@@ -1,0 +1,79 @@
+.TH DASED 8C "07 Jul 1990"
+.\" $Header: /f/osi/acsap/RCS/dased.8c,v 7.5 91/02/22 09:14:32 mrose Interim $
+.\"
+.\"
+.\" $Log:	dased.8c,v $
+.\" Revision 7.5  91/02/22  09:14:32  mrose
+.\" Interim 6.8
+.\" 
+.\" Revision 7.4  90/12/19  09:16:00  mrose
+.\" touch-up
+.\" 
+.\" Revision 7.3  90/12/17  22:12:48  mrose
+.\" -call
+.\" 
+.\" Revision 7.2  90/12/11  10:52:05  mrose
+.\" lock-and-load
+.\" 
+.\" Revision 7.1  90/07/09  14:30:55  mrose
+.\" sync
+.\" 
+.\" Revision 7.0  90/07/07  16:30:47  mrose
+.\" *** empty log message ***
+.\" 
+.SH NAME
+dased \- stand-alone DASE
+.SH SYNOPSIS
+.in +.5i
+.ti -.6i
+.B \*(SDdased
+\%[\-d]
+\%[\-a\0address]
+\%[\-c\0DSA-name-or-address]
+\%[\-u\0username] \%[\-p\0password]
+.in -.5i
+.SH DESCRIPTION
+The \fIdased\fR program is used as a name/address resolver for the ISODE.
+If the tailoring option \fIns_enable\fR is \*(lqon\*(rq,
+then ISODE programs may contact \fIdased\fR to map service
+descriptions into Distinguished Names and Presentation Addresses.
+.PP
+The \fIns_address\fR tailoring option indicates the transport address
+which \fIdased\fR should listen on.
+This may be overriden with the `\-a' option.
+.PP
+Note that unlike previous versions of the nameservice,
+\fIdased\fR uses the OSI CO-mode transport service as backing.
+As such,
+any valid OSI transport address may be used for listening.
+.PP
+By default,
+\fIdased\fR will use non-authentication when binding to the Directory.
+If desired,
+a username (DN) and a password can be supplied using the `\-u' and `\-p'
+switches can be used (respectively).
+Further,
+\fIdased\fR will connect to the default local DSA
+(the first entry in the \fIdsaptailor\fR file).
+If desired,
+the name or address of another DSA can be suppoed using the `\-c' switch.
+.SH "DEBUG OPERATION"
+If \fIdased\fR is started interactively,
+or if the `\-d' switch is given,
+then debug mode is entered.
+In this case,
+all logging activity is displayed on the user's terminal,
+the logging information is more verbose,
+and \fIdased\fR will terminate after it handles the first incoming connection
+(this allows \fIdased\fR to be run under a debugger).
+.SH FILES
+.nf
+.ta \w'\*(LDtsapd.log  'u
+\*(EDisotailor	ISODE tailoring file
+\*(LDdased.log	log file
+.re
+.fi
+.SH "SEE ALSO"
+isotailor(5)
+.SH AUTHOR
+Marshall T. Rose

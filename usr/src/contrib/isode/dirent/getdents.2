@@ -1,0 +1,86 @@
+.TH GETDENTS 2 "Standard Extension"
+.SH NAME
+getdents \- get directory entries in a file system independent format
+.SH SYNOPSIS
+.B "#include <sys/types.h>"
+.br
+.B "#include <sys/dirent.h>"
+.P
+.B "int getdents (fildes, buf, nbyte)"
+.br
+.B "int fildes;"
+.br
+.B "char \(**buf;"
+.br
+.B "unsigned nbyte;"
+.SH DESCRIPTION
+.I Fildes
+is a file descriptor obtained from an
+.IR open (2)
+or
+.IR dup (2)
+system call.
+.P
+.I Getdents
+attempts to read
+.I nbyte
+bytes from the directory associated with
+.I fildes
+and to format them as
+file system independent entries
+in the buffer pointed to by
+.IR buf .
+Since the file system independent directory entries
+are of variable length,
+in most cases the actual number of bytes returned
+will be less than
+.IR nbyte .
+.P
+The file system independent directory entry is specified by the
+.I dirent
+structure.
+For a description of this see
+.IR dirent (4).
+.P
+On devices capable of seeking,
+.I getdents
+starts at a position in the file given by
+the file pointer associated with
+.IR fildes .
+Upon return from
+.IR getdents ,
+the file pointer has been incremented
+to point to the next directory entry.
+.P
+This system call was developed in order to implement the
+.I readdir
+routine
+[for a description see
+.IR directory (3C)]
+and should not be used for other purposes.
+.SH "SEE ALSO"
+directory(3C), dirent(4).
+.SH DIAGNOSTICS
+Upon successful completion
+a non-negative integer is returned
+indicating the number of bytes of
+.I buf\^
+actually filled.
+(This need not be the number actually used
+in the actual directory file.)\|\|
+A value of zero
+indicates the end of the directory has been reached.
+If
+.I getdents
+fails for any other reason,
+a value of \-1 is returned and
+the external integer variable
+.I errno
+is set to indicate the error.
+.SH WARNINGS
+Entries for "." and ".."
+may not be reported for some file system types.
+.P
+The exact set of
+.I errno
+values and meanings may vary among implementations.
