@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)canfield.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)canfield.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -782,6 +782,10 @@ movetotalon()
 {
 	int i, fin;
 
+	if (cinhand <= 3 && cinhand > 0) {
+		move(msgrow, msgcol);
+		printw("Hand is now empty        ");
+	}
 	if (cinhand >= 3)
 		fin = 3;
 	else if (cinhand > 0)
