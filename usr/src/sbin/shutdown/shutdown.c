@@ -1,4 +1,4 @@
-/*	@(#)shutdown.c	4.6 (Berkeley/Melbourne) 81/05/10	*/
+static	char *sccsid = "@(#)shutdown.c	4.7 (Berkeley) 81/05/11";
 
 #include <stdio.h>
 #include <ctype.h>
