@@ -1,4 +1,4 @@
-/*	vplotf.c	4.2	83/05/16	*/
+/*	vplotf.c	4.2	83/05/23	*/
 /*
  *  Lpd filter to read standard graphics input and produce a plot on the
  *  Varian or Versatec
@@ -16,7 +16,7 @@
 #define DOTDASHED 054
 #define LONGDASHED 074
 
-static char *Sid = "@(#)\t%G%";
+static char *Sid = "@(#)\t5/16/83";
 
 int	linmod = SOLID;
 int	done1;
@@ -41,21 +41,22 @@ int	warned = 0;	/* Indicates whether the warning message about
 
 int	plotmd[] = {VPLOT};
 int	prtmd[]  = {VPRINT};
-int	varian = 1;		/* default is the varian */
+int	varian;			/* 0 for versatec, 1 for varian. */
+int	BYTES_PER_LINE;		/* number of bytes per raster line. */
+int	PAGE_LINES;		/* number of raster lines per page. */
 int	DevRange = 1536;	/* output array size (square) in pixels */
 int	DevRange8 = 1536/8;	/* output array size in bytes */
-int	BytesPerLine = 264;	/* Bytes per raster line (physical) */
 int	lines;			/* number of raster lines printed */
 char	zeros[880];		/* one raster line */
 
 char	*name, *host, *acctfile;
 
-/* variables for used to print from font file */
+/* variables used to print from font file */
 int	fontSet = 0;		/* Has the font file been read */
 struct	header header;
 struct	dispatch dispatch[256];
 char	*bits;
-char	*fontFile = "/usr/lib/vfont/R.10";
+char	*fontFile = "/usr/lib/vfont/R.8";
 
 main(argc, argv)
 	int argc;
@@ -64,16 +65,24 @@ main(argc, argv)
 	register char *cp, *arg;
 	register n, again;
 
-	if (argv[0][strlen(argv[0])-1] == 'W') {
-		varian = 0;
-		DevRange = 2048;
-		DevRange8 = 2048/8;
-		BytesPerLine = 880;
-	}
-
 	while (--argc) {
 		if (**++argv == '-') {
 			switch (argv[0][1]) {
+			case 'x':
+				BYTES_PER_LINE = atoi(&argv[0][2]) / 8;
+				if (varian = BYTES_PER_LINE == 264) {
+					DevRange = 1536;
+					DevRange8 = 1536/8;
+				} else {
+					DevRange = 2048;
+					DevRange8 = 2048/8;
+				}
+				break;
+
+			case 'y':
+				PAGE_LINES = atoi(&argv[0][2]);
+				break;
+
 			case 'n':
 				argc--;
 				name = *++argv;
@@ -107,7 +116,7 @@ main(argc, argv)
 		again = getpict();
 
 		ioctl(1, VSETSTATE, plotmd);
-		n = BytesPerLine - DevRange8;
+		n = BYTES_PER_LINE - DevRange8;
 		for (cp = obuf; cp < arg; cp += DevRange8) {
 			if (write(1, cp, DevRange8) != DevRange8)
 				exit(1);
@@ -139,7 +148,7 @@ account(who, from, acctfile)
 	 * Varian accounting is done by 8.5 inch pages;
 	 * Versatec accounting is by the (12 inch) foot.
 	 */
-	fprintf(a, "t%6.2f\t", (lines / 200.0) / (varian ? 8.5 : 12.0));
+	fprintf(a, "t%6.2f\t", (lines / 200.0) / PAGE_LINES);
 	if (from != NULL)
 		fprintf(a, "%s:", from);
 	fprintf(a, "%s\n", who);
