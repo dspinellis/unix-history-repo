@@ -1,4 +1,4 @@
-#	@(#)gettytab	4.4 (Berkeley) 83/07/23
+#	@(#)gettytab	4.5 (Berkeley) 83/08/08
 
 #
 # Most of the table entries here are just copies of the
@@ -12,8 +12,7 @@
 # entries, and in cases where getty is called with no table name
 #
 default:\
-	:ap:fd#1000:im=\r\n\r\n4.2 BSD UNIX (%h)\r\n\r\r\n\r:sp#1200:\
-	:er=#:kl=@:in=\177:
+	:ap:fd#1000:im=\r\n\r\n4.2 BSD UNIX (%h)\r\n\r\r\n\r:sp#1200:
 
 #
 # Fixed speed entries
