@@ -1,4 +1,4 @@
-/*	cgram.y	4.12	87/12/09	*/
+/*	cgram.y	4.13	87/12/09	*/
 
 /*
  * Grammar for the C compiler.
@@ -676,10 +676,11 @@ term:		   term INCOP
 				$$ = $2;
 				}
 			    else if( $2->in.op == UNARY MUL &&
-				     ($2->in.left->in.op == STCALL ||
+				     ($2->in.left->in.op == STASG ||
+				      $2->in.left->in.op == STCALL ||
 				      $2->in.left->in.op == UNARY STCALL) ){
-				/* a legal tree but not available to users */
-				uerror( "can't take address of function return value" );
+				/* legal trees but not available to users */
+				uerror( "unacceptable operand of &" );
 				goto ubop;
 				}
 			    else goto ubop;
