@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c.1	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c.1	5.23 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -263,7 +263,7 @@ main(argc, argv)
 		/*
 		 * If user not super-user, check for logins disabled.
 		 */
-		if (pwd->pw_uid != 0 && (nlfd = fopen(nolog, "r")) > 0) {
+		if (pwd->pw_uid != 0 && (nlfd = fopen(nolog, "r"))) {
 			while ((c = getc(nlfd)) != EOF)
 				putchar(c);
 			fflush(stdout);
