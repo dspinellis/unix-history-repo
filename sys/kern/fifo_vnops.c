@@ -262,7 +262,7 @@ fifo_write(vp, uio, ioflag, cred)
 	if (ioflag & IO_NDELAY)
 		wso->so_state |= SS_NBIO;
 	VOP_UNLOCK(vp);
-	error = sosend(wso, (struct mbuf *)0, uio, 0, (struct mbuf *)0);
+	error = sosend(wso, (struct mbuf *)0, uio, 0, (struct mbuf *)0, 0);
 	VOP_LOCK(vp);
 	if (ioflag & IO_NDELAY)
 		wso->so_state &= ~SS_NBIO;
