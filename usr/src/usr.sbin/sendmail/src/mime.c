@@ -10,7 +10,7 @@
 # include <string.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)mime.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)mime.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -213,6 +213,12 @@ mime8to7(mci, header, e, boundary)
 	if (sectionhighbits == 0)
 	{
 		/* no encoding necessary */
+		p = hvalue("content-transfer-encoding", header);
+		if (p != NULL)
+		{
+			sprintf(buf, "Content-Transfer-Encoding: %s", p);
+			putline(buf, mci);
+		}
 		putline("", mci);
 		mci->mci_flags &= ~MCIF_INHEADER;
 		while (fgets(buf, sizeof buf, e->e_dfp) != NULL)
