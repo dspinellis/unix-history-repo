@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_acct.c	7.2 (Berkeley) %G%
+ *	@(#)kern_acct.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -104,8 +104,7 @@ acct()
 		return;
 	}
 	ilock(ip);
-	for (i = 0; i < sizeof (ap->ac_comm); i++)
-		ap->ac_comm[i] = u.u_comm[i];
+	bcopy(u.u_comm, ap->ac_comm, sizeof(ap->ac_comm));
 	ru = &u.u_ru;
 	ap->ac_utime = compress(ru->ru_utime.tv_sec, ru->ru_utime.tv_usec);
 	ap->ac_stime = compress(ru->ru_stime.tv_sec, ru->ru_stime.tv_usec);
