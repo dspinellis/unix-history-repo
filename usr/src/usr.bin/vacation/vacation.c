@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)vacation.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)vacation.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -31,7 +31,6 @@ static char sccsid[] = "@(#)vacation.c	5.8 (Berkeley) %G%";
 #include <pwd.h>
 #include <stdio.h>
 #include <ctype.h>
-#include <sysexits.h>
 #include <syslog.h>
 
 /*
@@ -94,29 +93,29 @@ main(argc, argv)
 	if (argc != 1) {
 		if (!iflag) {
 usage:			syslog(LOG_ERR, "uid %u: usage: vacation [-i] [-a alias] login\n", getuid());
-			exit(EX_USAGE);
+			exit(1);
 		}
 		if (!(pw = getpwuid(getuid()))) {
 			syslog(LOG_ERR, "vacation: no such user uid %u.\n", getuid());
-			exit(EX_USAGE);
+			exit(1);
 		}
 	}
 	else if (!(pw = getpwnam(*argv))) {
 		syslog(LOG_ERR, "vacation: no such user %s.\n", *argv);
-		exit(EX_USAGE);
+		exit(1);
 	}
 	if (chdir(pw->pw_dir)) {
 		syslog(LOG_ERR, "vacation: no such directory %s.\n", pw->pw_dir);
-		exit(EX_USAGE);
+		exit(1);
 	}
 
 	if (iflag) {
 		initialize();
-		exit(EX_OK);
+		exit(0);
 	}
 
 	if (!(cur = (ALIAS *)malloc((u_int)sizeof(ALIAS))))
-		exit(EX_SOFTWARE);
+		exit(1);
 	cur->name = pw->pw_name;
 	cur->next = names;
 	names = cur;
@@ -132,7 +131,7 @@ usage:			syslog(LOG_ERR, "uid %u: usage: vacation [-i] [-a alias] login\n", getu
 		setreply();
 		sendmessage(pw->pw_name);
 	}
-	exit(EX_OK);
+	exit(0);
 }
 
 /*
@@ -157,7 +156,7 @@ char **shortp;
 				*p = '\0';
 				(void)strcpy(from, buf + 5);
 				if (junkmail())
-					exit(EX_OK);
+					exit(0);
 			}
 			break;
 		case 'P':		/* "Precedence:" */
@@ -170,7 +169,7 @@ char **shortp;
 			if (!*p)
 				break;
 			if (!strncasecmp(p, "junk", 4) || !strncasecmp(p, "bulk", 4))
-				exit(EX_OK);
+				exit(0);
 			break;
 		case 'C':		/* "Cc:" */
 			if (strncmp(buf, "Cc:", 3))
@@ -191,10 +190,10 @@ findme:			for (cur = names; !tome && cur; cur = cur->next)
 				tome += nsearch(cur->name, buf);
 		}
 	if (!tome)
-		exit(EX_OK);
+		exit(0);
 	if (!*from) {
 		syslog(LOG_ERR, "vacation: no initial \"From\" line.\n");
-		exit(EX_DATAERR);
+		exit(1);
 	}
 }
 
@@ -310,11 +309,11 @@ sendmessage(myname)
 {
 	if (!freopen(VMSG, "r", stdin)) {
 		syslog(LOG_ERR, "vacation: no ~%s/%s file.\n", myname, VMSG);
-		exit(EX_NOINPUT);
+		exit(1);
 	}
 	execl("/usr/lib/sendmail", "sendmail", "-f", myname, from, NULL);
 	syslog(LOG_ERR, "vacation: can't exec /usr/lib/sendmail.\n");
-	exit(EX_OSERR);
+	exit(1);
 }
 
 /*
@@ -330,12 +329,12 @@ initialize()
 
 	if ((fd = open(VDIR, O_WRONLY|O_CREAT|O_TRUNC, 0644)) < 0) {
 		syslog(LOG_ERR, "vacation: %s: %s\n", VDIR, sys_errlist[errno]);
-		exit(EX_OSERR);
+		exit(1);
 	}
 	(void)close(fd);
 	if ((fd = open(VPAG, O_WRONLY|O_CREAT|O_TRUNC, 0644)) < 0) {
 		syslog(LOG_ERR, "vacation: %s: %s\n", VPAG, sys_errlist[errno]);
-		exit(EX_OSERR);
+		exit(1);
 	}
 	(void)close(fd);
 	dbminit(VACAT);
