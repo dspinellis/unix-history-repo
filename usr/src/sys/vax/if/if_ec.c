@@ -1,4 +1,4 @@
-/*	if_ec.c	4.26	82/10/22	*/
+/*	if_ec.c	4.27	82/10/23	*/
 
 #include "ec.h"
 
@@ -511,7 +511,7 @@ ecoutput(ifp, m0, dst)
 	case AF_INET:
 		dest = ((struct sockaddr_in *)dst)->sin_addr.s_addr;
 		if ((dest &~ 0xff) == 0)
-			mcopy = m_copy(m, 0, M_COPYALL);
+			mcopy = m_copy(m, 0, (int)M_COPYALL);
 		else if (dest == ((struct sockaddr_in *)&es->es_if.if_addr)->
 		    sin_addr.s_addr) {
 			mcopy = m;
