@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 1993 The Regents of the University of California.
  * Copyright (c) 1993 Jan-Simon Pendry
+ * Copyright (c) 1993 Sean Eric Fagan
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -8,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)procfs_mem.c	8.2 (Berkeley) %G%
+ *	@(#)procfs_mem.c	8.3 (Berkeley) %G%
  *
  * From:
  *	$Id: procfs_mem.c,v 3.2 1993/12/15 09:40:17 jsp Exp $
