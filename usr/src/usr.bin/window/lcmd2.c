@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)lcmd2.c	3.7 %G%";
+static char sccsid[] = "@(#)lcmd2.c	3.8 %G%";
 #endif
 
 #include "defs.h"
@@ -307,4 +307,32 @@ struct value *v, *a;
 	if (a->v_type == ARG_STR)
 		v->v_num = alias_unset(a->v_str);
 	v->v_type = V_NUM;
+}
+
+struct lcmd_arg arg_echo[] = {
+	{ "window",	1,	ARG_NUM },
+	{ "",		0,	ARG_ANY|ARG_LIST },
+	0
+};
+
+/*ARGSUSED*/
+l_echo(v, a)
+struct value *v;
+register struct value *a;
+{
+	char buf[20];
+	struct ww *w;
+
+	if ((w = vtowin(a++)) == 0)
+		return;
+	while (a->v_type != V_ERR) {
+		if (a->v_type == V_NUM) {
+			(void) sprintf(buf, "%d", a->v_num);
+			(void) wwwrite(w, buf, strlen(buf));
+		} else
+			(void) wwwrite(w, a->v_str, strlen(a->v_str));
+		if ((++a)->v_type != V_ERR)
+			(void) wwwrite(w, " ", 1);
+	}
+	(void) wwwrite(w, "\r\n", 2);
 }
