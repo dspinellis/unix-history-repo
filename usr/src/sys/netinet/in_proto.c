@@ -1,8 +1,9 @@
-/*	in_proto.c	5.1	82/07/31	*/
+/*	in_proto.c	5.2	82/08/01	*/
 
 #include "../h/param.h"
 #include "../h/socket.h"
 #include "../h/protosw.h"
+#include "../h/domain.h"
 #include "../h/mbuf.h"
 #include "../net/in.h"
 #include "../net/in_systm.h"
@@ -20,6 +21,7 @@ int	tcp_input(),tcp_ctlinput();
 int	tcp_usrreq();
 int	tcp_init(),tcp_fasttimo(),tcp_slowtimo(),tcp_drain();
 int	rip_input(),rip_output();
+extern	int raw_usrreq();
 /*
  * IMP protocol family: raw interface.
  * Using the raw interface entry to get the timer routine
@@ -31,7 +33,7 @@ int	rimp_output(), hostslowtimo();
 #endif
 
 struct protosw inetsw[] = {
-{ 0,		0,		0,		0,
+{ 0,		PF_INET,	0,		0,
   0,		ip_output,	0,		0,
   0,
   ip_init,	0,		ip_slowtimo,	ip_drain,
@@ -56,14 +58,20 @@ struct protosw inetsw[] = {
   raw_usrreq,
   0,		0,		0,		0,
 },
-#if NIMP > 0
-{ SOCK_RAW,	PF_IMPLINK,	0,		PR_ATOMIC|PR_ADDR,
-  0,		rimp_output,	0,		0,
-  raw_usrreq,
-  0,		0,		hostslowtimo,	0,
-}
-#endif
 };
 
 struct domain inetdomain =
     { AF_INET, "internet", inetsw, &inetsw[sizeof(inetsw)/sizeof(inetsw[0])] };
+
+#if NIMP > 0
+struct protosw impsw[] = {
+{ SOCK_RAW,	PF_IMPLINK,	0,		PR_ATOMIC|PR_ADDR,
+  0,		rimp_output,	0,		0,
+  raw_usrreq,
+  0,		0,		hostslowtimo,	0,
+},
+};
+
+struct domain impdomain =
+    { AF_IMPLINK, "imp", impsw, &impsw[sizeof (impsw)/sizeof(impsw[0])] };
+#endif
