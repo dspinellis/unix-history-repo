@@ -4,7 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-static char sccsid[] = "@(#)fortran.c	5.2	%G%";
+static char sccsid[] = "@(#)fortran.c	5.3	%G%";
 /*
  * FORTRAN dependent symbol routines.
  */
@@ -22,7 +22,7 @@ static char sccsid[] = "@(#)fortran.c	5.2	%G%";
 #include "runtime.h"
 #include "machine.h"
 
-#define isfloat(range) ( \
+#define isspecial(range) ( \
     range->symvalue.rangev.upper == 0 and range->symvalue.rangev.lower > 0 \
 )
 
@@ -169,6 +169,7 @@ Symbol eltype;
     switch (s->class) {
 	case CONST:
 	    printf("parameter %s = ", symname(s));
+	    eval(s->symvalue.constval);
             printval(s);
 	    break;
 
@@ -282,14 +283,24 @@ Symbol s;
 	    break;
 
 	case RANGE:
-	     if (isfloat(s)) {
+	    if (isspecial(s)) {
 		switch (s->symvalue.rangev.lower) {
+		    case sizeof(short):
+			if (istypename(s->type, "logical*2")) {
+			    printlogical(pop(short));
+			}
+			break;
+
 		    case sizeof(float):
-			prtreal(pop(float));
+			if (istypename(s->type, "logical")) {
+			    printlogical(pop(long));
+			} else {
+			    prtreal(pop(float));
+			}
 			break;
 
 		    case sizeof(double):
-			if (istypename(s->type,"complex")) {
+			if (istypename(s->type, "complex")) {
 			    d2 = pop(float);
 			    d1 = pop(float);
 			    printf("(");
@@ -313,7 +324,7 @@ Symbol s;
 			break;
 		
 		    default:
-			panic("bad size \"%d\" for real",
+			panic("bad size \"%d\" for special",
                                   s->symvalue.rangev.lower);
 			break;
 		}
@@ -332,6 +343,20 @@ Symbol s;
 }
 
 /*
+ * Print out a logical
+ */
+
+private printlogical(i)
+Integer i;
+{
+    if (i == 0) {
+	printf(".false.");
+    } else {
+	printf(".true.");
+    }
+}
+
+/*
  * Print out an int 
  */
 
@@ -339,14 +364,13 @@ private printint(i, t)
 Integer i;
 register Symbol t;
 {
-    if (istypename(t->type, "logical")) {
-	printf(((Boolean) i) == true ? "true" : "false");
-    }
-    else if ( (t->type == t_int) or istypename(t->type, "integer") or
+    if ( (t->type == t_int) or istypename(t->type, "integer") or
                   istypename(t->type,"integer*2") ) {
 	printf("%ld", i);
+    } else if (istypename(t->type, "addr")) {
+	printf("0x%lx", i);
     } else {
-      error("unkown type in fortran printint");
+	error("unknown type in fortran printint");
     }
 }
 
