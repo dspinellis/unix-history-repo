@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)syscall.2	6.1 (Berkeley) %G%
+.\"	@(#)syscall.2	6.2 (Berkeley) %G%
 .\"
 .TH SYSCALL 2 ""
 .UC 4
@@ -10,6 +10,9 @@
 syscall \- indirect system call
 .SH SYNOPSIS
 .nf
+.ft B
+#include <syscall.h>
+.PP
 .BR "syscall(number, arg, ...)" \  \  (VAX-11)
 .fi
 .SH DESCRIPTION
@@ -23,6 +26,8 @@ and
 .I r1
 and further arguments
 .IR arg .
+Symbolic constants for system calls can be found in the header file
+.I <syscall.h>.
 .PP
 The r0 value of the system call is returned.
 .SH DIAGNOSTICS
