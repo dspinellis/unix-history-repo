@@ -1,4 +1,4 @@
-/* tcp_usrreq.c 1.41 81/12/12 */
+/* tcp_usrreq.c 1.42 81/12/19 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -108,7 +108,6 @@ badcon:
 		break;
 
 	case PRU_ACCEPT:
-		soisconnected(so);
 		break;
 
 	case PRU_DISCONNECT:
