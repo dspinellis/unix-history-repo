@@ -1,4 +1,4 @@
-/*	if_dmc.c	4.27	83/06/12	*/
+/*	if_dmc.c	4.28	83/06/13	*/
 
 #include "dmc.h"
 #if NDMC > 0
@@ -302,6 +302,7 @@ dmcxint(unit)
 	int unit;
 {
 	register struct dmc_softc *sc;
+	register struct ifnet *ifp;
 	struct uba_device *ui = dmcinfo[unit];
 	struct dmcdevice *addr;
 	struct mbuf *m;
@@ -316,6 +317,7 @@ dmcxint(unit)
 	arg = addr->sel6;
 	addr->bsel2 &= ~DMC_RDYO;
 	sc = &dmc_softc[unit];
+	ifp = &sc->sc_if;
 	printd("dmcxint\n");
 	switch (cmd & 07) {
 
@@ -325,13 +327,13 @@ dmcxint(unit)
 		 * data path.  Pass packet to type specific
 		 * higher-level input routine.
 		 */
-		sc->sc_if.if_ipackets++;
+		ifp->if_ipackets++;
 		if (sc->sc_ifuba.ifu_flags & UBA_NEEDBDP)
 			UBAPURGE(sc->sc_ifuba.ifu_uba,
 				sc->sc_ifuba.ifu_r.ifrw_bdp);
 		len = arg & DMC_CCOUNT;
 		printd("  read done, len %d\n", len);
-		switch (ui->ui_flags & DMC_AF) {
+		switch (ifp->if_addr.sa_family) {
 #ifdef INET
 		case AF_INET:
 			schednetisr(NETISR_IP);
@@ -341,7 +343,7 @@ dmcxint(unit)
 
 		default:
 			printf("dmc%d: unknown address type %d\n", unit,
-			    ui->ui_flags & DMC_AF);
+			    ifp->if_addr.sa_family);
 			goto setup;
 		}
 		m = if_rubaget(&sc->sc_ifuba, len, 0);
@@ -366,13 +368,13 @@ setup:
 		if (sc->sc_oactive == 0)
 			return;		/* SHOULD IT BE A FATAL ERROR? */
 		printd("  write done\n");
-		sc->sc_if.if_opackets++;
+		ifp->if_opackets++;
 		sc->sc_oactive = 0;
 		if (sc->sc_ifuba.ifu_xtofree) {
 			m_freem(sc->sc_ifuba.ifu_xtofree);
 			sc->sc_ifuba.ifu_xtofree = 0;
 		}
-		if (sc->sc_if.if_snd.ifq_head == 0)
+		if (ifp->if_snd.ifq_head == 0)
 			return;
 		dmcstart(unit);
 		return;
@@ -409,9 +411,9 @@ dmcoutput(ifp, m, dst)
 	int s;
 
 	printd("dmcoutput\n");
-	if (dst->sa_family != (ui->ui_flags & DMC_AF)) {
+	if (dst->sa_family != ifp->if_addr.sa_family) {
 		printf("dmc%d: af%d not supported\n", ifp->if_unit,
-			dst->sa_family);
+		    dst->sa_family);
 		m_freem(m);
 		return (EAFNOSUPPORT);
 	}
