@@ -25,15 +25,15 @@ ERROR: DBM is no longer supported -- use NDBM instead.
 #ifndef lint
 #ifdef NEWDB
 #ifdef NDBM
-static char sccsid[] = "@(#)alias.c	6.44 (Berkeley) %G% (with NEWDB and NDBM)";
+static char sccsid[] = "@(#)alias.c	6.45 (Berkeley) %G% (with NEWDB and NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	6.44 (Berkeley) %G% (with NEWDB)";
+static char sccsid[] = "@(#)alias.c	6.45 (Berkeley) %G% (with NEWDB)";
 #endif
 #else
 #ifdef NDBM
-static char sccsid[] = "@(#)alias.c	6.44 (Berkeley) %G% (with NDBM)";
+static char sccsid[] = "@(#)alias.c	6.45 (Berkeley) %G% (with NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	6.44 (Berkeley) %G% (without NEWDB or NDBM)";
+static char sccsid[] = "@(#)alias.c	6.45 (Berkeley) %G% (without NEWDB or NDBM)";
 #endif
 #endif
 #endif /* not lint */
@@ -252,44 +252,54 @@ setalias(spec)
 	if (tTd(27, 8))
 		printf("setalias(%s)\n", spec);
 
-	if (NAliasDBs >= MAXALIASDB)
+	for (p = spec; p != NULL; )
 	{
-		syserr("Too many alias databases defined, %d max", MAXALIASDB);
-		return;
-	}
-	ad = &AliasDB[NAliasDBs];
-
-	for (p = spec; *p != '\0'; p++)
-	{
-		if (strchr(" /:", *p) != NULL)
+		while (isspace(*p))
+			p++;
+		if (*p == NULL)
 			break;
-	}
-
-	if (*p == ':')
-	{
-		/* explicit class listed */
-		*p++ = '\0';
-		class = spec;
 		spec = p;
-	}
-	else
-	{
-		/* implicit class */
-		class = "implicit";
-	}
 
-	/* look up class */
-	s = stab(class, ST_ALIASCLASS, ST_FIND);
-	if (s == NULL)
-	{
-		if (tTd(27, 1))
-			printf("Unknown alias class %s\n", class);
-	}
-	else
-	{
-		ad->ad_class = s->s_aliasclass;
-		ad->ad_name = newstr(spec);
-		NAliasDBs++;
+		if (NAliasDBs >= MAXALIASDB)
+		{
+			syserr("Too many alias databases defined, %d max", MAXALIASDB);
+			return;
+		}
+		ad = &AliasDB[NAliasDBs];
+
+		p = strpbrk(p, " ,/:");
+		if (p != NULL && *p == ':')
+		{
+			/* explicit class listed */
+			*p++ = '\0';
+			class = spec;
+			spec = p;
+		}
+		else
+		{
+			/* implicit class */
+			class = "implicit";
+		}
+
+		/* find end of spec */
+		if (p != NULL)
+			p = strchr(p, ',');
+		if (p != NULL)
+			*p++ = '\0';
+
+		/* look up class */
+		s = stab(class, ST_ALIASCLASS, ST_FIND);
+		if (s == NULL)
+		{
+			if (tTd(27, 1))
+				printf("Unknown alias class %s\n", class);
+		}
+		else
+		{
+			ad->ad_class = s->s_aliasclass;
+			ad->ad_name = newstr(spec);
+			NAliasDBs++;
+		}
 	}
 }
 /*
