@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.50 (Berkeley) %G%
+#	@(#)READ_ME	8.51 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -253,7 +253,7 @@ LA_TYPE		The type of load average your kernel supports.  These
 		several other parameters that they try to divine: the
 		name of your kernel, the name of the variable in the
 		kernel to examine, the number of bits of precision in
-		a fixed point load average, and so forth.  In desparation,
+		a fixed point load average, and so forth.  In desperation,
 		use LA_ZERO (1) -- it always returns the load average as
 		"zero" (and does so on all architectures).  The actual
 		code is in conf.c -- it can be tweaked if you are brave.
@@ -356,7 +356,7 @@ help to link with "-l44bsd" to solve this problem.
 the header files you used -- some people have used the 4.9 headers
 and linked with BIND 4.8 or vice versa, and it doesn't work.
 Unfortunately, it doesn't fail in an obvious way -- things just
-subtlely don't work.
+subtly don't work.
 
 
 +-------------------------------------+
@@ -766,4 +766,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.50, last update %G% 17:36:09)
+(Version 8.51, last update %G% 17:37:26)
