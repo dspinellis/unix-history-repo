@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)csh.h	5.22 (Berkeley) %G%
+ *	@(#)csh.h	5.23 (Berkeley) %G%
  */
 
 /*
@@ -106,6 +106,7 @@ Char   *ffile;			/* Name of shell file for $0 */
 char   *seterr;			/* Error message from scanner/parser */
 Char   *shtemp;			/* Temp name for << shell files in /tmp */
 
+#include <sys/types.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 
