@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)param.h	7.13 (Berkeley) %G%
+ *	@(#)param.h	7.14 (Berkeley) %G%
  */
 
 #define	BSD	199003		/* system version (year & month) */
@@ -15,9 +15,6 @@
 /*
  * Machine-independent constants
  */
-#define	NMOUNT		30		/* number of mountable file systems */
-/* NMOUNT must be <= 255 unless c_mdev (cmap.h) is expanded */
-#define	MSWAPX		NMOUNT		/* pseudo mount index for swapdev */
 #define	MAXUPRC		CHILD_MAX	/* max processes per user */
 #define	NOFILE		OPEN_MAX	/* max open files per process */
 #define	CANBSIZ		256		/* max size of tty input line */
