@@ -21,6 +21,7 @@
 #include "systm.h"
 #include "dir.h"
 #include "user.h"
+#include "malloc.h"
 #include "mbuf.h"
 #include "protosw.h"
 #include "socket.h"
@@ -55,12 +56,12 @@ int traceallspps = 0;
 extern int sppconsdebug;
 int spp_hardnosed;
 int spp_use_delack = 0;
+u_short spp_newchecks[50];
 
 /*ARGSUSED*/
-spp_input(m, nsp, ifp)
+spp_input(m, nsp)
 	register struct mbuf *m;
 	register struct nspcb *nsp;
-	struct ifnet *ifp;
 {
 	register struct sppcb *cb;
 	register struct spidp *si = mtod(m, struct spidp *);
@@ -118,6 +119,7 @@ spp_input(m, nsp, ifp)
 		cb = nstosppcb(nsp);
 		cb->s_mtu = ocb->s_mtu;		/* preserve sockopts */
 		cb->s_flags = ocb->s_flags;	/* preserve sockopts */
+		cb->s_flags2 = ocb->s_flags2;	/* preserve sockopts */
 		cb->s_state = TCPS_LISTEN;
 	}
 
@@ -232,7 +234,8 @@ spp_input(m, nsp, ifp)
 		spp_trace(SA_INPUT, (u_char)ostate, cb, &spp_savesi, 0);
 
 	m->m_len -= sizeof (struct idp);
-	m->m_off += sizeof (struct idp);
+	m->m_pkthdr.len -= sizeof (struct idp);
+	m->m_data += sizeof (struct idp);
 
 	if (spp_reass(cb, si)) {
 		(void) m_freem(m);
@@ -380,8 +383,8 @@ register struct spidp *si;
 	 */
 	incr = CUNIT;
 	if (cb->s_cwnd > cb->s_ssthresh)
-		incr = MAX(incr * incr / cb->s_cwnd, 1);
-	cb->s_cwnd = MIN(cb->s_cwnd + incr, cb->s_cwmx);
+		incr = max(incr * incr / cb->s_cwnd, 1);
+	cb->s_cwnd = min(cb->s_cwnd + incr, cb->s_cwmx);
 	/*
 	 * Trim Acked data from output queue.
 	 */
@@ -391,8 +394,7 @@ register struct spidp *si;
 		else
 			break;
 	}
-	if ((so->so_snd.sb_flags & SB_WAIT) || so->so_snd.sb_sel)
-		 sowwakeup(so);
+	sowwakeup(so);
 	cb->s_rack = si->si_ack;
 update_window:
 	if (SSEQ_LT(cb->s_snxt, cb->s_rack))
@@ -503,12 +505,51 @@ present:
 			remque(q->si_next);
 			wakeup = 1;
 			sppstat.spps_rcvpack++;
+#ifdef SF_NEWCALL
+			if (cb->s_flags2 & SF_NEWCALL) {
+				struct sphdr *sp = mtod(m, struct sphdr *);
+				u_char dt = sp->sp_dt;
+				spp_newchecks[4]++;
+				if (dt != cb->s_rhdr.sp_dt) {
+					struct mbuf *mm =
+					   m_getclr(M_DONTWAIT, MT_CONTROL);
+					spp_newchecks[0]++;
+					if (mm != NULL) {
+						u_short *s =
+							mtod(mm, u_short *);
+						cb->s_rhdr.sp_dt = dt;
+						mm->m_len = 5; /*XXX*/
+						s[0] = 5;
+						s[1] = 1;
+						*(u_char *)(&s[2]) = dt;
+						sbappend(&so->so_rcv, mm);
+					}
+				}
+				if (sp->sp_cc & SP_OB) {
+					MCHTYPE(m, MT_OOBDATA);
+					spp_newchecks[1]++;
+					so->so_oobmark = 0;
+					so->so_state &= ~SS_RCVATMARK;
+				}
+				if (packetp == 0) {
+					m->m_data += SPINC;
+					m->m_len -= SPINC;
+					m->m_pkthdr.len -= SPINC;
+				}
+				if ((sp->sp_cc & SP_EM) || packetp) {
+					sbappendrecord(&so->so_rcv, m);
+					spp_newchecks[9]++;
+				} else
+					sbappend(&so->so_rcv, m);
+			} else
+#endif
 			if (packetp) {
 				sbappendrecord(&so->so_rcv, m);
 			} else {
 				cb->s_rhdr = *mtod(m, struct sphdr *);
-				m->m_off += SPINC;
+				m->m_data += SPINC;
 				m->m_len -= SPINC;
+				m->m_pkthdr.len -= SPINC;
 				sbappend(&so->so_rcv, m);
 			}
 		  } else
@@ -649,7 +690,7 @@ spp_output(cb, m0)
 	register struct spidp *si = (struct spidp *) 0;
 	register struct sockbuf *sb = &so->so_snd;
 	int len = 0, win, rcv_win;
-	short span, off;
+	short span, off, recordp = 0;
 	u_short alo;
 	int error = 0, sendalot;
 #ifdef notdef
@@ -667,6 +708,8 @@ spp_output(cb, m0)
 		for (m = m0; m ; m = m->m_next) {
 			mprev = m;
 			len += m->m_len;
+			if (m->m_flags & M_EOR)
+				recordp = 1;
 		}
 		datalen = (cb->s_flags & SF_HO) ?
 				len - sizeof (struct sphdr) : len;
@@ -683,6 +726,14 @@ spp_output(cb, m0)
 					if (m == NULL) {
 						error = ENOBUFS;
 						goto bad_copy;
+					}
+					if (cb->s_flags & SF_NEWCALL) {
+					    struct mbuf *mm = m;
+					    spp_newchecks[7]++;
+					    while (mm) {
+						mm->m_flags &= ~M_EOR;
+						mm = mm->m_next;
+					    }
 					}
 					error = spp_output(cb, m);
 					if (error) {
@@ -703,7 +754,7 @@ spp_output(cb, m0)
 		 */
 		if (len & 1) {
 			m = mprev;
-			if (m->m_len + m->m_off < MMAXOFF)
+			if (M_TRAILINGSPACE(m) >= 1)
 				m->m_len++;
 			else {
 				struct mbuf *m1 = m_get(M_DONTWAIT, MT_DATA);
@@ -713,11 +764,11 @@ spp_output(cb, m0)
 					return (ENOBUFS);
 				}
 				m1->m_len = 1;
-				m1->m_off = MMAXOFF - 1;
+				*(mtod(m1, u_char *)) = 0;
 				m->m_next = m1;
 			}
 		}
-		m = m_get(M_DONTWAIT, MT_HEADER);
+		m = m_gethdr(M_DONTWAIT, MT_HEADER);
 		if (m == 0) {
 			m_freem(m0);
 			return (ENOBUFS);
@@ -725,9 +776,8 @@ spp_output(cb, m0)
 		/*
 		 * Fill in mbuf with extended SP header
 		 * and addresses and length put into network format.
-		 * Long align so prepended ip headers will work on Gould.
 		 */
-		m->m_off = MMAXOFF - sizeof (struct spidp) - 2;
+		MH_ALIGN(m, sizeof (struct spidp));
 		m->m_len = sizeof (struct spidp);
 		m->m_next = m0;
 		si = mtod(m, struct spidp *);
@@ -747,10 +797,14 @@ spp_output(cb, m0)
 			si->si_dt = sh->sp_dt;
 			si->si_cc |= sh->sp_cc & SP_EM;
 			m0->m_len -= sizeof (*sh);
-			m0->m_off += sizeof (*sh);
+			m0->m_data += sizeof (*sh);
 			len -= sizeof (*sh);
 		}
 		len += sizeof(*si);
+		if ((cb->s_flags2 & SF_NEWCALL) && recordp) {
+			si->si_cc  |= SP_EM;
+			spp_newchecks[8]++;
+		}
 		if (cb->s_oobflags & SF_SOOB) {
 			/*
 			 * Per jqj@cornell:
@@ -766,6 +820,7 @@ spp_output(cb, m0)
 			}
 		}
 		si->si_len = htons((u_short)len);
+		m->m_pkthdr.len = ((len - 1) | 1) + 1;
 		/*
 		 * queue stuff up for output
 		 */
@@ -778,7 +833,7 @@ spp_output(cb, m0)
 again:
 	sendalot = 0;
 	off = cb->s_snxt - cb->s_rack;
-	win = MIN(cb->s_swnd, (cb->s_cwnd/CUNIT));
+	win = min(cb->s_swnd, (cb->s_cwnd/CUNIT));
 
 	/*
 	 * If in persist timeout with window of 0, send a probe.
@@ -793,7 +848,7 @@ again:
 		}
 	}
 	span = cb->s_seq - cb->s_rack;
-	len = MIN(span, win) - off;
+	len = min(span, win) - off;
 
 	if (len < 0) {
 		/*
@@ -913,7 +968,6 @@ send:
 		if (m == NULL) {
 			return (ENOBUFS);
 		}
-		m0 = m;
 		si = mtod(m, struct spidp *);
 		if (SSEQ_LT(si->si_seq, cb->s_smax))
 			sppstat.spps_sndrexmitpack++;
@@ -927,19 +981,16 @@ send:
 			sppstat.spps_sndprobe++;
 		if (cb->s_flags & SF_ACKNOW)
 			sppstat.spps_sndacks++;
-		m = m_get(M_DONTWAIT, MT_HEADER);
-		if (m == 0) {
+		m = m_gethdr(M_DONTWAIT, MT_HEADER);
+		if (m == 0)
 			return (ENOBUFS);
-		}
 		/*
 		 * Fill in mbuf with extended SP header
 		 * and addresses and length put into network format.
-		 * Allign beginning of packet to long to prepend
-		 * ifp's on loopback, or NSIP encaspulation for fussy cpu's.
 		 */
-		m->m_off = MMAXOFF - sizeof (struct spidp) - 2;
+		MH_ALIGN(m, sizeof (struct spidp));
 		m->m_len = sizeof (*si);
-		m->m_next = 0;
+		m->m_pkthdr.len = sizeof (*si);
 		si = mtod(m, struct spidp *);
 		si->si_i = *cb->s_idp;
 		si->si_s = cb->s_shdr;
@@ -1010,7 +1061,7 @@ send:
 			len = ntohs(si->si_len);
 			if (len & 1)
 				len++;
-			si->si_sum = ns_cksum(dtom(si), len);
+			si->si_sum = ns_cksum(m, len);
 		} else
 			si->si_sum = 0xffff;
 
@@ -1103,25 +1154,21 @@ spp_ctloutput(req, so, level, name, value)
 			mask = SF_HO;
 		get_flags:
 			m->m_len = sizeof(short);
-			m->m_off = MMAXOFF - sizeof(short);
 			*mtod(m, short *) = cb->s_flags & mask;
 			break;
 
 		case SO_MTU:
 			m->m_len = sizeof(u_short);
-			m->m_off = MMAXOFF - sizeof(short);
 			*mtod(m, short *) = cb->s_mtu;
 			break;
 
 		case SO_LAST_HEADER:
 			m->m_len = sizeof(struct sphdr);
-			m->m_off = MMAXOFF - sizeof(struct sphdr);
 			*mtod(m, struct sphdr *) = cb->s_rhdr;
 			break;
 
 		case SO_DEFAULT_HEADERS:
 			m->m_len = sizeof(struct spidp);
-			m->m_off = MMAXOFF - sizeof(struct sphdr);
 			*mtod(m, struct sphdr *) = cb->s_shdr;
 			break;
 
@@ -1159,6 +1206,19 @@ spp_ctloutput(req, so, level, name, value)
 			cb->s_mtu = *(mtod(*value, u_short *));
 			break;
 
+#ifdef SF_NEWCALL
+		case SO_NEWCALL:
+			ok = mtod(*value, int *);
+			if (*ok) {
+				cb->s_flags2 |= SF_NEWCALL;
+				spp_newchecks[5]++;
+			} else {
+				cb->s_flags2 &= ~SF_NEWCALL;
+				spp_newchecks[6]++;
+			}
+			break;
+#endif
+
 		case SO_DEFAULT_HEADERS:
 			{
 				register struct sphdr *sp
@@ -1179,10 +1239,10 @@ spp_ctloutput(req, so, level, name, value)
 }
 
 /*ARGSUSED*/
-spp_usrreq(so, req, m, nam, rights)
+spp_usrreq(so, req, m, nam, rights, controlp)
 	struct socket *so;
 	int req;
-	struct mbuf *m, *nam, *rights;
+	struct mbuf *m, *nam, *rights, *controlp;
 {
 	struct nspcb *nsp = sotonspcb(so);
 	register struct sppcb *cb;
@@ -1248,7 +1308,7 @@ spp_usrreq(so, req, m, nam, rights)
 		cb->s_mtu = 576 - sizeof (struct spidp);
 		cb->s_cwnd = sbspace(sb) * CUNIT / cb->s_mtu;
 		cb->s_ssthresh = cb->s_cwnd;
-		cb->s_cwmx = sb->sb_mbmax * CUNIT /
+		cb->s_cwmx = sbspace(sb) * CUNIT /
 				(2 * sizeof (struct spidp));
 		/* Above is recomputed when connecting to account
 		   for changed buffering or mtu's */
@@ -1388,6 +1448,14 @@ spp_usrreq(so, req, m, nam, rights)
 		cb->s_oobflags |= SF_SOOB;
 		/* fall into */
 	case PRU_SEND:
+		if (controlp) {
+			u_short *s = mtod(controlp, u_short *);
+			spp_newchecks[2]++;
+			if ((s[0] == 5) && s[1] == 1 ) { /* XXXX, for testing */
+				cb->s_shdr.sp_dt = *(u_char *)(&s[2]);
+				spp_newchecks[3]++;
+			}
+		}
 		error = spp_output(cb, m);
 		m = NULL;
 		break;
@@ -1423,12 +1491,12 @@ release:
 	return (error);
 }
 
-spp_usrreq_sp(so, req, m, nam, rights)
+spp_usrreq_sp(so, req, m, nam, rights, controlp)
 	struct socket *so;
 	int req;
-	struct mbuf *m, *nam, *rights;
+	struct mbuf *m, *nam, *rights, *controlp;
 {
-	int error = spp_usrreq(so, req, m, nam, rights);
+	int error = spp_usrreq(so, req, m, nam, rights, controlp);
 
 	if (req == PRU_ATTACH && error == 0) {
 		struct nspcb *nsp = sotonspcb(so);
@@ -1460,8 +1528,8 @@ spp_template(cb)
 	cb->s_cwnd = (sbspace(sb) * CUNIT) / cb->s_mtu;
 	cb->s_ssthresh = cb->s_cwnd; /* Try to expand fast to full complement
 					of large packets */
-	cb->s_cwmx = (sb->sb_mbmax * CUNIT) / (2 * sizeof(struct spidp));
-	cb->s_cwmx = MAX(cb->s_cwmx, cb->s_cwnd);
+	cb->s_cwmx = (sbspace(sb) * CUNIT) / (2 * sizeof(struct spidp));
+	cb->s_cwmx = max(cb->s_cwmx, cb->s_cwnd);
 		/* But allow for lots of little packets as well */
 }
 
@@ -1672,7 +1740,7 @@ spp_timers(cb, timer)
 		 * See very long discussion in tcp_timer.c about congestion
 		 * window and sstrhesh
 		 */
-		win = MIN(cb->s_swnd, (cb->s_cwnd/CUNIT)) / 2;
+		win = min(cb->s_swnd, (cb->s_cwnd/CUNIT)) / 2;
 		if (win < 2)
 			win = 2;
 		cb->s_cwnd = CUNIT;

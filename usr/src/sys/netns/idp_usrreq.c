@@ -20,6 +20,7 @@
 #include "param.h"
 #include "dir.h"
 #include "user.h"
+#include "malloc.h"
 #include "mbuf.h"
 #include "protosw.h"
 #include "socket.h"
@@ -46,12 +47,12 @@ struct	sockaddr_ns idp_ns = { AF_NS };
 /*
  *  This may also be called for raw listeners.
  */
-idp_input(m, nsp, ifp)
+idp_input(m, nsp)
 	struct mbuf *m;
 	register struct nspcb *nsp;
-	struct ifnet *ifp;
 {
 	register struct idp *idp = mtod(m, struct idp *);
+	struct ifnet *ifp = m->m_pkthdr.rcvif;
 
 	if (nsp==0)
 		panic("No nspcb");
@@ -74,7 +75,8 @@ idp_input(m, nsp, ifp)
 	nsp->nsp_rpt = idp->idp_pt;
 	if ( ! (nsp->nsp_flags & NSP_RAWIN) ) {
 		m->m_len -= sizeof (struct idp);
-		m->m_off += sizeof (struct idp);
+		m->m_pkthdr.len -= sizeof (struct idp);
+		m->m_data += sizeof (struct idp);
 	}
 	if (sbappendaddr(&nsp->nsp_socket->so_rcv, (struct sockaddr *)&idp_ns,
 	    m, (struct mbuf *)0) == 0)
@@ -144,7 +146,8 @@ idp_output(nsp, m0)
 	
 	if (len & 1) {
 		m = mprev;
-		if (m->m_len + m->m_off < MMAXOFF) {
+		if ((m->m_flags & M_EXT) == 0 &&
+			(m->m_len + m->m_data < &m->m_dat[MLEN])) {
 			m->m_len++;
 		} else {
 			struct mbuf *m1 = m_get(M_DONTWAIT, MT_DATA);
@@ -154,30 +157,23 @@ idp_output(nsp, m0)
 				return (ENOBUFS);
 			}
 			m1->m_len = 1;
-			m1->m_off = MMAXOFF - 1;
 			* mtod(m1, char *) = 0;
 			m->m_next = m1;
 		}
+		m0->m_pkthdr.len++;
 	}
 
 	/*
 	 * Fill in mbuf with extended IDP header
 	 * and addresses and length put into network format.
 	 */
+	m = m0;
 	if (nsp->nsp_flags & NSP_RAWOUT) {
-		m = m0;
 		idp = mtod(m, struct idp *);
 	} else {
-		m = m_get(M_DONTWAIT, MT_HEADER);
-		if (m == 0) {
-			m_freem(m0);
+		M_PREPEND(m, sizeof (struct idp), M_DONTWAIT);
+		if (m == 0)
 			return (ENOBUFS);
-		}
-		m->m_off = MMAXOFF - sizeof (struct idp) - 2;
-				/* adjust to start on longword bdry
-				   for NSIP on gould */
-		m->m_len = sizeof (struct idp);
-		m->m_next = m0;
 		idp = mtod(m, struct idp *);
 		idp->idp_tc = 0;
 		idp->idp_pt = nsp->nsp_dpt;
@@ -284,13 +280,11 @@ idp_ctloutput(req, so, level, name, value)
 			mask = NSP_RAWOUT;
 		get_flags:
 			m->m_len = sizeof(short);
-			m->m_off = MMAXOFF - sizeof(short);
 			*mtod(m, short *) = nsp->nsp_flags & mask;
 			break;
 
 		case SO_DEFAULT_HEADERS:
 			m->m_len = sizeof(struct idp);
-			m->m_off = MMAXOFF - sizeof(struct idp);
 			{
 				register struct idp *idp = mtod(m, struct idp *);
 				idp->idp_len = 0;
@@ -304,7 +298,6 @@ idp_ctloutput(req, so, level, name, value)
 
 		case SO_SEQNO:
 			m->m_len = sizeof(long);
-			m->m_off = MMAXOFF - sizeof(long);
 			*mtod(m, long *) = ns_pexseq++;
 			break;
 
