@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty.c	7.44 (Berkeley) %G%
+ *	@(#)tty.c	7.45 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -1200,7 +1200,8 @@ ttycheckoutq(tp, wait)
 
 	hiwat = tp->t_hiwat;
 	s = spltty();
-	oldsig = curproc->p_sig;
+	if (wait)
+		oldsig = curproc->p_sig;
 	if (tp->t_outq.c_cc > hiwat + 200)
 		while (tp->t_outq.c_cc > hiwat) {
 			ttstart(tp);
