@@ -5,12 +5,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)op.me	5.9 (Berkeley) %G%
+.\"	@(#)op.me	5.10 (Berkeley) %G%
 .\"
 .\" eqn % | troff -me
 .\"if n .ls 2
 .\".he 'Sendmail Installation and Operation Guide''%'
-.\".fo 'Version 5.9''Last Mod %G%'
+.\".fo 'Version 5.10''Last Mod %G%'
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
 .oh 'Sendmail Installation and Operation Guide''SMM:07-%'
 .nr si 3n
@@ -40,7 +40,9 @@
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 5.9
+Version 5.10
+.sp
+For Sendmail Version 5.61
 .)l
 .sp 2
 .pp
@@ -140,128 +142,83 @@ normally
 on 4.3BSD.
 .sh 2 "Off-The-Shelf Configurations"
 .pp
-The configuration files
-are all in the subdirectories
-.i cf.named
-and
-.i cf.hosttable
-of the sendmail directory.
-The directory
-.i cf.named
-contains configuration files that have been tailored for the name server
-.i named \|(8).
-These are the configuration files currently being used at Berkeley.
-The configuration files in
-.i cf.hosttable
-are some typical ones and the old Berkeley versions from before the name server
-was being used.
-You should create a symbolic link from
+Configuration files currently in use at Berkeley are in
+the directory
 .i cf
-to the directory that you are going to use.
-For example,
-to use the name server:
-.(b
-ln \-s cf.named cf
-.)b
-The ones used at Berkeley are in
-.i m4 \|(1)
-format;
-files with names ending
-.q .m4
-are
-.i m4
-include files,
-while files with names ending
-.q .mc
-are the master files.
-Files with names ending
+of the sendmail directory.
+This directory contains three subdirectories:
+.i cf ,
+.i m4 ,
+and
+.i sitedep .
+The directory
+.i cf/m4
+contains site-independent
+.i m4 (1)
+include files that have information common to all configuration files,
+while
+.i cf/sitedep
+contains
+.i m4 (1)
+include files that have site-specific information in them.
+These files are used by the master configuration (``.mc'')
+in
+.i cf/cf
+and produce standard configuration files (with
 .q .cf
-are the
-.i m4
-processed versions of the corresponding
-.q .mc
-file.
+suffix) when run through
+.i m4 (1).
 .pp
 Three off the shelf configurations are supplied
 to handle the basic cases:
 .np
-Arpanet (TCP) sites not running the name server
+Internet sites running the nameserver
+(or using host tables wherein the fully-qualfied domain
+name of each host is listed first)
 can use
-.i cf.hosttable/arpaproto.cf .
+.i cf/tcpproto.cf .
 For simple sites,
 you should be able to use this file without modification.
 This file is not in
 .i m4
 format.
 .np
-UUCP sites can use
-.i cf.hosttable/uucpproto.cf .
-If your UUCP node name is not the same as your
-system name
-(as printed by the
-.i hostname (1)
-command)
-you may have to modify the
-.b U
-macro.
+UUCP only sites can use
+.i cf/uucpproto.cf .
 This file is not in
 .i m4
 format.
 .np
 A group of machines at a single site
-connected by an ethernet
+connected by an ethernet (or other networking
+that supports TCP/IP)
 with (only) one host connected to the outside world
 via UUCP
 is represented by two configuration files:
-.i cf.hosttable/lanroot.mc
+.i cf/tcpuucpproto.cf
 should be installed on the host with outside connections
 and
-.i cf.hosttable/lanleaf.mc
+.i cf/tcpproto.cf
 should be installed on all other hosts.
-These will require slightly more configuration.
-First, in both files the
-.b D
-macro and
-.b D
-class must be adjusted to indicate your local domain.
-For example,
-if your company is known as
-.q Muse
-you will want to change both of those accordingly.
-(As distributed, they are called XXX.)
-Second,
-in
-.i lanleaf.mc
-you will have to change the
-.b R
-macro to the name of the root host,
-that is,
-the host that runs
-.i lanroot.mc .
-For example,
-they might appear as:
-.(b
-DDMuse
-CDLOCAL Muse
-.sp \n(psu
-DRErato
-.)b
-Internally, the root host will be known as
-.q Erato.Muse
-and other hosts will be known as
-.q Thalia.Muse ,
-.q Clio.Muse ,
-etc.
 .pp
-The file you need should be copied to a file with the same name
-as your system,
-e.g.,
-.(b
-cp uucpproto.cf ucsfcgl.cf
-.)b
-This file
-is now ready for installation as
+Some configuration will be needed in each of the
+above cases.
+Just be sure to correctly fill in the 
+.q blanks
+as shown in the instructions in the configuration file.
+Then install the file as
 .i /usr/lib/sendmail.cf .
+.pp
+If you are running a larger or more complex site, it
+is to your advantage to read the
+.q README
+file in the
+.i cf
+subdirectory.
+This file explains how to use
+.i m4 (1)
+to automatically create configuration files for
+non-standard situations.
 .sh 2 "Installation Using the Makefile"
 .pp
 A makefile exists in the root of the
@@ -320,39 +277,15 @@ If you are doing this installation
 in conjunction with a regular Berkeley UNIX install,
 these steps will already be complete.
 Many of these steps will have to be executed as the superuser (root).
-.sh 3 "lib/libsys.a"
-.pp
-The library in lib/libsys.a
-contains some routines that should in some sense
-be part of the system library.
-These are the system logging routines
-and the new directory access routines
-(if required).
-If you are not running the 4.3BSD directory code
-and do not have the compatibility routines installed in your system library,
-you should execute the command:
-.(b
-(cd lib; make ndir)
-.)b
-This will compile and install the 4.3 compatibility routines
-in the library.
-You should then type:
-.(b
-(cd lib; make)
-.)b
-This will recompile and fill the library.
 .sh 3 "/usr/lib/sendmail"
 .pp
 The binary for sendmail is located in /usr/lib.
-There is a version available in the source directory
-that is probably inadequate for your system.
-You should plan on recompiling and installing the entire system:
+If it becomes necessary to recompile and reinstall the
+entire system, the following sequence will do it:
 .(b
 cd src
 make clean
-make
-cp sendmail /usr/lib
-chgrp kmem /usr/lib/sendmail
+make install
 .)b
 .sh 3 "/usr/lib/sendmail.cf"
 .pp
@@ -379,14 +312,8 @@ ln /usr/lib/sendmail /usr/ucb/newaliases
 The directory
 .i /usr/spool/mqueue
 should be created to hold the mail queue.
-This directory should be mode 777
-unless
-.i sendmail
-is run setuid,
-when
-.i mqueue
-should be owned by the sendmail owner
-and mode 755.
+This directory should be mode 755
+and owned by root.
 .sh 3 "/usr/lib/aliases*"
 .pp
 The system aliases are held in three files.
@@ -414,11 +341,11 @@ and
 .q /usr/lib/aliases.pag.
 These can initially be created as empty files,
 but they will have to be initialized promptly.
-These should be mode 666 if you are running a reasonably relaxed system:
+These should be mode 644:
 .(b
 cp /dev/null /usr/lib/aliases.dir
 cp /dev/null /usr/lib/aliases.pag
-chmod 666 /usr/lib/aliases.*
+chmod 644 /usr/lib/aliases.*
 newaliases
 .)b
 .sh 3 "/usr/lib/sendmail.fc"
@@ -567,7 +494,7 @@ Each line in the system log
 consists of a timestamp,
 the name of the machine that generated it
 (for logging from several machines
-over the ethernet),
+over the local area network),
 the word
 .q sendmail: ,
 and a message.
@@ -730,8 +657,8 @@ H?D?date: 23-Oct-82 15:49:32-PDT (Sat)
 H?F?from: eric (Eric Allman)
 H?x?full-name: Eric Allman
 Hsubject: this is an example message
-Hmessage-id: <8209232249.13557@UCBARPA.BERKELEY.ARPA>
-Hreceived: by UCBARPA.BERKELEY.ARPA (3.227 [10/22/82])
+Hmessage-id: <8209232249.13557@UCBARPA.BERKELEY.EDU>
+Hreceived: by UCBARPA.BERKELEY.EDU (3.227 [10/22/82])
 	id A13557; 23-Oct-82 15:49:32-PDT (Sat)
 HTo: mckusick@calder, wnj
 .)b
@@ -786,7 +713,7 @@ To do this,
 it is acceptable to move the entire queue directory:
 .(b
 cd /usr/spool
-mv mqueue omqueue; mkdir mqueue; chmod 777 mqueue
+mv mqueue omqueue; mkdir mqueue; chmod 755 mqueue
 .)b
 You should then kill the existing daemon
 (since it will still be processing in the old queue directory)
@@ -1451,39 +1378,15 @@ to be accounted
 .i sa \|(8))
 to root
 rather than to the user sending the mail.
-.sh 3 "Temporary file modes"
-.pp
-The mode of all temporary files that
-.i sendmail
-creates is determined by the
-.q F
-option.
-Reasonable values for this option are
-0600
-and
-0644.
-If the more permissive mode is selected,
-it will not be necessary to run
-.i sendmail
-as root at all
-(even when running the queue).
 .sh 3 "Should my alias database be writable?"
 .pp
 At Berkeley
 we have the alias database
 (/usr/lib/aliases*)
-mode 666.
-There are some dangers inherent in this approach:
-any user can add him-/her-self
-to any list,
-or can
-.q steal
-any other user's mail.
-However,
-we have found users to be basically trustworthy,
-and the cost of having a read-only database
-greater than the expense of finding and eradicating
-the rare nasty person.
+mode 644.
+While this is not as flexible as if the database
+were more 666, it avoids potential security problems
+with a globally writable database.
 .pp
 The database that
 .i sendmail
@@ -1640,7 +1543,11 @@ Macros can be interpolated in most places using the escape sequence
 .sh 3 "C and F \*- define classes"
 .pp
 Classes of words may be defined
-to match on the left hand side of rewriting rules.
+to match on the left hand side of rewriting rules,
+where a
+.q word
+is a sequence of characters that do not contain characters
+in the $o macro.
 For example
 a class of all local names for this site
 might be created
@@ -1943,8 +1850,8 @@ for interpolation into argv's for mailers
 or for other contexts.
 These macros are:
 .(b
-a	The origination date in Arpanet format
-b	The current date in Arpanet format
+a	The origination date in RFC 822 format
+b	The current date in RFC 822 format
 c	The hop count
 d	The date in UNIX (ctime) format
 f	The sender (from) address
@@ -1967,7 +1874,7 @@ The
 .b $a
 and
 .b $b
-macros are in Arpanet format;
+macros are in RFC 822 format;
 .b $a
 is the time as extracted from the
 .q Date:
@@ -2095,7 +2002,7 @@ The class
 .b $=w
 is set to be the set of all names
 this host is known by.
-This can be used to delete local hostnames.
+This can be used to match local hostnames.
 .sh 3 "The left hand side"
 .pp
 The left hand side of rewriting rules contains a pattern.
@@ -2172,7 +2079,7 @@ is looked up using the
 routines and replaced by the canonical name.
 For example,
 .q $[csam$]
-would become
+might become
 .q lbl-csam.arpa
 and
 .q $[[128.32.130.2]$]
@@ -3145,10 +3052,6 @@ m	Mail back errors
 w	Write back errors (mail if user not logged in)
 e	Mail back errors and give zero exit stat always
 .)b
-.ip F\fIn\fP
-The temporary file mode,
-in octal.
-644 and 600 are good choices.
 .ip f
 Save
 Unix-style
@@ -3478,17 +3381,7 @@ in the message with a `>' sign.
 There are some configuration changes that can be made by
 recompiling
 .i sendmail .
-These are located in three places:
-.ip md/config.m4
-These contain operating-system dependent descriptions.
-They are interpolated into the Makefiles in the
-.i src
-and
-.i aux
-directories.
-This includes information about what version of UNIX
-you are running,
-what libraries you have to include, etc.
+These are located in two places:
 .ip src/conf.h
 Configuration parameters that may be tweaked by the installer
 are included in conf.h.
@@ -3497,40 +3390,6 @@ Some special routines and a few variables
 may be defined in conf.c.
 For the most part these are selected from the settings
 in conf.h.
-.uh "Parameters in md/config.m4"
-.pp
-The following compilation flags may be defined in the
-.i m4CONFIG
-macro in
-.i md/config.m4
-to define the environment in which you are operating.
-.ip V6
-If set,
-this will compile a version 6 system,
-with 8-bit user id's,
-single character tty id's,
-etc.
-.ip VMUNIX
-If set,
-you will be assumed to have a Berkeley 4BSD or 4.1BSD,
-including the
-.i vfork \|(2)
-system call,
-special types defined in <sys/types.h>
-(e.g, u_char),
-etc.
-.lp
-If none of these flags are set,
-a version 7 system is assumed.
-.pp
-You will also have to specify what libraries to link with
-.i sendmail
-in the
-.i m4LIBS
-macro.
-Most notably, you will have to include
-.B \-ljobs
-if you are running a 4.1BSD system.
 .uh "Parameters in src/conf.h"
 .pp
 Parameters and compilation options
@@ -3670,6 +3529,22 @@ lines.
 .ip NAMED_BIND
 Compile in code to use the Berkeley Internet Name Domain (BIND) server
 to resolve TCP/IP host names.
+.ip SETPROCTITLE
+If defined,
+.i sendmail
+will change its
+.i argv
+array to indicate its current status.
+This can be used in conjunction with the
+.i ps
+command to find out just what it's up to.
+.ip NO_WILDCARD_MX
+Should be set if there are no wildcard MX nameserver records
+in the local domain.
+If set, this will enable the use of ANY query types, resulting
+in better performance.
+Unfortunately, wildcard MX records in the local domain will mess
+this up, hence the need for this compilation option.
 .uh "Configuration in src/conf.c"
 .pp
 Not all header semantics are defined in the configuration file.
@@ -4015,7 +3890,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 5.9
+.\"Version 5.10
 .\".ce 0
 .pn 2
 .bp
