@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pt_file.c	8.1 (Berkeley) %G%
+ *	@(#)pt_file.c	8.2 (Berkeley) %G%
  *
  * $Id: pt_file.c,v 1.1 1992/05/25 21:43:09 jsp Exp jsp $
  */
@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <string.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/types.h>
@@ -32,7 +33,6 @@ int so;
 int *fdp;
 {
 	int fd;
-	int gid;
 	char pbuf[MAXPATHLEN];
 	int error;
 	int gidset[NGROUPS];
