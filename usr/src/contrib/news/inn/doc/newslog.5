@@ -1,0 +1,210 @@
+.TH NEWSLOG 5
+.SH NAME
+newslog \- description of Usenet log files
+.SH DESCRIPTION
+Most log files created by Usenet programs reside in the
+.\" =()<.I @<_PATH_MOST_LOGS>@>()=
+.I /var/spool/news/data
+directory and have a ``.log'' extension.
+Several versions are usually kept with an additional extension such as ``.1'',
+``.2'', etc. \(em the higher the number, the older the log.
+The older versions are compressed.
+.PP
+The
+.I scanlogs
+script and related utilities (see
+.IR newslog (8))
+are responsible for rotating and compressing these files.
+.PP
+Some log files always have data, others only have data if there is a
+problem, and others are only created if a particular program is used
+or configuration parameter is set.
+The
+.I innstat
+script (see
+.IR newslog (8))
+monitors the size of all log files.
+.PP
+The following files will only accumulate data under the direction of
+.IR control.ctl (5):
+.RS
+control.log
+miscctl.log
+newgroup.log
+rmgroup.log
+unwanted.log
+.RE
+In order to create these files, the ``message'' and ``action'' fields of
+.I control.ctl
+should be chosen from the following table:
+.RS
+.nf
+.ta \w'newgroup    'u +\w'doit=newgroup  'u
+Message	Action	Meaning
+all	log=miscctl	Log all messages by default
+default	log=miscctl	Log unknown messages
+newgroup	doit=newgroup	Create group and log message
+newgroup	log=newgroup	Log message
+rmgroup	doit=rmgroup	Remove group and log message
+rmgroup	log=rmgroup	Log message
+``other''	doit=miscctl	log and process the message
+``other''	log=miscctl	Log message
+.fi
+.RE
+Here, ``other'' refers to any other control message such as:
+.RS
+checkgroups
+ihave
+sendme
+sendsys
+senduuname
+version
+.RE
+.PP
+The following is a list of log files.
+.TP
+.I control.log
+This file maintains a count of the number of newgroup and rmgroup control
+messages seen for each newsgroup.
+The count is of the number of control messages with identical
+arguments, regardless if they were actually processed.
+All control arguments, including invalid ones, are counted.
+This file is updated by
+.IR tally.control ,
+which is invoked by
+.I scanlogs
+if either the newgroup or rmgroup logs exist.
+This file is not rotated.
+.TP
+.I errlog
+This file contains the standard output and standard error of any program
+spawned by
+.IR innd (8).
+The most common programs are the control-message handlers found in
+.\" =()<.IR @<_PATH_CONTROLPROGS>@ .>()=
+.IR /var/spool/news/data/ctlbin .
+This file should be empty.
+.I Scanlogs
+will print the entire contents of this log file if it is non-empty.
+.TP
+.I expire.log
+By default, when
+.I news.daily
+is going to expire old news articles, it writes the date to this file,
+followed by any output from
+.IR expire (8)
+and the ending date.
+All lines but the first are indented four spaces.
+.TP
+.I miscctl.log
+When
+.I control.ctl
+is configured as described above, all control messages except newgroup
+and rmgroup are appended to this file by
+.IR writelog .
+There will be a summary line describing the message and the action
+taken, followed by the article indented by four spaces, and a blank line.
+.TP
+.I newgroup.log
+When
+.I control.ctl
+is configured as described above, all newgroup messages are appended
+to this file using the same format as for
+.IR miscctl.log .
+.TP
+.I news
+This file logs articles received by
+.IR innd .
+.I Scanlogs
+summarizes the rejected articles reported in this file.
+.TP
+.I news.crit
+All critical error messages issued by
+.I innd
+are appended to this file via
+.IR syslog (3).
+This log file should be empty.
+.I Scanlogs
+will print the entire contents of this log file if it is non-empty.
+You should have the following line in your
+.IR syslog.conf (5)
+file:
+.RS
+.RS
+.\" =()<news.crit  @<_PATH_MOST_LOGS>@/news.crit>()=
+news.crit  /var/spool/news/data/news.crit
+.RE
+.RE
+.TP
+.I news.err
+All major error messages issued by
+.I innd
+are appended to this file via
+.IR syslog .
+This log file should be empty.
+.I Scanlogs
+will print the entire contents of this log file if it is non-empty.
+You should have the following line in your
+.I syslog.conf
+file:
+.RS
+.RS
+.\" =()<news.err  @<_PATH_MOST_LOGS>@/news.err>()=
+news.err  /var/spool/news/data/news.err
+.RE
+.RE
+.TP
+.I news.notice
+All standard error messages and status messages issued by
+.I innd
+are appended to this file via
+.IR syslog .
+.I Scanlogs
+uses the
+.IR awk (1)
+script
+.I innlog.awk
+to summarize this file.
+You should have the following line in your syslog.conf file:
+.RS
+.RS
+.\" =()<news.notice  @<_PATH_MOST_LOGS>@/news.notice>()=
+news.notice  /var/spool/news/data/news.notice
+.RE
+.RE
+.TP
+.I nntpsend.log
+The
+.IR nntpsend (8)
+programs appends all status messages to this file.
+.TP
+.I rmgroup.log
+When
+.I control.ctl
+is configured as described above, all rmgroup messages are appended to this
+file using the same format as for
+.IR miscctl.log .
+.TP
+.I unwanted.log
+This log maintains a count of the number of articles that were rejected
+because they were posted to newsgroups that do not exist at the local site.
+This file is updated by
+.I tally.unwanted
+and maintained in reverse numeric order (the most popular rejected group
+first).
+This file is not rotated.
+.SH HISTORY
+Written by Landon Curt Noll <chongo@toad.com> and Rich $alz
+<rsalz@uunet.uu.net> for InterNetNews.
+.de R$
+This is revision \\$3, dated \\$4.
+..
+.R$ $Id: newslog.5,v 1.3 1993/01/29 16:43:07 rsalz Exp $
+.SH "SEE ALSO"
+control.ctl(5),
+ctlinnd(8),
+expire(8),
+innd(8),
+news.daily(8),
+nntpsend(8),
+newslog(8).
