@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty.c	7.18 (Berkeley) %G%
+ *	@(#)tty.c	7.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -253,8 +253,7 @@ ttioctl(tp, com, data, flag)
 	case TIOCSETAWS:
 	case TIOCSETAFS:
 /***************************/
-		while (u.u_procp->p_pgid != tp->t_pgid &&
-		   tp == u.u_ttyp &&
+		while (isbackground(u.u_procp, tp) && 
 		   u.u_procp->p_pgrp->pg_jobc &&
 		   (u.u_procp->p_flag&SVFORK) == 0 &&
 		   !(u.u_procp->p_sigignore & sigmask(SIGTTOU)) &&
@@ -369,7 +368,7 @@ ttioctl(tp, com, data, flag)
 	case TIOCSTI:
 		if (u.u_uid && (flag & FREAD) == 0)
 			return (EPERM);
-		if (u.u_uid && u.u_ttyp != tp)
+		if (u.u_uid && !isctty(u.u_procp, tp))
 			return (EACCES);
 		(*linesw[tp->t_line].l_rint)(*(char *)data, tp);
 		break;
@@ -427,27 +426,25 @@ ttioctl(tp, com, data, flag)
 		register struct proc *p = u.u_procp;
 		register struct pgrp *pgrp = pgfind(*(int *)data);
 
-		if (u.u_uid && 
-		    (tp != u.u_ttyp ||
-		    (pgrp && pgrp->pg_session != p->p_session))) {
-			if (u.u_ttyp == NULL)
-				return (ENOTTY);
-			else
-				return (EPERM);
-		}
-		tp->t_pgid = *(int *)data;
+		if (!isctty(p, tp))
+			return (ENOTTY);
+		else if (pgrp->pg_session != p->p_session)
+			return (EPERM);
+		tp->t_pgrp = pgrp;
 		break;
 	}
 
 	case TIOCGPGRP:
-		*(int *)data = tp->t_pgid;
+		if (!isctty(u.u_procp, tp))
+			return (ENOTTY);
+		*(int *)data = tp->t_pgrp ? tp->t_pgrp->pg_id : 0;
 		break;
 
 	case TIOCSWINSZ:
 		if (bcmp((caddr_t)&tp->t_winsize, data,
 		    sizeof (struct winsize))) {
 			tp->t_winsize = *(struct winsize *)data;
-			gsignal(tp->t_pgid, SIGWINCH);
+			pgsignal(tp->t_pgrp, SIGWINCH);
 		}
 		break;
 
@@ -636,7 +633,8 @@ ttyclose(tp)
 	if (constty == tp)
 		constty = NULL;
 	ttyflush(tp, FREAD|FWRITE);
-	tp->t_pgid = 0;
+	tp->t_session = NULL;
+	tp->t_pgrp = NULL;
 	tp->t_state = 0;
 }
 
@@ -667,8 +665,8 @@ ttymodem(tp, flag)
 		tp->t_state &= ~TS_CARR_ON;
 		if (tp->t_state & TS_ISOPEN) {
 			if ((tp->t_lflag & NOHANG) == 0) {
-				gsignal(tp->t_pgid, SIGHUP);
-				gsignal(tp->t_pgid, SIGCONT);
+				pgsignal(tp->t_pgrp, SIGHUP);
+				pgsignal(tp->t_pgrp, SIGCONT);
 				ttyflush(tp, FREAD|FWRITE);
 				return (0);
 			}
@@ -697,7 +695,7 @@ nullmodem(tp, flag)
 	else {
 		tp->t_state &= ~TS_CARR_ON;
 		if ((tp->t_lflag & NOHANG) == 0)
-			gsignal(tp->t_pgid, SIGHUP);
+			pgsignal(tp->t_pgrp, SIGHUP);
 	}
 	return (flag);
 }
@@ -849,7 +847,7 @@ ttyinput(c, tp)
 			if ((lflag&NOFLSH) == 0)
 				ttyflush(tp, FREAD);
 			ttyecho(c, tp);
-			gsignal(tp->t_pgid, SIGTSTP);
+			pgsignal(tp->t_pgrp, SIGTSTP);
 			goto endcase;
 		}
 		if (CCEQ(cc[VINFO],c)) {
@@ -1212,7 +1210,7 @@ loop:
 	/*
 	 * Hang process if it's in the background.
 	 */
-	if (u.u_ttyp == tp && u.u_procp->p_pgid != tp->t_pgid) {
+	if (isbackground(u.u_procp, tp)) {
 		if ((u.u_procp->p_sigignore & sigmask(SIGTTIN)) ||
 		   (u.u_procp->p_sigmask & sigmask(SIGTTIN)) ||
 		    u.u_procp->p_flag&SVFORK || u.u_procp->p_pgrp->pg_jobc == 0)
@@ -1257,7 +1255,7 @@ loop:
 		 * delayed suspend (^Y)
 		 */
 		if (CCEQ(cc[VDSUSP], c) && lflag&ISIG) {
-			gsignal(tp->t_pgid, SIGTSTP);
+			pgsignal(tp->t_pgrp, SIGTSTP);
 			if (first) {
 				sleep((caddr_t)&lbolt, TTIPRI);
 				goto loop;
@@ -1688,7 +1686,7 @@ ttwakeup(tp)
 		tp->t_rsel = 0;
 	}
 	if (tp->t_state & TS_ASYNC)
-		gsignal(tp->t_pgid, SIGIO); 
+		pgsignal(tp->t_pgrp, SIGIO); 
 	wakeup((caddr_t)&tp->t_rawq);
 }
 
@@ -1732,17 +1730,17 @@ ttyinfo(tp)
 	struct tty *tp;
 {
 	register struct proc *p;
-	struct pgrp *pg = pgfind(tp->t_pgid);
 
 	if (ttycheckoutq(tp,0) == 0) 
 		return;
-	if (pg == NULL)
+	if (tp->t_session == NULL)
+		ttyprintf(tp, "kernel: not a controlling terminal\n");
+	else if (tp->t_pgrp == NULL || 
+		(p = tp->t_pgrp->pg_mem) == NULL)
 		ttyprintf(tp, "kernel: no foreground process group\n");
-	else if ((p = pg->pg_mem) == NULL)
-		ttyprintf(tp, "kernel: empty process group: %d\n", 
-			tp->t_pgid);
 	else {
 		int i = 0;
+
 		for (; p != NULL; p = p->p_pgrpnxt) {
 			ttyprintf(tp, 
 			 "kernel: pid: %d state: %x wchan: %x ticks: %d\n",
@@ -1758,9 +1756,31 @@ ttyinfo(tp)
 #define TOTTY	0x2	/* XXX should be in header */
 /*VARARGS2*/
 ttyprintf(tp, fmt, x1)
-	register struct tty *tp;
+	struct tty *tp;
 	char *fmt;
 	unsigned x1;
 {
-	prf(fmt, &x1, TOTTY, tp);
+	prf(fmt, &x1, TOTTY, (caddr_t)tp);
+}
+
+/*
+ * Output char to tty; console putchar style.
+ */
+tputchar(c, tp)
+	int c;
+	struct tty *tp;
+{
+	register s = spltty();
+
+	if ((tp->t_state & (TS_CARR_ON | TS_ISOPEN)) 
+	    == (TS_CARR_ON | TS_ISOPEN)) {
+		if (c == '\n')
+			(void) ttyoutput('\r', tp);
+		(void) ttyoutput(c, tp);
+		ttstart(tp);
+		splx(s);
+		return (0);
+	}
+	splx(s);
+	return (-1);
 }

@@ -3,13 +3,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty_tty.c	7.4 (Berkeley) %G%
+ *	@(#)tty_tty.c	7.5 (Berkeley) %G%
  */
 
 /*
  * Indirect driver for controlling tty.
- *
- * THIS IS GARBAGE: MUST SOON BE DONE WITH struct inode * IN PROC TABLE.
  */
 #include "param.h"
 #include "systm.h"
@@ -18,17 +16,28 @@
 #include "ioctl.h"
 #include "tty.h"
 #include "proc.h"
+#include "vnode.h"
+#include "file.h"
 #include "uio.h"
+
+#define cttyvp(p) ((p)->p_flag&SCTTY ? (p)->p_session->s_ttyvp : NULL)
+
+static off_t dummyoff;
 
 /*ARGSUSED*/
 syopen(dev, flag)
 	dev_t dev;
 	int flag;
 {
+	struct vnode *ttyvp = cttyvp(u.u_procp);
+	int error;
 
-	if (u.u_ttyp == NULL)
+	if (ttyvp == NULL)
 		return (ENXIO);
-	return ((*cdevsw[major(u.u_ttyd)].d_open)(u.u_ttyd, flag));
+	if (error = VOP_ACCESS(ttyvp,
+	   (flag&FREAD ? VREAD : 0) | (flag&FWRITE ? VWRITE : 0), u.u_cred))
+		return (error);
+	return (VOP_OPEN(ttyvp, flag, NOCRED));
 }
 
 /*ARGSUSED*/
@@ -36,10 +45,11 @@ syread(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
 {
+	struct vnode *ttyvp = cttyvp(u.u_procp);
 
-	if (u.u_ttyp == NULL)
+	if (ttyvp == NULL)
 		return (ENXIO);
-	return ((*cdevsw[major(u.u_ttyd)].d_read)(u.u_ttyd, uio, flag));
+	return (VOP_READ(ttyvp, uio, &dummyoff, flag, NOCRED));
 }
 
 /*ARGSUSED*/
@@ -47,10 +57,11 @@ sywrite(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
 {
+	struct vnode *ttyvp = cttyvp(u.u_procp);
 
-	if (u.u_ttyp == NULL)
+	if (ttyvp == NULL)
 		return (ENXIO);
-	return ((*cdevsw[major(u.u_ttyd)].d_write)(u.u_ttyd, uio, flag));
+	return (VOP_WRITE(ttyvp, uio, &dummyoff, flag, NOCRED));
 }
 
 /*ARGSUSED*/
@@ -60,22 +71,18 @@ syioctl(dev, cmd, addr, flag)
 	caddr_t addr;
 	int flag;
 {
+	struct vnode *ttyvp = cttyvp(u.u_procp);
 
-	if (cmd == TIOCNOTTY) {
-		if (SESS_LEADER(u.u_procp)) {
-			/* 
-			 * XXX - check posix draft
-			 */
-			u.u_ttyp->t_session = 0;
-			u.u_ttyp->t_pgid = 0;
-		}
-		u.u_ttyp = 0;
-		u.u_ttyd = 0;
-		return (0);
-	}
-	if (u.u_ttyp == NULL)
+	if (ttyvp == NULL)
 		return (ENXIO);
-	return ((*cdevsw[major(u.u_ttyd)].d_ioctl)(u.u_ttyd, cmd, addr, flag));
+	if (cmd == TIOCNOTTY) {
+		if (!SESS_LEADER(u.u_procp)) {
+			u.u_procp->p_flag &= ~SCTTY;
+			return (0);
+		} else
+			return (EINVAL);
+	}
+	return (VOP_IOCTL(ttyvp, cmd, addr, flag, NOCRED));
 }
 
 /*ARGSUSED*/
@@ -83,10 +90,9 @@ syselect(dev, flag)
 	dev_t dev;
 	int flag;
 {
+	struct vnode *ttyvp = cttyvp(u.u_procp);
 
-	if (u.u_ttyp == NULL) {
-		u.u_error = ENXIO;
-		return (0);
-	}
-	return ((*cdevsw[major(u.u_ttyd)].d_select)(u.u_ttyd, flag));
+	if (ttyvp == NULL)
+		return (ENXIO);
+	return (VOP_SELECT(ttyvp, flag, NOCRED));
 }
