@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)gettable.8	6.1 (Berkeley) %G%
+.\"	@(#)gettable.8	6.2 (Berkeley) %G%
 .\"
 .TH GETTABLE 8C ""
 .UC 5
@@ -47,6 +47,10 @@ program which converts the NIC standard file format to
 that used by the network library lookup routines.
 .SH "SEE ALSO"
 intro(3N),
-htable(8)
+htable(8),
+named(8)
 .SH BUGS
-Should allow requests for only part of the database.
+If the name-domain system provided network name mapping well as host
+name mapping,
+.I gettable
+would no longer be needed.
