@@ -1,5 +1,5 @@
 .nr _0 \n(c.
-.\"	@(#)footnote.me	2.3	%G%
+.\"	@(#)footnote.me	2.4	%G%
 .\"	%beginstrip%
 .de (f			\" *** begin footnote
 .ec
@@ -46,7 +46,11 @@
 .		ti \\n(fiu
 .	if \n@>2 .tm	<< (f $f=\\n($f
 .\}
-.el \!.(f \\$1
+.el \
+\{\
+.	ev 2
+\!.(f \\$1
+.\}
 ..
 .de )f			\" *** end footnote
 .ie "\\n(.z"|f" \
@@ -67,7 +71,12 @@
 .	nr dn _D
 .	rr _D
 .\}
-.el \!.)f
+.el \
+\{\
+.	br
+\!.)f
+.	ev
+.\}
 ..
 .if \n(ff<=0 \
 .	nr ff 1			\" footnote font: Times Roman
