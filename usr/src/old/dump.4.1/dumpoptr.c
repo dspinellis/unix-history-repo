@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)dumpoptr.c	1.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)dumpoptr.c	1.2 (Berkeley) %G%";
 #include "dump.h"
 
 /*
@@ -279,21 +279,23 @@ msgtail(fmt, a1, a2, a3, a4, a5)
 getfstab()
 {
 	register	struct	fstab	*dt;
-			FILE	*fstabfile;
+			struct	fstab	*fsp;
 
 	nfstab = 0;
-	if ( (fstabfile = fopen(FSTAB, "r")) == NULL){
+	if (setfsent() == 0) {
 		msg("Can't open %s for dump table information.\n", FSTAB);
 	} else {
 		for (nfstab = 0, dt = fstab; nfstab < MAXFSTAB;){
-			if (feof(fstabfile))
+			if ( (fsp = getfsent()) == 0)
 				break;
-			fscanf(fstabfile, FSTABFMT, FSTABARG(dt));
-			if (!strcmp(dt->fs_type, "rw") ||
-			    !strcmp(dt->fs_type, "ro"))
-				nfstab++, dt++;
+			if (   (strcmp(fsp->fs_type, FSTAB_RW) == 0)
+			    || (strcmp(fsp->fs_type, FSTAB_RO) == 0) ){
+				*dt = *fsp;
+				nfstab++; 
+				dt++;
+			}
 		}
-		fclose(fstabfile);
+		endfsent();
 	}
 }
 
