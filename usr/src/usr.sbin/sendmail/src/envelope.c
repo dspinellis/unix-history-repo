@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.38 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.39 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -156,7 +156,10 @@ dropenvelope(e)
 	{
 		if (!bitset(EF_WARNING|EF_RESPONSE, e->e_flags) &&
 		    e->e_class >= 0 &&
-		    strcmp(e->e_from.q_paddr, "<>") != 0)
+		    strcmp(e->e_from.q_paddr, "<>") != 0 &&
+		    strncasecmp(e->e_from.q_paddr, "owner-", 6) != 0 &&
+		    (strlen(e->e_from.q_paddr) <= 8 ||
+		     strcasecmp(&e->e_from.q_paddr[strlen(e->e_from.q_paddr) - 8], "-request") != 0))
 		{
 			(void) sprintf(buf,
 				"Warning: cannot send message for %s",
