@@ -1110,7 +1110,7 @@ ok:
 			    host, file, strerror(errno));
 		}
   	}
-	return(0);
+	return(ret);
 }
 
 /*
