@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_syscalls.c	7.30 (Berkeley) %G%
+ *	@(#)nfs_syscalls.c	7.30.1.1 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -104,6 +104,9 @@ getfh(p, uap, retval)
 }
 
 static struct nfssvc_sock nfssvc_sockhead;
+
+#define SLP_DEREFFREE	0x100
+#define SLP_CLRFREE	0x200
 
 /*
  * Nfs server psuedo system call for the nfsd's
@@ -290,6 +293,7 @@ nfssvc_addsock(fp, mynam)
 	else {
 		slp = (struct nfssvc_sock *)
 			malloc(sizeof (struct nfssvc_sock), M_NFSSVC, M_WAITOK);
+		printf("Alloc nfssvc_sock 0x%x\n", slp);
 		bzero((caddr_t)slp, sizeof (struct nfssvc_sock));
 		slp->ns_prev = nfssvc_sockhead.ns_prev;
 		slp->ns_prev->ns_next = slp;
@@ -714,9 +718,22 @@ nfsrv_slpderef(slp)
 	register struct nfssvc_sock *slp;
 {
 	if (--(slp->ns_sref) == 0 && (slp->ns_flag & SLP_VALID) == 0) {
+#ifdef NOTYET
 		slp->ns_prev->ns_next = slp->ns_next;
 		slp->ns_next->ns_prev = slp->ns_prev;
 		free((caddr_t)slp, M_NFSSVC);
+#else
+		if (slp->ns_flag & SLP_DEREFFREE)
+			panic("deref dup free 0x%x of deref free\n", slp);
+		else {
+			slp->ns_prev->ns_next = slp->ns_next;
+			slp->ns_next->ns_prev = slp->ns_prev;
+		}
+		if (slp->ns_flag & SLP_CLRFREE)
+			panic("deref dup free 0x%x of clrall free\n", slp);
+		slp->ns_flag |= SLP_DEREFFREE;
+		printf("Free deref sock 0x%x\n", slp);
+#endif
 	}
 }
 
@@ -744,15 +761,28 @@ nfsrv_init(terminating)
 			slp->ns_prev->ns_next = slp->ns_next;
 			oslp = slp;
 			slp = slp->ns_next;
+#ifdef NOTYET
 			free((caddr_t)oslp, M_NFSSVC);
+#else
+			if (oslp->ns_flag & SLP_DEREFFREE)
+				panic("clrall dup free 0x%x of deref free\n",
+					oslp);
+			if (oslp->ns_flag & SLP_CLRFREE)
+				panic("clrall dup free 0x%x of clrall free\n",
+					oslp);
+			oslp->ns_flag |= SLP_CLRFREE;
+			printf("Free all socks 0x%x\n", oslp);
+#endif
 		}
 		nfsrv_cleancache();	/* And clear out server cache */
 	}
 	nfs_udpsock = (struct nfssvc_sock *)
 	    malloc(sizeof (struct nfssvc_sock), M_NFSSVC, M_WAITOK);
+	printf("Alloc nfs_udpsock 0x%x\n", nfs_udpsock);
 	bzero((caddr_t)nfs_udpsock, sizeof (struct nfssvc_sock));
 	nfs_cltpsock = (struct nfssvc_sock *)
 	    malloc(sizeof (struct nfssvc_sock), M_NFSSVC, M_WAITOK);
+	printf("Alloc nfs_cltpsock 0x%x\n", nfs_cltpsock);
 	bzero((caddr_t)nfs_cltpsock, sizeof (struct nfssvc_sock));
 	nfssvc_sockhead.ns_next = nfs_udpsock;
 	nfs_udpsock->ns_next = nfs_cltpsock;
