@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)regular.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)regular.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -31,10 +31,10 @@ c_regular(fd1, file1, skip1, len1, fd2, file2, skip2, len2)
 	if (sflag && len1 != len2)
 		exit(1);
 
-	if (skip1 >= len1)
+	if (skip1 > len1)
 		eofmsg(file1);
 	len1 -= skip1;
-	if (skip2 >= len2)
+	if (skip2 > len2)
 		eofmsg(file2);
 	len2 -= skip2;
 
