@@ -1,5 +1,5 @@
 #	from: @(#)Makefile	5.6 (Berkeley) 5/22/91
-#	$Id: Makefile,v 1.8 1993/12/24 02:11:37 jkh Exp $
+#	$Id: Makefile,v 1.9 1994/03/09 17:12:57 nate Exp $
 
 CFLAGS+=	-DLIBC_SCCS -DDYNAMIC
 OBJS=		crt0.o gcrt0.o c++rt0.o
@@ -13,7 +13,7 @@ crt0.o: crt0.c
 	mv a.out ${.TARGET}
 
 c++rt0.o: c++rt0.c
-	${CC} ${CFLAGS} -fpic -c ${.ALLSRC}
+	${CC} ${CFLAGS} -fpic -c ${.ALLSRC} -o ${.TARGET}
 	@${LD} -x -r ${.TARGET}
 	@mv a.out ${.TARGET}
 
