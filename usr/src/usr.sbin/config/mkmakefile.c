@@ -1,4 +1,4 @@
-/*	mkmakefile.c	1.18	82/10/24	*/
+/*	mkmakefile.c	1.19	82/10/24	*/
 
 /*
  * Build the makefile for the system, from
@@ -125,7 +125,7 @@ makefile()
 				cp++;
 			COPTS = malloc(strlen(cp) + 1);
 			if (COPTS == 0) {
-				fprintf(stderr, "config: out of memory\n");
+				printf("config: out of memory\n");
 				exit(1);
 			}
 			strcpy(COPTS, cp);
@@ -191,12 +191,12 @@ next:
 	this = ns(wd);
 	next_word(fp, wd);
 	if (wd == NULL) {
-		fprintf(stderr, "%s: No type for %s.\n",
+		printf("%s: No type for %s.\n",
 		    fname, this);
 		exit(1);
 	}
 	if (fl_lookup(this)) {
-		fprintf(stderr, "%s: Duplicate file %s.\n",
+		printf("%s: Duplicate file %s.\n",
 		    fname, this);
 		exit(1);
 	}
@@ -206,7 +206,7 @@ next:
 	if (eq(wd, "standard"))
 		goto checkdev;
 	if (!eq(wd, "optional")) {
-		fprintf(stderr, "%s: %s must be optional or standard",
+		printf("%s: %s must be optional or standard",
 		    fname, this);
 		exit(1);
 	}
@@ -232,7 +232,7 @@ nextopt:
 	goto next;
 doneopt:
 	if (nreqs == 0) {
-		fprintf(stderr, "%s: what is %s optional on?\n",
+		printf("%s: what is %s optional on?\n",
 		    fname, this);
 		exit(1);
 	}
@@ -246,7 +246,7 @@ checkdev:
 	}
 save:
 	if (wd != NULL) {
-		fprintf(stderr, "%s: syntax error describing %s\n",
+		printf("%s: syntax error describing %s\n",
 		    fname, this);
 		exit(1);
 	}
@@ -411,7 +411,7 @@ for (ftp = ftab; ftp != NULL; ftp = ftp->f_next) {
 		}
 
 	default:
-		fprintf(stderr, "Don't know rules for %s", np);
+		printf("Don't know rules for %s", np);
 		break;
 	}
 	*cp = och;
