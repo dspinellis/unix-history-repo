@@ -11,7 +11,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)df.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)df.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -109,7 +109,7 @@ dfree(file, infsent)
 	    (stbuf.st_mode&S_IFMT) != S_IFCHR &&
 	    (stbuf.st_mode&S_IFMT) != S_IFBLK) {
 		if (infsent) {
-			fprintf(stderr, "%s: screwy /etc/fstab entry\n", file);
+			fprintf(stderr, "%s: screwy fstab entry\n", file);
 			return;
 		}
 		(void)setfsent();
@@ -200,9 +200,9 @@ eq(f1, f2)
 	char *f1, *f2;
 {
 
-	if (strncmp(f1, "/dev/", 5) == 0)
+	if (strncmp(f1, _PATH_DEV, sizeof(_PATH_DEV) - 1) == 0)
 		f1 += 5;
-	if (strncmp(f2, "/dev/", 5) == 0)
+	if (strncmp(f2, _PATH_DEV, sizeof(_PATH_DEV) - 1) == 0)
 		f2 += 5;
 	if (!strcmp(f1, f2))
 		return (1);
