@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)gmon.c	1.7 (Berkeley) %G%";
+static	char *sccsid = "@(#)gmon.c	1.8 (Berkeley) %G%";
 
 #ifdef DEBUG
 #include <stdio.h>
@@ -289,10 +289,10 @@ monitor( lowpc , highpc , buf , bufsiz )
     bufsiz -= o;
     if ( bufsiz <= 0 )
 	return;
-    o = ( ( (char *) highpc - (char *) lowpc) >> 1 );
+    o = ( ( (char *) highpc - (char *) lowpc) );
     if( bufsiz < o )
-	o = ( (float) bufsiz / o ) * 32768;
+	o = ( (float) bufsiz / o ) * 65536;
     else
-	o = 0177777;
+	o = 65536;
     profil( buf , bufsiz , lowpc , o );
 }
