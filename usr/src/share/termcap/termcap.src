@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file	@(#)termcap.src	5.46 (Berkeley) %G%
+#	Termcap source file	@(#)termcap.src	5.47 (Berkeley) %G%
 #	John Kunze, Berkeley
 #	Craig Leres, Berkeley
 #
@@ -1988,6 +1988,14 @@ h0|150|hp150|hp150a|150a:\
 	:bs:cd=\EJ:ce=\EK:ch=\E&a%dC:cl=\Eh\EJ:co#80:cv=\E&a%dY:da:db:dl=\EM:\
 	:ei=\ER:im=\EQ:kb=^H:mi:nd=\EC:pt:up=\EA:xs:vt#6:sf=\ES:sr=\ET:\
 	:vs=\E&s1A:ve=\E&s0A:ks=\E&jB\E&j@:ke=\E&j@:
+# From leres@okeeffe: This works on a hp300 console running Utah 4.3 BSD
+hc|300h|hp300h|HP Catseye console:\
+	:am:bs:cm=\E&a%dy%dC:do=\EB:le=\b:nd=\EC:up=\EA:dc=\EP:dl=\EM:\
+	:xs:da:db:mi:co#128:li#51:lm#0:sg#0:bt=\Ei:bl=^G:cr=\r:\
+	:ct=\E3:cl=\E&a0y0C\EJ:ce=\EK:cd=\EJ:ch=\E&a%dC:cv=\E&a%dY:\
+	:se=\E&d@:ue=\E&d@:im=\EQ:so=\E&dB:us=\E&dD:me=\E&d@:ei=\ER:\
+	:if=/usr/share/tabset/stdcrt:al=\EL:kb=\b:kd=\EB:kh=\Eh:kl=\ED:\
+	:kr=\EC:ku=\EA:ke=\E&s0A:ks=\E&s1A:sf=\n:ta=\t:
 # # --------------------------------
 #
 # i: INFOTON (GENERAL TERMINAL)
