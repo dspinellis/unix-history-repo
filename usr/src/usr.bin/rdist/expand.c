@@ -1,69 +1,38 @@
 #ifndef lint
-static	char *sccsid = "@(#)expand.c	4.1 (Berkeley) 83/09/07";
+static	char *sccsid = "@(#)expand.c	4.2 (Berkeley) 83/09/27";
 #endif
 
 #include "defs.h"
 
-static struct block *hashtab[HASHSIZE];
-static int nhashed = 0;
+char	shchars[] = "{[*?";
 
-/*
- * Lookup name in the table and return a pointer to it.
- * if insert, insert or replace name with value.
- */
+int	argc;
+char	**argv;
+char	*path, *pathp, *lastpathp;
+int	nleft;
 
-struct block *
-lookup(name, insert, value)
-	char *name;
-	int insert;
-	struct block *value;
-{
-	register unsigned n;
-	register char *cp;
-	register struct block *b;
-
-	if (debug)
-		printf("lookup(%s, %d, %x)\n", name, insert, value);
-
-	n = 0;
-	for (cp = name; *cp; )
-		n += *cp++;
-	n %= HASHSIZE;
-
-	for (b = hashtab[n]; b != NULL; b = b->b_next) {
-		if (strcmp(name, b->b_name))
-			continue;
-		if (insert) {
-			warn("%s redefined\n", name);
-			b->b_args = value->b_args;
-			free(value->b_name);
-			free(value);
-		}
-		return(b);
-	}
-
-	if (!insert)
-		fatal("%s not defined", name);
-
-	value->b_next = hashtab[n];
-	hashtab[n] = value;
-	return(value);
-}
+int	argcnt;
+int	expany;		/* any expansions done? */
+char	*entp;
+char	**sortbase;
 
 char	*index();
 
 /*
- * Take a list of names and expand any macros found.
+ * Take a list of names and expand any macros, etc.
  */
 struct block *
-expand(list)
+expand(list, noshexp)
 	struct block *list;
+	int noshexp;
 {
 	register struct block *prev, *bp, *tp;
 	register char *cp, *s;
 	register int n;
 	char *var, *tail;
 	int c;
+	char pathbuf[BUFSIZ];
+	char *argvbuf[GAVSIZ];
 
 	for (prev = NULL, bp = list; bp != NULL; prev = bp, bp = bp->b_next) {
 	again:
@@ -85,7 +54,7 @@ expand(list)
 			c = *tail;
 			*tail = '\0';
 		}
-		tp = lookup(cp, 0, NULL);
+		tp = lookup(cp, NULL, 0);
 		if ((tp = tp->b_args) != NULL) {
 			struct block *first = tp;
 
@@ -107,7 +76,7 @@ expand(list)
 			goto again;
 		} else {
 			if (prev == NULL)
-				list = tp = list->b_next;
+				list = tp = bp->b_next;
 			else
 				prev->b_next = tp = bp->b_next;
 			free(bp->b_name);
@@ -117,6 +86,40 @@ expand(list)
 				goto again;
 			}
 			break;
+		}
+	}
+
+	if (noshexp)
+		return(list);
+
+	path = pathp = pathbuf;
+	*pathp = '\0';
+	lastpathp = &path[sizeof pathbuf - 2];
+	argc = 0;
+	argv = sortbase = argvbuf;
+	*argv = 0;
+	nleft = NCARGS - 4;
+	argcnt = 0;
+	for (bp = list; bp != NULL; bp = bp->b_next)
+		expsh(bp->b_name);
+	for (bp = list; bp != NULL; bp = tp) {
+		tp = bp->b_next;
+		free(bp->b_name);
+		free(bp);
+	}
+	prev = NULL;
+	for (n = 0; n < argc; n++) {
+		bp = ALLOC(block);
+		if (bp == NULL)
+			fatal("ran out of memory\n");
+		bp->b_type = NAME;
+		bp->b_next = bp->b_args = NULL;
+		bp->b_name = argv[n];
+		if (prev == NULL)
+			list = prev = bp;
+		else {
+			prev->b_next = bp;
+			prev = bp;
 		}
 	}
 	return(list);
@@ -146,9 +149,387 @@ makestr(bp, head, tail)
 /*
  * If there are any Shell meta characters in the name,
  * expand into a list, after searching directory
- * For now, only do ~name.
  */
-shexpand(buf, file)
+expsh(s)
+	register char *s;
+{
+	register int i;
+	register int oargc = argc;
+
+	if (!strcmp(s, "{") || !strcmp(s, "{}")) {
+		Cat(s, "");
+		sort();
+		return;
+	}
+
+	pathp = path;
+	*pathp = 0;
+	expany = 0;
+	expstr(s);
+	if (argc != oargc)
+		sort();
+}
+
+/*
+ * Bubble sort any new entries
+ */
+sort()
+{
+	register char **p1, **p2, *c;
+	char **ap = &argv[argc];
+
+	p1 = sortbase;
+	while (p1 < ap-1) {
+		p2 = p1;
+		while (++p2 < ap)
+			if (strcmp(*p1, *p2) > 0)
+				c = *p1, *p1 = *p2, *p2 = c;
+		p1++;
+	}
+	sortbase = ap;
+}
+
+expstr(s)
+	char *s;
+{
+	register char *cp;
+	register char *spathp, *oldcp;
+	struct stat stb;
+
+	spathp = pathp;
+	cp = s;
+	while (!any(*cp, shchars)) {
+		if (*cp == '\0') {
+			if (!expany)
+				Cat(path, "");
+			else if (stat(path, &stb) >= 0) {
+				Cat(path, "");
+				argcnt++;
+			}
+			goto endit;
+		}
+		addpath(*cp++);
+	}
+	oldcp = cp;
+	while (cp > s && *cp != '/')
+		cp--, pathp--;
+	if (*cp == '/')
+		cp++, pathp++;
+	*pathp = '\0';
+	if (*oldcp == '{') {
+		execbrc(cp, NULL);
+		return;
+	}
+	matchdir(cp);
+endit:
+	pathp = spathp;
+	*pathp = '\0';
+}
+
+matchdir(pattern)
+	char *pattern;
+{
+	struct stat stb;
+	register struct direct *dp;
+	DIR *dirp;
+	register int cnt;
+
+	dirp = opendir(path);
+	if (dirp == NULL) {
+		if (expany)
+			return;
+		goto patherr2;
+	}
+	if (fstat(dirp->dd_fd, &stb) < 0)
+		goto patherr1;
+	if ((stb.st_mode & S_IFMT) != S_IFDIR) {
+		errno = ENOTDIR;
+		goto patherr1;
+	}
+	while ((dp = readdir(dirp)) != NULL)
+		if (match(dp->d_name, pattern)) {
+			Cat(path, dp->d_name);
+			argcnt++;
+		}
+	closedir(dirp);
+	return;
+
+patherr1:
+	closedir(dirp);
+patherr2:
+	fatal("%s: %s\n", path, sys_errlist[errno]);
+}
+
+execbrc(p, s)
+	char *p, *s;
+{
+	char restbuf[BUFSIZ + 2];
+	register char *pe, *pm, *pl;
+	int brclev = 0;
+	char *lm, savec, *spathp;
+
+	for (lm = restbuf; *p != '{'; *lm++ = *p++)
+		continue;
+	for (pe = ++p; *pe; pe++)
+		switch (*pe) {
+
+		case '{':
+			brclev++;
+			continue;
+
+		case '}':
+			if (brclev == 0)
+				goto pend;
+			brclev--;
+			continue;
+
+		case '[':
+			for (pe++; *pe && *pe != ']'; pe++)
+				continue;
+			if (!*pe)
+				fatal("Missing ]\n");
+			continue;
+		}
+pend:
+	if (brclev || !*pe)
+		fatal("Missing }\n");
+	for (pl = pm = p; pm <= pe; pm++)
+		switch (*pm & (QUOTE|TRIM)) {
+
+		case '{':
+			brclev++;
+			continue;
+
+		case '}':
+			if (brclev) {
+				brclev--;
+				continue;
+			}
+			goto doit;
+
+		case ',':
+			if (brclev)
+				continue;
+doit:
+			savec = *pm;
+			*pm = 0;
+			strcpy(lm, pl);
+			strcat(restbuf, pe + 1);
+			*pm = savec;
+			if (s == 0) {
+				spathp = pathp;
+				expstr(restbuf);
+				pathp = spathp;
+				*pathp = 0;
+			} else if (amatch(s, restbuf))
+				return (1);
+			sort();
+			pl = pm + 1;
+			continue;
+
+		case '[':
+			for (pm++; *pm && *pm != ']'; pm++)
+				continue;
+			if (!*pm)
+				fatal("Missing ]\n");
+			continue;
+		}
+	return (0);
+}
+
+match(s, p)
+	char *s, *p;
+{
+	register int c;
+	register char *sentp;
+	char sexpany = expany;
+
+	if (*s == '.' && *p != '.')
+		return (0);
+	sentp = entp;
+	entp = s;
+	c = amatch(s, p);
+	entp = sentp;
+	expany = sexpany;
+	return (c);
+}
+
+amatch(s, p)
+	register char *s, *p;
+{
+	register int scc;
+	int ok, lc;
+	char *spathp;
+	struct stat stb;
+	int c, cc;
+
+	expany = 1;
+	for (;;) {
+		scc = *s++ & TRIM;
+		switch (c = *p++) {
+
+		case '{':
+			return (execbrc(p - 1, s - 1));
+
+		case '[':
+			ok = 0;
+			lc = 077777;
+			while (cc = *p++) {
+				if (cc == ']') {
+					if (ok)
+						break;
+					return (0);
+				}
+				if (cc == '-') {
+					if (lc <= scc && scc <= *p++)
+						ok++;
+				} else
+					if (scc == (lc = cc))
+						ok++;
+			}
+			if (cc == 0)
+				fatal("Missing ]\n");
+			continue;
+
+		case '*':
+			if (!*p)
+				return (1);
+			if (*p == '/') {
+				p++;
+				goto slash;
+			}
+			for (s--; *s; s++)
+				if (amatch(s, p))
+					return (1);
+			return (0);
+
+		case '\0':
+			return (scc == '\0');
+
+		default:
+			if (c != scc)
+				return (0);
+			continue;
+
+		case '?':
+			if (scc == '\0')
+				return (0);
+			continue;
+
+		case '/':
+			if (scc)
+				return (0);
+slash:
+			s = entp;
+			spathp = pathp;
+			while (*s)
+				addpath(*s++);
+			addpath('/');
+			if (stat(path, &stb) == 0 &&
+			    (stb.st_mode & S_IFMT) == S_IFDIR)
+				if (*p == '\0') {
+					Cat(path, "");
+					argcnt++;
+				} else
+					expstr(p);
+			pathp = spathp;
+			*pathp = '\0';
+			return (0);
+		}
+	}
+}
+
+smatch(s, p)
+	register char *s, *p;
+{
+	register int scc;
+	int ok, lc;
+	int c, cc;
+
+	for (;;) {
+		scc = *s++ & TRIM;
+		switch (c = *p++) {
+
+		case '[':
+			ok = 0;
+			lc = 077777;
+			while (cc = *p++) {
+				if (cc == ']') {
+					if (ok)
+						break;
+					return (0);
+				}
+				if (cc == '-') {
+					if (lc <= scc && scc <= *p++)
+						ok++;
+				} else
+					if (scc == (lc = cc))
+						ok++;
+			}
+			if (cc == 0)
+				fatal("Missing ]\n");
+			continue;
+
+		case '*':
+			if (!*p)
+				return (1);
+			for (s--; *s; s++)
+				if (smatch(s, p))
+					return (1);
+			return (0);
+
+		case '\0':
+			return (scc == '\0');
+
+		default:
+			if ((c & TRIM) != scc)
+				return (0);
+			continue;
+
+		case '?':
+			if (scc == 0)
+				return (0);
+			continue;
+
+		}
+	}
+}
+
+Cat(s1, s2)
+	register char *s1, *s2;
+{
+	int len = strlen(s1) + strlen(s2) + 1;
+	register char *s, *ep;
+
+	nleft -= len;
+	if (nleft <= 0 || ++argc >= GAVSIZ)
+		fatal("Arguments too long\n");
+	argv[argc] = 0;
+	argv[argc - 1] = s = (char *) malloc(len);
+	if (s == NULL)
+		fatal("ran out of memory\n");
+	while (*s++ = *s1++ & TRIM)
+		;
+	s--;
+	while (*s++ = *s2++ & TRIM)
+		;
+}
+
+addpath(c)
+	char c;
+{
+
+	if (pathp >= lastpathp)
+		fatal("Pathname too long\n");
+	*pathp++ = c;
+	*pathp = '\0';
+}
+
+/*
+ * Expand file names beginning with `~' into the
+ * user's home directory path name.
+ */
+exptilde(buf, file)
 	char buf[];
 	register char *file;
 {
@@ -171,10 +552,9 @@ shexpand(buf, file)
 			*s3 = '\0';
 		else
 			s3 = NULL;
-		setpwent();
 		pw = getpwnam(file);
 		if (pw == NULL) {
-			error("unknown user %s\n", file);
+			fatal("unknown user %s\n", file);
 			if (s3 != NULL)
 				*s3 = '/';
 			return;

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	4.1 (Berkeley) 83/09/07";
+static	char *sccsid = "@(#)main.c	4.2 (Berkeley) 83/09/27";
 #endif
 
 #include "defs.h"
@@ -9,7 +9,9 @@ static	char *sccsid = "@(#)main.c	4.1 (Berkeley) 83/09/07";
  */
 
 char	*distfile = "distfile";
-char	*tmpfile = "/tmp/rdistXXXXXX";
+char	tmpfile[] = "/tmp/rdistAXXXXXX";
+char	*tmpname = &tmpfile[5];
+char	*tmpinc = &tmpfile[10];
 
 int	debug;		/* debugging flag */
 int	nflag;		/* NOP flag, just print commands without executing */
@@ -27,7 +29,8 @@ int	errs;		/* number of errors while sending/receiving */
 char	user[10];	/* user's name */
 char	homedir[128];	/* user's home directory */
 int	userid;		/* user's user ID */
-int	usergid;	/* user's group ID */
+int	groupid;	/* user's group ID */
+int	iamupdate;
 
 int	cleanup();
 int	lostconn();
@@ -39,16 +42,22 @@ main(argc, argv)
 	register char *arg;
 	register struct	passwd *pw;
 
-	setpwent();
+	arg = rindex(argv[0], '/');
+	if (arg == NULL)
+		arg = argv[0];
+	else
+		arg++;
+	if (!strcmp(arg, "update"))
+		iamupdate++;
+
 	pw = getpwuid(userid = getuid());
-	endpwent();
 	if (pw == NULL) {
-		fprintf(stderr, "rdist: Who are you?\n");
+		fprintf(stderr, "%s: Who are you?\n", argv[0]);
 		exit(1);
 	}
 	strcpy(user, pw->pw_name);
 	strcpy(homedir, pw->pw_dir);
-	usergid = pw->pw_gid;
+	groupid = pw->pw_gid;
 	gethostname(host, sizeof(host));
 
 	while (--argc > 0) {
@@ -67,6 +76,12 @@ main(argc, argv)
 				break;
 
 			case 'd':
+				if (--argc <= 0)
+					usage();
+				define(*++argv);
+				break;
+
+			case 'D':
 				debug++;
 				break;
 
@@ -90,31 +105,102 @@ main(argc, argv)
 				usage();
 			}
 	}
+
+	mktemp(tmpfile);
 	signal(SIGPIPE, lostconn);
 	if (iamremote) {
 		server();
 		exit(errs);
 	}
-	filec = argc;
-	filev = argv;
 
-	if (fin == NULL && (fin = fopen(distfile, "r")) == NULL) {
-		perror(distfile);
-		exit(1);
-	}
-	mktemp(tmpfile);
 	signal(SIGHUP, cleanup);
 	signal(SIGINT, cleanup);
 	signal(SIGQUIT, cleanup);
 	signal(SIGTERM, cleanup);
 
-	yyparse();
+	if (iamupdate)
+		doupdate(argc, argv);
+	else {
+		filec = argc;
+		filev = argv;
+		if (fin == NULL && (fin = fopen(distfile, "r")) == NULL) {
+			perror(distfile);
+			exit(1);
+		}
+		yyparse();
+	}
+
 	exit(errs);
 }
 
 usage()
 {
-	printf("Usage: rdist [-f distfile] [-n] [-q] [-y] [-d] [file ...]\n");
+	printf("Usage: rdist [-f distfile] [-d var=value] [-nqyD] [file ...]\n");
+	exit(1);
+}
+
+/*
+ * rcp like interface for distributing files.
+ */
+doupdate(nargs, args)
+	int nargs;
+	char *args[];
+{
+	struct block *bp, *files, *hosts, *cmds, *prev;
+	int i, firsttime = 1;
+	char *pos, dest[BUFSIZ];
+
+	if (nargs < 2)
+		upusage();
+
+	prev = NULL;
+	bp = files = ALLOC(block);
+	for (i = 0; i < nargs - 1; bp = ALLOC(block), i++) {
+		bp->b_type = NAME;
+		bp->b_name = args[i];
+		if (prev != NULL)
+			prev->b_next = bp;
+		bp->b_next = bp->b_args = NULL;
+		prev = bp;
+	}
+
+	hosts = ALLOC(block);
+	hosts->b_type = NAME;
+	hosts->b_name = args[i];
+	hosts->b_name = args[i];
+	hosts->b_next = hosts->b_args = NULL;
+	if ((pos = index(hosts->b_name, ':')) != NULL) {
+		*pos++ = '\0';
+		strcpy(dest, pos);
+	} else
+		dest[0] = '\0';
+
+	hosts = expand(hosts, 0);
+
+	if (dest[0] == '\0')
+		cmds = NULL;
+	else {
+		cmds = ALLOC(block);
+		if (vflag)
+			cmds->b_type = VERIFY;
+		else
+			cmds->b_type = INSTALL;
+		cmds->b_name = dest;
+		cmds->b_next = cmds->b_args = NULL;
+	}
+
+	if (debug) {
+		printf("doupdate()\nfiles = ");
+		prnames(files);
+		printf("hosts = ");
+		prnames(hosts);
+	}
+	dohcmds(files, hosts, cmds);
+}
+
+upusage()
+{
+	printf("Usage: update [-nqyD] source [...] machine[:dest]\n");
 	exit(1);
 }
 
