@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)cc.c 4.18 %G%";
+static	char sccsid[] = "@(#)cc.c 4.19 %G%";
 /*
  * cc - front end for C compiler
  */
@@ -295,7 +295,7 @@ nocom:
 		av[na++] = 0;
 		eflag |= callsys(ld, av);
 		if (nc==1 && nxo==1 && eflag==0)
-			unlink(setsuf(clist[0], 'o'));
+			unlink((char *)genbuildname(setsuf(clist[0], 'o')));
 	}
 	dexit();
 }
