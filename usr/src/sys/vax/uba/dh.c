@@ -1,4 +1,4 @@
-/*	dh.c	4.23	81/02/23	*/
+/*	dh.c	4.24	81/02/26	*/
 
 #include "dh.h"
 #if NDH > 0
@@ -149,7 +149,7 @@ dhprobe(reg)
 #ifdef lint
 	br = 0; cvec = br; br = cvec;
 #endif
-#ifdef notdef
+#ifndef notdef
 	dhaddr->un.dhcsr = DH_RIE|DH_MM|DH_RI;
 	DELAY(5);
 	dhaddr->un.dhcsr = 0;
@@ -249,7 +249,6 @@ dhopen(dev, flag)
 	}
 	if ((dhact&(1<<dh)) == 0) {
 		addr->un.dhcsr |= DH_IE;
-		DELAY(5);
 		dhact |= (1<<dh);
 		addr->dhsilo = 16;
 	}
@@ -455,7 +454,6 @@ dhxint(dh)
 	ui = dhinfo[dh];
 	addr = (struct dhdevice *)ui->ui_addr;
 	if (addr->un.dhcsr & DH_NXM) {
-		DELAY(5);
 		addr->un.dhcsr |= DH_CNI;
 		printf("dh%d NXM\n", dh);
 	}
@@ -473,7 +471,6 @@ dhxint(dh)
 				tp->t_state &= ~FLUSH;
 			else {
 				addr->un.dhcsrl = (unit&017)|DH_IE;
-				DELAY(5);
 				/*
 				 * Do arithmetic in a short to make up
 				 * for lost 16&17 bits.
@@ -555,7 +552,6 @@ dhstart(tp)
 		unit = 1 << unit;
 		dhsar[dh] |= unit;
 		addr->dhcar = car;
-		DELAY(5);
 		addr->dhbcr = -nch;
 		addr->dhbar |= unit;
 		tp->t_state |= BUSY;
@@ -588,7 +584,6 @@ dhstop(tp, flag)
 		 */
 		unit = minor(tp->t_dev);
 		addr->un.dhcsrl = (unit&017) | DH_IE;
-		DELAY(5);
 		if ((tp->t_state&TTSTOP)==0)
 			tp->t_state |= FLUSH;
 		addr->dhbcr = -1;
@@ -622,7 +617,6 @@ dhreset(uban)
 		if (ui == 0 || ui->ui_alive == 0 || ui->ui_ubanum != uban)
 			continue;
 		((struct dhdevice *)ui->ui_addr)->un.dhcsr |= DH_IE;
-		DELAY(5);
 		((struct dhdevice *)ui->ui_addr)->dhsilo = 16;
 		unit = dh * 16;
 		for (i = 0; i < 16; i++) {
