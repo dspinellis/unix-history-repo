@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)startup.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)startup.c	5.10 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -213,7 +213,7 @@ addrouteforif(ifp)
 	    ifp->int_netmask) != ifp->int_net)
 		state &= ~RTS_SUBNET;
 	if (ifp->int_flags & IFF_LOOPBACK)
-		state |= RTS_EXTERNAL;
+		state |= RTS_EXTERNAL | RTS_PASSIVE;
 	rtadd(dst, &ifp->int_addr, ifp->int_metric, state);
 	if (ifp->int_flags & IFF_POINTOPOINT && foundloopback)
 		add_ptopt_localrt(ifp);
