@@ -1,4 +1,4 @@
-/*	init_main.c	4.5	%G%	*/
+/*	init_main.c	4.6	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -40,6 +40,7 @@
 main(firstaddr)
 {
 	register int i;
+	register struct proc *p;
 
 #ifdef FASTVAX
 	rqinit();
@@ -51,14 +52,15 @@ main(firstaddr)
 	/*
 	 * set up system process 0 (swapper)
 	 */
-
-	proc[0].p_p0br = (struct pte *)mfpr(P0BR);
-	proc[0].p_szpt = 1;
-	proc[0].p_addr = uaddr(&proc[0]);
-	proc[0].p_stat = SRUN;
-	proc[0].p_flag |= SLOAD|SSYS;
-	proc[0].p_nice = NZERO;
-	u.u_procp = &proc[0];
+	p = &proc[0];
+	p->p_p0br = (struct pte *)mfpr(P0BR);
+	p->p_szpt = 1;
+	p->p_addr = uaddr(p);
+	p->p_stat = SRUN;
+	p->p_flag |= SLOAD|SSYS;
+	p->p_nice = NZERO;
+	setredzone(p->p_addr, (caddr_t)&u);
+	u.u_procp = p;
 	u.u_cmask = CMASK;
 	for (i = 1; i < sizeof(u.u_limit)/sizeof(u.u_limit[0]); i++)
 		switch (i) {
