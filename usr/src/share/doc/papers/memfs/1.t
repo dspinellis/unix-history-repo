@@ -1,4 +1,4 @@
-.\"	@(#)1.t	1.4	(Copyright 1990 M. K. McKusick)	90/04/16
+.\"	@(#)1.t	1.5	(Copyright 1990 M. K. McKusick)	90/04/16
 .nr PS 11
 .nr VS 13
 .SH
@@ -125,7 +125,7 @@ The current implementation took less time to write than did this paper.
 It consists of 560 lines of kernel code (1.7K text + data)
 and some minor modifications to the program that builds
 disk based filesystems, \fInewfs\fP.
-The interesting parts of the kernel code for the
+A condensed version of the kernel code for the
 memory-based filesystem are reproduced in Appendix 1.
 .PP
 A filesystem is created by invoking the modified \fInewfs\fP, with
