@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)deliver.c	3.86		%G%);
+SCCSID(@(#)deliver.c	3.87		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -1081,7 +1081,7 @@ putheader(fp, m, e)
 					p++;
 			}
 			strcpy(obp, "\n");
-			putline(obp, fp, fullsmtp);
+			putline(obuf, fp, fullsmtp);
 			nooutput = TRUE;
 		}
 		else
