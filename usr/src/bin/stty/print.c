@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -144,7 +144,7 @@ print(tp, wp, ldisc, fmt)
 	cc = tp->c_cc;
 	if (fmt == POSIX) {
 		binit("cchars");
-		for (p = cchars1; p->name; ++p) {
+		for (p = cchars1; *p->name; ++p) {
 			(void)snprintf(buf1, sizeof(buf1), "%s = %s;",
 			    p->name, ccval(cc[p->sub]));
 			bput(buf1);
@@ -152,7 +152,7 @@ print(tp, wp, ldisc, fmt)
 		binit(NULL);
 	} else {
 		binit(NULL);
-		for (p = cchars1, cnt = 0; p->name; ++p) {
+		for (p = cchars1, cnt = 0; *p->name; ++p) {
 			if (fmt != BSD && cc[p->sub] == p->def)
 				continue;
 #define	WD	"%-8s"

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)key.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)key.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -18,7 +18,6 @@ static char sccsid[] = "@(#)key.c	5.1 (Berkeley) %G%";
 #include "extern.h"
 
 __BEGIN_DECLS
-int	c_key __P((const void *, const void *));
 void	f_all __P((struct info *));
 void	f_cbreak __P((struct info *));
 void	f_columns __P((struct info *));
@@ -58,16 +57,32 @@ static struct key keys[] = {
 	"tty",		f_tty,		0,
 };
 
-struct key *
-ksearch(name)
-	char *name;
+ksearch(argvp, ip)
+	char ***argvp;
+	struct info *ip;
 {
+	register struct key *kp;
+	register char *name;
 	struct key tmp;
-	int c_key __P((const void *, const void *));
+	static int c_key __P((const void *, const void *));
+
+	name = **argvp;
+	if (*name == '-') {
+		ip->off = 1;
+		++name;
+	} else
+		ip->off = 0;
 
 	tmp.name = name;
-	return((struct key *)bsearch(&tmp, keys,
-	    sizeof(keys)/sizeof(struct key), sizeof(struct key), c_key));
+	if (!(kp = (struct key *)bsearch(&tmp, keys,
+	    sizeof(keys)/sizeof(struct key), sizeof(struct key), c_key)))
+		return(0);
+	if (!(kp->flags & F_OFFOK) && ip->off)
+		err("illegal option -- %s\n%s", name, usage);
+	if (kp->flags & F_NEEDARG && !(ip->arg = *++*argvp))
+		err("option requires an argument -- %s\n%s", name, usage);
+	kp->f(ip);
+	return(1);
 }
 
 static
