@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)ip_var.h	7.3 (Berkeley) %G%
+ *	@(#)ip_var.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -46,11 +46,11 @@ struct ipq {
  * Note: ipf_next must be at same offset as ipq_next above
  */
 struct	ipasfrag {
-#if ENDIAN == LITTLE
+#if BYTE_ORDER == LITTLE_ENDIAN 
 	u_char	ip_hl:4,
 		ip_v:4;
 #endif
-#if ENDIAN == BIG
+#if BYTE_ORDER == BIG_ENDIAN 
 	u_char	ip_v:4,
 		ip_hl:4;
 #endif

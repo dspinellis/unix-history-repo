@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)tcp.h	7.3 (Berkeley) %G%
+ *	@(#)tcp.h	7.4 (Berkeley) %G%
  */
 
 typedef	u_long	tcp_seq;
@@ -22,11 +22,11 @@ struct tcphdr {
 	u_short	th_dport;		/* destination port */
 	tcp_seq	th_seq;			/* sequence number */
 	tcp_seq	th_ack;			/* acknowledgement number */
-#if ENDIAN == LITTLE
+#if BYTE_ORDER == LITTLE_ENDIAN 
 	u_char	th_x2:4,		/* (unused) */
 		th_off:4;		/* data offset */
 #endif
-#if ENDIAN == BIG
+#if BYTE_ORDER == BIG_ENDIAN 
 	u_char	th_off:4,		/* data offset */
 		th_x2:4;		/* (unused) */
 #endif
