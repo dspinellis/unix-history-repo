@@ -7,8 +7,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machAsmDefs.h	7.1 (Berkeley) %G%
- *
+ *	@(#)machAsmDefs.h	7.2 (Berkeley) %G%
+ */
+
+/*
  * machAsmDefs.h --
  *
  *	Macros used when writing assembler programs.
@@ -27,6 +29,8 @@
 
 #ifndef _MACHASMDEFS
 #define _MACHASMDEFS
+
+#include <machine/regdef.h>
 
 /*
  * LEAF(x)
@@ -78,7 +82,7 @@ x: ; \
 	MSG(msg)
 
 #define	PRINTF(msg) \
-	la	a0,9f; \
+	la	a0, 9f; \
 	jal	printf; \
 	MSG(msg)
 
@@ -86,5 +90,9 @@ x: ; \
 	.rdata; \
 9:	.asciiz	msg; \
 	.text
+
+#define ASMSTR(str) \
+	.asciiz str; \
+	.align	2
 
 #endif /* _MACHASMDEFS */
