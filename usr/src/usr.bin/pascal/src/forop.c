@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)forop.c 1.12 %G%";
+static char sccsid[] = "@(#)forop.c 1.13 %G%";
 
 #include	"whoami.h"
 #include	"0.h"
@@ -36,6 +36,10 @@ forop( arg )
 	int		*lhs;
 	struct nl	*forvar;
 	struct nl	*fortype;
+#ifdef PC
+	int		forctype;	/* p2type(fortype) */
+#endif PC
+	int		forwidth;
 	int		*init;
 	struct nl	*inittype;
 	struct nl	*initnlp;	/* initial value namelist entry */
@@ -125,14 +129,19 @@ nogood:
 	     * the initial is tentatively placed in a register as it will
 	     * shadow the for loop variable in the body of the loop.
 	     */
-	initnlp = tmpalloc(sizeof(long), nl+T4INT, REGOK);
-	termnlp = tmpalloc(sizeof(long), nl+T4INT, NOREG);
+	forwidth = lwidth(fortype);
+	initnlp = tmpalloc(forwidth, fortype, REGOK);
+	termnlp = tmpalloc(forwidth, fortype, NOREG);
 #	ifdef PC
+	    forctype = p2type(fortype);
 		/*
 		 * compute and save the initial expression
 		 */
 	    putRV( 0 , cbn , initnlp -> value[ NL_OFFS ] ,
-		    initnlp -> extra_flags , P2INT );
+		    initnlp -> extra_flags , forctype );
+	    if ( opt( 't' ) ) {
+		precheck( fortype , "_RANG4" , "_RSNG4" );
+	    }
 #	endif PC
 #	ifdef OBJ
 	    put(2, O_LV | cbn<<8+INDX, initnlp -> value[ NL_OFFS ] );
@@ -148,17 +157,24 @@ nogood:
 	    goto byebye;
 	}
 #	ifdef PC
-	    sconv(p2type(inittype), P2INT);
-	    putop( P2ASSIGN , P2INT );
+	    if ( opt( 't' ) ) {
+		postcheck(fortype, inittype);
+	    }
+	    sconv(p2type(inittype), forctype);
+	    putop( P2ASSIGN , forctype );
 	    putdot( filename , line );
 		/*
 		 * compute and save the termination expression
 		 */
 	    putRV( 0 , cbn , termnlp -> value[ NL_OFFS ] ,
-		    termnlp -> extra_flags , P2INT );
+		    termnlp -> extra_flags , forctype );
+	    if ( opt( 't' ) ) {
+		precheck( fortype , "_RANG4" , "_RSNG4" );
+	    }
 #	endif PC
 #	ifdef OBJ
-	    gen(O_AS2, O_AS2, sizeof(long), width(inittype));
+	    rangechk(fortype, inittype);
+	    gen(O_AS2, O_AS2, forwidth, lwidth(inittype));
 		/*
 		 * compute and save the termination expression
 		 */
@@ -174,18 +190,21 @@ nogood:
 	    goto byebye;
 	}
 #	ifdef PC
-	    sconv(p2type(termtype), P2INT);
-	    putop( P2ASSIGN , P2INT );
+	    if ( opt( 't' ) ) {
+		postcheck(fortype, termtype);
+	    }
+	    sconv(p2type(termtype), forctype);
+	    putop( P2ASSIGN , forctype );
 	    putdot( filename , line );
 		/*
 		 * we can skip the loop altogether if !( init <= term )
 		 */
 	    after = getlab();
 	    putRV( 0 , cbn , initnlp -> value[ NL_OFFS ] ,
-		    initnlp -> extra_flags , P2INT );
+		    initnlp -> extra_flags , forctype );
 	    putRV( 0 , cbn , termnlp -> value[ NL_OFFS ] ,
-		    termnlp -> extra_flags , P2INT );
-	    putop( ( arg[0] == T_FORU ? P2LE : P2GE ) , P2INT );
+		    termnlp -> extra_flags , forctype );
+	    putop( ( arg[0] == T_FORU ? P2LE : P2GE ) , forctype );
 	    putleaf( P2ICON , after , 0 , P2INT , 0 );
 	    putop( P2CBRANCH , P2INT );
 	    putdot( filename , line );
@@ -200,27 +219,21 @@ nogood:
 		 * see the note in asgnop1 about why this is an rvalue.
 		 */
 	    lvalue( lhs , NOUSE , RREQ );
-	    if ( opt( 't' ) ) {
-		precheck( fortype , "_RANG4" , "_RSNG4" );
-	    }
 	    putRV( 0 , cbn , initnlp -> value[ NL_OFFS ] ,
-		    initnlp -> extra_flags , P2INT );
-	    if ( opt( 't' ) ) {
-		postcheck(fortype, nl+T4INT);
-	    }
-	    sconv(P2INT, p2type(fortype));
+		    initnlp -> extra_flags , forctype );
 	    putop( P2ASSIGN , p2type( fortype ) );
 	    putdot( filename , line );
 #	endif PC
 #	ifdef OBJ
-	    gen(O_AS2, O_AS2, sizeof(long), width(termtype));
+	    rangechk(fortype, termtype);
+	    gen(O_AS2, O_AS2, forwidth, lwidth(termtype));
 		/*
 		 * we can skip the loop altogether if !( init <= term )
 		 */
-	    put(2, O_RV4 | cbn<<8+INDX, initnlp -> value[ NL_OFFS ] );
-	    put(2, O_RV4 | cbn<<8+INDX, termnlp -> value[ NL_OFFS ] );
-	    gen(NIL, arg[0] == T_FORU ? T_LE : T_GE, sizeof(long),
-			sizeof(long));
+	    stackRV(initnlp);
+	    stackRV(termnlp);
+	    gen(NIL, arg[0] == T_FORU ? T_LE : T_GE, lwidth(nl+T4INT),
+			lwidth(nl+T4INT));
 	    after = getlab();
 	    put(2, O_IF, after);
 		/*
@@ -233,9 +246,8 @@ nogood:
 		 * assign the initial expression to the for variable.
 		 */
 	    lvalue( lhs , NOUSE , LREQ );
-	    put(2, O_RV4 | cbn<<8+INDX, initnlp -> value[ NL_OFFS ] );
-	    rangechk(fortype, nl+T4INT);
-	    gen(O_AS2, O_AS2, width(fortype), sizeof(long));
+	    stackRV(initnlp);
+	    gen(O_AS2, O_AS2, forwidth, lwidth(nl+T4INT));
 #	endif OBJ
 	    /*
 	     *	shadowing the real for variable
@@ -249,7 +261,6 @@ nogood:
 	*forvar = *initnlp;
 	forvar -> symbol = shadow_nl.symbol;
 	forvar -> nl_next = shadow_nl.nl_next;
-	forvar -> type = shadow_nl.type;
 	forvar -> value[ NL_FORV ] = FORVAR;
 	    /*
 	     * and don't forget ...
@@ -278,9 +289,9 @@ nogood:
 	    }
 	    /*rvalue( lhs , NIL , RREQ );*/
 	    putRV( 0 , cbn , initnlp -> value[ NL_OFFS ] ,
-		    initnlp -> extra_flags , P2INT );
+		    initnlp -> extra_flags , forctype );
 	    putRV( 0 , cbn , termnlp -> value[ NL_OFFS ] ,
-		    termnlp -> extra_flags , P2INT );
+		    termnlp -> extra_flags , forctype );
 	    putop( ( arg[ 0 ] == T_FORU ? P2LT : P2GT ) , P2INT );
 	    putleaf( P2ICON , after , 0 , P2INT , 0 );
 	    putop( P2CBRANCH , P2INT );
@@ -292,19 +303,21 @@ nogood:
 		 */
 	    /*lvalue( lhs , MOD , RREQ );*/
 	    putRV( 0 , cbn , initnlp -> value[ NL_OFFS ] ,
-		    initnlp -> extra_flags , P2INT );
+		    initnlp -> extra_flags , forctype );
 	    if ( opt( 't' ) ) {
 		precheck( fortype , "_RANG4" , "_RSNG4" );
 	    }
 	    /*rvalue( lhs , NIL , RREQ );*/
 	    putRV( 0 , cbn , initnlp -> value[ NL_OFFS ] ,
-		    initnlp -> extra_flags , P2INT );
+		    initnlp -> extra_flags , forctype );
+	    sconv(forctype, P2INT);
 	    putleaf( P2ICON , 1 , 0 , P2INT , 0 );
 	    putop( ( arg[0] == T_FORU ? P2PLUS : P2MINUS ) , P2INT );
 	    if ( opt( 't' ) ) {
 		postcheck(fortype, nl+T4INT);
 	    }
-	    putop( P2ASSIGN , P2INT );
+	    sconv(P2INT, forctype);
+	    putop( P2ASSIGN , forctype );
 	    putdot( filename , line );
 		/*
 		 * and do it all again
@@ -325,12 +338,12 @@ nogood:
 		 * of the loop.
 		 */
 	    putline();
-	    put(2, O_RV4 | cbn<<8+INDX, termnlp -> value[ NL_OFFS ] );
-	    lvalue(lhs, MOD, LREQ);
-	    if (width(fortype) <= 2)
-		    put(4, (arg[0] == T_FORU ? O_FOR1U : O_FOR1D) +
-			    (width(fortype)>>1), (int)fortype->range[0],
-			    (int)fortype->range[1], again);
+	    stackRV(termnlp);
+	    put(2, O_LV | cbn<<8+INDX, initnlp -> value[ NL_OFFS ] );
+	    if (forwidth <= 2)
+		    put(4,
+			(arg[0] == T_FORU ? O_FOR1U : O_FOR1D) + (forwidth>>1),
+			(int)fortype->range[0], (int)fortype->range[1], again);
 	    else
 		    put(4, (arg[0] == T_FORU ? O_FOR4U : O_FOR4D),
 			    fortype->range[0], fortype->range[1], again);
@@ -339,6 +352,7 @@ nogood:
 		 */
 	    patch( after );
 #	endif OBJ
+	/* and fall through */
 byebye:
 	noreach = 0;
 	if (forvar != NIL) {
