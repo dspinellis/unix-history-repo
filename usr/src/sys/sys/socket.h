@@ -1,4 +1,4 @@
-/*	socket.h	4.6	81/11/18	*/
+/*	socket.h	4.7	81/11/21	*/
 
 /*
  * Externally visible attributes of sockets.
@@ -64,12 +64,6 @@ struct sockproto {
 struct sockaddr {
 	short	sa_family;		/* address family */
 	char	sa_data[14];		/* up to 14 bytes of direct address */
-};
-struct sockaddri {
-	short	sai_family;
-	short	sai_length;
-	caddr_t	sai_addr;
-	char	sai_ddata[8];
 };
 
 /*
