@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kvm.h	5.8 (Berkeley) %G%
+ *	@(#)kvm.h	5.9 (Berkeley) %G%
  */
 
 #ifndef _KVM_H_
@@ -21,6 +21,7 @@ __BEGIN_DECLS
 
 typedef struct __kvm kvm_t;
 
+struct kinfo_proc;
 int	  kvm_close __P((kvm_t *));
 char	**kvm_getargv __P((kvm_t *, const struct kinfo_proc *, int));
 char	**kvm_getenvv __P((kvm_t *, const struct kinfo_proc *, int));
