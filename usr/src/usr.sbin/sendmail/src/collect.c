@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	8.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	8.35 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -353,7 +353,7 @@ readerr:
 	if ((feof(fp) && smtpmode) || ferror(fp))
 	{
 		if (tTd(30, 1))
-			printf("collect: read error\n");
+			printf("collect: %s\n", errstring(errno));
 		inputerr = TRUE;
 	}
 
