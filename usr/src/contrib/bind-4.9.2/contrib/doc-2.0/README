@@ -1,0 +1,70 @@
+
+/*
+** Distributed with 'doc' Version 2.0 from University of Southern
+** California Information Sciences Institute (USC-ISI). 8/22/90
+*/
+
+UPDATED RELEASE: 2.0.1 (9/12/90)
+
+Includes fixes for two portability bugs:
+
+  1) On some systems (e.g. SunOS 4.1), the shell exit code is an unsigned
+     8 bit value.  This differs from the development environment where
+     negative values were also returned.  This affected values
+     returned by auxiliary files: doc1.awk & doc3.awk.
+
+  2) Some shells did not handle things like "@ cnt2++ " correctly.
+     Variable names were changed where appropriate.
+
+=====================================================
+
+Greetings,
+
+This is a the first public release of Doc - Version 2.0.
+Doc (domain obscenity control) is a program which diagnoses
+misbehaving domains by sending queries off to the appropriate
+DNS nameservers, and performing simple analysis on the responses.
+
+IMPORTANT: Doc requires version 2.0 of the DNS query tool `dig`
+           (domain internet groper).
+
+Files contained in this distribution:
+
+README       - You're looking at it.
+INFO         - Documents current procedure
+doc.1        - man page
+doc.txt      - ASCII man page
+doc          - Shell script for automated domain test
+doc1.awk     - simple awk file used by `doc`
+doc3.awk     - simple awk file used by `doc`
+doc4.awk     - simple awk file used by `doc`
+RFC.XXXX     - Draft of RFC about Automated Domain testing
+log.isi.edu. - Sample run for isi.edu. domain
+
+
+Required files NOT in the distribution:
+
+Dig (Version 2.0) - DNS query program required to run `doc`
+                    Available via anonymous ftp from:
+                    venera.isi.edu.  pub/dig.2.0.tar.Z
+
+
+SETUP/CONFIGURATION
+
+'Doc' is a csh script, so no complex porting effort will be required.
+Other than the first few aliases and pointers to directories that you
+will edit in the 'doc' shell file itself, no changes should be necessary.
+
+
+Doc-V.2.0 is an initial implementation of an automated domain testing
+tool.  We expect considerable design modification and implementation
+changes to be made as experience is gained through use in the
+Internet.  At some point, we expect the design to stabilize and a
+production version, implemented in something other than the current
+UNIX-tool patchwork, to be released.
+
+Comments and discussion are very much welcome.
+
+Steve Hotz (hotz@isi.edu)
+Paul Mockapetris (pvm@isi.edu)
+
