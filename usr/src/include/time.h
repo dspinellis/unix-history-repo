@@ -4,13 +4,13 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)time.h	5.11 (Berkeley) %G%
+ *	@(#)time.h	5.12 (Berkeley) %G%
  */
 
 #ifndef _TIME_H_
 #define	_TIME_H_
 
-#include <machine/types.h>
+#include <machine/ansi.h>
 
 #ifndef	NULL
 #define	NULL	0
