@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cpp.c 1.2 %G%";
+static char sccsid[] = "@(#)cpp.c 1.3 %G%";
 #endif lint
 
 #ifdef FLEXNAMES
@@ -109,7 +109,7 @@ char *ptrtab;
 
 char buffer[NCPS+BUFSIZ+BUFSIZ+NCPS];
 
-# define SBSIZE 48000		/* std = 12000, wnj aug 1979 */
+# define SBSIZE 60000		/* std = 12000, wnj aug 1979 */
 char	sbf[SBSIZE];
 char	*savch	= sbf;
 
@@ -175,7 +175,7 @@ static jmp_buf env;
 extern FILE *_f[];
 # define symsiz 500
 # else
-# define symsiz 1000		/* std = 500, wnj aug 1979 */
+# define symsiz 1500		/* std = 500, wnj aug 1979 */
 # endif
 STATIC	struct symtab stab[symsiz];
 
