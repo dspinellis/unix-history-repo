@@ -6,17 +6,26 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recvjob.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)recvjob.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * Receive printer jobs from the network, queue them and
  * start the printer daemon.
  */
-
-#include "lp.h"
-#include "pathnames.h"
+#include <sys/param.h>
 #include <sys/mount.h>
+#include <sys/stat.h>
+
+#include <signal.h>
+#include <fcntl.h>
+#include <dirent.h>
+#include <syslog.h>
+#include <stdio.h>
+#include "lp.h"
+#include "lp.local.h"
+#include "extern.h"
+#include "pathnames.h"
 
 char	*sp = "";
 #define ack()	(void) write(1, sp, 1);
@@ -25,8 +34,16 @@ char    tfname[40];		/* tmp copy of cf before linking */
 char    dfname[40];		/* data files */
 int	minfree;		/* keep at least minfree blocks available */
 
-void	rcleanup();
+static int        readjob __P((void));
+static int        readfile __P((char *, int));
+static int        noresponse __P((void));
+static int        chksize __P((int));
+static void       frecverr __P((const char *, ...));
+static int        read_number __P((char *));
+static void       rcleanup __P((int));
 
+
+int
 recvjob()
 {
 	struct stat stb;
@@ -75,6 +92,7 @@ recvjob()
  * Read printer jobs sent by lpd and copy them to the spooling directory.
  * Return the number of jobs successfully transfered.
  */
+static int
 readjob()
 {
 	register int size, nfiles;
@@ -98,7 +116,7 @@ readjob()
 		cp = line;
 		switch (*cp++) {
 		case '\1':	/* cleanup because data sent was bad */
-			rcleanup();
+			rcleanup(0);
 			continue;
 
 		case '\2':	/* read cf file */
@@ -121,7 +139,7 @@ readjob()
 				continue;
 			}
 			if (!readfile(tfname, size)) {
-				rcleanup();
+				rcleanup(0);
 				continue;
 			}
 			if (link(tfname, cp) < 0)
@@ -155,6 +173,7 @@ readjob()
 /*
  * Read files send by lpd and copy them to the spooling directory.
  */
+static int
 readfile(file, size)
 	char *file;
 	int size;
@@ -200,6 +219,7 @@ readfile(file, size)
 	return(1);
 }
 
+static int
 noresponse()
 {
 	char resp;
@@ -215,6 +235,7 @@ noresponse()
  * Check to see if there is enough space on the disk for size bytes.
  * 1 == OK, 0 == Not OK.
  */
+static int
 chksize(size)
 	int size;
 {
@@ -232,6 +253,7 @@ chksize(size)
 	return(1);
 }
 
+static int
 read_number(fn)
 	char *fn;
 {
@@ -251,10 +273,10 @@ read_number(fn)
 /*
  * Remove all the files associated with the current job being transfered.
  */
-void
-rcleanup()
+static void
+rcleanup(signo)
+	int signo;
 {
-
 	if (tfname[0])
 		(void) unlink(tfname);
 	if (dfname[0])
@@ -267,11 +289,30 @@ rcleanup()
 	dfname[0] = '\0';
 }
 
-frecverr(msg, a1, a2)
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+
+static void
+#if __STDC__
+frecverr(const char *msg, ...)
+#else
+frecverr(msg, va_alist)
 	char *msg;
+        va_dcl
+#endif
 {
-	rcleanup();
-	syslog(LOG_ERR, msg, a1, a2);
+	va_list ap;
+#if __STDC__
+	va_start(ap, msg);
+#else
+	va_start(ap);
+#endif
+	rcleanup(0);
+	vsyslog(LOG_ERR, msg, ap);
+	va_end(ap);
 	putchar('\1');		/* return error code */
 	exit(1);
 }

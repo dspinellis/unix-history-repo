@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)printjob.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)printjob.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -16,8 +16,22 @@ static char sccsid[] = "@(#)printjob.c	5.14 (Berkeley) %G%";
  *	it does not need to be removed because file locks are dynamic.
  */
 
+#include <sys/param.h>
+#include <sys/wait.h>
+#include <sys/stat.h>
+
+#include <signal.h>
+#include <sgtty.h>
+#include <syslog.h>
+#include <fcntl.h>
+#include <dirent.h>
+#include <errno.h>
+#include <stdio.h>
+#include <string.h>
 #include "lp.h"
+#include "lp.local.h"
 #include "pathnames.h"
+#include "extern.h"
 
 #define DORETURN	0	/* absorb fork error */
 #define DOABORT		1	/* abort if dofork fails */
@@ -58,6 +72,24 @@ char	pxlength[10] = "-y";	/* page length in pixels */
 char	indent[10] = "-i0";	/* indentation size in characters */
 char	tempfile[] = "errsXXXXXX"; /* file name for filter output */
 
+static void       abortpr __P((int));
+static void       banner __P((char *, char *));
+static int        dofork __P((int));
+static int        dropit __P((int));
+static void       init __P((void));
+static void       openpr __P((void));
+static int        print __P((int, char *));
+static int        printit __P((char *));
+static void       pstatus __P((const char *, ...));
+static char       response __P((void));
+static void       scan_out __P((int, char *, int));
+static char      *scnline __P((int, char *, int));
+static int        sendfile __P((int, char *));
+static int        sendit __P((char *));
+static void       sendmail __P((char *, int));
+static void       setty __P((void));
+
+void
 printjob()
 {
 	struct stat stb;
@@ -66,7 +98,6 @@ printjob()
 	register int i, nitems;
 	long pidoff;
 	int count = 0;
-	void abortpr();
 
 	init();					/* set up capabilities */
 	(void) write(1, "", 1);			/* ack that daemon is started */
@@ -140,7 +171,7 @@ again:
 		if (stat(q->q_name, &stb) < 0)
 			continue;
 	restart:
-		(void) lseek(lfd, pidoff, 0);
+		(void) lseek(lfd, (off_t)pidoff, 0);
 		(void) sprintf(line, "%s\n", q->q_name);
 		i = strlen(line);
 		if (write(lfd, line, i) != i)
@@ -220,6 +251,7 @@ char ifonts[4][40] = {
  * The remaining part is the reading of the control file (cf)
  * and performing the various actions.
  */
+static int
 printit(file)
 	char *file;
 {
@@ -291,7 +323,7 @@ printit(file)
 		case 'P':
 			strncpy(logname, line+1, sizeof(logname)-1);
 			if (RS) {			/* restricted */
-				if (getpwnam(logname) == (struct passwd *)0) {
+				if (getpwnam(logname) == NULL) {
 					bombed = NOACCT;
 					sendmail(line+1, bombed);
 					goto pass2;
@@ -411,6 +443,7 @@ pass2:
  * Note: all filters take stdin as the file, stdout as the printer,
  * stderr as the log file, and must not ignore SIGINT.
  */
+static int
 print(format, file)
 	int format;
 	char *file;
@@ -633,6 +666,7 @@ start:
  * Return -1 if a non-recoverable error occured, 1 if a recoverable error and
  * 0 if all is well.
  */
+static int
 sendit(file)
 	char *file;
 {
@@ -718,8 +752,10 @@ sendit(file)
  * Send a data file to the remote machine and spool it.
  * Return positive if we should try resending.
  */
+static int
 sendfile(type, file)
-	char type, *file;
+	int type;
+	char *file;
 {
 	register int f, i, amt;
 	struct stat stb;
@@ -736,7 +772,7 @@ sendfile(type, file)
 	if ((stb.st_mode & S_IFMT) == S_IFLNK && fstat(f, &stb) == 0 &&
 	    (stb.st_dev != fdev || stb.st_ino != fino))
 		return(ACCESS);
-	(void) sprintf(buf, "%c%d %s\n", type, stb.st_size, file);
+	(void) sprintf(buf, "%c%qd %s\n", type, stb.st_size, file);
 	amt = strlen(buf);
 	for (i = 0;  ; i++) {
 		if (write(pfd, buf, amt) != amt ||
@@ -746,14 +782,14 @@ sendfile(type, file)
 		} else if (resp == '\0')
 			break;
 		if (i == 0)
-			status("no space on remote; waiting for queue to drain");
+			pstatus("no space on remote; waiting for queue to drain");
 		if (i == 10)
 			syslog(LOG_ALERT, "%s: can't send to %s; queue full",
 				printer, RM);
 		sleep(5 * 60);
 	}
 	if (i)
-		status("sending to %s", RM);
+		pstatus("sending to %s", RM);
 	sizerr = 0;
 	for (i = 0; i < stb.st_size; i += BUFSIZ) {
 		amt = BUFSIZ;
@@ -766,6 +802,10 @@ sendfile(type, file)
 			return(REPRINT);
 		}
 	}
+
+
+
+
 	(void) close(f);
 	if (sizerr) {
 		syslog(LOG_INFO, "%s: %s: changed size", printer, file);
@@ -783,6 +823,7 @@ sendfile(type, file)
  * are in sync with eachother.
  * Return non-zero if the connection was lost.
  */
+static char
 response()
 {
 	char resp;
@@ -797,6 +838,7 @@ response()
 /*
  * Banner printing stuff
  */
+static void
 banner(name1, name2)
 	char *name1, *name2;
 {
@@ -837,10 +879,11 @@ banner(name1, name2)
 	tof = 1;
 }
 
-char *
+static char *
 scnline(key, p, c)
-	register char key, *p;
-	char c;
+	register int key;
+	register char *p;
+	int c;
 {
 	register scnwidth;
 
@@ -853,9 +896,10 @@ scnline(key, p, c)
 
 #define TRC(q)	(((q)-' ')&0177)
 
+static void
 scan_out(scfd, scsp, dlm)
-	int scfd;
-	char *scsp, dlm;
+	int scfd, dlm;
+	char *scsp;
 {
 	register char *strp;
 	register nchrs, j;
@@ -886,8 +930,9 @@ scan_out(scfd, scsp, dlm)
 	}
 }
 
+static int
 dropit(c)
-	char c;
+	int c;
 {
 	switch(c) {
 
@@ -910,6 +955,7 @@ dropit(c)
  * sendmail ---
  *   tell people about job completion
  */
+static void
 sendmail(user, bombed)
 	char *user;
 	int bombed;
@@ -928,7 +974,7 @@ sendmail(user, bombed)
 			(void) close(i);
 		if ((cp = rindex(_PATH_SENDMAIL, '/')) != NULL)
 			cp++;
-		else
+	else
 			cp = _PATH_SENDMAIL;
 		sprintf(buf, "%s@%s", user, fromhost);
 		execl(_PATH_SENDMAIL, cp, buf, 0);
@@ -976,6 +1022,7 @@ sendmail(user, bombed)
 /*
  * dofork - fork with retries on failure
  */
+static int
 dofork(action)
 	int action;
 {
@@ -1010,8 +1057,9 @@ dofork(action)
 /*
  * Kill child processes to abort current job.
  */
-void
-abortpr()
+static void
+abortpr(signo)
+	int signo;
 {
 	(void) unlink(tempfile);
 	kill(0, SIGINT);
@@ -1022,6 +1070,7 @@ abortpr()
 	exit(0);
 }
 
+static void
 init()
 {
 	int status;
@@ -1098,6 +1147,7 @@ init()
 /*
  * Acquire line printer or remote connection.
  */
+static void
 openpr()
 {
 	register int i, n;
@@ -1113,12 +1163,12 @@ openpr()
 				exit(1);
 			}
 			if (i == 1)
-				status("waiting for %s to become ready (offline ?)", printer);
+				pstatus("waiting for %s to become ready (offline ?)", printer);
 			sleep(i);
 		}
 		if (isatty(pfd))
 			setty();
-		status("%s is ready and printing", printer);
+		pstatus("%s is ready and printing", printer);
 	} else if (RM != NULL) {
 		for (i = 1; ; i = i < 256 ? i << 1 : i) {
 			resp = -1;
@@ -1133,15 +1183,15 @@ openpr()
 			}
 			if (i == 1) {
 				if (resp < 0)
-					status("waiting for %s to come up", RM);
+					pstatus("waiting for %s to come up", RM);
 				else {
-					status("waiting for queue to be enabled on %s", RM);
+					pstatus("waiting for queue to be enabled on %s", RM);
 					i = 256;
 				}
 			}
 			sleep(i);
 		}
-		status("sending to %s", RM);
+		pstatus("sending to %s", RM);
 		remote = 1;
 	} else {
 		syslog(LOG_ERR, "%s: no line printer device or host name",
@@ -1202,6 +1252,7 @@ struct bauds {
 /*
  * setup tty lines.
  */
+static void
 setty()
 {
 	struct sgttyb ttybuf;
@@ -1245,12 +1296,29 @@ setty()
 	}
 }
 
-/*VARARGS1*/
-status(msg, a1, a2, a3)
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+
+void
+#if __STDC__
+pstatus(const char *msg, ...)
+#else
+pstatus(msg, va_alist)
 	char *msg;
+        va_dcl
+#endif
 {
 	register int fd;
 	char buf[BUFSIZ];
+	va_list ap;
+#if __STDC__
+	va_start(ap, msg);
+#else
+	va_start(ap);
+#endif
 
 	umask(0);
 	fd = open(ST, O_WRONLY|O_CREAT, 0664);
@@ -1259,7 +1327,8 @@ status(msg, a1, a2, a3)
 		exit(1);
 	}
 	ftruncate(fd, 0);
-	sprintf(buf, msg, a1, a2, a3);
+	(void)vsnprintf(buf, sizeof(buf), msg, ap);
+	va_end(ap);
 	strcat(buf, "\n");
 	(void) write(fd, buf, strlen(buf));
 	(void) close(fd);
