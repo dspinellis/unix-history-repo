@@ -1,4 +1,4 @@
-/*	tu.c	4.24	83/07/27	*/
+/*	%M	4.24	83/07/27	*/
 
 #if defined(VAX750) || defined(VAX730)
 /*
@@ -13,9 +13,10 @@
  * or MRSP depending on whether defined(MRSP) is true or not.
  * In the case of a 750 without MRSP, the only way for the CPU to
  * keep up with the tu58 is to lock out virtually everything else.
- * This is taken care of by a pseudo DMA routine in locore.s.
  *
- * NOTE: This driver will not work multiuser without MRSP
+ * NOTE: Reading large amounts of data from the tu58 is likely
+ *	 to crash your system if you are running multiuser.
+ *	 	******FOR SINGLE USER USE ONLY*****
  */
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -40,6 +41,10 @@ int	tudebug;	/* printd */
 #define WRV     02              /* bit in minor dev => write w. read verify */
 #define NTUQ    2               /* # of blocks which can be queued up */
 #define	TUIPL	((cpu == VAX_750) ? 0x17 : 0x14)
+
+#ifndef MRSP
+#define MRSP (cpu != VAX_750)
+#endif
 
 /*
  * State information 
@@ -80,6 +85,7 @@ u_char	tunull[2] = { 0, 0 };	/* nulls to send for initialization */
 u_char	tuinit[2] = { TUF_INITF, TUF_INITF };	/* inits to send */
 static char tu_pcnt[2];            		/* pee/vee counters */
 int	tutimer = 0;
+int	tuwake();
 struct buf tutab;				/* I/O queue header */
 
 /*
@@ -94,14 +100,15 @@ tuopen(dev, flag)
 #ifdef lint
 	turintr(); tuwintr();
 #endif
-	if ((minor(dev)&DNUM) >= NTU || tu.tu_dopen[minor(dev)&DNUM])
+	if ((minor(dev)&DNUM) >= NTU)
 		return (ENXIO);
-	if (tutimer == 0) {
-		tutimer++;
+	if (tu.tu_dopen[minor(dev)&DNUM])
+		return (EBUSY);
+	if (tutimer++ == 0)
 		timeout(tuwatch, (caddr_t)0, hz);
-	}
-	tu.tu_dopen[minor(dev)&DNUM]++;
+
 	s = splx(TUIPL);
+	tu.tu_dopen[minor(dev)&DNUM]++;
 	/*
 	 * If the cassette's already initialized,
 	 * just enable interrupts and return.
@@ -133,16 +140,46 @@ ok:
 }
 
 /*
- * Close the TU58
+ * Close the TU58, but make sure all
+ * outstanding i/o is complete first..
  */
-tuclose(dev)
+tuclose(dev, flag)
+	dev_t dev;
+	int flag;
 {
+	int s, unit = minor(dev);
+	struct buf *bp, *last = NULL;
 
-	if (tutab.b_active == 0) {
-		mtpr(CSRS, 0);
-		tutimer = 0;
+	s = splx(TUIPL);
+	while (tu_pcnt[unit])
+		sleep(&tu_pcnt[unit], PRIBIO);
+	/*
+	 * No more writes are pending, scan the 
+	 * buffer queue for oustanding reads from
+	 * this unit.
+	 */
+	for (bp = tutab.b_actf; bp; bp = bp->b_actf) {
+		if (bp->b_dev == dev)
+			last = bp;
 	}
-	tu.tu_dopen[minor(dev)&DNUM] = 0;
+	if (last) {
+		last->b_flags |= B_CALL;
+		last->b_iodone = tuwake;
+		sleep((caddr_t)last, PRIBIO);
+	}
+	tu.tu_dopen[unit&DNUM] = 0;
+	if (!tu.tu_dopen[0] && !tu.tu_dopen[1]) {
+		tutimer = 0;
+		mtpr(CSRS, 0);
+		tu.tu_flag = 0;
+	}
+	splx(s);
+}
+
+tuwake(bp)
+	struct buf *bp;
+{
+	wakeup(bp);
 }
 
 /*
@@ -151,6 +188,7 @@ tuclose(dev)
 tureset()
 {
 
+	mtpr(CSRS, 0);
 	tu.tu_state = TUS_INIT1;
 	tu.tu_wbptr = tunull;
 	tu.tu_wcnt = sizeof (tunull);
@@ -158,13 +196,8 @@ tureset()
 	tucmd.pk_mcount = sizeof (tucmd) - 4;
 	tucmd.pk_mod = 0;
 	tucmd.pk_seq = 0;
-#ifdef MRSP
-	tucmd.pk_sw = TUSW_MRSP;
-#else
-	tucmd.pk_sw = 0;
-#endif
+	tucmd.pk_sw = MRSP ? TUSW_MRSP : 0;
 	tutab.b_active++;
-	mtpr(CSRS, 0);
 	mtpr(CSTS, IE | BREAK);
 	tuxintr();			/* start output */
 }
@@ -202,11 +235,14 @@ tustrategy(bp)
 tustart()
 {
 	register struct buf *bp;
+	int s;
 
 	if ((bp = tutab.b_actf) == NULL)
 		return;
+	s = splx(TUIPL);
 	if (tu.tu_state != TUS_IDLE) {
 		tureset();
+		splx(s);
 		return;
 	}
 	tutab.b_active++;
@@ -215,11 +251,7 @@ tustart()
 	tucmd.pk_mod = ((bp->b_flags&B_READ) == 0 && (minor(bp->b_dev)&WRV)) ?
 	    TUMD_WRV : 0;
 	tucmd.pk_unit = (minor(bp->b_dev)&DNUM);
-#ifdef MRSP
-	tucmd.pk_sw = TUSW_MRSP;
-#else
-	tucmd.pk_sw = 0;
-#endif
+	tucmd.pk_sw = MRSP ? TUSW_MRSP : 0;
 	tucmd.pk_count = tu.tu_count = bp->b_bcount;
 	tucmd.pk_block = bp->b_blkno;
 	tucmd.pk_chksum =
@@ -230,6 +262,7 @@ tustart()
 	tu.tu_wbptr = (u_char *)&tucmd;
 	tu.tu_wcnt = sizeof (tucmd);
 	tuxintr();
+	splx(s);
 }
 
 /*
@@ -241,33 +274,32 @@ turintr()
 	register int c;
 
 	c = mfpr(CSRD)&0xff;
-#ifdef MRSP
-	while ((mfpr(CSTS)&READY) == 0)
-		;
-	mtpr(CSTD, TUF_CONT);			/* ACK */
-	if (tu.tu_rcnt) {
-		*tu.tu_rbptr++ = c;
-		if (--tu.tu_rcnt)
-			return;
+	if (MRSP) {
+		while ((mfpr(CSTS)&READY) == 0)
+			;
+		mtpr(CSTD, TUF_CONT);			/* ACK */
+		if (tu.tu_rcnt) {
+			*tu.tu_rbptr++ = c;
+			if (--tu.tu_rcnt)
+				return;
+		}
 	}
-#endif
 
 	/*
 	 * Switch on the state of the transfer.
 	 */
 	switch(tu.tu_state) {
 
-#ifndef MRSP
 	/*
 	 * Probably an overrun error,
 	 * cannot happen if MRSP is used
 	 */
 	case TUS_RCVERR:
-		printf(" overrun, recovered ");		/* DEBUG */
+		mtpr(CSRS, 0);					/* flush */
+		printf("overrun error, transfer restarted\n");	/* DEBUG */
 		tu.tu_serrs++;
 		tu_restart();
 		break;
-#endif
 
 	/*
 	 * If we get an unexpected "continue",
@@ -330,10 +362,8 @@ turintr()
 	 * fetch is included in packet.
 	 */
 	case TUS_GETH:
-#ifdef MRSP
-		if (tudata.pk_flag == TUF_DATA)
+		if (MRSP && (tudata.pk_flag == TUF_DATA))
 			tu.tu_rbptr = (u_char *)tu.tu_addr;
-#endif
 		tu.tu_rcnt = tudata.pk_mcount;
 		tu.tu_state = TUS_GETD;
 		break;
@@ -347,9 +377,18 @@ turintr()
 		tu.tu_state = TUS_GETC;
 		break;
 
-#ifdef MRSP
+	case TUS_CHKERR:		/* from tudma only */
+		tu.tu_cerrs++;
+		goto tus_get;
+
 	case TUS_GET:
-#endif
+		if (MRSP)
+			/* 
+		 	 * The checksum has already been calculated and
+		 	 * verified in the pseudo DMA routine
+		 	 */
+			goto tus_get;
+
 	case TUS_GETC:
 		/* got entire packet */
 		if (tudata.pk_chksum !=
@@ -357,15 +396,8 @@ turintr()
 		     (tudata.pk_flag == TUF_DATA ? 
 		     (u_short *) tu.tu_addr : (u_short *)&tudata.pk_op),
 		     (int)tudata.pk_mcount))
-	case TUS_CHKERR:
 			tu.tu_cerrs++;
-#ifndef MRSP
-	case TUS_GET:
-		/* 
-		 * The checksum has already been calculated and
-		 * verified in the pseudo DMA routine
-		 */
-#endif
+tus_get:
 		if (tudata.pk_flag == TUF_DATA) {
 			/* data packet, advance to next */
 			tu.tu_addr += tudata.pk_mcount;
@@ -437,10 +469,10 @@ bad:
 						(int)tudata.pk_unit);
 			printstate(tu.tu_state);
 			printf(", byte=%x\n", c & 0xff);
-#ifdef notdef
-			tu.tu_state = TUS_INIT1;
-#endif
-			wakeup((caddr_t)&tu);
+			if (tutab.b_actf)
+				tu_restart();
+			else
+				wakeup((caddr_t)&tu);
 		}
 	}
 }
@@ -562,7 +594,7 @@ top:
 	/*
 	 * Random interrupt, probably from MRSP ACK
 	 */
-	case TUS_IDLE:		/* stray interrupt? */
+	case TUS_IDLE:
 
 	default:
 		break;
@@ -620,18 +652,19 @@ tuwatch()
 	register int s;
 	register struct buf *bp;
 
-	if (tutimer == 0) {
-		tu.tu_flag = 0;
+	if (tutimer == 0)
+		return;
+
+	if (tu.tu_flag == 0) {		/* if no read in progress - skip */
+		timeout(tuwatch, (caddr_t)0, hz);
 		return;
 	}
-	if (tu.tu_flag)
-		tu.tu_flag++;
-	if (tu.tu_flag <= 40) {
+	if (tu.tu_flag++ <= 40) {
 		timeout(tuwatch, (caddr_t)0, hz);
 		return;
 	}
 	printf("tu%d: read stalled\n", tudata.pk_unit);
-#ifdef notdef
+#ifdef TUDEBUG
 	printf("%X %X %X %X %X %X %X %X\n", tu.tu_rbptr, tu.tu_rcnt,
 		tu.tu_wbptr, tu.tu_wcnt, tu.tu_state, tu.tu_flag,
 		tu.tu_addr, tu.tu_count);
@@ -688,4 +721,5 @@ tu_restart()
 	tureset();
 	timeout(tustart(), (caddr_t)0, hz * 3);
 }
+
 #endif
