@@ -7,8 +7,10 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)conf.c	5.1 (Berkeley) %G%
+ *	@(#)conf.c	5.2 (Berkeley) %G%
  */
+
+/*	conf.c	1.9	87/03/28	*/
 
 #include "param.h"
 #include "systm.h"
@@ -35,14 +37,18 @@ int	wddump(),wdsize();
 #define	wdsize		0
 #endif
 
+int fdstrategy(),fdopen(),fdclose(),fdread(),fdwrite();
+
 
 int	swstrategy(),swread(),swwrite();
 
 struct bdevsw	bdevsw[] =
 {
-	{ wdopen,	wdclose,	wdstrategy,	wdioctl,	/*1*/
+	{ wdopen,	wdclose,	wdstrategy,	wdioctl,	/*0*/
 	  wddump,	wdsize,		0 },
-	{ nodev,	nodev,	swstrategy,	nodev,	/*1*/
+	{ nodev,	nodev,		swstrategy,	nodev,		/*1*/
+	  nodev,	nodev,		0 },
+	{ fdopen,	fdclose,	fdstrategy,	nulldev,	/*2*/
 	  nodev,	nodev,		0 },
 };
 int	nblkdev = sizeof (bdevsw) / sizeof (bdevsw[0]);
@@ -80,6 +86,10 @@ int	logopen(),logclose(),logread(),logioctl(),logselect();
 
 int	ttselect(), seltrue();
 
+int	comopen(),comclose(),comread(),comwrite(),comioctl();
+int	comreset();
+extern	struct tty com_tty[];
+
 struct cdevsw	cdevsw[] =
 {
 	cnopen,		cnclose,	cnread,		cnwrite,	/*0*/
@@ -106,6 +116,12 @@ struct cdevsw	cdevsw[] =
 	logopen,	logclose,	logread,	nodev,		/*7*/
 	logioctl,	nodev,		nulldev,	0,
 	logselect,	nodev,
+	comopen,	comclose,	comread,	comwrite,	/*8*/
+	comioctl,	nodev,		comreset,	com_tty,
+	ttselect,	nodev,
+	fdopen,		nulldev,	fdread,		fdwrite,	/*9*/
+	nulldev,	nodev,		nulldev,	0,
+	seltrue,	nodev,
 };
 int	nchrdev = sizeof (cdevsw) / sizeof (cdevsw[0]);
 
