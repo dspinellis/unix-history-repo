@@ -1,5 +1,6 @@
-/*	kern_physio.c	3.1	%H%	*/
+/*	kern_physio.c	3.2	%H%	*/
 
+int	distrust = 1;		/* TEST */
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/dir.h"
@@ -10,6 +11,43 @@
 #include "../h/seg.h"
 #include "../h/pte.h"
 #include "../h/vm.h"
+
+/*
+ * The following several routines allocate and free
+ * buffers with various side effects.  In general the
+ * arguments to an allocate routine are a device and
+ * a block number, and the value is a pointer to
+ * to the buffer header; the buffer is marked "busy"
+ * so that no one else can touch it.  If the block was
+ * already in core, no I/O need be done; if it is
+ * already busy, the process waits until it becomes free.
+ * The following routines allocate a buffer:
+ *	getblk
+ *	bread
+ *	breada
+ *	baddr	(if it is incore)
+ * Eventually the buffer must be released, possibly with the
+ * side effect of writing it out, by using one of
+ *	bwrite
+ *	bdwrite
+ *	bawrite
+ *	brelse
+ */
+
+#define	BUFHSZ	63
+#define	BUFHASH(blkno)	(blkno % BUFHSZ)
+short	bufhash[BUFHSZ];
+
+/*
+ * Initialize hash links for buffers.
+ */
+bhinit()
+{
+	register int i;
+
+	for (i = 0; i < BUFHSZ; i++)
+		bufhash[i] = -1;
+}
 
 /* #define	DISKMON	1 */
 
@@ -38,27 +76,6 @@ struct	buf swbuf[NSWBUF];
 short	swsize[NSWBUF];		/* CAN WE JUST USE B_BCOUNT? */
 int	swpf[NSWBUF];
 
-/*
- * The following several routines allocate and free
- * buffers with various side effects.  In general the
- * arguments to an allocate routine are a device and
- * a block number, and the value is a pointer to
- * to the buffer header; the buffer is marked "busy"
- * so that no one else can touch it.  If the block was
- * already in core, no I/O need be done; if it is
- * already busy, the process waits until it becomes free.
- * The following routines allocate a buffer:
- *	getblk
- *	bread
- *	breada
- *	baddr	(if it is incore)
- * Eventually the buffer must be released, possibly with the
- * side effect of writing it out, by using one of
- *	bwrite
- *	bdwrite
- *	bawrite
- *	brelse
- */
 
 #ifdef	FASTVAX
 #define	notavail(bp) \
@@ -220,8 +237,10 @@ register struct buf *bp;
 		bfreelist.b_flags &= ~B_WANTED;
 		wakeup((caddr_t)&bfreelist);
 	}
-	if (bp->b_flags&B_ERROR)
+	if ((bp->b_flags&B_ERROR) && bp->b_dev != NODEV) {
+		bunhash(bp);
 		bp->b_dev = NODEV;  /* no assoc. on error */
+	}
 	s = spl6();
 	if(bp->b_flags & (B_AGE|B_ERROR)) {
 		backp = &bfreelist.av_forw;
@@ -240,6 +259,24 @@ register struct buf *bp;
 	splx(s);
 }
 
+/* HASHING IS A GUN LIKE CHANGE, THIS IS THE SAFETY */
+struct buf *
+oincore(dev, blkno)
+	dev_t dev;
+	daddr_t blkno;
+{
+	register struct buf *bp;
+	register struct buf *dp;
+	register int dblkno = fsbtodb(blkno);
+
+	dp = bdevsw[major(dev)].d_tab;
+	for (bp=dp->b_forw; bp != dp; bp = bp->b_forw)
+		if (bp->b_blkno==dblkno && bp->b_dev==dev &&
+		    bp >= buf && bp < &buf[NBUF])
+			return (bp);
+	return ((struct buf *)0);
+}
+
 /*
  * See if the block is associated with some buffer
  * (mainly to avoid getting hung up on a wait in breada)
@@ -249,14 +286,20 @@ dev_t dev;
 daddr_t blkno;
 {
 	register struct buf *bp;
-	register struct buf *dp;
 	register int dblkno = fsbtodb(blkno);
 
-	dp = bdevsw[major(dev)].d_tab;
-	for (bp=dp->b_forw; bp != dp; bp = bp->b_forw)
-		if (bp->b_blkno==dblkno && bp->b_dev==dev)
-			return(1);
-	return(0);
+	for (bp = &buf[bufhash[BUFHASH(blkno)]]; bp != &buf[-1];
+	    bp = &buf[bp->b_hlink])
+		if (bp->b_blkno == dblkno && bp->b_dev == dev) {
+			if (distrust)
+			if (oincore(dev, blkno) != bp)		/* TEST */
+				panic("incore 1");		/* TEST */
+			return (1);
+		}
+	if (distrust)
+	if (oincore(dev, blkno))				/* TEST */
+		panic("incore 2");				/* TEST */
+	return (0);
 }
 
 struct buf *
@@ -280,24 +323,19 @@ getblk(dev, blkno)
 dev_t dev;
 daddr_t blkno;
 {
-	register struct buf *bp;
-	register struct buf *dp;
-#ifdef	DISKMON
-	register i;
-#endif
+	register struct buf *bp, *dp, *ep;
+	register int i, x;
 	register int dblkno = fsbtodb(blkno);
-
-	if(major(dev) >= nblkdev)
-		panic("blkdev");
 
     loop:
 	VOID spl0();
-	dp = bdevsw[major(dev)].d_tab;
-	if(dp == NULL)
-		panic("devtab");
-	for (bp=dp->b_forw; bp != dp; bp = bp->b_forw) {
-		if (bp->b_blkno!=dblkno || bp->b_dev!=dev)
+	for (bp = &buf[bufhash[BUFHASH(blkno)]]; bp != &buf[-1];
+	    bp = &buf[bp->b_hlink]) {
+		if (bp->b_blkno != dblkno || bp->b_dev != dev)
 			continue;
+		if (distrust)
+		if (bp != oincore(dev, blkno))		/* TEST */
+			panic("getblk 1");		/* TEST */
 		VOID spl6();
 		if (bp->b_flags&B_BUSY) {
 			bp->b_flags |= B_WANTED;
@@ -319,6 +357,14 @@ daddr_t blkno;
 		bp->b_flags |= B_CACHE;
 		return(bp);
 	}
+	if (distrust)
+	if (oincore(dev, blkno))		/* TEST */
+		panic("getblk 2");		/* TEST */
+	if (major(dev) >= nblkdev)
+		panic("blkdev");
+	dp = bdevsw[major(dev)].d_tab;
+	if (dp == NULL)
+		panic("devtab");
 	VOID spl6();
 	if (bfreelist.av_forw == &bfreelist) {
 		bfreelist.b_flags |= B_WANTED;
@@ -333,6 +379,24 @@ daddr_t blkno;
 		bwrite(bp);
 		goto loop;
 	}
+	if (bp->b_dev == NODEV)
+		goto done;
+	/* INLINE EXPANSION OF bunhash(bp) */
+	i = BUFHASH(dbtofsb(bp->b_blkno));
+	x = bp - buf;
+	if (bufhash[i] == x) {
+		bufhash[i] = bp->b_hlink;
+	} else {
+		for (ep = &buf[bufhash[i]]; ep != &buf[-1];
+		    ep = &buf[ep->b_hlink])
+			if (ep->b_hlink == x) {
+				ep->b_hlink = bp->b_hlink;
+				goto done;
+			}
+		panic("getblk");
+	}
+done:
+	/* END INLINE EXPANSION */
 	bp->b_flags = B_BUSY;
 	bp->b_back->b_forw = bp->b_forw;
 	bp->b_forw->b_back = bp->b_back;
@@ -342,6 +406,9 @@ daddr_t blkno;
 	dp->b_forw = bp;
 	bp->b_dev = dev;
 	bp->b_blkno = dblkno;
+	i = BUFHASH(blkno);
+	bp->b_hlink = bufhash[i];
+	bufhash[i] = bp - buf;
 	return(bp);
 }
 
@@ -352,8 +419,8 @@ daddr_t blkno;
 struct buf *
 geteblk()
 {
-	register struct buf *bp;
-	register struct buf *dp;
+	register struct buf *bp, *dp, *ep;
+	register int i, x;
 
 loop:
 	VOID spl6();
@@ -370,6 +437,8 @@ loop:
 		bwrite(bp);
 		goto loop;
 	}
+	if (bp->b_dev != NODEV)
+		bunhash(bp);
 	bp->b_flags = B_BUSY;
 	bp->b_back->b_forw = bp->b_forw;
 	bp->b_forw->b_back = bp->b_back;
@@ -378,7 +447,31 @@ loop:
 	dp->b_forw->b_back = bp;
 	dp->b_forw = bp;
 	bp->b_dev = (dev_t)NODEV;
+	bp->b_hlink = -1;
 	return(bp);
+}
+
+bunhash(bp)
+	register struct buf *bp;
+{
+	register struct buf *ep;
+	register int i, x;
+
+	if (bp->b_dev == NODEV)
+		return;
+	i = BUFHASH(dbtofsb(bp->b_blkno));
+	x = bp - buf;
+	if (bufhash[i] == x) {
+		bufhash[i] = bp->b_hlink;
+		return;
+	}
+	for (ep = &buf[bufhash[i]]; ep != &buf[-1];
+	    ep = &buf[ep->b_hlink])
+		if (ep->b_hlink == x) {
+			ep->b_hlink = bp->b_hlink;
+			return;
+		}
+	panic("bunhash");
 }
 
 /*
