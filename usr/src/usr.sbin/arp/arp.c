@@ -15,33 +15,38 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)arp.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)arp.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * arp - display, set, and delete arp table entries
  */
 
-#include <machine/pte.h>
 
 #include <sys/param.h>
-#include <sys/vmmac.h>
 #include <sys/file.h>
 #include <sys/socket.h>
-#include <sys/ioctl.h>
+#include <sys/kinfo.h>
 
-#include <netdb.h>
-#include <netinet/in.h>
 #include <net/if.h>
+#include <net/if_dl.h>
+#include <net/if_types.h>
+#include <net/route.h>
+
+#include <netinet/in.h>
 #include <netinet/if_ether.h>
 
+#include <netdb.h>
 #include <errno.h>
 #include <nlist.h>
 #include <stdio.h>
 #include <paths.h>
 
 extern int errno;
+static int pid;
 static int kflag;
+static int nflag;
+static int s = -1;
 
 main(argc, argv)
 	int argc;
@@ -49,35 +54,24 @@ main(argc, argv)
 {
 	int ch;
 
-	while ((ch = getopt(argc, argv, "adsf")) != EOF)
+	pid = getpid();
+	while ((ch = getopt(argc, argv, "ands")) != EOF)
 		switch((char)ch) {
-		case 'a': {
-			char *mem;
-
-			if (argc > 4)
-				usage();
-			if (argc == 4) {
-				kflag = 1;
-				mem = argv[3];
-			}
-			else
-				mem = _PATH_KMEM;
-			dump((argc >= 3) ? argv[2] : _PATH_UNIX, mem);
+		case 'a':
+			dump(0);
 			exit(0);
-		}
 		case 'd':
-			if (argc != 3)
+			if (argc < 3 || argc > 4)
 				usage();
-			delete(argv[2]);
+			delete(argv[2], argv[3]);
 			exit(0);
+		case 'n':
+			nflag = 1;
+			continue;
 		case 's':
 			if (argc < 4 || argc > 7)
 				usage();
 			exit(set(argc-2, &argv[2]) ? 1 : 0);
-		case 'f':
-			if (argc != 3)
-				usage();
-			exit (file(argv[2]) ? 1 : 0);
 		case '?':
 		default:
 			usage();
@@ -123,6 +117,25 @@ file(name)
 	return (retval);
 }
 
+getsocket() {
+	if (s < 0) {
+		s = socket(PF_ROUTE, SOCK_RAW, 0);
+		if (s < 0) {
+			perror("arp: socket");
+			exit(1);
+		}
+	}
+}
+
+struct	sockaddr_in so_mask = {8, 0, 0, { 0xffffffff}};
+struct	sockaddr_inarp blank_sin = {sizeof(blank_sin), AF_INET }, sin_m;
+struct	sockaddr_dl blank_sdl = {sizeof(blank_sdl), AF_LINK }, sdl_m;
+int	expire_time, flags, export_only, doing_proxy, found_entry;
+struct	{
+	struct	rt_msghdr m_rtm;
+	char	m_space[512];
+}	m_rtmsg;
+
 /*
  * Set an individual arp entry 
  */
@@ -130,18 +143,18 @@ set(argc, argv)
 	int argc;
 	char **argv;
 {
-	struct arpreq ar;
 	struct hostent *hp;
-	struct sockaddr_in *sin;
+	register struct sockaddr_inarp *sin = &sin_m;
+	register struct sockaddr_dl *sdl;
+	register struct rt_msghdr *rtm = &(m_rtmsg.m_rtm);
 	u_char *ea;
-	int s;
 	char *host = argv[0], *eaddr = argv[1];
 
+	getsocket();
 	argc -= 2;
 	argv += 2;
-	bzero((caddr_t)&ar, sizeof ar);
-	sin = (struct sockaddr_in *)&ar.arp_pa;
-	sin->sin_family = AF_INET;
+	sdl_m = blank_sdl;
+	sin_m = blank_sin;
 	sin->sin_addr.s_addr = inet_addr(host);
 	if (sin->sin_addr.s_addr == -1) {
 		if (!(hp = gethostbyname(host))) {
@@ -152,31 +165,57 @@ set(argc, argv)
 		bcopy((char *)hp->h_addr, (char *)&sin->sin_addr,
 		    sizeof sin->sin_addr);
 	}
-	ea = (u_char *)ar.arp_ha.sa_data;
-	if (ether_aton(eaddr, ea))
-		return (1);
-	ar.arp_flags = ATF_PERM;
+	ea = (u_char *)LLADDR(&sdl_m);
+	if (ether_aton(eaddr, ea) == 0)
+		sdl_m.sdl_alen = 6;
+	doing_proxy = flags = export_only = expire_time = 0;
 	while (argc-- > 0) {
-		if (strncmp(argv[0], "temp", 4) == 0)
-			ar.arp_flags &= ~ATF_PERM;
+		if (strncmp(argv[0], "temp", 4) == 0) {
+			struct timeval time;
+			gettimeofday(&time, 0);
+			expire_time = time.tv_sec + 20 * 60;
+		}
 		else if (strncmp(argv[0], "pub", 3) == 0)
-			ar.arp_flags |= ATF_PUBL;
+			doing_proxy = SIN_PROXY;
 		else if (strncmp(argv[0], "trail", 5) == 0)
-			ar.arp_flags |= ATF_USETRAILERS;
+			flags = RTF_PROTO1;
 		argv++;
 	}
-	
-	s = socket(AF_INET, SOCK_DGRAM, 0);
-	if (s < 0) {
-		perror("arp: socket");
-		exit(1);
-	}
-	if (ioctl(s, SIOCSARP, (caddr_t)&ar) < 0) {
+tryagain:
+	if (rtmsg(RTM_GET) < 0) {
 		perror(host);
-		exit(1);
+		return (1);
 	}
-	close(s);
-	return (0);
+	sin = (struct sockaddr_inarp *)(rtm + 1);
+	sdl = (struct sockaddr_dl *)(sin->sin_len + (char *)sin);
+	if (sin->sin_addr.s_addr == sin_m.sin_addr.s_addr) {
+		if (sdl->sdl_family == AF_LINK &&
+		    (rtm->rtm_flags & RTF_LLINFO) &&
+		    !(rtm->rtm_flags & RTF_GATEWAY)) switch (sdl->sdl_type) {
+		case IFT_ETHER: case IFT_FDDI: case IFT_ISO88023:
+		case IFT_ISO88024: case IFT_ISO88025:
+			goto overwrite;
+		}
+		if (doing_proxy == 0) {
+			printf("set: can only proxy for %s\n", host);
+			return (1);
+		}
+		if (sin_m.sin_other & SIN_PROXY) {
+			printf("set: proxy entry exists for non 802 device\n");
+			return(1);
+		}
+		sin_m.sin_other = SIN_PROXY;
+		export_only = 1;
+		goto tryagain;
+	}
+overwrite:
+	if (sdl->sdl_family != AF_LINK) {
+		printf("cannot intuit interface index and type for %s\n", host);
+		return (1);
+	}
+	sdl_m.sdl_type = sdl->sdl_type;
+	sdl_m.sdl_index = sdl->sdl_index;
+	return (rtmsg(RTM_ADD));
 }
 
 /*
@@ -185,17 +224,12 @@ set(argc, argv)
 get(host)
 	char *host;
 {
-	struct arpreq ar;
 	struct hostent *hp;
-	struct sockaddr_in *sin;
+	struct sockaddr_inarp *sin = &sin_m;
 	u_char *ea;
-	int s;
 	char *inet_ntoa();
 
-	bzero((caddr_t)&ar, sizeof ar);
-	ar.arp_pa.sa_family = AF_INET;
-	sin = (struct sockaddr_in *)&ar.arp_pa;
-	sin->sin_family = AF_INET;
+	sin_m = blank_sin;
 	sin->sin_addr.s_addr = inet_addr(host);
 	if (sin->sin_addr.s_addr == -1) {
 		if (!(hp = gethostbyname(host))) {
@@ -206,151 +240,108 @@ get(host)
 		bcopy((char *)hp->h_addr, (char *)&sin->sin_addr,
 		    sizeof sin->sin_addr);
 	}
-	s = socket(AF_INET, SOCK_DGRAM, 0);
-	if (s < 0) {
-		perror("arp: socket");
+	dump(sin->sin_addr.s_addr);
+	if (found_entry == 0) {
+		printf("%s (%s) -- no entry\n",
+		    host, inet_ntoa(sin->sin_addr));
 		exit(1);
 	}
-	if (ioctl(s, SIOCGARP, (caddr_t)&ar) < 0) {
-		if (errno == ENXIO)
-			printf("%s (%s) -- no entry\n",
-			    host, inet_ntoa(sin->sin_addr));
-		else
-			perror("SIOCGARP");
-		exit(1);
-	}
-	close(s);
-	ea = (u_char *)ar.arp_ha.sa_data;
-	printf("%s (%s) at ", host, inet_ntoa(sin->sin_addr));
-	if (ar.arp_flags & ATF_COM)
-		ether_print(ea);
-	else
-		printf("(incomplete)");
-	if (ar.arp_flags & ATF_PERM)
-		printf(" permanent");
-	if (ar.arp_flags & ATF_PUBL)
-		printf(" published");
-	if (ar.arp_flags & ATF_USETRAILERS)
-		printf(" trailers");
-	printf("\n");
 }
 
 /*
  * Delete an arp entry 
  */
-delete(host)
+delete(host, info)
 	char *host;
+	char *info;
 {
-	struct arpreq ar;
 	struct hostent *hp;
-	struct sockaddr_in *sin;
-	int s;
+	register struct sockaddr_inarp *sin = &sin_m;
+	register struct rt_msghdr *rtm = &m_rtmsg.m_rtm;
+	struct sockaddr_dl *sdl;
+	u_char *ea;
+	char *eaddr;
 
-	bzero((caddr_t)&ar, sizeof ar);
-	ar.arp_pa.sa_family = AF_INET;
-	sin = (struct sockaddr_in *)&ar.arp_pa;
-	sin->sin_family = AF_INET;
+	if (info && strncmp(info, "pro", 3) )
+		export_only = 1;
+	getsocket();
+	sin_m = blank_sin;
 	sin->sin_addr.s_addr = inet_addr(host);
 	if (sin->sin_addr.s_addr == -1) {
 		if (!(hp = gethostbyname(host))) {
 			fprintf(stderr, "arp: %s: ", host);
 			herror((char *)NULL);
-			exit(1);
+			return (1);
 		}
 		bcopy((char *)hp->h_addr, (char *)&sin->sin_addr,
 		    sizeof sin->sin_addr);
 	}
-	s = socket(AF_INET, SOCK_DGRAM, 0);
-	if (s < 0) {
-		perror("arp: socket");
-		exit(1);
+tryagain:
+	if (rtmsg(RTM_GET) < 0) {
+		perror(host);
+		return (1);
 	}
-	if (ioctl(s, SIOCDARP, (caddr_t)&ar) < 0) {
-		if (errno == ENXIO)
-			printf("%s (%s) -- no entry\n",
-			    host, inet_ntoa(sin->sin_addr));
-		else
-			perror("SIOCDARP");
-		exit(1);
+	sin = (struct sockaddr_inarp *)(rtm + 1);
+	sdl = (struct sockaddr_dl *)(sin->sin_len + (char *)sin);
+	if (sin->sin_addr.s_addr == sin_m.sin_addr.s_addr) {
+		if (sdl->sdl_family == AF_LINK &&
+		    (rtm->rtm_flags & RTF_LLINFO) &&
+		    !(rtm->rtm_flags & RTF_GATEWAY)) switch (sdl->sdl_type) {
+		case IFT_ETHER: case IFT_FDDI: case IFT_ISO88023:
+		case IFT_ISO88024: case IFT_ISO88025:
+			goto delete;
+		}
 	}
-	close(s);
-	printf("%s (%s) deleted\n", host, inet_ntoa(sin->sin_addr));
+	if (sin_m.sin_other & SIN_PROXY) {
+		fprintf(stderr, "delete: can't locate %s\n",host);
+		return (1);
+	} else {
+		sin_m.sin_other = SIN_PROXY;
+		goto tryagain;
+	}
+delete:
+	if (sdl->sdl_family != AF_LINK) {
+		printf("cannot locate %s\n", host);
+		return (1);
+	}
+	if (rtmsg(RTM_DELETE) == 0)
+		printf("%s (%s) deleted\n", host, inet_ntoa(sin->sin_addr));
 }
-
-struct nlist nl[] = {
-#define	X_ARPTAB	0
-	{ "_arptab" },
-#define	X_ARPTAB_SIZE	1
-	{ "_arptab_size" },
-#define	N_SYSMAP	2
-	{ "_Sysmap" },
-#define	N_SYSSIZE	3
-	{ "_Syssize" },
-	{ "" },
-};
-
-static struct pte *Sysmap;
 
 /*
  * Dump the entire arp table
  */
-dump(kernel, mem)
-	char *kernel, *mem;
+dump(addr)
+u_long addr;
 {
+	int sz, needed, rlen;
+	long op = KINFO_RT_FLAGS | (((long)AF_INET) << 16);
+	char *host, *malloc(), *lim, *buf, *next;
+	struct rt_msghdr *rtm;
+	struct sockaddr_inarp *sin;
+	struct sockaddr_dl *sdl;
 	extern int h_errno;
-	struct arptab *at;
 	struct hostent *hp;
-	int bynumber, mf, arptab_size, sz;
-	char *host, *malloc();
-	off_t lseek();
 
-	if (nlist(kernel, nl) < 0 || nl[X_ARPTAB_SIZE].n_type == 0) {
-		fprintf(stderr, "arp: %s: bad namelist\n", kernel);
-		exit(1);
-	}
-	mf = open(mem, O_RDONLY);
-	if (mf < 0) {
-		fprintf(stderr, "arp: cannot open %s\n", mem);
-		exit(1);
-	}
-	if (kflag) {
-		off_t off;
-
-		Sysmap = (struct pte *)
-		   malloc((u_int)(nl[N_SYSSIZE].n_value * sizeof(struct pte)));
-		if (!Sysmap) {
-			fputs("arp: can't get memory for Sysmap.\n", stderr);
-			exit(1);
+	if ((needed = getkerninfo(op, 0, 0, RTF_LLINFO)) < 0)
+		quit("route-getkerninfo-estimate");
+	if ((buf = malloc(needed)) == NULL)
+		quit("malloc");
+	if ((rlen = getkerninfo(op, buf, &needed, RTF_LLINFO)) < 0)
+		quit("actual retrieval of routing table");
+	lim = buf + rlen;
+	for (next = buf; next < lim; next += rtm->rtm_msglen) {
+		rtm = (struct rt_msghdr *)next;
+		sin = (struct sockaddr_inarp *)(rtm + 1);
+		sdl = (struct sockaddr_dl *)(sin + 1);
+		if (addr) {
+			if (addr != sin->sin_addr.s_addr)
+				continue;
+			found_entry = 1;
 		}
-		off = nl[N_SYSMAP].n_value & ~KERNBASE;
-		(void)lseek(mf, off, L_SET);
-		(void)read(mf, (char *)Sysmap,
-		    (int)(nl[N_SYSSIZE].n_value * sizeof(struct pte)));
-	}
-	klseek(mf, (long)nl[X_ARPTAB_SIZE].n_value, L_SET);
-	read(mf, &arptab_size, sizeof arptab_size);
-	if (arptab_size <= 0 || arptab_size > 1000) {
-		fprintf(stderr, "arp: %s: namelist wrong\n", kernel);
-		exit(1);
-	}
-	sz = arptab_size * sizeof (struct arptab);
-	at = (struct arptab *)malloc((u_int)sz);
-	if (at == NULL) {
-		fputs("arp: can't get memory for arptab.\n", stderr);
-		exit(1);
-	}
-	klseek(mf, (long)nl[X_ARPTAB].n_value, L_SET);
-	if (read(mf, (char *)at, sz) != sz) {
-		perror("arp: error reading arptab");
-		exit(1);
-	}
-	close(mf);
-	for (bynumber = 0; arptab_size-- > 0; at++) {
-		if (at->at_iaddr.s_addr == 0 || at->at_flags == 0)
-			continue;
-		if (bynumber == 0)
-			hp = gethostbyaddr((caddr_t)&at->at_iaddr,
-			    sizeof at->at_iaddr, AF_INET);
+		if (nflag == 0)
+			hp = gethostbyaddr((caddr_t)&(sin->sin_addr),
+			    sizeof sin->sin_addr, AF_INET);
 		else
 			hp = 0;
 		if (hp)
@@ -358,37 +349,29 @@ dump(kernel, mem)
 		else {
 			host = "?";
 			if (h_errno == TRY_AGAIN)
-				bynumber = 1;
+				nflag = 1;
 		}
-		printf("%s (%s) at ", host, inet_ntoa(at->at_iaddr));
-		if (at->at_flags & ATF_COM)
-			ether_print(at->at_enaddr);
+		printf("%s (%s) at ", host, inet_ntoa(sin->sin_addr));
+		if (sdl->sdl_alen)
+			ether_print(LLADDR(sdl));
 		else
 			printf("(incomplete)");
-		if (at->at_flags & ATF_PERM)
+		if (rtm->rtm_rmx.rmx_expire == 0)
 			printf(" permanent");
-		if (at->at_flags & ATF_PUBL)
-			printf(" published");
-		if (at->at_flags & ATF_USETRAILERS)
+		if (sin->sin_other & SIN_PROXY)
+			printf(" published (proxy only)");
+		if (rtm->rtm_flags & RTF_PROTO1)
 			printf(" trailers");
+		if (rtm->rtm_addrs & RTA_NETMASK) {
+			sin = (struct sockaddr_inarp *)
+				(sdl->sdl_len + (char *)sdl);
+			if (sin->sin_addr.s_addr == 0xffffffff)
+				printf(" published");
+			if (sin->sin_len != 8)
+				printf("(wierd)");
+		}
 		printf("\n");
 	}
-}
-
-/*
- * Seek into the kernel for a value.
- */
-klseek(fd, base, off)
-	int fd, off;
-	off_t base;
-{
-	off_t lseek();
-
-	if (kflag) {	/* get kernel pte */
-		base &= ~KERNBASE;
-		base = ctob(Sysmap[btop(base)].pg_pfnum) + (base & PGOFSET);
-	}
-	(void)lseek(fd, base, off);
 }
 
 ether_print(cp)
@@ -421,5 +404,76 @@ usage()
 	printf("       arp -d hostname\n");
 	printf("       arp -s hostname ether_addr [temp] [pub] [trail]\n");
 	printf("       arp -f filename\n");
+	exit(1);
+}
+
+rtmsg(cmd)
+{
+	static int seq;
+	int rlen;
+	register struct rt_msghdr *rtm = &m_rtmsg.m_rtm;
+	register char *cp = m_rtmsg.m_space;
+	register int l;
+
+	errno = 0;
+	if (cmd == RTM_DELETE)
+		goto doit;
+	bzero((char *)&m_rtmsg, sizeof(m_rtmsg));
+	rtm->rtm_flags = flags;
+	rtm->rtm_version = RTM_VERSION;
+
+	switch (cmd) {
+	default:
+		fprintf(stderr, "arp: internal wrong cmd\n");
+		exit(1);
+	case RTM_ADD:
+		rtm->rtm_addrs |= RTA_GATEWAY;
+		rtm->rtm_rmx.rmx_expire = expire_time;
+		rtm->rtm_inits = RTV_EXPIRE;
+		rtm->rtm_flags |= RTF_HOST;
+		sin_m.sin_other = 0;
+		if (doing_proxy) {
+			if (export_only)
+				sin_m.sin_other = SIN_PROXY;
+			else {
+				rtm->rtm_addrs |= RTA_NETMASK;
+				rtm->rtm_flags &= ~RTF_HOST;
+			}
+		}
+	case RTM_GET:
+		rtm->rtm_addrs |= RTA_DST;
+	}
+#define NEXTADDR(w, s) \
+	if (rtm->rtm_addrs & (w)) { \
+		bcopy((char *)&s, cp, sizeof(s)); cp += sizeof(s);}
+
+	NEXTADDR(RTA_DST, sin_m);
+	NEXTADDR(RTA_GATEWAY, sdl_m);
+	NEXTADDR(RTA_NETMASK, so_mask);
+
+	rtm->rtm_msglen = cp - (char *)&m_rtmsg;
+doit:
+	l = rtm->rtm_msglen;
+	rtm->rtm_seq = ++seq;
+	rtm->rtm_type = cmd;
+	if ((rlen = write(s, (char *)&m_rtmsg, l)) < 0) {
+		if (errno != ESRCH || cmd != RTM_DELETE) {
+			perror("writing to routing socket");
+			return (-1);
+		}
+	}
+	do {
+		l = read(s, (char *)&m_rtmsg, sizeof(m_rtmsg));
+	} while (l > 0 && (rtm->rtm_seq != seq || rtm->rtm_pid != pid));
+	if (l < 0)
+		(void) fprintf(stderr, "arp: read from routing socket: %s\n",
+		    strerror(errno));
+	return (0);
+}
+
+quit(msg)
+char *msg;
+{
+	fprintf(stderr, "%s\n", msg);
 	exit(1);
 }
