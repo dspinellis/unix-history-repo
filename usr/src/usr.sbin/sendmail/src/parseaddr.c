@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	8.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	8.28 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1149,15 +1149,24 @@ rewrite(pvp, ruleset, reclevel, e)
 		{
 			int stat;
 
-			bcopy((char *) &npvp[2], (char *) pvp,
-				(int) (avp - npvp - 2) * sizeof *avp);
-			if (tTd(21, 3))
-				printf("-----callsubr %s\n", npvp[1]);
-			stat = rewrite(pvp, atoi(npvp[1]), reclevel, e);
-			if (rstat == EX_OK || stat == EX_TEMPFAIL)
-				rstat = stat;
-			if (*pvp != NULL && (**pvp & 0377) == CANONNET)
+			if (npvp[1] == NULL)
+			{
+				syserr("parseaddr: NULL subroutine call in ruleset %d, rule %d",
+					ruleset, ruleno);
+				*pvp = NULL;
+			}
+			else
+			{
+				bcopy((char *) &npvp[2], (char *) pvp,
+					(int) (avp - npvp - 2) * sizeof *avp);
+				if (tTd(21, 3))
+					printf("-----callsubr %s\n", npvp[1]);
+				stat = rewrite(pvp, atoi(npvp[1]), reclevel, e);
+				if (rstat == EX_OK || stat == EX_TEMPFAIL)
+					rstat = stat;
+				if (*pvp != NULL && (**pvp & 0377) == CANONNET)
 				rwr = NULL;
+			}
 		}
 		else
 		{
@@ -1506,12 +1515,15 @@ sameaddr(a, b)
 		return (FALSE);
 
 	/* if we have good uids for both but they differ, these are different */
-	ca = getctladdr(a);
-	cb = getctladdr(b);
-	if (ca != NULL && cb != NULL &&
-	    bitset(QGOODUID, ca->q_flags & cb->q_flags) &&
-	    ca->q_uid != cb->q_uid)
-		return (FALSE);
+	if (a->q_mailer == ProgMailer)
+	{
+		ca = getctladdr(a);
+		cb = getctladdr(b);
+		if (ca != NULL && cb != NULL &&
+		    bitset(QGOODUID, ca->q_flags & cb->q_flags) &&
+		    ca->q_uid != cb->q_uid)
+			return (FALSE);
+	}
 
 	/* otherwise compare hosts (but be careful for NULL ptrs) */
 	if (a->q_host == b->q_host)
