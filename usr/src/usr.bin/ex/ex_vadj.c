@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_vadj.c	6.1 %G%";
+static char *sccsid = "@(#)ex_vadj.c	6.2 %G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -89,10 +89,6 @@ vreopen(p, lineno, l)
 	register int d;
 	register struct vlinfo *vp = &vlinfo[l];
 
-#ifdef ADEBUG
-	if (trace)
-		tfixnl(), fprintf(trace, "vreopen(%d, %d, %d)\n", p, lineno, l);
-#endif
 	d = vp->vdepth;
 	if (d == 0 || (vp->vflags & VDIRT))
 		vp->vdepth = d = vdepth();
@@ -116,15 +112,7 @@ vreopen(p, lineno, l)
 	 *		necessary to determine which way to go.
 	 */
 	vigoto(p, 0);
-#ifdef TRACE
-	if (trace)
-		fprintf(trace, "before pline in vreopen\n");
-#endif
 	pline(lineno);
-#ifdef TRACE
-	if (trace)
-		fprintf(trace, "after pline in vreopen\n");
-#endif
 
 	/*
 	 * When we are typing part of a line for hardcopy open, don't

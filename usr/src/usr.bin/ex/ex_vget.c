@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_vget.c	6.1 %G%";
+static char *sccsid = "@(#)ex_vget.c	6.2 %G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -565,6 +565,7 @@ vudump(s)
 char *s;
 {
 	register line *p;
+	char savelb[1024];
 
 	if (!trace) return;
 
@@ -572,10 +573,16 @@ char *s;
 		s, undkind, vundkind, lineno(unddel), lineno(undap1), lineno(undap2));
 	fprintf(trace, "  undadot=%d, dot=%d, dol=%d, unddol=%d, truedol=%d\n",
 		lineno(undadot), lineno(dot), lineno(dol), lineno(unddol), lineno(truedol));
-	fprintf(trace, "  [");
-	for (p=zero+1; p<=truedol; p++)
+	fprintf(trace, "  [\n");
+	CP(savelb, linebuf);
+	fprintf(trace, "linebuf = '%s'\n", linebuf);
+	for (p=zero+1; p<=truedol; p++) {
 		fprintf(trace, "%o ", *p);
+		getline(*p);
+		fprintf(trace, "'%s'\n", linebuf);
+	}
 	fprintf(trace, "]\n");
+	CP(linebuf, savelb);
 }
 #endif
 

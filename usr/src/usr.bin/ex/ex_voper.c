@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_voper.c	6.1 %G%";
+static char *sccsid = "@(#)ex_voper.c	6.2 %G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -215,6 +215,10 @@ ein:
 	case '%':
 		vsave();
 		i = lmatchp((line *) 0);
+#ifdef TRACE
+		if (trace)
+			fprintf(trace, "after lmatchp in %, dot=%d, wdot=%d, dol=%d\n", lineno(dot), lineno(wdot), lineno(dol));
+#endif
 		getDOT();
 		forbid(!i);
 		if (opf != vmove)

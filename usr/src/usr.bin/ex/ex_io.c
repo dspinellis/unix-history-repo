@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_io.c	6.1 %G%";
+static char *sccsid = "@(#)ex_io.c	6.2 %G%";
 #include "ex.h"
 #include "ex_argv.h"
 #include "ex_temp.h"
@@ -352,12 +352,23 @@ rop(c)
 			break;
 		switch (magic) {
 
-		case 0405:
-		case 0407:
-		case 0410:
-		case 0411:
+		case 0405:	/* Interdata? overlay */
+		case 0407:	/* unshared */
+		case 0410:	/* shared text */
+		case 0411:	/* separate I/D */
+		case 0413:	/* VM/Unix demand paged */
+		case 0430:	/* PDP-11 Overlay shared */
+		case 0431:	/* PDP-11 Overlay sep I/D */
 			error(" Executable");
 
+		/*
+		 * We do not forbid the editing of portable archives
+		 * because it is reasonable to edit them, especially
+		 * if they are archives of text files.  This is
+		 * especially useful if you archive source files together
+		 * and copy them to another system with ~%take, since
+		 * the files sometimes show up munged and must be fixed.
+		 */
 		case 0177545:
 		case 0177555:
 			error(" Archive");
