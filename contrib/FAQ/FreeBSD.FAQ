@@ -6,7 +6,7 @@
 Please mail all suggestions and additions to <FreeBSD-FAQ@freefall.cdrom.com>
 
 
-Revision: $Id: FreeBSD.FAQ,v 1.33 1994/06/12 15:13:31 gclarkii Exp $
+Revision: $Id: FreeBSD.FAQ,v 1.34 1994/06/13 05:38:52 gclarkii Exp $
 
 All entries marked <CURRENT> are for FreeBSD-current.  All other entries
 are for both version 1.1 and current.
@@ -883,16 +883,6 @@ First off, to you'll need to rebuild a kernel with multicast support in it.
 This requires that you have the sources to at least the kernel and the config
 utility.  See /usr/src/sys/i386/conf/LINT for its comments on multicast; you'll
 need to set the MROUTING and MULTICAST options as shown there.
-
-If you are running a 1.1 system you may then find that things like rlogin and
-ftpd are whining to syslog about failures in setsockopt().  Don't worry as
-this is a harmless side-effect of putting FreeBSD into "compliance mode"
-with BSD/386 and NetBSD for certain network operations, necessary because many
-tools like `vat' (see below) are only distribted in binary form for BSDI
-systems and we wouldn't otherwise be able to run them.  If you have the full
-source dist, you may get rid of these warnings by doing a `make world'.  Users
-of FreeBSD 1.1.5 will not experience these problems as the binaries there have
-already been compiled this way by default.
 
 Further reading/exploration for those interested in multicast:
 
