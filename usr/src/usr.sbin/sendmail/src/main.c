@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -220,7 +220,6 @@ main(argc, argv, envp)
 	readconfig = TRUE;
 # endif
 
-# ifdef SETPROCTITLE
 	/*
 	**  Move the environment so setproctitle can use the space at
 	**  the top of memory.
@@ -235,6 +234,7 @@ main(argc, argv, envp)
 	UserEnviron[j] = NULL;
 	environ = UserEnviron;
 
+# ifdef SETPROCTITLE
 	/*
 	**  Save start and extent of argv for setproctitle.
 	*/
@@ -538,7 +538,23 @@ main(argc, argv, envp)
 	if (TimeZoneSpec == NULL)
 		unsetenv("TZ");
 	else if (TimeZoneSpec[0] != '\0')
-		setenv("TZ", TimeZoneSpec, 1);
+	{
+		char **evp = UserEnviron;
+		char tzbuf[100];
+
+		strcpy(tzbuf, "TZ=");
+		strcpy(&tzbuf[3], TimeZoneSpec);
+
+		while (*evp != NULL && strncmp(*evp, "TZ=", 3) != 0)
+			evp++;
+		if (*evp == NULL)
+		{
+			*evp++ = newstr(tzbuf);
+			*evp = NULL;
+		}
+		else
+			*evp++ = newstr(tzbuf);
+	}
 
 	if (ConfigLevel > MAXCONFIGLEVEL)
 	{
@@ -937,10 +953,6 @@ main(argc, argv, envp)
 		collect(FALSE, FALSE, CurEnv);
 	}
 	errno = 0;
-
-	/* collect statistics */
-	if (OpMode != MD_VERIFY)
-		markstats(CurEnv, (ADDRESS *) NULL);
 
 	if (tTd(1, 1))
 		printf("From person = \"%s\"\n", CurEnv->e_from.q_paddr);
