@@ -84,3 +84,7 @@ is, or soon will be, offering such a package).
 As mentioned in the last paragraph, we use Ungermann-Bass's library
 to perform the networking functions.  Probably other vendors' libraries
 could be integrated as well.
+
+The file utilities/tarread.exe is a small program which reads tar
+files on MS-DOS.  It is from Drew Perkins and CMU.  Many thanks
+to them.
