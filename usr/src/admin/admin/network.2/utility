@@ -1,4 +1,4 @@
-.\"	@(#)utility	5.1 (Berkeley) %G%
+.\"	@(#)utility	5.2 (Berkeley) %G%
 .\"
 .\" To build a document, pipe the two lists through column -c#, making
 .\" it N columns wide (remove the .TE at the end of the lists first).
@@ -319,7 +319,7 @@ deroff
 diction
 diff
 ed
-ex
+ex/vi
 expr
 f77
 file
