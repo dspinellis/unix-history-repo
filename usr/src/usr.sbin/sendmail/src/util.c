@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	5.26 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <stdio.h>
@@ -27,8 +27,6 @@ static char sccsid[] = "@(#)util.c	5.25 (Berkeley) %G%";
 **
 **	Parameters:
 **		s -- the string to strip.
-**		qf -- if set, remove actual `` " '' characters
-**			as well as the quote bits.
 **
 **	Returns:
 **		none.
@@ -40,9 +38,8 @@ static char sccsid[] = "@(#)util.c	5.25 (Berkeley) %G%";
 **		deliver
 */
 
-stripquotes(s, qf)
+stripquotes(s)
 	char *s;
-	bool qf;
 {
 	register char *p;
 	register char *q;
@@ -51,39 +48,16 @@ stripquotes(s, qf)
 	if (s == NULL)
 		return;
 
-	for (p = q = s; (c = *p++) != '\0'; )
+	p = q = s;
+	do
 	{
-		if (c != '"' || !qf)
-			*q++ = c & 0177;
-	}
-	*q = '\0';
-}
-/*
-**  QSTRLEN -- give me the string length assuming 0200 bits add a char
-**
-**	Parameters:
-**		s -- the string to measure.
-**
-**	Reurns:
-**		The length of s, including space for backslash escapes.
-**
-**	Side Effects:
-**		none.
-*/
-
-qstrlen(s)
-	register char *s;
-{
-	register int l = 0;
-	register char c;
-
-	while ((c = *s++) != '\0')
-	{
-		if (bitset(0200, c))
-			l++;
-		l++;
-	}
-	return (l);
+		c = *p++;
+		if (c == '\\')
+			c = *p++;
+		else if (c == '"')
+			continue;
+		*q++ = c;
+	} while (c != '\0');
 }
 /*
 **  CAPITALIZE -- return a copy of a string, properly capitalized.
@@ -711,13 +685,6 @@ fgetfolded(buf, n, f)
 	if (p == buf)
 		return (NULL);
 	*--p = '\0';
-	if (!EightBit)
-	{
-		/* headers always have to be 7-bit */
-		for (p = buf; (i = *p) != '\0'; *p++)
-			if (bitset(0200, i))
-				*p = i & ~0200;
-	}
 	return (buf);
 }
 /*

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/param.h>
@@ -685,6 +685,7 @@ commaize(h, p, fp, oldstyle, m)
 	while (*p != '\0')
 	{
 		register char *name;
+		register int c;
 		char savechar;
 		extern char *remotename();
 		extern char *DelimChar;		/* defined in prescan */
@@ -744,7 +745,7 @@ commaize(h, p, fp, oldstyle, m)
 		}
 
 		/* output the name with nice formatting */
-		opos += qstrlen(name);
+		opos += strlen(name);
 		if (!firstone)
 			opos += 2;
 		if (opos > 78 && !firstone)
@@ -755,7 +756,7 @@ commaize(h, p, fp, oldstyle, m)
 			(void) sprintf(obp, "        ");
 			opos = strlen(obp);
 			obp += opos;
-			opos += qstrlen(name);
+			opos += strlen(name);
 		}
 		else if (!firstone)
 		{
@@ -764,11 +765,11 @@ commaize(h, p, fp, oldstyle, m)
 		}
 
 		/* strip off quote bits as we output */
-		while (*name != '\0' && obp < &obuf[MAXLINE])
+		while ((c = *name++) != '\0' && obp < &obuf[MAXLINE])
 		{
-			if (bitset(0200, *name))
-				*obp++ = '\\';
-			*obp++ = *name++ & ~0200;
+			if (bitnset(M_7BITS, m->m_flags))
+				c &= 0177;
+			*obp++ = c;
 		}
 		firstone = FALSE;
 		*p = savechar;

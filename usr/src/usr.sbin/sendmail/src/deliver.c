@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.57 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.58 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -267,13 +267,8 @@ deliver(e, firstto)
 
 		if (bitnset(M_STRIPQ, m->m_flags))
 		{
-			stripquotes(user, TRUE);
-			stripquotes(host, TRUE);
-		}
-		else
-		{
-			stripquotes(user, FALSE);
-			stripquotes(host, FALSE);
+			stripquotes(user);
+			stripquotes(host);
 		}
 
 		/* hack attack -- delivermail compatibility */
