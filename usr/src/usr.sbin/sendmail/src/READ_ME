@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.87 (Berkeley) %G%
+#	@(#)READ_ME	8.88 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -233,6 +233,14 @@ HASSETREUID	Define this if you have setreuid(2) ***AND*** root can
 		security, since sendmail doesn't have to read .forward
 		and :include: files as root.  There are certain attacks
 		that may be unpreventable without this call.
+USESETEUID	Define this to 1 if you have seteuid(2) if you have a seteuid
+		system call that will allow root to set only the effective
+		user id to an arbitrary value ***AND*** you have saved user
+		ids.  This is preferable to HASSETREUID if these conditions
+		are fulfilled.  These are the semantics of the to-be-released
+		revision of Posix.1.  The test program ../test/t_seteuid.c
+		will try this out on your system.  If you define both
+		HASSETREUID and USESETEUID, the former is ignored.
 HASLSTAT	Define this if you have symbolic links (and thus the
 		lstat(2) system call).  This improves security.  Unlike
 		most other options, this one is on by default, so you
@@ -1012,4 +1020,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.87, last update %G% 08:29:55)
+(Version 8.88, last update %G% 16:44:26)

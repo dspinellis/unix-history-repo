@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.163 (Berkeley) %G%
+ *	@(#)conf.h	8.164 (Berkeley) %G%
  */
 
 /*
@@ -49,7 +49,7 @@ struct rusage;	/* forward declaration to get gcc to shut up in wait.h */
 # define MAXMIMENESTING	20		/* max MIME multipart nesting */
 
 # ifndef QUEUESIZE
-# define QUEUESIZE	1000		/* max # of jobs per queue run */
+#  define QUEUESIZE	3000		/* max # of jobs per queue run */
 # endif
 
 /**********************************************************************
