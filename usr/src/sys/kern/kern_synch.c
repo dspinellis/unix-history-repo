@@ -1,4 +1,4 @@
-/*	kern_synch.c	3.4	%H%	*/
+/*	kern_synch.c	3.5	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -94,9 +94,9 @@ caddr_t chan;
 	register sec, n, rval;
 
 	pp = u.u_procp;
+	n = spl7();
 	sec = 0;
 	rval = 0;
-	n = spl7();
 	if (pp->p_clktim && pp->p_clktim<seconds)
 		seconds = 0;
 	if (seconds) {
