@@ -9,8 +9,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)expr.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)expr.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
+
+#include <setjmp.h>
+#include <stdio.h>
 
 /*
  *      expression evaluator: performs a standard recursive
@@ -74,7 +77,6 @@ static char *nxtch;     /* Parser scan pointer */
 /*
  * For longjmp
  */
-#include <setjmp.h>
 static jmp_buf  expjump;
  
 /*

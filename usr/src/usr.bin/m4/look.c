@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)look.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)look.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -18,10 +18,11 @@ static char sccsid[] = "@(#)look.c	5.2 (Berkeley) %G%";
  * by: oz
  */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "mdef.h"
 #include "extr.h"
-
-extern char *strsave();
 
 /*
  *  hash - compute hash value using the proverbial
@@ -66,7 +67,7 @@ char *name;
 	if ((p = (ndptr) malloc(sizeof(struct ndblock))) != NULL) {
 		p->nxtptr = hashtab[h];
 		hashtab[h] = p;
-		p->name = strsave(name);
+		p->name = strdup(name);
 	}
 	else
 		error("m4: no more memory.");
