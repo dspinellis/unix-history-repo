@@ -113,7 +113,7 @@
 /usr/src/old/ld/ld.1
 /usr/src/usr.bin/learn/learn/learn.1
 /usr/src/usr.bin/leave/leave.1
-/usr/src/usr.bin/lex/lex.1
+/usr/src/contrib/flex-2.4.6/lex.1
 /usr/src/contrib/groff-1.08/lkbib/lkbib.1
 /usr/src/bin/ln/ln.1
 /usr/src/usr.bin/locate/locate/locate.1
