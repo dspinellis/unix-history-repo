@@ -1,4 +1,0 @@
-#	@(#)Makefile.sparc	5.1 (Berkeley) 4/12/93
-
-CFLAGS+=	-DSPARC
-SRCS+=		sparc.c atof-ieee.c

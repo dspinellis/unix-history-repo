@@ -1,5 +1,0 @@
-Mmt	mt.c	/^main(argc, argv)$/
-err	mt.c	/^err(fmt, va_alist)$/
-printreg	mt.c	/^printreg(s, v, bits)$/
-status	mt.c	/^status(bp)$/
-usage	mt.c	/^usage()$/

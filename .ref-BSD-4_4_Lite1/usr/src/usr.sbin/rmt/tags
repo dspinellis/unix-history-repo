@@ -1,7 +1,0 @@
-DEBUG	rmt.c	/^#define	DEBUG(f)	if (debug) fprintf(debug, f)$/
-DEBUG1	rmt.c	/^#define	DEBUG1(f,a)	if (debug) fprintf(debug, f, a/
-DEBUG2	rmt.c	/^#define	DEBUG2(f,a1,a2)	if (debug) fprintf(debug, /
-Mrmt	rmt.c	/^main(argc, argv)$/
-checkbuf	rmt.c	/^checkbuf(record, size)$/
-error	rmt.c	/^error(num)$/
-getstring	rmt.c	/^getstring(bp)$/

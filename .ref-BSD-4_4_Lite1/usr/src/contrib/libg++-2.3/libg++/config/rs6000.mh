@@ -1,6 +1,0 @@
-# configuration for IBM rs6000 running aix
-INSTALL=cp
-# /usr/include/unistd.h has write(int, char*, unsigned) instead
-# of write(int, const void*, size_t).  This causes problems due
-# to g++ new pedantic dis-allowal of void* -> char* conversions.
-G_CONFIG_ARGS = "HAVE_UNISTD=0 /*broken*/"

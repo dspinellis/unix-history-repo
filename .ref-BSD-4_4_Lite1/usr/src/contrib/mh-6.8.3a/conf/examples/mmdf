@@ -1,8 +1,0 @@
-# mmdf 		- template using mts: mmdf
-bin	/usr/local
-bboards	off
-etc	/usr/local/lib/mh
-mail	/usr/spool/mail
-manuals	local
-mts	mmdf
-mf	on

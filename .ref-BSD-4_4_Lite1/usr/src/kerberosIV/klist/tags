@@ -1,6 +1,0 @@
-Mklist	klist.c	/^main(argc, argv)$/
-display_srvtab	klist.c	/^display_srvtab(file)$/
-display_tktfile	klist.c	/^display_tktfile(file, tgt_test, long_form)$/
-ok_getst	klist.c	/^ok_getst(fd, s, n)$/
-short_date	klist.c	/^short_date(dp)$/
-usage	klist.c	/^usage()$/
