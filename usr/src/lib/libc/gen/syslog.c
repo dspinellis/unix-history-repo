@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)syslog.c	4.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslog.c	4.7 (Berkeley) %G%";
 #endif
 
 /*
@@ -39,7 +39,9 @@ static char	ctty[] = "/dev/console";
 static int	LogFile = -1;		/* fd for log */
 static int	LogStat	= 0;		/* status bits, set by openlog() */
 static char	*LogTag = NULL;		/* string to tag the entry with */
-static int	LogMask = 0xffffffff;	/* mask of priorities to be logged */
+		    			/* mask of priorities to be logged */
+static int	LogMask = ~(mask(KERN_EMERG)|mask(KERN_ALERT)|mask(KERN_ERR)|
+		    mask(KERN_FAIL)|mask(KERN_RECOV)|mask(KERN_INFO));
 
 static struct sockaddr SyslogAddr;
 
