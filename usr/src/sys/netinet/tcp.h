@@ -1,4 +1,4 @@
-/* tcp.h 1.23 82/12/28 */
+/*	tcp.h	1.24	83/07/06	*/
 
 typedef	u_long	tcp_seq;
 /*
@@ -13,10 +13,6 @@ struct tcphdr {
 #ifdef vax
 	u_char	th_x2:4,		/* (unused) */
 		th_off:4;		/* data offset */
-#endif
-#ifdef sun
-	u_char	th_off:4,		/* data offset */
-		th_x2:4;		/* (unused) */
 #endif
 	u_char	th_flags;
 #define	TH_FIN	0x01

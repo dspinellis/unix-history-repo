@@ -1,4 +1,4 @@
-/* ip.h 1.11 82/12/28 */
+/*	ip.h	1.12	83/07/06	*/
 
 /*
  * Definitions for internet protocol version 4.
@@ -17,10 +17,6 @@ struct ip {
 #ifdef vax
 	u_char	ip_hl:4,		/* header length */
 		ip_v:4;			/* version */
-#endif
-#ifdef sun
-	u_char	ip_v:4,			/* version */
-		ip_hl:4;		/* header length */
 #endif
 	u_char	ip_tos;			/* type of service */
 	short	ip_len;			/* total length */
