@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ctl.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)ctl.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -27,9 +27,9 @@ static char sccsid[] = "@(#)ctl.c	5.4 (Berkeley) %G%";
 
 #include "talk_ctl.h"
 
-struct	sockaddr_in daemon_addr = { AF_INET };
-struct	sockaddr_in ctl_addr = { AF_INET };
-struct	sockaddr_in my_addr = { AF_INET };
+struct	sockaddr_in daemon_addr = { sizeof(daemon_addr), AF_INET };
+struct	sockaddr_in ctl_addr = { sizeof(ctl_addr), AF_INET };
+struct	sockaddr_in my_addr = { sizeof(my_addr), AF_INET };
 
 	/* inet addresses of the two machines */
 struct	in_addr my_machine_addr;
