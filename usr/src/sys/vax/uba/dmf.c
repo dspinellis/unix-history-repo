@@ -1,4 +1,4 @@
-/*	dmf.c	6.6	85/06/04	*/
+/*	dmf.c	6.7	85/06/04	*/
 
 #include "dmf.h"
 #if NDMF > 0
@@ -349,9 +349,21 @@ dmfrint(dmf)
 				if ((tp->t_state & TS_CARR_ON) == 0) {
 					wakeup((caddr_t)&tp->t_rawq);
 					tp->t_state |= TS_CARR_ON;
+				} else if ((tp->t_flags & MDMBUF) &&
+				    (tp->t_state & TS_TTSTOP)) {
+					tp->t_state &= ~TS_TTSTOP;
+					ttstart(tp);
 				}
-			} else {
-				if (tp->t_state & TS_CARR_ON) {
+			} else if ((tp->t_state & TS_WOPEN) == 0 &&
+			    tp->t_flags & MDMBUF) {
+			    	if ((tp->t_state & TS_TTSTOP) == 0) {
+					tp->t_state |= TS_TTSTOP;
+					dmfstop(tp, 0);
+				}
+			} else if ((tp->t_state & TS_CARR_ON) &&
+			    (tp->t_flags & NOHANG) == 0 &&
+			    (dmfsoftCAR[dmf] & (1<<unit)) == 0) {
+				if (tp->t_state&TS_ISOPEN) {
 					gsignal(tp->t_pgrp, SIGHUP);
 					gsignal(tp->t_pgrp, SIGCONT);
 					addr->dmfcsr = DMF_IE | DMFIR_LCR |
@@ -368,7 +380,7 @@ dmfrint(dmf)
 			wakeup((caddr_t)tp);
 			continue;
 		}
-		if(c & (DMF_PE|DMF_DO|DMF_FE)) {
+		if (c & (DMF_PE|DMF_DO|DMF_FE)) {
 			if (c & DMF_PE)
 				if ((tp->t_flags&(EVENP|ODDP))==EVENP
 			 	|| (tp->t_flags&(EVENP|ODDP))==ODDP )
