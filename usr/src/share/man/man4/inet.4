@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)inet.4	6.1 (Berkeley) %G%
+.\"	@(#)inet.4	6.2 (Berkeley) %G%
 .\"
 .TH INET 4F ""
 .UC 5
@@ -51,8 +51,16 @@ struct sockaddr_in {
 };
 .sp 1
 .fi
-Sockets may be created with the address INADDR_ANY
+Sockets may be created with the local address INADDR_ANY
 to effect \*(lqwildcard\*(rq matching on incoming messages. 
+The address in a
+.IR connect (2)
+or
+.IR sendto (2)
+call may be given as INADDR_ANY to mean ``this host.''
+The distinguished address INADDR_BROADCAST
+is allowed as a shorthand for the broadcast address on the primary
+network if the first network configured supports broadcast.
 .SH PROTOCOLS
 The Internet protocol family is comprised of
 the IP transport protocol, Internet Control
@@ -62,9 +70,40 @@ TCP is used to support the SOCK_STREAM
 abstraction while UDP is used to support the SOCK_DGRAM
 abstraction.  A raw interface to IP is available
 by creating an Internet socket of type SOCK_RAW.
-The ICMP message protocol is not directly accessible.
+The ICMP message protocol is accessible from a raw socket.
+.PP
+The 32-bit Internet address contains both network and host parts.
+It is frequency-encoded; the most-significant bit is clear
+in Class A addresses, in which the high-order 8 bits are the network
+number.
+Class B addresses use the high-order 16 bits as the network field,
+and Class C addresses have a 24-bit network part.
+Sites with a cluster of local networks and a connection to the DARPA
+Internet may chose to use a single network number for the cluster;
+this is done by using subnet addressing.
+The local (host) portion of the address is further subdivided
+into subnet and host parts.
+Within a subnet, each subnet appears to be an individual network;
+externally, the entire cluster appears to be a single, uniform
+network requiring only a single routing entry.
+Subnet addressing is enabled and examined by the following
+.IR ioctl (2)
+commands on a datagram socket in the Internet domain;
+they have the same form as the
+SIOCIFADDR command (see
+.IR intro (4N)).
+.PP
+.TP 20
+SIOCSIFNETMASK
+Set interface network mask.
+The network mask defines the network part of the address;
+if it contains more of the address than the address type would indicate,
+then subnets are in use.
+.TP 20
+SIOCGIFNETMASK
+Get interface network mask.
 .SH SEE ALSO
-tcp(4P), udp(4P), ip(4P)
+ioctl(2), socket(2), intro(4N), tcp(4P), udp(4P), ip(4P), icmp(4P)
 .SH CAVEAT
 The Internet protocol support is subject to change as
 the Internet protocols develop.  Users should not depend
