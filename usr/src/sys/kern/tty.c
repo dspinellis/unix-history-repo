@@ -1,4 +1,4 @@
-/*	tty.c	6.7	83/10/01	*/
+/*	tty.c	6.8	83/12/16	*/
 
 #include "../machine/reg.h"
 
@@ -461,7 +461,7 @@ ttioctl(tp, com, data, flag)
 		break;
 
 	case TIOCLGET:
-		*(int *)data = tp->t_flags >> 16;
+		*(int *)data = ((unsigned) tp->t_flags) >> 16;
 		break;
 
 	/* should allow SPGRP and GPGRP only if tty open for reading */
