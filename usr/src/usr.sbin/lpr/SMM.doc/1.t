@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)1.t	6.1 (Berkeley) %G%
+.\"	@(#)1.t	6.2 (Berkeley) %G%
 .\"
 .NH 1
 Overview
@@ -16,7 +16,7 @@ multiple spooling queues,
 both local and remote
 printers, and
 .IP \(bu 3
-printers attached via serial lines which require
+printers attached via serial lines that require
 line initialization such as the baud rate.
 .LP
 Raster output devices
@@ -41,10 +41,10 @@ The file /etc/printcap is a master data base describing line
 printers directly attached to a machine and, also, printers
 accessible across a network. The manual page entry
 .IR printcap (5)
-provides the ultimate definition of
+provides the authoritative definition of
 the format of this data base, as well as
-indicating default values for important items
+specifying default values for important items
 such as the directory in which spooling is performed.
 This document highlights the important
-information which may be placed
+information that may be placed
 .IR printcap .

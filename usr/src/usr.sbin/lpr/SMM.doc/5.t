@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)5.t	6.2 (Berkeley) %G%
+.\"	@(#)5.t	6.3 (Berkeley) %G%
 .\"
 .NH 1
 Output filter specifications
@@ -24,8 +24,8 @@ When \fIlprm\fP
 sends a kill signal to the \fIlpd\fP process controlling
 printing, it sends a SIGINT signal 
 to all filters and descendents of filters.
-This signal can be trapped by filters which need
-to perform cleanup operations such as
+This signal can be trapped by filters that need
+to do cleanup operations such as
 deleting temporary files.
 .PP
 Arguments passed to a filter depend on its type.
@@ -49,11 +49,11 @@ filter is passed the following parameters.
 The
 .B \-c
 flag is optional, and only supplied when control characters
-are to be passed uninterpreted to the printer (when the
+are to be passed uninterpreted to the printer (when using the
 .B \-l
 option of
 .I lpr
-is used to print the file).
+to print the file).
 The
 .B \-w
 and
