@@ -18,10 +18,11 @@ KBD	= unix.kbd
 
 
 # The source files...
-ALLH = astosc.h ascebc.h disp_asc.h map3270.ext state.h termin.ext
+ALLH = ascebc.h astosc.h disp_asc.h map3270.ext state.h termin.ext
 
-ALLC = astosc.c map3270.c termin.c asctab.c ebctab.c
+ALLC = asctab.c astosc.c ebctab.c map3270.c mset.c termin.c
 
+# We don't include mset.o here...
 ALLO	= astosc.o map3270.o termin.o asctab.o ebctab.o disp_asc.o
 
 ALLPRINT = default.map ${ALLH} ${ALLC}
