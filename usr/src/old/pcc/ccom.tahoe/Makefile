@@ -1,5 +1,5 @@
 #
-#	Makefile	1.2	86/02/04
+#	Makefile	1.3	86/07/27
 #
 # Makefile for tahoe pcc
 #
@@ -25,17 +25,22 @@ LDFLAGS =
 
 RM=	/bin/rm -f
 
+M=	../mip
+SRCS=	code.c local.c local2.c order.c rel.c stab.c table.c \
+	$M/allo.c $M/common.c $M/fort.c $M/match.c $M/optim.c \
+	$M/pftn.c $M/reader.c $M/scan.c $M/trees.c $M/xdefs.c \
+	$M/cgram.y
 # objects common to single and double precision compilers
 OBJS=	rodata.o cgram.o xdefs.o scan.o pftn.o optim.o code.o reader.o \
-	match.o comm1.o stab.o local.o local2.o order.o table.o
+	match.o comm1.o stab.o local.o local2.o order.o
 # double precision objects
-COBJS=	trees.o allo.o
+COBJS=	trees.o allo.o table.o
 # single precision stuff
-SFILES=	strees.c sallo.c
-SOBJS=	strees.o sallo.o
+SFILES=	strees.c sallo.c stable.c
+SOBJS=	strees.o sallo.o stable.o
 # fortran version
-FFILES=	freader.c fallo.c fmatch.c ftable.c forder.c flocal2.c fcomm2.c
-FOBJS=	freader.o fallo.o fmatch.o ftable.o forder.o flocal2.o fcomm2.o
+FFILES=	freader.c fallo.c fmatch.c ftable.c forder.c flocal2.c fcomm2.c ftable.c
+FOBJS=	freader.o fallo.o fmatch.o ftable.o forder.o flocal2.o fcomm2.o ftable.o
 
 P1INCS=	$M/pass1.h macdefs.h $M/manifest.h pcclocal.h $M/config.h $M/ndu.h \
 	/usr/include/stdio.h
@@ -44,7 +49,6 @@ P2INCS=	$M/pass2.h macdefs.h mac2defs.h $M/manifest.h pcclocal.h $M/config.h \
 	$M/ndu.h /usr/include/stdio.h
 P2ONEP=	${P2INCS} $M/onepass.h
 
-M=	../mip
 TESTDIR=.
 
 all:	ccom sccom f1
@@ -108,22 +112,10 @@ strees.o: ${P1ONEP} $M/trees.c
 	ln $M/trees.c strees.c
 	${CC} -c ${SCOPTS} strees.c
 	${RM} strees.c
-slocal.o: ${P1ONEP} local.c
-	ln local.c slocal.c
-	${CC} -c ${SCOPTS} slocal.c
-	${RM} slocal.c
-slocal2.o: ${P2ONEP} local2.c
-	ln local2.c slocal2.c
-	${CC} -c ${SCOPTS} slocal2.c
-	${RM} slocal2.c
 sallo.o: ${P2ONEP} $M/allo.c
 	ln $M/allo.c sallo.c
 	${CC} -c ${SCOPTS} sallo.c
 	${RM} sallo.c
-sorder.o: ${P2ONEP} order.c
-	ln order.c sorder.c
-	${CC} -c ${SCOPTS} sorder.c
-	${RM} sorder.c
 stable.o: ${P2ONEP} table.c
 	ln table.c stable.c
 	${CC} -c ${SCOPTS} -R stable.c
@@ -199,3 +191,6 @@ lintall:
 	lint -hax -I. -I$M  cgram.c $M/xdefs.c $M/scan.c $M/pftn.c \
 		$M/trees.c $M/optim.c code.c local.c stab.c $M/reader.c \
 		local2.c order.c $M/match.c $M/allo.c $M/comm1.c table.c
+
+tags:	${SRCS}
+	ctags ${SRCS}
