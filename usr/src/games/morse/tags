@@ -1,0 +1,3 @@
+Mmorse	morse.c	/^main(argc, argv)$/
+morse	morse.c	/^morse(c)$/
+show	morse.c	/^show(s)$/
