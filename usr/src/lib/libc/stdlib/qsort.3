@@ -7,7 +7,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)qsort.3	6.7 (Berkeley) %G%
+.\"     @(#)qsort.3	6.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt QSORT 3
@@ -79,7 +79,9 @@ Its
 .Em only
 advantage over
 .Fn qsort
-is that it uses no additional memory.
+is that it uses almost no additional memory; while
+.Nm qsort
+does not allocate memory, it is implemented using recursion.
 .Sh RETURN VALUES
 The
 .Fn qsort
@@ -101,6 +103,9 @@ function succeeds unless:
 The
 .Fa size
 argument is zero.
+.It Bq Er ENOMEM
+.Nm Heapsort
+failed because it was unable to allocate memory.
 .Sh COMPATIBILITY
 Previous versions of
 .Fn qsort
