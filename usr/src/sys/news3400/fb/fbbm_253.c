@@ -9,7 +9,7 @@
  *
  * from: $Hdr: fbbm_253.c,v 4.300 91/06/09 06:33:12 root Rel41 $ SONY;
  *
- *	@(#)fbbm_253.c	7.4 (Berkeley) %G%
+ *	@(#)fbbm_253.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -36,6 +36,12 @@ extern short zero[];
 	
 #define	VRAM_START	(unsigned int *)(0x88000000)
 #define VRAM_WIDTH	(2048/32)
+
+void
+nwb253attach(i)
+{
+	/* temporary hack for pseudo-device initialization */;
+}
 
 static caddr_t
 fb253_Krom_addr(fb, c, sr)
