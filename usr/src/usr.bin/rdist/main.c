@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	4.3 (Berkeley) 83/10/10";
+static	char *sccsid = "@(#)main.c	4.4 (Berkeley) 83/10/10";
 #endif
 
 #include "defs.h"
@@ -30,7 +30,6 @@ char	user[10];	/* user's name */
 char	homedir[128];	/* user's home directory */
 int	userid;		/* user's user ID */
 int	groupid;	/* user's group ID */
-int	iamupdate;
 
 int	cleanup();
 int	lostconn();
@@ -41,14 +40,6 @@ main(argc, argv)
 {
 	register char *arg;
 	register struct	passwd *pw;
-
-	arg = rindex(argv[0], '/');
-	if (arg == NULL)
-		arg = argv[0];
-	else
-		arg++;
-	if (!strcmp(arg, "update"))
-		iamupdate++;
 
 	pw = getpwuid(userid = getuid());
 	if (pw == NULL) {
@@ -118,17 +109,13 @@ main(argc, argv)
 	signal(SIGQUIT, cleanup);
 	signal(SIGTERM, cleanup);
 
-	if (iamupdate)
-		doupdate(argc, argv);
-	else {
-		filec = argc;
-		filev = argv;
-		if (fin == NULL && (fin = fopen(distfile, "r")) == NULL) {
-			perror(distfile);
-			exit(1);
-		}
-		yyparse();
+	filec = argc;
+	filev = argv;
+	if (fin == NULL && (fin = fopen(distfile, "r")) == NULL) {
+		perror(distfile);
+		exit(1);
 	}
+	yyparse();
 
 	exit(errs);
 }
@@ -136,71 +123,6 @@ main(argc, argv)
 usage()
 {
 	printf("Usage: rdist [-f distfile] [-d var=value] [-nqyD] [file ...]\n");
-	exit(1);
-}
-
-/*
- * rcp like interface for distributing files.
- */
-doupdate(nargs, args)
-	int nargs;
-	char *args[];
-{
-	struct block *bp, *files, *hosts, *cmds, *prev;
-	int i;
-	char *pos, dest[BUFSIZ];
-
-	if (nargs < 2)
-		upusage();
-
-	prev = NULL;
-	bp = files = ALLOC(block);
-	for (i = 0; i < nargs - 1; bp = ALLOC(block), i++) {
-		bp->b_type = NAME;
-		bp->b_name = args[i];
-		if (prev != NULL)
-			prev->b_next = bp;
-		bp->b_next = bp->b_args = NULL;
-		prev = bp;
-	}
-
-	hosts = ALLOC(block);
-	hosts->b_type = NAME;
-	hosts->b_name = args[i];
-	hosts->b_name = args[i];
-	hosts->b_next = hosts->b_args = NULL;
-	if ((pos = index(hosts->b_name, ':')) != NULL) {
-		*pos++ = '\0';
-		strcpy(dest, pos);
-	} else
-		dest[0] = '\0';
-
-	hosts = expand(hosts, 0);
-
-	if (dest[0] == '\0')
-		cmds = NULL;
-	else {
-		cmds = ALLOC(block);
-		if (vflag)
-			cmds->b_type = VERIFY;
-		else
-			cmds->b_type = INSTALL;
-		cmds->b_name = dest;
-		cmds->b_next = cmds->b_args = NULL;
-	}
-
-	if (debug) {
-		printf("doupdate()\nfiles = ");
-		prnames(files);
-		printf("hosts = ");
-		prnames(hosts);
-	}
-	dohcmds(files, hosts, cmds);
-}
-
-upusage()
-{
-	printf("Usage: update [-nqyD] source [...] machine[:dest]\n");
 	exit(1);
 }
 
