@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_extern.h	8.1 (Berkeley) %G%
+ *	@(#)ffs_extern.h	8.2 (Berkeley) %G%
  */
 
 struct buf;
@@ -42,6 +42,7 @@ int	ffs_mount __P((struct mount *,
 int	ffs_mountfs __P((struct vnode *, struct mount *, struct proc *));
 int	ffs_mountroot __P((void));
 int	ffs_read __P((struct vop_read_args *));
+int	ffs_reallocblks __P((struct vop_reallocblks_args *));
 int	ffs_realloccg __P((struct inode *,
 	    daddr_t, daddr_t, int, int, struct ucred *, struct buf **));
 int	ffs_reclaim __P((struct vop_reclaim_args *));
