@@ -1,7 +1,7 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)fend.c 1.24 %G%";
+static char sccsid[] = "@(#)fend.c 1.25 %G%";
 #endif
 
 #include "whoami.h"
@@ -812,8 +812,8 @@ fp_prologue(eecookiep)
 fp_entrycode(eecookiep)
     struct entry_exit_cookie	*eecookiep;
 {
-    int	proflabel = getlab();
-    int	setjmp0 = getlab();
+    char *proflabel = getlab();
+    char *setjmp0 = getlab();
 
 	/*
 	 *	fill in the label cookie
@@ -910,7 +910,7 @@ fp_exitcode(eecookiep)
     if ( eecookiep -> nlp -> class == FUNC ) {
 	struct nl	*fvar = eecookiep -> nlp -> ptr[ NL_FVAR ];
 	long		fvartype = p2type( fvar -> type );
-	long		label;
+	char		*label;
 	char		labelname[ BUFSIZ ];
 
 	switch ( classify( fvar -> type ) ) {
