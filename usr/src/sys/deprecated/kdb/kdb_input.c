@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kdb_input.c	7.3 (Berkeley) %G%
+ *	@(#)kdb_input.c	7.4 (Berkeley) %G%
  */
 
 #include "../kdb/defs.h"
@@ -39,20 +39,20 @@ readchar()
 			if (mkfault)
 				error((char *)0);
 			switch (*lp) {
-			case CTRL(h): case 0177:
+			case CTRL('h'): case 0177:
 				if (lp > line)
 					kdbwrite(erase, 3), lp--;
 				break;
-			case CTRL(u):
+			case CTRL('u'):
 				while (lp > line) 
 					kdbwrite(erase, 3), lp--;
 				break;
-			case CTRL(r):
+			case CTRL('r'):
 				kdbwrite("^R\n", 3);
 				if (lp > line)
 					kdbwrite(line, lp-line);
 				break;
-			case CTRL(w):
+			case CTRL('w'):
 				if (lp <= line)
 					break;
 				do {
