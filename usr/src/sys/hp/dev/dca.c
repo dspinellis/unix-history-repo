@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dca.c	7.17 (Berkeley) %G%
+ *	@(#)dca.c	7.18 (Berkeley) %G%
  */
 
 #include "dca.h"
@@ -64,7 +64,9 @@ struct	dcadevice *dca_addr[NDCA];
 struct	tty dca_tty[NDCA];
 #ifdef hp300
 struct	isr dcaisr[NDCA];
+int	dcafastservice;
 #endif
+int	dcaoflows[NDCA];
 
 struct speedtab dcaspeedtab[] = {
 	0,	0,
@@ -224,6 +226,15 @@ dcaopen(dev, flag, mode, p)
 	(void) spl0();
 	if (error == 0)
 		error = (*linesw[tp->t_line].l_open)(dev, tp);
+#ifdef hp300
+	/*
+	 * XXX hack to speed up unbuffered builtin port.
+	 * If dca_fastservice is set, a level 5 interrupt
+	 * will be directed to dcaintr first.
+	 */
+	if (error == 0 && unit == 0 && (dca_hasfifo & 1) == 0)
+		dcafastservice = 1;
+#endif
 	return (error);
 }
  
@@ -238,6 +249,10 @@ dcaclose(dev, flag, mode, p)
 	register int unit;
  
 	unit = UNIT(dev);
+#ifdef hp300
+	if (unit == 0)
+		dcafastservice = 0;
+#endif
 	dca = dca_addr[unit];
 	tp = &dca_tty[unit];
 	(*linesw[tp->t_line].l_close)(tp, flag);
@@ -258,9 +273,19 @@ dcaread(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
 {
-	register struct tty *tp = &dca_tty[UNIT(dev)];
+	int unit = UNIT(dev);
+	register struct tty *tp = &dca_tty[unit];
+	int error, of;
  
-	return ((*linesw[tp->t_line].l_read)(tp, uio, flag));
+	of = dcaoflows[unit];
+	error = (*linesw[tp->t_line].l_read)(tp, uio, flag);
+	/*
+	 * XXX hardly a reasonable thing to do, but reporting overflows
+	 * at interrupt time just exacerbates the problem.
+	 */
+	if (dcaoflows[unit] != of)
+		log(LOG_WARNING, "dca%d: silo overflow\n", unit);
+	return (error);
 }
  
 dcawrite(dev, uio, flag)
@@ -288,12 +313,14 @@ dcaintr(unit)
 	register struct dcadevice *dca;
 	register u_char code;
 	register struct tty *tp;
+	int iflowdone = 0;
 
 	dca = dca_addr[unit];
 #ifdef hp300
 	if ((dca->dca_ic & (IC_IR|IC_IE)) != (IC_IR|IC_IE))
 		return (0);
 #endif
+	tp = &dca_tty[unit];
 	while (1) {
 		code = dca->dca_iir;
 #ifdef DEBUG
@@ -305,7 +332,6 @@ dcaintr(unit)
 		case IIR_RXTOUT:
 		case IIR_RXRDY:
 			/* do time-critical read in-line */
-			tp = &dca_tty[unit];
 /*
  * Process a received byte.  Inline for speed...
  */
@@ -345,9 +371,13 @@ dcaintr(unit)
 					fifoin[fifocnt]++;
 #endif
 			}
+			if (!iflowdone && (tp->t_cflag&CRTS_IFLOW) &&
+			    tp->t_rawq.c_cc > TTYHOG/2) {
+				dca->dca_mcr &= ~MCR_RTS;
+				iflowdone = 1;
+			}
 			break;
 		case IIR_TXRDY:
-			tp = &dca_tty[unit];
 			tp->t_state &=~ (TS_BUSY|TS_FLUSH);
 			if (tp->t_line)
 				(*linesw[tp->t_line].l_start)(tp);
@@ -393,7 +423,7 @@ dcaeint(unit, stat, dca)
 	else if (stat & LSR_PE)
 		c |= TTY_PE;
 	else if (stat & LSR_OE)
-		log(LOG_WARNING, "dca%d: silo overflow\n", unit);
+		dcaoflows[unit]++;
 	(*linesw[tp->t_line].l_rint)(c, tp);
 }
 
@@ -409,19 +439,25 @@ dcamint(unit, dca)
 #ifdef DEBUG
 	dcamintcount[stat & 0xf]++;
 #endif
-	if ((stat & MSR_DDCD) && (dcasoftCAR & (1 << unit)) == 0) {
+	if ((stat & MSR_DDCD) &&
+	    (dcasoftCAR & (1 << unit)) == 0) {
 		if (stat & MSR_DCD)
 			(void)(*linesw[tp->t_line].l_modem)(tp, 1);
 		else if ((*linesw[tp->t_line].l_modem)(tp, 0) == 0)
 			dca->dca_mcr &= ~(MCR_DTR | MCR_RTS);
-	} else if ((stat & MSR_DCTS) && (tp->t_state & TS_ISOPEN) &&
-		   (tp->t_flags & CRTSCTS)) {
-		/* the line is up and we want to do rts/cts flow control */
+	}
+	/*
+	 * CTS change.
+	 * If doing HW output flow control start/stop output as appropriate.
+	 */
+	if ((stat & MSR_DCTS) &&
+	    (tp->t_state & TS_ISOPEN) && (tp->t_cflag & CCTS_OFLOW)) {
 		if (stat & MSR_CTS) {
 			tp->t_state &=~ TS_TTSTOP;
-			ttstart(tp);
-		} else
+			dcastart(tp);
+		} else {
 			tp->t_state |= TS_TTSTOP;
+		}
 	}
 }
 
