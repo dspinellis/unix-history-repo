@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)dir.h	7.7 (Berkeley) %G%
+ *	@(#)dir.h	7.8 (Berkeley) %G%
  */
 
 #ifndef _DIR_
@@ -61,11 +61,9 @@ struct	direct {
  * without the d_name field, plus enough space for the name with a terminating
  * null byte (dp->d_namlen+1), rounded up to a 4 byte boundary.
  */
-#undef DIRSIZ
 #define DIRSIZ(dp) \
     ((sizeof (struct direct) - (MAXNAMLEN+1)) + (((dp)->d_namlen+1 + 3) &~ 3))
 
-#ifdef KERNEL
 /*
  * Template for manipulating directories.
  * Should use struct direct's, but the name field
@@ -81,40 +79,4 @@ struct dirtemplate {
 	short	dotdot_namlen;
 	char	dotdot_name[4];		/* ditto */
 };
-#endif
-
-/*
- * The following information should be obtained from <dirent.h>
- * and is provided solely (and temporarily) for backward compatibility.
- */
-#ifndef KERNEL
-#define d_fileno d_ino		/* compatibility with POSIX */
-#ifndef DEV_BSIZE
-#define	DEV_BSIZE	1024
-#endif
-/*
- * Definitions for library routines operating on directories.
- */
-typedef struct _dirdesc {
-	int	dd_fd;
-	long	dd_loc;
-	long	dd_size;
-	char	dd_buf[DIRBLKSIZ];
-} DIR;
-
-#define dirfd(dirp)	((dirp)->dd_fd)
-
-#ifndef NULL
-#define NULL 0
-#endif
-extern	DIR *opendir();
-extern	struct direct *readdir();
-extern	long telldir();
-extern	void seekdir();
-extern	void closedir();
-extern	long _rewinddir;
-#define rewinddir(dirp) \
-	_seekdir((dirp), _rewinddir); \
-	_rewinddir = telldir(dirp)
-#endif /* not KERNEL */
 #endif /* _DIR_ */
