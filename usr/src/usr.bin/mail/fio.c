@@ -5,12 +5,13 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)fio.c	5.3 (Berkeley) %G%";
+static char *sccsid = "@(#)fio.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include "rcv.h"
 #include <sys/stat.h>
 #include <errno.h>
+#include <strings.h>
 
 /*
  * Mail -- a mail program
