@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -304,16 +304,13 @@ deliver(firstto, editfcn)
 		**	with the others, so we fudge on the CurEnv->e_to person.
 		*/
 
-		if (m == LocalMailer)
+		if (m == FileMailer)
 		{
-			if (user[0] == '/')
-			{
-				rcode = mailfile(user, getctladdr(to), e);
-				giveresponse(rcode, m, e);
-				if (rcode == EX_OK)
-					to->q_flags |= QSENT;
-				continue;
-			}
+			rcode = mailfile(user, getctladdr(to), e);
+			giveresponse(rcode, m, e);
+			if (rcode == EX_OK)
+				to->q_flags |= QSENT;
+			continue;
 		}
 
 		/*
