@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uu.c	7.5 (Berkeley) %G%
+ *	@(#)uu.c	7.6 (Berkeley) %G%
  */
 
 #include "uu.h"
@@ -718,9 +718,9 @@ uuwatch()
 			continue;
 		printf("uu%d: read stalled\n", uudata[ctlr].pk_unit);
 #ifdef UUDEBUG
-		printf("%X %X %X %X %X %X %X\n", uuc->tu_rbptr, uuc->tu_rcnt,
-		       uuc->tu_wbptr, uuc->tu_wcnt, uuc->tu_state, uuc->tu_addr,
-		       uuc->tu_count);
+		printf("%lx %lx %lx %lx %lx %lx %lx\n",
+		    uuc->tu_rbptr, uuc->tu_rcnt, uuc->tu_wbptr, uuc->tu_wcnt,
+		    uuc->tu_state, uuc->tu_addr, uuc->tu_count);
 #endif
 		s = splx(UUIPL);
 		uuc->tu_flag = 0;

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fd.c	7.2 (Berkeley) %G%
+ *	@(#)fd.c	7.3 (Berkeley) %G%
  */
 
 /****************************************************************************/
@@ -171,7 +171,7 @@ retry:
 		numretry--;
 		if (numretry) goto retry;
 #ifndef SMALL
-		printf("FD err %X %X %X %X %X %X %X\n",
+		printf("FD err %lx %lx %lx %lx %lx %lx %lx\n",
 		fd_status[0], fd_status[1], fd_status[2], fd_status[3],
 		fd_status[4], fd_status[5], fd_status[6] );
 #endif
@@ -200,7 +200,7 @@ dump_stat()
 		if (fd_status[i] < 0) break;
 	}
 #ifdef FDDEBUGx
-printf("FD bad status :%X %X %X %X %X %X %X\n",
+printf("FD bad status :%lx %lx %lx %lx %lx %lx %lx\n",
 	fd_status[0], fd_status[1], fd_status[2], fd_status[3],
 	fd_status[4], fd_status[5], fd_status[6] );
 #endif

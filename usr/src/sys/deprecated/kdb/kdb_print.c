@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kdb_print.c	7.21 (Berkeley) %G%
+ *	@(#)kdb_print.c	7.22 (Berkeley) %G%
  */
 
 #include "machine/mtpr.h"
@@ -117,7 +117,7 @@ kdbprinttrace(modif)
 
 		savemmap = mmap[0];
 		for (p = allproc; p; p = p->p_nxt) {
-			kdbprintf("%X pid %5d%c%5d %c ", p, p->p_pid,
+			kdbprintf("%lx pid %5d%c%5d %c ", p, p->p_pid,
 				p == (struct proc *)kdbvar[kdbvarchk('p')]? '*' : ' ',
 				p->p_ppid,
 				p->p_stat == SSLEEP ? 'S' :
