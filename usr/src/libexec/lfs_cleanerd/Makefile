@@ -1,7 +1,7 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
 PROG=	lfs_cleanerd
-CFLAGS+=-I/sys/ufs/lfs -I${.CURDIR} -DVERBOSE
+CFLAGS+=-I/sys/ufs/lfs -I${.CURDIR}
 SRCS=	cleanerd.c lfs_cksum.c library.c misc.c print.c
 
 .PATH:	/sys/ufs/lfs
