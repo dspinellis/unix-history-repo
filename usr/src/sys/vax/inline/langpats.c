@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)langpats.c	1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)langpats.c	1.3 (Berkeley) %G%";
 #endif
 
 /*
@@ -68,6 +68,10 @@ struct pats {
 	mtpr	$0x18,$18\n" },
 
 	{ "_spl7\n",
+"	mfpr	$18,r0\n\
+	mtpr	$0x1f,$18\n" },
+
+	{ "_splhigh\n",
 "	mfpr	$18,r0\n\
 	mtpr	$0x1f,$18\n" },
 
