@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)Master	8.2 (Berkeley) %G%
+.\"	@(#)Master	6.7 (Berkeley) %G%
 .\"
 .ds Ln Screen Package
 .so macros
@@ -20,8 +20,8 @@
 .bp
 .so appen.A
 .pn 2
-.oh '\*(Ln''PS1:18-%'
-.eh 'PS1:18-%''\*(Ln'
+.oh '\*(Ln''PS1:19-%'
+.eh 'PS1:19-%''\*(Ln'
 .bp
 .bi Contents
 .sp

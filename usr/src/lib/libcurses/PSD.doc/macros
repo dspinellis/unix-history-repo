@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)macros	8.2 (Berkeley) %G%
+.\"	@(#)macros	6.8 (Berkeley) %G%
 .\"
 .\" this is the uncommented version.  The commented one is in "macros.coms"
 .ie t .ds _ \d\(mi\u
@@ -21,8 +21,8 @@
 .\" .hy WINDOW
 .\".he ''\*(Ln''
 .\".fo ''\- % \-''
-.oh '\*(Ln''PS1:18-%'
-.eh 'PS1:18-%''\*(Ln'
+.oh '\*(Ln''PS1:19-%'
+.eh 'PS1:19-%''\*(Ln'
 .de Un
 .b
 \s-2\\$2UNIX\\$1\s+2

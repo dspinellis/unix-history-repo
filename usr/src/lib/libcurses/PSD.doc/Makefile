@@ -1,6 +1,6 @@
-#	@(#)Makefile	8.3 (Berkeley) %G%
+#	@(#)Makefile	6.7 (Berkeley) %G%
 
-DIR=	ps1/18.curses
+DIR=	psd/19.curses
 SRCS=	Master
 MACROS=	-me
 
