@@ -6,11 +6,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)md-nop.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)md-nop.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
-#include <sys/kinfo_proc.h>
+#include <sys/sysctl.h>
 
 #include <stdio.h>
 #include <kvm.h>
