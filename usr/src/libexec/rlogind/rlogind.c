@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.35 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -34,25 +34,24 @@ static char sccsid[] = "@(#)rlogind.c	5.34 (Berkeley) %G%";
  *	data
  */
 
-#include <stdio.h>
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <sys/file.h>
-#include <sys/param.h>
+#include <sys/signal.h>
+#include <sys/ioctl.h>
+#include <sys/termios.h>
 
 #include <netinet/in.h>
 
 #include <errno.h>
 #include <pwd.h>
-#include <signal.h>
-#include <sys/ioctl.h>
-#include <sys/termios.h>
-#include <stdio.h>
 #include <netdb.h>
 #include <syslog.h>
 #include <strings.h>
+#include <stdio.h>
+#include "pathnames.h"
 
 #ifndef TIOCPKT_WINDOW
 #define TIOCPKT_WINDOW 0x80
@@ -315,12 +314,12 @@ gotpty:
 		dup2(t, 0), dup2(t, 1), dup2(t, 2);
 		close(t);
 		if (authenticated)
-			execl("/bin/login", "login", "-p",
+			execl(_PATH_LOGIN, "login", "-p",
 			    "-h", hp->h_name, "-f", lusername, 0);
 		else
-			execl("/bin/login", "login", "-p",
+			execl(_PATH_LOGIN, "login", "-p",
 			    "-h", hp->h_name, lusername, 0);
-		fatalperror(2, "/bin/login");
+		fatalperror(2, _PATH_LOGIN);
 		/*NOTREACHED*/
 	}
 	close(t);
