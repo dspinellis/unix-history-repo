@@ -1,4 +1,4 @@
-/*	uucp.h	5.4	85/01/22	*/
+/*	uucp.h	5.5	85/01/28	*/
 
 #include "stdio.h"
 
@@ -53,23 +53,23 @@
  * Define the various kinds of connections to include.
  * The complete list is in the condevs array in condevs.c
  */
-/*#define DN11		/* standard dialer */
+#define DN11		/* standard dialer */
 /*#define DATAKIT	/* ATT's datakit */
 /*#define PNET		/* Purdue network */
-/*#define DF02		/* Dec's DF02/DF03 */
-/*#define HAYES		/* Hayes' Smartmodem */
-/*#define VENTEL	/* ventel dialer */
-/*#define VADIC		/* Racal-Vadic 345x */
-/*#define VA212		/* Racal-Vadic 212 */
-/*#define VA811S	/* Racal-Vadic 811S dialer, 831 adaptor */
+#define DF02		/* Dec's DF02/DF03 */
+#define HAYES		/* Hayes' Smartmodem */
+#define VENTEL		/* ventel dialer */
+#define VADIC		/* Racal-Vadic 345x */
+#define VA212		/* Racal-Vadic 212 */
+#define VA811S		/* Racal-Vadic 811S dialer, 831 adaptor */
 #define VA820		/* Racal-Vadic 820 dialer, 831 adaptor */
-/*#define RVMACS	/* Racal-Vadic MACS  820 dialer, 831 adaptor */
-/*#define VMACS		/* Racal-Vadic MACS  811 dialer, 831 adaptor */
+#define RVMACS		/* Racal-Vadic MACS  820 dialer, 831 adaptor */
+#define VMACS		/* Racal-Vadic MACS  811 dialer, 831 adaptor */
 /*#define UNETTCP	/* 3Com's UNET */
 #define BSDTCP		/* 4.2bsd TCP/IP */
 #define PAD		/* X.25 PAD */
 /*#define MICOM		/* micom mux port */
-/*#define NOVATION	/* Novation modem */
+#define NOVATION	/* Novation modem */
 
 #if defined(UNETTCP) || defined(BSDTCP)
 #define TCPIP
