@@ -1,43 +1,8 @@
-#
-# Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms are permitted
-# provided that this notice is preserved and that due credit is given
-# to the University of California at Berkeley. The name of the University
-# may not be used to endorse or promote products derived from this
-# software without specific prior written permission. This software
-# is provided ``as is'' without express or implied warranty.
-#
-#	@(#)Makefile	5.4 (Berkeley) %G%
-#
-CFLAGS=	-DHERE=VAX -DTARGET=VAX -DFAMILY=PCC -DUCBVAXASM -DUCBPASS2 \
-	-O -I../include
-LIBC=	/lib/libc.a
-SRCS=	f77.c
-OBJS=	f77.o
+#	@(#)Makefile	5.5 (Berkeley) %G%
 
-all: f77
+PROG=	f77
+CFLAGS+=-DHERE=VAX -DTARGET=VAX -DFAMILY=PCC -DUCBVAXASM -DUCBPASS2 \
+	-I${.CURDIR}/../include.vax
+BINDIR=	/usr/bin
 
-f77: ${SRCS} ${LIBC}
-	${CC} -o $@ ${CFLAGS} ${SRCS}
-
-clean: FRC
-	rm -f ${OBJS} core f77
-
-cleandir: clean
-	rm -f tags .depend ${MAN}
-
-depend: FRC
-	mkdep -p ${CFLAGS} ${SRCS}
-
-install: FRC
-	install -s -o bin -g bin -m 755 f77 ${DESTDIR}/usr/bin
-
-lint: FRC
-	lint ${CFLAGS} ${SRCS}
-
-tags: FRC
-	ctags ${SRCS}
-
-FRC:
+.include <bsd.prog.mk>
