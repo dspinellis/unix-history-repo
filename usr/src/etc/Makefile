@@ -1,4 +1,4 @@
-#	@(#)Makefile	8.4 (Berkeley) %G%
+#	@(#)Makefile	8.5 (Berkeley) %G%
 
 NOOBJ=	oobj
 
@@ -7,7 +7,7 @@ NOOBJ=	oobj
 BIN1=	aliases amd-home amd-n changelist csh.cshrc csh.login csh.logout \
 	crontab crontab.local daily dm.conf exports ftpusers ftpwelcome \
 	gettytab group hosts hosts.lpd inetd.conf man.conf \
-	monthly motd netgroup phones printcap protocols rc \
+	monthly motd netgroup networks phones printcap protocols rc \
 	rc.local remote security services shells syslog.conf ttys weekly \
 	etc.${MACHINE}/disktab
 
