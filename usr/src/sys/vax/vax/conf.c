@@ -1,4 +1,4 @@
-/*	conf.c	4.35	81/06/10	*/
+/*	conf.c	4.36	81/07/01	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -231,7 +231,7 @@ int	chopen(),chclose(),chread(),chwrite(),chioctl(),chreset();
 #endif
 
 #include "en.h"
-#if	NEN > 0 && !defined(CHAOS)
+#if	(NEN > 0) && !defined(CHAOS)
 int	enopen(),enclose(),enread(),enwrite(),enreset();
 #else
 #define	enopen	nodev
