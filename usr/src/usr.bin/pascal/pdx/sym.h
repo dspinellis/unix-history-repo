@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)sym.h 1.1 %G%";
+/* static char sccsid[] = "@(#)sym.h 1.2 %G%"; */
 
 /*
  * This header file declares the variables and routines that
