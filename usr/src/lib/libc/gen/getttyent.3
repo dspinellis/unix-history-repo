@@ -1,8 +1,19 @@
-.\" Copyright (c) 1985 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)getttyent.3	6.4 (Berkeley) %G%
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)getttyent.3	6.5 (Berkeley) %G%
 .\"
 .TH GETTTYENT 3  ""
 .UC 6
@@ -25,70 +36,77 @@ getttyent, getttynam, setttyent, endttyent \- get ttys file entry
 .I Getttyent,
 and
 .I getttynam
-each return a pointer to an object with the
-following structure
-containing the broken-out
-fields of a line from the tty description file.
-.RS
-.PP
+each return a pointer to an object, with the following structure,
+containing the broken-out fields of a line from the tty description
+file.
+.sp
 .nf
-.so /usr/include/ttyent.h
-.ft R
-.ad
+struct ttyent {
+	char	*ty_name;			/* terminal device name */
+	char	*ty_getty;		/* command to execute */
+	char	*ty_type;			/* terminal type */
+#define	TTY_ON		0x01	/* enable logins */
+#define	TTY_SECURE	0x02	/* allow uid of 0 to login */
+	int	ty_status;		/* flag values */
+	char	*ty_window;		/* command for window manager */
+	char	*ty_comment;		/* comment field */
+};
 .fi
-.RE
 .PP
-.IP ty_name \w'ty_comment'u+3
-is the name of the character-special file in the directory ``/dev".
-For various reasons, it must reside in the directory ``/dev".
-.IP ty_getty
-is the command (usually
-.IR getty (8))
-which is invoked by
-.I init
+The fields are as follows:
+.TP
+ty_name
+The name of the character-special file.
+.TP
+ty_getty
+The name of the command invoked by
+.IR init (8)
 to initialize tty line characteristics.
-In fact, any arbitrary command can be used;
-a typical use is to initiate a terminal emulator in a window system.
-.IP ty_type
-is the name of the default terminal type connected to this tty line. This
-is typically a name from the
-.IR termcap (5)
-data base.
-The environment variable `TERM' is initialized with this name by
-.IR getty (8)
-or
-.IR login (1).
-.IP ty_status
-is a mask of bit fields which indicate various actions to be allowed on this
-tty line. The following is a description of each flag.
-.RS
-.IP TTY_ON \w'TTY_SECURE'u+3
+.TP
+ty_type
+The name of the default terminal type connected to this tty line.
+.TP
+ty_status
+A mask of bit fields which indicate various actions allowed on this
+tty line.
+The possible flags are as follows:
+.IP
+TTY_ON
+.IP
 Enables logins (i.e.,
 .IR init (8)
-will start the specified ``getty" command
-on this entry).
-.IP TTY_SECURE
-Allows root to login on this terminal. Note that `TTY_ON' must be included
-for this to be useful.
-.RE
-.IP ty_window
-is the command to execute for a window system
-associated with the line.  The window system will be started before
-the command specified in the
+will start the command referenced by
 .I ty_getty
-entry is executed.
-If none is specified, this will be null.
-.IP ty_comment
-is the trailing comment field, if any; a leading delimiter and white space
-will be removed.
+on this entry).
+.IP
+TTY_SECURE
+.IP
+Allow users with a uid of 0 to login on this terminal.
+.TP
+ty_window
+The command to execute for a window system associated with the line.
+.TP
+ty_comment
+Any trailing comment field, with any leading hash marks (``#'') or
+whitespace removed.
+.PP
+If any of the fields pointing to character strings are unspecified,
+they are returned as null pointers.
+The field
+.I ty_status
+will be zero if no flag values are specified.
+.PP
+See
+.IR ttys (5)
+for a more complete discussion of the meaning and usage of the
+fields.
 .PP
 .I Getttyent
-reads the next
-line from the ttys file, opening the file if necessary;
-.I setttyent
-rewinds the file;
-.I endttyent
-closes it.
+reads the next line from the ttys file, opening the file if necessary.
+.I Setttyent
+rewinds the file if open, or opens the file if it is unopened.
+.I Endttyent
+closes any open files.
 .PP
 .I Getttynam
 searches from the beginning of the file until a matching
@@ -98,12 +116,17 @@ is found
 .SH FILES
 /etc/ttys
 .SH "SEE ALSO"
-login(1), ttyslot(3), ttys(5), gettytab(5), termcap(5), getty(8), init(8)
+login(1), ttyslot(3), gettytab(5), termcap(5), ttys(5), getty(8), init(8)
 .SH DIAGNOSTICS
-Null pointer
-(0) returned on EOF or error.
+The routines
+.I getttyent
+and
+.I getttynam
+return a null pointer on EOF or error.
+.I Setttyent
+and
+.I endttyent
+return 0 on failure and 1 on success.
 .SH BUGS
-All information
-is contained in a static area
-so it must be copied if it is
-to be saved.
+All information is contained in a static area so it must be copied if
+it is to be saved.
