@@ -14,14 +14,11 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)extern.h	5.2 (Berkeley) %G%
+ *	@(#)extern.h	5.3 (Berkeley) %G%
  */
 
 #include <sys/signal.h>
 #include <stdio.h>
-
-#define PATH(x)		"/usr/games/lib/x"
-#define logfile		PATH(battlestar.log)
 
 #define BITS (8 * sizeof (int))
 
