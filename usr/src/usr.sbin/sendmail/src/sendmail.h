@@ -1,7 +1,7 @@
 /*
 **  SENDMAIL.H -- Global definitions for sendmail.
 **
-**	@(#)sendmail.h	3.40	%G%
+**	@(#)sendmail.h	3.41	%G%
 */
 
 
@@ -26,7 +26,7 @@
 # define MAXFIELD	2500		/* max total length of a hdr field */
 # define MAXPV		40		/* max # of parms to mailers */
 # define MAXHOP		30		/* max value of HopCount */
-# define MAXATOM	15		/* max atoms per address */
+# define MAXATOM	30		/* max atoms per address */
 # define MAXMAILERS	10		/* maximum mailers known to system */
 # define SPACESUB	('.'|0200)	/* substitution for <lwsp> */
 
