@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)if_sl.c	7.6.1.1 (Berkeley) %G%
+ *	@(#)if_sl.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -62,7 +62,7 @@
 
 /*
  * N.B.: SLMTU is now a hard limit on input packet size.
- * SLMTU must be <= CLBYTES - sizeof(struct ifnet *).
+ * SLMTU must be <= MCLBYTES - sizeof(struct ifnet *).
  */
 #define	SLMTU	1006
 #define	SLIP_HIWAT	1000	/* don't start a new packet if HIWAT on queue */
@@ -399,16 +399,16 @@ sl_btom(sc, len, ifp)
 		 */
 		if (len >= NBPG) {
 			MCLGET(m);
-			if (m->m_len == CLBYTES) {
+			if (m->m_len == MCLBYTES) {
 				cp = mtod(m, char *);
 				m->m_off = (int)sc->sc_buf - (int)m;
 				sc->sc_buf = cp;
 				if (ifp) {
 					m->m_off += sizeof(ifp);
 					count = MIN(len,
-					    CLBYTES - sizeof(struct ifnet *));
+					    MCLBYTES - sizeof(struct ifnet *));
 				} else
-					count = MIN(len, CLBYTES);
+					count = MIN(len, MCLBYTES);
 				goto nocopy;
 			}
 		}
