@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	6.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	6.14 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -153,9 +153,8 @@ usrerr(fmt, va_alist)
 **  MESSAGE -- print message (not necessarily an error)
 **
 **	Parameters:
-**		num -- the default ARPANET error number (in ascii)
-**		msg -- the message (printf fmt) -- if it begins
-**			with a digit, this number overrides num.
+**		msg -- the message (printf fmt) -- it can begin with
+**			an SMTP reply code.  If not, 050 is assumed.
 **		a, b, c, d, e -- printf arguments
 **
 **	Returns:
