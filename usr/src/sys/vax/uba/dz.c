@@ -1,4 +1,4 @@
-/*	dz.c	4.9	%G%	*/
+/*	dz.c	4.10	%G%	*/
 
 #include "dz.h"
 #if NDZ11 > 0
@@ -12,6 +12,7 @@
 #include "../h/user.h"
 #include "../h/map.h"
 #include "../h/pte.h"
+#include "../h/buf.h"
 #include "../h/uba.h"
 #include "../h/conf.h"
 #include "../h/pdma.h"
@@ -28,9 +29,18 @@
  * we could try to more intelligently manage its silo.
  * Thus don't take this out if you have no dz's unless you
  * change clock.c and dhtimer().
+ *
+ * SHOULD RATHER QUEUE SOFTWARE INTERRUPT AT CLOCK TIME.
  */
 #define	spl5	spl6
  
+int	dzcntrlr(), dzslave(), dzrint();
+struct	uba_dinfo *dzinfo[NDZ11];
+u_short	dzstd[] = { 0 };
+int	(*dzivec[])() = { dzrint, 0 }; /* omit dzxint so we can do it here */
+struct	uba_driver dzdriver =
+	{ dzcntrlr, dzslave, (int (*)())0, 0, 0, dzstd, dzinfo, dzivec };
+
 #define NDZ 	(NDZ11*8)
  
 #define BITS7	020
@@ -48,7 +58,6 @@
 #define	OVERRUN	040000
 #define SSPEED	7		/* std speed = 300 baud */
 
- 
 #define	dzlpr	dzrbuf
 #define dzmsr	dzbrk
 #define ON	1
@@ -56,6 +65,7 @@
  
 int	dzstart();
 int	dzxint();
+int	dzdma();
 int	ttrstrt();
 struct	tty dz_tty[NDZ];
 int	dz_cnt = { NDZ };
@@ -70,62 +80,60 @@ struct device {
 	char	dzbrk;
 };
 
-struct pdma dzpdma[] = {
-	(struct device *)(DZADDR), NULL, NULL, (int)&dz_tty[0], dzxint,
-	(struct device *)(DZADDR), NULL, NULL, (int)&dz_tty[1], dzxint,
-	(struct device *)(DZADDR), NULL, NULL, (int)&dz_tty[2], dzxint,
-	(struct device *)(DZADDR), NULL, NULL, (int)&dz_tty[3], dzxint,
-	(struct device *)(DZADDR), NULL, NULL, (int)&dz_tty[4], dzxint,
-	(struct device *)(DZADDR), NULL, NULL, (int)&dz_tty[5], dzxint,
-	(struct device *)(DZADDR), NULL, NULL, (int)&dz_tty[6], dzxint,
-	(struct device *)(DZADDR), NULL, NULL, (int)&dz_tty[7], dzxint,
-#if NDZ11 >= 2
-	(struct device *)(DZADDR+010), NULL, NULL, (int)&dz_tty[8], dzxint,
-	(struct device *)(DZADDR+010), NULL, NULL, (int)&dz_tty[9], dzxint,
-	(struct device *)(DZADDR+010), NULL, NULL, (int)&dz_tty[10], dzxint,
-	(struct device *)(DZADDR+010), NULL, NULL, (int)&dz_tty[11], dzxint,
-	(struct device *)(DZADDR+010), NULL, NULL, (int)&dz_tty[12], dzxint,
-	(struct device *)(DZADDR+010), NULL, NULL, (int)&dz_tty[13], dzxint,
-	(struct device *)(DZADDR+010), NULL, NULL, (int)&dz_tty[14], dzxint,
-	(struct device *)(DZADDR+010), NULL, NULL, (int)&dz_tty[15], dzxint,
-#endif
-#if NDZ11 >= 3
-	(struct device *)(DZADDR+020), NULL, NULL, (int)&dz_tty[16], dzxint,
-	(struct device *)(DZADDR+020), NULL, NULL, (int)&dz_tty[17], dzxint,
-	(struct device *)(DZADDR+020), NULL, NULL, (int)&dz_tty[18], dzxint,
-	(struct device *)(DZADDR+020), NULL, NULL, (int)&dz_tty[19], dzxint,
-	(struct device *)(DZADDR+020), NULL, NULL, (int)&dz_tty[20], dzxint,
-	(struct device *)(DZADDR+020), NULL, NULL, (int)&dz_tty[21], dzxint,
-	(struct device *)(DZADDR+020), NULL, NULL, (int)&dz_tty[22], dzxint,
-	(struct device *)(DZADDR+020), NULL, NULL, (int)&dz_tty[23], dzxint,
-#endif
-#if NDZ11 >= 4
-	(struct device *)(DZADDR+030), NULL, NULL, (int)&dz_tty[24], dzxint,
-	(struct device *)(DZADDR+030), NULL, NULL, (int)&dz_tty[25], dzxint,
-	(struct device *)(DZADDR+030), NULL, NULL, (int)&dz_tty[26], dzxint,
-	(struct device *)(DZADDR+030), NULL, NULL, (int)&dz_tty[27], dzxint,
-	(struct device *)(DZADDR+030), NULL, NULL, (int)&dz_tty[28], dzxint,
-	(struct device *)(DZADDR+030), NULL, NULL, (int)&dz_tty[29], dzxint,
-	(struct device *)(DZADDR+030), NULL, NULL, (int)&dz_tty[30], dzxint,
-	(struct device *)(DZADDR+030), NULL, NULL, (int)&dz_tty[31], dzxint,
-#endif
-};
+struct	pdma dzpdma[NDZ];
 char	dz_timer;
-char	dz_speeds[] = {
-	0, 020 , 021 , 022 , 023 , 024 , 0, 025,
-	026 , 027 , 030 , 032 , 034 , 036 , 0 , 0,
-};
-char dz_brk[NDZ11];
+char	dz_speeds[] =
+	{ 0,020,021,022,023,024,0,025,026,027,030,032,034,036,0,0 };
+char	dz_brk[NDZ11];
  
+dzcntrlr(ui, reg)
+	struct uba_dinfo *ui;
+	caddr_t reg;
+{
+
+	((struct device *)reg)->dzcsr |= IENABLE;
+	/* get it to interrupt */
+}
+
+dzslave(ui, reg, slaveno, uban)
+	register struct uba_dinfo *ui;
+	caddr_t reg;
+{
+	register struct pdma *pdp = &dzpdma[ui->ui_unit*8];
+	register struct tty *tp = &dz_tty[ui->ui_unit*8];
+	register int cnt;
+	register int *urk = (int *)(&reg - 24);	/* white magic */
+	caddr_t cp;
+	int urk2;
+
+	for (cnt = 0; cnt < 8; cnt++) {
+		pdp->p_addr = (struct device *)reg;
+		pdp->p_arg = (int)tp;
+		pdp->p_fcn = dzxint;
+		pdp++, tp++;
+	}
+	if ((cp = calloc(12)) == 0)
+		panic("dz iv nm\n");
+	uba_hd[uban].uh_vec[*urk] = (int (*)())cp;	/* more white magic */
+	*cp++ = 0xbb; *cp++ = 0xff; *cp++ = 0xd0;	/* black magic */
+	*cp++ = ui->ui_unit&0x3f; *cp++ = 0x50;
+	*cp++ = 0x17; *cp++ = 0x9f;
+	urk2 = (int)dzdma;
+	for (cnt = 0; cnt < 4; cnt++)
+		*cp++ = urk2, urk2 >>= 4;		/* the spell ends */
+	return (1);
+}
+
 /*ARGSUSED*/
-dzopen(d, flag)
+dzopen(dev, flag)
+	dev_t dev;
 {
 	register struct tty *tp;
-	register dev;
+	register int unit;
 	extern dzscan();
  
-	dev = minor(d);
-	if (dev >= dz_cnt) {
+	unit = minor(dev);
+	if (unit >= dz_cnt || dzpdma[unit].p_addr == 0) {
 		u.u_error = ENXIO;
 		return;
 	}
@@ -133,8 +141,8 @@ dzopen(d, flag)
 		dz_timer++;
 		timeout(dzscan, (caddr_t)0, 60);
 	}
-	tp = &dz_tty[dev];
-	tp->t_addr = (caddr_t)&dzpdma[dev];
+	tp = &dz_tty[unit];
+	tp->t_addr = (caddr_t)&dzpdma[unit];
 	tp->t_oproc = dzstart;
 	tp->t_iproc = NULL;
 	tp->t_state |= WOPEN;
@@ -143,72 +151,76 @@ dzopen(d, flag)
 		tp->t_ospeed = tp->t_ispeed = SSPEED;
 		tp->t_flags = ODDP|EVENP|ECHO;
 		/*tp->t_state |= HUPCLS;*/
-		dzparam(dev);
+		dzparam(unit);
 	} else if (tp->t_state&XCLUDE && u.u_uid != 0) {
 		u.u_error = EBUSY;
 		return;
 	}
-	dzmodem(dev, ON);
+	dzmodem(unit, ON);
 	(void) spl5();
 	while ((tp->t_state & CARR_ON) == 0) {
 		tp->t_state |= WOPEN;
 		sleep((caddr_t)&tp->t_rawq, TTIPRI);
 	}
 	(void) spl0();
-	(*linesw[tp->t_line].l_open)(d, tp);
+	(*linesw[tp->t_line].l_open)(dev, tp);
 }
  
-dzclose(d)
+/*ARGSUSED*/
+dzclose(dev, flag)
+	dev_t dev;
 {
 	register struct tty *tp;
-	register dev;
+	register int unit;
+	int dz;
  
-	dev = minor(d);
-	tp = &dz_tty[dev];
+	unit = minor(dev);
+	dz = unit >> 3;
+	tp = &dz_tty[unit];
 	(*linesw[tp->t_line].l_close)(tp);
-	/*
-	 * Turn the break bit off in case it was left on by a TIOCSBRK
-	 * but not turned off by TIOCCBRK
-	 */
 	((struct pdma *)(tp->t_addr))->p_addr->dzbrk =
-		(dz_brk[minor(dev)>>3] &= ~(1 << (dev&07)));
+	    (dz_brk[dz] &= ~(1 << (unit&07)));
 	if (tp->t_state & HUPCLS)
-		dzmodem(dev, OFF);
+		dzmodem(unit, OFF);
 	ttyclose(tp);
 }
  
-dzread(d)
+dzread(dev)
+	dev_t dev;
 {
 	register struct tty *tp;
  
-	tp = &dz_tty[minor(d)];
+	tp = &dz_tty[minor(dev)];
 	(*linesw[tp->t_line].l_read)(tp);
 }
  
-dzwrite(d)
+dzwrite(dev)
+	dev_t dev;
 {
 	register struct tty *tp;
  
-	tp = &dz_tty[minor(d)];
+	tp = &dz_tty[minor(dev)];
 	(*linesw[tp->t_line].l_write)(tp);
 }
  
 /*ARGSUSED*/
-dzrint(dev)
+dzrint(dz)
+	int dz;
 {
 	register struct tty *tp;
 	register int c;
 	register struct device *dzaddr;
 	register struct tty *tp0;
+	register int unit;
 	int s;
  
 	s = spl6();	/* see comment in clock.c */
 	/* as long as we are here, service them all */
-	for (dev = 0; dev < NDZ; dev += 8) {
-		if ((dzact & (1<<(dev>>3))) == 0)
+	for (unit = 0; unit < NDZ; unit += 8) {
+		if ((dzact & (1<<(unit>>3))) == 0)
 			continue;
-		dzaddr = dzpdma[dev].p_addr;
-		tp0 = &dz_tty[dev];
+		dzaddr = dzpdma[unit].p_addr;
+		tp0 = &dz_tty[unit];
 		while ((c = dzaddr->dzrbuf) < 0) {	/* char present */
 			tp = tp0 + ((c>>8)&07);
 			if (tp >= &dz_tty[dz_cnt])
@@ -246,53 +258,57 @@ dzrint(dev)
  
 /*ARGSUSED*/
 dzioctl(dev, cmd, addr, flag)
-caddr_t addr;
-dev_t dev;
+	dev_t dev;
+	caddr_t addr;
 {
 	register struct tty *tp;
+	register int unit = minor(dev);
+	register int dz = unit >> 3;
  
-	tp = &dz_tty[minor(dev)];
+	tp = &dz_tty[unit];
 	cmd = (*linesw[tp->t_line].l_ioctl)(tp, cmd, addr);
 	if (cmd == 0)
 		return;
 	if (ttioctl(tp, cmd, addr, flag)) {
 		if (cmd==TIOCSETP || cmd==TIOCSETN)
-			dzparam(minor(dev));
+			dzparam(unit);
 	} else switch(cmd) {
+
 	case TIOCSBRK:
 		((struct pdma *)(tp->t_addr))->p_addr->dzbrk =
-			(dz_brk[minor(dev)>>3] |= 1 << (dev&07));
+			(dz_brk[dz] |= 1 << (unit&07));
 		break;
 	case TIOCCBRK:
 		((struct pdma *)(tp->t_addr))->p_addr->dzbrk =
-			(dz_brk[minor(dev)>>3] &= ~(1 << (dev&07)));
+			(dz_brk[dz] &= ~(1 << (unit&07)));
 		break;
 	case TIOCSDTR:
-		dzmodem(minor(dev), ON);
+		dzmodem(unit, ON);
 		break;
 	case TIOCCDTR:
-		dzmodem(minor(dev), OFF);
+		dzmodem(unit, OFF);
 		break;
 	default:
 		u.u_error = ENOTTY;
 	}
 }
  
-dzparam(dev)
+dzparam(unit)
+	register int unit;
 {
 	register struct tty *tp;
 	register struct device *dzaddr;
-	register short lpr;
+	register int lpr;
  
-	tp = &dz_tty[dev];
-	dzaddr = dzpdma[dev].p_addr;
+	tp = &dz_tty[unit];
+	dzaddr = dzpdma[unit].p_addr;
 	dzaddr->dzcsr = DZ_IEN;
-	dzact |= (1<<(dev>>3));
+	dzact |= (1<<(unit>>3));
 	if (tp->t_ispeed == 0) {
-		dzmodem(dev, OFF);		/* hang up line */
+		dzmodem(unit, OFF);		/* hang up line */
 		return;
 	}
-	lpr = (dz_speeds[tp->t_ispeed]<<8) | (dev & 07);
+	lpr = (dz_speeds[tp->t_ispeed]<<8) | (unit & 07);
 #ifndef IIASA
 	if ((tp->t_local&LLITOUT) || (tp->t_flags&RAW))
 		lpr |= BITS8;
@@ -316,13 +332,13 @@ dzparam(dev)
 }
  
 dzxint(tp)
-register struct tty *tp;
+	register struct tty *tp;
 {
 	register struct pdma *dp;
 	register s;
 	s = spl6();	/* block the clock */
  
-	dp = &dzpdma[tp-dz_tty];
+	dp = (struct pdma *)tp->t_addr;
 	tp->t_state &= ~BUSY;
 	if (tp->t_state & FLUSH)
 		tp->t_state &= ~FLUSH;
@@ -333,21 +349,21 @@ register struct tty *tp;
 	else
 		dzstart(tp);
 	if (tp->t_outq.c_cc == 0 || (tp->t_state&BUSY)==0)
-		dp->p_addr->dztcr &= ~(1 << ((tp-dz_tty) % 8));
+		dp->p_addr->dztcr &= ~(1 << (minor(tp->t_dev)&07));
 	splx(s);
 }
 
 dzstart(tp)
-register struct tty *tp;
+	register struct tty *tp;
 {
 	register struct pdma *dp;
 	register struct device *dzaddr;
-	register cc;
-	int sps;
+	register int cc;
+	int s;
  
-	dp = &dzpdma[tp-dz_tty];
+	dp = (struct pdma *)tp->t_addr;
 	dzaddr = dp->p_addr;
-	sps = spl5();
+	s = spl5();
 	if (tp->t_state & (TIMEOUT|BUSY|TTSTOP))
 		goto out;
 	if (tp->t_state&ASLEEP && tp->t_outq.c_cc <= TTLOWAT(tp)) {
@@ -373,9 +389,9 @@ register struct tty *tp;
 	tp->t_state |= BUSY;
 	dp->p_end = dp->p_mem = tp->t_outq.c_cf;
 	dp->p_end += cc;
-	dzaddr->dztcr |= 1 << ((tp-dz_tty) % 8);
-   out:
-	splx(sps);
+	dzaddr->dztcr |= 1 << (minor(tp->t_dev) & 07);
+out:
+	splx(s);
 }
  
 /*
@@ -384,30 +400,29 @@ register struct tty *tp;
  */
 /*ARGSUSED*/
 dzstop(tp, flag)
-register struct tty *tp;
+	register struct tty *tp;
 {
 	register struct pdma *dp;
 	register int s;
 
-	dp = &dzpdma[tp-dz_tty];
+	dp = (struct pdma *)tp->t_addr;
 	s = spl6();
 	if (tp->t_state & BUSY) {
 		dp->p_end = dp->p_mem;
-		if ((tp->t_state&TTSTOP)==0) {
+		if ((tp->t_state&TTSTOP)==0)
 			tp->t_state |= FLUSH;
-		}
 	}
 	splx(s);
 }
  
-dzmodem(dev, flag)
-register int dev;
+dzmodem(unit, flag)
+	register int unit;
 {
 	register struct device *dzaddr;
 	register char bit;
  
-	dzaddr = dzpdma[dev].p_addr;
-	bit = 1<<(dev&07);
+	dzaddr = dzpdma[unit].p_addr;
+	bit = 1<<(unit&07);
 	if (flag == OFF)
 		dzaddr->dzdtr &= ~bit;
 	else
@@ -432,7 +447,7 @@ dzscan()
 				tp->t_state |= CARR_ON;
 			}
 		} else {
-			if ((tp->t_state&CARR_ON) && (tp->t_local&LNOHANG) == 0) {
+			if ((tp->t_state&CARR_ON) && (tp->t_local&LNOHANG)==0) {
 				/* carrier lost */
 				if (tp->t_state&ISOPEN) {
 					gsignal(tp->t_pgrp, SIGHUP);
@@ -457,17 +472,19 @@ dztimer()
  * Reset state of driver if UBA reset was necessary.
  * Reset parameters and restart transmission on open lines.
  */
-dzreset()
+dzreset(uban)
 {
-	int d;
+	register int unit;
 	register struct tty *tp;
 
+	/*** WE SHOULD LOOK TO SEE IF WE CARE ABOUT UBA BEING RESET ***/
+
 	printf(" dz");
-	for (d = 0; d < NDZ; d++) {
-		tp = &dz_tty[d];
+	for (unit = 0; unit < NDZ; unit++) {
+		tp = &dz_tty[unit];
 		if (tp->t_state & (ISOPEN|WOPEN)) {
-			dzparam(d);
-			dzmodem(d, ON);
+			dzparam(unit);
+			dzmodem(unit, ON);
 			tp->t_state &= ~BUSY;
 			dzstart(tp);
 		}

@@ -1,4 +1,4 @@
-/*	hp.c	4.7	81/02/08	*/
+/*	hp.c	4.8	81/02/10	*/
 
 #include "hp.h"
 #if NHP > 0
@@ -121,7 +121,7 @@ hpstrategy(bp)
 	if (unit >= NHP)
 		goto bad;
 	mi = hpinfo[unit];
-	if (mi->mi_alive == 0)
+	if (mi == 0 || mi->mi_alive == 0)
 		goto bad;
 	st = &hpst[mi->mi_type];
 	if (bp->b_blkno < 0 ||
@@ -161,17 +161,17 @@ hpustart(mi)
 		return (MBU_DODATA);
 	if ((hpaddr->hpds & (DPR|MOL)) != (DPR|MOL))
 		return (MBU_DODATA);
-	hpaddr->hpdc = bp->b_cylin;
-	flags = mi->mi_hd->mh_flags;
 	if (flags&MH_NOSEEK)
 		return (MBU_DODATA);
+	hpaddr->hpdc = bp->b_cylin;
+	st = &hpst[mi->mi_type];
+	bn = dkblock(bp);
+	sn = bn%st->nspc;
+	sn = (sn+st->nsect-hpSDIST)%st->nsect;
+	flags = mi->mi_hd->mh_flags;
 	if (bp->b_cylin == (hpaddr->hpdc & 0xffff)) {
 		if (flags&MH_NOSEARCH)
 			return (MBU_DODATA);
-		bn = dkblock(bp);
-		st = &hpst[mi->mi_type];
-		sn = bn%st->nspc;
-		sn = (sn+st->nsect-hpSDIST)%st->nsect;
 		dist = ((hpaddr->hpla & 0xffff)>>6) - st->nsect + 1;
 		if (dist < 0)
 			dist += st->nsect;
@@ -199,7 +199,7 @@ hpstart(mi)
 	bn = dkblock(bp);
 	sn = bn%st->nspc;
 	tn = sn/st->nsect;
-	sn = sn%st->nsect;
+	sn %= st->nsect;
 	if (mi->mi_tab.b_errcnt >= 16 && (bp->b_flags&B_READ) != 0) {
 		hpaddr->hpof = hp_offset[mi->mi_tab.b_errcnt & 017] | FMT22;
 		hpaddr->hpcs1 = OFFSET|GO;

@@ -1,7 +1,7 @@
-/*	up.c	4.12	%G%	*/
+/*	up.c	4.13	81/02/10	*/
 
 #include "up.h"
-#if NUP > 0
+#if NSC21 > 0
 /*
  * UNIBUS disk driver with overlapped seeks and ECC recovery.
  */
@@ -9,6 +9,8 @@
 
 #include "../h/param.h"
 #include "../h/systm.h"
+#include "../h/cpu.h"
+#include "../h/nexus.h"
 #include "../h/dk.h"
 #include "../h/buf.h"
 #include "../h/conf.h"
@@ -24,50 +26,14 @@
 
 #include "../h/upreg.h"
 
-/*
- * Software extension to the upas register, so we can
- * postpone starting SEARCH commands until the controller
- * is not transferring.
- */
-int	upsoftas;
+struct	up_softc {
+	int	sc_softas;
+	int	sc_seek;
+	int	sc_info;
+	int	sc_wticks;
+} up_softc[NSC21];
 
-/*
- * If upseek then we don't issue SEARCH commands but rather just
- * settle for a SEEK to the correct cylinder.
- */
-int	upseek;
-
-#define	NSECT	32
-#define	NTRAC	19
-
-/*
- * Constants controlling on-cylinder SEARCH usage.
- *
- * 	upSDIST/2 msec		time needed to start transfer
- * 	upRDIST/2 msec		tolerable rotational latency when on-cylinder
- *
- * If we are no closer than upSDIST sectors and no further than upSDIST+upRDIST
- * and in the driver then we take it as it is.  Otherwise we do a SEARCH
- * requesting an interrupt upSDIST sectors in advance.
- */
-#define	_upSDIST	2		/* 1.0 msec */
-#define	_upRDIST	4		/* 2.0 msec */
-
-int	upSDIST = _upSDIST;
-int	upRDIST = _upRDIST;
-
-/*
- * To fill a 300M drive:
- *	A is designed to be used as a root.
- *	B is suitable for a swap area.
- *	H is the primary storage area.
- * On systems with RP06'es, we normally use only 291346 blocks of the H
- * area, and use DEF or G to cover the rest of the drive.  The C system
- * covers the whole drive and can be used for pack-pack copying.
- *
- * Note: sizes here are for AMPEX drives with 815 cylinders.
- * CDC drives can make the F,G, and H areas larger as they have 823 cylinders.
- */
+/* THIS SHOULD BE READ OFF THE PACK, PER DRIVE */
 struct	size
 {
 	daddr_t	nblocks;
@@ -81,23 +47,52 @@ struct	size
 	81472,	681,		/* F=cyl 681 thru 814 */
 	153824,	562,		/* G=cyl 562 thru 814 */
 	291346,	82,		/* H=cyl 82 thru 561 */
+}, fj_sizes[8] = {
+	15884,	0,		/* A=cyl 0 thru 49 */
+	33440,	50,		/* B=cyl 50 thru 154 */
+	263360,	0,		/* C=cyl 0 thru 822 */
+	0,	0,
+	0,	0,
+	0,	0,
+	0,	0,
+	213760,	155,		/* H=cyl 155 thru 822 */
 };
+/* END OF STUFF WHICH SHOULD BE READ IN PER DISK */
 
-/*
- * The following defines are used in offset positioning
- * when trying to recover disk errors, with the constants being
- * +/- microinches.  Note that header compare inhibit (HCI) is not
- * tried (this makes sense only during read, in any case.)
- *
- * NB: Not all drives/controllers emulate all of these.
- */
-#define	P400	020
-#define	M400	0220
-#define	P800	040
-#define	M800	0240
-#define	P1200	060
-#define	M1200	0260
-#define	HCI	020000
+#define	_upSDIST	2		/* 1.0 msec */
+#define	_upRDIST	4		/* 2.0 msec */
+
+int	upSDIST = _upSDIST;
+int	upRDIST = _upRDIST;
+
+int	upcntrlr(), upslave(), updgo(), upintr();
+struct	uba_minfo *upminfo[NSC21];
+struct	uba_dinfo *updinfo[NUP];
+struct	uba_minfo up_minfo[NSC21];
+	/* there is no reason for this to be a global structure, it
+	   is only known/used locally, it would be better combined
+	   with up_softc - but that would mean I would have to alter
+	   more than I want to just now. Similarly, there is no longer
+	   any real need for upminfo, but the code still uses it so ...
+	*/
+
+u_short	upstd[] = { 0 };
+int	(*upivec[])() = { upintr, 0 };
+struct	uba_driver updriver =
+	{ upcntrlr, upslave, updgo, 4, 0, upstd, updinfo, upivec };
+struct	buf	uputab[NUP];
+
+struct	upst {
+	short	nsect;
+	short	ntrak;
+	short	nspc;
+	short	ncyl;
+	struct	size *sizes;
+} upst[] = {
+	32,	19,	32*19,	815,	up_sizes,	/* 9300 */
+	32,	19,	32*19,	823,	up_sizes,	/* so cdc will boot */
+	32,	10,	32*10,	823,	fj_sizes,	/* fujitsu 160m */
+};
 
 int	up_offset[16] =
 {
@@ -107,133 +102,143 @@ int	up_offset[16] =
 	0, 0, 0, 0,
 };
 
-/*
- * Each drive has a table uputab[i].  On this table are sorted the
- * pending requests implementing an elevator algorithm (see dsort.c.)
- * In the upustart() routine, each drive is independently advanced
- * until it is on the desired cylinder for the next transfer and near
- * the desired sector.  The drive is then chained onto the uptab
- * table, and the transfer is initiated by the upstart() routine.
- * When the transfer is completed the driver reinvokes the upustart()
- * routine to set up the next transfer.
- */
-struct	buf	uptab;
-struct	buf	uputab[NUP];
-
-struct	buf	rupbuf;			/* Buffer for raw i/o */
+struct	buf	rupbuf;			/* GROT */
 
 #define	b_cylin b_resid
-
-int	up_ubinfo;		/* Information about UBA usage saved here */
-
-int	up_wticks;		/* Ticks waiting for interrupt */
-int	upwstart;		/* Have started guardian */
-int	upwatch();
 
 #ifdef INTRLVE
 daddr_t dkblock();
 #endif
- 
-/*
- * Queue an i/o request for a drive, checking first that it is in range.
- *
- * A unit start is issued if the drive is inactive, causing
- * a SEARCH for the correct cylinder/sector.  If the drive is
- * already nearly on the money and the controller is not transferring
- * we kick it to start the transfer.
- */
-upstrategy(bp)
-register struct buf *bp;
+
+int	upwstart, upwatch();		/* Have started guardian */
+
+/*ARGSUSED*/
+upcntrlr(um, reg)
+	struct uba_minfo *um;
+	caddr_t reg;
 {
-	register struct buf *dp;
-	register unit, xunit;
-	long sz, bn;
+	((struct device *)reg)->upcs1 |= (IE|RDY);
+	return(1);			/* just assume it is us (for now) */
+}
+
+upslave(ui, reg, slaveno, uban)
+	struct uba_dinfo *ui;
+	caddr_t reg;
+{
+	register struct device *upaddr = (struct device *)reg;
+	register struct uba_minfo *um;
+	register int sc21;
+
+	upaddr->upcs1 = 0;		/* conservative */
+	upaddr->upcs2 = slaveno;
+	if (upaddr->upcs2&NED) {
+		upaddr->upcs1 = DCLR|GO;
+		return (0);
+	}
+	/*** we should check device type (return 0 if we don't like it) ***/
+	/*** and set type index in ui->ui_type, but we KNOW all we are  ***/
+	/*** going to see at the minute is a 9300, and the index for a  ***/
+	/*** 9300 is 0, which is the value already in ui->ui_type, so ..***/
+
+	um = &up_minfo[0];
+	for (sc21 = 0; sc21 < NSC21; sc21++) {
+		if (um->um_alive == 0) {	/* this is a new ctrlr */
+			um->um_addr = reg;
+			um->um_ubanum = uban;
+			um->um_num = sc21;	/* not needed after up_softc
+						   combined with um ???  */
+			um->um_alive = 1;
+			upminfo[sc21] = um;	/* just till upminfo vanishes */
+			goto found;
+		}
+		if (um->um_addr == reg && um->um_ubanum == uban)
+			goto found;
+		um++;
+	}
+	return(0);				/* too many sc21's */
+
+    found:
+	ui->ui_mi = um;
 
 	if (upwstart == 0) {
 		timeout(upwatch, (caddr_t)0, HZ);
 		upwstart++;
 	}
-	xunit = minor(bp->b_dev) & 077;
+	return (1);
+}
+ 
+/*
+	dk_mspw[UPDK_N+unit] = .0000020345;
+*/
+
+upstrategy(bp)
+	register struct buf *bp;
+{
+	register struct uba_dinfo *ui;
+	register struct uba_minfo *um;
+	register struct upst *st;
+	register int unit;
+	int xunit = minor(bp->b_dev) & 07;
+	long sz, bn;
+
 	sz = bp->b_bcount;
 	sz = (sz+511) >> 9;		/* transfer size in 512 byte sectors */
 	unit = dkunit(bp);
-	if (unit >= NUP ||
-	    bp->b_blkno < 0 ||
-	    (bn = dkblock(bp))+sz > up_sizes[xunit&07].nblocks) {
-		bp->b_flags |= B_ERROR;
-		iodone(bp);
-		return;
-	}
-	if (UPDK_N+unit <= UPDK_NMAX)
-		dk_mspw[UPDK_N+unit] = .0000020345;
-	bp->b_cylin = bn/(NSECT*NTRAC) + up_sizes[xunit&07].cyloff;
-	dp = &uputab[unit];
+	if (unit >= NUP)
+		goto bad;
+	ui = updinfo[unit];
+	if (ui == 0 || ui->ui_alive == 0)
+		goto bad;
+	st = &upst[ui->ui_type];
+	if (bp->b_blkno < 0 ||
+	    (bn = dkblock(bp))+sz > st->sizes[xunit].nblocks)
+		goto bad;
+	bp->b_cylin = bn/st->nspc + st->sizes[xunit].cyloff;
 	(void) spl5();
-	disksort(dp, bp);
-	if (dp->b_active == 0) {
-		(void) upustart(unit);
-		if (uptab.b_actf && uptab.b_active == 0)
-			(void) upstart();
+	disksort(&uputab[ui->ui_unit], bp);
+	if (uputab[ui->ui_unit].b_active == 0) {
+		(void) upustart(ui);
+		bp = &ui->ui_mi->um_tab;
+		if (bp->b_actf && bp->b_active == 0)
+			(void) upstart(ui->ui_mi);
 	}
 	(void) spl0();
+	return;
+
+bad:
+	bp->b_flags |= B_ERROR;
+	iodone(bp);
+	return;
 }
 
-/*
- * Start activity on specified drive; called when drive is inactive
- * and new transfer request arrives and also when upas indicates that
- * a SEARCH command is complete.
- */
-upustart(unit)
-register unit;
+upustart(ui)
+	register struct uba_dinfo *ui;
 {
 	register struct buf *bp, *dp;
-	register struct device *upaddr = UPADDR;
+	register struct uba_minfo *um;
+	register struct device *upaddr;
+	register struct upst *st;
 	daddr_t bn;
 	int sn, cn, csn;
 	int didie = 0;
 
-	/*
-	 * Other drivers tend to say something like
-	 *	upaddr->upcs1 = IE;
-	 *	upaddr->upas = 1<<unit;
-	 * here, but some controllers will cancel a command
-	 * happens to be sitting in the cs1 if you clear the go
-	 * bit by storing there (so the first is not safe).
-	 *
-	 * Thus we keep careful track of when we re-enable IE
-	 * after an interrupt and do it only if we didn't issue
-	 * a command which re-enabled it as a matter of course.
-	 * We clear bits in upas in the interrupt routine, when
-	 * no transfers are active.
-	 */
-	if (unit >= NUP)
-		goto out;
-	if (unit+UPDK_N <= UPDK_NMAX)
-		dk_busy &= ~(1<<(unit+UPDK_N));
-	dp = &uputab[unit];
+	/* SC21 cancels commands if you say cs1 = IE, so dont */
+	/* being ultra-cautious, we clear as bits only in upintr() */
+	dk_busy &= ~(1<<ui->ui_dk);
+	dp = &uputab[ui->ui_unit];
 	if ((bp = dp->b_actf) == NULL)
 		goto out;
-	/*
-	 * Most controllers don't start SEARCH commands when transfers are
-	 * in progress.  In fact, some tend to get confused when given
-	 * SEARCH'es during transfers, generating interrupts with neither
-	 * RDY nor a bit in the upas register.  Thus we defer
-	 * until an interrupt when a transfer is pending.
-	 */
-	if (uptab.b_active) {
-		upsoftas |= 1<<unit;
+	/* dont confuse controller by giving SEARCH while dt in progress */
+	um = ui->ui_mi;
+	if (um->um_tab.b_active) {
+		up_softc[um->um_num].sc_softas |= 1<<ui->ui_slave;
 		return (0);
 	}
 	if (dp->b_active)
 		goto done;
 	dp->b_active = 1;
-	if ((upaddr->upcs2 & 07) != unit)
-		upaddr->upcs2 = unit;
-	/*
-	 * If we have changed packs or just initialized,
-	 * then the volume will not be valid; if so, clear
-	 * the drive, preset it and put in 16bit/word mode.
-	 */
+	upaddr = (struct device *)um->um_addr;
+	upaddr->upcs2 = ui->ui_slave;
 	if ((upaddr->upds & VV) == 0) {
 		upaddr->upcs1 = IE|DCLR|GO;
 		upaddr->upcs1 = IE|PRESET|GO;
@@ -242,110 +247,82 @@ register unit;
 	}
 	if ((upaddr->upds & (DPR|MOL)) != (DPR|MOL))
 		goto done;
-
-#if NUP > 1
-	/*
-	 * Do enough of the disk address decoding to determine
-	 * which cylinder and sector the request is on.
-	 * If we are on the correct cylinder and the desired sector
-	 * lies between upSDIST and upSDIST+upRDIST sectors ahead of us, then
-	 * we don't bother to SEARCH but just begin the transfer asap.
-	 * Otherwise ask for a interrupt upSDIST sectors ahead.
-	 */
+	st = &upst[ui->ui_type];
 	bn = dkblock(bp);
 	cn = bp->b_cylin;
-	sn = bn%(NSECT*NTRAC);
-	sn = (sn+NSECT-upSDIST)%NSECT;
-
+	sn = bn%st->nspc;
+	sn = (sn + st->nsect - upSDIST) % st->nsect;
 	if (cn - upaddr->updc)
 		goto search;		/* Not on-cylinder */
+/****				WHAT SHOULD THIS BE NOW ???
 	else if (upseek)
 		goto done;		/* Ok just to be on-cylinder */
 	csn = (upaddr->upla>>6) - sn - 1;
 	if (csn < 0)
-		csn += NSECT;
-	if (csn > NSECT-upRDIST)
+		csn += st->nsect;
+	if (csn > st->nsect - upRDIST)
 		goto done;
-
 search:
 	upaddr->updc = cn;
+/***				ANOTHER OCCURRENCE
 	if (upseek)
 		upaddr->upcs1 = IE|SEEK|GO;
-	else {
+	else  ****/   {
 		upaddr->upda = sn;
 		upaddr->upcs1 = IE|SEARCH|GO;
 	}
 	didie = 1;
-	/*
-	 * Mark this unit busy.
-	 */
-	unit += UPDK_N;
-	if (unit <= UPDK_NMAX) {
-		dk_busy |= 1<<unit;
-		dk_seek[unit]++;
+	if (ui->ui_dk >= 0) {
+		dk_busy |= 1<<ui->ui_dk;
+		dk_seek[ui->ui_dk]++;
 	}
 	goto out;
-#endif
-
 done:
-	/*
-	 * This unit is ready to go so
-	 * link it onto the chain of ready disks.
-	 */
 	dp->b_forw = NULL;
-	if (uptab.b_actf == NULL)
-		uptab.b_actf = dp;
+	if (um->um_tab.b_actf == NULL)
+		um->um_tab.b_actf = dp;
 	else
-		uptab.b_actl->b_forw = dp;
-	uptab.b_actl = dp;
-
+		um->um_tab.b_actl->b_forw = dp;
+	um->um_tab.b_actl = dp;
 out:
 	return (didie);
 }
 
-/*
- * Start a transfer; call from top level at spl5() or on interrupt.
- */
-upstart()
+upstart(um)
+	register struct uba_minfo *um;
 {
 	register struct buf *bp, *dp;
+	register struct uba_dinfo *ui;
 	register unit;
 	register struct device *upaddr;
+	register struct upst *st;
 	daddr_t bn;
 	int dn, sn, tn, cn, cmd;
 
 loop:
-	/*
-	 * Pick a drive off the queue of ready drives, and
-	 * perform the first transfer on its queue.
-	 *
-	 * Looping here is completely for the sake of drives which
-	 * are not present and on-line, for which we completely clear the
-	 * request queue.
-	 */
-	if ((dp = uptab.b_actf) == NULL)
+	if ((dp = um->um_tab.b_actf) == NULL)
 		return (0);
 	if ((bp = dp->b_actf) == NULL) {
-		uptab.b_actf = dp->b_forw;
+		um->um_tab.b_actf = dp->b_forw;
 		goto loop;
 	}
 	/*
 	 * Mark the controller busy, and multi-part disk address.
 	 * Select the unit on which the i/o is to take place.
 	 */
-	uptab.b_active++;
-	unit = minor(bp->b_dev) & 077;
-	dn = dkunit(bp);
+	um->um_tab.b_active++;
+	ui = updinfo[dkunit(bp)];
 	bn = dkblock(bp);
-	cn = up_sizes[unit&07].cyloff;
-	cn += bn/(NSECT*NTRAC);
-	sn = bn%(NSECT*NTRAC);
-	tn = sn/NSECT;
-	sn %= NSECT;
-	upaddr = UPADDR;
+	dn = ui->ui_slave;
+	st = &upst[ui->ui_type];
+	sn = bn%st->nspc;
+	tn = sn/st->nsect;
+	sn %= st->nsect;
+	upaddr = (struct device *)ui->ui_addr;
 	if ((upaddr->upcs2 & 07) != dn)
 		upaddr->upcs2 = dn;
-	up_ubinfo = ubasetup(bp, 1);
+	up_softc[um->um_num].sc_info =
+	    ubasetup(ui->ui_ubanum, bp, UBA_NEEDBDP|UBA_CANTWAIT);
 	/*
 	 * If drive is not present and on-line, then
 	 * get rid of this with an error and loop to get
@@ -356,14 +333,14 @@ loop:
 		printf("!DPR || !MOL, unit %d, ds %o", dn, upaddr->upds);
 		if ((upaddr->upds & (DPR|MOL)) != (DPR|MOL)) {
 			printf("-- hard\n");
-			uptab.b_active = 0;
-			uptab.b_errcnt = 0;
+			um->um_tab.b_active = 0;
+			um->um_tab.b_errcnt = 0;
 			dp->b_actf = bp->av_forw;
 			dp->b_active = 0;
 			bp->b_flags |= B_ERROR;
 			iodone(bp);
 			/* A funny place to do this ... */
-			ubarelse(&up_ubinfo);
+			ubarelse(&up_softc[um->um_num].sc_info);
 			goto loop;
 		}
 		printf("-- came back\n");
@@ -372,8 +349,8 @@ loop:
 	 * If this is a retry, then with the 16'th retry we
 	 * begin to try offsetting the heads to recover the data.
 	 */
-	if (uptab.b_errcnt >= 16 && (bp->b_flags&B_READ) != 0) {
-		upaddr->upof = up_offset[uptab.b_errcnt & 017] | FMT22;
+	if (um->um_tab.b_errcnt >= 16 && (bp->b_flags&B_READ) != 0) {
+		upaddr->upof = up_offset[um->um_tab.b_errcnt & 017] | FMT22;
 		upaddr->upcs1 = IE|OFFSET|GO;
 		while (upaddr->upds & PIP)
 			DELAY(25);
@@ -385,9 +362,9 @@ loop:
 	 */
 	upaddr->updc = cn;
 	upaddr->upda = (tn << 8) + sn;
-	upaddr->upba = up_ubinfo;
+	upaddr->upba = up_softc[um->um_num].sc_info;
 	upaddr->upwc = -bp->b_bcount / sizeof (short);
-	cmd = (up_ubinfo >> 8) & 0x300;
+	cmd = (up_softc[um->um_num].sc_info >> 8) & 0x300;
 	if (bp->b_flags & B_READ)
 		cmd |= IE|RCOM|GO;
 	else
@@ -400,13 +377,15 @@ loop:
 	 * us in which case we record this as a drive busy
 	 * (if there is room for that).
 	 */
-	unit = dn+UPDK_N;
-	if (unit <= UPDK_NMAX) {
-		dk_busy |= 1<<unit;
-		dk_xfer[unit]++;
-		dk_wds[unit] += bp->b_bcount>>6;
-	}
+	unit = ui->ui_dk;
+	dk_busy |= 1<<unit;
+	dk_xfer[unit]++;
+	dk_wds[unit] += bp->b_bcount>>6;
 	return (1);
+}
+
+updgo()
+{
 }
 
 /*
@@ -415,115 +394,71 @@ loop:
  * If the transferring drive needs attention, service it
  * retrying on error or beginning next transfer.
  * Service all other ready drives, calling ustart to transfer
- * their blocks to the ready queue in uptab, and then restart
+ * their blocks to the ready queue in um->um_tab, and then restart
  * the controller if there is anything to do.
  */
-upintr()
+upintr(sc21)
+	register sc21;
 {
 	register struct buf *bp, *dp;
+	register struct uba_minfo *um = upminfo[sc21];
+	register struct uba_dinfo *ui;
+	register struct device *upaddr = (struct device *)um->um_addr;
 	register unit;
-	register struct device *upaddr = UPADDR;
 	int as = upaddr->upas & 0377;
-	int oupsoftas;
 	int needie = 1;
 
 	(void) spl6();
-	up_wticks = 0;
-	if (uptab.b_active) {
-		/*
-		 * The drive is transferring, thus the hardware
-		 * (say the designers) will only interrupt when the transfer
-		 * completes; check for it anyways.
-		 */
+	up_softc[um->um_num].sc_wticks = 0;
+	if (um->um_tab.b_active) {
 		if ((upaddr->upcs1 & RDY) == 0) {
 			printf("!RDY: cs1 %o, ds %o, wc %d\n", upaddr->upcs1,
 			    upaddr->upds, upaddr->upwc);
-			printf("as=%d act %d %d %d\n", as, uptab.b_active,
+			printf("as=%d act %d %d %d\n", as, um->um_tab.b_active,
 			    uputab[0].b_active, uputab[1].b_active);
 		}
-		/*
-		 * Mark drive not busy, and check for an
-		 * error condition which may have resulted from the transfer.
-		 */
-		dp = uptab.b_actf;
+		dp = um->um_tab.b_actf;
 		bp = dp->b_actf;
-		unit = dkunit(bp);
-		if (UPDK_N+unit <= UPDK_NMAX)
-			dk_busy &= ~(1<<(UPDK_N+unit));
-		if ((upaddr->upcs2 & 07) != unit)
-			upaddr->upcs2 = unit;
+		ui = updinfo[dkunit(bp)];
+		dk_busy &= ~(1 << ui->ui_dk);
+		upaddr->upcs2 = ui->ui_slave;
 		if ((upaddr->upds&ERR) || (upaddr->upcs1&TRE)) {
 			int cs2;
-			/*
-			 * An error occurred, indeed.  Select this unit
-			 * to get at the drive status (a SEARCH may have
-			 * intervened to change the selected unit), and
-			 * wait for the command which caused the interrupt
-			 * to complete (DRY).
-			 */
 			while ((upaddr->upds & DRY) == 0)
 				DELAY(25);
-			/*
-			 * After 28 retries (16 w/o servo offsets, and then
-			 * 12 with servo offsets), or if we encountered
-			 * an error because the drive is write-protected,
-			 * give up.  Print an error message on the last 2
-			 * retries before a hard failure.
-			 */
-			if (++uptab.b_errcnt > 28 || upaddr->uper1&WLE)
+			if (++um->um_tab.b_errcnt > 28 || upaddr->uper1&WLE)
 				bp->b_flags |= B_ERROR;
 			else
-				uptab.b_active = 0;	/* To force retry */
-			if (uptab.b_errcnt > 27)
+				um->um_tab.b_active = 0; /* force retry */
+			if (um->um_tab.b_errcnt > 27) {
 				cs2 = (int)upaddr->upcs2;
-				deverror(bp, (int)upaddr->upcs2,
-				    (int)upaddr->uper1);
-			/*
-			 * If this was a correctible ECC error, let upecc
-			 * do the dirty work to correct it.  If upecc
-			 * starts another READ for the rest of the data
-			 * then it returns 1 (having set uptab.b_active).
-			 * Otherwise we are done and fall through to
-			 * finish up.
-			 */
-			if ((upaddr->uper1&(DCK|ECH))==DCK && upecc(upaddr, bp))
+				deverror(bp, cs2, (int)upaddr->uper1);
+			}
+			if ((upaddr->uper1&(DCK|ECH))==DCK && upecc(ui))
 				return;
-			/*
-			 * Clear the drive and, every 4 retries, recalibrate
-			 * to hopefully help clear up seek positioning problems.
-			 */
 			upaddr->upcs1 = TRE|IE|DCLR|GO;
 			needie = 0;
-			if ((uptab.b_errcnt&07) == 4) {
+			if ((um->um_tab.b_errcnt&07) == 4) {
 				upaddr->upcs1 = RECAL|GO|IE;
 				while(upaddr->upds & PIP)
 					DELAY(25);
 			}
-			if (uptab.b_errcnt == 28 && cs2&(NEM|MXF)) {
+			if (um->um_tab.b_errcnt == 28 && cs2&(NEM|MXF)) {
 				printf("FLAKEY UP ");
-				ubareset();
+				ubareset(um->um_ubanum);
 				return;
 			}
 		}
-		/*
-		 * If we are still noted as active, then no
-		 * (further) retries are necessary.  
-		 *
-		 * Make sure the correct unit is selected,
-		 * return it to centerline if necessary, and mark
-		 * this i/o complete, starting the next transfer
-		 * on this drive with the upustart routine (if any).
-		 */
-		if (uptab.b_active) {
-			if (uptab.b_errcnt >= 16) {
+		if (um->um_tab.b_active) {
+			if (um->um_tab.b_errcnt >= 16) {
 				upaddr->upcs1 = RTC|GO|IE;
 				while (upaddr->upds & PIP)
 					DELAY(25);
 				needie = 0;
 			}
-			uptab.b_active = 0;
-			uptab.b_errcnt = 0;
-			uptab.b_actf = dp->b_forw;
+			um->um_tab.b_active = 0;
+			um->um_tab.b_errcnt = 0;
+			um->um_tab.b_actf = dp->b_forw;
 			dp->b_active = 0;
 			dp->b_errcnt = 0;
 			dp->b_actf = bp->av_forw;
@@ -533,36 +468,29 @@ upintr()
 				    bp->b_resid, upaddr->upds,
 				    upaddr->uper1, upaddr->uper2, upaddr->uper3);
 			iodone(bp);
-			if(dp->b_actf)
-				if (upustart(unit))
+			if (dp->b_actf)
+				if (upustart(ui))
 					needie = 0;
 		}
-		as &= ~(1<<unit);
-		upsoftas &= ~(1<<unit);
-		ubarelse(&up_ubinfo);
+		up_softc[um->um_num].sc_softas &= ~(1<<ui->ui_slave);
+		ubarelse(&up_softc[um->um_num].sc_info);
 	} else {
 		if (upaddr->upcs1 & TRE)
 			upaddr->upcs1 = TRE;
 	}
-	/*
-	 * If we have a unit with an outstanding SEARCH,
-	 * and the hardware indicates the unit requires attention,
-	 * the bring the drive to the ready queue.
-	 * Finally, if the controller is not transferring
-	 * start it if any drives are now ready to transfer.
-	 */
-	as |= upsoftas;
-	oupsoftas = upsoftas;
-	upsoftas = 0;
-	for (unit = 0; unit < NUP; unit++)
-		if ((as|oupsoftas) & (1<<unit)) {
+	as |= up_softc[um->um_num].sc_softas;
+	for (unit = 0; unit < NUP; unit++) {
+		if ((ui = updinfo[unit]) == 0 || ui->ui_mi != um)
+			continue;
+		if (as & (1<<unit)) {
 			if (as & (1<<unit))
 				upaddr->upas = 1<<unit;
-			if (upustart(unit))
+			if (upustart(ui))
 				needie = 0;
 		}
-	if (uptab.b_actf && uptab.b_active == 0)
-		if (upstart())
+	}
+	if (um->um_tab.b_actf && um->um_tab.b_active == 0)
+		if (upstart(um))
 			needie = 0;
 	if (needie)
 		upaddr->upcs1 = IE;
@@ -570,13 +498,11 @@ upintr()
 
 upread(dev)
 {
-
 	physio(upstrategy, &rupbuf, dev, B_READ, minphys);
 }
 
 upwrite(dev)
 {
-
 	physio(upstrategy, &rupbuf, dev, B_WRITE, minphys);
 }
 
@@ -586,11 +512,14 @@ upwrite(dev)
  * the transfer may be going to an odd memory address base and/or
  * across a page boundary.
  */
-upecc(up, bp)
-register struct device *up;
-register struct buf *bp;
+upecc(ui)
+	register struct uba_dinfo *ui;
 {
-	struct uba_regs *ubp = (struct uba_regs *)UBA0;
+	register struct device *up = (struct device *)ui->ui_addr;
+	register struct buf *bp = uputab[ui->ui_unit].b_actf;
+	register struct uba_minfo *um = ui->ui_mi;
+	register struct upst *st;
+	struct uba_regs *ubp = ui->ui_hd->uh_uba;
 	register int i;
 	caddr_t addr;
 	int reg, bit, byte, npf, mask, o, cmd, ubaddr;
@@ -603,7 +532,7 @@ register struct buf *bp;
 	 * O is offset within a memory page of the first byte transferred.
 	 */
 	npf = btop((up->upwc * sizeof(short)) + bp->b_bcount) - 1;
-	reg = btop(up_ubinfo&0x3ffff) + npf;
+	reg = btop(up_softc[um->um_num].sc_info&0x3ffff) + npf;
 	o = (int)bp->b_un.b_addr & PGOFSET;
 	printf("%D ", bp->b_blkno+npf);
 	prdev("ECC", bp->b_dev);
@@ -618,7 +547,7 @@ register struct buf *bp;
 	 * is the byte offset in the transfer, the variable byte
 	 * is the offset from a page boundary in main memory.
 	 */
-	ubp->uba_dpr[(up_ubinfo>>28)&0x0f] |= BNE;
+	ubp->uba_dpr[(up_softc[um->um_num].sc_info>>28)&0x0f] |= UBA_BNE;
 	i = up->upec1 - 1;		/* -1 makes 0 origin */
 	bit = i&07;
 	i = (i&~07)>>3;
@@ -637,7 +566,7 @@ register struct buf *bp;
 		i++;
 		bit -= 8;
 	}
-	uptab.b_active++;	/* Either complete or continuing... */
+	um->um_tab.b_active++;	/* Either complete or continuing... */
 	if (up->upwc == 0)
 		return (0);
 	/*
@@ -648,12 +577,13 @@ register struct buf *bp;
 	 */
 	up->upcs1 = TRE|IE|DCLR|GO;
 	bn = dkblock(bp);
+	st = &upst[ui->ui_type];
 	cn = bp->b_cylin;
-	sn = bn%(NSECT*NTRAC) + npf + 1;
-	tn = sn/NSECT;
-	sn %= NSECT;
-	cn += tn/NTRAC;
-	tn %= NTRAC;
+	sn = bn%st->nspc + npf + 1;
+	tn = sn/st->nsect;
+	sn %= st->nsect;
+	cn += tn/st->ntrak;
+	tn %= st->ntrak;
 	up->updc = cn;
 	up->upda = (tn << 8) | sn;
 	ubaddr = (int)ptob(reg+1) + o;
@@ -669,24 +599,45 @@ register struct buf *bp;
  * Cancel software state of all pending transfers
  * and restart all units and the controller.
  */
-upreset()
+upreset(uban)
 {
-	int unit;
+	register struct uba_minfo *um;
+	register struct uba_dinfo *ui;
+	register sc21, unit;
 
+	/* we should really delay the printf & DELAY till we know
+	 * that there is at least one sc21 on this UBA, but then
+	 * we would have to remember we had done it before, or the
+	 * msg would come twice(or whatever) - but perhaps that
+	 * wouldn't be such a bad thing - too many delays would
+	 * be annoying however
+	 */
 	printf(" up");
 	DELAY(15000000);		/* give it time to self-test */
-	uptab.b_active = 0;
-	uptab.b_actf = uptab.b_actl = 0;
-	if (up_ubinfo) {
-		printf("<%d>", (up_ubinfo>>28)&0xf);
-		ubarelse(&up_ubinfo);
+	for (sc21 = 0; sc21 < NSC21; sc21++) {
+		if ((um = upminfo[sc21]) == 0)
+			continue;
+		if (um->um_ubanum != uban)
+			continue;
+		if (!um->um_alive)
+			continue;
+		um->um_tab.b_active = 0;
+		um->um_tab.b_actf = um->um_tab.b_actl = 0;
+		if (up_softc[um->um_num].sc_info) {
+			printf("<%d>", (up_softc[um->um_num].sc_info>>28)&0xf);
+			ubarelse(&up_softc[um->um_num].sc_info);
+		}
+		((struct device *)(um->um_addr))->upcs2 = CLR;
+		for (unit = 0; unit < NUP; unit++) {
+			if ((ui = updinfo[unit]) == 0)
+				continue;
+			if (ui->ui_alive == 0)
+				continue;
+			uputab[unit].b_active = 0;
+			(void) upustart(ui);
+		}
+		(void) upstart(um);
 	}
-	UPADDR->upcs2 = CLR;		/* clear controller */
-	for (unit = 0; unit < NUP; unit++) {
-		uputab[unit].b_active = 0;
-		(void) upustart(unit);
-	}
-	(void) upstart();
 }
 
 /*
@@ -697,23 +648,28 @@ upreset()
  */
 upwatch()
 {
-	int i;
+	register struct uba_minfo *um;
+	register sc21, unit;
 
 	timeout(upwatch, (caddr_t)0, HZ);
-	if (uptab.b_active == 0) {
-		for (i = 0; i < NUP; i++)
-			if (uputab[i].b_active)
-				goto active;
-		up_wticks = 0;		/* idling */
-		return;
-	}
-active:
-	up_wticks++;
-	if (up_wticks >= 20) {
-		up_wticks = 0;
-		printf("LOST INTERRUPT RESET");
-		upreset();
-		printf("\n");
+	for (sc21 = 0; sc21 < NSC21; sc21++) {
+		um = upminfo[sc21];
+		if (um->um_tab.b_active == 0) {
+			for (unit = 0; unit < NUP; unit++)
+				if (updinfo[unit]->ui_mi == um &&
+				    uputab[unit].b_active)
+					goto active;
+			up_softc[sc21].sc_wticks = 0;
+			continue;
+		}
+    active:
+		up_softc[sc21].sc_wticks++;
+		if (up_softc[sc21].sc_wticks >= 20) {
+			up_softc[sc21].sc_wticks = 0;
+			printf("LOST INTERRUPT RESET");
+			upreset(um->um_ubanum);
+			printf("\n");
+		}
 	}
 }
 
@@ -726,27 +682,39 @@ updump(dev)
 	char *start;
 	int num, blk, unit, nsect, ntrak, nspc;
 	struct size *sizes;
-#if VAX==780
-	register struct uba_regs *up = (struct uba_regs *)PHYSUBA0;
+	register struct uba_regs *uba;
+	register struct uba_dinfo *ui;
 	register short *rp;
+	struct upst *st;
 	int bdp;
 
-	up->uba_cr = ADINIT;
-	up->uba_cr = IFS|BRIE|USEFIE|SUEFIE;
-	while ((up->uba_cnfgr & UBIC) == 0)
-		;
-#endif
-	DELAY(1000000);
-	while ((UPADDR->upcs1&DVA) == 0)
-		;
-	num = maxfree;
-	start = 0;
 	unit = minor(dev) >> 3;
 	if (unit >= NUP) {
 		printf("bad unit\n");
 		return (-1);
 	}
-	upaddr = UPPHYS;
+#define	phys1(cast, addr) ((cast)((int)addr & 0x7fffffff))
+#define	phys(cast, addr) phys1(cast, phys1(cast *, &addr))
+	ui = phys(struct uba_dinfo *, updinfo[unit]);
+	if (ui->ui_alive == 0) {
+		printf("dna\n");
+		return(-1);
+	}
+	uba = phys(struct uba_hd *, ui->ui_hd)->uh_physuba;
+#if VAX780
+	if (cpu == VAX_780) {
+		uba->uba_cr = UBA_ADINIT;
+		uba->uba_cr = UBA_IFS|UBA_BRIE|UBA_USEFIE|UBA_SUEFIE;
+		while ((uba->uba_cnfgr & UBA_UBIC) == 0)
+			;
+	}
+#endif
+	DELAY(1000000);
+	upaddr = (struct device *)ui->ui_physaddr;
+	while ((upaddr->upcs1&DVA) == 0)
+		;
+	num = maxfree;
+	start = 0;
 	upaddr->upcs2 = unit;
 	if ((upaddr->upds & VV) == 0) {
 		upaddr->upcs1 = DCLR|GO;
@@ -757,12 +725,15 @@ updump(dev)
 		printf("up !DPR || !MOL\n");
 		return (-1);
 	}
-	nsect = NSECT; ntrak = NTRAC; sizes = up_sizes;
+	st = phys1(struct upst *, &upst[ui->ui_type]);
+	nsect = st->nsect;
+	ntrak = st->ntrak;
+	sizes = phys(struct size *, st->sizes);
 	if (dumplo < 0 || dumplo + num >= sizes[minor(dev)&07].nblocks) {
-		printf("dumplo+num, sizes %d %d\n", dumplo+num, sizes[minor(dev)&07].nblocks);
+		printf("oor\n");
 		return (-1);
 	}
-	nspc = nsect * ntrak;
+	nspc = st->nspc;
 	while (num > 0) {
 		register struct pte *io;
 		register int i;
@@ -771,10 +742,10 @@ updump(dev)
 
 		blk = num > DBSIZE ? DBSIZE : num;
 		bdp = 1;		/* trick pcc */
-		((struct uba_regs *)PHYSUBA0)->uba_dpr[bdp] |= BNE;
-		io = ((struct uba_regs *)PHYSUBA0)->uba_map;
+		uba->uba_dpr[bdp] |= UBA_BNE;
+		io = uba->uba_map;
 		for (i = 0; i < blk; i++)
-			*(int *)io++ = (btop(start)+i) | (1<<21) | MRV;
+			*(int *)io++ = (btop(start)+i) | (1<<21) | UBA_MRV;
 		*(int *)io = 0;
 		bn = dumplo + btop(start);
 		cn = bn/nspc + sizes[minor(dev)&07].cyloff;
@@ -799,7 +770,7 @@ updump(dev)
 		num -= blk;
 	}
 	bdp = 1;		/* crud to fool c compiler */
-	((struct uba_regs *)PHYSUBA0)->uba_dpr[bdp] |= BNE;
+	uba->uba_dpr[bdp] |= UBA_BNE;
 	return (0);
 }
 #endif
