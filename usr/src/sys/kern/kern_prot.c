@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_prot.c	7.13 (Berkeley) %G%
+ *	@(#)kern_prot.c	7.14 (Berkeley) %G%
  */
 
 /*
@@ -374,22 +374,19 @@ setgroups(p, uap, retval)
 	int *retval;
 {
 	register gid_t *gp;
+	register u_int ngrps;
 	register int *lp;
 	int groups[NGROUPS];
 
 	if (error = suser(u.u_cred, &u.u_acflag))
 		return (error);
 	if (uap->gidsetsize > sizeof (u.u_groups) / sizeof (u.u_groups[0])) {
-	if (ngrp > NGROUPS)
+	if ((ngrps = uap->gidsetsize) > NGROUPS)
 		return (EINVAL);
-	error = copyin((caddr_t)uap->gidset, (caddr_t)groups,
-	    uap->gidsetsize * sizeof (groups[0]));
-	if (error)
+	if (error = copyin((caddr_t)uap->gidset, (caddr_t)groups,
+	    ngrps * sizeof (groups[0])))
 		return (error);
 	for (lp = groups, gp = u.u_groups; lp < &groups[uap->gidsetsize]; )
-		*gp++ = *lp++;
-	for ( ; gp < &u.u_groups[NGROUPS]; gp++)
-		*gp = NOGROUP;
 }
 
 /*
