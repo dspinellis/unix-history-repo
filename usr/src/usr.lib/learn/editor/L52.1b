@@ -1,0 +1,60 @@
+#print
+Even more powerful is to use two context
+searches for the pair of addresses
+in front of a command.  For example
+  /abc/,/def/p
+will print all lines from the one that
+contains "abc" to the one that contains
+"def".  In this directory is a file
+"phone".  On every line between
+"Pinson" and "Johnson" change "tel" to "ext".
+(Again, print the whole file first to see
+what's going on here and why the file is bad.)
+Then rewrite the corrected file and
+type "ready".
+#create Ref
+ telephone numbers
+
+McIlroy M D       ext 6050
+Aho A V           ext 4862
+Baker B S         ext 6503
+Cherry L L        ext 6067
+Knowlton K        ext 2328
+Morris R          ext 3878
+Ossanna J F       ext 3520
+Thompson K        ext 2394
+
+Pinson E N        ext 2582
+Bourne S R        ext 7419
+Elliot R J        ext 2879
+Fraser A G        ext 3685
+Johnson S C       ext 3968
+Kernighan B W     ext 6021
+Ritchie D M       ext 3770
+Vollaro J R       ext 6321
+#create phone
+ telephone numbers
+
+McIlroy M D       ext 6050
+Aho A V           ext 4862
+Baker B S         ext 6503
+Cherry L L        ext 6067
+Knowlton K        ext 2328
+Morris R          ext 3878
+Ossanna J F       ext 3520
+Thompson K        ext 2394
+
+Pinson E N        tel 2582
+Bourne S R        tel 7419
+Elliot R J        tel 2879
+Fraser A G        tel 3685
+Johnson S C       tel 3968
+Kernighan B W     ext 6021
+Ritchie D M       ext 3770
+Vollaro J R       ext 6321
+#user
+#cmp phone Ref
+#log
+#next
+53.1a 10
+52.2c 5
