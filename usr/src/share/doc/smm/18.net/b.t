@@ -2,10 +2,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)b.t	6.2 (Berkeley) %G%
+.\"	@(#)b.t	6.3 (Berkeley) %G%
 .\"
 .nr H2 1
 .\".ds RH "Raw sockets
+.br
+.ne 2i
 .NH
 \s+2Raw sockets\s0
 .PP
@@ -114,4 +116,3 @@ raw protocol output routine for any processing required before
 it is delivered to the appropriate network interface.  The
 output routine is normally the only code required to implement
 a raw socket interface.
-'ne 2i
