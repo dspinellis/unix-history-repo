@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	4.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	4.21 (Berkeley) %G%";
 #endif
 
 /*
@@ -182,18 +182,10 @@ nextopt:
 			form = FORM_N;
 			stru = STRU_F;
 			mode = MODE_S;
+			(void) getsockname(0, &ctrl_addr, sizeof (ctrl_addr));
 			gethostname(hostname, sizeof (hostname));
 			reply(220, "%s FTP server (%s) ready.",
 				hostname, version);
-			/*
-			 * Anchor data source address to that
-			 * of the control port so hosts with
-			 * multiple address won't have data
-			 * connections bound to an address different
-			 * than the control port.
-			 */
-			if (getsockname(0, &ctrl_addr, sizeof (ctrl_addr)) >= 0)
-				data_source.sin_addr = ctrl_addr.sin_addr;
 			for (;;) {
 				setjmp(errcatch);
 				yyparse();
@@ -305,7 +297,8 @@ retrieve(cmd, name)
 		fin = popen(line, "r"), closefunc = pclose;
 	}
 	if (fin == NULL) {
-		reply(550, "%s: %s.", name, sys_errlist[errno]);
+		if (errno != 0)
+			reply(550, "%s: %s.", name, sys_errlist[errno]);
 		return;
 	}
 	st.st_size = 0;
@@ -377,6 +370,9 @@ getdatasock(mode)
 	seteuid(0);
 	if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, 0, 0) < 0)
 		goto bad;
+	/* anchor socket to avoid multi-homing problems */
+	data_source.sin_family = AF_INET;
+	data_source.sin_addr = ctrl_addr.sin_addr;
 	if (bind(s, &data_source, sizeof (data_source), 0) < 0)
 		goto bad;
 	linger = 60;			/* value ignored by system */
@@ -725,7 +721,7 @@ dolog(sin)
 	if (hp)
 		remotehost = hp->h_name;
 	else
-		remotehost = "UNKNOWNHOST";
+		remotehost = inet_ntoa(sin->sin_addr);
 	t = time(0);
 	fprintf(stderr,"FTPD: connection from %s at %s", remotehost, ctime(&t));
 	fflush(stderr);
