@@ -3,7 +3,7 @@
 #
 # usage: xbt procp
 #
-#	@(#)xbt	8.1 (Berkeley) %G%
+#	@(#)xbt	8.2 (Berkeley) %G%
 
 set $maxargs = 4
 
@@ -15,8 +15,8 @@ define xbt
 	set $paddr = $p->p_addr
 	set $fix = (unsigned long *) $paddr - $usrstack
 	set $paddr = (struct user *)$paddr
-	set $xfp = (unsigned long *) $paddr->u_pcb.pcb_regs[10]
-	set $xpc = (unsigned long *) $paddr->u_pcb.pcb_regs[11]
+	set $xfp = (unsigned long *) $paddr->u_pcb.pcb_regs[0xa]
+	set $xpc = (unsigned long *) $paddr->u_pcb.pcb_regs[0xb]
 
 	printf "Process %s\n", &($p->p_comm[0])
 	while ($xfp > $usrstack)
