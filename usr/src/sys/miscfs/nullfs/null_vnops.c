@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)null_vnops.c	8.1 (Berkeley) %G%
+ *	@(#)null_vnops.c	8.2 (Berkeley) %G%
  *
  * Ancestors:
  *	@(#)lofs_vnops.c	1.2 (Berkeley) 6/18/92
@@ -344,7 +344,7 @@ null_reclaim(ap)
 	 */
 	/* After this assignment, this node will not be re-used. */
 	xp->null_lowervp = NULL;
-	remque(xp);
+	LIST_REMOVE(xp, null_hash);
 	FREE(vp->v_data, M_TEMP);
 	vp->v_data = NULL;
 	vrele (lowervp);
