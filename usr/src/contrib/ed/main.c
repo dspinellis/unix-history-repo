@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -291,7 +291,7 @@ cmd_loop(inputt, errnum)
 					break;
 				if (help_flag == 0) {
 					help_flag = 1;
-					printf("%?: %s\n", help_msg);
+					printf("?: %s\n", help_msg);
 				} else
 					help_flag = 0;
 				*errnum = 1;
