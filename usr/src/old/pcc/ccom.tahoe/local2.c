@@ -579,6 +579,7 @@ upput(p, size)
 	}
 }
 
+#ifdef old
 /*
  * Generate code for storage conversions.
  */
@@ -625,8 +626,8 @@ sconv(p, forcc)
 			printf("\n\tcmp");
 			prtype(l);
 			putchar('\t');
+			printf("$0,");
 			adrput(l);
-			printf(",$0");
 		}
 	} else {
 		/*
@@ -683,6 +684,137 @@ sconv(p, forcc)
 done:
 	l->in.type = oltype;
 }
+#else /* new */
+/*
+ * Generate code for integral scalar conversions.
+ * Many work-arounds for brain-damaged Tahoe register behavior.
+ */
+sconv(p, forcc)
+	NODE *p;
+	int forcc;
+{
+	register NODE *src, *dst;
+	register NODE *tmp;
+	register int srclen, dstlen;
+	int srctype, dsttype;
+	int val;
+
+	if (p->in.op == ASSIGN) {
+		src = getlr(p, 'R');
+		dst = getlr(p, 'L');
+		dstlen = tlen(dst);
+		dsttype = dst->in.type;
+	} else /* if (p->in.op == SCONV || optype(p->in.op) == LTYPE) */ {
+		src = getlr(p, 'L');
+		dst = getlr(p, '1');
+		dstlen = tlen(p);
+		dsttype = p->in.type;
+	}
+
+	srclen = tlen(src);
+	srctype = src->in.op == REG ?
+		ISUNSIGNED(src->in.type) ? UNSIGNED : INT :
+		src->in.type;
+
+	if (srclen < dstlen) {
+		if (srctype == CHAR && dsttype == USHORT && dst->in.op == REG) {
+			/* (unsigned short) c; => sign extend to 16 bits */
+			putstr("\tcvtbl\t");
+			adrput(src);
+			putstr(",-(sp)\n\tmovzwl\t2(sp),");
+			adrput(dst);
+			putstr("\n\tmovab\t4(sp),sp");
+			if (forcc) {
+				/* inverted test */
+				putstr("\n\tcmpl\t$0,");
+				adrput(dst);
+			}
+			return;
+		}
+		genconv(ISUNSIGNED(srctype),
+			srclen, dst->in.op == REG ? SZINT/SZCHAR : dstlen,
+			src, dst);
+		return;
+	}
+
+	if (srclen > dstlen && dst->in.op == REG) {
+		if (src->in.op == REG) {
+			if (ISUNSIGNED(dsttype)) {
+				val = (1 << dstlen * SZCHAR) - 1;
+				if (src->tn.rval == dst->tn.rval)
+					/* conversion in place */
+					printf("\tandl2\t$%#x,", val);
+				else {
+					printf("\tandl3\t$%#x,", val);
+					adrput(src);
+					putchar(',');
+				}
+				adrput(dst);
+				return;
+			}
+			val = SZINT - srclen * SZCHAR;
+			printf("\tshll\t$%d,", val);
+			adrput(src);
+			putchar(',');
+			adrput(dst);
+			printf("\n\tshar\t$%d,", val);
+			adrput(dst);
+			putchar(',');
+			adrput(dst);
+			return;
+		}
+		tmp = talloc();
+		if ((src->in.op == UNARY MUL &&
+		    ((src->in.left->in.op == NAME ||
+		     (src->in.left->in.op == ICON)))) ||
+		    (src->in.op == OREG && !R2TEST(src->tn.rval))) {
+			/* we can increment src's address & pun it */
+			*tmp = *src;
+			tmp->tn.lval += srclen - dstlen;
+		} else {
+			/* we must store src's address */
+			*tmp = *dst;
+			putstr("\tmovab\t");
+			adrput(src);
+			putchar(',');
+			adrput(tmp);
+			putchar('\n');
+			tmp->tn.op = OREG;
+			tmp->tn.lval = srclen - dstlen;
+		}
+		genconv(ISUNSIGNED(dsttype), dstlen, SZINT/SZCHAR, tmp, dst);
+		tmp->in.op = FREE;
+		return;
+	}
+
+	genconv(ISUNSIGNED(dsttype),
+		srclen, dst->in.op == REG ? SZINT/SZCHAR : dstlen,
+		src, dst);
+}
+
+genconv(usrc, srclen, dstlen, src, dst)
+	int usrc, srclen, dstlen;
+	NODE *src, *dst;
+{
+	static char convtab[SZINT/SZCHAR + 1] = {
+		'?', 'b', 'w', '?', 'l'
+	};
+
+	if (srclen != dstlen) {
+		if (usrc && srclen < dstlen)
+			putstr("\tmovz");
+		else
+			putstr("\tcvt");
+		putchar(convtab[srclen]);
+	} else
+		putstr("\tmov");
+	putchar(convtab[dstlen]);
+	putchar('\t');
+	adrput(src);
+	putchar(',');
+	adrput(dst);
+}
+#endif /* new */
 
 rmove( rt, rs, t ) TWORD t;{
 	printf( "	movl	%s,%s\n", rname(rs), rname(rt) );
