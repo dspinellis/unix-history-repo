@@ -1,16 +1,19 @@
-static	char *sccsid = "@(#)iostat.c	4.12 (Berkeley) 84/11/26";
+#ifndef lint
+static	char *sccsid = "@(#)iostat.c	4.13 (Berkeley) 85/04/25";
+#endif
+
 /*
  * iostat
  */
 #include <stdio.h>
+#include <ctype.h>
 #include <nlist.h>
+#include <signal.h>
+
 #include <sys/types.h>
+#include <sys/file.h>
 #include <sys/buf.h>
 #include <sys/dk.h>
-#ifdef vax
-#include <vaxuba/ubavar.h>
-#include <vaxmba/mbavar.h>
-#endif
 
 struct nlist nl[] = {
 	{ "_dk_busy" },
@@ -35,26 +38,35 @@ struct nlist nl[] = {
 #define	X_HZ		9
 	{ "_phz" },
 #define	X_PHZ		10
+	{ "_dk_ndrive" },
+#define	X_DK_NDRIVE	11
 #ifdef vax
 	{ "_mbdinit" },
-#define X_MBDINIT	11
+#define X_MBDINIT	12
 	{ "_ubdinit" },
-#define X_UBDINIT	12
+#define X_UBDINIT	13
 #endif
 	{ 0 },
 };
 
-char dr_name[DK_NDRIVE][10];
+char	**dr_name;
+int	*dr_select;
+float	*dk_mspw;
+int	dk_ndrive;
+int	ndrives = 0;
+#ifdef vax
+char	*defdrives[] = { "hp0", "hp1", "hp2",  0 };
+#else
+char	*defdrives[] = { 0 };
+#endif
 
-struct
-{
+struct {
 	int	dk_busy;
 	long	cp_time[CPUSTATES];
-	long	dk_time[DK_NDRIVE];
-	long	dk_wds[DK_NDRIVE];
-	long	dk_seek[DK_NDRIVE];
-	long	dk_xfer[DK_NDRIVE];
-	float	dk_mspw[DK_NDRIVE];
+	long	*dk_time;
+	long	*dk_wds;
+	long	*dk_seek;
+	long	*dk_xfer;
 	long	tk_nin;
 	long	tk_nout;
 } s, s1;
@@ -63,16 +75,18 @@ int	mf;
 int	hz;
 int	phz;
 double	etime;
+int	tohdr = 1;
+int	printhdr();
 
 main(argc, argv)
-char *argv[];
+	char *argv[];
 {
 	extern char *ctime();
 	register  i;
-	int iter;
+	int iter, ndrives;
 	double f1, f2;
 	long t;
-	int tohdr = 1;
+	char *arg, **cp, name[6], buf[BUFSIZ];
 
 	nlist("/vmunix", nl);
 	if(nl[X_DK_BUSY].n_type == 0) {
@@ -85,56 +99,100 @@ char *argv[];
 		exit(1);
 	}
 	iter = 0;
-	while (argc>1&&argv[1][0]=='-') {
-		argc--;
-		argv++;
+	for (argc--, argv++; argc > 0 && argv[0][0] == '-'; argc--, argv++)
+		;
+	if (nl[DK_NDRIVE].n_value == 0) {
+		printf("dk_ndrive undefined in system\n");
+		exit(1);
 	}
-	lseek(mf, (long)nl[X_DK_MSPW].n_value, 0);
-	read(mf, s.dk_mspw, sizeof s.dk_mspw);
-	for (i = 0; i < DK_NDRIVE; i++)
+	lseek(mf, nl[X_DK_NDRIVE].n_value, L_SET);
+	read(mf, &dk_ndrive, sizeof (dk_ndrive));
+	if (dk_ndrive <= 0) {
+		printf("dk_ndrive %d\n", dk_ndrive);
+		exit(1);
+	}
+	dr_select = (int *)calloc(dk_ndrive, sizeof (int));
+	dr_name = (char **)calloc(dk_ndrive, sizeof (char *));
+	dk_mspw = (float *)calloc(dk_ndrive, sizeof (float));
+#define	allocate(e, t) \
+    s./**/e = (t *)calloc(dk_ndrive, sizeof (t)); \
+    s1./**/e = (t *)calloc(dk_ndrive, sizeof (t));
+	allocate(dk_time, long);
+	allocate(dk_wds, long);
+	allocate(dk_seek, long);
+	allocate(dk_xfer, long);
+	for (arg = buf, i = 0; i < dk_ndrive; i++) {
+		dr_name[i] = arg;
 		sprintf(dr_name[i], "dk%d", i);
-	read_names();
-	if(argc > 2)
-		iter = atoi(argv[2]);
-loop:
-	if (--tohdr == 0) {
-		printf("      tty");
-		for (i = 0; i < DK_NDRIVE; i++)
-			if (s.dk_mspw[i] != 0.0)
-				printf("          %3.3s ", dr_name[i]);
-		printf("         cpu\n");
-		printf(" tin tout");
-		for (i = 0; i < DK_NDRIVE; i++)
-			if (s.dk_mspw[i] != 0.0)
-				printf(" bps tps msps ");
-		printf(" us ni sy id\n");
-		tohdr = 19;
+		arg += strlen(dr_name[i]) + 1;
 	}
-	lseek(mf, (long)nl[X_DK_BUSY].n_value, 0);
- 	read(mf, &s.dk_busy, sizeof s.dk_busy);
- 	lseek(mf, (long)nl[X_DK_TIME].n_value, 0);
- 	read(mf, s.dk_time, sizeof s.dk_time);
- 	lseek(mf, (long)nl[X_DK_XFER].n_value, 0);
- 	read(mf, s.dk_xfer, sizeof s.dk_xfer);
- 	lseek(mf, (long)nl[X_DK_WDS].n_value, 0);
- 	read(mf, s.dk_wds, sizeof s.dk_wds);
- 	lseek(mf, (long)nl[X_TK_NIN].n_value, 0);
- 	read(mf, &s.tk_nin, sizeof s.tk_nin);
- 	lseek(mf, (long)nl[X_TK_NOUT].n_value, 0);
- 	read(mf, &s.tk_nout, sizeof s.tk_nout);
-	lseek(mf, (long)nl[X_DK_SEEK].n_value, 0);
-	read(mf, s.dk_seek, sizeof s.dk_seek);
-	lseek(mf, (long)nl[X_CP_TIME].n_value, 0);
-	read(mf, s.cp_time, sizeof s.cp_time);
-	lseek(mf, (long)nl[X_DK_MSPW].n_value, 0);
-	read(mf, s.dk_mspw, sizeof s.dk_mspw);
-	lseek(mf, (long)nl[X_HZ].n_value, 0);
+	read_names();
+	lseek(mf, (long)nl[X_HZ].n_value, L_SET);
 	read(mf, &hz, sizeof hz);
-	lseek(mf, (long)nl[X_PHZ].n_value, 0);
+	lseek(mf, (long)nl[X_PHZ].n_value, L_SET);
 	read(mf, &phz, sizeof phz);
 	if (phz)
 		hz = phz;
-	for (i = 0; i < DK_NDRIVE; i++) {
+	lseek(mf, (long)nl[X_DK_MSPW].n_value, L_SET);
+	read(mf, dk_mspw, dk_ndrive*sizeof (dk_mspw));
+	/*
+	 * Choose drives to be displayed.  Priority
+	 * goes to (in order) drives supplied as arguments,
+	 * default drives.  If everything isn't filled
+	 * in and there are drives not taken care of,
+	 * display the first few that fit.
+	 */
+	ndrives = 0;
+	while (argc > 0 && !isdigit(argv[0][0])) {
+		for (i = 0; i < dk_ndrive; i++) {
+			if (strcmp(dr_name[i], argv[0]))
+				continue;
+			dr_select[i] = 1;
+			ndrives++;
+		}
+		argc--, argv++;
+	}
+	for (i = 0; i < dk_ndrive && ndrives < 4; i++) {
+		if (dr_select[i] || dk_mspw[i] == 0.0)
+			continue;
+		for (cp = defdrives; *cp; cp++)
+			if (strcmp(dr_name[i], *cp) == 0) {
+				dr_select[i] = 1;
+				ndrives++;
+				break;
+			}
+	}
+	for (i = 0; i < dk_ndrive && ndrives < 4; i++) {
+		if (dr_select[i])
+			continue;
+		dr_select[i] = 1;
+		ndrives++;
+	}
+	if (argc > 1)
+		iter = atoi(argv[1]);
+	signal(SIGCONT, printhdr);
+loop:
+	if (--tohdr == 0)
+		printhdr();
+	lseek(mf, (long)nl[X_DK_BUSY].n_value, L_SET);
+ 	read(mf, &s.dk_busy, sizeof s.dk_busy);
+ 	lseek(mf, (long)nl[X_DK_TIME].n_value, L_SET);
+ 	read(mf, s.dk_time, dk_ndrive*sizeof (long));
+ 	lseek(mf, (long)nl[X_DK_XFER].n_value, L_SET);
+ 	read(mf, s.dk_xfer, dk_ndrive*sizeof (long));
+ 	lseek(mf, (long)nl[X_DK_WDS].n_value, L_SET);
+ 	read(mf, s.dk_wds, dk_ndrive*sizeof (long));
+	lseek(mf, (long)nl[X_DK_SEEK].n_value, L_SET);
+	read(mf, s.dk_seek, dk_ndrive*sizeof (long));
+ 	lseek(mf, (long)nl[X_TK_NIN].n_value, L_SET);
+ 	read(mf, &s.tk_nin, sizeof s.tk_nin);
+ 	lseek(mf, (long)nl[X_TK_NOUT].n_value, L_SET);
+ 	read(mf, &s.tk_nout, sizeof s.tk_nout);
+	lseek(mf, (long)nl[X_CP_TIME].n_value, L_SET);
+	read(mf, s.cp_time, sizeof s.cp_time);
+	for (i = 0; i < dk_ndrive; i++) {
+		if (!dr_select[i])
+			continue;
 #define X(fld)	t = s.fld[i]; s.fld[i] -= s1.fld[i]; s1.fld[i] = t
 		X(dk_xfer); X(dk_seek); X(dk_wds); X(dk_time);
 	}
@@ -149,20 +207,35 @@ loop:
 		etime = 1.0;
 	etime /= (float) hz;
 	printf("%4.0f%5.0f", s.tk_nin/etime, s.tk_nout/etime);
-	for (i=0; i<DK_NDRIVE; i++)
-		if (s.dk_mspw[i] != 0.0)
+	for (i=0; i<dk_ndrive; i++)
+		if (dr_select[i])
 			stats(i);
 	for (i=0; i<CPUSTATES; i++)
 		stat1(i);
 	printf("\n");
 	fflush(stdout);
 contin:
-	--iter;
-	if(iter)
-	if(argc > 1) {
-		sleep(atoi(argv[1]));
+	if (--iter && argc > 0) {
+		sleep(atoi(argv[0]));
 		goto loop;
 	}
+}
+
+printhdr()
+{
+	register int i;
+
+	printf("      tty");
+	for (i = 0; i < dk_ndrive; i++)
+		if (dr_select[i])
+			printf("          %3.3s ", dr_name[i]);
+	printf("         cpu\n");
+	printf(" tin tout");
+	for (i = 0; i < dk_ndrive; i++)
+		if (dr_select[i])
+			printf(" bps tps msps ");
+	printf(" us ni sy id\n");
+	tohdr = 19;
 }
 
 stats(dn)
@@ -170,19 +243,15 @@ stats(dn)
 	register i;
 	double atime, words, xtime, itime;
 
-	if (s.dk_mspw[dn] == 0.0) {
+	if (dk_mspw[dn] == 0.0) {
 		printf("%4.0f%4.0f%5.1f ", 0.0, 0.0, 0.0);
 		return;
 	}
 	atime = s.dk_time[dn];
 	atime /= (float) hz;
 	words = s.dk_wds[dn]*32.0;	/* number of words transferred */
-	xtime = s.dk_mspw[dn]*words;	/* transfer time */
+	xtime = dk_mspw[dn]*words;	/* transfer time */
 	itime = atime - xtime;		/* time not transferring */
-/*
-	printf("\ndn %d, words %8.2f, atime %6.2f, xtime %6.2f, itime %6.2f\n",
-	    dn, words, atime, xtime, itime);
-*/
 	if (xtime < 0)
 		itime += xtime, xtime = 0;
 	if (itime < 0)
@@ -191,10 +260,6 @@ stats(dn)
 	printf("%4.0f", s.dk_xfer[dn]/etime);
 	printf("%5.1f ",
 	    s.dk_seek[dn] ? itime*1000./s.dk_seek[dn] : 0.0);
-/*
-	printf("%4.1f",
-	    s.dk_xfer[dn] ? xtime*1000./s.dk_xfer[dn] : 0.0);
-*/
 }
 
 stat1(o)
@@ -210,9 +275,13 @@ stat1(o)
 	printf("%3.0f", 100.*s.cp_time[o]/time);
 }
 
-#define steal(where, var) lseek(mf, where, 0); read(mf, &var, sizeof var);
+#define steal(where, var) \
+    lseek(mf, where, L_SET); read(mf, &var, sizeof var);
 
 #ifdef vax
+#include <vaxuba/ubavar.h>
+#include <vaxmba/mbavar.h>
+
 read_names()
 {
 	struct mba_device mdev;
@@ -225,8 +294,7 @@ read_names()
 
 	mp = (struct mba_device *) nl[X_MBDINIT].n_value;
 	up = (struct uba_device *) nl[X_UBDINIT].n_value;
-	if (up == 0)
-	{
+	if (up == 0) {
 		fprintf(stderr, "iostat: Disk init info not in namelist\n");
 		exit(1);
 	}
@@ -238,7 +306,8 @@ read_names()
 			continue;
 		steal(mdev.mi_driver, mdrv);
 		steal(mdrv.md_dname, two_char);
-		sprintf(dr_name[mdev.mi_dk], "%c%c%d", cp[0], cp[1], mdev.mi_unit);
+		sprintf(dr_name[mdev.mi_dk], "%c%c%d",
+		    cp[0], cp[1], mdev.mi_unit);
 	}
 	if (up) for (;;) {
 		steal(up++, udev);
@@ -248,7 +317,8 @@ read_names()
 			continue;
 		steal(udev.ui_driver, udrv);
 		steal(udrv.ud_dname, two_char);
-		sprintf(dr_name[udev.ui_dk], "%c%c%d", cp[0], cp[1], udev.ui_unit);
+		sprintf(dr_name[udev.ui_dk], "%c%c%d",
+		    cp[0], cp[1], udev.ui_unit);
 	}
 }
 #endif
