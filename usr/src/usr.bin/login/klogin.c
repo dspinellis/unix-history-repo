@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)klogin.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)klogin.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef KERBEROS
@@ -21,6 +21,7 @@ static char sccsid[] = "@(#)klogin.c	5.8 (Berkeley) %G%";
 #define	VERIFY_SERVICE	"rcmd"
 
 extern int notickets;
+extern char *krbtkfile_env;
 
 /*
  * Attempt to log the user in using Kerberos authentication
@@ -56,11 +57,25 @@ klogin(pw, instance, localhost, password)
 	/*
 	 * get TGT for local realm
 	 * tickets are stored in a file named TKT_ROOT plus uid
+	 * except for user.root tickets.
 	 */
 
-	(void)sprintf(tkt_location, "%s%d", TKT_ROOT, pw->pw_uid);
+	if (strcmp(instance, "root") != 0)
+		(void)sprintf(tkt_location, "%s%d", TKT_ROOT, pw->pw_uid);
+	else {
+		(void)sprintf(tkt_location, "%s_root_%d", TKT_ROOT, pw->pw_uid);
+		krbtkfile_env = tkt_location;
+	}
 	(void)krb_set_tkt_string(tkt_location);
 
+	/*
+	 * Set real as well as effective ID to 0 for the moment,
+	 * to make the kerberos library do the right thing.
+	 */
+	if (setuid(0) < 0) {
+		perror("login: setuid");
+		return (1);
+	}
 	kerror = krb_get_pw_in_tkt(pw->pw_name, instance,
 		    realm, INITIAL_TICKET, realm, DEFAULT_TKT_LIFE, password);
 	/*
