@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.12 (Berkeley) %G%
+#	@(#)Makefile	4.13 (Berkeley) %G%
 
 PROG=	c2
 SRCS=	c20.c c21.c c22.c
@@ -15,3 +15,5 @@ instrs.c2: ${ASDIR}/instrs
 	    awk -f ${ASDIR}/instrs > instrs.c2
 
 .include <bsd.prog.mk>
+
+.depend: instrs.c2
