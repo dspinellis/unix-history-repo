@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uucpname.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)uucpname.c	5.5 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -97,6 +97,7 @@ register char *name;
 	/* compile sysname right into uucp */
 	if (s == NULL || *s == '\0') {
 		s = sysname;
+		strncpy(Myfullname, s, sizeof Myfullname);
 	}
 #endif
 
@@ -136,6 +137,7 @@ register char *name;
 #ifdef	MYNAME
 	if (s == NULL || *s == '\0') {
 		s = MYNAME;
+		strncpy(Myfullname, s, sizeof Myfullname);
 	}
 #endif
 
@@ -146,7 +148,7 @@ register char *name;
 		 * but that is too much trouble, isn't it?
 		 */
 		logent("SYSTEM NAME", "CANNOT DETERMINE");
-		s = "unknown";
+		strcpy(Myfullname, "unknown");
 	}
 
 	/*
@@ -154,14 +156,14 @@ register char *name;
 	 * truncating to MAXBASENAME characters.
 	 * Also set up subdirectory names
 	 * Truncate names at '.' if found to handle cases like
-	 * seismo.arpa being returned by gethostname().
+	 * seismo.css.gov being returned by gethostname().
 	 * uucp sites should not have '.' in their name anyway
 	 */
-	strncpy(name, s, MAXBASENAME);
-	name[MAXBASENAME] = '\0';
-	s = index(name, '.');
+	s = index(Myfullname, '.');
 	if (s != NULL)
 		*s = '\0';
+	strncpy(name, Myfullname, MAXBASENAME);
+	name[MAXBASENAME] = '\0';
 	DEBUG(1, "My uucpname = %s\n", name);
 
 	sprintf(DLocal, "D.%.*s", SYSNSIZE, name);
@@ -192,7 +194,7 @@ int len;
 	if (fd == NULL)
 		return(-1);
 	
-	hname[0] = 0;	/* rti!trt: was "hostunknown" */
+	hname[0] = 0;
 	nname[0] = 0;
 	nptr = nname;
 
