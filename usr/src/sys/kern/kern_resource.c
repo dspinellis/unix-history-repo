@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_resource.c	7.18 (Berkeley) %G%
+ *	@(#)kern_resource.c	7.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -58,7 +58,7 @@ getpriority(curp, uap, retval)
 	case PRIO_USER:
 		if (uap->who == 0)
 			uap->who = curp->p_ucred->cr_uid;
-		for (p = allproc; p != NULL; p = p->p_nxt) {
+		for (p = (struct proc *)allproc; p != NULL; p = p->p_nxt) {
 			if (p->p_ucred->cr_uid == uap->who &&
 			    p->p_nice < low)
 				low = p->p_nice;
@@ -117,7 +117,7 @@ setpriority(curp, uap, retval)
 	case PRIO_USER:
 		if (uap->who == 0)
 			uap->who = curp->p_ucred->cr_uid;
-		for (p = allproc; p != NULL; p = p->p_nxt)
+		for (p = (struct proc *)allproc; p != NULL; p = p->p_nxt)
 			if (p->p_ucred->cr_uid == uap->who) {
 				error = donice(curp, p, uap->prio);
 				found++;
@@ -301,6 +301,50 @@ __getrlimit(p, uap, retval)
 	    sizeof (struct rlimit)));
 }
 
+/*
+ * Transform the running time and tick information in proc p into user,
+ * system, and interrupt time usage.
+ */
+calcru(p, up, sp, ip)
+	register struct proc *p;
+	register struct timeval *up;
+	register struct timeval *sp;
+	register struct timeval *ip;
+{
+	register u_quad_t usec, st, ut, it, tot;
+	struct timeval rtime;
+	int s;
+
+	/* Get a consistent picture, then do the computation. */
+	s = splstatclock();
+	st = p->p_sticks;
+	ut = p->p_uticks;
+	it = p->p_iticks;
+	rtime = p->p_rtime;
+	splx(s);
+
+	tot = st + ut + it;
+	if (tot == 0) {
+		up->tv_sec = up->tv_usec = 0;
+		sp->tv_sec = sp->tv_usec = 0;
+		if (ip != NULL)
+			ip->tv_sec = ip->tv_usec = 0;
+		return;
+	}
+	usec = rtime.tv_sec * 1000000 + rtime.tv_usec;
+	st = (usec * st) / tot;
+	sp->tv_sec = st / 1000000;
+	sp->tv_usec = st % 1000000;
+	ut = (usec * ut) / tot;
+	up->tv_sec = ut / 1000000;
+	up->tv_usec = ut % 1000000;
+	if (ip != NULL) {
+		it = (usec * it) / tot;
+		ip->tv_sec = it / 1000000;
+		ip->tv_usec = it % 1000000;
+	}
+}
+
 /* ARGSUSED */
 getrusage(p, uap, retval)
 	register struct proc *p;
@@ -315,13 +359,8 @@ getrusage(p, uap, retval)
 	switch (uap->who) {
 
 	case RUSAGE_SELF: {
-		int s;
-
 		rup = &p->p_stats->p_ru;
-		s = splclock();
-		rup->ru_stime = p->p_stime;
-		rup->ru_utime = p->p_utime;
-		splx(s);
+		calcru(p, &rup->ru_utime, rup->ru_stime, NULL);
 		break;
 	}
 
