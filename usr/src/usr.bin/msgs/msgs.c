@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)msgs.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)msgs.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -55,6 +55,7 @@ static char sccsid[] = "@(#)msgs.c	5.9 (Berkeley) %G%";
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
 #include "pathnames.h"
 
 #define CMODE	0666		/* bounds file creation mode */
