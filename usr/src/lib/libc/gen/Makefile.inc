@@ -1,11 +1,11 @@
-#	@(#)Makefile.inc	5.3 (Berkeley) %G%
+#	@(#)Makefile.inc	5.4 (Berkeley) %G%
 
 # gen sources
 .PATH: ${.CURDIR}/${MACHINE}/gen ${.CURDIR}/gen ${.CURDIR}/gen/regexp
 
 SRCS+=	alarm.c clock.c closedir.c crypt.c ctime.c ctype_.c difftime.c \
 	disklabel.c errlst.c execvp.c fakcu.c fnmatch.c fstab.c fts.c \
-	genbuildname.c getgrent.c getlogin.c getmntinfo.c getopt.c getpass.c \
+	getgrent.c getlogin.c getmntinfo.c getopt.c getpass.c \
 	getpwent.c getttyent.c getusershell.c getwd.c glob.c initgroups.c \
 	isatty.c isctype.c mktemp.c ndbm.c nice.c nlist.c opendir.c \
 	pause.c perror.c popen.c psignal.c random.c readdir.c regex.c \
@@ -40,7 +40,7 @@ SRCS+=	udiv.s urem.s
 .endif
 
 MAN3+=	alarm.0 clock.0 crypt.0 ctime.0 ctype.0 directory.0 execvp.0 \
-	fnmatch.0 frexp.0 fts.0 genbuildname.0 getdiskbyname.0 getfsent.0 \
+	fnmatch.0 frexp.0 fts.0 getdiskbyname.0 getfsent.0 \
 	getgrent.0 getlogin.0 getmntinfo.0 getopt.0 getpass.0 getpwent.0 \
 	getttyent.0 getusershell.0 getwd.0 glob.0 initgroups.0 insque.0 \
 	mktemp.0 ndbm.0 nice.0 nlist.0 pause.0 perror.0 popen.0 psignal.0 \
