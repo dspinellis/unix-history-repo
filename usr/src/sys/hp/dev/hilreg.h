@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: hilreg.h 1.1 90/07/09$
+ * from: Utah $Hdr: hilreg.h 1.9 91/01/21$
  *
- *	@(#)hilreg.h	7.2 (Berkeley) %G%
+ *	@(#)hilreg.h	7.3 (Berkeley) %G%
  */
 
 struct	hil_dev {
@@ -22,8 +22,8 @@ struct	hil_dev {
 #define hil_stat hil_cmd
 };
 
-#define	HILADDR			((struct hil_dev *)IOV(0x428000))
-#define BBCADDR			((struct hil_dev *)IOV(0x420000))  
+#define	HILADDR			((struct hil_dev *)IIOV(0x428000))
+#define BBCADDR			((struct hil_dev *)IIOV(0x420000))
 
 #define splhil			spl1
 
@@ -102,7 +102,7 @@ struct	hil_dev {
 #define HIL_KNOBBOX     0x03            /* knob box motion data */
 
 /* Magic */
-#define KBDNMISTAT		((volatile char *)IOV(0x478005))
+#define KBDNMISTAT		((volatile char *)IIOV(0x478005))
 #define	KBDNMI			0x04
 
 /* For setting auto repeat on the keyboard */
