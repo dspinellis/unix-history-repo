@@ -1,4 +1,4 @@
-.\"	@(#)Cover.alpha	1.5 (Berkeley) %G%
+.\"	@(#)Cover.alpha	1.6 (Berkeley) %G%
 .\" use -ms
 .\"
 .so HEADERS
@@ -357,8 +357,8 @@ what it is today!
 .SH
 How to obtain 4.4BSD-Encumbered
 .PP
-To obtain 4.4BSD-Encumbered (containing proprietary AT&T code),
-.\" or 4.4BSD-Lite (without proprietary AT&T code),
+To obtain 4.4BSD-Encumbered
+.\" or 4.4BSD-Lite
 we require execution of the Berkeley License Agreement (6/92).
 In addition, foreign licensees must execute Addendum Number One for 
 Foreign Licensees in ordering 4.4BSD-Encumbered.
