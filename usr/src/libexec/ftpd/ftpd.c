@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1985 Regents of the University of California.
+ * Copyright (c) 1985, 1988 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -17,12 +17,12 @@
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1985 Regents of the University of California.\n\
+"@(#) Copyright (c) 1985, 1988 Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -59,11 +59,12 @@ static char sccsid[] = "@(#)ftpd.c	5.19 (Berkeley) %G%";
 
 extern	int errno;
 extern	char *sys_errlist[];
+extern	int sys_nerr;
 extern	char *crypt();
 extern	char version[];
 extern	char *home;		/* pointer to home directory for glob */
 extern	FILE *ftpd_popen(), *fopen(), *freopen();
-extern	int  pclose(), fclose();
+extern	int  ftpd_pclose(), fclose();
 extern	char *getline();
 extern	char cbuf[];
 
@@ -85,8 +86,7 @@ int	form;
 int	stru;			/* avoid C keyword */
 int	mode;
 int	usedefault = 1;		/* for data transfers */
-int	pdata;			/* for passive mode */
-int	unique;
+int	pdata = -1;		/* for passive mode */
 int	transflag;
 char	tmpline[7];
 char	hostname[MAXHOSTNAMELEN];
@@ -112,16 +112,15 @@ main(argc, argv)
 	char *argv[];
 {
 	int addrlen, on = 1;
-	long pgid;
 	char *cp;
 
 	addrlen = sizeof (his_addr);
-	if (getpeername(0, &his_addr, &addrlen) < 0) {
+	if (getpeername(0, (struct sockaddr *)&his_addr, &addrlen) < 0) {
 		syslog(LOG_ERR, "getpeername (%s): %m",argv[0]);
 		exit(1);
 	}
 	addrlen = sizeof (ctrl_addr);
-	if (getsockname(0, (char *) &ctrl_addr, &addrlen) < 0) {
+	if (getsockname(0, (struct sockaddr *)&ctrl_addr, &addrlen) < 0) {
 		syslog(LOG_ERR, "getsockname (%s): %m",argv[0]);
 		exit(1);
 	}
@@ -169,10 +168,8 @@ nextopt:
 	if (setsockopt(0, SOL_SOCKET, SO_OOBINLINE, (char *)&on, sizeof(on)) < 0)
 		syslog(LOG_ERR, "setsockopt: %m");
 #endif
-	pgid = getpid();
-	if (ioctl(fileno(stdin), SIOCSPGRP, (char *) &pgid) < 0) {
-		syslog(LOG_ERR, "ioctl: %m");
-	}
+	if (fcntl(fileno(stdin), F_SETOWN, getpid()) == -1)
+		syslog(LOG_ERR, "fcntl F_SETOWN: %m");
 	dolog(&his_addr);
 	/* do telnet option negotiation here */
 	/*
@@ -186,10 +183,9 @@ nextopt:
 	tmpline[0] = '\0';
 	(void) gethostname(hostname, sizeof (hostname));
 	reply(220, "%s FTP server (%s) ready.", hostname, version);
-	for (;;) {
-		(void) setjmp(errcatch);
+	(void) setjmp(errcatch);
+	for (;;)
 		(void) yyparse();
-	}
 }
 
 lostconn()
@@ -209,20 +205,14 @@ char *
 sgetsave(s)
 	char *s;
 {
-#ifdef notdef
-	char *new = strdup(s);
-#else
 	char *malloc();
 	char *new = malloc((unsigned) strlen(s) + 1);
-#endif
 	
 	if (new == NULL) {
 		reply(553, "Local resource failure: malloc");
 		dologout(1);
 	}
-#ifndef notdef
 	(void) strcpy(new, s);
-#endif
 	return (new);
 }
 
@@ -259,26 +249,132 @@ sgetpwnam(name)
 	return (&save);
 }
 
+int login_attempts;		/* number of failed login attempts */
+int askpasswd;			/* had user command, ask for passwd */
+
+/*
+ * USER command.
+ * Sets global passwd pointer pw if named account exists
+ * and is acceptable; sets askpasswd if a PASS command is
+ * expected. If logged in previously, need to reset state.
+ * If name is "ftp" or "anonymous" and ftp account exists,
+ * set guest and pw, then just return.
+ * If account doesn't exist, ask for passwd anyway.
+ * Otherwise, check user requesting login privileges.
+ * Disallow anyone who does not have a standard
+ * shell returned by getusershell() (/etc/shells).
+ * Disallow anyone mentioned in the file FTPUSERS
+ * to allow people such as root and uucp to be avoided.
+ */
+user(name)
+	char *name;
+{
+	register char *cp;
+	FILE *fd;
+	char *shell;
+	char line[BUFSIZ], *index(), *getusershell();
+
+	if (logged_in) {
+		if (guest) {
+			reply(530, "Can't change user from guest login.");
+			return;
+		}
+		end_login();
+	}
+
+	guest = 0;
+	if (strcmp(name, "ftp") == 0 || strcmp(name, "anonymous") == 0) {
+		if ((pw = sgetpwnam("ftp")) != NULL) {
+			guest = 1;
+			askpasswd = 1;
+			reply(331, "Guest login ok, send ident as password.");
+		} else
+			reply(530, "User %s unknown.", name);
+		return;
+	}
+	if (pw = sgetpwnam(name)) {
+		if ((shell = pw->pw_shell) == NULL || *shell == 0)
+			shell = "/bin/sh";
+		while ((cp = getusershell()) != NULL)
+			if (strcmp(cp, shell) == 0)
+				break;
+		endusershell();
+		if (cp == NULL) {
+			reply(530, "User %s access denied.", name);
+			pw = (struct passwd *) NULL;
+			return;
+		}
+		if ((fd = fopen(FTPUSERS, "r")) != NULL) {
+		    while (fgets(line, sizeof (line), fd) != NULL) {
+			if ((cp = index(line, '\n')) != NULL)
+				*cp = '\0';
+			if (strcmp(line, name) == 0) {
+				reply(530, "User %s access denied.", name);
+				pw = (struct passwd *) NULL;
+				return;
+			}
+		    }
+		}
+		(void) fclose(fd);
+	}
+	reply(331, "Password required for %s.", name);
+	askpasswd = 1;
+	/*
+	 * Delay before reading passwd after first failed
+	 * attempt to slow down passwd-guessing programs.
+	 */
+	if (login_attempts)
+		sleep((unsigned) login_attempts);
+}
+
+/*
+ * Terminate login as previous user, if any, resetting state;
+ * used when USER command is given or login fails.
+ */
+end_login()
+{
+
+	(void) seteuid((uid_t)0);
+	if (logged_in)
+		logwtmp(ttyline, "", "");
+	pw = NULL;
+	logged_in = 0;
+	guest = 0;
+}
+
 pass(passwd)
 	char *passwd;
 {
-	char *xpasswd;
+	char *xpasswd, *salt;
 
-	if (logged_in || pw == NULL) {
+	if (logged_in || askpasswd == 0) {
 		reply(503, "Login with USER first.");
 		return;
 	}
+	askpasswd = 0;
 	if (!guest) {		/* "ftp" is only account allowed no password */
-		xpasswd = crypt(passwd, pw->pw_passwd);
+		if (pw == NULL)
+			salt = "xx";
+		else
+			salt = pw->pw_passwd;
+		xpasswd = crypt(passwd, salt);
 		/* The strcmp does not catch null passwords! */
-		if (*pw->pw_passwd == '\0' || strcmp(xpasswd, pw->pw_passwd)) {
+		if (pw == NULL || *pw->pw_passwd == '\0' ||
+		    strcmp(xpasswd, pw->pw_passwd)) {
 			reply(530, "Login incorrect.");
 			pw = NULL;
+			if (login_attempts++ >= 5) {
+				syslog(LOG_ERR,
+				    "repeated login failures from %s",
+				    remotehost);
+				exit(0);
+			}
 			return;
 		}
 	}
-	setegid(pw->pw_gid);
-	initgroups(pw->pw_name, pw->pw_gid);
+	login_attempts = 0;		/* this time successful */
+	(void) setegid((gid_t)pw->pw_gid);
+	(void) initgroups(pw->pw_name, pw->pw_gid);
 	if (chdir(pw->pw_dir)) {
 		reply(530, "User %s: can't change directory to %s.",
 			pw->pw_name, pw->pw_dir);
@@ -290,20 +386,23 @@ pass(passwd)
 	logwtmp(ttyline, pw->pw_name, remotehost);
 	logged_in = 1;
 
-	if (guest) {
-		if (chroot(pw->pw_dir) < 0) {
-			reply(550, "Can't set guest privileges.");
-			goto bad;
-		}
+	if (guest && chroot(pw->pw_dir) < 0) {
+		reply(550, "Can't set guest privileges.");
+		goto bad;
+	}
+	if (seteuid((uid_t)pw->pw_uid) < 0) {
+		reply(550, "Can't set uid.");
+		goto bad;
+	}
+	if (guest)
 		reply(230, "Guest login ok, access restrictions apply.");
-	} else
+	else
 		reply(230, "User %s logged in.", pw->pw_name);
-	seteuid(pw->pw_uid);
 	home = pw->pw_dir;		/* home dir for globbing */
 	return;
 bad:
-	seteuid(0);
-	pw = NULL;
+	/* Forget all about it... */
+	end_login();
 }
 
 retrieve(cmd, name)
@@ -317,7 +416,8 @@ retrieve(cmd, name)
 #ifdef notdef
 		/* no remote command execution -- it's a security hole */
 		if (*name == '|')
-			fin = ftpd_popen(name + 1, "r"), closefunc = pclose;
+			fin = ftpd_popen(name + 1, "r"),
+			    closefunc = ftpd_pclose;
 		else
 #endif
 			fin = fopen(name, "r"), closefunc = fclose;
@@ -325,11 +425,11 @@ retrieve(cmd, name)
 		char line[BUFSIZ];
 
 		(void) sprintf(line, cmd, name), name = line;
-		fin = ftpd_popen(line, "r"), closefunc = pclose;
+		fin = ftpd_popen(line, "r"), closefunc = ftpd_pclose;
 	}
 	if (fin == NULL) {
 		if (errno != 0)
-			reply(550, "%s: %s.", name, sys_errlist[errno]);
+			perror_reply(550, name);
 		return;
 	}
 	st.st_size = 0;
@@ -342,7 +442,7 @@ retrieve(cmd, name)
 	if (dout == NULL)
 		goto done;
 	if ((tmp = send_data(fin, dout)) > 0 || ferror(dout) > 0) {
-		reply(550, "%s: %s.", name, sys_errlist[errno]);
+		perror_reply(550, name);
 	}
 	else if (tmp == 0) {
 		reply(226, "Transfer complete.");
@@ -354,56 +454,50 @@ done:
 	(*closefunc)(fin);
 }
 
-store(name, mode)
+store(name, mode, unique)
 	char *name, *mode;
+	int unique;
 {
 	FILE *fout, *din;
-	int (*closefunc)(), dochown = 0, tmp;
-	char *gunique(), *local;
+	int (*closefunc)(), tmp;
+	char *gunique();
 
 #ifdef notdef
 	/* no remote command execution -- it's a security hole */
 	if (name[0] == '|')
-		fout = ftpd_popen(&name[1], "w"), closefunc = pclose;
+		fout = ftpd_popen(&name[1], "w"), closefunc = ftpd_pclose;
 	else
 #endif
 	{
 		struct stat st;
 
-		local = name;
-		if (stat(name, &st) < 0) {
-			dochown++;
-		}
-		else if (unique) {
-			if ((local = gunique(name)) == NULL) {
-				return;
-			}
-			dochown++;
-		}
-		fout = fopen(local, mode), closefunc = fclose;
+		if (unique && stat(name, &st) == 0 &&
+		    (name = gunique(name)) == NULL)
+			return;
+		fout = fopen(name, mode), closefunc = fclose;
 	}
 	if (fout == NULL) {
-		reply(553, "%s: %s.", local, sys_errlist[errno]);
+		perror_reply(553, name);
 		return;
 	}
-	din = dataconn(local, (off_t)-1, "r");
+	din = dataconn(name, (off_t)-1, "r");
 	if (din == NULL)
 		goto done;
-	if ((tmp = receive_data(din, fout)) > 0 || ferror(fout) > 0) {
-		reply(552, "%s: %s.", local, sys_errlist[errno]);
-	}
-	else if (tmp == 0 && !unique) {
-		reply(226, "Transfer complete.");
-	}
-	else if (tmp == 0 && unique) {
-		reply(226, "Transfer complete (unique file name:%s).", local);
+	if ((tmp = receive_data(din, fout)) > 0)
+		perror_reply(552, name);
+	else if (tmp == 0) {
+		if (ferror(fout) > 0)
+			perror_reply(552, name);
+		else if (unique)
+			reply(226, "Transfer complete (unique file name:%s).",
+			    name);
+		else
+			reply(226, "Transfer complete.");
 	}
 	(void) fclose(din);
 	data = -1;
 	pdata = -1;
 done:
-	if (dochown)
-		(void) fchown(fileno(fout), pw->pw_uid, -1);
 	(*closefunc)(fout);
 }
 
@@ -418,18 +512,18 @@ getdatasock(mode)
 	s = socket(AF_INET, SOCK_STREAM, 0);
 	if (s < 0)
 		return (NULL);
-	seteuid(0);
+	(void) seteuid((uid_t)0);
 	if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof (on)) < 0)
 		goto bad;
 	/* anchor socket to avoid multi-homing problems */
 	data_source.sin_family = AF_INET;
 	data_source.sin_addr = ctrl_addr.sin_addr;
-	if (bind(s, &data_source, sizeof (data_source)) < 0)
+	if (bind(s, (struct sockaddr *)&data_source, sizeof (data_source)) < 0)
 		goto bad;
-	seteuid(pw->pw_uid);
+	(void) seteuid((uid_t)pw->pw_uid);
 	return (fdopen(s, mode));
 bad:
-	seteuid(pw->pw_uid);
+	(void) seteuid((uid_t)pw->pw_uid);
 	(void) close(s);
 	return (NULL);
 }
@@ -444,15 +538,15 @@ dataconn(name, size, mode)
 	FILE *file;
 	int retry = 0;
 
-	if (size >= 0)
+	if (size != (off_t) -1)
 		(void) sprintf (sizebuf, " (%ld bytes)", size);
 	else
 		(void) strcpy(sizebuf, "");
-	if (pdata > 0) {
+	if (pdata >= 0) {
 		struct sockaddr_in from;
 		int s, fromlen = sizeof(from);
 
-		s = accept(pdata, &from, &fromlen);
+		s = accept(pdata, (struct sockaddr *)&from, &fromlen);
 		if (s < 0) {
 			reply(425, "Can't open data connection.");
 			(void) close(pdata);
@@ -479,18 +573,18 @@ dataconn(name, size, mode)
 		reply(425, "Can't create data socket (%s,%d): %s.",
 		    inet_ntoa(data_source.sin_addr),
 		    ntohs(data_source.sin_port),
-		    sys_errlist[errno]);
+		    errno < sys_nerr ? sys_errlist[errno] : "unknown error");
 		return (NULL);
 	}
 	data = fileno(file);
-	while (connect(data, &data_dest, sizeof (data_dest)) < 0) {
+	while (connect(data, (struct sockaddr *)&data_dest,
+	    sizeof (data_dest)) < 0) {
 		if (errno == EADDRINUSE && retry < swaitmax) {
 			sleep((unsigned) swaitint);
 			retry += swaitint;
 			continue;
 		}
-		reply(425, "Can't build data connection: %s.",
-		    sys_errlist[errno]);
+		perror_reply(425, "Can't build data connection");
 		(void) fclose(file);
 		data = -1;
 		return (NULL);
@@ -631,6 +725,7 @@ fatal(s)
 	dologout(0);
 }
 
+/* VARARGS2 */
 reply(n, s, p0, p1, p2, p3, p4)
 	int n;
 	char *s;
@@ -646,6 +741,7 @@ reply(n, s, p0, p1, p2, p3, p4)
 	}
 }
 
+/* VARARGS2 */
 lreply(n, s, p0, p1, p2, p3, p4)
 	int n;
 	char *s;
@@ -672,6 +768,7 @@ nack(s)
 	reply(502, "%s command not implemented.", s);
 }
 
+/* ARGSUSED */
 yyerror(s)
 	char *s;
 {
@@ -688,18 +785,18 @@ delete(name)
 	struct stat st;
 
 	if (stat(name, &st) < 0) {
-		reply(550, "%s: %s.", name, sys_errlist[errno]);
+		perror_reply(550, name);
 		return;
 	}
 	if ((st.st_mode&S_IFMT) == S_IFDIR) {
 		if (rmdir(name) < 0) {
-			reply(550, "%s: %s.", name, sys_errlist[errno]);
+			perror_reply(550, name);
 			return;
 		}
 		goto done;
 	}
 	if (unlink(name) < 0) {
-		reply(550, "%s: %s.", name, sys_errlist[errno]);
+		perror_reply(550, name);
 		return;
 	}
 done:
@@ -711,7 +808,7 @@ cwd(path)
 {
 
 	if (chdir(path) < 0) {
-		reply(550, "%s: %s.", path, sys_errlist[errno]);
+		perror_reply(550, path);
 		return;
 	}
 	ack("CWD");
@@ -720,15 +817,10 @@ cwd(path)
 makedir(name)
 	char *name;
 {
-	uid_t	oldeuid;
-
-	oldeuid = geteuid();
-	seteuid(pw->pw_uid);
 	if (mkdir(name, 0777) < 0)
-		reply(550, "%s: %s.", name, sys_errlist[errno]);
+		perror_reply(550, name);
 	else
 		reply(257, "MKD command successful.");
-	seteuid(oldeuid);
 }
 
 removedir(name)
@@ -736,7 +828,7 @@ removedir(name)
 {
 
 	if (rmdir(name) < 0) {
-		reply(550, "%s: %s.", name, sys_errlist[errno]);
+		perror_reply(550, name);
 		return;
 	}
 	ack("RMD");
@@ -745,8 +837,9 @@ removedir(name)
 pwd()
 {
 	char path[MAXPATHLEN + 1];
+	extern char *getwd();
 
-	if (getwd(path) == NULL) {
+	if (getwd(path) == (char *)NULL) {
 		reply(550, "%s.", path);
 		return;
 	}
@@ -760,7 +853,7 @@ renamefrom(name)
 	struct stat st;
 
 	if (stat(name, &st) < 0) {
-		reply(550, "%s: %s.", name, sys_errlist[errno]);
+		perror_reply(550, name);
 		return ((char *)0);
 	}
 	reply(350, "File exists, ready for destination name");
@@ -772,7 +865,7 @@ renamecmd(from, to)
 {
 
 	if (rename(from, to) < 0) {
-		reply(550, "rename: %s.", sys_errlist[errno]);
+		perror_reply(550, "rename");
 		return;
 	}
 	ack("RNTO");
@@ -781,21 +874,21 @@ renamecmd(from, to)
 dolog(sin)
 	struct sockaddr_in *sin;
 {
-	struct hostent *hp = gethostbyaddr(&sin->sin_addr,
+	struct hostent *hp = gethostbyaddr((char *)&sin->sin_addr,
 		sizeof (struct in_addr), AF_INET);
-	time_t t;
+	time_t t, time();
 	extern char *ctime();
 
-	if (hp) {
+	if (hp)
 		(void) strncpy(remotehost, hp->h_name, sizeof (remotehost));
-		endhostent();
-	} else
+	else
 		(void) strncpy(remotehost, inet_ntoa(sin->sin_addr),
 		    sizeof (remotehost));
 	if (!logging)
 		return;
 	t = time((time_t *) 0);
-	syslog(LOG_INFO,"FTPD: connection from %s at %s", remotehost, ctime(&t));
+	syslog(LOG_INFO, "connection from %s at %s",
+	    remotehost, ctime(&t));
 }
 
 /*
@@ -806,52 +899,11 @@ dologout(status)
 	int status;
 {
 	if (logged_in) {
-		(void) seteuid(0);
+		(void) seteuid((uid_t)0);
 		logwtmp(ttyline, "", "");
 	}
 	/* beware of flushing buffers after a SIGPIPE */
 	_exit(status);
-}
-
-/*
- * Check user requesting login priviledges.
- * Disallow anyone who does not have a standard
- * shell returned by getusershell() (/etc/shells).
- * Disallow anyone mentioned in the file FTPUSERS
- * to allow people such as uucp to be avoided.
- */
-checkuser(name)
-	register char *name;
-{
-	register char *cp;
-	FILE *fd;
-	struct passwd *p;
-	char *shell;
-	int found = 0;
-	char line[BUFSIZ], *index(), *getusershell();
-
-	if ((p = getpwnam(name)) == NULL)
-		return (0);
-	if ((shell = p->pw_shell) == NULL || *shell == 0)
-		shell = "/bin/sh";
-	while ((cp = getusershell()) != NULL)
-		if (strcmp(cp, shell) == 0)
-			break;
-	endusershell();
-	if (cp == NULL)
-		return (0);
-	if ((fd = fopen(FTPUSERS, "r")) == NULL)
-		return (1);
-	while (fgets(line, sizeof (line), fd) != NULL) {
-		if ((cp = index(line, '\n')) != NULL)
-			*cp = '\0';
-		if (strcmp(line, name) == 0) {
-			found++;
-			break;
-		}
-	}
-	(void) fclose(fd);
-	return (!found);
 }
 
 myoob()
@@ -859,12 +911,11 @@ myoob()
 	char *cp;
 
 	/* only process if transfer occurring */
-	if (!transflag) {
+	if (!transflag)
 		return;
-	}
 	cp = tmpline;
 	if (getline(cp, 7, stdin) == NULL) {
-		reply(221, "You could at least say goodby.");
+		reply(221, "You could at least say goodbye.");
 		dologout(0);
 	}
 	upper(cp);
@@ -893,17 +944,17 @@ passive()
 	}
 	tmp = ctrl_addr;
 	tmp.sin_port = 0;
-	seteuid(0);
+	(void) seteuid((uid_t)0);
 	if (bind(pdata, (struct sockaddr *) &tmp, sizeof(tmp)) < 0) {
-		seteuid(pw->pw_uid);
+		(void) seteuid((uid_t)pw->pw_uid);
 		(void) close(pdata);
 		pdata = -1;
 		reply(530, "Can't open passive connection");
 		return;
 	}
-	seteuid(pw->pw_uid);
+	(void) seteuid((uid_t)pw->pw_uid);
 	len = sizeof(tmp);
-	if (getsockname(pdata, (char *) &tmp, &len) < 0) {
+	if (getsockname(pdata, (struct sockaddr *) &tmp, &len) < 0) {
 		(void) close(pdata);
 		pdata = -1;
 		reply(530, "Can't open passive connection");
@@ -924,55 +975,51 @@ passive()
 		UC(a[1]), UC(a[2]), UC(a[3]), UC(p[0]), UC(p[1]));
 }
 
+/*
+ * Generate unique name for file with basename "local".
+ * The file named "local" is already known to exist.
+ * Generates failure reply on error.
+ */
 char *
 gunique(local)
 	char *local;
 {
 	static char new[MAXPATHLEN];
+	struct stat st;
 	char *cp = rindex(local, '/');
 	int d, count=0;
-	char ext = '1';
 
-	if (cp) {
+	if (cp)
 		*cp = '\0';
-	}
-	d = access(cp ? local : ".", 2);
-	if (cp) {
+	d = stat(cp ? local : ".", &st);
+	if (cp)
 		*cp = '/';
-	}
 	if (d < 0) {
-		syslog(LOG_ERR, "%s: %m", local);
+		perror_reply(553, local);
 		return((char *) 0);
 	}
 	(void) strcpy(new, local);
 	cp = new + strlen(new);
 	*cp++ = '.';
-	while (!d) {
-		if (++count == 100) {
-			reply(452, "Unique file name not cannot be created.");
-			return((char *) 0);
-		}
-		*cp++ = ext;
-		*cp = '\0';
-		if (ext == '9') {
-			ext = '0';
-		}
-		else {
-			ext++;
-		}
-		if ((d = access(new, 0)) < 0) {
-			break;
-		}
-		if (ext != '0') {
-			cp--;
-		}
-		else if (*(cp - 2) == '.') {
-			*(cp - 1) = '1';
-		}
-		else {
-			*(cp - 2) = *(cp - 2) + 1;
-			cp--;
-		}
+	for (count = 1; count < 100; count++) {
+		(void) sprintf(cp, "%d", count);
+		if (stat(new, &st) < 0)
+			return(new);
 	}
-	return(new);
+	reply(452, "Unique file name cannot be created.");
+	return((char *) 0);
+}
+
+/*
+ * Format and send reply containing system error number.
+ */
+perror_reply(code, string)
+	int code;
+	char *string;
+{
+
+	if (errno < sys_nerr)
+		reply(code, "%s: %s.", string, sys_errlist[errno]);
+	else
+		reply(code, "%s: unknown error %d.", string, errno);
 }

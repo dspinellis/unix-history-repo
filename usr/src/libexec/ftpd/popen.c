@@ -21,11 +21,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)popen.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)popen.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/signal.h>
+#include <sys/wait.h>
 #include <stdio.h>
 
 /*
@@ -33,7 +34,7 @@ static char sccsid[] = "@(#)popen.c	5.3 (Berkeley) %G%";
  * may create a pipe to a hidden program as a side effect of a list or dir
  * command.
  */
-static uid_t *pids;
+static int *pids;
 static int fds;
 
 FILE *
@@ -44,7 +45,7 @@ ftpd_popen(program, type)
 	FILE *iop;
 	int argc, gargc, pdes[2], pid;
 	char **pop, *argv[100], *gargv[1000], *vv[2];
-	extern char **glob(), **copyblk(), *strtok();
+	extern char **glob(), **copyblk(), *strtok(), *malloc();
 
 	if (*type != 'r' && *type != 'w' || type[1])
 		return(NULL);
@@ -52,10 +53,9 @@ ftpd_popen(program, type)
 	if (!pids) {
 		if ((fds = getdtablesize()) <= 0)
 			return(NULL);
-		if (!(pids =
-		    (uid_t *)malloc((u_int)(fds * sizeof(uid_t)))))
+		if ((pids = (int *)malloc((u_int)(fds * sizeof(int)))) == NULL)
 			return(NULL);
-		bzero(pids, fds * sizeof(uid_t));
+		bzero((char *)pids, fds * sizeof(int));
 	}
 	if (pipe(pdes) < 0)
 		return(NULL);
@@ -118,24 +118,24 @@ free:	for (argc = 1; argv[argc] != NULL; argc++)
 	return(iop);
 }
 
-pclose(iop)
+ftpd_pclose(iop)
 	FILE *iop;
 {
 	register int fdes;
-	long omask;
-	int pid, stat_loc;
-	u_int waitpid();
+	int omask;
+	union wait stat_loc;
+	int pid;
 
 	/*
 	 * pclose returns -1 if stream is not associated with a
 	 * `popened' command, or, if already `pclosed'.
 	 */
-	if (pids[fdes = fileno(iop)] == 0)
+	if (pids == 0 || pids[fdes = fileno(iop)] == 0)
 		return(-1);
 	(void)fclose(iop);
 	omask = sigblock(sigmask(SIGINT)|sigmask(SIGQUIT)|sigmask(SIGHUP));
 	while ((pid = wait(&stat_loc)) != pids[fdes] && pid != -1);
 	(void)sigsetmask(omask);
 	pids[fdes] = 0;
-	return(stat_loc);
+	return(pid == -1 ? -1 : stat_loc.w_status);
 }
