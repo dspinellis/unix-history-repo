@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)scanner.c 1.4 %G%";
+static char sccsid[] = "@(#)scanner.c 1.5 %G%";
 
 /*
  * Debugger scanner.
@@ -48,9 +48,6 @@ private struct {
 
 private unsigned int curinclindex;
 
-private Boolean firsttoken = true;
-private Boolean firstinit = true;
-
 private Token getident();
 private Token getnum();
 private Token getstring();
@@ -85,14 +82,6 @@ public scanner_init()
     errlineno = 0;
     curchar = linebuf;
     linebuf[0] = '\0';
-    if (runfirst) {
-	firstinit = false;
-	firsttoken = false;
-    } else if (firstinit and isterm(in)) {
-	firstinit = false;
-	printf("> ");
-	fflush(stdout);
-    }
 }
 
 /*
@@ -117,12 +106,8 @@ public Token yylex()
     if (*p == '\0') {
 	do {
 	    if (isterm(in)) {
-		if (firsttoken) {
-		    firsttoken = false;
-		} else {
-		    printf("> ");
-		    fflush(stdout);
-		}
+		printf("> ");
+		fflush(stdout);
 	    }
 	    line = fgets(linebuf, MAXLINESIZE, in);
 	} while (line == nil and not eofinput());
