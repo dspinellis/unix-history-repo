@@ -4,14 +4,15 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dkstat.h	7.5 (Berkeley) %G%
+ *	@(#)dkstat.h	7.6 (Berkeley) %G%
  */
 
 #define	CP_USER		0
 #define	CP_NICE		1
 #define	CP_SYS		2
-#define	CP_IDLE		3
-#define	CPUSTATES	4
+#define	CP_INTR		3
+#define	CP_IDLE		4
+#define	CPUSTATES	5
 
 #define	DK_NDRIVE	8
 #ifdef KERNEL
