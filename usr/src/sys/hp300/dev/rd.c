@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: rd.c 1.3 90/10/12$
+ * from: Utah $Hdr: rd.c 1.38 90/10/12$
  *
- *	@(#)rd.c	7.8 (Berkeley) %G%
+ *	@(#)rd.c	7.9 (Berkeley) %G%
  */
 
 /*
@@ -394,7 +394,6 @@ struct rdinfo rdinfo[] = {
 int nrdinfo = sizeof(rdinfo) / sizeof(rdinfo[0]);
 
 struct	buf rdtab[NRD];
-struct	buf rdbuf[NRD];
 
 #define	rdunit(x)	(minor(x) >> 3)
 #define rdpart(x)	(minor(x) & 0x7)
@@ -570,9 +569,11 @@ rdreset(rs, hd)
 #endif
 }
 
-/*ARGSUSED*/
-rdopen(dev, flags)
+int
+rdopen(dev, flags, mode, p)
 	dev_t dev;
+	int flags, mode;
+	struct proc *p;
 {
 	register int unit = rdunit(dev);
 	register struct rd_softc *rs = &rd_softc[unit];
@@ -988,34 +989,40 @@ rderror(unit)
 	return(1);
 }
 
-rdread(dev, uio)
+int
+rdread(dev, uio, flags)
 	dev_t dev;
 	struct uio *uio;
+	int flags;
 {
 	register int unit = rdunit(dev);
 
-	return(physio(rdstrategy, &rdbuf[unit], dev, B_READ, minphys, uio));
+	return (physio(rdstrategy, NULL, dev, B_READ, minphys, uio));
 }
 
-rdwrite(dev, uio)
+int
+rdwrite(dev, uio, flags)
 	dev_t dev;
 	struct uio *uio;
+	int flags;
 {
 	register int unit = rdunit(dev);
 
-	return(physio(rdstrategy, &rdbuf[unit], dev, B_WRITE, minphys, uio));
+	return (physio(rdstrategy, NULL, dev, B_WRITE, minphys, uio));
 }
 
-/*ARGSUSED*/
-rdioctl(dev, cmd, data, flag)
+int
+rdioctl(dev, cmd, data, flag, p)
 	dev_t dev;
 	int cmd;
 	caddr_t data;
 	int flag;
+	struct proc *p;
 {
 	return(EINVAL);
 }
 
+int
 rdsize(dev)
 	dev_t dev;
 {
@@ -1050,6 +1057,7 @@ rdprinterr(str, err, tab)
 /*
  * Non-interrupt driven, non-dma dump routine.
  */
+int
 rddump(dev)
 	dev_t dev;
 {
