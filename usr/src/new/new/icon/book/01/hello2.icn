@@ -1,0 +1,7 @@
+procedure main()
+   hello()
+end
+
+procedure hello()
+   write("Hello world")
+end

@@ -1,0 +1,3 @@
+procedure tab(i)
+   suspend &subject[.&pos:&pos <- i]
+end

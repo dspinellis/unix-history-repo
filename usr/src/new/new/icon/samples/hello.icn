@@ -1,0 +1,5 @@
+procedure main()
+	write("Hello world")
+	write("&version is '",&version,"'")
+	write("&host is '",&host,"'")
+end

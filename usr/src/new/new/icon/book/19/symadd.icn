@@ -1,0 +1,9 @@
+procedure add(arg1,arg2)
+   return {
+      (integer(arg1) + integer(arg2)) |
+      (if arg1 == "0" then arg2) |
+      (if arg2 == "0" then arg1) |
+      (if arg1 == arg2 then symop("2","*",arg2)) |
+      symop(arg1,"+",arg2)
+      }
+end
