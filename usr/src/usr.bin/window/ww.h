@@ -1,5 +1,5 @@
 /*
- *	@(#)ww.h	3.22 83/12/17	
+ *	@(#)ww.h	3.23 83/12/17	
  */
 
 #include <stdio.h>
@@ -92,6 +92,7 @@ union ww_char {
 #define WWM_REV		0x01	/* reverse video */
 #define WWM_BLK		0x02	/* blinking */
 #define WWM_UL		0x04	/* underlined */
+#define WWM_GRP		0x08	/* graphics */
 #define WWM_GLS		0x10	/* window only, glass, i.e. transparent */
 
 	/* ww_state values */

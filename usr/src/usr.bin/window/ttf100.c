@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ttf100.c	3.3 3.3";
+static	char *sccsid = "@(#)ttf100.c	3.4 3.4";
 #endif
 
 #include "ww.h"
@@ -9,11 +9,12 @@ static	char *sccsid = "@(#)ttf100.c	3.3 3.3";
  * Freedom 100
  */
 
-char f100_frame[16] = {
-	' ',      'J'|0x80, 'K'|0x80, 'A'|0x80,
-	'J'|0x80, 'J'|0x80, 'B'|0x80, 'M'|0x80,
-	'K'|0x80, 'D'|0x80, 'K'|0x80, 'O'|0x80,
-	'C'|0x80, 'L'|0x80, 'N'|0x80, 'I'|0x80
+#define G (WWM_GRP << WWC_MSHIFT)
+short f100_frame[16] = {
+	' ',	'J'|G,	'K'|G,	'A'|G,
+	'J'|G,	'J'|G,	'B'|G,	'M'|G,
+	'K'|G,	'D'|G,	'K'|G,	'O'|G,
+	'C'|G,	'L'|G,	'N'|G,	'I'|G
 };
 extern char *gen_GE, *gen_GS;
 
@@ -23,6 +24,7 @@ tt_f100()
 
 	ret = tt_generic();
 	tt.tt_frame = f100_frame;
+	tt.tt_availmodes |= WWM_GRP;
 	gen_GS = "\033$";
 	gen_GE = "\033%";
 	return ret;

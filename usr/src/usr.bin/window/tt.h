@@ -1,5 +1,5 @@
 /*
- *	@(#)tt.h	3.8 83/09/15
+ *	@(#)tt.h	3.9 83/12/17
  */
 
 /*
@@ -38,7 +38,7 @@ struct tt {
 	char tt_retain;			/* can retain below (db flag) */
 
 		/* the frame characters */
-	char *tt_frame;
+	short *tt_frame;
 };
 struct tt tt;
 
