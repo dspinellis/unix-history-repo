@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)vnode_if.src	8.6 (Berkeley) %G%
+#	@(#)vnode_if.src	8.7 (Berkeley) %G%
 #
 
 #
@@ -137,6 +137,16 @@ vop_write {
 	INOUT struct uio *uio;
 	IN int ioflag;
 	IN struct ucred *cred;
+};
+
+#
+#% lease	vp	= = =
+#
+vop_lease {
+	IN struct vnode *vp;
+	IN struct proc *p;
+	IN struct ucred *cred;
+	IN int flag;
 };
 
 #
