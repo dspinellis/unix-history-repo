@@ -4,11 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)saio.h	7.16 (Berkeley) %G%
+ *	@(#)saio.h	7.17 (Berkeley) %G%
  */
 
-#include <ufs/fs.h>
-#include <ufs/dinode.h>
+#include <ufs/ffs/fs.h>
+#include <ufs/ufs/dinode.h>
 #include "saioctl.h"
 #include "saerrno.h"
 
