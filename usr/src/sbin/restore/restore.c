@@ -1,12 +1,88 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)restore.c	3.7	(Berkeley)	83/03/08";
+static char sccsid[] = "@(#)restore.c	3.8	(Berkeley)	83/03/27";
 #endif
 
 #include "restore.h"
 
-static struct entry *removelist;	/* list of nodes to be deleted */
+/*
+ * This implements the 't' option.
+ * List entries on the tape.
+ */
+long
+listfile(name, ino, type)
+	char *name;
+	ino_t ino;
+	int type;
+{
+	long descend = hflag ? GOOD : FAIL;
+
+	if (BIT(ino, dumpmap) == 0) {
+		return (descend);
+	}
+	vprintf(stdout, "%s", type == LEAF ? "leaf" : "dir ");
+	fprintf(stdout, "%10d\t%s\n", ino, name);
+	return (descend);
+}
+
+/*
+ * This implements the 'x' option.
+ * Request that new entries be extracted.
+ */
+long
+addfile(name, ino, type)
+	char *name;
+	ino_t ino;
+	int type;
+{
+	register struct entry *ep;
+	long descend = hflag ? GOOD : FAIL;
+	char buf[100];
+
+	if (BIT(ino, dumpmap) == 0) {
+		vprintf(stdout, "%s: not on the tape\n", name);
+		return (descend);
+	}
+	if (!mflag) {
+		(void) sprintf(buf, "./%u", ino);
+		name = buf;
+		if (type == NODE) {
+			(void) genliteraldir(name, ino);
+			return (descend);
+		}
+	}
+	if (ino == ROOTINO)
+		return (descend);
+	ep = lookupino(ino);
+	if (ep != NIL) {
+		if (strcmp(name, myname(ep)) == 0)
+			return (descend);
+		type |= LINK;
+	}
+	ep = addentry(name, ino, type);
+	if (type == NODE) {
+		newnode(ep);
+		return (descend);
+	}
+	ep->e_flags |= NEW;
+	return (descend);
+}
+
+/* 
+ * The following four routines implement the incremental
+ * restore algorithm. The first removes old entries, the second
+ * does renames and calculates the extraction list, the third
+ * cleans up link names missed by the first two, and the final
+ * one deletes old directories.
+ *
+ * Directories cannot be immediately deleted, as they may have
+ * other files in them which need to be moved out first. As
+ * directories to be deleted are found, they are put on the 
+ * following deletion list. After all deletions and renames
+ * are done, this list is actually deleted.
+ */
+static struct entry *removelist;
 
 /*
  *	Remove unneeded leaves from the old tree.
@@ -40,64 +116,6 @@ removeoldleaves()
 }
 
 /*
- *	List entries on the tape.
- */
-void
-listfile(name, ino, type)
-	char *name;
-	ino_t ino;
-	int type;
-{
-
-	if (BIT(ino, dumpmap) == 0) {
-		return;
-	}
-	vprintf(stdout, "%s", type == LEAF ? "leaf" : "dir ");
-	fprintf(stdout, "%10d\t%s\n", ino, name);
-}
-
-/*
- *	Request that new entries be extracted.
- */
-void
-addfile(name, ino, type)
-	char *name;
-	ino_t ino;
-	int type;
-{
-	register struct entry *ep;
-	char buf[100];
-
-	if (BIT(ino, dumpmap) == 0) {
-		vprintf(stdout, "%s: not on the tape\n", name);
-		return;
-	}
-	if (!mflag) {
-		sprintf(buf, "./%u", ino);
-		name = buf;
-		if (type == NODE) {
-			(void) genliteraldir(name, ino);
-			return;
-		}
-	}
-	if (ino == ROOTINO)
-		return;
-	ep = lookupino(ino);
-	if (ep != NIL) {
-		if (strcmp(name, myname(ep)) == 0)
-			return;
-		type |= LINK;
-	}
-	ep = addentry(name, ino, type);
-	if (type == NODE) {
-		newnode(ep);
-		return;
-	}
-	ep->e_flags |= NEW;
-	return;
-}
-
-/*
  *	For each directory entry on the incremental tape, determine which
  *	category it falls into as follows:
  *	KEEP - entries that are to be left alone.
@@ -106,19 +124,20 @@ addfile(name, ino, type)
  *	LINK - new links to be added.
  *	Renames are done at the same time.
  */
-void
+long
 nodeupdates(name, ino, type)
 	char *name;
 	ino_t ino;
 	int type;
 {
 	register struct entry *ep, *np, *ip;
+	long descend = GOOD;
 	int key = 0;
 		/* key values */
-#		define ONTAPE	0x1
-#		define INOFND	0x2
-#		define NAMEFND	0x4
-#		define MODECHG	0x8
+#		define ONTAPE	0x1	/* inode is on the tape */
+#		define INOFND	0x2	/* inode already exists */
+#		define NAMEFND	0x4	/* name already exists */
+#		define MODECHG	0x8	/* mode of inode changed */
 	char keybuf[32], *keyval = &keybuf[1];
 
 	/*
@@ -146,9 +165,22 @@ nodeupdates(name, ino, type)
 				break;
 			}
 	}
+	/*
+	 * If both a name and an inode are found, but they do
+	 * not correspond to the same file, then both the inode
+	 * which has been found and the inode corresponding to
+	 * the name which has been found need to be renamed.
+	 * The current pathname is the new name for the inode
+	 * which has been found. Since all files to be
+	 * deleted have already been removed, the file found by
+	 * name must live under a new name in this dump level.
+	 * For the time being it is given a temporary name in anticipation
+	 * that it will be renamed when it is later found by inode number.
+	 */
 	if (((key & (INOFND|NAMEFND)) == (INOFND|NAMEFND)) && ip != np) {
+		dprintf(stdout, "name/inode conflict, mktempname %s\n",
+			myname(np));
 		mktempname(np);
-		dprintf(stdout, "[%s] %s: mktempname\n", keyval, name);
 		np = NIL;
 		key &= ~NAMEFND;
 	}
@@ -160,13 +192,32 @@ nodeupdates(name, ino, type)
 		key |= MODECHG;
 		(void) strcat(keybuf, "|MODECHG");
 	}
+
+	/*
+	 * Decide on the disposition of the file based on its flags.
+	 * Note that we have already handled the case in which
+	 * a name and inode are found that correspond to different files.
+	 * Thus if both NAMEFND and INOFND are set then ip == np.
+	 */
 	switch (key) {
 
+	/*
+	 * A previously existing file has been found.
+	 * Mark it as KEEP so that other links to the inode can be
+	 * detected, and so that it will not be reclaimed by the search
+	 * for unreferenced names.
+	 */
 	case INOFND|NAMEFND:
 		ip->e_flags |= KEEP;
 		dprintf(stdout, "[%s] %s: KEEP\n", keyval, name);
 		break;
 
+	/*
+	 * A previously non-existent file.
+	 * Add it to the file system, and request its extraction.
+	 * If it is a directory, create it immediately.
+	 * (Since the name is unused there can be no conflict)
+	 */
 	case ONTAPE:
 		ep = addentry(name, ino, type);
 		if (type == NODE)
@@ -177,27 +228,54 @@ nodeupdates(name, ino, type)
 		dprintf(stdout, "[%s] %s: KEEP|NEW\n", keyval, name);
 		break;
 
+	/*
+	 * A file with the same inode number, but a different
+	 * name has been found. If the other name has not already
+	 * been found (indicated by the KEEP flag, see above) then
+	 * this must be a new name for the file, and it is renamed.
+	 * If the other name has been found then this must be a
+	 * link to the file. Hard links to directories are not
+	 * permitted, and are either deleted or converted to
+	 * symbolic links. Finally, if the file is on the tape,
+	 * a request is made to extract it.
+	 */
 	case ONTAPE|INOFND:
-		if (type == LEAF)
+		if (type == LEAF && (ip->e_flags & KEEP) == 0) {
 			ip->e_flags |= EXTRACT;
-		dprintf(stdout, "[%s] %s: EXTRACT\n", keyval, name);
+			dprintf(stdout, "[%s] %s: EXTRACT\n", keyval, name);
+		}
 		/* fall through */
 	case INOFND:
-		if (ip->e_flags & KEEP) {
-			if (ip->e_type == NODE)
-				panic("%s linked to directory %s\n",
-				    name, myname(ip));
-			ep = addentry(name, ino, type|LINK);
-			ep->e_flags |= NEW;
-			dprintf(stdout, "[%s] %s: LINK\n", keyval, name);
+		if ((ip->e_flags & KEEP) == 0) {
+			renameit(myname(ip), name);
+			moveentry(ip, name);
+			ip->e_flags |= KEEP;
+			dprintf(stdout, "[%s] %s: RENAME\n", keyval, name);
 			break;
 		}
-		renameit(myname(ip), name);
-		moveentry(ip, name);
-		ip->e_flags |= KEEP;
-		dprintf(stdout, "[%s] %s: RENAME\n", keyval, name);
+		if (ip->e_type == NODE) {
+			descend = FAIL;
+			fprintf(stderr,
+				"deleted hard link %s to directory %s\n",
+				name, myname(ip));
+			break;
+		}
+		ep = addentry(name, ino, type|LINK);
+		ep->e_flags |= NEW;
+		dprintf(stdout, "[%s] %s: LINK\n", keyval, name);
 		break;
 
+	/*
+	 * A file on the tape has a name which is the same as a name
+	 * corresponding to a different file in the previous dump.
+	 * Since all files to be deleted have already been removed,
+	 * this file must live under a new name in this dump level.
+	 * For the time being it is given a temporary name in anticipation
+	 * that it will be renamed when it is later found by inode number
+	 * (see INOFND case above).
+	 * This then falls into the simple case of a previously known
+	 * file which is to be updated.
+	 */
 	case ONTAPE|NAMEFND:
 	case ONTAPE|NAMEFND|MODECHG:
 		mktempname(np);
@@ -212,6 +290,18 @@ nodeupdates(name, ino, type)
 		dprintf(stdout, "[%s] %s: KEEP|EXTRACT\n", keyval, name);
 		break;
 
+	/*
+	 * An inode is being reused in a completely different way.
+	 * Normally an extract can simply do an "unlink" followed
+	 * by a "creat". Here we must do effectively the same
+	 * thing. The complications arise because we cannot really
+	 * delete a directory since it may still contain files
+	 * that we need to rename, so we delete it from the symbol
+	 * table, and put it on the list to be deleted eventually.
+	 * Conversely if a directory is to be created, it must be
+	 * done immediately, rather than waiting until the 
+	 * extraction phase.
+	 */
 	case ONTAPE|INOFND|MODECHG:
 	case ONTAPE|INOFND|NAMEFND|MODECHG:
 		if (ip->e_flags & KEEP) {
@@ -237,24 +327,40 @@ nodeupdates(name, ino, type)
 		dprintf(stdout, "[%s] %s: KEEP|NEW\n", keyval, name);
 		break;
 
+	/*
+	 * A hard link to a diirectory that has been removed.
+	 * Ignore it.
+	 */
+	case NAMEFND:
+		dprintf(stdout, "[%s] %s: Extraneous name\n", keyval, name);
+		descend = FAIL;
+		break;
+
+	/*
+	 * If any of these arise, something is grievously wrong with
+	 * the current state of the symbol table.
+	 */
 	case INOFND|NAMEFND|MODECHG:
 	case NAMEFND|MODECHG:
 	case INOFND|MODECHG:
-	case NAMEFND:
 	case NIL:
 		panic("[%s] %s: inconsistent state\n", keyval, name);
 		break;
 
+	/*
+	 * These states "cannot" arise for any state of the symbol table.
+	 */
 	case ONTAPE|MODECHG:
 	case MODECHG:
 	default:
 		panic("[%s] %s: impossible state\n", keyval, name);
 		break;
 	}	
+	return (descend);
 }
 
 /*
- *	Find unreferenced link names.
+ * Find unreferenced link names.
  */
 findunreflinks()
 {
@@ -279,7 +385,13 @@ findunreflinks()
 }
 
 /*
- *	Remove old nodes (directories).
+ * Remove old nodes (directories).
+ * Note that this routine runs in O(N*D) where:
+ *	N is the number of directory entries to be removed.
+ *	D is the maximum depth of the tree.
+ * If N == D this can be quite slow. If the list were
+ * topologically sorted, the deletion could be done in
+ * time O(N).
  */
 removeoldnodes()
 {
@@ -306,7 +418,8 @@ removeoldnodes()
 }
 
 /*
- *	Extract new leaves.
+ * This is the routine used to extract files for the 'r' command.
+ * Extract new leaves.
  */
 createleaves(symtabfile)
 	char *symtabfile;
@@ -325,6 +438,12 @@ createleaves(symtabfile)
 	curvol = volno;
 	while (curfile.ino < maxino) {
 		first = lowerbnd(first);
+		/*
+		 * If the next available file is not the one which we
+		 * expect then we have missed one or more files. Since
+		 * we do not request files that were not on the tape,
+		 * the lost files must have been due to a tape read error.
+		 */
 		while (first < curfile.ino) {
 			ep = lookupino(first);
 			if (ep == NIL)
@@ -341,12 +460,22 @@ createleaves(symtabfile)
 			panic("unknown file on tape\n");
 		if ((ep->e_flags & (NEW|EXTRACT)) == 0)
 			badentry(ep, "unexpected file on tape");
+		/*
+		 * If the file is to be extracted, then the old file must
+		 * be removed since its type may change from one leaf type
+		 * to another (eg "file" to "character special").
+		 */
 		if ((ep->e_flags & EXTRACT) != 0) {
 			removeleaf(ep);
 			ep->e_flags &= ~REMOVED;
 		}
-		extractfile(myname(ep));
+		(void) extractfile(myname(ep));
 		ep->e_flags &= ~(NEW|EXTRACT);
+		/*
+		 * We checkpoint the restore after every tape reel, so
+		 * as to simplify the amount of work re quired by the
+		 * 'R' command.
+		 */
 		if (curvol != volno) {
 			dumpsymtable(symtabfile, volno);
 			skipmaps();
@@ -356,7 +485,8 @@ createleaves(symtabfile)
 }
 
 /*
- *	Efficiently extract a subset of the files on a tape
+ * This is the routine used to extract files for the 'x' command.
+ * Efficiently extract a subset of the files on a tape
  */
 createfiles()
 {
@@ -433,14 +563,14 @@ createfiles()
 			ep = lookupino(next);
 			if (ep == NIL)
 				panic("corrupted symbol table\n");
-			extractfile(myname(ep));
+			(void) extractfile(myname(ep));
 			ep->e_flags &= ~NEW;
 		}
 	}
 }
 
 /*
- *	Add links.
+ * Add links.
  */
 createlinks()
 {
@@ -456,7 +586,6 @@ createlinks()
 		for (np = ep->e_links; np != NIL; np = np->e_links) {
 			(void) strcpy(name, myname(ep));
 			if (ep->e_type == NODE) {
-				vprintf(stdout, "changing hard link to directory to a symbolic link:");
 				linkit(name, myname(np), SYMLINK);
 			} else {
 				linkit(name, myname(np), HARDLINK);
@@ -467,7 +596,9 @@ createlinks()
 }
 
 /*
- *	Check the symbol table.
+ * Check the symbol table.
+ * We do this to insure that all the requested work was done, and
+ * that no temporary names remain.
  */
 checkrestore()
 {
@@ -485,24 +616,32 @@ checkrestore()
 }
 
 /*
- *	Compare with the directory structure on the tape
+ * Compare with the directory structure on the tape
+ * A paranoid check that things are as they should be.
  */
-void
+long
 verifyfile(name, ino, type)
 	char *name;
 	ino_t ino;
 	int type;
 {
 	struct entry *np, *ep;
+	long descend = GOOD;
 
 	ep = lookupname(name);
-	if (ep == NIL)
-		panic("missing name %s\n", name);
-	for (np = lookupino(ino); np != NIL; np = np->e_links)
+	if (ep == NIL) {
+		fprintf(stderr, "Warning: missing name %s\n", name);
+		return (FAIL);
+	}
+	np = lookupino(ino);
+	if (np != ep)
+		descend = FAIL;
+	for ( ; np != NIL; np = np->e_links)
 		if (np == ep)
 			break;
 	if (np == NIL)
 		panic("missing inumber %d\n", ino);
 	if (ep->e_type == LEAF && type != LEAF)
 		badentry(ep, "type should be LEAF");
+	return (descend);
 }
