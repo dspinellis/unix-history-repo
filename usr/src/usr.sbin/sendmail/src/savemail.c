@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	6.37 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	6.38 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <pwd.h>
@@ -445,7 +445,7 @@ returntosender(msg, returnq, sendbody, e)
 			parseaddr(q->q_paddr, q, 0, '\0', NULL, e);
 
 		if (q->q_alias == NULL)
-			addheader("to", q->q_paddr, ee);
+			addheader("To", q->q_paddr, ee);
 	}
 
 # ifdef LOG
@@ -455,7 +455,7 @@ returntosender(msg, returnq, sendbody, e)
 # endif
 
 	(void) sprintf(buf, "Returned mail: %s", msg);
-	addheader("subject", buf, ee);
+	addheader("Subject", buf, ee);
 
 	/* fake up an address header for the from person */
 	expand("\201n", buf, &buf[sizeof buf - 1], e);

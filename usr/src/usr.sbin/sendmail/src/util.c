@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	6.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	6.16 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -52,43 +52,6 @@ stripquotes(s)
 			continue;
 		*q++ = c;
 	} while (c != '\0');
-}
-/*
-**  CAPITALIZE -- return a copy of a string, properly capitalized.
-**
-**	Parameters:
-**		s -- the string to capitalize.
-**
-**	Returns:
-**		a pointer to a properly capitalized string.
-**
-**	Side Effects:
-**		none.
-*/
-
-char *
-capitalize(s)
-	register char *s;
-{
-	static char buf[50];
-	register char *p;
-
-	p = buf;
-
-	for (;;)
-	{
-		while (!(isascii(*s) && isalpha(*s)) && *s != '\0')
-			*p++ = *s++;
-		if (*s == '\0')
-			break;
-		*p++ = toupper(*s);
-		s++;
-		while (isascii(*s) && isalpha(*s))
-			*p++ = *s++;
-	}
-
-	*p = '\0';
-	return (buf);
 }
 /*
 **  XALLOC -- Allocate memory and bitch wildly on failure.
