@@ -100,7 +100,7 @@ char	MyName[] = "sccs";	/* name used in messages */
 
 /****************  End of Configuration Information  ****************/
 
-static char SccsId[] = "@(#)sccs.c	1.33 %G%";
+static char SccsId[] = "@(#)sccs.c	1.34 %G%";
 
 # define bitset(bit, word)	((bit) & (word))
 
@@ -127,6 +127,7 @@ struct sccsprog
 # define FIX		2	/* fix a delta */
 # define CLEAN		3	/* clean out recreatable files */
 # define UNEDIT		4	/* unedit a file */
+# define SHELL		5	/* call a shell file (like PROG) */
 
 /* bits for sccsflags */
 # define NO_SDOT	0001	/* no s. on front of args */
@@ -152,6 +153,7 @@ struct sccsprog SccsProg[] =
 	"prt",		PROG,	0,		"",		PROGPATH(prt),
 	"rmdel",	PROG,	REALUSER,	"",		PROGPATH(rmdel),
 	"what",		PROG,	NO_SDOT,	"",		PROGPATH(what),
+	"sccsdiff",	SHELL,	REALUSER,	"",		PROGPATH(sccsdiff),
 	"edit",		CMACRO,	NO_SDOT,	"ixbscl",	"get -e",
 	"delget",	CMACRO,	NO_SDOT,	"",		"delta/get -t",
 	"deledit",	CMACRO,	NO_SDOT,	"",		"delta/get -e -t",
@@ -274,13 +276,13 @@ command(argv, forkflag, editflag, arg0)
 {
 	register struct sccsprog *cmd;
 	register char *p;
-	register char *q;
 	char buf[40];
 	extern struct sccsprog *lookup();
 	char *nav[1000];
 	char **np;
-	char **ap;
+	register char **ap;
 	register int i;
+	register char *q;
 	extern bool unedit();
 	int rval = 0;
 	extern char *index();
@@ -300,7 +302,7 @@ command(argv, forkflag, editflag, arg0)
 	**	Phase one -- from arg0 & if necessary argv[0].
 	*/
 
-	np = nav;
+	np = ap = &nav[1];
 	for (p = arg0, q = buf; *p != '\0' && *p != '/'; )
 	{
 		*np++ = q;
@@ -311,18 +313,18 @@ command(argv, forkflag, editflag, arg0)
 		*q++ = '\0';
 	}
 	*np = NULL;
-	if (nav[0] == NULL)
+	if (*ap == NULL)
 		*np++ = *argv++;
 
 	/*
 	**  Look up command.
-	**	At this point, nav[0] is the command name.
+	**	At this point, *ap is the command name.
 	*/
 
-	cmd = lookup(nav[0]);
+	cmd = lookup(*ap);
 	if (cmd == NULL)
 	{
-		usrerr("Unknown command \"%s\"", argv[0]);
+		usrerr("Unknown command \"%s\"", *ap);
 		return (EX_USAGE);
 	}
 
@@ -355,8 +357,14 @@ command(argv, forkflag, editflag, arg0)
 
 	switch (cmd->sccsoper)
 	{
+	  case SHELL:		/* call a shell file */
+		*ap = cmd->sccspath;
+		*--ap = "sh";
+		rval = callprog("/bin/sh", cmd->sccsflags, ap, forkflag);
+		break;
+
 	  case PROG:		/* call an sccs prog */
-		rval = callprog(cmd->sccspath, cmd->sccsflags, nav, forkflag);
+		rval = callprog(cmd->sccspath, cmd->sccsflags, ap, forkflag);
 		break;
 
 	  case CMACRO:		/* command macro */
@@ -365,24 +373,24 @@ command(argv, forkflag, editflag, arg0)
 			q = p;
 			while (*p != '\0' && *p != '/')
 				p++;
-			rval = command(&nav[1], *p != '\0', TRUE, q);
+			rval = command(&ap[1], *p != '\0', TRUE, q);
 			if (rval != 0)
 				break;
 		}
 		break;
 
 	  case FIX:		/* fix a delta */
-		if (strncmp(nav[1], "-r", 2) != 0)
+		if (strncmp(ap[1], "-r", 2) != 0)
 		{
 			usrerr("-r flag needed for fix command");
 			rval = EX_USAGE;
 			break;
 		}
-		rval = command(&nav[1], TRUE, TRUE, "get -k");
+		rval = command(&ap[1], TRUE, TRUE, "get -k");
 		if (rval == 0)
-			rval = command(&nav[1], TRUE, TRUE, "rmdel");
+			rval = command(&ap[1], TRUE, TRUE, "rmdel");
 		if (rval == 0)
-			rval = command(&nav[2], FALSE, TRUE, "get -e -g");
+			rval = command(&ap[2], FALSE, TRUE, "get -e -g");
 		break;
 
 	  case CLEAN:
@@ -390,14 +398,14 @@ command(argv, forkflag, editflag, arg0)
 		break;
 
 	  case UNEDIT:
-		for (argv = np = &nav[1]; *argv != NULL; argv++)
+		for (argv = np = &ap[1]; *argv != NULL; argv++)
 		{
 			if (unedit(*argv))
 				*np++ = *argv;
 		}
 		*np = NULL;
 		if (i > 0)
-			rval = command(&nav[1], FALSE, FALSE, "get");
+			rval = command(&ap[1], FALSE, FALSE, "get");
 		break;
 
 	  default:
