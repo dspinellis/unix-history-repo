@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	5.47 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	5.48 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -223,6 +223,18 @@ setupmaps()
 		s = stab("hash", ST_MAPCLASS, ST_ENTER);
 		s->s_mapclass.map_init = hash_map_init;
 		s->s_mapclass.map_lookup = db_map_lookup;
+	}
+# endif
+
+# ifdef NIS_MAP
+	/* NIS map access */
+	{
+		extern bool nis_map_init();
+		extern char *nis_map_lookup();
+
+		s = stab("nis", ST_MAPCLASS, ST_ENTER);
+		s->s_mapclass.map_init = nis_map_init;
+		s->s_mapclass.map_lookup = nis_map_lookup;
 	}
 # endif
 

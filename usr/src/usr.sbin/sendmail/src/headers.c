@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	5.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	5.29 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/param.h>
@@ -291,9 +291,12 @@ eatheader(e)
 	register HDR *h;
 	register char *p;
 	int hopcnt = 0;
+	char *msgid;
+	char msgidbuf[MAXNAME];
 
 	if (tTd(32, 1))
 		printf("----- collected header -----\n");
+	msgid = "<none>";
 	for (h = e->e_header; h != NULL; h = h->h_link)
 	{
 		extern char *capitalize();
@@ -313,22 +316,18 @@ eatheader(e)
 				   &e->e_sendqueue, e);
 		}
 
-		/* log the message-id */
-#ifdef LOG
-		if (!QueueRun && LogLevel > 8 && h->h_value != NULL &&
+		/* save the message-id for logging */
+		if (!QueueRun && h->h_value != NULL &&
 		    strcmp(h->h_field, "message-id") == 0)
 		{
-			char buf[MAXNAME];
-
-			p = h->h_value;
+			msgid = h->h_value;
 			if (bitset(H_DEFAULT, h->h_flags))
 			{
-				expand(p, buf, &buf[sizeof buf], e);
-				p = buf;
+				expand(msgid, msgidbuf,
+					&msgidbuf[sizeof msgidbuf], e);
+				msgid = msgidbuf;
 			}
-			syslog(LOG_INFO, "%s: message-id=%s", e->e_id, p);
 		}
-#endif /* LOG */
 	}
 	if (tTd(32, 1))
 		printf("----------------------------\n");
@@ -392,9 +391,9 @@ eatheader(e)
 			(void)sprintf(hbuf, "%.80s (%s)", 
 			    RealHostName, inet_ntoa(RealHostAddr.sin_addr));
 		syslog(LOG_INFO,
-		    "%s: from=%s, size=%ld, class=%d, received from %s\n",
+		    "%s: from=%s, size=%ld, class=%d, msgid=%s, received from %s\n",
 		    e->e_id, e->e_from.q_paddr, e->e_msgsize,
-		    e->e_class, name);
+		    e->e_class, msgid, name);
 	}
 # endif /* LOG */
 }

@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	5.45 (Berkeley) %G%
+ *	@(#)sendmail.h	5.46 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	5.45		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	5.46		%G%";
 # endif lint
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -431,6 +431,7 @@ MAP
 	char		*map_file;	/* the (nominal) filename */
 	void		*map_db;	/* the open database ptr */
 	char		*map_app;	/* to append to successful matches */
+	char		*map_domain;	/* the (nominal) NIS domain */
 };
 
 /* bit values for map_flags */
@@ -438,6 +439,7 @@ MAP
 # define MF_INCLNULL	00002		/* include null byte in key */
 # define MF_OPTIONAL	00004		/* don't complain if map not found */
 # define MF_NOFOLDCASE	00010		/* don't fold case in keys */
+# define MF_MATCHONLY	00020		/* don't use the map value */
 /*
 **  Symbol table definitions
 */
