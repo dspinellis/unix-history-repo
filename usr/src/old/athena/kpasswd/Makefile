@@ -17,25 +17,22 @@
 # @(#)Makefile	5.3 (Berkeley) 9/20/88
 #
 
-CDEFS=	-DKERBEROS
-CFLAGS=	-O
+CFLAGS=	-O -DKERBEROS
 LIBC=	/lib/libc.a
-KLIB=	/usr/local/lib/libkrb.a
-DESLIB=	/usr/local/lib/libdes.a
-KDBLIB=	/usr/local/lib/libkrb_dbm.a
-INCDIR=	/usr/include/kerberos
 SRC1=	kpasswd.c
+OBJ1=	kpasswd.o
 SRC2=	kpasswdd.c
+OBJ2=	kpasswdd.o
 OBJS=	kpasswd.o kpasswdd.o
 MAN=	kpasswd.0 kpasswdd.0
 
 all: kpasswd kpasswdd
 
-kpasswd: ${SRC1} ${LIBC} ${KLIB} ${DESLIB} kpasswd.c
-	${CC} -o $@ -I${INCDIR} ${CFLAGS} ${CDEFS} ${SRC1} ../lib/des_rw.o -lutil -lkrb -ldes
+kpasswd: ${OBJ1} ${LIBC}
+	${CC} -o $@ ${CFLAGS} ${OBJ1} -lutil -lkrb -ldes
 
-kpasswdd: ${SRC2} ${LIBC} ${KLIB} ${DESLIB} kpasswdd.c
-	${CC} -o $@ -I${INCDIR} ${CFLAGS} ${CDEFS} ${SRC2} ../lib/des_rw.o -lutil -lkrb -lkrb_dbm -ldes
+kpasswdd: ${OBJ2} ${LIBC}
+	${CC} -o $@ ${CFLAGS} ${OBJ2} -lutil -lkrb -lkdb -ldes
 
 clean:
 	rm -f ${OBJS} core kpasswd kpasswdd
@@ -47,8 +44,8 @@ depend: ${SRC1} ${SRC2}
 	mkdep -p ${CFLAGS} ${SRC1} ${SRC2}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 kpasswdd ${DESTDIR}/etc/kpasswdd
-	install -s -o bin -g bin -m 755 kpasswd ${DESTDIR}/usr/local
+	install -s -o bin -g bin -m 755 kpasswdd ${DESTDIR}/usr/libexec/kpasswdd
+	install -s -o bin -g bin -m 755 kpasswd ${DESTDIR}/usr/athena
 	install -c -o bin -g bin -m 444 kpasswd.0 ${DESTDIR}/usr/man/cat1
 	install -c -o bin -g bin -m 444 kpasswdd.0 ${DESTDIR}/usr/man/cat8
 
