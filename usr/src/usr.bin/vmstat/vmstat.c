@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.33 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -111,7 +111,6 @@ struct _disk {
 } cur, last;
 
 struct	vmmeter sum, osum;
-char	*vmunix = _PATH_UNIX;
 char	**dr_name;
 int	*dr_select, dk_ndrive, ndrives;
 
@@ -141,9 +140,9 @@ main(argc, argv)
 	register int c, todo;
 	u_int interval;
 	int reps;
-	char *kmem;
+	char *memf, *nlistf;
 
-	kmem = NULL;
+	memf = nlistf = NULL;
 	interval = reps = todo = 0;
 	while ((c = getopt(argc, argv, "c:fiM:mN:stw:")) != EOF) {
 		switch (c) {
@@ -159,13 +158,13 @@ main(argc, argv)
 			todo |= INTRSTAT;
 			break;
 		case 'M':
-			kmem = optarg;
+			memf = optarg;
 			break;
 		case 'm':
 			todo |= MEMSTAT;
 			break;
 		case 'N':
-			vmunix = optarg;
+			nlistf = optarg;
 			break;
 		case 's':
 			todo |= SUMSTAT;
@@ -189,7 +188,14 @@ main(argc, argv)
 	if (todo == 0)
 		todo = VMSTAT;
 
-	if (kvm_openfiles(vmunix, kmem, NULL) < 0) {
+	/*
+	 * Discard setgid privileges if not the running kernel so that bad
+	 * guys can't print interesting stuff from kernel memory.
+	 */
+	if (nlistf != NULL || memf != NULL)
+		setgid(getgid());
+
+	if (kvm_openfiles(nlistf, memf, NULL) < 0) {
 		(void)fprintf(stderr,
 		    "vmstat: kvm_openfiles: %s\n", kvm_geterr());
 		exit(1);
@@ -198,7 +204,7 @@ main(argc, argv)
 	if ((c = kvm_nlist(nl)) != 0) {
 		if (c > 0) {
 			(void)fprintf(stderr,
-			    "vmstat: undefined symbols in %s:", vmunix);
+			    "vmstat: undefined symbols: ");
 			for (c = 0; c < sizeof(nl)/sizeof(nl[0]); c++)
 				if (nl[c].n_type == 0)
 					printf(" %s", nl[c].n_name);
@@ -754,7 +760,7 @@ kread(nlx, addr, size)
 		if (*sym == '_')
 			++sym;
 		(void)fprintf(stderr,
-		    "vmstat: %s: symbol %s not defined\n", vmunix, sym);
+		    "vmstat: symbol %s not defined\n", sym);
 		exit(1);
 	}
 	if (kvm_read((void *)nl[nlx].n_value, addr, size) != size) {

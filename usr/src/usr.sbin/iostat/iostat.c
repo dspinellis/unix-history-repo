@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)iostat.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)iostat.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -103,20 +103,20 @@ main(argc, argv)
 	register int i;
 	long tmp;
 	int ch, hdrcnt, reps, interval, phz, ndrives;
-	char **cp, *memfile, *namelist, buf[30];
+	char **cp, *memf, *nlistf, buf[30];
 
 	interval = reps = 0;
-	namelist = memfile = NULL;
+	nlistf = memf = NULL;
 	while ((ch = getopt(argc, argv, "c:M:N:w:")) != EOF)
 		switch(ch) {
 		case 'c':
 			reps = atoi(optarg);
 			break;
 		case 'M':
-			memfile = optarg;
+			memf = optarg;
 			break;
 		case 'N':
-			namelist = optarg;
+			nlistf = optarg;
 			break;
 		case 'w':
 			interval = atoi(optarg);
@@ -128,7 +128,14 @@ main(argc, argv)
 	argc -= optind;
 	argv += optind;
 
-	if (kvm_openfiles(namelist, memfile, NULL) == -1)
+	/*
+	 * Discard setgid privileges if not the running kernel so that bad
+	 * guys can't print interesting stuff from kernel memory.
+	 */
+	if (nlistf != NULL || memf != NULL)
+		setgid(getgid());
+
+	if (kvm_openfiles(nlistf, memf, NULL) == -1)
 		err("kvm_openfiles: %s", kvm_geterr());
 	if (kvm_nlist(nl) == -1)
 		err("kvm_nlist: %s", kvm_geterr());
