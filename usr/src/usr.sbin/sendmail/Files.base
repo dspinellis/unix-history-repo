@@ -1,5 +1,4 @@
-#	@(#)Files.base	8.3 (Berkeley) %G%
-CHANGES-R5-R8
+#	@(#)Files.base	8.4 (Berkeley) %G%
 FAQ
 KNOWNBUGS
 Makefile
