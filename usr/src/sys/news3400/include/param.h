@@ -11,13 +11,13 @@
  *
  * from: Utah $Hdr: machparam.h 1.11 89/08/14$
  *
- *	@(#)param.h	7.4 (Berkeley) %G%
+ *	@(#)param.h	7.5 (Berkeley) %G%
  */
 
 /*
  * Machine dependent constants for DEC Station 3100.
  */
-#define	MACHINE	"news"
+#define	MACHINE	"news3400"
 #define COFF
 
 /*
@@ -25,7 +25,7 @@
  * data types (int, long, ...).   The result is u_int and must be cast to
  * any desired pointer type.
  */
-#define	ALIGNBYTES	3
+#define	ALIGNBYTES	7
 #define	ALIGN(p)	(((u_int)(p) + ALIGNBYTES) &~ ALIGNBYTES)
 
 #define	NBPG		4096		/* bytes/page */
@@ -49,9 +49,9 @@
 #define	SINCR		1		/* increment of stack/NBPG */
 
 #define	UPAGES		2		/* pages of u-area */
-#define	KERNELSTACK	0xffffe000	/* virtual address of kernel stack */
-#define	UADDR		0xffffc000	/* address of u */
+#define	UADDR		0xffffd000	/* address of u */
 #define	UVPN		(UADDR>>PGSHIFT)/* virtual page number of u */
+#define	KERNELSTACK	(UADDR+UPAGES*NBPG)	/* top of kernel stack */
 
 /*
  * Constants related to network buffer management.
@@ -112,14 +112,6 @@
 #define pmax_ptob(x)		((unsigned)(x) << PGSHIFT)
 
 #ifdef news3400
-#ifdef PMAXSPL
-#define	splnet		Mach_spl0
-#define	splbio		Mach_spl0
-#define	spltty		Mach_spl1
-#define	splimp		Mach_spl1
-#define	splclock	Mach_spl2
-#define	splstatclock	Mach_spl2
-#else
 #define	splnet		spl2
 #define	splsoftclock	spl2
 #define	splbio		spl3
@@ -127,7 +119,6 @@
 #define	splimp		spl4
 #define	splclock	spl5
 #define	splstatclock	spl5
-#endif /* PMAXSPL */
 #endif /* news3400 */
 
 #ifdef KERNEL
