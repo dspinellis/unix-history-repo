@@ -1,8 +1,7 @@
-static	char *sccsid = "@(#)login.c.1	4.14 82/03/15";
+static	char *sccsid = "@(#)login.c.1	4.15 82/03/27";
 /*
  * login [ name ]
  * login -r
- * login -r [ rhost ]
  */
 
 #include <sys/types.h>
@@ -95,32 +94,23 @@ char **argv;
 	nice(-100);
 	nice(20);
 	nice(0);
-	if (argc > 0 && !strcmp(argv[1], "-r")) {
+	if (argc > 1 && !strcmp(argv[1], "-r")) {
 		rflag++;
-		if (argc > 1)
-			rhost = argv[2];
+		rhost = argv[2];
 		argc = 1;
-		if (rhost) {
-			getstr(rusername, sizeof (rusername), "remuser");
-			getstr(lusername, sizeof (lusername), "locuser");
-		} else {
-			getstr(lusername, sizeof (lusername), "Username");
-			getstr(rpassword, sizeof (rpassword), "Password");
-		}
+		getstr(rusername, sizeof (rusername), "remuser");
+		getstr(lusername, sizeof (lusername), "locuser");
 		getstr(term+5, sizeof(term)-5, "Terminal type");
-		if (rhost == 0)
-			goto normal;
-		if (getuid()) {
-			rflag = 0;
-			goto normal;
-		}
+		if (getuid())
+			goto abnormal;
 		setpwent();
 		pwd = getpwnam(lusername);
-		if (pwd == NULL) {
-			fprintf(stderr, "Login incorrect.\n");
-			exit(1);
-		}
 		endpwent();
+		if (pwd == NULL) {
+			if (strcmp(rusername, lusername))
+				printf("%s: No such user\r\n", lusername);
+			goto abnormal;
+		}
 		hostf = fopen("/etc/hosts.equiv", "r");
 	again:
 		if (hostf) {
@@ -133,8 +123,10 @@ char **argv;
 			if (user)
 				*user++ = 0;
 			if (!strcmp(rhost, ahost) &&
-			    !strcmp(rusername, user ? user : lusername))
+			    !strcmp(rusername, user ? user : lusername)) {
+				fclose(hostf);
 				goto normal;
+			}
 		  }
 		  fclose(hostf);
 		}
@@ -145,12 +137,15 @@ char **argv;
 			hostf = fopen(".rhosts", "r");
 			goto again;
 		}
+abnormal:
 		rhost = 0;
 		rflag = -1;
 	}
 normal:
 	ioctl(0, TIOCLSET, &zero);
 	ioctl(0, TIOCNXCL, 0);
+	ioctl(0, FIONBIO, &zero);
+	ioctl(0, FIOASYNC, &zero);
 	gtty(0, &ttyb);
 	if (rflag) {
 		char *cp = index(term, '/');
@@ -165,8 +160,6 @@ normal:
 		}
 		ttyb.sg_flags = ECHO|CRMOD|ANYP|XTABS;
 	}
-	if (rflag == -1)
-		rflag = 0;
 	ttyb.sg_erase = CERASE;
 	ttyb.sg_kill = CKILL;
 	stty(0, &ttyb);
@@ -186,9 +179,11 @@ normal:
 			SCPYN(utmp.ut_name, argv[1]);
 			argc = 0;
 		}
-		if (rflag)
+		if (rflag) {
 			strcpy(utmp.ut_name, lusername);
-		else
+			if (rflag == -1)
+				rflag = 0;
+		} else
 			while (utmp.ut_name[0] == '\0') {
 				namep = utmp.ut_name;
 				{ char hostname[32];
@@ -237,26 +232,15 @@ normal:
 		}
 		if (!invalid && pwd->pw_uid == 0 &&
 		    !rootterm(ttyn+sizeof("/dev/")-1)) {
-			FILE *console = fopen("/dev/console", "w");
-			if (console != NULL) {
-				fprintf(console, "\r\nROOT LOGIN REFUSED %s\r\n"
-				    , ttyn+sizeof("/dev/")-1
-				);
-				fclose(console);
-			}
+			logerr("ROOT LOGIN REFUSED %s",
+			    ttyn+sizeof("/dev/")-1);
 			invalid = TRUE;
 		}
 		if (invalid) {
 			printf("Login incorrect\n");
-			if (ttyn[sizeof("/dev/tty")-1] == 'd') {
-				FILE *console = fopen("/dev/console", "w");
-				if (console != NULL) {
-					fprintf(console, "\r\nBADDIALUP %s %s\r\n"
-					    , ttyn+sizeof("/dev/")-1
-					    , utmp.ut_name);
-					fclose(console);
-				}
-			}
+			if (ttyn[sizeof("/dev/tty")-1] == 'd')
+				logerr("BADDIALUP %s %s\n",
+				    ttyn+sizeof("/dev/")-1, utmp.ut_name);
 		}
 		if (*pwd->pw_shell == '\0')
 			pwd->pw_shell = "/bin/sh";
@@ -288,15 +272,16 @@ normal:
 		write(f, (char *)&utmp, sizeof(utmp));
 		close(f);
 	}
-	quietlog = FALSE;
+	quietlog = 0;
 	if (access(qlog, 0) == 0)
-		quietlog = TRUE;
-	if ( !quietlog && (f = open(lastlog, 2)) >= 0 ) {
+		quietlog = 1;
+	if ((f = open(lastlog, 2)) >= 0) {
 		struct lastlog ll;
 
 		lseek(f, (long)pwd->pw_uid * sizeof (struct lastlog), 0);
 		if (read(f, (char *) &ll, sizeof ll) == sizeof ll &&
 		    ll.ll_time != 0) {
+			if (quietlog == 0)
 			printf("Last login: %.*s on %.*s\n"
 			    , 24-5
 			    , (char *) ctime(&ll.ll_time)
@@ -317,7 +302,7 @@ normal:
 	environ = envinit;
 	strncat(homedir, pwd->pw_dir, sizeof(homedir)-6);
 	strncat(shell, pwd->pw_shell, sizeof(shell)-7);
-	if (rflag == 0)
+	if (term[strlen("TERM=")] == 0)
 		strncat(term, stypeof(ttyn), sizeof(term)-6);
 	strncat(user, pwd->pw_name, sizeof(user)-6);
 	if ((namep = rindex(pwd->pw_shell, '/')) == NULL)
@@ -327,17 +312,9 @@ normal:
 	strcat(minusnam, namep);
 	alarm(0);
 	umask(022);
-	if (ttyn[sizeof("/dev/tty")-1] == 'd') {
-		FILE *console = fopen("/dev/console", "w");
-		if (console != NULL) {
-			fprintf(console, "\r\nDIALUP %s %s\r\n"
-			    , ttyn+sizeof("/dev/")-1
-			    , pwd->pw_name
-			);
-			fclose(console);
-		}
-	}
-	if ( !quietlog ) {
+	if (ttyn[sizeof("/dev/tty")-1] == 'd')
+		logerr("DIALUP %s %s\n", ttyn+sizeof("/dev/")-1, pwd->pw_name);
+	if (!quietlog) {
 		showmotd();
 		strcat(maildir, pwd->pw_name);
 		if (access(maildir,4)==0) {
@@ -459,4 +436,10 @@ getstr(buf, cnt, err)
 		}
 		*buf++ = c;
 	} while (c != 0);
+}
+
+logerr(fmt, a1, a2, a3)
+	char *fmt, *a1, *a2, *a3;
+{
+
 }
