@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -252,11 +252,11 @@ mountfs(spec, name, flags, type, options, mntopts)
 		if (options)
 			getufsopts(options, &flags);
 		args.fspec = spec;
-		args.exroot = DEFAULT_ROOTUID;
+		args.export.ex_root = DEFAULT_ROOTUID;
 		if (flags & MNT_RDONLY)
-			args.exflags = MNT_EXRDONLY;
+			args.export.ex_flags = MNT_EXRDONLY;
 		else
-			args.exflags = 0;
+			args.export.ex_flags = 0;
 		argp = (caddr_t)&args;
 		break;
 
@@ -385,6 +385,8 @@ getmnttype(fstype)
 		return (MOUNT_MFS);
 	if (!strcmp(fstype, "lfs"))
 		return (MOUNT_LFS);
+	if (!strcmp(fstype, "isofs"))
+		return (MOUNT_ISOFS);
 	return (0);
 }
 
