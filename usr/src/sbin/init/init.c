@@ -32,9 +32,10 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00014
+ * CURRENT PATCH LEVEL:         2       00022
  * --------------------         -----   ----------------------
  *
+ * 31 Jul 92	Christoph Robitschko	Fixed run level change code
  * 04 Sep 92	Paul Kranenburg		Fixed kill -1 and kill -15 for
  *					daemons started from /etc/rc.
  */
@@ -197,6 +198,7 @@ top:
 				execl("/bin/sh", "sh", "/etc/rc", Reboot, (char *)0);
 				_exit(127);
 			}
+			Reboot = 0;			/* 31 Jul 92*/
 			while(wait(&status) != pid);
 
 			/* if we are about to be rebooted, then wait for it */
@@ -224,6 +226,8 @@ top:
 			_exit(127);
 		}
 		while(wait(&status) != pid)
+		while(drain)				/* 31 Jul 92*/
+			pause();
 		goto top;
 	}
 
