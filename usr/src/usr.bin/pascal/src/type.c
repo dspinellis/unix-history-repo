@@ -1,7 +1,7 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)type.c 1.10 %G%";
+static char sccsid[] = "@(#)type.c 1.11 %G%";
 #endif
 
 #include "whoami.h"
@@ -80,7 +80,7 @@ type(tline, tid, tdecl)
 	np = gtype(tdecl);
 	line = tline;
 #ifndef PI0
-	enter(defnl(tid, TYPE, np, 0))->nl_flags |= NMOD;
+	enter(defnl(tid, TYPE, np, 0))->nl_flags |= (char) NMOD;
 #else
 	(void) enter(defnl(tid, TYPE, np, 0));
 	send(REVTYPE, tline, tid, tdecl);
@@ -138,7 +138,7 @@ gtype(r)
 		default:
 			panic("type");
 		case T_TYID:
-			r++;
+			r = (struct tnode *) (&(r->tyid_node.line_no));
 		case T_ID:
 			np = lookup(r->char_const.cptr);
 			if (np == NLNIL)
