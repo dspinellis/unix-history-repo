@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	5.49 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	5.50 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -826,7 +826,8 @@ telnet(f, p, host)
 	 */
 	send_do(TELOPT_NAWS, 1);
 	send_will(TELOPT_STATUS, 1);
-	flowmode = 1;  /* default flow control state */
+	flowmode = 1;		/* default flow control state */
+	restartany = -1;	/* uninitialized... */
 	send_do(TELOPT_LFLOW, 1);
 
 	/*
@@ -1188,11 +1189,18 @@ telnet(f, p, host)
 				if (his_state_is_will(TELOPT_LFLOW) &&
 				    (ptyibuf[0] &
 				     (TIOCPKT_NOSTOP|TIOCPKT_DOSTOP))) {
-					(void) sprintf(nfrontp, "%c%c%c%c%c%c",
-					    IAC, SB, TELOPT_LFLOW,
-					    ptyibuf[0] & TIOCPKT_DOSTOP ? 1 : 0,
-					    IAC, SE);
-					nfrontp += 6;
+					int newflow =
+					    ptyibuf[0] & TIOCPKT_DOSTOP ? 1 : 0;
+					if (newflow != flowmode) {
+						flowmode = newflow;
+						(void) sprintf(nfrontp,
+							"%c%c%c%c%c%c",
+							IAC, SB, TELOPT_LFLOW,
+							flowmode ? LFLOW_ON
+								 : LFLOW_OFF,
+							IAC, SE);
+						nfrontp += 6;
+					}
 				}
 				pcc--;
 				ptyip = ptyibuf+1;

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)termstat.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)termstat.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -142,18 +142,19 @@ localstat()
 	if (his_state_is_will(TELOPT_LFLOW)) {
 		if (tty_flowmode() != flowmode) {
 			flowmode = tty_flowmode();
-			(void) sprintf(nfrontp, "%c%c%c%c%c%c", IAC, SB,
-				TELOPT_LFLOW, flowmode ? LFLOW_ON : LFLOW_OFF,
-				IAC, SE);
+			(void) sprintf(nfrontp, "%c%c%c%c%c%c",
+					IAC, SB, TELOPT_LFLOW,
+					flowmode ? LFLOW_ON : LFLOW_OFF,
+					IAC, SE);
 			nfrontp += 6;
+		}
+		if (tty_restartany() != restartany) {
 			restartany = tty_restartany();
-			if (restartany >= 0) {
-				(void) sprintf(nfrontp, "%c%c%c%c%c%c",
+			(void) sprintf(nfrontp, "%c%c%c%c%c%c",
 					IAC, SB, TELOPT_LFLOW,
 					restartany ? LFLOW_RESTART_ANY
 						   : LFLOW_RESTART_XON,
 					IAC, SE);
-			}
 			nfrontp += 6;
 		}
 	}
