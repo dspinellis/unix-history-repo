@@ -32,6 +32,14 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00107
+ * --------------------         -----   ----------------------
+ *
+ * 28 Mar 93    Ken Hughes      Fix problem with odd-length symbols >16 chars.
+ *
  */
 
 #ifndef lint
@@ -294,7 +302,8 @@ copy_ar(cfp, size)
 		error(cfp->rname);
 	}
 
-	if (cfp->flags & RPAD && size & 1 && (nr = read(from, buf, 1)) != 1) {
+	if (cfp->flags & RPAD && (size + chdr.lname) & 1
+		&& (nr = read(from, buf, 1)) != 1) {
 		if (nr == 0)
 			badfmt();
 		error(cfp->rname);
