@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ps.c	4.26 (Berkeley) %G%";
+static	char *sccsid = "@(#)ps.c	4.27 (Berkeley) %G%";
 #endif
 
 /*
@@ -20,12 +20,13 @@ static	char *sccsid = "@(#)ps.c	4.26 (Berkeley) %G%";
 #include <sys/stat.h>
 #include <sys/mbuf.h>
 #include <math.h>
+#include <errno.h>
 
 struct nlist nl[] = {
 	{ "_proc" },
 #define	X_PROC		0
 	{ "_Usrptmap" },
-#define	X_USRPTMA	1
+#define	X_USRPTMAP	1
 	{ "_usrpt" },
 #define	X_USRPT		2
 	{ "_text" },
@@ -46,6 +47,10 @@ struct nlist nl[] = {
 #define	X_DMMIN		10
 	{ "_dmmax" },
 #define	X_DMMAX		11
+	{ "_Sysmap" },
+#define	X_SYSMAP	12
+	{ "_Syssize" },
+#define	X_SYSSIZE	13
 	{ "" },
 };
 
@@ -89,7 +94,9 @@ struct	vsav {
 	float	v_pctcpu;
 };
 
-struct	proc proc[8];		/* 8 = a few, for less syscalls */
+#define	NPROC	16
+
+struct	proc proc[NPROC];		/* a few, for less syscalls */
 struct	proc *mproc;
 struct	text *text;
 
@@ -99,32 +106,44 @@ union {
 } user;
 #define u	user.user
 
-#define clear(x) 	((int)x & 0x7fffffff)
+#ifndef	PSFILE
+char	*psdb	= "/etc/psdatabase";
+#else
+char	*psdb	= PSFILE;
+#endif
 
 int	chkpid;
 int	aflg, cflg, eflg, gflg, kflg, lflg, sflg,
-	uflg, vflg, xflg;
+	uflg, vflg, xflg, Uflg;
 char	*tptr;
-char	*gettty(), *getcmd(), *getname(), *savestr(), *alloc(), *state();
+char	*gettty(), *getcmd(), *getname(), *savestr(), *state();
 char	*rindex(), *calloc(), *sbrk(), *strcpy(), *strcat(), *strncat();
-char	*index(), *ttyname(), mytty[16];
+char	*strncpy(), *index(), *ttyname(), mytty[16];
 long	lseek();
+off_t	vtophys();
 double	pcpu(), pmem();
 int	pscomp();
 int	nswap, maxslp;
 struct	text *atext;
 double	ccpu;
 int	ecmx;
-struct	pte *Usrptma, *usrpt;
+struct	pte *Usrptmap, *usrpt;
 int	nproc, ntext;
 int	dmmin, dmmax;
+struct	pte *Sysmap;
+int	Syssize;
+
+#ifndef	MAXTTYS
+#define	MAXTTYS		256
+#endif
+
+int	nttys;
 
 struct	ttys {
-	char	name[MAXNAMLEN+1];
 	dev_t	ttyd;
-	struct	ttys *next;
 	struct	ttys *cand;
-} *allttys, *cand[16];
+	char	name[MAXNAMLEN+1];
+} allttys[MAXTTYS], *cand[16];
 
 int	npr;
 
@@ -160,6 +179,11 @@ main(argc, argv)
 		case 'S':
 			sumcpu++;
 			break;
+
+		case 'U':
+			Uflg++;
+			break;
+
 		case 'a':
 			aflg++;
 			break;
@@ -224,21 +248,16 @@ main(argc, argv)
 	}
 	openfiles(argc, argv);
 	getkvars(argc, argv);
-	if (chdir("/dev") < 0) {
-		perror("/dev");
-		exit(1);
-	}
-	getdev();
 	uid = getuid();
 	printhdr();
 	procp = getw(nl[X_PROC].n_value);
 	nproc = getw(nl[X_NPROC].n_value);
-	savcom = (struct savcom *)calloc(nproc, sizeof (*savcom));
-	for (i=0; i<nproc; i += 8) {
+	savcom = (struct savcom *)calloc((unsigned) nproc, sizeof (*savcom));
+	for (i=0; i<nproc; i += NPROC) {
 		klseek(kmem, (long)procp, 0);
 		j = nproc - i;
-		if (j > 8)
-			j = 8;
+		if (j > NPROC)
+			j = NPROC;
 		j *= sizeof (struct proc);
 		if (read(kmem, (char *)proc, j) != j) {
 			cantread("proc table", kmemf);
@@ -253,8 +272,9 @@ main(argc, argv)
 			if (tptr == 0 && gflg == 0 && xflg == 0 &&
 			    mproc->p_ppid == 1)
 				continue;
-			if (uid != mproc->p_uid && aflg==0 ||
-			    chkpid != 0 && chkpid != mproc->p_pid)
+			if (uid != mproc->p_uid && aflg==0)
+				continue;
+			if (chkpid != 0 && chkpid != mproc->p_pid)
 				continue;
 			if (vflg && gflg == 0 && xflg == 0) {
 				if (mproc->p_stat == SZOMB ||
@@ -268,7 +288,7 @@ main(argc, argv)
 			save();
 		}
 	}
-	qsort(savcom, npr, sizeof(savcom[0]), pscomp);
+	qsort((char *) savcom, npr, sizeof(savcom[0]), pscomp);
 	for (i=0; i<npr; i++) {
 		register struct savcom *sp = &savcom[i];
 		if (lflg)
@@ -299,7 +319,7 @@ main(argc, argv)
 getw(loc)
 	unsigned long loc;
 {
-	long word;
+	int word;
 
 	klseek(kmem, (long)loc, 0);
 	if (read(kmem, (char *)&word, sizeof (word)) != sizeof (word))
@@ -312,10 +332,58 @@ klseek(fd, loc, off)
 	long loc;
 	int off;
 {
-
-	if (kflg)
-		loc &= 0x7fffffff;
+	if (kflg) {
+		if ((loc = vtophys(loc)) == -1)
+			return;
+	}
 	(void) lseek(fd, (long)loc, off);
+}
+
+writepsdb(unixname)
+	char *unixname;
+{
+	int nllen;
+	register FILE *fp;
+
+	setuid(getuid());
+	if ((fp = fopen(psdb, "w")) == NULL) {
+		perror(psdb);
+		exit(1);
+	} else
+		fchmod(fileno(fp), 0644);
+	nllen = sizeof nl / sizeof (struct nlist);
+	fwrite((char *) &nllen, sizeof nllen, 1, fp);
+	fwrite((char *) nl, sizeof (struct nlist), nllen, fp);
+	fwrite((char *) &nttys, sizeof nttys, 1, fp);
+	fwrite((char *) allttys, sizeof (struct ttys), nttys, fp);
+	fwrite(unixname, strlen(unixname) + 1, 1, fp);
+	fclose(fp);
+}
+
+readpsdb(unixname)
+	char *unixname;
+{
+	int nllen;
+	register i;
+	register FILE *fp;
+	char unamebuf[BUFSIZ];
+	char *p	= unamebuf;
+	extern int errno;
+
+	if ((fp = fopen(psdb, "r")) == NULL) {
+		if (errno == ENOENT)
+			return (0);
+		perror(psdb);
+		exit(1);
+	}
+
+	fread((char *) &nllen, sizeof nllen, 1, fp);
+	fread((char *) nl, sizeof (struct nlist), nllen, fp);
+	fread((char *) &nttys, sizeof nttys, 1, fp);
+	fread((char *) allttys, sizeof (struct ttys), nttys, fp);
+	while ((*p = getc(fp)) != '\0')
+		p++;
+	return (strcmp(unixname, unamebuf) == 0);
 }
 
 openfiles(argc, argv)
@@ -354,19 +422,42 @@ openfiles(argc, argv)
 getkvars(argc, argv)
 	char **argv;
 {
-	register struct nlist *nlp;
 
 	nlistf = argc > 1 ? argv[1] : "/vmunix";
-	nlist(nlistf, nl);
+	if (Uflg) {
+		nlist(nlistf, nl);
+		getdev();
+		writepsdb(nlistf);
+		exit (0);
+	} else if (!readpsdb(nlistf)) {
+		if (!kflg)
+			nl[X_SYSMAP].n_name = "";
+		nlist(nlistf, nl);
+		getdev();
+	}
+
 	if (nl[0].n_type == 0) {
 		fprintf(stderr, "%s: No namelist\n", nlistf);
 		exit(1);
 	}
-	if (kflg)
-		for (nlp = nl; nlp < &nl[sizeof (nl)/sizeof (nl[0])]; nlp++)
-			nlp->n_value = clear(nlp->n_value);
-	usrpt = (struct pte *)nl[X_USRPT].n_value;	/* don't clear!! */
-	Usrptma = (struct pte *)nl[X_USRPTMA].n_value;
+	if (kflg) {
+		/* We must do the sys map first because klseek uses it */
+		long	addr;
+
+		Syssize = nl[X_SYSSIZE].n_value;
+		Sysmap = (struct pte *)
+			calloc((unsigned) Syssize, sizeof (struct pte));
+		if (Sysmap == NULL) {
+			fprintf(stderr, "Out of space for Sysmap\n");
+			exit(1);
+		}
+		addr = (long) nl[X_SYSMAP].n_value;
+		addr &= ~0x80000000;
+		(void) lseek(kmem, addr, 0);
+		read(kmem, (char *) Sysmap, Syssize * sizeof (struct pte));
+	}
+	usrpt = (struct pte *)nl[X_USRPT].n_value;
+	Usrptmap = (struct pte *)nl[X_USRPTMAP].n_value;
 	klseek(kmem, (long)nl[X_NSWAP].n_value, 0);
 	if (read(kmem, (char *)&nswap, sizeof (nswap)) != sizeof (nswap)) {
 		cantread("nswap", kmemf);
@@ -389,7 +480,8 @@ getkvars(argc, argv)
 	}
 	if (uflg || vflg) {
 		ntext = getw(nl[X_NTEXT].n_value);
-		text = (struct text *)alloc(ntext * sizeof (struct text));
+		text = (struct text *)
+			calloc((unsigned) ntext, sizeof (struct text));
 		if (text == 0) {
 			fprintf(stderr, "no room for text table\n");
 			exit(1);
@@ -438,6 +530,10 @@ getdev()
 {
 	register DIR *df;
 
+	if (chdir("/dev") < 0) {
+		perror("/dev");
+		exit(1);
+	}
 	dialbase = -1;
 	if ((df = opendir(".")) == NULL) {
 		fprintf(stderr, "Can't open . in /dev\n");
@@ -541,11 +637,22 @@ trymem:
 	else
 		x = -1;
 donecand:
-	dp = (struct ttys *)alloc(sizeof (struct ttys));
+	if (nttys >= MAXTTYS) {
+		fprintf(stderr, "ps: tty table overflow\n");
+		exit(1);
+	}
+	dp = &allttys[nttys++];
 	(void) strcpy(dp->name, dbuf->d_name);
-	dp->next = allttys;
-	dp->ttyd = -1;
-	allttys = dp;
+	if (Uflg) {
+		if (stat(dp->name, &stb) == 0 &&
+		   (stb.st_mode&S_IFMT)==S_IFCHR)
+			dp->ttyd = x = stb.st_rdev;
+		else {
+			nttys--;
+			return;
+		}
+	} else
+		dp->ttyd = -1;
 	if (x == -1)
 		return;
 	x &= 017;
@@ -576,7 +683,7 @@ gettty()
 			goto found;
 	}
 	/* ick */
-	for (dp = allttys; dp; dp = dp->next) {
+	for (dp = allttys; dp < &allttys[nttys]; dp++) {
 		if (dp->ttyd == -1) {
 			if (stat(dp->name, &stb) == 0 &&
 			   (stb.st_mode&S_IFMT)==S_IFCHR)
@@ -612,7 +719,7 @@ save()
 	cmdp = getcmd();
 	if (cmdp == 0)
 		return;
-	sp->ap = ap = (struct asav *)alloc(sizeof (struct asav));
+	sp->ap = ap = (struct asav *)calloc(1, sizeof (struct asav));
 	sp->ap->a_cmdp = cmdp;
 #define e(a,b) ap->a = mproc->b
 	e(a_flag, p_flag); e(a_stat, p_stat); e(a_nice, p_nice);
@@ -641,7 +748,8 @@ save()
 	if (lflg) {
 		register struct lsav *lp;
 
-		sp->s_un.lp = lp = (struct lsav *)alloc(sizeof (struct lsav));
+		sp->s_un.lp = lp = (struct lsav *)
+			calloc(1, sizeof (struct lsav));
 #define e(a,b) lp->a = mproc->b
 		e(l_ppid, p_ppid); e(l_cpu, p_cpu);
 		if (ap->a_stat != SZOMB)
@@ -651,7 +759,8 @@ save()
 	} else if (vflg) {
 		register struct vsav *vp;
 
-		sp->s_un.vp = vp = (struct vsav *)alloc(sizeof (struct vsav));
+		sp->s_un.vp = vp = (struct vsav *)
+			calloc(1, sizeof (struct vsav));
 #define e(a,b) vp->a = mproc->b
 		if (ap->a_stat != SZOMB) {
 			e(v_swrss, p_swrss);
@@ -729,21 +838,19 @@ getu()
 		argaddr = 0;
 		return (1);
 	}
-	if (kflg)
-		mproc->p_p0br = (struct pte *)clear(mproc->p_p0br);
-	pteaddr = &Usrptma[btokmx(mproc->p_p0br) + mproc->p_szpt - 1];
+	pteaddr = &Usrptmap[btokmx(mproc->p_p0br) + mproc->p_szpt - 1];
 	klseek(kmem, (long)pteaddr, 0);
 	if (read(kmem, (char *)&apte, sizeof(apte)) != sizeof(apte)) {
 		printf("ps: cant read indir pte to get u for pid %d from %s\n",
-		    mproc->p_pid, swapf);
+		    mproc->p_pid, kmemf);
 		return (0);
 	}
-	klseek(mem,
+	lseek(mem,
 	    (long)ctob(apte.pg_pfnum+1) - (UPAGES+CLSIZE) * sizeof (struct pte),
 		0);
 	if (read(mem, (char *)arguutl, sizeof(arguutl)) != sizeof(arguutl)) {
 		printf("ps: cant read page table for u of pid %d from %s\n",
-		    mproc->p_pid, kmemf);
+		    mproc->p_pid, memf);
 		return (0);
 	}
 	if (arguutl[0].pg_fod == 0 && arguutl[0].pg_pfnum)
@@ -754,7 +861,7 @@ getu()
 	ncl = (size + NBPG*CLSIZE - 1) / (NBPG*CLSIZE);
 	while (--ncl >= 0) {
 		i = ncl * CLSIZE;
-		klseek(mem, (long)ctob(arguutl[CLSIZE+i].pg_pfnum), 0);
+		lseek(mem, (long)ctob(arguutl[CLSIZE+i].pg_pfnum), 0);
 		if (read(mem, user.upages[i], CLSIZE*NBPG) != CLSIZE*NBPG) {
 			printf("ps: cant read page %d of u of pid %d from %s\n",
 			    arguutl[CLSIZE+i].pg_pfnum, mproc->p_pid, memf);
@@ -795,7 +902,7 @@ getcmd()
 			goto bad;
 		file = swapf;
 	} else {
-		klseek(mem, (long)argaddr, 0);
+		lseek(mem, (long)argaddr, 0);
 		if (read(mem, (char *)&argspac, sizeof (argspac))
 		    != sizeof (argspac))
 			goto bad;
@@ -836,10 +943,6 @@ getcmd()
 		(void) strncat(cmdbuf, u.u_comm, sizeof(u.u_comm));
 		(void) strcat(cmdbuf, ")");
 	}
-/*
-	if (xflg == 0 && gflg == 0 && tptr == 0 && cp[0] == '-')
-		return (0);
-*/
 	return (savestr(cmdbuf));
 
 bad:
@@ -1078,7 +1181,7 @@ struct nametable {
 
 struct nametable *
 findslot(uid)
-unsigned short	uid;
+int	uid;
 {
 	register struct nametable	*n, *start;
 
@@ -1143,46 +1246,49 @@ getname(uid)
 		case 2:
 			return ((char *)NULL);
 	}
-}
-
-char	*freebase;
-int	nleft;
-
-char *
-alloc(size)
-	int size;
-{
-	register char *cp;
-	register int i;
-
-#ifdef sun
-	size = (size+1)&~1;
-#endif
-	if (size > nleft) {
-		freebase = (char *)sbrk((int)(i = size > 2048 ? size : 2048));
-		if (freebase == (char *)-1) {
-			fprintf(stderr, "ps: ran out of memory\n");
-			exit(1);
-		}
-		nleft = i - size;
-	} else
-		nleft -= size;
-	cp = freebase;
-	for (i = size; --i >= 0; )
-		*cp++ = 0;
-	freebase = cp;
-	return (cp - size);
+	/* NOTREACHED */
 }
 
 char *
 savestr(cp)
 	char *cp;
 {
-	register int len;
+	register unsigned len;
 	register char *dp;
 
 	len = strlen(cp);
-	dp = (char *)alloc(len+1);
+	dp = (char *)calloc(len+1, sizeof (char));
 	(void) strcpy(dp, cp);
 	return (dp);
+}
+
+/*
+ * This routine was stolen from adb to simulate memory management
+ * on the VAX.
+ */
+off_t
+vtophys(loc)
+long	loc;
+{
+	register	p;
+	off_t	newloc;
+
+	newloc = loc & ~0xc0000000;
+	p = btop(newloc);
+	if ((loc & 0xc0000000) == 0) {
+		fprintf(stderr, "Vtophys: translating non-kernel address\n");
+		return((off_t) -1);
+	}
+	if (p >= Syssize) {
+		fprintf(stderr, "Vtophys: page out of bound (%d>=%d)\n",
+			p, Syssize);
+		return((off_t) -1);
+	}
+	if (Sysmap[p].pg_v == 0
+	&& (Sysmap[p].pg_fod || Sysmap[p].pg_pfnum == 0)) {
+		fprintf(stderr, "Vtophys: page not valid\n");
+		return((off_t) -1);
+	}
+	loc = (long) (ptob(Sysmap[p].pg_pfnum) + (loc & PGOFSET));
+	return(loc);
 }
