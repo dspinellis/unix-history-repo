@@ -3,14 +3,15 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)intro.3	6.6 (Berkeley) %G%
+.\"	@(#)intro.3	6.7 (Berkeley) %G%
 .\"
 .sh 1 Usage
 .pp
 This is a description of how to actually use the screen package.
 For simplicity, we assume all updating, reading, etc.
 is applied to
-.Vn stdscr, although a different window can of course be specified.
+.Vn stdscr , 
+although a different window can of course be specified.
 .sh 2 "Initialization"
 .pp
 In order to use the screen package,
@@ -73,7 +74,7 @@ control the size of the terminal.  They are initially implicitly set by
 but can be altered explicitly by the user followed by a call to 
 .Fn initscr .
 Note that any call to 
-Fn initscr ,
+.Fn initscr ,
 will always delete any existing
 .Vn stdscr
 and/or
