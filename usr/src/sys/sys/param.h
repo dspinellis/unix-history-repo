@@ -1,4 +1,4 @@
-/*	param.h	4.10	81/03/08	*/
+/*	param.h	4.11	81/05/05	*/
 
 /*
  * Tunable variables which do not usually vary per system.
@@ -9,7 +9,6 @@
  * The tables whose sizes don't vary often are given here.
  */
 
-#define	MAXNBUF	128
 #define	NMOUNT	15		/* number of mountable file systems */
 #define	MSWAPX	15		/* pseudo mount table index for swapdev */
 #define	MAXUPRC	25		/* max processes per user */
