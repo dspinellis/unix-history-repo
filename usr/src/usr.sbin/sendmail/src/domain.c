@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	6.6 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	6.7 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	6.6 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	6.7 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -38,6 +38,26 @@ static char	hostbuf[MAXMXHOSTS*PACKETSZ];
 #ifndef MAX
 #define MAX(a, b)	((a) > (b) ? (a) : (b))
 #endif
+
+/* don't use sizeof because sizeof(long) is different on 64-bit machines */
+#define SHORTSIZE	2	/* size of a short (really, must be 2) */
+#define LONGSIZE	4	/* size of a long (really, must be 4) */
+/*
+**  GETMXRR -- get MX resource records for a domain
+**
+**	Parameters:
+**		host -- the name of the host to MX.
+**		mxhosts -- a pointer to a return buffer of MX records.
+**		localhost -- the name of the local host.  All MX records
+**			less preferred than this one will be discarded.
+**		rcode -- a pointer to an EX_ status code.
+**
+**	Returns:
+**		The number of MX records found.
+**		-1 if there is an internal failure.
+**		If no MX records are found, mxhosts[0] is set to host
+**			and 1 is returned.
+*/
 
 getmxrr(host, mxhosts, localhost, rcode)
 	char *host, **mxhosts, *localhost;
@@ -105,7 +125,7 @@ getmxrr(host, mxhosts, localhost, rcode)
 			break;
 		cp += n;
 		GETSHORT(type, cp);
- 		cp += sizeof(u_short) + sizeof(u_long);
+ 		cp += SHORTSIZE + LONGSIZE;
 		GETSHORT(n, cp);
 		if (type != T_MX)
 		{
@@ -382,7 +402,7 @@ getcanonname(host, hbsize)
 				break;
 			ap += n;
 			GETSHORT(type, ap);
-			ap += sizeof(u_short) + sizeof(u_long);
+			ap += SHORTSIZE + LONGSIZE;
 			GETSHORT(n, ap);
 			switch (type)
 			{
