@@ -35,4 +35,6 @@ beforeinstall:
 	    ${.CURDIR}/hh ${.CURDIR}/data ${DESTDIR}/var/games/hackdir
 	rm -f ${DESTDIR}/var/games/hackdir/bones*
 
+.depend alloc.o: hack.onames.h
+
 .include <bsd.prog.mk>
