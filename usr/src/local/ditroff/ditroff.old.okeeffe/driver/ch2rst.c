@@ -1,4 +1,4 @@
-/* ch2rst.c	1.2	84/02/16
+/* ch2rst.c	1.3	84/02/27
  *
  * Font translation to Imagen-style fonts (RST format) from character format.
  *
@@ -75,7 +75,7 @@ char **argv;
     for (i = 0; i < DIRSIZ; glyphs[i++] = (char *) 0);
 
     fgets(ibuff, MAXLINE, filep);
-    if (strcmp(ibuff, "header\n"))
+    if (strcmp(ibuff, "fontheader\n"))
 	error("not a character font file");
 
     while (fgets(ibuff, MAXLINE, filep) != NULL) {
