@@ -5,7 +5,7 @@
  * symbolic debugging information into the object file.
  */
 
-static char *sccsid ="@(#)stab.c	1.7 (Berkeley) %G%";
+static char *sccsid ="@(#)stab.c	1.8 (Berkeley) %G%";
 
 #include "mfile1"
 
@@ -477,6 +477,8 @@ int size;
 private geninfo(p)
 register struct symtab *p;
 {
+    int stabtype;
+
     if (p == nil) {
 	printf("\",0x%x,0,0,0\n", N_LSYM);
     } else {
@@ -491,12 +493,13 @@ register struct symtab *p;
 		break;
 
 	    case STATIC:
+		stabtype = stabLCSYM ? N_LCSYM : N_STSYM;
 		if (ISFTN(p->stype)) {
 		    printf("\",0x%x,0,%d,_%s\n", N_FUN, bsize(p), p->sname);
 		} else if (p->slevel > 1) {
-		    printf("\",0x%x,0,%d,L%d\n", N_LCSYM, bsize(p), p->offset);
+		    printf("\",0x%x,0,%d,L%d\n", stabtype, bsize(p), p->offset);
 		} else {
-		    printf("\",0x%x,0,%d,_%s\n", N_LCSYM, bsize(p), p->sname);
+		    printf("\",0x%x,0,%d,_%s\n", stabtype, bsize(p), p->sname);
 		}
 		break;
 
