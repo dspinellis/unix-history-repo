@@ -1,0 +1,56 @@
+#	@(#)gettytab	4.1 (Berkeley) 83/07/07
+#
+# The default gettytab entry, used to set defaults for all other
+# entries, and in cases where getty is called with no table name
+#
+default:\
+	:ap:fd#1000:im=\r\n\r\n4.2 BSD UNIX (%)\r\n\r\r\n\r:sp#1200:
+8|crt.9600:\
+	:cb:ce:ck:sp#9600:
+#
+# Gandalf service 41, 9600, 300, 1200, 2400 rotation
+#
+0|Gand.41.9600:\
+	:cb:ce:ck:sp#9600:cl=60\033d\033v\030\f:nx=Gand.41.300:
+
+Gand.41.300:\
+	:pe:sp#300:fd#0:cl=\n\n\n:nx=Gand.41.1200:
+
+Gand.41.1200:\
+	:sp#1200:nx=Gand.41.2400:tc=Gand.41.9600:
+
+Gand.41.2400:\
+	:sp#2400:nx=Gand.41.9600:tc=Gand.41.9600:
+
+#
+# Gandalf service 01, 1200, 300, 110 rotation
+#
+2|Gand.01.1200:\
+	:nx=Gand.01.1200:tc=Gand.41.1200:
+
+3|Gand.01.300:\
+	:nx=Gand.01.110:tc=Gand.41.300:
+
+Gand.01.110:\
+	:nx=Gand.01.1200:sp#110:nd#1:cd#1:fd#1:pe:cl=\n\n:
+
+#
+# Console, direct line, decwriter at 300
+#
+4|Console:\
+	:sp#300:fd#1:pe:tt=dw:co:rw:
+
+#
+# Csironet, multiplexed line
+#
+N|csironet:\
+	:sp#1200:lm=login\072  ^H:ec:im=Melb Uni Comp Sci VM/UNIX:to#120:
+
+#
+# direct line to 3240
+#
+P|3240.1200|3240 line:\
+	:sp#1200:cb:ce:ck:nx=3240.300:
+
+3240.300|Slow 3240 line:\
+	:sp#300:pe:nx=3240.1200:
