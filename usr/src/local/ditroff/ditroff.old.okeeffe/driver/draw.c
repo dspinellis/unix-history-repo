@@ -1,4 +1,4 @@
-/*	draw.c	1.6	84/03/15
+/*	draw.c	1.7	84/04/13
  *
  *	This file contains the functions for producing the graphics
  *   images in the canon/imagen driver for ditroff.
@@ -89,84 +89,59 @@ register int d;
  | Routine:	drawellip (horizontal_diameter, vertical_diameter)
  |
  | Results:	Draws regular ellipses given the major "diameters."  It does
- |		so by drawing many small lines, every ELLIPSEDX pixels (DX
- |		defined here).  The ellipse formula:
- |			((x-x0)/hrad)**2 + ((y-y0)/vrad)**2 = 1     is used,
- |		converting to:  y = y0 +- vrad * sqrt(1 - ((x-x0)/hrad)**2).
- |		The line segments are duplicated (mirrored) on either side of
- |		the horizontal "diameter".
+ |		so by drawing many small lines along the ellipses perimeter.
+ |		The algorithm is a modified (bresenham-like) circle algorithm
  |
  | Side Efct:	Resulting position is at (hpos + hd, vpos).
  |
  | Bugs:	Odd numbered horizontal axes are rounded up to even numbers.
  *----------------------------------------------------------------------------*/
 
-#define ELLIPSEDX	3
-
 drawellip(hd, vd)
-register int hd;
+int hd;
 int vd;
 {
-    register int bx;		/* multiplicative x factor */
-    register int x;		/* x position drawing to */
-    register int k2;		/* the square-root term */
-    register int y;		/* y position drawing to */
-    double k1;			/* k? are constants depending on parameters */
-    int bxsave, xsave, hdsave;	/* places to save things to be used over */
+    double xs, ys, xepsilon, yepsilon;	/* ellipse-calculation vairables */
+    register int basex;			/* center of the ellipse */
+    register int basey;
+    register int mask;			/* used to skip points on the ellipse */
+    register int extent;		/* number of points to produce */
 
 
-    if (hd < ELLIPSEDX) {	/* don't draw tiny ellipses */
-	if (output) HGtline (hpos, vpos, hpos + hd, vpos);
-	hmot (hd);
-	return;
+    basex = hpos + (hd >> 1);	/* set the center of the ellipse */
+    basey = vpos;
+    hmot (hd);			/* troff motion done here, once. */
+    if ((hd = hd >> 1) < 1) hd = 1;	/* hd and vd are like radii */
+    if ((vd = vd >> 1) < 1) vd = 1;
+    ys = (double) vd;		/* initial distances from center to perimeter */
+    xs = 0.0;
+				/* calculate drawing parameters */
+    if (vd > hd) {
+	xepsilon = (double) hd / (double) (vd * vd);
+	yepsilon = 1.0 / (double) hd;
+	extent = 6 * vd + (vd >> 1);
+	mask = (1 << (int) log10(5.0 / xepsilon + 1.0)) - 1;
+    } else {
+	xepsilon = 1.0 / (double) vd;
+	yepsilon = (double) vd / (double) (hd * hd);
+	extent = 6 * hd + (hd >> 1);
+	mask = (1 << (int) log10(5.0 / yepsilon + 1.0)) - 1;
     }
 
-    bx = 4 * (hpos + hd);
-    x = hpos;
-    k1 = vd / (2.0 * hd);
-    k2 = hd * hd - (2 * hpos + hd) * (2 * hpos + hd);
-
-  if (output) {
-    bxsave = bx;	/* remember the parameters that will change through */
-    xsave = x;		/*    the top half of the ellipse so the bottom half */
-    hdsave = hd;	/*    can be drawn later. */
-
-    byte(ASPATH);		/* define drawing path */
-    word((hd - 1) / ELLIPSEDX + 2);
-    word(xbound(hpos));	/* start out at current position */
-    word(ybound(vpos));
-    while ((hd -= ELLIPSEDX) > 0) {
-	x += ELLIPSEDX;
-	word(xbound(x));
-	y = vpos + (int) (k1 * sqrt((double) (k2 + (bx -= (4*ELLIPSEDX)) * x)));
-	word(ybound(y));
+    byte(ASPATH);			/* start path definition */
+    word(2 + (extent-1) / (mask+1));	/* number of points */
+    word(xbound(basex));
+    word(ybound(basey + vd));
+    while (--extent >= 0) {
+	xs += xepsilon * ys;
+	ys -= yepsilon * xs;
+	if (!(extent&mask)) {		/* put out a point on ellipse */
+	    word(xbound(basex + (int)(0.5 + xs)));
+	    word(ybound(basey + (int)(0.5 + ys)));
+	}
     }
-    word(xbound(hpos + hdsave));	/* end at right side */
-    word(ybound(vpos));
-    byte(ADRAW);		/* now draw the top half */
+    byte(ADRAW);		/* now draw the arc */
     byte(15);
-
-    bx = bxsave;	/* get back the parameters for bottom half */
-    x = xsave;
-    hd = hdsave;
-
-    byte(ASPATH);		/* define drawing path */
-    word((hd - 1) / ELLIPSEDX + 2);
-    word(xbound(hpos));	/* start out at current position */
-    word(ybound(vpos));
-    while ((hd -= ELLIPSEDX) > 0) {
-	x += ELLIPSEDX;
-	word(xbound(x));
-	y = vpos - (int) (k1 * sqrt((double) (k2 + (bx -= (4*ELLIPSEDX)) * x)));
-	word(ybound(y));
-    }
-    word(xbound(hpos + hdsave));	/* end at right side */
-    word(ybound(vpos));
-    byte(ADRAW);		/* now draw the bottom half */
-    byte(15);
-  }
-
-    hmot (hdsave);	/* end position is the right-hand side of the ellipse */
 }
 
 
@@ -255,8 +230,10 @@ int pic;
     npts--;	/* npts must point to the last coordinate in x and y */
 				/* now, actually DO the curve */
     if (output) {
-	if (pic)
+	if (pic > 0)
 	    picurve(x, y, npts);
+	else if (pic < 0)
+	    polygon(x, y, npts);
 	else
 	    HGCurve(x, y, npts);
     }
@@ -293,6 +270,47 @@ drawstyle(s)
 int s;
 {
     linmod = s;
+}
+
+
+/*----------------------------------------------------------------------------*
+ | Routine:	polygon (xpoints, ypoints, num_of_points)
+ |
+ | Results:	draws a polygon through the points (xpoints, ypoints).
+ |		The polygon has a raster fill associated with it.  The
+ |		fill is already set up from conv(), but if the stipple
+ |		pattern "laststipmem" is zero, polygon draws a "clear"
+ |		polygon.
+ |
+ | Bugs:	If the path is not closed, polygon will NOT close it.
+ |		(or is that a feature?)
+ |		polygons are affected by line thickness, but NOT line style.
+ |		if the path is "counterclockwise", it'll slow down the
+ |		Imagen's rendering.  This is not checked for here.
+ *----------------------------------------------------------------------------*/
+
+extern int laststipmem;		/* this is set, before this routine, to the */
+				/* stipple member number to be printed.  If */
+				/* it's zero, the path should not be filled */
+polygon(x, y, npts)
+int x[MAXPOINTS];
+int y[MAXPOINTS];
+int npts;
+{
+	register int i;
+
+	byte(ASPATH);		/* set up to send the path */
+	word(npts);
+	for (i = 1; i <= npts; i++) {	/* send the path */
+		word(xbound(x[i]));
+		word(ybound(y[i]));
+	}
+	byte(ADRAW);
+	byte(15);
+	if (laststipmem) {	/* draw a filled path, if requested */
+		byte(AFPATH);
+		byte(7);
+	}
 }
 
 
