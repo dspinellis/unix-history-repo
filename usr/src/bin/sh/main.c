@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -87,6 +87,8 @@ main(argc, argv)
 		 * exception EXSHELLPROC to clean up before executing
 		 * the shell procedure.
 		 */
+		if (exception == EXERROR)
+			exitstatus = 2;
 		if (exception == EXSHELLPROC) {
 			rootpid = getpid();
 			rootshell = 1;
