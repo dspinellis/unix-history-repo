@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_subr.c	7.3 (Berkeley) %G%
+ *	@(#)lfs_subr.c	7.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -52,26 +52,6 @@ lfs_blkatoff(vp, offset, res, bpp)
 	return (0);
 }
 
-/* Return the current version number for a specific inode. */
-u_long
-lfs_getversion(fs, ino)
-	struct lfs *fs;
-	ino_t ino;
-{
-	BUF *bp;
-	IFILE *ifp;
-	u_long version;
-
-	/*
-	 * Read the appropriate block from the ifile.  Return the
-	 * version number.
-	 */
-	LFS_IENTRY(ifp, fs, ino, bp);
-	version = ifp->if_version;
-	brelse(bp);
-	return (version);
-}
-
 /* Search a block for a specific dinode. */
 DINODE *
 lfs_ifind(fs, ino, page)
@@ -82,7 +62,7 @@ lfs_ifind(fs, ino, page)
 	register DINODE *dip;
 	register int cnt;
 
-#ifdef ALLOCPRINT
+#ifdef VERBOSE
 	printf("lfs_ifind: inode %d\n", ino);
 #endif
 	dip = page;
@@ -106,7 +86,7 @@ lfs_iset(ip, daddr, atime)
 	struct lfs *fs;
 	ino_t ino;
 
-#ifdef ALLOCPRINT
+#ifdef VERBOSE
 	printf("lfs_iset: setting ino %d daddr %lx time %lx\n",
 	    ip->i_number, daddr, atime);
 #endif
@@ -130,11 +110,14 @@ lfs_itod(fs, ino)
 	IFILE *ifp;
 	daddr_t iaddr;
 
+#ifdef VERBOSE
+	printf("lfs_itod %d\n", ino);
+#endif
 	/* Read the appropriate block from the ifile. */
 	LFS_IENTRY(ifp, fs, ino, bp);
 
 	if (ifp->if_daddr == LFS_UNUSED_DADDR)
-		panic("itod: unused disk address");
+		panic("lfs_itod: unused disk address");
 	iaddr = ifp->if_daddr;
 	brelse(bp);
 	return (iaddr);
