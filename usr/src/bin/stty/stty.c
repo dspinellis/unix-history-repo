@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)stty.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)stty.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -116,6 +116,8 @@ struct
 	"-mdmbuf",	0, 0, 0, LMDMBUF,
 	"litout",	0, 0, LLITOUT, 0,
 	"-litout",	0, 0, 0, LLITOUT,
+	"pass8",	0, 0, LPASS8, 0,
+	"-pass8",	0, 0, 0, LPASS8,
 	"tostop",	0, 0, LTOSTOP, 0,
 	"-tostop",	0, 0, 0, LTOSTOP,
 	"flusho",	0, 0, LFLUSHO, 0,
@@ -418,6 +420,7 @@ prmodes(all)
 		lpit(LFLUSHO, "-flusho ");
 		lpit(LMDMBUF, "-mdmbuf ");
 		lpit(LLITOUT, "-litout ");
+		lpit(LPASS8, "-pass8 ");
 		lpit(LNOHANG, "-nohang ");
 		if (any) {
 			fprintf(stderr,"\n");
