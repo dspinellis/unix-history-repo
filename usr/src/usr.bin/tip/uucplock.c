@@ -1,4 +1,4 @@
-/*	uucplock.c	4.1	81/05/09	*/
+/*	uucplock.c	4.2	81/11/20	*/
 /*
  * defs that come from uucp.h
  */
@@ -42,8 +42,8 @@
 
 static
 ulockf(file, atime)
-char *file;
-time_t atime;
+	char *file;
+	time_t atime;
 {
 	struct stat stbuf;
 	time_t ptime;
@@ -88,7 +88,7 @@ int Nlocks = 0;
 
 static
 stlock(name)
-char *name;
+	char *name;
 {
 	char *p;
 	extern char *calloc();
@@ -117,7 +117,7 @@ char *name;
 
 static
 rmlock(name)
-char *name;
+	char *name;
 {
 	int i;
 
@@ -149,7 +149,7 @@ char *name;
  */
 static
 isalock(name)
-char *name;
+	char *name;
 {
 	struct stat xstat;
 
@@ -162,7 +162,7 @@ char *name;
 
 static
 onelock(pid,tempfile,name)
-char *tempfile,*name;
+	char *tempfile,*name;
 {
 	int fd;
 
@@ -187,7 +187,7 @@ char *tempfile,*name;
  */
 
 delock(s)
-char *s;
+	char *s;
 {
 	char ln[30];
 
@@ -203,7 +203,7 @@ char *s;
  */
 
 mlock(sys)
-char *sys;
+	char *sys;
 {
 	char lname[30];
 	sprintf(lname, "%s.%s", LOCKPRE, sys);

@@ -1,4 +1,4 @@
-/*	log.c	4.1	81/05/09	*/
+/*	log.c	4.2	81/11/20	*/
 #include "tip.h"
 
 #ifdef ACULOG
@@ -9,7 +9,7 @@ static FILE *flog = NULL;
  */
 
 logent(group, num, acu, message)
-char *group, *num, *acu, *message;
+	char *group, *num, *acu, *message;
 {
 	char *user, *timestamp;
 	struct passwd *pwd;

@@ -1,4 +1,4 @@
-/*	remote.c	4.3	81/07/13	*/
+/*	remote.c	4.4	81/11/20	*/
 # include "tip.h"
 
 /*

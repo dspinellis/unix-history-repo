@@ -1,4 +1,4 @@
-/*	tip.c	4.8	81/08/26	*/
+/*	tip.c	4.9	81/11/20	*/
 /*
  * tip - Unix link to other systems
  *  tip [-v] [-speed] system-name
@@ -67,7 +67,7 @@ int	timeout();
 static int cleanup();
 
 main(argc, argv)
-char *argv[];
+	char *argv[];
 {
 	char *system = NOSTR;
 	register int i;

@@ -1,4 +1,4 @@
-/*	dn11.c	4.9	81/09/21	*/
+/*	dn11.c	4.10	81/11/20	*/
 
 #if DN11
 /*
@@ -16,7 +16,7 @@ static jmp_buf jmpbuf;
 static int child = -1, dn;
 
 dn_dialer(num, acu)
-char *num, *acu;
+	char *num, *acu;
 {
 	extern errno;
 	char *p, *q, phone[40];

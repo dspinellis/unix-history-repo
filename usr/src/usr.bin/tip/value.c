@@ -1,4 +1,4 @@
-/*	value.c	4.1	81/05/09	*/
+/*	value.c	4.2	81/11/20	*/
 #include "tip.h"
 
 #define MIDDLE	35
@@ -49,8 +49,8 @@ vinit()
 
 /*VARARGS1*/
 vassign(p, v)
-register value_t *p;
-char *v;
+	register value_t *p;
+	char *v;
 {
 
 	if (!vaccess(p->v_access, WRITE)) {
@@ -93,7 +93,7 @@ char *v;
 }
 
 vlex(s)
-register char *s;
+	register char *s;
 {
 	register value_t *p;
 
@@ -119,7 +119,7 @@ register char *s;
 
 static int
 vtoken(s)
-register char *s;
+	register char *s;
 {
 	register value_t *p;
 	register char *cp;
@@ -155,7 +155,7 @@ register char *s;
 
 static int
 vprint(p)
-register value_t *p;
+	register value_t *p;
 {
 	register char *cp;
 	extern char *interp(), *ctrl();
@@ -206,7 +206,7 @@ register value_t *p;
 
 static int
 vaccess(mode, rw)
-register unsigned mode, rw;
+	register unsigned mode, rw;
 {
 	if (mode & (rw<<PUBLIC))
 		return(1);
@@ -217,7 +217,7 @@ register unsigned mode, rw;
 
 static value_t *
 vlookup(s)
-register char *s;
+	register char *s;
 {
 	register value_t *p;
 
@@ -229,7 +229,7 @@ register char *s;
 
 char *
 vinterp(s, stop)
-register char *s;
+	register char *s;
 char stop;
 {
 	register char *p = s, c;
