@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs.h	7.25 (Berkeley) %G%
+ *	@(#)lfs.h	7.26 (Berkeley) %G%
  */
 
 #define	LFS_LABELPAD	8192		/* LFS label size */
@@ -151,12 +151,6 @@ struct lfs {
 #define	S_INDIR(fs)	-NDADDR
 #define	D_INDIR(fs)	(S_INDIR(fs) - NINDIR(fs) - 1)
 #define	T_INDIR(fs)	(D_INDIR(fs) - NINDIR(fs) * NINDIR(fs) - 1)
-
-/* Structure used to pass around logical block paths. */
-typedef struct _indir {
-	long	in_lbn;			/* logical block number */
-	int	in_off;			/* offset in buffer */
-} INDIR;
 
 /* Unassigned disk address. */
 #define	UNASSIGNED	-1
