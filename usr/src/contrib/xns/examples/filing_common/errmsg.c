@@ -136,9 +136,10 @@ FilingErrMsg(Code, Message)
 	case ScopeValueError:
 /* the following fails because "type" is defined as "Filing4_type".  Argh!!
 /*		problem = (int) (((ScopeTypeErrorArgs *) Message)->problem);
-/*		problemstr = sprintf(tempbuf,"problem: %s; type: %d",
+/*		(void)sprintf(tempbuf,"problem: %s; type: %d",
 /*				argproblems[problem],
 /*				((ScopeTypeErrorArgs *) Message)->type);
+/*		problemstr = tempbuf;
 /*		break;
  */
 	case RangeError:
