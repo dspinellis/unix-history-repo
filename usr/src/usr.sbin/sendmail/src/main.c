@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)main.c	3.70		%G%);
+SCCSID(@(#)main.c	3.71		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -364,7 +364,7 @@ main(argc, argv)
 		  case 'q':	/* run queue files at intervals */
 # ifdef QUEUE
 			queuemode = TRUE;
-			QueueIntvl = atoi(&p[1]);
+			QueueIntvl = convtime(&p[2]);
 # else QUEUE
 			syserr("I don't know about queues");
 # endif QUEUE
@@ -441,22 +441,24 @@ main(argc, argv)
 	/*
 	**  If a daemon, wait for a request.
 	**	getrequests will always return in a child.
+	**	If we should also be processing the queue, start
+	**	doing it in background.
 	*/
 
 	if (Daemon)
-		getrequests();
-#endif DAEMON
-	
-# ifdef SMTP
-	/*
-	if (Smtp)
 	{
 # ifdef QUEUE
 		if (queuemode)
 			runqueue(TRUE);
 # endif QUEUE
-		smtp();
+		getrequests();
 	}
+#endif DAEMON
+	
+# ifdef SMTP
+	/*
+	if (Smtp)
+		smtp();
 # endif SMTP
 
 # ifdef QUEUE
@@ -464,7 +466,7 @@ main(argc, argv)
 	**  If collecting stuff from the queue, go start doing that.
 	*/
 
-	if (queuemode)
+	if (queuemode && !Daemon)
 	{
 		runqueue(FALSE);
 		finis();
