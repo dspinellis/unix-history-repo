@@ -1,5 +1,5 @@
 /*
-char id_rdfmt[] = "@(#)rdfmt.c	1.9";
+char id_rdfmt[] = "@(#)rdfmt.c	1.10";
  *
  * formatted read routines
  */
@@ -21,7 +21,7 @@ rd_ed(p,ptr,len) char *ptr; struct syl *p; ftnlen len;
 		n = (rd_I(ptr,p->p1,len));
 		break;
 	case L:
-		n = (rd_L(ptr,p->p1));
+		n = (rd_L(ptr,p->p1,len));
 		break;
 	case A:
 		n = (rd_AW(ptr,len,len));
@@ -135,7 +135,7 @@ done:
 	return(OK);
 }
 
-rd_L(n,w) ftnint *n;
+rd_L(n,w,len) uint *n; ftnlen len;
 {	int ch,i,v = -1;
 	for(i=0;i<w;i++)
 	{	if((ch=(*getn)()) < 0) return(ch);
@@ -144,7 +144,8 @@ rd_L(n,w) ftnint *n;
 		else if(ch==',') break;
 	}
 	if(v==-1) return(errno=F_ERLOGIF);
-	*n=v;
+	if(len==sizeof(short)) n->is=v;
+	else n->il=v;
 	return(OK);
 }
 

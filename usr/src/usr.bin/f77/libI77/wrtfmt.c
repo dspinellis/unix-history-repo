@@ -21,7 +21,7 @@ w_ed(p,ptr,len) char *ptr; struct syl *p; ftnlen len;
 	case IM:
 		return(wrt_IM(ptr,p->p1,p->p2,len));
 	case L:
-		return(wrt_L(ptr,p->p1));
+		return(wrt_L(ptr,p->p1,len));
 	case A:
 		return(wrt_AW(ptr,len,len));
 	case AW:
@@ -138,10 +138,14 @@ wrt_H(a,b)
 	return(OK);
 }
 
-wrt_L(l,len) ftnint *l;
+wrt_L(l,width,len) uint *l; ftnlen len;
 {	int i,n;
-	for(i=0;i<len-1;i++) PUT(' ')
-	if(*l) PUT('t')
+	for(i=0;i<width-1;i++) PUT(' ')
+	if(len == sizeof (short))
+		i = l->is;
+	else
+		i = l->il;
+	if(i) PUT('t')
 	else PUT('f')
 	return(OK);
 }
