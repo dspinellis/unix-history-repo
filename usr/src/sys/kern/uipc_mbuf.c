@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_mbuf.c	6.8 (Berkeley) %G%
+ *	@(#)uipc_mbuf.c	6.9 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -49,7 +49,7 @@ m_clalloc(ncl, how, canwait)
 	mbx = rmalloc(mbmap, (long)npg);
 	if (mbx == 0) {
 		if (canwait == M_WAIT)
-			panic("out of mbuf map");
+			panic("out of mbufs: map full");
 		return (0);
 	}
 	m = cltom(mbx / CLSIZE);
