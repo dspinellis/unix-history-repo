@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)clock.c	3.3		%G%);
+SCCSID(@(#)clock.c	3.4		%G%);
 
 /*
 **  SETEVENT -- set an event to happen at a specific time.
@@ -121,6 +121,7 @@ tick()
 	auto time_t now;
 	register EVENT *ev;
 
+	signal(SIGALRM, SIG_IGN);
 	(void) time(&now);
 
 # ifdef DEBUG
@@ -147,4 +148,39 @@ tick()
 	signal(SIGALRM, tick);
 	if (EventQueue != NULL)
 		(void) alarm(EventQueue->ev_time - now);
+}
+/*
+**  SLEEP -- a version of sleep that works with this stuff
+**
+**	Because sleep uses the alarm facility, I must reimplement
+**	it here.
+**
+**	Parameters:
+**		intvl -- time to sleep.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		waits for intvl time.  However, other events can
+**		be run during that interval.
+*/
+
+static bool	SleepDone;
+
+sleep(intvl)
+	int intvl;
+{
+	extern endsleep();
+
+	SleepDone = FALSE;
+	setevent(intvl, endsleep, 0);
+	while (!SleepDone)
+		pause();
+}
+
+static
+endsleep()
+{
+	SleepDone = TRUE;
 }
