@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	8.32 (Berkeley) %G%
+.\"	@(#)op.me	8.33 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:08-%''Sendmail Installation and Operation Guide'
@@ -43,7 +43,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 8.32
+Version 8.33
 .sp
 For Sendmail Version 8.6
 .)l
@@ -2424,10 +2424,22 @@ is later rewritten by the mailer-specific envelope rewriting set
 and assigned to the
 .b $u
 macro.
+As a special case, if the value to
+.b $#
+is
+.q local
+and the first character of the
+.b $:
+value is
+.q @ ,
+the
+.q @
+is stripped off, and a flag is set in the address descriptor
+that causes sendmail to not do ruleset 5 processing.
 .pp
-Normally, a ruleset that matches is retried,
+Normally, a rule that matches is retried,
 that is,
-the ruleset loops until it fails.
+the rule loops until it fails.
 A RHS may also be preceded by a
 .b $@
 or a
@@ -6812,7 +6824,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 8.32
+.\"Version 8.33
 .\".ce 0
 .bp 2
 .rs
