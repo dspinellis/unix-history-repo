@@ -1,0 +1,16 @@
+.\"	@(#)null.4	4.1 (Berkeley) %G%
+.\"
+.TH NULL 4 
+.AT 3
+.SH NAME
+null \- data sink
+.SH DESCRIPTION
+Data written on 
+a null special file
+is discarded.
+.PP
+Reads from 
+a null special file
+always return 0 bytes.
+.SH FILES
+/dev/null
