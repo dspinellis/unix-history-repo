@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)gmon.c	4.9 (Berkeley) %G%";
+static	char *sccsid = "@(#)gmon.c	4.10 (Berkeley) %G%";
 
 #ifdef DEBUG
 #include <stdio.h>
@@ -9,6 +9,7 @@ static	char *sccsid = "@(#)gmon.c	4.9 (Berkeley) %G%";
     /*
      *	froms is actually a bunch of unsigned shorts indexing tos
      */
+static int		profiling = 3;
 static unsigned short	*froms;
 static struct tostruct	*tos = 0;
 static long		tolimit = 0;
@@ -29,7 +30,6 @@ monstartup(lowpc, highpc)
     int			monsize;
     char		*buffer;
     char		*sbrk();
-    unsigned long	limit;
 
 	/*
 	 *	round lowpc and highpc to multiples of the density we're using
@@ -54,13 +54,13 @@ monstartup(lowpc, highpc)
 	froms = 0;
 	return;
     }
-    limit = s_textsize * ARCDENSITY / 100;
-    if ( limit < MINARCS ) {
-	limit = MINARCS;
-    } else if ( limit > 65534 ) {
-	limit = 65534;
+    tolimit = s_textsize * ARCDENSITY / 100;
+    if ( tolimit < MINARCS ) {
+	tolimit = MINARCS;
+    } else if ( tolimit > 65534 ) {
+	tolimit = 65534;
     }
-    tos = (struct tostruct *) sbrk( limit * sizeof( struct tostruct ) );
+    tos = (struct tostruct *) sbrk( tolimit * sizeof( struct tostruct ) );
     if ( tos == (struct tostruct *) -1 ) {
 	write( 2 , MSG , sizeof(MSG) );
 	froms = 0;
@@ -69,13 +69,12 @@ monstartup(lowpc, highpc)
     }
     minsbrk = sbrk(0);
     tos[0].link = 0;
-	/*
-	 *	tolimit is what mcount checks to see if
-	 *	all the data structures are ready!!!
-	 *	make sure it won't overflow.
-	 */
-    tolimit = limit;
     monitor( lowpc , highpc , buffer , monsize , tolimit );
+	/*
+	 *	profiling is what mcount checks to see if
+	 *	all the data structures are ready!!!
+	 */
+    profiling = 0;
 }
 
 _mcleanup()
@@ -127,7 +126,6 @@ mcount()
 	register struct tostruct	*top;		/* r9  => r3 */
 	register struct tostruct	*prevtop;	/* r8  => r2 */
 	register long			toindex;	/* r7  => r1 */
-	static int			profiling = 0;
 
 #ifdef lint
 	selfpc = (char *)0;
@@ -145,13 +143,10 @@ mcount()
 	 *	check that we are profiling
 	 *	and that we aren't recursively invoked.
 	 */
-	if (tolimit == 0) {
-		goto out;
-	}
 	if (profiling) {
 		goto out;
 	}
-	profiling = 1;
+	profiling++;
 	/*
 	 *	check that frompcindex is a reasonable pc value.
 	 *	for example:	signal catchers get called from the stack,
@@ -233,13 +228,13 @@ mcount()
 
 	}
 done:
-	profiling = 0;
+	profiling--;
 	/* and fall through */
 out:
 	asm("	rsb");
 
 overflow:
-	tolimit = 0;
+	profiling++; /* halt further profiling */
 #   define	TOLIMIT	"mcount: tos overflow\n"
 	write(2, TOLIMIT, sizeof(TOLIMIT));
 	goto out;
@@ -258,6 +253,7 @@ monitor( lowpc , highpc , buf , bufsiz , nfunc )
     register o;
 
     if ( lowpc == 0 ) {
+	profiling++; /* halt profiling */
 	profil( (char *) 0 , 0 , 0 , 0 );
 	_mcleanup();
 	return;
