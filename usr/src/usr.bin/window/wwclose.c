@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwclose.c	3.1 83/08/11";
+static	char *sccsid = "@(#)wwclose.c	3.2 83/08/19";
 #endif
 
 #include "ww.h"
@@ -13,8 +13,8 @@ register struct ww *w;
 		(void) kill(w->ww_pid, SIGHUP);
 	(void) close(w->ww_tty);
 	(void) close(w->ww_pty);
-	wwfree((char **)w->ww_win, w->ww_w.nr);
-	wwfree((char **)w->ww_cov, w->ww_w.nr);
-	wwfree((char **)w->ww_buf, w->ww_nline);
+	wwfree((char **)w->ww_win);
+	wwfree((char **)w->ww_cov);
+	wwfree((char **)w->ww_buf);
 	free((char *)w);
 }

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwopen.c	3.1 83/08/11";
+static	char *sccsid = "@(#)wwopen.c	3.2 83/08/19";
 #endif
 
 #include "ww.h"
@@ -80,16 +80,16 @@ wwopen(flags, nrow, ncol, row, col, nline)
 bad:
 	if (w != 0) {
 		if (w->ww_win != 0)
-			wwfree(w->ww_win, nrow);
+			wwfree(w->ww_win);
 		if (w->ww_cov != 0)
-			wwfree(w->ww_cov, nrow);
+			wwfree(w->ww_cov);
 		if (w->ww_buf != 0)
-			wwfree((char **)w->ww_buf, w->ww_nline);
+			wwfree((char **)w->ww_buf);
 		if (w->ww_nvis != 0)
 			free((char *)w->ww_nvis);
 		(void) close(w->ww_tty);
 		(void) close(w->ww_pty);
-		cfree((char *)w);
+		free((char *)w);
 	}
 	return 0;
 }
