@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	6.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	6.34 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -645,6 +645,10 @@ main(argc, argv, envp)
 		syserr("cannot chdir(%s)", QueueDir);
 		exit(EX_SOFTWARE);
 	}
+
+	/* if we've had errors so far, exit now */
+	if (ExitStat != EX_OK)
+		exit(ExitStat);
 
 	/*
 	**  Do operation-mode-dependent initialization.
