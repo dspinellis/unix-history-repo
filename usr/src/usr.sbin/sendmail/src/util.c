@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.55 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.56 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -278,9 +278,6 @@ xputs(s)
 		/* wasn't a meta-macro -- find another way to print it */
 		switch (c)
 		{
-		  case '\0':
-			continue;
-
 		  case '\n':
 			c = 'n';
 			break;
@@ -298,6 +295,8 @@ xputs(s)
 			(void) putchar(c ^ 0100);
 			continue;
 		}
+		(void) putchar('\\');
+		(void) putchar(c);
 	}
 	(void) fflush(stdout);
 }
