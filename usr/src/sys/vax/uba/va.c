@@ -1,4 +1,4 @@
-/*	va.c	4.18	82/11/27	*/
+/*	va.c	4.18	82/11/28	*/
 
 #include "va.h"
 #if NVA > 0
@@ -445,6 +445,13 @@ vareset(uban)
 		else
 			vaaddr->vacsh = VAPRINTPLOT;
 		DELAY(10000);
+		sc->sc_iostate = VAS_IDLE;
+		um->um_tab.b_actf->b_active = 0;
+		um->um_tab.b_actf->b_actf = um->um_tab.b_actf->b_actl = 0;
+		if (um->um_ubinfo) {
+			printf("<%d>", (um->um_ubinfo >> 28) & 0xf);
+			um->um_ubinfo = 0;
+		}
 		sc->sc_iostate = VAS_IDLE;
 		um->um_tab.b_actf->b_active = 0;
 		um->um_tab.b_actf->b_actf = um->um_tab.b_actf->b_actl = 0;
