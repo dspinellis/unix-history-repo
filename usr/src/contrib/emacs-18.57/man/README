@@ -1,0 +1,18 @@
+This directory contains the Tex sources of the Emacs manual,
+plus the macro package (texinfo.tex) necessary for processing it.
+
+1) Run tex on emacs.tex, producing emacs.cp, emacs.fn, emacs.ky,
+and emacs.vr (unsorted index files), plus emacs.aux (cross ref file).
+
+2) Compile texindex.c, and run it:
+   `texindex emacs.??'
+This produces sorted index files emacs.cps, emacs.fns, etc.
+that are used as input in step 3.
+
+3) Run tex on emacs.tex again.
+
+4) Now you have a dvi file that you can print.
+
+The latest versions of all the intermediate files are supplied,
+so if you want to print the manual with no change, you can start with
+step 3.
