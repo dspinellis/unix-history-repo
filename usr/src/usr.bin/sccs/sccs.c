@@ -3,7 +3,7 @@
 # include <sys/stat.h>
 # include <sysexits.h>
 
-static char SccsId[] = "@(#)sccs.c 1.5 delta %G% 11:32:24 get %H% %T%";
+static char SccsId[] = "@(#)sccs.c 1.6 delta %G% 19:12:04 get %H% %T%";
 
 # define bitset(bit, word)	((bit) & (word))
 
@@ -35,7 +35,6 @@ struct sccsprog SccsProg[] =
 };
 
 char	*SccsPath = "SCCS";	/* pathname of SCCS files */
-bool	IsAdmin;		/* if set, this person is an administrator */
 bool	RealUser;		/* if set, running as real user */
 
 main(argc, argv)
@@ -48,8 +47,6 @@ main(argc, argv)
 	extern char *makefile();
 	register struct sccsprog *cmd;
 	char buf[200];
-	int uid;
-	auto int xuid;
 	register FILE *fp;
 
 	/*
@@ -84,32 +81,6 @@ main(argc, argv)
 	**  See if this user is an administrator.
 	*/
 
-	uid = getuid();
-# ifdef V6
-	uid &= 0377;
-# endif V6
-	strcpy(buf, SccsPath);
-	strcat(buf, "/ADMINFILE");
-	fp = fopen(buf, "r");
-	if (fp != NULL)
-	{
-		while (fgets(buf, sizeof buf, fp) != NULL)
-		{
-			if (buf[0] == 'A')
-			{
-				if (sscanf(&buf[1], "%d", &xuid) > 0 &&
-				    xuid == uid)
-					IsAdmin++;
-			}
-		}
-		fclose(fp);
-	}
-	else
-	{
-		/* no ADMINFILE -- take some defaults */
-		IsAdmin++;
-	}
-
 	/*
 	**  Look up command.
 	**	At this point, p and argv point to the command name.
@@ -130,11 +101,8 @@ main(argc, argv)
 	**  Set protection as appropriate.
 	*/
 
-	if (bitset(F_PROT, cmd->sccsflags) && !IsAdmin && !RealUser)
-	{
-		fprintf(stderr, "Sccs: not authorized to use %s\n", p);
-		exit(EX_USAGE);
-	}
+	if (bitset(F_PROT, cmd->sccsflags))
+		setuid(getuid());
 
 	/*
 	**  Build new argument vector.
