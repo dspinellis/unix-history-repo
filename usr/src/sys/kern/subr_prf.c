@@ -1,4 +1,4 @@
-/*	subr_prf.c	4.25	82/12/17	*/
+/*	subr_prf.c	4.26	83/05/18	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -182,7 +182,10 @@ panic(s)
 #ifdef sun
 		asm("movl a6, a5");
 		traceback(a5, a5);
-		resume(pcbb(u.u_procp));	/* for adb traceback */
+		/* make sure u area has been initialized before doing resume */
+		if (u.u_procp >= proc && u.u_procp < procNPROC &&
+		    u.u_procp->p_addr != 0)
+			resume(pcbb(u.u_procp));	/* for adb traceback */
 #endif
 	}
 	printf("panic: %s\n", s);
@@ -244,8 +247,12 @@ putchar(c, touser)
 #endif
 	    ) {
 		if (msgbuf.msg_magic != MSG_MAGIC) {
+			register int i;
+
 			msgbuf.msg_bufx = 0;
 			msgbuf.msg_magic = MSG_MAGIC;
+			for (i=0; i < MSG_BSIZE; i++)
+				msgbuf.msg_bufc[i] = 0;
 		}
 		if (msgbuf.msg_bufx < 0 || msgbuf.msg_bufx >= MSG_BSIZE)
 			msgbuf.msg_bufx = 0;
