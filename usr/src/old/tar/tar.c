@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)tar.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)tar.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -104,6 +104,9 @@ char	tname[] = "/tmp/tarXXXXXX";
 char	*usefile;
 char	magtape[] = "/dev/rmt8";
 char	*malloc();
+long	time();
+off_t	lseek();
+char	*mktemp();
 char	*sprintf();
 char	*strcat();
 char	*strcpy();
@@ -245,14 +248,14 @@ char	*argv[];
 		if (cflag && tfile != NULL)
 			usage();
 		if (signal(SIGINT, SIG_IGN) != SIG_IGN)
-			signal(SIGINT, onintr);
+			(void) signal(SIGINT, onintr);
 		if (signal(SIGHUP, SIG_IGN) != SIG_IGN)
-			signal(SIGHUP, onhup);
+			(void) signal(SIGHUP, onhup);
 		if (signal(SIGQUIT, SIG_IGN) != SIG_IGN)
-			signal(SIGQUIT, onquit);
+			(void) signal(SIGQUIT, onquit);
 #ifdef notdef
 		if (signal(SIGTERM, SIG_IGN) != SIG_IGN)
-			signal(SIGTERM, onterm);
+			(void) signal(SIGTERM, onterm);
 #endif
 		mt = openmt(usefile, 1);
 		dorep(argv);
@@ -262,7 +265,7 @@ char	*argv[];
 	if (xflag)
 		doxtract(argv);
 	else
-		dotable();
+		dotable(argv);
 	done(0);
 }
 
@@ -278,8 +281,6 @@ openmt(tape, writing)
 	char *tape;
 	int writing;
 {
-	register char *rmtape;
-	extern char *rmterr;
 
 	if (strcmp(tape, "-") == 0) {
 		/*
@@ -304,8 +305,7 @@ openmt(tape, writing)
 		 */
 		if (writing) {
 			if (cflag)
-				mt = open(tape, O_RDWR|O_CREAT|O_TRUNC,
-				    0666);
+				mt = open(tape, O_RDWR|O_CREAT|O_TRUNC, 0666);
 			else
 				mt = open(tape, O_RDWR);
 		} else
@@ -441,7 +441,7 @@ passtape()
 	blocks /= TBLOCK;
 
 	while (blocks-- > 0)
-		readtbuf(&bufp, TBLOCK);
+		(void) readtbuf(&bufp, TBLOCK);
 }
 
 putfile(longname, shortname, parent)
@@ -456,7 +456,8 @@ putfile(longname, shortname, parent)
 	register char *cp;
 	struct direct *dp;
 	DIR *dirp;
-	int i;
+	register int i;
+	long l;
 	char newparent[NAMSIZ+64];
 	extern int errno;
 	int	maxread;
@@ -494,7 +495,7 @@ putfile(longname, shortname, parent)
 			tomodes(&stbuf);
 			strcpy(dblock.dbuf.name,buf);
 			sprintf(dblock.dbuf.chksum, "%6o", checksum());
-			writetape((char *)&dblock);
+			(void) writetape((char *)&dblock);
 		}
 		sprintf(newparent, "%s/%s", parent, shortname);
 		if (chdir(shortname) < 0) {
@@ -517,11 +518,11 @@ putfile(longname, shortname, parent)
 			    !strcmp("..", dp->d_name))
 				continue;
 			strcpy(cp, dp->d_name);
-			i = telldir(dirp);
+			l = telldir(dirp);
 			closedir(dirp);
 			putfile(buf, cp, newparent);
 			dirp = opendir(".");
-			seekdir(dirp, i);
+			seekdir(dirp, l);
 		}
 		closedir(dirp);
 		if (chdir(parent) < 0) {
@@ -556,7 +557,7 @@ putfile(longname, shortname, parent)
 			    longname, dblock.dbuf.linkname);
 		sprintf(dblock.dbuf.size, "%11lo", 0);
 		sprintf(dblock.dbuf.chksum, "%6o", checksum());
-		writetape((char *)&dblock);
+		(void) writetape((char *)&dblock);
 		break;
 
 	case S_IFREG:
@@ -587,7 +588,7 @@ putfile(longname, shortname, parent)
 				strcpy(dblock.dbuf.linkname, lp->pathname);
 				dblock.dbuf.linkflag = '1';
 				sprintf(dblock.dbuf.chksum, "%6o", checksum());
-				writetape( (char *) &dblock);
+				(void) writetape( (char *) &dblock);
 				if (vflag)
 					fprintf(vfile, "a %s link to %s\n",
 					    longname, lp->pathname);
@@ -611,7 +612,7 @@ putfile(longname, shortname, parent)
 		sprintf(dblock.dbuf.chksum, "%6o", checksum());
 		hint = writetape((char *)&dblock);
 		maxread = max(stbuf.st_blksize, (nblock * TBLOCK));
-		if ((bigbuf = malloc(maxread)) == 0) {
+		if ((bigbuf = malloc((unsigned)maxread)) == 0) {
 			maxread = TBLOCK;
 			bigbuf = buf;
 		}
@@ -630,7 +631,7 @@ putfile(longname, shortname, parent)
 		if (bigbuf != buf)
 			free(bigbuf);
 		if (i < 0) {
-			fprintf("tar: Read error on ");
+			fprintf(stderr, "tar: Read error on ");
 			perror(longname);
 		} else if (blocks != 0 || i != 0)
 			fprintf(stderr, "tar: %s: file changed size\n",
@@ -650,22 +651,13 @@ doxtract(argv)
 	char *argv[];
 {
 	long blocks, bytes;
-	char **cp;
-	int ofile;
+	int ofile, i;
 
 	for (;;) {
-		getdir();
-		if (endtape())
-			break;
-		if (*argv == 0)
-			goto gotit;
-		for (cp = argv; *cp; cp++)
-			if (prefix(*cp, dblock.dbuf.name))
-				goto gotit;
-		passtape();
-		continue;
-
-gotit:
+		if ((i = wantit(argv)) == 0)
+			continue;
+		if (i == -1)
+			break;		/* end of tape */
 		if (checkw('x', dblock.dbuf.name) == 0) {
 			passtape();
 			continue;
@@ -778,12 +770,16 @@ gotit:
 	}
 }
 
-dotable()
+dotable(argv)
+	char *argv[];
 {
+	register int i;
+
 	for (;;) {
-		getdir();
-		if (endtape())
-			break;
+		if ((i = wantit(argv)) == 0)
+			continue;
+		if (i == -1)
+			break;		/* end of tape */
 		if (vflag)
 			longt(&stbuf);
 		printf("%s", dblock.dbuf.name);
@@ -801,7 +797,7 @@ putempty()
 	char buf[TBLOCK];
 
 	bzero(buf, sizeof (buf));
-	writetape(buf);
+	(void) writetape(buf);
 }
 
 longt(st)
@@ -812,7 +808,7 @@ longt(st)
 
 	pmode(st);
 	printf("%3d/%1d", st->st_uid, st->st_gid);
-	printf("%7D", st->st_size);
+	printf("%7ld", st->st_size);
 	cp = ctime(&st->st_mtime);
 	printf(" %-12.12s %-4.4s ", cp+4, cp+20);
 }
@@ -860,7 +856,7 @@ selectbits(pairp, st)
 	n = *ap++;
 	while (--n>=0 && (st->st_mode&*ap++)==0)
 		ap++;
-	printf("%c", *ap);
+	putchar(*ap);
 }
 
 /*
@@ -909,26 +905,26 @@ checkdir(name)
 
 onintr()
 {
-	signal(SIGINT, SIG_IGN);
+	(void) signal(SIGINT, SIG_IGN);
 	term++;
 }
 
 onquit()
 {
-	signal(SIGQUIT, SIG_IGN);
+	(void) signal(SIGQUIT, SIG_IGN);
 	term++;
 }
 
 onhup()
 {
-	signal(SIGHUP, SIG_IGN);
+	(void) signal(SIGHUP, SIG_IGN);
 	term++;
 }
 
 #ifdef notdef
 onterm()
 {
-	signal(SIGTERM, SIG_IGN);
+	(void) signal(SIGTERM, SIG_IGN);
 	term++;
 }
 #endif
@@ -1034,6 +1030,27 @@ done(n)
 	exit(n);
 }
 
+/* 
+ * Do we want the next entry on the tape, i.e. is it selected?  If
+ * not, skip over the entire entry.  Return -1 if reached end of tape.
+ */
+wantit(argv)
+	char *argv[];
+{
+	register char **cp;
+
+	getdir();
+	if (endtape())
+		return (-1);
+	if (*argv == 0)
+		return (1);
+	for (cp = argv; *cp; cp++)
+		if (prefix(*cp, dblock.dbuf.name))
+			return (1);
+	passtape();
+	return (0);
+}
+
 /*
  * Does s2 begin with the string s1, on a directory boundary?
  */
@@ -1134,7 +1151,7 @@ readtape(buffer)
 
 	if (first == 0)
 		getbuf();
-	readtbuf(&bufp, TBLOCK);
+	(void) readtbuf(&bufp, TBLOCK);
 	bcopy(bufp, buffer, TBLOCK);
 	return(TBLOCK);
 }
@@ -1146,7 +1163,7 @@ readtbuf(bufpp, size)
 	register int i;
 
 	if (recno >= nblock || first == 0) {
-		if ((i = bread(mt, tbuf, TBLOCK*nblock)) < 0)
+		if ((i = bread(mt, (char *)tbuf, TBLOCK*nblock)) < 0)
 			mterr("read", i, 3);
 		if (first == 0) {
 			if ((i % TBLOCK) != 0) {
@@ -1180,7 +1197,7 @@ writetbuf(buffer, n)
 		first = 1;
 	}
 	if (recno >= nblock) {
-		i = write(mt, tbuf, TBLOCK*nblock);
+		i = write(mt, (char *)tbuf, TBLOCK*nblock);
 		if (i != TBLOCK*nblock)
 			mterr("write", i, 2);
 		recno = 0;
@@ -1204,7 +1221,7 @@ writetbuf(buffer, n)
 		bcopy(buffer, (char *)&tbuf[recno++], TBLOCK);
 		buffer += TBLOCK;
 		if (recno >= nblock) {
-			i = write(mt, tbuf, TBLOCK*nblock);
+			i = write(mt, (char *)tbuf, TBLOCK*nblock);
 			if (i != TBLOCK*nblock)
 				mterr("write", i, 2);
 			recno = 0;
@@ -1222,9 +1239,9 @@ backtape()
 	struct mtget mtget;
 	
 	if (mtdev == 1)
-		mtdev = ioctl(mt, MTIOCGET, &mtget);
+		mtdev = ioctl(mt, MTIOCGET, (char *)&mtget);
 	if (mtdev == 0) {
-		if (ioctl(mt, MTIOCTOP, &mtop) < 0) {
+		if (ioctl(mt, MTIOCTOP, (char *)&mtop) < 0) {
 			fprintf(stderr, "tar: tape backspace error: ");
 			perror("");
 			done(4);
@@ -1238,7 +1255,7 @@ flushtape()
 {
 	int i;
 
-	i = write(mt, tbuf, TBLOCK*nblock);
+	i = write(mt, (char *)tbuf, TBLOCK*nblock);
 	if (i != TBLOCK*nblock)
 		mterr("write", i, 2);
 }
@@ -1302,7 +1319,7 @@ getbuf()
 				nblock = NBLOCK;
 		}
 	}
-	tbuf = (union hblock *)malloc(nblock*TBLOCK);
+	tbuf = (union hblock *)malloc((unsigned)nblock*TBLOCK);
 	if (tbuf == NULL) {
 		fprintf(stderr, "tar: blocksize %d too big, can't get memory\n",
 		    nblock);
