@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)du.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)du.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -141,8 +141,7 @@ main(argc, argv)
 		case FTS_DNR:			/* Warn, continue. */
 		case FTS_ERR:
 		case FTS_NS:
-			errno = p->fts_errno;
-			warn("%s", p->fts_path);
+			warnx("%s: %s", p->fts_path, strerror(p->fts_errno));
 			rval = 1;
 			break;
 		default:

@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -271,8 +271,7 @@ traverse(argc, argv, options)
 			break;
 		case FTS_DNR:
 		case FTS_ERR:
-			errno = p->fts_errno;
-			warn("%s", p->fts_name);
+			warnx("%s: %s", p->fts_name, strerror(p->fts_errno));
 			break;
 		case FTS_D:
 			if (p->fts_level != FTS_ROOTLEVEL &&
@@ -338,8 +337,8 @@ display(p, list)
 	maxsize = 0;
 	for (cur = list, entries = 0; cur; cur = cur->fts_link) {
 		if (cur->fts_info == FTS_ERR || cur->fts_info == FTS_NS) {
-			errno = cur->fts_errno;
-			warn("%s", cur->fts_name);
+			warnx("%s: %s",
+			    cur->fts_name, strerror(cur->fts_errno));
 			cur->fts_number = NO_PRINT;
 			continue;
 		}
