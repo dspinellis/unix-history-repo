@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)man.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)man.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -129,7 +129,7 @@ main(argc, argv)
 	locpath = LOCAL_PATH;
 	newpath = NEW_PATH;
 	man(argv);
-	/* use system(3) in case someone's pager is "foo arg1 arg2" */
+	/* use system(3) in case someone's pager is "pager arg1 arg2" */
 	if (command)
 		(void)system(command);
 	exit(0);
@@ -160,21 +160,22 @@ man(argv)
 		section = NULL;
 		switch(**argv) {
 		case 'l':				/* local */
+			/* support the "{l,local,n,new}###"  syntax */
 			for (p = *argv; isalpha(*p); ++p);
 			if (!strncmp(*argv, "l", p - *argv) ||
 			    !strncmp(*argv, "local", p - *argv)) {
+				++argv;
 				manpath = locpath;
-				if (section = getsect(p))
-					goto argtest;
+				section = getsect(p);
 			}
 			break;
 		case 'n':				/* new */
 			for (p = *argv; isalpha(*p); ++p);
 			if (!strncmp(*argv, "n", p - *argv) ||
 			    !strncmp(*argv, "new", p - *argv)) {
+				++argv;
 				manpath = newpath;
-				if (section = getsect(p))
-					goto argtest;
+				section = getsect(p);
 			}
 			break;
 		/*
@@ -185,45 +186,45 @@ man(argv)
 			for (p = *argv; isalpha(*p); ++p);
 			if (!strncmp(*argv, "o", p - *argv) ||
 			    !strncmp(*argv, "old", p - *argv)) {
+				++argv;
 				list3[0] = list1[3];
 				section = list3;
-				goto argtest;
 			}
 			break;
 		case '1': case '2': case '3': case '4':
 		case '5': case '6': case '7': case '8':
-			if (!(section = getsect(*argv)))
-				break;
-argtest:		if (!*++argv) {
-				fprintf(stderr, "man: what do you want from the %s section of the manual?\n", section->msg);
-				exit(1);
-			}
+			if (section = getsect(*argv))
+				++argv;
 		}
 
+		if (*argv) {
+			if (section)
+				res = manual(section, *argv);
+			else {
+				res = manual(list1, *argv);
+				if (!res || (how & ALL))
+					res += manual(list2, *argv);
+			}
+			if (res || how&WHERE)
+				continue;
+		}
+
+		fputs("man: ", stderr);
+		if (*argv)
+			fprintf(stderr, "no entry for %s in the ", *argv);
+		else
+			fputs("what do you want from the ", stderr);
 		if (section)
-			res = manual(section, *argv);
-		else {
-			res = manual(list1, *argv);
-			if (!res || (how & ALL))
-				res += manual(list2, *argv);
-		}
-		if (!res && !(how & WHERE)) {
-			if (manpath == locpath)
-				if (section)
-					fprintf(stderr, "No entry for %s in the %s section of the local manual.\n", *argv, section->msg);
-				else
-					fprintf(stderr, "No entry for %s in the local manual.\n", *argv);
-			else if (manpath == newpath)
-				if (section)
-					fprintf(stderr, "No entry for %s in the %s section of the new manual.\n", *argv, section->msg);
-				else
-					fprintf(stderr, "No entry for %s in the new manual.\n", *argv);
-			else if (section)
-				fprintf(stderr, "No entry for %s in the %s section of the manual.\n", *argv, section->msg);
-			else
-				fprintf(stderr, "No entry for %s in the manual.\n", *argv);
-			exit(1);
-		}
+			fprintf(stderr, "%s section of the ", section->msg);
+		if (manpath == locpath)
+			fputs("local ", stderr);
+		else if (manpath == newpath)
+			fputs("new ", stderr);
+		if (*argv)
+			fputs("manual.\n", stderr);
+		else
+			fputs("manual?\n", stderr);
+		exit(1);
 	}
 }
 
