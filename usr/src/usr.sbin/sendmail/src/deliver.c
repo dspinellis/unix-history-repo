@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1749,7 +1749,10 @@ putfromline(fp, m, e)
 		expand("\201g", buf, &buf[sizeof buf - 1], e);
 		bang = strchr(buf, '!');
 		if (bang == NULL)
-			syserr("554 No ! in UUCP! (%s)", buf);
+		{
+			errno = 0;
+			syserr("554 No ! in UUCP From address! (%s given)", buf);
+		}
 		else
 		{
 			*bang++ = '\0';
