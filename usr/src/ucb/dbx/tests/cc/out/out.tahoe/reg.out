@@ -1,0 +1,15 @@
+reading symbolic information ...
+[using reg.put]
+[1] stop in reg.put
+[1] stopped in reg.put at line 29
+   29       printf("%d ", i);
+reg.put(i = 0), line 29 in "reg.c"
+main(0x1, 0xbfffe7e8, 0xbfffe7f0), line 22 in "reg.c"
+0 (x = 3, y = 4) "is a test" 
+[1] stopped in reg.put at line 29
+   29       printf("%d ", i);
+reg.put(i = 1), line 29 in "reg.c"
+main(0x1, 0xbfffe7e8, 0xbfffe7f0), line 22 in "reg.c"
+0 1 
+execution completed (exit code 2)
+
