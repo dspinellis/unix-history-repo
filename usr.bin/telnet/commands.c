@@ -1320,7 +1320,7 @@ setescape(argc, argv)
 	}
 	if (arg[0] != '\0')
 		escape = arg[0];
-	if (!In3270 && escape != _POSIX_VDISABLE) {
+	if (!In3270) {
 		printf("Escape character is '%s'.\n", control(escape));
 	}
 	(void) fflush(stdout);
@@ -2084,12 +2084,10 @@ status(argc, argv)
 	printf("No connection.\n");
     }
 #   if !defined(TN3270)
-    if (escape != _POSIX_VDISABLE)
 	printf("Escape character is '%s'.\n", control(escape));
     (void) fflush(stdout);
 #   else /* !defined(TN3270) */
-    if ((!In3270) && escape != _POSIX_VDISABLE
-	&& ((argc < 2) || strcmp(argv[1], "notmuch"))) {
+    if ((!In3270) && ((argc < 2) || strcmp(argv[1], "notmuch"))) {
 	printf("Escape character is '%s'.\n", control(escape));
     }
 #   if defined(unix)
