@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.60	82/10/21	*/
+/*	uipc_socket.c	4.61	82/10/23	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -393,8 +393,8 @@ soreceive(so, aname, uio, flags)
 
 restart:
 	sblock(&so->so_rcv);
-SBCHECK(&so->so_rcv, "soreceive restart");
 	s = splnet();
+SBCHECK(&so->so_rcv, "soreceive restart");
 
 #define	rcverr(errno)	{ error = errno; splx(s); goto release; }
 	if (so->so_rcv.sb_cc == 0) {
