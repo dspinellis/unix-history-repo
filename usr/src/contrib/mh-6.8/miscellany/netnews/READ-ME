@@ -1,0 +1,75 @@
+From: Thomas Scott Christiansen <tom@rsch.wisc.EDU>
+
+I noticed that in the mh.6 tar file on huey, you have some things on using
+MH for netnews.  I thought you would like the whole kit, so here it is:
+
+===========================================================================
+		     Using MH on Netnews and System MSGS
+
+First look at all the directories in /usr/spool/news.  Then, assuming
+that your MH directory is ~/Mail, do something like the following:
+
+	% ln -s /usr/spool/news/{net,fa,mod} ~/Mail
+
+You may now reference read-only folders named (for example +net/jokes
+and +mod/unix.   
+	
+Linking /usr/msgs will allow you to read msgs in a similar manner, 
+but that you should have your system administrator make /usr/msgs
+perms 775 and the msgs program setgid the group on the msgs dir.
+Usually the perms are 777, which means this wouldn't be a read-only
+folder.
+
+				   WARNINGS
+
+If your version of MH has a limit on message numbers (as in max 2000
+msgs) then you will not be able to read folders with highest message
+numbers higher than this without modifying the MH source code.
+
+Refiling causes copies to be made of messages, rather than actually moving
+them, since these are read-only folders.
+
+
+		       Doing followups to news articles
+
+In order to do followups to news articles, you should get your
+local mail administrator to do the following things on your
+system.  It all assumes that you have used /usr/local/lib/mh 
+as your MH lib directory.   
+
+
+First create an alias like this:
+
+	followup:	 "|/usr/local/lib/mh/followup"
+
+This file should look like this and be executable:
+
+	#!/bin/sh
+	sed -f /usr/local/lib/mh/followup.sed | /usr/lib/news/inews -h
+
+The sed script should look like this:
+
+	1,/^$/{
+	/^From /d
+	/^To:/d
+	/^Received:/d
+	/^Message-Id:/d
+	/^Date:/d
+	}
+
+
+Then create a link to repl called flup, and add the following line
+to your mh_profile:
+
+	flup:	-nocc all -form flupcomps
+
+where flupcomps is the following  file (located in ~/Mail)
+
+	To: followup
+	Subject: Re: %<{subject}%subject%|Orphaned response%>
+	%<{followup-to}Newsgroups: %followup-to%|%<{newsgroups}Newgroups: %newsgroups%>%>
+	%<{message-id}References: %message-id%<{references} %references%>%>
+	%<{distribution}Distribution: %distribution%>
+	Followup-to:
+	Fcc: +posted
+	--------

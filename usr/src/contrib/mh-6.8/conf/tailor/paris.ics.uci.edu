@@ -1,0 +1,18 @@
+mmdfldir:	@(MHDROPATH)
+mmdflfil:	@(MHDROPFIL)
+uucpldir:	/usr/spool/mail
+uucplfil:	
+mmdelim1:	\001\001\001\001\n
+mmdelim2:	\001\001\001\001\n
+mmailid:	0
+umincproc:
+lockldir:
+
+hostable:	@(MHETCPATH)/hosts
+
+bbdomain:	UCI
+systemname:	paris.ics.uci.edu
+
+nntphost:	paris.ics.uci.edu
+
+servers:	paris.ics.uci.edu ics.uci.edu \01localnet

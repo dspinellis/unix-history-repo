@@ -1,0 +1,35 @@
+.TH MHE
+.SH NAME
+mhe \- Display interface to Rand Mail Handler
+.SH DESCRIPTION
+.I MHE
+is a program that provides an Emacs-based display-oriented front end to the
+Rand Mail Handler. By Emacs-based we mean that it is actually implemented as
+an extensive macro package in Emacs, thereby providing access to full Emacs
+at all points. By display-oriented, we mean that it provides windows on mail
+messages and headers so that you can edit your mail directory as if it were
+a file.
+.PP
+To get started using \fIMHE\fR without being an expert at \fIMH\fR, just
+type ``mhe'' to the shell. It will start up Emacs, load the macro package,
+tell you how to initialize things if you have not already done so, and then
+(assuming things are initialized properly) load your inbox headers into its
+current window in a buffer named ``+inbox''. You can then type various
+1-character commands to do mail operations. The ``?'' command asks for help.
+.PP
+If you want to use the Emacs that is inside \fIMHE\fR, just visit a file
+with C-X C-V, in the normal way. If you want to return to the \fIMHE\fR
+code, just make the buffer ``+inbox'' visible again; the key bindings are
+buffer-local, and will magically return to their mail-reading meanings.
+.SH SEE ALSO
+.nf
+.ta 1.5i
+mh (1)	- the Rand Mail Handler
+.SH AUTHOR
+Brian K. Reid
+.SH BUGS
+There is a fundamental design bug in the Unix kernel that prevents more than
+one Emacs process from being able to run at a time. \fIMHE\fR is implemented
+in Emacs. This means that you cannot have a mail-reading job and an editing
+job active simultaneously. However, since you have access to all of Emacs
+while inside \fIMHE\fR, this is not a serious problem.

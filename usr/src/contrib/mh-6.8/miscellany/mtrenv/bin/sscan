@@ -1,0 +1,21 @@
+: run this script through /bin/sh
+
+if mhpath all > /dev/null; then true; else exit 1; fi
+
+if [ "x$1" = x ]; then
+    S=`scan -format %subject first`
+    if [ "x$S" = x ]; then mark -add -zero -sequence select first; fi
+else
+    S="$1"
+fi
+
+if [ "x$2" != x ]; then echo 'usage: sscan [subject]' 1>&2; exit 1; fi
+
+if [ "x$S" != x ]; then
+    S=`echo $S | tr A-Z a-z | sed -e 's%^re:%%' | sed -e 's%^[ 	]*%%'` 
+    if pick -subject "$S" -zero -sequence select; then true; else exit 1; fi
+fi
+
+sortm select; scan select
+
+exit 0

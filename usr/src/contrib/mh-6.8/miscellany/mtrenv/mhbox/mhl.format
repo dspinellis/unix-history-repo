@@ -1,0 +1,22 @@
+overflowoffset=10
+leftadjust,compress,compwidth=9
+addrfield,formatfield="%<{error}%{text}%|%(putstr(friendly{text}))%>"
+MessageName:nocomponent
+: -- using template mhl.format --
+Date:formatfield="%<(nodate{text})%{text}%|%(putstr(pretty{text}))%>"
+Subject:
+From:
+X-KDS-ID:
+To:
+cc:
+Resent-From:
+Resent-Note:
+nocompress
+Resent:
+Forwarded:
+Replied:
+Illegal-Field:
+Illegal-Object:
+Source-Info:
+:
+body:nocomponent,overflowoffset=0,noleftadjust

@@ -1,0 +1,125 @@
+/* LINTLIBRARY */
+
+#include "../h/mh.h"
+#include "../h/addrsbr.h"
+#include "../h/formatsbr.h"
+#include <stdio.h>
+
+
+char   *add(a,b) char *a,*b; { return add(a,b); }
+	/* VARARGS2 */
+void	adios(w,f) char *w,*f; { adios(w,f); }
+	/* VARARGS2 */
+void	admonish(w,f) char *w,*f; { admonish(w,f); }
+char   *adrsprintf(l,d) char *l,*d; { return adrsprintf(l,d); }
+	/* VARARGS2 */
+void	advise(w,f) char *w,*f; { advise(w,f); }
+	/* VARARGS3 */
+void	advertise(w,t,f) char *w,*t,*f; { advertise(w,t,f); }
+void	ambigsw(a,s) char *a; struct swit *s; { ambigsw(a,s); }
+int     atooi(s) char *s; { return atooi(s); }
+char   *auxformat(m,e) struct mailname *m; { return auxformat(m,e); }
+char  **brkstring(s,b,t) char *s,*b,*t; { return brkstring(s,b,t); }
+void	closefds(i) { closefds (i); }
+	/* VARARGS */
+char   *concat(s1) char *s1; { return concat(s1); }
+char   *copy(f,t) char *f,*t; { return copy(f,t); }
+char  **copyip(f,t) char **f,**t; { return copyip(f,t); }
+void	cpydata(i,o,f,g) char *f,*g; { cpydata(i,o,f,g); }
+void	cpydgst(i,o,f,g) char *f,*g; { cpydgst(i,o,f,g); }
+void	discard(i) FILE *i; { discard(i); }
+/*
+ * done should not be defined here because it is designed to be
+ *  redefined by the parent routines if they need special exit
+ *  processing.  Definition here causes multiply defined messages
+ *  from lint.
+ *
+void	done(s) { done(s); }
+ */
+int     fdcompare(f1,f2) { return fdcompare(f1,f2); }
+int	fmt_compile(s,f) char *s; struct format **f;
+	{ return fmt_compile(s,f); }
+int	fmtscan(f,s,w,d) struct format *f; char *s; int d[];
+	{ return fmtscan(f,s,w,d); }
+/*
+ * formataddr is also designed to be redefined by the parent routines.
+ *
+char   *formataddr(d,e,b,s) char *d,*e,*b,*s;
+	{ return formataddr(d,e,b,s); }
+ */
+int     gans(p,s) char *p; struct swit *s; { return gans(p,s); }
+char  **getans(p,s) char *p; struct swit *s; { return getans(p,s); }
+int	getanswer(p) char *p; { return getanswer(p); }
+char   *getcpy(s) char *s; { return getcpy(s); }
+struct mailname
+       *getm(s,h,t,w,e) char *s,*h,*e; { return getm(s,h,t,w,e); }
+char   *getname(a) char *a; { return getname(a); }
+void	help(s,sw) char *s; struct swit *sw; { help(s,sw); }
+int	ismymbox(n) struct mailname *n; { return ismymbox(n); }
+char   *libpath(f) char *f; { return libpath(f); }
+int	m_atoi(s) char *s; { return m_atoi(s); }
+char   *m_backup(s) char *s; { return m_backup(s); }
+int     m_convert(m,s) struct msgs *m; char *s; { return m_convert(m,s); }
+int     m_delete(s) char *s; { return m_delete(s); }
+char   *m_draft(f,m,u,i) char *f,*m; int *i; { return m_draft(f,m,u,i); }
+void	m_eomsbr(a) int (*a)(); { m_eomsbr(a); }
+char   *m_find(s) char *s; { return s; }
+void	m_fmsg(m) struct msgs *m; { m_fmsg(m); }
+void	m_foil(p) char *p; { m_foil(p); }
+void	m_getdefs() { m_getdefs(); }
+int     m_getfld(s,n,b,bs,i) char *n,*b; FILE *i; 
+	{ return m_getfld(s,n,b,bs,i); }
+char   *m_getfolder() { return m_getfolder(); }
+int     m_gmprot() { return m_gmprot(); }
+struct msgs
+       *m_gmsg(s) char *s; { return m_gmsg(s); }
+char   *m_maildir(s) char *s; { return m_maildir(s); }
+char   *m_mailpath(s) char *s; { return m_mailpath(s); }
+char   *m_name(i) { return m_name(i); }
+void	m_readefs(n,i,f,c) struct node **n; FILE *i; char *f;
+	{ m_readefs(n,i,f,c); }
+struct msgs
+       *m_remsg(m,l,h) struct msgs *m; { return m_remsg(m,l,h); }
+void	m_replace(k,v) char *k,*v; { m_replace(k,v); }
+char   *m_scratch(s,t) char *s,*t; { return m_scratch (s,t); }
+char   *m_seq(m,c) struct msgs *m; char *c; { return m_seq(m,c); }
+int	m_seqadd (m,c,j,p) struct msgs *m; char *c;
+	{ return m_seqadd (m,c,j,p); }
+char   *m_seqbits (m) struct msgs *m; { return m_seqbits (m); }
+int	m_seqdel (m,c,j) struct msgs *m; char *c; { return m_seqdel (m,c,j); }
+int	m_seqflag (m,c) struct msgs *m; char *c; { return m_seqflag (m,c); }
+int	m_seqnew (m,c,p) struct msgs *m; char *c; { return m_seqnew (m,c,p); }
+void	m_setcur(m,i) struct msgs *m; { m_setcur(m,i); }
+void	m_setseq(m) struct msgs *m; { m_setseq(m); }
+void	m_setvis(m,s) struct msgs *m; { m_setvis(m,s); }
+void	m_sync(m) struct msgs *m; { m_sync(m); }
+char   *m_tmpfil(t) char *t; { return m_tmpfil (t); }
+void	m_unknown(f) FILE *f; { m_unknown(f); }
+void	m_update() { m_update(); }
+int     m_whatnow(e,n,u,f,a,d,m,t,i,c) struct msgs *m; char *e,*f,*a,*t,*c;
+	{ return m_whatnow (e,n,u,f,a,d,m,t,i,c); }
+int     makedir(d) char *d; { return makedir(d); }
+void	mnfree (m) struct mailname *m; { mnfree (m); }
+char   *new_fs(f,m,d) char *f,*m,*d; { return new_fs(f,m,d); }
+char   *path(n,t) char *n; { return path(n,t); }
+int     peekc(i) FILE *i; { return peekc(i); }
+int	pidwait(i,s) { return pidwait(i,s); }
+int	pidstatus(s,f,c) FILE *f; char *c; { return pidstatus(s,f,c); }
+void	printsw(s,sw,p) char *s,*p; struct swit *sw; { printsw(s,sw,p); }
+void	push() { push(); }
+int	putenv(a,b) char *a,*b; { return putenv(a,b); }
+char   *pwd() { return pwd(); }
+char   *r1bindex(s,c) char *s; { return r1bindex(s,c); }
+int	refile(a,f) char **a,*f; { return refile(a,f); }
+int     remdir(d) char *d; { return remdir(d); }
+int     showfile(a,f) char **a,*f; { return showfile(a,f); }
+int     smatch(s,sw) char *s; struct swit *sw; { return smatch(s,sw); }
+char   *sprintb(b,v,f) char *b,*f; unsigned v; { return sprintb(b,v,f); }
+int	ssequal(a,b) char *a,*b; { return ssequal(a,b); }
+int	strindex(a,b) char *a,*b; { return strindex(a,b); }
+char   *trimcpy(s) char *s; { return trimcpy(s); }
+int     type(fd,s) char *s; { return type(fd,s); }
+int     uleq(s1,s2) char *s1,*s2; { return uleq(s1,s2); }
+int	unputenv(a) char *a; { return unputenv(a); }
+int	uprf(s1,s2) char *s1,*s2; { return uleq(s1,s2); }
+int	vfgets(i,b) FILE *i; char **b; {return vfgets(i,b); }

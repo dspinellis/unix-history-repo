@@ -1,0 +1,13 @@
+if test $# -lt 3; then
+  echo "Usage: tarmail mailpath \"subject-string\" directory-or-file(s)"
+  exit
+else
+  mailpath=$1
+  echo "mailpath = $mailpath"
+  shift
+  subject="$1"
+  echo "subject-string = $subject"
+  shift
+  echo files = $*
+  tar cvf - $* | compress | btoa | mail -s "$subject" $mailpath
+fi

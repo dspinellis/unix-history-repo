@@ -1,0 +1,29 @@
+.\"	@(MHWARNING)
+.SC NAME SECTION
+.NA
+name \- action
+.SY
+name
+.\" more switches here
+\%[\-help]
+.DE
+.\" description of command here
+.Fi
+^$HOME/\&.mh\(ruprofile~^The user profile
+.Pr
+^Path:~^To determine the user's MH directory
+.\" .Ps
+.\" for each additional profile entry
+.Sa
+.\" the see\-also's go here
+.De
+.\" the first default goes here
+.\" .Ds
+.\" for each additional default
+.Co
+.\" context changes go here
+.\" You can also have
+.\" .Hh \- the helpful hints section
+.\" .Hi \- the history section
+.\" .Bu \- the bugs section
+.En

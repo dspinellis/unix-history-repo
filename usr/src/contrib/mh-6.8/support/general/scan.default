@@ -1,0 +1,7 @@
+%; NOTE: This file is supplied for reference only; it shows the default
+%;	format string (for non-UK sites) which was compiled into "scan".
+%;	See the source file "h/scansbr.h" for details.
+%4(msg)%<(cur)+%| %>%<{replied}-%?{encrypted}E%| %>\
+%02(mon{date})/%02(mday{date})%<{date} %|*%>\
+%<(mymbox{from})%<{to}To:%14(friendly{to})%>%>%<(zero)%17(friendly{from})%>  \
+%{subject}%<{body}<<%{body}>>%>

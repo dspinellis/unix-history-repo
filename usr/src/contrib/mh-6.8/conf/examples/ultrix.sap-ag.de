@@ -1,0 +1,24 @@
+# ultrix.sap-ag.de - MH 6.8 options for ULTRIX (ULTRIX 4.2 on RISC).
+# Bill Wohler <wohler@sap-ag.de>
+# Sat, 31 Oct 92 19:14:43 +0100
+#
+# General
+#
+bin		/usr/local/bin/mh
+ldoptions	-s
+mandir		/usr/local/man
+manuals		standard
+mts		sendmail/smtp
+options		BIND DBMPWD ISI MHE MHRC OVERHEAD RPATHS WHATNOW UK
+#
+# Machine specific options
+#
+options		TYPESIG=void BSD42 BSD43
+curses		-lcurses -ltermlib
+#
+#
+# the compiler complains:
+# formatsbr.c:
+# uopt: Warning: fmtscan: this procedure not optimized because it
+#      exceeds size threshold; to optimize this procedure, use -Olimit option
+#      with value >=  679.

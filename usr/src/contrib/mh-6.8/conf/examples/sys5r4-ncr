@@ -1,0 +1,34 @@
+# sys5r4-ncr	- an NCR system: Unix System V Release 4.0.2.0 (WINS)
+# running MMDF2 with SMTP posting
+#
+# Apparently, there are two compilation environments: 4.2BSD and SYS5.
+# This config file uses the SYS5 environment -- I never could get the
+# 4.2BSD environment directory routines to work right.
+#
+# You may want to define SVR4; this option was added after MH was
+# ported to the NCR, and I haven't been able to test it there.
+#
+# uip/vmh.c still won't compile because of loader problems with the
+# curses & termlib libraries.  Also, NCR should fix their loader not to try
+# to search additional libraries for modules that have already been found.
+#
+bin	/usr/local
+etc	/usr/local/lib/mh
+mail	.mail
+manuals	gen
+chown   /usr/bin/chown
+mts	mmdf2/smtp
+mf	off
+ranlib  off
+bboards off
+bbdelivery off
+oldload none
+cc	/bin/cc
+ldoptlibs -lnet -lnsl -lsocket
+options	MORE='"/usr/bin/more"'
+options	ncr
+options SYS5
+options	SYS5DIR 
+options	SOCKETS
+options	TZNAME
+options TYPESIG=void

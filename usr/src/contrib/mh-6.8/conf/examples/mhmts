@@ -1,0 +1,8 @@
+# mhmts		- stand-alone mhmts template
+bin	/usr/local
+bboards	off
+etc	/usr/local/lib/mh
+mail	/usr/spool/mail
+manuals	local
+mts	mh
+mf	on

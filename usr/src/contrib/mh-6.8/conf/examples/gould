@@ -1,0 +1,9 @@
+# gould
+bin	/usr/local
+bboards	on
+etc	/usr/local/lib/mh
+mail	/usr/spool/mail
+manuals	local
+mts	sendmail
+options	MHE
+ldoptions -m 8

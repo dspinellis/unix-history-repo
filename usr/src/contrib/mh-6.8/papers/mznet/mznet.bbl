@@ -1,0 +1,52 @@
+\begin{thebibliography}{5.}
+\bibitem{ARPANET-Literature} SRI-NIC, ARPANET Directory,
+Network Information Center, SRI International, Menlo Park, California
+(November 1980).
+\bibitem{CACM-83} Comer, D.,  A Computer Science Research Network CSNET:
+A History and Status Report, Communications of the ACM, volume 26, number 10
+(October 1983) 747-753.
+\bibitem{USENET-Literature} Emerson, S. L., USENET: A Bulletin Board
+for Unix Users. BYTE, volume 8, number 10 (October 1983) 219-236.
+\bibitem{Vittal81} Vittal, J., MSG: A Simple Message System, in:
+Uhlig (editor), Proceedings of the IFIP TC-6 International Symposium on
+Computer Message Systems (North-Holland, April 1981).
+\bibitem{Deutsch81} Deutsch, D., Design of a Message Format Standard, in:
+Uhlig (editor), Proceedings of the IFIP TC-6 International Symposium on
+Computer Message Systems (North-Holland, April 1981).
+\bibitem{Pickens81} v.Bochmann, G. and Pickens, J. R., A Methodology
+for the Specification of a Message Transport System, in: Uhlig (editor),
+Proceedings of the IFIP TC-6 International Symposium on Computer Message
+Systems (North-Holland, April 1981).
+\bibitem{Kerr81} Kerr, I. H., Interconnection of Electronic Mail Systems,
+in: Uhlig (editor), Proceedings of the IFIP TC-6 International Symposium
+on Computer Message Systems (North-Holland, April 1981).
+\bibitem{RFC-822} Crocker, D., Standard for the Format of ARPA Internet
+Text Messages (RFC 822) Network Information Center, SRI International,
+Menlo Park, California (August 1982).
+\bibitem{NBS} NBS, Message Format for Computer-Based Message Systems,
+U.S. National Bureau of Standards FIPS Publication 98 (March 1983).
+\bibitem{CCITT} CCITT Study Group VII/5, Draft Recommendation
+X.MHS1: Message Handling Systems: System Model---Service Elements (version 2),
+Technical Report, International Telegraph and Telephone Consultative
+Committee (CCITT) (December 1982).
+\bibitem{Rose84} Rose, M., Low Tech Connections into the ARPA Internet:
+The RawPacket Split-Gateway, University of California Irvine
+Techical Report number 216 (February 1984).
+\bibitem{MMDF} Crocker, D., Szurkowski, E., Farber, D. J., An Internet
+Memo Distribution Facility---MMDF, Proceedings of the Sixth IEEE Data
+Communications Symposium (November 1979).
+\bibitem{Rose83-1} Rose, M., The ZOTnet---A Local Area Mailing Network,
+University of California Irvine Technical Report number 200 (January 1983).
+\bibitem{CSNET-UCI} CSNET-CIC, Focus on the University of California, Irvine,
+CSNET News 2, Bolt, Beranek, and Newman, Cambridge, Massachusetts
+(October 1983).
+\bibitem{Rose83-2} Rose, M., Achieving Interoperability Between
+Two Domains---Connecting the ZOTnet and UUCP Computer Mail Networks,
+University of California Irvine Technical Report number 201 (January 1983).
+\bibitem{RFC-MMM} Rose, M., Proposed Standard for Message Munging (RFC 886),
+Network Information Center, SRI International, Menlo Park, California
+(December 1983).
+\bibitem{MH} Borden, B. S., Gaines, R. S., and Shapiro, N.Z.,
+The Rand MH Message Handling System: User's Manual
+(Rand Corporation, March 1983).
+\end{thebibliography}

@@ -1,0 +1,9 @@
+/* LINTLIBRARY */
+
+char   *OfficialName(n) char *n; { return OfficialName (n); }
+int	nm_init(u,c) char *u; long *c; { return nm_init(u,c); }
+int	nm_wadr(m,h) char *m,*h; { return nm_wadr(m,h); }
+int	nm_waend(); { return nm_waend(); }
+int	nm_wtxt(b,c) char *b; { return nm_wtxt(b,c); }
+int	nm_wtend(); { return nm_wtend(); }
+int	uucpsite(s) char *s; { return uucpsite(s); }

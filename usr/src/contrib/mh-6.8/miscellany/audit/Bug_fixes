@@ -1,0 +1,6 @@
+Bugs fixed since previous release:
+
+	- @to and @cc are always created. 
+	- $apparentlyto is set to $headers{"apparently-to"} if it exists.
+	- mail header names that contain hyphens (return-path, replty-to,
+	  etc.) are parsed correctly.

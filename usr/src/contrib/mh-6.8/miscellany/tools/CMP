@@ -1,0 +1,24 @@
+: run this through /bin/sh
+
+case $# in
+    2)	;;
+    *)	echo "usage: CMP dir1 dir2" 1>&2; exit 1 ;;
+esac
+
+for A in `hier -a echo $2 | sed -e s%$2%%`
+do
+    if [ ! -d $1$A ];
+    then
+	if [ -f $1$A ];
+	then
+	    if cmp -s $2$A $1$A;
+	    then
+		true
+	    else
+		echo $1$A: different
+	    fi
+	else
+	    echo $1$A: non-existent
+	fi
+    fi
+done

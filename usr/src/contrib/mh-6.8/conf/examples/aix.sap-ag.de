@@ -1,0 +1,18 @@
+# aix.sap-ag.de	- MH 6.8 options for AIX (AIX 3.2 on RS/6000 350).
+# Bill Wohler <wohler@sap-ag.de>
+# Sat, 31 Oct 92 18:45:00 +0100
+#
+# General
+#
+bin		/usr/local/bin/mh
+ldoptions	-s
+mandir		/usr/local/man
+manuals		standard
+mts		sendmail/smtp
+options		BIND DBMPWD ISI MHE MHRC OVERHEAD RPATHS WHATNOW UK
+#
+# Machine specific options
+#
+options		TYPESIG=void SYS5 SYS5DIR SOCKETS
+curses		-lcurses
+sprintf		int

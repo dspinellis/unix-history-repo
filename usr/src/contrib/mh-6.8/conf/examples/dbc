@@ -1,0 +1,23 @@
+# dbc		- DBC's MH 6.8 config file
+# SunOS 4.1.1 rev B
+# Wed, 02 Dec 1992 12:40:42 PST
+# Marshall Rose <mrose@dbc.mtview.ca.us>
+#
+options SUN40 BSD42 BSD43
+options	BIND MIME MSGID RPATHS UCI WHATNOW
+#
+bboards	pop
+bin	/usr/local/bin
+curses	-lcurses -ltermcap
+etc	/usr/local/lib/mh
+ldoptions -s -O
+mail	.maildrop
+mandir	/usr/local/man
+manuals	standard
+editor	prompter
+mts	zmailer/smtp
+pop	on
+options    APOP='"/etc/pop.auth"' MPOP
+options    POPSERVICE='"pop3"'
+ranlib	on
+signal	void

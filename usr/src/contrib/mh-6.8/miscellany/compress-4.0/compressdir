@@ -1,0 +1,16 @@
+OPTIONS=
+FILES=
+for ARG
+do
+	case "$ARG" in
+	-*)	OPTIONS="$OPTIONS $ARG";;
+	*)	FILES="$FILES $ARG";;
+	esac
+done
+if test -z "$FILES"; then
+	FILES="."
+fi
+set $FILES
+find $@ -type f -links 1 -exec test -r {} -a -s {} \; \
+-exec expr '(' {} : '.*\.Z' ')' '=' 0 \; \
+-exec compress $OPTIONS {} \; >/dev/null

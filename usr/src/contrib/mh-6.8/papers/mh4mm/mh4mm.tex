@@ -1,0 +1,660 @@
+\documentstyle [12pt]{article}
+\parindent=0pt
+\parskip=7pt plus 2pt
+
+\def\oneline#1{\par\bigskip\leftline{\tt\hskip.75in#1}}
+\def\command#1{\par\bigskip\leftline{\tt\hskip.75in\% #1}}
+\def\comarg#1#2{\par\bigskip\leftline{\tt\hskip.75in\% #1 {\it#2}}}
+\def\tcom#1{\par\bigskip\leftline{\tt\hskip.75in@#1}}
+\def\MH/{{\sf MH}}
+\def\tops20/{{\sc Tops-20}}
+\def\unix/{{\sc Unix}}
+\def\MM/{{\sc mm}}
+\newfont{\itt}{cmti10}
+\sloppy
+\begin{document}
+
+\title{MH for MM Users}
+\author{Mary Hegardt \and Tim Morgan}
+\maketitle
+
+\section{Introduction}
+
+This document is another in a continuing series on use of the \MH/ mail
+system at UCI.  It is intended for those users accustomed to the \MM/ ``user
+agent'' (mail program) under \tops20/ and who are already familiar with
+network mail, but who may not be experienced \unix/ users.  For an
+introduction to \MH/, see ``MH For Beginners'' by Mary
+Hegardt and Tim Morgan.  For complete, detailed information on the \MH/
+system, see {\sl The Rand MH Message Handling System: User's Manual\/} by
+Marshall~T. Rose and John~L. Romine. Both documents are available for
+Xeroxing in suite CS408.
+
+\subsection{UNIX Versus Tops-20}
+
+The \unix/\footnote{\unix/ is a trademark of AT\&T Bell Laboratories}
+paradigm is that each command, or program, should perform only one
+function.  An extension of this idea is that the operating system
+implements only those functions which are necessary, but it does so in
+a very general way so that programs may still accomplish their functions.
+This philosophy probably evolved because the original versions
+of \unix/ ran on PDP-11 minicomputers which had only a small memory
+space for each process.
+
+Consequently, all commands in \unix/, with a very few exceptions, are
+in actuality programs.  On \tops20/, in contrast, many of the most frequently
+used commands are built into the user's shell, or {\em exec.}  Both the
+Exec and {\it csh,} which is typically the user's command interface on
+\unix/, will accept and parse command lines, attempting to invoke a command
+as a program if it is not one of the built-in commands.  \unix/ and \tops20/
+are surprisingly similar internally: the use of the shell, separate
+processes for each command or program to execute, standard input and output
+for each program, and many other ideas are common to both operating
+systems.  Users should be familiar with the capabilities of the shell,
+which is described in the document ``Introduction to the Csh.''
+
+\subsection{The MH User Interface}
+
+The \MH/ mail ``user agent'' is different from most other mail systems.
+\MM/, for example, is a {\em monolithic\/} system because one program
+implements all the mail-related functions.  The disadvantages of monolithic
+systems are that (a)~they are large, so they tend to put more burden on the
+computer system, and (b)~they allow for much less flexibility.  In contrast,
+\MH/ implements each mail command as a separate program: there is no single
+program called {\it mh.}  This approach facilitates interspersing mail
+commands with other, perhaps unrelated, commands.
+
+Another unique feature of \MH/ is that it takes advantage of the facilities
+provided by the operating system.  Most mail agents, such as \MM/, maintain
+a file containing the user's mail in a special, usually undocumented, format.
+When a message is deleted, \MM/ must take care of compacting the mail file.
+It must be able to distinguish the separate messages contained in the file.
+\MM/ must also implement a simple text editor to allow the user to enter
+and modify a message while it is being composed.
+These functions are essentially those provided by the operating system when
+separate files are stored within a directory.  Therefore, the approach
+taken by \MH/ is that
+each message is kept in a separate file.  This file simply contains the
+message, with no other special formatting characters or requirements.
+All the messages are stored within a normal \unix/ directory.  This approach
+makes it easy to add new \MH/ commands, to edit messages using standard
+text editors, etc.
+
+All your \MH/ related files are stored in a directory within your home
+directory.  Usually this directory is called {\tt Mail} or {\tt mhbox},
+although you are free to name it as you choose.  Another file in your home
+directory called \verb|.mh_profile| is equivalent to the {\tt MM.INIT} file
+under \MM/.  It contains all the options which you prefer for the various
+\MH/ commands.  It also contains the name of the \MH/ directory and the
+name that you want on your outgoing mail in the {\tt From:} field (your
+``{\em signature\/}'').
+
+\section{Getting Started}
+
+\subsection{Incorporating Mail}
+
+Another important difference between \MM/ and \MH/ is the concept of the
+{\em maildrop\/} file.  Under \tops20/, the mail transport system delivers
+new messages directly into the recipient's {\tt MAIL.TXT} file, where they may
+then be processed with \MM/.  In contrast, the \unix/ mail transport system,
+called {\it MMDF-II,} makes no assumptions about the user agent used by the
+recipient.  Instead, it puts all new mail into a special file called the
+{\em maildrop.}  This file is in the \verb|/usr/spool/mail| directory.
+When you log in, if there is new mail for you in your
+maildrop, you will be so notified by the message
+
+	\oneline{You have new ZOTnet mail -- type inc (or mail)}
+
+When you are ready to process this new mail, you may type the command
+
+	\command{inc}
+
+(``incorporate'') which will copy the new mail into separate files, one per
+message, stored in your ``inbox'' folder.  A folder is a subdirectory
+beneath your \MH/ directory which is used to store related messages.
+Additional information on folders is given in Section~\ref{Folders},
+page~\pageref{Folders}.  The
+``inbox'' is a distinguished folder because by default {\it inc\/} will
+always copy new mail into that folder, removing it from the maildrop.
+
+If this is the first time you have used {\it inc\/} or any other \MH/
+command, the {\it mh-install\/} program  will inform you that it is
+creating your {\tt Mail} directory. It will also create
+the ``inbox'' folder directory, and \verb|.mh_profile|.  
+
+\subsection{Message Numbers}\label{Scan}
+
+As {\it inc\/} processes each message, it prints a ``scan'' listing showing
+the message number, the date the message was sent,
+the name of the sender, the subject, and sometimes the initial part of the
+text of the message.  A ``scan'' listing is thus similar to the output of
+the {\tt HEADERS} command in \MM/.  Each message within a folder is given a
+number, starting with 1, by which it can be referenced.  {\it
+Inc\/} will display the numbers assigned to each new message in its ``scan''
+listing.
+
+As in \MM/, there is a ``current message'' number which usually identifies the
+message most recently manipulated by the user.  With most \MH/ commands,
+this will be the default message if no messages are explicitly specified in
+a command.  {\it Inc\/} makes the first new message the current message,
+which is indicated by a ``{\tt+}'' character in the scan listing, just after
+the message number.
+
+Many \MH/ commands take a list of messages to process. A message designation
+is either a single message number, two message numbers separated by a dash.
+The dash format indicates a range of messages including the endpoints. A
+message list consists of one or more message designations separated by
+spaces. For example, messages 11 through 15 and message 17 may be indicated
+by typing
+
+	\oneline{11-15 17}
+
+as the argument to some command.  There are also several predefined names
+for messages or lists of messages which may be used in place of message
+numbers:
+
+\bigskip
+\begingroup\parskip=0pt
+\def\titem[#1]{\par\hangafter=1\hangindent=.7in\noindent
+	\hbox to\hangindent{\it\hfil#1\qquad}\ignorespaces}
+
+\titem[cur] The current message (the last one that was handled).  Equivalent
+  to ``.'' or ``{\tt CURRENT}'' in \MM/.
+\titem[next] The next message 
+\titem[prev] The previous message
+\titem[first] The first message in the current folder.
+\titem[last] The last message in the folder.  Equivalent to {\tt\%} or
+  {\tt*} in \MM/.
+\titem[all] All messages ($\it first-last$).  Same as in \MM/.
+\endgroup
+
+It is also possible for you to define your own named {\em sequences\/} of
+messages.  See the {\it pick\/} command description for more details.
+
+\section{Processing Messages}
+
+This section contains a list of the common \MM/ commands and their
+equivalents in the in \MH/ mail system.  A short textual note describes how
+the \MH/ commands differ from their \MM/ counterparts.
+
+\subsection{Listing Messages}
+
+As mentioned in Section~\ref{Scan},
+the {\it scan\/} command may be used to summarize the
+messages in a folder, similar to the {\tt HEADERS} command in \MM/.  Unlike
+most \MH/ commands, however, {\it scan\/} defaults to {\em all\/} the
+messages in the current folder unless you specify one or messages on the
+command line to be scanned.  So simply typing
+
+	\command{scan}
+
+is equivalent to typing {\tt HEADERS ALL} (or {\tt H A}) in \MM/.
+
+\subsection{Reading Mail}
+
+Unlike the {\tt READ} command in \MM/, in \MH/ there is no special
+mail-reading mode (indicated in \MM/ by the {\tt R>} prompt).
+The command to read messages in \MH/ is {\it show.} If no message list is
+specified, then the current message is displayed.  The message is displayed
+by your ``showproc'', as specified in the \verb|.mh_profile|, described
+in Section~\ref{Tailoring}.
+Normally, your ``showproc'' will be {\it more\/} or {\it mhless.}
+Both of these programs will display your messages one screenful at a time.
+You press the \fbox{space bar} on your terminal to see the next screenful,
+or the \fbox{return} key to see the next line.
+
+The command
+
+	\command{show next}
+
+(which will display the first message following the current message in the
+current folder) can be abbreviated as simply
+
+	\command{next}
+
+Similarly, the command ``{\tt show prev}'' can be abbreviated as simply ``{\tt
+prev}''.
+
+To get a paper copy of a mail message, take the output from the {\it show\/}
+command and pipe it into the {\it imprint\/} command.
+
+	\command{show 5 | imprint}
+
+See the manual page for {\it imprint\/} for more information.
+
+
+\subsection{Deleting Messages}
+
+The equivalent of the {\tt DELETE} command in \MM/ is {\it rmm\/} in \MH/
+(remove messages).  It acts on the current message unless messages are
+specified on the command line. Unlike \MM/, the deleted messages will
+no longer show up in a ``scan'' listing. But the messages are not 
+completely removed; they are renamed to have a comma
+prepended to the name of the file containing the message within its folder
+directory.  Therefore, if you need to recover a message, it is possible to
+go into the directory and rename the message back.  Be careful in doing this
+not to overwrite a new message with the same message number!  It is a \unix/
+convention that files whose names begin with a comma will be removed from
+disk ({\em expunged\/}) early each morning. Therefore, your deleted
+messages will be available for the rest of the day, unless you remove another
+message subsequently which has the same message.  Then the previously deleted
+message is gone.
+
+\subsection{Replying to Mail}
+
+The equivalent of the {\tt REPLY} command in \MM/ is {\it repl\/} in \MH/.
+{\it Repl\/} may be given the number of the message to which you wish to
+reply, or it will default to the current message.  When replying in \MM/,
+you are prompted asking if you wish to reply to all the recipients of the
+message to which you are replying, or only to its sender.  In \MH/, normally
+the reply will be constructed to be sent to all the recipients.  You may
+select which recipients receive copies of your reply by using the {\tt
+-query} option on {\it repl,} or by putting this option in your
+\verb|.mh_profile|, as described in Section~\ref{Tailoring}. If you
+wish a reply to go to everyone but yourself, you can 
+use \verb|repl -nocc me|.
+
+\subsection{Sending Mail}
+
+The equivalent of the {\tt SEND} \MM/ command is {\it comp\/} (``compose'')
+in \MH/.  These two commands are fairly similar, except that the recipient of
+the message cannot be specified on the {\it comp\/} command line.
+The {\it comp\/} program invokes a simple editor called {\it prompter\/}
+which will prompt you for the {\tt To:}, {\tt Cc:},
+and {\tt Subject:} fields of the message.  Then a line of dashes is typed,
+and you may enter the body of your message (its {\em text,} in \MM/ terms).
+When you are finished, type \fbox{ctrl}--D (equivalent to typing \fbox{ESC} or
+control-Z in \MM/).  Then you'll receive the prompt
+
+	\oneline{What now?}
+
+which is similar to \MM/'s {\tt S>} prompt.  You may receive a list of the
+options that you have at this point by typing ``{\tt?}'' followed by
+\fbox{return}.  Here is a short list of the options and their meanings.
+Notice that, unlike \MM/, there are very few commands to modify the message
+(such as the {\tt TEXT}, {\tt TO}, {\tt CC}, etc., commands which may be
+typed at the {\tt S>} prompt in \MM/).  In place of these commands, you use
+the {\tt edit} command to invoke your favorite text editor on the message,
+and you use it to make the equivalent changes.  You also use your editor
+to include other files into the body of the message, rather than using
+control-B, as in \MM/.  One additional use of the {\tt edit} command is
+for spelling checking.  In \MM/, you may use the command {\tt SPELL} 
+for this purpose.  
+In \MH/, you type ``{\tt edit spell}''\footnote{ Actually, any
+program named after the ``{\tt edit}'' command will be invoked with
+whatever arguments you have given and a path to the file containing
+the message you are editing.} instead.  This will
+cause the spelling checker to be run, giving you a list of the possibly
+misspelled words in your message.
+
+\bigskip
+
+\begingroup
+\def\titem[#1]{\par\hangafter=1\hangindent=1.4in\noindent
+	\hbox to\hangindent{\hfil#1\qquad}\ignorespaces}
+
+\titem[\tt edit \it editor\/] Edit the message using the specified
+				editor.  When you exit, you will be
+				back at \verb|What now?|.
+
+\titem[\tt list] Shows the message you just typed
+
+\titem[\tt whom -check] Verifies that the addresses you have
+				used are valid as far as our system
+				can tell
+
+\titem[\tt send] Sends the message to the recipients
+
+\titem[\tt push] Sends the message in the background
+
+\titem[\tt quit] Quits without sending the message.
+				Saves the text of the message as
+				a ``draft''. Type \verb|comp -use| to
+				get back to that draft later.
+
+\titem[\tt quit -delete] Quit, throwing away the draft
+\endgroup
+
+\bigskip
+
+\subsection{Forwarding Mail}
+
+The {\it forw\/} command is used in \MH/ to forward messages.  It will take
+a list of messages on the command line to be forwarded, or it will default
+to the current message if none are specified.  It will prompt you like {\it
+comp\/} does for the {\tt To:}, {\tt Cc:}, and {\tt Subject:}\ fields.  Note
+that, unlike \MM/'s {\tt FORWARD} command, {\it forw\/} will not construct a
+subject line automatically.  Also as with {\it comp,} you will have the
+opportunity to add additional text to the message(s) which you are
+forwarding, ended with a control-D.  
+
+\subsection{Resending Mail}
+
+The equivalent of the {\tt RESEND} command in \MM/ is the {\it dist\/}
+(``distribute'') command in \MH/.  {\it Dist\/} works very much like the
+{\it forw\/} command, except that the prompts will be {\tt Resend-To:},
+{\tt Resend-Cc:}, etc. After filling in the headers, a line of dashes
+is typed giving the impression that additional text can be entered.
+Nothing could be further from the truth; if you add any text at this
+point the {\it dist\/} will fail.  Your only opportunity to add text
+is in the {\tt Resend-Note:} field.
+
+\section{Advanced Topics}
+
+\subsection{Selecting Messages}
+
+In \MM/, you may use several reserved command words to select messages
+in place of an explicit list of message numbers.  For example, you can
+type ``{\tt DELETE FROM SMITH}'' to remove all the messages from a user named
+``Smith''.  Rather than building such a capability into each \MH/ program
+which can process message lists, a special program called {\it pick\/} is
+used instead.  Just as there are predefined sequences of messages, such as
+``{\tt all}'', ``{\tt cur}'', etc., you may use {\it pick\/} to define your
+own sequences.  {\it Pick\/} is capable of selecting messages from a folder
+based on the {\tt To:}, {\tt From:}, {\tt Subject:}, {\tt Cc:}, or {\tt
+Date:} fields, or by searching the body of the message.  The patterns to be
+searched for may include full regular expressions (see the ``man'' page for
+{\it ed(1)\/} for more information) or simple strings.
+
+{\it Pick\/} may be used in one of two ways.  First, it may output the
+sequence of message numbers which match the search parameters.  Using the
+backquoting mechanism of the shell, these message numbers may then become
+the arguments to other \MH/ programs.  The second way to use {\it pick\/} is
+to have it define a new sequence name which will be the messages which were
+selected.  Only this second method of using {\it pick\/} will be described
+here; see {\it pick(l)\/} if you wish to use the first method.
+
+In your \verb|.mh_profile|, add the line
+
+	\oneline{pick: -seq sel}
+
+Then each time you use the {\it pick\/} command, it will define the
+resulting sequence of messages to be called ``sel''.  Then to ``pick'' all
+the messages in the current folder which are from ``Smith'', just type
+
+	\command{pick -from smith}
+
+To see a summary of those messages, type
+
+	\command{scan sel}
+
+Then to the remove the messages, type the command
+
+	\command{rmm sel}
+
+You can {\it pick\/} messages according to any of the headers ({\tt -to
+-from -subj -cc {\rm or} -date}) or just search all the messages for a given
+word ({\tt -search}).
+
+\subsection{Customizing Your Mail Environment}\label{Tailoring}
+
+In \MM/, you use the {\tt PROFILE} command to tailor your mail environment.
+This command writes a file called {\tt MM.INIT} in your home directory which
+is then read by subsequent executions of \MM/.  In the \MH/ system, the file
+\verb|.mh_profile| serves the same purpose.  It is edited with any normal
+text editor, rather than using a special-purpose command to modify it.  The
+format of the file is line oriented, one line per \MH/ program or \MH/
+option to be set.  The only required line in the profile is the name of the
+primary \MH/ mail directory, which is by default {\tt Mail}. This
+information is specified by the line
+
+	\oneline{Path: Mail}
+
+The textual name you would like to have on your outgoing mail is specified
+by the {\tt Signature:} line.  For example,
+
+	\oneline{Signature: Mary Hegardt}
+
+The BBoards which you like to read should also be listed in the
+\verb|.mh_profile| (see Section~\ref{BBoards}, page~\pageref{BBoards}, for
+additional information).  For example, if you read the ``system'' BBoard
+(where all important announcements are posted), as well as ``whimsey''
+and ``imagen-users'' BBoards, your \verb|.mh_profile| should contain the line
+
+	\oneline{bboards: system whimsey imagen-users}
+
+Other options may be specified on a per-program basis.  The format for these
+lines is the same.  First, the program name is given followed by a colon.
+Then any flags which are to be the default options for that program are
+given.  Here is a short list of the most common options which you may want
+to set in your \verb|.mh_profile|:
+
+	\oneline{showproc: mhless}
+
+The {\it showproc\/} is the program used to show messages to you.  By
+default, it is the {\it more\/} command.  {\it Mhless\/} is the same as
+{\it more\/} except that it omits the headers of the messages which you
+indicate that you wish not to see.  Type
+
+	\command{man mhless}
+
+for more information about this program.
+
+	\oneline{msh: -scan}
+
+Selecting this option causes an automatic scan of new messages on BBoards to be
+made when reading BBoards with {\it bbc,} similar to the scan listing
+produced by {\it inc.}
+
+	\oneline{repl: -query}
+
+causes {\it repl\/} to ask for each address in the message being replied to
+if it should be included in the {\tt To:} or {\tt Cc:} fields of the reply
+being composed.
+
+	\oneline{pick: -seq sel}
+
+This line will cause messages ``picked'' by the {\it pick\/} command to be
+put into a sequence named ``sel''.  This sequence name may then be used
+just as the built-in sequences (``last'', ``first'', etc.).
+
+\subsection{Aliases}
+
+Using \MH/, you may specify your own private mail aliases.  This feature
+allows you to store lists of addresses or long internet addresses of people
+with whom you frequently correspond in one file, and then to address them
+using short mnemonic names.  Typically, you will call your alias file ``{\tt
+aliases}''; it must be stored in your \MH/ directory.  The format of this
+file is simple. The alias is given, followed by a colon, followed by one or
+more legal mail addresses separated by commas.  For example, you might for
+some reason have an alias for all the users named ``Rose'' in the ICS
+department:
+
+	\oneline{roses: prose, srose, mrose, drose}
+
+In addition to your ``{\tt aliases}'' file, you will need to modify your
+\verb|.mh_profile| in order to use aliases.  You should add the flag
+``{\tt -alias aliases}'' to the entries for the commands {\it ali, whom,
+send,} and {\it push,} creating entries for these programs if they aren't
+already in your \verb|.mh_profile|.
+Now, messages addressed to ``{\tt roses}'' will be distributed to all
+the people listed in the alias.
+
+The {\it ali\/} command is used to show you what an alias expands to.
+You just type
+
+	\comarg{ali}{alias}
+
+and {\it ali\/} will respond with the expansion of the {\it alias.}  {\it
+Ali\/} searches the system aliases file in addition to your private ones.
+
+\subsection{Blind Lists}
+
+There are two different types of so-called ``blind addressing'' of messages.
+Users of \MM/ may already be familiar with the ``Blind Carbon Copy'', or
+{\tt BCC:} field.  It allows you to add recipients to your message just
+like those who are CC'd, but the normal recipients will not see that the
+BCC recipients were copied on the message, their replies will not go to the
+blind recipients, and the blind recipients cannot (easily) reply to the
+message.
+
+The second type of blind mailing is actually called a ``group address list'',
+although it is commonly referred to as a ``blind list''.
+The format of this type of address is
+
+	\oneline{{\it phrase\/}: {\it address\_list\/};}
+
+where the ``{\it phrase\/}'' is any English phrase of one or more words,
+and the {\it address\_list\/} consists of one or more addresses separated by
+commas.  The recipients of a message addressed in this fashion will
+see simply
+
+	\oneline{{\it phrase\/}: ;}
+
+so when they reply to the message, their reply will come only to the sender
+(or the {\tt Reply-To:} field, if one was specified), rather than going to
+all the recipients of the original list. For example, to use a group
+address list for the ``{\tt roses}'' alias you would type:
+
+	\oneline{To: People Named Rose: roses;}
+
+This type of group address is very
+useful for making up lists of related people, such as all the people working
+on a particular research project.
+
+\subsection{Folders}\label{Folders}
+
+As mentioned previously, folders are directories within your \MH/ directory
+used to store related messages.  There is no equivalent of the folder
+concept in the \MM/ system. Usually, you will use only the folder ``inbox'',
+so you won't have to worry about folders.  However, if you process a large
+volume of mail, then folders become invaluable in managing the messages
+which you wish to keep for future reference.
+
+Just as there is a ``current message,'' \MH/ maintains a ``current folder,''
+which will normally be ``inbox''.  You can change folders either by
+specifying the folder on the command line of \MH/ programs which take a
+list of messages as an argument, or by using the {\tt folder} command:
+
+	\command{folder +{\it folder\_name}}
+
+In general, the folder name is indicated by a ``{\tt+}'' sign followed
+immediately by the folder name, all preceeding any list of messages. For
+example, you may read the most recent message in a folder called
+``job\_offers'' using the command
+
+	\command{show +job\_offers last}
+
+This command will have the side-effect of setting the current folder to be
+``job\_offers''. You may move messages from the current folder into the
+``job\_offers'' folder using the command
+
+	\comarg{refile +job\_offers}{messages}
+
+where, as usual, the {\it messages\/} list will default to the current
+message in the current folder if none are specified.  Note that, in contrast
+with the {\it show\/} command and most other \MH/ commands, the {\it
+messages\/} are {\em not\/} considered to be in the folder ``job\_offers''.
+You may obtain a summary of all your folders by typing the command
+
+	\command{folders}
+
+When you remove messages from a folder using the {\it rmm\/} command,
+the deleted messages will show up as a ``hole'' in the message numbering.
+The command
+
+	\command{folder -pack}
+
+will cause all the messages within one folder to be renumbered starting
+with~1. Similarly, the command
+
+	\command{folders -pack}
+
+will do the same thing for all your folders.
+
+To remove an empty folder, use the command
+
+	\command{rmf +{\it folder}}
+
+\subsection{Reading BBoards}\label{BBoards}
+
+Two special-purpose programs are utilized in reading BBoards.  The first is
+{\it bbc,} which is used to check a list of BBoards for new messages.
+The list of messages may be given on the command line, or if not, it will be
+taken from the {\tt BBoards:} list in your \verb|.mh_profile|.  You may
+obtain a list of all the available BBoards by typing the command
+
+	\command{bbc -topics}
+
+For each BBoard with unseen messages, {\it bbc\/} will invoke the \MH/
+shell, {\it msh,} whose prompt is
+
+	\oneline{(msh)}
+
+The {\it msh\/} program allows you to read BBoard mail as if it were normal
+messages in one of your folders.  Almost all the \MH/ commands will work
+just as the normally do.  Typing the command ``{\tt quit}'' to {\it msh\/}
+causes it to stop reading the current BBoard and go on to the next one
+containing unseen messages, or to exit if there are no more such BBoards.
+Typing control-D causes {\it msh\/} to exit unconditionally.  The command
+{\tt mark} followed by a message number causes {\it msh\/} to act as if you
+have seen that message and all previous ones.
+
+\subsection{Checking for Mail}
+
+Under \unix/, there are about a dozen different ways to check for new mail.
+The easiest way to do it is to set the {\it csh\/} variable named ``mail''
+to tell {\it csh\/} to check for new mail for you periodically.  To do this,
+add the line
+
+	\oneline{set mail=(60 /usr/spool/mail/\$USER)}
+
+to your {\tt .login} file in your home directory.  This command says to
+check for mail if {\it csh\/} is about to prompt you with a {\tt\%} sign,
+and if it has been at least 60 seconds since it last checked for mail.
+The advantage of this method of mail notification, besides simplicity, is
+that you will never be interrupted by a mail notification.  You will only be
+notified of new mail when you are between commands, when the shell is about to
+prompt you.
+
+If you desire asynchronous mail notification, which will print to your
+terminal regardless of what you are currently doing, you may make use of a
+``Receive Mail Hook'' called ``rcvtty''.  To do this, create a file in your
+home directory called ``{\tt .maildelivery}''.  In this file, put the line
+
+	\oneline{* - pipe R /usr/uci/lib/mh/rcvtty}
+
+Then each time new mail arrives, you will receive a one-line ``scan''
+listing of the mail if your terminal is world-writable. For more information
+on ``maildelivery'' files, type:
+
+	\command{man 5 maildelivery}
+
+
+\subsection{Saving Drafts}
+
+Normally when you use {\it comp,} it creates the message being composed in a
+file called ``{\tt draft}'' in your \MH/ directory. If you use the ``{\tt
+quit}'' option at the ``{\tt What now?}'' prompt, this file will remain
+there.  You may later use the command
+
+	\command{comp -use}
+
+to resume composing the message.
+
+If you begin composing a new message and there is already a ``draft'' file,
+you will be asked for the disposition of this file.  Typing {\tt?}
+\fbox{return} will give you a list of the options at this point.  Normally
+you will either {\tt replace} (delete) the old draft and begin
+a new one or {\tt use} the old one.
+
+The {\tt -file} switch to {\it comp\/} may be used to specify the name of a
+draft other than ``{\tt draft}''.  For example, one might type
+
+	\command{comp -file mary}
+
+to begin composing a message maintained in the draft file ``{\tt mary}''.
+Typing
+
+	\command{comp -file mary -use}
+
+would cause {\it comp\/} to resume composing this same draft after a
+``{\tt quit}'' command to the ``{\tt What now?}'' prompt.
+
+Very advanced users of \MH/ maintain multiple draft files in a {\it draft
+folder.}  This is a normal folder which holds all your drafts, rather than
+having just one draft in your \MH/ directory named ``{\tt draft}''.  If you
+feel that you need to use draft folders, you should consult the {\sl MH
+User's Manual\/} for additional information.
+
+\end{document}

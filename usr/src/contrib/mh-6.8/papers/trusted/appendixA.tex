@@ -1,0 +1,77 @@
+% appendix A
+
+\appendix{A}{An MH Session}
+
+\tagdiagram{A1-1}{Sending Encrypted Mail}{sendmail}
+In the following,
+the user \eg{Marshall\ T.\ Rose} logged onto host \eg{udel-dewey},
+wishes to send a message to a user known as
+the \eg{UCI\ Portal} (a system maintenance account).
+As shown in Figure~\sendmail, line~1,
+the user first establishes a mapping between the name \eg{UCI\ Portal} and
+the address {\tx uci@udel-dewey}.
+Once this mapping is performed,
+it remains in effect until the user indicates otherwise to the \TMA/.
+When the \pgm{tma} program is invoked,
+it consults the \TMA/ database to see if that user is known.
+If not,
+it contacts the \KDS/ to ask for the \KDS/ ID associated with the user.
+If the response is successful (in this case, the \KDS/ ID is \eg{3}),
+then the \TMA/ updates its database.
+The \pgm{tma} program indicates in its output the \KDS/ ID associated with
+the user,
+along with all known addresses (in this case, only one).
+So, once the name to address mapping has been described the user,
+the user agent, \MH/, deals only with the address,
+while the trusted mail agent deals with the name and \KDS/ ID aspects of the
+user.
+
+Next, the \pgm{comp} program is invoked to compose a new draft on line~5.
+The user addresses the local user \eg{uci} in the To: field,
+and indicates that a plaintext copy should be kept in the folder \eg{+outbox}.
+After entering the subject and text of the draft,
+the user enters \whatnow/ level on line~13.
+At this point,
+the user directs \MH/ to send the draft in encrypted form.
+The resulting output is verbose (a default for \pgm{send} for this user)
+but instructive.
+Initially,
+all addresses in the draft are verified on lines~14 to~17.
+Two forms of verification occur:
+first, the \MTS/ is asked to verify the address as much as possible.
+For local addresses,
+the \MTS/ decides if the name has a maildrop associated with it.
+For remote addresses,
+the \MTS/ decides if the host is known to it.
+The second type of verification occurs with the \TMA/.
+For all addresses,
+the \TMA/ is asked if it can find a mapping from the address to a \KDS/ ID.
+
+The reason \MH/ goes to all this trouble is a philosophical issue.
+Since the copy of the encrypted draft is different for each recipient,
+\pgm{post} tries to verify that all recipients can be successfully posted
+prior to actually posting the different ciphertext versions of the draft.
+This behavior is not optimal in terms of cycles,
+but is perhaps ``correct'' from a \UA/ perspective.
+
+Finally, the draft is actually posted, and the folder carbon-copy is filed.
+
+\tagdiagram{A1-2}{Receiving Encrypted Mail}{recvmail}
+Some time later, the UCI portal is informed that new mail has arrived.
+As shown in Figure~\recvmail,
+the \pgm{inc} program is run.
+The \eg{E} prior to the date of the message indicates that \pgm{inc} has
+detected the message to be encrypted.
+Since the user did not inhibit \pgm{inc} from deciphering the message,
+it proceeds to do so.
+
+\tagdiagram{A1-3}{Message Prior to Decryption}{before}
+\tagdiagram{A1-4}{Message After Decryption}{after}
+Finally, it may be instructive to see what the encrypted message looked like
+when it was delivered to the portal's maildrop,
+and the final message after deciphering.
+Figures~\before\ and~\after\ show these respectively.
+In particular,
+note that the \eg{X-KDS-ID:} field has been introduced in Figure~\after\
+after successfully deciphering the message.
+The presence of this field authenticates the sender of the message.

@@ -1,0 +1,64 @@
+# uci.hp-pa	- MH 6.8 options for HPUX (HPUX 8.05 on HP9000/720).
+# based on a file from Bill Wohler <wohler@sap-ag.de>
+# Sat, 31 Oct 92 19:16:29 +0100
+#
+#
+# Installation Paths
+#
+bin		/usr/local/mh-6.8
+etc		/usr/local/lib/mh-6.8
+popdir		/usr/local/lib/mh-6.8
+mandir		/usr/man/mh
+manuals		standard
+chown		/bin/chown
+#ln		ln -s
+#
+# Compiler/loader
+#
+ccoptions	+DA1.0 +DS1.0
+curses		-lcurses -ltermlib
+ldoptions	-s
+#
+# Message Transport System
+#
+mts		mmdf2/smtp
+#
+# UCI BBoards Facility
+#
+#bboards 	nntp
+bboards 	off
+bbdelivery	off
+#
+# Post Office Protocol
+#
+pop		on
+#
+# General System Dependencies
+#
+signal		void
+sprintf		int
+
+options		BIND
+options		DBMPWD
+options		FCNTL
+options		MORE='"/usr/bin/more"'
+options		RENAME
+options		SOCKETS
+options		SYS5
+options		SYS5DIR
+options		UNISTD
+options		VSPRINTF
+options		_CLASSIC_ANSI_TYPES
+
+#
+# Site Preferences
+#
+options		FOLDPROT='"0700"'
+options		MHE
+options		MHRC
+options		MIME
+options		MSGPROT='"0600"'
+options		OVERHEAD
+options		RPOP
+options		UCI
+options		WHATNOW
