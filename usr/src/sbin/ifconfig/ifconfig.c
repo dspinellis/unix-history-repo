@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ifconfig.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)ifconfig.c	4.4 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -33,6 +33,8 @@ struct	cmd {
 	{ "-trailers",	IFF_NOTRAILERS,	setifflags },
 	{ "arp",	IFF_NOARP,	setifflags },
 	{ "-arp",	-IFF_NOARP,	setifflags },
+	{ "debug",	IFF_DEBUG,	setifflags },
+	{ "-debug",	-IFF_DEBUG,	setifflags },
 #ifdef notdef
 #define	EN_SWABIPS	0x100
 	{ "swabips",	EN_SWABIPS,	setifflags },
