@@ -41,7 +41,6 @@
 #include <machine/endian.h>
 
 #include <limits.h>
-#include <compat.h>
 
 #define	RET_ERROR	-1		/* Return values. */
 #define	RET_SUCCESS	 0
