@@ -1,4 +1,4 @@
-/* @(#)getpass.c	4.2 (Berkeley) %G% */
+/* @(#)getpass.c	4.3 (Berkeley) %G% */
 #include <stdio.h>
 #include <signal.h>
 #include <sgtty.h>
@@ -21,10 +21,10 @@ char *prompt;
 	else
 		setbuf(fi, (char *)NULL);
 	sig = signal(SIGINT, SIG_IGN);
-	gtty(fileno(fi), &ttyb);
+	ioctl(fileno(fi), TIOCGETP, &ttyb);
 	flags = ttyb.sg_flags;
 	ttyb.sg_flags &= ~ECHO;
-	stty(fileno(fi), &ttyb);
+	ioctl(fileno(fi), TIOCSETP, &ttyb);
 	fprintf(stderr, "%s", prompt); fflush(stderr);
 	for (p=pbuf; (c = getc(fi))!='\n' && c!=EOF;) {
 		if (p < &pbuf[8])
@@ -33,7 +33,7 @@ char *prompt;
 	*p = '\0';
 	fprintf(stderr, "\n"); fflush(stderr);
 	ttyb.sg_flags = flags;
-	stty(fileno(fi), &ttyb);
+	ioctl(fileno(fi), TIOCSETP, &ttyb);
 	signal(SIGINT, sig);
 	if (fi != stdin)
 		fclose(fi);
