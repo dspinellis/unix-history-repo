@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	6.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	6.34 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -360,7 +360,7 @@ recipient(a, sendq, e)
 
 # ifdef USERDB
 	/* if not aliased, look it up in the user database */
-	if (!bitset(QDONTSEND|QNOTREMOTE, a->q_flags))
+	if (!bitset(QDONTSEND|QNOTREMOTE|QVERIFIED, a->q_flags))
 	{
 		extern int udbexpand();
 
