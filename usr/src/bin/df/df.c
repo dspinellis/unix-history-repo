@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)df.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)df.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -45,7 +45,7 @@ main(argc, argv)
 	char **argv;
 {
 	extern int errno, optind;
-	int ch, i;
+	int err, ch, i;
 	long mntsize;
 	char *mntpt;
 	struct stat stbuf;
@@ -88,8 +88,12 @@ main(argc, argv)
 	}
 	for (; *argv; argv++) {
 		if (stat(*argv, &stbuf) < 0) {
-			if ((mntpt = getmntpt(*argv)) == 0)
+			err = errno;
+			if ((mntpt = getmntpt(*argv)) == 0) {
+				errno = err;
+				perror(*argv);
 				continue;
+			}
 		} else if ((stbuf.st_mode & S_IFMT) == S_IFBLK) {
 			if ((mntpt = getmntpt(*argv)) == 0)
 				mntpt = "/tmp/.mnt";
