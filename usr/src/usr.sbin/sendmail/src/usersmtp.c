@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	8.39 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.40 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	8.39 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.40 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -494,31 +494,34 @@ smtprcpt(to, m, mci, e)
 	strcpy(optbuf, "");
 	if (bitset(MCIF_DSN, mci->mci_flags))
 	{
-		bool firstone = TRUE;
-
 		/* NOTIFY= parameter */
-		strcat(optbuf, " NOTIFY=");
-		if (bitset(QPINGONSUCCESS, to->q_flags))
+		if (bitset(QHASNOTIFY, to->q_flags))
 		{
-			strcat(optbuf, "SUCCESS");
-			firstone = FALSE;
+			bool firstone = TRUE;
+
+			strcat(optbuf, " NOTIFY=");
+			if (bitset(QPINGONSUCCESS, to->q_flags))
+			{
+				strcat(optbuf, "SUCCESS");
+				firstone = FALSE;
+			}
+			if (bitset(QPINGONFAILURE, to->q_flags))
+			{
+				if (!firstone)
+					strcat(optbuf, ",");
+				strcat(optbuf, "FAILURE");
+				firstone = FALSE;
+			}
+			if (bitset(QPINGONDELAY, to->q_flags))
+			{
+				if (!firstone)
+					strcat(optbuf, ",");
+				strcat(optbuf, "DELAY");
+				firstone = FALSE;
+			}
+			if (firstone)
+				strcat(optbuf, "NEVER");
 		}
-		if (bitset(QPINGONFAILURE, to->q_flags))
-		{
-			if (!firstone)
-				strcat(optbuf, ",");
-			strcat(optbuf, "FAILURE");
-			firstone = FALSE;
-		}
-		if (bitset(QPINGONDELAY, to->q_flags))
-		{
-			if (!firstone)
-				strcat(optbuf, ",");
-			strcat(optbuf, "DELAY");
-			firstone = FALSE;
-		}
-		if (firstone)
-			strcat(optbuf, "NEVER");
 
 		/* ORCPT= parameter */
 		if (to->q_orcpt != NULL)

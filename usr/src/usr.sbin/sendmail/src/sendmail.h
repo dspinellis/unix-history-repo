@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.105 (Berkeley) %G%
+ *	@(#)sendmail.h	8.106 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.105		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.106		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -144,6 +144,7 @@ typedef struct address ADDRESS;
 # define QPINGONSUCCESS	0x00001000	/* give return on successful delivery */
 # define QPINGONFAILURE	0x00002000	/* give return on failure */
 # define QPINGONDELAY	0x00004000	/* give return on message delay */
+# define QHASNOTIFY	0x00008000	/* propogate notify parameter */
 # define QRELAYED	0x00020000	/* relayed to non-DSN aware mailer */
 
 # define NULLADDR	((ADDRESS *) NULL)

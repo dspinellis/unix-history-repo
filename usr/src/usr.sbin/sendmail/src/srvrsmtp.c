@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.60 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.61 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.60 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.61 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -888,6 +888,7 @@ rcpt_esmtp_args(a, kp, vp, e)
 			/* NOTREACHED */
 		}
 		a->q_flags &= ~(QPINGONSUCCESS|QPINGONFAILURE|QPINGONDELAY);
+		a->q_flags |= QHASNOTIFY;
 		if (strcasecmp(vp, "never") == 0)
 			return;
 		for (p = vp; p != NULL; vp = p)
