@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vba.c	7.2 (Berkeley) %G%
+ *	@(#)vba.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -230,11 +230,14 @@ vbadone(bp, vb)
 
 /*
  * Set up a scatter-gather operation for SMD/E controller.
- * This code belongs half-way between vd.c and this file.
+ * This code belongs half-way between {hd,vd}.c and this file.
  */
+
+#include "dk.h"
+#if NVD > 0
 #include "vdreg.h"
 
-vba_sgsetup(bp, vb, sg)
+vd_sgsetup(bp, vb, sg)
 	register struct buf *bp;
 	struct vb_buf *vb;
 	struct trsg *sg;
@@ -244,7 +247,6 @@ vba_sgsetup(bp, vb, sg)
 	register int i;
 	int o;
 
-	o = (int)bp->b_un.b_addr & PGOFSET;
 	vb->vb_iskernel = (((int)bp->b_un.b_addr & KERNBASE) == KERNBASE);
 	vb->vb_copy = 0;
 	if (vb->vb_iskernel) {
@@ -256,13 +258,14 @@ vba_sgsetup(bp, vb, sg)
 		vbastat.u_sg++;
 	}
 
+	o = (int)bp->b_un.b_addr & PGOFSET;
 	i = min(NBPG - o, bp->b_bcount);
-	sg->start_addr.wcount = (i + 1) >> 1;
+	sg->start_addr.wcount = i >> 1;
 	sg->start_addr.memadr = ((spte++)->pg_pfnum << PGSHIFT) + o;
 	i = bp->b_bcount - i;
 	if (i > VDMAXPAGES * NBPG)
 		panic("vba xfer too large");
-	i = (i + 1) >> 1;
+	i = i >> 1;
 	for (adr = sg->addr_chain; i > 0; adr++, i -= NBPG / 2) {
 		adr->nxt_addr = (spte++)->pg_pfnum << PGSHIFT;
 		adr->nxt_len = imin(i, NBPG / 2);
@@ -271,3 +274,51 @@ vba_sgsetup(bp, vb, sg)
 	adr++->nxt_len = 0;
 	return ((adr - sg->addr_chain) * sizeof(*adr) / sizeof(long));
 }
+#endif
+
+#include "hd.h"
+#if NHD > 0
+#include "hdreg.h"
+
+hd_sgsetup(bp, vb, sg)
+	register struct buf *bp;
+	struct vb_buf *vb;
+	struct chain *sg;
+{
+	register struct pte *spte;
+	register struct addr_chain *adr;
+	register int i, cnt;
+	int o;
+
+	if (bp->b_bcount > HDC_MAXBC ||
+	    bp->b_bcount % sizeof(long) - 1 ||
+	    (u_int)bp->b_un.b_addr % sizeof(long) - 1)
+		return(0);
+
+	vb->vb_iskernel = (((int)bp->b_un.b_addr & KERNBASE) == KERNBASE);
+	vb->vb_copy = 0;
+	if (vb->vb_iskernel) {
+		spte = kvtopte(bp->b_un.b_addr);
+		vbastat.k_sg++;
+	} else {
+		spte = vtopte((bp->b_flags&B_DIRTY) ? &proc[2] : bp->b_proc,
+		    btop(bp->b_un.b_addr));
+		vbastat.u_sg++;
+	}
+
+	o = (int)bp->b_un.b_addr & PGOFSET;
+	i = min(NBPG - o, bp->b_bcount);
+	sg->wcount = i >> 2;
+	sg->memadr = ((spte++)->pg_pfnum << PGSHIFT) + o;
+	cnt = 0;
+	for (i = (bp->b_bcount - i) >> 2; i > 0; i -= NBPG / sizeof(long)) {
+		if (++cnt == HDC_MAXCHAIN)
+			return(0);
+		sg->wcount |= LWC_DATA_CHAIN;
+		++sg;
+		sg->wcount = imin(i, NBPG / sizeof(long));
+		sg->memadr = (spte++)->pg_pfnum << PGSHIFT;
+	}
+	return(1);
+}
+#endif
