@@ -1,7 +1,7 @@
 #	@(#)Makefile	5.4 (Berkeley) 5/7/91
 
 LIB=	crypt
-SRCS=	auth.c crypt.c encrypt.c
+SRCS=	auth.c crypt.c encrypt.c misc.c
 
 # Do DES encryption?
 CFLAGS+= -DDES_ENCRYPT
