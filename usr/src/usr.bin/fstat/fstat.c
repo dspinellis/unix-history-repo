@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fstat.c	5.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)fstat.c	5.35 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -28,6 +28,7 @@ static char sccsid[] = "@(#)fstat.c	5.34 (Berkeley) %G%";
 #ifndef NEWVM
 #include <machine/pte.h>
 #include <sys/vmmac.h>
+#include <sys/text.h>
 #endif
 #include <sys/stat.h>
 #include <sys/vnode.h>
@@ -325,18 +326,18 @@ dofiles(p)
 	 * open files
 	 */
 #define FPSIZE	(sizeof (struct file *))
-	ALLOC_OFILES(filed.fd_lastfile);
+	ALLOC_OFILES(filed.fd_lastfile+1);
 #ifdef NEWVM
 	if (filed.fd_nfiles > NDFILE) {
 		if (!KVM_READ(filed.fd_ofiles, ofiles,
-		    filed.fd_lastfile * FPSIZE)) {
+		    (filed.fd_lastfile+1) * FPSIZE)) {
 			dprintf(stderr,
 			    "can't read file structures at %x for pid %d\n",
 			    filed.fd_ofiles, Pid);
 			return;
 		}
 	} else
-		bcopy(filed0.fd_dfiles, ofiles, filed.fd_lastfile * FPSIZE);
+		bcopy(filed0.fd_dfiles, ofiles, (filed.fd_lastfile+1) * FPSIZE);
 #else
 	bcopy(filed.fd_ofile, ofiles, MIN(filed.fd_lastfile, NDFILE) * FPSIZE);
 	last = filed.fd_lastfile;
@@ -347,7 +348,7 @@ dofiles(p)
 		return;
 	}
 #endif
-	for (i = 0; i < filed.fd_lastfile; i++) {
+	for (i = 0; i <= filed.fd_lastfile; i++) {
 		if (ofiles[i] == NULL)
 			continue;
 		if (!KVM_READ(ofiles[i], &file, sizeof (struct file))) {
