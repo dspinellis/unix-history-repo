@@ -12,7 +12,6 @@ cpu		"HP370"
 ident		GENERIC
 
 timezone	8 dst
-maxusers	8
 
 # Standard 4.3-Reno options
 maxusers	48

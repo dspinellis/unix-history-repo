@@ -5,7 +5,6 @@ machine		tahoe
 cpu		"TAHOE"
 ident		GENERIC
 timezone	8 dst
-maxusers	32
 timezone	8 dst
 maxusers	48
 options		INET

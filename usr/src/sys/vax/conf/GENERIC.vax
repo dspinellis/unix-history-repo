@@ -8,7 +8,6 @@ cpu		"VAX780"
 cpu		"VAX750"
 cpu		"VAX730"
 ident		GENERIC
-maxusers	8
 timezone	8 dst
 maxusers	48
 options		INET
