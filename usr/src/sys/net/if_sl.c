@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_sl.c	7.18 (Berkeley) %G%
+ *	@(#)if_sl.c	7.19 (Berkeley) %G%
  */
 
 /*
@@ -85,34 +85,50 @@
 #include "if_slvar.h"
 
 /*
- * SLMTU is a hard limit on input packet size.  To simplify the code
+ * SLMAX is a hard limit on input packet size.  To simplify the code
  * and improve performance, we require that packets fit in an mbuf
- * cluster, that there be enough extra room for the ifnet pointer that
- * IP input requires and, if we get a compressed packet, there's
- * enough extra room to expand the header into a max length tcp/ip
- * header (128 bytes).  So, SLMTU can be at most
- * 	MCLBYTES - 128 
+ * cluster, and if we get a compressed packet, there's enough extra
+ * room to expand the header into a max length tcp/ip header (128
+ * bytes).  So, SLMAX can be at most
+ *	MCLBYTES - 128
  *
- * To insure we get good interactive response, the MTU wants to be
- * the smallest size that amortizes the header cost.  (Remember
- * that even with type-of-service queuing, we have to wait for any
- * in-progress packet to finish.  I.e., we wait, on the average,
- * 1/2 * mtu / cps, where cps is the line speed in characters per
- * second.  E.g., 533ms wait for a 1024 byte MTU on a 9600 baud
- * line.  The average compressed header size is 6-8 bytes so any
- * MTU > 90 bytes will give us 90% of the line bandwidth.  A 100ms
- * wait is tolerable (500ms is not), so want an MTU around 256.
- * (Since TCP will send 212 byte segments (to allow for 40 byte
- * headers), the typical packet size on the wire will be around 220
- * bytes).  In 4.3tahoe+ systems, we can set an MTU in a route
- * so we do that & leave the interface MTU relatively high (so we
- * don't IP fragment when acting as a gateway to someone using a
- * stupid MTU).
+ * SLMTU is a hard limit on output packet size.  To insure good
+ * interactive response, SLMTU wants to be the smallest size that
+ * amortizes the header cost.  (Remember that even with
+ * type-of-service queuing, we have to wait for any in-progress
+ * packet to finish.  I.e., we wait, on the average, 1/2 * mtu /
+ * cps, where cps is the line speed in characters per second.
+ * E.g., 533ms wait for a 1024 byte MTU on a 9600 baud line.  The
+ * average compressed header size is 6-8 bytes so any MTU > 90
+ * bytes will give us 90% of the line bandwidth.  A 100ms wait is
+ * tolerable (500ms is not), so want an MTU around 296.  (Since TCP
+ * will send 256 byte segments (to allow for 40 byte headers), the
+ * typical packet size on the wire will be around 260 bytes).  In
+ * 4.3tahoe+ systems, we can set an MTU in a route so we do that &
+ * leave the interface MTU relatively high (so we don't IP fragment
+ * when acting as a gateway to someone using a stupid MTU).
+ *
+ * Similar considerations apply to SLIP_HIWAT:  It's the amount of
+ * data that will be queued 'downstream' of us (i.e., in clists
+ * waiting to be picked up by the tty output interrupt).  If we
+ * queue a lot of data downstream, it's immune to our t.o.s. queuing.
+ * E.g., if SLIP_HIWAT is 1024, the interactive traffic in mixed
+ * telnet/ftp will see a 1 sec wait, independent of the mtu (the
+ * wait is dependent on the ftp window size but that's typically
+ * 1k - 4k).  So, we want SLIP_HIWAT just big enough to amortize
+ * the cost (in idle time on the wire) of the tty driver running
+ * off the end of its clists & having to call back slstart for a
+ * new packet.  For a tty interface with any buffering at all, this
+ * cost will be zero.  Even with a totally brain dead interface (like
+ * the one on a typical workstation), the cost will be <= 1 character
+ * time.  So, setting SLIP_HIWAT to ~100 guarantees that we'll lose
+ * at most 1% while maintaining good interactive response.
  */
-#define	SLMTU		576
 #define BUFOFFSET	128
-#define	SLBUFSIZE	(SLMTU + BUFOFFSET)
-#define	SLIP_HIWAT	1024	/* don't start a new packet if HIWAT on queue */
+#define	SLMAX		(MCLBYTES - BUFOFFSET)
+#define	SLBUFSIZE	(SLMAX + BUFOFFSET)
+#define	SLMTU		296
+#define	SLIP_HIWAT	roundup(50,CBSIZE)
 #define	CLISTRESERVE	1024	/* Can't let clists get too low */
 
 /*
@@ -190,7 +206,7 @@ slinit(sc)
 			return (0);
 		}
 	}
-	sc->sc_buf = sc->sc_ep - SLMTU;
+	sc->sc_buf = sc->sc_ep - SLMAX;
 	sc->sc_mp = sc->sc_buf;
 	sl_compress_init(&sc->sc_comp);
 	return (1);
@@ -278,7 +294,7 @@ sltioctl(tp, cmd, data, flag)
 		break;
 
 	case SLIOCSFLAGS:
-#define	SC_MASK	(SC_COMPRESS|SC_NOICMP)
+#define	SC_MASK	0xffff
 		s = splimp();
 		sc->sc_flags =
 		    (sc->sc_flags &~ SC_MASK) | ((*(int *)data) & SC_MASK);
@@ -327,18 +343,21 @@ sloutput(ifp, m, dst)
 	if ((ip = mtod(m, struct ip *))->ip_p == IPPROTO_TCP) {
 		register int p = ((int *)ip)[ip->ip_hl];
 
-		if (INTERACTIVE(p & 0xffff) || INTERACTIVE(p >> 16))
+		if (INTERACTIVE(p & 0xffff) || INTERACTIVE(p >> 16)) {
 			ifq = &sc->sc_fastq;
+			p = 1;
+		} else
+			p = 0;
 
 		if (sc->sc_flags & SC_COMPRESS) {
-			/* if two copies of sl_compress_tcp are running
-			 * for the same line, the compression state can
-			 * get screwed up.  We're assuming that sloutput
-			 * was invoked at splnet so this isn't possible
-			 * (this assumption is correct for 4.xbsd, x<=4).
-			 * In a multi-threaded kernel, a lockout might
-			 * be needed here. */
-			p = sl_compress_tcp(m, ip, &sc->sc_comp);
+			/*
+			 * The last parameter turns off connection id
+			 * compression for background traffic:  Since
+			 * fastq traffic can jump ahead of the background
+			 * traffic, we don't know what order packets will
+			 * go on the line.
+			 */
+			p = sl_compress_tcp(m, ip, &sc->sc_comp, p);
 			*mtod(m, u_char *) |= p;
 		}
 	} else if (sc->sc_flags & SC_NOICMP && ip->ip_p == IPPROTO_ICMP) {
@@ -614,9 +633,26 @@ slinput(c, tp)
 				c = TYPE_COMPRESSED_TCP;
 			else if (c == TYPE_UNCOMPRESSED_TCP)
 				*sc->sc_buf &= 0x4f; /* XXX */
-			len = sl_uncompress_tcp(&sc->sc_buf, len, (u_int)c,
-						&sc->sc_comp);
-			if (len <= 0)
+			/*
+			 * We've got something that's not an IP packet.
+			 * If compression is enabled, try to decompress it.
+			 * Otherwise, if `auto-enable' compression is on and
+			 * it's a reasonable packet, decompress it and then
+			 * enable compression.  Otherwise, drop it.
+			 */
+			if (sc->sc_flags & SC_COMPRESS) {
+				len = sl_uncompress_tcp(&sc->sc_buf, len,
+							(u_int)c, &sc->sc_comp);
+				if (len <= 0)
+					goto error;
+			} else if ((sc->sc_flags & SC_AUTOCOMP) &&
+			    c == TYPE_UNCOMPRESSED_TCP && len >= 40) {
+				len = sl_uncompress_tcp(&sc->sc_buf, len,
+							(u_int)c, &sc->sc_comp);
+				if (len <= 0)
+					goto error;
+				sc->sc_flags |= SC_COMPRESS;
+			} else
 				goto error;
 		}
 		m = sl_btom(sc, len);
@@ -646,7 +682,7 @@ slinput(c, tp)
 error:
 	sc->sc_if.if_ierrors++;
 newpack:
-	sc->sc_mp = sc->sc_buf = sc->sc_ep - SLMTU;
+	sc->sc_mp = sc->sc_buf = sc->sc_ep - SLMAX;
 	sc->sc_escape = 0;
 }
 
