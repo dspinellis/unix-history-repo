@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)hexdump.1	5.2 (Berkeley) %G%
+.\"	@(#)hexdump.1	5.3 (Berkeley) %G%
 .\"
 .TH HEXDUMP 1 ""
 .UC 7
@@ -193,9 +193,9 @@ once, when all of the input data has been processed.
 .TP
 _c
 Output characters in the default character set.
-Nonprinting characters are displayed in hexadecimal, except for those
-representable by standard escape notation, which are displayed
-as follows:
+Nonprinting characters are displayed in three character, zero-padded
+octal, except for those representable by standard escape notation,
+which are displayed as the following two character strings:
 .in +5
 .TS
 l l.
