@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)syslogd.c	5.43 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslogd.c	5.44 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -327,7 +327,7 @@ main(argc, argv)
 usage()
 {
 	(void) fprintf(stderr,
-	    "usage: syslogd [-d] [-f conffile] [-m markinterval] [-p path]\n");
+	    "usage: syslogd [-f conffile] [-m markinterval] [-p logpath]\n");
 	exit(1);
 }
 
