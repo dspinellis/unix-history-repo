@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)spp_usrreq.c	6.12 (Berkeley) %G%
+ *	@(#)spp_usrreq.c	6.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -42,6 +42,7 @@ struct spidp spp_savesi;
 int traceallspps = 0;
 extern int sppconsdebug;
 int spp_hardnosed;
+int spp_use_delack = 0;
 
 /*ARGSUSED*/
 spp_input(m, nsp, ifp)
@@ -204,10 +205,10 @@ spp_input(m, nsp, ifp)
 	m->m_len -= sizeof (struct idp);
 	m->m_off += sizeof (struct idp);
 
-	if (spp_reass(cb,si)) {
+	if (spp_reass(cb, si)) {
 		goto drop;
 	}
-	(void) spp_output(cb,(struct mbuf *)0);
+	(void) spp_output(cb, (struct mbuf *)0);
 	return;
 
 dropwithreset:
@@ -233,7 +234,7 @@ bad:
  * but its function is somewhat different:  It merely queues
  * packets up, and suppresses duplicates.
  */
-spp_reass(cb,si)
+spp_reass(cb, si)
 register struct sppcb *cb;
 register struct spidp *si;
 {
@@ -251,11 +252,20 @@ register struct spidp *si;
 	 * Update our news from them.
 	 */
 	if (si->si_cc & SP_SA)
-		cb->s_flags |= SF_DELACK;
-	if (SSEQ_GT(si->si_ack,cb->s_rack)) {
+		cb->s_flags |= (spp_use_delack ? SF_DELACK : SF_AK);
+	if (SSEQ_GT(si->si_ack, cb->s_rack)) {
 		cb->s_rack = si->si_ack;
-		cb->s_timer[TCPT_REXMT] = 0;
-
+		/*
+		 * If there are other packets outstanding,
+		 * restart the timer for them.
+		 */
+		if (SSEQ_GEQ(cb->s_snt, si->si_ack)) {
+			TCPT_RANGESET(cb->s_timer[TCPT_REXMT],
+				tcp_beta * cb->s_srtt, TCPTV_MIN,
+				TCPTV_MAX);
+			cb->s_rxtshift = 0;
+		} else
+			cb->s_timer[TCPT_REXMT] = 0;
 		/*
 		 * If transmit timer is running and timed sequence
 		 * number was acked, update smoothed round trip time.
@@ -270,7 +280,7 @@ register struct spidp *si;
 			cb->s_rtt = 0;
 		}
 	}
-	if (SSEQ_GT(si->si_alo,cb->s_ralo)) {
+	if (SSEQ_GT(si->si_alo, cb->s_ralo)) {
 		cb->s_ralo = si->si_alo;
 		cb->s_timer[TCPT_PERSIST] = 0;
 	}
@@ -288,7 +298,7 @@ register struct spidp *si;
 	 * than that of the first packet not yet seen coming
 	 * from them, this must be a duplicate, so drop.
 	 */
-	if (SSEQ_LT(si->si_seq,cb->s_ack)) {
+	if (SSEQ_LT(si->si_seq, cb->s_ack)) {
 		spp_istat.bdreas++;
 		if (si->si_seq == cb->s_ack-1)
 			spp_istat.lstdup++;
@@ -298,16 +308,16 @@ register struct spidp *si;
 	 * If this packet number is higher than that which
 	 * we have allocated refuse it, unless urgent
 	 */
-	if (SSEQ_GT(si->si_seq,cb->s_alo) && (!(si->si_cc & SP_OB))) {
-		spp_istat.notyet++;
-		return (1);
-	}
-	/*
-	 * If this packet is urgent, inform process
-	 */
-	if (si->si_cc & SP_OB) {
-		cb->s_iobc = ((char *)si)[1 + sizeof(*si)];
-		sohasoutofband(so);
+	if (SSEQ_GT(si->si_seq, cb->s_alo)) {
+		if (si->si_cc & SP_OB) {
+			if (SSEQ_GT(si->si_seq, cb->s_alo + 60)) {
+				ns_error(dtom(si), NS_ERR_FULLUP, 0);
+				return (0);
+			} /* else queue this packet; */
+		} else {
+			spp_istat.notyet++;
+			return (1);
+		}
 	}
 
 	/*
@@ -317,10 +327,17 @@ register struct spidp *si;
 
 	for (q = cb->s_q.si_next; q!=&cb->s_q; q = q->si_next) {
 	    if (si->si_seq == SI(q)->si_seq) return (1); /*duplicate */
-	    if (SSEQ_LT(si->si_seq,SI(q)->si_seq)) break;
+	    if (SSEQ_LT(si->si_seq, SI(q)->si_seq)) break;
 	}
-	insque(si,q->si_prev);
-		
+	insque(si, q->si_prev);
+	/*
+	 * If this packet is urgent, inform process
+	 */
+	if (si->si_cc & SP_OB) {
+		cb->s_iobc = ((char *)si)[1 + sizeof(*si)];
+		sohasoutofband(so);
+		cb->s_oobflags |= SF_IOOB;
+	}
 present:
 #define SPINC sizeof(struct sphdr)
 	/*
@@ -333,6 +350,7 @@ present:
 			cb->s_ack++;
 			m = dtom(q);
 			if (SI(q)->si_cc & SP_OB) {
+				cb->s_oobflags &= ~SF_IOOB;
 				if (sb->sb_cc)
 					so->so_oobmark = sb->sb_cc;
 				else
@@ -342,12 +360,12 @@ present:
 			remque(q->si_next);
 			wakeup = 1;
 			if (packetp) {
-				sbappendrecord(sb,m);
+				sbappendrecord(sb, m);
 			} else {
 				cb->s_rhdr = *mtod(m, struct sphdr *);
 				m->m_off += SPINC;
 				m->m_len -= SPINC;
-				sbappend(sb,m);
+				sbappend(sb, m);
 			}
 		  } else
 			break;
@@ -589,7 +607,7 @@ spp_output(cb, m0)
 		/*
 		 * queue stuff up for output
 		 */
-		sbappendrecord(sb,m);
+		sbappendrecord(sb, m);
 		cb->s_seq++;
 	}
 	/*
@@ -691,12 +709,13 @@ spp_output(cb, m0)
 		si->si_seq = cb->s_snt + 1;
 		si->si_len = htons(sizeof (*si));
 		si->si_cc |= SP_SP;
-		cb->s_flags &= ~SF_AK;
 	}
 	/*
 	 * Stuff checksum and output datagram.
 	 */
 	if (si) {
+		if (cb->s_flags & (SF_AK|SF_DELACK))
+			cb->s_flags &= ~(SF_AK|SF_DELACK);
 		/*
 		 * If we are almost out of allocation
 		 * or one of the timers has gone off
@@ -913,7 +932,7 @@ spp_usrreq(so, req, m, nam, rights)
 			break;
 		nsp = sotonspcb(so);
 		{
-			struct mbuf *mm = m_getclr(M_DONTWAIT,MT_PCB);
+			struct mbuf *mm = m_getclr(M_DONTWAIT, MT_PCB);
 
 			if (mm == NULL) {
 				error = ENOBUFS;
@@ -1041,19 +1060,13 @@ spp_usrreq(so, req, m, nam, rights)
 		break;
 
 	case PRU_RCVOOB:
-		if (so->so_oobmark == 0 &&
-		    (so->so_state & SS_RCVATMARK) == 0) {
-			error = EINVAL;
+		if ((cb->s_oobflags & SF_IOOB) || so->so_oobmark ||
+		    (so->so_state & SS_RCVATMARK)) {
+			m->m_len = 1;
+			*mtod(m, caddr_t) = cb->s_iobc;
 			break;
 		}
-		if ( ! (cb->s_oobflags & SF_IOOB) ) {
-			error = EWOULDBLOCK;
-			break;
-		}
-		m->m_len = 1;
-		*mtod(m, caddr_t) = cb->s_iobc;
-		if (((int)nam & MSG_PEEK) == 0)
-			cb->s_oobflags &= ~ SF_IOOB;
+		error = EINVAL;
 		break;
 
 	case PRU_SENDOOB:
@@ -1065,7 +1078,6 @@ spp_usrreq(so, req, m, nam, rights)
 		cb->s_oobflags |= SF_SOOB;
 		error = spp_output(cb, m);
 		m = NULL;
-		cb->s_oobflags &= ~SF_SOOB;
 		break;
 
 	case PRU_SOCKADDR:
