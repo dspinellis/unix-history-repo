@@ -1,17 +1,20 @@
-%token MACHINE
-%token CPU IDENT CONFIG ANY DEVICE UBA MBA NEXUS CSR DRIVE VECTOR OPTIONS
-%token CONTROLLER PSEUDO_DEVICE FLAGS ID SEMICOLON NUMBER FPNUMBER TRACE
-%token DISK SLAVE AT HZ TIMEZONE DST MAXUSERS MASTER PRIORITY COMMA MINUS EQUALS
+%token	MACHINE
+%token	CPU IDENT CONFIG ANY DEVICE UBA MBA NEXUS CSR DRIVE VECTOR OPTIONS
+%token	CONTROLLER PSEUDO_DEVICE FLAGS ID SEMICOLON NUMBER FPNUMBER TRACE
+%token	DISK SLAVE AT HZ TIMEZONE DST MAXUSERS
+%token	MASTER PRIORITY COMMA MINUS EQUALS
 %{
 
-/*	config.y	1.14	82/10/24	*/
+/*	config.y	1.15	82/10/24	*/
 
 #include "config.h"
 #include <stdio.h>
-	struct device cur;
-	struct device *curp = NULL;
-	char *temp_id;
-	char *val_id;
+
+struct	device cur;
+struct	device *curp = 0;
+char	*temp_id;
+char	*val_id;
+
 %}
 %%
 Configuration:
@@ -81,7 +84,7 @@ Option:
 		    struct opt *op = malloc(sizeof (struct opt));
 		    op->op_name = ns($1);
 		    op->op_next = opt;
-		    op->op_value = NULL;
+		    op->op_value = 0;
 		    opt = op;
 		    free(temp_id);
 	} |
@@ -133,9 +136,9 @@ Dev_name:
 	Init_dev Dev NUMBER =	{
 			cur.d_name = $2;
 			if (eq($2, "mba"))
-			    seen_mba = TRUE;
+			    seen_mba = 1;
 			else if (eq($2, "uba"))
-			    seen_uba = TRUE;
+			    seen_uba = 1;
 			cur.d_unit = $3;
 		}
 	;
@@ -169,7 +172,7 @@ Info:
 	DRIVE NUMBER = { cur.d_drive = $2; } |
 	SLAVE NUMBER =
 	{
-		if (cur.d_conn != NULL && cur.d_conn != TO_NEXUS
+		if (cur.d_conn != 0 && cur.d_conn != TO_NEXUS
 		    && cur.d_conn->d_type == MASTER)
 			cur.d_slave = $2;
 		else
@@ -193,19 +196,18 @@ Id_list:
 %%
 
 yyerror(s)
-char *s;
+	char *s;
 {
+
 	fprintf(stderr, "config: %s at line %d\n", s, yyline);
 }
 
 /*
- * ns:
- *	Return the passed string in a new space
+ * return the passed string in a new space
  */
-
 char *
 ns(str)
-register char *str;
+	register char *str;
 {
 	register char *cp;
 
@@ -215,18 +217,16 @@ register char *str;
 }
 
 /*
- * newdev
- *	Add a device to the list
+ * add a device to the list of devices
  */
-
 newdev(dp)
-register struct device *dp;
+	register struct device *dp;
 {
 	register struct device *np;
 
 	np = (struct device *) malloc(sizeof *np);
 	*np = *dp;
-	if (curp == NULL)
+	if (curp == 0)
 		dtab = np;
 	else
 		curp->d_next = np;
@@ -234,143 +234,132 @@ register struct device *dp;
 }
 
 /*
- * mkconf
- *	Note that a configuration should be made
+ * note that a configuration should be made
  */
-
 mkconf(dev, sysname)
-char *dev, *sysname;
+	char *dev, *sysname;
 {
 	register struct file_list *fl;
 
 	fl = (struct file_list *) malloc(sizeof *fl);
 	fl->f_fn = ns(dev);
 	fl->f_needs = ns(sysname);
-	if (confp == NULL)
-	    conf_list = fl;
+	if (confp == 0)
+		conf_list = fl;
 	else
-	    confp->f_next = fl;
+		confp->f_next = fl;
 	confp = fl;
 }
 
 /*
- * Connect:
- *	Find the pointer to connect to the given device and number.
- *	returns NULL if no such device and prints an error message
+ * find the pointer to connect to the given device and number.
+ * returns 0 if no such device and prints an error message
  */
-
-struct device *connect(dev, num)
-register char *dev;
-register int num;
+struct device *
+connect(dev, num)
+	register char *dev;
+	register int num;
 {
 	register struct device *dp;
 	struct device *huhcon();
 
 	if (num == QUES)
-	    return huhcon(dev);
-	for (dp = dtab; dp != NULL; dp = dp->d_next)
-		if ((num == dp->d_unit) && eq(dev, dp->d_name))
-		    if (dp->d_type != CONTROLLER && dp->d_type != MASTER)
-		    {
+		return (huhcon(dev));
+	for (dp = dtab; dp != 0; dp = dp->d_next) {
+		if ((num != dp->d_unit) || !eq(dev, dp->d_name))
+			continue;
+		if (dp->d_type != CONTROLLER && dp->d_type != MASTER) {
 			yyerror(sprintf(errbuf,
 			    "%s connected to non-controller", dev));
-			return NULL;
-		    }
-		    else
-			return dp;
+			return (0);
+		}
+		return (dp);
+	}
 	yyerror(sprintf(errbuf, "%s %d not defined", dev, num));
-	return NULL;
+	return (0);
 }
 
 /*
- * huhcon
- *	Connect to an unspecific thing
+ * connect to an unspecific thing
  */
-
-struct device *huhcon(dev)
-register char *dev;
+struct device *
+huhcon(dev)
+	register char *dev;
 {
-    register struct device *dp, *dcp;
-    struct device rdev;
-    int oldtype;
+	register struct device *dp, *dcp;
+	struct device rdev;
+	int oldtype;
 
-    /*
-     * First make certain that there are some of these to wildcard on
-     */
-    for (dp = dtab; dp != NULL; dp = dp->d_next)
-	if (eq(dp->d_name, dev))
-	    break;
-    if (dp == NULL)
-    {
-	yyerror(sprintf(errbuf, "no %s's to wildcard", dev));
-	return NULL;
-    }
-    oldtype = dp->d_type;
-    dcp = dp->d_conn;
-    /*
-     * Now see if there is already a wildcard entry for this device
-     * (e.g. Search for a "uba ?")
-     */
-    for (; dp != NULL; dp = dp->d_next)
-	if (eq(dev, dp->d_name) && dp->d_unit == -1)
-	    break;
-    /*
-     * If there isn't, make one becuase everything needs to be connected
-     * to something.
-     */
-    if (dp == NULL)
-    {
-	dp = &rdev;
-	init_dev(dp);
-	dp->d_unit = QUES;
-	dp->d_name = ns(dev);
-	dp->d_type = oldtype;
-	newdev(dp);
-	dp = curp;
 	/*
-	 * Connect it to the same thing that other similar things are
-	 * connected to, but make sure it is a wildcard unit
-	 * (e.g. up connected to sc ?, here we make connect sc? to a uba?)
-	 * If other things like this are on the NEXUS or if the aren't
-	 * connected to anything, then make the same connection, else
-	 * call ourself to connect to another unspecific device.
+	 * First make certain that there are some of these to wildcard on
 	 */
-	if (dcp == TO_NEXUS || dcp == NULL)
-	    dp->d_conn = dcp;
-	else
-	    dp->d_conn = connect(dcp->d_name, QUES);
-    }
-    return dp;
+	for (dp = dtab; dp != 0; dp = dp->d_next)
+		if (eq(dp->d_name, dev))
+			break;
+	if (dp == 0) {
+		yyerror(sprintf(errbuf, "no %s's to wildcard", dev));
+		return (0);
+	}
+	oldtype = dp->d_type;
+	dcp = dp->d_conn;
+	/*
+	 * Now see if there is already a wildcard entry for this device
+	 * (e.g. Search for a "uba ?")
+	 */
+	for (; dp != 0; dp = dp->d_next)
+		if (eq(dev, dp->d_name) && dp->d_unit == -1)
+			break;
+	/*
+	 * If there isn't, make one because everything needs to be connected
+	 * to something.
+	 */
+	if (dp == 0) {
+		dp = &rdev;
+		init_dev(dp);
+		dp->d_unit = QUES;
+		dp->d_name = ns(dev);
+		dp->d_type = oldtype;
+		newdev(dp);
+		dp = curp;
+		/*
+		 * Connect it to the same thing that other similar things are
+		 * connected to, but make sure it is a wildcard unit
+		 * (e.g. up connected to sc ?, here we make connect sc? to a
+		 * uba?).  If other things like this are on the NEXUS or
+		 * if they aren't connected to anything, then make the same
+		 * connection, else call ourself to connect to another
+		 * unspecific device.
+		 */
+		if (dcp == TO_NEXUS || dcp == 0)
+			dp->d_conn = dcp;
+		else
+			dp->d_conn = connect(dcp->d_name, QUES);
+	}
+	return (dp);
 }
-
-/*
- * init_dev:
- *	Set up the fields in the current device to their
- *	default values.
- */
 
 init_dev(dp)
-register struct device *dp;
+	register struct device *dp;
 {
-    dp->d_name = "OHNO!!!";
-    dp->d_type = DEVICE;
-    dp->d_conn = NULL;
-    dp->d_vec = NULL;
-    dp->d_addr = dp->d_pri = dp->d_flags = dp->d_dk = 0;
-    dp->d_slave = dp->d_drive = dp->d_unit = UNKNOWN;
+
+	dp->d_name = "OHNO!!!";
+	dp->d_type = DEVICE;
+	dp->d_conn = 0;
+	dp->d_vec = 0;
+	dp->d_addr = dp->d_pri = dp->d_flags = dp->d_dk = 0;
+	dp->d_slave = dp->d_drive = dp->d_unit = UNKNOWN;
 }
 
 /*
- * Check_nexus:
- *	Make certain that this is a reasonable type of thing to put
- *	on the nexus.
+ * make certain that this is a reasonable type of thing to connect to a nexus
  */
-
 check_nexus(dev, num)
-register struct device *dev;
-int num;
+	register struct device *dev;
+	int num;
 {
+
 	switch (machine) {
+
 	case MACHINE_VAX:
 		if (!eq(dev->d_name, "uba") && !eq(dev->d_name, "mba"))
 			yyerror("only uba's and mba's should be connected to the nexus");
@@ -394,5 +383,5 @@ check_tz()
 	if (abs(timezone) > 12 * 60)
 		yyerror("timezone is unreasonable");
 	else
-		hadtz = TRUE;
+		hadtz = 1;
 }
