@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)c.c 1.3 %G%";
+static char sccsid[] = "@(#)c.c 1.4 %G%";
 
 /*
  * C-dependent symbol routines.
@@ -18,6 +18,10 @@ static char sccsid[] = "@(#)c.c 1.3 %G%";
 #include "process.h"
 #include "runtime.h"
 #include "machine.h"
+
+#ifndef public
+# include "tree.h"
+#endif
 
 #define isdouble(range) ( \
     range->symvalue.rangev.upper == 0 and range->symvalue.rangev.lower > 0 \
