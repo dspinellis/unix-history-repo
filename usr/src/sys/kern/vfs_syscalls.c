@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	7.80 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.81 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -19,6 +19,7 @@
 #include "proc.h"
 #include "uio.h"
 #include "malloc.h"
+#include <vm/vm.h>
 
 #ifdef REF_DIAGNOSTIC
 #define CURCOUNT (curproc ? curproc->p_spare[0] : 0)
@@ -873,10 +874,40 @@ out:
 	return (error);
 }
 
+#ifdef COMPAT_43
 /*
  * Seek system call.
  */
 lseek(p, uap, retval)
+	struct proc *p;
+	register struct args {
+		int	fdes;
+		long	off;
+		int	sbase;
+	} *uap;
+	long *retval;
+{
+	struct nargs {
+		int	fdes;
+		off_t	off;
+		int	sbase;
+	} nuap;
+	quad_t qret;
+	int error;
+
+	nuap.fdes = uap->fdes;
+	nuap.off = uap->off;
+	nuap.sbase = uap->sbase;
+	error = qseek(p, &nuap, &qret);
+	*retval = qret;
+	return (error);
+}
+#endif /* COMPAT_43 */
+
+/*
+ * Seek system call.
+ */
+qseek(p, uap, retval)
 	struct proc *p;
 	register struct args {
 		int	fdes;
@@ -966,12 +997,102 @@ out1:
 	return (error);
 }
 
+#ifdef COMPAT_43
 /*
  * Stat system call.
  * This version follows links.
  */
 /* ARGSUSED */
 stat(p, uap, retval)
+	struct proc *p;
+	register struct args {
+		char	*fname;
+		struct ostat *ub;
+	} *uap;
+	int *retval;
+{
+	struct stat sb;
+	struct ostat osb;
+	int error;
+	struct nameidata nd;
+
+	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->fname, p);
+	if (error = namei(&nd))
+		return (error);
+	error = vn_stat(nd.ni_vp, &sb, p);
+	vput(nd.ni_vp);
+	if (error)
+		return (error);
+	cvtstat(&sb, &osb);
+	error = copyout((caddr_t)&osb, (caddr_t)uap->ub, sizeof (osb));
+	return (error);
+}
+
+/*
+ * Lstat system call.
+ * This version does not follow links.
+ */
+/* ARGSUSED */
+lstat(p, uap, retval)
+	struct proc *p;
+	register struct args {
+		char	*fname;
+		struct ostat *ub;
+	} *uap;
+	int *retval;
+{
+	struct stat sb;
+	struct ostat osb;
+	int error;
+	struct nameidata nd;
+
+	NDINIT(&nd, LOOKUP, NOFOLLOW | LOCKLEAF, UIO_USERSPACE, uap->fname, p);
+	if (error = namei(&nd))
+		return (error);
+	error = vn_stat(nd.ni_vp, &sb, p);
+	vput(nd.ni_vp);
+	if (error)
+		return (error);
+	cvtstat(&sb, &osb);
+	error = copyout((caddr_t)&osb, (caddr_t)uap->ub, sizeof (osb));
+	return (error);
+}
+
+/*
+ * convert from an old to a new stat structure.
+ */
+cvtstat(st, ost)
+	struct stat *st;
+	struct ostat *ost;
+{
+
+	ost->st_dev = st->st_dev;
+	ost->st_ino = st->st_ino;
+	ost->st_mode = st->st_mode;
+	ost->st_nlink = st->st_nlink;
+	ost->st_uid = st->st_uid;
+	ost->st_gid = st->st_gid;
+	ost->st_rdev = st->st_rdev;
+	if (st->st_size < (quad_t)1 << 32)
+		ost->st_size = st->st_size;
+	else
+		ost->st_size = -2;
+	ost->st_atime = st->st_atime;
+	ost->st_mtime = st->st_mtime;
+	ost->st_ctime = st->st_ctime;
+	ost->st_blksize = st->st_blksize;
+	ost->st_blocks = st->st_blocks;
+	ost->st_flags = st->st_flags;
+	ost->st_gen = st->st_gen;
+}
+#endif /* COMPAT_43 */
+
+/*
+ * Stat system call.
+ * This version follows links.
+ */
+/* ARGSUSED */
+qstat(p, uap, retval)
 	struct proc *p;
 	register struct args {
 		char	*fname;
@@ -999,7 +1120,7 @@ stat(p, uap, retval)
  * This version does not follow links.
  */
 /* ARGSUSED */
-lstat(p, uap, retval)
+lqstat(p, uap, retval)
 	struct proc *p;
 	register struct args {
 		char	*fname;
@@ -1304,8 +1425,8 @@ utimes(p, uap, retval)
 		goto out;
 	}
 	VATTR_NULL(&vattr);
-	vattr.va_atime = tv[0];
-	vattr.va_mtime = tv[1];
+	vattr.va_atime.tv_sec = tv[0].tv_sec;
+	vattr.va_mtime.tv_sec = tv[1].tv_sec;
 	LEASE_CHECK(vp, p, p->p_ucred, LEASE_WRITE);
 	error = VOP_SETATTR(vp, &vattr, p->p_ucred, p);
 out:
@@ -1313,11 +1434,57 @@ out:
 	return (error);
 }
 
+#ifdef COMPAT_43
 /*
  * Truncate a file given its path name.
  */
 /* ARGSUSED */
 truncate(p, uap, retval)
+	struct proc *p;
+	register struct args {
+		char	*fname;
+		long	length;
+	} *uap;
+	int *retval;
+{
+	struct nargs {
+		char	*fname;
+		off_t	length;
+	} nuap;
+
+	nuap.fname = uap->fname;
+	nuap.length = uap->length;
+	return (qtruncate(p, &nuap, retval));
+}
+
+/*
+ * Truncate a file given a file descriptor.
+ */
+/* ARGSUSED */
+ftruncate(p, uap, retval)
+	struct proc *p;
+	register struct args {
+		int	fd;
+		long	length;
+	} *uap;
+	int *retval;
+{
+	struct nargs {
+		int	fd;
+		off_t	length;
+	} nuap;
+
+	nuap.fd = uap->fd;
+	nuap.length = uap->length;
+	return (fqtruncate(p, &nuap, retval));
+}
+#endif /* COMPAT_43 */
+
+/*
+ * Truncate a file given its path name.
+ */
+/* ARGSUSED */
+qtruncate(p, uap, retval)
 	struct proc *p;
 	register struct args {
 		char	*fname;
@@ -1354,7 +1521,7 @@ out:
  * Truncate a file given a file descriptor.
  */
 /* ARGSUSED */
-ftruncate(p, uap, retval)
+fqtruncate(p, uap, retval)
 	struct proc *p;
 	register struct args {
 		int	fd;
