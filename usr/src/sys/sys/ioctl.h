@@ -1,4 +1,4 @@
-/*	ioctl.h	6.3	84/04/13	*/
+/*	ioctl.h	6.4	84/08/02	*/
 /*
  * Ioctl definitions
  */
@@ -12,7 +12,6 @@
 #include <sys/ttydev.h>
 #endif
 
-#include <sgtty.h>
 struct tchars {
 	char	t_intrc;	/* interrupt */
 	char	t_quitc;	/* quit */
@@ -29,6 +28,21 @@ struct ltchars {
 	char	t_werasc;	/* word erase */
 	char	t_lnextc;	/* literal next character */
 };
+
+/*
+ * Structure for TIOCGETP and TIOCSETP ioctls.
+ */
+
+#ifndef _SGTTYB_
+#define	_SGTTYB_
+struct sgttyb {
+	char	sg_ispeed;		/* input speed */
+	char	sg_ospeed;		/* output speed */
+	char	sg_erase;		/* erase character */
+	char	sg_kill;		/* kill character */
+	short	sg_flags;		/* mode flags */
+};
+#endif
 
 #ifndef _IO
 /*
