@@ -1,0 +1,102 @@
+VGRINDEFS(5)                BSD Programmer's Manual               VGRINDEFS(5)
+
+NNAAMMEE
+     vvggrriinnddeeffss - language definition data base for vgrind(1)
+
+SSYYNNOOPPSSIISS
+     vvggrriinnddeeffss
+
+DDEESSCCRRIIPPTTIIOONN
+     The vvggrriinnddeeffss file contains all language definitions for vgrind(1).  The
+     data base is very similar to termcap(5).
+
+FFIIEELLDDSS
+     The following table names and describes each field.
+
+     NNaammee       TTyyppee      DDeessccrriippttiioonn
+     pb         str       regular expression for start of a procedure
+     bb         str       regular expression for start of a lexical block
+     be         str       regular expression for the end of a lexical block
+     cb         str       regular expression for the start of a comment
+     ce         str       regular expression for the end of a comment
+     sb         str       regular expression for the start of a string
+     se         str       regular expression for the end of a string
+     lb         str       regular expression for the start of a character
+                          constant
+     le         str       regular expression for the end of a character
+                          constant
+     tl         bool      present means procedures are only defined at the top
+                          lexical level
+     oc         bool      present means upper and lower case are equivalent
+     kw         str       a list of keywords separated by spaces
+
+EEXXAAMMPPLLEESS
+     The following entry, which describes the C language, is typical of a lan-
+     guage entry.
+
+     C|c::pb=^\d?*?\d?\p\d?\(\a?\):bb={:be=}:cb=/*:ce=*/:sb=":se=\e":\
+     :lb=':le=\e':tl:\
+     :kw=asm auto break case char continue default do double else enum\
+     extern float for fortran goto if int long register return short\
+     sizeof static struct switch typedef union unsigned while #define\
+     #else #endif #if #ifdef #ifndef #include #undef # define else endif\
+     if ifdef ifndef include undef:
+
+     Note that the first field is just the language name (and any variants of
+     it).  Thus the C language could be specified to vgrind(1) as "c" or "C".
+
+     Entries may continue onto multiple lines by giving a \ as the last char-
+     acter of a line.  Capabilities in vvggrriinnddeeffss are of two types: Boolean ca-
+     pabilities which indicate that the language has some particular feature
+     and string capabilities which give a regular expression or keyword list.
+
+RREEGGUULLAARR EEXXPPRREESSSSIIOONNSS
+     VVggrriinnddeeffss uses regular expression which are very similar to those of
+     ex(1) and lex(1).  The characters `^', `$', `:' and `\' are reserved
+     characters and must be "quoted" with a preceding `\' if they are to be
+     included as normal characters.  The metasymbols and their meanings are:
+
+     $       the end of a line
+
+     ^       the beginning of a line
+
+     \d      a delimiter (space, tab, newline, start of line)
+
+
+     \a      matches any string of symbols (like .* in lex)
+
+     \p      matches any alphanumeric name.  In a procedure definition (pb)
+             the string that matches this symbol is used as the procedure
+             name.
+
+     ()      grouping
+
+     |       alternation
+
+     ?       last item is optional
+
+     \e      preceding any string means that the string will not match an in-
+             put string if the input string is preceded by an escape character
+             (\).  This is typically used for languages (like C) which can in-
+             clude the string delimiter in a string by escaping it.
+
+     Unlike other regular expressions in the system,  these match words and
+     not characters.  Hence something like "(tramp|steamer)flies?"  would
+     match "tramp", "steamer", "trampflies", or "steamerflies".
+
+KKEEYYWWOORRDD LLIISSTT
+     The keyword list is just a list of keywords in the language separated by
+     spaces.  If the "oc" boolean is specified, indicating that upper and low-
+     er case are equivalent, then all the keywords should be specified in low-
+     er case.
+
+FFIILLEESS
+     /usr/share/misc/vgrindefs  File containing terminal descriptions.
+
+SSEEEE AALLSSOO
+     vgrind(1),  troff(1)
+
+HHIISSTTOORRYY
+     The vvggrriinnddeeffss file format appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 6, 1993                                2

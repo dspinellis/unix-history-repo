@@ -1,0 +1,107 @@
+VGRIND(1)                    BSD Reference Manual                    VGRIND(1)
+
+NNAAMMEE
+     vvggrriinndd - grind nice listings of programs
+
+SSYYNNOOPPSSIISS
+     vvggrriinndd [--] [--WW] [--dd _f_i_l_e] [--ff] [--hh _h_e_a_d_e_r] [--ll _l_a_n_g_u_a_g_e] [--nn] [--ssnn] [--tt]
+            [--xx] _n_a_m_e _._._.
+
+DDEESSCCRRIIPPTTIIOONN
+     VVggrriinndd formats the program sources which are arguments in a nice style
+     using troff(1) Comments are placed in italics, keywords in bold face, and
+     the name of the current function is listed down the margin of each page
+     as it is encountered.
+
+     VVggrriinndd runs in two basic modes, filter mode (see the --ff option) or regu-
+     lar mode.  In filter mode vvggrriinndd acts as a filter in a manner similar to
+     tbl(1).  The standard input is passed directly to the standard output ex-
+     cept for lines bracketed by the _t_r_o_f_f_-_l_i_k_e macros:
+
+     .vS     starts processing
+
+     .vE     ends processing
+
+     These lines are formatted as described above.  The output from this fil-
+     ter can be passed to troff for output.  There need be no particular or-
+     dering with eqn(1) or tbl(1).
+
+     In regular mode vvggrriinndd accepts input files, processes them, and passes
+     them to troff(1) for output.
+
+     In both modes vvggrriinndd passes any lines beginning with a decimal point
+     without conversion.
+
+     The options are:
+
+     --             forces input to be taken from standard input (default if --ff
+                   is specified )
+
+     --WW            forces output to the (wide) Versatec printer rather than
+                   the (narrow) Varian
+
+     --dd _f_i_l_e       specifies an alternate language definitions file (default
+                   is _/_u_s_r_/_s_h_a_r_e_/_m_i_s_c_/_v_g_r_i_n_d_e_f_s)
+
+     --ff            forces filter mode
+
+     --hh _h_e_a_d_e_r     specifies a particular header to put on every output page
+                   (default is the file name)
+
+     --ll            specifies the language to use.  Currently known are PASCAL
+                   (--ll_p), MODEL (--ll_m), C (--ll_c or the default), CSH (--ll_c_s_h),
+                   SHELL (--ll_s_h), RATFOR (--ll_r), MODULA2 (--ll_m_o_d_2), YACC
+                   (--ll_y_a_c_c), LISP (--ll_i_s_p), and ICON (--ll_I).
+
+     --nn            forces no keyword bolding
+
+     --ss            specifies a point size to use on output (exactly the same
+                   as the argument of a .ps)
+
+     --tt            similar to the same option in troff causing formatted text
+                   to go to the standard output
+
+     --xx            outputs the index file in a ``pretty'' format.  The index
+                   file itself is produced whenever vvggrriinndd is run with a file
+                   called _i_n_d_e_x in the current directory.  The index of func-
+                   tion definitions can then be run off by giving vvggrriinndd the
+                   --xx option and the file _i_n_d_e_x as argument.
+
+FFIILLEESS
+     index                        file where source for index is created
+     /usr/share/tmac/tmac.vgrind  macro package
+     /usr/libexec/vfontedpr       preprocessor
+     /usr/share/misc/vgrindefs    language descriptions
+
+SSEEEE AALLSSOO
+     getcap(3),  vgrindefs(5)
+
+BBUUGGSS
+     Vfontedpr assumes that a certain programming style is followed:
+
+     For C - function names can be preceded on a line only by spaces, tabs, or
+     an asterisk.  The parenthesized arguments must also be on the same line.
+
+     For PASCAL - function names need to appear on the same line as the key-
+     words _f_u_n_c_t_i_o_n or _p_r_o_c_e_d_u_r_e.
+
+     For MODEL - function names need to appear on the same line as the key-
+     words _i_s _b_e_g_i_n_p_r_o_c.
+
+     If these conventions are not followed, the indexing and marginal function
+     name comment mechanisms will fail.
+
+     More generally, arbitrary formatting styles for programs mostly look bad.
+     The use of spaces to align source code fails miserably; if you plan to
+     vvggrriinndd your program you should use tabs.  This is somewhat inevitable
+     since the font used by vvggrriinndd is variable width.
+
+     The mechanism of ctags(1) in recognizing functions should be used here.
+
+     Filter mode does not work in documents using the --mmee or --mmss macros.  (So
+     what use is it anyway?)
+
+HHIISSTTOORRYY
+     The vvggrriinndd command appeared in 3.0BSD.
+
+4th Berkeley Distribution        June 6, 1993                                2

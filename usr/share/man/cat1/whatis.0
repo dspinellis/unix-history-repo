@@ -1,0 +1,40 @@
+WHATIS(1)                    BSD Reference Manual                    WHATIS(1)
+
+NNAAMMEE
+     wwhhaattiiss - describe what a command is
+
+SSYYNNOOPPSSIISS
+     wwhhaattiiss [--MM _p_a_t_h] [--mm _p_a_t_h] _c_o_m_m_a_n_d _._._.
+
+DDEESSCCRRIIPPTTIIOONN
+     WWhhaattiiss looks up a given command and gives the header line from the manual
+     page.  You can then use the man(1) command to get more information.
+
+     The options are as follows:
+
+     --MM _p_a_t_h     Override the list of standard directories wwhhaattiiss searches for
+                 its database named ``_w_h_a_t_i_s_._d_b''. The supplied _p_a_t_h must be a
+                 colon ``:'' separated list of directories.  This search path
+                 may also be set using the environment variable MANPATH.
+
+     --mm _p_a_t_h     Augment the list of standard directories wwhhaattiiss searches for
+                 its database named ``_w_h_a_t_i_s_._d_b''. The supplied _p_a_t_h must be a
+                 colon ``:'' separated list of directories.  These directories
+                 will be searched before the standard directories or the di-
+                 rectories supplied with the --MM option or the MANPATH environ-
+                 ment variable are searched.
+
+EENNVVIIRROONNMMEENNTT
+     MANPATH  The standard search path used by man(1) may be overridden by
+              specifying a path in the MANPATH environment variable.
+
+FFIILLEESS
+     whatis.db  name of the whatis database
+
+SSEEEE AALLSSOO
+     apropos(1),  man(1),  whereis(1)
+
+HHIISSTTOORRYY
+     The wwhhaattiiss command appeared in 3.0BSD.
+
+4th Berkeley Distribution        June 6, 1993                                1
