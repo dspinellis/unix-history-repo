@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_input.c,v 5.6 88/11/18 17:27:38 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_input.c,v $
- *	@(#)tp_input.c	7.5 (Berkeley) %G% *
+ *	@(#)tp_input.c	7.6 (Berkeley) %G% *
  *
  * tp_input() gets an mbuf chain from ip.  Actually, not directly
  * from ip, because ip calls a net-level routine that strips off
@@ -1352,14 +1352,11 @@ again:
 		make_control_msg:
 			c_hdr.cmsg_level = SOL_TRANSPORT;
 			mbtype = MT_CONTROL;
-			if (datalen > 0) {
-				datalen += sizeof(c_hdr);
-				m->m_len += sizeof(c_hdr);
-				m->m_data -= sizeof(c_hdr);
-				c_hdr.cmsg_len = datalen;
-				bcopy((caddr_t)&c_hdr, mtod(m, caddr_t),
-								sizeof(c_hdr));
-			}
+			datalen += sizeof(c_hdr);
+			m->m_len += sizeof(c_hdr);
+			m->m_data -= sizeof(c_hdr);
+			c_hdr.cmsg_len = datalen;
+			bcopy((caddr_t)&c_hdr, mtod(m, caddr_t), sizeof(c_hdr));
 			/* FALLTHROUGH */
 
 		case XPD_TPDU_type:
