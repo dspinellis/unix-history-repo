@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lcmd2.c	3.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)lcmd2.c	3.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -34,7 +34,7 @@ struct value *v, *a;
 	wwprintf(w, "%d\t%d\t%d\t%d\t%d\n",
 		wwnflush, wwnwr, wwnwre, wwnwrz, wwnwrc);
 	wwprintf(w, "token\tuse\tbad\tsaving\ttotal\tbaud\n");
-	wwprintf(w, "%d\t%d\t%d\t%d\t%d\t%d/%d\n",
+	wwprintf(w, "%d\t%d\t%d\t%d\t%d\t%d/%d (%.1f/%.1f)\n",
 		wwntokdef, wwntokuse, wwntokbad, wwntoksave, wwntokc,
 		wwntokc - wwntoksave ?
 			(int) ((float) wwbaud * wwntokc /
@@ -42,7 +42,10 @@ struct value *v, *a;
 			wwbaud,
 		wwnwrc ? (int) ((float) wwbaud * (wwnwrc + wwntoksave) /
 					wwnwrc) :
-			wwbaud);
+			wwbaud,
+		wwntokc - wwntoksave ?
+			(float) wwntokc / (wwntokc - wwntoksave) : 1.0,
+		wwnwrc ? (float) (wwnwrc + wwntoksave) / wwnwrc : 1.0);
 	wwprintf(w, "wwwrite\tattempt\tchar\n");
 	wwprintf(w, "%d\t%d\t%d\n",
 		wwnwwr, wwnwwra, wwnwwrc);
