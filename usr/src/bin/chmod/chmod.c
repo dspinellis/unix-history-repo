@@ -1,9 +1,9 @@
-static char *sccsid = "@(#)chmod.c	4.4 %G%";
+static char *sccsid = "@(#)chmod.c	4.5 %G%";
 
 /*
  * chmod options mode files
  * where
- *	mode	is [ugoa][+-=][rwxstugo] or a octal number
+ *	mode	is [ugoa][+-=][rwxXstugo] or a octal number
  *	options are -R
  */
 #include <stdio.h>
@@ -25,7 +25,7 @@ static char *sccsid = "@(#)chmod.c	4.4 %G%";
 char	*modestring, *ms;
 int	um;
 int	status;
-int	rflag, debug, Xflag;
+int	rflag, debug;
 
 main(argc,argv)
 char **argv;
@@ -34,9 +34,10 @@ char **argv;
 	register char *p, *flags;
 	struct	stat st;
 
+usage:
 	if (argc < 3) {
 		fprintf(stderr
-			,"Usage: chmod [-RX] [ugoa][+-=][rwxstugo] file ...\n");
+			,"Usage: chmod [-R] [ugoa][+-=][rwxXstugo] file ...\n");
 		exit(-1);
 	}
 
@@ -46,7 +47,7 @@ char **argv;
 			switch (*flags) {
 			  case '-':			break;
 			  case 'R':	rflag++;	break;
-			  case 'X': 	Xflag++;	break;
+			  default: 	argc = 0;	goto usage;
 			}
 		argv++, argc--;
 	}
@@ -76,12 +77,6 @@ char **argv;
 chmodr(dir, mode)
 	char	*dir;
 {
-#define CHECK(name,sbuf)\
-	if (stat(name, sbuf) < 0) {\
-		fprintf(stderr, "chmod: can't access %s\n", dp->d_name);\
-		return(1);\
-	}
-	
 	register DIR		*dirp;
 	register struct direct	*dp;
 	register struct stat	st;
@@ -105,7 +100,10 @@ chmodr(dir, mode)
 	dp = readdir(dirp);
 	dp = readdir(dirp); /* read "." and ".." */
 	for (dp = readdir(dirp); dp != NULL; dp = readdir(dirp)) {
-		CHECK(dp->d_name, &st);
+		if (stat(dp->d_name, &st) < 0) {
+			fprintf(stderr, "chmod: can't access %s\n", dp->d_name);
+			return(1);
+		}
 		chmod(dp->d_name, newmode(st.st_mode));
 		if (st.st_mode & S_IFDIR)
 			chmodr(dp->d_name, mode);
@@ -124,10 +122,8 @@ unsigned nm;
 	ms = modestring;
 	savem = nm;
 	m = abs();
-	if (!*ms) {
-		nm = m;
-		goto ret;
-	}
+	if (!*ms)
+		return(m);
 	do {
 		m = who();
 		while (o = what()) {
@@ -150,9 +146,6 @@ unsigned nm;
 		fprintf(stderr, "chmod: invalid mode\n");
 		exit(255);
 	}
-ret:
-	if (Xflag && ((savem & S_IFDIR) || (savem & S_IEXEC)))
-		nm = nm | ((nm & 0444) >> 2);
 	return(nm);
 }
 
@@ -237,7 +230,8 @@ register om;
 		m |= EXEC;
 		continue;
 	case 'X':
-		Xflag++;
+		if ((om & S_IFDIR) || (om & EXEC))
+			m |= EXEC;
 		continue;
 	case 's':
 		m |= SETID;
