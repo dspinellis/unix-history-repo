@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_get.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_get.c	5.9 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -147,6 +147,8 @@ __rec_vpipe(t, top)
 			if ((ch = getc(t->bt_rfp)) == EOF || ch == bval) {
 				data.data = t->bt_dbuf;
 				data.size = p - t->bt_dbuf;
+				if (ch == EOF && data.size == 0)
+					break;
 				if (__rec_iput(t, nrec, &data, 0)
 				    != RET_SUCCESS)
 					return (RET_ERROR);
