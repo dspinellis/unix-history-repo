@@ -1,0 +1,29 @@
+INSQUE(3)                   BSD Programmer's Manual                  INSQUE(3)
+
+NNAAMMEE
+     iinnssqquuee, rreemmqquuee - insert/remove element from a queue
+
+SSYYNNOOPPSSIISS
+     struct qelem {
+             struct  qelem *q_forw;
+             struct  qelem *q_back;
+             char    q_data[];
+     };
+
+     iinnssqquuee(_(_c_a_d_d_r___t_) _s_t_r_u_c_t _q_e_l_e_m _*_e_l_e_m, _(_c_a_d_d_r___t_) _s_t_r_u_c_t _q_e_l_e_m _*_p_r_e_d);
+
+     rreemmqquuee(_(_c_a_d_d_r___t_) _s_t_r_u_c_t _q_e_l_e_m _*_e_l_e_m);
+
+DDEESSCCRRIIPPTTIIOONN
+     The iinnssqquuee() and rreemmqquuee() functions manipulate queues built from doubly
+     linked lists.  Each element in the queue must in the form of ``struct
+     qelem''. The function iinnssqquuee() inserts _e_l_e_m in a queue immediately after
+     _p_r_e_d; rreemmqquuee() removes an entry _e_l_e_m from a queue.
+
+SSEEEE AALLSSOO
+     _V_A_X _A_r_c_h_i_t_e_c_t_u_r_e _H_a_n_d_b_o_o_k, pp. 228-235.
+
+HHIISSTTOORRYY
+     The iinnssqquuee() and rreemmqquuee() functions appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 4, 1993                                1

@@ -1,0 +1,66 @@
+VLIMIT(3)                   BSD Programmer's Manual                  VLIMIT(3)
+
+NNAAMMEE
+     vvlliimmiitt - control maximum system resource consumption
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//vvlliimmiitt..hh>>
+
+     vvlliimmiitt(_r_e_s_o_u_r_c_e, _v_a_l_u_e);
+
+DDEESSCCRRIIPPTTIIOONN
+     TThhiiss iinntteerrffaaccee iiss oobbssoolleetteedd bbyy ggeettrrlliimmiitt((22))..  IItt iiss aavvaaiillaabbllee ffrroomm tthhee
+     ccoommppaattiibbiilliittyy lliibbrraarryy,, lliibbccoommppaatt..
+
+     Limits the consumption by the current process and each process it creates
+     to not individually exceed _v_a_l_u_e on the specified _r_e_s_o_u_r_c_e. If _v_a_l_u_e is
+     specified as -1, then the current limit is returned and the limit is un-
+     changed.  The resources which are currently controllable are:
+
+     LIM_NORAISE  A pseudo-limit; if set non-zero then the limits may not be
+                  raised.  Only the super-user may remove the _n_o_r_a_i_s_e restric-
+                  tion.
+
+     LIM_CPU      the maximum number of cpu-seconds to be used by each process
+
+     LIM_FSIZE    the largest single file which can be created
+
+     LIM_DATA     the maximum growth of the data+stack region via sbrk(2) be-
+                  yond the end of the program text
+
+     LIM_STACK    the maximum size of the automatically-extended stack region
+
+     LIM_CORE     the size of the largest core dump that will be created.
+
+     LIM_MAXRSS   a soft limit for the amount of physical memory (in bytes) to
+                  be given to the program.  If memory is tight, the system
+                  will prefer to take memory from processes which are exceed-
+                  ing their declared LIM_MAXRSS.
+
+     Because this information is stored in the per-process information this
+     system call must be executed directly by the shell if it is to affect all
+     future processes created by the shell; limit is thus a built-in command
+     to csh(1).
+
+     The system refuses to extend the data or stack space when the limits
+     would be exceeded in the normal way; a break(2) call fails if the data
+     space limit is reached, or the process is killed when the stack limit is
+     reached (since the stack cannot be extended, there is no way to send a
+     signal!).
+
+     A file I/O operation which would create a file which is too large will
+     cause a signal SIGXFSZ to be generated, this normally terminates the pro-
+     cess, but may be caught.  When the cpu time limit is exceeded, a signal
+     SIGXCPU is sent to the offending process; to allow it time to process the
+     signal it is given 5 seconds grace by raising the CPU time limit.
+
+SSEEEE AALLSSOO
+     csh(1)
+
+HHIISSTTOORRYY
+     The vvlliimmiitt() function appeared in 4.2BSD.
+
+BBUUGGSS
+     LIM_NORAISE no longer exists.
+
+4th Berkeley Distribution        June 4, 1993                                1

@@ -1,0 +1,45 @@
+SQRT(3)                     BSD Programmer's Manual                    SQRT(3)
+
+NNAAMMEE
+     ccbbrrtt, ssqqrrtt - cube root and square root functions
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<mmaatthh..hh>>
+
+     _d_o_u_b_l_e
+     ccbbrrtt(_d_o_u_b_l_e _x);
+
+     _d_o_u_b_l_e
+     ssqqrrtt(_d_o_u_b_l_e _x);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ccbbrrtt() function computes the cube root of _x.
+
+     The ssqqrrtt() computes the non-negative square root of x.
+
+RREETTUURRNN VVAALLUUEESS
+     The ccbbrrtt() function returns the requested cube root.  The ssqqrrtt() function
+     returns the requested square root unless an error occurs.  On the VAX or
+     Tahoe processor an attempt to take the ssqqrrtt() of negative _x causes an er-
+     ror; in this event, the global variable _e_r_r_n_o is set to EDOM and a re-
+     served operand fault is generated.
+
+EERRRROORR ((dduuee ttoo RRoouunnddooffff eettcc..))
+     The ccbbrrtt() function is accurate to within 0.7 _u_l_p_s.
+
+     The ssqqrrtt() function on a VAX is accurate to within 0.501 _u_l_p_s. Sqrt on a
+     machine that conforms to IEEE 754 is correctly rounded in accordance with
+     the rounding mode in force; the error is less than half an _u_l_p in the de-
+     fault mode (round-to-nearest).  An _u_l_p is one _Unit in the _Last _Place car-
+     ried.
+
+SSEEEE AALLSSOO
+     math(3),  infnan(3)
+
+SSTTAANNDDAARRDDSS
+     The ssqqrrtt function conforms to ANSI C X3.159-1989 (``ANSI C '').
+
+HHIISSTTOORRYY
+     The ccbbrrtt function appeared in 4.3BSD.
+
+4.4BSD                           June 4, 1993                                1

@@ -1,0 +1,35 @@
+STTY(3)                     BSD Programmer's Manual                    STTY(3)
+
+NNAAMMEE
+     ssttttyy, ggttttyy - set and get terminal state (defunct)
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssggttttyy..hh>>
+
+     ssttttyy(_i_n_t _f_d, _s_t_r_u_c_t _s_g_t_t_y_b _*_b_u_f);
+
+     ggttttyy(_i_n_t _f_d, _s_t_r_u_c_t _s_g_t_t_y_b _*_b_u_f);
+
+DDEESSCCRRIIPPTTIIOONN
+     TThheessee iinntteerrffaacceess aarree oobbssoolleetteedd bbyy iiooccttll((22))..  TThheeyy aarree aavvaaiillaabbllee ffrroomm tthhee
+     ccoommppaattiibbiilliittyy lliibbrraarryy,, lliibbccoommppaatt..
+
+     The ssttttyy() function sets the state of the terminal associated with _f_d.
+     The ggttttyy() function retrieves the state of the terminal associated with
+     _f_d. To set the state of a terminal the call must have write permission.
+
+     The ssttttyy() call is actually `ioctl(fd, TIOCSETP, buf)', while the ggttttyy()
+     call is `ioctl(fd, TIOCGETP, buf)'. See ioctl(2) and tty(4) for an expla-
+     nation.
+
+DDIIAAGGNNOOSSTTIICCSS
+     If the call is successful 0 is returned, otherwise -1 is returned and the
+     global variable _e_r_r_n_o contains the reason for the failure.
+
+SSEEEE AALLSSOO
+     ioctl(2),  tty(4)
+
+HHIISSTTOORRYY
+     The ssttttyy() and ggttttyy() functions appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 4, 1993                                1

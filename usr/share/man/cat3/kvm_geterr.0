@@ -1,0 +1,31 @@
+KVM_GETERR(3)               BSD Programmer's Manual              KVM_GETERR(3)
+
+NNAAMMEE
+     kkvvmm__ggeetteerrrr - get error message on kvm descriptor
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<kkvvmm..hh>>
+
+     _c_h_a_r _*
+     kkvvmm__ggeetteerrrr(_k_v_m___t _*_k_d);
+
+DDEESSCCRRIIPPTTIIOONN
+     This function returns a string describing the most recent error condition
+     on the descriptor _k_d. The results are undefined if the most recent kvm(3)
+     library call did not produce an error.  The string returned is stored in
+     memory owned by kvm(3) so the message should be copied out and saved
+     elsewhere if necessary.
+
+BBUUGGSS
+     This routine cannot be used to access error conditions due to a failed
+     kkvvmm__ooppeennffiilleess() call, since failure is indicated by returning a NULL de-
+     scriptor.  Therefore, errors on open are output to the special error
+     buffer passed to kkvvmm__ooppeennffiilleess().  This option is not available to
+     kkvvmm__ooppeenn().
+
+SSEEEE AALLSSOO
+     kvm(3),  kvm_close(3),  kvm_getargv(3),  kvm_getenvv(3),
+     kvm_getprocs(3),  kvm_nlist(3),  kvm_open(3),  kvm_openfiles(3),
+     kvm_read(3),  kvm_write(3)
+
+4.4BSD                           June 4, 1993                                1
