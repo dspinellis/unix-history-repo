@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tahoe.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)tahoe.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -41,14 +41,60 @@ typedef unsigned int Word;
 #define BITSPERWORD (BITSPERBYTE * sizeof(Word))
 
 #define nargspassed(frame) ((frame->removed-4)/4)
+/*
+ * Extract a field's value from the integer i.  The value
+ * is placed in i in such as way as the first bit of the
+ * field is contained in the first byte of the integer.
+ */
+#define	extractfield(i, s) \
+	((i >> BITSPERWORD - ((s)->symvalue.field.offset mod BITSPERBYTE + \
+		(s)->symvalue.field.length)) & \
+	 ((1 << (s)->symvalue.field.length) - 1))
+/*
+ * Rearrange the stack so that the top of stack has
+ * something corresponding to newsize, whereas before it had
+ * something corresponding to oldsize.  If we are expanding
+ * then the stack is padded at the front of the data with nulls.
+ * If we are contracting, the appropriate amount is shaved off the
+ * front by copying up the stack.
+ */
+#define	typerename(oldsize, newsize) { \
+	int osize = oldsize; \
+	Stack *osp; \
+\
+	len = newsize - osize; \
+	osp = sp - osize; \
+	if (len > 0) { \
+		mov(osp, osp+len, osize);	/* copy old up and pad */ \
+		bzero(osp, len); \
+	} else if (len < 0) \
+		mov(osp-len, osp, osize+len);	/* copy new size down */ \
+	sp += len; \
+}
+
+#define	SYSBASE	0xc0000000		/* base of system address space */
+#define	physaddr(a)	((a) &~ 0xc0000000)
 
 #include "source.h"
 #include "symbols.h"
+#include <sys/param.h>
+#include <sys/dir.h>
+#include <machine/psl.h>
+#include <sys/user.h>
+#include <sys/vm.h>
+#include <machine/reg.h>
+#include <machine/pte.h>
 
 Address pc;
 Address prtaddr;
 
 #endif
+
+/*
+ * Indices into u. for use in collecting registers values.
+ */
+public int rloc[] =
+    { R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, FP, SP, PC };
 
 private Address printop();
 
@@ -894,4 +940,133 @@ error("Can't do a \"call\" right now...sorry");	/* XXX */
 	pc = reg(PROGCTR);
 	if (not isbperr())
 		printstatus();
+}
+
+/*
+ * Special variables for debugging the kernel.
+ */
+
+public integer masterpcbb;
+public integer slr;
+public struct pte *sbr;
+public struct pcb pcb;
+
+public getpcb ()
+{
+    fseek(corefile, masterpcbb & ~0xc0000000, 0);
+    get(corefile, pcb);
+    printf("p0br %lx p0lr %lx p2br %lx p2lr %lx\n",
+	pcb.pcb_p0br, pcb.pcb_p0lr, pcb.pcb_p2br, pcb.pcb_p2lr
+    );
+    setreg(0, pcb.pcb_r0);
+    setreg(1, pcb.pcb_r1);
+    setreg(2, pcb.pcb_r2);
+    setreg(3, pcb.pcb_r3);
+    setreg(4, pcb.pcb_r4);
+    setreg(5, pcb.pcb_r5);
+    setreg(6, pcb.pcb_r6);
+    setreg(7, pcb.pcb_r7);
+    setreg(8, pcb.pcb_r8);
+    setreg(9, pcb.pcb_r9);
+    setreg(10, pcb.pcb_r10);
+    setreg(11, pcb.pcb_r11);
+    setreg(12, pcb.pcb_r12);
+    setreg(FRP, pcb.pcb_fp);
+    setreg(STKP, pcb.pcb_ksp);
+    setreg(PROGCTR, pcb.pcb_pc);
+}
+
+public copyregs (savreg, reg)
+Word savreg[], reg[];
+{
+    reg[0] = savreg[R0];
+    reg[1] = savreg[R1];
+    reg[2] = savreg[R2];
+    reg[3] = savreg[R3];
+    reg[4] = savreg[R4];
+    reg[5] = savreg[R5];
+    reg[6] = savreg[R6];
+    reg[7] = savreg[R7];
+    reg[8] = savreg[R8];
+    reg[9] = savreg[R9];
+    reg[10] = savreg[R10];
+    reg[11] = savreg[R11];
+    reg[12] = savreg[R12];
+    reg[FRP] = savreg[FP];
+    reg[STKP] = savreg[SP];
+    reg[PROGCTR] = savreg[PC];
+}
+
+/*
+ * Map a virtual address to a physical address.
+ */
+
+public Address vmap (addr)
+Address addr;
+{
+	int oldaddr = addr, v;
+	struct pte pte;
+
+	addr &= ~0xc0000000;
+	v = btop(addr);
+	switch (oldaddr&0xc0000000) {
+
+	case 0xc0000000:
+		/*
+		 * In system space get system pte.  If
+		 * valid or reclaimable then physical address
+		 * is combination of its page number and the page
+		 * offset of the original address.
+		 */
+		if (v >= slr)
+			goto oor;
+		addr = ((long)(sbr+v)) &~ 0xc0000000;
+		goto simple;
+
+	case 0x80000000:
+		/*
+		 * In p2 spce must not be in shadow region.
+		 */
+		if (v < pcb.pcb_p2lr)
+			goto oor;
+		addr = (long)(pcb.pcb_p2br+v);
+		break;
+
+	case 0x40000000:
+		/*
+		 * In p1 space everything is verboten (for now).
+		 */
+		goto oor;
+
+	case 0x00000000:
+		/*
+		 * In p0 space must not be off end of region.
+		 */
+		if (v >= pcb.pcb_p0lr)
+			goto oor;
+		addr = (long)(pcb.pcb_p0br+v);
+		break;
+	oor:
+		error("address out of segment");
+	}
+	/*
+	 * For p0/p1/p2 address, user-level page table should
+	 * be in kernel vm.  Do second-level indirect by recursing.
+	 */
+	if ((addr & 0xc0000000) != 0xc0000000)
+		error("bad p0br, p1br, or p2br in pcb");
+	addr = vmap(addr);
+simple:
+	/*
+	 * Addr is now address of the pte of the page we
+	 * are interested in; get the pte and paste up the
+	 * physical address.
+	 */
+	fseek(corefile, addr, 0);
+	if (fread(&pte, sizeof (pte), 1, corefile) != 1)
+		error("page table botch");
+	/* SHOULD CHECK NOT I/O ADDRESS; NEED CPU TYPE! */
+	if (pte.pg_v == 0 && (pte.pg_fod || pte.pg_pfnum == 0))
+		error("page not valid/reclaimable");
+	return ((long)(ptob(pte.pg_pfnum) + (oldaddr & PGOFSET)));
 }
