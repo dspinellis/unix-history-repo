@@ -51,6 +51,7 @@
 41	queue.c		orderq
 42	mci.c		mci_get
 45	envelope.c	setsender
+49	conf.c		checkcompat
 50	envelope.c	dropenvelope
 51	queue.c		unlockqueue
 52	main.c		disconnect
