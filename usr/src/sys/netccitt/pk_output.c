@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_output.c	7.8 (Berkeley) %G%
+ *	@(#)pk_output.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -26,6 +26,7 @@
 #include "pk.h"
 #include "pk_var.h"
 
+struct mbuf_cache pk_output_cache = {0 };
 struct	mbuf *nextpk ();
 
 pk_output (lcp)
@@ -146,6 +147,8 @@ register struct pklcd *lcp;
 		pk_trace (pkp -> pk_xcp, m, "P-Out");
 
 		/* Pass the packet on down to the link layer */
+		if (pk_output_cache.mbc_size || pk_output_cache.mbc_oldsize)
+			mbuf_cache(&pk_output_cache, m);
 		(*pkp -> pk_lloutput) (pkp -> pk_llnext, m);
 	}
 }
