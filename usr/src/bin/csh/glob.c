@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)glob.c	5.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)glob.c	5.36 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -642,6 +642,17 @@ backeval(cp, literal)
     faket.t_dcom = fakecom;
     fakecom[0] = STRfakecom1;
     fakecom[1] = 0;
+
+    if (didfds == 0) {
+	/*
+	 * Make sure that we have some file descriptors to
+	 * play with, so that the processes have at least 0, 1, 2
+	 * open
+	 */
+	(void) dcopy(SHIN, 0);
+	(void) dcopy(SHOUT, 1);
+	(void) dcopy(SHERR, 2);
+    }
 
     /*
      * We do the psave job to temporarily change the current job so that the
