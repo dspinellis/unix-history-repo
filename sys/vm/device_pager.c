@@ -54,6 +54,8 @@
 #include "vm_page.h"
 #include "vm_kern.h"
 #include "device_pager.h"
+#include "vnode.h"
+#include "specdev.h"
 
 queue_head_t	dev_pager_list;	/* list of managed devices */
 
@@ -89,6 +91,7 @@ dev_pager_alloc(handle, size, prot)
 	register dev_pager_t devp;
 	register int npages, off;
 	extern int nullop(), enodev();
+	struct vnode *vp;
 
 
 #ifdef DEBUG
@@ -110,7 +113,8 @@ dev_pager_alloc(handle, size, prot)
 		 * Validation.  Make sure this device can be mapped
 		 * and that range to map is acceptible to device.
 		 */
-		dev = (dev_t)handle;
+		vp = (struct vnode *)handle;
+		dev = vp->v_rdev;
 		mapfunc = cdevsw[major(dev)].d_mmap;
 		if (!mapfunc || mapfunc == enodev || mapfunc == nullop)
 			return(NULL);

@@ -475,7 +475,7 @@ vm_mmap(map, addr, size, prot, flags, handle, foff)
 		vp = (struct vnode *)handle;
 		if (vp->v_type == VCHR) {
 			type = PG_DEVICE;
-			handle = (caddr_t)vp->v_rdev;
+			handle = (caddr_t)vp;
 		} else
 			type = PG_VNODE;
 	}
