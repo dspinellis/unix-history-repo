@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty.c	7.35 (Berkeley) %G%
+ *	@(#)tty.c	7.36 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -1670,24 +1670,12 @@ ttyinfo(tp)
 	struct tty *tp;
 {
 	register struct proc *p, *pick = NULL;
-	register char *cp = hostname;
 	int x, s;
 	struct timeval utime, stime;
 #define	pgtok(a)	(((a)*NBPG)/1024)
 
 	if (ttycheckoutq(tp,0) == 0) 
 		return;
-	/* 
-	 * hostname 
-	 */
-	if (ttyhostname) {
-		if (*cp == '\0')
-			ttyprintf(tp, "amnesia");
-		else
-			while (*cp && *cp != '.')
-				tputchar(*cp++, tp);
-		tputchar(' ');
-	}
 	/* 
 	 * load average 
 	 */
@@ -1779,6 +1767,11 @@ ttyoutint(n, base, min, tp)
  *
  */
 #define isrun(p)	(((p)->p_stat == SRUN) || ((p)->p_stat == SIDL))
+#define TESTAB(a, b)    ((a)<<1 | (b))
+#define ONLYA   2
+#define ONLYB   1
+#define BOTH    3
+
 proc_compare(p1, p2)
 	register struct proc *p1, *p2;
 {
@@ -1788,12 +1781,12 @@ proc_compare(p1, p2)
 	/*
 	 * see if at least one of them is runnable
 	 */
-	switch (isrun(p1)<<1 | isrun(p2)) {
-	case 0x01:
-		return (1);
-	case 0x10:
+	switch (TESTAB(isrun(p1), isrun(p2))) {
+	case ONLYA:
 		return (0);
-	case 0x11:
+	case ONLYB:
+		return (1);
+	case BOTH:
 		/*
 		 * tie - favor one with highest recent cpu utilization
 		 */
@@ -1802,6 +1795,17 @@ proc_compare(p1, p2)
 		if (p1->p_cpu > p2->p_cpu)
 			return (0);
 		return (p2->p_pid > p1->p_pid);	/* tie - return highest pid */
+	}
+	/*
+ 	 * weed out zombies
+	 */
+	switch (TESTAB(p1->p_stat == SZOMB, p2->p_stat == SZOMB)) {
+	case ONLYA:
+		return (1);
+	case ONLYB:
+		return (0);
+	case BOTH:
+		return (p2->p_pid > p1->p_pid); /* tie - return highest pid */
 	}
 	/* 
 	 * pick the one with the smallest sleep time
@@ -1819,6 +1823,7 @@ proc_compare(p1, p2)
 		return (0);
 	return(p2->p_pid > p1->p_pid);		/* tie - return highest pid */
 }
+
 #define TOTTY	0x2	/* XXX should be in header */
 /*VARARGS2*/
 ttyprintf(tp, fmt, x1)
