@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)restore.8	6.3 (Berkeley) %G%
+.\"	@(#)restore.8	6.4 (Berkeley) %G%
 .\"
 .TH RESTORE 8 ""
 .UC 4
@@ -270,6 +270,13 @@ extracts the actual directory,
 rather than the files that it references.
 This prevents hierarchical restoration of complete subtrees
 from the tape.
+.TP 5n
+.B s
+The next argument to
+.I restore
+is a number which
+selects the file on a multi-file dump tape.  File numbering
+starts at 1.
 .SH DIAGNOSTICS
 Complaints about bad key characters.
 .PP
