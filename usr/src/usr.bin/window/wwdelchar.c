@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwdelchar.c	3.6 83/09/15";
+static	char *sccsid = "@(#)wwdelchar.c	3.7 83/11/23";
 #endif
 
 #include "ww.h"
@@ -53,24 +53,22 @@ register struct ww *w;
 		buf = &w->ww_buf[row][col];
 		win = &w->ww_win[row][col];
 		ns = &wwns[row][col];
+		smap = &wwsmap[row][col];
 		touched = &wwtouched[row];
-		for (; --i >= 0;) {
-			if (*win) {
-				if ((*win & (WWM_COV|WWM_GLS)) != 0) {
-					ns++;
-					buf++;
-				} else {
-					ns++->c_w = buf++->c_w
-						^ *win++ << WWC_MSHIFT;
-					*touched = 1;
-				}
-			} else {
+		for (; --i >= 0;)
+			if (*smap++ != w->ww_index) {
+				ns++;
+				buf++;
+				win++;
+			} else if (*win) {
+				ns++->c_w = buf++->c_w ^ *win++ << WWC_MSHIFT;
 				*touched = 1;
+			} else {
 				*ns++ = *buf++;
 				win++;
 				nvis++;
+				*touched = 1;
 			}
-		}
 	}
 
 	/*

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwinschar.c	3.9 83/09/15";
+static	char *sccsid = "@(#)wwinschar.c	3.10 83/11/23";
 #endif
 
 #include "ww.h"
@@ -54,25 +54,23 @@ short c;
 		buf = &w->ww_buf[row][col];
 		win = &w->ww_win[row][col];
 		ns = &wwns[row][col];
+		smap = &wwsmap[row][col];
 		touched = &wwtouched[row];
 		c = buf->c_w ^ *win << WWC_MSHIFT;
-		for (; --i >= 0;) {
-			if (*win) {
-				if ((*win & (WWM_COV|WWM_GLS)) != 0) {
-					ns++;
-					buf++;
-				} else {
-					*touched = 1;
-					ns++->c_w = buf++->c_w
-						^ *win++ << WWC_MSHIFT;
-				}
-			} else {
+		for (; --i >= 0;)
+			if (*smap++ != w->ww_index) {
+				ns++;
+				buf++;
+				win++;
+			} else if (*win) {
+				ns++->c_w = buf++->c_w ^ *win++ << WWC_MSHIFT;
 				*touched = 1;
+			} else {
 				*ns++ = *buf++;
 				win++;
 				nvis++;
+				*touched = 1;
 			}
-		}
 	}
 
 	/*
