@@ -1,4 +1,4 @@
-@(#)README	2.1 (Berkeley) %G%
+@(#)README	2.2 (Berkeley) %G%
 
 This document describes the sendmail configuration files being used
 at Berkeley.  There have been several previous versions.  This file
@@ -67,13 +67,13 @@ honest!
 
 You need this line!
 
-	VERSIONID(@(#)README	2.1 (Berkeley) %G%)
+	VERSIONID(<SCCS or RCS version id>)
 
 VERSIONID is a macro that stuffs the version information into the
 resulting file.  We use SCCS; you could use RCS, something else, or
 omit it completely.
 
-	DOMAIN(cs.exposed)dnl
+	DOMAIN(cs.exposed)
 
 This example exposes the host inside of the CS subdomain -- that is,
 it doesn't try to hide the name of the workstation to the outside
@@ -85,8 +85,8 @@ local hostname.  This can also be effected by using:
 
 in the ".mc" file.
 
-	MAILER(local)dnl
-	MAILER(smtp)dnl
+	MAILER(local)
+	MAILER(smtp)
 
 These describe the mailers used at the default CS site site.  
 
@@ -114,6 +114,29 @@ uucp		The Unix-to-Unix Copy Program mailer.  Actually, this
 		defines two mailers, "uucp" and "suucp".  The latter
 		is for when you know that the UUCP mailer at the other
 		end can handle multiple recipients in one transfer.
+
+EXTENSIONS
+
+For more complex configurations, you can define special rules.
+The macro LOCAL_RULE_3 introduces rules that are used in canonicalizing
+the names.  Any modifications made here are reflected in the header.
+
+A common use is to convert old UUCP addreses to SMTP addresses using
+the UUCPSMTP macro.  For example:
+
+	LOCAL_RULE_3
+	UUCPSMTP(decvax,	decvax.dec.com)
+	UUCPSMTP(research,	research.att.com)
+
+will cause addresses of the form "decvax!user" and "research!user"
+to be converted to "user@decvax.dec.com" and "user@research.att.com"
+respectively.
+
+Similarly, LOCAL_RULE_0 can be used to introduce new parsing rules.
+For example, new rules are needed to parse hostnames that you accept
+via MX records.
+
+????
 
 HIERARCHY
 
@@ -157,6 +180,9 @@ hack		Local hacks.  These can be referenced using the HACK
 		macro.  They shouldn't be of more than voyeuristic
 		interest outside the .Berkeley.EDU domain, but who knows?
 		We've all got our own peccadilloes.
+
+siteconfig	Site configuration -- e.g., tables of locally connected
+		UUCP sites.
 
 
 ADMINISTRATIVE DETAILS
@@ -210,7 +236,7 @@ MACROS
    S
    T
    U	UUCP Relay (all hosts)
-   V	UUCP Relay (class V hosts)
+   V	my UUCP name (if I have a UUCP connection)
    W	UUCP Relay (class W hosts)
    X	UUCP Relay (class X hosts)
    Y	UUCP Relay (class Y hosts)
@@ -240,10 +266,10 @@ CLASSES
    S
    T
    U	locally connected UUCP hosts
-   V	UUCP hosts connected to host $V
-   W	UUCP hosts connected to host $X
-   X	UUCP hosts connected to host $Y
-   Y	UUCP hosts connected to host $Z
+   V	locally connected smart UUCP hosts
+   W	UUCP hosts connected to host $W
+   X	UUCP hosts connected to host $X
+   Y	UUCP hosts connected to host $Y
    Z
 
 
@@ -252,7 +278,7 @@ M4 DIVERSIONS
    1	Versions
    2	Local Ruleset 0 additions
    3	Local Ruleset 3 additions
-   4
+   4	UUCP Ruleset 0 additions
    5
    6
    7	mailer definitions
