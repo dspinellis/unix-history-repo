@@ -7,7 +7,7 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)vm_machdep.c	5.3 (Berkeley) %G%
+ *	@(#)vm_machdep.c	5.4 (Berkeley) %G%
  */
 
 /*
@@ -42,12 +42,6 @@
 #include "text.h"
 
 #include "buf.h"
-
-#include "dbg.h"
-
-#define load_cr3(s)	{long phys; \
-	phys = (long)(s) /*| 0x80000000 */ ;\
-	__asm ( "movl %0,%%eax; movl %%eax,%%cr3" : : "g" (phys) : "ax" ) ; }
 
 /*
  * Set a red zone in the kernel stack after the u. area.
@@ -98,7 +92,7 @@ newptes(pte, v, size)
 #ifdef lint
 	pte = pte;
 #endif
-	load_cr3(u.u_pcb.pcb_ptd);
+	tlbflush();
 }
 
 /*
@@ -130,7 +124,7 @@ chgprot(addr, tprot)
 	}
 	*(u_int *)pte &= ~PG_PROT;
 	*(u_int *)pte |= tprot;
-	load_cr3(u.u_pcb.pcb_ptd);
+	tlbflush();
 	return (1);
 }
 
@@ -144,7 +138,7 @@ settprot(tprot)
 		ptaddr[i] &= ~PG_PROT;
 		ptaddr[i] |= tprot;
 	}
-	load_cr3(u.u_pcb.pcb_ptd);
+	tlbflush();
 }
 
 /*
@@ -167,20 +161,17 @@ setptlr(region, nlen)
 		u.u_pcb.pcb_p1lr = nlen;
 		nlen = P1PAGES - nlen;
 	}
-/*pg("setptlr(%x,%x), was %d",region, nlen, olen);*/
 	if ((change = olen - nlen) <= 0)
 		return;
 	if (region == 0)
 		pte = u.u_pcb.pcb_p0br + u.u_pcb.pcb_p0lr;
 	else
 		pte = u.u_pcb.pcb_p1br + u.u_pcb.pcb_p1lr - change;
-/*printf("p0b %x p0l %x", u.u_pcb.pcb_p0br, u.u_pcb.pcb_p0lr);
-printf("p1b %x p1l %x pte %x", u.u_pcb.pcb_p1br, u.u_pcb.pcb_p1lr, pte);*/
 	do {
 		*(u_int *)pte++ = 0;
 	} while (--change);
 	/* short cut newptes */
-	load_cr3(u.u_pcb.pcb_ptd);
+	tlbflush();
 }
 
 /*
@@ -201,7 +192,7 @@ physaccess(pte, paddr, size, prot)
 		page += NBPG;
 		pte++;
 	}
-	load_cr3(u.u_pcb.pcb_ptd);
+	tlbflush();
 }
 
 /*
@@ -226,7 +217,7 @@ pagemove(from, to, size)
 		to += NBPG;
 		size -= NBPG;
 	}
-	load_cr3(u.u_pcb.pcb_ptd);
+	tlbflush();
 }
 
 /*
@@ -259,11 +250,7 @@ probew(addr)
 	p = u.u_procp;
 	page = btop(addr);
 	if (page < dptov(p, p->p_dsize) || page > sptov(p, p->p_ssize))
-/*
-{
-dprintf(DPHYS,"vtopte %x %x\n", vtopte(p, page), *(int *)vtopte(p, page) );*/
 		return((*(int *)vtopte(p, page) & PG_PROT) == PG_UW);
-/*}*/
 	return(0);
 }
 
@@ -280,7 +267,6 @@ kernacc(addr, count, rw)
 	register int ix, cnt;
 	extern long Syssize;
 
-/*dprintf(DPHYS,"kernacc %x count %d rw %d", addr, count, rw);*/
 	if (count <= 0)
 		return(0);
 	pde = (struct pde *)((u_int)u.u_procp->p_p0br + u.u_procp->p_szpt * NBPG);
@@ -289,25 +275,15 @@ kernacc(addr, count, rw)
 	cnt -= ix;
 	for (pde += ix; cnt; cnt--, pde++)
 		if (pde->pd_v == 0)
-/*{
-dprintf(DPHYS,"nope pde %x, idx %x\n", pde, ix);*/
 			return(0);
-/*}*/
 	ix = btop(addr-0xfe000000);
 	cnt = btop(addr-0xfe000000+count+NBPG-1);
 	if (cnt > (int)&Syssize)
-/*{
-dprintf(DPHYS,"nope cnt %x\n", cnt);*/
 		return(0);
-/*}*/
 	cnt -= ix;
 	for (pte = &Sysmap[ix]; cnt; cnt--, pte++)
 		if (pte->pg_v == 0 /*|| (rw == B_WRITE && pte->pg_prot == 1)*/) 
-/*{
-dprintf(DPHYS,"nope pte %x %x, idx %x\n", pte, *(int *)pte, ix);*/
 			return(0);
-/*}
-dprintf(DPHYS,"yup\n");*/
 	return(1);
 }
 
@@ -319,7 +295,6 @@ useracc(addr, count, rw)
 	register u_int addr2;
 	extern int prober(), probew();
 
-/*dprintf(DPHYS,"useracc %x count %d rw %d", addr, count, rw);*/
 	if (count <= 0)
 		return(0);
 	addr2 = addr;
@@ -327,13 +302,9 @@ useracc(addr, count, rw)
 	func = (rw == B_READ) ? prober : probew;
 	do {
 		if ((*func)(addr2) == 0)
-/*{
-dprintf(DPHYS,"nope %x\n", addr);*/
 			return(0);
-/*}*/
 		addr2 = (addr2 + NBPG) & ~PGOFSET;
 	} while (addr2 < addr);
-/*dprintf(DPHYS,"yup\n", addr);*/
 	return(1);
 }
 
@@ -383,7 +354,6 @@ initpdt(p)
 	extern struct pde *vtopde();
 	extern Sysbase;
 
-/*pg("initpdt");*/
 	/* clear entire map */
 	pde = vtopde(p, 0);
 	/*bzero(pde, NBPG); */
@@ -397,8 +367,6 @@ initpdt(p)
 	pde = vtopde(p, &u);
 	*(int *)pde = PG_UW | PG_V;
 	pde->pd_pfnum = Usrptmap[btokmx(p->p_addr)].pg_pfnum;
-/*printf("%d.u. pde %x pfnum %x virt %x\n", p->p_pid, pde, pde->pd_pfnum,
-p->p_addr);*/
 
 	/* otherwise, fill in user map */
 	k = btokmx(p->p_p0br);
@@ -407,11 +375,9 @@ p->p_addr);*/
 
 	/* text and data */
 	sz = ctopt(p->p_tsize + p->p_dsize);
-/*dprintf(DEXPAND,"textdata 0 to %d\n",sz-1);*/
 	for (i = 0; i < sz; i++, pde++) {
 		*(int *)pde = PG_UW | PG_V;
 		pde->pd_pfnum = Usrptmap[k++].pg_pfnum;
-/*dprintf(DEXPAND,"%d.pde %x pf %x\n", p->p_pid, pde, *(int *)pde);*/
 	}
 	/*
 	 * Bogus!  The kernelmap may map unused PT pages
@@ -424,21 +390,13 @@ p->p_addr);*/
 		k += p->p_szpt - sz;
 	/* hole */
 	sz = NPTEPG - ctopt(p->p_ssize + UPAGES + btoc(&Sysbase));
-/*dprintf(DEXPAND,"zero %d upto %d\n", i, sz-1);*/
 	for ( ; i < sz; i++, pde++)
-/* definite bug here... does not hit all entries, but point moot due
-to bzero above XXX*/
-{
 		*(int *)pde = 0;
-/*pg("pde %x pf %x", pde, *(int *)pde);*/
-}
 	/* stack and u-area */
 	sz = NPTEPG - ctopt(UPAGES + btoc(&Sysbase));
-/*dprintf(DEXPAND,"stack %d upto %d\n", i, sz-1);*/
 	for ( ; i < sz; i++, pde++) {
 		*(int *)pde = PG_UW | PG_V;
 		pde->pd_pfnum = Usrptmap[k++].pg_pfnum;
-/*pg("pde %x pf %x", pde, *(int *)pde);*/
 	}
 	return(initcr3(p));
 }
@@ -537,7 +495,7 @@ vmapbuf(bp)
 		iopte++, pte++;
 		a++;
 	}
-	load_cr3(u.u_pcb.pcb_ptd);
+	tlbflush();
 }
 
 /*
@@ -577,5 +535,5 @@ vunmapbuf(bp)
 		a = ((bp - swbuf) * CLSIZE) * KLMAX;
 		bp->b_un.b_addr = (caddr_t)ctob(dptov(&proc[2], a));
 	}
-	load_cr3(u.u_pcb.pcb_ptd);
+	tlbflush();
 }

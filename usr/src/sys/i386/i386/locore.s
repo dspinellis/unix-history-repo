@@ -7,7 +7,7 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)locore.s	5.4 (Berkeley) %G%
+ *	@(#)locore.s	5.5 (Berkeley) %G%
  */
 
 /*
@@ -361,11 +361,11 @@ begin:
 	movl	%ecx,PCB_P1BR(%eax)	# p1br: P1PAGES from end of PT
 	movl	$ P1PAGES-UPAGES,PCB_P1LR(%eax)	# p1lr: vax style
 	movl	$ CLSIZE,PCB_SZPT(%eax)	# page table size
-	fninit
-	pushl	$0x262
-	fldcw	0(%esp)
-	popl	%ecx
-	fnsave	PCB_SAVEFPU(%eax)
+	# fninit
+	# pushl	$0x262
+	# fldcw	0(%esp)
+	# popl	%ecx
+	# fnsave	PCB_SAVEFPU(%eax)
 	movl	%edi,PCB_CR3(%eax)
 	pushl	%edi	# cr3
 	movl	%esi,%eax
@@ -993,9 +993,9 @@ sw2:
 	movl	%eax,_Swtchmap
 	movl	4(%edx),%eax
 	movl	%eax,_Swtchmap+4
-	movl	%cr3,%eax
- 	orl	$ I386_CR3PAT,%eax
-	movl	%eax,%cr3
+	# movl	%cr3,%eax
+ 	# orl	$ I386_CR3PAT,%eax
+	# movl	%eax,%cr3
 	movl	_Swtchbase+PCB_CR3,%edx
 
  # pushal; pushl %edx ; pushl P_CR3(%ecx); pushl $l2; call _pg; popl %eax ; popl %eax; popl %eax ; popal ; .data ; l2: .asciz "s %x %x " ; .text
@@ -1110,21 +1110,148 @@ _doadump:
 _physaddr:
 	.byte 0xcc
 
-/* Paranoiaa - never happens, right? */
-	.globl	_svfpsp,_rsfpsp
-_svfpsp:
-	popl %eax
-	movl	%esp,svesp
-	movl	%ebp,svebp
-	pushl %eax
-	ret
+#define	IDTVEC(name)	.align 4; .globl _X/**/name; _X/**/name:
+/*#define	PANIC(msg)	xorl %eax,%eax; movl %eax,_waittime; pushl 1f; \
+			call _panic; 1: .asciz msg*/
+#define	PRINTF(n,msg)	pushal ; pushl 1f; call _printf; MSG(msg) ; popl %eax ; popal
+#define	MSG(msg)	.data; 1: .asciz msg; .text
 
-_rsfpsp:
-	popl %eax
-	movl	svesp,%esp
-	movl	svebp,%ebp
-	pushl %eax
-	ret
+	.text
 
-svesp:	.long 0
-svebp:	.long 0
+/*
+ * Trap and fault vector routines
+ */ 
+#define	TRAP(a)	pushl $ a; jmp alltraps
+
+IDTVEC(div)
+	pushl $0; TRAP(T_DIVIDE)
+IDTVEC(dbg)
+	pushl $0; TRAP(T_TRCTRAP)
+IDTVEC(nmi)
+	pushl $0; TRAP(T_NMI)
+IDTVEC(bpt)
+	pushl $0; TRAP(T_BPTFLT)
+IDTVEC(ofl)
+	pushl $0; TRAP(T_OFLOW)
+IDTVEC(bnd)
+	pushl $0; TRAP(T_BOUND)
+IDTVEC(ill)
+	pushl $0; TRAP(T_PRIVINFLT)
+IDTVEC(dna)
+	pushl $0; TRAP(T_DNA)
+IDTVEC(dble)
+	TRAP(T_DOUBLEFLT)
+	/*PANIC("Double Fault");*/
+IDTVEC(fpusegm)
+	pushl $0; TRAP(T_FPOPFLT)
+IDTVEC(tss)
+	TRAP(T_TSSFLT)
+	/*PANIC("TSS not valid");*/
+IDTVEC(missing)
+	TRAP(T_SEGNPFLT)
+IDTVEC(stk)
+	TRAP(T_STKFLT)
+IDTVEC(prot)
+	TRAP(T_PROTFLT)
+IDTVEC(page)
+	TRAP(T_PAGEFLT)
+IDTVEC(rsvd)
+	pushl $0; TRAP(T_RESERVED)
+IDTVEC(fpu)
+	pushl $0; TRAP(T_ARITHTRAP)
+	/* 17 - 31 reserved for future exp */
+IDTVEC(rsvd0)
+	pushl $0; TRAP(17)
+IDTVEC(rsvd1)
+	pushl $0; TRAP(18)
+IDTVEC(rsvd2)
+	pushl $0; TRAP(19)
+IDTVEC(rsvd3)
+	pushl $0; TRAP(20)
+IDTVEC(rsvd4)
+	pushl $0; TRAP(21)
+IDTVEC(rsvd5)
+	pushl $0; TRAP(22)
+IDTVEC(rsvd6)
+	pushl $0; TRAP(23)
+IDTVEC(rsvd7)
+	pushl $0; TRAP(24)
+IDTVEC(rsvd8)
+	pushl $0; TRAP(25)
+IDTVEC(rsvd9)
+	pushl $0; TRAP(26)
+IDTVEC(rsvd10)
+	pushl $0; TRAP(27)
+IDTVEC(rsvd11)
+	pushl $0; TRAP(28)
+IDTVEC(rsvd12)
+	pushl $0; TRAP(29)
+IDTVEC(rsvd13)
+	pushl $0; TRAP(30)
+IDTVEC(rsvd14)
+	pushl $0; TRAP(31)
+
+alltraps:
+	pushal
+	push %ds
+	push %es
+	movw	$0x10,%ax
+	movw	%ax,%ds
+	movw	%ax,%es
+	incl	_cnt+V_TRAP
+	call	_trap
+
+#ifdef junk
+	cmpl	$0xfc000000,12*4(%esp)	# is it a user pc
+	ja	1f 
+	cmpw	$0x1f,13*4(%esp)	# is it a user cs
+	je	1f 
+	.data	; lx: .asciz "t user cs %x?" ; .text
+2:
+	movl	13*4(%esp),%eax
+	pushl	%eax
+	pushl	$lx
+	call	_pg
+	popl %eax ; popl %eax
+	jmp	2b
+1:
+#endif junk
+
+	pop %es
+	pop %ds
+	popal
+	addl	$8,%esp			# pop type, code
+	iret
+
+/*
+ * Call gate entry for syscall
+ */
+
+IDTVEC(syscall)
+	pushfl	# only for stupid carry bit and more stupid wait3 cc kludge
+	pushal	# only need eax,ecx,edx - trap resaves others
+	movw	$0x10,%ax	# switch to kernel segments
+	movw	%ax,%ds
+	movw	%ax,%es
+	call	_syscall
+
+#ifdef notdef
+	cmpw	$0x1f,10*4(%esp)	# is user cs what it should be?
+	jz	1f
+	.data	; lz: .asciz "s user cs %x?" ; .text
+2:
+	movl	10*4(%esp),%eax
+	pushl	%eax
+	pushl	$lz
+	call	_pg
+	jmp	2b
+1:
+#endif
+
+	movw	__udatasel,%ax	# switch back to user segments
+	movw	%ax,%ds
+	movw	%ax,%es
+	popal
+	popfl
+	lret			# back we go, we hope!
+
