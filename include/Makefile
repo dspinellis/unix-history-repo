@@ -1,15 +1,6 @@
 #	@(#)Makefile	5.45.1.1 (Berkeley) 5/6/91
 #
-# PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
-# --------------------         -----   ----------------------
-# CURRENT PATCH LEVEL:         1       00123
-# --------------------         -----   ----------------------
-#
-# 04 Apr 93	Rodney W. Grimes	Removed added netccitt and vm
-#
-# Doing a make install builds /usr/include
-#
-# The ``rm -rf''s used below are safe because rm doesn't follow symbolic
+ The ``rm -rf''s used below are safe because rm doesn't follow symbolic
 # links.
 #
 all clean cleandir depend lint tags:
@@ -17,11 +8,11 @@ all clean cleandir depend lint tags:
 # Missing: mp.h
 
 FILES=	a.out.h ar.h assert.h bitstring.h ctype.h db.h dirent.h disktab.h \
-	fstab.h fts.h glob.h grp.h kvm.h limits.h locale.h math.h memory.h \
-	mpool.h ndbm.h netdb.h nlist.h paths.h pwd.h ranlib.h regexp.h \
-	resolv.h setjmp.h sgtty.h stab.h stdarg.h stddef.h stdio.h \
-	stdlib.h string.h strings.h struct.h sysexits.h time.h ttyent.h \
-	tzfile.h unistd.h utime.h utmp.h varargs.h vis.h
+	err.h fnmatch.h fstab.h fts.h glob.h grp.h kvm.h limits.h locale.h \
+	math.h memory.h mpool.h ndbm.h netdb.h nlist.h paths.h pwd.h \
+	ranlib.h regexp.h resolv.h setjmp.h sgtty.h stab.h stdarg.h \
+	stddef.h stdio.h stdlib.h string.h strings.h struct.h sysexits.h \
+	time.h ttyent.h tzfile.h unistd.h utime.h utmp.h varargs.h vis.h
 
 MFILES=	float.h frame.h
 LFILES=	errno.h fcntl.h signal.h syslog.h syscall.h termios.h
