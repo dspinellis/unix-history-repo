@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)pc.c 3.17 %G%";
+static	char sccsid[] = "@(#)pc.c 3.18 %G%";
 
 #include <stdio.h>
 #include <signal.h>
@@ -397,8 +397,13 @@ duplicate:
 		ldargs[ldargx++] = "-lm_p";
 		ldargs[ldargx++] = "-lc_p";
 	} else {
+#ifndef sun
 		ldargs[ldargx++] = "-lm";
 		ldargs[ldargx++] = "-lc";
+#else
+		ldargs[ldargx++] = "-lMm";
+		ldargs[ldargx++] = "-lMc";
+#endif
 	}
 	ldargs[ldargx] = 0;
 	if (dosys(ld, ldargs, 0, 0)==0 && np == 1 && nxo == 0)
