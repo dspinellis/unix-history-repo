@@ -4,11 +4,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_ethersubr.c	7.12 (Berkeley) %G%
+ *	@(#)if_ethersubr.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
+#include "kernel.h"
 #include "malloc.h"
 #include "mbuf.h"
 #include "protosw.h"
@@ -67,7 +68,6 @@ ether_output(ifp, m0, dst, rt)
 	struct mbuf *mcopy = (struct mbuf *)0;
 	register struct ether_header *eh;
 	int usetrailers, off, len = m->m_pkthdr.len;
-	extern struct timeval time;
 #define	ac ((struct arpcom *)ifp)
 
 	if ((ifp->if_flags & (IFF_UP|IFF_RUNNING)) != (IFF_UP|IFF_RUNNING)) {
