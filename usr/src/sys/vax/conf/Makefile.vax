@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile.vax	7.9 (Berkeley) %G%
+#	@(#)Makefile.vax	7.10 (Berkeley) %G%
 #
 # Makefile for 4.3 BSD
 #
@@ -62,8 +62,8 @@ lint: /tmp param.c
 	cd ../vax/inline; make
 
 locore.o: assym.s ${AHEADS} ../vax/rpb.s ../vax/scb.s ubvec.s \
-    ../vax/locore.s ubglue.s ../vax/mtpr.h ../vax/trap.h ../machine/psl.h \
-    ../machine/pte.h ../vax/cpu.h mba.h
+    ../vax/locore.s ubglue.s ../vax/mtpr.h ../vax/trap.h machine/psl.h \
+    machine/pte.h ../vax/cpu.h mba.h
 	cat assym.s ../vax/rpb.s ../vax/scb.s ubvec.s ../vax/locore.s \
 	    ubglue.s > locore.c
 	cc -E -DLOCORE -I../vax ${COPTS} locore.c > locore.i
@@ -91,10 +91,10 @@ trap.o:	Makefile
 # depend on maxusers
 assym.s: Makefile
 
-assym.s: ../h/param.h ../machine/pte.h ../h/buf.h ../h/vmparam.h \
+assym.s: ../h/param.h machine/pte.h ../h/buf.h ../h/vmparam.h \
     ../h/vmmeter.h ../h/dir.h ../h/cmap.h ../h/map.h ../vaxuba/ubavar.h \
     ../vaxuba/ubareg.h ../h/proc.h ../h/msgbuf.h ../h/text.h ../h/user.h \
-    ../vax/rpb.h ../machine/vmparam.h
+    ../vax/rpb.h machine/vmparam.h
 	cc ${INCLUDES} ${IDENT} ${PARAM} ../vax/genassym.c
 	./a.out >assym.s; rm -f a.out
 
@@ -125,7 +125,7 @@ print:
 	@cd ../vax/inline; make print
 	@pr -f ${CFILES}
 
-ioconf.o: ioconf.c ../h/param.h ../machine/pte.h ../h/buf.h ../h/map.h \
+ioconf.o: ioconf.c ../h/param.h machine/pte.h ../h/buf.h ../h/map.h \
     ../vaxmba/mbavar.h ../h/vm.h ../vaxuba/ubavar.h
 	${CC} -c -S ${COPTS} ioconf.c
 	${C2} ioconf.s | ../vax/inline/inline | ${AS} -o ioconf.o
