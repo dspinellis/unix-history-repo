@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	5.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	5.36 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -242,20 +242,23 @@ bread(fd, buf, blk, size)
 {
 	char *cp;
 	int i, errs;
+	off_t offset;
 
-	if (lseek(fd, blk * dev_bsize, 0) < 0)
+	offset = blk;
+	offset *= dev_bsize;
+	if (lseek(fd, offset, 0) < 0)
 		rwerror("SEEK", blk);
 	else if (read(fd, buf, (int)size) == size)
 		return (0);
 	rwerror("READ", blk);
-	if (lseek(fd, blk * dev_bsize, 0) < 0)
+	if (lseek(fd, offset, 0) < 0)
 		rwerror("SEEK", blk);
 	errs = 0;
 	bzero(buf, (size_t)size);
 	printf("THE FOLLOWING DISK SECTORS COULD NOT BE READ:");
 	for (cp = buf, i = 0; i < size; i += secsize, cp += secsize) {
 		if (read(fd, cp, (int)secsize) != secsize) {
-			(void)lseek(fd, blk * dev_bsize + i + secsize, 0);
+			(void)lseek(fd, offset + i + secsize, 0);
 			if (secsize != dev_bsize && dev_bsize != 1)
 				printf(" %ld (%ld),",
 				    (blk * dev_bsize + i) / secsize,
@@ -277,22 +280,25 @@ bwrite(fd, buf, blk, size)
 {
 	int i;
 	char *cp;
+	off_t offset;
 
 	if (fd < 0)
 		return;
-	if (lseek(fd, blk * dev_bsize, 0) < 0)
+	offset = blk;
+	offset *= dev_bsize;
+	if (lseek(fd, offset, 0) < 0)
 		rwerror("SEEK", blk);
 	else if (write(fd, buf, (int)size) == size) {
 		fsmodified = 1;
 		return;
 	}
 	rwerror("WRITE", blk);
-	if (lseek(fd, blk * dev_bsize, 0) < 0)
+	if (lseek(fd, offset, 0) < 0)
 		rwerror("SEEK", blk);
 	printf("THE FOLLOWING SECTORS COULD NOT BE WRITTEN:");
 	for (cp = buf, i = 0; i < size; i += dev_bsize, cp += dev_bsize)
 		if (write(fd, cp, (int)dev_bsize) != dev_bsize) {
-			(void)lseek(fd, blk * dev_bsize + i + dev_bsize, 0);
+			(void)lseek(fd, offset + i + dev_bsize, 0);
 			printf(" %ld,", blk + i / dev_bsize);
 		}
 	printf("\n");
