@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ftp_var.h	5.2 (Berkeley) %G%
+ *	@(#)ftp_var.h	5.3 (Berkeley) %G%
  */
 
 /*
@@ -32,7 +32,6 @@ int	mcase;			/* map upper to lower case for mget names */
 int	ntflag;			/* use ntin ntout tables for name translation */
 int	mapflag;		/* use mapin mapout templates on file names */
 int	code;			/* return/reply code for ftp command */
-int	macroflg;		/* active macro */
 int	crflag;			/* if 1, strip car. rets. on ascii gets */
 char	pasv[64];		/* passive port for proxy data connection */
 char	*altarg;		/* argv[1] with no shell-like preprocessing  */
@@ -89,7 +88,7 @@ struct macel {
 };
 
 int macnum;			/* number of defined macros */
-struct macel macros[16], *macpt;
+struct macel macros[16];
 char macbuf[4096];
 
 extern	char *tail();
@@ -97,3 +96,8 @@ extern	char *index();
 extern	char *rindex();
 extern	char *remglob();
 extern	int errno;
+extern	char *mktemp();
+extern	char *strncpy();
+extern	char *strncat();
+extern	char *strcat();
+extern	char *strcpy();
