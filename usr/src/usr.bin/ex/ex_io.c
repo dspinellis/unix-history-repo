@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_io.c	7.17 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_io.c	7.17.1.1 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -410,10 +410,6 @@ rop(c)
 		error(" Directory");
 
 	case S_IFREG:
-#ifdef CRYPT
-		if (xflag)
-			break;
-#endif
 		i = read(io, (char *)&head, sizeof(head));
 		(void)lseek(io, 0L, L_SET);
 		if (i != sizeof(head))
@@ -829,18 +825,6 @@ getfile()
 				}
 				return (EOF);
 			}
-#ifdef CRYPT
-			if (kflag) {
-				fp = genbuf;
-				while(fp < &genbuf[ninbuf]) {
-					if (*fp++ & 0200) {
-						crblock(perm, genbuf, ninbuf+1,
-	cntch);
-						break;
-					}
-				}
-			}
-#endif
 			fp = genbuf;
 			cntch += ninbuf+1;
 		}
@@ -898,10 +882,6 @@ int isfilter;
 		for (;;) {
 			if (--nib < 0) {
 				nib = fp - genbuf;
-#ifdef CRYPT
-                		if(kflag && !isfilter)
-                                        crblock(perm, genbuf, nib, cntch);
-#endif
 				if (write(io, genbuf, nib) != nib) {
 					wrerror();
 				}
@@ -916,10 +896,6 @@ int isfilter;
 		}
 	} while (a1 <= addr2);
 	nib = fp - genbuf;
-#ifdef CRYPT
-	if(kflag && !isfilter)
-		crblock(perm, genbuf, nib, cntch);
-#endif
 	if (write(io, genbuf, nib) != nib) {
 		wrerror();
 	}

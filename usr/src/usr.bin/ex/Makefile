@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	7.22 (Berkeley) %G%
+#	@(#)Makefile	7.22.1.1 (Berkeley) %G%
 #
 VERSION=3.7
 #
@@ -13,8 +13,7 @@ VERSION=3.7
 # software.  Things that can be turned off to save
 # space include LISPCODE (-l flag, showmatch and lisp options), UCVISUAL
 # (visual \ nonsense on upper case only terminals), CHDIR (the undocumented
-# chdir command.)  CRYPT includes the code to edit encrypted files (the -x
-# option, like ed.)  VMUNIX makes ex considerably larger, raising many limits
+# chdir command.) VMUNIX makes ex considerably larger, raising many limits
 # and improving speed and simplicity of maintenance.  It is suitable only
 # for a VAX or other large machine, and then probably only in a paged system.
 #
@@ -27,7 +26,7 @@ VERSION=3.7
 BINDIR=		/usr/ucb
 NBINDIR=	/usr/new
 LIBDIR=		/usr/lib
-OPTIONS=	-DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX \
+OPTIONS=	-DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX \
 		-DFASTTAG -DUNIX_SBRK
 CFLAGS=		-DTABS=8 -O ${OPTIONS}
 LDFLAGS=	-z				# or -i or -n
