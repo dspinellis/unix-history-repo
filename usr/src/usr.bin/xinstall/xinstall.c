@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)xinstall.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)xinstall.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -59,7 +59,12 @@ main(argc, argv)
 			group = optarg;
 			break;
 		case 'm':
-			mode = atoo(optarg);
+			mode = setmode(optarg, (mode_t)0, 0);
+			if (mode == (mode_t)-1) {
+				(void)fprintf(stderr,
+				    "install: invalid file mode.\n");
+				exit(1);
+			}
 			break;
 		case 'o':
 			owner = optarg;
@@ -227,20 +232,6 @@ strip(to_name)
 		if (wait(&status) == -1 || status)
 			bad(to_name);
 	}
-}
-
-/*
- * atoo --
- *	octal string to int
- */
-atoo(str)
-	register char *str;
-{
-	register int val;
-
-	for (val = 0; isdigit(*str); ++str)
-		val = val * 8 + *str - '0';
-	return(val);
 }
 
 /*
