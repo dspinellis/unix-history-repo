@@ -1,6 +1,5 @@
-
 #ifndef lint
-static char sccsid[] = "@(#)lint.c	1.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)lint.c	1.2	(Berkeley)	%G%";
 #endif lint
 
 # include "mfile1"
@@ -719,10 +718,13 @@ strip(s) char *s; {
 	static char x[BUFSIZ];
 #endif
 	register char *p;
+	static	int	stripping = 0;
 
+	if (stripping)
+		return(s);
+	stripping++;
 	for( p=x; *s; ++s ){
-		if( *s == '/' ) p=x;
-		else if( *s != '"' ){
+		if( *s != '"' ){
 #ifndef FLEXNAMES
 /* PATCHED by ROBERT HENRY on 8Jul80 to fix 14 character file name bug */
 			if( p >= &x[LFNM] )
@@ -731,6 +733,7 @@ strip(s) char *s; {
 			*p++ = *s;
 		}
 	}
+	stripping = 0;
 	*p = '\0';
 #ifndef FLEXNAMES
 	return( x );
@@ -762,8 +765,9 @@ fsave( s ) char *s; {
 	}
 
 where(f){ /* print true location of error */
-	if( f == 'u' && nerrors>1 ) --nerrors; /* don't get "too many errors" */
-	fprintf( stderr, "%s(%d): ", (f == 'c') ? ftitle : strip(ftitle), lineno );
+	if( f == 'u' && nerrors > 1 )
+		--nerrors; /* don't get "too many errors" */
+	fprintf( stderr, "%s(%d): ", strip(ftitle), lineno);
 	}
 
 	/* a number of dummy routines, unneeded by lint */
