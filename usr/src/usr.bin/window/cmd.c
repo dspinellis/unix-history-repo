@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd.c	3.17 83/12/02";
+static	char *sccsid = "@(#)cmd.c	3.18 83/12/06";
 #endif
 
 #include "defs.h"
@@ -85,6 +85,9 @@ docmd()
 				break;
 			case 'L':
 				c_list();
+				break;
+			case 'v':
+				c_variable();
 				break;
 			case ':':
 				c_colon();
