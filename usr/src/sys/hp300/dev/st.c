@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: st.c 1.11 92/01/21$
  *
- *      @(#)st.c	8.3 (Berkeley) %G%
+ *      @(#)st.c	8.4 (Berkeley) %G%
  */
 
 /*
@@ -923,10 +923,12 @@ stioctl(dev, cmd, data, flag)
 				 xp->exb_xsense.tplft1 << 8 |
 				 xp->exb_xsense.tplft0);
 			mtget->mt_resid = resid / 1000;
-			mtget->mt_erreg |= (((xp->exb_xsense.rwerrcnt2 << 16 |
-					      xp->exb_xsense.rwerrcnt1 << 8 |
-					      xp->exb_xsense.rwerrcnt0) * 100) / 
-					    (sc->sc_numblks - resid)) & 0xff;
+			if (sc->sc_numblks - resid)
+				mtget->mt_erreg |=
+					(((xp->exb_xsense.rwerrcnt2 << 16 |
+					   xp->exb_xsense.rwerrcnt1 << 8 |
+					   xp->exb_xsense.rwerrcnt0) * 100) / 
+					 (sc->sc_numblks - resid)) & 0xff;
 		} else if (xp->sc_xsense.valid) {
 			resid = ((xp->sc_xsense.info1 << 24) |
 				 (xp->sc_xsense.info2 << 16) |
