@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)lpd.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)lpd.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -48,6 +48,7 @@ static char sccsid[] = "@(#)lpd.c	5.11 (Berkeley) %G%";
 #include "pathnames.h"
 
 int	lflag;				/* log requests flag */
+int	from_remote;			/* from remote socket */
 
 void mcleanup(), reapchild();
 
@@ -192,8 +193,11 @@ main(argc, argv)
 			(void) close(finet);
 			dup2(s, 1);
 			(void) close(s);
-			if (domain == AF_INET)
+			if (domain == AF_INET) {
+				from_remote = 1;
 				chkhost(&frominet);
+			} else
+				from_remote = 0;
 			doit();
 			exit(0);
 		}
@@ -271,6 +275,10 @@ doit()
 			printjob();
 			break;
 		case '\2':	/* receive files to be queued */
+			if (!from_remote) {
+				syslog(LOG_INFO, "illegal request (%d)", *cp);
+				exit(1);
+			}
 			printer = cp;
 			recvjob();
 			break;
@@ -300,6 +308,10 @@ doit()
 			displayq(cbuf[0] - '\3');
 			exit(0);
 		case '\5':	/* remove a job from the queue */
+			if (!from_remote) {
+				syslog(LOG_INFO, "illegal request (%d)", *cp);
+				exit(1);
+			}
 			printer = cp;
 			while (*cp && *cp != ' ')
 				cp++;
