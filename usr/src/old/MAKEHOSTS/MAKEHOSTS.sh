@@ -15,11 +15,11 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)MAKEHOSTS.sh	5.1 (Berkeley) %G%
+#	@(#)MAKEHOSTS.sh	5.2 (Berkeley) %G%
 #
 
 # program to link to
-RSH=/usr/ucb/rsh
+RSH=/usr/bin/rsh
 
 # address search pattern to recognize local hosts
 LOCALADDR='^128\.32'
