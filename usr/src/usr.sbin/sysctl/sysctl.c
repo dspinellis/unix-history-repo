@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)sysctl.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)sysctl.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -146,6 +146,7 @@ parse(string, flags)
 {
 	int indx, type, state, size, len;
 	int isclockrate = 0;
+	int isboottime = 0;
 	void *newval = 0;
 	int intval, newsize = 0;
 	quad_t quadval;
@@ -222,6 +223,9 @@ parse(string, flags)
 			return;
 		case KERN_CLOCKRATE:
 			isclockrate = 1;
+			break;
+		case KERN_BOOTTIME:
+			isboottime = 1;
 			break;
 		}
 		break;
@@ -321,6 +325,16 @@ parse(string, flags)
 		fprintf(stdout,
 		    "hz = %d, tick = %d, profhz = %d, stathz = %d\n",
 		    clkp->hz, clkp->tick, clkp->profhz, clkp->stathz);
+		return;
+	}
+	if (isboottime) {
+		struct timeval *btp = (struct timeval *)buf;
+
+		if (!nflag)
+			fprintf(stdout, "%s = %s\n", string,
+			    ctime(&btp->tv_sec));
+		else
+			fprintf(stdout, "%d\n", btp->tv_sec);
 		return;
 	}
 	switch (type) {
