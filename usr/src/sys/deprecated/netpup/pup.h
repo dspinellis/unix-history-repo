@@ -1,4 +1,4 @@
-/*	pup.h	1.1	82/02/15	*/
+/*	pup.h	4.1	82/02/15	*/
 
 /*
  * PUP port addressing.
