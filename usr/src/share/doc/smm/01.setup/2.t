@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.t	6.6 (Berkeley) %G%
+.\"	@(#)2.t	6.7 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -24,10 +24,10 @@ In either case, it is highly desirable to read and understand
 the remainder of this document before proceeding.
 .NH 2
 Bootstrapping from the tape
-.PP
+.LP
 The set of files on the distribution tape are as follows:
 .IP 1)
-dd (HP300 and DecStation) or dump (Sparc) image of the root filesystem
+dd (HP300 and DecStation) or dump (SPARC) image of the root filesystem
 .IP 2)
 tar image of the
 .Pn /var
@@ -45,7 +45,7 @@ tar image of the rest of
 .IP 6)
 (8mm tape only) tar image of
 .Pn /usr/src/X11R5
-.PP
+.LP
 The tape bootstrap procedure used to create a
 working system involves the following major steps:
 .IP 1)
@@ -63,13 +63,12 @@ Extract the system and utility source files as desired.
 .PP
 The following sections describe the above steps in detail.
 The details of the first step vary between architectures.
-The specific steps for the HP300, Sparc, and DecStation are
+The specific steps for the HP300, SPARC, and DecStation are
 given in the next three sections respectively.
 You should follow the instructions for your particular architecture.
 In all sections,
 commands you are expected to type are shown in italics, while that
 information printed by the system is shown emboldened.
-.PP
 .NH 2
 Booting the HP300
 .NH 3
@@ -134,7 +133,7 @@ configured for Domain/OS, EISA and VME bus adaptors, audio, the centronics
 port, 1/2" tape drives (7980), CD-ROM, and the PVRX/TVRX 3D graphics displays.
 .NH 3
 Standalone device file naming
-.PP
+.LP
 The standalone system device name syntax on the HP300 is of the form:
 .DS
 xx(a,c,u,p)
@@ -209,7 +208,7 @@ There are two approaches to getting the root filesystem from tape to disk.
 If you have an extra disk, the easiest approach is to use
 .Xr dd (1)
 under HP-UX to copy the root filesystem image from the tape to the beginning
-of the second disk. 
+of the second disk.
 For HPs, the root filesystem image is the first file on the tape.
 It includes a disklabel and bootblock along with the root filesystem.
 An example command to copy the image from tape to the beginning of a disk is:
@@ -226,7 +225,7 @@ man pages for details.
 .PP
 If you have only a single machine with a single disk,
 you need to use the more difficult approach of booting a
-standalone copy program, and using that to copy the 
+standalone copy program, and using that to copy the
 root filesystem image from the tape to the disk.
 If your distribution is on 8mm tape and you have an 8mm drive attached
 to the target machine, you should be able to boot from the distribution
@@ -318,7 +317,7 @@ will be discussed later.
 .PP
 UNIX itself then runs for the first time and begins by printing out a banner
 identifying the release and
-version of the system that is in use and the date that it was compiled.  
+version of the system that is in use and the date that it was compiled. 
 .PP
 Next the
 .I mem
@@ -346,7 +345,7 @@ present in the configuration description
 is printed out at boot time as the system verifies that each device
 is present.
 .PP
-The \*(lqroot device?\*(rq prompt was printed by the system 
+The \*(lqroot device?\*(rq prompt was printed by the system
 to ask you for the name of the root filesystem to use.
 This happens because the distribution system is a \fIgeneric\fP
 system, i.e., it can be bootstrapped on a cpu with its root device
@@ -369,7 +368,7 @@ that was executed by the root shell when it started.  This message
 is present to inform you as to what values the character erase,
 line erase, and interrupt characters have been set.
 .NH 4
-Step 4: restoring the root filesystem
+Step 4: (optional) restoring the root filesystem
 .PP
 UNIX is now running,
 and the \fIUNIX Programmer's manual\fP applies.  The ``#'' is the prompt
@@ -452,7 +451,7 @@ The hardware supported by \*(4B for the SPARC is as follows:
 .TS
 center box;
 lw(1i) lw(4i).
-CPUs    T{
+CPUs	T{
 SPARCstation 1 series (1, 1+, SLC, IPC) and
 SPARCstation 2 series (2, IPX).
 T}
@@ -691,7 +690,7 @@ mfb0	raw interface to mono graphics devices
 .NH 2
 Installing the rest of the system
 .PP
-All architectures now have a root filesystem up and running and now
+All architectures now have a root filesystem up and running and
 proceed from this point to extract the rest of the data from the tape.
 At a minimum you need to set up the
 .Pn /var
