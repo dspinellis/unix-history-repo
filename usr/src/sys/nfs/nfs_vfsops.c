@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vfsops.c	7.30 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	7.31 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -197,8 +197,6 @@ nfs_mountroot()
 		swapdev_vp = vp;
 		VREF(vp);
 		swdevt[0].sw_vp = vp;
-		VREF(vp);
-		argdev_vp = vp;
 	}
 
 	/*
