@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)netstat.1	8.1 (Berkeley) %G%
+.\"	@(#)netstat.1	6.16 (Berkeley) %G%
 .\"
 .Dd 
 .Dt NETSTAT 1
@@ -18,7 +18,7 @@
 .Op Ar system
 .Op Ar core
 .Nm netstat
-.Op Fl Bhimnrs
+.Op Fl Bimnrs
 .Op Fl f Ar address_family
 .Op Fl M Ar core
 .Op Fl N Ar system
@@ -72,10 +72,6 @@ With either interface display (option
 .Fl i
 or an interval, as described below),
 show the number of dropped packets.
-.It Fl h
-Show the state of the
-.Tn IMP
-host table.
 .It Fl i
 Show the state of interfaces which have been auto-configured
 (interfaces statically configured into a system, but not
