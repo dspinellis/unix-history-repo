@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)READ8.c 1.8 %G%";
+static char sccsid[] = "@(#)READ8.c 1.9 %G%";
 
 #include "h00vars.h"
 #include <errno.h>
@@ -133,56 +133,38 @@ readreal(curfile, doublep)
 	 *	[ "+" | "-" ] digit {digits}
 	 */
 	AT_MOST_ONE(read, filep, "%[+-]", sequencep);
-fprintf(stderr,	"leading sign		<%s>\n", sequence);
 	AT_LEAST_ONE(read, filep, "%[0123456789]", sequencep);
-fprintf(stderr,	"leading digits		<%s>\n", sequence);
 	/*
 	 *	any of this is optional:
 	 *	[ `.' digit {digit} ] [ `e' [ `+' | `-' ] digit {digits} ]
 	 */
-*sequencep = getc(filep);
-fprintf(stderr,	"before [.e]		0x%x\n", *sequencep);
-ungetc(*sequencep, filep);
-*sequencep = '\0';
-	/* ANY_ONE_OF(read, filep, "%c", sequencep);*/
-	/* read = fscanf(filep, "%c", sequencep);
-	 * *++sequencep = '\0';
-	 */
 	NEXT_CHAR(read, filep, "%c", sequencep);
-fprintf(stderr,	"[.e] (read %d)		<%s>\n", read, sequence);
 	switch (sequencep[-1]) {
 	default:
 		PUSHBACK(curfile, sequencep);
 		goto convert;
 	case '.':
 		SOME(read, filep, "%[0123456789]", sequencep);
-fprintf(stderr,	"trailing digits	<%s>\n", sequence);
 		if (!read) {
 			PUSHBACK(curfile, sequencep);
 			goto convert;
 		}
-		/* AT_MOST_ONE(read, filep, "%c", sequencep); */
 		NEXT_CHAR(read, filep, "%c", sequencep);
-fprintf(stderr,	"optional e		<%s>\n", sequence);
 		if (sequencep[-1] != 'e') {
 			PUSHBACK(curfile, sequencep);
 			goto convert;
 		}
 		/* fall through */
 	case 'e':
-		/* ANY_ONE_OF(read, filep, "%c", sequencep); */
 		NEXT_CHAR(read, filep, "%c", sequencep);
-fprintf(stderr,	"exponent sign		<%s>\n", sequence);
 		if (sequencep[-1] != '+' && sequencep[-1] != '-') {
 			PUSHBACK(curfile, sequencep);
 			SOME(read, filep, "%[0123456789]", sequencep);
-fprintf(stderr,	"signed exponent	<%s>\n", sequence);
 			if (!read)
 				PUSHBACK(curfile, sequencep);
 			goto convert;
 		}
 		SOME(read, filep, "%[0123456789]", sequencep);
-fprintf(stderr,	"unsigned exponent	<%s>\n", sequence);
 		if (!read) {
 			PUSHBACK(curfile, sequencep);
 			PUSHBACK(curfile, sequencep);
@@ -193,7 +175,6 @@ convert:
 	/*
 	 * convert sequence to double
 	 */
-fprintf(stderr,	"convert		<%s>\n", sequence);
 	*doublep = atof(&sequence[0]);
 	return (1);
 }
