@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_node.c	7.35 (Berkeley) %G%
+ *	@(#)nfs_node.c	7.36 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -19,10 +19,12 @@
 #include "kernel.h"
 #include "malloc.h"
 
+#include "rpcv2.h"
 #include "nfsv2.h"
 #include "nfs.h"
 #include "nfsnode.h"
 #include "nfsmount.h"
+#include "nqnfs.h"
 
 /* The request list head */
 extern struct nfsreq nfsreqh;
@@ -103,11 +105,6 @@ loop:
 		if (mntp != NFSTOV(np)->v_mount ||
 		    bcmp((caddr_t)fhp, (caddr_t)&np->n_fh, NFSX_FH))
 			continue;
-		if ((np->n_flag & NLOCKED) != 0) {
-			np->n_flag |= NWANT;
-			(void) tsleep((caddr_t)np, PINOD, "nfsnode", 0);
-			goto loop;
-		}
 		vp = NFSTOV(np);
 		if (vget(vp))
 			goto loop;
@@ -127,13 +124,18 @@ loop:
 	 */
 	np->n_flag = 0;
 	insque(np, nh);
-	nfs_lock(vp);
 	bcopy((caddr_t)fhp, (caddr_t)&np->n_fh, NFSX_FH);
 	np->n_attrstamp = 0;
 	np->n_direofoffset = 0;
 	np->n_sillyrename = (struct sillyrename *)0;
 	np->n_size = 0;
-	np->n_mtime = 0;
+	if (VFSTONFS(mntp)->nm_flag & NFSMNT_NQNFS) {
+		ZEROQUAD(np->n_brev);
+		ZEROQUAD(np->n_lrev);
+		np->n_expiry = (time_t)0;
+		np->n_tnext = (struct nfsnode *)0;
+	} else
+		np->n_mtime = 0;
 	*npp = np;
 	return (0);
 }
@@ -144,52 +146,25 @@ nfs_inactive(vp, p)
 {
 	register struct nfsnode *np;
 	register struct sillyrename *sp;
-	struct nfsnode *dnp;
 	extern int prtactive;
 
 	np = VTONFS(vp);
 	if (prtactive && vp->v_usecount != 0)
 		vprint("nfs_inactive: pushing active", vp);
-	nfs_lock(vp);
 	sp = np->n_sillyrename;
 	np->n_sillyrename = (struct sillyrename *)0;
 	if (sp) {
 		/*
 		 * Remove the silly file that was rename'd earlier
 		 */
-		if (!nfs_nget(vp->v_mount, &sp->s_fh, &dnp)) {
-			sp->s_dvp = NFSTOV(dnp);
-			nfs_removeit(sp, p);
-			nfs_nput(sp->s_dvp);
-		}
+		nfs_removeit(sp, p);
 		crfree(sp->s_cred);
 		vrele(sp->s_dvp);
 #ifdef SILLYSEPARATE
 		free((caddr_t)sp, M_NFSREQ);
 #endif
 	}
-	nfs_unlock(vp);
 	np->n_flag &= NMODIFIED;
-#ifdef notdef
-	/*
-	 * Scan the request list for any requests left hanging about
-	 */
-	s = splnet();
-	rep = nfsreqh.r_next;
-	while (rep && rep != &nfsreqh) {
-		if (rep->r_vp == vp) {
-			rep->r_prev->r_next = rep2 = rep->r_next;
-			rep->r_next->r_prev = rep->r_prev;
-			m_freem(rep->r_mreq);
-			if (rep->r_mrep != NULL)
-				m_freem(rep->r_mrep);
-			free((caddr_t)rep, M_NFSREQ);
-			rep = rep2;
-		} else
-			rep = rep->r_next;
-	}
-	splx(s);
-#endif
 	return (0);
 }
 
@@ -200,6 +175,7 @@ nfs_reclaim(vp)
 	register struct vnode *vp;
 {
 	register struct nfsnode *np = VTONFS(vp);
+	register struct nfsmount *nmp = VFSTONFS(vp->v_mount);
 	extern int prtactive;
 
 	if (prtactive && vp->v_usecount != 0)
@@ -208,38 +184,34 @@ nfs_reclaim(vp)
 	 * Remove the nfsnode from its hash chain.
 	 */
 	remque(np);
+
+	/*
+	 * For nqnfs, take it off the timer queue as required.
+	 */
+	if ((nmp->nm_flag & NFSMNT_NQNFS) && np->n_tnext) {
+		if (np->n_tnext == (struct nfsnode *)nmp)
+			nmp->nm_tprev = np->n_tprev;
+		else
+			np->n_tnext->n_tprev = np->n_tprev;
+		if (np->n_tprev == (struct nfsnode *)nmp)
+			nmp->nm_tnext = np->n_tnext;
+		else
+			np->n_tprev->n_tnext = np->n_tnext;
+	}
 	cache_purge(vp);
 	FREE(vp->v_data, M_NFSNODE);
-	vp->v_data = NULL;
+	vp->v_data = (void *)0;
 	return (0);
 }
 
 /*
- * In theory, NFS does not need locking, but we make provision
- * for doing it just in case it is needed.
- */
-int donfslocking = 0;
-/*
  * Lock an nfsnode
  */
-
 nfs_lock(vp)
 	struct vnode *vp;
 {
-	register struct nfsnode *np = VTONFS(vp);
 
-	if (!donfslocking)
-		return;
-	while (np->n_flag & NLOCKED) {
-		np->n_flag |= NWANT;
-		if (np->n_lockholder == curproc->p_pid)
-			panic("locking against myself");
-		np->n_lockwaiter = curproc->p_pid;
-		(void) tsleep((caddr_t)np, PINOD, "nfslock", 0);
-	}
-	np->n_lockwaiter = 0;
-	np->n_lockholder = curproc->p_pid;
-	np->n_flag |= NLOCKED;
+	return (0);
 }
 
 /*
@@ -248,14 +220,8 @@ nfs_lock(vp)
 nfs_unlock(vp)
 	struct vnode *vp;
 {
-	register struct nfsnode *np = VTONFS(vp);
 
-	np->n_lockholder = 0;
-	np->n_flag &= ~NLOCKED;
-	if (np->n_flag & NWANT) {
-		np->n_flag &= ~NWANT;
-		wakeup((caddr_t)np);
-	}
+	return (0);
 }
 
 /*
@@ -265,24 +231,7 @@ nfs_islocked(vp)
 	struct vnode *vp;
 {
 
-	if (VTONFS(vp)->n_flag & NLOCKED)
-		return (1);
 	return (0);
-}
-
-/*
- * Unlock and vrele()
- * since I can't decide if dirs. should be locked, I will check for
- * the lock and be flexible
- */
-nfs_nput(vp)
-	struct vnode *vp;
-{
-	register struct nfsnode *np = VTONFS(vp);
-
-	if (np->n_flag & NLOCKED)
-		nfs_unlock(vp);
-	vrele(vp);
 }
 
 /*

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsmount.h	7.8 (Berkeley) %G%
+ *	@(#)nfsmount.h	7.9 (Berkeley) %G%
  */
 
 /*
@@ -18,27 +18,32 @@
 struct	nfsmount {
 	int	nm_flag;		/* Flags for soft/hard... */
 	struct	mount *nm_mountp;	/* Vfs structure for this filesystem */
+	int	nm_numgrps;		/* Max. size of groupslist */
 	nfsv2fh_t nm_fh;		/* File handle of root dir */
 	struct	socket *nm_so;		/* Rpc socket */
 	int	nm_sotype;		/* Type of socket */
 	int	nm_soproto;		/* and protocol */
 	int	nm_soflags;		/* pr_flags for socket protocol */
 	struct	mbuf *nm_nam;		/* Addr of server */
-	short	nm_retry;		/* Max retry count */
-	short	nm_rexmit;		/* Rexmit on previous request */
-	short	nm_rtt;			/* Round trip timer ticks @ NFS_HZ */
-	short	nm_rto;			/* Current timeout */
-	short	nm_srtt;		/* Smoothed round trip time */
-	short	nm_rttvar;		/* RTT variance */
-	short	nm_currto;		/* Current rto of any nfsmount */
-	short	nm_currexmit;		/* Max rexmit count of nfsmounts */
-	short	nm_sent;		/* Request send count */
-	short	nm_window;		/* Request send window (max) */
-	short	nm_winext;		/* Window incremental value */
-	short	nm_ssthresh;		/* Slowstart threshold */
-	short	nm_salen;		/* Actual length of nm_sockaddr */
+	int	nm_timeo;		/* Init timer for NFSMNT_DUMBTIMR */
+	int	nm_retry;		/* Max retries */
+	int	nm_srtt[4];		/* Timers for rpcs */
+	int	nm_sdrtt[4];
+	int	nm_sent;		/* Request send count */
+	int	nm_cwnd;		/* Request send window */
+	int	nm_timeouts;		/* Request timeouts */
+	int	nm_deadthresh;		/* Threshold of timeouts-->dead server*/
 	int	nm_rsize;		/* Max size of read rpc */
 	int	nm_wsize;		/* Max size of write rpc */
+	int	nm_readahead;		/* Num. of blocks to readahead */
+	int	nm_leaseterm;		/* Term (sec) for NQNFS lease */
+	struct nfsnode *nm_tnext;	/* Head of lease timer queue */
+	struct nfsnode *nm_tprev;
+	struct vnode *nm_inprog;	/* Vnode in prog by nqnfs_clientd() */
+	uid_t	nm_authuid;		/* Uid for authenticator */
+	int	nm_authtype;		/* Authenticator type */
+	int	nm_authlen;		/* and length */
+	char	*nm_authstr;		/* Authenticator string */
 };
 
 #ifdef KERNEL
@@ -84,6 +89,7 @@ int	nfs_sync __P((
 int	nfs_fhtovp __P((
 		struct mount *mp,
 		struct fid *fhp,
+		int setgen,
 		struct vnode **vpp));
 int	nfs_vptofh __P((
 		struct vnode *vp,

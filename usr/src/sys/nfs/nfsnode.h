@@ -7,8 +7,19 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsnode.h	7.15 (Berkeley) %G%
+ *	@(#)nfsnode.h	7.16 (Berkeley) %G%
  */
+
+/*
+ * Silly rename structure that hangs off the nfsnode until the name
+ * can be removed by nfs_inactive()
+ */
+struct sillyrename {
+	struct	ucred *s_cred;
+	struct	vnode *s_dvp;
+	long	s_namlen;
+	char	s_name[20];
+};
 
 /*
  * The nfsnode is the nfs equivalent to ufs's inode. Any similarity
@@ -22,20 +33,37 @@ struct nfsnode {
 	struct	nfsnode *n_chain[2];	/* must be first */
 	nfsv2fh_t n_fh;			/* NFS File Handle */
 	long	n_flag;			/* Flag for locking.. */
-	struct	vnode *n_vnode;	/* vnode associated with this nfsnode */
-	time_t	n_attrstamp;	/* Time stamp (sec) for attributes */
-	struct	vattr n_vattr;	/* Vnode attribute cache */
-	struct	sillyrename *n_sillyrename;	/* Ptr to silly rename struct */
-	u_long	n_size;		/* Current size of file */
-	time_t	n_mtime;	/* Prev modify time to maintain data cache consistency*/
-	time_t	n_ctime;	/* Prev create time for name cache consistency*/
-	int	n_error;	/* Save write error value */
-	pid_t	n_lockholder;	/* holder of nfsnode lock */
-	pid_t	n_lockwaiter;	/* most recent waiter for nfsnode lock */
-	u_long	n_direofoffset;	/* Dir. EOF offset cache */
-	struct	sillyrename n_silly;	/* allocate here since we have room */
-	long	n_spare[7];	/* round up to size 256 */
+	struct	vnode *n_vnode;		/* vnode associated with this node */
+	time_t	n_attrstamp;		/* Time stamp for cached attributes */
+	struct	vattr n_vattr;		/* Vnode attribute cache */
+	struct	sillyrename *n_sillyrename; /* Ptr to silly rename struct */
+	u_long	n_size;			/* Current size of file */
+	int	n_error;		/* Save write error value */
+	u_long	n_direofoffset;		/* Dir. EOF offset cache */
+	union {
+		struct {
+			time_t	un_mtime; /* Prev modify time. */
+			time_t	un_ctime; /* Prev create time. */
+		} un_nfs;
+		struct {
+			u_quad_t un_brev; /* Modify rev when cached */
+			u_quad_t un_lrev; /* Modify rev for lease */
+			time_t	un_expiry; /* Lease expiry time */
+			struct	nfsnode *un_tnext; /* Nqnfs timer chain */
+			struct	nfsnode *un_tprev;
+		} un_nqnfs;
+	} n_un;
+	struct	sillyrename n_silly;	/* Silly rename struct */
+	long	n_spare[11];		/* Up to a power of 2 */
 };
+
+#define	n_mtime		n_un.un_nfs.un_mtime
+#define	n_ctime		n_un.un_nfs.un_ctime
+#define	n_brev		n_un.un_nqnfs.un_brev
+#define	n_lrev		n_un.un_nqnfs.un_lrev
+#define	n_expiry	n_un.un_nqnfs.un_expiry
+#define	n_tnext		n_un.un_nqnfs.un_tnext
+#define	n_tprev		n_un.un_nqnfs.un_tprev
 
 #define	n_forw		n_chain[0]
 #define	n_back		n_chain[1]
@@ -50,10 +78,11 @@ struct nfsnode {
 /*
  * Flags for n_flag
  */
-#define	NLOCKED		0x1	/* Lock the node for other local accesses */
-#define	NWANT		0x2	/* Want above lock */
-#define	NMODIFIED	0x4	/* Might have a modified buffer in bio */
-#define	NWRITEERR	0x8	/* Flag write errors so close will know */
+#define	NMODIFIED	0x0004	/* Might have a modified buffer in bio */
+#define	NWRITEERR	0x0008	/* Flag write errors so close will know */
+#define	NQNFSNONCACHE	0x0020	/* Non-cachable lease */
+#define	NQNFSWRITE	0x0040	/* Write lease */
+#define	NQNFSEVICTED	0x0080	/* Has been evicted */
 
 /*
  * Prototypes for NFS vnode operations

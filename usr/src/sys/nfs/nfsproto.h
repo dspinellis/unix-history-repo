@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsproto.h	7.8 (Berkeley) %G%
+ *	@(#)nfsproto.h	7.9 (Berkeley) %G%
  */
 
 /*
@@ -29,7 +29,7 @@
 #define	NFS_FHSIZE	32
 #define	NFS_MAXPKTHDR	404
 #define NFS_MAXPACKET	(NFS_MAXPKTHDR+NFS_MAXDATA)
-#define	NFS_NPROCS	18
+#define	NFS_MINPACKET	20
 #define	NFS_FABLKSIZE	512	/* Size in bytes of a block wrt fa_blocks */
 
 /* Stat numbers for rpc returns */
@@ -46,7 +46,7 @@
 #define	NFSERR_FBIG	27
 #define	NFSERR_NOSPC	28
 #define	NFSERR_ROFS	30
-#define	NFSERR_NAMETOOLONG	63
+#define	NFSERR_NAMETOL	63
 #define	NFSERR_NOTEMPTY	66
 #define	NFSERR_DQUOT	69
 #define	NFSERR_STALE	70
@@ -64,11 +64,12 @@
 #define	NFSPROC_NULL		0
 #define	NFSPROC_GETATTR		1
 #define	NFSPROC_SETATTR		2
-#define	NFSPROC_ROOT		3		/* Obsolete */
+#define	NFSPROC_NOOP		3
+#define	NFSPROC_ROOT		NFSPROC_NOOP	/* Obsolete */
 #define	NFSPROC_LOOKUP		4
 #define	NFSPROC_READLINK	5
 #define	NFSPROC_READ		6
-#define	NFSPROC_WRITECACHE	7		/* Obsolete */
+#define	NFSPROC_WRITECACHE	NFSPROC_NOOP	/* Obsolete */
 #define	NFSPROC_WRITE		8
 #define	NFSPROC_CREATE		9
 #define	NFSPROC_REMOVE		10
@@ -80,6 +81,13 @@
 #define	NFSPROC_READDIR		16
 #define	NFSPROC_STATFS		17
 
+/* NQ nfs numbers */
+#define	NQNFSPROC_READDIRLOOK	18
+#define	NQNFSPROC_GETLEASE	19
+#define	NQNFSPROC_VACATED	20
+#define	NQNFSPROC_EVICTED	21
+
+#define	NFS_NPROCS		22
 /* Conversion macros */
 extern int		vttoif_tab[];
 #define	vtonfs_mode(t,m) \

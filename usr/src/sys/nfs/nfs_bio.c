@@ -7,24 +7,24 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_bio.c	7.20 (Berkeley) %G%
+ *	@(#)nfs_bio.c	7.21 (Berkeley) %G%
  */
 
 #include "param.h"
+#include "resourcevar.h"
 #include "proc.h"
 #include "buf.h"
-#include "uio.h"
-#include "namei.h"
 #include "vnode.h"
 #include "trace.h"
 #include "mount.h"
-#include "resourcevar.h"
-
+#include "kernel.h"
+#include "machine/endian.h"
+#include "nfsnode.h"
+#include "rpcv2.h"
 #include "nfsv2.h"
 #include "nfs.h"
-#include "nfsnode.h"
-#include "nfsiom.h"
 #include "nfsmount.h"
+#include "nqnfs.h"
 
 /* True and false, how exciting */
 #define	TRUE	1
@@ -44,9 +44,10 @@ nfs_bioread(vp, uio, ioflag, cred)
 	register int biosize;
 	struct buf *bp;
 	struct vattr vattr;
-	daddr_t lbn, bn, rablock;
-	int diff, error = 0;
-	long n, on;
+	struct nfsmount *nmp;
+	daddr_t lbn, bn, rablock[NFS_MAXRAHEAD];
+	int rasize[NFS_MAXRAHEAD], nra, diff, error = 0;
+	int n, on;
 
 #ifdef lint
 	ioflag = ioflag;
@@ -59,32 +60,40 @@ nfs_bioread(vp, uio, ioflag, cred)
 		return (0);
 	if (uio->uio_offset < 0 && vp->v_type != VDIR)
 		return (EINVAL);
-	biosize = VFSTONFS(vp->v_mount)->nm_rsize;
+	nmp = VFSTONFS(vp->v_mount);
+	biosize = nmp->nm_rsize;
 	/*
+	 * For nfs, cache consistency can only be maintained approximately.
+	 * Although RFC1094 does not specify the criteria, the following is
+	 * believed to be compatible with the reference port.
+	 * For nqnfs, full cache consistency is maintained within the loop.
+	 * For nfs:
 	 * If the file's modify time on the server has changed since the
 	 * last read rpc or you have written to the file,
 	 * you may have lost data cache consistency with the
 	 * server, so flush all of the file's data out of the cache.
 	 * Then force a getattr rpc to ensure that you have up to date
 	 * attributes.
+	 * The mount flag NFSMNT_MYWRITE says "Assume that my writes are
+	 * the ones changing the modify time.
 	 * NB: This implies that cache data can be read when up to
 	 * NFS_ATTRTIMEO seconds out of date. If you find that you need current
 	 * attributes this could be forced by setting n_attrstamp to 0 before
-	 * the nfs_dogetattr() call.
+	 * the nfs_getattr() call.
 	 */
-	if (vp->v_type != VLNK) {
+	if ((nmp->nm_flag & NFSMNT_NQNFS) == 0 && vp->v_type != VLNK) {
 		if (np->n_flag & NMODIFIED) {
 			np->n_flag &= ~NMODIFIED;
-			vinvalbuf(vp, TRUE);
+			if ((nmp->nm_flag & NFSMNT_MYWRITE) == 0 ||
+			     vp->v_type != VREG)
+				vinvalbuf(vp, TRUE);
 			np->n_attrstamp = 0;
 			np->n_direofoffset = 0;
-			if (error = nfs_dogetattr(vp, &vattr, cred, 1,
-			    uio->uio_procp))
+			if (error = nfs_getattr(vp, &vattr, cred, uio->uio_procp))
 				return (error);
 			np->n_mtime = vattr.va_mtime.tv_sec;
 		} else {
-			if (error = nfs_dogetattr(vp, &vattr, cred, 1,
-			    uio->uio_procp))
+			if (error = nfs_getattr(vp, &vattr, cred, uio->uio_procp))
 				return (error);
 			if (np->n_mtime != vattr.va_mtime.tv_sec) {
 				np->n_direofoffset = 0;
@@ -94,6 +103,42 @@ nfs_bioread(vp, uio, ioflag, cred)
 		}
 	}
 	do {
+
+	    /*
+	     * Get a valid lease. If cached data is stale, flush it.
+	     */
+	    if ((nmp->nm_flag & NFSMNT_NQNFS) &&
+		NQNFS_CKINVALID(vp, np, NQL_READ)) {
+		do {
+			error = nqnfs_getlease(vp, NQL_READ, cred, uio->uio_procp);
+		} while (error == NQNFS_EXPIRED);
+		if (error)
+			return (error);
+		if (QUADNE(np->n_lrev, np->n_brev) ||
+		    ((np->n_flag & NMODIFIED) && vp->v_type == VDIR)) {
+			if (vp->v_type == VDIR) {
+				np->n_direofoffset = 0;
+				cache_purge(vp);
+			}
+			np->n_flag &= ~NMODIFIED;
+			vinvalbuf(vp, TRUE);
+			np->n_brev = np->n_lrev;
+		}
+	    }
+	    if (np->n_flag & NQNFSNONCACHE) {
+		switch (vp->v_type) {
+		case VREG:
+			error = nfs_readrpc(vp, uio, cred);
+			break;
+		case VLNK:
+			error = nfs_readlinkrpc(vp, uio, cred);
+			break;
+		case VDIR:
+			error = nfs_readdirrpc(vp, uio, cred);
+			break;
+		};
+		return (error);
+	    }
 	    switch (vp->v_type) {
 	    case VREG:
 		nfsstats.biocache_reads++;
@@ -106,13 +151,32 @@ nfs_bioread(vp, uio, ioflag, cred)
 		if (diff < n)
 			n = diff;
 		bn = lbn*(biosize/DEV_BSIZE);
-		rablock = (lbn+1)*(biosize/DEV_BSIZE);
-		if (vp->v_lastr + 1 == lbn &&
-		    np->n_size > (rablock * DEV_BSIZE))
-			error = breada(vp, bn, biosize, rablock, biosize,
+		for (nra = 0; nra < nmp->nm_readahead &&
+			(lbn + 1 + nra) * biosize < np->n_size; nra++) {
+			rablock[nra] = (lbn + 1 + nra) * (biosize / DEV_BSIZE);
+			rasize[nra] = biosize;
+		}
+again:
+		if (nra > 0 && lbn >= vp->v_lastr)
+			error = breadn(vp, bn, biosize, rablock, rasize, nra,
 				cred, &bp);
 		else
 			error = bread(vp, bn, biosize, cred, &bp);
+		if (bp->b_validend > 0) {
+			if (on < bp->b_validoff || (on+n) > bp->b_validend) {
+				bp->b_flags |= B_INVAL;
+				if (bp->b_dirtyend > 0) {
+					if ((bp->b_flags & B_DELWRI) == 0)
+						panic("nfsbioread");
+					(void) bwrite(bp);
+				} else
+					brelse(bp);
+				goto again;
+			}
+		} else {
+			bp->b_validoff = 0;
+			bp->b_validend = biosize - bp->b_resid;
+		}
 		vp->v_lastr = lbn;
 		if (bp->b_resid) {
 		   diff = (on >= (biosize-bp->b_resid)) ? 0 :
@@ -136,6 +200,47 @@ nfs_bioread(vp, uio, ioflag, cred)
 	    if (error) {
 		brelse(bp);
 		return (error);
+	    }
+
+	    /*
+	     * For nqnfs:
+	     * Must check for valid lease, since it may have expired while in
+	     * bread(). If expired, get a lease.
+	     * If data is stale, flush and try again.
+	     * nb: If a read rpc is done by bread() or breada() and there is
+	     *     no valid lease, a get_lease request will be piggy backed.
+	     */
+	    if (nmp->nm_flag & NFSMNT_NQNFS) {
+		if (NQNFS_CKINVALID(vp, np, NQL_READ)) {
+			do {
+				error = nqnfs_getlease(vp, NQL_READ, cred, uio->uio_procp);
+			} while (error == NQNFS_EXPIRED);
+			if (error) {
+				brelse(bp);
+				return (error);
+			}
+			if ((np->n_flag & NQNFSNONCACHE) ||
+			    QUADNE(np->n_lrev, np->n_brev) ||
+			    ((np->n_flag & NMODIFIED) && vp->v_type == VDIR)) {
+				if (vp->v_type == VDIR) {
+					np->n_direofoffset = 0;
+					cache_purge(vp);
+				}
+				brelse(bp);
+				np->n_flag &= ~NMODIFIED;
+				vinvalbuf(vp, TRUE);
+				np->n_brev = np->n_lrev;
+				continue;
+			}
+		} else if ((np->n_flag & NQNFSNONCACHE) ||
+		    ((np->n_flag & NMODIFIED) && vp->v_type == VDIR)) {
+			np->n_direofoffset = 0;
+			brelse(bp);
+			np->n_flag &= ~NMODIFIED;
+			vinvalbuf(vp, TRUE);
+			np->n_brev = np->n_lrev;
+			continue;
+		}
 	    }
 	    if (n > 0)
 		error = uiomove(bp->b_un.b_addr + on, (int)n, uio);
@@ -165,11 +270,12 @@ nfs_write(vp, uio, ioflag, cred)
 	int ioflag;
 	struct ucred *cred;
 {
-	struct proc *p = uio->uio_procp;
 	register int biosize;
+	struct proc *p = uio->uio_procp;
 	struct buf *bp;
 	struct nfsnode *np = VTONFS(vp);
 	struct vattr vattr;
+	struct nfsmount *nmp;
 	daddr_t lbn, bn;
 	int n, on, error = 0;
 
@@ -181,24 +287,7 @@ nfs_write(vp, uio, ioflag, cred)
 #endif
 	if (vp->v_type != VREG)
 		return (EIO);
-	/* Should we try and do this ?? */
-	if (ioflag & (IO_APPEND | IO_SYNC)) {
-		if (np->n_flag & NMODIFIED) {
-			np->n_flag &= ~NMODIFIED;
-			vinvalbuf(vp, TRUE);
-		}
-		if (ioflag & IO_APPEND) {
-			np->n_attrstamp = 0;
-			if (error = nfs_dogetattr(vp, &vattr, cred, 1, p))
-				return (error);
-			uio->uio_offset = np->n_size;
-		}
-		return (nfs_writerpc(vp, uio, cred));
-	}
-#ifdef notdef
-	cnt = uio->uio_resid;
-	osize = np->n_size;
-#endif
+	nmp = VFSTONFS(vp->v_mount);
 	if (uio->uio_offset < 0)
 		return (EINVAL);
 	if (uio->uio_resid == 0)
@@ -207,7 +296,7 @@ nfs_write(vp, uio, ioflag, cred)
 	 * Maybe this should be above the vnode op call, but so long as
 	 * file servers have no limits, i don't think it matters
 	 */
-	if (uio->uio_offset + uio->uio_resid >
+	if (p && uio->uio_offset + uio->uio_resid >
 	      p->p_rlimit[RLIMIT_FSIZE].rlim_cur) {
 		psignal(p, SIGXFSZ);
 		return (EFBIG);
@@ -217,48 +306,105 @@ nfs_write(vp, uio, ioflag, cred)
 	 * will be the same size within a filesystem. nfs_writerpc will
 	 * still use nm_wsize when sizing the rpc's.
 	 */
-	biosize = VFSTONFS(vp->v_mount)->nm_rsize;
+	biosize = nmp->nm_rsize;
 	np->n_flag |= NMODIFIED;
 	do {
+
+		/*
+		 * Check for a valid write lease.
+		 * If non-cachable, just do the rpc
+		 */
+		if ((nmp->nm_flag & NFSMNT_NQNFS) &&
+		    NQNFS_CKINVALID(vp, np, NQL_WRITE)) {
+			do {
+				error = nqnfs_getlease(vp, NQL_WRITE, cred, p);
+			} while (error == NQNFS_EXPIRED);
+			if (error)
+				return (error);
+			if (QUADNE(np->n_lrev, np->n_brev) ||
+			    (np->n_flag & NQNFSNONCACHE)) {
+				vinvalbuf(vp, TRUE);
+				np->n_brev = np->n_lrev;
+			}
+		}
+		if (np->n_flag & NQNFSNONCACHE)
+			return (nfs_writerpc(vp, uio, cred));
 		nfsstats.biocache_writes++;
 		lbn = uio->uio_offset / biosize;
 		on = uio->uio_offset & (biosize-1);
 		n = MIN((unsigned)(biosize - on), uio->uio_resid);
-		if (uio->uio_offset+n > np->n_size) {
-			np->n_size = uio->uio_offset+n;
+		if (uio->uio_offset + n > np->n_size) {
+			np->n_size = uio->uio_offset + n;
 			vnode_pager_setsize(vp, np->n_size);
 		}
-		bn = lbn*(biosize/DEV_BSIZE);
+		bn = lbn * (biosize / DEV_BSIZE);
 again:
 		bp = getblk(vp, bn, biosize);
 		if (bp->b_wcred == NOCRED) {
 			crhold(cred);
 			bp->b_wcred = cred;
 		}
-		if (bp->b_dirtyend > 0) {
-			/*
-			 * If the new write will leave a contiguous dirty
-			 * area, just update the b_dirtyoff and b_dirtyend,
-			 * otherwise force a write rpc of the old dirty area.
-			 */
-			if (on <= bp->b_dirtyend && (on+n) >= bp->b_dirtyoff) {
-				bp->b_dirtyoff = MIN(on, bp->b_dirtyoff);
-				bp->b_dirtyend = MAX((on+n), bp->b_dirtyend);
-			} else {
-				bp->b_proc = p;
-				if (error = bwrite(bp))
-					return (error);
-				goto again;
+
+		/*
+		 * If the new write will leave a contiguous dirty
+		 * area, just update the b_dirtyoff and b_dirtyend,
+		 * otherwise force a write rpc of the old dirty area.
+		 */
+		if (bp->b_dirtyend > 0 &&
+		    (on > bp->b_dirtyend || (on + n) < bp->b_dirtyoff)) {
+			bp->b_proc = p;
+			if (error = bwrite(bp))
+				return (error);
+			goto again;
+		}
+
+		/*
+		 * Check for valid write lease and get one as required.
+		 * In case getblk() and/or bwrite() delayed us.
+		 */
+		if ((nmp->nm_flag & NFSMNT_NQNFS) &&
+		    NQNFS_CKINVALID(vp, np, NQL_WRITE)) {
+			do {
+				error = nqnfs_getlease(vp, NQL_WRITE, cred, p);
+			} while (error == NQNFS_EXPIRED);
+			if (error) {
+				brelse(bp);
+				return (error);
 			}
-		} else {
-			bp->b_dirtyoff = on;
-			bp->b_dirtyend = on+n;
+			if (QUADNE(np->n_lrev, np->n_brev) ||
+			    (np->n_flag & NQNFSNONCACHE)) {
+				vinvalbuf(vp, TRUE);
+				np->n_brev = np->n_lrev;
+			}
 		}
 		if (error = uiomove(bp->b_un.b_addr + on, n, uio)) {
 			brelse(bp);
 			return (error);
 		}
-		if ((n+on) == biosize) {
+		if (bp->b_dirtyend > 0) {
+			bp->b_dirtyoff = MIN(on, bp->b_dirtyoff);
+			bp->b_dirtyend = MAX((on+n), bp->b_dirtyend);
+		} else {
+			bp->b_dirtyoff = on;
+			bp->b_dirtyend = on+n;
+		}
+		if (bp->b_validend == 0 || bp->b_validend < bp->b_dirtyoff ||
+		    bp->b_validoff > bp->b_dirtyend) {
+			bp->b_validoff = bp->b_dirtyoff;
+			bp->b_validend = bp->b_dirtyend;
+		} else {
+			bp->b_validoff = MIN(bp->b_validoff, bp->b_dirtyoff);
+			bp->b_validend = MAX(bp->b_validend, bp->b_dirtyend);
+		}
+
+		/*
+		 * If the lease is non-cachable or IO_SYNC do bwrite().
+		 */
+		if ((np->n_flag & NQNFSNONCACHE) || (ioflag & IO_SYNC)) {
+			bp->b_proc = p;
+			bwrite(bp);
+		} else if ((n+on) == biosize &&
+			 (nmp->nm_flag & NFSMNT_NQNFS) == 0) {
 			bp->b_flags |= B_AGE;
 			bp->b_proc = (struct proc *)0;
 			bawrite(bp);
@@ -267,13 +413,5 @@ again:
 			bdwrite(bp);
 		}
 	} while (error == 0 && uio->uio_resid > 0 && n != 0);
-#ifdef notdef
-	/* Should we try and do this for nfs ?? */
-	if (error && (ioflag & IO_UNIT)) {
-		np->n_size = osize;
-		uio->uio_offset -= cnt - uio->uio_resid;
-		uio->uio_resid = cnt;
-	}
-#endif
 	return (error);
 }
