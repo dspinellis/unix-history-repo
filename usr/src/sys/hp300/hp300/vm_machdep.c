@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_machdep.c 1.18 89/08/23$
  *
- *	@(#)vm_machdep.c	7.1 (Berkeley) %G%
+ *	@(#)vm_machdep.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -20,7 +20,6 @@
 #include "proc.h"
 #include "cmap.h"
 #include "mount.h"
-#include "../ufs/ufsmount.h"
 #include "vm.h"
 #include "text.h"
 #include "malloc.h"
@@ -115,9 +114,8 @@ chgprot(addr, tprot)
 	pte = tptopte(u.u_procp, tp);
 	if (pte->pg_fod == 0 && pte->pg_pfnum) {
 		c = &cmap[pgtocm(pte->pg_pfnum)];
-		if (c->c_blkno && c->c_mdev != MSWAPX)
-			munhash(mounttab[c->c_mdev].um_devvp,
-			    (daddr_t)(u_long)c->c_blkno);
+		if (c->c_blkno)
+			munhash(c->c_vp, (daddr_t)(u_long)c->c_blkno);
 	}
 	*(u_int *)pte &= ~PG_PROT;
 	*(u_int *)pte |= tprot;
