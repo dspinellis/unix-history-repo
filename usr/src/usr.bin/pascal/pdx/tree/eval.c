@@ -1,9 +1,9 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)eval.c 1.1 %G%";
+static char sccsid[] = "@(#)eval.c 1.2 %G%";
 
 /*
- * parse tree evaluation
+ * Parse tree evaluation.
  */
 
 #include "defs.h"
@@ -20,6 +20,9 @@ static char sccsid[] = "@(#)eval.c 1.1 %G%";
  * Evaluate a parse tree using a stack; value is left at top.
  */
 
+#define STACKSIZE 2000
+
+STACK stack[STACKSIZE];
 STACK *sp = &stack[0];
 
 eval(p)
@@ -118,8 +121,9 @@ register NODE *p;
 				error("reference through nil pointer");
 			}
 			len = size(p->nodetype);
-			dread(sp, addr, len);
-			sp += len;
+			if (!rpush(addr, len)) {
+				error("expression too large to evaluate");
+			}
 			if (len < sizeof(long)) {
 				switch (len) {
 					case sizeof(char):
@@ -368,6 +372,10 @@ register NODE *p;
 			dump();
 			break;
 
+		case O_GRIPE:
+			gripe();
+			break;
+
 		case O_HELP:
 			help();
 			break;
@@ -412,6 +420,29 @@ register NODE *p;
 		default:
 			panic("eval: bad op %d", p->op);
 	}
+}
+
+/*
+ * Push "len" bytes onto the expression stack from address "addr"
+ * in the process.  Normally TRUE is returned, however if there
+ * isn't enough room on the stack, rpush returns FALSE.
+ * 
+ */
+
+BOOLEAN rpush(addr, len)
+ADDRESS addr;
+int len;
+{
+	BOOLEAN success;
+
+	if (sp + len >= &stack[STACKSIZE]) {
+		success = FALSE;
+	} else {
+		dread(sp, addr, len);
+		sp += len;
+		success = TRUE;
+	}
+	return success;
 }
 
 /*
