@@ -1,10 +1,10 @@
-#	Makefile	4.3	83/10/10
+#	Makefile	4.4	83/10/26
 
 DESTDIR=
 SRCS =	docmd.c expand.c gram.y lookup.c main.c server.c
 OBJS =	docmd.o expand.o gram.o lookup.o main.o server.o
 LINT =	lint -ps
-CFLAGS=
+CFLAGS= -O
 
 rdist:	${OBJS}
 	${CC} -o rdist ${OBJS}
