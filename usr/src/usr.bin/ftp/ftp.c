@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	4.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	4.9 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -272,7 +272,7 @@ sendrequest(cmd, local, remote)
 				fflush(stdout);
 			}
 		}
-		if (hash) {
+		if (hash && bytes > 0) {
 			putchar('\n');
 			fflush(stdout);
 		}
@@ -303,6 +303,8 @@ sendrequest(cmd, local, remote)
 			}
 		}
 		if (hash) {
+			if (bytes < hashbytes)
+				putchar('#');
 			putchar('\n');
 			fflush(stdout);
 		}
@@ -404,7 +406,7 @@ recvrequest(cmd, local, remote, mode)
 				fflush(stdout);
 			}
 		}
-		if (hash) {
+		if (hash && bytes > 0) {
 			putchar('\n');
 			fflush(stdout);
 		}
@@ -437,6 +439,8 @@ recvrequest(cmd, local, remote, mode)
 			bytes++;
 		}
 		if (hash) {
+			if (bytes < hashbytes)
+				putchar('#');
 			putchar('\n');
 			fflush(stdout);
 		}
@@ -543,6 +547,9 @@ dataconn(mode)
 	}
 	(void) close(data);
 	data = s;
+	if (*mode == 'w' && linger)
+		(void) setsockopt(s, SOL_SOCKET, SO_LINGER, &linger,
+		    sizeof (linger));
 	return (fdopen(data, mode));
 }
 
