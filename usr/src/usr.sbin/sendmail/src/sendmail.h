@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.60 (Berkeley) %G%
+ *	@(#)sendmail.h	8.61 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.60		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.61		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -189,6 +189,7 @@ typedef struct mailer	MAILER;
 # define M_NO_NULL_FROM	'g'	/* sender of errors should be $g */
 # define M_HST_UPPER	'h'	/* preserve host case distinction */
 # define M_PREHEAD	'H'	/* MAIL11V3: preview headers */
+# define M_UDBENVELOPE	'i'	/* do udbsender rewriting on envelope */
 # define M_INTERNAL	'I'	/* SMTP to another sendmail site */
 # define M_NOLOOPCHECK	'k'	/* don't check for loops in HELO command */
 # define M_LOCALMAILER	'l'	/* delivery is to this host */
