@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.11	81/04/23	*/
+/*	kern_proc.c	4.12	81/04/28	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -177,10 +177,7 @@ exece()
 		panic("execa rmalloc");
 	if (uap->argp) for (;;) {
 		ap = NULL;
-		if (na == 1 && indir) {
-			if (sharg == NULL)
-				ap = (int)uap->fname;
-		} else if (na == 2 && indir && sharg != NULL)
+		if (indir && (na == 1 || na == 2 && sharg))
 			ap = (int)uap->fname;
 		else if (uap->argp) {
 			ap = fuword((caddr_t)uap->argp);
