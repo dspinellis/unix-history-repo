@@ -1,12 +1,16 @@
 # include <time.h>
+# ifndef V6
+# include <sys/types.h>
+# include <sys/timeb.h>
+# endif
 
-static char SccsId[] = "@(#)arpadate.c	2.1	%G%";
+static char SccsId[] = "@(#)arpadate.c	3.1	%G%";
 
 /*
 **  ARPADATE -- Create date in ARPANET format
 **
 **	Parameters:
-**		none
+**		ud -- unix style date string.  if NULL, one is created.
 **
 **	Returns:
 **		pointer to an ARPANET date field
@@ -19,33 +23,105 @@ static char SccsId[] = "@(#)arpadate.c	2.1	%G%";
 **		calls will overwrite.
 */
 
+# ifdef V6
+# define DST_NAME	"PDT"
+# define STD_NAME	"PST"
+# endif
+
+# define NULL		0
+
 char *
-arpadate()
+arpadate(ud)
+	register char *ud;
 {
-	register char *ud;	/* the unix date */
-	long t;
-	extern struct tm *localtime();
 	register char *p;
+	register char *q;
 	static char b[40];
 	extern char *ctime();
+	register int i;
+	extern struct tm *localtime();
+# ifdef V6
+	long t;
+# else
+	struct timeb t;
+	extern struct timeb *ftime();
+	extern char *timezone();
+# endif
 
+# ifdef V6
 	time(&t);
-	ud = ctime(&t);
+	if (ud == NULL)
+		ud = ctime(&t);
+# else
+	ftime(&t);
+	if (ud == NULL)
+		ud = ctime(&t.time);
+# endif
 
-	ud[3] = ud[7] = ud[10] = ud[19] = ud[24] = '\0';
+	q = b;
+
+	p = &ud[0];		/* Mon */
+	*q++ = *p++;
+	*q++ = *p++;
+	*q++ = *p++;
+	*q++ = ',';
+	*q++ = ' ';
+
 	p = &ud[8];		/* 16 */
 	if (*p == ' ')
 		p++;
-	strcpy(b, p);
-	strcat(b, " ");
-	strcat(b, &ud[4]);	/* Sep */
-	strcat(b, " ");
-	strcat(b, &ud[20]);	/* 1979 */
-	strcat(b, " ");
-	strcat(b, &ud[11]);	/* 01:03:52 */
-	if (localtime(&t)->tm_isdst)
-		strcat(b, "-PDT");
 	else
-		strcat(b, "-PST");
+		*q++ = *p++;
+	*q++ = *p++;
+	*q++ = '-';
+
+	p = &ud[4];		/* Sep */
+	*q++ = *p++;
+	*q++ = *p++;
+	*q++ = *p++;
+	*q++ = '-';
+
+	p = &ud[20];		/* 1979 */
+	for (i = 4; i > 0; i--)
+		*q++ = *p++;
+	*q++ = ' ';
+
+	p = &ud[11];		/* 01:03:52 */
+	for (i = 8; i > 0; i--)
+		*q++ = *p++;
+
+				/* -PST or -PDT */
+# ifdef V6
+	if (localtime(&t)->tm_isdst)
+		p = DST_NAME;
+	else
+		p = STD_NAME;
+# else
+	p = timezone(t.timezone, localtime(&t.time)->tm_isdst);
+# endif V6
+	if (p[3] != '\0')
+	{
+		/* hours from GMT */
+		p += 3;
+		*q++ = *p++;
+		if (p[1] == ':')
+			*q++ = '0';
+		else
+			*q++ = *p++;
+		*q++ = *p++;
+		p++;		/* skip ``:'' */
+		*q++ = *p++;
+		*q++ = *p++;
+	}
+	else
+	{
+		*q++ = '-';
+		*q++ = *p++;
+		*q++ = *p++;
+		*q++ = *p++;
+	}
+
+	*q = '\0';
+
 	return (b);
 }

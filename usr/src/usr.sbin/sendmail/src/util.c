@@ -1,7 +1,8 @@
 # include <sysexits.h>
 # include "useful.h"
+# include <ctype.h>
 
-static char	SccsId[] = "@(#)util.c	2.1	%G%";
+static char	SccsId[] = "@(#)util.c	3.1	%G%";
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
@@ -37,6 +38,42 @@ stripquotes(s)
 	*q = '\0';
 }
 /*
+**  CAPITALIZE -- return a copy of a string, properly capitalized.
+**
+**	Parameters:
+**		s -- the string to capitalize.
+**
+**	Returns:
+**		a pointer to a properly capitalized string.
+**
+**	Side Effects:
+**		none.
+*/
+
+char *
+capitalize(s)
+	register char *s;
+{
+	static char buf[50];
+	register char *p;
+
+	p = buf;
+
+	for (;;)
+	{
+		while (!isalpha(*s) && *s != '\0')
+			*p++ = *s++;
+		if (*s == '\0')
+			break;
+		*p++ = toupper(*s++);
+		while (isalpha(*s))
+			*p++ = *s++;
+	}
+
+	*p = '\0';
+	return (buf);
+}
+/*
 **  XALLOC -- Allocate memory and bitch wildly on failure.
 **
 **	THIS IS A CLUDGE.  This should be made to give a proper
@@ -50,9 +87,6 @@ stripquotes(s)
 **
 **	Side Effects:
 **		Memory is allocated.
-**
-**	Called By:
-**		lots of people.
 */
 
 char *
@@ -68,6 +102,31 @@ xalloc(sz)
 		syserr("Out of memory!!");
 		exit(EX_UNAVAILABLE);
 	}
+	return (p);
+}
+/*
+**  NEWSTR -- make copy of string.
+**
+**	Space is allocated for it using xalloc.
+**
+**	Parameters:
+**		string to copy.
+**
+**	Returns:
+**		pointer to new string.
+**
+**	Side Effects:
+**		none.
+*/
+
+char *
+newstr(s)
+	register char *s;
+{
+	register char *p;
+
+	p = xalloc(strlen(s) + 1);
+	strcpy(p, s);
 	return (p);
 }
 /*

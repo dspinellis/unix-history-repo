@@ -1,12 +1,13 @@
 # include <stdio.h>
 # include <signal.h>
 # include <ctype.h>
+# include <pwd.h>
 # include "dlvrmail.h"
 # ifdef LOG
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	2.4	%G%";
+static char	SccsId[] = "@(#)main.c	3.1	%G%";
 
 /*
 **  DELIVERMAIL -- Deliver mail to a set of destinations
@@ -120,10 +121,12 @@ char	InFileName[] = "/tmp/mailtXXXXXX";
 char	Transcript[] = "/tmp/mailxXXXXXX";
 addrq	From;		/* the from person */
 char	*To;		/* the target person */
+char	*FullName;	/* full name of sender */
 int	HopCount;	/* hop count */
 int	ExitStat;	/* the exit status byte */
 addrq	SendQ;		/* queue of people to send to */
 addrq	AliasQ;		/* queue of people who turned out to be aliases */
+HDR	*Header;	/* header list */
 
 
 
@@ -136,7 +139,7 @@ main(argc, argv)
 {
 	register char *p;
 	extern char *maketemp();
-	extern char *getname();
+	extern char *getlogin();
 	extern int finis();
 	extern addrq *parse();
 	register addrq *q;
@@ -146,6 +149,10 @@ main(argc, argv)
 	register int i;
 	typedef int (*fnptr)();
 	char nbuf[MAXLINE];
+	struct passwd *pw;
+	extern char *newstr();
+	extern char *Macro[];
+	extern char *index();
 
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
 		signal(SIGINT, finis);
@@ -168,6 +175,7 @@ main(argc, argv)
 # endif
 	errno = 0;
 	from = NULL;
+	initmacs();
 
 	/*
 	** Crack argv.
@@ -247,6 +255,13 @@ main(argc, argv)
 			Debug++;
 			printf("%s\n", Version);
 			break;
+
+		  case 'D':	/* redefine internal macro */
+			if (!isupper(p[2]))
+				usrerr("Invalid flag: %s", p);
+			else
+				Macro[p[2] - 'A'] = &p[3];
+			break;
 # endif DEBUG
 		
 		  case 'n':	/* don't alias */
@@ -289,7 +304,7 @@ main(argc, argv)
 		from = p;
 # ifdef DEBUG
 	if (Debug)
-		printf("Message-Id: <%s>\n", MsgId);
+		printf("Message-Id: %s\n", MsgId);
 # endif DEBUG
 
 	/*
@@ -316,12 +331,32 @@ main(argc, argv)
 	*/
 
 	errno = 0;
-	p = getname();
-	if (p == NULL || p[0] == '\0')
+	p = getlogin();
+	if (p == NULL)
 	{
-		syserr("Who are you? (uid=%d)", getuid());
-		finis();
+		extern struct passwd *getpwuid();
+		int uid;
+
+		uid = getuid();
+# ifdef V6
+		uid &= 0377;
+# endif
+		pw = getpwuid(uid);
+		if (pw == NULL)
+			syserr("Who are you? (uid=%d)", uid);
+		else
+			p = pw->pw_name;
 	}
+	else
+	{
+		extern struct passwd *getpwnam();
+
+		pw = getpwnam(p);
+		if (pw == NULL)
+			syserr("Who are you? (name=%s)", p);
+	}
+	if (p == NULL || p[0] == '\0' || pw == NULL)
+		finis();
 	errno = 0;
 	if (from != NULL)
 	{
@@ -334,7 +369,34 @@ main(argc, argv)
 		}
 	}
 	if (from == NULL || from[0] == '\0')
-		from = p;
+	{
+		from = newstr(p);
+
+		/* extract full name from passwd file */
+		if (pw != NULL && pw->pw_gecos != NULL)
+		{
+			register char *nb;
+
+			nb = nbuf;
+			p = pw->pw_gecos;
+			while (*p != '\0' && *p != ',' && *p != ';')
+			{
+				if (*p == '&')
+				{
+					strcpy(nb, from);
+					*nb = toupper(*nb);
+					while (*nb != '\0')
+						nb++;
+					p++;
+				}
+				else
+					*nb++ = *p++;
+			}
+			*nb = '\0';
+			if (nbuf[0] != '\0')
+				FullName = newstr(nbuf);
+		}
+	}
 	else
 		FromFlag++;
 	SuprErrs = TRUE;
