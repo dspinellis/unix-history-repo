@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_balloc.c	7.21 (Berkeley) %G%
+ *	@(#)lfs_balloc.c	7.22 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -38,16 +38,11 @@
  * they can be found, and have to have "names" different from the standard
  * data blocks.  To do this, we divide the name space into positive and
  * negative block numbers, and give the meta-data blocks negative logical
- * numbers.
- *
- * The mapping for meta-data blocks is as follows (assuming a 4K block size):
- *
- * -1 -- single indirect
- * -2 -- double indirect:
- *		single indirect blocks -4, -1027
- * -3 -- triple indirect:
- *		double indirect blocks -1028, -2051
- *		single indirect blocks -2052, -(1M + 2052 - 1)
+ * numbers.  Indirect blocks are addressed by the negative address of the
+ * first data block to which they point.  Double indirect blocks are addressed
+ * by one less than the address of the first indirect block to which they
+ * point.  Triple indirect blocks are addressed by one less than the address
+ * of the first double indirect block to which they point.
  */
 int
 lfs_bmap(vp, bn, vpp, bnp)
@@ -61,8 +56,9 @@ lfs_bmap(vp, bn, vpp, bnp)
 	register daddr_t nb;
 	struct buf *bp;
 	struct vnode *devvp;
-	daddr_t *bap, daddr, lbn_ind, doing_a_triple;
-	int error, j, off, sh, sh_ind;
+	daddr_t *bap, daddr, metalbn;
+	long realbn;
+	int error, j, off, sh;
 
 	/*
 	 * Check for underlying vnode requests and ensure that logical
@@ -77,31 +73,31 @@ lfs_bmap(vp, bn, vpp, bnp)
 #ifdef VERBOSE
 printf("lfs_bmap: block number %d, inode %d\n", bn, ip->i_number);
 #endif
+	realbn = bn;
+	if ((long)bn < 0)
+		bn = -(long)bn;
+
 	/* The first NDADDR blocks are direct blocks. */
 	if (bn < NDADDR) {
 		nb = ip->i_db[bn];
-		if (nb == LFS_UNUSED_DADDR)
+		if (nb == 0) {
 			*bnp = UNASSIGNED;
-		else
-			*bnp = nb;
+			return (0);
+		}
+		*bnp = nb;
 		return (0);
 	}
 
 	/* 
-	 * The first NIADDR negative blocks are the indirect block pointers.
 	 * Determine the number of levels of indirection.  After this loop
 	 * is done, sh indicates the number of data blocks possible at the
-	 * given level of indirection, lbn_ind is the logical block number
-	 * of the next indirect block to retrieve, and NIADDR - j is the
-	 * number of levels of indirection needed to locate the requested
-	 * block.
+	 * given level of indirection, and NIADDR - j is the number of levels
+	 * of indirection needed to locate the requested block.
 	 */
+	bn -= NDADDR;
 	fs = ip->i_lfs;
 	sh = 1;
-	bn -= NDADDR;
-	lbn_ind = 0;
 	for (j = NIADDR; j > 0; j--) {
-		--lbn_ind;
 		sh *= NINDIR(fs);
 		if (bn < sh)
 			break;
@@ -110,17 +106,20 @@ printf("lfs_bmap: block number %d, inode %d\n", bn, ip->i_number);
 	if (j == 0)
 		return (EFBIG);
 
+	/* Calculate the address of the first meta-block. */
+	if (realbn >= 0)
+		metalbn = -(realbn - bn + NIADDR - j);
+	else
+		metalbn = -(-realbn - bn + NIADDR - j);
+
 	/* 
 	 * Fetch through the indirect blocks.  At each iteration, off is the
 	 * offset into the bap array which is an array of disk addresses at
 	 * the current level of indirection.
 	 */
-	bap = ip->i_ib;
 	bp = NULL;
 	devvp = VFSTOUFS(vp->v_mount)->um_devvp;
-	off = NIADDR - j;
-	doing_a_triple = 0;
-	for (; j <= NIADDR; j++) {
+	for (off = NIADDR - j, bap = ip->i_ib; j <= NIADDR; j++) {
 		/*
 		 * In LFS, it's possible to have a block appended to a file
 		 * for which the meta-blocks have not yet been allocated.
@@ -131,6 +130,11 @@ printf("lfs_bmap: block number %d, inode %d\n", bn, ip->i_number);
 			daddr = UNASSIGNED;
 			break;
 		}
+
+		/* If searching for a meta-data block, quit when found. */
+		if (metalbn == realbn)
+			break;
+
 		/*
 		 * Read in the appropriate indirect block.  LFS can't do a
 		 * bread because bread knows that FFS will hand it the device
@@ -143,58 +147,26 @@ printf("lfs_bmap: block number %d, inode %d\n", bn, ip->i_number);
 		 */
 		if (bp)
 			brelse(bp);
-		bp = getblk(vp, lbn_ind, fs->lfs_bsize);
+		bp = getblk(vp, metalbn, fs->lfs_bsize);
 		if (bp->b_flags & (B_DONE | B_DELWRI)) {
-			trace(TR_BREADHIT, pack(vp, size), lbn_ind);
+			trace(TR_BREADHIT, pack(vp, size), metalbn);
 		} else {
-			bp->b_flags |= B_READ;
+			trace(TR_BREADMISS, pack(vp, size), metalbn);
 			bp->b_blkno = daddr;
+			bp->b_flags |= B_READ;
 			bp->b_dev = devvp->v_rdev;
 			(devvp->v_op->vop_strategy)(bp);
-			trace(TR_BREADMISS, pack(vp, size), lbn_ind);
 			curproc->p_stats->p_ru.ru_inblock++;	/* XXX */
 			if (error = biowait(bp)) {
 				brelse(bp);
 				return (error);
 			}
 		}
+
 		bap = bp->b_un.b_daddr;
 		sh /= NINDIR(fs);
 		off = (bn / sh) % NINDIR(fs);
-
-		/*
-		 * Ahem.  Now the disgusting part.  We have to figure out
-		 * the logical block number for the next meta-data block.
-		 * There are really three equations...  Note the clever
-		 * use of the doing_a_triple variable to hold the last
-		 * offset into the block of pointers.
-		 */
-		switch(j) {
-		case 1:
-			/* The triple indirect block found in the inode. */
-			doing_a_triple = off;
-			lbn_ind = -(NIADDR + 1 + off + NINDIR(fs));
-			break;
-		case 2:
-			/*
-			 * The double indirect block found after indirecting
-			 * through a triple indirect block.
-			 */
-			if (doing_a_triple)
-				lbn_ind = -((doing_a_triple + 2) * NINDIR(fs) +
-				    NIADDR + 1);
-
-			/* The double indirect block found in the inode. */
-			else
-				lbn_ind = -(NIADDR + 1 + off);
-			break;
-		case 3:
-			/*
-			 * A single indirect block; lbn_ind isn't used again,
-			 * so don't do anything.
-			 */
-			break;
-		}
+		metalbn -= -1 + off * sh;
 	}
 	if (bp)
 		brelse(bp);
