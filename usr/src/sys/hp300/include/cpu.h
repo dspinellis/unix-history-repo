@@ -11,7 +11,87 @@
  *
  * from: Utah $Hdr: cpu.h 1.13 89/06/23$
  *
- *	@(#)cpu.h	7.3 (Berkeley) %G%
+ *	@(#)cpu.h	7.4 (Berkeley) %G%
+ */
+
+#ifdef notyet
+#include "../hp300/psl.h"
+#else
+#include "machine/psl.h"
+#endif
+
+/*
+ * Exported definitions unique to hp300/68k cpu support.
+ */
+
+/*
+ * definitions of cpu-dependent requirements
+ * referenced in generic code
+ */
+#define	COPY_SIGCODE		/* copy sigcode above user stack in exec */
+
+/*
+ * function vs. inline configuration;
+ * these are defined to get generic functions
+ * rather than inline or machine-dependent implementations
+ */
+#define	NEED_MINMAX		/* need {,i,l,ul}{min,max} functions */
+#undef	NEED_FFS		/* don't need ffs function */
+#undef	NEED_BCMP		/* don't need bcmp function */
+#undef	NEED_STRLEN		/* don't need strlen function */
+
+#define	cpu_exec(p)	/* nothing */
+
+/*
+ * Arguments to hardclock, softclock and gatherstats
+ * encapsulate the previous machine state in an opaque
+ * clockframe; for hp300, use just what the hardware
+ * leaves on the stack.
+ */
+typedef struct intrframe {
+	int	pc;
+	int	ps;
+} clockframe;
+
+#define	CLKF_USERMODE(framep)	USERMODE((framep)->ps)
+#define	CLKF_BASEPRI(framep)	BASEPRI((framep)->ps)
+#define	CLKF_PC(framep)		((framep)->pc)
+
+
+/*
+ * Preempt the current process if in interrupt from user mode,
+ * or after the current trap/syscall if in system mode.
+ */
+#define	need_resched()	{ want_resched++; aston(); }
+
+
+/*
+ * Give a profiling tick to the current process from the softclock
+ * interrupt.  On hp300, request an ast to send us through trap(),
+ * marking the proc as needing a profiling tick.
+ */
+#define	profile_tick(p, framep)	{ (p)->p_flag |= SOWEUPC; aston(); }
+
+int	want_resched;		/* resched() was called */
+
+
+/*
+ * simulated software interrupt register
+ */
+extern unsigned char ssir;
+
+#define SIR_NET		0x1
+#define SIR_CLOCK	0x2
+
+#define siroff(x)	ssir &= ~(x)
+#define setsoftnet()	ssir |= SIR_NET
+#define setsoftclock()	ssir |= SIR_CLOCK
+
+
+
+/*
+ * The rest of this should probably be moved to ../hp300/hp300cpu.h,
+ * although some of it could probably be put into generic 68k headers.
  */
 
 /* values for machineid */
