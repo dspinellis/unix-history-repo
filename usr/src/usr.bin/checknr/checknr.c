@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)checknr.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)checknr.c	4.3 (Berkeley) %G%";
 /*
  * checknr: check an nroff/troff input file for matching macro calls.
  * we also attempt to match size and font changes, but only the embedded
@@ -36,71 +36,83 @@ struct brstr {
 	"sz",	"sz",	/* also \s */
 #define FT	1
 	"ft",	"ft",	/* also \f */
+	/* the -mm package */
+	"AL",	"LE",
+	"AS",	"AE",
+	"BL",	"LE",
+	"BS",	"BE",
+	"DF",	"DE",
+	"DL",	"LE",
+	"DS",	"DE",
+	"FS",	"FE",
+	"ML",	"LE",
+	"NS",	"NE",
+	"RL",	"LE",
+	"VL",	"LE",
 	/* the -ms package */
 	"AB",	"AE",
-	"RS",	"RE",
-	"LG",	"NL",
-	"SM",	"NL",
-	"FS",	"FE",
-	"DS",	"DE",
 	"CD",	"DE",
-	"LD",	"DE",
+	"DS",	"DE",
+	"FS",	"FE",
 	"ID",	"DE",
-	"KS",	"KE",
 	"KF",	"KE",
+	"KS",	"KE",
+	"LD",	"DE",
+	"LG",	"NL",
 	"QS",	"QE",
-	/* Things needed by preprocessors */
-	"TS",	"TE",
-	"EQ",	"EN",
+	"RS",	"RE",
+	"SM",	"NL",
 	/* The -me package */
-	"(l",	")l",
-	"(q",	")q",
 	"(b",	")b",
-	"(z",	")z",
 	"(c",	")c",
 	"(d",	")d",
 	"(f",	")f",
+	"(l",	")l",
+	"(q",	")q",
 	"(x",	")x",
+	"(z",	")z",
+	/* Things needed by preprocessors */
+	"EQ",	"EN",
+	"TS",	"TE",
+	/* Refer */
+	"[",	"]",
 	0,	0
 };
 
 /*
- * All commands known to nroff, plus ms and me.
+ * All commands known to nroff, plus macro packages.
  * Used so we can complain about unrecognized commands.
  */
 char *knowncmds[MAXCMDS] = {
-"$c", "$f", "$h", "$p", "$s", "(b", "(c", "(d", "(f", "(l",
-"(q", "(t", "(x", "(z", ")b", ")c", ")d", ")f", ")l", ")q",
-")t", ")x", ")z", "++", "+c", "1C", "1c", "2C", "2c", "@(",
-"@)", "@C", "@D", "@F", "@I", "@M", "@c", "@e", "@f", "@h",
-"@m", "@n", "@o", "@p", "@r", "@t", "@z", "AB", "AB", "AE",
-"AE", "AI", "AI", "AT", "AU", "AU", "AX", "B",  "B1", "B2",
-"BD", "BG", "BT", "BX", "C1", "C2", "CD", "CM", "CT", "D", 
-"DA", "DE", "DF", "DS", "EG", "EM", "EN", "EQ", "EQ", "FA",
-"FE", "FJ", "FK", "FL", "FN", "FO", "FQ", "FS", "FV", "FX",
-"HO", "I",  "ID", "IE", "IH", "IM", "IP", "IZ", "KD", "KE",
-"KF", "KQ", "KS", "LB", "LD", "LG", "LP", "MC", "ME", "MF",
-"MH", "MR", "ND", "NH", "NL", "NP", "OK", "PP", "PT", "PY",
-"QE", "QP", "QS", "R",  "RA", "RC", "RE", "RP", "RQ", "RS",
-"RT", "S0", "S2", "S3", "SG", "SH", "SM", "SY", "TA", "TC",
-"TD", "TE", "TH", "TL", "TL", "TM", "TQ", "TR", "TS", "TS",
-"TX", "UL", "US", "UX", "WH", "XD", "XF", "XK", "XP", "[-",
-"[0", "[1", "[2", "[3", "[4", "[5", "[<", "[>", "[]", "]-",
-"]<", "]>", "][", "ab", "ac", "ad", "af", "am", "ar", "as",
-"b",  "ba", "bc", "bd", "bi", "bl", "bp", "bp", "br", "bx",
-"c.", "c2", "cc", "ce", "cf", "ch", "cs", "ct", "cu", "da",
-"de", "di", "dl", "dn", "ds", "dt", "dw", "dy", "ec", "ef",
-"eh", "el", "em", "eo", "ep", "ev", "ex", "fc", "fi", "fl",
-"fo", "fp", "ft", "fz", "hc", "he", "hl", "hp", "ht", "hw",
-"hx", "hy", "i",  "ie", "if", "ig", "in", "ip", "it", "ix",
-"lc", "lg", "li", "ll", "ll", "ln", "lo", "lp", "ls", "lt",
-"m1", "m2", "m3", "m4", "mc", "mk", "mo", "n1", "n2", "na",
-"ne", "nf", "nh", "nl", "nm", "nn", "np", "nr", "ns", "nx",
-"of", "oh", "os", "pa", "pc", "pi", "pl", "pm", "pn", "po",
-"po", "pp", "ps", "q",  "r",  "rb", "rd", "re", "re", "rm",
-"rn", "ro", "rr", "rs", "rt", "sb", "sc", "sh", "sk", "so",
-"sp", "ss", "st", "sv", "sz", "ta", "tc", "th", "ti", "tl",
-"tm", "tp", "tr", "u",  "uf", "uh", "ul", "vs", "wh", "yr",
+"$c", "$f", "$h", "$p", "$s", "(b", "(c", "(d", "(f", "(l", "(q", "(t",
+"(x", "(z", ")b", ")c", ")d", ")f", ")l", ")q", ")t", ")x", ")z", "++",
+"+c", "1C", "1c", "2C", "2c", "@(", "@)", "@C", "@D", "@F", "@I", "@M",
+"@c", "@e", "@f", "@h", "@m", "@n", "@o", "@p", "@r", "@t", "@z", "AB",
+"AE", "AF", "AI", "AL", "AS", "AT", "AU", "AX", "B",  "B1", "B2", "BD",
+"BE", "BG", "BL", "BS", "BT", "BX", "C1", "C2", "CD", "CM", "CT", "D", 
+"DA", "DE", "DF", "DL", "DS", "EC", "EF", "EG", "EH", "EM", "EN", "EQ",
+"EX", "FA", "FD", "FE", "FG", "FJ", "FK", "FL", "FN", "FO", "FQ", "FS",
+"FV", "FX", "H",  "HC", "HM", "HO", "HU", "I",  "ID", "IE", "IH", "IM",
+"IP", "IZ", "KD", "KE", "KF", "KQ", "KS", "LB", "LC", "LD", "LE", "LG",
+"LI", "LP", "MC", "ME", "MF", "MH", "ML", "MR", "MT", "ND", "NE", "NH",
+"NL", "NP", "NS", "OF", "OH", "OK", "OP", "P",  "PF", "PH", "PP", "PT",
+"PY", "QE", "QP", "QS", "R",  "RA", "RC", "RE", "RL", "RP", "RQ", "RS",
+"RT", "S",  "S0", "S2", "S3", "SA", "SG", "SH", "SK", "SM", "SP", "SY",
+"TA", "TB", "TC", "TD", "TE", "TH", "TL", "TM", "TP", "TQ", "TR", "TS",
+"TX", "UL", "US", "UX", "VL", "WC", "WH", "XD", "XF", "XK", "XP", "[",  "[-",
+"[0", "[1", "[2", "[3", "[4", "[5", "[<", "[>", "[]", "]",  "]-", "]<", "]>",
+"][", "ab", "ac", "ad", "af", "am", "ar", "as", "b",  "ba", "bc", "bd",
+"bi", "bl", "bp", "br", "bx", "c.", "c2", "cc", "ce", "cf", "ch", "cs",
+"ct", "cu", "da", "de", "di", "dl", "dn", "ds", "dt", "dw", "dy", "ec",
+"ef", "eh", "el", "em", "eo", "ep", "ev", "ex", "fc", "fi", "fl", "fo",
+"fp", "ft", "fz", "hc", "he", "hl", "hp", "ht", "hw", "hx", "hy", "i", 
+"ie", "if", "ig", "in", "ip", "it", "ix", "lc", "lg", "li", "ll", "ln",
+"lo", "lp", "ls", "lt", "m1", "m2", "m3", "m4", "mc", "mk", "mo", "n1",
+"n2", "na", "ne", "nf", "nh", "nl", "nm", "nn", "np", "nr", "ns", "nx",
+"of", "oh", "os", "pa", "pc", "pi", "pl", "pm", "pn", "po", "pp", "ps",
+"q",  "r",  "rb", "rd", "re", "rm", "rn", "ro", "rr", "rs", "rt", "sb",
+"sc", "sh", "sk", "so", "sp", "ss", "st", "sv", "sz", "ta", "tc", "th",
+"ti", "tl", "tm", "tp", "tr", "u",  "uf", "uh", "ul", "vs", "wh", "xp", "yr",
 0
 };
 
@@ -224,7 +236,7 @@ FILE *f;
 				mac[1] = 0;
 			} else if (isspace(mac[2])) {
 				mac[2] = 0;
-			} else if (mac[2] != '\\' || mac[3] != '\"') {
+			} else if (mac[0] != '\\' || mac[1] != '\"') {
 				pe(lineno);
 				printf("Command too long\n");
 			}
@@ -429,6 +441,8 @@ char *mac;
 		return;
 	if (binsrch(mac) >= 0)
 		return;
+	if (mac[0] == '\\' && mac[1] == '"')	/* comments */
+		return;
 
 	pe(lineno);
 	printf("Unknown command: .%s\n", mac);
@@ -521,3 +535,5 @@ char *mac;
 	slot = bot;	/* place it would have gone */
 	return -1;
 }
+
+
