@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	6.11 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.12 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	6.11 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.12 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -117,7 +117,7 @@ smtpinit(m, pvp)
 	**	happen.
 	*/
 
-	r = reply(m, mci, e, (time_t) 300);
+	r = reply(m, mci, e, TimeOuts.to_initial);
 	if (r < 0 || REPLYTYPE(r) != 2)
 		goto tempfail1;
 
@@ -338,7 +338,7 @@ smtpfinish(m, editfcn)
 	/* check for the results of the transaction */
 	SmtpPhase = mci->mci_phase = "result wait";
 	setproctitle("%s %s: %s", e->e_id, CurHostName, mci->mci_phase);
-	r = reply(m, mci, e, ReadTimeout);
+	r = reply(m, mci, e, TimeOuts.to_datafinal);
 	if (r < 0)
 	{
 		smtpquit(m, mci, e);
@@ -407,7 +407,7 @@ smtprset(m, mci, e)
 	int r;
 
 	smtpmessage("RSET", m, mci);
-	r = reply(m, mci, e, (time_t) 300);
+	r = reply(m, mci, e, TimeOuts.to_rset);
 	if (r < 0)
 		mci->mci_state = MCIS_ERROR;
 	else if (REPLYTYPE(r) == 2)
@@ -430,7 +430,7 @@ smtpnoop(mci)
 	ENVELOPE *e = &BlankEnvelope;
 
 	smtpmessage("NOOP", m, mci);
-	r = reply(m, mci, e, ReadTimeout);
+	r = reply(m, mci, e, TimeOuts.to_miscshort);
 	if (r < 0 || REPLYTYPE(r) != 2)
 		smtpquit(m, mci, e);
 	return r;

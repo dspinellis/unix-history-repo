@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.20 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
