@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)udp.4	6.1 (Berkeley) %G%
+.\"	@(#)udp.4	6.2 (Berkeley) %G%
 .\"
 .TH UDP 4P ""
 .UC 5
@@ -43,6 +43,9 @@ may not be \*(lqconnected\*(rq to a TCP port).  In addition broadcast
 packets may be sent (assuming the underlying network supports
 this) by using a reserved \*(lqbroadcast address\*(rq; this address
 is network interface dependent.
+.PP
+Options at the IP transport level may be used with UDP; see
+.IR ip (4P).
 .SH DIAGNOSTICS
 A socket operation may fail with one of the following errors returned:
 .TP 15
@@ -70,7 +73,4 @@ when an attempt is made to create a
 socket with a network address for which no network interface
 exists.
 .SH SEE ALSO
-send(2),
-recv(2),
-intro(4N),
-inet(4F)
+getsockopt(2), recv(2), send(2), socket(2), intro(4N), inet(4F), ip(4P)

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)tcp.4	6.1 (Berkeley) %G%
+.\"	@(#)tcp.4	6.2 (Berkeley) %G%
 .\"
 .TH TCP 4P ""
 .UC 5
@@ -52,6 +52,31 @@ fixed by the peer entity's location.   The address assigned the
 socket is the address associated with the network interface
 through which packets are being transmitted and received.  Normally
 this address corresponds to the peer entity's network.
+.PP
+TCP supports one socket option which is set with
+.IR setsockopt (2)
+and tested with
+.IR getsockopt (2).
+Under most circumstances, TCP sends data when it is presented;
+when outstanding data has not yet been acknowledged, it gathers
+small amounts of output to be sent in a single packet once
+an acknowledgement is received.
+For a small number of clients, such as window systems
+that send a stream of mouse events which receive no replies,
+this packetization may cause significant delays.
+Therefore, TCP provides a boolean option, TCP_NODELAY (from
+.IR <netinet/tcp.h> ,
+to defeat this algorithm.
+The option level for the
+.I setsockopt
+call is the protocol number for TCP,
+available from
+.IR getprotobyname (3N).
+.PP
+Options at the IP transport level may be used with TCP; see
+.IR ip (4P).
+Incoming connection requests that are source-routed are noted,
+and the reverse source route is used in responding.
 .SH DIAGNOSTICS
 A socket operation may fail with one of the following errors returned:
 .TP 20
@@ -86,9 +111,4 @@ when an attempt is made to create a
 socket with a network address for which no network interface
 exists.
 .SH SEE ALSO
-intro(4N), inet(4F)
-.SH BUGS
-It should be possible to send and receive TCP options.
-The system always tries to negotiates the maximum TCP segment
-size to be 1024 bytes.  This can result in poor performance
-if an intervening network performs excessive fragmentation.
+getsockopt(2), socket(2), intro(4N), inet(4F), ip(4P)
