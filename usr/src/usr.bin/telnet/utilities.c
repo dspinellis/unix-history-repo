@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	TELOPTS
@@ -777,7 +777,7 @@ printsub(direction, pointer, length)
 	    if (TELOPT_OK(pointer[0]))
 		fprintf(NetTrace, "%s (unknown)", TELOPT(pointer[0]));
 	    else
-		fprintf(NetTrace, "%d (unknown)", pointer[i]);
+		fprintf(NetTrace, "%d (unknown)", pointer[0]);
 	    for (i = 1; i < length; i++)
 		fprintf(NetTrace, " %d", pointer[i]);
 	    break;
