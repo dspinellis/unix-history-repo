@@ -1,4 +1,4 @@
-\"	@(#)profiling.me	1.2 %G%
+\"	@(#)profiling.me	1.3 %G%
 .sh 1 "Types of Profiling"
 .pp
 There are a number of different uses for program profiles,
@@ -10,9 +10,9 @@ and those that display timing information about statements
 or routines.
 Counts are typically presented in tabular form,
 often in parallel with a listing of the source code.
-Timing information may be similarly presented,
-or may be further processed to attribute the time of each
-statement to its enclosing statement or routine.
+Timing information may be similarly presented;
+but more than one measure of time might be associated with each
+statement or routine.
 Thus each profiled segment would display two times:
 one for the time used by the segment itself, and another for the
 time inherited from code segments it invokes.
@@ -58,7 +58,7 @@ We distinguish among three different call graphs for a program.
 The \fIcomplete call graph\fP incorporates all routines and all
 potential arcs,
 including arcs that represent calls to functional parameters
-or variables.
+or functional variables.
 This graph contains the other two graphs as subgraphs.
 The \fIstatic call graph\fP includes all routines and all possible arcs
 that are not calls to functional parameters or variables.
