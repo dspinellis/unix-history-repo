@@ -3,13 +3,14 @@
 static	char copyright[] =
 	    "@(#)Copyright (c) 1979 Regents of the University of California";
 
-static char sccsid[] = "@(#)main.c 1.6 %G%";
+static char sccsid[] = "@(#)main.c 1.7 %G%";
 
 #include "whoami.h"
 #include "0.h"
 #include "yy.h"
 #include <signal.h>
 #include "objfmt.h"
+#include "config.h"
 
 /*
  * This version of pi has been in use at Berkeley since May 1977
@@ -25,8 +26,6 @@ char	pcusage[]	= "pc [ options ] [ -o file ] [ -i file ... ] name.p";
 
 char	*usageis	= piusage;
 
-char	*errfile = ERR_STRNGS;
-
 #ifdef OBJ
     char	*obj	= "obj";
 #endif OBJ
@@ -36,20 +35,6 @@ char	*errfile = ERR_STRNGS;
 #ifdef PTREE
     char	*pTreeName = "pi.pTree";
 #endif PTREE
-
-/*
- * Be careful changing errfile and howfile.
- * There are the "magic" constants 9 and 15 immediately below.
- * errfile is now defined by ERR_STRNGS, in objfmt.h,
- * and its leading path name length is ERR_PATHLEN long.
- * this for executing out of the current directory if running as `a.something'.
- */
-#ifdef OBJ
-char	*howfile	= HOW_STRNGS;
-#endif OBJ
-#ifdef PC
-char	*howfile	= HOW_STRNGS;
-#endif PC
 
 int	onintr();
 
@@ -80,12 +65,12 @@ main(argc, argv)
 	int i;
 
 	if (argv[0][0] == 'a')
-		errfile += ERR_PATHLEN , howfile += HOW_PATHLEN;
+		err_file += err_pathlen , how_file += how_pathlen;
 #	ifdef OBJ
 	    if (argv[0][0] == '-' && argv[0][1] == 'o') {
 		    obj = &argv[0][2];
 		    usageis = pixusage;
-		    howfile[HOW_PATHLEN+6] = 'x';
+		    how_file[strlen(how_file)] = 'x';
 		    ofil = 3;
 	    } else {
 		    ofil = creat(obj, 0755);
@@ -101,7 +86,7 @@ main(argc, argv)
 		if (i == -1)
 			goto usage;
 		if (i == 0) {
-			execl("/bin/cat", "cat", howfile, 0);
+			execl("/bin/cat", "cat", how_file, 0);
 			goto usage;
 		}
 		while (wait(&i) != -1)
@@ -271,9 +256,9 @@ usage:
 #	endif PC
 	if (argc != 1)
 		goto usage;
-	efil = open ( errfile, 0 );
+	efil = open ( err_file, 0 );
 	if ( efil < 0 )
-		perror(errfile), pexit(NOSTART);
+		perror(err_file), pexit(NOSTART);
 	filename = argv[0];
 	if (!dotted(filename, 'p')) {
 		Perror(filename, "Name must end in '.p'");
@@ -399,12 +384,12 @@ geterr(seekpt, buf)
 
 	lseek(efil, (long) seekpt, 0);
 	if (read(efil, buf, 256) <= 0)
-		perror(errfile), pexit(DIED);
+		perror(err_file), pexit(DIED);
 }
 
 header()
 {
-	extern char version[];
+	extern char *version;
 	static char anyheaders;
 
 	gettime( filename );
@@ -412,11 +397,11 @@ header()
 		putc( '\f' , stdout );
 	anyheaders++;
 #	ifdef OBJ
-	    printf("Berkeley Pascal PI -- Version 2.0 (%s)\n\n%s  %s\n\n",
+	    printf("Berkeley Pascal PI -- Version %s\n\n%s  %s\n\n",
 		    version, myctime(&tvec), filename);
 #	endif OBJ
 #	ifdef PC
-	    printf("Berkeley Pascal PC -- Version 2.0 (%s)\n\n%s  %s\n\n",
+	    printf("Berkeley Pascal PC -- Version %s\n\n%s  %s\n\n",
 		    version, myctime(&tvec), filename);
 #	endif PC
 }
