@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tables.c	4.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)tables.c	4.6 (Berkeley) %G%";
 #endif
 
 /*
@@ -150,27 +150,48 @@ rtchange(rt, gate, metric)
 {
 	int doioctl = 0, metricchanged = 0;
 	struct rtentry oldroute;
+#define	NDEBUG
+#ifdef	NDEBUG
+	int turntraceoff = 0;
+#endif
 
 	if (!equal(&rt->rt_router, gate))
 		doioctl++;
-	if (metric != rt->rt_metric) {
+	if (metric != rt->rt_metric)
 		metricchanged++;
-		rt->rt_metric = metric;
-	}
 	if (doioctl || metricchanged) {
-		TRACE_ACTION(CHANGE, rt);
-		rt->rt_state |= RTS_CHANGED;
-	}
-	if (doioctl) {
-		oldroute = rt->rt_rt;
-		rt->rt_router = *gate;
-		if (install) {
-			if (ioctl(s, SIOCADDRT, (char *)&rt->rt_rt) < 0)
-				perror("SIOCADDRT");
-			if (ioctl(s, SIOCDELRT, (char *)&oldroute) < 0)
-				perror("SIOCDELRT");
+#ifdef	NDEBUG
+		if (rt->rt_state & RTS_INTERFACE) {
+		    if (!tracing) {
+			traceon("/usr/adm/routed.log");
+			turntraceoff = 1;
+			fprintf(ftrace, "**** Changing route from interface\n");
+			fprintf(ftrace, "rt_timer = %d\n", rt->rt_timer);
+		    }
 		}
+#endif
+		TRACE_ACTION(CHANGE FROM, rt);
+		if (doioctl) {
+			oldroute = rt->rt_rt;
+			rt->rt_router = *gate;
+		}
+		rt->rt_metric = metric;
+		rt->rt_state &= ~RTS_INTERFACE;
+		if (metric)
+			rt->rt_state |= RTF_GATEWAY;
+		rt->rt_state |= RTS_CHANGED;
+		TRACE_ACTION(CHANGE TO, rt);
 	}
+	if (doioctl && install) {
+		if (ioctl(s, SIOCADDRT, (char *)&rt->rt_rt) < 0)
+			perror("SIOCADDRT");
+		if (ioctl(s, SIOCDELRT, (char *)&oldroute) < 0)
+			perror("SIOCDELRT");
+	}
+#ifdef	NDEBUG
+	if (turntraceoff)
+		traceoff();
+#endif
 }
 
 rtdelete(rt)

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	4.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	4.9 (Berkeley) %G%";
 #endif
 
 /*
@@ -18,6 +18,7 @@ static char sccsid[] = "@(#)main.c	4.8 (Berkeley) %G%";
 int	supplier = -1;		/* process should supply updates */
 
 struct	rip *msg = (struct rip *)packet;
+int	hup();
 
 main(argc, argv)
 	int argc;
@@ -117,6 +118,7 @@ main(argc, argv)
 	msg->rip_nets[0].rip_metric = htonl(HOPCNT_INFINITY);
 	toall(sendmsg);
 	signal(SIGALRM, timer);
+	signal(SIGHUP, hup);
 	timer();
 
 	for (;;) {

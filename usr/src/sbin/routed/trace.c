@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)trace.c	4.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)trace.c	4.6 (Berkeley) %G%";
 #endif
 
 /*
@@ -37,6 +37,7 @@ iftraceinit(ifp, ifd)
 	if (ifd->ifd_records == 0)
 		return (0);
 	ifd->ifd_front = ifd->ifd_records;
+	ifd->ifd_count = 0;
 	for (t = ifd->ifd_records; t < ifd->ifd_records + NRECORDS; t++) {
 		t->ift_size = 0;
 		t->ift_packet = 0;
@@ -82,6 +83,8 @@ trace(ifd, who, p, len, m)
 	t = ifd->ifd_front++;
 	if (ifd->ifd_front >= ifd->ifd_records + NRECORDS)
 		ifd->ifd_front = ifd->ifd_records;
+	if (ifd->ifd_count < NRECORDS)
+		ifd->ifd_count++;
 	if (t->ift_size > 0 && t->ift_packet)
 		free(t->ift_packet);
 	t->ift_packet = 0;
@@ -162,13 +165,13 @@ traceaction(fd, action, rt)
 dumpif(fd, ifp)
 	register struct interface *ifp;
 {
-	register struct ifdebug *ifd;
-	
-	fprintf(fd, "*** Packet history for interface %s ***\n",
-		ifp->int_name);
-	dumptrace(fd, "to", &ifp->int_output);
-	dumptrace(fd, "from", &ifp->int_output);
-	fprintf(fd, "*** end packet history ***\n");
+	if (ifp->int_input.ifd_count || ifp->int_output.ifd_count) {
+		fprintf(fd, "*** Packet history for interface %s ***\n",
+			ifp->int_name);
+		dumptrace(fd, "to", &ifp->int_output);
+		dumptrace(fd, "from", &ifp->int_input);
+		fprintf(fd, "*** end packet history ***\n");
+	}
 }
 
 dumptrace(fd, dir, ifd)
@@ -185,14 +188,12 @@ dumptrace(fd, dir, ifd)
 		return;
 	}
 	fprintf(fd, "%s trace:\n", cp);
-	for (t = ifd->ifd_front; t <= ifd->ifd_records + NRECORDS; t++) {
-		if (t->ift_size == 0)
-			continue;
-		fprintf(fd, "%.24s: metric=%d\n", ctime(&t->ift_stamp),
-			t->ift_metric);
-		dumppacket(fd, dir, &t->ift_who, t->ift_packet, t->ift_size);
-	}
-	for (t = ifd->ifd_records; t < ifd->ifd_front; t++) {
+	t = ifd->ifd_front - ifd->ifd_count;
+	if (t < ifd->ifd_records)
+		t += NRECORDS;
+	for ( ; ifd->ifd_count; ifd->ifd_count--, t++) {
+		if (t >= ifd->ifd_records + NRECORDS)
+			t = ifd->ifd_records;
 		if (t->ift_size == 0)
 			continue;
 		fprintf(fd, "%.24s: metric=%d\n", ctime(&t->ift_stamp),

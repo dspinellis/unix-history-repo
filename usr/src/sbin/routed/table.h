@@ -1,4 +1,4 @@
-/*	table.h	4.1	83/01/11	*/
+/*	table.h	4.2	84/04/09	*/
 
 /*
  * Routing table management daemon.
@@ -49,9 +49,9 @@ struct rt_entry {
  * "State" of routing table entry.
  */
 #define	RTS_CHANGED	0x1		/* route has been altered recently */
-#define	RTS_PASSIVE	0x20		/* don't time out route */
-#define	RTS_INTERFACE	0x40		/* route is for network interface */
-#define	RTS_REMOTE	0x80		/* route is for ``remote'' entity */
+#define	RTS_PASSIVE	IFF_PASSIVE	/* don't time out route */
+#define	RTS_INTERFACE	IFF_INTERFACE	/* route is for network interface */
+#define	RTS_REMOTE	IFF_REMOTE	/* route is for ``remote'' entity */
 
 struct	rthash nethash[ROUTEHASHSIZ];
 struct	rthash hosthash[ROUTEHASHSIZ];
