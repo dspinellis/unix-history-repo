@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)unistd.h	5.3 (Berkeley) %G%
+ *	@(#)unistd.h	5.4 (Berkeley) %G%
  */
 
 /* compile-time symbolic constants */
@@ -39,12 +39,18 @@
 #define	SEEK_END	2	/* set file offset to EOF plus offset */
 
 /* map a stream pointer to a file descriptor */
-#define	STDIN_FILENO		0	/* standard input value, stdin */
-#define	STDOUT_FILENO		1	/* standard output value, stdout */
-#define	STDERR_FILENO		2	/* standard error value, stdout */
+#define	STDIN_FILENO	0	/* standard input value, stdin */
+#define	STDOUT_FILENO	1	/* standard output value, stdout */
+#define	STDERR_FILENO	2	/* standard error value, stdout */
+
+/* fnmatch function */
+#define	FNM_PATHNAME	0x01	/* match pathnames, not filenames */
+#ifndef _POSIX_SOURCE
+#define	FNM_QUOTE	0x02	/* escape special chars with \ */
+#endif
 
 #ifndef NULL
-#define	NULL	0			/* null pointer constant */
+#define	NULL		0	/* null pointer constant */
 #endif
 
 /* configurable pathname variables */
