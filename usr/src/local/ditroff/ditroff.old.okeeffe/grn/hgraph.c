@@ -1,4 +1,4 @@
-/*	hgraph.c	1.3	(Berkeley) 83/08/03
+/*	hgraph.c	1.4	(Berkeley) 83/08/23
  *
  *     This file contains the graphics routines for converting gremlin
  * pictures to troff input.
@@ -104,34 +104,32 @@ int justify;
 POINT pnt;
 char string[];
 {
-    printf(".di gt\n\\&%s\n.di", string);	/* divert the text. */
-    tmove(&pnt);				/* move to positioning point */
+    printf(".ds g9 \"%s", string);	/* define string containing the text. */
+    tmove(&pnt);			/* move to positioning point */
     switch (justify) {
 					/* local vertical motions */
         case CENTLEFT:
         case CENTCENT:
-       case CENTRIGHT:	printf("\\v'(\\n(dnu+1m)/2u'");	/* down half */
+       case CENTRIGHT:	printf("\\v'0.85n'");		/* down half */
 			break;
 
 	 case TOPLEFT:
 	 case TOPCENT:
-        case TOPRIGHT:	printf("\\v'\\n(dnu+1m'");		/* down whole */
+        case TOPRIGHT:	printf("\\v'1.7n'");		/* down whole */
     }
 
     switch (justify) {
 					/* local horizontal motions */
 	 case BOTCENT:
         case CENTCENT:
-	 case TOPCENT:	printf("\\h'-\\n(dlu/2u'");	/* back half */
+	 case TOPCENT:	printf("\\h'-\\w'\\*(g9'u/2u'");	/* back half */
 			break;
 
         case BOTRIGHT:
        case CENTRIGHT:
-        case TOPRIGHT:	printf("\\h'-\\n(dlu'");	/* back whole */
+        case TOPRIGHT:	printf("\\h'-\\w'\\*(g9'u'");		/* back whole */
     }
-				/* now print the text.  The (cr) at the end */
-    printf("\\c\n.gt\n");	/* results in a blank line in the output.  It */
-				/* is necessary to break the "\c" directive. */
+    printf("\\*(g9");			/* now print the text. */
 } /* end HGPutText */
 
 
