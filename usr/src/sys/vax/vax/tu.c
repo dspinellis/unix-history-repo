@@ -15,6 +15,9 @@
  * In the case of a 750 without MRSP, the only way for the CPU to
  * keep up with the tu58 is to lock out virtually everything else.
  * This is taken care of by a pseudo DMA routine in locore.s.
+ *
+ * NOTE: This driver will not work in multiuser mode 
+ *	 unless MRSP is used!!
  */
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -164,8 +167,8 @@ tureset()
 #endif
 	tutab.b_active++;
 	mtpr(CSRS, 0);
-	mtpr(CSTS, IE|BREAK);
-	tuxintr();		/* start output */
+	mtpr(CSTS, IE | BREAK);
+	tuxintr();			/* start output */
 }
 
 /*
