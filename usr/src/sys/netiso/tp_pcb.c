@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_pcb.c	7.22 (Berkeley) %G%
+ *	@(#)tp_pcb.c	7.23 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -932,15 +932,30 @@ register struct mbuf *nam;
 			if (tp_tselinuse(tlen, tsel, siso,
 								tpcb->tp_sock->so_options & SO_REUSEADDR))
 				return (EINVAL);
-		} else for (tsel = (caddr_t)&tp_unique, tlen = 2;;){
-			if (tp_unique++ < ISO_PORT_RESERVED ||
-				tp_unique > ISO_PORT_USERRESERVED) {
-					if (wrapped++)
-						return ESRCH;
-					tp_unique = ISO_PORT_RESERVED;
+		} else {
+			for (tsel = (caddr_t)&tutil, tlen = 2;;){
+				if (tp_unique++ < ISO_PORT_RESERVED ||
+					tp_unique > ISO_PORT_USERRESERVED) {
+						if (wrapped++)
+							return ESRCH;
+						tp_unique = ISO_PORT_RESERVED;
+				}
+				tutil = htons(tp_unique);
+				if (tp_tselinuse(tlen, tsel, siso, 0) == 0)
+					break;
 			}
-			if (tp_tselinuse(tlen, tsel, siso, 0) == 0)
-				break;
+			if (siso) switch (siso->siso_family) {
+#ifdef ISO
+				case AF_ISO:
+					bcopy(tsel, TSEL(siso), tlen);
+					siso->siso_tlen = tlen;
+					break;
+#endif
+#ifdef INET
+				case AF_INET:
+					((struct sockaddr_in *)siso)->sin_port = tutil;
+#endif
+				}
 		}
 		bcopy(tsel, tpcb->tp_lsuffix, (tpcb->tp_lsuffixlen = tlen));
 		insque(tpcb, &tp_bound_pcbs);
