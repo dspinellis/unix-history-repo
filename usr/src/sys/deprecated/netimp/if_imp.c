@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_imp.c	7.11 (Berkeley) %G%
+ *	@(#)if_imp.c	7.12 (Berkeley) %G%
  */
 
 #include "imp.h"
@@ -448,8 +448,8 @@ impmsg(sc, fmt, a1)
 }
 
 struct sockproto impproto = { PF_IMPLINK };
-struct sockaddr_in impdst = { sizeof (impdst), AF_IMPLINK };
-struct sockaddr_in impsrc = { sizeof (impsrc), AF_IMPLINK };
+struct sockaddr_in impdst = { sizeof (impdst), AF_INET };
+struct sockaddr_in impsrc = { sizeof (impsrc), AF_INET };
 
 /*
  * Pick up the IMP "error" messages enqueued earlier,
@@ -461,7 +461,7 @@ impintr()
 	register struct mbuf *m;
 	register struct control_leader *cp;
 	struct ifnet *ifp;
-	int s;
+	int s, code;
 
 	for (;;) {
 		s = splimp();
@@ -476,18 +476,19 @@ impintr()
 		impdst.sin_addr = IA_SIN(ifp->if_addrlist)->sin_addr;
 
 		if (cp->dl_mtype == IMPTYPE_HOSTDEAD ||
-		    cp->dl_mtype == IMPTYPE_HOSTUNREACH)
+		    cp->dl_mtype == IMPTYPE_HOSTUNREACH) {
+			code = (cp->dl_mtype == IMPTYPE_HOSTDEAD) ?
+				PRC_HOSTDEAD : PRC_UNREACH_HOST;
 			switch (cp->dl_link) {
 
 			case IMPLINK_IP:
-				pfctlinput((int)cp->dl_mtype,
-				    (struct sockaddr *)&impsrc);
+				pfctlinput(code, (struct sockaddr *)&impsrc);
 				break;
 			default:
-				raw_ctlinput((int)cp->dl_mtype,
-				    (struct sockaddr *)&impsrc);
+				raw_ctlinput(code, (struct sockaddr *)&impsrc);
 				break;
 			}
+		}
 
 		raw_input(m, &impproto, (struct sockaddr *)&impsrc,
 		  (struct sockaddr *)&impdst);
