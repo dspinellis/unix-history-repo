@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_balloc.c	7.16 (Berkeley) %G%
+ *	@(#)lfs_balloc.c	7.17 (Berkeley) %G%
  */
 
 #ifdef LOGFS
@@ -33,6 +33,7 @@
  * is done by using the logical block number to index into
  * the array of block pointers described by the dinode.
  */
+int
 lfs_bmap(ip, bn, bnp)
 	register struct inode *ip;
 	register daddr_t bn;
@@ -44,7 +45,7 @@ lfs_bmap(ip, bn, bnp)
 	struct buf *bp;
 	daddr_t *bap, daddr;
 	daddr_t lbn_ind;
-	int i, j, off, sh;
+	int j, off, sh;
 	int error;
 
 printf("lfs_bmap: block number %d, inode %d\n", bn, ip->i_number);
@@ -71,7 +72,7 @@ printf("lfs_bmap: block number %d, inode %d\n", bn, ip->i_number);
 	if (bn < NDADDR) {
 		nb = ip->i_db[bn];
 		if (nb == 0) {
-			*bnp = (daddr_t)-1;
+			*bnp = UNASSIGNED;
 			return (0);
 		}
 		*bnp = nb;
@@ -100,7 +101,7 @@ printf("lfs_bmap: block number %d, inode %d\n", bn, ip->i_number);
 	devvp = VFSTOUFS(vp->v_mount)->um_devvp;
 	for (off = NIADDR - j, bap = ip->i_ib; j <= NIADDR; j++) {
 		if((daddr = bap[off]) == 0) {
-			daddr = (daddr_t)-1;
+			daddr = UNASSIGNED;
 			break;
 		}
 		if (bp)
