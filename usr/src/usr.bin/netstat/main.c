@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -27,6 +27,7 @@ static char sccsid[] = "@(#)main.c	5.18 (Berkeley) %G%";
 #include <stdio.h>
 #include <paths.h>
 
+#define nl netstatnl
 struct nlist nl[] = {
 #define	N_MBSTAT	0
 	{ "_mbstat" },
@@ -197,7 +198,7 @@ struct protox *protoprotox[] = { protox, nsprotox, isoprotox, NULLPROTOX };
 struct	pte *Sysmap;
 
 char	*system = _PATH_UNIX;
-char	*kmemf = _PATH_KMEM;
+char	*kmemf;
 int	kmem;
 int	kflag;
 int	Aflag;
@@ -320,28 +321,13 @@ main(argc, argv)
 			}
 		}
 	}
-	if (nlist(system, nl) < 0 || nl[0].n_type == 0) {
+	if (kvm_openfiles(system, kmemf, (char *)0) == -1) {
+		fprintf("netstat(kvm_openfiles): %s\n", kvm_geterr());
+		exit(1);
+	}
+	if (kvm_nlist(nl) < 0 || nl[0].n_type == 0) {
 		fprintf(stderr, "%s: no namelist\n", system);
 		exit(1);
-	}
-	kmem = open(kmemf, O_RDONLY);
-	if (kmem < 0) {
-		perror(kmemf);
-		exit(1);
-	}
-	if (kflag) {
-		off_t off;
-
-		Sysmap = (struct pte *)
-		   malloc((u_int)(nl[N_SYSSIZE].n_value * sizeof(struct pte)));
-		if (!Sysmap) {
-			fputs("netstat: can't get memory for Sysmap.\n", stderr);
-			exit(1);
-		}
-		off = nl[N_SYSMAP].n_value & ~KERNBASE;
-		(void)lseek(kmem, off, L_SET);
-		(void)read(kmem, (char *)Sysmap,
-		    (int)(nl[N_SYSSIZE].n_value * sizeof(struct pte)));
 	}
 	if (mflag) {
 		mbpr((off_t)nl[N_MBSTAT].n_value);
@@ -430,21 +416,6 @@ main(argc, argv)
     exit(0);
 }
 
-/*
- * Seek into the kernel for a value.
- */
-off_t
-klseek(fd, base, off)
-	int fd, off;
-	off_t base;
-{
-	if (kflag) {
-		/* get kernel pte */
-		base &= ~KERNBASE;
-		base = ctob(Sysmap[btop(base)].pg_pfnum) + (base & PGOFSET);
-	}
-	return (lseek(fd, base, off));
-}
 
 char *
 plural(n)

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ns.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)ns.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -40,7 +40,6 @@ static char sccsid[] = "@(#)ns.c	5.11 (Berkeley) %G%";
 struct	nspcb nspcb;
 struct	sppcb sppcb;
 struct	socket sockb;
-extern	int kmem;
 extern	int Aflag;
 extern	int aflag;
 extern	int nflag;
@@ -67,8 +66,7 @@ nsprotopr(off, name)
 	if (off == 0)
 		return;
 	isspp = strcmp(name, "spp") == 0;
-	klseek(kmem, off, 0);
-	read(kmem, (char *)&cb, sizeof (struct nspcb));
+	kvm_read(off, (char *)&cb, sizeof (struct nspcb));
 	nspcb = cb;
 	prev = (struct nspcb *)off;
 	if (nspcb.nsp_next == (struct nspcb *)off)
@@ -77,8 +75,7 @@ nsprotopr(off, name)
 		off_t ppcb;
 
 		next = nspcb.nsp_next;
-		klseek(kmem, (off_t)next, 0);
-		read(kmem, (char *)&nspcb, sizeof (nspcb));
+		kvm_read((off_t)next, (char *)&nspcb, sizeof (nspcb));
 		if (nspcb.nsp_prev != prev) {
 			printf("???\n");
 			break;
@@ -86,13 +83,12 @@ nsprotopr(off, name)
 		if (!aflag && ns_nullhost(nspcb.nsp_faddr) ) {
 			continue;
 		}
-		klseek(kmem, (off_t)nspcb.nsp_socket, 0);
-		read(kmem, (char *)&sockb, sizeof (sockb));
+		kvm_read((off_t)nspcb.nsp_socket,
+				(char *)&sockb, sizeof (sockb));
 		ppcb = (off_t) nspcb.nsp_pcb;
 		if (ppcb) {
 			if (isspp) {
-				klseek(kmem, ppcb, 0);
-				read(kmem, (char *)&sppcb, sizeof (sppcb));
+				kvm_read(ppcb, (char *)&sppcb, sizeof (sppcb));
 			} else continue;
 		} else
 			if (isspp) continue;
@@ -141,8 +137,7 @@ spp_stats(off, name)
 
 	if (off == 0)
 		return;
-	klseek(kmem, off, 0);
-	read(kmem, (char *)&spp_istat, sizeof (spp_istat));
+	kvm_read(off, (char *)&spp_istat, sizeof (spp_istat));
 	printf("%s:\n", name);
 	ANY(spp_istat.nonucn, "connection", " dropped due to no new sockets ");
 	ANY(spp_istat.gonawy, "connection", " terminated due to our end dying");
@@ -215,8 +210,7 @@ idp_stats(off, name)
 
 	if (off == 0)
 		return;
-	klseek(kmem, off, 0);
-	read(kmem, (char *)&idpstat, sizeof (idpstat));
+	kvm_read(off, (char *)&idpstat, sizeof (idpstat));
 	printf("%s:\n", name);
 	ANY(idpstat.idps_toosmall, "packet", " smaller than a header");
 	ANY(idpstat.idps_tooshort, "packet", " smaller than advertised");
@@ -254,8 +248,7 @@ nserr_stats(off, name)
 
 	if (off == 0)
 		return;
-	klseek(kmem, off, 0);
-	read(kmem, (char *)&ns_errstat, sizeof (ns_errstat));
+	kvm_read(off, (char *)&ns_errstat, sizeof (ns_errstat));
 	printf("NS error statistics:\n");
 	ANY(ns_errstat.ns_es_error, "call", " to ns_error");
 	ANY(ns_errstat.ns_es_oldshort, "error",
