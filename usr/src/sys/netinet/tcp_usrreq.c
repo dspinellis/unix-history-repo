@@ -1,4 +1,4 @@
-/* tcp_usrreq.c 1.21 81/10/31 */
+/* tcp_usrreq.c 1.22 81/10/31 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -493,26 +493,39 @@ COUNT(TDB_STUFF);
 		tcp_prt(tdp);
 }
 
-/* BETTER VERSION OF THIS ROUTINE? */
 tcp_prt(tdp)
 	register struct tcp_debug *tdp;
 {
 COUNT(TCP_PRT);
 
-	printf("TCP(%x) %s x %s",
-	    tdp->td_tcb, tcpstates[tdp->td_old], tcpinputs[tdp->td_inp]);
-	if (tdp->td_inp == ISTIMER)
-		printf("(%s)", tcptimers[tdp->td_tim]);
-	printf(" --> %s",
-	    tcpstates[(tdp->td_new > 0) ? tdp->td_new : tdp->td_old]);
-	/* GROSS... DEPENDS ON SIGN EXTENSION OF CHARACTERS */
-	if (tdp->td_new < 0)
-		printf(" (FAILED)");
-	if (tdp->td_sno) {
-		printf(" sno %x ano %x win %d len %d flags %x",
-		    tdp->td_sno, tdp->td_ano, tdp->td_wno,
-		    tdp->td_lno, tdp->td_flg);
+	printf("%x ", ((int)tdp->td_tcb)&0xffffff);
+	if (tdp->td_inp == INSEND) {
+		printf("SEND #%x", tdp->td_sno);
+		tdp->td_lno = ntohs(tdp->td_lno);
+		tdp->td_wno = ntohs(tdp->td_wno);
+	} else {
+		if (tdp->td_inp == INRECV)
+			printf("RCV #%x ", tdp->td_sno);
+		printf("%s.%s",
+		    tcpstates[tdp->td_old], tcpinputs[tdp->td_inp]);
+		if (tdp->td_inp == ISTIMER)
+			printf("(%s)", tcptimers[tdp->td_tim]);
+		printf(" -> %s",
+		    tcpstates[(tdp->td_new > 0) ? tdp->td_new : tdp->td_old]);
+		if (tdp->td_new == -1)
+			printf(" (FAILED)");
 	}
+	/* GROSS... DEPENDS ON SIGN EXTENSION OF CHARACTERS */
+	if (tdp->td_lno)
+		printf(" len=%d", tdp->td_lno);
+	if (tdp->td_wno)
+		printf(" win=%d", tdp->td_wno);
+	if (tdp->td_flg & TH_FIN) printf(" FIN");
+	if (tdp->td_flg & TH_SYN) printf(" SYN");
+	if (tdp->td_flg & TH_RST) printf(" RST");
+	if (tdp->td_flg & TH_EOL) printf(" EOL");
+	if (tdp->td_flg & TH_ACK)  printf(" ACK %x", tdp->td_ano);
+	if (tdp->td_flg & TH_URG) printf(" URG");
 	printf("\n");
 }
 #endif

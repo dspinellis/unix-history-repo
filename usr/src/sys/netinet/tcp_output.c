@@ -1,4 +1,4 @@
-/* tcp_output.c 4.6 81/10/31 */
+/* tcp_output.c 4.7 81/10/31 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -104,8 +104,6 @@ COUNT(TCP_SEND);
 			flags |= TH_FIN;
 			tp->seq_fin = tp->snd_lst++;
 		}
-		if (tp->snd_nxt >= tp->snd_lst)
-			return (0);
 	} else {
 		if (tp->tc_flags&TC_SYN_ACKED) {
 			wind = tp->snd_una + tp->snd_wnd;
@@ -118,7 +116,7 @@ COUNT(TCP_SEND);
 		if ((tp->tc_flags&TC_FORCE_ONE) && (tp->snd_lst == wind)) {
 			tp->snd_lst = tp->snd_nxt + 1;
 			forced = 1;
-		} else if (tp->snd_nxt >= tp->snd_lst)
+		} else if (tp->snd_nxt >= tp->snd_lst && (tp->tc_flags&TC_SND_FIN) == 0)
 			return (0);
 		m = tcp_sndcopy(tp, MAX(tp->iss+1,tp->snd_nxt), tp->snd_lst);
 		if (tp->snd_end > tp->iss && tp->snd_end <= tp->snd_lst)
@@ -130,6 +128,8 @@ COUNT(TCP_SEND);
 			tp->seq_fin = tp->snd_lst++;
 		}
 	}
+	if (tp->snd_nxt >= tp->snd_lst)
+		return (0);
 	if (tp->tc_flags & TC_SND_URG)
 		flags |= TH_URG;
 	sent = tcp_output(tp, flags, tp->snd_lst - tp->snd_nxt, m);
