@@ -1,4 +1,4 @@
-/*	dh.c	3.17	%G%	*/
+/*	dh.c	3.18	%G%	*/
 
 #include "../conf/dh.h"
 #if NDH11 > 0
@@ -341,7 +341,7 @@ dhxint(dev)
 			else {
 				addr->un.dhcsrl = (d&017)|IENAB;
 				ndflush(&tp->t_outq,
-				    (int)addr->dhcar-UBACVT(tp->t_outq.c_cf));
+				    (int)(short)addr->dhcar-UBACVT(tp->t_outq.c_cf));
 			}
 			if (tp->t_line)
 				(*linesw[tp->t_line].l_start)(tp);
