@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.13	%G%";
+static char	SccsId[] = "@(#)main.c	3.14	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -169,6 +169,9 @@ main(argc, argv)
 	char cbuf[5];			/* holds hop count */
 	char dbuf[30];			/* holds ctime(tbuf) */
 	extern char *sprintf();
+# ifndef V6
+	extern char *getenv();
+# endif V6
 	bool canrename;
 
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
@@ -351,6 +354,19 @@ main(argc, argv)
 	define('v', Version);
 
 	readcf(cfname);
+
+# ifndef V6
+	p = getenv("HOME");
+	if (p != NULL)
+	{
+		char cfbuf[60];
+
+		define('z', p);
+		expand("$z/.mailcf", cfbuf, &cfbuf[sizeof cfbuf - 1]);
+		if (access(cfbuf, 2) == 0)
+			readcf(cfbuf);
+	}
+# endif V6
 
 	/*
 	locname = getname();
