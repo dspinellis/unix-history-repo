@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)curses.ext	5.2 (Berkeley) %G%
+ *	@(#)curses.ext	5.2 (Berkeley) 6/19/85
  */
 
 /*
@@ -16,7 +16,7 @@
 
 extern bool	_echoit, _rawmode, My_term, _endwin;
 
-extern char	ttytype[], *_unctrl[];
+extern char	ttytype[50], *_unctrl[];
 
 extern int	_tty_ch, LINES, COLS;
 
