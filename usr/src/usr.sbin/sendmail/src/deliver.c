@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.28 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1620,7 +1620,7 @@ sendall(e, mode)
 			if (e->e_df != NULL && mode != SM_VERIFY)
 			{
 				ee->e_dfp = NULL;
-				ee->e_df = queuename(ee, 'd');
+				ee->e_df = newstr(queuename(ee, 'd'));
 				if (link(e->e_df, ee->e_df) < 0)
 				{
 					syserr("sendall: link(%s, %s)",
