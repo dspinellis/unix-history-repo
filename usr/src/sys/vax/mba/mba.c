@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mba.c	6.5 (Berkeley) %G%
+ *	@(#)mba.c	6.6 (Berkeley) %G%
  */
 
 #include "mba.h"
@@ -55,20 +55,6 @@ loop:
 	bp = mi->mi_tab.b_actf;
 	if (bp == NULL)
 		return;
-	/*
-	 * Make sure the drive is still there before starting it up.
-	 */
-	if ((mi->mi_drv->mbd_dt & MBDT_TYPE) == 0) {
-		printf("%s%d: nonexistent\n", mi->mi_driver->md_dname,
-		    mbunit(bp->b_dev));
-		mi->mi_alive = 0;
-		mi->mi_tab.b_actf = bp->av_forw;
-		mi->mi_tab.b_active = 0;
-		mi->mi_tab.b_errcnt = 0;
-		bp->b_flags |= B_ERROR;
-		iodone(bp);
-		goto loop;
-	}
 	/*
 	 * Let the drivers unit start routine have at it
 	 * and then process the request further, per its instructions.
@@ -289,7 +275,16 @@ mbintr(mbanum)
 				mbustart(mi);
 			break;
 
-		case MBD_RESTARTED:	/* driver restarted op (ecc, e.g.)
+		case MBD_REPOSITION:	/* driver started repositioning */
+			/*
+			 * Drive is repositioning, not doing data transfer.
+			 * Free controller, but don't have to restart drive.
+			 */
+			mhp->mh_active = 0;
+			mhp->mh_actf = mi->mi_forw;
+			break;
+
+		case MBD_RESTARTED:	/* driver restarted op (ecc, e.g.) */
 			/*
 			 * Note that mhp->mh_active is still on.
 			 */
