@@ -1,5 +1,5 @@
 INSTALLATION GUIDE
-README	5.1	83/07/02
+README	5.2	83/07/19
 
 Tom Truscott, rti!trt,decvax!duke!trt (919)541-6488 Research Triangle Institute
 Bob Gray, gray@berkeley, duke!adiron!bob (315) 336-4989
@@ -85,11 +85,12 @@ Some steps will vary slightly from system to system.
 	(If you are chicken, type 'make -n install' first).
 
 6. Edit and install the control files:
-	cp UUAIDS/L.cmds /usr/lib/uucp/L.cmds
-	Make needed changes to it.  Make sure it has all the commands you want.
-	Edit if necessary L.sys, L-devices, L-dialcodes.  The format for
-	dialers is slightly different so that any dialer can be handled.
-	Install these L* files in /usr/lib/uucp.  See samples in UUAIDS.
+	Look in UUAIDS.  Edit and install into /usr/lib/uucp if necessary
+	USERFILE, L.cmds, L.sys, L-devices, L-dialcodes.
+	THESE FILES MUST BE OWNED BY THE SAME OWNER AND GROUP AS
+	THE UUCP COMMANDS AND UUCP SPOOL FILES!!! (probably uucp, daemon).
+	The format for dialers is slightly different so that any dialer
+	can be handled.
 
 7. Make new subdirectories:
 	For safety:  cd /usr/spool/uucp; tar c .   (save Qed files on tape)
