@@ -1,4 +1,4 @@
-/*	tty_subr.c	4.4	%G%	*/
+/*	tty_subr.c	4.5	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -399,7 +399,7 @@ register s;
 	return(f);
 }
 
-#ifdef notdef
+#ifdef UCBIPC
 char *
 nb_to_q(cp, cc, q)
 register char *cp;

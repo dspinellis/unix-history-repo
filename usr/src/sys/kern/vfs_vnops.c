@@ -1,4 +1,4 @@
-/*	vfs_vnops.c	4.3	%G%	*/
+/*	vfs_vnops.c	4.4	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -25,13 +25,17 @@ register int f;
 {
 	register struct file *fp;
 
-	if(0 <= f && f < NOFILE) {
-		fp = u.u_ofile[f];
-		if(fp != NULL)
-			return(fp);
+	if ((unsigned)f >= NOFILE || (fp = u.u_ofile[f]) == NULL) {
+		u.u_error = EBADF;
+		return (NULL);
 	}
-	u.u_error = EBADF;
-	return(NULL);
+#ifdef UCBIPC
+	if (u.u_pofile[f] & ISPORT) {
+		u.u_error = EISPORT;
+		return (NULL);
+	}
+#endif
+	return (fp);
 }
 
 /*
@@ -100,7 +104,6 @@ register struct file *fp;
 			if (fp->f_count && (ip=fp->f_inode)->i_un.i_rdev==dev &&
 			    (ip->i_mode&IFMT) == mode)
 				return;
-
 		if (mode == IFBLK) {
 			/*
 			 * on last close of a block device (that isn't mounted)
@@ -110,7 +113,6 @@ register struct file *fp;
 			binval(dev);
 		}
 	}
-
 	(*cfunc)(dev, flag, fp);
 }
 
