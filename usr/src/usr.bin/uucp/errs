@@ -1,0 +1,8 @@
+cc -O -DUCBNEWTTY -DLONGNAMES -c pk0.c
+./pk.h: 48: MIN redefined
+"pk0.c", line 346: warning: illegal combination of pointer and integer, op =
+cc -O -DUCBNEWTTY -DLONGNAMES -c pk1.c
+./pk.h: 48: MIN redefined
+cc -O -DUCBNEWTTY -DLONGNAMES -c gio.c
+./pk.h: 48: MIN redefined
+cc -O -DUCBNEWTTY -DLONGNAMES cico.o cntrl.o conn.o pk0.o pk1.o gio.o  anyread.o sdmail.o  pkon.o cpmv.o expfile.o gename.o getpwinfo.o index.o lastpart.o  prefix.o shio.o ulockf.o xqt.o  anlwrk.o chkpth.o getargs.o gnsys.o gnxseq.o  imsg.o logent.o sysacct.o systat.o uucpname.o  dial.o  -o uucico
