@@ -2,7 +2,7 @@
  * Copyright (c) 1982, 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *	@(#)init_main.c	7.35 (Berkeley) %G%
+ *	@(#)init_main.c	7.36 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -226,7 +226,8 @@ main(firstaddr)
 	if (fork(p, (void *) NULL, rval))
 		panic("fork init");
 	if (rval[1]) {
-		char *ip = initflags;
+		static char initflags[] = "-sf";
+		char *ip = initflags + 1;
 		vm_offset_t addr = 0;
 
 		/*
@@ -236,17 +237,17 @@ main(firstaddr)
 		 */
 		p = curproc;
 		initproc = p;
-		*ip++ = '-';
 		if (boothowto&RB_SINGLE)
 			*ip++ = 's';
 #ifdef notyet
 		if (boothowto&RB_FASTBOOT)
 			*ip++ = 'f';
-		*ip++ = '\0';
 #endif
+		*ip++ = '\0';
 
 		if (vm_allocate(&p->p_vmspace->vm_map, &addr,
-		    round_page(szicode), FALSE) != KERN_SUCCESS || addr != 0)
+		    round_page(szicode + sizeof(initflags)), FALSE) != 0 ||
+		    addr != 0)
 			panic("init: couldn't allocate at zero");
 
 		/* need just enough stack to exec from */
@@ -256,6 +257,7 @@ main(firstaddr)
 			panic("vm_allocate init stack");
 		p->p_vmspace->vm_maxsaddr = (caddr_t)addr;
 		(void) copyout((caddr_t)icode, (caddr_t)0, (unsigned)szicode);
+		(void) copyout(initflags, (caddr_t)szicode, sizeof(initflags));
 		return;			/* returns to icode */
 	}
 
