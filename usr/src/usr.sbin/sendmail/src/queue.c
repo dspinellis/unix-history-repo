@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.10		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.11		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.10		%G%);
+SCCSID(@(#)queue.c	3.11		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -245,6 +245,7 @@ reordersig()
 	**  Arrange to get this signal again.
 	*/
 
+	(void) signal(SIGALRM, reordersig);
 	(void) alarm((unsigned) QueueIntvl);
 }
 /*
