@@ -1,5 +1,5 @@
 /*
- *	@(#)mpreg.h	1.3 (Berkeley) %G%
+ *	@(#)mpreg.h	7.1 (Berkeley) %G%
  */
 
 /*
