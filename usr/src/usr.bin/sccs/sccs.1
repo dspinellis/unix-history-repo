@@ -9,6 +9,8 @@ subsystem
 .B \-r
 ] [
 .BI \-p path
+] [
+.BI \-d path
 ] command [ flags ] [ args ]
 .SH DESCRIPTION
 .I Sccs
@@ -34,9 +36,11 @@ Each
 argument
 is modified to be prepended
 with ``SCCS/s.''
-unless it begins with ``s.'',
-contains a `\|/\|' character,
-or specifies a directory.
+unless
+it specifies a directory
+or the final component
+of the pathname
+begins with ``s.''.
 .PP
 Flags to be interpreted by the
 .I sccs
@@ -108,6 +112,27 @@ in which
 .SM SCCS
 will be found;
 ``SCCS'' is the default.
+The
+.B \-d
+flag gives a base directory
+for the pathname search;
+it differs from
+.B \-p
+in that the
+.B \-d
+argument is prepended to the entire pathname
+and the
+.B \-p
+argument is inserted before the final component of the
+pathname.
+For example,
+``sccs -d/x -py get a/b''
+will convert to
+``get /x/a/y/s.b''.
+The intent here is to create aliases such as
+``alias syssccs sccs -d/usr/src''
+which will be used as
+``syssccs get cmd/who.c''.
 .PP
 Certain commands (such as
 .IR admin )
