@@ -21,5 +21,10 @@ beforeinstall:
 		install -c -o ${BINOWN} -g ${BINGRP} -m 444 $$j \
 			${DESTDIR}/usr/include/g++/$$j; \
 	done)
+	@(cd include ; for j in *.h; do \
+		cmp -s $$j ${DESTDIR}/usr/include/$$j || \
+		install -c -o ${BINOWN} -g ${BINGRP} -m 444 $$j \
+			${DESTDIR}/usr/include/$$j; \
+	done)
 
 .include <bsd.subdir.mk>
