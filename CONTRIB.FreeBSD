@@ -41,7 +41,7 @@ Bob Wilcox <bob@obiwan.uucp>
 Bruce Evans <bde@runx.oz.au>
 Charles Hannum
 Chris G. Demetriou <cdg@sun-lamp.cs.berkeley.edu>
-Chris Torek
+Chris Torek <torek@ee.lbl.gov>
 Christoph Robitschko <chmr@edvz.tu-graz.ac.at> <chmr@fstgds01.tu-graz.ac.at>
 Dave Burgess <burgess@hrd769.brooks.af.mil>
 Dave Rivers <rivers@ponds.uucp>
@@ -57,7 +57,7 @@ Jim Wilson <wilson@moria.cygnus.com>
 John Dyson - <formerly dyson@ref.tfs.com>
 Julian Elischer <julian@dialix.oz.au>
 Julian Stacey <stacey@guug.de> <fallback: <julian@meepmeep.pcs.com>>
-Keith Bostic
+Keith Bostic <bostic@toe.CS.Berkeley.EDU>
 Mark Tinguely <tinguely@plains.nodak.edu> <tinguely@hookie.cs.ndsu.NoDak.edu>
 Paul Kranenburg <pk@cs.few.eur.nl>
 Paul Mackerras <paulus@cs.anu.edu.au>
@@ -68,7 +68,7 @@ Scott Mace <smace@tenet.edu>
 Sean Eric Fagan <sef@kithrup.com>
 Terry Lee <terry@uivlsi.csl.uiuc.edu> <terry@uivlsisd.csl.uiuc.edu>
 Theo Deraadt <deraadt@fsa.ca>
-Yoval Yarom <???>
+Yoval Yarom <yval@cs.huji.ac.il>
 
 PATCH KIT PATCH CONTRIBUTORS:
 Adam Glass <glass@postgres.berkeley.edu>
@@ -86,7 +86,7 @@ Brett Lymn <blymn@mulga.awadi.com.AU>
 Bruce Evans <bde@runx.oz.au>
 Charles Hannum
 Chris G. Demetriou <cdg@sun-lamp.cs.berkeley.edu>
-Chris Torek
+Chris Torek <torek@ee.lbl.gov>
 Christoph Robitschko <chmr@edvz.tu-graz.ac.at> <chmr@fstgds01.tu-graz.ac.at>
 Daniel Poirot <poirot@aio.jsc.nasa.gov>
 Dave Burgess <burgess@hrd769.brooks.af.mil>
@@ -121,7 +121,7 @@ Jordan K. Hubbard <jkh@whisker.lotus.ie>
 Julian Elischer <julian@dialix.oz.au>
 Julian Stacey <stacey@guug.de> <fallback: <julian@meepmeep.pcs.com>>
 Karl Lehenbauer <karl@NeoSoft.com> <karl@one.neosoft.com>
-Keith Bostic
+Keith Bostic <bostic@toe.CS.Berkeley.EDU>
 Ken Hughes
 Kent Talarico <kent@shipwreck.tsoft.net>
 Kevin Lahey <kml%rokkaku.UUCP@mathcs.emory.edu> <kml@mosquito.cis.ufl.edu>
@@ -159,4 +159,4 @@ Wiljo Heinen <wiljo@freeside.ki.open.de>
 William Jolitz <withheld>
 Wolfgang Solfrank <ws@tools.de>
 Wolfgang Stanglmeier <wolf@dentaro.GUN.de>
-Yoval Yarom <???>
+Yoval Yarom <yval@cs.huji.ac.il>
