@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -49,9 +49,11 @@ maketemp(from)
 	char *from;
 {
 	register FILE *tf;
-	char buf[MAXFIELD+2];
-	register char *p;
+	char buf[MAXFIELD], buf2[MAXFIELD];
+	register char *workbuf, *freebuf;
+	register int workbuflen;
 	extern char *hvalue();
+	extern bool isheader(), flusheol();
 	extern char *index();
 
 	/*
@@ -78,13 +80,17 @@ maketemp(from)
 	**  Try to read a UNIX-style From line
 	*/
 
-	(void) sfgets(buf, sizeof buf, InChannel);
+	if (sfgets(buf, MAXFIELD, InChannel) == NULL)
+		goto readerr;
 	fixcrlf(buf, FALSE);
 # ifndef NOTUNIX
 	if (!SaveFrom && strncmp(buf, "From ", 5) == 0)
 	{
+		if (!flusheol(buf, InChannel))
+			goto readerr;
 		eatfrom(buf);
-		(void) sfgets(buf, sizeof buf, InChannel);
+		if (sfgets(buf, MAXFIELD, InChannel) == NULL)
+			goto readerr;
 		fixcrlf(buf, FALSE);
 	}
 # endif NOTUNIX
@@ -96,58 +102,96 @@ maketemp(from)
 	**	like UNIX "From" lines are deleted in the header.
 	*/
 
-	do
+	workbuf = buf;		/* `workbuf' contains a header field */
+	freebuf = buf2;		/* `freebuf' can be used for read-ahead */
+	for (;;)
 	{
-		int c;
-		extern bool isheader();
-
-		/* drop out on error */
-		if (ferror(InChannel))
+		/* first, see if the header is over */
+		if (!isheader(workbuf))
+		{
+			fixcrlf(workbuf, TRUE);
 			break;
+		}
 
 		/* if the line is too long, throw the rest away */
-		if (index(buf, '\n') == NULL)
-		{
-			while ((c = getc(InChannel)) != '\n' && c != EOF)
-				continue;
-			/* give an error? */
-		}
+		if (!flusheol(workbuf, InChannel))
+			goto readerr;
 
-		fixcrlf(buf, TRUE);
+		/* it's okay to toss '\n' now (flusheol() needed it) */
+		fixcrlf(workbuf, TRUE);
 
-		/* see if the header is over */
-		if (!isheader(buf))
-			break;
+		workbuflen = strlen(workbuf);
 
 		/* get the rest of this field */
-		while ((c = getc(InChannel)) == ' ' || c == '\t')
+		for (;;)
 		{
-			p = &buf[strlen(buf)];
-			*p++ = '\n';
-			*p++ = c;
-			if (sfgets(p, MAXFIELD - (p - buf), InChannel) == NULL)
-				break;
-			fixcrlf(p, TRUE);
-		}
-		if (!feof(InChannel) && !ferror(InChannel))
-			(void) ungetc(c, InChannel);
+			if (sfgets(freebuf, MAXFIELD, InChannel) == NULL)
+				goto readerr;
 
-		CurEnv->e_msgsize += strlen(buf);
+			/* is this a continuation line? */
+			if (*freebuf != ' ' && *freebuf != '\t')
+				break;
+
+			if (!flusheol(freebuf, InChannel))
+				goto readerr;
+
+			/* yes; append line to `workbuf' if there's room */
+			if (workbuflen < MAXFIELD-3)
+			{
+				register char *p = workbuf + workbuflen;
+				register char *q = freebuf;
+
+				/* we have room for more of this field */
+				fixcrlf(freebuf, TRUE);
+				*p++ = '\n'; workbuflen++;
+				while(*q != '\0' && workbuflen < MAXFIELD-1)
+				{
+					*p++ = *q++;
+					workbuflen++;
+				}
+				*p = '\0';
+			}
+		}
+
+		CurEnv->e_msgsize += workbuflen;
+
+		/*
+		**  The working buffer now becomes the free buffer, since
+		**  the free buffer contains a new header field.
+		**
+		**  This is premature, since we still havent called
+		**  chompheader() to process the field we just created
+		**  (so the call to chompheader() will use `freebuf').
+		**  This convolution is necessary so that if we break out
+		**  of the loop due to H_EOH, `workbuf' will always be
+		**  the next unprocessed buffer.
+		*/
+
+		{
+			register char *tmp = workbuf;
+			workbuf = freebuf;
+			freebuf = tmp;
+		}
 
 		/*
 		**  Snarf header away.
 		*/
 
-		if (bitset(H_EOH, chompheader(buf, FALSE)))
+		if (bitset(H_EOH, chompheader(freebuf, FALSE)))
 			break;
-	} while (sfgets(buf, MAXFIELD, InChannel) != NULL);
+	}
 
 	if (tTd(30, 1))
 		printf("EOH\n");
 
-	/* throw away a blank line */
-	if (buf[0] == '\0')
-		(void) sfgets(buf, MAXFIELD, InChannel);
+	if (*workbuf == '\0')
+	{
+		/* throw away a blank line */
+		if (sfgets(buf, MAXFIELD, InChannel) == NULL)
+			goto readerr;
+	}
+	else if (workbuf == buf2)	/* guarantee `buf' contains data */
+		(void) strcpy(buf, buf2);
 
 	/*
 	**  Collect the body of the message.
@@ -178,6 +222,8 @@ maketemp(from)
 		if (ferror(tf))
 			tferror(tf);
 	} while (sfgets(buf, MAXFIELD, InChannel) != NULL);
+
+readerr:
 	if (fflush(tf) != 0)
 		tferror(tf);
 	(void) fclose(tf);
@@ -185,13 +231,15 @@ maketemp(from)
 	/* An EOF when running SMTP is an error */
 	if ((feof(InChannel) || ferror(InChannel)) && OpMode == MD_SMTP)
 	{
+		int usrerr(), syserr();
 # ifdef LOG
 		if (RealHostName != NULL && LogLevel > 0)
 			syslog(LOG_NOTICE,
 			    "collect: unexpected close on connection from %s: %m\n",
 			    CurEnv->e_from.q_paddr, RealHostName);
 # endif
-		usrerr("collect: unexpected close, from=%s", CurEnv->e_from.q_paddr);
+		(feof(InChannel) ? usrerr: syserr)
+			("collect: unexpected close, from=%s", CurEnv->e_from.q_paddr);
 
 		/* don't return an error indication */
 		CurEnv->e_to = NULL;
@@ -231,6 +279,36 @@ maketemp(from)
 
 	if ((CurEnv->e_dfp = fopen(CurEnv->e_df, "r")) == NULL)
 		syserr("Cannot reopen %s", CurEnv->e_df);
+}
+/*
+**  FLUSHEOL -- if not at EOL, throw away rest of input line.
+**
+**	Parameters:
+**		buf -- last line read in (checked for '\n'),
+**		fp -- file to be read from.
+**
+**	Returns:
+**		FALSE on error from sfgets(), TRUE otherwise.
+**
+**	Side Effects:
+**		none.
+*/
+
+bool
+flusheol(buf, fp)
+	char *buf;
+	FILE *fp;
+{
+	char junkbuf[MAXLINE], *sfgets();
+	register char *p = buf;
+
+	while (index(p, '\n') == NULL) {
+		if (sfgets(junkbuf,MAXLINE,fp) == NULL)
+			return(FALSE);
+		p = junkbuf;
+	}
+
+	return(TRUE);
 }
 /*
 **  TFERROR -- signal error on writing the temporary file.
