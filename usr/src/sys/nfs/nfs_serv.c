@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_serv.c	8.3 (Berkeley) %G%
+ *	@(#)nfs_serv.c	8.4 (Berkeley) %G%
  */
 
 /*
@@ -1354,19 +1354,19 @@ nfsrv_readdir(nfsd, mrep, md, dpos, cred, nam, mrq)
 	int len, nlen, rem, xfer, tsiz, i, error = 0;
 	int siz, cnt, fullsiz, eofflag, rdonly, cache;
 	u_quad_t frev;
-	u_long on, off, toff;
+	u_long off, *cookiebuf, *cookie;
+	int ncookies;
 
 	fhp = &nfh.fh_generic;
 	nfsm_srvmtofh(fhp);
 	nfsm_dissect(tl, u_long *, 2*NFSX_UNSIGNED);
-	toff = fxdr_unsigned(u_long, *tl++);
-	off = (toff & ~(NFS_DIRBLKSIZ-1));
-	on = (toff & (NFS_DIRBLKSIZ-1));
+	off = fxdr_unsigned(u_long, *tl++);
 	cnt = fxdr_unsigned(int, *tl);
 	siz = ((cnt+NFS_DIRBLKSIZ-1) & ~(NFS_DIRBLKSIZ-1));
 	if (cnt > NFS_MAXREADDIR)
 		siz = NFS_MAXREADDIR;
 	fullsiz = siz;
+	ncookies = siz / 16;	/* Guess at the number of cookies needed. */
 	if (error = nfsrv_fhtovp(fhp, TRUE, &vp, cred, nfsd->nd_slp, nam, &rdonly))
 		nfsm_reply(0);
 	nqsrv_getl(vp, NQL_READ);
@@ -1376,6 +1376,8 @@ nfsrv_readdir(nfsd, mrep, md, dpos, cred, nam, mrq)
 	}
 	VOP_UNLOCK(vp);
 	MALLOC(rbuf, caddr_t, siz, M_TEMP, M_WAITOK);
+	MALLOC(cookiebuf, u_long *, ncookies * sizeof(*cookiebuf), M_TEMP,
+	    M_WAITOK);
 again:
 	iv.iov_base = rbuf;
 	iv.iov_len = fullsiz;
@@ -1386,17 +1388,15 @@ again:
 	io.uio_segflg = UIO_SYSSPACE;
 	io.uio_rw = UIO_READ;
 	io.uio_procp = (struct proc *)0;
-	error = VOP_READDIR(vp, &io, cred);
+	error = VOP_READDIR(vp, &io, cred, &eofflag, cookiebuf, ncookies);
+	cookie = cookiebuf;
 	off = (off_t)io.uio_offset;
 	if (error) {
 		vrele(vp);
+		free((caddr_t)cookiebuf, M_TEMP);
 		free((caddr_t)rbuf, M_TEMP);
 		nfsm_reply(0);
 	}
-	if (io.uio_resid < fullsiz)
-		eofflag = 0;
-	else
-		eofflag = 1;
 	if (io.uio_resid) {
 		siz -= io.uio_resid;
 
@@ -1410,6 +1410,7 @@ again:
 			nfsm_build(tl, u_long *, 2*NFSX_UNSIGNED);
 			*tl++ = nfs_false;
 			*tl = nfs_true;
+			FREE((caddr_t)cookiebuf, M_TEMP);
 			FREE((caddr_t)rbuf, M_TEMP);
 			return (0);
 		}
@@ -1419,23 +1420,21 @@ again:
 	 * Check for degenerate cases of nothing useful read.
 	 * If so go try again
 	 */
-	cpos = rbuf + on;
+	cpos = rbuf;
 	cend = rbuf + siz;
-	dp = (struct dirent *)cpos;
-	while (cpos < cend && dp->d_fileno == 0) {
-		cpos += dp->d_reclen;
+	while (cpos < cend) {
 		dp = (struct dirent *)cpos;
+		if (dp->d_fileno == 0) {
+			cpos += dp->d_reclen;
+			cookie++;
+		} else
+			break;
 	}
 	if (cpos >= cend) {
-		toff = off;
 		siz = fullsiz;
-		on = 0;
 		goto again;
 	}
 
-	cpos = rbuf + on;
-	cend = rbuf + siz;
-	dp = (struct dirent *)cpos;
 	len = 3*NFSX_UNSIGNED;	/* paranoia, probably can be 0 */
 	nfsm_reply(siz);
 	mp = mp2 = mb;
@@ -1487,13 +1486,12 @@ again:
 			nfsm_clget;
 	
 			/* Finish off the record */
-			toff += dp->d_reclen;
-			*tl = txdr_unsigned(toff);
+			*tl = txdr_unsigned(*cookie);
 			bp += NFSX_UNSIGNED;
-		} else
-			toff += dp->d_reclen;
+		}
 		cpos += dp->d_reclen;
 		dp = (struct dirent *)cpos;
+		cookie++;
 	}
 	vrele(vp);
 	nfsm_clget;
@@ -1510,6 +1508,7 @@ again:
 			mp->m_len = bp - mtod(mp, caddr_t);
 	} else
 		mp->m_len += bp - bpos;
+	FREE(cookiebuf, M_TEMP);
 	FREE(rbuf, M_TEMP);
 	nfsm_srvdone;
 }
@@ -1541,20 +1540,20 @@ nqnfsrv_readdirlook(nfsd, mrep, md, dpos, cred, nam, mrq)
 	int len, nlen, rem, xfer, tsiz, i, error = 0, duration2, cache2;
 	int siz, cnt, fullsiz, eofflag, rdonly, cache;
 	u_quad_t frev, frev2;
-	u_long on, off, toff;
+	u_long off, *cookiebuf, *cookie;
+	int ncookies;
 
 	fhp = &nfh.fh_generic;
 	nfsm_srvmtofh(fhp);
 	nfsm_dissect(tl, u_long *, 3*NFSX_UNSIGNED);
-	toff = fxdr_unsigned(u_long, *tl++);
-	off = (toff & ~(NFS_DIRBLKSIZ-1));
-	on = (toff & (NFS_DIRBLKSIZ-1));
+	off = fxdr_unsigned(u_long, *tl++);
 	cnt = fxdr_unsigned(int, *tl++);
 	duration2 = fxdr_unsigned(int, *tl);
 	siz = ((cnt+NFS_DIRBLKSIZ-1) & ~(NFS_DIRBLKSIZ-1));
 	if (cnt > NFS_MAXREADDIR)
 		siz = NFS_MAXREADDIR;
 	fullsiz = siz;
+	ncookies = siz / 16;	/* Guess at the number of cookies needed. */
 	if (error = nfsrv_fhtovp(fhp, TRUE, &vp, cred, nfsd->nd_slp, nam, &rdonly))
 		nfsm_reply(0);
 	nqsrv_getl(vp, NQL_READ);
@@ -1564,6 +1563,8 @@ nqnfsrv_readdirlook(nfsd, mrep, md, dpos, cred, nam, mrq)
 	}
 	VOP_UNLOCK(vp);
 	MALLOC(rbuf, caddr_t, siz, M_TEMP, M_WAITOK);
+	MALLOC(cookiebuf, u_long *, ncookies * sizeof(*cookiebuf), M_TEMP,
+	    M_WAITOK);
 again:
 	iv.iov_base = rbuf;
 	iv.iov_len = fullsiz;
@@ -1574,17 +1575,15 @@ again:
 	io.uio_segflg = UIO_SYSSPACE;
 	io.uio_rw = UIO_READ;
 	io.uio_procp = (struct proc *)0;
-	error = VOP_READDIR(vp, &io, cred);
+	error = VOP_READDIR(vp, &io, cred, &eofflag, cookiebuf, ncookies);
+	cookie = cookiebuf;
 	off = (u_long)io.uio_offset;
 	if (error) {
 		vrele(vp);
+		free((caddr_t)cookiebuf, M_TEMP);
 		free((caddr_t)rbuf, M_TEMP);
 		nfsm_reply(0);
 	}
-	if (io.uio_resid < fullsiz)
-		eofflag = 0;
-	else
-		eofflag = 1;
 	if (io.uio_resid) {
 		siz -= io.uio_resid;
 
@@ -1598,6 +1597,7 @@ again:
 			nfsm_build(tl, u_long *, 2 * NFSX_UNSIGNED);
 			*tl++ = nfs_false;
 			*tl = nfs_true;
+			FREE((caddr_t)cookiebuf, M_TEMP);
 			FREE((caddr_t)rbuf, M_TEMP);
 			return (0);
 		}
@@ -1607,23 +1607,21 @@ again:
 	 * Check for degenerate cases of nothing useful read.
 	 * If so go try again
 	 */
-	cpos = rbuf + on;
+	cpos = rbuf;
 	cend = rbuf + siz;
-	dp = (struct dirent *)cpos;
-	while (cpos < cend && dp->d_fileno == 0) {
-		cpos += dp->d_reclen;
+	while (cpos < cend) {
 		dp = (struct dirent *)cpos;
+		if (dp->d_fileno == 0) {
+			cpos += dp->d_reclen;
+			cookie++;
+		} else
+			break;
 	}
 	if (cpos >= cend) {
-		toff = off;
 		siz = fullsiz;
-		on = 0;
 		goto again;
 	}
 
-	cpos = rbuf + on;
-	cend = rbuf + siz;
-	dp = (struct dirent *)cpos;
 	len = 3 * NFSX_UNSIGNED;	/* paranoia, probably can be 0 */
 	nfsm_reply(siz);
 	mp = mp2 = mb;
@@ -1723,14 +1721,13 @@ again:
 			nfsm_clget;
 	
 			/* Finish off the record */
-			toff += dp->d_reclen;
-			*tl = txdr_unsigned(toff);
+			*tl = txdr_unsigned(*cookie);
 			bp += NFSX_UNSIGNED;
-		} else
+		}
 invalid:
-			toff += dp->d_reclen;
 		cpos += dp->d_reclen;
 		dp = (struct dirent *)cpos;
+		cookie++;
 	}
 	vrele(vp);
 	nfsm_clget;
@@ -1747,6 +1744,7 @@ invalid:
 			mp->m_len = bp - mtod(mp, caddr_t);
 	} else
 		mp->m_len += bp - bpos;
+	FREE(cookiebuf, M_TEMP);
 	FREE(rbuf, M_TEMP);
 	nfsm_srvdone;
 }
