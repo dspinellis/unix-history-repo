@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	6.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)newfs.c	6.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifndef lint
@@ -114,7 +114,7 @@ char copyright[] =
 #define	NRPOS		8	/* number distinct rotational positions */
 
 
-int	memfs;			/* run as the memory based filesystem */
+int	mfs;			/* run as the memory based filesystem */
 int	Nflag;			/* run without writing file system */
 int	fssize;			/* file system size */
 int	ntracks;		/* # tracks/cylinder */
@@ -145,6 +145,7 @@ int	maxbpg;			/* maximum blocks per file in a cyl group */
 int	nrpos = NRPOS;		/* # of distinguished rotational positions */
 int	bbsize = BBSIZE;	/* boot block size */
 int	sbsize = SBSIZE;	/* superblock size */
+int	mntflags;		/* flags to be passed to mount */
 u_long	memleft;		/* virtual memory available */
 caddr_t	membase;		/* start address of memory based filesystem */
 #ifdef COMPAT
@@ -176,14 +177,25 @@ main(argc, argv)
 
 	if ((progname = rindex(*argv, '/') + 1) == (char *)1)
 		progname = *argv;
-	if (!strcmp(progname, "memfs")) {
+	if (!strcmp(progname, "mfs")) {
 		Nflag++;
-		memfs++;
+		mfs++;
 	}
 	argc--, argv++;
 	while (argc > 0 && argv[0][0] == '-') {
 		for (cp = &argv[0][1]; *cp; cp++)
 			switch (*cp) {
+
+			case 'F':
+				if (!mfs)
+					fatal("-F: unknown flag");
+				if (argc < 1)
+					fatal("-F: mount flags");
+				argc--, argv++;
+				mntflags = atoi(*argv);
+				if (mntflags == 0)
+					fatal("%s: bad mount flags", *argv);
+				goto next;
 
 			case 'N':
 				Nflag++;
@@ -380,9 +392,9 @@ next:
 		argc--, argv++;
 	}
 	if (argc < 1) {
-		if (memfs)
+		if (mfs)
 			fprintf(stderr,
-			    "usage: memfs [ fsoptions ] special-device %s\n",
+			    "usage: mfs [ fsoptions ] special-device %s\n",
 			    "mount-point");
 		else
 #ifdef COMPAT
@@ -463,7 +475,7 @@ next:
 		fatal("%s: `%c' partition is unavailable", argv[0], *cp);
 	if (fssize == 0)
 		fssize = pp->p_size;
-	if (fssize > pp->p_size && !memfs)
+	if (fssize > pp->p_size && !mfs)
 	       fatal("%s: maximum file system size on the `%c' partition is %d",
 			argv[0], *cp, pp->p_size);
 	if (rpm == 0) {
@@ -559,13 +571,13 @@ next:
 	if (!Nflag)
 		close(fso);
 	close(fsi);
-	if (memfs) {
-		sprintf(buf, "memfs:%d", getpid());
+	if (mfs) {
+		sprintf(buf, "mfs:%d", getpid());
 		args.name = buf;
 		args.base = membase;
 		args.size = fssize * sectorsize;
-		if (mount(MOUNT_MFS, argv[1], 0, &args) < 0) {
-			perror("memfs: mount");
+		if (mount(MOUNT_MFS, argv[1], mntflags, &args) < 0) {
+			perror("mfs: mount");
 			exit(5);
 		}
 	}
