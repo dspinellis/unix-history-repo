@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)aux.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)aux.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -640,6 +640,8 @@ isign(field, ignore)
 {
 	char realfld[BUFSIZ];
 
+	if (ignore == ignoreall)
+		return 1;
 	/*
 	 * Lower-case the string, so that "Status" and "status"
 	 * will hash to the same place.

@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)fio.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)fio.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -308,7 +308,7 @@ edstop()
 		if ((mp->m_flag & MDELETED) != 0)
 			continue;
 		c++;
-		if (send(mp, obuf, 0) < 0) {
+		if (send(mp, obuf, (struct ignoretab *) NULL, NOSTR) < 0) {
 			perror(mailname);
 			relsesigs();
 			reset(0);

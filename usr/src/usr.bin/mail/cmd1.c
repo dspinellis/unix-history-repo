@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmd1.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmd1.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -341,7 +341,7 @@ type1(msgvec, doign, page)
 		dot = mp;
 		if (value("quiet") == NOSTR)
 			fprintf(obuf, "Message %d:\n", mesg);
-		send(mp, obuf, doign ? ignore : 0);
+		(void) send(mp, obuf, doign ? ignore : 0, NOSTR);
 	}
 	if (obuf != stdout) {
 		pipef = NULL;

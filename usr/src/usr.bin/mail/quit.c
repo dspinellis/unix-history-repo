@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)quit.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)quit.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -203,7 +203,7 @@ quit()
 	}
 	for (mp = &message[0]; mp < &message[msgCount]; mp++)
 		if (mp->m_flag & MBOX)
-			if (send(mp, obuf, saveignore) < 0) {
+			if (send(mp, obuf, saveignore, NOSTR) < 0) {
 				perror(mbox);
 				fclose(ibuf);
 				fclose(obuf);
@@ -308,7 +308,7 @@ writeback(res)
 	for (mp = &message[0]; mp < &message[msgCount]; mp++)
 		if ((mp->m_flag&MPRESERVE)||(mp->m_flag&MTOUCH)==0) {
 			p++;
-			if (send(mp, obuf, 0) < 0) {
+			if (send(mp, obuf, (struct ignoretab *)0, NOSTR) < 0) {
 				perror(mailname);
 				fclose(obuf);
 				return(-1);
