@@ -3,7 +3,7 @@
 /*
  *	This routine clears up to the end of line
  *
- * %G% (Berkeley) @(#)clrtoeol.c	1.2
+ * %G% (Berkeley) @(#)clrtoeol.c	1.3
  */
 wclrtoeol(win)
 reg WINDOW	*win; {
