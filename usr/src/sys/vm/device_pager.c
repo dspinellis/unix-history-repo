@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)device_pager.c	7.5 (Berkeley) %G%
+ *	@(#)device_pager.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -19,15 +19,16 @@
 #include "devpager.h"
 #if NDEVPAGER > 0
 
-#include "param.h"
-#include "conf.h"
-#include "mman.h"
-#include "malloc.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/conf.h>
+#include <sys/mman.h>
+#include <sys/malloc.h>
 
-#include "vm.h"
-#include "vm_page.h"
-#include "vm_kern.h"
-#include "device_pager.h"
+#include <vm/vm.h>
+#include <vm/vm_kern.h>
+#include <vm/vm_page.h>
+#include <vm/device_pager.h>
 
 queue_head_t	dev_pager_list;	/* list of managed devices */
 
@@ -39,7 +40,25 @@ int	dpagerdebug = 0;
 #define DDB_FAIL	0x08
 #endif
 
-void
+static vm_pager_t	 dev_pager_alloc __P((caddr_t, vm_size_t, vm_prot_t));
+static void		 dev_pager_dealloc __P((vm_pager_t));
+static int		 dev_pager_getpage
+			    __P((vm_pager_t, vm_page_t, boolean_t));
+static boolean_t	 dev_pager_haspage __P((vm_pager_t, vm_offset_t));
+static void		 dev_pager_init __P((void));
+static int		 dev_pager_putpage
+			    __P((vm_pager_t, vm_page_t, boolean_t));
+
+struct pagerops devicepagerops = {
+	dev_pager_init,
+	dev_pager_alloc,
+	dev_pager_dealloc,
+	dev_pager_getpage,
+	dev_pager_putpage,
+	dev_pager_haspage
+};
+
+static void
 dev_pager_init()
 {
 #ifdef DEBUG
@@ -49,7 +68,7 @@ dev_pager_init()
 	queue_init(&dev_pager_list);
 }
 
-vm_pager_t
+static vm_pager_t
 dev_pager_alloc(handle, size, prot)
 	caddr_t handle;
 	vm_size_t size;
@@ -164,7 +183,7 @@ dev_pager_alloc(handle, size, prot)
 
 }
 
-void
+static void
 dev_pager_dealloc(pager)
 	vm_pager_t pager;
 {
@@ -190,6 +209,7 @@ dev_pager_dealloc(pager)
 	pager->pg_data = 0;
 }
 
+static int
 dev_pager_getpage(pager, m, sync)
 	vm_pager_t pager;
 	vm_page_t m;
@@ -202,6 +222,7 @@ dev_pager_getpage(pager, m, sync)
 	return(VM_PAGER_BAD);
 }
 
+static int
 dev_pager_putpage(pager, m, sync)
 	vm_pager_t pager;
 	vm_page_t m;
@@ -216,7 +237,7 @@ dev_pager_putpage(pager, m, sync)
 	panic("dev_pager_putpage called");
 }
 
-boolean_t
+static boolean_t
 dev_pager_haspage(pager, offset)
 	vm_pager_t pager;
 	vm_offset_t offset;
