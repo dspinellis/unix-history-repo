@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)vdfmt.c	1.3 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)vdfmt.c	1.4 (Berkeley/CCI) %G%";
 #endif
 
 /*
@@ -61,6 +61,8 @@ report_unexecuted_ops()
 /*
 **
 */
+#define	VDBASE	0xffff2000	/* address of first controller */
+#define	VDOFF	0x100		/* offset between controllers */
 
 determine_controller_types()
 {
@@ -73,27 +75,27 @@ determine_controller_types()
 	/* Identify which controllers are present and what type they are. */
 	num_controllers = 0;
 	for(ctlr = 0; ctlr < MAXCTLR; ctlr++) {
-		c_info[ctlr].addr = (cdr *)(vddcaddr[ctlr]);
+		c_info[ctlr].addr = (struct vddevice *)(VDBASE+(ctlr*VDOFF));
 		if(!badaddr(c_info[ctlr].addr, 2)) {
 			printf("controller %d: ", ctlr);
 			num_controllers++;
-			c_info[ctlr].addr->cdr_reset = (unsigned)0xffffffff;
+			c_info[ctlr].addr->vdreset = (unsigned)0xffffffff;
 			DELAY(1000000);
-			if(c_info[ctlr].addr->cdr_reset!=(unsigned)0xffffffff) {
+			if(c_info[ctlr].addr->vdreset!=(unsigned)0xffffffff) {
 				c_info[ctlr].alive = u_true;
-				c_info[ctlr].type = SMDCTLR;
+				c_info[ctlr].type = VDTYPE_VDDC;
 				c_info[ctlr].name = "VDDC";
 				c_info[ctlr].decode_pos = smd_decode_position;
 				c_info[ctlr].code_pos = smd_code_position;
 				c_info[ctlr].cylinder_skew = smd_cyl_skew;
 				c_info[ctlr].track_skew = smd_trk_skew;
-				printf("smd\n");
+				printf("vddc\n");
 				DELAY(1000000);
 			} else {
 				c_info[ctlr].alive = u_true;
-				c_info[ctlr].type = SMD_ECTLR;
+				c_info[ctlr].type = VDTYPE_SMDE;
 				c_info[ctlr].name = "SMD-E";
-				c_info[ctlr].addr->cdr_reserved = 0x0;
+				c_info[ctlr].addr->vdrstclr = 0;
 				c_info[ctlr].decode_pos = smd_e_decode_position;
 				c_info[ctlr].code_pos = smd_e_code_position;
 				c_info[ctlr].cylinder_skew = smd_e_cyl_skew;
@@ -103,7 +105,7 @@ determine_controller_types()
 			}
 		} else  {
 			c_info[ctlr].alive = u_false;
-			c_info[ctlr].type = UNKNOWN;
+			c_info[ctlr].type = -1;
 		}
 		for(drive=0; drive<MAXDRIVE; drive++) {
 			d_info[ctlr][drive].alive = u_unknown;
@@ -197,4 +199,3 @@ reset_operation_tables()
 	}
 	kill_processes = false;
 }
-

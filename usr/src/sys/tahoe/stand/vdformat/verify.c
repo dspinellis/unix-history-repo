@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)verify.c	1.2 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)verify.c	1.3 (Berkeley/CCI) %G%";
 #endif
 
 #include	"vdfmt.h"
@@ -145,7 +145,7 @@ int	verbosity;
 	if (pats == 0)
 		return;
 	dskaddr->sector = (char)0;
-	access_dsk((char *)pattern_address[0], dskaddr, WD,
+	access_dsk((char *)pattern_address[0], dskaddr, VDOP_WD,
 	    CURRENT->vc_nsec, 1);
 	for (index = 0; index < pattern_count; index++) {
 		if (!data_ok()) {
@@ -158,7 +158,8 @@ int	verbosity;
 			if (dcb.operrsta & DATA_ERROR)
 				pattern_count = 16;
 		}
-		access_dsk((char *)scratch, dskaddr, RD, CURRENT->vc_nsec, 1);
+		access_dsk((char *)scratch, dskaddr, VDOP_RD,
+		    CURRENT->vc_nsec, 1);
 		if (!data_ok()) {
 			if (dcb.operrsta & HEADER_ERROR)  {
 				flag_sector(dskaddr, dcb.operrsta,
@@ -170,7 +171,7 @@ int	verbosity;
 
 				dskaddr->sector = i;
 				next = &scratch[i * offset];
-				access_dsk((char *)next, dskaddr, RD, 1, 1);
+				access_dsk((char *)next, dskaddr, VDOP_RD, 1,1);
 				if (!data_ok())
 					flag_sector(dskaddr, dcb.operrsta,
 					    dcb.err_code, verbosity);
@@ -179,7 +180,7 @@ int	verbosity;
 		}
 		if (index+1 < pattern_count)
 			access_dsk((char *)pattern_address[index+1],
-			    dskaddr, WD, CURRENT->vc_nsec, 0);
+			    dskaddr, VDOP_WD, CURRENT->vc_nsec, 0);
 		count = CURRENT->vc_nsec * offset;
 		before = *pattern_address[index];
 		after = scratch;
@@ -222,10 +223,10 @@ int	verbosity;
 		    to_sector(*dskaddr), dskaddr->cylinder, dskaddr->track,
 		    dskaddr->sector);
 		if (status)
-			print("  status=%b", status, ERRBITS);
+			print("  status=%b", status, VDERRBITS);
 		else
 			printf("  data comparison error");
-		if (C_INFO.type == SMD_ECTLR && ecode)
+		if (C_INFO.type == VDTYPE_SMDE && ecode)
 			printf(", ecode=0x%x", ecode);
 		printf(".\n  Sector will be relocated.\n");
 	}

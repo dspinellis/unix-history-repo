@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)relocate.c	1.2 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)relocate.c	1.3 (Berkeley/CCI) %G%";
 #endif
 
 #include	"vdfmt.h"
@@ -313,7 +313,7 @@ bs_entry	entry;
 	    (entry.bs_alt.sector == 0))
 		print_unix_block(temp.err_adr);
 	else if(temp.err_stat & HEADER_ERROR)
-		if(C_INFO.type == SMDCTLR) {
+		if(C_INFO.type == VDTYPE_VDDC) {
 			print("Can't relocate tracks on VDDC controllers.\n");
 			print_unix_block(temp.err_adr);
 		}
@@ -341,8 +341,8 @@ bs_entry	entry;
 	format_sectors(&phys, &reloc, RELOC_SECTOR, (long)1);
 	
 	format_sectors(&reloc, &phys, ALT_SECTOR, (long)1);
-	status = access_dsk((char *)save, &temp.err_adr, WD, 1, 1);
-	if(!((status & ALTACC) && !(status & (HRDERR |SFTERR)))) {
+	status = access_dsk((char *)save, &temp.err_adr, VDOP_WD, 1, 1);
+	if(!((status & DCBS_ATA) && !(status & (DCBS_HARD|DCBS_SOFT)))) {
 		print(
 		"Sector relocation failed (c %d t %d s %d).  Status = 0x%x.\n",
 		    phys.cylinder, phys.track, phys.sector, status);
@@ -372,12 +372,9 @@ bs_entry	entry;
 	
 	reloc.sector = 0x00;
 	format_sectors(&reloc, &phys, ALT_SECTOR, (long)CURRENT->vc_nsec);
-	status = access_dsk((char *)save, &temp.err_adr, WD, CURRENT->vc_nsec, 1);
-	if(!((status & ALTACC) && !(status & (HRDERR | SFTERR)))) {
+	status = access_dsk((char *)save, &temp.err_adr, VDOP_WD, CURRENT->vc_nsec, 1);
+	if(!((status & DCBS_ATA) && !(status & (DCBS_HARD|DCBS_SOFT)))) {
 		print("Track relocation failed.  Status = 0x%x.\n", status);
 		print_unix_block(phys);
 	}
 }
-
-
-

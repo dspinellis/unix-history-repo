@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)profile.c	1.1 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)profile.c	1.2 (Berkeley/CCI) %G%";
 #endif
 
 
@@ -37,8 +37,8 @@ profile()
 	for(ead.cylinder=1; ead.cylinder<CURRENT->vc_ncyl; ead.cylinder+=step){
 		total_time = 0;
 		for(i=0; i<cycles; i++) {
-			access_dsk((char *)save, &zero, SEEK, 1, 60);
-			access_dsk((char *)save, &ead, SEEK, 1, 60);
+			access_dsk((char *)save, &zero, VDOP_SEEK, 1, 60);
+			access_dsk((char *)save, &ead, VDOP_SEEK, 1, 60);
 			if(kill_processes == true)
 				_longjmp(quit_environ, 1);
 			total_time += ((2*60*1000*1000) - vdtimeout);

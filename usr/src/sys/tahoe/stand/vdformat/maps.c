@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)maps.c	1.3 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)maps.c	1.4 (Berkeley/CCI) %G%";
 #endif
 
 
@@ -47,7 +47,8 @@ short	flags;
 	for(trk=0; trk<CURRENT->vc_ntrak; trk++) {
 		dskaddr.track = trk;
 		dskaddr.sector = 0;
-		if(access_dsk((char *)save,&dskaddr,RD,CURRENT->vc_nsec,1)& HRDERR)
+		if(access_dsk((char *)save,&dskaddr, VDOP_RD,
+		    CURRENT->vc_nsec,1)& VDERR_HARD)
 			continue;
 		if(blkcmp((char *)scratch, (char *)save, bytes_trk) == true) {
 			blkcopy((char *)save, (char *)bad_map, bytes_trk);
@@ -93,8 +94,8 @@ boolean read_bad_sector_map()
 	blkzero(bad_map, bytes_trk);
 	bad_map->bs_id = 0;
 	bad_map->bs_max = MAX_FLAWS;
-	if (C_INFO.type == SMD_ECTLR) {
-		access_dsk((char *)save, &dskaddr, RD_RAW, 1, 1);
+	if (C_INFO.type == VDTYPE_SMDE) {
+		access_dsk((char *)save, &dskaddr, VDOP_RDRAW, 1, 1);
 		if (align_buf((unsigned long *)save, CDCSYNC) == true) {
 			read_flaw_map();
 			return (false);
@@ -132,8 +133,8 @@ get_relocations_the_hard_way()
 		for(trk=0; trk<CURRENT->vc_ntrak; trk++) {
 			dskaddr.track = trk;
 			status=access_dsk((char *)scratch, &dskaddr,
-			    RD, CURRENT->vc_nsec, 1);
-			if(status & ALTACC)
+			    VDOP_RD, CURRENT->vc_nsec, 1);
+			if(status & DCBS_ATA)
 				get_track_relocations(dskaddr);
 		}
 	}
@@ -153,8 +154,8 @@ dskadr	dskaddr;
 	fmt_err		error;
 	
 	for(dskaddr.sector=0; dskaddr.sector<CURRENT->vc_nsec; dskaddr.sector++) {
-		status = access_dsk((char *)scratch, &dskaddr, RD, 1, 1);
-		if(status & ALTACC) {
+		status = access_dsk((char *)scratch, &dskaddr, VDOP_RD, 1, 1);
+		if(status & DCBS_ATA) {
 			error.err_adr = dskaddr;
 			error.err_stat = DATA_ERROR;
 			temp = (*C_INFO.code_pos)(error);
@@ -289,7 +290,7 @@ read_flaw_map()
 		dskaddr.cylinder = cyl;
 		for  (trk=0; trk<CURRENT->vc_ntrak; trk++) {
 			dskaddr.track = trk;
-			access_dsk(&buffer, &dskaddr, RD_RAW, 1, 1);
+			access_dsk(&buffer, &dskaddr, VDOP_RDRAW, 1, 1);
 			if(align_buf(&buffer, CDCSYNC) == true) {
 				add_flaw_entries(&buffer);
 				continue;
@@ -321,7 +322,7 @@ get_smde_relocations()
 			bad_track = true;
 			for(sec=0; sec<CURRENT->vc_nsec; sec++) {
 				dskaddr.sector = sec;
-				access_dsk(&buffer, &dskaddr, RD_RAW, 1, 1);
+				access_dsk(&buffer, &dskaddr, VDOP_RDRAW, 1, 1);
 				if(align_buf(&buffer, SMDE1SYNC) == false) {
 					bad_track = false;
 					break;
@@ -341,7 +342,7 @@ get_smde_relocations()
 			}
 			for(sec=0; sec<CURRENT->vc_nsec; sec++) {
 				dskaddr.sector = sec;
-				access_dsk(&buffer, &dskaddr, RD_RAW, 1, 1);
+				access_dsk(&buffer, &dskaddr, VDOP_RDRAW, 1, 1);
 				if(align_buf(&buffer, SMDE1SYNC) == true) {
 					bad.err_adr.cylinder = buffer.alt_cyl;
 					bad.err_adr.track = buffer.alt_trk;
@@ -677,7 +678,7 @@ bs_entry	*entry;
 			}
 		}
 	}
-	else if(C_INFO.type == SMDCTLR) {
+	else if(C_INFO.type == VDTYPE_VDDC) {
 		for(i = 0; i < (CURRENT->vc_ntrak * NUMREL); i++) {
 			if(free_tbl[i][temp.err_adr.sector].free_status !=
 			    ALLOCATED) {
@@ -708,4 +709,3 @@ bs_entry	*entry;
 	}
 	return &newaddr;
 }
-

@@ -1,4 +1,4 @@
-/*	vdfmt.h	1.3	86/12/19	*/
+/*	vdfmt.h	1.4	87/06/01	*/
 
 /*
  * VERSAbus disk controller (vd) disk formatter.
@@ -40,10 +40,11 @@ extern	struct cpdcb_i cpin;		/* found in prf.c */
 #define bytes_trk	(CURRENT->vc_nsec * SECSIZ)
 
 #define	HARD_ERROR \
-    (DRVNRDY|INVDADR|DNEMEM|PARERR|OPABRT|WPTERR|DSEEKERR|NOTCYLERR)
+    (DCBS_NRDY|DCBS_IVA|DCBS_NEM|DCBS_DPE|DCBS_OAB|DCBS_WPT|DCBS_SKI|DCBS_OCYL)
 #define DATA_ERROR \
-    (CTLRERR|UCDATERR|DCOMPERR|DSERLY|DSLATE|TOPLUS|TOMNUS|CPDCRT|HRDERR|SFTERR)
-#define HEADER_ERROR	(HCRCERR | HCMPERR)
+    (DCBS_HCE|DCBS_UDE|DCBS_DCE|DCBS_DSE|DCBS_DSL|DCBS_TOP|DCBS_TOM|DCBS_CCD|\
+     DCBS_HARD|DCBS_SOFT)
+#define HEADER_ERROR	(DCBS_HCRC|DCBS_HCE)
 #define	NRM		(short)0
 #define	BAD		(short)VDUF
 #define WPT		(short)(NRM | VDWPT)
@@ -187,7 +188,7 @@ struct {
  */
 typedef struct {
 	uncertain	alive;
-	cdr		*addr;
+	struct	vddevice *addr;
 	char		*name;
 	int		type;
 	fmt_err		(*decode_pos)();
@@ -236,8 +237,8 @@ extern	int vdtimeout;
  * Pattern buffers and the sort
  */
 fmt_free	free_tbl[NUMREL*MAXTRKS][MAXSECS_PER_TRK];
-fmt_mdcb	mdcb;		/* Master device control block */
-fmt_dcb		dcb;		/* Device control blocks */
+struct	mdcb	mdcb;		/* Master device control block */
+struct	dcb	dcb;		/* Device control blocks */
 
 long	pattern_0[TRKSIZ],  pattern_1[TRKSIZ];
 long	pattern_2[TRKSIZ],  pattern_3[TRKSIZ];

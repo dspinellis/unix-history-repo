@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)exercise.c	1.1 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)exercise.c	1.2 (Berkeley/CCI) %G%";
 #endif
 
 #include	"vdfmt.h"
@@ -41,7 +41,8 @@ exercise()
 			for(trk=0; trk<CURRENT->vc_ntrak; trk++) {
 				ead.track = trk;
 				ead.sector = 0;
-				access_dsk((char *)scratch, &sad, SEEK, 1, 1);
+				access_dsk((char *)scratch, &sad,
+				    VDOP_SEEK, 1, 1);
 				verify_track(&ead, 16, verbose);
 				if(kill_processes == true)
 					goto exit;

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)format.c	1.3 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)format.c	1.4 (Berkeley/CCI) %G%";
 #endif
 
 #include	"vdfmt.h"
@@ -119,13 +119,13 @@ boolean is_formatted()
 	dskaddr.cylinder = 0;
 	dskaddr.track = 0;
 	dskaddr.sector = 0;
-	if(C_INFO.type == SMD_ECTLR) {
-		access_dsk((char *)save, &dskaddr, RD_RAW, 1, 1);
+	if(C_INFO.type == VDTYPE_SMDE) {
+		access_dsk((char *)save, &dskaddr, VDOP_RDRAW, 1, 1);
 		if(align_buf((unsigned long *)save, CDCSYNC) == false)
 			return true;
 		return	false;
 	}
-	else if(access_dsk((char *)save, &dskaddr, RD, 1, 1) & HEADER_ERROR)
+	else if(access_dsk((char *)save, &dskaddr, VDOP_RD, 1, 1)&HEADER_ERROR)
 		return false;
 	return true;
 }
@@ -142,12 +142,12 @@ long	count;
 {
 	cur.daddr.cylinder = dskaddr->cylinder & 0xfff;
 	cur.daddr.track = dskaddr->track;
-	dcb.opcode = FSECT;		/* format sector command */
-	dcb.intflg = NOINT;
-	dcb.nxtdcb = (fmt_dcb *)0;	/* end of chain */
+	dcb.opcode = VDOP_FSECT;		/* format sector command */
+	dcb.intflg = DCBINT_NONE;
+	dcb.nxtdcb = (struct dcb *)0;	/* end of chain */
 	dcb.operrsta  = 0;
 	dcb.devselect = (char)cur.drive;
-	dcb.trailcnt = (char)(sizeof(trfmt) / sizeof(long));
+	dcb.trailcnt = (char)(sizeof(struct trfmt) / sizeof(long));
 	dcb.trail.fmtrail.addr = (char *)scratch; 
 	dcb.trail.fmtrail.nsectors = count;
 	dcb.trail.fmtrail.disk.cylinder = dskaddr->cylinder | flags;
@@ -156,13 +156,12 @@ long	count;
 	dcb.trail.fmtrail.hdr.cylinder = hdraddr->cylinder | flags;
 	dcb.trail.fmtrail.hdr.track = hdraddr->track;
 	dcb.trail.fmtrail.hdr.sector = hdraddr->sector;
-	mdcb.firstdcb = &dcb;
-	mdcb.vddcstat = 0;
-	VDDC_ATTENTION(C_INFO.addr, &mdcb, C_INFO.type);
+	mdcb.mdcb_head = &dcb;
+	mdcb.mdcb_status = 0;
+	VDGO(C_INFO.addr, (u_long)&mdcb, C_INFO.type);
 	poll((int)(((count+849)/850)+120));
 	if(vdtimeout <= 0) {
 		printf(" while formatting sectors.\n");
 		_longjmp(abort_environ, 1);
 	}
 }
-
