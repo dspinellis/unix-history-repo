@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)cron.c	4.15 (Berkeley) %G%";
+static char *sccsid = "@(#)cron.c	4.16 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -79,10 +79,7 @@ main(argc, argv)
 			exit(1);
 		(void) fcntl(fileno(debug), F_SETFL, FAPPEND);
 	}
-	(void) chdir("/");
-	(void) freopen("/", "r", stdout);
-	(void) freopen("/", "r", stderr);
-	untty();
+	daemon(0, 0);
 	(void) signal(SIGHUP, SIG_IGN);
 	(void) signal(SIGINT, SIG_IGN);
 	(void) signal(SIGQUIT, SIG_IGN);
@@ -364,15 +361,4 @@ reapchild()
 		dprintf(debug, "%d: child exits with signal %d status %d\n",
 			pid, status.w_termsig, status.w_retcode),
 			fflush (debug);
-}
-
-untty()
-{
-	int i;
-
-	i = open(_PATH_TTY, O_RDWR);
-	if (i >= 0) {
-		(void) ioctl(i, TIOCNOTTY, (char *)0);
-		(void) close(i);
-	}
 }
