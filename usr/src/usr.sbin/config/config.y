@@ -76,7 +76,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)config.y	5.15 (Berkeley) %G%
+ *	@(#)config.y	5.16 (Berkeley) %G%
  */
 
 #include "config.h"
@@ -134,6 +134,9 @@ Config_spec:
 		} else if (!strcmp($2, "pmax")) {
 			machine = MACHINE_PMAX;
 			machinename = "pmax";
+		} else if (!strcmp($2, "luna68k")) {
+			machine = MACHINE_LUNA68K;
+			machinename = "luna68k";
 		} else
 			yyerror("Unknown machine type");
 	      } |
@@ -155,7 +158,7 @@ Config_spec:
 	System_spec
 		|
 	HZ NUMBER
-	      = { yyerror("HZ specification obsolete; delete"); } |
+	      = { hz = $2; }|
 	TIMEZONE NUMBER
 	      = { zone = 60 * $2; check_tz(); } |
 	TIMEZONE NUMBER DST NUMBER
@@ -760,6 +763,7 @@ check_nexus(dev, num)
 		break;
 
 	case MACHINE_HP300:
+	case MACHINE_LUNA68K:
 		if (num != QUES)
 			dev->d_addr = num;
 		break;

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)config.h	5.16 (Berkeley) %G%
+ *	@(#)config.h	5.17 (Berkeley) %G%
  */
 
 /*
@@ -165,6 +165,7 @@ struct	file_list *ftab, *conf_list, **confp;
 
 int	zone, hadtz;
 int	dst;
+int	hz;
 int	profiling;
 int	debugging;
 
