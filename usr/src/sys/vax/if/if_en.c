@@ -1,4 +1,4 @@
-/*	if_en.c	6.1	83/07/29	*/
+/*	if_en.c	6.2	84/04/12	*/
 
 #include "en.h"
 
@@ -70,6 +70,7 @@ int	eninit(),enoutput(),enreset(),enioctl();
 struct	en_softc {
 	struct	ifnet es_if;		/* network-visible interface */
 	struct	ifuba es_ifuba;		/* UNIBUS resources */
+	short	es_host;		/* hardware host number */
 	short	es_delay;		/* current output delay */
 	short	es_mask;		/* mask for current output delay */
 	short	es_lastx;		/* host last transmitted to */
@@ -200,6 +201,7 @@ enstart(dev)
 	struct uba_device *ui = eninfo[unit];
 	register struct en_softc *es = &en_softc[unit];
 	register struct endevice *addr;
+	register struct en_header *en;
 	struct mbuf *m;
 	int dest;
 
@@ -216,7 +218,9 @@ enstart(dev)
 		es->es_oactive = 0;
 		return;
 	}
-	dest = mtod(m, struct en_header *)->en_dhost;
+	en = mtod(m, struct en_header *);
+	dest = en->en_dhost;
+	en->en_shost = es->es_host;
 	es->es_olen = if_wubaput(&es->es_ifuba, m);
 #ifdef ENF_SWABIPS
 	/*
@@ -228,8 +232,6 @@ enstart(dev)
 	 * Should swab everybody, but this is a kludge anyway.
 	 */
 	if (es->es_if.if_flags & ENF_SWABIPS) {
-		register struct en_header *en;
-
 		en = (struct en_header *)es->es_ifuba.ifu_w.ifrw_addr;
 		if (en->en_type == ENTYPE_IP)
 			enswab((caddr_t)(en + 1), (caddr_t)(en + 1),
@@ -560,7 +562,7 @@ gottype:
 		m->m_len += sizeof (struct en_header);
 	}
 	en = mtod(m, struct en_header *);
-	en->en_shost = ifp->if_host[0];
+	/* add en_shost later */
 	en->en_dhost = dest;
 	en->en_type = htons((u_short)type);
 
@@ -624,12 +626,15 @@ ensetaddr(ifp, sin)
 {
 	struct endevice *enaddr;
 
+	/* set address once for in_netof, so subnets will be recognized */
+	ifp->if_addr = *(struct sockaddr *)sin;
 	ifp->if_net = in_netof(sin->sin_addr);
 	enaddr = (struct endevice *)eninfo[ifp->if_unit]->ui_addr;
-	ifp->if_host[0] = (~enaddr->en_addr) & 0xff;
+	((struct en_softc *) ifp)->es_host = (~enaddr->en_addr) & 0xff;
 	sin = (struct sockaddr_in *)&ifp->if_addr;
 	sin->sin_family = AF_INET;
-	sin->sin_addr = if_makeaddr(ifp->if_net, ifp->if_host[0]);
+	sin->sin_addr = if_makeaddr(ifp->if_net,
+	    ((struct en_softc *)ifp)->es_host);
 	sin = (struct sockaddr_in *)&ifp->if_broadaddr;
 	sin->sin_family = AF_INET;
 	sin->sin_addr = if_makeaddr(ifp->if_net, INADDR_ANY);
