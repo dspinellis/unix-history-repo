@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_lookup.c	8.5 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	8.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -493,7 +493,7 @@ found:
 	 * when following backward pointers ".." we must unlock the
 	 * parent directory before getting the requested directory.
 	 * There is a potential race condition here if both the current
-	 * and parent directories are removed before the `iget' for the
+	 * and parent directories are removed before the VFS_VGET for the
 	 * inode associated with ".." returns.  We hope that this occurs
 	 * infrequently since we cannot avoid this race condition without
 	 * implementing a sophisticated deadlock detection algorithm.
