@@ -1,4 +1,4 @@
-#	@(#)Makefile.hp300	8.1 (Berkeley) %G%
+#	@(#)Makefile.hp300	8.2 (Berkeley) %G%
 #
 # Makefile for 4.4 BSD
 #
@@ -121,7 +121,7 @@ autoconf.o: Makefile
 machdep.o sys_machdep.o pmap.o pmap_bootstrap.o trap.o dma.o: Makefile
 
 # depend on network or filesystem configuration
-af.o uipc_proto.o vfs_conf.o locore.o: Makefile
+uipc_proto.o vfs_conf.o locore.o: Makefile
 
 # depend on maxusers
 assym.s: Makefile
