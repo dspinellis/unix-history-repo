@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tip.h	5.5 (Berkeley) %G%
+ *	@(#)tip.h	5.6 (Berkeley) %G%
  */
 
 /*
@@ -13,13 +13,17 @@
 
 #include <sys/types.h>
 #include <sys/file.h>
+#include <sys/time.h>
 
 #include <sgtty.h>
 #include <signal.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <pwd.h>
 #include <ctype.h>
 #include <setjmp.h>
+#include <unistd.h>
 #include <errno.h>
 
 /*
@@ -238,13 +242,5 @@ int	odisc;				/* initial tty line discipline */
 extern	int disc;			/* current tty discpline */
 
 extern	char *ctrl();
-extern	char *ctime();
-extern	long time();
-extern	struct passwd *getpwuid();
-extern	char *getlogin();
 extern	char *vinterp();
-extern	char *getenv();
-extern	char *rindex();
-extern	char *index();
-extern	char *malloc();
 extern	char *connect();
