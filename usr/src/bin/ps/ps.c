@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ps.c	5.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)ps.c	5.35 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -89,7 +89,7 @@ main(argc, argv)
 	all = xflg = 0;
 	pid = uid = -1;
 	ttydev = NODEV;
-	while ((ch = getopt(argc, argv, "aCghjLlmO:o:p:rSsTt:uvwx")) != EOF)
+	while ((ch = getopt(argc, argv, "aCghjLlmO:o:p:rSTt:uvwx")) != EOF)
 		switch((char)ch) {
 		case 'a':
 			all = 1;
