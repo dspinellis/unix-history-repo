@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -861,7 +861,16 @@ nis_map_open(map, mode)
 
 	if (mode != O_RDONLY)
 	{
-		errno = ENODEV;
+		/* issue a pseudo-error message */
+#ifdef ENOSYS
+		errno = ENOSYS;
+#else
+# ifdef EFTYPE
+		errno = EFTYPE;
+# else
+		errno = ENXIO;
+# endif
+#endif
 		return FALSE;
 	}
 
@@ -1168,7 +1177,7 @@ impl_map_open(map, mode)
 		map->map_mflags &= ~MF_IMPL_NDBM;
 #endif
 
-#if !defined(NEWDB) && !defined(NDBM)
+#if defined(NEWDB) || defined(NDBM)
 	if (Verbose)
 		message("WARNING: cannot open alias database %s", map->map_file);
 #endif
