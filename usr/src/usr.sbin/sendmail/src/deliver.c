@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)deliver.c	3.88		%G%);
+SCCSID(@(#)deliver.c	3.89		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
