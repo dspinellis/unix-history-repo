@@ -28,22 +28,23 @@
 #include <sys/vmmac.h>
 #include <sys/ioctl.h>
 #include <sys/tty.h>
-#include <sys/kinfo.h>
-#include <stdio.h>
+#include <kvm.h>
 #include <ctype.h>
+#include <cencode.h>
 #include <nlist.h>
 #include <pwd.h>
 #include <strings.h>
 #include <ndbm.h>
 #include <limits.h>
 #include <paths.h>
+#include <stdio.h>
 
 /*
  * files
  */
 static	char *unixf, *memf, *kmemf, *swapf;
 static	int unixx, mem, kmem, swap;
-DBM	*db;
+static	DBM *db;
 /*
  * flags
  */
@@ -55,7 +56,6 @@ static	int kvmfilesopen = 0;
  */
 static	struct kinfo_proc *kvmprocbase, *kvmprocptr;
 static	int kvmnprocs;
-static	char *err;
 /*
  * u. buffer
  */
@@ -71,15 +71,13 @@ static	int	dmmin, dmmax;
 static	struct	pte *Sysmap;
 static	int	Syssize;
 static	int     pcbpf;
-static	int     argaddr;
+static	int     argaddr0;	/* XXX */
+static	int     argaddr1;
 static	int	nswap;
-static char *tmp;
-#define basename(cp)	((tmp=rindex((cp), '/')) ? tmp+1 : (cp))
+static	char	*tmp;
 
-#define KVMDBDIR	"/var/run"
+#define basename(cp)	((tmp=rindex((cp), '/')) ? tmp+1 : (cp))
 #define	MAXSYMSIZE	256
-#define	KVMDB_NLIST	1
-#define	KVMDB_DEVS	2
 
 static struct nlist nl[] = {
 	{ "_Usrptmap" },
@@ -111,27 +109,16 @@ static struct nlist nl[] = {
 
 static char *savestr();
 
-kvm_init(uf, mf, sf)
-	char *uf, *mf, *sf;
-{
-	if (kvminit) {
-		seterr("already initialized (can't re-initialize)");
-		return (-1);
-	}
-	if (kvm_openfiles(uf, mf, sf) == -1)
-		return (-1);
-	if (getkvars() == -1)
-		return (-1);
-	kvminit = 1;
-
-	return (0);
-}
-
-static 
+/*
+ * returns 	0 if files were opened now,
+ * 		1 if files were already opened,
+ *		-1 if files could not be opened.
+ */
 kvm_openfiles(uf, mf, sf)
-	char *uf, *mf, *sf; {
-	if (kvmfilesopen) /* XXX && the file names are all the same ??? */
-		return (0);
+	char *uf, *mf, *sf; 
+{
+	if (kvmfilesopen)
+		return (1);
 	unixx = mem = kmem = swap = -1;
 	unixf = (uf == NULL) ? _PATH_UNIX : uf; 
 	memf = (mf == NULL) ? _PATH_MEM : mf;
@@ -175,20 +162,50 @@ failed:
 	return (-1);
 }
 
+static
+kvm_init(uf, mf, sf)
+	char *uf, *mf, *sf;
+{
+	if (kvmfilesopen == 0 && kvm_openfiles(NULL, NULL, NULL) == -1)
+		return (-1);
+	if (getkvars() == -1)
+		return (-1);
+	kvminit = 1;
+
+	return (0);
+}
+
 kvm_close()
 {
-	if (unixx != -1)
+	if (unixx != -1) {
 		close(unixx);
-	if (mem != -1)
+		unixx = -1;
+	}
+	if (kmem != -1) {
+		if (kmem != mem)
+			close(kmem);
+		/* otherwise kmem is a copy of mem, and will be closed below */
+		kmem = -1;
+	}
+	if (mem != -1) {
 		close(mem);
-	if (kmem != -1 && (kmem != mem))
-		close(kmem);
-	if (swap != -1)
+		mem = -1;
+	}
+	if (swap != -1) {
 		close(swap);
-	if (db != NULL)
+		swap = -1;
+	}
+	if (db != NULL) {
 		dbm_close(db);
+		db = NULL;
+	}
 	kvminit = 0;
 	kvmfilesopen = 0;
+	deadkernel = 0;
+	if (Sysmap) {
+		free(Sysmap);
+		Sysmap = NULL;
+	}
 }
 
 kvm_nlist(nl)
@@ -207,19 +224,22 @@ kvm_nlist(nl)
 		return (-1);
 	if (deadkernel)
 		goto hard2;
+	/*
+	 * initialize key datum
+	 */
+	key.dptr = symbuf;
+	symbuf[0] = KVMDB_NLIST;
+
 	if (db != NULL)
-		goto win;
+		goto win;	/* off to the races */
+	/*
+	 * open database
+	 */
 	sprintf(dbname, "%s/kvm_%s", KVMDBDIR, basename(unixf));
 	if ((db = dbm_open(dbname, O_RDONLY, 0)) == NULL)
 		goto hard2;
 	/*
-	 * read version out of kmem and compare to version
-	 * in database.
-	 */
-	key.dptr = symbuf;
-	symbuf[0] = KVMDB_NLIST;
-	/*
-	 * read version string from database
+	 * read version out of database
 	 */
 	bcopy("VERSION", symbuf+1, sizeof ("VERSION")-1);
 	key.dsize = (sizeof ("VERSION") - 1) + 1;
@@ -255,7 +275,7 @@ win:
 	for (n = nl; n->n_name && n->n_name[0]; n++, num++) {
 		int len;
 		/*
-		 * clear out crap from users buffer
+		 * clear out fields from users buffer
 		 */
 		n->n_type = 0;
 		n->n_other = 0;
@@ -285,11 +305,13 @@ hard1:
 	dbm_close(db);
 	db = NULL;
 hard2:
-	return (nlist(unixf, nl));
+	return (nlist(unixf, nl));	/* XXX seterr if -1 */
 }
 
 kvm_getprocs(what, arg)
 {
+	if (kvminit == 0 && kvm_init(NULL, NULL, NULL, 0) == -1)
+		return (NULL);
 	if (!deadkernel) {
 		int ret, copysize;
 
@@ -314,7 +336,6 @@ kvm_getprocs(what, arg)
 		}
 		kvmnprocs = copysize / sizeof (struct kinfo_proc);
 	} else {
-		int i;
 		int nproc;
 
 		if (kvm_read(nl[X_NPROC].n_value, &nproc, sizeof (int)) !=
@@ -324,7 +345,8 @@ kvm_getprocs(what, arg)
 		}
 		if ((kvmprocbase = (struct kinfo_proc *)
 		     malloc(nproc * sizeof (struct kinfo_proc))) == NULL) {
-			seterr("out of memory (addr: %x nproc = %d)", nl[X_NPROC].n_value, nproc);
+			seterr("out of memory (addr: %x nproc = %d)",
+				nl[X_NPROC].n_value, nproc);
 			return (-1);
 		}
 		kvmnprocs = kvm_doprocs(what, arg, kvmprocbase);
@@ -513,17 +535,21 @@ kvm_getu(p)
 	struct proc *p;
 {
 	struct pte *pteaddr, apte;
-	struct pte arguutl[UPAGES+CLSIZE];
+	struct pte arguutl[UPAGES+(CLSIZE*2)];
 	register int i;
 	int ncl;
 
 	if (kvminit == 0 && kvm_init(NULL, NULL, NULL, 0) == -1)
 		return (NULL);
-	if (p->p_stat == SZOMB)
+	if (p->p_stat == SZOMB) {
+		seterr("zombie process");
 		return (NULL);
+	}
 	if ((p->p_flag & SLOAD) == 0) {
-		if (swap < 0)
+		if (swap < 0) {
+			seterr("no swap");
 			return (NULL);
+		}
 		(void) lseek(swap, (long)dtob(p->p_swaddr), 0);
 		if (read(swap, (char *)&user.user, sizeof (struct user)) != 
 		    sizeof (struct user)) {
@@ -532,7 +558,8 @@ kvm_getu(p)
 			return (NULL);
 		}
 		pcbpf = 0;
-		argaddr = 0;
+		argaddr0 = 0;
+		argaddr1 = 0;
 		return (&user.user);
 	}
 	pteaddr = &Usrptmap[btokmx(p->p_p0br) + p->p_szpt - 1];
@@ -543,7 +570,7 @@ kvm_getu(p)
 		return (NULL);
 	}
 	lseek(mem,
-	    (long)ctob(apte.pg_pfnum+1) - (UPAGES+CLSIZE) * sizeof (struct pte),
+	    (long)ctob(apte.pg_pfnum+1) - (UPAGES+(CLSIZE*2)) * sizeof (struct pte),
 		0);
 	if (read(mem, (char *)arguutl, sizeof(arguutl)) != sizeof(arguutl)) {
 		seterr("can't read page table for u of pid %d from %s",
@@ -551,14 +578,18 @@ kvm_getu(p)
 		return (NULL);
 	}
 	if (arguutl[0].pg_fod == 0 && arguutl[0].pg_pfnum)
-		argaddr = ctob(arguutl[0].pg_pfnum);
+		argaddr0 = ctob(arguutl[0].pg_pfnum);
 	else
-		argaddr = 0;
-	pcbpf = arguutl[CLSIZE].pg_pfnum;
+		argaddr0 = 0;
+	if (arguutl[CLSIZE*1].pg_fod == 0 && arguutl[CLSIZE*1].pg_pfnum)
+		argaddr1 = ctob(arguutl[CLSIZE*1].pg_pfnum);
+	else
+		argaddr1 = 0;
+	pcbpf = arguutl[CLSIZE*2].pg_pfnum;
 	ncl = (sizeof (struct user) + NBPG*CLSIZE - 1) / (NBPG*CLSIZE);
 	while (--ncl >= 0) {
 		i = ncl * CLSIZE;
-		lseek(mem, (long)ctob(arguutl[CLSIZE+i].pg_pfnum), 0);
+		lseek(mem, (long)ctob(arguutl[(CLSIZE*2)+i].pg_pfnum), 0);
 		if (read(mem, user.upages[i], CLSIZE*NBPG) != CLSIZE*NBPG) {
 			seterr("can't read page %d of u of pid %d from %s",
 			    arguutl[CLSIZE+i].pg_pfnum, p->p_pid, memf);
@@ -573,10 +604,10 @@ kvm_getargs(p, up)
 	struct proc *p;
 	struct user *up;
 {
-	char cmdbuf[CLSIZE*NBPG];
+	char cmdbuf[CLSIZE*NBPG*2];
 	union {
-		char	argc[CLSIZE*NBPG];
-		int	argi[CLSIZE*NBPG/sizeof (int)];
+		char	argc[CLSIZE*NBPG*2];
+		int	argi[CLSIZE*NBPG*2/sizeof (int)];
 	} argspac;
 	register char *cp;
 	register int *ip;
@@ -585,33 +616,41 @@ kvm_getargs(p, up)
 	struct dblock db;
 	char *file;
 
-	if (p->p_pid == 0)
-		return ("swapper");	/* XXX should be set in kernel */
-	if (p->p_pid == 2)
-		return ("pagedaemon");
 	if (p->p_stat == SZOMB)
 		return ("<defunct>");
 	if (p->p_flag & SWEXIT)
 		return ("<exiting>");
-	if (up == NULL)
+	if (up == NULL || p->p_pid == 0 || p->p_pid == 2)
 		goto retucomm;
-	if ((p->p_flag & SLOAD) == 0 || argaddr == 0) {
+	if ((p->p_flag & SLOAD) == 0 || argaddr1 == 0) {
 		if (swap < 0)
 			goto retucomm;
 		vstodb(0, CLSIZE, &up->u_smap, &db, 1);
 		(void) lseek(swap, (long)dtob(db.db_base), 0);
-		if (read(swap, (char *)&argspac, sizeof(argspac))
-		    != sizeof(argspac))
+		if (read(swap, (char *)&argspac.argc[NBPG*CLSIZE], 
+			NBPG*CLSIZE) != NBPG*CLSIZE)
+			goto bad;
+		vstodb(1, CLSIZE, &up->u_smap, &db, 1);
+		(void) lseek(swap, (long)dtob(db.db_base), 0);
+		if (read(swap, (char *)&argspac.argc[0], 
+			NBPG*CLSIZE) != NBPG*CLSIZE)
 			goto bad;
 		file = swapf;
 	} else {
-		lseek(mem, (long)argaddr, 0);
-		if (read(mem, (char *)&argspac, sizeof (argspac))
-		    != sizeof (argspac))
+		if (argaddr0) {
+			lseek(mem, (long)argaddr0, 0);
+			if (read(mem, (char *)&argspac, NBPG*CLSIZE)
+			    != NBPG*CLSIZE)
+				goto bad;
+		} else
+			bzero(&argspac, NBPG*CLSIZE);
+		lseek(mem, (long)argaddr1, 0);
+		if (read(mem, &argspac.argc[NBPG*CLSIZE], NBPG*CLSIZE)
+		    != NBPG*CLSIZE)
 			goto bad;
 		file = memf;
 	}
-	ip = &argspac.argi[CLSIZE*NBPG/sizeof (int)];
+	ip = &argspac.argi[CLSIZE*NBPG*2/sizeof (int)];
 	ip -= 2;		/* last arg word and .long 0 */
 	while (*--ip) {
 		if (ip == argspac.argi)
@@ -620,7 +659,7 @@ kvm_getargs(p, up)
 	*(char *)ip = ' ';
 	ip++;
 	nbad = 0;
-	for (cp = (char *)ip; cp < &argspac.argc[CLSIZE*NBPG]; cp++) {
+	for (cp = (char *)ip; cp < &argspac.argc[CLSIZE*NBPG*2]; cp++) {
 		c = *cp & 0177;
 		if (c == 0)
 			*cp = ' ';
@@ -641,7 +680,7 @@ kvm_getargs(p, up)
 	while (*--cp == ' ')
 		*cp = 0;
 	cp = (char *)ip;
-	(void) strncpy(cmdbuf, cp, &argspac.argc[CLSIZE*NBPG] - cp);
+	(void) strncpy(cmdbuf, cp, &argspac.argc[CLSIZE*NBPG*2] - cp);
 	if (cp[0] == '-' || cp[0] == '?' || cp[0] <= ' ') {
 		(void) strcat(cmdbuf, " (");
 		(void) strncat(cmdbuf, p->p_comm, sizeof(p->p_comm));
@@ -710,6 +749,8 @@ kvm_read(loc, buf, len)
 	unsigned long loc;
 	char *buf;
 {
+	if (kvmfilesopen == 0 && kvm_openfiles(NULL, NULL, NULL) == -1)
+		return (-1);
 	if (loc & KERNBASE) {
 		klseek(kmem, loc, 0);
 		if (read(kmem, buf, len) != len) {
@@ -729,14 +770,17 @@ kvm_read(loc, buf, len)
 static
 klseek(fd, loc, off)
 	int fd;
-	long loc;
+	off_t loc;
 	int off;
 {
+
 	if (deadkernel) {
+		off_t vtophys();
+
 		if ((loc = vtophys(loc)) == -1)
 			return;
 	}
-	(void) lseek(fd, (long)loc, off);
+	(void) lseek(fd, (off_t)loc, off);
 }
 
 /*
