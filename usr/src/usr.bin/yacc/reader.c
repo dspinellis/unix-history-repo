@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)reader.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)reader.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -1129,7 +1129,7 @@ end_rule()
     if (!last_was_action && plhs[nrules]->tag)
     {
 	for (i = nitems - 1; pitem[i]; --i) continue;
-	if (pitem[i+1]->tag != plhs[nrules]->tag)
+	if (pitem[i+1] == 0 || pitem[i+1]->tag != plhs[nrules]->tag)
 	    default_action_warning();
     }
 
