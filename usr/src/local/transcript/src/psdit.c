@@ -1,4 +1,4 @@
-/*	@(#)psdit.c	1.5 %G%	*/
+/*	@(#)psdit.c	1.6 %G%	*/
 #ifndef lint
 static char Notice[] = "Copyright (c) 1984, 1985 Adobe Systems Incorporated";
 static char *RCSID = "$Header: psdit.c,v 2.1 85/11/24 11:50:41 shore Rel $";
@@ -361,7 +361,7 @@ conv(fp)	/* convert a file */
 {
 	register int c, k;
 	int m, n, n1, m1;
-	char str[100], buf[300];
+	char str[100], buf[1024];
 
 	while ((c = getc(fp)) != EOF)
 		switch (c) {
@@ -1170,7 +1170,7 @@ putnf(c, s)	/* note that a character wasnt found */
 	FlushShow(0);
 	thisw = 0;
 	if (s == NULL || *s == '\0')
-		printf("(\%3o)cb\n", c);
+		printf("(%3o)cb\n", c);
 	else if (strcmp(s, "\\|") == 0 || strcmp(s, "\\^") == 0 ||
 		 strcmp(s, "\\&") == 0)
 		return;
@@ -1323,8 +1323,6 @@ drawcirc(d)
 	MoveTo();
 	DoMove();
 	printf("%d Dc\n", d);
-	hpos += d;
-	PSx = hpos * PSmag;
 }
 
 drawarc(dx1, dy1, dx2, dy2)
