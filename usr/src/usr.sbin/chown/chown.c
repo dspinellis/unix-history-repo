@@ -46,7 +46,6 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	extern int optind;
 	FTS *ftsp;
 	FTSENT *p;
 	int Hflag, Lflag, Pflag, ch, fts_options, hflag, rval;
