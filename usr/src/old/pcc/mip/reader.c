@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)reader.c	4.7 (Berkeley) %G%";
+static char *sccsid ="@(#)reader.c	4.8 (Berkeley) %G%";
 #endif lint
 
 # include "pass2.h"
@@ -614,11 +614,7 @@ order(p,cook) register NODE *p; {
 			}
 
 	case UNARY MINUS:
-#if defined(tahoe)
 		order( p1, INBREG|INAREG|SOREG );
-#else
-		order( p1, INBREG|INAREG );
-#endif
 		goto again;
 
 	case NAME:
