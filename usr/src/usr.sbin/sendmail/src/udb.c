@@ -8,9 +8,9 @@
 
 #ifndef lint
 #ifdef USERDB
-static char sccsid [] = "@(#)udb.c	5.12 (Berkeley) %G% (with USERDB)";
+static char sccsid [] = "@(#)udb.c	5.13 (Berkeley) %G% (with USERDB)";
 #else
-static char sccsid [] = "@(#)udb.c	5.12 (Berkeley) %G% (without USERDB)";
+static char sccsid [] = "@(#)udb.c	5.13 (Berkeley) %G% (without USERDB)";
 #endif
 #endif
 
@@ -118,8 +118,7 @@ udbexpand(a, sendq)
 		printf("expand(%s)\n", a->q_paddr);
 
 	/* make certain we are supposed to send to this address */
-	if (bitset(QDONTSEND, a->q_flags) ||
-	    UdbSpec == NULL || UdbSpec[0] == '\0')
+	if (bitset(QDONTSEND, a->q_flags))
 		return;
 	CurEnv->e_to = a->q_paddr;
 
@@ -131,6 +130,10 @@ udbexpand(a, sendq)
 		_udbx_init();
 		firstcall = FALSE;
 	}
+
+	/* short circuit the process if no chance of a match */
+	if (UdbSpec == NULL || UdbSpec[0] == '\0')
+		return;
 
 	/* if name is too long, assume it won't match */
 	if (strlen(a->q_user) > sizeof keybuf - 12)
