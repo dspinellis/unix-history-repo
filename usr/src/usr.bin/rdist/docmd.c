@@ -1,9 +1,10 @@
 #ifndef lint
-static	char *sccsid = "@(#)docmd.c	4.26 (Berkeley) 85/02/28";
+static	char *sccsid = "@(#)docmd.c	4.26 (Berkeley) 85/03/05";
 #endif
 
 #include "defs.h"
 #include <setjmp.h>
+#include <netdb.h>
 
 #ifndef RDIST
 #define RDIST "/usr/ucb/rdist"
@@ -159,6 +160,8 @@ makeconn(rhost)
 {
 	register char *ruser, *cp;
 	static char *cur_host = NULL;
+	static int port = -1;
+	char tuser[20];
 	int n;
 	extern char user[];
 	extern int userid;
@@ -171,27 +174,41 @@ makeconn(rhost)
 			return(1);
 		closeconn();
 	}
+	cur_host = rhost;
+	cp = index(rhost, '@');
+	if (cp != NULL) {
+		char c = *cp;
 
-	ruser = rindex(rhost, '.');
-	if (ruser != NULL) {
-		*ruser++ = '\0';
-		if (!okname(ruser))
+		*cp = '\0';
+		strncpy(tuser, rhost, sizeof(tuser)-1);
+		*cp = c;
+		rhost = cp + 1;
+		ruser = tuser;
+		if (*ruser == '\0')
+			ruser = user;
+		else if (!okname(ruser))
 			return(0);
 	} else
 		ruser = user;
 	if (!qflag)
 		printf("updating host %s\n", rhost);
 	(void) sprintf(buf, "%s -Server%s", RDIST, qflag ? " -q" : "");
+	if (port < 0) {
+		struct servent *sp;
+
+		if ((sp = getservbyname("shell", "tcp")) == NULL)
+			fatal("shell/tcp: unknown service");
+		port = sp->s_port;
+	}
 
 	if (debug) {
-		printf("luser = %s, ruser = %s\n", user, ruser);
+		printf("port = %d, luser = %s, ruser = %s\n", ntohs(port), user, ruser);
 		printf("buf = %s\n", buf);
 	}
 
 	fflush(stdout);
-	cur_host = rhost;
 	setreuid(userid, 0);
-	rem = rcmd(&rhost, IPPORT_CMDSERVER, user, ruser, buf, 0);
+	rem = rcmd(&rhost, port, user, ruser, buf, 0);
 	setreuid(0, userid);
 	if (rem < 0)
 		return(0);
