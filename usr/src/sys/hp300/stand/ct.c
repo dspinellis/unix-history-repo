@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ct.c	7.7 (Berkeley) %G%
+ *	@(#)ct.c	8.1 (Berkeley) %G%
  */
 
 /*

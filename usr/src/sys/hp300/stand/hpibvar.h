@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1982, 1990 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1982, 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)hpibvar.h	7.1 (Berkeley) %G%
+ *	@(#)hpibvar.h	8.1 (Berkeley) %G%
  */
 
 #define	HPIBA		32
