@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)input.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)input.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>	/* defines BUFSIZ */
@@ -17,6 +17,7 @@ static char sccsid[] = "@(#)input.c	8.2 (Berkeley) %G%";
 #include <errno.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <string.h>
 
 /*
  * This file implements the input routines used by the parser.
