@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)spec_vnops.c	7.14 (Berkeley) %G%
+ *	@(#)spec_vnops.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -25,6 +25,7 @@
 #include "buf.h"
 #include "mount.h"
 #include "vnode.h"
+#include "../ufs/inode.h"
 #include "stat.h"
 #include "errno.h"
 
@@ -123,47 +124,95 @@ spec_open(vp, mode, cred)
 /*
  * Vnode op for read
  */
-spec_read(vp, uio, offp, ioflag, cred)
+spec_read(vp, uio, ioflag, cred)
 	register struct vnode *vp;
 	struct uio *uio;
-	off_t *offp;
 	int ioflag;
 	struct ucred *cred;
 {
-	int count, error;
+	int error;
+	extern int mem_no;
 
-	if (vp->v_type == VBLK && vp->v_data)
-		VOP_LOCK(vp);
-	uio->uio_offset = *offp;
-	count = uio->uio_resid;
-	error = readblkvp(vp, uio, cred, ioflag);
-	*offp += count - uio->uio_resid;
-	if (vp->v_type == VBLK && vp->v_data)
+	if (uio->uio_rw != UIO_READ)
+		panic("spec_read mode");
+	if (uio->uio_resid == 0)
+		return (0);
+	/*
+	 * XXX  Set access flag for the ufs filesystem.
+	 */
+	if (vp->v_tag == VT_UFS)
+		VTOI(vp)->i_flag |= IACC;
+
+	switch (vp->v_type) {
+
+	case VCHR:
+		/*
+		 * Negative offsets allowed only for /dev/kmem
+		 */
+		if (uio->uio_offset < 0 && major(vp->v_rdev) != mem_no)
+			return (EINVAL);
 		VOP_UNLOCK(vp);
-	return (error);
+		error = (*cdevsw[major(vp->v_rdev)].d_read)
+			(vp->v_rdev, uio, ioflag);
+		VOP_LOCK(vp);
+		return (error);
+
+	case VBLK:
+		if (uio->uio_offset < 0)
+			return (EINVAL);
+		return (readblkvp(vp, uio, cred, ioflag));
+
+	default:
+		panic("spec_read type");
+	}
+	/* NOTREACHED */
 }
 
 /*
  * Vnode op for write
  */
-spec_write(vp, uio, offp, ioflag, cred)
+spec_write(vp, uio, ioflag, cred)
 	register struct vnode *vp;
 	struct uio *uio;
-	off_t *offp;
 	int ioflag;
 	struct ucred *cred;
 {
-	int count, error;
+	int error;
+	extern int mem_no;
 
-	if (vp->v_type == VBLK && vp->v_data)
-		VOP_LOCK(vp);
-	uio->uio_offset = *offp;
-	count = uio->uio_resid;
-	error = writeblkvp(vp, uio, cred, ioflag);
-	*offp += count - uio->uio_resid;
-	if (vp->v_type == VBLK && vp->v_data)
+	if (uio->uio_rw != UIO_WRITE)
+		panic("spec_write mode");
+	/*
+	 * XXX  Set update and change flags for the ufs filesystem.
+	 */
+	if (vp->v_tag == VT_UFS)
+		VTOI(vp)->i_flag |= IUPD|ICHG;
+
+	switch (vp->v_type) {
+
+	case VCHR:
+		/*
+		 * Negative offsets allowed only for /dev/kmem
+		 */
+		if (uio->uio_offset < 0 && major(vp->v_rdev) != mem_no)
+			return (EINVAL);
 		VOP_UNLOCK(vp);
-	return (error);
+		error = (*cdevsw[major(vp->v_rdev)].d_write)
+			(vp->v_rdev, uio, ioflag);
+		VOP_LOCK(vp);
+		return (error);
+
+	case VBLK:
+		if (uio->uio_resid == 0)
+			return (0);
+		if (uio->uio_offset < 0)
+			return (EINVAL);
+		return (writeblkvp(vp, uio, cred, ioflag));
+
+	default:
+		panic("spec_write type");
+	}
+	/* NOTREACHED */
 }
 
 /*
