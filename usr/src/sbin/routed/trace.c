@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1983 Regents of the University of California.
+ * Copyright (c) 1983, 1988 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)trace.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)trace.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -20,11 +20,12 @@ static char sccsid[] = "@(#)trace.c	5.4 (Berkeley) %G%";
 #define	RIPCMDS
 #include "defs.h"
 #include <sys/stat.h>
+#include <sys/signal.h>
 
 #define	NRECORDS	50		/* size of circular trace buffer */
 #ifdef DEBUG
 FILE	*ftrace = stdout;
-int	tracing = 1;
+int	traceactions = 1;
 #endif
 
 traceinit(ifp)
@@ -34,7 +35,7 @@ traceinit(ifp)
 	if (iftraceinit(ifp, &ifp->int_input) &&
 	    iftraceinit(ifp, &ifp->int_output))
 		return;
-	tracing = 0;
+	tracehistory = 0;
 	fprintf(stderr, "traceinit: can't init %s\n", ifp->int_name);
 }
 
@@ -73,17 +74,34 @@ traceon(file)
 		return;
 	dup2(fileno(ftrace), 1);
 	dup2(fileno(ftrace), 2);
-	tracing = 1;
+	traceactions = 1;
 }
 
 traceoff()
 {
-	if (!tracing)
+	if (!traceactions)
 		return;
 	if (ftrace != NULL)
 		fclose(ftrace);
 	ftrace = NULL;
-	tracing = 0;
+	traceactions = 0;
+	tracehistory = 0;
+}
+
+sigtrace(s)
+	int s;
+{
+	if (s == SIGUSR2) {
+		traceoff();
+		tracepackets = 0;
+	} else if (traceactions == 0)
+		traceactions++;
+	else if (tracehistory == 0)
+		tracehistory++;
+	else {
+		tracepackets++;
+		tracehistory = 0;
+	}
 }
 
 trace(ifd, who, p, len, m)
@@ -149,6 +167,10 @@ traceaction(fd, action, rt)
 
 	if (fd == NULL)
 		return;
+	if (curtime) {
+		fprintf(fd, "\n%s", curtime);
+		curtime = NULL;
+	}
 	fprintf(fd, "%s ", action);
 	dst = (struct sockaddr_in *)&rt->rt_dst;
 	gate = (struct sockaddr_in *)&rt->rt_router;
@@ -176,9 +198,26 @@ traceaction(fd, action, rt)
 			first = 0;
 		}
 	}
-	putc('\n', fd);
+	fprintf(fd, " timer %d\n", rt->rt_timer);
 	if (!tracepackets && (rt->rt_state & RTS_PASSIVE) == 0 && rt->rt_ifp)
 		dumpif(fd, rt->rt_ifp);
+	fflush(fd);
+}
+
+tracenewmetric(fd, rt, newmetric)
+	FILE *fd;
+	struct rt_entry *rt;
+	int newmetric;
+{
+	struct sockaddr_in *dst, *gate;
+
+	if (fd == NULL)
+		return;
+	dst = (struct sockaddr_in *)&rt->rt_dst;
+	gate = (struct sockaddr_in *)&rt->rt_router;
+	fprintf(fd, "CHANGE metric dst %s, ", inet_ntoa(dst->sin_addr));
+	fprintf(fd, "router %s, from %d to %d\n",
+	     inet_ntoa(gate->sin_addr), rt->rt_metric, newmetric);
 	fflush(fd);
 }
 
@@ -188,7 +227,9 @@ dumpif(fd, ifp)
 	if (ifp->int_input.ifd_count || ifp->int_output.ifd_count) {
 		fprintf(fd, "*** Packet history for interface %s ***\n",
 			ifp->int_name);
+#ifdef notneeded
 		dumptrace(fd, "to", &ifp->int_output);
+#endif
 		dumptrace(fd, "from", &ifp->int_input);
 		fprintf(fd, "*** end packet history ***\n");
 	}
@@ -218,17 +259,17 @@ dumptrace(fd, dir, ifd)
 			t = ifd->ifd_records;
 		if (t->ift_size == 0)
 			continue;
-		fprintf(fd, "%.24s: metric=%d\n", ctime(&t->ift_stamp),
-			t->ift_metric);
-		dumppacket(fd, dir, &t->ift_who, t->ift_packet, t->ift_size);
+		dumppacket(fd, dir, &t->ift_who, t->ift_packet, t->ift_size,
+		    &t->ift_stamp);
 	}
 }
 
-dumppacket(fd, dir, who, cp, size)
+dumppacket(fd, dir, who, cp, size, tstamp)
 	FILE *fd;
 	struct sockaddr_in *who;		/* should be sockaddr */
 	char *dir, *cp;
 	register int size;
+	time_t *tstamp;
 {
 	register struct rip *msg = (struct rip *)cp;
 	register struct netinfo *n;
@@ -237,17 +278,18 @@ dumppacket(fd, dir, who, cp, size)
 		fprintf(fd, "%s %s %s.%d", ripcmds[msg->rip_cmd],
 		    dir, inet_ntoa(who->sin_addr), ntohs(who->sin_port));
 	else {
-		fprintf(fd, "Bad cmd 0x%x %s %x.%d\n", msg->rip_cmd,
-		    dir, inet_ntoa(who->sin_addr), ntohs(who->sin_port));
+		fprintf(fd, "Bad cmd 0x%x %s %x.%d %.24s\n", msg->rip_cmd,
+		    dir, inet_ntoa(who->sin_addr), ntohs(who->sin_port),
+		    ctime(tstamp));
 		fprintf(fd, "size=%d cp=%x packet=%x\n", size, cp, packet);
 		fflush(fd);
 		return;
 	}
+	fprintf(fd, " %.24s:\n", ctime(tstamp));
 	switch (msg->rip_cmd) {
 
 	case RIPCMD_REQUEST:
 	case RIPCMD_RESPONSE:
-		fprintf(fd, ":\n");
 		size -= 4 * sizeof (char);
 		n = msg->rip_nets;
 		for (; size > 0; n++, size -= sizeof (struct netinfo)) {
@@ -261,11 +303,10 @@ dumppacket(fd, dir, who, cp, size)
 		break;
 
 	case RIPCMD_TRACEON:
-		fprintf(fd, ", file=%*s\n", size, msg->rip_tracefile);
+		fprintf(fd, "\tfile=%*s\n", size, msg->rip_tracefile);
 		break;
 
 	case RIPCMD_TRACEOFF:
-		fprintf(fd, "\n");
 		break;
 	}
 	fflush(fd);
