@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)glob.h	5.5 (Berkeley) %G%
+ *	@(#)glob.h	5.6 (Berkeley) %G%
  */
 
 /*
@@ -42,7 +42,6 @@ char	*editfile;			/* Name of file being edited */
 char	*sflag;				/* Subject given from non tty */
 int	outtty;				/* True if standard output a tty */
 int	intty;				/* True if standard input a tty */
-int	baud;				/* Output baud rate */
 char	mbox[PATHSIZE];			/* Name of mailbox file */
 char	mailname[PATHSIZE];		/* Name of system mailbox */
 int	uid;				/* The invoker's user id */
@@ -70,7 +69,9 @@ char	**localnames;			/* List of aliases for our local host */
 int	debug;				/* Debug flag set */
 int	rmail;				/* Being called as rmail */
 int	screenwidth;			/* Screen width, or best guess */
-int	screenheight;			/* Screen height, or best guess */
+int	screenheight;			/* Screen height, or best guess,
+					   for "header" command */
+int	realscreenheight;		/* the real screen height */
 
 #include <setjmp.h>
 
