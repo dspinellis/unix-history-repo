@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode.h	7.55 (Berkeley) %G%
+ *	@(#)vnode.h	7.56 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -135,7 +135,7 @@ struct vattr {
  */
 extern enum vtype	iftovt_tab[];
 extern int		vttoif_tab[];
-#define IFTOVT(mode)	(iftovt_tab[((mode) & IFMT) >> 12])
+#define IFTOVT(mode)	(iftovt_tab[((mode) & S_IFMT) >> 12])
 #define VTTOIF(indx)	(vttoif_tab[(int)(indx)])
 #define MAKEIMODE(indx, mode)	(int)(VTTOIF(indx) | (mode))
 
@@ -316,6 +316,8 @@ struct vop_bwrite_args;
 int 	bdevvp __P((dev_t dev, struct vnode **vpp));
 int 	getnewvnode __P((enum vtagtype tag,
 	    struct mount *mp, int (**vops)(), struct vnode **vpp));
+int	vinvalbuf __P((struct vnode *vp, int save, struct ucred *cred,
+	    struct proc *p));
 void 	vattr_null __P((struct vattr *vap));
 int 	vcount __P((struct vnode *vp));
 int 	vget __P((struct vnode *vp));
