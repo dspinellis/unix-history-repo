@@ -1,0 +1,34 @@
+#once #create message
+.ND
+.LP
+Since "sqrt thing" is really a single object, you
+often don't need braces around it, although there
+may well be braces around "thing" itself.
+For example, you can say
+  .EQ
+  1 over sqrt {ax sup2 +bx+c}
+  .EN
+to produce
+.EQ
+1 over sqrt {ax sup 2 +bx+c}
+.EN
+Does the input
+   .EQ
+   e sup sqrt {pi x}
+   .EN
+produce the same output as
+   .EQ
+   e sup {sqrt {pi x}}
+   .EN
+Answer yes or no.
+.pl 1
+#
+#once neqn message | nroff -T$TERM %s/tinyms -
+#copyin
+#user
+#uncopyin
+#match yes
+#log
+#next
+9.1a 10
+8.2b 5
