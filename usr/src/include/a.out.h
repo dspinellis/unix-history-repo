@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)a.out.h	5.1 (Berkeley) %G%
+ *	@(#)a.out.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -65,7 +65,7 @@ unsigned long	n_value;	/* value of this symbol (or sdb offset) */
 #define	N_DATA	0x6		/* data */
 #define	N_BSS	0x8		/* bss */
 #define	N_COMM	0x12		/* common (internal to ld) */
-#define	N_FN	0x1f		/* file name symbol */
+#define	N_FN	0x1e		/* file name symbol */
 
 #define	N_EXT	01		/* external bit, or'ed in */
 #define	N_TYPE	0x1e		/* mask for all the type bits */
