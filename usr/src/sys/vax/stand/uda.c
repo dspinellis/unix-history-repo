@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uda.c	6.3 (Berkeley) %G%
+ *	@(#)uda.c	6.4 (Berkeley) %G%
  */
 
 /*
@@ -18,6 +18,7 @@
 #include "saio.h"
 #include "savax.h"
 
+#define	NRA	4
 /*
  * Parameters for the communications area
  */
@@ -44,16 +45,29 @@ struct uda {
 
 struct uda *ud_ubaddr;			/* Unibus address of uda structure */
 
-int uda_off[] = { 0, 15884, 0, -1, -1, -1, 49324, 131404 };
+int ra25_off[] = { 0, 15884, 0, -1, -1, -1, 25916, -1 };
+int ra60_off[] = { 0, 15884, 0, 49324, 131404, 49324, 242606, 49324 };
+int ra80_off[] = { 0, 15884, 0, -1, 49324, 49324, 49910, 131404 };
+#ifndef	UCBRA
+#ifdef RA_COMPAT
+int ra81_off[] = { 0, 16422, 0, 49324, 131404, 412490, 375564, 83538 };
+#else
+int ra81_off[] = { 0, 16422, 0, 375564, 391986, 699720, 375564, 83538 };
+#endif
+#else
+int ra81_off[] = { 0, 15884, 0, 242606, 258490, 565690, 242606, 49324 };
+#endif
 
 struct mscp *udcmd();
+static int ratype[NRA];
 
 raopen(io)
 	register struct iob *io;
 {
 	register struct mscp *mp;
-	static int udainit;
+	static int udainit, udadriveinit[NRA];
 	int i;
+	daddr_t off;
 
 	if (udaddr == 0)
 		udaddr = (struct udadevice *)ubamem(io->i_unit, udastd[0]);
@@ -89,16 +103,40 @@ raopen(io)
 			_stop("ra: open error, STCON");
 			return;
 		}
-		uda.uda_cmd.mscp_unit = io->i_unit&7;
+	}
+	i = io->i_unit & 7;
+	if (udadriveinit[i] == 0) {
+		uda.uda_cmd.mscp_unit = i;
 		if (udcmd(M_OP_ONLIN) == 0) {
 			_stop("ra: open error, ONLIN");
 			return;
 		}
 		udainit = 1;
 	}
-	if (io->i_boff < 0 || io->i_boff > 7 || uda_off[io->i_boff] == -1)
+	if (io->i_boff < 0 || io->i_boff > 7)
 		_stop("ra: bad unit");
-	io->i_boff = uda_off[io->i_boff];
+
+	switch (ratype[i]) {
+	case    25:
+		off = ra25_off[io->i_boff];
+		break;
+	case    60:
+		off = ra60_off[io->i_boff];
+		break;
+	case    80:
+		off = ra80_off[io->i_boff];
+		break;
+	case    81:
+		off = ra81_off[io->i_boff];
+		break;
+	default:
+		printf("uda%d: don't support ra%d's\n", i, ratype[i]);
+		off = -1;
+		break;
+	}
+	if (off == -1)
+		_stop("ra: bad partition");
+	io->i_boff = off;
 }
 
 struct mscp *
@@ -125,6 +163,8 @@ udcmd(op)
 	if (mp->mscp_opcode != (op|M_OP_END) ||
 	    (mp->mscp_status&M_ST_MASK) != M_ST_SUCC)
 		return(0);
+	if (mp->mscp_opcode == (M_OP_ONLIN|M_OP_END))
+		ratype[uda.uda_cmd.mscp_unit] = mp->mscp_mediaid & 0x7f;
 	return(mp);
 }
 
