@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)diff.h	4.10 (Berkeley) %G%
+ *	@(#)diff.h	4.11 (Berkeley) %G%
  */
 
 /*
@@ -47,7 +47,7 @@ int	iflag;			/* ignore case in comparisons */
 int	lflag;			/* long output format with header */
 int	rflag;			/* recursively trace directories */
 int	sflag;			/* announce files which are same */
-char	*start;			/* do file only if name >= this */
+char	*Start;			/* do file only if name >= this */
 
 /*
  * Variables for -I D_IFDEF option.
