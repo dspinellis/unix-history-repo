@@ -1,0 +1,367 @@
+.\" $Header: /f/osi/others/ntp/RCS/ntpd.8,v 7.1 91/02/22 09:33:55 mrose Interim $
+.\"
+.\" $Log:	ntpd.8,v $
+.\" Revision 7.1  91/02/22  09:33:55  mrose
+.\" Interim 6.8
+.\" 
+.\" Revision 7.0  90/12/10  17:21:36  mrose
+.\" *** empty log message ***
+.\" 
+.\" Revision 1.1  89/06/15  20:37:00  jpo
+.\" Initial revision
+.\" 
+.\"
+.TH NTPD 8 "15 June 1989"
+.SH NAME
+ntpd \- time synchronization daemon implementing NTP
+.SH SYNOPSIS
+.B /usr/local/etc/ntpd
+[-a threshold] [-c file] [-d] [-D level] [-l] [-n] [-s] [-t] [-p port]
+.SH OPTIONS
+.B -a 
+.I threshold
+is used to set the threshold which limits how far 
+.B ntpd
+will change the system clock.  Its used as a sort of ultimate sanity check to
+prevent your system time from being changed a great deal.  By default, the
+threshold is 1000 seconds. 
+.I threshold
+is to be specified in units of seconds, or the string
+.B any
+to defeat the sanity check.
+.PP
+.B -c 
+.I config-file
+can be used to specify the location of the
+.I ntpd
+configuration file. By default, /etc/ntp.conf is used.
+.PP
+.B -d
+will bump the debug level by one.  May be specified more than once to
+increment debug
+level by one each time.  Has no effect if 
+.I ntpd
+has not been compiled with 
+.B DEBUG
+defined.
+.PP
+.B -D
+.I level
+will set the debug level to the value specified.
+.PP
+.B -l
+will cause
+.I ntpd
+to log a message each time the logical clock is changed.  Normally, you would
+not specify this option  unless you wanted to gather statistical information
+to analyze the logical clock behavior.  If the
+.B -l 
+option is specified, a message will be logged approximately every 2 minutes.
+.PP
+.B -n
+will, on Ultrix systems, inhibit the
+.I ntpd
+program from being swapped.  This is a desirable thing to do when in the
+diskless workstation environment.
+.PP
+.B -s
+will cause
+.I ntpd
+to
+.B never
+adjust the the local clock.
+.PP
+.B -t
+will cause
+.I ntpd
+to modify the value of
+.I tickadj
+in your kernel.  This will have no effect unless 
+.I ntpd
+was compiled with
+.B SETTICKADJ
+defined.  This is an ugly thing to do, and idealy you should set the value
+of
+.B tickadj
+in your kernel configuration to the correct value.
+.PP
+.B -p
+will specify a UDP port to use for ntp. This will override the default.
+.PP
+.SH DESCRIPTION
+.I NTPD
+is the network time synchronization daemon and is normally invoked at 
+boot time from the
+.IR /etc/rc (8)
+file.  It implements a new revision of the
+.B Network Time Protocol
+first described in RFC-958.
+It maintains the host's time synchronized with a set of distributed time 
+servers, each with varying accurracy and reliability.  Multiple time server
+masters may exist, but there is no requirement for election of a single
+master. 
+.PP
+.I Ntpd
+uses the
+.IR adjtime (2)
+system call to slew the clock of the host by small amount in order to keep the
+clock synchronized.  If the local clock exceeds the ``correct'' time by some
+threshold, then 
+.IR settimeofday (2)
+is used to make a step adjustment of the local clock.
+.PP
+When
+.IR ntpd (8)
+is started on the machine, it reads configuration information from
+.I /etc/ntpd.conf
+which contains information about other 
+.I ntp
+time servers and host specific information.  Configuration information is
+listed one entry per line, with fields separated by whitespace.  Lines which 
+begin with a ``#'' character are treated as comments.  Here is a sample
+configuration file:
+.in +2m
+.nf
+#
+# 		Local clock parameters
+#
+#	Precision of the local clock to the nearest power of 2
+#		ex.
+#			60-HZ   = 2**-6
+#			100-HZ  = 2**-7
+#			1000-HZ = 2**-10
+precision -7
+#
+tickadj 5
+#
+peer       INET:foo.umd.edu
+peer       INET:192.5.39.94
+peer       OSI:Internet=foo.bar.edu
+peer       OSI:Janet=000021000018+PID+03030101
+server     INET:bogon.umd.edu
+passive    INET:bozo.umd.edu
+#
+# Configure a reference clock.  
+#           device      refid  stratum  precision  type
+#          -------     -----   -------  ---------  ----
+refclock   /dev/tty03   WWV      1        -5       psti
+# refclock       /dev/null    LOCL     1        -5       local
+
+.DT
+.fi
+.PP
+There are two major types of information specified in the
+configuration file: local host information, and remote timer server
+specification.  The local host information is used to describe the
+intrinsic properties of the local host's timekeeping machinary, such
+as 
+.B precision
+and
+.BR tickadj .
+The remote time server specifications give details of the ntp clients
+and server to synchronise with.
+.PP
+The possible configuration file options are as follows:-
+.PP
+.TP
+.B precision
+a number which describes the resolution of the local clock, as a power
+of two.  For example, a 
+.I VAX
+system typically has a 100 HZ clock and thus a 
+.I precision 
+of -7.  If the symbol
+.B _hz
+is defined in the namelist of /vmunix, this value is automatically set based
+on the value of hz.
+.TP
+.B tickadj
+is used to specify the granularity of clock adjustment done by the
+.IR adjtime(2)
+system call.  If the 
+.B \-t
+option is specified when ntpd is invoked, the kernel variable _tickadj is
+modified via
+.IR /dev/kmem.
+The preferred method of setting 
+.B tickadj
+is by changing the value in the kernel file
+.I conf.c
+instead of having ntpd set in this rude fashion.  On a VAX, a value of
+1 is usually used. See the README file for typical values of
+.B tickadj
+on various hardware platforms.
+.TP
+.B driftfile
+can be used to specify the name of the file that the drift compensation
+register will be loaded from at initialization time and that updated values
+will be written into.  The drift compensation value describes the intrinsic
+drift of your host's clock.  By default, the file
+.B /etc/ntp.drift
+will be used.
+.TP
+.B peer
+.TP
+.B passive
+.TP
+.B server
+Currently three time server specifications are supported.  
+Each command takes an address. If the address starts with the letters
+.I OSI:
+then it is assumed to be an OSI address, 
+.I INET:
+implies internet addressing and neither prefix currently defaults to
+internet.  Each host specified in any one of the three commands is
+elligable to be synchronized to, while random hosts which set up a
+peer relationship are not.  The
+.B peer
+and
+.B server
+commands create an active polling situation; in the case of 
+.B peer,
+the NTP packets are sourced in 
+.I Symmetric-Active
+mode, while using
+.B server
+causes the packets to be in
+.I Client
+mode.  When reachability is lost with a configured host in either of these
+two cases, the daemon will continue to poll to re-acquire that host.
+A host specified in the
+.B passive
+command will not continue to be polled.  If that host begins to poll us,
+it will be eligable as to be synchronized but will not be polled if
+reachability is lost.
+.br
+It is recommended that the bulk of the peers configured should be specified
+with the
+.I client
+keyword; this will minimize resource usage on the remote NTP server.  If your
+host will be serving as a redistribution point for a cluster of hosts,  you
+should set up
+.I peer
+relationships with higher quality clocks (lower stratums) and other equal
+stratum clocks.  In other words, if you are not redistributing time to
+others, you shouldn't need to configure any
+.I peers
+in your NTP configuration;
+.I client
+specifications are more appropriate.
+.TP
+.B refclock
+To configure a 
+.B reference
+clock, you should use something like the example above.  The first
+field after the
+.B refclock
+keyword is the name of the file that the clock is connected to.  This must be
+a complete path name with a leading
+.B /
+character.  The next field is the 
+.I reference-id
+that will be inserted into the packets generated from this NTP daemon.  For
+a PSTI clock, this should be
+.B WWV.
+The next field is the 
+.B stratum
+of the clock.  Actually, it is really the 
+stratum that will be placed in the packet if this clock is selected by the
+local NTP daemon as the reference clock.  Following that is the 
+.B precision
+that will be inserted into the packet when this clock is selected.  The
+final field is the
+.B type
+of the clock.  Currently, two types are supported:
+.B psti
+for the Precision Standard Time, Inc WWV clock (RIP) and
+.B local
+for the local time of the system.  The
+.B local
+type of clock can be used to declare one host in an isolated network as
+having the "correct" time and then the other hosts on that network can
+synchronized to it.
+.br
+The reference clock feature is new and will probably be enhanced in the future.
+.TP
+.B maxpeers
+sets the maximum number of peers allowed (currently not used).
+.TP
+.B trusting
+allows clocks not mentioned in your configuration file to be eligle to
+synchronise your clock if they appear suitable.
+.TP
+.B osilisten
+This is an OSI address specification that
+.I ntpd 
+listens on for incoming connections.
+.TP
+.B logclock
+sets the variable which logs all clock changes.
+.TP
+.B driftfile
+specifies the localtion of the drift file (defaults to 
+.IR /etc/ntp.drift ).
+.TP
+.B waytoobig
+.TP
+.B setthreshold
+either of these sets a variable which is the maximum clock change that
+will be considered. Setting this to
+.I any
+allows any change. Otherwise this value should be a floating point
+number.
+.TP
+.B debuglevel
+Another way to set the debug level.
+.TP
+.B settickadj
+this specifies whether to set the kernels tickadj parameter if required.
+.TP
+.B noswap
+On machines that support it (ultrix) this will allow the process to be
+locked in memory, which helps.
+.TP 
+.B broadcast
+this specifies an interface which will allow broadcast mode ntp actions.
+.TP
+.B logfile
+This specifies a log file that will receive the tracing and monitoring
+output of the ntp daemon.
+.TP
+.B priority
+The priority for the
+.I ntpd
+process to run at (defaults to -10).
+.SH NOTES
+.B Please choose your NTP peers carefully; 
+.B send mail to
+.IR ntp@TRANTOR.UMD.EDU
+.B for assitance.
+.SH BUGS
+No doubt.
+.SH FILES
+.nf
+/etc/ntp.conf  NTP daemon configuration file
+.fi
+.SH "SEE ALSO"
+adjtime(2), settimeofday(2), RFC-958, 
+.I Network Time Protocol (Version 2) Specification and Implementation, 
+.I Revised 15 April 1988,
+David L. Mills, University of Delaware
+.SH "AUTHORS"
+Original Code
+.br
+Louis A. Mamakos,
+.I louie@TRANTOR.UMD.EDU
+.br
+Michael G. Petry,
+.I petry@TRANTOR.UMD.EDU
+.br
+The University of Maryland, Computer Science Center.
+.sp
+OSI support and various gratuitous changes
+.br
+Julian Onions,
+.I jpo@cs.nott.ac.uk
+.br
+Nottingham University

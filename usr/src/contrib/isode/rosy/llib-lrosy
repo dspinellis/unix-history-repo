@@ -1,0 +1,219 @@
+/* llib-lrosy - lint library for -lrosy */
+
+/* 
+ * $Header: /f/osi/rosy/RCS/llib-lrosy,v 7.1 91/02/22 09:41:43 mrose Interim $
+ *
+ *
+ * $Log:	llib-lrosy,v $
+ * Revision 7.1  91/02/22  09:41:43  mrose
+ * Interim 6.8
+ * 
+ * Revision 7.0  89/11/23  22:21:48  mrose
+ * Release 6.0
+ * 
+ */
+
+/*
+ *				  NOTICE
+ *
+ *    Acquisition, use, and distribution of this module and related
+ *    materials are subject to the restrictions of a license agreement.
+ *    Consult the Preface in the User's Manual for the full terms of
+ *    this agreement.
+ *
+ */
+
+
+/* LINTLIBRARY */
+
+#include "rosy.h"
+
+/*  */
+
+/* WAIT */
+
+int	RyWait (sd, id, out, secs, roi)
+int	sd,
+       *id,
+	secs;
+caddr_t *out;
+struct RoSAPindication *roi;
+{
+    return RyWait (sd, id, out, secs, roi);
+}
+
+
+/* Initiator */
+
+/* STUB */
+
+int	RyStub (sd, ryo, op, id, linked, in, rfx, efx, class, roi)
+int	sd;
+struct RyOperation *ryo;
+int	op,
+	id,
+       *linked,
+    	class;
+caddr_t	in;
+IFP	rfx,
+    	efx;
+struct RoSAPindication *roi;
+{
+    return RyStub (sd, ryo, op, id, linked, in, rfx, efx, class, roi);
+}
+
+
+/* DISCARD */
+
+int	RyDiscard (sd, id, roi)
+int	sd,
+	id;
+struct RoSAPindication *roi;
+{
+    return RyDiscard (sd, id, roi);
+}
+
+
+/* OPERATION */
+
+int	RyOperation (sd, ryo, op, in, out, response, roi)
+int	sd;
+struct RyOperation *ryo;
+int	op,
+       *response;
+caddr_t	in,
+       *out;
+struct RoSAPindication *roi;
+{
+    return RyOperation (sd, ryo, op, in, out, response, roi);
+}
+
+
+/* INVOKE */
+
+int	RyOpInvoke (sd, ryo, op, in, out, rfx, efx, class, invokeID, linkedID,
+		    priority, roi)
+int	sd;
+struct RyOperation *ryo;
+int	op,
+	class,
+	invokeID,
+       *linkedID,
+	priority;
+caddr_t	in,
+       *out;
+IFP	rfx,
+	efx;
+struct RoSAPindication *roi;
+{
+    return RyOpInvoke (sd, ryo, op, in, out, rfx, efx, class, invokeID,
+		       linkedID, priority, roi);
+}
+
+
+/* generate unique invoke ID */
+
+int	RyGenID (sd)
+int	sd;
+{
+    return RyGenID (sd);
+}
+
+
+/* Responder */
+
+/* DISPATCH */
+
+int	RyDispatch (sd, ryo, op, fnx, roi)
+int	sd;
+struct RyOperation *ryo;
+int	op;
+IFP	fnx;
+struct RoSAPindication *roi;
+{
+    return RyDispatch (sd, ryo, op, fnx, roi);
+}
+
+
+/* RESULT */
+
+int	RyDsResult (sd, id, out, priority, roi)
+int	sd;
+int	id,
+	priority;
+caddr_t out;
+struct RoSAPindication *roi;
+{
+    return RyDsResult (sd, id, out, priority, roi);
+}
+
+
+/* ERROR */
+
+int	RyDsError (sd, id, err, out, priority, roi)
+int	sd;
+int	id,
+	err,
+	priority;
+caddr_t	out;
+struct RoSAPindication *roi;
+{
+    return RyDsError (sd, id, err, out, priority, roi);
+}
+
+
+/* U-REJECT */
+
+int	RyDsUReject (sd, id, reason, priority, roi)
+int	sd;
+int	id,
+	reason,
+	priority;
+struct RoSAPindication *roi;
+{
+    return RyDsUReject (sd, id, reason, priority, roi);
+}
+
+
+/* clean-up after association termination */
+
+int	RyLose (sd, roi)
+int	sd;
+struct RoSAPindication *roi;
+{
+    return RyLose (sd, roi);
+}
+
+
+/* find operations and errors by numbers and names */
+
+struct RyOperation *findopbyop (ryo, op)
+struct RyOperation *ryo;
+int	op;
+{
+    return findopbyop (ryo, op);
+}
+
+
+struct RyOperation *findopbyname (ryo, name)
+struct RyOperation *ryo;
+char   *name;
+{
+    return findopbyname (ryo, name);
+}
+
+
+struct RyError *finderrbyerr (rye, err)
+struct RyError *rye;
+int	err;
+{
+    return finderrbyerr (rye, err);
+}
+
+
+struct RyError *finderrbyname (rye, name)
+struct RyError *rye;
+char   *name;
+{
+    return finderrbyname (rye, name);
+}
