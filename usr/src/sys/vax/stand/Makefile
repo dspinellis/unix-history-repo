@@ -1,4 +1,4 @@
-#	Makefile	4.30	83/06/16
+#	Makefile	4.31	83/07/06
 
 DESTDIR=/
 CFLAGS=	-O -DSTANDALONE ${COPTS} 
@@ -55,7 +55,8 @@ tpboot.o: saio.h ../h/reboot.h ../h/vm.h
 
 tpcopy:	copy.o tpsrt0.o /usr/lib/libsa.a
 	ld -N tpsrt0.o copy.o -lsa -lc
-	cp a.out b.out; strip b.out; dd if=b.out of=tpcopy ibs=32 skip=1; rm b.out
+	cp a.out b.out; strip b.out; \
+		dd if=b.out of=tpcopy ibs=32 skip=1; rm b.out
 
 tpformat: format.o tpsrt0.o dkbad.o
 tpformat: confhpup.o hp.new.o up.new.o /usr/lib/libsa.a
@@ -64,7 +65,8 @@ tpformat: confhpup.o hp.new.o up.new.o /usr/lib/libsa.a
 	rm tpformat.c
 	ld -N tpsrt0.o tpformat.o dkbad.o confhpup.o \
 		hp.new.o up.new.o -lsa -lc
-	cp a.out b.out; strip b.out; dd if=b.out of=tpformat ibs=32 skip=1; rm b.out
+	cp a.out b.out; strip b.out; \
+		dd if=b.out of=tpformat ibs=32 skip=1; rm b.out
 
 # bootable from floppy or real disks
 
@@ -93,9 +95,16 @@ drtest:	confhpup.o hp.new.o up.new.o /usr/lib/libsa.a
 dkbad.o: ../vax/dkbad.c
 	${CC} -c ${CFLAGS} ../vax/dkbad.c
 
-# for 730s minimize size so it fits on the cassette
+# for 730s minimize size to avoid microcode botch
+# (won't load files larger than 12.5 Kbytes)
 
-730boot: boot.o relsrt0.o 730bootconf.o /usr/lib/libsa.a
+730boot.o: boot.c ../h/param.h ../h/inode.h ../h/fs.h
+730boot.o: saio.h ../h/reboot.h ../h/vm.h 
+	cp boot.c 730boot.c; chmod +w 730boot.c
+	cc -c ${730OPTS} -DJUSTASK 730boot.c
+	rm 730boot.c
+
+730boot: 730boot.o relsrt0.o 730bootconf.o /usr/lib/libsa.a
 	ld -N -T ${RELOC} -o 730boot relsrt0.o boot.o 730bootconf.o -lsa -lc
 
 730bootconf.o: conf.c ../h/param.h ../h/inode.h ../machine/pte.h
@@ -207,20 +216,26 @@ install: ${ALL}
 	cp tpcopy ${DESTDIR}/tp/copy
 	cp tpboot ${DESTDIR}/tp/boot
 	cp tpformat ${DESTDIR}/tp/format
-	cp copy a.out; strip a.out; dd if=a.out of=../floppy/copy bs=32 skip=1
-	cp boot a.out; strip a.out; dd if=a.out of=../floppy/boot bs=32 skip=1
+	cp boot a.out; strip a.out; \
+		dd if=a.out of=../floppy/boot bs=32 skip=1
 	cp 730boot a.out; strip a.out; \
 		dd if=a.out of=../cassette/boot bs=32 skip=1
+	cp ../floppy/boot ../cassette/boot.750
+	cp copy a.out; strip a.out; \
+		dd if=a.out of=../floppy/copy bs=32 skip=1
 	cp 730copy a.out; strip a.out; \
 		dd if=a.out of=../cassette/copy bs=32 skip=1
+	cp ../floppy/copy ../cassette/copy.750
 	cp format a.out; strip a.out; \
 		dd if=a.out of=../floppy/format bs=32 skip=1
 	cp 730format a.out; strip a.out; \
 		dd if=a.out of=../cassette/format bs=32 skip=1
+	cp ../floppy/format ../cassette/format.750
 	cp drtest a.out; strip a.out; \
 		dd if=a.out of=../floppy/drtest bs=32 skip=1
 	cp 730drtest a.out; strip a.out; \
 		dd if=a.out of=../cassette/drtest bs=32 skip=1
+	cp ../floppy/drtest ../cassette/drtest.750
 	cp bootup boothk boothp bootra bootrl ${DESTDIR}/usr/mdec
 
 # beware...
