@@ -1,4 +1,4 @@
-#	@(#)Makefile.hp300	7.12 (Berkeley) %G%
+#	@(#)Makefile.hp300	7.13 (Berkeley) %G%
 #
 # Makefile for 4.4 BSD
 #
@@ -26,7 +26,6 @@ CC=	cc ${DEBUG}
 CPP=	cpp
 LD=	ld
 TOUCH=	touch -f -c
-GPROF.EX=/usr/src/usr.lib/libc/csu/hp300/gmon.ex
 
 # source tree is located via $S relative to the compilation directory
 S=	../..
@@ -48,8 +47,8 @@ DRIVER_C=	${CC} -c ${CFLAGS} ${PROF} $<
 DRIVER_C_C=	${CC} -c ${CFLAGS} ${PROF} ${PARAM} $<
 
 PROFILE_C=	${CC} -S -c ${COPTS} $<; \
-		ex - $*.s < ${GPROF.EX}; \
-		${AS} -o $@ $*.s; \
+		sed -e s/_mcount/mcount/ -e s/subrmcount/subr_mcount/ <$*.s | \
+		${AS} -o $@; \
 		rm -f $*.s
 
 NORMAL_S=	${CPP} ${COPTS} $< | ${AS} -o $@
