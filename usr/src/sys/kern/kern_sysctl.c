@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sysctl.c	7.19 (Berkeley) %G%
+ *	@(#)kern_sysctl.c	7.20 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -72,12 +72,11 @@ getkerninfo(p, uap, retval)
 	    sizeof (bufsize)))
 		goto done;
 	while (kinfo_lock.kl_lock) {
-		kinfo_lock.kl_want++;
-		sleep(&kinfo_lock, PRIBIO+1);
-		kinfo_lock.kl_want--;
+		kinfo_lock.kl_want = 1;
+		sleep((caddr_t)&kinfo_lock, PRIBIO+1);
 		kinfo_lock.kl_locked++;
 	}
-	kinfo_lock.kl_lock++;
+	kinfo_lock.kl_lock = 1;
 
 	if (!useracc(uap->where, bufsize, B_WRITE))
 		snderr(EFAULT);
@@ -91,9 +90,11 @@ getkerninfo(p, uap, retval)
 		error = copyout((caddr_t)&bufsize,
 				(caddr_t)uap->size, sizeof (bufsize));
 release:
-	kinfo_lock.kl_lock--;
-	if (kinfo_lock.kl_want)
-		wakeup(&kinfo_lock);
+	kinfo_lock.kl_lock = 0;
+	if (kinfo_lock.kl_want) {
+		kinfo_lock.kl_want = 0;
+		wakeup((caddr_t)&kinfo_lock);
+	}
 done:
 	if (!error)
 		*retval = needed;
@@ -106,19 +107,17 @@ done:
 #define KINFO_PROCSLOP	(5 * sizeof (struct kinfo_proc))
 
 kinfo_doproc(op, where, acopysize, arg, aneeded)
+	int op;
 	char *where;
-	int *acopysize, *aneeded;
+	int *acopysize, arg, *aneeded;
 {
 	register struct proc *p;
 	register struct kinfo_proc *dp = (struct kinfo_proc *)where;
 	register needed = 0;
-	int buflen;
+	int buflen = where != NULL ? *acopysize : 0;
 	int doingzomb;
 	struct eproc eproc;
 	int error = 0;
-
-	if (where != NULL)
-		buflen = *acopysize;
 
 	p = allproc;
 	doingzomb = 0;
@@ -159,7 +158,7 @@ again:
 				continue;
 			break;
 		}
-		if (where != NULL && buflen >= sizeof (struct kinfo_proc)) {
+		if (buflen >= sizeof (struct kinfo_proc)) {
 			fill_eproc(p, &eproc);
 			if (error = copyout((caddr_t)p, &dp->kp_proc, 
 			    sizeof (struct proc)))
@@ -200,7 +199,25 @@ fill_eproc(p, ep)
 	ep->e_sess = p->p_pgrp->pg_session;
 	ep->e_pcred = *p->p_cred;
 	ep->e_ucred = *p->p_ucred;
-	ep->e_vm = *p->p_vmspace;
+	if (p->p_stat == SIDL || p->p_stat == SZOMB) {
+		ep->e_vm.vm_rssize = 0;
+		ep->e_vm.vm_tsize = 0;
+		ep->e_vm.vm_dsize = 0;
+		ep->e_vm.vm_ssize = 0;
+#ifndef sparc
+		/* ep->e_vm.vm_pmap = XXX; */
+#endif
+	} else {
+		register struct vmspace *vm = p->p_vmspace;
+
+		ep->e_vm.vm_rssize = vm->vm_rssize;
+		ep->e_vm.vm_tsize = vm->vm_tsize;
+		ep->e_vm.vm_dsize = vm->vm_dsize;
+		ep->e_vm.vm_ssize = vm->vm_ssize;
+#ifndef sparc
+		ep->e_vm.vm_pmap = vm->vm_pmap;
+#endif
+	}
 	if (p->p_pptr)
 		ep->e_ppid = p->p_pptr->p_pid;
 	else
@@ -227,8 +244,9 @@ fill_eproc(p, ep)
  * Get file structures.
  */
 kinfo_file(op, where, acopysize, arg, aneeded)
+	int op;
 	register char *where;
-	int *acopysize, *aneeded;
+	int *acopysize, arg, *aneeded;
 {
 	int buflen, needed, error;
 	struct file *fp;
