@@ -2,12 +2,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)man.1	6.5 (Berkeley) %G%
+.\"	@(#)man.1	6.6 (Berkeley) %G%
 .\"
 .TH MAN 1 ""
 .UC 4
 .SH NAME
-man \- find manual information by keywords; print out the manual
+man \- print out the manual
 .SH SYNOPSIS
 .br
 .B man
@@ -20,113 +20,47 @@ man \- find manual information by keywords; print out the manual
 section
 ]
 title ...
-.br
-.B man
-.B \-k
-keyword ...
-.br
-.B man
-.B \-f
-file ...
 .SH DESCRIPTION
-.I Man
-is a program which gives information from the programmers manual.
-It can be asked for one line descriptions of commands specified by
-name, or for all commands whose description contains any of a set of
-keywords.  It can also provide on-line access to the sections of the
-printed manual.
+\fIMan\fP is the program which provides on-line access to the UNIX manual.
+If a \fIsection\fP specifier is given, \fIman\fP looks in that section of
+the manual for the given \fItitle\fP(s).  \fISection\fP is either an Arabic
+section number (``3'' for example), or one of the words ``local'', ``new,''
+or ``old''.  (The abbreviations ``l'', ``n'', and ``o'' are also allowed.)
+If \fIsection\fP is omitted, \fIman\fP searches all sections of the manual,
+giving preference to commands over library subroutines, and displays the
+first manual page it finds, if any.
 .PP
-When given the option
-.B \-k
-and a set of keywords,
-.I man
-prints out a one line synopsis of each manual sections whose
-listing in the table of contents contains one of those keywords.
+Normally \fIman\fP checks in standard locations (/usr/man and /usr/local/man)
+for manual information.  This can be changed by supplying a search path (a
+la the Bourne shell) with the \fB-M\fP flag.  The search path is a colon
+(``:'') separated list of directories in which \fIman\fP expects to find
+the standard manual subdirectories.  This search path can also be set with
+the environmental variable \fIMANPATH\fP.
 .PP
-When given the option
-.B \-f
-and a list of file names, \fIman\fR attempts to locate manual
-sections related to those files, printing out the table of contents
-lines for those sections.
+Since some manual pages are intended for use only on certain machines,
+\fIman\fP only searches those directories applicable to the current
+machine.  \fIMan\fP's determination of the current machine type can
+be overridden by setting the environmental variable \fIMACHINE\fP.
 .PP
-When neither
-.B \-k
-nor
-.B \-f
-is specified,
-.I man
-formats a specified set of manual pages.
-If a section specifier is given
-.I man
-looks in the that section of the manual for the given
-.I titles.
-.I Section
-is either
-an Arabic section number (3 for instance), or one of the words ``new,''
-``local,'' ``old,'' or ``public.''
-A section number may be followed by
-a single letter classifier (for instance, 1g,
-indicating a graphics program in section 1).  If
-.I section
-is omitted,
-.I man
-searches all sections of the manual, giving preference to commands
-over subroutines in system libraries, and printing the first section
-it finds, if any.
+If the standard output is a teletype, and the \fB-\fP flag is not provided,
+\fIman\fP uses \fImore\fP(1), or the pager provided by the environmental
+variable \fIPAGER\fP, to display the manual page.
 .PP
-If the standard output is a teletype, or if the flag
-.B \-
-is given,
-.I man
-pipes its output through
-.IR more (1)
-with the option
-.B \-s
-to crush out useless blank lines
-and to stop after each page on the screen.
-Hit a space to continue,
-a control-D to scroll 11 more lines when the output stops.
-.PP
-Normally
-.I man
-checks in a standard location for manual
-information (/usr/man).  This can be changed by supplying a search
-path (a la the shell) with the
-.B \-M
-flag.  The search path is a colon (`:') separated list
-of directories in which manual subdirectories may be found;
-e.g. ``/usr/local:/usr/man''.  
-.hw MANPATH
-If the environment variable `MANPATH' is set,
-its value is used for the default path.
-If a search path is supplied
-with the 
-.B \-k
-or
-.B \-f
-options, it must be specified first.
-.PP
-.I Man
-will look for the manual page in either of two forms, the nroff source or
-preformatted pages.
-If either version is available, the manual page will be displayed.
-If the preformatted version is available, and it has a more recent modify
-time than the nroff source,  it will be promptly displayed.
-Otherwise, the manual page will be formatted with nroff and displayed.
-If the user has permission, the formatted manual page will be deposited
-in the proper place, so that later invocations of man will not need to
-format the page again.
+The FORTRAN version of section 3 of the manual may be specified by supplying
+\fIman\fP with the \fIsection\fP ``3f''.  Also, a specific section of the
+local manual may be specified by appending a number to the \fIsection\fP,
+i.e. ``l5'' would indicate section 5 of the local manual.
 .SH FILES
 .nf
-.ta \w'/usr/man/man?/*   'u
+.ta \w'/usr/local/man/man?/*   'u
 /usr/man	standard manual area
-/usr/man/man?/*	directories containing source for manuals
-/usr/man/cat?/*	directories containing preformatted pages
-/usr/man/whatis	keyword database
+/usr/man/cat?/*	directories containing standard manual pages
+/usr/local/man/cat?/*	directories containing local manual pages
+/usr/src/man	directories containing unformatted manual pages
 .fi
 .SH SEE\ ALSO
-apropos(1), more(1), whereis(1), catman(8)
+apropos(1), more(1), whatis(1), whereis(1)
 .SH BUGS
-The manual is supposed to be reproducible either on the phototypesetter
-or on a typewriter.
-However, on a typewriter some information is necessarily lost.
+The manual is supposed to be reproducible either on the
+phototypesetter or on a typewriter, however, on a typewriter,
+some information is necessarily lost.
