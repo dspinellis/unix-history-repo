@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_bmap.c	7.1 (Berkeley) %G%
+ *	@(#)ufs_bmap.c	7.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -100,8 +100,7 @@ ufs_bmaparray(vp, bn, bnp, ap, nump, runp)
 		 * can handle.
 		 */
 		*runp = 0;
-		maxrun = MAXBSIZE / mp->mnt_stat.f_iosize -
-		    (MAXBSIZE < 64 * 1024 ? 1 : 2);
+		maxrun = MAXBSIZE / mp->mnt_stat.f_iosize - 1;
 	}
 
 	xap = ap == NULL ? a : ap;
@@ -115,12 +114,10 @@ ufs_bmaparray(vp, bn, bnp, ap, nump, runp)
 		*bnp = blkptrtodb(ump, ip->i_db[bn]);
 		if (*bnp == 0)
 			*bnp = -1;
-		else if (runp) {
+		else if (runp)
 			for (++bn; bn < NDADDR && *runp < maxrun &&
 			    is_sequential(ump, ip->i_db[bn - 1], ip->i_db[bn]);
 			    ++bn, ++*runp);
-			printf ("ufs_bmaparray: runlength = %d\n", *runp);
-		}
 		return (0);
 	}
 
@@ -170,14 +167,12 @@ ufs_bmaparray(vp, bn, bnp, ap, nump, runp)
 		}
 
 		daddr = bp->b_un.b_daddr[xap->in_off];
-		if (num == 1 && daddr && runp) {
+		if (num == 1 && daddr && runp)
 			for (bn = xap->in_off + 1;
 			    bn < MNINDIR(ump) && *runp < maxrun &&
 			    is_sequential(ump, bp->b_un.b_daddr[bn - 1],
 			    bp->b_un.b_daddr[bn]);
 			    ++bn, ++*runp);
-			printf ("ufs_bmaparray: runlength = %d\n", *runp);
-		}
 	}
 	if (bp)
 		brelse(bp);
