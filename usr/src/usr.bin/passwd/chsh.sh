@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)chsh.sh	4.6 (Berkeley) %G%";
+static char *sccsid = "@(#)chsh.sh	4.7 (Berkeley) %G%";
 #endif
 
 /*
@@ -73,6 +73,7 @@ register char *argv[];
 	signal(SIGINT, SIG_IGN);
 	signal(SIGQUIT, SIG_IGN);
 	signal(SIGTSTP, SIG_IGN);
+	(void) umask(0);
 	if ((fd = open(temp, O_CREAT|O_EXCL|O_RDWR, 0644)) < 0) {
 		printf("Temporary file busy -- try again\n");
 		exit(1);
