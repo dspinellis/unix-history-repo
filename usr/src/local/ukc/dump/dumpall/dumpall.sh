@@ -1,5 +1,5 @@
 #!/bin/sh
-#	dumpall.sh	1.6	%G%
+#	dumpall.sh	1.7	%G%
 #	shell script to do all pending dumps
 #	Asks for confirmation before proceeding
 PATH=:/etc:/bin:/usr/bin:
@@ -17,12 +17,12 @@ do
 		read ans
 		case $ans in
 		yes|y|Y)
-			doadump $fi
-			/etc/dumplogclean
+			dumpdev $fi
+			/etc/cleanvolumes
 			askagain=no
 			;;
 		list|l|L)
-			doadump $fi T
+			dumpdev $fi T
 			;;
 		exit|e|E)
 			exit 1
