@@ -1,0 +1,351 @@
+#
+#       UTREE.HELP
+#       UTREE help pages
+#       3.00-um klin, Sun May  5 17:41:59 1991
+#       Directory:      /usr/local/lib (default)
+#
+#       Copyright (c) 1991 by Peter Klingebiel & UNIX Magazin Muenchen.
+#       For copying and distribution information see the file COPYRIGHT.
+#
+#       Help about items is enclosed in two lines '#@item' and '#@'.
+#       The string 'item' is used as item for the menuline, the lines
+#       between these opening and closing lines are the help lines
+#       for the topic 'item'. The upper case character in 'item' is used
+#       as hotkey for selecting help about this topic.
+#       Be sure that all items separated by a blank fit in one screen line!
+#       Don't change the hot keys because they are hard coded in utree!
+#
+#       SCCSID=@(#) utree.help (utree 3.00-m) May  5 1991
+
+#@Help          h: About help
+
+	The utree help page menu lets you select help pages about the
+	following topics (menu hotkeys are enclosed in brackets):
+
+	(h) Help        This help page.
+	(a) About       About utree and some naming conventions.
+	(u) Usage       Utree usage and command line options.
+	(g) Global      Global commands for tree and file screen.
+	(t) Tree        Commands for the tree screen.
+	(f) File        Commands for the file screen.
+	(e) Edit        Commands for the builtin line editor.
+	(v) Vars        Utree variables and variable definition.
+	(c) Cmds        Filetype dependent command definition.
+	(l) Line        Line format for tree, file and filetype commands.
+	(k) Keys        Function keys used by utree.
+	(p) Patterns    File and time pattern matching.
+
+#@
+#@About         a: About utree and key naming conventions
+
+	This is utree 3.00-um, a screen oriented filesystem browser.
+
+	    Copyright (c) 1991 Peter Klingebiel & UNIX Magazin.
+			All rights reserved.
+
+	First utree version (utree 1.00) created in July 1988.
+
+
+
+	The naming conventions for keys in the help pages are:
+	'C-key' means <CONTROL>+<key> (Hit <CONTROL) AND <key>)
+	'M-key' means <ESCAPE>  <key> (Hit <ESCAPE) THEN <key>)
+
+	Many function keys are supported by utree, i.e. the four
+	cursor keys, the next-page and previous-page keys, the
+	function keys F0 (or F10) .. F9 and many others.
+	(See the keys help page for more information)
+#@
+#@Usage         u: About utree usage and command line options
+	Usage:  utree [-abcgrqstuvw] [-d var=[val]] [-d typ:[cmd]]
+		      [-i ind] [-l lev] [-x cmd] [-SV] [rootdir]
+
+	-S              Ignore default minimal screen size.
+	-V              Display program version.
+	-a              Read in all (including hidden) directories.
+	-b              No bell.
+	-c              No clock display/update in echoline.
+	-d var=[val]    Define/undefine variable var.
+	-d typ:[cmd]    Set/unset type command for filetype typ.
+	-g              No graphic characters.
+	-i ind          Set tree indention to ind (default 4)
+	-l lev          Build tree up to level lev.
+	-q              Build tree up to level 2 (like -l 2).
+	-r              Recreate tree list (always scan disk).
+	-s              No hardware scrolling.
+	-t              Sort file by modification times.
+	-u              No scan tree for changes in tree.
+	-v              No bold-reverse video attribute.
+	-w              No warnings about unreadable directories.
+	-x cmd          Use string cmd as initial input.
+	The options bcgsuvw may be pre-set in the environment variable UTREE.
+#@
+#@Global        g: About global commands for tree and file screen
+	The following commands are common for tree and file screen:
+
+	C-z             Exit utree.
+	C-c,C-g,C-y     Cancel command or input.
+	C-l             Refresh/redisplay screen.
+	C-t,TAB         Move to next tagged directory or file.
+	M-h,h,?         Display help menu and pages.
+	C-@,M-@,@       Mark current directory or file.
+	M-g,#           Goto to previously marked file or directory.
+	a               Display utree version.
+	d               Display current date and time.
+	j               Next directory or file (for vi fans).
+	k               Previous directory or file (for vi fans).
+	n               Change sort criteria (lexical/time) and resort files.
+	t               Tag files in tree.
+	u               Untag files tree.
+	w               Display pathname of current directory.
+	=               Show and set/reset variables.
+	:               Show and set/unset filetype commands.
+	!               Execute a system command.
+	$               Escape to an interactive shell.
+#@
+#@Tree          t: About utree directory tree screen commands
+
+	All tree commands can be given in lower or uppercase letters:
+
+	CR,NL,SP        Change to file screen of current directory.
+	C-f             Move to next directory on same level.
+	C-n             Move to next directory.
+	C-b             Move to previous directory on same level.
+	C-p             Move to previous directory.
+	C-v             Move one page forward.
+	M-v,C-w         Move one page backward.
+	C-a             Move to begin of directory tree.
+	C-e             Move to end of directory tree.
+	TAB,C-t         Move to next directory containing tagged files.
+	C-u,M-u         Scroll up directory tree.
+	C-d,M-d         Scroll down directory tree.
+	C-@,M-@,@       Mark current directory.
+	M-g,#           Goto previously marked directory.
+	b               Backup directory/tree.
+	c,>             Change to a directory.
+	f               Find files in directory/tree matching a pattern.
+	g               Search for pattern in files.
+	i               Show some directory information.
+	l               List files in directory/tree matching a pattern.
+	m               Create new directory.
+	n               Change sort criteria and resort file list.
+	o               Write list of tree, files or tagged files to file.
+	q               Exit utree.
+	r               Remove current directory.
+	s               Show/change status of current directory.
+	t               Tag files in tree.
+	u               Untag files in tree.
+	+               Enlarge tree window.
+	-               Shrink tree window.
+	/               Scan tree and rebuild directories if needed.
+	\               Scan directory for subdirectories and insert subtree.
+	0               Switch tree/user commands menuline.
+	1..9            Execute user defined tree command.
+
+	For further information about filename patterns for the commands find,
+	grep, list, tag and untag see the pattern help page.
+#@
+#@File          f: About utree file screen commands
+
+	All file commands can be given in lower or upper case letters.
+	For most commands a lowercase letter hits the current file only,
+	an uppercase letter hits all selected (tagged) files.
+
+	CR,NL,SP,q      Change back to tree screen.
+	C-f             Move to next file.
+	C-b             Move to previous file.
+	C-n             Move to file on next line.
+	C-p             Move to file on previous line.
+	C-v             Move one page forward.
+	M-v,C-w         Move one page backward.
+	C-a             Move to first file.
+	C-e             Move to last file.
+	TAB,C-t         Move to next tagged file.
+	C-u,M-u         Scroll up file screen.
+	C-d,M-d         Scroll down file screen.
+	C-@,M-@,@       Mark current file.
+	M-g,#           Goto previously marked file.
+	c,C             Copy file/tagged files.
+	e,E             Edit file/tagged files.
+	f               Find files matching a pattern.
+	g               Search for pattern in file/tagged files.
+	i,I             Show some information about file/tagged files.
+	l               List files matching a pattern.
+	m,M             Rename/move file/tagged files.
+	n               Change sort criteria and resort file list.
+	p,P             Send file/tagged files to printer spooler.
+	r,R             Remove file/tagged files.
+	s,S             Show/change status of file/tagged files.
+	t,T             Tag/select files for further processing.
+	u,U             Untag file/tagged files.
+	v,V             View file/tagged files.
+	x               Execute current file or call a command for it.
+	>               If current file is a directory, change to.
+	<               Change back to parent directory.
+	/               Rebuild file list (i.e. after shell escape).
+	0               Switch file/user commands menuline.
+	1..9            Execute user defined file command.
+
+	For further information about filename patterns for the commands find,
+	grep, list, tag and untag see the pattern help page.
+#@
+#@Edit          e: About utree line editor commands
+
+	The builtin utree line editor knows the following functions:
+	(Function keys are supported if known by termcap/terminfo)
+
+	CR,NL           Accept and send input line.
+	C-c,C-g,C-y     Cancel input line and line editor.
+	C-o             Switch insert/overwrite mode.
+	C-l             Redisplay input line.
+	C-f,C-n         Move cursor one character forward.
+	C-b,C-p         Move cursor one character backward.
+	C-a             Move cursor to beginning of line.
+	C-b             Move cursor to end of line.
+	C-v,M-d         Scroll forward line.
+	M-v,C-w,M-u     Scroll backward line.
+	C-d             Delete character under cursor.
+	C-h,DEL         Delete character left from cursor.
+	C-x             Delete line.
+	C-k             Delete from cursor position to end of line.
+	C-t             Transpose characters.
+	M-h             Display help menu and pages.
+	C-@,M-@         Set mark at current position.
+	M-g             Move cursor to previously set mark.
+#@
+#@Vars          v: About utree variables
+
+	Utree knows about and uses the following variables which may be
+	set/unset at startup in the startupfile '$HOME/.utree', with the
+	commandline option '-d' or the variables command '=':
+
+	BL      BELL            Allow ringing of the bell.
+	CL      CLOCK           Show and update clock every second.
+	GC      GRAPHCHARS      Use graphical character set.
+	BR      BOLDREVERSE     Use bold+reverse video attribute.
+	TS      TERMSCROLL      Use terminal scrolling.
+	ST      SCANTREE        Allow scanning the tree for changes.
+	WC      WARNDIRS        Warning about unreadable directories.
+	TI      TREEINDENT      Set tree indention (2..9)
+	ED      EDITOR          Editor.
+	EO      EDITOPTS        Editor options.
+	PG      PAGER           File pager/viewer.
+	PO      PAGEOPTS        Pager options.
+	XD      HEXDUMPER       File hexdumper.
+	XO      XDUMPOPTS       Dumper options.
+	LP      LINEPRINTER     Printer spooler command.
+	LO      LPRINTOPTS      Printer options.
+	BK      BACKUP          Backup program.
+	BO      BACKUPOPTS      Backup options.
+	SH      SHELL           Interactive shell.
+
+	T1..9   TREECMD1..9     User defined commands 1..9 for tree screen.
+	F1..9   FILECMD1..9     User defined commands 1..9 for file screen.
+
+	Variables are set with a line 'shorthand=value' or 'variable=value'
+	(i.e. 't1=ps -ef'), unset with a line 'shorthand=' or 'variable='
+	(i.e. 't1='). When defining user tree or file commands some sprintf
+	like format characters lead in by a percent sign ('%') have a
+	special meaning and are expanded before the command is executed.
+	For further information about the command line format see the
+	line help page.
+
+	The last sharp sign (#) in a variable definition is used as leadin
+	for a menu item of the defined user file or tree command.
+	Example: the variable definition 'fc1=wc -l %F # Count' for user
+	defined file command 1 is expanded to 'wc -l filename' and in the
+	user command file menu 'Count' is displayed behind menu item 1.
+#@
+#@Cmds          c: About filetype dependent commands
+
+	On file screen you can execute a file or a command on it with
+	the utree command execute ('x'). you are requested for parameters
+	if the current file is executable, for a command to execute on the
+	current file if he is not executable. For a type of file you can
+	define so called filetype commands which are called if the current
+	file matches this filetype (or extension).
+
+	Filetype commands can be set/unset at startup in the startupfile
+	'$HOME/.utree', with the commandline option '-d' or the filetype
+	command ':' similar to setting/unsetting variables.
+	Filetype commands are set with a line like 'filetype:command' (i.e.
+	'*.c:cc -c -O'). The command (i.e. 'cc -c -O') is then executed
+	if the current file matches the filetype pattern ('*.c' for 'foo.c').
+	Filetype commands are unset with a line 'filetype:' (i.e. '*.c:').
+
+	When defining filetype commands some sprintf like format characters
+	lead in by a percent sign ('%') have a special meaning and are
+	expanded before the command is executed. For further information
+	about filename patterns and the format characters and her meaning
+	see the pattern and line help pages.
+#@
+#@Line          l: About line format for tree, file and filetype commands
+
+	When defining a user defined tree or file command or a
+	filetype command some sprintf like format characters are
+	known and expanded before the command is executed.
+	These format characters and their meaning are:
+
+	%D,%d   Full pathname of current directory.
+	%F,%f   Filename of current file or directory.
+	%P,%p   Full pathname of current file or directory.
+	%B,%b   Basename of current file or directory.
+	%S,%s   Additional parameter(s) for a command which are requested
+		before the command is executed.
+
+	I.e. the command line 'command %s %f >%b.out' is expanded before
+	execution to 'command parameters filename basename.out' with filename
+	and basename.out ('%f', '%b.out') of the current file or directory and
+	parameters ('%s') which are requested before.
+
+	For further information about tree/file and filetype commands see
+	the vars and defs help pages.
+#@
+#@Keys          k: About functions keys used by utree
+
+	The following function keys are supported by utree if they are
+	defined in your system's termcap or terminfo database:
+
+	CursorKeys              Move left/right/up/down (C-b/C-f/C-p/C-n)
+	Home/Begin              Move to beginning (C-a)
+	End                     Move to end (C-e)
+	NextPage/PageDown       Move one page down (C-v)
+	PrevPage/PageUp         Move one page up (C-w)
+	ScrollUp                Scroll one line up (C-u)
+	ScrollDown              Scroll one line down (C-d)
+	InsertChar              Change to directory (>) or switch mode (C-o)
+	DeleteChar              Change to parent dir (<) or delete char (C-d)
+	Clear                   Refresh screen or line (C-l)
+	Print                   Print a file or files (p)
+	Help                    Call the help menu (h)
+	Select/Mark             Set a mark
+	Find                    Move to previously set mark
+	Enter                   Switch tree/file screen (NL,SP)
+	Command/Do              Execute a system command (!)
+	FuncKey0/FuncKey10      Switch default/user menuline (0)
+	FuncKey1..9             Execute user defined commands 1..9 (1..9)
+#@
+#@Patterns      p: About pattern matching
+
+	Some commands (list, find, grep, tag or untag) require filename
+	patterns for matching files using some special (meta) characters.
+
+	File pattern matching (shell like) interprets the following meta chars:
+	*       matches all characters in a filename.
+	?       matches one character in a filename.
+	[class] matches all characters enclosed in '[' and ']'
+		where '!' and '-' have a special meaning, i.e.
+		[abc]   matches the characters 'a', 'b' and 'c'.
+		[a-z_]  matches the characters from 'a' to  'z' and '_'.
+		[!a-z_] matches all characters except 'a' to 'z' and '_'.
+
+	Time pattern matching interprets the following meta chars:
+	>#      matches all files modified within # hours.
+	<#      matches all files not modified within # hours.
+	you may specify time in minutes (m), hours(h, default), days(d) or
+	weeks (w), i.e. '>2d' matches all files modified within last 2 days.
+
+	To combine patterns use '&' for ANDing and '|' for ORing of patterns.
+	If a character is preceeded by a backslash (\) or enclosed in quotes
+	his interpretation is suppressed and he is used as he is.
+#@

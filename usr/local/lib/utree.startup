@@ -1,0 +1,41 @@
+#
+#       $HOME/.utree or $UTLIB/utree
+#       Example startup file for UTREE 3.00-um
+#       klin, Sat Apr 20 11:23:16 1991
+#       Directory:      user's home directory  ($HOME)
+#                       or a library directory ($UTLIB)
+
+# General variables: variable=value
+SHELL=ksh                               #Shell for shell escape
+ED=mg                                   #My favourite editor
+EO=-s                                   #Editor options
+PG=less                                 #My favourite pager
+PO=-e                                   #Pager options
+# User defined tree commands: variable=value #Menuitem comment
+TREECMD1=whodo                          #Whodo  Who is doing what
+T2=ps -ef                               #Procs  Process status
+T3=df -t                                #Space  Disk space
+T4=rwho                                 #Rwho   Who is on the net
+T5=ruptime                              #Rupt   Nodes on the net
+# User defined file commands: variable=value #Menuitem
+FILECMD1=whodo                          #Whodo  Who is doing what
+F2=ps -ef                               #Procs  Process status
+F3=df -t                                #Space  Disk space
+F4=rwho                                 #Rwho   Who is on the net
+F5=ruptime                              #Rupt   Nodes on the net
+F6=wc -l %F                             #Lines  Lines of the current file
+F7=make %F                              #Make   Make the current file
+# Filetype dependent commands: filetype:commandline #Comment
+*.c:cc -c -O %F                         #Compile C
+*.f:f77 -c %F                           #Compile fortran
+*.p:pc -c -O %F                         #Compile pascal
+*.sc:sc %F                              #Spreadsheet calculator
+*.mk:make -f %F %s                      #Call make for file.mk
+[Mm]akefile:make %s                     #Call make for Makefile or makefile
+*.[1-9]:nroff -man %F|pg -cen           #View manual page
+*.z:pcat %F|pg -cen                     #View packed files
+*.Z:zcat %F|pg -cen                     #View compressed file
+*.a:ar tv %F|pg -cen                    #Table of ar archive
+*.tar:tar tvf %F|pg -cen                #Table of tar archive
+*.tar.Z:zcat %F|tar -tvf -|pg -cen      #Table of compressed tar archive
+*.[1-9].Z:zcat %F|nroff -man|pg -cen    #View compressed manual page
