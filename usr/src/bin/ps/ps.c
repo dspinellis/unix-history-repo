@@ -749,7 +749,7 @@ tdev(k, v)
 	}
 }
 
-char *devname();
+extern char *devname();
 
 tname(k, v)
 	struct kinfo *k;
@@ -758,7 +758,7 @@ tname(k, v)
 	dev_t dev = k->ki_e->e_tdev;
 	char *tname;
 
-	if (dev == NODEV || (tname = devname(dev, 1)) == NULL)
+	if (dev == NODEV || (tname = devname(dev, S_IFCHR)) == NULL)
 		printf("%-*s", v->width, "??");
 	else {
 		if (strncmp(tname, "tty", 3) == 0)
@@ -775,7 +775,7 @@ longtname(k, v)
 	dev_t dev = k->ki_e->e_tdev;
 	char *tname;
 
-	if (dev == NODEV || (tname = devname(dev, 1)) == NULL)
+	if (dev == NODEV || (tname = devname(dev, S_IFCHR)) == NULL)
 		printf("%-*s", v->width, "??");
 	else
 		printf("%-*s", v->width, tname);
