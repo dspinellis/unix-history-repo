@@ -560,7 +560,7 @@ sendit(s, mp, flags, retsize)
 	if (ktriov != NULL) {
 		if (error == 0)
 			ktrgenio(u.u_procp->p_tracep, s, UIO_WRITE,
-				ktriov, *retsize);
+				ktriov, *retsize, error);
 		FREE(ktriov, M_TEMP);
 	}
 #endif
@@ -790,7 +790,7 @@ recvit(s, mp, namelenp, retsize)
 	if (ktriov != NULL) {
 		if (error == 0)
 			ktrgenio(u.u_procp->p_tracep, s, UIO_READ,
-				ktriov, len - auio.uio_resid);
+				ktriov, len - auio.uio_resid, error);
 		FREE(ktriov, M_TEMP);
 	}
 #endif
