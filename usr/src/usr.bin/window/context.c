@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)context.c	3.2 83/11/22";
+static	char *sccsid = "@(#)context.c	3.3 83/12/07";
 #endif
 
 #include <stdio.h>
@@ -57,7 +57,7 @@ char *filename;
 	cx.x_bol = 1;
 	cx.x_lineno = 0;
 	cx.x_errwin = 0;
-	cx.x_baderr = 0;
+	cx.x_noerrwin = 0;
 	return 0;
 bad:
 	if (cx.x_filename != 0)

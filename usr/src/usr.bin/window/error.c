@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)error.c	3.3 83/11/22";
+static	char *sccsid = "@(#)error.c	3.4 83/12/07";
 #endif
 
 #include "defs.h"
@@ -12,6 +12,8 @@ static	char *sccsid = "@(#)error.c	3.3 83/11/22";
 error(fmt, a, b, c, d, e, f, g, h)
 char *fmt;
 {
+	register struct ww *w;
+
 	if (cx.x_type != X_FILE) {
 		if (terse)
 			wwbell();
@@ -21,27 +23,25 @@ char *fmt;
 		}
 		return;
 	}
-	if (cx.x_baderr)
+	if (cx.x_noerrwin)
 		return;
-	if (cx.x_errwin == 0) {
+	if ((w = cx.x_errwin) == 0) {
 		char buf[512];
 
 		(void) sprintf(buf, "Errors from %s", cx.x_filename);
-		if ((cx.x_errwin = openiwin(ERRLINES, buf)) == 0) {
-			(void) wwprintf(cmdwin, "Can't open error window.  ");
-			cx.x_baderr = 1;
+		if ((w = cx.x_errwin = openiwin(ERRLINES, buf)) == 0) {
+			(void) wwputs("Can't open error window.  ", cmdwin);
+			cx.x_noerrwin = 1;
 			return;
 		}
-		cx.x_errlineno = 0;
 	}
-	if (cx.x_errlineno++ > ERRLINES - 4) {
-		waitnl(cx.x_errwin);
-		cx.x_errlineno = 0;
+	if (w->ww_cur.r >= w->ww_w.b - 2) {
+		waitnl(w);
+		(void) wwputs("\033E", w);
 	}
-	if (cx.x_lineno != 0)
-		(void) wwprintf(cx.x_errwin, "line %d: ", cx.x_lineno);
-	(void) wwprintf(cx.x_errwin, fmt, a, b, c, d, e, f, g, h);
-	(void) wwprintf(cx.x_errwin, "\n");
+	(void) wwprintf(w, "line %d: ", cx.x_lineno);
+	(void) wwprintf(w, fmt, a, b, c, d, e, f, g, h);
+	(void) wwputc('\n', w);
 }
 
 err_end()
