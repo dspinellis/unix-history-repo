@@ -1,4 +1,4 @@
-#	@(#)Makefile	8.1 (Berkeley) %G%
+#	@(#)Makefile	8.2 (Berkeley) %G%
 
 DIR=	smm/08.sendmailop
 SRCS=	op.me
@@ -7,6 +7,7 @@ MACROS=	-me
 all: op.ps
 
 op.ps: ${SRCS}
+	rm -f ${.TARGET}
 	${PIC} ${SRCS} | ${EQN} | ${ROFF} > ${.TARGET}
 
 .include <bsd.doc.mk>
