@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)dir.c	3.7 (Berkeley) %G%";
+static char version[] = "@(#)dir.c	3.8 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -47,7 +47,6 @@ descend(parentino, inumber)
 	curino.id_func = parentino->id_func;
 	curino.id_parent = parentino->id_number;
 	curino.id_number = inumber;
-	curino.id_filesize = dp->di_size;
 	(void)ckinode(dp, &curino);
 }
 
@@ -286,7 +285,6 @@ linkup(orphan, pdir)
 		idesc.id_type = DATA;
 		idesc.id_func = findino;
 		idesc.id_number = ROOTINO;
-		idesc.id_filesize = dp->di_size;
 		(void)ckinode(dp, &idesc);
 		if (idesc.id_parent >= ROOTINO && idesc.id_parent < imax) {
 			lfdir = idesc.id_parent;
@@ -295,7 +293,6 @@ linkup(orphan, pdir)
 			if (preen || reply("CREATE")) {
 				idesc.id_func = mkentry;
 				idesc.id_parent = allocdir(ROOTINO, 0);
-				idesc.id_filesize = dp->di_size;
 				if (idesc.id_parent != 0) {
 					if (makeentry(dp, &idesc) != 0) {
 						lfdir = idesc.id_parent;
@@ -356,7 +353,6 @@ linkup(orphan, pdir)
 	idesc.id_type = DATA;
 	idesc.id_func = mkentry;
 	idesc.id_number = lfdir;
-	idesc.id_filesize = dp->di_size;
 	idesc.id_parent = orphan;	/* this is the inode to enter */
 	idesc.id_fix = DONTKNOW;
 	idesc.id_name = tempname;
@@ -375,7 +371,6 @@ linkup(orphan, pdir)
 		idesc.id_type = DATA;
 		idesc.id_func = chgino;
 		idesc.id_number = orphan;
-		idesc.id_filesize = dp->di_size;
 		idesc.id_fix = DONTKNOW;
 		idesc.id_name = "..";
 		idesc.id_parent = lfdir;	/* new value for ".." */
@@ -404,7 +399,6 @@ makeentry(dp, idesc)
 		return (1);
 	if (expanddir(dp) == 0)
 		return (0);
-	idesc->id_filesize = dp->di_size;
 	return (ckinode(dp, idesc) & ALTERED);
 }
 

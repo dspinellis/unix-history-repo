@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)pass1.c	3.4 (Berkeley) %G%";
+static char version[] = "@(#)pass1.c	3.5 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -107,17 +107,16 @@ pass1()
 			statemap[inumber] = DIRCT(dp) ? DSTATE : FSTATE;
 			badblk = dupblk = 0; maxblk = 0;
 			idesc.id_number = inumber;
-			idesc.id_filesize = 0;
 			(void)ckinode(dp, &idesc);
-			idesc.id_filesize *= btodb(sblock.fs_fsize);
-			if (dp->di_blocks != idesc.id_filesize) {
+			idesc.id_entryno *= btodb(sblock.fs_fsize);
+			if (dp->di_blocks != idesc.id_entryno) {
 				pwarn("INCORRECT BLOCK COUNT I=%u (%ld should be %ld)",
-				    inumber, dp->di_blocks, idesc.id_filesize);
+				    inumber, dp->di_blocks, idesc.id_entryno);
 				if (preen)
 					printf(" (CORRECTED)\n");
 				else if (reply("CORRECT") == 0)
 					continue;
-				dp->di_blocks = idesc.id_filesize;
+				dp->di_blocks = idesc.id_entryno;
 				inodirty();
 			}
 			continue;
@@ -184,7 +183,10 @@ pass1check(idesc)
 				*muldup++ = blkno;
 			}
 		}
-		idesc->id_filesize++;
+		/*
+		 * count the number of blocks found in id_entryno
+		 */
+		idesc->id_entryno++;
 	}
 	return (res);
 }
