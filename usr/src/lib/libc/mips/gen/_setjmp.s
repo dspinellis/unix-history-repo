@@ -12,7 +12,7 @@
 #include <machine/machAsmDefs.h>
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	ASMSTR("@(#)_setjmp.s	5.5 (Berkeley) %G%")
+	ASMSTR("@(#)_setjmp.s	5.6 (Berkeley) %G%")
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -25,6 +25,8 @@
  * by restoring registers from the stack,
  * The previous signal state is NOT restored.
  */
+
+	.set	noreorder
 
 LEAF(_setjmp)
 	li	v0, 0xACEDBADE			# sigcontext magic number
@@ -54,14 +56,14 @@ LEAF(_setjmp)
 	swc1	$f30, ((30 + 38) * 4)(a0)
 	swc1	$f31, ((31 + 38) * 4)(a0)
 	sw	v0, ((32 + 38) * 4)(a0)
-	move	v0, zero
 	j	ra
+	move	v0, zero
 END(_setjmp)
 
 LEAF(_longjmp)
 	lw	v0, (3 * 4)(a0)			# get magic number
-	bne	v0, 0xACEDBADE, botch		# jump if error
 	lw	ra, (2 * 4)(a0)
+	bne	v0, 0xACEDBADE, botch		# jump if error
 	lw	s0, ((S0 + 3) * 4)(a0)
 	lw	s1, ((S1 + 3) * 4)(a0)
 	lw	s2, ((S2 + 3) * 4)(a0)
@@ -86,9 +88,11 @@ LEAF(_longjmp)
 	lwc1	$f29, ((29 + 38) * 4)(a0)
 	lwc1	$f30, ((30 + 38) * 4)(a0)
 	lwc1	$f31, ((31 + 38) * 4)(a0)
-	move	v0, a1
 	j	ra
+	move	v0, a1
 botch:
 	jal	longjmperror
+	nop
 	jal	abort
+	nop
 END(_longjmp)
