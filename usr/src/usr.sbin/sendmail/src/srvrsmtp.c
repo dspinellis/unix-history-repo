@@ -1,10 +1,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)srvrsmtp.c	3.13		%G%	(no SMTP));
+SCCSID(@(#)srvrsmtp.c	3.14		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)srvrsmtp.c	3.13		%G%);
+SCCSID(@(#)srvrsmtp.c	3.14		%G%);
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -157,7 +157,7 @@ smtp()
 # endif DEBUG
 			if (Errors == 0)
 			{
-				message("250", "Recipient ok");
+				message("250", "%s... Recipient ok", p);
 				rcps++;
 			}
 			break;
