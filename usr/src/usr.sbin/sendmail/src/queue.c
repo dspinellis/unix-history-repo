@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.61 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.62 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.61 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.62 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -216,7 +216,7 @@ queueup(e, queueall, announce)
 
 	/* message from envelope, if it exists */
 	if (e->e_message != NULL)
-		fprintf(tfp, "M%s\n", e->e_message);
+		fprintf(tfp, "M%s\n", denlstring(e->e_message));
 
 	/* send various flag bits through */
 	p = buf;
@@ -232,22 +232,22 @@ queueup(e, queueall, announce)
 
 	/* $r and $s and $_ macro values */
 	if ((p = macvalue('r', e)) != NULL)
-		fprintf(tfp, "$r%s\n", p);
+		fprintf(tfp, "$r%s\n", denlstring(p));
 	if ((p = macvalue('s', e)) != NULL)
-		fprintf(tfp, "$s%s\n", p);
+		fprintf(tfp, "$s%s\n", denlstring(p));
 	if ((p = macvalue('_', e)) != NULL)
-		fprintf(tfp, "$_%s\n", p);
+		fprintf(tfp, "$_%s\n", denlstring(p));
 
 	/* output name of sender */
 	if (bitnset(M_UDBENVELOPE, e->e_from.q_mailer->m_flags))
 		p = e->e_sender;
 	else
 		p = e->e_from.q_paddr;
-	fprintf(tfp, "S%s\n", p);
+	fprintf(tfp, "S%s\n", denlstring(p));
 
 	/* output ESMTP-supplied "original" information */
 	if (e->e_envid != NULL)
-		fprintf(tfp, "Z%s\n", e->e_envid);
+		fprintf(tfp, "Z%s\n", denlstring(e->e_envid));
 
 	/* output list of error recipients */
 	printctladdr(NULL, NULL);
@@ -256,7 +256,7 @@ queueup(e, queueall, announce)
 		if (!bitset(QDONTSEND|QBADADDR, q->q_flags))
 		{
 			printctladdr(q, tfp);
-			fprintf(tfp, "E%s\n", q->q_paddr);
+			fprintf(tfp, "E%s\n", denlstring(q->q_paddr));
 		}
 	}
 
@@ -268,7 +268,7 @@ queueup(e, queueall, announce)
 		{
 			printctladdr(q, tfp);
 			if (q->q_orcpt != NULL)
-				fprintf(tfp, "Q%s\n", q->q_orcpt);
+				fprintf(tfp, "Q%s\n", denlstring(q->q_orcpt));
 			putc('R', tfp);
 			if (bitset(QPRIMARY, q->q_flags))
 				putc('P', tfp);
@@ -286,7 +286,7 @@ queueup(e, queueall, announce)
 					putc('B', tfp);
 			}
 			putc(':', tfp);
-			fprintf(tfp, "%s\n", q->q_paddr);
+			fprintf(tfp, "%s\n", denlstring(q->q_paddr));
 			if (announce)
 			{
 				e->e_to = q->q_paddr;
@@ -463,7 +463,7 @@ printctladdr(a, tfp)
 	else
 		uname = pw->pw_name;
 
-	fprintf(tfp, "C%s:%s\n", uname, a->q_paddr);
+	fprintf(tfp, "C%s:%s\n", uname, denlstring(a->q_paddr));
 }
 /*
 **  RUNQUEUE -- run the jobs in the queue.
