@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)mv.1	4.1 (Berkeley) %G%
+.\"	@(#)mv.1	5.1 (Berkeley) %G%
 .\"
-.TH MV 1 4/1/81
+.TH MV 1 "1 April 1981"
 .UC 4
 .SH NAME
 mv \- move or rename files
@@ -35,32 +35,25 @@ to
 .PP
 If
 .I file2
-already exists,
-it is removed before
+already exists, it is removed before
 .I file1
-is moved.
-If
+is moved.  If
 .I file2
 has a mode which forbids writing,
 .I mv
 prints the mode (see
 .IR chmod (2))
-and
-reads the standard input to obtain a line;
-if the line begins with
+and reads the standard input to obtain a line; if the line begins with
 .B y,
-the move takes place;
-if not,
+the move takes place; if not,
 .I mv
 exits.
 .PP
-In the second form,
-one or more
+In the second form, one or more
 .I files
-are moved to the
+(plain files or directories) are moved to the
 .I directory
-with their original
-file-names.
+with their original file-names.
 .PP
 .I Mv
 refuses to move a file onto itself.
@@ -92,10 +85,5 @@ and
 lie on different file systems,
 .I mv
 must copy the file and delete the original.
-In this case the owner name becomes
-that of the copying process and any
-linking relationship with other files
-is lost.
-.PP
-Directories may only be moved within the same parent
-directory.
+In this case the owner name becomes that of the copying process and any
+linking relationship with other files is lost.
