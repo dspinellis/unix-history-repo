@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/stat.h>
@@ -131,10 +131,11 @@ state1:
 	} 
 state2:
 	state = 3;
-	if ((shinit = lookupvar("ENV")) != NULL &&
-	     *shinit != '\0') {
-		state = 3;
-		read_profile(shinit);
+	if (getuid() == geteuid() && getgid() == getegid()) {
+		if ((shinit = lookupvar("ENV")) != NULL && *shinit != '\0') {
+			state = 3;
+			read_profile(shinit);
+		}
 	}
 state3:
 	state = 4;
