@@ -3,19 +3,17 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)route.8	8.2 (Berkeley) %G%
+.\"     @(#)route.8	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt ROUTE 8
-.Os BSD 4.2
+.Os BSD 4.4
 .Sh NAME
 .Nm route
-.Nd manually manipulate the routing tables (Interim)
+.Nd manually manipulate the routing tables.
 .Sh SYNOPSIS
 .Nm route
-.Op Fl n
-.Op Fl q
-.Op Fl v
+.Op Fl nqv
 .Ar command
 .Oo
 .Op Ar modifiers
@@ -23,27 +21,36 @@
 .Oc
 .Sh DESCRIPTION
 .Nm Route
-is a program used to manually manipulate the network
-routing tables.  It normally is not needed, as the
-system routing table management daemon,
+is a utility used to manually manipulate the network
+routing tables.  It normally is not needed, as a
+system routing table management daemon such as
 .Xr routed 8 ,
 should tend to this task.
 .Pp
-Options supported by
+The
 .Nm route :
+utility supports a limited number of general options,
+but a rich command language, enabling the user to specify
+any arbitrary request that could be delivered via the
+programmatic interface discussed in 
+.Xr route 4 .
 .Pp
 .Bl -tag -width Ds
 .It Fl n
-Prevent attempts to print host and network names symbolically
-when reporting actions.
+Bypasses attempts to print host and network names symbolically
+when reporting actions.  (The process of translating between symbolic
+names and numerical equivalents can be quite time consuming, and
+may require correct operation of the network; thus it may be expedient
+to forgo this, especially when attempting to repair networking operations),
 .It Fl v
 (verbose) Print additional details.
 .It Fl q
 Suppress all output.
 .El
 .Pp
-Commands accepted by
+The
 .Nm route :
+utility provides six commands:
 .Pp
 .Bl -tag -width Fl -compact
 .It Cm add
@@ -76,12 +83,18 @@ The flush command has the syntax
 .Op Ar family
 .Ed
 .Pp
-Where the address family may be specified by any of the
+If the 
+.Cm flush
+command is specified, 
+.Nm route
+will ``flush'' the routing tables of all gateway entries.
+When the address family may is specified by any of the
 .Fl osi ,
 .Fl xns ,
 or
 .Fl inet
-keywords.
+modifiers, only routes having destinations with addresses in the
+delineated family will be deleted.
 .Pp
 The other commands have the following syntax:
 .Pp
@@ -96,11 +109,11 @@ where
 .Ar destination
 is the destination host or network,
 .Ar gateway
-is the next-hop gateway to which packets should be addressed.
-Routes to a particular host are distinguished from those to
-a network by interpreting the Internet address associated with
-.Ar destination .
-The optional keywords
+is the next-hop intermediary via which packets should be routed.
+Routes to a particular host may be distinguished from those to
+a network by interpreting the Internet address specified as the
+.Ar destination argument.
+The optional modifiers
 .Fl net
 and
 .Fl host
@@ -130,8 +143,9 @@ and
 is interpreted as
 .Li 128.32.130.0 .
 .Pp
-If the route is via an interface rather than
-via a gateway, the 
+If the destination is directly reachable
+via an interface requiring
+no intermediary system to act as a gateway, the 
 .Fl interface
 modifier should be specified;
 the gateway given is the address of this host on the common network,
@@ -139,13 +153,14 @@ indicating the interface to be used for transmission.
 .Pp
 The optional modifiers
 .Fl xns ,
+.Fl osi ,
 and
-.Fl osi
+.Fl link 
 specify that all subsequent addresses are in the
 .Tn XNS
-or
 .Tn OSI
 address families,
+or are specified as link-level addresses,
 and the names must be numeric specifications rather than
 symbolic names.
 .Pp
@@ -155,11 +170,31 @@ qualifier is intended
 to achieve the effect of an
 .Tn OSI
 .Tn ESIS
-redirect with the netmask option.
+redirect with the netmask option,
+or to manually add subnet routes with
+netmasks different from that of the implied network interface
+(as would otherwise be communicated using the OSPF or ISIS routing protocols).
 One specifies an additional ensuing address parameter
 (to be interpreted as a network mask).
-The implicit network mask generated in the inet case
+The implicit network mask generated in the AF_INET case
 can be overridden by making sure this option follows the destination parameter.
+.Pp
+Routes have associated flags which influence operation of the protocols
+when sending to destinations matched by the routes.
+These flags may be set (or sometimes cleared)
+by indicating the following corresponding modifiers:
+.Bd -literal
+-cloning   RTF_CLONING    - generates a new route on use
+-xresolve  RTF_XRESOLVE   - emit mesg on use (for external lookup)
+-iface    ~RTF_GATEWAY    - destination is directly reachable
+-static    RTF_STATIC     - manually added route
+-nostatic ~RTF_STATIC     - pretend route added by kernel or daemon
+-reject    RTF_REJECT     - emit an ICMP unreachable when matched
+-blackhole RTF_BLACKHOLE  - silently discard pkts (during updates)
+-proto1    RTF_PROTO1     - set protocol specific routing flag #1
+-proto2    RTF_PROTO2     - set protocol specific routing flag #2
+-llinfo    RTF_LLINFO     - validly translates proto addr to link addr
+.Ed
 .Pp
 The optional modifiers
 .Fl rtt ,
@@ -171,7 +206,8 @@ The optional modifiers
 .Fl expire ,
 and
 .Fl ssthresh
-provide initial values to metrics maintained in the routing entry.
+provide initial values to quantities maintained in the routing entry
+by transport level protocols, such as TCP or TP4.
 These may be individually locked by preceding each such modifier to
 be locked by
 the
@@ -214,15 +250,6 @@ and
 RTM_CHANGE.
 As such, only the super-user may modify
 the routing tables.
-.Pp
-If the 
-.Cm flush
-command is specified, 
-.Nm route
-will ``flush'' the routing tables of all gateway entries.
-One can choose to flush only those routes whose destinations
-are of a given address family, by specifying an optional keyword
-describing which address family.
 .Sh DIAGNOSTICS
 .Bl -tag -width Ds
 .It Sy "add [host \&| network ] %s: gateway %s flags %x"
