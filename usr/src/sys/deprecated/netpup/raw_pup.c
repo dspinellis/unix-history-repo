@@ -1,4 +1,4 @@
-/*	raw_pup.c	4.9	82/03/28	*/
+/*	raw_pup.c	4.10	82/04/04	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -47,6 +47,9 @@ COUNT(RPUP_OUTPUT);
 	for (len = 0, n = m; n; n = n->m_next)
 		len += n->m_len;
 	pup->pup_length = len;
+#if vax || pdp11
+	pup->pup_length = htons(pup->pup_length);
+#endif
 	spup = (struct sockaddr_pup *)&(rp->rcb_socket->so_addr);
 	pup->pup_sport = spup->spup_addr;
 	/* for now, assume user generates PUP checksum. */
@@ -56,7 +59,7 @@ COUNT(RPUP_OUTPUT);
 	ifp = if_ifonnetof(pup->pup_dnet);
 	if (ifp == 0)
 		goto bad;
-	return (enoutput(ifp, m, (struct sockaddr *)spup));
+	return ((*ifp->if_output)(ifp, m, (struct sockaddr *)spup));
 
 bad:
 	m_freem(m);
