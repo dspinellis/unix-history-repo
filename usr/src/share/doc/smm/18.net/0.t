@@ -2,29 +2,27 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)0.t	5.1 (Berkeley) %G%
+.\"	@(#)0.t	6.1 (Berkeley) %G%
 .\"
 .if n .ND
 .TL
-4.2BSD Networking Implementation Notes
-.sp
-Revised July, 1983
+Networking Implementation Notes
+.br
+4.3BSD Edition
 .AU
-Samuel J. Leffler, William N. Joy, Robert S. Fabry
+Samuel J. Leffler, William N. Joy, Robert S. Fabry, and Michael J. Karels
 .AI
 Computer Systems Research Group
 Computer Science Division
 Department of Electrical Engineering and Computer Science
 University of California, Berkeley
 Berkeley, CA  94720
-
-(415) 642-7780
 .AB
 .FS
 * UNIX is a trademark of Bell Laboratories.
 .FE
 This report describes the internal structure of the
-networking facilities developed for the 4.2BSD version
+networking facilities developed for the 4.3BSD version
 of the UNIX* operating system
 for the VAX\(dg.  These facilities
 .FS
@@ -35,26 +33,26 @@ are based on several central abstractions which
 structure the external (user) view of network communication
 as well as the internal (system) implementation.
 .PP
-The report documents the internal structure of the
-networking system.  The
-``4.2BSD System Manual'' provides a
-description of the user interface to the networking
-facilities.
+The report documents the internal structure of the networking system.
+The ``Berkeley Software Architecture Manual, 4.3BSD Edition'' (PS1:6)
+provides a description of the user interface to the networking facilities.
+.sp
+.LP
+Revised 
 .AE
 .LP
-.de PT
-.lt \\n(LLu
-.pc %
-.nr PN \\n%
-.tl '\\*(LH'\\*(CH'\\*(RH'
-.lt \\n(.lu
-..
-.af PN i
+.\".de PT
+.\".lt \\n(LLu
+.\".pc %
+.\".nr PN \\n%
+.\".tl '\\*(LH'\\*(CH'\\*(RH'
+.\".lt \\n(.lu
+.\"..
 .ds LH Networking Implementation
 .ds RH Contents
-.bp 1
-.if t .ds LF CSRG TR/6
-.if t .ds RF Leffler, et. al.
+.OH 'Networking Implementation Notes''SMM:15-%'
+.EH 'SMM:15-%''Networking Implementation Notes'
+.bp
 .ce
 .B "TABLE OF CONTENTS"
 .LP
@@ -81,13 +79,13 @@ facilities.
 .sp .5v
 .nf
 .B "6.  Internal layering
-\0.1.    Socket layer
-\0.1.1.    Socket state
-\0.1.2.    Socket data queues
-\0.1.3.    Socket connection queueing
-\0.2.    Protocol layer(s)
-\0.3.    Network-interface layer
-\0.3.1.    UNIBUS interfaces
+6.1.    Socket layer
+6.1.1.    Socket state
+6.1.2.    Socket data queues
+6.1.3.    Socket connection queueing
+6.2.    Protocol layer(s)
+6.3.    Network-interface layer
+6.3.1.    UNIBUS interfaces
 .LP
 .sp .5v
 .nf
@@ -96,38 +94,38 @@ facilities.
 .sp .5v
 .nf
 .B "8.  Protocol/protocol interface"
-\0.1.     pr_output
-\0.2.     pr_input
-\0.3.     pr_ctlinput
-\0.4.     pr_ctloutput
+8.1.     pr_output
+8.2.     pr_input
+8.3.     pr_ctlinput
+8.4.     pr_ctloutput
 .LP
 .sp .5v
 .nf
 .B "9.  Protocol/network-interface interface"
-\0.1.     Packet transmission
-\0.2.     Packet reception
+9.1.     Packet transmission
+9.2.     Packet reception
 .LP
 .sp .5v
 .nf
 .B "10. Gateways and routing issues
-\0.1.     Routing tables
-\0.2.     Routing table interface
-\0.3.     User level routing policies
+10.1.     Routing tables
+10.2.     Routing table interface
+10.3.     User level routing policies
 .LP
 .sp .5v
 .nf
 .B "11. Raw sockets"
-\0.1.     Control blocks
-\0.2.     Input processing
-\0.3.     Output processing
+11.1.     Control blocks
+11.2.     Input processing
+11.3.     Output processing
 .LP
 .sp .5v
 .nf
 .B "12. Buffering and congestion control"
-\0.1.     Memory management
-\0.2.     Protocol buffering policies
-\0.3.     Queue limiting
-\0.4.     Packet forwarding
+12.1.     Memory management
+12.2.     Protocol buffering policies
+12.3.     Queue limiting
+12.4.     Packet forwarding
 .LP
 .sp .5v
 .nf
@@ -145,8 +143,7 @@ facilities.
 .nf
 .B References
 .ds RH Introduction
-.af PN 1
-.bp 1
+.bp
 .de _d
 .if t .ta .6i 2.1i 2.6i
 .\" 2.94 went to 2.6, 3.64 to 3.30
