@@ -26,7 +26,7 @@ SOFTWARE.
  */
 /* $Header: clnp_raw.c,v 4.2 88/06/29 14:58:56 hagens Exp $ */
 /* $Source: /usr/argo/sys/netiso/RCS/clnp_raw.c,v $ */
-/*	@(#)clnp_raw.c	7.6 (Berkeley) %G% */
+/*	@(#)clnp_raw.c	7.7 (Berkeley) %G% */
 #ifndef lint
 static char *rcsid = "$Header: clnp_raw.c,v 4.2 88/06/29 14:58:56 hagens Exp $";
 #endif lint
@@ -241,10 +241,10 @@ struct mbuf		**m;			/* ptr to ptr to option data */
 }
 
 /*ARGSUSED*/
-clnp_usrreq(so, req, m, nam, rights, control)
+clnp_usrreq(so, req, m, nam, control)
 	register struct socket *so;
 	int req;
-	struct mbuf *m, *nam, *rights, *control;
+	struct mbuf *m, *nam, *control;
 {
 	register int error = 0;
 	register struct rawisopcb *rp = sotorawisopcb(so);
@@ -317,7 +317,7 @@ clnp_usrreq(so, req, m, nam, rights, control)
 		return (0);
 	    }
 	}
-	error =  raw_usrreq(so, req, m, nam, rights, control);
+	error =  raw_usrreq(so, req, m, nam, control);
 
 	if (error && req == PRU_ATTACH && so->so_pcb)
 		free((caddr_t)rp, M_PCB);
