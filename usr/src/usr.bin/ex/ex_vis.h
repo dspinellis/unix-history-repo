@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-/* sccs id:	@(#)ex_vis.h	4.2 %G%  */
+/* sccs id:	@(#)ex_vis.h	4.3 %G%  */
 /*
  * Ex version 3
  * Mark Horton, UCB
@@ -144,7 +144,7 @@ char	*vutmp;		/* Prev line image when "VCHNG" */
  */
 #define VC_NOTINMAC	0	/* Not in a macro */
 #define VC_NOCHANGE	1	/* In a macro, no changes so far */
-#define VC_ONECHANCE	2	/* In a macro, one change so far */
+#define VC_ONECHANGE	2	/* In a macro, one change so far */
 #define VC_MANYCHANGE	3	/* In a macro, at least 2 changes so far */
 
 short	vch_mac;	/* Change state - one of the above */
