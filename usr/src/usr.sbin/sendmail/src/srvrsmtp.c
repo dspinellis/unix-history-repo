@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.24 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.25 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.24 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.25 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -228,13 +228,6 @@ smtp(e)
 				SmtpPhase = "server HELO";
 			}
 			sendinghost = newstr(p);
-			if (strcasecmp(p, RealHostName) != 0 &&
-			    (strcasecmp(RealHostName, "localhost") != 0 ||
-			     strcasecmp(p, MyHostName) != 0))
-			{
-				auth_warning(e, "Host %s claimed to be %s",
-					RealHostName, p);
-			}
 			message("250", "%s Hello %s, pleased to meet you", HostName, p);
 			break;
 
@@ -277,6 +270,14 @@ smtp(e)
 					"Host %s didn't use HELO protocol",
 					RealHostName);
 			}
+			if (strcasecmp(sendinghost, RealHostName) != 0 &&
+			    (strcasecmp(RealHostName, "localhost") != 0 ||
+			     strcasecmp(sendinghost, MyHostName) != 0))
+			{
+				auth_warning(e, "Host %s claimed to be %s",
+					RealHostName, sendinghost);
+			}
+
 			if (protocol == NULL)
 				protocol = "SMTP";
 			define('r', protocol, e);
