@@ -1,0 +1,113 @@
+	 ==== /usr/lib/lisp directory ====
+
+  This directory contains a number of different kinds of files.  The meanings
+of the file suffixes are:
+	.l - lisp source		.o - compiled lisp	
+	.x - lisp cross reference   	.blat - messages from liszt
+
+    -- Contents --
+
+Makefile:
+    Input for make program. Can compile foo.l files by saying 'make foo.o'
+
+SCCS
+    Directory for checkpointing source.
+
+as:
+    Berkeley assembler. Probably a copy of /bin/as except in those places
+    whose internal politics prevent the berkeley assembler from being the
+    standard one.
+    This assembler is called from liszt.
+
+auxfns0.l
+    Most lisp coded lisp functions are in here.  
+    * Loaded into the standard lisp.
+
+auxfns1.l
+    Other lisp coded lisp functions.  contains the pretty printer.
+    * Loaded into the standard lisp.
+
+backquote.l
+    Contains the ever popular backquote macro and the sharp sign macro
+    Also sets ; to be a comment character
+    * Loaded into the standard lisp.
+
+cmu
+    This is a directory of lisp functions written at cmu that worked
+    with the standard 4bsd distribution.  We are in the process of
+    integrating this with opus 36.
+
+cmu3m.l
+    this is cmu3.l with many functions turned into macros.  this is work
+    in progress.
+
+cmumacs.l
+    This is a collection of macros which are the equivalents of nlambda's
+    found in the cmu files.  This file is incomplete but when finished
+    it should allow us to create a 'cmu' environment for compiling.
+    It is currently loaded by fix.l
+
+cs284.l
+    A set of functions for a discrimination net written by dhl at berkeley.
+    These are written in a ucilisp form and load in the ucifnc compatibility
+    package automatically.
+
+editor.l
+    Interlisp-like editor.  It will eventually be phased out
+    in favor of cmu's version.
+
+fix.l
+    fixit package from cmu.   It has been modified to allow it to compile
+    with only the macros in cmumacs.  this is autoloaded when the 
+    function (debug) is invoked.
+
+jkfmacs.l
+    Some addition macros such as a nice 'If' macro and a msg macro for
+    printing multiple values in one call.
+
+loop.l
+    loop package from mit.  Must be compiled with -m.
+
+machacks.l
+    a list of macros for generating a maclisp environment.
+
+manual
+    directory containing nroff output form of manual pages.
+
+nld
+    berkeley loader.  Probably a copy of /bin/ld.
+
+step.l
+    Step package from cmu (and from mit).  It has been modified for the
+    new evalhook and funcallhook in Franz.  Will autoload when the 
+    function step is referenced.
+
+syscall.l
+    A set of macros for doing syscall's.  very unix dependent at this point.
+
+sysfunc.l
+    file from cmu.  Probably should be removed and functions put elsewhere.
+    
+tackon
+    program to put a 'fasl' type map onto an object file.
+    use is: 'tackon map objectfile'
+
+toplevel.l
+    standard berkeley franz top level.  Contains top-level and break
+    handlers as well as startup function for liszt -r and autoloads.
+
+trace.l
+    Joseph Lister Trace package from Berekeley.
+
+ucido.l
+    do function from ucilisp.  should be in ucifnc but isn't due to 
+    supposed compiler problems (which I don't believe still exist).
+
+ucifnc.l
+    set of macros and functions for generating a ucilisp environment.
+    automatically loaded when -u is done.
+
+wholine.l
+    a simple function for putting a line of text in the .who file to be
+    read later on by h19sys.  This should probably be put somewhere 
+    else.
