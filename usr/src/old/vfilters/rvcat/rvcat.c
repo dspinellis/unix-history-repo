@@ -1,4 +1,4 @@
-/*	rvcat.c	4.3	83/04/29	*/
+/*	rvcat.c	4.4	83/05/16	*/
 /*
  * Cat Simulator for Versatec and Varian
  * Modified for Varian with rotated fonts: wnj 5/30/80.
@@ -33,20 +33,14 @@ int	pltmode[] = {VPLOT};
 #define CONVERT(n)		((n*(200./432.))*(2112./2200.))
 #define RECONVERT(n)		((n*(432./200.))*(2200./2112.))
 
-#define VA_RASTER_LENGTH	2112
-
-#define VA_BYTES_PER_LINE	(VA_RASTER_LENGTH/8)
-
 #define NLINES			110
-#define VA_BUFFER_SIZE		(NLINES*VA_BYTES_PER_LINE)
 
 #define	FF_LINES		1600	/* Scan lines to output before formfeeding. */
-#define	PAGE_LINES		1700	/* 8.5 inches * 200 lines/inch. */
 
 #define	min(a,b)		(a<b ? a : b)
 
-char	buffer[VA_BUFFER_SIZE];	/* Big line buffers  */
-char	*buf0p = &buffer[0];	/* Zero origin in circular buffer  */
+char	buffer[NLINES * 264];	/* Big enough for varain */
+char	*buf0p = &buffer[0];	/* Zero origin in circular buffer */
 
 char	*calloc();
 char	*nalloc();
@@ -87,16 +81,13 @@ struct point_sizes {
 	0, 0
 };
 
-#define VA_FFLINES	2200
-#define VP_FFLINES	650
-#define VP_EOTLINES	1400
-
 int	lines;
 
 int	vc = 1;		/* varian/versatec output file descriptor */
 int	varian;		/* 0 for versatec, 1 for varian. */
-int	BYTES_PER_LINE;	/* VA_BYTES_PER_LINE or VP_BYTES_PER_LINE. */
-int	BUFFER_SIZE;	/* VA_BUFFER_SIZE or VP_BUFFER_SIZE. */
+int	BYTES_PER_LINE;	/* number of bytes per raster line. */
+int	PAGE_LINES;	/* number of raster lines per page. */
+int	BUFFER_SIZE;	/* buffer size. */
 int	cfnum = -1;
 int	cpsize = 10;
 int	cfont = 1;
@@ -359,22 +350,18 @@ main(argc, argv)
 	char *hostarg = NULL;
 	char *acctfile = NULL;
 
-	varian = 1;	/* Default is the varian */
-	BYTES_PER_LINE = VA_BYTES_PER_LINE;
-	BUFFER_SIZE = VA_BUFFER_SIZE;
-
-	if (argv[0][strlen(argv[0])-1] == 'W') { /* Wide: the versatec. */
-/*
-		varian = 0;
-		BYTES_PER_LINE = VP_BYTES_PER_LINE;
-		BUFFER_SIZE = VP_BUFFER_SIZE;
-*/
-		fprintf(stderr, "rvcat: W not implemented\n");
-	}
-
 	while (--argc) {
 		if (*(*++argv) == '-')
 			switch (argv[0][1]) {
+			case 'x':
+				BYTES_PER_LINE = atoi(&argv[0][2]) / 8;
+				BUFFER_SIZE = NLINES * BYTES_PER_LINE;
+				varian = 1;	/* Default is the varian */
+				break;
+
+			case 'y':
+				PAGE_LINES = atoi(&argv[0][2]);
+				break;
 
 			case 'n':
 				if (argc > 1) {
@@ -389,10 +376,6 @@ main(argc, argv)
 					hostarg = *++argv;
 				}
 				break;
-
-			default:
-				fprintf(stderr, "usage: rvcat[W] [-n name] [-h host] [accounting file]\n");
-				exit(2);
 			}
 		else
 			acctfile = *argv;
@@ -564,7 +547,7 @@ leadin:
 				continue;
 
 normal_char:
-			if (row < 0 || CONVERT(row) >= VA_RASTER_LENGTH)
+			if (row < 0 || CONVERT(row) >= BYTES_PER_LINE * 8)
 				continue;
 			c = (c & 077) | mcase;
 			outc(c);
@@ -610,7 +593,7 @@ account(who, from, acctfile)
 	 * Varian accounting is done by 8.5 inch pages;
 	 * Versatec accounting is by the (12 inch) foot.
 	 */
-	fprintf(a, "t%6.2f\t", (lines / 200.0) / (varian ? 8.5 : 12.0));
+	fprintf(a, "t%6.2f\t", (lines / 200.0) / PAGE_LINES);
 	if (from != NULL)
 		fprintf(a, "%s:", from);
 	fprintf(a, "%s\n", who);
