@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.15 (Berkeley) %G%
+#	@(#)Makefile.inc	5.16 (Berkeley) %G%
 
 # machine-independent stdlib sources
 .PATH: ${.CURDIR}/${MACHINE}/stdlib ${.CURDIR}/stdlib
@@ -18,7 +18,7 @@ MAN3+=	abort.0 abs.0 alloca.0 atexit.0 atof.0 atoi.0 atol.0 bsearch.0 \
 	random.0 realloc.0 strtod.0 strtol.0 strtoul.0 system.0
 
 MLINKS+=getenv.3 setenv.3 getenv.3 unsetenv.3 getenv.3 putenv.3
-MLINKS+=qsort.3 heapsort.3
+MLINKS+=qsort.3 heapsort.3 qsort.3 mergesort.3
 MLINKS+=rand.3 srand.3
 MLINKS+=random.3 initstate.3 random.3 setstate.3 random.3 srandom.3
 MLINKS+=strtol.3 strtoq.3
