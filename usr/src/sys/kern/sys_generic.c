@@ -1,4 +1,4 @@
-/*	sys_generic.c	5.26	82/12/21	*/
+/*	sys_generic.c	5.27	82/12/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -257,7 +257,6 @@ rwip(ip, uio, rw)
 				if (diff < n)
 					n = diff;
 			}
-			u.u_error = 0;		/* XXX */
 			bn = fsbtodb(fs,
 			    bmap(ip, lbn, rw == UIO_WRITE ? B_WRITE: B_READ, (int)(on+n)));
 			if (u.u_error || rw == UIO_WRITE && (long)bn<0)
@@ -329,8 +328,8 @@ uiomove(cp, n, rw, uio)
 	register struct uio *uio;
 {
 	register struct iovec *iov;
-	int error;
 	u_int cnt;
+	int error = 0;
 
 	while (n > 0 && uio->uio_resid) {
 		iov = uio->uio_iov;

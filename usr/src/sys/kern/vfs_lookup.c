@@ -1,4 +1,4 @@
-/*	vfs_lookup.c	4.32	82/12/21	*/
+/*	vfs_lookup.c	4.33	82/12/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -662,7 +662,6 @@ dirremove()
 		/*
 		 * Collapse new free space into previous entry.
 		 */
-		u.u_error = 0;	/* XXX */
 		bp = blkatoff(dp, (int)(u.u_offset - u.u_count), (char **)&ep);
 		if (bp == 0)
 			return (0);
