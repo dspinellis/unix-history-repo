@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)init.c	4.5 (Berkeley) %G%";
+static	char *sccsid = "@(#)init.c	4.6 (Berkeley) %G%";
 #endif
 
 #include "sh.local.h"
@@ -227,7 +227,7 @@ struct	mesg {
 	"PROF",	"Profiling timer expired",
 	"WINCH","Window size changed",
 	0,	"Signal 29",
-	0,	"Signal 30",
-	0,	"Signal 31",
+	"USR1",	"User defined signal 1",
+	"USR2",	"User defined signal 2",
 	0,	"Signal 32"
 };
