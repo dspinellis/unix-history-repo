@@ -16,7 +16,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)cmd.h	5.2 (Berkeley) %G%
+ *	@(#)cmd.h	5.3 (Berkeley) %G%
  */
 
 #define	MAX_USERCMD		200
@@ -52,7 +52,6 @@
 #define	A_STAT			28
 
 #define	A_TOGGLE_OPTION		30
-#define	A_VERSION		31
 #define	A_VISUAL		32
 
 #define	A_INVALID		100
