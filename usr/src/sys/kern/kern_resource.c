@@ -1,4 +1,4 @@
-/*	kern_resource.c	4.13	82/09/06	*/
+/*	kern_resource.c	4.14	82/09/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -10,6 +10,10 @@
 #include "../h/fs.h"
 #include "../h/uio.h"
 #include "../h/vm.h"
+
+/*
+ * Resource controls and accounting.
+ */
 
 getpriority()
 {
@@ -31,17 +35,35 @@ getpriority()
 		if (p == 0)
 			return;
 		u.u_r.r_val1 = u.u_procp->p_nice;
+		u.u_error = 0;
 		break;
 
 	case PRIO_PGRP:
 		if (uap->who == 0)
 			uap->who = u.u_procp->p_pgrp;
-		for (p = proc; p < procNPROC; p++)
+		for (p = proc; p < procNPROC; p++) {
+			if (p->p_stat == NULL)
+				continue;
 			if (p->p_pgrp == uap->who &&
 			    p->p_nice < u.u_r.r_val1) {
 				u.u_r.r_val1 = p->p_nice;
 				u.u_error = 0;
 			}
+		}
+		break;
+
+	case PRIO_USER:
+		if (uap->who == 0)
+			uap->who = u.u_uid;
+		for (p = proc; p < procNPROC; p++) {
+			if (p->p_stat == NULL)
+				continue;
+			if (p->p_uid == uap->who &&
+			    p->p_nice < u.u_r.r_val1) {
+				u.u_r.r_val1 = p->p_nice;
+				u.u_error = 0;
+			}
+		}
 		break;
 
 	default:
@@ -64,15 +86,28 @@ setpriority()
 	switch (uap->which) {
 
 	case PRIO_PROCESS:
-		p = pfind(uap->who);
+		if (uap->who == 0)
+			p = u.u_procp;
+		else
+			p = pfind(uap->who);
 		if (p == 0)
 			return;
 		donice(p, uap->prio);
 		break;
 
 	case PRIO_PGRP:
+		if (uap->who == 0)
+			uap->who = u.u_procp->p_pgrp;
 		for (p = proc; p < procNPROC; p++)
 			if (p->p_pgrp == uap->who)
+				donice(p, uap->prio);
+		break;
+
+	case PRIO_USER:
+		if (uap->who == 0)
+			uap->who = u.u_uid;
+		for (p = proc; p < procNPROC; p++)
+			if (p->p_uid == uap->who)
 				donice(p, uap->prio);
 		break;
 
@@ -89,16 +124,18 @@ donice(p, n)
 
 	if (u.u_uid && u.u_ruid &&
 	    u.u_uid != p->p_uid && u.u_ruid != p->p_uid) {
-		u.u_error = EPERM;
+		u.u_error = EACCES;
 		return;
 	}
-	n += p->p_nice;
+	n += NZERO;
 	if (n >= 2*NZERO)
 		n = 2*NZERO - 1;
 	if (n < 0)
 		n = 0;
-	if (n < p->p_nice && !suser())
+	if (n < p->p_nice && !suser()) {
+		u.u_error = EACCES;
 		return;
+	}
 	p->p_nice = n;
 	(void) setpri(p);
 	if (u.u_error == ESRCH)
@@ -209,26 +246,83 @@ onice()
 {
 	register struct a {
 		int	niceness;
-	} *uap;
+	} *uap = (struct a *)u.u_ap;
+	register struct proc *p = u.u_procp;
 
-	uap = (struct a *)u.u_ap;
-	donice(u.u_procp, uap->niceness);
+	donice(p, (p->p_nice-NZERO)+uap->niceness);
 }
-#endif
+
+#include "../h/times.h"
 
 otimes()
 {
+	register struct a {
+		struct	tms *tmsb;
+	} *uap = (struct a *)u.u_ap;
+	struct tms atms;
 
-	/* XXX */
+	atms.tms_utime = scale60(&u.u_ru.ru_utime);
+	atms.tms_stime = scale60(&u.u_ru.ru_stime);
+	atms.tms_cutime = scale60(&u.u_cru.ru_utime);
+	atms.tms_cstime = scale60(&u.u_cru.ru_stime);
+	if (copyout((caddr_t)&atms, uap->tmsb, sizeof (atms))) {
+		u.u_error = EFAULT;
+		return;
+	}
 }
+
+scale60(tvp)
+	register struct timeval *tvp;
+{
+
+	return (tvp->tv_sec * 60 + tvp->tv_usec / 16667);
+}
+
+#include <vtimes.h>
 
 ovtimes()
 {
+	register struct a {
+		struct	vtimes *par;
+		struct	vtimes *chi;
+	} *uap = (struct a *)u.u_ap;
+	struct vtimes avt;
 
-	/* XXX */
+	if (uap->par) {
+		getvtimes(&u.u_ru, &avt);
+		if (copyout((caddr_t)&avt, (caddr_t)uap->par, sizeof (avt))) {
+			u.u_error = EFAULT;
+			return;
+		}
+	}
+	if (uap->chi) {
+		getvtimes(&u.u_cru, &avt);
+		if (copyout((caddr_t)&avt, (caddr_t)uap->chi, sizeof (avt))) {
+			u.u_error = EFAULT;
+			return;
+		}
+	}
+}
+
+getvtimes(aru, avt)
+	register struct rusage *aru;
+	register struct vtimes *avt;
+{
+
+	avt->vm_utime = scale60(&aru->ru_utime);
+	avt->vm_stime = scale60(&aru->ru_stime);
+	avt->vm_idsrss = ((aru->ru_idrss+aru->ru_isrss) / hz) * 60;
+	avt->vm_ixrss = aru->ru_ixrss / hz * 60;
+	avt->vm_maxrss = aru->ru_maxrss;
+	avt->vm_majflt = aru->ru_majflt;
+	avt->vm_minflt = aru->ru_minflt;
+	avt->vm_nswap = aru->ru_nswap;
+	avt->vm_inblk = aru->ru_inblock;
+	avt->vm_oublk = aru->ru_oublock;
 }
 
 ovlimit()
 {
 
+	u.u_error = EACCES;
 }
