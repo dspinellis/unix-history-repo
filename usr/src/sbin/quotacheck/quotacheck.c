@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)quotacheck.c	4.4 (Berkeley, Melbourne) %G%";
+static char sccsid[] = "@(#)quotacheck.c	4.5 (Berkeley, Melbourne) %G%";
 #endif
 
 /*
@@ -161,13 +161,17 @@ chkquota(fsdev, qffile)
 			acct(ginode());
 	}
 	for (uid = 0; uid <= highuid; uid++) {
-		fup = lookup(uid);
-		if (fup == 0)
-			continue;
-		fseek(qf, uid * sizeof(struct dqblk), 0);
 		i = fread(&dqbuf, sizeof(struct dqblk), 1, qf);
 		if (i == 0)
 			dqbuf = zerodqbuf;
+		fup = lookup(uid);
+		if (fup == 0) {
+			if (!feof(qf)) {
+				fseek(qf, uid * sizeof(struct dqblk), 0);
+				fwrite(&zerodqbuf, sizeof(struct dqblk), 1, qf);
+			}
+			continue;
+		}
 		if (dqbuf.dqb_curinodes == fup->fu_usage.du_curinodes &&
 		    dqbuf.dqb_curblocks == fup->fu_usage.du_curblocks) {
 			fup->fu_usage.du_curinodes = 0;
@@ -192,6 +196,7 @@ chkquota(fsdev, qffile)
 		fup->fu_usage.du_curinodes = 0;
 		fup->fu_usage.du_curblocks = 0;
 	}
+	ftruncate(fileno(qf), (highuid + 1) * sizeof(struct dqblk));
 	return (0);
 }
 
