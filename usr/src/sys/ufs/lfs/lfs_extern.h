@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_extern.h	5.2 (Berkeley) %G%
+ *	@(#)lfs_extern.h	5.3 (Berkeley) %G%
  */
 
 struct fid;
@@ -23,6 +23,7 @@ void	 lfs_bwrite __P((struct buf *));
 void	 lfs_cleaner __P((void));
 int	 lfs_fhtovp __P((struct mount *, struct fid *, struct vnode **));
 u_long	 lfs_getversion __P((LFS *fs, ino_t));
+void	 lfs_hqueue __P((INODE *));
 ino_t	 lfs_ialloc __P((LFS *, struct inode *, struct inode **,
 	     struct ucred *));
 IFILE	*lfs_ientry __P((LFS *, ino_t));
@@ -33,7 +34,8 @@ int	 lfs_inactive __P((struct vnode *, struct proc *));
 int	 lfs_init __P((void));
 void	 lfs_iset __P((INODE *, daddr_t, time_t));
 int	 lfs_lookup __P((struct vnode *, struct nameidata *, struct proc *));
-int	 lfs_mount __P((struct mount *, char *, caddr_t, struct nameidata *, struct proc *));
+int	 lfs_mount __P((struct mount *, char *, caddr_t, struct nameidata *,
+	     struct proc *));
 int	 lfs_root __P((struct mount *, struct vnode **));
 int	 lfs_segwrite __P((MOUNT *, int));
 int	 lfs_statfs __P((struct mount *, struct statfs *, struct proc *));
