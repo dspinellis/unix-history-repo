@@ -15,13 +15,15 @@
  *
  *	@(#)cgthree.c	8.2 (Berkeley) %G%
  *
- * from: $Header: cgthree.c,v 1.6 92/11/26 02:28:06 torek Exp $
+ * from: $Header: cgthree.c,v 1.8 93/10/31 05:09:24 torek Exp $
  */
 
 /*
  * color display (cgthree) driver.
  *
  * Does not handle interrupts, even though they can occur.
+ *
+ * XXX should defer colormap updates to vertical retrace interrupts
  */
 
 #include <sys/param.h>
@@ -37,23 +39,20 @@
 #include <machine/pmap.h>
 #include <machine/fbvar.h>
 
+#include <sparc/sbus/btreg.h>
+#include <sparc/sbus/btvar.h>
 #include <sparc/sbus/cgthreereg.h>
 #include <sparc/sbus/sbusvar.h>
-
-union colormap {
-	u_char	cm_map[256][3];		/* 256 R/G/B entries */
-	u_int	cm_chip[256 * 3 / 4];	/* the way the chip gets loaded */
-};
 
 /* per-display variables */
 struct cgthree_softc {
 	struct	device sc_dev;		/* base device */
 	struct	sbusdev sc_sd;		/* sbus device */
 	struct	fbdevice sc_fb;		/* frame buffer device */
-	volatile struct cgthreereg *sc_reg;/* control registers */
+	volatile struct bt_regs *sc_bt;	/* Brooktree registers */
 	caddr_t	sc_phys;		/* display RAM (phys addr) */
 	int	sc_blanked;		/* true if blanked */
-	union	colormap sc_cmap;	/* current color map */
+	union	bt_cmap sc_cmap;	/* Brooktree color map */
 };
 
 /* autoconfiguration driver */
@@ -61,11 +60,6 @@ static void	cgthreeattach(struct device *, struct device *, void *);
 struct cfdriver cgthreecd =
     { NULL, "cgthree", matchbyname, cgthreeattach,
       DV_DULL, sizeof(struct cgthree_softc) };
-
-/*
- * XXX we do not handle frame buffer interrupts (do not know how) ... we
- * need these to do color map loading at vertical retrace time!
- */
 
 /* frame buffer generic driver */
 static void	cgthreeunblank(struct device *);
@@ -76,9 +70,8 @@ extern struct tty *fbconstty;
 extern int (*v_putc)();
 extern int nullop();
 static int cgthree_cnputc();
-#ifdef notdef
-static struct cgthree_softc *bwcons;
-#endif
+
+static void cgthreeloadcmap __P((struct cgthree_softc *, int, int));
 
 #define	CGTHREE_MAJOR	55		/* XXX */
 
@@ -93,7 +86,7 @@ cgthreeattach(parent, self, args)
 	register struct cgthree_softc *sc = (struct cgthree_softc *)self;
 	register struct sbus_attach_args *sa = args;
 	register int node = sa->sa_ra.ra_node, ramsize, i;
-	register volatile struct cgthreereg *cg3;
+	register volatile struct bt_regs *bt;
 	register struct cgthree_all *p;
 	int isconsole;
 
@@ -128,15 +121,19 @@ cgthreeattach(parent, self, args)
 		/* this probably cannot happen, but what the heck */
 		sc->sc_fb.fb_pixels = mapiodev(p->ba_ram, ramsize);
 	}
-	sc->sc_reg = cg3 = (volatile struct cgthreereg *)
-	    mapiodev((caddr_t)&p->ba_reg, sizeof(p->ba_reg));
+	sc->sc_bt = bt = (volatile struct bt_regs *)
+	    mapiodev((caddr_t)&p->ba_btreg, sizeof(p->ba_btreg));
 	sc->sc_phys = p->ba_ram;
 
-	/* grab initial (current) color map, then set video */
-	cg3->cg3_addr = 0;
+	/* grab initial (current) color map */
+	bt->bt_addr = 0;
 	for (i = 0; i < 256 * 3 / 4; i++)
-		sc->sc_cmap.cm_chip[i] = cg3->cg3_cmap;
-	cgthreeunblank(&sc->sc_dev);
+		sc->sc_cmap.cm_chip[i] = bt->bt_cmap;
+	/* make sure we are not blanked (see cgthreeunblank) */
+	bt->bt_addr = 0x06;		/* command reg */
+	bt->bt_ctrl = 0x73;		/* overlay plane */
+	bt->bt_addr = 0x04;		/* read mask */
+	bt->bt_ctrl = 0xff;		/* color planes */
 
 	if (isconsole) {
 		printf(" (console)\n");
@@ -177,12 +174,13 @@ int
 cgthreeioctl(dev, cmd, data, flags, p)
 	dev_t dev;
 	int cmd;
-	caddr_t data;
+	register caddr_t data;
 	int flags;
 	struct proc *p;
 {
 	register struct cgthree_softc *sc = cgthreecd.cd_devs[minor(dev)];
 	register struct fbgattr *fba;
+	int error;
 
 	switch (cmd) {
 
@@ -202,58 +200,19 @@ cgthreeioctl(dev, cmd, data, flags, p)
 		fba->emu_types[1] = -1;
 		break;
 
-	case FBIOGETCMAP: {
-		register struct fbcmap *p = (struct fbcmap *)data;
-		register int i, color, count, error;
-		register u_char *cp;
+	case FBIOGETCMAP:
+		return (bt_getcmap((struct fbcmap *)data, &sc->sc_cmap, 256));
 
-		/* get color map from software copy */
-		if ((unsigned)(color = p->index) >= 256 ||
-		    (unsigned)(count = p->count) > 256 - color)
-			return (EINVAL);
-		if (!useracc(p->red, count, B_WRITE) ||
-		    !useracc(p->green, count, B_WRITE) ||
-		    !useracc(p->blue, count, B_WRITE))
-			return (EFAULT);
-		cp = &sc->sc_cmap.cm_map[color][0];
-		for (i = 0; i < count; cp += 3, i++) {
-			p->red[i] = cp[0];
-			p->green[i] = cp[1];
-			p->blue[i] = cp[2];
-		}
-	}
-		break;
-
-	case FBIOPUTCMAP: {
-		register struct fbcmap *p = (struct fbcmap *)data;
-		register int i, color, count, error;
-		register u_char *cp;
-		register u_int *ip;
-
-		/* update software copy */
-		if ((unsigned)(color = p->index) >= 256 ||
-		    (unsigned)(count = p->count) > 256 - color)
-			return (EINVAL);
-		if (!useracc(p->red, count, B_READ) ||
-		    !useracc(p->green, count, B_READ) ||
-		    !useracc(p->blue, count, B_READ))
-			return (EFAULT);
-		cp = &sc->sc_cmap.cm_map[color][0];
-		for (i = 0; i < count; cp += 3, i++) {
-			cp[0] = p->red[i];
-			cp[1] = p->green[i];
-			cp[2] = p->blue[i];
-		}
-		/* then blast them into the chip */
+	case FBIOPUTCMAP:
+		/* copy to software map */
+#define p ((struct fbcmap *)data)
+		error = bt_putcmap(p, &sc->sc_cmap, 256);
+		if (error)
+			return (error);
+		/* now blast them into the chip */
 		/* XXX should use retrace interrupt */
-#define	D4M3(x)	((((x) >> 2) << 1) + ((x) >> 2))	/* (x / 4) * 3 */
-#define	D4M4(x)	((x) & ~3)				/* (x / 4) * 4 */
-		ip = &sc->sc_cmap.cm_chip[D4M3(color)];
-		count = D4M3(color + count - 1) - D4M3(color) + 3;
-		sc->sc_reg->cg3_addr = D4M4(color);
-		while (--count >= 0)
-			sc->sc_reg->cg3_cmap = *ip++;
-	}
+		cgthreeloadcmap(sc, p->index, p->count);
+#undef p
 		break;
 
 	case FBIOGVIDEO:
@@ -263,17 +222,22 @@ cgthreeioctl(dev, cmd, data, flags, p)
 	case FBIOSVIDEO:
 		if (*(int *)data)
 			cgthreeunblank(&sc->sc_dev);
-		else {
-			register volatile struct cgthreereg *cg3 = sc->sc_reg;
+		else if (!sc->sc_blanked) {
+			register volatile struct bt_regs *bt;
+
+			bt = sc->sc_bt;
+			bt->bt_addr = 0x06;	/* command reg */
+			bt->bt_ctrl = 0x70;	/* overlay plane */
+			bt->bt_addr = 0x04;	/* read mask */
+			bt->bt_ctrl = 0x00;	/* color planes */
+			/*
+			 * Set color 0 to black -- note that this overwrites
+			 * R of color 1.
+			 */
+			bt->bt_addr = 0;
+			bt->bt_cmap = 0;
 
 			sc->sc_blanked = 1;
-			cg3->cg3_addr = 0x06;	/* command reg */
-			cg3->cg3_ctrl = 0x70;	/* overlay plane */
-			cg3->cg3_addr = 0x04;	/* read mask */
-			cg3->cg3_ctrl = 0x00;	/* color planes */
-			/* set color 0 to black; scribble on R of color 1 */
-			cg3->cg3_addr = 0;
-			cg3->cg3_cmap = 0;
 		}
 		break;
 
@@ -283,21 +247,49 @@ cgthreeioctl(dev, cmd, data, flags, p)
 	return (0);
 }
 
+/*
+ * Undo the effect of an FBIOSVIDEO that turns the video off.
+ */
 static void
 cgthreeunblank(dev)
 	struct device *dev;
 {
 	struct cgthree_softc *sc = (struct cgthree_softc *)dev;
-	register volatile struct cgthreereg *cg3 = sc->sc_reg;
+	register volatile struct bt_regs *bt;
 
-	sc->sc_blanked = 0;
-	cg3->cg3_addr = 0x06;	/* command reg */
-	cg3->cg3_ctrl = 0x73;	/* overlay plane */
-	cg3->cg3_addr = 0x04;	/* read mask */
-	cg3->cg3_ctrl = 0xff;	/* color planes */
-	/* restore color 0 and R of color 1 */
-	cg3->cg3_addr = 0;
-	cg3->cg3_cmap = sc->sc_cmap.cm_chip[0];
+	if (sc->sc_blanked) {
+		sc->sc_blanked = 0;
+		bt = sc->sc_bt;
+		/* restore color 0 (and R of color 1) */
+		bt->bt_addr = 0;
+		bt->bt_cmap = sc->sc_cmap.cm_chip[0];
+
+		/* restore read mask */
+		bt->bt_addr = 0x06;	/* command reg */
+		bt->bt_ctrl = 0x73;	/* overlay plane */
+		bt->bt_addr = 0x04;	/* read mask */
+		bt->bt_ctrl = 0xff;	/* color planes */
+	}
+}
+
+/*
+ * Load a subset of the current (new) colormap into the Brooktree DAC.
+ */
+static void
+cgthreeloadcmap(sc, start, ncolors)
+	register struct cgthree_softc *sc;
+	register int start, ncolors;
+{
+	register volatile struct bt_regs *bt;
+	register u_int *ip;
+	register int count;
+
+	ip = &sc->sc_cmap.cm_chip[BT_D4M3(start)];	/* start/4 * 3 */
+	count = BT_D4M3(start + ncolors - 1) - BT_D4M3(start) + 3;
+	bt = sc->sc_bt;
+	bt->bt_addr = BT_D4M4(start);
+	while (--count >= 0)
+		bt->bt_cmap = *ip++;
 }
 
 /*
