@@ -1,4 +1,4 @@
-/*	if_enreg.h	4.1	81/11/07	*/
+/*	if_enreg.h	4.2	81/11/07	*/
 
 /*
  * Xerox experimental ethernet registers.
@@ -24,7 +24,7 @@ struct endevice {
 #define	EN_OERROR	0x8000		/* collision or output underrun */
 #define EN_OPDONE	0x0080		/* previous operation completed */
 #define EN_IEN		0x0040		/* enable interrupt when DONE */
-#define	EN_PROMISCUOOS	0x0002		/* promiscuous, input any packet */
+#define	EN_PROMISCUOUS	0x0002		/* promiscuous, input any packet */
 #define EN_GO		0x0001		/* start op bit */
 
 #define	EN_BITS	"\10\20ERR\10OPDONE\7IEN\2PROM\1GO"
