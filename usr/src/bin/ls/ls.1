@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ls.1	6.2 (Berkeley) %G%
+.\"	@(#)ls.1	6.3 (Berkeley) %G%
 .\"
 .TH LS 1 ""
 .UC
@@ -11,7 +11,7 @@ ls \- list contents of directory
 .SH SYNOPSIS
 .B ls
 [
-.B \-acdfgilqrstu1ACLFRS
+.B \-acdfgilqrstu1ACLFR
 ] name ...
 .br
 .SH DESCRIPTION
@@ -47,20 +47,6 @@ Include the group ownership of the file in a long output.
 Sort by time modified (latest first) instead of
 by name.
 .TP
-.B \-S
-Sort by size (biggest first) instead of
-by name.
-This option turns on
-.BR \-s .
-If both
-.B \-t
-and
-.B \-S
-are given,
-.B \-t
-overrides
-(e.g. sorting is done by time).
-.TP
 .B \-a
 List all entries; in the absence of this option, entries whose
 names begin with a period
@@ -81,8 +67,8 @@ If argument is a symbolic link, list the file or directory the link references
 rather than the link itself.
 .TP
 .B \-r
-Reverse the order of sort to get reverse alphabetic,
-size, or oldest first as appropriate.
+Reverse the order of sort to get reverse alphabetic
+or oldest first as appropriate.
 .TP
 .B \-u
 Use time of last access instead of last
@@ -100,7 +86,7 @@ For each file, print the i-number in the first column of the report.
 Force each argument to be interpreted as a directory
 and list the name found in each slot.
 This option turns off
-.B "\-t, \-S,"
+.B "\-l, \-t, \-s,"
 and
 .B \-r,
 and
