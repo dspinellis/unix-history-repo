@@ -15,7 +15,7 @@ static char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mountd.c	8.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)mountd.c	8.7 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -119,7 +119,7 @@ void getexp_err(), hang_dirp(), add_dlist(), free_dir(), free_host();
 void setnetgrent(), endnetgrent();
 struct exportlist *ex_search(), *get_exp();
 struct grouplist *get_grp();
-char *realpath(), *add_expdir();
+char *add_expdir();
 struct in_addr inet_makeaddr();
 char *inet_ntoa();
 struct dirlist *dirp_search();
@@ -1853,90 +1853,6 @@ free_grp(grp)
 		free((caddr_t)grp->gr_ptr.gt_isoaddr);
 #endif
 	free((caddr_t)grp);
-}
-
-/*
- * char *realpath(const char *path, char resolved_path[MAXPATHLEN])
- *
- * find the real name of path, by removing all ".", ".."
- * and symlink components.
- *
- * Jan-Simon Pendry, September 1991.
- */
-char *
-realpath(path, resolved)
-	char *path;
-	char resolved[MAXPATHLEN];
-{
-	int d = open(".", O_RDONLY);
-	int rootd = 0;
-	char *p, *q;
-	struct stat stb;
-	char wbuf[MAXPATHLEN];
-
-	strcpy(resolved, path);
-
-	if (d < 0)
-		return 0;
-
-loop:;
-	q = strrchr(resolved, '/');
-	if (q) {
-		p = q + 1;
-		if (q == resolved)
-			q = "/";
-		else {
-			do
-				--q;
-			while (q > resolved && *q == '/');
-			q[1] = '\0';
-			q = resolved;
-		}
-		if (chdir(q) < 0)
-			goto out;
-	} else
-		p = resolved;
-
-	if (lstat(p, &stb) == 0) {
-		if (S_ISLNK(stb.st_mode)) {
-			int n = readlink(p, resolved, MAXPATHLEN);
-			if (n < 0)
-				goto out;
-			resolved[n] = '\0';
-			goto loop;
-		}
-		if (S_ISDIR(stb.st_mode)) {
-			if (chdir(p) < 0)
-				goto out;
-			p = "";
-		}
-	}
-
-	strcpy(wbuf, p);
-	if (getcwd(resolved, MAXPATHLEN) == 0)
-		goto out;
-	if (resolved[0] == '/' && resolved[1] == '\0')
-		rootd = 1;
-
-	if (*wbuf) {
-		if (strlen(resolved) + strlen(wbuf) + rootd + 1 > MAXPATHLEN) {
-			errno = ENAMETOOLONG;
-			goto out;
-		}
-		if (rootd == 0)
-			strcat(resolved, "/");
-		strcat(resolved, wbuf);
-	}
-
-	if (fchdir(d) < 0)
-		goto out;
-	(void) close(d);
-
-	return resolved;
-
-out:;
-	(void) close(d);
-	return 0;
 }
 
 #ifdef DEBUG
