@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)split.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)split.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -84,7 +84,7 @@ main(argc, argv)
 		case 'l':		/* Line count. */
 			if (numlines != 0)
 				usage();
-			if ((numlines = strtol(optarg, &ep, 10)) <= 0 || *p)
+			if ((numlines = strtol(optarg, &ep, 10)) <= 0 || *ep)
 				errx(1, "%s: illegal line count.", optarg);
 			break;
 		default:
