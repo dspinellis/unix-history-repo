@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fts.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)fts.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -15,12 +15,12 @@ static char sccsid[] = "@(#)fts.c	5.5 (Berkeley) %G%";
 #include <errno.h>
 #include <fts.h>
 #include <string.h>
+#include <stdlib.h>
 
 extern int errno;
 
 FTSENT *fts_alloc(), *fts_build(), *fts_cycle(), *fts_sort(), *fts_root();
 short fts_stat();
-char *malloc(), *realloc();
 
 /*
  * Special case a root of "/" so that slashes aren't appended causing
@@ -102,20 +102,19 @@ ftsopen(argv, options, compar)
 		root->fts_parent = parent;
 	}
 
+	/*
+	 * allocate a dummy pointer and make ftsread think that we've just
+	 * finished the node before the root(s); set p->fts_info to FTS_NS
+	 * so that everything about the "current" node is ignored.
+	 */
+	if (!(sp->fts_cur = fts_alloc("", 0)))
+		goto mem2;
+	sp->fts_cur->fts_link = root;
+	sp->fts_cur->fts_info = FTS_NS;
+
 	/* start out with at least 1K+ of path space */
 	if (!fts_path(MAX(maxlen, MAXPATHLEN)))
-		goto mem2;
-
-	/*
-	 * some minor trickiness.  Set the pointers so that ftsread thinks
-	 * we've just finished the node before the root(s); set p->fts_info
-	 * to FTS_NS so that everything about the "current" node is ignored.
-	 * Rather than allocate a dummy node use the root's parent's link
-	 * pointer.  This is handled specially in ftsclose() as well.
-	 */
-	sp->fts_cur = parent;
-	parent->fts_link = root;
-	parent->fts_info = FTS_NS;
+		goto mem3;
 
 	/*
 	 * if using chdir(2), do a getwd() to insure that we can get back
@@ -130,6 +129,7 @@ ftsopen(argv, options, compar)
 
 	return(sp);
 
+mem3:	(void)free((char *)sp->fts_cur);
 mem2:	fts_lfree(root);
 	(void)free((char *)parent);
 mem1:	(void)free((char *)sp);
@@ -164,18 +164,19 @@ ftsclose(sp)
 	register FTSENT *freep, *p;
 	int saved_errno;
 
-	if (sp->fts_cur)
-		/* check for never having read anything */
-		if (sp->fts_cur->fts_level == ROOTPARENTLEVEL)
-			fts_lfree(sp->fts_cur);
-		else {
-			for (p = sp->fts_cur; p->fts_level > ROOTPARENTLEVEL;) {
-				freep = p;
-				p = p->fts_link ? p->fts_link : p->fts_parent;
-				(void)free((char *)freep);
-			}
-			(void)free((char *)p);
+	if (sp->fts_cur) {
+		/*
+		 * this still works if we haven't read anything -- the dummy
+		 * structure points to the root list, so we step through to
+		 * the end of the root list which has a valid parent pointer.
+		 */
+		for (p = sp->fts_cur; p->fts_level > ROOTPARENTLEVEL;) {
+			freep = p;
+			p = p->fts_link ? p->fts_link : p->fts_parent;
+			(void)free((char *)freep);
 		}
+		(void)free((char *)p);
+	}
 
 	/* free up child linked list, sort array, path buffer */
 	if (sp->fts_child)
@@ -259,8 +260,8 @@ ftsread(sp)
 	}
 
 	/*
-	 * user may have called ftsset on pointer returned by
-	 * ftschildren; handle it here.
+	 * user may have called ftsset on pointer returned by ftschildren;
+	 * handle it here.
 	 */
 	for (p = p->fts_link; p;) {
 		instr = p->fts_instr;
@@ -288,18 +289,16 @@ ftsread(sp)
 		 */
 		if (p->fts_level == ROOTLEVEL) {
 			fts_load(p);
-			if (cd) {
-				(void)free((char *)sp->fts_cur);
-				if (p->fts_path[0] != '/' &&
-				    CHDIR(sp, sp->fts_wd)) {
-					/* return target path for error msg */
-					p->fts_path = sp->fts_wd;
-					p->fts_info = FTS_ERR;
-					sp->fts_options |= FTS__STOP;
-					return(sp->fts_cur = p);
-				}
-			} else
-				cd = 1;
+			(void)free((char *)sp->fts_cur);
+			if (cd &&
+			    p->fts_path[0] != '/' && CHDIR(sp, sp->fts_wd)) {
+				/* return target path for error msg */
+				p->fts_path = sp->fts_wd;
+				p->fts_info = FTS_ERR;
+				sp->fts_options |= FTS__STOP;
+				return(sp->fts_cur = p);
+			}
+			cd = 1;
 			p->fts_info = fts_stat(p, 0);
 			sp->sdev = p->fts_statb.st_dev;
 		} else {
