@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.86 (Berkeley) %G%
+#	@(#)READ_ME	8.87 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -414,6 +414,12 @@ IDENTPROTO	Define this as 1 to get IDENT (RFC 1413) protocol support.
 		is actually still compiled in, but it defaults off; you
 		can turn it on by setting the IDENT timeout to 30s in the
 		configuration file.
+IP_SRCROUTE	Define this to 1 to get IP source routing information
+		displayed in the Received: header.  This is assumed on
+		most systems, but some (e.g., Ultrix) apparently have a
+		broken version of getsockopt that doesn't properly
+		support the IP_OPTIONS call.  You probably want this if
+		your OS can cope with it.
 LOG		Set this to get syslog(3) support.  Defined by default
 		in conf.h.  You want this if at all possible.
 NETINET		Set this to get TCP/IP support.  Defined by default
@@ -1006,4 +1012,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.86, last update %G% 08:30:29)
+(Version 8.87, last update %G% 08:29:55)

@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.90 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.91 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.90 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.91 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -24,6 +24,12 @@ static char sccsid[] = "@(#)daemon.c	8.90 (Berkeley) %G% (without daemon mode)";
 
 #if NAMED_BIND
 # include <resolv.h>
+#endif
+
+#if IP_SRCROUTE
+# include <netinet/in_systm.h>
+# include <netinet/ip.h>
+# include <netinet/ip_var.h>
 #endif
 
 /*
@@ -722,7 +728,7 @@ getauthinfo(fd)
 	i = strlen(hbuf);
 	hbuf[i++] = '@';
 	strcpy(&hbuf[i], RealHostName == NULL ? "localhost" : RealHostName);
-	goto finish;
+	goto postident;
 
 closeident:
 	(void) close(s);
@@ -737,12 +743,91 @@ noident:
 	}
 	(void) strcpy(hbuf, RealHostName);
 
-finish:
+postident:
+#if IP_SRCROUTE
+	/*
+	**  Extract IP source routing information.
+	**
+	**	Format of output for a connection from site a through b
+	**	through c to d:
+	**		loose:      @site-c@site-b:site-a
+	**		strict:	   !@site-c@site-b:site-a
+	**
+	**	o - pointer within ipopt_list structure.
+	**	q - pointer within ls/ss rr route data
+	**	p - pointer to hbuf
+	*/
+
+	if (RealHostAddr.sa.sa_family == AF_INET)
+	{
+		int ipoptlen, j;
+		char *q;
+		u_char *o;
+		struct in_addr addr;
+		struct ipoption ipopt;
+
+		ipoptlen = sizeof ipopt;
+		if (getsockopt(fd, IPPROTO_IP, IP_OPTIONS,
+			       (char *) &ipopt, &ipoptlen) < 0)
+			goto noipsr;
+		if (ipoptlen == 0)
+			goto noipsr;
+		o = (u_char *) &ipopt.ipopt_list;
+		while (o != NULL && o < (u_char *) (&ipopt + ipoptlen))
+		{
+			switch (*o)
+			{
+			  case IPOPT_EOL: 
+				o = NULL;
+				break;
+
+			  case IPOPT_NOP:
+				o++;
+				break;
+
+			  case IPOPT_SSRR:
+			  case IPOPT_LSRR:
+				p = &hbuf[strlen(hbuf)];
+				sprintf(p, " [%s@%s",
+				    *o == IPOPT_SSRR ? "!" : "",
+				    inet_ntoa(ipopt.ipopt_dst));
+				p += strlen(p);
+
+				/* o[1] is option length */
+				j = *++o / sizeof(struct in_addr) - 1;
+
+				/* q skips length and router pointer to data */
+				q = o + 2;
+				for ( ; j >= 0; j--)
+				{
+					memcpy(&addr, q, sizeof(addr));
+					p += sprintf(p, "%c%s",
+						     j ? '@' : ':',
+						     inet_ntoa(addr));
+					q+=sizeof(struct in_addr); 
+				}
+				o += *o;
+				break;
+
+			  default:
+				/* Skip over option */
+				o += o[1];
+				break;
+			}
+		}
+		strcat(hbuf,"]");
+		goto postipsr;
+	}
+#endif
+
+noipsr:
 	if (RealHostName != NULL && RealHostName[0] != '[')
 	{
 		p = &hbuf[strlen(hbuf)];
 		(void) sprintf(p, " [%s]", anynet_ntoa(&RealHostAddr));
 	}
+
+postipsr:
 	if (tTd(9, 1))
 		printf("getauthinfo: %s\n", hbuf);
 	return hbuf;
