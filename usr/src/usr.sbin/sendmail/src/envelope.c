@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	6.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	6.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -562,11 +562,11 @@ setsender(from, e, delimptr)
 		pvp = prescan(from, '\0', pvpbuf, NULL);
 	if (pvp == NULL)
 	{
+		/* don't need to give error -- prescan did that already */
 # ifdef LOG
 		if (LogLevel > 2)
 			syslog(LOG_NOTICE, "cannot prescan from (%s)", from);
 # endif
-		usrerr("553 cannot prescan from (%s)", from);
 		finis();
 	}
 	rewrite(pvp, 3);
