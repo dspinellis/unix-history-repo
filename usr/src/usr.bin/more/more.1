@@ -18,7 +18,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)more.1	5.1 (Berkeley) %G%
+.\"	@(#)more.1	5.2 (Berkeley) %G%
 .\"
 .TH LESS 1
 .SH NAME
@@ -26,7 +26,7 @@ less \- opposite of more
 .SH SYNOPSIS
 .B "less [-[+]aABcCdeEimMnqQuUsw] [-b\fIN\fB] [-h\fIN\fB] [-x\fIN\fB] [-[z]\fIN\fB]"
 .br
-.B "     [-P[mM=]\fIstring\fB] [-[lL]\fIlogfile\fB] [+\fIcmd\fB]"
+.B "     [-P[mM=]\fIstring\fB] [+\fIcmd\fB]"
 .br
 .B "     [-t\fItag\fB] [\fIfilename\fB]..."
 .SH DESCRIPTION
@@ -214,22 +214,10 @@ being run.
 Exits
 .I less.
 .PP
-The following 
-two 
-commands may or may not be valid, depending on your particular installation.
-.PP
 .IP v
 Invokes an editor to edit the current file being viewed.
 The editor is taken from the environment variable EDITOR,
 or defaults to "vi".
-.PP
-.IP "! shell-command"
-Invokes a shell to run the shell-command given.
-A percent sign in the command is replaced by the name of the
-current file.  "!!" repeats the last shell command.
-"!" with no shell command simply invokes a shell.
-In all cases, the shell is taken from the environment variable SHELL,
-or defaults to "sh".
 .PP
 .SH OPTIONS
 Command line options are described below.
@@ -326,22 +314,6 @@ backwards, -h0 is implied.)
 The -i option causes searches to ignore case; that is,
 uppercase and lowercase are considered identical.
 Also, text which is overstruck or underlined can be searched for.
-.IP -l
-The -l option, followed immediately by a filename,
-will cause 
-.I less
-to copy its input to the named file as it is being viewed.
-This applies only when the input file is a pipe,
-not an ordinary file.
-If the file already exists, less will ask for confirmation before
-overwriting it.
-.IP -L
-The -L option is like -l, but it will overwrite an existing
-file without asking for confirmation.
-.sp
-If no log file has been specified,
-the -l and -L options can be used from within less to specify a log file.
-Without a file name, they will simply report the name of the log file.
 .IP -m
 Normally,
 .I less
