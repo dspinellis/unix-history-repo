@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* sccsid[] = "@(#)h00vars.h 1.1 %G%"; */
+/* sccsid[] = "@(#)h00vars.h 1.2 %G%"; */
 
 #include <stdio.h>
 
@@ -11,6 +11,7 @@
 #define	TRUE		1
 #define	FALSE		0
 #define	MAXLVL		20
+#define MAXERRS		75
 #define NAMSIZ		76
 #define MAXFILES	32
 #define PREDEF		2
@@ -38,6 +39,11 @@ struct formalrtn {
 	struct display	disp[2*MAXLVL];
 };
 
+struct errentry {
+	long (*entryaddr)();
+};
+
+
 /*
  * program variables
  */
@@ -49,6 +55,7 @@ extern long		_stcnt;		/* statement count */
 extern char		*_maxptr;	/* maximum valid pointer */
 extern char		*_minptr;	/* minimum valid pointer */
 extern long		_pcpcount[];	/* pxp buffer */
+extern struct errentry	_entry[MAXERRS];/* error entry catches */
 
 /*
  * file structures

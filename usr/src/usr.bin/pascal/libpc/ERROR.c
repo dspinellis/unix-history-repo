@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)ERROR.c 1.1 %G%";
+static char sccsid[] = "@(#)ERROR.c 1.2 %G%";
 
 #include	"stdio.h"
 #include	"signal.h"
