@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ls.1	6.10 (Berkeley) %G%
+.\"	@(#)ls.1	6.11 (Berkeley) %G%
 .\"
 .TH LS 1 ""
 .UC
@@ -11,7 +11,7 @@ ls \- list contents of directory
 .SH SYNOPSIS
 .B ls
 [
-.B \-1AaCcdFgikLlqRrstu
+.B \-1AaCcdFfgikLlqRrstu
 ] [ file ... ]
 .br
 .SH DESCRIPTION
@@ -55,6 +55,9 @@ Use time when file status was last changed for sorting or printing.
 .B \-d
 If argument is a directory, list only its name;
 often used with \fB\-l\fR to get the status of a directory.
+.TP
+.B \-f
+Don't sort the output.
 .TP
 .B \-F
 cause directories to be marked with a trailing `/',

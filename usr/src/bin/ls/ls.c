@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.34 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -57,6 +57,7 @@ int f_longform;			/* long listing format */
 int f_needstat;			/* if need to stat files */
 int f_newline;			/* if precede with newline */
 int f_nonprint;			/* show unprintables as ? */
+int f_nosort;			/* don't sort output */
 int f_recursive;		/* ls subdirectories also */
 int f_reversesort;		/* reverse whatever sort is used */
 int f_singlecol;		/* use single column output */
@@ -96,7 +97,7 @@ main(argc, argv)
 	if (!getuid())
 		f_listdot = 1;
 
-	while ((ch = getopt(argc, argv, "1ACFLRacdgiklqrstu")) != EOF) {
+	while ((ch = getopt(argc, argv, "1ACFLRacdfgiklqrstu")) != EOF) {
 		switch (ch) {
 		/*
 		 * -1, -C and -l all override each other
@@ -142,6 +143,9 @@ main(argc, argv)
 			Sflg++; /* fall into... */
 		case 'd':
 			f_listdir = 1;
+			break;
+		case 'f':
+			f_nosort = 1;
 			break;
 		case 'g':
 			f_group = 1;
@@ -324,7 +328,7 @@ displaydir(stats, num)
 	register char *p, *savedpath;
 	LS *lp;
 
-	if (num > 1) {
+	if (num > 1 && !f_nosort) {
 		u_long save1, save2;
 
 		save1 = stats[0].lstat.st_btotal;
