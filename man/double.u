@@ -1,0 +1,14 @@
+.TH DOUBLE UCB 2/24/79 UCB
+.SH NAME
+double \- double strike output for faint ribbons
+.SH SYNOPSIS
+.B double
+[ file ... ]
+.SH DESCRIPTION
+.I Double
+double strikes each of the specified files,
+or the standard input
+for printing dark copies with faint ribbons.
+.SH AUTHOR
+Bill Joy
+.SH BUGS
