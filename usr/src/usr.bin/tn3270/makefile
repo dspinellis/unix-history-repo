@@ -59,7 +59,6 @@ CFLAGS	= $(OPTIMIZE) $(INCLUDES) $(DEFINES)
 LINTFLAGS	= -hbxaz
 # How to install the bloody thing...
 
-DIRPATH=.
 DESTDIR=
 
 BINDIR		= $(DESTDIR)/usr/ucb
@@ -92,15 +91,14 @@ SUBDIR =	api apilib ascii ctlr general sys
 # The following are directories we don't do regular make's in, but
 # we do make everywhere, print, and sourcelist in.
 
-EXTRADIR =	arpa sys_dos tools
+EXTRADIR =	arpa sys_dos tools utilities
 
 # The libraries we use.  The order here is important.
-# ctlr.lib and sys.lib should come first, then api.lib
+# ctlrlib.a and syslib.a should come first, then apilib.a
 # then the rest.
-SUBLIB =	ctlr/ctlr.lib sys/sys.lib \
-		api/api.lib \
-		ascii/ascii.lib general/general.lib
-
+SUBLIB =	ctlr/ctlrlib.a sys/syslib.a \
+		api/apilib.a \
+		ascii/asciilib.a general/generallib.a
 
 .s.o:
 	/lib/cpp -E $< | as -o $@
@@ -115,8 +113,8 @@ tn3270:	telnet.o ${SUBLIB}
 	${CC} ${CFLAGS} -o tn3270 telnet.o \
 		${SUBLIB} apilib/apilib.a $(LIBCURSES) $(LIBTERM)
 
-mset:	mset.o ascii/map3270.o ascii/astosc.o
-	${CC} ${CFLAGS} -o mset mset.o ascii/map3270.o ascii/astosc.o
+mset:	mset.o ascii/map3270.o
+	${CC} ${CFLAGS} -o mset mset.o ascii/map3270.o apilib/apilib.a
 
 telnet.o:	$(TNMAIN)
 	$(CC) $(CFLAGS) -DTN3270 -c $(TNMAIN)
@@ -144,9 +142,9 @@ everywhere:	action
 
 clean:
 	rm -f $(ALLO) mset tn3270 errs makefile.bak
+	-sccs clean
+	-sccs get makefile
 	for i in ${SUBDIR} ${EXTRADIR}; do (cd $$i; make ${MFLAGS} clean); done
-	rm -f t1 tmp/*.o
-	-rmdir tmp
 
 print:
 	${PRINT} ${ALLPRINT}
@@ -158,9 +156,9 @@ tags:	${ALLC} ${ALLH}
 
 sourcelist:	${ALLSOURCE}
 	@for i in ${ALLSOURCE}; \
-		do (echo ${DIRPATH}/$$i); done
+		do (echo ${DIRPATH}$$i); done
 	@for i in ${SUBDIR} ${EXTRADIR}; \
-		do (cd $$i; make ${MFLAGS} "DIRPATH=${DIRPATH}/$$i" \
+		do (cd $$i; make ${MFLAGS} "DIRPATH=${DIRPATH}$$i/" \
 							    sourcelist); done
 
 lint:
