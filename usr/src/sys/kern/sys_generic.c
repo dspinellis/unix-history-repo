@@ -1,4 +1,4 @@
-/*	sys_generic.c	5.34	83/05/08	*/
+/*	sys_generic.c	5.35	83/05/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -14,12 +14,6 @@
 #include "../h/socket.h"
 #include "../h/socketvar.h"
 #include "../h/fs.h"
-#ifdef MUSH
-#include "../h/quota.h"
-#include "../h/share.h"
-#else
-#define	CHARGE(nothing)
-#endif
 #include "../h/descrip.h"
 #include "../h/uio.h"
 #include "../h/cmap.h"
@@ -219,16 +213,12 @@ rwip(ip, uio, rw)
 		ip->i_flag |= IACC;
 	type = ip->i_mode&IFMT;
 	if (type == IFCHR) {
-#ifdef QUOTA
-		register c = uio->uio_resid;
-#endif
 		if (rw == UIO_READ)
 			u.u_error = (*cdevsw[major(dev)].d_read)(dev, uio);
 		else {
 			ip->i_flag |= IUPD|ICHG;
 			u.u_error = (*cdevsw[major(dev)].d_write)(dev, uio);
 		}
-		CHARGE(sc_tio * (c - uio->uio_resid));
 		return (u.u_error);
 	}
 	if (uio->uio_resid == 0)
