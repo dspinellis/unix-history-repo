@@ -1,0 +1,20 @@
+,config.h:#define alloca(x) __builtin_alloca(x)
+c-parse.c:#define alloca __builtin_alloca
+cexp.c:#define alloca __builtin_alloca
+cp-parse.c:#define alloca __builtin_alloca
+genextract.c:      printf ("#define bcopy(FROM,TO,COUNT) __builtin_memcpy(TO,FROM,COUNT)\n");
+getopt.c:#define alloca __builtin_alloca
+gvarargs.h:#define va_alist  __builtin_va_alist
+gvarargs.h:#define va_dcl    int __builtin_va_alist; __va_ellipsis
+hconfig.h:#define alloca(x) __builtin_alloca(x)
+math-convex.h:#define fabs(x)		 __builtin_fabs(x)
+objc-parse.c:#define alloca __builtin_alloca
+tconfig.h:#define alloca(x) __builtin_alloca(x)
+va-alpha.h:#define va_alist __builtin_va_alist
+va-alpha.h:#define va_start(pvar) ((pvar) = * (__gnuc_va_list *) __builtin_saveregs ())
+va-i860.h:#define va_alist __builtin_va_alist
+va-i860.h:#define va_start(pvar) ((pvar) = * (__gnuc_va_list *) __builtin_saveregs ())
+va-mips.h:#define va_alist  __builtin_va_alist
+va-mips.h:#define va_dcl    int __builtin_va_alist; __va_ellipsis
+va-sparc.h:#define va_alist  __builtin_va_alist
+va-sparc.h:#define va_dcl    int __builtin_va_alist; __va_ellipsis
