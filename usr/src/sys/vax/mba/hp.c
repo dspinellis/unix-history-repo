@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hp.c	7.13 (Berkeley) %G%
+ *	@(#)hp.c	7.14 (Berkeley) %G%
  */
 
 #ifdef HPDEBUG
@@ -88,6 +88,8 @@ short	hptypes[] = {
 #define HPDT_RM02	14
 	MBDT_RM02,		/* beware, actually mapped */
 #define HPDT_2361	15
+	-1,
+#define HPDT_2361A	16
 	-1,
 	0
 };
@@ -1237,6 +1239,15 @@ struct	size {
 	377408,	547,		/* F=cyl 547 thru 841 */
 	701248,	294,		/* G=cyl 294 thru 841 */
 	291346,	66,		/* H=cyl 66 thru 293 */
+}, fj2361a_sizes[8] = {
+	15884,	0,		/* A=cyl 0 thru 11 */
+	66880,	12,		/* B=cyl 12 thru 61 */
+	1145120, 0,		/* C=cyl 0 thru 841 */
+	15884,	277,		/* D=cyl 277 thru 288 */
+	307200,	289,		/* E=cyl 289 thru 514 */
+	444516,	515,		/* F=cyl 515 thru 841 */
+	768196,	277,		/* G=cyl 277 thru 841 */
+	291346,	62,		/* H=cyl 62 thru 276 */
 };
 
 /*
@@ -1281,6 +1292,7 @@ struct hpst {
     { 48, 20,	48*20,	842,	eagle_sizes,   15, 8, 3, "eagle" },
     { 32, 19,	32*19,	815,	ampex_sizes,	7, 4, 1, "9300" },
     { 64, 20,	64*20,	842,	fj2361_sizes,  15, 8, 3, "2361" },
+    { 68, 20,	68*20,	842,	fj2361a_sizes, 15, 8, 3, "2361a" },
 };
 
 /*

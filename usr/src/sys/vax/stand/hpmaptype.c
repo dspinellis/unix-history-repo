@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hpmaptype.c	7.7 (Berkeley) %G%
+ *	@(#)hpmaptype.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -27,13 +27,14 @@ short	rp06_off[8] =	{ 0, 38, 0, -1, -1, -1, 118, -1 };
 short	rm03_off[8] =	{ 0, 100, 0, -1, -1, -1, 309, -1 };
 short	rm05_off[8] =	{ 0, 27, 0, 562, 589, 681, 562, 82 };
 short	rm80_off[8] =	{ 0, 37, 0, -1, -1, -1, 115, -1 };
-short	rp07_off[8] = 	{ 0, 10, 0, 235, 245, 437, 235, 52 };
+short	rp07_off[8] =	{ 0, 10, 0, 235, 245, 437, 235, 52 };
 short	ml_off[8] =	{ 0, -1, -1, -1, -1, -1, -1, -1 };
 /*short	cdc9775_off[8] = { 0, 13, 0, -1, -1, -1, 294, 66 };*/
 short	cdc9730_off[8] = { 0, 50, 0, -1, -1, -1, 155, -1 };
 short	capricorn_off[8] = { 0, 32, 0, 668, 723, 778, 668, 98 };
-short	eagle_off[8] =	{ 0, 17, 0, 391, 408, 728, 391, 87 };
+short	eagle_off[8] = { 0, 17, 0, 391, 408, 728, 391, 87 };
 short	fj2361_off[8] = { 0, 13, 0, 294, 307, 547, 294, 66 };
+short	fj2361a_off[8] = { 0, 12, 0, 277, 289, 515, 277, 62 };
 
 /*
  * hptypes is used to translate Massbus drive type and other information
@@ -56,6 +57,7 @@ short	hptypes[] = {
 	-1,		/* 9300 */
 	-1,		/* 9766 */
 	-1,		/* 2361 */
+	-1,		/* 2361A */
 	0
 };
 
@@ -92,6 +94,8 @@ struct st hpst[] = {
 	32,	19,	32*19,	823,	rm05_off,	/* CDC 9766 */
 #define HPDT_2361	15
 	64,	20,	64*20,	842,	fj2361_off,	/* Fuji 2361 */
+#define HPDT_2361A
+	68,	20,	68*20,	842,	fj2361a_off,	/* Fuji 2361a */
 };
 #define	NTYPES	(sizeof(hpst) / sizeof(hpst[0]))
 
