@@ -1,0 +1,95 @@
+			Warp Kit, Version 7.0
+
+		    Copyright (c) 1986, Larry Wall
+
+You may copy the warp kit in whole or in part as long as you don't try to
+make money off it, or pretend that you wrote it.
+--------------------------------------------------------------------------
+
+Warp is a real-time space war game that doesn't get boring very quickly.
+Read warp.doc and the manual page for more information.
+
+Warp will probably not run on V7 systems that don't have a non-blocking read,
+or on machines with a small address space like the PDP-11.  Caveat Emptor.
+
+Please read all the directions below before you proceed any further, and
+then follow them carefully.  Failure to do so may void your warranty. :-)
+
+After you have unpacked your kit, you should have all the files listed
+in MANIFEST.
+
+			    IMPORTANT
+
+You must choose the uid that you want warp to run under, since warp runs
+setuid to protect its files.  Choose a uid (not root) that is used only
+by trustworthy persons.  If you do your make install as root, the installed
+version will be chowned to this uid.  Otherwise, you should login to your
+selected uid before proceeding.  The Configure script will ask you which
+uid you want warp to run under.
+
+Installation
+
+1)  Run Configure.  This will figure out various things about your system.
+    Some things Configure will figure out for itself, other things it will
+    ask you about.  It will then proceed to make config.h, config.sh, and
+    Makefile.
+
+    You might possibly have to trim # comments from the front of Configure
+    if your sh doesn't handle them, but all other # comments will be taken
+    care of.
+
+    (If you don't have sh, you'll have to copy the sample file config.H to
+    config.h and edit the config.h to reflect your system's peculiarities.)
+
+2)  Glance through config.h to make sure system dependencies are correct.
+    Most of them should have been taken care of by running the Configure script.
+
+    If you have any additional changes to make to the C definitions, they
+    can be done in the Makefile, or in config.h.  Bear in mind that they will
+    get undone next time you run Configure.
+
+3)  make depend
+
+    This will look for all the includes and modify Makefile accordingly.
+    Configure will offer to do this for you.
+
+4)  make
+
+    This will attempt to make warp in the current directory.
+
+5)  make install
+
+    This will put warp into a public directory (normally /usr/games).
+    It will also try to put the man pages in a reasonable place.  It will not
+    nroff the man page, however.  You may need to be root to do this.  If
+    you are not root, you must own the directories in question and you should
+    ignore any messages about chown not working.
+
+6)  Read the manual entry before running warp.
+
+7)  Feel free to edit warp.news.
+
+8)  IMPORTANT!  Help save the world!  Communicate any problems and
+    suggested patches to me, lwall@sdcrdcf.UUCP (Larry Wall), so we can
+    keep the world in sync.  If you have a problem, there's someone else
+    out there who either has had or will have the same problem.
+
+    If possible, send in patches such that the patch program will apply them.
+    Context diffs are the best, then normal diffs.  Don't send ed scripts--
+    I've probably changed my copy since the version you have.
+
+    Watch for warp patches in comp.sources.bugs.  Patches will generally be
+    in a form usable by the patch program.  If you are just now bringing up
+    warp and aren't sure how many patches there are, write to me and I'll
+    send any you don't have.  Your current patch level is shown in patchlevel.h.
+
+
+NEW FEATURES IN THIS RELEASE
+
+Uses a Configure script for greater portability.
+Space Amoebas!!!
+Pirates
+Friendly Freighters
+Harry Mudd
+Damage
+Keyboard mapping
