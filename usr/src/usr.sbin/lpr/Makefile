@@ -1,15 +1,14 @@
-#	@(#)Makefile	4.7	(Berkeley)	%G%
+#	@(#)Makefile	4.8	(Berkeley)	%G%
 #
 # makefile for line printer spooling system
 #
-# Ownerships {see note at the top of main in lpd.c}
+# Ownerships {see note at the top of lpd.c}
 # ROOT		a user that can access any and all files
 # DAEMON	someone special
 # SPGRP		the group id of the spooling programs
 #
 
-CFLAGS=-O -DBSD41C
-LDFLAGS=
+CFLAGS=-O
 LIBDIR=/usr/lib
 BINDIR=/usr/ucb
 SPOOLDIR=/usr/spool/lpd
@@ -19,40 +18,45 @@ DAEMON=daemon
 SPGRP=daemon
 DESTDIR=
 
-SRCS=	lpd.c rlpr.c lpr.c lpq.c lprm.c lpdrestart.c \
-	lpdchar.c getq.c printcap.c lpf.c necf.c \
-	rvsort.c rvcat.c vsort.c vcat.c vpf.c vpsf.c \
-	vpltdmp.c vfontinfo.c vwidth.c pac.c
-OBJS=	lpd rlpr lpr lpq lprm lpdrestart vfontinfo vwidth pac
-FLTRS=	lpf necf rvsort rvcat vsort vcat vpf vpsf vpltdmp
+SRCS=	lpd.c lpr.c lpq.c lprm.c restart.c pac.c \
+	startup.c printjob.c recvjob.c displayq.c rmjob.c \
+	startdaemon.c common.c printcap.c lpdchar.c lpf.c necf.c \
+	rvsort.c rvcat.c vsort.c vcat.c vpf.c vpsf.c vdmp.c vpltdmp.c \
+	vfontinfo.c vwidth.c vfw.c fcvt.c rotate.c rotprt.c
+OBJS=	lpd lpr lpq lprm restart pac
+PRINTER=	lpf necf
+VARIAN=	rvsort rvcat vsort vcat vpf vpsf vdmp vpltdmp vfontinfo vwidth \
+	vfw fcvt rotate rotprt
 
 all:	${OBJS}
 
-filters: ${FLTRS}
+printer: ${PRINTER}
 
-lpd:	lpd.o lpdchar.o printcap.o getq.o
-	${CC} -o lpd ${LDFLAGS} lpd.o lpdchar.o printcap.o getq.o -ljobs
+varian:	${VARIAN}
 
-rlpr:	rlpr.o printcap.o
-	${CC} -o rlpr ${LDFLAGS} rlpr.o printcap.o
+lpd:	lpd.o startup.o printjob.o recvjob.o displayq.o rmjob.o \
+	startdaemon.o lpdchar.o common.o printcap.o
+	${CC} -o lpd lpd.o startup.o printjob.o recvjob.o \
+		displayq.o rmjob.o startdaemon.o lpdchar.o common.o printcap.o \
+		-ljobs
 
-lpr:	lpr.o printcap.o
-	${CC} -o lpr ${LDFLAGS} lpr.o printcap.o -ljobs
+lpr:	lpr.o startdaemon.o common.o printcap.o
+	${CC} -o lpr lpr.o startdaemon.o common.o printcap.o -ljobs
 
-lpq:	lpq.o printcap.o getq.o
-	${CC} -o lpq ${LDFLAGS} lpq.o printcap.o getq.o -ltermcap
+lpq:	lpq.o displayq.o common.o printcap.o
+	${CC} -o lpq lpq.o displayq.o common.o printcap.o -ltermcap
 
-lprm:	lprm.o printcap.o
-	${CC} -o lprm ${LDFLAGS} lprm.o printcap.o
+lprm:	lprm.o rmjob.o startdaemon.o common.o printcap.o
+	${CC} -o lprm lprm.o rmjob.o startdaemon.o common.o printcap.o
 
-lpdrestart: lpdrestart.o
-	${CC} -o lpdrestart ${LDFLAGS} lpdrestart.o
+restart: restart.o startdaemon.o common.o printcap.o
+	${CC} -o restart restart.o startdaemon.o common.o printcap.o
 
 lpf:	lpf.c
-	${CC} -o lpf ${CFLAGS} ${LDFLAGS} lpf.c
+	${CC} -o lpf ${CFLAGS} lpf.c
 
 necf:	necf.c
-	${CC} -o necf ${CFLAGS} ${LDFLAGS} necf.c
+	${CC} -o necf ${CFLAGS} necf.c
 
 rvsort:	rvsort.c
 	${CC} -o rvsort ${CFLAGS} rvsort.c
@@ -72,6 +76,9 @@ vpf:	vpf.c
 vpsf:	vpsf.c
 	${CC} -o vpsf ${CFLAGS} vpsf.c
 
+vdmp: vdmp.c
+	${CC} -o vdmp ${CFLAGS} vdmp.c
+
 vpltdmp: vpltdmp.c
 	${CC} -o vpltdmp ${CFLAGS} vpltdmp.c
 
@@ -81,42 +88,57 @@ vfontinfo: vfontinfo.c
 vwidth: vwidth.c
 	${CC} -o vwidth ${CFLAGS} vwidth.c
 
-pac:	pac.o printcap.o
-	${CC} -o pac ${CFLAGS} pac.o printcap.o
+vfw: vfw.c
+	${CC} -o vfw ${CFLAGS} vfw.c
 
-lpd.o rlpr.o lpr.o lpq.o lprm.o lpdrestart.o pac.o: lp.local.h
-lpd.o lpq.o getq.o: getq.h
+fcvt: fcvt.c
+	${CC} -o fcvt ${CFLAGS} fcvt.c
+
+rotate: rotate.c
+	${CC} -o rotate ${CFLAGS} rotate.c
+
+rotprt: rotprt.c
+	${CC} -o rotprt ${CFLAGS} rotprt.c
+
+pac:	pac.o printcap.o
+	${CC} -o pac pac.o printcap.o
+
+lpd.o lpr.o lpq.o lprm.o restart.o pac.o: lp.h lp.local.h
+recvjob.o printjob.o displayq.o rmjob.o common.o: lp.h lp.local.h
 
 install: all
-	install -o ${ROOT} -m 6711 lpd ${DESTDIR}${LIBDIR}/lpd
-	install -o ${DAEMON} -m 6711 rlpr ${DESTDIR}${LIBDIR}/rlpr
-	install -o ${ROOT} -m 6711 lpr ${DESTDIR}${BINDIR}/lpr
-	install -o ${ROOT} -m 6711 lpq ${DESTDIR}${BINDIR}/lpq
-	install -o ${ROOT} -m 6711 lprm ${DESTDIR}${BINDIR}/lprm
-	install -s lpdrestart ${DESTDIR}/etc/lpdrestart
-	chgrp ${SPGRP} ${DESTDIR}${LIBDIR}/lpd ${DESTDIR}${LIBDIR}/rlpr \
-		${DESTDIR}${BINDIR}/lpr ${DESTDIR}${BINDIR}/lpq \
-		${DESTDIR}${BINDIR}/lprm
+	install -s -g ${SPGRP} -m 6711 lpd ${DESTDIR}${LIBDIR}/lpd
+	install -s -g ${SPGRP} -m 6711 lpr ${DESTDIR}${BINDIR}/lpr
+	install -s -g ${SPGRP} -m 6711 lpq ${DESTDIR}${BINDIR}/lpq
+	install -s -g ${SPGRP} -m 6711 lprm ${DESTDIR}${BINDIR}/lprm
+	install -s -g ${SPGRP} -m 6711 restart ${DESTDIR}${BINDIR}/restart
 	chown ${DAEMON} ${DESTDIR}${SPOOLDIR}
 	chgrp ${SPGRP} ${DESTDIR}${SPOOLDIR}
 	chmod 775 ${DESTDIR}${SPOOLDIR}
-	install -s vfontinfo ${DESTDIR}${LIBDIR}/vfontinfo
-	install -s vwidth ${DESTDIR}${LIBDIR}/vwidth
 	install -s pac ${DESTDIR}/etc/pac
 
-finstall: filters
+installp: filters
 	install -s lpf ${DESTDIR}${LIBDIR}/lpf
 	install -s necf ${DESTDIR}${LIBDIR}/necf
+
+installv: varian
+	install -s vfontinfo ${DESTDIR}${LIBDIR}/vfontinfo
+	install -s vwidth ${DESTDIR}${LIBDIR}/vwidth
+	install -s vfw ${DESTDIR}${LIBDIR}/vfw
+	install -s fcvt ${DESTDIR}${LIBDIR}/fcvt
+	install -s rotate ${DESTDIR}${LIBDIR}/rotate
+	install -s rotprt ${DESTDIR}${LIBDIR}/rotprt
 	install -s rvsort ${DESTDIR}${LIBDIR}/rvsort
 	install -s rvcat ${DESTDIR}${LIBDIR}/rvcat
 	install -s vsort ${DESTDIR}${LIBDIR}/vsort
 	install -s vcat ${DESTDIR}${LIBDIR}/vcat
 	install -s vpf ${DESTDIR}${LIBDIR}/vpf
 	install -s vpsf ${DESTDIR}${LIBDIR}/vpsf
+	install -s vdmp ${DESTDIR}${LIBDIR}/vdmp
 	install -s vpltdmp ${DESTDIR}${LIBDIR}/vpltdmp
 
 clean:
-	rm -f ${OBJS} ${FLTRS} *.o
+	rm -f ${OBJS} ${PRINTER} ${VARIAN} *.o
 
 print:
 	@pr makefile

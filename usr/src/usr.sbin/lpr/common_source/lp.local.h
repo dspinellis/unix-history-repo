@@ -1,4 +1,4 @@
-/*	lp.local.h	1.4	83/01/05	*/
+/*	lp.local.h	4.1	83/04/29	*/
 /*
  * Possibly, local parameters to the spooling system
  */
@@ -59,3 +59,20 @@
 #define HEIGHT	9		/* height of characters */
 #define WIDTH	8		/* width of characters */
 #define DROP	3		/* offset to drop characters with descenders */
+
+/*
+ * Some utilities used by printjob.
+ */
+#define PR		"/bin/pr"
+#define MAIL		"/usr/lib/sendmail"
+
+/*
+ * Define TERMCAP if the terminal capabilites are to be used for lpq.
+ */
+#define TERMCAP
+
+/*
+ * Maximum number of user and job requests for lpq and lprm.
+ */
+#define MAXUSERS	50
+#define MAXREQUESTS	50

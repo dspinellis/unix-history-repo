@@ -55,7 +55,7 @@
 
 char lpr_id[] = "~|^`lpr.c:\t4.2\t1 May 1981\n";
 
-/*	lpr.c	4.14	83/04/05	*/
+/*	lpr.c	4.15	83/04/29	*/
 /*
  *      lpr -- off line print
  *
@@ -63,14 +63,7 @@ char lpr_id[] = "~|^`lpr.c:\t4.2\t1 May 1981\n";
  * using information from a printer data base.
  */
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/file.h>
-#include <signal.h>
-#include <pwd.h>
-#include <stdio.h>
-#include <ctype.h>
-#include "lp.local.h"
+#include "lp.h"
 
 char    *tfname;		/* tmp copy of cf before linking */
 char    *cfname;		/* daemon control files, linked from tf's */
@@ -82,75 +75,50 @@ int     mailflg;		/* send mail */
 int	qflag;			/* q job, but don't exec daemon */
 char	format = 'f';		/* format char for printing files */
 int	rflag;			/* remove files upon completion */	
-int	lflag;			/* link flag */
-char	*person;		/* user name */
+int	sflag;			/* symbolic link flag */
 int	inchar;			/* location to increment char in file names */
 int     ncopies = 1;		/* # of copies to make */
 int	iflag;			/* indentation wanted */
 int	indent;			/* amount to indent */
-char	*DN;			/* path name to daemon program */
-char	*LP;			/* line printer device name */
-char	*RM;			/* remote machine name if no local printer */
-char	*SD;			/* spool directory */
-int     MX;			/* maximum size in blocks of a print file */
 int	hdr = 1;		/* print header or not (default is yes) */
 int     userid;			/* user id */
+char	*person;		/* user name */
 char	*title;			/* pr'ing title */
 char	*fonts[4];		/* troff font names */
 char	*width;			/* width for versatec printing */
-char	host[32];		/* host name */
 char	*class = host;		/* class title on header page */
 char    *jobname;		/* job name on header page */
-char	*name;			/* program name */
 
-char	*pgetstr();
-char	*malloc();
-char	*getenv();
-char	*rindex();
 char	*linked();
+int	cleanup();
 
 /*ARGSUSED*/
 main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	extern char *getlogin();
-	extern struct passwd *getpwuid(), *getpwnam();
+	extern struct passwd *getpwuid();
 	struct passwd *pw;
 	extern char *itoa();
 	register char *arg, *cp;
-	int i, f, out();
-	char *printer = NULL;
+	int i, f;
 	struct stat stb;
 
-	/*
-	 * Strategy to maintain protected spooling area:
-	 *	1. Spooling area is writable only by daemon and spooling group
-	 *	2. lpr runs setuid root and setgrp spooling group; it uses
-	 *	   root to access any file it wants (verifying things before
-	 *	   with an access call) and group id to know how it should
-	 *	   set up ownership of files in spooling area.
-	 *	3. Files in spooling area are owned by daemon and spooling
-	 *	   group, with mode 660.
-	 *	4. lpd runs setuid root and setgrp spooling group to
-	 *	   access files and printer.  Users can't get to anything
-	 *	   w/o help of lpq and lprm programs.
-	 */
 	if (signal(SIGHUP, SIG_IGN) != SIG_IGN)
-		signal(SIGHUP, out);
+		signal(SIGHUP, cleanup);
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
-		signal(SIGINT, out);
+		signal(SIGINT, cleanup);
 	if (signal(SIGQUIT, SIG_IGN) != SIG_IGN)
-		signal(SIGQUIT, out);
+		signal(SIGQUIT, cleanup);
 	if (signal(SIGTERM, SIG_IGN) != SIG_IGN)
-		signal(SIGTERM, out);
+		signal(SIGTERM, cleanup);
 
 	gethostname(host, sizeof (host));
 	name = argv[0];
 
-	while (argc > 1 && (arg = argv[1])[0] == '-') {
+	while (argc > 1 && argv[1][0] == '-') {
 		argc--;
-		argv++;
+		arg = *++argv;
 		switch (arg[1]) {
 
 		case 'P':		/* specifiy printer name */
@@ -188,10 +156,16 @@ main(argc, argv)
 
 		case 'l':		/* literal output */
 		case 'p':		/* print using ``pr'' */
-		case 't':		/* print troff output */
+		case 't':		/* print troff output (cat files) */
+		case 'd':		/* print tex output (dvi files) */
+		case 'g':		/* print graph(1G) output */
 		case 'c':		/* print cifplot output */
 		case 'v':		/* print vplot output */
 			format = arg[1];
+			break;
+
+		case 'f':		/* print fortran output */
+			format = 'r';
 			break;
 
 		case '4':		/* troff fonts */
@@ -222,7 +196,7 @@ main(argc, argv)
 			break;
 
 		case 's':		/* try to link files */
-			lflag++;
+			sflag++;
 			break;
 
 		case 'q':		/* just q job */
@@ -241,22 +215,18 @@ main(argc, argv)
 	}
 	if (printer == NULL && (printer = getenv("PRINTER")) == NULL)
 		printer = DEFLP;
-	if (!chkprinter(printer)) {
-		printf("%s: unknown printer %s\n", name, printer);
-		exit(1);
-	}
+	chkprinter(printer);
 	/*
-	 * Get the identity of the person doing the lpr and initialize the
-	 * control file.
+	 * Get the identity of the person doing the lpr using the same
+	 * algorithm as lprm. 
 	 */
 	userid = getuid();
-	if ((person = getlogin()) == NULL || strlen(person) == 0) {
-		if ((pw = getpwuid(userid)) == NULL)
-			person = "Unknown User";
-		else
-			person = pw->pw_name;
-	} else if ((pw = getpwnam(person)) != NULL)
-		userid = pw->pw_uid;		/* in case of su */
+	if ((pw = getpwuid(userid)) == NULL)
+		fatal("Who are you?");
+	person = pw->pw_name;
+	/*
+	 * Initialize the control file.
+	 */
 	mktemps();
 	tfd = nfile(tfname);
 	card('H', host);
@@ -266,7 +236,7 @@ main(argc, argv)
 			if (argc == 1)
 				jobname = "stdin";
 			else
-				jobname = argv[1];
+				jobname = (arg = rindex(argv[1], '/')) ? arg+1 : argv[1];
 		}
 		card('J', jobname);
 		card('C', class);
@@ -276,13 +246,16 @@ main(argc, argv)
 		card('I', itoa(indent));
 	if (mailflg)
 		card('M', person);
-	if (format == 't')
+	if (format == 't' || format == 'd')
 		for (i = 0; i < 4; i++)
 			if (fonts[i] != NULL)
 				card('1'+i, fonts[i]);
 	if (width != NULL)
 		card('W', width);
 
+	/*
+	 * Read the files and spool them.
+	 */
 	if (argc == 1)
 		copy(0, " ");
 	else while (--argc) {
@@ -325,28 +298,24 @@ main(argc, argv)
 			    write(tfd, &c, 1) != 1) {
 				printf("%s: cannot touch %s\n", name, tfname);
 				tfname[inchar]++;
-				out();
+				cleanup();
 			}
 			(void) close(tfd);
 		}
 		if (link(tfname, cfname) < 0) {
 			printf("%s: cannot rename %s\n", name, cfname);
 			tfname[inchar]++;
-			out();
+			cleanup();
 		}
 		unlink(tfname);
 		if (qflag)		/* just q things up */
 			exit(0);
-		if (*LP && stat(LP, &stb) >= 0 && (stb.st_mode & 0777) == 0) {
-			printf("jobs queued, but %s is down.\n", printer);
-			exit(0);
-		}
-		execl(DN, (arg = rindex(DN, '/')) ? arg+1 : DN, printer, 0);
-		printf("jobs queued, but cannot start daemon.\n");
+		if (!startdaemon())
+			printf("jobs queued, but cannot start daemon.\n");
 		exit(0);
 	}
-	out();
-	/*NOTREACHED*/
+	cleanup();
+	/* NOTREACHED */
 }
 
 /*
@@ -444,7 +413,6 @@ card(c, p2)
 /*
  * Create a new file in the spool directory.
  */
-
 nfile(n)
 	char *n;
 {
@@ -455,21 +423,17 @@ nfile(n)
 	(void) umask(oldumask);
 	if (f < 0) {
 		printf("%s: cannot create %s\n", name, n);
-		out();
+		cleanup();
 	}
-#ifdef BSD41C
 	if (chown(n, userid, -1) < 0) {
-#else
-	if (chown(n, userid, getegid()) < 0) {
-#endif
 		unlink(n);
 		printf("%s: cannot chown %s\n", name, n);
-		out();
+		cleanup();
 	}
 	if (++n[inchar] > 'z') {
 		if (++n[inchar-2] == 't') {
 			printf("too many files - break up the job\n");
-			out();
+			cleanup();
 		}
 		n[inchar] = 'A';
 	} else if (n[inchar] == '[')
@@ -480,7 +444,7 @@ nfile(n)
 /*
  * Cleanup after interrupts and errors.
  */
-out()
+cleanup()
 {
 	register i;
 
@@ -553,7 +517,7 @@ test(file)
 		}
 	(void) close(fd);
 	fd = 0;
-	if (lflag && (statb.st_mode & 04))
+	if (sflag && (statb.st_mode & 04))
 		fd |= 1;
 	if (rflag) {
 		if ((cp = rindex(file, '/')) == NULL) {
@@ -597,26 +561,17 @@ itoa(i)
 chkprinter(s)
 	register char *s;
 {
-	static char buf[BUFSIZ/2];
-	char b[BUFSIZ];
-	int stat;
-	char *bp = buf;
+	int status;
 
-	if ((stat = pgetent(b, s)) < 0) {
-		printf("%s: can't open printer description file\n", name);
-		exit(1);
-	} else if (stat == 0)
-		return(0);
-	if ((DN = pgetstr("dn", &bp)) == NULL)
-		DN = DEFDAEMON;
-	if ((LP = pgetstr("lp", &bp)) == NULL)
-		LP = DEFDEVLP;
+	if ((status = pgetent(line, s)) < 0)
+		fatal("cannot open printer description file");
+	else if (status == 0)
+		fatal("unknown printer");
 	if ((SD = pgetstr("sd", &bp)) == NULL)
 		SD = DEFSPOOL;
 	if ((MX = pgetnum("mx")) < 0)
 		MX = DEFMX;
-	RM = pgetstr("rm", &bp);
-	return(1);
+	RM = host;		/* machine for getport to connect to */
 }
 
 /*
@@ -639,12 +594,10 @@ mktemps()
 		n = 0;
 	} else {
 		setbuf(fp, buf);
-#ifdef BSD41C
 		if (flock(fileno(fp), FEXLOCK)) {
 			printf("%s: cannot lock %s\n", name, buf);
 			exit(1);
 		}
-#endif
 		n = 0;
 		while ((c = getc(fp)) >= '0' && c <= '9')
 			n = n * 10 + (c - '0');
@@ -670,10 +623,8 @@ mktemp(id, num, len)
 {
 	register char *s;
 
-	if ((s = malloc(len)) == NULL) {
-		printf("%s: out of memory\n", name);
-		exit(1);
-	}
+	if ((s = malloc(len)) == NULL)
+		fatal("out of memory");
 	(void) sprintf(s, "%s/%sA%03d%s", SD, id, num, host);
 	return(s);
 }
