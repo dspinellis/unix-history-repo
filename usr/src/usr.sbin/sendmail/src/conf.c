@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	5.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	5.31 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -349,31 +349,80 @@ rlsesigs()
 **		none.
 */
 
-#ifdef sun
+/* try to guess what style of load average we have */
+#define LA_ZERO		1	/* always return load average as zero */
+#define LA_INT		2	/* read kmem for avenrun; interpret as int */
+#define LA_FLOAT	3	/* read kmem for avenrun; interpret as float */
+#define LA_SUBR		4	/* call getloadavg */
+
+#ifndef LA_TYPE
+#  if defined(sun)
+#    define LA_TYPE		LA_INT
+#  endif
+#  if defined(mips)
+     /* Ultrix or RISC/os */
+#    define LA_TYPE		LA_INT
+#    define LA_AVENRUN		"avenrun"
+#  endif
+#  if defined(hpux)
+#    define LA_TYPE		LA_FLOAT
+#  endif
+#  if defined(BSD)
+#    define LA_TYPE		LA_SUBR
+#  endif
+
+#  ifndef LA_TYPE
+#    define LA_TYPE		LA_ZERO
+#  endif
+#endif
+
+#if (LA_TYPE == LA_INT) || (LA_TYPE == LA_FLOAT)
 
 #include <nlist.h>
+#include <fcntl.h>
+
+#ifndef LA_AVENRUN
+#define LA_AVENRUN	"_avenrun"
+#endif
+
+/* _PATH_UNIX should be defined in <paths.h> */
+#ifndef _PATH_UNIX
+#  if defined(hpux)
+#    define _PATH_UNIX		"/hp-ux"
+#  endif
+#  if defined(mips) && !defined(ultrix)
+     /* powerful RISC/os */
+#    define _PATH_UNIX		"/unix"
+#  endif
+#  ifndef _PATH_UNIX
+#    define _PATH_UNIX		"/vmunix"
+#  endif
+#endif
 
 struct	nlist Nl[] =
 {
-	{ "_avenrun" },
+	{ LA_AVENRUN },
 #define	X_AVENRUN	0
 	{ 0 },
 };
 
-
-extern int la;
+#if (LA_TYPE == LA_INT) && !defined(FSHIFT)
+#  define FSHIFT	8
+#  define FSCALE	(1 << FSHIFT)
+#endif
 
 getla()
 {
 	static int kmem = -1;
+#if LA_TYPE == LA_INT
 
 	if (kmem < 0)
 	{
 		kmem = open("/dev/kmem", 0, 0);
 		if (kmem < 0)
 			return (-1);
-		(void) ioctl(kmem, (int) FIOCLEX, (char *) 0);
-		nlist("/vmunix", Nl);
+		(void) fcntl(kmem, F_SETFD, 1);
+		nlist(_PATH_UNIX, Nl);
 		if (Nl[0].n_type == 0)
 			return (-1);
 	}
@@ -383,25 +432,26 @@ getla()
 		/* thank you Ian */
 		return (-1);
 	}
+#if LA_TYPE == LA_INT
 }
 
 #else
-#ifdef ultrix
-
-getla()
-{
-	return (0);
-}
-
-#else
+#if LA_TYPE == LA_SUBR
 
 getla()
 {
 	double avenrun[3];
 
 	if (getloadavg(avenrun, sizeof(avenrun) / sizeof(avenrun[0])) < 0)
-		return (0);
+		return (-1);
 	return ((int) (avenrun[0] + 0.5));
+}
+
+#else
+
+getla()
+{
+	return (0);
 }
 
 #endif

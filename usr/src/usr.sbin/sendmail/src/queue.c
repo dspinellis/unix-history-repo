@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	5.35 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	5.36 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	5.35 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	5.36 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -42,7 +42,6 @@ struct work
 };
 
 typedef struct work	WORK;
-extern int la;
 
 WORK	*WorkQ;			/* queue of things to be done */
 /*
@@ -53,13 +52,13 @@ WORK	*WorkQ;			/* queue of things to be done */
 **			be transformed into a control file name.
 **
 **	Returns:
-**		locked FILE* to q file
+**		none.
 **
 **	Side Effects:
 **		The current request are saved in a control file.
+**		The queue file is left locked.
 */
 
-FILE *
 queueup(df)
 	char *df;
 {
@@ -67,49 +66,54 @@ queueup(df)
 	register FILE *f;
 	register HDR *h;
 	register ADDRESS *q;
+	int fd;
+	int i;
+	bool newid;
 	MAILER nullmailer;
-	int fd, ret;
+	char buf[MAXLINE], tf[MAXLINE];
 
 	/*
 	**  Create control file.
 	*/
 
-	do
+	newid = (e->e_id == NULL);
+	strcpy(tf, queuename(e, 't'));
+	tfp = e->e_lockfp;
+	if (tfp == NULL)
+		newid = FALSE;
+	if (newid)
 	{
-		strcpy(tf, queuename(e, 't'));
-		fd = open(tf, O_CREAT|O_WRONLY|O_EXCL, FileMode);
-		if (fd < 0)
+		tfp = e->e_lockfp;
+	}
+	else
+	{
+		/* get a locked tf file */
+		for (i = 100; --i >= 0; )
 		{
-			if (errno != EEXIST)
+			fd = open(tf, O_CREAT|O_WRONLY|O_EXCL, FileMode);
+			if (fd < 0)
 			{
-				syserr("queueup: cannot create temp file %s",
-					tf);
-				return NULL;
+				if (errno == EEXIST)
+					continue;
+				syserr("queueup: cannot create temp file %s", tf);
+				return;
 			}
-		}
-		else
-		{
 # ifdef LOCKF
-			if (lockf(fd, F_TLOCK, 0) < 0)
-			{
-				if (errno != EACCES && errno != EAGAIN)
-					syserr("cannot lockf(%s)", tf);
-				close(fd);
-				fd = -1;
-			}
+			if (lockf(fd, F_TLOCK, 0) >= 0)
+				break;
+			if (errno != EACCES && errno != EAGAIN)
+				syserr("cannot lockf(%s)", tf);
 # else
-			if (flock(fd, LOCK_EX|LOCK_NB) < 0)
-			{
-				if (errno != EWOULDBLOCK)
-					syserr("cannot flock(%s)", tf);
-				close(fd);
-				fd = -1;
-			}
+			if (flock(fd, LOCK_EX|LOCK_NB) >= 0)
+				break;
+			if (errno != EWOULDBLOCK)
+				syserr("cannot flock(%s)", tf);
 # endif
+			close(fd);
 		}
-	} while (fd < 0);
 
-	tfp = fdopen(fd, "w");
+		tfp = fdopen(fd, "w");
+	}
 
 	if (tTd(40, 1))
 		printf("queued in %s\n", cf);
@@ -227,7 +231,7 @@ runqueue(forkflag)
 	**  the queue.
 	*/
 
-	la = getla();	/* get load average */
+	CurrentLA = getla();	/* get load average */
 
 	if (shouldqueue(-100000000L))
 	{
@@ -524,6 +528,7 @@ dowork(w)
 {
 	register int i;
 	extern bool shouldqueue();
+	extern bool readqf();
 
 	if (tTd(40, 1))
 		printf("dowork: %s pri %ld\n", w->w_name, w->w_pri);
@@ -559,8 +564,6 @@ dowork(w)
 
 	if (i == 0)
 	{
-		FILE *qflock, *readqf();
-
 		/*
 		**  CHILD
 		*/
@@ -586,7 +589,6 @@ dowork(w)
 			finis();
 		else
 			dropenvelope(CurEnv);
-		fclose(qflock);
 	}
 	else
 	{
@@ -603,16 +605,13 @@ dowork(w)
 **
 **	Parameters:
 **		e -- the envelope of the job to run.
-**		full -- if set, read in all information.  Otherwise just
-**			read in info needed for a queue print.
 **
 **	Returns:
-**		FILE * pointing to flock()ed fd so it can be closed
-**		after the mail is delivered
+**		TRUE if it successfully read the queue file.
+**		FALSE otherwise.
 **
 **	Side Effects:
-**		cf is read and created as the current job, as though
-**		we had been invoked by argument.
+**		The queue file is returned locked.
 */
 
 # ifdef LOCKF
@@ -621,10 +620,9 @@ dowork(w)
 # define RDLK_MODE	"r"
 # endif
 
-FILE *
-readqf(e, full)
+bool
+readqf(e)
 	register ENVELOPE *e;
-	bool full;
 {
 	char *qf;
 	register FILE *qfp;
@@ -644,7 +642,7 @@ readqf(e, full)
 	{
 		if (errno != ENOENT)
 			syserr("readqf: no control file %s", qf);
-		return NULL;
+		return FALSE;
 	}
 
 # ifdef LOCKF
@@ -653,21 +651,26 @@ readqf(e, full)
 	if (flock(fileno(qfp), LOCK_EX|LOCK_NB) < 0)
 # endif
 	{
-# ifdef LOG
 		/* being processed by another queuer */
 		if (Verbose)
 			printf("%s: locked\n", CurEnv->e_id);
+# ifdef LOG
+		if (LogLevel > 9)
+			syslog(LOG_DEBUG, "%s: locked", CurEnv->e_id);
 # endif LOG
 		(void) fclose(qfp);
-		return NULL;
+		return FALSE;
 	}
+
+	/* save this lock */
+	e->e_lockfp = qfp;
 
 	/* do basic system initialization */
 	initsys();
 
 	FileName = qf;
 	LineNumber = 0;
-	if (Verbose && full)
+	if (Verbose)
 		printf("\nRunning %s\n", e->e_id);
 	while (fgetfolded(buf, sizeof buf, qfp) != NULL)
 	{
@@ -689,8 +692,7 @@ readqf(e, full)
 			break;
 
 		  case 'H':		/* header */
-			if (full)
-				(void) chompheader(&buf[1], FALSE);
+			(void) chompheader(&buf[1], FALSE);
 			break;
 
 		  case 'M':		/* message */
@@ -704,8 +706,6 @@ readqf(e, full)
 			break;
 
 		  case 'D':		/* data file name */
-			if (!full)
-				break;
 			e->e_df = newstr(&buf[1]);
 			e->e_dfp = fopen(e->e_df, "r");
 			if (e->e_dfp == NULL)
@@ -759,7 +759,7 @@ readqf(e, full)
 		errno = 0;
 		e->e_flags |= EF_CLRQUEUE | EF_FATALERRS | EF_RESPONSE;
 	}
-	return qfp;
+	return TRUE;
 }
 /*
 **  PRINTQUEUE -- print out a representation of the mail queue
@@ -799,7 +799,7 @@ printqueue()
 		return;
 	}
 
-	la = getla();	/* get load average */
+	CurrentLA = getla();	/* get load average */
 
 	printf("\t\tMail Queue (%d request%s", nrequests, nrequests == 1 ? "" : "s");
 	if (nrequests > QUEUESIZE)
@@ -857,6 +857,7 @@ printqueue()
 				if (message[0] != '\0')
 					printf("\n\t\t (%.60s)", message);
 				break;
+
 			  case 'C':	/* controlling user */
 				if (strlen(buf) < MAXLINE-3)	/* sanity */
 					(void) strcat(buf, ") ");
@@ -914,9 +915,9 @@ printqueue()
 **		a pointer to the new file name (in a static buffer).
 **
 **	Side Effects:
-**		Will create the qf file if no id code is
-**		already assigned.  This will cause the envelope
-**		to be modified.
+**		If no id code is already assigned, queuename will
+**		assign an id code, create a qf file, and leave a
+**		locked, open-for-write file pointer in the envelope.
 */
 
 char *
@@ -958,16 +959,26 @@ queuename(e, type)
 				printf("queuename: trying \"%s\"\n", qf);
 
 			i = open(qf, O_WRONLY|O_CREAT|O_EXCL, FileMode);
-			if (i < 0) {
-				if (errno != EEXIST) {
-					syserr("queuename: Cannot create \"%s\" in \"%s\"",
-						qf, QueueDir);
-					exit(EX_UNAVAILABLE);
-				}
-			} else {
-				(void) close(i);
+			if (i < 0)
+			{
+				if (errno == EEXIST)
+					continue;
+				syserr("queuename: Cannot create \"%s\" in \"%s\"",
+					qf, QueueDir);
+				exit(EX_UNAVAILABLE);
+			}
+# ifdef LOCKF
+			if (lockf(i, F_TLOCK, 0) >= 0)
+# else
+			if (flock(i, LOCK_EX|LOCK_NB) >= 0)
+# endif
+			{
+				e->e_lockfp = fdopen(i, "w");
 				break;
 			}
+
+			/* a reader got the file; abandon it and try again */
+			(void) close(i);
 		}
 		if (c1 >= '~' && c2 >= 'Z')
 		{
@@ -1008,6 +1019,11 @@ queuename(e, type)
 unlockqueue(e)
 	ENVELOPE *e;
 {
+	/* if there is a lock file in the envelope, close it */
+	if (e->e_lockfp != NULL)
+		fclose(e->e_lockfp);
+	e->e_lockfp = NULL;
+
 	/* remove the transcript */
 # ifdef LOG
 	if (LogLevel > 19)

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.48 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.49 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1314,7 +1314,6 @@ sendall(e, mode)
 	bool oldverbose;
 	int pid;
 	int nsent;
-	FILE *lockfp = NULL, *queueup();
 
 	/* determine actual delivery mode */
 	if (mode == SM_DEFAULT)
@@ -1361,7 +1360,7 @@ sendall(e, mode)
 	if ((mode == SM_QUEUE || mode == SM_FORK ||
 	     (mode != SM_VERIFY && SuperSafe)) &&
 	    !bitset(EF_INQUEUE, e->e_flags))
-		lockfp = queueup(e, TRUE, mode == SM_QUEUE);
+		queueup(e, TRUE, mode == SM_QUEUE);
 #endif QUEUE
 
 	oldverbose = Verbose;
@@ -1374,8 +1373,6 @@ sendall(e, mode)
 	  case SM_QUEUE:
   queueonly:
 		e->e_flags |= EF_INQUEUE|EF_KEEPQUEUE;
-		if (lockfp != NULL)
-			(void) fclose(lockfp);
 		return;
 
 	  case SM_FORK:
@@ -1391,10 +1388,10 @@ sendall(e, mode)
 		**  child.
 		*/
 
-		if (lockfp != NULL)
+		if (e->e_lockfp != NULL)
 		{
-			(void) fclose(lockfp);
-			lockfp = NULL;
+			(void) fclose(e->e_lockfp);
+			e->e_lockfp = NULL;
 		}
 # endif /* LOCKF */
 
@@ -1408,8 +1405,8 @@ sendall(e, mode)
 			/* be sure we leave the temp files to our child */
 			e->e_id = e->e_df = NULL;
 # ifndef LOCKF
-			if (lockfp != NULL)
-				(void) fclose(lockfp);
+			if (e->e_lockfp != NULL)
+				(void) fclose(e->e_lockfp);
 # endif
 			return;
 		}
@@ -1426,8 +1423,9 @@ sendall(e, mode)
 		**  Now try to get our lock back.
 		*/
 
-		lockfp = fopen(queuename(e, 'q'), "r+");
-		if (lockfp == NULL || lockf(fileno(lockfp), F_TLOCK, 0) < 0)
+		e->e_lockfp = fopen(queuename(e, 'q'), "r+");
+		if (e->e_lockfp == NULL ||
+		    lockf(fileno(e->e_lockfp), F_TLOCK, 0) < 0)
 		{
 			/* oops....  lost it */
 # ifdef LOG
