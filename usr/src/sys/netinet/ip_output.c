@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ip_output.c	7.27 (Berkeley) %G%
+ *	@(#)ip_output.c	7.28 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -132,7 +132,6 @@ ip_output(m0, opt, ro, flags, imo)
 	if (IN_MULTICAST(ntohl(ip->ip_dst.s_addr))) {
 		struct in_multi *inm;
 		extern struct ifnet loif;
-		extern struct socket *ip_mrouter;
 
 		m->m_flags |= M_MCAST;
 		/*
@@ -183,7 +182,7 @@ ip_output(m0, opt, ro, flags, imo)
 			ip_mloopback(ifp, m, dst);
 		}
 #ifdef MROUTING
-		else if (ip_mrouter && (flags & IP_FORWARDING) == 0) {
+		else {
 			/*
 			 * If we are acting as a multicast router, perform
 			 * multicast forwarding as if the packet had just
@@ -196,9 +195,12 @@ ip_output(m0, opt, ro, flags, imo)
 			 * above, will be forwarded by the ip_input() routine,
 			 * if necessary.
 			 */
-			if (ip_mforward(m, ifp) != 0) {
-				m_freem(m);
-				goto done;
+			extern struct socket *ip_mrouter;
+			if (ip_mrouter && (flags & IP_FORWARDING) == 0) {
+				if (ip_mforward(m, ifp) != 0) {
+					m_freem(m);
+					goto done;
+				}
 			}
 		}
 #endif
