@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)more.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)more.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -72,7 +72,7 @@ int		bad_so;	/* True if overwriting does not turn off standout */
 int		inwait, Pause, errors;
 int		within;	/* true if we are within a file,
 			false if we are between files */
-int		hard, dumb, noscroll, hardtabs, clreol;
+int		hard, dumb, noscroll, hardtabs, clreol, eatnl;
 int		catch_susp;	/* We should catch the SIGTSTP signal */
 char		**fnames;	/* The list of file names */
 int		nfiles;		/* Number of files left to process */
@@ -774,6 +774,9 @@ int *length;
 	}
     }
     colflg = column == Mcol && fold_opt;
+    if (colflg && eatnl && Wrap) {
+	*p++ = '\n'; /* simulate normal wrap */
+    }
     *length = p - Line;
     *p = 0;
     return (column);
@@ -1478,6 +1481,8 @@ retry:
 		hard++;	/* Hard copy terminal */
 		Lpp = 24;
 	    }
+	    if (tgetflag("xn"))
+		eatnl++; /* Eat newline at last column + 1; dec, concept */
 	    if (Mcol <= 0)
 		Mcol = 80;
 
