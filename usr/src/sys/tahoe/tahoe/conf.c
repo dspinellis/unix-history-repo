@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)conf.c	7.1 (Berkeley) %G%
+ *	@(#)conf.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -23,14 +23,12 @@ int nulldev(), nodev(), rawread(), rawwrite(), swstrategy();
 
 #include "dk.h"
 #if NVD > 0
-int	vdopen(),vdclose(),vdstrategy(),vdread(),vdwrite(),vdioctl();
+int	vdopen(),vdclose(),vdstrategy(),vdioctl();
 int	vddump(),vdsize();
 #else
 #define	vdopen		nodev
 #define	vdclose		nodev
 #define	vdstrategy	nodev
-#define	vdread		nodev
-#define	vdwrite		nodev
 #define	vdioctl		nodev
 #define	vddump		nodev
 #define	vdsize		0
@@ -38,14 +36,12 @@ int	vddump(),vdsize();
 
 #include "yc.h"
 #if NCY > 0
-int	cyopen(),cyclose(),cystrategy(),cyread(),cywrite(),cydump();
+int	cyopen(),cyclose(),cystrategy(),cydump();
 int	cyioctl(),cyreset();
 #else
 #define	cyopen		nodev
 #define	cyclose		nodev
 #define	cystrategy	nodev
-#define	cyread		nodev
-#define	cywrite		nodev
 #define	cydump		nodev
 #define	cyioctl		nodev
 #define	cyreset		nulldev
@@ -110,6 +106,7 @@ struct	tty pt_tty[];
 #define	ptsstop		nulldev
 #endif
 
+#include "mp.h"
 #if NMP > 0
 int	mpopen(), mpclose(), mpread(), mpwrite(), mpioctl(), mpstop();
 int	mpdlopen(), mpdlclose(), mpdlwrite(), mpdlioctl();
@@ -197,7 +194,7 @@ struct cdevsw	cdevsw[] =
 	nodev,		nulldev,	nodev,		nodev,		/*6*/
 	nodev,		nodev,		nulldev,	NULL,
 	seltrue,	nodev,		NULL,
-	cyopen,		cyclose,	cyread,		cywrite,	/*7*/
+	cyopen,		cyclose,	rawread,	rawwrite,	/*7*/
 	cyioctl,	nodev,		cyreset,	NULL,
 	seltrue,	nodev,		NULL,
 	nulldev,	nulldev,	rawread,	rawwrite,	/*8*/
