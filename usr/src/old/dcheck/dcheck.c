@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)dcheck.c	1.2 (Berkeley) %G%";
+static	char *sccsid = "@(#)dcheck.c	1.3 (Berkeley) %G%";
 /*
  * dcheck - check directory consistency
  */
@@ -209,6 +209,6 @@ bmap(i)
 		printf("%u - huge directory\n", ino);
 		return((daddr_t)0);
 	}
-	bread(gip->di_ib[i], (char *)ibuf, sizeof(ibuf));
+	bread(gip->di_ib[0], (char *)ibuf, sizeof(ibuf));
 	return(ibuf[i]);
 }
