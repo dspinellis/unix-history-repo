@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)map3270.5	4.1 (Berkeley) %G%
+.\"	@(#)map3270.5	4.2 (Berkeley) %G%
 .\"
 .TH MAP3270 5  ""
 .UC 6
@@ -22,7 +22,7 @@ map3270 \- database for mapping ascii keystrokes into IBM 3270 keys
 .SH SYNOPSIS
 .B /etc/map3270
 .SH DESCRIPTION
-When emulating IBM-syle 3270 terminals under UNIX (see \fItn3270\fR(1)),
+When emulating IBM-syle 3270 terminals under \s-UNIX\s0 (see \fItn3270\fR(1)),
 a mapping must be performed between sequences of keys hit on
 a user's (ascii) keyboard, and the keys that are
 available on a 3270.  For example, a 3270 has a key labeled
@@ -40,38 +40,44 @@ The requirements for these sequences are:
 .nf
 .ta 4n 9n
 .sp
-	1.)	that the first character of the sequence be outside of the
+	1)	that the first character of the sequence be outside of the
 		standard ascii printable characters;
 .sp
-	2.)	that no one sequence \fIbe\fR an initial part of another (although
+	2)	that no sequence \fIbe\fR an initial part of another (although
 		sequences may \fIshare\fR initial parts).
 .sp
 .fi
 .SH FORMAT
-The file consists of entries for various terminals.  The first part
-of an entry lists the names of the terminals which use that entry.
-These names should be the same as in
+The file consists of entries for various keyboards.  The first part
+of an entry lists the names of the keyboards which use that entry.
+These names will often be the same as in
 .I /etc/termcap
-(see \fItermcap\fR(5));
-note that often the terminals from various termcap entries will all
+(see
+.IR termcap (5));
+however, note that often the terminals from various termcap entries will all
 use the same
 .I map3270
 entry; for example, both 925 and 925vb (for
 925 with visual bells) would probably use the same
 .I map3270
 entry.
+Additionally, there are occasions when the terminal type defines
+a window manager, and it will then be necessary to specify a
+keyboard name (via the
+.B KEYBD
+environment variable) as the name of the entry.
 After the names, separated by vertical bars (`|'), comes a left
 brace (`{'); the definitions; and, finally, a right brace
 (`}').
 .PP
-The definitions consist of a reserved keyword (see list below) which
+Each definition consists of a reserved keyword (see list below) which
 identifies the 3270 function (extended as defined below), followed
 by an equal sign (`='), followed by the various ways to generate
 this particular function, followed by a semi-colon (`;').
 Each way is a sequence of strings of
 .I printable
 ascii characters enclosed inside single quotes (`\(aa');
-various ways (options) are separated by vertical bars (`|').
+various ways (alternatives) are separated by vertical bars (`|').
 .PP
 Inside the single quotes, a few characters are special.
 A caret
@@ -81,7 +87,8 @@ So, `^a'
 represents control-a, ie: hexadecimal 1
 (note that `^A' would generate the same code). 
 To generate
-.B rubout,
+.B rubout
+(DEL),
 one enters `^?'.
 To represent a control character inside a file
 requires using the caret to represent a control sequence;
@@ -95,6 +102,8 @@ Since this has little effect for most characters,
 its use is usually not recommended.
 For the case of a single quote (`\(aa'), the backslash
 prevents that single quote from terminating the string.
+For the case of a caret (`^'), the backslash prevents
+the caret from having its special meaning.
 To have the backslash be part of the string, it is necessary to
 place two backslashes ('\e\e') in the file.
 .PP
@@ -134,7 +143,7 @@ that the developers of the Yale code offer in their product.
 .IR tn3270 (1).
 An unsupported function will cause
 .IR tn3270(1)
-to send a bell sequence to the user's terminal.
+to send a (possibly visual) bell sequence to the user's terminal.
 .sp
 .nf
         3270 Key Name   Functional description
@@ -142,7 +151,8 @@ to send a bell sequence to the user's terminal.
      (*)LPRT            local print
         DP              dup character
         FM              field mark character
-     (*)CURSEL          cursor select
+        CURSEL          cursor select
+        CENTSIGN        EBCDIC cent sign
         RESHOW          redisplay the screen
         EINP            erase input
         EEOF            erase end of field
@@ -290,7 +300,7 @@ and
                               Keyboard Unlock               control-t
                               Redisplay Screen              control-v
      Other Keys
-			      Erase current field           control-u
+                              Erase current field           control-u
 .fi
 .SH FILES
 /etc/map3270
@@ -309,7 +319,7 @@ when such a function is requested
 .I tn3270
 will beep at you.
 .PP
-The definition of "word" (for "word delete", "word tab") should be a run-time
+The definition of "word" (for "word erase", "word tab") should be a run-time
 option.  Currently it is defined as the kernel tty driver defines it (strings
-of non-blanks); more than one person would rather use the "vi" definition
+of non-whitespace); more than one person would rather use the "vi" definition
 (strings of specials, strings of alphanumeric).
