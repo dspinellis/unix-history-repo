@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)pstat.c	4.29 (Berkeley) %G%";
+static char *sccsid = "@(#)pstat.c	4.30 (Berkeley) %G%";
 #endif
 /*
  * Print system stuff
@@ -26,8 +26,9 @@ static char *sccsid = "@(#)pstat.c	4.29 (Berkeley) %G%";
 #include <machine/pte.h>
 
 char	*fcore	= "/dev/kmem";
+char	*fmem	= "/dev/mem";
 char	*fnlist	= "/vmunix";
-int	fc;
+int	fc, fm;
 
 struct nlist nl[] = {
 #define	SINODE	0
@@ -128,7 +129,7 @@ char **argv;
 
 		case 'k':
 			kflg++;
-			fcore = "/vmcore";
+			fcore = fmem = "/vmcore";
 			break;
 
 		case 'x':
@@ -163,9 +164,13 @@ char **argv;
 		}
 	}
 	if (argc>1)
-		fcore = argv[1];
+		fcore = fmem = argv[1];
 	if ((fc = open(fcore, 0)) < 0) {
 		printf("Can't find %s\n", fcore);
+		exit(1);
+	}
+	if ((fm = open(fmem, 0)) < 0) {
+		printf("Can't find %s\n", fmem);
 		exit(1);
 	}
 	if (argc>0)
@@ -343,7 +348,7 @@ doproc()
 		return;
 	}
 	printf("%d/%d processes\n", np, nproc);
-	printf("   LOC    S    F POIP PRI      SIG  UID SLP TIM  CPU  NI   PGRP    PID   PPID    ADDR   RSS SRSS SIZE    WCHAN    LINK   TEXTP CLKT\n");
+	printf("   LOC    S    F POIP PRI      SIG  UID SLP TIM  CPU  NI   PGRP    PID   PPID    ADDR   RSS SRSS SIZE    WCHAN    LINK   TEXTP\n");
 	for (pp=xproc; pp<&xproc[nproc]; pp++) {
 		if (pp->p_stat==0 && allflg==0)
 			continue;
@@ -363,9 +368,12 @@ doproc()
 		printf(" %6d", pp->p_ppid);
 		if (kflg)
 			pp->p_addr = (struct pte *)clear((int)pp->p_addr);
-		lseek(fc, (long)(Usrptma+btokmx(pp->p_addr)), 0);
-		read(fc, &apte, sizeof(apte));
-		printf(" %8x", ctob(apte.pg_pfnum+1) - sizeof(struct pte) * UPAGES);
+		if (pp->p_flag & SLOAD) {
+			lseek(fc, (long)pp->p_addr, 0);
+			read(fc, &apte, sizeof(apte));
+			printf(" %8x", apte.pg_pfnum);
+		} else
+			printf(" %8x", pp->p_swaddr);
 		printf(" %4x", pp->p_rssize);
 		printf(" %4x", pp->p_swrss);
 		printf(" %5x", pp->p_dsize+pp->p_ssize);
@@ -552,9 +560,9 @@ dousr()
 	register i, j, *ip;
 	register struct nameidata *nd = &U.u_nd;
 
-	/* This wins only if PAGSIZ > sizeof (struct user) */
-	lseek(fc, ubase * NBPG, 0);
-	read(fc, &U, sizeof(U));
+	/* This wins only if CLBYTES >= sizeof (struct user) */
+	lseek(fm, ubase * NBPG, 0);
+	read(fm, &U, sizeof(U));
 	printf("pcb");
 	ip = (int *)&U.u_pcb;
 	while (ip < &U.u_arg[0]) {
@@ -566,14 +574,11 @@ dousr()
 	}
 	if ((ip - (int *)&U.u_pcb) % 4 != 0)
 		printf("\n");
-	printf("arg\t");
-	for (i=0; i<5; i++)
-		printf(" %.1x", U.u_arg[i]);
-	printf("\n");
-	for (i=0; i<sizeof(label_t)/sizeof(int); i++) {
+	printf("arg");
+	for (i=0; i<sizeof(U.u_arg)/sizeof(U.u_arg[0]); i++) {
 		if (i%5==0)
 			printf("\t");
-		printf("%9.1x", U.u_ssave.val[i]);
+		printf(" %.1x", U.u_arg[i]);
 		if (i%5==4)
 			printf("\n");
 	}
@@ -590,20 +595,26 @@ dousr()
 	printf("dirp %.1x\n", nd->ni_dirp);
 	printf("dent %d %.14s\n", nd->ni_dent.d_ino, nd->ni_dent.d_name);
 	printf("pdir %.1o\n", nd->ni_pdir);
-	printf("file\t");
-	for (i=0; i<10; i++)
+	printf("file");
+	for (i=0; i<NOFILE; i++) {
+		if (i % 8 == 0)
+			printf("\t");
 		printf("%9.1x", U.u_ofile[i]);
-	printf("\n\t");
-	for (i=10; i<NOFILE; i++)
-		printf("%9.1x", U.u_ofile[i]);
-	printf("\n");
-	printf("pofile\t");
-	for (i=0; i<10; i++)
+		if (i % 8 == 7)
+			printf("\n");
+	}
+	if (i % 8)
+		printf("\n");
+	printf("pofile");
+	for (i=0; i<NOFILE; i++) {
+		if (i % 8 == 0)
+			printf("\t");
 		printf("%9.1x", U.u_pofile[i]);
-	printf("\n\t");
-	for (i=10; i<NOFILE; i++)
-		printf("%9.1x", U.u_pofile[i]);
-	printf("\n");
+		if (i % 8 == 7)
+			printf("\n");
+	}
+	if (i % 8)
+		printf("\n");
 	printf("ssave");
 	for (i=0; i<sizeof(label_t)/sizeof(int); i++) {
 		if (i%5==0)
@@ -614,10 +625,16 @@ dousr()
 	}
 	if (i%5)
 		printf("\n");
-	printf("sigs\t");
-	for (i=0; i<NSIG; i++)
+	printf("sigs");
+	for (i=0; i<NSIG; i++) {
+		if (i % 8 == 0)
+			printf("\t");
 		printf("%.1x ", U.u_signal[i]);
-	printf("\n");
+		if (i % 8 == 7)
+			printf("\n");
+	}
+	if (i % 8)
+		printf("\n");
 	printf("code\t%.1x\n", U.u_code);
 	printf("ar0\t%.1x\n", U.u_ar0);
 	printf("prof\t%X %X %X %X\n", U.u_prof.pr_base, U.u_prof.pr_size,
