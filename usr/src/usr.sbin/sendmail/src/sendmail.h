@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.110		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.111		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -87,6 +87,7 @@ struct mailer
 	char	**m_argv;	/* template argument vector */
 	short	m_s_rwset;	/* rewriting set for sender addresses */
 	short	m_r_rwset;	/* rewriting set for recipient addresses */
+	char	*m_eol;		/* end of line string */
 };
 
 typedef struct mailer	MAILER;
@@ -111,7 +112,6 @@ typedef struct mailer	MAILER;
 # define M_EXPENSIVE	000200000L	/* it costs to use this mailer.... */
 # define M_LIMITS	000400000L	/* must enforce SMTP line limits */
 # define M_INTERNAL	001000000L	/* SMTP to another sendmail site */
-# define M_CRLF		002000000L	/* use CRLF instead of NL as EOLine */
 # define M_FROMPATH	004000000L	/* use reverse-path in MAIL FROM: */
 # define M_XDOT		010000000L	/* use hidden-dot algorithm */
 
@@ -449,9 +449,6 @@ EXTERN u_char	tTdvect[100];
 
 /* set exit status */
 # define setstat(s)		{ if (ExitStat == EX_OK) ExitStat = s; }
-
-/* line terminator appropriate for a given mailer */
-# define crlf(m)		(bitset(M_CRLF, (m)->m_flags) ? "\r\n" : "\n")
 
 /* make a copy of a string */
 # define newstr(s)		strcpy(xalloc(strlen(s) + 1), s)
