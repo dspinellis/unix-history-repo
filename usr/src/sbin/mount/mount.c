@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	8.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	8.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -206,7 +206,7 @@ main(argc, argv)
 	if (rval == 0 && getuid() == 0 &&
 	    (mountdfp = fopen(_PATH_MOUNTDPID, "r")) != NULL) {
 		if (fscanf(mountdfp, "%ld", &pid) == 1 &&
-		     pid > 0 && kill(pid, SIGHUP))
+		     pid > 0 && kill(pid, SIGHUP) == -1 && errno != ESRCH)
 			err(1, "signal mountd");
 		(void)fclose(mountdfp);
 	}
