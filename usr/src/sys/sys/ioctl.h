@@ -1,4 +1,4 @@
-/*	ioctl.h	3.7	%G%	*/
+/*	ioctl.h	3.8	%G%	*/
 /*
  * ioctl definitions, and special character and local tty definitions
  */
@@ -48,6 +48,7 @@ struct ltchars {
 #define	LSERASE	04		/* within a \.../ for LPRTRUB */
 #define	LSLNCH	010		/* next character is literal */
 #define	LSTYPEN	020		/* retyping suspended input (LPENDIN) */
+#define	LSCNTTB	040		/* counting width of tab; leave LFLUSHO alone */
 
 /*
  * tty ioctl commands
@@ -79,6 +80,7 @@ struct ltchars {
 #define	TIOCSLTC	(('t'<<8)|117)	/* set local special characters */
 #define	TIOCGLTC	(('t'<<8)|116)	/* get local special characters */
 #define	TIOCOUTQ	(('t'<<8)|115)	/* number of chars in output queue */
+#define	TIOCSTI		(('t'<<8)|114)	/* simulate a terminal in character */
 
 #define	NETLDISC	1		/* line discip for berk net */
 #define	NTTYDISC	2
