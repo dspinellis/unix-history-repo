@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)dr_3.c	2.1 83/10/31";
+static	char *sccsid = "@(#)dr_3.c	2.2 83/11/01";
 #endif
 
 #include "driver.h"
@@ -100,7 +100,7 @@ moveall()		/* move all comp ships */
 					Write(W_SHIPROW, sq, 0,
 						sp->file->row - 1, 0, 0, 0);
 					if (sp->file->dir == 1
-					    || sp->file->dir == 5) /* XXX */
+					    || sp->file->dir == 5)
 						Write(W_SHIPCOL, sq, 0,
 							sp->file->col - 1,
 							0, 0, 0);
@@ -197,27 +197,11 @@ register struct ship *ship;
 	return 1;
 }
 
-/* XXX */
 push(from, to)
 register struct ship *from, *to;
 {
-	int bow1r, bow1c, bow2r, bow2c, stern1r, stern1c, stern2r, stern2c;
 	register int bs, sb;
 
-	stern1r = bow1r = from->file->row;
-	stern1c = bow1c = from->file->col;
-	stern2r = bow2r = to->file->row;
-	stern2c = bow2c = to->file->col;
-	stern2r += dr[to->file->dir];
-	stern2c += dc[to->file->dir];
-	bs = bow1r - stern2r + bow1c - stern2c;
-	sb = stern1r - bow2r + stern1c - bow2c;
-	if (!bs)
-		return 1;
-	stern1r += dr[from->file->dir];
-	stern1c += dc[from->file->dir];
-	if(!sb)
-		return 0;
 	sb = to->specs->class;
 	bs = from->specs->class;
 	if (sb > bs)
