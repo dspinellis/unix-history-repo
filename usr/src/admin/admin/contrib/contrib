@@ -1,4 +1,4 @@
-.\"	@(#)contrib	5.57 (Berkeley) %G%
+.\"	@(#)contrib	5.58 (Berkeley) %G%
 .\"
 .\" To build a document, pipe the bottom list through column -c140, making
 .\" it two columns wide (remove the .TE at the end of the file first).
@@ -127,6 +127,7 @@ User level XNS	Cornell University
 VAX 3000 support	Mt. Xinu and Tom Ferrin
 VAX BI support	Chris Torek
 VAX device support	Digital Equipment Corporation and Helge Skrivervik
+VAX virtual memory implementation	Ozalp Babaoglu
 Versatec printer/plotter support	University of Toronto
 Virtual memory implementation	Avadis Tevanian, Jr., Michael Wayne Young,
 	and the Carnegie-Mellon University Mach project
