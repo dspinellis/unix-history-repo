@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setterm.c	8.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)setterm.c	8.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/ioctl.h>		/* TIOCGWINSZ on old systems. */
@@ -115,10 +115,11 @@ setterm(type)
 	 * Test for cursor motion capbility.
 	 *
 	 * XXX
-	 * This is truly stupid -- tgoto returns "OOPS" if it can't
-	 * do cursor motions.
+	 * This is truly stupid -- historically, tgoto returns "OOPS" if it
+	 * can't do cursor motions.  Some systems have been fixed to return
+	 * a NULL pointer.
 	 */
-	if (tgoto(CM, 0, 0)[0] == 'O') {
+	if ((p = tgoto(CM, 0, 0)) == NULL || *p == 'O') {
 		CA = 0;
 		CM = 0;
 	} else
