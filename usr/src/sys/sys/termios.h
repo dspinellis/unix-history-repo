@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)termios.h	7.21 (Berkeley) %G%
+ *	@(#)termios.h	7.22 (Berkeley) %G%
  */
 
 /*
@@ -211,6 +211,14 @@ int	tcflush __P((int, int));
 int	tcgetattr __P((int, struct termios *));
 int	tcsendbreak __P((int, int));
 int	tcsetattr __P((int, int, const struct termios *));
+
+#define	TCIFLUSH	1
+#define	TCOFLUSH	2
+#define TCIOFLUSH	3
+#define	TCOOFF		1
+#define	TCOON		2
+#define TCIOFF		3
+#define TCION		4
 
 #ifndef _POSIX_SOURCE
 void	cfmakeraw __P((struct termios *));
