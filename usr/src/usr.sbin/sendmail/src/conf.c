@@ -32,7 +32,7 @@
 
 
 
-static char SccsId[] = "@(#)conf.c	3.19	%G%";
+static char SccsId[] = "@(#)conf.c	3.20	%G%";
 
 
 # include <whoami.h>		/* definitions of machine id's at berkeley */
@@ -93,58 +93,33 @@ char	Arpa_Usrerr[] =	"450";	/* some (fatal) user error */
 
 # ifdef V6
 /*
-**  TTYPATH -- Get the path of the user's tty -- Version 6 version.
-**
-**	Returns the pathname of the user's tty.  Returns NULL if
-**	the user is not logged in or if s/he has write permission
-**	denied.
+**  TTYNAME -- return name of terminal.
 **
 **	Parameters:
-**		none
+**		fd -- file descriptor to check.
 **
 **	Returns:
-**		pathname of the user's tty.
-**		NULL if not logged in or write permission denied.
+**		pointer to full path of tty.
+**		NULL if no tty.
 **
 **	Side Effects:
 **		none.
-**
-**	WARNING:
-**		Return value is in a local buffer.
-**
-**	Called By:
-**		savemail
 */
 
-# include <sys/stat.h>
-
 char *
-ttypath()
+ttyname(fd)
+	int fd;
 {
-	struct stat stbuf;
-	register int i;
+	register char tn;
 	static char pathn[] = "/dev/ttyx";
 
 	/* compute the pathname of the controlling tty */
-	if ((i = ttyn(2)) == 'x' && (i = ttyn(1)) == 'x' && (i = ttyn(0)) == 'x')
+	if ((tn = ttyn(fd)) == NULL)
 	{
 		errno = 0;
 		return (NULL);
 	}
-	pathn[8] = i;
-
-	/* see if we have write permission */
-	if (stat(pathn, &stbuf) < 0 || !bitset(02, stbuf.st_mode))
-	{
-		errno = 0;
-		return (NULL);
-	}
-
-	/* see if the user is logged in */
-	if (getlogin() == NULL)
-		return (NULL);
-
-	/* looks good */
+	pathn[8] = tn;
 	return (pathn);
 }
 /*
@@ -217,10 +192,8 @@ index(s, c)
 	return (NULL);
 }
 # endif V6
-
-# ifndef V6
-/*
-**  TTYPATH -- Get the path of the user's tty -- Version 7 version.
+/*
+**  TTYPATH -- Get the path of the user's tty
 **
 **	Returns the pathname of the user's tty.  Returns NULL if
 **	the user is not logged in or if s/he has write permission
@@ -274,7 +247,6 @@ ttypath()
 	/* looks good */
 	return (pathn);
 }
-# endif V6
 /*
 **  CHECKCOMPAT -- check for From and To person compatible.
 **
