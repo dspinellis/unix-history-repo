@@ -1,4 +1,4 @@
-# sccsid = "@(#)Makefile	1.3 (Berkeley) %G%"
+# sccsid = "@(#)Makefile	1.4 (Berkeley) %G%"
 #
 #	dump.h			header file
 #	dumpitime.c		reads /etc/ddate
@@ -7,6 +7,7 @@
 #	dumptape.c		handles the mag tape and opening/closing
 #	dumptraverse.c		traverses the file system
 #	unctime.c		undo ctime
+#	l3tol.c			3-byte to 4-byte unpacking
 #
 #	DEBUG			use local directory to find ddate and dumpdates
 #	TDEBUG			trace out the process forking
@@ -30,7 +31,7 @@ CFLAGS = -O $(DFLAGS)
 dump:	$(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) -o dump
 install:
-	install -s dump $(DESTDIR)/etc
+	install -s dump $(DESTDIR)/etc/dump.4.1
 clean:
 	rm -f *.o dump
 
