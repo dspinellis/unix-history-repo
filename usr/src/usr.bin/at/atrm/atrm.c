@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)atrm.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)atrm.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -27,13 +27,13 @@ static char sccsid[] = "@(#)atrm.c	5.3 (Berkeley) %G%";
  *
  */
 
-#include <stdio.h>
-#include <pwd.h>
-#include <ctype.h>
 #include <sys/types.h>
 #include <sys/dir.h>
 #include <sys/file.h>
 #include <sys/stat.h>
+#include <stdio.h>
+#include <pwd.h>
+#include <ctype.h>
 
 #define SUPERUSER	0			/* is user super-user? */
 #define MAXENTRIES	1000			/* max # of entries allowed */
