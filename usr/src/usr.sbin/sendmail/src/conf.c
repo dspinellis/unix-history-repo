@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.198 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.199 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -2852,6 +2852,7 @@ resetlimits()
 char *
 getcfname()
 {
+	struct stat st;
 
 	if (ConfFile != NULL)
 		return ConfFile;
@@ -2867,6 +2868,8 @@ getcfname()
 	}
 #endif
 
+	if (stat("/etc/sendmail.cf", &st) >= 0)
+		return "/etc/sendmail.cf";
 	return _PATH_SENDMAILCF;
 }
 /*
