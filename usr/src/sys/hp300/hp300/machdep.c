@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machdep.c 1.74 92/12/20$
  *
- *	@(#)machdep.c	8.13 (Berkeley) %G%
+ *	@(#)machdep.c	8.14 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1037,6 +1037,8 @@ int	waittime = -1;
 boot(howto)
 	register int howto;
 {
+	struct proc *p = curproc;	/* XXX */
+
 	/* take a snap shot before clobbering any registers */
 	if (curproc && curproc->p_addr)
 		savectx(curproc->p_addr, 0);
@@ -1060,7 +1062,7 @@ boot(howto)
 		vnshutdown();
 #endif
 #endif
-		sync(&proc0, (void *)NULL, (int *)NULL);
+		sync(p, (void *)NULL, (int *)NULL);
 		/*
 		 * Unmount filesystems
 		 */
