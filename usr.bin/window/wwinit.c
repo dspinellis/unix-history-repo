@@ -55,9 +55,9 @@ wwinit()
 	wwhead.ww_back = &wwhead;
 
 	s = sigblock(sigmask(SIGIO));
-	if (signal(SIGIO, wwrint) == BADSIG ||
-	    signal(SIGCHLD, wwchild) == BADSIG ||
-	    signal(SIGPIPE, SIG_IGN) == BADSIG) {
+	if (signal(SIGIO, wwrint) == SIG_ERR ||
+	    signal(SIGCHLD, wwchild) == SIG_ERR ||
+	    signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
 		wwerrno = WWE_SYS;
 		return -1;
 	}
