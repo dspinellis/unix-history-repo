@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)curses.h	5.22 (Berkeley) %G%
+ *	@(#)curses.h	5.23 (Berkeley) %G%
  */
 
 #ifndef _CURSES_H_

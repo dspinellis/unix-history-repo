@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)overlay.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)overlay.c	5.11 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <ctype.h>
@@ -36,7 +36,7 @@ overlay(win1, win2)
 	    starty, startx, endy, endx);
 #endif
 	if (starty >= endy || startx >= endx)
-		return (OK);
+		return (CURSES_OK);
 	y1 = starty - win1->begy;
 	y2 = starty - win2->begy;
 	for (y = starty; y < endy; y++, y1++, y2++) {
@@ -51,5 +51,5 @@ overlay(win1, win2)
 			x++;
 		}
 	}
-	return (OK);
+	return (CURSES_OK);
 }

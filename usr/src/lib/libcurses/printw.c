@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)printw.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)printw.c	5.13 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -102,8 +102,8 @@ mvprintw(y, x, fmt, va_alist)
 #else
 	va_start(ap);
 #endif
-	if (move(y, x) != OK)
-		return (ERR);
+	if (move(y, x) != CURSES_OK)
+		return (CURSES_ERR);
 	ret = vwprintw(stdscr, fmt, ap);
 	va_end(ap);
 	return (ret);
@@ -129,8 +129,8 @@ mvwprintw(win, y, x, fmt, va_alist)
 #else
 	va_start(ap);
 #endif
-	if (wmove(win, y, x) != OK)
-		return (ERR);
+	if (wmove(win, y, x) != CURSES_OK)
+		return (CURSES_ERR);
 
 	ret = vwprintw(win, fmt, ap);
 	va_end(ap);
@@ -150,7 +150,7 @@ __winwrite(cookie, buf, n)
 	register int c;
 
 	for (c = n, win = cookie; --c >= 0;)
-		if (waddch(win, *buf++) == ERR)
+		if (waddch(win, *buf++) == CURSES_ERR)
 			return (-1);
 	return (n);
 }
@@ -168,7 +168,7 @@ vwprintw(win, fmt, ap)
 	FILE *f;
 
 	if ((f = funopen(win, NULL, __winwrite, NULL, NULL)) == NULL)
-		return (ERR);
+		return (CURSES_ERR);
 	(void)vfprintf(f, fmt, ap);
-	return (fclose(f) ? ERR : OK);
+	return (fclose(f) ? CURSES_ERR : CURSES_OK);
 }

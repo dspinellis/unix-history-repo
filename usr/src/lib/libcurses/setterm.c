@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setterm.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)setterm.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/ioctl.h>
@@ -88,7 +88,7 @@ setterm(type)
 	 * Historically, curses fails if rows <= 5, cols <= 4.
 	 */
 	if (LINES <= 5 || COLS <= 4)
-		return (ERR);
+		return (CURSES_ERR);
 
 #ifdef DEBUG
 	__TRACE("setterm: LINES = %d, COLS = %d\n", LINES, COLS);
@@ -125,7 +125,7 @@ setterm(type)
 	if ((!AL && !al) || (!DL && !dl))
 		__noqch = 1;
 
-	return (unknown ? ERR : OK);
+	return (unknown ? CURSES_ERR : CURSES_OK);
 }
 
 /*

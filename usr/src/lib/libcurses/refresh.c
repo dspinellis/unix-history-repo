@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)refresh.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)refresh.c	5.26 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
@@ -89,8 +89,8 @@ wrefresh(win)
 			curscr->lines[wy]->hash = win->lines[wy]->hash;
 		if (win->lines[wy]->flags & __ISDIRTY ||
 		    win->lines[wy]->flags & __FORCEPAINT)
-			if (makech(win, wy) == ERR)
-				return (ERR);
+			if (makech(win, wy) == CURSES_ERR)
+				return (CURSES_ERR);
 			else {
 				if (*win->lines[wy]->firstchp >= win->ch_off)
 					*win->lines[wy]->firstchp = win->maxx +
@@ -133,7 +133,7 @@ wrefresh(win)
 			curscr->curx = win->curx + win->begx;
 		}
 	}
-	retval = OK;
+	retval = CURSES_OK;
 
 	_win = NULL;
 	(void)fflush(stdout);
@@ -164,15 +164,15 @@ makech(win, wy)
 		lx = 0;
 	}
 	if (!(win->lines[wy]->flags & __ISDIRTY))
-		return (OK);
+		return (CURSES_OK);
 	wx = *win->lines[wy]->firstchp - win->ch_off;
 	if (wx >= win->maxx)
-		return (OK);
+		return (CURSES_OK);
 	else if (wx < 0)
 		wx = 0;
 	lch = *win->lines[wy]->lastchp - win->ch_off;
 	if (lch < 0)
-		return (OK);
+		return (CURSES_OK);
 	else if (lch >= win->maxx)
 		lch = win->maxx - 1;
 	y = wy + win->begy;
@@ -262,7 +262,7 @@ makech(win, wy)
 						csp->attr = 0;
 						csp++;
 					}
-					return (OK);
+					return (CURSES_OK);
 				}
 				ce = NULL;
 			}
@@ -307,11 +307,11 @@ makech(win, wy)
 					}
 					ly = win->begy + win->maxy - 1;
 					lx = win->begx + win->maxx - 1;
-					return (OK);
+					return (CURSES_OK);
 				} else
 					if (win->flags & __SCROLLWIN) {
 						lx = --wx;
-						return (ERR);
+						return (CURSES_ERR);
 					}
 			if (!curwin) {
 				csp->attr = nsp->attr;
@@ -361,7 +361,7 @@ makech(win, wy)
 		__TRACE("makech: 3: wx = %d, lx = %d\n", wx, lx);
 #endif
 	}
-	return (OK);
+	return (CURSES_OK);
 }
 
 /*
