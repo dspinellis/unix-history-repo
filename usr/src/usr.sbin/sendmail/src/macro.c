@@ -1,8 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)macro.c	3.11		%G%);
-
-char	*Macro[128];
+SCCSID(@(#)macro.c	3.11.1.1		%G%);
 
 /*
 **  EXPAND -- macro expand a string using $x escapes.
@@ -12,6 +10,7 @@ char	*Macro[128];
 **		buf -- the place to put the expansion.
 **		buflim -- the buffer limit, i.e., the address
 **			of the last usable position in buf.
+**		e -- envelope in which to work.
 **
 **	Returns:
 **		End of interpolated output.
@@ -20,11 +19,24 @@ char	*Macro[128];
 **		none.
 */
 
-char *
-expand(s, buf, buflim)
+expand(s, buf, buflim, e)
 	register char *s;
 	register char *buf;
 	char *buflim;
+	register ENVELOPE *e;
+{
+	extern char *expand2();
+
+	(void) expand2(s, buf, buflim, e);
+}
+
+
+char *
+expand2(s, buf, buflim, e)
+	register char *s;
+	register char *buf;
+	char *buflim;
+	register ENVELOPE *e;
 {
 	register char *q;
 	char xbuf[BUFSIZ];
@@ -57,7 +69,7 @@ expand(s, buf, buflim)
 		{
 		  case CONDIF:		/* see if var set */
 			c = *++s;
-			skipping = Macro[c] == NULL;
+			skipping = e->e_macro[c] == NULL;
 			continue;
 
 		  case CONDELSE:	/* change state of skipping */
@@ -70,7 +82,7 @@ expand(s, buf, buflim)
 
 		  case '$':		/* macro interpolation */
 			c = *++s;
-			q = Macro[c & 0177];
+			q = e->e_macro[c & 0177];
 			if (q == NULL && c != '$')
 				continue;
 			gotone = TRUE;
@@ -108,7 +120,7 @@ expand(s, buf, buflim)
 
 	/* recurse as appropriate */
 	if (gotone)
-		return (expand(xbuf, buf, buflim));
+		return (expand2(xbuf, buf, buflim, e));
 
 	/* copy results out */
 	for (q = buf, xp = xbuf; xp != '\0' && q < buflim-1; )
@@ -130,7 +142,7 @@ expand(s, buf, buflim)
 **		none.
 **
 **	Side Effects:
-**		Macro[n] is defined.
+**		CurEnv->e_macro[n] is defined.
 **
 **	Notes:
 **		There is one macro for each ASCII character,
@@ -185,7 +197,7 @@ define(n, v)
 		printf(")\n");
 	}
 # endif DEBUG
-	Macro[n & 0177] = v;
+	CurEnv->e_macro[n & 0177] = v;
 }
 /*
 **  MACVALUE -- return uninterpreted value of a macro.
@@ -204,5 +216,5 @@ char *
 macvalue(n)
 	char n;
 {
-	return (Macro[n & 0177]);
+	return (CurEnv->e_macro[n & 0177]);
 }

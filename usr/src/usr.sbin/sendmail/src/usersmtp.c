@@ -3,10 +3,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)usersmtp.c	3.9		%G%	(no SMTP));
+SCCSID(@(#)usersmtp.c	3.9.1.1		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)usersmtp.c	3.9		%G%);
+SCCSID(@(#)usersmtp.c	3.9.1.1		%G%);
 
 /*
 **  SMTPINIT -- initialize SMTP.
@@ -85,7 +85,7 @@ smtpinit(m, pvp, ctladdr)
 	**	Designates the sender.
 	*/
 
-	(void) expand("$g", buf, &buf[sizeof buf - 1]);
+	expand("$g", buf, &buf[sizeof buf - 1], CurEnv);
 	smtpmessage("MAIL From:<%s>", buf);
 	r = reply();
 	if (REPLYTYPE(r) == 4)
@@ -130,8 +130,7 @@ smtprcpt(to)
 **
 **	Parameters:
 **		m -- mailer being sent to.
-**		editfcn -- a function to call to output the
-**			text of the message with.
+**		e -- the envelope for this message.
 **
 **	Returns:
 **		exit status corresponding to DATA command.
@@ -140,9 +139,9 @@ smtprcpt(to)
 **		none.
 */
 
-smtpfinish(m, editfcn)
+smtpfinish(m, e)
 	struct mailer *m;
-	int (*editfcn)();
+	register ENVELOPE *e;
 {
 	register int r;
 
@@ -160,7 +159,9 @@ smtpfinish(m, editfcn)
 		return (EX_TEMPFAIL);
 	if (r != 354)
 		return (EX_SOFTWARE);
-	(*editfcn)(SmtpOut, m, TRUE);
+	(*e->e_puthdr)(SmtpOut, m, CurEnv);
+	fprintf(SmtpOut, "\n");
+	(*e->e_putbody)(SmtpOut, m, TRUE);
 	smtpmessage(".");
 	r = reply();
 	if (REPLYTYPE(r) == 4)

@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)headers.c	3.18		%G%);
+SCCSID(@(#)headers.c	3.18.1.1		%G%);
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -128,6 +128,55 @@ chompheader(line, def)
 		CurEnv->e_oldstyle = FALSE;
 
 	return (h->h_flags);
+}
+/*
+**  ADDHEADER -- add a header entry to the end of the queue.
+**
+**	This bypasses the special checking of chompheader.
+**
+**	Parameters:
+**		field -- the name of the header field.
+**		value -- the value of the field.  It must be lower-cased.
+**		e -- the envelope to add them to.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		adds the field on the list of headers for this envelope.
+*/
+
+addheader(field, value, e)
+	char *field;
+	char *value;
+	ENVELOPE *e;
+{
+	register HDR *h;
+	register struct hdrinfo *hi;
+	HDR **hp;
+
+	/* find info struct */
+	for (hi = HdrInfo; hi->hi_field != NULL; hi++)
+	{
+		if (strcmp(field, hi->hi_field) == 0)
+			break;
+	}
+
+	/* find current place in list -- keep back pointer? */
+	for (hp = &e->e_header; (h = *hp) != NULL; hp = &h->h_link)
+	{
+		if (strcmp(field, h->h_field) == 0)
+			break;
+	}
+
+	/* allocate space for new header */
+	h = (HDR *) xalloc(sizeof *h);
+	h->h_field = field;
+	h->h_value = newstr(value);
+	h->h_link = NULL;
+	h->h_flags = hi->hi_flags | H_DEFAULT;
+	h->h_mflags = hi->hi_mflags;
+	*hp = h;
 }
 /*
 **  HVALUE -- return value of a header.
