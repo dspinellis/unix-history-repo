@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)liszt.1	4.1 (Berkeley) %G%
+.\"	@(#)liszt.1	5.1 (Berkeley) %G%
 .\"
-.TH LISZT 1 10/1/80
+.TH LISZT 1 "1 October 1980"
 .UC 4
 .SH NAME
 liszt \- compile a Franz Lisp program
@@ -12,6 +12,9 @@ liszt \- compile a Franz Lisp program
 .B liszt
 [
 .B \-mpqruwxCQST
+] [
+.B \-e
+form
 ] [
 .B \-o
 objfile
@@ -24,6 +27,9 @@ source with `.o' substituted for `.l'.
 .PP
 The following options are interpreted by
 .I liszt.
+.TP
+.B \-e
+Evaluate the given form before compilation begins.
 .TP
 .B \-m
 Compile a M\s-2ACLISP\s0 file, by changing the readtable to conform to
