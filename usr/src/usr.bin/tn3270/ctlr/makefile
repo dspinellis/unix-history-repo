@@ -19,7 +19,8 @@ KBD	= 3270pc.kbd
 KBD	= unix.kbd
 
 # The source files...
-ALLH =	dctype.h ebc_disp.h hostctlr.h kbdctlr.h options.h screen.h scrnctlr.h
+ALLH =	dctype.h ebc_disp.h hostctlr.h kbdctlr.h oia.h options.h \
+		screen.h scrnctlr.h
 
 ALLC =	dctype.c ebc_disp.c inbound.c oia.c options.c outbound.c
 
