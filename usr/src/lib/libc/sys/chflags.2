@@ -1,13 +1,13 @@
 .\" Copyright (c) 1989 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)chflags.2	6.4 (Berkeley) %G%
+.\"	@(#)chflags.2	6.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CHFALGS 2
-.Os BSD 4.4
+.Os
 .Sh NAME
 .Nm chflags ,
 .Nm fchflags
@@ -61,7 +61,9 @@ The named file resides on a read-only file system.
 .Fa Path
 points outside the process's allocated address space.
 .It Bq Er EIO
-An I/O error occurred while reading from or writing to the file system.
+An
+.Tn I/O
+error occurred while reading from or writing to the file system.
 .El
 .Pp
 .Fn Fchflags
@@ -78,7 +80,9 @@ the effective user ID is not the super-user.
 .It Bq Er EROFS
 The file resides on a read-only file system.
 .It Bq Er EIO
-An I/O error occurred while reading from or writing to the file system.
+An
+.Tn I/O
+error occurred while reading from or writing to the file system.
 .El
 .Sh SEE ALSO
 .Xr chmod 2 ,
@@ -87,5 +91,8 @@ An I/O error occurred while reading from or writing to the file system.
 .Xr stat 2
 .Sh HISTORY
 The
-.Nm
-function call is currently under development.
+.Nm chflags
+and
+.Nm fchflags
+function calls are
+.Ud .
