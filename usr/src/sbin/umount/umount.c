@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)umount.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)umount.c	5.10 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -39,6 +39,7 @@ int xdr_dir();
 char	*index();
 #endif
 int	vflag, all, errs;
+int	fflag = MNT_NOFORCE;
 char	*rindex(), *getmntname();
 #define MNTON	1
 #define MNTFROM	2
@@ -56,13 +57,19 @@ again:
 		argc--, argv++;
 		goto again;
 	}
+	if (argc > 0 && !strcmp(*argv, "-f")) {
+		fflag = MNT_FORCE;
+		argc--, argv++;
+		goto again;
+	}
 	if (argc > 0 && !strcmp(*argv, "-a")) {
 		all++;
 		argc--, argv++;
 		goto again;
 	}
 	if (argc == 0 && !all) {
-		fprintf(stderr, "Usage: umount [ -a ] [ -v ] [ dev ... ]\n");
+		fprintf(stderr,
+			"Usage: umount [ -a ] [ -f ] [ -v ] [ dev ... ]\n");
 		exit(1);
 	}
 	if (all) {
@@ -168,7 +175,7 @@ umountfs(name)
 			name);
 		return (0);
 	}
-	if (unmount(mntpt, MNT_NOFORCE) < 0) {
+	if (unmount(mntpt, fflag) < 0) {
 		perror(mntpt);
 		return (0);
 	}
