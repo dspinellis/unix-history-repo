@@ -14,11 +14,11 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.11 (Berkeley) %G%
+#	@(#)Makefile	5.12 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
-VPATH=	../../sys/kern
+VPATH=	../../sys/ufs
 SRCS=	dir.c inode.c main.c pass1.c pass1b.c pass2.c pass3.c pass4.c \
 	pass5.c setup.c utilities.c ufs_subr.c ufs_tables.c
 LOCOBJS=dir.o inode.o main.o pass1.o pass1b.o pass2.o pass3.o pass4.o \
