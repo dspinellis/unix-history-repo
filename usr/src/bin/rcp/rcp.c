@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rcp.c	4.15 85/04/11";
+static char sccsid[] = "@(#)rcp.c	4.16 85/05/29";
 #endif
 
 /*
@@ -32,6 +32,11 @@ struct	passwd *pwd;
 struct	passwd *getpwuid();
 int	userid;
 int	port;
+
+struct buffer {
+	int	cnt;
+	char	*buf;
+} *allocbuf();
 
 /*VARARGS*/
 int	error();
@@ -312,9 +317,11 @@ source(argc, argv)
 {
 	char *last, *name;
 	struct stat stb;
-	char buf[BUFSIZ];
-	int x, sizerr, f;
+	static struct buffer buffer;
+	struct buffer *bp;
+	int x, sizerr, f, amt;
 	off_t i;
+	char buf[BUFSIZ];
 
 	for (x = 0; x < argc; x++) {
 		name = argv[x];
@@ -354,14 +361,18 @@ notreg:
 			(void) close(f);
 			continue;
 		}
+		if ((bp = allocbuf(&buffer, f, BUFSIZ)) < 0) {
+			(void) close(f);
+			continue;
+		}
 		sizerr = 0;
-		for (i = 0; i < stb.st_size; i += BUFSIZ) {
-			int amt = BUFSIZ;
+		for (i = 0; i < stb.st_size; i += bp->cnt) {
+			amt = bp->cnt;
 			if (i + amt > stb.st_size)
 				amt = stb.st_size - i;
-			if (sizerr == 0 && read(f, buf, amt) != amt)
+			if (sizerr == 0 && read(f, bp->buf, amt) != amt)
 				sizerr = 1;
-			(void) write(rem, buf, amt);
+			(void) write(rem, bp->buf, amt);
 		}
 		(void) close(f);
 		if (sizerr == 0)
@@ -460,15 +471,17 @@ sink(argc, argv)
 	int argc;
 	char **argv;
 {
-	char *targ;
-	char cmdbuf[BUFSIZ], nambuf[BUFSIZ], buf[BUFSIZ], *cp;
-	int of, mode, wrerr, exists, first;
-	off_t i, size;
-	char *whopp;
-	struct stat stb; int targisdir = 0;
-#define	SCREWUP(str)	{ whopp = str; goto screwup; }
+	off_t i, j;
+	char *targ, *whopp, *cp;
+	int of, mode, wrerr, exists, first, count, amt, size;
+	struct buffer *bp;
+	static struct buffer buffer;
+	struct stat stb;
+	int targisdir = 0;
 	int mask = umask(0);
 	char *myargv[1];
+	char cmdbuf[BUFSIZ], nambuf[BUFSIZ], buf[BUFSIZ];
+#define	SCREWUP(str)	{ whopp = str; goto screwup; }
 
 	umask(mask);
 	if (argc != 1) {
@@ -560,27 +573,36 @@ sink(argc, argv)
 		if (exists)
 			(void) fchmod(of, mode &~ mask);
 		ga();
+		if ((bp = allocbuf(&buffer, of, BUFSIZ)) < 0) {
+			close(of);
+			continue;
+		}
+		cp = bp->buf;
+		count = 0;
 		wrerr = 0;
 		for (i = 0; i < size; i += BUFSIZ) {
-			int amt = BUFSIZ;
-			char *cp = buf;
-
+			amt = BUFSIZ;
 			if (i + amt > size)
 				amt = size - i;
+			count += amt;
 			do {
-				int j = read(rem, cp, amt);
-
+				j = read(rem, cp, amt);
 				if (j <= 0)
 					exit(1);
 				amt -= j;
 				cp += j;
 			} while (amt > 0);
-			amt = BUFSIZ;
-			if (i + amt > size)
-				amt = size - i;
-			if (wrerr == 0 && write(of, buf, amt) != amt)
-				wrerr++;
+			if (count == bp->cnt) {
+				if (wrerr == 0 &&
+				    write(of, bp->buf, count) != count)
+					wrerr++;
+				count = 0;
+				cp = bp->buf;
+			}
 		}
+		if (count != 0 && wrerr == 0 &&
+		    write(of, bp->buf, count) != count)
+			wrerr++;
 		(void) close(of);
 		(void) response();
 		if (wrerr)
@@ -591,6 +613,34 @@ sink(argc, argv)
 screwup:
 	error("rcp: protocol screwup: %s\n", whopp);
 	exit(1);
+}
+
+struct buffer *
+allocbuf(bp, fd, blksize)
+	struct buffer *bp;
+	int fd, blksize;
+{
+	struct stat stb;
+	int size;
+
+	if (fstat(fd, &stb) < 0) {
+		error("rcp: fstat: %s\n", sys_errlist[errno]);
+		return ((struct buffer *)-1);
+	}
+	size = roundup(stb.st_blksize, blksize);
+	if (size == 0)
+		size = blksize;
+	if (bp->cnt < size) {
+		if (bp->buf != 0)
+			free(bp->buf);
+		bp->buf = (char *)malloc(size);
+		if (bp->buf == 0) {
+			error("rcp: malloc: out of memory\n");
+			return ((struct buffer *)-1);
+		}
+	}
+	bp->cnt = size;
+	return (bp);
 }
 
 /*VARARGS*/
