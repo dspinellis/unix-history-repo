@@ -1,0 +1,27 @@
+.pa 1
+.he 'FSTAT (II)'3/15/72'FSTAT (II)'
+.ti 0
+NAME		fstat  --  get status of open file
+.sp
+.ti 0
+SYNOPSIS	(file descriptor in r0)
+.br
+sys fstat; buf  / fstat = 28.
+.sp
+.ti 0
+DESCRIPTION	This
+call is identical to stat____, except that it operates
+on open files instead of files given by name.
+It is most often used to get the status
+of the standard input and output files, whose names
+are unknown.
+.sp
+.ti 0
+SEE ALSO	stat(II)
+.sp
+.ti 0
+DIAGNOSTICS	The error bit
+(c-bit) is set if the file descriptor is unknown.
+.sp
+.ti 0
+BUGS		--
