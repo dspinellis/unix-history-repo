@@ -1,5 +1,6 @@
-#	Makefile	1.2	86/11/04
+#	Makefile	1.3	86/11/16
 #
+DESTDIR=
 COPTS=	-DSTANDALONE -DTAHOE -I../../h -I../..
 CFLAGS=	-O ${COPTS}
 RELOC=	800
@@ -24,6 +25,9 @@ clean:
 
 ../srt0.o: 
 	@(cd ..; make srt0.o)
+
+install:
+	install -m 644 vdformat ${DESTDIR}/stand/vdformat
 
 depend:
 	${CC} -M ${COPTS} ${SRCS} | \
