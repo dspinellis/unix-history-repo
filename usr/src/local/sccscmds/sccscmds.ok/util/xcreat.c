@@ -19,8 +19,10 @@ int mode;
 
 	d = alloca(size(name));
 	copy(name,d);
-	if (!exists(dname(d)))
-		fatal(sprintf(Error,"directory `%s' nonexistent (ut1)",d));
+	if (!exists(dname(d))) {
+		sprintf(Error,"directory `%s' nonexistent (ut1)",d);
+		fatal(Error);
+	}
 	unlink(name);
 	if ((fd = creat(name,mode)) >= 0)
 		return(fd);

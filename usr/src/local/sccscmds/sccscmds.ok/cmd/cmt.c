@@ -1,7 +1,7 @@
 # include	"../hdr/defines.h"
 # include	"../hdr/had.h"
 
-static char Sccsid[] = "@(#)cmt.c	4.4	%G%";
+static char Sccsid[] = "@(#)cmt.c	4.5	%G%";
 
 struct packet gpkt;
 int	num_files, had_ffile;
@@ -119,9 +119,10 @@ register char *file;
 	else downer = Statbuf.st_uid & 0377;
 	user = getuid() & 0377;
 	if (user != fowner || user != downer)
-		if (!equal(Pgmr,logname()))
-			fatal(sprintf(Error,
-				"you are neither owner nor '%s' (rc4)",Pgmr));
+		if (!equal(Pgmr,logname())) {
+			sprintf(Error, "you are neither owner nor '%s' (rc4)",Pgmr);
+			fatal(Error);
+		}
 
 	if ((HADF && had_ffile)) {
 		if (Sflags[VALFLAG - 'a'])
@@ -142,7 +143,8 @@ register char *file;
 	/*
 	Write new header.
 	*/
-	putline(&gpkt,sprintf(Line,"%c%c00000\n",CTLCHAR,HEAD));
+	sprintf(Line,"%c%c00000\n",CTLCHAR,HEAD);
+	putline(&gpkt,Line);
 	do_delt(&gpkt);		/* read delta table second time */
 
 	flushto(&gpkt,EUSERNAM,0);
@@ -289,18 +291,25 @@ fixintdel()
 				fatal("invalid MRs (de9)");
 			putmrs(&gpkt);
 		}
-		else putline(&gpkt,sprintf(Line,CTLSTR,CTLCHAR,MRNUM));
+		else {
+			sprintf(Line,CTLSTR,CTLCHAR,MRNUM);
+			putline(&gpkt,Line);
+		}
 	}
 	if (doprmt)
 		printf("comments? ");
 	if (Opened) {
-		Comments = getinput(sprintf(Line,"\n%c%c ",CTLCHAR,COMMENTS),
-			   Cstr);
-		putline(&gpkt,sprintf(str,"%c%c ",CTLCHAR,COMMENTS));
+		sprintf(Line,"\n%c%c ",CTLCHAR,COMMENTS);
+		Comments = getinput(Line,Cstr);
+		sprintf(str,"%c%c ",CTLCHAR,COMMENTS);
+		putline(&gpkt,str);
 		putline(&gpkt,Comments);
 		putline(&gpkt,"\n");
 	}
-	else putline(&gpkt,sprintf(Line,CTLSTR,CTLCHAR,COMMENTS));
+	else {
+		sprintf(Line,CTLSTR,CTLCHAR,COMMENTS);
+		putline(&gpkt,Line);
+	}
 
 	if (F_Opened)
 		fclose(iop);
@@ -348,6 +357,8 @@ struct packet *pkt;
 	char str[64];
 	extern char *Varg[];
 
-	for (argv = &Varg[VSTART]; *argv; argv++)
-		putline(pkt,sprintf(str,"%c%c %s\n",CTLCHAR,MRNUM,*argv));
+	for (argv = &Varg[VSTART]; *argv; argv++) {
+		sprintf(str,"%c%c %s\n",CTLCHAR,MRNUM,*argv);
+		putline(pkt,str);
+	}
 }

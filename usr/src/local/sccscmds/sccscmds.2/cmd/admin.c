@@ -1,7 +1,7 @@
 # include "../hdr/defines.h"
 # include "../hdr/had.h"
 
-static char Sccsid[] = "@(#)admin.c	4.2	%G%";
+static char Sccsid[] = "@(#)admin.c	4.3	%G%";
 
 /*
 	Program to create new SCCS files and change parameters
@@ -105,9 +105,10 @@ char *argv[];
 				case FLORFLAG:
 				case CEILFLAG:
 				case DEFTFLAG:
-					if (*p)
-						fatal(sprintf(Error,
-						"value after %c flag (ad12)",f));
+					if (*p) {
+						sprintf(Error, "value after %c flag (ad12)",f);
+						fatal(Error);
+					}
 					break;
 
 				default:
@@ -129,9 +130,10 @@ char *argv[];
 				case IDFLAG:	/* id-kwd message (err/warn) */
 				case BRCHFLAG:	/* branch */
 				case NULLFLAG:	/* null deltas */
-					if (*p)
-						fatal(sprintf(Error,
-						"value after %c flag (ad13)",f));
+					if (*p) {
+						sprintf(Error, "value after %c flag (ad13)",f);
+						fatal(Error);
+					}
 					break;
 
 				case VALFLAG:	/* mr validation */
@@ -164,9 +166,10 @@ char *argv[];
 
 				case TYPEFLAG:	/* type */
 				case MODFLAG:	/* module name */
-					if (!(*p))
-						fatal(sprintf(Error,
-						"flag %c has no value (ad2)",f));
+					if (!(*p)) {
+						sprintf(Error, "flag %c has no value (ad2)",f);
+						fatal(Error);
+					}
 					break;
 
 				default:
@@ -306,11 +309,15 @@ char *afile;
 	if (HADN && HADD)
 		fatal("d not allowed with n (ad18)");
 
-	if (HADN && fexists)
-		fatal(sprintf(Error,"file %s exists (ad19)",afile));
+	if (HADN && fexists) {
+		sprintf(Error,"file %s exists (ad19)",afile);
+		fatal(Error);
+	}
 
-	if (!HADN && !fexists)
-		fatal(sprintf(Error,"file %s does not exist (ad20)",afile));
+	if (!HADN && !fexists) {
+		sprintf(Error,"file %s does not exist (ad20)",afile);
+		fatal(Error);
+	}
 	/*
 	   Check for '-h' flag.  If set, create child process and
 	   invoke 'get' to examine format of SCCS file.
@@ -327,11 +334,10 @@ char *afile;
 			/*
 			   perform 'val' with appropriate keyletters
 			*/
-			execl("/bin/sh","/bin/sh","-c",
-				sprintf(command,
-					"/usr/local/val -s %s",
-						afile),0);
-			fatal(sprintf(Error,"cannot execute '%s'",Valpgm));
+			sprintf(command, "/usr/local/val -s %s", afile);
+			execl("/bin/sh","/bin/sh","-c", command, 0);
+			sprintf(Error,"cannot execute '%s'",Valpgm);
+			fatal(Error);
 		}
 		else {
 			wait(&status);	   /* wait on status from 'execl' */
@@ -381,7 +387,8 @@ char *afile;
 		/*
 		Beginning of SCCS file.
 		*/
-		putline(&gpkt,sprintf(line,"%c%c%s\n",CTLCHAR,HEAD,"00000"));
+		sprintf(line,"%c%c%s\n",CTLCHAR,HEAD,"00000");
+		putline(&gpkt,line);
 
 		/*
 		Statistics.
@@ -427,7 +434,8 @@ char *afile;
 		*/
 
 		if (HADY) {
-			putline(&gpkt,sprintf(line,"%c%c ",CTLCHAR,COMMENTS));
+			sprintf(line,"%c%c ",CTLCHAR,COMMENTS);
+			putline(&gpkt,line);
 			putline(&gpkt,Comments);
 			putline(&gpkt,"\n");
 		}
@@ -441,12 +449,14 @@ char *afile;
 		/*
 		End of delta-table.
 		*/
-		putline(&gpkt,sprintf(line,CTLSTR,CTLCHAR,EDELTAB));
+		sprintf(line,CTLSTR,CTLCHAR,EDELTAB);
+		putline(&gpkt,line);
 
 		/*
 		Beginning of user-name section.
 		*/
-		putline(&gpkt,sprintf(line,CTLSTR,CTLCHAR,BUSERNAM));
+		sprintf(line,CTLSTR,CTLCHAR,BUSERNAM);
+		putline(&gpkt,line);
 	}
 	else
 		/*
@@ -460,8 +470,10 @@ char *afile;
 	allowed to make deltas.
 	*/
 	if (HADA)
-		for (k = 0; k < asub; k++)
-			putline(&gpkt,sprintf(line,"%s\n",anames[k]));
+		for (k = 0; k < asub; k++) {
+			sprintf(line,"%s\n",anames[k]);
+			putline(&gpkt,line);
+		}
 
 	/*
 	Do not copy those user-names which are to be erased.
@@ -493,7 +505,8 @@ char *afile;
 		/*
 		End of user-name section.
 		*/
-		putline(&gpkt,sprintf(line,CTLSTR,CTLCHAR,EUSERNAM));
+		sprintf(line,CTLSTR,CTLCHAR,EUSERNAM);
+		putline(&gpkt,line);
 	}
 	else
 		/*
@@ -560,11 +573,13 @@ char *afile;
 			}
 		}
 
-	if (HADN)
+	if (HADN) {
 		/*
 		Beginning of descriptive (user) text.
 		*/
-		putline(&gpkt,sprintf(line,CTLSTR,CTLCHAR,BUSERTXT));
+		sprintf(line,CTLSTR,CTLCHAR,BUSERTXT);
+		putline(&gpkt,line);
+	}
 	else
 		/*
 		Write out BUSERTXT record which was read in
@@ -596,12 +611,14 @@ char *afile;
 		/*
 		End of user description.
 		*/
-		putline(&gpkt,sprintf(line,CTLSTR,CTLCHAR,EUSERTXT));
+		sprintf(line,CTLSTR,CTLCHAR,EUSERTXT);
+		putline(&gpkt,line);
 
 		/*
 		Beginning of body (text) of first delta.
 		*/
-		putline(&gpkt,sprintf(line,"%c%c %u\n",CTLCHAR,INS,1));
+		sprintf(line,"%c%c %u\n",CTLCHAR,INS,1);
+		putline(&gpkt,line);
 
 		if (HADI) {		/* get body */
 
@@ -650,7 +667,8 @@ char *afile;
 		/*
 		End of body of first delta.
 		*/
-		putline(&gpkt,sprintf(line,"%c%c %u\n",CTLCHAR,END,1));
+		sprintf(line,"%c%c %u\n",CTLCHAR,END,1);
+		putline(&gpkt,line);
 	}
 	else {
 		/*
@@ -689,9 +707,11 @@ register struct packet *pkt;
 	register int k;
 
 	for (k = 1; fgets(strp,len,inptr); k++) {
-		if (*strp == CTLCHAR) fatal(
+		if (*strp == CTLCHAR) {
 			sprintf(Error,"%s illegal data on line %d (ad21)",
-				file,k));
+				file,k);
+			fatal(Error);
+		}
 
 		if (check_id)
 			chkid(strp);
@@ -755,5 +775,6 @@ struct packet *pkt;
 	extern char *Varg[];
 
 	for (argv = &Varg[VSTART]; *argv; argv++)
-		putline(pkt,sprintf(str,"%c%c %s\n",CTLCHAR,MRNUM,*argv));
+		sprintf(str,"%c%c %s\n",CTLCHAR,MRNUM,*argv);
+		putline(pkt,str);
 }

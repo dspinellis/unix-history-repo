@@ -13,7 +13,7 @@
 # include	"../hdr/defines.h"
 # include	"dir.h"
 
-SCCSID(@(#)scv.c	4.6);
+SCCSID(@(#)scv.c	4.7);
 
 
 /*
@@ -270,7 +270,8 @@ char *ofile;
 	sinit(&npkt,ofile,0);
 	npkt.p_upd = 1;
 	line = npkt.p_line;
-	putline(&npkt,sprintf(line,"%c%c00000\n",CTLCHAR,HEAD),0);
+	sprintf(line,"%c%c00000\n",CTLCHAR,HEAD);
+	putline(&npkt,line);
 	statstr[0] = 0;
 	for (n = ndels; n; n--) {
 		if (!statstr[0])
@@ -278,31 +279,44 @@ char *ofile;
 		else
 			putline(&npkt,statstr);
 		putline(&npkt,del_ba(&dt[n],line));
-		putline(&npkt,sprintf(line,"%c%c %s\n",CTLCHAR,COMMENTS,
-			hists[n]));
-		putline(&npkt,sprintf(line,CTLSTR,CTLCHAR,EDELTAB));
+		sprintf(line,"%c%c %s\n",CTLCHAR,COMMENTS,hists[n]);
+		putline(&npkt,line);
+		sprintf(line,CTLSTR,CTLCHAR,EDELTAB);
+		putline(&npkt,line);
 	}
-	putline(&npkt,sprintf(line,CTLSTR,CTLCHAR,BUSERNAM));
+	sprintf(line,CTLSTR,CTLCHAR,BUSERNAM);
+	putline(&npkt,line);
 	dousers(opkt.Phdr.Hulist,&npkt);
-	putline(&npkt,sprintf(line,CTLSTR,CTLCHAR,EUSERNAM));
-	if (*(p = opkt.Phdr.Htype))
-		putline(&npkt,sprintf(line,"%c%c %c %s\n",CTLCHAR,FLAG,
-			TYPEFLAG,p));
-	if (n = opkt.Phdr.Hfloor)
-		putline(&npkt,sprintf(line,"%c%c %c %d\n",CTLCHAR,FLAG,
-			FLORFLAG,n));
-	if (n = opkt.Phdr.Hceil)
-		putline(&npkt,sprintf(line,"%c%c %c %d\n",CTLCHAR,FLAG,
-			CEILFLAG,n));
-	if (n = opkt.Phdr.Hrdef)
-		putline(&npkt,sprintf(line,"%c%c %c %d\n",CTLCHAR,FLAG,
-			DEFTFLAG,n));
-	putline(&npkt,sprintf(line,CTLSTR,CTLCHAR,BUSERTXT));
-	if (*(p = opkt.Phdr.Hpers))
-		putline(&npkt,sprintf(line,"%s\n",p));
-	if (*(p = opkt.Phdr.Hdesc))
-		putline(&npkt,sprintf(line,"%s\n",p));
-	putline(&npkt,sprintf(line,CTLSTR,CTLCHAR,EUSERTXT));
+	sprintf(line,CTLSTR,CTLCHAR,EUSERNAM);
+	putline(&npkt,line);
+	if (*(p = opkt.Phdr.Htype)) {
+		sprintf(line,"%c%c %c %s\n",CTLCHAR,FLAG,TYPEFLAG,p);
+		putline(&npkt,line);
+	}
+	if (n = opkt.Phdr.Hfloor) {
+		sprintf(line,"%c%c %c %d\n",CTLCHAR,FLAG,FLORFLAG,n);
+		putline(&npkt,line);
+	}
+	if (n = opkt.Phdr.Hceil) {
+		sprintf(line,"%c%c %c %d\n",CTLCHAR,FLAG,CEILFLAG,n);
+		putline(&npkt,line);
+	}
+	if (n = opkt.Phdr.Hrdef) {
+		sprintf(line,"%c%c %c %d\n",CTLCHAR,FLAG,DEFTFLAG,n);
+		putline(&npkt,line);
+	}
+	sprintf(line,CTLSTR,CTLCHAR,BUSERTXT);
+	putline(&npkt,line);
+	if (*(p = opkt.Phdr.Hpers)) {
+		sprintf(line,"%s\n",p);
+		putline(&npkt,line);
+	}
+	if (*(p = opkt.Phdr.Hdesc)) {
+		sprintf(line,"%s\n",p);
+		putline(&npkt,line);
+	}
+	sprintf(line,CTLSTR,CTLCHAR,EUSERTXT);
+	putline(&npkt,line);
 	dobod(&opkt,&npkt,rlp,line);
 	convflush(&npkt);
 	close(opkt.Pibuf.Ifildes);
@@ -422,8 +436,10 @@ struct packet *pkt;
 		if (c = *up++) {
 			j = 0;
 			for (mask = 1; mask; mask <<= 1) {
-				if ((c & mask) && (p = getlnam(i * SZLNAM + j)))
-					putline(pkt,sprintf(str,"%s\n",p));
+				if ((c & mask) && (p = getlnam(i * SZLNAM + j))) {
+					sprintf(str,"%s\n",p);
+					putline(pkt,str);
+				}
 				j++;
 			}
 		}
@@ -551,14 +567,15 @@ char *line;
 	register char *p, c;
 
 	while (rdrec(opkt) != 1 && (octl = opkt->Pibuf.Irecptr)->Crel) {
-		if (octlrec(octl,opkt->Pibuf.Ilen))
-			putline(npkt,sprintf(line,"%c%c %u\n",CTLCHAR,
-				"EDI"[octl->Cctl-OEND],
-				rlp[octl->Crel][octl->Clev]));
+		if (octlrec(octl,opkt->Pibuf.Ilen)) {
+			sprintf(line,"%c%c %u\n",CTLCHAR,"EDI"[octl->Cctl-OEND],rlp[octl->Crel][octl->Clev]);
+			putline(npkt,line);
+		}
 		else {
 			c = (p = octl)[opkt->Pibuf.Ilen];
 			p[opkt->Pibuf.Ilen] = 0;
-			putline(npkt,sprintf(line,"%s\n",p));
+			sprintf(line,"%s\n",p);
+			putline(npkt,line);
 			p[opkt->Pibuf.Ilen] = c;
 		}
 	}
@@ -781,8 +798,8 @@ register char *file;
 
 	if(exists(file)) {
 		rdpfile(file,&r,un);
-		fatal(sprintf(Error,"being edited at release %d by `%s' (scv1)",
-		  r,un));
+		sprintf(Error,"being edited at release %d by `%s' (scv1)",r,un));
+		fatal(Error);
 	}
 }
 

@@ -4,7 +4,7 @@
 # include	"../hdr/had.h"
 # include	<sys/dir.h>
 
-static char Sccsid[] = "@(#)get.c	4.8	%G%";
+static char Sccsid[] = "@(#)get.c	4.9	%G%";
 
 int	Debug = 0;
 struct packet gpkt;
@@ -94,9 +94,10 @@ register char *argv[];
 
 			if (testmore) {
 				testmore = 0;
-				if (*p)
-					fatal(sprintf(Error,
-					  "value after %c arg (cm8)",c));
+				if (*p) {
+					sprintf(Error,"value after %c arg (cm8)",c);
+					fatal(Error);
+				}
 			}
 			if (had[c - 'a']++)
 				fatal("key letter twice (cm2)");
@@ -168,8 +169,10 @@ get(file)
 	setup(&gpkt,ser);
 	if (!(Type = Sflags[TYPEFLAG - 'a']))
 		Type = Null;
-	if (!(HADP || HADG) && writable(Gfile))
-		fatal(sprintf(Error,"writable `%s' exists (ge4)",Gfile));
+	if (!(HADP || HADG) && writable(Gfile)) {
+		sprintf(Error,"writable `%s' exists (ge4)",Gfile);
+		fatal(Error);
+	}
 	if (gpkt.p_verbose) {
 		sid_ba(&gpkt.p_gotsid,str);
 		fprintf(gpkt.p_stdout,"%s\n",str);
@@ -293,11 +296,13 @@ struct sid *sidp;
 		break;
 	case APPLY:
 		sid_ba(sidp,str);
-		fatal(sprintf(Error,"%s already included (ge9)",str));
+		sprintf(Error,"%s already included (ge9)",str);
+		fatal(Error);
 		break;
 	case NOAPPLY:
 		sid_ba(sidp,str);
-		fatal(sprintf(Error,"%s already excluded (ge10)",str));
+		sprintf(Error,"%s already excluded (ge10)",str);
+		fatal(Error);
 		break;
 	default:
 		fatal("internal error in get/enter() (ge11)");
@@ -637,8 +642,8 @@ char *inc, *exc;
 				pf.pf_nsid.s_br == pkt->p_reqsid.s_br &&
 				pf.pf_nsid.s_seq == pkt->p_reqsid.s_seq)) {
 				fclose(in);
-				fatal(sprintf(Error,"being edited: `%s' (ge17)",
-					line));
+				sprintf(Error,"being edited: `%s' (ge17)",line);
+				fatal(Error);
 				}
 			if (!equal(pf.pf_user,user))
 				fprintf(stderr,"WARNING: being edited: `%s' (ge18)\n",line);

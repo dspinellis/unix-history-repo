@@ -1,7 +1,7 @@
 # include	"../hdr/defines.h"
 # include	"../hdr/had.h"
 
-static char Sccsid[] = "@(#)snull.c	4.4	%G%";
+static char Sccsid[] = "@(#)snull.c	4.5	%G%";
 USXALLOC();
 
 int	Debug = 0;
@@ -147,7 +147,8 @@ snull(file)
 	/*
 	Write new header.
 	*/
-	putline(&gpkt,sprintf(line,"%c%c00000\n",CTLCHAR,HEAD));
+	sprintf(line,"%c%c00000\n",CTLCHAR,HEAD);
+	putline(&gpkt,line);
 	mkdelt();		/* insert 'null' deltas */
 	wrtdeltbl(&gpkt);	/* write out new delta table */
 
@@ -155,9 +156,10 @@ snull(file)
 	/*
 	If file does not have the 'n' flag, put one in.
 	*/
-	if (!Sflags[NULLFLAG - 'a'])
-		putline(&gpkt,sprintf(line,"%c%c %c\n",CTLCHAR,
-						FLAG,NULLFLAG));
+	if (!Sflags[NULLFLAG - 'a']) {
+		sprintf(line,"%c%c %c\n",CTLCHAR,FLAG,NULLFLAG);
+		putline(&gpkt,line);
+	}
 
 	flushto(&gpkt,EUSERTXT,0);
 
@@ -439,10 +441,8 @@ register struct packet *pkt;
 			/*
 			Write out statistics line.
 			*/
-			putline(pkt,sprintf(line,"%c%c %05u/%05u/%05u\n",
-				CTLCHAR,STATS,ptr->ds_stats.s_ins,
-						ptr->ds_stats.s_del,
-						ptr->ds_stats.s_unc));
+			sprintf(line,"%c%c %05u/%05u/%05u\n",CTLCHAR,STATS,ptr->ds_stats.s_ins,ptr->ds_stats.s_del,ptr->ds_stats.s_unc);
+			putline(pkt,line);
 
 			/*
 			Write 'delta' line, taken from
@@ -450,9 +450,10 @@ register struct packet *pkt;
 			*/
 			putdel(pkt,ptr);
 
-			putline(pkt,sprintf(line,"%c%c %s\n",CTLCHAR,COMMENTS,
-					"INSERTED BY SNULL"));
-			putline(pkt,sprintf(line,CTLSTR,CTLCHAR,EDELTAB));
+			sprintf(line,"%c%c %s\n",CTLCHAR,COMMENTS,"INSERTED BY SNULL");
+			putline(pkt,line);
+			sprintf(line,CTLSTR,CTLCHAR,EDELTAB);
+			putline(pkt,line);
 		}
 		else {
 			getline(pkt);		/* statistics line */
@@ -485,8 +486,8 @@ register struct packet *pkt;
 					case EXCLUDE:
 					case IGNORE:
 						pkt->p_wrttn = 1;
-						putline(pkt,sprintf(line,
-							"%c%c",CTLCHAR,*p++));
+						sprintf(line,"%c%c",CTLCHAR,*p++);
+						putline(pkt,line);
 						NONBLANK(p);
 						while (numeric(*p)) {
 							p = satoi(p,&ser);
@@ -495,9 +496,8 @@ register struct packet *pkt;
 							ser <= Max_old_ser))
 								fmterr(pkt);
 
-							putline(pkt,sprintf(
-							line," %u",
-							New_ser_ptr[ser]));
+							sprintf(line," %u",New_ser_ptr[ser]);
+							putline(pkt,line);
 
 							NONBLANK(p);
 						}
@@ -563,8 +563,8 @@ register struct packet *pkt;
 			/*
 			Output new value of sequence number.
 			*/
-			putline(pkt,sprintf(line,"%c%c %u\n",CTLCHAR,type,
-						New_ser_ptr[ser]));
+			sprintf(line,"%c%c %u\n",CTLCHAR,type,New_ser_ptr[ser]);
+			putline(pkt,line);
 		}
 	}
 }

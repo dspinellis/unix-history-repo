@@ -1,6 +1,6 @@
 # include "../hdr/defines.h"
 
-static char Sccsid[] = "@(#)bdiff.c	4.3	%G%";
+static char Sccsid[] = "@(#)bdiff.c	4.4	%G%";
 
 /*
 	This program segments two files into pieces of <= seglim lines
@@ -201,7 +201,8 @@ char *argv[];
 			*/
 			execl(diff,diff,otmp,ntmp,0);
 			close(1);
-			fatal(sprintf(Error,"cannot execute '%s' (bd5)",diff));
+			sprintf(Error,"cannot execute '%s' (bd5)",diff);
+			fatal(Error);
 		}
 		else {			/* parent process */
 			close(pfd[1]);
@@ -223,8 +224,10 @@ char *argv[];
 			EOF on pipe.
 			*/
 			wait(&status);
-			if (status&~0x100)
-				fatal(sprintf(Error,"'%s' failed (bd6)",diff));
+			if (status&~0x100) {
+				sprintf(Error,"'%s' failed (bd6)",diff);
+				fatal(Error);
+			}
 		}
 		linenum += seglim;
 
