@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mfs_vnops.c	7.12 (Berkeley) %G%
+ *	@(#)mfs_vnops.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -77,8 +77,8 @@ struct vnodeops mfs_vnodeops = {
 	mfs_badop,		/* abortop */
 	mfs_inactive,		/* inactive */
 	mfs_nullop,		/* reclaim */
-	mfs_badop,		/* lock */
-	mfs_badop,		/* unlock */
+	mfs_nullop,		/* lock */
+	mfs_nullop,		/* unlock */
 	mfs_bmap,		/* bmap */
 	mfs_strategy,		/* strategy */
 	mfs_print,		/* print */
