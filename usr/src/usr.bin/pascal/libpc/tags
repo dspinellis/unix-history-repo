@@ -1,0 +1,109 @@
+ACTFILE	ACTFILE.c	/^ACTFILE(curfile)$/
+ADDT	ADDT.c	/^ADDT(result0, left, right, siz)$/
+ANY_ONE_OF	READ8.c	/^#define	ANY_ONE_OF(read, filep, format, sequencep)/
+APPEND	APPEND.c	/^APPEND(filep)$/
+ARGV	ARGV.c	/^ARGV(subscript, var, siz)$/
+ASRT	ASRT.c	/^ASRT(cond)$/
+ASRTS	ASRTS.c	/^ASRTS(cond, stmt)$/
+ATAN	ATAN.c	/^ATAN(value)$/
+AT_LEAST_ONE	READ8.c	/^#define	AT_LEAST_ONE(read, filep, format, sequence/
+AT_MOST_ONE	READ8.c	/^#define	AT_MOST_ONE(read, filep, format, sequencep/
+BUFF	BUFF.c	/^BUFF(amount)$/
+CARD	CARD.c	/^CARD(setptr, siz)$/
+CASERNG	CASERNG.c	/^CASERNG(val)$/
+CHR	CHR.c	/^CHR(value)$/
+CLCK	CLCK.c	/^CLCK()$/
+COS	COS.c	/^COS(value)$/
+CTTOT	CTTOT.c	/^CTTOT(result, lwrbnd, uprbnd, paircnt, singcnt, da/
+CTTOTA	CTTOT.c	/^CTTOTA(result, lwrbnd, uprbnd, paircnt, singcnt, d/
+DATE	DATE.c	/^DATE(alfap)$/
+DEFNAME	DEFNAME.c	/^DEFNAME(filep, name, maxnamlen, datasize)$/
+DFDISPOSE	DFDISPOSE.c	/^DFDISPOSE(var, size)$/
+DISPOSE	DISPOSE.c	/^DISPOSE(var, siz)$/
+ERROR	ERROR.c	/^ERROR(msg, d1, d2)$/
+EXCEPT	EXCEPT.c	/^EXCEPT(signum, type)$/
+EXP	EXP.c	/^EXP(value)$/
+EXPO	EXPO.c	/^EXPO(value)$/
+FCALL	FCALL.c	/^FCALL(save, frtn)$/
+FLUSH	FLUSH.c	/^FLUSH(curfile)$/
+FNIL	FNIL.c	/^FNIL(curfile)$/
+FRTN	FRTN.c	/^FRTN(frtn, save)$/
+FSAV	FSAV.c	/^FSAV(entryaddr, cbn, frtn) $/
+GET	GET.c	/^GET(curfile)$/
+GETNAME	GETNAME.c	/^GETNAME(filep, name, namlim, datasize)$/
+HALT	HALT.c	/^HALT()$/
+IN	IN.c	/^IN(element, lower, upper, setptr)$/
+INCT	INCT.c	/^INCT(element, paircnt, singcnt, data)$/
+IOSYNC	IOSYNC.c	/^IOSYNC(curfile)$/
+LINO	LINO.c	/^LINO()$/
+LLIMIT	LLIMIT.c	/^LLIMIT(curfile, limit)$/
+LN	LN.c	/^LN(value)$/
+MAX	MAX.c	/^MAX(width, reduce, min)$/
+MULT	MULT.c	/^MULT(result0, left, right, siz)$/
+NAM	NAM.c	/^NAM(val, name)$/
+NEW	NEW.c	/^NEW(var, size)$/
+NEXT_CHAR	READ8.c	/^#define	NEXT_CHAR(read, filep, format, sequencep) /
+NIL	NIL.c	/^NIL(ptr)$/
+PACK	PACK.c	/^PACK(i, a, z, size_a, lb_a, ub_a, size_z)$/
+PAGE	PAGE.c	/^PAGE(curfile)$/
+PCEXIT	PCEXIT.c	/^PCEXIT(code)$/
+PCLOSE	PCLOSE.c	/^PCLOSE(level)$/
+PCSTART	PCSTART.c	/^PCSTART(mode)$/
+PERROR	PERROR.c	/^PERROR(msg, fname)$/
+PFCLOSE	PFCLOSE.c	/^PFCLOSE(filep, lastuse)$/
+PFLUSH	PFLUSH.c	/^PFLUSH()$/
+PMFLUSH	PMFLUSH.c	/^PMFLUSH(cntrs, rtns, bufaddr)$/
+PRED	PRED.c	/^PRED(value, lower, upper)$/
+PUSHBACK	READ8.c	/^#define PUSHBACK(curfile, sequencep) \\$/
+PUSH_TO_NULL	READ8.c	/^#define	PUSH_TO_NULL(sequencep) \\$/
+PUT	PUT.c	/^PUT(curfile)$/
+RANDOM	RANDOM.c	/^RANDOM()$/
+RANG4	RANG4.c	/^RANG4(value, lower, upper)$/
+READ4	READ4.c	/^READ4(curfile)$/
+READ8	READ8.c	/^READ8(curfile)$/
+READC	READC.c	/^READC(curfile)$/
+READE	READE.c	/^READE(curfile, name)$/
+READLN	READLN.c	/^READLN(curfile)$/
+RELEQ	RELEQ.c	/^RELEQ(siz, str1, str2)$/
+RELNE	RELNE.c	/^RELNE(siz, str1, str2)$/
+RELSGE	RELSGE.c	/^RELSGE(siz, str1, str2)$/
+RELSGT	RELSGT.c	/^RELSGT(siz, str1, str2)$/
+RELSLE	RELSLE.c	/^RELSLE(siz, str1, str2)$/
+RELSLT	RELSLT.c	/^RELSLT(siz, str1, str2)$/
+RELTGE	RELTGE.c	/^RELTGE(bytecnt, left, right)$/
+RELTGT	RELTGT.c	/^RELTGT(bytecnt, left, right)$/
+RELTLE	RELTLE.c	/^RELTLE(bytecnt, left, right)$/
+RELTLT	RELTLT.c	/^RELTLT(bytecnt, left, right)$/
+REMOVE	REMOVE.c	/^REMOVE(name, namlim)$/
+RESET	RESET.c	/^RESET(filep, name, maxnamlen, datasize)$/
+RETURN_ON_EOF	READ8.c	/^#define	RETURN_ON_EOF(read) \\$/
+REWRITE	REWRITE.c	/^REWRITE(filep, name, maxnamlen, datasize)$/
+ROUND	ROUND.c	/^ROUND(value)$/
+RSNG4	RSNG4.c	/^RSNG4(value, upper)$/
+SCLCK	SCLCK.c	/^SCLCK()$/
+SEED	SEED.c	/^SEED(value)$/
+SEEK	SEEK.c	/^SEEK(curfile, loc)$/
+SIN	SIN.c	/^SIN(value)$/
+SOME	READ8.c	/^#define	SOME(read, filep, format, sequencep) \\$/
+SQRT	SQRT.c	/^SQRT(value)$/
+STLIM	STLIM.c	/^STLIM(limit)$/
+SUBSC	SUBSC.c	/^SUBSC(i, lower, upper)$/
+SUBSCZ	SUBSCZ.c	/^SUBSCZ(value, upper)$/
+SUBT	SUBT.c	/^SUBT(result0, left, right, siz)$/
+SUCC	SUCC.c	/^SUCC(value, lower, upper)$/
+TELL	TELL.c	/^TELL(curfile)$/
+TEOF	TEOF.c	/^TEOF(filep)$/
+TEOLN	TEOLN.c	/^TEOLN(filep)$/
+TIME	TIME.c	/^TIME(alfap)$/
+TRUNC	TRUNC.c	/^TRUNC(value)$/
+UNIT	UNIT.c	/^UNIT(curfile)$/
+UNPACK	UNPACK.c	/^UNPACK(i, a, z, size_a, lb_a, ub_a, size_z)$/
+UNSYNC	UNSYNC.c	/^UNSYNC(curfile)$/
+VWRITEF	VWRITEF.c	/^VWRITEF(curfile, file, format, args)$/
+WRITEC	WRITEC.c	/^WRITEC(curfile, d1, d2)$/
+WRITEF	WRITEF.c	/^WRITEF(curfile, d1, d2, d3, d4, d5, d6, d7, d8)$/
+WRITES	WRITES.c	/^WRITES(curfile, d1, d2, d3, d4)$/
+WRITLN	WRITLN.c	/^WRITLN(curfile)$/
+blkclr	blkclr.c	/^blkclr(at, siz)$/
+blkcpy	blkcpy.c	/^blkcpy(from, to, siz)$/
+readreal	READ8.c	/^readreal(curfile, doublep)$/
