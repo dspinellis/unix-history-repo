@@ -1,0 +1,24 @@
+.\"	@(#)getenv.3	4.1 (Berkeley) %G%
+.\"
+.TH GETENV 3
+.AT 3
+.SH NAME
+getenv \- value for environment name
+.SH SYNOPSIS
+.nf
+.B char *getenv(name)
+.B char *name;
+.fi
+.SH DESCRIPTION
+.I Getenv
+.a
+searches the environment list
+(see
+.IR environ (5))
+for a string of the form
+.IB name = value
+and returns
+.I value
+if such a string is present, otherwise 0 (NULL).
+.SH SEE ALSO
+environ(5), exec(2)
