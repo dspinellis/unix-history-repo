@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	6.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	6.35 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -567,6 +567,7 @@ main(argc, argv, envp)
 		}
 	}
 # endif /* QUEUE */
+
 	switch (OpMode)
 	{
 # ifdef FROZENCONFIG
@@ -588,16 +589,17 @@ main(argc, argv, envp)
 		/* remove things that don't make sense in daemon mode */
 		FullName = NULL;
 		break;
-
-	  default:
-		/* find our real host name */
-		p = getrealhostname(STDIN_FILENO);
-		if (p != NULL)
-			RealHostName = newstr(p);
-		else
-			RealHostName = "localhost";
-		break;
 	}
+
+	/*
+	**  Find our real host name for future logging.
+	*/
+
+	p = getrealhostname(STDIN_FILENO);
+	if (p != NULL)
+		RealHostName = newstr(p);
+	else
+		RealHostName = "localhost";
 
 	/* do heuristic mode adjustment */
 	if (Verbose)
