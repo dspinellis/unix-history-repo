@@ -1,0 +1,56 @@
+.TH DICTION 1 
+.SH NAME
+diction \- print wordy sentences
+.br
+explain \- interactive thesaurus for diction
+.SH SYNOPSIS
+.B diction
+[
+.B \-ml
+] [
+.B \-mm
+] [
+.B \-n
+] [
+.B \-f
+pfile ]
+file ...
+.br
+.B explain
+.LP
+.SH DESCRIPTION
+.I Diction
+finds all sentences in a document that contain phrases
+from a data base of bad or wordy diction.
+Each phrase is bracketed with [ ].
+Because
+.I diction
+runs
+.I deroff
+before looking at the text, formatting
+header files should be included as part of the input.
+The default macro package
+.B \-ms
+may be overridden with the flag
+.B \-mm.
+The flag
+.B \-ml
+which causes 
+.B deroff
+to skip lists, should be used if the document contains many lists of
+non-sentences.
+The user may supply her/his own pattern file to be used in addition to the default file
+with
+.B \-f
+.I pfile.
+If the flag
+.B \-n
+is also supplied the default file will be supressed.
+.PP
+.I Explain
+is an interactive thesaurus for the phrases found by diction.
+.SH "SEE ALSO"
+deroff(1)
+.SH BUGS
+Use of non-standard formatting macros may cause
+incorrect sentence breaks.
