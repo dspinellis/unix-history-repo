@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)eval.c 1.4 %G%";
+static char sccsid[] = "@(#)eval.c 1.5 %G%";
 
 /*
  * Tree evaluation.
@@ -329,6 +329,10 @@ register Node p;
 		putchar('\n');
 	    } else {
 		curfunc = p->value.arg[0]->value.sym;
+		if (isblock(curfunc) and not ismodule(curfunc)) {
+		    error("%s is not a procedure or function",
+			symname(curfunc));
+		}
 		addr = codeloc(curfunc);
 		if (addr != NOADDR) {
 		    setsource(srcfilename(addr));
@@ -719,7 +723,7 @@ Node p;
     cond = p->value.arg[2];
     if (exp == nil) {
 	traceall(p->op, place, cond);
-    } else if (exp->op == O_QLINE) {
+    } else if (exp->op == O_QLINE or exp->op == O_LCON) {
 	traceinst(p->op, exp, cond);
     } else if (place != nil and place->op == O_QLINE) {
 	traceat(p->op, exp, place, cond);
@@ -773,15 +777,20 @@ Operator op;
 Node exp;
 Node cond;
 {
-    Node event;
+    Node event, wh;
     Command action;
 
-    if (op == O_TRACEI) {
-	event = build(O_EQ, build(O_SYM, pcsym), exp);
+    if (exp->op == O_LCON) {
+	wh = build(O_QLINE, build(O_SCON, cursource), exp);
     } else {
-	event = build(O_EQ, build(O_SYM, linesym), exp);
+	wh = exp;
     }
-    action = build(O_PRINTSRCPOS, exp);
+    if (op == O_TRACEI) {
+	event = build(O_EQ, build(O_SYM, pcsym), wh);
+    } else {
+	event = build(O_EQ, build(O_SYM, linesym), wh);
+    }
+    action = build(O_PRINTSRCPOS, wh);
     if (cond) {
 	action = build(O_IF, cond, buildcmdlist(action));
     }
