@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)conf.c	7.14 (Berkeley) %G%
+ *	@(#)conf.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -455,8 +455,6 @@ int	adopen(),adclose(),adioctl(),adreset();
 #define adreset nulldev
 #endif
 
-int	logopen(),logclose(),logread(),logioctl(),logselect();
-
 #include "dhu.h"
 #if NDHU > 0
 int dhuopen(),dhuclose(),dhuread(),dhuwrite(),dhuioctl(),dhustop(),dhureset();
@@ -578,6 +576,10 @@ int kmcrint(), kmcload(), kmcset(), kmcdclr();
 #define kmcread nodev
 #define kmcdclr nodev
 #endif
+
+int	logopen(), logclose(), logread(), logioctl(), logselect();
+
+int	fdopen();
 
 int	ttselect(), seltrue();
 
@@ -739,12 +741,15 @@ struct cdevsw	cdevsw[] =
 	nodev,		nulldev,	nulldev,	NULL,
 	nodev,		nodev,		NULL,
 	rx50open,	rx50close,	rx50rw,		rx50rw,		/*51*/
- 	nodev,		nodev,		nulldev,	0,
- 	seltrue,	nodev,		NULL,
+	nodev,		nodev,		nulldev,	0,
+	seltrue,	nodev,		NULL,
 /* kdb50 ra */
 	kdbopen,	nulldev/*XXX*/,	rawread,	rawwrite,	/*52*/
 	nodev,		nodev,		nulldev,	0,
 	seltrue,	nodev,		kdbstrategy,
+	fdopen,		nodev,		nodev,		nodev,		/*53*/
+	nodev,		nodev,		nodev,		NULL,
+	nodev,		nodev,		NULL,
 };
 int	nchrdev = sizeof (cdevsw) / sizeof (cdevsw[0]);
 
