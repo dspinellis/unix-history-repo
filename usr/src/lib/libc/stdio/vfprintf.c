@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vfprintf.c	5.40 (Berkeley) %G%";
+static char sccsid[] = "@(#)vfprintf.c	5.41 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -149,6 +149,9 @@ __sbprintf(fp, fmt, ap)
 #define	DEFPREC		6
 
 static int cvt();
+#if defined(hp300) || defined(sparc)
+static char *isspecial();
+#endif
 
 #else /* no FLOATING_POINT */
 
@@ -401,6 +404,13 @@ reswitch:	switch (ch) {
 		case 'g':
 		case 'G':
 			_double = va_arg(ap, double);
+#if defined(hp300) || defined(sparc)
+			/* do this before tricky precision changes */
+			if ((cp = isspecial(_double, &sign)) != NULL) {
+				size = strlen(cp);
+				break;
+			}
+#endif
 			/*
 			 * don't do unrealistic precision; just pad it with
 			 * zeroes later, so buffer size stays rational.
@@ -641,6 +651,32 @@ error:
 #ifdef FLOATING_POINT
 static char *exponent();
 static char *round();
+
+#if defined(hp300) || defined(sparc)
+/*
+ * Check for special IEEE format values (NaN, Inf).
+ */
+static char *
+isspecial(d, signp)
+	double d;
+	char *bufp, *signp;
+{
+	register struct IEEEdp {
+		unsigned sign:1;
+		unsigned exp:11;
+		unsigned manh:20;
+		unsigned manl:32;
+	} *ip = (struct IEEEdp *)&d;
+
+	if (ip->exp != 0x7ff)
+		return (NULL);
+	if (ip->manh || ip->manl)
+		return ("NaN");
+	if (ip->sign)
+		*signp = '-';
+	return ("Inf");
+}
+#endif /* hp300 or sparc */
 
 static
 cvt(number, prec, flags, signp, fmtch, startp, endp)
