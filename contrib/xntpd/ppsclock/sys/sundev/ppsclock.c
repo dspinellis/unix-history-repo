@@ -125,7 +125,8 @@ extern struct zsaline zsaline[];
  * discipline the cpu clock oscillator. It requires corresponding kernel
  * support.
  */
-extern hardpps();
+extern hardpps();			/* pps signal processor */
+extern struct timeval time;		/* the real kernel time */
 #endif /* PPS_SYNC */
 
 /*
@@ -233,28 +234,37 @@ ppsclock_intr(zs)
 	register struct zsaline *za = (struct zsaline *)zs->zs_priv;
 	register struct zscc_device *zsaddr = zs->zs_addr;
 	register u_char s0;
+	register struct timeval *tvp = &ppsclockev.tv;
+#ifdef PPS_SYNC
+	long usec;
+#endif /* PPS_SYNC */
 
+	/*
+	 * This code captures a timestamp at the designated transition of
+	 * the PPS signal. If the PPS_SYNC option has been configured in
+	 * the kernel, the code provides a pointer to the timestamp, as
+	 * well as the hardware counter value at the capture.
+	 */
 	s0 = zsaddr->zscc_control;
 	if ((s0 ^ za->za_rr0) & ZSRR0_CD) {
 		if ((s0 & ZSRR0_CD) != 0) {
+#ifdef PPS_SYNC
+			usec = time.tv_usec;
+#endif /* PPS_SYNC */
 #ifdef PPSCLOCKLED
 			if (ppsclockled) {
-				register struct timeval *tvp = &ppsclockev.tv;
 				LED_OFF;
 				uniqtime(tvp);
 				LED_ON;
 			} else
-#endif
-				uniqtime(&ppsclockev.tv);
+#endif /* PPSCLOCKLED */
+				uniqtime(tvp);
 			++ppsclockev.serial;
-
 #ifdef PPS_SYNC
-			/*
-			 * If the 1-pps cpu oscillator discipline has been
-			 * configured in the kernel, give it something to
-			 * chew on.
-			 */
-			hardpps();
+			usec = tvp->tv_usec - usec;
+			if (usec < 0)
+				usec += 1000000;
+			hardpps(tvp, usec);
 #endif /* PPS_SYNC */
 		}
 		za->za_rr0 = s0;

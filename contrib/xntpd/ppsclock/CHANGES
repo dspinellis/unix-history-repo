@@ -16,3 +16,8 @@ Changes between ppsclock 1.2 beta and 1.3 beta
     - README: Fix typo in kernel configuration step (2). (Thanks to
     Brian Tierney, tierney@george.lbl.gov.) Document need for revision
     1.3 or higher roms with the SS1.
+
+    - sys/sundev/ppsclock.c: Added support for PPS signal. This is
+    compiled only if the PPS_SYNC option is defined in the kernel and
+    requires modified kernel support for the PPS clock discipline.
+    Flames may be sent to Dave Mills (mills@udel.edu).
