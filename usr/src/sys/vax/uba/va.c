@@ -1,4 +1,4 @@
-/*	va.c	4.13.1.2	82/11/27	*/
+/*	va.c	4.13.1.3	82/11/27	*/
 
 #include "va.h"
 #if NVA > 0
@@ -12,10 +12,11 @@
 #include "../h/systm.h"
 #include "../h/map.h"
 #include "../h/pte.h"
-#include "../h/ubareg.h"
-#include "../h/ubavar.h"
 #include "../h/vcmd.h"
 #include "../h/uio.h"
+
+#include "../vaxuba/ubareg.h"
+#include "../vaxuba/ubavar.h"
 
 int	vadebug = 0;
 #define	dprintf	if(vadebug)printf
@@ -138,13 +139,11 @@ vaopen(dev)
 	register struct va_softc *sc;
 	register struct vadevice *vaaddr;
 	register struct uba_device *ui;
+	int error;
 	int unit = VAUNIT(dev);
 
-	if (unit >= NVA || (sc = &va_softc[unit])->sc_openf ||
-	    (ui = vadinfo[unit]) == 0 || ui->ui_alive == 0) {
-		u.u_error = ENXIO;
-		return;
-	}
+	    (ui = vadinfo[VAUNIT(dev)]) == 0 || ui->ui_alive == 0)
+		return (ENXIO);
 	vaaddr = (struct vadevice *)ui->ui_addr;
 	sc->sc_openf = 1;
 	vaaddr->vawc = 0;
@@ -153,9 +152,10 @@ vaopen(dev)
 	sc->sc_iostate = VAS_IDLE;
 	vaaddr->vacsl = VA_IENABLE;
 	vatimo(dev);
-	vacmd(dev, VPRINT);
-	if (u.u_error)
+	error = vacmd(dev, VPRINT);
+	if (error)
 		vaclose(dev);
+	return (error);
 }
 
 vastrategy(bp)
@@ -210,10 +210,9 @@ vawrite(dev, uio)
 {
 
 	if (VAUNIT(dev) > NVA)
-		u.u_error = ENXIO;
-	else
-		physio(vastrategy, &rvabuf[VAUNIT(dev)], dev, B_WRITE,
-		    minvaph, uio);
+		return (ENXIO);
+	return (physio(vastrategy, &rvabuf[VAUNIT(dev)], dev, B_WRITE,
+		    minvaph, uio));
 }
 
 vastart(um)
@@ -266,16 +265,16 @@ vaioctl(dev, cmd, data, flag)
 
 	case VGETSTATE:
 		*(int *)data = sc->sc_state;
-		return;
+		break;
 
 	case VSETSTATE:
-		vacmd(dev, *(int *)data);
-		return;
+		return (vacmd(dev, *(int *)data));
+		break;
 
 	default:
-		u.u_error = ENOTTY;
-		return;
+		return (ENOTTY);
 	}
+	return (0);
 }
 
 vacmd(dev, vcmd)
@@ -298,7 +297,7 @@ vacmd(dev, vcmd)
 	case VPLOT:
 		/* Must turn on plot AND autostep modes. */
 		if (vadopio(dev, VAPLOT))
-			u.u_error = EIO;
+			error = EIO;
 		cmd = VAAUTOSTEP;
 		break;
 
@@ -312,7 +311,7 @@ vacmd(dev, vcmd)
 	}
 	sc->sc_state = (sc->sc_state & ~(VPLOT|VPRINT|VPRINTPLOT)) | vcmd;
 	if (cmd && vadopio(dev, cmd))
-		u.u_error = EIO;
+		error = EIO;
 	sc->sc_iostate &= ~VAS_PIO;
 	if (sc->sc_iostate&VAS_WANT) {
 		sc->sc_iostate &= ~VAS_WANT;
@@ -447,19 +446,13 @@ vareset(uban)
 		else
 			vaaddr->vacsh = VAPRINTPLOT;
 		DELAY(10000);
-		sc->sc_iostate = VAS_IDLE;
-		um->um_tab.b_actf->b_active = 0;
-		um->um_tab.b_actf->b_actf = um->um_tab.b_actf->b_actl = 0;
-		if (um->um_ubinfo) {
-			printf("<%d>", (um->um_ubinfo >> 28) & 0xf);
-			ubadone(um);
-		}
 		(void) vastart(um);
 	}
 }
 
 vaselect()
 {
+
 	return (1);
 }
 #endif
