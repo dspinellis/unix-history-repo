@@ -20,9 +20,9 @@
 
 #ifndef lint
 # ifdef DBM
-static char	SccsId[] = "@(#)alias.c	5.11 (Berkeley) %G%	(with DBM)";
+static char	SccsId[] = "@(#)alias.c	5.12 (Berkeley) %G%	(with DBM)";
 # else DBM
-static char	SccsId[] = "@(#)alias.c	5.11 (Berkeley) %G%	(without DBM)";
+static char	SccsId[] = "@(#)alias.c	5.12 (Berkeley) %G%	(without DBM)";
 # endif DBM
 #endif not lint
 
@@ -352,7 +352,6 @@ readaliases(aliasfile, init)
 			(void) signal(SIGINT, oldsigint);
 			return;
 		}
-		dbminit(aliasfile);
 		(void) strcpy(line, aliasfile);
 		(void) strcat(line, ".pag");
 		if (close(creat(line, DBMMODE)) < 0)
@@ -361,6 +360,7 @@ readaliases(aliasfile, init)
 			(void) signal(SIGINT, oldsigint);
 			return;
 		}
+		dbminit(aliasfile);
 	}
 
 	/*
