@@ -1,4 +1,4 @@
-/*	va.c	4.13.1.2	82/11/27	*/
+/*	va.c	4.13.1.3	82/11/27	*/
 
 #include "va.h"
 #if NVA > 0
@@ -12,10 +12,11 @@
 #include "../h/systm.h"
 #include "../h/map.h"
 #include "../h/pte.h"
-#include "../h/ubareg.h"
-#include "../h/ubavar.h"
 #include "../h/vcmd.h"
 #include "../h/uio.h"
+
+#include "../vaxuba/ubareg.h"
+#include "../vaxuba/ubavar.h"
 
 unsigned minvaph();
 
@@ -113,12 +114,11 @@ vaopen(dev)
 	register struct va_softc *sc;
 	register struct vadevice *vaaddr;
 	register struct uba_device *ui;
+	int error;
 
 	if (VAUNIT(dev) >= NVA || (sc = &va_softc[minor(dev)])->sc_openf ||
-	    (ui = vadinfo[VAUNIT(dev)]) == 0 || ui->ui_alive == 0) {
-		u.u_error = ENXIO;
-		return;
-	}
+	    (ui = vadinfo[VAUNIT(dev)]) == 0 || ui->ui_alive == 0)
+		return (ENXIO);
 	vaaddr = (struct vadevice *)ui->ui_addr;
 	sc->sc_openf = 1;
 	vaaddr->vawc = 0;
@@ -126,9 +126,10 @@ vaopen(dev)
 	sc->sc_state = 0;
 	vaaddr->vacsl = VA_IENABLE;
 	vatimo(dev);
-	vacmd(dev, VPRINT);
-	if (u.u_error)
+	error = vacmd(dev, VPRINT);
+	if (error)
 		vaclose(dev);
+	return (error);
 }
 
 vastrategy(bp)
@@ -161,9 +162,9 @@ brkout:
 	ubarelse(ui->ui_ubanum, &sc->sc_ubinfo);
 	sc->sc_bp = 0;
 	sc->sc_busy = 0;
-	iodone(bp);
 	if (e)
-		u.u_error = EIO;
+		bp->b_flags |= B_ERROR;
+	iodone(bp);
 	wakeup((caddr_t)sc);
 }
 
@@ -185,10 +186,9 @@ vawrite(dev, uio)
 {
 
 	if (VAUNIT(dev) > NVA)
-		u.u_error = ENXIO;
-	else
-		physio(vastrategy, &rvabuf[VAUNIT(dev)], dev, B_WRITE,
-		    minvaph, uio);
+		return (ENXIO);
+	return (physio(vastrategy, &rvabuf[VAUNIT(dev)], dev, B_WRITE,
+		    minvaph, uio));
 }
 
 vawait(dev)
@@ -234,16 +234,16 @@ vaioctl(dev, cmd, data, flag)
 
 	case VGETSTATE:
 		*(int *)data = sc->sc_state;
-		return;
+		break;
 
 	case VSETSTATE:
-		vacmd(dev, *(int *)data);
-		return;
+		return (vacmd(dev, *(int *)data));
+		break;
 
 	default:
-		u.u_error = ENOTTY;
-		return;
+		return (ENOTTY);
 	}
+	return (0);
 }
 
 vacmd(dev, vcmd)
@@ -253,6 +253,7 @@ vacmd(dev, vcmd)
 	register struct va_softc *sc = &va_softc[VAUNIT(dev)];
 	register struct vadevice *vaaddr =
 	    (struct vadevice *)vadinfo[VAUNIT(dev)]->ui_addr;
+	int error = 0;
 
 	(void) spl4();
 	(void) vawait(dev);
@@ -262,7 +263,7 @@ vacmd(dev, vcmd)
 		/* Must turn on plot AND autostep modes. */
 		vaaddr->vacsh = VAPLOT;
 		if (vawait(dev))
-			u.u_error = EIO;
+			error = EIO;
 		vaaddr->vacsh = VAAUTOSTEP;
 		break;
 
@@ -276,8 +277,9 @@ vacmd(dev, vcmd)
 	}
 	sc->sc_state = (sc->sc_state & ~(VPLOT|VPRINT|VPRINTPLOT)) | vcmd;
 	if (vawait(dev))
-		u.u_error = EIO;
+		error = EIO;
 	(void) spl0();
+	return (error);
 }
 
 vatimo(dev)
@@ -339,10 +341,6 @@ vareset(uban)
 		DELAY(10000);
 		if (sc->sc_busy == 0)
 			continue;
-		if (sc->sc_ubinfo) {
-			printf("<%d>", (sc->sc_ubinfo>>28)&0xf);
-			ubarelse(ui->ui_ubanum, &sc->sc_ubinfo);
-		}
 		sc->sc_ubinfo = ubasetup(ui->ui_ubanum, sc->sc_bp, UBA_NEEDBDP);
 		sc->sc_wc = -(sc->sc_bp->b_bcount/2);
 		vastart(sc->sc_bp->b_dev);
@@ -351,6 +349,7 @@ vareset(uban)
 
 vaselect()
 {
+
 	return (1);
 }
 #endif
