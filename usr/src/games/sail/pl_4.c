@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_4.c	2.2 83/11/14";
+static	char *sccsid = "@(#)pl_4.c	2.3 84/12/12";
 #endif
 
 #include "player.h"
@@ -36,7 +36,7 @@ acceptsignal()
 	register char *p = buf;
 
 	*p++ = '"';
-	sgetstr("Mesage? ", p, sizeof buf - 2);
+	sgetstr("Message? ", p, sizeof buf - 2);
 	while (*p++)
 		;
 	p[-1] = '"';
