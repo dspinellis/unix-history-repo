@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)disklabel.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)disklabel.c	5.5 (Berkeley) %G%";
 /* from static char sccsid[] = "@(#)disklabel.c	1.2 (Symmetric) 11/28/85"; */
 #endif
 
@@ -164,9 +164,7 @@ main(argc, argv)
 			xxboot = argv[--argc];
 		}
 #else
-#ifdef FIX_FOR_LATER
 		if (argc > 3 || argc < 2)
-#endif
 			usage();
 #endif
 		if (argc > 2)
