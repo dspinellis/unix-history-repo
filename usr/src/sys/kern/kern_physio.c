@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_physio.c	7.2.1.1 (Berkeley) %G%
+ *	@(#)kern_physio.c	7.3 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -20,11 +20,6 @@
 #include "trace.h"
 #include "map.h"
 #include "uio.h"
-#ifdef SECSIZE
-#include "file.h"
-#include "ioctl.h"
-#include "disklabel.h"
-#endif SECSIZE
 
 /*
  * Swap IO headers -
@@ -76,9 +71,6 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, dev, pfcent)
 	splx(s);
 
 	bp->b_flags = B_BUSY | B_PHYS | rdflg | flag;
-#ifdef SECSIZE
-	bp->b_blksize = DEV_BSIZE;
-#endif SECSIZE
 	if ((bp->b_flags & (B_DIRTY|B_PGIN)) == 0)
 		if (rdflg == B_READ)
 			sum.v_pswpin += btoc(nbytes);
@@ -124,10 +116,6 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, dev, pfcent)
 			error = EIO;
 		}
 		nbytes -= c;
-#ifdef SECSIZE
-		if (flag & B_PGIN && nbytes > 0)
-			panic("big pgin");
-#endif SECSIZE
 		dblkno += btodb(c);
 	}
 	s = splbio();
@@ -212,19 +200,7 @@ physio(strat, bp, dev, rw, mincnt, uio)
 	register int c;
 	char *a;
 	int s, error = 0;
-#ifdef SECSIZE
-	int bsize;
-	struct partinfo dpart;
-#endif SECSIZE
 
-#ifdef SECSIZE
-	if ((unsigned)major(dev) < nchrdev &&
-	    (*cdevsw[major(dev)].d_ioctl)(dev, DIOCGPART, (caddr_t)&dpart,
-	    FREAD) == 0)
-		bsize = dpart.disklab->d_secsize;
-	else
-		bsize = DEV_BSIZE;
-#endif SECSIZE
 	for (;;) {
 		if (uio->uio_iovcnt == 0)
 			return (0);
@@ -240,18 +216,11 @@ physio(strat, bp, dev, rw, mincnt, uio)
 		splx(s);
 		bp->b_error = 0;
 		bp->b_proc = u.u_procp;
-#ifdef SECSIZE
-		bp->b_blksize = bsize;
-#endif SECSIZE
 		bp->b_un.b_addr = iov->iov_base;
 		while (iov->iov_len > 0) {
 			bp->b_flags = B_BUSY | B_PHYS | rw;
 			bp->b_dev = dev;
-#ifdef SECSIZE
-			bp->b_blkno = uio->uio_offset / bsize;
-#else SECSIZE
 			bp->b_blkno = btodb(uio->uio_offset);
-#endif SECSIZE
 			bp->b_bcount = iov->iov_len;
 			(*mincnt)(bp);
 			c = bp->b_bcount;

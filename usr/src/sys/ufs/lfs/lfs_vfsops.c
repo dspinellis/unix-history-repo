@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)lfs_vfsops.c	7.2.1.1 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -84,29 +84,13 @@ mountfs(dev, ronly, ip)
 	if (error)
 		goto out;
 	needclose = 1;
-#ifdef SECSIZE
-	/*
-	 * If possible, determine hardware sector size
-	 * and adjust fsbtodb to correspond.
-	 */
-#endif SECSIZE
 	if ((*bdevsw[major(dev)].d_ioctl)(dev, DIOCGPART,
 	    (caddr_t)&dpart, FREAD) == 0) {
 		havepart = 1;
 		size = dpart.disklab->d_secsize;
-#ifdef SECSIZE
-		if (size < MINSECSIZE) {
-			error = EINVAL;
-			goto out;
-		}
-#endif SECSIZE
 	} else
 		size = DEV_BSIZE;
-#ifdef SECSIZE
-	tp = bread(dev, (daddr_t)(SBOFF / size), SBSIZE, size);
-#else SECSIZE
 	tp = bread(dev, SBLOCK, SBSIZE);
-#endif SECSIZE
 	if (tp->b_flags & B_ERROR)
 		goto out;
 	for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++)
@@ -140,29 +124,10 @@ found:
 	fs->fs_ronly = (ronly != 0);
 	if (ronly == 0)
 		fs->fs_fmod = 1;
-#ifdef SECSIZE
-	/*
-	 * If we have a disk label, force per-partition
-	 * filesystem information to be correct
-	 * and set correct current fsbtodb shift.
-	 */
-#endif SECSIZE
 	if (havepart) {
 		dpart.part->p_fstype = FS_BSDFFS;
 		dpart.part->p_fsize = fs->fs_fsize;
 		dpart.part->p_frag = fs->fs_frag;
-#ifdef SECSIZE
-#ifdef tahoe
-		/*
-		 * Save the original fsbtodb shift to restore on updates.
-		 * (Console doesn't understand fsbtodb changes.)
-		 */
-		fs->fs_sparecon[0] = fs->fs_fsbtodb;
-#endif
-		i = fs->fs_fsize / size;
-		for (fs->fs_fsbtodb = 0; i > 1; i >>= 1)
-			fs->fs_fsbtodb++;
-#endif SECSIZE
 		fs->fs_dbsize = size;
 	}
 	blks = howmany(fs->fs_cssize, fs->fs_fsize);
@@ -175,12 +140,7 @@ found:
 		size = fs->fs_bsize;
 		if (i + fs->fs_frag > blks)
 			size = (blks - i) * fs->fs_fsize;
-#ifdef SECSIZE
-		tp = bread(dev, fsbtodb(fs, fs->fs_csaddr + i), size,
-		    fs->fs_dbsize);
-#else SECSIZE
 		tp = bread(dev, fsbtodb(fs, fs->fs_csaddr + i), size);
-#endif SECSIZE
 		if (tp->b_flags&B_ERROR) {
 			wmemfree(space, (int)fs->fs_cssize);
 			goto out;
@@ -288,20 +248,8 @@ sbupdate(mp)
 	caddr_t space;
 	int i, size;
 
-#ifdef SECSIZE
-	bp = getblk(mp->m_dev, (daddr_t)fsbtodb(fs, SBOFF / fs->fs_fsize),
-	    (int)fs->fs_sbsize, fs->fs_dbsize);
-#else SECSIZE
 	bp = getblk(mp->m_dev, SBLOCK, (int)fs->fs_sbsize);
-#endif SECSIZE
 	bcopy((caddr_t)fs, bp->b_un.b_addr, (u_int)fs->fs_sbsize);
-#ifdef SECSIZE
-#ifdef tahoe
-	/* restore standard fsbtodb shift */
-	bp->b_un.b_fs->fs_fsbtodb = fs->fs_sparecon[0];
-	bp->b_un.b_fs->fs_sparecon[0] = 0;
-#endif
-#endif SECSIZE
 	bwrite(bp);
 	blks = howmany(fs->fs_cssize, fs->fs_fsize);
 	space = (caddr_t)fs->fs_csp[0];
@@ -309,12 +257,7 @@ sbupdate(mp)
 		size = fs->fs_bsize;
 		if (i + fs->fs_frag > blks)
 			size = (blks - i) * fs->fs_fsize;
-#ifdef SECSIZE
-		bp = getblk(mp->m_dev, fsbtodb(fs, fs->fs_csaddr + i), size,
-		    fs->fs_dbsize);
-#else SECSIZE
 		bp = getblk(mp->m_dev, fsbtodb(fs, fs->fs_csaddr + i), size);
-#endif SECSIZE
 		bcopy(space, bp->b_un.b_addr, (u_int)size);
 		space += size;
 		bwrite(bp);

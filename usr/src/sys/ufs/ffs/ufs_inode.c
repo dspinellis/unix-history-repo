@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ufs_inode.c	7.1.1.1 (Berkeley) %G%
+ *	@(#)ufs_inode.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -185,12 +185,7 @@ loop:
 #ifdef QUOTA
 	dqrele(ip->i_dquot);
 #endif
-#ifdef SECSIZE
-	bp = bread(dev, fsbtodb(fs, itod(fs, ino)), (int)fs->fs_bsize,
-	    fs->fs_dbsize);
-#else SECSIZE
 	bp = bread(dev, fsbtodb(fs, itod(fs, ino)), (int)fs->fs_bsize);
-#endif SECSIZE
 	/*
 	 * Check I/O errors
 	 */
@@ -345,13 +340,8 @@ iupdat(ip, ta, tm, waitfor)
 	if ((ip->i_flag & (IUPD|IACC|ICHG|IMOD)) != 0) {
 		if (fs->fs_ronly)
 			return;
-#ifdef SECSIZE
-		bp = bread(ip->i_dev, fsbtodb(fs, itod(fs, ip->i_number)),
-			(int)fs->fs_bsize, fs->fs_dbsize);
-#else SECSIZE
 		bp = bread(ip->i_dev, fsbtodb(fs, itod(fs, ip->i_number)),
 			(int)fs->fs_bsize);
-#endif SECSIZE
 		if (bp->b_flags & B_ERROR) {
 			brelse(bp);
 			return;
@@ -437,11 +427,7 @@ itrunc(oip, length)
 		count = howmany(size, CLBYTES);
 		dev = oip->i_dev;
 		for (i = 0; i < count; i++)
-#ifdef SECSIZE
-			munhash(dev, bn + i * CLBYTES / fs->fs_dbsize);
-#else SECSIZE
 			munhash(dev, bn + i * CLBYTES / DEV_BSIZE);
-#endif SECSIZE
 		bp = bread(dev, bn, size);
 		if (bp->b_flags & B_ERROR) {
 			u.u_error = EIO;
@@ -596,12 +582,7 @@ indirtrunc(ip, bn, lastbn, level)
 	 * and update on disk copy first.
 	 */
 	copy = geteblk((int)fs->fs_bsize);
-#ifdef SECSIZE
-	bp = bread(ip->i_dev, fsbtodb(fs, bn), (int)fs->fs_bsize,
-	    fs->fs_dbsize);
-#else SECSIZE
 	bp = bread(ip->i_dev, fsbtodb(fs, bn), (int)fs->fs_bsize);
-#endif SECSIZE
 	if (bp->b_flags&B_ERROR) {
 		brelse(copy);
 		brelse(bp);

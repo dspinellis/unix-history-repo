@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_exec.c	7.3.1.1 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.4 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -63,9 +63,6 @@ execve()
 	} exdata;
 	register struct nameidata *ndp = &u.u_nd;
 	int resid, error;
-#ifdef SECSIZE
-	extern long argdbsize;			/* XXX */
-#endif SECSIZE
 
 	ndp->ni_nameiop = LOOKUP | FOLLOW;
 	ndp->ni_segflg = UIO_USERSPACE;
@@ -190,11 +187,7 @@ execve()
 	nc = 0;
 	cc = 0;
 	uap = (struct execa *)u.u_ap;
-#ifdef SECSIZE
-	bno = rmalloc(argmap, (clrnd((int)btoc(NCARGS))) * CLBYTES / argdbsize);
-#else SECSIZE
 	bno = rmalloc(argmap, (long)ctod(clrnd((int)btoc(NCARGS))));
-#endif SECSIZE
 	if (bno == 0) {
 		swkill(u.u_procp, "exec: no swap space");
 		goto bad;
@@ -246,12 +239,7 @@ execve()
 				if (bp)
 					bdwrite(bp);
 				cc = CLBYTES;
-#ifdef SECSIZE
-				bp = getblk(argdev, bno + nc / argdbsize, cc,
-				    argdbsize);
-#else SECSIZE
 				bp = getblk(argdev, bno + ctod(nc/NBPG), cc);
-#endif SECSIZE
 				cp = bp->b_un.b_addr;
 			}
 			if (sharg) {
@@ -282,12 +270,7 @@ execve()
 	if (u.u_error) {
 badarg:
 		for (cc = 0; cc < nc; cc += CLSIZE*NBPG) {
-#ifdef SECSIZE
-			bp = baddr(argdev, bno + cc / argdbsize, CLSIZE*NBPG,
-			    argdbsize);
-#else SECSIZE
 			bp = baddr(argdev, bno + ctod(cc/NBPG), CLSIZE*NBPG);
-#endif SECSIZE
 			if (bp) {
 				bp->b_flags |= B_AGE;		/* throw away */
 				bp->b_flags &= ~B_DELWRI;	/* cancel io */
@@ -323,12 +306,7 @@ badarg:
 				if (bp)
 					brelse(bp);
 				cc = CLBYTES;
-#ifdef SECSIZE
-				bp = bread(argdev, bno + nc / argdbsize, cc,
-				    argdbsize);
-#else SECSIZE
 				bp = bread(argdev, bno + ctod(nc / NBPG), cc);
-#endif SECSIZE
 				bp->b_flags |= B_AGE;		/* throw away */
 				bp->b_flags &= ~B_DELWRI;	/* cancel io */
 				cp = bp->b_un.b_addr;
@@ -389,12 +367,7 @@ bad:
 	if (bp)
 		brelse(bp);
 	if (bno)
-#ifdef SECSIZE
-		rmfree(argmap, (clrnd((int)btoc(NCARGS))) * CLBYTES / argdbsize,
-		    bno);
-#else SECSIZE
 		rmfree(argmap, (long)ctod(clrnd((int) btoc(NCARGS))), bno);
-#endif SECSIZE
 	if (ip)
 		iput(ip);
 }

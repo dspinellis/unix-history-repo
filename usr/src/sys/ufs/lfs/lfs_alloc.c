@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)lfs_alloc.c	7.1.1.1 (Berkeley) %G%
+ *	@(#)lfs_alloc.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -86,11 +86,7 @@ alloc(ip, bpref, size)
 		goto nospace;
 	ip->i_blocks += btodb(size);
 	ip->i_flag |= IUPD|ICHG;
-#ifdef SECSIZE
-	bp = getblk(ip->i_dev, fsbtodb(fs, bno), size, fs->fs_dbsize);
-#else SECSIZE
 	bp = getblk(ip->i_dev, fsbtodb(fs, bno), size);
-#endif SECSIZE
 	clrbuf(bp);
 	return (bp);
 nospace:
@@ -144,12 +140,7 @@ realloccg(ip, bprev, bpref, osize, nsize)
 	bno = fragextend(ip, cg, (long)bprev, osize, nsize);
 	if (bno != 0) {
 		do {
-#ifdef SECSIZE
-			bp = bread(ip->i_dev, fsbtodb(fs, bno), osize,
-			    fs->fs_dbsize);
-#else SECSIZE
 			bp = bread(ip->i_dev, fsbtodb(fs, bno), osize);
-#endif SECSIZE
 			if (bp->b_flags & B_ERROR) {
 				brelse(bp);
 				return (NULL);
@@ -209,30 +200,17 @@ realloccg(ip, bprev, bpref, osize, nsize)
 	bno = (daddr_t)hashalloc(ip, cg, (long)bpref, request,
 		(u_long (*)())alloccg);
 	if (bno > 0) {
-#ifdef SECSIZE
-		obp = bread(ip->i_dev, fsbtodb(fs, bprev), osize,
-		    fs->fs_dbsize);
-#else SECSIZE
 		obp = bread(ip->i_dev, fsbtodb(fs, bprev), osize);
-#endif SECSIZE
 		if (obp->b_flags & B_ERROR) {
 			brelse(obp);
 			return (NULL);
 		}
 		bn = fsbtodb(fs, bno);
-#ifdef SECSIZE
-		bp = getblk(ip->i_dev, bn, nsize, fs->fs_dbsize);
-#else SECSIZE
 		bp = getblk(ip->i_dev, bn, nsize);
-#endif SECSIZE
 		bcopy(obp->b_un.b_addr, bp->b_un.b_addr, (u_int)osize);
 		count = howmany(osize, CLBYTES);
 		for (i = 0; i < count; i++)
-#ifdef SECSIZE
-			munhash(ip->i_dev, bn + i * CLBYTES / fs->fs_dbsize);
-#else SECSIZE
 			munhash(ip->i_dev, bn + i * CLBYTES / DEV_BSIZE);
-#endif SECSIZE
 		bzero(bp->b_un.b_addr + osize, (unsigned)nsize - osize);
 		if (obp->b_flags & B_DELWRI) {
 			obp->b_flags &= ~B_DELWRI;
@@ -519,12 +497,7 @@ fragextend(ip, cg, bprev, osize, nsize)
 		/* cannot extend across a block boundary */
 		return (NULL);
 	}
-#ifdef SECSIZE
-	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), (int)fs->fs_cgsize,
-	    fs->fs_dbsize);
-#else SECSIZE
 	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), (int)fs->fs_cgsize);
-#endif SECSIZE
 	cgp = bp->b_un.b_cg;
 	if (bp->b_flags & B_ERROR || cgp->cg_magic != CG_MAGIC) {
 		brelse(bp);
@@ -583,12 +556,7 @@ alloccg(ip, cg, bpref, size)
 	fs = ip->i_fs;
 	if (fs->fs_cs(fs, cg).cs_nbfree == 0 && size == fs->fs_bsize)
 		return (NULL);
-#ifdef SECSIZE
-	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), (int)fs->fs_cgsize,
-	    fs->fs_dbsize);
-#else SECSIZE
 	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), (int)fs->fs_cgsize);
-#endif SECSIZE
 	cgp = bp->b_un.b_cg;
 	if (bp->b_flags & B_ERROR || cgp->cg_magic != CG_MAGIC ||
 	    (cgp->cg_cs.cs_nbfree == 0 && size == fs->fs_bsize)) {
@@ -783,12 +751,7 @@ ialloccg(ip, cg, ipref, mode)
 	fs = ip->i_fs;
 	if (fs->fs_cs(fs, cg).cs_nifree == 0)
 		return (NULL);
-#ifdef SECSIZE
-	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), (int)fs->fs_cgsize,
-	    fs->fs_dbsize);
-#else SECSIZE
 	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), (int)fs->fs_cgsize);
-#endif SECSIZE
 	cgp = bp->b_un.b_cg;
 	if (bp->b_flags & B_ERROR || cgp->cg_magic != CG_MAGIC ||
 	    cgp->cg_cs.cs_nifree == 0) {
@@ -871,12 +834,7 @@ free(ip, bno, size)
 		printf("bad block %d, ino %d\n", bno, ip->i_number);
 		return;
 	}
-#ifdef SECSIZE
-	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), (int)fs->fs_cgsize,
-	    fs->fs_dbsize);
-#else SECSIZE
 	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), (int)fs->fs_cgsize);
-#endif SECSIZE
 	cgp = bp->b_un.b_cg;
 	if (bp->b_flags & B_ERROR || cgp->cg_magic != CG_MAGIC) {
 		brelse(bp);
@@ -965,12 +923,7 @@ ifree(ip, ino, mode)
 		panic("ifree: range");
 	}
 	cg = itog(fs, ino);
-#ifdef SECSIZE
-	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), (int)fs->fs_cgsize,
-	    fs->fs_dbsize);
-#else SECSIZE
 	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), (int)fs->fs_cgsize);
-#endif SECSIZE
 	cgp = bp->b_un.b_cg;
 	if (bp->b_flags & B_ERROR || cgp->cg_magic != CG_MAGIC) {
 		brelse(bp);

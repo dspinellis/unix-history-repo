@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vm_swap.c	7.1.1.1 (Berkeley) %G%
+ *	@(#)vm_swap.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -59,10 +59,6 @@ swstrategy(bp)
 	} else
 		index = 0;
 	sp = &swdevt[index];
-#ifdef SECSIZE
-	bp->b_blkno <<= sp->sw_bshift;
-	bp->b_blksize = sp->sw_blksize;
-#endif SECSIZE
 	bp->b_dev = sp->sw_dev;
 	if (bp->b_dev == 0)
 		panic("swstrategy");
@@ -131,10 +127,6 @@ swapon()
 	u.u_error = EINVAL;
 }
 
-#ifdef SECSIZE
-long	argdbsize;		/* XXX */
-
-#endif SECSIZE
 /*
  * Swfree(index) frees the index'th portion of the swap map.
  * Each of the nswdev devices provides 1/nswdev'th of the swap
@@ -171,15 +163,8 @@ swfree(index)
 			 * hunk which needs special treatment anyways.
 			 */
 			argdev = sp->sw_dev;
-#ifdef SECSIZE
-			argdbsize = sp->sw_blksize;
-			rminit(argmap,
-			   ((blk / 2) * DEV_BSIZE - CLBYTES) / argdbsize,
-			   CLBYTES / argdbsize, "argmap", ARGMAPSIZE);
-#else SECSIZE
 			rminit(argmap, (long)(blk/2-ctod(CLSIZE)),
 			    (long)ctod(CLSIZE), "argmap", ARGMAPSIZE);
-#endif SECSIZE
 			/*
 			 * First of all chunks... initialize the swapmap
 			 * the second half of the hunk.
