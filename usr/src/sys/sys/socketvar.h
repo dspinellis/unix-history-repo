@@ -16,7 +16,7 @@
  * WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)socketvar.h	7.14 (Berkeley) %G%
+ *	@(#)socketvar.h	7.15 (Berkeley) %G%
  */
 
 /*
@@ -179,6 +179,8 @@ extern	char netio[], netcon[], netcls[];
  * Operations on sockets.
  */
 struct	file;
+struct	ucred;
+struct	uio;
 int	soo_read __P((			/* read a socket into a uio structure */
 		struct file *fp,
 		struct uio *uio,
