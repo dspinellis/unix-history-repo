@@ -1,4 +1,4 @@
-/*	boot.c	4.3	81/03/16	*/
+/*	boot.c	4.4	81/03/22	*/
 
 #include "../h/param.h"
 #include "../h/ino.h"
@@ -26,10 +26,12 @@ char	devname[][2] = {
 
 char line[100] = "xx(0,0)vmunix";
 
+int	retry = 0;
+
 main()
 {
 	register howto, devtype;	/* howto=r11, devtype=r10 */
-	int io, retry;
+	int io;
 
 #ifdef lint
 	howto = 0; devtype = 0;
@@ -47,7 +49,6 @@ main()
 			howto = RB_SINGLE|RB_ASKNAME;
 	}
 #endif
-	retry = 0;
 	for (;;) {
 		if (howto & RB_ASKNAME) {
 			printf(": ");
@@ -56,14 +57,15 @@ main()
 			printf(": %s\n", line);
 		io = open(line, 0);
 		if (io >= 0)
-			copyunix(io);
+			copyunix(howto, io);
 		if (++retry > 2)
 			howto = RB_SINGLE|RB_ASKNAME;
 	}
 }
 
-copyunix(io)
-	register io;
+/*ARGSUSED*/
+copyunix(howto, io)
+	register howto, io;
 {
 	struct exec x;
 	register int i;
