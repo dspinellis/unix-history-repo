@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)refresh.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)refresh.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
@@ -301,13 +301,15 @@ makech(win, wy)
 						putchar(*csp = *nsp);
 					} else
 						putchar(*nsp);
-#ifdef notdef
+#ifdef notdef /* why is this here? */
 					if (win->flags & __FULLWIN && !curwin)
 						scroll(curscr);
 #endif
-					domvcur(ly, wx + win->begx, 
-						win->begy + win->maxy - 1,
-						win->begx + win->maxx - 1);
+					if (wx + win->begx < curscr->maxx) {
+						domvcur(ly, wx + win->begx, 
+						    win->begy + win->maxy - 1,
+						    win->begx + win->maxx - 1);
+					}
 					ly = win->begy + win->maxy - 1;
 					lx = win->begx + win->maxx - 1;
 					return (OK);
