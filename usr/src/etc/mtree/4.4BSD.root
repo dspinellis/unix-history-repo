@@ -61,6 +61,13 @@ fd              type=dir uname=root gname=wheel mode=0755
 ..
 
 
+# ./dump
+/set type=file gname=wheel uname=root mode=0750
+dump		type=dir gname=operator uname=operator mode=0775
+# ./dump
+..
+
+
 # ./etc
 /set type=file gname=wheel uname=root mode=0644
 etc             type=dir mode=0755
@@ -83,6 +90,13 @@ kerberosIV      type=dir mode=0755
 /set type=file gname=wheel uname=root mode=0600
 mtree           type=dir mode=0755
 # ./etc/mtree
+..
+
+
+# ./etc/namedb
+/set type=file gname=wheel uname=root mode=0600
+namedb           type=dir mode=0755
+# ./etc/namedb
 ..
 
 
