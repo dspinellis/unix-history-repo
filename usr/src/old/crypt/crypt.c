@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)crypt.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)crypt.c	4.3 (Berkeley) %G%";
 
 /*
  *	A one-rotor machine designed along the lines of Enigma
@@ -20,6 +20,7 @@ setup(pw)
 char *pw;
 {
 	int ic, i, k, temp, pf[2];
+	int pid, wpid;
 	unsigned random;
 	long seed;
 
@@ -29,7 +30,7 @@ char *pw;
 	buf[8] = buf[0];
 	buf[9] = buf[1];
 	pipe(pf);
-	if (fork()==0) {
+	if ((pid=fork())==0) {
 		close(0);
 		close(1);
 		dup(pf[0]);
@@ -39,7 +40,8 @@ char *pw;
 		exit(1);
 	}
 	write(pf[1], buf, 10);
-	wait((int *)NULL);
+	while ((wpid = wait((int *)NULL)) != -1 && wpid != pid)
+	    ;
 	if (read(pf[0], buf, 13) != 13) {
 		fprintf(stderr, "crypt: cannot generate key\n");
 		exit(1);
