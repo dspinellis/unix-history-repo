@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	6.22 (Berkeley) %G%
+		@(#)README	6.23 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -618,7 +618,7 @@ confOPERATORS		.:%@!^/[]	Do	Address operator characters.
 confSTMP_LOGIN_MSG	$j Sendmail $v/$Z ready at $b
 					De	The initial (spontaneous)
 						SMTP greeting message.
-confEIGHT_BIT_INPUT	True		O8	Use 8-bit input?
+confSEVEN_BIT_INPUT	False		O7	Force input to seven bits?
 confALIAS_WAIT		10		Oa	Wait (in minutes) for alias
 						file rebuild.
 confMIN_FREE_BLOCKS	4		Ob	Minimum number of free blocks
@@ -644,6 +644,9 @@ confMAX_HOP		17		Oh	Maximum hop count.
 confIGNORE_DOTS		False		Oi	Ignore dot as terminator
 						for incoming messages?
 confBIND_OPTS		(empty)		OI	Default options for BIND.
+confMIME_FORMAT_ERRORS	True		Oj	Send error messages as MIME-
+						encapsulated messages per
+						RFC 1344.
 confMCI_CACHE_SIZE	2		Ok	Size of open connection cache.
 confMCI_CACHE_TIMEOUT	5m		OK	Open connection cache timeout.
 confLOG_LEVEL		9		OL	Log level.
