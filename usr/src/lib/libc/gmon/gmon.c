@@ -6,7 +6,7 @@
  */
 
 #if !defined(lint) && defined(LIBC_SCCS)
-static char sccsid[] = "@(#)gmon.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)gmon.c	5.15 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -25,103 +25,74 @@ extern char *minbrk asm ("minbrk");
 
 struct gmonparam _gmonparam = { GMON_PROF_OFF };
 
-static int	ssiz;
-static char	*sbuf;
 static int	s_scale;
 /* see profil(2) where this is describe (incorrectly) */
 #define		SCALE_1_TO_1	0x10000L
 
 #define ERR(s) write(2, s, sizeof(s))
 
-static struct gmonhdr gmonhdr;
-
 monstartup(lowpc, highpc)
 	u_long lowpc;
 	u_long highpc;
 {
 	register int o;
-	struct clockinfo clockinfo;
-	int mib[2], tsize, fsize, size;
 	char *cp;
-	struct gmonhdr *hdr;
 	struct gmonparam *p = &_gmonparam;
 
 	/*
 	 * round lowpc and highpc to multiples of the density we're using
 	 * so the rest of the scaling (here and in gprof) stays in ints.
 	 */
-	lowpc = ROUNDDOWN(lowpc, HISTFRACTION * sizeof(HISTCOUNTER));
-	p->lowpc = lowpc;
-	highpc = ROUNDUP(highpc, HISTFRACTION * sizeof(HISTCOUNTER));
-	p->highpc = highpc;
-	p->textsize = highpc - lowpc;
-	ssiz = p->textsize / HISTFRACTION;
-	fsize = p->textsize / HASHFRACTION;
-	tsize = p->textsize * ARCDENSITY / 100;
-	if (tsize < MINARCS)
-		tsize = MINARCS;
-	else if (tsize > MAXARCS)
-		tsize = MAXARCS;
-	p->tolimit = tsize;
-	tsize *= sizeof(struct tostruct);
+	p->lowpc = ROUNDDOWN(lowpc, HISTFRACTION * sizeof(HISTCOUNTER));
+	p->highpc = ROUNDUP(highpc, HISTFRACTION * sizeof(HISTCOUNTER));
+	p->textsize = p->highpc - p->lowpc;
+	p->kcountsize = p->textsize / HISTFRACTION;
+	p->hashfraction = HASHFRACTION;
+	p->fromssize = p->textsize / HASHFRACTION;
+	p->tolimit = p->textsize * ARCDENSITY / 100;
+	if (p->tolimit < MINARCS)
+		p->tolimit = MINARCS;
+	else if (p->tolimit > MAXARCS)
+		p->tolimit = MAXARCS;
+	p->tossize = p->tolimit * sizeof(struct tostruct);
 
-	cp = sbrk(ssiz + fsize + tsize);
+	cp = sbrk(p->kcountsize + p->fromssize + p->tossize);
 	if (cp == (char *)-1) {
 		ERR("monstartup: out of memory\n");
 		return;
 	}
 #ifdef notdef
-	bzero(cp, ssiz + fsize + tsize);
+	bzero(cp, p->kcountsize + p->fromssize + p->tossize);
 #endif
 	p->tos = (struct tostruct *)cp;
-	cp += tsize;
-	sbuf = cp;
-	cp += ssiz;
+	cp += p->tossize;
+	p->kcount = (u_short *)cp;
+	cp += p->kcountsize;
 	p->froms = (u_short *)cp;
 
 	minbrk = sbrk(0);
 	p->tos[0].link = 0;
 
-	o = highpc - lowpc;
-	if (ssiz < o) {
+	o = p->highpc - p->lowpc;
+	if (p->kcountsize < o) {
 #ifndef hp300
-		s_scale = ((float)ssiz / o ) * SCALE_1_TO_1;
+		s_scale = ((float)p->kcountsize / o ) * SCALE_1_TO_1;
 #else /* avoid floating point */
-		int quot = o / ssiz;
+		int quot = o / p->kcountsize;
 		
 		if (quot >= 0x10000)
 			s_scale = 1;
 		else if (quot >= 0x100)
 			s_scale = 0x10000 / quot;
 		else if (o >= 0x800000)
-			s_scale = 0x1000000 / (o / (ssiz >> 8));
+			s_scale = 0x1000000 / (o / (p->kcountsize >> 8));
 		else
-			s_scale = 0x1000000 / ((o << 8) / ssiz);
+			s_scale = 0x1000000 / ((o << 8) / p->kcountsize);
 #endif
 	} else
 		s_scale = SCALE_1_TO_1;
 
 	moncontrol(1);
-	size = sizeof(clockinfo);
-	mib[0] = CTL_KERN;
-	mib[1] = KERN_CLOCKRATE;
-	if (sysctl(mib, 2, &clockinfo, &size, NULL, 0) < 0)
-		/*
-		 * Best guess
-		 */
-		clockinfo.profhz = hertz();
-	else if (clockinfo.profhz == 0) {
-		if (clockinfo.hz != 0)
-			clockinfo.profhz = clockinfo.hz;
-		else
-			clockinfo.profhz = hertz();
-	}
-	hdr = (struct gmonhdr *)&gmonhdr;
-	hdr->lpc = lowpc;
-	hdr->hpc = highpc;
-	hdr->ncnt = ssiz + sizeof(gmonhdr);
-	hdr->version = GMONVERSION;
-	hdr->profrate = clockinfo.profhz;
 }
 
 _mcleanup()
@@ -133,11 +104,29 @@ _mcleanup()
 	int toindex;
 	struct rawarc rawarc;
 	struct gmonparam *p = &_gmonparam;
+	struct gmonhdr gmonhdr, *hdr;
+	struct clockinfo clockinfo;
+	int mib[2], size;
 	int log, len;
 	char buf[200];
 
 	if (p->state == GMON_PROF_ERROR)
 		ERR("_mcleanup: tos overflow\n");
+
+	size = sizeof(clockinfo);
+	mib[0] = CTL_KERN;
+	mib[1] = KERN_CLOCKRATE;
+	if (sysctl(mib, 2, &clockinfo, &size, NULL, 0) < 0) {
+		/*
+		 * Best guess
+		 */
+		clockinfo.profhz = hertz();
+	} else if (clockinfo.profhz == 0) {
+		if (clockinfo.hz != 0)
+			clockinfo.profhz = clockinfo.hz;
+		else
+			clockinfo.profhz = hertz();
+	}
 
 	moncontrol(0);
 	fd = creat("gmon.out", 0666);
@@ -151,18 +140,25 @@ _mcleanup()
 		perror("mcount: gmon.log");
 		return;
 	}
-	len = sprintf(buf, "[mcleanup1] sbuf 0x%x ssiz %d\n", sbuf, ssiz);
+	len = sprintf(buf, "[mcleanup1] kcount 0x%x ssiz %d\n",
+	    p->kcount, p->kcountsize);
 	write(log, buf, len);
 #endif
-	write(fd, (char *)&gmonhdr, sizeof(gmonhdr));
-	write(fd, sbuf, ssiz);
-	endfrom = p->textsize / (HASHFRACTION * sizeof(*p->froms));
+	hdr = (struct gmonhdr *)&gmonhdr;
+	hdr->lpc = p->lowpc;
+	hdr->hpc = p->highpc;
+	hdr->ncnt = p->kcountsize + sizeof(gmonhdr);
+	hdr->version = GMONVERSION;
+	hdr->profrate = clockinfo.profhz;
+	write(fd, (char *)hdr, sizeof *hdr);
+	write(fd, p->kcount, p->kcountsize);
+	endfrom = p->fromssize / sizeof(*p->froms);
 	for (fromindex = 0; fromindex < endfrom; fromindex++) {
 		if (p->froms[fromindex] == 0)
 			continue;
 
 		frompc = p->lowpc;
-		frompc += fromindex * HASHFRACTION * sizeof(*p->froms);
+		frompc += fromindex * p->hashfraction * sizeof(*p->froms);
 		for (toindex = p->froms[fromindex]; toindex != 0;
 		     toindex = p->tos[toindex].link) {
 #ifdef DEBUG
@@ -193,7 +189,8 @@ moncontrol(mode)
 
 	if (mode) {
 		/* start */
-		profil(sbuf, ssiz, (int)p->lowpc, s_scale);
+		profil((char *)p->kcount, p->kcountsize, (int)p->lowpc,
+		    s_scale);
 		p->state = GMON_PROF_ON;
 	} else {
 		/* stop */
