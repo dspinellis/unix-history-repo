@@ -1,4 +1,4 @@
-#       @(#)Makefile.inc	5.3 (Berkeley) %G%
+#       @(#)Makefile.inc	8.1 (Berkeley) %G%
 
 .PATH: ${.CURDIR}/db/man
 
