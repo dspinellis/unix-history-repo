@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)m2	8.1 (Berkeley) %G%
+.\"	@(#)m2	6.4 (Berkeley) %G%
 .\"
 .tr |
 .rm mx
@@ -68,14 +68,14 @@ The input is copied without interpretation
 \fIexcept\fR that:
 .x1
 .ds + \v'-.1m'\s-4\(bu\s+4\v'+.1m'
-\*+ The contents of number registers indicated by \fB\en\fR are interpolated.
-\*+ Strings indicated by \fB\e\(**\fR are interpolated.
-\*+ Arguments indicated by \fB\e$\fR are interpolated.
-\*+ Concealed newlines indicated by \fB\e\fR(newline) are eliminated.
-\*+ Comments indicated by \fB\e"\fR are eliminated.
-\*+ \fB\et\fR and \fB\ea\fR are interpreted as \s-1ASCII\s+1 horizontal tab and \s-1SOH\s+1 respectively (\(sc9).
-\*+ \fB\e\e\fR is interpreted as \fB\e\fR.
-\*+ \fB\e.\fR is interpreted as "\fB.\fR".
+\(bu The contents of number registers indicated by \fB\en\fR are interpolated.
+\(bu Strings indicated by \fB\e\(**\fR are interpolated.
+\(bu Arguments indicated by \fB\e$\fR are interpolated.
+\(bu Concealed newlines indicated by \fB\e\fR(newline) are eliminated.
+\(bu Comments indicated by \fB\e"\fR are eliminated.
+\(bu \fB\et\fR and \fB\ea\fR are interpreted as \s-1ASCII\s+1 horizontal tab and \s-1SOH\s+1 respectively (\(sc9).
+\(bu \fB\e\e\fR is interpreted as \fB\e\fR.
+\(bu \fB\e.\fR is interpreted as "\fB.\fR".
 .x2
 These interpretations can be suppressed by
 prepending
@@ -105,24 +105,24 @@ If an invoked argument doesn't exist,
 a null string results.
 For example, the macro \fIxx\fR may be defined by
 .x1
-.ftB
+.ft B
 .ta .75i
 &de xx	\e"begin definition
 Today is \e\e$1 the \e\e$2.
 &.	\e"end definition
-.ftR
+.ft R
 .x2
 and called by
 .x1
-.ftB
+.ft B
 &xx Monday 14th
-.ftR
+.ft R
 .x2
 to produce the text
 .x1
-.ftB
+.ft B
 Today is Monday the 14th.
-.ftR
+.ft R
 .x2
 Note that the \fB\e$\fR
 was concealed in the definition with a prepended \fB\e\fR.
@@ -307,10 +307,10 @@ the following access sequences have the effect shown:
 .TS
 center box;
 c2|c2|c
-c2|c2|c2
-l2|c2|c2
-l2|c2|c2
-l2|l2|c2.
+c2|c2|c
+l2|c2|c
+l2|c2|c
+l2|l2|c.
 	Effect on	Value
 Sequence	Register	Interpolated
 _
