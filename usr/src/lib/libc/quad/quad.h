@@ -7,6 +7,8 @@
  * contributed to Berkeley.
  *
  * %sccs.include.redist.c%
+ *
+ *	@(#)quad.h	5.6 (Berkeley) %G%
  */
 
 /*
@@ -34,8 +36,8 @@
  * most little-endian machines, all you need do is exchange _QUAD_HIGHWORD
  * and _QUAD_LOWWORD.
  */
-#define _QUAD_HIGHWORD 0
-#define _QUAD_LOWWORD 1
+#define _QUAD_HIGHWORD	0
+#define _QUAD_LOWWORD	1
 #endif
 
 typedef long long quad;
