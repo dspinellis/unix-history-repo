@@ -1,4 +1,4 @@
-/*	trap.c	4.3	%G%	*/
+/*	trap.c	4.4	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -11,6 +11,7 @@
 #include "../h/psl.h"
 #include "../h/pte.h"
 #include "../h/inline.h"
+#include "../h/mtpr.h"
 
 #define	USER	040		/* user-mode flag added to type */
 
@@ -49,7 +50,14 @@ unsigned code;
 		i = SIGILL;
 		break;
 
-	case RESCHED + USER:	/* Allow process switch */
+	case ASTFLT + USER:	/* Allow process switch */
+		astoff();
+		if ((u.u_procp->p_flag & SOWEUPC) && u.u_prof.pr_scale) {
+			addupc(pc, &u.u_prof, 1);
+			u.u_procp->p_flag &= ~SOWEUPC;
+		}
+		if (runrun == 0)
+			return;
 		goto out;
 
 	case ARITHTRAP + USER:
