@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.t	6.9 (Berkeley) %G%
+.\"	@(#)2.t	6.10 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -22,6 +22,29 @@ An understanding of the operations used in a full bootstrap
 is very helpful in performing an upgrade as well.
 In either case, it is highly desirable to read and understand
 the remainder of this document before proceeding.
+.PP
+The distribution supports a somewhat wider set of machines than
+those for which we have built binaries.
+The architectures that are supported only in source form include:
+.IP \(bu
+Intel 386/486-based machines (ISA/AT or EISA bus only)
+.IP \(bu
+Sony News MIPS-based workstations
+.IP \(bu
+Omron Luna 68000-based workstations
+.LP
+If you wish to run one of these other architectures,
+you will have to build a cross compilation environment.
+Note that the distribution does
+.B not
+include the machine support for the Tahoe and VAX architectures
+found in previous BSD distributions.
+Our primary development environment is the HP9000/300 series machines.
+The other architectures are developed and supported by
+people outside the university.
+Consequently, we are not able to directly test or maintain these 
+other architectures, so cannot comment on their robustness,
+reliability, or completeness.
 .NH 2
 Bootstrapping from the tape
 .LP
@@ -43,7 +66,7 @@ tar image of
 tar image of the rest of
 .Pn /usr/src
 .IP 6)
-(8mm tape only) tar image of
+(8mm Exabyte tape distributions only) tar image of
 .Pn /usr/src/X11R5
 .LP
 The tape bootstrap procedure used to create a
@@ -78,18 +101,18 @@ The hardware supported by \*(4B for the HP300/400 is as follows:
 .TS
 center box;
 lw(1i) lw(4i).
-CPUs	T{
+CPU's	T{
 68020 based (318, 319, 320, 330 and 350),
 68030 based (340, 345, 360, 370, 375, 400) and
 68040 based (380, 425, 433).
 T}
 _
-DISKs	T{
+DISK's	T{
 HP-IB/CS80 (7912, 7914, 7933, 7936, 7945, 7957, 7958, 7959, 2200, 2203)
 and SCSI-I (including magneto-optical).
 T}
 _
-TAPEs	T{
+TAPE's	T{
 Low-density CS80 cartridge (7914, 7946, 9144),
 high-density CS80 cartridge (9145),
 HP SCSI DAT and
@@ -106,11 +129,11 @@ T}
 _
 GRAPHICS	T{
 Terminal emulation and raw frame buffer support for
-98544/98545/98547 (Topcat color & monochrome),
-98548/98549/98550 (Catseye color & monochrome),
-98700/98710 (Gatorbox),
-98720/98721 (Renaissance),
-98730/98731 (DaVinci) and
+98544 / 98545 / 98547 (Topcat color & monochrome),
+98548 / 98549 / 98550 (Catseye color & monochrome),
+98700 / 98710 (Gatorbox),
+98720 / 98721 (Renaissance),
+98730 / 98731 (DaVinci) and
 A1096A (Hyperion monochrome).
 T}
 _
@@ -128,7 +151,8 @@ and SCSI autochanger device.
 T}
 .TE
 .LP
-Major items not supported include the 310 and 332 CPUs, 400 series machines
+Major items which are not supported
+include the 310 and 332 CPU's, 400 series machines
 configured for Domain/OS, EISA and VME bus adaptors, audio, the centronics
 port, 1/2" tape drives (7980), CD-ROM, and the PVRX/TVRX 3D graphics displays.
 .NH 3
@@ -188,19 +212,19 @@ Label the disks with the
 .Xr disklabel (8)
 program.
 .NH 4
-Step 1: formating a disk.
+Step 1: formatting a disk.
 .PP
 For your first system you will have to obtain a formatted disk
 of a type given in the ``supported hardware'' list above.
-Since most HP disk drives, with the exception of optical media,
-come pre-formatted there should be nothing to do.
+Since most HP disk drives come pre-formatted
+(with the exception of optical media),
+there should be nothing to do.
 If necessary, you can format a disk under HP-UX using the
 .Xr mediainit (1m)
 program.
-Once you have \*(4B up and running on one machine you can use
-the
+Once you have \*(4B up and running on one machine you can use the
 .Xr scsiformat (8)
-program to format additional disks.
+program to format additional SCSI disks.
 .NH 4
 Step 2: copying the root filesystem from tape to disk
 .PP
@@ -209,7 +233,7 @@ If you have an extra disk, the easiest approach is to use
 .Xr dd (1)
 under HP-UX to copy the root filesystem image from the tape to the beginning
 of the second disk.
-For HPs, the root filesystem image is the first file on the tape.
+For HP's, the root filesystem image is the first file on the tape.
 It includes a disklabel and bootblock along with the root filesystem.
 An example command to copy the image from tape to the beginning of a disk is:
 .DS
@@ -287,7 +311,7 @@ Boot
 \fB:\fP \fI/vmunix\fP
 .DE
 .LP
-After providing the kernel name, the machine will boot and run \*(4B with
+After providing the kernel name, the machine will boot \*(4B with
 output that looks approximately like this:
 .DS
 .B
@@ -352,9 +376,12 @@ to ask you for the name of the root filesystem to use.
 This happens because the distribution system is a \fIgeneric\fP
 system, i.e., it can be bootstrapped on a cpu with its root device
 and paging area on any available disk drive.
-You should respond to the root device question with ``\*(Dk0''.
-This response indicates that
-that the disk it is running on is drive 0 of type ``\*(Dk''.
+You should respond to the root device question with ``sd0''
+if you are booting from a SCSI disk;
+you should respond to the root device question with ``rd0''
+if you are booting from an HP-IB disk.
+This response indicates that that the disk it is running
+on is drive 0 of type ``sd'' or ``rd'' respectively.
 You will later build a system tailored to your configuration
 that will not ask this question when it is bootstrapped.
 .DS
@@ -373,7 +400,7 @@ line erase, and interrupt characters have been set.
 Step 4: (optional) restoring the root filesystem
 .PP
 UNIX is now running,
-and the \fIUNIX Programmer's manual\fP applies.  The ``#'' is the prompt
+and the \fIUNIX Programmer's Manual\fP applies.  The ``#'' is the prompt
 from the Bourne shell, and lets you know that you are the super-user,
 whose login name is \*(lqroot\*(rq.
 .PP
@@ -400,7 +427,7 @@ Then run the following commands:
 \fB#\fP\|\fInewfs /dev/r\*(Dk1a\fP
 \fB#\fP\|\fImount /dev/\*(Dk1a /mnt\fP
 \fB#\fP\|\fIcd /mnt\fP
-\fB#\fP\|\fIdump 0f \- /dev/r\(*Dk0a | restore xf \-\fP
+\fB#\fP\|\fIdump 0f \- /dev/r\*(Dk0a | restore xf \-\fP
 (Note: restore will ask if you want to ``set owner/mode for '.'''
 to which you should reply ``yes''.)
 .DE
@@ -426,10 +453,12 @@ This information is written with
 .PP
 For each disk that you wish to label, run the following command:
 .DS
-\fB#\|\fP\fIdisklabel  -rw  \*(Dk\fP\fB#\fP  \fBtype\fP  \fI"optional_pack_name"\fP
+\fB#\|\fP\fIdisklabel  -rw  \fBXX#  type\fP  \fI"optional_pack_name"\fP
 .DE
-The \fB#\fP is the unit number; the \fBtype\fP is the HP300 disk device
-name as listed in section 2.2.1 or any other name listed in
+The \fBXX\fP is either ``sd'' for a SCSI disk or ``rd'' for an HP-IB disk;
+the \fB#\fP is the unit number.
+The \fBtype\fP is the HP300 disk device name as listed in
+section 2.2.1 or any other name listed in
 .Pn /etc/disktab .
 The optional information may contain any descriptive name for the
 contents of a disk, and may be up to 16 characters long.  This procedure
@@ -444,6 +473,8 @@ before labeling the affected disks.
 You have now completed the HP300 specific part of the installation.
 You should now proceed to the generic part of the installation
 described starting in section 2.5 below.
+Note that where the disk name ``sd'' is used throughout section 2.5,
+you should substitute the name ``rd'' if you are running on an HP-IB disk.
 .NH 2
 Booting the SPARC
 .NH 3
@@ -453,16 +484,16 @@ The hardware supported by \*(4B for the SPARC is as follows:
 .TS
 center box;
 lw(1i) lw(4i).
-CPUs	T{
+CPU's	T{
 SPARCstation 1 series (1, 1+, SLC, IPC) and
 SPARCstation 2 series (2, IPX).
 T}
 _
-DISKs	T{
+DISK's	T{
 SCSI.
 T}
 _
-TAPEs	T{
+TAPE's	T{
 none.
 T}
 _
@@ -486,7 +517,7 @@ and audio device.
 T}
 .TE
 .LP
-Major items not supported include the GX (cgnine) display,
+Major items which are not supported include the GX (cgnine) display,
 the floppy disk, and SCSI tapes.
 .NH 3
 Limitations
@@ -529,7 +560,7 @@ Bring up SunOS (preferably SunOS 4.1.x or Solaris 1.x, although
 Solaris 2 may work \(em this is untested).
 .IP 2)
 Attach auxiliary SCSI disk(s).  Format and label using the
-SunOS formating and labeling programs as needed.
+SunOS formatting and labeling programs as needed.
 Note that the root filesystem currently requires at least 10 MB; 16 MB
 or more is recommended.  The b partition will be used for swap;
 this should be at least 32 MB.
@@ -633,16 +664,16 @@ The hardware supported by \*(4B for the DECstation is as follows:
 .TS
 center box;
 lw(1i) lw(4i).
-CPUs	T{
+CPU's	T{
 R2000 based (3100) and
 R3000 based (5000/200, 5000/20, 5000/25, 5000/1xx).
 T}
 _
-DISKs	T{
+DISK's	T{
 SCSI-I (tested RZ23, RZ55, RZ57, Maxtor 8760S).
 T}
 _
-TAPEs	T{
+TAPE's	T{
 SCSI-I (tested DEC TK50, Archive DAT, Emulex MT02).
 T}
 _
@@ -670,8 +701,8 @@ internal and TURBOchannel PMAZ-AA SCSI interfaces.
 T}
 .TE
 .LP
-Major items not supported include the 5000/240 (there is code but not
-compiled in or tested),
+Major items which are not supported include the 5000/240
+(there is code but not compiled in or tested),
 R4000 based machines, FDDI and audio interfaces.
 Diskless machines are not supported but booting kernels and bootstrapping
 over the network is supported on the 5000 series.
@@ -852,6 +883,8 @@ xcfb0	raw interface to maxine graphics devices
 mfb0	raw interface to mono graphics devices
 .DE
 You can then proceed to section 2.5 to install the rest of the system.
+Note that where the disk name ``sd'' is used throughout section 2.5,
+you should substitute the name ``rz''.
 .NH 2
 Installing the rest of the system
 .PP
@@ -975,7 +1008,7 @@ point on the 8mm tape.
 \fB#\fP \fItar xpbf 40 /dev/nr\*(Mt0\fP
 .DE
 .PP
-If you received a distribution on 8mm tape,
+If you received a distribution on 8mm Exabyte tape,
 there is one additional tape file on the distribution tape
 which has not been installed to this point; it contains the
 sources for X11R5 in
@@ -983,12 +1016,13 @@ sources for X11R5 in
 format.  As distributed, X11R5 should be placed in
 .Pn /usr/src/X11R5 .
 .DS
-\fB#\fP \fImkdir /usr/src/X11R5\fP
-\fB#\fP \fIchmod 755 /usr/src/X11R5\fP
-\fB#\fP \fIcd /usr/src/X11R5\fP
+\fB#\fP \fIcd /usr/src\fP
 \fB#\fP \fImt -t /dev/nr\*(Mt0 fsf\fP
 \fB#\fP \fItar xpbf 40 /dev/nr\*(Mt0\fP
 .DE
+Many of the X11 utilities search using the path /usr/X11,
+so be sure that you have a symbolic link that points at
+the location of your X11 binaries (here, X11R5).
 .NH 2
 Additional conversion information
 .PP

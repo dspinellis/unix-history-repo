@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.t	6.3 (Berkeley) %G%
+.\"	@(#)1.t	6.4 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -15,7 +15,7 @@
 .NH 1
 Introduction
 .PP
-This document explains how to install the Berkeley
+This document explains how to install the \*(4B Berkeley
 version of \*(Ux on your system.
 The filesystem format is compatible with \*(Ps
 and it will only be necessary for you to do a full bootstrap
@@ -33,14 +33,13 @@ system binaries and sources from the archives on the tape(s).
 The technique for upgrading a \*(Ps system is described
 in chapter 3 of this document.
 The upgrade procedure involves extracting a new set of system binaries
-onto new root and /usr filesystems.
-The sources are then extracted, and local configuration files are merged
-into the new system.  User filesystems may be upgraded in place.
+onto new root and /usr filesystems and local
+configuration files are merged into the new system.
+User filesystems may be upgraded in place.
 Most \*(Ps binaries may be used with \*(4B in the course
 of the conversion.
 It is desirable to recompile local sources after the conversion,
-as the compilers have had many fixes installed
-and many new system call interfaces have been added.
+as the new compiler (GCC) provides superior code optimization.
 Consult section 3 for a description of the differences
 between \*(4B and \*(Ps.
 .NH 2
@@ -60,18 +59,16 @@ end-of-tape is signaled by a double end-of-file.  The first file
 on the tape is a disk image of the root filesystem.
 Following the disk-image root file is a full dump of the root filesystem
 (see
-.Xr dump (8)*).
+.Xr dump (8)\**).
 .FS
-\ * References of the form \fIX\fP(Y) mean the entry named
-\fIX\fP in section Y of the
-.UX
-programmer's manual.
+References of the form \fIX\fP(Y) mean the entry named
+\fIX\fP in section Y of the ``UNIX Programmer's Manual''.
 .FE
 Additional files on the tape(s)
 contain tape archive images of the system binaries and sources (see
 .Xr tar (1)).
 See the tape label for a description of the contents
-and format of the tape(s).
+and format of each individual tape.
 .NH 2
 \*(Ux device naming
 .PP
@@ -84,21 +81,21 @@ the ``/dev/'' directory.
 The file name typically encodes the device type, its logical unit and
 a partition within that unit.
 For example, ``/dev/sd2b'' refers to the second partition (``b'') of
-SCSI (``sd'') drive number ``2'', while ``/dev/mt0'' refers to 9-track
+SCSI (``sd'') drive number ``2'', while ``/dev/rmt0'' refers to 9-track
 tape (``mt'') unit ``0''.
 .PP
 The mapping of physical addressing information (e.g. controller, target)
 to a logical unit number is dependent on the system configuration.
 In all simple cases, where only a single controller is present, a drive
-with physical unit number 0 (e.g., as determined by its unit plug on the
-front of the drive) will be called unit 0 in its \*(Ux file name.
+with physical unit number 0 (e.g., as determined by its unit
+specification (either unit plug or other selection mechanism)
+will be called unit 0 in its \*(Ux file name.
 This is not, however, strictly
 necessary, since the system has a level of indirection in this naming.
 If there are multiple controllers, the disk unit numbers will normally
 be counted sequentially across controllers.  This can be taken
 advantage of to make the system less dependent on the interconnect
-topology, and to make reconfiguration after hardware failure extremely
-easy.
+topology, and to make reconfiguration after hardware failure easier.
 .PP
 Each \*(Ux physical disk is divided into at most 8 logical disk partitions,
 each of which may occupy any consecutive cylinder range on the physical
