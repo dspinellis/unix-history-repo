@@ -1,108 +1,112 @@
 #
-# Copyright (c) 1983 Regents of the University of California.
+# Copyright (c) 1987 Regents of the University of California.
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2	(Berkeley)	%G%
 #
-#
-# makefile for line printer filters and associated programs
-#
-
-DESTDIR=
 CFLAGS=	-O
+LIBC=	/lib/libc.a
 LIBDIR=	/usr/lib
-CXREF=	/usr/ucb/ctags -x
-SRCS=	lpf.c necf.c \
-	chrtab.c rvsort.c rvcat.c vsort.c vcat.c vpf.c vpsf.c vdmp.c vpltdmp.c \
-	vplotf.c vfontinfo.c vwidth.c vfw.c fcvt.c rotate.c rotprt.c
-PRINTER=lpf necf
+SRCS=	lpf.c necf.c chrtab.c rvsort.c rvcat.c vsort.c vcat.c vpf.c vpsf.c \
+	vdmp.c vpltdmp.c vplotf.c vfontinfo.c vwidth.c vfw.c fcvt.c rotate.c \
+	rotprt.c
+OBJS=	lpf.o necf.o chrtab.o rvsort.o rvcat.o vsort.o vcat.o vpf.o vpsf.o \
+	vdmp.o vpltdmp.o vplotf.o vfontinfo.o vwidth.o vfw.o fcvt.o rotate.o \
+	rotprt.o
+PRINT=	lpf necf
 VARIAN=	rvsort rvcat vsort vcat vpf vpsf vdmp vpltdmp vplotf vfontinfo vwidth \
 	vfw fcvt rotate rotprt
+ALL=	${PRINT} ${VARIAN}
 
-all:	printer varian
+all: ${ALL}
 
-printer: ${PRINTER}
+lpf: lpf.c
+	${CC} -o $@ ${CFLAGS} lpf.c
 
-varian:	${VARIAN}
+necf: necf.c
+	${CC} -o $@ ${CFLAGS} necf.c
 
-lpf:	lpf.c
-	${CC} -o lpf ${CFLAGS} lpf.c
+rvsort: rvsort.c
+	${CC} -o $@ ${CFLAGS} rvsort.c
 
-necf:	necf.c
-	${CC} -o necf ${CFLAGS} necf.c
+rvcat: rvcat.c
+	${CC} -o $@ ${CFLAGS} rvcat.c
 
-rvsort:	rvsort.c
-	${CC} -o rvsort ${CFLAGS} rvsort.c
+vsort: vsort.c
+	${CC} -o $@ ${CFLAGS} vsort.c
 
-rvcat:	rvcat.c
-	${CC} -o rvcat ${CFLAGS} rvcat.c
+vcat: vcat.c
+	${CC} -o $@ ${CFLAGS} vcat.c
 
-vsort:	vsort.c
-	${CC} -o vsort ${CFLAGS} vsort.c
+vpf: vpf.c
+	${CC} -o $@ ${CFLAGS} vpf.c
 
-vcat:	vcat.c
-	${CC} -o vcat ${CFLAGS} vcat.c
-
-vpf:	vpf.c
-	${CC} -o vpf ${CFLAGS} vpf.c
-
-vpsf:	vpsf.c
-	${CC} -o vpsf ${CFLAGS} vpsf.c
+vpsf: vpsf.c
+	${CC} -o $@ ${CFLAGS} vpsf.c
 
 vdmp: vdmp.c
-	${CC} -o vdmp ${CFLAGS} vdmp.c
+	${CC} -o $@ ${CFLAGS} vdmp.c
 
 vpltdmp: vpltdmp.c
-	${CC} -o vpltdmp ${CFLAGS} vpltdmp.c
+	${CC} -o $@ ${CFLAGS} vpltdmp.c
 
 vplotf: vplotf.c chrtab.o
-	${CC} -o vplotf ${CFLAGS} vplotf.c chrtab.o
+	${CC} -o $@ ${CFLAGS} vplotf.c chrtab.o
 
 vfontinfo: vfontinfo.c
-	${CC} -o vfontinfo ${CFLAGS} vfontinfo.c
+	${CC} -o $@ ${CFLAGS} vfontinfo.c
 
 vwidth: vwidth.c
-	${CC} -o vwidth ${CFLAGS} vwidth.c
+	${CC} -o $@ ${CFLAGS} vwidth.c
 
 vfw: vfw.c
-	${CC} -o vfw ${CFLAGS} vfw.c
+	${CC} -o $@ ${CFLAGS} vfw.c
 
 fcvt: fcvt.c
-	${CC} -o fcvt ${CFLAGS} fcvt.c
+	${CC} -o $@ ${CFLAGS} fcvt.c
 
 rotate: rotate.c
-	${CC} -o rotate ${CFLAGS} rotate.c
+	${CC} -o $@ ${CFLAGS} rotate.c
 
 rotprt: rotprt.c
-	${CC} -o rotprt ${CFLAGS} rotprt.c
+	${CC} -o $@ ${CFLAGS} rotprt.c
 
-install: printer
-	install -s lpf ${DESTDIR}/${LIBDIR}/lpf
-	install -s necf ${DESTDIR}/${LIBDIR}/necf
+clean: FRC
+	rm -f ${OBJS} core ${ALL}
 
-installv: varian
-	install -s vfontinfo ${DESTDIR}/${LIBDIR}/vfontinfo
-	install -s vwidth ${DESTDIR}/${LIBDIR}/vwidth
-	install -s vfw ${DESTDIR}/${LIBDIR}/vfw
-	install -s fcvt ${DESTDIR}/${LIBDIR}/fcvt
-	install -s rotate ${DESTDIR}/${LIBDIR}/rotate
-	install -s rotprt ${DESTDIR}/${LIBDIR}/rotprt
-	install -s rvsort ${DESTDIR}/${LIBDIR}/rvsort
-	install -s rvcat ${DESTDIR}/${LIBDIR}/rvcat
-	install -s vsort ${DESTDIR}/${LIBDIR}/vsort
-	install -s vcat ${DESTDIR}/${LIBDIR}/vcat
-	install -s vpf ${DESTDIR}/${LIBDIR}/vpf
+depend: FRC
+	mkdep -p ${CFLAGS} ${SRCS}
+
+install: FRC
+	install -s -o bin -g bin -m 755 lpf ${DESTDIR}/${LIBDIR}/lpf
+	install -s -o bin -g bin -m 755 necf ${DESTDIR}/${LIBDIR}/necf
+
+installv:
+	install -s -o bin -g bin -m 755 vfontinfo ${DESTDIR}/${LIBDIR}/vfontinfo
+	install -s -o bin -g bin -m 755 vwidth ${DESTDIR}/${LIBDIR}/vwidth
+	install -s -o bin -g bin -m 755 vfw ${DESTDIR}/${LIBDIR}/vfw
+	install -s -o bin -g bin -m 755 fcvt ${DESTDIR}/${LIBDIR}/fcvt
+	install -s -o bin -g bin -m 755 rotate ${DESTDIR}/${LIBDIR}/rotate
+	install -s -o bin -g bin -m 755 rotprt ${DESTDIR}/${LIBDIR}/rotprt
+	install -s -o bin -g bin -m 755 rvsort ${DESTDIR}/${LIBDIR}/rvsort
+	install -s -o bin -g bin -m 755 rvcat ${DESTDIR}/${LIBDIR}/rvcat
+	install -s -o bin -g bin -m 755 vsort ${DESTDIR}/${LIBDIR}/vsort
+	install -s -o bin -g bin -m 755 vcat ${DESTDIR}/${LIBDIR}/vcat
+	install -s -o bin -g bin -m 755 vpf ${DESTDIR}/${LIBDIR}/vpf
 	ln ${DESTDIR}/${LIBDIR}/vpf ${DESTDIR}/${LIBDIR}/vpfW
-	install -s vpsf ${DESTDIR}/${LIBDIR}/vpsf
-	install -s vdmp ${DESTDIR}/${LIBDIR}/vdmp
-	install -s vpltdmp ${DESTDIR}/${LIBDIR}/vpltdmp
-	install -s vplotf ${DESTDIR}/${LIBDIR}/vplotf
+	install -s -o bin -g bin -m 755 vpsf ${DESTDIR}/${LIBDIR}/vpsf
+	install -s -o bin -g bin -m 755 vdmp ${DESTDIR}/${LIBDIR}/vdmp
+	install -s -o bin -g bin -m 755 vpltdmp ${DESTDIR}/${LIBDIR}/vpltdmp
+	install -s -o bin -g bin -m 755 vplotf ${DESTDIR}/${LIBDIR}/vplotf
 
-clean:
-	rm -f ${PRINTER} ${VARIAN} *.o
+lint: FRC
+	lint ${CFLAGS} ${SRCS}
 
-print:
-	@pr makefile
-	@${CXREF} *.c | pr -h XREF
-	@pr *.h *.c
+tags: FRC
+	ctags ${SRCS}
+
+FRC:
+
+# DO NOT DELETE THIS LINE -- make depend uses it
+
