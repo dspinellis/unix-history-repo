@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)systm.h	8.6 (Berkeley) %G%
+ *	@(#)systm.h	8.7 (Berkeley) %G%
  */
 
 /*
@@ -87,6 +87,7 @@ int	enodev __P((void));
 int	enoioctl __P((void));
 int	enxio __P((void));
 int	eopnotsupp __P((void));
+int	einval __P((void));
 int	seltrue __P((dev_t dev, int which, struct proc *p));
 void	*hashinit __P((int count, int type, u_long *hashmask));
 int	nosys __P((struct proc *, void *, register_t *));
