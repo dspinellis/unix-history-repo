@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)more.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)more.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -939,6 +939,47 @@ register FILE *f;
 	    if (retval >= 0)
 		done++;
 	    break;
+	case 'b':
+	case ctrl(B):
+	    {
+		register int initline;
+
+		if (no_intty) {
+		    write(2, &bell, 1);
+		    return (-1);
+		}
+
+		if (nlines == 0) nlines++;
+
+		putchar ('\r');
+		erase (0);
+		printf ("\n");
+		if (clreol)
+			cleareol ();
+		printf ("...back %d page", nlines);
+		if (nlines > 1)
+			pr ("s\n");
+		else
+			pr ("\n");
+
+		if (clreol)
+			cleareol ();
+		pr ("\n");
+
+		initline = Currline - dlines * (nlines + 1);
+		if (! noscroll)
+		    --initline;
+		if (initline < 0) initline = 0;
+		Fseek(f, 0L);
+		Currline = 0;	/* skiplns() will make Currline correct */
+		skiplns(initline, f);
+		if (! noscroll) {
+		    ret(dlines + 1);
+		}
+		else {
+		    ret(dlines);
+		}
+	    }
 	case ' ':
 	case 'z':
 	    if (nlines == 0) nlines = dlines;
@@ -948,7 +989,6 @@ register FILE *f;
 	case ctrl(D):
 	    if (nlines != 0) nscroll = nlines;
 	    ret (nscroll);
-	case RUBOUT:
 	case 'q':
 	case 'Q':
 	    end_it ();
@@ -1038,6 +1078,7 @@ register FILE *f;
 	case '!':
 	    do_shell (filename);
 	    break;
+	case '?':
 	case 'h':
 	    if ((helpf = fopen (HELPFILE, "r")) == NULL)
 		error ("Can't open help file");
@@ -1050,7 +1091,8 @@ register FILE *f;
 	    if (!no_intty) {
 		kill_line ();
 		cmdbuf[0] = '+';
-		scanstr (Currline, &cmdbuf[1]);
+		scanstr (Currline - dlines < 0 ? 0
+				: Currline - (dlines + 1) / 2, &cmdbuf[1]);
 		pr ("vi "); pr (cmdbuf); putchar (' '); pr (fnames[fnum]);
 		execute (filename, VI, "vi", cmdbuf, fnames[fnum], 0);
 		break;

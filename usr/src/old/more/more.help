@@ -9,13 +9,13 @@ d or ctrl-D		Scroll k lines [current scroll size, initially 11]*
 q or Q or <interrupt>	Exit from more
 s			Skip forward k lines of text [1]
 f			Skip forward k screenfuls of text [1]
+b or ctrl-B		Skip backwards k screenfuls of text [1]
 '			Go to place where previous search started
 =			Display current line number
 /<regular expression>	Search for kth occurrence of regular expression [1]
 n			Search for kth occurrence of last r.e [1]
 !<cmd> or :!<cmd>	Execute <cmd> in a subshell
 v			Start up /usr/ucb/vi at current line
-h			Display this message
 ctrl-L			Redraw screen
 :n			Go to kth next file [1]
 :p			Go to kth previous file [1]
