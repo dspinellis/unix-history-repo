@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cache.h	7.3 (Berkeley) %G%
+ *	@(#)cache.h	7.4 (Berkeley) %G%
  *
- * from: $Header: cache.h,v 1.6 92/11/26 03:04:46 torek Exp $
+ * from: $Header: cache.h,v 1.7 93/04/27 14:31:16 torek Exp $
  */
 
 /*
@@ -32,7 +32,7 @@
  */
 enum vactype { VAC_NONE, VAC_WRITETHROUGH, VAC_WRITEBACK };
 
-extern enum vactype vactype;
+extern enum vactype vactype;	/* XXX  move into cacheinfo struct */
 
 /*
  * Cache tags can be written in control space, and must be set to 0
@@ -50,7 +50,7 @@ extern enum vactype vactype;
  *			:2;		(unused; must be zero)
  *	};
  *
- * The cache sees virtual addresses as:
+ * The SPARCstation 1 cache sees virtual addresses as:
  *
  *	struct cache_va {
  *		u_int	:2,		(unused; probably copies of va_tid<13>)
@@ -58,6 +58,8 @@ extern enum vactype vactype;
  *			cva_line:12,	(cache line number)
  *			cva_byte:4;	(byte in cache line)
  *	};
+ *
+ * (The SS2 cache is similar but has half as many lines, each twice as long.)
  *
  * Note that, because the 12-bit line ID is `wider' than the page offset,
  * it is possible to have one page map to two different cache lines.
@@ -95,3 +97,28 @@ void	cache_flush_context __P((void));	/* flush current context */
 void	cache_flush_segment __P((int vseg));	/* flush seg in cur ctx */
 void	cache_flush_page __P((int va));		/* flush page in cur ctx */
 void	cache_flush __P((caddr_t base, u_int len));/* flush region */
+
+/*
+ * Cache control information.
+ */
+struct cacheinfo {
+	int	c_totalsize;		/* total size, in bytes */
+	int	c_enabled;		/* true => cache is enabled */
+	int	c_hwflush;		/* true => have hardware flush */
+	int	c_linesize;		/* line size, in bytes */
+	int	c_l2linesize;		/* log2(linesize) */
+};
+extern struct cacheinfo cacheinfo;
+
+/*
+ * Cache control statistics.
+ */
+struct cachestats {
+	int	cs_npgflush;		/* # page flushes */
+	int	cs_nsgflush;		/* # seg flushes */
+	int	cs_ncxflush;		/* # context flushes */
+	int	cs_nraflush;		/* # range flushes */
+#ifdef notyet
+	int	cs_ra[65];		/* pages/range */
+#endif
+};
