@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)in_proto.c	6.13 (Berkeley) %G%
+ *	@(#)in_proto.c	6.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -123,5 +123,5 @@ struct protosw hysw[] = {
 };
 
 struct domain hydomain =
-    { AF_HYLINK, "hy", hysw, &hysw[sizeof (hysw)/sizeof(hysw[0])] };
+    { AF_HYLINK, "hy", 0, 0, 0, hysw, &hysw[sizeof (hysw)/sizeof(hysw[0])] };
 #endif
