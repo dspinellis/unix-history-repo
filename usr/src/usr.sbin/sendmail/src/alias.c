@@ -5,9 +5,9 @@
 # include "sendmail.h"
 
 # ifdef DBM
-SCCSID(@(#)alias.c	3.43		%G%	(with DBM));
+SCCSID(@(#)alias.c	3.44		%G%	(with DBM));
 # else DBM
-SCCSID(@(#)alias.c	3.43		%G%	(without DBM));
+SCCSID(@(#)alias.c	3.44		%G%	(without DBM));
 # endif DBM
 
 /*
@@ -349,7 +349,7 @@ readaliases(aliasfile, init)
 			continue;
 		}
 		*p++ = '\0';
-		if (parse(line, &al, 1) == NULL)
+		if (parseaddr(line, &al, 1) == NULL)
 		{
 			*--p = ':';
 			syserr("illegal alias name");
@@ -412,7 +412,7 @@ readaliases(aliasfile, init)
 						p[-1] = c;
 						continue;
 					}
-					(void) parse(p2, &bl, -1);
+					(void) parseaddr(p2, &bl, -1);
 					p[-1] = c;
 					while (isspace(*p))
 						p++;

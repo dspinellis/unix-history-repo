@@ -3,7 +3,7 @@
 # include <sys/mx.h>
 
 #ifndef DAEMON
-SCCSID(@(#)daemon.c	3.37		%G%	(w/o daemon mode));
+SCCSID(@(#)daemon.c	3.38		%G%	(w/o daemon mode));
 #else
 
 #include <sys/socket.h>
@@ -11,7 +11,7 @@ SCCSID(@(#)daemon.c	3.37		%G%	(w/o daemon mode));
 #include <netdb.h>
 #include <wait.h>
 
-SCCSID(@(#)daemon.c	3.37		%G%	(with daemon mode));
+SCCSID(@(#)daemon.c	3.38		%G%	(with daemon mode));
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
@@ -51,7 +51,9 @@ static FILE	*MailPort;	/* port that mail comes in on */
 **		Waits until some interesting activity occurs.  When
 **		it does, a child is created to process it, and the
 **		parent waits for completion.  Return from this
-**		routine is always in the child.
+**		routine is always in the child.  The file pointers
+**		"InChannel" and "OutChannel" should be set to point
+**		to the communication channel.
 */
 
 # define MAXCONNS	4	/* maximum simultaneous sendmails */
@@ -64,7 +66,6 @@ getrequests()
 	int t;
 	union wait status;
 	int numconnections = 0;
-	struct sockaddr otherend;
 	register struct servent *sp;
 
 	/*

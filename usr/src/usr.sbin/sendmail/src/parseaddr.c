@@ -1,9 +1,9 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	3.69		%G%);
+SCCSID(@(#)parseaddr.c	3.70		%G%);
 
 /*
-**  PARSE -- Parse an address
+**  PARSEADDR -- Parse an address
 **
 **	Parses an address and breaks it up into three parts: a
 **	net to transmit the message on, the host to transmit it
@@ -42,7 +42,7 @@ SCCSID(@(#)parseaddr.c	3.69		%G%);
 # define DELIMCHARS	"$()<>,;\\\"\r\n"	/* word delimiters */
 
 ADDRESS *
-parse(addr, a, copyf)
+parseaddr(addr, a, copyf)
 	char *addr;
 	register ADDRESS *a;
 	int copyf;
@@ -59,7 +59,7 @@ parse(addr, a, copyf)
 	CurEnv->e_to = addr;
 # ifdef DEBUG
 	if (tTd(20, 1))
-		printf("\n--parse(%s)\n", addr);
+		printf("\n--parseaddr(%s)\n", addr);
 # endif DEBUG
 
 	pvp = prescan(addr, ',');
@@ -136,7 +136,7 @@ parse(addr, a, copyf)
 # ifdef DEBUG
 	if (tTd(20, 1))
 	{
-		printf("parse-->");
+		printf("parseaddr-->");
 		printaddr(a, FALSE);
 	}
 # endif DEBUG
