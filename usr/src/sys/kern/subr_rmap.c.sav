@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_rmap.c.sav	6.3 (Berkeley) %G%
+ *	@(#)subr_rmap.c.sav	6.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -326,7 +326,7 @@ rmget(mp, size, addr)
 			 */
 			for (bp2=bp; bp2->m_size; bp2++)
 				;
-			if (bp2 == mp->m_limit)
+			if (bp2 + 1 >= mp->m_limit)
 				return (0);
 			while (bp2 > bp) {
 				(bp2+1)->m_addr = bp2->m_addr;
