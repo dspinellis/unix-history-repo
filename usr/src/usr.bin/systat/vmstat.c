@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -21,7 +21,7 @@ static char sccsid[] = "@(#)vmstat.c	5.21 (Berkeley) %G%";
 #include <sys/user.h>
 #include <sys/proc.h>
 #include <sys/namei.h>
-#include <sys/kinfo.h>
+#include <sys/sysctl.h>
 #include <vm/vm.h>
 
 #include <signal.h>
@@ -584,7 +584,7 @@ getinfo(s, st)
 	struct Info *s;
 	enum state st;
 {
-	int size;
+	int mib[2], size;
 	extern int errno;
 
 	NREAD(X_CPTIME, s->time, sizeof s->time);
@@ -597,8 +597,10 @@ getinfo(s, st)
 	NREAD(X_NCHSTATS, &s->nchstats, sizeof s->nchstats);
 	NREAD(X_INTRCNT, s->intrcnt, nintr * LONG);
 	size = sizeof(s->Total);
-	if (getkerninfo(KINFO_METER, &s->Total, &size, 0) < 0) {
-		error("Can't get kerninfo: %s\n", strerror(errno));
+	mib[0] = CTL_VM;
+	mib[1] = VM_METER;
+	if (sysctl(mib, 2, &s->Total, &size, NULL, 0) < 0) {
+		error("Can't get kernel info: %s\n", strerror(errno));
 		bzero(&s->Total, sizeof(s->Total));
 	}
 }
