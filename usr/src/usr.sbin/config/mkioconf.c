@@ -1,4 +1,4 @@
-/*	mkioconf.c	2.6	83/01/02	*/
+/*	mkioconf.c	2.7	83/03/28	*/
 
 #include <stdio.h>
 #include "y.tab.h"
@@ -71,9 +71,9 @@ vax_ioconf()
 				    dp->d_name, dp->d_unit);
 				continue;
 			}
-			fprintf(fp,
-				"\t{ &%sdriver, %d,   %s,  %s,    %d },\n",
-				dp->d_name, dp->d_unit, qu(mp->d_unit),
+			fprintf(fp, "\t{ &%sdriver, %d,   %s,",
+				dp->d_name, dp->d_unit, qu(mp->d_unit));
+			fprintf(fp, "  %s,  %d },\n",
 				qu(dp->d_drive), dp->d_dk);
 		}
 		fprintf(fp, "\t0\n};\n\n");
@@ -242,11 +242,12 @@ vax_ioconf()
 			}
 			slave = dp->d_drive;
 		}
-		fprintf(fp,
-"\t{ &%sdriver,  %2d,   %s,  %s,    %2d,   %s, C 0%-6o,  %d,  0x%x },\n",
+		fprintf(fp, "\t{ &%sdriver,  %2d,   %s,",
 		    eq(mp->d_name, "uba") ? dp->d_name : mp->d_name, dp->d_unit,
-		    eq(mp->d_name, "uba") ? " -1" : qu(mp->d_unit), qu(uba_n),
-		    slave, intv(dp), dp->d_addr, dp->d_dk, dp->d_flags);
+		    eq(mp->d_name, "uba") ? " -1" : qu(mp->d_unit));
+		fprintf(fp, "  %s,    %2d,   %s, C 0%-6o,  %d,  0x%x },\n",
+		    qu(uba_n), slave, intv(dp), dp->d_addr, dp->d_dk,
+		    dp->d_flags);
 	}
 	fprintf(fp, "\t0\n};\n");
 	(void) fclose(fp);
