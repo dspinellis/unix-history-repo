@@ -1,5 +1,5 @@
 #
-#	@(#)disktab	5.1 (Berkeley) %G%
+#	@(#)disktab	5.2 (Berkeley) %G%
 #
 
 # Disk geometry and partition layout tables. 
@@ -45,3 +45,14 @@ rz55|RZ55|DEC RZ55 Winchester:\
         pe#152446:be#8192:fe#1024:\
         pf#152448:bf#8192:ff#1024:\
         pg#457340:bg#8192:fg#1024:
+
+rz57|RZ57|DEC RZ57 Winchester:\
+        :ty=winchester:ns#71:nt#15:nc#1925:\
+        :pa#32768:ba#8192:fa#1024:\
+        :pb#184320:bb#4096:fb#1024:\
+        :pc#2025788:bc#8192:fc#1024:\
+        :pd#299008:bd#8192:fd#1024:\
+        :pe#299008:be#8192:fe#1024:\
+        :pf#596284:bf#8192:ff#1024:\
+        :pg#614400:bg#8192:fg#1024:\
+        :ph#1194300:bh#8192:fh#1024:
