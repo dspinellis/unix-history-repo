@@ -1,14 +1,14 @@
-#	@(#)makefile	4.1	(Berkeley)	%G%
+#	@(#)makefile	4.2	(Berkeley)	%G%
 #
 DESTDIR = /
 OBJS =
 ARCH = /usr/src/cmd/berknet/
 RDIR = $(DESTDIR)/usr/ucb/
 CRYPT =
-OTHER = schmidt
+OTHER = daemon
 MWRITEMODE = 711
 NETLPRMODE = 711
-NETLPROWN = schmidt
+NETLPROWN = daemon
 V6MAILMODE = 4711
 CC = cc
 CFLAGS = -O
