@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)fsck.h	5.4 (Berkeley) %G%
+ *	@(#)fsck.h	5.5 (Berkeley) %G%
  */
 
 #define	MAXDUP		10	/* limit on dup blks (per inode) */
@@ -140,6 +140,7 @@ int	bflag;			/* location of alternate super block */
 int	debug;			/* output debugging info */
 char	preen;			/* just fix normal inconsistencies */
 char	hotroot;		/* checking root device */
+char	havesb;			/* superblock has been read */
 
 char	*blockmap;		/* ptr to primary blk allocation map */
 char	*statemap;		/* ptr to inode state table */

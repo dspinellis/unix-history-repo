@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setup.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)setup.c	5.14 (Berkeley) %G%";
 #endif not lint
 
 #define DKTYPENAMES
@@ -29,9 +29,11 @@ setup(dev)
 {
 	dev_t rootdev;
 	long cg, ncg, size, i, j;
+	struct disklabel *getdisklabel(), *lp;
 	struct stat statb;
 	struct fs proto;
 
+	havesb = 0;
 	if (stat("/", &statb) < 0)
 		errexit("Can't stat root\n");
 	rootdev = statb.st_dev;
@@ -72,11 +74,17 @@ setup(dev)
 	initbarea(&fileblk);
 	initbarea(&inoblk);
 	initbarea(&cgblk);
+	if (lp = getdisklabel((char *)NULL, dfile.rfdes))
+		dev_bsize = secsize = lp->d_secsize;
+	else {
+		dev_bsize = DEV_BSIZE;
+		secsize = 0;			/* guess later */
+	}
 	/*
 	 * Read in the superblock, looking for alternates if necessary
 	 */
 	if (readsb(1) == 0) {
-		if (bflag || calcsb(dev, dfile.rfdes, &proto) == 0 || preen)
+		if (bflag || preen || calcsb(dev, dfile.rfdes, &proto) == 0)
 			return(0);
 		if (reply("LOOK FOR ALTERNATE SUPERBLOCKS") == 0)
 			return (0);
@@ -174,12 +182,11 @@ readsb(listerr)
 	int listerr;
 {
 	BUFAREA asblk;
-	struct disklabel *getdisklabel(), *lp;
 #	define altsblock asblk.b_un.b_fs
-	daddr_t super = bflag ? bflag * DEV_BSIZE : SBOFF;
+	off_t sboff;
+	daddr_t super = bflag ? bflag : SBOFF / dev_bsize;
 
 	initbarea(&asblk);
-	dev_bsize = 1;
 	if (bread(&dfile, (char *)&sblock, super, (long)SBSIZE) != 0)
 		return (0);
 	sblk.b_bno = super;
@@ -199,22 +206,29 @@ readsb(listerr)
 	if (sblock.fs_sbsize > SBSIZE)
 		{ badsb(listerr, "SIZE PREPOSTEROUSLY LARGE"); return (0); }
 	/*
+	 * Compute block size that the filesystem is based on,
+	 * according to fsbtodb, and adjust superblock block number
+	 * so we can tell if this is an alternate later.
+	 */
+	if (sblock.fs_dbsize && secsize == 0)
+		secsize = sblock.fs_dbsize;
+	super *= dev_bsize;
+	dev_bsize = sblock.fs_fsize / fsbtodb(&sblock, 1);
+	sblk.b_bno = super / dev_bsize;
+	/*
 	 * Set all possible fields that could differ, then do check
 	 * of whole super block against an alternate super block.
 	 * When an alternate super-block is specified this check is skipped.
 	 */
-	dev_bsize = sblock.fs_fsize / fsbtodb(&sblock, 1);
-	if (lp = getdisklabel((char *)NULL, dfile.rfdes))
-		secsize = lp->d_secsize;
-	else
-		secsize = dev_bsize;
-	sblk.b_bno = sblk.b_bno / dev_bsize;
-	if (bflag)
+	if (bflag) {
+		havesb = 1;
 		return (1);
+	}
 	getblk(&asblk, cgsblock(&sblock, sblock.fs_ncg - 1), sblock.fs_sbsize);
 	if (asblk.b_errs != NULL)
 		return (0);
 	altsblock.fs_fsbtodb = sblock.fs_fsbtodb;
+	altsblock.fs_dbsize = sblock.fs_dbsize;
 	altsblock.fs_link = sblock.fs_link;
 	altsblock.fs_rlink = sblock.fs_rlink;
 	altsblock.fs_time = sblock.fs_time;
@@ -242,6 +256,7 @@ readsb(listerr)
 		"VALUES IN SUPER BLOCK DISAGREE WITH THOSE IN FIRST ALTERNATE");
 		return (0);
 	}
+	havesb = 1;
 	return (1);
 #	undef altsblock
 }
@@ -285,7 +300,7 @@ calcsb(dev, devfd, fs)
 	else
 		pp = &lp->d_partitions[*cp - 'a'];
 	if (pp->p_fstype != FS_BSDFFS) {
-		pfatal("%s: NOT FORMATTED AS A BSD FILE SYSTEM (%s)\n",
+		pfatal("%s: NOT LABELED AS A BSD FILE SYSTEM (%s)\n",
 			dev, pp->p_fstype < FSMAXTYPES ?
 			fstypenames[pp->p_fstype] : "unknown");
 		return (0);
@@ -313,6 +328,7 @@ calcsb(dev, devfd, fs)
 	fs->fs_ncg = howmany(fs->fs_size / fs->fs_spc, fs->fs_cpg);
 	for (fs->fs_fsbtodb = 0, i = NSPF(fs); i > 1; i >>= 1)
 		fs->fs_fsbtodb++;
+	dev_bsize = lp->d_secsize;
 	return (1);
 }
 
