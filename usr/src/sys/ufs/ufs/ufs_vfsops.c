@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vfsops.c	7.62 (Berkeley) %G%
+ *	@(#)ufs_vfsops.c	7.63 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -269,15 +269,14 @@ ufs_free_addrlist(ump)
  * return a vnode for the presented file handle.
  */
 int
-ufs_check_export(mp, fhp, nam, vpp, exflagsp, credanonp)
+ufs_check_export(mp, ufhp, nam, vpp, exflagsp, credanonp)
 	register struct mount *mp;
-	struct fid *fhp;
+	struct ufid *ufhp;
 	struct mbuf *nam;
 	struct vnode **vpp;
 	int *exflagsp;
 	struct ucred **credanonp;
 {
-	register struct ufid *ufhp;
 	register struct inode *ip;
 	register struct netcred *np;
 	register struct ufsmount *ump = VFSTOUFS(mp);

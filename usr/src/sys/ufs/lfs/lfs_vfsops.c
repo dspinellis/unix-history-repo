@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vfsops.c	7.84 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	7.85 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -510,7 +510,7 @@ lfs_fhtovp(mp, fhp, nam, vpp, exflagsp, credanonp)
 	ufhp = (struct ufid *)fhp;
 	if (ufhp->ufid_ino < ROOTINO)
 		return (ESTALE);
-	return (ufs_check_export(mp, fhp, nam, vpp, exflagsp, credanonp));
+	return (ufs_check_export(mp, ufhp, nam, vpp, exflagsp, credanonp));
 }
 
 /*
