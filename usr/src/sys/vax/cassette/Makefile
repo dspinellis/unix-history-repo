@@ -1,25 +1,28 @@
-#	Makefile	4.3	83/07/09
+#	Makefile	4.4	83/07/20
 #
 # Make a 750/730 tu58 cassette
 # 
-BOOTS=	boot boot.750
+BOOTS=	boot.730 boot.750
 STDBOO=	defboo.cmd anyboo.cmd restar.cmd
 DEFBOO=	defboo.rb defboo.rl defboo.hk defboo.up defboo.ra
 DEVBOO=	rbmboo.cmd rbsboo.cmd rlsboo.cmd hkmboo.cmd hksboo.cmd \
 	upmboo.cmd upsboo.cmd ramboo.cmd rasboo.cmd
-UTILS=	format.750 format copy copy.750 drtest drtest.750
+UTILS=	format.730 format.750 copy.730 copy.750 drtest.730 drtest.750
 # order is NOT random...
-OBJS=	${BOOTS} ${STDBOO} ${DEFBOO} ${DEVBOO} ${UTILS}
-# this is ONLY for a 730...
-BOOTOBJS=boot ${STDBOO} ${DEFBOO} ${DEVBOO} format copy drtest
+OBJS=	boot ${STDBOO} ${DEFBOO} ${DEVBOO} format copy drtest
 FROMDEC=d[lmq]* cs* *boo.* boot.exe vmb.exe
 CASSETTE=/dev/uu0
 
 all:	cassette
 
-cassette: ${OBJS}
+cassette: boot.750 ${STDBOO} ${DEFBOO} ${DEVBOO} format.750
+cassette: copy.750 drtest.750
 	cp /dev/null cassette
 	cp /dev/null pad
+	cp boot.750 boot
+	cp format.750 format
+	cp copy.750 copy
+	cp drtest.750 drtest
 	arff mcrf cassette ${OBJS} pad
 	rm -f pad
 
@@ -32,12 +35,18 @@ install: cassette ../mdec/tuboot
 
 # build a 730 boot cassette from a DEC console cassette
 # DONT TRY THIS ON A 750 W/O MRSP, THE SYSTEM WILL CRASH
-update:	${BOOTOBJS}
+update:	boot.730 ${STDBOO} ${DEFBOO} ${DEVBOO} format.730
+update:	copy.730 drtest.730
 	-mkdir fromdec
 	cd fromdec; arff mxf ${CASSETTE}; rm -f ${FROMDEC}; \
 		flcopy -t3; arff mcrf ${CASSETTE} *
 	rm -rf fromdec
-	arff mrf ${CASSETTE} ${BOOTOBJS}
+	cp boot.730 boot
+	cp format.730 format
+	cp copy.730 copy
+	cp drtest.730 drtest
+	arff mrf ${CASSETTE} ${OBJS}
 
 clean:
 	rm -f ${BOOTS} ${UTILS} cassette form50 boot50 copy50
+	rm -f boot format copy drtest
