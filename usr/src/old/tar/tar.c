@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)tar.c	4.11 (Berkeley) 82/10/20";
+static	char *sccsid = "@(#)tar.c	4.12 (Berkeley) 82/12/09";
 
 /*
  * Tape Archival Program
@@ -247,7 +247,7 @@ dorep(argv)
 	char *argv[];
 {
 	register char *cp, *cp2;
-	char wdir[60];
+	char wdir[MAXPATHLEN], tempdir[MAXPATHLEN], *parent;
 
 	if (!cflag) {
 		getdir();
@@ -283,16 +283,22 @@ dorep(argv)
 			argv++;
 			continue;
 		}
+		parent = wdir;
 		for (cp = *argv; *cp; cp++)
 			if (*cp == '/')
 				cp2 = cp;
 		if (cp2 != *argv) {
 			*cp2 = '\0';
-			chdir(*argv);
+			if (chdir(*argv) < 0) {
+				perror(*argv);
+				continue;
+			}
+			getwdir(tempdir);
+			parent = tempdir;
 			*cp2 = '/';
 			cp2++;
 		}
-		putfile(*argv++, cp2);
+		putfile(*argv++, cp2, parent);
 		chdir(wdir);
 	}
 	putempty();
@@ -356,9 +362,10 @@ passtape()
 		readtape(buf);
 }
 
-putfile(longname, shortname)
+putfile(longname, shortname, parent)
 	char *longname;
 	char *shortname;
+	char *parent;
 {
 	int infile;
 	long blocks;
@@ -367,13 +374,20 @@ putfile(longname, shortname)
 	struct direct *dp;
 	DIR *dirp;
 	int i, j;
+	char newparent[NAMSIZ+64];
 
 	infile = open(shortname, 0);
 	if (infile < 0) {
 		fprintf(stderr, "tar: %s: cannot open file\n", longname);
 		return;
 	}
-	lstat(shortname, &stbuf);
+	if (!hflag)
+		lstat(shortname, &stbuf);
+	else if (stat(shortname, &stbuf) < 0) {
+		perror(longname);
+		close(infile);
+		return;
+	}
 	if (tfile != NULL && checkupdate(longname) == 0) {
 		close(infile);
 		return;
@@ -401,10 +415,12 @@ putfile(longname, shortname)
 			sprintf(dblock.dbuf.chksum, "%6o", checksum());
 			writetape((char *)&dblock);
 		}
+		sprintf(newparent, "%s/%s", parent, shortname);
 		chdir(shortname);
 		close(infile);
 		if ((dirp = opendir(".")) == NULL) {
 			fprintf(stderr, "%s: directory read error\n", longname);
+			chdir(parent);
 			return;
 		}
 		while ((dp = readdir(dirp)) != NULL && !term) {
@@ -416,12 +432,12 @@ putfile(longname, shortname)
 			strcpy(cp, dp->d_name);
 			i = telldir(dirp);
 			closedir(dirp);
-			putfile(buf, cp);
+			putfile(buf, cp, newparent);
 			dirp = opendir(".");
 			seekdir(dirp, i);
 		}
 		closedir(dirp);
-		chdir("..");
+		chdir(parent);
 		return;
 	}
 	i = stbuf.st_mode & S_IFMT;
@@ -446,9 +462,9 @@ putfile(longname, shortname)
 			close(infile);
 			return;
 		}
-		i = readlink(longname, dblock.dbuf.linkname, NAMSIZ - 1);
+		i = readlink(shortname, dblock.dbuf.linkname, NAMSIZ - 1);
 		if (i < 0) {
-			perror("readlink");
+			perror(longname);
 			close(infile);
 			return;
 		}
@@ -875,6 +891,7 @@ getwdir(s)
 	}
 	while (wait((int *)NULL) != -1)
 			;
+	read(pipdes[0], s, 50);
 	read(pipdes[0], s, 50);
 	while (*s != '\n')
 		s++;
