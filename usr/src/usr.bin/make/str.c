@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)str.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)str.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -164,7 +164,7 @@ Str_BreakString (str, breaks, end, argcPtr)
     while ((*str != '\0') && (index (end, *str) == (char *)NULL)) {
 	if (index (breaks, *str) != (char *)NULL) {
 	    *tstr++ = '\0';
-	    argv[argc++] = Str_New(tstring);
+	    argv[argc++] = strdup(tstring);
 	    while ((*str != '\0') &&
 		   (index (breaks, *str) != (char *)NULL) &&
 		   (index (end, *str) == (char *)NULL)) {
@@ -234,7 +234,7 @@ Str_BreakString (str, breaks, end, argcPtr)
 	 * If any word is left over, add it to the vector
 	 */
 	*tstr = '\0';
-	argv[argc++] = Str_New(tstring);
+	argv[argc++] = strdup(tstring);
     }
     argv[argc] = (char *) 0;
     *argcPtr = argc;

@@ -19,7 +19,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)make.h	5.2 (Berkeley) %G%
+ *	@(#)make.h	5.3 (Berkeley) %G%
  */
 
 /*-
@@ -30,11 +30,12 @@
 #ifndef _MAKE_H_
 #define _MAKE_H_
 
-#include    <sys/types.h>
-#include    "sprite.h"
-#include    <ctype.h>
-#include    "lst.h"
-#include    "config.h"
+#include <sys/types.h>
+#include <strings.h>
+#include <ctype.h>
+#include "sprite.h"
+#include "lst.h"
+#include "config.h"
 
 #ifdef NO_VFORK
 #define vfork fork
