@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	5.43 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	5.44 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -281,7 +281,7 @@ nextopt:
 	/* If logins are disabled, print out the message. */
 	if ((fd = fopen(_PATH_NOLOGIN,"r")) != NULL) {
 		while (fgets(line, sizeof (line), fd) != NULL) {
-			if ((cp = index(line, '\n')) != NULL)
+			if ((cp = strchr(line, '\n')) != NULL)
 				*cp = '\0';
 			lreply(530, "%s", line);
 		}
@@ -292,7 +292,7 @@ nextopt:
 	}
 	if ((fd = fopen(_PATH_FTPWELCOME, "r")) != NULL) {
 		while (fgets(line, sizeof (line), fd) != NULL) {
-			if ((cp = index(line, '\n')) != NULL)
+			if ((cp = strchr(line, '\n')) != NULL)
 				*cp = '\0';
 			lreply(220, "%s", line);
 		}
@@ -458,7 +458,7 @@ checkuser(name)
 
 	if ((fd = fopen(_PATH_FTPUSERS, "r")) != NULL) {
 		while (fgets(line, sizeof(line), fd) != NULL)
-			if ((p = index(line, '\n')) != NULL) {
+			if ((p = strchr(line, '\n')) != NULL) {
 				*p = '\0';
 				if (line[0] == '#')
 					continue;
@@ -566,7 +566,7 @@ pass(passwd)
 		char *cp, line[MAXLINE];
 
 		while (fgets(line, sizeof (line), fd) != NULL) {
-			if ((cp = index(line, '\n')) != NULL)
+			if ((cp = strchr(line, '\n')) != NULL)
 				*cp = '\0';
 			lreply(230, "%s", line);
 		}
@@ -1134,7 +1134,7 @@ yyerror(s)
 {
 	char *cp;
 
-	if (cp = index(cbuf,'\n'))
+	if (cp = strchr(cbuf,'\n'))
 		*cp = '\0';
 	reply(500, "'%s': command not understood.", cbuf);
 }
@@ -1360,7 +1360,7 @@ gunique(local)
 	int count;
 	char *cp;
 
-	cp = rindex(local, '/');
+	cp = strrchr(local, '/');
 	if (cp)
 		*cp = '\0';
 	if (stat(cp ? local : ".", &st) < 0) {

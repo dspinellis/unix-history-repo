@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ftpcmd.y	5.27 (Berkeley) %G%
+ *	@(#)ftpcmd.y	5.28 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 %{
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpcmd.y	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpcmd.y	5.28 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -865,7 +865,7 @@ yylex()
 			if (strncasecmp(cbuf, "PASS", 4) != NULL)
 				setproctitle("%s: %s", proctitle, cbuf);
 #endif /* SETPROCTITLE */
-			if ((cp = index(cbuf, '\r'))) {
+			if ((cp = strchr(cbuf, '\r'))) {
 				*cp++ = '\n';
 				*cp = '\0';
 			}
