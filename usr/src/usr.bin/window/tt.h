@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)tt.h	3.23 (Berkeley) %G%
+ *	@(#)tt.h	3.24 (Berkeley) %G%
  */
 
 /*
@@ -101,7 +101,7 @@ int tttputc();
 
 /*
  * Buffered output without stdio.
- * These variables have different meanings from the ww_ob* variabels.
+ * These variables have different meanings from the ww_ob* variables.
  * But I'm too lazy to think up different names.
  */
 char tt_ob[512];
@@ -109,3 +109,10 @@ char *tt_obp;
 char *tt_obe;
 #define ttputc(c)	(tt_obp < tt_obe ? (*tt_obp++ = (c)) \
 				: (ttflush(), *tt_obp++ = (c)))
+
+/*
+ * Convenience macros for the drivers
+ * They require char.h
+ */
+#define ttctrl(c)	ttputc(ctrl(c))
+#define ttesc(c)	(ttctrl('['), ttputc(c))
