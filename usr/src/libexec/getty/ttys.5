@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)ttys.5	6.5 (Berkeley) %G%
+.\"	@(#)ttys.5	6.6 (Berkeley) %G%
 .\"
 .TH TTYS 5  ""
 .AT 3
@@ -84,15 +84,15 @@ starting the command specified by the second field.
 .SH EXAMPLES
 .nf
 # root login on console at 1200 baud
-console	"/sbin/getty std.1200"	vt100	on secure
+console	"/usr/libexec/getty std.1200"	vt100	on secure
 # dialup at 1200 baud, no root logins
-ttyd0	"/sbin/getty d1200"		dialup	on		# 555-1234
+ttyd0	"/usr/libexec/getty d1200"	dialup	on	# 555-1234
 # Mike's terminal: hp2621
-ttyh0	"/sbin/getty std.9600"	hp2621-nl	on		# 457 Evans
+ttyh0	"/usr/libexec/getty std.9600"	hp2621-nl	on	# 457 Evans
 # John's terminal: vt100
-ttyh1	"/sbin/getty std.9600"	vt100	on		# 459 Evans
+ttyh1	"/usr/libexec/getty std.9600"	vt100	on		# 459 Evans
 # terminal emulate/window system
-ttyv0	"/usr/new/xterm -L :0"	vs100	on window="/usr/new/Xvs100 0"
+ttyv0	"/usr/new/xterm -L :0"		vs100	on window="/usr/new/Xvs100 0"
 # Network pseudo ttys -- don't enable getty
 ttyp0	none	network
 ttyp1	none	network	off
