@@ -1,12 +1,10 @@
 .\" Copyright (c) 1983, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)rlogin.1	6.18 (Berkeley) %G%
+.\"	@(#)rlogin.1	6.19 (Berkeley) %G%
 .\"
-.Vx
-.Vx
 .Dd 
 .Dt RLOGIN 1
 .Os BSD 4.2
@@ -31,44 +29,45 @@ If the remote host does not supporting Kerberos the standard Berkeley
 .Pa rhosts
 authorization mechanism is used.
 The options are as follows:
-.Tw Fl
-.Tp Fl 8
+.Bl -tag -width flag
+.It Fl 8
 The
 .Fl 8
 option allows an eight-bit input data path at all times; otherwise
 parity bits are stripped except when the remote side's stop and start
-characters are other than ^S/^Q.
-.Tp Fl E
+characters are other than
+^S/^Q .
+.It Fl E
 The
 .Fl E
 option stops any character from being recognized as an escape character.
 When used with the
 .Fl 8
 option, this provides a completely transparent connection.
-.Tp Fl K
+.It Fl K
 The
 .Fl K
 option turns off all Kerberos authentication.
-.Tp Fl L
+.It Fl L
 The
 .Fl L
 option allows the rlogin session to be run in ``litout'' (see
-.Xr tty  4  )
+.Xr tty 4 )
 mode.
-.Tp Fl d
+.It Fl d
 The
 .Fl d
 option turns on socket debugging (see
-.Xr setsockopt  2  )
+.Xr setsockopt 2 )
 on the TCP sockets used for communication with the remote host.
-.Tp Fl e
+.It Fl e
 The
 .Fl e
 option allows user specification of the escape character, which is
 ``~'' by default.
 This specification may be as a literal character, or as an octal
 value in the form \ennn.
-.Tp Fl k
+.It Fl k
 The
 .FL k
 option requests rlogin to obtain tickets for the remote host
@@ -76,7 +75,7 @@ in realm
 .Ar realm
 instead of the remote host's realm as determined by
 .Xr krb_realmofhost  3  .
-.Tp
+.El
 .Pp
 A line of the form ``<escape char>.'' disconnects from the remote host.
 Similarly, the line ``<escape char>^Z'' will suspend the
@@ -119,23 +118,25 @@ the remote user.
 .Pp
 If Kerberos authentication fails, a warning message is printed and the
 standard Berkeley
-.Em rlogin
+.Nm rlogin
 is used instead.
 .Sh ENVIRONMENT
 The following environment variable is utilized by
 .Nm rlogin :
-.Tw Fl
-.Tp Ev TERM
-to find user's terminal type.
-.Tp
+.Bl -tag -width TERM
+.It Ev TERM
+Determines the user's terminal type.
+.El
 .Sh SEE ALSO
 .Xr rsh 1 ,
 .Xr kerberos 3 ,
 .Xr krb_sendauth 3 ,
 .Xr krb_realmofhost 3
 .Sh HISTORY
-.Nm Rlogin
-appeared in 4.2 BSD.
+The
+.Nm rlogin
+command appeared in
+.Bx 4.2 .
 .Sh BUGS
 .Nm Rlogin
 will be replaced by
