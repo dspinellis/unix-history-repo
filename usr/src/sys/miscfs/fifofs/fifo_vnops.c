@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)fifo_vnops.c	7.1 (Berkeley) %G%
+ *	@(#)fifo_vnops.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -117,6 +117,7 @@ fifo_open(vp, mode, cred)
 	register struct fifoinfo *fip;
 	struct socket *rso, *wso;
 	int error;
+	static char openstr[] = "fifo";
 
 	if ((mode & (FREAD|FWRITE)) == (FREAD|FWRITE))
 		return (EINVAL);
@@ -150,8 +151,8 @@ fifo_open(vp, mode, cred)
 		if (mode & O_NONBLOCK)
 			return (0);
 		while (fip->fi_writers == 0)
-			if (error = isleep((caddr_t)&fip->fi_readers, PZERO + 1,
-			    SLP_FIFO_OPEN, 0))
+			if (error = tsleep((caddr_t)&fip->fi_readers, PSOCK,
+			    openstr, 0))
 				break;
 	} else {
 		fip->fi_writers++;
@@ -164,8 +165,8 @@ fifo_open(vp, mode, cred)
 					wakeup((caddr_t)&fip->fi_readers);
 			}
 			while (fip->fi_readers == 0)
-				if (error = isleep((caddr_t)&fip->fi_writers,
-				    PZERO + 1, SLP_FIFO_OPEN, 0))
+				if (error = tsleep((caddr_t)&fip->fi_writers,
+				    PSOCK, openstr, 0))
 					break;
 		}
 	}
