@@ -3,55 +3,57 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)strings.1	6.8 (Berkeley) %G%
+.\"     @(#)strings.1	6.9 (Berkeley) %G%
 .\"
-.TH STRINGS 1 "%Q"
-.UC
-.SH NAME
-strings \- find the printable strings in a file
-.SH SYNOPSIS
-.ft B
-strings [ \-aof ] [ \-n number ] [ file ... ]
-.ft R
-.SH DESCRIPTION
-.I String
+.Dd 
+.Dt STRINGS 1
+.Os BSD 3
+.Sh NAME
+.Nm strings
+.Nd find printable strings in a file
+.Sh SYNOPSIS
+.Nm strings
+.Op Fl afo
+.Op Fl n Ar number
+.Op Ar file ...
+.Sh DESCRIPTION
+.Nm Strings
 displays the sequences of printable characters in each of the specified
 files, or in the standard input, by default.
 By default, a sequence must be at least four characters in length
 before being displayed.
-.PP
+.Pp
 The options are as follows:
-.TP
-\-a
+.Bl -tag -width Ds
+.It Fl a
 By default,
-.I strings
+.Nm strings
 only searches the initialized data space of object files.
 The
-.I \-a
+.Fl a
 option causes
-.I strings
+.Nm strings
 to search the entire object file.
-.TP
-\-n
-Specifies the minimum number of characters in a sequence to be
-.IR number ,
-instead of four.
-.TP
-\-o
-The
-.I \-o
-option causes each string to be preceded by its decimal offset in the
-file.
-.TP
-\-f
-The
-.I \-f
-option causes each string to be preceded by the name of the file
+.It Fl f
+Each string is preceded by the name of the file
 in which it was found.
-.PP
-.I Strings
+.It Fl n
+Specifies the minimum number of characters in a sequence to be
+.Ar number ,
+instead of four.
+.It Fl o
+Each string is preceded by its decimal offset in the
+file.
+.El
+.Pp
+.Nm Strings
 is useful for identifying random binaries, among other things.
-.SH "SEE ALSO"
-hexdump(1)
-.SH BUGS
+.Sh SEE ALSO
+.Xr hexdump 1
+.Sh BUGS
 The algorithm for identifying strings is extremely primitive.
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 3.0 .
