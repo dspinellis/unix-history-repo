@@ -1,7 +1,7 @@
 # include "../hdr/defines.h"
 # include "../hdr/had.h"
 
-SCCSID(@(#)rmchg.c	4.2);
+static char Sccsid[] = "@(#)rmchg.c	4.3	%G%";
 
 /*
 	Program to remove a specified delta from an SCCS file,
@@ -92,8 +92,8 @@ char *argv[];
 	Change flags for 'fatal' so that it will return to this
 	routine (main) instead of terminating processing.
 	*/
-	Fflags =& ~FTLEXIT;
-	Fflags =| FTLJMP;
+	Fflags &= ~FTLEXIT;
+	Fflags |= FTLJMP;
 
 	/*
 	Call 'rmchg' routine for each file argument.
@@ -130,7 +130,7 @@ USXALLOC();		/* defines alloc() and free() */
 rmchg(file)
 char *file;
 {
-	static int first_time 1;
+	static int first_time = 1;
 	struct deltab dt;	/* see file s.defines.h */
 	struct stats stats;	/* see file s.defines.h */
 	extern char *Sflags[];

@@ -23,18 +23,17 @@
 # include "../hdr/defines.h"
 # include "../hdr/had.h"
 
-SCCSID(@(#)prs.c	4.1);
+static char Sccsid[] = "@(#)prs.c	4.2	%G%";
 
 char	had[26];
-char	Getpgm[]	"/usr/local/get";
+char	Getpgm[] = "/usr/local/get";
 char	Sid[32];
 char	Mod[16];
 char	*Type;
 char	Deltadate[18];
 char	*Deltatime;
-char	tempskel[]	"/tmp/prXXXXXX";	/* used to generate temp
-						   file names
-						*/
+char	tempskel[] = "/tmp/prXXXXXX";	/* used to generate temp file names */
+
 char	untmp[32], uttmp[32], cmtmp[32];
 char	mrtmp[32], bdtmp[32];
 FILE	*UNiop;
@@ -130,8 +129,8 @@ char *argv[];
 	Change flags for 'fatal' so that it will return to this
 	routine (main) instead of terminating processing.
 	*/
-	Fflags =& ~FTLEXIT;
-	Fflags =| FTLJMP;
+	Fflags &= ~FTLEXIT;
+	Fflags |= FTLJMP;
 
 	/*
 	Call 'prs' routine for each file argument.
@@ -265,7 +264,7 @@ register struct packet *pkt;
  * immediately.
 */
 
-static	char	Zkeywd[5]	"@(#)";
+static	char	Zkeywd[5] = "@(#)";
 scanspec(spec,dtp,statp)
 char spec[];
 struct	deltab	*dtp;
@@ -350,7 +349,7 @@ struct	stats	*statp;
 		else if(lp[0] == ':' && lp[1] != 0 && lp[2] !=0 && lp[3] == ':') {
 			if (lp[1] == ':') {
 				putchar(':');
-				*lp =+ 2;
+				*lp += 2;
 				continue;
 			}
 			u.str[1] = *++lp;
@@ -734,7 +733,7 @@ struct packet *pkt;
 getit(str,cp)
 register	char	*str, *cp;
 {
-	cp =+ 2;
+	cp += 2;
 	NONBLANK(cp);
 	cp[length(cp) - 1] = '\0';
 	sprintf(str,"%s",cp);

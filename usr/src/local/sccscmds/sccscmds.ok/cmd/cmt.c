@@ -1,7 +1,7 @@
 # include	"../hdr/defines.h"
 # include	"../hdr/had.h"
 
-SCCSID(@(#)cmt.c	4.3);
+static char Sccsid[] = "@(#)cmt.c	4.4	%G%";
 
 struct packet gpkt;
 int	num_files, had_ffile;
@@ -9,7 +9,7 @@ int	F_Opened, Opened, Domrs, First;
 char	*Comments, *Mrs, *ffile;
 char	Cstr[BUFSIZ], Mstr[BUFSIZ], Line[BUFSIZ], had[26];
 FILE	*iop, *Xiop;
-static	char	ifde[]	"initial file does not exists";
+static	char ifde[] = "initial file does not exists";
 
 main(argc,argv)
 int argc;
@@ -58,8 +58,8 @@ register char *argv[];
 	Reset flags for 'fatal' so that it will return to 'main'
 	rather than exiting.
 	*/
-	Fflags =& ~FTLEXIT;
-	Fflags =| FTLJMP;
+	Fflags &= ~FTLEXIT;
+	Fflags |= FTLJMP;
 
 	/*
 	Invoke 'cmt' for each file argument. 
@@ -72,9 +72,9 @@ register char *argv[];
 }
 
 
-static char s_warn[] "WARNING: MR flag is set; `%s' should contain both MR line and comment line\n";
+static char s_warn[] = "WARNING: MR flag is set; `%s' should contain both MR line and comment line\n";
 
-static char ns_warn[] "WARNING: MR flag is not set; `%s' should only contain comment line\n";
+static char ns_warn[] = "WARNING: MR flag is not set; `%s' should only contain comment line\n";
 
 cmt(file)
 register char *file;
@@ -158,13 +158,13 @@ register char *file;
 }
 
 
-static	char	cle[]	"comment line for initial delta already exists";
+static	char cle[] = "comment line for initial delta already exists";
 
 do_delt(pkt)
 register struct packet *pkt;
 {
 	int	n;
-	int	did_zero 0;
+	int	did_zero = 0;
 	struct deltab dt;
 	struct stats stats;
 

@@ -1,7 +1,7 @@
 # include	"../hdr/defines.h"
 # include	"../hdr/had.h"
 
-SCCSID(@(#)delta.c	4.7);
+static char Sccsid[] = "@(#)delta.c	4.8	%G%";
 USXALLOC();
 
 # ifdef LOGDELTA
@@ -11,7 +11,7 @@ FILE	*Logf;
 
 char	Diffpgm[] = "/usr/local/bdiff";
 FILE	*Diffin;
-int	Debug	0;
+int	Debug = 0;
 struct packet gpkt;
 struct sid sid;
 int	num_files;
@@ -89,8 +89,8 @@ register char *argv[];
 	Logf = fopen(LogFile, "a");
 # endif
 	setsig();
-	Fflags =& ~FTLEXIT;
-	Fflags =| FTLJMP;
+	Fflags &= ~FTLEXIT;
+	Fflags |= FTLJMP;
 	for (i=1; i<argc; i++)
 		if (p=argv[i])
 			do_file(p,delta);
@@ -105,7 +105,7 @@ register char *argv[];
 delta(file)
 char *file;
 {
-	static int first 1;
+	static int first = 1;
 	register char *p;
 	int n, linenum;
 	char type;
@@ -199,11 +199,11 @@ char *file;
 		Diffin = dodiff(auxf(gpkt.p_file,'g'),dfilename,difflim);
 		while (n = getdiff(&type,&linenum)) {
 			if (type == INS) {
-				inserted =+ n;
+				inserted += n;
 				insert(&gpkt,linenum,n,newser);
 			}
 			else {
-				deleted =+ n;
+				deleted += n;
 				delete(&gpkt,linenum,n,newser);
 			}
 		}

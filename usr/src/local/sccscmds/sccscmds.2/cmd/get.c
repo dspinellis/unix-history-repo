@@ -4,16 +4,16 @@
 # include	"../hdr/had.h"
 # include	<sys/dir.h>
 
-SCCSID(@(#)get.c	4.7);
+static char Sccsid[] = "@(#)get.c	4.8	%G%";
 
-int	Debug	0;
+int	Debug = 0;
 struct packet gpkt;
 struct sid sid;
 unsigned	Ser;
 int	num_files;
 char	had[26];
 char	*ilist, *elist, *lfile;
-long	cutoff	0X7FFFFFFFL;	/* max positive long */
+long	cutoff = 0X7FFFFFFFL;	/* max positive long */
 int verbosity;
 char	Gfile[MAXNAMLEN + 3];
 char	Mod[MAXNAMLEN + 3];		/* should be as large as Gfile? */
@@ -113,8 +113,8 @@ register char *argv[];
 	if (!HADS)
 		verbosity = -1;
 	setsig();
-	Fflags =& ~FTLEXIT;
-	Fflags =| FTLJMP;
+	Fflags &= ~FTLEXIT;
+	Fflags |= FTLJMP;
 	for (i=1; i<argc; i++)
 		if (p=argv[i])
 			do_file(p,get);
@@ -242,7 +242,7 @@ int branch;
 
 	chkbr = 0;
 	if (pkt->p_reqsid.s_br == 0) {
-		pkt->p_reqsid.s_lev =+ 1;
+		pkt->p_reqsid.s_lev += 1;
 		if (sidtoser(&pkt->p_reqsid,pkt) ||
 			pkt->p_maxr > pkt->p_reqsid.s_rel || branch) {
 				pkt->p_reqsid.s_rel = pkt->p_gotsid.s_rel;
@@ -255,16 +255,16 @@ int branch;
 	else if (pkt->p_reqsid.s_seq == 0 && !branch)
 		pkt->p_reqsid.s_seq = pkt->p_gotsid.s_seq + 1;
 	else {
-		pkt->p_reqsid.s_seq =+ 1;
+		pkt->p_reqsid.s_seq += 1;
 		if (branch || sidtoser(&pkt->p_reqsid,pkt)) {
-			pkt->p_reqsid.s_br =+ 1;
+			pkt->p_reqsid.s_br += 1;
 			pkt->p_reqsid.s_seq = 1;
 			chkbr++;
 		}
 	}
 	if (chkbr)
 		while (sidtoser(&pkt->p_reqsid,pkt))
-			pkt->p_reqsid.s_br =+ 1;
+			pkt->p_reqsid.s_br += 1;
 	if (sidtoser(&pkt->p_reqsid,pkt))
 		fatal("internal error in newsid()");
 }
@@ -477,7 +477,7 @@ register char *old, *new;
 	*new = '\0';
 }
 
-static char Zkeywd[5]	"@(#)";
+static char Zkeywd[5] = "@(#)";
 
 
 idsubst(pkt,line)

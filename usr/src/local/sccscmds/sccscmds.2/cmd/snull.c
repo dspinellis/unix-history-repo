@@ -1,10 +1,10 @@
 # include	"../hdr/defines.h"
 # include	"../hdr/had.h"
 
-SCCSID(@(#)snull.c	4.3);
+static char Sccsid[] = "@(#)snull.c	4.4	%G%";
 USXALLOC();
 
-int	Debug	0;
+int	Debug = 0;
 struct packet gpkt;
 struct sid sid;
 int	num_files;
@@ -69,8 +69,8 @@ register char *argv[];
 	Reset flags for 'fatal' so that it will return to 'main'
 	rather than exiting.
 	*/
-	Fflags =& ~FTLEXIT;
-	Fflags =| FTLJMP;
+	Fflags &= ~FTLEXIT;
+	Fflags |= FTLJMP;
 
 	/*
 	Invoke 'snull' for each file argument. 
@@ -327,7 +327,7 @@ mkdelt()
 		if (reldiff < 0)
 			fatal("file has invalid trunk delta (sn1)");
 
-		currel =+ reldiff;	/* update currel */
+		currel += reldiff;	/* update currel */
 
 		/*
 		Find pointer to ancestor delta.
@@ -377,9 +377,9 @@ mkdelt()
 		reldiff--;
 		while (ptrtemp) {
 			if (ptrtemp->ds_ser >= serhold)
-				ptrtemp->ds_ser =+ reldiff;
+				ptrtemp->ds_ser += reldiff;
 			if (ptrtemp->ds_pred >= serhold)
-				ptrtemp->ds_pred =+ reldiff;
+				ptrtemp->ds_pred += reldiff;
 
 			ptrtemp = ptrtemp->ds_youngerdel;
 		}
