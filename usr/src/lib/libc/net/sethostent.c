@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sethostent.c	1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)sethostent.c	6.1 (Berkeley) %G%";
 #endif not lint
 
 /*

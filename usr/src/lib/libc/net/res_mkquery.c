@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)res_mkquery.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_mkquery.c	6.1 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
