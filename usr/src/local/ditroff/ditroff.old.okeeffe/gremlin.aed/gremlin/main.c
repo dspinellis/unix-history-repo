@@ -1,4 +1,4 @@
-/* @(#)main.c	1.2	%G%
+/* @(#)main.c	1.3	%G%
  *
  * Copyright -C- 1982 Barry S. Roitblat
  *
@@ -13,6 +13,7 @@
 #include <sgtty.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <time.h>
 
 /* imports from config.c */
 
@@ -74,6 +75,10 @@ extern TXFIELD TEdit, TJustmode;
 /* Library routines: */
 
 extern char *malloc(), *sprintf(), *strcat(), *strcpy();
+
+/* Version number */
+
+char SccsId [] = "@(#)main.c	1.3	(Berkeley)	%G%";
 
 #ifdef SIGTINT
 static int lintrup = LINTRUP;    /* Constant for local mode bit */
@@ -350,7 +355,7 @@ char *argv[];
         i = 1 << fileno(stdin);
         GREnableTablet();
         i |= (1 << fileno(tablet));
-        (void) select(20, &i, 0, 10000000);
+        (void) select(20, &i, 0, 0, 0);
         if (i & (1 << fileno(stdin)))
         {
             TxMsgOK();
@@ -415,6 +420,7 @@ OnCommand()
     long charcount;
 #else SIGTINT
     int i;
+    struct timeval selectpoll;
 #endif SIGTINT
 
     static char cmd, lastcmd;
@@ -443,7 +449,9 @@ OnCommand()
     }
 #else SIGTINT
     i = 1 << fileno(stdin);
-    if (select(20, &i, 0, 0) <= 0)
+    selectpoll.tv_sec = 0l;
+    selectpoll.tv_usec = 0l;
+    if (select(20, &i, 0, 0, &selectpoll) <= 0)
     {
         GREnableTablet();
         return;
@@ -472,7 +480,7 @@ OnCommand()
     else 
     {
         TxLine(inline);
-        if (cmd != '\') putchar(cmd);
+        if (cmd != '\') putchar(cmd);
         (void) fflush(stdout);
         SHCommand(&cmd);
     }
