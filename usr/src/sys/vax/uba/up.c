@@ -1,5 +1,5 @@
 #define UPECCDEBUG
-/*	up.c	4.39	81/05/11	*/
+/*	up.c	4.43	82/03/24	*/
 
 #include "up.h"
 #if NSC > 0
