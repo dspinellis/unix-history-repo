@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	5.38 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	5.39 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -22,13 +22,16 @@ static char sccsid[] = "@(#)ftp.c	5.38 (Berkeley) %G%";
 #include <arpa/ftp.h>
 #include <arpa/telnet.h>
 
-#include <stdio.h>
 #include <signal.h>
-#include <errno.h>
 #include <netdb.h>
 #include <fcntl.h>
+#include <errno.h>
 #include <pwd.h>
 #include <varargs.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "ftp_var.h"
 
@@ -38,11 +41,9 @@ int	data = -1;
 int	abrtflag = 0;
 int	ptflag = 0;
 struct	sockaddr_in myctladdr;
-uid_t	getuid();
 sig_t	lostpeer();
 off_t	restart_point = 0;
 
-extern char *strerror();
 extern int connected, errno;
 
 FILE	*cin, *cout;
@@ -673,9 +674,7 @@ recvrequest(cmd, local, remote, lmode, printnames)
 	register int c, d;
 	struct timeval start, stop;
 	struct stat st;
-	off_t lseek();
 	void abortrecv();
-	char *malloc();
 
 	is_retr = strcmp(cmd, "RETR") == 0;
 	if (is_retr && verbose && printnames) {
@@ -818,7 +817,7 @@ recvrequest(cmd, local, remote, lmode, printnames)
 	case TYPE_I:
 	case TYPE_L:
 		if (restart_point &&
-		    lseek(fileno(fout), (long) restart_point, L_SET) < 0) {
+		    lseek(fileno(fout), (off_t)restart_point, L_SET) < 0) {
 			fprintf(stderr, "local: %s: %s\n", local,
 				strerror(errno));
 			if (closefunc != NULL)
