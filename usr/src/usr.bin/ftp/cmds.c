@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -393,8 +393,10 @@ mput(argc, argv)
 		gargs = glob(argv[i]);
 		if (globerr != NULL) {
 			printf("%s\n", globerr);
-			if (gargs)
+			if (gargs) {
 				blkfree(gargs);
+				free(gargs);
+			}
 			continue;
 		}
 		for (cpp = gargs; cpp && *cpp != NULL; cpp++) {
@@ -413,8 +415,10 @@ mput(argc, argv)
 				}
 			}
 		}
-		if (gargs != NULL)
+		if (gargs != NULL) {
 			blkfree(gargs);
+			free(gargs);
+		}
 	}
 	(void) signal(SIGINT, oldintr);
 	mflag = 0;
@@ -1353,15 +1357,19 @@ globulize(cpp)
 	globbed = glob(*cpp);
 	if (globerr != NULL) {
 		printf("%s: %s\n", *cpp, globerr);
-		if (globbed)
+		if (globbed) {
 			blkfree(globbed);
+			free(globbed);
+		}
 		return (0);
 	}
 	if (globbed) {
 		*cpp = *globbed++;
 		/* don't waste too much memory */
-		if (*globbed)
+		if (*globbed) {
 			blkfree(globbed);
+			free(globbed);
+		}
 	}
 	return (1);
 }
