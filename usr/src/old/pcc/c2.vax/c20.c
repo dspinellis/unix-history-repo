@@ -1,6 +1,6 @@
 #
-static	char sccsid[] = "@(#)c20.c 4.1 %G%";
-/* char C20[] = {"@(#)c20.c 1.33 80/08/08 10:01:02"}; /* sccs ident */
+static	char sccsid[] = "@(#)c20.c 4.2 %G%";
+/* char C20[] = {"@(#)c20.c 1.35 80/08/26 14:13:40"}; /* sccs ident */
 /*
  *	 C object code improver
  */
@@ -11,11 +11,11 @@ static	char sccsid[] = "@(#)c20.c 4.1 %G%";
 
 char _sibuf[BUFSIZ], _sobuf[BUFSIZ];
 int ioflag;
-int	isn	= 2000000;
+long	isn	= 2000000;
 struct optab *oplook();
 struct optab *getline();
-int lgensym[10] =
-  {100000,200000,300000,400000,500000,600000,700000,800000,900000,1000000};
+long lgensym[10] =
+  {100000L,200000L,300000L,400000L,500000L,600000L,700000L,800000L,900000L,1000000L};
 
 struct node *
 alloc(an)
@@ -24,6 +24,8 @@ alloc(an)
 	register char *p;
 
 	n = an;
+	n+=sizeof(char *)-1;
+	n &= ~(sizeof(char *)-1);
 	n++;
 	n &= ~01;
 	if (lasta+n >= lastr) {
@@ -129,7 +131,7 @@ input()
 			if (isdigit(line[0]) && (p->labno=locdef(line)) ||
 			  (line[0] == 'L') && (p->labno=getnum(line+1))) {
 				p->combop = LABEL;
-				if (isn<=p->labno) isn=1+p->labno;
+				if (p->labno<100000L && isn<=p->labno) isn=1+p->labno;
 				p->code = 0;
 			} else {
 				p->combop = DLABEL;
