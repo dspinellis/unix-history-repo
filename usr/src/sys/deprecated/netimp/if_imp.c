@@ -1,4 +1,4 @@
-/*	if_imp.c	4.15	82/03/15	*/
+/*	if_imp.c	4.16	82/03/16	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -409,7 +409,7 @@ impoutput(ifp, m0, pf)
 {
 	register struct imp_leader *imp;
 	register struct mbuf *m = m0;
-	int x, dhost, dimp, dlink, len;
+	int x, dhost, dimp, dlink, len, dnet;
 
 COUNT(IMPOUTPUT);
 	/*
@@ -426,8 +426,9 @@ COUNT(IMPOUTPUT);
 		register struct ip *ip = mtod(m0, struct ip *);
 
 		dhost = ip->ip_dst.s_host;
-		dimp = ip->ip_dst.s_imp;
+		dimp = ip->ip_dst.s_impno;
 		dlink = IMPLINK_IP;
+		dnet = 0;
 		len = ntohs((u_short)ip->ip_len);
 		break;
 	}
@@ -460,9 +461,9 @@ COUNT(IMPOUTPUT);
 	imp = mtod(m, struct imp_leader *);
 	imp->il_format = IMP_NFF;
 	imp->il_mtype = IMPTYPE_DATA;
-	imp->il_network = 0;
+	imp->il_network = dnet;
 	imp->il_host = dhost;
-	imp->il_imp = dimp;
+	imp->il_imp = htons((u_short)dimp);
 	imp->il_length =
 		htons((u_short)(len + sizeof(struct imp_leader)) << 3);
 	imp->il_link = dlink;
@@ -595,7 +596,7 @@ printleader(routine, ip)
 	else
 		printf("%x,", ip->il_mtype);
 	printf("htype=%x,host=%x,imp=%x,link=", ip->il_htype, ip->il_host,
-		ip->il_impno);
+		ntohs(ip->il_imp));
 	if (ip->il_link == IMPLINK_IP)
 		printf("ip,");
 	else

@@ -1,4 +1,4 @@
-/*	if_imphost.c	4.8	82/03/15	*/
+/*	if_imphost.c	4.9	82/03/16	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -32,7 +32,6 @@ hostlookup(addr)
 	register int hash = HOSTHASH(addr);
 
 COUNT(HOSTLOOKUP);
-	addr.s_lh = 0;
 	for (m = hosts; m; m = m->m_next) {
 		hp = &mtod(m, struct hmbuf *)->hm_hosts[hash];
 		if (hp->h_refcnt == 0)
@@ -57,7 +56,6 @@ hostenter(addr)
 	register int hash = HOSTHASH(addr);
 
 COUNT(HOSTENTER);
-	addr.s_lh = 0;
 	mprev = &hosts;
 	while (m = *mprev) {
 		mprev = &m->m_next;

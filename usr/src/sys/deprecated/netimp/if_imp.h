@@ -1,4 +1,4 @@
-/*	if_imp.h	4.4	82/02/21	*/
+/*	if_imp.h	4.5	82/03/16	*/
 
 /*
  * Structure of IMP 1822 long leader.
@@ -10,13 +10,7 @@ struct control_leader {
 	u_char	dl_mtype;	/* message type */
 	u_char	dl_htype;	/* handling type */
 	u_char	dl_host;	/* host number */
-	union {
-		u_short	dl_short;
-		u_char	dl_char[2];
-	} dlun;
-#define	dl_imp		dlun.dl_short	/* imp field */
-#define	dl_impno	dlun.dl_char[1]	/* imp number */
-#define	dl_lh		dlun.dl_char[0]	/* logical host */
+	u_short	dl_imp;		/* imp field */
 	u_char	dl_link;	/* link number */
 	u_char	dl_subtype;	/* message subtype */
 };
@@ -30,8 +24,6 @@ struct imp_leader {
 #define	il_htype	il_dl.dl_htype
 #define	il_host		il_dl.dl_host
 #define	il_imp		il_dl.dl_imp
-#define	il_impno	il_dl.dl_impno
-#define	il_lh		il_dl.dl_lh
 #define	il_link		il_dl.dl_link
 #define	il_subtype	il_dl.dl_subtype
 	u_short	il_length;	/* message length */
