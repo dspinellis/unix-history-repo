@@ -8,7 +8,7 @@
  * Lexical processing of commands.
  */
 
-static char *SccsId = "@(#)lex.c	1.16 %G%";
+static char *SccsId = "@(#)lex.c	1.17 %G%";
 
 /*
  * Set up editing on the given file name.
@@ -101,8 +101,10 @@ commands()
 	int prompt, firstsw, stop();
 	register int n;
 	char linebuf[LINESIZE];
-	int hangup();
+	int hangup(), contin();
 
+	sigset(SIGCONT, contin);
+	sighold(SIGCONT);
 	if (rcvmode) {
 		if (sigset(SIGINT, SIG_IGN) != SIG_IGN)
 			sigset(SIGINT, stop);
@@ -143,8 +145,10 @@ commands()
 		if (!rcvmode && !sourcing)
 			return;
 top:
-		if (prompt && !sourcing)
+		if (prompt && !sourcing) {
+			sigrelse(SIGCONT);
 			printf("_\r");
+		}
 		flush();
 		sreset();
 
@@ -178,6 +182,7 @@ top:
 				break;
 			linebuf[n++] = ' ';
 		}
+		sighold(SIGCONT);
 		if (execute(linebuf, 0))
 			return;
 more:		;
@@ -391,6 +396,16 @@ execute(linebuf, contxt)
 	if (!sourcing && (com->c_argtype & T) == 0)
 		sawcom = 1;
 	return(0);
+}
+
+/*
+ * When we wake up after ^Z, reprint the prompt.
+ */
+contin(s)
+{
+
+	printf("_\r");
+	fflush(stdout);
 }
 
 /*
