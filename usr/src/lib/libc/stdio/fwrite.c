@@ -1,4 +1,4 @@
-/* @(#)fwrite.c	4.1 (Berkeley) %G% */
+/* @(#)fwrite.c	4.2 (Berkeley) %G% */
 #include	<stdio.h>
 
 fwrite(ptr, size, count, iop)
@@ -17,7 +17,7 @@ fwrite(ptr, size, count, iop)
 				iop->_ptr += iop->_cnt;
 				s -= iop->_cnt;
 			}
-			if (_flsbuf((unsigned)*ptr++, iop) == EOF)
+			if (_flsbuf((unsigned)*ptr++ & 0377, iop) == EOF)
 				break;
 			s--;
 		}
