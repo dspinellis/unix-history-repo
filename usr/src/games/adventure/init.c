@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*      Re-coding of advent in C: data initialization                   */
@@ -179,7 +179,7 @@ startup()
 {
 	time_t time();
 
-	demo=start(0);
+	demo=Start(0);
 	srand((int)(time((time_t *)NULL)));	/* random seed */
 	/* srand(371);				/* non-random seed */
 	hinted[3]=yes(65,1,0);
