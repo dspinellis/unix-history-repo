@@ -1,0 +1,1 @@
+#define NQE 0
