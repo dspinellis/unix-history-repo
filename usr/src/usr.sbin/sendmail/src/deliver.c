@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)deliver.c	3.70		%G%);
+SCCSID(@(#)deliver.c	3.71		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -919,19 +919,28 @@ putmessage(fp, m, xdot)
 	**
 	**  >>>>>>>>>>	One of the ugliest hacks seen by human eyes is
 	**  >>>>>>>>>>	contained herein: UUCP wants those stupid
-	**  >>>>>>>>>>	"remote from <host>" lines.  Why oh why does a
-	**  >> NOTE >>	well-meaning programmer such as myself have to
+	**  >> NOTE >>	"remote from <host>" lines.  Why oh why does a
+	**  >>>>>>>>>>	well-meaning programmer such as myself have to
 	**  >>>>>>>>>>	deal with this kind of antique garbage????
-	**  >>>>>>>>>>  This even depends on the local UUCP host name
-	**  >>>>>>>>>>  being in the $U macro!!!!
 	*/
 
 	if (!bitset(M_NHDR, m->m_flags))
 	{
 # ifdef UGLYUUCP
 		if (bitset(M_UGLYUUCP, m->m_flags))
-			(void) expand("From $f  $d remote from $U", buf,
+		{
+			extern char *macvalue();
+			char *sys = macvalue('g');
+			char *bang = index(sys, '!');
+
+			if (bang == NULL)
+				syserr("No ! in UUCP! (%s)", sys);
+			else
+				*bang = '\0';
+			(void) expand("From $f  $d remote from $g", buf,
 					&buf[sizeof buf - 1]);
+			*bang = '!';
+		}
 		else
 # endif UGLYUUCP
 			(void) expand("$l", buf, &buf[sizeof buf - 1]);
