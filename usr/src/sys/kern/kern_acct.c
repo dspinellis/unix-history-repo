@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_acct.c	7.17 (Berkeley) %G%
+ *	@(#)kern_acct.c	7.18 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -36,7 +36,15 @@ struct	vnode *acctp;
 struct	vnode *savacctp;
 
 /*
- * Perform process accounting functions.
+ * Enable or disable process accounting.
+ *
+ * If a non-null filename is given, that file is used to store accounting
+ * records on process exit. If a null filename is given process accounting
+ * is suspended. If accounting is enabled, the system checks the amount
+ * of freespace on the filesystem at timeval intervals. If the amount of
+ * freespace is below acctsuspend percent, accounting is suspended. If
+ * accounting has been suspended, and freespace rises above acctresume,
+ * accounting is resumed.
  */
 /* ARGSUSED */
 sysacct(p, uap, retval)
@@ -113,7 +121,8 @@ acctwatch(resettime)
 }
 
 /*
- * On exit, write a record on the accounting file.
+ * This routine calculates an accounting record for a process and,
+ * if accounting is enabled, writes it to the accounting file.
  */
 acct(p)
 	register struct proc *p;
