@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getrlimit.2	5.1 (Berkeley) %G%
+.\"	@(#)getrlimit.2	6.1 (Berkeley) %G%
 .\"
-.TH GETRLIMIT 2 "7 July 1983"
+.TH GETRLIMIT 2 ""
 .UC 4
 .SH NAME
 getrlimit, setrlimit \- control maximum system resource consumption
@@ -38,7 +38,7 @@ The
 parameter is one of the following:
 .TP 17
 RLIMIT_CPU
-the maximum amount of cpu time (in milliseconds) to be used by
+the maximum amount of cpu time (in seconds) to be used by
 each process.
 .TP 17
 RLIMIT_FSIZE
@@ -96,7 +96,7 @@ within the range from 0 to
 or (irreversibly) lower
 .IR rlim_max .
 .PP
-An \*(lqinfinite\*(rq value for a limit is defined as RLIMIT_INFINITY
+An \*(lqinfinite\*(rq value for a limit is defined as RLIM_INFINITY
 (0x7\&f\&f\&f\&f\&f\&f\&f).
 .PP
 Because this information is stored in the per-process information,
