@@ -1,3 +1,13 @@
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)toucholap.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 # include	"curses.ext"
 
 # define	min(a,b)	(a < b ? a : b)
@@ -6,7 +16,6 @@
 /*
  *	Touch, on win2, the part that overlaps with win1.
  *
- * @(#)toucholap.c	1.1 (Berkeley) %G%
  */
 touchoverlap(win1, win2)
 reg WINDOW	*win1, *win2; {

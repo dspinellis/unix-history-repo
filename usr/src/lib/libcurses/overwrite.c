@@ -1,3 +1,13 @@
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)overwrite.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 # include	"curses.ext"
 # include	<ctype.h>
 
@@ -7,7 +17,6 @@
 /*
  *	This routine writes win1 on win2 destructively.
  *
- * @(#)overwrite.c	1.4 (Berkeley) %G%
  */
 overwrite(win1, win2)
 reg WINDOW	*win1, *win2; {

@@ -1,10 +1,19 @@
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)mvscanw.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 # include	"curses.ext"
 
 /*
  * implement the mvscanw commands.  Due to the variable number of
  * arguments, they cannot be macros.  Another sigh....
  *
- * @(#)mvscanw.c	1.3 (Berkeley) %G%
  */
 
 mvscanw(y, x, fmt, args)

@@ -1,9 +1,18 @@
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)touchwin.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 # include	"curses.ext"
 
 /*
  * make it look like the whole window has been changed.
  *
- * @(#)touchwin.c	1.3 (Berkeley) %G%
  */
 touchwin(win)
 register WINDOW	*win;
