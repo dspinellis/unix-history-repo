@@ -1,4 +1,4 @@
-/*	locore.s	1.8	86/07/16	*/
+/*	locore.s	1.9	86/07/20	*/
 
 #include "../tahoe/mtpr.h"
 #include "../tahoe/trap.h"
@@ -311,6 +311,7 @@ SCBVEC(powfail):			# We should be on interrupt stack now.
 	halt
 
 SCBVEC(stray):
+	incl	_cnt+V_INTR		# add to statistics
 	rei
 
 #include "../net/netisr.h"
@@ -494,8 +495,16 @@ SCBVEC(tracep):
 	pushl $0;
 	SAVE_FPSTAT(8)
 	TRAP(TRCTRAP)
+#include "align.h"
 SCBVEC(alignflt):
+#if NALIGN > 0
+	bitl	$PSL_CURMOD,4(sp)
+	jeql	align_excp		# Can't emulate for kernel mode !
+	jbr	non_aligned		# Only emulated for user mode.
+align_excp:
+#else
 	CHECK_SFE(4)
+#endif
 	pushl $0;
 	SAVE_FPSTAT(8)
 	TRAP(ALIGNFLT)
@@ -517,6 +526,7 @@ segflt:
 SCBVEC(fpm):			# Floating Point Emulation
 	CHECK_SFE(16)
 	SAVE_FPSTAT(16)
+	incl	_cnt+V_FPE	# count emulation traps
 	callf	$4,_fpemulate
 	REST_FPSTAT
 	moval	8(sp),sp	# Pop operand
@@ -1573,4 +1583,93 @@ ENTRY(locc, 0)
 0:	aoblss	r1,r0,1b		# while (++cp < end);
 2:
 	subl3	r0,r1,r0; ret		# return (end - cp);
+#endif
+
+#if NALIGN > 0
+
+#include "../tahoealign/align.h"
+
+	.globl	_alignment
+/*
+ * There's an intimate relationship between this piece of code
+ * and the alignment emulation code (especially the layout
+ * of local variables in alignment.c! Don't change unless
+ * you update both this, alignment.h and alignment.c !!
+ */
+non_aligned:
+	orb2	$EMULATEALIGN,_u+U_EOSYS
+	incl	_cnt+V_TRAP
+	incl	_cnt+V_ALIGN		# count emulated alignment traps
+	moval	4(sp),_user_psl
+	SAVE_FPSTAT(4)			# Also zeroes out ret_exception !
+	pushl	$0			# ret_addr
+	pushl	$0			# ret_code
+	mfpr	$USP,-(sp)		# user sp
+	callf	$4,_alignment		# call w/o parms so regs may be modified
+	/*
+	 * We return here after a successful emulation or an exception.
+	 * The registers have been restored and we must not alter them
+	 * before returning to the user.
+	 */
+2:	mtpr	(sp)+,$USP		# restore user sp
+	tstl	8(sp)			# Any exception ?
+	bneq	got_excp		# Yes, reflect it back to user.
+	moval	8(sp),sp		# pop 2 zeroes pushed above
+	REST_FPSTAT
+	xorb2	$EMULATEALIGN,_u+U_EOSYS
+
+	bitl	$PSL_T,4(sp)		# check for trace bit set
+	beql	9f
+	CHECK_SFE(4)
+	pushl $0
+	SAVE_FPSTAT(8)
+	TRAP(TRCTRAP)
+9:	rei
+
+got_excp:				# decode exception
+	casel	8(sp),$ILL_ADDRMOD,$ALIGNMENT
+	.align	1
+L1:
+	.word	ill_addrmod-L1
+	.word	ill_access-L1
+	.word	ill_oprnd-L1
+	.word	arithmetic-L1
+	.word	alignment-L1
+	brw	alignment		# default - shouldn't come here at all !
+
+ill_addrmod:				# No other parameters. Set up stack as
+	moval	8(sp),sp		# the HW would do it in a real case.
+	REST_FPSTAT
+	jbr	_Xresadflt
+ill_oprnd:
+	moval	8(sp),sp
+	REST_FPSTAT
+	jbr	_Xresopflt
+alignment:
+	moval	8(sp),sp
+	REST_FPSTAT
+	jbr	align_excp	# NB: going to _Xalignflt would cause loop
+ill_access:
+	/*
+	 * Must restore accumulator w/o modifying sp and w/o using
+	 * registers.  Solution: copy things needed by REST_FPSTAT.
+	 */
+	pushl	20(sp)			# The flags longword
+	pushl	20(sp)			# acc_low
+	pushl	20(sp)			# acc_high
+	pushl	20(sp)			# ret_exception ignored by REST_FPSTAT 
+	REST_FPSTAT			# Back where we were with the sp !
+	movl	(sp),16(sp)		# code for illegal access
+	movl	4(sp),20(sp)		# original virtual address
+	moval	16(sp),sp		# Just like the HW would set it up
+	jbr	_Xprotflt
+arithmetic:				# same trickery as above
+	pushl	20(sp)			# The flags longword
+	pushl	20(sp)			# acc_low
+	pushl	20(sp)			# acc_high
+	pushl	20(sp)			# ret_exception ignored by REST_FPSTAT 
+	REST_FPSTAT			# Back where we were with the sp !
+	movl	(sp),20(sp)		# code for arithmetic exception
+	moval	20(sp),sp		# Just like the HW would set it up
+	jbr	_Xarithtrap
 #endif
