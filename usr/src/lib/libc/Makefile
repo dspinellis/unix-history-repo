@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.18 (Berkeley) %G%
+#	@(#)Makefile	4.19 (Berkeley) %G%
 #
 #
 # The system has two monitoring schemes, utilizing either ``prof''
@@ -20,8 +20,11 @@
 # The C run-time startup code is always machine dependent and expected
 # to be located in ${MACHINE}/csu
 #
-# All files contain sccsid strings. To compile a library that does
-# not include these strings one must add -Dlint to DEFS below.
+# All files contain sccsid strings, but these are not compiled into
+# library objects by default, as a space-saving measure.  To produce
+# a library that contains these strings in every object except
+# system call stubs, add -DLIBC_SCCS to DEFS below; to put these
+# strings into system call stubs, use -DSYSLIBC_SCCS.
 #
 # There are two possible methods of doing host name look up.  They are
 # to use the name server or /etc/hosts. HOSTLOOKUP defines which method
