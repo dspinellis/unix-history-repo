@@ -11,7 +11,7 @@
  *
  * from: $Hdr: dcm.c 1.26 91/01/21$
  *
- *	@(#)dcm.c	7.13 (Berkeley) %G%
+ *	@(#)dcm.c	7.14 (Berkeley) %G%
  */
 
 /*
@@ -89,7 +89,7 @@ struct speedtab dcmspeedtab[] = {
 
 /*
  * Per board interrupt scheme.  16.7ms is the polling interrupt rate
- * (16.7ms is about 550 buad, 38.4k is 72 chars in 16.7ms).
+ * (16.7ms is about 550 baud, 38.4k is 72 chars in 16.7ms).
  */
 #define DIS_TIMER	0
 #define DIS_PERCHAR	1
@@ -124,7 +124,7 @@ extern	struct tty *constty;
  */
 #include "machine/remote-sl.h"
 
-extern int kgdb_dev;
+extern dev_t kgdb_dev;
 extern int kgdb_rate;
 extern int kgdb_debug_init;
 #endif
@@ -165,13 +165,48 @@ struct	dcmstats {
 #define PORT(x)		((x) & 3)
 #define MKUNIT(b,p)	(((b) << 2) | (p))
 
+/*
+ * Conversion from "HP DCE" to almost-normal DCE: on the 638 8-port mux,
+ * the distribution panel uses "HP DCE" conventions.  If requested via
+ * the device flags, we swap the inputs to something closer to normal DCE,
+ * allowing a straight-through cable to a DTE or a reversed cable
+ * to a DCE (reversing 2-3, 4-5, 8-20 and leaving 6 unconnected;
+ * this gets "DCD" on pin 20 and "CTS" on 4, but doesn't connect
+ * DSR or make RTS work, though).  The following gives the full
+ * details of a cable from this mux panel to a modem:
+ *
+ *		     HP		    modem
+ *		name	pin	pin	name
+ * HP inputs:
+ *		"Rx"	 2	 3	Tx
+ *		CTS	 4	 5	CTS	(only needed for CCTS_OFLOW)
+ *		DCD	20	 8	DCD
+ *		"DSR"	 9	 6	DSR	(unneeded)
+ *		RI	22	22	RI	(unneeded)
+ *
+ * HP outputs:
+ *		"Tx"	 3	 2	Rx
+ *		"DTR"	 6	not connected
+ *		"RTS"	 8	20	DTR
+ *		"SR"	23	 4	RTS	(often not needed)
+ */
+#define	FLAG_STDDCE	0x10	/* map inputs if this bit is set in flags */
+#define hp2dce_in(ibits)	(iconv[(ibits) & 0xf])
+static char iconv[16] = {
+	0,		MI_DM,		MI_CTS,		MI_CTS|MI_DM,
+	MI_CD,		MI_CD|MI_DM,	MI_CD|MI_CTS,	MI_CD|MI_CTS|MI_DM,
+	MI_RI,		MI_RI|MI_DM,	MI_RI|MI_CTS,	MI_RI|MI_CTS|MI_DM,
+	MI_RI|MI_CD,	MI_RI|MI_CD|MI_DM, MI_RI|MI_CD|MI_CTS,
+	MI_RI|MI_CD|MI_CTS|MI_DM
+};
+
 dcmprobe(hd)
 	register struct hp_device *hd;
 {
 	register struct dcmdevice *dcm;
 	register int i;
 	register int timo = 0;
-	int s, brd, isconsole;
+	int s, brd, isconsole, mbits;
 
 	dcm = (struct dcmdevice *)hd->hp_addr;
 	if ((dcm->dcm_rsid & 0x1f) != DCMID)
@@ -185,7 +220,7 @@ dcmprobe(hd)
 	 * CONSUNIT).  Don't recognize this card.
 	 */
 	if (isconsole && dcm != dcm_addr[BOARD(dcmconsole)])
-		return(0);
+		return (0);
 
 	/*
 	 * Empirically derived self-test magic
@@ -198,17 +233,17 @@ dcmprobe(hd)
 	dcm->dcm_cr = CR_SELFT;
 	while ((dcm->dcm_ic & IC_IR) == 0)
 		if (++timo == 20000)
-			return(0);
+			return (0);
 	DELAY(50000)	/* XXX why is this needed ???? */
 	while ((dcm->dcm_iir & IIR_SELFT) == 0)
 		if (++timo == 400000)
-			return(0);
+			return (0);
 	DELAY(50000)	/* XXX why is this needed ???? */
 	if (dcm->dcm_stcon != ST_OK) {
 		if (!isconsole)
 			printf("dcm%d: self test failed: %x\n",
 			       brd, dcm->dcm_stcon);
-		return(0);
+		return (0);
 	}
 	dcm->dcm_ic = IC_ID;
 	splx(s);
@@ -224,7 +259,7 @@ dcmprobe(hd)
 #ifdef KGDB
 	if (major(kgdb_dev) == dcmmajor && BOARD(kgdb_dev) == brd) {
 		if (dcmconsole == UNIT(kgdb_dev))
-			kgdb_dev = -1;	/* can't debug over console port */
+			kgdb_dev = NODEV; /* can't debug over console port */
 #ifndef KGDB_CHEAT
 		/*
 		 * The following could potentially be replaced
@@ -253,8 +288,12 @@ dcmprobe(hd)
 	dcm_modem[MKUNIT(brd, 2)] = &dcm->dcm_modem2;
 	dcm_modem[MKUNIT(brd, 3)] = &dcm->dcm_modem3;
 	/* set DCD (modem) and CTS (flow control) on all ports */
+	if (dcmsoftCAR[brd] & FLAG_STDDCE)
+		mbits = hp2dce_in(MI_CD|MI_CTS);
+	else
+		mbits = MI_CD|MI_CTS;
 	for (i = 0; i < 4; i++)
-		dcm_modem[MKUNIT(brd, i)]->mdmmsk = MI_CD|MI_CTS;
+		dcm_modem[MKUNIT(brd, i)]->mdmmsk = mbits;
 
 	dcm->dcm_ic = IC_IE;		/* turn all interrupts on */
 	/*
@@ -280,7 +319,7 @@ dcmopen(dev, flag, mode, p)
 {
 	register struct tty *tp;
 	register int unit, brd;
-	int error = 0;
+	int error = 0, mbits;
 
 	unit = UNIT(dev);
 	brd = BOARD(unit);
@@ -304,7 +343,10 @@ dcmopen(dev, flag, mode, p)
 		ttsetwater(tp);
 	} else if (tp->t_state&TS_XCLUDE && p->p_ucred->cr_uid != 0)
 		return (EBUSY);
-	(void) dcmmctl(dev, MO_ON, DMSET);	/* enable port */
+	mbits = MO_ON;
+	if (dcmsoftCAR[brd] & FLAG_STDDCE)
+		mbits |= MO_SR;		/* pin 23, could be used as RTS */
+	(void) dcmmctl(dev, mbits, DMSET);	/* enable port */
 	if ((dcmsoftCAR[brd] & (1 << PORT(unit))) ||
 	    (dcmmctl(dev, MO_OFF, DMGET) & MI_CD))
 		tp->t_state |= TS_CARR_ON;
@@ -315,7 +357,7 @@ dcmopen(dev, flag, mode, p)
 #endif
 	(void) spltty();
 	while ((flag&O_NONBLOCK) == 0 && (tp->t_cflag&CLOCAL) == 0 &&
-	       (tp->t_state & TS_CARR_ON) == 0) {
+	    (tp->t_state & TS_CARR_ON) == 0) {
 		tp->t_state |= TS_WOPEN;
 		if (error = ttysleep(tp, (caddr_t)&tp->t_rawq, TTIPRI | PCATCH,
 		    ttopen, 0))
@@ -345,19 +387,16 @@ dcmclose(dev, flag, mode, p)
 	unit = UNIT(dev);
 	tp = &dcm_tty[unit];
 	(*linesw[tp->t_line].l_close)(tp, flag);
-#ifdef KGDB
-	if (dev != kgdb_dev)
-#endif
-	(void) dcmmctl(dev, MO_OFF, DMSET);
-	if (tp->t_state & TS_HUPCLS)
-		(*linesw[tp->t_line].l_modem)(tp, 0);
+	if (tp->t_cflag&HUPCL || tp->t_state&TS_WOPEN ||
+	    (tp->t_state&TS_ISOPEN) == 0)
+		(void) dcmmctl(dev, MO_OFF, DMSET);
 #ifdef DEBUG
 	if (dcmdebug & DDB_OPENCLOSE)
 		printf("dcmclose: u %x st %x fl %x\n",
 			unit, tp->t_state, tp->t_flags);
 #endif
 	ttyclose(tp);
-	return(0);
+	return (0);
 }
  
 dcmread(dev, uio, flag)
@@ -405,12 +444,15 @@ dcmintr(brd)
 	SEM_LOCK(dcm);
 	if ((dcm->dcm_ic & IC_IR) == 0) {
 		SEM_UNLOCK(dcm);
-		return(0);
+		return (0);
 	}
 	for (i = 0; i < 4; i++) {
 		pcnd[i] = dcm->dcm_icrtab[i].dcm_data;
 		dcm->dcm_icrtab[i].dcm_data = 0;
-		mcnd[i] = dcm_modem[unit+i]->mdmin;
+		code = dcm_modem[unit+i]->mdmin;
+		if (dcmsoftCAR[brd] & FLAG_STDDCE)
+			code = hp2dce_in(code);
+		mcnd[i] = code;
 	}
 	code = dcm->dcm_iir & IIR_MASK;
 	dcm->dcm_iir = 0;	/* XXX doc claims read clears interrupt?! */
@@ -485,7 +527,7 @@ dcmintr(brd)
 		dis->dis_intr = dis->dis_char = 0;
 		dis->dis_time = time.tv_sec;
 	}
-	return(1);
+	return (1);
 }
 
 /*
@@ -631,19 +673,19 @@ dcmmint(unit, mcnd, dcm)
 	delta = mcnd ^ mcndlast[unit];
 	mcndlast[unit] = mcnd;
 	if ((delta & MI_CTS) && (tp->t_state & TS_ISOPEN) &&
-	    (tp->t_flags & CRTSCTS)) {
+	    (tp->t_flags & CCTS_OFLOW)) {
 		if (mcnd & MI_CTS) {
 			tp->t_state &= ~TS_TTSTOP;
 			ttstart(tp);
 		} else
 			tp->t_state |= TS_TTSTOP;	/* inline dcmstop */
 	}
-	if ((delta & MI_CD) &&
-	    (dcmsoftCAR[BOARD(unit)] & (1 << PORT(unit))) == 0) {
+	if (delta & MI_CD) {
 		if (mcnd & MI_CD)
 			(void)(*linesw[tp->t_line].l_modem)(tp, 1);
-		else if ((*linesw[tp->t_line].l_modem)(tp, 0) == 0) {
-			dcm_modem[unit]->mdmout &= ~(MO_DTR|MO_RTS);
+		else if ((dcmsoftCAR[BOARD(unit)] & (1 << PORT(unit))) == 0 &&
+		    (*linesw[tp->t_line].l_modem)(tp, 0) == 0) {
+			dcm_modem[unit]->mdmout = MO_OFF;
 			SEM_LOCK(dcm);
 			dcm->dcm_modemchng |= 1<<(unit & 3);
 			dcm->dcm_cr |= CR_MODM;
@@ -740,14 +782,14 @@ dcmparam(tp, t)
 
 	/* check requested parameters */
         if (ospeed < 0 || (t->c_ispeed && t->c_ispeed != t->c_ospeed))
-                return(EINVAL);
+                return (EINVAL);
         /* and copy to tty */
         tp->t_ispeed = t->c_ispeed;
         tp->t_ospeed = t->c_ospeed;
         tp->t_cflag = cflag;
 	if (ospeed == 0) {
 		(void) dcmmctl(UNIT(tp->t_dev), MO_OFF, DMSET);
-		return(0);
+		return (0);
 	}
 
 	mode = 0;
@@ -799,7 +841,7 @@ dcmparam(tp, t)
 	 * XXX why do we do this?
 	 */
 	DELAY(16 * DCM_USPERCH(tp->t_ospeed));
-	return(0);
+	return (0);
 }
  
 dcmstart(tp)
@@ -952,7 +994,7 @@ dcmmctl(dev, bits, how)
 	int bits, how;
 {
 	register struct dcmdevice *dcm;
-	int s, unit, hit = 0;
+	int s, unit, brd, hit = 0;
 
 	unit = UNIT(dev);
 #ifdef DEBUG
@@ -961,7 +1003,8 @@ dcmmctl(dev, bits, how)
 		       BOARD(unit), unit, bits, how);
 #endif
 
-	dcm = dcm_addr[BOARD(unit)];
+	brd = BOARD(unit);
+	dcm = dcm_addr[brd];
 	s = spltty();
 	switch (how) {
 
@@ -982,6 +1025,8 @@ dcmmctl(dev, bits, how)
 
 	case DMGET:
 		bits = dcm_modem[unit]->mdmin;
+		if (dcmsoftCAR[brd] & FLAG_STDDCE)
+			bits = hp2dce_in(bits);
 		break;
 	}
 	if (hit) {
@@ -992,7 +1037,7 @@ dcmmctl(dev, bits, how)
 		DELAY(10); /* delay until done */
 		(void) splx(s);
 	}
-	return(bits);
+	return (bits);
 }
 
 /*
@@ -1109,9 +1154,6 @@ dcmcnprobe(cp)
 	 */
 	if (dcmconsole == UNIT(unit))
 		cp->cn_pri = CN_REMOTE;
-#ifdef KGDB
-	if (major(kgdb_dev) == 2)			/* XXX */
-		kgdb_dev = makedev(dcmmajor, minor(kgdb_dev));
 #ifdef KGDB_CHEAT
 	/*
 	 * This doesn't currently work, at least not with ite consoles;
@@ -1130,7 +1172,6 @@ dcmcnprobe(cp)
 			kgdb_connect(1);
 		}
 	}
-#endif
 #endif
 }
 
@@ -1203,7 +1244,7 @@ dcmcngetc(dev)
 	stat = fifo->data_stat;
 	pp->r_head = (head + 2) & RX_MASK;
 	splx(s);
-	return(c);
+	return (c);
 }
 
 /*
