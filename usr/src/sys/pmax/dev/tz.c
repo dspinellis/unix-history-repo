@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tz.c	7.1 (Berkeley) %G%
+ *	@(#)tz.c	7.2 (Berkeley) %G%
  *
  * from: $Header: /sprite/src/kernel/dev/RCS/devSCSITape.c,
  *	v 8.14 89/07/31 17:26:13 mendel Exp $ SPRITE (Berkeley)
@@ -173,21 +173,21 @@ tzstart(unit)
 	register struct tz_softc *sc = &tz_softc[unit];
 	register struct buf *bp = sc->sc_tab.b_actf;
 	register int n;
-	extern int sii_debug; /* XXX */
 
 	sc->sc_cmd.buf = bp->b_un.b_addr;
 	sc->sc_cmd.buflen = bp->b_bcount;
 
 	if (sc->sc_flags & (TZF_SENSEINPROGRESS | TZF_ALTCMD)) {
-		sc->sc_cmd.dataToDevice = !(bp->b_flags & B_READ);
+		sc->sc_cmd.flags = !(bp->b_flags & B_READ) ?
+			SCSICMD_DATA_TO_DEVICE : 0;
 		sc->sc_cmd.cmd = sc->sc_cdb.cdb;
 		sc->sc_cmd.cmdlen = sc->sc_cdb.len;
 	} else {
 		if (bp->b_flags & B_READ) {
-			sc->sc_cmd.dataToDevice = 0;
+			sc->sc_cmd.flags = 0;
 			sc->sc_rwcmd.command = SCSI_READ;
 		} else {
-			sc->sc_cmd.dataToDevice = 1;
+			sc->sc_cmd.flags = SCSICMD_DATA_TO_DEVICE;
 			sc->sc_rwcmd.command = SCSI_WRITE;
 		}
 		sc->sc_cmd.cmd = (u_char *)&sc->sc_rwcmd;
@@ -205,7 +205,6 @@ tzstart(unit)
 		sc->sc_flags, sc->sc_cmd.buf, sc->sc_cmd.buflen); /* XXX */
 	/* tell controller to start this command */
 	if (sc->sc_cmd.cmd[0] == SCSI_READ)
-		sii_debug = 5; /* XXX */
 	(*sc->sc_sd->sd_cdriver->d_start)(&sc->sc_cmd);
 }
 
@@ -222,7 +221,6 @@ tzdone(unit, error, resid, status)
 	register struct tz_softc *sc = &tz_softc[unit];
 	register struct buf *bp = sc->sc_tab.b_actf;
 	extern int cold;
-	extern int sii_debug; /* XXX */
 
 	printf("tzdone(%d, %d, %d, %x) %x flags %x\n", unit, error, resid,
 		status, sc, sc->sc_flags); /* XXX */
@@ -234,7 +232,6 @@ tzdone(unit, error, resid, status)
 		sc->sc_flags &= ~TZF_SENSEINPROGRESS;
 		sc->sc_tab.b_actf = bp = bp->b_actf;	/* remove sc_errbuf */
 		if (bp == 0) {
-			sii_DumpLog();
 			panic("tzdone"); /* XXX */
 		}
 
@@ -301,7 +298,6 @@ tzdone(unit, error, resid, status)
 	if (sc->sc_tab.b_actf)
 		tzstart(unit);
 	else {
-		sii_debug = 1; /* XXX */
 		sc->sc_tab.b_active = 0;
 		if (sc->sc_flags & TZF_WAIT) {
 			sc->sc_flags &= ~TZF_WAIT;
@@ -342,7 +338,7 @@ tzopen(dev, flags)
 #ifdef notdef
 	if ((flag&FWRITE) && (sc->sc_dsreg&HTDS_WRL)) {
 		sc->sc_openf = 0;
-		uprintf("tu%d: no write ring\n", tuunit);
+		uprintf("tz%d: no write ring\n", unit);
 		return (EIO);
 	}
 	sc->sc_ctty = (caddr_t)(u.u_procp->p_flag & SCTTY ? 
