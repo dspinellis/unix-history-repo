@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)exec.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)exec.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -14,14 +14,22 @@ static char sccsid[] = "@(#)exec.c	5.5 (Berkeley) %G%";
 #include <errno.h>
 #include <unistd.h>
 #include <stdlib.h>
+#if __STDC__
 #include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
 #include <string.h>
 #include <stdio.h>
 #include <paths.h>
 
 extern char **environ;
 
-static char **buildargv(va_list ap, const char *arg, char ***envpp)
+static char **
+buildargv(ap, arg, envpp)
+	va_list ap;
+	const char *arg;
+	char ***envpp;
 {
 	register size_t max, off;
 	register char **argv;
@@ -46,13 +54,25 @@ static char **buildargv(va_list ap, const char *arg, char ***envpp)
 	return(argv);
 }
 
-int execl(const char *name, const char *arg, ...)
+int
+#if __STDC__
+execl(const char *name, const char *arg, ...)
+#else
+execl(name, arg, va_alist)
+	const char *name;
+	const char *arg;
+	va_dcl
+#endif
 {
 	va_list ap;
 	int sverrno;
 	char **argv;
 
+#if __STDC__
 	va_start(ap, arg);
+#else
+	va_start(ap);
+#endif
 	if (argv = buildargv(ap, arg, (char ***)NULL))
 		(void)execve(name, argv, environ);
 	va_end(ap);
@@ -62,13 +82,25 @@ int execl(const char *name, const char *arg, ...)
 	return(-1);
 }
 
-int execle(const char *name, const char *arg, ...)
+int
+#if __STDC__
+execle(const char *name, const char *arg, ...)
+#else
+execle(name, arg, va_alist)
+	const char *name;
+	const char *arg;
+	va_dcl
+#endif
 {
 	va_list ap;
 	int sverrno;
 	char **argv, **envp;
 
+#if __STDC__
 	va_start(ap, arg);
+#else
+	va_start(ap);
+#endif
 	if (argv = buildargv(ap, arg, &envp))
 		(void)execve(name, argv, envp);
 	va_end(ap);
@@ -78,13 +110,25 @@ int execle(const char *name, const char *arg, ...)
 	return(-1);
 }
 
-int execlp(const char *name, const char *arg, ...)
+int
+#if __STDC__
+execlp(const char *name, const char *arg, ...)
+#else
+execlp(name, arg, va_alist)
+	const char *name;
+	const char *arg;
+	va_dcl
+#endif
 {
 	va_list ap;
 	int sverrno;
 	char **argv;
 
+#if __STDC__
 	va_start(ap, arg);
+#else
+	va_start(ap);
+#endif
 	if (argv = buildargv(ap, arg, (char ***)NULL))
 		(void)execvp(name, argv);
 	va_end(ap);
@@ -94,13 +138,19 @@ int execlp(const char *name, const char *arg, ...)
 	return(-1);
 }
 
-int execv(const char *name, char * const *argv)
+int
+execv(name, argv)
+	const char *name;
+	char * const *argv;
 {
 	(void)execve(name, argv, environ);
 	return(-1);
 }
 
-int execvp(const char *name, char * const *argv)
+int
+execvp(name, argv)
+	const char *name;
+	char * const *argv;
 {
 	register char *p;
 	int eacces, etxtbsy;
