@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)init_main.c	7.45 (Berkeley) %G%
+ *	@(#)init_main.c	7.46 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -264,11 +264,11 @@ main()
 			*ip++ = '-';
 		*ip++ = '\0';
 
-		addr = 0;
+		addr = VM_MIN_ADDRESS;
 		initproc = p = curproc;
 		if (vm_allocate(&p->p_vmspace->vm_map, &addr,
 		    round_page(szicode + sizeof(initflags)), FALSE) != 0 ||
-		    addr != 0)
+		    addr != VM_MIN_ADDRESS)
 			panic("init: couldn't allocate at zero");
 
 		/* need just enough stack to exec from */
@@ -277,8 +277,10 @@ main()
 		    PAGE_SIZE, FALSE) != KERN_SUCCESS)
 			panic("vm_allocate init stack");
 		p->p_vmspace->vm_maxsaddr = (caddr_t)addr;
-		(void)copyout((caddr_t)icode, (caddr_t)0, (u_int)szicode);
-		(void)copyout(initflags, (caddr_t)szicode, sizeof(initflags));
+		(void)copyout((caddr_t)icode, (caddr_t)VM_MIN_ADDRESS,
+		    (u_int)szicode);
+		(void)copyout(initflags, (caddr_t)(VM_MIN_ADDRESS + szicode),
+		    sizeof(initflags));
 		return;			/* returns to icode */
 	}
 
