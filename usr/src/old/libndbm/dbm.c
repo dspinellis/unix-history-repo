@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dbm.c	5.2 (Berkeley) 85/06/26";
+static char sccsid[] = "@(#)dbm.c	5.3 (Berkeley) 85/08/15";
 #endif not lint
 
 #include	"dbm.h"
@@ -25,7 +25,8 @@ dbminit(file)
 	cur_db = dbm_open(file, 2, 0);
 	if (cur_db == NODB) {
 		cur_db = dbm_open(file, 0, 0);
-		return (-1);
+		if (cur_db == NODB)
+			return (-1);
 	}
 	return (0);
 }
