@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)invert.c	2.6	%G%";
+static char sccsid[] = "@(#)invert.c	2.7	%G%";
 #endif not lint
 #
 /*  input:  records of lines, separated by blank lines
@@ -9,15 +9,12 @@ static char sccsid[] = "@(#)invert.c	2.6	%G%";
 # include "stdio.h"
 # include "streams.h"
 # include "bib.h"
-# define isnull(x)  (*(x) == NULL)
 # define makelow(c) ('A'<=(c) && (c)<='Z' ? (c)-'A'+'a' : c)
 
 int     max_kcnt = 100;     /*  max number of keys                      */
 int     max_klen =   6;     /*  max length of keys                      */
 char    *ignore =           /*  string of line starts to ignore         */
             "CNOPVX";
-char    *common =           /*  name of file of common words            */
-            COMFILE;
 char    *INDEX=             /*  name of output file                     */
             INDXFILE;
 
@@ -43,14 +40,15 @@ char **arglist;
     char            word[maxstr];
     int             kcnt;
     char            tag_line[maxstr];
+    int 	    bol = 1; /* at beginning of line */
 
     long int	    records = 0;  /*  number of records read           */
     long int	    keys    = 0;  /*  number of keys read (occurences) */
     long int	    distinct;     /*  number of distinct keys          */
     long int	    shorten();
 
-    strcpy(COMFILE, N_COMFILE);
-    strcpy(BMACLIB, N_BMACLIB);
+    InitDirectory(BMACLIB,N_BMACLIB);
+    InitDirectory(COMFILE,N_COMFILE);
 
     argc= argcount-1;
     argv= arglist+1;
@@ -62,32 +60,32 @@ char **arglist;
             filename=   *argv;
             input=      fopen(filename,"r");
             if (input==NULL)
-            {   fprintf(stderr, "invert: error in open of %s\n", filename);
+            {   fprintf(stderr,"invert: error in open of %s\n", filename);
                 continue;
             }
-            start=      0L;
-            length=     0L;
+      start=      0L;
+      length=     0L;
 
-        for(;;) /* each record  */
-        {   /* find start of next record (exit if none)     */
-                start= nextrecord(input,start+length);
-                if (start==EOF)   break;
-            records++;
-	    kcnt= 0;
-            length= recsize(input,start);
-            sprintf(tag_line, " %s %d %d\n", filename, start, length);
+      for(;;) /* each record  */ {
+	 /* find start of next record (exit if none)     */
+	 start= nextrecord(input,start+length);
+	 if (start==EOF)   break;
+	 records++;
+	 kcnt= 0;
+	 length= recsize(input,start);
+	 sprintf(tag_line, " %s %d %d\n", filename, start, length);
 
-            while (ftell(input) < start+length && kcnt < max_kcnt)
-            {   getword(input,word,ignore);
-                makekey(word,max_klen,common);
-                if (!isnull(word))
-                {   fputs(word,output); fputs(tag_line,output);
-                    kcnt++; keys++;
-                }
-            }
-        }
-        fclose(input);
-    }
+	 while (ftell(input) < start+length && kcnt < max_kcnt) {
+	    getword(input,word,ignore,&bol);
+	    makekey(word,max_klen,COMFILE);
+	    if (*word != NULL) {
+	       fputs(word,output); fputs(tag_line,output);
+	       kcnt++; keys++;
+	       }
+	    }
+	 }
+       fclose(input);
+       }
     fclose(output);
 
     sprintf(sortcmd, sort_it, bibtmpfile, bibtmpfile);
@@ -126,7 +124,7 @@ flags()
                         break;
             case 'l':   max_klen= atoi(operand);
                         break;
-            case 'c':   common=  operand;
+            case 'c':   strcpy(COMFILE,operand);
                         break;
             case '%':   ignore=  *argv+2;
                         break;
@@ -143,7 +141,7 @@ flags()
 		strreplace(COMFILE, BMACLIB, p);
 		strcpy(BMACLIB, p);
 		break;
-            default:    fprintf(stderr, "unknown flag '%s'\n", *argv);
+            default:    fprintf(stderr,"unknown flag '%s'\n", *argv);
         }
     }
 }
@@ -169,7 +167,7 @@ char *inf, *outf;
     in=  fopen(inf, "r");
     out= fopen(outf, "w");
     if (in==NULL || out==NULL)
-    {   fprintf(stderr, "invert: error in opening file for compression\n");
+    {   fprintf(stderr,"invert: error in opening file for compression\n");
         return(0);
     }
 

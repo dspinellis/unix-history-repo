@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)bibargs.c	2.12	%G%";
+static char sccsid[] = "@(#)bibargs.c	2.13	%G%";
 #endif not lint
 /*
         Authored by: Tim Budd, University of Arizona, 1983.
@@ -9,6 +9,12 @@ static char sccsid[] = "@(#)bibargs.c	2.12	%G%";
                 David Cherveny - Duke University Medical Center
                 Phil Garrison - UC Berkeley
                 M. J. Hawley - Yale University
+
+
+	       version 8/23/1988
+	 
+	 Adapted to use TiB style macro calls (i.e. |macro|)
+	       A. Dain Samples
 
 
 
@@ -27,6 +33,8 @@ static char sccsid[] = "@(#)bibargs.c	2.12	%G%";
    int  biblineno;              /* line number currently being referenced    */
    int  abbrev       = false;   /* automatically abbreviate names            */
    int  capsmcap     = false;   /* print names in caps small caps (CACM form)*/
+   int  TibOption    = false;   /* expect files in TiB format                */
+   int	TibxOption   = false;   /* to create files for bib2tib               */
    int  numrev       = 0;       /* number of authors names to reverse        */
    int  edabbrev     = false;   /* abbreviate editors names ?                */
    int  edcapsmcap   = false;   /* print editors in cap small caps           */
@@ -34,7 +42,8 @@ static char sccsid[] = "@(#)bibargs.c	2.12	%G%";
    int	max_klen     = 6;	/* max size of key			     */
    int  sort         = false;   /* sort references ? (default no)            */
    int  foot         = false;   /* footnoted references ? (default endnotes) */
-   int  doacite      = true;    /* place citations ? */
+   int  doacite      = true;    /* place citations ?                         */
+   int	redefWarning = false;	/* warnings on attempted redefs ?	     */
    int  hyphen       = false;   /* hypenate contiguous references            */
    int  ordcite      = true;    /* order multiple citations                  */
    char sortstr[80]  = "1";     /* sorting template                          */
@@ -46,6 +55,10 @@ static char sccsid[] = "@(#)bibargs.c	2.12	%G%";
    struct wordinfo *wordhash[HASHSIZE];
    struct wordinfo *wordsearch();
    int  wordtop = 0;           /* number of defined words         */
+   char letterSeen[128];   /* keeps track of keyletters
+		       * so we know whether to emit a .ds
+		       * or a .as 
+		      /* */
 
 /* where output goes */
    extern FILE *tfd;
@@ -56,12 +69,65 @@ static char sccsid[] = "@(#)bibargs.c	2.12	%G%";
    extern FILE *rfd;
 #endif not INCORE
    extern int numrefs;
+   extern char *programName;
+
+char *usageArr[] = {
+"-aa    abbreviate authors' first names",
+"-arN   reverse first N authors' names; no N, do all",
+"-ax    print authors' last names in Caps-Small",
+"-cS    use template S for citations",
+"-d	change the default directory",
+"-ea    abbreviate editors' first names",
+"-ex    print editors' last names in Caps-Small",
+"-erN   reverse first N editors' names; no N, do all",
+"-f     dump reference after citation for footnotes",
+"-iFILE process FILE (e.g. a file of definitions)",
+"-h     hyphenate sequences of citations (turns on -o)",
+"-nS    turn off options; S is composed of the option letters 'afhosx'",
+"-pFILE search these FILEs (comma separated list) instead of INDEX",
+"-R	print warnings when duplicate definitions of names are ignored",
+"-sS    sort references according to template S",
+"-tTYPE use the style TYPE",
+"-Tib   expect files to be in TiB format (which see)",
+"-Tibx	write a file for converting bib to TiB-style |macros|",
+"",
+0
+};
+ 
+void
+usageErr(argv0, opt, str)
+    char *argv0;
+    char *opt;
+    char *str;
+{
+    char  **p;
+    fprintf(stderr, "Illegal invocation of %s.  Acceptable options:\n",
+                                            argv0);
+    fprintf(stderr, "Argument: %s\n", opt);
+    fprintf(stderr, "Problem:  %s\n", str);
+    for (p = usageArr; *p != 0; p++) {
+        fprintf(stderr, "    %s\n", *p);
+        }
+}
+
+/* bibwarning - print out a warning message */
+  /*VARARGS1*/
+  bibwarning(msg, a1, a2)
+  char *msg;
+{
+  fprintf(stderr,"%s: `%s', line %d: ", programName, bibfname, biblineno);
+  fprintf(stderr, msg, a1, a2);
+  fprintf(stderr, "\n");
+}
+
+
 
 /* doargs - read command argument line for both bib and listrefs
             set switch values
             call rdtext on file arguments, after dumping
             default style file if no alternative style is given
 */
+
    int doargs(argc, argv, defstyle)
    int argc;
    char **argv, defstyle[];
@@ -71,19 +137,13 @@ static char sccsid[] = "@(#)bibargs.c	2.12	%G%";
 
    numfiles = 0;
    style = true;
+   TibxOption = false;
    newbibdir(BMACLIB);
 
+   programName = argv[0];
    for (i = 1; i < argc; i++)
       if (argv[i][0] == '-')
          switch(argv[i][1]) {
-			case 'd':
-				if (argv[i][2])
-					p = &argv[i][2];
-				else {  /* take next arg */
-					i++;
-					p = argv[i];
-			}
-			newbibdir(p);
             case 'a':  for (p = &argv[i][2]; *p; p++)
                           if (*p == 'a' || *p == 0)
                              abbrev = true;
@@ -104,6 +164,15 @@ static char sccsid[] = "@(#)bibargs.c	2.12	%G%";
                           for (p = citetemplate,q = &argv[i][2]; *p++ = *q++; );
                        break;
 
+	    case 'd':  if (argv[i][2])
+			    p = &argv[i][2];
+		       else {  /* take next arg */
+			    i++;
+			    p = argv[i];
+			    }
+		       newbibdir(p);
+		       break;
+
             case 'e':  for (p = &argv[i][2]; *p; p++)
                           if (*p == 'a')
                              edabbrev = true;
@@ -118,6 +187,21 @@ static char sccsid[] = "@(#)bibargs.c	2.12	%G%";
                               }
                        break;
 
+            case 'f':  CASE_f:
+		       foot = true;
+                       hyphen = false;
+                       break;
+
+            case 'i':  CASE_i:
+		       if (argv[i][2])
+                          p = &argv[i][2];
+                       else { /* take next arg */
+                          i++;
+                          p = argv[i];
+                          }
+                       incfile(p);
+                       break;
+
 	    case 'l':  if (argv[i][2]){
                           max_klen  = atoi(&argv[i][2]);
 			  if (max_klen > REFSIZE)
@@ -127,32 +211,28 @@ static char sccsid[] = "@(#)bibargs.c	2.12	%G%";
 		       }
 		       break;
 
-            case 'v':  doacite = false;
-			/*FALLTHROUGH*/
-            case 'f':  foot = true;
-                       hyphen = false;
-                       break;
-
             case 'h':  hyphen = ordcite = true;
                        break;
 
             case 'n':  for (p = &argv[i][2]; *p; p++)
                           if (*p == 'a')
                              abbrev = false;
-                          else if (*p == 'v')
-                             doacite = true;
                           else if (*p == 'f')
                              foot = false;
                           else if (*p == 'h')
                              hyphen = false;
                           else if (*p == 'o')
                              ordcite = false;
+                          else if (*p == 'R')
+                             redefWarning = false;
                           else if (*p == 'r')
                              numrev = 0;
                           else if (*p == 's')
                              sort = false;
                           else if (*p == 'x')
                              capsmcap = false;
+                          else if (*p == 'v')
+                             doacite = true;
                        break;
 
             case 'o':  ordcite = true;
@@ -168,7 +248,10 @@ static char sccsid[] = "@(#)bibargs.c	2.12	%G%";
                        personal = true;
                        break;
 
-            case 'r':  if (argv[i][2] == 0)  /* this is now replaced by -ar */
+	    case 'R':  redefWarning = true;
+		       break;
+
+            case 'r':  if (argv[i][2] == 0)  /* synonym -ar */
                           numrev = 1000;
                        else
                           numrev = atoi(&argv[i][2]);
@@ -179,17 +262,24 @@ static char sccsid[] = "@(#)bibargs.c	2.12	%G%";
                           for (p = sortstr,q = &argv[i][2]; *p++ = *q++; );
                        break;
 
-            case 't':  style = false;           /* fall through */
-            case 'i':  if (argv[i][2])
-                          p = &argv[i][2];
-                       else { /* take next arg */
-                          i++;
-                          p = argv[i];
-                          }
-                       incfile(p);
-                       break;
+            case 't':  style = false;
+		       goto CASE_i;
 
-            case 'x':  capsmcap = true; /* this is now replaced by -ax */
+	   case 'T':   if (strcmp("Tib", &(argv[i][1])) == 0) 
+			   TibOption = true;
+		       else if (strcmp("Tibx",&(argv[i][1])) == 0) 
+			   TibxOption = true;
+		       else {
+			    usageErr(argv[0], argv[i], 
+				    "Did you want the Tib option?");
+			    error("'%s' invalid switch", argv[i]);
+			    }
+		       break;
+
+            case 'v':  doacite = false;
+		       goto CASE_f;
+
+            case 'x':  capsmcap = true; /* synonym for -ax */
                        break;
 
             case 0:    if (style) {  /* no style command given, take default */
@@ -201,7 +291,7 @@ static char sccsid[] = "@(#)bibargs.c	2.12	%G%";
                        numfiles++;
                        break;
 
-            default:   fputs(argv[i], stderr);
+            default:   usageErr(argv[0], argv[i], "Invalid switch");
                        error("'%c' invalid switch", argv[i][1]);
             }
       else { /* file name */
@@ -222,6 +312,22 @@ static char sccsid[] = "@(#)bibargs.c	2.12	%G%";
          }
 
    if (style) incfile( defstyle );
+   if (TibxOption) {
+     /*
+     Emits m4 macros that allow easy transformation of old bib-style
+     bibliographic databases into tib-style.  The primary problem 
+     (although not the only one) is the change of |macro| calls.
+      */
+      reg struct wordinfo *wp;
+      FILE *outf;
+      outf = fopen("bib.m4.in","w");
+      for (i=0; i<HASHSIZE; i++) {
+	 for (wp = wordhash[i]; wp != NULL; wp = wp->wi_hp) {
+	    fprintf(outf,"define(%s,|%s__m4_|)dnl\n",wp->wi_word,wp->wi_word);
+	    }
+	 }
+      fclose(outf);
+      }
    return(numfiles);
 
 }
@@ -229,11 +335,11 @@ static char sccsid[] = "@(#)bibargs.c	2.12	%G%";
 newbibdir(name)
 	char *name;
 {
-	strreplace(COMFILE, BMACLIB, name);
-	strreplace(DEFSTYLE, BMACLIB, name);
-	strcpy(BMACLIB, name);
-	wordstuff("BMACLIB", BMACLIB);
-	fprintf(tfd, ".ds l] %s\n", BMACLIB);
+   strreplace(COMFILE, BMACLIB, name);
+   strreplace(DEFSTYLE, BMACLIB, name);
+   strcpy(BMACLIB, name);
+   wordrestuff("BMACLIB", BMACLIB);
+   fprintf(tfd, ".ds l] %s\n", BMACLIB);
 }
 
 /* incfile - read in an included file  */
@@ -244,23 +350,44 @@ incfile(np)
    char *p, line[LINELENGTH], dline[LINELENGTH], word[80], *tfgets();
    int  i, getwrd();
 
-   strcpy(bibfname, np);
-   fd = fopen(np, "r");
+   strcpy(line, bibfname); /* temporary save in case of errors */
+   /* first try ./<yourfile> */
+      strcpy(bibfname, np);
+      fd = fopen(bibfname, "r");
+   /* try BMACLIB/<yourfile> */
    if (fd == NULL && *np != '/') {
-      strcpy(name, "bib.");
-      strcat(name, np);
+      strcpy(name, BMACLIB); strcat(name, "/"); strcat(name, np);
       strcpy(bibfname, name);
-      fd = fopen(name, "r");
+      fd = fopen(bibfname, "r");
       }
-   if (fd == NULL && *np != '/') {
-      strcpy(name,BMACLIB);
-      strcat(name, "/bib.");
-      strcat(name, np);
+   /* try BMACLIB/tibmacs/<yourfile> */
+   if (TibOption && fd == NULL && *np != '/') {
+      strcpy(name, BMACLIB); strcat(name, "/tibmacs/"); strcat(name, np);
       strcpy(bibfname, name);
-      fd = fopen(name, "r");
+      fd = fopen(bibfname, "r");
+      }
+   /* try BMACLIB/bibmacs/<yourfile> */
+   if (!TibOption && fd == NULL && *np != '/') {
+      strcpy(name, BMACLIB); strcat(name, "/bibmacs/"); strcat(name, np);
+      strcpy(bibfname, name);
+      fd = fopen(bibfname, "r");
+      }
+   /* try ./bib.<yourfile> */
+   if (fd == NULL && *np != '/') {
+      strcpy(name, "bib."); strcat(name, np);
+      strcpy(bibfname, name);
+      fd = fopen(bibfname, "r");
+      }
+   /* try BMACLIB/bib.<yourfile> */
+   if (fd == NULL && *np != '/') {
+      strcpy(name,BMACLIB); strcat(name, "/bib."); strcat(name, np);
+      strcpy(bibfname, name);
+      fd = fopen(bibfname, "r");
       }
    if (fd == NULL) {
-      bibwarning("%s: can't open", np);
+      /* unsave old name */
+      strcpy(bibfname, line);
+      bibwarning("%s: can't find", np);
       exit(1);
       }
 
@@ -293,12 +420,14 @@ incfile(np)
          case 'D': if ((i = getwrd(line, 1, word)) == 0)
                       error("word expected in definition");
 		   if (wordsearch(word)) { /* already there-toss rest of def.*/
+			if (redefWarning)
+			   bibwarning("Attempted redefine of %s ignored.",word);
 			while(line[strlen(line)-1] == '\\' ) {
                             if (tfgets(line, LINELENGTH, fd) == NULL) break;
 			}
 			break;
 		   }
-                   for (p = &line[i]; *p == ' '; p++) ;
+                   for (p = &line[i]; isspace(*p); p++) ;
                    for (strcpy(dline, p); dline[strlen(dline)-1] == '\\'; ){
                        dline[strlen(dline)-1] = '\n';
                        if (tfgets(line, LINELENGTH, fd) == NULL) break;
@@ -365,16 +494,6 @@ incfile(np)
    fclose(fd);
 }
 
-/* bibwarning - print out a warning message */
-  /*VARARGS1*/
-  bibwarning(msg, a1, a2)
-  char *msg;
-{
-  fprintf(stderr,"`%s', line %d: ", bibfname, biblineno);
-  fprintf(stderr, msg, a1, a2);
-  fprintf(stderr, "\n");
-}
-
 /* error - report unrecoverable error message */
   /*VARARGS1*/
   error(str, a1, a2)
@@ -436,10 +555,10 @@ int getwrd(in, i, out)
 {  int j;
 
    j = 0;
-   while (in[i] == ' ' || in[i] == '\n' || in[i] == '\t')
+   while (isspace(in[i]))
       i++;
-   if (in[i])
-      while (in[i] && in[i] != ' ' && in[i] != '\t' && in[i] != '\n')
+   if (in[i] != '\0')
+      while (in[i]  != '\0' && !isspace(in[i]))
          out[j++] = in[i++];
    else
       i = 0;    /* signals end of in[i..]   */
@@ -459,36 +578,83 @@ char *walloc(word)
 }
 
 /* isword - see if character is legit word char */
-int iswordc(c)
-char c;
-{
-   if (isalnum(c) || c == '&' || c == '_')
-      return(true);
-   return(false);
-}
+#define iswordc(c) (isalnum(c) || c == '&' || c == '_')
+
    expand(line)
    char *line;
-{  char line2[REFSIZE], word[LINELENGTH];
+{  char line2[REFSIZE], word[REFSIZE];
    reg	struct wordinfo *wp;
    reg	char *p, *q, *w;
 
-	q = line2;
-	for (p = line; *p; /*VOID*/){
-		if (isalnum(*p)) {
-			for (w = word; *p && iswordc(*p); ) *w++ = *p++;
-			*w = 0;
-			if (wp = wordsearch(word)){
-				strcpy(word, wp->wi_def);
-				expand(word);
-			}
-			strcpy(q, word);
-			q += strlen(q);
-		} else {
-			*q++ = *p++;
-		}
-	}
-	*q = 0;
-	strcpy(line, line2);
+   q = line2;
+   if (TibOption) {
+      /* expand only macro names in |name| vertical bars; name must exist */
+      for (p = line; *p != '\0'; /* VOID */ ) {
+	 if (*p == '|') {
+	    p++;
+	    w = word;
+	    while (*p != '|' && *p != '\0' && !isspace(*p)) { *w++ = *p++; }
+	    *w = '\0';
+	    /* skip second '|', if present */
+	    if (*p++ != '|') {
+	       --p;
+	       bibwarning("Unbalanced |macro| bars\n");
+	       }
+	    else if ((wp = wordsearch(word)) != 0) {
+	       strcpy(word, wp->wi_def);
+	       if (wp->wi_expanding) {
+		  bibwarning("Recursive definition for |%s|\n", word);
+		  }
+	       else {
+		  wp->wi_expanding = true;
+		  expand(word);
+		  wp->wi_expanding = false;
+		  }
+	       }
+	    else {
+	       char errword[REFSIZE];
+	       bibwarning("word |%s| not defined\n", word);
+	       strcpy(errword, "?");
+	       strcat(errword, word);
+	       strcat(errword, "?");
+	       wordstuff(word, errword);
+	       strcpy(word, errword);
+	       }
+	    for (w = word; *w != '\0'; *q++ = *w++);
+	    }
+	 else {
+	    *q++ = *p++;
+	    }
+	 }    
+      }
+   else {
+      for (p = line; *p != '\0'; /*VOID*/){
+	 if (isalnum(*p)) {
+	    for (w = word; *p && iswordc(*p); ) *w++ = *p++;
+	    *w = 0;
+	    if (wp = wordsearch(word)){
+	       if (wp->wi_expanding) 
+		  bibwarning("Recursive definition for %s\n", word);
+	       else {
+		  strcpy(word, wp->wi_def);
+		  wp->wi_expanding = true;
+		  expand(word);
+		  wp->wi_expanding = false;
+		  }
+	       }
+	    for (w = word; *w != '\0'; *q++ = *w++);
+	    }
+	 else if (*p == '\\' && *(p+1) != '\0') {
+	    *q++ = *p++;
+	    *q++ = *p++;
+	    }
+	 else {
+	    *q++ = *p++;
+	    }
+	 }
+      }
+   *q = 0;
+   strcpy(line, line2);
 }
 
 /* wordstuff- save a word and its definition, building a hash table */
@@ -499,9 +665,10 @@ char c;
    if (wordtop >= MAXDEFS)
 	error("too many definitions, max of %d", MAXDEFS);
    words[wordtop].wi_length = strlen(word);
-   words[wordtop].wi_word = word ? walloc(word) : 0;
-   words[wordtop].wi_def = def ? walloc(def) : 0;
+   words[wordtop].wi_word = word ? walloc(word) : NULL;
+   words[wordtop].wi_def = def ? walloc(def) : NULL;
    i = strhash(word);
+   words[wordtop].wi_expanding = false;
    words[wordtop].wi_hp = wordhash[i];
    wordhash[i] = &words[wordtop];
    wordtop++;
@@ -518,6 +685,24 @@ char c;
 	}
    }
    return(0);
+}
+/* wordrestuff - save a word and its definition, but replace any existing
+ * definition; this could be more efficient, but it is only used to
+ * redefine BMACLIB at the present.  -ads 8/88
+ */
+   wordrestuff(word, def)
+   char *word, *def;
+{
+   struct wordinfo *wp = wordsearch(word);
+   if (wp == NULL) wordstuff(word, def);
+   else {
+      if (wp->wi_word != NULL) free(wp->wi_word);
+      if (wp->wi_def != NULL) free(wp->wi_def);
+      wp->wi_length = strlen(word);
+      wp->wi_word = word ? walloc(word) : NULL;
+      wp->wi_def = def ? walloc(def) : NULL;
+      wp->wi_expanding = false;
+      }
 }
 
    int strhash(str)
@@ -764,7 +949,6 @@ char c;
             for (fp = field; *fp; )
                *cp++ = *fp++;
             }
-/*       else if (c == '4')          here is how to add new styles */
          else if (c == '{') {                   /* other information   */
             while (*p != '}')
                if (*p == 0)
@@ -918,9 +1102,9 @@ return(cp);
    if (*ptr == 'A')
       getname(1, field, temp, ref);
    else
-      for (p = ref; *p; p++)
+      for (p = ref; *p != '\0'; p++)
          if (*p == '%' && *(p+1) == *ptr) {
-            for (p = p + 2; *p == ' '; p++)
+            for (p = p + 2; isspace(*p); p++)
                ;
             for (q = field; (*p != '\n') && (*p != '\0'); )
                *q++ = *p++;
@@ -1128,19 +1312,20 @@ return(cp);
    int numauths, maxauths, numeds, maxeds;
    FILE *ofd;
 {
+   int appending;
 
    switch(c) {
       case 'A':
           prtauth(c, line, numauths, maxauths, ofd, abbrev, capsmcap, numrev);
           break;
 
-       case 'E':
+      case 'E':
           prtauth(c, line, numeds, maxeds, ofd, edabbrev, edcapsmcap, ednumrev);
           if (numeds == maxeds)
              fprintf(ofd,".nr [E %d\n", maxeds);
           break;
 
-       case 'P':
+      case 'P':
           if (index(line, '-'))
              fprintf(ofd,".nr [P 1\n");
           else
@@ -1150,10 +1335,26 @@ return(cp);
              fprintf(ofd,".ds ]P %c\n",line[strlen(line)-2]);
           break;
 
-       case 'F':
-       case 'K': break;
+      case 'F': break;
 
-       default:
+      /* these now accumulate their entries */
+      /* defined by official bib documentation */
+      case 'K': case 'O': case 'W': 
+      /* not defined by official bib documentation */
+      case 'H': case 'L': case 'M': case 'Q': case 'U': case 'X': case 'Y': 
+      case 'Z':
+	 appending = letterSeen[c];
+	 letterSeen[c] = true;
+	 if (appending)
+	    fprintf(ofd, ".as [%c , %s", c, line);
+	 else
+	    fprintf(ofd, ".ds [%c %s", c, line);
+	 if (index(trailstr, c))
+	    fprintf(ofd, ".ds ]%c %c\n", c, line[strlen(line) - 2]);
+	 break;
+
+      default:
+	  if (!isupper(c)) break; /* ignore what you don't understand */
           fprintf(ofd,".ds [%c %s", c, line);
           if (index(trailstr, c))
              fprintf(ofd,".ds ]%c %c\n", c, line[strlen(line)-2]);
@@ -1168,12 +1369,14 @@ return(cp);
    reg char *p, *q;
    char *from;
    int numauths, maxauths, numeds, maxeds;
+   int j;
 
    if ( i < 0 ) ref[0] = 0; /* ref not found */
    else {
 	   rdref(&refinfo[i], ref);
 	   maxauths = maxeds = 0;
 	   numauths = numeds = 0;
+	   for (j=0; j < 128; j++) letterSeen[j] = 0;
 	   for (p = ref; *p; p++)
 	      if (*p == '%')
 	         if (*(p+1) == 'A') maxauths++;

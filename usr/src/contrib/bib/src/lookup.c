@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)lookup.c	2.5	%G%";
+static char sccsid[] = "@(#)lookup.c	2.6	%G%";
 #endif not lint
 # include "stdio.h"
 # include "streams.h"
@@ -10,8 +10,6 @@ char *locate();
 int     fflag =   0;        /*  print out file names                    */
 int     Aflag =   0;        /*  print hits from All indexes 		*/
 int     max_klen =   6;     /*  max length of keys                      */
-char    *common =           /*  name of file of common words            */
-            COMFILE;
 char    INDEX[maxstr] =     /*  name of index file                      */
             INDXFILE;
 
@@ -27,9 +25,8 @@ char **arglist;
     char one_index[maxstr];
     int found;
 
-    strcpy(BMACLIB, N_BMACLIB);
-    strcpy(COMFILE, N_COMFILE);
-    strcpy(DEFSTYLE, N_DEFSTYLE);
+    InitDirectory(BMACLIB,N_BMACLIB);
+    InitDirectory(COMFILE,N_COMFILE);
 
     argc= argcount-1;
     argv= arglist+1;
@@ -45,10 +42,9 @@ char **arglist;
 	for (p = one_index, q = INDEX; *q != 0 ; q++)
 	    if (*q == ',' )
 	    {   *p = 0;
-	        refs = locate(keys, one_index, max_klen, common);
+	        refs = locate(keys, one_index, max_klen, COMFILE);
 		if( refs==NULL )
-		{   fprintf(stderr,
-			"%s removed from index list.\n", one_index);
+		{   fprintf(stderr,"%s removed from index list.\n", one_index);
 		    /* delete this file name (shift remainder on top) */
 			strcpy(q-strlen(one_index),q+1);
 			q = q-strlen(one_index)-1;
@@ -80,7 +76,7 @@ flags()
                         break;
 	    case 'f':	fflag++;
 			break;
-            case 'c':   common=  operand;
+            case 'c':   strcpy(COMFILE, operand);
                         break;
 	    case 'A':	Aflag++;
 			break;

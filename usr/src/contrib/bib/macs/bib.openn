@@ -1,11 +1,11 @@
 #
-#	"@(#)bib.openn	2.2	%G%";
+#	"@(#)bib.openn	2.3	%G%";
 #
 #  standard open numeric format
 #
 SAD-2
 C1
-I BMACLIB/bibinc.fullnames
+I bibinc.fullnames
 H
 T AT
 # a[ - amount to indent references

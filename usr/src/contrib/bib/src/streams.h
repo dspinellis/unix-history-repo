@@ -1,5 +1,5 @@
 /*
- *	@(#)streams.h	2.2	%G%
+ *	@(#)streams.h	2.3	%G%
  */
 long int nextrecord(), recsize(), nextline();
 

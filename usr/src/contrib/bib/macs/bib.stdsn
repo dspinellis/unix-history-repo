@@ -1,9 +1,9 @@
 #
-#	"@(#)bib.stdsn	2.3	%G%";
+#	"@(#)bib.stdsn	2.4	%G%";
 #
 #  standard sorted numeric
 #
-I BMACLIB/bib.stdn
+I bib.stdn
 SAD-2
 AA
 EA

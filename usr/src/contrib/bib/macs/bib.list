@@ -1,9 +1,9 @@
 #
-#	"@(#)bib.list	2.2	%G%";
+#	"@(#)bib.list	2.3	%G%";
 #
 #  format for listrefs
 #
-I BMACLIB/bibinc.shortnames
+I bibinc.shortnames
 T AT
 H
 .so \*(l]/bmac.std

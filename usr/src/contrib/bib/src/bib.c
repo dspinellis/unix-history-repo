@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)bib.c	2.10	%G%";
+static char sccsid[] = "@(#)bib.c	2.11	%G%";
 #endif not lint
 /*
         Bib - bibliographic formatter
@@ -14,10 +14,13 @@ static char sccsid[] = "@(#)bib.c	2.10	%G%";
                 Phil Garrison - UC Berkeley
                 M. J. Hawley - Yale University
 
-
-
+	       version 8/23/1988
+	 
+	 Adapted to use TiB style macro calls (i.e. |macro|)
+	       A. Dain Samples
 
                                                         */
+
 # include <stdio.h>
 # include <ctype.h>
 # include "bib.h"
@@ -45,10 +48,13 @@ static char sccsid[] = "@(#)bib.c	2.10	%G%";
    char *common = COMFILE;       /* common word file                      */
    int  findex = false;         /* can we read the file INDEX ?          */
 
+char *programName;
+
 /* global variables in bibargs */
    extern int foot, doacite, sort, max_klen, personal;
    extern int hyphen, ordcite, biblineno;
    extern char sortstr[], pfile[], citetemplate[], bibfname[];
+   extern int TibOption;
 
 #include <signal.h>
 
@@ -61,9 +67,9 @@ main(argc, argv)
    /* the file INDEX in the current directory is the default index,
       if it is present */
 
-   strcpy(BMACLIB, N_BMACLIB);
-   strcpy(COMFILE, N_COMFILE);
-   strcpy(DEFSTYLE, N_DEFSTYLE);
+   InitDirectory(BMACLIB,N_BMACLIB);
+   InitDirectory(COMFILE,N_COMFILE);
+   InitDirectory(DEFSTYLE,N_DEFSTYLE);
 
    signal(SIGINT, intr);
    rfd = fopen( INDXFILE , "r");
@@ -92,7 +98,7 @@ main(argc, argv)
                arguments are read by doargs (bibargs.c)
     */
 
-   if (doargs(argc, argv, DEFSTYLE ) == 0) {
+   if (doargs(argc, argv, DEFSTYLE ) == 0) { /* may not return */
       strcpy(bibfname, "<stdin>");
       rdtext(stdin);
       }
@@ -198,7 +204,7 @@ cleanup(val)
    while (getch(c, fd) != EOF)
       switch (c) {
          case ',':
-	    citemark(info, huntstr, (char *)0);
+	    citemark(info, huntstr, "");
             huntstr[0] = info[0] = 0;
             break;
          case '.':
@@ -249,15 +255,12 @@ citemark(info, huntstr, tail)
 		fprintf(tfd, "%c%s%c", FMTSTART, ncitetemplate, FMTEND);
 		ncitetemplate[0] = 0;
 	}
-	if (doacite && (tail != (char *)0))
-	  fprintf(tfd, "%c%d%c%s%c%s", c ,n, c, info, CITEEND, tail);
-	else
-	  fprintf(tfd, "%c%d%c%s%c", c ,n, c, info, CITEEND);
+	fprintf(tfd, "%c%d%c%s%c%s", c ,n, c, info, CITEEND, doacite?tail:"");
 
 }
 
 /* addc - add a character to hunt string */
-   addc(huntstr, c)
+addc(huntstr, c)
    char huntstr[HUNTSIZE], c;
 {  int  i;
 
@@ -267,9 +270,10 @@ citemark(info, huntstr, tail)
    huntstr[i] = c;
    huntstr[i+1] = 0;
 }
+
 /* getref - if an item was already referenced, return its reference index
                 otherwise create a new entry */
-   int getref(huntstr)
+int getref(huntstr)
    char huntstr[HUNTSIZE];
 {  char rf[REFSIZE], *r, *hunt();
    int	match(), getwrd();
@@ -324,6 +328,7 @@ citemark(info, huntstr, tail)
       return(-1);
       }
 }
+
 struct refinfo *refssearch(rf)
    char *rf;
 {
@@ -342,28 +347,51 @@ struct refinfo *refssearch(rf)
    return(0);
 }
 /* hunt - hunt for reference from either personal or system index */
-   char *hunt(huntstr)
+/* the old versions would stop at the first index file where a citation
+ * matched.  This is NOT what is desired.  I have changed it so that it still
+ * returns the first citation found, but also reports the existence of
+ * duplicate entries in an INDEX file as well as across INDEX files.
+ * Also, we do NOT assume that the SYSINDEX has been Tib'd.  Therefore,
+ * if tib style expansion is in effect, the SYSINDEX is not searched.
+ * (Besides which, on Sun systems at least, the SYSINDEX files are
+ * created by refer, not bib, so we can't use them very effectively
+ * anyway.  Besides which again, everything in SYSINDEX is in our
+ * local files anyway.)
+ *                   - ads 8/88
+ */
+char *hunt(huntstr)
    char huntstr[];
-{  char *fhunt(), *r, *p, *q, fname[120];
+{  char *found, *fhunt(), *r, *tp, *sp, fname[120];
 
+   found = NULL;
    if (personal) {
-      for (p = fname, q = pfile; ; q++)
-         if (*q == ',' || *q == 0) {
-            *p = 0;
-            if ((r = fhunt(fname, huntstr)) != NULL)
-               return(r);
-            else if (*q == 0)
+      for (tp = fname, sp = pfile; ; sp++)
+         if (*sp == ',' || *sp == '\0') {
+            *tp = '\0';
+            if ((r = fhunt(fname, huntstr)) != NULL) {
+		if (found != NULL) {
+		    /* we need an option to suppress this message -ads 5/89 */
+		    bibwarning("multiple INDEX files match citation %s\n",
+							huntstr);
+		    return (found);
+		    }
+		found = r;
+		}
+            if (*sp == '\0')
                break;
-            p = fname;
+            tp = fname;
             }
-         else *p++ = *q;
+         else *tp++ = *sp;
+      if (found != NULL) return (found);
       }
    else if (findex) {
-      if ((r = fhunt( INDXFILE , huntstr)) != NULL)
+      if ((r = fhunt(INDXFILE , huntstr)) != NULL)
          return(r);
       }
-   if ((r = fhunt(SYSINDEX , huntstr)) != NULL)
-      return(r);
+   if (!TibOption) {
+      if ((r = fhunt(SYSINDEX , huntstr)) != NULL)
+	 return(r);
+      }
    return(NULL);
 }
 

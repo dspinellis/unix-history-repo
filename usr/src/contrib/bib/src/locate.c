@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)locate.c	2.6	%G%";
+static char sccsid[] = "@(#)locate.c	2.7	%G%";
 #endif not lint
 #
 
@@ -67,31 +67,30 @@ int  max_klen;          /* max key length */
                 else                        pathlen= 0;
 
             index= fopen(oldname,"r");
-            if (index==NULL)
-            {   fprintf(stderr, "locate: cannot open %s\n", oldname);
-		strcpy(oldname, "");
-                return(NULL);
-            }
-            else
-            {   fseek(index,0L,2);     /*  seeks last newline      */
-                i_size= ftell(index);
-            }
+            if (index==NULL) {
+	       fprintf(stderr,"locate: cannot open %s\n", oldname);
+	       strcpy(oldname, "");
+	       return(NULL);
+	       }
+            else {
+	       fseek(index,0L,2);     /*  seeks last newline      */
+               i_size= ftell(index);
+	       }
 
         }
 
     /*  load references to first key  */
         keys= stripkeys(keys,key, max_klen, common);
-	if (*key==NULL)
-	{ fprintf(stderr,"locate: no keys for citation\n");
+	if (*key==NULL) { 
+	  fprintf(stderr,"locate: no keys for citation: %s\n", keys);
 	  allrefs = (char *) calloc(1, sizeof (char));
-	  if (allrefs==NULL)
-	  {  fprintf(stderr, 
-	       "locate: insufficient space for references\n");
-	     exit(1);
-	  }
+	  if (allrefs==NULL) {  
+	    fprintf(stderr,"locate: insufficient space for references\n");
+	    exit(1);
+	    }
 	  *allrefs= NULL;
 	  return(allrefs);
-	}
+	  }
         len= strlen(key);
         strcat(key," ");
         alpha_seek(index, key, i_size, 0);
@@ -108,8 +107,8 @@ int  max_klen;          /* max key length */
         }
 
         if (refcnt==maxrefs)
-            fprintf(stderr,
-		"locate: first key (%s) matched too many refs\n", key);
+	    fprintf(stderr,
+	       "locate: first key (%s) matched too many refs\n", key);
 
     /*  intersect the reference sets for remaining keys with first set */
         while (*keys!=NULL)
@@ -149,7 +148,7 @@ int  max_klen;          /* max key length */
 
     allrefs= (char *) calloc(total+1, sizeof (char));
     if (allrefs==NULL)
-    {   fprintf(stderr, "locate: insufficient space for references\n");
+    {   fprintf(stderr,"locate: insufficient space for references\n");
 	exit(1);
     }
 
@@ -170,7 +169,7 @@ int  max_klen;          /* max key length */
                     if (text) fclose(text);
                     text= fopen(str, "r");
                     if (text==NULL)
-                    {   fprintf(stderr, "locate: cannot open %s\n", str);
+                    {   fprintf(stderr,"locate: cannot open %s\n", str);
 			strcpy(oldtext, "");
                         return(NULL);
                     }

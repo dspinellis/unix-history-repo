@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)listrefs.c	2.5	%G%";
+static char sccsid[] = "@(#)listrefs.c	2.6	%G%";
 #endif not lint
 /*
         Listrefs - list references for bib system
@@ -38,6 +38,7 @@ int numrefs = 0;               /* number of references */
 extern int sort;                /* see if things are to be sorted */
 extern char bibfname[];
 extern int biblineno;
+char *programName;
 
 #include <signal.h>
 main(argc, argv)
@@ -46,11 +47,12 @@ main(argc, argv)
 {  char defult[120];
    int  i, rcomp(), intr();
 
-   strcpy(BMACLIB, N_BMACLIB);
-   strcpy(COMFILE, N_COMFILE);
-   strcpy(DEFSTYLE, N_DEFSTYLE);
+   InitDirectory(BMACLIB,N_BMACLIB);
+   InitDirectory(COMFILE,N_COMFILE);
+   InitDirectory(DEFSTYLE,N_DEFSTYLE);
 
    signal(SIGINT, intr);
+   programName = argv[0];
    tfd = stdout;
    strcpy(defult, BMACLIB);
    strcat(defult,"/bib.list");
@@ -90,14 +92,21 @@ cleanup(val)
 /* rdtext - process a file */
    rdtext(ifile)
    FILE *ifile;
-{  char c, *p, rec[REFSIZE];
+{  int c;
+   char *p, rec[REFSIZE];
    int i;
    int hash, lg;
 
    biblineno = 1;
    for (;;) {
-      while (getch(c, ifile) == '\n')
-         biblineno++;   /* skip leading newlines */
+      getch(c, ifile);
+      for (;;) {
+	 /* skip leading newlines and comments */
+	 if (c == '\n') getch(c, ifile);
+	 else if (c == '#') while (getch(c, ifile) != '\n' && c != EOF) ;
+	 else break;
+         biblineno++;   
+	 }
       if (c == EOF)
          return;
 
@@ -108,7 +117,10 @@ cleanup(val)
                error("ill formed reference file");
             else
                *p++ = c;
-         if (getch(c, ifile) == '\n' || c == EOF) {
+	 /* at end-of-line */
+	 while (getch(c, ifile) == '#') 
+	    while (getch(c, ifile) != '\n' && c != EOF) ;
+         if (c == '\n' || c == EOF) { /* if empty or eof */
             biblineno++;
             *p++ = '\n';
             break;
