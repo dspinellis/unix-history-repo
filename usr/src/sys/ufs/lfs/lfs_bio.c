@@ -4,26 +4,23 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_bio.c	5.3 (Berkeley) %G%
+ *	@(#)lfs_bio.c	5.4 (Berkeley) %G%
  */
 
-#ifdef LOGFS
-#include "param.h"
-#include "proc.h"
-#include "buf.h"
-#include "vnode.h"
-#include "specdev.h"
-#include "mount.h"
-#include "trace.h"
-#include "resourcevar.h"
-#include "lfs.h"
+#include <sys/param.h>
+#include <sys/proc.h>
+#include <sys/buf.h>
+#include <sys/resourcevar.h>
+
+#include <lfs/lfs.h>
+#include <lfs/lfs_extern.h>
 
 /*
  * LFS version of bawrite, bdwrite, bwrite.  Set the delayed write flag and
  * use reassignbuf to move the buffer from the clean list to the dirty one,
  * then unlock the buffer.
  */
-void
+int
 lfs_bwrite(bp)
 	register BUF *bp;
 {
@@ -36,5 +33,5 @@ lfs_bwrite(bp)
 	bp->b_flags |= B_WRITE | B_DELWRI;
 	reassignbuf(bp, bp->b_vp);		/* XXX: do this inline? */
 	brelse(bp);
+	return (0);
 }
-#endif /* LOGFS */
