@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ld.c	6.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)ld.c	6.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /* Linker `ld' for GNU
@@ -77,6 +77,11 @@ char *progname;
 
 #ifdef hp300
 #define	INITIALIZE_HEADER	outheader.a_mid = MID_HP300
+#endif
+
+#ifdef sparc
+#define	INITIALIZE_HEADER \
+	(outheader.a_mid = MID_SUN_SPARC, outheader.a_toolversion = 1)
 #endif
 
 /*
@@ -710,6 +715,9 @@ enum { STRIP_NONE, STRIP_ALL, STRIP_DEBUGGER } strip_symbols;
    This is irrelevant if STRIP_NONE.  */
 enum { DISCARD_NONE, DISCARD_ALL, DISCARD_L } discard_locals;
 
+/* Do we want to pad the text to a page boundary? */
+int padtext;
+
 /* 1 => write load map.  */
 int write_map;
 
@@ -826,6 +834,7 @@ main (argc, argv)
   strip_symbols = STRIP_NONE;
   trace_files = 0;
   discard_locals = DISCARD_NONE;
+  padtext = 0;
   entry_symbol = 0;
   write_map = 0;
   relocatable_output = 0;
@@ -1222,6 +1231,10 @@ decode_option (swt, arg)
 
     case 'o':
       output_filename = arg;
+      return;
+
+    case 'p':
+      padtext = 1;
       return;
 
     case 'r':
@@ -2359,6 +2372,12 @@ digest_symbols ()
       text_pad = ((text_end + page_size - 1) & (- page_size)) - text_end;
       text_size += text_pad;
     }
+  if (padtext)
+    {
+      int text_end = text_size;
+      text_pad = ((text_end + page_size - 1) & (- page_size)) - text_end;
+      text_size += text_pad;
+    }
 
 #ifdef _N_BASEADDR
   /* SunOS 4.1 N_TXTADDR depends on the value of outheader.a_entry.  */
@@ -3208,9 +3227,10 @@ write_output ()
   if (fstat (outdesc, &statbuf) < 0)
     perror_name (output_filename);
 
-  filemode = statbuf.st_mode;
+  (void) fchflags(outdesc, statbuf.st_flags | NODUMP);
 
-  chmod (output_filename, filemode & ~0111);
+  filemode = statbuf.st_mode;
+  (void) fchmod (outdesc, filemode & ~0111);
 
   /* Output the a.out header.  */
   write_header ();
@@ -3229,10 +3249,10 @@ write_output ()
   /* Copy any GDB symbol segments from input files.  */
   write_symsegs ();
 
-  close (outdesc);
-
-  if (chmod (output_filename, filemode | 0111) == -1)
+  if (fchmod (outdesc, filemode | 0111) == -1)
     perror_name (output_filename);
+
+  close (outdesc);
 }
 
 void modify_location (), perform_relocation (), copy_text (), copy_data ();
