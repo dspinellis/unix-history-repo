@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if.h	7.9 (Berkeley) %G%
+ *	@(#)if.h	7.10 (Berkeley) %G%
  */
 
 /*
@@ -106,7 +106,8 @@ struct ifnet {
 #define	IFF_SIMPLEX	0x800		/* can't hear own transmissions */
 
 /* flags set internally only: */
-#define	IFF_CANTCHANGE	(IFF_BROADCAST|IFF_POINTOPOINT|IFF_RUNNING|IFF_OACTIVE)
+#define	IFF_CANTCHANGE \
+	(IFF_BROADCAST|IFF_POINTOPOINT|IFF_RUNNING|IFF_OACTIVE|IFF_SIMPLEX)
 
 /*
  * Output queues (ifp->if_snd) and internetwork datagram level (pup level 1)
