@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1982 Regents of the University of California.
+ * Copyright (c) 1984,1985 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
@@ -293,6 +293,10 @@ idp_ctloutput(req, so, level, name, value)
 			m->m_len = sizeof(long);
 			m->m_off = MMAXOFF - sizeof(long);
 			*mtod(m, long *) = ns_pexseq++;
+			break;
+
+		default:
+			error = EINVAL;
 		}
 		*value = m;
 		break;
@@ -327,12 +331,15 @@ idp_ctloutput(req, so, level, name, value)
 				    = mtod(*value, struct idp *);
 				nsp->nsp_dpt = idp->idp_pt;
 			}
-#ifdef NSIP
 			break;
+#ifdef NSIP
 
 		case SO_NSIP_ROUTE:
 			error = nsip_route(*value);
+			break;
 #endif NSIP
+		default:
+			error = EINVAL;
 		}
 		if (value && *value)
 			m_freem(*value);
