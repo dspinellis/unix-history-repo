@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 #include "restore.h"
@@ -151,10 +151,8 @@ setup()
 		while (--j);
 		endoftapemark.s_spcl.c_checksum = CHECKSUM - i;
 	}
-	if (vflag || command == 't') {
-		fprintf(stdout, "Dump   date: %s", ctime(&spcl.c_date));
-		fprintf(stdout, "Dumped from: %s", ctime(&spcl.c_ddate));
-	}
+	if (vflag || command == 't')
+		printdumpinfo();
 	dumptime = spcl.c_ddate;
 	dumpdate = spcl.c_date;
 	if (stat(".", &stbuf) < 0) {
@@ -173,7 +171,7 @@ setup()
 	}
 	if (readhdr(&spcl) == FAIL)
 		panic("no header after volume mark!\n");
-	findinode(&spcl, 1);
+	findinode(&spcl);
 	if (checktype(&spcl, TS_CLRI) == FAIL) {
 		fprintf(stderr, "Cannot find file removal list\n");
 		done(1);
@@ -212,6 +210,7 @@ getvol(nextvol)
 	long savecnt, i;
 	union u_spcl tmpspcl;
 #	define tmpbuf tmpspcl.s_spcl
+	char buf[TP_BSIZE];
 
 	if (nextvol == 1) {
 		tapesread = 0;
@@ -316,8 +315,14 @@ gethdr:
 			panic("active file into volume 1\n");
 		return;
 	}
+	/*
+	 * Skip up to the beginning of the next record
+	 */
+	if (tmpbuf.c_type == TS_TAPE)
+		for (i = tmpbuf.c_count; i > 0; i--)
+			readtape(buf);
 	(void) gethead(&spcl);
-	findinode(&spcl, curfile.action == UNKNOWN ? 1 : 0);
+	findinode(&spcl);
 	if (gettingfile) {
 		gettingfile = 0;
 		longjmp(restart, 1);
@@ -346,6 +351,18 @@ setdumpnum()
 	if (ioctl(mt, (int)MTIOCTOP, (char *)&tcom) < 0)
 		perror("ioctl MTFSF");
 #endif
+}
+
+printdumpinfo()
+{
+
+	fprintf(stdout, "Dump   date: %s", ctime(&spcl.c_date));
+	fprintf(stdout, "Dumped from: %s", ctime(&spcl.c_ddate));
+	if (spcl.c_host[0] == '\0')
+		return;
+	fprintf(stderr, "Level %d dump of %s on %s:%s\n",
+		spcl.c_level, spcl.c_filesys, spcl.c_host, spcl.c_dev);
+	fprintf(stderr, "Label: %s\n", spcl.c_label);
 }
 
 extractfile(name)
@@ -509,7 +526,7 @@ loop:
 	}
 	if (curblk > 0)
 		(*f1)(buf, (curblk * TP_BSIZE) + size);
-	findinode(&spcl, 1);
+	findinode(&spcl);
 	gettingfile = 0;
 }
 
@@ -853,6 +870,7 @@ good:
 			buf->c_addr[i]++;
 		break;
 
+	case TS_OTAPE:
 	case TS_TAPE:
 	case TS_END:
 		buf->c_inumber = 0;
@@ -882,7 +900,7 @@ accthdr(header)
 	static long predict;
 	long blks, i;
 
-	if (header->c_type == TS_TAPE) {
+	if (header->c_type == TS_TAPE || header->c_type == TS_OTAPE) {
 		fprintf(stderr, "Volume header\n");
 		previno = 0x7fffffff;
 		return;
@@ -926,9 +944,8 @@ newcalc:
  * Find an inode header.
  * Complain if had to skip, and complain is set.
  */
-findinode(header, complain)
+findinode(header)
 	struct s_spcl *header;
-	int complain;
 {
 	static long skipcnt = 0;
 	long i;
@@ -974,7 +991,7 @@ findinode(header, complain)
 		while (gethead(header) == FAIL)
 			skipcnt++;
 	}
-	if (skipcnt > 0 && complain)
+	if (skipcnt > 0)
 		fprintf(stderr, "resync restore, skipped %d blocks\n", skipcnt);
 	skipcnt = 0;
 }
