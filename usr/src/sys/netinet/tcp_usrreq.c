@@ -1,4 +1,4 @@
-/*	tcp_usrreq.c	1.68	82/10/20	*/
+/*	tcp_usrreq.c	1.69	82/10/30	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"

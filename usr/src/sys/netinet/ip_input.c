@@ -1,4 +1,4 @@
-/*	ip_input.c	1.56	82/10/23	*/
+/*	ip_input.c	1.57	82/10/30	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -91,14 +91,12 @@ next:
 			goto bad;
 		}
 
-#if vax || pdp11 || ns16032
 	/*
 	 * Convert fields to host representation.
 	 */
 	ip->ip_len = ntohs((u_short)ip->ip_len);
 	ip->ip_id = ntohs(ip->ip_id);
 	ip->ip_off = ntohs((u_short)ip->ip_off);
-#endif
 
 	/*
 	 * Check that the amount of data in the buffers

@@ -1,4 +1,4 @@
-/*	in_cksum.c	1.14	82/10/17	*/
+/*	in_cksum.c	1.15	82/10/30	*/
 
 #include <sys/types.h>
 #include "../h/mbuf.h"
@@ -11,7 +11,7 @@
  * code and should be rewritten for each CPU to be as fast as possible.
  */
 
-#if vax || pdp11 || ns16032
+#if vax
 in_cksum(m, len)
 	register struct mbuf *m;
 	register int len;

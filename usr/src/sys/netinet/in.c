@@ -1,4 +1,4 @@
-/*	in.c	4.9	82/10/21	*/
+/*	in.c	4.10	82/10/30	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -18,10 +18,7 @@ inet_hash(sin, hp)
 {
 
 	hp->afh_nethash = in_netof(sin->sin_addr);
-	hp->afh_hosthash = sin->sin_addr.s_addr;
-#if vax || pdp11 || ns16032
-	hp->afh_hosthash = ntohl((u_long)hp->afh_hosthash);
-#endif
+	hp->afh_hosthash = ntohl(sin->sin_addr.s_addr);
 }
 
 inet_netmatch(sin1, sin2)
@@ -47,9 +44,7 @@ if_makeaddr(net, host)
 		addr = (net << IN_CLASSB_NSHIFT) | host;
 	else
 		addr = (net << IN_CLASSC_NSHIFT) | host;
-#ifdef vax || pdp11 || ns16032
 	addr = htonl(addr);
-#endif
 	return (*(struct in_addr *)&addr);
 }
 
@@ -59,11 +54,8 @@ if_makeaddr(net, host)
 in_netof(in)
 	struct in_addr in;
 {
-	register u_long i = in.s_addr;
+	register u_long i = ntohl(in.s_addr);
 
-#ifdef vax || pdp11 || ns16032
-	i = ntohl(i);
-#endif
 	if (IN_CLASSA(i))
 		return (((i)&IN_CLASSA_NET) >> IN_CLASSA_NSHIFT);
 	else if (IN_CLASSB(i))
@@ -79,11 +71,8 @@ in_netof(in)
 in_lnaof(in)
 	struct in_addr in;
 {
-	register u_long i = in.s_addr;
+	register u_long i = ntohl(in.s_addr);
 
-#ifdef vax || pdp11 || ns16032
-	i = ntohl(i);
-#endif
 	if (IN_CLASSA(i))
 		return ((i)&IN_CLASSA_HOST);
 	else if (IN_CLASSB(i))
