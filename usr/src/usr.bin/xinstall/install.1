@@ -1,12 +1,10 @@
 .\" Copyright (c) 1987, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)install.1	6.10 (Berkeley) %G%
+.\"     @(#)install.1	6.11 (Berkeley) %G%
 .\"
-.Vx
-.Vx
 .Dd 
 .Dt INSTALL 1
 .Os BSD 4.2
@@ -16,13 +14,13 @@
 .Sh SYNOPSIS
 .Nm install
 .Op Fl cs
-.Op.Fl m Ar mode
+.Op Fl m Ar mode
 .Op Fl o Ar owner
 .Op Fl g Ar group
 .Ar file1 file2
 .Nm install
 .Op Fl cs
-.Op.Fl m Ar mode
+.Op Fl m Ar mode
 .Op Fl o Ar owner
 .Op Fl g Ar group
 .Ar file1
@@ -40,24 +38,24 @@ with its original filename.
 If the target file already exists, it is overwritten if permissions
 allow.
 .Pp
-.Tw Ds
-.Tp Fl m
-option may be used to specify an alternate mode.
+.Bl -tag -width Ds
+.It Fl m
+Specify an alternate mode.
 The default mode is set to 755.
 The specified mode may be either an octal or symbolic value; see
 .Xr chmod  1
 for a description of possible mode values.
-.Tp Fl o
+.It Fl o
 Specify an owner.
-.Tp Fl g
+.It Fl g
 Specify a group.
-.Tp Fl s
+.It Fl s
 .Nm Install
 exec's the command
 .Xr strip  1
 to strip binaries so that install can be portable over a large
 number of systems and binary types.
-.Tp
+.El
 .Pp
 .Nm Install
 refuses to move a file onto itself.
@@ -77,5 +75,7 @@ Otherwise, a value of 1 is returned.
 .Xr a.out 5 ,
 .Xr chown 8
 .Sh HISTORY
-.Nm Install
-appeared in 4.2 BSD.
+The
+.Nm install
+utility appeared in
+.Bx 4.2 .
