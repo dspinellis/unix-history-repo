@@ -1,4 +1,4 @@
-/*	raw_usrreq.c	4.18	82/07/24	*/
+/*	raw_usrreq.c	4.19	82/10/09	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -6,9 +6,8 @@
 #include "../h/socket.h"
 #include "../h/socketvar.h"
 #include "../h/mtpr.h"
-#include "../net/in.h"
-#include "../net/in_systm.h"
 #include "../net/if.h"
+#include "../net/netisr.h"
 #include "../net/raw_cb.h"
 #include <errno.h>
 
@@ -45,7 +44,6 @@ raw_input(m0, proto, src, dst)
 		return;
 	}
 	m->m_next = m0;
-	m->m_off = MMINOFF;
 	m->m_len = sizeof(struct raw_header);
 	rh = mtod(m, struct raw_header *);
 	rh->raw_dst = *dst;
@@ -146,11 +144,11 @@ raw_ctlinput(cmd, arg)
 }
 
 /*ARGSUSED*/
-raw_usrreq(so, req, m, addr)
+raw_usrreq(so, req, m, nam, opt)
 	struct socket *so;
 	int req;
-	struct mbuf *m;
-	caddr_t addr;
+	struct mbuf *m, *nam;
+	struct socketopt *opt;
 {
 	register struct rawcb *rp = sotorawcb(so);
 	int error = 0;
@@ -170,7 +168,7 @@ raw_usrreq(so, req, m, addr)
 			return (EACCES);
 		if (rp)
 			return (EINVAL);
-		error = raw_attach(so, (struct sockaddr *)addr);
+		error = raw_attach(so);
 		break;
 
 	/*
@@ -192,7 +190,7 @@ raw_usrreq(so, req, m, addr)
 	case PRU_CONNECT:
 		if (rp->rcb_flags & RAW_FADDR)
 			return (EISCONN);
-		raw_connaddr(rp, (struct sockaddr *)addr);
+		raw_connaddr(rp, nam);
 		soisconnected(so);
 		break;
 
@@ -215,14 +213,14 @@ raw_usrreq(so, req, m, addr)
 	 * routine handles any massaging necessary.
 	 */
 	case PRU_SEND:
-		if (addr) {
+		if (nam) {
 			if (rp->rcb_flags & RAW_FADDR)
 				return (EISCONN);
-			raw_connaddr(rp, (struct sockaddr *)addr);
+			raw_connaddr(rp, nam);
 		} else if ((rp->rcb_flags & RAW_FADDR) == 0)
 			return (ENOTCONN);
 		error = (*so->so_proto->pr_output)(m, so);
-		if (addr)
+		if (nam)
 			rp->rcb_flags &= ~RAW_FADDR;
 		break;
 
@@ -245,7 +243,9 @@ raw_usrreq(so, req, m, addr)
 		break;
 
 	case PRU_SOCKADDR:
-		bcopy(addr, (caddr_t)&rp->rcb_laddr, sizeof (struct sockaddr));
+		bcopy((caddr_t)&rp->rcb_laddr, mtod(nam, struct sockaddr *),
+		    sizeof (struct sockaddr));
+		nam->m_len = sizeof (struct sockaddr);
 		break;
 
 	default:

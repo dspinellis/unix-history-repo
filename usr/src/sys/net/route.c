@@ -1,4 +1,4 @@
-/*	route.c	4.11	82/06/20	*/
+/*	route.c	4.12	82/10/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -6,8 +6,6 @@
 #include "../h/protosw.h"
 #include "../h/socket.h"
 #include "../h/ioctl.h"
-#include "../net/in.h"
-#include "../net/in_systm.h"
 #include "../net/if.h"
 #include "../net/af.h"
 #include "../net/route.h"

@@ -1,4 +1,4 @@
-/*	raw_cb.c	4.11	82/07/24	*/
+/*	raw_cb.c	4.12	82/10/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -6,11 +6,8 @@
 #include "../h/socket.h"
 #include "../h/socketvar.h"
 #include "../h/mtpr.h"
-#include "../net/in.h"
-#include "../net/in_systm.h"
 #include "../net/if.h"
 #include "../net/raw_cb.h"
-#include "../net/pup.h"
 #include <errno.h>
 
 /*
@@ -26,54 +23,12 @@
  * Allocate a control block and a nominal amount
  * of buffer space for the socket.
  */
-raw_attach(so, addr)
+raw_attach(so)
 	register struct socket *so;
-	struct sockaddr *addr;
 {
 	struct mbuf *m;
 	register struct rawcb *rp;
 
-	if (ifnet == 0)
-		return (EADDRNOTAVAIL);
-	/*
-	 * Should we verify address not already in use?
-	 * Some say yes, others no.
-	 */
-	if (addr) switch (addr->sa_family) {
-
-	case AF_IMPLINK:
-	case AF_INET:
-		if (((struct sockaddr_in *)addr)->sin_addr.s_addr &&
-		    if_ifwithaddr(addr) == 0)
-			return (EADDRNOTAVAIL);
-		break;
-
-#ifdef PUP
-	/*
-	 * Curious, we convert PUP address format to internet
-	 * to allow us to verify we're asking for an Ethernet
-	 * interface.  This is wrong, but things are heavily
-	 * oriented towards the internet addressing scheme, and
-	 * converting internet to PUP would be very expensive.
-	 */
-	case AF_PUP: {
-		struct sockaddr_pup *spup = (struct sockaddr_pup *)addr;
-		struct sockaddr_in inpup;
-
-		bzero((caddr_t)&inpup, sizeof(inpup));
-		inpup.sin_family = AF_INET;
-		inpup.sin_addr.s_net = spup->sp_net;
-		inpup.sin_addr.s_impno = spup->sp_host;
-		if (inpup.sin_addr.s_addr &&
-		    if_ifwithaddr((struct sockaddr *)&inpup) == 0)
-			return (EADDRNOTAVAIL);
-		break;
-	}
-#endif
-
-	default:
-		return (EAFNOSUPPORT);
-	}
 	m = m_getclr(M_DONTWAIT);
 	if (m == 0)
 		return (ENOBUFS);
@@ -86,10 +41,6 @@ raw_attach(so, addr)
 	insque(rp, &rawcb);
 	so->so_pcb = (caddr_t)rp;
 	rp->rcb_pcb = 0;
-	if (addr) {
-		bcopy((caddr_t)addr, (caddr_t)&rp->rcb_laddr, sizeof(*addr));
-		rp->rcb_flags |= RAW_LADDR;
-	}
 	return (0);
 bad2:
 	sbrelease(&so->so_snd);
@@ -124,14 +75,77 @@ raw_disconnect(rp)
 		raw_detach(rp);
 }
 
+raw_bind(so, nam)
+	register struct socket *so;
+	struct mbuf *nam;
+{
+	struct sockaddr *addr = mtod(nam, struct sockaddr *);
+	struct mbuf *m;
+	register struct rawcb *rp;
+
+	if (ifnet == 0)
+		return (EADDRNOTAVAIL);
+{
+#include "../netinet/in.h"
+#include "../netinet/in_systm.h"
+/* BEGIN DUBIOUS */
+	/*
+	 * Should we verify address not already in use?
+	 * Some say yes, others no.
+	 */
+	switch (addr->sa_family) {
+
+	case AF_IMPLINK:
+	case AF_INET:
+		if (((struct sockaddr_in *)addr)->sin_addr.s_addr &&
+		    if_ifwithaddr(addr) == 0)
+			return (EADDRNOTAVAIL);
+		break;
+
+#ifdef PUP
+	/*
+	 * Curious, we convert PUP address format to internet
+	 * to allow us to verify we're asking for an Ethernet
+	 * interface.  This is wrong, but things are heavily
+	 * oriented towards the internet addressing scheme, and
+	 * converting internet to PUP would be very expensive.
+	 */
+	case AF_PUP: {
+#include "../netpup/pup.h"
+		struct sockaddr_pup *spup = (struct sockaddr_pup *)addr;
+		struct sockaddr_in inpup;
+
+		bzero((caddr_t)&inpup, sizeof(inpup));
+		inpup.sin_family = AF_INET;
+		inpup.sin_addr.s_net = spup->sp_net;
+		inpup.sin_addr.s_impno = spup->sp_host;
+		if (inpup.sin_addr.s_addr &&
+		    if_ifwithaddr((struct sockaddr *)&inpup) == 0)
+			return (EADDRNOTAVAIL);
+		break;
+	}
+#endif
+
+	default:
+		return (EAFNOSUPPORT);
+	}
+}
+/* END DUBIOUS */
+	bcopy((caddr_t)addr, (caddr_t)&rp->rcb_laddr, sizeof (*addr));
+	rp->rcb_flags |= RAW_LADDR;
+	return (0);
+}
+
 /*
  * Associate a peer's address with a
  * raw connection block.
  */
-raw_connaddr(rp, addr)
+raw_connaddr(rp, nam)
 	struct rawcb *rp;
-	struct sockaddr *addr;
+	struct mbuf *nam;
 {
+	struct sockaddr *addr = mtod(nam, struct sockaddr *);
+
 	bcopy((caddr_t)addr, (caddr_t)&rp->rcb_faddr, sizeof(*addr));
 	rp->rcb_flags |= RAW_FADDR;
 }
