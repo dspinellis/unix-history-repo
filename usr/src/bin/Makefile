@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.6	(Berkeley)	%G%
+#	@(#)Makefile	4.7	(Berkeley)	%G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -15,7 +15,7 @@ SCRIPT=	false true
 # explicit make lines.
 #
 STD=	ar cat cc chgrp chmod cmp date dd df du echo ed expr \
-	grep hostid hostname kill ld ln login ls mail mkdir mt mv nice \
+	grep hostid hostname kill ld ln login ls mail mkdir mt nice \
 	nm od pagesize passwd pr pwd rm rmail rmdir size strip stty su sync \
 	tee test wall who write
 
@@ -32,13 +32,14 @@ all:	${SUBDIR} ${STD} ${NSTD} cp
 ${SUBDIR}: /tmp
 	cd $@; make ${MFLAGS}
 
-${STD} cp:
+${STD} cp mv:
 	cc ${CFLAGS} -o $@ $@.c
 
-# take care with cp, install uses it
+# take care with cp and mv, install uses them
 install:
 	install cp ${DESTDIR}/bin/newcp; \
 		mv ${DESTDIR}/bin/newcp ${DESTDIR}/bin/cp
+	install -c mv ${DESTDIR}/bin/mv; rm -f mv
 	for i in ${SUBDIR}; do \
 		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install); done
 	for i in ${SCRIPT}; do (install -c $$i.sh ${DESTDIR}/bin/$$i); done
