@@ -1,5 +1,5 @@
 /*
-char id_signal[] = "@(#)signal_.c	1.1";
+char id_signal[] = "@(#)signal_.c	1.2";
  *
  * change the action for a specified signal
  *
@@ -16,12 +16,16 @@ char id_signal[] = "@(#)signal_.c	1.1";
  *	If 'flag' is 0 or positive, it will be passed to signal(2) as the
  *	signal action flag. 0 resets the default action; 1 sets 'ignore'.
  *	'flag' may be the value returned from a previous call to signal.
+ *
+ * This routine arranges to trap user specified signals so that it can
+ * pass the signum fortran style - by address. (boo)
  */
 
 #include	"../libI77/f_errno.h"
 
-/*** NOTE: the type casts for procp and signal are problematical but work ***/
+int (*dispatch[17])();
 int (*signal())();
+int sig_trap();
 
 long signal_(sigp, procp, flag)
 long *sigp, *flag;
@@ -31,8 +35,18 @@ int (*procp)();
 		return(-((long)(errno=F_ERARG)));
 
 	if (*flag < 0)	/* function address passed */
-		return((long)signal((int)*sigp, procp) );
+	{
+		dispatch[*sigp] = procp;
+		return((long)signal((int)*sigp, sig_trap) );
+	}
 
 	else		/* integer value passed */
 		return((long)signal((int)*sigp, (int)*flag) );
+}
+
+sig_trap(sn)
+int sn;
+{
+	long lsn = (long)sn;
+	return((*dispatch[sn])(&lsn));
 }
