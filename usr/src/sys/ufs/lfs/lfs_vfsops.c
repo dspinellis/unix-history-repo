@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vfsops.c	7.83 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	7.84 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -343,10 +343,11 @@ lfs_statfs(mp, sbp, p)
 	sbp->f_type = MOUNT_LFS;
 	sbp->f_bsize = fs->lfs_bsize;
 	sbp->f_iosize = fs->lfs_bsize;
-	sbp->f_blocks = fs->lfs_dsize;
+	sbp->f_blocks = dbtofsb(fs,fs->lfs_dsize);
 	sbp->f_bfree = dbtofsb(fs, fs->lfs_bfree);
 	sbp->f_bavail = (fs->lfs_dsize * (100 - fs->lfs_minfree) / 100) -
 		(fs->lfs_dsize - sbp->f_bfree);
+	sbp->f_bavail = dbtofsb(fs, sbp->f_bavail);
 	sbp->f_files = fs->lfs_nfiles;
 	sbp->f_ffree = sbp->f_bfree * INOPB(fs);
 	if (sbp != &mp->mnt_stat) {
