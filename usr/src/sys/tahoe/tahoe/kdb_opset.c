@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kdb_opset.c	7.5 (Berkeley) %G%
+ *	@(#)kdb_opset.c	7.6 (Berkeley) %G%
  */
 
 #include "../kdb/defs.h"
@@ -193,4 +193,79 @@ kdbprintins(idsp, ins)
 		incp += kdbvar[2]+kdbvar[2]+2;
 	}
 	kdbdotinc = incp;
+}
+ADDR	kdblastframe;
+ADDR	kdbcallpc;
+
+
+kdbstacktrace(dolocals)
+	int dolocals;
+{
+	register int narg;
+	register ADDR argp, frame;
+	int tramp;
+
+	if (kdbadrflg) {
+		frame = kdbadrval;
+		kdbcallpc = getprevpc(frame);
+	} else {
+		frame = kdbpcb.pcb_fp;
+		kdbcallpc = kdbpcb.pcb_pc;
+	}
+	kdblastframe = NOFRAME;
+	while (kdbcntval-- && frame != NOFRAME) {
+		char *name;
+
+		kdbchkerr();
+		/* check for pc in pcb (signal trampoline code) */
+		if (issignalpc(kdbcallpc)) {
+			tramp = 1;
+			name = "sigtramp";
+		} else {
+			tramp = 0;
+			(void) kdbfindsym((long)kdbcallpc, ISYM);
+			if (kdbcursym)
+				name = kdbcursym->n_un.n_name;
+			else
+				name = "?";
+		}
+		kdbprintf("%s(", name);
+		narg = getnargs(frame);
+		if (narg > 10)
+			narg = 10;
+		argp = frame;
+		if (!tramp)
+			while (narg) {
+				kdbprintf("%R",
+				    kdbget((off_t)(argp = nextarg(argp)),
+					DSP));
+				if (--narg != 0)
+					kdbprintc(',');
+			}
+		kdbprintf(") at ");
+		kdbpsymoff((long)kdbcallpc, ISYM, "\n");
+
+		if (dolocals) {
+			register ADDR word;
+
+			while (kdblocalsym((long)frame)) {
+				word = kdbget((off_t)kdblocalval, DSP);
+				kdbprintf("%8t%s:%10t",
+				    kdbcursym->n_un.n_name);
+				if (kdberrflg) {
+					kdbprintf("?\n");
+					kdberrflg = 0;
+				} else
+					kdbprintf("%R\n", word);
+			}
+		}
+		if (!tramp) {
+			kdbcallpc = getprevpc(frame);
+			kdblastframe = frame;
+			frame = getprevframe(frame);
+		} else
+			kdbcallpc = getsignalpc(kdblastframe);
+		if (!kdbadrflg && !INSTACK(frame))
+			break;
+	}
 }
