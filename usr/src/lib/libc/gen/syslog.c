@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)syslog.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslog.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -34,22 +34,20 @@ static char sccsid[] = "@(#)syslog.c	5.1 (Berkeley) %G%";
 #define	MAXLINE	1024			/* max message size */
 #define NULL	0			/* manifest */
 
-#define mask(p)	(1 << (p))
-#define IMPORTANT (mask(KERN_EMERG)|mask(KERN_ALERT)|mask(KERN_ERR)|mask(KERN_FAIL)\
-	|mask(KERN_RECOV)|mask(KERN_INFO)|mask(LOG_EMERG)|mask(LOG_ALERT)\
-	|mask(LOG_CRIT)|mask(LOG_ERR)|mask(LOG_FAIL))
+#define PRIMASK(p)	(1 << ((p) & LOG_PRIMASK))
+#define PRIFAC(p)	(((p) & LOG_FACMASK) >> 3)
+#define IMPORTANT 	LOG_ERR
 
 static char	logname[] = "/dev/log";
 static char	ctty[] = "/dev/console";
 
 static int	LogFile = -1;		/* fd for log */
 static int	LogStat	= 0;		/* status bits, set by openlog() */
-static char	*LogTag = NULL;		/* string to tag the entry with */
-		    			/* mask of priorities to be logged */
-static int	LogMask = ~(mask(KERN_EMERG)|mask(KERN_ALERT)|mask(KERN_ERR)|
-		    mask(KERN_FAIL)|mask(KERN_RECOV)|mask(KERN_INFO));
+static char	*LogTag = "syslog";	/* string to tag the entry with */
+static int	LogMask = 0xff;		/* mask of priorities to be logged */
+static int	LogFacility = LOG_USER;	/* default facility code */
 
-static struct sockaddr SyslogAddr;
+static struct sockaddr SyslogAddr;	/* AF_UNIX address of local logger */
 
 extern	int errno, sys_nerr;
 extern	char *sys_errlist[];
@@ -65,12 +63,21 @@ syslog(pri, fmt, p0, p1, p2, p3, p4)
 	int pid, olderrno = errno;
 
 	/* see if we should just throw out this message */
-	if (pri <= 0 || pri >= 32 || (mask(pri) & LogMask) == 0)
+	if (pri <= 0 || PRIFAC(pri) >= LOG_NFACILITIES || (PRIMASK(pri) & LogMask) == 0)
 		return;
 	if (LogFile < 0)
 		openlog(LogTag, LogStat & ~LOG_ODELAY, 0);
+
+	/* set default facility if none specified */
+	if ((pri & LOG_FACMASK) == 0)
+		pri |= LogFacility;
+
+	/* build the message */
 	o = outline;
 	sprintf(o, "<%d>", pri);
+	o += strlen(o);
+	time(&now);
+	sprintf(o, "%.15s ", ctime(&now) + 4);
 	o += strlen(o);
 	if (LogTag) {
 		strcpy(o, LogTag);
@@ -80,9 +87,10 @@ syslog(pri, fmt, p0, p1, p2, p3, p4)
 		sprintf(o, "[%d]", getpid());
 		o += strlen(o);
 	}
-	time(&now);
-	sprintf(o, ": %.15s-- ", ctime(&now) + 4);
-	o += strlen(o);
+	if (LogTag) {
+		strcpy(o, ": ");
+		o += 2;
+	}
 
 	b = buf;
 	f = fmt;
@@ -108,15 +116,19 @@ syslog(pri, fmt, p0, p1, p2, p3, p4)
 	c = strlen(outline);
 	if (c > MAXLINE)
 		c = MAXLINE;
+
+	/* output the message to the local logger */
 	if (sendto(LogFile, outline, c, 0, &SyslogAddr, sizeof SyslogAddr) >= 0)
 		return;
-	if (!(LogStat & LOG_CONS) && !(mask(pri) & IMPORTANT))
+	if (!(LogStat & LOG_CONS) && (pri & LOG_PRIMASK) <= LOG_ERR)
 		return;
+
+	/* output the message to the console */
 	pid = fork();
 	if (pid == -1)
 		return;
 	if (pid == 0) {
-		LogFile = open(ctty, O_RDWR);
+		LogFile = open(ctty, O_WRONLY);
 		strcat(o, "\r");
 		write(LogFile, outline, c+1);
 		close(LogFile);
@@ -129,15 +141,16 @@ syslog(pri, fmt, p0, p1, p2, p3, p4)
 /*
  * OPENLOG -- open system log
  */
-openlog(ident, logstat, logmask)
-	char *ident;
-	int logstat, logmask;
-{
 
-	LogTag = (ident != NULL) ? ident : "syslog";
+openlog(ident, logstat, logfac)
+	char *ident;
+	int logstat, logfac;
+{
+	if (ident != NULL)
+		LogTag = ident;
 	LogStat = logstat;
-	if (logmask != 0)
-		LogMask = logmask;
+	if (logfac != 0)
+		LogFacility = logfac & LOG_FACMASK;
 	if (LogFile >= 0)
 		return;
 	SyslogAddr.sa_family = AF_UNIX;
