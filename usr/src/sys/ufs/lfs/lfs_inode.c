@@ -1,4 +1,4 @@
-/*	lfs_inode.c	4.15	82/07/01	*/
+/*	lfs_inode.c	4.16	82/07/01	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -289,6 +289,8 @@ iupdat(ip, ta, tm, waitfor)
 		if (ip->i_flag&ICHG)
 			ip->i_ctime = time;
 		ip->i_flag &= ~(IUPD|IACC|ICHG);
+		dp = bp->b_un.b_dino + itoo(fp, ip->i_number);
+		dp->di_ic = ip->i_ic;
 		if (waitfor)
 			bwrite(bp);
 		else
