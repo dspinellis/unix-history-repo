@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	8.20 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	8.21 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -50,6 +50,7 @@ struct vfsops ufs_vfsops = {
 	ffs_fhtovp,
 	ffs_vptofh,
 	ffs_init,
+	ffs_sysctl,
 };
 
 extern u_long nextgennumber;
@@ -68,6 +69,7 @@ ffs_mountroot()
 	register struct mount *mp;
 	struct proc *p = curproc;	/* XXX */
 	struct ufsmount *ump;
+	struct vfsconf *vfsp;
 	u_int size;
 	int error;
 	
@@ -77,9 +79,14 @@ ffs_mountroot()
 	if (bdevvp(swapdev, &swapdev_vp) || bdevvp(rootdev, &rootvp))
 		panic("ffs_mountroot: can't setup bdevvp's");
 
+	for (vfsp = vfsconf; vfsp; vfsp = vfsp->vfc_next)
+		if (!strcmp(vfsp->vfc_name, "ufs"))
+			break;
+	if (vfsp == NULL)
+		return (ENODEV);
 	mp = malloc((u_long)sizeof(struct mount), M_MOUNT, M_WAITOK);
 	bzero((char *)mp, (u_long)sizeof(struct mount));
-	mp->mnt_op = &ufs_vfsops;
+	mp->mnt_op = vfsp->vfc_vfsops;
 	mp->mnt_flag = MNT_RDONLY;
 	if (error = ffs_mountfs(rootvp, mp, p)) {
 		free(mp, M_MOUNT);
@@ -91,8 +98,12 @@ ffs_mountroot()
 		return (error);
 	}
 	TAILQ_INSERT_TAIL(&mountlist, mp, mnt_list);
-	mp->mnt_flag |= MNT_ROOTFS;
 	mp->mnt_vnodecovered = NULLVP;
+	mp->mnt_vfc = vfsp;
+	vfsp->vfc_refcount++;
+	mp->mnt_stat.f_type = vfsp->vfc_typenum;
+	mp->mnt_flag |= (vfsp->vfc_flags & MNT_VISFLAGMASK) | MNT_ROOTFS;
+	strncpy(mp->mnt_stat.f_fstypename, vfsp->vfc_name, MFSNAMELEN);
 	ump = VFSTOUFS(mp);
 	fs = ump->um_fs;
 	bzero(fs->fs_fsmnt, sizeof(fs->fs_fsmnt));
@@ -470,9 +481,8 @@ ffs_mountfs(devvp, mp, p)
 	}
 	mp->mnt_data = (qaddr_t)ump;
 	mp->mnt_stat.f_fsid.val[0] = (long)dev;
-	mp->mnt_stat.f_fsid.val[1] = MOUNT_UFS;
+	mp->mnt_stat.f_fsid.val[1] = mp->mnt_vfc->vfc_typenum;
 	mp->mnt_maxsymlinklen = fs->fs_maxsymlinklen;
-	mp->mnt_flag |= MNT_LOCAL;
 	ump->um_mountp = mp;
 	ump->um_dev = dev;
 	ump->um_devvp = devvp;
@@ -560,7 +570,6 @@ ffs_unmount(mp, mntflags, p)
 	free(fs, M_UFSMNT);
 	free(ump, M_UFSMNT);
 	mp->mnt_data = (qaddr_t)0;
-	mp->mnt_flag &= ~MNT_LOCAL;
 	return (error);
 }
 
@@ -610,7 +619,6 @@ ffs_statfs(mp, sbp, p)
 	fs = ump->um_fs;
 	if (fs->fs_magic != FS_MAGIC)
 		panic("ffs_statfs");
-	sbp->f_type = MOUNT_UFS;
 	sbp->f_bsize = fs->fs_fsize;
 	sbp->f_iosize = fs->fs_bsize;
 	sbp->f_blocks = fs->fs_dsize;
@@ -621,6 +629,7 @@ ffs_statfs(mp, sbp, p)
 	sbp->f_files =  fs->fs_ncg * fs->fs_ipg - ROOTINO;
 	sbp->f_ffree = fs->fs_cstotal.cs_nifree;
 	if (sbp != &mp->mnt_stat) {
+		sbp->f_type = mp->mnt_vfc->vfc_typenum;
 		bcopy((caddr_t)mp->mnt_stat.f_mntonname,
 			(caddr_t)&sbp->f_mntonname[0], MNAMELEN);
 		bcopy((caddr_t)mp->mnt_stat.f_mntfromname,
@@ -853,6 +862,53 @@ ffs_vptofh(vp, fhp)
 	ufhp->ufid_ino = ip->i_number;
 	ufhp->ufid_gen = ip->i_gen;
 	return (0);
+}
+
+/*
+ * Initialize the filesystem; just use ufs_init.
+ */
+int
+ffs_init(vfsp)
+	struct vfsconf *vfsp;
+{
+
+	return (ufs_init(vfsp));
+}
+
+/*
+ * fast filesystem related variables.
+ */
+ffs_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
+	int *name;
+	u_int namelen;
+	void *oldp;
+	size_t *oldlenp;
+	void *newp;
+	size_t newlen;
+	struct proc *p;
+{
+	extern int doclusterread, doclusterwrite, doreallocblks, doasyncfree;
+
+	/* all sysctl names at this level are terminal */
+	if (namelen != 1)
+		return (ENOTDIR);		/* overloaded */
+
+	switch (name[0]) {
+	case FFS_CLUSTERREAD:
+		return (sysctl_int(oldp, oldlenp, newp, newlen,
+		    &doclusterread));
+	case FFS_CLUSTERWRITE:
+		return (sysctl_int(oldp, oldlenp, newp, newlen,
+		    &doclusterwrite));
+	case FFS_REALLOCBLKS:
+		return (sysctl_int(oldp, oldlenp, newp, newlen,
+		    &doreallocblks));
+	case FFS_ASYNCFREE:
+		return (sysctl_int(oldp, oldlenp, newp, newlen, &doasyncfree));
+	default:
+		return (EOPNOTSUPP);
+	}
+	/* NOTREACHED */
 }
 
 /*
