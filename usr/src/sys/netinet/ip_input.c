@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ip_input.c	6.18 (Berkeley) %G%
+ *	@(#)ip_input.c	6.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -809,6 +809,11 @@ int	ipsendredirects = IPSENDREDIRECTS;
  * an icmp packet.  Note we can't always generate a meaningful
  * icmp message because icmp doesn't have a large enough repertoire
  * of codes and types.
+ *
+ * If not forwarding (possibly because we have only a single external
+ * network), just drop the packet.  This could be confusing if ipforwarding
+ * was zero but some routing protocol was advancing us as a gateway
+ * to somewhere.  However, we must let the routing protocol deal with that.
  */
 ip_forward(ip, ifp)
 	register struct ip *ip;
@@ -827,9 +832,9 @@ ip_forward(ip, ifp)
 			ip->ip_dst, ip->ip_ttl);
 	ip->ip_id = htons(ip->ip_id);
 	if (ipforwarding == 0 || in_interfaces <= 1) {
-		/* can't tell difference between net and host */
-		type = ICMP_UNREACH, code = ICMP_UNREACH_NET;
-		goto sendicmp;
+		ipstat.ips_cantforward++;
+		m_freem(dtom(ip));
+		return;
 	}
 	if (ip->ip_ttl < IPTTLDEC) {
 		type = ICMP_TIMXCEED, code = ICMP_TIMXCEED_INTRANS;
