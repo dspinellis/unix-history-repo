@@ -1,4 +1,4 @@
-/*	va.c	4.15	82/11/16	*/
+/*	va.c	4.16	82/11/16	*/
 
 #include "va.h"
 #if NVA > 0
@@ -16,7 +16,7 @@
 #include "../h/ubavar.h"
 #include "../h/vcmd.h"
 
-int	vadebug = 1;
+int	vadebug = 0;
 #define	dprintf	if(vadebug)printf
 
 unsigned minvaph();
@@ -80,6 +80,7 @@ struct	buf rvabuf[NVA];
 int	vaprobe(), vaslave(), vaattach(), vadgo();
 struct	uba_device *vadinfo[NVA];
 struct	uba_ctlr *vaminfo[NVA];
+struct	buf vabhdr[NVA];
 u_short	vastd[] = { 0764000, 0 };
 struct	uba_driver vadriver =
     { vaprobe, vaslave, vaattach, vadgo, vastd, "vz", vadinfo, "va", vaminfo };
@@ -124,6 +125,7 @@ vaattach(ui)
 	struct uba_device *ui;
 {
 
+	ui->ui_mi->um_tab.b_actf = &vabhdr[ui->ui_unit];
 }
 
 vaopen(dev)
@@ -159,7 +161,7 @@ vastrategy(bp)
 	register struct uba_ctlr *um;
 	int s;
 
-dprintf("vastrategy(%x)\n", bp);
+	dprintf("vastrategy(%x)\n", bp);
 	ui = vadinfo[VAUNIT(bp->b_dev)];
 	if (ui == 0 || ui->ui_alive == 0) {
 		bp->b_flags |= B_ERROR;
@@ -168,13 +170,19 @@ dprintf("vastrategy(%x)\n", bp);
 	}
 	s = spl4();
 	um = ui->ui_mi;
-	if (um->um_tab.b_actf == NULL)
-		um->um_tab.b_actf = bp;
-	else
-		um->um_tab.b_actl->b_forw = bp;
-	um->um_tab.b_actl = bp;
-	bp = &um->um_tab;
-dprintf("vastrategy: bp=%x actf=%x active=%x\n", bp, bp->b_actf, bp->b_active);
+	bp->b_actf = NULL;
+	if (um->um_tab.b_actf->b_actf == NULL)
+		um->um_tab.b_actf->b_actf = bp;
+	else {
+		printf("bp = 0x%x, um->um_tab.b_actf->b_actf = 0x%x\n",
+			bp, um->um_tab.b_actf->b_actf);
+		panic("vastrategy");
+		um->um_tab.b_actf->b_actl->b_forw = bp;
+	}
+	um->um_tab.b_actf->b_actl = bp;
+	bp = um->um_tab.b_actf;
+	dprintf("vastrategy: bp=%x actf=%x active=%d\n",
+		bp, bp->b_actf, bp->b_active);
 	if (bp->b_actf && bp->b_active == 0)
 		(void) vastart(um);
 	splx(s);
@@ -207,12 +215,12 @@ vastart(um)
 	register struct va_softc *sc;
 	int unit;
 
-dprintf("vastart(%x), bp=%x\n", um, um->um_tab.b_actf);
-	if ((bp = um->um_tab.b_actf) == NULL)
+	dprintf("vastart(%x), bp=%x\n", um, um->um_tab.b_actf->b_actf);
+	if ((bp = um->um_tab.b_actf->b_actf) == NULL)
 		return;
-	um->um_tab.b_active++;
 	unit = VAUNIT(bp->b_dev);
 	sc = &va_softc[unit];
+	sc->sc_tocnt = 0;
 	while (sc->sc_iostate&VAS_PIO) {
 		sc->sc_iostate |= VAS_WANT;
 		sleep((caddr_t)&sc->sc_iostate, VAPRI);
@@ -229,12 +237,11 @@ vadgo(um)
 	register struct uba_ctlr *um;
 {
 	register struct vadevice *vaaddr = (struct vadevice *)um->um_addr;
-	u_short i;
-	short j;
+	register struct buf *bp;
 
-	i = um->um_ubinfo;
-	j = ((um->um_ubinfo >> 12) & 0x30) | um->um_cmd;
-dprintf("vadgo: vaba 0x%x, vacsl 0%o, vawc 0x%x\n", i, j, vaaddr->vawc);
+	bp = um->um_tab.b_actf;
+	va_softc[VAUNIT(bp->b_actf->b_dev)].sc_tocnt = 0;
+	bp->b_active++;
 	vaaddr->vaba = um->um_ubinfo;
 	vaaddr->vacsl = ((um->um_ubinfo >> 12) & 0x30) | um->um_cmd;
 }
@@ -335,7 +342,7 @@ vatimo(dev)
 	if (++sc->sc_tocnt < 2)
 		return;
 	sc->sc_tocnt = 0;
-dprintf("vatimo: calling vaintr\n");
+	dprintf("vatimo: calling vaintr\n");
 	vaintr(dev);
 }
 
@@ -352,7 +359,8 @@ vaintr(dev)
 	um = vaminfo[unit];
 	vaaddr = (struct vadevice *)um->um_addr;
 	e = vaaddr->vacsw;
-dprintf("vaintr: um=%x, e=%x\n", um, e);
+	dprintf("vaintr: um=0x%x, e=0x%x, b_active %d\n",
+		um, e, um->um_tab.b_actf->b_active);
 	if ((e&(VA_DONE|VA_ERROR)) == 0)
 		return;
 	vaaddr->vacsl = 0;
@@ -363,8 +371,8 @@ dprintf("vaintr: um=%x, e=%x\n", um, e);
 		wakeup((caddr_t)&sc->sc_info);
 		return;
 	}
-	if (um->um_tab.b_active) {
-		bp = um->um_tab.b_actf;
+	if (um->um_tab.b_actf->b_active) {
+		bp = um->um_tab.b_actf->b_actf;
 		if (e&VA_ERROR)
 			bp->b_flags |= B_ERROR;
 		if (sc->sc_state&VPRINTPLOT) {
@@ -372,17 +380,15 @@ dprintf("vaintr: um=%x, e=%x\n", um, e);
 			vaaddr->vacsh = VAAUTOSTEP;
 			return;
 		}
-	}
-	ubadone(um);
-	if (um->um_tab.b_active) {
-		um->um_tab.b_active = 0;
-		um->um_tab.b_actf = bp->b_forw;
+		ubadone(um);
+		um->um_tab.b_actf->b_active = 0;
+		um->um_tab.b_actf->b_actf = bp->b_forw;
 		bp->b_active = 0;
 		bp->b_errcnt = 0;
 		bp->b_resid = 0;
 		iodone(bp);
 	}
-	if (um->um_tab.b_actf == 0) {
+	if (um->um_tab.b_actf->b_actf == 0) {
 		sc->sc_iostate &= ~VAS_DMA;
 		if (sc->sc_iostate&VAS_WANT) {
 			sc->sc_iostate &= ~VAS_WANT;
@@ -390,7 +396,7 @@ dprintf("vaintr: um=%x, e=%x\n", um, e);
 		}
 		return;
 	}
-	if (um->um_tab.b_active == 0)
+	if (um->um_tab.b_actf->b_active == 0)
 		vastart(um);
 }
 
@@ -438,8 +444,8 @@ vareset(uban)
 			vaaddr->vacsh = VAPRINTPLOT;
 		DELAY(10000);
 		sc->sc_iostate = VAS_IDLE;
-		um->um_tab.b_active = 0;
-		um->um_tab.b_actf = um->um_tab.b_actl = 0;
+		um->um_tab.b_actf->b_active = 0;
+		um->um_tab.b_actf->b_actf = um->um_tab.b_actf->b_actl = 0;
 		if (um->um_ubinfo) {
 			printf("<%d>", (um->um_ubinfo >> 28) & 0xf);
 			ubadone(um);
