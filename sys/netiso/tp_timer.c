@@ -62,8 +62,8 @@ SOFTWARE.
 /* 
  * ARGO TP
  *
- * $Header: tp_timer.c,v 5.2 88/11/18 17:29:07 nhall Exp $
- * $Source: /usr/argo/sys/netiso/RCS/tp_timer.c,v $
+ * $Header: /a/cvs/386BSD/src/sys/netiso/tp_timer.c,v 1.1.1.1 1993/06/12 14:57:17 rgrimes Exp $
+ * $Source: /a/cvs/386BSD/src/sys/netiso/tp_timer.c,v $
  *
  * Contains all the timer code.  
  * There are two sources of calls to these routines:
@@ -83,6 +83,7 @@ SOFTWARE.
  */
 
 #include "param.h"
+#include "systm.h"
 #include "types.h"
 #include "time.h"
 #include "malloc.h"

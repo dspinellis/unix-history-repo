@@ -62,8 +62,8 @@ SOFTWARE.
 /* 
  * ARGO TP
  *
- * $Header: tp_subr.c,v 5.3 88/11/18 17:28:43 nhall Exp $
- * $Source: /usr/argo/sys/netiso/RCS/tp_subr.c,v $
+ * $Header: /a/cvs/386BSD/src/sys/netiso/tp_subr.c,v 1.1.1.1 1993/06/12 14:57:17 rgrimes Exp $
+ * $Source: /a/cvs/386BSD/src/sys/netiso/tp_subr.c,v $
  *
  * The main work of data transfer is done here.
  * These routines are called from tp.trans.
@@ -75,6 +75,7 @@ SOFTWARE.
  */
 
 #include "param.h"
+#include "systm.h"
 #include "mbuf.h"
 #include "socket.h"
 #include "socketvar.h"
