@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-char version[] = "@(#)main.c 2.2 %G%";
+char version[] = "@(#)main.c 2.3 %G%";
 
 /*	Modified to include h option (recursively extract all files within
  *	a subtree) and m option (recreate the heirarchical structure of
@@ -211,7 +211,7 @@ extractfiles(argc, argv)
 	ino_t	d;
 	int	xtrfile(), xtrskip(), xtrcvtdir(), xtrcvtskip(),
 		xtrlnkfile(), xtrlnkskip(), null();
-	int	mode, uid, gid;
+	int	mode, uid, gid, i;
 	char	name[BUFSIZ + 1];
 	struct	stat stbuf;
 
@@ -291,9 +291,13 @@ rbits:
 	readbits(&dumpmap);
 	while (xtrcnt > 0) {
 again:
-		if (ishead(&spcl) == 0)
+		if (ishead(&spcl) == 0) {
+			i = 0;
 			while(gethead(&spcl) == 0)
-				;
+				i++;
+			fprintf(stderr, "resync restor, skipped %i blocks\n",
+			    i);
+		}
 		if (checktype(&spcl, TS_END) == 1) {
 			fprintf(stderr, "end of tape\n");
 			break;
@@ -786,15 +790,25 @@ readtape(b)
 {
 	register int i;
 	struct s_spcl tmpbuf;
+	char c;
 
 	if (bct >= NTREC) {
 		for (i = 0; i < NTREC; i++)
 			((struct s_spcl *)&tbf[i*TP_BSIZE])->c_magic = 0;
 		bct = 0;
 		if ((i = read(mt, tbf, NTREC*TP_BSIZE)) < 0) {
-			perror("Tape read error");
+			fprintf(stderr, "Tape read error, continue?");
+			do	{
+				fprintf(stderr, "[yn]\n");
+				c = getchar();
+				while (getchar() != '\n')
+					/* void */;
+			} while (c != 'y' && c != 'n');
 			eflag++;
-			done(1);
+			if (c == 'n')
+				done(1);
+			i = NTREC*TP_BSIZE;
+			blkclr(tbf, i);
 		}
 		if (i == 0) {
 			bct = NTREC + 1;
