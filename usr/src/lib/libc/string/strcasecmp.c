@@ -5,15 +5,17 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strcasecmp.c	5.3 (Berkeley) %G%";
-#endif LIBC_SCCS and not lint
+static char sccsid[] = "@(#)strcasecmp.c	5.4 (Berkeley) %G%";
+#endif /* LIBC_SCCS and not lint */
+
+#include <sys/types.h>
 
 /*
  * This array is designed for mapping upper and lower case letter
  * together for a case independent comparison.  The mappings are
  * based upon ascii character sequences.
  */
-static char charmap[] = {
+static u_char charmap[] = {
 	'\000', '\001', '\002', '\003', '\004', '\005', '\006', '\007',
 	'\010', '\011', '\012', '\013', '\014', '\015', '\016', '\017',
 	'\020', '\021', '\022', '\023', '\024', '\025', '\026', '\027',
@@ -49,24 +51,28 @@ static char charmap[] = {
 };
 
 strcasecmp(s1, s2)
-	register char *s1, *s2;
+	char *s1, *s2;
 {
-	register char *cm = charmap;
+	register u_char	*cm = charmap,
+			*us1 = (u_char *)s1,
+			*us2 = (u_char *)s2;
 
-	while (cm[*s1] == cm[*s2++])
-		if (*s1++ == '\0')
+	while (cm[*us1] == cm[*us2++])
+		if (*us1++ == '\0')
 			return(0);
-	return(cm[*s1] - cm[*--s2]);
+	return(cm[*us1] - cm[*--us2]);
 }
 
 strncasecmp(s1, s2, n)
-	register char *s1, *s2;
+	char *s1, *s2;
 	register int n;
 {
-	register char *cm = charmap;
+	register u_char	*cm = charmap,
+			*us1 = (u_char *)s1,
+			*us2 = (u_char *)s2;
 
-	while (--n >= 0 && cm[*s1] == cm[*s2++])
-		if (*s1++ == '\0')
+	while (--n >= 0 && cm[*us1] == cm[*us2++])
+		if (*us1++ == '\0')
 			return(0);
-	return(n < 0 ? 0 : cm[*s1] - cm[*--s2]);
+	return(n < 0 ? 0 : cm[*us1] - cm[*--us2]);
 }
