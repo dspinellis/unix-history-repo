@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	4.6 82/11/15";
+static char sccsid[] = "@(#)rwhod.c	4.7 82/12/24";
 #endif
 
 #include <sys/types.h>
@@ -54,7 +54,6 @@ main()
 		fprintf(stderr, "rwhod: udp/who: unknown service\n");
 		exit(1);
 	}
-	sp->s_port = htons(sp->s_port);
 #ifndef DEBUG
 	if (fork())
 		exit(0);
@@ -136,7 +135,7 @@ main()
 				from.sin_addr);
 			continue;
 		}
-		(void) sprintf(path, "/etc/whod.%s", wd.wd_hostname);
+		(void) sprintf(path, "%s/whod.%s", RWHODIR, wd.wd_hostname);
 		whod = creat(path, 0666);
 		if (whod < 0) {
 			fprintf(stderr, "rwhod: ");
