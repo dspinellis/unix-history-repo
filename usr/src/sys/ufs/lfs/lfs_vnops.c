@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)lfs_vnops.c	7.15 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -373,8 +373,7 @@ chown1(vp, uid, gid, cred)
 	ip->i_uid = uid;
 	ip->i_gid = gid;
 	ip->i_flag |= ICHG;
-	if (cred->cr_ruid != 0)
-		ip->i_mode &= ~(ISUID|ISGID);
+	ip->i_mode &= ~(ISUID|ISGID);
 #ifdef QUOTA
 	ip->i_dquot = inoquota(ip);
 	(void) chkdq(ip, change, 1);
