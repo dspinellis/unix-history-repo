@@ -1,4 +1,4 @@
-/*	conf.c	1.5	86/07/16	*/
+/*	conf.c	1.6	86/11/25	*/
 
 #include "param.h"
 #include "systm.h"
@@ -128,6 +128,40 @@ int	iiioctl(), iiclose(), iiopen();
 #define	iiioctl	nodev
 #endif
 
+#include "enp.h"
+#if NENP > 0
+int	enpr_open(), enpr_close(), enpr_read(), enpr_write(), enpr_ioctl();
+#else
+#define enpr_open	nodev
+#define enpr_close	nodev
+#define enpr_read	nodev
+#define enpr_write	nodev
+#define enpr_ioctl	nodev
+#endif
+
+#include "dr.h"
+#if NDR > 0
+int     dropen(),drclose(),drread(),drwrite(),drioctl(),drreset();
+#else
+#define dropen nodev
+#define drclose nodev
+#define drread nodev
+#define drwrite nodev
+#define drioctl nodev
+#define drreset nodev
+#endif
+
+#include "ik.h"
+#if NIK > 0
+int     ikopen(),ikclose(),ikread(),ikwrite(),ikioctl();
+#else
+#define ikopen nodev
+#define ikclose nodev
+#define ikread nodev
+#define ikwrite nodev
+#define ikioctl nodev
+#endif
+
 int	logopen(),logclose(),logread(),logioctl(),logselect();
 
 int	ttselect(), seltrue();
@@ -182,19 +216,22 @@ struct cdevsw	cdevsw[] =
 	logopen,	logclose,	logread,	nodev,		/*15*/
 	logioctl,	nodev,		nulldev,	0,
 	logselect,	nodev,
-	nodev,		nodev,		nulldev,	nulldev,	/*16*/
+	enpr_open,	enpr_close,	enpr_read,	enpr_write,	/*16*/
+	enpr_ioctl,	nodev,		nulldev,	0,
+	nodev,		nodev,		
+	nodev,		nodev,		nodev,		nodev,		/*17*/
 	nodev,		nodev,		nulldev,	0,
 	nodev,		nodev,
-	nodev,		nodev,		nulldev,	nulldev,	/*17*/
-	nodev,		nodev,		nulldev,	0,
+	dropen,		drclose,	drread,		drwrite,	/*18*/
+	drioctl,	nodev,		drreset,	0,
 	nodev,		nodev,
-	nodev,		nodev,		nulldev,	nulldev,	/*18*/
-	nodev,		nodev,		nulldev,	0,
-	nodev,		nodev,
-	nodev,		nodev,		nulldev,	nulldev,	/*19*/
+	nodev,		nodev,		nodev,		nodev,		/*19*/
 	nodev,		nodev,		nulldev,	0,
 	nodev,		nodev,
 /* 20-30 are reserved for local use */
+	ikopen,		ikclose,	ikread,		ikwrite,	/*20*/
+	ikioctl,	nodev,		nulldev,	0,
+	nodev,		nodev,
 };
 int	nchrdev = sizeof (cdevsw) / sizeof (cdevsw[0]);
 
