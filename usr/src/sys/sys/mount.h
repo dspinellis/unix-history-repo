@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount.h	8.14 (Berkeley) %G%
+ *	@(#)mount.h	8.15 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -43,7 +43,8 @@ struct statfs {
 	long	f_files;		/* total file nodes in file system */
 	long	f_ffree;		/* free file nodes in fs */
 	fsid_t	f_fsid;			/* file system id */
-	long	f_spare[9];		/* spare for later */
+	uid_t	f_owner;		/* user that mounted the filesystem */
+	long	f_spare[8];		/* spare for later */
 	char	f_mntonname[MNAMELEN];	/* directory on which mounted */
 	char	f_mntfromname[MNAMELEN];/* mounted filesystem */
 };
@@ -103,7 +104,6 @@ struct mount {
 	struct vnodelst	mnt_vnodelist;		/* list of vnodes this mount */
 	int		mnt_flag;		/* flags */
 	int		mnt_maxsymlinklen;	/* max size of short symlink */
-	uid_t		mnt_owner;		/* uid that did mount */
 	struct statfs	mnt_stat;		/* cache of filesystem stats */
 	qaddr_t		mnt_data;		/* private data */
 };
