@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -331,7 +331,9 @@ map_init(s, rebuild)
 
 	if (tTd(38, 2))
 		printf("map_init(%s:%s)\n",
-			map->map_class->map_cname, map->map_file);
+			map->map_class->map_cname == NULL ? "NULL" :
+				map->map_class->map_cname,
+			map->map_file == NULL ? "NULL" : map->map_file);
 
 	/* if already open, close it (for nested open) */
 	if (bitset(MF_OPEN, map->map_mflags))
@@ -352,14 +354,18 @@ map_init(s, rebuild)
 		{
 			if (tTd(38, 4))
 				printf("%s:%s: valid\n",
-					map->map_class->map_cname,
-					map->map_file);
+					map->map_class->map_cname == NULL ? "NULL" :
+						map->map_class->map_cname,
+					map->map_file == NULL ? "NULL" :
+						map->map_file);
 			map->map_mflags |= MF_OPEN;
 		}
 		else if (tTd(38, 4))
 			printf("%s:%s: invalid: %s\n",
-				map->map_class->map_cname,
-				map->map_file,
+				map->map_class->map_cname == NULL ? "NULL" :
+					map->map_class->map_cname,
+				map->map_file == NULL ? "NULL" :
+					map->map_file,
 				errstring(errno));
 	}
 }
