@@ -55,7 +55,7 @@
 
 char lpr_id[] = "~|^`lpr.c:\t4.2\t1 May 1981\n";
 
-/*	lpr.c	4.11	83/03/11	*/
+/*	lpr.c	4.12	83/03/17	*/
 /*
  *      lpr -- off line print
  *
@@ -338,7 +338,7 @@ main(argc, argv)
 		if (qflag)		/* just q things up */
 			exit(0);
 		if (*LP && stat(LP, &stb) >= 0 && (stb.st_mode & 0777) == 0) {
-			printf("jobs queued, but line printer is down.\n");
+			printf("jobs queued, but %s is down.\n", printer);
 			exit(0);
 		}
 		execl(DN, (arg = rindex(DN, '/')) ? arg+1 : DN, printer, 0);
