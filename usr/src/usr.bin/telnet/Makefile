@@ -1,127 +1,71 @@
-# msdos versus unix defines
-O	= .o
-#PC_O	= .obj
+#
+# Copyright (c) 1987 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)Makefile	1.4	(Berkeley)	%G%
+#
+CFLAGS=	-O
+LIBC=	/lib/libc.a
+SRCS=	commands.c main.c network.c ring.c sys_bsd.c sys_dos.c \
+	telnet.c terminal.c tn3270.c utilities.c
+OBJS=	commands.o main.o network.o ring.o sys_bsd.o sys_dos.o \
+	telnet.o terminal.o tn3270.o utilities.o
 
-X	=
-#PC_X	= .exe
+all: telnet
 
-L	=
-#PC_L	= -link
+telnet:	${OBJS} ${LIBC}
+	${CC} -o $@ ${CFLAGS} ${OBJS}
 
-CC	= cc
-#PC_CC	= cl
+clean: FRC
+	rm -f ${OBJS} core telnet
 
-MV	= mv
-#PC_MV	= rename
+depend: FRC
+	mkdep ${CFLAGS} ${SRCS}
 
-RM	= rm -f
-#PC_RM= erase
+install: FRC
+	install -s -o bin -g bin -m 755 telnet ${DESTDIR}/usr/ucb/telnet
 
-LINT_ARGS =
-#PC_LINT_ARGS = -DLINT_ARGS
+lint: FRC
+	lint ${CFLAGS} ${SRCS}
 
-DEBUG_FLAGS = -g
-#PC_DEBUG_FLAGS = -Zi -Od
+tags: FRC
+	ctags ${SRCS}
 
-AR	= ar
-AR1	= cr
-AR2	=
-AR3	=
-#PC_AR	= lib
-#PC_AR1	=
-#PC_AR2	= +
-#PC_AR3	= ";"
+FRC:
 
-RANLIB	= ranlib
-#PC_RANLIB = echo "Done with "
+# DO NOT DELETE THIS LINE -- mkdep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
 
-PRINT	= print
+commands.o: commands.c /usr/include/sys/types.h /usr/include/sys/socket.h
+commands.o: /usr/include/netinet/in.h /usr/include/signal.h
+commands.o: /usr/include/machine/trap.h /usr/include/netdb.h
+commands.o: /usr/include/ctype.h /usr/include/arpa/telnet.h externs.h
+commands.o: /usr/include/stdio.h /usr/include/setjmp.h defines.h types.h
+main.o: main.c externs.h /usr/include/stdio.h /usr/include/setjmp.h defines.h
+network.o: network.c /usr/include/sys/types.h /usr/include/sys/socket.h
+network.o: /usr/include/sys/time.h /usr/include/time.h /usr/include/errno.h
+network.o: /usr/include/arpa/telnet.h defines.h externs.h /usr/include/stdio.h
+network.o: /usr/include/setjmp.h
+sys_bsd.o: sys_bsd.c /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
+sys_bsd.o: /usr/include/sys/ttydev.h /usr/include/sys/time.h
+sys_bsd.o: /usr/include/time.h /usr/include/signal.h
+sys_bsd.o: /usr/include/machine/trap.h defines.h externs.h /usr/include/stdio.h
+sys_bsd.o: /usr/include/setjmp.h types.h
+sys_dos.o: sys_dos.c
+telnet.o: telnet.c /usr/include/sys/types.h /usr/include/sys/time.h
+telnet.o: /usr/include/time.h /usr/include/sys/socket.h
+telnet.o: /usr/include/netinet/in.h /usr/include/curses.h /usr/include/stdio.h
+telnet.o: /usr/include/sgtty.h /usr/include/sys/ioctl.h
+telnet.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+telnet.o: /usr/include/arpa/telnet.h /usr/include/arpa/inet.h
+telnet.o: /usr/include/ctype.h /usr/include/errno.h /usr/include/netdb.h
+telnet.o: /usr/include/strings.h defines.h externs.h /usr/include/stdio.h
+telnet.o: /usr/include/setjmp.h types.h general.h
+terminal.o: terminal.c /usr/include/arpa/telnet.h externs.h
+terminal.o: /usr/include/stdio.h /usr/include/setjmp.h types.h
+tn3270.o: tn3270.c
+utilities.o: utilities.c /usr/include/arpa/telnet.h /usr/include/ctype.h
+utilities.o: externs.h /usr/include/stdio.h /usr/include/setjmp.h
 
-DEFINES = ${LINT_ARGS}
-
-INCLUDES = -I.
-
-OPTIMIZE = -O
-OPTIMIZE = ${DEBUG_FLAGS}
-
-CFLAGS	= $(OPTIMIZE) $(INCLUDES) $(DEFINES)
-
-# Lint flags
-LINTFLAGS	= -hbxaz
-
-# The source files...
-ALLH =	defines.h externs.h general.h types.h
-
-ALLC =	commands.c main.c network.c sys_bsd.c sys_dos.c telnet.c \
-		terminal.c tn3270.c utilities.c
-
-ALLO =	commands$O main$O network$O sys_bsd$O sys_dos$O telnet$O \
-		terminal$O tn3270$O utilities$O
-
-ALLPRINT =	${ALLH} ${ALLC}
-
-ALLSOURCE =	${ALLPRINT} Makefile
-
-.s.o:
-	/lib/cpp -E $< | as -o $@
-
-.c.obj:
-	${CC} ${CFLAGS} -c $<
-
-telnet$X:	${ALLO}
-	${CC} ${CFLAGS} -o telnet ${ALLO}
-
-clean:
-	for i in $(ALLO) telnet$X errs \
-		Makefile.bak; \
-			do (${RM} $$i); done
-
-sccsclean:
-	-sccs clean
-	-sccs get Makefile
-
-sourcelist:	${ALLSOURCE}
-	@for i in ${ALLSOURCE}; \
-		do (echo ${DIRPATH}$$i); done
-
-print:
-	${PRINT} ${ALLPRINT}
-
-tags:	${ALLC} ${ALLH}
-	ctags -t ${ALLC} ${ALLH}
-
-action:
-	${ACTION}
-
-lint:
-	lint ${LINTFLAGS} ${INCLUDES} ${DEFINES} ${ALLC} -lcurses
-
-.DEFAULT:
-	sccs get $<
-
-depend:
-	grep '^#include' ${ALLC} | grep -v '<' | \
-	sed -e 's/:[^"]*"\([^"]*\)".*/: \1/' \
-	    -e 's/\.c/$$O/' | \
-	awk ' { if ($$1 != prev) { print rec; rec = $$0; prev = $$1; } \
-		else { if (length(rec $$2) > 78) { print rec; rec = $$0; } \
-		       else rec = rec " " $$2 } } \
-	      END { print rec } ' > makedep
-	echo '$$r makedep' >>eddep
-	echo '/^# DO NOT DELETE THIS LINE/+1,$$d' >eddep
-	echo '$$r makedep' >>eddep
-	echo 'w' >>eddep
-	-rm -f Makefile.bak
-	cp Makefile Makefile.bak
-	ed - Makefile < eddep
-	rm eddep makedep
-
-# DO NOT DELETE THIS LINE
-
-commands$O: externs.h defines.h types.h
-main$O: externs.h
-network$O: externs.h
-sys_bsd$O: externs.h
-telnet$O: externs.h types.h general.h
-terminal$O: externs.h types.h
-utilities$O: externs.h
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
