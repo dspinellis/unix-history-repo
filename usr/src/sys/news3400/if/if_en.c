@@ -9,7 +9,7 @@
  *
  * from: $Hdr: if_en.c,v 4.300 91/06/09 06:25:54 root Rel41 $ SONY
  *
- *	@(#)if_en.c	7.6 (Berkeley) %G%
+ *	@(#)if_en.c	7.7 (Berkeley) %G%
  */
 
 #include "en.h"
@@ -22,7 +22,6 @@
  * Interlan Ethernet Communications Controller interface
  */
 #include <sys/types.h>
-#include <machine/fix_machine_type.h>
 #include <machine/pte.h>
 
 #include <sys/param.h>
@@ -248,18 +247,10 @@ _enxint(unit, error, collision)
 		es->es_if.if_flags &= ~IFF_OACTIVE;
 		es->es_if.if_opackets++;
 	}
-	if (error) {
-#ifdef DEBUG
-		printf("_enxint: error (unit=%d)\n", unit);
-#endif
+	if (error)
 		es->es_if.if_oerrors++;
-	}
-	if (collision) {
-#ifdef DEBUG
-		printf("_enxint: collision (unit=%d)\n", unit);
-#endif
+	if (collision)
 		es->es_if.if_collisions++;
-	}
 	enstart(&es->es_if);
 }
 
