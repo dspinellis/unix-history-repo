@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)uuencode.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)uuencode.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -24,87 +24,103 @@ static char sccsid[] = "@(#)uuencode.c	5.6 (Berkeley) %G%";
  *
  * Encode a file so it can be mailed to a remote system.
  */
-#include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-
-/* ENC is the basic 1 character encoding function to make a char printing */
-#define ENC(c) ((c) ? ((c) & 077) + ' ': '`')
+#include <stdio.h>
 
 main(argc, argv)
-char **argv;
+	int argc;
+	char **argv;
 {
-	FILE *in;
-	struct stat sbuf;
+	extern int optind;
+	extern int errno;
+	struct stat sb;
 	int mode;
+	char *strerror();
 
-	/* optional 1st argument */
-	if (argc > 2) {
-		if ((in = fopen(argv[1], "r")) == NULL) {
-			perror(argv[1]);
+	while (getopt(argc, argv, "") != EOF)
+		usage();
+	argv += optind;
+	argc -= optind;
+
+	switch(argc) {
+	case 2:			/* optional first argument is input file */
+		if (!freopen(*argv, "r", stdin) || fstat(fileno(stdin), &sb)) {
+			(void)fprintf(stderr, "uuencode: %s: %s.\n",
+			    *argv, strerror(errno));
 			exit(1);
 		}
-		argv++; argc--;
-	} else
-		in = stdin;
-
-	if (argc != 2) {
-		fprintf(stderr,"Usage: uuencode [infile] remotefile\n");
-		exit(2);
+#define	RWX	(S_IRWXU|S_IRWXG|S_IRWXO)
+		mode = sb.st_mode & RWX;
+		++argv;
+		break;
+	case 1:
+#define	RW	(S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH)
+		mode = RW & ~umask(RW);
+		break;
+	case 0:
+	default:
+		usage();
 	}
 
-	/* figure out the input file mode */
-	if (fstat(fileno(in), &sbuf) < 0 || !isatty(fileno(in)))
-		mode = 0666 & ~umask(0666);
-	else
-		mode = sbuf.st_mode & 0777;
-	printf("begin %o %s\n", mode, argv[1]);
-
-	encode(in, stdout);
-
-	printf("end\n");
+	(void)printf("begin %o %s\n", mode, *argv);
+	encode();
+	(void)printf("end\n");
+	if (ferror(stdout)) {
+		(void)fprintf(stderr, "uuencode: write error.\n");
+		exit(1);
+	}
 	exit(0);
 }
+
+/* ENC is the basic 1 character encoding function to make a char printing */
+#define	ENC(c) ((c) ? ((c) & 077) + ' ': '`')
 
 /*
  * copy from in to out, encoding as you go along.
  */
-encode(in, out)
-register FILE *in;
-register FILE *out;
+encode()
 {
+	register int ch, n;
+	register char *p;
 	char buf[80];
-	register int i, n;
 
-	for (;;) {
-		/* 1 (up to) 45 character line */
-		n = fread(buf, 1, 45, in);
-		putc(ENC(n), out);
-
-		for (i=0; i<n; i += 3)
-			outdec(&buf[i], out);
-
-		putc('\n', out);
-		if (n <= 0)
+	while (n = fread(buf, 1, 45, stdin)) {
+		ch = ENC(n);
+		if (putchar(ch) == EOF)
+			break;
+		for (p = buf; n; n -= 3, p += 3) {
+			ch = *p >> 2;
+			ch = ENC(ch);
+			if (putchar(ch) == EOF)
+				break;
+			ch = (*p << 4) & 060 | (p[1] >> 4) & 017;
+			ch = ENC(ch);
+			if (putchar(ch) == EOF)
+				break;
+			ch = (p[1] << 2) & 074 | (p[2] >> 6) & 03;
+			ch = ENC(ch);
+			if (putchar(ch) == EOF)
+				break;
+			ch = p[2] & 077;
+			ch = ENC(ch);
+			if (putchar(ch) == EOF)
+				break;
+		}
+		if (putchar('\n') == EOF)
 			break;
 	}
+	if (ferror(stdin)) {
+		(void)fprintf(stderr, "uuencode: read error.\n");
+		exit(1);
+	}
+	ch = ENC('\0');
+	(void)putchar(ch);
+	(void)putchar('\n');
 }
 
-/*
- * output one group of 3 bytes, pointed at by p, on file f.
- */
-outdec(p, f)
-register char *p;
-register FILE *f;
+usage()
 {
-	register int c1, c2, c3, c4;
-
-	c1 = *p >> 2;
-	c2 = (*p << 4) & 060 | (p[1] >> 4) & 017;
-	c3 = (p[1] << 2) & 074 | (p[2] >> 6) & 03;
-	c4 = p[2] & 077;
-	putc(ENC(c1), f);
-	putc(ENC(c2), f);
-	putc(ENC(c3), f);
-	putc(ENC(c4), f);
+	(void)fprintf(stderr,"usage: uuencode [infile] remotefile\n");
+	exit(1);
 }
