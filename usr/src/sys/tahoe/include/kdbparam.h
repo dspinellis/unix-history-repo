@@ -1,4 +1,4 @@
-/*	kdbparam.h	7.3	86/11/23	*/
+/*	kdbparam.h	7.4	86/11/23	*/
 
 #include <sys/vm.h>
 
@@ -10,7 +10,7 @@
 #define	MAXSTOR (KERNBASE - ctob(UPAGES))
 
 #define	ENTRYMASK	1			/* check for entry masks */
-#define	ishiddenreg(p)	((p) <= reglist[8])
+#define	ishiddenreg(p)	((p) <= &reglist[8])
 
 #define BPT	0x30
 #define KCALL	0xcf
