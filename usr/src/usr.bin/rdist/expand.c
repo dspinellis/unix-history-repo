@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)expand.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)expand.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "defs.h"
@@ -31,6 +31,10 @@ char	*entp;
 char	**sortbase;
 
 char	*index();
+int	argcmp();
+
+#define sort()	qsort((char *)sortbase, &eargv[eargc] - sortbase, \
+		      sizeof(*sortbase), argcmp), sortbase = &eargv[eargc]
 
 /*
  * Take a list of names and expand any macros, etc.
@@ -200,23 +204,12 @@ expstr(s)
 	sort();
 }
 
-/*
- * Bubble sort any new entries
- */
-sort()
+static
+argcmp(a1, a2)
+	char **a1, **a2;
 {
-	register char **p1, **p2, *c;
-	char **ap = &eargv[eargc];
 
-	p1 = sortbase;
-	while (p1 < ap-1) {
-		p2 = p1;
-		while (++p2 < ap)
-			if (strcmp(*p1, *p2) > 0)
-				c = *p1, *p1 = *p2, *p2 = c;
-		p1++;
-	}
-	sortbase = ap;
+	return (strcmp(*a1, *a2));
 }
 
 /*
