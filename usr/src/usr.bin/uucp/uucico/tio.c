@@ -1,6 +1,6 @@
 /*-
- * Copyright (c) 1982 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1982, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Rick Adams.
@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tio.c	4.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)tio.c	8.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
