@@ -1,82 +1,67 @@
-.\" Copyright (c) 1983 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)bstring.3	6.5 (Berkeley) %G%
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek.
 .\"
-.TH BSTRING 3  ""
-.UC 5
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)bstring.3	6.6 (Berkeley) %G%
+.\"
+.TH BSTRING 3 ""
+.UC
 .SH NAME
-bcopy, bcmp, bzero, ffs \- bit and byte string operations
+bcmp, bcopy, bzero, memccpy, memchr, memcmp, memcpy, memmove,
+memset \- byte string operations
 .SH SYNOPSIS
 .nf
-.B void
-.B bcopy(src, dst, length)
-.B char *src, *dst;
-.B int length;
-.PP
-.B bcmp(b1, b2, length)
-.B char *b1, *b2;
-.B int length;
-.PP
-.B void
-.B bzero(b, length)
-.B char *b;
-.B int length;
-.PP
-.B ffs(i)
-.B int i;
+.ft B
+#include <string.h>
+
+int
+bcmp(const char *b1, const char *b2, size_t len);
+
+void
+bcopy(const char *src, char *dst, size_t len);
+
+void
+bzero(char *b, size_t len);
+
+void *
+memchr(const void *b, int c, size_t len);
+
+int
+memcmp(const void *b1, const void *b2, size_t len);
+
+char *
+memccpy(char *dst, const char *src, int c, size_t len);
+
+void *
+memcpy(void *dst, const void *src, size_t len);
+
+void *
+memmove(void *dst, const void *src, size_t len);
+
+void *
+memset(void *b, int c, size_t len)
+.ft R
 .fi
 .SH DESCRIPTION
-The functions
-.IR bcopy ,
-.IR bcmp ,
-and
-.I bzero
-operate on variable length strings of bytes.
-They do not check for null bytes as the routines in
+These functions operate on variable length strings of bytes.
+They do not check for terminating null bytes as the routines
+listed in
 .IR string (3)
 do.
 .PP
-.I Bcopy
-copies 
-.I length
-bytes from string
-.I src
-to the string
-.IR dst .
-The
-.I src
+See the specific manual pages for more information.
+.SH SEE\ ALSO
+bcmp(3), bcopy(3), bzero(3), memccpy(3), memchr(3), memcmp(3), memcpy(3),
+memmove(3), memset(3)
+.SH STANDARDS
+.IR Memchr ,
+.IR memcmp ,
+.IR memcpy ,
+.IR memmove ,
 and
-.I dst
-strings may overlap.
-.PP
-.I Bcmp
-compares byte string
-.I b1
-against byte string
-.IR b2 ,
-returning zero if they are identical,
-non-zero otherwise.  Both strings are
-assumed to be
-.I length
-bytes long.
-.B Bcmp
-of
-.I length
-zero bytes always returns zero.
-.PP
-.I Bzero
-places
-.I length
-0 bytes in the string
-.IR b1 .
-.PP
-\fIFfs\fP finds the first bit set in the argument passed it and returns
-the index of that bit.  Bits are numbered starting at 1, from the right.
-A return value of 0 indicates the value passed is zero.
-.SH BUGS
-The
-.I bcopy
-routine take parameters backwards from
-.IR strcpy .
+.I memset
+conform to ANSI X3.159-1989 (``ANSI C'').
