@@ -6,7 +6,7 @@
 # include <log.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	2.2	%G%";
+static char	SccsId[] = "@(#)main.c	2.3	%G%";
 
 /*
 **  DELIVERMAIL -- Deliver mail to a set of destinations
@@ -146,6 +146,7 @@ main(argc, argv)
 	char *from;
 	register int i;
 	typedef int (*fnptr)();
+	char nbuf[MAXLINE];
 	bool canrename;
 
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
@@ -373,7 +374,29 @@ main(argc, argv)
 
 	for (; argc-- > 0; argv++)
 	{
-		sendto(*argv, 0);
+		p = argv[1];
+		if (argc >= 2 && p[2] == '\0' &&
+		    (p[0] == 'a' || p[0] == 'A') &&
+		    (p[1] == 't' || p[1] == 'T'))
+		{
+			if (strlen(argv[0]) + strlen(argv[2]) + 2 > sizeof nbuf)
+			{
+				usrerr("address overflow");
+				p = argv[0];
+			}
+			else
+			{
+				strcpy(nbuf, argv[0]);
+				strcat(nbuf, "@");
+				strcat(nbuf, argv[2]);
+				p = nbuf;
+				argv += 2;
+				argc -= 2;
+			}
+		}
+		else
+			p = argv[0];
+		sendto(p, 0);
 	}
 
 	/* if we have had errors sofar, drop out now */
