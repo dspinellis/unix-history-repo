@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)talk.1	6.3 (Berkeley) %G%
+.\"	@(#)talk.1	6.4 (Berkeley) %G%
 .\"
 .TH TALK 1 ""
 .UC 5
@@ -12,87 +12,48 @@ talk \- talk to another user
 .B talk
 person [ ttyname ]
 .SH DESCRIPTION
-.I Talk
-is a visual communication program which
-copies lines from your terminal to that of
-another user.
+\fITalk\fP is a visual communication program which copies lines from your
+terminal to that of another user.
 .PP 
-If you wish to talk to someone on you own machine, then
-.I person
-is just the person's login name. If you wish to talk to
-a user on another host, then
-.I person
-is of the form :
-.sp
-.in +2.0i
-.I host!user
-\ or
-.br
-.I host.user
-\ or
-.br
-.I host:user
-\ or
-.br
-.I user@host
-.br
-.in -2.0i
-.sp
-though
-.I user@host
-is perhaps preferred.
+If you wish to talk to someone on your own machine, then \fIperson\fP
+is just the person's login name.  If you wish to talk to a user on
+another host, then \fIperson\fP is of the form \fIuser@host\fP.
 .PP
-If you want to talk to a user who is logged in more than once,
-the
-.I ttyname
-argument may be used to indicate the
-appropriate terminal name.
+If you want to talk to a user who is logged in more than once, the
+\fIttyname\fP argument may be used to indicate the appropriate terminal
+name, where \fIttyname\fP is of the form ``ttyXX''.
 .PP
-When first called,
-it sends the message
+When first called, \fItalk\fP sends the message
 .PP
      Message from TalkDaemon@his_machine...
      talk: connection requested by your_name@your_machine.
      talk: respond with: talk your_name@your_machine
 .PP
 to the user you wish to talk to. At this point, the recipient
-of the message should reply by 
-typing 
+of the message should reply by typing
 .PP
      talk \ your_name@your_machine
 .PP
-It doesn't matter from 
-which machine the recipient replies, as long as his login-name is
-the same.
-Once communication is established, the two parties may type 
-simultaneously, with their output appearing in separate windows. 
-Typing control L will cause the screen to be reprinted, while your 
-erase, kill, and word kill characters will work in talk as normal.
-To exit,
-just type your interrupt character;
-.I talk
-then moves the cursor to the bottom of the screen and restores 
-the terminal.
+It doesn't matter from which machine the recipient replies, as
+long as his login-name is the same.  Once communication is established,
+the two parties may type simultaneously, with their output appearing
+in separate windows.  Typing control L (^L) will cause the screen to
+be reprinted, while your erase, kill, and word kill characters will
+behave normally.  To exit, just type your interrupt character; \fItalk\fP
+then moves the cursor to the bottom of the screen and restores the
+terminal to its previous state.
 .PP
-Permission to talk may be denied or granted by use of the
-.I mesg
-command.
-At the outset talking is allowed.
-Certain commands, in particular
-.I nroff
-and
-.IR  pr (1)
-disallow
-messages in order to prevent messy output.
+Permission to talk may be denied or granted by use of the \fImesg\fP
+command.  At the outset talking is allowed.  Certain commands, in
+particular \fInroff\fP and \fIpr\fP, disallow messages in order to
+prevent messy output.
 .PP
 .SH FILES
 /etc/hosts	to find the recipient's machine
 .br
-/etc/utmp	to find the recipient's tty
+/etc/utmp		to find the recipient's tty
 .SH "SEE ALSO"
-mesg(1), who(1), mail(1), write(1)
+mail(1), mesg(1), who(1), write(1)
 .SH BUGS
-The version of 
-.IR talk (1)
-released with 4.3BSD uses a protocol that is incompatible
-with the protocol used in the version released with 4.2BSD.
+The version of \fItalk\fP(1) released with 4.3BSD uses a protocol that
+is incompatible with the protocol used in the version released with 4.2BSD.
