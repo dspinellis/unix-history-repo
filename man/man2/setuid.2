@@ -1,0 +1,26 @@
+.pa 1
+.he 'SETUID (II)'3/15/72'SETUID (II)'
+.ti 0
+NAME		setuid  --  set process ID
+.sp
+.ti 0
+SYNOPSIS	(process ID in r0)
+.br
+sys setuid  / setuid = 23.
+.sp
+.ti 0
+DESCRIPTION	The user ID of the current process is set to
+the argument in r0.
+Both the effective and the real user ID are set.
+This call is only permitted to the super-user
+or if r0 is the real user ID.
+.sp
+.ti 0
+SEE ALSO	getuid(II)
+.sp
+.ti 0
+DIAGNOSTICS	Error bit
+(c-bit) is set as indicated.
+.sp
+.ti 0
+BUGS		--
