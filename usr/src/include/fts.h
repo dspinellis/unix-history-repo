@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)fts.h	5.4 (Berkeley) %G%
+ *	@(#)fts.h	5.5 (Berkeley) %G%
  */
 
 typedef struct fts {
@@ -71,7 +71,7 @@ typedef struct ftsent {
 	char fts_name[1];		/* file name */
 } FTSENT;
 
-#ifdef __STDC__
+#if __STDC__ || c_plusplus
 extern FTS *ftsopen(const char **, int, int (*)(const FTSENT *, const FTSENT *);
 extern FTSENT *ftsread(FTS *);
 extern FTSENT *ftschildren(FTS *);

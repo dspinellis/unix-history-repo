@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)grp.h	5.1 (Berkeley) %G%
+ *	@(#)grp.h	5.2 (Berkeley) %G%
  */
 
 #ifndef _POSIX_SOURCE
@@ -18,7 +18,7 @@ struct group {
 	char	**gr_mem;		/* group members */
 };
 
-#ifdef __STDC__
+#if __STDC__ || c_plusplus
 extern struct group *getgrgid(gid_t);
 extern struct group *getgrnam(const char *);
 #ifndef _POSIX_SOURCE
