@@ -3,7 +3,7 @@
 # include <errno.h>
 # include "dlvrmail.h"
 
-static char	SccsId[] = "@(#)collect.c	2.2.1.1	%G%";
+static char	SccsId[] = "@(#)collect.c	2.3	%G%";
 
 /*
 **  MAKETEMP -- read & parse message header & make temp file.
@@ -21,14 +21,10 @@ static char	SccsId[] = "@(#)collect.c	2.2.1.1	%G%";
 **	the protocol.  So we limp by.....
 **
 **	Parameters:
-**		from -- the person we think it may be from.  If
-**			there is a "From" line, we will replace
-**			the name of the person by this.  If NULL,
-**			do no such replacement.
+**		none
 **
 **	Returns:
-**		Name of the "from" person extracted from the
-**		arpanet header.
+**		Name of temp file.
 **
 **	Side Effects:
 **		Temp file is created and filled.
@@ -46,8 +42,7 @@ long	MsgSize;		/* size of message in bytes */
 bool	GotHdr;			/* if set, "From ..." line exists */
 
 char *
-maketemp(from)
-	char *from;
+maketemp()
 {
 	register FILE *tf;
 	char buf[MAXFIELD+1];
@@ -59,7 +54,6 @@ maketemp(from)
 	bool firstline;
 	char c;
 	extern int errno;
-	extern char *index();
 
 	/*
 	**  Create the temp file name and create the file.
@@ -92,7 +86,7 @@ maketemp(from)
 	inheader = TRUE;
 	firstline = TRUE;
 	fbuf[0] = '\0';
-	while (fgets(buf, sizeof buf, stdin) != NULL)
+	while (!feof(stdin) && fgets(buf, sizeof buf, stdin) != NULL)
 	{
 		if (inheader && isalnum(buf[0]))
 		{
@@ -136,22 +130,7 @@ maketemp(from)
 				MsgSize++;
 			}
 			else
-			{
 				GotHdr++;
-				if (from != NULL)
-				{
-					fputs("From ", tf);
-					fputs(from, tf);
-					MsgSize += strlen(from) + 5;
-					p = index(&buf[5], ' ');
-					if (p != NULL)
-					{
-						fputs(p, tf);
-						MsgSize += strlen(p);
-					}
-					continue;
-				}
-			}
 		}
 
 		if (inheader && !isspace(buf[0]))
