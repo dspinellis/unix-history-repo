@@ -1,4 +1,4 @@
-#	@(#)bsd.lib.mk	8.2 (Berkeley) %G%
+#	@(#)bsd.lib.mk	8.3 (Berkeley) %G%
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -93,7 +93,7 @@ cleandir:
 	rm -f ${POBJS}
 	rm -f a.out [Ee]rrs mklog ${CLEANFILES} \
 	    profiled/*.o lib${LIB}.a lib${LIB}_p.a llib-l${LIB}.ln
-	rm -f ${MANALL} ${.CURDIR}/tags .depend
+	rm -f ${MANALL} .depend
 .endif
 
 .if !target(depend)
