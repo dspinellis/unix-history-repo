@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	4.1		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	4.2		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -400,6 +400,9 @@ EXTERN char	SendMode;	/* send mode, see below */
 #define SM_FORK		'b'		/* deliver in background */
 #define SM_QUEUE	'q'		/* queue, don't deliver */
 #define SM_VERIFY	'v'		/* verify only (used internally) */
+
+/* used only as a parameter to sendall */
+#define SM_DEFAULT	'\0'		/* unspecified, use SendMode */
 
 
 EXTERN char	ErrorMode;	/* error mode, see below */
