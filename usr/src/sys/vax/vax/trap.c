@@ -1,4 +1,4 @@
-/*	trap.c	4.8	81/03/09	*/
+/*	trap.c	4.9	81/04/15	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -57,8 +57,6 @@ unsigned code;
 			addupc(pc, &u.u_prof, 1);
 			u.u_procp->p_flag &= ~SOWEUPC;
 		}
-		if (runrun == 0)
-			return;
 		goto out;
 
 	case ARITHTRAP + USER:
@@ -85,13 +83,9 @@ unsigned code;
 		i = u.u_error;
 		pagein(code);
 		u.u_error = i;
-#ifdef notdef
 		if (type == PAGEFLT)
 			return;
 		goto out;
-#else
-		return;
-#endif
 
 	case BPTFLT + USER:	/* bpt instruction fault */
 	case TRCTRAP + USER:	/* trace trap */
