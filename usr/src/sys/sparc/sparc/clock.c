@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)clock.c	8.1 (Berkeley) %G%
+ *	@(#)clock.c	8.2 (Berkeley) %G%
  *
  * from: $Header: clock.c,v 1.17 92/11/26 03:04:47 torek Exp $ (LBL)
  */
@@ -101,7 +101,7 @@ clockattach(parent, self, aux)
 	h = cl->cl_idprom.id_machine << 24;
 	h |= cl->cl_idprom.id_hostid[0] << 16;
 	h |= cl->cl_idprom.id_hostid[1] << 8;
-	h |= cl->cl_idprom.id_hostid[0];
+	h |= cl->cl_idprom.id_hostid[2];
 	hostid = h;
 	clockreg = cl;
 }
