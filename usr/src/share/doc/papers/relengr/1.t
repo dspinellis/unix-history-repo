@@ -1,4 +1,4 @@
-.\"	@(#)1.t	1.4	(Copyright 1989 M. K. McKusick)	89/02/23
+.\"	@(#)1.t	1.5	(Copyright 1989 M. K. McKusick)	89/02/23
 .NH
 Introduction
 .PP
@@ -30,5 +30,8 @@ to be able to coordinate their own work with
 that of other people to produce a coherent final system.
 Companies with large development organizations find
 this result difficult to duplicate.
-This paper describes in more detail the process by which
-the development effort is managed.
+This paper describes the process by which
+the development effort for \*(b3 was managed.
+.[
+design and implementation
+.]
