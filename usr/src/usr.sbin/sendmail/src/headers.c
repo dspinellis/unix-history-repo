@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)headers.c	3.24		%G%);
+SCCSID(@(#)headers.c	3.25		%G%);
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -95,8 +95,8 @@ chompheader(line, def)
 	if (bitset(H_EOH, hi->hi_flags))
 		return (hi->hi_flags);
 
-	/* count Mail-From: lines to avoid loops (simulate hop counts) */
-	if (strcmp(fname, "mail-from") == 0)
+	/* count Received: lines to avoid loops (simulate hop counts) */
+	if (strcmp(fname, "received") == 0)
 		HopCount++;
 
 	/* create/fill in a new node */

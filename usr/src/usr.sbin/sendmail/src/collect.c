@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)collect.c	3.47		%G%);
+SCCSID(@(#)collect.c	3.48		%G%);
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -62,15 +62,15 @@ maketemp(from)
 	CurEnv->e_df = tempfname;
 
 	/*
-	**  Create the Mail-From line if we want to.
+	**  Create the Received: line if we want to.
 	*/
 
 	if (Smtp && macvalue('s') != NULL)
 	{
 		char xbuf[50];
 
-		(void) sprintf(xbuf, "Mail-From: %s$s received by $i at $b",
-			macvalue('r') == NULL ? "" : "$r host ");
+		/* this should be in the config file */
+		(void) sprintf(xbuf, "Received: from $s by $i with SMTP; $b");
 		expand(xbuf, buf, &buf[sizeof buf - 1], CurEnv);
 		(void) chompheader(buf, FALSE);
 	}
