@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)cksum.1	5.5 (Berkeley) %G%
+.\"	@(#)cksum.1	5.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CKSUM 1
@@ -22,11 +22,12 @@
 The
 .Nm cksum
 utility writes to standard output three whitespace separated fields for each
-input file (or the standard input by default).
+input file.
 These fields are a checksum
 .Tn CRC ,
-the total number of bytes in the file and
-the file name.
+the total number of octets in the file and the file name.
+If no file name is specified, the standard input is used and no file name
+is written.
 .Pp
 The options are as follows:
 .Bl -tag -width indent
@@ -91,30 +92,35 @@ the following procedure:
 .Bd -filled -offset indent
 The
 .Ar n
-bits of the file are considered to be the coefficients of a mod 2
+bits to be evaluated are considered to be the coefficients of a mod 2
 polynomial M(x) of degree
 .Ar n Ns \-1 .
+These
+.Ar n
+bits are the bits from the file, with the most significant bit being the most
+significant bit of the first octet of the file and the last bit being the least
+significant bit of the last octet, padded with zero bits (if necessary) to
+achieve an integral number of octets, followed by one or more octets
+representing the length of the file as a binary value, least significant octet
+first.
+The smallest number of octets capable of representing this integer are used.
 .Pp
 M(x) is multiplied by x^32 (i.e., shifted left 32 bits) and divided by
 G(x) using mod 2 division, producing a remainder R(x) of degree <= 31.
-During the division, each time the intermediate remainder is zero, it
-is changed to the next value from a predefined sequence of
-32-bit integers before completing the division.
-This sequence is long and complex -- see the source code for more
-information.
 .Pp
 The coefficients of R(x) are considered to be a 32-bit sequence.
-.Ed
 .Pp
-The calculation used is identical to that given in pseudo-code in
-the
-.Tn ACM
-article referenced below.
+The bit sequence is complemented and the result is the CRC.
+.Ed
 .Pp
 The
 .Nm cksum
 utility exits 0 on success, and >0 if an error occurs.
 .Sh SEE ALSO
+The default calculation is identical to that given in pseudo-code
+in the following
+.Tn ACM
+article.
 .Rs
 .%T "Computation of Cyclic Redundancy Checks Via Table Lookup"
 .%A Dilip V. Sarwate
