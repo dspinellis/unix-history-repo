@@ -25,11 +25,9 @@ FOLD=	${BINDIR}/fold
 CTAGS=	${BINDIR}/ctags
 XSTR=	${BINDIR}/xstr
 DEBUGFLAGS=	-DTRACE -g
-#
-# D O   N O T   D I S T R I B U T E   E X    W I T H   H O R S E   I N   I T!!!
-NONDEBUGFLAGS=	-O -DHORSE
+NONDEBUGFLAGS=	-O
 DEB=	${NONDEBUGFLAGS}	# or ${DEBUGFLAGS} to to debug
-CFLAGS=	-DTABS=8 -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX ${DEB}
+CFLAGS=	-DTABS=8 -DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX ${DEB}
 LDFLAGS=	-z		# or -i or -n
 TERMLIB=	-ltermlib
 MKSTR=	${BINDIR}/mkstr
@@ -41,14 +39,14 @@ OBJS=	ex.o ex_addr.o ex_cmds.o ex_cmds2.o ex_cmdsub.o \
 	ex_set.o ex_subr.o ex_temp.o ex_tty.o ex_unix.o \
 	ex_v.o ex_vadj.o ex_vget.o ex_vmain.o ex_voperate.o \
 	ex_vops.o ex_vops2.o ex_vops3.o ex_vput.o ex_vwind.o \
-	printf.o bcopy.o horse.o strings.o
+	printf.o bcopy.o strings.o
 HDRS=	ex.h ex_argv.h ex_re.h ex_temp.h ex_tty.h ex_tune.h ex_vars.h ex_vis.h
 SRC1=	ex.c ex_addr.c ex_cmds.c ex_cmds2.c ex_cmdsub.c
 SRC2=	ex_data.c ex_get.c ex_io.c ex_put.c ex_re.c
 SRC3=	ex_set.c ex_subr.c ex_temp.c ex_tty.c ex_unix.c
 SRC4=	ex_v.c ex_vadj.c ex_vget.c ex_vmain.c ex_voperate.c
 SRC5=	ex_vops.c ex_vops2.c ex_vops3.c ex_vput.c ex_vwind.c
-SRC6=	printf.c horse.c bcopy.c expreserve.c exrecover.c
+SRC6=	printf.c bcopy.c expreserve.c exrecover.c
 MISC=	makefile READ_ME :rofix
 VGRIND=	csh /usr/ucb/vgrind
 VHDR=	"Ex Version ${VERSION}"
@@ -215,5 +213,4 @@ expreserve.c: SCCS/s.expreserve.c; rm -f expreserve.c; sccs get expreserve.c
 exrecover.c: SCCS/s.exrecover.c; rm -f exrecover.c; sccs get exrecover.c 
 makeoptions: SCCS/s.makeoptions; rm -f makeoptions; sccs get makeoptions 
 bcopy.c: SCCS/s.bcopy.c; rm -f bcopy.c; sccs get bcopy.c
-horse.c: SCCS/s.horse.c; rm -f horse.c; sccs get horse.c
 printf.c: SCCS/s.printf.c; rm -f printf.c; sccs get printf.c 
