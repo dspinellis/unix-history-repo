@@ -9,27 +9,14 @@
  *
  * from: $Hdr: scc.h,v 4.300 91/06/09 06:44:56 root Rel41 $ SONY
  *
- *	@(#)scc.h	7.1 (Berkeley) %G%
+ *	@(#)scc.h	7.2 (Berkeley) %G%
  */
 
-#ifdef news700
-#define splscc		spl4
-#endif
-
-#if defined(news1200) || defined(news1700)
-#define splscc		spl5
-#endif
-
 #ifdef news3400
-#ifdef PMAXSPL
-#define	splscc		Mach_spl1
-#else
 #define	splscc		spl4
-#endif /* PMAXSPL */
-#endif /* news3400 */
+#endif
 
 #define	SCCWAIT		DELAY(2)
-#define	SCCWAIT		_delay(5)
 
 #define SCC_REMOTE0	0
 #define SCC_REMOTE1	1

@@ -9,7 +9,7 @@
  *
  * from: $Hdr: scc.c,v 4.300 91/06/09 06:44:53 root Rel41 $ SONY
  *
- *	@(#)scc.c	7.3 (Berkeley) %G%
+ *	@(#)scc.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -23,7 +23,6 @@
  * Work Station Division, all rights RESERVED.
  */
 
-#include <machine/fix_machine_type.h>
 #include <machine/adrsmap.h>
 
 #include "rs.h"
