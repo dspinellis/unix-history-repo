@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_subs.c	7.38 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.39 (Berkeley) %G%
  */
 
 /*
@@ -23,6 +23,7 @@
 #include "mount.h"
 #include "file.h"
 #include "vnode.h"
+#include "namei.h"
 #include "mbuf.h"
 #include "map.h"
 
@@ -90,7 +91,7 @@ struct mbuf *nfsm_reqh(prog, vers, procid, cred, hsiz, bpos, mb, retxid)
 	u_long *retxid;
 {
 	register struct mbuf *mreq, *m;
-	register u_long *p;
+	register u_long *tl;
 	struct mbuf *m1;
 	char *ap;
 	int asiz, siz;
@@ -121,23 +122,23 @@ struct mbuf *nfsm_reqh(prog, vers, procid, cred, hsiz, bpos, mb, retxid)
 		siz += MLEN;
 		m1 = m;
 	}
-	p = mtod(mreq, u_long *);
-	*p++ = *retxid = txdr_unsigned(++nfs_xid);
-	*p++ = rpc_call;
-	*p++ = rpc_vers;
-	*p++ = prog;
-	*p++ = vers;
-	*p++ = procid;
+	tl = mtod(mreq, u_long *);
+	*tl++ = *retxid = txdr_unsigned(++nfs_xid);
+	*tl++ = rpc_call;
+	*tl++ = rpc_vers;
+	*tl++ = prog;
+	*tl++ = vers;
+	*tl++ = procid;
 
 	/* Now we can call nfs_unixauth() and copy it in */
 	ap = nfs_unixauth(cred);
 	m = mreq;
 	siz = m->m_len-RPC_SIZ;
 	if (asiz <= siz) {
-		bcopy(ap, (caddr_t)p, asiz);
+		bcopy(ap, (caddr_t)tl, asiz);
 		m->m_len = asiz+RPC_SIZ;
 	} else {
-		bcopy(ap, (caddr_t)p, siz);
+		bcopy(ap, (caddr_t)tl, siz);
 		ap += siz;
 		asiz -= siz;
 		while (asiz > 0) {
@@ -328,7 +329,7 @@ nfsm_disct(mdp, dposp, siz, left, updateflg, cp2)
 {
 	register struct mbuf *mp, *mp2;
 	register int siz2, xfer;
-	register caddr_t p;
+	register caddr_t tl;
 
 	mp = *mdp;
 	while (left == 0) {
@@ -356,10 +357,10 @@ nfsm_disct(mdp, dposp, siz, left, updateflg, cp2)
 			mp->m_len -= left;
 			mp = mp2;
 		}
-		*cp2 = p = mtod(mp, caddr_t);
-		bcopy(*dposp, p, left);		/* Copy what was left */
+		*cp2 = tl = mtod(mp, caddr_t);
+		bcopy(*dposp, tl, left);		/* Copy what was left */
 		siz2 = siz-left;
-		p += left;
+		tl += left;
 		mp2 = mp->m_next;
 		/* Loop around copying up the siz2 bytes */
 		while (siz2 > 0) {
@@ -367,10 +368,10 @@ nfsm_disct(mdp, dposp, siz, left, updateflg, cp2)
 				return (EBADRPC);
 			xfer = (siz2 > mp2->m_len) ? mp2->m_len : siz2;
 			if (xfer > 0) {
-				bcopy(mtod(mp2, caddr_t), p, xfer);
+				bcopy(mtod(mp2, caddr_t), tl, xfer);
 				NFSMADV(mp2, xfer);
 				mp2->m_len -= xfer;
-				p += xfer;
+				tl += xfer;
 				siz2 -= xfer;
 			}
 			if (siz2 > 0)
@@ -420,20 +421,20 @@ nfsm_strtmbuf(mb, bpos, cp, siz)
 {
 	register struct mbuf *m1, *m2;
 	long left, xfer, len, tlen;
-	u_long *p;
+	u_long *tl;
 	int putsize;
 
 	putsize = 1;
 	m2 = *mb;
 	left = NFSMSIZ(m2)-m2->m_len;
 	if (left > 0) {
-		p = ((u_long *)(*bpos));
-		*p++ = txdr_unsigned(siz);
+		tl = ((u_long *)(*bpos));
+		*tl++ = txdr_unsigned(siz);
 		putsize = 0;
 		left -= NFSX_UNSIGNED;
 		m2->m_len += NFSX_UNSIGNED;
 		if (left > 0) {
-			bcopy(cp, (caddr_t) p, left);
+			bcopy(cp, (caddr_t) tl, left);
 			siz -= left;
 			cp += left;
 			m2->m_len += left;
@@ -448,10 +449,10 @@ nfsm_strtmbuf(mb, bpos, cp, siz)
 		m1->m_len = NFSMSIZ(m1);
 		m2->m_next = m1;
 		m2 = m1;
-		p = mtod(m1, u_long *);
+		tl = mtod(m1, u_long *);
 		tlen = 0;
 		if (putsize) {
-			*p++ = txdr_unsigned(siz);
+			*tl++ = txdr_unsigned(siz);
 			m1->m_len -= NFSX_UNSIGNED;
 			tlen = NFSX_UNSIGNED;
 			putsize = 0;
@@ -460,11 +461,11 @@ nfsm_strtmbuf(mb, bpos, cp, siz)
 			len = nfsm_rndup(siz);
 			xfer = siz;
 			if (xfer < len)
-				*(p+(xfer>>2)) = 0;
+				*(tl+(xfer>>2)) = 0;
 		} else {
 			xfer = len = m1->m_len;
 		}
-		bcopy(cp, (caddr_t) p, xfer);
+		bcopy(cp, (caddr_t) tl, xfer);
 		m1->m_len = len+tlen;
 		siz -= xfer;
 		cp += xfer;
@@ -516,45 +517,45 @@ nfs_init()
 static char *nfs_unixauth(cr)
 	register struct ucred *cr;
 {
-	register u_long *p;
+	register u_long *tl;
 	register int i;
 	int ngr;
 
 	/* Maybe someday there should be a cache of AUTH_SHORT's */
-	if ((p = rpc_uidp) == NULL) {
+	if ((tl = rpc_uidp) == NULL) {
 #ifdef FILLINHOST
 		i = nfsm_rndup(hostnamelen)+(25*NFSX_UNSIGNED);
 #else
 		i = 25*NFSX_UNSIGNED;
 #endif
-		MALLOC(p, u_long *, i, M_TEMP, M_WAITOK);
-		bzero((caddr_t)p, i);
-		rpc_unixauth = (caddr_t)p;
-		*p++ = txdr_unsigned(RPCAUTH_UNIX);
-		p++;	/* Fill in size later */
-		*p++ = hostid;
+		MALLOC(tl, u_long *, i, M_TEMP, M_WAITOK);
+		bzero((caddr_t)tl, i);
+		rpc_unixauth = (caddr_t)tl;
+		*tl++ = txdr_unsigned(RPCAUTH_UNIX);
+		tl++;	/* Fill in size later */
+		*tl++ = hostid;
 #ifdef FILLINHOST
-		*p++ = txdr_unsigned(hostnamelen);
+		*tl++ = txdr_unsigned(hostnamelen);
 		i = nfsm_rndup(hostnamelen);
-		bcopy(hostname, (caddr_t)p, hostnamelen);
-		p += (i>>2);
+		bcopy(hostname, (caddr_t)tl, hostnamelen);
+		tl += (i>>2);
 #else
-		*p++ = 0;
+		*tl++ = 0;
 #endif
-		rpc_uidp = p;
+		rpc_uidp = tl;
 	}
-	*p++ = txdr_unsigned(cr->cr_uid);
-	*p++ = txdr_unsigned(cr->cr_groups[0]);
+	*tl++ = txdr_unsigned(cr->cr_uid);
+	*tl++ = txdr_unsigned(cr->cr_groups[0]);
 	ngr = ((cr->cr_ngroups - 1) > numgrps) ? numgrps : (cr->cr_ngroups - 1);
-	*p++ = txdr_unsigned(ngr);
+	*tl++ = txdr_unsigned(ngr);
 	for (i = 1; i <= ngr; i++)
-		*p++ = txdr_unsigned(cr->cr_groups[i]);
+		*tl++ = txdr_unsigned(cr->cr_groups[i]);
 	/* And add the AUTH_NULL */
-	*p++ = 0;
-	*p = 0;
-	i = (((caddr_t)p)-rpc_unixauth)-12;
-	p = (u_long *)(rpc_unixauth+4);
-	*p = txdr_unsigned(i);
+	*tl++ = 0;
+	*tl = 0;
+	i = (((caddr_t)tl)-rpc_unixauth)-12;
+	tl = (u_long *)(rpc_unixauth+4);
+	*tl = txdr_unsigned(i);
 	return (rpc_unixauth);
 }
 
@@ -795,7 +796,7 @@ nfs_namei(ndp, fhp, len, mdp, dposp)
 	/*
 	 * And call namei() to do the real work
 	 */
-	error = namei(ndp);
+	error = namei(ndp, curproc);		/* XXX XXX XXX */
 	if (error || (ndp->ni_nameiop & SAVESTARTDIR) == 0)
 		vrele(dp);
 	return (error);
