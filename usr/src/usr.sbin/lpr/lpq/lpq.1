@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)lpq.1	6.2 (Berkeley) %G%
+.\"	@(#)lpq.1	6.3 (Berkeley) %G%
 .\"
 .TH LPQ 1 ""
 .UC 5
@@ -32,12 +32,10 @@ argument is supplied,
 displays the spool queue until it empties.  Supplying a number
 immediately after the
 .B \(pl
-sign indicates that
-.I lpq
-should sleep \fIn\fR seconds in between scans of the queue.
-All other arguments supplied are
-interpreted as user names or job numbers to filter out only those
-jobs of interest.
+sign changes the number of seconds that \fIlpq\fP should sleep inbetween
+scans of the queue, from the default, 30, to \fIn\fP.  All other arguments
+supplied are interpreted as user names or job numbers to filter out only
+those jobs of interest.
 .PP
 For each job submitted (i.e. invocation of 
 .IR lpr (1))
