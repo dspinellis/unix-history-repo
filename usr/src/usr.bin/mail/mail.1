@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)mail.1	6.2 (Berkeley) %G%
+.\"	@(#)mail.1	6.3 (Berkeley) %G%
 .\"
 .TH MAIL 1 ""
 .UC 4
@@ -520,9 +520,14 @@ commands and discards the remembered groups of users.  The group names
 no longer have any significance.
 .TP
 .B undelete
-(\fBu\fR) Takes a message list and marks each one as
+(\fBu\fR) Takes a message list and marks each message as
 .I not
 being deleted.
+.TP
+.B unread
+(\fBU\fR) Takes a message list and marks each message as
+.I not
+having been read.
 .TP
 .B unset
 Takes a list of option names and discards their remembered values;
@@ -723,6 +728,13 @@ in your home directory. Setting the binary option
 .I nosave
 prevents this.
 .TP
+.B Replyall
+Reverses the sense of
+.I reply
+and
+.I Reply
+commands.
+.TP
 .B quiet
 Suppresses the printing of the version when first invoked.
 .TP
@@ -742,6 +754,14 @@ Pathname of the text editor to use in the
 .B edit
 command and ~e escape.  If not defined, then a default editor is used.
 .TP
+PAGER
+Pathname of the program to use in the
+.B more
+command or when
+.I crt
+variable is set.  A default paginator is used if this option is
+not defined.
+.TP
 SHELL
 Pathname of the shell to use in the
 .B !
@@ -758,7 +778,7 @@ The valued option
 .I crt
 is used as a threshold to determine how long a message must
 be before
-.I more
+.B PAGER
 is used to read it.
 .TP
 .B escape
