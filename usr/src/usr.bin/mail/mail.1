@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)mail.1	6.12 (Berkeley) %G%
+.\"	@(#)mail.1	6.13 (Berkeley) %G%
 .\"
 .TH MAIL 1 ""
 .UC 4
@@ -175,7 +175,7 @@ While you are composing a message,
 treats lines beginning with the character `~' specially.
 For instance, typing ``~m'' (alone on a line) will place a copy
 of the current message into the response right shifting it by a tabstop
-(see ``tabstr'' variable, below).
+(see ``indentprefix'' variable, below).
 Other escapes will set up subject fields, add and delete recipients
 to the message and allow you to escape to an editor to revise the
 message or to a shell to run some commands.  (These options
@@ -506,7 +506,7 @@ option.  Arguments are of the form
 (no space before or after =) or
 ``option.''
 Quotation marks may be placed around any part of the assignment statement to
-quote blanks or tabs, i.e. ``set tabstr="-> "''.
+quote blanks or tabs, i.e. ``set indentprefix="-> "''.
 .TP
 .B saveignore
 \fBSaveignore\fP is to \fBsave\fP what \fBignore\fP is to \fBprint\fP
@@ -635,8 +635,8 @@ the user to append text to the end or modify the field by using the
 current terminal erase and kill characters.
 .TP
 \fB~m\fR messages
-Read the named messages into the message being sent, shifted right one
-tab or by the value of \fItabstr\fP.  If no messages are specified,
+Read the named messages into the message being sent, indented by a
+tab or by the value of \fIindentprefix\fP.  If no messages are specified,
 read the current message.
 Message headers currently being ignored (by the \fIignore\fP or \fIretain\fP
 command) are not included.
@@ -863,8 +863,8 @@ The default is ``mbox'' in the user's home directory.
 If defined, gives the pathname of the file used to record all outgoing
 mail.  If not defined, then outgoing mail is not so saved.
 .TP
-.B tabstr
-String used by the ``~m'' tilde escape for tabbing messages, in place of
+.B indentprefix
+String used by the ``~m'' tilde escape for indenting messages, in place of
 the normal tab character (^I).  Be sure to quote the value if it contains
 spaces or tabs.
 .TP
