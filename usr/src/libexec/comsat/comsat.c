@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)comsat.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)comsat.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -34,7 +34,7 @@ static char sccsid[] = "@(#)comsat.c	5.5 (Berkeley) %G%";
  * comsat
  */
 int	debug = 0;
-#define	dprintf	if (debug) printf
+#define	dsyslog     if (debug) syslog
 
 struct	sockaddr_in sin = { AF_INET };
 extern	errno;
@@ -70,10 +70,10 @@ main(argc, argv)
 		perror("getsockname");
 		_exit(1);
 	}
+	openlog("comsat", LOG_PID, LOG_DAEMON);
 	chdir("/usr/spool/mail");
 	if ((uf = open("/etc/utmp",0)) < 0) {
-		openlog("comsat", 0, LOG_DAEMON);
-		syslog(LOG_ERR, "/etc/utmp: %m");
+		syslog(LOG_ERR, ".main: /etc/utmp: %m");
 		(void) recv(0, msgbuf, sizeof (msgbuf) - 1, 0);
 		exit(1);
 	}
@@ -112,11 +112,11 @@ onalrm()
 
 	if (time(0) - lastmsgtime >= MAXIDLE)
 		exit(0);
-	dprintf("alarm\n");
+	dsyslog(LOG_DEBUG,".onalrm: alarm");
 	alarm(15);
 	fstat(uf, &statbf);
 	if (statbf.st_mtime > utmpmtime) {
-		dprintf(" changed\n");
+		dsyslog(LOG_DEBUG,".onalrm: changed\n");
 		utmpmtime = statbf.st_mtime;
 		if (statbf.st_size > utmpsize) {
 			utmpsize = statbf.st_size + 10 * sizeof(struct utmp);
@@ -125,14 +125,14 @@ onalrm()
 			else
 				utmp = (struct utmp *)malloc(utmpsize);
 			if (! utmp) {
-				dprintf("malloc failed\n");
+				dsyslog(LOG_DEBUG,".onalrm: malloc failed");
 				exit(1);
 			}
 		}
 		lseek(uf, 0, 0);
 		nutmp = read(uf,utmp,statbf.st_size)/sizeof(struct utmp);
 	} else
-		dprintf(" ok\n");
+		dsyslog(LOG_DEBUG, ".onalrm: ok\n");
 }
 
 mailfor(name)
@@ -143,12 +143,12 @@ mailfor(name)
 	char *rindex();
 	int offset;
 
-	dprintf("mailfor %s\n", name);
+	dsyslog(LOG_DEBUG,".mailfor: mailfor %s\n", name);
 	cp = name;
 	while (*cp && *cp != '@')
 		cp++;
 	if (*cp == 0) {
-		dprintf("bad format\n");
+		dsyslog(LOG_DEBUG,".mailfor: bad format\n");
 		return;
 	}
 	*cp = 0;
@@ -170,9 +170,9 @@ notify(utp, offset)
 
 	strcpy(tty, "/dev/");
 	strncat(tty, utp->ut_line, sizeof(utp->ut_line));
-	dprintf("notify %s on %s\n", utp->ut_name, tty);
+	dsyslog(LOG_DEBUG,".notify: notify %s on %s\n", utp->ut_name, tty);
 	if (stat(tty, &stb) == 0 && (stb.st_mode & 0100) == 0) {
-		dprintf("wrong mode\n");
+		dsyslog(LOG_DEBUG,".notify: wrong mode on tty");
 		return;
 	}
 	if (fork())
@@ -180,7 +180,7 @@ notify(utp, offset)
 	signal(SIGALRM, SIG_DFL);
 	alarm(30);
 	if ((tp = fopen(tty,"w")) == 0) {
-		dprintf("fopen failed\n");
+		dsyslog(LOG_DEBUG,".notify: fopen of tty failed");
 		exit(-1);
 	}
 	ioctl(fileno(tp), TIOCGETP, &gttybuf);
@@ -202,10 +202,10 @@ jkfprintf(tp, name, offset)
 	char line[BUFSIZ];
 	int inheader;
 
-	dprintf("HERE %s's mail starting at %d\n",
+	dsyslog(LOG_DEBUG,".jkfprint: HERE %s's mail starting at %d\n",
 	    name, offset);
 	if ((fi = fopen(name,"r")) == NULL) {
-		dprintf("Cant read the mail\n");
+		dsyslog(LOG_DEBUG,".jkfprintf: Cant read the mail\n");
 		return;
 	}
 	fseek(fi, offset, L_SET);
