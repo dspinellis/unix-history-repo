@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount.h	8.1 (Berkeley) %G%
+ *	@(#)mount.h	8.2 (Berkeley) %G%
  */
 
 #ifndef KERNEL
