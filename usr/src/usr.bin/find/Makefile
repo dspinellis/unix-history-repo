@@ -1,69 +1,61 @@
-#	@(#)Makefile	4.4	(Berkeley)	87/06/18
 #
-DESTDIR=
+# Copyright (c) 1987 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)Makefile	4.4	(Berkeley)	%G%
+#
 CFLAGS=	-O
-LFLAGS=	
-
-# The programs themselves
-#
-PROG=	find
-LIBS=	bigram code
-
-# Sources
-#
+LIBC=	/lib/libc.a
 SRCS=	find.c bigram.c code.c
+OBJS=	find.o bigram.o code.o
 
-all: ${PROG} ${LIBS}
+all: find bigram code
 
-find: find.c
-	cc ${CFLAGS} -o find find.c
+find: find.c ${LIBC}
+	${CC} ${CFLAGS} -o $@ find.c
 
 bigram: bigram.c
-	cc ${CFLAGS} -o bigram bigram.c
+	${CC} ${CFLAGS} -o $@ bigram.c
 
 code: code.c
-	cc ${CFLAGS} -o code code.c
+	${CC} ${CFLAGS} -o $@ code.c
 
-install: ${PROG} ${LIBS}
-	install -s ${PROG} ${DESTDIR}/usr/bin/${PROG}
-	-mkdir ${DESTDIR}/usr/lib/find
-	install -s bigram ${DESTDIR}/usr/lib/find/bigram
-	install -s code ${DESTDIR}/usr/lib/find/code
-	install -c -m 755 updatedb.csh ${DESTDIR}/usr/lib/find/updatedb
+clean: FRC
+	rm -f ${OBJS} core find bigram code
 
-clean:
-	rm -f a.out core ${LIBS} ${PROG}
+depend: FRC
+	mkdep -p ${CFLAGS} ${SRCS}
 
-depend:
-	cat </dev/null >x.c
-	for i in ${SRCS}; do \
-		(echo `basename $$i .c`.o: $$i >>makedep; \
-		/bin/grep '^#[ 	]*include' x.c $$i | sed \
-			-e 's,<\(.*\)>,"/usr/include/\1",' \
-			-e 's/:[^"]*"\([^"]*\)".*/: \1/' \
-			-e 's/\.c/.o/' >>makedep); done
-	echo '/^# DO NOT DELETE THIS LINE/+2,$$d' >eddep
-	echo '$$r makedep' >>eddep
-	echo 'w' >>eddep
-	cp Makefile Makefile.bak
-	ed - Makefile < eddep
-	rm eddep makedep x.c
-	echo '# DEPENDENCIES MUST END AT END OF FILE' >> Makefile
-	echo '# IF YOU PUT STUFF HERE IT WILL GO AWAY' >> Makefile
-	echo '# see make depend above' >> Makefile
+install: FRC
+	install -s -o bin -g bin -m 755 find ${DESTDIR}/usr/bin/find
+	-mkdir ${DESTDIR}/usr/lib/find > /dev/null 2>&1
+	install -s -o bin -g bin -m 755 bigram ${DESTDIR}/usr/lib/find/bigram
+	install -s -o bin -g bin -m 755 code ${DESTDIR}/usr/lib/find/code
+	install -c -o bin -g bin -m 755 updatedb.csh ${DESTDIR}/usr/lib/find/updatedb
 
-# DO NOT DELETE THIS LINE -- make depend uses it
+lint: FRC
+	lint ${CFLAGS} find.c
+	lint ${CFLAGS} bigram.c
+	lint ${CFLAGS} code.c
 
-find.o: find.c
-find.o: /usr/include/stdio.h
-find.o: /usr/include/sys/param.h
-find.o: /usr/include/sys/dir.h
-find.o: /usr/include/sys/stat.h
-find.o: /usr/include/signal.h
-bigram.o: bigram.c
-bigram.o: /usr/include/stdio.h
-code.o: code.c
-code.o: /usr/include/stdio.h
-# DEPENDENCIES MUST END AT END OF FILE
-# IF YOU PUT STUFF HERE IT WILL GO AWAY
-# see make depend above
+tags: FRC
+	ctags find.c
+	ctags -a bigram.c
+	ctags -a code.c
+	sort -o tags tags
+
+FRC:
+
+# DO NOT DELETE THIS LINE -- mkdep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
+
+find: find.c /usr/include/stdio.h /usr/include/sys/param.h
+find: /usr/include/sys/types.h /usr/include/signal.h
+find: /usr/include/machine/machparam.h /usr/include/sys/dir.h
+find: /usr/include/sys/stat.h /usr/include/pwd.h /usr/include/grp.h
+find: /usr/include/utmp.h
+bigram: bigram.c /usr/include/stdio.h
+code: code.c /usr/include/stdio.h
+
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
