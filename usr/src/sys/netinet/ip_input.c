@@ -1,4 +1,4 @@
-/*	ip_input.c	6.7	84/11/15	*/
+/*	ip_input.c	6.8	84/12/20	*/
 
 #include "param.h"
 #include "systm.h"
@@ -40,7 +40,7 @@ ip_init()
 	for (i = 0; i < IPPROTO_MAX; i++)
 		ip_protox[i] = pr - inetsw;
 	for (pr = inetdomain.dom_protosw;
-	    pr <= inetdomain.dom_protoswNPROTOSW; pr++)
+	    pr < inetdomain.dom_protoswNPROTOSW; pr++)
 		if (pr->pr_domain->dom_family == PF_INET &&
 		    pr->pr_protocol && pr->pr_protocol != IPPROTO_RAW)
 			ip_protox[pr->pr_protocol] = pr - inetsw;
@@ -451,8 +451,8 @@ ip_dooptions(ip)
 			optlen = 1;
 		else {
 			optlen = cp[1];
-			if (optlen <= 0)
-				break;
+			if (optlen <= 0 || optlen >= cnt)
+				goto bad;
 		}
 		switch (opt) {
 
