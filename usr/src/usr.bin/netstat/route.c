@@ -5,8 +5,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.6 (Berkeley) 86/04/23";
+static char sccsid[] = "@(#)route.c	5.7 (Berkeley) 86/08/11";
 #endif
+
+#include <stdio.h>
+#include <strings.h>
 
 #include <sys/param.h>
 #include <sys/socket.h>
@@ -22,7 +25,8 @@ static char sccsid[] = "@(#)route.c	5.6 (Berkeley) 86/04/23";
 
 extern	int kmem;
 extern	int nflag;
-extern	char *routename(), *netname(), *ns_print();
+extern	char *routename(), *netname(), *ns_print(), *plural();
+extern	char *malloc();
 
 /*
  * Definitions for showing gateway flags.
@@ -67,10 +71,10 @@ routepr(hostaddr, netaddr, hashsizeaddr)
 		return;
 	}
 	klseek(kmem, hashsizeaddr, 0);
-	read(kmem, &hashsize, sizeof (hashsize));
+	read(kmem, (char *)&hashsize, sizeof (hashsize));
 	routehash = (struct mbuf **)malloc( hashsize*sizeof (struct mbuf *) );
 	klseek(kmem, hostaddr, 0);
-	read(kmem, routehash, hashsize*sizeof (struct mbuf *));
+	read(kmem, (char *)routehash, hashsize*sizeof (struct mbuf *));
 	printf("Routing tables\n");
 	printf("%-20.20s %-20.20s %-8.8s %-6.6s %-10.10s %s\n",
 		"Destination", "Gateway",
@@ -82,10 +86,9 @@ again:
 		m = routehash[i];
 		while (m) {
 			struct sockaddr_in *sin;
-			struct sockaddr_ns *sns;
 
-			klseek(kmem, m, 0);
-			read(kmem, &mb, sizeof (mb));
+			klseek(kmem, (off_t)m, 0);
+			read(kmem, (char *)&mb, sizeof (mb));
 			rt = mtod(&mb, struct rtentry *);
 			if ((unsigned)rt < (unsigned)&mb ||
 			    (unsigned)rt >= (unsigned)(&mb + 1)) {
@@ -100,7 +103,7 @@ again:
 				    (sin->sin_addr.s_addr == 0) ? "default" :
 				    (rt->rt_flags & RTF_HOST) ?
 				    routename(sin->sin_addr) :
-					netname(sin->sin_addr, 0));
+					netname(sin->sin_addr, 0L));
 				sin = (struct sockaddr_in *)&rt->rt_gateway;
 				printf("%-20.20s ", routename(sin->sin_addr));
 				break;
@@ -133,9 +136,9 @@ again:
 				m = mb.m_next;
 				continue;
 			}
-			klseek(kmem, rt->rt_ifp, 0);
-			read(kmem, &ifnet, sizeof (ifnet));
-			klseek(kmem, (int)ifnet.if_name, 0);
+			klseek(kmem, (off_t)rt->rt_ifp, 0);
+			read(kmem, (char *)&ifnet, sizeof (ifnet));
+			klseek(kmem, (off_t)ifnet.if_name, 0);
 			read(kmem, name, 16);
 			printf("%s%d\n", name, ifnet.if_unit);
 			m = mb.m_next;
@@ -143,11 +146,11 @@ again:
 	}
 	if (doinghost) {
 		klseek(kmem, netaddr, 0);
-		read(kmem, routehash, hashsize*sizeof (struct mbuf *));
+		read(kmem, (char *)routehash, hashsize*sizeof (struct mbuf *));
 		doinghost = 0;
 		goto again;
 	}
-	free(routehash);
+	free((char *)routehash);
 }
 
 char *
@@ -171,7 +174,7 @@ routename(in)
 	}
 	cp = 0;
 	if (!nflag) {
-		hp = gethostbyaddr(&in, sizeof (struct in_addr),
+		hp = gethostbyaddr((char *)&in, sizeof (struct in_addr),
 			AF_INET);
 		if (hp) {
 			if ((cp = index(hp->h_name, '.')) &&
@@ -235,7 +238,7 @@ netname(in, mask)
 		np = getnetbyaddr(net, AF_INET);
 		if (np)
 			cp = np->n_name;
-	}
+	}	
 	if (cp)
 		strcpy(line, cp);
 	else if ((in.s_addr & 0xffffff) == 0)
@@ -289,7 +292,7 @@ struct sockaddr_ns *sns;
 	u_short port;
 	static char mybuf[50], cport[10], chost[25];
 	char *host = "";
-	register char *p; register u_char *q; u_char *q_lim;
+	register char *p; register u_char *q;
 
 	work = sns->sns_addr;
 	port = ntohs(work.x_port);

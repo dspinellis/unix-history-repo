@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)unix.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)unix.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -23,6 +23,7 @@ static char sccsid[] = "@(#)unix.c	5.3 (Berkeley) %G%";
 
 int	Aflag;
 int	kmem;
+extern	char *calloc();
 
 unixpr(nfileaddr, fileaddr, unixsw)
 	off_t nfileaddr, fileaddr;
@@ -37,12 +38,12 @@ unixpr(nfileaddr, fileaddr, unixsw)
 		return;
 	}
 	klseek(kmem, nfileaddr, L_SET);
-	if (read(kmem, &nfile, sizeof (nfile)) != sizeof (nfile)) {
+	if (read(kmem, (char *)&nfile, sizeof (nfile)) != sizeof (nfile)) {
 		printf("nfile: bad read.\n");
 		return;
 	}
 	klseek(kmem, fileaddr, L_SET);
-	if (read(kmem, &filep, sizeof (filep)) != sizeof (filep)) {
+	if (read(kmem, (char *)&filep, sizeof (filep)) != sizeof (filep)) {
 		printf("File table address, bad read.\n");
 		return;
 	}
@@ -52,7 +53,7 @@ unixpr(nfileaddr, fileaddr, unixsw)
 		return;
 	}
 	klseek(kmem, (off_t)filep, L_SET);
-	if (read(kmem, file, nfile * sizeof (struct file)) !=
+	if (read(kmem, (char *)file, nfile * sizeof (struct file)) !=
 	    nfile * sizeof (struct file)) {
 		printf("File table read error.\n");
 		return;
@@ -61,8 +62,8 @@ unixpr(nfileaddr, fileaddr, unixsw)
 	for (fp = file; fp < fileNFILE; fp++) {
 		if (fp->f_count == 0 || fp->f_type != DTYPE_SOCKET)
 			continue;
-		klseek(kmem, fp->f_data, L_SET);
-		if (read(kmem, so, sizeof (*so)) != sizeof (*so))
+		klseek(kmem, (off_t)fp->f_data, L_SET);
+		if (read(kmem, (char *)so, sizeof (*so)) != sizeof (*so))
 			continue;
 		/* kludge */
 		if (so->so_proto >= unixsw && so->so_proto <= unixsw + 2)
@@ -84,13 +85,13 @@ unixdomainpr(so, soaddr)
 	struct sockaddr_un *sa;
 	static int first = 1;
 
-	klseek(kmem, so->so_pcb, L_SET);
-	if (read(kmem, unp, sizeof (*unp)) != sizeof (*unp))
+	klseek(kmem, (off_t)so->so_pcb, L_SET);
+	if (read(kmem, (char *)unp, sizeof (*unp)) != sizeof (*unp))
 		return;
 	if (unp->unp_addr) {
 		m = &mbuf;
-		klseek(kmem, unp->unp_addr, L_SET);
-		if (read(kmem, m, sizeof (*m)) != sizeof (*m))
+		klseek(kmem, (off_t)unp->unp_addr, L_SET);
+		if (read(kmem, (char *)m, sizeof (*m)) != sizeof (*m))
 			m = (struct mbuf *)0;
 		sa = mtod(m, struct sockaddr_un *);
 	} else

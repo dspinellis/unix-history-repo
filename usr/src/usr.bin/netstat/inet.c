@@ -5,8 +5,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)inet.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)inet.c	5.5 (Berkeley) %G%";
 #endif not lint
+
+#include <strings.h>
+#include <stdio.h>
 
 #include <sys/param.h>
 #include <sys/socket.h>
@@ -38,13 +41,12 @@ static char sccsid[] = "@(#)inet.c	5.4 (Berkeley) %G%";
 struct	inpcb inpcb;
 struct	tcpcb tcpcb;
 struct	socket sockb;
-struct	protosw proto;
 extern	int kmem;
 extern	int Aflag;
 extern	int aflag;
 extern	int nflag;
+extern	char *plural();
 
-static	int first = 1;
 char	*inetname();
 
 /*
@@ -60,36 +62,36 @@ protopr(off, name)
 	struct inpcb cb;
 	register struct inpcb *prev, *next;
 	int istcp;
+	static int first = 1;
 
 	if (off == 0)
 		return;
 	istcp = strcmp(name, "tcp") == 0;
 	klseek(kmem, off, 0);
-	read(kmem, &cb, sizeof (struct inpcb));
+	read(kmem, (char *)&cb, sizeof (struct inpcb));
 	inpcb = cb;
 	prev = (struct inpcb *)off;
 	if (inpcb.inp_next == (struct inpcb *)off)
 		return;
 	while (inpcb.inp_next != (struct inpcb *)off) {
-		char *cp;
 
 		next = inpcb.inp_next;
 		klseek(kmem, (off_t)next, 0);
-		read(kmem, &inpcb, sizeof (inpcb));
+		read(kmem, (char *)&inpcb, sizeof (inpcb));
 		if (inpcb.inp_prev != prev) {
 			printf("???\n");
 			break;
 		}
 		if (!aflag &&
-		  inet_lnaof(inpcb.inp_laddr.s_addr) == INADDR_ANY) {
+		  inet_lnaof(inpcb.inp_laddr) == INADDR_ANY) {
 			prev = next;
 			continue;
 		}
 		klseek(kmem, (off_t)inpcb.inp_socket, 0);
-		read(kmem, &sockb, sizeof (sockb));
+		read(kmem, (char *)&sockb, sizeof (sockb));
 		if (istcp) {
 			klseek(kmem, (off_t)inpcb.inp_ppcb, 0);
-			read(kmem, &tcpcb, sizeof (tcpcb));
+			read(kmem, (char *)&tcpcb, sizeof (tcpcb));
 		}
 		if (first) {
 			printf("Active Internet connections");
@@ -284,7 +286,7 @@ icmp_stats(off, name)
  */
 inetprint(in, port, proto)
 	register struct in_addr *in;
-	int port;
+	u_short port; 
 	char *proto;
 {
 	struct servent *sp = 0;
@@ -294,7 +296,7 @@ inetprint(in, port, proto)
 	sprintf(line, "%.*s.", (Aflag && !nflag) ? 12 : 16, inetname(*in));
 	cp = index(line, '\0');
 	if (!nflag && port)
-		sp = getservbyport(port, proto);
+		sp = getservbyport((int)port, proto);
 	if (sp || port == 0)
 		sprintf(cp, "%.8s", sp ? sp->s_name : "*");
 	else
@@ -338,7 +340,7 @@ inetname(in)
 				cp = np->n_name;
 		}
 		if (cp == 0) {
-			hp = gethostbyaddr(&in, sizeof (in), AF_INET);
+			hp = gethostbyaddr((char *)&in, sizeof (in), AF_INET);
 			if (hp) {
 				if ((cp = index(hp->h_name, '.')) &&
 				    !strcmp(cp + 1, domain))
