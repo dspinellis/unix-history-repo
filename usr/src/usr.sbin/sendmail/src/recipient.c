@@ -2,7 +2,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)recipient.c	3.42		%G%);
+SCCSID(@(#)recipient.c	3.43		%G%);
 
 /*
 **  SENDTO -- Designate a send list.
@@ -243,7 +243,7 @@ recipient(a, sendq)
 		(void) strcpy(buf, a->q_user);
 		for (p = buf; *p != '\0' && !quoted; p++)
 		{
-			if (!isascii(*p) && (*p & 0377) != (SPACESUB & 0377))
+			if (!isascii(*p) && (*p & 0377) != (SpaceSub & 0377))
 				quoted = TRUE;
 		}
 		stripquotes(buf, TRUE);
@@ -330,7 +330,7 @@ finduser(name)
 
 	for (p = name; *p != '\0'; p++)
 	{
-		if (*p == (SPACESUB & 0177) || *p == '_')
+		if (*p == (SpaceSub & 0177) || *p == '_')
 			*p = ' ';
 	}
 
