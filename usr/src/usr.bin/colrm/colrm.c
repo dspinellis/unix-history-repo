@@ -1,4 +1,4 @@
-static	char *Sccsid = "@(#)colrm.c	4.2 (Berkeley) %G%";
+static	char *Sccsid = "@(#)colrm.c	4.3 (Berkeley) %G%";
 #include <stdio.h>
 /*
 COLRM removes unwanted columns from a file
@@ -27,7 +27,8 @@ char **argv;
 start:
 	ct = 0;
 loop1:
-	if ((c=getc(stdin))<0)
+	c = getc(stdin);
+	if (feof(stdin))
 		goto fin;
 	if (c == '\t')
 		ct = (ct + 8) &~ 7;
@@ -46,7 +47,8 @@ loop1:
 
 /* Loop getting rid of characters */
 	for (;ct<last;ct++) {
-		if ((c=getc(stdin))<0)
+		c = getc(stdin);
+		if (feof(stdin))
 			goto fin;
 		if (c=='\n') {
 			putc(c,stdout);
@@ -55,7 +57,10 @@ loop1:
 	}
 
 /* Output last of the line */
-	while ((c=getc(stdin))>0) {
+	for (;;) {
+		c = getc(stdin);
+		if (feof(stdin))
+			break;
 		putc(c,stdout);
 		if (c=='\n')
 			goto start;
