@@ -11,7 +11,7 @@
  *
  * from Utah: $Hdr: dcm.c 1.29 92/01/21$
  *
- *	@(#)dcm.c	8.1 (Berkeley) %G%
+ *	@(#)dcm.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -47,7 +47,6 @@
 #define DEFAULT_BAUD_RATE 9600
 #endif
 
-int	ttrstrt();
 int	dcmprobe(), dcmintr(), dcmparam();
 void	dcmstart();
 struct	driver dcmdriver = {
