@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ip_output.c	6.10 (Berkeley) %G%
+ *	@(#)ip_output.c	6.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -71,37 +71,41 @@ ip_output(m, opt, ro, flags)
 	if (ro->ro_rt == 0) {
 		dst->sin_family = AF_INET;
 		dst->sin_addr = ip->ip_dst;
-		/*
-		 * If routing to interface only,
-		 * short circuit routing lookup.
-		 */
-		if (flags & IP_ROUTETOIF) {
-			struct in_ifaddr *ia;
-			ia = in_iaonnetof(in_netof(ip->ip_dst));
-			if (ia == 0) {
-				error = ENETUNREACH;
-				goto bad;
-			}
-			ifp = ia->ia_ifp;
-			goto gotif;
+	}
+	/*
+	 * If routing to interface only,
+	 * short circuit routing lookup.
+	 */
+	if (flags & IP_ROUTETOIF) {
+		struct in_ifaddr *ia;
+		ia = in_iaonnetof(in_netof(ip->ip_dst));
+		if (ia == 0) {
+			error = ENETUNREACH;
+			goto bad;
 		}
-		rtalloc(ro);
-	} else if ((ro->ro_rt->rt_flags & RTF_UP) == 0) {
+		ifp = ia->ia_ifp;
+	} else {
 		/*
-		 * The old route has gone away; try for a new one.
+		 * If there is a cached route,
+		 * check that it is to the same destination
+		 * and is still up.  If not, free it and try again.
 		 */
-		rtfree(ro->ro_rt);
-		ro->ro_rt = NULL;
-		rtalloc(ro);
+		if (ro->ro_rt && ((ro->ro_rt->rt_flags & RTF_UP) == 0 ||
+		   dst->sin_addr.s_addr != ip->ip_dst.s_addr)) {
+			RTFREE(ro->ro_rt);
+			ro->ro_rt = (struct rtentry *)0;
+			dst->sin_addr = ip->ip_dst;
+		}
+		if (ro->ro_rt == 0)
+			rtalloc(ro);
+		if (ro->ro_rt == 0 || (ifp = ro->ro_rt->rt_ifp) == 0) {
+			error = ENETUNREACH;
+			goto bad;
+		}
+		ro->ro_rt->rt_use++;
+		if (ro->ro_rt->rt_flags & (RTF_GATEWAY|RTF_HOST))
+			dst = (struct sockaddr_in *)&ro->ro_rt->rt_gateway;
 	}
-	if (ro->ro_rt == 0 || (ifp = ro->ro_rt->rt_ifp) == 0) {
-		error = ENETUNREACH;
-		goto bad;
-	}
-	ro->ro_rt->rt_use++;
-	if (ro->ro_rt->rt_flags & (RTF_GATEWAY|RTF_HOST))
-		dst = (struct sockaddr_in *)&ro->ro_rt->rt_gateway;
-gotif:
 #ifndef notdef
 	/*
 	 * If source address not specified yet, use address
