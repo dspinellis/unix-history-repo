@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dmx.c	7.5 (Berkeley) %G%
+ *	@(#)dmx.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -25,7 +25,6 @@
 #include "sys/map.h"
 #include "sys/buf.h"
 #include "sys/vm.h"
-#include "sys/bkmac.h"
 #include "sys/clist.h"
 #include "sys/file.h"
 #include "sys/uio.h"

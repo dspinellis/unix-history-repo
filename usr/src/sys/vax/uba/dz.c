@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dz.c	7.12 (Berkeley) %G%
+ *	@(#)dz.c	7.13 (Berkeley) %G%
  */
 
 #include "dz.h"
@@ -23,7 +23,6 @@
 #include "sys/buf.h"
 #include "sys/vm.h"
 #include "sys/conf.h"
-#include "sys/bkmac.h"
 #include "sys/file.h"
 #include "sys/uio.h"
 #include "sys/kernel.h"
