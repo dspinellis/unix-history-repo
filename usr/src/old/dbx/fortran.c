@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)fortran.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)fortran.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -560,7 +560,7 @@ long i;
 private fortran_printarray(a)
 Symbol a;
 {
-struct Bounds { int lb, val, ub} dim[MAXDIM];
+struct Bounds { int lb, val, ub; } dim[MAXDIM];
 
 Symbol sc,st,eltype;
 char buf[50];
