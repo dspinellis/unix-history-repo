@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_mmap.c 1.3 90/01/21$
  *
- *	@(#)vm_mmap.c	7.3 (Berkeley) %G%
+ *	@(#)vm_mmap.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -568,12 +568,9 @@ vm_mmap(map, addr, size, prot, flags, handle, foff)
 			 * (XXX)
 			 * Map copy code cannot detect sharing unless a
 			 * sharing map is involved.  So we cheat and write
-			 * protect everything ourselves.  Note we cannot
-			 * use vm_object_pmap_copy() because that relies
-			 * on the page copy_on_write bit which isn't
-			 * always accurate with shared objects.
+			 * protect everything ourselves.
 			 */
-			vm_object_pmap_force_copy(object, (vm_offset_t)foff,
+			vm_object_pmap_copy(object, (vm_offset_t)foff,
 					    (vm_offset_t)foff+size);
 			vm_object_deallocate(object);
 			vm_map_deallocate(tmap);
@@ -790,32 +787,4 @@ vm_map_is_allocated(map, start, end, single_entry)
 
 	vm_map_unlock_read(map);
 	return (end <= nend);
-}
-
-#include "../vm/vm_page.h"
-
-/*
- * Doesn't trust the COW bit in the page structure.
- * vm_fault can improperly set it.
- */
-vm_object_pmap_force_copy(object, start, end)
-	register vm_object_t	object;
-	register vm_offset_t	start;
-	register vm_offset_t	end;
-{
-	register vm_page_t	p;
-
-	if (object == NULL)
-		return;
-
-	vm_object_lock(object);
-	p = (vm_page_t) queue_first(&object->memq);
-	while (!queue_end(&object->memq, (queue_entry_t) p)) {
-		if (start <= p->offset && p->offset < end) {
-			pmap_copy_on_write(VM_PAGE_TO_PHYS(p));
-			p->copy_on_write = TRUE;
-		}
-		p = (vm_page_t) queue_next(&p->listq);
-	}
-	vm_object_unlock(object);
 }
