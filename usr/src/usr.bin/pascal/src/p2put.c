@@ -1,6 +1,8 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)p2put.c 1.14 %G%";
+#ifndef lint
+static	char sccsid[] = "@(#)p2put.c 1.15 %G%";
+#endif
 
     /*
      *	functions to help pi put out
@@ -58,7 +60,7 @@ str4len( string )
      *	none of arg1 .. arg5 need be present.
      *	and you can add more if you need them.
      */
-    /* VARARGS */
+/* VARARGS */
 putprintf( format , incomplete , arg1 , arg2 , arg3 , arg4 , arg5 )
     char	*format;
     int		incomplete;
@@ -99,8 +101,8 @@ putlbracket(ftnno, sizesp)
 	maxtempreg =	(sizesp->curtmps.next_avail[REG_ADDR] << 4)
 		      | (sizesp->curtmps.next_avail[REG_DATA]);
 #   endif mc68000
-    alignedframesize =
-	roundup(BITSPERBYTE * -sizesp->curtmps.om_off, BITSPERBYTE * A_STACK);
+    alignedframesize = roundup((int)(BITSPERBYTE * -sizesp->curtmps.om_off),
+	(long)(BITSPERBYTE * A_STACK));
     p2word( TOF77( P2FLBRAC , maxtempreg , ftnno ) );
     p2word(alignedframesize);
 #   ifdef DEBUG
@@ -233,7 +235,6 @@ putRV( name , level , offset , other_flags , type )
     {
 	char	extname[ BUFSIZ ];
 	char	*printname;
-	int	regnumber;
 
 	if ( !CGENNING )
 	    return;
@@ -241,10 +242,10 @@ putRV( name , level , offset , other_flags , type )
 	    if ( ( offset < 0 ) || ( offset > P2FP ) ) {
 		panic( "putRV regvar" );
 	    }
-	    putleaf( P2REG , 0 , offset , type , 0 );
+	    putleaf( P2REG , 0 , offset , type , (char *) 0 );
 	    return;
 	}
-	if ( whereis( level , offset , other_flags ) == GLOBALVAR ) {
+	if ( whereis( offset , other_flags ) == GLOBALVAR ) {
 	    if ( name != 0 ) {
 		if ( name[0] != '_' ) {
 			sprintf( extname , EXTFORMAT , name );
@@ -283,7 +284,7 @@ putLV( name , level , offset , other_flags , type )
     if ( other_flags & NREGVAR ) {
 	panic( "putLV regvar" );
     }
-    switch ( whereis( level , offset , other_flags ) ) {
+    switch ( whereis( offset , other_flags ) ) {
 	case GLOBALVAR:
 	    if ( ( name != 0 ) ) {
 		if ( name[0] != '_' ) {
@@ -300,29 +301,29 @@ putLV( name , level , offset , other_flags , type )
 	    }
 	case PARAMVAR:
 	    if ( level == cbn ) {
-		putleaf( P2REG , 0 , P2AP , ADDTYPE( type , P2PTR ) , 0 );
+		putleaf( P2REG, 0, P2AP, ADDTYPE( type , P2PTR ), (char *) 0 );
 	    } else {
 		putleaf( P2NAME , (level * sizeof(struct dispsave)) + AP_OFFSET
 		    , 0 , P2PTR | P2CHAR , DISPLAYNAME );
 		parts[ level ] |= NONLOCALVAR;
 	    }
-	    putleaf( P2ICON , offset , 0 , P2INT , 0 );
+	    putleaf( P2ICON , offset , 0 , P2INT , (char *) 0 );
 	    putop( P2PLUS , P2PTR | P2CHAR );
 	    break;
 	case LOCALVAR:
 	    if ( level == cbn ) {
-		putleaf( P2REG , 0 , P2FP , ADDTYPE( type , P2PTR ) , 0 );
+		putleaf( P2REG, 0, P2FP, ADDTYPE( type , P2PTR ), (char *) 0 );
 	    } else {
 		putleaf( P2NAME , (level * sizeof(struct dispsave)) + FP_OFFSET
 		    , 0 , P2PTR | P2CHAR , DISPLAYNAME );
 		parts[ level ] |= NONLOCALVAR;
 	    }
-	    putleaf( P2ICON , -offset , 0 , P2INT , 0 );
+	    putleaf( P2ICON , -offset , 0 , P2INT , (char *) 0 );
 	    putop( P2MINUS , P2PTR | P2CHAR );
 	    break;
 	case NAMEDLOCALVAR:
 	    if ( level == cbn ) {
-		putleaf( P2REG , 0 , P2FP , ADDTYPE( type , P2PTR ) , 0 );
+		putleaf( P2REG, 0, P2FP, ADDTYPE( type , P2PTR ), (char *) 0 );
 	    } else {
 		putleaf( P2NAME , (level * sizeof(struct dispsave)) + FP_OFFSET
 		    , 0 , P2PTR | P2CHAR , DISPLAYNAME );
@@ -343,7 +344,7 @@ putLV( name , level , offset , other_flags , type )
 putCON8( val )
     double	val;
     {
-	int	label;
+	char	*label;
 	char	name[ BUFSIZ ];
 
 	if ( !CGENNING )
@@ -351,7 +352,7 @@ putCON8( val )
 	label = getlab();
 	putprintf( "	.data" , 0 );
 	aligndot(A_DOUBLE);
-	putlab( label );
+	(void) putlab( label );
 #	ifdef vax
 	    putprintf( "	.double 0d%.20e" , 0 , val );
 #	endif vax
@@ -374,7 +375,7 @@ putCONG( string , length , required )
     int		required;
     {
 	char	name[ BUFSIZ ];
-	int	label;
+	char	*label;
 	char	*cp;
 	int	pad;
 	int	others;
@@ -384,7 +385,7 @@ putCONG( string , length , required )
 	putprintf( "	.data" , 0 );
 	aligndot(A_STRUCT);
 	label = getlab();
-	putlab( label );
+	(void) putlab( label );
 	cp = string;
 	while ( *cp ) {
 	    putprintf( "	.byte	0%o" , 1 , *cp ++ );
@@ -434,6 +435,7 @@ putCONG( string , length , required )
 #define	MAXQUALS	6
 int
 p2type( np )
+    struct nl	*np;
 {
 
     return typerecur( np , 0 );
@@ -461,6 +463,7 @@ typerecur( np , quals )
 			return P2INT;
 		    default:
 			panic( "p2type int" );
+			/* NOTREACHED */
 		}
 	    case STR :
 		return ( P2ARY | P2CHAR );
@@ -512,22 +515,10 @@ typerecur( np , quals )
 		return ( P2PTR | P2STRTY );
 	    default :
 		panic( "p2type" );
+		/* NOTREACHED */
 	}
     }
 
-    /*
-     *	add a most significant type modifier to a type
-     */
-long
-addtype( underlying , mtype )
-    long	underlying;
-    long	mtype;
-    {
-	return ( ( ( underlying & ~P2BASETYPE ) << P2TYPESHIFT )
-	       | mtype
-	       | ( underlying & P2BASETYPE ) );
-    }
-
     /*
      *	put a typed operator to the pcstream
      */
@@ -700,7 +691,7 @@ char	*p2opnames[] = {
      *	puts a long word on the pcstream
      */
 p2word( word )
-    long	word;
+    int		word;
     {
 
 	putw( word , pcstream );
@@ -788,7 +779,8 @@ printjbr( prefix , label )
     /*
      *	another version of put to catch calls to put
      */
-put( arg1 , arg2 )
+/* VARARGS */
+put()
     {
 
 	panic("put()");
