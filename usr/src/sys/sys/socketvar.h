@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)socketvar.h	7.4 (Berkeley) %G%
+ *	@(#)socketvar.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -87,6 +87,7 @@ struct socket {
 #define	SS_PRIV			0x080	/* privileged for broadcast, raw... */
 #define	SS_NBIO			0x100	/* non-blocking ops */
 #define	SS_ASYNC		0x200	/* async i/o notify */
+#define	SS_ISCONFIRMING		0x400	/* deciding to accept connection req */
 
 
 /*
@@ -95,7 +96,7 @@ struct socket {
 
 /* how much space is there in a socket buffer (so->so_snd or so->so_rcv) */
 #define	sbspace(sb) \
-    (MIN((long)((sb)->sb_hiwat - (sb)->sb_cc),\
+    (min((long)((sb)->sb_hiwat - (sb)->sb_cc),\
 	 (long)((sb)->sb_mbmax - (sb)->sb_mbcnt)))
 
 /* do we have to send all at once on a socket? */
@@ -119,16 +120,16 @@ struct socket {
 #define	sballoc(sb, m) { \
 	(sb)->sb_cc += (m)->m_len; \
 	(sb)->sb_mbcnt += MSIZE; \
-	if ((m)->m_off > MMAXOFF) \
-		(sb)->sb_mbcnt += CLBYTES; \
+	if ((m)->m_flags & M_EXT) \
+		(sb)->sb_mbcnt += MCLBYTES; \
 }
 
 /* adjust counters in sb reflecting freeing of m */
 #define	sbfree(sb, m) { \
 	(sb)->sb_cc -= (m)->m_len; \
 	(sb)->sb_mbcnt -= MSIZE; \
-	if ((m)->m_off > MMAXOFF) \
-		(sb)->sb_mbcnt -= CLBYTES; \
+	if ((m)->m_flags & M_EXT) \
+		(sb)->sb_mbcnt -= MCLBYTES; \
 }
 
 /* set lock on sockbuf sb */
