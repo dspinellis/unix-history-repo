@@ -1,1 +1,0 @@
-#define NWE 1
