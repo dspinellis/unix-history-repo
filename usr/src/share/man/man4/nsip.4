@@ -1,61 +1,102 @@
-.\" Copyright (c) 1985 The Regents of the University of California.
+.\" Copyright (c) 1985, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)nsip.4	1.3 (Berkeley) %G%
+.\"     @(#)nsip.4	1.4 (Berkeley) %G%
 .\"
-.TH NSIP 4 ""
-.UC 6
-.SH NAME
-nsip \- software network interface encapsulating ns packets in ip packets.
-.SH SYNOPSIS
-.B options NSIP
-.br
-.B #include <netns/ns_if.h>
-.SH DESCRIPTION
+.Dd 
+.Dt NSIP 4
+.Os BSD 4.3
+.Sh NAME
+.Nm nsip
+.Nd software network interface encapsulating NS packets in IP packets
+.Sh SYNOPSIS
+.Cd options NSIP
+.Fd #include <netns/ns_if.h>
+.Sh DESCRIPTION
 The
-.I nsip
+.Nm nsip
 interface is a software mechanism which may be
-used to transmit Xerox NS(tm) packets through otherwise uncooperative
+used to transmit Xerox
+.Tn NS Ns (tm)
+packets through otherwise uncooperative
 networks.
-It functions by prepending an IP header, and resubmitting the packet
-through the unix IP machinery.
-.LP
+It functions by prepending an
+.Tn IP
+header, and resubmitting the packet
+through the
+.Tn UNIX
+.Tn IP
+machinery.
+.Pp
 The super-user can advise the operating system of a willing partner
-by naming an IP address to be associated with an NS address.
+by naming an
+.Tn IP
+address to be associated with an
+.Tn NS
+address.
 Presently, only specific hosts pairs are allowed, and for each host
 pair, an artificial point-to-point interface is constructed.
-At some future date, IP broadcast addresses or hosts may be paired
-with NS networks or hosts.
-.LP
-Specifically, a socket option of SO_NSIP_ROUTE is set on a socket
-of family AF_NS, type SOCK_DGRAM, passing the following structure:
-.nf
-
+At some future date,
+.Tn IP
+broadcast addresses or hosts may be paired
+with
+.Tn NS
+networks or hosts.
+.Pp
+Specifically, a socket option of
+.Dv SO_NSIP_ROUTE
+is set on a socket
+of family
+.Dv AF_NS ,
+type
+.Dv SOCK_DGRAM ,
+passing the following structure:
+.Bd -literal
 struct nsip_req {
 	struct sockaddr rq_ns;	/* must be ns format destination */
 	struct sockaddr rq_ip;	/* must be ip format gateway */
 	short rq_flags;
 };
-
-.SH DIAGNOSTICS
-\fBnsip%d: can't handle af%d\fP.  The interface was handed
+.Ed
+.Sh DIAGNOSTICS
+.Bl -diag
+.It nsip%d: can't handle af%d.
+The interface was handed
 a message with addresses formatted in an unsuitable address
 family; the packet was dropped.
-.SH SEE ALSO
-intro(4), ns(4)
-.SH BUGS
+.El
+.Sh SEE ALSO
+.Xr intro 4 ,
+.Xr ns 4
+.Sh HISTORY
+The
+.Nm
+interface appeared in
+.Bx 4.3 .
+.Sh BUGS
 It is absurd to have a separate pseudo-device for each pt-to-pt
 link.
-There is no way to change the IP address for an NS host once the
+There is no way to change the
+.Tn IP
+address for an
+.Tn NS
+host once the
 the encapsulation interface is set up.
-The request should honor flags of RTF_GATEWAY to indicate
-remote networks, and the absence of RTF_UP should be a clue
+The request should honor flags of
+.Dv RTF_GATEWAY
+to indicate
+remote networks, and the absence of
+.Dv RTF_UP
+should be a clue
 to remove that partner.
-This was intended to postpone the necessity of rewriting reverse ARP
+This was intended to postpone the necessity of rewriting reverse
+.Tn ARP
 for the 
-.B en
-device, and to allow passing XNS packets through an
+.Xr en 4
+device, and to allow passing
+.Tn XNS
+packets through an
 Arpanet-Milnet gateway, to facilitate testing between some co-operating
 universities.

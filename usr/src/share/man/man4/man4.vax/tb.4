@@ -1,34 +1,34 @@
-.\" Copyright (c) 1986 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1986, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)tb.4	6.3 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH TB 4 ""
-.UC 6
-.SH NAME
-tb \- line discipline for digitizing devices
-.SH SYNOPSIS
-.B pseudo-device tb
-.SH DESCRIPTION
+.\"     @(#)tb.4	6.4 (Berkeley) %G%
+.\"
+.Dd 
+.Dt TB 4 vax
+.Os BSD 4.3
+.Sh NAME
+.Nm tb
+.Nd line discipline for digitizing devices
+.Sh SYNOPSIS
+.Cd pseudo-device tb
+.Sh DESCRIPTION
 This line discipline provides a polled interface to many common
 digitizing devices which are connected to a host through a serial line.
 When these devices stream data at high speed, the use of the
 line discipline is critical in minimizing the number of samples
 that would otherwise be lost due to buffer exhaustion in the
-.IR tty (4)
+.Xr tty 4
 handler.
-.PP
+.Pp
 The line discipline is enabled by a sequence:
-.PP
-.nf
-.ft B
-	#include <sys/tablet.h>
-	int ldisc = TBLDISC, fildes; ...
-	ioctl(fildes, TIOCSETD, &ldisc);
-.fi
-.ft R
-.PP
+.Bd -literal -offset indent
+#include <sys/tablet.h>
+int ldisc = TBLDISC, fildes; ...
+ioctl(fildes, TIOCSETD, &ldisc);
+.Ed
+.Pp
 A typical application program then polls the digitizing device by
 reading a binary data structure which contains: the current X and
 Y positions (in the device coordinate space),
@@ -36,31 +36,47 @@ up-down status of the buttons or pen stylus,
 proximity information (when available), and a count
 of the number of samples received from the input device
 since it was opened.  In addition, devices such as the
-GTCO append tilt and pressure information to the end of
+.Tn GTCO
+append tilt and pressure information to the end of
 the aforementioned structure.  For the Polhemus 3-D digitizer
 the structure read is completely different. Refer to the
 include file for a complete description.
-.PP
+.Pp
 While in tablet mode, normal teletype input and output functions take place.
 Thus, if an 8 bit output data path is desired, it is necessary
-to prepare the output line by putting it into RAW mode using
-.IR ioctl (2).
+to prepare the output line by putting it into
+.Tn RAW
+mode using
+.Xr ioctl 2 .
 This must be done
-.B before
-changing the discipline with TIOCSETD, as most
-.IR ioctl (2)
+.Em before
+changing the discipline with
+.Dv TIOCSETD ,
+as most
+.Xr ioctl 2
 calls are disabled while in tablet line-discipline mode.
-.PP
+.Pp
 The line discipline supports
-.IR ioctl (2)
+.Xr ioctl 2
 requests to get/set the operating mode, and to get/set the tablet type
-and operating mode by \fIor\fP-ing the two values together.
-.PP
+and operating mode by
+.Em or Ns -ing
+the two values together.
+.Pp
 The line discipline supports digitizing devices which are
-compatible with Hitachi, GTCO, or Polhemus protocol formats.
+compatible with Hitachi,
+.Tn GTCO ,
+or Polhemus protocol formats.
 For Hitachi there are several formats with that used in the
-newer model HDG-1111B the most common.
-.SH "SEE ALSO"
-tty(4)
-.SH DIAGNOSTICS
+newer model
+.Tn HDG-1111B
+the most common.
+.Sh DIAGNOSTICS
 None.
+.Sh SEE ALSO
+.Xr tty 4
+.Sh HISTORY
+The
+.Nm
+interface appeared in
+.Bx 4.3 .
