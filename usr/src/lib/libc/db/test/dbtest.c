@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dbtest.c	8.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)dbtest.c	8.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -422,7 +422,7 @@ u_int
 setflags(s)
 	char *s;
 {
-	char *p;
+	char *p, *index();
 
 	for (; isspace(*s); ++s);
 	if (*s == '\n')
@@ -473,7 +473,7 @@ setinfo(type, s)
 	static BTREEINFO ib;
 	static HASHINFO ih;
 	static RECNOINFO rh;
-	char *eq;
+	char *eq, *index();
 
 	if ((eq = index(s, '=')) == NULL)
 		err("%s: illegal structure set statement", s);
@@ -569,7 +569,7 @@ rfile(name, lenp)
 	struct stat sb;
 	void *p;
 	int fd;
-	char *np;
+	char *np, *index();
 
 	for (; isspace(*name); ++name);
 	if ((np = index(name, '\n')) != NULL)
@@ -581,7 +581,7 @@ rfile(name, lenp)
 	if (sb.st_size > (off_t)SIZE_T_MAX)
 		err("%s: %s\n", name, strerror(E2BIG));
 #endif
-	if ((p = malloc((u_int)sb.st_size)) == NULL)
+	if ((p = (void *)malloc((u_int)sb.st_size)) == NULL)
 		err("%s", strerror(errno));
 	(void)read(fd, p, (int)sb.st_size);
 	*lenp = sb.st_size;
@@ -596,7 +596,7 @@ xmalloc(text, len)
 {
 	void *p;
 
-	if ((p = malloc(len)) == NULL)
+	if ((p = (void *)malloc(len)) == NULL)
 		err("%s", strerror(errno));
 	memmove(p, text, len);
 	return (p);
