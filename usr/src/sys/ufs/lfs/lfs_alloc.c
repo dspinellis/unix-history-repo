@@ -14,12 +14,11 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)lfs_alloc.c	7.17 (Berkeley) %G%
+ *	@(#)lfs_alloc.c	7.18 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "mount.h"
 #include "buf.h"
 #include "user.h"
 #include "vnode.h"

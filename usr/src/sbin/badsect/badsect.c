@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)badsect.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)badsect.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -38,10 +38,8 @@ static char sccsid[] = "@(#)badsect.c	5.7 (Berkeley) %G%";
 #include <sys/param.h>
 #include <sys/dir.h>
 #include <sys/stat.h>
-#include <sys/time.h>
-#include <sys/vnode.h>
 #include <ufs/fs.h>
-#include <ufs/inode.h>
+#include <ufs/dinode.h>
 #include <stdio.h>
 #include <paths.h>
 

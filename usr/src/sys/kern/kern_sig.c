@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_sig.c	7.13 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -14,7 +14,6 @@
 #include "timeb.h"
 #include "times.h"
 #include "buf.h"
-#include "mount.h"
 #include "text.h"
 #include "seg.h"
 #include "vm.h"

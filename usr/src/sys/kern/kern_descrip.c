@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_descrip.c	7.10 (Berkeley) %G%
+ *	@(#)kern_descrip.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -26,7 +26,6 @@
 #include "file.h"
 #include "socket.h"
 #include "socketvar.h"
-#include "mount.h"
 #include "stat.h"
 
 #include "ioctl.h"

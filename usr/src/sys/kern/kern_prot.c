@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_prot.c	7.9 (Berkeley) %G%
+ *	@(#)kern_prot.c	7.10 (Berkeley) %G%
  */
 
 /*
@@ -21,7 +21,6 @@
 #include "reboot.h"
 #include "fs.h"
 #include "buf.h"
-#include "mount.h"
 #include "quota.h"
 
 #include "machine/reg.h"
