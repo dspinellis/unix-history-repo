@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_input.c	7.7 (Berkeley) %G%
+ *	@(#)pk_input.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -154,7 +154,7 @@ struct x25config *xcp;
 		return;
 	}
 
-	pk_trace (pkp -> pk_xcp, xp, "P-In");
+	pk_trace (pkp -> pk_xcp, m, "P-In");
 
 	if (pkp -> pk_state != DTE_READY && ptype != RESTART && ptype != RESTART_CONF) {
 		m_freem (m);
@@ -189,7 +189,7 @@ struct x25config *xcp;
 	 *  Incoming Call packet received. 
 	 */
 	case CALL + LISTEN: 
-		incoming_call (pkp, xp, m -> m_len);
+		incoming_call (pkp, m);
 		break;
 
 	/* 	
@@ -276,7 +276,7 @@ struct x25config *xcp;
 		if (PS(xp) != ((lcp -> lcd_rsn + 1) % MODULUS) ||
 			PS(xp) == ((lcp -> lcd_input_window + lcp->lcd_windowsize) % MODULUS)) {
 			m_freem (m);
-			pk_procerror (RESET, lcp, "p(s) flow control error");
+			pk_procerror (RESET, lcp, "p(s) flow control error", 1);
 			break;
 		}
 		lcp -> lcd_rsn = PS(xp);
@@ -285,10 +285,41 @@ struct x25config *xcp;
 			m_freem (m);
 			break;
 		}
-		if (so == 0)
-			break;
 		m -> m_data += PKHEADERLN;
 		m -> m_len -= PKHEADERLN;
+		m -> m_pkthdr.len -= PKHEADERLN;
+
+		if (lcp -> lcd_flags & X25_MBS_HOLD) {
+			register struct mbuf *n = lcp -> lcd_cps;
+			int mbit = MBIT(xp);
+			octet q_and_d_bits;
+
+			if (n) {
+				n -> m_pkthdr.len += m -> m_pkthdr.len;
+				while (n -> m_next)
+					n = n -> m_next;
+				n -> m_next = m;
+				m = lcp -> lcd_cps;
+
+				if (lcp -> lcd_cpsmax &&
+				    n -> m_pkthdr.len > lcp -> lcd_cpsmax) {
+					pk_procerror (RESET, lcp,
+						"C.P.S. overflow", 128);
+					return;
+				}
+				q_and_d_bits = 0xc0 & *(octet *)xp;
+				xp = (struct x25_packet *)
+					(mtod(m, octet *) - PKHEADERLN);
+				*(octet *)xp |= q_and_d_bits;
+			}
+			if (mbit) {
+				lcp -> lcd_cps = m;
+				return;
+			}
+			lcp -> lcd_cps = 0;
+		}
+		if (so == 0)
+			break;
 		if (lcp -> lcd_flags & X25_MQBIT) {
 			octet t = (xp -> q_bit) ? t = 0x80 : 0;
 
@@ -296,6 +327,7 @@ struct x25config *xcp;
 				t |= 0x40;
 			m -> m_data -= 1;
 			m -> m_len += 1;
+			m -> m_pkthdr.len += 1;
 			*mtod(m, octet *) = t;
 		}
 
@@ -329,9 +361,17 @@ struct x25config *xcp;
 		lcp -> lcd_intrdata = xp -> packet_data;
 		lcp -> lcd_template = pk_template (lcp -> lcd_lcn, X25_INTERRUPT_CONFIRM);
 		pk_output (lcp);
+		m -> m_data += PKHEADERLN;
+		m -> m_len -= PKHEADERLN;
+		m -> m_pkthdr.len -= PKHEADERLN;
 		MCHTYPE(m, MT_OOBDATA);
-		if (so)
+		if (so) {
+			if (so -> so_options & SO_OOBINLINE)
+				sbinsertoob (&so -> so_rcv, m);
+			else
+				m_freem (m);
 			sohasoutofband (so);
+		}
 		break;
 
 	/* 
@@ -343,8 +383,7 @@ struct x25config *xcp;
 		if (lcp -> lcd_intrconf_pending == TRUE)
 			lcp -> lcd_intrconf_pending = FALSE;
 		else
-			pk_procerror (RESET, lcp, "unexpected packet");
-		MCHTYPE(m, MT_CONTROL);
+			pk_procerror (RESET, lcp, "unexpected packet", 43);
 		break;
 
 	/* 
@@ -360,7 +399,6 @@ struct x25config *xcp;
 		if (lcp -> lcd_rnr_condition == TRUE)
 			lcp -> lcd_rnr_condition = FALSE;
 		pk_output (lcp);
-		MCHTYPE(m, MT_CONTROL);
 		break;
 
 	/* 
@@ -374,7 +412,6 @@ struct x25config *xcp;
 			break;
 		}
 		lcp -> lcd_rnr_condition = TRUE;
-		MCHTYPE(m, MT_CONTROL);
 		break;
 
 	/* 
@@ -398,11 +435,9 @@ struct x25config *xcp;
 		lcp -> lcd_template = pk_template (lcp -> lcd_lcn, X25_RESET_CONFIRM);
 		pk_output (lcp);
 
-		MCHTYPE(m, MT_CONTROL);
+		pk_flush(lcp);
 		if (so == 0)
 			break;
-		sbflush (&so -> so_snd);
-		sbflush (&so -> so_rcv);
 		wakeup ((caddr_t) & so -> so_timeo);
 		sorwakeup (so);
 		sowwakeup (so);
@@ -417,8 +452,7 @@ struct x25config *xcp;
 			pk_output (lcp);
 		}
 		else
-			pk_procerror (RESET, lcp, "unexpected packet");
-		MCHTYPE(m, MT_CONTROL);
+			pk_procerror (RESET, lcp, "unexpected packet", 32);
 		break;
 
 	case DATA + SENT_CLEAR: 
@@ -477,20 +511,21 @@ struct x25config *xcp;
 
 	default: 
 		if (lcp) {
-			pk_procerror (CLEAR, lcp, "unknown packet error");
+			pk_procerror (CLEAR, lcp, "unknown packet error", 33);
 			pk_message (lcn, pkp -> pk_xcp,
 				"\"%s\" unexpected in \"%s\" state",
 				pk_name[ptype/MAXSTATES], pk_state[lcdstate]);
-		}
-		else	/* Packets arrived on an unassigned channel. 
-			*/
+		} else
 			pk_message (lcn, pkp -> pk_xcp,
 				"packet arrived on unassigned lcn");
 		break;
 	}
-	if (so == 0 && lcdstate == DATA_TRANSFER && lcp -> lcd_upper)
+	if (so == 0 && lcp -> lcd_upper &&
+	    (lcdstate == SENT_CALL || lcdstate == DATA_TRANSFER)) {
+		if (ptype != DATA && ptype != INTERRUPT)
+			MCHTYPE(m, MT_CONTROL);
 		lcp -> lcd_upper (lcp, m);
-	else if (ptype != DATA)
+	} else if (ptype != DATA && ptype != INTERRUPT)
 		m_freem (m);
 }
 
@@ -502,18 +537,20 @@ struct x25config *xcp;
  */
 
 static
-incoming_call (pkp, xp, len)
+incoming_call (pkp, m0)
+struct mbuf *m0;
 struct pkcb *pkp;
-struct x25_packet *xp;
 {
 	register struct pklcd *lcp = 0, *l;
 	register struct sockaddr_x25 *sa;
 	register struct x25_calladdr *a;
 	register struct socket *so = 0;
+	struct x25_packet *xp = mtod(m0, struct x25_packet *);
 	struct mbuf *m;
+	int len = m0->m_pkthdr.len;
 	register int l1, l2;
 	char *e, *errstr = "server unavailable";
-	octet *u;
+	octet *u, *facp;
 	int lcn = LCN(xp);
 
 	/* First, copy the data from the incoming call packet to a X25_socket
@@ -535,6 +572,7 @@ struct x25_packet *xp;
 	if (l1 & 0x01)
 		u++;
 
+	facp = u;
 	parse_facilities (u, sa);
 	u += *u + 1;
 	sa -> x25_udlen = min (16, ((octet *)xp) + len - u);
@@ -598,15 +636,21 @@ struct x25_packet *xp;
 		lcp -> lcd_template = pk_template (lcp -> lcd_lcn, X25_CALL_ACCEPTED);
 		if (lcp -> lcd_flags & X25_DBIT) {
 			if (xp -> d_bit)
-				lcp -> lcd_template -> d_bit = 1;
+				mtod(lcp -> lcd_template,
+					struct x25_packet *) -> d_bit = 1;
 			else
 				lcp -> lcd_flags &= ~X25_DBIT;
 		}
 		if (so) {
 			pk_output (lcp);
 			soisconnected (so);
-		} else if (lcp->lcd_upper)
-			(*lcp->lcd_upper)(lcp, m);
+			if (so -> so_options & SO_OOBINLINE)
+				save_extra(m0, facp, so);
+		} else if (lcp -> lcd_upper) {
+			m -> m_next = m0;
+			(*lcp -> lcd_upper) (lcp, m);
+			(void) m_free (m);  /* only m; m0 freed by caller */
+		}
 		return;
 	}
 
@@ -636,7 +680,31 @@ struct x25_packet *xp;
 	lcp -> lcd_state = RECEIVED_CALL;
 	pk_assoc (pkp, lcp, sa);
 	(void) m_free (m);
-	pk_clear (lcp);
+	pk_clear (lcp, 0, 1);
+}
+
+static
+save_extra(m0, fp, so)
+struct mbuf *m0;
+octet *fp;
+struct socket *so;
+{
+	register struct mbuf *m;
+	struct cmsghdr cmsghdr;
+	if (m = m_copym (m, 0, (int)M_COPYALL)) {
+		int off = fp - mtod (m0, octet *);
+		int len = m->m_pkthdr.len - off + sizeof (cmsghdr);
+		cmsghdr.cmsg_len = len;
+		cmsghdr.cmsg_level = AF_CCITT;
+		cmsghdr.cmsg_type = PK_FACILITIES;
+		m_adj (m, off);
+		M_PREPEND (m, sizeof(cmsghdr), M_DONTWAIT);
+		if (m == 0)
+			return;
+		bcopy ((caddr_t)&cmsghdr, mtod (m, caddr_t), sizeof (cmsghdr));
+		MCHTYPE(m, MT_CONTROL);
+		sbappendrecord(&so -> so_rcv, m);
+	}
 }
 
 static

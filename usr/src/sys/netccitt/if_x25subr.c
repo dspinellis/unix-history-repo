@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_x25subr.c	7.7 (Berkeley) %G%
+ *	@(#)if_x25subr.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -48,16 +48,6 @@
 
 extern	struct ifnet loif;
 
-union imp_addr {
-	struct in_addr  ip;
-	struct imp {
-		u_char		s_net;
-		u_char		s_host;
-		u_char		s_lh;
-		u_char		s_impno;
-	}		    imp;
-};
-
 #define senderr(x) {error = x; goto bad;}
 /*
  * X.25 output routine.
@@ -75,7 +65,6 @@ register struct	rtentry *rt;
 	struct x25_ifaddr *ia;
 	struct mbuf    *prev;
 	int             s, error = 0, flags = 0, af;
-	union imp_addr  imp_addr;
 
 	if ((ifp->if_flags & IFF_UP) == 0)
 		return (ENETDOWN);
@@ -105,20 +94,6 @@ register struct	rtentry *rt;
 	}
 	ia = (struct x25_ifaddr *)ifa;
     }
-	if (lx->lx_lcd == 0) {
-		int x25_ifinput();
-
-		lcp = pk_attach((struct socket *)0);
-		if (lcp == 0)
-			senderr(ENOBUFS);
-		lx->lx_lcd = lcp;
-		lx->lx_rt = rt;
-		lx->lx_ia = ia;
-		lx->lx_family = dst->sa_family;
-		lcp->lcd_upnext = (caddr_t)lx;
-		lcp->lcd_upper = x25_ifinput;
-		lcp->lcd_packetsize = ia->ia_xc.xc_psize; /* XXX pk_fragment */
-	}
 	switch (lx->lx_state) {
 
 	case LXS_CONNECTED:
@@ -160,8 +135,7 @@ register struct	rtentry *rt;
 	case LXS_FREE:
 		lcp->lcd_pkp = &(lx->lx_ia->ia_pkcb);
 		pk_fragment(lcp, m, 0, 0, 0);
-		pk_connect(lcp, (struct mbuf *)0,
-				(struct sockaddr_x25 *)rt->rt_gateway);
+		pk_connect(lcp, (struct sockaddr_x25 *)rt->rt_gateway);
 		break;
 		/* FALLTHROUGH */
 	default:
@@ -208,18 +182,13 @@ struct ifnet *ifp;
 		pkcb = &((struct x25_ifaddr *)ifa)->ia_pkcb;
 	if (pkcb)
 		for (lcpp = pkcb->pk_chan + pkcb->pk_maxlcn;
-		     --lcpp >= pkcb->pk_chan;)
+		     --lcpp > pkcb->pk_chan;)
 			if ((lcp = *lcpp) &&
 			    lcp->lcd_state == DATA_TRANSFER &&
 			    (lcp->lcd_flags & X25_DG_CIRCUIT) &&
-			    (--(lcp->lcd_dg_timer) <= 0)) {
-				register struct llinfo_x25 *lx;
+			    (lcp->lcd_dg_timer && --lcp->lcd_dg_timer == 0)) {
 				pk_disconnect(lcp);
-				lx = (struct llinfo_x25 *)
-						lcp->lcd_upnext;
-				if (lx)
-					lx->lx_state = LXS_DISCONNECTING;
-			    }
+			}
 	splx(s);
 }
 
@@ -231,38 +200,29 @@ struct pklcd *lcp;
 register struct mbuf *m;
 {
 	struct llinfo_x25 *lx = (struct llinfo_x25 *)lcp->lcd_upnext;
-	struct rtentry *rt = lx->lx_rt;
-	register struct ifnet *ifp = rt->rt_ifp;
+	register struct ifnet *ifp = m->m_pkthdr.rcvif;
 	struct ifqueue *inq;
+	struct rtentry *rt;
 	extern struct timeval time;
-	struct x25_packet *xp = mtod(m, struct x25_packet *);
-	struct mbuf **mp = &lcp->lcd_ifrag;
 	int s, len;
 
+	if (m == 0)
+		goto trouble;
+	ifp = m->m_pkthdr.rcvif;
 	ifp->if_lastchange = time;
 	switch (m->m_type) {
+	trouble:
 	case MT_CONTROL:
+		if (lcp->lcd_state != DATA_TRANSFER) {
+			lx->lx_lcd = 0;
+			if (lx->lx_rt == 0)
+				FREE(lx, M_PCB);
+			pk_close(lcp);
+		}
 	case MT_OOBDATA:
-		m_freem(m);
+		if (m)
+			m_freem(m);
 		return;
-
-	case MT_DATA:
-	case MT_HEADER:
-		m->m_len -= PKHEADERLN;
-		m->m_data += PKHEADERLN;
-		m->m_pkthdr.len -= PKHEADERLN;
-		while (*mp)
-			mp = &((*mp)->m_next);
-		*mp = m;
-		if (MBIT(xp))
-			return;
-	}
-	m = lcp->lcd_ifrag;
-	if (m->m_flags & M_PKTHDR) {
-		for (len = 0; m; m = m->m_next)
-			len += m->m_len;
-		m = lcp->lcd_ifrag;
-		m->m_pkthdr.len = len;
 	}
 
 	switch (lx->lx_family) {
@@ -282,8 +242,6 @@ register struct mbuf *m;
 #endif
 #ifdef	ISO
 	case AF_ISO:
-		/* XXXX need to find out about tearing off COSNS
-		   headers if any */
 		schednetisr(NETISR_ISO);
 		inq = &clnlintrq;
 		break;
@@ -303,10 +261,93 @@ register struct mbuf *m;
 	}
 	splx(s);
 }
+
+/*
+ * This routine gets called when validing new routes or deletions of old
+ * ones.
+ */
+x25_ifrtchange(cmd, rt, dst)
+register struct rtentry *rt;
+struct sockaddr *dst;
+{
+	register struct llinfo_x25 *lx = (struct llinfo_x25 *)rt->rt_llinfo;
+	register struct sockaddr_x25 *sa =(struct sockaddr_x25 *)rt->rt_gateway;
+	register struct pklcd *lcp;
+	register struct x25_ifaddr *ia;
+	register struct sockaddr *sa2;
+	int x25_ifinput();
+#define SA(p) ((struct sockaddr *)(p))
+
+	if (lx == 0) {
+		MALLOC(lx, struct llinfo_x25 *, sizeof (*lx), M_PCB, M_NOWAIT);
+		if (lx == 0)
+			return;
+		Bzero(lx, sizeof(*lx));
+		rt->rt_llinfo = (caddr_t)lx;
+		rt->rt_refcnt++;
+		lx->lx_rt = rt;
+		lx->lx_ia = (struct x25_ifaddr *)rt->rt_ifa;
+	}
+	lcp = lx->lx_lcd;
+	if (cmd == RTM_DELETE) {
+		if (lcp)
+			pk_disconnect(lcp);
+		rt->rt_refcnt--;
+		rt->rt_llinfo = 0;
+		FREE(lx, M_PCB);
+		return;
+	}
+	if (lcp && lcp->lcd_state != READY) {
+		pk_disconnect(lcp);
+		lcp = 0;
+	}
+	if (lcp == 0) {
+		if (rt->rt_flags & RTF_XRESOLVE || sa->x25_family != AF_CCITT)
+			return;
+		lx->lx_lcd = lcp = pk_attach((struct socket *)0);
+		ia = lx->lx_ia;
+		if (lcp == 0)
+			return;
+		lcp->lcd_upnext = (caddr_t)lx;
+		lcp->lcd_upper = x25_ifinput;
+		lcp->lcd_packetsize = ia->ia_xc.xc_psize; /* XXX pk_fragment */
+		lcp->lcd_pkp = &(ia->ia_pkcb);
+	}
+	pk_connect(lcp, sa);
+	if (rt->rt_ifp->if_type == IFT_X25DDN)
+		return;
+	sa2 = rt_key(rt);
+	if (cmd == RTM_CHANGE) {
+		if (sa->x25_family == AF_CCITT) {
+			sa->x25_opts.op_speed = sa2->sa_family;
+			(void) rtrequest(RTM_DELETE, SA(sa), sa2,
+			       SA(0), RTF_HOST, (struct rtentry **)0);
+		}
+		sa = (struct sockaddr_x25 *)dst;
+		cmd = RTM_ADD;
+	}
+	if (sa->x25_family == AF_CCITT) {
+		sa->x25_opts.op_speed = sa2->sa_family;
+		(void) rtrequest(cmd, SA(sa), sa2, SA(0), RTF_HOST,
+							(struct rtentry **)0);
+		sa->x25_opts.op_speed = 0;
+	}
+}
+
 static struct sockaddr_x25 blank_x25 = {sizeof blank_x25, AF_CCITT};
 /*
  * IP to X25 address routine copyright ACC, used by permission.
  */
+union imp_addr {
+	struct in_addr  ip;
+	struct imp {
+		u_char		s_net;
+		u_char		s_host;
+		u_char		s_lh;
+		u_char		s_impno;
+	}		    imp;
+};
+
 x25_ddnip_to_ccitt(src, dst)
 struct sockaddr_in *src;
 register struct sockaddr_x25 *dst;
@@ -352,83 +393,10 @@ register struct sockaddr_x25 *dst;
 	}
 }
 
-#ifdef caseof
-#undef caseof
-#endif
-#define caseof(a, b) (b + 8 * a)
-#define SA(p) ((struct sockaddr *)(p))
-
-/*
- * This routine gets called when validing new routes or deletions of old
- * ones.
- */
-x25_ifrtchange(cmd, rt, dst)
-register struct rtentry *rt;
-struct sockaddr *dst;
-{
-	register struct llinfo_x25 *lx = (struct llinfo_x25 *)rt->rt_llinfo;
-	register struct sockaddr_x25 *sa =(struct sockaddr_x25 *)rt->rt_gateway;
-	register struct pklcd *lcp;
-	register struct x25_ifaddr *ia;
-	register struct sockaddr *sa2;
-	struct mbuf *m, *mold;
-	int x25_ifrtfree();
-
-	if (lx == 0)
-		return;
-	ia = lx->lx_ia;
-	lcp = lx->lx_lcd;
-
-	switch (caseof(lx->lx_state, cmd)) {
-
-	case caseof(LXS_CONNECTED, RTM_DELETE):
-	case caseof(LXS_CONNECTED, RTM_CHANGE):
-	case caseof(LXS_CONNECTING, RTM_DELETE):
-	case caseof(LXS_CONNECTING, RTM_CHANGE):
-		pk_disconnect(lcp);
-		/*lcp->lcd_upper = x25_ifrtfree; */
-		rt->rt_refcnt++;
-		break;
-
-	case caseof(LXS_CONNECTED, RTM_ADD):
-	case caseof(LXS_CONNECTING, RTM_ADD):
-	case caseof(LXS_RESOLVING, RTM_ADD):
-		printf("ifrtchange: impossible transition, should panic\n");
-		break;
-
-	case caseof(LXS_RESOLVING, RTM_DELETE):
-		sbflush(&(lx->lx_lcd->lcd_sb));
-		free((caddr_t)lx->lx_lcd, M_PCB);
-		lx->lx_lcd = 0;
-		break;
-
-	case caseof(LXS_RESOLVING, RTM_CHANGE):
-		lcp->lcd_pkp = &(ia->ia_pkcb);
-		pk_connect(lcp, (struct mbuf *)0, sa);
-		break;
-	}
-	if (rt->rt_ifp->if_type == IFT_X25DDN)
-		return;
-	sa2 = rt_key(rt);
-	if (cmd == RTM_CHANGE) {
-		if (sa->x25_family == AF_CCITT) {
-			sa->x25_opts.op_speed = sa2->sa_family;
-			(void) rtrequest(RTM_DELETE, SA(sa), sa2,
-			       SA(0), RTF_HOST, (struct rtentry **)0);
-		}
-		sa = (struct sockaddr_x25 *)dst;
-		cmd = RTM_ADD;
-	}
-	if (sa->x25_family == AF_CCITT) {
-		sa->x25_opts.op_speed = sa2->sa_family;
-		(void) rtrequest(cmd, SA(sa), sa2, SA(0), RTF_HOST,
-							(struct rtentry **)0);
-		sa->x25_opts.op_speed = 0;
-	}
-}
-
 static struct sockaddr_in sin = {sizeof(sin), AF_INET};
 /*
+ * This routine is a sketch and is not to be believed!!!!!
+ *
  * This is a utility routine to be called by x25 devices when a
  * call request is honored with the intent of starting datagram forwarding.
  */
