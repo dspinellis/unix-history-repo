@@ -119,6 +119,13 @@ TerminalSaveState()				/* unix */
     ntc = otc;
     nltc = oltc;
     nttyb = ottyb;
+
+    termEofChar = ntc.t_eofc;
+    termEraseChar = nttyb.sg_erase;
+    termFlushChar = nltc.t_flushc;
+    termIntChar = ntc.t_intrc;
+    termKillChar = nttyb.sg_kill;
+    termQuitChar = ntc.t_quitc;
 }
 
 void
