@@ -27,15 +27,18 @@ static	char	sccsid[] = "@(#)termin.c	3.1  10/29/86";
 	codes
  */
 
+#include <stdio.h>
 #include <ctype.h>
 
+#include "../general.h"
 #include "m4.out"		/* output of termcodes.m4 */
 #include "state.h"
 
-#include "globals.h"
-#include "inbound.ext"
-#include "outbound.ext"
-#include "telnet.ext"
+#include "../system/globals.h"
+#include "../ctlr/function.h"
+#include "../ctlr/inbound.ext"
+#include "../ctlr/outbound.ext"
+#include "../telnet.ext"
 #include "termin.ext"
 
 #define IsControl(c)	(!isprint(c) || (isspace(c) && ((c) != ' ')))
@@ -46,19 +49,42 @@ static	char	sccsid[] = "@(#)termin.c	3.1  10/29/86";
 
 #define MATCH_ANY 0xff			/* actually, match any character */
 
+#include "astosc.out"
 
 static char
 	ourBuffer[100],		/* where we store stuff */
 	*ourPHead = ourBuffer,	/* first character in buffer */
 	*ourPTail = ourBuffer;	/* where next character goes */
 
+static int InControl;
+static int WaitingForSynch;
+
 static state
 	*headOfControl = 0;	/* where we enter code state table */
 
-#define FullChar	(ourPTail == ourBuffer+sizeof ourBuffer)
+#define FullChar	((ourPTail+5) >= ourBuffer+sizeof ourBuffer)
 #define EmptyChar	(ourPTail == ourPHead)
 
 
+/*
+ * Initialize the keyboard mapping file.
+ */
+
+void
+InitMapping()
+{
+    extern state *InitControl();
+
+    if (!headOfControl) {
+	/* need to initialize */
+	headOfControl = InitControl((char *)0, 0);
+	if (!headOfControl) {		/* should not occur */
+	    quit();
+	}
+    }
+}
+
+
 /* AddChar - put a character in our buffer */
 
 static void
@@ -66,9 +92,46 @@ AddChar(c)
 int	c;
 {
     if (!FullChar) {
-	*ourPTail++ = (char) c;
+	if ((c >= numberof(asctosc)) || (c < 0)) {
+	    ExitString(stderr,
+		    "Unable to locate function in termout.c, AddChar()\n", 1);
+	    /*NOTREACHED*/
+	} else {
+	    switch (asctosc[c].shift) {
+	    case cantdo:
+		if (c == ' ') {
+		    *ourPTail++ = asctosc[TC_SPACE].scancode;
+		} else {
+		    RingBell("Keyboard not capable of function.");
+		}
+		break;
+	    case normal:
+		*ourPTail++ = asctosc[c].scancode;
+		break;
+	    case shifted:
+		*ourPTail++ = asctosc[TC_MAKE_SHIFT].scancode;
+		*ourPTail++ = asctosc[c].scancode;
+		*ourPTail++ = asctosc[TC_BREAK_SHIFT].scancode;
+		break;
+	    case alted:
+		*ourPTail++ = asctosc[TC_MAKE_ALT].scancode;
+		*ourPTail++ = asctosc[c].scancode;
+		*ourPTail++ = asctosc[TC_BREAK_ALT].scancode;
+		break;
+	    case shiftalted:
+		*ourPTail++ = asctosc[TC_MAKE_SHIFT].scancode;
+		*ourPTail++ = asctosc[TC_MAKE_ALT].scancode;
+		*ourPTail++ = asctosc[c].scancode;
+		*ourPTail++ = asctosc[TC_BREAK_ALT].scancode;
+		*ourPTail++ = asctosc[TC_BREAK_SHIFT].scancode;
+		break;
+	    default:
+		ExitString(stderr,
+			    "Illegal 'shift' to AddChar() in termin.c\n", 1);
+	    }
+	}
     } else {
-	RingBell();
+	RingBell("Typeahead buffer full");
     }
 }
 
@@ -79,6 +142,12 @@ FlushChar()
 {
     ourPTail = ourBuffer;
     ourPHead = ourBuffer;
+}
+
+terminit()
+{
+    FlushChar();
+    InControl = WaitingForSynch = 0;
 }
 
 
@@ -110,20 +179,12 @@ register int	count;			/* how many bytes in this buffer */
     register char c;
     register int result;
     int origCount;
-
-    static int InControl = 0;
-    static int WaitingForSynch = 0;
+    extern int bellwinup;
     static state *controlPointer;
-    extern state *InitControl();
 
-    if (!headOfControl) {
-	/* need to initialize */
-	headOfControl = InitControl((char *)0, 0);
-	if (!headOfControl) {		/* should not occur */
-	    quit();
-	}
+    if (bellwinup) {
+	BellOff();
     }
-
 
     origCount = count;
 
@@ -142,7 +203,7 @@ register int	count;			/* how many bytes in this buffer */
 	    for (regControlPointer = controlPointer; ;
 			regControlPointer = NextState(regControlPointer)) {
 		if (!regControlPointer) {	/* ran off end */
-		    RingBell();
+		    RingBell("Invalid control sequence");
 		    regControlPointer = headOfControl;
 		    InControl = 0;
 		    break;
@@ -158,7 +219,7 @@ register int	count;			/* how many bytes in this buffer */
 			if (result == TC_SYNCH) {
 			    WaitingForSynch = 0;
 			} else {
-			    RingBell();
+			    RingBell("Need to type synch character");
 			}
 		    }
 		    else if (result == TC_FLINP) {
