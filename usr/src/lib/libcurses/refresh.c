@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)refresh.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)refresh.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
@@ -72,7 +72,7 @@ wrefresh(win)
 				curscr->curx = 0;
 				werase(curscr);
 			}
-			touchwin(win);
+			__touchwin(win);
 		}
 		win->flags &= ~__CLEAROK;
 	}
@@ -98,7 +98,8 @@ wrefresh(win)
 #endif
 		if (!curwin)
 			curscr->lines[wy]->hash = win->lines[wy]->hash;
-		if (win->lines[wy]->flags & __ISDIRTY)
+		if (win->lines[wy]->flags & __ISDIRTY ||
+		    win->lines[wy]->flags & __FORCEPAINT)
 			if (makech(win, wy) == ERR)
 				return (ERR);
 			else {
@@ -162,6 +163,7 @@ makech(win, wy)
 	register int nlsp, clsp;		/* Last space in lines. */
 	register short wx, lch, y;
 	register __LDATA *nsp, *csp, *cp;
+	u_int force;
 	char *ce;
 	__LDATA blank = {' ', 0};
 
@@ -192,6 +194,8 @@ makech(win, wy)
 		csp = &curscr->lines[wy + win->begy]->line[wx + win->begx];
 
 	nsp = &win->lines[wy]->line[wx];
+	force = win->lines[wy]->flags & __FORCEPAINT;
+	win->lines[wy]->flags &= ~__FORCEPAINT;
 	if (CE && !curwin) {
 		for (cp = &win->lines[wy]->line[win->maxx - 1]; 
 		     cp->ch == ' ' && cp->attr == 0; cp--)
@@ -204,8 +208,16 @@ makech(win, wy)
 	else
 		ce = NULL;
 
+	if (force) {
+		if (CM)
+			tputs(tgoto(CM, lx, ly), 0, __cputchar);
+		else {
+			tputs(HO, 0, __cputchar);
+			mvcur(0, 0, ly, lx);
+		}
+	}
 	while (wx <= lch) {
-		if (bcmp(nsp, csp, sizeof(__LDATA)) == 0) {
+		if (!force && bcmp(nsp, csp, sizeof(__LDATA)) == 0) {
 			if (wx <= lch) {
 				while (bcmp(nsp, csp, sizeof(__LDATA)) == 0 &&
 			            wx <= lch) {
@@ -221,12 +233,13 @@ makech(win, wy)
 		domvcur(ly, lx, y, wx + win->begx);
 
 #ifdef DEBUG
-		__TRACE("makech: 1: wx = %d, ly= %d, lx = %d, newy = %d, newx = %d\n", 
-		    wx, ly, lx, y, wx + win->begx);
+		__TRACE("makech: 1: wx = %d, ly= %d, lx = %d, newy = %d, newx = %d, force =%d\n", 
+		    wx, ly, lx, y, wx + win->begx, force);
 #endif
 		ly = y;
 		lx = wx + win->begx;
-		while (bcmp(nsp, csp, sizeof(__LDATA)) != 0 && wx <= lch) {
+		while ((force || bcmp(nsp, csp, sizeof(__LDATA)) != 0) 
+		    && wx <= lch) {
 #ifdef notdef
 			/* XXX
 			 * The problem with this code is that we can't count on
@@ -405,18 +418,20 @@ quickch(win)
 			     starts++) {
 				for (curw = startw, curs = starts;
 				     curs < starts + bsize; curw++, curs++)
-					if (win->lines[curw]->hash !=
+					if (win->lines[curw]->flags &
+					    __FORCEPAINT ||
+					    (win->lines[curw]->hash !=
 					    curscr->lines[curs]->hash ||
 				            bcmp(win->lines[curw]->line, 
 					    curscr->lines[curs]->line, 
-					    win->maxx * __LDATASIZE) != 0)
+					    win->maxx * __LDATASIZE) != 0))
 						break;
 				if (curs == starts + bsize)
 					goto done;
 			}
  done:
-	/* Did not find anything or block is in correct place already. */
-	if (bsize < THRESH || starts == startw)	
+	/* Did not find anything */
+	if (bsize < THRESH)	
 		return;
 
 	/* 
@@ -424,7 +439,8 @@ quickch(win)
 	 */
 	if (starts != 0) {
 		for (top = 0; top < win->maxy; top++)
-			if (win->lines[top]->hash != curscr->lines[top]->hash 
+			if (win->lines[top]->flags & __FORCEPAINT ||
+			    win->lines[top]->hash != curscr->lines[top]->hash 
 			    || bcmp(win->lines[top]->line, 
 			    curscr->lines[top]->line, 
 			    win->maxx * __LDATASIZE) != 0)
@@ -437,7 +453,8 @@ quickch(win)
 	*/
 	if (curs != win->maxy) {
 		for (bot = win->maxy - 1; bot >= 0; bot--)
-			if (win->lines[bot]->hash != curscr->lines[bot]->hash 
+			if (win->lines[bot]->flags & __FORCEPAINT ||
+			    win->lines[bot]->hash != curscr->lines[bot]->hash 
 			    || bcmp(win->lines[bot]->line, 
 			    curscr->lines[bot]->line, 
 			    win->maxx * __LDATASIZE) != 0)
@@ -459,9 +476,11 @@ quickch(win)
 	if (top > startw)
 		top = startw;
 
-	scrolln(win, starts, startw, curs, top, bot);
-
 	n = startw - starts;
+
+	if (n != 0)
+		scrolln(win, starts, startw, curs, top, bot);
+
 
 	/* So we don't have to call __hash() each time */
 	for (i = 0; i < win->maxx; i++) {
@@ -507,12 +526,12 @@ quickch(win)
 #ifdef DEBUG
 				__TRACE(" -- blank line already: dirty");
 #endif
-			touchline(win, target, 0, win->maxx - 1);
+			__touchline(win, target, 0, win->maxx - 1, 0);
 		} else {
 #ifdef DEBUG
 			__TRACE(" -- dirty");
 #endif
-			touchline(win, target, 0, win->maxx - 1);
+			__touchline(win, target, 0, win->maxx - 1, 0);
 		}
 #ifdef DEBUG
 		__TRACE("\n");
@@ -557,19 +576,27 @@ scrolln(win, starts, startw, curs, top, bot)
 		else
 			for(i = 0; i < n; i++)
 				tputs(dl, 0, __cputchar);
-		/* Push back down the bottom region */
-		if (bot < win->maxy - 1) {
-			mvcur(top, 0, bot - n + 1, 0);
+		/* 
+		 * Push back down the bottom region.
+		 */
+		if (bot <= win->maxy - 1) {
+			if (bot == win->maxy - 1)
+				mvcur(top, 0, bot - n, 0);
+			else
+				mvcur(top, 0, bot - n + 1, 0);
 			if (AL)
 				tputs(tscroll(AL, n), 0, __cputchar);
 			else
 				for(i = 0; i < n; i++)
 					tputs(al, 0, __cputchar);
-			mvcur(bot - n + 1, 0, oy, ox);
+			if (bot == win->maxy - 1)
+				mvcur(bot - n, 0, oy, ox);
+			else
+				mvcur(bot - n + 1, 0, oy, ox);
 		} else
 			mvcur(top, 0, oy, ox);
 	} else {
-		/* Preserve the bottom lines. (Pull them up) */
+		/* Preserve the bottom lines */
 		if (bot < win->maxy - 1) {
 			mvcur(oy, ox, curs, 0);
 			if (DL)
