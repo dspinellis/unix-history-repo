@@ -18,6 +18,9 @@ timezone	8 dst
 maxusers	48
 
 # Standard system options
+options		SWAPPAGER		# swap pager (anonymous and swap space)
+options		VNODEPAGER		# vnode pager (mapped files)
+options		DEVPAGER		# device pager (mapped devices)
 options		DIAGNOSTIC		# extra kernel debugging checks
 options		DEBUG			# extra kernel debugging support
 options		"COMPAT_43"		# compatibility with 4.3BSD binaries
@@ -113,7 +116,3 @@ pseudo-device	bpfilter	16	# packet filter ports
 pseudo-device	ite
 pseudo-device	loop
 pseudo-device	ether
-
-pseudo-device	swappager
-pseudo-device	vnodepager
-pseudo-device	devpager
