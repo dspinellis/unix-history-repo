@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ar_io.c	1.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)ar_io.c	1.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -49,7 +49,6 @@ static int did_io;			/* did i/o ever occur on volume? */
 static int done;			/* set via tty termination */
 static struct stat arsb;		/* stat of archive device at open */
 static int invld_rec;			/* tape has out of spec record size */
-static int phyblk; 			/* size of physical block on TAPE */
 static int wr_trail = 1;		/* trailer was rewritten in append */
 static int can_unlnk = 0;		/* do we unlink null archives?  */
 char *arcname;                  	/* printable name of archive */
@@ -80,7 +79,7 @@ ar_open(name)
 	if (arfd != -1)
 		(void)close(arfd);
 	arfd = -1;
-	can_unlnk = phyblk = did_io = io_ok = invld_rec = 0;
+	can_unlnk = did_io = io_ok = invld_rec = 0;
 	artyp = ISREG;
 	flcnt = 0;
 
@@ -836,6 +835,7 @@ ar_rev(sksz)
 {
 	off_t cpos;
         struct mtop mb;
+	register int phyblk;
 
 	/*
 	 * make sure we do not have try to reverse on a flawed archive
@@ -906,7 +906,7 @@ ar_rev(sksz)
 		 * (We also cannot handler trailers spread over two vols).
 		 * get_phys() also makes sure we are in front of the filemark.
 	 	 */
-		if (get_phys() < 0) {
+		if ((phyblk = get_phys()) <= 0) {
 			lstrval = -1;
 			return(-1);
 		}
@@ -959,7 +959,7 @@ ar_rev(sksz)
  *	return.
  *	This is one really SLOW routine...
  * Return:
- *	0 if ok, -1 otherwise
+ *	physical block size if ok (ok > 0), -1 otherwise
  */
 
 #if __STDC__
@@ -972,6 +972,7 @@ get_phys()
 {
 	register int padsz = 0;
 	register int res;
+	register int phyblk;
 	struct mtop mb;
 	char scbuf[MAXBLK];
 
@@ -1044,7 +1045,7 @@ get_phys()
 	 * return if there was no padding
 	 */
 	if (padsz == 0)
-		return(0);
+		return(phyblk);
 
 	/*
 	 * make sure we can move backwards over the padding. (this should
@@ -1066,7 +1067,7 @@ get_phys()
 		    mb.mt_count);
 		return(-1);
 	}
-	return(0);
+	return(phyblk);
 }
 
 /*
