@@ -1,4 +1,4 @@
-/*	ip_icmp.c	4.6	81/11/20	*/
+/*	ip_icmp.c	4.7	81/11/23	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -174,7 +174,7 @@ icmp_send(ip)
 
 	icp->icmp_cksum = 0;
 	icp->icmp_cksum = inet_cksum(dtom(ip), 0);		/* XXX */
-	/* what about ttl? */
+	ip->ip_ttl = MAXTTL;
 	ip_output(dtom(ip));
 }
 
