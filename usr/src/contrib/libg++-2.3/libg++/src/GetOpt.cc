@@ -21,7 +21,7 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 #endif
 /* AIX requires the alloca decl to be the first thing in the file. */
 #ifdef __GNUC__
-#define alloca __builtin_alloca
+#define alloca alloca
 #elif defined(sparc)
 #include <alloca.h>
 #elif defined(_AIX)

@@ -27,7 +27,7 @@
 
 /* AIX requires the alloca decl to be the first thing in the file. */
 #ifdef __GNUC__
-#define alloca __builtin_alloca
+#define alloca alloca
 #else
 #ifdef sparc
 #include <alloca.h>
@@ -2555,7 +2555,7 @@ bcmp_translate (char *s1, char *s2, int len, unsigned char *translate)
 static struct re_pattern_buffer re_comp_buf;
 
 char *
-re_comp (char *s)
+re_comp (const char *s)
 {
   if (!s)
     {
@@ -2576,7 +2576,7 @@ re_comp (char *s)
 }
 
 int
-re_exec (char *s)
+re_exec (const char *s)
 {
   int len = strlen (s);
   return 0 <= re_search (&re_comp_buf, s, len, 0, len,

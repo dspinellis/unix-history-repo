@@ -18,7 +18,7 @@ int       ffs _G_ARGS((int));
 #ifdef __OSF1__
 int	  getpagesize _G_ARGS((void));
 #else
-_G_size_t    getpagesize _G_ARGS((void));
+const int    getpagesize _G_ARGS((void));
 #endif
 void*     valloc _G_ARGS((_G_size_t));
 

@@ -94,8 +94,8 @@ long      clock(void);
 #endif
 _G_time_t      time(_G_time_t*);
 unsigned  ualarm(unsigned, unsigned);
-unsigned  usleep(unsigned);
-void      profil _G_ARGS((unsigned short*, _G_size_t, unsigned int, unsigned));
+void  	 usleep(unsigned);
+int      profil _G_ARGS((char *, int, int, int));
 
 #endif
 }

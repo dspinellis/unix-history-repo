@@ -45,7 +45,7 @@ extern SignalHandler signal _G_ARGS((int sig, SignalHandler action));
 extern SSignalHandler ssignal _G_ARGS((int sig, SSignalHandler action));
 extern int           gsignal  _G_ARGS((int sig));
 extern int           kill  _G_ARGS((_G_pid_t pid, int sig));
-extern int           killpg _G_ARGS((int, int));
+extern int           killpg _G_ARGS((_G_pid_t, int));
 extern int           siginterrupt _G_ARGS((int, int));
 extern void	     psignal _G_ARGS((unsigned, const char*));
 

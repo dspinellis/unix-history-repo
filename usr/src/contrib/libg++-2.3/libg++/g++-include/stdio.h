@@ -113,7 +113,7 @@ int    fclose(FILE*);
 FILE*  fdopen(int, const char*);
 int    fflush(FILE*);
 int    fgetc(FILE*);
-char*  fgets(char*, int, FILE *);
+char*  fgets(char*, unsigned int, FILE *);
 FILE*  fopen(const char*, const char*);
 int    fprintf(FILE*, const char* ...);
 int    fputc(int, FILE*);
