@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_usrreq.c	6.16 (Berkeley) %G%
+ *	@(#)uipc_usrreq.c	6.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -41,6 +41,8 @@ uipc_usrreq(so, req, m, nam, rights)
 	register struct socket *so2;
 	int error = 0;
 
+	if (req == PRU_CONTROL)
+		return (EOPNOTSUPP);
 	if (req != PRU_SEND && rights && rights->m_len) {
 		error = EOPNOTSUPP;
 		goto release;
@@ -208,11 +210,6 @@ uipc_usrreq(so, req, m, nam, rights)
 		unp_drop(unp, ECONNABORTED);
 		break;
 
-/* SOME AS YET UNIMPLEMENTED HOOKS */
-	case PRU_CONTROL:
-		return (EOPNOTSUPP);
-
-/* END UNIMPLEMENTED HOOKS */
 	case PRU_SENSE:
 		((struct stat *) m)->st_blksize = so->so_snd.sb_hiwat;
 		if (so->so_type == SOCK_STREAM && unp->unp_conn != 0) {
