@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_balloc.c	7.23 (Berkeley) %G%
+ *	@(#)ffs_balloc.c	7.24 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -201,7 +201,7 @@ ffs_balloc(ip, bn, size, cred, bpp, flags)
 			brelse(bp);
 			return (error);
 		}
-		bap[indirs[j].in_off] = nb;
+		bap[indirs[j - 1].in_off] = nb;
 		/*
 		 * If required, write synchronously, otherwise use
 		 * delayed write.
