@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tr.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)tr.c	4.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -196,8 +196,8 @@ tran(s)
 {
 	register int ch, cnt, val;
 
-	for (val = cnt = 0; isascii(ch = *s->str) && isdigit(ch)
-	    && cnt++ < 3; ++s->str)
+	for (val = cnt = 0; isascii(ch = *s->str++) && isdigit(ch)
+	    && cnt++ < 3;)
 		val = val * 8 + ch - '0';
 	return(cnt ? val : ch);
 }
