@@ -1,0 +1,56 @@
+The rest of this file is oriented to updating a vanilla 4.2 system.
+As 4.3 comes configured, all you have to do is uncomment the "uucpd"
+line in /etc/inetd.conf (and of course update your L.sys as needed).
+If you want to turn off logging uucp logins in wtmp, set the "user"
+field in inetd.conf to "uucp", who doesn't have write permission on wtmp.
+
+----------------------------------------------------------------------
+Basically, to run UUCP on top of TCP, the code had to be changed to
+not do ioctl's on sockets,etc. Also, a new protocl 't' was added.
+This is because the 'g' protocol maxes out at about 9000 baud
+regardless of the physical medium. The 't' protocol presumes an
+error free channel, and is essentially the 'g' protocol with the
+checksumming and packetizing ripped out.
+
+To install it, make uucp with BSD4_2 defined in uucp.h.
+
+Add a line in /etc/services that looks like:
+uucp		540/tcp		uucpd
+
+Add lines to /etc/rc.local that looks something like:
+if [ -f /etc/uucpd ]; then
+	/etc/uucpd & echo -n ' uucpd'				>/dev/console
+fi
+
+The L.sys entry should look something like:
+uucpname time-to-call TCP port networkname standard uucp login chat
+
+This is how it would look for rochester.
+rochester Any TCP uucp ur-seneca "" uucplogin "" uucppasswd
+
+UUCP site rochester is arpanet site ur-seneca (and there is a 
+arpanet site rochester  that is a different machine)
+
+The "port" field is either a word or a number. It is a number,
+that number is used as the port. If it is a word, the word is
+looked up in /etc/services and the port is taken from there.
+
+Another example would be:
+seismo Any TCP 33 seismo "" uucplogin "" uucppassword
+
+In almost every case, the networkname field will be the same as the
+uucpname field. Similarly, the port field will usually be "uucp", which
+says to use the standard uucp port from the services file.
+
+The daemon expects the incoming site to send its login and password
+for authentication.
+
+If you have any problems feel free to call me:
+
+	Rick Adams
+	Center for Seismic Studies
+	1300 North 17th Street, Suite 1450
+	Arlington, VA 22209
+	(703) 276-7900
+	rick@seismo.ARPA
+	seismo!rick
