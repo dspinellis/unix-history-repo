@@ -123,13 +123,17 @@ icmp_input(m)
 	if (icmpprintfs)
 		printf("icmp_input from %x, len %d\n", ip->ip_src, icmplen);
 #endif
-	if (icmplen < ICMP_MINLEN) {
+	if (icmplen < sizeof(struct ip) + ICMP_MINLEN) {
 		icmpstat.icps_tooshort++;
 		goto free;
 	}
+	if ((m->m_off > MMAXOFF || m->m_len < icmplen)
+	   && (m = m_pullup(m, icmplen)) == 0) {
+		icmpstat.icps_tooshort++;
+		return;
+	}
 	m->m_len -= hlen;
 	m->m_off += hlen;
-	/* need routine to make sure header is in this mbuf here */
 	icp = mtod(m, struct icmp *);
 	i = icp->icmp_cksum;
 	icp->icmp_cksum = 0;
@@ -218,9 +222,6 @@ icmp_input(m)
 #endif
 
 	case ICMP_REDIRECT:
-	case ICMP_ECHOREPLY:
-	case ICMP_TSTAMPREPLY:
-	case ICMP_IREQREPLY:
 		if (icmplen < ICMP_ADVLENMIN || icmplen < ICMP_ADVLEN(icp)) {
 			icmpstat.icps_badlen++;
 			goto free;
@@ -232,12 +233,17 @@ icmp_input(m)
 		 * listening on a raw socket (e.g. the routing
 		 * daemon for use in updating it's tables).
 		 */
-		if (icp->icmp_type == ICMP_REDIRECT) {
-			icmpsrc.sin_addr = icp->icmp_ip.ip_dst;
-			icmpdst.sin_addr = icp->icmp_gwaddr;
-			rtredirect((struct sockaddr *)&icmpsrc,
-			  (struct sockaddr *)&icmpdst);
-		}
+		icmpsrc.sin_addr = icp->icmp_ip.ip_dst;
+		icmpdst.sin_addr = icp->icmp_gwaddr;
+		rtredirect((struct sockaddr *)&icmpsrc,
+		  (struct sockaddr *)&icmpdst,
+		  (code == ICMP_REDIRECT_NET || code == ICMP_REDIRECT_TOSNET) ?
+		   RTF_GATEWAY : (RTF_GATEWAY | RTF_HOST));
+		/* FALL THROUGH */
+
+	case ICMP_ECHOREPLY:
+	case ICMP_TSTAMPREPLY:
+	case ICMP_IREQREPLY:
 		icmpsrc.sin_addr = ip->ip_src;
 		icmpdst.sin_addr = ip->ip_dst;
 		raw_input(dtom(icp), &icmproto, (struct sockaddr *)&icmpsrc,
