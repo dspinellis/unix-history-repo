@@ -5,7 +5,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)MAKEDEV	5.3 (Berkeley) %G%
+#	@(#)MAKEDEV	5.4 (Berkeley) %G%
 #
 
 # Device "make" file.  Valid arguments:
@@ -18,12 +18,17 @@
 #	vnd*	"file" pseudo-disks
 # Terminal multiplexors:
 #	dc*	4 channel serial interface (keyboard, mouse, modem, printer)
+#	scc*	82530 serial interface
 # Pseudo terminals:
 #	pty*	set of 16 master and slave pseudo terminals
 # Printers:
 # Call units:
 # Special purpose devices:
+#	NOTE: /dev/mouse should be a link to one of these for X windows.
 #	pm*	raw interface to PMAX graphics devices
+#	cfb*	raw interface to turbochannel PMAG-BA color frame buffer
+#	xcfb*	raw interface to maxine graphics devices
+#	mfb*	raw interface to mono graphics devices
 
 PATH=/sbin:/bin/:/usr/bin:/usr/sbin
 umask 77
@@ -126,14 +131,63 @@ dc*)
 	esac
 	;;
 
+scc*)
+	unit=`expr $i : 'scc\(.*\)'`
+	case $unit in
+	0)
+		mknod tty0 c 17 2
+		mknod tty1 c 17 3
+		;;
+	*)
+		echo bad unit for scc in: $i
+		;;
+	esac
+	;;
+
 pm*)
 	unit=`expr $i : 'pm\(.*\)'`
 	case $unit in
 	0)
-		mknod mouse c 8 0
+		mknod pm0 c 8 0
 		;;
 	*)
 		echo bad unit for pm in: $i
+		;;
+	esac
+	;;
+
+cfb*)
+	unit=`expr $i : 'cfb\(.*\)'`
+	case $unit in
+	0)
+		mknod cfb0 c 13 0
+		;;
+	*)
+		echo bad unit for cfb in: $i
+		;;
+	esac
+	;;
+
+xcfb*)
+	unit=`expr $i : 'xcfb\(.*\)'`
+	case $unit in
+	0)
+		mknod xcfb0 c 14 0
+		;;
+	*)
+		echo bad unit for xcfb in: $i
+		;;
+	esac
+	;;
+
+mfb*)
+	unit=`expr $i : 'mfb\(.*\)'`
+	case $unit in
+	0)
+		mknod mfb0 c 18 0
+		;;
+	*)
+		echo bad unit for mfb in: $i
 		;;
 	esac
 	;;
