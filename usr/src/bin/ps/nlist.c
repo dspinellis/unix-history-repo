@@ -6,17 +6,19 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)nlist.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)nlist.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/proc.h>
+#include <sys/resource.h>
 #include <nlist.h>
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include <kvm.h>
+#include "ps.h"
 
 #ifdef SPPWAIT
 #define NEWVM
@@ -49,6 +51,7 @@ extern kvm_t *kd;
 #define kread(x, v) \
 	kvm_read(kd, psnl[x].n_value, (char *)&v, sizeof v) != sizeof(v)
 
+int
 donlist()
 {
 	extern int eval;
@@ -91,14 +94,15 @@ donlist()
 	return(rval);
 }
 
+void
 nlisterr(nl)
 	struct nlist nl[];
 {
 	int i;
 
-	fprintf(stderr, "ps: nlist: can't find following symbols:");
+	(void)fprintf(stderr, "ps: nlist: can't find following symbols:");
 	for (i = 0; nl[i].n_name != NULL; i++)
 		if (nl[i].n_value == 0)
-			fprintf(stderr, " %s", nl[i].n_name);
-	fprintf(stderr, "\n");
+			(void)fprintf(stderr, " %s", nl[i].n_name);
+	(void)fprintf(stderr, "\n");
 }

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ps.h	5.4 (Berkeley) %G%
+ *	@(#)ps.h	5.5 (Berkeley) %G%
  */
 
 #define	UNLIMITED	0	/* unlimited terminal width */
@@ -21,7 +21,7 @@ struct usave {
 #define KI_PROC(ki) (&(ki)->ki_p->kp_proc)
 #define KI_EPROC(ki) (&(ki)->ki_p->kp_eproc)
 
-typedef struct _kinfo {
+typedef struct kinfo {
 	struct kinfo_proc *ki_p;	/* proc structure */
 	struct usave ki_u;	/* interesting parts of user */
 	char *ki_args;		/* exec args */
@@ -29,7 +29,12 @@ typedef struct _kinfo {
 } KINFO;
 
 /* Variables. */
-typedef struct _var {
+typedef struct varent {
+	struct varent *next;
+	struct var *var;
+} VARENT;
+
+typedef struct var {
 	char	*name;		/* name(s) of variable */
 	char	*header;	/* default header */
 	char	*alias;		/* aliases */
@@ -37,7 +42,8 @@ typedef struct _var {
 #define	LJUST	0x02		/* left adjust on output (trailing blanks) */
 #define	USER	0x04		/* needs user structure */
 	u_int	flag;
-	int	(*oproc)();	/* output routine */
+				/* output routine */
+	void	(*oproc) __P((struct kinfo *, struct varent *));
 	short	width;		/* printing width */
 	/*
 	 * The following (optional) elements are hooks for passing information
@@ -52,10 +58,5 @@ typedef struct _var {
 	 * glue to link selected fields together
 	 */
 } VAR;
-
-struct varent {
-	VAR *var;
-	struct varent *next;
-};
 
 #include "extern.h"
