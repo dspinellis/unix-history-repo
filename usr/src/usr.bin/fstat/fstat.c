@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fstat.c	5.40 (Berkeley) %G%";
+static char sccsid[] = "@(#)fstat.c	5.41 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -30,16 +30,17 @@ static char sccsid[] = "@(#)fstat.c	5.40 (Berkeley) %G%";
 #include <sys/kinfo_proc.h>
 #include <sys/filedesc.h>
 #define	KERNEL
-#define NFS
 #include <sys/file.h>
-#include <sys/mount.h>
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>
+#undef KERNEL
+#define NFS
+#include <sys/mount.h>
 #include <nfs/nfsv2.h>
 #include <nfs/rpcv2.h>
 #include <nfs/nfs.h>
 #include <nfs/nfsnode.h>
-#undef KERNEL
+#undef NFS
 
 #include <net/route.h>
 #include <netinet/in.h>
