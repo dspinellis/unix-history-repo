@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -117,9 +117,8 @@ enter_lastlog(pn)
 	register PERSON *pn;
 {
 	register WHERE *w;
-	static int opened;
+	static int opened, fd;
 	struct lastlog ll;
-	int fd;
 	char doit = 0;
 	off_t lseek();
 
@@ -138,7 +137,7 @@ enter_lastlog(pn)
 		}
 	if ((w = pn->whead) == NULL)
 		doit = 1;
-	else {
+	else if (ll.ll_time != 0) {
 		/* if last login is earlier than some current login */
 		for (; !doit && w != NULL; w = w->next)
 			if (w->info == LOGGEDIN && w->loginat < ll.ll_time)
