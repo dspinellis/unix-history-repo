@@ -1,5 +1,7 @@
-.\"	@(#)m4.ms	5.1 (Berkeley) %G%
+.\"	@(#)m4.ms	6.1 (Berkeley) %G%
 .\"
+.EH 'PS1:17-%''The M4 Macro Processor'
+.OH 'The M4 Macro Processor''PS1:17-%'
 .if n .ls 2
 .tr _\(em
 .tr *\(**
@@ -44,7 +46,7 @@
 .		\"2=not last lines; 4= no -xx; 8=no xx-
 .		\"special chars in programs
 .	\" start of text
-.RP
+.\".RP
 .....TR 59
 .....TM 77-1273-6 39199 39199-11
 .ND "July 1, 1977"
