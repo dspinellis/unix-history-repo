@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_fork.c	7.13 (Berkeley) %G%
+ *	@(#)kern_fork.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -175,7 +175,7 @@ again:
 #endif
 	rpp->p_stat = SIDL;
 	timerclear(&rpp->p_realtimer.it_value);
-	rpp->p_flag = SLOAD | (rip->p_flag & (SPAGV|SCTTY));
+	rpp->p_flag = SLOAD | (rip->p_flag & (SPAGV|SCTTY|SHPUX));
 	if (isvfork) {
 		rpp->p_flag |= SVFORK;
 		rpp->p_ndx = rip->p_ndx;
@@ -209,13 +209,14 @@ again:
 	rpp->p_sigignore = rip->p_sigignore;
 	/* take along any pending signals like stops? */
 	if (isvfork) {
-		rpp->p_tsize = rpp->p_dsize = rpp->p_ssize = 0;
-		rpp->p_szpt = clrnd(ctopt(UPAGES));
+		rpp->p_tsize = rpp->p_dsize = rpp->p_mmsize = rpp->p_ssize = 0;
+		rpp->p_szpt = clrnd(ctopt(HIGHPAGES));
 		forkstat.cntvfork++;
 		forkstat.sizvfork += rip->p_dsize + rip->p_ssize;
 	} else {
 		rpp->p_tsize = rip->p_tsize;
 		rpp->p_dsize = rip->p_dsize;
+		rpp->p_mmsize = rip->p_mmsize;
 		rpp->p_ssize = rip->p_ssize;
 		rpp->p_szpt = rip->p_szpt;
 		forkstat.cntfork++;
