@@ -14,10 +14,11 @@ This file lists known problems with this release of FreeBSD
 	This file will not compile correctly with the compiler distributed
 	in FreeBSD before version 1.1.  To compile a FreeBSD 1.1 kernel 
 	with a compiler from before FreeBSD 1.1, you will need to add
-	the additional define to COPTS in your 
-	/sys/compile/{KERNEN_NAME}/Makefile.  Add -D__Free_BSD to
-	that line.  Once you upgrade your compile this will no longer
-	be necessary and that addition can be removed.
+	the `-D__FreeBSD__' flag to your kernel compiles; e.g.,
+		make CC='cc -D__FreeBSD__'
+	in /sys/compile/SYSCONS (or substitute the name of your
+	configuration.  Once you upgrade your compilation tools this
+	will no longer be necessary.
 	
 
-$Id: KNOWNBUGS,v 1.1 1994/02/09 01:50:39 rgrimes Exp $
+$Id: KNOWNBUGS,v 1.2 1994/02/09 05:25:23 nate Exp $
