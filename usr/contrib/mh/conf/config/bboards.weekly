@@ -1,0 +1,3 @@
+#! /bin/csh -f
+cd @(BBHOME)/etc
+sh -c 'make inst-archives > weekly.log 2>&1'
