@@ -1,20 +1,20 @@
-/*	if_uba.c	6.1	83/07/29	*/
+/*	if_uba.c	6.2	84/08/29	*/
 
 #include "../machine/pte.h"
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/mbuf.h"
-#include "../h/map.h"
-#include "../h/buf.h"
-#include "../h/cmap.h"
-#include "../h/vmmac.h"
-#include "../h/socket.h"
+#include "param.h"
+#include "systm.h"
+#include "mbuf.h"
+#include "map.h"
+#include "buf.h"
+#include "cmap.h"
+#include "vmmac.h"
+#include "socket.h"
 
 #include "../net/if.h"
 
 #include "../vax/mtpr.h"
-#include "../vaxif/if_uba.h"
+#include "if_uba.h"
 #include "../vaxuba/ubareg.h"
 #include "../vaxuba/ubavar.h"
 
