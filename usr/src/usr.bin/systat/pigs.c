@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pigs.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)pigs.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -16,7 +16,6 @@ static char sccsid[] = "@(#)pigs.c	5.4 (Berkeley) %G%";
 #include <sys/dir.h>
 #include <sys/time.h>
 #include <sys/proc.h>
-#include <sys/dk.h>
 #include <pwd.h>
 
 WINDOW *
