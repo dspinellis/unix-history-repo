@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)headers.c	3.54		%G%);
+SCCSID(@(#)headers.c	3.55		%G%);
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -94,7 +94,7 @@ chompheader(line, def)
 	}
 
 	/* see if this is a resent message */
-	if (!def && bitset(H_RESENT, h->h_flags))
+	if (!def && bitset(H_RESENT, hi->hi_flags))
 		CurEnv->e_flags |= EF_RESENT;
 
 	/* if this means "end of header" quit now */
