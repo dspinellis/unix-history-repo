@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -101,7 +101,7 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	int addrlen;
+	int addrlen, on = 1;
 	long pgid;
 	char *cp;
 
@@ -152,8 +152,14 @@ nextopt:
 	if (signal(SIGURG, myoob) < 0) {
 		syslog(LOG_ERR, "signal: %m");
 	}
+	/* handle urgent data inline */
+#ifdef SO_OOBINLINE
+	if (setsockopt(0, SOL_SOCKET, SO_OOBINLINE, (char *)&on, sizeof(on)) < 0) {
+		syslog(LOG_ERR, "setsockopt: %m");
+	}
+#endif SO_OOBINLINE
 	pgid = getpid();
-	if (ioctl(fileno(stdin), (int) SIOCSPGRP, (char *) &pgid) < 0) {
+	if (ioctl(fileno(stdin), SIOCSPGRP, (char *) &pgid) < 0) {
 		syslog(LOG_ERR, "ioctl: %m");
 	}
 	dolog(&his_addr);
@@ -437,9 +443,6 @@ dataconn(name, size, mode)
 		    sys_errlist[errno]);
 		return (NULL);
 	}
-	reply(150, "Opening data connection for %s (%s,%d)%s.",
-	    name, inet_ntoa(data_dest.sin_addr),
-	    ntohs(data_dest.sin_port), sizebuf);
 	data = fileno(file);
 	while (connect(data, &data_dest, sizeof (data_dest)) < 0) {
 		if (errno == EADDRINUSE && retry < swaitmax) {
@@ -453,6 +456,9 @@ dataconn(name, size, mode)
 		data = -1;
 		return (NULL);
 	}
+	reply(150, "Opening data connection for %s (%s,%d)%s.",
+	    name, inet_ntoa(data_dest.sin_addr),
+	    ntohs(data_dest.sin_port), sizebuf);
 	return (file);
 }
 
@@ -485,9 +491,9 @@ send_data(instr, outstr)
 					transflag = 0;
 					return (1);
 				}
-				putc('\r', outstr);
+				(void) putc('\r', outstr);
 			}
-			putc(c, outstr);
+			(void) putc(c, outstr);
 		/*	if (c == '\r')			*/
 		/*		putc ('\0', outstr);	*/
 		}
@@ -557,17 +563,17 @@ receive_data(instr, outstr)
 
 	case TYPE_A:
 		while ((c = getc(instr)) != EOF) {
-			if (c == '\r') {
+			while (c == '\r') {
 				if (ferror (outstr)) {
 					transflag = 0;
 					return (1);
 				}
 				if ((c = getc(instr)) != '\n')
-					putc ('\r', outstr);
+					(void) putc ('\r', outstr);
 			/*	if (c == '\0')			*/
 			/*		continue;		*/
 			}
-			putc (c, outstr);
+			(void) putc (c, outstr);
 		}
 		transflag = 0;
 		if (ferror (instr) || ferror (outstr))
@@ -948,44 +954,17 @@ checkuser(name)
 
 myoob()
 {
-	int aflag = 0, atmark;
-	char c, *cp;
+	char *cp;
 
+	/* only process if transfer occurring */
 	if (!transflag) {
-		for (;;) {
-			if (ioctl(fileno(stdin), (int) SIOCATMARK, (char *) &atmark) < 0) {
-				syslog(LOG_ERR, "ioctl: %m");
-				break;
-			}
-			if (atmark)
-				break;
-			(void) read(fileno(stdin), &c, 1);
-		}
-		(void) recv(fileno(stdin), &c, 1, MSG_OOB);
-		(void) read(fileno(stdin), &c, 1);
 		return;
 	}
-	for (;;) {
-		if (ioctl(fileno(stdin), (int) SIOCATMARK, (char *) &atmark) < 0) {
-			syslog(LOG_ERR, "ioctl: %m");
-			break;
-		}
-		if (atmark)
-			break;
-		(void) read(fileno(stdin), &c, 1);
-		if (c == IAC || c == IP)
-			aflag++;
-	}
-	(void) recv(fileno(stdin), &c, 1, MSG_OOB);
-	if (c == IAC)
-		aflag++;
-	(void) read(fileno(stdin), &c, 1);
-	if (c == DM)
-		aflag++;
-	if (aflag != 4)
-		return;
 	cp = tmpline;
-	(void) getline(cp, 7, stdin);
+	if (getline(cp, 7, stdin) == NULL) {
+		reply(221, "You could at least say goodby.");
+		dologout(0);
+	}
 	upper(cp);
 	if (strcmp(cp, "ABOR\r\n"))
 		return;
