@@ -1,4 +1,4 @@
-.\"	@(#)NBSproposal.11.88	1.6	89/01/05
+.\"	@(#)NBSproposal.11.88	1.7	89/02/21
 .\" *troff -ms
 .de CO
 .br
@@ -490,3 +490,144 @@ document, 1988.
 .br
 Marshall T. Rose, UNI network interface, IEEE P1003.8 subcommittee working
 document.
+.bp
+.ce2
+UNIX BUDGET
+April 1, 1989 - March 31, 1990
+.sp2
+.TS
+center, expand;
+ln.
+A. SALARIES AND WAGES
+
+     1. Academic (Assistant Research Engineer @ 100%)	$ 54,389
+     2. Technical (Programmer V @ 100%)	$ 59,392
+     3. Clerical Assistance (Assistant III @ 10%, Assistant II @ 50%)	$ 14,769
+     4. Administrative Services 	$ 12,286
+
+     TOTAL SALARIES AND WAGES	$ 140,836
+
+B. EMPLOYEE BENEFITS	$ 39,339
+
+     TOTAL SALARIES AND EMPLOYEE BENEFITS	$ 180,175
+
+C. EQUIPMENT
+
+     1. 3 ea. DEC/Sun 8MB Workstations	$ 29,085
+     2. 4 ea. SMD Disk Drives	$ 44,000
+     3. 3 Ethernet Interfaces	$ 9,000
+     4. 1 ea. Sun Fileserver upgrade	$ 9,030
+     5. 3 ea. 4 Mb Upgrades for Sun Workstations	$ 9,000
+     6. 2 ea. 16 Mb Upgrades for VAX	$ 20,000
+     7. 1 ea. Gateway, MicroVAX	$ 15,000
+
+     TOTAL EQUIPMENT	$ 135,115
+
+D. TRAVEL
+
+     1. 9 R/Ts to the East Coast @ $700/trip
+     2. 2 R/Ts to Europe (IEEE 1003, IETF) @ $1,760/trip
+
+     TOTAL TRAVEL	$ 9,820
+
+E. SUPPLIES AND EXPENSES
+
+     1. Computer Maintenance	$ 43,908
+     2. Network Access	$ 1,440
+     3. Mailing, Telephone, Manuals & Expendable Supplies	$ 9,270
+
+     TOTAL SUPPLIES AND EXPENSES	$ 54,618
+
+F. TOTAL DIRECT COSTS	$ 379,728
+
+G. INDIRECT COSTS (47% of $244,613 Modified Total Direct Costs)	$ 114,968
+
+H.  TOTAL COST OF PROJECT	$ 494,696
+.TE
+.bp
+.ce2
+SECURITY BUDGET
+April 1, 1989 - March 31, 1990
+.sp2
+.TS
+center, expand;
+ln.
+A. SALARIES AND WAGES
+
+     1. Technical (Programmer II @ 100% & Programmer III @ 100%)	$ 85,361
+     2. Clerical Assistance (Assistant III @ 10%, Assistant II @ 50%)	$ 14,769
+     3. Administrative Services 	$ 10,227
+
+     TOTAL SALARIES AND WAGES	$ 110,357
+
+B. EMPLOYEE BENEFITS	$ 33,383
+
+     TOTAL SALARIES AND EMPLOYEE BENEFITS	$ 143,740
+
+C. EQUIPMENT
+
+     1. 2 ea. DEC/Sun 8MB Workstations	$ 19,390
+     2. 3 ea. SMD Disk Drives	$ 33,000
+     3. 3 Ethernet Interfaces	$ 9,000
+     4. 4 ea. 9600 Baud Telebit Modems	$ 6,400
+     5. 3 ea. 4 Mb Upgrades for Sun Workstations	$ 9,000
+     6. 2 ea. 16 Mb Upgrades for Micro VAX	$ 16,000
+     7. 3 ea. SCSI Disks	$9,600
+     8. 4 ea. Interphase 4400 Disk Controllers	$ 20,000
+     9. 4 ea. High-speed Network Interfaces	$ 30,000
+    10. 2 ea. X.25 Network Interfaces	$ 10,000
+    11. 2 Exabyte 8mm Tape Backup Systems	$ 15,000
+
+     TOTAL EQUIPMENT	$ 177,390
+
+D. TRAVEL
+
+     1. 10 R/Ts to the East Coast @ $700/trip
+     2. 2 R/Ts to Europe (IEEE 1003) @ $1,760/trip
+
+     TOTAL TRAVEL	$ 10,520
+
+E. SUPPLIES AND EXPENSES
+
+     1. Computer Maintenance	$ 42,908
+     2. Network Access	$ 1,080
+     3. Mailing, Telephone, Xeroxing & Expendable Supplies	$ 5,370
+
+     TOTAL SUPPLIES AND EXPENSES	$ 49,358
+
+F. TOTAL DIRECT COSTS	$ 381,008
+
+G. INDIRECT COSTS (47% of $203,618 Modified Total Direct Costs)	$ 95,700
+
+H.  TOTAL COST OF PROJECT	$ 476,708
+.TE
+.bp
+.ce2
+OSI BUDGET
+April 1, 1989 - March 31, 1990
+.r
+.sp2
+.TS
+center,expand;
+ln.
+.ta 1.i
+A. SALARIES AND WAGES
+
+     1. Technical (Programmer IV @ 80%)	$ 43,350
+
+     2. Administrative Services	3,417
+
+     TOTAL SALARIES AND WAGES	$ 46,767
+
+B. EMPLOYEE BENEFITS	14,147
+
+     TOTAL SALARIES AND EMPLOYEE BENEFITS	$ 60,914
+
+C. SUPPLIES AND EXPENSES (Network connection & manuals)	$ 7,113
+
+D. TOTAL DIRECT COSTS	$ 68,027
+
+E. INDIRECT COSTS (47% of $68,027 Modified Total Direct Costs)	$ 31,973
+
+F. TOTAL COST OF PROJECT	$ 100,000
+.TE
