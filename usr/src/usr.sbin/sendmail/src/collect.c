@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	6.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	6.17 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -332,7 +332,6 @@ flusheol(buf, fp)
 	register char *p = buf;
 	bool printmsg = TRUE;
 	char junkbuf[MAXLINE];
-	extern char *sfgets();
 
 	while (strchr(p, '\n') == NULL)
 	{

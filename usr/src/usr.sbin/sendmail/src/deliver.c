@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.78 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.79 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -55,8 +55,6 @@ sendall(e, mode)
 	/* determine actual delivery mode */
 	if (mode == SM_DEFAULT)
 	{
-		extern bool shouldqueue();
-
 		mode = e->e_sendmode;
 		if (mode != SM_VERIFY &&
 		    shouldqueue(e->e_msgpriority, e->e_ctime))
@@ -102,8 +100,6 @@ sendall(e, mode)
 
 	if (!MeToo && !bitset(QQUEUEUP, e->e_from.q_flags))
 	{
-		extern ADDRESS *recipient();
-
 		if (tTd(13, 5))
 		{
 			printf("sendall: QDONTSEND ");
@@ -590,9 +586,6 @@ deliver(e, firstto)
 	char buf[MAXNAME];
 	char rpathbuf[MAXNAME];		/* translated return path */
 	extern int checkcompat();
-	extern ADDRESS *getctladdr();
-	extern char *remotename();
-	extern char *hostsignature();
 	extern FILE *fdopen();
 
 	errno = 0;
@@ -944,8 +937,6 @@ deliver(e, firstto)
 #ifdef DAEMON
 		register int i;
 		register u_short port;
-		extern MCI *mci_get();
-		extern char *hostsignature();
 
 		CurHostName = pv[1];
 		curhost = hostsignature(m, pv[1], e);
@@ -1433,7 +1424,6 @@ markfailure(e, q, rcode)
 	int rcode;
 {
 	char buf[MAXLINE];
-	extern char *pintvl();
 
 	if (rcode == EX_OK)
 		return;
@@ -1707,8 +1697,6 @@ logdelivery(m, mci, stat, e)
 # ifdef LOG
 	char *curhost;
 	char buf[512];
-	extern char *pintvl();
-	extern char *macvalue();
 
 	(void) sprintf(buf, "delay=%s", pintvl(curtime() - e->e_ctime, TRUE));
 
@@ -1722,7 +1710,6 @@ logdelivery(m, mci, stat, e)
 	{
 # ifdef DAEMON
 		extern SOCKADDR CurHostAddr;
-		extern char *anynet_ntoa();
 # endif
 
 		(void) strcat(buf, ", relay=");
@@ -2123,7 +2110,6 @@ hostsignature(m, host, e)
 		{
 			register MCI *mci;
 			extern int errno;
-			extern MCI *mci_get();
 
 			/* update the connection info for this host */
 			mci = mci_get(hp, m);

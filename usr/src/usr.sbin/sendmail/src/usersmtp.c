@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	6.31 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.32 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	6.31 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.32 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -63,7 +63,6 @@ smtpinit(m, mci, e)
 {
 	register int r;
 	register char *p;
-	extern STAB *stab();
 	extern void esmtp_check();
 	extern void helo_options();
 

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	6.56 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	6.57 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -733,7 +733,6 @@ _rewrite(pvp, ruleset)
 	int subr;			/* subroutine number if >= 0 */
 	bool dolookup;			/* do host aliasing */
 	char *npvp[MAXATOM+1];		/* temporary space for rebuild */
-	extern char *macvalue();
 	char tokbuf[MAXNAME+1];		/* for concatenated class tokens */
  	int nloops, nmatches = 0;	/* for looping rule checks */
 	struct rewrite *prev_rwr;	/* pointer to previous rewrite rule */
