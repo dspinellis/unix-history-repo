@@ -1,4 +1,4 @@
-/* $Id: os-hlh42.h,v 5.2 90/06/23 22:20:46 jsp Rel $ */
+/* $Id: os-hlh42.h,v 5.2.1.2 90/11/04 23:17:40 jsp Exp $ */
 
 /*
  * HLH OTS definitions for Amd (automounter)
@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-hlh42.h	5.1 (Berkeley) %G%
+ *	@(#)os-hlh42.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -59,4 +59,5 @@
 /*
  * HLH's 4.2 needs the extra RPC definitions.
  */
-#define MISC_RPC
+#define NEED_XDR_POINTER
+#define	NEED_CLNT_SPERRNO

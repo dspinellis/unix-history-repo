@@ -1,4 +1,4 @@
-/* $Id: os-utx32.h,v 5.2 90/06/23 22:21:00 jsp Rel $ */
+/* $Id: os-utx32.h,v 5.2.1.1 90/10/21 22:31:11 jsp Exp $ */
 
 /*
  * Gould UTX/32 definitions for Amd (automounter)
@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-utx32.h	5.1 (Berkeley) %G%
+ *	@(#)os-utx32.h	5.2 (Berkeley) %G%
  */
 
 /*

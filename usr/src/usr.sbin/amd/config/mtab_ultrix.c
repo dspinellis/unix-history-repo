@@ -1,5 +1,5 @@
 /*
- * $Id: mtab_ultrix.c,v 5.2 90/06/23 22:20:57 jsp Rel $
+ * $Id: mtab_ultrix.c,v 5.2.1.1 90/10/21 22:31:08 jsp Exp $
  *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
@@ -11,7 +11,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mtab_ultrix.c	5.1 (Berkeley) %G%
+ *	@(#)mtab_ultrix.c	5.2 (Berkeley) %G%
  */
 
 #include "am.h"

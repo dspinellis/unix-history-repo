@@ -1,5 +1,5 @@
 /*
- * $Id: amq_xdr.c,v 5.2 90/06/23 22:20:14 jsp Rel $
+ * $Id: amq_xdr.c,v 5.2.1.1 90/10/21 22:30:16 jsp Exp $
  *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
@@ -11,7 +11,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)amq_xdr.c	5.1 (Berkeley) %G%
+ *	@(#)amq_xdr.c	5.2 (Berkeley) %G%
  */
 
 #include "am.h"

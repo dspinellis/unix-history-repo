@@ -1,4 +1,4 @@
-/* $Id: os-umax43.h,v 5.2 90/06/23 22:20:59 jsp Rel $ */
+/* $Id: os-umax43.h,v 5.2.1.1 90/10/21 22:31:10 jsp Exp $ */
 
 /*
  * UMAX 4.3 definitions for Amd (automounter)
@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-umax43.h	5.1 (Berkeley) %G%
+ *	@(#)os-umax43.h	5.2 (Berkeley) %G%
  */
 
 /*

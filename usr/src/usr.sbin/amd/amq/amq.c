@@ -1,5 +1,5 @@
 /*
- * $Id: amq.c,v 5.2 90/06/23 22:20:07 jsp Rel $
+ * $Id: amq.c,v 5.2.1.3 91/03/17 17:33:42 jsp Alpha $
  *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
@@ -25,8 +25,8 @@ char copyright[] = "\
 #endif /* not lint */
 
 #ifndef lint
-static char rcsid[] = "$Id: amq.c,v 5.2 90/06/23 22:20:07 jsp Rel $";
-static char sccsid[] = "@(#)amq.c	5.1 (Berkeley) %G%";
+static char rcsid[] = "$Id: amq.c,v 5.2.1.3 91/03/17 17:33:42 jsp Alpha $";
+static char sccsid[] = "@(#)amq.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "am.h"
@@ -35,14 +35,18 @@ static char sccsid[] = "@(#)amq.c	5.1 (Berkeley) %G%";
 #include <fcntl.h>
 #include <netdb.h>
 
+static int privsock();
+
 char *progname;
 static int flush_flag;
 static int minfo_flag;
 static int unmount_flag;
 static int stats_flag;
+static int getvers_flag;
 static char *debug_opts;
 static char *logfile;
-static char *xlog_opt;
+static char *mount_map;
+static char *xlog_optstr;
 static char localhost[] = "localhost";
 static char *def_server = localhost;
 
@@ -76,7 +80,7 @@ int *twid;
 	} break;
 
 	case Full: {
-		struct tm *tp = localtime(&mt->mt_mounttime);
+		struct tm *tp = localtime((time_t *) &mt->mt_mounttime);
 printf("%-*.*s %-*.*s %-*.*s %s\n\t%-5d %-7d %-6d %-7d %-7d %-6d %02d/%02d/%02d %02d:%02d:%02d\n",
 			*dwid, *dwid,
 			*mt->mt_directory ? mt->mt_directory : "/",	/* XXX */
@@ -99,7 +103,7 @@ printf("%-*.*s %-*.*s %-*.*s %s\n\t%-5d %-7d %-6d %-7d %-7d %-6d %02d/%02d/%02d 
 	} break;
 
 	case Stats: {
-		struct tm *tp = localtime(&mt->mt_mounttime);
+		struct tm *tp = localtime((time_t *) &mt->mt_mounttime);
 printf("%-*.*s %-5d %-7d %-6d %-7d %-7d %-6d %02d/%02d/%02d %02d:%02d:%02d\n",
 			*dwid, *dwid,
 			*mt->mt_directory ? mt->mt_directory : "/",	/* XXX */
@@ -249,7 +253,10 @@ char *argv[];
 	int errs = 0;
 	char *server;
 	struct sockaddr_in server_addr;
-	int s = RPC_ANYSOCK;
+
+	/* In order to pass the Amd security check, we must use a priv port. */
+	int s;
+
 	CLIENT *clnt;
 	struct hostent *hp;
 	int nodefault = 0;
@@ -270,10 +277,11 @@ char *argv[];
 	/*
 	 * Parse arguments
 	 */
-	while ((opt_ch = getopt(argc, argv, "fh:l:msux:D:")) != EOF)
+	while ((opt_ch = getopt(argc, argv, "fh:l:msuvx:D:M:")) != EOF)
 	switch (opt_ch) {
 	case 'f':
 		flush_flag = 1;
+		nodefault = 1;
 		break;
 
 	case 'h':
@@ -292,14 +300,21 @@ char *argv[];
 
 	case 's':
 		stats_flag = 1;
+		nodefault = 1;
 		break;
 
 	case 'u':
 		unmount_flag = 1;
+		nodefault = 1;
+		break;
+
+	case 'v':
+		getvers_flag = 1;
+		nodefault = 1;
 		break;
 
 	case 'x':
-		xlog_opt = optarg;
+		xlog_optstr = optarg;
 		nodefault = 1;
 		break;
 
@@ -308,16 +323,26 @@ char *argv[];
 		nodefault = 1;
 		break;
 
+	case 'M':
+		mount_map = optarg;
+		nodefault = 1;
+		break;
+
 	default:
 		errs = 1;
 		break;
 	}
 
+	if (optind == argc) {
+		if (unmount_flag)
+			errs = 1;
+	}
+	
 	if (errs) {
 show_usage:
 		fprintf(stderr, "\
-Usage: %s [-h host] [[-f] [-m] | | [-s] | [[-u] directory ...]] |\n\
-\t[-l logfile|\"syslog\"] [-x log_flags] [-D dbg_opts]\n", progname);
+Usage: %s [-h host] [[-f] [-m] [-v] [-s]] | [[-u] directory ...]] |\n\
+\t[-l logfile|\"syslog\"] [-x log_flags] [-D dbg_opts] [-M mapent]\n", progname);
 		exit(1);
 	}
 
@@ -340,11 +365,12 @@ Usage: %s [-h host] [[-f] [-m] | | [-s] | [[-u] directory ...]] |\n\
 	}
 	bzero(&server_addr, sizeof server_addr);
 	server_addr.sin_family = AF_INET;
-	server_addr.sin_addr = *(struct in_addr *) hp->h_addr;
+	bcopy((voidp) hp->h_addr, (voidp) &server_addr.sin_addr, sizeof(server_addr.sin_addr));
 
 	/*
 	 * Create RPC endpoint
 	 */
+	s = privsock();
 	clnt = clntudp_create(&server_addr, AMQ_PROGRAM, AMQ_VERSION, TIMEOUT, &s);
 	if (clnt == 0) {
 		fprintf(stderr, "%s: ", progname);
@@ -373,14 +399,14 @@ Usage: %s [-h host] [[-f] [-m] | | [-s] | [[-u] directory ...]] |\n\
 	/*
 	 * Control logging
 	 */
-	if (xlog_opt) {
+	if (xlog_optstr) {
 		int *rc;
 		amq_setopt opt;
 		opt.as_opt = AMOPT_XLOG;
-		opt.as_str = xlog_opt;
+		opt.as_str = xlog_optstr;
 		rc = amqproc_setopt_1(&opt, clnt);
 		if (!rc || *rc) {
-			fprintf(stderr, "%s: setting log level to \"%s\" failed\n", progname, xlog_opt);
+			fprintf(stderr, "%s: setting log level to \"%s\" failed\n", progname, xlog_optstr);
 			errs = 1;
 		}
 	}
@@ -403,7 +429,7 @@ Usage: %s [-h host] [[-f] [-m] | | [-s] | [[-u] directory ...]] |\n\
 	/*
 	 * Flush map cache
 	 */
-	if (logfile) {
+	if (flush_flag) {
 		int *rc;
 		amq_setopt opt;
 		opt.as_opt = AMOPT_FLUSHMAPC;
@@ -433,6 +459,38 @@ Usage: %s [-h host] [[-f] [-m] | | [-s] | [[-u] directory ...]] |\n\
 	}
 
 	/*
+	 * Mount map
+	 */
+	if (mount_map) {
+		int *rc;
+		do {
+			rc = amqproc_mount_1(&mount_map, clnt);
+		} while (rc && *rc < 0);
+		if (!rc || *rc > 0) {
+			if (rc)
+				errno = *rc;
+			else
+				errno = ETIMEDOUT;
+			fprintf(stderr, "%s: could not start new ", progname);
+			perror("autmount point");
+		}
+	}
+
+	/*
+	 * Get Version
+	 */
+	if (getvers_flag) {
+		amq_string *spp = amqproc_getvers_1((voidp) 0, clnt);
+		if (spp && *spp) {
+			printf("%s.\n", *spp);
+			free(*spp);
+		} else {
+			fprintf(stderr, "%s: failed to get version infromation\n", progname);
+			errs = 1;
+		}
+	}
+
+	/*
 	 * Apply required operation to all remaining arguments
 	 */
 	if (optind < argc) {
@@ -454,12 +512,6 @@ Usage: %s [-h host] [[-f] [-m] | | [-s] | [[-u] directory ...]] |\n\
 						int mwid = 0, dwid = 0, twid = 0;
 						show_mt(mt, Calc, &mwid, &dwid, &twid);
 						mwid++; dwid++, twid++;
-#ifdef notdef
-		printf("\t%s\n%-*.*s %-*.*s %-*.*s %s\n",
-		"Uid   Getattr Lookup RdDir   RdLnk   Statfs Mounted@",
-		      dwid, dwid, "What", twid, twid, "Type", mwid, mwid, "Info", "Where");
-						show_mt(mt, Full, &mwid, &dwid, &twid);
-#endif /* notdef */
 		printf("%-*.*s Uid   Getattr Lookup RdDir   RdLnk   Statfs Mounted@\n",
 			dwid, dwid, "What");
 						show_mt(mt, Stats, &mwid, &dwid, &twid);
@@ -508,6 +560,54 @@ Usage: %s [-h host] [[-f] [-m] | | [-s] | [[-u] directory ...]] |\n\
 	}
 
 	exit(errs);
+}
+
+/*
+ * udpresport creates a datagram socket and attempts to bind it to a 
+ * secure port.
+ * returns: The bound socket, or -1 to indicate an error.
+ */
+static int udpresport()
+{
+	int alport;
+	struct sockaddr_in addr;
+	int sock;
+
+	/* Use internet address family */
+	addr.sin_family = AF_INET;
+	addr.sin_addr.s_addr = INADDR_ANY;
+	if ((sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0)
+		return -1;
+	for (alport = IPPORT_RESERVED-1; alport > IPPORT_RESERVED/2 + 1; alport--) {
+		addr.sin_port = htons((u_short)alport);
+		if (bind(sock, (struct sockaddr *)&addr, sizeof (addr)) >= 0)
+			return sock;
+		if (errno != EADDRINUSE) {
+			close(sock);
+			return -1;
+		}
+	}
+	close(sock);
+	errno = EAGAIN;
+	return -1;
+}
+
+/*
+ * Privsock() calls udpresport() to attempt to bind a socket to a secure
+ * port.  If udpresport() fails, privsock returns a magic socket number which
+ * indicates to RPC that it should make its own socket.
+ * returns: A privileged socket # or RPC_ANYSOCK.
+ */
+static int privsock()
+{
+	int sock = udpresport();
+
+	if (sock < 0) {
+		errno = 0;
+		/* Couldn't get a secure port, let RPC make an insecure one */
+		sock = RPC_ANYSOCK;
+	}
+	return sock;
 }
 
 #ifdef DEBUG

@@ -1,4 +1,4 @@
-/* $Id: os-defaults.h,v 5.2 90/06/23 22:20:44 jsp Rel $ */
+/* $Id: os-defaults.h,v 5.2.1.2 91/03/03 20:49:12 jsp Alpha $ */
 
 /*
  * Common OS definitions.  These may be overridden in
@@ -14,7 +14,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-defaults.h	5.1 (Berkeley) %G%
+ *	@(#)os-defaults.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -100,3 +100,18 @@
  * How to get a mount list
  */
 #define	READ_MTAB_FROM_FILE
+
+/*
+ * Make Amd automount points appear
+ * to be zero sized.  undef this
+ * if the O/S has a divide by zero
+ * problem in df et al.
+ */
+#define	HAS_EMPTY_AUTOMOUNTS
+
+/*
+ * For the RE matcher
+ */
+#define	CHARBITS 0377
+#define STRCSPN
+#define	RE_HDR "re.h"

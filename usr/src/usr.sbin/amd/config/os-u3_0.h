@@ -1,4 +1,4 @@
-/* $Id: os-u3_0.h,v 5.2 90/06/23 22:20:58 jsp Rel $ */
+/* $Id: os-u3_0.h,v 5.2.1.2 90/11/04 23:17:44 jsp Exp $ */
 
 /*
  * Ultrix 3.0 definitions for Amd (automounter)
@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-u3_0.h	5.1 (Berkeley) %G%
+ *	@(#)os-u3_0.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -109,7 +109,8 @@ struct mntent {
 #define	NFS_HDR	"misc-ultrix.h"
 #define	UFS_HDR	"misc-ultrix.h"
 
-#define	MISC_RPC
+#define NEED_XDR_POINTER
+#define	NEED_CLNT_SPERRNO
 
 #define	nfs_args	nfs_gfs_mount
 #define	ULTRIX_HACK	/* Should be handled better than this !! */

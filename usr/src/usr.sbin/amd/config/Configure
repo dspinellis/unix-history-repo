@@ -10,7 +10,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)Configure	5.1 (Berkeley) %G%
+#	@(#)Configure	5.2 (Berkeley) %G%
 #
 echo "Making ./arch and ./os-type executable ..."
 until chmod +x ./arch ./os-type; do echo "Error: chmod command failed" >&2; exit 1; done

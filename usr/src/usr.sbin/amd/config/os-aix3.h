@@ -1,4 +1,4 @@
-/* $Id: os-aix3.h,v 5.2 90/06/23 22:20:33 jsp Rel $ */
+/* $Id: os-aix3.h,v 5.2.1.1 90/10/21 22:30:38 jsp Exp $ */
 
 /*
  * AIX 3.1 definitions for Amd (automounter)
@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-aix3.h	5.1 (Berkeley) %G%
+ *	@(#)os-aix3.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -116,7 +116,7 @@ struct mntent {
 #define	NFS_HDR "misc-aix3.h"
 #define	UFS_HDR "misc-aix3.h"
 #undef NFS_FH_DREF
-#define	NFS_FH_DREF(dst, src) { (dst).addr = *(src); }
+#define	NFS_FH_DREF(dst, src) { (dst) = *(src); }
 #undef NFS_SA_DREF
 #define	NFS_SA_DREF(dst, src) { (dst).addr = *(src); }
 #define	M_RDONLY MNT_READONLY
@@ -146,7 +146,7 @@ static nfs_errormap[] = {	     0,75,77,99,99,99, \
 			99,99,99,71,99,99,99,99,99,99 \
 			};
 
-#define	MOUNT_AIX3
+#define	MOUNT_HELPER_SOURCE "mount_aix.c"
 
 /*
  * Need this too

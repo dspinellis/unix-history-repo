@@ -1,5 +1,5 @@
 /*
- * $Id: amq_clnt.c,v 5.2 90/06/23 22:20:16 jsp Rel $
+ * $Id: amq_clnt.c,v 5.2.1.2 91/03/17 17:39:38 jsp Alpha $
  *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
@@ -11,14 +11,13 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)amq_clnt.c	5.1 (Berkeley) %G%
+ *	@(#)amq_clnt.c	5.2 (Berkeley) %G%
  */
 
 #include "am.h"
 #include "amq.h"
 
-/* Default timeout can be changed using clnt_control() */
-static struct timeval TIMEOUT = { 25, 0 };
+static struct timeval TIMEOUT = { ALLOWED_MOUNT_TIME, 0 };
 
 voidp
 amqproc_null_1(argp, clnt)
@@ -118,6 +117,36 @@ amqproc_getmntfs_1(argp, clnt)
 
 	bzero((char *)&res, sizeof(res));
 	if (clnt_call(clnt, AMQPROC_GETMNTFS, xdr_void, argp, xdr_amq_mount_info_list, &res, TIMEOUT) != RPC_SUCCESS) {
+		return (NULL);
+	}
+	return (&res);
+}
+
+
+int *
+amqproc_mount_1(argp, clnt)
+	voidp argp;
+	CLIENT *clnt;
+{
+	static int res;
+
+	bzero((char *)&res, sizeof(res));
+	if (clnt_call(clnt, AMQPROC_MOUNT, xdr_amq_string, argp, xdr_int, &res, TIMEOUT) != RPC_SUCCESS) {
+		return (NULL);
+	}
+	return (&res);
+}
+
+
+amq_string *
+amqproc_getvers_1(argp, clnt)
+	voidp argp;
+	CLIENT *clnt;
+{
+	static amq_string res;
+
+	bzero((char *)&res, sizeof(res));
+	if (clnt_call(clnt, AMQPROC_GETVERS, xdr_void, argp, xdr_amq_string, &res, TIMEOUT) != RPC_SUCCESS) {
 		return (NULL);
 	}
 	return (&res);

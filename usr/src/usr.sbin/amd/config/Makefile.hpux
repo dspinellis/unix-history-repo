@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.hpux,v 5.2 90/06/23 22:20:49 jsp Rel $
+# $Id: Makefile.hpux,v 5.2.1.2 90/12/21 16:42:22 jsp Alpha $
 #
 # Copyright (c) 1989 Jan-Simon Pendry
 # Copyright (c) 1989 Imperial College of Science, Technology & Medicine
@@ -11,11 +11,14 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)Makefile.hpux	5.1 (Berkeley) %G%
+#	@(#)Makefile.hpux	5.2 (Berkeley) %G%
 #
 # Extra Makefile definitions for HP-UX
 #
 
 #CC = gcc ${GCCOPTS}
+# Works only on HP300
 CC = cc -Wc,-Nd2000
-OLDCC = cc -Wc,-Nd2000
+SYSCC = $(CC)
+# Works only Hp800
+# CC = cc
