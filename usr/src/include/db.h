@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)db.h	5.15 (Berkeley) %G%
+ *	@(#)db.h	5.16 (Berkeley) %G%
  */
 
 #ifndef _DB_H_
@@ -62,7 +62,7 @@ typedef struct __db {
 /* Structure used to pass parameters to the btree routines. */
 typedef struct {
 #define	R_DUP		0x01	/* duplicate keys */
-	u_long flags;
+	unsigned long flags;
 	int cachesize;		/* bytes to cache */
 	int maxkeypage;		/* maximum keys per page */
 	int minkeypage;		/* minimum keys per page */
@@ -91,22 +91,22 @@ typedef struct {
 #define	R_FIXEDLEN	0x01	/* fixed-length records */
 #define	R_NOKEY		0x02	/* key not required */
 #define	R_SNAPSHOT	0x04	/* snapshot the input */
-	u_long flags;
+	unsigned long flags;
 	int cachesize;		/* bytes to cache */
 	int lorder;		/* byte order */
 	size_t reclen;		/* record length (fixed-length records) */
-	u_char bval;		/* delimiting byte (variable-length records */
+	unsigned char bval;	/* delimiting byte (variable-length records */
 } RECNOINFO;
 
 /* Key structure for the record routines. */
 typedef struct {
-	u_long number;
-	u_long offset;
-	u_long length;
+	unsigned long number;
+	unsigned long offset;
+	unsigned long length;
 #define	R_LENGTH	0x01	/* length is valid */
 #define	R_NUMBER	0x02	/* record number is valid */
 #define	R_OFFSET	0x04	/* offset is valid */
-	u_char valid;
+	unsigned char valid;
 } RECNOKEY;
 
 /*
@@ -116,14 +116,14 @@ typedef struct {
  *	BLSWAP_COPY	swap from one location to another
  */
 #define BLSWAP(a) { \
-	u_long _tmp = a; \
+	unsigned long _tmp = a; \
 	((char *)&a)[0] = ((char *)&_tmp)[3]; \
 	((char *)&a)[1] = ((char *)&_tmp)[2]; \
 	((char *)&a)[2] = ((char *)&_tmp)[1]; \
 	((char *)&a)[3] = ((char *)&_tmp)[0]; \
 }
 #define	BLPSWAP(a) { \
-	u_long _tmp = *(u_long *)a; \
+	unsigned long _tmp = *(unsigned long *)a; \
 	((char *)a)[0] = ((char *)&_tmp)[3]; \
 	((char *)a)[1] = ((char *)&_tmp)[2]; \
 	((char *)a)[2] = ((char *)&_tmp)[1]; \
@@ -143,12 +143,12 @@ typedef struct {
  *	BSSWAP_COPY	swap from one location to another
  */
 #define BSSWAP(a) { \
-	u_short _tmp = a; \
+	unsigned short _tmp = a; \
 	((char *)&a)[0] = ((char *)&_tmp)[1]; \
 	((char *)&a)[1] = ((char *)&_tmp)[0]; \
 }
 #define BSPSWAP(a) { \
-	u_short _tmp = *(u_short *)a; \
+	unsigned short _tmp = *(unsigned short *)a; \
 	((char *)a)[0] = ((char *)&_tmp)[1]; \
 	((char *)a)[1] = ((char *)&_tmp)[0]; \
 }
