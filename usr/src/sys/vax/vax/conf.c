@@ -1,4 +1,4 @@
-/*	conf.c	4.48	82/02/08	*/
+/*	conf.c	4.49	82/03/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -216,13 +216,12 @@ struct	tty dz_tty[];
 
 #include "lp.h"
 #if NLP > 0
-int	lpopen(),lpclose(),lpwrite(),lpreset(),lpselect();
+int	lpopen(),lpclose(),lpwrite(),lpreset();
 #else
 #define	lpopen		nodev
 #define	lpclose		nodev
 #define	lpwrite		nodev
 #define	lpreset		nulldev
-#define	lpselect	nodev
 #endif
 
 int	syopen(),syread(),sywrite(),syioctl(),syselect();
@@ -278,12 +277,11 @@ struct	tty pt_tty[];
 
 #include "dn.h"
 #if NDN > 0
-int	dnopen(), dnclose(), dnwrite(), dnselect();
+int	dnopen(), dnclose(), dnwrite();
 #else
 #define	dnopen		nodev
 #define	dnclose		nodev
 #define	dnwrite		nodev
-#define	dnselect	selecttrue
 #endif
 
 /*
