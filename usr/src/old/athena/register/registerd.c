@@ -1,5 +1,6 @@
 #include <sys/types.h>
 #include <sys/time.h>
+#include <sys/signal.h>
 #include <sys/resource.h>
 #include <sys/param.h>
 #include <sys/file.h>
@@ -15,6 +16,8 @@
 
 char	*progname;
 struct	sockaddr_in	sin;
+
+int	die();
 
 main(argc, argv)
 char	**argv;
@@ -35,6 +38,7 @@ char	**argv;
 	signal(SIGHUP, SIG_IGN);
 	signal(SIGINT, SIG_IGN);
 	signal(SIGTSTP, SIG_IGN);
+	signal(SIGPIPE, die);
 	if(setrlimit(RLIMIT_CORE, &rl) < 0) {
 		syslog(LOG_ERR, "setrlimit: %m");
 		exit(1);
@@ -84,6 +88,8 @@ char	**argv;
 		retval = KFAILURE;
 		syslog(LOG_ERR, "couldn't read command code on Kerberos update");
 	}
+
+syslog(LOG_DEBUG,"read comm code and did append (%d)", retval);
 
 	code = (u_char) retval;
 	if(code != KSUCCESS)
@@ -243,4 +249,11 @@ cleanup()
 	bzero(master_key, sizeof(master_key));
 	bzero(key, sizeof(key));
 	bzero(master_key_schedule, sizeof(master_key_schedule));
+}
+
+die()
+{
+	syslog(LOG_ERR, "remote end died (SIGPIPE)");
+	cleanup();
+	exit(1);
 }
