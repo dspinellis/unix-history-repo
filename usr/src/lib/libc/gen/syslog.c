@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)syslog.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslog.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -28,6 +28,7 @@ static char sccsid[] = "@(#)syslog.c	5.2 (Berkeley) %G%";
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/file.h>
+#include <signal.h>
 #include <syslog.h>
 #include <netdb.h>
 
@@ -128,7 +129,11 @@ syslog(pri, fmt, p0, p1, p2, p3, p4)
 	if (pid == -1)
 		return;
 	if (pid == 0) {
+		signal(SIGALRM, SIG_DFL);
+		sigsetmask(sigblock(0) & ~sigmask(SIGALRM));
+		alarm(5);
 		LogFile = open(ctty, O_WRONLY);
+		alarm(0);
 		strcat(o, "\r");
 		write(LogFile, outline, c+1);
 		close(LogFile);
