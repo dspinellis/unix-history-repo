@@ -1,1 +1,1 @@
-char version[] = "Wooden Ships and Iron Men, Version 2.1 (83/10/31)";
+char version[] = "Wooden Ships and Iron Men, Version 2.2 (83/12/09)";
