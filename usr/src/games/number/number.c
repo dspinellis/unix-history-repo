@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1988, 1993
+ * Copyright (c) 1988, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
@@ -7,21 +7,23 @@
 
 #ifndef lint
 static char copyright[] =
-"@(#) Copyright (c) 1988, 1993\n\
+"@(#) Copyright (c) 1988, 1993, 1994\n\
 	The Regents of the University of California.  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)number.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)number.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <stdio.h>
-#include <ctype.h>
+#include <sys/types.h>
 
-#define	YES		1
-#define	NO		0
-#define	EOS		'\0'
-#define	MAXNUM		65		/* biggest number we handle */
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <err.h>
+
+#define	MAXNUM		65		/* Biggest number we handle. */
 
 static char	*name1[] = {
 	"",		"one",		"two",		"three",
@@ -45,173 +47,219 @@ static char	*name1[] = {
 	"novemdecillion",		"vigintillion",
 };
 
-main(argc,argv)
-	int	argc;
-	char	**argv;
-{
-	register int	cnt;
-	char	line[MAXNUM * 2 + 2];		/* MAXNUM '.' MAXNUM '\0' */
+void	convert __P((char *));
+int	number __P((char *, int));
+void	pfract __P((int));
+void	toobig __P((void));
+int	unit __P((int, char *));
+void	usage __P((void));
 
-	if (argc > 1)
-		for (cnt = 1;cnt < argc;++cnt) {
-			convert(argv[cnt]);
-			puts("...");
+int lflag;
+
+int
+main(argc, argv)
+	int argc;
+	char *argv[];
+{
+	int ch, first;
+	char line[256];
+
+	lflag = 0;
+	while ((ch = getopt(argc, argv, "l")) != EOF)
+		switch (ch) {
+		case 'l':
+			lflag = 1;
+			break;
+		case '?':
+		default:
+			usage();
+		}
+	argc -= optind;
+	argv += optind;
+
+	if (*argv == NULL)
+		for (first = 1;
+		    fgets(line, sizeof(line), stdin) != NULL; first = 0) {
+			if (strchr(line, '\n') == NULL)
+				errx(1, "line too long.");
+			if (!first)
+				(void)printf("...\n");
+			convert(line);
 		}
 	else
-		while (fgets(line,sizeof(line),stdin)) {
-			convert(line);
-			puts("...");
+		for (first = 1; *argv != NULL; first = 0, ++argv) {
+			if (!first)
+				(void)printf("...\n");
+			convert(*argv);
 		}
 	exit(0);
 }
 
+void
 convert(line)
-	char	*line;
+	char *line;
 {
-	register int	len,
-			ret;
-	register char	*C,
-			*fraction;
+	register flen, len, rval;
+	register char *p, *fraction;
 
-	for (fraction = NULL, C = line;*C && *C != '\n';++C)
-		if (!isdigit(*C))
-			switch(*C) {
-			case '-':
-				if (C != line)
-					usage(NO);
-				break;
-			case '.':
-				if (!fraction) {
-					fraction = C + 1;
-					*C = EOS;
-					break;
-				}
-			default:
-				usage(NO);
+	fraction = NULL;
+	for (p = line; *p != '\0' && *p != '\n'; ++p) {
+		if (isblank(*p)) {
+			if (p == line) {
+				++line;
+				continue;
 			}
-	*C = EOS;
+			goto badnum;
+		}
+		if (isdigit(*p))
+			continue;
+		switch (*p) {
+		case '.':
+			if (fraction != NULL)
+				goto badnum;
+			fraction = p + 1;
+			*p = '\0';
+			break;
+		case '-':
+			if (p == line)
+				break;
+			/* FALLTHROUGH */
+		default:
+badnum:			errx(1, "illegal number: %s", line);
+			break;
+		}
+	}
+	*p = '\0';
+
+	if ((len = strlen(line)) > MAXNUM ||
+	    fraction != NULL && (flen = strlen(fraction)) > MAXNUM)
+		errx(1, "number too large, max %d digits.", MAXNUM);
+
 	if (*line == '-') {
-		puts("minus");
+		(void)printf("minus%s", lflag ? " " : "\n");
 		++line;
 	}
-	ret = NO;
-	if (len = strlen(line)) {
-		if (len > MAXNUM)
-			usage(YES);
-		ret = unit(len,line);
-	}
-	if (fraction && (len = strlen(fraction))) {
-		if (len > MAXNUM)
-			usage(YES);
-		for (C = fraction;*C;++C)
-			if (*C != '0') {
-				if (ret)
-					puts("and");
-				if (unit(len,fraction)) {
-					++ret;
-					pfract(len);
+
+	rval = len > 0 ? unit(len, line) : 0;
+	if (fraction != NULL && flen != 0)
+		for (p = fraction; *p != '\0'; ++p)
+			if (*p != '0') {
+				if (rval)
+					(void)printf("%sand%s",
+					    lflag ? " " : "",
+					    lflag ? " " : "\n");
+				if (unit(flen, fraction)) {
+					if (lflag)
+						(void)printf(" ");
+					pfract(flen);
+					rval = 1;
 				}
 				break;
 			}
-	}
-	if (!ret)
-		puts("zero.");
+	if (!rval)
+		(void)printf("zero%s", lflag ? "" : ".\n");
+	if (lflag)
+		(void)printf("\n");
 }
 
-unit(len,C)
-	register int	len;
-	register char	*C;
+int
+unit(len, p)
+	register int len;
+	register char *p;
 {
-	register int	off,
-			ret;
+	register int off, rval;
 
-	ret = NO;
+	rval = 0;
 	if (len > 3) {
 		if (len % 3) {
 			off = len % 3;
 			len -= off;
-			if (number(C,off)) {
-				ret = YES;
-				printf(" %s.\n",name3[len / 3]);
+			if (number(p, off)) {
+				rval = 1;
+				(void)printf(" %s%s",
+				    name3[len / 3], lflag ? " " : ".\n");
 			}
-			C += off;
+			p += off;
 		}
-		for (;len > 3;C += 3) {
+		for (; len > 3; p += 3) {
 			len -= 3;
-			if (number(C,3)) {
-				ret = YES;
-				printf(" %s.\n",name3[len / 3]);
+			if (number(p, 3)) {
+				rval = 1;
+				(void)printf(" %s%s",
+				    name3[len / 3], lflag ? " " : ".\n");
 			}
 		}
 	}
-	if (number(C,len)) {
-		puts(".");
-		ret = YES;
+	if (number(p, len)) {
+		if (!lflag)
+			(void)printf(".\n");
+		rval = 1;
 	}
-	return(ret);
+	return (rval);
 }
 
-number(C,len)
-	register char	*C;
-	int	len;
+int
+number(p, len)
+	register char *p;
+	int len;
 {
-	register int	val,
-			ret;
+	register int val, rval;
 
-	ret = 0;
-	switch(len) {
+	rval = 0;
+	switch (len) {
 	case 3:
-		if (*C != '0') {
-			++ret;
-			printf("%s hundred",name1[*C - '0']);
+		if (*p != '0') {
+			rval = 1;
+			(void)printf("%s hundred", name1[*p - '0']);
 		}
-		++C;
-		/*FALLTHROUGH*/
+		++p;
+		/* FALLTHROUGH */
 	case 2:
-		val = (C[1] - '0') + (C[0] - '0') * 10;
+		val = (p[1] - '0') + (p[0] - '0') * 10;
 		if (val) {
-			if (ret++)
-				putchar(' ');
+			if (rval)
+				(void)printf(" ");
 			if (val < 20)
-				fputs(name1[val],stdout);
+				(void)printf("%s", name1[val]);
 			else {
-				fputs(name2[val / 10],stdout);
+				(void)printf("%s", name2[val / 10]);
 				if (val % 10)
-					printf("-%s",name1[val % 10]);
+					(void)printf("-%s", name1[val % 10]);
 			}
+			rval = 1;
 		}
 		break;
 	case 1:
-		if (*C != '0') {
-			++ret;
-			fputs(name1[*C - '0'],stdout);
+		if (*p != '0') {
+			rval = 1;
+			(void)printf("%s", name1[*p - '0']);
 		}
 	}
-	return(ret);
+	return (rval);
 }
 
+void
 pfract(len)
-	register int	len;
+	int len;
 {
-	static char	*pref[] = { "", "ten-", "hundred-" };
+	static char *pref[] = { "", "ten-", "hundred-" };
 
 	switch(len) {
 	case 1:
-		puts("tenths.");
+		(void)printf("tenths.\n");
 		break;
 	case 2:
-		puts("hundredths.");
+		(void)printf("hundredths.\n");
 		break;
 	default:
-		printf("%s%sths.\n",pref[len % 3],name3[len / 3]);
+		(void)printf("%s%sths.\n", pref[len % 3], name3[len / 3]);
+		break;
 	}
 }
 
-usage(toobig)
-	int	toobig;
+void
+usage()
 {
-	if (toobig)
-		fprintf(stderr,"number: number too large, max %d digits.\n",MAXNUM);
-	fputs("usage: number # ...\n",stderr);
-	exit(-1);
+	(void)fprintf(stderr, "usage: number [# ...]\n");
+	exit(1);
 }
