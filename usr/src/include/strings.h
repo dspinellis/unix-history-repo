@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)strings.h	5.1 (Berkeley) %G%
+ *	@(#)strings.h	5.2 (Berkeley) %G%
  */
 
 /*
