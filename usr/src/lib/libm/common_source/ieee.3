@@ -64,10 +64,16 @@ is a power of 2.
 .PP
 .I Scalb(x,n)
 returns
+.if n \
+.I  x*(2**n),
+.if t \
 .I  x*2\u\s8n\s10\d,
 for integer values
 .I n
 without computing
+.if n \
+.I 2**n
+.if t \
 .I 2\u\s8n\s10\d.
 .SH SEE ALSO
 intro(3M)
