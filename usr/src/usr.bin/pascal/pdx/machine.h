@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)machine.h 1.2 %G%"; */
+/* static char sccsid[] = "@(#)machine.h 1.3 %G%"; */
 
 /*
  * Definitions for the machine module.
@@ -20,5 +20,6 @@ unsetbp();			/* unset a breakpoint */
 BOOLEAN isbperr();		/* test if a breakpoint has occurred */
 printerror();			/* print out an execution error message */
 ADDRESS nextaddr();		/* address of next line to be executed */
+BOOLEAN isendofproc();		/* test if address is at end of procedure */
 printinst(), printninst();	/* print the instruction at a given address */
 printdata(), printndata();	/* print the contents of a given data address */
