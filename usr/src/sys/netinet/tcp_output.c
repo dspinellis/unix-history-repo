@@ -1,4 +1,4 @@
-/* tcp_output.c 4.4 81/10/31 */
+/* tcp_output.c 4.5 81/10/31 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -103,6 +103,8 @@ COUNT(TCP_SEND);
 			flags |= TH_FIN;
 			tp->seq_fin = tp->snd_lst++;
 		}
+		if (tp->snd_nxt >= tp->snd_lst)
+			return (0);
 	} else {
 		if (tp->tc_flags&TC_SYN_ACKED) {
 			wind = tp->snd_una + tp->snd_wnd;
@@ -115,8 +117,9 @@ COUNT(TCP_SEND);
 		if ((tp->tc_flags&TC_FORCE_ONE) && (tp->snd_lst == wind)) {
 			tp->snd_lst = tp->snd_nxt + 1;
 			forced = 1;
-		}
-		m = tcp_sndcopy(tp, max(tp->iss+1,tp->snd_nxt), tp->snd_lst);
+		} else if (tp->snd_nxt >= tp->snd_lst)
+			return (0);
+		m = tcp_sndcopy(tp, MAX(tp->iss+1,tp->snd_nxt), tp->snd_lst);
 		if (tp->snd_end > tp->iss && tp->snd_end <= tp->snd_lst)
 			flags |= TH_EOL;
 		if ((tp->tc_flags&TC_SND_FIN) && !forced &&
@@ -126,8 +129,6 @@ COUNT(TCP_SEND);
 			tp->seq_fin = tp->snd_lst++;
 		}
 	}
-	if (tp->snd_nxt >= tp->snd_lst)
-		return (0);
 	if (tp->tc_flags & TC_SND_URG)
 		flags |= TH_URG;
 	sent = tcp_output(tp, flags, tp->snd_lst - tp->snd_nxt, m);
@@ -147,7 +148,7 @@ COUNT(TCP_SEND);
 		tp->t_xmt_val = tp->snd_lst;
 	}
 	tp->tc_flags &= ~(TC_ACK_DUE|TC_REXMT|TC_FORCE_ONE);
-	tp->snd_hi = max(tp->snd_nxt, tp->snd_hi);
+	tp->snd_hi = MAX(tp->snd_nxt, tp->snd_hi);
 	return (1);
 }
 
@@ -328,23 +329,4 @@ nospace:
 	printf("snd_copy: no space\n");
 	m_freem(top);
 	return (0);
-}
-
-tcp_enq(p, prev)
-	register struct th *p;
-	register struct th *prev;
-{
-
-	p->t_prev = prev;
-	p->t_next = prev->t_next;
-	prev->t_next->t_prev = p;
-	prev->t_next = p;
-}
- 
-tcp_deq(p)
-	register struct th *p;
-{
-
-	p->t_prev->t_next = p->t_next;
-	p->t_next->t_prev = p->t_prev;
 }
