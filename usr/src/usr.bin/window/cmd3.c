@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd3.c	3.7 84/01/11";
+static	char *sccsid = "@(#)cmd3.c	3.8 84/01/13";
 #endif
 
 #include "defs.h"
@@ -7,41 +7,39 @@ static	char *sccsid = "@(#)cmd3.c	3.7 84/01/11";
 #include "var.h"
 #include "string.h"
 
-#define VLINE (wwnrow - 3)
-static vlineno;
-static struct ww *vw;
-
 c_variable()
 {
+	register struct ww *w;
 	int printvar();
 
-	if ((vw = openiwin(VLINE, "Variables")) == 0) {
+	if ((w = openiwin(wwnrow - 3, "Variables")) == 0) {
 		error("Can't open variable window: %s.", wwerror());
 		return;
 	}
-	vlineno = 0;
-	var_walk(printvar);
-	waitnl(vw);
-	closeiwin(vw);
+	if (var_walk(printvar, (int)w) >= 0)
+		waitnl(w);
+	closeiwin(w);
 }
 
-printvar(r)
+printvar(w, r)
+register struct ww *w;
 register struct var *r;
 {
-	if (vlineno >= VLINE - 2)
-		waitnl(vw);
-	wwprintf(vw, "%16s\t", r->r_name);
+	if (more(w, 0) == 2)
+		return -1;
+	wwprintf(w, "%16s\t", r->r_name);
 	switch (r->r_val.v_type) {
 	case V_STR:
-		wwprintf(vw, "%s\n", r->r_val.v_str);
+		wwprintf(w, "%s\n", r->r_val.v_str);
 		break;
 	case V_NUM:
-		wwprintf(vw, "%d\n", r->r_val.v_num);
+		wwprintf(w, "%d\n", r->r_val.v_num);
 		break;
 	case V_ERR:
-		wwprintf(vw, "ERR\n");
+		wwprintf(w, "ERROR\n");
 		break;
 	}
+	return 0;
 }
 
 c_close(w)
@@ -73,21 +71,6 @@ register struct ww *w;
 	}
 	if (didit)
 		reframe();
-}
-
-closewin(w)
-register struct ww *w;
-{
-	if (w == selwin)
-		selwin = 0;
-	if (w == lastselwin)
-		lastselwin = 0;
-	if (w->ww_id >= 0 && w->ww_id < NWINDOW)
-		window[w->ww_id] = 0;
-	if (w->ww_label)
-		str_free(w->ww_label);
-	wwdelete(w);
-	wwclose(w);
 }
 
 setescape(esc)

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd2.c	3.20 84/01/13";
+static	char *sccsid = "@(#)cmd2.c	3.21 84/01/13";
 #endif
 
 #include "defs.h"
@@ -74,7 +74,7 @@ register char **list;
 			(void) wwputc('\n', w);
 			break;
 		case 1:
-			(void) wwprintf(w, "%s: (continue)\n\n", name);
+			(void) wwprintf(w, "%s: (continued)\n\n", name);
 			break;
 		case 2:
 			return -1;
@@ -217,64 +217,4 @@ c_quit()
 		(void) wwputs("\r\n", cmdwin);
 	if (terse && !quit)
 		wwdelete(cmdwin);
-}
-
-/*
- * Open an information window.
- */
-struct ww *
-openiwin(nrow, label)
-char *label;
-{
-	register struct ww *w;
-
-	if ((w = wwopen(0, nrow, wwncol, 2, 0, 0)) == 0)
-		return 0;
-	w->ww_mapnl = 1;
-	w->ww_hasframe = 1;
-	w->ww_id = -1;
-	w->ww_center = 1;
-	(void) setlabel(w, label);
-	wwadd(w, framewin);
-	reframe();
-	return w;
-}
-
-waitnl(w)
-struct ww *w;
-{
-	(void) waitnl1(w, "[Type any key to continue]");
-}
-
-waitnl1(w, prompt)
-register struct ww *w;
-char *prompt;
-{
-	front(w, 0);
-	(void) wwprintf(w, "\033Y%c%c\033p%s\033q ",
-		w->ww_w.nr - 1 + ' ', ' ', prompt);	/* print on last line */
-	wwcurtowin(w);
-	while (bpeekc() < 0)
-		bread();
-	return bgetc();
-}
-
-more(w, flag)
-register struct ww *w;
-char flag;
-{
-	int c;
-
-	if (!flag && w->ww_cur.r < w->ww_w.b - 2)
-		return 0;
-	c = waitnl1(w, "[Type escape to abort, any other key to continue]");
-	(void) wwputs("\033E", w);
-	return c == CTRL([) ? 2 : 1;
-}
-
-closeiwin(w)
-struct ww *w;
-{
-	closewin(w);
-	reframe();
 }
