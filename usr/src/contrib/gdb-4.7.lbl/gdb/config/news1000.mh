@@ -1,0 +1,3 @@
+# Host: Sony news series 1000 (68030) running NewsOS version 3.
+XDEPFILES= infptrace.o inftarg.o fork-child.o coredep.o corelow.o news-xdep.o
+XM_FILE= xm-news1000.h
