@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	4.8	81/11/23	*/
+/*	udp_usrreq.c	4.9	81/11/23	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -40,12 +40,10 @@ udp_input(m0)
 	/*
 	 * Get ip and udp header together in first mbuf.
 	 */
-	printf("udp_input: ");
 	m = m0;
 	if (m->m_len < sizeof (struct udpiphdr) &&
 	    m_pullup(m, sizeof (struct udpiphdr)) == 0) {
 		udpstat.udps_hdrops++;
-		printf("hdrop m_len %d\n", m->m_len);
 		goto bad;
 	}
 	ui = mtod(m, struct udpiphdr *);
@@ -58,10 +56,8 @@ udp_input(m0)
 	 */
 	ulen = ntohs((u_short)ui->ui_ulen);
 	len = sizeof (struct udpiphdr) + ulen;
-	printf("ulen %d, len %d\n", ulen, len);
 	if (((struct ip *)ui)->ip_len != len) {
 		if (len > ((struct ip *)ui)->ip_len) {
-			printf("udp badlen\n");
 			udpstat.udps_badlen++;
 			goto bad;
 		}
@@ -88,14 +84,10 @@ udp_input(m0)
 	 * Convert addresses and ports to host format.
 	 * Locate pcb for datagram.
 	 */
-	printf("src %x dst %x sport %x dport %x\n",
-	    ui->ui_src.s_addr, ui->ui_dst.s_addr, ui->ui_sport, ui->ui_dport);
 	inp = in_pcblookup(&udb,
 	    ui->ui_src, ui->ui_sport, ui->ui_dst, ui->ui_dport);
-	if (inp == 0) {
-		printf("pcb not found\n");
+	if (inp == 0)
 		goto bad;
-	}
 
 	/*
 	 * Construct sockaddr format source address.
@@ -136,12 +128,9 @@ udp_output(inp, m0)
 	 */
 	for (m = m0; m; m = m->m_next)
 		len += m->m_len;
-	printf("udp_output len %d: ", len);
 	m = m_get(0);
-	if (m == 0) {
-		printf("no mbufs\n");
+	if (m == 0)
 		goto bad;
-	}
 
 	/*
 	 * Fill in mbuf with extended udp header
@@ -160,15 +149,12 @@ udp_output(inp, m0)
 	ui->ui_sport = inp->inp_lport;
 	ui->ui_dport = inp->inp_fport;
 	ui->ui_ulen = htons((u_short)len);
-	printf("src %x dst %x sport %x dport %x",
-	    ui->ui_src.s_addr, ui->ui_dst.s_addr, ui->ui_sport, ui->ui_dport);
 
 	/*
 	 * Stuff checksum and output datagram.
 	 */
 	ui->ui_sum = 0;
 	ui->ui_sum = inet_cksum(m, sizeof (struct udpiphdr) + len);
-	printf(" cksum %x\n", ui->ui_sum);
 	((struct ip *)ui)->ip_len = sizeof (struct udpiphdr) + len;
 	((struct ip *)ui)->ip_ttl = MAXTTL;
 	ip_output(m);
@@ -187,21 +173,16 @@ udp_usrreq(so, req, m, addr)
 	struct inpcb *inp = sotoinpcb(so);
 	int error;
 
-	printf("udp_usrreq %x %s\n", inp, prurequests[req]);
-	if (inp == 0 && req != PRU_ATTACH) {
-		printf("inp == 0 not on ATTACH\n");
+	if (inp == 0 && req != PRU_ATTACH)
 		return (EINVAL);
-	}
 	switch (req) {
 
 	case PRU_ATTACH:
 		if (inp != 0)
 			return (EINVAL);
 		error = in_pcballoc(so, &udb, 2048, 2048, (struct sockaddr_in *)addr);
-		if (error) {
-			printf("in_pcballoc failed %d\n", error);
+		if (error)
 			return (error);
-		}
 		break;
 
 	case PRU_DETACH:
@@ -214,10 +195,8 @@ udp_usrreq(so, req, m, addr)
 		if (inp->inp_faddr.s_addr)
 			return (EISCONN);
 		error = in_pcbsetpeer(inp, (struct sockaddr_in *)addr);
-		if (error) {
-			printf("in_pcbsetpeer failed %d\n", error);
+		if (error)
 			return (error);
-		}
 		soisconnected(so);
 		break;
 
@@ -240,16 +219,12 @@ udp_usrreq(so, req, m, addr)
 			if (inp->inp_faddr.s_addr)
 				return (EISCONN);
 			error = in_pcbsetpeer(inp, (struct sockaddr_in *)addr);
-			if (error) {
-				printf("send setpeer failed %d\n", error);
+			if (error)
 				return (error);
-			}
 		} else {
 			if (inp->inp_faddr.s_addr == 0)
 				return (ENOTCONN);
 		}
-		printf("udp send m %x m_len %d * %c (%o)\n",
-		    m, m->m_len, *(mtod(m, caddr_t)), *(mtod(m, caddr_t)));
 		udp_output(inp, m);
 		if (addr)
 			inp->inp_faddr.s_addr = 0;
