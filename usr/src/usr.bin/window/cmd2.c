@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd2.c	1.1 83/07/18";
+static	char *sccsid = "@(#)cmd2.c	1.2 83/07/19";
 #endif
 
 #include "defs.h"
@@ -12,14 +12,16 @@ dohelp()
 {
 	register struct ww *w;
 
-	if ((w = openwin(20, "Help")) == 0)
+	if ((w = openwin(22, "Help")) == 0)
 		return;
 	wwprintf(w, "The escape character is ^P, which gets you into command mode.\r\n");
 	wwprintf(w, "The commands are:\r\n");
-	wwprintf(w, "%%[1-9]  select window [1-9]\r\n");
 	wwprintf(w, "[1-9]   select window [1-9] and exit command mode\r\n");
+	wwprintf(w, "%%[1-9]  select window [1-9]\r\n");
 	wwprintf(w, "c[1-9]  close window [1-9]\r\n");
 	wwprintf(w, "C       close all empty windows\r\n");
+	wwprintf(w, "Z       close all windows\r\n");
+	wwprintf(w, "Q       show all windows in sequence\r\n");
 	wwprintf(w, "R       force refresh after every newline in current window\r\n");
 	wwprintf(w, "r       don't refresh every line\r\n");
 	wwprintf(w, "w       open a new window\r\n");
@@ -30,6 +32,7 @@ dohelp()
 	wwprintf(w, "^L      redraw screen\r\n");
 	wwprintf(w, "^Z      suspend\r\n");
 	wwprintf(w, ".       quit\r\n");
+	waitnl(w);
 	closewin(w);
 }
 
@@ -39,7 +42,7 @@ dotime(flag)
 	struct rusage rusage;
 	struct timeval timeval;
 
-	if ((w = openwin(9, "Time")) == 0)
+	if ((w = openwin(8, "Time")) == 0)
 		return;
 
 	gettimeofday(&timeval, &timezone);
@@ -64,6 +67,7 @@ dotime(flag)
 		rusage.ru_msgsnd, rusage.ru_msgrcv, rusage.ru_nsignals,
 		rusage.ru_nvcsw, rusage.ru_nivcsw);
 
+	waitnl(w);
 	closewin(w);
 }
 
@@ -112,15 +116,18 @@ char *label;
 	return w;
 }
 
-closewin(w)
+waitnl(w)
 register struct ww *w;
 {
 	wwprintf(w, "\r\nType return to continue: ");
 	wwsetcursor(WCurRow(w->ww_win), WCurCol(w->ww_win));
-	while (bgetc() < 0) {
-		wwflush();
+	while (bgetc() < 0)
 		bread();
-	}
+}
+
+closewin(w)
+register struct ww *w;
+{
 	wwclose(w);
 	wwsetcurrent(cmdwin);
 }

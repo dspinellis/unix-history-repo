@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwprintf.c	1.2 83/07/18";
+static	char *sccsid = "@(#)wwprintf.c	1.3 83/07/19";
 #endif
 
 #include "ww.h"
@@ -24,7 +24,7 @@ char *fmt;
 	return wwwrite(w, buf, _wwbuf._ptr - buf);
 }
 
-#ifdef notdef
+/*
 wwprintf(w, fmt, args)
 struct ww *w;
 char *fmt;
@@ -54,4 +54,4 @@ register struct ww *file;
 		adjust--;
 	}
 }
-#endif
+*/

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd.c	1.1 83/07/18";
+static	char *sccsid = "@(#)cmd.c	1.2 83/07/19";
 #endif
 
 #include "defs.h"
@@ -50,6 +50,9 @@ top:
 		case 'w':
 			dowindow();
 			break;
+		case 'Q':
+			doquery();
+			break;
 		case 'r':
 			selwin->ww_refresh = 0;
 			break;
@@ -81,16 +84,14 @@ top:
 			goto out;
 		default:
 			Ding();
-			wwputs("Type ? for help.  ", cmdwin);
+			wwprintf(cmdwin, "(%x) Type ? for help.  ", c);
 			break;
 		}
 	}
 	wwputs("Command: ", cmdwin);
 	wwsetcursor(WCurRow(cmdwin->ww_win), WCurCol(cmdwin->ww_win));
-	while (bpeekc() < 0) {
-		wwflush();
+	while (bpeekc() < 0)
 		bread();
-	}
 	goto top;
 out:
 	if (!quit)
@@ -104,10 +105,8 @@ getwin()
 	register int c;
 	struct ww *w;
 
-	while ((c = bgetc()) < 0) {
-		wwflush();
+	while ((c = bgetc()) < 0)
 		bread();
-	}
 	if (c < '1' || c > '9') {
 		Ding();
 		return 0;

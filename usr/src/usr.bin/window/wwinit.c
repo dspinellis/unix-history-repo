@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwinit.c	1.3 83/07/18";
+static	char *sccsid = "@(#)wwinit.c	1.4 83/07/19";
 #endif
 
 #include "ww.h"
@@ -11,6 +11,7 @@ struct ww_tty wwnewtty = {
 	{ -1, -1, -1, -1, -1, -1 },
 	0, 0, 0
 };
+int _wwdtablesize;
 
 wwinit()
 {
@@ -19,6 +20,7 @@ wwinit()
 	if (done)
 		return 0;
 	done++;
+	_wwdtablesize = getdtablesize();
 	if (wwgettty(0, &wwoldtty) < 0)
 		return -1;
 	wwnewtty.ww_sgttyb.sg_flags = wwoldtty.ww_sgttyb.sg_flags;
