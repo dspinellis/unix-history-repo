@@ -32,7 +32,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tty.c	7.44 (Berkeley) 5/28/91
- *	$Id: tty.c,v 1.13 1994/01/08 12:09:47 ache Exp $
+ *	$Id: tty.c,v 1.14 1994/01/11 18:09:36 ache Exp $
  */
 
 #include "param.h"
@@ -1291,7 +1291,7 @@ ttread(tp, uio, flag)
 	register long lflag;
 	register u_char *cc = tp->t_cc;
 	register struct proc *p = curproc;
-	int s, first, error = 0, not_enough;
+	int s, first, error = 0, not_enough, rblen;
 
 loop:
 	lflag = tp->t_lflag;
@@ -1327,13 +1327,14 @@ loop:
 	 */
 	qp = lflag&ICANON ? &tp->t_can : &tp->t_raw;
 	not_enough = lflag&ICANON ? 0 : (int) cc[VMIN] - 1;
+	rblen = RB_LEN(qp);
 
 	/*
 	 * If there is no input, sleep on rawq
 	 * awaiting hardware receipt and notification.
 	 * If we have data, we don't need to check for carrier.
 	 */
-	if (RB_LEN(qp) <= not_enough) {
+	if (rblen == 0 || rblen <= not_enough) {
 		int carrier;
 
 		carrier = (tp->t_state&TS_CARR_ON) || (tp->t_cflag&CLOCAL);
@@ -1341,9 +1342,7 @@ loop:
 			splx(s);
 			return (0);	/* EOF */
 		}
-		if (   (flag&IO_NDELAY)
-		    || !(lflag&ICANON) && cc[VMIN] == 0
-		   ) {
+		if ((flag&IO_NDELAY) || not_enough < 0) {
 			splx(s);
 			return (EWOULDBLOCK);
 		}
