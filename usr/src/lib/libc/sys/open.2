@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)open.2	6.7 (Berkeley) %G%
+.\"     @(#)open.2	6.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt OPEN 2
@@ -101,10 +101,13 @@ the request for the lock will never fail
 .Pp
 If successful,
 .Fn open
-returns a non-negative integer, termed a
-file descriptor.  It returns -1 on failure.
+returns a non-negative integer, termed a file descriptor.
+It returns -1 on failure.
 The file pointer used to mark the current position within the
 file is set to the beginning of the file.
+.Pp
+When a new file is created it is given the group of the directory
+which contains it.
 .Pp
 The new descriptor is set to remain open across
 .Xr execve
