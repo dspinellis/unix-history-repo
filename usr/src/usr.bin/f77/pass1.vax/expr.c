@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid[] = "@(#)expr.c	5.3 (Berkeley) %G%";
+static char *sccsid[] = "@(#)expr.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -16,6 +16,16 @@ static char *sccsid[] = "@(#)expr.c	5.3 (Berkeley) %G%";
  * University of Utah CS Dept modification history:
  *
  * $Log:	expr.c,v $
+ * Revision 5.3  85/08/10  05:48:16  donn
+ * Fixed another of my goofs in the substring parameter conversion code.
+ * 
+ * Revision 5.2  85/08/10  04:13:51  donn
+ * Jerry Berkman's change to call pow() directly rather than indirectly
+ * through pow_dd, in mkpower().
+ * 
+ * Revision 5.1  85/08/10  03:44:19  donn
+ * 4.3 alpha
+ * 
  * Revision 3.16  85/06/21  16:38:09  donn
  * The fix to mkprim() didn't handle null substring parameters (sigh).
  * 
@@ -1652,10 +1662,10 @@ p->argsp = args;
 if(substr)
 	{
 	p->fcharp = (expptr) substr->datap;
-	if (p->fcharp != ENULL && ! ISINT(p->fcharp.headblock->vtype))
+	if (p->fcharp != ENULL && ! ISINT(p->fcharp->headblock.vtype))
 		p->fcharp = mkconv(TYINT, p->fcharp);
 	p->lcharp = (expptr) substr->nextp->datap;
-	if (p->lcharp != ENULL && ! ISINT(p->lcharp.headblock->vtype))
+	if (p->lcharp != ENULL && ! ISINT(p->lcharp->headblock.vtype))
 		p->lcharp = mkconv(TYINT, p->lcharp);
 	frchain(&substr);
 	}
@@ -2695,6 +2705,8 @@ register expptr p;
 {
 register expptr q, lp, rp;
 int ltype, rtype, mtype;
+struct Listblock *args, *mklist();
+Addrp ap;
 
 lp = p->exprblock.leftp;
 rp = p->exprblock.rightp;
@@ -2753,7 +2765,14 @@ if( ISINT(rtype) )
 		}
 	}
 else if( ISREAL( (mtype = maxtype(ltype,rtype)) ))
-	q = call2(mtype, "pow_dd", mkconv(TYDREAL,lp), mkconv(TYDREAL,rp));
+	{
+	args = mklist( mkchain( mkconv(TYDREAL,lp), mkchain( mkconv(TYDREAL,rp), CHNULL ) ) );
+	fixargs(YES, args );
+	ap = builtin( TYDREAL, "pow" );
+	ap->vstg = STGINTR;
+	q = fixexpr( mkexpr(OPCCALL, ap, args ));
+	q->exprblock.vtype = mtype;
+	}
 else	{
 	q  = call2(TYDCOMPLEX, "pow_zz",
 		mkconv(TYDCOMPLEX,lp), mkconv(TYDCOMPLEX,rp));
