@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cp.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)cp.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -264,7 +264,7 @@ copy()
 		 * otherwise copy the contents.
 		 */
 		if (recursive_flag) {
-			copy_special(&from_stat, &to_stat);
+			copy_special(&from_stat, !dne);
 			if (preserve_flag)
 				setfile(&from_stat, 0);
 			return;
@@ -457,10 +457,11 @@ copy_link(exists)
 	}
 }
 
-copy_special(from_stat, to_stat)
-	struct stat *from_stat, *to_stat;
+copy_special(from_stat, exists)
+	struct stat *from_stat;
+	int exists;
 {
-	if (to_stat->st_ino != -1 && unlink(to.p_path)) {
+	if (exists && unlink(to.p_path)) {
 		error(to.p_path);
 		return;
 	}
