@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)stty.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)stty.c	5.14 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -225,8 +225,7 @@ extern errno;
 #define NORMAL	0	/* only print modes differing from defaults */
 #define ALL	1	/* print all modes - POSIX standard format */
 #define ALL_BSD	2	/* print all modes - using BSD shorthand for cc's */
-#define GFMT	3	/* print modes in a form that can be re-input to stty */
-
+#define	GFMT	3	/* print modes in form suitable to be re-input */
 
 main(argc, argv) 
 	char *argv[];
@@ -240,6 +239,10 @@ main(argc, argv)
 	argc--, argv++;
 	if (argc > 0 && eq(argv[0], "-a")) {
 		fmt = ALL;
+		argc--, argv++;
+	}
+	if (argc > 0 && eq(argv[0], "-g")) {
+		fmt = GFMT;
 		argc--, argv++;
 	}
 	if (argc > 0 && eq(argv[0], "-f")) {
@@ -259,9 +262,6 @@ main(argc, argv)
 	if (argc == 0 || fmt) {
 		prmode(&t, ldisc, fmt);
 		exit(0);
-	} else if (argc == 1 && strlen(argv[0]) > 2 && *(argv[0]+2) == ':') {
-		gfmtset(argv[0]);
-		goto setit;
 	}
 	
 	while (*argv) {
@@ -400,6 +400,10 @@ main(argc, argv)
 			cfsetispeed(&t, atoi(*argv));
 			goto next;
 		}
+		if (strncmp(*argv, "-gfmt", sizeof ("-gfmt") - 1) == 0) {
+			gfmtset(&t, *argv);
+			goto next;
+		}
 		/* didn't match anything */
 		errexit("unknown option: %s", *argv);
 		exit(1);
@@ -415,7 +419,60 @@ setit:
 	exit(0);
 }
 
-gfmtset() {
+gfmtset(tp, s) 
+	register struct termios *tp;
+	char *s;
+{
+	register int cnt;
+	char sep;
+	char *saves = s;
+	int cval;
+#define advance(c)	while (*(s) && *(s) != (c)) (s)++; if (*s) (s)++ ; \
+				else \
+					errexit("bad gfmt operand: %s", saves)
+#define chkeq(string)	if (strncmp(s, (string), strlen(string))) \
+				errexit("bad gfmt operand: %s", saves)
+
+	if (s == NULL)
+		errexit("missing gfmt string");
+	advance(':');
+	chkeq("iflag=");
+	advance('=');
+	sscanf(s, "%x", &tp->c_iflag);
+
+	advance(':');
+	chkeq("oflag");
+	advance('=');
+	sscanf(s, "%x", &tp->c_oflag);
+
+	advance(':');
+	chkeq("cflag");
+	advance('=');
+	sscanf(s, "%x", &tp->c_cflag);
+
+	advance(':');
+	chkeq("lflag");
+	advance('=');
+	sscanf(s, "%x", &tp->c_lflag);
+
+	advance(':');
+	chkeq("cc=");
+
+	for (cnt = 0, sep = '='; cnt < NCCS; cnt++, sep = ',') {
+		advance(sep);
+		sscanf(s, "%o", &cval);
+		tp->c_cc[cnt] = cval;
+	}
+
+	advance(':');
+	chkeq("ispeed=");
+	advance('=');
+	sscanf(s, "%d", &tp->c_ispeed);
+
+	advance(':');
+	chkeq("ospeed=");
+	advance('=');
+	sscanf(s, "%d", &tp->c_ospeed);
 }
 
 prmode(tp, ldisc, fmt)
@@ -431,8 +488,19 @@ prmode(tp, ldisc, fmt)
 	char	unknown[32],
 		*ld;
 	char *ccval();
-	
 
+	if (fmt == GFMT) {
+		int	cnt;
+		char	sep;
+
+		printf("-gfmt:iflag=%x:oflag=%x:cflag=%x:lflag=%x:cc",
+			i, o, c, l);
+		for (cnt = 0, sep = '='; cnt < NCCS; cnt++, sep = ',')
+			printf("%c%o", sep, cc[cnt]);
+		printf(":ispeed=%d:ospeed=%d:\n", ispeed, ospeed);
+		return;
+	}
+	
 	/*
 	 * line discipline
 	 */
