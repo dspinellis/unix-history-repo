@@ -1,48 +1,9 @@
-#
-# Copyright (c) 1988 Regents of the University of California.
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms are permitted
-# provided that the above copyright notice and this paragraph are
-# duplicated in all such forms and that any documentation,
-# advertising materials, and other materials related to such
-# distribution and use acknowledge that the software was developed
-# by the University of California, Berkeley.  The name of the
-# University may not be used to endorse or promote products derived
-# from this software without specific prior written permission.
-# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
-#
-#	@(#)Makefile	5.6 (Berkeley) %G%
-#
-CFLAGS=	-O
-LIBC=	/lib/libc.a
-SRCS=	cpio.c
-OBJS=
-MAN=	cpio.0 cpio_format.0
+#	@(#)Makefile	5.7 (Berkeley) %G%
 
-all: cpio
+PROG=	cpio
+MAN1=	cpio.0
+MAN5=	cpio_format.0
+DPADD=	${LIBCOMPAT}
+LDADD=	-lcompat
 
-cpio: ${LIBC}
-	${CC} -o $@ ${CFLAGS} cpio.c -lcompat
-
-clean:
-	rm -f ${OBJS} core cpio
-
-cleandir: clean
-	rm -f ${MAN} tags .depend
-
-depend: ${SRCS}
-	mkdep -p ${CFLAGS} ${SRCS}
-
-install: ${MAN}
-	install -s -o bin -g bin -m 755 cpio ${DESTDIR}/usr/bin
-	install -c -o bin -g bin -m 444 cpio.0 ${DESTDIR}/usr/man/cat1
-	install -c -o bin -g bin -m 444 cpio_format.0 ${DESTDIR}/usr/man/cat5
-
-lint: ${SRCS}
-	lint ${CFLAGS} ${SRCS}
-
-tags: ${SRCS}
-	ctags ${SRCS}
+.include <bsd.prog.mk>
