@@ -1,4 +1,4 @@
-/*	kern_proc.c	3.4	%H%	*/
+/*	kern_proc.c	3.5	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -12,9 +12,11 @@
 #include "../h/inode.h"
 #include "../h/seg.h"
 #include "../h/acct.h"
+#include <wait.h>
 #include "../h/pte.h"
 #include "../h/vm.h"
 #include "../h/text.h"
+#include "../h/psl.h"
 
 /*
  * exec system call, with and without environments.
@@ -341,10 +343,38 @@ setregs()
 {
 	register int (**rp)();
 	register i;
+	long sigmask;
 
-	for(rp = &u.u_signal[0]; rp < &u.u_signal[NSIG]; rp++)
-		if(((int)*rp & 1) == 0)
-			*rp = 0;
+	for(rp = &u.u_signal[0], sigmask = 1L; rp < &u.u_signal[NSIG];
+	    sigmask <<= 1, rp++) {
+		switch (*rp) {
+
+		case SIG_IGN:
+		case SIG_DFL:
+		case SIG_HOLD:
+			continue;
+
+		default:
+			/*
+			 * Normal or deferring catch.
+			 * If deferred, now hold it, else
+			 * revert to default.
+			 */
+			if (SIGISDEFER(*rp))
+				*rp = SIG_HOLD;
+			else
+				*rp = SIG_DFL;
+			if ((int)*rp & 1)
+				u.u_procp->p_siga0 |= sigmask;
+			else
+				u.u_procp->p_siga1 &= ~sigmask;
+			if ((int)*rp & 2)
+				u.u_procp->p_siga1 |= sigmask;
+			else
+				u.u_procp->p_siga1 &= ~sigmask;
+			continue;
+		}
+	}
 /*
 	for(rp = &u.u_ar0[0]; rp < &u.u_ar0[16];)
 		*rp++ = 0;
@@ -354,8 +384,8 @@ setregs()
 		if (u.u_pofile[i]&EXCLOSE) {
 			closef(u.u_ofile[i]);
 			u.u_ofile[i] = NULL;
+			u.u_pofile[i] &= ~EXCLOSE;
 		}
-		u.u_pofile[i] &= ~EXCLOSE;
 	}
 	/*
 	 * Remember file name for accounting.
@@ -399,6 +429,16 @@ exit(rv)
 	p->p_flag &= ~(STRC|SULOCK);
 	p->p_flag |= SWEXIT;
 	p->p_clktim = 0;
+	(void) spl6();
+	if ((int)SIG_IGN & 1)
+		p->p_siga0 = ~0;
+	else
+		p->p_siga0 = 0;
+	if ((int)SIG_IGN & 2)
+		p->p_siga1 = ~0;
+	else
+		p->p_siga0 = 0;
+	(void) spl0();
 	rate.v_pgin -= p->p_aveflt;
 	p->p_aveflt = 0;
 	for(i=0; i<NSIG; i++)
@@ -451,22 +491,38 @@ done:
 	((struct xproc *)p)->xp_vm = u.u_vm;		/* overlay */
 	vmsadd(&((struct xproc *)p)->xp_vm, &u.u_cvm);
 	for(q = &proc[0]; q < &proc[NPROC]; q++)
-		if(q->p_ppid == p->p_pid) {
-			wakeup((caddr_t)&proc[1]);
+		if(q->p_pptr == p) {
+			q->p_pptr = &proc[1];
 			q->p_ppid = 1;
-			if (q->p_stat==SSTOP)
-				setrun(q);
+			wakeup((caddr_t)&proc[1]);
+			/*
+			 * Stopped or traced processes are killed
+			 * since their existence means someone is screwing up.
+			 */
+			if (q->p_stat == SSTOP || q->p_flag&STRC) {
+				q->p_flag &= ~STRC;
+				psignal(q, SIGKILL);
+			}
 		}
-	q = pfind(p->p_ppid);
-	if (q)
-		wakeup((caddr_t)q);
+	wakeup((caddr_t)p->p_pptr);
+	psignal(p->p_pptr, SIGCHLD);
 	swtch();
 }
 
 wait()
 {
+	struct vtimes vm;
+	struct vtimes *vp;
 
-	wait1((struct vtimes *)0);
+	if ((u.u_ar0[PS] & PSL_ALLCC) != PSL_ALLCC) {
+		wait1(0, (struct vtimes *)0);
+		return;
+	}
+	vp = (struct vtimes *)u.u_ar0[R1];
+	wait1(u.u_ar0[R0], &vm);
+	if (u.u_error)
+		return;
+	(void) copyout((caddr_t)&vm, (caddr_t)vp, sizeof (struct vtimes));
 }
 
 /*
@@ -476,17 +532,17 @@ wait()
  * Look also for stopped (traced) children,
  * and pass back status from them.
  */
-wait1(vp)
+wait1(options, vp)
+	register options;
 	struct vtimes *vp;
 {
 	register f;
 	register struct proc *p;
 
 	f = 0;
-
 loop:
 	for(p = &proc[0]; p < &proc[NPROC]; p++)
-	if(p->p_ppid == u.u_procp->p_pid) {
+	if(p->p_pptr == u.u_procp) {
 		f++;
 		if(p->p_stat == SZOMB) {
 			u.u_r.r_val1 = p->p_pid;
@@ -499,27 +555,38 @@ loop:
 			p->p_stat = NULL;
 			p->p_pid = 0;
 			p->p_ppid = 0;
+			p->p_pptr = 0;
 			p->p_sig = 0;
+			p->p_siga0 = 0;
+			p->p_siga1 = 0;
 			p->p_pgrp = 0;
 			p->p_flag = 0;
 			p->p_wchan = 0;
+			p->p_cursig = 0;
 			return;
 		}
-		if(p->p_stat == SSTOP) {
-			if((p->p_flag&SWTED) == 0) {
-				p->p_flag |= SWTED;
-				u.u_r.r_val1 = p->p_pid;
-				u.u_r.r_val2 = (fsig(p)<<8) | 0177;
-				return;
-			}
-			continue;
+		if (p->p_stat == SSTOP && (p->p_flag&SWTED)==0 &&
+		    (p->p_flag&STRC || options&WUNTRACED)) {
+			p->p_flag |= SWTED;
+			u.u_r.r_val1 = p->p_pid;
+			u.u_r.r_val2 = (p->p_cursig<<8) | WSTOPPED;
+			return;
 		}
 	}
-	if(f) {
-		sleep((caddr_t)u.u_procp, PWAIT);
-		goto loop;
+	if (f==0) {
+		u.u_error = ECHILD;
+		return;
 	}
-	u.u_error = ECHILD;
+	if (options&WNOHANG) {
+		u.u_r.r_val1 = 0;
+		return;
+	}
+	if (setjmp(u.u_qsav)) {
+		u.u_eosys = RESTARTSYS;
+		return;
+	}
+	sleep((caddr_t)u.u_procp, PWAIT);
+	goto loop;
 }
 
 /*
