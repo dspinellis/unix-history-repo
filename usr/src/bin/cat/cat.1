@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)cat.1	6.1 (Berkeley) %G%
+.\"	@(#)cat.1	6.2 (Berkeley) %G%
 .\"
 .TH CAT 1 ""
 .UC 4
@@ -40,8 +40,9 @@ concatenates the first two files and places the result on the third.
 If no input file is given, or if the argument `\-' is encountered,
 .I cat
 reads from the standard input file.
-Output is buffered in 1024-byte blocks unless the standard
-output is a terminal, in which case it is line buffered.  The
+Output is buffered in the block size recommended by \fIstat\fP(2)
+unless the standard output is a terminal,
+when it is line buffered.  The
 .B \-u
 option makes the output completely unbuffered.
 .PP
