@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)strerror.3	4.1 (Berkeley) %G%
+.\"	@(#)strerror.3	5.1 (Berkeley) %G%
 .\"
-.TH PERROR 3 
+.TH PERROR 3  "19 January 1983"
 .UC 4
 .SH NAME
 perror, sys_errlist, sys_nerr \- system error messages
@@ -18,8 +18,7 @@ perror, sys_errlist, sys_nerr \- system error messages
 .fi
 .SH DESCRIPTION
 .I Perror
-produces a short error message
-on the standard error file
+produces a short error message on the standard error file
 describing the last error encountered during a call
 to the system from a C program.
 First the argument string
@@ -34,8 +33,7 @@ The error number is taken from the external variable
 which is set when errors occur but not cleared when
 non-erroneous calls are made.
 .PP
-To simplify variant formatting
-of messages, the vector of message strings
+To simplify variant formatting of messages, the vector of message strings
 .I sys_errlist
 is provided;
 .I errno
@@ -43,8 +41,8 @@ can be used as an index in this table to get the
 message string without the newline.
 .I Sys_nerr
 is the number of messages provided for in the table;
-it should be checked because new
-error codes may be added to the system before
+it should be checked because new error codes may be added to the system before
 they are added to the table.
 .SH "SEE ALSO"
-intro(2)
+intro(2),
+psignal(3)
