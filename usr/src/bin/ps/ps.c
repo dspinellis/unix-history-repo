@@ -11,26 +11,27 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ps.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)ps.c	5.17 (Berkeley) %G%";
 #endif not lint
 
-#include <stdio.h>
-#include <ctype.h>
-#include <a.out.h>
-#include <pwd.h>
 #include <sys/param.h>
 #include <sys/ioctl.h>
 #include <sys/tty.h>
 #include <sys/dir.h>
 #include <sys/user.h>
 #include <sys/proc.h>
-#include <machine/pte.h>
 #include <sys/vm.h>
 #include <sys/text.h>
 #include <sys/stat.h>
 #include <sys/mbuf.h>
+#include <machine/pte.h>
+#include <a.out.h>
+#include <pwd.h>
 #include <math.h>
 #include <errno.h>
+#include <stdio.h>
+#include <ctype.h>
+#include "pathnames.h"
 
 char *nl_names[] = {
 	"_proc",
@@ -151,7 +152,7 @@ union {
 #define u	user.user
 
 #ifndef	PSFILE
-char	*psdb	= "/etc/psdatabase";
+char	*psdb	= _PATH_PSDATABASE;
 #else
 char	*psdb	= PSFILE;
 #endif
@@ -297,7 +298,8 @@ main(argc, argv)
 				tptr = ap;
 			else if ((tptr = ttyname(0)) != 0) {
 				tptr = strcpy(mytty, tptr);
-				if (strncmp(tptr, "/dev/", 5) == 0)
+				if (strncmp(tptr, _PATH_DEV,
+				    sizeof(_PATH_DEV) - 1) == 0)
 					tptr += 5;
 			}
 			if (strncmp(tptr, "tty", 3) == 0)
@@ -534,9 +536,9 @@ openfiles(argc, argv)
 	char **argv;
 {
 
-	kmemf = "/dev/kmem";
+	kmemf = _PATH_KMEM;
 	if (kflg)
-		kmemf = argc > 2 ? argv[2] : "/vmcore";
+		kmemf = argc > 2 ? argv[2] : _PATH_VMCORE;
 	kmem = open(kmemf, 0);
 	if (kmem < 0) {
 		perror(kmemf);
@@ -546,7 +548,7 @@ openfiles(argc, argv)
 		mem = kmem;
 		memf = kmemf;
 	} else {
-		memf = "/dev/mem";
+		memf = _PATH_MEM;
 		mem = open(memf, 0);
 		if (mem < 0) {
 			perror(memf);
@@ -554,7 +556,7 @@ openfiles(argc, argv)
 		}
 	}
 	if (kflg == 0 || argc > 3) {
-		swapf = argc>3 ? argv[3]: "/dev/drum";
+		swapf = argc>3 ? argv[3]: _PATH_DRUM;
 		swap = open(swapf, 0);
 		if (swap < 0) {
 			perror(swapf);
@@ -569,7 +571,7 @@ getkvars(argc, argv)
 	int faildb = 0;			/* true if psdatabase init failed */
 	int i;
 
-	nlistf = argc > 1 ? argv[1] : "/vmunix";
+	nlistf = argc > 1 ? argv[1] : _PATH_UNIX;
 	if (Uflg) {
 		init_nlist();
 		nlist(nlistf, nl);
@@ -742,13 +744,13 @@ getdev()
 	struct ttys *t;
 	struct lttys *lt;
 
-	if (chdir("/dev") < 0) {
-		perror("/dev");
+	if (chdir(_PATH_DEV) < 0) {
+		perror(_PATH_DEV);
 		exit(1);
 	}
 	dialbase = -1;
 	if ((df = opendir(".")) == NULL) {
-		fprintf(stderr, "Can't open . in /dev\n");
+		fprintf(stderr, "ps: can't open . in %s\n", _PATH_DEV);
 		exit(1);
 	}
 	while ((dbuf = readdir(df)) != NULL) 
@@ -756,7 +758,7 @@ getdev()
 	closedir(df);
 	allttys = (struct ttys *)malloc(sizeof(struct ttys)*nttys);
 	if (allttys == NULL) {
-		fprintf(stderr, "ps: Can't malloc space for tty table\n");
+		fprintf(stderr, "ps: can't malloc space for tty table\n");
 		exit(1);
 	}
 	for (lt = lallttys, t = allttys; lt ; lt = lt->next, t++)
@@ -1449,9 +1451,11 @@ getname(uid)
 	register struct passwd *pw;
 	struct passwd *getpwent();
 	register int cp;
+#ifdef notdef
 	extern int _pw_stayopen;
 
 	_pw_stayopen = 1;
+#endif
 
 #if	(((NUID) & ((NUID) - 1)) != 0)
 	cp = uid % (NUID);
