@@ -8,6 +8,9 @@ divert(-1)
 #
 
 divert(0)
-VERSIONID(`@(#)hpux9.m4	8.2 (Berkeley) %G%')
-define(`_HPUX_', `')dnl
+VERSIONID(`@(#)hpux9.m4	8.3 (Berkeley) %G%')
+
+define(`QUEUE_DIR', /usr/spool/mqueue)dnl
+define(`ALIAS_FILE', /usr/lib/aliases)dnl
+define(`STATUS_FILE', /usr/lib/sendmail.st)dnl
 define(`LOCAL_MAILER_FLAGS', `m')dnl
