@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.20 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1346,4 +1346,53 @@ printit:
 		syslog(LOG_DEBUG, "%s", buf);
 	else
 		printf("%s\n", buf);
+}
+/*
+**  SHORTENSTRING -- return short version of a string
+**
+**	If the string is already short, just return it.  If it is too
+**	long, return the head and tail of the string.
+**
+**	Parameters:
+**		s -- the string to shorten.
+**		m -- the max length of the string.
+**
+**	Returns:
+**		Either s or a short version of s.
+*/
+
+#ifndef MAXSHORTSTR
+# define MAXSHORTSTR	83
+#endif
+
+char *
+shortenstring(s, m)
+	register char *s;
+	int m;
+{
+	int l;
+	static char buf[MAXSHORTSTR + 1];
+
+	l = strlen(s);
+	if (l < m)
+		return s;
+	if (m > MAXSHORTSTR)
+		m = MAXSHORTSTR;
+	else if (m < 10)
+	{
+		if (m < 5)
+		{
+			strncpy(buf, s, m);
+			buf[m] = '\0';
+			return buf;
+		}
+		strncpy(buf, s, m - 3);
+		strcpy(buf + m - 3, "...");
+		return buf;
+	}
+	m = (m - 3) / 2;
+	strncpy(buf, s, m);
+	strcpy(buf + m, "...");
+	strcpy(buf + m + 3, s + l - m);
+	return buf;
 }

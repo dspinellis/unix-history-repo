@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.56 (Berkeley) %G%
+ *	@(#)conf.h	8.57 (Berkeley) %G%
  */
 
 /*
@@ -38,7 +38,6 @@
 # define MEMCHUNKSIZE	1024		/* chunk size for memory allocation */
 # define MAXUSERENVIRON	100		/* max envars saved, must be >= 3 */
 # define MAXALIASDB	12		/* max # of alias databases */
-# define PSBUFSIZE	(MAXLINE + MAXATOM)	/* size of prescan buffer */
 
 # ifndef QUEUESIZE
 # define QUEUESIZE	1000		/* max # of jobs per queue run */
@@ -805,6 +804,13 @@ typedef void		(*sigfunc_t) __P((int));
 # define TOBUFSIZE (1024 - 256)
 #endif
 
+/*
+**  Size of prescan buffer.
+**	Despite comments in the _sendmail_ book, this probably should
+**	not be changed; there are some hard-to-define dependencies.
+*/
+
+# define PSBUFSIZE	(MAXNAME + MAXATOM)	/* size of prescan buffer */
 /* fork routine -- set above using #ifdef _osname_ or in Makefile */
 # ifndef FORK
 # define FORK		vfork		/* function to call to fork mailer */

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.47 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.48 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1779,12 +1779,7 @@ logdelivery(m, mci, stat, ctladdr, e)
 	if (ctladdr != NULL)
 	{
 		strcpy(bp, ", ctladdr=");
-		l = strlen(ctladdr->q_paddr);
-		if (l > 83)
-			sprintf(bp, "%.40s...%s",
-				ctladdr->q_paddr, ctladdr->q_paddr + l - 40);
-		else
-			strcat(bp, ctladdr->q_paddr);
+		strcpy(bp, shortenstring(ctladdr->q_paddr, 83));
 		bp += strlen(bp);
 		if (bitset(QGOODUID, ctladdr->q_flags))
 		{

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.19.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -605,7 +605,7 @@ setsender(from, e, delimptr, internal)
 			}
 			syslog(LOG_NOTICE,
 				"setsender: %s: invalid or unparseable, received from %s",
-				from, p);
+				shortenstring(from, 83), p);
 		}
 # endif /* LOG */
 		if (from != NULL)
