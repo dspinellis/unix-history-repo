@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	7.95 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.96 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -88,7 +88,7 @@ mount(p, uap, retval)
 		VOP_UNLOCK(vp);
 		goto update;
 	}
-	if (vp->v_usecount != 1) {
+	if (vp->v_usecount != 1 && (uap->flags & MNT_UNION) == 0) {
 		vput(vp);
 		return (EBUSY);
 	}
@@ -148,6 +148,10 @@ update:
 		mp->mnt_flag |= MNT_SYNCHRONOUS;
 	else
 		mp->mnt_flag &= ~MNT_SYNCHRONOUS;
+	if (uap->flags & MNT_UNION)
+		mp->mnt_flag |= MNT_UNION;
+	else
+		mp->mnt_flag &= ~MNT_UNION;
 	/*
 	 * Mount the filesystem.
 	 */
@@ -1927,6 +1931,7 @@ getdirentries(p, uap, retval)
 	if ((fp->f_flag & FREAD) == 0)
 		return (EBADF);
 	vp = (struct vnode *)fp->f_data;
+unionread:
 	if (vp->v_type != VDIR)
 		return (EINVAL);
 	aiov.iov_base = uap->buf;
@@ -1944,6 +1949,17 @@ getdirentries(p, uap, retval)
 	VOP_UNLOCK(vp);
 	if (error)
 		return (error);
+	if ((uap->count == auio.uio_resid) &&
+	    (vp->v_flag & VROOT) &&
+	    (vp->v_mount->mnt_flag & MNT_UNION)) {
+		struct vnode *tvp = vp;
+		vp = vp->v_mount->mnt_vnodecovered;
+		VREF(vp);
+		fp->f_data = (caddr_t) vp;
+		fp->f_offset = 0;
+		vrele(tvp);
+		goto unionread;
+	}
 	error = copyout((caddr_t)&loff, (caddr_t)uap->basep, sizeof(long));
 	*retval = uap->count - auio.uio_resid;
 	return (error);

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_lookup.c	7.42 (Berkeley) %G%
+ *	@(#)vfs_lookup.c	7.43 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -335,6 +335,7 @@ dirloop:
 	/*
 	 * We now have a segment name to search for, and a directory to search.
 	 */
+unionlookup:
 	ndp->ni_dvp = dp;
 	if (error = VOP_LOOKUP(dp, &ndp->ni_vp, cnp)) {
 #ifdef DIAGNOSTIC
@@ -344,6 +345,17 @@ dirloop:
 #ifdef NAMEI_DIAGNOSTIC
 		printf("not found\n");
 #endif
+		if ((error == ENOENT) &&
+		    (dp->v_flag & VROOT) &&
+		    (dp->v_mount->mnt_flag & MNT_UNION)) {
+			tdp = dp;
+			dp = dp->v_mount->mnt_vnodecovered;
+			vput(tdp);
+			VREF(dp);
+			VOP_LOCK(dp);
+			goto unionlookup;
+		}
+
 		if (error != EJUSTRETURN)
 			goto bad;
 		/*
