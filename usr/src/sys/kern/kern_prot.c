@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_prot.c	8.6 (Berkeley) %G%
+ *	@(#)kern_prot.c	8.7 (Berkeley) %G%
  */
 
 /*
@@ -354,20 +354,32 @@ osetreuid(p, uap, retval)
 	int *retval;
 {
 	register struct pcred *pc = p->p_cred;
-	struct seteuid_args args;
+	union {
+		struct setuid_args sa;
+		struct seteuid_args ea;
+	} args;
 
 	/*
-	 * we assume that the intent of setting ruid is to be able to get
-	 * back ruid priviledge. So we make sure that we will be able to
-	 * do so, but do not actually set the ruid.
+	 * If ruid == euid then setreuid is being used to emulate setuid,
+	 * just do it.
+	 */
+	if (uap->ruid != -1 && uap->ruid == uap->euid) {
+		args.sa.uid = uap->ruid;
+		return (setuid(p, &args.sa, retval));
+	}
+	/*
+	 * Otherwise we assume that the intent of setting ruid is to be
+	 * able to get back ruid priviledge (i.e. swapping ruid and euid).
+	 * So we make sure that we will be able to do so, but do not
+	 * actually set the ruid.
 	 */
 	if (uap->ruid != (uid_t)-1 && uap->ruid != pc->p_ruid &&
 	    uap->ruid != pc->p_svuid)
 		return (EPERM);
 	if (uap->euid == (uid_t)-1)
 		return (0);
-	args.euid = uap->euid;
-	return (seteuid(p, &args, retval));
+	args.ea.euid = uap->euid;
+	return (seteuid(p, &args.ea, retval));
 }
 
 struct setregid_args {
@@ -381,20 +393,32 @@ osetregid(p, uap, retval)
 	int *retval;
 {
 	register struct pcred *pc = p->p_cred;
-	struct setegid_args args;
+	union {
+		struct setgid_args sa;
+		struct setegid_args ea;
+	} args;
 
 	/*
-	 * we assume that the intent of setting rgid is to be able to get
-	 * back rgid priviledge. So we make sure that we will be able to
-	 * do so, but do not actually set the rgid.
+	 * If rgid == egid then setreuid is being used to emulate setgid,
+	 * just do it.
+	 */
+	if (uap->rgid != -1 && uap->rgid == uap->egid) {
+		args.sa.gid = uap->rgid;
+		return (setgid(p, &args.sa, retval));
+	}
+	/*
+	 * Otherwise we assume that the intent of setting rgid is to be
+	 * able to get back rgid priviledge (i.e. swapping rgid and egid).
+	 * So we make sure that we will be able to do so, but do not
+	 * actually set the rgid.
 	 */
 	if (uap->rgid != (gid_t)-1 && uap->rgid != pc->p_rgid &&
 	    uap->rgid != pc->p_svgid)
 		return (EPERM);
 	if (uap->egid == (gid_t)-1)
 		return (0);
-	args.egid = uap->egid;
-	return (setegid(p, &args, retval));
+	args.ea.egid = uap->egid;
+	return (setegid(p, &args.ea, retval));
 }
 #endif /* defined(COMPAT_43) || defined(COMPAT_SUNOS) */
 
