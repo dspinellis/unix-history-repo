@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)create.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)create.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -140,7 +140,6 @@ cwalk()
 #define	MAXUID	5000
 #define	MAXMODE	MBITS + 1
 
-static
 statdir(t, parent, puid, pgid, pmode, tabs)
 	FTS *t;
 	FTSENT *parent;
@@ -200,7 +199,6 @@ statdir(t, parent, puid, pgid, pmode, tabs)
 	return(0);
 }
 
-static
 dsort(p1, p2)
 	FTSENT **p1, **p2;
 {
