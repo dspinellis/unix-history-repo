@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)in_var.h	7.4 (Berkeley) %G%
+ *	@(#)in_var.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -26,12 +26,12 @@
 struct in_ifaddr {
 	struct	ifaddr ia_ifa;		/* protocol-independent info */
 #define	ia_ifp		ia_ifa.ifa_ifp
+#define ia_flags	ia_ifa.ifa_flags
 					/* ia_{,sub}net{,mask} in host order */
 	u_long	ia_net;			/* network number of interface */
 	u_long	ia_netmask;		/* mask of net part */
 	u_long	ia_subnet;		/* subnet number, including net */
 	u_long	ia_subnetmask;		/* mask of subnet part */
-	int	ia_flags;
 	struct	in_addr ia_netbroadcast; /* to recognize net broadcasts */
 	struct	in_ifaddr *ia_next;	/* next in list of internet addresses */
 	struct	sockaddr_in ia_addr;	/* reserve space for interface name */
@@ -49,13 +49,9 @@ struct	in_aliasreq {
 };
 /*
  * Given a pointer to an in_ifaddr (ifaddr),
- * return a pointer to the addr as a sockadd_in.
+ * return a pointer to the addr as a sockaddr_in.
  */
 #define	IA_SIN(ia) (&(((struct in_ifaddr *)(ia))->ia_addr))
-/*
- * ia_flags
- */
-#define	IFA_ROUTE	0x01		/* routing entry installed */
 
 #ifdef	KERNEL
 struct	in_ifaddr *in_ifaddr;
