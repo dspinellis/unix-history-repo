@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)who.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)who.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -61,7 +61,10 @@ main(argc, argv)
 		if (argc == 3) {
 			if (strcmp(utmp.ut_line, tp))
 				continue;
-			putline();
+			if (!utmp.ut_name[0])
+				guess();
+			else
+				putline();
 			exit(0);
 		}
 		if (utmp.ut_name[0] == '\0' && argc == 1)
@@ -91,7 +94,6 @@ putline()
 
 guess()
 {
-
 	pw = getpwuid(getuid());
 	strncpy(utmp.ut_name, pw ? pw->pw_name : "?", NMAX);
 	time(&utmp.ut_time);
