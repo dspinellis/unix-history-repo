@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)interp.c 1.13 %G%";
+static char sccsid[] = "@(#)interp.c 1.14 %G%";
 
 #include <math.h>
 #include "whoami.h"
@@ -9,7 +9,6 @@ static char sccsid[] = "@(#)interp.c 1.13 %G%";
 #include "panics.h"
 #include "h02opcs.h"
 #include "machdep.h"
-#include "h01errs.h"
 #include "libpc.h"
 
 /*
@@ -282,7 +281,7 @@ interpreter(base)
 			stp = _dp->stp;
 			while (tstp != stp) {
 				if (_dp == &_display.frame[1])
-					ERROR(EGOTO); /* exiting prog ??? */
+					ERROR("Active frame not found in non-local goto\n", 0); /* exiting prog ??? */
 				PCLOSE(_dp->locvars); /* close local files */
 				curfile = stp->file;  /* restore active file */
 				*_dp = stp->odisp;    /* old display entry */
@@ -1066,7 +1065,7 @@ interpreter(base)
 				if (tl1 == *tcp++)
 					break;
 			if (tl == 0)		/* default case => error */
-				ERROR(ECASE, tl1);
+				ERROR("Label of %D not found in case\n", tl1);
 			pc.cp += *(tsp - tl);
 			continue;
 		case O_CASE2OP:
@@ -1080,7 +1079,7 @@ interpreter(base)
 				if (tl1 == *tsp1++)
 					break;
 			if (tl == 0)		/* default case => error */
-				ERROR(ECASE, tl1);
+				ERROR("Label of %D not found in case\n", tl1);
 			pc.cp += *(tsp - tl);
 			continue;
 		case O_CASE4OP:
@@ -1094,7 +1093,7 @@ interpreter(base)
 				if (tl1 == *tlp++)
 					break;
 			if (tl == 0)		/* default case => error */
-				ERROR(ECASE, tl1);
+				ERROR("Label of %D not found in case\n", tl1);
 			pc.cp += *(tsp - tl);
 			continue;
 		case O_ADDT:

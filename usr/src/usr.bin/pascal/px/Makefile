@@ -1,4 +1,4 @@
-SCCSID = "@(#)Makefile 1.8 %G%"
+SCCSID = "@(#)Makefile 1.9 %G%"
 
 CFLAGS = -O
 DESTDIR =
@@ -12,7 +12,7 @@ AS = as
 RM = rm -f
 
 PSHDR =	OPnames.h whoami.h objfmt.h opc.c pic.c
-PCHDR =	libpc.h h01errs.h
+PCHDR =	libpc.h
 
 PXHDR =	vars.h machdep.h
 
@@ -56,7 +56,7 @@ install: px
 
 clean:
 	${RM}  *.o *.s px version opc* pic* OPnames.h objfmt.h libpc.h\
-		panics.h h01errs.h h02opcs.h errs lpr core tmp
+		panics.h h02opcs.h errs lpr core tmp
 
 prt: interp.s
 	sed -f clean.sed <interp.s
@@ -102,7 +102,6 @@ interp.o: vars.h
 interp.o: panics.h
 interp.o: h02opcs.h
 interp.o: machdep.h
-interp.o: h01errs.h
 interp.o: libpc.h
 opc.o: OPnames.h
 pic.o: OPnames.h
