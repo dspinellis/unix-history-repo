@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.48	%G%";
+static char	SccsId[] = "@(#)main.c	3.49	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -422,10 +422,16 @@ main(argc, argv)
 	/*
 	**  If running SMTP protocol, start collecting and executing
 	**  commands.  This will never return.
+	**	If we should also be processing the queue, start
+	**	doing it in background.
 	*/
 
 	if (Smtp)
+	{
+		if (queuemode)
+			runqueue(TRUE);
 		smtp();
+	}
 
 	/*
 	**  If collecting stuff from the queue, go start doing that.
@@ -433,7 +439,7 @@ main(argc, argv)
 
 	if (queuemode)
 	{
-		runqueue();
+		runqueue(FALSE);
 		finis();
 	}
 
