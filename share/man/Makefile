@@ -1,12 +1,11 @@
 #	from: @(#)Makefile	5.9 (Berkeley) 7/1/91
-#	$Id: Makefile,v 1.5 1993/10/14 23:15:22 rgrimes Exp $
+#	$Id: Makefile,v 1.6 1993/10/19 19:57:35 rgrimes Exp $
 
 SUBDIR=	man1 man3 man4 man5 man7 man8
 
 afterinstall:
 	install -c -o ${BINOWN} -g ${BINGRP} -m 444 man0/COPYRIGHT \
 	    ${DESTDIR}/usr/share/man/COPYRIGHT
-	makewhatis ${DESTDIR}${BINDIR}/man
 
 makedb:
 	makewhatis ${DESTDIR}${BINDIR}/man
