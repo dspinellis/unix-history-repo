@@ -1,5 +1,5 @@
 
-static char sccsid[] = "	quiz.c	4.5	90/05/12	";
+static char sccsid[] = "	quiz.c	4.6	91/02/04	";
 
 #include <stdio.h>
 #include <signal.h>
@@ -351,7 +351,7 @@ loop:
 	readindex();
 	if(!tflag || na>nl)
 		na = nl;
-	stdout->_flag |= _IONBF;
+	setvbuf(stdout, (char *)NULL, _IONBF, 0);
 	for(;;) {
 		i = next();
 		fseek(input,xx[i]+0L,0);
