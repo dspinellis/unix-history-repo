@@ -4,6 +4,8 @@
 # include <log.h>
 # endif LOG
 
+static char	SccsId[] = "@(#)err.c	1.2	%G%";
+
 /*
 **  ERR -- Print error message.
 **

@@ -1,6 +1,8 @@
 # include <sysexits.h>
 # include "useful.h"
 
+static char	SccsId[] = "@(#)util.c	1.2	%G%";
+
 /*
 **  UTIL.C -- General Purpose Routines
 **
