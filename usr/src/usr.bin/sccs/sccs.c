@@ -92,7 +92,7 @@
 **		Copyright 1980 Regents of the University of California
 */
 
-static char SccsId[] = "@(#)sccs.c	1.39 %G%";
+static char SccsId[] = "@(#)sccs.c	1.40 %G%";
 
 /*******************  Configuration Information  ********************/
 
@@ -1021,6 +1021,8 @@ dodiff(getv, gfile)
 	auto int st;
 	extern int errno;
 	int (*osig)();
+
+	printf("\n------- %s -------\n", gfile);
 
 	/* create context for diff to run in */
 	if (pipe(pipev) < 0)
