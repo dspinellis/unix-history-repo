@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	3.3	(Berkeley)	83/02/27";
+static char sccsid[] = "@(#)main.c	3.4	(Berkeley)	83/02/28";
 #endif
 
 /*
@@ -45,6 +45,7 @@ main(argc, argv)
 	char *inputdev = "/dev/rmt8";
 	char *symtbl = "./restoresymtable";
 	char *dirmodefile = "./dirmodes";
+	char name[BUFSIZ];
 	int (*signal())();
 	extern int onintr();
 
@@ -154,12 +155,13 @@ usage:
 		setup();
 		extractdirs((char *)0);
 		while (argc--) {
-			if ((ino = psearch(*argv)) == 0 ||
+			canon(*argv++, name);
+			if ((ino = psearch(name)) == 0 ||
 			    BIT(ino, dumpmap) == 0) {
-				fprintf(stderr, "%s: not on tape\n", *argv++);
+				fprintf(stderr, "%s: not on tape\n", name);
 				continue;
 			}
-			treescan(*argv++, ino, listfile);
+			treescan(name, ino, listfile);
 		}
 		done(0);
 
@@ -172,19 +174,19 @@ usage:
 			panic("no memory for entry table\n");
 		(void)addentry(".", ROOTINO, NODE);
 		while (argc--) {
-			if ((ino = psearch(*argv)) == 0 ||
+			canon(*argv++, name);
+			if ((ino = psearch(name)) == 0 ||
 			    BIT(ino, dumpmap) == 0) {
-				fprintf(stderr, "%s: not on tape\n", *argv++);
+				fprintf(stderr, "%s: not on tape\n", name);
 				continue;
 			}
 			if (mflag)
-				pathcheck(*argv, NEW);
+				pathcheck(name, NULL);
 			if (hflag)
-				treescan(*argv++, ino, addfile);
+				treescan(name, ino, addfile);
 			else
-				addfile(*argv++, ino, LEAF);
+				addfile(name, ino, inodetype(ino));
 		}
-		createnodes();
 		createfiles();
 		createlinks();
 		setdirmodes(dirmodefile);
@@ -228,6 +230,8 @@ usage:
 
 	case 'R':
 		initsymtable(symtbl);
+		skipmaps();
+		skipdirs();
 		createleaves(symtbl);
 		createlinks();
 		setdirmodes(dirmodefile);
