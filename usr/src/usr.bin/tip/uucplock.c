@@ -1,218 +1,97 @@
 /*
- * Copyright (c) 1983 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1988 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)uucplock.c	5.2 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)uucplock.c	5.3 (Berkeley) %G%";
+#endif /* not lint */
 
-/*
- * defs that come from uucp.h
- */
-#define NAMESIZE 32
-#define FAIL -1
-#define SAME 0
-#define SLCKTIME 28800	/* system/device timeout (LCK.. files) in seconds (8 hours) */
-#define ASSERT(e, f, v) if (!(e)) {\
-	fprintf(stderr, "AERROR - (%s) ", "e");\
-	fprintf(stderr, f, v);\
-	finish(FAIL);\
-}
-
-#define LOCKPRE "/usr/spool/uucp/LCK."
-
-/*
- * This code is taken almost directly from uucp and follows the same
- * conventions.  This is important since uucp and tip should
- * respect each others locks.
- */
-
-	/*  ulockf 3.2  10/26/79  11:40:29  */
-/* #include "uucp.h" */
 #include <sys/types.h>
-#include <sys/stat.h>
-#include <stdio.h>
+#include <sys/file.h>
+#include <sys/dir.h>
+#include <errno.h>
 
-/*******
- *	ulockf(file, atime)
- *	char *file;
- *	time_t atime;
- *
- *	ulockf  -  this routine will create a lock file (file).
- *	If one already exists, the create time is checked for
- *	older than the age time (atime).
- *	If it is older, an attempt will be made to unlink it
- *	and create a new one.
- *
- *	return codes:  0  |  FAIL
+/* pick the directory naming scheme you are using */
+
+#define LOCKDIRNAME	"/usr/spool/uucp/LCK..%s"	/**/
+/* #define LOCKDIRNAME	"/usr/spool/uucp/LCK/LCK..%s"	/**/
+
+/* 
+ * uucp style locking routines
+ * return: 0 - success
+ * 	  -1 - failure
  */
 
-static
-ulockf(file, atime)
-	char *file;
-	time_t atime;
+uu_lock(ttyname)
+	char *ttyname;
 {
-	struct stat stbuf;
-	time_t ptime;
-	int ret;
-	static int pid = -1;
-	static char tempfile[NAMESIZE];
+	extern int errno;
+	int fd, pid;
+	char tbuf[sizeof(LOCKDIRNAME) + MAXNAMLEN];
+	off_t lseek();
 
-	if (pid < 0) {
-		pid = getpid();
-		sprintf(tempfile, "/usr/spool/uucp/LTMP.%d", pid);
-	}
-	if (onelock(pid, tempfile, file) == -1) {
-		/* lock file exists */
-		/* get status to check age of the lock file */
-		ret = stat(file, &stbuf);
-		if (ret != -1) {
-			time(&ptime);
-			if ((ptime - stbuf.st_ctime) < atime) {
-				/* file not old enough to delete */
-				return (FAIL);
-			}
+	(void)sprintf(tbuf, LOCKDIRNAME, ttyname);
+	fd = open(tbuf, O_RDWR|O_CREAT|O_EXCL, 0660);
+	if (fd < 0) {
+		/*
+		 * file is already locked
+		 * check to see if the process holding the lock still exists
+		 */
+		fd = open(tbuf, O_RDWR, 0);
+		if (fd < 0) {
+			perror("lock open");
+			return(-1);
 		}
-		ret = unlink(file);
-		ret = onelock(pid, tempfile, file);
-		if (ret != 0)
-			return (FAIL);
-	}
-	stlock(file);
-	return (0);
-}
-
-#define MAXLOCKS 10	/* maximum number of lock files */
-char *Lockfile[MAXLOCKS];
-int Nlocks = 0;
-
-/***
- *	stlock(name)	put name in list of lock files
- *	char *name;
- *
- *	return codes:  none
- */
-
-static
-stlock(name)
-	char *name;
-{
-	char *p;
-	extern char *calloc();
-	int i;
-
-	for (i = 0; i < Nlocks; i++) {
-		if (Lockfile[i] == NULL)
-			break;
-	}
-	ASSERT(i < MAXLOCKS, "TOO MANY LOCKS %d", i);
-	if (i >= Nlocks)
-		i = Nlocks++;
-	p = calloc(strlen(name) + 1, sizeof (char));
-	ASSERT(p != NULL, "CAN NOT ALLOCATE FOR %s", name);
-	strcpy(p, name);
-	Lockfile[i] = p;
-	return;
-}
-
-/***
- *	rmlock(name)	remove all lock files in list
- *	char *name;	or name
- *
- *	return codes: none
- */
-
-static
-rmlock(name)
-	char *name;
-{
-	int i;
-
-	for (i = 0; i < Nlocks; i++) {
-		if (Lockfile[i] == NULL)
-			continue;
-		if (name == NULL || strcmp(name, Lockfile[i]) == SAME) {
-			unlink(Lockfile[i]);
-			free(Lockfile[i]);
-			Lockfile[i] = NULL;
+		if (read(fd, &pid, sizeof(pid)) != sizeof(pid)) {
+			(void)close(fd);
+			perror("lock read");
+			return(-1);
 		}
+
+		if (kill(pid, 0) == 0 || errno != ESRCH) {
+			(void)close(fd);	/* process is still running */
+			return(-1);
+		}
+		/*
+		 * The process that locked the file isn't running, so
+		 * we'll lock it ourselves
+		 */
+		if (lseek(fd, 0L, L_SET) < 0) {
+			(void)close(fd);
+			perror("lock lseek");
+			return(-1);
+		}
+		/* fall out and finish the locking process */
 	}
-}
-
-/*
- * this stuff from pjw 
- *  /usr/pjw/bin/recover - check pids to remove unnecessary locks
- *
- *	isalock(name) returns 0 if the name is a lock
- *
- *	onelock(pid,tempfile,name) makes lock a name
- *	on behalf of pid.  Tempfile must be in the same
- *	file system as name.
- *
- *	lock(pid,tempfile,names) either locks all the
- *	names or none of them
- */
-static
-isalock(name)
-	char *name;
-{
-	struct stat xstat;
-
-	if (stat(name, &xstat) < 0)
-		return (0);
-	if (xstat.st_size != sizeof(int))
-		return (0);
-	return (1);
-}
-
-static
-onelock(pid, tempfile, name)
-	char *tempfile, *name;
-{
-	int fd;
-
-	fd = creat(tempfile, 0444);
-	if (fd < 0)
-		return (-1);
-	write(fd,(char *)&pid, sizeof(int));
-	close(fd);
-	if (link(tempfile, name) < 0) {
-		unlink(tempfile);
-		return (-1);
+	pid = getpid();
+	if (write(fd, (char *)&pid, sizeof(pid)) != sizeof(pid)) {
+		(void)close(fd);
+		(void)unlink(tbuf);
+		perror("lock write");
+		return(-1);
 	}
-	unlink(tempfile);
-	return (0);
+	(void)close(fd);
+	return(0);
 }
 
-/***
- *	delock(s)	remove a lock file
- *	char *s;
- *
- *	return codes:  0  |  FAIL
- */
-
-delock(s)
-	char *s;
+uu_unlock(ttyname)
+	char *ttyname;
 {
-	char ln[30];
+	char tbuf[sizeof(LOCKDIRNAME) + MAXNAMLEN];
 
-	sprintf(ln, "%s.%s", LOCKPRE, s);
-	rmlock(ln);
-}
-
-/***
- *	mlock(sys)	create system lock
- *	char *sys;
- *
- *	return codes:  0  |  FAIL
- */
-
-mlock(sys)
-	char *sys;
-{
-	char lname[30];
-	sprintf(lname, "%s.%s", LOCKPRE, sys);
-	return (ulockf(lname, (time_t) SLCKTIME ) < 0 ? FAIL : 0);
+	(void)sprintf(tbuf, LOCKDIRNAME, ttyname);
+	return(unlink(tbuf));
 }
