@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bsearch.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)bsearch.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stddef.h>		/* size_t */
@@ -30,21 +30,21 @@ static char sccsid[] = "@(#)bsearch.c	5.3 (Berkeley) %G%";
  */
 void *
 bsearch(key, base0, nmemb, size, compar)
-	register void *key;
-	void *base0;
+	register const void *key;
+	const void *base0;
 	size_t nmemb;
 	register size_t size;
-	register int (*compar)();
+	register int (*compar) __P((const void *, const void *));
 {
-	register char *base = base0;
+	register const char *base = base0;
 	register int lim, cmp;
-	register void *p;
+	register const void *p;
 
 	for (lim = nmemb; lim != 0; lim >>= 1) {
 		p = base + (lim >> 1) * size;
 		cmp = (*compar)(key, p);
 		if (cmp == 0)
-			return (p);
+			return ((void *)p);
 		if (cmp > 0) {	/* key > p: move right */
 			base = (char *)p + size;
 			lim--;

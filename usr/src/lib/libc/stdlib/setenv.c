@@ -6,11 +6,12 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)setenv.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)setenv.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stddef.h>
 #include <stdlib.h>
+#include <string.h>
 
 /*
  * setenv --
@@ -18,7 +19,8 @@ static char sccsid[] = "@(#)setenv.c	5.4 (Berkeley) %G%";
  *	"value".  If rewrite is set, replace any current value.
  */
 setenv(name, value, rewrite)
-	register char *name, *value;
+	register const char *name;
+	register const char *value;
 	int rewrite;
 {
 	extern char **environ;
@@ -61,7 +63,7 @@ setenv(name, value, rewrite)
 		environ[cnt + 1] = NULL;
 		offset = cnt;
 	}
-	for (C = name; *C && *C != '='; ++C);	/* no `=' in name */
+	for (C = (char *)name; *C && *C != '='; ++C);	/* no `=' in name */
 	if (!(environ[offset] =			/* name + `=' + value */
 	    malloc((size_t)((int)(C - name) + l_value + 2))))
 		return(-1);
@@ -76,7 +78,7 @@ setenv(name, value, rewrite)
  */
 void
 unsetenv(name)
-	char	*name;
+	const char	*name;
 {
 	extern char **environ;
 	register char **P;

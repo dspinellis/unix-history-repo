@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strtol.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)strtol.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <limits.h>
@@ -23,10 +23,11 @@ static char sccsid[] = "@(#)strtol.c	5.3 (Berkeley) %G%";
  */
 long
 strtol(nptr, endptr, base)
-	char *nptr, **endptr;
+	const char *nptr;
+	char **endptr;
 	register int base;
 {
-	register char *s = nptr;
+	register const char *s = nptr;
 	register unsigned long acc;
 	register int c;
 	register unsigned long cutoff;
@@ -97,6 +98,6 @@ strtol(nptr, endptr, base)
 	} else if (neg)
 		acc = -acc;
 	if (endptr != 0)
-		*endptr = any ? s - 1 : nptr;
+		*endptr = any ? s - 1 : (char *)nptr;
 	return (acc);
 }
