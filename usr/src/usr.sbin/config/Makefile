@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 #
 CFILES=	y.tab.c main.c lex.yy.c mkioconf.c mkmakefile.c \
@@ -20,11 +20,8 @@ config: ${OBJS}
 lex.yy.c: config.l
 	lex config.l
 
-y.tab.h: 
+y.tab.h y.tab.c: config.y
 	yacc -d config.y
-
-y.tab.c: config.y
-	yacc config.y
 
 clean:
 	rm -f ${OBJS} lex.yy.c y.tab.c y.tab.h config
