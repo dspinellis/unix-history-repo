@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)catman.c	4.7 (Berkeley) %G%";
+static char *sccsid = "@(#)catman.c	4.8 (Berkeley) %G%";
 #endif
 
 /*
@@ -34,7 +34,7 @@ main(ac, av)
 	register char changed = 0;
 
 	ac--, av++;
-	while (ac > 1 && av[0][0] == '-') {
+	while (ac > 0 && av[0][0] == '-') {
 		switch (av[0][1]) {
 
 		case 'p':
@@ -65,15 +65,12 @@ main(ac, av)
 		}
 		ac--, av++;
 	}
-	if (ac == 2)
-		sections = *av;
-	else if (ac < 2)
-		sections = "12345678ln";
-	else {
+	if (ac > 1) {
 usage:
 		printf("usage: catman [ -p ] [ -n ] [ -w ] [ -M path ] [ sections ]\n");
 		exit(-1);
 	}
+	sections = (ac == 1) ? *av : "12345678ln";
 	if (wflag)
 		goto whatis;
 	if (chdir(mandir) < 0) {
