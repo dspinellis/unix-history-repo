@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ufs_inode.c	7.40 (Berkeley) 5/8/91
- *	$Id: ufs_inode.c,v 1.3 1993/10/16 18:17:52 rgrimes Exp $
+ *	$Id: ufs_inode.c,v 1.4 1993/11/07 17:53:44 wollman Exp $
  */
 
 #include "param.h"
@@ -117,7 +117,7 @@ loop:
 			continue;
 		if ((ip->i_flag&ILOCKED) != 0) {
 			ip->i_flag |= IWANT;
-			sleep((caddr_t)ip, PINOD);
+			tsleep((caddr_t)ip, PINOD, "iget", 0);
 			goto loop;
 		}
 		if (vget(ITOV(ip)))
@@ -684,7 +684,7 @@ ilock(ip)
 		if (ip->i_spare0 == curproc->p_pid)
 			panic("locking against myself");
 		ip->i_spare1 = curproc->p_pid;
-		(void) sleep((caddr_t)ip, PINOD);
+		(void) tsleep((caddr_t)ip, PINOD, "ilock", 0);
 	}
 	ip->i_spare1 = 0;
 	ip->i_spare0 = curproc->p_pid;

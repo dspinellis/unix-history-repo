@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_glue.c	7.8 (Berkeley) 5/15/91
- *	$Id: vm_glue.c,v 1.9 1993/10/19 00:54:49 nate Exp $
+ *	$Id: vm_glue.c,v 1.10 1993/11/07 17:54:11 wollman Exp $
  */
 
 /*
@@ -325,8 +325,8 @@ noswap:
 	 * Nothing to do, back to sleep
 	 */
 	if ((p = pp) == NULL) {
-		sleep((caddr_t)&proc0, PVM);
-		goto loop;
+	  tsleep((caddr_t)&proc0, PVM, "sched", 0);
+	  goto loop;
 	}
 
 	/*
@@ -506,7 +506,7 @@ thread_block()
 	int s = splhigh();
 
 	if (curproc->p_thread)
-		sleep((caddr_t)curproc->p_thread, PVM);
+	  tsleep((caddr_t)curproc->p_thread, PVM, "vmblock", 0);
 	splx(s);
 }
 
@@ -523,7 +523,7 @@ thread_sleep(event, lock, ruptible)
 	curproc->p_thread = event;
 	simple_unlock(lock);
 	if (curproc->p_thread)
-		sleep((caddr_t)event, PVM);
+	  tsleep((caddr_t)event, PVM, "vmsleep", 0);
 	splx(s);
 }
 

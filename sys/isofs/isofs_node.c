@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)isofs_inode.c
- *	$Id: isofs_node.c,v 1.3 1993/07/27 18:38:16 nate Exp $
+ *	$Id: isofs_node.c,v 1.4 1993/10/25 03:39:55 rgrimes Exp $
  */
 
 #include "param.h"
@@ -114,7 +114,7 @@ loop:
 			continue;
 		if ((ip->i_flag&ILOCKED) != 0) {
 			ip->i_flag |= IWANT;
-			sleep((caddr_t)ip, PINOD);
+			tsleep((caddr_t)ip, PINOD, "isoiget", 0);
 			goto loop;
 		}
 		if (vget(ITOV(ip)))
@@ -290,7 +290,7 @@ iso_ilock(ip)
 		if (ip->i_spare0 == curproc->p_pid)
 			panic("locking against myself");
 		ip->i_spare1 = curproc->p_pid;
-		(void) sleep((caddr_t)ip, PINOD);
+		(void) tsleep((caddr_t)ip, PINOD, "isoilck", 0);
 	}
 	ip->i_spare1 = 0;
 	ip->i_spare0 = curproc->p_pid;

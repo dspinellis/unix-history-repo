@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ufs_quota.c	7.11 (Berkeley) 6/21/91
- *	$Id$
+ *	$Id: ufs_quota.c,v 1.2 1993/10/16 18:17:57 rgrimes Exp $
  */
 
 #include "param.h"
@@ -119,7 +119,7 @@ chkdq(ip, change, cred, flags)
 				continue;
 			while (dq->dq_flags & DQ_LOCK) {
 				dq->dq_flags |= DQ_WANT;
-				sleep((caddr_t)dq, PINOD+1);
+				tsleep((caddr_t)dq, PINOD+1, "chkdq", 0);
 			}
 			ncurblocks = dq->dq_curblocks + change;
 			if (ncurblocks >= 0)
@@ -144,7 +144,7 @@ chkdq(ip, change, cred, flags)
 			continue;
 		while (dq->dq_flags & DQ_LOCK) {
 			dq->dq_flags |= DQ_WANT;
-			sleep((caddr_t)dq, PINOD+1);
+			tsleep((caddr_t)dq, PINOD+1, "chkdq", 0);
 		}
 		dq->dq_curblocks += change;
 		dq->dq_flags |= DQ_MOD;
@@ -230,7 +230,7 @@ chkiq(ip, change, cred, flags)
 				continue;
 			while (dq->dq_flags & DQ_LOCK) {
 				dq->dq_flags |= DQ_WANT;
-				sleep((caddr_t)dq, PINOD+1);
+				tsleep((caddr_t)dq, PINOD+1, "chkiq", 0);
 			}
 			ncurinodes = dq->dq_curinodes + change;
 			if (ncurinodes >= 0)
@@ -255,7 +255,7 @@ chkiq(ip, change, cred, flags)
 			continue;
 		while (dq->dq_flags & DQ_LOCK) {
 			dq->dq_flags |= DQ_WANT;
-			sleep((caddr_t)dq, PINOD+1);
+			tsleep((caddr_t)dq, PINOD+1, "chkiq", 0);
 		}
 		dq->dq_curinodes += change;
 		dq->dq_flags |= DQ_MOD;
@@ -516,7 +516,7 @@ setquota(mp, id, type, addr)
 	dq = ndq;
 	while (dq->dq_flags & DQ_LOCK) {
 		dq->dq_flags |= DQ_WANT;
-		sleep((caddr_t)dq, PINOD+1);
+		tsleep((caddr_t)dq, PINOD+1, "setquota", 0);
 	}
 	/*
 	 * Copy all but the current values.
@@ -574,7 +574,7 @@ setuse(mp, id, type, addr)
 	dq = ndq;
 	while (dq->dq_flags & DQ_LOCK) {
 		dq->dq_flags |= DQ_WANT;
-		sleep((caddr_t)dq, PINOD+1);
+		tsleep((caddr_t)dq, PINOD+1, "setuse", 0);
 	}
 	/*
 	 * Reset time limit if have a soft limit and were
@@ -878,7 +878,7 @@ dqsync(vp, dq)
 		VOP_LOCK(dqvp);
 	while (dq->dq_flags & DQ_LOCK) {
 		dq->dq_flags |= DQ_WANT;
-		sleep((caddr_t)dq, PINOD+2);
+		tsleep((caddr_t)dq, PINOD+2, "dqsync", 0);
 		if ((dq->dq_flags & DQ_MOD) == 0) {
 			if (vp != dqvp)
 				VOP_UNLOCK(dqvp);

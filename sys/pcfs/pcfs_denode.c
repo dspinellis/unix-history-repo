@@ -15,7 +15,7 @@
  *
  *  October 1992
  *
- *	$Id$
+ *	$Id: pcfs_denode.c,v 1.2 1993/10/16 19:29:32 rgrimes Exp $
  */
 
 #include "param.h"
@@ -131,7 +131,7 @@ loop:
 			/* should we brelse() the passed buf hdr to
 			 *  avoid some potential deadlock? */
 			ldep->de_flag |= DEWANT;
-			sleep((caddr_t)ldep, PINOD);
+			tsleep((caddr_t)ldep, PINOD, "deget", 0);
 			goto loop;
 		}
 		if (vget(DETOV(ldep)))
@@ -595,7 +595,7 @@ delock(dep)
 		if (dep->de_spare0 == curproc->p_pid)
 			panic("delock: locking against myself");
 		dep->de_spare1 = curproc->p_pid;
-		(void) sleep((caddr_t)dep, PINOD);
+		(void) tsleep((caddr_t)dep, PINOD, "delock", 0);
 	}
 	dep->de_spare1 = 0;
 	dep->de_spare0 = curproc->p_pid;
