@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)input.c	1.6 (Berkeley) 82/05/04";
+static	char *sccsid = "@(#)input.c	1.7 (Berkeley) 83/02/09";
 #include <stdio.h>
 #include <ctype.h>
 #include "error.h"
@@ -289,7 +289,7 @@ Errorclass lint1()
 	 *
 	 *	Look first for type 1 lint errors
 	 */
-	if (strcmp(wordv[wordc-1], "::") == 0){
+	if (wordc > 1 && strcmp(wordv[wordc-1], "::") == 0){
 	 /*
   	  * %.7s, arg. %d used inconsistently %s(%d) :: %s(%d)
   	  * %.7s value used inconsistently %s(%d) :: %s(%d)
@@ -298,7 +298,8 @@ Errorclass lint1()
   	  * %.7s function value type must be declared before use %s(%d) :: %s(%d)
 	  */
 		language = INLINT;
-		if (    (persperdexplode(wordv[wordc], &line2, &file2))
+		if (wordc > 2
+		     && (persperdexplode(wordv[wordc], &line2, &file2))
 		     && (persperdexplode(wordv[wordc-2], &line1, &file1)) ){
 			nwordv1 = wordvsplice(2, wordc, wordv+1);
 			nwordv2 = wordvsplice(2, wordc, wordv+1);
