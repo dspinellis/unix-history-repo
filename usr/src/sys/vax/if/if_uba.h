@@ -1,4 +1,4 @@
-/*	if_uba.h	4.3	81/12/03	*/
+/*	if_uba.h	4.4	81/12/09	*/
 
 /*
  * Structure and routine definitions
@@ -32,11 +32,11 @@ struct	ifuba {
 	short	ifu_hlen;			/* local net header length */
 	struct	uba_regs *ifu_uba;		/* uba regs, in vm */
 	struct ifrw {
-		int	ifrw_info;		/* value from ubaalloc */
-		short	ifrw_bdp;		/* unibus bdp */
-		struct	pte *ifrw_mr;		/* base of map registers */
-		int	ifrw_proto;		/* map register prototype */
 		caddr_t	ifrw_addr;		/* virt addr of header */
+		int	ifrw_bdp;		/* unibus bdp */
+		int	ifrw_info;		/* value from ubaalloc */
+		int	ifrw_proto;		/* map register prototype */
+		struct	pte *ifrw_mr;		/* base of map registers */
 	} ifu_r, ifu_w;
 	struct	pte ifu_wmap[IF_MAXNUBAMR];	/* base pages for output */
 	short	ifu_xswapd;			/* mask of clusters swapped */
