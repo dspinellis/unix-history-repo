@@ -1,0 +1,42 @@
+/*	TODO	4.10	81/04/15	*/
+
+1. Minor
+	- Put u.u_ttyd in proc structure and fix sys.c (/dev/tty) and chfile()
+	- Turn the u. and kernel stack around and use a virtual hole as redzone
+	- Hash the process groups in the proc table so wakeups are fast
+	- Use pointers for process hashing, not indices.
+	- Also use pointers in inode table.
+	- Discard init code after boot.
+	- Allocate spt at boot
+	- Cleanup handling of file table.
+	- Add child and sibling pointers in proc table.
+	- Remove all linear searches of tables.
+	- Deal with dh NXM problem
+	- Test rm80 sse code
+	- Find and fix ttrstrt problem
+	- Why did up drive give i/o errors after uba reset when tape was hung?
+	- Incorporate good stuff from ghg's system
+	- Fix rpb autorestart
+	- Handle sbi alert/fault
+	- Get multi-porting code to work
+
+2. Error logging/handling
+	- Improve error logging, by adding a binary error log file
+	- Write a user mode program to decipher the error log file
+	- Log soft device errors and produce a dec-like error log
+	- (cn,tn,sn) for disks; soft errors; ecc: pat, pos
+	- Write a better analyze program more like sda
+
+3. New stuff
+	- File system (new data structures, new policies)
+	- Vm primitives (segmentation, copy-on-write)
+	- Ipc (fast datagrams, named pipes, vc stuff)
+	- Local net support (chaosnet, etc.)
+	- Incorporate bbn arpa net support
+	- Project support
+	- Sccs replacement
+
+4. Benchmarking
+	- Get hardware clock
+	- Run jm's benchmarks
+	- Run tracing experiments
