@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)nlist.3	5.1 (Berkeley) %G%
+.\"	@(#)nlist.3	6.1 (Berkeley) %G%
 .\"
-.TH NLIST 3  "19 January 1983"
+.TH NLIST 3  ""
 .UC 4
 .SH NAME
 nlist \- get entries from name list
@@ -37,5 +37,7 @@ In this way programs can obtain system addresses that are up to date.
 .SH "SEE ALSO"
 a.out(5)
 .SH DIAGNOSTICS
-All type entries are set to 0 if the file cannot be found
-or if it is not a valid namelist.
+If the file cannot be found or if it is not a valid namelist \-1 is returned;
+otherwise, the number of unfound namelist entries is returned.
+.PP
+The type entry is set to 0 if the symbol is not found.
