@@ -1,4 +1,4 @@
-.\"	@(#)m4.ms	4.1 (Berkeley) %G%
+.\"	@(#)m4.ms	5.1 (Berkeley) %G%
 .\"
 .if n .ls 2
 .tr _\(em
