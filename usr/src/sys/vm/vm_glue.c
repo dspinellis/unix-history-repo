@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_glue.c	7.16 (Berkeley) %G%
+ *	@(#)vm_glue.c	7.17 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -271,7 +271,7 @@ loop:
 #endif
 	pp = NULL;
 	ppri = INT_MIN;
-	for (p = allproc; p != NULL; p = p->p_nxt) {
+	for (p = (struct proc *)allproc; p != NULL; p = p->p_nxt) {
 		if (p->p_stat == SRUN && (p->p_flag & SLOAD) == 0) {
 			pri = p->p_time + p->p_slptime - p->p_nice * 8;
 			if (pri > ppri) {
@@ -307,7 +307,7 @@ loop:
 			       ppri, cnt.v_free_count);
 #endif
 		vm_map_pageable(kernel_map, addr, addr+size, FALSE);
-		(void) splclock();
+		(void) splstatclock();
 		if (p->p_stat == SRUN)
 			setrq(p);
 		p->p_flag |= SLOAD;
@@ -360,7 +360,7 @@ swapout_threads()
 #endif
 	outp = outp2 = NULL;
 	outpri = outpri2 = 0;
-	for (p = allproc; p != NULL; p = p->p_nxt) {
+	for (p = (struct proc *)allproc; p != NULL; p = p->p_nxt) {
 		if (!swappable(p))
 			continue;
 		switch (p->p_stat) {
