@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
 MAN=	roffbib.0
 
@@ -13,7 +13,11 @@ install:
 	    ${.CURDIR}/roffbib.sh ${DESTDIR}${BINDIR}/roffbib
 	install -c -o ${BINOWN} -g ${BINGRP} -m ${BINMODE} \
 	    ${.CURDIR}/tmac.bib ${DESTDIR}/usr/share/tmac
-	sh ${.CURDIR}/runinv ${DESTDIR}/usr/share/dict/papers
+	(cd ${.CURDIR}/../papers; \
+	    install -c -o ${BINOWN} -g ${BINGRP} -m 444 \
+	    INDEX Rbstjissue Rv7man ${DESTDIR}/usr/share/dict/papers)
+	-/usr/libexec/mkey /usr/share/dict/papers/R* | (cd /var/db; \
+	    /usr/libexec/inv -v -h997 -n Ind; chmod 444 Ind*)
 
 .include "../../Makefile.inc"
 .include <bsd.prog.mk>
