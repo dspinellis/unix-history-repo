@@ -1,3 +1,5 @@
+/*	ht.c	4.7	81/03/07	*/
+
 #include "ht.h"
 #if NHT > 0
 /*
@@ -16,6 +18,7 @@
 #include "../h/mtio.h"
 #include "../h/ioctl.h"
 #include "../h/cmap.h"
+#include "../h/cpu.h"
 
 #include "../h/htreg.h"
 
@@ -89,8 +92,8 @@ htopen(dev, flag)
 		return;
 	}
 	sc->sc_dens =
-	    ((minor(dev)&H_1600BPI)?HTTC_1600BPI:HTTC_800BPI)|HTTC_PDP11|mi->mi_slave;
-	printf("dens %o\n", sc->sc_dens);
+	    ((minor(dev)&H_1600BPI)?HTTC_1600BPI:HTTC_800BPI)|
+		HTTC_PDP11|mi->mi_slave;
 	sc->sc_openf = 1;
 	sc->sc_blkno = (daddr_t)0;
 	sc->sc_nxrec = INF;
@@ -152,7 +155,6 @@ htstrategy(bp)
 	register int unit = HTUNIT(bp->b_dev);
 	register struct mba_info *mi = htinfo[unit];
 	register struct buf *dp;
-	register struct ht_softc *sc = &ht_softc[unit];
 
 	bp->av_forw = NULL;
 	dp = &mi->mi_tab;
@@ -193,25 +195,22 @@ htustart(mi)
 		if (dbtofsb(bp->b_blkno) > sc->sc_nxrec) {
 			bp->b_flags |= B_ERROR;
 			bp->b_error = ENXIO;
-			goto next;
+			return (MBU_NEXT);
 		} else if (dbtofsb(bp->b_blkno) == sc->sc_nxrec &&
 		    bp->b_flags&B_READ) {
 			bp->b_resid = bp->b_bcount;
 			clrbuf(bp);
-			goto next;
+			return (MBU_NEXT);
 		} else if ((bp->b_flags&B_READ)==0)
 			sc->sc_nxrec = dbtofsb(bp->b_blkno) + 1;
 	} else {
-		if (bp->b_command == HT_SENSE) {
-			T(10)("sense complete\n");
+		if (bp->b_command == HT_SENSE)
 			return (MBU_NEXT);
-		}
 		if (bp->b_command == HT_REW)
 			sc->sc_flags |= H_REWIND;
 		else
 			htaddr->htfc = -bp->b_bcount;
 		htaddr->htcs1 = bp->b_command|HT_GO;
-		T(10)("started cmd %d\n", bp->b_command);
 		return (MBU_STARTED);
 	}
 	if ((blkno = sc->sc_blkno) == dbtofsb(bp->b_blkno)) {
@@ -234,17 +233,12 @@ htustart(mi)
 	}
 	if (blkno < dbtofsb(bp->b_blkno)) {
 		htaddr->htfc = blkno - dbtofsb(bp->b_blkno);
-		T(10)("spacing fwd %d\n", MASKREG(htaddr)->htfc);
 		htaddr->htcs1 = HT_SFORW|HT_GO;
 	} else {
 		htaddr->htfc = dbtofsb(bp->b_blkno) - blkno;
-		T(10)("spacing back %d\n", MASKREG(htaddr)->htfc);
 		htaddr->htcs1 = HT_SREV|HT_GO;
 	}
 	return (MBU_STARTED);
-next:
-	iodone(bp);
-	return (MBU_NEXT);
 }
 
 /*
@@ -258,25 +252,29 @@ htdtint(mi, mbasr)
 	register struct htdevice *htaddr = (struct htdevice *)mi->mi_drv;
 	register struct buf *bp = mi->mi_tab.b_actf;
 	register struct ht_softc *sc;
-	int ds, er;
+	int ds, er, mbs;
 
 	sc = &ht_softc[HTUNIT(bp->b_dev)];
 	ds = sc->sc_dsreg = MASKREG(htaddr->htds);
 	er = sc->sc_erreg = MASKREG(htaddr->hter);
 	sc->sc_resid = MASKREG(htaddr->htfc);
+	mbs = mbasr;
 	sc->sc_blkno++;
 	if((bp->b_flags & B_READ) == 0)
 		sc->sc_flags |= H_WRITTEN;
 	if ((ds&(HTDS_ERR|HTDS_MOL)) != HTDS_MOL ||
-	    mbasr & MBAEBITS) {
+	    mbs & MBAEBITS) {
 		htaddr->htcs1 = HT_DCLR|HT_GO;
-		if (bp == &rhtbuf[HTUNIT(bp->b_dev)])
+		mbclrattn(mi);
+		if (bp == &rhtbuf[HTUNIT(bp->b_dev)]) {
 			er &= ~HTER_FCE;
+			mbs &= ~(MBS_DTABT|MBS_MBEXC);
+		}
 		if (bp->b_flags & B_READ && ds & HTDS_PES)
 			er &= ~(HTER_CSITM|HTER_CORCRC);
 		if (er&HTER_HARD ||
-		    mbasr&MBAEBITS || (ds&HTDS_MOL) == 0 ||
-		    sc->sc_erreg && ++mi->mi_tab.b_errcnt >= 7) {
+		    mbs&MBAEBITS || (ds&HTDS_MOL) == 0 ||
+		    er && ++mi->mi_tab.b_errcnt >= 7) {
 			if ((ds & HTDS_MOL) == 0 && sc->sc_openf > 0)
 				sc->sc_openf = -1;
 			printf("ht%d: hard error bn%d mbasr=%b er=%b\n",
@@ -313,9 +311,11 @@ htndtint(mi)
 	sc = &ht_softc[HTUNIT(bp->b_dev)];
 	ds = sc->sc_dsreg = MASKREG(htaddr->htds);
 	er = sc->sc_erreg = MASKREG(htaddr->hter);
-	sc->sc_resid = MASKREG(htaddr->htfc);
-	if (sc->sc_erreg)
+	fc = sc->sc_resid = MASKREG(htaddr->htfc);
+	if (sc->sc_erreg) {
 		htaddr->htcs1 = HT_DCLR|HT_GO;
+		mbclrattn(mi);
+	}
 	if (bp == &chtbuf[HTUNIT(bp->b_dev)]) {
 		if (bp->b_command == HT_REWOFFL)
 			/* offline is on purpose; don't do anything special */
@@ -485,7 +485,9 @@ htdump()
 	mi = phys(htinfo[0], struct mba_info *);
 	mp = phys(mi->mi_hd, struct mba_hd *)->mh_physmba;
 #if VAX780
-	mbainit(mp);
+	if (cpu == VAX780)
+		mbainit(mp);
+#endif
 	htaddr = (struct htdevice *)&mp->mba_drv[mi->mi_drive];
 	htaddr->httc = HTTC_PDP11|HTTC_1600BPI;
 	htaddr->htcs1 = HT_DCLR|HT_GO;
