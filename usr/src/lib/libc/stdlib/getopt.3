@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)getopt.3	6.11 (Berkeley) %G%
+.\"	@(#)getopt.3	6.12 (Berkeley) %G%
 .\"
 .TH GETOPT 3 ""
 .UC 6
@@ -21,18 +21,14 @@
 getopt \- get option letter from argv
 .SH SYNOPSIS
 .ft B
+.nf
 int getopt(argc, argv, optstring)
-.br
 int argc;
-.br
 char **argv;
-.br
 char *optstring;
 .sp
 extern char *optarg;
-.br
 extern int optind;
-.br
 extern int opterr;
 .ft
 .SH DESCRIPTION
@@ -42,156 +38,108 @@ returns the next option letter in
 that matches a letter in
 .IR optstring .
 .I Optstring
-is a string of recognized option letters;
-if a letter is followed by a colon, the option is expected to have
-an argument that may or may not be separated from it by white space.
-.I Optarg
-is set to point to the start of the option argument on return from
-.IR getopt .
+is a string of recognized option letters; if a letter is followed by a
+colon, the option is expected to have an argument that may or may not
+be separated from it by white space.
 .PP
-.I Getopt
-places in
-.I optind
-the
+On return from
+.IR getopt ,
+optarg is set to point to the start of any option argument.
+.I Optind
+contains the
 .I argv
 index of the next argument to be processed.
-Because
-.I optind
-is external, it is normally initialized to zero automatically
-before the first call to 
-.IR getopt .
 .PP
-When all options have been processed (i.e., up to the first
-non-option argument),
+.I Opterr
+and
+.I optind
+are both initialized to 1.
+.PP
+When all options have been processed (i.e., up to the first non-option
+argument),
 .I getopt
-returns
-.BR EOF .
-The special option
-.B \-\-
-may be used to delimit the end of the options;
-.B EOF
-will be returned, and
-.B \-\-
-will be skipped.
+returns EOF.
+The special option ``\-\-'' may be used to delimit the end of the options;
+EOF will be returned, and the ``\-\-'' will be skipped.
 .SH DIAGNOSTICS
 .I Getopt
 prints an error message on
 .I stderr
-and returns a question mark
-.RB ( ? )
-when it encounters an option letter not included in
-.IR optstring .
-Setting \fIopterr\fP to a zero will disable this error message.
+and returns a question mark (``?'') when it encounters an option
+letter not included in
+.IR optstring ,
+or it encounters an option that requires an argument which is not
+supplied.
+Setting
+.I opterr
+to a zero will disable these error messages.
 .SH EXAMPLE
-The following code fragment shows how one might process the arguments
-for a command that can take the mutually exclusive options
-.B a
-and
-.BR b ,
-and the options
-.B f
-and
-.BR o ,
-both of which require arguments:
-.PP
-.RS
 .nf
-main(argc, argv)
-int argc;
-char **argv;
-{
-	int c;
-	extern int optind;
-	extern char *optarg;
-	\&.
-	\&.
-	\&.
-	while ((c = getopt(argc, argv, "abf:o:")) != EOF)
-		switch (c) {
-		case `a':
-			if (bflg)
-				errflg++;
-			else
-				aflg++;
-			break;
-		case `b':
-			if (aflg)
-				errflg++;
-			else
-				bproc();
-			break;
-		case `f':
-			ifile = optarg;
-			break;
-		case `o':
-			ofile = optarg;
-			break;
-		case `?':
-		default:
-			errflg++;
-			break;
-		}
-	if (errflg) {
-		fprintf(stderr, "Usage: ...");
-		exit(2);
-	}
-	for (; optind < argc; optind++) {
-		\&.
-		\&.
-		\&.
-	}
-	\&.
-	\&.
-	\&.
-}
-.RE
-.SH HISTORY
-Written by Henry Spencer, working from a Bell Labs manual page.
-.SH BUGS
-``-'' may be specified as an option letter, however it should never
-have an argument associated with it.  This allows \fIgetopt\fP to be
-used with programs that expect ``-'' as an option flag.  This practice
-is wrong, and should not be used in any current development, it is
-provided for backward compatibility \fBonly\fP.
-.PP
-It is possible to handle digits as option letters.  This allows
-\fIgetopt\fP to be used with programs that expect ``-#'' as an
-option flag. This practice is wrong, and should not be used in any
-current development, it is provided for backward compatibility
-\fBonly\fP.  The following code fragment, while not perfect, works
-fairly well.
-.RS
-.nf
+.in +5
+extern char *optarg;
+extern int optind;
+int bflag, ch, fd;
 
-	int minlen;
-	char *p;
-
-	minlen = -1;
-	while ((c = getopt(argc, argv, "0123456789")) != EOF)
-		switch (c) {
-		case '0': case '1': case '2': case '3': case '4':
-		case '5': case '6': case '7': case '8': case '9':
-			if (minlen == -1) {
-				p = argv[optind - 1];
-				if (p[0] == '-' && p[1] == ch && !p[2])
-					minlen = atoi(++p);
-				else
-					minlen = atoi(argv[optind] + 1);
-			}
-			break;
+bflag = 0;
+while ((ch = getopt(argc, argv, "bf:")) != EOF)
+	switch(ch) {
+	case 'b':
+		bflag = 1;
+		break;
+	case 'f':
+		if ((fd = open(optarg, O_RDONLY, 0)) < 0) {
+			(void)fprintf(stderr,
+			    "myname: unable to read file %s.\en", optarg);
+			exit(1);
 		}
+		break;
+	case '?':
+	default:
+		usage();
 	}
-	\&.
-	\&.
-	\&.
-.RE
+argc -= optind;
+argv += optind;
 .fi
+.SH BUGS
+Option arguments are allowed to begin with ``\-''; this is reasonable but
+reduces the amount of error checking possible.
 .PP
-Option arguments are allowed to begin with ``\-'';
-this is reasonable but reduces the amount of error checking possible.
+A single dash (``-'') may be specified as an character in
+.IR optstring ,
+however it should
+.B never
+have an argument associated with it.
+This allows
+.I getopt
+to be used with programs that expect ``-'' as an option flag.
+This practice is wrong, and should not be used in any current development.
+It is provided for backward compatibility
+.BR only .
 .PP
-.I Getopt
-is quite flexible but the obvious price must be paid:  there is much
-it could do that it doesn't, like
-checking mutually exclusive options, checking type of
-option arguments, etc.
+It is also possible to handle digits as option letters.
+This allows
+.I getopt
+to be used with programs that expect a number (``-3'') as an option.
+This practice is wrong, and should not be used in any current development.
+It is provided for backward compatibility
+.BR only .
+The following code fragment works fairly well.
+.sp
+.nf
+.in +5
+int length;
+char *p;
+
+while ((c = getopt(argc, argv, "0123456789")) != EOF)
+	switch (c) {
+	case '0': case '1': case '2': case '3': case '4':
+	case '5': case '6': case '7': case '8': case '9':
+		p = argv[optind - 1];
+		if (p[0] == '-' && p[1] == ch && !p[2])
+			length = atoi(++p);
+		else
+			length = atoi(argv[optind] + 1);
+		break;
+	}
+}
+.fi
