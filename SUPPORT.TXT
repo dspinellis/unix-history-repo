@@ -44,34 +44,21 @@ floppies and tape cartridges available.  System software development
 including drivers for non-standard equipment.
 
 
-Guy Helmer <ghelmer@alpha.dsu.edu>
-519 West Ave. South
-Madison, SD  57042
-Home: 605-256-2788
-Expires on 1995/06/30
-
-Interests: supporting FreeBSD & XFree86 installation, configuration,
-operation; Internet connection support; training.  Prefer short-term
-part-time projects in the northern midwest United States.  I reserve the
-right to refuse work.  Rates negotiable. 
-
-Degree: SDSM&T BS CS, 1989
-
-
 Jordan Hubbard
 Timberline Associates (est 1978)
-Dublin, Ireland
+Dublin, Ireland [And soon Boston / San Francisco]
 Support hours:  1000 - 2300 GMT
 Tel #:          00353-1-332796
 Email:          jkh@al.org
 
 
 Telephone and on-site consulting for FreeBSD for Ireland, the United
-Kingdom and most parts of Europe.  Services include installation,
-system configuration and custom software projects, graphical user
-interfaces a specialty (actively involved with The X Window System
-since Version 9).  Reasonable and flexible rates comeasurate with
-location and duration of assignment.
+States, United Kingdom and most parts of Europe.  Services include
+installation, system configuration, networking and custom software
+projects, graphical user interfaces a specialty (actively involved with
+The X Window System since Version 9 and contributor to the X Consortium).
+Reasonable and flexible rates comensurate with location and duration of
+assignment.  Internet assignments welcomed (and cheaper).
 
 
 
@@ -105,4 +92,4 @@ Public Domain Copies:
 
 
 
-$Id: SUPPORT.TXT,v 1.1 1994/01/16 00:27:31 rgrimes Exp $
+$Id: SUPPORT.TXT,v 1.2 1994/04/21 19:05:04 rgrimes Exp $
