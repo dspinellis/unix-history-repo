@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_fork.c	7.41 (Berkeley) %G%
+ *	@(#)kern_fork.c	7.42 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -176,7 +176,7 @@ again:
 	 * Increase reference counts on shared objects.
 	 * The p_stats and p_sigacts substructs are set in vm_fork.
 	 */
-	p2->p_flag = SLOAD | (p1->p_flag & SHPUX);
+	p2->p_flag = SLOAD;
 	if (p1->p_flag & SPROFIL)
 		startprofclock(p2);
 	MALLOC(p2->p_cred, struct pcred *, sizeof(struct pcred),
