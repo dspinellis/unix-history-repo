@@ -1,6 +1,19 @@
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * the University of Utah, and William Jolitz.
+ *
+ * %sccs.include.386.c%
+ *
+ *	@(#)segments.h	5.2 (Berkeley) %G%
+ */
+
 /*
  * 386 Segmentation Data Structures and definitions
  *	William F. Jolitz (william@ernie.berkeley.edu) 6/20/1989
+ * Copyright (c) 1989,1990 William F. Jolitz
  */
 
 /*
@@ -140,3 +153,12 @@ struct region_descriptor {
 	char *rd_base;			/* base address  */
 };
 
+/*
+ * Segment Protection Exception code bits
+ */
+
+#define	SEGEX_EXT	0x01	/* recursive or externally induced */
+#define	SEGEX_IDT	0x02	/* interrupt descriptor table */
+#define	SEGEX_TI	0x04	/* local descriptor table */
+				/* other bits are affected descriptor index */
+#define SEGEX_IDX(s)	((s)>>3)&0x1fff)
