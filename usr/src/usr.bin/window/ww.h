@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ww.h	3.51 (Berkeley) %G%
+ *	@(#)ww.h	3.52 (Berkeley) %G%
  */
 
 #include <sgtty.h>
@@ -237,7 +237,8 @@ char wwintr;		/* interrupting */
 char wwsetjmp;		/* want a longjmp() from wwrint() and wwchild() */
 jmp_buf wwjmpbuf;	/* jmpbuf for above */
 #define wwinterrupt()	wwintr
-#define wwsetintr()	(wwintr = 1, wwsetjmp ? longjmp(wwjmpbuf, 1) : 0)
+#define wwsetintr()	do { wwintr = 1; if (wwsetjmp) longjmp(wwjmpbuf, 1); } \
+			while (0)
 #define wwclrintr()	(wwintr = 0)
 
 	/* the window virtual terminal */
