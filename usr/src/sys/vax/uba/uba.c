@@ -1,4 +1,4 @@
-/*	uba.c	4.45	82/05/26	*/
+/*	uba.c	4.46	82/06/26	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -561,4 +561,23 @@ ubamem(uban, addr, size)
 			*m++ = 0;	/* All off, especially 'valid' */
 	}
 	return(a);
+}
+
+/*
+ * Map a virtual address into users address space. Actually all we
+ * do is turn on the user mode write protection bits for the particular
+ * page of memory involved.
+ */
+maptouser(vaddress)
+	caddr_t vaddress;
+{
+
+	Sysmap[(((unsigned)(vaddress))-0x80000000) >> 9].pg_prot = (PG_UW>>27);
+}
+
+unmaptouser(vaddress)
+	caddr_t vaddress;
+{
+
+	Sysmap[(((unsigned)(vaddress))-0x80000000) >> 9].pg_prot = (PG_KW>>27);
 }
