@@ -1,4 +1,4 @@
-/* in.h 4.8 82/02/03 */
+/* in.h 4.9 82/02/27 */
 
 /*
  * Constants and structures defined by the internet system,
@@ -9,7 +9,7 @@
  * Protocols
  */
 #define	IPPROTO_ICMP		1		/* control message protocol */
-#define	IPPROTO_GG		2		/* gateway^2 (deprecated) */
+#define	IPPROTO_GGP		2		/* gateway^2 (deprecated) */
 #define	IPPROTO_TCP		6		/* tcp */
 #define	IPPROTO_PUP		12		/* pup */
 #define	IPPROTO_UDP		17		/* user datagram protocol */
@@ -42,6 +42,8 @@
 #define	IPPORT_TTYLINK		87
 #define	IPPORT_SUPDUP		95
 
+#define	IPPORT_RESERVED		1024
+
 /*
  * Link numbers
  */
@@ -65,6 +67,8 @@ struct in_addr {
 #define	s_imp	S_un.S_un_w.s_w2	/* imp */
 #endif
 };
+
+#define	INADDR_ANY	0x00000000
 
 /*
  * Socket address, internet style.

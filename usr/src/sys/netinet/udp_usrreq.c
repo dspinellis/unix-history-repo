@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	4.19	82/01/19	*/
+/*	udp_usrreq.c	4.20	82/02/27	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -82,10 +82,11 @@ COUNT(UDP_INPUT);
 	}
 
 	/*
-	 * Locate pcb for datagram.
+	 * Locate pcb for datagram.  On wildcard match, update
+	 * control block to anchor network and host address.
 	 */
 	inp = in_pcblookup(&udb,
-	    ui->ui_src, ui->ui_sport, ui->ui_dst, ui->ui_dport);
+	    ui->ui_src, ui->ui_sport, ui->ui_dst, ui->ui_dport, 1);
 	if (inp == 0)
 		goto bad;
 
@@ -214,8 +215,11 @@ COUNT(UDP_USRREQ);
 		socantsendmore(so);
 		break;
 
-	case PRU_SEND:
+	case PRU_SEND: {
+		struct in_addr laddr;
+
 		if (addr) {
+			laddr = inp->inp_laddr;
 			if (inp->inp_faddr.s_addr)
 				return (EISCONN);
 			error = in_pcbconnect(inp, (struct sockaddr_in *)addr);
@@ -226,8 +230,11 @@ COUNT(UDP_USRREQ);
 				return (ENOTCONN);
 		}
 		udp_output(inp, m);
-		if (addr)
+		if (addr) {
 			in_pcbdisconnect(inp);
+			inp->inp_laddr = laddr;
+		}
+		}
 		break;
 
 	case PRU_ABORT:

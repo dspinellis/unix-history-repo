@@ -1,4 +1,4 @@
-/*	in_pcb.c	4.16	82/02/15	*/
+/*	in_pcb.c	4.17	82/02/27	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -59,26 +59,31 @@ in_pcbattach(so, head, sndcc, rcvcc, sin)
 {
 	struct mbuf *m;
 	register struct inpcb *inp;
-	struct ifnet *ifp;
-	u_short lport;
+	u_short lport = 0;
 
 COUNT(IN_PCBATTACH);
+	if (ifnet == 0)
+		return (EADDRNOTAVAIL);
 	if (sin) {
 		if (sin->sin_family != AF_INET)
 			return (EAFNOSUPPORT);
-		if (ifnet && sin->sin_addr.s_addr == 0)
-			sin->sin_addr = ifnet->if_addr;
-		ifp = if_ifwithaddr(sin->sin_addr);
+		if (sin->sin_addr.s_addr &&
+		    if_ifwithaddr(sin->sin_addr.s_addr) == 0)
+			return (EADDRNOTAVAIL);
 		lport = sin->sin_port;
-		if (lport &&
-		    in_pcblookup(head, zeroin_addr, 0, sin->sin_addr, lport))
-			return (EADDRINUSE);
-	} else {
-		ifp = ifnet;
-		lport = 0;
+		if (lport) {
+			u_short aport = lport;
+#if vax
+			aport = htons(aport);
+#endif
+			/* GROSS */
+			if (aport < IPPORT_RESERVED && u.u_uid != 0)
+				return (EPERM);
+			if (in_pcblookup(head,
+			    zeroin_addr, 0, sin->sin_addr, lport, 0))
+				return (EADDRINUSE);
+		}
 	}
-	if (ifp == 0)
-		return (EADDRNOTAVAIL);
 	m = m_getclr(M_DONTWAIT);
 	if (m == 0)
 		return (ENOBUFS);
@@ -88,21 +93,20 @@ COUNT(IN_PCBATTACH);
 		goto bad2;
 	inp = mtod(m, struct inpcb *);
 	inp->inp_head = head;
-	inp->inp_laddr = ifp->if_addr;
+	if (sin)
+		inp->inp_laddr = sin->sin_addr;
 	if (lport == 0)
 		do {
-			if (head->inp_lport++ < 1024)
-				head->inp_lport = 1024;
+			if (head->inp_lport++ < IPPORT_RESERVED)
+				head->inp_lport = IPPORT_RESERVED;
 			lport = htons(head->inp_lport);
-		} while (in_pcblookup(head, zeroin_addr, 0, inp->inp_laddr, lport));
+		} while (in_pcblookup(head,
+			    zeroin_addr, 0, inp->inp_laddr, lport, 0));
 	inp->inp_lport = lport;
 	inp->inp_socket = so;
 	insque(inp, head);
 	so->so_pcb = (caddr_t)inp;
-	sin = (struct sockaddr_in *)&so->so_addr;
-	sin->sin_family = AF_INET;
-	sin->sin_addr = inp->inp_laddr;
-	sin->sin_port = inp->inp_lport;
+	in_setsockaddr(inp);
 	return (0);
 bad2:
 	sbrelease(&so->so_snd);
@@ -115,30 +119,36 @@ in_pcbconnect(inp, sin)
 	struct inpcb *inp;
 	struct sockaddr_in *sin;
 {
-	struct inpcb *xp;
+	struct ifnet *ifp;
 
 COUNT(IN_PCBCONNECT);
 	if (sin->sin_family != AF_INET)
 		return (EAFNOSUPPORT);
 	if (sin->sin_addr.s_addr == 0 || sin->sin_port == 0)
 		return (EADDRNOTAVAIL);
-	xp = in_pcblookup(inp->inp_head, sin->sin_addr, sin->sin_port, inp->inp_laddr, inp->inp_lport);
-	if (xp->inp_faddr.s_addr)
+	if (inp->inp_laddr.s_addr == 0) {
+		ifp = if_ifonnetof(sin->sin_addr.s_addr);
+		if (ifp == 0)
+			ifp = ifnet;
+		inp->inp_laddr = ifp->if_addr;
+	}
+	if (in_pcblookup(inp->inp_head,
+	    sin->sin_addr, sin->sin_port, inp->inp_laddr, inp->inp_lport, 0))
 		return (EADDRINUSE);
 	inp->inp_faddr = sin->sin_addr;
 	inp->inp_fport = sin->sin_port;
 	return (0);
 }
 
-in_pcbconnaddr(inp, sp)
+in_setsockaddr(inp)
 	struct inpcb *inp;
-	struct sockaddr *sp;
 {
-	register struct sockaddr_in *sin = (struct sockaddr_in *)sp;
+	register struct sockaddr_in *sin =
+	    (struct sockaddr_in *)&inp->inp_socket->so_addr;
 
 	sin->sin_family = AF_INET;
-	sin->sin_port = inp->inp_fport;
-	sin->sin_addr = inp->inp_faddr;
+	sin->sin_addr = inp->inp_laddr;
+	sin->sin_port = inp->inp_lport;
 }
 
 in_pcbdisconnect(inp)
@@ -165,29 +175,51 @@ in_pcbdetach(inp)
 /*
  * Look for a control block to accept a segment.
  * First choice is an exact address match.
- * Second choice is a match of local address, with
- * unspecified foreign address.
+ * Second choice is a match with either the foreign or the local
+ * address specified.
+ *
+ * SHOULD ALLOW MATCH ON MULTI-HOMING ONLY
  */
 struct inpcb *
-in_pcblookup(head, faddr, fport, laddr, lport)
+in_pcblookup(head, faddr, fport, laddr, lport, enter)
 	struct inpcb *head;
 	struct in_addr faddr, laddr;
 	u_short fport, lport;
+	int enter;
 {
-	register struct inpcb *inp;
-	struct inpcb *match = 0;
+	register struct inpcb *inp, *match = 0;
+	int matchwild = 3, wildcard;
 
 	for (inp = head->inp_next; inp != head; inp = inp->inp_next) {
-		if (inp->inp_laddr.s_addr != laddr.s_addr ||
-		    inp->inp_lport != lport)
+		if (inp->inp_lport != lport)
 			continue;
-		if (inp->inp_faddr.s_addr == 0) {
-			match = inp;
-			continue;
+		wildcard = 0;
+		if (inp->inp_laddr.s_addr != 0) {
+			if (inp->inp_laddr.s_addr != laddr.s_addr)
+				continue;
+		} else {
+			if (laddr.s_addr != 0)
+				wildcard++;
 		}
-		if (inp->inp_faddr.s_addr == faddr.s_addr &&
-		    inp->inp_fport == fport)
-			return (inp);
+		if (inp->inp_faddr.s_addr != 0) {
+			if (inp->inp_faddr.s_addr != faddr.s_addr)
+				continue;
+		} else {
+			if (faddr.s_addr != 0)
+				wildcard++;
+		}
+		if (enter == 0 && wildcard)
+			continue;
+		if (wildcard < matchwild) {
+			match = inp;
+			matchwild = wildcard;
+			if (matchwild == 0)
+				break;
+		}
+	}
+	if (match && enter) {
+		match->inp_laddr = laddr;
+		in_setsockaddr(match);
 	}
 	return (match);
 }

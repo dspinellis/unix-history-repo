@@ -1,4 +1,4 @@
-/* tcp_usrreq.c 1.51 82/02/25 */
+/* tcp_usrreq.c 1.52 82/02/27 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -154,7 +154,6 @@ COUNT(TCP_USRREQ);
 	 * of the peer, storing through addr.
 	 */
 	case PRU_ACCEPT:
-		in_pcbconnaddr(inp, (struct sockaddr *)addr);
 		break;
 
 	/*
