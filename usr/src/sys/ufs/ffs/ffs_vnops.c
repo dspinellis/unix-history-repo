@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vnops.c	7.67 (Berkeley) %G%
+ *	@(#)ffs_vnops.c	7.68 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -180,7 +180,7 @@ ffs_read(vp, uio, ioflag, cred)
 	register struct fs *fs;
 	struct buf *bp;
 	daddr_t lbn, bn, rablock;
-	int size, diff, error = 0;
+	int size, rasize, diff, error = 0;
 	long n, on, type;
 
 #ifdef DIAGNOSTIC
@@ -208,10 +208,11 @@ ffs_read(vp, uio, ioflag, cred)
 		size = blksize(fs, ip, lbn);
 		rablock = lbn + 1;
 		if (vp->v_lastr + 1 == lbn &&
-		    lblktosize(fs, rablock) < ip->i_size)
-			error = breada(ITOV(ip), lbn, size, rablock,
-				blksize(fs, ip, rablock), NOCRED, &bp);
-		else
+		    lblktosize(fs, rablock) < ip->i_size) {
+			rasize = blksize(fs, ip, rablock);
+			error = breadn(ITOV(ip), lbn, size, &rablock,
+				&rasize, 1, NOCRED, &bp);
+		} else
 			error = bread(ITOV(ip), lbn, size, NOCRED, &bp);
 		vp->v_lastr = lbn;
 		n = MIN(n, size - bp->b_resid);

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vnops.c	7.75 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	7.76 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -210,8 +210,8 @@ lfs_read(vp, uio, ioflag, cred)
 		rablock = lbn + 1;
 		if (vp->v_lastr + 1 == lbn &&
 		    lblktosize(fs, rablock) < ip->i_size)
-			error = breada(ITOV(ip), lbn, size, rablock,
-				blksize(fs), NOCRED, &bp);
+			error = breadn(ITOV(ip), lbn, size, &rablock,
+				&size, 1, NOCRED, &bp);
 		else
 			error = bread(ITOV(ip), lbn, size, NOCRED, &bp);
 		vp->v_lastr = lbn;
