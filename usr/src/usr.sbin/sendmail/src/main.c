@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.26 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -1252,6 +1252,10 @@ disconnect(droplev, e)
 		(void) setsid();
 		errno = 0;
 	}
+
+#ifdef XDEBUG
+	checkfd012("disconnect");
+#endif
 
 # ifdef LOG
 	if (LogLevel > 71)
