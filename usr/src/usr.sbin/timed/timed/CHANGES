@@ -1,4 +1,13 @@
-#	@(#)CHANGES	5.1 (Berkeley) %G%
+#	@(#)CHANGES	5.2 (Berkeley) %G%
+
+Jan 1995
+    fix unlikely loop in median computation in networkdelta.c
+    add missing htonl() which caused craziness on little endian machines
+    fix initialization of socket in timed.c
+ vjs
+
+
+--------
 
 This new version is almost identical to the timed and timedc code
 that has been shipped for years by a workstation vendor.
