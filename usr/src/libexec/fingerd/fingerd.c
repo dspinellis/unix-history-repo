@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fingerd.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)fingerd.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -30,7 +30,6 @@ static char sccsid[] = "@(#)fingerd.c	5.2 (Berkeley) %G%";
  */
 #include <sys/types.h>
 #include <netinet/in.h>
-
 #include <stdio.h>
 #include <ctype.h>
 
@@ -48,12 +47,11 @@ main(argc, argv)
 	i = sizeof (sin);
 	if (getpeername(0, &sin, &i) < 0)
 		fatal(argv[0], "getpeername");
-	line[0] = '\0';
-	gets(line);
+	if (fgets(line, sizeof(line), stdin) == NULL)
+		exit(1);
 	sp = line;
 	av[0] = "finger";
-	i = 1;
-	while (1) {
+	for (i = 1;;) {
 		while (isspace(*sp))
 			sp++;
 		if (!*sp)
@@ -100,7 +98,6 @@ main(argc, argv)
 fatal(prog, s)
 	char *prog, *s;
 {
-
 	fprintf(stderr, "%s: ", prog);
 	perror(s);
 	exit(1);
