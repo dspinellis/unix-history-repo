@@ -1,7 +1,7 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)type.c 2.1 %G%";
+static char sccsid[] = "@(#)type.c 1.8.1.1 %G%";
 #endif
 
 #include "whoami.h"
@@ -76,9 +76,11 @@ type(tline, tid, tdecl)
 	register struct tnode *tdecl;
 {
 	register struct nl *np;
+	struct nl *tnp;
 
 	np = gtype(tdecl);
 	line = tline;
+	tnp = defnl(tid, TYPE, np, 0);
 #ifndef PI0
 	enter(defnl(tid, TYPE, np, 0))->nl_flags |= (char) NMOD;
 #else
@@ -88,7 +90,9 @@ type(tline, tid, tdecl)
 
 #ifdef PC
 	if (cbn == 1) {
-	    stabgtype( tid , line );
+	    stabgtype(tid, np, line);
+	} else {
+	    stabltype(tid, np);
 	}
 #endif PC
 
@@ -435,6 +439,9 @@ foredecl()
 				pDEF( p -> inTree ).PtrTType = PtrTo;
 			    }
 			}
+#			endif
+#			ifdef PC
+			    fixfwdtype(p);
 #			endif
 			p -> ptr[0] = 0;
 		}
