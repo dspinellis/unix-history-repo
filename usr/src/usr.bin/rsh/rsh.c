@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rsh.c	4.7 83/02/23";
+static char sccsid[] = "@(#)rsh.c	4.8 83/06/10";
 #endif
 
 #include <sys/types.h>
@@ -29,6 +29,8 @@ int	options;
 int	rfd2;
 int	sendsig();
 
+#define	mask(s)	(1 << ((s) - 1))
+
 main(argc, argv0)
 	int argc;
 	char **argv0;
@@ -41,6 +43,7 @@ main(argc, argv0)
 	int readfrom, ready;
 	int one = 1;
 	struct servent *sp;
+	int omask;
 
 	host = rindex(argv[0], '/');
 	if (host)
@@ -123,7 +126,10 @@ another:
 			perror("setsockopt (stderr)");
 	}
 	(void) setuid(getuid());
-	sigacts(SIG_HOLD);
+	omask = sigblock(mask(SIGINT)|mask(SIGQUIT)|mask(SIGTERM));
+	signal(SIGINT, sendsig);
+	signal(SIGQUIT, sendsig);
+	signal(SIGTERM, sendsig);
         pid = fork();
         if (pid < 0) {
 		perror("fork");
@@ -165,7 +171,7 @@ another:
 		(void) shutdown(rem, 1);
 		exit(0);
 	}
-	sigacts(sendsig);
+	sigsetmask(omask);
 	readfrom = (1<<rfd2) | (1<<rem);
 	do {
 		ready = readfrom;
@@ -201,15 +207,6 @@ usage:
 	fprintf(stderr,
 	    "usage: rsh host [ -l login ] [ -p passwd ] command\n");
 	exit(1);
-}
-
-sigacts(state)
-	int (*state)();
-{
-
-	sigset(SIGINT, state);
-	sigset(SIGQUIT, state);
-	sigset(SIGTERM, state);
 }
 
 sendsig(signo)

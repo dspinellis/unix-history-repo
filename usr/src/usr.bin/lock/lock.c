@@ -1,13 +1,16 @@
-static char *sccsid = "@(#)lock.c	4.2 (Berkeley) %G%";
+#ifndef lint
+static char *sccsid = "@(#)lock.c	4.3 (Berkeley) %G%";
+#endif
+
+/*
+ * Lock a terminal up until the knowledgeable Joe returns.
+ */
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <signal.h>
 #include <sgtty.h>
 
-/*
- * Lock a terminal up until the knowledgeable Joe returns.
- */
 char	masterp[] =	"hasta la vista\n";
 struct	sgttyb tty, ntty;
 char	s[BUFSIZ], s1[BUFSIZ];
@@ -18,22 +21,15 @@ main(argc, argv)
 	register int t;
 	struct stat statb;
 
-	
-	/*
-	 *	Ignore signals generated from tty keyboard.  These signals
-	 *	are for xBSD only.  This program should be compiled with
-	 *	the jobs library (cc ... -ljobs).
-	 */
-	sigset( SIGINT, SIG_IGN ); 
-	sigset( SIGQUIT, SIG_IGN ); 
-	sigset( SIGTSTP, SIG_IGN ); 
-
+	signal(SIGINT, SIG_IGN);
+	signal(SIGQUIT, SIG_IGN);
+	signal(SIGTSTP, SIG_IGN);
 	if (argc > 0)
 		argv[0] = 0;
-	if (gtty(0, &tty))
+	if (ioctl(0, TIOCGETP, &tty))
 		exit(1);
 	ntty = tty; ntty.sg_flags &= ~ECHO;
-	stty(0, &ntty);
+	ioctl(0, TIOCSETN, &ntty);
 	printf("Key: ");
 	fgets(s, sizeof s, stdin);
 	printf("\nAgain: ");
@@ -52,8 +48,8 @@ main(argc, argv)
 		if (strcmp(s, masterp) == 0)
 			break;
 		putchar(07);
-		if (gtty(0, &ntty))
+		if (ioctl(0, TIOCGETP, &ntty))
 			exit(1);
 	}
-	stty(0, &tty);
+	ioctl(0, TIOCSETN, &tty);
 }

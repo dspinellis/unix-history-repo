@@ -1,7 +1,10 @@
 #ifndef lint
-static char sccsid[] = "@(#)rlogin.c	4.12 83/04/30";
+static char sccsid[] = "@(#)rlogin.c	4.13 83/06/10";
 #endif
 
+/*
+ * rlogin - remote login
+ */
 #include <sys/types.h>
 #include <sys/socket.h>
 
@@ -15,9 +18,6 @@ static char sccsid[] = "@(#)rlogin.c	4.12 83/04/30";
 #include <netdb.h>
 #include <wait.h>
 
-/*
- * rlogin - remote login
- */
 char	*index(), *rindex(), *malloc(), *getenv();
 struct	passwd *getpwuid();
 char	*name;
@@ -93,7 +93,7 @@ another:
 		strcat(term, "/");
 		strcat(term, speeds[ttyb.sg_ospeed]);
 	}
-	sigset(SIGPIPE, lostpeer);
+	signal(SIGPIPE, lostpeer);
         rem = rcmd(&host, sp->s_port, pwd->pw_name,
 	    name ? name : pwd->pw_name, term, 0);
         if (rem < 0)
@@ -138,15 +138,15 @@ doit()
 	ioctl(0, TIOCCGET, (char *)&deftc);
 	notc.tc_startc = deftc.tc_startc;
 	notc.tc_stopc = deftc.tc_stopc;
-	sigset(SIGINT, exit);
-	sigset(SIGHUP, exit);
-	sigset(SIGQUIT, exit);
+	signal(SIGINT, exit);
+	signal(SIGHUP, exit);
+	signal(SIGQUIT, exit);
 	child = fork();
 	if (child == -1) {
 		perror("rlogin: fork");
 		done();
 	}
-	sigignore(SIGINT);
+	signal(SIGINT, SIG_IGN);
 	mode(1);
 	if (child == 0) {
 		reader();
@@ -154,7 +154,7 @@ doit()
 		prf("\007Connection closed.");
 		exit(3);
 	}
-	sigset(SIGCHLD, catchild);
+	signal(SIGCHLD, catchild);
 	writer();
 	prf("Closed connection.");
 	done();
@@ -245,10 +245,10 @@ top:
 				    cmdc == deftc.tc_dsuspc) {
 					write(0, CRLF, sizeof(CRLF));
 					mode(0);
-					sigignore(SIGCHLD);
+					signal(SIGCHLD, SIG_IGN);
 					kill(cmdc == deftc.tc_suspc ?
 					  0 : getpid(), SIGTSTP);
-					sigrelse(SIGCHLD);
+					signal(SIGCHLD, catchild);
 					mode(1);
 					goto top;
 				}
@@ -287,7 +287,7 @@ oob()
 			break;
 		(void) read(rem, waste, sizeof (waste));
 	}
-	recv(rem, &mark, 1, SOF_OOB);
+	recv(rem, &mark, 1, MSG_OOB);
 	if (mark & TIOCPKT_NOSTOP) {
 		notc.tc_stopc = -1;
 		notc.tc_startc = -1;
@@ -308,7 +308,7 @@ reader()
 	char rb[BUFSIZ];
 	register int cnt;
 
-	sigset(SIGURG, oob);
+	signal(SIGURG, oob);
 	{ int pid = -getpid();
 	  ioctl(rem, SIOCSPGRP, (char *)&pid); }
 	for (;;) {
@@ -364,7 +364,7 @@ prf(f, a1, a2, a3)
 
 lostpeer()
 {
-	sigignore(SIGPIPE);
+	signal(SIGPIPE, SIG_IGN);
 	prf("\007Connection closed.");
 	done();
 }
