@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.115 (Berkeley) %G%
+ *	@(#)conf.h	8.116 (Berkeley) %G%
  */
 
 /*
@@ -108,7 +108,7 @@
 **  HP-UX -- tested for 8.07, 9.00, and 9.01.
 */
 
-# ifdef __hpux
+#ifdef __hpux
 /* avoid m_flags conflict between db.h & sys/sysmacros.h on HP 300 */
 # undef m_flags
 # define SYSTEM5	1	/* include all the System V defines */
@@ -132,21 +132,20 @@
 # ifdef __STDC__
 extern int	syslog(int, char *, ...);
 # endif
-# endif
+#endif
 
 
 /*
 **  IBM AIX 3.x -- actually tested for 3.2.3
 */
 
-# ifdef _AIX3
+#ifdef _AIX3
 # define HASINITGROUPS	1	/* has initgroups(3) call */
 # define HASUNAME	1	/* use System V uname(2) system call */
 # define HASGETUSERSHELL 0	/* does not have getusershell(3) call */
 # define FORK		fork	/* no vfork primitive available */
-# undef  SETPROCTITLE		/* setproctitle confuses AIX */
 # define SFS_TYPE	SFS_STATFS	/* use <sys/statfs.h> statfs() impl */
-# endif
+#endif
 
 
 /*
@@ -155,7 +154,7 @@ extern int	syslog(int, char *, ...);
 **	Compiles on 4.0.1.
 */
 
-# ifdef IRIX
+#ifdef IRIX
 # define SYSTEM5	1	/* this is a System-V derived system */
 # define HASSETREUID	1	/* has setreuid(2) call */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
@@ -167,7 +166,7 @@ extern int	syslog(int, char *, ...);
 # define SFS_TYPE	SFS_4ARGS	/* four argument statfs() call */
 # define LA_TYPE	LA_INT
 # define NAMELISTMASK	0x7fffffff	/* mask for nlist() values */
-# endif
+#endif
 
 
 /*
