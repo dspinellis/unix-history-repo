@@ -6,20 +6,30 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tty.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)tty.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
-/*
- * Terminal initialization routines.
- */
 #include <sys/ioctl.h>
 
 #include <curses.h>
 #include <termios.h>
 #include <unistd.h>
 
+/*
+ * In general, curses should leave tty hardware settings alone (speed, parity,
+ * word size).  This is most easily done in BSD by using TCSASOFT on all
+ * tcsetattr calls.  On other systems, it would be better to get and restore
+ * those attributes at each change, or at least when stopped and restarted.
+ * See also the comments in getterm().
+ */
+#ifdef TCSASOFT
+#define	TCACTION (TCSASOFT | TCSADRAIN)		/* ignore hardware settings */
+#else
+#define	TCACTION  TCSADRAIN
+#endif
+
 struct termios __orig_termios;
-static struct termios norawt, rawt;
+static struct termios baset, cbreakt, rawt, *curt;
 static int useraw;
 
 #ifndef	OXTABS
@@ -45,8 +55,8 @@ gettmode()
 	GT = (__orig_termios.c_oflag & OXTABS) == 0;
 	NONL = (__orig_termios.c_oflag & ONLCR) == 0;
 
-	norawt = __orig_termios;
-	norawt.c_oflag &= ~OXTABS;
+	baset = __orig_termios;
+	baset.c_oflag &= ~OXTABS;
 
 	/*
 	 * XXX
@@ -55,78 +65,87 @@ gettmode()
 	 * as the VEOL element.  This means that, if VEOF was ^D, the
 	 * default VMIN is 4.  Majorly stupid.
 	 */
-	rawt = norawt;
-	cfmakeraw(&rawt);
-	rawt.c_cc[VMIN] = 1;
-	rawt.c_cc[VTIME] = 0;
+	cbreakt = baset;
+	cbreakt.c_lflag &= ~ICANON;
+	cbreakt.c_cc[VMIN] = 1;
+	cbreakt.c_cc[VTIME] = 0;
 
-	return (tcsetattr(STDIN_FILENO, TCSADRAIN, &norawt) ? ERR : OK);
+	rawt = cbreakt;
+	rawt.c_iflag &= ~(IGNBRK|BRKINT|PARMRK|INLCR|IGNCR|ICRNL|IXON);
+	rawt.c_oflag &= ~OPOST;
+	rawt.c_lflag &= ~(ECHO|ECHONL|ICANON|ISIG|IEXTEN);
+#if 0
+	/*
+	 * In general, curses should leave hardware-related settings alone.
+	 * This includes parity and word size.  Older versions set the tty
+	 * to 8 bits, no parity in raw(), but this is considered to be an
+	 * artifact of the old tty interface.  If it's desired to change
+	 * parity and word size, the TCSASOFT bit would have to be removed
+	 * from the calls that switch to/from "raw" mode.
+	 */
+	rawt.c_iflag &= ~ISTRIP;
+	rawt.c_cflag &= ~(CSIZE|PARENB);
+	rawt.c_cflag |= CS8;
+#endif
+
+	curt = &baset;
+	return (tcsetattr(STDIN_FILENO, TCACTION, &baset) ? ERR : OK);
 }
 
 int
 raw()
 {
 	useraw = __pfast = __rawmode = 1;
-	return (tcsetattr(STDIN_FILENO, TCSADRAIN, &rawt));
+	curt = &rawt;
+	return (tcsetattr(STDIN_FILENO, TCACTION, &rawt));
 }
 
 int
 noraw()
 {
 	useraw = __pfast = __rawmode = 0;
-	return (tcsetattr(STDIN_FILENO, TCSADRAIN, &norawt));
+	curt = &baset;
+	return (tcsetattr(STDIN_FILENO, TCACTION, &baset));
 }
 
 int
 cbreak()
 {
-	rawt.c_lflag &= ~ICANON;
-	norawt.c_lflag &= ~ICANON;
 
 	__rawmode = 1;
-	if (useraw)
-		return (tcsetattr(STDIN_FILENO, TCSADRAIN, &rawt));
-	else
-		return (tcsetattr(STDIN_FILENO, TCSADRAIN, &norawt));
+	curt = useraw ? &rawt : &cbreakt;
+	return (tcsetattr(STDIN_FILENO, TCACTION, curt));
 }
 
 int
 nocbreak()
 {
-	rawt.c_lflag |= ICANON;
-	norawt.c_lflag |= ICANON;
 
 	__rawmode = 0;
-	if (useraw) 
-		return (tcsetattr(STDIN_FILENO, TCSADRAIN, &rawt));
-	else
-		return (tcsetattr(STDIN_FILENO, TCSADRAIN, &norawt));
+	curt = useraw ? &rawt : &baset;
+	return (tcsetattr(STDIN_FILENO, TCACTION, curt));
 }
 	
 int
 echo()
 {
 	rawt.c_lflag |= ECHO;
-	norawt.c_lflag |= ECHO;
+	cbreakt.c_lflag |= ECHO;
+	baset.c_lflag |= ECHO;
 	
 	__echoit = 1;
-	if (useraw) 
-		return (tcsetattr(STDIN_FILENO, TCSADRAIN, &rawt));
-	else
-		return (tcsetattr(STDIN_FILENO, TCSADRAIN, &norawt));
+	return (tcsetattr(STDIN_FILENO, TCACTION, curt));
 }
 
 int
 noecho()
 {
 	rawt.c_lflag &= ~ECHO;
-	norawt.c_lflag &= ~ECHO;
+	cbreakt.c_lflag &= ~ECHO;
+	baset.c_lflag &= ~ECHO;
 	
 	__echoit = 0;
-	if (useraw) 
-		return (tcsetattr(STDIN_FILENO, TCSADRAIN, &rawt));
-	else
-		return (tcsetattr(STDIN_FILENO, TCSADRAIN, &norawt));
+	return (tcsetattr(STDIN_FILENO, TCACTION, curt));
 }
 
 int
@@ -134,14 +153,13 @@ nl()
 {
 	rawt.c_iflag |= ICRNL;
 	rawt.c_oflag |= ONLCR;
-	norawt.c_iflag |= ICRNL;
-	norawt.c_oflag |= ONLCR;
+	cbreakt.c_iflag |= ICRNL;
+	cbreakt.c_oflag |= ONLCR;
+	baset.c_iflag |= ICRNL;
+	baset.c_oflag |= ONLCR;
 
 	__pfast = __rawmode;
-	if (useraw) 
-		return (tcsetattr(STDIN_FILENO, TCSADRAIN, &rawt));
-	else
-		return (tcsetattr(STDIN_FILENO, TCSADRAIN, &norawt));
+	return (tcsetattr(STDIN_FILENO, TCACTION, curt));
 }
 
 int
@@ -149,14 +167,13 @@ nonl()
 {
 	rawt.c_iflag &= ~ICRNL;
 	rawt.c_oflag &= ~ONLCR;
-	norawt.c_iflag &= ~ICRNL;
-	norawt.c_oflag &= ~ONLCR;
+	cbreakt.c_iflag &= ~ICRNL;
+	cbreakt.c_oflag &= ~ONLCR;
+	baset.c_iflag &= ~ICRNL;
+	baset.c_oflag &= ~ONLCR;
 
 	__pfast = 1;
-	if (useraw) 
-		return (tcsetattr(STDIN_FILENO, TCSADRAIN, &rawt));
-	else
-		return (tcsetattr(STDIN_FILENO, TCSADRAIN, &norawt));
+	return (tcsetattr(STDIN_FILENO, TCACTION, curt));
 }
 
 void
@@ -185,7 +202,7 @@ endwin()
 	(void)fflush(stdout);
 	(void)setvbuf(stdout, NULL, _IOLBF, 0);
 
-	return (tcsetattr(STDIN_FILENO, TCSADRAIN, &__orig_termios));
+	return (tcsetattr(STDIN_FILENO, TCACTION, &__orig_termios));
 }
 
 /*
@@ -203,5 +220,5 @@ savetty()
 int
 resetty()
 {
-	return (tcsetattr(STDIN_FILENO, TCSADRAIN, &savedtty));
+	return (tcsetattr(STDIN_FILENO, TCACTION, &savedtty));
 }
