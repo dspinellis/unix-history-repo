@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)weekly	5.15 (Berkeley) %G%
+#	@(#)weekly	5.16 (Berkeley) %G%
 #
 
 PATH=/bin:/sbin:/usr/sbin:/usr/bin:/usr/libexec
@@ -28,7 +28,7 @@ then
 		owner=`awk '{ print $3 }' $file`
 		echo "$owner	$file"
 		echo $file >> $TDIR/$owner
-	done | sed -e 's,SCCS/p.,, | sort'
+	done | sed -e 's,SCCS/p.,,' | sort
 	for file in $TDIR/*; do
 		sed -e 's,SCCS/p.,,' $file | \
 		    Mail -s 'checked out files' `basename $file`
