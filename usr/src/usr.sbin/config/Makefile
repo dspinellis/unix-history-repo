@@ -1,21 +1,22 @@
 #
-# Copyright (c) 1980 Regents of the University of California.
+# Copyright (c) 1987 Regents of the University of California.
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.5	(Berkeley)	%G%
 #
-#
-CFILES=	y.tab.c main.c lex.yy.c mkioconf.c mkmakefile.c \
+CFLAGS=	-O
+LIBC=	/lib/libc.a
+LIBS=	-ll
+SRCS=	y.tab.c main.c lex.yy.c mkioconf.c mkmakefile.c \
 	mkglue.c mkheaders.c mkswapconf.c
 OBJS=	y.tab.o main.o lex.yy.o mkioconf.o mkmakefile.o \
 	mkglue.o mkheaders.o mkswapconf.o
 
-CFLAGS=-O
-LDFLAGS=-ll
+all: config
 
-config: ${OBJS}
-	${CC} ${OBJS} -o config ${LDFLAGS}
+config: ${OBJS} ${LIBC}
+	${CC} -o $@ ${OBJS} ${LIBS}
 
 lex.yy.c: config.l
 	lex config.l
@@ -26,39 +27,41 @@ y.tab.h:
 y.tab.c: config.y
 	yacc config.y
 
-clean:
-	rm -f ${OBJS} lex.yy.c y.tab.c y.tab.h config
+clean: FRC
+	rm -f ${OBJS} lex.yy.c y.tab.c y.tab.h config core
 
-install:
-	install -s config ${DESTDIR}/etc/config
+depend: y.tab.c lex.yy.c y.tab.h FRC
+	mkdep ${CFLAGS} ${SRCS}
 
-lint: ${CFILES}
-	lint ${CFILES}
+install: FRC
+	install -s -o bin -g bin -m 755 config ${DESTDIR}/etc/config
 
-depend:
-	grep '^#include' ${CFILES} | grep -v '<' | \
-	sed -e 's/:[^"]*"\([^"]*\)".*/: \1/' \
-	    -e 's/\.c/.o/' \
-	    -e 's,../[a-zA-Z]*/,,' | \
-	awk ' { if ($$1 != prev) { print rec; rec = $$0; prev = $$1; } \
-		else { if (length(rec $$2) > 78) { print rec; rec = $$0; } \
-		       else rec = rec " " $$2 } } \
-	      END { print rec } ' > makedep
-	echo '$$r makedep' >>eddep
-	echo '/^# DO NOT DELETE THIS LINE/+1,$$d' >eddep
-	echo '$$r makedep' >>eddep
-	echo 'w' >>eddep
-	cp Makefile Makefile.bak
-	ed - Makefile < eddep
-	rm eddep makedep
+lint: FRC
+	lint ${CFLAGS} ${SRCS}
 
-# DO NOT DELETE THIS LINE -- make depend uses it
+tags: FRC
+	ctags ${SRCS}
 
-y.tab.o: config.h
-main.o: y.tab.h config.h
-lex.yy.o: y.tab.h config.h
-mkioconf.o: y.tab.h config.h
-mkmakefile.o: y.tab.h config.h
-mkglue.o: config.h y.tab.h
-mkheaders.o: config.h y.tab.h
-mkswapconf.o: config.h
+FRC:
+
+# DO NOT DELETE THIS LINE -- mkdep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
+
+y.tab.o: y.tab.c config.h /usr/include/sys/types.h /usr/include/ctype.h
+y.tab.o: /usr/include/stdio.h
+main.o: main.c /usr/include/stdio.h /usr/include/ctype.h y.tab.h config.h
+main.o: /usr/include/sys/types.h
+lex.yy.o: lex.yy.c /usr/include/stdio.h /usr/include/ctype.h y.tab.h config.h
+lex.yy.o: /usr/include/sys/types.h
+mkioconf.o: mkioconf.c /usr/include/stdio.h y.tab.h config.h
+mkioconf.o: /usr/include/sys/types.h
+mkmakefile.o: mkmakefile.c /usr/include/stdio.h /usr/include/ctype.h y.tab.h
+mkmakefile.o: config.h /usr/include/sys/types.h
+mkglue.o: mkglue.c /usr/include/stdio.h config.h /usr/include/sys/types.h
+mkglue.o: y.tab.h /usr/include/ctype.h
+mkheaders.o: mkheaders.c /usr/include/stdio.h /usr/include/ctype.h config.h
+mkheaders.o: /usr/include/sys/types.h y.tab.h
+mkswapconf.o: mkswapconf.c config.h /usr/include/sys/types.h
+mkswapconf.o: /usr/include/stdio.h /usr/include/ctype.h
+
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY

@@ -1,5 +1,5 @@
 #
-#	Makefile	4.6	87/05/31
+#	Makefile	4.7	87/06/02
 #
 DESTDIR= 
 DFLAGS = -DADB

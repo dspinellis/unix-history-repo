@@ -1,69 +1,63 @@
 #
-# Copyright (c) 1983 Regents of the University of California.
+# Copyright (c) 1987 Regents of the University of California.
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.5	(Berkeley)	%G%
 #
-DESTDIR=
-OBJS=	talkd.o announce.o process.o table.o print.o
+CFLAGS=	-O
+LIBC=	/lib/libc.a
 SRCS=	talkd.c announce.c process.c table.c print.c
-CFLAGS= -O
+OBJS=	talkd.o announce.o process.o table.o print.o
 
-all:	talkd
+all: talkd
 
-talkd: ${OBJS}
-	cc ${CFLAGS} -o talkd ${OBJS}
+talkd:	${OBJS} ${LIBC}
+	${CC} -o $@ ${CFLAGS} ${OBJS}
 
-install: talkd
-	install -s talkd ${DESTDIR}/etc/ntalkd
+clean: FRC
+	rm -f ${OBJS} core talkd
 
-clean:
-	rm -f ${OBJS} errs core a.out talkd
+depend: FRC
+	mkdep ${CFLAGS} ${SRCS}
 
-tags:	${SRCS}
-	ctags ${SOURCE}
+install: FRC
+	install -s -o bin -g bin -m 755 talkd ${DESTDIR}/etc/ntalkd
 
-depend: ${SRCS}
-	for i in ${SRCS}; do \
-	    cc -M $$i | sed 's/\.o//' | \
-	    awk ' { if ($$1 != prev) \
-		{ if (rec != "") print rec; rec = $$0; prev = $$1; } \
-		else { if (length(rec $$2) > 78) { print rec; rec = $$0; } \
-		else rec = rec " " $$2 } } \
-		END { print rec } ' >> makedep; done
-	echo '/^# DO NOT DELETE THIS LINE/+2,$$d' >eddep
-	echo '$$r makedep' >>eddep
-	echo 'w' >>eddep
-	cp Makefile Makefile.bak
-	ed - Makefile < eddep
-	rm eddep makedep
-	echo '# DEPENDENCIES MUST END AT END OF FILE' >> Makefile
-	echo '# IF YOU PUT STUFF HERE IT WILL GO AWAY' >> Makefile
-	echo '# see make depend above' >> Makefile
+lint: FRC
+	lint ${CFLAGS} ${SRCS}
 
-# DO NOT DELETE THIS LINE -- make depend uses it
+tags: FRC
+	ctags ${SRCS}
 
-talkd: talkd.c /usr/include/stdio.h /usr/include/errno.h /usr/include/signal.h
-talkd: /usr/include/syslog.h /usr/include/protocols/talkd.h
-talkd: /usr/include/sys/types.h /usr/include/sys/socket.h
-announce: announce.c /usr/include/sys/types.h /usr/include/sys/stat.h
-announce: /usr/include/sgtty.h /usr/include/sys/ioctl.h
-announce: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-announce: /usr/include/sys/ioctl.h /usr/include/sys/time.h /usr/include/time.h
-announce: /usr/include/stdio.h /usr/include/sys/wait.h /usr/include/errno.h
-announce: /usr/include/syslog.h /usr/include/protocols/talkd.h
-announce: /usr/include/sys/types.h /usr/include/sys/socket.h
-process: process.c /usr/include/sys/types.h /usr/include/sys/stat.h
-process: /usr/include/stdio.h /usr/include/syslog.h /usr/include/netdb.h
-process: /usr/include/netinet/in.h /usr/include/protocols/talkd.h
-process: /usr/include/sys/types.h /usr/include/sys/socket.h /usr/include/utmp.h
-table: table.c /usr/include/stdio.h /usr/include/sys/time.h /usr/include/time.h
-table: /usr/include/syslog.h /usr/include/protocols/talkd.h
-table: /usr/include/sys/types.h /usr/include/sys/socket.h
-print: print.c /usr/include/stdio.h /usr/include/syslog.h
-print: /usr/include/protocols/talkd.h /usr/include/sys/types.h
-print: /usr/include/sys/socket.h
-# DEPENDENCIES MUST END AT END OF FILE
-# IF YOU PUT STUFF HERE IT WILL GO AWAY
-# see make depend above
+FRC:
+
+# DO NOT DELETE THIS LINE -- mkdep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
+
+talkd.o: talkd.c /usr/include/stdio.h /usr/include/errno.h
+talkd.o: /usr/include/signal.h /usr/include/syslog.h
+talkd.o: /usr/include/protocols/talkd.h /usr/include/sys/types.h
+talkd.o: /usr/include/sys/socket.h
+announce.o: announce.c /usr/include/sys/types.h /usr/include/sys/stat.h
+announce.o: /usr/include/sgtty.h /usr/include/sys/ioctl.h
+announce.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+announce.o: /usr/include/sys/ioctl.h /usr/include/sys/time.h
+announce.o: /usr/include/time.h /usr/include/stdio.h /usr/include/sys/wait.h
+announce.o: /usr/include/machine/machparam.h /usr/include/errno.h
+announce.o: /usr/include/syslog.h /usr/include/protocols/talkd.h
+announce.o: /usr/include/sys/types.h /usr/include/sys/socket.h
+process.o: process.c /usr/include/sys/types.h /usr/include/sys/stat.h
+process.o: /usr/include/stdio.h /usr/include/syslog.h /usr/include/netdb.h
+process.o: /usr/include/netinet/in.h /usr/include/protocols/talkd.h
+process.o: /usr/include/sys/types.h /usr/include/sys/socket.h
+process.o: /usr/include/utmp.h
+table.o: table.c /usr/include/stdio.h /usr/include/sys/time.h
+table.o: /usr/include/time.h /usr/include/syslog.h
+table.o: /usr/include/protocols/talkd.h /usr/include/sys/types.h
+table.o: /usr/include/sys/socket.h
+print.o: print.c /usr/include/stdio.h /usr/include/syslog.h
+print.o: /usr/include/protocols/talkd.h /usr/include/sys/types.h
+print.o: /usr/include/sys/socket.h
+
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
