@@ -1,4 +1,4 @@
-/*	hp.c	4.39	81/05/11	*/
+/*	hp.c	4.40	81/06/03	*/
 
 #ifdef HPDEBUG
 int	hpdebug;
@@ -481,6 +481,7 @@ hpecc(mi, flag)
 		}
 		if (bcr == 0)
 			return (0);
+		npf++;
 		break;
 		}
 
