@@ -1,4 +1,4 @@
-/*	pte.h	1.2	86/01/05	*/
+/*	pte.h	1.3	86/01/17	*/
 
 /*
  * Tahoe page table entry
@@ -78,14 +78,6 @@ extern	struct pte Xswapmap[];
 extern	struct pte Xswap2map[];
 extern	struct pte Pushmap[];
 extern	struct pte Vfmap[];
-extern	struct pte VD0map[];
-extern	struct pte VD1map[];
-extern	struct pte VD2map[];
-extern	struct pte VD3map[];
-extern	struct pte UDmap[];
-extern	struct pte CY0map[];
-extern	struct pte CY1map[];
-extern	struct pte XYmap[];
 extern	struct pte mmap[];
 extern	struct pte msgbufmap[];
 extern	struct pte camap[];
