@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)res_send.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_send.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -38,12 +38,16 @@ res_send(buf, buflen, answer, anslen)
 	HEADER *hp = (HEADER *) buf;
 	HEADER *anhp = (HEADER *) answer;
 
+#ifdef DEBUG
 	if (_res.options & RES_DEBUG) {
 		printf("res_send()\n");
 		p_query(buf);
 	}
+#endif
 	if (!(_res.options & RES_INIT))
-		res_init();
+		if (res_init() == -1) {
+			return(-1);
+		}
 	s = -1;
 	v_circuit = (_res.options & RES_USEVC) || buflen > PACKETSZ;
 	id = hp->id;
@@ -58,8 +62,10 @@ res_send(buf, buflen, answer, anslen)
 			if (s < 0)
 				s = socket(AF_INET, SOCK_STREAM, 0);
 			if (connect(s, &_res.nsaddr, sizeof(_res.nsaddr)) < 0) {
+#ifdef DEBUG
 				if (_res.options & RES_DEBUG)
 					printf("connect failed %d\n", errno);
+#endif
 				(void) close(s);
 				s = -1;
 				continue;
@@ -70,8 +76,10 @@ res_send(buf, buflen, answer, anslen)
 			len = htons(buflen);
 			if (write(s, &len, sizeof(len)) != sizeof(len) ||
 			    write(s, buf, buflen) != buflen) {
+#ifdef DEBUG
 				if (_res.options & RES_DEBUG)
 					printf("write failed %d\n", errno);
+#endif
 				(void) close(s);
 				s = -1;
 				continue;
@@ -86,8 +94,10 @@ res_send(buf, buflen, answer, anslen)
 				len -= n;
 			}
 			if (n <= 0) {
+#ifdef DEBUG
 				if (_res.options & RES_DEBUG)
 					printf("read failed %d\n", errno);
+#endif
 				(void) close(s);
 				s = -1;
 				continue;
@@ -99,8 +109,10 @@ res_send(buf, buflen, answer, anslen)
 				len -= n;
 			}
 			if (n <= 0) {
+#ifdef DEBUG
 				if (_res.options & RES_DEBUG)
 					printf("read failed %d\n", errno);
+#endif
 				(void) close(s);
 				s = -1;
 				continue;
@@ -113,8 +125,10 @@ res_send(buf, buflen, answer, anslen)
 				s = socket(AF_INET, SOCK_DGRAM, 0);
 			if (sendto(s, buf, buflen, 0, &_res.nsaddr,
 			    sizeof(_res.nsaddr)) != buflen) {
+#ifdef DEBUG
 				if (_res.options & RES_DEBUG)
 					printf("sendto errno = %d\n", errno);
+#endif
 			}
 			/*
 			 * Wait for reply 
@@ -124,40 +138,50 @@ res_send(buf, buflen, answer, anslen)
 			dsmask = 1 << s;
 			n = select(s+1, &dsmask, 0, 0, &timeout);
 			if (n < 0) {
+#ifdef DEBUG
 				if (_res.options & RES_DEBUG)
 					printf("select errno = %d\n", errno);
+#endif
 				continue;
 			}
 			if (n == 0) {
 				/*
 				 * timeout
 				 */
+#ifdef DEBUG
 				if (_res.options & RES_DEBUG)
 					printf("timeout\n");
+#endif
 				continue;
 			}
 			if ((resplen = recvfrom(s, answer, anslen,
 			    0, 0, 0)) <= 0) {
+#ifdef DEBUG
 				if (_res.options & RES_DEBUG)
 					printf("recvfrom, errno=%d\n", errno);
+#endif
 				continue;
 			}
 			if (id != anhp->id) {
 				/*
 				 * response from old query, ignore it
 				 */
+#ifdef DEBUG
 				if (_res.options & RES_DEBUG) {
 					printf("old answer:\n");
 					p_query(answer);
 				}
+#endif
 				continue;
 			}
 			if (!(_res.options & RES_IGNTC) && anhp->tc) {
 				/*
 				 * get rest of answer
 				 */
+#ifdef DEBUG
 				if (_res.options & RES_DEBUG)
 					printf("truncated answer\n");
+#endif
 				(void) close(s);
 				s = -1;
 				retry = _res.retry;
@@ -165,10 +189,12 @@ res_send(buf, buflen, answer, anslen)
 				continue;
 			}
 		}
+#ifdef DEBUG
 		if (_res.options & RES_DEBUG) {
 			printf("got answer:\n");
 			p_query(answer);
 		}
+#endif
 		(void) close(s);
 		return (resplen);
 	}
