@@ -1,4 +1,4 @@
-/*	if_en.c	4.63	82/05/27	*/
+/*	if_en.c	4.64	82/06/12	*/
 
 #include "en.h"
 #include "imp.h"
@@ -179,7 +179,7 @@ eninit(unit)
 	es->es_if.if_flags |= IFF_UP;
 	enxint(unit);
 	splx(s);
-	if_rtinit(&es->es_if, RTF_DIRECT|RTF_UP);
+	if_rtinit(&es->es_if, RTF_UP);
 }
 
 int	enalldelay = 0;
@@ -599,6 +599,6 @@ COUNT(ENLHINIT);
 	ifp->if_dstaddr = ifp->if_addr;
 	ifp->if_output = looutput;
 	if_attach(ifp);
-	rtinit(&ifp->if_addr, &ifp->if_addr, RTF_UP|RTF_DIRECT|RTF_HOST);
+	rtinit(&ifp->if_addr, &ifp->if_addr, RTF_UP|RTF_HOST);
 }
 #endif

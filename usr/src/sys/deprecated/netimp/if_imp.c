@@ -1,4 +1,4 @@
-/*	if_imp.c	4.32	82/05/14	*/
+/*	if_imp.c	4.33	82/06/12	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -116,7 +116,7 @@ COUNT(IMPINIT);
 	}
 	sc->imp_state = IMPS_INIT;
 	impnoops(sc);
-	if_rtinit(&sc->imp_if, RTF_DIRECT|RTF_UP);
+	if_rtinit(&sc->imp_if, RTF_UP);
 	splx(s);
 }
 

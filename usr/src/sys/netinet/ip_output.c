@@ -1,4 +1,4 @@
-/*	ip_output.c	1.32	82/04/10	*/
+/*	ip_output.c	1.33	82/06/12	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -12,6 +12,8 @@
 #include "../net/ip_var.h"
 #include "../net/route.h"
 #include <errno.h>
+
+int	ipnorouteprint = 0;
 
 ip_output(m, opt, ro, allowbroadcast)
 	struct mbuf *m;
@@ -37,39 +39,52 @@ COUNT(IP_OUTPUT);
 	ip->ip_id = htons(ip_id++);
 
 	/*
-	 * Find interface for this packet in the routing
-	 * table.  Note each interface has placed itself
-	 * in there at boot time, so calls to rtalloc
-	 * degenerate to if_ifonnetof(ip->ip_dst.s_net).
+	 * Route packet.
 	 */
 	if (ro == 0) {
 		ro = &iproute;
 		bzero((caddr_t)ro, sizeof (*ro));
 	}
+	dst = &ro->ro_dst;
 	if (ro->ro_rt == 0) {
 		ro->ro_dst.sa_family = AF_INET;
 		((struct sockaddr_in *)&ro->ro_dst)->sin_addr = ip->ip_dst;
+		/*
+		 * If routing to interface only, short circuit routing lookup.
+		 */
+		if (ro == &routetoif) {
+			/* check ifp is AF_INET??? */
+			ifp = if_ifonnetof(ip->ip_dst.s_net);
+			if (ifp == 0)
+				goto unreachable;
+			goto gotif;
+		}
 		rtalloc(ro);
 	}
-	if (ro->ro_rt == 0 || (ifp = ro->ro_rt->rt_ifp) == 0) {
-		extern int ipprintfs;
+	if (ro->ro_rt == 0 || (ifp = ro->ro_rt->rt_ifp) == 0)
+		goto unreachable;
+	ro->ro_rt->rt_use++;
+	if (ro->ro_rt->rt_flags & RTF_GATEWAY)
+		dst = &ro->ro_rt->rt_gateway;
+gotif:
+	/*
+	 * If source address not specified yet, use address
+	 * of outgoing interface.
+	 */
+	if (ip->ip_src.s_addr == 0)
+		ip->ip_src.s_addr =
+		    ((struct sockaddr_in *)&ifp->if_addr)->sin_addr.s_addr;
 
-		if (ipprintfs)
-			printf("no route to %x (from %x, len %d)\n",
-			    ip->ip_dst.s_addr, ip->ip_src.s_addr, ip->ip_len);
-		error = ENETUNREACH;
-		goto bad;
-	}
-	dst = ro->ro_rt->rt_flags & RTF_DIRECT ?
-	    (struct sockaddr *)&ro->ro_dst : &ro->ro_rt->rt_gateway;
-	if (ro == &iproute)
-		RTFREE(ro->ro_rt);
+	/*
+	 * Have interface for packet.  Allow
+	 * broadcasts only by authorized users.
+	 */
 	if (!allowbroadcast && (ifp->if_flags & IFF_BROADCAST)) {
 		struct sockaddr_in *sin;
 
 		sin = (struct sockaddr_in *)&ifp->if_broadaddr;
 		if (sin->sin_addr.s_addr == ip->ip_dst.s_addr) {
-			error = EPERM;		/* ??? */
+			error = EACCES;
 			goto bad;
 		}
 	}
@@ -84,8 +99,8 @@ COUNT(IP_OUTPUT);
 #endif
 		ip->ip_sum = 0;
 		ip->ip_sum = in_cksum(m, hlen);
-		ro->ro_rt->rt_use++;
-		return ((*ifp->if_output)(ifp, m, dst));
+		error = (*ifp->if_output)(ifp, m, dst);
+		goto done;
 	}
 
 	/*
@@ -147,12 +162,22 @@ COUNT(IP_OUTPUT);
 #endif
 		mhip->ip_sum = 0;
 		mhip->ip_sum = in_cksum(mh, hlen);
-		ro->ro_rt->rt_use++;
 		if (error = (*ifp->if_output)(ifp, mh, dst))
 			break;
 	}
+	m_freem(m);
+	goto done;
+
+unreachable:
+	if (ipnorouteprint)
+		printf("no route to %x (from %x, len %d)\n",
+		    ip->ip_dst.s_addr, ip->ip_src.s_addr, ip->ip_len);
+	error = ENETUNREACH;
 bad:
 	m_freem(m);
+done:
+	if (ro == &iproute && ro->ro_rt)
+		RTFREE(ro->ro_rt);
 	return (error);
 }
 

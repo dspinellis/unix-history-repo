@@ -1,39 +1,61 @@
-/*	route.h	4.7	82/03/31	*/
+/*	route.h	4.8	82/06/12	*/
 
 /*
  * Kernel resident routing tables.
  * 
- * Each interface makes an entry at boot time so that
- * correspondents directly addressible can be found.
- * User programs can update this data base from information
- * stored in the file system or information gleaned from
- * routing protocol interactions with gateways.
+ * The routing tables are initialized at boot time by
+ * making entries for all directly connected interfaces.
+ * Routing daemons can thereafter update the routing tables.
  *
  * TODO:
  *	keep statistics
- *	smooth usage figures
  */
-struct rtentry {
-	u_long	rt_hash;		/* for net or for host */
-	struct	sockaddr rt_dst;	/* match value */
-	struct	sockaddr rt_gateway;	/* who to forward to */
-	short	rt_flags;		/* see below */
-	short	rt_refcnt;		/* # held references */
-	u_long	rt_use;			/* raw # packets forwarded */
-	struct	ifnet *rt_ifp;		/* interface to use */
-};
 
+/*
+ * A route consists of a destination address and a reference
+ * to a routing entry.  These are often held by protocols
+ * in their control blocks, e.g. inpcb.
+ */
 struct route {
 	struct	rtentry *ro_rt;
 	struct	sockaddr ro_dst;
-	caddr_t	ro_pcb;			/* back pointer? */
+#ifdef notdef
+	caddr_t	ro_pcb;			/* not used yet */
+#endif
 };
+#ifdef KERNEL
+/*
+ * The route ``routetoif'' is a special atom passed to the output routines
+ * to implement the SO_DONTROUTE option.
+ */
+struct	route routetoif;
+#endif
 
 /*
- * Flags and host/network status.
+ * We distinguish between routes to hosts and routes to networks,
+ * preferring the former if available.  For each route we infer
+ * the interface to use from the gateway address supplied when
+ * the route was entered.  Routes that forward packets through
+ * gateways are marked so that the output routines know to address the
+ * gateway rather than the ultimate destination.
  */
+struct rtentry {
+	u_long	rt_hash;		/* to speed lookups */
+	struct	sockaddr rt_dst;	/* key */
+	struct	sockaddr rt_gateway;	/* value */
+	short	rt_flags;		/* up/down?, host/net */
+	short	rt_refcnt;		/* # held references */
+	u_long	rt_use;			/* raw # packets forwarded */
+	struct	ifnet *rt_ifp;		/* the answer: interface to use */
+};
+#ifdef KERNEL
+#define	RTHASHSIZ	7
+struct	mbuf *rthost[RTHASHSIZ];
+struct	mbuf *rtnet[RTHASHSIZ];
+#endif
+
 #define	RTF_UP		0x1		/* route useable */
-#define	RTF_DIRECT	0x2		/* destination is a neighbor */
+#define	RTF_GATEWAY	0x2		/* destination is a gateway */
 #define	RTF_HOST	0x4		/* host entry (net otherwise) */
 
 #define	RTFREE(rt) \
@@ -41,15 +63,3 @@ struct route {
 		rtfree(rt); \
 	else \
 		(rt)->rt_refcnt--;
-
-#ifdef KERNEL
-/*
- * Lookup are hashed by a key.  Each hash bucket
- * consists of a linked list of mbuf's
- * containing routing entries.  Dead entries are
- * reclaimed along with mbufs.
- */
-#define	RTHASHSIZ	7
-struct	mbuf *rthost[RTHASHSIZ];
-struct	mbuf *rtnet[RTHASHSIZ];
-#endif
