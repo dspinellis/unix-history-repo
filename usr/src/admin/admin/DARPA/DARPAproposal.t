@@ -1,4 +1,4 @@
-.\"	@(#)DARPAproposal.t	1.3	87/04/29
+.\"	@(#)DARPAproposal.t	1.4	87/06/06
 .rm CM
 .sp 2
 .ce 1
@@ -30,6 +30,127 @@ advantage of current technology and to provide new capabilities
 such as mapped files and shared memory.
 Finally, there is a need to refine the internal layering of the network
 and terminal protocols to provide more internal flexibility.
+.sp 2
+.NH
+Accomplishments Under the Current Contract
+.PP
+This section summarizes the work done at Berkeley between the
+September 1983 4.2BSD distribution of
+.UX
+for the VAX\(dd
+.FS
+\(dd \s-2DEC\s0, \s-2VAX\s0, \s-2PDP\s0, \s-2MASSBUS\s0, \s-2UNIBUS\s0,
+\s-2Q-bus\s0 and \s-2ULTRIX\s0
+are trademarks of Digital Equipment Corporation.
+.FE
+and the March 1986 4.3BSD release.
+Most of the changes between 4.2BSD and 4.3BSD fall into one
+of several categories.
+These are:
+.RS
+.IP \(bu 3
+bug fixes,
+.IP \(bu 3
+performance improvements,
+.IP \(bu 3
+completion of skeletal facilities,
+.IP \(bu 3
+generalizations of the framework to accommodate
+new hardware and software systems,
+or to remove hardware- or protocol-specific code
+from common facilities, and
+.IP \(bu 3
+new protocol and hardware support.
+.RE
+.LP
+The major changes to the kernel are:
+.RS
+.IP \(bu 3
+the use of caching to decrease the overhead of file system name translation,
+.IP \(bu 3
+a new interface to the \fInamei\fP name lookup function
+that encapsulates the arguments, return information and side effects
+of this call,
+.IP \(bu 3
+removal of most of the Internet dependencies from common parts of the network,
+and greater allowance for the use of multiple address families on the same
+network hardware,
+.IP \(bu 3
+support for the Xerox NS network protocols,
+.IP \(bu 3
+support for the VAX 8600 and 8650 processors (with UNIBUS and MASSBUS
+peripherals, but not with CI bus or HSC50 disk controllers),
+.IP \(bu 3
+new drivers for the DHU11 and DMZ32 terminal multiplexors,
+the TU81 and other TMSCP tape drives,
+the VS100 display,
+the DEUNA, Excelan 204, and Interlan NP100 Ethernet* interfaces, and
+.FS
+* Ethernet is a trademark of Xerox Corporation.
+.FE
+the ACC HDH and DDN X.25 IMP interfaces, and
+.IP \(bu 3
+full support for the MS780-E memory controller on the VAX 11/780 and 11/785,
+using 64K and 256K memory chips.
+.RE
+.sp
+.PP
+The performance of the system has been improved to be at least as
+good as that of 4.1BSD, and in many instances is better.
+In addition to improving the performance of kernel operations,
+heavily used utilities were optimized and
+many user level programs were improved by
+rewriting C library routines for efficiency.
+.IP \s+1\(bu\s0
+Many programs were rewritten to do I/O in optimal blocks for the file system.
+Most of these programs were doing their own I/O and not using the standard
+I/O library.
+.IP \s+1\(bu\s0
+The system now supports the Xerox Network System
+network communication protocols.
+Most of the remaining Internet dependencies in shared common code
+have been removed or generalized.
+.IP \s+1\(bu\s0
+The signal mechanism has been extended
+to allow selected signals to interrupt pending system calls.
+.IP \s+1\(bu\s0
+The C and Fortran 77 compilers have been modified so that they
+can generate single precision floating point operations.
+.IP \s+1\(bu\s0
+The Fortran 77 compiler and associated I/O library have undergone
+extensive changes to improve reliability and performance.  Compilation may,
+optionally, include optimization phases to improve code density and
+decrease execution time.
+Many minor bugs in the C compiler have been fixed.
+.IP \s+1\(bu\s0
+The math library has been completely rewritten
+by a group of numerical analysts
+to improve both its speed and accuracy.
+.IP \s+1\(bu\s0
+Password lookup functions now use a hashed database rather than linear
+search of the password file.
+.IP \s+1\(bu\s0
+C library string routines and several standard I/O functions
+were recoded in VAX assembler for greater speed.
+The C versions are available for portability.
+Standard error is now buffered within a single call to do output.
+.IP \s+1\(bu\s0
+The symbolic debugger, \fIdbx\fP, has been dramatically improved.
+\fIDbx\fP works on C, Pascal and Fortran 77 programs and allows users
+to set break points and trace execution by source code line numbers,
+references to memory locations, procedure entry, etc.  \fIDbx\fP allows
+users to reference structured and local variables using
+the program's programming language syntax.
+.IP \s+1\(bu\s0
+A new internet name domain server has been added to allow sites to
+administer their name space locally and export it to the rest of the Internet.
+Sites not using the name server may use a static host table with a hashed
+lookup mechanism.
+.IP \s+1\(bu\s0
+A new time synchronization server has been added to allow a set of machines to
+keep their clocks within tens of milliseconds of each other.
+.br
+.ne 10
 .sp 2
 .NH
 Current UNIX Research at Berkeley
@@ -159,7 +280,7 @@ uncontested ``lock'' and ``unlock'' without doing two system calls.
 Only in the unusual case of trying to lock an already-locked lock or when
 a desired lock is being released will a system call be required.  The
 interface will allow a user-level implementation of the System V semaphore
-interface on most machines with a much lower runtime cost [McKusick86].
+interface on most machines with a much lower run time cost [McKusick86].
 .PP
 We have maintained an active mailing list to discuss
 the issues of the user interface to the virtual memory system\(dg.
@@ -222,7 +343,7 @@ multiplexed connections and commercially important protocols.
 Unfortunately, the implementation complexity increased enormously.
 .PP
 The design of the networking facilities for 4.2BSD took
-a very different approach, based on the \fBsocket\fP interface
+a different approach, based on the \fBsocket\fP interface
 and a flexible multi-layer network architecture.
 This design allows a single system to support multiple sets of networking
 protocols with stream, datagram, and other types of access.
@@ -252,7 +373,7 @@ It will also allow kernel support for remote procedure
 protocols based on standard transport protocols.
 Finally, this interface will provide a mechanism to extend the kernel
 protocol framework into user processes to allow prototyping
-of new protocols and to perform network monitoring functions.
+of new protocols and to do network monitoring functions.
 .NH
 References
 .sp
