@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	6.24 (Berkeley) %G%
+ *	@(#)machdep.c	6.25 (Berkeley) %G%
  */
 
 #include "reg.h"
@@ -110,7 +110,7 @@ startup(firstaddr)
 	valloc(argmap, struct map, ARGMAPSIZE);
 	valloc(kernelmap, struct map, nproc);
 	valloc(mbmap, struct map, nmbclusters/4);
-	valloc(nch, struct nch, nchsize);
+	valloc(namecache, struct namecache, nchsize);
 #ifdef QUOTA
 	valloclim(quota, struct quota, nquota, quotaNQUOTA);
 	valloclim(dquot, struct dquot, ndquot, dquotNDQUOT);

@@ -35,12 +35,12 @@ int	dirchk = 0;
 
 union nchash {
 	union	nchash *nch_head[2];
-	struct	nch *nch_chain[2];
+	struct	namecache *nch_chain[2];
 } nchash[NCHHASH];
 #define	nch_forw	nch_chain[0]
 #define	nch_back	nch_chain[1]
 
-struct	nch *nchhead, **nchtail;	/* LRU chain pointers */
+struct	namecache *nchhead, **nchtail;	/* LRU chain pointers */
 struct	nchstats nchstats;		/* cache effectiveness statistics */
 
 /*
@@ -122,7 +122,7 @@ namei(ndp)
 	register char *cp;		/* pointer into pathname argument */
 /* these variables refer to things which must be freed or unlocked */
 	register struct inode *dp = 0;	/* the directory we are searching */
-	register struct nch *ncp;	/* cache slot for entry */
+	register struct namecache *ncp;	/* cache slot for entry */
 	register struct fs *fs;		/* file system that directory is in */
 	register struct buf *bp = 0;	/* a buffer of directory entries */
 	register struct direct *ep;	/* the current directory entry */
@@ -264,7 +264,7 @@ dirloop2:
 		makeentry = 0;
 	} else {
 		nhp = &nchash[NHASH(hash, dp->i_number, dp->i_dev)];
-		for (ncp = nhp->nch_forw; ncp != (struct nch *)nhp;
+		for (ncp = nhp->nch_forw; ncp != (struct namecache *)nhp;
 		    ncp = ncp->nc_forw) {
 			if (ncp->nc_ino == dp->i_number &&
 			    ncp->nc_dev == dp->i_dev &&
@@ -273,15 +273,15 @@ dirloop2:
 				(unsigned)ncp->nc_nlen))
 				break;
 		}
-		if (ncp == (struct nch *)nhp) {
+		if (ncp == (struct namecache *)nhp) {
 			nchstats.ncs_miss++;
 			ncp = NULL;
 		} else {
-			if (ncp->nc_id != ncp->nc_ip->i_id) {
+			if (ncp->nc_id != ncp->nc_ip->i_id)
 				nchstats.ncs_falsehits++;
-			} else if (!makeentry) {
+			else if (!makeentry)
 				nchstats.ncs_badhits++;
-			} else {
+			else {
 				/*
 				 * move this slot to end of LRU
 				 * chain, if not already there
@@ -308,9 +308,9 @@ dirloop2:
 					dp = ncp->nc_ip;
 				if (dp == NULL)
 					panic("nami: null cache ino");
-				if (pdp == dp) {
+				if (pdp == dp)
 					dp->i_count++;
-				} else if (isdotdot) {
+				else if (isdotdot) {
 					IUNLOCK(pdp);
 					igrab(dp);
 				} else {
@@ -1195,11 +1195,11 @@ out:
 nchinit()
 {
 	register union nchash *nchp;
-	register struct nch *ncp;
+	register struct namecache *ncp;
 
 	nchhead = 0;
 	nchtail = &nchhead;
-	for (ncp = nch; ncp < &nch[nchsize]; ncp++) {
+	for (ncp = namecache; ncp < &namecache[nchsize]; ncp++) {
 		ncp->nc_forw = ncp;			/* hash chain */
 		ncp->nc_back = ncp;
 		ncp->nc_nxt = NULL;			/* lru chain */
@@ -1225,7 +1225,7 @@ nchinit()
 nchinval(dev)
 	register dev_t dev;
 {
-	register struct nch *ncp, *nxtcp;
+	register struct namecache *ncp, *nxtcp;
 
 	for (ncp = nchhead; ncp; ncp = nxtcp) {
 		nxtcp = ncp->nc_nxt;
@@ -1262,8 +1262,8 @@ nchinval(dev)
  */
 cacheinvalall()
 {
-	register struct nch *ncp;
+	register struct namecache *ncp;
 
-	for (ncp = nch; ncp < &nch[nchsize]; ncp++)
+	for (ncp = namecache; ncp < &namecache[nchsize]; ncp++)
 		ncp->nc_id = 0;
 }
