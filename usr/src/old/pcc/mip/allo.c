@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)allo.c	4.3 (Berkeley) %G%";
+static char *sccsid ="@(#)allo.c	4.4 (Berkeley) %G%";
 #endif lint
 
 # include "mfile2"
@@ -200,7 +200,13 @@ usable( p, n, r ) NODE *p; {
 	else {
 		if( n & NBMASK ) return(0);
 		}
-	if( (n&NAMASK) && (szty(p->in.type) == 2) ){ /* only do the pairing for real regs */
+	/*
+	 * Have to check for ==, <=, etc. because the result is type INT
+	 * but need a register pair temp if either side is real.
+	 */
+	if( (n&NAMASK) && (szty(p->in.type) == 2 ||
+	    logop(p->in.op) && (szty(p->in.left->in.type) == 2 ||
+	    szty(p->in.right->in.type) == 2)) ){ /* only do the pairing for real regs */
 #ifndef NOEVENODD
 		if( r&01 ) return(0);
 #endif
