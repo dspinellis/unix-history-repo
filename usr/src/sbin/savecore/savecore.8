@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)savecore.8	6.8 (Berkeley) %G%
+.\"     @(#)savecore.8	6.9 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SAVECORE 8
@@ -86,6 +86,8 @@ is meant to be called near the end of the initialization file
 current
 .Tn UNIX
 .El
+.Sh BUGS
+The minfree code does not consider the effect of compression.
 .Sh SEE ALSO
 .Xr compress 1 ,
 .Xr syslogd 8
