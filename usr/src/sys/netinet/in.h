@@ -1,4 +1,4 @@
-/*	in.h	4.16	82/10/20	*/
+/*	in.h	4.17	82/10/31	*/
 
 /*
  * Constants and structures defined by the internet system,
@@ -118,3 +118,13 @@ struct sockaddr_in {
 	struct	in_addr sin_addr;
 	char	sin_zero[8];
 };
+
+#if !defined(vax)
+/*
+ * Macros for number representation conversion.
+ */
+#define	ntohl(x)	(x)
+#define	ntohs(x)	(x)
+#define	htonl(x)	(x)
+#define	htons(x)	(x)
+#endif
