@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)keyboard.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)keyboard.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -34,13 +34,13 @@ keyboard()
                                 ch += 'a' - 'A';
                         if (col == 0) {
 #define	mask(s)	(1 << ((s) - 1))
-                                if (ch == CTRL(l)) {
+                                if (ch == CTRL('l')) {
 					oldmask = sigblock(mask(SIGALRM));
 					wrefresh(curscr);
 					sigsetmask(oldmask);
                                         continue;
                                 }
-				if (ch == CTRL(g)) {
+				if (ch == CTRL('g')) {
 					oldmask = sigblock(mask(SIGALRM));
 					status();
 					sigsetmask(oldmask);
@@ -57,7 +57,7 @@ keyboard()
                                 col--;
                                 goto doerase;
                         }
-                        if (ch == CTRL(w) && col > 0) {
+                        if (ch == CTRL('w') && col > 0) {
                                 while (--col >= 0 && isspace(line[col]))
                                         ;
                                 col++;

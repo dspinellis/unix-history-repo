@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmdtab.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmdtab.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include "tip.h"
@@ -27,9 +27,9 @@ esctable_t etable[] = {
 #endif
 	{ 'c',	NORM,	"change directory",		 chdirectory },
 	{ '.',	NORM,	"exit from tip",		 finish },
-	{CTRL(d),NORM,	"exit from tip",		 finish },
-	{CTRL(y),NORM,	"suspend tip (local+remote)",	 suspend },
-	{CTRL(z),NORM,	"suspend tip (local only)",	 suspend },
+	{CTRL('d'),NORM,"exit from tip",		 finish },
+	{CTRL('y'),NORM,"suspend tip (local+remote)",	 suspend },
+	{CTRL('z'),NORM,"suspend tip (local only)",	 suspend },
 	{ 's',	NORM,	"set variable",			 variable },
 	{ '?',	NORM,	"get this summary",		 help },
 	{ '#',	NORM,	"send break",			 genbrk },
