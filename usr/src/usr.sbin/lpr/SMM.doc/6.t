@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)6.t	5.1 (Berkeley) %G%
+.\"	@(#)6.t	6.1 (Berkeley) %G%
 .\"
 .NH 1
 Line printer Administration
