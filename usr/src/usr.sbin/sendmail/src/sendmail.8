@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)sendmail.8	6.11 (Berkeley) %G%
+.\"     @(#)sendmail.8	6.12 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SENDMAIL 8
@@ -210,6 +210,13 @@ Use alternate alias file.
 On mailers that are considered ``expensive'' to connect to,
 don't initiate immediate connection.
 This requires queueing.
+.It Li C Ar N
+Checkpoint the queue file after every
+.Ar N
+successful deliveries (default 10).
+This avoids excessive duplicate deliveries
+when sending to long mailing lists
+interrupted by system crashes.
 .It Li d Ns Ar x
 Set the delivery mode to
 .Ar x .
@@ -265,16 +272,12 @@ The default group id to use when calling mailers.
 The
 .Tn SMTP
 help file.
+.It Li h Ar N
+The maximum number of times a message is allowed to ``hop''
+before we decide it is in a loop.
 .It Li i
 Do not take dots on a line by themselves
 as a message terminator.
-.It Li k Ar N
-Checkpoint the queue file after every
-.Ar N
-successful deliveries (default 10).
-This avoids excessive duplicate deliveries
-when sending to long mailing lists
-interrupted by system crashes.
 .It Li L Ns Ar n
 The log level.
 .It Li m

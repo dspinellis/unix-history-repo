@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	5.27 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -688,8 +688,8 @@ setoption(opt, val, sticky)
 		NoConnect = atobool(val);
 		break;
 
-	  case 'C':		/* checkpoint after N connections */
-		CheckPointLimit = atoi(val);
+	  case 'C':		/* checkpoint every N addresses */
+		CheckpointInterval = atoi(val);
 		break;
 
 	  case 'd':		/* delivery mode */
@@ -755,16 +755,16 @@ setoption(opt, val, sticky)
 			HelpFile = newstr(val);
 		break;
 
+	  case 'h':		/* maximum hop count */
+		MaxHopCount = atoi(val);
+		break;
+
 	  case 'I':		/* use internet domain name server */
 		UseNameServer = atobool(val);
 		break;
 
 	  case 'i':		/* ignore dot lines in message */
 		IgnrDot = atobool(val);
-		break;
-
-	  case 'k':		/* checkpoint every N addresses */
-		CheckpointInterval = atoi(val);
 		break;
 
 	  case 'L':		/* log level */

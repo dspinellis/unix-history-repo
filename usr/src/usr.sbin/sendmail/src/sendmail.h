@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	5.20 (Berkeley) %G%
+ *	@(#)sendmail.h	5.21 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	5.20		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	5.21		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -547,8 +547,7 @@ EXTERN char	SpaceSub;	/* substitution for <lwsp> */
 EXTERN int	WkClassFact;	/* multiplier for message class -> priority */
 EXTERN int	WkRecipFact;	/* multiplier for # of recipients -> priority */
 EXTERN int	WkTimeFact;	/* priority offset each time this job is run */
-EXTERN int	CheckPointLimit;	/* deliveries before checkpointing */
-EXTERN int	Nmx;			/* number of MX RRs */
+EXTERN int	Nmx;		/* number of MX RRs */
 EXTERN char	*PostMasterCopy;	/* address to get errs cc's */
 EXTERN char	*MxHosts[MAXMXHOSTS+1];	/* for MX RRs */
 EXTERN char	*TrustedUsers[MAXTRUST+1];	/* list of trusted users */
@@ -556,6 +555,7 @@ EXTERN char	*UserEnviron[MAXUSERENVIRON+1];	/* saved user environment */
 EXTERN int	CheckpointInterval;	/* queue file checkpoint interval */
 EXTERN bool	NoWildcardMX;	/* we don't have wildcard MX records */
 EXTERN char	*UdbFileName;	/* user database file name [udbexpand.c] */
+EXTERN int	MaxHopCount;	/* number of hops until we give an error */
 /*
 **  Trace information
 */
