@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -123,7 +123,7 @@ lookup(name)
 
 	longest = 0;
 	nmatches = 0;
-	found = (struct cmdtab *)-1;
+	found = (struct cmdtab *) 0;
 	for (c = cmdtab; p = c->c_name; c++) {
 		for (q = name; *q == *p++; q++)
 			if (*q == 0)		/* exact match? */
