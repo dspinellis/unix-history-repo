@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)profil.2	6.1 (Berkeley) %G%
+.\"	@(#)profil.2	6.2 (Berkeley) %G%
 .\"
 .TH PROFIL 2 ""
 .UC 4
@@ -29,15 +29,12 @@ inside
 that word is incremented.
 .PP
 The scale is interpreted as an unsigned,
-fixed-point fraction with binary point at the
-left: 0x10000 gives a 1-1 mapping of pc's to words
+fixed-point fraction with 16 bits of fraction:
+0x10000 gives a 1-1 mapping of pc's to words
 in
 .I buff;
 0x8000 maps each pair of instruction words
 together.
-0x2 maps all instructions onto the beginning of
-.I buff
-(producing a non-interrupting core clock).
 .PP
 Profiling is turned off by giving a
 .I scale
