@@ -1,4 +1,4 @@
-.\" @(#)License	1.3 (CSRG - distribution) %G%
+.\" @(#)License	1.4 (CSRG - distribution) %G%
 .ND
 .po +0.34375i
 .nr PO +0.34375i
@@ -7,7 +7,7 @@
 .ft B
 .ce
 .sp 2
-FOURTH BERKELEY DISTRIBUTION LICENSE AGREEMENT
+FOURTH BERKELEY SOFTWARE DISTRIBUTION LICENSE AGREEMENT
 .ft R
 .sp 3
 .ps 12
@@ -84,7 +84,7 @@ shall terminate when LICENSEE's
 UNIX/32V, SYSTEM-III, or SYSTEM-V
 license terminates.
 Either THE REGENTS or LICENSEE may terminate this Agreement upon thirty 
-(30) days written notice to the other party.
+(30) days' written notice to the other party.
 This license shall terminate thirty (30) days after notice from The
 Regents of the University of California to LICENSEE that LICENSEE
 is in breach of this Agreement unless within that time LICENSEE gives
@@ -205,9 +205,9 @@ WHATSOEVER, INCLUDING WITHOUT LIMITATION, THE CONDITION OF THE
 FOURTH BERKELEY SOFTWARE DISTRIBUTION,
 ITS MERCHANTABILITY OR ITS FITNESS FOR ANY PARTICULAR PURPOSE.
 .PP
-\09.\ \ \fBDisclaimer of Proprietary Rights Warrante. \fR THE REGENTS DOES NOT
+\09.\ \ \fBDisclaimer of Proprietary Rights Warranty. \fR THE REGENTS DOES NOT
 WARRANT THAT THE USE OF FOURTH BERKELEY SOFTWARE DISTRIBUTION WILL NOT 
-INFRINGE ON ANY PATENT, COPYRIGHT, TRADE SECRET, OR OTHER PROPRIETARY OR 
+INFRINGE ANY PATENT, COPYRIGHT, TRADE SECRET, OR OTHER PROPRIETARY OR 
 CONTRACTUAL RIGHT OF ANOTHER PARTY.  THE LIMITATION OF LIABILITY SET FORTH IN 
 THIS AGREEMENT IS APPLICABLE TO ANY CLAIM THAT FOURTH BERKELEY SOFTWARE 
 DISTRIBUTION, OR ANY PORTION THEREOF, INFRINGES ANOTHER'S PATENT, COPYRIGHT,
@@ -255,7 +255,7 @@ by reason of their relationship to The Regents of the University
 of California or the Other Contributors, with respect to any expense,
 claim, liability, loss or
 damages, including direct, indirect, special, incidental, or consequential
-(including lost profits) damges, whether incurred, made or suffered by
+(including lost profits) damages, whether incurred, made or suffered by
 LICENSEE or any of its sublicensees or by other third parties, in
 connection with or in any way arising out of the furnishing,
 sublicensing, performance or use of the Fourth Berkeley Software
