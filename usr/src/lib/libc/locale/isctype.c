@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)isctype.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)isctype.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #define _ANSI_LIBRARY
@@ -16,14 +16,14 @@ static char sccsid[] = "@(#)isctype.c	5.5 (Berkeley) %G%";
 isalnum(c)
 	int c;
 {
-	return ((_ctype_ + 1)[c] & (_U|_L|_N));
+	return ((__ctype + 1)[c] & (_U|_L|_N));
 }
 
 #undef isalpha
 isalpha(c)
 	int c;
 {
-	return ((_ctype_ + 1)[c] & (_U|_L));
+	return ((__ctype + 1)[c] & (_U|_L));
 }
 
 #undef isascii
@@ -44,63 +44,63 @@ isblank(c)
 iscntrl(c)
 	int c;
 {
-	return ((_ctype_ + 1)[c] & _C);
+	return ((__ctype + 1)[c] & _C);
 }
 
 #undef isdigit
 isdigit(c)
 	int c;
 {
-	return ((_ctype_ + 1)[c] & _N);
+	return ((__ctype + 1)[c] & _N);
 }
 
 #undef isgraph
 isgraph(c)
 	int c;
 {
-	return ((_ctype_ + 1)[c] & (_P|_U|_L|_N));
+	return ((__ctype + 1)[c] & (_P|_U|_L|_N));
 }
 
 #undef islower
 islower(c)
 	int c;
 {
-	return ((_ctype_ + 1)[c] & _L);
+	return ((__ctype + 1)[c] & _L);
 }
 
 #undef isprint
 isprint(c)
 	int c;
 {
-	return ((_ctype_ + 1)[c] & (_P|_U|_L|_N|_B));
+	return ((__ctype + 1)[c] & (_P|_U|_L|_N|_B));
 }
 
 #undef ispunct
 ispunct(c)
 	int c;
 {
-	return ((_ctype_ + 1)[c] & _P);
+	return ((__ctype + 1)[c] & _P);
 }
 
 #undef isspace
 isspace(c)
 	int c;
 {
-	return ((_ctype_ + 1)[c] & _S);
+	return ((__ctype + 1)[c] & _S);
 }
 
 #undef isupper
 isupper(c)
 	int c;
 {
-	return ((_ctype_ + 1)[c] & _U);
+	return ((__ctype + 1)[c] & _U);
 }
 
 #undef isxdigit
 isxdigit(c)
 	int c;
 {
-	return ((_ctype_ + 1)[c] & (_N|_X));
+	return ((__ctype + 1)[c] & (_N|_X));
 }
 
 #undef toascii
