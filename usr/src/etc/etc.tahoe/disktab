@@ -1,4 +1,4 @@
-#	@(#)disktab	4.6 (Berkeley) %G%
+#	@(#)disktab	4.7 (Berkeley) %G%
 # Disk geometry and partition layout tables. 
 # Key:
 #	dt	controller type
@@ -105,3 +105,14 @@ fsd|Fsd|FSD|160 Mb FSD:\
 	:pf#0:of#0:bf#4096:ff#1024:\
 	:pg#0:og#0:bg#4096:fg#1024:\
 	:ph#0:oh#0:bh#4096:fh#1024:
+
+mxd|Mxd|MXD|380 Mb MAXTOR:\
+	:ty=winchester:ns#18:nt#15:nc#1224:rm#3600:se#1024:\
+	:pa#21600:oa#0:ba#8192:fa#1024:\
+	:pb#22410:ob#21600:bb#8192:fb#1024:tb=swap:\
+	:pc#285120:oc#44010:bc#8192:fc#1024:\
+#	:pd#237600:od#0:bd#8192:fd#1024:\
+#	:pe#190080:oe#0:be#8192:fe#1024:\
+#	:pf#142560:of#0:bf#8192:ff#1024:\
+#	:pg#95040:og#0:bg#8192:fg#1024:\
+#	:ph#47520:oh#0:bh#8192:fh#1024:
