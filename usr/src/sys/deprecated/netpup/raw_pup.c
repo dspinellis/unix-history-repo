@@ -1,4 +1,4 @@
-/*	raw_pup.c	4.18	83/06/13	*/
+/*	raw_pup.c	4.19	83/06/30	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -8,13 +8,34 @@
 #include "../h/errno.h"
 
 #include "../net/if.h"
+#include "../net/route.h"
+#include "../net/raw_cb.h"
 
 #include "../netpup/pup.h"
-#include "../net/raw_cb.h"
 
 /*
  * Raw PUP protocol interface.
  */
+
+struct	sockaddr_pup pupsrc = { AF_PUP };
+struct	sockaddr_pup pupdst = { AF_PUP };
+struct	sockproto pupproto = { PF_PUP };
+/*
+ * Raw PUP input.
+ */
+rpup_input(m)
+	struct mbuf *m;
+{
+	register struct pup_header *pup = mtod(m, struct pup_header *);
+
+	pupproto.sp_protocol = pup->pup_type;
+	bcopy((caddr_t)&pup->pup_dnet, (caddr_t)&pupdst.spup_net,
+	    sizeof (struct pupport));
+	bcopy((caddr_t)&pup->pup_snet, (caddr_t)&pupsrc.spup_net,
+	    sizeof (struct pupport));
+	raw_input(m, &pupproto, (struct sockaddr *)&pupsrc,
+	  (struct sockaddr *)&pupdst);
+}
 
 /*
  * Encapsulate packet in PUP header which is supplied by the
@@ -30,7 +51,7 @@ rpup_output(m, so)
 	register struct mbuf *n, *last;
 	struct sockaddr_pup *dst;
 	struct ifnet *ifp;
-	u_short *pchecksum;
+	u_short *pc;
 
 	/*
 	 * Verify user has supplied necessary space
@@ -55,9 +76,14 @@ rpup_output(m, so)
 	}
 	pup->pup_length = htons((u_short)len);
 	dst = (struct sockaddr_pup *)&rp->rcb_faddr;
-	bcopy((caddr_t)dst->spup_net, (caddr_t)pup->pup_dnet,
+	bcopy((caddr_t)&dst->spup_net, (caddr_t)&pup->pup_dnet,
 	    sizeof (struct pupport));
-	ifp = if_ifonnetof((int)(unsigned)pup->pup_dnet);
+	if (rp->rcb_route.ro_rt == 0)
+		ifp = if_ifonnetof(dst->spup_net);
+	else {
+		rp->rcb_route.ro_rt->rt_use++;
+		ifp = rp->rcb_route.ro_rt->rt_ifp;
+	}
 	if (ifp == 0) {
 		error = ENETUNREACH;
 		goto bad;
@@ -66,7 +92,7 @@ rpup_output(m, so)
 		register struct sockaddr_pup *src;
 
 		src = (struct sockaddr_pup *)&rp->rcb_laddr;
-		bcopy((caddr_t)src->spup_net, (caddr_t)pup->pup_snet,
+		bcopy((caddr_t)&src->spup_net, (caddr_t)&pup->pup_snet,
 		    sizeof (struct pupport));
 	} else {
 		pup->pup_snet = ifp->if_net;
@@ -76,10 +102,9 @@ rpup_output(m, so)
 	/*
 	 * Fill in checksum unless user indicates none should be specified.
 	 */
-	pchecksum =
-	    (u_short *)(mtod(last, caddr_t) + last->m_len - sizeof (short));
-	if (*pchecksum != PUP_NOCKSUM)
-		*pchecksum = pup_cksum(m, len - sizeof (short));
+	pc = (u_short *)(mtod(last, caddr_t) + last->m_len - sizeof (short));
+	if (*pc != PUP_NOCKSUM)
+		*pc = pup_cksum(m, len - sizeof (short));
 	return ((*ifp->if_output)(ifp, m, (struct sockaddr *)dst));
 bad:
 	m_freem(m);
