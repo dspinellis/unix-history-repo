@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	4.39	82/12/28	*/
+/*	uipc_syscalls.c	4.40	83/01/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -458,8 +458,20 @@ recvmsg()
 
 shutdown()
 {
+	struct a {
+		int	s;
+		int	how;
+	} *uap = (struct a *)u.u_ap;
+	struct file *fp;
 
-	u.u_error = EINVAL;
+	fp = getf(uap->s);
+	if (fp == 0)
+		return;
+	if (fp->f_type != DTYPE_SOCKET) {
+		u.u_error = ENOTSOCK;
+		return;
+	}
+	u.u_error = soshutdown(fp->f_socket, uap->how);
 }
 
 pipe()
@@ -565,7 +577,8 @@ sockopt(so, opt)
 	caddr_t opt;
 {
 	register struct mbuf *m;
-	int error;
+	register caddr_t cp;
+	int error, len;
 
 	if (opt == 0) {
 		so->so_optlen = 0;
@@ -584,6 +597,22 @@ sockopt(so, opt)
 		(void) m_free(m);
 		return (error);
 	}
-	so->so_optdata = mtod(m, caddr_t);
+	so->so_optdata = mtod(m, struct sotemplate *);
+	/*
+	 * Verify data structure consistency.
+	 */
+	cp = (caddr_t)so->so_optdata;
+	len = so->so_optlen;
+	while (len > 0 && cp < (caddr_t)so->so_optdata + m->m_len) {
+		struct sotemplate *tp;
+
+		if (len < sizeof (struct sotemplate))
+			break;
+		tp = (struct sotemplate *)cp;
+		len -= tp->opt_size + sizeof (int);
+		cp += tp->opt_size + sizeof (int);
+	}
+	if (len != 0 || cp != (caddr_t)so->so_optdata + m->m_len)
+		return (EINVAL);
 	return (0);
 }
