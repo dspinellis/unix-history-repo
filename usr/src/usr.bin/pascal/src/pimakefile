@@ -8,7 +8,7 @@ GET = sccs get
 CFLAGS = -O -w
 LDFLAGS = -z
 
-INSTALLDIR = /usr/new
+INSTALLDIR = /usr/lib
 LIBDIR = /usr/lib
 TMPDIR = tmp
 
