@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)sccs.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)sccs.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <stdio.h>
@@ -175,37 +175,43 @@ struct sccsprog
 **	macro definition, or the arg to a sub-algorithm.
 */
 
-struct sccsprog SccsProg[] =
-{
-	"admin",	PROG,	REALUSER,		PROGPATH(admin),
-	"cdc",		PROG,	0,			PROGPATH(rmdel),
-	"comb",		PROG,	0,			PROGPATH(comb),
-	"delta",	PROG,	0,			PROGPATH(delta),
-	"get",		PROG,	0,			PROGPATH(get),
-	"help",		PROG,	NO_SDOT,		PROGPATH(help),
-	"prs",		PROG,	0,			PROGPATH(prs),
-	"prt",		PROG,	0,			PROGPATH(prt),
-	"rmdel",	PROG,	REALUSER,		PROGPATH(rmdel),
-	"val",		PROG,	0,			PROGPATH(val),
-	"what",		PROG,	NO_SDOT,		PROGPATH(what),
-	"sccsdiff",	SHELL,	REALUSER,		PROGPATH(sccsdiff),
-	"edit",		CMACRO,	NO_SDOT,		"get -e",
-	"delget",	CMACRO,	NO_SDOT,		"delta:mysrp/get:ixbeskcl -t",
-	"deledit",	CMACRO,	NO_SDOT,		"delta:mysrp -n/get:ixbskcl -e -t -g",
-	"fix",		FIX,	NO_SDOT,		NULL,
-	"clean",	CLEAN,	REALUSER|NO_SDOT,	(char *) CLEANC,
-	"info",		CLEAN,	REALUSER|NO_SDOT,	(char *) INFOC,
-	"check",	CLEAN,	REALUSER|NO_SDOT,	(char *) CHECKC,
-	"tell",		CLEAN,	REALUSER|NO_SDOT,	(char *) TELLC,
-	"unedit",	UNEDIT,	NO_SDOT,		NULL,
-	"diffs",	DIFFS,	NO_SDOT|REALUSER,	NULL,
-	"-diff",	DODIFF,	NO_SDOT|REALUSER,	PROGPATH(bdiff),
-	"print",	CMACRO,	0,			"prs -e/get -p -m -s",
+struct sccsprog SccsProg[] = {
+	"admin",	PROG,	REALUSER,	__CONCAT(_SCCSPATH, "admin"),
+	"cdc",		PROG,	0,		__CONCAT(_SCCSPATH, "rmdel"),
+	"comb",		PROG,	0,		__CONCAT(_SCCSPATH, "comb"),
+	"delta",	PROG,	0,		__CONCAT(_SCCSPATH, "delta"),
+	"get",		PROG,	0,		__CONCAT(_SCCSPATH, "get"),
+	"help",		PROG,	NO_SDOT,	__CONCAT(_SCCSPATH, "help"),
+	"prs",		PROG,	0,		__CONCAT(_SCCSPATH, "prs"),
+	"prt",		PROG,	0,		__CONCAT(_SCCSPATH, "prt"),
+	"rmdel",	PROG,	REALUSER,	__CONCAT(_SCCSPATH, "rmdel"),
+	"val",		PROG,	0,		__CONCAT(_SCCSPATH, "val"),
+	"what",		PROG,	NO_SDOT,	__CONCAT(_SCCSPATH, "what"),
+	"sccsdiff",	SHELL,	REALUSER,	__CONCAT(_SCCSPATH, "sccsdiff"),
+	"edit",		CMACRO,	NO_SDOT,	"get -e",
+	"delget",	CMACRO,	NO_SDOT,	"delta:mysrp/get:ixbeskcl -t",
+	"deledit",	CMACRO,	NO_SDOT,
+					"delta:mysrp -n/get:ixbskcl -e -t -g",
+	"fix",		FIX,	NO_SDOT,	NULL,
+	"clean",	CLEAN,	REALUSER|NO_SDOT,
+						(char *) CLEANC,
+	"info",		CLEAN,	REALUSER|NO_SDOT,
+						(char *) INFOC,
+	"check",	CLEAN,	REALUSER|NO_SDOT,
+						(char *) CHECKC,
+	"tell",		CLEAN,	REALUSER|NO_SDOT,
+						(char *) TELLC,
+	"unedit",	UNEDIT,	NO_SDOT,	NULL,
+	"diffs",	DIFFS,	NO_SDOT|REALUSER,
+						NULL,
+	"-diff",	DODIFF,	NO_SDOT|REALUSER,
+						__CONCAT(_SCCSPATH, "bdiff"),
+	"print",	CMACRO,	0,		"prs -e/get -p -m -s",
 	"branch",	CMACRO,	NO_SDOT,
-		"get:ixrc -e -b/delta: -s -n -ybranch-place-holder/get:pl -e -t -g",
-	"enter",	ENTER,	NO_SDOT,		NULL,
-	"create",	CMACRO,	NO_SDOT,		"enter/get:ixbeskcl -t",
-	NULL,		-1,	0,			NULL
+	    "get:ixrc -e -b/delta: -s -n -ybranch-place-holder/get:pl -e -t -g",
+	"enter",	ENTER,	NO_SDOT,	NULL,
+	"create",	CMACRO,	NO_SDOT,	"enter/get:ixbeskcl -t",
+	NULL,		-1,	0,		NULL
 };
 
 /* one line from a p-file */
