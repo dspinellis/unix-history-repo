@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	7.88 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.89 (Berkeley) %G%
  */
 
 /*
@@ -892,9 +892,10 @@ void vgone(vp)
 		vp->v_specinfo = NULL;
 	}
 	/*
-	 * If it is on the freelist, move it to the head of the list.
+	 * If it is on the freelist and not already at the head,
+	 * move it to the head of the list.
 	 */
-	if (vp->v_freeb) {
+	if (vp->v_freeb && vfreeh != vp) {
 		if (vq = vp->v_freef)
 			vq->v_freeb = vp->v_freeb;
 		else
