@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ftpd.8	6.3 (Berkeley) %G%
+.\"	@(#)ftpd.8	6.4 (Berkeley) %G%
 .\"
 .TH FTPD 8C "April 27, 1985"
 .UC 5
@@ -109,6 +109,9 @@ may be performed.
 The user name must not appear in the file
 .IR /etc/ftpusers .
 .IP 3)
+The user must have a standard shell returned by 
+.IR getusershell (3).
+.IP 4)
 If the user name is ``anonymous'' or ``ftp'', an
 anonymous ftp account must be present in the password
 file (user ``ftp'').  In this case the user is allowed
@@ -146,7 +149,7 @@ Make this directory mode 777 and owned by ``ftp''.  Users
 should then place files which are to be accessible via the
 anonymous account in this directory.
 .SH "SEE ALSO"
-ftp(1C), syslogd(8)
+ftp(1C), getusershell(3), syslogd(8)
 .SH BUGS
 The anonymous account is inherently dangerous and should
 avoided when possible.
