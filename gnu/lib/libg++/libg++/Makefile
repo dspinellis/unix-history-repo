@@ -23,6 +23,8 @@ GFLAGS=		-nostdinc++ -I$(.CURDIR) -I$(.CURDIR)/../g++-include \
 NOMAN=		noman
 .PATH:		$(.CURDIR)/../iostream $(.CURDIR)/../libiberty
 
+depend:
+	@echo "BROKEN MAKE DEPEND"
 .include <bsd.lib.mk>
 
 .SUFFIXES: .cc .C
