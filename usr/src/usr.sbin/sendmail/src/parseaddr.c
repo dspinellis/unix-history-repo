@@ -2,7 +2,7 @@
 # include <ctype.h>
 # include "dlvrmail.h"
 
-static char	SccsId[] = "@(#)parseaddr.c	2.2	%G%";
+static char	SccsId[] = "@(#)parseaddr.c	2.3	%G%";
 
 /*
 **  PARSE -- Parse an address
@@ -414,6 +414,11 @@ prescan(addr, buf, buflim, delim)
 			continue;
 		else if (c == '<')
 		{
+			if (brccnt < 0)
+			{
+				usrerr("multiple < spec");
+				return (NULL);
+			}
 			brccnt++;
 			delimmode = TRUE;
 			space = FALSE;
@@ -435,7 +440,10 @@ prescan(addr, buf, buflim, delim)
 			else
 				brccnt--;
 			if (brccnt <= 0)
+			{
+				brccnt = -1;
 				continue;
+			}
 		}
 
 		/*
@@ -459,8 +467,8 @@ prescan(addr, buf, buflim, delim)
 		if (delimmode = any(c, DELIMCHARS))
 			space = FALSE;
 
-		/* skip blanks */
-		if (!isascii(c) || !isspace(c))
+		/* if not a space, squirrel it away */
+		if ((!isascii(c) || !isspace(c)) && brccnt >= 0)
 		{
 			if (q >= buflim-1)
 			{
