@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)4.t	6.8 (Berkeley) %G%
+.\"	@(#)4.t	6.9 (Berkeley) %G%
 .\"
 .ds LH "Installing/Operating \*(4B
 .ds CF \*(Dy
@@ -224,9 +224,9 @@ If
 .Sm BLOCKSIZE=1k
 is set in the user's environment, all user programs report
 disk space in kilobytes, otherwise,
-disk sizes are always reported in units of 512-byte sectors\(dg.
+disk sizes are always reported in units of 512-byte sectors\**.
 .FS
-\(dgYou can thank System V intransigency and POSIX duplicity for
+You can thank System V intransigency and POSIX duplicity for
 requiring that 512-byte blocks be the units that programs report.
 .FE
 The
