@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwiomux.c	3.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwiomux.c	3.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -67,7 +67,7 @@ wwiomux()
 				wwcurtowin(wwcurwin);
 			wwupdate();
 			wwflush();
-			setjmp(wwjmpbuf);
+			(void) setjmp(wwjmpbuf);
 			wwsetjmp = 1;
 			if (wwinterrupt()) {
 				wwsetjmp = 0;
@@ -83,7 +83,7 @@ wwiomux()
 			 * in the kernel.)
 			 * I don't like this one bit.
 			 */
-			fcntl(0, F_SETFL, wwnewtty.ww_fflags);
+			(void) fcntl(0, F_SETFL, wwnewtty.ww_fflags);
 			tv.tv_sec = 30;
 			tv.tv_usec = 0;
 		} else {
