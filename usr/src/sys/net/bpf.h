@@ -31,6 +31,9 @@
 #define BPF_ALIGNMENT sizeof(long)
 #define BPF_WORDALIGN(x) (((x)+(BPF_ALIGNMENT-1))&~(BPF_ALIGNMENT-1))
 
+#define BPF_MAXINSNS 512
+#define BPF_MAXBUFSIZE 0x8000
+
 /*
  *  Structure for BIOCSETF.
  */
