@@ -1,6 +1,6 @@
 # Makefile for the f77 math & startup lib - libF77.a
 
-#	@(#)makefile	1.14	%G%
+#	@(#)makefile	1.15	%G%
 
 DESTDIR =
 LIB = libF77.a
@@ -16,7 +16,7 @@ LIBDIR = ${DESTDIR}/usr/lib
 TAPE = /dev/rnmt0.1600
 OPTIONS = -DUCBVAX
 
-MISC =	Version.o main.o s_rnge.o abort_.o exit_.o \
+MISC =	main.o s_rnge.o abort_.o exit_.o \
 	s_stop.o s_paus.o rand_.o range.o traper_.o trapov_.o \
 	dbesj0_.o dbesj1_.o dbesjn_.o dbesy0_.o dbesy1_.o dbesyn_.o \
 	besj0_.o besj1_.o besjn_.o besy0_.o besy1_.o besyn_.o
@@ -43,9 +43,9 @@ ALL =	$(MISC) $(POW) $(CX) $(DCX) $(REAL) $(DBL) $(INT) $(HALF) \
 
 all:	$(LIB)
 
-$(LIB):	$(ALL)
+$(LIB):	$(ALL) Version
 	@rm -f $(LIB)
-	ar rc $(LIB) $(ALL)
+	ar ru $(LIB) $(ALL) Version
 	@ls -l $(LIB)
 
 c_abs.o c_cos.o c_div.o c_div.o c_exp.o c_log.o c_sin.o c_sqrt.o d_cnjg.o d_imag.o pow_ci.o pow_zi.o pow_zz.o r_cnjg.o r_imag.o z_abs.o z_cos.o z_div.o z_div.o z_exp.o z_log.o z_sin.o z_sqrt.o:	complex
@@ -74,7 +74,7 @@ $(LIBDIR)/$(LIB):	$(LIB)
 clean:
 	rm -f $(ALL) $(LIB)
 
-SOURCES = Version.c main.c s_rnge.c abort_.c exit_.c opcodes.h \
+SOURCES = main.c s_rnge.c abort_.c exit_.c opcodes.h \
 	s_stop.c s_paus.c rand_.c bit.c range.c traper_.c trapov_.c \
 	dbesj0_.c dbesj1_.c dbesjn_.c dbesy0_.c dbesy1_.c dbesyn_.c \
 	besj0_.c besj1_.c besjn_.c besy0_.c besy1_.c besyn_.c \
@@ -97,6 +97,15 @@ SOURCES = Version.c main.c s_rnge.c abort_.c exit_.c opcodes.h \
 	l_ge.c l_gt.c l_le.c l_lt.c hl_ge.c hl_gt.c hl_le.c hl_lt.c \
 	ef1asc_.c ef1cmc_.c \
 	s_cat.c s_cmp.c s_copy.c lnblnk_.c rindex_.c
+
+Version:	$(SOURCES) mkvers
+	@rm -f Version.c
+	./mkvers $(LIB) $(SOURCES) > Version.c
+	cc -c Version.c
+	mv Version.o Version
+
+mkvers:	mkvers.c
+	@cc mkvers.c -o mkvers
 
 print:	index
 	@pr index Makefile `ls $(SOURCES)` | $(LPR)
