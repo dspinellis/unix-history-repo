@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1988 University of Utah.
- * Copyright (c) 1982, 1986, 1990 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1982, 1986, 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * the Systems Programming Group of the University of Utah Computer
@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: dcmreg.h 1.7 92/01/21$
  *
- *	@(#)dcmreg.h	7.6 (Berkeley) %G%
+ *	@(#)dcmreg.h	8.1 (Berkeley) %G%
  */
 
 #include <hp/dev/iotypes.h>		/* XXX */

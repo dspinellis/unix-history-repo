@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: ite_dv.c 1.9 92/12/20$
  *
- *	@(#)ite_dv.c	7.8 (Berkeley) %G%
+ *	@(#)ite_dv.c	8.1 (Berkeley) %G%
  */
 
 #include "ite.h"
