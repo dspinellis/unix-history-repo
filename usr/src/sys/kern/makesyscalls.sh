@@ -1,5 +1,5 @@
 #! /bin/sh -
-#	@(#)makesyscalls.sh	7.2 (Berkeley) %G%
+#	@(#)makesyscalls.sh	7.3 (Berkeley) %G%
 
 # name of compat option:
 compat=COMPAT_43
@@ -104,17 +104,17 @@ awk < $1 "
 	}
 	$2 == "COMPAT" {
 		printf("int\to%s();\n", $4) > syscompat
-		printf("\tcompat(%d,%s),\t\t/* %d = old %s */\n", \
+		printf("\tcompat(%d,%s),\t\t/* %d = old_%s */\n", \
 		    $3, $4, syscall, $5) > sysent
-		printf("\t\"old %s\",\t\t/* %d = old %s */\n", \
+		printf("\t\"old %s\",\t\t/* %d = old_%s */\n", \
 		    $5, syscall, $5) > sysnames
-		printf("\t\t\t\t/* %d is old %s */\n", \
+		printf("\t\t\t\t/* %d is old_%s */\n", \
 		    syscall, comment) > syshdr
 	}
 	$2 == "OBSOL" {
 		printf("\t0, nosys,\t\t\t/* %d = obsolete %s */\n", \
 		    syscall, comment) > sysent
-		printf("\t\"obs %s\",\t\t\t/* %d = obsolete %s */\n", \
+		printf("\t\"obs_%s\",\t\t\t/* %d = obsolete %s */\n", \
 		    $4, syscall, comment) > sysnames
 		printf("\t\t\t\t/* %d is obsolete %s */\n", \
 		    syscall, comment) > syshdr
