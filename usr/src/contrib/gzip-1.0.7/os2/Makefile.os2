@@ -1,0 +1,51 @@
+# Makefile for gzip (GNU zip)    -*- Indented-Text -*-
+# Copyright (C) 1992-1993 Jean-loup Gailly
+
+# specialized version for OS/2
+# compilation with emx 0.8f (gcc 2.3.3) or newer
+
+# release version, statically linked C runtime
+static:
+	$(MAKE) -f Makefile.os2 all \
+	CC="gcc -Zomf -Zsys -O" O=".obj" LDFLAGS="-s"
+
+# release version, dynamically linked C runtime
+dynamic:
+	$(MAKE) -f Makefile.os2 all \
+	CC="gcc -Zomf -Zmt -O" O=".obj" LDFLAGS="-s"
+
+# debugging version
+debug:
+	$(MAKE) -f Makefile.os2 all \
+	CC="gcc -g" O=".o"
+
+CFLAGS  = -DOS2 -DASMV
+LIBS    = gzip.def
+OBJA    = match$O
+
+OBJS = gzip$O zip$O deflate$O trees$O bits$O unzip$O inflate$O util$O \
+       crypt$O lzw$O unlzw$O unpack$O getopt$O $(OBJA)
+
+.c$O:
+	$(CC) $(CFLAGS) -c $<
+
+all: gzip.exe gzip.info gzip.doc
+
+gzip.exe: $(OBJS)
+	$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
+
+gzip$O zip$O deflate$O trees$O bits$O unzip$O inflate$O: gzip.h tailor.h
+util$O lzw$O unlzw$O unpack$O crypt$O: gzip.h tailor.h
+
+gzip$O unlzw$O: revision.h lzw.h
+
+bits$O unzip$O util$O zip$O: crypt.h
+
+match$O: match.S
+	$(CC) -xassembler-with-cpp -c -o $@ match.S
+
+gzip.info: gzip.texi gpl.texinfo
+	makeinfo gzip.texi
+
+gzip.doc: gzip.1
+	groff -man gzip.1 > $@
