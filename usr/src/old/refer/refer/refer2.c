@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)refer2.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)refer2.c	4.3 (Berkeley) %G%";
 #endif
 
 #include "refer..c"
@@ -9,7 +9,7 @@ static char *sccsid = "@(#)refer2.c	4.2 (Berkeley) %G%";
 extern FILE *in;
 char one[ANSLEN];
 int onelen = ANSLEN;
-static char dr [100] = "";
+extern char usedir[];
 
 doref(line1)
 char *line1;
@@ -117,7 +117,7 @@ char *line1;
 					return;
 				}
 			if (one[0] == 0)
-				corout(answer, one, "deliv", dr, QLEN);
+				corout(answer, one, "deliv", usedir, QLEN);
 			break;
 		}
 	assert(strlen(buff) < QLEN);
@@ -159,7 +159,7 @@ char *buff;
 	for (r = p = buff; *p; p++) {
 		if (*p == '\n') {
 			*p++ = 0;
-			corout(r, ob, "deliv", dr, BUFSIZ);
+			corout(r, ob, "deliv", usedir, BUFSIZ);
 			nl = 1;
 			for (q = ob; *q; q++) {
 				if (nl && (q[0]=='.'||q[0]=='%') && q[1]=='T') {
