@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)more.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)more.c	5.28 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -616,17 +616,6 @@ Sprintf (n)
 }
 
 static char bell = ctrl('G');
-
-strlen (s)
-char *s;
-{
-    register char *p;
-
-    p = s;
-    while (*p++)
-	;
-    return (p - s - 1);
-}
 
 /* See whether the last component of the path name "path" is equal to the
 ** string "string"
@@ -1437,6 +1426,7 @@ initterm ()
     char	*term;
     int		tgrp;
     struct winsize win;
+    char	*tgoto();
 
 retry:
     if (!(no_tty = ioctl(fileno(stdout), TIOCGETP, &otty))) {
