@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwgets.c	1.5 83/07/28";
+static	char *sccsid = "@(#)wwgets.c	1.6 83/07/28";
 #endif
 
 #include "defs.h"
@@ -47,29 +47,39 @@ register struct ww *w;
 
 	for (;;) {
 		wwsetcursor(WCurRow(w->ww_win), WCurCol(w->ww_win));
-		while ((c = bpeekc()) < 0)
+		while ((c = bgetc()) < 0)
 			bread();
-		switch (c) {
-		case '\b':
-			if (p > buf) {
-				wwputs("\b \b", w);
-				p--;
-				if (ISCTRL(*p))
-					wwputs("\b \b", w);
-			} else
+		if (c == wwoldtty.ww_sgttyb.sg_erase) {
+			if (p > buf)
+				rub(*--p, w);
+			else
 				Ding();
+		} else if (c == wwoldtty.ww_sgttyb.sg_kill) {
+			while (p > buf)
+				rub(*--p, w);
+		} else if (c == wwoldtty.ww_ltchars.t_werasc) {
+			while (--p >= buf && (*p == ' ' || *p == '\t'))
+				rub(*p, w);
+			while (p >= buf && *p != ' ' && *p != '\t')
+				rub(*p--, w);
+			p++;
+		} else if (c == '\r' || c == '\n') {
 			break;
-		case '\r':
-		case '\n':
-			*p = 0;
-			return;
-		default:
+		} else {
 			if (p >= buf + n - 1)
 				Ding();
-			else {
-				*p++ = c;
-				wwputs(unctrl(*p), w);
-			}
+			else
+				wwputs(unctrl(*p++ = c), w);
 		}
 	}
+	*p = 0;
+}
+
+rub(c, w)
+struct ww *w;
+{
+	register i;
+
+	for (i = strlen(unctrl(c)); --i >= 0;)
+		wwputs("\b \b", w);
 }
