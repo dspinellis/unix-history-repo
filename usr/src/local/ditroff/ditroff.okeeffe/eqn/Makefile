@@ -1,21 +1,20 @@
-
 #
-#	Makefile	(CWI)	1.2	85/03/12
+#	Makefile	(CWI)	2.1	87/04/01
 #
-CFLAGS= -O
+CFLAGS=
 YFLAGS= -d
 DESTDIR=
-BINDIR=/usr/local/.code
+BINDIR=/usr/local
 OBJECTS= diacrit.o eqnbox.o font.o fromto.o funny.o glob.o integral.o \
- io.o lex.o lookup.o mark.o matrix.o move.o over.o paren.o \
- pile.o shift.o size.o sqrt.o text.o e.o
+ input.o main.o lex.o lookup.o mark.o matrix.o move.o over.o paren.o \
+ pile.o shift.o size.o sqrt.o text.o eqn.o
 
-all:	dieqn
+all:	dieqn ${FILES}
 
 dieqn:	${OBJECTS}
-	cc -n -o dieqn ${CFLAGS} ${OBJECTS}
+	cc -o dieqn ${CFLAGS} ${OBJECTS}
 
-y.tab.h:	e.o
+y.tab.h:	eqn.o
 
 e.def:	y.tab.h
 	-cmp -s y.tab.h e.def || cp y.tab.h e.def
