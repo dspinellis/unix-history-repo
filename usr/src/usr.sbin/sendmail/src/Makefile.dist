@@ -1,0 +1,18 @@
+# a very simple makefile...
+# installation:
+#	install sendmail, owned by root, group kmem, mode 6555
+#	link sendmail to "newaliases" and "mailq"
+#	delete sendmail.fc, sendmail.st
+#	install sendmail.hf
+#	refreeze the configuration file
+#
+#	note, this installation is NOT complete... it assumes that
+#	sendmail is already running on the system and you know where
+#	everything goes.
+sendmail:
+	@echo 'make of sendmail and manual pages started.'
+	cc -DVMUNIX -I. *.c -ldbm -lcompat -lutil
+	nroff -h -man aliases.5 > aliases.0
+	nroff -h -man newaliases.1 > newaliases.0
+	nroff -h -man sendmail.0 > sendmail.0
+	@echo 'make of sendmail and manual pages completed.'
