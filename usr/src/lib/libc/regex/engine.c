@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)engine.c	8.3 (Berkeley) %G%
+ *	@(#)engine.c	8.4 (Berkeley) %G%
  */
 
 /*
@@ -64,12 +64,12 @@ extern "C" {
 #endif
 
 /* === engine.c === */
-static int matcher(register struct re_guts *g, char *string, size_t nmatch, regmatch_t pmatch[], int eflags);
-static char *dissect(register struct match *m, char *start, char *stop, sopno startst, sopno stopst);
-static char *backref(register struct match *m, char *start, char *stop, sopno startst, sopno stopst, sopno lev);
-static char *fast(register struct match *m, char *start, char *stop, sopno startst, sopno stopst);
-static char *slow(register struct match *m, char *start, char *stop, sopno startst, sopno stopst);
-static states step(register struct re_guts *g, sopno start, sopno stop, register states bef, int ch, register states aft);
+static int matcher __P((struct re_guts *g, char *string, size_t nmatch, regmatch_t pmatch[], int eflags));
+static char *dissect __P((struct match *m, char *start, char *stop, sopno startst, sopno stopst));
+static char *backref __P((struct match *m, char *start, char *stop, sopno startst, sopno stopst, sopno lev));
+static char *fast __P((struct match *m, char *start, char *stop, sopno startst, sopno stopst));
+static char *slow __P((struct match *m, char *start, char *stop, sopno startst, sopno stopst));
+static states step __P((struct re_guts *g, sopno start, sopno stop, states bef, int ch, states aft));
 #define	BOL	(OUT+1)
 #define	EOL	(BOL+1)
 #define	BOLEOL	(BOL+2)
@@ -80,13 +80,13 @@ static states step(register struct re_guts *g, sopno start, sopno stop, register
 #define	NONCHAR(c)	((c) > CHAR_MAX)
 #define	NNONCHAR	(CODEMAX-CHAR_MAX)
 #ifdef REDEBUG
-static void print(struct match *m, char *caption, states st, int ch, FILE *d);
+static void print __P((struct match *m, char *caption, states st, int ch, FILE *d));
 #endif
 #ifdef REDEBUG
-static void at(struct match *m, char *title, char *start, char *stop, sopno startst, sopno stopst);
+static void at __P((struct match *m, char *title, char *start, char *stop, sopno startst, sopno stopst));
 #endif
 #ifdef REDEBUG
-static char *pchar(int ch);
+static char *pchar __P((int ch));
 #endif
 
 #ifdef __cplusplus
