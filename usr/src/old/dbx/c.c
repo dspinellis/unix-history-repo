@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)c.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)c.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 static char rcsid[] = "$Header: c.c,v 1.5 84/12/26 10:38:23 linton Exp $";
@@ -473,9 +473,11 @@ Symbol s;
 		if (s->language != primlang) {
 		    putchar('"');
 		}
-		while (len > 0) {
+		while (--len > 0 and *str != '\0') {
 		    printchar(*str++);
-		    len--;
+		}
+		if (*str != '\0') {	/* XXX - pitch trailing null */
+		    printchar(*str);
 		}
 		if (s->language != primlang) {
 		    putchar('"');
