@@ -5,12 +5,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)op.me	5.8 (Berkeley) %G%
+.\"	@(#)op.me	5.9 (Berkeley) %G%
 .\"
 .\" eqn % | troff -me
 .\"if n .ls 2
 .\".he 'Sendmail Installation and Operation Guide''%'
-.\".fo 'Version 5.8''Last Mod %G%'
+.\".fo 'Version 5.9''Last Mod %G%'
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
 .oh 'Sendmail Installation and Operation Guide''SMM:07-%'
 .nr si 3n
@@ -40,7 +40,7 @@
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 5.8
+Version 5.9
 .)l
 .sp 2
 .pp
@@ -3164,6 +3164,27 @@ to
 .ip H\fIfile\fP
 Specify the help file
 for SMTP.
+.ip I
+Insist that the BIND name server be running
+to resolve host names.
+If this is not set and the name server is not running,
+the
+.i /etc/hosts
+file will be considered complete.
+In general, you do want to set this option
+if your
+.i /etc/hosts
+file does not include all hosts known to you
+or if you are using the MX (mail forwarding) feature of the BIND name server.
+The name server will still be consulted
+even if this option is not set, but
+.i sendmail
+will feel free to resort to reading
+.i /etc/hosts
+if the name server is not available.
+Thus, you should
+.i never
+set this option if you do not run the name server.
 .ip i
 Ignore dots in incoming messages.
 .ip L\fIn\fP
@@ -3646,6 +3667,9 @@ you can set this flag to turn off special processing
 of UNIX-style
 .q "From "
 lines.
+.ip NAMED_BIND
+Compile in code to use the Berkeley Internet Name Domain (BIND) server
+to resolve TCP/IP host names.
 .uh "Configuration in src/conf.c"
 .pp
 Not all header semantics are defined in the configuration file.
@@ -3991,7 +4015,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 5.8
+.\"Version 5.9
 .\".ce 0
 .pn 2
 .bp
