@@ -5,30 +5,41 @@
 #
 #	@(#)Makefile	5.4 (Berkeley) %G%
 #
-DESTDIR=
 CFLAGS=	-O
 
 # Programs that live in subdirectories, and have makefiles of their own.
 #
-SUBDIR=	eyacc pi pc0 px pxp pdx utilities
+SUBDIR=	pi pc0 px pxp pdx utilities
 
 all:
-	for i in ${SUBDIR}; do \
+	for i in eyacc ${SUBDIR}; do \
 		(cd $$i; make ${MFLAGS}); \
 	done
 
-${SUBDIR}: /tmp
+${SUBDIR}: FRC
 	cd $@; make ${MFLAGS}
 
-install:
-	for i in ${SUBDIR}; do \
-		(echo $$i; cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install); \
+tags: FRC
+	for i in eyacc ${SUBDIR}; do \
+		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} tags); \
 	done
 
-clean:
+install: FRC
+	for i in eyacc ${SUBDIR}; do \
+		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install); \
+	done
+
+clean: FRC
 	rm -f a.out core *.s *.o
-	for i in ${SUBDIR}; do \
-		(echo $$i; cd $$i; make ${MFLAGS} clean); \
+	for i in eyacc ${SUBDIR}; do \
+		(cd $$i; make ${MFLAGS} clean); \
 	done
 
 depend:
+	(cd eyacc; make ${MFLAGS} depend)
+	(cd eyacc; make ${MFLAGS} all)
+	for i in ${SUBDIR}; do \
+		(cd $$i; make ${MFLAGS} depend); \
+	done
+
+FRC:
