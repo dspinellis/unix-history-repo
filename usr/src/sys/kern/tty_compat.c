@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty_compat.c	7.14 (Berkeley) %G%
+ *	@(#)tty_compat.c	7.15 (Berkeley) %G%
  */
 
 /* 
@@ -231,6 +231,10 @@ ttcompatgetflags(tp)
 		else
 			flags |= RAW;
 	}
+	if (cflag&MDMBUF)
+		flags |= MDMBUF;
+	if ((cflag&HUPCL) == 0)
+		flags |= NOHANG;
 	if (oflag&OXTABS)
 		flags |= XTABS;
 	if (lflag&ECHOE)
@@ -243,7 +247,7 @@ ttcompatgetflags(tp)
 		flags |= CTLECH;
 	if ((iflag&IXANY) == 0)
 		flags |= DECCTQ;
-	flags |= lflag&(ECHO|MDMBUF|TOSTOP|FLUSHO|NOHANG|PENDIN|NOFLSH);
+	flags |= lflag&(ECHO|TOSTOP|FLUSHO|PENDIN|NOFLSH);
 if (ttydebug)
 	printf("getflags: %x\n", flags);
 	return (flags);
@@ -347,11 +351,19 @@ ttcompatsetlflags(tp, t)
 	else
 		lflag &= ~ECHOCTL;
 	if ((flags&DECCTQ) == 0)
-		lflag |= IXANY;
+		iflag |= IXANY;
 	else
-		lflag &= ~IXANY;
-	lflag &= ~(MDMBUF|TOSTOP|FLUSHO|NOHANG|PENDIN|NOFLSH);
-	lflag |= flags&(MDMBUF|TOSTOP|FLUSHO|NOHANG|PENDIN|NOFLSH);
+		iflag &= ~IXANY;
+	if (flags & MDMBUF)
+		cflag |= MDMBUF;
+	else
+		cflag &= ~MDMBUF;
+	if (flags&NOHANG)
+		cflag &= ~HUPCL;
+	else
+		cflag |= HUPCL;
+	lflag &= ~(TOSTOP|FLUSHO|PENDIN|NOFLSH);
+	lflag |= flags&(TOSTOP|FLUSHO|PENDIN|NOFLSH);
 	if (flags&(LITOUT|PASS8)) {
 		iflag &= ~ISTRIP;
 		cflag &= ~(CSIZE|PARENB);

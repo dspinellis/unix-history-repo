@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty.c	7.52 (Berkeley) %G%
+ *	@(#)tty.c	7.53 (Berkeley) %G%
  */
 
 #include "param.h"
