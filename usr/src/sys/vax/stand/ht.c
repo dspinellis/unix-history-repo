@@ -1,15 +1,17 @@
-/*	ht.c	4.7	82/03/07	*/
+/*	ht.c	4.8	82/11/13	*/
 
 /*
  * TM03/TU?? tape driver
  */
 
-#include "../h/htreg.h"
 #include "../h/param.h"
 #include "../h/inode.h"
 #include "../h/pte.h"
-#include "../h/mbareg.h"
 #include "../h/fs.h"
+
+#include "../vaxmba/htreg.h"
+#include "../vaxmba/mbareg.h"
+
 #include "saio.h"
 #include "savax.h"
 

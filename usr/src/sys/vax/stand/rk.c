@@ -1,15 +1,17 @@
-/*	rk.c	4.5	82/07/15	*/
+/*	rk.c	4.6	82/11/13	*/
 
 /*
  * RK611/RK07
  */
 
 #include "../h/param.h"
-#include "../h/rkreg.h"
 #include "../h/inode.h"
 #include "../h/pte.h"
-#include "../h/ubareg.h"
 #include "../h/fs.h"
+
+#include "../vaxuba/ubareg.h"
+#include "../vaxuba/rkreg.h"
+
 #include "saio.h"
 #include "savax.h"
 

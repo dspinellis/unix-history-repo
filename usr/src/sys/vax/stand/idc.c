@@ -1,4 +1,4 @@
-/*	idc.c	4.2	82/07/15	*/
+/*	idc.c	4.3	82/11/13	*/
 
 /*
  * IDC (RB730)
@@ -8,11 +8,13 @@
  */
 
 #include "../h/param.h"
-#include "../h/idcreg.h"
 #include "../h/inode.h"
 #include "../h/pte.h"
-#include "../h/ubareg.h"
 #include "../h/fs.h"
+
+#include "../vaxuba/idcreg.h"
+#include "../vaxuba/ubareg.h"
+
 #include "saio.h"
 #include "savax.h"
 

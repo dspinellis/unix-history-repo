@@ -1,4 +1,4 @@
-/*	ut.c	4.3	82/07/15	*/
+/*	ut.c	4.4	82/11/13	*/
 
 /*
  * SI Model 9700 -- emulates TU45 on the UNIBUS
@@ -7,12 +7,14 @@
 #include "../h/param.h"
 #include "../h/inode.h"
 #include "../h/pte.h"
-#include "../h/ubareg.h"
 #include "../h/fs.h"
+
+#include "../vaxuba/ubareg.h"
+#include "../vaxuba/utreg.h"
+
 #include "saio.h"
 #include "savax.h"
 
-#include "../h/utreg.h"
 
 u_short	utstd[] = { 0172440 };		/* non-standard */
 

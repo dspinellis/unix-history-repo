@@ -1,8 +1,9 @@
-/*	prf.c	4.3	81/05/05	*/
+/*	prf.c	4.4	82/11/13	*/
 
 #include "../h/param.h"
-#include "../h/cons.h"
-#include "../h/mtpr.h"
+
+#include "../vax/mtpr.h"
+#include "../vax/cons.h"
 
 /*
  * Scaled down version of C Library printf.
