@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* notdef */
 
 #ifdef notdef
-static char sccsid[] = "@(#)main.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.9 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -59,9 +59,6 @@ main(argc, argv)
 	 * all the temporary files, buffer standard output, and so forth.
 	 */
 
-#ifdef	GETHOST
-	inithost();
-#endif	GETHOST
 	mypid = getpid();
 	intty = isatty(0);
 	outtty = isatty(1);
