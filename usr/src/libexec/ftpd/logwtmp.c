@@ -7,14 +7,16 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)logwtmp.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)logwtmp.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
-#include <sys/file.h>
 #include <sys/time.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 #include <utmp.h>
+#include <unistd.h>
+#include <string.h>
 
 static int fd = -1;
 

@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	5.38 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	5.39 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -22,9 +22,7 @@ static char sccsid[] = "@(#)ftpd.c	5.38 (Berkeley) %G%";
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
-#include <sys/file.h>
 #include <sys/wait.h>
-#include <sys/dir.h>
 
 #include <netinet/in.h>
 #include <netinet/in_systm.h>
@@ -35,16 +33,21 @@ static char sccsid[] = "@(#)ftpd.c	5.38 (Berkeley) %G%";
 #include <arpa/inet.h>
 #include <arpa/telnet.h>
 
-#include <ctype.h>
-#include <stdio.h>
 #include <signal.h>
+#include <dirent.h>
+#include <fcntl.h>
+#include <time.h>
 #include <pwd.h>
 #include <setjmp.h>
 #include <netdb.h>
 #include <errno.h>
-#include <string.h>
 #include <syslog.h>
 #include <varargs.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
 #include "pathnames.h"
 
 /*
@@ -105,8 +108,7 @@ char	remotehost[MAXHOSTNAMELEN];
 int	swaitmax = SWAITMAX;
 int	swaitint = SWAITINT;
 
-int	lostconn();
-int	myoob();
+void	lostconn(), myoob();
 FILE	*getdatasock(), *dataconn();
 
 #ifdef SETPROCTITLE
@@ -238,9 +240,9 @@ nextopt:
 	/* NOTREACHED */
 }
 
+void
 lostconn()
 {
-
 	if (debug)
 		syslog(LOG_DEBUG, "lost connection");
 	dologout(-1);
@@ -255,7 +257,6 @@ char *
 sgetsave(s)
 	char *s;
 {
-	char *malloc();
 	char *new = malloc((unsigned) strlen(s) + 1);
 
 	if (new == NULL) {
@@ -1114,6 +1115,7 @@ dologout(status)
 	_exit(status);
 }
 
+void
 myoob()
 {
 	char *cp;
@@ -1241,17 +1243,17 @@ send_file_list(whichfiles)
 {
 	struct stat st;
 	DIR *dirp = NULL;
-	struct direct *dir;
+	struct dirent *dir;
 	FILE *dout = NULL;
 	register char **dirlist, *dirname;
 	int simple = 0;
 	char *strpbrk();
 
 	if (strpbrk(whichfiles, "~{[*?") != NULL) {
-		extern char **glob(), *globerr;
+		extern char **ftpglob(), *globerr;
 
 		globerr = NULL;
-		dirlist = glob(whichfiles);
+		dirlist = ftpglob(whichfiles);
 		if (globerr != NULL) {
 			reply(550, globerr);
 			return;

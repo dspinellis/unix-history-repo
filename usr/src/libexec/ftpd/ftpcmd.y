@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ftpcmd.y	5.23 (Berkeley) %G%
+ *	@(#)ftpcmd.y	5.24 (Berkeley) %G%
  */
 
 /*
@@ -15,24 +15,24 @@
 %{
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpcmd.y	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpcmd.y	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/socket.h>
-
+#include <sys/stat.h>
 #include <netinet/in.h>
-
 #include <arpa/ftp.h>
-
-#include <stdio.h>
 #include <signal.h>
-#include <ctype.h>
-#include <pwd.h>
 #include <setjmp.h>
 #include <syslog.h>
-#include <sys/stat.h>
 #include <time.h>
+#include <pwd.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
 
 extern	struct sockaddr_in data_dest;
 extern	int logged_in;
@@ -51,7 +51,7 @@ extern	char *globerr;
 extern	int usedefault;
 extern  int transflag;
 extern  char tmpline[];
-char	**glob();
+char	**ftpglob();
 
 static	int cmd_type;
 static	int cmd_form;
@@ -59,7 +59,6 @@ static	int cmd_bytesz;
 char	cbuf[512];
 char	*fromname;
 
-char	*index();
 %}
 
 %token
@@ -594,7 +593,7 @@ pathname:	pathstring
 		 * This is a valid reply in some cases but not in others.
 		 */
 		if (logged_in && $1 && strncmp((char *) $1, "~", 1) == 0) {
-			*(char **)&($$) = *glob((char *) $1);
+			*(char **)&($$) = *ftpglob((char *) $1);
 			if (globerr != NULL) {
 				reply(550, globerr);
 				$$ = NULL;
@@ -801,12 +800,10 @@ getline(s, n, iop)
 	return (s);
 }
 
-static int
+static void
 toolong()
 {
 	time_t now;
-	extern char *ctime();
-	extern time_t time();
 
 	reply(421,
 	  "Timeout (%d seconds): closing control connection.", timeout);
@@ -825,8 +822,7 @@ yylex()
 	register char *cp, *cp2;
 	register struct tab *p;
 	int n;
-	char c, *strpbrk();
-	char *copy();
+	char c, *copy();
 
 	for (;;) {
 		switch (state) {
@@ -1052,7 +1048,6 @@ copy(s)
 	char *s;
 {
 	char *p;
-	extern char *malloc(), *strcpy();
 
 	p = malloc((unsigned) strlen(s) + 1);
 	if (p == NULL)
