@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vmparam.h	5.7 (Berkeley) %G%
+ *	@(#)vmparam.h	5.8 (Berkeley) %G%
  */
 
 
@@ -21,16 +21,14 @@
  * USRTEXT is the start of the user text/data space, while USRSTACK
  * is the top (end) of the user stack. Immediately above the user stack
  * resides the user structure, which is UPAGES long and contains the
- * kernel stack. As such, UPAGES is the number of pages from the beginning
- * of the P1 region to the beginning of the user stack. Also, the P0
- * region begins with user text and ends with user data.
- * Immediately after the user structure is the kernal address space.
+ * kernel stack.
+ *
+ * Immediately after the user structure is the page table map, and then
+ * kernal address space.
  */
 #define	USRTEXT		0
-#define	USRSTACK	0xFDBFE000
+#define	USRSTACK	0xFDBFD000
 #define	BTOPUSRSTACK	(0xFDC00-(UPAGES))	/* btop(USRSTACK) */
-
-#define P1PAGES		0xFDC00
 #define	LOWPAGES	0
 #define HIGHPAGES	UPAGES
 
@@ -176,6 +174,7 @@
 
 /* user/kernel map constants */
 #define VM_MIN_ADDRESS		((vm_offset_t)0)
+#define VM_MAXUSER_ADDRESS	((vm_offset_t)0xFDBFD000)
 #define UPT_MIN_ADDRESS		((vm_offset_t)0xFDC00000)
 #define UPT_MAX_ADDRESS		((vm_offset_t)0xFDFF7000)
 #define VM_MAX_ADDRESS		UPT_MAX_ADDRESS
