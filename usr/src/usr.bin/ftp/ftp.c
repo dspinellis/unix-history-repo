@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	4.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	4.14 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -480,6 +480,7 @@ initconn()
 {
 	register char *p, *a;
 	int result, len;
+	int on = 1;
 
 noport:
 	data_addr = myctladdr;
@@ -493,7 +494,7 @@ noport:
 		return (1);
 	}
 	if (!sendport)
-		if (setsockopt(data, SOL_SOCKET, SO_REUSEADDR, 0, 0) < 0) {
+		if (setsockopt(data, SOL_SOCKET, SO_REUSEADDR, &on, sizeof (on)) < 0) {
 			perror("ftp: setsockopt (resuse address)");
 			goto bad;
 		}
@@ -502,7 +503,7 @@ noport:
 		goto bad;
 	}
 	if (options & SO_DEBUG &&
-	    setsockopt(data, SOL_SOCKET, SO_DEBUG, 0, 0) < 0)
+	    setsockopt(data, SOL_SOCKET, SO_DEBUG, &on, sizeof (on)) < 0)
 		perror("ftp: setsockopt (ignored)");
 	len = sizeof (data_addr);
 	if (getsockname(data, (char *)&data_addr, &len) < 0) {

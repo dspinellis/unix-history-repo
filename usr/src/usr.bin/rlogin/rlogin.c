@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rlogin.c	4.15 (Berkeley) 83/07/02";
+static char sccsid[] = "@(#)rlogin.c	4.16 (Berkeley) 84/12/03";
 #endif
 
 /*
@@ -40,6 +40,7 @@ main(argc, argv)
 	struct passwd *pwd;
 	struct servent *sp;
 	int uid, options = 0;
+	int on = 1;
 
 	host = rindex(argv[0], '/');
 	if (host)
@@ -99,7 +100,7 @@ another:
         if (rem < 0)
                 exit(1);
 	if (options & SO_DEBUG &&
-	    setsockopt(rem, SOL_SOCKET, SO_DEBUG, 0, 0) < 0)
+	    setsockopt(rem, SOL_SOCKET, SO_DEBUG, &on, sizeof (on)) < 0)
 		perror("rlogin: setsockopt (SO_DEBUG)");
 	uid = getuid();
 	if (setuid(uid) < 0) {
