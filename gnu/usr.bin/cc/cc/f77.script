@@ -26,8 +26,8 @@ first=yes
 # More precisely, it is the option that wants an argument.
 quote=
 # $library is made empty to disable use of libf2c.
-#library=-lF77 -lI77
-library=-lf2c
+#library=-lF77 -lI77 -lm
+library="-lf2c -lm"
 numargs=$#
 
 # ash requires the newline before `do'.
@@ -59,8 +59,8 @@ do
 	# always comes before the math library.  We recognize both -lm
 	# and -lmath, since on some systems (e.g. m88k SVR3), it
 	# doesn't call it libm.a for some reason.
-	set "$@" $library
-	library=""
+	#set "$@" $library
+	#library=""
 	;;
       -[bBVDUoeTuIYmLiA] | -Tdata)
 	# these switches take following word as argument,
@@ -83,10 +83,10 @@ do
 	# Pass other options through; they don't need -x and aren't inputs.
 	;;
       *)
-	# If file ends in .c or .i, put options around it.
+	# If file ends in .i, put options around it.
 	# But not if a specified -x option is currently active.
-	case "$speclang $arg" in -xnone\ *.[ci])
-	  set "$@" -xc++ "'$arg'" -xnone
+	case "$speclang $arg" in -xnone\ *.i)
+	  set "$@" -xf2c "'$arg'" -xnone
 	  continue
 	esac
 	;;
@@ -109,6 +109,6 @@ then
   exit 1
 fi
 
-eval $gcc -pipe "$@" $library
+eval $gcc "$@" $library
 
 
