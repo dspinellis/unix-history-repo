@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.45	%G%";
+static char SccsId[] = "@(#)deliver.c	3.46	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -383,8 +383,8 @@ sendoff(m, pvp, editfcn, ctladdr)
 	{
 		/* child -- set up input & exec mailer */
 		/* make diagnostic output be standard output */
-		(void) signal(SIGINT, SIG_DFL);
-		(void) signal(SIGHUP, SIG_DFL);
+		(void) signal(SIGINT, SIG_IGN);
+		(void) signal(SIGHUP, SIG_IGN);
 		(void) signal(SIGTERM, SIG_DFL);
 		(void) close(2);
 		(void) dup(1);
