@@ -1,4 +1,4 @@
-/*	mbareg.h	4.14	81/03/09	*/
+/*	mbareg.h	4.15	81/05/03	*/
 
 /*
  * VAX MASSBUS adapter registers
@@ -123,4 +123,4 @@ extern	char	mbsr_bits[];
 #define	MBDT_TE16	051
 #define	MBDT_TU45	052
 #define	MBDT_TU77	054
-#define	MBDT_TU78	0140		/* can't handle these (yet) */
+#define	MBDT_TU78	0101		/* can't handle these (yet) */
