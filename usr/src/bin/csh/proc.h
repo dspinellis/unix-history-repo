@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)proc.h	5.5 (Berkeley) %G%
+ *	@(#)proc.h	5.6 (Berkeley) %G%
  */
 
 /*
@@ -21,7 +21,7 @@ struct process {
     struct directory *p_cwd;	/* cwd of the job (only in head) */
     short unsigned p_flags;	/* various job status flags */
     char    p_reason;		/* reason for entering this state */
-    char    p_index;		/* shorthand job index */
+    int     p_index;		/* shorthand job index */
     int     p_pid;
     int     p_jobid;		/* pid of job leader */
     /* if a job is stopped/background p_jobid gives its pgrp */
@@ -72,4 +72,4 @@ struct process *pcurrjob;	/* current job */
 struct process *pcurrent;	/* current job in table */
 struct process *pprevious;	/* previous job in table */
 
-short   pmaxindex;		/* current maximum job index */
+int    pmaxindex;		/* current maximum job index */
