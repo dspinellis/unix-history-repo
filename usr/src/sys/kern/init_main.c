@@ -2,7 +2,7 @@
  * Copyright (c) 1982, 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *	@(#)init_main.c	7.20 (Berkeley) %G%
+ *	@(#)init_main.c	7.21 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -85,7 +85,9 @@ main(firstaddr)
 	if (pg->pg_session == NULL)
 		panic("no space to craft zero'th session");
 	pg->pg_session->s_count = 1;
-	pg->pg_session->s_leader = 0;
+	pg->pg_session->s_leader = NULL;
+	pg->pg_session->s_ttyvp = NULL;
+	pg->pg_session->s_ttyp = NULL;
 #ifdef KTRACE
 	p->p_tracep = NULL;
 	p->p_traceflag = 0;
