@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)lpd.c	4.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)lpd.c	4.12 (Berkeley) %G%";
 #endif
 
 /*
@@ -17,12 +17,6 @@ static char sccsid[] = "@(#)lpd.c	4.11 (Berkeley) %G%";
  *		return the current state of the queue (long form).
  *	\5printer person [users ...] [jobs ...]\n
  *		remove jobs from the queue.
- *	\6printer\n
- *		enable queuing on the specified printer queue.
- *	\7printer\n
- *		disable queuing on the specified printer queue.
- *	\8printer\n
- *		return the queue status (queuing enabled or disabled).
  *
  * Strategy to maintain protected spooling area:
  *	1. Spooling area is writable only by daemon and spooling group
@@ -39,11 +33,10 @@ static char sccsid[] = "@(#)lpd.c	4.11 (Berkeley) %G%";
 
 #include "lp.h"
 
-static int	lflag;				/* log requests flag */
-static char	*logfile = DEFLOGF;
+int	lflag;				/* log requests flag */
 
 int	reapchild();
-int	cleanup();
+int	mcleanup();
 
 main(argc, argv)
 	int argc;
@@ -67,10 +60,6 @@ main(argc, argv)
 			case 'l':
 				lflag++;
 				break;
-			case 'L':
-				argc--;
-				logfile = *++argv;
-				break;
 			}
 	}
 
@@ -80,11 +69,11 @@ main(argc, argv)
 	 */
 	if (fork())
 		exit(0);
-	for (f = 0; f < 3; f++)
+	for (f = 0; f < 5; f++)
 		(void) close(f);
 	(void) open("/dev/null", O_RDONLY);
 	(void) open("/dev/null", O_WRONLY);
-	(void) open(logfile, O_WRONLY|O_APPEND);
+	(void) dup(1);
 	f = open("/dev/tty", O_RDWR);
 	if (f > 0) {
 		ioctl(f, TIOCNOTTY, 0);
@@ -92,16 +81,17 @@ main(argc, argv)
 	}
 #endif
 
+	openlog("lpd", LOG_PID, 0);
 	(void) umask(0);
 	lfd = open(MASTERLOCK, O_WRONLY|O_CREAT, 0644);
 	if (lfd < 0) {
-		log("cannot create %s", MASTERLOCK);
+		syslog(LOG_ERR, "%s: %m", MASTERLOCK);
 		exit(1);
 	}
 	if (flock(lfd, LOCK_EX|LOCK_NB) < 0) {
 		if (errno == EWOULDBLOCK)	/* active deamon present */
 			exit(0);
-		log("cannot lock %s", MASTERLOCK);
+		syslog(LOG_ERR, "%s: %m", MASTERLOCK);
 		exit(1);
 	}
 	ftruncate(lfd, 0);
@@ -111,7 +101,7 @@ main(argc, argv)
 	sprintf(line, "%u\n", getpid());
 	f = strlen(line);
 	if (write(lfd, line, f) != f) {
-		log("cannot write daemon pid");
+		syslog(LOG_ERR, "%s: %m", MASTERLOCK);
 		exit(1);
 	}
 	signal(SIGCHLD, reapchild);
@@ -122,19 +112,19 @@ main(argc, argv)
 	(void) unlink(SOCKETNAME);
 	funix = socket(AF_UNIX, SOCK_STREAM, 0);
 	if (funix < 0) {
-		logerr("socket");
+		syslog(LOG_ERR, "socket: %m");
 		exit(1);
 	}
 #define	mask(s)	(1 << ((s) - 1))
 	omask = sigblock(mask(SIGHUP)|mask(SIGINT)|mask(SIGQUIT)|mask(SIGTERM));
-	signal(SIGHUP, cleanup);
-	signal(SIGINT, cleanup);
-	signal(SIGQUIT, cleanup);
-	signal(SIGTERM, cleanup);
+	signal(SIGHUP, mcleanup);
+	signal(SIGINT, mcleanup);
+	signal(SIGQUIT, mcleanup);
+	signal(SIGTERM, mcleanup);
 	sun.sun_family = AF_UNIX;
 	strcpy(sun.sun_path, SOCKETNAME);
 	if (bind(funix, &sun, strlen(sun.sun_path) + 2) < 0) {
-		logerr("unix domain bind");
+		syslog(LOG_ERR, "ubind: %m");
 		exit(1);
 	}
 	sigsetmask(omask);
@@ -146,19 +136,19 @@ main(argc, argv)
 
 		if (options & SO_DEBUG)
 			if (setsockopt(finet, SOL_SOCKET, SO_DEBUG, 0, 0) < 0) {
-				logerr("setsockopt (SO_DEBUG)");
-				cleanup();
+				syslog(LOG_ERR, "setsockopt (SO_DEBUG): %m");
+				mcleanup();
 			}
 		sp = getservbyname("printer", "tcp");
 		if (sp == NULL) {
-			log("printer/tcp: unknown service");
-			cleanup();
+			syslog(LOG_ERR, "printer/tcp: unknown service");
+			mcleanup();
 		}
 		sin.sin_family = AF_INET;
 		sin.sin_port = sp->s_port;
 		if (bind(finet, &sin, sizeof(sin), 0) < 0) {
-			logerr("internet domain bind");
-			cleanup();
+			syslog(LOG_ERR, "bind: %m");
+			mcleanup();
 		}
 		defreadfds |= 1 << finet;
 		listen(finet, 5);
@@ -171,11 +161,8 @@ main(argc, argv)
 
 		nfds = select(20, &readfds, 0, 0, 0);
 		if (nfds <= 0) {
-			if (nfds < 0 && errno != EINTR) {
-				logerr("select");
-				cleanup();
-				/*NOTREACHED*/
-			}
+			if (nfds < 0 && errno != EINTR)
+				syslog(LOG_WARNING, "select: %m");
 			continue;
 		}
 		if (readfds & (1 << funix)) {
@@ -186,10 +173,9 @@ main(argc, argv)
 			s = accept(finet, &frominet, &fromlen);
 		}
 		if (s < 0) {
-			if (errno == EINTR)
-				continue;
-			logerr("accept");
-			cleanup();
+			if (errno != EINTR)
+				syslog(LOG_WARNING, "accept: %m");
+			continue;
 		}
 		if (fork() == 0) {
 			signal(SIGCHLD, SIG_IGN);
@@ -210,7 +196,6 @@ main(argc, argv)
 	}
 }
 
-static
 reapchild()
 {
 	union wait status;
@@ -219,11 +204,10 @@ reapchild()
 		;
 }
 
-static
-cleanup()
+mcleanup()
 {
 	if (lflag)
-		log("cleanup()");
+		syslog(LOG_INFO, "exiting");
 	unlink(SOCKETNAME);
 	exit(0);
 }
@@ -237,9 +221,9 @@ int	requ[MAXREQUESTS];	/* job number of spool entries */
 int	requests;		/* # of spool requests */
 char	*person;		/* name of person doing lprm */
 
-static char	fromb[32];	/* buffer for client's machine name */
-static char	cbuf[BUFSIZ];	/* command line buffer */
-static char	*cmdnames[] = {
+char	fromb[32];	/* buffer for client's machine name */
+char	cbuf[BUFSIZ];	/* command line buffer */
+char	*cmdnames[] = {
 	"null",
 	"printjob",
 	"recvjob",
@@ -248,7 +232,6 @@ static char	*cmdnames[] = {
 	"rmjob"
 };
 
-static
 doit()
 {
 	register char *cp;
@@ -267,9 +250,13 @@ doit()
 		} while (*cp++ != '\n');
 		*--cp = '\0';
 		cp = cbuf;
-		if (lflag && *cp >= '\1' && *cp <= '\5') {
-			printer = NULL;
-			log("%s requests %s %s", from, cmdnames[*cp], cp+1);
+		if (lflag) {
+			if (*cp >= '\1' && *cp <= '\5')
+				syslog(LOG_INFO, "%s requests %s %s",
+					from, cmdnames[*cp], cp+1);
+			else
+				syslog(LOG_INFO, "bad request (%d) from %s",
+					*cp, from);
 		}
 		switch (*cp++) {
 		case '\1':	/* check the queue and print any jobs there */
@@ -344,7 +331,6 @@ doit()
  * Make a pass through the printcap database and start printing any
  * files left from the last time the machine went down.
  */
-static
 startup()
 {
 	char buf[BUFSIZ];
@@ -363,8 +349,8 @@ startup()
 				break;
 			}
 		if ((pid = fork()) < 0) {
-			log("startup: cannot fork");
-			cleanup();
+			syslog(LOG_WARNING, "startup: cannot fork");
+			mcleanup();
 		}
 		if (!pid) {
 			endprent();
@@ -376,7 +362,6 @@ startup()
 /*
  * Check to see if the from host has access to the line printer.
  */
-static
 chkhost(f)
 	struct sockaddr_in *f;
 {
@@ -420,39 +405,4 @@ again:
 		goto again;
 	}
 	fatal("Your host does not have line printer access");
-}
-
-/*VARARGS1*/
-log(msg, a1, a2, a3)
-	char *msg;
-{
-	short console = isatty(fileno(stderr));
-
-	fprintf(stderr, console ? "\r\n%s: " : "%s: ", name);
-	if (printer)
-		fprintf(stderr, "%s: ", printer);
-	fprintf(stderr, msg, a1, a2, a3);
-	if (console)
-		putc('\r', stderr);
-	putc('\n', stderr);
-	fflush(stderr);
-}
-
-static
-logerr(msg)
-	char *msg;
-{
-	register int err = errno;
-	short console = isatty(fileno(stderr));
-	extern int sys_nerr;
-	extern char *sys_errlist[];
-
-	fprintf(stderr, console ? "\r\n%s: " : "%s: ", name);
-	if (msg)
-		fprintf(stderr, "%s: ", msg);
-	fputs(err < sys_nerr ? sys_errlist[err] : "Unknown error" , stderr);
-	if (console)
-		putc('\r', stderr);
-	putc('\n', stderr);
-	fflush(stderr);
 }
