@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	2.3 (CWI) 87/04/01";
+static char sccsid[] = "@(#)main.c	2.4 (CWI) 87/04/01";
 #endif lint
 # include "e.h"
 #define	MAXLINE	3600	/* maximum input line */
@@ -82,6 +82,14 @@ settype(s)	/* initialize data for particular typesetter */
 		{ minsize = 5; ttype = DEVAPS; }
 	else if (strcmp(s, "cat") == 0)
 		{ minsize = 6; ttype = DEVCAT; }
+	else if (strcmp(s, "har") == 0)
+		{ minsize = 4; ttype = DEVHAR; }
+	else if (strcmp(s, "ver") == 0)
+		{ minsize = 6; ttype = DEVVER; }
+	else if (strcmp(s, "psc") == 0)
+		{/* Postscript printer (Laserwriter) using transcript */
+			minsize = 4;	/* troff believes 2, but that's so small */
+			ttype = DEVPSC; }
 	else
 		{ minsize = 6; ttype = DEVCAT; }
 }
