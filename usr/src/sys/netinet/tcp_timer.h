@@ -1,4 +1,4 @@
-/*	tcp_timer.h	4.7	82/02/03	*/
+/*	tcp_timer.h	4.8	82/06/06	*/
 
 /*
  * Definitions of the TCP timers.  These timers are counted
@@ -26,10 +26,10 @@
  * backoff on the retransmit timer.
  *
  * The TCPT_PERSIST timer is used to keep window size information
- * flowing even if the window goes shut.  If an output is attempted when there
- * is data ready to transmit, but nothing gets sent because the window
- * is shut, then we start the TCPT_PERSIST timer, and at intervals
- * send a single byte into the peers window to force him to update
+ * flowing even if the window goes shut.  If all previous transmissions
+ * have been acknowledged (so that there are no retransmissions in progress),
+ * and the window is shut, then we start the TCPT_PERSIST timer, and at
+ * intervals send a single byte into the peers window to force him to update
  * our window information.  We do this at most as often as TCPT_PERSMIN
  * time intervals, but no more frequently than the current estimate of
  * round-trip packet time.  The TCPT_PERSIST timer is cleared whenever
@@ -56,10 +56,10 @@
  */
 #define	TCPTV_MSL	( 30*PR_SLOWHZ)		/* max seg lifetime */
 #define	TCPTV_SRTTBASE	(  1*PR_SLOWHZ)		/* base roundtrip time */
-#define	TCPTV_KEEP	( 60*PR_SLOWHZ)		/* keep alive - 1 min */
+#define	TCPTV_KEEP	( 45*PR_SLOWHZ)		/* keep alive - 45 secs */
 #define	TCPTV_PERSMIN	(  5*PR_SLOWHZ)		/* retransmit persistance */
 
-#define	TCPTV_MAXIDLE	(  4*TCPTV_KEEP)	/* maximum allowable idle
+#define	TCPTV_MAXIDLE	(  8*TCPTV_KEEP)	/* maximum allowable idle
 						   time before drop conn */
 
 #define	TCPTV_MIN	(  1*PR_SLOWHZ)		/* minimum allowable value */

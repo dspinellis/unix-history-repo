@@ -1,4 +1,4 @@
-/*	tcp_output.c	4.38	82/04/10	*/
+/*	tcp_output.c	4.39	82/06/06	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
