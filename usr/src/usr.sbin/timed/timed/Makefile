@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.9 (Berkeley) %G%
+#	@(#)Makefile	5.10 (Berkeley) %G%
 #
 # optional flags are: MEASURE TESTING DEBUG
 
@@ -9,4 +9,5 @@ DPADD=	${LIBUTIL}
 LDADD=	-lutil
 MAN8=	timed.0
 
+.include "../../Makefile.inc"
 .include <bsd.prog.mk>
