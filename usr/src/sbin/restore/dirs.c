@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)dirs.c	3.14	(Berkeley)	83/07/08";
+static char sccsid[] = "@(#)dirs.c	3.15	(Berkeley)	83/08/11";
 #endif
 
 #include "restore.h"
@@ -451,11 +451,15 @@ setdirmodes()
 		if (feof(mf))
 			break;
 		ep = lookupino(node.ino);
-		if (ep == NIL) {
-			if (command != 'r' && command != 'R')
+		if (command == 'i' || command == 'x') {
+			if (ep == NIL)
 				continue;
-			panic("cannot find directory inode %d\n", node.ino);
+			if (node.ino == ROOTINO &&
+		   	    reply("set owner/mode for '.'") == FAIL)
+				continue;
 		}
+		if (ep == NIL)
+			panic("cannot find directory inode %d\n", node.ino);
 		cp = myname(ep);
 		(void) chown(cp, node.uid, node.gid);
 		(void) chmod(cp, node.mode);
