@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mem.c	7.1 (Berkeley) %G%
+ *	@(#)mem.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -23,7 +23,7 @@
 #include "pte.h"
 #include "mtpr.h"
 
-mmread(dev, uio)
+mmread(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
 {
@@ -31,7 +31,7 @@ mmread(dev, uio)
 	return (mmrw(dev, uio, UIO_READ));
 }
 
-mmwrite(dev, uio)
+mmwrite(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
 {
