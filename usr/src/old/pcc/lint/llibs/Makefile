@@ -1,11 +1,11 @@
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 
 SRCS=	llib-lc llib-lcurses llib-ldbm llib-lm llib-lmp llib-lplot \
 	llib-ltermcap llib-port
 LN=	llib-port.ln llib-lc.ln llib-lcurses.ln llib-ldbm.ln llib-lm.ln \
 	llib-lmp.ln llib-lplot.ln llib-ltermcap.ln
 
-BINDIR=	/usr/libdata/lint
+BINDIR=	/usr/old/libdata/lint
 LINKS=	${BINDIR}/llib-ltermcap ${BINDIR}/llib-ltermlib \
 	${BINDIR}/llib-ltermcap.ln ${BINDIR}/llib-ltermlib.ln
 
