@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	4.7	81/11/20	*/
+/*	uipc_syscalls.c	4.8	81/11/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -57,7 +57,7 @@ COUNT(SPIPE);
 	wf->f_socket = wso;
 	u.u_r.r_val2 = u.u_r.r_val1;
 	u.u_r.r_val1 = r;
-	if (piconnect(rso, wso) == 0)
+	if (piconnect(wso, rso) == 0)
 		goto free4;
 	return;
 free4:
