@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_fork.c	7.29 (Berkeley) 5/15/91
- *	$Id: kern_fork.c,v 1.3 1993/11/25 01:32:58 wollman Exp $
+ *	$Id: kern_fork.c,v 1.4 1993/11/29 18:01:12 ache Exp $
  */
 
 #include "param.h"
@@ -159,27 +159,21 @@ again:
 	 */
 	MALLOC(p2, struct proc *, sizeof(struct proc), M_PROC, M_WAITOK);
 	nprocs++;
+
+	/* Initialize all fields to zero */
+	bzero((struct proc *)p2, sizeof(struct proc));
+
 	p2->p_nxt = allproc;
 	p2->p_nxt->p_prev = &p2->p_nxt;		/* allproc is never NULL */
 	p2->p_prev = &allproc;
 	allproc = p2;
-	p2->p_link = NULL;			/* shouldn't be necessary */
-	p2->p_rlink = NULL;			/* shouldn't be necessary */
 
 	/*
 	 * Make a proc table entry for the new process.
-	 * Start by zeroing the section of proc that is zero-initialized,
-	 * then copy the section that is copied directly from the parent.
+	 * Copy the section that is copied directly from the parent.
 	 */
-	bzero(&p2->p_startzero,
-	    (unsigned) ((caddr_t)&p2->p_endzero - (caddr_t)&p2->p_startzero));
 	bcopy(&p1->p_startcopy, &p2->p_startcopy,
 	    (unsigned) ((caddr_t)&p2->p_endcopy - (caddr_t)&p2->p_startcopy));
-	p2->p_wmesg = NULL;     /* to prevent getkerninfo fault */
-	p2->p_spare[0] = 0;	/* XXX - should be in zero range */
-	p2->p_spare[1] = 0;	/* XXX - should be in zero range */
-	p2->p_spare[2] = 0;	/* XXX - should be in zero range */
-	p2->p_spare[3] = 0;	/* XXX - should be in zero range */
 
 	/*
 	 * Duplicate sub-structures as needed.
