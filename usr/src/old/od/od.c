@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)od.c	5.7 (Berkeley) %G%";
+static char *sccsid = "@(#)od.c	5.8 (Berkeley) %G%";
 /*
  * od -- octal, hex, decimal, character dump of data in a file.
  *
@@ -226,8 +226,6 @@ char	**argv;
 				case 's':
 					d = &string;
 					*(cv++) = d;
-					if (addr_base == 0)
-						addr_base = d->df_radix;
 					while (isdigit(p[1]))
 						d->df_size = (10 * d->df_size) + (*++p - '0');
 					if (d->df_size <= 0)
@@ -255,8 +253,6 @@ char	**argv;
 				 */
 				nelm = max_nelm - 1;
 				max_llen = (max_llen + nelm) & (~nelm);
-				if (addr_base == 0)
-					addr_base = d->df_radix;
 				*(cv++) = d;
 			}
 			argc--;
@@ -269,7 +265,6 @@ char	**argv;
 	 */
 	if(cv == conv_vec)
 	{
-		addr_base = 8;
 		*(cv++) = &u_s_oct;
 		max_nelm = DBUF_SIZE / u_s_oct.df_size;
 		max_llen = max_nelm * (u_s_oct.df_field + 1);
