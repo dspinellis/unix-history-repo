@@ -8,7 +8,7 @@
  * Lexical processing of commands.
  */
 
-static char *SccsId = "@(#)lex.c	2.12 %G%";
+static char *SccsId = "@(#)lex.c	2.13 %G%";
 
 char	*prompt = "& ";
 
@@ -119,11 +119,12 @@ commands()
 		eofloop = 0;
 top:
 		if (shudprompt) {
+			printf(prompt);
+			flush();
 # ifdef VMUNIX
 			sigset(SIGCONT, contin);
-			printf(prompt);
-		}
-		flush();
+		} else
+			flush();
 		sreset();
 
 		/*
