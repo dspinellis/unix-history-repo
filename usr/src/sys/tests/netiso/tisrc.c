@@ -5,7 +5,7 @@
  * %sccs.include.redist.c%
  */
 #ifndef lint
-static char sccsid[] = "@(#)tisrc.c	7.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)tisrc.c	7.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -34,10 +34,11 @@ static char sccsid[] = "@(#)tisrc.c	7.2 (Berkeley) %G%";
 struct	iso_addr eon = {20, 0x47, 0, 6, 3, 0, 0, 0, 25 /*EGP for Berkeley*/};
 struct  sockaddr_iso to_s = { sizeof(to_s), AF_ISO }, *to = &to_s;
 struct  sockaddr_iso old_s = { sizeof(to_s), AF_ISO }, *old = &old_s;
+struct	tp_conn_param tp_params;
 fd_set	readfds, writefds, exceptfds;
 long size, count = 10;
 int verbose = 1, selectp, type = SOCK_SEQPACKET, nobuffs, errno, playtag = 0;
-int verify = 0, dgramp = 0, debug = 0;
+int verify = 0, dgramp = 0, debug = 0, tp0mode = 1;
 short portnumber = 3000;
 char your_it[] = "You're it!";
 char *Servername, *conndata, data_msg[2048];
@@ -125,12 +126,11 @@ maketoaddr()
 	bcopy(old, to, old->siso_len);
 }
 
-
 tisrc() {
-	int x, s, pid, on = 1, flags = 8, n;
+	int x, s, pid, on = 1, flags = 8, n, proto = tp0mode ? ISOPROTO_TP0: 0;
 
 	if (dgramp) type = SOCK_DGRAM;
-	try(socket, (AF_ISO, type, 0),"");
+	try(socket, (AF_ISO, type, proto),"");
 	s = x;
 
 	if (debug)
