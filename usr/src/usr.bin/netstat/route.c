@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)route.c	4.6 83/05/30";
+static char sccsid[] = "@(#)route.c	4.7 84/05/11";
 #endif
 
 #include <sys/types.h>
@@ -111,19 +111,27 @@ routename(in)
 {
 	char *cp = 0;
 	static char line[50];
-	int lna, net;
+	struct hostent *hp;
+	struct netent *np;
+	int lna, net, subnet;
 
 	net = inet_netof(in);
+	subnet = inet_subnetof(in);
 	lna = inet_lnaof(in);
 	if (!nflag) {
 		if (lna == INADDR_ANY) {
-			struct netent *np = getnetbyaddr(net, AF_INET);
-
+			np = getnetbyaddr(net, AF_INET);
 			if (np)
 				cp = np->n_name;
+			else if (net == 0)
+				cp = "default";
+		} else if ((subnet != net) && ((lna & 0xff) == 0) &&
+		    (np = getnetbyaddr(subnet, AF_INET))) {
+			struct in_addr subnaddr, inet_makeaddr();
+			subnaddr = inet_makeaddr(subnet, INADDR_ANY);
+			if (bcmp(&in, &subnaddr, sizeof(in)) == 0)
+				cp = np->n_name;
 		} else {
-			struct hostent *hp;
-
 			hp = gethostbyaddr(&in, sizeof (struct in_addr),
 				AF_INET);
 			if (hp)
@@ -142,7 +150,6 @@ routename(in)
 	}
 	return (line);
 }
-
 /*
  * Print routing statistics
  */
@@ -168,4 +175,32 @@ rt_stats(off)
 		rtstat.rts_unreach, plural(rtstat.rts_unreach));
 	printf("\t%d use%s of a wildcard route\n",
 		rtstat.rts_wildcard, plural(rtstat.rts_wildcard));
+}
+
+/*
+ * Return the possible subnetwork number from an internet address.
+ * If the address is of the form of a subnet address (most significant
+ * bit of the host part is set), believe the subnet exists.
+ * Otherwise, return the network number.
+ * SHOULD FIND OUT WHETHER THIS IS A LOCAL NETWORK BEFORE LOOKING
+ * INSIDE OF THE HOST PART.  We can only believe this if we have other
+ * information (e.g., we can find a name for this number).
+ */
+inet_subnetof(in)
+	struct in_addr in;
+{
+	register u_long i = ntohl(in.s_addr);
+
+	if (IN_CLASSA(i)) {
+		if (IN_SUBNETA(i))
+			return ((i & IN_CLASSA_SUBNET) >> IN_CLASSA_SUBNSHIFT);
+		else
+			return ((i & IN_CLASSA_NET) >> IN_CLASSA_NSHIFT);
+	} else if (IN_CLASSB(i)) {
+		if (IN_SUBNETB(i))
+			return ((i & IN_CLASSB_SUBNET) >> IN_CLASSB_SUBNSHIFT);
+		else
+			return ((i & IN_CLASSB_NET) >> IN_CLASSB_NSHIFT);
+	} else
+		return ((i & IN_CLASSC_NET) >> IN_CLASSC_NSHIFT);
 }

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)inet.c	4.14 (Berkeley) 83/09/21";
+static char sccsid[] = "@(#)inet.c	4.15 (Berkeley) 84/05/11";
 #endif
 
 #include <sys/types.h>
@@ -71,7 +71,7 @@ protopr(off, name)
 		putchar('\n');
 		if (Aflag)
 			printf("%-8.8s ", "PCB");
-		printf("%-5.5s %-6.6s %-6.6s  %-18.18s %-18.18s %s\n",
+		printf("%-5.5s %-6.6s %-6.6s  %-22.22s %-22.22s %s\n",
 			"Proto", "Recv-Q", "Send-Q",
 			"Local Address", "Foreign Address", "(state)");
 		first = 0;
@@ -273,7 +273,7 @@ inetprint(in, port, proto)
 	struct servent *sp = 0;
 	char line[80], *cp, *index();
 
-	sprintf(line, "%.10s.", inetname(*in));
+	sprintf(line, "%.16s.", inetname(*in));
 	cp = index(line, '\0');
 	if (!nflag && port)
 		sp = getservbyport(port, proto);
@@ -281,7 +281,7 @@ inetprint(in, port, proto)
 		sprintf(cp, "%.8s", sp ? sp->s_name : "*");
 	else
 		sprintf(cp, "%d", ntohs((u_short)port));
-	printf(" %-18.18s", line);
+	printf(" %-22.22s", line);
 }
 
 /*
@@ -297,15 +297,16 @@ inetname(in)
 	static char line[50];
 
 	if (!nflag) {
-		if (inet_lnaof(in) == INADDR_ANY) {
-			struct netent *np;
-
-			np = getnetbyaddr(inet_netof(in), AF_INET);
+		struct netent *np;
+		int net = inet_netof(in), subnet = inet_subnetof(in);
+		if (subnet != net && (np = getnetbyaddr(subnet, AF_INET)))
+			cp = np->n_name;
+		else if (inet_lnaof(in) == INADDR_ANY) {
+			np = getnetbyaddr(net, AF_INET);
 			if (np)
 				cp = np->n_name;
 		} else {
 			struct hostent *hp;
-
 			hp = gethostbyaddr(&in, sizeof (struct in_addr),
 				AF_INET);
 			if (hp)
