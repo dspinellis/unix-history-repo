@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1985 Regents of the University of California.
+ * Copyright (c) 1985, 1989 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_send.c	6.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_send.c	6.22 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -48,8 +48,6 @@ static struct sockaddr no_addr;
 #define FD_ZERO(p)	bzero((char *)(p), sizeof(*(p)))
 #endif
 
-#define KEEPOPEN (RES_USEVC|RES_STAYOPEN)
-
 res_send(buf, buflen, answer, anslen)
 	char *buf;
 	int buflen;
@@ -57,7 +55,7 @@ res_send(buf, buflen, answer, anslen)
 	int anslen;
 {
 	register int n;
-	int retry, v_circuit, resplen, ns;
+	int try, v_circuit, resplen, ns;
 	int gotsomewhere = 0, connected = 0;
 	u_short id, len;
 	char *cp;
@@ -84,19 +82,22 @@ res_send(buf, buflen, answer, anslen)
 	/*
 	 * Send request, RETRY times, or until successful
 	 */
-	for (retry = _res.retry; retry > 0; retry--) {
+	for (try = 0; try < _res.retry; try++) {
 	   for (ns = 0; ns < _res.nscount; ns++) {
 #ifdef DEBUG
 		if (_res.options & RES_DEBUG)
 			printf("Querying server (# %d) address = %s\n", ns+1,
 			      inet_ntoa(_res.nsaddr_list[ns].sin_addr));
 #endif DEBUG
+	usevc:
 		if (v_circuit) {
 			int truncated = 0;
 
 			/*
-			 * Use virtual circuit.
+			 * Use virtual circuit;
+			 * at most one attempt per server.
 			 */
+			try = _res.retry;
 			if (s < 0) {
 				s = socket(AF_INET, SOCK_STREAM, 0);
 				if (s < 0) {
@@ -205,7 +206,23 @@ res_send(buf, buflen, answer, anslen)
 			if (s < 0)
 				s = socket(AF_INET, SOCK_DGRAM, 0);
 #if	BSD >= 43
-			if (_res.nscount == 1 || retry == _res.retry) {
+			/*
+			 * I'm tired of answering this question, so:
+			 * On a 4.3BSD+ machine (client and server,
+			 * actually), sending to a nameserver datagram
+			 * port with no nameserver will cause an
+			 * ICMP port unreachable message to be returned.
+			 * If our datagram socket is "connected" to the
+			 * server, we get an ECONNREFUSED error on the next
+			 * socket operation, and select returns if the
+			 * error message is received.  We can thus detect
+			 * the absence of a nameserver without timing out.
+			 * If we have sent queries to at least two servers,
+			 * however, we don't want to remain connected,
+			 * as we wish to receive answers from the first
+			 * server to respond.
+			 */
+			if (_res.nscount == 1 || (try == 0 && ns == 0)) {
 				/*
 				 * Don't use connect if we might
 				 * still receive a response
@@ -256,8 +273,9 @@ res_send(buf, buflen, answer, anslen)
 			/*
 			 * Wait for reply
 			 */
-			timeout.tv_sec = (_res.retrans << (_res.retry - retry))
-				/ _res.nscount;
+			timeout.tv_sec = (_res.retrans << try);
+			if (try > 0)
+				timeout.tv_sec /= _res.nscount;
 			if (timeout.tv_sec <= 0)
 				timeout.tv_sec = 1;
 			timeout.tv_usec = 0;
@@ -281,7 +299,9 @@ wait:
 				if (_res.options & RES_DEBUG)
 					printf("timeout\n");
 #endif DEBUG
+#if BSD >= 43
 				gotsomewhere = 1;
+#endif
 				continue;
 			}
 			if ((resplen = recv(s, answer, anslen, 0)) <= 0) {
@@ -306,7 +326,8 @@ wait:
 			}
 			if (!(_res.options & RES_IGNTC) && anhp->tc) {
 				/*
-				 * get rest of answer
+				 * get rest of answer;
+				 * use TCP with same server.
 				 */
 #ifdef DEBUG
 				if (_res.options & RES_DEBUG)
@@ -314,13 +335,8 @@ wait:
 #endif DEBUG
 				(void) close(s);
 				s = -1;
-				/*
-				 * retry decremented on continue
-				 * to desired starting value
-				 */
-				retry = _res.retry + 1;
 				v_circuit = 1;
-				continue;
+				goto usevc;
 			}
 		}
 #ifdef DEBUG
@@ -330,11 +346,16 @@ wait:
 		}
 #endif DEBUG
 		/*
-		 * We are going to assume that the first server is preferred
-		 * over the rest (i.e. it is on the local machine) and only
-		 * keep that one open.
+		 * If using virtual circuits, we assume that the first server
+		 * is preferred * over the rest (i.e. it is on the local
+		 * machine) and only keep that one open.
+		 * If we have temporarily opened a virtual circuit,
+		 * or if we haven't been asked to keep a socket open,
+		 * close the socket.
 		 */
-		if ((_res.options & KEEPOPEN) == 0 || ns != 0) {
+		if ((v_circuit &&
+		    ((_res.options & RES_USEVC) == 0 || ns != 0)) ||
+		    (_res.options & RES_STAYOPEN) == 0) {
 			(void) close(s);
 			s = -1;
 		}
@@ -347,9 +368,9 @@ wait:
 	}
 	if (v_circuit == 0)
 		if (gotsomewhere == 0)
-			errno = ECONNREFUSED;
+			errno = ECONNREFUSED;	/* no nameservers found */
 		else
-			errno = ETIMEDOUT;
+			errno = ETIMEDOUT;	/* no answer obtained */
 	else
 		errno = terrno;
 	return (-1);
