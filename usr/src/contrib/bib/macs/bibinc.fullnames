@@ -1,5 +1,5 @@
 #
-#	"@(#)bibinc.fullnames	2.10	%G%";
+#	"@(#)bibinc.fullnames	2.11	%G%";
 # full journal names, and other names
 #
 # journals
@@ -121,6 +121,12 @@ D POPL12 CONF Record of the Twelfth POPL\
 D POPL13 CONF Record of the Thirteenth POPL\
 %C Tampa Bay, FL\
 %D JAN 1986
+D POPL14 CONF Record of the Fourteenth POPL\
+%C Munich, West Germany\
+%D JAN 1987
+D OOPS86 Object-Oriented Programming Systems, Languages and Applications CONF Proceedings\
+%C Portland, OR\
+%D NOV 1986
 D PSDE84 PROC of the ACM S\&IGSOFT/S\&IGPLAN Software Engineering SYMP on Practical Software Development Environments\
 %C Pittsburgh, PA\
 %D APR 1984

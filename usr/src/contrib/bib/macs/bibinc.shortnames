@@ -1,5 +1,5 @@
 #
-#	"@(#)bibinc.shortnames	2.5	%G%";
+#	"@(#)bibinc.shortnames	2.6	%G%";
 # short journal names, and other names
 #
 # journals
@@ -67,11 +67,11 @@ D ICSE7 PROC 7th ICSE\
 D PLISS83 PROC SI\&GPLAN 1983 SYMP on Prog. Lang. Issues in Software Systems\
 %D JUN 1983
 D POPL ACM SYMP on Prin. of Prog. Lang.
-D POPL1 CONF Rec 1th POPL
-D POPL2 CONF Rec 2th POPL
-D POPL3 CONF Rec 3th POPL
-D POPL4 CONF Rec 4th POPL
-D POPL5 CONF Rec 5th POPL
+D POPL1 CONF Rec. 1st POPL
+D POPL2 CONF Rec. 2nd POPL
+D POPL3 CONF Rec. 3rd POPL
+D POPL4 CONF Rec. 4th POPL
+D POPL5 CONF Rec. 5th POPL
 D POPL6 CONF Rec. 6th POPL
 D POPL7 CONF Rec. 7th POPL
 D POPL8 CONF Rec. 8th POPL
@@ -83,6 +83,9 @@ D POPL13 CONF Rec. 13th POPL
 D POPL14 CONF Rec. 14th POPL
 D POPL15 CONF Rec. 15th POPL
 D POPL16 CONF Rec. 16th POPL
+D OOPS86 OOPSLA '86 Conf. Proc.\
+%C Portland, OR\
+%D NOV 1986
 D PSDE84 PROC ACM S\&IGSOFT/S\&IGPLAN Software Eng. SYMP on Practical Software Development Environments\
 %D APR 1984
 D TEXT81 PROC ACM S\&IGPLAN S\&IGOA SYMP on Text Manipulation\
