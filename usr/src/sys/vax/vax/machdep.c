@@ -1,4 +1,4 @@
-/*	machdep.c	3.8	%G%	*/
+/*	machdep.c	3.9	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -12,8 +12,9 @@
 #include "../h/vm.h"
 #include "../h/proc.h"
 #include "../h/psl.h"
+#include "../h/uba.h"
 
-char	version[] = "VM/UNIX (Berkeley Version 3.8) %H% \n";
+char	version[] = "VM/UNIX (Berkeley Version 3.9) %H% \n";
 int	icode[] =
 {
 	0x9f19af9f,	/* pushab [&"init.vm",0]; pushab */
@@ -109,6 +110,19 @@ vmtime(otime, olbolt, oicr)
 		return(-1);
 	else
 		return(((time-otime)*60 + lbolt-olbolt)*16667 + mfpr(ICR)-oicr);
+}
+#endif
+
+#ifdef TRACE
+/*
+ * Put the current time into the trace,
+ * in fractional seconds (i.e. 12345 means the
+ * current time is ``n.12345'' for some n.
+ */
+ttime()
+{
+
+	trace("%d ", (lbolt*16667 + mfpr(ICR)));
 }
 #endif
 
@@ -243,5 +257,21 @@ tbiscl(v)
 		asm("mtpr r11,$TBIS");
 #endif
 		addr += NBPG;
+	}
+}
+
+int	hangcnt;
+
+unhang()
+{
+	register struct uba_regs *up = (struct uba_regs *)UBA0;
+
+	if (up->uba_sr == 0)
+		return;
+	hangcnt++;
+	if (hangcnt > 5*HZ) {
+		hangcnt = 0;
+		printf("HANG ");
+		ubareset();
 	}
 }
