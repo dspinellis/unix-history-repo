@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)qdcons.c	7.1 (Berkeley) %G%
+ *	@(#)qdcons.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -205,6 +205,7 @@ qd_init()
 
 	caddr_t qdaddr;
 	struct dga *dga;
+	extern int cpu;
 
  	qdaddr = (caddr_t) QDSSCSR;
         if (badaddr(qdaddr, sizeof(short)))
@@ -248,21 +249,24 @@ qd_init()
 /*--------------------------------------------------------------------
 * tell the VAX ROM that the cursor is at the bottom of the screen  */
 
-	NVR = (short *) NVR_ADRS;
+	if (cpu == VAX_630) {
+		NVR = (short *) NVR_ADRS;
 
-	i = *NVR++ & 0xFF;
-	i |= (*NVR++ & 0xFF) << 8;
-	i |= (*NVR++ & 0xFF) << 16;
-	i |= (*NVR++ & 0xFF) << 24;
+		i = *NVR++ & 0xFF;
+		i |= (*NVR++ & 0xFF) << 8;
+		i |= (*NVR++ & 0xFF) << 16;
+		i |= (*NVR++ & 0xFF) << 24;
 
-	ROM_console = (char *) i;
+		ROM_console = (char *) i;
 
-	ROM_console[CURRENT_COL] = ROM_console[COL_MIN];
-	ROM_console[CURRENT_ROW] = ROM_console[ROW_MAX];
+		ROM_console[CURRENT_COL] = ROM_console[COL_MIN];
+		ROM_console[CURRENT_ROW] = ROM_console[ROW_MAX];
+	}
 
 /*----------------------------------------------------------
 * smash system virtual console service routine addresses */
 
+	printf("switching console to QDSS display...\n");
 	v_getc = qdgetc;
 	v_putc = qdputc;
 

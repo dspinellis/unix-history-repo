@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ts.c	7.5 (Berkeley) %G%
+ *	@(#)ts.c	7.6 (Berkeley) %G%
  */
 
 #include "ts.h"
@@ -575,7 +575,7 @@ tsintr(tsunit)
 	register struct ts_softc *sc;
 	register int state;
 
-#if VAX630
+#ifdef QBA
 	(void) spl5();
 #endif
 	um = tsdinfo[tsunit]->ui_mi;

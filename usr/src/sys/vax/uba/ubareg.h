@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ubareg.h	7.4 (Berkeley) %G%
+ *	@(#)ubareg.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -28,7 +28,7 @@
 #define	DW730	3		/* has adaptor regs, no sr: 750, 730 */
 #endif
 
-#if VAX630
+#if VAX630 || VAX650
 #define	QBA	4		/* 22-bit Q-bus, no adaptor regs: uVAX II */
 #endif
 
@@ -237,7 +237,7 @@ struct uba_regs {
  * Symbolic BUS addresses for UBAs.
  */
 
-#if VAX630
+#if VAX630 || VAX650
 #define	QBAMAP630	((struct pte *)0x20088000)
 #define	QMEM630		0x30000000
 #define	QIOPAGE630	0x20000000

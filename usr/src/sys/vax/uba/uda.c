@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uda.c	7.19 (Berkeley) %G%
+ *	@(#)uda.c	7.20 (Berkeley) %G%
  */
 
 /*
@@ -330,8 +330,8 @@ again:
 			goto bad;
 
 	/* should have interrupted by now */
-#ifdef VAX630
-	if (cpu == VAX_630)
+#ifdef QBA
+	if (cpu == VAX_630 || cpu == VAX_650)
 		br = 0x15;	/* screwy interrupt structure */
 #endif
 	return (sizeof (struct udadevice));
@@ -1272,7 +1272,7 @@ udaintr(ctlr)
 	register struct mscp *mp;
 	register int i;
 
-#ifdef VAX630
+#ifdef QBA
 	(void) spl5();		/* Qbus interrupt protocol is odd */
 #endif
 	sc->sc_wticks = 0;	/* reset interrupt watchdog */

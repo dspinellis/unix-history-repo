@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	7.11 (Berkeley) %G%
+ *	@(#)autoconf.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -56,7 +56,7 @@ caddr_t	uioaddr730[] = { UMA };
 #undef	UMA
 #endif
 
-#if VAX630
+#if VAX630 || VAX650
 /*
  * The map registers start at 20088000 on the ka630, so
  * subtract a 2k offset to make things work.
@@ -219,6 +219,18 @@ configure()
 		nuba = 1;
 		break;
 #endif
+
+#if VAX650
+	case VAX_650:
+#ifndef SMALL
+		if (debug)
+			printf("cpu: uVAX 3000\n");
+#endif
+		ubaddr = ubaddr630;
+		uioaddr = uioaddr630;
+		nuba = 1;
+		break;
+#endif
 	}
 
 	/*
@@ -239,8 +251,9 @@ configure()
 		break;
 #endif
 
-#if VAX630
+#if VAX630 || VAX650
 	case VAX_630:
+	case VAX_650:
 		mtpr(IUR, 0);
 		*((char *)QIOPAGE630 + QIPCR) = Q_LMEAE;
 #if !defined(SMALL)
@@ -251,7 +264,7 @@ configure()
 			;
 #endif
 		break;
-#endif /* VAX630 */
+#endif
 	}
 
 	/* give unibus devices a chance to recover... */

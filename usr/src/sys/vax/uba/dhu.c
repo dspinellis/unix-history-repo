@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dhu.c	7.2 (Berkeley) %G%
+ *	@(#)dhu.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -307,7 +307,7 @@ dhurint(dhu)
 	register line;
 	int overrun = 0;
 
-#ifdef VAX630
+#ifdef QBA
 	(void) spl5();
 #endif
 	ui = dhuinfo[dhu];
@@ -516,7 +516,7 @@ dhuxint(dhu)
 	register int line, t;
 	u_short cntr;
 
-#ifdef VAX630
+#ifdef QBA
 	(void) spl5();
 #endif
 	ui = dhuinfo[dhu];

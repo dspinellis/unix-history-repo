@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)prf.c	7.5 (Berkeley) %G%
+ *	@(#)prf.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -115,7 +115,7 @@ putchar(c)
 	register c;
 {
 	register s, timo;
-#if VAX630
+#if VAX630 || VAX650
 	extern (*v_putc)();
 
 	if (v_putc) {
@@ -147,7 +147,7 @@ putchar(c)
 getchar()
 {
 	register c;
-#if VAX630
+#if VAX630 || VAX650
 	extern (*v_getc)();
 
 	if (v_getc) {
@@ -157,7 +157,7 @@ getchar()
 	while((mfpr(RXCS)&RXCS_DONE) == 0)
 		;
 	c = mfpr(RXDB)&0177;
-#if VAX630
+#if VAX630 || VAX650
 	}
 #endif
 	if (c=='\r')
