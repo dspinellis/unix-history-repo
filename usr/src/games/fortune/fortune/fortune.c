@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fortune.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)fortune.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	<sys/param.h>
@@ -35,6 +35,7 @@ static char sccsid[] = "@(#)fortune.c	5.5 (Berkeley) %G%";
 # include	<stdio.h>
 # include	<assert.h>
 # include	"strfile.h"
+# include	"pathnames.h"
 
 #ifdef	SYSV
 # include	<dirent.h>
@@ -74,10 +75,6 @@ static char sccsid[] = "@(#)fortune.c	5.5 (Berkeley) %G%";
 
 # define	POS_UNKNOWN	((unsigned long) -1)	/* pos for file unknown */
 # define	NO_PROB		(-1)		/* no prob specified for file */
-
-# ifndef FORTDIR
-# define	FORTDIR		"/usr/games/lib/fortune"
-# endif	/* FORTDIR */
 
 # ifdef DEBUG
 # define	DPRINTF(l,x)	if (Debug >= l) fprintf x; else
