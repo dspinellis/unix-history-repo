@@ -34,12 +34,14 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         2       00026
+ * CURRENT PATCH LEVEL:         3       00147
  * --------------------         -----   ----------------------
  *
  * 27 Nov 92	Bruce Evans		Fixed access()
  * 20 Aug 92	David Greenman		Fixed incorrect setting of B_AGE after
  *					each read to improve cache performance
+ * 20 Apr 93	Paul Kranenburg		Detect and prevent kernel deadlocks in
+ *					VM system
  */
 
 #include "param.h"
@@ -573,6 +575,8 @@ ufs_write(vp, uio, ioflag, cred)
 	flags = 0;
 	if (ioflag & IO_SYNC)
 		flags = B_SYNC;
+
+	(void) vnode_pager_uncache(vp);
 	do {
 		lbn = lblkno(fs, uio->uio_offset);
 		on = blkoff(fs, uio->uio_offset);
@@ -589,7 +593,6 @@ ufs_write(vp, uio, ioflag, cred)
 			vnode_pager_setsize(vp, ip->i_size);
 		}
 		size = blksize(fs, ip, lbn);
-		(void) vnode_pager_uncache(vp);
 		n = MIN(n, size - bp->b_resid);
 		error = uiomove(bp->b_un.b_addr + on, n, uio);
 		if (ioflag & IO_SYNC)

@@ -60,6 +60,14 @@
  *
  * any improvements or extensions that they make and grant Carnegie the
  * rights to redistribute these changes.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00147
+ * --------------------         -----   ----------------------
+ *
+ * 20 Apr 93	Paul Kranenburg		Detect and prevent kernel deadlocks in
+ *					VM system
  */
 
 /*
@@ -248,6 +256,26 @@ void vm_object_deallocate(object)
 		 */
 
 		if (object->can_persist) {
+			register vm_page_t	p;
+
+			/*
+			 * Check for dirty pages in object
+			 * Print warning as this may signify kernel bugs
+			 * pk@cs.few.eur.nl	- 4/15/93
+			 */
+			p = (vm_page_t) queue_first(&object->memq);
+			while (!queue_end(&object->memq, (queue_entry_t) p)) {
+				VM_PAGE_CHECK(p);
+
+				if (pmap_is_modified(VM_PAGE_TO_PHYS(p)) ||
+								!p->clean) {
+
+					printf("vm_object_dealloc: persistent object %x isn't clean\n", object);
+					goto cant_persist;
+				}
+
+				p = (vm_page_t) queue_next(&p->listq);
+			}
 
 			queue_enter(&vm_object_cached_list, object,
 				vm_object_t, cached_list);
@@ -260,6 +288,7 @@ void vm_object_deallocate(object)
 			vm_object_cache_trim();
 			return;
 		}
+	cant_persist:;
 
 		/*
 		 *	Make sure no one can look us up now.
