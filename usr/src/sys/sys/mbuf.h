@@ -3,7 +3,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mbuf.h	7.17 (Berkeley) %G%
+ *	@(#)mbuf.h	7.18 (Berkeley) %G%
  */
 
 #ifndef M_WAITOK
@@ -349,22 +349,22 @@ extern	int mbtypes[];			/* XXX */
 
 #ifdef MBTYPES
 int mbtypes[] = {				/* XXX */
-	M_FREE,		/* MT_FREE	0	/* should be on free list */
-	M_MBUF,		/* MT_DATA	1	/* dynamic (data) allocation */
-	M_MBUF,		/* MT_HEADER	2	/* packet header */
-	M_SOCKET,	/* MT_SOCKET	3	/* socket structure */
-	M_PCB,		/* MT_PCB	4	/* protocol control block */
-	M_RTABLE,	/* MT_RTABLE	5	/* routing tables */
-	M_HTABLE,	/* MT_HTABLE	6	/* IMP host tables */
-	0,		/* MT_ATABLE	7	/* address resolution tables */
-	M_MBUF,		/* MT_SONAME	8	/* socket name */
+	M_FREE,		/* MT_FREE	0	   should be on free list */
+	M_MBUF,		/* MT_DATA	1	   dynamic (data) allocation */
+	M_MBUF,		/* MT_HEADER	2	   packet header */
+	M_SOCKET,	/* MT_SOCKET	3	   socket structure */
+	M_PCB,		/* MT_PCB	4	   protocol control block */
+	M_RTABLE,	/* MT_RTABLE	5	   routing tables */
+	M_HTABLE,	/* MT_HTABLE	6	   IMP host tables */
+	0,		/* MT_ATABLE	7	   address resolution tables */
+	M_MBUF,		/* MT_SONAME	8	   socket name */
 	0,		/* 		9 */
-	M_SOOPTS,	/* MT_SOOPTS	10	/* socket options */
-	M_FTABLE,	/* MT_FTABLE	11	/* fragment reassembly header */
-	M_MBUF,		/* MT_RIGHTS	12	/* access rights */
-	M_IFADDR,	/* MT_IFADDR	13	/* interface address */
-	M_MBUF,		/* MT_CONTROL	14	/* extra-data protocol message */
-	M_MBUF,		/* MT_OOBDATA	15	/* expedited data  */
+	M_SOOPTS,	/* MT_SOOPTS	10	   socket options */
+	M_FTABLE,	/* MT_FTABLE	11	   fragment reassembly header */
+	M_MBUF,		/* MT_RIGHTS	12	   access rights */
+	M_IFADDR,	/* MT_IFADDR	13	   interface address */
+	M_MBUF,		/* MT_CONTROL	14	   extra-data protocol message */
+	M_MBUF,		/* MT_OOBDATA	15	   expedited data  */
 #ifdef DATAKIT
 	25, 26, 27, 28, 29, 30, 31, 32		/* datakit ugliness */
 #endif
