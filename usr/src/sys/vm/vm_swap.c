@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_swap.c	7.22 (Berkeley) %G%
+ *	@(#)vm_swap.c	7.23 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -81,7 +81,6 @@ void
 swstrategy(bp)
 	register struct buf *bp;
 {
-	USES_VOP_STRATEGY;
 	int sz, off, seg, index;
 	register struct swdevt *sp;
 	struct vnode *vp;
@@ -204,7 +203,6 @@ swfree(p, index)
 	struct proc *p;
 	int index;
 {
-	USES_VOP_OPEN;
 	register struct swdevt *sp;
 	register swblk_t vsbase;
 	register long blk;
