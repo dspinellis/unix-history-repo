@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	1.11 (Berkeley) %G%
+#	@(#)Makefile	1.12 (Berkeley) %G%
 #
 
 # The following is the telnet makefile.  The sources are down one level
@@ -42,7 +42,10 @@ telnet:	${OBJS} ${LIBC}
 	${CC} -o $@ ${CFLAGS} ${OBJS}
 
 clean: FRC
-	rm -f ${OBJS} core errs l.errs tags telnet
+	rm -f ${OBJS} core errs l.errs telnet
+
+cleandir: clean
+	rm -f ${MAN} tags .depend
 
 clist:	FRC ${SRCS}
 	@for i in ${SRCS} ; \
