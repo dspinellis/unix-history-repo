@@ -1,4 +1,4 @@
-/*	ubavar.h	4.24	82/04/01	*/
+/*	ubavar.h	4.25	82/04/11	*/
 
 /*
  * This file contains definitions related to the kernel structures
@@ -169,8 +169,8 @@ extern	struct	uba_device ubdinit[];
  * UNIbus device address space is mapped by UMEMmap
  * into virtual address umem[][].
  */
-extern	struct pte UMEMmap[][16];	/* uba device addr pte's */
-extern	char umem[][16*NBPG];		/* uba device addr space */
+extern	struct pte UMEMmap[][512];	/* uba device addr pte's */
+extern	char umem[][512*NBPG];		/* uba device addr space */
 
 /*
  * Since some VAXen vector their first (and only) unibus interrupt

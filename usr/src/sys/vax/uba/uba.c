@@ -1,4 +1,4 @@
-/*	uba.c	4.42	82/03/31	*/
+/*	uba.c	4.43	82/04/11	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -510,3 +510,31 @@ ubaremap(uban, ubinfo, addr)
 	return (ubinfo | o);
 }
 #endif
+
+/*
+ * This routine is called by a driver for a device with on-board Unibus
+ * memory.  It removes the memory block from the Unibus resource map
+ * and clears the map registers for the block.
+ *
+ * Arguments are the Unibus number, the Unibus address of the memory
+ * block, and its size in blocks of 512 bytes.
+ *
+ * Returns addr if successful, 0 if not.
+ */
+
+ubamem(uban, addr, size)
+{
+	register struct uba_hd *uh = &uba_hd[uban];
+	register int *m;
+	register int i, a, s;
+
+	s = spl6();
+	a = rmget(uh->uh_map, size, addr>>9);
+	splx(s);
+	if (a) {
+		m = (int *) &uh->uh_uba->uba_map[a];
+		for (i=0; i<size; i++)
+			*m++ = 0;	/* All off, especially 'valid' */
+	}
+	return(a);
+}

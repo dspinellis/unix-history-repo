@@ -1,4 +1,4 @@
-/*	ubareg.h	4.27	82/03/18	*/
+/*	ubareg.h	4.28	82/04/11	*/
 
 /*
  * VAX UNIBUS adapter registers
@@ -158,11 +158,11 @@ struct uba_regs
  * for each possible uba.
  */
 #if VAX7ZZ
-#define	UMEM7ZZ		((u_short *)(0xffe000))
+#define	UMEM7ZZ		((u_short *)(0xfc0000))
 #endif
 #if VAX750
-#define	UMEM750(i)	((u_short *)(0xffe000-(i)*0x40000))
+#define	UMEM750(i)	((u_short *)(0xfc0000-(i)*0x40000))
 #endif
 #if VAX780
-#define	UMEM780(i)	((u_short *)(0x2013e000+(i)*0x40000))
+#define	UMEM780(i)	((u_short *)(0x20100000+(i)*0x40000))
 #endif
