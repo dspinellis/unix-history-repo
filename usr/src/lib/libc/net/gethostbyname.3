@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)gethostbyname.3	6.1 (Berkeley) %G%
+.\"	@(#)gethostbyname.3	6.2 (Berkeley) %G%
 .\"
 .TH GETHOSTENT 3N ""
 .UC 5
@@ -82,9 +82,9 @@ opens and rewinds the file.  If the
 .I stayopen
 flag is non-zero,
 the host data base will not be closed after each call to 
-.I gethostent
-(either directly, or indirectly through one of the other
-\*(lqgethost\*(rq calls).
+.I gethosbyname
+or
+.IR gethostbyaddr .
 .PP
 .I Endhostent
 closes the file.
@@ -112,7 +112,7 @@ Host addresses are supplied in network order.
 .SH FILES
 /etc/hosts
 .SH "SEE ALSO"
-hosts(5)
+hosts(5), resolver(3), named(8)
 .SH DIAGNOSTICS
 Null pointer
 (0) returned on EOF or error.
@@ -122,3 +122,13 @@ is contained in a static area
 so it must be copied if it is
 to be saved.  Only the Internet
 address format is currently understood.
+.PP
+On sites configured to use the name server
+.IR named (8)
+instead of 
+.IR /etc/hosts ,
+.I gethostent
+is not available
+and
+.I sethostfile
+is a no-op.
