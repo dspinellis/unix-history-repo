@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 # Makefile for testing dbx.
 #
@@ -30,9 +30,10 @@ CC = cc
 
 TESTDBX = ../../tdbx
 TESTS = \
-    aliases.t args.t arrays.t bitfields.t call.t dump.t enum.t float.t \
-    loophole.t nested.t own.t reg.t \
+    aliases.t args.t arrays.t bitfields.t \
+    dump.t enum.t float.t loophole.t nested.t own.t reg.t \
     same.t signal.t sleep.t stkcmds.t strings.t struct.t user.t ushort.t
+#   call.t - deleted as it crashes the CCI microcode.
 
 .c.x:
 	${CC} -g $*.c -o $*.x
@@ -48,7 +49,7 @@ TESTS = \
 	@echo "    $*"
 	@rm -f tmp
 	@../runtest ${TESTDBX} $* > tmp
-	@../check tmp $*.out
+	@../check tmp out/out.`machine`/$*.out
 	@rm -f tmp
 	@rm -f $*.t
 	@touch $*.t
@@ -62,6 +63,9 @@ beforemsg:
 
 strings.x: strings.c
 	cc -g -R strings.c -o strings.x
+
+clean:
+	rm -f *.x *.t *.o *.tst strings.core
 
 aliases.t: aliases.x ${TESTDBX}
 args.t: args.x ${TESTDBX}
@@ -87,12 +91,12 @@ strings.t: strings.x strings.core ${TESTDBX}
 	@echo "    $*"
 	@rm -f tmp
 	@${TESTDBX} $*.x $*.core < $*.in | tail +3 > tmp
-	@../check tmp $*.out
+	@../check tmp out/out.`machine`/$*.out
 	@rm -f tmp
 	@rm -f $*.t
 	@touch $*.t
 
-strings.core:
+strings.core: strings.x
 	-csh -f -c "limit coredumpsize 6m >& /dev/null; strings.x"
 	mv core strings.core
 
