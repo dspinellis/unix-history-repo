@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_pager.h	7.3 (Berkeley) %G%
+ *	@(#)vm_pager.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -51,15 +51,17 @@ struct	pagerops {
 
 /*
  * get/put return values
- * OK	operation was successful
- * BAD	specified data was out of the accepted range
- * FAIL	specified data was in range, but doesn't exist
- * PEND	operations was initiated but not completed
+ * OK	 operation was successful
+ * BAD	 specified data was out of the accepted range
+ * FAIL	 specified data was in range, but doesn't exist
+ * PEND	 operations was initiated but not completed
+ * ERROR error while accessing data that is in range and exists
  */
 #define	VM_PAGER_OK	0
 #define	VM_PAGER_BAD	1
 #define	VM_PAGER_FAIL	2
 #define	VM_PAGER_PEND	3
+#define	VM_PAGER_ERROR	4
 
 #define	VM_PAGER_ALLOC(h, s, p)		(*(pg)->pg_ops->pgo_alloc)(h, s, p)
 #define	VM_PAGER_DEALLOC(pg)		(*(pg)->pg_ops->pgo_dealloc)(pg)
