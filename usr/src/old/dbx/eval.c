@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)eval.c 1.2 %G%";
+static char sccsid[] = "@(#)eval.c 1.3 %G%";
 
 /*
  * Tree evaluation.
@@ -712,7 +712,10 @@ Node p;
     } else if (place != nil and place->op == O_QLINE) {
 	traceat(p->op, exp, place, cond);
     } else {
-	left = (exp->op == O_RVAL) ? exp->value.arg[0] : exp;
+	left = exp;
+	if (left->op == O_RVAL or left->op == O_CALL) {
+	    left = left->value.arg[0];
+	}
 	if (left->op == O_SYM and isblock(left->value.sym)) {
 	    traceproc(p->op, left->value.sym, place, cond);
 	} else {
