@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ttydefaults.h	7.4 (Berkeley) %G%
+ *	@(#)ttydefaults.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -54,7 +54,7 @@
  * #define TTYDEFCHARS to include an array of default control characters.
  */
 #ifdef TTYDEFCHARS
-cc_t	ttydefchars[NCC] = {
+cc_t	ttydefchars[NCCS] = {
 	CEOF,	CEOL,	CEOL,	CERASE, CWERASE, CKILL, CREPRINT, 
 	_POSIX_VDISABLE, CINTR,	CQUIT,	CSUSP,	CDSUSP,	CSTART,	CSTOP,	CLNEXT,
 	CDISCARD, CMIN,	CTIME,  CSTATUS, _POSIX_VDISABLE
