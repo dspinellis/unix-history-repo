@@ -4,20 +4,22 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)gprof.h	5.12 (Berkeley) %G%
+ *	@(#)gprof.h	5.13 (Berkeley) %G%
  */
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/gmon.h>
+
 #include <a.out.h>
 #include <stdio.h>
-#include "gmon.h"
+#include <stdlib.h>
 
 #if vax
 #   include "vax.h"
 #endif
-#if sun
-#   include "sun.h"
+#if sparc
+#   include "sparc.h"
 #endif
 #if tahoe
 #   include "tahoe.h"
@@ -185,7 +187,7 @@ double	printtime;		/* total of time being printed */
 double	scale;			/* scale factor converting samples to pc
 				   values: each sample covers scale bytes */
 char	*strtab;		/* string table in core */
-off_t	ssiz;			/* size of the string table */
+long	ssiz;			/* size of the string table */
 struct	exec xbuf;		/* exec header of a.out */
 unsigned char	*textspace;	/* text space of a.out in core */
 int	cyclethreshold;		/* with -C, minimum cycle size to ignore */
