@@ -18,8 +18,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)scan.l	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)scan.l	5.7 (Berkeley) %G%";
 #endif /* not lint */
+
+extern int yylineno;
+int yylineno = 1;
 
 #include "y.tab.h"
 #include "htable.h"
@@ -74,14 +77,9 @@ NAMECHR	[0-9A-Za-z./-]
 ","		return (',');
 "/"		return ('/');
 ";".*		;
-"\n"{BLANK}+	;
+"\n"{BLANK}+	++yylineno;
 {BLANK}+	;
-"\n"		return (END);
+"\n"		++yylineno; return (END);
 .		fprintf(stderr, "Illegal char: '%s'\n", yytext);
 
 %%
-
-yywrap()
-{
-	return (1);
-}
