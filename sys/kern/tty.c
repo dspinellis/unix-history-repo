@@ -32,7 +32,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tty.c	7.44 (Berkeley) 5/28/91
- *	$Id: tty.c,v 1.28 1994/03/26 14:08:23 ache Exp $
+ *	$Id: tty.c,v 1.29 1994/03/31 00:51:01 ache Exp $
  */
 
 /*-
@@ -719,7 +719,7 @@ ttnread(tp)
 	nread = RB_LEN(tp->t_can);
 	if ((tp->t_lflag & ICANON) == 0) {
 		nread += RB_LEN(tp->t_raw);
-		if (nread < tp->t_cc[VMIN])
+		if (nread < tp->t_cc[VMIN] && tp->t_cc[VTIME] == 0)
 			nread = 0;
 	}
 	return (nread);
