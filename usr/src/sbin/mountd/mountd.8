@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)mountd.8	5.4 (Berkeley) %G%
+.\"	@(#)mountd.8	5.5 (Berkeley) %G%
 .\"
 .TH MOUNTD 8 ""
 .UC 7
@@ -32,6 +32,9 @@ This should only be specified if there are clients such as PC's,
 that require it.
 The \fBexportsfile\fR argument specifies an alternate location
 for the exports file.
+Sending a SIGHUP signal to
+.I mountd
+will cause it to reread its exports file.
 .SH FILES
 /etc/exports
 .SH SEE ALSO
