@@ -3,14 +3,14 @@
 # include <pwd.h>
 # include "postbox.h"
 
-static char SccsId[] = "@(#)alias.c	3.2	%G%";
+static char SccsId[] = "@(#)alias.c	3.3	%G%";
 
 /*
 **  ALIAS -- Compute aliases.
 **
 **	Scans the file ALIASFILE for a set of aliases.
-**	If found, it arranges to deliver to them by inserting the
-**	new names onto the SendQ queue.  Uses libdbm database if -DDBM.
+**	If found, it arranges to deliver to them.  Uses libdbm
+**	database if -DDBM.
 **
 **	Parameters:
 **		none
@@ -19,15 +19,10 @@ static char SccsId[] = "@(#)alias.c	3.2	%G%";
 **		none
 **
 **	Side Effects:
-**		Aliases found on SendQ are removed and put onto
-**		AliasQ; replacements are added to SendQ.  This is
-**		done until no such replacement occurs.
+**		Aliases found are expanded.
 **
 **	Defined Constants:
 **		MAXRCRSN -- the maximum recursion depth.
-**
-**	Called By:
-**		main
 **
 **	Files:
 **		ALIASFILE -- the mail aliases.  The format is
@@ -76,6 +71,7 @@ alias()
 	auto ADDRESS al;
 	extern bool sameaddr();
 	extern ADDRESS *parse();
+	int mno;
 
 	if (NoAlias)
 		return;
@@ -141,10 +137,10 @@ alias()
 			gotmatch = FALSE;
 
 			/*
-			**  Check to see if this pseudonym exists in SendQ.
+			**  Check to see if this pseudonym exists.
 			**	Turn the alias into canonical form.
-			**	Then scan SendQ until you do (or do not)
-			**	find that address.
+			**	Then scan the send queue until you
+			**	do (or do not) find that address.
 			*/
 
 			/*  Get a canonical form for the alias. */
@@ -163,109 +159,80 @@ alias()
 				goto syntaxerr;
 			}
 
-			/* if already in AliasQ don't realias */
-			for (q = &AliasQ; (q = nxtinq(q)) != NULL; )
+			/* if already queued up, don't realias */
+			for (q = Mailer[al.q_mailer]->m_sendq; q != NULL; q = q->q_next)
 			{
 				if (sameaddr(&al, q, TRUE))
 					break;
 			}
-			if (q != NULL)
+			if (q == NULL || bitset(QDONTSEND, q->q_flags))
 				continue;
 
-			/*  Scan SendQ for that canonical form. */
-			for (q = &SendQ; (q = nxtinq(q)) != NULL; )
-			{
-				if (sameaddr(&al, q, TRUE))
-					break;
-			}
-			if (q != NULL)
-			{
-				/*
-				**  Match on Alias.
-				**	Deliver to the target list.
-				**	Remove the alias from the send queue
-				**	  and put it on the Alias queue.
-				*/
+			/*
+			**  Match on Alias.
+			**	Deliver to the target list.
+			**	Remove the alias from the send queue
+			**	  and put it on the Alias queue.
+			*/
 
 # ifdef DEBUG
-				if (Debug)
-					printf("%s (%s, %s) aliased to %s (%s,%s,%s)\n",
-					    q->q_paddr, q->q_host, q->q_user,
-					    p, al.q_paddr, al.q_host, al.q_user);
+			if (Debug)
+				printf("%s (%s, %s) aliased to %s (%s,%s,%s)\n",
+				    q->q_paddr, q->q_host, q->q_user,
+				    p, al.q_paddr, al.q_host, al.q_user);
 # endif
-				tkoffq(q, &SendQ);
-				didalias++;
-				gotmatch++;
-				sendto(p, 1);
-				putonq(q, &AliasQ);
-			}
+			q->q_flags |= QDONTSEND;
+			didalias++;
+			gotmatch++;
+			sendto(p, 1);
 		}
 	} while (didalias);
 	fclose(af);
 #else DBM
 	/*
-	**  Scan SendQ
+	**  Scan send queues
 	**	We only have to do this once, since anything we alias
 	**	to is being put at the end of the queue we are
 	**	scanning.
-	**	If the alias on SendQ is also (already) on AliasQ, we
-	**	have an alias such as:
-	**		eric:eric,i:eric
-	**	In this case we have already done this alias once, and
-	**	we don't want to do it again (for obvious reasons!).
 	*/
 
-	for (q2 = nxtinq(&SendQ); q2 != NULL; )
+	for (mno = 0; Mailer[mno] != NULL; mno++)
 	{
-		/* if already in AliasQ, don't realias */
-		for (q = &AliasQ; (q = nxtinq(q)) != NULL; )
+		for (q = Mailer[mno]->m_sendq; q != NULL; q = q->q_next)
 		{
-			if (sameaddr(q, q2, TRUE))
-				break;
-		}
-		if (q != NULL)
-		{
-			q2 = nxtinq(q2);
-			continue;
-		}
+			/* don't realias already aliased names */
+			if (bitset(QDONTSEND, q->q_flags))
+				continue;
 
-		/* save ptr to next address */
-		q = q2;
-		q2 = nxtinq(q);
+			/* only alias local users */
+			if (q->q_mailer != 0)
+				continue;
 
-		/* only alias local users */
-		if (q->q_mailer != 0)
-			continue;
+			/* create a key for fetch */
+			lhs.dptr = q->q_user;
+			lhs.dsize = strlen(q->q_user) + 1;
+			rhs = fetch(lhs);
 
-		/* create a key for fetch */
-		lhs.dptr = q->q_user;
-		lhs.dsize = strlen(q->q_user) + 1;
-		rhs = fetch(lhs);
+			/* find this alias? */
+			p = rhs.dptr;
+			if (p == NULL)
+				continue;
 
-		/* find this alias? */
-		p = rhs.dptr;
-		if (p == NULL)
-			continue;
-
-		/*
-		**  Match on Alias.
-		**	Deliver to the target list.
-		**	Remove the alias from the send queue
-		**	  and put it on the Alias queue.
-		*/
+			/*
+			**  Match on Alias.
+			**	Deliver to the target list.
+			**	Remove the alias from the send queue
+			**	  and put it on the Alias queue.
+			*/
 
 # ifdef DEBUG
-		if (Debug)
-			printf("%s (%s, %s) aliased to %s\n",
-			    q->q_paddr, q->q_host, q->q_user, p);
+			if (Debug)
+				printf("%s (%s, %s) aliased to %s\n",
+				    q->q_paddr, q->q_host, q->q_user, p);
 # endif
-		tkoffq(q, &SendQ);
-		sendto(p, 1);
-		putonq(q, &AliasQ);
-
-		/* if our last entry had an alias, process them */
-		if (q2 == NULL)
-			q2 = nxtinq(&SendQ);
+			q->q_flags |= QDONTSEND;
+			sendto(p, 1);
+		}
 	}
 #endif DBM
 }
@@ -286,10 +253,7 @@ alias()
 **		FALSE -- not forwarded; go ahead & deliver.
 **
 **	Side Effects:
-**		New names are added to SendQ.
-**
-**	Called By:
-**		recipient
+**		New names are added to send queues.
 */
 
 bool

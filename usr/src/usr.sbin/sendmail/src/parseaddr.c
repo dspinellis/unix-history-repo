@@ -2,7 +2,7 @@
 # include <ctype.h>
 # include "postbox.h"
 
-static char	SccsId[] = "@(#)parseaddr.c	3.7	%G%";
+static char	SccsId[] = "@(#)parseaddr.c	3.8	%G%";
 
 /*
 **  PARSE -- Parse an address
@@ -58,7 +58,6 @@ parse(addr, a, copyf)
 	register char **pvp;
 	register struct mailer *m;
 	extern char **prescan();
-	extern char *xalloc();
 	extern char *newstr();
 	extern char *strcpy();
 	extern ADDRESS *buildaddr();
@@ -68,6 +67,11 @@ parse(addr, a, copyf)
 	*/
 
 	To = addr;
+# ifdef DEBUG
+	if (Debug)
+		printf("\n--parse(%s)\n", addr);
+# endif DEBUG
+
 	pvp = prescan(addr, '\0');
 	if (pvp == NULL)
 		return (NULL);
@@ -471,13 +475,13 @@ rewrite(pvp)
 	struct match mlist[MAXMATCH];
 	char *npvp[MAXATOM+1];		/* temporary space for rebuild */
 
-# ifdef DEBUG
+# ifdef DEBUGX
 	if (Debug)
 	{
 		printf("rewrite: original pvp:\n");
 		printav(pvp);
 	}
-# endif DEBUG
+# endif DEBUGX
 
 	/*
 	**  Run through the list of rewrite rules, applying
@@ -486,13 +490,13 @@ rewrite(pvp)
 
 	for (rwr = RewriteRules; rwr != NULL; )
 	{
-# ifdef DEBUG
+# ifdef DEBUGX
 		if (Debug)
 		{
 			printf("-----trying rule:\n");
 			printav(rwr->r_lhs);
 		}
-# endif DEBUG
+# endif DEBUGX
 
 		/* try to match on this rule */
 		clrmatch(mlist);
@@ -566,13 +570,13 @@ rewrite(pvp)
 
 		if (rvp >= rwr->r_lhs && *rvp == NULL)
 		{
-# ifdef DEBUG
+# ifdef DEBUGX
 			if (Debug)
 			{
 				printf("-----rule matches:\n");
 				printav(rwr->r_rhs);
 			}
-# endif DEBUG
+# endif DEBUGX
 
 			/* substitute */
 			for (rvp = rwr->r_rhs, avp = npvp; *rvp != NULL; rvp++)
@@ -602,8 +606,12 @@ rewrite(pvp)
 # ifdef DEBUG
 			if (Debug)
 			{
-				printf("rewritten as:\n");
-				printav(pvp);
+				char **vp;
+
+				printf("rewritten as `");
+				for (vp = pvp; *vp != NULL; vp++)
+					xputs(*vp);
+				printf("'\n");
 			}
 # endif DEBUG
 			if (pvp[0][0] == CANONNET)
@@ -611,10 +619,10 @@ rewrite(pvp)
 		}
 		else
 		{
-# ifdef DEBUG
+# ifdef DEBUGX
 			if (Debug)
 				printf("----- rule fails\n");
-# endif DEBUG
+# endif DEBUGX
 			rwr = rwr->r_next;
 		}
 	}
@@ -754,6 +762,7 @@ buildaddr(tv, a)
 
 	if (a == NULL)
 		a = (ADDRESS *) xalloc(sizeof *a);
+	a->q_flags = 0;
 
 	/* figure out what net/mailer to use */
 	if (**tv != CANONNET)
@@ -790,4 +799,49 @@ buildaddr(tv, a)
 	a->q_user = buf;
 
 	return (a);
+}
+/*
+**  SAMEADDR -- Determine if two addresses are the same
+**
+**	This is not just a straight comparison -- if the mailer doesn't
+**	care about the host we just ignore it, etc.
+**
+**	Parameters:
+**		a, b -- pointers to the internal forms to compare.
+**		wildflg -- if TRUE, 'a' may have no user specified,
+**			in which case it is to match anything.
+**
+**	Returns:
+**		TRUE -- they represent the same mailbox.
+**		FALSE -- they don't.
+**
+**	Side Effects:
+**		none.
+*/
+
+bool
+sameaddr(a, b, wildflg)
+	register ADDRESS *a;
+	register ADDRESS *b;
+	bool wildflg;
+{
+	/* if they don't have the same mailer, forget it */
+	if (a->q_mailer != b->q_mailer)
+		return (FALSE);
+
+	/* if the user isn't the same, we can drop out */
+	if ((!wildflg || a->q_user[0] != '\0') && strcmp(a->q_user, b->q_user) != 0)
+		return (FALSE);
+
+	/* if the mailer ignores hosts, we have succeeded! */
+	if (bitset(M_NOHOST, Mailer[a->q_mailer]->m_flags))
+		return (TRUE);
+
+	/* otherwise compare hosts (but be careful for NULL ptrs) */
+	if (a->q_host == NULL || b->q_host == NULL)
+		return (FALSE);
+	if (strcmp(a->q_host, b->q_host) != 0)
+		return (FALSE);
+
+	return (TRUE);
 }
