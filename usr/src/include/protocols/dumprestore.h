@@ -1,4 +1,10 @@
-/*	dumprestore.h	2.6	85/03/24	*/
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)dumprestore.h	5.1 (Berkeley) %G%
+ */
 
 /*
  * TP_BSIZE is the size of file blocks on the dump tapes.
