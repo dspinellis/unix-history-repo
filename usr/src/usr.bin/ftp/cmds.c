@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	4.4 (Berkeley) %G%";
 #endif
 
 /*
@@ -197,14 +197,26 @@ setstruct(argc, argv)
 /*
  * Send a single file.
  */
+append(argc, argv)
+	char *argv[];
+{
+
+	return (put1("APPE", argc, argv));
+}
+
 put(argc, argv)
 	char *argv[];
 {
 
-	if (!connected) {
-		printf("Not connected.\n");
-		return;
-	}
+	return (put1("STOR", argc, argv));
+}
+
+put1(cmd, argc, argv)
+	char *cmd;
+	int argc;
+	char *argv[];
+{
+
 	if (argc == 2)
 		argc++, argv[2] = argv[1];
 	if (argc < 2) {
@@ -232,7 +244,7 @@ usage:
 		goto usage;
 	if (!globulize(&argv[1]))
 		return;
-	sendrequest("STOR", argv[1], argv[2]);
+	sendrequest(cmd, argv[1], argv[2]);
 }
 
 /*
@@ -241,51 +253,38 @@ usage:
 mput(argc, argv)
 	char *argv[];
 {
-	char **cpp, *dst;
+	char **cpp, **gargs = NULL;
 	int i;
 
-	if (!connected) {
-		printf("Not connected.\n");
-		return;
+	if (argc < 2) {
+		strcat(line, " ");
+		printf("(local-files) ");
+		gets(&line[strlen(line)]);
+		makeargv();
+		argc = margc;
+		argv = margv;
 	}
 	if (argc < 2) {
-		printf("%s local-file remote-file, or\n", argv[0]);
 		printf("%s local-files\n", argv[0]);
 		return;
 	}
-	if (argc == 3)  {
-		if (!globulize(&argv[1]))
-			return;
-		sendrequest("STOR", argv[1], argv[2]);
-		return;
-	}
-	/*
-	 * Check for shell metacharacters which we might
-	 * want to expand into a list of file names.
-	 */
-	for (i = 1; i < argc; i++) {
-		if (!doglob) {
-			if (!skip(argv[0], argv[i]))
-				sendrequest("STOR", argv[i], argv[i]);
-			continue;
-		}
-		cpp = glob(argv[i]);
+	cpp = argv + 1;
+	if (doglob) {
+		gargs = glob(cpp);
 		if (globerr != NULL) {
-			printf("%s: %s\n", argv[i], globerr);
-			if (cpp)
-				blkfree(cpp);
-			continue;
-		}
-		if (cpp == NULL) {
-			printf("%s: no match\n", argv[i]);
-			continue;
-		}
-		while (*cpp != NULL) {
-			if (!skip(argv[0], *cpp))
-				sendrequest("STOR", *cpp, *cpp);
-			free(*cpp), cpp++;
+			printf("%s\n", globerr);
+			if (gargs)
+				blkfree(gargs);
+			return;
 		}
 	}
+	if (gargs != NULL)
+		cpp = gargs;
+	for (; *cpp != NULL; cpp++)
+		if (confirm(argv[0], *cpp))
+			sendrequest("STOR", *cpp, *cpp);
+	if (gargs != NULL)
+		blkfree(gargs);
 }
 
 /*
@@ -295,10 +294,6 @@ get(argc, argv)
 	char *argv[];
 {
 
-	if (!connected) {
-		printf("Not connected.\n");
-		return;
-	}
 	if (argc == 2)
 		argc++, argv[2] = argv[1];
 	if (argc < 2) {
@@ -326,7 +321,7 @@ usage:
 		goto usage;
 	if (!globulize(&argv[2]))
 		return;
-	recvrequest("RETR", argv[2], argv[1]);
+	recvrequest("RETR", argv[2], argv[1], "w");
 }
 
 /*
@@ -335,17 +330,8 @@ usage:
 mget(argc, argv)
 	char *argv[];
 {
-	char temp[16], *dst, dstpath[MAXPATHLEN], buf[MAXPATHLEN];
-	FILE *ftemp;
-	int madedir = 0, oldverbose;
-	struct stat stb;
+	register char *cp;
 
-	if (!connected) {
-		printf("Not connected.\n");
-		return;
-	}
-	if (argc == 2)
-		argc++, argv[2] = argv[1];
 	if (argc < 2) {
 		strcat(line, " ");
 		printf("(remote-directory) ");
@@ -355,81 +341,51 @@ mget(argc, argv)
 		argv = margv;
 	}
 	if (argc < 2) {
-usage:
-		printf("%s remote-directory [ local-directory ], or\n",
-			argv[0]);
-		printf("%s remote-files local-directory\n", argv[0]);
+		printf("%s remote-files\n", argv[0]);
 		return;
 	}
-	if (argc < 3) {
-		strcat(line, " ");
-		printf("(local-directory) ");
-		gets(&line[strlen(line)]);
-		makeargv();
-		argc = margc;
-		argv = margv;
-	}
-	if (argc < 3) 
-		goto usage;
-	dst = argv[argc - 1];
-	if (!globulize(&dst))
-		return;
-	/*
-	 * If destination doesn't exist,
-	 * try and create it.
-	 */
-	if (stat(dst, &stb) < 0) {
-		if (mkdir(dst, 0777) < 0) {
-			perror(dst);
-			return;
-		}
-		madedir++;
-	} else {
-		if ((stb.st_mode & S_IFMT) != S_IFDIR) {
-			printf("%s: not a directory\n", dst);
-			return;
-		}
-	}
-	/*
-	 * Multiple files, just get each one without an nlst.
-	 */
-	if (argc > 3) {
-		int i;
+	while ((cp = remglob(argc, argv)) != NULL)
+		if (confirm(argv[0], cp))
+			recvrequest("RETR", cp, cp, "w");
+}
 
-		for (i = 1; i < argc - 1; i++)
-			recvrequest("RETR",
-			  sprintf(dstpath, "%s/%s", dst, argv[i]), argv[i]);
-		return;
+char *
+remglob(argc, argv)
+	char *argv[];
+{
+	char temp[16], *cp;
+	static char buf[MAXPATHLEN];
+	static FILE *ftemp = NULL;
+	static char **args;
+	int oldverbose;
+
+	if (!doglob) {
+		if (argc == NULL)
+			args = argv;
+		if ((cp = *++args) == NULL)
+			args = NULL;
+		return (cp);
 	}
-	/*
-	 * Get a directory full of files.  Perform an
-	 * nlst to find the file names, then retrieve
-	 * each individually.  If prompting is on, ask
-	 * before grabbing each file.
-	 */
-	strcpy(temp, "/tmp/ftpXXXXXX");
-	mktemp(temp);
-	oldverbose = verbose, verbose = 0;
-	recvrequest("NLST", temp, argv[1]);
-	verbose = oldverbose;
-	ftemp = fopen(temp, "r");
-	unlink(temp);
 	if (ftemp == NULL) {
-		printf("can't find list of remote files, oops\n");
-		if (madedir)
-			(void) rmdir(dst);
-		return;
+		strcpy(temp, "/tmp/ftpXXXXXX");
+		mktemp(temp);
+		oldverbose = verbose, verbose = 0;
+		recvrequest("NLST", temp, argv[1], "w");
+		verbose = oldverbose;
+		ftemp = fopen(temp, "r");
+		unlink(temp);
+		if (ftemp == NULL) {
+			printf("can't find list of remote files, oops\n");
+			return;
+		}
 	}
-	while (fgets(buf, sizeof (buf), ftemp) != NULL) {
-		char *cp = index(buf, '\n');
-
-		if (cp)
-			*cp = '\0';
-		if (skip(argv[0], buf))
-			continue;
-		recvrequest("RETR", sprintf(dstpath, "%s/%s", dst, buf), buf);
+	if (fgets(buf, sizeof (buf), ftemp) == NULL) {
+		fclose(ftemp), ftemp = NULL;
+		return (NULL);
 	}
-	fclose(ftemp);
+	if ((cp = index(buf, '\n')) != NULL)
+		*cp = '\0';
+	return (buf);
 }
 
 char *
@@ -456,6 +412,8 @@ status(argc, argv)
 	printf("Verbose: %s; Bell: %s; Prompting: %s; Globbing: %s\n", 
 		onoff(verbose), onoff(bell), onoff(interactive),
 		onoff(doglob));
+	printf("Hash mark printing: %s; Use of PORT cmds: %s\n",
+		onoff(hash), onoff(sendport));
 }
 
 /*
@@ -481,6 +439,20 @@ settrace()
 }
 
 /*
+ * Toggle hash mark printing during transfers.
+ */
+/*VARARGS*/
+sethash()
+{
+
+	hash = !hash;
+	printf("Hash mark printing %s", onoff(hash));
+	if (hash)
+		printf(" (%d bytes/hash mark)", BUFSIZ);
+	printf(".\n");
+}
+
+/*
  * Turn on printing of server echo's.
  */
 /*VARARGS*/
@@ -489,6 +461,17 @@ setverbose()
 
 	verbose = !verbose;
 	printf("Verbose mode %s.\n", onoff(verbose));
+}
+
+/*
+ * Toggle PORT cmd use before each data connection.
+ */
+/*VARARGS*/
+setport()
+{
+
+	sendport = !sendport;
+	printf("Use of PORT cmds %s.\n", onoff(sendport));
 }
 
 /*
@@ -615,6 +598,30 @@ delete(argc, argv)
 }
 
 /*
+ * Delete multiple files.
+ */
+mdelete(argc, argv)
+	char *argv[];
+{
+	char *cp;
+
+	if (argc < 2) {
+		strcat(line, " ");
+		printf("(remote-files) ");
+		gets(&line[strlen(line)]);
+		makeargv();
+		argc = margc;
+		argv = margv;
+	}
+	if (argc < 2) {
+		printf("%s remote-files\n", argv[0]);
+		return;
+	}
+	while ((cp = remglob(argc, argv)) != NULL)
+		if (confirm(argv[0], cp))
+			(void) command("DELE %s", cp);
+}
+/*
  * Rename a remote file.
  */
 renamefile(argc, argv)
@@ -655,20 +662,19 @@ usage:
 ls(argc, argv)
 	char *argv[];
 {
-	char *cmd;
+	char *cmd, *mode;
+	int i;
 
 	if (argc < 2)
 		argc++, argv[1] = NULL;
 	if (argc < 3)
 		argc++, argv[2] = "-";
-	if (argc > 3) {
-		printf("usage: %s remote-directory local-file\n", argv[0]);
-		return;
-	}
 	cmd = argv[0][0] == 'l' ? "NLST" : "LIST";
 	if (strcmp(argv[2], "-") && !globulize(&argv[2]))
 		return;
-	recvrequest(cmd, argv[2], argv[1]);
+	mode = argc > 3 ? "a" : "w";
+	for (i = 1; i < argc - 1; i++)
+		recvrequest(cmd, argv[argc - 1], argv[i], mode);
 }
 
 /*
@@ -852,17 +858,17 @@ disconnect()
 	data = -1;
 }
 
-skip(cmd, file)
+confirm(cmd, file)
 	char *cmd, *file;
 {
 	char line[BUFSIZ];
 
 	if (!interactive)
-		return (0);
+		return (1);
 	printf("%s %s? ", cmd, file);
 	fflush(stdout);
 	gets(line);
-	return (*line == 'y');
+	return (*line != 'n' && *line != 'N');
 }
 
 fatal(msg)
