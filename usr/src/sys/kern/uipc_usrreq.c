@@ -1,4 +1,4 @@
-/*	uipc_usrreq.c	6.10	84/08/29	*/
+/*	uipc_usrreq.c	6.11	84/12/20	*/
 
 #include "param.h"
 #include "dir.h"
@@ -110,7 +110,7 @@ uipc_usrreq(so, req, m, nam, rights)
 			rcv->sb_mbmax = rcv->sb_mbcnt;
 			snd->sb_hiwat += rcv->sb_hiwat - rcv->sb_cc;
 			rcv->sb_hiwat = rcv->sb_cc;
-			sbwakeup(snd);
+			sowwakeup(so2);
 #undef snd
 #undef rcv
 			break;
@@ -150,10 +150,11 @@ uipc_usrreq(so, req, m, nam, rights)
 				 * There's no record of source socket's
 				 * name, so send null name for the moment.
 				 */
-				(void) sbappendaddr(&so2->so_rcv,
-				    &sun_noname, m, rights);
-				sbwakeup(&so2->so_rcv);
-				m = 0;
+				if (sbappendaddr(&so2->so_rcv,
+				    &sun_noname, m, rights)) {
+					sorwakeup(so2);
+					m = 0;
+				}
 			}
 			/* END XXX */
 			if (nam)
@@ -180,7 +181,8 @@ uipc_usrreq(so, req, m, nam, rights)
 			rcv->sb_mbmax = rcv->sb_mbcnt;
 			snd->sb_hiwat -= rcv->sb_cc - rcv->sb_hiwat;
 			rcv->sb_hiwat = rcv->sb_cc;
-			sbwakeup(rcv);
+			sorwakeup(so2);
+			m = 0;
 #undef snd
 #undef rcv
 			break;
@@ -188,7 +190,6 @@ uipc_usrreq(so, req, m, nam, rights)
 		default:
 			panic("uipc 4");
 		}
-		m = 0;
 		break;
 
 	case PRU_ABORT:
@@ -212,6 +213,7 @@ uipc_usrreq(so, req, m, nam, rights)
 		return (EOPNOTSUPP);
 
 	case PRU_SENDOOB:
+		error = EOPNOTSUPP;
 		break;
 
 	case PRU_SOCKADDR:
@@ -351,6 +353,11 @@ unp_connect(so, nam)
 		u.u_error = 0;
 		return (error);		/* XXX */
 	}
+	if (access(ip, IWRITE)) {
+		error = u.u_error;
+		u.u_error = 0; 		/* XXX */
+		goto bad;
+	}
 	if ((ip->i_mode&IFMT) != IFSOCK) {
 		error = ENOTSOCK;
 		goto bad;
@@ -393,6 +400,7 @@ unp_connect2(so, sonam, so2)
 	case SOCK_DGRAM:
 		unp->unp_nextref = unp2->unp_refs;
 		unp2->unp_refs = unp;
+		soisconnected(so);
 		break;
 
 	case SOCK_STREAM:
