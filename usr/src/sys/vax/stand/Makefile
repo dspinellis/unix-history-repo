@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	7.5 (Berkeley) %G%
+#	@(#)Makefile	7.6 (Berkeley) %G%
 #
 DESTDIR=/
 INCPATH=-I. -I../h
@@ -216,7 +216,7 @@ print:
 	@pr *.h *.c
 
 clean:
-	rm -f *.o *.exe *.i errs sm_*.c
+	rm -f *.o *.exe *.i errs sm_*.c libsa.a
 	rm -f a.out boot cat tpboot tpcopy copy tpformat
 	rm -f boot[a-z]? boot[a-wyz][a-z].c conf[a-wyz][a-z].c
 	rm -f format drtest core sboot bootconf.c
