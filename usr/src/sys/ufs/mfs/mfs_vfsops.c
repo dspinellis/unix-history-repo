@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfs_vfsops.c	8.7 (Berkeley) %G%
+ *	@(#)mfs_vfsops.c	8.8 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -56,20 +56,15 @@ struct vfsops mfs_vfsops = {
 
 /*
  * Called by main() when mfs is going to be mounted as root.
- *
- * Name is updated by mount(8) after booting.
  */
-#define ROOTNAME	"mfs_root"
-
 mfs_mountroot()
 {
 	extern struct vnode *rootvp;
-	register struct fs *fs;
-	register struct mount *mp;
+	struct fs *fs;
+	struct mount *mp;
 	struct proc *p = curproc;	/* XXX */
 	struct ufsmount *ump;
 	struct mfsnode *mfsp;
-	u_int size;
 	int error;
 
 	/*
@@ -78,10 +73,8 @@ mfs_mountroot()
 	if (bdevvp(swapdev, &swapdev_vp) || bdevvp(rootdev, &rootvp))
 		panic("mfs_mountroot: can't setup bdevvp's");
 
-	mp = malloc((u_long)sizeof(struct mount), M_MOUNT, M_WAITOK);
-	bzero((char *)mp, (u_long)sizeof(struct mount));
-	mp->mnt_op = &mfs_vfsops;
-	mp->mnt_flag = MNT_RDONLY;
+	if (error = vfs_rootmountalloc("mfs", "mfs_root", &mp))
+		return (error);
 	mfsp = malloc(sizeof *mfsp, M_MFSNODE, M_WAITOK);
 	rootvp->v_data = mfsp;
 	rootvp->v_op = mfs_vnodeop_p;
@@ -92,27 +85,22 @@ mfs_mountroot()
 	mfsp->mfs_pid = p->p_pid;
 	mfsp->mfs_buflist = (struct buf *)0;
 	if (error = ffs_mountfs(rootvp, mp, p)) {
+		mp->mnt_vfc->vfc_refcount--;
 		free(mp, M_MOUNT);
 		free(mfsp, M_MFSNODE);
 		return (error);
 	}
 	if (error = vfs_lock(mp)) {
 		(void)ffs_unmount(mp, 0, p);
+		mp->mnt_vfc->vfc_refcount--;
 		free(mp, M_MOUNT);
 		free(mfsp, M_MFSNODE);
 		return (error);
 	}
 	CIRCLEQ_INSERT_TAIL(&mountlist, mp, mnt_list);
-	mp->mnt_vnodecovered = NULLVP;
 	ump = VFSTOUFS(mp);
 	fs = ump->um_fs;
-	bzero(fs->fs_fsmnt, sizeof(fs->fs_fsmnt));
-	fs->fs_fsmnt[0] = '/';
-	bcopy((caddr_t)fs->fs_fsmnt, (caddr_t)mp->mnt_stat.f_mntonname,
-	    MNAMELEN);
-	(void) copystr(ROOTNAME, mp->mnt_stat.f_mntfromname, MNAMELEN - 1,
-	    &size);
-	bzero(mp->mnt_stat.f_mntfromname + size, MNAMELEN - size);
+	(void) copystr(mp->mnt_stat.f_mntonname, fs->fs_fsmnt, MNAMELEN - 1, 0);
 	(void)ffs_statfs(mp, &mp->mnt_stat, p);
 	vfs_unlock(mp);
 	inittodr((time_t)0);

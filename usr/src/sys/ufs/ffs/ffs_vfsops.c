@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	8.25 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	8.26 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -57,19 +57,14 @@ extern u_long nextgennumber;
 
 /*
  * Called by main() when ufs is going to be mounted as root.
- *
- * Name is updated by mount(8) after booting.
  */
-#define ROOTNAME	"root_device"
-
 ffs_mountroot()
 {
 	extern struct vnode *rootvp;
-	register struct fs *fs;
-	register struct mount *mp;
+	struct fs *fs;
+	struct mount *mp;
 	struct proc *p = curproc;	/* XXX */
 	struct ufsmount *ump;
-	struct vfsconf *vfsp;
 	u_int size;
 	int error;
 	
@@ -79,40 +74,23 @@ ffs_mountroot()
 	if (bdevvp(swapdev, &swapdev_vp) || bdevvp(rootdev, &rootvp))
 		panic("ffs_mountroot: can't setup bdevvp's");
 
-	for (vfsp = vfsconf; vfsp; vfsp = vfsp->vfc_next)
-		if (!strcmp(vfsp->vfc_name, "ufs"))
-			break;
-	if (vfsp == NULL)
-		return (ENODEV);
-	mp = malloc((u_long)sizeof(struct mount), M_MOUNT, M_WAITOK);
-	bzero((char *)mp, (u_long)sizeof(struct mount));
-	mp->mnt_vfc = vfsp;
-	mp->mnt_op = vfsp->vfc_vfsops;
-	mp->mnt_flag = MNT_RDONLY;
+	if (error = vfs_rootmountalloc("ufs", "root_device", &mp))
+		return (error);
 	if (error = ffs_mountfs(rootvp, mp, p)) {
+		mp->mnt_vfc->vfc_refcount--;
 		free(mp, M_MOUNT);
 		return (error);
 	}
 	if (error = vfs_lock(mp)) {
 		(void)ffs_unmount(mp, 0, p);
+		mp->mnt_vfc->vfc_refcount--;
 		free(mp, M_MOUNT);
 		return (error);
 	}
 	CIRCLEQ_INSERT_TAIL(&mountlist, mp, mnt_list);
-	mp->mnt_vnodecovered = NULLVP;
-	vfsp->vfc_refcount++;
-	mp->mnt_stat.f_type = vfsp->vfc_typenum;
-	mp->mnt_flag |= vfsp->vfc_flags & MNT_VISFLAGMASK;
-	strncpy(mp->mnt_stat.f_fstypename, vfsp->vfc_name, MFSNAMELEN);
 	ump = VFSTOUFS(mp);
 	fs = ump->um_fs;
-	bzero(fs->fs_fsmnt, sizeof(fs->fs_fsmnt));
-	fs->fs_fsmnt[0] = '/';
-	bcopy((caddr_t)fs->fs_fsmnt, (caddr_t)mp->mnt_stat.f_mntonname,
-	    MNAMELEN);
-	(void) copystr(ROOTNAME, mp->mnt_stat.f_mntfromname, MNAMELEN - 1,
-	    &size);
-	bzero(mp->mnt_stat.f_mntfromname + size, MNAMELEN - size);
+	(void) copystr(mp->mnt_stat.f_mntonname, fs->fs_fsmnt, MNAMELEN - 1, 0);
 	(void)ffs_statfs(mp, &mp->mnt_stat, p);
 	vfs_unlock(mp);
 	inittodr(fs->fs_time);
