@@ -1,6 +1,6 @@
-#	Makefile	4.7	84/12/06
+#	Makefile	4.8	85/02/28
 
-RDIST = /usr/local/rdist
+RDIST = /usr/ucb/rdist
 DESTDIR=
 SRCS =	docmd.c expand.c gram.y lookup.c main.c server.c
 OBJS =	docmd.o expand.o gram.o lookup.o main.o server.o

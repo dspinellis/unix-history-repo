@@ -1,12 +1,12 @@
 #ifndef lint
-static	char *sccsid = "@(#)docmd.c	4.24 (Berkeley) 85/02/05";
+static	char *sccsid = "@(#)docmd.c	4.25 (Berkeley) 85/02/28";
 #endif
 
 #include "defs.h"
 #include <setjmp.h>
 
 #ifndef RDIST
-#define RDIST "/usr/local/rdist"
+#define RDIST "/usr/ucb/rdist"
 #endif
 
 FILE	*lfp;			/* log file for recording files updated */
