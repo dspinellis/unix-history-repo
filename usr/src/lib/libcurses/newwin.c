@@ -7,31 +7,26 @@
 
 #ifndef lint
 static char sccsid[] = "@(#)newwin.c	5.5 (Berkeley) %G%";
-#endif /* not lint */
+#endif	/* not lint */
+
+#include <curses.h>
+#include <stdlib.h>
+
+#undef	nl		/* Don't need it here, and it interferes. */
+
+static WINDOW *makenew __P((int, int, int, int));
 
 /*
- * allocate space for and set up defaults for a new window
- *
+ * newwin --
+ *	Allocate space for and set up defaults for a new window.
  */
-
-# include	"curses.ext"
-
-char	*malloc();
-
-# define	SMALLOC	(short *) malloc
-
-static WINDOW	*makenew();
-
-# undef		nl	/* don't need it here, and it interferes	*/
-
 WINDOW *
 newwin(num_lines, num_cols, begy, begx)
-int	num_lines, num_cols, begy, begx;
+	int num_lines, num_cols, begy, begx;
 {
-	reg WINDOW	*win;
-	reg char	*sp;
-	reg int		i, by, bx, nl, nc;
-	reg int		j;
+	register WINDOW *win;
+	register int by, bx, i, j, nl, nc;
+	register char *sp;
 
 	by = begy;
 	bx = begx;
@@ -43,17 +38,17 @@ int	num_lines, num_cols, begy, begx;
 	if (nc == 0)
 		nc = COLS - bx;
 	if ((win = makenew(nl, nc, by, bx)) == NULL)
-		return ERR;
-	if ((win->_firstch = SMALLOC(nl * sizeof win->_firstch[0])) == NULL) {
+		return (NULL);
+	if ((win->_firstch = malloc(nl * sizeof(win->_firstch[0]))) == NULL) {
 		free(win->_y);
 		free(win);
-		return NULL;
+		return (NULL);
 	}
-	if ((win->_lastch = SMALLOC(nl * sizeof win->_lastch[0])) == NULL) {
+	if ((win->_lastch = malloc(nl * sizeof(win->_lastch[0]))) == NULL) {
 		free(win->_y);
 		free(win->_firstch);
 		free(win);
-		return NULL;
+		return (NULL);
 	}
 	win->_nextp = win;
 	for (i = 0; i < nl; i++) {
@@ -61,76 +56,72 @@ int	num_lines, num_cols, begy, begx;
 		win->_lastch[i] = _NOCHANGE;
 	}
 	for (i = 0; i < nl; i++)
-		if ((win->_y[i] = malloc(nc * sizeof win->_y[0])) == NULL) {
+		if ((win->_y[i] = malloc(nc * sizeof(win->_y[0]))) == NULL) {
 			for (j = 0; j < i; j++)
 				free(win->_y[j]);
 			free(win->_firstch);
 			free(win->_lastch);
 			free(win->_y);
 			free(win);
-			return ERR;
-		}
-		else
-			for (sp = win->_y[i]; sp < win->_y[i] + nc; )
+			return (NULL);
+		} else
+			for (sp = win->_y[i]; sp < win->_y[i] + nc;)
 				*sp++ = ' ';
 	win->_ch_off = 0;
-# ifdef DEBUG
-	fprintf(outf, "NEWWIN: win->_ch_off = %d\n", win->_ch_off);
-# endif
-	return win;
+#ifdef DEBUG
+	__TRACE("newwin: win->_ch_off = %d\n", win->_ch_off);
+#endif
+	return (win);
 }
 
 WINDOW *
 subwin(orig, num_lines, num_cols, begy, begx)
-reg WINDOW	*orig;
-int		num_lines, num_cols, begy, begx;
+	register WINDOW *orig;
+	int num_lines, num_cols, begy, begx;
 {
-	reg int		i;
-	reg WINDOW	*win;
-	reg int		by, bx, nl, nc;
+	register WINDOW *win;
+	register int by, bx, i, nl, nc;
 
 	by = begy;
 	bx = begx;
 	nl = num_lines;
 	nc = num_cols;
 
-	/*
-	 * make sure window fits inside the original one
-	 */
-# ifdef	DEBUG
-	fprintf(outf, "SUBWIN(%0.2o, %d, %d, %d, %d)\n", orig, nl, nc, by, bx);
-# endif
+	/* Make sure window fits inside the original one. */
+#ifdef	DEBUG
+	__TRACE("subwin: (%0.2o, %d, %d, %d, %d)\n", orig, nl, nc, by, bx);
+#endif
 	if (by < orig->_begy || bx < orig->_begx
 	    || by + nl > orig->_maxy + orig->_begy
 	    || bx + nc > orig->_maxx + orig->_begx)
-		return ERR;
+		return (NULL);
 	if (nl == 0)
 		nl = orig->_maxy + orig->_begy - by;
 	if (nc == 0)
 		nc = orig->_maxx + orig->_begx - bx;
 	if ((win = makenew(nl, nc, by, bx)) == NULL)
-		return ERR;
+		return (NULL);
 	win->_nextp = orig->_nextp;
 	orig->_nextp = win;
 	win->_orig = orig;
-	_set_subwin_(orig, win);
-	return win;
+	__set_subwin(orig, win);
+	return (win);
 }
 
 /*
- * this code is shared with mvwin()
+ * This code is shared with mvwin().
  */
-_set_subwin_(orig, win)
-register WINDOW	*orig, *win;
+__set_subwin_(orig, win)
+	register WINDOW *orig, *win;
 {
-	register int	i, j, k;
+	register int i, j, k;
 
 	j = win->_begy - orig->_begy;
 	k = win->_begx - orig->_begx;
 	win->_ch_off = k;
-# ifdef DEBUG
-	fprintf(outf, "_SET_SUBWIN_: win->_ch_off = %d\n", win->_ch_off);
-# endif
+#ifdef DEBUG
+	__TRACE("__set_subwin: win->_ch_off = %d\n", win->_ch_off);
+#endif
 	win->_firstch = &orig->_firstch[j];
 	win->_lastch = &orig->_lastch[j];
 	for (i = 0; i < win->_maxy; i++, j++)
@@ -139,62 +130,63 @@ register WINDOW	*orig, *win;
 }
 
 /*
- *	This routine sets up a window buffer and returns a pointer to it.
+ * makenew --
+ *	Set up a window buffer and returns a pointer to it.
  */
 static WINDOW *
 makenew(num_lines, num_cols, begy, begx)
-int	num_lines, num_cols, begy, begx; {
-
-	reg int		i;
-	reg WINDOW	*win;
-	reg int		by, bx, nl, nc;
+	int num_lines, num_cols, begy, begx;
+{
+	register WINDOW *win;
+	register int by, bx, i, nl, nc;
 
 	by = begy;
 	bx = begx;
 	nl = num_lines;
 	nc = num_cols;
 
-# ifdef	DEBUG
-	fprintf(outf, "MAKENEW(%d, %d, %d, %d)\n", nl, nc, by, bx);
-# endif
-	if ((win = (WINDOW *) malloc(sizeof *win)) == NULL)
-		return NULL;
-# ifdef DEBUG
-	fprintf(outf, "MAKENEW: nl = %d\n", nl);
-# endif
-	if ((win->_y = (char **) malloc(nl * sizeof win->_y[0])) == NULL) {
+#ifdef	DEBUG
+	__TRACE("makenew: (%d, %d, %d, %d)\n", nl, nc, by, bx);
+#endif
+	if ((win = malloc(sizeof(*win))) == NULL)
+		return (NULL);
+#ifdef DEBUG
+	__TRACE("makenew: nl = %d\n", nl);
+#endif
+	if ((win->_y = malloc(nl * sizeof(win->_y[0]))) == NULL) {
 		free(win);
-		return NULL;
+		return (NULL);
 	}
-# ifdef DEBUG
-	fprintf(outf, "MAKENEW: nc = %d\n", nc);
-# endif
+#ifdef DEBUG
+	__TRACE("makenew: nc = %d\n", nc);
+#endif
 	win->_cury = win->_curx = 0;
-	win->_clear = FALSE;
+	win->_clear = 0;
 	win->_maxy = nl;
 	win->_maxx = nc;
 	win->_begy = by;
 	win->_begx = bx;
 	win->_flags = 0;
-	win->_scroll = win->_leave = FALSE;
-	_swflags_(win);
-# ifdef DEBUG
-	fprintf(outf, "MAKENEW: win->_clear = %d\n", win->_clear);
-	fprintf(outf, "MAKENEW: win->_leave = %d\n", win->_leave);
-	fprintf(outf, "MAKENEW: win->_scroll = %d\n", win->_scroll);
-	fprintf(outf, "MAKENEW: win->_flags = %0.2o\n", win->_flags);
-	fprintf(outf, "MAKENEW: win->_maxy = %d\n", win->_maxy);
-	fprintf(outf, "MAKENEW: win->_maxx = %d\n", win->_maxx);
-	fprintf(outf, "MAKENEW: win->_begy = %d\n", win->_begy);
-	fprintf(outf, "MAKENEW: win->_begx = %d\n", win->_begx);
-# endif
-	return win;
+	win->_scroll = win->_leave = 0;
+	__swflags(win);
+#ifdef DEBUG
+	__TRACE("makenew: win->_clear = %d\n", win->_clear);
+	__TRACE("makenew: win->_leave = %d\n", win->_leave);
+	__TRACE("makenew: win->_scroll = %d\n", win->_scroll);
+	__TRACE("makenew: win->_flags = %0.2o\n", win->_flags);
+	__TRACE("makenew: win->_maxy = %d\n", win->_maxy);
+	__TRACE("makenew: win->_maxx = %d\n", win->_maxx);
+	__TRACE("makenew: win->_begy = %d\n", win->_begy);
+	__TRACE("makenew: win->_begx = %d\n", win->_begx);
+#endif
+	return (win);
 }
 
-_swflags_(win)
-register WINDOW	*win;
+void
+__swflags(win)
+	register WINDOW *win;
 {
-	win->_flags &= ~(_ENDLINE|_FULLLINE|_FULLWIN|_SCROLLWIN);
+	win->_flags &= ~(_ENDLINE | _FULLLINE | _FULLWIN | _SCROLLWIN);
 	if (win->_begx + win->_maxx == COLS) {
 		win->_flags |= _ENDLINE;
 		if (win->_begx == 0) {
