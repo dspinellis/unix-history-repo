@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)portal_vnops.c	8.2 (Berkeley) %G%
+ *	@(#)portal_vnops.c	8.3 (Berkeley) %G%
  *
  * $Id: portal_vnops.c,v 1.4 1992/05/30 10:05:24 jsp Exp jsp $
  */
@@ -592,7 +592,8 @@ portal_reclaim(ap)
 		free((caddr_t) pt->pt_arg, M_TEMP);
 		pt->pt_arg = 0;
 	}
-	FREE(pt, M_TEMP);
+	FREE(ap->a_vp->v_data, M_TEMP);
+	ap->a_vp->v_data = 0;
 	return (0);
 }
 
