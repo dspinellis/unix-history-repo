@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static	char sccsid[] = "@(#)asparse.c 4.6 %G%";
+static	char sccsid[] = "@(#)asparse.c 4.7 %G%";
 #include <stdio.h>
 #include "as.h"
 #include "asexpr.h"
@@ -1042,6 +1042,22 @@ yyerror(s, a1, a2,a3,a4,a5)
 	if (silent) return;
 	
 	fprintf(sink, "\"%s\", line %d: ", dotsname, lineno);
+	fprintf(sink, s, a1, a2,a3,a4,a5);
+	fprintf(sink, "\n");
+}
+
+/*VARARGS1*/
+yywarning(s, a1, a2,a3,a4,a5)
+	char	*s;
+{
+
+#define	sink stdout
+
+	if (anyerrs == 0 && ! silent) 
+		fprintf(sink, "Assembler:\n");
+	if (silent) return;
+	
+	fprintf(sink, "\"%s\", line %d: WARNING: ", dotsname, lineno);
 	fprintf(sink, s, a1, a2,a3,a4,a5);
 	fprintf(sink, "\n");
 }
