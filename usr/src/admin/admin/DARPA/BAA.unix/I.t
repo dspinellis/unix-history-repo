@@ -1,4 +1,4 @@
-.\"     @(#)I.t	1.3     89/02/23
+.\"     @(#)I.t	1.4     89/02/24
 .LP
 \fB\s+4I. Accomplishments of the Berkeley UNIX Project\fP\s-4
 .PP
@@ -158,7 +158,7 @@ making the MIPS architecture a likely candidate for inclusion into a future
 BSD release.
 .PP
 Support has been added for the DEC VAX 8600/8650, VAX 8200/8250, 
-MicroVAXII and MicroVAXIII.
+MicroVAXII and MicroVAX 3200/3500/3600.
 .PP
 During the work on the CCI machine,
 it became obvious that disk geometry and filesystem layout information
