@@ -15,18 +15,18 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)mkdep.sh	5.12 (Berkeley) %G%
+#	@(#)mkdep.sh	5.13 (Berkeley) %G%
 #
 PATH=/bin:/usr/bin:/usr/ucb
 export PATH
 
-MAKE=Makefile			# default makefile name is "Makefile"
+D=.depend			# default dependency file is .depend
 
 while :
 	do case "$1" in
 		# -f allows you to select a makefile name
 		-f)
-			MAKE=$2
+			D=$2
 			shift; shift ;;
 
 		# the -p flag produces "program: program.c" style dependencies
@@ -40,28 +40,13 @@ while :
 done
 
 if [ $# = 0 ] ; then
-	echo 'usage: mkdep [-p] [-f makefile] [flags] file ...'
-	exit 1
-fi
-
-if [ ! -w $MAKE ]; then
-	echo "mkdep: no writeable file \"$MAKE\""
+	echo 'usage: mkdep [-p] [-f depend_file] [cc_flags] file ...'
 	exit 1
 fi
 
 TMP=/tmp/mkdep$$
 
 trap 'rm -f $TMP ; exit 1' 1 2 3 13 15
-
-cp $MAKE ${MAKE}.bak
-
-sed -e '/DO NOT DELETE THIS LINE/,$d' < $MAKE > $TMP
-
-cat << _EOF_ >> $TMP
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-_EOF_
 
 # If your compiler doesn't have -M, add it.  If you can't, the next two
 # lines will try and replace the "cc -M".  The real problem is that this
@@ -93,14 +78,9 @@ awk '{
 }
 END {
 	print rec
-}' >> $TMP
-
-cat << _EOF_ >> $TMP
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
-_EOF_
+}' > $TMP
 
 # copy to preserve permissions
-cp $TMP $MAKE
-rm -f ${MAKE}.bak $TMP
+cp $TMP $D
+rm -f $TMP
 exit 0
