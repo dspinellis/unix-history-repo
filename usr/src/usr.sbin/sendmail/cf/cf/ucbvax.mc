@@ -15,6 +15,7 @@ MAILER(local)
 MAILER(smtp)
 MAILER(uucp)
 undefine(`UUCP_RELAY')dnl
+DDBerkeley.EDU
 
 # additional names we are known by
 Fw	/etc/sendmail.cw
@@ -53,8 +54,11 @@ UUCPSMTP(unmvax,	unmvax.cs.unm.edu)
 UUCPSMTP(uwvax,		spool.cs.wisc.edu)
 
 LOCAL_RULE_0
+# make sure we handle the local domain as absolute
+R$* <  @ $* $D > $*		$: $1 < @ $2 $D . > $3
+
 # handle local UUCP connections in the Berkeley.EDU domain
-R$+<@cnmat.Berkeley.EDU>	$#uucp$@cnmat$:$1
-R$+<@cnmat.CS.Berkeley.EDU>	$#uucp$@cnmat$:$1
-R$+<@craig.Berkeley.EDU>	$#uucp$@craig$:$1
-R$+<@craig.CS.Berkeley.EDU>	$#uucp$@craig$:$1
+R$+<@cnmat.$D . >		$#uucp$@cnmat$:$1
+R$+<@cnmat.CS.$D . >		$#uucp$@cnmat$:$1
+R$+<@craig.$D . >		$#uucp$@craig$:$1
+R$+<@craig.CS.$D . >		$#uucp$@craig$:$1
