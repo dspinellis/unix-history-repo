@@ -1,4 +1,4 @@
-/*	uipc_mbuf.c	1.19	81/12/09	*/
+/*	uipc_mbuf.c	1.20	81/12/09	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -71,6 +71,7 @@ printf("m %x &Mbmap[mbx] %x\n", m, &Mbmap[mbx]);
 			m++;
 		}
 		mbstat.m_clusters += ncl;
+		break;
 	}
 	return ((caddr_t)m);
 }
