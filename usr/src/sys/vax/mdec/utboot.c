@@ -1,4 +1,4 @@
-/*	utboot.c	4.2	83/02/20	*/
+/*	utboot.c	4.3	83/03/06	*/
 
 /*
  * VAX tape boot block for distribution tapes
@@ -49,7 +49,7 @@
 	.set	UTDS,012
 	.set	UTER,014
 	.set	UTAS,016
-	.set	UTCK,020
+	.set	UTCC,020
 	.set	UTDB,022
 	.set	UTMR,024
 	.set	UTDT,026
@@ -58,13 +58,13 @@
 
 /* UT commands and bits */
 	.set	GO,01
-	.set	UT_REW,06
-	.set	UT_RCOM,070
-	.set	UT_SREV,032
-	.set	UT_DCLR,010
-	.set	UT_crdy,0200
-	.set	UT_gapsd,020000	/* aka "positioning in progress" */
-	.set	UTDENS,0		/* 1600 bpi */
+	.set	UT_REW,0x6
+	.set	UT_RCOM,0x38
+	.set	UT_SREV,0x1a
+	.set	UT_DCLR,0x8
+	.set	UT_crdy,0x80
+	.set	UT_gapsd,0x2000		/* aka "positioning in progress" */
+	.set	UTDENS,0x4c0		/* 1600 bpi, PDP-11 format */
 /* local stack variables */
 	.set	tapa,-4		/* desired tape addr */
 	.set	mtapa,-8	/* current tape addr */
