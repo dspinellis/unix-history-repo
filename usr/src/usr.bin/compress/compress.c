@@ -336,7 +336,7 @@ fprintf(stderr,"Usage: compress [-dDVfc] [-b maxbits] [file ...]\n");
 }
 int debug = 0;
 #else
-fprintf(stderr,"Usage: compress [-dfvcV] [-b maxbits] [file ...]\n");
+fprintf(stderr,"Usage: compress [-fvc] [-b maxbits] [file ...]\n");
 }
 #endif /* DEBUG */
 int nomagic = 0;	/* Use a 3-byte magic number header, unless old file */
@@ -1464,7 +1464,7 @@ long int num, den;
 
 version()
 {
-	fprintf(stderr, "%s\n", rcs_ident);
+	fprintf(stderr, "%s, Berkeley 5.7 %G%\n", rcs_ident);
 	fprintf(stderr, "Options: ");
 #ifdef vax
 	fprintf(stderr, "vax, ");
