@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -60,10 +60,10 @@ printlong(stats, num)
 			    stats->lstat.st_blocks);
 		printperms(stats->lstat.st_mode);
 		(void)printf("%3u %-*s ", stats->lstat.st_nlink, UT_NAMESIZE,
-		    user_from_uid(stats->lstat.st_uid)); 
+		    user_from_uid(stats->lstat.st_uid, 0));
 		if (f_group)
 			(void)printf("%-*s ", UT_NAMESIZE,
-			    group_from_gid(stats->lstat.st_gid));
+			    group_from_gid(stats->lstat.st_gid, 0));
 		if (S_ISCHR(stats->lstat.st_mode) ||
 		    S_ISBLK(stats->lstat.st_mode))
 			(void)printf("%3d, %3d ", major(stats->lstat.st_rdev),
