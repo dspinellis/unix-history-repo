@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vm_machdep.c	7.8 (Berkeley) %G%
+ *	@(#)vm_machdep.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -89,10 +89,8 @@ chgprot(addr, tprot)
 	register struct cmap *c;
 
 	v = clbase(btop(addr));
-	if (!isatsv(u.u_procp, v)) {
-		u.u_error = EFAULT;
-		return (0);
-	}
+	if (!isatsv(u.u_procp, v))
+		return (EFAULT);
 	tp = vtotp(u.u_procp, v);
 	pte = tptopte(u.u_procp, tp);
 	if (pte->pg_fod == 0 && pte->pg_pfnum) {
@@ -104,7 +102,7 @@ chgprot(addr, tprot)
 	*(int *)pte |= tprot;
 	distcl(pte);
 	tbiscl(v);
-	return (1);
+	return (0);
 }
 
 settprot(tprot)
