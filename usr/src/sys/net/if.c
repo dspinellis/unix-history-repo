@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if.c	7.16 (Berkeley) %G%
+ *	@(#)if.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -71,7 +71,7 @@ if_attach(ifp)
 	struct ifnet *ifp;
 {
 	unsigned socksize, ifasize;
-	int namelen, unitlen;
+	int namelen, unitlen, masklen;
 	char workbuf[12], *unitname;
 	register struct ifnet **p = &ifnet;
 	register struct sockaddr_dl *sdl;
@@ -93,12 +93,6 @@ if_attach(ifp)
 		}
 		ifnet_addrs = q;
 	}
-	/* XXX -- Temporary fix before changing 10 ethernet drivers */
-	if (ifp->if_output == ether_output) {
-		ifp->if_type = IFT_ETHER;
-		ifp->if_addrlen = 6;
-		ifp->if_hdrlen = 14;
-	}
 	/*
 	 * create a Link Level name for this device
 	 */
@@ -106,35 +100,39 @@ if_attach(ifp)
 	namelen = strlen(ifp->if_name);
 	unitlen = strlen(unitname);
 #define _offsetof(t, m) ((int)((caddr_t)&((t *)0)->m))
-	socksize = _offsetof(struct sockaddr_dl, sdl_data[0]) +
-			       unitlen + namelen + ifp->if_addrlen;
+	masklen = _offsetof(struct sockaddr_dl, sdl_data[0]) +
+			       unitlen + namelen;
+	socksize = masklen + ifp->if_addrlen;
 #define ROUNDUP(a) (1 + (((a) - 1) | (sizeof(long) - 1)))
 	socksize = ROUNDUP(socksize);
 	if (socksize < sizeof(*sdl))
 		socksize = sizeof(*sdl);
 	ifasize = sizeof(*ifa) + 2 * socksize;
-	ifa = (struct ifaddr *)malloc(ifasize, M_IFADDR, M_WAITOK);
-	if (ifa == 0)
-		return;
-	ifnet_addrs[if_index - 1] = ifa;
-	bzero((caddr_t)ifa, ifasize);
-	sdl = (struct sockaddr_dl *)(ifa + 1);
-	ifa->ifa_addr = (struct sockaddr *)sdl;
-	ifa->ifa_ifp = ifp;
-	sdl->sdl_len = socksize;
-	sdl->sdl_family = AF_LINK;
-	bcopy(ifp->if_name, sdl->sdl_data, namelen);
-	bcopy(unitname, namelen + (caddr_t)sdl->sdl_data, unitlen);
-	sdl->sdl_nlen = (namelen += unitlen);
-	sdl->sdl_index = ifp->if_index;
-	sdl = (struct sockaddr_dl *)(socksize + (caddr_t)sdl);
-	ifa->ifa_netmask = (struct sockaddr *)sdl;
-	sdl->sdl_len = socksize - ifp->if_addrlen;
-	while (namelen != 0)
-		sdl->sdl_data[--namelen] = 0xff;
-	ifa->ifa_next = ifp->if_addrlist;
-	ifa->ifa_rtrequest = link_rtrequest;
-	ifp->if_addrlist = ifa;
+	if (ifa = (struct ifaddr *)malloc(ifasize, M_IFADDR, M_WAITOK)) {
+		bzero((caddr_t)ifa, ifasize);
+		sdl = (struct sockaddr_dl *)(ifa + 1);
+		sdl->sdl_len = socksize;
+		sdl->sdl_family = AF_LINK;
+		bcopy(ifp->if_name, sdl->sdl_data, namelen);
+		bcopy(unitname, namelen + (caddr_t)sdl->sdl_data, unitlen);
+		sdl->sdl_nlen = (namelen += unitlen);
+		sdl->sdl_index = ifp->if_index;
+		sdl->sdl_type = ifp->if_type;
+		ifnet_addrs[if_index - 1] = ifa;
+		ifa->ifa_ifp = ifp;
+		ifa->ifa_next = ifp->if_addrlist;
+		ifa->ifa_rtrequest = link_rtrequest;
+		ifp->if_addrlist = ifa;
+		ifa->ifa_addr = (struct sockaddr *)sdl;
+		sdl = (struct sockaddr_dl *)(socksize + (caddr_t)sdl);
+		ifa->ifa_netmask = (struct sockaddr *)sdl;
+		sdl->sdl_len = masklen;
+		while (namelen != 0)
+			sdl->sdl_data[--namelen] = 0xff;
+	}
+	/* XXX -- Temporary fix before changing 10 ethernet drivers */
+	if (ifp->if_output == ether_output)
+		ether_ifattach(ifp);
 }
 /*
  * Locate an interface based on a complete address.
@@ -316,6 +314,26 @@ if_down(ifp)
 	for (ifa = ifp->if_addrlist; ifa; ifa = ifa->ifa_next)
 		pfctlinput(PRC_IFDOWN, ifa->ifa_addr);
 	if_qflush(&ifp->if_snd);
+	rt_ifmsg(ifp);
+}
+
+/*
+ * Mark an interface up and notify protocols of
+ * the transition.
+ * NOTE: must be called at splnet or eqivalent.
+ */
+if_up(ifp)
+	register struct ifnet *ifp;
+{
+	register struct ifaddr *ifa;
+
+	ifp->if_flags |= IFF_UP;
+#ifdef notyet
+	/* this has no effect on IP, and will kill all iso connections XXX */
+	for (ifa = ifp->if_addrlist; ifa; ifa = ifa->ifa_next)
+		pfctlinput(PRC_IFUP, ifa->ifa_addr);
+#endif notyet
+	rt_ifmsg(ifp);
 }
 
 /*
@@ -446,6 +464,11 @@ ifioctl(so, cmd, data, p)
 		if (ifp->if_flags & IFF_UP && (ifr->ifr_flags & IFF_UP) == 0) {
 			int s = splimp();
 			if_down(ifp);
+			splx(s);
+		}
+		if (ifr->ifr_flags & IFF_UP && (ifp->if_flags & IFF_UP) == 0) {
+			int s = splimp();
+			if_up(ifp);
 			splx(s);
 		}
 		ifp->if_flags = (ifp->if_flags & IFF_CANTCHANGE) |
