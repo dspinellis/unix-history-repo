@@ -1,0 +1,1219 @@
+Info file gdb, produced by texinfo-format-buffer   -*-Text-*-
+from file gdb.texinfo
+
+This file documents the GNU debugger GDB.
+
+Copyright (C) 1988 Free Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided also that the
+sections entitled "Distribution" and "GDB General Public License" are
+included exactly as in the original, and provided that the entire resulting
+derived work is distributed under the terms of a permission notice
+identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that the sections entitled "Distribution" and "GDB General Public
+License" may be included in a translation approved by the author instead
+of in the original English.
+
+
+
+File: gdb  Node: Top, Up: (DIR), Next: Commands
+
+Summary of GDB
+**************
+
+The purpose of a debugger such as GDB is to allow you to execute another
+program while examining what is going on inside it.  We call the other
+program "your program" or "the program being debugged".
+
+GDB can do four kinds of things (plus other things in support of these):
+
+  1. Start the program, specifying anything that might affect its behavior.
+     
+  2. Make the program stop on specified conditions.
+     
+  3. Examine what has happened, when the program has stopped, so that you
+     can see bugs happen.
+     
+  4. Change things in the program, so you can correct the effects of one bug
+     and go on to learn about another without having to recompile first.
+
+* Menu:
+
+* License::    The GDB General Public License gives you permission
+	       to redistribute GDB on certain terms; and also
+	       explains that there is no warranty.
+* Input::      GDB command syntax and input conventions.
+* Files::      Specifying files for GDB to operate on.
+* Options::    GDB arguments and options.
+* Compilation::Compiling your program so you can debug it.
+* Running::    Running your program under GDB.
+* Stopping::   Making your program stop.  Why it may stop.  What to do then.
+* Stack::      Examining your program's stack.
+* Source::     Examining your program's source files.
+* Data::       Examining data in your program.
+* Symbols::    Examining the debugger's symbol table.
+* Altering::   Altering things in your program.
+* Sequences::  Canned command sequences for repeated use.
+* Emacs::      Using GDB through GNU Emacs.
+* Remote::     Remote kernel debugging across a serial line.
+* Commands::   Index of GDB commands.
+* Concepts::   Index of GDB concepts.
+
+
+File: gdb  Node: License, Prev: Top, Up: Top, Next: Input
+
+GDB General Public License
+**************************
+                          (Clarified 11 Feb 1988)
+
+  The license agreements of most software companies keep you at the mercy
+of those companies.  By contrast, our general public license is intended to
+give everyone the right to share GDB.  To make sure that you get the rights
+we want you to have, we need to make restrictions that forbid anyone to
+deny you these rights or to ask you to surrender the rights.  Hence this
+license agreement.
+
+  Specifically, we want to make sure that you have the right to give away
+copies of GDB, that you receive source code or else can get it if you want
+it, that you can change GDB or use pieces of it in new free programs, and
+that you know you can do these things.
+
+  To make sure that everyone has such rights, we have to forbid you to
+deprive anyone else of these rights.  For example, if you distribute copies
+of GDB, you must give the recipients all the rights that you have.  You
+must make sure that they, too, receive or can get the source code.  And you
+must tell them their rights.
+
+  Also, for our own protection, we must make certain that everyone finds
+out that there is no warranty for GDB.  If GDB is modified by someone else
+and passed on, we want its recipients to know that what they have is not
+what we distributed, so that any problems introduced by others will not
+reflect on our reputation.
+
+  Therefore we (Richard Stallman and the Free Software Foundation,
+Inc.) make the following terms which say what you must do to be
+allowed to distribute or change GDB.
+
+
+Copying Policies
+================
+
+  1. You may copy and distribute verbatim copies of GDB source code as you
+     receive it, in any medium, provided that you conspicuously and
+     appropriately publish on each file a valid copyright notice "Copyright
+     (C) 1988 Free Software Foundation, Inc." (or with whatever year
+     is appropriate); keep intact the notices on all files that
+     refer to this License Agreement and to the absence of any warranty; and
+     give any other recipients of the GDB program a copy of this License
+     Agreement along with the program.  You may charge a distribution fee
+     for the physical act of transferring a copy.
+     
+  2. You may modify your copy or copies of GDB source code or any portion
+     of it, and copy and distribute such modifications under the terms of
+     Paragraph 1 above, provided that you also do the following:
+     
+        * cause the modified files to carry prominent notices stating
+          that you changed the files and the date of any change; and
+          
+        * cause the whole of any work that you distribute or publish, that
+          in whole or in part contains or is a derivative of GDB or any
+          part thereof, to be licensed at no charge to all third parties on
+          terms identical to those contained in this License Agreement
+          (except that you may choose to grant more extensive warranty
+          protection to some or all third parties, at your option).
+          
+        * if the modified program serves as a debugger, cause it, when
+          started running in the simplest and usual way, to print an
+          announcement including a valid copyright notice "Copyright
+          (C) 1988 Free Software Foundation, Inc." (or with the
+          year that is appropriate), saying that there is no warranty (or
+          else, saying that you provide a warranty) and that users may
+          redistribute the program under these conditions, and telling the
+          user how to view a copy of this License Agreement.
+          
+        * You may charge a distribution fee for the physical act of
+          transferring a copy, and you may at your option offer warranty
+          protection in exchange for a fee.
+     
+     Mere aggregation of another unrelated program with this program (or its
+     derivative) on a volume of a storage or distribution medium does not bring
+     the other program under the scope of these terms.
+     
+  3. You may copy and distribute GDB (or a portion or derivative of it,
+     under Paragraph 2) in object code or executable form under the terms
+     of Paragraphs 1 and 2 above provided that you also do one of the
+     following:
+     
+        * accompany it with the complete corresponding machine-readable
+          source code, which must be distributed under the terms of
+          Paragraphs 1 and 2 above; or,
+          
+        * accompany it with a written offer, valid for at least three
+          years, to give any third party free (except for a nominal
+          shipping charge) a complete machine-readable copy of the
+          corresponding source code, to be distributed under the terms of
+          Paragraphs 1 and 2 above; or,
+          
+        * accompany it with the information you received as to where the
+          corresponding source code may be obtained.  (This alternative is
+          allowed only for noncommercial distribution and only if you
+          received the program in object code or executable form alone.)
+     
+     For an executable file, complete source code means all the source code
+     for all modules it contains; but, as a special exception, it need not
+     include source code for modules which are standard libraries that
+     accompany the operating system on which the executable file runs.
+     
+  4. You may not copy, sublicense, distribute or transfer GDB except as
+     expressly provided under this License Agreement.  Any attempt
+     otherwise to copy, sublicense, distribute or transfer GDB is void and
+     your rights to use GDB under this License agreement shall be
+     automatically terminated.  However, parties who have received computer
+     software programs from you with this License Agreement will not have
+     their licenses terminated so long as such parties remain in full
+     compliance.
+     
+  5. If you wish to incorporate parts of GDB into other free programs whose
+     distribution conditions are different, write to the Free Software
+     Foundation.  We have not yet worked out a simple rule that can be
+     stated here, but we will often permit this.  We will be guided by the
+     two goals of preserving the free status of all derivatives our free
+     software and of promoting the sharing and reuse of software.
+
+
+NO WARRANTY
+===========
+
+  BECAUSE GDB IS LICENSED FREE OF CHARGE, WE PROVIDE ABSOLUTELY
+NO WARRANTY, TO THE EXTENT PERMITTED BY APPLICABLE STATE LAW.  EXCEPT
+WHEN OTHERWISE STATED IN WRITING, THE FREE SOFTWARE FOUNDATION, INC,
+RICHARD M. STALLMAN AND/OR OTHER PARTIES PROVIDE GDB "AS IS"
+WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE ENTIRE RISK AS TO THE QUALITY
+AND PERFORMANCE OF THE PROGRAM IS WITH YOU.  SHOULD THE GDB
+PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY
+SERVICING, REPAIR OR CORRECTION.
+
+ IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW WILL FREE SOFTWARE
+FOUNDATION, INC., RICHARD M. STALLMAN, AND/OR ANY OTHER PARTY WHO MAY
+MODIFY AND REDISTRIBUTE GDB AS PERMITTED ABOVE, BE LIABLE TO YOU
+FOR DAMAGES, INCLUDING ANY LOST PROFITS, LOST MONIES, OR OTHER
+SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR
+INABILITY TO USE (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR DATA
+BEING RENDERED INACCURATE OR LOSSES SUSTAINED BY THIRD PARTIES OR A
+FAILURE OF THE PROGRAM TO OPERATE WITH PROGRAMS NOT DISTRIBUTED BY
+FREE SOFTWARE FOUNDATION, INC.) THE PROGRAM, EVEN IF YOU HAVE BEEN
+ADVISED OF THE POSSIBILITY OF SUCH DAMAGES, OR FOR ANY CLAIM BY ANY
+OTHER PARTY.
+
+
+File: gdb  Node: Input, Prev: License, Up: Top, Next: Files
+
+GDB Input Conventions
+*********************
+
+GDB is invoked with the shell command `gdb'.  Once started, it reads
+commands from the terminal until you tell it to exit.
+
+A GDB command is a single line of input.  There is no limit on how long
+it can be.  It starts with a command name, which is followed by arguments
+whose meaning depends on the command name.  Some command names do not
+allow arguments.
+
+GDB command names may always be abbreviated if the abbreviation is
+unambiguous.  Sometimes even ambiguous abbreviations are allowed; for
+example, `s' is specially defined as equivalent to `step'
+even though there are other commands whose names start with `s'.
+Possible command abbreviations are often stated in the documentation
+of the individual commands.
+
+A blank line as input to GDB means to repeat the previous command verbatim.
+Certain commands do not allow themselves to be repeated this way; these are
+commands for which unintentional repetition might cause trouble and which
+you are unlikely to want to repeat.  Certain others (`list' and
+`x') act differently when repeated because that is more useful.
+
+A line of input starting with `#' is a comment; it does nothing.
+This is useful mainly in command files (*Note Command Files::).
+
+GDB "prompts" for commands with a string that is normally `(gdb)'.
+When debugging GDB with GDB, it is useful to change the prompt in one of
+the GDBs so that you can distinguish them.  This can be done with the
+`set-prompt' command.
+
+`set-prompt NEWPROMPT'     
+     Directs GDB to use NEWPROMPT as its prompt string henceforth.
+
+To exit GDB, use the `quit' command (abbreviated `q').
+`Ctrl-c' will not exit from GDB, but rather will terminate the action
+of any GDB command that is in progress and return to GDB command level.
+It is safe to type `Ctrl-c' at any time because GDB does not allow
+it to take effect until a time when it is safe.
+
+
+File: gdb  Node: Files, Prev: Input, Up: Top, Next: Options
+
+Specifying GDB's Files
+**********************
+
+GDB needs to know the filename of the program to be debugged.  To debug a
+core dump of a previous run, GDB must be told the filename of the core
+dump.
+
+* Menu:
+
+* Arguments: File Arguments.   Specifying files with arguments
+                                (when you start GDB).
+* Commands: File Commands.     Specifying files with GDB commands.
+
+
+File: gdb  Node: File Arguments, Prev: Files, Up: Files, Next: File Commands
+
+Specifying Files with Arguments
+===============================
+
+The usual way to specify the executable and core dump file names is with
+two command arguments given when you start GDB.  The first argument is used
+as the file for execution and symbols, and the second argument (if any) is
+used as the core dump file name.  Thus,
+
+     gdb progm core
+
+specifies `progm' as the executable program and `core' as a core
+dump file to examine.  (You do not need to have a core dump file if what
+you plan to do is debug the program interactively.)
+
+*Note Options::, for full information on command options and arguments for
+GDB.
+
+
+File: gdb  Node: File Commands, Prev: File Arguments, Up: Files
+
+Specifying Files with Commands
+==============================
+
+Usually you specify the files for GDB to work with by giving arguments when
+you invoke GDB.  But occasionally it is necessary to change to a different
+file during a GDB session.  Or you may run GDB and forget to specify the
+files you want to use.  In these situations the GDB commands to specify new
+files are useful.
+
+`exec-file FILENAME'     
+     Specify that the program to be run is found in FILENAME.  If you
+     do not specify a directory and the file is not found in GDB's working
+     directory, GDB will use the environment variable `PATH' as a list
+     of directories to search, just as the shell does when looking for a
+     program to run.
+     
+`symbol-file FILENAME'     
+     Read symbol table information from file FILENAME.  `PATH'
+     is searched when necessary.  Most of the time you will use both the
+     `exec-file' and `symbol-file' commands on the same file.
+     
+     `symbol-file' with no argument clears out GDB's symbol table.
+     
+`core-file FILENAME'     
+     Specify the whereabouts of a core dump file to be used as the
+     "contents of memory".  Note that the core dump contains only the
+     writable parts of memory; the read-only parts must come from the
+     executable file.
+     
+     `core-file' with no argument specifies that no core file is
+     to be used.
+     
+`kill'     
+     Cancel running the program under GDB.  This could be used if you wish
+     to debug a core dump instead.  GDB ignores any core dump file if it is
+     actually running the program, so the `kill' command is the only
+     sure way to go back to using the core dump file.
+     
+`info files'     
+     Print the names of the executable and core dump files currently in
+     use by GDB, and the file from which symbols were loaded.
+
+While all three file-specifying commands allow both absolute and relative
+file names as arguments, GDB always converts the file name to an absolute
+one and remembers it that way.
+
+The `symbol-file' command causes GDB to forget the contents of its
+convenience variables, the value history, and all breakpoints and
+auto-display expressions.  This is because they may contain pointers to the
+internal data recording symbols and data types, which are part of the old
+symbol table data being discarded inside GDB.
+
+
+File: gdb  Node: Options, Prev: Files, Up: Top, Next: Compilation
+
+Options and Arguments for GDB
+*****************************
+
+When you invoke GDB, you can pass commands telling it what files to
+operate on and what other things to do.
+
+* Menu:
+
+* Mode Options::     Options controlling modes of operation.
+* File Options::     Options to specify files (executable, coredump, commands)
+* Other Arguments::  Any other arguments without options
+			also specify files.
+
+
+File: gdb  Node: Mode Options, Prev: Options, Up: Options, Next: File Options
+
+Mode Options
+============
+
+`-nx'     
+     Do not execute commands from the init files `.gdbinit'.
+     Normally, the commands in these files are executed after all the
+     command options and arguments have been processed.  *Note Command Files::.
+     
+`-q'     
+     "Quiet".  Do not print the usual introductory messages.
+     
+`-batch'     
+     Run in batch mode.  Exit with code 1 after processing all the command
+     files specified with `-x' (and `.gdbinit', if not
+     inhibited).  Exit also if, due to an error, GDB would otherwise
+     attempt to read a command from the terminal.
+     
+`-fullname'     
+     This option is used when Emacs runs GDB as a subprocess.  It tells GDB
+     to output the full file name and line number in a standard,
+     recognizable fashion each time a stack frame is displayed (which
+     includes each time the program stops).  This recognizable format looks
+     like two `\032' characters, followed by the filename, line number
+     and character position separated by colons, and a newline.  The
+     Emacs-to-GDB interface program uses the two `\032' characters as
+     a signal to display the source code for the frame.
+
+
+File: gdb  Node: File Options, Prev: Mode Options, Up: Options, Next: Other Arguments
+
+File-specifying Options
+=======================
+
+All the options and command line arguments given are processed
+in sequential order.  The order makes a difference when the
+`-x' command is used.
+
+`-s FILE'     
+     Read symbol table from file FILE.
+     
+`-e FILE'     
+     Use file FILE as the executable file to execute when
+     appropriate, and for examining pure data in conjunction with a core
+     dump.
+     
+`-se FILE'     
+     Read symbol table from file FILE and use it as the executable
+     file.
+     
+`-c FILE'     
+     Use file FILE as a core dump to examine.
+     
+`-x FILE'     
+     Execute GDB commands from file FILE.
+     
+`-d DIRECTORY'     
+     Add DIRECTORY to the path to search for source files.
+
+
+File: gdb  Node: Other Arguments, Prev: File Options, Up: Options
+
+Other Arguments
+===============
+
+If there are arguments to GDB that are not options or associated with
+options, the first one specifies the symbol table and executable file name
+(as if it were preceded by `-se') and the second one specifies a core
+dump file name (as if it were preceded by `-c').
+
+
+File: gdb  Node: Compilation, Prev: Options, Up: Top, Next: Running
+
+Compiling Your Program for Debugging
+************************************
+
+In order to debug a program effectively, you need to ask for debugging
+information when you compile it.  This information in the object file
+describes the data type of each variable or function and the correspondence
+between source line numbers and addresses in the executable code.
+
+To request debugging information, specify the `-g' option when you run
+the compiler.
+
+The Unix C compiler is unable to handle the `-g' and `-O' options
+together.  This means that you cannot ask for optimization if you ask for
+debugger information.
+
+The GNU C compiler supports `-g' with or without `-O', making it
+possible to debug optimized code.  We recommend that you *always* use
+`-g' whenever you compile a program.  You may think the program is
+correct, but there's no sense in pushing your luck.
+
+If you are using the GNU C compiler, the GNU assembler and the GNU linker,
+you can choose between two formats of debugging information: the standard
+Unix format, which is what you get with `-g', and GDB's own format,
+which you request by using `-gg' instead of `-g'.  This stores
+debugging information in the executable file in a format much like that
+which is used inside GDB.  This has these advantages and disadvantages:
+
+   * GDB can read `-gg' format more than twice as fast as Unix
+     `-g' format.
+     
+   * The `-gg' format uses much more disk space than Unix format.
+     
+   * The Unix debuggers can understand only Unix format, so you cannot use
+     Unix source-level debuggers if you compile with `-gg'.  (The
+     `adb' debugger works with either format; it does not use this
+     information in any case.)
+
+
+File: gdb  Node: Running, Prev: Compilation, Up: Top, Next: Stopping
+
+Running Your Program Under GDB
+******************************
+
+To start your program under GDB, use the `run' command.  The program
+must already have been specified using the `exec-file' command or with
+an argument to GDB (*Note Files::); what `run' does is create an
+inferior process, load the program into it, and set it in motion.
+
+The execution of a program is affected by certain information it receives
+from its superior.  GDB provides ways to specify them, which you must do
+before starting the program.  (You can change them after starting the
+program, but such changes do not affect the program unless you start it
+over again.)
+
+The arguments.     
+     You specify the arguments to give the program as the arguments of the
+     `run' command.
+     
+The environment.     
+     The program normally inherits its environment from GDB, but you can
+     use the GDB commands `set-environment' and `unset-environment' to
+     change parts of the environment that will be given to the program.
+     
+The working directory.     
+     The program inherits its working directory from GDB.  You can set GDB's
+     working directory with the `cd' command in GDB.
+
+After the `run' command, the debugger does nothing but wait for your
+program to stop.  *Note Stopping::.
+
+* Menu:
+
+* Arguments::          Specifying the arguments for your program.
+* Environment::        Specifying the environment for your program.
+* Working Directory::  Specifying the working directory for giving
+                       to your program when it is run.
+* Input/Output::       Specifying the program's standard input and output.
+* Attach::             Debugging a process started outside GDB.
+
+
+File: gdb  Node: Arguments, Prev: Running, Up: Running, Next: Environment
+
+Your Program's Arguments
+========================
+
+You specify the arguments to give the program as the arguments of the
+`run' command.  They are passed to a shell, which expands wildcard
+characters and performs redirection of I/O, and thence to the program.
+
+`run' with no arguments uses the same arguments used by the previous
+`run'.
+
+The command `set-args' can be used to specify the arguments to be used
+the next time the program is run.  If `set-args' has no arguments, it
+means to use no arguments the next time the program is run.  If you have
+run your program with arguments and want to run it again with no arguments,
+this is the only way to do so.
+
+
+File: gdb  Node: Environment, Prev: Arguments, Up: Running, Next: Working Directory
+
+Your Program's Environment
+==========================
+
+The "environment" consists of a set of "environment variables" and
+their values.  Environment variables conventionally record such things as
+your user name, your home directory, your terminal type, and your search
+path for programs to run.  Usually you set up environment variables with
+the shell and they are inherited by all the other programs you run.  When
+debugging, it can be useful to try running the program with different
+environments without having to start the debugger over again.
+
+`info environment VARNAME'     
+     Print the value of environment variable VARNAME to be given to
+     your program when it is started.  This command can be abbreviated
+     `i env VARNAME'.
+     
+`info environment'     
+     Print the names and values of all environment variables to be given to
+     your program when it is started.  This command can be abbreviated
+     `i env'.
+     
+`set-environment VARNAME VALUE'     
+     Sets environment variable VARNAME to VALUE, for your
+     program only, not for GDB itself.  VALUE may be any string; the
+     values of environment variables are just strings, and any
+     interpretation is supplied by your program itself.  This command
+     can be abbreviated as short as `set-e'.
+     
+`unset-environment VARNAME'     
+     Remove variable VARNAME from the environment to be passed to
+     your program.  This is different from `set-env VARNAME ='
+     because `unset-environment' makes a variable not be defined at
+     all, which is distinguishable from an empty value.  This command can
+     be abbreviated `unset'.
+
+
+File: gdb  Node: Working Directory, Prev: Environment, Up: Running, Next: Input/Output
+
+Your Program's Working Directory
+================================
+
+Each time you start your program with `run', it inherits its working
+directory from the current working directory of GDB.  GDB's working
+directory is initially whatever it inherited from its superior, but you can
+specify the working directory for GDB with the `cd' command.
+
+The GDB working directory also serves as a default for the commands
+that specify files for GDB to operate on.  *Note Files::.
+
+`cd DIRECTORY'     
+     Set GDB's working directory to DIRECTORY.
+     
+`pwd'     
+     Print GDB's working directory.
+
+
+File: gdb  Node: Input/Output, Prev: Working Directory, Up: Running, Next: Attach
+
+Your Program's Input and Output
+===============================
+
+By default, the program you run under GDB does input and output to the same
+terminal that GDB uses.
+
+You can redirect the program's input and/or output using `sh'-style
+redirection commands in the `run' command.  For example,
+
+     run > outfile
+
+starts the program, diverting its output to the file `outfile'.
+
+Another way to specify where the program should do input and output is with
+the `tty' command.  This command accepts a file name as argument, and
+causes this file to be the default for future `run' commands.  For
+example,
+
+     tty /dev/ttyb
+
+directs that processes started with subsequent `run' commands default
+to do input and output on the terminal `/dev/ttyb'.  An explicit
+redirection in `run' overrides the `tty' command.
+
+When you use the `tty' command or redirect input in the `run'
+command, the *input for your program* comes from the specified file,
+but the input for GDB still comes from your terminal.  The program's
+controlling terminal is your (GDB's) terminal, not the terminal that the
+program is reading from; so if you want to type `C-c' to stop the
+program, you must type it on your (GDB's) terminal.  A `C-c' typed on
+the program's terminal is available to the program as ordinary input.
+
+
+File: gdb  Node: Attach, Prev: Input/Output, Up: Running
+
+Debugging an Already-Running Process
+====================================
+
+Some operating systems (in particular, Sun) allow GDB to begin debugging an
+already-running process that was started outside of GDB.  To do this you
+must use the `attach' command instead of the `run' command.
+
+The `attach' command requires one argument, which is the process-id of
+the process you want to debug.  (The usual way to find out the process-id
+of the process is with the `ps' utility.)
+
+The first thing GDB after arranging to debug the process is to stop it.
+You can examine and modify an attached process with all the GDB commands
+that ordinarily available when you start processes with `run'.  You
+can insert breakpoints; you can step and continue; you can modify storage.
+If you would rather the process continue running, use the `continue'
+command after attaching.
+
+When you are finished debugging the attached process, you can use the
+`detach' command to release it from GDB's control.  Detaching
+the process continues its execution.  After the `detach' command,
+that process and GDB become completely independent once more, and you
+are ready to `attach' another process or start one with `run'.
+
+If you exit GDB or use the `run' command while you have an attached
+process, you kill that process.  You will be asked for confirmation if you
+try to do either of these things.
+
+
+File: gdb  Node: Stopping, Prev: Running, Up: Top, Next: Stack
+
+Stopping and Continuing
+***********************
+
+When you run a program normally, it runs until exiting.  The purpose
+of using a debugger is so that you can stop it before that point;
+or so that if the program runs into trouble you can find out why.
+
+* Menu:
+
+* Signals::      Fatal signals in your program just stop it;
+                 then you can use GDB to see what is going on.
+* Breakpoints::  Breakpoints let you stop your program when it
+                 reaches a specified point in the code.
+* Continuing::   Resuming execution until the next signal or breakpoint.
+* Stepping::     Stepping runs the program a short distance and
+                 then stops it wherever it has come to.
+
+
+File: gdb  Node: Signals, Prev: Stopping, Up: Stopping, Next: Breakpoints
+
+Signals
+=======
+
+A signal is an asynchronous event that can happen in a program.  The
+operating system defines the possible kinds of signals, and gives each kind
+a name and a number.  For example, `SIGINT' is the signal a program
+gets when you type `Ctrl-c'; `SIGSEGV' is the signal a program
+gets from referencing a place in memory far away from all the areas in use;
+`SIGALRM' occurs when the alarm clock timer goes off (which happens
+only if the program has requested an alarm).
+
+Some signals, including `SIGALRM', are a normal part of the
+functioning of the program.  Others, such as `SIGSEGV', indicate
+errors; these signals are "fatal" (kill the program immediately) if the
+program has not specified in advance some other way to handle the signal.
+`SIGINT' does not indicate an error in the program, but it is normally
+fatal so it can carry out the purpose of `Ctrl-c': to kill the program.
+
+GDB has the ability to detect any occurrence of a signal in the program
+running under GDB's control.  You can tell GDB in advance what to do for
+each kind of signal.
+
+Normally, GDB is set up to ignore non-erroneous signals like `SIGALRM'
+(so as not to interfere with their role in the functioning of the program)
+but to stop the program immediately whenever an error signal happens.
+You can change these settings with the `handle' command.  You must
+specify which signal you are talking about with its number.
+
+`info signal'     
+     Print a table of all the kinds of signals and how GDB has been told to
+     handle each one.  You can use this to see the signal numbers of all
+     the defined types of signals.
+     
+`handle SIGNALNUM KEYWORDS...'     
+     Change the way GDB handles signal SIGNALNUM.  The KEYWORDS
+     say what change to make.
+
+To use the `handle' command you must know the code number of the
+signal you are concerned with.  To find the code number, type `info
+signal' which prints a table of signal names and numbers.
+
+The keywords allowed by the handle command can be abbreviated.  Their full
+names are
+
+`stop'     
+     GDB should stop the program when this signal happens.  This implies
+     the `print' keyword as well.
+     
+`print'     
+     GDB should print a message when this signal happens.
+     
+`nostop'     
+     GDB should not stop the program when this signal happens.  It may
+     still print a message telling you that the signal has come in.
+     
+`noprint'     
+     GDB should not mention the occurrence of the signal at all.  This
+     implies the `nostop' keyword as well.
+     
+`pass'     
+     GDB should allow the program to see this signal; the program will be
+     able to handle the signal, or may be terminated if the signal is fatal
+     and not handled.
+     
+`nopass'     
+     GDB should not allow the program to see this signal.
+
+When a signal has been set to stop the program, the program cannot see the
+signal until you continue.  It will see the signal then, if `pass' is
+in effect for the signal in question at that time.  In other words,
+after GDB reports a signal, you can use the `handle' command with
+`pass' or `nopass' to control whether that signal will be seen by
+the program when you later continue it.
+
+You can also use the `signal' command to prevent the program from
+seeing a signal, or cause it to see a signal it normally would not see,
+or to give it any signal at any time.  *Note Signaling::.
+
+
+File: gdb  Node: Breakpoints, Prev: Signals, Up: Stopping, Next: Continuing
+
+Breakpoints
+===========
+
+A "breakpoint" makes your program stop whenever a certain point in the
+program is reached.  You set breakpoints explicitly with GDB commands,
+specifying the place where the program should stop by line number, function
+name or exact address in the program.  You can add various other conditions
+to control whether the program will stop.
+
+Each breakpoint is assigned a number when it is created; these numbers are
+successive integers starting with 1.  In many of the commands for controlling
+various features of breakpoints you use the breakpoint number to say which
+breakpoint you want to change.  Each breakpoint may be "enabled" or
+"disabled"; if disabled, it has no effect on the program until you
+enable it again.
+
+The command `info break' prints a list of all breakpoints set and not
+cleared, showing their numbers, where in the program they are, and any
+special features in use for them.  Disabled breakpoints are included in the
+list, but marked as disabled.  `info break' with a breakpoint number
+as argument lists only that breakpoint.  The convenience variable `$_'
+and the default examining-address for the `x' command are set to the
+address of the last breakpoint listed (*Note Memory::).
+
+* Menu:
+
+* Set Breaks::     How to establish breakpoints.
+* Clear Breaks::   How to remove breakpoints no longer needed.
+* Disabling::      How to disable breakpoints (turn them off temporarily).
+* Conditions::     Making extra conditions on whether to stop.
+* Break Commands:: Commands to be executed at a breakpoint.
+* Error in Breakpoints:: "Cannot insert breakpoints" error--why, what to do.
+
+
+File: gdb  Node: Set Breaks, Prev: Breakpoints, Up: Breakpoints, Next: Clear Breaks
+
+Setting Breakpoints
+-------------------
+
+Breakpoints are set with the `break' command (abbreviated `b').
+You have several ways to say where the breakpoint should go.
+
+`break FUNCTION'     
+     Set a breakpoint at entry to function FUNCTION.
+     
+`break LINENUM'     
+     Set a breakpoint at line LINENUM in the current source file.
+     That file is the last file whose source text was printed.  This
+     breakpoint will stop the program just before it executes any of the
+     code on that line.
+     
+`break FILENAME:LINENUM'     
+     Set a breakpoint at line LINENUM in source file FILENAME.
+     
+`break FILENAME:FUNCTION'     
+     Set a breakpoint at entry to function FUNCTION found in file
+     FILENAME.  Specifying a filename as well as a function name is
+     superfluous except when multiple files contain similarly named
+     functions.
+     
+`break *ADDRESS'     
+     Set a breakpoint at address ADDRESS.  You can use this to set
+     breakpoints in parts of the program which do not have debugging
+     information or source files.
+     
+`break'     
+     Set a breakpoint at the next instruction to be executed in the
+     selected stack frame (*Note Stack::).  This is a silly thing to do in
+     the innermost stack frame because the program would stop immediately
+     after being started, but it is very useful with another stack frame,
+     because it will cause the program to stop as soon as control returns
+     to that frame.
+     
+`break ... if COND'     
+     Set a breakpoint with condition COND; evaluate the expression
+     COND each time the breakpoint is reached, and stop only if the
+     value is nonzero.  `...' stands for one of the possible
+     arguments described above (or no argument) specifying where to break.
+     *Note Conditions::, for more information on breakpoint conditions.
+     
+`tbreak ARGS'     
+     Set a breakpoint enabled only for one stop.  ARGS are the
+     same as in the `break' command, and the breakpoint is set in the same
+     way, but the breakpoint is automatically "disabled" the first time it
+     is hit.
+
+GDB allows you to set any number of breakpoints at the same place in the
+program.  There is nothing silly or meaningless about this.  When the
+breakpoints are conditional, this is even useful (*Note Conditions::).
+
+
+File: gdb  Node: Clear Breaks, Prev: Set Breaks, Up: Breakpoints, Next: Disabling
+
+Clearing Breakpoints
+--------------------
+
+It is often necessary to eliminate a breakpoint once it has done its job
+and you no longer want the program to stop there.  This is called
+"clearing" or `deleting' the breakpoint.  A breakpoint that
+has been cleared no longer exists in any sense.
+
+With the `clear' command you can clear breakpoints according to where
+they are in the program.  With the `delete' command you can clear
+individual breakpoints by specifying their breakpoint numbers.
+
+It is not necessary to clear a breakpoint to proceed past it.  GDB
+automatically ignores breakpoints in the first instruction to be executed
+when you continue execution at the same address where the program stopped.
+
+`clear'     
+     Clear any breakpoints at the next instruction to be executed in the
+     selected stack frame (*Note Selection::).  When the innermost frame
+     is selected, this is a good way to clear a breakpoint that the program
+     just stopped at.
+     
+`clear FUNCTION'     
+`clear FILENAME:FUNCTION'     
+     Clear any breakpoints set at entry to the function FUNCTION.
+     
+`clear LINENUM'     
+`clear FILENAME:LINENUM'     
+     Clear any breakpoints set at or within the code of the specified line.
+     
+`delete BNUMS...'     
+     Delete the breakpoints of the numbers specified as arguments.
+     A breakpoint deleted is forgotten completely.
+
+
+File: gdb  Node: Disabling, Prev: Clear Breaks, Up: Breakpoints, Next: Conditions
+
+Disabling Breakpoints
+---------------------
+
+Rather than clearing a breakpoint, you might prefer to "disable" it.
+This makes the breakpoint inoperative as if it had been cleared, but
+remembers the information on the breakpoint so that you can "enable"
+it again later.
+
+You disable and enable breakpoints with the `enable' and
+`disable' commands, specifying one or more breakpoint numbers as
+arguments.  Use `info break' to print a list of breakpoints if you
+don't know which breakpoint numbers to use.
+
+A breakpoint can have any of four different states of enablement:
+
+   * Enabled.  The breakpoint will stop the program.  A breakpoint made
+     with the `break' command starts out in this state.
+   * Disabled.  The breakpoint has no effect on the program.
+   * Enabled once.  The breakpoint will stop the program, but
+     when it does so it will become disabled.  A breakpoint made
+     with the `tbreak' command starts out in this state.
+   * Enabled for deletion.  The breakpoint will stop the program, but
+     immediately after it does so it will be deleted permanently.
+
+You change the state of enablement of a breakpoint with the following
+commands:
+
+`disable BNUMS...'     
+     Disable the specified breakpoints.  A disabled breakpoint has no
+     effect but is not forgotten.  All options such as ignore-counts,
+     conditions and commands are remembered in case the breakpoint is
+     enabled again later.
+     
+`enable BNUMS...'     
+     Enable the specified breakpoints.  They become effective once again in
+     stopping the program, until you specify otherwise.
+     
+`enable once BNUMS...'     
+     Enable the specified breakpoints temporarily.  Each will be disabled
+     again the next time it stops the program (unless you have used one of
+     these commands to specify a different state before that time comes).
+     
+`enable delete BNUMS...'     
+     Enable the specified breakpoints to work once and then die.  Each of
+     the breakpoints will be deleted the next time it stops the program
+     (unless you have used one of these commands to specify a different
+     state before that time comes).
+
+Aside from the automatic disablement or deletion of a breakpoint when it
+stops the program, which happens only in certain states, the state of
+enablement of a breakpoint changes only when one of the commands above
+is used.
+
+
+File: gdb  Node: Conditions, Prev: Disabling, Up: Breakpoints, Next: Break Commands
+
+Break Conditions
+----------------
+
+The simplest sort of breakpoint breaks every time the program reaches a
+specified place.  You can also specify a "condition" for a breakpoint.
+A condition is just a boolean expression in your programming language.
+A breakpoint with a condition evaluates the expression each time the
+program reaches it, and the program stops only if the condition is true.
+
+Break conditions may have side effects, and may even call functions in your
+program.  These may sound like strange things to do, but their effects are
+completely predictable unless there is another enabled breakpoint at the
+same address.  (In that case, GDB might see the other breakpoint first and
+stop the program without checking the condition of this one.)  Note that
+breakpoint commands are usually more convenient and flexible for the
+purpose of performing side effects when a breakpoint is reached
+(*Note Break Commands::).
+
+Break conditions can be specified when a breakpoint is set, by using
+`if' in the arguments to the `break' command.  *Note Set Breaks::.
+They can also be changed at any time with the `condition' command:
+
+`condition BNUM EXPRESSION'     
+     Specify EXPRESSION as the break condition for breakpoint number
+     BNUM.  From now on, this breakpoint will stop the program only if
+     the value of EXPRESSION is true (nonzero, in C).  EXPRESSION
+     is not evaluated at the time the `condition' command is given.
+     
+`condition BNUM'     
+     Remove the condition from breakpoint number BNUM.  It becomes
+     an ordinary unconditional breakpoint.
+
+A special feature is provided for one kind of condition: to prevent the
+breakpoint from doing anything until it has been reached a certain number
+of times.  This is done with the "ignore count" of the breakpoint.
+When the program reaches a breakpoint whose ignore count is positive, then
+instead of stopping, it just decrements the ignore count by one and
+continues.
+
+`ignore BNUM COUNT'     
+     Set the ignore count of breakpoint number BNUM to COUNT.
+     The next COUNT times the breakpoint is reached, it will not stop.
+     
+     To make the breakpoint stop the next time it is reached, specify
+     a count of zero.
+     
+`cont COUNT'     
+     Continue execution of the program, setting the ignore count of the
+     breakpoint that the program stopped at to COUNT minus one.
+     Continuing through the breakpoint does not itself count as one of
+     COUNT.  Thus, the program will not stop at this breakpoint until the
+     COUNT'th time it is hit.
+     
+     This command is allowed only when the program stopped due to a
+     breakpoint.  At other times, the argument to `cont' is ignored.
+
+If a breakpoint has a positive ignore count and a condition, the condition
+is not checked.  Once the ignore count reaches zero, the condition will
+start to be checked.
+
+Note that you could achieve the effect of the ignore count with a condition
+such as `$foo-- <= 0' using a debugger convenience variable that is
+decremented each time.  That is why the ignore count is considered a
+special case of a condition.  *Note Convenience Vars::.
+
+
+File: gdb  Node: Break Commands, Prev: Conditions, Up: Breakpoints, Next: Error in Breakpoints
+
+Commands Executed on Breaking
+-----------------------------
+
+You can give any breakpoint a series of commands to execute when the
+program stops due to that breakpoint.  For example, you might want to
+print the values of certain expressions, or enable other breakpoints.
+
+`commands BNUM'     
+     Specify commands for breakpoint number BNUM.  The commands
+     themselves appear on the following lines.  Type a line containing just
+     `end' to terminate the commands.
+     
+     To remove all commands from a breakpoint, use the command
+     `commands' and follow it immediately by `end'; that is, give
+     no commands.
+
+It is possible for breakpoint commands to start the program up again.
+Simply use the `cont' command, or `step', or any other command
+to resume execution.  However, any remaining breakpoint commands are
+ignored.  When the program stops again, GDB will act according to why
+that stop took place.
+
+If the first command specified is `silent', the usual message about
+stopping at a breakpoint is not printed.  This may be desirable for
+breakpoints that are to print a specific message and then continue.
+If the remaining commands too print nothing, you will see no sign that
+the breakpoint was reached at all.  `silent' is not really a command;
+it is meaningful only at the beginning of the commands for a breakpoint.
+
+The commands `echo' and `output' that allow you to print precisely
+controlled output are often useful in silent breakpoints.  *Note Output::.
+
+For example, here is how you could use breakpoint commands to print the
+value of `x' at entry to `foo' whenever it is positive.  We
+assume that the newly created breakpoint is number 4; `break' will
+print the number that is assigned.
+
+     break foo if x>0
+     commands 4
+     silent
+     echo x is\040
+     output x
+     echo \n
+     cont
+     end
+
+One application for breakpoint commands is to correct one bug so you can
+test another.  Put a breakpoint just after the erroneous line of code, give
+it a condition to detect the case in which something erroneous has been
+done, and give it commands to assign correct values to any variables that
+need them.  End with the `cont' command so that the program does not
+stop, and start with the `silent' command so that no output is
+produced.  Here is an example:
+
+     break 403
+     commands 5
+     silent
+     set x = y + 4
+     cont
+     end
+
+One deficiency in the operation of automatically continuing breakpoints
+under Unix appears when your program uses raw mode for the terminal.
+GDB options back to its own terminal modes (not raw) before executing
+commands, and then must switch back to raw mode when your program is
+continued.  This causes any pending terminal input to be lost.
+
+In the GNU system, this will be fixed by changing the behavior of
+terminal modes.
+
+Under Unix, when you have this problem, you might be able to get around
+it by putting your actions into the breakpoint condition instead of
+commands.  For example
+
+     condition 5  (x = y + 4), 0
+
+is a condition expression that will change `x' as needed, then always
+have the value 0 so the program will not stop.  Loss of input is avoided
+here because break conditions are evaluated without changing the terminal
+modes.  When you want to have nontrivial conditions for performing the side
+effects, the operators `&&', `||' and `? ... :' may be useful.
+
+
+File: gdb  Node: Error in Breakpoints, Prev: Break Commands, Up: Breakpoints
+
+"Cannot Insert Breakpoints" Error
+---------------------------------
+
+Under Unix, breakpoints cannot be used in a program if any other process
+is running that program.  Attempting to run or continue the program with
+a breakpoint in this case will cause GDB to stop it.
+
+When this happens, you have two ways to proceed:
+
+  1. Remove or disable the breakpoints, then continue.
+     
+  2. Suspend GDB, and copy the file containing the program to a new name.
+     Resume GDB and use the `exec-file' command to specify that GDB
+     should run the program under that name.  Then start the program again.
+
+
+File: gdb  Node: Continuing, Prev: Breakpoints, Up: Stopping, Next: Stepping
+
+Continuing
+==========
+
+After your program stops, most likely you will want it to run some more if
+the bug you are looking for has not happened yet.
+
+`cont'     
+     Continue running the program at the place where it stopped.
+
+If the program stopped at a breakpoint, the place to continue running
+is the address of the breakpoint.  You might expect that continuing would
+just stop at the same breakpoint immediately.  In fact, `cont'
+takes special care to prevent that from happening.  You do not need
+to clear the breakpoint to proceed through it after stopping at it.
+
+You can, however, specify an ignore-count for the breakpoint that the
+program stopped at, by means of an argument to the `cont' command.
+*Note Conditions::.
+
+If the program stopped because of a signal other than `SIGINT' or
+`SIGTRAP', continuing will cause the program to see that signal.
+You may not want this to happen.  For example, if the program stopped
+due to some sort of memory reference error, you might store correct
+values into the erroneous variables and continue, hoping to see more
+execution; but the program would probably terminate immediately as
+a result of the fatal signal once it sees the signal.  To prevent this,
+you can continue with `signal 0'.  *Note Signaling::.  You can
+also act in advance to prevent the program from seeing certain kinds
+of signals, using the `handle' command (*Note Signals::).
+
+
+File: gdb  Node: Stepping, Prev: Continuing, Up: Stopping
+
+Stepping
+========
+
+"Stepping" means setting your program in motion for a limited time, so
+that control will return automatically to the debugger after one line of
+code or one machine instruction.  Breakpoints are active during stepping
+and the program will stop for them even if it has not gone as far as the
+stepping command specifies.
+
+`step'     
+     Proceed the program until control reaches a different line, then stop
+     it and return to the debugger.  This command is abbreviated `s'.
+     
+`step COUNT'     
+     Proceed as in `step', but do so COUNT times.  If a breakpoint
+     or a signal not related to stepping is reached before COUNT steps,
+     stepping stops right away.
+     
+`next'     
+     Similar to `step', but any function calls appearing within the line of
+     code are executed without stopping.  Execution stops when control reaches a
+     different line of code at the stack level which was executing when the
+     `next' command was given.  This command is abbreviated `n'.
+     
+     An argument is a repeat count, as in `step'.
+     
+`finish'     
+     Continue running until just after the selected stack frame returns
+     (or until there is some other reason to stop, such as a fatal signal
+     or a breakpoint).
+     
+     Contrast this with the `return' command (*Note Returning::).
+     
+`stepi'     
+`si'     
+     Proceed one machine instruction, then stop and return to the debugger.
+     
+     It is often useful to do `display/i $pc' when stepping by machine
+     instructions.  This will cause the next instruction to be executed to
+     be displayed automatically at each stop.  *Note Auto Display::.
+     
+     An argument is a repeat count, as in `step'.
+     
+`nexti'     
+`ni'     
+     Proceed one machine instruction, but if it is a subroutine call,
+     proceed until the subroutine returns.
+     
+     An argument is a repeat count, as in `next'.
+
+A typical technique for using stepping is to put a breakpoint
+(*Note Breakpoints::) at the beginning of the function or the section of
+the program in which a problem is believed to lie, and then step through
+the suspect area, examining the variables that are interesting, until the
+problem happens.
+
+The `cont' command can be used after stepping to resume execution
+until the next breakpoint or signal.
+
+

@@ -1,0 +1,174 @@
+Info file gdb, produced by texinfo-format-buffer   -*-Text-*-
+from file gdb.texinfo
+
+This file documents the GNU debugger GDB.
+
+Copyright (C) 1988 Free Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided also that the
+sections entitled "Distribution" and "GDB General Public License" are
+included exactly as in the original, and provided that the entire resulting
+derived work is distributed under the terms of a permission notice
+identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that the sections entitled "Distribution" and "GDB General Public
+License" may be included in a translation approved by the author instead
+of in the original English.
+
+
+
+File: gdb  Node: Commands, Prev: Remote, Up: Top, Next: Concepts
+
+Command Index
+*************
+
+
+* Menu:
+
+* $_: Breakpoints.
+* $_: List.
+* $_: Memory.
+* $__: Memory.
+* attach: Attach.
+* condition: Conditions.
+* define: Define.
+* detach: Attach.
+* disable: Disabling.
+* document: Define.
+* down: Selection.
+* echo: Output.
+* enable: Disabling.
+* finish: Stepping.
+* forward-search: Search.
+* frame: Selection.
+* handle: Signals.
+* ignore: Conditions.
+* jump: Jumping.
+* list: List.
+* next: Stepping.
+* nexti: Stepping.
+* ni: Stepping.
+* output: Output.
+* print: Data.
+* printf: Output.
+* printsyms: Symbols.
+* ptype: Symbols.
+* quit: Input.
+* return: Returning.
+* reverse-search: Search.
+* run: Running.
+* set-args: Arguments.
+* set-environment: Environment.
+* set-prompt: Input.
+* set: Assignment.
+* si: Stepping.
+* signal: Signaling.
+* step: Stepping.
+* stepi: Stepping.
+* tty: Input/Output.
+* unset-environment: Environment.
+* up: Selection.
+* whatis: Symbols.
+* x: Memory.
+* break: Set Breaks.
+* cd: Working Directory.
+* clear: Clear Breaks.
+* core-file: File Commands.
+* delete: Clear Breaks.
+* directory: Source Path.
+* display: Auto Display.
+* exec-file: File Commands.
+* info address: Symbols.
+* info break: Breakpoints.
+* info environment: Environment.
+* info functions: Symbols.
+* info line: List.
+* info registers: Registers.
+* info signal: Signals.
+* info sources: Symbols.
+* info types: Symbols.
+* info variables: Symbols.
+* kill: File Commands.
+* pwd: Working Directory.
+* silent: Break Commands.
+* source: Command Files.
+* symbol-file: File Commands.
+* tbreak: Set Breaks.
+* undisplay: Auto Display.
+* info args: Frame Info.
+* info convenience: Convenience Vars.
+* info directories: Source Path.
+* info display: Auto Display.
+* info files: File Commands.
+* info frame: Frame Info.
+* info history: Value History.
+* info locals: Frame Info.
+
+
+File: gdb  Node: Concepts, Prev: Commands, Up: Top
+
+Concept Index
+*************
+
+
+* Menu:
+
+* assignment: Assignment.
+* attach: Attach.
+* breakpoints: Breakpoints.
+* conditions: Conditions.
+* expressions: Expressions.
+* frame: Frames.
+* redirection: Input/Output.
+* registers: Registers.
+* running: Running.
+* searching: Search.
+* stepping: Stepping.
+* word: Memory.
+* $$: Value History.
+* $: Value History.
+* .gdbinit: Command Files.
+* artificial array: Arrays.
+* call stack: Stack.
+* disabled breakpoints: Disabling.
+* enabled breakpoints: Disabling.
+* examining data: Data.
+* examining memory: Memory.
+* executable file: Files.
+* exiting GDB: Input.
+* formatted output: Formats.
+* frame number: Frames.
+* frame pointer: Frames.
+* initial frame: Frames.
+* innermost frame: Frames.
+* outermost frame: Frames.
+* output formats: Formats.
+* printing data: Data.
+* selected frame: Frames.
+* setting variables: Assignment.
+* symbol table: Files.
+* user-defined commands: Define.
+* breakpoint commands: Break Commands.
+* clear breakpoint: Clear Breaks.
+* command files: Command Files.
+* convenience variables: Convenience Vars.
+* core dump file: Files.
+* delete breakpoints: Clear Breaks.
+* init file: Command Files.
+* source path: Source Path.
+* value history: Value History.
+* arguments (to your program): Arguments.
+* environment (of your program): Environment.
+* ignore count (of breakpoint): Conditions.
+* returning from a function: Returning.
+* directories for source files: Source Path.
+* working directory (of your program): Working Directory.
+
+
