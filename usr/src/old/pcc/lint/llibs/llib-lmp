@@ -1,4 +1,4 @@
-/*	llib-lmp	1.1	85/06/19	*/
+/*	llib-lmp	1.2	86/03/13	*/
 /* LINTLIBRARY */
 #include <stdio.h>
 #include <mp.h>
@@ -14,8 +14,8 @@ long	m_trq(v1,v2,u1,u2,u3) { return 0L; }
 	m_div(a,b,q,r) MINT *a,*b,*q,*r; {}
 int	m_in(a,b,f) MINT *a; FILE *f; { return EOF; }
 	m_out(a,b,f) MINT *a; FILE *f; {}
-	sdiv(a,n,q,r) MINT *a,*q; short *r; {}
-	s_div(a,n,q,r) MINT *a,*q; short *r; {}
+	sdiv(a,n,q,r) MINT *a,*q; short n; short *r; {}
+	s_div(a,n,q,r) MINT *a,*q; short n; short *r; {}
 int	min(a) MINT *a; { return 0; }
 int	omin(a) MINT *a; { return 0; }
 	mout(a) MINT *a; {}
