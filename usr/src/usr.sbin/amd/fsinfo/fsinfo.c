@@ -1,24 +1,24 @@
 /*
  * Copyright (c) 1989 Jan-Simon Pendry
  * Copyright (c) 1989 Imperial College of Science, Technology & Medicine
- * Copyright (c) 1989 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1989, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Jan-Simon Pendry at Imperial College, London.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fsinfo.c	5.5 (Berkeley) %G%
+ *	@(#)fsinfo.c	8.1 (Berkeley) %G%
  *
  * $Id: fsinfo.c,v 5.2.2.1 1992/02/09 15:09:33 jsp beta $
  *
  */
 
 #ifndef lint
-char copyright[] =
-"@(#) Copyright (c) 1993 The Regents of the University of California.\n\
- All rights reserved.\n";
+static char copyright[] =
+"@(#) Copyright (c) 1989, 1993\n\
+	The Regents of the University of California.  All rights reserved.\n";
 #endif /* not lint */
 
 /*
