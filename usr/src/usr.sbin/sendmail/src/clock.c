@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)clock.c	3.4		%G%);
+SCCSID(@(#)clock.c	3.5		%G%);
 
 /*
 **  SETEVENT -- set an event to happen at a specific time.
@@ -27,6 +27,14 @@ setevent(intvl, func, arg)
 	register EVENT *ev;
 	auto time_t now;
 	extern tick();
+
+# ifdef DEBUG
+	if (intvl <= 0)
+	{
+		syserr("setevent: intvl=%ld\n", intvl);
+		return;
+	}
+# endif DEBUG
 
 	(void) time(&now);
 
@@ -83,6 +91,8 @@ clrevent(ev)
 	if (tTd(5, 2))
 		printf("clrevent: ev=%x\n", ev);
 # endif DEBUG
+	if (ev == NULL)
+		return;
 
 	/* find the parent event */
 	for (evp = &EventQueue; *evp != NULL; evp = &(*evp)->ev_link)
@@ -173,6 +183,8 @@ sleep(intvl)
 {
 	extern endsleep();
 
+	if (intvl == 0)
+		return;
 	SleepDone = FALSE;
 	setevent(intvl, endsleep, 0);
 	while (!SleepDone)
