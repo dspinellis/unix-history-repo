@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)cmd1.c	5.2 (Berkeley) %G%";
+static char *sccsid = "@(#)cmd1.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "rcv.h"
@@ -193,7 +193,7 @@ printhead(mesg)
 {
 	struct message *mp;
 	FILE *ibuf;
-	char headline[LINESIZE], wcount[10], *subjline, dispc, curind;
+	char headline[LINESIZE], wcount[LINESIZE], *subjline, dispc, curind;
 	char pbuf[BUFSIZ];
 	int s;
 	struct headline hl;
@@ -339,15 +339,18 @@ type1(msgvec, doign, page)
 		return(0);
 	}
 	if (intty && outtty && (page || (cp = value("crt")) != NOSTR)) {
+		nlines = 0;
 		if (!page) {
-			nlines = 0;
 			for (ip = msgvec; *ip && ip-msgvec < msgCount; ip++)
 				nlines += message[*ip - 1].m_lines;
 		}
 		if (page || nlines > atoi(cp)) {
-			obuf = popen(MORE, "w");
+			cp = value("PAGER");
+			if (cp == NULL || *cp == '\0')
+				cp = MORE;
+			obuf = popen(cp, "w");
 			if (obuf == NULL) {
-				perror(MORE);
+				perror(cp);
 				obuf = stdout;
 			}
 			else {
