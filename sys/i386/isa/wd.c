@@ -37,7 +37,7 @@ static int wdtest = 0;
  * SUCH DAMAGE.
  *
  *	from: @(#)wd.c	7.2 (Berkeley) 5/9/91
- *	$Id: wd.c,v 1.37 1994/04/10 11:17:13 csgr Exp $
+ *	$Id: wd.c,v 1.38 1994/04/20 07:06:44 davidg Exp $
  */
 
 /* TODO:
@@ -358,13 +358,14 @@ wdstrategy(register struct buf *bp)
 		goto done;
 	}
 
+#if !defined(DISKLABEL_UNPROTECTED)
 	/* "soft" write protect check */
 	if ((du->dk_flags & DKFL_WRITEPROT) && (bp->b_flags & B_READ) == 0) {
 		bp->b_error = EROFS;
 		bp->b_flags |= B_ERROR;
 		goto done;
 	}
-
+#endif /* !defined(DISKLABEL_UNPROTECTED) */
 	/*
 	 * Do bounds checking, adjust transfer, and set b_cylin.
 	 */
