@@ -1,4 +1,4 @@
-/*	vx.c	1.7	86/01/21	*/
+/*	vx.c	1.8	86/01/23	*/
 
 #include "vx.h"
 #if NVX > 0
@@ -6,7 +6,7 @@
  * VIOC-X driver
  */
 #ifdef VXPERF
-#define DOSCOPE
+#define	DOSCOPE
 #endif
 
 #include "../tahoe/pte.h"
@@ -41,21 +41,21 @@ char	bscport[NVX*16];
 
 #ifdef VX_DEBUG
 long	vxintr4 = 0;
-#define VXERR4	1
-#define VXNOBUF	2
+#define	VXERR4	1
+#define	VXNOBUF	2
 long	vxdebug = 0;
-#define VXVCM	1
-#define VXVCC	2
-#define VXVCX	4
+#define	VXVCM	1
+#define	VXVCC	2
+#define	VXVCX	4
 #include "../tahoesna/snadebug.h"
 #endif
 
 /*
  * Interrupt type bits passed to vinthandl().
  */
-#define CMDquals 0		/* command completed interrupt */
-#define RSPquals 1		/* command response interrupt */
-#define UNSquals 2		/* unsolicited interrupt */
+#define	CMDquals 0		/* command completed interrupt */
+#define	RSPquals 1		/* command response interrupt */
+#define	UNSquals 2		/* unsolicited interrupt */
 
 struct	tty vx_tty[NVX*16];
 int	vxstart(), ttrstrt();
@@ -79,14 +79,14 @@ struct	vx_softc {
 	u_short	vs_maxcmd;	/* max number of concurrent cmds */
 	u_short	vs_silosiz;	/* silo size */
 	short	vs_vers;	/* vioc/pvioc version */
-#define VXV_OLD	0		/* PVIOCX | VIOCX */
-#define VXV_NEW	1		/* NPVIOCX | NVIOCX */
+#define	VXV_OLD	0		/* PVIOCX | VIOCX */
+#define	VXV_NEW	1		/* NPVIOCX | NVIOCX */
 	short	vs_xmtcnt;	/* xmit commands pending */
 	short	vs_brkreq;	/* send break requests pending */
 	short	vs_active;	/* active port bit array or flag */
 	short 	vs_state;	/* controller state */
-#define VXS_READY	0	/* ready for commands */
-#define VXS_RESET	1	/* in process of reseting */
+#define	VXS_READY	0	/* ready for commands */
+#define	VXS_RESET	1	/* in process of reseting */
 	caddr_t vs_mricmd;	/* most recent issued cmd */
 	u_int	vs_ivec;	/* interrupt vector base */
 	struct	vxcmd *vs_avail;/* next available command buffer */
