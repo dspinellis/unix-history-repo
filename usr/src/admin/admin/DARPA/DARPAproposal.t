@@ -1,4 +1,5 @@
-.\"	@(#)DARPAproposal.t	1.4	87/06/06
+.\"	@(#)DARPAproposal.t	1.5	87/06/08
+.\" *troff -ms
 .rm CM
 .sp 2
 .ce 1
@@ -225,24 +226,14 @@ but otherwise is closely related to Sun's VFS [Karels86].
 A prototype implementation is now being developed.
 We expect that this work will be finished in time for a release at the
 end of the current DARPA contract if that is deemed desirable.
-.NH
-Future Projects
-.PP
-The virtual memory and stream protocol research are longer term projects
-that we would expect would be done as part of a follow on contract.
-.\" XXX future contract stategy?
-The virtual memory work uses many new and untested ideas that will
-require extensive experience to insure that they work well in a wide range
-of environments.
-It is our expectation that this work would be ready for release toward
-the end of the follow-on contract.
 .NH 2
 A New Virtual Memory Implementation
 .PP
 With the cost per byte of memory approaching that of the cost per byte
 for disks, and with file systems increasingly removed from host
 machines, a new approach to the implementation of virtual memory is
-necessary. In 4.3BSD the swap space is preallocated;
+necessary.
+In 4.3BSD the swap space is preallocated;
 this limits the maximum virtual memory that can be
 supported to the size of the swap area [Babaoglu79] [Someren84].
 The new system should support virtual memory space at least as great as
@@ -257,19 +248,29 @@ of the same data from the file system.
 The new implementation should also add new functionality.  Processes
 should be allowed to have large sparse address spaces, to map files
 into their address spaces, to map device memory into their address
-spaces, and to share memory with other processes. The shared address
+spaces, and to share memory with other processes.
+The shared address
 space may either be obtained by mapping a file into (possibly
 different) parts of the address space, or by arranging for processes to
 share ``anonymous memory'' (that is, memory that is zero-fill on demand, and
 whose contents are lost when the last process unmaps the memory).
 This latter approach was the one adopted by the developers of System V.
+Unrelated processes should be able to share memory for reading and writing
+if they are running on the same system.
+Rendezvous for such uses of shared memory will use filesystem names.
+In order to avoid the overhead of filesystem storage allocation
+when only shared memory is desired, processes will be able to use
+a new virtual-memory-resident filesystem.
 .PP
 One possible use of shared memory is to provide a high-speed
 Inter-Process Communication (IPC) mechanism between two or more
-cooperating processes. To insure the integrity of data structures
+cooperating processes.
+To insure the integrity of data structures
 in a shared region, processes must be able to use semaphores to
-coordinate their access to these shared structures. In System V,
-semaphores are provided as a set of system calls. Unfortunately,
+coordinate their access to these shared structures.
+In System V,
+semaphores are provided as a set of system calls.
+Unfortunately,
 the use of system calls reduces the throughput of the shared memory
 IPC to that of existing IPC mechanisms.
 To avoid this bottleneck,
@@ -306,16 +307,32 @@ Jukka Virtanen (Helsinki Univ of Technology, Finland)
 .FE
 Within the last few months, the specification of the interface has been
 agreed upon.
-The next step is to design an implementation for this interface.
+A preliminary design has been done, and implementation is scheduled
+to start this summer.
 There are several groups that have recently done
 virtual memory implementations, including several major UNIX vendors
 as well as groups in academic environments.
+We intend to take advantage of the experience gained by these groups.
 The academic work is most interesting to us because the source
 code is unencumbered by licensing restrictions making it readily
 available for our direct incorporation.
 The most promising of this work is that done as part of the MACH
-project since it can easily be extended to provide the
+project since it can most likely be extended to provide the
 services described for our user interface [Accetta86].
+.PP
+A preliminary version of the new virtual memory system is expected
+to be available for testing near the end of the current contract.
+The virtual memory work uses many new and untested ideas that will
+require extensive experience to insure that they work well in a wide range
+of environments.
+.NH
+Future Projects
+.PP
+The stream protocol research is a longer term project
+that we would expect would be done as part of our next contract
+or extension.
+It is our expectation that this work would be ready for release toward
+the end of the follow-on contract.
 .NH 2
 Changes to the Protocol Layering Interface
 .PP
@@ -355,9 +372,11 @@ Because AT&T will not allow others to include Streams unless they
 also change their interface to comply with the System V Interface Definition
 base and Networking Extension,
 we cannot use the Release 3 implementation of Streams in the Berkeley system.
-Given that compatibility thus will be difficult,
+Given that complete compatibility thus will be difficult,
 we feel we will have complete freedom to make our
 choices based solely on technical merits.
+We intend to combine the best features of the original Bell Labs
+version of streams with the network-level structure used in 4.2BSD.
 As a result, our implementation will appear far more like the original
 Bell Labs stream implementation
 than the more complex Release 3 Streams [Chandler86].
@@ -374,6 +393,43 @@ protocols based on standard transport protocols.
 Finally, this interface will provide a mechanism to extend the kernel
 protocol framework into user processes to allow prototyping
 of new protocols and to do network monitoring functions.
+.PP
+We have recently requested a distribution of Eighth Edition UNIX
+with permission to incorporate parts of the stream I/O system
+into future Berkeley releases.
+It will be substantially modified if we use it as a part of the new
+protocol layering scheme.
+However, adoption of a consistent set of message types
+and certain structuring techniques will increase
+the similarity of user interfaces between the Berkeley
+implementation and the Bell Labs research system.
+.NH 2
+Process debugging interface
+.PP
+As a part of our request to Bell Labs for Eighth Edition UNIX,
+we have also requested permission to incorporate the \fI/proc\fP
+process debugging interface for future release.
+\fI/proc\fP will be heavily modified to fit the Berkeley system environment,
+as it depends heavily on both the filesystem
+interface and the virtual memory system.
+However, use of the interface from the research version of UNIX
+would increase compatibility between the two systems.
+.NH 2
+ISO protocol development
+.PP
+The DoD has committed publicly to adoption of the ISO standard networking
+protocols as they are specified and implemented.
+We were recently approached by Mike Corrigan of the Office
+of the Secretary of Defense to see whether we are interested
+in developing and/or integrating ISO standard protocols for Berkeley UNIX.
+This area has been receiving much attention in the Internet research
+community, but few implementations have been available for testing
+or experimentation.
+The network architecture of 4.2BSD was designed to accommodate
+multiple network protocol families and address formats,
+and an ISO implementation should fit this framework without
+difficulty.
+This subject is still under consideration.
 .NH
 References
 .sp
