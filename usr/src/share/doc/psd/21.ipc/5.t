@@ -3,13 +3,13 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)5.t	8.1 (Berkeley) %G%
+.\"	@(#)5.t	8.2 (Berkeley) %G%
 .\"
 .\".ds RH "Advanced Topics
-.bp
 .nr H1 5
 .nr H2 0
 .LG
+.sp 2
 .B
 .ce
 5. ADVANCED TOPICS
@@ -345,7 +345,48 @@ pseudo-terminals is given in Figure 8; this code assumes
 that a connection on a socket \fIs\fP exists, connected
 to a peer who wants a service of some kind, and that the
 process has disassociated itself from any previous controlling terminal.
-.KF
+.NH 2
+Selecting specific protocols
+.PP
+If the third argument to the \fIsocket\fP call is 0,
+\fIsocket\fP will select a default protocol to use with
+the returned socket of the type requested.
+The default protocol is usually correct, and alternate choices are not
+usually available.
+However, when using ``raw'' sockets to communicate directly with
+lower-level protocols or hardware interfaces,
+the protocol argument may be important for setting up demultiplexing.
+For example, raw sockets in the Internet family may be used to implement
+a new protocol above IP, and the socket will receive packets
+only for the protocol specified.
+To obtain a particular protocol one determines the protocol number
+as defined within the communication domain.  For the Internet
+domain one may use one of the library routines
+discussed in section 3, such as \fIgetprotobyname\fP:
+.DS
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+ ...
+pp = getprotobyname("newtcp");
+s = socket(AF_INET, SOCK_STREAM, pp->p_proto);
+.DE
+This would result in a socket \fIs\fP using a stream
+based connection, but with protocol type of ``newtcp''
+instead of the default ``tcp.''
+.PP
+In the NS domain, the available socket protocols are defined in
+<\fInetns/ns.h\fP>.  To create a raw socket for Xerox Error Protocol
+messages, one might use:
+.DS
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netns/ns.h>
+ ...
+s = socket(AF_NS, SOCK_RAW, NSPROTO_ERROR);
+.DE
+.ne 1i
 .DS
 gotpty = 0;
 for (c = 'p'; !gotpty && c <= 's'; c++) {
@@ -400,48 +441,7 @@ if (i < 0) {
 .ce
 Figure 8.  Creation and use of a pseudo terminal
 .sp
-.KE
-.NH 2
-Selecting specific protocols
-.PP
-If the third argument to the \fIsocket\fP call is 0,
-\fIsocket\fP will select a default protocol to use with
-the returned socket of the type requested.
-The default protocol is usually correct, and alternate choices are not
-usually available.
-However, when using ``raw'' sockets to communicate directly with
-lower-level protocols or hardware interfaces,
-the protocol argument may be important for setting up demultiplexing.
-For example, raw sockets in the Internet family may be used to implement
-a new protocol above IP, and the socket will receive packets
-only for the protocol specified.
-To obtain a particular protocol one determines the protocol number
-as defined within the communication domain.  For the Internet
-domain one may use one of the library routines
-discussed in section 3, such as \fIgetprotobyname\fP:
-.DS
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
- ...
-pp = getprotobyname("newtcp");
-s = socket(AF_INET, SOCK_STREAM, pp->p_proto);
-.DE
-This would result in a socket \fIs\fP using a stream
-based connection, but with protocol type of ``newtcp''
-instead of the default ``tcp.''
-.PP
-In the NS domain, the available socket protocols are defined in
-<\fInetns/ns.h\fP>.  To create a raw socket for Xerox Error Protocol
-messages, one might use:
-.DS
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netns/ns.h>
- ...
-s = socket(AF_NS, SOCK_RAW, NSPROTO_ERROR);
-.DE
+.ne 1i
 .NH 2
 Address binding
 .PP
@@ -683,6 +683,7 @@ sin.sin_addr.s_addr = htonl(INADDR_ANY);
 sin.sin_port = htons(MYPORT);
 bind(s, (struct sockaddr *) &sin, sizeof (sin));
 .DE
+.ne 1i
 or, for the NS domain,
 .DS
 sns.sns_family = AF_NS;
@@ -1099,13 +1100,14 @@ main(argc)
         perror("socket");
         exit(1);
     }
-
+.DE
+.ne 1i
+.DS
     bzero(&addr, sizeof(addr));
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
     addr.sin_port = htons(EXAMPLE_PORT);
     addrlen = sizeof(addr);
-
     if (argc > 1) {     /* Send */
         addr.sin_addr.s_addr = inet_addr(EXAMPLE_GROUP);
         while (1) {
@@ -1148,8 +1150,8 @@ main(argc)
         }
     }
 }
-.DE
 .\"----------------------------------------------------------------------
+.DE
 .NH 2
 NS Packet Sequences
 .PP
@@ -1174,6 +1176,7 @@ struct sphdr {
 #define	SP_SA	0x40		/* send acknowledgement */
 #define	SP_OB	0x20		/* attention (out of band data) */
 #define	SP_EM	0x10		/* end of message */
+
 	u_char	sp_dt;		/* datastream type */
 	u_short	sp_sid;		/* source connection identifier */
 	u_short	sp_did;		/* destination connection identifier */
@@ -1241,7 +1244,6 @@ s = socket(AF_NS, SOCK_SEQPACKET, 0);
 bind(s, (struct sockaddr *) &sns, sizeof (sns));
 setsockopt(s, NSPROTO_SPP, SO_HEADERS_ON_OUTPUT, &off, sizeof(off));
 setsockopt(s, NSPROTO_SPP, SO_HEADERS_ON_INPUT, &on, sizeof(on));
- ...
 .DE
 .PP
 Output is handled somewhat differently in the IDP world.
@@ -1284,6 +1286,9 @@ struct sockaddr sns;
 struct idp proto_idp;		/* prototype header */
 int s, on = 1;
  ...
+.DE
+.ne 1i
+.DS
 s = socket(AF_NS, SOCK_DGRAM, 0);
  ...
 bind(s, (struct sockaddr *) &sns, sizeof (sns));
@@ -1350,6 +1355,9 @@ is communicating with wants to close the connection:
 struct sphdr proto_sp;
 int s;
  ...
+.DE
+.ne 1i
+.DS
 read(s, buf, BUFSIZE);
 if (((struct sphdr *)buf)->sp_dt == SPPSST_END) {
 	/*
@@ -1374,6 +1382,7 @@ if (((struct sphdr *)buf)->sp_dt == SPPSST_END) {
 }
  ...
 .DE
+.pl +2
 To indicate to another process that we would like to close the
 connection, the following code would suffice:
 .DS
@@ -1398,10 +1407,8 @@ proto_sp.sp_dt = SPPSST_ENDREPLY;
 setsockopt(s, NSPROTO_SPP, SO_DEFAULT_HEADERS, (char *)&proto_sp,
     sizeof(proto_sp));
 /*
- * We assume (perhaps unwisely)
- * that the other side will send the
- * ENDREPLY, so we'll just send our final ENDREPLY
- * as if we'd seen theirs already.
+ * We assume (perhaps unwisely) that the other side will send the ENDREPLY,
+ * so we'll just send our final ENDREPLY as if we'd seen theirs already
  */
 write(s, buf, 0);
 close(s);
@@ -1583,6 +1590,7 @@ main()
         fflush(stdout);
 }
 .DE
+.ne 1i
 The \f2inetd.conf\f1 entry is:
 .DS
 tcpmux/current_time stream tcp nowait nobody /d/curtime curtime
