@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.16 (Berkeley) %G%
+#	@(#)Makefile	5.17 (Berkeley) %G%
 
 NOOBJ=	oobj
 
@@ -13,7 +13,7 @@ BIN1=	aliases changelist csh.cshrc csh.login csh.logout crontab daily \
 # -rw-rw-rw-
 BIN2=	motd
 
-MTREE=	BSD.root.dist BSD.usr.dist BSD.var.dist special
+MTREE=	4.4alpha.dist special
 KRB=	README krb.conf krb.realms
 NAMEDB=	localhost.rev named.boot root.cache
 PCS=	pcs750.bin
@@ -23,11 +23,14 @@ WCS2=	fpevent fppwcs fppwcs_dual hdcwcs load_diags start_fpp wcs wcs_dual
 all clean cleandir depend etc install lint:
 
 distribution:
-	# password file first
-	install -c -o root -g wheel -m 600 master.passwd ${DESTDIR}/etc
-	install -c -o root -g wheel -m 600 master.passwd ${DESTDIR}/tmp/p
+	# Hand-craft the password file first.
+	mkdir /etc /dev
+	cp master.passwd ${DESTDIR}/tmp/p
 	pwd_mkdb -p /tmp/p
 	rm -f /tmp/p
+	cp group /etc/group
+	# Build the tree.
+	-mtree -def mtree/4.4alpha.dist -p ${DESTDIR}/ -u
 	# install devices
 .if ${MACHINE} == "hp300"
 	(cd etc.hp300; install -c -o ${BINOWN} -g ${BINGRP} -m 444 \
@@ -37,8 +40,10 @@ distribution:
 	     MAKEDEV.local etc.${MACHINE}/MAKEDEV ${DESTDIR}/dev
 	(cd /dev && ./MAKEDEV std)
 	install -c -o ${BINOWN} -g ${BINGRP} -m 444 COPYRIGHT ${DESTDIR}/
+	install -c -o root -g wheel -m 600 master.passwd ${DESTDIR}/etc
 	install -c -o ${BINOWN} -g ${BINGRP} -m 644 ${BIN1} ${DESTDIR}/etc
 	install -c -o ${BINOWN} -g ${BINGRP} -m 666 ${BIN2} ${DESTDIR}/etc
+	(cd /etc && rm -f rmt && ln -s /usr/sbin/rmt rmt)
 	(cd root; \
 		install -c -o root -g wheel -m 644 dot.cshrc \
 		    ${DESTDIR}/root/.cshrc; \
@@ -51,12 +56,12 @@ distribution:
 		rm -f ${DESTDIR}/.cshrc ${DESTDIR}/.profile; \
 		ln ${DESTDIR}/root/.cshrc ${DESTDIR}/.cshrc; \
 		ln ${DESTDIR}/root/.profile ${DESTDIR}/.profile)
-	cd mtree; install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${MTREE} \
-	    ${DESTDIR}/etc/mtree
-	cd namedb; install -c -o ${BINOWN} -g ${BINGRP} -m 644 ${NAMEDB} \
-	    ${DESTDIR}/etc/namedb
-	cd kerberosIV; install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${KRB} \
-	    ${DESTDIR}/etc/kerberosIV
+	(cd mtree; install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${MTREE} \
+	    ${DESTDIR}/etc/mtree)
+	(cd namedb; install -c -o ${BINOWN} -g ${BINGRP} -m 644 ${NAMEDB} \
+	    ${DESTDIR}/etc/namedb)
+	(cd kerberosIV; install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${KRB} \
+	    ${DESTDIR}/etc/kerberosIV)
 	install -c -o ${BINOWN} -g operator -m 664 /dev/null \
 	    ${DESTDIR}/etc/dumpdates
 	install -c -o ${BINOWN} -g ${BINGRP} -m 664 /dev/null \
@@ -77,6 +82,13 @@ distribution:
 	(cd etc.vax; install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${PCS} \
 	    ${DESTDIR}/)
 .endif
+	# There are certain symbolic links we have to have, and
+	# no other place to have install them.
+	(cd /usr/lib && rm -f X && ln -s /usr/hpux/lib/X X)
+	(cd /usr/lib && rm -f X11 && ln -s /usr/X11R4/lib X11)
+	(cd /usr/lib && rm -f grmd && ln -s /usr/hpux/lib/grmd grmd)
+	(cd /usr/lib && rm -f tmac && ln -s /usr/share/tmac tmac)
+	(cd /usr/ucb && rm -f rdist && ln -s /usr/bin/rdist rdist)
 
 hcx9-distribution:
 	(cd etc.tahoe; install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${WCS2} \
