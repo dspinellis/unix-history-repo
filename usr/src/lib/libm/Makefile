@@ -9,7 +9,7 @@
 # software without specific written prior permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	1.8 (Berkeley) %G%
 #
 # This high quality math library is intended to run on either a VAX in
 # D_floating format or a machine that conforms to the IEEE standard 754
@@ -71,7 +71,7 @@ more.vax: FRC
 	cd vax; make "CFLAGS=${CFLAGS}"
 
 clean: FRC
-	rm -f ${OBJS} core libm.a libm_p.a
+	rm -f ${OBJS} profiled/*.o core libm.a libm_p.a
 	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean); done
 
 depend: FRC
