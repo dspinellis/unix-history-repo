@@ -1,4 +1,4 @@
-/*	vxdebug.h	1.1	85/07/21	*/
+/*	vxdebug.h	1.2	86/01/12	*/
 
 #ifdef VX_DEBUG
 #define VXERR4		1
@@ -10,5 +10,5 @@ extern long vxdebug;
 #define VXVCC	2
 #define VXVCX	4
 
-#include "../sna/snadebug.h"
+#include "../tahoesna/snadebug.h"
 #endif

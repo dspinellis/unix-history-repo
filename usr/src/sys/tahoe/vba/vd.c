@@ -1,10 +1,14 @@
-/*	vd.c	1.4	86/01/12	*/
+/*	vd.c	1.5	86/01/12	*/
 
 #include "fsd.h"
 #if NVD > 0
 /*
  * VDDC - Versabus SMD/ESMD driver.
  */
+#ifdef VDDCPERF
+#define	DOSCOPE
+#endif
+
 #include "../tahoe/mtpr.h"
 #include "../tahoe/pte.h"
 
@@ -25,6 +29,7 @@
 #define	VDGENDATA
 #include "../tahoevba/vddcreg.h"
 #undef VDGENDATA
+#include "../tahoevba/scope.h"
 
 #define	MAX_BLOCKSIZE	(MAXBPTE*NBPG)
 #define	DUMPSIZE	64	/* controller limit */
@@ -539,9 +544,7 @@ vdexecute(controller_info, uq)
 	ci->int_expected = 1;
 	timeout(vd_int_timeout, (caddr_t)ctlr, 20*60);
   	dk_busy |= 1 << unit;
-#ifdef VDDCPERF
 	scope_out(1);
-#endif
 	VDDC_ATTENTION((cdr *)(vdminfo[ctlr]->um_addr),
 	    (fmt_mdcb *)(PHYS(mdcb)), ci->ctlr_type);
 }
@@ -583,9 +586,7 @@ vdintr(ctlr)
 	int code, s;
 
 	untimeout(vd_int_timeout, (caddr_t)ctlr);
-#ifdef VDDCPERF
 	scope_out(2);
-#endif
 	ci = &vdctlr_info[ctlr];
 	if (!ci->int_expected) {
 		printf("vd%d: stray interrupt\n", ctlr);
@@ -662,9 +663,7 @@ vdintr(ctlr)
 	/* reset controller state */
 	cq->b_errcnt = 0;
 	cq->b_active--;
-#ifdef VDDCPERF
 	scope_out(3);
-#endif
 	if (bp->b_flags & B_ERROR)
 		bp->b_error = EIO;
 	iodone(bp);

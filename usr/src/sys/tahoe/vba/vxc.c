@@ -1,10 +1,14 @@
-/*	vxc.c	1.4	86/01/12	*/
+/*	vxc.c	1.5	86/01/12	*/
 
 #include "vx.h"
 #if NVX > 0
 /*
- *  VIOC driver
+ * VIOC driver
  */
+#ifdef VXPERF
+#define	DOSCOPE
+#endif
+
 #include "param.h"
 #include "file.h"
 #include "ioctl.h"
@@ -16,9 +20,7 @@
 
 #include "../tahoevba/vioc.h"
 #include "../tahoesna/snadebug.h"
-#ifdef VXPERF
 #include "../tahoevba/scope.h"
-#endif VXPERF
 
 #define CMDquals 0
 #define RSPquals 1
@@ -100,9 +102,7 @@ register n ;		/* VIOC number */
 	register struct	vcmds	*cp ;
 	register s;
 
-#ifdef VXPERF
 	scope_out(5);
-#endif VXPERF
 	if (vxtype[n]) {	/* Its a BOP */
 #ifdef SNA_DEBUG
 		if (snadebug & SVIOC)
@@ -167,9 +167,7 @@ register n ;
 	register k ;
 	register int s ;
 
-#ifdef VXPERF
 	scope_out(6);
-#endif VXPERF
 	if (vxtype[n]) {	/* Its a BOP */
 		printf("vcmdrsp: stray interrupt from BOP at VIOC%d...\n",n);
 		return;
@@ -217,9 +215,7 @@ register(n) ;
 	register struct	vblok	*vp ;
 	register s;
 
-#ifdef VXPERF
 	scope_out(1);
-#endif VXPERF
 	if (vxtype[n]) {	/* Its a BOP */
 		printf("vunsol: stray interrupt from BOP at VIOC%d...\n",n);
 		return;
@@ -290,24 +286,18 @@ register int n ;
 		vp->v_vcbsy = V_BSY ;
 		*intr = item ;
 		}
-#ifdef VXPERF
-	scope_out(4);
-#endif VXPERF
+		scope_out(4);
 		break ;
 
 	case RSPquals:		/* command response */
 		*intr = item ;
-#ifdef VXPERF
-	scope_out(7);
-#endif VXPERF
+		scope_out(7);
 		break ;
 
 	case UNSquals:		/* unsolicited interrupt */
 		vp->v_uqual = 0 ;
 		*intr = item ;
-#ifdef VXPERF
-	scope_out(2);
-#endif VXPERF
+		scope_out(2);
 		break ;
 	}
 }
