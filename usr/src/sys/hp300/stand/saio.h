@@ -4,15 +4,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)saio.h	7.2 (Berkeley) %G%
+ *	@(#)saio.h	7.3 (Berkeley) %G%
  */
 
 /*
  * Header file for standalone package
  */
 
-#include "types.h"
-#include "param.h"
+#include <sys/param.h>
 #include "../ufs/dinode.h"
 #include "../ufs/fs.h"
 
@@ -28,6 +27,7 @@ struct	iob {
 	daddr_t	i_boff;		/* block offset on device */
 	daddr_t	i_cyloff;	/* cylinder offset on device */
 	off_t	i_offset;	/* seek offset in file */
+	dev_t	i_dev;		/* associated device */
 	daddr_t	i_bn;		/* 1st block # of next read */
 	char	*i_ma;		/* memory address of i/o buffer */
 	int	i_cc;		/* character count of transfer */
