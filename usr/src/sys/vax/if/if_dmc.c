@@ -1,4 +1,4 @@
-/*	if_dmc.c	4.1	82/02/08	*/
+/*	if_dmc.c	4.2	82/02/12	*/
 
 #include "dmc.h"
 #if NDMC > 0
@@ -218,7 +218,7 @@ dmcinit(unit)
 		sc->sc_flag |= DMCBMAPPED;
 	}
 	if (if_ubainit(&sc->sc_ifuba, ui->ui_ubanum, 0,
-	    (int)btop(DMCMTU)) == 0) {
+	    (int)btoc(DMCMTU)) == 0) {
 		printf("dmc%d: can't initialize\n", unit);
 		return;
 	}
