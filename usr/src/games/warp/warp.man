@@ -1,0 +1,133 @@
+.TH WARP 6
+.SH NAME
+warp - a real-time space war game
+.SH SYNOPSIS
+.B warp [options]
+.SH DESCRIPTION
+.I Warp
+is a real-time space war game that requires skill and quick thinking.
+"Real-time" in this context means that the enemies keep moving (and shooting)
+even if you don't.
+A unique feature of
+.I warp
+is that blast propagates; it is unhealthy to remain near things that are
+in the process of blowing up.
+If a given universe is above a critical density it may chain react.
+Scoring is like many popular arcade games--there are multiple waves which
+get harder and harder as you go along.
+Nobody has ever maxed out the scoreboard without cheating.
+.PP
+Unlike many space-war games,
+.I warp
+is not simply a shooting gallery.
+Along with phasers and photon torpedoes, you have tractor beams and a cloaking
+device.
+Skill in navigation is important.
+It helps to be schizophrenic, because you must manage an Enterprise and a Base
+simultaneously.
+And enemies do not simply shoot back.
+You can get tailed, absorbed, snuck up upon, hemmed in, rammed, loved to death,
+reprimanded for destroying civilized life, dragged around, robbed, damaged
+and eaten.
+And if you should happen to get bored by the enemies (a trifle unlikely),
+you can always watch the interesting star patterns.
+In fact, you'll have to, since your tactics will depend upon what kind of
+universe you find yourself in.
+.PP
+.I Warp
+is played in a double wraparound universe, i.e. the bottom is connected to the
+top, and the right is connected to the left.
+You need a crt with random cursor addressing and at least 24 lines by 80
+columns.
+For more information about about how to play, simply run
+.I warp
+and say "y" when it asks if you want to see the instructions.
+There is also a single-page command summary that you can get while playing
+by typing a "?".
+.PP
+Command line options include:
+.TP 5
+.B -b
+Put
+.I warp
+into beginner mode.
+Makes the difficulty increase more slowly, but penalizes you for it.
+.TP 5
+.B -d<n>
+Sets the initial difficulty to
+.BR n .
+.TP 5
+.B -l
+Play a low-speed game.
+Changes the basic cycle time from 1 second to 2 seconds.
+This switch is automatically set at baud rates below 2400.
+You may want to set it at higher speeds if your terminal cannot keep up
+with the output.
+(This should never happen on BSD systems, which have an IOCTL call to
+determine output queue length.)
+Because this makes the game easier, a separate scoreboard is kept for
+low-speed games.
+.TP 5
+.B -m
+Terminal has a meta key which turns on the eighth bit.  Ordinarily the
+eighth bit is stripped in order to ignore parity.
+Metacharacters will appear to the keymap as prefixed with a ^A, and will
+subsequently have the same effect as a control character, unless otherwise
+mapped.
+.TP 5
+.B -s
+Just prints out the scoreboards and saved games and then exits.
+.TP 5
+.B -v
+Prints out the version number.
+.TP 5
+.B -x
+Play an experimental game.
+This causes
+.I warp
+to ignore any saved game, and disables the ability to save
+the current game.
+Thus you can play around with something or show
+.I warp
+to someone without jeopardizing a currently saved game.
+.SH ENVIRONMENT
+.TP 5
+.B WARPMACRO
+If defined, names a file containing keyboard mappings and macros.
+If not defined, the value %X/Kbmap.%{TERM} is assumed.
+The macro file contains lines of the following form:
+.sp
+<keystroke-sequence> <whitespace> <canonical-keystroke-sequence>
+.sp
+You may use certain % interpolations and ^<letter> control characters.
+For possible % interpolations see warp.h.
+Sequences in the canonical-keystroke-sequence bounded by ^(...^) are
+subject to reinterpretation via the keymap.
+This file has two major uses.
+First, you can set up your commands to use any kind of prefix key your terminal
+might have, or change the key bindings in any other way you choose.
+Second, you can define arbitrary macros, such as this:
+.sp
+# define Corbamite maneuver
+=	DDllllll
+.SH AUTHOR
+Larry Wall <lwall@sdcrdcf.UUCP>
+.SH FILES
+~/.fullname, if full names aren't in /etc/passwd
+.SH DIAGNOSTICS
+Generally self-documenting, as they say.
+.SH BUGS
+Addicting.
+At the end of a wave, all you have to do to keep going is hit a space.
+You see the message "Hit space to continue" and automatically hit space.
+About 2 seconds later you remember you wanted to go home, but by then
+it's too late to escape without penalty.
+.PP
+You can't kill a backgrounded
+.I warp
+process directly, because it is running setuid.
+You have to use the killer built in to
+.IR warp .
+.PP
+Now that there is a space amoeba, there ought to be tribbles.
+But it might be too much trouble...
