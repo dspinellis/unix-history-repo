@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)mount.2	6.4 (Berkeley) %G%
+.\"	@(#)mount.2	6.5 (Berkeley) %G%
 .\"
 .TH MOUNT 2 ""
 .UC 4
@@ -66,7 +66,7 @@ explicit write is attempted.
 .IP M_NOEXEC 14
 Do not allow files to be executed from the file system.
 .IP M_NOSUID 14
-Do not honor setuid bits on files when executing them.
+Do not honor setuid or setgid bits on files when executing them.
 .IP M_NODEV 14
 Do not interpret special files on the file system.
 .IP M_SYNCHRONOUS 14
@@ -76,7 +76,7 @@ The
 .I type
 argument defines the type of the file system.
 The types of file systems known to the system are defined in
-.I mount.h .
+.IR mount.h .
 .I Data
 is a pointer to a structure that contains the type
 specific arguments to mount.
@@ -103,6 +103,15 @@ struct nfs_args {
 	char	*hostname;	/* server's name */
 };
 .fi
+.IP MOUNT_MFS 6
+.nf
+struct mfs_args {
+	char	*name;	/* name of backing process */
+	caddr_t	base;	/* base address of the file system */
+	u_long	size;	/* size of the file system */
+};
+.fi
+.sp
 .PP
 .I Umount
 announces to the system that the file system mounted at
@@ -134,6 +143,8 @@ specified in the ufs_args structure is
 inaccessible, is not an appropriate file, or is already mounted.
 A
 .I ufs
+or
+.I mfs
 mount can also fail if there are already too many
 file systems mounted.
 .PP
@@ -222,6 +233,28 @@ timed out trying to contact the server.
 Some part of the information described by nfs_args
 points outside the process's allocated address space.
 .PP
+The following errors can occur for a
+.I mfs
+file system mount:
+.TP 15
+[EMFILE]
+No space remains in the mount table.
+.TP 15
+[EINVAL]
+The super block for the file system had a bad magic
+number or an out of range block size.
+.TP 15
+[ENOMEM]
+Not enough memory was available to read the cylinder
+group information for the file system.
+.TP 15
+[EIO]
+An paging error occurred while reading the super block or
+cylinder group information.
+.TP 15
+[EFAULT]
+\fIName\fP points outside the process's allocated address space.
+.PP
 .I Umount
 may fail with one of the following errors:
 .TP 15
@@ -254,6 +287,6 @@ An I/O error occurred while writing cached file system information.
 [EFAULT]
 \fIDir\fP points outside the process's allocated address space.
 .SH "SEE ALSO"
-mount(8), umount(8)
+mount(8), umount(8), mfs(8)
 .SH BUGS
 Some of the error codes need translation to more obvious messages.
