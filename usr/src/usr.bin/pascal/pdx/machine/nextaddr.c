@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)nextaddr.c 1.2 %G%";
+static char sccsid[] = "@(#)nextaddr.c 1.3 %G%";
 
 /*
  * Calculate the next address that will be executed from the current one.
@@ -339,17 +339,16 @@ int incr;
     dread(&limit, p->sp + sizeof(valaddr), size);
     i += (incr << (8*(sizeof(i) - size)));
     addr += size;
+
 /*
  * It is very slow to go through the loop again and again.
- * So for the time being, we just skip to the end.
- *
+ * If it is desired to just skip to the end, the next 4 lines
+ * should be skipped.
+ */
     if ((incr > 0 && i < limit) || (incr < 0 && i > limit)) {
 	iread(&offset, addr, sizeof(offset));
 	return(addr + offset);
     } else {
- */
 	return(addr + sizeof(short));
-/*
     }
- */
 }
