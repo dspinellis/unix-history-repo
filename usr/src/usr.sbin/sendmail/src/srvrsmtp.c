@@ -15,12 +15,12 @@
 
 # ifndef SMTP
 # ifndef lint
-static char	SccsId[] = "@(#)srvrsmtp.c	5.18 (Berkeley) %G%	(no SMTP)";
+static char	SccsId[] = "@(#)srvrsmtp.c	5.19 (Berkeley) %G%	(no SMTP)";
 # endif not lint
 # else SMTP
 
 # ifndef lint
-static char	SccsId[] = "@(#)srvrsmtp.c	5.18 (Berkeley) %G%";
+static char	SccsId[] = "@(#)srvrsmtp.c	5.19 (Berkeley) %G%";
 # endif not lint
 
 /*
@@ -106,6 +106,7 @@ smtp()
 	bool hasmail;			/* mail command received */
 	auto ADDRESS *vrfyqueue;
 	ADDRESS *a;
+	char *sendinghost;
 	char inp[MAXLINE];
 	char cmdbuf[100];
 	extern char Version[];
@@ -203,10 +204,10 @@ smtp()
 				char hostbuf[MAXNAME];
 
 				(void) sprintf(hostbuf, "%s (%s)", p, RealHostName);
-				define('s', newstr(hostbuf), CurEnv);
+				sendinghost = newstr(hostbuf);
 			}
 			else
-				define('s', newstr(p), CurEnv);
+				sendinghost = newstr(p);
 			message("250", "%s Hello %s, pleased to meet you",
 				MyHostName, p);
 			break;
@@ -214,7 +215,7 @@ smtp()
 		  case CMDMAIL:		/* mail -- designate sender */
 			/* force a sending host even if no HELO given */
 			if (RealHostName != NULL && macvalue('s', CurEnv) == NULL)
-				define('s', RealHostName, CurEnv);
+				sendinghost = RealHostName;
 
 			/* check for validity of this command */
 			if (hasmail)
@@ -231,6 +232,7 @@ smtp()
 			/* fork a subprocess to process this command */
 			if (runinchild("SMTP-MAIL") > 0)
 				break;
+			define('s', sendinghost, CurEnv);
 			initsys();
 			setproctitle("%s %s: %s", CurEnv->e_id,
 				CurHostName, inp);
