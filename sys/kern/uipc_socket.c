@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)uipc_socket.c	7.28 (Berkeley) 5/4/91
- *	$Id: uipc_socket.c,v 1.6 1993/10/16 15:25:10 rgrimes Exp $
+ *	$Id: uipc_socket.c,v 1.7 1993/10/18 05:40:30 davidg Exp $
  */
 
 #include "param.h"
@@ -320,6 +320,11 @@ sosend(so, addr, uio, top, control, flags)
 		resid = uio->uio_resid;
 	else
 		resid = top->m_pkthdr.len;
+
+	/* Don't allow negative sized sends */
+	if (resid < 0)
+		return (EINVAL);
+
 	dontroute =
 	    (flags & MSG_DONTROUTE) && (so->so_options & SO_DONTROUTE) == 0 &&
 	    (so->so_proto->pr_flags & PR_ATOMIC);
@@ -696,8 +701,11 @@ dontblock:
 					so->so_state |= SS_RCVATMARK;
 					break;
 				}
-			} else
+			} else {
 				offset += len;
+				if (offset == so->so_oobmark)
+					break;
+			}
 		}
 		if (flags & MSG_EOR)
 			break;
