@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	7.112 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.112.1.1 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1627,6 +1627,7 @@ ufs_islocked(ap)
  * Calculate the logical to physical mapping if not done already,
  * then call the device strategy routine.
  */
+int checkblk = 0;
 int
 ufs_strategy(ap)
 	struct vop_strategy_args /* {
@@ -1636,22 +1637,48 @@ ufs_strategy(ap)
 	register struct buf *bp = ap->a_bp;
 	register struct vnode *vp = bp->b_vp;
 	register struct inode *ip;
+	daddr_t blkno;
 	int error;
 
 	ip = VTOI(vp);
 	if (vp->v_type == VBLK || vp->v_type == VCHR)
 		panic("ufs_strategy: spec");
-	if (bp->b_blkno == bp->b_lblkno) {
-		if (error =
-		    VOP_BMAP(vp, bp->b_lblkno, NULL, &bp->b_blkno, NULL)) {
+	if ((checkblk && (long)bp->b_lblkno >= 0 &&
+	    (bp->b_flags & B_XXX) == 0) ||
+	    bp->b_blkno == bp->b_lblkno) {
+		if (error = VOP_BMAP(vp, bp->b_lblkno, NULL, &blkno, NULL)) {
 			bp->b_error = error;
 			bp->b_flags |= B_ERROR;
 			biodone(bp);
 			return (error);
 		}
+		if (bp->b_blkno != bp->b_lblkno && bp->b_blkno != blkno &&
+		    !((bp->b_flags & B_READ) && (long)blkno == -1))
+			panic("ufs_strategy: bad blkno %d != %d", bp->b_blkno,
+			    blkno);
+		/* If this is a clustered block, check sub-blocks as well */
+		if (bp->b_saveaddr) {
+			struct buf *tbp;
+			struct cluster_save *b_save = bp->b_saveaddr;
+			int i;
+			daddr_t bn;
+			for (i = 0; i < b_save->bs_nchildren; i++) {
+				tbp = b_save->bs_children[i];
+				if ((tbp->b_flags & B_XXX) == 0 &&
+				    !VOP_BMAP(vp, tbp->b_lblkno, NULL,
+				    &bn, NULL) && tbp->b_blkno != bn)
+					panic("ufs_strategy: bad bno %d != %d",
+					    bp->b_blkno, blkno);
+			}
+		}
+		bp->b_blkno = blkno;
 		if ((long)bp->b_blkno == -1)
-			clrbuf(bp);
+			if ((bp->b_flags & B_READ) == 0)
+				panic("ufs_startegy: write unallocated block");
+			else
+				clrbuf(bp);
 	}
+	bp->b_flags &=~ B_XXX;
 	if ((long)bp->b_blkno == -1) {
 		biodone(bp);
 		return (0);
