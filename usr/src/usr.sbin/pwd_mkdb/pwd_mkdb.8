@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)pwd_mkdb.8	5.2 (Berkeley) %G%
+.\"	@(#)pwd_mkdb.8	5.3 (Berkeley) %G%
 .\"
 .TH PWD_MKDB 8 "
 .UC 7
@@ -18,8 +18,8 @@ pwd_mkdb [ \-p ] file
 creates
 .IR db (3)
 style secure and insecure databases for the specified file.
-These databases are then installed into ``/var/db/spwd.db'' and
-``/var/db/pwd.db'' respectively.
+These databases are then installed into ``/etc/spwd.db'' and
+``/etc/pwd.db'' respectively.
 The file is installed into ``/etc/master.passwd''.
 The file must be in the correct format (see
 .IR passwd (5)).
