@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)msgs.c	4.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)msgs.c	4.10 (Berkeley) %G%";
 #endif lint
 /*
  * msgs - a user bulletin board program
@@ -605,6 +605,7 @@ onsusp()
 {
 	tstpflag = YES;
 	signal(SIGTSTP, SIG_DFL);
+	sigsetmask(0);
 	kill(0, SIGTSTP);
 
 	/* the pc stops here */
