@@ -1,4 +1,4 @@
-static char sccsid[] = "@(#)vpr.c	1.3	(Berkeley)	%G%";
+static char sccsid[] = "@(#)vpr.c	1.4	(Berkeley)	%G%";
 
 #include <signal.h>
 #include <sys/param.h>
@@ -200,9 +200,9 @@ main(argc, argv)
 		}
 		unlink(tfname);
 		if (wide)
-			execl(VPD, "vpd", 0);
+			execl(VPD, "vpd", "-n", "-3", 0);
 		else
-			execl(VAD, "vad", 0);
+			execl(VAD, "vad", "-n", "-3", 0);
 		dfname[inchar]++;
 		printf("Daemon doesn't exist\n");
 		exit(0);
