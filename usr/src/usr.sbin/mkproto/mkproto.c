@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)mkproto.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)mkproto.c	4.2	(Berkeley)	%G%";
 
 /*
  * Make a file system prototype.
@@ -141,7 +141,7 @@ descend(par)
 
 		i = getnum() & 0377;
 		f = getnum() & 0377;
-		in.i_dev = (i << 8) | f;
+		in.i_rdev = (i << 8) | f;
 		break;
 
 	case IFDIR:
