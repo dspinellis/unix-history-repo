@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-static char vers[] = "@(#)lfs_alloc.c 1.20 %G%";
+static char vers[] = "@(#)lfs_alloc.c 1.21 %G%";
 
 /*	alloc.c	4.8	81/03/08	*/
 
@@ -109,16 +109,15 @@ realloccg(ip, bprev, bpref, osize, nsize)
 	    fs->fs_cstotal.cs_nbfree * fs->fs_frag + fs->fs_cstotal.cs_nffree <
 	      fs->fs_dsize * fs->fs_minfree / 100)
 		goto nospace;
-	if (bprev != 0)
-		cg = dtog(fs, bprev);
-	else
+	if (bprev == 0)
 		panic("realloccg: bad bprev");
+	cg = dtog(fs, bprev);
 	bno = fragextend(ip, cg, (long)bprev, osize, nsize);
 	if (bno != 0) {
 		bp = bread(ip->i_dev, fsbtodb(fs, bno), osize);
 		if (bp->b_flags & B_ERROR) {
 			brelse(bp);
-			return 0;
+			return (NULL);
 		}
 		bp->b_bcount = nsize;
 		blkclr(bp->b_un.b_addr + osize, nsize - osize);
@@ -134,7 +133,7 @@ realloccg(ip, bprev, bpref, osize, nsize)
 		obp = bread(ip->i_dev, fsbtodb(fs, bprev), osize);
 		if (obp->b_flags & B_ERROR) {
 			brelse(obp);
-			return 0;
+			return (NULL);
 		}
 		bp = getblk(ip->i_dev, fsbtodb(fs, bno), nsize);
 		cp = bp->b_un.b_addr;
@@ -144,7 +143,7 @@ realloccg(ip, bprev, bpref, osize, nsize)
 		brelse(obp);
 		fre(ip, bprev, (off_t)osize);
 		blkclr(bp->b_un.b_addr + osize, nsize - osize);
-		return(bp);
+		return (bp);
 	}
 nospace:
 	/*
@@ -201,7 +200,7 @@ ialloc(pip, ipref, mode)
 	return (ip);
 noinodes:
 	fserr(fs, "out of inodes");
-	uprintf("\n%s: create failed, no inodes free\n", fs->fs_fsmnt);
+	uprintf("\n%s: create/symlink failed, no inodes free\n", fs->fs_fsmnt);
 	u.u_error = ENOSPC;
 	return (NULL);
 }
@@ -255,7 +254,7 @@ blkpref(fs)
 			fs->fs_cgrotor = cg;
 			return (fs->fs_fpg * cg + fs->fs_frag);
 		}
-	return (0);
+	return (NULL);
 }
 
 /*
@@ -309,7 +308,7 @@ hashalloc(ip, cg, pref, size, allocator)
 		if (cg == fs->fs_ncg)
 			cg = 0;
 	}
-	return (0);
+	return (NULL);
 }
 
 /*
@@ -337,19 +336,19 @@ fragextend(ip, cg, bprev, osize, nsize)
 	bbase = fragoff(fs, bprev);
 	if (bbase > (bprev + frags - 1) % fs->fs_frag) {
 		/* cannot extend across a block boundry */
-		return (0);
+		return (NULL);
 	}
 	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), fs->fs_bsize);
 	if (bp->b_flags & B_ERROR) {
 		brelse(bp);
-		return 0;
+		return (NULL);
 	}
 	cgp = bp->b_un.b_cg;
 	bno = dtogd(fs, bprev);
 	for (i = numfrags(fs, osize); i < frags; i++)
 		if (isclr(cgp->cg_free, bno + i)) {
 			brelse(bp);
-			return (0);
+			return (NULL);
 		}
 	/*
 	 * the current fragment can be extended
@@ -396,11 +395,11 @@ alloccg(ip, cg, bpref, size)
 
 	fs = ip->i_fs;
 	if (fs->fs_cs(fs, cg).cs_nbfree == 0 && size == fs->fs_bsize)
-		return (0);
+		return (NULL);
 	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), fs->fs_bsize);
 	if (bp->b_flags & B_ERROR) {
 		brelse(bp);
-		return 0;
+		return (NULL);
 	}
 	cgp = bp->b_un.b_cg;
 	if (size == fs->fs_bsize) {
@@ -424,7 +423,7 @@ alloccg(ip, cg, bpref, size)
 		 */
 		if (cgp->cg_cs.cs_nbfree == 0) {
 			brelse(bp);
-			return (0);
+			return (NULL);
 		}
 		bno = alloccgblk(fs, cgp, bpref);
 		bpref = dtogd(fs, bno);
@@ -440,7 +439,7 @@ alloccg(ip, cg, bpref, size)
 	}
 	bno = mapsearch(fs, cgp, bpref, allocsiz);
 	if (bno == 0)
-		return (0);
+		return (NULL);
 	for (i = 0; i < frags; i++)
 		clrbit(cgp->cg_free, bno + i);
 	cgp->cg_cs.cs_nffree -= frags;
@@ -471,7 +470,7 @@ alloccgblk(fs, cgp, bpref)
 	daddr_t bpref;
 {
 	daddr_t bno;
-	int cylno, pos;
+	int cylno, pos, delta;
 	short *cylbp;
 	register int i;
 
@@ -541,13 +540,15 @@ alloccgblk(fs, cgp, bpref)
 		bno = (cylno - pos) * fs->fs_spc / NSPB(fs);
 		if (fs->fs_postbl[pos][i] == -1)
 			panic("alloccgblk: cyl groups corrupted");
-		for (i = fs->fs_postbl[pos][i]; ; i += fs->fs_rotbl[i]) {
+		for (i = fs->fs_postbl[pos][i];; ) {
 			if (isblock(fs, cgp->cg_free, bno + i)) {
 				bno = (bno + i) * fs->fs_frag;
 				goto gotit;
 			}
-			if (fs->fs_rotbl[i] == 0)
+			delta = fs->fs_rotbl[i];
+			if (delta <= 0 || delta > MAXBPC - i)
 				break;
+			i += delta;
 		}
 		panic("alloccgblk: can't find blk in cyl");
 	}
@@ -558,7 +559,7 @@ norot:
 	 */
 	bno = mapsearch(fs, cgp, bpref, fs->fs_frag);
 	if (bno == 0)
-		return (0);
+		return (NULL);
 	cgp->cg_rotor = bno;
 gotit:
 	clrblock(fs, cgp->cg_free, bno/fs->fs_frag);
@@ -595,11 +596,11 @@ ialloccg(ip, cg, ipref, mode)
 
 	fs = ip->i_fs;
 	if (fs->fs_cs(fs, cg).cs_nifree == 0)
-		return (0);
+		return (NULL);
 	bp = bread(ip->i_dev, fsbtodb(fs, cgtod(fs, cg)), fs->fs_bsize);
 	if (bp->b_flags & B_ERROR) {
 		brelse(bp);
-		return 0;
+		return (NULL);
 	}
 	cgp = bp->b_un.b_cg;
 	if (ipref) {
@@ -618,7 +619,7 @@ ialloccg(ip, cg, ipref, mode)
 		}
 	}
 	brelse(bp);
-	return (0);
+	return (NULL);
 gotit:
 	setbit(cgp->cg_iused, ipref);
 	cgp->cg_cs.cs_nifree--;
@@ -680,8 +681,7 @@ fre(ip, bno, size)
 		/*
 		 * decrement the counts associated with the old frags
 		 */
-		blk = ((cgp->cg_free[bbase / NBBY] >> (bbase % NBBY)) &
-		       (0xff >> (NBBY - fs->fs_frag)));
+		blk = blkmap(fs, cgp->cg_free, bbase);
 		fragacct(fs, blk, cgp->cg_frsum, -1);
 		/*
 		 * deallocate the fragment
@@ -691,15 +691,14 @@ fre(ip, bno, size)
 			if (isset(cgp->cg_free, bno + i))
 				panic("free: freeing free frag");
 			setbit(cgp->cg_free, bno + i);
-			cgp->cg_cs.cs_nffree++;
-			fs->fs_cstotal.cs_nffree++;
-			fs->fs_cs(fs, cg).cs_nffree++;
 		}
+		cgp->cg_cs.cs_nffree += i;
+		fs->fs_cstotal.cs_nffree += i;
+		fs->fs_cs(fs, cg).cs_nffree += i;
 		/*
 		 * add back in counts associated with the new frags
 		 */
-		blk = ((cgp->cg_free[bbase / NBBY] >> (bbase % NBBY)) &
-		       (0xff >> (NBBY - fs->fs_frag)));
+		blk = blkmap(fs, cgp->cg_free, bbase);
 		fragacct(fs, blk, cgp->cg_frsum, 1);
 		/*
 		 * if a complete block has been reassembled, account for it
@@ -797,7 +796,7 @@ mapsearch(fs, cgp, bpref, allocsiz)
 			1 << (allocsiz - 1 + (fs->fs_frag % NBBY)));
 		if (loc == 0) {
 			panic("alloccg: map corrupted");
-			return (0);
+			return (NULL);
 		}
 	}
 	bno = (start + len - loc) * NBBY;
@@ -806,22 +805,20 @@ mapsearch(fs, cgp, bpref, allocsiz)
 	 * found the byte in the map
 	 * sift through the bits to find the selected frag
 	 */
-	for (i = 0; i < NBBY; i += fs->fs_frag) {
-		blk = (cgp->cg_free[bno / NBBY] >> i) &
-		      (0xff >> NBBY - fs->fs_frag);
+	for (i = bno + NBBY; bno < i; bno += fs->fs_frag) {
+		blk = blkmap(fs, cgp->cg_free, bno);
 		blk <<= 1;
 		field = around[allocsiz];
 		subfield = inside[allocsiz];
 		for (pos = 0; pos <= fs->fs_frag - allocsiz; pos++) {
-			if ((blk & field) == subfield) {
-				return (bno + i + pos);
-			}
+			if ((blk & field) == subfield)
+				return (bno + pos);
 			field <<= 1;
 			subfield <<= 1;
 		}
 	}
 	panic("alloccg: block not in map");
-	return (0);
+	return (NULL);
 }
 
 /*
@@ -889,13 +886,14 @@ getfs(dev)
 	register struct mount *mp;
 	register struct fs *fs;
 
-	for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++)
-		if (mp->m_bufp != NULL && mp->m_dev == dev) {
-			fs = mp->m_bufp->b_un.b_fs;
-			if (fs->fs_magic != FS_MAGIC)
-				panic("getfs: bad magic");
-			return (fs);
-		}
+	for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++) {
+		if (mp->m_bufp == NULL || mp->m_dev != dev)
+			continue;
+		fs = mp->m_bufp->b_un.b_fs;
+		if (fs->fs_magic != FS_MAGIC)
+			panic("getfs: bad magic");
+		return (fs);
+	}
 	panic("getfs: no fs");
 	return (NULL);
 }
@@ -945,7 +943,8 @@ getfsx(dev)
  * modified nodes; and it goes through the mount table to initiate
  * the writing of the modified super blocks.
  */
-update()
+update(flag)
+	int flag;
 {
 	register struct inode *ip;
 	register struct mount *mp;
@@ -962,38 +961,40 @@ update()
 	 * Consistency check that the superblock
 	 * of each file system is still in the buffer cache.
 	 */
-	for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++)
-		if (mp->m_bufp != NULL) {
-			fs = mp->m_bufp->b_un.b_fs;
-			if (fs->fs_fmod == 0)
-				continue;
-			if (fs->fs_ronly != 0)
-				panic("update: rofs mod");
-			bp = getblk(mp->m_dev, SBLOCK, SBSIZE);
-			fs->fs_fmod = 0;
-			fs->fs_time = TIME;
-			if (bp->b_un.b_fs != fs)
-				panic("update: bad b_fs");
+	for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++) {
+		if (mp->m_bufp == NULL)
+			continue;
+		fs = mp->m_bufp->b_un.b_fs;
+		if (fs->fs_fmod == 0)
+			continue;
+		if (fs->fs_ronly != 0)
+			panic("update: rofs mod");
+		bp = getblk(mp->m_dev, SBLOCK, SBSIZE);
+		fs->fs_fmod = 0;
+		fs->fs_time = TIME;
+		if (bp->b_un.b_fs != fs)
+			panic("update: bad b_fs");
+		bwrite(bp);
+		blks = howmany(fs->fs_cssize, fs->fs_bsize);
+		for (i = 0; i < blks; i++) {
+			bp = getblk(mp->m_dev,
+			    fsbtodb(fs, fs->fs_csaddr + (i * fs->fs_frag)),
+			    fs->fs_bsize);
 			bwrite(bp);
-			blks = howmany(fs->fs_cssize, fs->fs_bsize);
-			for (i = 0; i < blks; i++) {
-				bp = getblk(mp->m_dev,
-				    fsbtodb(fs, fs->fs_csaddr + (i * fs->fs_frag)),
-				    fs->fs_bsize);
-				bwrite(bp);
-			}
 		}
+	}
 	/*
 	 * Write back each (modified) inode.
 	 */
-	for (ip = inode; ip < inodeNINODE; ip++)
-		if((ip->i_flag&ILOCK)==0 && ip->i_count) {
-			ip->i_flag |= ILOCK;
-			ip->i_count++;
-			tim = TIME;
-			iupdat(ip, &tim, &tim, 0);
-			iput(ip);
-		}
+	for (ip = inode; ip < inodeNINODE; ip++) {
+		if ((ip->i_flag & ILOCK) != 0 || ip->i_count == 0)
+			continue;
+		ip->i_flag |= ILOCK;
+		ip->i_count++;
+		tim = TIME;
+		iupdat(ip, &tim, &tim, 0);
+		iput(ip);
+	}
 	updlock = 0;
 	/*
 	 * Force stale buffer cache information to be flushed,
@@ -1027,8 +1028,8 @@ isblock(fs, cp, h)
 		mask = 0x01 << (h & 0x7);
 		return ((cp[h >> 3] & mask) == mask);
 	default:
-		panic("isblock bad fs_frag");
-		return;
+		panic("isblock");
+		return (NULL);
 	}
 }
 
@@ -1054,7 +1055,7 @@ clrblock(fs, cp, h)
 		cp[h >> 3] &= ~(0x01 << (h & 0x7));
 		return;
 	default:
-		panic("clrblock bad fs_frag");
+		panic("clrblock");
 		return;
 	}
 }
@@ -1081,7 +1082,7 @@ setblock(fs, cp, h)
 		cp[h >> 3] |= (0x01 << (h & 0x7));
 		return;
 	default:
-		panic("setblock bad fs_frag");
+		panic("setblock");
 		return;
 	}
 }
