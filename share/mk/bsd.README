@@ -227,7 +227,6 @@ DPADD		Additional dependencies for the program.  Usually used for
 			LIBMP		/usr/lib/libmp.a
 			LIBPC		/usr/lib/libpc.a
 			LIBPLOT		/usr/lib/libplot.a
-			LIBRPC		/usr/lib/sunrpc.a
 			LIBTELNET	/usr/lib/libtelnet.a
 			LIBTERM		/usr/lib/libterm.a
 			LIBUTIL		/usr/lib/libutil.a

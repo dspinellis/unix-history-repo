@@ -31,7 +31,6 @@ LIBMP?=		/usr/lib/libmp.a
 LIBPC?=		/usr/lib/libpc.a
 LIBPLOT?=	/usr/lib/libplot.a
 LIBRESOLV?=	/usr/lib/libresolv.a
-LIBRPC?=	/usr/lib/librpc.a
 LIBRPCSVC?=	/usr/lib/librpcsvc.a
 LIBTELNET?=	/usr/lib/libtelnet.a
 LIBTERM?=	/usr/lib/libterm.a
