@@ -40,6 +40,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include <sys/stat.h>
 #include <sys/file.h>
 #include <errno.h>
+#include <unistd.h>
 #define NO_SHORTNAMES   /* Tell config not to load remap.h */
 #include "../src/config.h"
 
