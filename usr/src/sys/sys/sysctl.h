@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sysctl.h	7.18 (Berkeley) %G%
+ *	@(#)sysctl.h	7.19 (Berkeley) %G%
  */
 
 /*
@@ -76,11 +76,12 @@ struct ctlname {
 #define	KERN_SECURELVL	 9		/* int: system security level */
 #define	KERN_HOSTNAME	10		/* string: hostname */
 #define	KERN_HOSTID	11		/* int: host identifier */
-#define	KERN_CLOCKRATE	12		/* struct clockrate */
-#define	KERN_VNODE	13		/* vnode structures */
-#define	KERN_PROC	14		/* process entries */
-#define	KERN_FILE	15		/* file entries */
-#define	KERN_MAXID	16		/* number of valid kern ids */
+#define	KERN_CLOCKRATE	12		/* struct: struct clockrate */
+#define	KERN_VNODE	13		/* struct: vnode structures */
+#define	KERN_PROC	14		/* struct: process entries */
+#define	KERN_FILE	15		/* struct: file entries */
+#define	KERN_PROF	16		/* node: kernel profiling info */
+#define	KERN_MAXID	17		/* number of valid kern ids */
 
 #define CTL_KERN_NAMES { \
 	{ 0, 0 }, \
@@ -99,6 +100,7 @@ struct ctlname {
 	{ "vnode", CTLTYPE_STRUCT }, \
 	{ "proc", CTLTYPE_STRUCT }, \
 	{ "file", CTLTYPE_STRUCT }, \
+	{ "profiling", CTLTYPE_NODE }, \
 }
 
 /* 
