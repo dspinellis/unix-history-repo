@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mroute.c	8.1 (Berkeley) %G%
+ *	@(#)mroute.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -193,4 +193,6 @@ mrt_stats(mrpaddr, mstaddr)
 	  mrtstat.mrts_bad_tunnel, plural(mrtstat.mrts_bad_tunnel));
 	printf(" %10u datagram%s with no room for tunnel options\n",
 	  mrtstat.mrts_cant_tunnel, plural(mrtstat.mrts_cant_tunnel));
+	printf(" %10u datagram%s arrived on the wrong interface\n",
+	  mrtstat.mrts_wrong_if, plural(mrtstat.mrts_wrong_if));
 }
