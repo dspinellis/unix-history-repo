@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vnops.c	8.23 (Berkeley) %G%
+ *	@(#)union_vnops.c	8.24 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -910,42 +910,42 @@ union_link(ap)
 	struct vnode *vp;
 	struct vnode *tdvp;
 
-	un = VTOUNION(ap->a_vp);
+	un = VTOUNION(ap->a_tdvp);
 
-	if (ap->a_vp->v_op != ap->a_tdvp->v_op) {
-		tdvp = ap->a_tdvp;
+	if (ap->a_tdvp->v_op != ap->a_vp->v_op) {
+		vp = ap->a_vp;
 	} else {
-		struct union_node *tdun = VTOUNION(ap->a_tdvp);
-		if (tdun->un_uppervp == NULLVP) {
-			VOP_LOCK(ap->a_tdvp);
-			if (un->un_uppervp == tdun->un_dirvp) {
+		struct union_node *tun = VTOUNION(ap->a_vp);
+		if (tun->un_uppervp == NULLVP) {
+			VOP_LOCK(ap->a_vp);
+			if (un->un_uppervp == tun->un_dirvp) {
 				un->un_flags &= ~UN_ULOCK;
 				VOP_UNLOCK(un->un_uppervp);
 			}
-			error = union_copyup(tdun, 1, ap->a_cnp->cn_cred,
+			error = union_copyup(tun, 1, ap->a_cnp->cn_cred,
 						ap->a_cnp->cn_proc);
-			if (un->un_uppervp == tdun->un_dirvp) {
+			if (un->un_uppervp == tun->un_dirvp) {
 				VOP_LOCK(un->un_uppervp);
 				un->un_flags |= UN_ULOCK;
 			}
-			VOP_UNLOCK(ap->a_tdvp);
+			VOP_UNLOCK(ap->a_vp);
 		}
-		tdvp = tdun->un_uppervp;
+		vp = tun->un_uppervp;
 	}
 
-	vp = un->un_uppervp;
-	if (vp == NULLVP)
+	tdvp = un->un_uppervp;
+	if (tdvp == NULLVP)
 		error = EROFS;
 
 	if (error) {
-		vput(ap->a_vp);
+		vput(ap->a_tdvp);
 		return (error);
 	}
 
 	FIXUP(un);
-	VREF(vp);
+	VREF(tdvp);
 	un->un_flags |= UN_KLOCK;
-	vput(ap->a_vp);
+	vput(ap->a_tdvp);
 
 	return (VOP_LINK(vp, tdvp, ap->a_cnp));
 }

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_serv.c	8.4 (Berkeley) %G%
+ *	@(#)nfs_serv.c	8.5 (Berkeley) %G%
  */
 
 /*
@@ -1052,7 +1052,7 @@ out:
 	if (!error) {
 		nqsrv_getl(vp, NQL_WRITE);
 		nqsrv_getl(xp, NQL_WRITE);
-		error = VOP_LINK(nd.ni_dvp, vp, &nd.ni_cnd);
+		error = VOP_LINK(vp, nd.ni_dvp, &nd.ni_cnd);
 	} else {
 		VOP_ABORTOP(nd.ni_dvp, &nd.ni_cnd);
 		if (nd.ni_dvp == nd.ni_vp)

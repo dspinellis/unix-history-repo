@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vnops.c	8.9 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	8.10 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -352,10 +352,10 @@ lfs_link(ap)
 {
 	int ret;
 
-	SET_DIROP(VTOI(ap->a_vp)->i_lfs);
-	MARK_VNODE(ap->a_vp);
+	SET_DIROP(VTOI(ap->a_tdvp)->i_lfs);
+	MARK_VNODE(ap->a_tdvp);
 	ret = ufs_link(ap);
-	SET_ENDOP(VTOI(ap->a_vp)->i_lfs);
+	SET_ENDOP(VTOI(ap->a_tdvp)->i_lfs);
 	return (ret);
 }
 

@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	8.30 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	8.31 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -905,7 +905,7 @@ link(p, uap, retval)
 				VOP_LEASE(nd.ni_dvp, p, p->p_ucred,
 				    LEASE_WRITE);
 				VOP_LEASE(vp, p, p->p_ucred, LEASE_WRITE);
-				error = VOP_LINK(nd.ni_dvp, vp, &nd.ni_cnd);
+				error = VOP_LINK(vp, nd.ni_dvp, &nd.ni_cnd);
 			} else {
 				VOP_ABORTOP(nd.ni_dvp, &nd.ni_cnd);
 				if (nd.ni_dvp == nd.ni_vp)
