@@ -16,7 +16,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)compress.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)compress.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -879,7 +879,7 @@ decompress() {
 		 offset = 0;
 		 do {
 		     nwritten = write(fileno(stdout), &buff[offset], n);
-		     if (nwritten <= 0)
+		     if (nwritten < 0)
 			 writeerr();
 		     offset += nwritten;
 		 } while ((n -= nwritten) > 0);
@@ -903,12 +903,13 @@ decompress() {
      * Flush the stuff remaining in our buffer...
      */
     offset = 0;
-    do {
+    while (n > 0) {
 	nwritten = write(fileno(stdout), &buff[offset], n);
-	if (nwritten <= 0)
+	if (nwritten < 0)
 	    writeerr();
 	offset += nwritten;
-    } while ((n -= nwritten) > 0);
+	n -= nwritten;
+    }
 }
 
 /*-
@@ -1106,7 +1107,8 @@ in_stack(c, stack_top)
 
 writeerr()
 {
-	(void)fprintf(stderr, "compress: %s: %s\n", ofname, strerror(errno));
+	(void)fprintf(stderr, "compress: %s: %s\n",
+	    ofname[0] ? ofname : "stdout", strerror(errno));
 	(void)unlink(ofname);
 	exit(1);
 }
