@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)iso_snpac.c	7.15 (Berkeley) %G%
+ *	@(#)iso_snpac.c	7.16 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -323,7 +323,7 @@ int					nsellength;	/* nsaps may differ only in trailing bytes */
 	struct	rtentry *mrt = 0;
 	register struct	iso_addr *r; /* for zap_isoaddr macro */
 	int		snpalen = min(ifp->if_addrlen, MAX_SNPALEN);
-	int		new_entry = 0, index = ifp->if_index;
+	int		new_entry = 0, index = ifp->if_index, if_type = ifp->if_type;
 
 	IFDEBUG(D_SNPA)
 		printf("snpac_add(%x, %x, %x, %x, %x, %x)\n",
@@ -346,6 +346,7 @@ int					nsellength;	/* nsaps may differ only in trailing bytes */
 		}
 		new_entry = 1;
 		zap_linkaddr((&gte_dl), snpa, snpalen, index);
+		gte_dl.sdl_type = if_type;
 		if (rtrequest(RTM_ADD, S(dst), S(gte_dl), netmask, flags, &mrt) ||
 			mrt == 0)
 			return (0);
@@ -379,6 +380,7 @@ int					nsellength;	/* nsaps may differ only in trailing bytes */
 			}
 			zap_linkaddr(sdl, snpa, snpalen, index);
 			sdl->sdl_len = old_sdl_len;
+			sdl->sdl_type = if_type;
 			new_entry = 1;
 		}
 	}
@@ -482,6 +484,7 @@ register struct rtentry *sc;
 	register struct rtentry *rt = rtalloc1((struct sockaddr *)&zsi, 0);
 
 	zap_linkaddr((&gte_dl), LLADDR(sdl), sdl->sdl_alen, sdl->sdl_index);
+	gte_dl.sdl_type = sc->rt_ifp->if_type;
 	if (known_is == 0)
 		known_is = sc;
 	if (known_is != sc) {
