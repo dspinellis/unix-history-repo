@@ -68,7 +68,8 @@
    cache types.  We should be able to come up with a more coherent
    scheme (though HP 68k boxes have just about every caching scheme
    imaginable: internal/external, physical/virtual, writeback/writethrough)
-   See, for example, Wheeler and Bershad in ASPLOS 92.
+   See, for example, Wheeler and Bershad in ASPLOS 92.  For more efficient
+   handling of physical caches see also Kessler and Hill in Nov. 92 TOCS.
 
 9. Sort the free page list.
    The DMA hardware on the 300 cannot do scatter/gather IO.  For example,
