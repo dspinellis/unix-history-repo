@@ -34,7 +34,7 @@ SUBDIR=	ar awk bc biff basename cal calendar \
 
 awk::
 	@rm -f awk
-	ln -s ../gnu/gawk .
+	ln -s ../gnu/gawk awk
 bc::
 	@rm -f bc
 	ln -s ../gnu/bc .
