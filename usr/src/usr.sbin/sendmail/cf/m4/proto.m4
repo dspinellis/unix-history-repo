@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	6.35 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	6.36 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -469,7 +469,7 @@ ifdef(`MAILER_TABLE',
 `
 # try mailer table lookup
 R$* < @ $+ > $*		$: $1 < @ $(mailertable $2 $) > $3
-R$* < @ $-:$+ > $*	$# $2 $@ $3 $: $1 < @ $3 > $4	found a match',
+R$* < @ $-:$+ > $*	$# $2 $@ $3 $: $1 @ $3 $4	found a match',
 `dnl')
 
 # short circuit local delivery so forwarded email works
@@ -478,8 +478,8 @@ ifdef(`_LOCAL_NOT_STICKY_',
 R$+ < @ $j . >		$#local $: $1			dispose directly',
 `R$+ < @ $j . >		$: $1 < @ $j @ $H >		first try hub
 ifdef(`_OLD_SENDMAIL_',
-`R$+ < $+ @ $-:$+ >	$# $3 $@ $4 $: $1 < $2 >	yep ....
-R$+ < $+ @ $+ >		$#relay $@ $3 $: $1 < $2 >	yep ....
+`R$+ < $+ @ $-:$+ >	$# $3 $@ $4 $: $1 $2		yep ....
+R$+ < $+ @ $+ >		$#relay $@ $3 $: $1 $2		yep ....
 R$+ < $+ @ >		$#local $: $1			nope, local address',
 `R$+ < $+ @ $+ >		$#local $: $1			yep ....
 R$+ < $+ @ >		$#local $: @ $1			nope, local address')')
@@ -488,34 +488,34 @@ undivert(4)dnl
 
 # resolve remotely connected UUCP links (if any)
 ifdef(`_CLASS_V_',
-`R$* < @ $=V . UUCP > $*		$#smtp $@ $V $: <@ $V> : $1 @ $2.UUCP $3',
+`R$* < @ $=V . UUCP > $*		$#smtp $@ $V $: @ $V : $1 @ $2.UUCP $3',
 	`dnl')
 ifdef(`_CLASS_W_',
-`R$* < @ $=W . UUCP > $*		$#smtp $@ $W $: <@ $W> : $1 @ $2.UUCP $3',
+`R$* < @ $=W . UUCP > $*		$#smtp $@ $W $: @ $W : $1 @ $2.UUCP $3',
 	`dnl')
 ifdef(`_CLASS_X_',
-`R$* < @ $=X . UUCP > $*		$#smtp $@ $X $: <@ $X> : $1 @ $2.UUCP $3',
+`R$* < @ $=X . UUCP > $*		$#smtp $@ $X $: @ $X : $1 @ $2.UUCP $3',
 	`dnl')
 
 # resolve fake top level domains by forwarding to other hosts
 ifdef(`BITNET_RELAY',
-`R$*<@$+.BITNET>$*	$#smtp $@ $B $: $1 <@$2.BITNET> $3	user@host.BITNET',
+`R$*<@$+.BITNET>$*	$#smtp $@ $B $: $1 @ $2 . BITNET $3	user@host.BITNET',
 	`dnl')
 ifdef(`CSNET_RELAY',
-`R$*<@$+.CSNET>$*	$#smtp $@ $C $: $1 <@$2.CSNET> $3	user@host.CSNET',
+`R$*<@$+.CSNET>$*	$#smtp $@ $C $: $1 @ $2 . CSNET $3	user@host.CSNET',
 	`dnl')
 ifdef(`_MAILER_fax_',
 `R$+ < @ $+ .FAX >	$#fax $@ $2 $: $1			user@host.FAX',
 `ifdef(`FAX_RELAY',
-`R$*<@$+.FAX>$*		$#smtp $@ $F $: $1 <@$2.FAX> $3		user@host.FAX',
+`R$*<@$+.FAX>$*		$#smtp $@ $F $: $1 @ $2 . FAX $3		user@host.FAX',
 	`dnl')')
 
 ifdef(`UUCP_RELAY',
 `# forward non-local UUCP traffic to our UUCP relay
-R$*<@$*.UUCP>$*		$#smtp $@ $Y $: <@ $Y> : $1 @ $2.UUCP $3	uucp mail',
+R$*<@$*.UUCP>$*		$#smtp $@ $Y $: @ $Y : $1 @ $2.UUCP $3	uucp mail',
 `ifdef(`_MAILER_uucp_',
 `# forward other UUCP traffic straight to UUCP
-R< @ $+ .UUCP > : $+	$#uucp $@ $1 $: $1:$2			@host.UUCP:...
+R< @ $+ .UUCP > : $+	$#uucp $@ $1 $: $2			@host.UUCP:...
 R$+ < @ $+ .UUCP >	$#uucp $@ $2 $: $1			user@host.UUCP',
 	`dnl')')
 
@@ -524,12 +524,12 @@ ifdef(`_LOCAL_RULES_',
 undivert(1)',
 `ifdef(`_MAILER_smtp_',
 `# deal with other remote names
-R$* < @ $* > $*		$#smtp $@ $2 $: $1 < @ $2 > $3		user@host.domain')')
+R$* < @ $* > $*		$#smtp $@ $2 $: $1 @ $2 $3		user@host.domain')')
 ifdef(`SMART_HOST', `
 # pass names that still have a host to a smarthost
 R$* < @ $* > $*		$: < $S > $1 < @ $2 > $3	glue on smarthost name
-R<$-:$+> $* < @$* > $*	$# $1 $@ $2 $: $3 < @ $4 > $5	if non-null, use it
-R<$+> $* < @$* > $*	$#suucp $@ $1 $: $2 < @ $3 > $4	if non-null, use it
+R<$-:$+> $* < @$* > $*	$# $1 $@ $2 $: $3 @ $4 $5	if non-null, use it
+R<$+> $* < @$* > $*	$#suucp $@ $1 $: $2 @ $3 $4	if non-null, use it
 R<> $* < @ $* > $*	$1 < @ $2 > $3			else strip off gunk',
 `ifdef(`_LOCAL_RULES_', `
 # reject messages that have host names we do not understand
