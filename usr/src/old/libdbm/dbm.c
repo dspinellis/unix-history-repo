@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)dbm.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)dbm.c	4.4 (Berkeley) %G%";
 #endif
 
 #include	"dbm.h"
@@ -28,7 +28,7 @@ char *file;
 		dbrdonly = 1;
 	}
 	if(pagf < 0 || dirf < 0) {
-		printf("cannot open database %s\n", file);
+		printf("dbm: %s: cannot open database\n", file);
 		return(-1);
 	}
 	fstat(dirf, &statb);
@@ -67,7 +67,7 @@ datum key;
 		if(cmpdatum(key, item) == 0) {
 			item = makdatum(pagbuf, i+1);
 			if(item.dptr == NULL)
-				printf("items not in pairs\n");
+				printf("dbm: items not in pairs\n");
 			return(item);
 		}
 	}
@@ -131,7 +131,7 @@ loop:
 
 split:
 	if(key.dsize+dat.dsize+3*sizeof(short) >= PBLKSIZ) {
-		printf("entry too big\n");
+		printf("dbm: entry too big\n");
 		return (-1);
 	}
 	clrbuf(ovfbuf, PBLKSIZ);
@@ -144,7 +144,7 @@ split:
 			delitem(pagbuf, i);
 			item = makdatum(pagbuf, i);
 			if(item.dptr == NULL) {
-				printf("split not paired\n");
+				printf("dbm: split not paired\n");
 				break;
 			}
 			additem(ovfbuf, item);
@@ -438,7 +438,7 @@ char buf[PBLKSIZ];
 	return;
 
 bad:
-	printf("bad delitem\n");
+	printf("dbm: bad delitem\n");
 	abort();
 }
 
