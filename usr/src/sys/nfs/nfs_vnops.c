@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vnops.c	7.30 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.31 (Berkeley) %G%
  */
 
 /*
@@ -166,6 +166,55 @@ struct vnodeops spec_nfsv2nodeops = {
 	nfs_print,		/* print */
 	nfs_islocked,		/* islocked */
 };
+
+#ifdef FIFO
+int	fifo_lookup(),
+	fifo_open(),
+	fifo_read(),
+	fifo_write(),
+	fifo_bmap(),
+	fifo_ioctl(),
+	fifo_select(),
+	fifo_close(),
+	fifo_print(),
+	fifo_badop(),
+	fifo_nullop();
+
+struct vnodeops fifo_nfsv2nodeops = {
+	fifo_lookup,		/* lookup */
+	fifo_badop,		/* create */
+	fifo_badop,		/* mknod */
+	fifo_open,		/* open */
+	fifo_close,		/* close */
+	nfs_access,		/* access */
+	nfs_getattr,		/* getattr */
+	nfs_setattr,		/* setattr */
+	fifo_read,		/* read */
+	fifo_write,		/* write */
+	fifo_ioctl,		/* ioctl */
+	fifo_select,		/* select */
+	fifo_badop,		/* mmap */
+	fifo_nullop,		/* fsync */
+	fifo_badop,		/* seek */
+	fifo_badop,		/* remove */
+	fifo_badop,		/* link */
+	fifo_badop,		/* rename */
+	fifo_badop,		/* mkdir */
+	fifo_badop,		/* rmdir */
+	fifo_badop,		/* symlink */
+	fifo_badop,		/* readdir */
+	fifo_badop,		/* readlink */
+	fifo_badop,		/* abortop */
+	nfs_inactive,		/* inactive */
+	nfs_reclaim,		/* reclaim */
+	nfs_lock,		/* lock */
+	nfs_unlock,		/* unlock */
+	fifo_bmap,		/* bmap */
+	fifo_badop,		/* strategy */
+	nfs_print,		/* print */
+	nfs_islocked,		/* islocked */
+};
+#endif /* FIFO */
 
 extern u_long nfs_procids[NFS_NPROCS];
 extern u_long nfs_prog, nfs_vers;
@@ -1520,9 +1569,13 @@ nfs_print(vp)
 {
 	register struct nfsnode *np = VTONFS(vp);
 
-	printf("tag VT_NFS, fileid %d fsid 0x%x%s\n",
-		np->n_vattr.va_fileid, np->n_vattr.va_fsid,
-		(np->n_flag & NLOCKED) ? " (LOCKED)" : "");
+	printf("tag VT_NFS, fileid %d fsid 0x%x",
+		np->n_vattr.va_fileid, np->n_vattr.va_fsid);
+#ifdef FIFO
+	if (vp->v_type == VFIFO)
+		fifo_printinfo(vp);
+#endif /* FIFO */
+	printf("%s\n", (np->n_flag & NLOCKED) ? " (LOCKED)" : "");
 	if (np->n_lockholder == 0)
 		return;
 	printf("\towner pid %d", np->n_lockholder);
