@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file @(#)termcap.src	1.6	(Berkeley) %G%
+#	Termcap source file @(#)termcap.src	1.7	(Berkeley) %G%
 #	Mark Horton, U.C. Berkeley
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
@@ -550,10 +550,9 @@ Ms|swtp|ct82|southwest technical products ct82:\
 	:is=^\^r^^^s^^^d^]^w^i^s^^^]^^^o^]^w^r^i:
 Mt|terak|Terak emulating Datamedia 1520:\
 	:tc=dm1520:
-# SUN MicroSystems Inc.
 Mu|sun|Sun Microsystems Workstation console:\
 	:li#34:co#80:cl=^L:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
-	:am:bs:mi:ms:pt:\
+	:am:bs:mi:ms:\
 	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:\
 	:kd=\E[B:kl=\E[D:ku=\E[A:kr=\E[C:kh=\E[H:\
 	:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:\
@@ -1084,8 +1083,8 @@ Xr|4025-cr|tek 4025 for curses and rogue:\
 	:am:le=^H:bs:ta=^I:pt:li#33:co#80:cm=^_jum%i%d,%d;:up=^K:cr=^M:\
 	:do=^F^J:bl=^G:cl=^_era;:nd=^_rig;:nl=^F\n:ti=^_wor 33h:te=^_wor 0:
 # next two lines commented out since curses only allows 128 chars, sigh.
-	:ti=^_lea p1/b/^_lea p2/j/^_lea p3/n/^_lea p4/h/^_lea p5/ /^_lea p6/l/^_lea p7/y/^_lea p8/k/^_lea p9/u/^_lea p./f/^_lea pt/`era w/13^_lea p0/s/^_wor 33h:\
-	:te=^_lea p1^_lea p2^_lea p3^_lea p4^_lea pt^_lea p5^_lea p6^_lea p7^_lea p8^_lea p9/la/13^_lea p.^_lea p0^_wor 0:
+#	:ti=^_lea p1/b/^_lea p2/j/^_lea p3/n/^_lea p4/h/^_lea p5/ /^_lea p6/l/^_lea p7/y/^_lea p8/k/^_lea p9/u/^_lea p./f/^_lea pt/`era w/13^_lea p0/s/^_wor 33h:\
+#	:te=^_lea p1^_lea p2^_lea p3^_lea p4^_lea pt^_lea p5^_lea p6^_lea p7^_lea p8^_lea p9/la/13^_lea p.^_lea p0^_wor 0:
 # The 4110 series may be a wonderful graphics series, but they make the 4025
 # look good for screen editing.  In the dialog area, you can't move the cursor
 # off the bottom line.  Out of the dialog area, ^K moves it up, but there
@@ -1135,8 +1134,6 @@ av|viewpoint|addsviewpoint|adds viewpoint:\
 	:am:le=^H:bs:li#24:co#80:cm=\EY%+ %+ :cd=\Ek:ce=\EK:nd=^F:\
 	:up=^Z:cl=^L:ll=^A:kl=^U:kr=^F:kd=^J:ku=^Z:kh=^A:\
 	:so=^N:se=^O:us=^N:ue=^O:is=^O\E0`:vs=^O\E0P:ve=^O\E0`:
-
-
 # # --------------------------------
 #
 # b: BEEHIVE
@@ -1454,24 +1451,6 @@ h6|hp2626|hp2626a|hp2626p|2626|2626a|2626p|hp 2626:\
 	:mr=\E&dB:us=\E&dD:mb=\E&dA:mk=\E&dS:me=\E&d@:ue=\E&d@:\
 	:kh=\Eh:ku=\EA:kl=\ED:kr=\EC:kd=\EB:ks=\E&s1A:ke=\E&s0A:\
 	:sf=\ES:ta=2^I:xs:tc=2621:
-# This entry is for sysline.  It allocates a 23 line window with a 115 line
-# workspace for regular use, and a 1 line window for the status line.
-# This assumes port 2 is being used.
-# Turn off horizontal line, Create ws #1 with 115 lines,
-# Create ws #2 with 1 line, Create window #1 lines 1-23,
-# Create window #2 lines 24-24, Attach cursor to workspace #1.
-# Note that this clears the tabs so it must be done by tset before
-# it sets the tabs.
-2626-23|hp 2626 using only 23 lines:\
-	:ts=\E&w7f2p2I\E&w4f2I\r\EK\E&a%dC:\
-	:fs=\E&d@\E&w7f2p1I\E&w4f1I:es:hs:\
-	:i2=\E&q3t0{0H \E&w0f115n1I \E&w0f1n2I
-	\E&w2f1i0d0u22l0S \E&w2f2i0d23u23l0S \E&w7f2p1I \r:\
-	:li#23:tc=2626:
-2626-12:li#12:tc=2626:
-2626-12x40:co#40:li#12:tc=2626:
-2626-x40:co#40:tc=2626:
-2626-11:li#11:tc=2626:
 # cD is a pain - but it only screws up at 9600 baud.
 # You should use this terminal at 4800 baud or less.
 h8|hp2648|hp2648a|2648a|2648|HP 2648a graphics terminal:\
@@ -1932,67 +1911,67 @@ yf|t1061f|teleray 1061 with fast PROMs:\
 # contains an extra dash) should be used instead.  These names will go
 # away eventually (read: "soon") so you should start converting!
 #
-hp2621nl|2621nl:tc=2621-nl:
-hp2621nt|2621nt:tc=2621-nt:
-hp2621wl|2621wl:tc=2621-wl:
-9122p:tc=912-2p:
-9202p:tc=920-2p:
-9502p:tc=950-2p:
-9504p:tc=950-4p:
-950rv:tc=950-rv:
-950rv2p:tc=950-rv2p:
-950rv4p:tc=950-rv4p:
-aaa18:tc=aaa-18:
-aaa20:tc=aaa-20:
-aaa22:tc=aaa-22:
-aaa24:tc=aaa-24:
-aaa26:tc=aaa-26:
-aaa28:tc=aaa-28:
-aaa30:tc=aaa-30:
-aaa36:tc=aaa-36:
-aaa40:tc=aaa-40:
-aaa48:tc=aaa-48:
-aaa60:tc=aaa-60:
-aaadb:tc=aaa-db:
-c1004p:tc=c100-4p:
-c100rv:tc=c100-rv:
-c100rv4p:tc=c100-rv-4p:
-c100rv4pna:tc=c100-rv-4p-na:
-c100rv4ppp:tc=c100-rv-4p-pp:
-c100rvna:tc=c100-rv-na:
-c100rvpp:tc=c100-rv-pp:
-c100rvs:tc=c100-rv-s:
-c100s:tc=c100-s:
-c108-4:tc=c108-4p:
-c108-8:tc=c108-8p:
-h19A:tc=h19-A:
-h19b:tc=h19-b:
-h19bs:tc=h19-bs:
-h19u:tc=h19-u:
-h19us:tc=h19-us:
-mime2as:tc=mime2a-s:
-mime2av:tc=mime2a-v:
-mimefb:tc=mime-fb:
-mimehb:tc=mime-hb:
-tvi2p:tc=tvi-2p:
-tvi9122p:tc=tvi912-2p:
-tvi9202p:tc=tvi920-2p:
-tvi9502p:tc=tvi950-2p:
-tvi9504p:tc=tvi950-4p:
-tvi950b:tc=tvi950-b:
-tvi950ns:tc=tvi950-ns:
-tvi950rv:tc=tvi950-rv:
-tvi950rv2p:tc=tvi950-rv2p:
-tvi950rv4p:tc=tvi950-rv4p:
-vt100am:tc=vt100-am:
-vt100nam:tc=vt100-nam:
-vt100s:tc=vt100-s:
-vt100w:tc=vt100-w:
-vi200rvic:tc=vi200-rv-ic:
-vi200f:tc=vi200-f:
-vi200rv:tc=vi200-rv:
-vi200ic:tc=vi200-ic:
-tek4014sm|4014sm:tc=tek4014-sm:
+zz|hp2621nl|2621nl:tc=2621-nl:
+zz|hp2621nt|2621nt:tc=2621-nt:
+zz|hp2621wl|2621wl:tc=2621-wl:
+zz|9122p:tc=912-2p:
+zz|9202p:tc=920-2p:
+zz|9502p:tc=950-2p:
+zz|9504p:tc=950-4p:
+zz|950rv:tc=950-rv:
+zz|950rv2p:tc=950-rv2p:
+zz|950rv4p:tc=950-rv4p:
+zz|aaa18:tc=aaa-18:
+zz|aaa20:tc=aaa-20:
+zz|aaa22:tc=aaa-22:
+zz|aaa24:tc=aaa-24:
+zz|aaa26:tc=aaa-26:
+zz|aaa28:tc=aaa-28:
+zz|aaa30:tc=aaa-30:
+zz|aaa36:tc=aaa-36:
+zz|aaa40:tc=aaa-40:
+zz|aaa48:tc=aaa-48:
+zz|aaa60:tc=aaa-60:
+zz|aaadb:tc=aaa-db:
+zz|c1004p:tc=c100-4p:
+zz|c100rv:tc=c100-rv:
+zz|c100rv4p:tc=c100-rv-4p:
+zz|c100rv4pna:tc=c100-rv-4p-na:
+zz|c100rv4ppp:tc=c100-rv-4p-pp:
+zz|c100rvna:tc=c100-rv-na:
+zz|c100rvpp:tc=c100-rv-pp:
+zz|c100rvs:tc=c100-rv-s:
+zz|c100s:tc=c100-s:
+zz|c108-4:tc=c108-4p:
+zz|c108-8:tc=c108-8p:
+zz|h19A:tc=h19-A:
+zz|h19b:tc=h19-b:
+zz|h19bs:tc=h19-bs:
+zz|h19u:tc=h19-u:
+zz|h19us:tc=h19-us:
+zz|mime2as:tc=mime2a-s:
+zz|mime2av:tc=mime2a-v:
+zz|mimefb:tc=mime-fb:
+zz|mimehb:tc=mime-hb:
+zz|tvi2p:tc=tvi-2p:
+zz|tvi9122p:tc=tvi912-2p:
+zz|tvi9202p:tc=tvi920-2p:
+zz|tvi9502p:tc=tvi950-2p:
+zz|tvi9504p:tc=tvi950-4p:
+zz|tvi950b:tc=tvi950-b:
+zz|tvi950ns:tc=tvi950-ns:
+zz|tvi950rv:tc=tvi950-rv:
+zz|tvi950rv2p:tc=tvi950-rv2p:
+zz|tvi950rv4p:tc=tvi950-rv4p:
+zz|vt100am:tc=vt100-am:
+zz|vt100nam:tc=vt100-nam:
+zz|vt100s:tc=vt100-s:
+zz|vt100w:tc=vt100-w:
+zz|vi200rvic:tc=vi200-rv-ic:
+zz|vi200f:tc=vi200-f:
+zz|vi200rv:tc=vi200-rv:
+zz|vi200ic:tc=vi200-ic:
+zz|tek4014sm|4014sm:tc=tek4014-sm:
 #
 # END OF TERMCAP
 #  ------------------------
