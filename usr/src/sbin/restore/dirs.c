@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)dirs.c	3.4	(Berkeley)	83/03/06";
+static char sccsid[] = "@(#)dirs.c	3.5	(Berkeley)	83/03/23";
 #endif
 
 #include "restore.h"
@@ -129,7 +129,7 @@ treescan(pname, ino, todo)
 	int namelen;
 	daddr_t bpt;
 	register struct direct *dp;
-	char locname[BUFSIZ + 1];
+	char locname[MAXPATHLEN + 1];
 
 	itp = inotablookup(ino);
 	if (itp == NULL) {
@@ -147,8 +147,8 @@ treescan(pname, ino, todo)
 	 * begin search through the directory
 	 * skipping over "." and ".."
 	 */
-	strncpy(locname, pname, BUFSIZ);
-	strncat(locname, "/", BUFSIZ);
+	strncpy(locname, pname, MAXPATHLEN);
+	strncat(locname, "/", MAXPATHLEN);
 	namelen = strlen(locname);
 	seekdir(dirp, itp->t_seekpt, itp->t_seekpt);
 	dp = readdir(dirp); /* "." */
@@ -160,9 +160,9 @@ treescan(pname, ino, todo)
 	 */
 	while (dp != NULL && !(dp->d_namlen == 1 && dp->d_name[0] == '/')) {
 		locname[namelen] = '\0';
-		if (namelen + dp->d_namlen >= BUFSIZ) {
+		if (namelen + dp->d_namlen >= MAXPATHLEN) {
 			fprintf(stderr, "%s%s: name exceeds %d char\n",
-				locname, dp->d_name, BUFSIZ);
+				locname, dp->d_name, MAXPATHLEN);
 		} else {
 			strncat(locname, dp->d_name, dp->d_namlen);
 			treescan(locname, dp->d_ino, todo);
