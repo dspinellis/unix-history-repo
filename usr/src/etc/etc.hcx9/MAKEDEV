@@ -5,7 +5,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)MAKEDEV	5.2 (Berkeley) %G%
+#	@(#)MAKEDEV	5.3 (Berkeley) %G%
 #
 
 # Device "make" file.  Valid arguments:
