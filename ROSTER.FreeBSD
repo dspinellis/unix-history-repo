@@ -73,6 +73,7 @@ ports/nethack           Sean Vickery            seanv@cs.uq.edu.au
 ports/pcvt              J"org Wunsch            joerg_wunsch@uriah.sax.de
 ports/piewm		Satoshi Asami		asami@cs.berkeley.edu
 ports/pkg_install       Jordan Hubbard          jkh@freefall.cdrom.com
+ports/popper		Andreas Schulz		ats@g386bsd.first.gmd.de
 ports/point             Jordan Hubbard          jkh@freefall.cdrom.com
 ports/sather		Jeffrey Hsu		hsu@freefall.cdrom.com
 ports/schemetoc		Jeffrey Hsu		hsu@freefall.cdrom.com
