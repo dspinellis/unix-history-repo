@@ -1,4 +1,4 @@
-/*	up.c	4.67	83/02/10	*/
+/*	up.c	4.68	83/02/10	*/
 
 #include "up.h"
 #if NSC > 0
@@ -544,7 +544,14 @@ upintr(sc21)
 			/*
 			 * After 28 retries (16 without offset, and
 			 * 12 with offset positioning) give up.
+			 * If the error was header CRC, the header is 
+			 * screwed up, and the sector may in fact exist
+			 * in the bad sector table, better check...
 			 */
+			if (upaddr->uper1&UPER1_HCRC) {
+				if (upecc(ui, BSE))
+					return;
+			}
 	hard:
 			harderr(bp, "up");
 			printf("cn=%d tn=%d sn=%d cs2=%b er1=%b er2=%b\n",
