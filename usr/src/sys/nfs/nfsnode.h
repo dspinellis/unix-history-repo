@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsnode.h	8.3 (Berkeley) %G%
+ *	@(#)nfsnode.h	8.4 (Berkeley) %G%
  */
 
 /*
@@ -131,6 +131,8 @@ int	nfs_advlock __P((struct vop_advlock_args *));
 int	nfs_blkatoff __P((struct vop_blkatoff_args *));
 int	nfs_vget __P((struct mount *, ino_t, struct vnode **));
 int	nfs_valloc __P((struct vop_valloc_args *));
+#define nfs_reallocblks \
+	((int (*) __P((struct  vop_reallocblks_args *)))eopnotsupp)
 int	nfs_vfree __P((struct vop_vfree_args *));
 int	nfs_truncate __P((struct vop_truncate_args *));
 int	nfs_update __P((struct vop_update_args *));
