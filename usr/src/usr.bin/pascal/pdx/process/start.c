@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)start.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)start.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -41,7 +41,7 @@ char *infile, *outfile;
     char *cmd;
 
     setsigtrace();
-    cmd = "/usr/ucb/px";
+    cmd = "px";
     pstart(process, cmd, argv, infile, outfile);
     if (process->status == STOPPED) {
 	TRAPARGS *ap, t;
@@ -83,7 +83,7 @@ char *infile, *outfile;
 	DISPLAY = t.disp;
 	DP = t.dp;
 	ENDOFF = t.objstart;
-	PCADDRP = t.pcaddrp;
+	PCADDR = t.pcaddr;
 	LOOPADDR = t.loopaddr;
 	pc = 0;
 	curfunc = program;

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savenl.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)savenl.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -56,10 +56,10 @@ static char sccsid[] = "@(#)savenl.c	5.1 (Berkeley) %G%";
 #include "../pdx/mappings.h"
 #include "../pdx/mappings/filetab.h"
 
-LOCAL char *symname = "/tmp/obj.symXXXX";
-LOCAL char *strname = "/tmp/obj.strXXXX";
-LOCAL char *filesname = "/tmp/obj.filesXXXX";
-LOCAL char *linesname = "/tmp/obj.linesXXXX";
+LOCAL char symname[] = "/tmp/obj.symXXXXXX";
+LOCAL char strname[] = "/tmp/obj.strXXXXXX";
+LOCAL char filesname[] = "/tmp/obj.filesXXXXXX";
+LOCAL char linesname[] = "/tmp/obj.linesXXXXXX";
 
 LOCAL FILE *symfp;
 LOCAL FILE *strfp;
@@ -69,6 +69,9 @@ LOCAL FILE *linesfp;
 LOCAL long nlsize;
 
 extern FILE *fopen();
+
+LOCAL putblock();
+LOCAL putstring();
 
 /*
  * create temporary files for the namelist info

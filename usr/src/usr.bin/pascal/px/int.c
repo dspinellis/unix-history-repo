@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)int.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)int.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -36,7 +36,8 @@ static char sccsid[] = "@(#)int.c	5.1 (Berkeley) %G%";
 
 extern char *end;
 extern loopaddr();
-union progcntr *pcaddrp;	/* address of interpreter frame address */
+extern union progcntr pdx_pc;	/* address of interpreter program cntr */
+static void inittrap();
 
 main(ac,av)
 
@@ -156,7 +157,7 @@ main(ac,av)
 	 * See if we're being watched by the debugger, if so set a trap.
 	 */
 	if (_mode == PDX || (_mode == PIX && pxhd.symtabsize > 0)) {
-		inittrap(&_display, &_dp, objprog, &pcaddrp, loopaddr);
+		inittrap(&_display, &_dp, objprog, &pdx_pc, loopaddr);
 	}
 
 	/*
@@ -183,11 +184,12 @@ main(ac,av)
  * not the procedure.
  */
 
-static inittrap(dispaddr, dpaddr, endaddr, pcaddrp, loopaddrp)
+static void
+inittrap(dispaddr, dpaddr, endaddr, pcaddr, loopaddrp)
 union disply *dispaddr;
 struct disp *dpaddr;
 char *endaddr;
-union progcntr **pcaddrp;
+union progcntr *pcaddr;
 char **loopaddrp;
 {
 	kill(getpid(), SIGIOT);

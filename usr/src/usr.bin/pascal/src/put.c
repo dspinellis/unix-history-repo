@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)put.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)put.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "whoami.h"
@@ -27,11 +27,15 @@ static char sccsid[] = "@(#)put.c	5.2 (Berkeley) %G%";
 #include "OPnames.h"
 #endif
 
+char showit[] = "'x'";
+
 #ifdef OBJ
 /*
  * Put is responsible for the interpreter equivalent of code
  * generation.  Since the interpreter is specifically designed
  * for Pascal, little work is required here.
+ *
+ * FIXME, this should be converted to use <varargs.h> or <stdarg.h>.
  */
 /*VARARGS*/
 put(a)
@@ -214,7 +218,7 @@ put(a)
 			break;
 		case O_CONC:
 #ifdef DEBUG
-			(string = "'x'")[1] = p[1];
+			(string = showit)[1] = p[1];
 #endif
 			suboppr = 0;
 			op = O_CON1;
@@ -225,7 +229,7 @@ put(a)
 			goto around;
 		case O_CONC4:
 #ifdef DEBUG
-			(string = "'x'")[1] = p[1];
+			(string = showit)[1] = p[1];
 #endif
 			suboppr = 0;
 			op = O_CON14;
