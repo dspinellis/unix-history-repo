@@ -1,4 +1,4 @@
-/*	defs.h	4.1	82/05/22	*/
+/*	defs.h	4.2	82/05/25	*/
 
 /*
  * Internal data structure definitions for
@@ -6,12 +6,13 @@
  * protocol specs with mods relevant to more
  * general addressing scheme.
  */
+#include <net/route.h>
 
 /*
  * Internal routing table structure.
  * Differs a bit from kernel tables.
  */
-struct rt_hash {
+struct rthash {
 	struct	rt_entry *rt_forw;
 	struct	rt_entry *rt_back;
 };
@@ -19,15 +20,30 @@ struct rt_hash {
 struct rt_entry {
 	struct	rt_entry *rt_forw;
 	struct	rt_entry *rt_back;
-	u_long	rt_hash;		/* for net or for host */
-	struct	sockaddr rt_dst;	/* match value */
-	struct	sockaddr rt_gateway;	/* who to forward to */
-	short	rt_flags;		/* see below */
-	short	rt_retry;		/* # ioctl retries */
-	int	rt_timer;		/* for invalidation */
-	int	rt_metric;		/* hop count of route */
-	struct	ifnet *rt_ifp;		/* corresponding interface */
+	union {
+		struct	rtentry rtu_rt;
+		struct {
+			u_long	rtu_hash;
+			struct	sockaddr rtu_dst;
+			struct	sockaddr rtu_gateway;
+			short	rtu_flags;
+			short	rtu_retry;
+			int	rtu_timer;
+			int	rtu_metric;
+			struct	ifnet *rtu_ifp;
+		} rtu_entry;
+	} rt_rtu;
 };
+
+#define	rt_rt		rt_rtu.rtu_rt			/* pass to ioctl */
+#define	rt_hash		rt_rtu.rtu_entry.rtu_hash	/* for net or host */
+#define	rt_dst		rt_rtu.rtu_entry.rtu_dst	/* match value */
+#define	rt_gateway	rt_rtu.rtu_entry.rtu_gateway	/* who to forward to */
+#define	rt_flags	rt_rtu.rtu_entry.rtu_flags	/* see below */
+#define	rt_retry	rt_rtu.rtu_entry.rtu_retry	/* retries of ioctl */
+#define	rt_timer	rt_rtu.rtu_entry.rtu_timer	/* for invalidation */
+#define	rt_metric	rt_rtu.rtu_entry.rtu_metric	/* cost of route */
+#define	rt_ifp		rt_rtu.rtu_entry.rtu_ifp	/* interface to take */
 
 #define	ROUTEHASHSIZ	19
 
@@ -40,7 +56,7 @@ struct rt_entry {
 #define	RTF_ADDRT	0x20		/* add command pending */
 #define	RTF_SILENT	0x40		/* don't send to router */
 
-struct	rt_hash nethash[ROUTEHASHSIZ], hosthash[ROUTEHASHSIZ];
+struct	rthash nethash[ROUTEHASHSIZ], hosthash[ROUTEHASHSIZ];
 struct	rt_entry *rtlookup();
 
 /*
