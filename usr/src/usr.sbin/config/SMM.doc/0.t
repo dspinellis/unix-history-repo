@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)0.t	8.1 (Berkeley) %G%
+.\"	@(#)0.t	6.6 (Berkeley) %G%
 .\"
 .bd S B 3
 .de UX
@@ -18,6 +18,9 @@
 .el is a Trademark of Bell Laboratories.
 .FE
 .nr GA 1\}
+..
+.de BR
+\fB\\$1\fP\\$2
 ..
 .TL
 Building 4.4BSD Kernels with Config
