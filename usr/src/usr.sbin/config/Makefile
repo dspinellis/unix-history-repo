@@ -1,4 +1,10 @@
-#	Makefile	1.10	83/05/18
+#
+# Copyright (c) 1980 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)Makefile	5.1 (Berkeley) %G%
+#
 #
 CFILES=	y.tab.c main.c lex.yy.c mkioconf.c mkmakefile.c \
 	mkubglue.c mkheaders.c mkswapconf.c
