@@ -107,7 +107,7 @@ int	num_lines, num_cols, begy, begx; {
 # ifdef	DEBUG
 	fprintf(outf, "MAKENEW(%d, %d, %d, %d)\n", nl, nc, by, bx);
 # endif
-	if ((win = (WINDOW *) malloc(sizeof (WINDOW))) == NULL)
+	if ((win = (WINDOW *) calloc(1, sizeof (WINDOW))) == NULL)
 		return NULL;
 # ifdef DEBUG
 	fprintf(outf, "MAKENEW: nl = %d\n", nl);
