@@ -1,11 +1,13 @@
-/*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1986 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
  */
-#ifdef LIBC_SCCS
-_sccsid:.asciz	"@(#)reset.s	1.2 (Berkeley/CCI) %G%"
-#endif LIBC_SCCS
+
+#if defined(LIBC_SCCS) && !defined(lint)
+	.asciz "@(#)reset.s	1.3 (Berkeley) %G%"
+#endif /* LIBC_SCCS and not lint */
 
 /*
  * C library -- reset, setexit
