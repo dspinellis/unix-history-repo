@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vfs_lookup.c	7.3 (Berkeley) %G%
+ *	@(#)vfs_lookup.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -634,7 +634,7 @@ found:
 		} else if (ndp->ni_dent.d_ino == ROOTINO &&
 		   dp->i_number == ROOTINO) {
 			for (i = 1; i < NMOUNT; i++)
-			if (mount[i].m_bufp != NULL &&
+			if (mount[i].m_fs != NULL &&
 			   mount[i].m_dev == dp->i_dev) {
 				iput(dp);
 				dp = mount[i].m_inodp;
