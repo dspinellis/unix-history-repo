@@ -1,10 +1,10 @@
 /*-
- * Copyright (c) 1990 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)callout.h	7.3 (Berkeley) %G%
+ *	@(#)callout.h	8.1 (Berkeley) %G%
  */
 
 struct callout {

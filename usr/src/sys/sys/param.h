@@ -1,10 +1,10 @@
 /*-
- * Copyright (c) 1982, 1986, 1989 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1982, 1986, 1989, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)param.h	7.28 (Berkeley) %G%
+ *	@(#)param.h	8.1 (Berkeley) %G%
  */
 
 #define	BSD	199306		/* System version (year & month). */

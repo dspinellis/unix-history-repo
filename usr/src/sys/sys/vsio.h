@@ -1,10 +1,10 @@
 /*-
- * Copyright (c) 1987 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1987, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vsio.h	7.4 (Berkeley) %G%
+ *	@(#)vsio.h	8.1 (Berkeley) %G%
  */
 
  /****************************************************************************

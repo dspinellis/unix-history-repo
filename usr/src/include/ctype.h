@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ctype.h	5.10 (Berkeley) %G%
+ *	@(#)ctype.h	8.1 (Berkeley) %G%
  */
 
 #ifndef	_CTYPE_H_

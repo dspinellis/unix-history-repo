@@ -1,10 +1,10 @@
 /*-
- * Copyright (c) 1983 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1983, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)struct.h	5.2 (Berkeley) %G%
+ *	@(#)struct.h	8.1 (Berkeley) %G%
  */
 
 #ifndef _STRUCT_H_
