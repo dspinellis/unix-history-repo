@@ -1,4 +1,4 @@
-# symbols.raw 4.5 81/11/07
+# symbols.raw 4.6 82/11/13
 	_version
 #dmesg
 	_msgbuf
@@ -48,7 +48,7 @@
 #	_rectime
 #	_pgintime
 	_dk_xfer
-	_bootime
+	_boottime
 #w
 	_proc
 	_swapdev

@@ -1,4 +1,4 @@
-/*	mscp.h	4.2	82/05/26	*/
+/*	mscp.h	4.3	82/11/13	*/
 /*
  * Definitions for the Mass Storage Control Protocol
  */
@@ -137,9 +137,6 @@
 #define	M_ST_CNTLR	012		/* Controller error */
 #define	M_ST_DRIVE	013		/* Drive error */
 #define	M_ST_DIAG	037		/* Message from an internal diagnostic */
-
-
-typedef	short	quad[4];		/* a word-aligned quadword */
 
 /*
  * An MSCP packet
@@ -306,5 +303,5 @@ struct mslg {
 	char	mslg_sdistat[12];	/* SDI status information */
 };
 
-#define	mslg_busaddr	mslg_unitid
+#define	mslg_busaddr	mslg_unitid.val[0]
 #define	mslg_sdecyl	mslg_group

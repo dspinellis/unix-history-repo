@@ -1,4 +1,4 @@
-/*	uda.c	4.14	82/10/21	*/
+/*	uda.c	4.15	82/11/13	*/
 
 #include "ra.h"
 #if NUDA > 0
@@ -722,7 +722,7 @@ uderror(um, mp)
 
 	case M_FM_BUSADDR:
 		printf("host memory access error, event 0%o, addr 0%o\n",
-			mp->mslg_event, *((long *)&mp->mslg_busaddr[0]));
+			mp->mslg_event, mp->mslg_busaddr);
 		break;
 
 	case M_FM_DISKTRN:

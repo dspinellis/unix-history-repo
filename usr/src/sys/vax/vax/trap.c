@@ -1,4 +1,4 @@
-/*	trap.c	4.23	82/10/31	*/
+/*	trap.c	4.24	82/11/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -12,6 +12,9 @@
 #include "../h/psl.h"
 #include "../h/pte.h"
 #include "../h/acct.h"
+#ifdef SYSCALLTRACE
+#include "../sys/syscalls.c"
+#endif
 
 #include "../vax/mtpr.h"
 
@@ -148,6 +151,9 @@ out:
 	curpri = p->p_pri;
 }
 
+#ifdef SYSCALLTRACE
+int syscalltrace = 0;
+#endif
 /*
  * Called from the trap handler when a system call occurs
  */
@@ -197,6 +203,25 @@ asm("ok:");						/* GROT */
 			u.u_error = EINTR;
 	} else {
 		u.u_eosys = JUSTRETURN;
+#ifdef SYSCALLTRACE
+		if (syscalltrace) {
+			register int i;
+			char *cp;
+
+			if (code >= nsysent)
+				printf("0x%x", code);
+			else
+				printf("%s", syscallnames[code]);
+			cp = "(";
+			for (i= 0; i < callp->sy_narg; i++) {
+				printf("%s%x", cp, u.u_arg[i]);
+				cp = ", ";
+			}
+			if (i)
+				putchar(')', 0);
+			putchar('\n', 0);
+		}
+#endif
 		(*(callp->sy_call))();
 	}
 	locr0[PS] &= ~PSL_C;

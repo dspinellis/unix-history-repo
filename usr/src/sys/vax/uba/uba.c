@@ -1,4 +1,4 @@
-/*	uba.c	4.56	82/10/23	*/
+/*	uba.c	4.57	82/11/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -465,6 +465,7 @@ ubamem(uban, addr, size, doalloc)
 	return(a);
 }
 
+#ifdef notdef
 /*
  * Map a virtual address into users address space. Actually all we
  * do is turn on the user mode write protection bits for the particular
@@ -483,3 +484,4 @@ unmaptouser(vaddress)
 
 	Sysmap[(((unsigned)(vaddress))-0x80000000) >> 9].pg_prot = (PG_KW>>27);
 }
+#endif

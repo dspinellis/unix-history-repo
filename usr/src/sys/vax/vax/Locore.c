@@ -1,4 +1,4 @@
-/*	Locore.c	4.21	82/10/17	*/
+/*	Locore.c	4.22	82/11/13	*/
 
 #include "dz.h"
 #include "mba.h"
@@ -216,6 +216,12 @@ splx(s) int s; { }
 
 /*ARGSUSED*/
 bcopy(from, to, count) caddr_t from, to; unsigned count; { ; }
+
+/*ARGSUSED*/
+bzero(base, count) caddr_t base; unsigned count; { ; }
+
+/*ARGSUSED*/
+bcmp(s1, s2, count) caddr_t s1, s2; unsigned count; { return (0); }
 
 /*ARGSUSED*/
 ffs(i) { return (0); }

@@ -1,4 +1,4 @@
-/*	ut.c	4.21	82/10/17	*/
+/*	ut.c	4.22	82/11/13	*/
 
 #include "tj.h"
 #if NUT > 0
@@ -136,7 +136,10 @@ utopen(dev, flag)
 get:
 	utcommand(dev, UT_SENSE, 1);
 	if (sc->sc_dsreg&UTDS_PIP) {
-		sleep((caddr_t) &lbolt, PZERO+1);
+#ifdef notdef
+		/* this needs to be fixed */
+		sleep((caddr_t)&lbolt, PZERO+1);
+#endif
 		goto get;
 	}
 	sc->sc_dens = olddens;
@@ -737,7 +740,7 @@ utioctl(dev, cmd, data, flag)
 			utcommand(dev, utops[mtop->mt_op], fcount);
 			/* note this depends on the mtop values */
 			if ((mtop->mt_op >= MTFSF || mtop->mt_op <= MTBSR) &&
-			    bp->b_resid) {
+			    bp->b_resid)
 				return (EIO);
 			if ((bp->b_flags&B_ERROR) || (sc->sc_dsreg&UTDS_BOT))
 				break;

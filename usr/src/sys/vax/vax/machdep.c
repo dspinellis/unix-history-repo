@@ -1,4 +1,4 @@
-/*	machdep.c	4.70	82/11/03	*/
+/*	machdep.c	4.71	82/11/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -47,7 +47,7 @@ int	icode[] =
 };
 int	szicode = sizeof(icode);
 
-#if	MUSH
+#ifdef MUSH
 int	mcode[] =
 {
 	0x9f19af9f,	/* pushab [&"mush",0]; pushab */
@@ -78,6 +78,7 @@ startup(firstaddr)
 	register int unixsize;
 	register unsigned i;
 	register struct pte *pte;
+	int mapaddr, j;
 	register caddr_t v;
 
 	/*
@@ -96,12 +97,12 @@ startup(firstaddr)
 	printf("real mem  = %d\n", ctob(maxmem));
 	
 	/*
-	 * First determine how many buffers are reasonable.
-	 * Current alg is 16 per megabyte, with min of 16.
+	 * Determine how many buffers to allocate.
+	 * Use 10% of memory, with min of 16.
 	 * We allocate 1/2 as many swap buffer headers as file i/o buffers.
 	 */
 	if (nbuf == 0) {
-		nbuf = (16 * physmem) / btoc(1024*1024);
+		nbuf = ((physmem * NBPG) / 10) / (2 * CLBYTES);
 		if (nbuf < 16)
 			nbuf = 16;
 	}
@@ -113,13 +114,28 @@ startup(firstaddr)
 
 	/*
 	 * Allocate space for system data structures.
+	 * The first available real memory address is in "firstaddr".
+	 * As pages of memory are allocated, "firstaddr" is incremented.
+	 * The first available kernel virtual address is in "v".
+	 * As pages of kernel virtual memory are allocated, "v" is incremented.
+	 * An index into the kernel page table corresponding to the
+	 * virtual memory address maintained in "v" is kept in "mapaddr".
 	 */
+	mapaddr = firstaddr;
 	v = (caddr_t)(0x80000000 | (firstaddr * NBPG));
 #define	valloc(name, type, num) \
 	    (name) = (type *)(v); (v) = (caddr_t)((name)+(num))
 #define	valloclim(name, type, num, lim) \
 	    (name) = (type *)(v); (v) = (caddr_t)((lim) = ((name)+(num)))
 	valloc(buffers, char, MAXBSIZE * nbuf);
+	for (i = 0; i < nbuf; i++) {
+		for (j = 0; j < 2 * CLSIZE; j++) {
+			*(int *)(&Sysmap[mapaddr+j]) = PG_V | PG_KW | firstaddr;
+			clearseg((unsigned)firstaddr);
+			firstaddr++;
+		}
+		mapaddr += MAXBSIZE / NBPG;
+	}
 	valloc(buf, struct buf, nbuf);
 	valloc(swbuf, struct buf, nswbuf);
 	valloc(swsize, short, nswbuf);	/* note: nswbuf is even */
@@ -134,14 +150,20 @@ startup(firstaddr)
 	valloc(argmap, struct map, ARGMAPSIZE);
 	valloc(kernelmap, struct map, nproc);
 	valloc(mbmap, struct map, nmbclusters/4);
-#if	QUOTA
+#ifdef QUOTA
 	valloclim(quota, struct quota, nquota, quotaNQUOTA);
 	valloclim(dquot, struct dquot, ndquot, dquotNDQUOT);
 #endif
 	/*
 	 * Now allocate space for core map
+	 * Allow space for all of phsical memory minus the amount 
+	 * dedicated to the system. The amount of physical memory
+	 * dedicated to the system is the total virtual memory of
+	 * the system minus the space in the buffers which is not
+	 * allocated real memory.
 	 */
-	ncmap = (physmem*NBPG - ((int)v &~ 0x80000000)) /
+	ncmap = (physmem*NBPG - ((int)v &~ 0x80000000) +
+		(nbuf * (MAXBSIZE - 2 * CLBYTES))) /
 		    (NBPG*CLSIZE + sizeof (struct cmap));
 	valloclim(cmap, struct cmap, ncmap, ecmap);
 	if ((((int)(ecmap+1))&~0x80000000) > SYSPTSIZE*NBPG)
@@ -152,13 +174,13 @@ startup(firstaddr)
 	 * for the space in the kernel map.
 	 */
 	unixsize = btoc((int)(ecmap+1) &~ 0x80000000);
-	if (unixsize >= physmem - 8*UPAGES)
-		panic("no memory");
-	pte = &Sysmap[firstaddr];
-	for (i = firstaddr; i < unixsize; i++) {
-		*(int *)(&Sysmap[i]) = PG_V | PG_KW | i;
-		clearseg(i);
+	for (i = mapaddr; i < unixsize; i++) {
+		*(int *)(&Sysmap[i]) = PG_V | PG_KW | firstaddr;
+		clearseg((unsigned)firstaddr);
+		firstaddr++;
 	}
+	if (firstaddr >= physmem - 8*UPAGES)
+		panic("no memory");
 	mtpr(TBIA, 1);
 
 	/*
@@ -175,7 +197,7 @@ startup(firstaddr)
 	 * THE USER PAGE TABLE MAP IS CALLED ``kernelmap''
 	 * WHICH IS A VERY UNDESCRIPTIVE AND INCONSISTENT NAME.
 	 */
-	meminit(unixsize, maxmem);
+	meminit(firstaddr, maxmem);
 	maxmem = freemem;
 	printf("avail mem = %d\n", ctob(maxmem));
 	rminit(kernelmap, (long)USRPTSIZE, (long)1,
