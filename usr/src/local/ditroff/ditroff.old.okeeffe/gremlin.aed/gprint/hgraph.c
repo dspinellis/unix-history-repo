@@ -34,7 +34,6 @@ extern char *fontdir ;
 /* imports from main.c */
 
 extern double scale;
-extern char device;
 extern point();
 extern int    linethickness;
 extern int    linmod;
@@ -50,9 +49,10 @@ extern double    delx;
 extern double    dely;
 extern double    del;
 extern int DevRange;
+extern char device;
 
 
-
+
 line(x0, y0, x1, y1)
 int x0, y0, x1, y1;
 
@@ -111,7 +111,7 @@ int x0, y0, x1, y1;
     if((x1+slope*y1)&linmod) point(x1, y1);
 }
 
-
+
 HGPrintElt(element)
 ELT *element;
 
@@ -172,7 +172,7 @@ ELT *element;
     }  /* end if */
 }  /* end PrintElt */
 
-
+
 HGPutText(justify,pnt,string)
 int justify;
 POINT pnt;
@@ -295,7 +295,7 @@ char string[];
     }
 } /* end HGPutText */;
 
-
+
 #define pi 3.14159265357
 #define log2_10 3.321915
 
@@ -343,7 +343,7 @@ int angle;
     }   /* end for */;
 }  /* end HGArc */;
 
-
+
 RoundEnd(x, y, radius, filled)
 int x, y, radius;
 int filled;                /* indicates whether the circle is filled */
@@ -406,7 +406,7 @@ int filled;                /* indicates whether the circle is filled */
     }  /* end for i */;
 }  /* end RoundEnd */;
 
-
+
 #define MAXPOINTS 200
 
 static Paramaterize(x, y, h, n)
@@ -514,7 +514,7 @@ int npoints;				/* number of valid points */
 	}
 }  /* end PeriodicSpline */
 
-
+
 static NaturalEndSpline(h, z, dz, d2z, d3z, npoints)
 float h[MAXPOINTS], z[MAXPOINTS];	/* Point list and parameterization */
 float dz[MAXPOINTS];			/* to return the 1st derivative */
@@ -576,7 +576,7 @@ int npoints;				/* number of valid points */
 	}
 }  /* end NaturalEndSpline */
 
-
+
 #define PointsPerInterval 32
 
 HGCurve(pointlist,style)
@@ -651,7 +651,7 @@ int   style;
 }  /* end HGCurve */
 
 
-
+
 HGplotch(ch)
 char ch;
 
@@ -686,7 +686,7 @@ char ch;
           lasty += dispatch[ (ch == ' ') ? 'a' : ch ].width;
 }
 
-
+
 HGInitFont(fontFile)
 char *fontFile;
 
@@ -744,7 +744,7 @@ char *fontFile;
     }
 }
 
-
+
 HGtline(x0, y0, x1, y1)
 int x0, y0, x1, y1;
 /*
@@ -803,7 +803,7 @@ int x0, y0, x1, y1;
         RoundEnd(x1, y1, (int) morelen, TRUE);    /* add rounded end */
 }  /* end HGtline */
 
-
+
 HGMove(p)
 POINT p;
 {
