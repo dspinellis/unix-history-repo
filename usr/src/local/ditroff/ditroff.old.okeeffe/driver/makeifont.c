@@ -1,17 +1,30 @@
 /* Font description file producer:  David Slattengren
  * Taken from vfontinfo by Andy Hertzfeld  4/79
  *
- *	Use:  mkfnt [-s] [-m] [-p#] [-r#] [-ddirectory] font
+ *	Use:  mkfnt [ -nNAME ]  [ -smial ]  [ "-xs1,s2[;s1,s2...]" ]
+ *		[ "-ys1,s2[;s1,s2...]" ]  [ -p# ]  [ -r# ]  [ -ddir ]  font
  *
  *	Mkfnt takes the font named "font" and produces a ditroff description
- *	file from it.  The -s option tells mkfnt that this is a special font,
- *	and sould substitute special character names for the normal ones.  The
- *	-m option switches to the math font character map.  -m and -s together
- *	will get the math font at the moment.  The
- *	-p# option tells what point size the DESC file has as it's "unitwidth"
- *	argument (default: 36).  The -r# option is the resolution of the device
- *	(default: 240, in units/inch).  The -d option tells where to look for
- *	fonts (default: /usr/src/local/imagen/fonts/raster).
+ *	file from it.  The -n option takes the 1 or 2 letter troff name to put
+ *	the description (default = XX).  The -s, -m, -i, -a options select a
+ *	different character mapping than for a "roman" font.  s = special;
+ *	m = math;  i = italics;  a = ascii.  The -l option tells if the font
+ *	has ligatures.
+ *
+ *	Both -x and -y options allow character name mapping.  A semi-colon
+ *	separated list of comma-separated character-name pairs follows the
+ *	x or y.  Notice that there are no spaces in the -x or -y command.  It
+ *	is also IMPORTANT to enclose these arguments in double quotes to stop
+ *	the cshell from interpretting the contents.  A -x pair REPLACES the
+ *	definition for s1 by s2.  A -y pair creates a synonym for s1 and calls
+ *	it s2.  -x and -y MUST be sent after -s, -m, -i, or -a  if one of them
+ *	is used.  Some synonyms are defaulted.  To remove a synonym or char-
+ *	acter, leave out s2.
+ *
+ *	The -p# option tells what point size the DESC file has
+ *	as it's "unitwidth" argument (default: 36).  The -r# option is the
+ *	resolution of the device (default: 240, in units/inch).  The -d option
+ *	tells where to find fonts (default: /usr/src/local/imagen/fonts/raster).
  */
 
 /*
@@ -41,7 +54,7 @@
 #include <ctype.h>
 #include "rst.h"
 
-char 	sccsid[] = "@(#)makeifont.c	1.1	(Berkeley)	%G%";
+char 	sccsid[] = "@(#)makeifont.c	1.2	(Berkeley)	%G%";
 
 #define PCNTUP		62	/* percent of maximum height for an ascender */
 #define PCNTDOWN	73	/* percent of maximum droop for a descender */
@@ -51,6 +64,9 @@ char 	sccsid[] = "@(#)makeifont.c	1.1	(Berkeley)	%G%";
 #define MAXSIZE		36	/*    acceptible for use as "unitwidth"s */
 #define MINRES		10	/* check up on resolution input by setting */
 #define MAXRES		100000	/*    absurdly out-of-range limits on them */
+#define MAXLAST		127	/* highest character code allowed */
+#define SYNON		100	/* number of entries in a synonym table. */
+				/*    equals twice the number of pairs. */
 
 
 unsigned char *idstrings;	/* place for identifying strings */
@@ -65,6 +81,7 @@ int	psize;			/* point size of font actually used */
 int	psizelist[] = { 40, 36, 28, 24, 22, 20, 18, 16,
 			14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 0 };
 
+char	*fontname = "XX";	/* troff name of font - set on command line */
 char	*fontdir = FONTDIR;	/* place to look for fonts */
 char	IName[100];		/* input file name put here */
 char	*rdchar ();		/* function makes strings for ascii */
@@ -73,80 +90,108 @@ int	FID = -1;		/* input file number */
 int	maxdown = 0;		/* size of the most "droopy" character */
 int	maxup = 0;		/* size of the tallest character */
 int	type;			/* 1, 2, or 3 for type of ascend/descending */
-int	mathf = 0;		/* flag "is this a math font?"; */
-int	specialf = 0;		/* flag "is this a special font?";  used to
-				   determine which mapping array to look in. */
+int	ligsf = 0;		/* flag "does this font have ligatures?" */
 
 				/* following are the character maps for */
 				/* ascii code-conversion to printables... */
 char	**charmap;
-char *iregular[] = {
+char	**synonyms;
+int	numsyn;
 
+char *iregular[] = {
 	"*G", "*D", "*H", "*L", "*C", "*P", "*S", "*U", "*F", "*Q", "*W",
-	"id", "ij", "ga", "aa", "^", "d^", "hc", "\\-", "..", "~", "->",
-	"im", "de", "tc", "tl", "hs", "fe", "ae", "oe", "AE", "OE", "/o",
-	"!", "\"", "fm", "ft", "%", "&", "'", "(", ")", "*", "+", ",", "-",
+	"id", "ij", "ga", "aa", "^", "d^", "hc", "rn", "..", "~", "ve",
+	"im", "de", "ce", "tl", "ar", "fb", "ae", "oe", "AE", "OE", "o/",
+	"!", "\"", "fm", "ft", "%", "&", "'", "(", ")", "*", "+", ",", "hy",
 	".", "/", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ":", ";",
 	"<", "=", ">", "?",
-	"/O", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
+	"es", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
 	"N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "[",
-	"b\"", "]", "\\_", "_", "`", "a", "b", "c", "d", "e", "f", "g", "h",
+	"b\"", "]", "\\-", "em", "`", "a", "b", "c", "d", "e", "f", "g", "h",
 	"i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v",
-	"w", "x", "y", "z", "ff", "fi", "fl", "Fi", "Fl",
-	"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
-	"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
-	"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
-	"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
-	"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
-	"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
-	"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
-	"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""
+	"w", "x", "y", "z", "ff", "fi", "fl", "Fi", "Fl"
+};
+int	nregular = 14;
+char *sregular[SYNON] = {
+	"A", "*A",	"B", "*B",	"E", "*E",	"H", "*Y",
+	"I", "*I",	"K", "*K",	"M", "*M",	"N", "*N",
+	"O", "*O",	"P", "*R",	"T", "*T",	"X", "*X",
+	"Z", "*Z",	"hy", "-"
+};
+
+char *iascii[] = {
+	"m.", "da", "*a", "*b", "an", "no", "mo", "*p", "*l", "*g", "*d",
+	"is", "+-", "O+", "if", "pd", "sb", "sp", "ca", "cu", "fa", "te",
+	"OX", "<>", "<-", "->", "ap", "!=", "<=", ">=", "==", "or", "",
+	"!", "\"", "#", "$", "%", "&", "'", "(", ")", "*", "+", ",", "-",
+	".", "/", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ":", ";",
+	"<", "=", ">", "?",
+	"@", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
+	"N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "[",
+	"\\", "]", "^", "_", "`", "a", "b", "c", "d", "e", "f", "g", "h", "i",
+	"j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w",
+	"x", "y", "z", "{", "|", "}", "~", "dm"
+};
+int	nascii = 2;
+char *sascii[SYNON] = {
+	"-", "hy",	"-", "\\-"
 };
 
 char *ispecial[] = {
-
-	"mi", "m.", "mu", "**", "\\", "de", "+-", "-+", "O+", "O-", "OX", "O/",
-	"O.", "di", "ht", "bu", "ut", "==", "ib", "ip", "<=", ">=", "(=", ")=",
-	"ap", "~~", "sb", "sp", "!=", "eq", "((", "))", "<-", "->", "ua", "da",
-	"<>", "<<", ">>", "~=", "<_", "_>", "Ua", "Da", "><", "uL", "uR", "lR",
-	"fm", "if", "mo", "!m", "0/", "ru", "al", ")(", "fa", "te", "no", "~N",
-	"~R", "~T", "cr", "", "sl", "A", "B", "C", "D", "E", "F", "G", "H", "I",
+	"mi", "m.", "mu", "**", "\\", "ci", "+-", "-+", "O+", "O-", "OX", "O/",
+	"O.", "di", "ht", "bu", "pe", "==", "ib", "ip", "<=", ">=", "(=", ")=",
+	"ap", "pt", "sb", "sp", "!=", ".=", "((", "))", "<-", "->", "ua", "da",
+	"<>", "<<", ">>", "~=", "lh", "rh", "Ua", "Da", "><", "uL", "uR", "lR",
+	"fm", "if", "mo", "!m", "0/", "ul", "al", ")(", "fa", "te", "no", "?0",
+	"?1", "?2", "cr", "", "/", "A", "B", "C", "D", "E", "F", "G", "H", "I",
 	"J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W",
 	"X", "Y", "Z", "cu", "ca", "c+", "an", "or", "|-", "-|", "lf", "rf",
 	"lc", "rc", "{", "}", "<", ">", "bv", "||", "[[", "]]", "", "", "sr",
 	"#", "gr", "is", "ux", "dx", "rx", "dm", "sc", "dg", "dd", "pp", "@",
-	"co", "", "$",
-	"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
-	"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
-	"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
-	"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
-	"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
-	"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
-	"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
-	"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""
+	"co", "", "$"
+};
+int	nspecial = 0;
+char *sspecial[SYNON] = {
+	"",""
 };
 
 char *imath[] = {
+	"", "", "", "", "lf", "rf", "lc", "rc", "", "", "", "",
+	"", "", "/", "", "", "", "", "", "", "", "",
+	"", "", "", "", "", "", "", "", "", "", "", "",
+	"", "", "", "", "", "", "", "", "", "", "", "Bl", "Br",
+	"", "", "", "", "", "", "", "", "lt", "rt", "lb", "rb",
+	"lk", "rk", "", "", "", "", "", "", "", "", "", "", "", "", "",
+	"", "", "", "", "", "", "", "", "", "", "", "",
+	"", "", "", "", "", "", "", "", "", "", "", "", "",
+	"LT", "RT", "LB", "RB", "", "", "", "", "", "", "", "", "",
+	"", "", "", "", "", "", "",
+	"", "?0", "", "", "", "", "?1", "?2"
+};
+int	nmath = 0;
+char *smath[SYNON] = {
+	"",""
+};
 
-	"", "ct", "dd", "aa", "ga", "?1", "?2", "?3", "?4", "?5", "co", "rg",
-	"tm", "?6", "pp", "fe", "ma", "bu", "bk", "bb", "ci", "sq", "#", "te",
-	"rh", "lh", "*a", "*b", "*q", "*d", "*e", "*f", "*g", "*y", "*i", "*c",
-	"*k", "*l", "*m", "*n", "*o", "*p", "*r", "*s", "*t", "*h", "*w", "*x",
-	"*u", "*z", "*G", "*D", "*F", "*G", "*C", "*L", "*H", "*W", "pl", "mi",
-	"mu", "eq", "di", "+-", "de", "fm", "*X", "es", "?7", "pt", "ts", "gr",
-	"pd", ">", "<", ">=", "<=", "or", "sl", "\\\\", "ap", "~=", "~~", "==",
-	"po", "**", "?8", "{", "}", "br", "sr", "is", "*S", "*P", "sb", "sp",
-	"ca", "cu", "ib", "ip", "if", "?9", "ru", "?0", "??", "bs", "b4", "b9",
-	"->", "<-", "ua", "da", "!=", "lf", "rf", "lc", "rc", "ul", "bv", "lt",
-	"rt", "lb", "rb", "lk", "rk", "no", "fa", "ti",
-	"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
-	"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
-	"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
-	"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
-	"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
-	"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
-	"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
-	"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""
+char *iitalics[] = {
+	"*G", "*D", "*H", "*L", "*C", "*P", "*S", "*U", "*F", "*Q", "*W",
+	"*a", "*b", "*g", "*d", "*e", "*z", "*y", "*h", "*i", "*k", "*l",
+	"*m", "*n", "*c", "*p", "*r", "*s", "*t", "*u", "*f", "*x", "id",
+	"!", "\"", "el", "?0", "pd", "&", "'", "(", ")", "*", "+", ",", "hy",
+	".", "/", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ":", ";",
+	"<", "=", ">", "?",
+	"id", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
+	"N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "[",
+	"", "]", "", "", "`", "a", "b", "c", "d", "e", "f", "g", "h",
+	"i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v",
+	"w", "x", "y", "z", "*q", "*w", "?2", "?1", "w-"
+};
+int	nitalics = 15;
+char *sitalics[SYNON] = {
+	"A", "*A",	"B", "*B",	"E", "*E",	"H", "*Y",
+	"I", "*I",	"K", "*K",	"M", "*M",	"N", "*N",
+	"O", "*O",	"P", "*R",	"T", "*T",	"X", "*X",
+	"Z", "*Z",	"o", "*o",	"hy", "-"
 };
 
 
@@ -155,15 +200,72 @@ main (argc, argv)
 int argc;
 char **argv;
 {
-    register i, j;
+    register int i;		/* two indexes */
+    register int j;
+    register char *ptr;		/* string traveller */
+    register char delimit;	/* place for delemiters on command-line */
+    char tostring();		/* function makes string */
+    char *nextstring();		/* moves to next string on list */
 
-    while (*(*(++argv)) == '-') {		/* do options... */
+    charmap = iregular;			/* default character map */
+    synonyms = sregular;
+    numsyn = nregular;
+    while (*(*(++argv)) == '-') {	/* do options... */
 	switch (*(++(*argv))) {
 
-	  case 's': specialf = 1;		/* special font */
+	  case 's': charmap = ispecial;		/* special font */
+		    synonyms = sspecial;
+		    numsyn = nspecial;
 		    break;
 
-	  case 'm': mathf = 1;			/* math font */
+	  case 'm': charmap = imath;		/* math font */
+		    synonyms = smath;
+		    numsyn = nmath;
+		    break;
+
+	  case 'i': charmap = iitalics;		/* italics font */
+		    synonyms = sitalics;
+		    numsyn = nitalics;
+		    break;
+
+	  case 'a': charmap = iascii;		/* ascii font */
+		    synonyms = sascii;
+		    numsyn = nascii;
+		    break;
+
+	  case 'l': ligsf = 1;			/* ascii font */
+		    break;
+
+	  case 'n': fontname = ++*argv;		/* troff font name */
+		    break;
+
+	  case 'x': ptr = ++*argv;		/* replacements */
+		    while (delimit = tostring(ptr, ',')) {	/* get s1 */
+			for (i = 0; i <= MAXLAST; i++)	/* search for match */
+			    if (strcmp (charmap[i], ptr) == 0)
+				break;
+			if (i > MAXLAST) error ("-x option: no match");
+			charmap[i] = ptr = nextstring(ptr);	/* replace s1 */
+			delimit = tostring(ptr, ';');	/* with string s2 */
+			if (delimit) ptr = nextstring(ptr);
+		    }
+		    break;
+
+	  case 'y': ptr = ++*argv;		/* synonyms */
+		    while (delimit = tostring(ptr, ',')) {	/* get s1 */
+			synonyms[2 * numsyn] = ptr;	/* set on end of list */
+			ptr = nextstring(ptr);		/* get string s2 */
+			delimit = tostring(ptr, ';');
+			if (*ptr) {			/* if something there */
+			    synonyms[2 * numsyn++ + 1] = ptr;  /* add to list */
+			} else {			/* otherwise remove */
+			    for (i = 0; i < numsyn; i++)	/* from list */
+				if (strcmp (synonyms[2 * i], ptr) == 0)
+				    *synonyms[2 * i] = '\0';
+			}
+			if (delimit) ptr = nextstring(ptr);
+			if (numsyn > SYNON) error ("out of synonym space");
+		    }
 		    break;
 
 	  case 'd': fontdir = ++*argv;		/* directory */
@@ -187,8 +289,6 @@ char **argv;
 		    exit(1);
 	}
     }
-			/* set character map */
-    charmap = mathf ? imath : specialf ? ispecial : iregular;
 
 							/* open font file */
     for (i = 0; FID < 0 && (psize = psizelist[i]) > 0; i++) {
@@ -196,7 +296,7 @@ char **argv;
 	FID = open (IName, 0);
     }
     if (FID < 0) { 
-	printf ("Can't find %s\n", *argv);
+	fprintf (stderr, "Can't find %s\n", *argv);
 	exit (8); 
     }
 
@@ -207,10 +307,14 @@ char **argv;
     p.p_size = rd2();
     p.p_version = rd1();
     if (p.p_version)
-	    error("Wrong version of Font file.");
+	error("Wrong version of Font file.");
     p.p_glyph = rd3();
     p.p_first = rd2();
     p.p_last = rd2();
+    if (p.p_last > MAXLAST) {
+	fprintf(stderr, "truncating from %d to %d\n", p.p_last, MAXLAST);
+	p.p_last = MAXLAST;
+    }
     p.p_mag = rd4();
     p.p_desiz = rd4();
     p.p_linesp = rd4();
@@ -242,21 +346,21 @@ char **argv;
     if ((fixtowdth = FIXPIX * p.p_mag / 1000.0) == 0.0)
 	fixtowdth = FIXPIX;
 
-    printf("# Font %s, size %.2f, ", IName, p.p_desiz * FIX);
+    printf("# Font %s\n# size %.2f, ", IName, p.p_desiz * FIX);
     printf("first %d, last %d, res %d, ", p.p_first, p.p_last, p.p_res);
     printf("mag %.2f\n", fixtowdth / FIXPIX);
 
-    printf("spacewidth %d\n", (int) (p.p_wordsp * fixtowdth));
-    printf("name XX\ninternalname #\n");
-    if (specialf || mathf) {
-	printf ("special\n");
-    } else {
+    printf("name %s\n", fontname);
+    if (ligsf)
 	printf ("ligatures ff fl fi ffl ffi 0\n");
-    }
+    if ((i = (pointsize * p.p_wordsp * fixtowdth) / psize) > 127) i = 127;
+    printf("spacewidth %d\n", i);
     printf ("# char	width	u/d	octal\ncharset\n");
-    printf ("\\|	%4d	 0	0\n\\^	%4d	 0	0\n",
- 		(int) (p.p_wordsp * fixtowdth) / 2,
- 		(int) (p.p_wordsp * fixtowdth) / 4);
+			/* the octal values for the following characters are */
+			/* purposefully OUT of the range for characters (128) */
+    printf ("\\|	%4d	 0	0200\n\\^	%4d	 0	0200\n",
+								i / 3, i / 6);
+
     for (j = p.p_first; j <= p.p_last; j++) {
 	if (g[j].g_bitp != 0) {
 	    if (g[j].g_up > maxup) maxup = g[j].g_up;
@@ -279,15 +383,57 @@ char **argv;
 	if (g[j].g_bitp != 0) {
 	    type = (int) (((g[j].g_up * 100) / maxup) > PCNTUP) * 2 | (int)
 	    	((((g[j].g_height - (g[j].g_up+1)) * 100)/maxdown) > PCNTDOWN);
-	    i = pointsize * g[j].g_pwidth * fixtowdth / psize;
-	    printf ("%s	%4d	 %d	0%o\n", charmap[j], i, type, j);
+	    if (*(ptr = charmap[j])) {
+		printf ("%s	%4d	 %d	0%o\n", ptr, (int) (pointsize
+			* g[j].g_pwidth * fixtowdth / psize), type, j);
+		for (i = 0; i < numsyn; i++)
+		    if (strcmp (ptr, synonyms[2 * i]) == 0)
+			printf ("%s	\"\n", synonyms[2 * i + 1]);
+	    }
 	}
     }
 }
 
+
+/*----------------------------------------------------------------------------*
+ | Routine:	char  tostring (pointer, delimitter)
+ |
+ | Results:	checks string pointed to by pointer and turns it into a
+ |		string at 'delimitter' by replacing it with '\0'.  If the
+ |		end of the string is found first, '\0' is returned; otherwise
+ |		the delimitter found there is returned.
+ |
+ *----------------------------------------------------------------------------*/
+
+char tostring(p, d)
+register char *p;
+register char d;
+{
+    while (*p && *p != d) p++;
+    d = *p;
+    *p = '\0';
+    return d;
+}
+
+
+/*----------------------------------------------------------------------------*
+ | Routine:	char  * nextstring (pointer)
+ |
+ | Results:	returns address of next string after one pointed to by
+ |		pointer.  The next string is after the '\0' byte.
+ |
+ *----------------------------------------------------------------------------*/
+
+char *nextstring(p)
+register char *p;
+{
+    while (*(p++));
+    return p;
+}
+
+
 error(string)
 char *string;
-
 { 
     printf("\nmakefont: %s\n",string);
     exit(8);
