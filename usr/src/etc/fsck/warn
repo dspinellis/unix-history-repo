@@ -1,0 +1,18 @@
+	pwarn("%d files, %d used, %d free (%d frags, %d blocks)\n",
+				pwarn("EXCESSIVE BAD BLKS I=%u", inum);
+				pwarn("EXCESSIVE DUP BLKS I=%u", inum);
+		pwarn("FREE INODE COUNT WRONG IN SUPERBLK");
+		pwarn("%d DUP BLKS IN BIT MAPS\n", dupblk);
+			pwarn("%ld BLK(S) MISSING\n", fmax - b);
+			pwarn("SUMMARY INFORMATION %s%s%s%sBAD\n",
+			pwarn("FREE BLK COUNT(S) WRONG IN SUPERBLK");
+		pwarn("BAD CYLINDER GROUPS");
+			pwarn("DIRECTORY %D CORRUPTED", dirp->number);
+			pwarn("DIRECTORY %D CORRUPTED", dirp->number);
+	pwarn("%s ", s);
+		pwarn("LINK COUNT %s",
+		pwarn("%s %s", s, DIRCT?"DIR":"FILE");
+	pwarn("USE -b OPTION TO FSCK TO SPECIFY LOCATION OF AN ALTERNATE\n");
+	pwarn("UNREF %s ", lostdir ? "DIR" : "FILE");
+		pwarn("DIR I=%u CONNECTED. ", orphan);
+pwarn(s, a1, a2, a3, a4, a5, a6)
