@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	8.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	8.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -291,6 +291,9 @@ mountfs(vfstype, spec, name, flags, options, mntopts)
 		free(optbuf);
 		return (1);
 	case 0:					/* Child. */
+		if (strcmp(vfstype, "ufs") == 0)
+			exit(mount_ufs(argc, (char * const *) argv));
+
 		/* Go find an executable. */
 		edir = edirs;
 		do {
