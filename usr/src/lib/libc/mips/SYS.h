@@ -7,11 +7,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)SYS.h	5.1 (Berkeley) %G%
+ *	@(#)SYS.h	5.2 (Berkeley) %G%
  */
 
 #include <sys/syscall.h>
-#include "DEFS.h"
+#include <machine/machAsmDefs.h>
 
 /* vax/tahoe compat */
 #define	ret
