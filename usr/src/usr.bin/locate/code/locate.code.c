@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)locate.code.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)locate.code.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -110,16 +110,14 @@ main(argc, argv)
 			*cp = '\0';
 
 		/* Squelch characters that would botch the decoding. */
-		for (cp = path; *cp != NULL; cp++) {
-			if ((u_char)*cp >= PARITY)
-				*cp &= PARITY-1;
-			if (*cp <= SWITCH)
+		for (cp = path; *cp != '\0'; cp++) {
+			if ((u_char)*cp >= PARITY || *cp <= SWITCH)
 				*cp = '?';
 		}
 
 		/* Skip longest common prefix. */
 		for (cp = path; *cp == *oldpath; cp++, oldpath++)
-			if (*oldpath == NULL)
+			if (*oldpath == '\0')
 				break;
 		count = cp - path;
 		diffcount = count - oldcount + OFFSET;
@@ -132,8 +130,8 @@ main(argc, argv)
 			if (putchar(diffcount) == EOF)
 				err(1, "stdout");
 
-		while (*cp != NULL) {
-			if (*(cp + 1) == NULL) {
+		while (*cp != '\0') {
+			if (*(cp + 1) == '\0') {
 				if (putchar(*cp) == EOF)
 					err(1, "stdout");
 				break;
@@ -171,10 +169,10 @@ bgindex(bg)			/* Return location of bg in bigrams or -1. */
 
 	bg0 = bg[0];
 	bg1 = bg[1];
-	for (p = bigrams; *p != NULL; p++)
+	for (p = bigrams; *p != '\0'; p++)
 		if (*p++ == bg0 && *p == bg1)
 			break;
-	return (*p == NULL ? -1 : --p - bigrams);
+	return (*p == '\0' ? -1 : --p - bigrams);
 }
 
 void
