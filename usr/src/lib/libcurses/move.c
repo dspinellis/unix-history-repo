@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)move.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)move.c	5.11 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -25,11 +25,11 @@ wmove(win, y, x)
 	__TRACE("wmove: (%d, %d)\n", y, x);
 #endif
 	if (x < 0 || y < 0)
-		return (CURSES_ERR);
+		return (ERR);
 	if (x >= win->maxx || y >= win->maxy)
-		return (CURSES_ERR);
+		return (ERR);
 	win->curx = x;
 	win->cury = y;
 	win->lines[y]->flags &= ~__ISPASTEOL;
-	return (CURSES_OK);
+	return (OK);
 }

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)insertln.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)insertln.c	5.14 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -51,5 +51,5 @@ winsertln(win)
 	__touchline(win, y, 0, win->maxx - 1, 0);
 	if (win->orig == NULL)
 		__id_subwins(win);
-	return (CURSES_OK);
+	return (OK);
 }

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)initscr.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)initscr.c	5.12 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -28,7 +28,7 @@ initscr()
 	__echoit = 1;
         __pfast = __rawmode = __noqch = 0;
 
-	if (gettmode() == CURSES_ERR)
+	if (gettmode() == ERR)
 		return (NULL);
 
 	/*
@@ -37,7 +37,7 @@ initscr()
 	 */
 	if (My_term || (sp = getenv("TERM")) == NULL)
 		sp = Def_term;
-	if (setterm(sp) == CURSES_ERR)
+	if (setterm(sp) == ERR)
 		return (NULL);
 
 	/* Need either homing or cursor motion for refreshes */
@@ -49,13 +49,13 @@ initscr()
 
 	if (curscr != NULL)
 		delwin(curscr);
-	if ((curscr = newwin(LINES, COLS, 0, 0)) == CURSES_ERR)
+	if ((curscr = newwin(LINES, COLS, 0, 0)) == ERR)
 		return (NULL);
 	clearok(curscr, 1);
 
 	if (stdscr != NULL)
 		delwin(stdscr);
-	if ((stdscr = newwin(LINES, COLS, 0, 0)) == CURSES_ERR) {
+	if ((stdscr = newwin(LINES, COLS, 0, 0)) == ERR) {
 		delwin(curscr);
 		return (NULL);
 	}

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)getstr.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)getstr.c	5.8 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -20,12 +20,12 @@ wgetstr(win, str)
 	register WINDOW *win;
 	register char *str;
 {
-	while ((*str = wgetch(win)) != CURSES_ERR && *str != '\n')
+	while ((*str = wgetch(win)) != ERR && *str != '\n')
 		str++;
-	if (*str == CURSES_ERR) {
+	if (*str == ERR) {
 		*str = '\0';
-		return (CURSES_ERR);
+		return (ERR);
 	}
 	*str = '\0';
-	return (CURSES_OK);
+	return (OK);
 }

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)insch.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)insch.c	5.11 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -41,6 +41,6 @@ winsch(win, ch)
 			scroll(win);
 			win->cury--;
 		} else
-			return (CURSES_ERR);
-	return (CURSES_OK);
+			return (ERR);
+	return (OK);
 }

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mvwin.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)mvwin.c	5.9 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -24,7 +24,7 @@ mvwin(win, by, bx)
 	register int dy, dx;
 
 	if (by + win->maxy > LINES || bx + win->maxx > COLS)
-		return (CURSES_ERR);
+		return (ERR);
 	dy = by - win->begy;
 	dx = bx - win->begx;
 	orig = win->orig;
@@ -38,14 +38,14 @@ mvwin(win, by, bx)
 		} while (win != orig);
 	} else {
 		if (by < orig->begy || win->maxy + dy > orig->maxy)
-			return (CURSES_ERR);
+			return (ERR);
 		if (bx < orig->begx || win->maxx + dx > orig->maxx)
-			return (CURSES_ERR);
+			return (ERR);
 		win->begy = by;
 		win->begx = bx;
 		__swflags(win);
 		__set_subwin(orig, win);
 	}
 	__touchwin(win);
-	return (CURSES_OK);
+	return (OK);
 }
