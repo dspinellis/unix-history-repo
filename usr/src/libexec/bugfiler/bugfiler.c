@@ -1,6 +1,18 @@
+/*
+ * Copyright (c) 1983 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
 #ifndef lint
-static char sccsid[] = "@(#)bugfiler.c	4.15.1.1 (Berkeley) %G%";
-#endif
+char copyright[] =
+"@(#) Copyright (c) 1983 Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif not lint
+
+#ifndef lint
+static char sccsid[] = "@(#)bugfiler.c	5.3 (Berkeley) 85/11/04";
+#endif not lint
 
 /*
  * Bug report processing program.
@@ -17,8 +29,12 @@ static char sccsid[] = "@(#)bugfiler.c	4.15.1.1 (Berkeley) %G%";
 #include <sys/stat.h>
 #include <sys/dir.h>
 
+#ifndef BUGS_NAME
 #define	BUGS_NAME	"4bsd-bugs"
-#define	BUGS_HOME	"%ucbarpa@BERKELEY"
+#endif
+#ifndef BUGS_HOME
+#define	BUGS_HOME	"@ucbarpa.BERKELEY.EDU"
+#endif
 #define	MAILCMD		"/usr/lib/sendmail -i -t"
 
 char	unixtomh[] = "/usr/new/lib/mh/unixtomh";
