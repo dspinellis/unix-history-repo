@@ -9,14 +9,16 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_delete.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_delete.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
-#include <errno.h>
+
 #include <db.h>
+#include <errno.h>
 #include <stdio.h>
 #include <string.h>
+
 #include "btree.h"
 
 static int bt_bdelete __P((BTREE *, const DBT *));
@@ -128,7 +130,7 @@ bt_bdelete(t, key)
 		dirty2 = 0;
 		do {
 			if (h->pgno == cpgno && e->index == cindex) {
-				if (NOTSET(t, BTF_DELCRSR)) {
+				if (!ISSET(t, BTF_DELCRSR)) {
 					SET(t, BTF_DELCRSR);
 					deleted = 1;
 				}
@@ -195,7 +197,7 @@ done1:	if (h->pgno != save.page->pgno)
 			if (__bt_cmp(t, key, e) != 0)
 				goto done2;
 			if (h->pgno == cpgno && e->index == cindex) {
-				if (NOTSET(t, BTF_DELCRSR)) {
+				if (!ISSET(t, BTF_DELCRSR)) {
 					SET(t, BTF_DELCRSR);
 					deleted = 1;
 				}
