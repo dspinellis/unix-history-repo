@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uipc_domain.c	7.5 (Berkeley) %G%
+ *	@(#)uipc_domain.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -47,6 +47,9 @@ domaininit()
 #endif
 #ifdef ISO
 	ADDDOMAIN(iso);
+#endif
+#ifdef RMP
+	ADDDOMAIN(rmp);
 #endif
 #include "imp.h"
 #if NIMP > 0
