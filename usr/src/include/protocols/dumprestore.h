@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dumprestore.h	5.2 (Berkeley) %G%
+ *	@(#)dumprestore.h	5.3 (Berkeley) %G%
  */
 
 /*
@@ -48,19 +48,24 @@ union u_spcl {
 		char	c_filesys[NAMELEN]; /* name of dumpped file system */
 		char	c_dev[NAMELEN];	    /* name of dumpped device */
 		char	c_host[NAMELEN];    /* name of dumpped host */
+		long	c_flags;	    /* additional information */
 	} s_spcl;
 } u_spcl;
 #define spcl u_spcl.s_spcl
 /*
  * special record types
  */
-#define TS_OTAPE 	1	/* 4.3BSD and earlier type dump tape header */
-#define TS_TAPE 	7	/* dump tape header */
+#define TS_TAPE 	1	/* dump tape header */
 #define TS_INODE	2	/* beginning of file record */
 #define TS_ADDR 	4	/* continuation of file record */
 #define TS_BITS 	3	/* map of inodes on tape */
 #define TS_CLRI 	6	/* map of inodes deleted since last dump */
 #define TS_END  	5	/* end of volume marker */
+
+/*
+ * flag values
+ */
+#define DR_NEWHEADER	1	/* new format tape header */
 
 #define	DUMPOUTFMT	"%-16s %c %s"		/* for printf */
 						/* name, incno, ctime(date) */
