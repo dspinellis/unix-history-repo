@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	7.9 (Berkeley) %G%
+ *	@(#)autoconf.c	7.10 (Berkeley) %G%
  */
 
 /*
@@ -446,6 +446,7 @@ mbafind(nxv, nxp)
 					ms->ms_alive = 1;
 					ms->ms_ctlr = mi->mi_unit;
 					ms->ms_slave = sn;
+					break;
 				}
 		    }
 	}
