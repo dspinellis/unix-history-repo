@@ -34,6 +34,13 @@
  * SUCH DAMAGE.
  *
  *	@(#)conf.c	5.8 (Berkeley) 5/12/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00079
+ * --------------------         -----   ----------------------
+ *
+ * 10 Feb 93	Jordan K. Hubbard	Added select entry for com driver
  */
 static char rcsid[] = "$Header: /usr/src/sys.386bsd/i386/i386/RCS/conf.c,v 1.2 92/01/21 14:21:57 william Exp Locker: toor $";
 
@@ -152,7 +159,7 @@ struct	tty pt_tty[];
 
 #include "com.h"
 #if NCOM > 0
-int	comopen(),comclose(),comread(),comwrite(),comioctl();
+int	comopen(),comclose(),comread(),comwrite(),comioctl(),comselect();
 #define comreset	enxio
 extern	struct tty com_tty[];
 #else
@@ -162,6 +169,7 @@ extern	struct tty com_tty[];
 #define comwrite	enxio
 #define comioctl	enxio
 #define comreset	enxio
+#define comselect	enxio
 #define	com_tty		NULL
 #endif
 
@@ -198,7 +206,7 @@ struct cdevsw	cdevsw[] =
 	  logselect,	enodev,		NULL },
 	{ comopen,	comclose,	comread,	comwrite,	/*8*/
 	  comioctl,	enodev,		comreset,	com_tty,
-	  ttselect,	enodev,		NULL },
+	  comselect,	enodev,		NULL },
 	{ Fdopen,	fdclose,	rawread,	rawwrite,	/*9*/
 	  fdioctl,	enodev,		nullop,		NULL,
 	  seltrue,	enodev,		fdstrategy },

@@ -34,12 +34,13 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         3       00045
+ * CURRENT PATCH LEVEL:         4       00079
  * --------------------         -----   ----------------------
  *
  * 23 Sep 92	Rodney W. Grimes	Fix SILO overflow on 16550 UARTS
  * 30 Aug 92	Poul-Henning Kamp	Stabilize SLIP on lossy lines/UARTS
  * 09 Aug 92	Christoph Robitschko	Correct minor number on com ports
+ * 10 Feb 93	Jordan K. Hubbard	Added select code
  */
 static char rcsid[] = "$Header: /usr/bill/working/sys/i386/isa/RCS/com.c,v 1.2 92/01/21 14:34:11 william Exp $";
 
@@ -723,3 +724,43 @@ comcnputc(dev, c)
 	splx(s);
 }
 #endif
+
+int
+comselect(dev, rw, p)
+	dev_t dev;
+	int rw;
+	struct proc *p;
+{
+	register struct tty *tp = &com_tty[UNIT(dev)];
+	int nread;
+	int s = spltty();
+        struct proc *selp;
+
+	switch (rw) {
+
+	case FREAD:
+		nread = ttnread(tp);
+		if (nread > 0 || 
+		   ((tp->t_cflag&CLOCAL) == 0 && (tp->t_state&TS_CARR_ON) == 0))
+			goto win;
+		if (tp->t_rsel && (selp = pfind(tp->t_rsel)) && selp->p_wchan == (caddr_t)&selwait)
+			tp->t_state |= TS_RCOLL;
+		else
+			tp->t_rsel = p->p_pid;
+		break;
+
+	case FWRITE:
+		if (RB_LEN(&tp->t_out) <= tp->t_lowat)
+			goto win;
+		if (tp->t_wsel && (selp = pfind(tp->t_wsel)) && selp->p_wchan == (caddr_t)&selwait)
+			tp->t_state |= TS_WCOLL;
+		else
+			tp->t_wsel = p->p_pid;
+		break;
+	}
+	splx(s);
+	return (0);
+  win:
+	splx(s);
+	return (1);
+}
