@@ -262,8 +262,29 @@ fincode( d, sz ) double d; {
 	}
 
 cinit( p, sz ) NODE *p; {
-	/* arrange for the initialization of p into a space of
-	size sz */
+	NODE *l;
+
+	/*
+	 * as a favor (?) to people who want to write
+	 *     int i = 9600/134.5;
+	 * we will, under the proper circumstances, do
+	 * a coersion here.
+	 */
+	switch (p->in.type) {
+	case INT:
+	case UNSIGNED:
+		l = p->in.left;
+		if (l->in.op != SCONV || l->in.left->tn.op != FCON) break;
+		l->in.op = FREE;
+		l = l->in.left;
+		l->tn.lval = (long)(l->fpn.dval);
+		l->tn.rval = NONAME;
+		l->tn.op = ICON;
+		l->tn.type = INT;
+		p->in.left = l;
+		break;
+	}
+	/* arrange for the initialization of p into a space of size sz */
 	/* the proper alignment has been opbtained */
 	/* inoff is updated to have the proper final value */
 	ecode( p );
