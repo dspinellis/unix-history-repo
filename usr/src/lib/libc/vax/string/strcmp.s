@@ -1,4 +1,4 @@
-/*	strcmp.s	4.3	84/11/14	*/
+/*	strcmp.s	4.4	84/12/02	*/
 
 /*
  * Compare string s1 lexicographically to string s2.
@@ -20,7 +20,8 @@ ENTRY(strcmp, 0)
 	bneq	2f
 	locc	$0,$32,-32(r1)	# check if contain null
 	beql	1b
-	mnegb	-32(r0)[r3],r0	# r0 = $0 - *s2
+	subl2	r0,r3		# back up r3 to same point
+	mnegb	(r3),r0		# r0 = '\0' - *s2
 	cvtbl	r0,r0
 	ret
 2:
@@ -28,7 +29,7 @@ ENTRY(strcmp, 0)
 	subl2	r0,r1
 	locc	$0,r0,(r1)
 	bneq	3f
-	subb3	(r3),-(r1),r0	# r0 = *s1 - *s2
+	subb3	(r3),(r1),r0	# r0 = *s1 - *s2
 	cvtbl	r0,r0
 	ret
 3:
