@@ -15,11 +15,13 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tsort.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)tsort.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <db.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -49,15 +51,14 @@ static char sccsid[] = "@(#)tsort.c	5.4 (Berkeley) %G%";
 typedef struct node_str NODE;
 
 struct node_str {
-	char *n_name;			/* name of this node */
 	NODE **n_prevp;			/* pointer to previous node's n_next */
 	NODE *n_next;			/* next node in graph */
-	NODE *n_hash;			/* next node in hash table */
+	NODE **n_arcs;			/* array of arcs to other nodes */
 	int n_narcs;			/* number of arcs in n_arcs[] */
 	int n_arcsize;			/* size of n_arcs[] array */
-	NODE **n_arcs;			/* array of arcs to other nodes */
 	int n_refcnt;			/* # of arcs pointing to this node */
 	int n_flags;			/* NF_* */
+	char n_name[1];			/* name of this node */
 };
 
 typedef struct _buf {
@@ -65,18 +66,16 @@ typedef struct _buf {
 	int b_bsize;
 } BUF;
 
+DB *db;
 NODE *graph;
-NODE *hashtable[HASHSIZE];
 NODE **cycle_buf;
 NODE **longest_cycle;
 
 void	 add_arc __P((char *, char *));
-NODE	*add_node __P((char *));
 void	 err __P((const char *, ...));
 int	 find_cycle __P((NODE *, NODE *, int, int));
-NODE	*find_node __P((char *));
+NODE	*get_node __P((char *));
 void	*grow_buf __P((void *, int));
-int	 hash_string __P((char *));
 void	 remove_node __P((NODE *));
 void	 tsort __P((void));
 void	 usage __P((void));
@@ -171,16 +170,12 @@ add_arc(s1, s2)
 	NODE *n2;
 	int bsize;
 
-	n1 = find_node(s1);
-	if (!n1)
-		n1 = add_node(s1);
+	n1 = get_node(s1);
 
 	if (!strcmp(s1, s2))
 		return;
 
-	n2 = find_node(s2);
-	if (!n2)
-		n2 = add_node(s2);
+	n2 = get_node(s2);
 
 	/*
 	 * could check to see if this arc is here already, but it isn't
@@ -198,43 +193,32 @@ add_arc(s1, s2)
 	++n2->n_refcnt;
 }
 
-int
-hash_string(s)
-	char *s;
-{
-	register int hash, i;
-
-	for (hash = 0, i = 1; *s; s++, i++)
-		hash += *s * i;
-	return (hash % HASHSIZE);
-}
-
-/*
- * find a node in the graph and return a pointer to it - returns null if not
- * found.
- */
+/* Find a node in the graph (insert if not found) and return a pointer to it. */
 NODE *
-find_node(name)
+get_node(name)
 	char *name;
 {
-	register NODE *n;
+	DBT data, key;
+	NODE *n;
 
-	for (n = hashtable[hash_string(name)]; n; n = n->n_hash)
-		if (!strcmp(n->n_name, name))
-			return (n);
-	return (NULL);
-}
+	if (db == NULL &&
+	    (db = dbopen(NULL, O_RDWR, 0, DB_HASH, NULL)) == NULL)
+		err("db: open: %s", name, strerror(errno));
 
-/* Add a node to the graph and return a pointer to it. */
-NODE *
-add_node(name)
-	char *name;
-{
-	register NODE *n;
-	int hash;
+	key.data = name;
+	key.size = strlen(name) + 1;
 
-	if ((n = malloc(sizeof(NODE))) == NULL ||
-	    (n->n_name = strdup(name)) == NULL)
+	switch((*db->get)(db, &key, &data, 0)) {
+	case 0:
+		return (*(NODE **)data.data);
+	case 1:
+		break;
+	default:
+	case -1:
+		err("db: get %s: %s", name, strerror(errno));
+	}
+
+	if ((n = malloc(sizeof(NODE) + key.size)) == NULL)
 		err("%s", strerror(errno));
 
 	n->n_narcs = 0;
@@ -242,17 +226,19 @@ add_node(name)
 	n->n_arcs = NULL;
 	n->n_refcnt = 0;
 	n->n_flags = 0;
+	bcopy(name, n->n_name, key.size);
 
-	/* add to linked list */
+	/* Add to linked list. */
 	if (n->n_next = graph)
 		graph->n_prevp = &n->n_next;
 	n->n_prevp = &graph;
 	graph = n;
 
-	/* add to hash table */
-	hash = hash_string(name);
-	n->n_hash = hashtable[hash];
-	hashtable[hash] = n;
+	/* Add to hash table. */
+	data.data = &n;
+	data.size = sizeof(n);
+	if ((*db->put)(db, &key, &data, 0))
+		err("db: put %s: %s", name, strerror(errno));
 	return (n);
 }
 
