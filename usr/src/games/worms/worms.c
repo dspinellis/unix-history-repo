@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)worms.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)worms.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -207,7 +207,7 @@ main(argc, argv)
 		case '?':
 		default:
 			(void)fprintf(stderr,
-			    "usage: worms [-ft] [-length #] [-number #]\n");
+			    "usage: worms [-ft] [-l length] [-n number]\n");
 			exit(1);
 		}
 
