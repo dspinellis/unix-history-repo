@@ -25,13 +25,6 @@ ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
 THIS SOFTWARE.
 ****************************************************************/
 
-/* some of this depends on behavior of lex that
-   may not be preserved in other implementations of lex.
-*/
-
-#undef	input	/* defeat lex */
-#undef	unput
-
 #include <stdlib.h>
 #include <string.h>
 #include "awk.h"
@@ -60,6 +53,18 @@ int	parencnt = 0;
 uchar	cbuf[CBUFLEN];
 uchar	*s;
 int	clen, cflag;
+
+/* some of this depends on behavior of lex that
+   may not be preserved in other implementations of lex.
+*/
+
+static	int	my_input( YY_CHAR *buf, int max_size );
+
+#undef YY_INPUT
+#define YY_INPUT(buf,result,max_size) result = my_input(buf, max_size);
+
+#undef YY_USER_INIT
+#define YY_USER_INIT init_input_source();
 %}
 
 A	[a-zA-Z_]
@@ -70,7 +75,7 @@ H	[0-9a-fA-F]
 WS	[ \t]
 
 %%
-	switch (yybgin-yysvec-1) {	/* witchcraft */
+	switch ((yy_start - 1) / 2) {	/* witchcraft */
 	case 0:
 		BEGIN A;
 		break;
@@ -116,13 +121,19 @@ WS	[ \t]
 
 <A>"$"{D}+	{ yylval.cp = fieldadr(atoi(yytext+1)); RET(FIELD); }
 <A>"$NF"	{ unputstr("(NF)"); return(INDIRECT); }
-<A>"$"{A}{B}*	{ int c, n;
-		  c = input(); unput(c);
-		  if (c == '(' || c == '[' || infunc && (n=isarg(yytext+1)) >= 0) {
-			unputstr(yytext+1);
+<A>"$"{A}{B}*	{
+		  int c;
+		  char *yytext_copy = strdup(yytext);
+		  c = input(); unput(c);	/* look for '(' or '[' */
+		  if (c == '(' || c == '[' ||
+		      infunc && isarg(yytext_copy+1) >= 0) {
+			  unputstr(yytext_copy+1);
+			  free(yytext_copy);
 			return(INDIRECT);
 		  } else {
-			yylval.cp = setsymtab(yytext+1,"",0.0,STR|NUM,symtab);
+			  yylval.cp =
+				setsymtab(yytext_copy+1,"",0.0,STR|NUM,symtab);
+			  free(yytext_copy);
 			RET(IVAR);
 		  }
 		}
@@ -172,12 +183,16 @@ WS	[ \t]
 <A>fflush	{ yylval.i = FFLUSH; RET(BLTIN); }
 
 <A>{A}{B}*	{ int n, c;
+		  char *yytext_copy = strdup(yytext);
 		  c = input(); unput(c);	/* look for '(' */
-		  if (c != '(' && infunc && (n=isarg(yytext)) >= 0) {
+		  if (c != '(' && infunc && (n=isarg(yytext_copy)) >= 0) {
 			yylval.i = n;
+			free(yytext_copy);
 			RET(ARG);
 		  } else {
-			yylval.cp = setsymtab(yytext,"",0.0,STR|NUM,symtab);
+			yylval.cp =
+				setsymtab(yytext_copy,"",0.0,STR|NUM,symtab);
+			free(yytext_copy);
 			if (c == '(') {
 				RET(CALL);
 			} else {
@@ -185,6 +200,7 @@ WS	[ \t]
 			}
 		  }
 		}
+
 <A>\"		{ BEGIN str; clen = 0; }
 
 <A>"}"		{ if (--bracecnt < 0) ERROR "extra }" SYNTAX; BEGIN sc; RET(';'); }
@@ -235,45 +251,30 @@ void startreg(void)	/* start parsing a regular expression */
 	clen = 0;
 }
 
-/* input() and unput() are transcriptions of the standard lex
-   macros for input and output with additions for error message
-   printing.  God help us all if someone changes how lex works.
-*/
-
-uchar	ebuf[300];
-uchar	*ep = ebuf;
-
-input(void)	/* get next lexical input character */
+static int my_input( YY_CHAR *buf, int max_size )
 {
-	register int c;
 	extern uchar *lexprog;
 
-	if (yysptr > yysbuf)
-		c = U(*--yysptr);
-	else if (lexprog != NULL) {	/* awk '...' */
-		if (c = *lexprog)
-			lexprog++;
-	} else				/* awk -f ... */
-		c = pgetc();
-	if (c == '\n')
-		yylineno++;
-	else if (c == EOF)
-		c = 0;
-	if (ep >= ebuf + sizeof ebuf)
-		ep = ebuf;
-	return *ep++ = c;
+	if ( lexprog ) {		/* awk '...' */
+		int num_chars = strlen( lexprog );
+		if ( num_chars > max_size )
+			{
+			num_chars = max_size;
+			strncpy( buf, lexprog, num_chars );
 }
+		else
+			strcpy( buf, lexprog );
+		lexprog += num_chars;
+		return num_chars;
 
-void unput(int c)	/* put lexical character back on input */
-{
-	yytchar = c;
-	if (yytchar == '\n')
-		yylineno--;
-	*yysptr++ = yytchar;
-	if (--ep < ebuf)
-		ep = ebuf + sizeof(ebuf) - 1;
+	} else {			/* awk -f ... */
+		int c = pgetc();
+		if (c == EOF)
+			return 0;
+		buf[0] = c;
+		return 1;
 }
-
+}
 
 void unputstr(char *s)	/* put a string back on input */
 {
@@ -281,4 +282,9 @@ void unputstr(char *s)	/* put a string back on input */
 
 	for (i = strlen(s)-1; i >= 0; i--)
 		unput(s[i]);
+}
+
+int lex_input()
+{
+	return input();
 }

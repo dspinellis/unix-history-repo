@@ -175,3 +175,15 @@ pgetc(void)		/* get 1 character from awk program */
 		curpfile++;
 	}
 }
+
+void init_input_source(void)
+{
+	if (yyin == NULL) {
+		if (pfile[curpfile] == 0)
+			return;
+		if (strcmp((char *) pfile[curpfile], "-") == 0)
+			yyin = stdin;
+		else if ((yyin = fopen((char *) pfile[curpfile], "r")) == NULL)
+			ERROR "can't open file %s", pfile[curpfile] FATAL;
+	}
+}

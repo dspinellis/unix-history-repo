@@ -360,7 +360,7 @@ Cell *getline(Node **a, int n)	/* get next line from specific input */
 			strcpy(record, buf);
 			recloc->sval = record;
 			recloc->tval = REC | STR | DONTFREE;
-			if (isnumber(recloc->sval)) {
+			if (is_a_number(recloc->sval)) {
 				recloc->fval = atof(recloc->sval);
 				recloc->tval |= NUM;
 			}
@@ -618,7 +618,7 @@ Cell *indirect(Node **a, int n)	/* $( a[0] ) */
 
 	x = execute(a[0]);
 	m = getfval(x);
-	if (m == 0 && !isnumber(s = getsval(x)))	/* suspicion! */
+	if (m == 0 && !is_a_number(s = getsval(x)))	/* suspicion! */
 		ERROR "illegal field $(%s), name \"%s\"", s, x->nval FATAL;
   /* can x->nval ever be null??? */
 		/* ERROR "illegal field $(%s)", s FATAL; */
@@ -1097,7 +1097,7 @@ Cell *split(Node **a, int nnn)	/* split(a[0], a[1], a[2]); a[3] is type */
 				sprintf((char *)num, "%d", n);
 				temp = *patbeg;
 				*patbeg = '\0';
-				if (isnumber(s))
+				if (is_a_number(s))
 					setsymtab(num, s, atof((char *)s), STR|NUM, (Array *) ap->sval);
 				else
 					setsymtab(num, s, 0.0, STR, (Array *) ap->sval);
@@ -1114,7 +1114,7 @@ Cell *split(Node **a, int nnn)	/* split(a[0], a[1], a[2]); a[3] is type */
 		}
 		n++;
 		sprintf((char *)num, "%d", n);
-		if (isnumber(s))
+		if (is_a_number(s))
 			setsymtab(num, s, atof((char *)s), STR|NUM, (Array *) ap->sval);
 		else
 			setsymtab(num, s, 0.0, STR, (Array *) ap->sval);
@@ -1134,7 +1134,7 @@ Cell *split(Node **a, int nnn)	/* split(a[0], a[1], a[2]); a[3] is type */
 			temp = *s;
 			*s = '\0';
 			sprintf((char *)num, "%d", n);
-			if (isnumber(t))
+			if (is_a_number(t))
 				setsymtab(num, t, atof((char *)t), STR|NUM, (Array *) ap->sval);
 			else
 				setsymtab(num, t, 0.0, STR, (Array *) ap->sval);
@@ -1151,7 +1151,7 @@ Cell *split(Node **a, int nnn)	/* split(a[0], a[1], a[2]); a[3] is type */
 			temp = *s;
 			*s = '\0';
 			sprintf((char *)num, "%d", n);
-			if (isnumber(t))
+			if (is_a_number(t))
 				setsymtab(num, t, atof((char *)t), STR|NUM, (Array *) ap->sval);
 			else
 				setsymtab(num, t, 0.0, STR, (Array *) ap->sval);

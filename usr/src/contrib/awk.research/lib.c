@@ -129,7 +129,7 @@ getrec(uchar *buf)	/* get next input record from whatever source */
 					xfree(recloc->sval);
 				recloc->sval = record;
 				recloc->tval = REC | STR | DONTFREE;
-				if (isnumber(recloc->sval)) {
+				if (is_a_number(recloc->sval)) {
 					recloc->fval = atof(recloc->sval);
 					recloc->tval |= NUM;
 				}
@@ -202,7 +202,7 @@ void setclvar(uchar *s)	/* set var=value from s */
 	p = qstring(p, '\0');
 	q = setsymtab(s, p, 0.0, STR, symtab);
 	setsval(q, p);
-	if (isnumber(q->sval)) {
+	if (is_a_number(q->sval)) {
 		q->fval = atof(q->sval);
 		q->tval |= NUM;
 	}
@@ -268,7 +268,7 @@ void fldbld(void)	/* create fields from current record */
 	maxfld = i;
 	donefld = 1;
 	for (p = fldtab+1; p <= fldtab+maxfld; p++) {
-		if(isnumber(p->sval)) {
+		if(is_a_number(p->sval)) {
 			p->fval = atof(p->sval);
 			p->tval |= NUM;
 		}
@@ -410,7 +410,7 @@ void bracecheck(void)
 
 	if (beenhere++)
 		return;
-	while ((c = input()) != EOF && c != '\0')
+	while ((c = lex_input()) != EOF && c != '\0')
 		bclass(c);
 	bcheck2(bracecnt, '{', '}');
 	bcheck2(brackcnt, '[', ']');
@@ -458,6 +458,7 @@ void error(int f, char *s)
 
 void eprint(void)	/* try to print context around error */
 {
+#if 0
 	uchar *p, *q;
 	int c;
 	static int been_here = 0;
@@ -490,6 +491,7 @@ void eprint(void)	/* try to print context around error */
 		}
 	putc('\n', stderr);
 	ep = ebuf;
+#endif
 }
 
 void bclass(int c)
@@ -534,7 +536,7 @@ isclvar(uchar *s)	/* is s of form var=something ? */
 
 #define	MAXEXPON	38	/* maximum exponent for fp number. should be IEEE */
 
-isnumber(uchar *s)	/* probably should be done by a library function */
+is_a_number(uchar *s)	/* probably should be done by a library function */
 {
 	register int d1, d2;
 	int point;

@@ -110,7 +110,7 @@ void arginit(int ac, uchar *av[])	/* set up ARGV and ARGC */
 	cp->sval = (uchar *) ARGVtab;
 	for (i = 0; i < ac; i++) {
 		sprintf((char *)temp, "%d", i);
-		if (isnumber(*av))
+		if (is_a_number(*av))
 			setsymtab(temp, *av, atof(*av), STR|NUM, ARGVtab);
 		else
 			setsymtab(temp, *av, 0.0, STR, ARGVtab);
@@ -130,7 +130,7 @@ void envinit(uchar **envp)	/* set up ENVIRON variable */
 		if ((p = (uchar *) strchr((char *) *envp, '=')) == NULL)
 			continue;
 		*p++ = 0;	/* split into two strings at = */
-		if (isnumber(p))
+		if (is_a_number(p))
 			setsymtab(*envp, p, atof(p), STR|NUM, ENVtab);
 		else
 			setsymtab(*envp, p, 0.0, STR, ENVtab);
@@ -332,7 +332,7 @@ Awkfloat r_getfval(Cell *vp)	/* get float val of a Cell */
 		recbld();
 	if (!isnum(vp)) {	/* not a number */
 		vp->fval = atof(vp->sval);	/* best guess */
-		if (isnumber(vp->sval) && !(vp->tval&CON))
+		if (is_a_number(vp->sval) && !(vp->tval&CON))
 			vp->tval |= NUM;	/* make NUM only sparingly */
 	}
 	dprintf( ("getfval %o: %s = %g, t=%o\n", vp, vp->nval, vp->fval, vp->tval) );
