@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.41 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.42 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1448,15 +1448,22 @@ sendall(e, mode)
 		}
 		else if (!bitset(QDONTSEND, q->q_flags))
 		{
+# ifdef QUEUE
 			/*
 			**  Checkpoint the send list every few addresses
 			*/
 
 			if (nsent >= CheckpointInterval)
 			{
-				queueup(e, TRUE, FALSE);
+				FILE *nlockfp;
+
+				nlockfp = queueup(e, TRUE, FALSE);
+				if (lockfp != NULL)
+					fclose(lockfp);
+				lockfp = nlockfp;
 				nsent = 0;
 			}
+# endif /* QUEUE */
 			if (deliver(e, q) == EX_OK)
 				nsent++;
 		}
