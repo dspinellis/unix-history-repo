@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_usrreq.c	7.21 (Berkeley) %G%
+ *	@(#)tp_usrreq.c	7.22 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -606,19 +606,12 @@ tp_usrreq(so, req, m, nam, controlp)
 		 * possibly by a whole cluster.
 		 */
 		{
-			register struct mbuf *n = m;
-			register struct sockbuf *sb = &so->so_snd;
-			int	maxsize = tpcb->tp_l_tpdusize 
-				    - tp_headersize(DT_TPDU_type, tpcb)
-				    - (tpcb->tp_use_checksum?4:0) ;
-			int totlen = n->m_pkthdr.len;
-			int	mbufcnt = 0;
-			struct mbuf *nn;
-
 			/*
 			 * Could have eotsdu and no data.(presently MUST have
 			 * an mbuf though, even if its length == 0) 
 			 */
+			int totlen = m->m_pkthdr.len;
+			struct sockbuf *sb = &so->so_snd;
 			IFPERF(tpcb)
 			   PStat(tpcb, Nb_from_sess) += totlen;
 			   tpmeas(tpcb->tp_lref, TPtime_from_session, 0, 0, 
@@ -631,65 +624,9 @@ tp_usrreq(so, req, m, nam, controlp)
 				dump_mbuf(sb->sb_mb, "so_snd.sb_mb");
 				dump_mbuf(m, "m : to be added");
 			ENDDEBUG
-			/*
-			 * Pre-packetize the data in the sockbuf
-			 * according to negotiated mtu.  Do it here
-			 * where we can safely wait for mbufs.
-			 *
-			 * This presumes knowledge of sockbuf conventions.
-			 */
-			if (n = sb->sb_mb)
-				while (n->m_act)
-					n = n->m_act;
-			if ((nn = n) && n->m_pkthdr.len < maxsize) {
-				u_int space = maxsize - n->m_pkthdr.len;
-
-				do {
-					if (n->m_flags & M_EOR)
-						goto on1;
-				} while (n->m_next && (n = n->m_next));
-				if (totlen <= space) {
-					TPNagle1++;
-					n->m_next = m; 
-					nn->m_pkthdr.len += totlen;
-					while (n = n->m_next)
-						sballoc(sb, n);
-					if (eotsdu)
-						nn->m_flags |= M_EOR; 
-					goto on2; 
-				} else {
-					/*
-					 * Can't sleep here, because when you wake up
-					 * packet you want to attach to may be gone!
-					 */
-					if (TNew && (n->m_next = m_copym(m, 0, space, M_NOWAIT))) {
-						nn->m_pkthdr.len += space;
-						TPNagle2++;
-						while (n = n->m_next)
-							sballoc(sb, n);
-						m_adj(m, space);
-					}
-				}
-			}	
-	on1:	mbufcnt++;
-			for (n = m; n->m_pkthdr.len > maxsize;) {
-				nn = m_copym(n, 0, maxsize, M_WAIT);
-				sbappendrecord(sb, nn);
-				m_adj(n, maxsize);
-				mbufcnt++;
-			}
-			if (eotsdu)
-				n->m_flags |= M_EOR;
-			sbappendrecord(sb, n);
-	on2:	
-			IFTRACE(D_DATA)
-				tptraceTPCB(TPPTmisc,
-				"SEND BF: maxsize totlen mbufcnt eotsdu",
-					maxsize, totlen, mbufcnt, eotsdu);
-			ENDTRACE
+			tp_packetize(tpcb, m, eotsdu);
 			IFDEBUG(D_SYSCALL)
-				printf("PRU_SEND: eot %d after sbappend 0x%x mbufcnt 0x%x\n",
-					eotsdu, n, mbufcnt);
+				printf("PRU_SEND: eot %d after sbappend 0x%x\n", eotsdu, m);
 				dump_mbuf(sb->sb_mb, "so_snd.sb_mb");
 			ENDDEBUG
 			if (tpcb->tp_state == TP_OPEN)
