@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)proc.c	5.12 (Berkeley) %G%";
+static char *sccsid = "@(#)proc.c	5.13 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -28,6 +28,7 @@ static char *sccsid = "@(#)proc.c	5.12 (Berkeley) %G%";
  *	childs status.  Top level routines (like pwait) must be sure
  *	to mask interrupts when playing with the proclist data structures!
  */
+void
 pchild()
 {
 	register struct process *pp;
@@ -39,7 +40,8 @@ pchild()
 	extern int insource;
 
 loop:
-	pid = wait3(&w, (setintr && (intty || insource) ? WNOHANG|WUNTRACED:WNOHANG), &ru);
+	pid = wait3((int *)&w,
+	    (setintr && (intty || insource) ? WNOHANG|WUNTRACED:WNOHANG), &ru);
 	if (pid <= 0) {
 		if (errno == EINTR) {
 			errno = 0;
