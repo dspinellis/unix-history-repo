@@ -1,9 +1,10 @@
-/*	ht.c	4.1	%G%	*/
+/*	ht.c	4.2	%G%	*/
 
 /*
  * TJU16 tape driver
  */
 
+#if VAX==780
 #include "../h/param.h"
 #include "../h/inode.h"
 #include "../h/pte.h"
@@ -157,3 +158,9 @@ htquiet()
 		s = htp->htds;
 	while ((s & RDY) == 0);
 }
+#else
+htdummy()
+{
+	;
+}
+#endif

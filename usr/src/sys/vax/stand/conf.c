@@ -1,4 +1,4 @@
-/*	conf.c	4.3	%G%	*/
+/*	conf.c	4.4	%G%	*/
 
 #include "../h/param.h"
 #include "../h/inode.h"
@@ -35,19 +35,26 @@ nullsys()
 { ; }
 
 int	nullsys();
+#if VAX==780
 int	hpstrategy(), hpopen();
 int	htstrategy(), htopen(), htclose();
+#endif
 int	upstrategy(), upopen();
 int	tmstrategy(), tmopen(), tmclose();
+int	rkopen(),rkstrategy();
 
 struct devsw devsw[] = {
+#if VAX==780
 	"hp",	hpstrategy,	hpopen,		nullsys,
 	"ht",	htstrategy,	htopen,		htclose,
+#endif
 	"up",	upstrategy,	upopen,		nullsys,
 	"tm",	tmstrategy,	tmopen,		tmclose,
+	"rk",	rkstrategy,	rkopen,		ullsys,
 	0,0,0,0
 };
 
+#if VAX==780
 int mbanum[] = {	/* mba number of major device */
 	0,		/* disk */
 	1,		/* tape */
@@ -58,3 +65,4 @@ int *mbaloc[] = { 	/* physical location of mba */
 	(int *)PHYSMBA0,
 	(int *)PHYSMBA1,
 };
+#endif
