@@ -1,12 +1,12 @@
 #ifndef lint
-static	char sccsid[] = "@(#)ld.c 4.10 %G%";
+static	char sccsid[] = "@(#)ld.c 4.11 %G%";
 #endif
 
 /*
  * ld - string table version for VAX
  */
 
-#include <sys/types.h>
+#include <sys/param.h>
 #include <signal.h>
 #include <stdio.h>
 #include <ctype.h>
@@ -14,6 +14,7 @@ static	char sccsid[] = "@(#)ld.c 4.10 %G%";
 #include <a.out.h>
 #include <ranlib.h>
 #include <sys/stat.h>
+#include <sys/file.h>
 
 /*
  * Basic strategy:
@@ -312,6 +313,10 @@ int	ofilemode;		/* respect umask even for unsucessful ld's */
 int	infil;			/* current input file descriptor */
 char	*filname;		/* and its name */
 
+#define	NDIRS	25
+char	*dirs[NDIRS];		/* directories for library search */
+int	ndir;			/* number of directories */
+
 /*
  * Base of the string table of the current module (pass1 and pass2).
  */
@@ -325,6 +330,7 @@ int	pagesize;
 char 	get();
 int	delexit();
 char	*savestr();
+char	*malloc();
 
 main(argc, argv)
 char **argv;
@@ -340,9 +346,27 @@ char **argv;
 	}
 	if (argc == 1)
 		exit(4);
-	p = argv+1;
 	pagesize = getpagesize();
 
+	/* 
+	 * Pull out search directories.
+	 */
+	for (c = 1; c < argc; c++) {
+		ap = argv[c];
+		if (ap[0] == '-' && ap[1] == 'L') {
+			if (ap[2] == 0)
+				error(1, "-L: pathname missing");
+			if (ndir >= NDIRS)
+				error(1, "-L: too many directories");
+			dirs[ndir++] = &ap[2];
+		}
+	}
+	/* add default search directories */
+	dirs[ndir++] = "/lib";
+	dirs[ndir++] = "/usr/lib";
+	dirs[ndir++] = "/usr/local/lib";
+
+	p = argv+1;
 	/*
 	 * Scan files once to find where symbols are defined.
 	 */
@@ -464,6 +488,8 @@ char **argv;
 			zflag++;
 			Nflag = nflag = 0;
 			continue;
+		case 'L':
+			goto next;
 		default:
 			filname = savestr("-x");	/* kludge */
 			filname[1] = ap[i];		/* kludge */
@@ -576,6 +602,7 @@ endload(argc, argv)
 			c++;
 			continue;
 		case 'y':
+		case 'L':
 			goto next;
 		case 'l':
 			ap[--i]='-'; 
@@ -1588,33 +1615,17 @@ STREAM *asp;
 getfile(acp)
 char *acp;
 {
-	register char *cp;
 	register int c;
 	char arcmag[SARMAG+1];
 	struct stat stb;
 
-	infil = -1;
 	archdr.ar_name[0] = '\0';
-	filname = cp = acp;
-	if (cp[0]=='-' && cp[1]=='l') {
-		char *locfilname = "/usr/local/lib/libxxxxxxxxxxxxxxx";
-		if(cp[2] == '\0')
-			cp = "-la";
-		filname = "/usr/lib/libxxxxxxxxxxxxxxx";
-		for(c=0; cp[c+2]; c++) {
-			filname[c+12] = cp[c+2];
-			locfilname[c+18] = cp[c+2];
-		}
-		filname[c+12] = locfilname[c+18] = '.';
-		filname[c+13] = locfilname[c+19] = 'a';
-		filname[c+14] = locfilname[c+20] = '\0';
-		if ((infil = open(filname+4, 0)) >= 0) {
-			filname += 4;
-		} else if ((infil = open(filname, 0)) < 0) {
-			filname = locfilname;
-		}
-	}
-	if (infil == -1 && (infil = open(filname, 0)) < 0)
+	filname = acp;
+	if (filname[0] == '-' && filname[1] == 'l')
+		infil = libopen(filname + 2, O_RDONLY);
+	else
+		infil = open(filname, O_RDONLY);
+	if (infil < 0)
 		error(1, "cannot open");
 	fstat(infil, &stb);
 	page[0].bno = page[1].bno = -1;
@@ -1650,12 +1661,46 @@ char *acp;
 	if (strcmp(arcmag, ARMAG))
 		return (0);
 	dseek(&text, SARMAG, sizeof archdr);
-	if(text.size <= 0)
+	if (text.size <= 0)
 		return (1);
 	getarhdr();
 	if (strncmp(archdr.ar_name, "__.SYMDEF", sizeof(archdr.ar_name)) != 0)
 		return (1);
 	return (stb.st_mtime > atol(archdr.ar_date) ? 3 : 2);
+}
+
+/*
+ * Search for a library with given name
+ * using the directory search array.
+ */
+libopen(name, oflags)
+	char *name;
+	int oflags;
+{
+	register char *p, *cp;
+	register int i;
+	static char buf[MAXPATHLEN+1];
+	int fd = -1;
+
+	if (*name == '\0')			/* backwards compat */
+		name = "a";
+	for (i = 0; i < ndir && fd == -1; i++) {
+		p = buf;
+		for (cp = dirs[i]; *cp; *p++ = *cp++)
+			;
+		*p++ = '/';
+		for (cp = "lib"; *cp; *p++ = *cp++)
+			;
+		for (cp = name; *cp; *p++ = *cp++)
+			;
+		cp = ".a";
+		while (*p++ = *cp++)
+			;
+		fd = open(buf, oflags);
+	}
+	if (fd != -1)
+		filname = buf;
+	return (fd);
 }
 
 struct nlist **
@@ -1881,7 +1926,7 @@ savestr(cp)
 		saveleft = NSAVETAB;
 		if (len > saveleft)
 			saveleft = len;
-		savetab = (char *)malloc(saveleft);
+		savetab = malloc(saveleft);
 		if (savetab == 0)
 			error(1, "ran out of memory (savestr)");
 	}
@@ -1896,7 +1941,7 @@ bopen(bp, off, bufsize)
 	register struct biobuf *bp;
 {
 
-	bp->b_ptr = bp->b_buf = (char *)malloc(bufsize);
+	bp->b_ptr = bp->b_buf = malloc(bufsize);
 	if (bp->b_ptr == (char *)0)
 		error(1, "ran out of memory (bopen)");
 	bp->b_bufsize = bufsize;
