@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_uba.h	7.1 (Berkeley) %G%
+ *	@(#)if_uba.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -41,7 +41,8 @@
 struct	ifubinfo {
 	short	iff_uban;			/* uba number */
 	short	iff_hlen;			/* local net header length */
-	struct	uba_regs *iff_uba;		/* uba regs, in vm */
+	struct	uba_regs *iff_uba;		/* uba adaptor regs, in vm */
+	struct	pte *iff_ubamr;			/* uba map regs, in vm */
 	short	iff_flags;			/* used during uballoc's */
 };
 
@@ -89,6 +90,7 @@ struct ifuba {
 #define	ifu_uban	ifu_info.iff_uban
 #define	ifu_hlen	ifu_info.iff_hlen
 #define	ifu_uba		ifu_info.iff_uba
+#define	ifu_ubamr	ifu_info.iff_ubamr
 #define	ifu_flags	ifu_info.iff_flags
 #define	ifu_w		ifu_xmt.ifrw
 #define	ifu_xtofree	ifu_xmt.ifw_xtofree

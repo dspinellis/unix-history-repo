@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ubavar.h	7.1 (Berkeley) %G%
+ *	@(#)ubavar.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -38,8 +38,13 @@
  * wait states are also recorded here.
  */
 struct	uba_hd {
-	struct	uba_regs *uh_uba;	/* virt addr of uba */
-	struct	uba_regs *uh_physuba;	/* phys addr of uba */
+	int	uh_type;		/* type of adaptor */
+	struct	uba_regs *uh_uba;	/* virt addr of uba adaptor regs */
+	struct	uba_regs *uh_physuba;	/* phys addr of uba adaptor regs */
+	struct	pte *uh_mr;		/* start of page map */
+	int	uh_memsize;		/* size of uba memory, pages */
+	caddr_t	uh_mem;			/* start of uba memory address space */
+	caddr_t	uh_iopage;		/* start of uba io page */
 	int	(**uh_vec)();		/* interrupt vector */
 	struct	uba_device *uh_actf;	/* head of queue to transfer */
 	struct	uba_device *uh_actl;	/* tail of queue to transfer */
@@ -59,7 +64,6 @@ struct	uba_hd {
 	struct	map *uh_map;		/* buffered data path regs free */
 };
 
-#ifndef LOCORE
 /*
  * Per-controller structure.
  * (E.g. one for each disk and tape controller, and other things
@@ -120,7 +124,6 @@ struct uba_device {
 	struct	uba_ctlr *ui_mi;
 	struct	uba_hd *ui_hd;
 };
-#endif
 
 /*
  * Per-driver structure.
@@ -179,6 +182,8 @@ extern	struct	uba_device ubdinit[];
 /*
  * UNIbus device address space is mapped by UMEMmap
  * into virtual address umem[][].
+ * The IO page is mapped to the last 8K of each.
+ * This should be enlarged for the Q22 bus.
  */
 extern	struct pte UMEMmap[][512];	/* uba device addr pte's */
 extern	char umem[][512*NBPG];		/* uba device addr space */
@@ -187,7 +192,7 @@ extern	char umem[][512*NBPG];		/* uba device addr space */
  * Since some VAXen vector their unibus interrupts
  * just adjacent to the system control block, we must
  * allocate space there when running on ``any'' cpu.  This space is
- * used for the vectors for uba0 and uba1 on all cpu's.
+ * used for the vectors for uba0 and uba1 on all cpu's but 8600's.
  */
 extern	int (*UNIvec[])();			/* unibus vec for uba0 */
 #if NUBA > 1
@@ -196,7 +201,7 @@ extern	int (*UNI1vec[])();			/* unibus vec for uba1 */
 
 #if defined(VAX780) || defined(VAX8600)
 /*
- * On 780's, we must set the scb vectors for the nexus of the
+ * On DW780's, we must set the scb vectors for the nexus of the
  * UNIbus adaptors to vector to locore unibus adaptor interrupt dispatchers
  * which make 780's look like the other VAXen.
  */

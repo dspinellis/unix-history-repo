@@ -3,28 +3,52 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ubareg.h	7.1 (Berkeley) %G%
+ *	@(#)ubareg.h	7.2 (Berkeley) %G%
  */
 
 /*
- * VAX UNIBUS adapter registers
+ * VAX UNIBUS adapter definitions
  */
 
 /*
- * size of unibus address space in pages
+ * "UNIBUS" adaptor types.
+ * This code is used for both UNIBUSes and Q-buses
+ * with different types of adaptors.
+ * Definition of a type includes support code for that type.
  */
-#define UBAPAGES 512
+#if VAX780 || VAX8600
+#define	DW780	1		/* has adaptor regs, sr: 780/785/8600 */
+#endif
+
+#if VAX750
+#define	DW750	2		/* has adaptor regs, no sr: 750, 730 */
+#endif
+
+#if VAX730
+#define	DW730	3		/* has adaptor regs, no sr: 750, 730 */
+#endif
+
+#if VAX630
+#define	QBA	4		/* 22-bit Q-bus, no adaptor regs: uVAX II */
+#endif
+
+#if VAX8200 || VAX8500 || VAX8800
+#define	DWBUA	5		/* BI UNIBUS adaptor: 8200/8500/8800 */
+#endif
 
 /*
- * Number of UNIBUS map registers.  We can't use the last 8k of UNIBUS
- * address space for i/o transfers since it is used by the devices,
- * hence have slightly less than 256K of UNIBUS address space.
+ * Size of unibus memory address space in pages
+ * (also number of map registers).
+ * QBAPAGES should be 8192, but umem needs to be expanded.
  */
-#define	NUBMREG	496
+#define	UBAPAGES	496
+#define	NUBMREG		496
+#define	QBAPAGES	UBAPAGES	/* for now; should be 8192 */
+#define	UBAIOPAGES	16
 
 #ifndef LOCORE
 /*
- * UBA hardware registers
+ * DW780/DW750 hardware registers
  */
 struct uba_regs
 {
@@ -39,12 +63,12 @@ struct uba_regs
 	int	uba_brrvr[4];		/* receive vector registers */
 	int	uba_dpr[16];		/* buffered data path register */
 	int	pad2[480];
-	struct	pte uba_map[NUBMREG];	/* unibus map register */
-	int	pad3[16];		/* no maps for device address space */
+	struct	pte uba_map[UBAPAGES];	/* unibus map register */
+	int	pad3[UBAIOPAGES];	/* no maps for device address space */
 };
 #endif
 
-#if defined(VAX780) || defined(VAX8600)
+#ifdef DW780
 /* uba_cnfgr */
 #define	UBACNFGR_UBINIT	0x00040000	/* unibus init asserted */
 #define	UBACNFGR_UBPDN	0x00020000	/* unibus power down */
@@ -93,7 +117,7 @@ struct uba_regs
 #endif
  
 /* uba_dpr */
-#if defined(VAX780) || defined(VAX8600)
+#ifdef DW780
 #define	UBADPR_BNE	0x80000000	/* buffer not empty - purge */
 #define	UBADPR_BTE	0x40000000	/* buffer transfer error */
 #define	UBADPR_DPF	0x20000000	/* DP function (RO) */
@@ -104,7 +128,7 @@ struct uba_regs
 #else
 #define UBA_PURGE780(uba, bdp)
 #endif
-#if VAX750
+#ifdef DW750
 #define	UBADPR_ERROR	0x80000000	/* error occurred */
 #define	UBADPR_NXM	0x40000000	/* nxm from memory */
 #define	UBADPR_UCE	0x20000000	/* uncorrectable error */
@@ -125,15 +149,14 @@ struct uba_regs
  * expansion...
  */
 
-#if defined(VAX8600) || defined(VAX780) || defined(VAX750)
+#if DW780 || DW750
 #define	UBAPURGE(uba, bdp) { \
 	switch (cpu) { \
 	case VAX_8600: case VAX_780: UBA_PURGE780((uba), (bdp)); break; \
 	case VAX_750: UBA_PURGE750((uba), (bdp)); break; \
 	} \
 }
-#endif
-#if !defined(VAX8600) && !defined(VAX780) && !defined(VAX750)
+#else
 #define	UBAPURGE(uba, bdp)
 #endif
 
@@ -151,41 +174,51 @@ struct uba_regs
  * Number of unibus buffered data paths and possible uba's per cpu type.
  */
 #define	NBDP8600	15
-#define	NBDP780	15
-#define	NBDP750	3
-#define	NBDP730	0
-#define	NBDP630	0
-#define	MAXNBDP	15
+#define	NBDP780		15
+#define	NBDP750		3
+#define	NBDP730		0
+#define	MAXNBDP		15
 
 /*
  * Symbolic BUS addresses for UBAs.
  */
 
 #if VAX630
-#define	UMEM630		((u_short *)(0x1ffc2000))
+#define	QBAMAP630	((struct pte *)0x20088000)
+#define	QMEM630		0x30000000
+#define	QIOPAGE630	0x20000000
+/*
+ * Q-bus control registers
+ */
+#define	QIPCR		0x1f40		/* from start of iopage */
+/* bits in QIPCR */
+#define	Q_DBIRQ		0x0001		/* doorbell interrupt request */
+#define	Q_LMEAE		0x0020		/* local mem external access enable */
+#define	Q_DBIIE		0x0040		/* doorbell interrupt enable */
+#define	Q_AUXHLT	0x0100		/* auxiliary processor halt */
+#define	Q_DMAQPE	0x8000		/* Q22 bus address space parity error */
 #endif
 
 #if VAX730
-#define	UMEM730		((u_short *)(0xfc0000))
+#define	UMEM730		0xfc0000
 #endif
 
 #if VAX750
-#define	UMEM750(i)	((u_short *)(0xfc0000-(i)*0x40000))
+#define	UMEM750(i)	(0xfc0000-(i)*0x40000)
 #endif
 
 #if VAX780
-#define	UMEM780(i)	((u_short *)(0x20100000+(i)*0x40000))
+#define	UMEM780(i)	(0x20100000+(i)*0x40000)
 #endif
 
 #if VAX8600
-#define	UMEMA8600(i)	((u_short *)(0x20100000+(i)*0x40000))
-#define	UMEMB8600(i)	((u_short *)(0x22100000+(i)*0x40000))
+#define	UMEMA8600(i)	(0x20100000+(i)*0x40000)
+#define	UMEMB8600(i)	(0x22100000+(i)*0x40000)
 #endif
 
 /*
  * Macro to offset a UNIBUS device address, often expressed as
- * something like 0172520 by forcing it into the last 8K of UNIBUS memory
- * space.
+ * something like 0172520, by forcing it into the last 8K
+ * of UNIBUS memory space.
  */
-#define	ubdevreg(addr)	(0760000|((addr)&017777))
-
+#define	ubdevreg(addr)	((addr) & 017777)
