@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_alloc.c	8.15 (Berkeley) %G%
+ *	@(#)ffs_alloc.c	8.16 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -287,15 +287,9 @@ nospace:
  * Note that the error return is not reflected back to the user. Rather
  * the previous block allocation will be used.
  */
-#ifdef DEBUG
-#include <sys/sysctl.h>
 int doasyncfree = 1;
-struct ctldebug debug14 = { "doasyncfree", &doasyncfree };
+int doreallocblks = 1;
 int prtrealloc = 0;
-struct ctldebug debug15 = { "prtrealloc", &prtrealloc };
-#else
-#define doasyncfree	1
-#endif
 
 int
 ffs_reallocblks(ap)
@@ -314,6 +308,8 @@ ffs_reallocblks(ap)
 	struct indir start_ap[NIADDR + 1], end_ap[NIADDR + 1], *idp;
 	int i, len, start_lvl, end_lvl, pref, ssize;
 
+	if (doreallocblks == 0)
+		return (ENOSPC);
 	vp = ap->a_vp;
 	ip = VTOI(vp);
 	fs = ip->i_fs;
