@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.84 (Berkeley) %G%
+ *	@(#)conf.h	8.85 (Berkeley) %G%
  */
 
 /*
@@ -357,7 +357,7 @@ typedef int		pid_t;
 #ifdef __bsdi__
 # define HASUNSETENV	1	/* has the unsetenv(3) call */
 # define HASSETSID	1	/* has the setsid(2) POSIX syscall */
-# define HASSTATFS	1	/* has the statfs(2) syscall */
+# define SFS_TYPE	SFS_MOUNT	/* use <sys/mount.h> statfs() impl */
 # if defined(_BSDI_VERSION) && _BSDI_VERSION >= 199312
 #  define HASSETPROCTITLE 1	/* setproctitle is in libc */
 # else
@@ -713,12 +713,11 @@ typedef int		pid_t;
 */
 
 #ifdef apollo
-# define HASSTATFS	1	/* has the statfs(2) syscall */
 # define HASSETREUID	1	/* has setreuid(2) call */
 # define HASINITGROUPS	1	/* has initgroups(2) call */
 # undef  SETPROCTITLE
 # define LA_TYPE	LA_SUBR		/* use getloadavg.c */
-# define SFS_TYPE	SFS_MOUNT
+# define SFS_TYPE	SFS_MOUNT	/* use <sys/mount.h> statfs() impl */
 # ifndef _PATH_SENDMAILCF
 #  define _PATH_SENDMAILCF	"/usr/lib/sendmail.cf"
 # endif
