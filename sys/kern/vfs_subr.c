@@ -38,7 +38,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vfs_subr.c	7.60 (Berkeley) 6/21/91
- *	$Id: vfs_subr.c,v 1.10 1994/04/26 00:23:24 davidg Exp $
+ *	$Id: vfs_subr.c,v 1.11 1994/05/04 08:27:16 rgrimes Exp $
  */
 
 /*
@@ -645,6 +645,7 @@ loop:
 		nvp->v_hashchain = vpp;
 		nvp->v_specnext = *vpp;
 		nvp->v_specflags = 0;
+		nvp->v_opencount = 0;
 		*vpp = nvp;
 		if (vp != NULL) {
 			nvp->v_flag |= VALIASED;
@@ -1068,6 +1069,7 @@ vfinddev(dev, type, vpp)
 
 /*
  * Calculate the total number of references to a special device.
+ * Not counting sleeping openers.
  */
 int
 vcount(vp)
@@ -1089,7 +1091,7 @@ loop:
 			vgone(vq);
 			goto loop;
 		}
-		count += vq->v_usecount;
+		count += vq->v_usecount - vq->v_opencount;
 	}
 	return (count);
 }
