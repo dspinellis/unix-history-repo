@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)last.c	4.2 (Berkeley) %G%";
+static	char *sccsid = "@(#)last.c	4.3 (Berkeley) %G%";
 /*
  * last
  */
@@ -37,6 +37,8 @@ main(ac, av)
 	long otime;
 	struct stat stb;
 	int print;
+	char * crmsg = (char *)0;
+	long crtime;
  
 	time(&buf[0].ut_time);
 	ac--, av++;
@@ -94,7 +96,7 @@ main(ac, av)
 					long delta;
 					if (otime < 0) {
 						otime = -otime;
-						printf("- crash");
+						printf("- %s", crmsg);
 					} else
 						printf("- %5.5s",
 						    ctime(&otime)+11);
@@ -109,9 +111,14 @@ main(ac, av)
 				}
 				fflush(stdout);
 			}
-			if (!strcmp(bp->ut_name, "reboot"))
+			if (lineq(bp->ut_line, "~")) {
 				for (i = 0; i < MAXTTYS; i++)
 					logouts[i] = -bp->ut_time;
+				if (nameq(bp->ut_name, "shutdown"))
+					crmsg = "down ";
+				else
+					crmsg = "crash";
+			}
 		}
 	}
 	ct = ctime(&buf[0].ut_time);
@@ -138,7 +145,7 @@ want(bp)
 	register char **av;
 	register int ac;
 
-	if (bp->ut_line[0] == '~')
+	if (bp->ut_line[0] == '~' && bp->ut_name[0] == '\0')
 		strcpy(bp->ut_name, "reboot");		/* bandaid */
 	if (bp->ut_name[0] == 0)
 		return (0);
