@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	6.40 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.41 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	6.40 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.41 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -269,18 +269,19 @@ getrequests()
 			}
 #endif
 
+			(void) close(DaemonSocket);
+			InChannel = fdopen(t, "r");
+			OutChannel = fdopen(dup(t), "w");
+
 			/* should we check for illegal connection here? XXX */
 #ifdef XLA
 			if (!xla_host_ok(RealHostName))
 			{
-				message("421 Too many sessions for this host");
+				message("421 Too many SMTP sessions for this host");
 				exit(0);
 			}
 #endif
 
-			(void) close(DaemonSocket);
-			InChannel = fdopen(t, "r");
-			OutChannel = fdopen(dup(t), "w");
 			if (tTd(15, 2))
 				printf("getreq: returning\n");
 			return;
@@ -681,6 +682,9 @@ gothostent:
 
 		/* failure, decide if temporary or not */
 	failure:
+#ifdef XLA
+		xla_host_end(host);
+#endif
 		if (transienterror(sav_errno))
 			return EX_TEMPFAIL;
 		else
@@ -688,9 +692,6 @@ gothostent:
 			extern char *errstring();
 
 			message("%s", errstring(sav_errno));
-#ifdef XLA
-			xla_host_end(host);
-#endif
 			return (EX_UNAVAILABLE);
 		}
 	}
