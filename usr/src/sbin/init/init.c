@@ -15,11 +15,11 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	6.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	6.13 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <sys/sysctl.h>
 #include <sys/types.h>
+#include <sys/sysctl.h>
 #include <sys/wait.h>
 #include <db.h>
 #include <errno.h>
