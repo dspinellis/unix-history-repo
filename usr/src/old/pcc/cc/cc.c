@@ -1,8 +1,8 @@
-static	char sccsid[] = "@(#)cc.c 4.3 %G%";
+static	char sccsid[] = "@(#)cc.c 4.4 %G%";
 /*
  * cc - front end for C compiler
  */
-#include <sys/types.h>
+#include <sys/param.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
