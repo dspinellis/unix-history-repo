@@ -3,8 +3,10 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)pow_ri.c	5.1	%G%
+ *	@(#)pow_ri.c	5.2	%G%
  */
+
+float flt_retval;
 
 float pow_ri(ap, bp)
 float *ap;
@@ -23,7 +25,8 @@ if(n != 0)
 		{
 		if(x == 0)
 			{
-			return(pow);
+			flt_retval = pow;
+			return(flt_retval);
 			}
 		n = -n;
 		x = 1/x;
@@ -38,5 +41,6 @@ if(n != 0)
 			break;
 		}
 	}
-return(pow);
+flt_retval = pow;
+return(flt_retval);
 }
