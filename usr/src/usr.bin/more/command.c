@@ -18,7 +18,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)command.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)command.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -135,7 +135,7 @@ cmd_char(c)
 
 prompt()
 {
-	extern int linenums;
+	extern int linenums, short_file;
 	extern char *current_name, *firstsearch, *next_name;
 	off_t len, pos, ch_length(), position(), forw_line();
 	char pbuf[40];
@@ -154,7 +154,7 @@ prompt()
 		repaint();
 
 	/* if no -e flag and we've hit EOF on the last file, quit. */
-	if (!quit_at_eof && hit_eof && curr_ac + 1 >= ac)
+	if ((!quit_at_eof || short_file) && hit_eof && curr_ac + 1 >= ac)
 		quit();
 
 	/* select the proper prompt and display it. */
