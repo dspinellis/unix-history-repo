@@ -3,10 +3,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_css.c	6.5 (Berkeley) %G%
+ *	@(#)if_css.c	6.6 (Berkeley) %G%
  */
 
 #include "css.h"
+#if NCSS > 0
 
 /*
  * DEC/CSS IMP11-A ARPAnet IMP interface driver.
@@ -398,3 +399,4 @@ setup:
         addr->css_icsr =
                 IN_HRDY | CSS_IE | IN_WEN | ((info & 0x30000) >> 12) | CSS_GO;
 }
+#endif

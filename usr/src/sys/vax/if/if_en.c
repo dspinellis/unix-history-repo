@@ -3,10 +3,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_en.c	6.9 (Berkeley) %G%
+ *	@(#)if_en.c	6.10 (Berkeley) %G%
  */
 
 #include "en.h"
+#if NEN > 0
 
 /*
  * Xerox prototype (3 Mb) Ethernet interface driver.
@@ -687,4 +688,5 @@ enswab(from, to, n)
 		STEP; STEP; STEP; STEP;
 	}
 }
+#endif
 #endif
