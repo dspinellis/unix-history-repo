@@ -1,10 +1,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)srvrsmtp.c	3.24		%G%	(no SMTP));
+SCCSID(@(#)srvrsmtp.c	3.25		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)srvrsmtp.c	3.24		%G%);
+SCCSID(@(#)srvrsmtp.c	3.25		%G%);
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -98,19 +98,10 @@ smtp()
 		Errors = 0;
 		(void) fflush(stdout);
 
-		/* arrange a timeout */
-		if (setjmp(TickFrame) != 0)
-		{
-			message("421", "%s timed out", HostName);
-			finis();
-		}
-		(void) alarm(ReadTimeout);
-
 		/* read the input line */
-		p = fgets(inp, sizeof inp, InChannel);
+		p = sfgets(inp, sizeof inp, InChannel);
 
-		/* clear the timeout and handle errors */
-		(void) alarm(0);
+		/* handle errors */
 		if (p == NULL)
 		{
 			/* end of file, just die */

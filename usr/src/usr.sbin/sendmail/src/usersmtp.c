@@ -4,10 +4,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)usersmtp.c	3.15		%G%	(no SMTP));
+SCCSID(@(#)usersmtp.c	3.16		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)usersmtp.c	3.15		%G%);
+SCCSID(@(#)usersmtp.c	3.16		%G%);
 
 /*
 **  SMTPINIT -- initialize SMTP.
@@ -42,6 +42,7 @@ smtpinit(m, pvp, ctladdr)
 	register int r;
 	char buf[MAXNAME];
 	extern tick();
+	extern char *canonname();
 
 	/*
 	**  Open the connection to the mailer.
@@ -97,7 +98,7 @@ smtpinit(m, pvp, ctladdr)
 	*/
 
 	expand("$g", buf, &buf[sizeof buf - 1], CurEnv);
-	smtpmessage("MAIL From:<%s>", buf);
+	smtpmessage("MAIL From: %s", canonname(buf));
 	r = reply();
 	if (REPLYTYPE(r) == 4)
 		return (EX_TEMPFAIL);
@@ -122,11 +123,12 @@ smtprcpt(to)
 	ADDRESS *to;
 {
 	register int r;
+	extern char *canonname();
 
 	if (SmtpPid < 0)
 		return (SmtpErrstat);
 
-	smtpmessage("RCPT To:<%s>", to->q_user);
+	smtpmessage("RCPT To: %s", canonname(to->q_user));
 
 	r = reply();
 	if (REPLYTYPE(r) == 4)
@@ -241,17 +243,10 @@ reply()
 		register int r;
 		register char *p;
 
-		/* arrange to time out the read */
-		(void) fflush(Xscript);			/* for debugging */
-		if (setjmp(TickFrame) != 0)
-			return (-1);
-		(void) alarm(ReadTimeout);
-
 		/* actually do the read */
-		p = fgets(buf, sizeof buf, SmtpIn);
+		(void) fflush(Xscript);			/* for debugging */
+		p = sfgets(buf, sizeof buf, SmtpIn);
 
-		/* clean up timeout and check for errors */
-		(void) alarm(0);
 		if (p == NULL)
 			return (-1);
 

@@ -8,7 +8,7 @@
 # include "sendmail.h"
 # include "conf.h"
 
-SCCSID(@(#)util.c	3.21		%G%);
+SCCSID(@(#)util.c	3.22		%G%);
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
@@ -573,4 +573,45 @@ xunlink(f)
 	if (i < 0 && LogLevel > 21)
 		syslog(LOG_DEBUG, "%s: unlink-fail %e");
 # endif LOG
+}
+/*
+**  SFGETS -- "safe" fgets -- times out.
+**
+**	Parameters:
+**		buf -- place to put the input line.
+**		siz -- size of buf.
+**		fp -- file to read from.
+**
+**	Returns:
+**		NULL on error (including timeout).
+**		buf otherwise.
+**
+**	Side Effects:
+**		none.
+*/
+
+jmp_buf	TimeoFrame;
+
+char *
+sfgets(buf, siz, fp)
+	char *buf;
+	int siz;
+	FILE *fp;
+{
+	register EVENT *ev;
+	register char *p;
+	extern readtimeout();
+
+	ev = setevent(ReadTimeout, readtimeout, 0);
+	if (setjmp(TimeoFrame) != 0)
+		return (NULL);
+	p = fgets(buf, siz, fp);
+	clrevent(ev);
+	return (p);
+}
+
+static
+readtimeout()
+{
+	longjmp(TimeoFrame, 1);
 }

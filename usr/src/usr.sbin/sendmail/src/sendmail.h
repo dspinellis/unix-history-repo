@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.76		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.77		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -312,6 +312,23 @@ extern STAB	*stab();
 # define ST_FIND	0	/* find entry */
 # define ST_ENTER	1	/* enter if not there */
 /*
+**  STRUCT EVENT -- event queue.
+**
+**	Maintained in sorted order.
+*/
+
+struct event
+{
+	time_t		ev_time;	/* time of the function call */
+	int		(*ev_func)();	/* function to call */
+	int		ev_arg;		/* argument to ev_func */
+	struct event	*ev_link;	/* link to next item */
+};
+
+typedef struct event	EVENT;
+
+EXTERN EVENT	*EventQueue;		/* head of event queue */
+/*
 **  Statistics structure.
 */
 
@@ -419,3 +436,5 @@ extern ADDRESS	*parse();
 extern char	*xalloc();
 extern bool	sameaddr();
 extern FILE	*dfopen();
+extern EVENT	*setevent();
+extern char	*sfgets();
