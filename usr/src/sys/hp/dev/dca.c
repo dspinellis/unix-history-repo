@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dca.c	7.5 (Berkeley) %G%
+ *	@(#)dca.c	7.6 (Berkeley) %G%
  */
 
 #include "dca.h"
@@ -226,23 +226,55 @@ dcaintr(unit)
 	register int unit;
 {
 	register struct dcadevice *dca;
-	register int code;
+	register u_char code;
+	register struct tty *tp;
 
 	dca = dca_addr[unit];
 	if ((dca->dca_ic & IC_IR) == 0)
 		return(0);
-	while (((code = dca->dca_iir) & IIR_NOPEND) == 0) {
-		code &= IIR_IMASK;
-		if (code == IIR_RLS)
+	while (1) {
+		code = dca->dca_iir;
+		switch (code) {
+		case IIR_NOPEND:
+			return (1);
+		case IIR_RXRDY:
+			/* do time-critical read in-line */
+			tp = &dca_tty[unit];
+			code = dca->dca_data;
+			if ((tp->t_state & TS_ISOPEN) == 0) {
+#ifdef KGDB
+				if (kgdb_dev == makedev(1, unit) &&
+				    code == '!') {
+					printf("kgdb trap from dca%d\n", unit);
+					/* trap into kgdb */
+					asm("trap #15;");
+				}
+#endif
+			} else
+				(*linesw[tp->t_line].l_rint)(code, tp);
+			break;
+		case IIR_TXRDY:
+			tp = &dca_tty[unit];
+			tp->t_state &=~ (TS_BUSY|TS_FLUSH);
+			if (tp->t_line)
+				(*linesw[tp->t_line].l_start)(tp);
+			else
+				dcastart(tp);
+			break;
+		case IIR_RLS:
 			dcaeint(unit, dca);
-		else if (code == IIR_RXRDY)
-			dcarint(unit, dca);
-		else if (code == IIR_TXRDY)
-			dcaxint(unit, dca);
-		else
+			break;
+		default:
+			if (code & IIR_NOPEND)
+				return (1);
+			log(LOG_WARNING, "dca%d: weird interrupt: 0x%x\n",
+			    unit, code);
+			/* fall through */
+		case IIR_MLSC:
 			dcamint(unit, dca);
+			break;
+		}
 	}
-	return(1);
 }
 
 dcaeint(unit, dca)
@@ -254,7 +286,7 @@ dcaeint(unit, dca)
 
 	tp = &dca_tty[unit];
 	stat = dca->dca_lsr;
-	c = dca->dca_data & 0xff;
+	c = dca->dca_data;
 	if ((tp->t_state & TS_ISOPEN) == 0) {
 #ifdef KGDB
 		/* we don't care about parity errors */
@@ -276,45 +308,6 @@ dcaeint(unit, dca)
 	(*linesw[tp->t_line].l_rint)(c, tp);
 }
 
-dcarint(unit, dca)
-	int unit;
-	register struct dcadevice *dca;
-{
-	register struct tty *tp;
-	register int c;
-
-	tp = &dca_tty[unit];
-	c = dca->dca_data;
-	if ((tp->t_state & TS_ISOPEN) == 0) {
-#ifdef KGDB
-		if (kgdb_dev == makedev(1, unit) && c == '!') {
-			printf("kgdb trap from dca%d\n", unit);
-			/* trap into kgdb */
-			asm("trap #15;");
-		}
-#endif
-		return;
-	}
-	(*linesw[tp->t_line].l_rint)(c, tp);
-}
-
-/*ARGSUSED*/
-dcaxint(unit, dca)
-	int unit;
-	struct dcadevice *dca;
-{
-	register struct tty *tp;
-
-	tp = &dca_tty[unit];
-	tp->t_state &= ~TS_BUSY;
-	if (tp->t_state & TS_FLUSH)
-		tp->t_state &= ~TS_FLUSH;
-	if (tp->t_line)
-		(*linesw[tp->t_line].l_start)(tp);
-	else
-		dcastart(tp);
-}
-
 dcamint(unit, dca)
 	register int unit;
 	register struct dcadevice *dca;
@@ -324,11 +317,19 @@ dcamint(unit, dca)
 
 	tp = &dca_tty[unit];
 	stat = dca->dca_msr;
-	if ((stat & MSR_CCD) && (dcasoftCAR & (1 << unit)) == 0) {
+	if ((stat & MSR_DDCD) && (dcasoftCAR & (1 << unit)) == 0) {
 		if (stat & MSR_DCD)
-			(void) (*linesw[tp->t_line].l_modem)(tp, 1);
+			(void)(*linesw[tp->t_line].l_modem)(tp, 1);
 		else if ((*linesw[tp->t_line].l_modem)(tp, 0) == 0)
 			dca->dca_mcr &= ~(MCR_DTR | MCR_RTS);
+	} else if ((stat & MSR_DCTS) && (tp->t_state & TS_ISOPEN) &&
+		   (tp->t_flags & CRTSCTS)) {
+		/* the line is up and we want to do rts/cts flow control */
+		if (stat & MSR_CTS) {
+			tp->t_state &=~ TS_TTSTOP;
+			ttstart(tp);
+		} else
+			tp->t_state |= TS_TTSTOP;
 	}
 }
 
@@ -446,7 +447,7 @@ dcastart(tp)
 	unit = UNIT(tp->t_dev);
 	dca = dca_addr[unit];
 	s = spltty();
-	if (tp->t_state & (TS_TIMEOUT|TS_BUSY|TS_TTSTOP))
+	if (tp->t_state & (TS_TIMEOUT|TS_TTSTOP))
 		goto out;
 	if (tp->t_outq.c_cc <= tp->t_lowat) {
 		if (tp->t_state&TS_ASLEEP) {
@@ -461,9 +462,11 @@ dcastart(tp)
 	}
 	if (tp->t_outq.c_cc == 0)
 		goto out;
-	c = getc(&tp->t_outq);
-	tp->t_state |= TS_BUSY;
-	dca->dca_data = c;
+	if (dca->dca_lsr & LSR_TXRDY) {
+		c = getc(&tp->t_outq);
+		tp->t_state |= TS_BUSY;
+		dca->dca_data = c;
+	}
 out:
 	splx(s);
 }
