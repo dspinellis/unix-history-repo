@@ -31,7 +31,7 @@
 .\"
 .\"     @(#)slattach.8	6.4 (Berkeley) 3/16/91
 .\"
-.\"	$Header: /a/cvs/386BSD/src/sbin/slattach/slattach.8,v 1.3 1993/08/30 09:51:00 rgrimes Exp $
+.\"	$Header: /a/cvs/386BSD/src/sbin/slattach/slattach.8,v 1.4 1993/09/06 23:24:05 rgrimes Exp $
 .\"
 .Dd April 4, 1993
 .Dt SLATTACH 8
@@ -86,10 +86,15 @@ redial-command) whenever carrier is lost on the line.
 Specifies the speed of the connection. If not specified, the
 default of 9600 is used.
 .It Ar \-u unit-command
-Specifies a command to be invoked within a shell,
-.Ql sh \-c unit-command old new , 
-whenever the unit number for the slip line changes.  This can happen
-after redialing if you are using more than one slip line.
+When the line is switched to slip discipline, run
+.Ql sh \-c unit-command <last> <current> 
+where <last> and <current> are the slip unit numbers when the line was
+last opened and the unit number of the current slip connection
+respecitvely.  The unit number can change after redialing if you are
+using more than one slip line.  Slattach will abort if the unit number
+changes and
+.Ql \-u unit-command
+was not specified.
 .It Ar \-z
 forces redial
 redial-cmd upon startup irrespective of carrier.
