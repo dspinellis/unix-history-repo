@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)procfs_vfsops.c	8.6 (Berkeley) %G%
+ *	@(#)procfs_vfsops.c	8.7 (Berkeley) %G%
  *
  * From:
  *	$Id: procfs_vfsops.c,v 3.1 1993/12/15 09:40:17 jsp Exp $
@@ -77,15 +77,10 @@ procfs_unmount(mp, mntflags, p)
 	struct proc *p;
 {
 	int error;
-	extern int doforce;
 	int flags = 0;
 
-	if (mntflags & MNT_FORCE) {
-		/* procfs can never be rootfs so don't check for it */
-		if (!doforce)
-			return (EINVAL);
+	if (mntflags & MNT_FORCE)
 		flags |= FORCECLOSE;
-	}
 
 	if (error = vflush(mp, 0, flags))
 		return (error);

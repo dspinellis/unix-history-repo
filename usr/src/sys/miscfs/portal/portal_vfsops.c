@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)portal_vfsops.c	8.8 (Berkeley) %G%
+ *	@(#)portal_vfsops.c	8.9 (Berkeley) %G%
  *
  * $Id: portal_vfsops.c,v 1.5 1992/05/30 10:25:27 jsp Exp jsp $
  */
@@ -127,17 +127,12 @@ portal_unmount(mp, mntflags, p)
 	int mntflags;
 	struct proc *p;
 {
-	extern int doforce;
 	struct vnode *rootvp = VFSTOPORTAL(mp)->pm_root;
 	int error, flags = 0;
 
 
-	if (mntflags & MNT_FORCE) {
-		/* portal can never be rootfs so don't check for it */
-		if (!doforce)
-			return (EINVAL);
+	if (mntflags & MNT_FORCE)
 		flags |= FORCECLOSE;
-	}
 
 	/*
 	 * Clear out buffer cache.  I don't think we
