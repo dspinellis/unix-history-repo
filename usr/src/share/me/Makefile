@@ -9,7 +9,7 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	6.5 (Berkeley) %G%
+#	@(#)Makefile	6.6 (Berkeley) %G%
 #
 MELIB=	/usr/lib/me
 TMLIB=	/usr/lib/tmac
@@ -37,5 +37,8 @@ install: FRC
 	install -c -o bin -g bin -m 444 revisions ${DESTDIR}${MELIB}/revisions
 
 clean:
+cleandir:
 depend:
+lint:
+tags:
 FRC:
