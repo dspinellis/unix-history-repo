@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-/*	fs.h	1.15	%G%	*/
+/*	fs.h	1.16	%G%	*/
 
 /*
  * Each disk drive contains some number of file systems.
@@ -137,8 +137,12 @@
  * The path name on which the file system is mounted is maintained
  * in fs_fsmnt. MAXMNTLEN defines the amount of space allocated in 
  * the super block for this name.
+ * The limit on the amount of summary information per file system
+ * is defined by MAXCSBUFS. It is currently parameterized for 1Meg
+ * cylinders maximum.
  */
 #define MAXMNTLEN 34
+#define MAXCSBUFS 16
 
 /*
  * Per cylinder group information; summarized in blocks allocated
@@ -204,7 +208,7 @@ struct	fs
 	char	fs_fsmnt[MAXMNTLEN];	/* name mounted on */
 /* these fields retain the current block allocation info */
 	long	fs_cgrotor;		/* last cg searched */
-	struct	csum *fs_csp[NBUF / 2];	/* list of fs_cs info buffers */
+	struct	csum *fs_csp[MAXCSBUFS];/* list of fs_cs info buffers */
 	short	fs_cpc;			/* cyl per cycle in postbl */
 	short	fs_postbl[MAXCPG][NRPOS];/* head of blocks for each rotation */
 	u_char	fs_rotbl[1];		/* list of blocks for each rotation */
