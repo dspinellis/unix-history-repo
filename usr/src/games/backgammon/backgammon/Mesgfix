@@ -1,4 +1,4 @@
-2!date
+4!date
 g/Sun /s//Sunday, /
 g/Mon /s//Monday, /
 g/Tue /s//Tuesday, /
@@ -18,8 +18,8 @@ g/Oct /s//October /
 g/Nov /s//November /
 g/Dec /s//December /
 g/  /s// /
-2s/ ..:..:.. .../,/
-2s/^/	"Last update on /
-2s/$/.",/
+4s/ ..:..:.. .../,/
+4s/^/	"Last update on /
+4s/$/.",/
 w!
 q
