@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)deliver.c	3.88		%G%);
+SCCSID(@(#)deliver.c	3.89		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -936,7 +936,7 @@ putfromline(fp, m)
 			syserr("No ! in UUCP! (%s)", sys);
 		else
 			*bang = '\0';
-		expand("From $f  $d remote from $g", buf,
+		expand("From $f  $d remote from $g\n", buf,
 				&buf[sizeof buf - 1], CurEnv);
 		*bang = '!';
 	}
