@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)db.h	5.16 (Berkeley) %G%
+ *	@(#)db.h	5.17 (Berkeley) %G%
  */
 
 #ifndef _DB_H_
@@ -17,11 +17,11 @@
 #define	RET_SPECIAL	 1
 
 #define	MAX_PAGE_NUMBER	ULONG_MAX	/* >= # of pages in a file */
-typedef unsigned long	pgno_t;
+typedef u_long	pgno_t;
 #define	MAX_PAGE_OFFSET	USHRT_MAX	/* >= # of bytes in a page */
-typedef unsigned short	index_t;
+typedef u_short	index_t;
 #define	MAX_REC_NUMBER	ULONG_MAX	/* >= # of records in a tree */
-typedef unsigned long	recno_t;
+typedef u_long	recno_t;
 
 /* Key/data structure -- a Data-Base Thang. */
 typedef struct {
@@ -46,12 +46,11 @@ typedef enum { DB_BTREE, DB_HASH, DB_RECNO } DBTYPE;
 typedef struct __db {
 	DBTYPE type;			/* underlying db type */
 	int (*close)	__P((struct __db *));
-	int (*del)	__P((const struct __db *, const DBT *, unsigned int));
-	int (*get)	__P((const struct __db *, const DBT *, DBT *,
-			    unsigned int));
+	int (*del)	__P((const struct __db *, const DBT *, u_int));
+	int (*get)	__P((const struct __db *, const DBT *, DBT *, u_int));
 	int (*put)	__P((const struct __db *, const DBT *, const DBT *,
-			    unsigned int));
-	int (*seq)	__P((const struct __db *, DBT *, DBT *, unsigned int));
+			    u_int));
+	int (*seq)	__P((const struct __db *, DBT *, DBT *, u_int));
 	int (*sync)	__P((const struct __db *));
 	void *internal;			/* access method private */
 } DB;
@@ -62,7 +61,7 @@ typedef struct __db {
 /* Structure used to pass parameters to the btree routines. */
 typedef struct {
 #define	R_DUP		0x01	/* duplicate keys */
-	unsigned long flags;
+	u_long flags;
 	int cachesize;		/* bytes to cache */
 	int maxkeypage;		/* maximum keys per page */
 	int minkeypage;		/* minimum keys per page */
@@ -91,22 +90,22 @@ typedef struct {
 #define	R_FIXEDLEN	0x01	/* fixed-length records */
 #define	R_NOKEY		0x02	/* key not required */
 #define	R_SNAPSHOT	0x04	/* snapshot the input */
-	unsigned long flags;
+	u_long flags;
 	int cachesize;		/* bytes to cache */
 	int lorder;		/* byte order */
 	size_t reclen;		/* record length (fixed-length records) */
-	unsigned char bval;	/* delimiting byte (variable-length records */
+	u_char bval;		/* delimiting byte (variable-length records */
 } RECNOINFO;
 
 /* Key structure for the record routines. */
 typedef struct {
-	unsigned long number;
-	unsigned long offset;
-	unsigned long length;
+	u_long number;
+	u_long offset;
+	u_long length;
 #define	R_LENGTH	0x01	/* length is valid */
 #define	R_NUMBER	0x02	/* record number is valid */
 #define	R_OFFSET	0x04	/* offset is valid */
-	unsigned char valid;
+	u_char valid;
 } RECNOKEY;
 
 /*
@@ -116,14 +115,14 @@ typedef struct {
  *	BLSWAP_COPY	swap from one location to another
  */
 #define BLSWAP(a) { \
-	unsigned long _tmp = a; \
+	u_long _tmp = a; \
 	((char *)&a)[0] = ((char *)&_tmp)[3]; \
 	((char *)&a)[1] = ((char *)&_tmp)[2]; \
 	((char *)&a)[2] = ((char *)&_tmp)[1]; \
 	((char *)&a)[3] = ((char *)&_tmp)[0]; \
 }
 #define	BLPSWAP(a) { \
-	unsigned long _tmp = *(unsigned long *)a; \
+	u_long _tmp = *(u_long *)a; \
 	((char *)a)[0] = ((char *)&_tmp)[3]; \
 	((char *)a)[1] = ((char *)&_tmp)[2]; \
 	((char *)a)[2] = ((char *)&_tmp)[1]; \
@@ -143,12 +142,12 @@ typedef struct {
  *	BSSWAP_COPY	swap from one location to another
  */
 #define BSSWAP(a) { \
-	unsigned short _tmp = a; \
+	u_short _tmp = a; \
 	((char *)&a)[0] = ((char *)&_tmp)[1]; \
 	((char *)&a)[1] = ((char *)&_tmp)[0]; \
 }
 #define BSPSWAP(a) { \
-	unsigned short _tmp = *(unsigned short *)a; \
+	u_short _tmp = *(u_short *)a; \
 	((char *)a)[0] = ((char *)&_tmp)[1]; \
 	((char *)a)[1] = ((char *)&_tmp)[0]; \
 }
