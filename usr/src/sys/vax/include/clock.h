@@ -1,4 +1,4 @@
-/*	clock.h	4.6	82/09/04	*/
+/*	clock.h	4.7	82/09/12	*/
 
 /*
  * VAX clock registers
@@ -26,7 +26,7 @@
  * Start a 60 HZ clock.
  */
 #define	clkstart() {\
-	mtpr(NICR, -16667);	/* 16.667 milli-seconds */\
+	mtpr(NICR, -1000000/hz);	/* 10 milli-seconds */\
 	mtpr(ICCS, ICCS_RUN+ICCS_IE+ICCS_TRANS+ICCS_INT+ICCS_ERR);\
 }
 #define	clkwrap()	(((unsigned)mfpr(TODR) - TODRZERO)/100 > SECYR+SECDAY)
