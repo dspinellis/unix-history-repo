@@ -16,13 +16,13 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)system.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)system.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/signal.h>
-#include <stdio.h>
+#include <stddef.h>
 #include <paths.h>
 
 system(command)
@@ -32,6 +32,9 @@ system(command)
 	pid_t pid, waitpid();
 	int omask;
 	sig_t intsave, quitsave;
+
+	if (!command)		/* just checking... */
+		return(1);
 
 	omask = sigblock(sigmask(SIGCHLD));
 	switch(pid = vfork()) {
