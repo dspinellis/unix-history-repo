@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)dc.h	5.1 (Berkeley) %G%
+ *	@(#)dc.h	5.2 (Berkeley) %G%
  */
 
 #define FATAL 0
@@ -89,7 +89,7 @@ struct	blk *scalint();
 struct	blk *removc();
 struct	blk *add(),*div(),*removr();
 struct	blk *exp();
-struct	blk *sqrt();
+struct	blk *dcsqrt();
 struct	blk *salloc(),*copy();
 struct	blk *scale();
 int	neg;
