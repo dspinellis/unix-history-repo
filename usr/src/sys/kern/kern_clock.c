@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.30	81/12/19	*/
+/*	kern_clock.c	4.31	82/06/26	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -22,6 +22,7 @@
 #include "bk.h"
 #include "dh.h"
 #include "dz.h"
+#include "ps.h"
 
 /*
  * Hardclock is called straight from
@@ -71,6 +72,13 @@ hardclock(pc, ps)
 	 * reprime clock
 	 */
 	clkreld();
+
+#if NPS > 0
+	/*
+	 * sync referesh of picture system
+	 */
+	psextsync(pc, ps);
+#endif
 
 	/*
 	 * update callout times
@@ -497,5 +505,31 @@ timeout(fun, arg, tim)
 	pnew->c_time = t;
 	if (p2)
 		p2->c_time -= t;
+	splx(s);
+}
+
+/*
+ * untimeout is called to remove a function timeout call
+ * from the callout structure.
+ */
+untimeout (fun, arg)
+	int (*fun)();
+	caddr_t arg;
+{
+
+	register struct callout *p1, *p2;
+	register int s;
+
+	s = spl7();
+	for (p1 = &calltodo; (p2 = p1->c_next) != 0; p1 = p2) {
+		if (p2->c_func == fun && p2->c_arg == arg) {
+			if (p2->c_next)
+				p2->c_next->c_time += p2->c_time;
+			p1->c_next = p2->c_next;
+			p2->c_next = callfree;
+			callfree = p2;
+			break;
+		}
+	}
 	splx(s);
 }
