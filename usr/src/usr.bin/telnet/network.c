@@ -223,24 +223,31 @@ va_dcl
 {
     va_list ap;
     char buffer[100];		/* where things go */
-    char *ptr = buffer;
+    char *ptr;
     char *format;
+    char *string;
     int i;
 
     va_start(ap);
 
     format = va_arg(ap, char *);
+    ptr = buffer;
 
     while ((i = *format++) != 0) {
 	if (i == '%') {
 	    i = *format++;
 	    switch (i) {
 	    case 'c':
-		i = va_arg(ap, char);
-		NETADD(i);
+		*ptr++ = va_arg(ap, int);
+		break;
+	    case 's':
+		string = va_arg(ap, char *);
+		ring_add_data(&netoring, buffer, ptr-buffer);
+		ring_add_data(&netoring, string, strlen(string));
+		ptr = buffer;
 		break;
 	    case 0:
-		ExitString("netoprint: trailing %.\n", 1);
+		ExitString("netoprint: trailing %%.\n", 1);
 		/*NOTREACHED*/
 	    default:
 		ExitString("netoprint: unknown format character.\n", 1);
