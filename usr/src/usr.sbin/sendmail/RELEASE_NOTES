@@ -1,9 +1,15 @@
 			SENDMAIL RELEASE NOTES
-	     @(#)RELEASE_NOTES	8.6.6.1 (Berkeley) %G%
+	     @(#)RELEASE_NOTES	8.6.7.1 (Berkeley) %G%
 
 This listing shows the version of the sendmail binary, the version
 of the sendmail configuration files, the date of release, and a
 summary of the changes in that release.
+
+8.6.7/8.6.6	94/03/14
+	SECURITY: it was possible to get root access by using wierd
+		values to the -d flag.  Thanks to Alain Durand of
+		INRIA for forwarding me the notice from the bugtraq
+		list.
 
 8.6.6/8.6.6	94/03/13
 	SECURITY: the ability to give files away on System V-based
