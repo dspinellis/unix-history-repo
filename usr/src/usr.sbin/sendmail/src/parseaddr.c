@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -362,7 +362,7 @@ prescan(addr, delim, pvpbuf)
 	state = ATM;
 	c = NOCHAR;
 	p = addr;
-	if (tTd(22, 45))
+	if (tTd(22, 11))
 	{
 		printf("prescan: ");
 		xputs(p);
@@ -392,8 +392,29 @@ prescan(addr, delim, pvpbuf)
 
 			/* read a new input character */
 			c = *p++;
-			if (c == '\0')
-				break;
+			if (c == '\0' || (c == delim && anglecnt <= 0))
+			{
+				/* diagnose and patch up bad syntax */
+				if (state == QST)
+				{
+					usrerr("Unbalanced '\"'");
+					c = '"';
+				}
+				else if (cmntcnt > 0)
+				{
+					usrerr("Unbalanced '('");
+					c = ')';
+				}
+				else if (anglecnt > 0)
+				{
+					c = '>';
+					usrerr("Unbalanced '<'");
+				}
+				else
+					break;
+
+				p--;
+			}
 
 			if (tTd(22, 101))
 				printf("c=%c, s=%d; ", c, state);
@@ -506,13 +527,12 @@ prescan(addr, delim, pvpbuf)
 	} while (c != '\0' && (c != delim || anglecnt > 0));
 	*avp = NULL;
 	DelimChar = --p;
-	if (cmntcnt > 0)
-		usrerr("Unbalanced '('");
-	else if (anglecnt > 0)
-		usrerr("Unbalanced '<'");
-	else if (state == QST)
-		usrerr("Unbalanced '\"'");
-	else if (av[0] != NULL)
+	if (tTd(22, 12))
+	{
+		printf("prescan==>");
+		printav(av);
+	}
+	if (av[0] != NULL)
 		return (av);
 	return (NULL);
 }
