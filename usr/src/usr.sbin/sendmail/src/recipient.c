@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.10 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -472,12 +472,18 @@ recipient(a, sendq, e)
 		e->e_nrcpts++;
 
   testselfdestruct:
-	if (a->q_alias == NULL && a != &e->e_from)
+	if (tTd(26, 8))
 	{
-		q = a->q_next;
+		printf("testselfdestruct: ");
+		printaddr(a, TRUE);
+	}
+	if (a->q_alias == NULL && a != &e->e_from &&
+	    bitset(QDONTSEND, a->q_flags))
+	{
+		q = *sendq;
 		while (q != NULL && bitset(QDONTSEND, q->q_flags))
 			q = q->q_next;
-		if (bitset(QDONTSEND, a->q_flags) && q == NULL)
+		if (q == NULL)
 		{
 			a->q_flags |= QBADADDR;
 			usrerr("554 aliasing/forwarding loop broken");
