@@ -1,0 +1,22 @@
+		Unix f77 Math Function Library
+			February, 1981
+
+This is the library providing interface to the C math library, libm.a
+In addition there are functions for complex and double
+complex arguments and short int arguments. There are also utility functions
+to enable floating overflow/integer underflow trapping, and to return
+numerical range for this machine. Finally there are also the string
+functions required by ANSI plus a few additions.
+
+Install these sources in parallel with the other f77 libraries. Then:
+	make libF77.a
+	make install
+	cd man
+	make install
+
+
+
+Please send bug reports, fixes, etc. to one of
+	dlw@g.cc.berkeley	(new uucp mailer)
+	ucbvax!g.dlw		(old uucp mailer)
+	g.dlw@berkeley		(arpanet)
