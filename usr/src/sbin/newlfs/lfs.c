@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lfs.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)lfs.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -70,6 +70,8 @@ static struct lfs lfs_default =  {
 	/* lfs_free */		LFS_FIRST_INUM,
 	/* lfs_bfree */		0,
 	/* lfs_nfiles */	0,
+	/* lfs_avail */		0,
+	/* lfs_uinodes */	0,
 	/* lfs_idaddr */	0,
 	/* lfs_ifile */		LFS_IFILE_INUM,
 	/* lfs_lastseg */	0,
@@ -106,6 +108,7 @@ static struct lfs lfs_default =  {
 	/* lfs_writer */	0,
 	/* lfs_dirops */	0,
 	/* lfs_doifile */	0,
+	/* lfs_nactive */	0,
 	/* lfs_fmod */		0,
 	/* lfs_clean */		0,
 	/* lfs_ronly */		0,
@@ -220,12 +223,11 @@ make_lfs(fd, lp, partp, minfree, block_size, seg_size)
 	lfsp->lfs_maxfilesize = maxtable[lfsp->lfs_bshift] << lfsp->lfs_bshift;
 
 	/* 
-	 * The number of free blocks is set from the total data size (lfs_dsize)
-	 * minus one sector for each segment (for the segment summary).  Then 
-	 * we'll subtract off the room for the superblocks, ifile entries and
-	 * segment usage table.
+	 * The number of free blocks is set from the number of segments times
+	 * the segment size.  Then we'll subtract off the room for the
+	 * superblocks ifile entries and segment usage table.
 	 */
-	lfsp->lfs_bfree = lfsp->lfs_dsize * db_per_fb - lfsp->lfs_nseg;
+	lfsp->lfs_bfree = fsbtodb(lfsp, lfsp->lfs_nseg * lfsp->lfs_ssize);
 	lfsp->lfs_segtabsz = SEGTABSIZE_SU(lfsp);
 	lfsp->lfs_cleansz = CLEANSIZE_SU(lfsp);
 	if ((lfsp->lfs_tstamp = time(NULL)) == -1)
@@ -274,13 +276,15 @@ make_lfs(fd, lp, partp, minfree, block_size, seg_size)
 		fatal("%s", strerror(errno));
 	segp = segtable;
 	blocks_used = lfsp->lfs_segtabsz + lfsp->lfs_cleansz + 4;
-	segp->su_nbytes = blocks_used << lfsp->lfs_bshift;
+	segp->su_nbytes = ((blocks_used - 1) << lfsp->lfs_bshift) +
+	    3 * sizeof(struct dinode) + LFS_SUMMARY_SIZE;
 	segp->su_lastmod = lfsp->lfs_tstamp;
 	segp->su_nsums = 1;	/* 1 summary blocks */
 	segp->su_ninos = 1;	/* 1 inode block */
 	segp->su_flags = SEGUSE_SUPERBLOCK | SEGUSE_DIRTY;
-	lfsp->lfs_bfree -= db_per_fb *
-	     (lfsp->lfs_cleansz + lfsp->lfs_segtabsz + 4);
+	lfsp->lfs_bfree -= LFS_SUMMARY_SIZE / lp->d_secsize;
+	lfsp->lfs_bfree -=
+	     fsbtodb(lfsp, lfsp->lfs_cleansz + lfsp->lfs_segtabsz + 4);
 
 	/* 
 	 * Now figure out the address of the ifile inode. The inode block
@@ -301,6 +305,16 @@ make_lfs(fd, lp, partp, minfree, block_size, seg_size)
 		segp->su_nsums = 0;
 	}
 
+	/* 
+	 * Initialize dynamic accounting.  The blocks available for
+	 * writing are the bfree blocks minus 1 segment summary for
+	 * each segment since you can't write any new data without
+	 * creating a segment summary - 2 segments that the cleaner
+	 * needs.
+	 */
+	lfsp->lfs_avail = lfsp->lfs_bfree - lfsp->lfs_nseg - 
+		fsbtodb(lfsp, 2 * lfsp->lfs_ssize);
+	lfsp->lfs_uinodes = 0;
 	/*
 	 * Ready to start writing segments.  The first segment is different
 	 * because it contains the segment usage table and the ifile inode
