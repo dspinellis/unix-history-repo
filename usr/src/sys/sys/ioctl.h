@@ -1,4 +1,4 @@
-/*	ioctl.h	4.6	81/02/25	*/
+/*	ioctl.h	4.7	81/03/17	*/
 /*
  * ioctl definitions, and special character and local tty definitions
  */
@@ -24,20 +24,21 @@ struct ltchars {
 /*
  * local mode settings
  */
-#define	LCRTBS	01		/* correct backspacing for crt */
-#define	LPRTERA 02		/* printing terminal \ ... / erase */
-#define	LCRTERA	04		/* do " \b " to wipe out character */
-#define	LTILDE	010		/* IIASA - hazeltine tilde kludge */
-#define	LMDMBUF	020		/* IIASA - start/stop output on carrier intr */
-#define	LLITOUT	040		/* IIASA - suppress any output translations */
-#define	LTOSTOP	0100		/* send stop for any background tty output */
-#define	LFLUSHO	0200		/* flush output sent to terminal */
-#define	LNOHANG 0400		/* IIASA - don't send hangup on carrier drop */
-#define	LETXACK 01000		/* IIASA - diablo style buffer hacking */
-#define	LCRTKIL	02000		/* erase whole line on kill with " \b " */
-#define	LINTRUP 04000		/* interrupt on every input char - SIGTINT */
-#define	LCTLECH	010000		/* echo control characters as ^X */
-#define	LPENDIN	020000		/* tp->t_rawq is waiting to be reread */
+#define	LCRTBS	0000001		/* correct backspacing for crt */
+#define	LPRTERA 0000002		/* printing terminal \ ... / erase */
+#define	LCRTERA	0000004		/* do " \b " to wipe out character */
+#define	LTILDE	0000010		/* IIASA - hazeltine tilde kludge */
+#define	LMDMBUF	0000020		/* IIASA - start/stop output on carrier intr */
+#define	LLITOUT	0000040		/* IIASA - suppress any output translations */
+#define	LTOSTOP	0000100		/* send stop for any background tty output */
+#define	LFLUSHO	0000200		/* flush output sent to terminal */
+#define	LNOHANG 0000400		/* IIASA - don't send hangup on carrier drop */
+#define	LETXACK 0001000		/* IIASA - diablo style buffer hacking */
+#define	LCRTKIL	0002000		/* erase whole line on kill with " \b " */
+#define	LINTRUP 0004000		/* interrupt on every input char - SIGTINT */
+#define	LCTLECH	0010000		/* echo control characters as ^X */
+#define	LPENDIN	0020000		/* tp->t_rawq is waiting to be reread */
+#define	LDECCTQ 0040000		/* only ^Q starts after ^S */
 
 /* local state */
 #define	LSBKSL	01		/* state bit for lowercase backslash work */
