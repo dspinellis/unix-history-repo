@@ -1,0 +1,49 @@
+#once #create message
+.ND
+.PP
+There is one special construction with subscripts
+and superscripts that you have to be aware of, although
+it almost always does what you want automatically.
+When something has both a subscript and a superscript,
+it is usually printed as
+.EQ
+x sub i sup j
+.EN
+instead of
+.EQ
+{x sub i} sup j
+.EN
+To produce this effect, with the superscript _____above the
+subscript instead of to the right, you have to type
+the subscript ______before the superscript, like this:
+
+   .EQ
+   x sub i sup j
+   .EN
+
+That's all there is to it.
+
+Modify "Example" to produce the following output, then type "ready".
+.pl 1
+#once #create Ref
+.LP
+.EQ
+x sub ij sup kmn = y sub i sub j
+.EN
+.pl 1
+#once #create Example
+.LP
+.EQ
+xxx
+.EN
+.pl 1
+#
+#once neqn Ref | nroff >X1 &
+#once neqn message Ref | nroff -T$TERM %s/tinyms -
+#user
+neqn Example | nroff >X2
+#cmp X1 X2
+#log
+#next
+3.1e 10
+3.2d 5

@@ -1,0 +1,39 @@
+#once #create message
+.ND
+.PP
+Subscripts and superscripts can appear in the same equation,
+and any subscripted or superscripted thing can have
+a subscript or superscript.
+For example, you can say
+
+   .EQ
+   x sub i sub j ~+~ y sup i sup j
+   .EN
+
+to get
+.EQ
+x sub i sub j ~+~ y sup i sup j
+.EN
+Modify "Example" to produce the following output, then type "ready".
+.pl 1
+#once #create Ref
+.LP
+.EQ
+2 sup 2 sup 2 sup 2 ~=~ 65536
+.EN
+.pl 1
+#once #create Example
+.LP
+.EQ
+xxx
+.EN
+#
+#once neqn Ref | nroff >X1 &
+#once neqn message Ref | nroff -T$TERM %s/tinyms -
+#user
+neqn Example | nroff >X2
+#cmp X1 X2
+#log
+#next
+3.1d 10
+3.2c 5
