@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)boot.c	7.11 (Berkeley) %G%
+ *	@(#)boot.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -28,12 +28,11 @@ extern	unsigned opendev;
 main()
 {
 	register unsigned howto, devtype;	/* howto=r11, devtype=r10 */
-	int io, retry, type;
+	int io = 0, retry, type;
 
 #ifdef lint
 	howto = 0; devtype = 0;
 #endif
-	printf("\nBoot\n");
 #ifdef JUSTASK
 	howto = RB_ASKNAME|RB_SINGLE;
 #else
@@ -46,6 +45,8 @@ main()
 	}
 #endif
 	for (retry = 0;;) {
+		if (io >= 0)
+			printf("\nBoot\n");
 		if (howto & RB_ASKNAME) {
 			printf(": ");
 			gets(line);
@@ -80,7 +81,7 @@ copyunix(howto, devtype, aio)
 	char *addr;
 
 	if (read(io, (char *)&x, sizeof(x)) != sizeof(x) || N_BADMAG(x)) {
-		printf("bad magic #\n");
+		printf("Bad format\n");
 		return;
 	}
 	printf("%d", x.a_text);
