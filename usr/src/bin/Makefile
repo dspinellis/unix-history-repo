@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.25	(Berkeley)	%G%
+#	@(#)Makefile	5.26	(Berkeley)	%G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -21,8 +21,8 @@ SCRIPT=	false true
 #
 SRCS=	ar.c cat.c cc.c chmod.c cmp.c cp.c date.c dd.c df.c du.c \
 	echo.c ed.c expr.c hostid.c hostname.c kill.c ld.c ln.c login.c \
-	ls.c machine.c mail.c mkdir.c mt.c mv.c nice.c nm.c od.c pagesize.c \
-	pr.c ps.c pwd.c rcp.c rm.c rmail.c rmdir.c size.c strip.c \
+	ls.c machine.c mkdir.c mt.c mv.c nice.c nm.c od.c pagesize.c \
+	pr.c ps.c pwd.c rcp.c rm.c rmdir.c size.c strip.c \
 	stty.c su.c sync.c tar.c tee.c test.c time.c wall.c who.c write.c
 
 # C programs that live in the current directory and do not need
@@ -30,7 +30,7 @@ SRCS=	ar.c cat.c cc.c chmod.c cmp.c cp.c date.c dd.c df.c du.c \
 #
 STD=	ar cat cc chmod cmp cp date dd du echo ed hostid \
 	hostname kill ld ln ls machine mkdir mt mv nice nm od pagesize pr \
-	pwd rm rmail rmdir size strip stty sync tar tee test time who
+	pwd rm rmdir size strip stty sync tar tee test time who
 
 # C programs that live in the current directory and need explicit make lines.
 #
@@ -38,7 +38,7 @@ NSTD=	expr ps
 
 # Programs that get installed with special permissions
 #
-PERM=	df login mail rcp su wall write
+PERM=	df login rcp su wall write
 
 all:	${SUBDIR} ${STD} ${NSTD} ${PERM}
 
@@ -57,7 +57,6 @@ install: FRC
 	install -o bin -g bin -m 755 ${STD} ${DESTDIR}/bin
 # programs that run with special permissions
 	install -s -o root -g bin -m 4755 login ${DESTDIR}/bin/login
-	install -s -o root -g bin -m 4755 mail ${DESTDIR}/bin/mail
 	install -s -o root -g bin -m 4755 rcp ${DESTDIR}/bin/rcp
 	install -s -o root -g bin -m 4755 su ${DESTDIR}/bin/su
 	install -s -o bin -g operator -m 2755 df ${DESTDIR}/bin/df
@@ -178,13 +177,6 @@ ls: /usr/include/grp.h /usr/include/utmp.h
 machine: machine.c /usr/include/sys/param.h /usr/include/sys/types.h
 machine: /usr/include/signal.h /usr/include/machine/trap.h
 machine: /usr/include/machine/machparam.h /usr/include/machine/endian.h
-mail: mail.c /usr/include/sys/param.h /usr/include/sys/types.h
-mail: /usr/include/signal.h /usr/include/machine/trap.h
-mail: /usr/include/machine/machparam.h /usr/include/machine/endian.h
-mail: /usr/include/sys/stat.h /usr/include/sys/file.h /usr/include/ctype.h
-mail: /usr/include/stdio.h /usr/include/pwd.h /usr/include/utmp.h
-mail: /usr/include/signal.h /usr/include/setjmp.h /usr/include/sys/socket.h
-mail: /usr/include/netinet/in.h /usr/include/netdb.h
 mkdir: mkdir.c /usr/include/stdio.h
 mt: mt.c /usr/include/stdio.h /usr/include/ctype.h /usr/include/sys/types.h
 mt: /usr/include/sys/mtio.h /usr/include/sys/ioctl.h
@@ -236,9 +228,6 @@ rm: rm.c /usr/include/stdio.h /usr/include/sys/param.h /usr/include/sys/types.h
 rm: /usr/include/signal.h /usr/include/machine/trap.h
 rm: /usr/include/machine/machparam.h /usr/include/machine/endian.h
 rm: /usr/include/sys/stat.h /usr/include/sys/dir.h /usr/include/sys/file.h
-rmail: rmail.c /usr/include/sys/types.h /usr/include/sys/file.h
-rmail: /usr/include/sys/stat.h /usr/include/stdio.h
-rmail: ../usr.lib/sendmail/include/sysexits.h
 rmdir: rmdir.c /usr/include/stdio.h
 size: size.c /usr/include/stdio.h /usr/include/a.out.h /usr/include/sys/exec.h
 strip: strip.c /usr/include/a.out.h /usr/include/sys/exec.h
