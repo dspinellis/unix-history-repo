@@ -18,7 +18,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)less.h	5.1 (Berkeley) %G%
+ *	@(#)less.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -33,9 +33,6 @@
 /*
  * Language details.
  */
-#if !VOID
-#define	void  int
-#endif
 #define	public		/* PUBLIC FUNCTION */
 
 /*
@@ -91,7 +88,7 @@ typedef	int		HANDLER;
 #define	SIGNAL(sig,func)	signal(sig,func)
 
 /* Library function declarations */
-offset_t lseek();
+off_t lseek();
 char *calloc();
 
 #include "funcs.h"
