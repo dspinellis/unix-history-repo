@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)refresh.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)refresh.c	5.47 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
@@ -246,8 +246,8 @@ makech(win, wy)
 	while (wx <= lch) {
 		if (!force && memcmp(nsp, csp, sizeof(__LDATA)) == 0) {
 			if (wx <= lch) {
-				while (memcmp(nsp, csp, sizeof(__LDATA)) == 0 &&
-			            wx <= lch) {
+				while (wx <= lch &&
+				       memcmp(nsp, csp, sizeof(__LDATA)) == 0) {
 					    nsp++;
 					    if (!curwin)
 						    csp++;
