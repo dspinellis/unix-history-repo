@@ -27,7 +27,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -122,7 +122,7 @@ MainParseArgs(argc, argv)
 	register char *cp;
 	char c;
 
-	while((c = getopt(argc, argv, "D:I:d:ef:ij:knqrstv")) != -1) {
+	while((c = getopt(argc, argv, "D:I:d:ef:ij:knqrst")) != -1) {
 		switch(c) {
 		case 'D':
 			Var_Set(optarg, "1", VAR_GLOBAL);
@@ -762,7 +762,7 @@ enomem()
 usage()
 {
 	(void)fprintf(stderr,
-"usage: make [-eiknqrstv] [-D variable] [-d flags] [-f makefile ]\n\t\
+"usage: make [-eiknqrst] [-D variable] [-d flags] [-f makefile ]\n\t\
 [-I directory] [-j max_jobs] [variable=value]\n");
 	exit(2);
 }
