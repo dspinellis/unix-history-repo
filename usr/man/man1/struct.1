@@ -1,0 +1,110 @@
+.TH STRUCT 1 
+.SH NAME
+struct \- structure Fortran programs
+.SH SYNOPSIS
+.B struct
+[ option ] ...
+file
+.SH DESCRIPTION
+.LP
+.I Struct
+translates the Fortran program specified by
+.I file
+(standard input default)
+into a Ratfor program.
+Wherever possible, Ratfor control constructs
+replace the original Fortran.
+Statement numbers appear only where still necessary.
+Cosmetic changes are made, including changing Hollerith strings
+into quoted strings
+and relational operators into symbols (.e.g. ".GT." into ">").
+The output is appropriately indented.
+.PP
+The following options may occur in any order.
+.TP
+.B  \-s
+Input is accepted in standard format, i.e.
+comments are specified by a c, C, or * in column 1, and continuation lines
+are specified by a nonzero, nonblank character in column 6.
+Normally input is in the form accepted by 
+.IR f77 (1)
+.TP
+.B  \-i
+Do not turn computed goto statements into
+switches.
+(Ratfor does not turn switches back
+into computed goto statements.)
+.TP
+.B  \-a
+Turn sequences of else ifs into a
+non-Ratfor switch of the form
+.IP
+.nf
+.ta 5 7
+switch
+	{	case pred1: code
+		case pred2: code
+		case pred3: code
+		default: code
+	}
+.fi
+.DT
+.IP
+The case predicates are tested in order;
+the code appropriate to only one case is executed.
+This generalized form of switch statement does not
+occur in Ratfor.
+.TP
+.B  \-b
+Generate goto's instead of multilevel break statements.
+.TP
+.B  \-n
+Generate goto's instead of multilevel next statements.
+.TP
+.BI \-t n
+Make
+the nonzero integer
+.I n
+the lowest valued label in the output program
+(default 10).
+.TP
+.BI \-c n
+Increment successive labels
+in the output program
+by the nonzero integer
+.I n
+(default 1).
+.TP
+.BI \-e n
+If 
+.I n
+is 0 (default),
+place code within a loop only if it can
+lead to an iteration of the loop.
+If
+.I n
+is nonzero,
+admit a small code segments to a loop
+if otherwise the loop would have exits to several places including the segment,
+and the segment can be reached only from the loop.
+`Small' is close to, but not equal to, the
+number of statements in the code segment.
+Values of n under 10 are suggested.
+.SH FILES
+/tmp/struct*
+.br
+/usr/lib/struct/*
+.SH SEE ALSO
+f77(1)
+.SH BUGS
+Struct knows Fortran 66 syntax, but not full Fortran 77.
+.br
+If an input Fortran program contains identifiers which
+are reserved words in Ratfor, the structured
+version of the program
+will not be a valid Ratfor program.
+.br
+The labels generated cannot go above 32767.
+.br
+If you get a goto without a target, try
+.B \-e .
