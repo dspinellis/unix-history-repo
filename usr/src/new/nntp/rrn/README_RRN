@@ -1,0 +1,52 @@
+Updated hacks to change rn into rrn	28 June 1986
+
+Everything is now automated to install the changes and have
+the source co-resident with the non-network version.  These
+changes also work with rn patches up to #27, and with the
+Georgia Tech patch to make "rn" compatible with 2.10.3 news.
+
+To install, simply run the shell file MAKE_RRN_CHANGES in
+the "rn" source directory  (you may need to alter the file to
+include the location of the "patch" command).  After the file is
+run, "ifdef" changes for the "rrn" version will have been included
+in strategic locations, and a few extra shell files should be
+in place.  Running "Configure" and answering the questions should
+provide you with either the local version (rn) or the network version
+(rrn).
+
+Good luck.
+
+Gene Spafford, (gatech!spaf)
+[Thanks, Gene!  --Phil]
+
+----------
+
+[You should ignore this, Gene's stuff is far better --Phil]
+
+Hacks to change rn into rrn		31 August 1985
+
+     The following steps should be followed to set up "rrn" on
+your system.  The files in this directory are somewhat modified
+versions of those distributed with normal rn 4.3.  However, some
+things were overly-difficult to change, and you will have to
+hack them in by hand later.  Fortunately, that's mostly
+trivial.
+
+     1. Run "Configure", as usual.  However, make one change --
+	make your news spool directory be "/tmp", instead of
+	whatever it would normally be.
+
+     2. Edit the file "config.h".  Append two lines to the end of
+	the file:
+
+	#define SERVER
+	#define SERVER_HOST	"xxx"
+
+	The first line tells the compiler that you want the
+	remote news reading hacks compiled in.  The second
+	tells it that the host to query for news and to send
+	posted articles to is "xxx".  Obviously, "xxx" should be
+	changed to whatever machine name is apropriate.
+	
+     3. Type "make"...
+

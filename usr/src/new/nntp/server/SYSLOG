@@ -1,0 +1,50 @@
+SYSLOG INFO
+
+If LOG is defined, the following informational messages are
+logged at LOG_INFO.  All messages are preceded by
+the host name executing the command.
+
+host connect			"host" connected to the server.
+host refused connection		"host" tried to connect, but was denied.
+host unrecognized %s		"host" gave an unknown command, %s.
+host group newsgroup		"host" isssued GROUP to "newsgroup".
+host post rejected		"host" tried to POST, but was denied.
+host post succeeded		"host" tried to POST, inews worked.
+host post failed		"host" tried to POST, inews failed.
+host timeout			"host" didn't issue a command for TIMEOUT
+				seconds (#defined in common/conf.h), so
+				nntpd closed the connection.
+host transfer_timeout		"host" hasn't sent any lines of data
+				during article transmission for XFER_TIMEOUT
+				seconds, so nntpd closed the connection.
+host ihave_stats accepted %d rejected %d failed %d
+				"host" quit, having offered news articles
+				to us for transfer.  We accepted %d,
+				rejected %d (having already seem them),
+				and %d failed (inews exited non-zero).
+host newnews %s %s %s GMT|local %s
+				"host" issued NEWNEWS in group %s,
+				from date %s time %s.  Timezone was
+				either GMT or local.  <%s> distributions.
+host newnews_stats told %d took %d
+				"host" asked for new news (see above).
+				We told it about %d articles, and it
+				subsequently issued %d ARTICLE commands,
+				presumably to retrieve the asked about msgs.
+host exit %d aritcles %d groups	"host" quit, having read a total of %d
+				articles and %d groups.
+host times user %f system %f elapsed %f
+				"host" quit, having used %f user seconds,
+				%f system seconds, and %f real-time elapsed
+				seconds.
+
+The following messages are logged at priority LOG_DEBUG
+if IHAVE_DEBUG is #defined in common/conf.h:
+
+host ihave artid rejected	"host" offered "artid", we already had it.
+host ihave artid accepted failed	"host" offered "artid", we didn't
+host ihave artid accepted succeeded	have it, and the rnews worked or not.
+
+The following error message is logged at LOG_ERR:
+
+host spawn: EOF before period on a line by itself
