@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_vv.c	6.19 (Berkeley) %G%
+ *	@(#)if_vv.c	6.20 (Berkeley) %G%
  */
 
 #include "vv.h"
@@ -20,13 +20,15 @@
  * A unit may be marked as 80 megabit using "flags 1" in the
  * config file.
  *
- * TRAILERS: You must turn off trailers via ifconfig if you want to share
- * a ring with software using the following protocol types:
- *  3: Address Resolution Protocol
- *  4: HDLC (old Proteon drivers)
- *  5: VAX Debugging Protocol (never used)
- * This is because the protocol type values chosen for trailers
- * conflict with these protocols. It's too late to change either now.
+ * TRAILERS: This driver has a new implementation of trailers that
+ * is at least a tolerable neighbor on the ring. The offset is not
+ * stored in the protocol type, but instead only in the vh_info
+ * field. Also, the vh_info field, and the two shorts before the
+ * trailing header, are in network byte order, not VAX byte order.
+ *
+ * Of course, nothing but BSD UNIX supports trailers on ProNET.
+ * If you need interoperability with anything else, turn off
+ * trailers using the -trailers option to /etc/ifconfig!
  *
  * HARDWARE COMPATABILITY: This driver prefers that the HSBU (p1001)
  * have a serial number >= 040, which is about March, 1982. Older
@@ -706,16 +708,15 @@ len = %d, vvicsr = %b\n",
 	}
 
 #define	vvdataaddr(vv, off, type)	((type)(((caddr_t)((vv)+1)+(off))))
-	if (vv->vh_type >= RING_IPTrailer &&
-	     vv->vh_type < RING_IPTrailer+RING_IPNTrailer) {
-		off = (vv->vh_type - RING_IPTrailer) * 512;
+	if (vv->vh_type == RING_TRAILER ) {
+		off = ntohs(vv->vh_info);
 		if (off > VVMTU) {
 			vvprintf("vv%d: off > VVMTU, off = %d, vvicsr = %b\n",
 				    unit, off, 0xffff&(addr->vvicsr), VV_IBITS);
 			goto dropit;
 		}
 		vv->vh_type = ntohs(*vvdataaddr(vv, off, u_short *));
-		resid = ntohs(*(vvdataaddr(vv, off+2, u_short *)));
+		resid = ntohs(*(vvdataaddr(vv, off+sizeof(u_short), u_short *)));
 		if (off + resid > len) {
 			vvprintf("vv%d: trailer packet too short\n", unit);
 			vvprintf("vv%d: off = %d, resid = %d, vvicsr = %b\n",
@@ -863,7 +864,7 @@ vvoutput(ifp, m0, dst)
 		if ((ifp->if_flags & IFF_NOTRAILERS) == 0)
 		if (off > 0 && (off & 0x1ff) == 0 &&
 		    m->m_off >= MMINOFF + 2 * sizeof (u_short)) {
-			type = RING_IPTrailer + (off>>9);
+			type = RING_TRAILER;
 			m->m_off -= 2 * sizeof (u_short);
 			m->m_len += 2 * sizeof (u_short);
 			*mtod(m, u_short *) = htons(RING_IP);
