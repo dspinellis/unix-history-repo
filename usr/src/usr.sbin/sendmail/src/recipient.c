@@ -3,7 +3,7 @@
 # include <sys/stat.h>
 # include "sendmail.h"
 
-static char SccsId[] = "@(#)recipient.c	3.21	%G%";
+static char SccsId[] = "@(#)recipient.c	3.22	%G%";
 
 /*
 **  SENDTO -- Designate a send list.
@@ -140,9 +140,12 @@ recipient(a)
 	}
 
 	/*
-	**  Look up this person in the recipient list.  If they
-	**  are there already, return, otherwise continue.
-	**  If the list is empty, just add it.
+	**  Look up this person in the recipient list.
+	**	If they are there already, return, otherwise continue.
+	**	If the list is empty, just add it.  Notice the cute
+	**	hack to make from addresses suppress things correctly:
+	**	the QDONTSEND bit will be set in the send list.
+	**	[Please note: the emphasis is on "hack."]
 	*/
 
 	for (pq = &m->m_sendq; (q = *pq) != NULL; pq = &q->q_next)
@@ -155,6 +158,7 @@ recipient(a)
 # endif DEBUG
 			if (Verbose && !bitset(QDONTSEND, a->q_flags))
 				message(Arpa_Info, "duplicate suppressed");
+			q->q_flags |= a->q_flags;
 			return;
 		}
 	}
