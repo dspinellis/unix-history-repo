@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)telnet.1	6.11 (Berkeley) %G%
+.\"     @(#)telnet.1	6.12 (Berkeley) %G%
 .\"
 .Dd 
 .Dt TELNET 1
@@ -16,6 +16,7 @@ protocol
 .Sh SYNOPSIS
 .Nm telnet
 .Op Fl d
+.Op Fl a
 .Op Fl n Ar tracefile
 .Op Ar host Op Ar port
 .Sh DESCRIPTION
@@ -44,6 +45,14 @@ Sets the initial value of the
 .Ic debug
 toggle to
 .Li TRUE
+.Tp Fl a
+Attempt automatic login.
+Currently, this sends the user name via the USER variable
+of the ENVIRON option if supported by the remote system.
+The name used is that of the current user as returned by
+.Xr getlogin 2
+if it agrees with the current user ID,
+otherwise it is the name associated with the user ID.
 .Tp Cx Fl n
 .Cx \&\ \&
 .Ar tracefile
