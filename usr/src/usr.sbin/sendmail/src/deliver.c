@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)deliver.c	3.65		%G%);
+SCCSID(@(#)deliver.c	3.66		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -898,10 +898,7 @@ putmessage(fp, m, xdot)
 
 		nooutput = FALSE;
 		if (bitset(H_CHECK|H_ACHECK, h->h_flags) && !bitset(h->h_mflags, m->m_flags))
-		{
-			p = ")><(";		/* can't happen (I hope) */
 			nooutput = TRUE;
-		}
 
 		/* use From: line from message if generated is the same */
 		if (strcmp(h->h_field, "from") == 0 && origfrom != NULL &&
@@ -914,6 +911,61 @@ putmessage(fp, m, xdot)
 		{
 			(void) expand(h->h_value, buf, &buf[sizeof buf]);
 			p = buf;
+		}
+		else if (bitset(H_ADDR, h->h_flags))
+		{
+			register int opos;
+			bool firstone = TRUE;
+
+			/*
+			**  Output the address list translated by the
+			**  mailer and with commas.
+			*/
+
+			p = h->h_value;
+			if (p == NULL || *p == '\0' || nooutput)
+				continue;
+			fprintf(fp, "%s: ", capitalize(h->h_field));
+			opos = strlen(h->h_field) + 2;
+			while (*p != '\0')
+			{
+				register char *name = p;
+				extern char *remotename();
+				char savechar;
+
+				/* find the end of the name */
+				while (*p != '\0' && *p != ',' &&
+				       (OldStyle ? (!isspace(*p)) : TRUE))
+					p++;
+				savechar = *p;
+				*p = '\0';
+
+				/* translate the name to be relative */
+				name = remotename(name);
+				if (*name == '\0')
+					continue;
+
+				/* output the name with nice formatting */
+				opos += strlen(name);
+				if (!firstone)
+					opos += 2;
+				if (opos > 78 && !firstone)
+				{
+					fprintf(fp, ",\n        ");
+					opos = 8;
+				}
+				else if (!firstone)
+					fprintf(fp, ", ");
+				fprintf(fp, "%s", name);
+				firstone = FALSE;
+
+				/* clean up the source string */
+				*p = savechar;
+				while (*p != '\0' && (isspace(*p) || *p == ','))
+					p++;
+			}
+			fprintf(fp, "\n");
+			nooutput = TRUE;
 		}
 		else
 			p = h->h_value;
@@ -974,6 +1026,83 @@ putmessage(fp, m, xdot)
 		setstat(EX_IOERR);
 	}
 	errno = 0;
+}
+/*
+**  REMOTENAME -- return the name relative to the current mailer
+**
+**	Parameters:
+**		name -- the name to translate.
+**
+**	Returns:
+**		the text string representing this address relative to
+**			the receiving mailer.
+**
+**	Side Effects:
+**		none.
+**
+**	Warnings:
+**		The text string returned is tucked away locally;
+**			copy it if you intend to save it.
+*/
+
+char *
+remotename(name)
+	char *name;
+{
+	static char buf[MAXNAME];
+	char lbuf[MAXNAME];
+	extern char *macvalue();
+	char *oldf = macvalue('f');
+	extern char **prescan();
+	register char **pvp;
+
+	/*
+	**  Do general rewriting of name.
+	**	This will also take care of doing global name translation.
+	*/
+
+	pvp = prescan(name, '\0');
+	for (;;)
+	{
+		rewrite(pvp, 1);
+		rewrite(pvp, 3);
+		if (**pvp == CANONNET)
+		{
+			auto ADDRESS a;
+			register char *p;
+			extern char *hostalias();
+
+			/* oops... resolved to something */
+			if (buildaddr(pvp, &a) == NULL)
+				return (name);
+			p = hostalias(&a);
+			if (p == NULL)
+				return (name);
+			pvp = prescan(p, '\0');
+		}
+		else
+		{
+			cataddr(pvp, lbuf, sizeof lbuf);
+			break;
+		}
+	}
+
+	/* make the name relative to the receiving mailer */
+	define('f', lbuf);
+	(void) expand(From.q_mailer->m_from, buf, &buf[sizeof buf - 1]);
+
+	/* rewrite to get rid of garbage we added in the expand above */
+	pvp = prescan(buf, '\0');
+	rewrite(pvp, 2);
+	cataddr(pvp, buf, sizeof buf);
+
+	define('f', oldf);
+
+# ifdef DEBUG
+	if (Debug > 0)
+		printf("remotename(%s) => `%s'\n", name, buf);
+# endif DEBUG
+	return (buf);
 }
 /*
 **  SAMEFROM -- tell if two text addresses represent the same from address.
