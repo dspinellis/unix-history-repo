@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)fts.3	5.13 (Berkeley) %G%
+.\"     @(#)fts.3	5.14 (Berkeley) %G%
 .\"
 .Dd 
 .Dt FTS 3
@@ -87,7 +87,8 @@ typedef struct _ftsent {
 	long fts_number;		/* local numeric value */
 	void *fts_pointer;		/* local address value */
 	struct ftsent *fts_parent;	/* parent directory */
-	struct ftsent *fts_link;	/* cycle or next file structure */
+	struct ftsent *fts_link;	/* next file structure */
+	struct ftsent *fts_cycle;	/* cycle structure */
 	struct stat fts_statb;		/* stat(2) information */
 } FTSENT;
 .Ed
@@ -110,7 +111,7 @@ A directory being visited in pre-order.
 .It Dv FTS_DC
 A directory that causes a cycle in the tree.
 (The
-.Fa fts_link
+.Fa fts_cycle
 field of the
 .Fa FTSENT
 structure will be filled in as well.)
@@ -229,28 +230,29 @@ and
 .Fa fts_pointer
 fields are guaranteed to be initialized.
 .It Fa fts_link
-The
+Upon return from the
+.Fn fts_children
+function, the
 .Fa fts_link
-field has two separate uses.
+field points to the next structure in the NULL-terminated linked list of
+directory members.
+Otherwise, the contents of the
+.Fa fts_link
+field are undefined.
+.It Fa fts_cycle
 If a directory causes a cycle in the hierarchy (see
 .Dv FTS_DC ) ,
 either because
 of a hard link between two directories, or a symbolic link pointing to a
 directory, the
-.Fa fts_link
+.Fa fts_cycle
 field of the structure will point to the
 .Fa FTSENT
-structure in the hierarchy
-that references the same file as the current
+structure in the hierarchy that references the same file as the current
 .Fa FTSENT
 structure.
-Also, upon return from the
-.Fn fts_children
-function, the
-.Fa fts_link
-field points to the next structure in the linked list of directory members.
 Otherwise, the contents of the
-.Fa fts_link
+.Fa fts_cycle
 field are undefined.
 .It Fa fts_statb
 .Xr Stat 2
@@ -462,7 +464,8 @@ The
 function returns a pointer to an
 .Fa FTSENT
 structure describing the first
-entry in a linked list of the files in the directory represented by the
+entry in a NULL-terminated linked list of the files in the directory
+represented by the
 .Fa FTSENT
 structure most recently returned by
 .Fn fts_read .
@@ -501,9 +504,8 @@ The
 structures returned by
 .Fn fts_children
 may be overwritten after a call to
+.Fn fts_children ,
 .Fn fts_close
-on the same file hierarchy stream, or after a call to
-.Fn fts_children
 or
 .Fn fts_read
 on the same file hierarchy stream.
