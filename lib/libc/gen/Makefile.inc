@@ -1,7 +1,7 @@
 #	@(#)Makefile.inc	5.21 (Berkeley) 5/24/91
 
 # gen sources
-.PATH: ${.CURDIR}/${MACHINE}/gen ${.CURDIR}/gen ${.CURDIR}/gen/regexp
+.PATH: ${.CURDIR}/${MACHINE}/gen ${.CURDIR}/gen
 
 SRCS+=	alarm.c assert.c clock.c crypt.c ctermid.c ctime.c ctype_.c \
 	directory.c difftime.c disklabel.c err.c errlst.c exec.c \
@@ -17,9 +17,6 @@ SRCS+=	alarm.c assert.c clock.c crypt.c ctermid.c ctime.c ctype_.c \
 	termios.c time.c times.c timezone.c ttyname.c ttyslot.c \
 	ualarm.c unvis.c usleep.c utime.c valloc.c vis.c \
 	wait.c wait3.c waitpid.c
-
-# gen/regexp sources
-SRCS+=	regerror.c regexp.c regsub.c
 
 .if   (${MACHINE} == "hp300")
 SRCS+=	_setjmp.s alloca.s fabs.s ldexp.s modf.s setjmp.s
@@ -50,7 +47,7 @@ MAN3+=	gen/alarm.3 gen/clock.3 gen/crypt.3 gen/ctermid.3 gen/ctime.3 \
 	gen/islower.3 gen/isprint.3 gen/ispunct.3 gen/isspace.3 \
 	gen/isupper.3 gen/isxdigit.3 gen/ldexp.3 gen/modf.3 gen/nice.3 \
 	gen/nlist.3 gen/pause.3 gen/popen.3 gen/psignal.3 gen/raise.3 \
-	gen/regexp.3 gen/scandir.3 gen/setjmp.3 gen/setmode.3 gen/setuid.3 \
+	gen/scandir.3 gen/setjmp.3 gen/setmode.3 gen/setuid.3 \
 	gen/siginterrupt.3 gen/signal.3 gen/sigsetops.3 gen/sleep.3 \
 	gen/syslog.3 gen/tcsendbreak.3 gen/time.3 gen/times.3  \
 	gen/timezone.3 gen/tolower.3 gen/toupper.3 gen/ttyname.3 \
@@ -85,8 +82,6 @@ MLINKS+=insque.3 remque.3
 MLINKS+=isinf.3 isnan.3
 MLINKS+=popen.3 pclose.3
 MLINKS+=psignal.3 sys_siglist.3
-MLINKS+=regexp.3 regcomp.3 regexp.3 regexec.3 regexp.3 regsub.3 \
-	regexp.3 regerror.3
 MLINKS+=scandir.3 alphasort.3
 MLINKS+=setjmp.3 _longjmp.3 setjmp.3 _setjmp.3 setjmp.3 longjmp.3 \
 	setjmp.3 sigsetjmp.3 setjmp.3 siglongjmp.3 setjmp.3 longjmperror.3
