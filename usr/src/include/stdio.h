@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stdio.h	5.13 (Berkeley) %G%
+ *	@(#)stdio.h	5.14 (Berkeley) %G%
  */
 
 #ifndef	_STDIO_H_
@@ -243,6 +243,13 @@ int	 vsnprintf __P((char *, size_t, const char *, _VA_LIST_));
 __END_DECLS
 
 /*
+ * This is a #define because the function is used internally and
+ * (unlike vfscanf) the name __svfscanf is guaranteed not to collide
+ * with a user function when _ANSI_SOURCE or _POSIX_SOURCE is defined.
+ */
+#define	 vfscanf	__svfscanf
+
+/*
  * Stdio function-access interface.
  */
 __BEGIN_DECLS
@@ -261,6 +268,7 @@ __END_DECLS
  */
 __BEGIN_DECLS
 int	__srget __P((FILE *));
+int	__svfscanf __P((FILE *, const char *, _VA_LIST_));
 int	__swbuf __P((int, FILE *));
 __END_DECLS
 
@@ -269,8 +277,8 @@ __END_DECLS
  * define function versions in the C library.
  */
 #define	__sgetc(p) (--(p)->_r < 0 ? __srget(p) : (int)(*(p)->_p++))
-#ifdef __GNUC__
-static __inline int __sputc(int _c, FILE *_p) {
+#if defined(__GNUC__) && defined(__STDC__)
+static inline int __sputc(int _c, FILE *_p) {
 	if (--_p->_w >= 0 || (_p->_w >= _p->_lbfsize && (char)_c != '\n'))
 		return (*_p->_p++ = _c);
 	else
