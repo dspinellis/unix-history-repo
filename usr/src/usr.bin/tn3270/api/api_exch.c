@@ -2,6 +2,8 @@
 
 #include "api_exch.h"
 
+static int sock;		/* Socket number */
+
 static char ibuffer[40], *ibuf_next, *ibuf_last;
 #define	IBUFADDED(i)		ibuf_last += (i)
 #define	IBUFAVAILABLE()		(ibuf_last -ibuf_next)
@@ -61,7 +63,19 @@ int count;
     return 0;
 }
 
-static int
+int
+api_exch_inbyte()
+{
+    if (IBUFAVAILABLE() < 1) {
+	if (infill(1) == -1) {
+	    return -1;
+	}
+    }
+    return IBUFGETCHAR();
+}
+
+
+int
 api_exch_incommand(command)
 int command;
 {
@@ -82,7 +96,7 @@ int command;
 }
 
 
-static int
+int
 api_exch_outcommand(command)
 int command;
 {
@@ -96,7 +110,7 @@ int command;
 }
 
 
-static int
+int
 api_exch_outtype(type, length, location)
 int
     type,
@@ -127,7 +141,7 @@ char
 }
 
 
-static int
+int
 api_exch_intype(type, length, location)
 int
     type,
@@ -159,5 +173,17 @@ char
 	length -= i;
 	location += i;
     }
+    return 0;
+}
+
+int
+api_exch_init(sock_number)
+int sock_number;
+{
+    sock = sock_number;
+
+    IBUFRESET();
+    OBUFRESET();
+
     return 0;
 }

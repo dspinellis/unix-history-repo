@@ -2,10 +2,13 @@
  * This file describes the structures passed back and forth
  * between the API client and API server on a Unix-based
  * tn3270 implementation.
+ *
+ * A command is: <command code> <sequence number> <parameter>*
+ *
  */
 
 
-#define	EXCH_CONNECT	23	/* Connect request [client->server] */
+#define	EXCH_ASSOCIATE	23	/* Connect request [client->server] */
 #define	EXCH_SEND_AUTH	44	/* Send auth (password) [server->client] */
 	/*
 	 * struct storeage_desc
@@ -18,7 +21,7 @@
 	 * struct storeage_desc
 	 * char authenticator[]
 	 */
-#define	EXCH_CONNECTED	78	/* You are now connected [server->client] */
+#define	EXCH_ASSOCIATED	78	/* You are now connected [server->client] */
 #define	EXCH_REJECTED	93	/* Too bad [server->client] */
 	/*
 	 * struct storeage_desc
@@ -52,7 +55,7 @@
 #define	EXCH_TYPE_BYTES		67
 
 /*
- * each structure that comes over looks like:
+ * each parameter that comes over looks like:
  *
  *	char			type of following
  *	short (2 bytes)		length of following (network byte order)
