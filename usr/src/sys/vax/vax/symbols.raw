@@ -1,4 +1,4 @@
-# symbols.raw 4.4 81/05/03
+# symbols.raw 4.5 81/11/07
 	_version
 #dmesg
 	_msgbuf
@@ -26,8 +26,8 @@
 	_inode
 	_text
 	_proc
-	_dz_tty
-	_dz_cnt
+#	_dz_tty
+#	_dz_cnt
 	_cons
 	_file
 	_Usrptmap
