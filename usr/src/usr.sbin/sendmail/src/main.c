@@ -8,7 +8,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.44	%G%";
+static char	SccsId[] = "@(#)main.c	3.45	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -712,13 +712,27 @@ setsender(from)
 	**	Getlogin can return errno != 0 on non-errors.
 	*/
 
-	if (!Daemon)
+	if (!Smtp)
 	{
 		errno = 0;
 		p = getlogin();
 		errno = 0;
 	}
-	if (Daemon || p == NULL)
+	else
+		p = from;
+	if (p != NULL)
+	{
+		extern struct passwd *getpwnam();
+
+		pw = getpwnam(p);
+		if (pw == NULL)
+		{
+			if (!Smtp)
+				syserr("Who are you? (name=%s)", p);
+			p = NULL;
+		}
+	}
+	if (p == NULL)
 	{
 		extern struct passwd *getpwuid();
 		int uid;
@@ -729,14 +743,6 @@ setsender(from)
 			syserr("Who are you? (uid=%d)", uid);
 		else
 			p = pw->pw_name;
-	}
-	else
-	{
-		extern struct passwd *getpwnam();
-
-		pw = getpwnam(p);
-		if (pw == NULL)
-			syserr("Who are you? (name=%s)", p);
 	}
 	if (p == NULL || p[0] == '\0' || pw == NULL)
 		finis();
@@ -760,7 +766,7 @@ setsender(from)
 		char nbuf[MAXNAME];
 
 		buildfname(pw->pw_gecos, realname, nbuf);
-		if (ArpaMode == ARPA_NONE && from == NULL && nbuf[0] != '\0')
+		if (nbuf[0] != '\0')
 			FullName = newstr(nbuf);
 	}
 	if (FullName != NULL && FullName[0] != '\0')
