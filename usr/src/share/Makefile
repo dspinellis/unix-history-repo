@@ -14,10 +14,10 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 
-SUBDIR=	man me ms skel termcap zic
+SUBDIR=	man me ms skel termcap zoneinfo
 
 all clean cleandir depend install lint tags: FRC
 	@-for i in ${SUBDIR}; do \
