@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)3.t	6.3 (Berkeley) %G%
+.\"	@(#)3.t	6.4 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -181,12 +181,13 @@ If you have any local device drivers,
 they will have to be incorporated into the new kernel.
 See section 4.2.3 and ``Building 4.3BSD UNIX Systems with Config.''
 .PP
-The disk partitions in \*(4B are the same as those in 4.2BSD,
+The standard disk partitions in \*(4B are the same as those
+in 4.2BSD and 4.3BSD,
 except for those on the DEC UDA50; see section 4.3.2 for details.
 If you have changed the disk partition sizes, be sure to
-make the necessary table changes and boot your custom kernel
-BEFORE trying to access any of your 4.2BSD file systems!
-After doing this if necessary, the remaining 4.2BSD filesystems
+make the necessary changes to your new disk labels
+\fIbefore\fP trying to access any of your old file systems!
+After doing this if necessary, the remaining filesystems
 may be converted in place.
 This is done by using the \*(4B version of
 .IR fsck (8)
@@ -196,13 +197,56 @@ strict about the size of directories than the version supplied with 4.2BSD.
 Thus the first time that it is run on a 4.2BSD file system,
 it will produce messages of the form:
 .DS
-DIRECTORY ...: LENGTH xx NOT MULTIPLE OF 512 (ADJUSTED)
+\fBDIRECTORY ...: LENGTH\fP xx \fBNOT MULTIPLE OF 512 (ADJUSTED)\fP
 .DE
 Length ``xx'' will be the size of the directory;
 it will be expanded to the next multiple of 512 bytes.
-Note that file systems are otherwise completely
-compatible between 4.2BSD and \*(4B,
-though running a \*(4B file system under 4.2BSD may cause more of the above
+The new \fIfsck\fP will also set default \fIinterleave\fP and
+\fInpsect\fP (number of physical sectors per track) values on older
+file systems, in which these fields were unused spares; this correction
+will produce messages of the form:
+.DS
+\fBIMPOSSIBLE INTERLEAVE=0 IN SUPERBLOCK (SET TO DEFAULT)\fP*
+\fBIMPOSSIBLE NPSECT=0 IN SUPERBLOCK (SET TO DEFAULT)\fP
+.DE
+.FS
+* The defaults are to set \fIinterleave\fP to 1 and
+\fInpsect\fP to \fInsect\fP;
+this is correct on many drives.
+Notable exceptions are the RM80 and RA81,
+where npsect should be set to
+one more than nsect.
+This affects only performance (and in the case
+of the RA81, at least, virtually unmeasurably).
+.FE
+File systems that have had their interleave and npsect values
+set will be diagnosed by the old \fIfsck\fP as having a bad superblock;
+the old \fIfsck\fP will run only if given an alternate superblock
+(\fIfsck \-b32\fP), in which case it will re-zero these fields.
+The \*(4B kernel will internally set these fields to their defaults
+if fsck has not done so; again, the \fI\-b32\fP option may be
+necessary for running the old \fIfsck\fP.
+.PP
+In addition, \*(4B removes several limits on file system sizes
+that were present in both 4.2BSD and 4.3BSD.
+The limited file systems
+continue to work in \*(4B, but should be converted
+as soon as it is convenient
+by running \fIfsck\fP with the \fI\-c\fP option.
+If no file systems have been so converted,
+the sequence \fIfsck \-p \-c\fP will update all of them,
+fix the interleave and npsect fields,
+and fix any incorrect directory lengths
+all at once.
+The new unlimited file system formats are treated as read-only
+by older systems.
+A second \fIfsck \-c\fP, however, will
+reconvert the new format to the old if none of the static limits
+of the old file system format have been exceeded.
+The new file systems are otherwise
+compatible between 4.2BSD, 4.3BSD, and \*(4B,
+though running a \*(4B file system under older systems
+may cause more of the above
 messages to be generated the next time it is \fIfsck\fP'ed on \*(4B.
 .NH 2
 Merging your files from 4.2BSD into \*(4B
