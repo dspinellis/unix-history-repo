@@ -1,0 +1,39 @@
+.TH LIBROSY 3N "07 Sep 1987"
+.\" $Header: /f/osi/rosy/RCS/librosy.3n,v 7.1 91/02/22 09:41:42 mrose Interim $
+.\"
+.\"
+.\" $Log:	librosy.3n,v $
+.\" Revision 7.1  91/02/22  09:41:42  mrose
+.\" Interim 6.8
+.\" 
+.\" Revision 7.0  89/11/23  22:21:47  mrose
+.\" Release 6.0
+.\" 
+.SH NAME
+librosy \- Remote Operations library
+.SH SYNOPSIS
+.B "#include <isode/rosy.h>"
+.sp
+\fIcc\fR\0...\0\fB\-lisode\fR
+.SH DESCRIPTION
+The \fIlibrosy\fR library contains a set of routines which implement a
+run\-time environment for a \*(lqcooked\*(rq remote operations facility.
+.PP
+Consult the \fIUser's Manual\fR for the details.
+Normally,
+the users employ the supplied boilerplate which uses this library rather than
+invoking this library directly.
+.SH FILES
+None
+.SH "SEE ALSO"
+rosy(1)
+.br
+\fIThe ISO Development Environment: User's Manual\fR,
+\fIVolume Four: The Applications Cookbook\fR
+.SH DIAGNOSTICS
+All routines return the manifest constant \fBNOTOK\fR (\-1) on error.
+In addition,
+those routines which take a pointer to a \fBRoSAPindication\fR structure
+fill\-in the structure as appropriate.
+.SH AUTHOR
+Marshall T. Rose

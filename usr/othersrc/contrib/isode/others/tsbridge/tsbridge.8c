@@ -1,0 +1,149 @@
+.TH TSBRIDGE 8C "08 March 1989"
+.\" $Header: /f/osi/others/tsbridge/RCS/tsbridge.8c,v 7.5 91/02/22 09:34:36 mrose Interim $
+.\"
+.\" Contributed by Julian Onions, Nottingham University in the UK.
+.\"
+.\"
+.\" $Log:	tsbridge.8c,v $
+.\" Revision 7.5  91/02/22  09:34:36  mrose
+.\" Interim 6.8
+.\" 
+.\" Revision 7.4  90/03/20  05:08:45  mrose
+.\" jpo
+.\" 
+.\" Revision 7.2  89/12/08  09:41:19  mrose
+.\" touch-up
+.\" 
+.\" Revision 7.1  89/11/27  05:43:27  mrose
+.\" sync
+.\" 
+.\" Revision 7.0  89/11/23  22:11:11  mrose
+.\" Release 6.0
+.\" 
+.SH NAME
+tsbridge \- Transport Service Bridge
+.SH SYNOPSIS
+.in +.5i
+.ti -.5i
+.B \*(SDtsbridge
+\%[-a\ address]
+\%[-s]
+\%[-T\ tailorfile]
+\%[configuration-file\ ...]
+.in -.5i
+(under /etc/rc.local)
+.SH DESCRIPTION
+The \fItsbridge\fP listens for transport connections on the
+given address.  Once a connection is accepted the transport selector
+is examined for a transport address and a call initiated to that
+address.
+The TSB then shuffles data back and forth between the two connections.
+This is used to solve interworking problems between OSI hosts/networks
+using different lower-layer stacks (e.g., TP0/X.25, TP4/CLNP,
+RFC1006/TCP, and so on).
+.PP
+Entries are seperated by end\-of\-line (or the end\-of\-file).
+The character `#' at the beginning of a line indicates a comment line.
+The syntax is:
+.sp
+.in +.5i
+.nf
+address [forwarding-address] [-s] [-n] [-f]
+.fi
+.in -.5i
+.sp
+as in
+.sp
+.in +.5i
+.nf
+# generic tsb operation
+Internet=sheriff+19001\\|Janet=000021000018+PID+04010100
+
+# specific use of transparent address with strict checking
+Internet=sheriff+19002 Internet=sheriff+102 -s
+.fi
+.in -.5i
+.PP
+If the forwarding address is present, this specifies that the
+\fItsbridge\fP should run in transparent mode. That is, it should
+accept incoming connections as though it were the \fItsapd\fP daemon
+and a call established to the given address (which is normally a
+\fItsapd\fP process or a static listener). 
+.PP
+The `\-s' option specifies strict transport addresses. When relaying
+through the \fItsbridge\fP the calling transport address is changed to
+indicate that of the \fItsbridge\fP. This can fail in several ways:
+.TP
+1.
+The original calling address when encoded into a string may be too big
+to fit into the transport selector.
+.TP 
+2.
+The \fItsbridge\fP may not be listening on an address on the outgoing
+network. (E.g., it can call out on that network but not accept
+incoming calls.)
+.TP
+3.
+The original calling address can not be converted to a text string (unusual).
+.PP
+In strict mode, any of these failures will abort the connection
+attempt. If strict mode is not in force, then the bridge will leave
+the original transport address alone and hope it is not needed.
+.PP
+The `\-n' option specifies that the original transport selector should not
+be changed to indicate that the address came from a transport bridge. This
+effectively passes the original T-Selector through unchaged. This option
+is implied if a forwarding address is present.
+.PP
+The `\-f' option overrides the default application of the `\-n' flag when 
+a forwarding address is present.  This permits one to set up a
+semi-transparent listener --- transparent to the caller, visible locally.
+.PP
+If desired, the \fItsbridge\fP can run without a configuration file,
+in which case the `\-a' flag specifies the address to listen on. If
+this is not present, it will use use the value of the
+\*(lqtsb_default_address\*(rq variable in the tailor file for the
+default address.
+The `\-s' flag may also be specified in this case.
+.PP
+Finally the `\-T' flag specifies a different \fIisotailor\fR file to use.
+This should be a full pathname and, if present,
+should be the first argument given.
+.SH EXAMPLE
+A configuration file on host 128.199.200.7 has in its tsbridge 
+configuration the line
+.sp
+.in +.5i
+.nf
+# specific use of transparent address with external visibility
+Int-X25(80)=234212900115+PID+03010100 stcTCP=128.199.200.43+102 -f
+.fi
+.in -.5i
+.sp
+A call placed to 234212900115+PID+0301010 from X121+23421920030045 will
+appear at the final recipient [128.199.200.43] to come from
+.sp
+.in +.5i
+.nf
+"X121+23421920030045"/stcTCP=128.199.200.7
+.fi
+.in -.5i
+.sp
+.SH FILES
+.nf
+.ta \w'\*(EDisotailor  'u
+\*(EDisotailor	ISODE tailoring file
+.re
+.fi
+.SH "SEE ALSO"
+\fIThe ISO Development Environment: User's Manual, Volume 2:
+Underyling Services\fR, \*(lqThe Transport Switch\*(rq.
+.br
+isotailor(5),
+tsapd(8)
+.SH AUTHORS
+Julian Onions,
+Nottingham University.
+.br
+Based on an idea by Steve Kille of University College London
+and Christian Huitema of INRIA.

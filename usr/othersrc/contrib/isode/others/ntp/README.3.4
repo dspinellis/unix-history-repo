@@ -1,0 +1,412 @@
+README for UNIX NTP release $Date: 91/02/22 09:33:36 $ $Revision: 7.1 $
+
+
+
+NTP (Network Time Protocol) Daemons
+
+	There are three programs in the NTP distribution:
+	ntp	-	simple query program used for single
+			sample queries
+
+	ntpd	-	A daemon that sets up peers and responds
+			to queries.  Ntpd does the clock trimming.
+
+	ntpdc	-	program to query an ntpd.  It was useful in
+			checking the filters and cleaning the windows
+
+Installation:
+
+	1) Add an entry to /etc/services to define the ntp port.
+
+	ntp	123/udp		# network time protocol (exp)
+
+	2) Make a /etc/ntp.conf with the clocks you want to track.
+		Please refer to the RFC's in the man directory, the man
+		pages, and the clock.txt file to assist you in selecting
+		clocks to peer with.  The supplied ntp.conf is only a 
+		sample, and is not suitable for use.
+
+
+	3) Change the Makefile definitions to suit your environment.
+	4) make
+	5) make install
+	6) adb or remake kernel and change "tickadj"
+		Recommended values for tickadj on various machines:
+
+		VAX:	5
+		Sun3:	10
+		Sun4:	5
+		NeXT:	7
+
+		This step is optional; new algorithms will allow you to
+		get by (with reduced accuracy) with the system supplied
+		value of tickadj.  For better preformence, you should
+		change the value of tickadj.  This can be done by making
+		a new kernel or by compiling ntpd with SETTICKADJ defined,
+		and having ntpd set it to the value you specify.  This is
+		clearly ugly.
+
+	7) Fire up ntpd in /etc/rc.local
+
+History:
+5/17/89
+	Yet another preprocessor define for broken unsigned long to double
+	conversions.  Define GENERIC_UNS_BUG, and the unsigned long is shifted
+	right one bit and cast to an int before conversion to a double.  This
+	seems to work much better.
+
+	Preliminary support for NeXT systems.  Be sure to define both
+	GENERIC_UNS_BUG and SUN_FLT_BUG.  The default value of tickadj in the
+	kernel is too large so you'll have to adjust it by using the
+	-t option and compiling with SETTICKADJ.  I don't think you can use
+	gdb on the running /dev/mem image.   NOTE: don't even think of trying
+	to run this on the 0.8 release of the system software.  You will
+	utterly and absolutely hang you system.  Current testing is being 
+	done on the 0.9 release.  So far, there seems to be some weirdness in
+	the kernel which is attempting to sync to the clock to the internal
+	clock chip every so ofter.  So while it compiles and runs, it really
+	doesn't work very well on the NeXT machine.
+
+	Integration of the reference clock code from Doug Kingston and Jeff 
+	Schiller has been done.  To configure a reference clock, check the
+	ntpd manual page.
+
+5/3/89
+	The changes to the ntp_proto.c module for clockhopper suppression have
+	been tweaked once more, ever so slightly to conform with the 21 April
+	1989 draft of the NTP spec.  We won't switch peers if the current 
+	peer makes it into the final selection list, unless the first peer on
+	the selection list is of a higher stratum than the current peer.
+
+	The ntpd.c/hourly() function now saves the value of the drift
+	compensation register to a file (/etc/ntp.drift by default).  In fact,
+	the last 5 hourly samples are written to the file, as well as how
+	many hours the ntpd process has been running.  Ntpd will also attempt
+	to intialize the value of the drift compensation register from this
+	file when it is started up.  The hourly stats: log message has been
+	augmented to log additional information.
+
+4/8/89
+	Changes to the ntp_proto.c module to supress peer switching when the
+	dispersion between the newly selected peer and the currently selected
+	peer is "small."  A new configuration option, NOSWAP, has been added
+	for use on Ultrix systems which can lock the ntpd process in memory;
+	very desirable for diskless workstations.  peer.reach is now not
+	cleared in the clear() procedure.  The stat.pl perl script can now
+	handle syslog records which span a month boundary correctly.  We're
+	getting real close to a "blessed" version now.
+
+3/29/89
+	A few fixes, clean up of unused #defines in ntp.h.  The receive()
+	procedure is now table driven per the 26 March 1989 draft of the
+	spec.  If no terrible errors or bugs are found, this version
+	will probably be packaged as a "blessed" working version before
+	the next stage of major hacking.
+
+3/22/89
+	A bunch of minor fixes here an there.  The RCS header is being
+	updated so that patches that are generated will apply; apparently
+	the new version of RCS puts the Locked: status in the Header
+
+	Minor fiddles to ntpd/ntpdc to eliminate some byte-sex dependencies.
+	Changs to ntp_proto.c to fix an mis-interpretation in the packet
+	procedure.
+
+	The ntp program now uses connected UDP sockets to pick up ICMP
+	generated errors.
+
+	ntpdc will now select a value of tickadj if you don't specify one.
+
+3/17/89
+	Another sort-of-working ntpd.  There might still be something weird
+	with the logical clock code; seems to be a little weird.  Would
+	really like your comments on this version.
+
+	Note that the a version that supports the Precision Time WWV clock
+	can be had via anonymous FTP from BITSY.MIT.EDU.  The version there
+	might lag the University of Maryland version.
+
+3/12/89
+	A snapshot of a more-or-less working ntpd.  There's been a few more
+	bug fixes and changes due to the NTP spec being revised.  A few more
+	changes have been made to the latest NTP spec (11 March 1989 version)
+	which have not yet been applied.
+
+	A few problems areas:  I currently observe some peer flapping between
+	two clock which are both of very good quality (UMD1.UMD.EDU and
+	TRUECHIMER.CSO.UIUC.EDU).  Not quite sure why this is happening yet
+	or if it is really a problem.
+
+	There are quite a few "Dropping peer <foo>" messages in the syslog.
+	Most of these are due to lower statum "transient" clocks peering with
+	the local daemon.  Need to find a way to supress the messages in
+	the transmit procedure when we've got no intention of keeping a
+	peer structure around for them.
+
+	There are changes in the works to improve the reliability of the 
+	ntpdc program.  The ntpd hooks are there now, and some work remains
+	in the ntpdc program.
+
+
+3/7/89
+	*** THIS IS A TEST RELEASE ***
+
+	This version contain most of the new algorithms from the 6 March 1989
+	draft of the NTP specification.  It still operates, however, as 
+	Version 1, and does not support the authentication feature.
+
+	The stratum 1 WWV clock code from Doug Kingston has not been tested or
+	changed for this release.  I would really like someone to change the
+	interface to have the clock appear as just another peer.
+
+	Quite a bit if clean-up and cosmetic changes were made in almost all
+	of the modules.  Note that the ntest program which tests certain
+	arithmetic operations on you machine is automatically run by the
+	Makefile.  If it fail *for any reason*, stop right there and find
+	out why.  Until ntest works correctly, don't even bother with the
+	rest of the code.  Note that at least Ultrix has problems, and there
+	is a define option in the makefile to accomodate the broken Ultrix
+	pcc compiler.  Recent version of GNU CC are known to work correctly
+	on a VAX platform, and is in fact used for development.  It is not
+	necessary to use the GNU C compiler on you machine, however.
+
+	The logical clock code in ntp_adjust.c has been changed to be more
+	self-contained and independent from NTP proper.  It has the tickadj
+	round-off residual accumulating code, and attempts to implemenet the
+	newest version of the NTP logical clock code.  A large change here is
+	that once an clock update has been passed to the logical clock, it will
+	ignore further updated for 1<<CLOCK_UPDATE seconds.  Note that the
+	units for tick_adj have changed in this version.  Eventually, a
+	normalized version of this value will be written to a file for use
+	on subsequent invocations.
+
+	There has been no work in the area of supporting broadcast NTP.  A
+	bunch of bug fixes have been made to the ntp_proto.c module, including
+	a significant one in the code which selects the clock; the dispersion
+	computed before was incorrect and resulted in poor clock choices.  This
+	is probably the cause of having long "strings" of peers rather then 
+	all syncing to one clock.
+
+	The ntpd will now actually delete peer entries when the hosts "go 
+	away."  This will hopefully save some memory.  The peer list is now
+	doublely linked, so deletions can happen very efficiently.
+
+	There is still a weirdness in there when interoperating with very old
+	broken versions of ntpd.  It manifests itself with peers being expunged
+	and them coming back.
+
+	Please beat on this version and let me know what bugs you find.  I
+	want to make another release, this one "blessed" until the Version 2
+	one is ready.
+
+
+1/12/89
+	*** THIS IS A TEST RELEASE ***
+	There have been a bunch of bug fixes, and an attemtp to unify the
+	the debug output and logging.  There is still a problem with the
+	verbose version of ntpdc; the offset values are clearly bogus.
+
+	Danger: don't attempt to run ntpd on a NeXT machine.  It provokes
+	a bug in the OS which hangs the machine quite absolutely.
+
+	There is some support for a statrum 1 clock in some code provided by
+	Doug Kingston (dpk@morgan.com).  I'm not really sure that its the
+	``right'' way to do it; I'd rather have the clock appear just like
+	another peer, and have it selected as a reference, just like you'd
+	select any other clock.  In fact, by doing it that way with some other
+	support, you could even have a seperate process take care of reading
+	the clock, and talking to the main process with some UNIX domain
+	sockets... Hmm..
+
+12/8/88
+	*** THIS IS A TEST RELEASE ***
+	Really.  We have tested this code on a VAX platform, but not much of
+	anything else.  I would like to hear back about any bugs, but you 
+	should not treat this as a 'release' version.
+
+	Very large number of changes and updates.  Files have been reorganized
+	with ntpd.c containing intialization and other very UNIX specific code,
+	while the new file ntp_proto.c contains the bulk of the NTP code.
+	This version of the UNIX NTP daemon was re-written and updated to
+	conform with the revised NTP specification.
+
+	For all of the mucking about with tickadj, you can now define 
+	SETTICKADJ in the Makefile, and specify the value of tickadj in 
+	/etc/ntp.conf.  The ntpd will attempt to update `tickadj' using 
+	/dev/kmem.  Yow!
+
+	If possible, ntpd will attempt to discover the value of your kernel's
+	`hz' variable, and set the value of `precison' automagically.  If 
+	`precision' is specified in /etc/ntp.conf, it will override any 
+	automatic selection.
+
+	Only hosts which are configured or mentioned in /etc/ntp.conf on a
+	`peer', `server' or `passive' statement are elligable to be
+	synchronized to.  This solves the "ganging-up" problem, but is sorta
+	ugly.
+
+	The `peer' statement in /etc/ntp.conf works just as before; it sends
+	packets with MODE=SYMMETRIC-ACTIVE to the remote host.  The remote host
+	might synchronize to you if appropriate.  If reachability is lost,
+	polling will continue.
+
+	The new `server' statement in /etc/ntp.conf causes packets of MODE=
+	CLIENT to be sent to the specified host.  The remote host will *not*
+	synchronize to you under any circumstances.  If reachability is lost,
+	polling will continue.
+
+	The new `passive' statement in /etc/ntp.conf causes packets of
+	MODE=SYMMETRIC-PASSIVE to be sent to the remote host *when the local
+	host is polled*.  If reachability is lost, then polling will cease
+	until the remote host begins to the local host again.
+
+	Note conditional compilation define in the makefile for
+	VAX_COMPILER_FLT_BUG for old 4.2 and Ultrix 2.0/2.2/3.0 pcc compilers.
+	There is a bug in the code generated to convert an unsigned long to a 
+	double.  Previously, this code was always present, but it is now 
+	#ifdef'd.  The 4.3BSD-tahoe and GNU CC (1.30 and 1.31 at least) are
+	known to work correctly.  If you don't know if your compiler 
+	performs this conversion correctly, try making and running the
+	`ntest' program, and see if test3 passes or not.
+
+	The format of the data sent between ntpd and the ntpdc programs has
+	changed yet again.  It is likely to change again before the final
+	release of this version.  
+
+7/30/88
+	Added and updated manual entries contributed by Glenn Trewitt.
+		(trewitt@miasma.stanford.edu)
+7/27/88
+	Reorder peer list so configuted hosts are always first.  This
+	REALLY helps the faleticker code.
+
+	Changed ntpdc to have a larger RECV socket buffer. This fixes
+	the "only see 20 peers" problem. This is a side affect of using
+	UDP for the status return.
+
+6/20/88
+	Support for hosts with multiple interfaces.  Minor updates to
+	the ntpdc program; note that the format of the messages between
+	the ntpd and ntpdc programs is different in this version than the
+	last.  You should update both ntpd and ntpdc at the same time.
+
+	New file ``ntp_sock.c''.  Tested with Ultrix 2.4 field test, and 
+	4.3 BSD tahoe release.  Debug level can be adjusted by sending
+	SIGUSR1 to increase and SIGUSR2 to zero the debug level.
+
+5/17/88
+	Changed peer structure alloactor to stop allocating a perm
+	structure for non-peer relationships. This make the ntpdc
+	output a lot more understandable.
+	Installed faletick code.
+	Installed work around to bug in Ultrix C compiler.
+	The compiler has troubles converting unsigned longs to floats.
+	This caused a lot of off by 2 second problems.
+3/31/88
+	The world is ALL different now.  The NTP protocols have had
+	some major structural work.  This is the first rev that
+	attempts to meet NTP version 1 compliance.  There are a couple
+	of loose ends (faltickers code and clock slew rate) that
+	are not finished, but should be RSN.  This release is to
+	bridge the compatability with the old clock system.
+
+	CHANGES:
+	ntpsubs.c had a MAJOR bug in the tstamp routine.  Accuracy
+	should be much better now.
+
+	The ntp.conf file is much simpler.  List your precision
+	and peers, the rest is automagic.
+
+	The ntp/udp service mapping is now consitent.  No more hard
+	coded 123s. 
+
+	The math routines are more robust.  They now handle signed
+	conversion of longs and shorts.
+
+	The control structure of ntpd is radically different.  A peer
+	relation is NOT setup for clocks at a higher stratum.  This
+	reduces table clutter, but you lose the history of those
+	requesters.
+
+2/20/88
+	Removed the median filter and replaced it with a minimum
+	filter.  Experimentation by Dave Mills suggests this is
+	a better way to track network clocks.  Changed status field based
+	on updated RFC.
+
+12/29/87
+	Only believe samples were the round trip delay is positive.
+	I recommend HIGHLY that you change tickadj in /sys/conf/param.c
+	to equal 1 instead of 40.  This reduces the granularity of
+	clock slewing from 4ms/sec to .1ms/sec.  This should suffice
+	if your clock is less that 4.3 minutes per month. If this is
+	the case get a new clock, increase the value, or live with
+	periodic clock jumps due to setimeofday().  The basic problem is
+	that adjtime() slews only with "tickadj" granularity.  That's
+	argueably broken, but needs kernel mods to fix it.
+
+12/17/87
+	Added some of the changes from Greg Fowler and Ken Stone
+	of HP labs.  This adds "hpux" compatability.  Ken and Greg
+	also tighten up the "bestclock" determination so you
+	don't end up tracking yourself. (thanks again)
+
+	The Precision field in now correct, precision is the power
+	of 2 indication of internal clock tics.  (ex. 60-HZ = -6)
+	This is a constant for the machine and should be set in the
+	ntp.conf file.
+
+12/1/87
+	Massive cleanup in the daemon code.  There was a BIG problem
+	with "bestclock" peer calculation.  A clock of a lower type would
+	be tracked if the delay to that clock was lower than the delay
+	to the higher precision clock.  The peers listed in the ntp.conf
+	files are marked as PERM.  This causes a ntp gram to go to these
+	guys regardless of any recv activity. This eliminates the problem
+	of a peer being down and not talking ot him when he comes back
+	up because the activity indicator went to zero.  Using PERM
+	entries creates a fixed overhead, use it with caution.
+	There is the beginning of a second order filter that can be used
+	to adjust the kernel tick rate.  More on that when it's done.
+	The data structures have changed for queries.  Querying old
+	clocks will cause problems.  Note - the NTP protocol has NOT
+	changed, only the query hack.  The SET_THRESHOLD has been changed
+	to be more reasonable with the max slew rate of 4.3BSD.  This
+	will be relaxed when the second order stuff is working.
+
+5/29/87
+
+	All of the internal math is now done with doubles.  This removes
+a lot of the hair and cost.  On vaxen the double yields 54(5) bits of
+accuracy.  The NTP timestamps are 64 bits.  Converting to doubles
+will cause the loss of some bits on ost machines.  This is not bad
+since most machines don't have clocks that could track even the lower
+16 bits of the NTP timestamps.
+
+	NTP makes three choices on changing the local clock.
+	1) If the local clock apperars to be off by more than
+	WAYTOOBIG (1000.0) seconds, it refuses to do anything
+	but fill up you log.
+	2) If the local clock is off less than WAYTOOBIG but more
+	than SET_THRESHOLD (2.0) a settimeofday will be done.
+	3) If the clock is off less than SET_THRESHOLD an adjustime
+	is done.
+
+	Ntpd clears out the samples after every clock adjustment.
+	This helped to prevent the filter from overshouting based on old
+	data.
+===========================================================================
+Still cooking on the stove are:
+
+	modify adjtime - it won't allow small adjustments.
+		I may punt and put in a new adjtime that handles
+		the second order stuff.
+
+	making it handle broadcasted time like timed
+
+	man pages
+
+Any suggestions or help are ALWAYS appreciated.
+
+Louis A. Mamakos  (louie@trantor.umd.edu)
+mike petry (petry@trantor.umd.edu)
