@@ -1,4 +1,4 @@
-/*	copy.c	4.3	83/02/18	*/
+/*	copy.c	4.4	83/02/20	*/
 
 /*
  * Copy from to in 10K units.
@@ -26,7 +26,7 @@ main()
 				record, errno);
 			break;
 		}
-		if (rcc != sizeof (buffer))
+		if (rcc < sizeof (buffer))
 			printf("Record %d: read short; expected %d, got %d\n",
 				record, sizeof (buffer), rcc);
 		wcc = write(to, buffer, rcc);
@@ -35,7 +35,7 @@ main()
 				record, errno);
 			break;
 		}
-		if (wcc != rcc) {
+		if (wcc < rcc) {
 			printf("Record %d: write short; expected %d, got %d\n",
 				record, rcc, wcc);
 			break;
