@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	7.78 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.79 (Berkeley) %G%
  */
 
 /*
@@ -158,9 +158,11 @@ static u_short xxxfs_mntid;
 		++xxxfs_mntid;
 	tfsid.val[0] = makedev(nblkdev, xxxfs_mntid);
 	tfsid.val[1] = mtype;
-	while (getvfs(&tfsid)) {
-		tfsid.val[0]++;
-		xxxfs_mntid++;
+	if (rootfs) {
+		while (getvfs(&tfsid)) {
+			tfsid.val[0]++;
+			xxxfs_mntid++;
+		}
 	}
 	mp->mnt_stat.f_fsid.val[0] = tfsid.val[0];
 }
