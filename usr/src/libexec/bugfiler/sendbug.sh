@@ -4,7 +4,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)sendbug.sh	5.4 (Berkeley) 85/08/09
+#	@(#)sendbug.sh	5.5 (Berkeley) 85/09/07
 #
 # Create a bug report and mail to '4bsd-bugs'.
 #
@@ -16,7 +16,7 @@ FORMAT=/usr/ucb/bugformat
 : ${BUGADDR=4bsd-bugs@BERKELEY.EDU}
 : ${EDITOR=/usr/ucb/vi}
 
-trap '/bin/rm -f $TEMP' 0 1 2 3 13 15
+trap '/bin/rm -f $TEMP ; exit 1' 1 2 3 13 15
 
 /bin/cp $FORMAT $TEMP
 if $EDITOR $TEMP
@@ -31,3 +31,5 @@ then
 	*) /usr/lib/sendmail -t -oi "$@" < $TEMP ;;
 	esac
 fi
+
+/bin/rm -f $TEMP
