@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
 LIBC=	/lib/libc.a
 AS=	../../as/as.vax
@@ -46,7 +46,7 @@ cleandir: clean
 	rm -f ${MAN} tags .depend
 
 depend: ${SRCS}
-	mkdep ${CFLAGS} -I. -I${AS} ${SRCS}
+	mkdep ${CFLAGS} ${SRCS}
 
 install: ${MAN}
 	install -s -o bin -g bin -m 755 adb ${DESTDIR}/bin/adb
