@@ -1,4 +1,4 @@
-/*	uipc_proto.c	4.10	81/12/03	*/
+/*	uipc_proto.c	4.11	81/12/12	*/
 
 #include "../h/param.h"
 #include "../h/socket.h"
@@ -138,4 +138,27 @@ COUNT(PFFINDPROTO);
 		if (pr->pr_family == family && pr->pr_protocol == protocol)
 			return (pr);
 	return (0);
+}
+
+/*
+ * Slow timeout on all protocols.
+ */
+pfslowtimo()
+{
+	register struct protosw *pr;
+
+COUNT(PFSLOWTIMO);
+	for (pr = protoswLAST; pr >= protosw; pr--)
+		if (pr->pr_slowtimo)
+			(*pr->pr_slowtimo)();
+}
+
+pffasttimo()
+{
+	register struct protosw *pr;
+
+COUNT(PFSLOWTIMO);
+	for (pr = protoswLAST; pr >= protosw; pr--)
+		if (pr->pr_slowtimo)
+			(*pr->pr_slowtimo)();
 }

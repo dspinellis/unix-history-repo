@@ -1,4 +1,4 @@
-/*	uipc_mbuf.c	1.20	81/12/09	*/
+/*	uipc_mbuf.c	1.21	81/12/12	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -13,8 +13,6 @@
 
 mbinit()
 {
-	register struct mbuf *m;
-	register i;
 
 COUNT(MBINIT);
 	if (m_reserve(32) == 0)
