@@ -9,20 +9,18 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)operator.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)operator.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <stdio.h>
 #include "find.h"
     
-void bad_arg();
-
 /*
  * yanknode --
  *	destructively removes the top from the plan
  */
-PLAN *
+static PLAN *
 yanknode(planp)    
 	PLAN **planp;		/* pointer to top of plan (modified) */
 {
@@ -41,7 +39,7 @@ yanknode(planp)
  *	paren_squish.  In comments below, an expression is either a
  *	simple node or a N_EXPR node containing a list of simple nodes.
  */
-PLAN *
+static PLAN *
 yankexpr(planp)    
 	PLAN **planp;		/* pointer to top of plan (modified) */
 {
@@ -64,7 +62,7 @@ yankexpr(planp)
 	if (node->type == N_OPENPAREN)
 		for (tail = subplan = NULL;;) {
 			if ((next = yankexpr(planp)) == NULL)
-				bad_arg("(", "missing closing ')'");
+				err("%s: %s", "(", "missing closing ')'");
 			/*
 			 * If we find a closing ')' we store the collected
 			 * subplan in our '(' node and convert the node to
@@ -74,7 +72,8 @@ yankexpr(planp)
 			 */
 			if (next->type == N_CLOSEPAREN) {
 				if (subplan == NULL)
-					bad_arg("()", "empty inner expression");
+					err("%s: %s",
+					    "()", "empty inner expression");
 				node->p_data[0] = subplan;
 				node->type = N_EXPR;
 				node->eval = f_expr;
@@ -116,7 +115,7 @@ paren_squish(plan)
 		 * '(' someplace.
 		 */
 		if (expr->type == N_CLOSEPAREN)
-			bad_arg(")", "no beginning '('");
+			err("%s: %s", ")", "no beginning '('");
 
 		/* add the expression to our result plan */
 		if (result == NULL)
@@ -167,9 +166,9 @@ not_squish(plan)
 				node = yanknode(&plan);
 			}
 			if (node == NULL)
-				bad_arg("!", "no following expression");
+				err("%s: %s", "!", "no following expression");
 			if (node->type == N_OR)
-				bad_arg("!", "nothing between ! and -o");
+				err("%s: %s", "!", "nothing between ! and -o");
 			if (notlevel % 2 != 1)
 				next = node;
 			else
@@ -221,11 +220,11 @@ or_squish(plan)
 		 */
 		if (next->type == N_OR) {
 			if (result == NULL)
-				bad_arg("-o", "no expression before -o");
+				err("%s: %s", "-o", "no expression before -o");
 			next->p_data[0] = result;
 			next->p_data[1] = or_squish(plan);
 			if (next->p_data[1] == NULL)
-				bad_arg("-o", "no expression after -o");
+				err("%s: %s", "-o", "no expression after -o");
 			return(next);
 		}
 
