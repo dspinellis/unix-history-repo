@@ -1,4 +1,4 @@
-/*	@(#)ww.h	3.44 88/02/21		*/
+/*	@(#)ww.h	3.45 88/03/19		*/
  * Copyright (c) 1983 Regents of the University of California.
  * All rights reserved.
  *
@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)ww.h	3.44 (Berkeley) %G%
+ *	@(#)ww.h	3.45 (Berkeley) %G%
  */
 
 #include <sgtty.h>
@@ -55,7 +55,7 @@ struct ww_tty {
 union ww_char {
 	short c_w;		/* as a word */
 	struct {
-#if defined(vax)
+#if defined(vax) || defined(MIPSEL)
 		char C_c;	/* the character part */
 		char C_m;	/* the mode part */
 #else
