@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 
 DESTDIR=
 STAND=	../../stand
@@ -16,8 +16,7 @@ DRIVERS= rz.c
 SRCS=	${DRIVERS}
 LIBS=	libdrive.a libsa/libsa.a ../../libkern/obj/libkern.a
 
-#ALL=	boot mkboot mkboottape
-ALL=	boot
+ALL=	boot mkboot mkboottape dec_label
 
 .s.o:
 	${CPP} -E ${CFLAGS:M-[ID]*} ${AINC} ${.IMPSRC} | \
@@ -56,6 +55,9 @@ mkboot: mkboot.c
 
 mkboottape: mkboottape.c
 	${CC} ${CFLAGS} -o mkboottape mkboottape.c
+
+dec_label: dec_label.c
+	${CC} ${CFLAGS} -o dec_label dec_label.c
 
 # utilities
 
