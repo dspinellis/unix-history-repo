@@ -1,4 +1,4 @@
-(Version 8.11 of %G%)
+(Version 8.12 of %G%)
 
 Key:
   X -- extension (user visible change)
@@ -55,6 +55,8 @@ X ****	Add uucp-bang mailer that strips off any domain name from
 X ****	"quote" map (inverse of dequote).  Lets you turn node::user
 	into "node::user"@DECNET.gateway
 
+X ****	Named rulesets.
+
 X ***	Mailer flag that does a "ping" equivalent -- if it fails, wait
 	30 seconds and try again (for dialup PPP connections).  Could
 	just try the connection and then immediately retry on some
@@ -90,6 +92,9 @@ E ***	Eliminate E qf line and e_errorqueue; use e_errorsto a la
 B ***	Fix syslog buffer overflow problems.
 
 X ***	DECNET_RELAY support in configs.
+
+E **	Change listen() high-load backoff to accept and issue a 4xx
+	message so that it responds more quickly.
 
 E **	Change "/usr/tmp/dead.letter" to be based on _PATH_VARTMP.
 
