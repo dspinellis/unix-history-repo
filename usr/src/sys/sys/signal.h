@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)signal.h	6.7 (Berkeley) %G%
+ *	@(#)signal.h	6.8 (Berkeley) %G%
  */
 
 #ifndef	NSIG
@@ -19,6 +19,7 @@
 /* CHME, CHMS, CHMU are not yet given back to users reasonably */
 #define	SIGTRAP	5	/* trace trap (not reset when caught) */
 #define	SIGIOT	6	/* IOT instruction */
+#define	SIGABRT	SIGIOT	/* compatibility */
 #define	SIGEMT	7	/* EMT instruction */
 #define	SIGFPE	8	/* floating point exception */
 #define	    FPE_INTOVF_TRAP	0x1	/* integer overflow */
@@ -43,6 +44,7 @@
 #define	SIGTSTP	18	/* stop signal from tty */
 #define	SIGCONT	19	/* continue a stopped process */
 #define	SIGCHLD	20	/* to parent on child stop or exit */
+#define	SIGCLD	SIGCHLD	/* compatibility */
 #define	SIGTTIN	21	/* to readers pgrp upon background tty read */
 #define	SIGTTOU	22	/* like TTIN for output if (tp->t_local&LTOSTOP) */
 #define	SIGIO	23	/* input/output possible signal */

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)errno.h	6.4 (Berkeley) %G%
+ *	@(#)errno.h	6.5 (Berkeley) %G%
  */
 
 /*
@@ -49,8 +49,10 @@
 
 /* non-blocking and interrupt i/o */
 #define	EWOULDBLOCK	35		/* Operation would block */
+#define	EDEADLK		EWOULDBLOCK	/* ditto */
 #define	EINPROGRESS	36		/* Operation now in progress */
 #define	EALREADY	37		/* Operation already in progress */
+
 /* ipc/network software */
 
 	/* argument errors */
