@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty.c	7.24 (Berkeley) %G%
+ *	@(#)tty.c	7.25 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -480,7 +480,9 @@ ttioctl(tp, com, data, flag)
 
 	case TIOCCONS:
 		if (*(int *)data) {
-			if (constty != NULL)
+			if (constty && constty != tp &&
+			    (constty->t_state & (TS_CARR_ON|TS_ISOPEN)) ==
+			    (TS_CARR_ON|TS_ISOPEN))
 				return (EBUSY);
 #ifndef	UCONSOLE
 			if (error = suser(u.u_cred, &u.u_acflag))
@@ -877,12 +879,6 @@ ttyinput(c, tp)
 			pgsignal(tp->t_pgrp, SIGTSTP);
 			goto endcase;
 		}
-		if (CCEQ(cc[VINFO], c)) {
-			pgsignal(tp->t_pgrp, SIGINFO);
-			if ((lflag&NOKERNINFO) == 0)
-				ttyinfo(tp);
-			goto endcase;
-		}
 	}
 	/*
 	 * Handle start/stop characters.
@@ -993,6 +989,12 @@ ttyinput(c, tp)
 	 */
 	if (CCEQ(cc[VREPRINT], c)) {
 		ttyretype(tp);
+		goto endcase;
+	}
+	if (CCEQ(cc[VINFO], c)) {
+		pgsignal(tp->t_pgrp, SIGINFO);
+		if ((lflag&NOKERNINFO) == 0)
+			ttyinfo(tp);
 		goto endcase;
 	}
 	/*
