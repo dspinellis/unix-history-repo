@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)getmntopts.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)getmntopts.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -20,15 +20,19 @@ static char sccsid[] = "@(#)getmntopts.c	8.2 (Berkeley) %G%";
 
 #include "mntopts.h"
 
+int getmnt_silent = 0;
+
 void
-getmntopts(options, m0, flagp)
+getmntopts(options, m0, flagp, altflagp)
 	const char *options;
 	const struct mntopt *m0;
 	int *flagp;
+	int *altflagp;
 {
 	const struct mntopt *m;
 	int negative;
 	char *opt, *optbuf, *p;
+	int *thisflagp;
 
 	/* Copy option string, since it is about to be torn asunder... */
 	if ((optbuf = strdup(options)) == NULL)
@@ -57,12 +61,14 @@ getmntopts(options, m0, flagp)
 
 		/* Save flag, or fail if option is not recognised. */
 		if (m->m_option) {
+			thisflagp = m->m_altloc ? altflagp : flagp;
 			if (negative == m->m_inverse)
-				*flagp |= m->m_flag;
+				*thisflagp |= m->m_flag;
 			else
-				*flagp &= ~m->m_flag;
-		} else
+				*thisflagp &= ~m->m_flag;
+		} else if (!getmnt_silent) {
 			errx(1, "-o %s: option not supported", opt);
+		}
 	}
 
 	free(optbuf);
