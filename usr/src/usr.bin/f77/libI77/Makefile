@@ -1,6 +1,6 @@
 # Makefile for f77 I/O lib, libI77.a
 #
-# @(#)Makefile	1.2 (Berkeley) %G%
+# @(#)Makefile	1.3 (Berkeley) %G%
 
 CFLAGS	      = -O
 
@@ -25,8 +25,10 @@ LIBRARY_P     = libI77_p.a
 MAKEFILE      = Makefile
 
 OBJS	      = backspace.o \
+		c_dfe.o \
+		c_iio.o \
+		c_sfe.o \
 		close.o \
-		dfe.o \
 		dofio.o \
 		dolio.o \
 		douio.o \
@@ -36,25 +38,33 @@ OBJS	      = backspace.o \
 		f_errlist.o \
 		fmt.o \
 		fmtlib.o \
-		iio.o \
 		inquire.o \
 		lread.o \
 		lwrite.o \
 		open.o \
+		rdfe.o \
 		rdfmt.o \
 		rewind.o \
-		sfe.o \
+		rfi.o \
+		rsfe.o \
+		rsli.o \
 		sue.o \
 		util.o \
-		wrtfmt.o
+		wdfe.o \
+		wfi.o \
+		wrtfmt.o \
+		wsfe.o \
+		wsli.o
 
 OLDDIR	      = $(DESTDIR)/usr/old/lib
 
 PRINT	      = pr
 
 SRCS	      = backspace.c \
+		c_dfe.c \
+		c_iio.c \
+		c_sfe.c \
 		close.c \
-		dfe.c \
 		dofio.c \
 		dolio.c \
 		douio.c \
@@ -64,17 +74,23 @@ SRCS	      = backspace.c \
 		f_errlist.c \
 		fmt.c \
 		fmtlib.c \
-		iio.c \
 		inquire.c \
 		lread.c \
 		lwrite.c \
 		open.c \
+		rdfe.c \
 		rdfmt.c \
 		rewind.c \
-		sfe.c \
+		rfi.c \
+		rsfe.c \
+		rsli.c \
 		sue.c \
 		util.c \
-		wrtfmt.c
+		wdfe.c \
+		wfi.c \
+		wrtfmt.c \
+		wsfe.c \
+		wsli.c
 
 all:		$(LIBRARY) $(LIBRARY_P) libI66.o
 
@@ -143,15 +159,23 @@ f_errlist.o:	f_errlist.c
 		mv a.out $*.o
 
 backspace.o:	fio.h f_errno.h fiodefs.h backspace.c
-dfe.o:		fio.h f_errno.h fiodefs.h dfe.c
+c_dfe.o:	fio.h f_errno.h fiodefs.h c_dfe.c
+rdfe.o:		fio.h f_errno.h fiodefs.h rdfe.c
+wdfe.o:		fio.h f_errno.h fiodefs.h wdfe.c
 due.o:		fio.h f_errno.h fiodefs.h due.c
-iio.o:		fio.h f_errno.h fiodefs.h lio.h iio.c
+rfi.o:		fio.h f_errno.h fiodefs.h rfi.c
+wfi.o:		fio.h f_errno.h fiodefs.h wfi.c
+rsli.o:		fio.h f_errno.h fiodefs.h lio.h rsli.c
+wsli.o:		fio.h f_errno.h fiodefs.h lio.h wsli.c
+c_iio.o:	fio.h f_errno.h fiodefs.h lio.h c_iio.c
 inquire.o:	fio.h f_errno.h fiodefs.h inquire.c
 rewind.o:	fio.h f_errno.h fiodefs.h rewind.c
 rdfmt.o:	fio.h f_errno.h fiodefs.h format.h rdfmt.c
 sue.o:		fio.h f_errno.h fiodefs.h sue.c
 douio.o:	fio.h f_errno.h fiodefs.h douio.c
-sfe.o:		fio.h f_errno.h fiodefs.h sfe.c
+rsfe.o:		fio.h f_errno.h fiodefs.h rsfe.c
+wsfe.o:		fio.h f_errno.h fiodefs.h wsfe.c
+c_sfe.o:	fio.h f_errno.h fiodefs.h c_sfe.c
 fmt.o:		fio.h f_errno.h fiodefs.h format.h fmt.c
 dofio.o:	fio.h f_errno.h fiodefs.h format.h dofio.c
 lwrite.o:	fio.h f_errno.h fiodefs.h lio.h lwrite.c
@@ -162,5 +186,5 @@ close.o:	fio.h f_errno.h fiodefs.h close.c
 util.o:		fio.h f_errno.h fiodefs.h util.c
 endfile.o:	fio.h f_errno.h fiodefs.h endfile.c
 wrtfmt.o:	fio.h f_errno.h fiodefs.h format.h wrtfmt.c
-err.o:		fiodefs.h f_errno.h err.c
+err.o:		fio.h f_errno.h fiodefs.h err.c
 fmtlib.o:	fio.h f_errno.h fiodefs.h fmtlib.c
