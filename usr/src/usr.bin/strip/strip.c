@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)strip.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)strip.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -30,12 +30,13 @@ static char sccsid[] = "@(#)strip.c	5.3 (Berkeley) %G%";
 #include <a.out.h>
 #include <stdio.h>
 
+typedef struct exec EXEC;
+
 /* ARGSUSED */
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	typedef struct exec EXEC;
 	register off_t fsize;
 	register int fd, n, pagesize;
 	EXEC head;
@@ -47,14 +48,12 @@ main(argc, argv)
 		    (n = read(fd, (char *)&head, sizeof(EXEC))) == -1)
 			error(*argv);
 		if (n != sizeof(EXEC) || N_BADMAG(head)) {
-			fprintf(stderr, "strip: %s not in a.out format.\n",
-			    *argv);
+			(void)fprintf(stderr,
+			    "strip: %s not in a.out format.\n", *argv);
 			exit(1);
 		}
-		if (!head.a_syms && !head.a_trsize && !head.a_drsize) {
-			fprintf(stderr, "strip: %s already stripped.\n", *argv);
+		if (!head.a_syms && !head.a_trsize && !head.a_drsize)
 			continue;
-		}
 		fsize = head.a_text + head.a_data;
 		if (head.a_magic == ZMAGIC)
 			fsize += pagesize - sizeof(EXEC);
@@ -68,11 +67,12 @@ main(argc, argv)
 	exit(0);
 }
 
-static
 error(fname)
 	char *fname;
 {
-	fprintf(stderr, "strip: %s: ", fname);
-	perror((char *)NULL);
+	extern int errno;
+	char *strerror();
+
+	(void)fprintf(stderr, "strip: %s: %s.\n", fname, strerror(errno));
 	exit(1);
 }
