@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)radix.c	7.4 (Berkeley) %G%
+ *	@(#)radix.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -23,6 +23,8 @@
 #ifndef RNF_NORMAL
 #include "param.h"
 #include "radix.h"
+#include "malloc.h"
+#define	M_DONTWAIT M_NOWAIT
 #endif
 struct radix_node_head *mask_rnhead;
 #define rn_maskhead mask_rnhead->rnh_treetop
