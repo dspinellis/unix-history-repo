@@ -10,7 +10,7 @@
  * Perform message editing functions.
  */
 
-static char *SccsId = "@(#)edit.c	2.2 %G%";
+static char *SccsId = "@(#)edit.c	2.3 %G%";
 
 /*
  * Edit a message list.
@@ -108,7 +108,7 @@ edit1(msgvec, ed)
 			perror(edname);
 			goto out;
 		}
-		if (send(mp, obuf) < 0) {
+		if (send(mp, obuf, 0) < 0) {
 			perror(edname);
 			fclose(obuf);
 			remove(edname);
