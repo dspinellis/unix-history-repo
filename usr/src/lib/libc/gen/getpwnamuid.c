@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getpwnamuid.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)getpwnamuid.c	5.3 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <stdio.h>
@@ -38,19 +38,19 @@ fetchpw(key)
         cp = key.dptr;
 	tp = line;
 
-#define	EXPAND(e)	passwd.pw_/**/e = tp; while (*tp++ = *cp++);
-	EXPAND(name);
-	EXPAND(passwd);
+#define	EXPAND(e)	passwd.e = tp; while (*tp++ = *cp++);
+	EXPAND(pw_name);
+	EXPAND(pw_passwd);
 	bcopy(cp, (char *)&passwd.pw_uid, sizeof (int));
 	cp += sizeof (int);
 	bcopy(cp, (char *)&passwd.pw_gid, sizeof (int));
 	cp += sizeof (int);
 	bcopy(cp, (char *)&passwd.pw_quota, sizeof (int));
 	cp += sizeof (int);
-	EXPAND(comment);
-	EXPAND(gecos);
-	EXPAND(dir);
-	EXPAND(shell);
+	EXPAND(pw_comment);
+	EXPAND(pw_gecos);
+	EXPAND(pw_dir);
+	EXPAND(pw_shell);
         return (&passwd);
 }
 
