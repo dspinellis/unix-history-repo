@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	5.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	5.33 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -353,6 +353,10 @@ getpathname(namebuf, curdir, ino)
 	static int busy = 0;
 	extern int findname();
 
+	if (curdir == ino && ino == ROOTINO) {
+		(void)strcpy(namebuf, "/");
+		return;
+	}
 	if (busy ||
 	    (statemap[curdir] != DSTATE && statemap[curdir] != DFOUND)) {
 		(void)strcpy(namebuf, "?");
@@ -398,7 +402,8 @@ getpathname(namebuf, curdir, ino)
 void
 catch()
 {
-	ckfini();
+	if (!doinglevel2)
+		ckfini();
 	exit(12);
 }
 
