@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tr.c	4.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)tr.c	4.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -140,7 +140,7 @@ main(argc, argv)
 }
 
 next(s)
-	STR *s;
+	register STR *s;
 {
 	register int ch;
 
@@ -181,13 +181,22 @@ fail2:			s->lastch = '-';
 	return(1);
 }
 
+/*
+ * Translate \-escapes.  Up to 3 octal digits => char; no digits => literal.
+ * Unadorned backslash "\" is like \000.
+ */
 tran(s)
 	register STR *s;
 {
-	register int ch, cnt, val;
+	register int ch, cnt = 0, val = 0;
 
-	for (val = cnt = 0; isascii(ch = *s->str++) && isdigit(ch)
-	    && cnt++ < 3;)
+	for (;;) {
+		ch = *s->str++;
+		if (!isascii(ch) || !isdigit(ch) || ++cnt > 3)
+			break;
 		val = val * 8 + ch - '0';
-	return(cnt ? val : ch);
+	}
+	if (cnt || ch == 0)
+		s->str--;
+	return (cnt ? val : ch);
 }
