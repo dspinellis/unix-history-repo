@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	8.2 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	8.3 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	8.2 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	8.3 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -255,8 +255,8 @@ punt:
 	}
 
 	/* if we have a default lowest preference, include that */
-	if (FallBackMX != NULL && !seenlocal)
-		mxhosts[nmx++] = FallBackMX;
+	if (fallbackMX != NULL && !seenlocal)
+		mxhosts[nmx++] = fallbackMX;
 
 	return (nmx);
 }
