@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tnrecv.c	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)tnrecv.c	4.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -473,8 +473,7 @@ ack()
     memcpy(a_ack_sequence, ack_blanks, sizeof a_ack_sequence);
     sprintf(a_ack_sequence, "%d", ack_sequence);
     a_ack_sequence[strlen(a_ack_sequence)] = ' ';
-    Host[ACK_SEQUENCE-1] |= ATTR_MDT;
-    if (putascii(ACK_SEQUENCE, a_ack_sequence, ACK_SEQUENCE_LENGTH, 1) == -1) {
+    if (putascii(ACK_SEQUENCE, a_ack_sequence, ACK_SEQUENCE_LENGTH, 0) == -1) {
 	return -1;
     }
     return 0;
@@ -566,12 +565,7 @@ char	*argv[];
 	    return -1;
 	}
     }
-    if (i == 0) {
-	Host[ScreenSize-1] |= ATTR_MDT;
-    } else {
-	Host[i-1] |= ATTR_MDT;
-    }
-    if (putascii(i, data_array, data_length, 1) == -1) {
+    if (putascii(i, data_array, data_length, 0) == -1) {
 	return -1;
     }
     if (send_key(enter_index) == -1) {
