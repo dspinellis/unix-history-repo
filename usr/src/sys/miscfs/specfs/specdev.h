@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)specdev.h	8.5 (Berkeley) %G%
+ *	@(#)specdev.h	8.6 (Berkeley) %G%
  */
 
 /*
@@ -83,7 +83,7 @@ int	spec_fsync __P((struct  vop_fsync_args *));
 #define spec_readdir ((int (*) __P((struct  vop_readdir_args *)))spec_badop)
 #define spec_readlink ((int (*) __P((struct  vop_readlink_args *)))spec_badop)
 #define spec_abortop ((int (*) __P((struct  vop_abortop_args *)))spec_badop)
-#define spec_inactive ((int (*) __P((struct  vop_inactive_args *)))nullop)
+int	spec_inactive __P((struct  vop_inactive_args *));
 #define spec_reclaim ((int (*) __P((struct  vop_reclaim_args *)))nullop)
 #define spec_lock ((int (*) __P((struct  vop_lock_args *)))vop_nolock)
 #define spec_unlock ((int (*) __P((struct  vop_unlock_args *)))vop_nounlock)
