@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)sh.1	8.3 (Berkeley) %G%
+.\"	@(#)sh.1	8.4 (Berkeley) %G%
 .\"
 .na
 .TH SH 1
@@ -112,11 +112,11 @@ Export all variables assigned to.
 (UNIMPLEMENTED for 4.4alpha)
 .TP
 -C    noclobber
-Don't overwite existing files with ``>''.
+Don't overwrite existing files with ``>''.
 (UNIMPLEMENTED for 4.4alpha)
 .TP
 -e    errexit
-If not interactive, exit immediatly if any
+If not interactive, exit immediately if any
 untested command fails.
 The exit status of a command is considered to be
 explicitly tested if the command is used to control
@@ -135,7 +135,7 @@ syntax of shell scripts.
 -u    nounset
 Write a message to standard error when attempting
 to expand a variable that is not set, and if the
-shell is not interactive, exit immediatly.
+shell is not interactive, exit immediately.
 (UNIMPLEMENTED for 4.4alpha)
 .TP
 -v    verbose
@@ -421,7 +421,7 @@ Each command has an exit status that can influence the behavior
 of other shell commands.  The paradigm is that a command exits
 with zero for normal or success, and non-zero for failure,
 error, or a false indication.  The man page for each command
-should indicate the varius exit codes and what they mean.
+should indicate the various exit codes and what they mean.
 Additionally, the builtin commands return exit codes, as does
 an executed function.
 .sp 2
