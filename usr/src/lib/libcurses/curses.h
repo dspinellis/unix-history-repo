@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)curses.h	5.34 (Berkeley) %G%
+ *	@(#)curses.h	5.35 (Berkeley) %G%
  */
 
 #ifndef _CURSES_H_
@@ -215,7 +215,6 @@ int	 gettmode __P((void));
 void	 idlok __P((WINDOW *, int));
 WINDOW	*initscr __P((void));
 char	*longname __P((char *, char *));
-int	 mvcur __P((int, int, int, int));
 int	 mvprintw __P((int, int, const char *, ...));
 int	 mvscanw __P((int, int, const char *, ...));
 int	 mvwin __P((WINDOW *, int, int));
