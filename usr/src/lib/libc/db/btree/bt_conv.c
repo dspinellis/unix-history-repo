@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_conv.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_conv.c	5.8 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -20,6 +20,7 @@ static char sccsid[] = "@(#)bt_conv.c	5.7 (Berkeley) %G%";
 #include "btree.h"
 
 static void kdswap __P((PAGE *));
+static void mswap __P((PAGE *));
 
 /*
  * __BT_BPGIN, __BT_BPGOUT --
@@ -32,68 +33,33 @@ static void kdswap __P((PAGE *));
  *	h:	page to convert
  */
 void
-__bt_pgin(t, pg, p)
+__bt_pgin(t, pg, pp)
 	void *t;
 	pgno_t pg;
-	void *p;
+	void *pp;
 {
 	PAGE *h;
-
-	if (((BTREE *)t)->bt_lorder == BYTE_ORDER)
-		return;
-
-	h = p;
-	BLSWAP(h->pgno);
-	BLSWAP(h->prevpg);
-	BLSWAP(h->nextpg);
-	BLSWAP(h->flags);
-	BSSWAP(h->lower);
-	BSSWAP(h->upper);
-	kdswap(h);
-}
-
-void
-__bt_pgout(t, pg, p)
-	void *t;
-	pgno_t pg;
-	void *p;
-{
-	PAGE *h;
-
-	if (((BTREE *)t)->bt_lorder == BYTE_ORDER)
-		return;
-
-	h = p;
-	kdswap(h);
-	BLSWAP(h->pgno);
-	BLSWAP(h->prevpg);
-	BLSWAP(h->nextpg);
-	BLSWAP(h->flags);
-	BSSWAP(h->lower);
-	BSSWAP(h->upper);
-}
-
-/*
- * KDSWAP -- Actually swap the bytes on the page.
- *
- * Parameters:
- *	h:	page to convert
- *
- * Warnings:
- *	Everywhere else in the code, the pgno_t and indx_t types are
- *	opaque.  These routines know what they really are.
- */
-static void
-kdswap(h)
-	PAGE *h;
-{
-	register int i, top;
-	register char *p;			/* Really void, thanks ANSI! */
+	int i, top;
 	u_char flags;
+	char *p;
+
+	if (!ISSET(((BTREE *)t), BTF_NEEDSWAP))
+		return;
+	if (pg == P_META) {
+		mswap(pp);
+		return;
+	}
+
+	h = pp;
+	BLSWAP(h->pgno);
+	BLSWAP(h->prevpg);
+	BLSWAP(h->nextpg);
+	BLSWAP(h->flags);
+	BSSWAP(h->lower);
+	BSSWAP(h->upper);
 
 	top = NEXTINDEX(h);
-	switch (h->flags & P_TYPE) {
-	case P_BINTERNAL:
+	if ((h->flags & P_TYPE) == P_BINTERNAL)
 		for (i = 0; i < top; i++) {
 			BSSWAP(h->linp[i]);
 			p = (char *)GETBINTERNAL(h, i);
@@ -108,8 +74,7 @@ kdswap(h)
 				BLPSWAP(p);
 			}
 		}
-		break;
-	case P_BLEAF:
+	else if ((h->flags & P_TYPE) == P_BLEAF)
 		for (i = 0; i < top; i++) {
 			BSSWAP(h->linp[i]);
 			p = (char *)GETBLEAF(h, i);
@@ -133,6 +98,99 @@ kdswap(h)
 				}
 			}
 		}
-		break;
+}
+
+void
+__bt_pgout(t, pg, pp)
+	void *t;
+	pgno_t pg;
+	void *pp;
+{
+	PAGE *h;
+	int i, top;
+	u_char flags;
+	char *p;
+
+	if (!ISSET(((BTREE *)t), BTF_NEEDSWAP))
+		return;
+	if (pg == P_META) {
+		mswap(pp);
+		return;
 	}
+
+	h = pp;
+	top = NEXTINDEX(h);
+	if ((h->flags & P_TYPE) == P_BINTERNAL)
+		for (i = 0; i < top; i++) {
+			p = (char *)GETBINTERNAL(h, i);
+			BLPSWAP(p);
+			p += sizeof(size_t);
+			BLPSWAP(p);
+			p += sizeof(pgno_t);
+			if (*(u_char *)p & P_BIGKEY) {
+				p += sizeof(u_char);
+				BLPSWAP(p);
+				p += sizeof(pgno_t);
+				BLPSWAP(p);
+			}
+			BSSWAP(h->linp[i]);
+		}
+	else if ((h->flags & P_TYPE) == P_BLEAF)
+		for (i = 0; i < top; i++) {
+			p = (char *)GETBLEAF(h, i);
+			BLPSWAP(p);
+			p += sizeof(size_t);
+			BLPSWAP(p);
+			p += sizeof(size_t);
+			flags = *(u_char *)p;
+			if (flags & (P_BIGKEY | P_BIGDATA)) {
+				p += sizeof(u_char);
+				if (flags & P_BIGKEY) {
+					BLPSWAP(p);
+					p += sizeof(pgno_t);
+					BLPSWAP(p);
+				}
+				if (flags & P_BIGDATA) {
+					p += sizeof(size_t);
+					BLPSWAP(p);
+					p += sizeof(pgno_t);
+					BLPSWAP(p);
+				}
+			}
+			BSSWAP(h->linp[i]);
+		}
+
+	BLSWAP(h->pgno);
+	BLSWAP(h->prevpg);
+	BLSWAP(h->nextpg);
+	BLSWAP(h->flags);
+	BSSWAP(h->lower);
+	BSSWAP(h->upper);
+}
+
+/*
+ * MSWAP -- Actually swap the bytes on the meta page.
+ *
+ * Parameters:
+ *	p:	page to convert
+ */
+void
+mswap(pg)
+	PAGE *pg;
+{
+	char *p;
+
+	p = (char *)pg;
+	BLPSWAP(p);		/* m_magic */
+	p += sizeof(u_long);
+	BLPSWAP(p);		/* m_version */
+	p += sizeof(u_long);
+	BLPSWAP(p);		/* m_psize */
+	p += sizeof(u_long);
+	BLPSWAP(p);		/* m_free */
+	p += sizeof(u_long);
+	BLPSWAP(p);		/* m_nrecs */
+	p += sizeof(u_long);
+	BLPSWAP(p);		/* m_flags */
+	p += sizeof(u_long);
 }
