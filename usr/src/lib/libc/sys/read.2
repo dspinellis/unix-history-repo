@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)read.2	8.2 (Berkeley) %G%
+.\"     @(#)read.2	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt READ 2
@@ -18,7 +18,7 @@
 .Fd #include <unistd.h>
 .Ft ssize_t
 .Fn read "int d" "void *buf" "size_t nbytes"
-.Ft int
+.Ft ssize_t
 .Fn readv "int d" "struct iovec *iov" "int iovcnt"
 .Sh DESCRIPTION
 .Fn Read
