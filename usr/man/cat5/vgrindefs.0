@@ -1,0 +1,198 @@
+
+
+
+VGRINDEFS(5)	    UNIX Programmer's Manual	     VGRINDEFS(5)
+
+
+
+NNAAMMEE
+     vgrindefs - vgrind's language definition data base
+
+SSYYNNOOPPSSIISS
+     //uussrr//lliibb//vvggrriinnddeeffss
+
+DDEESSCCRRIIPPTTIIOONN
+     _V_g_r_i_n_d_e_f_s contains all language definitions for vgrind.  The
+     data base is very similar to _t_e_r_m_c_a_p(5).
+
+FFIIEELLDDSS
+     The following table names and describes each field.
+
+     NNaammee   TTyyppee  DDeessccrriippttiioonn
+     pb     str   regular expression for start of a procedure
+     bb     str   regular expression for start of a lexical block
+     be     str   regular expression for the end of a lexical block
+     cb     str   regular expression for the start of a comment
+     ce     str   regular expression for the end of a comment
+     sb     str   regular expression for the start of a string
+     se     str   regular expression for the end of a string
+     lb     str   regular expression for the start of a character constant
+     le     str   regular expression for the end of a character constant
+     tl     bool  present means procedures are only defined at the top
+		  lexical level
+     oc     bool  present means upper and lower case are equivalent
+     kw     str   a list of keywords separated by spaces
+
+     EExxaammppllee
+
+     The following entry, which describes the C language, is typ-
+     ical of a language entry.
+
+     C|c:   :pb=^\d?*?\d?\p\d??):bb={:be=}:cb=/*:ce=*/:sb=":se=\e":\
+	    :lb=':le=\e':tl:\
+	    :kw=asm auto break case char continue default do double else enum\
+	    extern float for fortran goto if int long register return short\
+	    sizeof static struct switch typedef union unsigned while #define\
+	    #else #endif #if #ifdef #ifndef #include #undef # define else endif\
+	    if ifdef ifndef include undef:
+
+     Note that the first field is just the language name (and any
+     variants of it).  Thus the C language could be specified to
+     _v_g_r_i_n_d(1) as "c" or "C".
+
+     Entries may continue onto multiple lines by giving a \ as
+     the last character of a line.  Capabilities in _v_g_r_i_n_d_e_f_s are
+     of two types: Boolean capabilities which indicate that the
+     language has some particular feature and string capabilities
+     which give a regular expression or keyword list.
+
+
+
+
+
+Printed 7/9/88	       September 30, 1987			1
+
+
+
+
+
+
+VGRINDEFS(5)	    UNIX Programmer's Manual	     VGRINDEFS(5)
+
+
+
+     RREEGGUULLAARR EEXXPPRREESSSSIIOONNSS
+
+     _V_g_r_i_n_d_e_f_s uses regular expression which are very similar to
+     those of _e_x(1) and _l_e_x(1).  The characters `^', `$', `:' and
+     `\' are reserved characters and must be "quoted" with a
+     preceding \ if they are to be included as normal characters.
+     The metasymbols and their meanings are:
+
+     $	  the end of a line
+
+     ^	  the beginning of a line
+
+     \d   a delimiter (space, tab, newline, start of line)
+
+     \a   matches any string of symbols (like .* in lex)
+
+     \p   matches any alphanumeric name.  In a procedure defini-
+	  tion (pb) the string that matches this symbol is used
+	  as the procedure name.
+
+     ()   grouping
+
+     |	  alternation
+
+     ?	  last item is optional
+
+     \e   preceding any string means that the string will not
+	  match an input string if the input string is preceded
+	  by an escape character (\).  This is typically used for
+	  languages (like C) which can include the string delim-
+	  iter in a string by escaping it.
+
+     Unlike other regular expressions in the system,  these match
+     words and not characters.	Hence something like
+     "(tramp|steamer)flies?" would match "tramp", "steamer",
+     "trampflies", or "steamerflies".
+
+     KKEEYYWWOORRDD LLIISSTT
+
+     The keyword list is just a list of keywords in the language
+     separated by spaces.  If the "oc" boolean is specified,
+     indicating that upper and lower case are equivalent, then
+     all the keywords should be specified in lower case.
+
+FFIILLEESS
+     /usr/lib/vgrindefs  file containing terminal descriptions
+
+SSEEEE AALLSSOO
+     vgrind(1), troff(1)
+
+AAUUTTHHOORR
+     Dave Presotto
+
+
+
+Printed 7/9/88	       September 30, 1987			2
+
+
+
+
+
+
+VGRINDEFS(5)	    UNIX Programmer's Manual	     VGRINDEFS(5)
+
+
+
+BBUUGGSS
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88	       September 30, 1987			3
+
+
+
+
+
+

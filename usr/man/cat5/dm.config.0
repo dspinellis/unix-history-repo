@@ -1,0 +1,66 @@
+
+
+
+DM.CONFIG(5)	    UNIX Programmer's Manual	     DM.CONFIG(5)
+
+
+
+NNAAMMEE
+     dm.config - dm configuration file
+
+DDEESSCCRRIIPPTTIIOONN
+     _D_m._c_o_n_f_i_g is the configuration file for the _d_m(8) program.
+     It consists of lines beginning with one of three keywords,
+     ``badtty'', ``game'', and ``time''.  All other lines are
+     ignored.
+
+     Any tty listed after the keyword ``badtty'' may not have
+     games played on it.  Entries consist of two white-space
+     separated fields: the string ``badtty'' and the ttyname as
+     returned by _t_t_y_n_a_m_e(3).  For example, to keep the uucp
+     dialout, ``tty19'', from being used for games, the entry
+     would be:
+
+	       badtty	 /dev/tty19
+
+     Any day/hour combination listed after the keyword ``time''
+     will disallow games during those hours.  Entries consist of
+     four white-space separated fields: the string ``time'', the
+     unabbreviated day of the week and the beginning and ending
+     time of a period of the day when games may not be played.
+     The time fields are in a 0 based, 24-hour clock.  For exam-
+     ple, the following entry allows games playing before 8AM and
+     after 5PM on Mondays.
+
+	       time	 Monday    8	17
+
+     Any game listed after the keyword ``game'' will set parame-
+     ters for a specific game.	Entries consist of five white-
+     space separated fields: the keyword ``game'', the name of a
+     game, the highest system load average at which the game may
+     be played, the maximum users allowed if the game is to be
+     played, and the priority at which the game is to be run.
+     Any of these fields may start with a non-numeric character,
+     resulting in no game limitation or priority based on that
+     field.  The game "default" controls the settings for any
+     game not otherwise listed, and must be the last ``game''
+     entry in the file.  Priorities may not be negative.  For
+     example, the following entries limits the game ``hack'' to
+     running only when the system has 10 or less users and a load
+     average of 5 or less; all other games may be run any time
+     the system has 15 or less users.
+
+	       game	 hack	   5	10   *
+	       game	 default   *	15   *
+
+SSEEEE AALLSSOO
+     setpriority(2), ttyname(3), dm(8)
+
+
+
+
+
+Printed 7/9/88		  July 9, 1988				1
+
+
+

@@ -1,0 +1,66 @@
+
+
+
+DRUM(4)             UNIX Programmer's Manual		  DRUM(4)
+
+
+
+NNAAMMEE
+     drum - paging device
+
+DDEESSCCRRIIPPTTIIOONN
+     This file refers to the paging device in use by the system.
+     This may actually be a subdevice of one of the disk drivers,
+     but in a system with paging interleaved across multiple disk
+     drives it provides an indirect driver for the multiple
+     drives.
+
+FFIILLEESS
+     /dev/drum
+
+BBUUGGSS
+     Reads from the drum are not allowed across the interleaving
+     boundaries.  Since these only occur every ..5Mbytes or so,
+     and since the system never allocates blocks across the boun-
+     dary, this is usually not a problem.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 15, 1985				1
+
+
+

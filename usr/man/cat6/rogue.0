@@ -1,0 +1,132 @@
+
+
+
+ROGUE(6)	    UNIX Programmer's Manual		 ROGUE(6)
+
+
+
+NNAAMMEE
+     rogue - Exploring The Dungeons of Doom
+
+SSYYNNOOPPSSIISS
+     //uussrr//ggaammeess//rroogguuee [ --rr ] [ _s_a_v_e__f_i_l_e ] [ --ss ] [ --dd ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _R_o_g_u_e is a computer fantasy game with a new twist.  It is
+     crt oriented and the object of the game is to survive the
+     attacks of various monsters and get a lot of gold, rather
+     than the puzzle solving orientation of most computer fantasy
+     games.
+
+     To get started you really only need to know two commands.
+     The command ?? will give you a list of the available commands
+     and the command // will identify the things you see on the
+     screen.
+
+     To win the game (as opposed to merely playing to beat other
+     people's high scores) you must locate the Amulet of Yendor
+     which is somewhere below the 20th level of the dungeon and
+     get it out.  Nobody has achieved this yet and if somebody
+     does, they will probably go down in history as a hero among
+     heroes.
+
+     When the game ends, either by your death, when you quit, or
+     if you (by some miracle) manage to win, _r_o_g_u_e will give you
+     a list of the top-ten scorers.  The scoring is based
+     entirely upon how much gold you get.  There is a 10% penalty
+     for getting yourself killed.
+
+     If _s_a_v_e__f_i_l_e is specified, rogue will be restored from the
+     specified saved game file.
+
+     The --ss option will print out the list of scores.
+
+     For more detailed directions, read the document _A _G_u_i_d_e _t_o
+     _t_h_e _D_u_n_g_e_o_n_s _o_f _D_o_o_m.
+
+AAUUTTHHOORRSS
+     Timothy Stoehr, Michael C. Toy, Kenneth C. R. C. Arnold,
+     Glenn Wichman
+
+FFIILLEESS
+     /usr/games/lib/rogue_roll	 Score file
+     ~~/rogue.save		 Default save file
+
+SSEEEE AALLSSOO
+     Michael C. Toy and Kenneth C. R. C. Arnold, _A _g_u_i_d_e _t_o _t_h_e
+     _D_u_n_g_e_o_n_s _o_f _D_o_o_m
+
+
+
+
+
+Printed 7/9/88		December 10, 1987			1
+
+
+
+
+
+
+ROGUE(6)	    UNIX Programmer's Manual		 ROGUE(6)
+
+
+
+BBUUGGSS
+     Probably infinite, although none are known.  However, that
+     Ice Monsters sometimes transfix you permanently is _n_o_t a
+     bug.  It's a feature.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		December 10, 1987			2
+
+
+

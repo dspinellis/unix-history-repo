@@ -1,0 +1,132 @@
+
+
+
+AUTOCONF(4)	    UNIX Programmer's Manual	      AUTOCONF(4)
+
+
+
+NNAAMMEE
+     autoconf - diagnostics from autoconfiguration code
+
+DDEESSCCRRIIPPTTIIOONN
+     When UNIX bootstraps it probes the innards of the machine it
+     is running on and locates controllers, drives, and other
+     devices, printing out what it finds on the console.  This
+     procedure is driven by a system configuration table which is
+     processed by _c_o_n_f_i_g(8) and compiled into each kernel.
+
+     VERSAbus devices are located by probing to see if their
+     control-status registers respond.	If not, they are silently
+     ignored.  If the control status register responds but the
+     device cannot be made to interrupt, a diagnostic warning
+     will be printed on the console and the device will not be
+     available to the system.
+
+     A generic system may be built which picks its root device at
+     boot time as the ``best'' available device.  If such a sys-
+     tem is booted with the RB_ASKNAME option of (see
+     _r_e_b_o_o_t(2v)), then the name of the root device is read from
+     the console terminal at boot time, and any available device
+     may be used.
+
+SSEEEE AALLSSOO
+     config(8)
+
+DDIIAAGGNNOOSSTTIICCSS
+     vvbbaa%%dd aatt %%xx.  A VERSAbus adapter was found and mapped into
+     the address space of the operating system starting at vir-
+     tual address %x.  UNIX will call it vba%d.
+
+     %%ss%%dd aatt vvbbaa%%dd ddrriivvee %%dd.  A tape formatter or a disk was
+     found on the VERSAbus; for disks %s%d will look like
+     ``dk0'', for tape formatters like ``yc1''.  The drive number
+     comes from the unit plug on the drive or in the tape for-
+     matter (nnoott on the tape drive; see below).
+
+     %%ss%%dd aatt %%ss%%dd ssllaavvee %%dd. Which would look like ``yc0 at cy0
+     slave 0'', where yycc00 is the name for the tape device and ccyy00
+     is the name for the formatter.  A tape slave was found on
+     the tape formatter at the indicated drive number (on the
+     front of the tape drive).	UNIX will call the device, e.g.,
+     ccyy00.
+
+     %%ss%%dd aatt vvbbaa%%dd ccssrr %%xx vveecc %%xx iippll %%xx.  The device %s%d, e.g.
+     vd0 was found on vba%d at control-status register address %x
+     and with device vector %x.  The device interrupted at prior-
+     ity level %x.
+
+     %%ss%%dd aatt vvbbaa%%dd ccssrr %%xx nnoo iinntteerrrruuppttss.  The device was found on
+     vba%d at control-status register address %x; no interrupts
+
+
+
+Printed 7/9/88		  June 30, 1987                         1
+
+
+
+
+
+
+AUTOCONF(4)	    UNIX Programmer's Manual	      AUTOCONF(4)
+
+
+
+     were configured for the device.
+
+     %%ss%%dd aatt vvbbaa%%dd ccssrr %%xx ddiiddnn''tt iinntteerrrruupptt.  The device did not
+     interrupt, likely because it is broken, hung, or not the
+     kind of device it is advertised to be.  The csr address is
+     interpreted as described above.
+
+     %%ss%%dd aatt %%ss%%dd ssllaavvee %%dd.  Which would look like ``dk0 at vd0
+     slave 0'', where ddkk00 is the name of a disk drive and vvdd00 is
+     the name of the controller.
+
+BBUUGGSS
+     Very few devices actually figure out their interrupt vector
+     by forcing the device to interrupt.  Only the upper megabyte
+     of the VERSAbus address space is mapped into the system's
+     virtual address space.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  June 30, 1987                         2
+
+
+

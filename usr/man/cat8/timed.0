@@ -1,0 +1,132 @@
+
+
+
+TIMED(8)	    UNIX Programmer's Manual		 TIMED(8)
+
+
+
+NNAAMMEE
+     timed - time server daemon
+
+SSYYNNOOPPSSIISS
+     //eettcc//ttiimmeedd [ -t ] [ -M ] [ -n network ] [ -i network ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _T_i_m_e_d is the time server daemon and is normally  invoked  at
+     boot  time  from  the _r_c(8) file. It synchronizes the host's
+     time with the time of other machines in a local area network
+     running  _t_i_m_e_d(8).   These  time  servers will slow down the
+     clocks of some machines and speed up the clocks of others to
+     bring them to the average network time.  The average network
+     time is computed  from  measurements  of  clock  differences
+     using the ICMP timestamp request message.
+
+     The service provided by _t_i_m_e_d is based   on  a  master-slave
+     scheme.   When _t_i_m_e_d(8) is started on a machine, it asks the
+     master for the network time and sets  the	host's	clock  to
+     that  time.  After that, it accepts synchronization messages
+     periodically sent by the master and calls _a_d_j_t_i_m_e(2) to per-
+     form the needed corrections on the host's clock.
+
+     It also communicates with _d_a_t_e(1) in order to set	the  date
+     globally,	and  with _t_i_m_e_d_c(8), a timed control program.  If
+     the machine running the master crashes, then the slaves will
+     elect  a  new  master  from among slaves running with the --MM
+     flag.  A _t_i_m_e_d running without the --MM  flag  will	remain	a
+     slave.   The  --tt flag enables _t_i_m_e_d to trace the messages it
+     receives in the file  /usr/adm/timed.log.	 Tracing  can  be
+     turned  on  or off by the program _t_i_m_e_d_c(8).  _T_i_m_e_d normally
+     checks for a master time server on each network to which  it
+     is  connected,  except  as modified by the options described
+     below.  It will request  synchronization  service	from  the
+     first  master  server located.  If permitted by the --MM flag,
+     it will provide synchronization service on any attached net-
+     works  on which no current master server was detected.  Such
+     a server propagates the time computed by the top-level  mas-
+     ter.   The  --nn flag, followed by the name of a network which
+     the host is connected to (see  _n_e_t_w_o_r_k_s(5)),  overrides  the
+     default choice of the network addresses made by the program.
+     Each time the --nn flag appears, that network name is added to
+     a	list  of valid networks.  All other networks are ignored.
+     The --ii flag, followed by the name of a network to which  the
+     host  is  connected (see _n_e_t_w_o_r_k_s(5)), overrides the default
+     choice of the network addresses made by the  program.   Each
+     time  the	--ii  flag appears, that network name is added to a
+     list of networks to ignore.  All other networks are used  by
+     the  time	daemon.   The  --nn and --ii flags are meaningless if
+     used together.
+
+
+
+
+
+Printed 7/9/88		  July 9, 1988				1
+
+
+
+
+
+
+TIMED(8)	    UNIX Programmer's Manual		 TIMED(8)
+
+
+
+FFIILLEESS
+     /usr/adm/timed.log           tracing file for timed
+     /usr/adm/timed.masterlog	  log file for master timed
+
+SSEEEE AALLSSOO
+     date(1), adjtime(2), gettimeofday(2), icmp(4P), timedc(8),
+     _T_S_P: _T_h_e _T_i_m_e _S_y_n_c_h_r_o_n_i_z_a_t_i_o_n _P_r_o_t_o_c_o_l _f_o_r _U_N_I_X  _4._3_B_S_D,  R.
+     Gusella and S. Zatti
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  July 9, 1988				2
+
+
+

@@ -1,0 +1,66 @@
+
+
+
+RENICE(8)	    UNIX Programmer's Manual		RENICE(8)
+
+
+
+NNAAMMEE
+     renice - alter priority of running processes
+
+SSYYNNOOPPSSIISS
+     //eettcc//rreenniiccee priority [ [ --pp ] pid ... ] [ [ --gg ] pgrp ... ]
+     [ [ --uu ] user ... ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _R_e_n_i_c_e alters the scheduling priority of one or more running
+     processes.  The _w_h_o parameters are interpreted as process
+     ID's, process group ID's, or user names.  _R_e_n_i_c_e'ing a pro-
+     cess group causes all processes in the process group to have
+     their scheduling priority altered. _R_e_n_i_c_e'ing a user causes
+     all processes owned by the user to have their scheduling
+     priority altered.	By default, the processes to be affected
+     are specified by their process ID's.  To force _w_h_o parame-
+     ters to be interpreted as process group ID's, a --gg may be
+     specified.  To force the _w_h_o parameters to be interpreted as
+     user names, a --uu may be given.  Supplying --pp will reset _w_h_o
+     interpretation to be (the default) process ID's.  For exam-
+     ple,
+
+	  /etc/renice +1 987 -u daemon root -p 32
+
+     would change the priority of process ID's 987 and 32, and
+     all processes owned by users daemon and root.
+
+     Users other than the super-user may only alter the priority
+     of processes they own, and can only monotonically increase
+     their ``nice value'' within the range 0 to PRIO_MAX (20).
+     (This prevents overriding administrative fiats.) The super-
+     user may alter the priority of any process and set the
+     priority to any value in the range PRIO_MIN (-20) to
+     PRIO_MAX.	Useful priorities are: 20 (the affected processes
+     will run only when nothing else in the system wants to), 0
+     (the ``base'' scheduling priority), anything negative (to
+     make things go very fast).
+
+FFIILLEESS
+     /etc/passwd    to map user names to user ID's
+
+SSEEEE AALLSSOO
+     getpriority(2), setpriority(2)
+
+BBUUGGSS
+     Non super-users can not increase scheduling priorities of
+     their own processes, even if they were the ones that
+     decreased the priorities in the first place.
+
+
+
+
+
+
+
+Printed 7/9/88		  May 19, 1986				1
+
+
+

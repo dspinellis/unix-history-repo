@@ -1,0 +1,66 @@
+
+
+
+NULL(4)             UNIX Programmer's Manual		  NULL(4)
+
+
+
+NNAAMMEE
+     null - data sink
+
+DDEESSCCRRIIPPTTIIOONN
+     Data written on a null special file is discarded.
+
+     Reads from a null special file always return 0 bytes.
+
+FFIILLEESS
+     /dev/null
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 15, 1985				1
+
+
+

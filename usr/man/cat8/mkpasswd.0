@@ -1,0 +1,66 @@
+
+
+
+MKPASSWD(8)	    UNIX Programmer's Manual	      MKPASSWD(8)
+
+
+
+NNAAMMEE
+     mkpasswd - generate hashed password table
+
+SSYYNNOOPPSSIISS
+     //eettcc//mmkkppaasssswwdd [ --vv ] passwdfile
+
+DDEESSCCRRIIPPTTIIOONN
+     _M_k_p_a_s_s_w_d is used to generated the hashed password database
+     used by the library routines ggeettppwwnnaamm(()) and ggeettppwwuuiidd(()).  If
+     the --vv option is supplied, each entry will be listed as it
+     is added.	The file _p_a_s_s_w_d_f_i_l_e is usually /etc/ptmp (invoked
+     by vipw(8)), and in any case must be in the format of
+     /etc/passwd (see passwd(5)).  _M_k_p_a_s_s_w_d will generate data-
+     base files named _p_a_s_s_w_d_f_i_l_e._p_a_g and _p_a_s_s_w_d_f_i_l_e._d_i_r. _M_k_p_a_s_s_w_d
+     will exit with a non-zero exit code if any errors are
+     detected.
+
+FFIILLEESS
+     _p_a_s_s_w_d_f_i_l_e.pag    - database filenames
+     _p_a_s_s_w_d_f_i_l_e.dir
+
+SSEEEE AALLSSOO
+     getpwent(3), vipw(8), passwd(5)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  June 3, 1986				1
+
+
+

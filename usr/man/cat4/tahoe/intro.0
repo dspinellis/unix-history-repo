@@ -1,0 +1,66 @@
+
+
+
+INTRO(4)	    UNIX Programmer's Manual		 INTRO(4)
+
+
+
+NNAAMMEE
+     intro - introduction to special files and hardware support
+
+DDEESSCCRRIIPPTTIIOONN
+     This section describes the special files, related driver
+     functions, and networking support available in the system.
+     In this part of the manual, the SYNOPSIS section of each
+     configurable device gives a sample specification for use in
+     constructing a system description for the _c_o_n_f_i_g(8) program.
+     The DIAGNOSTICS section lists messages which may appear on
+     the console and in the system error log /_u_s_r/_a_d_m/_m_e_s_s_a_g_e_s
+     due to errors in device operation.
+
+     This section contains both devices which may be configured
+     into the system, ``4'' entries, and network related informa-
+     tion, ``4N'', ``4P'', and ``4F'' entries; The networking
+     support is introduced in _i_n_t_r_o(4N).
+
+     A hardware device is identified to the system at configura-
+     tion time and the appropriate device or network interface
+     driver is then compiled into the system.  When the resultant
+     system is booted, the autoconfiguration facilities in the
+     system probe for the device on the VERSAbus and, if found,
+     enable the software support for it.  If a VERSAbus device
+     does not respond at autoconfiguration time it is not acces-
+     sible at any time afterwards.  To enable a VERSAbus device
+     which did not autoconfigure, the system will have to be
+     rebooted.
+
+     The autoconfiguration system is described in _a_u_t_o_c_o_n_f(4).
+
+SSEEEE AALLSSOO
+     autoconf(4), config(8)
+
+LLIISSTT OOFF DDEEVVIICCEESS
+     The devices listed below are supported in this incarnation
+     of the system.  Devices are indicated by their functional
+     interface.  If second vendor products provide functionally
+     identical interfaces they should be usable with the supplied
+     software.	(BBeewwaarree hhoowweevveerr tthhaatt wwee pprroommiissee tthhee ssooffttwwaarree
+     wwoorrkkss OONNLLYY wwiitthh tthhee hhaarrddwwaarree iinnddiiccaatteedd oonn tthhee aapppprroopprriiaattee
+     mmaannuuaall ppaaggee..)
+
+     ace       ACC 10 Mb/s Ethernet controller
+     cons      Tahoe console interface
+     cy        Cypher tape drive interface
+     dr        Ikon DR-11W controller
+     enp       3Com 10 Mb/s Ethernet controller
+     ik        Evans and Sutherland PS300 interface through an Ikon DR-11W controller
+     vd        CCI vd mass storage disk controller
+     vx        CCI vioc terminal multiplexor
+
+
+
+
+Printed 7/9/88		  June 30, 1987                         1
+
+
+

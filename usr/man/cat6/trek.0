@@ -1,0 +1,66 @@
+
+
+
+TREK(6)             UNIX Programmer's Manual		  TREK(6)
+
+
+
+NNAAMMEE
+     trek - trekkie game
+
+SSYYNNOOPPSSIISS
+     //uussrr//ggaammeess//ttrreekk [ [ --aa ] file ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _T_r_e_k is a game of space glory and war.  Below is a summary
+     of commands.  For complete documentation, see _T_r_e_k by Eric
+     Allman.
+
+     If a filename is given, a log of the game is written onto
+     that file.  If the --aa flag is given before the filename,
+     that file is appended to, not truncated.
+
+     The game will ask you what length game you would like.
+     Valid responses are "short", "medium", and "long".  You may
+     also type "restart", which restarts a previously saved game.
+     You will then be prompted for the skill, to which you must
+     respond "novice", "fair", "good", "expert", "commadore", or
+     "impossible".  You should normally start out with a novice
+     and work up.
+
+     In general, throughout the game, if you forget what is
+     appropriate the game will tell you what it expects if you
+     just type in a question mark.
+
+AAUUTTHHOORR
+     Eric Allman
+
+SSEEEE AALLSSOO
+     /usr/doc/trek
+
+CCOOMMMMAANNDD SSUUMMMMAARRYY
+     _a_b_a_n_d_o_n			   _c_apture
+     _c_loak _up/_down
+     _computer request; ...	   _d_amages
+     _d_e_s_t_r_u_c_t			   _d_ock
+     _h_e_l_p			   _impulse course distance
+     _lrscan			   _move course distance
+     _phasers _automatic amount
+     _phasers _manual amt1 course1 spread1 ...
+     _torpedo course [_yes] angle/_no
+     _r_a_m course distance	   _rest time
+     _s_h_e_l_l			   _s_hields _up/_down
+     _srscan [_yes/_no]
+     _s_tatus			   _t_e_r_m_i_n_a_t_e _yes/_no
+     _undock			   _visual course
+     _warp warp_factor
+
+
+
+
+
+
+Printed 7/9/88		  May 20, 1985				1
+
+
+

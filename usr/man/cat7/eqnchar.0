@@ -1,0 +1,135 @@
+
+
+
+EQNCHAR(7)	    UNIX Programmer's Manual	       EQNCHAR(7)
+
+
+
+     tdefine ciplus % "+O" % ndefine ciplus % O+ % tdefine citimes
+     % "xO" % ndefine citimes % Ox % tdefine =wig % "=~~" % ndefine
+     =wig % ="~" % tdefine bigstar % "+x" % ndefine bigstar % X|- %
+     tdefine =dot % "=." % ndefine =dot % = dot % tdefine orsign %
+     "\\//" % ndefine orsign % \/ % tdefine andsign % "//\\" % nde-
+     fine andsign % /\ % tdefine =del % "=/_\_" % ndefine =del % =
+     to DELTA % tdefine oppA % "\\//----" % ndefine oppA % V- % tdefine
+     oppE %"--- ||" % ndefine oppE % E/ % tdefine incl % "|---" % ndefine
+     incl % C_ % tdefine nomem % "<-/" % ndefine nomem % C-/ % tdefine
+     angstrom % "A" % ndefine angstrom % A to o % tdefine star %{
+     roman "*"}% ndefine star % * % tdefine || % || % tdefine
+     <wig % "<~" % ndefine <wig %{ < from "~" }% tdefine >wig %
+     ">~" % ndefine >wig %{ > from "~" }% tdefine langle % "/
+							      \" %
+     ndefine langle %<% tdefine rangle % "\
+					    /" % ndefine rangle %>%
+     tdefine hbar % "h_" % ndefine hbar % h- % ndefine ppd % _| %
+     tdefine ppd % "_|" % tdefine <-> % "<-->" % ndefine <-> % "<--
+     >" % tdefine <=> % "<= =>" % ndefine <=> % "<=>" % tdefine |< %
+     "<|" % ndefine |< % <| % tdefine |> % ">|" % ndefine |> % |> %
+     tdefine ang % "/_" % ndefine ang % /_ % tdefine rang % "|_" %
+     ndefine rang % L % tdefine 3dot % "..." % ndefine 3dot % ...
+								   %
+     tdefine thf % "..." % ndefine thf % ... % tdefine quarter %
+     roman 1/4 % ndefine quarter % 1/4 % tdefine 3quarter % roman
+     3/4 % ndefine 3quarter % 3/4 % tdefine degree %  % ndefine
+     degree % nothing sup o % tdefine square % [] % ndefine
+     square % [] % tdefine circle % O % ndefine circle % O % tde-
+     fine blot % "[[]]" % ndefine blot % HIX % tdefine bullet % o+ %
+     ndefine bullet % oxe % tdefine -wig % "~_" % ndefine -wig % -
+     to "~" % tdefine wig % ~ % ndefine wig % "~" % tdefine prop
+     % oc % ndefine prop % oc % tdefine empty % O/ % ndefine empty
+     % O/ % tdefine member % <- % ndefine member % C- % tdefine cup
+     % (~)~ % ndefine cup % U % define cap % (_)_ % define subset %
+     (= % define supset % =) % define !subset % (=_ % define
+     !supset % =_) %
+
+NNAAMMEE
+     eqnchar - special character definitions for eqn
+
+SSYYNNOOPPSSIISS
+     eeqqnn //uussrr//ppuubb//eeqqnncchhaarr [ files ] || ttrrooffff [ options ]
+
+     nneeqqnn //uussrr//ppuubb//eeqqnncchhaarr [ files ] || nnrrooffff [ options ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _E_q_n_c_h_a_r contains _t_r_o_f_f and _n_r_o_f_f character definitions for
+     constructing characters that are not available on the
+     Graphic Systems typesetter.  These definitions are primarily
+     intended for use with _e_q_n and _n_e_q_n.  It contains definitions
+     for the following characters
+
+     "ciplus"  ciplus	   "||"      ||         "square"  square
+     "citimes" citimes	   "langle"  langle	"circle"  circle
+     "wig"     wig	   "rangle"  rangle	"blot"	  blot
+
+
+
+Printed 7/9/88		  May 20, 1985				1
+
+
+
+
+
+
+EQNCHAR(7)	    UNIX Programmer's Manual	       EQNCHAR(7)
+
+
+
+     "-wig"    -wig	   "hbar"    hbar	"bullet"  bullet
+     ">wig"    >wig	   "ppd"     ppd	"prop"	  prop
+     "<wig"    <wig	   "<->"     <->	"empty"   empty
+     "=wig"    =wig	   "<=>"     <=>	"member"  member
+     "star"    star	   "|<"      |<         "nomem"   nomem
+     "bigstar" bigstar	   "|>"      |>         "cup"	  cup
+     "=dot"    =dot	   "ang"     ang	"cap"	  cap
+     "orsign"  orsign	   "rang"    rang	"incl"	  incl
+     "andsign" andsign	   "3dot"    3dot	"subset"  subset
+     "=del"    =del	   "thf"     thf	"supset"  supset
+     "oppA"    oppA	   "quarter" quarter	"!subset" !subset
+     "oppE"    oppE	   "3quarter"		3quarter  "!supset"!supset
+     "angstrom"            angstrom  "degree"	degree
+
+FFIILLEESS
+     /usr/pub/eqnchar
+
+SSEEEE AALLSSOO
+     troff(1), eqn(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 20, 1985				2
+
+
+

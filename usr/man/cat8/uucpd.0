@@ -1,0 +1,198 @@
+
+
+
+UUCICO(8C)	    UNIX Programmer's Manual	       UUCICO(8C)
+
+
+
+NNAAMMEE
+     uucico, uucpd - transfer files queued by uucp or uux
+
+SSYYNNOOPPSSIISS
+     //uussrr//lliibb//uuuuccpp//uuuucciiccoo [ --dd_s_p_o_o_l_d_i_r ] [ --gg_g_r_a_d_e ] [ --rr_r_o_l_e ] [
+     --RR ] [ --ss_s_y_s_t_e_m ] [ --xx_d_e_b_u_g ] [ --LL ] [ --tt_t_u_r_n_a_r_o_u_n_d ]
+
+     //eettcc//uuuuccppdd
+
+DDEESSCCRRIIPPTTIIOONN
+     _U_u_c_i_c_o performs the actual work involved in transferring
+     files between systems. _U_u_c_p(1C) and _u_u_x(1C) merely queue
+     requests for data transfer which _u_u_c_i_c_o processes.
+
+     The following options are available.
+
+     --dd_s_p_o_o_l_d_i_r
+	     Use _s_p_o_o_l_d_i_r as the spool directory. The default is
+	     /usr/spool/uucp.
+
+     --gg_g_r_a_d_e Only send jobs of grade _g_r_a_d_e or higher this
+	     transfer.	The grade of a job is specified when the
+	     job is queued by _u_u_c_p or _u_u_x.
+
+     --rr_r_o_l_e  _r_o_l_e is either 1 or 0; it indicates whether _u_u_c_i_c_o
+	     is to start up in master or slave role, respec-
+	     tively. 1 is used when running _u_u_c_i_c_o by hand or
+	     from _c_r_o_n(8).  0 is used when another system calls
+	     the local system.	Slave role is the default.
+
+     --RR      Reverse roles.  When used with the --rr11 option, this
+	     tells the remote system to begin sending its jobs
+	     first, instead of waiting for the local machine to
+	     finish.
+
+     --ss_s_y_s_t_e_m
+	     Call only system _s_y_s_t_e_m.  If --ss is not specified,
+	     and -r1 is specified, _u_u_c_i_c_o will attempt to call
+	     all systems for which there is work.  If --ss is
+	     specified, a call will be made even if there is no
+	     work for that system. This is useful for polling.
+
+     --xx_d_e_b_u_g Turn on debugging at level _d_e_b_u_g.	Level 5 is a good
+	     start when trying to find out why a call failed.
+	     Level 9 is very detailed. Level 99 is absurdly ver-
+	     bose.  If _r_o_l_e is 1 (master), output is normally
+	     written to the standard message output _s_t_d_e_r_r.  If
+	     _s_t_d_e_r_r is unavailable, output is written to
+	     /usr/spool/uucp/AUDIT/_s_y_s_t_e_m.  When _r_o_l_e is 0
+	     (slave), debugging output is always written to the
+	     AUDIT file.
+
+
+
+
+Printed 7/9/88		  May 15, 1986				1
+
+
+
+
+
+
+UUCICO(8C)	    UNIX Programmer's Manual	       UUCICO(8C)
+
+
+
+     --LL      Only call ``local'' sites. A site is considered
+	     local if the device-type field in _L._s_y_s is one of
+	     LOCAL, DIR or TCP.
+
+     --tt_t_u_r_n_a_r_o_u_n_d
+	     Use _t_u_r_n_a_r_o_u_n_d as the line turnaround time (in
+	     minutes) instead of the default 30.  If _t_u_r_n_a_r_o_u_n_d
+	     is missing or 0, line turnaround will be disabled.
+	     After _u_u_c_i_c_o has been running in slave role for _t_u_r_-
+	     _n_a_r_o_u_n_d minutes, it will attempt to run in master
+	     role by negotiating with the remote machine.  In
+	     earlier versions of _u_u_c_i_c_o, a transfer of many large
+	     files in one direction would hold up mail going in
+	     the other direction.  With the turnaround code work-
+	     ing, the message flow will be more bidirectional in
+	     the short term.  This option only works with newer
+	     _u_u_c_i_c_o's and is ignored by older ones.
+
+     If _u_u_c_i_c_o receives a SSIIGGFFPPEE (see _k_i_l_l(1)), it will toggle
+     the debugging on or off.
+
+     _U_u_c_p_d is the server for supporting uucp connections over
+     networks.	_U_u_c_p_d listens for service requests at the port
+     indicated in the ``uucp'' service specification; see _s_e_r_-
+     _v_i_c_e_s(5).	The server provides login name and password
+     authentication before starting up _u_u_c_i_c_o for the rest of the
+     transaction.
+
+     _U_u_c_i_c_o is commonly used either of two ways: as a daemon run
+     periodically by _c_r_o_n(8) to call out to remote systems, and
+     as a ``shell'' for remote systems who call in.  For calling
+     out periodically, a typical line in _c_r_o_n_t_a_b would be:
+
+	  0    *    *	 *    *    /usr/lib/uucp/uucico -r1
+
+     This will run _u_u_c_i_c_o every hour in master role. For each
+     system that has transfer requests queued, _u_u_c_i_c_o calls the
+     system, logs in, and executes the transfers. The file
+     _L._s_y_s(5) is consulted for information about how to log in,
+     while _L-_d_e_v_i_c_e_s(5) specifies available lines and modems for
+     calling.
+
+     For remote systems to dial in, an entry in the _p_a_s_s_w_d(5)
+     file must be created, with a login ``shell'' of _u_u_c_i_c_o.  For
+     example:
+
+	  nuucp:Password:6:1::/usr/spool/uucppublic:/usr/lib/uucp/uucico
+
+     The UID for UUCP remote logins is not critical, so long as
+     it differs from the UUCP Administrative login.  The latter
+     owns the UUCP files, and assigning this UID to a remote
+     login would be an extreme security hazard.
+
+
+
+Printed 7/9/88		  May 15, 1986				2
+
+
+
+
+
+
+UUCICO(8C)	    UNIX Programmer's Manual	       UUCICO(8C)
+
+
+
+FFIILLEESS
+     /usr/lib/uucp/		   UUCP internal files/utilities
+     /usr/lib/uucp/L-devices	   Local device descriptions
+     /usr/lib/uucp/L-dialcodes	   Phone numbers and prefixes
+     /usr/lib/uucp/L.aliases	   Hostname aliases
+     /usr/lib/uucp/L.cmds	   Remote command permissions list
+     /usr/lib/uucp/L.sys	   Host connection specifications
+     /usr/lib/uucp/USERFILE	   Remote directory tree permissions list
+
+     /usr/spool/uucp/		   Spool directory
+     /usr/spool/uucp/AUDIT/*	   Debugging audit trails
+     /usr/spool/uucp/C./	   Control files directory
+     /usr/spool/uucp/D./	   Incoming data file directory
+     /usr/spool/uucp/D.hostname/   Outgoing data file directory
+     /usr/spool/uucp/D.hostnameX/  Outgoing execution file directory
+     /usr/spool/uucp/CORRUPT/	   Place for corrupted C. and D. files
+     /usr/spool/uucp/ERRLOG	   UUCP internal error log
+     /usr/spool/uucp/LOGFILE	   UUCP system activity log
+     /usr/spool/uucp/LCK/LCK..*    Device lock files
+     /usr/spool/uucp/SYSLOG	   File transfer statistics log
+     /usr/spool/uucp/STST/*	   System status files
+     /usr/spool/uucp/TM./	   File transfer temp directory
+     /usr/spool/uucp/X./	   Incoming execution file directory
+
+     /usr/spool/uucppublic	   Public access directory
+
+SSEEEE AALLSSOO
+     uucp(1C), uuq(1C), uux(1C), L-devices(5), L-dialcodes(5),
+     L.aliases(5), L.cmds(5), L.sys(5), uuclean(8C), uupoll(8C),
+     uusnap(8C), uuxqt(8C)
+
+     D. A. Nowitz and M. E. Lesk, _A _D_i_a_l-_U_p _N_e_t_w_o_r_k _o_f _U_N_I_X _S_y_s_-
+     _t_e_m_s.
+
+     D. A. Nowitz, _U_u_c_p _I_m_p_l_e_m_e_n_t_a_t_i_o_n _D_e_s_c_r_i_p_t_i_o_n.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 15, 1986				3
+
+
+

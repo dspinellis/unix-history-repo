@@ -1,0 +1,198 @@
+
+
+
+INTRO(4)	    UNIX Programmer's Manual		 INTRO(4)
+
+
+
+NNAAMMEE
+     intro - introduction to special files and hardware support
+
+DDEESSCCRRIIPPTTIIOONN
+     This section describes the special files, related driver
+     functions, and networking support available in the system.
+     In this part of the manual, the SYNOPSIS section of each
+     configurable device gives a sample specification for use in
+     constructing a system description for the _c_o_n_f_i_g(8) program.
+     The DIAGNOSTICS section lists messages which may appear on
+     the console and/or in the system error log /_u_s_r/_a_d_m/_m_e_s_s_a_g_e_s
+     due to errors in device operation; see _s_y_s_l_o_g_d(8) for more
+     information.
+
+     This section contains both devices which may be configured
+     into the system, ``4'' entries, and network related informa-
+     tion, ``4N'', ``4P'', and ``4F'' entries; The networking
+     support is introduced in _i_n_t_r_o(4N).
+
+VVAAXX DDEEVVIICCEE SSUUPPPPOORRTT
+     This section describes the hardware supported on the DEC
+     VAX-11.  Software support for these devices comes in two
+     forms.  A hardware device may be supported with a character
+     or block _d_e_v_i_c_e _d_r_i_v_e_r, or it may be used within the net-
+     working subsystem and have a _n_e_t_w_o_r_k _i_n_t_e_r_f_a_c_e _d_r_i_v_e_r.
+     Block and character devices are accessed through files in
+     the file system of a special type; c.f.  _m_k_n_o_d(8).  Network
+     interfaces are indirectly accessed through the interprocess
+     communication facilities provided by the system; see
+     _s_o_c_k_e_t(2).
+
+     A hardware device is identified to the system at configura-
+     tion time and the appropriate device or network interface
+     driver is then compiled into the system.  When the resultant
+     system is booted, the autoconfiguration facilities in the
+     system probe for the device on either the UNIBUS (or Q-bus)
+     or MASSBUS and, if found, enable the software support for
+     it.  If a UNIBUS device does not respond at autoconfigura-
+     tion time it is not accessible at any time afterwards.  To
+     enable a UNIBUS device which did not autoconfigure, the sys-
+     tem will have to be rebooted.  If a MASSBUS device comes
+     ``on-line'' after the autoconfiguration sequence it will be
+     dynamically autoconfigured into the running system.
+
+     The autoconfiguration system is described in _a_u_t_o_c_o_n_f(4).	A
+     list of the supported devices is given below.
+
+SSEEEE AALLSSOO
+     intro(4), intro(4N), autoconf(4), config(8).
+
+     Building 4.3BSD UNIX Systems with _C_o_n_f_i_g (SMM:2)
+
+
+
+
+Printed 7/9/88		  June 1, 1986				1
+
+
+
+
+
+
+INTRO(4)	    UNIX Programmer's Manual		 INTRO(4)
+
+
+
+LLIISSTT OOFF DDEEVVIICCEESS
+     The devices listed below are supported in this incarnation
+     of the system.  Pseudo-devices are not listed.  Devices are
+     indicated by their functional interface.  If second vendor
+     products provide functionally identical interfaces they
+     should be usable with the supplied software.  (BBeewwaarree,, hhooww--
+     eevveerr,, tthhaatt wwee pprroommiissee tthhee ssooffttwwaarree wwoorrkkss OONNLLYY wwiitthh tthhee
+     hhaarrddwwaarree iinnddiiccaatteedd oonn tthhee aapppprroopprriiaattee mmaannuuaall ppaaggee..) Occa-
+     sionally, new devices of a similar type may be added simply
+     by creating appropriate table entries in the driver.
+
+     acc       ACC LH/DH IMP communications interface
+     ad        Data translation A/D interface
+     css       DEC IMP-11A communications interface
+     crl       VAX 8600, 8650 console RL02 disk
+     ct        C/A/T or APS phototypesetter
+     ddn       ACC ACP625 DDN Standard Mode X.25 IMP interface
+     de        DEC DEUNA 10Mb/s Ethernet controller
+     dh        DH-11 emulators, terminal multiplexor
+     dhu       DHU-11 terminal multiplexor
+     dmc       DEC DMC-11/DMR-11 point-to-point communications device
+     dmf       DEC DMF-32 terminal multiplexor and parallel printer interface
+     dmz       DEC DMZ-32 terminal multiplexor
+     dn        DEC DN-11 autodialer interface
+     dz        DZ-11 terminal multiplexor
+     ec        3Com 10Mb/s Ethernet controller
+     en        Xerox 3Mb/s Ethernet controller (obsolete)
+     ex        Excelan 10Mb/s Ethernet controller
+     fl        VAX-11/780 console floppy interface
+     hdh       ACC IF-11/HDH IMP interface
+     hk        RK6-11/RK06 and RK07 moving head disk
+     hp        MASSBUS disk interface (with RP06, RM03, RM05, etc.)
+     ht        TM03 MASSBUS tape drive interface (with TE-16, TU-45, TU-77)
+     hy        DR-11B or GI-13 interface to an NSC Hyperchannel
+     ik        Ikonas frame buffer graphics device interface
+     il        Interlan 1010, 1010A 10Mb/s Ethernet controller
+     ix        Interlan NP-100 10Mb/s Ethernet controller
+     kg        KL-11/DL-11W line clock
+     lp        LP-11 parallel line printer interface
+     mt        TM78 MASSBUS tape drive interface
+     np        Interlan NP-100 10Mb/s Ethernet controller (intelligent mode)
+     pcl       DEC PCL-11 communications interface
+     ps        Evans and Sutherland Picture System 2 graphics interface
+     qe        DEC DEQNA Q-bus 10 Mb/s Ethernet interface
+     rx        DEC RX02 floppy interface
+     tm        TM-11/TE-10 tape drive interface
+     tmscp     TMSCP-compatible tape controllers (e.g., TU81, TK50)
+     ts        TS-11 tape drive interface
+     tu        VAX-11/730 TU58 console cassette interface
+     uda       DEC UDA-50 disk controller
+     un        DR-11W interface to Ungermann-Bass
+     up        Emulex SC-21V, SC-31 UNIBUS disk controller
+
+
+
+Printed 7/9/88		  June 1, 1986				2
+
+
+
+
+
+
+INTRO(4)	    UNIX Programmer's Manual		 INTRO(4)
+
+
+
+     ut        UNIBUS TU-45 tape drive interface
+     uu        TU58 dual cassette drive interface (DL11)
+     va        Benson-Varian printer/plotter interface
+     vp        Versatec printer/plotter interface
+     vv        Proteon proNET 10Mb/s and 80Mb/s ring network interface
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  June 1, 1986				3
+
+
+

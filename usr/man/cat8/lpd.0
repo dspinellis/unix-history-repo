@@ -1,0 +1,198 @@
+
+
+
+LPD(8)		    UNIX Programmer's Manual		   LPD(8)
+
+
+
+NNAAMMEE
+     lpd - line printer daemon
+
+SSYYNNOOPPSSIISS
+     //uussrr//lliibb//llppdd [ --ll ] [ port # ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _L_p_d is the line printer daemon (spool area handler)  and  is
+     normally invoked at boot time from the _r_c(8) file.  It makes
+     a single pass through the _p_r_i_n_t_c_a_p(5) file to find out about
+     the  existing  printers  and  prints  any files left after a
+     crash. It then uses the system calls _l_i_s_t_e_n(2) and _a_c_c_e_p_t(2)
+     to  receive  requests  to print files in the queue, transfer
+     files to the spooling area, display  the  queue,  or  remove
+     jobs from the queue.  In each case, it forks a child to han-
+     dle the request so the parent can	continue  to  listen  for
+     more  requests.  The Internet port number used to rendezvous
+     with  other  processes  is  normally  obtained   with   _g_e_t_-
+     _s_e_r_v_b_y_n_a_m_e(3)  but  can  be changed with the _p_o_r_t# argument.
+     The --ll flag causes _l_p_d to log valid requests  received  from
+     the network. This can be useful for debugging purposes.
+
+     Access control is provided by two means. First, All requests
+     must  come  from  one  of	the  machines  listed in the file
+     /_e_t_c/_h_o_s_t_s._e_q_u_i_v or /_e_t_c/_h_o_s_t_s._l_p_d.  Second, if  the  ``rs''
+     capability  is  specified	in  the  _p_r_i_n_t_c_a_p  entry  for the
+     printer being accessed, _l_p_r requests will	only  be  honored
+     for  those  users	with  accounts	on  the  machine with the
+     printer.
+
+     The file _m_i_n_f_r_e_e in each spool directory contains the number
+     of  disk blocks to leave free so that the line printer queue
+     won't completely fill the disk.  The  _m_i_n_f_r_e_e  file  can  be
+     edited with your favorite text editor.
+
+     The file _l_o_c_k in each spool directory  is	used  to  prevent
+     multiple daemons from becoming active simultaneously, and to
+     store information	about  the  daemon  process  for  _l_p_r(1),
+     _l_p_q(1),  and _l_p_r_m(1).  After the daemon has successfully set
+     the lock, it scans the directory for  files  beginning  with
+     _c_f.   Lines  in  each _c_f file specify files to be printed or
+     non-printing actions to be performed.  Each such line begins
+     with  a  key  character  to  specify  what  to  do  with the
+     remainder of the line.
+
+     J	  Job Name.  String to be used for the job  name  on  the
+	  burst page.
+
+     C	  Classification.  String to be used for the  classifica-
+	  tion line on the burst page.
+
+     L	  Literal.  The line contains  identification  info  from
+
+
+
+Printed 7/9/88		December 8, 1985			1
+
+
+
+
+
+
+LPD(8)		    UNIX Programmer's Manual		   LPD(8)
+
+
+
+	  the  password  file  and  causes  the banner page to be
+	  printed.
+
+     T	  Title.  String to be used as the title for _p_r(1).
+
+     H	  Host Name.  Name of the machine where _l_p_r was invoked.
+
+     P	  Person.  Login name of  the  person  who  invoked  _l_p_r.
+	  This is used to verify ownership by _l_p_r_m.
+
+     M	  Send mail to the specified user when the current  print
+	  job completes.
+
+     f	  Formatted File.  Name of  a  file  to  print	which  is
+	  already formatted.
+
+     l	  Like ``f'' but passes control characters and	does  not
+	  make page breaks.
+
+     p	  Name of a file to print using _p_r(1) as a filter.
+
+     t	  Troff File.  The file  contains  _t_r_o_f_f(1)  output  (cat
+	  phototypesetter commands).
+
+     n	  Ditroff File.  The  file  contains  device  independent
+	  troff output.
+
+     d	  DVI File.  The file contains _T_e_x(l) output (DVI  format
+	  from Standford).
+
+     g	  Graph  File.	 The  file  contains  data  produced   by
+	  _p_l_o_t(3X).
+
+     c	  Cifplot File. The file contains data produced  by  _c_i_f_-
+	  _p_l_o_t.
+
+     v	  The file contains a raster image.
+
+     r	  The file contains text data with FORTRAN carriage  con-
+	  trol characters.
+
+     1	  Troff Font R. Name of the font file to use  instead  of
+	  the default.
+
+     2	  Troff Font I. Name of the font file to use  instead  of
+	  the default.
+
+     3	  Troff Font B. Name of the font file to use  instead  of
+	  the default.
+
+     4	  Troff Font S. Name of the font file to use  instead  of
+	  the default.
+
+
+
+Printed 7/9/88		December 8, 1985			2
+
+
+
+
+
+
+LPD(8)		    UNIX Programmer's Manual		   LPD(8)
+
+
+
+     W	  Width. Changes the page width (in characters)  used  by
+	  _p_r(1) and the text filters.
+
+     I	  Indent.  The number of characters to indent the  output
+	  by (in ascii).
+
+     U	  Unlink.  Name of file  to  remove  upon  completion  of
+	  printing.
+
+     N	  File name.   The  name  of  the  file  which	is  being
+	  printed, or a blank for the standard input (when _l_p_r is
+	  invoked in a pipeline).
+
+     If a file can not be opened, a message will  be  logged  via
+     _s_y_s_l_o_g(3) using the _L_O_G__L_P_R facility.  _L_p_d will try up to 20
+     times to reopen a file it expects to be there,  after  which
+     it will skip the file to be printed.
+
+     _L_p_d uses _f_l_o_c_k(2) to provide exclusive access  to	the  lock
+     file  and	to  prevent multiple deamons from becoming active
+     simultaneously.  If the daemon should be killed or die unex-
+     pectedly,	the lock file need not be removed.  The lock file
+     is kept in a readable ASCII form  and  contains  two  lines.
+     The  first is the process id of the daemon and the second is
+     the control file name of the current job being printed.  The
+     second  line is updated to reflect the current status of _l_p_d
+     for the programs _l_p_q(1) and _l_p_r_m(1).
+
+FFIILLEESS
+     /etc/printcap	     printer description file
+     /usr/spool/*	     spool directories
+     /usr/spool/*/minfree    minimum free space to leave
+     /dev/lp*		     line printer devices
+     /dev/printer	     socket for local requests
+     /etc/hosts.equiv	     lists machine names allowed printer access
+     /etc/hosts.lpd	     lists machine names allowed printer access,
+			     but not under same administrative control.
+
+SSEEEE AALLSSOO
+     lpc(8),  pac(1),	lpr(1),   lpq(1),   lprm(1),   syslog(3),
+     printcap(5)
+     _4._2_B_S_D _L_i_n_e _P_r_i_n_t_e_r _S_p_o_o_l_e_r _M_a_n_u_a_l
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		December 8, 1985			3
+
+
+

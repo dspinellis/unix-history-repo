@@ -1,0 +1,66 @@
+
+
+
+UUCLEAN(8C)	    UNIX Programmer's Manual	      UUCLEAN(8C)
+
+
+
+NNAAMMEE
+     uuclean - uucp spool directory clean-up
+
+SSYYNNOOPPSSIISS
+     //uussrr//lliibb//uuuuccpp//uuuucclleeaann [ --mm ] [ --nn_t_i_m_e ] [ --pp_p_r_e ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _U_u_c_l_e_a_n will scan the spool directory for files with the
+     specified prefix and delete all those which are older than
+     the specified number of hours.
+
+     The following options are available.
+
+     --pp_p_r_e   Scan for files with _p_r_e as the file prefix.  Up to
+	     10 --pp arguments may be specified.
+
+     --nn_t_i_m_e  Files whose age is more than _t_i_m_e hours will be
+	     deleted if the prefix test is satisfied.  (default
+	     time is 72 hours)
+
+     --mm      Send mail to the owner of the file when it is
+	     deleted.
+
+     --dd_s_u_b_d_i_r_e_c_t_o_r_y
+	     Only the specified subdirectory will be cleaned.
+
+     This program will typically be run daily by _c_r_o_n(8).
+
+FFIILLEESS
+     /usr/spool/uucp	   Spool directory
+
+SSEEEE AALLSSOO
+     uucp(1C), uux(1C), uucico(8C)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 April 24, 1986                         1
+
+
+

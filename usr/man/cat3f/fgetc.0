@@ -1,0 +1,66 @@
+
+
+
+GETC(3F)	    UNIX Programmer's Manual		 GETC(3F)
+
+
+
+NNAAMMEE
+     getc, fgetc - get a character from a logical unit
+
+SSYYNNOOPPSSIISS
+     iinntteeggeerr ffuunnccttiioonn ggeettcc ((cchhaarr))
+     cchhaarraacctteerr cchhaarr
+
+     iinntteeggeerr ffuunnccttiioonn ffggeettcc ((lluunniitt,, cchhaarr))
+     cchhaarraacctteerr cchhaarr
+
+DDEESSCCRRIIPPTTIIOONN
+     These routines return the next character from a file associ-
+     ated with a fortran logical unit, bypassing normal fortran
+     I/O.  _G_e_t_c reads from logical unit 5, normally connected to
+     the control terminal input.
+
+     The value of each function is a system status code. Zero
+     indicates no error occurred on the read; -1 indicates end of
+     file was detected.  A positive value will be either a UNIX
+     system error code or an f77 I/O error code. See perror(3F).
+
+FFIILLEESS
+     /usr/lib/libU77.a
+
+SSEEEE AALLSSOO
+     getc(3S), intro(2), perror(3F)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 27, 1986				1
+
+
+

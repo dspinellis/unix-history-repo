@@ -1,0 +1,66 @@
+
+
+
+COMSAT(8C)	    UNIX Programmer's Manual	       COMSAT(8C)
+
+
+
+NNAAMMEE
+     comsat - biff server
+
+SSYYNNOOPPSSIISS
+     //eettcc//ccoommssaatt
+
+DDEESSCCRRIIPPTTIIOONN
+     _C_o_m_s_a_t is the server process which receives reports of
+     incoming mail and notifies users if they have requested this
+     service.  _C_o_m_s_a_t receives messages on a datagram port asso-
+     ciated with the ``biff'' service specification (see _s_e_r_-
+     _v_i_c_e_s(5) and _i_n_e_t_d(8)).  The one line messages are of the
+     form
+
+	  user@mailbox-offset
+
+     If the _u_s_e_r specified is logged in to the system and the
+     associated terminal has the owner execute bit turned on (by
+     a ``biff y''), the _o_f_f_s_e_t is used as a seek offset into the
+     appropriate mailbox file and the first 7 lines or 560 char-
+     acters of the message are printed on the user's terminal.
+     Lines which appear to be part of the message header other
+     than the ``From'', ``To'', ``Date'', or ``Subject'' lines
+     are not included in the displayed message.
+
+FFIILLEESS
+     /etc/utmp to find out who's logged on and on what terminals
+
+SSEEEE AALLSSOO
+     biff(1), inetd(8)
+
+BBUUGGSS
+     The message header filtering is prone to error.  The density
+     of the information presented is near the theoretical
+     minimum.
+
+     Users should be notified of mail which arrives on other
+     machines than the one to which they are currently logged in.
+
+     The notification should appear in a separate window so it
+     does not mess up the screen.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 20, 1986				1
+
+
+

@@ -1,0 +1,198 @@
+
+
+
+SA(8)		    UNIX Programmer's Manual		    SA(8)
+
+
+
+NNAAMMEE
+     sa, accton - system accounting
+
+SSYYNNOOPPSSIISS
+     //eettcc//ssaa [ --aabbccddDDffiijjkkKKllnnrrssttuuvv ] [ --SS savacctfile ] [ --UU
+     usracctfile ] [ file ]
+
+     //eettcc//aaccccttoonn [ file ]
+
+DDEESSCCRRIIPPTTIIOONN
+     With an argument naming an existing _f_i_l_e, _a_c_c_t_o_n causes sys-
+     tem accounting information for every process executed to be
+     placed at the end of the file.  If no argument is given,
+     accounting is turned off.
+
+     _S_a reports on, cleans up, and generally maintains accounting
+     files.
+
+     _S_a is able to condense the information in /_u_s_r/_a_d_m/_a_c_c_t into
+     a summary file /_u_s_r/_a_d_m/_s_a_v_a_c_c_t which contains a count of
+     the number of times each command was called and the time
+     resources consumed.  This condensation is desirable because
+     on a large system /_u_s_r/_a_d_m/_a_c_c_t can grow by 100 blocks per
+     day.  The summary file is normally read before the account-
+     ing file, so the reports include all available information.
+
+     If a file name is given as the last argument, that file will
+     be treated as the accounting file; /_u_s_r/_a_d_m/_a_c_c_t is the
+     default.
+
+     Output fields are labeled: "cpu" for the sum of user+system
+     time (in minutes), "re" for real time (also in minutes), "k"
+     for cpu-time averaged core usage (in 1k units), "avio" for
+     average number of i/o operations per execution.  With
+     options fields labeled "tio" for total i/o operations,
+     "k*sec" for cpu storage integral (kilo-core seconds), "u"
+     and "s" for user and system cpu time alone (both in minutes)
+     will sometimes appear.
+
+     There are near a googol of options:
+
+     a	  Print all command names, even those containing unprint-
+	  able characters and those used only once.  By default,
+	  those are placed under the name `***other.'
+
+     b	  Sort output by sum of user and system time divided by
+	  number of calls.  Default sort is by sum of user and
+	  system times.
+
+     c	  Besides total user, system, and real time for each com-
+	  mand print percentage of total time over all commands.
+
+
+
+
+Printed 7/9/88		  July 29, 1985                         1
+
+
+
+
+
+
+SA(8)		    UNIX Programmer's Manual		    SA(8)
+
+
+
+     d	  Sort by average number of disk i/o operations.
+
+     D	  Print and sort by total number of disk i/o operations.
+
+     f	  Force no interactive threshold compression with -v
+	  flag.
+
+     i	  Don't read in summary file.
+
+     j	  Instead of total minutes time for each category, give
+	  seconds per call.
+
+     k	  Sort by cpu-time average memory usage.
+
+     K	  Print and sort by cpu-storage integral.
+
+     l	  Separate system and user time; normally they are com-
+	  bined.
+
+     m	  Print number of processes and number of CPU minutes for
+	  each user.
+
+     n	  Sort by number of calls.
+
+     r	  Reverse order of sort.
+
+     s	  Merge accounting file into summary file
+	  /_u_s_r/_a_d_m/_s_a_v_a_c_c_t when done.
+
+     t	  For each command report ratio of real time to the sum
+	  of user and system times.
+
+     u	  Superseding all other flags, print for each command in
+	  the accounting file the user ID and command name.
+
+     v	  Followed by a number _n, types the name of each command
+	  used _n times or fewer.  Await a reply from the termi-
+	  nal; if it begins with `y', add the command to the
+	  category `**junk**.' This is used to strip out garbage.
+
+     S	  The following filename is used as the command summary
+	  file instead of /_u_s_r/_a_d_m/_s_a_v_a_c_c_t.
+
+     U	  The following filename is used instead of
+	  /_u_s_r/_a_d_m/_u_s_r_a_c_c_t to accumulate the per-user statistics
+	  printed by the -m option.
+
+FFIILLEESS
+     /usr/adm/acct	 raw accounting
+     /usr/adm/savacct	 summary
+     /usr/adm/usracct	 per-user summary
+
+
+
+
+Printed 7/9/88		  July 29, 1985                         2
+
+
+
+
+
+
+SA(8)		    UNIX Programmer's Manual		    SA(8)
+
+
+
+SSEEEE AALLSSOO
+     ac(8), acct(2)
+
+BBUUGGSS
+     The number of options to this program is absurd.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  July 29, 1985                         3
+
+
+

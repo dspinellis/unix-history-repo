@@ -1,0 +1,198 @@
+
+
+
+ME(7)		    UNIX Programmer's Manual		    ME(7)
+
+
+
+NNAAMMEE
+     me - macros for formatting papers
+
+SSYYNNOOPPSSIISS
+     nnrrooffff --mmee [ options ] file ...
+     ttrrooffff --mmee [ options ] file ...
+
+DDEESSCCRRIIPPTTIIOONN
+     This package of _n_r_o_f_f and _t_r_o_f_f macro definitions provides a
+     canned formatting facility for technical papers in various
+     formats.  When producing 2-column output on a terminal,
+     filter the output through _c_o_l(1).
+
+     The macro requests are defined below.  Many _n_r_o_f_f and _t_r_o_f_f
+     requests are unsafe in conjunction with this package, how-
+     ever, these requests may be used with impunity after the
+     first .pp:
+
+	  .bp	  begin new page
+	  .br	  break output line here
+	  .sp n   insert n spacing lines
+	  .ls n   (line spacing) n=1 single, n=2 double space
+	  .na	  no alignment of right margin
+	  .ce n   center next n lines
+	  .ul n   underline next n lines
+	  .sz +n  add n to point size
+
+     Output of the _e_q_n, _n_e_q_n, _r_e_f_e_r, and _t_b_l(1) preprocessors for
+     equations and tables is acceptable as input.
+
+FFIILLEESS
+     /usr/lib/tmac/tmac.e
+     /usr/lib/me/*
+
+SSEEEE AALLSSOO
+     eqn(1), troff(1), refer(1), tbl(1)
+     -me Reference Manual, Eric P. Allman
+     Writing Papers with Nroff Using -me
+
+RREEQQUUEESSTTSS
+     In the following list, "initialization" refers to the first
+     .pp, .lp, .ip, .np, .sh, or .uh macro.  This list is incom-
+     plete; see _T_h_e -_m_e _R_e_f_e_r_e_n_c_e _M_a_n_u_a_l for interesting details.
+
+Request      Initial Cause Explanation
+	     Value   Break
+.(c	     -	     yes   Begin centered block
+.(d	     -	     no    Begin delayed text
+.(f	     -	     no    Begin footnote
+.(l	     -	     yes   Begin list
+.(q	     -	     yes   Begin major quote
+.(x _x	     -	     no    Begin indexed item in index _x
+
+
+
+Printed 7/9/88		   May 6, 1986				1
+
+
+
+
+
+
+ME(7)		    UNIX Programmer's Manual		    ME(7)
+
+
+
+.(z	     -	     no    Begin floating keep
+.)c	     -	     yes   End centered block
+.)d	     -	     yes   End delayed text
+.)f	     -	     yes   End footnote
+.)l	     -	     yes   End list
+.)q	     -	     yes   End major quote
+.)x	     -	     yes   End index item
+.)z	     -	     yes   End floating keep
+.++ _m _H      -	     no    Define paper section.  _m defines the
+			   part of the paper, and can be CC
+			   (chapter), AA (appendix), PP (prelim-
+			   inary, e.g., abstract, table of con-
+			   tents, etc.), BB (bibliography), RRCC
+			   (chapters renumbered from page one
+			   each chapter), or RRAA (appendix renum-
+			   bered from page one).
+.+c _T	     -	     yes   Begin chapter (or appendix, etc., as
+			   set by .++).  _T is the chapter title.
+.1c	     1	     yes   One column format on a new page.
+.2c	     1	     yes   Two column format.
+.EN	     -	     yes   Space after equation produced by _e_q_n
+			   or _n_e_q_n.
+.EQ _x _y      -	     yes   Precede equation; break out and add
+			   space.  Equation number is _y.  The
+			   optional argument _x may be _I to indent
+			   equation (default), _L to left-adjust
+			   the equation, or _C to center the equa-
+			   tion.
+.GE	     -	     yes   End _g_r_e_m_l_i_n picture.
+.GS	     -	     yes   Begin _g_r_e_m_l_i_n picture.
+.PE	     -	     yes   End _p_i_c picture.
+.PS	     -	     yes   Begin _p_i_c picture.
+.TE	     -	     yes   End table.
+.TH	     -	     yes   End heading section of table.
+.TS _x	     -	     yes   Begin table; if _x is _H table has
+			   repeated heading.
+.ac _A _N      -	     no    Set up for ACM style output.  _A is the
+			   Author's name(s), _N is the total
+			   number of pages.  Must be given before
+			   the first initialization.
+.b _x	     no      no    Print _x in boldface; if no argument
+			   switch to boldface.
+.ba +_n	     0	     yes   Augments the base indent by _n. This
+			   indent is used to set the indent on
+			   regular text (like paragraphs).
+.bc	     no      yes   Begin new column
+.bi _x	     no      no    Print _x in bold italics (nofill only)
+.bu	     -	     yes   Begin bulleted paragraph
+.bx _x	     no      no    Print _x in a box (nofill only).
+.ef '_x'_y'_z'  ''''    no    Set even footer to x  y  z
+.eh '_x'_y'_z'  ''''    no    Set even header to x  y  z
+.fo '_x'_y'_z'  ''''    no    Set footer to x  y  z
+
+
+
+Printed 7/9/88		   May 6, 1986				2
+
+
+
+
+
+
+ME(7)		    UNIX Programmer's Manual		    ME(7)
+
+
+
+.hx	     -	     no    Suppress headers and footers on next
+			   page.
+.he '_x'_y'_z'  ''''    no    Set header to x  y  z
+.hl	     -	     yes   Draw a horizontal line
+.i _x	     no      no    Italicize _x; if _x missing, italic text
+			   follows.
+.ip _x _y      no      yes   Start indented paragraph, with hanging
+			   tag _x.  Indentation is _y ens (default
+			   5).
+.lp	     yes     yes   Start left-blocked paragraph.
+.lo	     -	     no    Read in a file of local macros of the
+			   form ..**_x.  Must be given before ini-
+			   tialization.
+.np	     1	     yes   Start numbered paragraph.
+.of '_x'_y'_z'  ''''    no    Set odd footer to x	y  z
+.oh '_x'_y'_z'  ''''    no    Set odd header to x	y  z
+.pd	     -	     yes   Print delayed text.
+.pp	     no      yes   Begin paragraph.  First line indented.
+.r	     yes     no    Roman text follows.
+.re	     -	     no    Reset tabs to default values.
+.sc	     no      no    Read in a file of special characters
+			   and diacritical marks.  Must be given
+			   before initialization.
+.sh _n _x      -	     yes   Section head follows, font automati-
+			   cally bold.	_n is level of section, _x
+			   is title of section.
+.sk	     no      no    Leave the next page blank.  Only one
+			   page is remembered ahead.
+.sm _x	     -	     no    Set _x in a smaller pointsize.
+.sz +_n	     10p     no    Augment the point size by _n points.
+.th	     no      no    Produce the paper in thesis format.
+			   Must be given before initialization.
+.tp	     no      yes   Begin title page.
+.u _x	     -	     no    Underline argument (even in _t_r_o_f_f).
+			   (Nofill only).
+.uh	     -	     yes   Like .sh but unnumbered.
+.xp _x	     -	     no    Print index _x.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		   May 6, 1986				3
+
+
+

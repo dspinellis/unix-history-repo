@@ -1,0 +1,264 @@
+
+
+
+A.OUT(5)	    UNIX Programmer's Manual		 A.OUT(5)
+
+
+
+NNAAMMEE
+     a.out - assembler and link editor output
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<aa..oouutt..hh>>
+
+DDEESSCCRRIIPPTTIIOONN
+     _A._o_u_t is the output file of the assembler _a_s(1) and the link
+     editor _l_d(1).  Both programs make _a._o_u_t executable if there
+     were no errors and no unresolved external references.  Lay-
+     out information as given in the include file for the VAX-11
+     is:
+
+     /*
+      * Header prepended to each a.out file.
+      */
+     struct exec {
+	      long	a_magic;   /* magic number */
+	      unsigned	a_text;    /* size of text segment */
+	      unsigned	a_data;    /* size of initialized data */
+	      unsigned	a_bss;	   /* size of uninitialized data */
+	      unsigned	a_syms;    /* size of symbol table */
+	      unsigned	a_entry;   /* entry point */
+	      unsigned	a_trsize;  /* size of text relocation */
+	      unsigned	a_drsize;  /* size of data relocation */
+     };
+
+     #define  OMAGIC	0407	   /* old impure format */
+     #define  NMAGIC	0410	   /* read-only text */
+     #define  ZMAGIC	0413	   /* demand load format */
+
+     /*
+      * Macros which take exec structures as arguments and tell whether
+      * the file has a reasonable magic number or offsets to text|symbols|strings.
+      */
+     #define  N_BADMAG(x) \
+	 (((x).a_magic)!=OMAGIC && ((x).a_magic)!=NMAGIC && ((x).a_magic)!=ZMAGIC)
+
+     #define  N_TXTOFF(x) \
+	      ((x).a_magic==ZMAGIC ? 1024 : sizeof (struct exec))
+     #define N_SYMOFF(x) \
+	      (N_TXTOFF(x) + (x).a_text+(x).a_data + (x).a_trsize+(x).a_drsize)
+     #define  N_STROFF(x) \
+	      (N_SYMOFF(x) + (x).a_syms)
+
+     The file has five sections: a header, the program text and
+     data, relocation information, a symbol table and a string
+     table (in that order).  The last three may be omitted if the
+     program was loaded with the `-s' option of _l_d or if the sym-
+     bols and relocation have been removed by _s_t_r_i_p(1).
+
+
+
+
+
+Printed 7/9/88		  May 19, 1986				1
+
+
+
+
+
+
+A.OUT(5)	    UNIX Programmer's Manual		 A.OUT(5)
+
+
+
+     In the header the sizes of each section are given in bytes.
+     The size of the header is not included in any of the other
+     sizes.
+
+     When an _a._o_u_t file is executed, three logical segments are
+     set up: the text segment, the data segment (with uninitial-
+     ized data, which starts off as all 0, following initial-
+     ized), and a stack.  The text segment begins at 0 in the
+     core image; the header is not loaded.  If the magic number
+     in the header is OMAGIC (0407), it indicates that the text
+     segment is not to be write-protected and shared, so the data
+     segment is immediately contiguous with the text segment.
+     This is the oldest kind of executable program and is rarely
+     used.  If the magic number is NMAGIC (0410) or ZMAGIC
+     (0413), the data segment begins at the first 0 mod 1024 byte
+     boundary following the text segment, and the text segment is
+     not writable by the program; if other processes are execut-
+     ing the same file, they will share the text segment.  For
+     ZMAGIC format, the text segment begins at a 0 mod 1024 byte
+     boundary in the _a._o_u_t file, the remaining bytes after the
+     header in the first block are reserved and should be zero.
+     In this case the text and data sizes must both be multiples
+     of 1024 bytes, and the pages of the file will be brought
+     into the running image as needed, and not pre-loaded as with
+     the other formats.  This is especially suitable for very
+     large programs and is the default format produced by _l_d(1).
+
+     The stack will occupy the highest possible locations in the
+     core image, growing downwards from USRSTACK (from
+     <_m_a_c_h_i_n_e/_v_m_p_a_r_a_m._h>).  The stack is automatically extended
+     as required.  The data segment is only extended as requested
+     by _b_r_k(2).
+
+     After the header in the file follow the text, data, text
+     relocation data relocation, symbol table and string table in
+     that order.  The text begins at the byte 1024 in the file
+     for ZMAGIC format or just after the header for the other
+     formats.  The N_TXTOFF macro returns this absolute file
+     position when given the name of an exec structure as argu-
+     ment.  The data segment is contiguous with the text and
+     immediately followed by the text relocation and then the
+     data relocation information.  The symbol table follows all
+     this; its position is computed by the N_SYMOFF macro.
+     Finally, the string table immediately follows the symbol
+     table at a position which can be gotten easily using
+     N_STROFF.	The first 4 bytes of the string table are not
+     used for string storage, but rather contain the size of the
+     string table; this size INCLUDES the 4 bytes, the minimum
+     string table size is thus 4.
+
+     The layout of a symbol table entry and the principal flag
+     values that distinguish symbol types are given in the
+
+
+
+Printed 7/9/88		  May 19, 1986				2
+
+
+
+
+
+
+A.OUT(5)	    UNIX Programmer's Manual		 A.OUT(5)
+
+
+
+     include file as follows:
+
+     /*
+      * Format of a symbol table entry.
+      */
+     struct nlist {
+	      union {
+		  char	    *n_name; /* for use when in-core */
+		  long	    n_strx;  /* index into file string table */
+	      } n_un;
+	      unsigned char n_type;  /* type flag, i.e. N_TEXT etc; see below */
+	      char	    n_other;
+	      short	    n_desc;  /* see <stab.h> */
+	      unsigned	    n_value; /* value of this symbol (or offset) */
+     };
+     #define  n_hash	    n_desc   /* used internally by ld */
+
+     /*
+      * Simple values for n_type.
+      */
+     #define  N_UNDF	    0x0      /* undefined */
+     #define  N_ABS	    0x2      /* absolute */
+     #define  N_TEXT	    0x4      /* text */
+     #define  N_DATA	    0x6      /* data */
+     #define  N_BSS	    0x8      /* bss */
+     #define  N_COMM	    0x12     /* common (internal to ld) */
+     #define  N_FN	    0x1f     /* file name symbol */
+
+     #define  N_EXT	    01	     /* external bit, or'ed in */
+     #define  N_TYPE	    0x1e     /* mask for all the type bits */
+
+     /*
+      * Other permanent symbol table entries have some of the N_STAB bits set.
+      * These are given in <stab.h>
+      */
+     #define  N_STAB	    0xe0     /* if any of these bits set, don't discard */
+
+     /*
+      * Format for namelist values.
+      */
+     #define  N_FORMAT	    "%08x"
+
+     In the _a._o_u_t file a symbol's n_un.n_strx field gives an
+     index into the string table.  A n_strx value of 0 indicates
+     that no name is associated with a particular symbol table
+     entry.  The field n_un.n_name can be used to refer to the
+     symbol name only if the program sets this up using n_strx
+     and appropriate data from the string table.
+
+     If a symbol's type is undefined external, and the value
+     field is non-zero, the symbol is interpreted by the loader
+     _l_d as the name of a common region whose size is indicated by
+
+
+
+Printed 7/9/88		  May 19, 1986				3
+
+
+
+
+
+
+A.OUT(5)	    UNIX Programmer's Manual		 A.OUT(5)
+
+
+
+     the value of the symbol.
+
+     The value of a byte in the text or data which is not a por-
+     tion of a reference to an undefined external symbol is
+     exactly that value which will appear in memory when the file
+     is executed.  If a byte in the text or data involves a
+     reference to an undefined external symbol, as indicated by
+     the relocation information, then the value stored in the
+     file is an offset from the associated external symbol.  When
+     the file is processed by the link editor and the external
+     symbol becomes defined, the value of the symbol will be
+     added to the bytes in the file.
+
+     If relocation information is present, it amounts to eight
+     bytes per relocatable datum as in the following structure:
+
+     /*
+      * Format of a relocation datum.
+      */
+     struct relocation_info {
+	      int	r_address;	 /* address which is relocated */
+	      unsigned	r_symbolnum:24,  /* local symbol ordinal */
+			r_pcrel:1,	 /* was relocated pc relative already */
+			r_length:2,	 /* 0=byte, 1=word, 2=long */
+			r_extern:1,	 /* does not include value of sym referenced */
+			:4;		 /* nothing, yet */
+     };
+
+     There is no relocation information if a_trsize+a_drsize==0.
+     If r_extern is 0, then r_symbolnum is actually a n_type for
+     the relocation (i.e. N_TEXT meaning relative to segment text
+     origin.)
+
+SSEEEE AALLSSOO
+     adb(1), as(1), ld(1), nm(1), dbx(1), stab(5), strip(1)
+
+BBUUGGSS
+     Not having the size of the string table in the header is a
+     loss, but expanding the header size would have meant
+     stripped executable file incompatibility, and we couldn't
+     hack this just now.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 19, 1986				4
+
+
+

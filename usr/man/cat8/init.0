@@ -1,0 +1,132 @@
+
+
+
+INIT(8)             UNIX Programmer's Manual		  INIT(8)
+
+
+
+NNAAMMEE
+     init - process control initialization
+
+SSYYNNOOPPSSIISS
+     //eettcc//iinniitt
+
+DDEESSCCRRIIPPTTIIOONN
+     _I_n_i_t is invoked inside UNIX as the last step in the boot
+     procedure.  It normally then runs the automatic reboot
+     sequence as described in _r_e_b_o_o_t(8), and if this succeeds,
+     begins multi-user operation.  If the reboot fails, it com-
+     mences single user operation by giving the super-user a
+     shell on the console.  It is possible to pass parameters
+     from the boot program to _i_n_i_t so that single user operation
+     is commenced immediately.	When such single user operation
+     is terminated by killing the single-user shell (i.e. by hit-
+     ting ^D), _i_n_i_t runs /_e_t_c/_r_c without the reboot parameter.
+     This command file performs housekeeping operations such as
+     removing temporary files, mounting file systems, and start-
+     ing daemons.
+
+     In multi-user operation, _i_n_i_t'_s role is to create a process
+     for each terminal port on which a user may log in.  To begin
+     such operations, it reads the file /_e_t_c/_t_t_y_s and executes a
+     command for each terminal specified in the file.  This com-
+     mand will usually be /_e_t_c/_g_e_t_t_y.  _G_e_t_t_y opens and initial-
+     izes the terminal line, reads the user's name and invokes
+     _l_o_g_i_n to log in the user and execute the Shell.
+
+     Ultimately the Shell will terminate because of an end-of-
+     file either typed explicitly or generated as a result of
+     hanging up.  The main path of _i_n_i_t, which has been waiting
+     for such an event, wakes up and removes the appropriate
+     entry from the file _u_t_m_p, which records current users, and
+     makes an entry in /_u_s_r/_a_d_m/_w_t_m_p, which maintains a history
+     of logins and logouts.  The _w_t_m_p entry is made only if a
+     user logged in successfully on the line.  Then the appropri-
+     ate terminal is reopened and _g_e_t_t_y is reinvoked.
+
+     _I_n_i_t catches the _h_a_n_g_u_p signal (signal SIGHUP) and inter-
+     prets it to mean that the file /_e_t_c/_t_t_y_s should be read
+     again.  The Shell process on each line which used to be
+     active in _t_t_y_s but is no longer there is terminated; a new
+     process is created for each added line; lines unchanged in
+     the file are undisturbed.	Thus it is possible to drop or
+     add terminal lines without rebooting the system by changing
+     the _t_t_y_s file and sending a _h_a_n_g_u_p signal to the _i_n_i_t pro-
+     cess: use `kill -HUP 1.'
+
+     _I_n_i_t will terminate multi-user operations and resume
+     single-user mode if sent a terminate (TERM) signal, i.e.
+     ``kill -TERM 1''.	If there are processes outstanding which
+
+
+
+Printed 7/9/88		  May 22, 1986				1
+
+
+
+
+
+
+INIT(8)             UNIX Programmer's Manual		  INIT(8)
+
+
+
+     are deadlocked (due to hardware or software failure), _i_n_i_t
+     will not wait for them all to die (which might take for-
+     ever), but will time out after 30 seconds and print a warn-
+     ing message.
+
+     _I_n_i_t will cease creating new _g_e_t_t_y's and allow the system to
+     slowly die away, if it is sent a terminal stop (TSTP) sig-
+     nal, i.e. ``kill -TSTP 1''.  A later hangup will resume full
+     multi-user operations, or a terminate will initiate a single
+     user shell.  This hook is used by _r_e_b_o_o_t(8) and _h_a_l_t(8).
+
+     _I_n_i_t'_s role is so critical that if it dies, the system will
+     reboot itself automatically.  If, at bootstrap time, the
+     _i_n_i_t process cannot be located, the system will loop in user
+     mode at location 0x13.
+
+DDIIAAGGNNOOSSTTIICCSS
+     //eettcc//ggeettttyy _g_e_t_t_y_a_r_g_s ffaaiilliinngg,, sslleeeeppiinngg.  A process being
+     started to service a line is exiting quickly each time it is
+     started.  This is often caused by a ringing or noisy termi-
+     nal line.	_I_n_i_t _w_i_l_l _s_l_e_e_p _f_o_r _3_0 _s_e_c_o_n_d_s,
+
+     WWAARRNNIINNGG:: SSoommeetthhiinngg iiss hhuunngg ((wwoonntt ddiiee));; ppss aaxxll aaddvviisseedd.  A
+     process is hung and could not be killed when the system was
+     shutting down.  This is usually caused by a process which is
+     stuck in a device driver due to a persistent device error
+     condition.
+
+FFIILLEESS
+     /dev/console, /dev/tty*, /etc/utmp, /usr/adm/wtmp,
+     /etc/ttys, /etc/rc
+
+SSEEEE AALLSSOO
+     login(1), kill(1), sh(1), ttys(5), crash(8V), getty(8),
+     rc(8), reboot(8), halt(8), shutdown(8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 22, 1986				2
+
+
+

@@ -1,0 +1,264 @@
+
+
+
+CRASH(8V)	    UNIX Programmer's Manual		CRASH(8V)
+
+
+
+NNAAMMEE
+     crash - what happens when the system crashes
+
+DDEESSCCRRIIPPTTIIOONN
+     This section explains what happens when the system crashes
+     and (very briefly) how to analyze crash dumps.
+
+     When the system crashes voluntarily it prints a message of
+     the form
+
+	  panic: why i gave up the ghost
+
+     on the console, takes a dump on a mass storage peripheral,
+     and then invokes an automatic reboot procedure as described
+     in _r_e_b_o_o_t(8).  (If auto-reboot is disabled on the front
+     panel of the machine the system will simply halt at this
+     point.) Unless some unexpected inconsistency is encountered
+     in the state of the file systems due to hardware or software
+     failure, the system will then resume multi-user operations.
+
+     The system has a large number of internal consistency
+     checks; if one of these fails, then it will panic with a
+     very short message indicating which one failed.  In many
+     instances, this will be the name of the routine which
+     detected the error, or a two-word description of the incon-
+     sistency.	A full understanding of most panic messages
+     requires perusal of the source code for the system.
+
+     The most common cause of system failures is hardware
+     failure, which can reflect itself in different ways.  Here
+     are the messages which are most likely, with some hints as
+     to causes.  Left unstated in all cases is the possibility
+     that hardware or software error produced the message in some
+     unexpected way.
+
+     iiiinniitt
+	  This cryptic panic message results from a failure to
+	  mount the root filesystem during the bootstrap process.
+	  Either the root filesystem has been corrupted, or the
+	  system is attempting to use the wrong device as root
+	  filesystem.  Usually, an alternate copy of the system
+	  binary or an alternate root filesystem can be used to
+	  bring up the system to investigate.
+
+     CCaann''tt eexxeecc //eettcc//iinniitt
+	  This is not a panic message, as reboots are likely to
+	  be futile.  Late in the bootstrap procedure, the system
+	  was unable to locate and execute the initialization
+	  process, _i_n_i_t(8).  The root filesystem is incorrect or
+	  has been corrupted, or the mode or type of /etc/init
+	  forbids execution.
+
+
+
+
+Printed 7/9/88		  May 20, 1986				1
+
+
+
+
+
+
+CRASH(8V)	    UNIX Programmer's Manual		CRASH(8V)
+
+
+
+     IIOO eerrrr iinn ppuusshh
+     hhaarrdd IIOO eerrrr iinn sswwaapp
+	  The system encountered an error trying to write to the
+	  paging device or an error in reading critical informa-
+	  tion from a disk drive.  The offending disk should be
+	  fixed if it is broken or unreliable.
+
+     rreeaallllooccccgg:: bbaadd ooppttiimm
+     iiaalllloocc:: dduupp aalllloocc
+     aallllooccccggbbllkk:: ccyyll ggrroouuppss ccoorrrruupptteedd
+     iiaallllooccccgg:: mmaapp ccoorrrruupptteedd
+     ffrreeee:: ffrreeeeiinngg ffrreeee bblloocckk
+     ffrreeee:: ffrreeeeiinngg ffrreeee ffrraagg
+     iiffrreeee:: ffrreeeeiinngg ffrreeee iinnooddee
+     aallllooccccgg:: mmaapp ccoorrrruupptteedd
+	  These panic messages are among those that may be pro-
+	  duced when filesystem inconsistencies are detected.
+	  The problem generally results from a failure to repair
+	  damaged filesystems after a crash, hardware failures,
+	  or other condition that should not normally occur.  A
+	  filesystem check will normally correct the problem.
+
+     ttiimmeeoouutt ttaabbllee oovveerrffllooww
+	  This really shouldn't be a panic, but until the data
+	  structure involved is made to be extensible, running
+	  out of entries causes a crash.  If this happens, make
+	  the timeout table bigger.
+
+     KKSSPP nnoott vvaalliidd
+     SSBBII ffaauulltt
+     CCHHMM?? iinn kkeerrnneell
+	  These indicate either a serious bug in the system or,
+	  more often, a glitch or failing hardware.  If SBI
+	  faults recur, check out the hardware or call field ser-
+	  vice.  If the other faults recur, there is likely a bug
+	  somewhere in the system, although these can be caused
+	  by a flakey processor.  Run processor microdiagnostics.
+
+     mmaacchhiinnee cchheecckk %%xx::
+	  _d_e_s_c_r_i_p_t_i_o_n
+
+	_m_a_c_h_i_n_e _d_e_p_e_n_d_e_n_t _m_a_c_h_i_n_e-_c_h_e_c_k _i_n_f_o_r_m_a_t_i_o_n
+	  Machine checks are different on each type of CPU.  Most
+	  of the internal processor registers are saved at the
+	  time of the fault and are printed on the console.  For
+	  most processors, there is one line that summarizes the
+	  type of machine check.  Often, the nature of the prob-
+	  lem is apparent from this messaage and/or the contents
+	  of key registers.  The VAX Hardware Handbook should be
+	  consulted, and, if necessary, your friendly field ser-
+	  vice people should be informed of the problem.
+
+
+
+
+Printed 7/9/88		  May 20, 1986				2
+
+
+
+
+
+
+CRASH(8V)	    UNIX Programmer's Manual		CRASH(8V)
+
+
+
+     ttrraapp ttyyppee %%dd,, ccooddee==%%xx,, ppcc==%%xx
+	  A unexpected trap has occurred within the system; the
+	  trap types are:
+
+	  0    reserved addressing fault
+	  1    privileged instruction fault
+	  2    reserved operand fault
+	  3    bpt instruction fault
+	  4    xfc instruction fault
+	  5    system call trap
+	  6    arithmetic trap
+	  7    ast delivery trap
+	  8    segmentation fault
+	  9    protection fault
+	  10   trace trap
+	  11   compatibility mode fault
+	  12   page fault
+	  13   page table fault
+
+	  The favorite trap types in system crashes are trap
+	  types 8 and 9, indicating a wild reference.  The code
+	  is the referenced address, and the pc at the time of
+	  the fault is printed.  These problems tend to be easy
+	  to track down if they are kernel bugs since the proces-
+	  sor stops cold, but random flakiness seems to cause
+	  this sometimes.  The debugger can be used to locate the
+	  instruction and subroutine corresponding to the PC
+	  value.  If that is insufficient to suggest the nature
+	  of the problem, more detailed examination of the system
+	  status at the time of the trap usually can produce an
+	  explanation.
+
+     iinniitt ddiieedd
+	  The system initialization process has exited.  This is
+	  bad news, as no new users will then be able to log in.
+	  Rebooting is the only fix, so the system just does it
+	  right away.
+
+     oouutt ooff mmbbuuffss:: mmaapp ffuullll
+	  The network has exhausted its private page map for net-
+	  work buffers.  This usually indicates that buffers are
+	  being lost, and rather than allow the system to slowly
+	  degrade, it reboots immediately.  The map may be made
+	  larger if necessary.
+
+     That completes the list of panic types you are likely to
+     see.
+
+     When the system crashes it writes (or at least attempts to
+     write) an image of memory into the back end of the dump dev-
+     ice, usually the same as the primary swap area.  After the
+     system is rebooted, the program _s_a_v_e_c_o_r_e(8) runs and
+
+
+
+Printed 7/9/88		  May 20, 1986				3
+
+
+
+
+
+
+CRASH(8V)	    UNIX Programmer's Manual		CRASH(8V)
+
+
+
+     preserves a copy of this core image and the current system
+     in a specified directory for later perusal.  See _s_a_v_e_c_o_r_e(8)
+     for details.
+
+     To analyze a dump you should begin by running _a_d_b(1) with
+     the --kk flag on the system load image and core dump.  If the
+     core image is the result of a panic, the panic message is
+     printed.  Normally the command ``$c'' will provide a stack
+     trace from the point of the crash and this will provide a
+     clue as to what went wrong.  A more complete discussion of
+     system debugging is impossible here.  See, however, ``Using
+     ADB to Debug the UNIX Kernel''.
+
+SSEEEE AALLSSOO
+     adb(1), reboot(8)
+     _V_A_X _1_1/_7_8_0 _S_y_s_t_e_m _M_a_i_n_t_e_n_a_n_c_e _G_u_i_d_e and _V_A_X _H_a_r_d_w_a_r_e _H_a_n_d_-
+     _b_o_o_k for more information about machine checks.
+     _U_s_i_n_g _A_D_B _t_o _D_e_b_u_g _t_h_e _U_N_I_X _K_e_r_n_e_l
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 20, 1986				4
+
+
+

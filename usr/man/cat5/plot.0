@@ -1,0 +1,132 @@
+
+
+
+PLOT(5)             UNIX Programmer's Manual		  PLOT(5)
+
+
+
+NNAAMMEE
+     plot - graphics interface
+
+DDEESSCCRRIIPPTTIIOONN
+     Files of this format are produced by routines described in
+     _p_l_o_t(3X) and _p_l_o_t(3F), and are interpreted for various dev-
+     ices by commands described in _p_l_o_t(1G).  A graphics file is
+     a stream of plotting instructions.  Each instruction con-
+     sists of an ASCII letter usually followed by bytes of binary
+     information.  The instructions are executed in order.  A
+     point is designated by four bytes representing the x and y
+     values; each value is a signed integer.  The last designated
+     point in an ll,, mm,, nn,, aa,, or pp instruction becomes the
+     `current point' for the next instruction.	The aa and cc
+     instructions change the current point in a manner dependent
+     upon the specific device.
+
+     Each of the following descriptions begins with the name of
+     the corresponding routine in _p_l_o_t(3X).
+
+     mm	move: The next four bytes give a new current point.
+
+     nn	cont: Draw a line from the current point to the point
+	given by the next four bytes.
+
+     pp	point: Plot the point given by the next four bytes.
+
+     ll	line: Draw a line from the point given by the next four
+	bytes to the point given by the following four bytes.
+
+     tt	label: Place the following ASCII string so that its first
+	character falls on the current point.  The string is ter-
+	minated by a newline.
+
+     aa	arc: The first four bytes give the center, the next four
+	give the starting point, and the last four give the end
+	point of a circular arc.  The least significant coordi-
+	nate of the end point is used only to determine the qua-
+	drant.	The arc is drawn counter-clockwise.
+
+     cc	circle: The first four bytes give the center of the cir-
+	cle, the next two the radius.
+
+     ee	erase: Start another frame of output.
+
+     ff	linemod: Take the following string, up to a newline, as
+	the style for drawing further lines.  The styles are
+	`dotted,' `solid,' `longdashed,' `shortdashed,' and `dot-
+	dashed.' Effective only in _p_l_o_t _4_0_1_4 and _p_l_o_t _v_e_r.
+
+     ss	space: The next four bytes give the lower left corner of
+	the plotting area; the following four give the upper
+
+
+
+Printed 7/9/88		 April 25, 1987                         1
+
+
+
+
+
+
+PLOT(5)             UNIX Programmer's Manual		  PLOT(5)
+
+
+
+	right corner.  The plot will be magnified or reduced to
+	fit the device as closely as possible.
+
+	Space settings that exactly fill the plotting area with
+	unity scaling appear below for devices supported by the
+	filters of _p_l_o_t(1G).  The upper limit is just outside the
+	plotting area.	In every case the plotting area is taken
+	to be square; points outside may be displayable on dev-
+	ices whose face isn't square.
+
+	4013	  space(0, 0, 780, 780);
+	4014	  space(0, 0, 3120, 3120);
+	ver	  space(0, 0, 2048, 2048);
+	300, 300s space(0, 0, 4096, 4096);
+	450	  space(0, 0, 4096, 4096);
+
+SSEEEE AALLSSOO
+     plot(1G), plot(3X), plot(3F), graph(1G)
+
+BBUUGGSS
+     A _l_a_b_e_l instruction immediately followed by a _c_o_n_t instruc-
+     tion does the wrong thing on a 4014.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 April 25, 1987                         2
+
+
+

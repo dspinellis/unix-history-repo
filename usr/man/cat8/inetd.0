@@ -1,0 +1,132 @@
+
+
+
+INETD(8)	    UNIX Programmer's Manual		 INETD(8)
+
+
+
+NNAAMMEE
+     inetd - internet ``super-server''
+
+SSYYNNOOPPSSIISS
+     //eettcc//iinneettdd [ --dd ] [ configuration file ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _I_n_e_t_d should be run at boot time by /_e_t_c/_r_c._l_o_c_a_l.  It then
+     listens for connections on certain internet sockets.  When a
+     connection is found on one of its sockets, it decides what
+     service the socket corresponds to, and invokes a program to
+     service the request.  After the program is finished, it con-
+     tinues to listen on the socket (except in some cases which
+     will be described below).	Essentially, _i_n_e_t_d allows running
+     one daemon to invoke several others, reducing load on the
+     system.
+
+     Upon execution, _i_n_e_t_d reads its configuration information
+     from a configuration file which, by default, is
+     /_e_t_c/_i_n_e_t_d._c_o_n_f.  There must be an entry for each field of
+     the configuration file, with entries for each field
+     separated by a tab or a space.  Comments are denoted by a
+     ``#'' at the beginning of a line.	There must be an entry
+     for each field.  The fields of the configuration file are as
+     follows:
+	  service name
+	  socket type
+	  protocol
+	  wait/nowait
+	  user
+	  server program
+	  server program arguments
+
+     The _s_e_r_v_i_c_e _n_a_m_e entry is the name of a valid service in the
+     file /_e_t_c/_s_e_r_v_i_c_e_s/.  For ``internal'' services (discussed
+     below), the service name _m_u_s_t be the official name of the
+     service (that is, the first entry in /_e_t_c/_s_e_r_v_i_c_e_s).
+
+     The _s_o_c_k_e_t _t_y_p_e should be one of ``stream'', ``dgram'',
+     ``raw'', ``rdm'', or ``seqpacket'', depending on whether the
+     socket is a stream, datagram, raw, reliably delivered mes-
+     sage, or sequenced packet socket.
+
+     The _p_r_o_t_o_c_o_l must be a valid protocol as given in
+     /_e_t_c/_p_r_o_t_o_c_o_l_s.  Examples might be ``tcp'' or ``udp''.
+
+     The _w_a_i_t/_n_o_w_a_i_t entry is applicable to datagram sockets only
+     (other sockets should have a ``nowait'' entry in this
+     space).  If a datagram server connects to its peer, freeing
+     the socket so _i_n_e_t_d can received further messages on the
+     socket, it is said to be a ``multi-threaded'' server, and
+     should use the ``nowait'' entry.  For datagram servers which
+
+
+
+Printed 7/9/88		  May 26, 1986				1
+
+
+
+
+
+
+INETD(8)	    UNIX Programmer's Manual		 INETD(8)
+
+
+
+     process all incoming datagrams on a socket and eventually
+     time out, the server is said to be ``single-threaded'' and
+     should use a ``wait'' entry.  ``Comsat'' (``biff'') and
+     ``talk'' are both examples of the latter type of datagram
+     server.  _T_f_t_p_d is an exception; it is a datagram server that
+     establishes pseudo-connections.  It must be listed as
+     ``wait'' in order to avoid a race; the server reads the
+     first packet, creates a new socket, and then forks and exits
+     to allow _i_n_e_t_d to check for new service requests to spawn
+     new servers.
+
+     The _u_s_e_r entry should contain the user name of the user as
+     whom the server should run.  This allows for servers to be
+     given less permission than root.  The _s_e_r_v_e_r _p_r_o_g_r_a_m entry
+     should contain the pathname of the program which is to be
+     executed by _i_n_e_t_d when a request is found on its socket.  If
+     _i_n_e_t_d provides this service internally, this entry should be
+     ``internal''.
+
+     The arguments to the server program should be just as they
+     normally are, starting with argv[0], which is the name of
+     the program.  If the service is provided internally, the
+     word ``internal'' should take the place of this entry.
+
+     _I_n_e_t_d provides several ``trivial'' services internally by
+     use of routines within itself.  These services are ``echo'',
+     ``discard'', ``chargen'' (character generator), ``daytime''
+     (human readable time), and ``time'' (machine readable time,
+     in the form of the number of seconds since midnight, January
+     1, 1900).	All of these services are tcp based.  For details
+     of these services, consult the appropriate RFC from the Net-
+     work Information Center.
+
+     _I_n_e_t_d rereads its configuration file when it receives a
+     hangup signal, SIGHUP.  Services may be added, deleted or
+     modified when the configuration file is reread.
+
+SSEEEE AALLSSOO
+     comsat(8C), ftpd(8C), rexecd(8C), rlogind(8C), rshd(8C),
+     telnetd(8C), tftpd(8C)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 26, 1986				2
+
+
+

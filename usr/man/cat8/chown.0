@@ -1,0 +1,66 @@
+
+
+
+CHOWN(8)	    UNIX Programmer's Manual		 CHOWN(8)
+
+
+
+NNAAMMEE
+     chown - change owner
+
+SSYYNNOOPPSSIISS
+     cchhoowwnn [ --RRff ] owner[.group] file ...
+
+DDEESSCCRRIIPPTTIIOONN
+     _C_h_o_w_n changes the owner of the _f_i_l_e_s to _o_w_n_e_r.  The owner
+     may be either a decimal UID or a login name found in the
+     password file.  An optional group may also be specified.
+     The group may be either a decimal GID or a group name found
+     in the group-ID file.
+
+     Only the super-user can change owner, in order to simplify
+     accounting procedures.  No errors, except for usage errors,
+     are reported when the --ff (force) option is given.
+
+     When the --RR option is given, _c_h_o_w_n recursively descends its
+     directory arguments setting the specified owner.  When sym-
+     bolic links are encountered, their ownership is changed, but
+     they are not traversed.
+
+SSEEEE AALLSSOO
+     chgrp(1), chown(2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 April 21, 1988                         1
+
+
+

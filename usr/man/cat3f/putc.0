@@ -1,0 +1,66 @@
+
+
+
+PUTC(3F)	    UNIX Programmer's Manual		 PUTC(3F)
+
+
+
+NNAAMMEE
+     putc, fputc - write a character to a fortran logical unit
+
+SSYYNNOOPPSSIISS
+     iinntteeggeerr ffuunnccttiioonn ppuuttcc ((cchhaarr))
+     cchhaarraacctteerr cchhaarr
+
+     iinntteeggeerr ffuunnccttiioonn ffppuuttcc ((lluunniitt,, cchhaarr))
+     cchhaarraacctteerr cchhaarr
+
+DDEESSCCRRIIPPTTIIOONN
+     These funtions write a character to the file associated with
+     a fortran logical unit bypassing normal fortran I/O.  _P_u_t_c
+     writes to logical unit 6, normally connected to the control
+     terminal output.
+
+     The value of each function will be zero unless some error
+     occurred; a system error code otherwise. See perror(3F).
+
+FFIILLEESS
+     /usr/lib/libU77.a
+
+SSEEEE AALLSSOO
+     putc(3S), intro(2), perror(3F)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 15, 1985				1
+
+
+

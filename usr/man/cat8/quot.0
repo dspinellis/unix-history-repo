@@ -1,0 +1,66 @@
+
+
+
+QUOT(8)             UNIX Programmer's Manual		  QUOT(8)
+
+
+
+NNAAMMEE
+     quot - summarize file system ownership
+
+SSYYNNOOPPSSIISS
+     //eettcc//qquuoott [ -ncf ] [ filesystem ... ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _Q_u_o_t prints the number of blocks in the named _f_i_l_e_s_y_s_t_e_m
+     currently owned by each user.  If no _f_i_l_e_s_y_s_t_e_m is named,
+     the file systems listed in /_e_t_c/_f_s_t_a_b are used.  The follow-
+     ing options are available:
+
+     --nn   Cause the pipeline nncchheecckk ffiilleessyysstteemm || ssoorrtt ++00nn || qquuoott
+	  --nn ffiilleessyysstteemm to produce a list of all files and their
+	  owners.
+
+     --cc   Print three columns giving file size in blocks, number
+	  of files of that size, and cumulative total of blocks
+	  in that size or smaller file.
+
+     --ff   Print count of number of files as well as space owned
+	  by each user.
+
+SSEEEE AALLSSOO
+     ls(1), du(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 April 18, 1988                         1
+
+
+

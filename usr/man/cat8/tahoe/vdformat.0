@@ -1,0 +1,660 @@
+
+
+
+VDFORMAT(8)	    UNIX Programmer's Manual	      VDFORMAT(8)
+
+
+
+NNAAMMEE
+     _V_d_f_o_r_m_a_t - Format disk media and / or relocate bad sectors
+     on drives attached to VDDC disk controllers.
+
+DDEESSCCRRIIPPTTIIOONN
+     VVDDFFOORRMMAATT can be used to format disk drives, relocate known
+     flawed sectors, verify disk surfaces, print seek profile
+     graphs for disk drives, exercise disk drives, and perform
+     general disk drive maintenance procedures.
+
+     VDFORMAT keeps track of all known flaws by placing their
+     addresses in a bbaadd sseeccttoorr mmaapp on the last cylinder of each
+     disk drive.  This information is used during subsequent for-
+     matter operations to keep all known bad sectors correctly
+     relocated.
+
+     Flaw addresses are loaded into the bad sector map in four
+     ways.  The first is by reading the manufacturer's flaw map
+     directly from the disk surface.  The second is by automati-
+     cally adding any new flaws found during verify operations.
+     The third is by direct operator entry.  The fourth is by
+     reading the entire disk surface once and taking note of any
+     errors or relocations found during the reads.
+
+CCoommmmaanndd oovveerrvviieeww
+     The following basic commands are _a_l_w_a_y_s available, even when
+     long formatting operations are underway:
+
+	_C_o_m_m_a_n_d   _A_c_t_i_o_n
+
+	HHeellpp	  Prints a list of available options.
+	SSttaattuuss	  Display current state of formatter.
+	KKiillll	  Aborts all operations.
+
+     There are two abbreviations available for the above com-
+     mands.  These abbreviations are strictly for operator con-
+     venience.	They are:
+
+	_A_b_b_r_e_v_i_a_t_i_o_n   _C_o_m_m_a_n_d
+	??	       Help
+	!!	       Status
+
+     In addition, the following commands are available from the
+     _O_p_e_r_a_t_i_o_n prompt level:
+
+	_C_o_m_m_a_n_d    _A_c_t_i_o_n
+
+	LLiisstt	   List all operations specified so far.
+	DDeelleettee	   Delete specific operations.
+	RReesseett	   Reinitialize VVDDFFOORRMMAATT, and start all over again.
+	SSttaarrtt	   Start operations.
+	IInnffoo	   Tell everything that is known about a disk.
+
+
+
+Printed 7/9/88		 March 27, 1988                         1
+
+
+
+
+
+
+VDFORMAT(8)	    UNIX Programmer's Manual	      VDFORMAT(8)
+
+
+
+	FFoorrmmaatt	   Format and verify disk surface.
+	VVeerriiffyy	   Non-destructively verify disk surface.
+	RReellooccaattee   Add known flaws to bad sector map.
+	CCoorrrreecctt    Correct erroneous relocations or drive identification.
+	PPrrooffiillee    Print a graph of seek time vs seek length.
+	EExxeerrcciissee   Perform read / write / seek exercises on disk.
+
+     The starting banner prints the program name, version number,
+     and enough information for the operator to get started
+     without reading this manual page.
+
+     _E_x_a_m_p_l_e
+
+	VVDDFFOORRMMAATT	   Version 3.0
+
+	Type "Help" for help, "Start" to start specified operations.
+
+	Operation?
+
+HHeellpp
+     The operator has a help command available for use at _a_n_y
+     time.  The HHeellpp command displays available options according
+     to the current context.
+
+     In addition to the examples below there are further examples
+     of help messages throughout the operation examples.
+
+     _E_x_a_m_p_l_e
+
+	Operation? HHeellpp
+		The following operations are available:
+			Reset	 - Reinitialize VVDDFFOORRMMAATT and start over.
+			List	 - List all operations specified so far.
+			Delete	 - Delete specific operations.
+			Format	 - Format and verify disk surface.
+			Verify	 - Non-destructively verify disk surface.
+			Relocate - Add known flaws to bad sector map.
+			Correct  - Correct erroneous relocations or drive ID.
+			Info	 - Display known disk information.
+			Profile  - Display seek profile graph of disk.
+			Exercise - Perform seek exercises on disk.
+			Start	 - Start operations.
+
+	Operation?
+
+SSttaattuuss
+     The SSttaattuuss command may be typed in at any time to determine
+     the status of the formatter.  The status message will
+     explain what the formatter is waiting for, the current
+     operation, and a progress report if the formatter is busy.
+
+     _E_x_a_m_p_l_e
+
+
+
+Printed 7/9/88		 March 27, 1988                         2
+
+
+
+
+
+
+VDFORMAT(8)	    UNIX Programmer's Manual	      VDFORMAT(8)
+
+
+
+	Starting format on controller 0, drive 1, drive type is FSD.
+
+	  HHeellpp
+		The following commands are available:
+			Status - Display current state of formatter.
+
+	  SSttaattuuss
+		 Formatting on controller 0, drive 1, drive type is FSD.
+		 Inspecting disk to determine current state.
+		 Currently inspecting cylinder 120, track 10, sector 15.
+
+	Formatting completed successfully.
+
+KKiillll
+     The KKiillll command may be used to stop operations that are in
+     progress already.	KKiillll will always have meaning, may be
+     issued at any time, and will always leave disks in a con-
+     sistent state.
+
+SSppeecciiffyyiinngg ooppeerraattiioonnss
+     Formatter operations are broken into two phases: entry and
+     execution.
+
+     During the entry phase the operator enters all the disk
+     operations that he / she wants to execute during the execu-
+     tion phase.  After the operation list is entered correctly
+     the operator issues the start command and execution begins.
+
+     The execution phase executes all commands specified during
+     the entry phase on the specified disks.  These commands are
+     accumulated and executed later because each operation may
+     require up to several hours to complete.  By deferring
+     operations, VVDDFFOORRMMAATT frees the operator to do other work
+     during this time period.
+
+     The commands that are detailed in this section are grouped
+     according to the immediacy of their actions.  Commands such
+     as DDeelleettee and RReesseett, which will execute the moment they are
+     keyed into the system, are termed immediate commands.  Com-
+     mands which effect after the SSttaarrtt command is issued are
+     termed deferred commands.
+
+IImmmmeeddiiaattee ccoommmmaannddss
+     Instead of forcing the operator to specify one operation on
+     one drive at a time, comma separated lists and dash
+     separated ranges can be entered for operations, controller
+     numbers, and drive numbers.  Please refer to examples.
+
+LLiisstt ooppeerraattiioonn
+     The LLiisstt operation displays all commands that were keyed in
+     by the operator and are ready to be executed when the SSttaarrtt
+     command is issued.
+
+
+
+Printed 7/9/88		 March 27, 1988                         3
+
+
+
+
+
+
+VDFORMAT(8)	    UNIX Programmer's Manual	      VDFORMAT(8)
+
+
+
+     _E_x_a_m_p_l_e
+
+	Operation? LLiisstt
+	  The following operations will occur when Start is issued:
+
+	  Format on Controller 0, drive 1, type FSD.
+	  Format on Controller 0, drive 2, type XFD.
+	  Format on Controller 0, drive 3, type XFD.
+	  Relocate on Controller 0, drive 0, type FSD.
+
+DDeelleettee ooppeerraattiioonn
+     Delete is intended to provide a simple editing facility for
+     command lists.  Between the DDeelleettee operation and the ability
+     to add more operations to the operation list, Any error in
+     the operation list can be corrected.
+
+     When the delete operation is specified, a numbered list of
+     operations is printed on the console and VVDDFFOORRMMAATT will
+     repeatedly ask for line numbers to delete.
+
+     Line numbering for the DDeelleettee operation will remain the same
+     even after a line is deleted.  This is done to avoid confu-
+     sion, but it implies that the same line can be deleted mul-
+     tiple times.  This presents no problems for the formatter
+     and no error will be returned if this is done.
+
+     The DDeelleettee prompt level is terminated by entering 'Quit' (or
+     the KKiillll command) as shown in the following example:
+
+     _E_x_a_m_p_l_e
+
+	Operation? DDeelleettee
+	    1)	Format on Controller 0, drive 1, type FSD.
+	    2)	Format on Controller 0, drive 2, type XFD.
+	    3)	Format on Controller 0, drive 3, type XFD.
+	    4)	Format on Controller 1, drive 0, type XSD.
+	    5)	Format on Controller 1, drive 1, type XSD.
+	    6)	Format on Controller 1, drive 2, type XSD.
+	    7)	Format on Controller 1, drive 3, type XSD.
+	    8)	Relocate on Controller 0, drive 0, type FSD.
+
+	  Delete line? 22
+		2) Format using Controller 0, drive 2, type FSD has been deleted.
+	  Delete line? 88
+		8) Relocate using Controller 0, drive 0, type FSD has been deleted.
+	  Delete line? QQuuiitt
+
+	Operation?
+
+
+RReesseett ooppeerraattiioonn
+
+
+
+
+Printed 7/9/88		 March 27, 1988                         4
+
+
+
+
+
+
+VDFORMAT(8)	    UNIX Programmer's Manual	      VDFORMAT(8)
+
+
+
+     The RReesseett operation clears all commands keyed in so far and
+     executes internal consistency checks for the formatter.  The
+     main use is to quickly delete all operations, and reset
+     internal state.  The operator who really messed up the com-
+     mand sequence can start again from the top.
+
+     _E_x_a_m_p_l_e
+
+	Operation? RReesseett
+	  Reset the world.  Are you sure? YYeess
+
+	  All operations specified have been deleted.
+
+	Operation?
+
+SSttaarrtt ooppeerraattiioonnss
+     The SSttaarrtt command starts processing the command list that
+     was typed in by the operator.  The operator should be sure
+     that all commands are correct before proceeding.
+
+     _E_x_a_m_p_l_e
+
+	Operation? SSttaarrtt
+
+	Starting format on controller 0, drive 1, drive type is FSD.
+
+AAllll tthhee ffoolllloowwiinngg ccoommmmaannddss aarree ddeeffeerrrreedd
+IInnffoo ooppeerraattiioonn
+     IInnffoo gives a full report of everything that is known about a
+     drive.  This includes which sectors were bad, to what sector
+     they were relocated, how were the errors detected, and the
+     current format state.
+
+     _E_x_a_m_p_l_e
+
+	Operation? IInnffoo
+	  Gather information on which controller?  00
+	    Drives on controller 0? 11
+		Drive type for controller 0 drive 1? ffssdd
+
+	Operation? SSttaarrtt
+
+	Gathering information for controller 0, drive 1.
+
+	Module number is 123456789.
+	Drive type is FSD.
+	Drive contains a bad sector map.
+	The following sectors are known to be bad:
+	  cyl 181, head 2, pos 4470, len 1 (Sector #57991) -> sector 261760.
+	  cyl 210, head 6, pos 8880, len 1 (Sector #67406) -> sector 261764.
+	  cyl 292, head 3, pos 19590, len 1 (Sector #93567) -> sector 261761.
+	  cyl 293, head 3, pos 19590, len 1 (Sector #93887) -> sector 261762.
+
+
+
+Printed 7/9/88		 March 27, 1988                         5
+
+
+
+
+
+
+VDFORMAT(8)	    UNIX Programmer's Manual	      VDFORMAT(8)
+
+
+
+	Information display completed successfully.
+
+FFoorrmmaatt ooppeerraattiioonn
+     The ffoorrmmaatt operation will read the flaw map information
+     directly from the drives and use that information to map out
+     all flaws after formatting the drive's surface.
+
+     After formatting the drive's surface the drive surface is
+     verified using the number of patterns requested by the
+     operator.	The number of patterns may range from 0 to 16.
+     It is suggested that at least one pattern be used so poten-
+     tial drive problems are more likely to be found before real
+     information is written on the drives.
+
+     _E_x_a_m_p_l_e
+
+	Operation? FFoorrmmaatt
+	  Format on which controller?  HHeellpp
+		The following controllers are attached to the system
+		    Controller 0, which is a VDDC controller.
+		    Controller 1, which is an SMD-E controller.
+		    Controller 2, which is an SMD-E controller.
+
+	  Format on which controller?  00
+	    Number of patterns to use when verifying? 11
+	    Drives on controller 0? HHeellpp
+		Drives 0 through 3 are acceptable on VDDC controllers.
+
+	    Drives on controller 0? 11
+		Drive type for controller 0 drive 1? HHeellpp
+		  The following drive types are available to VDDC controllers:
+		    FSD - 160 Mb Control Data winchester drive.
+		    SMD - 300 Mb Control Data Removable media drive.
+		    XFD - 340 Mb Control Data winchester drive.
+
+		Drive type for controller 0 drive 1? ffssdd
+		Module serial number for controller 0 drive 1? 11223344
+
+	Operation? SSttaarrtt
+
+	Starting format on controller 0, drive 1, drive type is FSD.
+
+	  ** Warning - Unable to relocate sector 12347,
+		to map out using BADSECT use the following values:
+		    On the 'a' partition use block 6000
+		    On the 'c' partition use block 25
+
+	Formatting completed successfully.
+
+VVeerriiffyy ooppeerraattiioonn
+     The verify  operation can be used to check for new flaws on
+     a disk that currently has data on it.  This is accomplished
+
+
+
+Printed 7/9/88		 March 27, 1988                         6
+
+
+
+
+
+
+VDFORMAT(8)	    UNIX Programmer's Manual	      VDFORMAT(8)
+
+
+
+     by writing the necessary patterns on the drive's surface,
+     reading the information back, and comparing the results to
+     the original pattern.  If a flaw is found the sector is
+     relocated immediately.  Each new flaw will be relocated and
+     permanently added to the bad sector map.
+
+     _E_x_a_m_p_l_e
+
+	Operation? VVeerriiffyy
+	  Verify on which controller?  00
+	    Drives on controller 0? 11
+	      Drive type for controller 0 drive 1? ffssdd
+
+	Operation? SSttaarrtt
+
+	Starting verify on controller 0, drive 1, drive type is FSD.
+
+	Verification completed successfully.
+
+RReellooccaattee ooppeerraattiioonn
+     The operator has the ability to manually type in known flaws
+     using the CDC flaw map format, UNIX file-system / block
+     numbers, absolute sector numbers, and absolute track
+     numbers.
+
+     VVDDFFOORRMMAATT will automatically switch back and forth between
+     the various forms of inputing flaw addresses by looking at
+     the first character on any line.  If the first character is
+     between 'a' and 'h' then it is assumed that the character is
+     a file system name and the next input will be the actual
+     UNIX block number, if the first character is an 's' then
+     sector numbers are entered, if the first character is an 't'
+     then track numbers are entered, otherwise flaw map format is
+     assumed.
+
+     _E_x_a_m_p_l_e
+
+	Operation? RReellooccaattee
+	  Relocate on controller? 00
+	    Drives on controller 0? 00
+	      Drive type for controller 0 drive 0? ffssdd
+
+	Operation? SSttaarrtt
+
+	Adding flaws to bad sector map on Controller 0, drive 1, type FSD.
+	  Location? aa 2200
+	    Confirm block 20 on file-system 'a' ? YYeess
+	  Location? 1100 55 1122559944 1100
+	    Confirm Cyl 10, head 5, offset 12594, len 10 (Sector 12345)? YYeess
+	  Location? SSeeccttoorr 11000000
+	    Confirm sector 1000? YYeess
+	  Location? TTrraacckk 2255
+
+
+
+Printed 7/9/88		 March 27, 1988                         7
+
+
+
+
+
+
+VDFORMAT(8)	    UNIX Programmer's Manual	      VDFORMAT(8)
+
+
+
+	    Confirm track 25? YYeess
+	  Location? aa 220000
+	    Confirm relocation of block 200 on file-system 'a' ? YYeess
+	  Location? SSttaarrtt
+	Relocation complete.
+
+	Operation?
+
+CCoorrrreecctt ooppeerraattiioonn
+     The correct operation is used to correct any information
+     that was incorrectly written to disk.  This information
+     includes sectors that were wrongly specified by the operator
+     and the operator entered pack identification.
+
+     _E_x_a_m_p_l_e
+
+	Operation? CCoorrrreecctt
+	  Correct on controller? 00
+	    Drives on controller 0? 00
+	      Drive type for controller 0 drive 0? ffssdd
+
+	Operation? SSttaarrtt
+
+	Making corrections to bad sector map on Controller 0, drive 0, type FSD
+	  Location? IIDD
+	    Pack ID is 123456789.  Change to? 11223344556677889900
+	    Pack ID changed to 1234567890.
+	  Location? ssee 2200
+	    Confirm relocation removal of sector 20? YYeess
+	    Sector 20 removed.
+	  Location? tt 2211
+	    Confirm relocation removal of track 21? YYeess
+	    Track 21 removed.
+	  Location? 1100 55 112255
+	    Confirm relocation removal of Cylinder 10, head 5, offset 125? YYeess
+	    Cylinder 10, head 5, offset 125 removed.
+	  Location? SSttaarrtt
+      Relocation complete.
+
+	Operation?
+
+PPrrooffiillee ooppeerraattiioonn
+     The profile operation is used to print a graph of seek time
+     verses seek distance for the specified drive.  Each point on
+     the graph prints as either a star ('*') or a plus ('+') to
+     indicate which direction the point was rounded.  The star
+     shows that the point was rounded up, and the plus shows
+     rounding down has taken place.
+
+     _E_x_a_m_p_l_e
+
+	Operation? PPrrooffiillee
+
+
+
+Printed 7/9/88		 March 27, 1988                         8
+
+
+
+
+
+
+VDFORMAT(8)	    UNIX Programmer's Manual	      VDFORMAT(8)
+
+
+
+	  Profile on controller? 00
+	    Drives on controller 0? 00
+	      Drive type for controller 0 drive 0? xxssdd
+	Operation? SSttaarrtt
+
+	  Disk seek profile for controller 0, drive 0, type XSD.
+
+	     Seek  |		      Seek time (ms)
+	    Length |0	 5    10   15	20   25   30   35   40	 45   50
+	    -------|-----+----+----+----+----+----+----+----+----+----+
+	    1	   |	 *
+	    13	   |	     +
+	    25	   |		+
+	    37	   |		  *
+	    49	   |		   *
+	    61	   |		    +
+	    73	   |		     +
+	    85	   |		      +
+	    97	   |		       *
+	    109    |		       +
+	    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	    577    |					     *
+	    589    |					     +
+	    601    |					      *
+	    613    |					      *
+	    625    |					      +
+	    637    |					       *
+	    697    |						+
+	    709    |						 *
+	    -------|-----+----+----+----+----+----+----+----+----+----+
+		   |0	 5    10   15	20   25   30   35   40	 45   50
+
+	  Profile completed successfully.
+
+EExxeerrcciissee ooppeerraattiioonn
+     The exercise operation does an exhaustive test of the drive
+     read / write / seek logic on a drive.  The test is destruc-
+     tive and calculations show that it should take about 22
+     weeks to complete the entire test.  It is suggested that the
+     test be run for as long as the operator can take it before
+     killing the test.	(24 hours is about right.)
+
+     _E_x_a_m_p_l_e
+
+	Operation? EExxeerrcciissee
+	  Profile on controller? 00
+	    Drives on controller 0? 00
+	      Drive type for controller 0 drive 0? xxssdd
+	Operation? SSttaarrtt
+
+
+
+
+Printed 7/9/88		 March 27, 1988                         9
+
+
+
+
+
+
+VDFORMAT(8)	    UNIX Programmer's Manual	      VDFORMAT(8)
+
+
+
+	  Starting disk exercise on controller 0, drive 0, type XSD.
+	    Pass 1...
+	    Pass 2...
+	    Pass 3...
+	       .
+	       .
+	       .
+	    Pass 710...
+	  Exercise completed successfully.
+
+
+DDIIAAGGNNOOSSTTIICCSS
+     The controller status will be printed out after any unrecov-
+     erable error is found.  The exact meaning of the error words
+     can be found in vvddddcc((44)).
+
+SSEEEE AALLSSOO
+     vddc(4)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 March 27, 1988                        10
+
+
+

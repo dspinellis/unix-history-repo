@@ -1,0 +1,66 @@
+
+
+
+CONS(4)             UNIX Programmer's Manual		  CONS(4)
+
+
+
+NNAAMMEE
+     cons - VAX-11 console interface
+
+DDEESSCCRRIIPPTTIIOONN
+     The console is available to the processor through the con-
+     sole registers.  It acts like a normal terminal, except that
+     when the local functions are not disabled, control-P puts
+     the console in local console mode (where the prompt is
+     ``>>>'').	The operation of the console in this mode varies
+     slightly per-processor.
+
+     On an 11/780 or 785 the processor is not stopped by entering
+     local console mode.  The CPU may be halted with the ``halt''
+     command, which may be abbreviated to ``h.'' Conversational
+     mode is re-entered by using the command ``set t p'' (set
+     terminal program) if the processor is still running, or
+     ``continue'' if it is halted.  The latter command may be
+     abbreviated ``c''.  If you hit the break key on the console,
+     then the console LSI-11 will go into ODT (console debugger
+     mode).  Hit a ``P'' (upper-case letter p; ``proceed'') to
+     get out of this mode.
+
+     On an 11/750 or an 11/730 the processor is halted whenever
+     the console is not in conversational mode, and typing ``C''
+     returns to conversational mode.  When in console mode on an
+     11/750 which has a remote diagnosis module, a ^D will put
+     you in remote diagnosis mode, where the prompt will be
+     ``RDM>''.	The command ``ret'' will return from remote diag-
+     nosis mode to local console mode.
+
+     The VAX 8600 (8650) console normally works in the same way
+     as the 11/750, except that there are many additional modes
+     and commands.  In the normal mode control-P halts the pro-
+     cessor, and ``c'' or ``continue'' returns to conversational
+     mode.  If HEX debug is enabled, control-P does not halt the
+     CPU; the ``halt'' command stops the CPU as on the 11/780.
+
+     With the above proviso's the console works like any other
+     UNIX terminal.
+
+FFIILLEESS
+     /dev/console
+
+SSEEEE AALLSSOO
+     tty(4), reboot(8)
+     VAX Hardware Handbook
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 19, 1986				1
+
+
+

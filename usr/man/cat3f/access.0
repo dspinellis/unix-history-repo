@@ -1,0 +1,66 @@
+
+
+
+ACCESS(3F)	    UNIX Programmer's Manual	       ACCESS(3F)
+
+
+
+NNAAMMEE
+     access - determine accessibility of a file
+
+SSYYNNOOPPSSIISS
+     iinntteeggeerr ffuunnccttiioonn aacccceessss ((nnaammee,, mmooddee))
+     cchhaarraacctteerr**((**)) nnaammee,, mmooddee
+
+DDEESSCCRRIIPPTTIIOONN
+     _A_c_c_e_s_s checks the given file, _n_a_m_e, for accessibility with
+     respect to the caller according to _m_o_d_e. _M_o_d_e may include in
+     any order and in any combination one or more of:
+
+		  rr	 test for read permission
+		  ww	 test for write permission
+		  xx	 test for execute permission
+	       (blank)	 test for existence
+
+     An error code is returned if either argument is illegal, or
+     if the file cannot be accessed in all of the specified
+     modes.  0 is returned if the specified access would be suc-
+     cessful.
+
+FFIILLEESS
+     /usr/lib/libU77.a
+
+SSEEEE AALLSSOO
+     access(2), perror(3F)
+
+BBUUGGSS
+     Pathnames can be no longer than MAXPATHLEN as defined in
+     <_s_y_s/_p_a_r_a_m._h>.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 27, 1986				1
+
+
+

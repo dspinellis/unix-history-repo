@@ -1,0 +1,264 @@
+
+
+
+MS(7)		    UNIX Programmer's Manual		    MS(7)
+
+
+
+NNAAMMEE
+     ms - text formatting macros
+
+SSYYNNOOPPSSIISS
+     nnrrooffff  --mmss  [ options ]  file  ...
+     ttrrooffff  --mmss  [ options ]  file  ...
+
+DDEESSCCRRIIPPTTIIOONN
+     This package of _n_r_o_f_f and _t_r_o_f_f macro definitions provides a
+     formatting facility for various styles of articles, theses,
+     and books.  When producing 2-column output on a terminal or
+     lineprinter, or when reverse line motions are needed, filter
+     the output through _c_o_l(1).  All external -ms macros are
+     defined below.  Many _n_r_o_f_f and _t_r_o_f_f requests are unsafe in
+     conjunction with this package.  However, the first four
+     requests below may be used with impunity after initializa-
+     tion, and the last two may be used even before initializa-
+     tion:
+	  .bp	 begin new page
+	  .br	 break output line
+	  .sp n  insert n spacing lines
+	  .ce n  center next n lines
+	  .ls n  line spacing: n=1 single, n=2 double space
+	  .na	 no alignment of right margin
+     Font and point size changes with \f and \s are also allowed;
+     for example, ``\fIword\fR'' will italicize _w_o_r_d.  Output of
+     the _t_b_l, _e_q_n, and _r_e_f_e_r(1) preprocessors for equations,
+     tables, and references is acceptable as input.
+
+FFIILLEESS
+     /usr/lib/tmac/tmac.x
+     /usr/lib/ms/x.???
+
+SSEEEE AALLSSOO
+     eqn(1), refer(1), tbl(1), troff(1)
+
+RREEQQUUEESSTTSS
+Macro	Initial   Break?   Explanation
+Name	Value	  Reset?
+.AB _x	-	  y	 begin abstract; if _x=no don't label abstract
+.AE	-	  y	 end abstract
+.AI	-	  y	 author's institution
+.AM	-	  n	 better accent mark definitions
+.AU	-	  y	 author's name
+.B _x	-	  n	 embolden _x; if no _x, switch to boldface
+.B1	-	  y	 begin text to be enclosed in a box
+.B2	-	  y	 end boxed text and print it
+.BT	date	  n	 bottom title, printed at foot of page
+.BX _x	-	  n	 print word _x in a box
+.CM	if t	  n	 cut mark between pages
+.CT	-	  y,y	 chapter title: page number moved to CF (TM only)
+.DA _x	if n	  n	 force date _x at bottom of page; today if no _x
+
+
+
+UCB Computer Center	   May 2, 1988				1
+
+
+
+
+
+
+MS(7)		    UNIX Programmer's Manual		    MS(7)
+
+
+
+.DE	-	  y	 end display (unfilled text) of any kind
+.DS _x _y I	  y	 begin display with keep; _x=I,L,C,B; _y=indent
+.ID _y	8n,.5i	  y	 indented display with no keep; _y=indent
+.LD	-	  y	 left display with no keep
+.CD	-	  y	 centered display with no keep
+.BD	-	  y	 block display; center entire block
+.EF _x	-	  n	 even page footer _x (3 part as for .tl)
+.EH _x	-	  n	 even page header _x (3 part as for .tl)
+.EN	-	  y	 end displayed equation produced by _e_q_n
+.EQ _x _y -	  y	 break out equation; _x=L,I,C; _y=equation number
+.FE	-	  n	 end footnote to be placed at bottom of page
+.FP	-	  n	 numbered footnote paragraph; may be redefined
+.FS _x	-	  n	 start footnote; _x is optional footnote label
+.HD	undef	  n	 optional page header below header margin
+.I _x	-	  n	 italicize _x; if no _x, switch to italics
+.IP _x _y -	  y,y	 indented paragraph, with hanging tag _x; _y=indent
+.IX _x _y -	  y	 index words _x _y and so on (up to 5 levels)
+.KE	-	  n	 end keep of any kind
+.KF	-	  n	 begin floating keep; text fills remainder of page
+.KS	-	  y	 begin keep; unit kept together on a single page
+.LG	-	  n	 larger; increase point size by 2
+.LP	-	  y,y	 left (block) paragraph.
+.MC _x	-	  y,y	 multiple columns; _x=column width
+.ND _x	if t	  n	 no date in page footer; _x is date on cover
+.NH _x _y -	  y,y	 numbered header; _x=level, _x=0 resets, _x=S sets to _y
+.NL	10p	  n	 set point size back to normal
+.OF _x	-	  n	 odd page footer _x (3 part as for .tl)
+.OH _x	-	  n	 odd page header _x (3 part as for .tl)
+.P1	if TM	  n	 print header on 1st page
+.PP	-	  y,y	 paragraph with first line indented
+.PT	- % -	  n	 page title, printed at head of page
+.PX _x	-	  y	 print index (table of contents); _x=no suppresses title
+.QP	-	  y,y	 quote paragraph (indented and shorter)
+.R	on	  n	 return to Roman font
+.RE	5n	  y,y	 retreat: end level of relative indentation
+.RP _x	-	  n	 released paper format; _x=no stops title on 1st page
+.RS	5n	  y,y	 right shift: start level of relative indentation
+.SH	-	  y,y	 section header, in boldface
+.SM	-	  n	 smaller; decrease point size by 2
+.TA	8n,5n	  n	 set tabs to 8n 16n ... (nroff) 5n 10n ... (troff)
+.TC _x	-	  y	 print table of contents at end; _x=no suppresses title
+.TE	-	  y	 end of table processed by _t_b_l
+.TH	-	  y	 end multi-page header of table
+.TL	-	  y	 title in boldface and two points larger
+.TM	off	  n	 UC Berkeley thesis mode
+.TS _x	-	  y,y	 begin table; if _x=H table has multi-page header
+.UL _x	-	  n	 underline _x, even in _t_r_o_f_f
+.UX _x	-	  n	 UNIX; trademark message first time; _x appended
+.XA _x _y -	  y	 another index entry; _x=page or no for none; _y=indent
+.XE	-	  y	 end index entry (or series of .IX entries)
+.XP	-	  y,y	 paragraph with first line exdented, others indented
+.XS _x _y -	  y	 begin index entry; _x=page or no for none; _y=indent
+
+
+
+UCB Computer Center	   May 2, 1988				2
+
+
+
+
+
+
+MS(7)		    UNIX Programmer's Manual		    MS(7)
+
+
+
+.1C	on	  y,y	 one column format, on a new page
+.2C	-	  y,y	 begin two column format
+.]-	-	  n	 beginning of _r_e_f_e_r reference
+.[0	-	  n	 end of unclassifiable type of reference
+.[N	-	  n	 N= 1:journal-article, 2:book, 3:book-article, 4:report
+
+RREEGGIISSTTEERRSS
+     Formatting distances can be controlled in -ms by means of
+     built-in number registers.  For example, this sets the line
+     length to 6.5 inches:
+	  .nr  LL  6.5i
+     Here is a table of number registers and their default
+     values:
+	  Name Register Controls  Takes Effect Default
+	  PS   point size	  paragraph    10
+	  VS   vertical spacing   paragraph    12
+	  LL   line length	  paragraph    6i
+	  LT   title length	  next page    same as LL
+	  FL   footnote length	  next .FS     5.5i
+	  PD   paragraph distance paragraph    1v (if n), .3v (if t)
+	  DD   display distance   displays     1v (if n), .5v (if t)
+	  PI   paragraph indent   paragraph    5n
+	  QI   quote indent	  next .QP     5n
+	  FI   footnote indent	  next .FS     2n
+	  PO   page offset	  next page    0 (if n), ~1i (if t)
+	  HM   header margin	  next page    1i
+	  FM   footer margin	  next page    1i
+	  FF   footnote format	  next .FS     0 (1, 2, 3 available)
+     When resetting these values, make sure to specify the
+     appropriate units.  Setting the line length to 7, for exam-
+     ple, will result in output with one character per line.
+     Setting FF to 1 suppresses footnote superscripting; setting
+     it to 2 also suppresses indentation of the first line; and
+     setting it to 3 produces an .IP-like footnote paragraph.
+
+     Here is a list of string registers available in -ms; they
+     may be used anywhere in the text:
+	  Name	String's Function
+	  \*Q	quote (" in _n_r_o_f_f, `` in _t_r_o_f_f )
+	  \*U	unquote (" in _n_r_o_f_f, '' in _t_r_o_f_f )
+	  \*-	dash (-- in _n_r_o_f_f, - in _t_r_o_f_f )
+	  \*(MO month (month of the year)
+	  \*(DY day (current date)
+	  \**	automatically numbered footnote
+	  \*[	opening footnote string delimiter
+	  \*]	closing footnote string delimiter
+	  \*([. opening reference tag delimiter
+	  \*(.] closing reference tag delimiter
+	  \*'	acute accent (before letter)
+	  \*`	grave accent (before letter)
+	  \*^	circumflex (before letter)
+	  \*,	cedilla (before letter)
+
+
+
+UCB Computer Center	   May 2, 1988				3
+
+
+
+
+
+
+MS(7)		    UNIX Programmer's Manual		    MS(7)
+
+
+
+	  \*:	umlaut (before letter)
+	  \*~	tilde (before letter)
+     The opening and closing delimiters for footnote numbers and
+     reference tags may be changed by resetting the appropriate
+     string.  Both opening delimiters change to italics and
+     superscript in _t_r_o_f_f, reverting to the previous font and the
+     baseline at the closing delimiter.  In _n_r_o_f_f, square brack-
+     ets are used as delimiters, with footnote numbers in ital-
+     ics.
+
+     When using the extended accent mark definitions available
+     with .AM, these strings should come after, rather than
+     before, the letter to be accented.
+
+BBUUGGSS
+     Floating keeps and regular keeps are diverted to the same
+     space, so they cannot be mixed together with predictable
+     results.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+UCB Computer Center	   May 2, 1988				4
+
+
+

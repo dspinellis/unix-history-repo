@@ -1,0 +1,66 @@
+
+
+
+STAT(3F)	    UNIX Programmer's Manual		 STAT(3F)
+
+
+
+NNAAMMEE
+     stat, lstat, fstat - get file status
+
+SSYYNNOOPPSSIISS
+     iinntteeggeerr ffuunnccttiioonn ssttaatt ((nnaammee,, ssttaattbb))
+     cchhaarraacctteerr**((**)) nnaammee
+     iinntteeggeerr ssttaattbb((1122))
+
+     iinntteeggeerr ffuunnccttiioonn llssttaatt ((nnaammee,, ssttaattbb))
+     cchhaarraacctteerr**((**)) nnaammee
+     iinntteeggeerr ssttaattbb((1122))
+
+     iinntteeggeerr ffuunnccttiioonn ffssttaatt ((lluunniitt,, ssttaattbb))
+     iinntteeggeerr ssttaattbb((1122))
+
+DDEESSCCRRIIPPTTIIOONN
+     These routines return detailed information about a file.
+     _S_t_a_t and _l_s_t_a_t return information about file _n_a_m_e; _f_s_t_a_t
+     returns information about the file associated with fortran
+     logical unit _l_u_n_i_t. The order and meaning of the information
+     returned in array _s_t_a_t_b is as described for the structure
+     _s_t_a_t under _s_t_a_t(2).  The ``spare'' values are not included.
+
+     The value of either function will be zero if successful; an
+     error code otherwise.
+
+FFIILLEESS
+     /usr/lib/libU77.a
+
+SSEEEE AALLSSOO
+     stat(2), access(3F), perror(3F), time(3F)
+
+BBUUGGSS
+     Pathnames can be no longer than MAXPATHLEN as defined in
+     <_s_y_s/_p_a_r_a_m._h>.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 15, 1985				1
+
+
+

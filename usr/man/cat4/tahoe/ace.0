@@ -1,0 +1,66 @@
+
+
+
+ACE(4)		    UNIX Programmer's Manual		   ACE(4)
+
+
+
+NNAAMMEE
+     ace - ACC 10 Mb/s Ethernet interface
+
+SSYYNNOOPPSSIISS
+     ddeevviiccee aaccee00 aatt vvbbaa?? ccssrr 00xxffffffff00000000 ffllaaggss 00xxffffff8800000000 vveeccttoorr
+     aacceecciinntt aacceerriinntt
+
+DDEESSCCRRIIPPTTIIOONN
+     The _a_c_e interface provides access to a 10 Mb/s Ethernet net-
+     work through an ACC controller.
+
+     The hardware has 32 kilobytes of dual-ported memory on the
+     VERSAbus. This memory is used for internal buffering by the
+     board, and the interface code reads the buffer contents
+     directly through the VERSAbus.  The address of this memory
+     is given in the _f_l_a_g_s field in the configuration file.
+
+     Each of the host's network addresses is specified at boot
+     time with an SIOCSIFADDR ioctl.  The _a_c_e interface employs
+     the address resolution protocol described in _a_r_p(4P) to
+     dynamically map between Internet and Ethernet addresses on
+     the local network.
+
+     The interface normally tries to use a ``trailer'' encapsula-
+     tion to minimize copying data on input and output.  The use
+     of trailers is negotiated with ARP.  This negotiation may be
+     disabled, on a per-interface basis, by setting the
+     IFF_NOTRAILERS flag with an SIOCSIFFLAGS ioctl.
+
+     The device implements an exponential backoff algorithm when
+     notified of a collision on the cable.  This algorithm util-
+     izes a table of random numbers setup by the system at boot
+     time.  The delay is done in the controller.
+
+DDIIAAGGNNOOSSTTIICCSS
+     aaccee%%dd:: ssttrraayy xxmmiitt iinntteerrrruupptt,, xxnncctt %%dd.  An unexpected
+     transmission complete interrupt was received; the interrupt
+     is ignored.  aaccee%%dd:: ccaann''tt hhaannddllee aaff%%dd.  The interface was
+     handed a message with addresses formatted in an unsuitable
+     address family; the packet was dropped.
+
+SSEEEE AALLSSOO
+     intro(4N), inet(4F), arp(4P)
+
+BBUUGGSS
+     The hardware is not capable of talking to itself.	The
+     software implements local sending and broadcast by sending
+     such packets to the loop interface.  This is a kludge.
+
+     The device doesn't autoconfigure its interrupt vector; it is
+     set at 0x90 + eight times the unit number.
+
+
+
+
+Printed 7/9/88		  May 16, 1986				1
+
+
+

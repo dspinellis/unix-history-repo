@@ -1,0 +1,66 @@
+
+
+
+LONG(3F)	    UNIX Programmer's Manual		 LONG(3F)
+
+
+
+NNAAMMEE
+     long, short - integer object conversion
+
+SSYYNNOOPPSSIISS
+     iinntteeggeerr**44 ffuunnccttiioonn lloonngg ((iinntt22))
+     iinntteeggeerr**22 iinntt22
+
+     iinntteeggeerr**22 ffuunnccttiioonn sshhoorrtt ((iinntt44))
+     iinntteeggeerr**44 iinntt44
+
+DDEESSCCRRIIPPTTIIOONN
+     These functions provide conversion between short and long
+     integer objects.  _L_o_n_g is useful when constants are used in
+     calls to library routines and the code is to be compiled
+     with ``-i2''.  _S_h_o_r_t is useful in similar context when an
+     otherwise long object must be passed as a short integer.
+
+FFIILLEESS
+     /usr/lib/libF77.a
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 15, 1985				1
+
+
+

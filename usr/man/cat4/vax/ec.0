@@ -1,0 +1,132 @@
+
+
+
+EC(4)		    UNIX Programmer's Manual		    EC(4)
+
+
+
+NNAAMMEE
+     ec - 3Com 10 Mb/s Ethernet interface
+
+SSYYNNOOPPSSIISS
+     ddeevviiccee eecc00 aatt uubbaa00 ccssrr 116611000000 vveeccttoorr eeccrriinntt eeccccoolllliiddee eeccxxiinntt
+     ffllaaggss 00
+
+DDEESSCCRRIIPPTTIIOONN
+     The _e_c interface provides access to a 10 Mb/s Ethernet net-
+     work through a 3com controller.
+
+     The hardware has 32 kilobytes of dual-ported memory on the
+     UNIBUS. This memory is used for internal buffering by the
+     board, and the interface code reads the buffer contents
+     directly through the UNIBUS.  The address of this memory is
+     given in the _f_l_a_g_s field in the configuration file.  The
+     first interface normally has its memory at Unibus address 0.
+
+     Each of the host's network addresses is specified at boot
+     time with an SIOCSIFADDR ioctl.  The _e_c interface employs
+     the address resolution protocol described in _a_r_p(4P) to
+     dynamically map between Internet and Ethernet addresses on
+     the local network.
+
+     The interface normally tries to use a ``trailer'' encapsula-
+     tion to minimize copying data on input and output.  The use
+     of trailers is negotiated with ARP.  This negotiation may be
+     disabled, on a per-interface basis, by setting the
+     IFF_NOTRAILERS flag with an SIOCSIFFLAGS ioctl.
+
+     The interface software implements an exponential backoff
+     algorithm when notified of a collision on the cable.  This
+     algorithm utilizes a 16-bit mask and the VAX-11's interval
+     timer in calculating a series of random backoff values.  The
+     algorithm is as follows:
+
+     1.   Initialize the mask to be all 1's.
+
+     2.   If the mask is zero, 16 retries have been made and we
+	  give up.
+
+     3.   Shift the mask left one bit and formulate a backoff by
+	  masking the interval timer with the smaller of the com-
+	  plement of this mask and a 5-bit mask, resulting in a
+	  pseudo-random number between 0 and 31.  This produces
+	  the number of slot times to delay, where a slot is 51
+	  microseconds.
+
+     4.   Use the value calculated in step 3 to delay before
+	  retransmitting the packet.  The delay is done in a
+	  software busy loop.
+
+
+
+
+Printed 7/9/88		  May 16, 1986				1
+
+
+
+
+
+
+EC(4)		    UNIX Programmer's Manual		    EC(4)
+
+
+
+DDIIAAGGNNOOSSTTIICCSS
+     eecc%%dd:: sseenndd eerrrroorr.	After 16 retransmissions using the
+     exponential backoff algorithm described above, the packet
+     was dropped.
+
+     eecc%%dd:: iinnppuutt eerrrroorr ((ooffffsseett==%%dd)).  The hardware indicated an
+     error in reading a packet off the cable or an illegally
+     sized packet.  The buffer offset value is printed for debug-
+     ging purposes.
+
+     eecc%%dd:: ccaann''tt hhaannddllee aaff%%dd.  The interface was handed a message
+     with addresses formatted in an unsuitable address family;
+     the packet was dropped.
+
+SSEEEE AALLSSOO
+     intro(4N), inet(4F), arp(4P)
+
+BBUUGGSS
+     The hardware is not capable of talking to itself.	The
+     software implements local sending and broadcast by sending
+     such packets to the loop interface.  This is a kludge.
+
+     Backoff delays are done in a software busy loop.  This can
+     degrade the system if the network experiences frequent col-
+     lisions.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 16, 1986				2
+
+
+

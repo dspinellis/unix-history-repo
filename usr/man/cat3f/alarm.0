@@ -1,0 +1,66 @@
+
+
+
+ALARM(3F)	    UNIX Programmer's Manual		ALARM(3F)
+
+
+
+NNAAMMEE
+     alarm - execute a subroutine after a specified time
+
+SSYYNNOOPPSSIISS
+     iinntteeggeerr ffuunnccttiioonn aallaarrmm ((ttiimmee,, pprroocc))
+     iinntteeggeerr ttiimmee
+     eexxtteerrnnaall pprroocc
+
+DDEESSCCRRIIPPTTIIOONN
+     This routine arranges for subroutine _p_r_o_c to be called after
+     _t_i_m_e seconds. If _t_i_m_e is ``0'', the alarm is turned off and
+     no routine will be called.  The returned value will be the
+     time remaining on the last alarm.
+
+FFIILLEESS
+     /usr/lib/libU77.a
+
+SSEEEE AALLSSOO
+     alarm(3C), sleep(3F), signal(3F)
+
+BBUUGGSS
+     _A_l_a_r_m and _s_l_e_e_p interact. If _s_l_e_e_p is called after _a_l_a_r_m,
+     the _a_l_a_r_m process will never be called. SIGALRM will occur
+     at the lesser of the remaining _a_l_a_r_m time or the _s_l_e_e_p time.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 15, 1985				1
+
+
+

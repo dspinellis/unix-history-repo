@@ -1,0 +1,132 @@
+
+
+
+DN(4)		    UNIX Programmer's Manual		    DN(4)
+
+
+
+NNAAMMEE
+     dn - DN-11 autocall unit interface
+
+SSYYNNOOPPSSIISS
+     ddeevviiccee ddnn00 aatt uubbaa?? ccssrr 00116600002200 vveeccttoorr ddnniinnttrr
+
+DDEESSCCRRIIPPTTIIOONN
+     The _d_n device provides an interface through a DEC DN-11 (or
+     equivalent such as the Able Quadracall) to an auto-call unit
+     (ACU).  To place an outgoing call one forks a sub-process
+     which opens the appropriate call unit file, /_d_e_v/_c_u_a? and
+     writes the phone number on it.  The parent process then
+     opens the corresponding modem line /_d_e_v/_c_u_l?.  When the con-
+     nection has been established, the open on the modem line,
+     /_d_e_v/_c_u_l? will return and the process will be connected.  A
+     timer is normally used to timeout the opening of the modem
+     line.
+
+     The codes for the phone numbers are:
+
+     0-9    dial 0-9
+     *	    dial * (`:' is a synonym)
+     #	    dial # (`;' is a synonym)
+     -	    delay 20 milliseconds
+     <	    end-of-number (`e' is a synonym)
+     =	    delay for a second dial tone (`w' is a synonym)
+     f	    force a hangup of any existing connection
+
+     The entire telephone number must be presented in a single
+     _w_r_i_t_e system call.
+
+     By convention, even numbered call units are for 300 baud
+     modem lines, while odd numbered units are for 1200 baud
+     lines.  For example, /_d_e_v/_c_u_a_0 is associated with a 300 baud
+     modem line, /_d_e_v/_c_u_l_0, while /_d_e_v/_c_u_a_1 is associated with a
+     1200 baud modem line, /_d_e_v/_c_u_l_1.  For devices such as the
+     Quadracall which simulate multiple DN-11 units, the minor
+     device indicates which outgoing modem to use.
+
+FFIILLEESS
+     /dev/cua? call units
+     /dev/cul? associated modem lines
+
+SSEEEE AALLSSOO
+     tip(1C)
+
+DDIIAAGGNNOOSSTTIICCSS
+     Two error numbers are of interest at open time.
+
+     [EBUSY]   The dialer is in use.
+
+     [ENXIO]   The device doesn't exist, or there's no power to
+
+
+
+Printed 7/9/88		  May 15, 1985				1
+
+
+
+
+
+
+DN(4)		    UNIX Programmer's Manual		    DN(4)
+
+
+
+	       it.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 15, 1985				2
+
+
+

@@ -1,0 +1,132 @@
+
+
+
+MALLOC(3F)	    UNIX Programmer's Manual	       MALLOC(3F)
+
+
+
+NNAAMMEE
+     malloc, free, falloc - memory allocator
+
+SSYYNNOOPPSSIISS
+     ssuubbrroouuttiinnee mmaalllloocc ((ssiizzee,, aaddddrr))
+     iinntteeggeerr ssiizzee,, aaddddrr
+
+     ssuubbrroouuttiinnee ffrreeee ((aaddddrr))
+     iinntteeggeerr aaddddrr
+
+     ssuubbrroouuttiinnee ffaalllloocc ((nneelleemm,, eellssiizzee,, cclleeaann,, bbaasseevveecc,, aaddddrr,, ooffffsseett))
+     iinntteeggeerr nneelleemm,, eellssiizzee,, cclleeaann,, aaddddrr,, ooffffsseett
+
+DDEESSCCRRIIPPTTIIOONN
+     _M_a_l_l_o_c, _f_a_l_l_o_c and _f_r_e_e provide a general-purpose memory
+     allocation package.  _M_a_l_l_o_c returns in _a_d_d_r the address of a
+     block of at least _s_i_z_e bytes beginning on an even-byte boun-
+     dary.
+
+     _F_a_l_l_o_c allocates space for an array of _n_e_l_e_m elements of
+     size _e_l_s_i_z_e and returns the address of the block in _a_d_d_r. It
+     zeros the block if _c_l_e_a_n is 1.  It returns in _o_f_f_s_e_t an
+     index such that the storage may be addressed as
+     _b_a_s_e_v_e_c(_o_f_f_s_e_t+_1) ... _b_a_s_e_v_e_c(_o_f_f_s_e_t+_n_e_l_e_m). _F_a_l_l_o_c gets
+     extra bytes so that after address arithmetic, all the
+     objects so addressed are within the block.
+
+     The argument to _f_r_e_e is the address of a block previously
+     allocated by _m_a_l_l_o_c or _f_a_l_l_o_c; this space is made available
+     for further allocation, but its contents are left undis-
+     turbed.  To free blocks allocated by _f_a_l_l_o_c, use _a_d_d_r in
+     calls to _f_r_e_e, do not use _b_a_s_e_v_e_c(_o_f_f_s_e_t+_1).
+
+     Needless to say, grave disorder will result if the space
+     assigned by _m_a_l_l_o_cor_f_a_l_l_o_c is overrun or if some random
+     number is handed to _f_r_e_e.
+
+DDIIAAGGNNOOSSTTIICCSS
+     _M_a_l_l_o_c and _f_a_l_l_o_c set _a_d_d_r to 0 if there is no available
+     memory or if the arena has been detectably corrupted by
+     storing outside the bounds of a block.
+
+     The following example shows how to obtain memory and use it
+     within a subprogram:
+
+	   integer addr, work(1), offset
+	      ...
+	   call falloc ( n, 4, 0, work, addr, offset )
+	   do 10 i = 1, n
+	   work(offset+i) = ...
+     10    continue
+
+
+
+
+Printed 7/9/88		  May 15, 1985				1
+
+
+
+
+
+
+MALLOC(3F)	    UNIX Programmer's Manual	       MALLOC(3F)
+
+
+
+     The next example reads in dimension information, allocates
+     space for two arrays and two vectors, and calls subroutine
+     _d_o_i_t to do the computations:
+
+	   integer addr, dummy(1), offs
+	   read *, k, l, m
+	   indm1   = 1
+	   indm2   = indm1 + k*l
+	   indm3   = indm2 + l*m
+	   indsym  = indm3 + k*m
+	   lsym = n*(n+1)/2
+	   indv  = indsym + lsym
+	   indtot = indv + m
+	   call falloc ( indtot, 4, 0, dummy, addr, offs )
+	   call doit( dummy(indm1+offs), dummy(indm2+offs),
+	  .	      dummy(indm3+offs), dummy(indsym+offs),
+	  .	      dummy(indv +offs), m, n, lsym )
+	   end
+	   subroutine doit( arr1, arr2, arr3, vsym, vec, m, n, lsym )
+	   real arr1(k,l), arr2(l,m), arr3(k,m), vsym(lsym), v2(m)
+	      ...
+
+FFIILLEESS
+     /usr/lib/libU77.a
+
+SSEEEE AALLSSOO
+     malloc(3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 15, 1985				2
+
+
+

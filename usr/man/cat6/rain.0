@@ -1,0 +1,66 @@
+
+
+
+RAIN(6)             UNIX Programmer's Manual		  RAIN(6)
+
+
+
+NNAAMMEE
+     rain - animated raindrops display
+
+SSYYNNOOPPSSIISS
+     /usr/games/rain
+
+DDEESSCCRRIIPPTTIIOONN
+     _R_a_i_n's display is modeled after the VAX/VMS program  of  the
+     same  name.   The	terminal  has  to be set for 9600 baud to
+     obtain the proper effect.
+
+     As with all programs that use _t_e_r_m_c_a_p, the TERM  environment
+     variable  must be set (and exported) to the type of the ter-
+     minal being used.
+
+FFIILLEESS
+     /etc/termcap
+
+AAUUTTHHOORR
+     Eric P. Scott
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 20, 1985				1
+
+
+

@@ -1,0 +1,66 @@
+
+
+
+LP(4)		    UNIX Programmer's Manual		    LP(4)
+
+
+
+NNAAMMEE
+     lp - line printer
+
+SSYYNNOOPPSSIISS
+     ddeevviiccee llpp00 aatt uubbaa00 ccssrr 00117777551144 vveeccttoorr llppiinnttrr
+
+DDEESSCCRRIIPPTTIIOONN
+     _L_p provides the interface to any of the standard DEC line
+     printers on an LP-11 parallel interface.  When it is opened
+     or closed, a suitable number of page ejects is generated.
+     Bytes written are printed.
+
+     The unit number of the printer is specified by the minor
+     device after removing the low 3 bits, which act as per-
+     device parameters.  Currently only the lowest of the low
+     three bits is interpreted: if it is set, the device is
+     treated as having a 64-character set, rather than a full
+     96-character set.	In the resulting half-ASCII mode, lower
+     case letters are turned into upper case and certain charac-
+     ters are escaped according to the following table:
+
+     {	       -(
+     }	       -)
+     `	       -'
+     |	       -!
+     ~	       -^
+
+     The driver correctly interprets carriage returns, back-
+     spaces, tabs, and form feeds.  Lines longer than the maximum
+     page width are truncated.	The default page width is 132
+     columns.  This may be overridden by specifying, for example,
+     ``flags 256'' .
+
+FFIILLEESS
+     /dev/lp
+
+SSEEEE AALLSSOO
+     lpr(1)
+
+DDIIAAGGNNOOSSTTIICCSS
+     None.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 15, 1985				1
+
+
+

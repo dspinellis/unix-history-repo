@@ -1,0 +1,198 @@
+
+
+
+CY(4)		    UNIX Programmer's Manual		    CY(4)
+
+
+
+NNAAMMEE
+     cy - Cipher/tapemaster magtape interface
+
+SSYYNNOOPPSSIISS
+     ccoonnttrroolllleerr ccyy00 aatt vvbbaa?? ccssrr 00xxffffffff44000000 vveeccttoorr ccyyiinnttrr
+     ddeevviiccee yycc00 aatt ccyy00 ddrriivvee 00
+
+DDEESSCCRRIIPPTTIIOONN
+     The Cipher F880, M990/Tapemaster combination provides a
+     standard tape drive interface as described in _m_t(4).  The
+     Cipher F880 tape drive operates at 1600 or 3200 bpi - con-
+     trolled by a switch on the drive. The Cipher M990 operates
+     at 1600, 3200 or 6250 bpi - controlled by switches on the
+     front of the drive.
+
+     The Tapemaster controller board is actually a Multibus con-
+     troller accessed through a Halversa Multibus to VERSAbus
+     converter card.
+
+SSEEEE AALLSSOO
+     mt(1), tar(1), mtio(4)
+
+DDIIAAGGNNOOSSTTIICCSS
+     ccyy%%dd:: %%ddkkbb bbuuffffeerr.  The formatter was found to have a %d
+     kilobyte buffer during autoconfiguration.
+
+     ccyy%%dd:: ttiimmeeoouutt oorr eerrrr dduurriinngg iinniitt,, ssttaattuuss==%%bb.  The controller
+     timed out or an error occurred on a nop command during auto-
+     configuration; the controller may be hung.
+
+     ccyy%%dd:: ccoonnffiigguurraattiioonn ffaaiilluurree,, ssttaattuuss==%%bb.  The controller
+     timed out or an error occurred on a configure command during
+     autoconfiguration; the controller may be hung.
+
+     yycc%%dd:: nnoo wwrriittee rriinngg.  An attempt was made to write on the
+     tape drive when no write ring was present; this message is
+     written on the terminal of the user who tried to access the
+     tape.
+
+     yycc%%dd:: nnoott oonnlliinnee.	An attempt was made to access the tape
+     while it was offline; this message is written on the termi-
+     nal of the user who tried to access the tape.
+
+     ccyy%%dd:: ii//oo ssiizzee ttoooo llaarrggee.	A read or a write request
+     exceeded the maximum transfer size for the controller - 32
+     kilobytes; this message is written on the terminal of the
+     user who made the read or write request.
+
+     yycc%%dd:: hhaarrdd eerrrroorr bbnn%%dd ssttaattuuss==%%bb.	A tape error occurred at
+     block _b_n; the cy error register is printed in hexadecimal
+     with the bits symbolically decoded.  Any error is fatal on
+     non-raw tape; when possible the driver will have retried the
+
+
+
+Printed 7/9/88		  July 8, 1988				1
+
+
+
+
+
+
+CY(4)		    UNIX Programmer's Manual		    CY(4)
+
+
+
+     operation which failed several times before reporting the
+     error.  For known errors, the trailing %s is one of the fol-
+     lowing:
+	  ttiimmeeoouutt, ttiimmeeoouutt11, ttiimmeeoouutt22, ttiimmeeoouutt33, ttiimmeeoouutt44. Time
+	  out errors; this may be due to trying to read a blank
+	  tape or the controller failing to interrupt or the
+	  drive dropping off-line.
+
+	  nnoonn--eexxiisstteenntt mmeemmoorryy.	A controller transfer to memory
+	  timed out.
+
+	  bbllaannkk ttaappee.  The controller detected a blank tape when
+	  data was expected.
+
+	  mmiiccrroo--ddiiaaggnnoossttiicc, mmiissssiinngg ddiiaaggnnoossttiicc jjuummppeerr. An error
+	  occurred in the micro-diagnostics or the diagnostic
+	  mode jumper was not installed while attempting to exe-
+	  cute a diagnostics command.
+
+	  eeoott//bboott ddeetteecctteedd.  The controller unexpectedly encoun-
+	  tered end-of-tape or beginning-of-tape during an opera-
+	  tion.
+
+	  rreettrryy uunnssuucccceessssffuull. An error occurred which could not
+	  be recovered by repeated retries.
+
+	  ffiiffoo oovveerr//uunnddeerr--ffllooww.  The controller was unable to
+	  transfer data to the drive fast enough.  This usually
+	  occurs because a transfer was performed without using
+	  the controller's internal buffer.
+
+	  ddrriivvee ttoo ccoonnttrroolllleerr ppaarriittyy eerrrroorr.  A parity error was
+	  detected by the controller in data transferred between
+	  the drive and the controller's internal buffer.
+
+	  pprroomm cchheecckkssuumm.  The controller thinks its PROM is cor-
+	  rupted.
+
+	  ttiimmee oouutt ttaappee ssttrroobbee ((rreeccoorrdd lleennggtthh eerrrroorr)).  The con-
+	  troller timed out while looking for an inter-record
+	  gap.	This usually occurs because the records on the
+	  tape are larger than expected (or can be handled).
+
+	  ttaappee nnoott rreeaaddyy.  The drive does not respond; usually
+	  the power has been turned off or a cable has come off.
+
+	  wwrriittee pprrootteecctteedd.  A write ring was present in the tape
+	  when a write was attempted.
+
+	  iinnvvaalliidd lliinnkk ppooiinntteerr.  An invalid pointer was encoun-
+	  tered in a tape parameter block.
+
+
+
+
+Printed 7/9/88		  July 8, 1988				2
+
+
+
+
+
+
+CY(4)		    UNIX Programmer's Manual		    CY(4)
+
+
+
+	  uunneexxppeecctteedd ffiillee mmaarrkk.  A tape file mark was encountered
+	  while trying to read or space.
+
+	  iinnvvaalliidd bbyyttee ccoouunntt.  An invalid byte count parameter
+	  was encountered in a tape parameter block.
+
+	  uunniiddeennttiiffiieedd hhaarrddwwaarree eerrrroorr, ssttrreeaammiinngg tteerrmmiinnaatteedd.
+	  These should not happen.
+
+     yycc%%dd:: lloosstt iinntteerrrruupptt.  The controller failed to respond with
+     an interrupt signifying completion of the current command.
+     The system will attempt to abort the outstanding command and
+     reset the controller.
+
+     ccyy%%dd:: rreesseett ffaaiilleedd.  The system was unable to reset the con-
+     troller.  This is normally preceded by another message from
+     the driver.
+
+BBUUGGSS
+     The controller supports only 20-bit addresses.  The only way
+     the system can insure the controller will be able to address
+     data to be transferred is to copy it into an intermediate
+     buffer allocated in the first megabyte of system memory.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  July 8, 1988				3
+
+
+

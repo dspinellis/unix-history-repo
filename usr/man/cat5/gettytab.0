@@ -1,0 +1,264 @@
+
+
+
+GETTYTAB(5)	    UNIX Programmer's Manual	      GETTYTAB(5)
+
+
+
+NNAAMMEE
+     gettytab - terminal configuration data base
+
+SSYYNNOOPPSSIISS
+     /etc/gettytab
+
+DDEESSCCRRIIPPTTIIOONN
+     _G_e_t_t_y_t_a_b is a simplified version of the _t_e_r_m_c_a_p(5) data base
+     used to describe terminal lines.  The initial terminal login
+     process _g_e_t_t_y(8) accesses the _g_e_t_t_y_t_a_b file each time it
+     starts, allowing simpler reconfiguration of terminal charac-
+     teristics.  Each entry in the data base is used to describe
+     one class of terminals.
+
+     There is a default terminal class, _d_e_f_a_u_l_t, that is used to
+     set global defaults for all other classes.  (That is, the
+     _d_e_f_a_u_l_t entry is read, then the entry for the class required
+     is used to override particular settings.)
+
+CCAAPPAABBIILLIITTIIEESS
+     Refer to _t_e_r_m_c_a_p(5) for a description of the file layout.
+     The _d_e_f_a_u_l_t column below lists defaults obtained if there is
+     no entry in the table obtained, nor one in the special
+     _d_e_f_a_u_l_t table.
+
+     NNaammee   TTyyppee  DDeeffaauulltt	 DDeessccrriippttiioonn
+     ap     bool  false          terminal uses any parity
+     bd     num   0		 backspace delay
+     bk     str   0377		 alternate end of line character (input break)
+     cb     bool  false          use crt backspace mode
+     cd     num   0		 carriage-return delay
+     ce     bool  false          use crt erase algorithm
+     ck     bool  false          use crt kill algorithm
+     cl     str   NULL		 screen clear sequence
+     co     bool  false          console - add \n after login prompt
+     ds     str   ^Y		 delayed suspend character
+     dx     bool  false          set DECCTLQ
+     ec     bool  false          leave echo OFF
+     ep     bool  false          terminal uses even parity
+     er     str   ^?		 erase character
+     et     str   ^D		 end of text (EOF) character
+     ev     str   NULL		 initial enviroment
+     f0     num   unused	 tty mode flags to write messages
+     f1     num   unused	 tty mode flags to read login name
+     f2     num   unused	 tty mode flags to leave terminal as
+     fd     num   0		 form-feed (vertical motion) delay
+     fl     str   ^O		 output flush character
+     hc     bool  false          do NOT hangup line on last close
+     he     str   NULL		 hostname editing string
+     hn     str   hostname	 hostname
+     ht     bool  false          terminal has real tabs
+     ig     bool  false          ignore garbage characters in login name
+
+
+
+Printed 7/9/88		  May 19, 1986				1
+
+
+
+
+
+
+GETTYTAB(5)	    UNIX Programmer's Manual	      GETTYTAB(5)
+
+
+
+     im     str   NULL		 initial (banner) message
+     in     str   ^C		 interrupt character
+     is     num   unused	 input speed
+     kl     str   ^U		 kill character
+     lc     bool  false          terminal has lower case
+     lm     str   login:	 login prompt
+     ln     str   ^V		 ``literal next'' character
+     lo     str   /bin/login	 program to exec when name obtained
+     nd     num   0		 newline (line-feed) delay
+     nl     bool  false          terminal has (or might have) a newline character
+     nx     str   default	 next table (for auto speed selection)
+     op     bool  false          terminal uses odd parity
+     os     num   unused	 output speed
+     pc     str   \0		 pad character
+     pe     bool  false          use printer (hard copy) erase algorithm
+     pf     num   0		 delay between first prompt and following flush (seconds)
+     ps     bool  false          line connected to a MICOM port selector
+     qu     str   ^\		 quit character
+     rp     str   ^R		 line retype character
+     rw     bool  false          do NOT use raw for input, use cbreak
+     sp     num   unused	 line speed (input and output)
+     su     str   ^Z		 suspend character
+     tc     str   none		 table continuation
+     to     num   0		 timeout (seconds)
+     tt     str   NULL		 terminal type (for enviroment)
+     ub     bool  false          do unbuffered output (of prompts etc)
+     uc     bool  false          terminal is known upper case only
+     we     str   ^W		 word erase character
+     xc     bool  false          do NOT echo control chars as ^X
+     xf     str   ^S		 XOFF (stop output) character
+     xn     str   ^Q		 XON (start output) character
+
+     If no line speed is specified, speed will not be altered
+     from that which prevails when getty is entered.  Specifying
+     an input or output speed will override line speed for stated
+     direction only.
+
+     Terminal modes to be used for the output of the message, for
+     input of the login name, and to leave the terminal set as
+     upon completion, are derived from the boolean flags speci-
+     fied.  If the derivation should prove inadequate, any (or
+     all) of these three may be overriden with one of the ff00, ff11,
+     or ff22 numeric specifications, which can be used to specify
+     (usually in octal, with a leading '0') the exact values of
+     the flags.  Local (new tty) flags are set in the top 16 bits
+     of this (32 bit) value.
+
+     Should _g_e_t_t_y receive a null character (presumed to indicate
+     a line break) it will restart using the table indicated by
+     the nnxx entry. If there is none, it will re-use its original
+     table.
+
+
+
+
+Printed 7/9/88		  May 19, 1986				2
+
+
+
+
+
+
+GETTYTAB(5)	    UNIX Programmer's Manual	      GETTYTAB(5)
+
+
+
+     Delays are specified in milliseconds, the nearest possible
+     delay available in the tty driver will be used.  Should
+     greater certainty be desired, delays with values 0, 1, 2,
+     and 3 are interpreted as choosing that particular delay
+     algorithm from the driver.
+
+     The ccll screen clear string may be preceded by a (decimal)
+     number of milliseconds of delay required (a la termcap).
+     This delay is simulated by repeated use of the pad character
+     ppcc.
+
+     The initial message, and login message, iimm and llmm may
+     include the character sequence %%hh or %%tt to obtain the host-
+     name or tty name respectively.  (%%%% obtains a single '%'
+     character.) The hostname is normally obtained from the sys-
+     tem, but may be set by the hhnn table entry.  In either case
+     it may be edited with hhee.	The hhee string is a sequence of
+     characters, each character that is neither '@' nor '#' is
+     copied into the final hostname.  A '@' in the hhee string,
+     causes one character from the real hostname to be copied to
+     the final hostname.  A '#' in the hhee string, causes the next
+     character of the real hostname to be skipped.  Surplus '@'
+     and '#' characters are ignored.
+
+     When getty execs the login process, given in the lloo string
+     (usually "/bin/login"), it will have set the enviroment to
+     include the terminal type, as indicated by the tttt string (if
+     it exists).  The eevv string, can be used to enter additional
+     data into the environment.  It is a list of comma separated
+     strings, each of which will presumably be of the form
+     _n_a_m_e=_v_a_l_u_e.
+
+     If a non-zero timeout is specified, with ttoo, then getty will
+     exit within the indicated number of seconds, either having
+     received a login name and passed control to _l_o_g_i_n, or having
+     received an alarm signal, and exited.  This may be useful to
+     hangup dial in lines.
+
+     Output from _g_e_t_t_y is even parity unless oopp is specified.  OOpp
+     may be specified with aapp to allow any parity on input, but
+     generate odd parity output.  Note: this only applies while
+     getty is being run, terminal driver limitations prevent a
+     more complete implementation.  _G_e_t_t_y does not check parity
+     of input characters in _R_A_W mode.
+
+SSEEEE AALLSSOO
+     login(1), termcap(5), getty(8).
+
+BBUUGGSS
+     The special characters (erase, kill, etc.) are reset to sys-
+     tem defaults by _l_o_g_i_n(1).	In aallll cases, '#' or '^H' typed
+     in a login name will be treated as an erase character, and
+
+
+
+Printed 7/9/88		  May 19, 1986				3
+
+
+
+
+
+
+GETTYTAB(5)	    UNIX Programmer's Manual	      GETTYTAB(5)
+
+
+
+     '@' will be treated as a kill character.
+
+     The delay stuff is a real crock.  Apart form its general
+     lack of flexibility, some of the delay algorithms are not
+     implemented.  The terminal driver should support sane delay
+     settings.
+
+     The hhee capability is stupid.
+
+     _T_e_r_m_c_a_p format is horrid, something more rational should
+     have been chosen.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 19, 1986				4
+
+
+

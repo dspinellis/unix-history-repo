@@ -1,0 +1,132 @@
+
+
+
+REMOTE(5)	    UNIX Programmer's Manual		REMOTE(5)
+
+
+
+NNAAMMEE
+     remote - remote host description file
+
+DDEESSCCRRIIPPTTIIOONN
+     The systems known by _t_i_p(1C) and their attributes are stored
+     in an ASCII file which is structured somewhat like the
+     _t_e_r_m_c_a_p(5) file.  Each line in the file provides a descrip-
+     tion for a single _s_y_s_t_e_m.	Fields are separated by a colon
+     (``:'').  Lines ending in a \ character with an immediately
+     following newline are continued on the next line.
+
+     The first entry is the name(s) of the host system.  If there
+     is more than one name for a system, the names are separated
+     by vertical bars.	After the name of the system comes the
+     fields of the description.  A field name followed by an `='
+     sign indicates a string value follows.  A field name fol-
+     lowed by a `#' sign indicates a following numeric value.
+
+     Entries named ``tip*'' and ``cu*'' are used as default
+     entries by _t_i_p, and the _c_u interface to _t_i_p, as follows.
+     When _t_i_p is invoked with only a phone number, it looks for
+     an entry of the form ``tip300'', where 300 is the baud rate
+     with which the connection is to be made.  When the _c_u inter-
+     face is used, entries of the form ``cu300'' are used.
+
+CCAAPPAABBIILLIITTIIEESS
+     Capabilities are either strings (str), numbers (num), or
+     boolean flags (bool).  A string capability is specified by
+     _c_a_p_a_b_i_l_i_t_y=_v_a_l_u_e; e.g. ``dv=/dev/harris''.  A numeric capa-
+     bility is specified by _c_a_p_a_b_i_l_i_t_y#_v_a_l_u_e; e.g. ``xa#99''.  A
+     boolean capability is specified by simply listing the capa-
+     bility.
+
+     aatt   (str) Auto call unit type.
+
+     bbrr   (num) The baud rate used in establishing a connection
+	  to the remote host.  This is a decimal number. The
+	  default baud rate is 300 baud.
+
+     ccmm   (str) An initial connection message to be sent to the
+	  remote host.	For example, if a host is reached through
+	  port selector, this might be set to the appropriate
+	  sequence required to switch to the host.
+
+     ccuu   (str) Call unit if making a phone call.  Default is the
+	  same as the `dv' field.
+
+     ddii   (str) Disconnect message sent to the host when a
+	  disconnect is requested by the user.
+
+     dduu   (bool) This host is on a dial-up line.
+
+
+
+
+Printed 7/9/88		  May 15, 1985				1
+
+
+
+
+
+
+REMOTE(5)	    UNIX Programmer's Manual		REMOTE(5)
+
+
+
+     ddvv   (str) UNIX device(s) to open to establish a connection.
+	  If this file refers to a terminal line, _t_i_p(1C)
+	  attempts to perform an exclusive open on the device to
+	  insure only one user at a time has access to the port.
+
+     eell   (str) Characters marking an end-of-line. The default is
+	  NULL.  `~' escapes are only recognized by _t_i_p after one
+	  of the characters in `el', or after a carriage-return.
+
+     ffss   (str) Frame size for transfers. The default frame size
+	  is equal to BUFSIZ.
+
+     hhdd   (bool) The host uses half-duplex communication, local
+	  echo should be performed.
+
+     iiee   (str) Input end-of-file marks.  The default is NULL.
+
+     ooee   (str) Output end-of-file string.  The default is NULL.
+	  When _t_i_p is transferring a file, this string is sent at
+	  end-of-file.
+
+     ppaa   (str) The type of parity to use when sending data to
+	  the host.  This may be one of ``even'', ``odd'',
+	  ``none'', ``zero'' (always set bit 8 to zero), ``one''
+	  (always set bit 8 to 1).  The default is even parity.
+
+     ppnn   (str) Telephone number(s) for this host.  If the tele-
+	  phone number field contains an @ sign, _t_i_p searches the
+	  file /_e_t_c/_p_h_o_n_e_s file for a list of telephone numbers;
+	  c.f.	_p_h_o_n_e_s(5).
+
+     ttcc   (str) Indicates that the list of capabilities is con-
+	  tinued in the named description.  This is used pri-
+	  marily to share common capability information.
+
+     Here is a short example showing the use of the capability
+     continuation feature:
+
+     UNIX-1200:\
+	  :dv=/dev/cau0:el=^D^U^C^S^Q^O@:du:at=ventel:ie=#$%:oe=^D:br#1200:
+     arpavax|ax:\
+	  :pn=7654321%:tc=UNIX-1200
+
+FFIILLEESS
+     /etc/remote
+
+SSEEEE AALLSSOO
+     tip(1C), phones(5)
+
+
+
+
+
+
+
+Printed 7/9/88		  May 15, 1985				2
+
+
+

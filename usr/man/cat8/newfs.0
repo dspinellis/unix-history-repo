@@ -1,0 +1,198 @@
+
+
+
+NEWFS(8)	    UNIX Programmer's Manual		 NEWFS(8)
+
+
+
+NNAAMMEE
+     newfs - construct a new file system
+
+SSYYNNOOPPSSIISS
+     //eettcc//nneewwffss [ --NN ] [ mmkkffss--ooppttiioonnss ] ssppeecciiaall
+
+DDEESSCCRRIIPPTTIIOONN
+     _N_e_w_f_s replaces the more obtuse _m_k_f_s(8) program.  Before run-
+     ning _n_e_w_f_s, the disk must be labeled using _d_i_s_k_l_a_b_e_l(8).
+     _N_e_w_f_s builds a file system on the specified special device
+     basing its defaults on the information in the disk label.
+     Typically the defaults are reasonable, however _n_e_w_f_s has
+     numerous options to allow the defaults to be selectively
+     overridden.  The --NN option causes the file system parameters
+     to be printed out without really creating the file system.
+
+     The following options define the general layout policies.
+
+     --bb bblloocckk--ssiizzee
+	       The block size of the file system in bytes.
+
+     --ff ffrraagg--ssiizzee
+	       The fragment size of the file system in bytes.
+
+     --mm ffrreeee ssppaaccee %%
+	       The percentage of space reserved from normal
+	       users; the minimum free space threshold.  The
+	       default value used is 10%.  See _t_u_n_e_f_s(8) for more
+	       details on how to set this option.
+
+     --oo ooppttiimmiizzaattiioonn pprreeffeerreennccee ((````ssppaaccee'''' oorr ````ttiimmee''''))
+	       The file system can either be instructed to try to
+	       minimize the time spent allocating blocks, or to
+	       try to minimize the space fragmentation on the
+	       disk.  If the value of minfree (see above) is less
+	       than 10%, the default is to optimize for space; if
+	       the value of minfree greater than or equal to 10%,
+	       the default is to optimize for time.  See
+	       _t_u_n_e_f_s(8) for more details on how to set this
+	       option.
+
+     --aa mmaaxxccoonnttiigg
+	       This specifies the maximum number of contiguous
+	       blocks that will be laid out before forcing a
+	       rotational delay (see -d below).  The default
+	       value is one.  See _t_u_n_e_f_s(8) for more details on
+	       how to set this option.
+
+     --dd rroottddeellaayy
+	       This specifies the expected time (in milliseconds)
+	       to service a transfer completion interrupt and
+	       initiate a new transfer on the same disk.  The
+
+
+
+Printed 7/9/88		 October 1, 1987			1
+
+
+
+
+
+
+NEWFS(8)	    UNIX Programmer's Manual		 NEWFS(8)
+
+
+
+	       default is 4 milliseconds.  See _t_u_n_e_f_s(8) for more
+	       details on how to set this option.
+
+     --ee mmaaxxbbppgg This indicates the maximum number of blocks any
+	       single file can allocate out of a cylinder group
+	       before it is forced to begin allocating blocks
+	       from another cylinder group.  The default is about
+	       one quarter of the total blocks in a cylinder
+	       group.  See _t_u_n_e_f_s(8) for more details on how to
+	       set this option.
+
+     --ii nnuummbbeerr ooff bbyytteess ppeerr iinnooddee
+	       This specifies the density of inodes in the file
+	       system.	The default is to create an inode for
+	       each 2048 bytes of data space.  If fewer inodes
+	       are desired, a larger number should be used; to
+	       create more inodes a smaller number should be
+	       given.
+
+     --cc ##ccyylliinnddeerrss//ggrroouupp
+	       The number of cylinders per cylinder group in a
+	       file system.  The default value used is 16.
+
+     --ss ssiizzee   The size of the file system in sectors.
+
+     The following options override the standard sizes for the
+     disk geometry. Their default values are taken from the disk
+     label.  Changing these defaults is useful only when using
+     _n_e_w_f_s to build a file system whose raw image will eventually
+     be used on a different type of disk than the one on which it
+     is initially created (for example on a write-once disk).
+     Note that changing any of these values from their defaults
+     will make it impossible for _f_s_c_k to find the alternate
+     superblocks if the standard super block is lost.
+
+     --rr rreevvoolluuttiioonnss//mmiinnuuttee
+	       The speed of the disk in revolutions per minute.
+
+     --SS sseeccttoorr--ssiizzee
+	       The size of a sector in bytes (almost never any-
+	       thing but 512).
+
+     --uu sseeccttoorrss//ttrraacckk
+	       The number of sectors/track available for data
+	       allocation by the file system.  This does not
+	       include sectors reserved at the end of each track
+	       for bad block replacement (see --pp below).
+
+     --tt ##ttrraacckkss//ccyylliinnddeerr
+	       The number of tracks/cylinder available for data
+	       allocation by the file system.
+
+
+
+
+Printed 7/9/88		 October 1, 1987			2
+
+
+
+
+
+
+NEWFS(8)	    UNIX Programmer's Manual		 NEWFS(8)
+
+
+
+     --pp ssppaarree sseeccttoorrss ppeerr ttrraacckk
+	       Spare sectors (bad sector replacements) are physi-
+	       cal sectors that occupy space at the end of each
+	       track.  They are not counted as part of the
+	       sectors/track (--uu) since they are not available to
+	       the file system for data allocation.
+
+     --xx ssppaarree sseeccttoorrss ppeerr ccyylliinnddeerr
+	       Spare sectors (bad sector replacements) are physi-
+	       cal sectors that occupy space at the end of the
+	       last track in the cylinder.  They are deducted
+	       from the sectors/track (--uu) of the last track of
+	       each cylinder since they are not available to the
+	       file system for data allocation.
+
+     --ll hhaarrddwwaarree sseeccttoorr iinntteerrlleeaavvee
+	       Used to describe perturbations in the media format
+	       to compensate for a slow controller.  Interleave
+	       is physical sector interleave on each track,
+	       specified as the denominator of the ratio:
+		    sectors read / sectors passed over
+	       Thus an interleave of 1/1 implies contiguous lay-
+	       out, while 1/2 implies logical sector 0 is
+	       separated by one sector from logical sector 1.
+
+     --kk sseeccttoorr 00 sskkeeww,, ppeerr ttrraacckk
+	       Used to describe perturbations in the media format
+	       to compensate for a slow controller.  Track skew
+	       is the offset of sector 0 on track N relative to
+	       sector 0 on track N-1 on the same cylinder.
+
+SSEEEE AALLSSOO
+     disktab(5), fs(5), disklabel(8), diskpart(8), fsck(8), for-
+     mat(8), tunefs(8)
+
+     M. McKusick, W. Joy, S. Leffler, R. Fabry, ``A Fast File
+     System for UNIX'', _A_C_M _T_r_a_n_s_a_c_t_i_o_n_s _o_n _C_o_m_p_u_t_e_r _S_y_s_t_e_m_s _2,
+     3.  pp 181-197, August 1984.  (reprinted in the System
+     Manager's Manual, SMM:14)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 October 1, 1987			3
+
+
+

@@ -1,0 +1,132 @@
+
+
+
+BACKGAMMON(6)	    UNIX Programmer's Manual	    BACKGAMMON(6)
+
+
+
+NNAAMMEE
+     backgammon - the game of backgammon
+
+SSYYNNOOPPSSIISS
+     bbaacckkggaammmmoonn [ - ] [ n r w b pr pw pb t_t_e_r_m s_f_i_l_e ]
+
+DDEESSCCRRIIPPTTIIOONN
+     This program lets you play backgammon against the computer
+     or against a "friend".  All commands only are one letter, so
+     you don't need to type a carriage return, except at the end
+     of a move.  The program is mostly self documenting, so that
+     a question mark (?) will usually get some help.  If you
+     answer `y' when the program asks if you want the rules, you
+     will get text explaining the rules of the game, some hints
+     on strategy, instruction on how to use the program, and a
+     tutorial consisting of a practice game against the computer.
+     A description of how to use the program can be obtained by
+     answering `y' when it asks if you want instructions.
+
+     The possible arguments for backgammon (most are unnecessary
+     but some are very convenient) consist of:
+
+     nn	     don't ask for rules or instructions
+
+     rr	     player is red (implies n)
+
+     ww	     player is white (implies n)
+
+     bb	     two players, red and white (implies n)
+
+     pprr      print the board before red's turn
+
+     ppww      print the board before white's turn
+
+     ppbb      print the board before both player's turn
+
+     tttteerrmm   terminal is type _t_e_r_m, uses /etc/termcap
+
+     ssffiillee   recover previously saved game from _f_i_l_e.  (This can
+	     also be done by executing the saved file, i.e., typ-
+	     ing its name in as a command)
+
+     Arguments may be optionally  preceded  by	a  `-'.   Several
+     arguments may be concatenated together, but not after `s' or
+     `t' arguments, since they can be followed	by  an	arbitrary
+     string.   Any  unrecognized arguments are ignored.  An argu-
+     ment of a lone `-' gets a description of possible arguments.
+
+     If _t_e_r_m has capabilities for  direct  cursor  movement  (see
+     _t_e_r_m_c_a_p(5))  _b_a_c_k_g_a_m_m_o_n ``fixes'' the board after each move,
+     so the board does not  need  to  be  reprinted,  unless  the
+     screen suffers some horrendous malady.  Also, any `p' option
+
+
+
+Printed 7/9/88		  July 9, 1988				1
+
+
+
+
+
+
+BACKGAMMON(6)	    UNIX Programmer's Manual	    BACKGAMMON(6)
+
+
+
+     will be ignored.  (The `t' option is  not	necessary  unless
+     the   terminal   type  does  not  match  the  entry  in  the
+     /etc/termcap data base.)
+
+QQUUIICCKK RREEFFEERREENNCCEE
+     When the program prompts by typing only your color,  type	a
+     space or carriage return to roll, or
+
+     dd	     to double
+
+     pp	     to print the board
+
+     qq	     to quit
+
+     ss	     to save the game for later
+
+     When the program prompts with 'Move:', type
+
+     pp	     to print the board
+
+     qq	     to quit
+
+     ss	     to save the game
+
+     or a _m_o_v_e, which is a sequence of
+
+     ss--ff     move from ss to ff
+
+     ss//rr     move one man on ss the roll rr
+
+     separated by commas or spaces and	ending	with  a  newline.
+     Available abbreviations are
+
+     ss--ff11--ff22   means ss--ff11,,ff11--ff22
+
+     ss//rr11rr22    means ss//rr11,,ss//rr22
+
+     Use `b' for bar and `h' for home, or 0 or 25 as appropriate.
+
+AAUUTTHHOORR
+     Alan Char
+
+FFIILLEESS
+     /usr/games/teachgammon   - rules and tutorial
+
+     /etc/termcap	      - terminal capabilities
+
+BBUUGGSS
+     The program's strategy needs much work.
+
+
+
+
+
+
+Printed 7/9/88		  July 9, 1988				2
+
+
+

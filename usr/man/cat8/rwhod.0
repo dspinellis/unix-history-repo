@@ -1,0 +1,132 @@
+
+
+
+RWHOD(8C)	    UNIX Programmer's Manual		RWHOD(8C)
+
+
+
+NNAAMMEE
+     rwhod - system status server
+
+SSYYNNOOPPSSIISS
+     //eettcc//rrwwhhoodd
+
+DDEESSCCRRIIPPTTIIOONN
+     _R_w_h_o_d is the server which maintains the database used by the
+     _r_w_h_o(1C) and _r_u_p_t_i_m_e(1C) programs.  Its operation is predi-
+     cated on the ability to _b_r_o_a_d_c_a_s_t messages on a network.
+
+     _R_w_h_o_d operates as both a producer and consumer of status
+     information.  As a producer of information it periodically
+     queries the state of the system and constructs status mes-
+     sages which are broadcast on a network.  As a consumer of
+     information, it listens for other _r_w_h_o_d servers' status mes-
+     sages, validating them, then recording them in a collection
+     of files located in the directory /_u_s_r/_s_p_o_o_l/_r_w_h_o.
+
+     The server transmits and receives messages at the port indi-
+     cated in the ``rwho'' service specification; see _s_e_r_-
+     _v_i_c_e_s(5).	The messages sent and received, are of the form:
+
+     struct    outmp {
+	  char out_line[8];/* tty name */
+	  char out_name[8];/* user id */
+	  long out_time;/* time on */
+     };
+
+     struct    whod {
+	  char wd_vers;
+	  char wd_type;
+	  char wd_fill[2];
+	  int  wd_sendtime;
+	  int  wd_recvtime;
+	  char wd_hostname[32];
+	  int  wd_loadav[3];
+	  int  wd_boottime;
+	  struct    whoent {
+	       structoutmp we_utmp;
+	       int  we_idle;
+	  } wd_we[1024 / sizeof (struct whoent)];
+     };
+
+     All fields are converted to network byte order prior to
+     transmission.  The load averages are as calculated by the
+     _w(1) program, and represent load averages over the 5, 10,
+     and 15 minute intervals prior to a server's transmission;
+     they are multiplied by 100 for representation in an integer.
+     The host name included is that returned by the _g_e_t_h_o_s_t_-
+     _n_a_m_e(2) system call, with any trailing domain name omitted.
+     The array at the end of the message contains information
+
+
+
+Printed 7/9/88		  May 24, 1986				1
+
+
+
+
+
+
+RWHOD(8C)	    UNIX Programmer's Manual		RWHOD(8C)
+
+
+
+     about the users logged in to the sending machine.	This
+     information includes the contents of the _u_t_m_p(5) entry for
+     each non-idle terminal line and a value indicating the time
+     in seconds since a character was last received on the termi-
+     nal line.
+
+     Messages received by the _r_w_h_o server are discarded unless
+     they originated at an _r_w_h_o server's port.	In addition, if
+     the host's name, as specified in the message, contains any
+     unprintable ASCII characters, the message is discarded.
+     Valid messages received by _r_w_h_o_d are placed in files named
+     _w_h_o_d._h_o_s_t_n_a_m_e in the directory /_u_s_r/_s_p_o_o_l/_r_w_h_o.  These files
+     contain only the most recent message, in the format
+     described above.
+
+     Status messages are generated approximately once every 3
+     minutes.  _R_w_h_o_d performs an _n_l_i_s_t(3) on /vmunix every 30
+     minutes to guard against the possibility that this file is
+     not the system image currently operating.
+
+SSEEEE AALLSSOO
+     rwho(1C), ruptime(1C)
+
+BBUUGGSS
+     There should be a way to relay status information between
+     networks. Status information should be sent only upon
+     request rather than continuously.	People often interpret
+     the server dying or network communtication failures as a
+     machine going down.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 24, 1986				2
+
+
+

@@ -1,0 +1,132 @@
+
+
+
+TTYS(5)             UNIX Programmer's Manual		  TTYS(5)
+
+
+
+NNAAMMEE
+     ttys - terminal initialization data
+
+DDEESSCCRRIIPPTTIIOONN
+     The _t_t_y_s file contains information that is used by various
+     routines to initialize and control the use of terminal spe-
+     cial files. This information is read with the _g_e_t_t_t_y_e_n_t(3)
+     library routines.	There is one line in the _t_t_y_s file per
+     special file.  Fields are separated by tabs and/or spaces.
+     Some fields may contain more than one word and should be
+     enclosed in double quotes.  Blank lines and comments can
+     appear anywhere in the file; comments are delimited by `#'
+     and new line. Unspecified fields default to null.	The first
+     field is the terminal's entry in the device directory, /dev.
+     The second field of the file is the command to execute for
+     the line, typically _g_e_t_t_y(8), which performs such tasks as
+     baud-rate recognition, reading the login name, and calling
+     _l_o_g_i_n(1).	It can be, however, any desired command, for
+     example the start up for a window system terminal emulator
+     or some other daemon process, and can contain multiple words
+     if quoted.  The third field is the type of terminal normally
+     connected to that tty line, as found in the _t_e_r_m_c_a_p(5) data
+     base file.  The remaining fields set flags in the _t_y__s_t_a_t_u_s
+     entry (see _g_e_t_t_t_y_e_n_t(3)) or specify a window system process
+     that _i_n_i_t(8) will maintain for the terminal line.	As flag
+     values, the strings `on' and `off' specify whether _i_n_i_t
+     should execute the command given in the second field, while
+     `secure' in addition to `on' allows root to login on this
+     line.  These flag fields should not be quoted.  The string
+     `window=' is followed by a quoted command string which _i_n_i_t
+     will execute before starting _g_e_t_t_y.  If the line ends in a
+     comment, the comment is included in the _t_y__c_o_m_m_e_n_t field of
+     the ttyent structure.
+
+     Some examples:
+
+     console "/etc/getty std.1200"   vt100	  on secure
+     ttyd0   "/etc/getty d1200"      dialup	  on	 # 555-1234
+     ttyh0   "/etc/getty std.9600"   hp2621-nl	  on	 # 254MC
+     ttyh1   "/etc/getty std.9600"   plugboard	  on	 # John's office
+     ttyp0   none		     network
+     ttyp1   none		     network	  off
+     ttyv0   "/usr/new/xterm -L :0"  vs100	  on window="/usr/new/Xvs100 0"
+
+     The first example permits root login on the console at 1200
+     baud, the second allows dialup at 1200 baud without root
+     login, the third and fourth allow login at 9600 baud with
+     terminal types of "hp2621-nl" and "plugboard" respectively,
+     the fifth and sixth line are examples of network pseudo
+     ttys, which should not have _g_e_t_t_y enabled on them, and the
+     last example shows a terminal emulator and window system
+     startup entry.
+
+
+
+Printed 7/9/88		  May 20, 1986				1
+
+
+
+
+
+
+TTYS(5)             UNIX Programmer's Manual		  TTYS(5)
+
+
+
+FFIILLEESS
+     /etc/ttys
+
+SSEEEE AALLSSOO
+     login(1), getttyent(3), gettytab(5), init(8), getty(8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 20, 1986				2
+
+
+

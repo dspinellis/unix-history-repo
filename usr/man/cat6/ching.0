@@ -1,0 +1,132 @@
+
+
+
+CHING(6)	    UNIX Programmer's Manual		 CHING(6)
+
+
+
+NNAAMMEE
+     ching - the book of changes and other cookies
+
+SSYYNNOOPPSSIISS
+     //uussrr//ggaammeess//cchhiinngg [ hexagram ]
+
+DDEESSCCRRIIPPTTIIOONN
+     The _I _C_h_i_n_g or _B_o_o_k _o_f _C_h_a_n_g_e_s is an ancient Chinese oracle
+     that has been in use for centuries as a source of wisdom and
+     advice.
+
+     The text of the _o_r_a_c_l_e (as it is sometimes known) consists
+     of sixty-four _h_e_x_a_g_r_a_m_s, each symbolized by a particular
+     arrangement of six straight (---) and broken (- -) lines.
+     These lines have values ranging from six through nine, with
+     the even values indicating the broken lines.
+
+     Each hexagram consists of two major sections.  The JJuuddggeemmeenntt
+     relates specifically to the matter at hand (E.g., "It furth-
+     ers one to have somewhere to go.") while the IImmaaggee describes
+     the general attributes of the hexagram and how they apply to
+     one's own life ("Thus the superior man makes himself strong
+     and untiring.").
+
+     When any of the lines have the values six or nine, they are
+     moving lines; for each there is an appended judgement which
+     becomes significant.  Furthermore, the moving lines are
+     inherently unstable and change into their opposites; a
+     second hexagram (and thus an additional judgement) is
+     formed.
+
+     Normally, one consults the oracle by fixing the desired
+     question firmly in mind and then casting a set of changes
+     (lines) using yarrow-stalks or tossed coins.  The resulting
+     hexagram will be the answer to the question.
+
+     Using an algorithm suggested by S. C. Johnson, the UNIX _o_r_a_-
+     _c_l_e simply reads a question from the standard input (up to
+     an EOF) and hashes the individual characters in combination
+     with the time of day, process id and any other magic numbers
+     which happen to be lying around the system.  The resulting
+     value is used as the seed of a random number generator which
+     drives a simulated coin-toss divination.  The answer is then
+     piped through nnrrooffff for formatting and will appear on the
+     standard output.
+
+     For those who wish to remain steadfast in the old tradi-
+     tions, the oracle will also accept the results of a personal
+     divination using, for example, coins.  To do this, cast the
+     change and then type the resulting line values as an argu-
+     ment.
+
+
+
+
+Printed 7/9/88		  May 20, 1985				1
+
+
+
+
+
+
+CHING(6)	    UNIX Programmer's Manual		 CHING(6)
+
+
+
+     The impatient modern may prefer to settle for Chinese cook-
+     ies; try _f_o_r_t_u_n_e(6).
+
+SSEEEE AALLSSOO
+     It furthers one to see the great man.
+
+DDIIAAGGNNOOSSTTIICCSS
+     The great prince issues commands,
+     Founds states, vests families with fiefs.
+     Inferior people should not be employed.
+
+BBUUGGSS
+     Waiting in the mud
+     Brings about the arrival of the enemy.
+
+     If one is not extremely careful,
+     Somebody may come up from behind and strike him.
+     Misfortune.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 20, 1985				2
+
+
+

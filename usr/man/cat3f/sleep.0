@@ -1,0 +1,66 @@
+
+
+
+SLEEP(3F)	    UNIX Programmer's Manual		SLEEP(3F)
+
+
+
+NNAAMMEE
+     sleep - suspend execution for an interval
+
+SSYYNNOOPPSSIISS
+     ssuubbrroouuttiinnee sslleeeepp ((iittiimmee))
+
+DDEESSCCRRIIPPTTIIOONN
+     _S_l_e_e_p causes the calling process to be suspended for _i_t_i_m_e
+     seconds.  The actual time can be up to 1 second less than
+     _i_t_i_m_e due to granularity in system timekeeping.
+
+FFIILLEESS
+     /usr/lib/libU77.a
+
+SSEEEE AALLSSOO
+     sleep(3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 15, 1985				1
+
+
+

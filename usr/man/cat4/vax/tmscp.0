@@ -1,0 +1,132 @@
+
+
+
+TMSCP(4)	    UNIX Programmer's Manual		 TMSCP(4)
+
+
+
+NNAAMMEE
+     tmscp - DEC TMSCP magtape interface
+
+SSYYNNOOPPSSIISS
+     ccoonnttrroolllleerr ttmmssccpp00 aatt uubbaa?? ccssrr 00117744550000 vveeccttoorr ttmmssccppiinnttrr
+     ttaappee ttmmss00 aatt ttmmssccpp00 ddrriivvee 00
+
+DDEESSCCRRIIPPTTIIOONN
+     Tape controllers compatible with the DEC Tape Mass Storage
+     Control Protocol (TMSCP) architecture such as the TU81 and
+     the TK50 provide a standard tape drive interface as
+     described in _m_t_i_o(4).  The controller communicates with the
+     host through a packet oriented protocol.  Consult the file
+     <vax/tmscp.h> for a detailed description of this protocol.
+
+DDIIAAGGNNOOSSTTIICCSS
+     ttmmssccpp ccoonnttrroolllleerr ffaaiilleedd ttoo iinniitt.  The controller initializa-
+     tion procedure failed.  This probably indicates a hardware
+     problem.
+
+     ttmmssccpp%%dd:: ssaa 00%%oo,, ssttaattee %%dd.  (Additional status information
+     given after a hard I/O error.) The values of the controller
+     status register and the internal driver state are printed.
+
+     ttmmssccpp%%dd:: rraannddoomm iinntteerrrruupptt iiggnnoorreedd.  An unexpected interrupt
+     was received (e.g. when no i/o was pending).  The interrupt
+     is ignored.
+
+     ttmmssccpp%%dd::  iinntteerrrruupptt iinn uunnkknnoowwnn ssttaattee %%dd iiggnnoorreedd.  An inter-
+     rupt was received when the driver was in an unknown internal
+     state.  Indicates a hardware problem or a driver bug.
+
+     ttmmssccpp%%dd::  ffaattaall eerrrroorr ((00%%oo)).  The controller detected a
+     ``fatal error'' in the status returned to the host.  The
+     contents of the status register are displayed.
+
+     OOFFFFLLIINNEE.  (Additional status information given after a hard
+     I/O error.) A hard I/O error occurred because the drive was
+     not on-line.
+
+     The following errors are interpretations of TMSCP error mes-
+     sages returned by the controller to the host.  Each is pre-
+     ceded by either ttmmssccpp%%dd:: hhaarrdd eerrrroorr or ttmmssccpp%%dd:: ssoofftt eerrrroorr.
+
+     ccoonnttrroolllleerr eerrrroorr,, eevveenntt 00%%oo.
+
+     hhoosstt mmeemmoorryy aacccceessss eerrrroorr,, eevveenntt 00%%oo,, aaddddrr 00%%oo.
+
+     ttaappee ttrraannssffeerr eerrrroorr,, uunniitt %%dd,, ggrrpp 00xx%%xx,, eevveenntt 00%%oo.
+
+     SSTTII eerrrroorr,, uunniitt %%dd,, eevveenntt 00%%oo.
+
+
+
+
+Printed 7/9/88		  June 4, 1986				1
+
+
+
+
+
+
+TMSCP(4)	    UNIX Programmer's Manual		 TMSCP(4)
+
+
+
+     SSTTII DDrriivvee EErrrroorr LLoogg,, uunniitt %%dd,, eevveenntt 00%%oo.
+
+     SSTTII FFoorrmmaatttteerr EErrrroorr LLoogg,, uunniitt %%dd,, eevveenntt 00%%oo.
+
+     uunnkknnoowwnn eerrrroorr,, uunniitt %%dd,, ffoorrmmaatt 00%%oo,, eevveenntt 00%%oo.
+
+SSEEEE AALLSSOO
+     mt(1), tar(1), tp(1), mtio(4), tm(4), ts(4), ut(4), dmesg(8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  June 4, 1986				2
+
+
+

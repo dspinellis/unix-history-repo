@@ -1,0 +1,66 @@
+
+
+
+HDH(4)		    UNIX Programmer's Manual		   HDH(4)
+
+
+
+NNAAMMEE
+     hdh - ACC IF-11/HDH IMP interface
+
+SSYYNNOOPPSSIISS
+     ppsseeuuddoo--ddeevviiccee iimmpp
+     ddeevviiccee hhddhh00 aatt uubbaa00 ccssrr 116666774400 vveeccttoorr hhddhhiinnttrr
+
+DDEESSCCRRIIPPTTIIOONN
+     The _h_d_h device provides an HDLC Host (HDH) interface to an
+     IMP.  It is normally used when participating in the DARPA
+     Internet.	The controller itself is not accessible to users,
+     but instead provides the hardware support to the IMP inter-
+     face described in _i_m_p(4).	When configuring, the _i_m_p
+     pseudo-device must also be included.
+
+DDIIAAGGNNOOSSTTIICCSS
+     hhddhh%%dd:: nnoott aalliivvee.	The initialization routine was entered
+     even though the device did not autoconfigure.  This indi-
+     cates a system problem.
+
+     hhddhh%%dd:: ccaannnnoott ggeett cchhaann %%dd uubbaa rreessoouurrcceess.  Insufficient
+     UNIBUS resources existed to initialize the device.  This is
+     likely to be a shortage of UNIBUS mapping registers.
+
+     hhddhh%%dd:: LLIINNEE UUPP.  This indicates that both the HDLC and HDH
+     protocols have declared the link to the IMP alive.
+
+     hhddhh%%dd:: LLIINNEE DDOOWWNN.	This indicates that the link to the IMP
+     has died.
+
+     hhddhh%%dd:: HHOOSSTT SSEEQQUUEENNCCEE EERRRROORR
+     hhddhh%%dd:: IIMMPP SSEEQQUUEENNCCEE EERRRROORR
+     hhddhh%%dd:: HHOOSSTT DDAATTAA EERRRROORR
+     hhddhh%%dd:: TTIIMMEEOOUUTT
+     These errors indicate that an HDH protocol error has been
+     detected.
+
+     hhddhh%%dd:: ccaannnnoott ggeett ssuuppeerrvviissoorr ccmmnndd bbuuffffeerr.	This error indi-
+     cates that an _m_b_u_f could not be allocated to send a command
+     to the IF-11/HDH.
+
+     Any other error message from hdh%d: indicates a serious
+     error detected by either the driver or the IF-11/HDH
+     firmware.
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		 August 8, 1985                         1
+
+
+

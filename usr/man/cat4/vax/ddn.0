@@ -1,0 +1,66 @@
+
+
+
+DDN(4)		    UNIX Programmer's Manual		   DDN(4)
+
+
+
+NNAAMMEE
+     ddn - DDN Standard Mode X.25 IMP interface
+
+SSYYNNOOPPSSIISS
+     ddeevviiccee ddddnn00 aatt uubbaa00 ccssrr 116666774400 vveeccttoorr ddddnniinnttrr
+
+DDEESSCCRRIIPPTTIIOONN
+     The _d_d_n device provides a DDN Standard Mode X.25 interface
+     to an IMP using the ACC ACP625 X.25 board.  It is normally
+     used for connecting to the Defense Data Network (DDN).  The
+     controller itself is not accessible to users, but instead
+     provides a network interface for the Internet Protocol
+     described in _i_p(4P).
+
+SSEEEE AALLSSOO
+     intro(4N), ip(4P)
+
+DDIIAAGGNNOOSSTTIICCSS
+     ddddnn%%dd:: nnoott aalliivvee.	The initialization routine was entered
+     even though the device did not autoconfigure.  This indi-
+     cates a system problem.
+
+     ddddnn%%dd:: ffaaiilleedd ggeettttiinngg UUBBAA rreessoouurrcceess ffoorr llccnn %%dd.  Insuffi-
+     cient UNIBUS resources existed to initialize the device.
+     This is likely to be a shortage of UNIBUS mapping registers.
+
+     ddddnn%%dd:: ccoouullddnn''tt ggeett XX2255 iinniitt bbuuffffeerr.  This indicates that an
+     _m_b_u_f could not be allocated for sending the initialization
+     message to the ACP625.
+
+     DDDDNN:: iilllleeggaall XX2255 aaddddrreessss lleennggtthh!!
+     DDDDNN:: iilllleeggaall XX2255 aaddddrreessss ffoorrmmaatt!!
+     These errors indicate a problem with the called X.25 address
+     received from the IMP on an incoming call.
+
+     XX2255 RREESSEETT oonn llccnn == %%dd.  This indicates that an unexpected
+     X.25 RESET was received on the indicated LCN.
+
+     XX2255 IINNTTEERRRRUUPPTT oonn llccnn == %%dd,, ccooddee == %%dd.  This indicates that
+     an unexpected X.25 INTERRUPT Packet was received on the
+     indicated LCN.
+
+     ddddnn%%dd:: ffaaiilleedd ttoo ggeett ssuupprr mmssgg bbffrr!!.  This indicates that an
+     _m_b_u_f could not be allocated for sending a supervisor message
+     to the ACP625.
+
+     Any other error message from ddn%d: indicates a serious
+     error detected by either the driver or the ACP625 firmware.
+
+
+
+
+
+
+
+Printed 7/9/88		  May 16, 1986				1
+
+
+

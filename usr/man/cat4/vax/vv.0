@@ -1,0 +1,132 @@
+
+
+
+VV(4)		    UNIX Programmer's Manual		    VV(4)
+
+
+
+NNAAMMEE
+     vv - Proteon proNET 10 Megabit ring
+
+SSYYNNOOPPSSIISS
+     ddeevviiccee vvvv00 aatt uubbaa00 ccssrr 00116611000000 vveeccttoorr vvvvrriinntt vvvvxxiinntt
+
+DDEESSCCRRIIPPTTIIOONN
+     The _v_v interface provides access to a 10 Mb/s Proteon proNET
+     ring network.
+
+     The network address of the interface must be specified with
+     an an SIOCSIFADDR ioctl before data can be transmitted or
+     received.	It is only permissible to change the network
+     address while the interface is marked "down".
+
+     The host's hardware address is discovered by putting the
+     interface in digital loopback mode (not joining the ring)
+     and sending a broadcast packet from which the hardware
+     address is extracted.
+
+     Transmit timeouts are detected through use of a watchdog
+     routine.  Lost input interrupts are checked for when packets
+     are sent out.
+
+     If the installation is running CTL boards which use the old
+     broadcast address of 0 instead of the new address of 0xff,
+     the define OLD_BROADCAST should be specified in the driver.
+
+     The driver can use ``trailer'' encapsulation to minimize
+     copying data on input and output.	This may be disabled, on
+     a per-interface basis, by setting the IFF_NOTRAILERS flag
+     with an SIOCSIFFLAGS ioctl.
+
+DDIIAAGGNNOOSSTTIICCSS
+     vvvv%%dd:: hhoosstt %%dd.  The software announces the host address
+     discovered during autoconfiguration.
+
+     vvvv%%dd:: ccaann''tt iinniittiiaalliizzee. The software was unable to discover
+     the address of this interface, so it deemed "dead" will not
+     be enabled.
+
+     vvvv%%dd:: eerrrroorr vvvvooccssrr==%%bb.  The hardware indicated an error on
+     the previous transmission.
+
+     vvvv%%dd:: oouuttppuutt ttiimmeeoouutt.  The token timer has fired and the
+     token will be recreated.
+
+     vvvv%%dd:: eerrrroorr vvvviiccssrr==%%bb.  The hardware indicated an error in
+     reading a packet off the ring.
+
+     eenn%%dd:: ccaann''tt hhaannddllee aaff%%dd.  The interface was handed a message
+     with addresses formatted in an unsuitable address family;
+
+
+
+Printed 7/9/88		  May 16, 1986				1
+
+
+
+
+
+
+VV(4)		    UNIX Programmer's Manual		    VV(4)
+
+
+
+     the packet was dropped.
+
+     vvvv%%dd:: vvss__oolleenn==%%dd.	The ring output routine has been handed a
+     message with a preposterous length.  This results in an
+     immediate _p_a_n_i_c: _v_s__o_l_e_n.
+
+SSEEEE AALLSSOO
+     intro(4N), inet(4F)
+
+BBUUGGSS
+     The encapsulation of trailer packets in the 4.2BSD version
+     of this driver was incorrect (the packet type was in VAX
+     byte order).  As a result, the trailer encapsulation in this
+     version is not compatible with the 4.2BSD VAX version.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 16, 1986				2
+
+
+

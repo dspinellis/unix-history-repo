@@ -1,0 +1,132 @@
+
+
+
+BAD144(8)	    UNIX Programmer's Manual		BAD144(8)
+
+
+
+NNAAMMEE
+     bad144 - read/write dec standard 144 bad sector information
+
+SSYYNNOOPPSSIISS
+     //eettcc//bbaadd114444 [ --ff ] [ --cc ] [ --vv ] disk [ sno [ bad ...  ] ]
+     //eettcc//bbaadd114444 --aa [ --ff ] [ --cc ] [ --vv ] disk [ bad ...  ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _B_a_d_1_4_4 can be used to inspect the information stored on a
+     disk that is used by the disk drivers to implement bad sec-
+     tor forwarding.  The format of the information is specified
+     by DEC standard 144, as follows.
+
+     The bad sector information is located in the first 5 even
+     numbered sectors of the last track of the disk pack.  There
+     are five identical copies of the information, described by
+     the _d_k_b_a_d structure.
+
+     Replacement sectors are allocated starting with the first
+     sector before the bad sector information and working back-
+     wards towards the beginning of the disk.  A maximum of 126
+     bad sectors are supported.  The position of the bad sector
+     in the bad sector table determines the replacement sector to
+     which it corresponds.  The bad sectors must be listed in
+     ascending order.
+
+     The bad sector information and replacement sectors are con-
+     ventionally only accessible through the ``c'' file system
+     partition of the disk.  If that partition is used for a file
+     system, the user is responsible for making sure that it does
+     not overlap the bad sector information or any replacement
+     sectors.  Thus, one track plus 126 sectors must be reserved
+     to allow use of all of the possible bad sector replacements.
+
+     The bad sector structure is as follows:
+
+     struct dkbad {
+	    long    bt_csn;		/* cartridge serial number */
+	    u_short bt_mbz;		/* unused; should be 0 */
+	    u_short bt_flag;		/* -1 => alignment cartridge */
+	    struct bt_bad {
+		    u_short bt_cyl;	/* cylinder number of bad sector */
+		    u_short bt_trksec;	/* track and sector number */
+	    } bt_bad[126];
+     };
+
+     Unused slots in the _b_t__b_a_d array are filled with all bits
+     set, a putatively illegal value.
+
+     _B_a_d_1_4_4 is invoked by giving a device name (e.g. hk0, hp1,
+     etc.).  With no optional arguments it reads the first sector
+     of the last track of the corresponding disk and prints out
+
+
+
+Printed 7/10/88           July 9, 1988				1
+
+
+
+
+
+
+BAD144(8)	    UNIX Programmer's Manual		BAD144(8)
+
+
+
+     the bad sector information.  It issues a warning if the bad
+     sectors are out of order.	_B_a_d_1_4_4 may also be invoked with a
+     serial number for the pack and a list of bad sectors.  It
+     will write the supplied information into all copies of the
+     bad-sector file, replacing any previous information.  Note,
+     however, that _b_a_d_1_4_4 does not arrange for the specified sec-
+     tors to be marked bad in this case.  This procedure should
+     only be used to restore known bad sector information which
+     was destroyed.
+
+     With the --aa option, the argument list consists of new bad
+     sectors to be added to an existing list.  The new sectors
+     are sorted into the list, which must have been in order.
+     Replacement sectors are moved to accommodate the additions;
+     the new replacement sectors are cleared.  The entire process
+     is described as it happens in gory detail if --vv (verbose) is
+     given.  The --cc option forces an attempt to copy the old sec-
+     tor to the replacement, and may be useful when replacing an
+     unreliable sector.
+
+     If the disk is an RP06, RM03, RM05, Fujitsu Eagle, or SMD
+     disk on a Massbus, the --ff option may be used to mark the new
+     bad sectors as ``bad'' by reformatting them as unusable sec-
+     tors.  This option is required unless the sectors have
+     already been marked bad, or the system will not be notified
+     that it should use the replacement sector.  This option may
+     be used while running multiuser; it is no longer necessary
+     to perform format operations while running single-user.
+
+     It is no longer necessary to reboot to allow the kernel to
+     reread the bad-sector table from the drive.
+
+SSEEEE AALLSSOO
+     badsect(8), format(8V)
+
+BBUUGGSS
+     It should be possible to format disks on-line under UNIX.
+
+     It should be possible to mark bad sectors on drives of all
+     type.
+
+     On an 11/750, the standard bootstrap drivers used to boot
+     the system do not understand bad sectors, handle ECC errors,
+     or the special SSE (skip sector) errors of RM80-type disks.
+     This means that none of these errors can occur when reading
+     the file /vmunix to boot.	Sectors 0-15 of the disk drive
+     must also not have any of these errors.
+
+     The drivers which write a system core image on disk after a
+     crash do not handle errors; thus the crash dump area must be
+     free of errors and bad sectors.
+
+
+
+
+Printed 7/10/88           July 9, 1988				2
+
+
+

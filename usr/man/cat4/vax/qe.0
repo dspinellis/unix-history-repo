@@ -1,0 +1,66 @@
+
+
+
+QE(4)		    UNIX Programmer's Manual		    QE(4)
+
+
+
+NNAAMMEE
+     qe - DEC DEQNA Q-bus 10 Mb/s Ethernet interface
+
+SSYYNNOOPPSSIISS
+     ddeevviiccee qqee00 aatt uubbaa?? ccssrr 117744444400 vveeccttoorr qqeeiinnttrr
+
+DDEESSCCRRIIPPTTIIOONN
+     The qqee interface provides access to a 10 Mb/s Ethernet net-
+     work through the DEC DEQNA Q-bus controller.
+
+     Each of the host's network addresses is specified at boot
+     time with an SIOCSIFADDR ioctl.  The qqee interface employs
+     the address resolution protocol described in arp(4P) to map
+     dynamically  between Internet and Ethernet addresses on the
+     local network.
+
+     The interface normally tries to use a ``trailer'' encapsula-
+     tion to minimize copying data on input and output.  The use
+     of trailers is negotiated with ARP.  This negotiation may be
+     disabled, on a per-interface basis, by setting the
+     IFF_NOTRAILERS flag with an SIOCSIFFLAGS ioctl.
+
+DDIIAAGGNNOOSSTTIICCSS
+SSEEEE AALLSSOO
+     inet(4F), intro(4N), arp(4P)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  June 3, 1986				1
+
+
+

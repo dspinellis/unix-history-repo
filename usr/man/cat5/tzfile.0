@@ -1,0 +1,132 @@
+
+
+
+TZFILE(5)	    UNIX Programmer's Manual		TZFILE(5)
+
+
+
+NNAAMMEE
+     tzfile - time zone information
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttzzffiillee..hh>>
+
+DDEESSCCRRIIPPTTIIOONN
+     The time zone information files used by _t_z_s_e_t(3) begin with
+     bytes reserved for future use, followed by three four-byte
+     values of type lloonngg, written in a ``standard'' byte order
+     (the high-order byte of the value is written first).  These
+     values are, in order:
+
+     _t_z_h__t_i_m_e_c_n_t
+	  The number of "transition times" for which data is
+	  stored in the file.
+
+     _t_z_h__t_y_p_e_c_n_t
+	  The number of "local time types" for which data is
+	  stored in the file (must not be zero).
+
+     _t_z_h__c_h_a_r_c_n_t
+	  The number of characters of "time zone abbreviation
+	  strings" stored in the file.
+
+     The above header is followed by _t_z_h__t_i_m_e_c_n_t four-byte values
+     of type lloonngg, sorted in ascending order.  These values are
+     written in ``standard'' byte order.  Each is used as a tran-
+     sition time (as returned by _t_i_m_e(2)) at which the rules for
+     computing local time change.  Next come _t_z_h__t_i_m_e_c_n_t one-byte
+     values of type uunnssiiggnneedd cchhaarr; each one tells which of the
+     different types of ``local time'' types described in the
+     file is associated with the same-indexed transition time.
+     These values serve as indices into an array of _t_t_i_n_f_o struc-
+     tures that appears next in the file; these structures are
+     defined as follows:
+
+	  struct ttinfo {
+	       long	     tt_gmtoff;
+	       int	     tt_isdst;
+	       unsigned int  tt_abbrind;
+	  };
+
+     Each structure is written as a four-byte value for _t_t__g_m_t_o_f_f
+     of type lloonngg, in a standard byte order, followed by a one-
+     byte value for _t_t__i_s_d_s_t and a one-byte value for _t_t__a_b_b_r_i_n_d.
+     In each structure, _t_t__g_m_t_o_f_f gives the number of seconds to
+     be added to GMT, _t_t__i_s_d_s_t tells whether _t_m__i_s_d_s_t should be
+     set by _l_o_c_a_l_t_i_m_e (_3) and _t_t__a_b_b_r_i_n_d serves as an index into
+     the array of time zone abbreviation characters that follow
+     the _t_t_i_n_f_o structure(s) in the file.
+
+
+
+
+Printed 7/9/88							1
+
+
+
+
+
+
+TZFILE(5)	    UNIX Programmer's Manual		TZFILE(5)
+
+
+
+     _L_o_c_a_l_t_i_m_e uses the first standard-time _t_t_i_n_f_o structure in
+     the file (or simply the first _t_t_i_n_f_o structure in the
+     absence of a standard-time structure) if either _t_z_h__t_i_m_e_c_n_t
+     is zero or the time argument is less than the first transi-
+     tion time recorded in the file.
+
+SSEEEE AALLSSOO
+     ctime(3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88							2
+
+
+

@@ -1,0 +1,66 @@
+
+
+
+HOSTNAME(7)	    UNIX Programmer's Manual	      HOSTNAME(7)
+
+
+
+NNAAMMEE
+     hostname - host name resolution description
+
+DDEESSCCRRIIPPTTIIOONN
+     Hostnames are domains, where a domain is a hierarchical,
+     dot-separated list of subdomains; for example, the machine
+     monet, in the Berkeley subdomain of the EDU subdomain of the
+     ARPANET would be represented as
+	       monet.Berkeley.EDU
+     (with no trailing dot).
+
+     Hostnames are often used with network client and server pro-
+     grams, which must generally translate the name to an address
+     for use.  (This function is generally performed by the
+     library routine _g_e_t_h_o_s_t_b_y_n_a_m_e(3).) Hostnames are resolved by
+     the internet name resolver in the following fashion.
+
+     If the name consists of a single component, i.e. contains no
+     dot, and if the environment variable ``HOSTALIASES'' is set
+     to the name of a file, that file is searched for an string
+     matching the input hostname.  The file should consist of
+     lines made up of two white-space separated strings, the
+     first of which is the hostname alias, and the second of
+     which is the complete hostname to be substituted for that
+     alias.  If a case-sensitive match is found between the host-
+     name to be resolved and the first field of a line in the
+     file, the substituted name is looked up with no further pro-
+     cessing.
+
+     If the input name ends with a trailing dot, the trailing dot
+     is removed, and the remaining name is looked up with no
+     further processing.
+
+     If the input name does not end with a trailing dot, it is
+     looked up in the local domain and its parent domains until
+     either a match is found or fewer than 2 components of the
+     local domain remain.  For example, in the domain
+     CS.Berkeley.EDU, the name lithium.CChem will be checked
+     first as lithium.CChem.CS.Berkeley.EDU and then as
+     lithium.CChem.Berkeley.EDU.  Lithium.CChem.EDU will not be
+     tried, as the there is only one component remaining from the
+     local domain.
+
+SSEEEE AALLSSOO
+     gethostbyname(3), resolver(5), mailaddr(7), named(8), RFC883
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		November 21, 1987			1
+
+
+

@@ -1,0 +1,66 @@
+
+
+
+MKNOD(8)	    UNIX Programmer's Manual		 MKNOD(8)
+
+
+
+NNAAMMEE
+     mknod - build special file
+
+SSYYNNOOPPSSIISS
+     //eettcc//mmkknnoodd name [ cc ] [ bb ] major minor
+
+DDEESSCCRRIIPPTTIIOONN
+     _M_k_n_o_d makes a special file.  The first argument is the _n_a_m_e
+     of the entry.  The second is bb if the special file is
+     block-type (disks, tape) or cc if it is character-type (other
+     devices).	The last two arguments are numbers specifying the
+     _m_a_j_o_r device type and the _m_i_n_o_r device (e.g. unit, drive, or
+     line number).
+
+     The assignment of major device numbers is specific to each
+     system.  They have to be dug out of the system source file
+     _c_o_n_f._c.
+
+SSEEEE AALLSSOO
+     mknod(2), makedev(8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/9/88		  May 19, 1986				1
+
+
+
