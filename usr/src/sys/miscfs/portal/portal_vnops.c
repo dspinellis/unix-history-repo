@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)portal_vnops.c	8.10 (Berkeley) %G%
+ *	@(#)portal_vnops.c	8.11 (Berkeley) %G%
  *
  * $Id: portal_vnops.c,v 1.4 1992/05/30 10:05:24 jsp Exp jsp $
  */
@@ -612,6 +612,7 @@ portal_nullop()
 #define portal_ioctl ((int (*) __P((struct  vop_ioctl_args *)))portal_enotsupp)
 #define portal_select ((int (*) __P((struct vop_select_args *)))portal_enotsupp)
 #define portal_mmap ((int (*) __P((struct  vop_mmap_args *)))portal_enotsupp)
+#define	portal_revoke vop_revoke
 #define portal_fsync ((int (*) __P((struct  vop_fsync_args *)))nullop)
 #define portal_seek ((int (*) __P((struct  vop_seek_args *)))nullop)
 #define portal_remove ((int (*) __P((struct vop_remove_args *)))portal_enotsupp)
@@ -660,6 +661,7 @@ struct vnodeopv_entry_desc portal_vnodeop_entries[] = {
 	{ &vop_ioctl_desc, portal_ioctl },		/* ioctl */
 	{ &vop_select_desc, portal_select },		/* select */
 	{ &vop_mmap_desc, portal_mmap },		/* mmap */
+	{ &vop_revoke_desc, portal_revoke },		/* revoke */
 	{ &vop_fsync_desc, portal_fsync },		/* fsync */
 	{ &vop_seek_desc, portal_seek },		/* seek */
 	{ &vop_remove_desc, portal_remove },		/* remove */

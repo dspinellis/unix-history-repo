@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)procfs_vnops.c	8.13 (Berkeley) %G%
+ *	@(#)procfs_vnops.c	8.14 (Berkeley) %G%
  *
  * From:
  *	$Id: procfs_vnops.c,v 3.2 1993/12/15 09:40:17 jsp Exp $
@@ -871,6 +871,7 @@ struct vnodeopv_entry_desc procfs_vnodeop_entries[] = {
 	{ &vop_ioctl_desc, procfs_ioctl },		/* ioctl */
 	{ &vop_select_desc, procfs_select },		/* select */
 	{ &vop_mmap_desc, procfs_mmap },		/* mmap */
+	{ &vop_revoke_desc, procfs_revoke },		/* revoke */
 	{ &vop_fsync_desc, procfs_fsync },		/* fsync */
 	{ &vop_seek_desc, procfs_seek },		/* seek */
 	{ &vop_remove_desc, procfs_remove },		/* remove */
