@@ -3,10 +3,10 @@
 # include <signal.h>
 
 # ifndef SMTP
-SCCSID(@(#)srvrsmtp.c	4.7		%G%	(no SMTP));
+SCCSID(@(#)srvrsmtp.c	4.8		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)srvrsmtp.c	4.7		%G%);
+SCCSID(@(#)srvrsmtp.c	4.8		%G%);
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -562,41 +562,43 @@ runinchild(label)
 {
 	int childpid;
 
-	if (OneXact)
-		return (0);
-
-	childpid = dofork();
-	if (childpid < 0)
+	if (!OneXact)
 	{
-		syserr("%s: cannot fork", label);
-		return (1);
+		childpid = dofork();
+		if (childpid < 0)
+		{
+			syserr("%s: cannot fork", label);
+			return (1);
+		}
+		if (childpid > 0)
+		{
+			auto int st;
+
+			/* parent -- wait for child to complete */
+			st = waitfor(childpid);
+			if (st == -1)
+				syserr("%s: lost child", label);
+
+			/* if we exited on a QUIT command, complete the process */
+			if (st == (EX_QUIT << 8))
+				finis();
+
+			return (1);
+		}
+		else
+		{
+			/* child */
+			InChild = TRUE;
+		}
 	}
-	if (childpid > 0)
-	{
-		auto int st;
 
-		/* parent -- wait for child to complete */
-		st = waitfor(childpid);
-		if (st == -1)
-			syserr("%s: lost child", label);
+	/* child (or ONEX command specified) */
+	clearenvelope(CurEnv);
 
-		/* if we exited on a QUIT command, complete the process */
-		if (st == (EX_QUIT << 8))
-			finis();
+	/* open alias database */
+	initaliases(AliasFile, FALSE);
 
-		return (1);
-	}
-	else
-	{
-		/* child */
-		InChild = TRUE;
-		clearenvelope(CurEnv);
-
-		/* open alias database */
-		initaliases(AliasFile, FALSE);
-
-		return (0);
-	}
+	return (0);
 }
 /*
 **  PADDRTREE -- print address tree
