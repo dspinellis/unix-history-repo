@@ -1,0 +1,132 @@
+grap is a pic preprocessor for drawing graphs.
+
+	grap [files] | pic | ...  (mrkos!/usr/bin so far)
+
+.G1
+frame  ht e  wid e  top dotted ...
+	sets frame around graph to specified ht and wid;
+		default ht 3, wid 2
+	default mode applies to all four sides;
+		you can set top, bot, left or right
+		to dotted, dashed, invis, solid independently
+label  side   "a label" "as a set of strings" adj
+	one line per label, on the four sides.
+	default side is bot
+	adj is up|down|left|right expr, to shift default position
+ticks side inout at optname expr, expr, ...
+	put ticks on side at expr, ..., and label with "expr".
+	if any expr followed by "...", label tick with "...",
+	  and turn off all automatic labels.
+	if "..." contains %f's, they will be interpreted as printf
+	  formatting instructions for the tick value.
+	ticks point in or out according to inout (default out)
+	tick iterator: instead of at ..., use from expr to expr by o expr
+		where o is optionally +-*/ for additive or multiplicative steps.
+		"by" can be omitted, to give steps of size 1.
+	if no ticks requested, they are supplied automatically;
+	  suppress this with "ticks off".  Automatic ticks normally
+	leave a margin of 7% on each side; set this to anything by
+		margin = expr
+grid side linedesc at optname expr, expr, ...
+	draw grids perpendicular (!) to side in style linedesc
+	   at expr, ....   Iterators and labels work as with ticks.
+coord optname x min, max y min, max log x log y  (x, y literal!)
+	set range of coords and optional log scaling on either or both
+	overrides computation of data range
+	default value of optname is current coordinate system
+	(each "coord" defines new coord system)
+plot "str" at point (or just "str" at point)
+	puts it at the point.  you can add rjust, ljust, above, below after "...".
+line from point to point linedesc
+	draw line from here to there.
+	"arrow" works in place of line.
+next optname at point linedesc
+	continues plot of data in optname to point;
+	default is current
+draw optname linedesc "..."
+	set mode for next:  use this style from now on,
+	and plot "..." at each point (if given)
+new optname linedesc "..."
+	set mode for next, but disconnect from previous
+numberlist
+	x y1 y2 y3 ...
+	treated as 
+		plot bullet at x,y1
+		plot bullet at x,y2
+		plot bullet at x,y3
+	etc., or as next at x,y1 etc., if draw specified.
+	abscissae of 1,2,3,... provided if only one input number per line
+
+point
+	optname expr, expr
+	maps the point to the coordinate system
+linedesc
+	dot|dash|invis|solid optexpr
+define name % whatever %
+	macros just like in pic
+	There are macros already defined for standard plotting
+	symbols like bullet, circle, star, plus: cat /usr/lib/grap.defines,
+	which is included if it exists.
+var = expr
+	operators are = + - * / and ()
+	functions are log() and exp() (both base 10!), sin(), cos(), sqrt();
+		rand() returns random number on [0,1);
+		max(e,e), min(e,e), int(e).
+print expr; print "..."
+	as a debugging aid, prints expr or string on the standard error
+copy "filename"
+	include this file right here
+copy thru macro
+	pass rest of input (until .G2) through macros,
+	treating each field (non-blank, or "...") as an argument.
+	"macro" can be the name of a macro previously defined,
+	or the body of one in place, like / plot $1 at $2,$3 /
+copy thru macro until "string"
+	stop copy when input is string (left-justified)
+copy "filename" thru macro until "string"
+	combinations work too
+pic remainder of line
+	copied to output with leading blanks removed.
+graph Name pic-position
+	start a new frame, place it at specified position,
+	e.g., graph Thing2 with .sw at Thing1.se + (0.1,0)
+	Name is capitalized to keep pic happy.
+.anything at beginning of line
+	copied untouched
+sh X anything X
+	passes everything between the X's to the shell;
+	as with macros, X may be any character and "anything"
+	may include newlines.
+# anything after # is a comment
+.G2
+
+Order is mostly irrelevant; no category is mandatory.
+The simplest graphs are like
+	.G1
+	1
+	2
+	.G2
+or
+	.G1
+	1 2
+	3 4
+	5 6
+	.G2
+More complicated is like
+.G1
+frame top invis right invis
+coord x 0, 10 y 1, 5 log y
+ticks left in at 1 "bottommost tick", 2,3,4,5 "top tick"
+ticks bot in from 0 to 10 by 2
+label bot "this is a" "silly graph"
+label left "left side label" "here"
+grid bot dotted at 2,4,6,8
+grid left dashed at 2.5
+
+copy thru / plot circle at $1,$2 /
+1 1
+2 1.5
+3 2
+4 1.5
+10 5
+.G2
