@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)catman.8	6.1 (Berkeley) %G%
+.\"	@(#)catman.8	6.2 (Berkeley) %G%
 .\"
 .TH CATMAN 8 ""
 .UC 4
@@ -62,6 +62,38 @@ No manual reformatting is done.
 update manual pages located in the specified
 .I directory
 (/usr/man by default).
+.PP
+If the nroff source file contains only a line of the form ".so manx/yyy.x",
+a link is made in the catx directory to the appropriate preformatted manual
+page.
+This feature allows easy distribution of the preformatted manual pages
+among a group of associated machines with
+.I rdist(1).
+The nroff sources need not be distributed to all machines,
+thus saving the associated disk space.
+As an example, consider a local network with 5 machines,
+called mach1 through mach5.
+Suppose mach3 has the manual page nroff sources.
+Every night, mach3 runs
+.I catman
+via
+.I cron(8)
+and later runs
+.I rdist
+with a distfile that looks like:
+.IP
+.nf
+.ta \w'${MANUAL'u
+
+MANSLAVES = ( mach1 mach2 mach4 mach5 )
+
+MANUALS = (/usr/man/cat[1-8no] /usr/lib/whatis)
+
+${MANUALS} -> ${MANSLAVES}
+	install -R;
+	notify root;
+
+.fi
 .SH FILES
 .nf
 .ta \w'/usr/lib/makewhatis   'u
@@ -73,6 +105,6 @@ update manual pages located in the specified
 .fi
 .DT
 .SH "SEE ALSO"
-man(1)
+man(1), cron(8), rdist(1)
 .SH BUGS
 Acts oddly on nights with full moons.
