@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_serv.c	7.53 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.54 (Berkeley) %G%
  */
 
 /*
@@ -68,7 +68,6 @@ nfsrv_getattr(nfsd, mrep, md, dpos, cred, nam, mrq)
 	struct ucred *cred;
 	struct mbuf *nam, **mrq;
 {
-	USES_VOP_GETATTR;
 	register struct nfsv2_fattr *fp;
 	struct vattr va;
 	register struct vattr *vap = &va;
@@ -106,8 +105,6 @@ nfsrv_setattr(nfsd, mrep, md, dpos, cred, nam, mrq)
 	struct ucred *cred;
 	struct mbuf *nam, **mrq;
 {
-	USES_VOP_GETATTR;
-	USES_VOP_SETATTR;
 	struct vattr va;
 	register struct vattr *vap = &va;
 	register struct nfsv2_sattr *sp;
@@ -187,7 +184,6 @@ nfsrv_lookup(nfsd, mrep, md, dpos, cred, nam, mrq)
 	struct ucred *cred;
 	struct mbuf *nam, **mrq;
 {
-	USES_VOP_GETATTR;
 	register struct nfsv2_fattr *fp;
 	struct nameidata nd;
 	struct vnode *vp;
@@ -264,7 +260,6 @@ nfsrv_readlink(nfsd, mrep, md, dpos, cred, nam, mrq)
 	struct ucred *cred;
 	struct mbuf *nam, **mrq;
 {
-	USES_VOP_READLINK;
 	struct iovec iv[(NFS_MAXPATHLEN+MLEN-1)/MLEN];
 	register struct iovec *ivp = iv;
 	register struct mbuf *mp;
@@ -347,8 +342,6 @@ nfsrv_read(nfsd, mrep, md, dpos, cred, nam, mrq)
 	struct ucred *cred;
 	struct mbuf *nam, **mrq;
 {
-	USES_VOP_GETATTR;
-	USES_VOP_READ;
 	register struct iovec *iv;
 	struct iovec *iv2;
 	register struct mbuf *m;
@@ -457,8 +450,6 @@ nfsrv_write(nfsd, mrep, md, dpos, cred, nam, mrq)
 	struct ucred *cred;
 	struct mbuf *nam, **mrq;
 {
-	USES_VOP_GETATTR;
-	USES_VOP_WRITE;
 	register struct iovec *ivp;
 	register struct mbuf *mp;
 	register struct nfsv2_fattr *fp;
@@ -576,11 +567,6 @@ nfsrv_create(nfsd, mrep, md, dpos, cred, nam, mrq)
 	struct ucred *cred;
 	struct mbuf *nam, **mrq;
 {
-	USES_VOP_ABORTOP;
-	USES_VOP_CREATE;
-	USES_VOP_GETATTR;
-	USES_VOP_MKNOD;
-	USES_VOP_SETATTR;
 	register struct nfsv2_fattr *fp;
 	struct vattr va;
 	register struct vattr *vap = &va;
@@ -732,8 +718,6 @@ nfsrv_remove(nfsd, mrep, md, dpos, cred, nam, mrq)
 	struct ucred *cred;
 	struct mbuf *nam, **mrq;
 {
-	USES_VOP_ABORTOP;
-	USES_VOP_REMOVE;
 	struct nameidata nd;
 	register u_long *tl;
 	register long t1;
@@ -795,8 +779,6 @@ nfsrv_rename(nfsd, mrep, md, dpos, cred, nam, mrq)
 	struct ucred *cred;
 	struct mbuf *nam, **mrq;
 {
-	USES_VOP_ABORTOP;
-	USES_VOP_RENAME;
 	register u_long *tl;
 	register long t1;
 	caddr_t bpos;
@@ -933,8 +915,6 @@ nfsrv_link(nfsd, mrep, md, dpos, cred, nam, mrq)
 	struct ucred *cred;
 	struct mbuf *nam, **mrq;
 {
-	USES_VOP_ABORTOP;
-	USES_VOP_LINK;
 	struct nameidata nd;
 	register u_long *tl;
 	register long t1;
@@ -1000,8 +980,6 @@ nfsrv_symlink(nfsd, mrep, md, dpos, cred, nam, mrq)
 	struct ucred *cred;
 	struct mbuf *nam, **mrq;
 {
-	USES_VOP_ABORTOP;
-	USES_VOP_SYMLINK;
 	struct vattr va;
 	struct nameidata nd;
 	register struct vattr *vap = &va;
@@ -1084,9 +1062,6 @@ nfsrv_mkdir(nfsd, mrep, md, dpos, cred, nam, mrq)
 	struct ucred *cred;
 	struct mbuf *nam, **mrq;
 {
-	USES_VOP_ABORTOP;
-	USES_VOP_GETATTR;
-	USES_VOP_MKDIR;
 	struct vattr va;
 	register struct vattr *vap = &va;
 	register struct nfsv2_fattr *fp;
@@ -1165,8 +1140,6 @@ nfsrv_rmdir(nfsd, mrep, md, dpos, cred, nam, mrq)
 	struct ucred *cred;
 	struct mbuf *nam, **mrq;
 {
-	USES_VOP_ABORTOP;
-	USES_VOP_RMDIR;
 	register u_long *tl;
 	register long t1;
 	caddr_t bpos;
@@ -1266,8 +1239,6 @@ nfsrv_readdir(nfsd, mrep, md, dpos, cred, nam, mrq)
 	struct ucred *cred;
 	struct mbuf *nam, **mrq;
 {
-	USES_VOP_READDIR;
-	USES_VOP_UNLOCK;
 	register char *bp, *be;
 	register struct mbuf *mp;
 	register struct dirent *dp;
@@ -1454,10 +1425,6 @@ nqnfsrv_readdirlook(nfsd, mrep, md, dpos, cred, nam, mrq)
 	struct ucred *cred;
 	struct mbuf *nam, **mrq;
 {
-	USES_VOP_VGET;
-	USES_VOP_GETATTR;
-	USES_VOP_READDIR;
-	USES_VOP_UNLOCK;
 	register char *bp, *be;
 	register struct mbuf *mp;
 	register struct dirent *dp;
@@ -1578,7 +1545,7 @@ again:
 			 * For readdir_and_lookup get the vnode using
 			 * the file number.
 			 */
-			if (VOP_VGET(vp, dp->d_fileno, &nvp))
+			if (VFS_VGET(vp->v_mount, dp->d_fileno, &nvp))
 				goto invalid;
 			(void) nqsrv_getlease(nvp, &duration2, NQL_READ, nfsd,
 				nam, &cache2, &frev2, cred);
@@ -1782,8 +1749,6 @@ nfsrv_access(vp, flags, cred, rdonly, p)
 	int rdonly;
 	struct proc *p;
 {
-	USES_VOP_ACCESS;
-	USES_VOP_GETATTR;
 	struct vattr vattr;
 	int error;
 	if (flags & VWRITE) {
