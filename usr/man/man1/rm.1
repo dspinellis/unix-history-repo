@@ -1,0 +1,110 @@
+.TH RM 1 "1 April 1981"
+.UC 4
+.SH NAME
+rm, rmdir  \- remove (unlink) files or directories
+.SH SYNOPSIS
+.B rm
+[
+.B \-f
+] [
+.B \-r
+] [
+.B \-i
+] [
+.B \-
+] file ...
+.PP
+.B rmdir
+dir ...
+.PP
+.SH DESCRIPTION
+.I Rm
+removes the entries for one or more files from a directory.
+If an entry was the last link to the file, the file is destroyed.
+Removal of a file requires write permission in its directory,
+but neither read nor write permission on the file itself.
+.PP
+If a file has no write permission and the standard input is a terminal,
+its permissions are printed and a line is read from the standard input.
+If that line begins with `y' the file is deleted, otherwise the file remains.
+No questions are asked and no errors are reported when the
+.B \-f
+(force) option is given.
+.PP
+If a designated file is a directory,
+an error comment is printed unless the optional argument
+.B \-r
+has been used.  In that case,
+.I rm
+recursively deletes the entire contents of the specified directory,
+and the directory itself.
+.PP
+If the
+.B \-i
+(interactive) option is in effect,
+.I rm
+asks whether to delete each file, and, under
+.BR \-r ,
+whether to examine each directory.
+.PP
+The null option
+.B \-
+indicates that all the arguments following it are to be treated as
+file names.  This allows the specification of file names starting with
+a minus.
+.PP
+.I Rmdir
+removes entries for the named directories, which must be empty.
+.SH "SEE ALSO"
+rm(1), unlink(2), rmdir(2)
+.SH MESSAGES
+.LP
+It is forbidden to remove the file `..' merely to avoid the
+antisocial consequences of inadvertently doing something like `rm \-r .*'.
+.IP "rm: unknown option \fIx\fP" 10
+.br
+You typed an option which \fIrm\fP does not recognize.  Acceptable
+options are \fB-i\fP (interactive prompting), \fB-r\fP (recursive
+removal of whole hierarchies), and \fB-f\fP (force removal of files).
+.IP "remove directory \fIfilename\fP? " 10
+.br
+This message is displayed when you used the \fB-i\fP (interactive
+prompt) option, and you are asking \fIrm\fP to remove a directory.
+If you type a `y', the directory is removed;  any other response leaves
+the directory intact.
+.IP "rm: remove \fIfilename\fP? " 10
+.br
+This message is displayed when you used the \fB-i\fP (interactive
+prompt) option, and you are asking \fIrm\fP to remove a file.
+If you type a `y', the file is removed;  any other response leaves
+the file intact.
+.IP "rm: override protection \fInnn\fP for \fIfilename\fP? " 10
+.br
+The protections for \fIfilename\fP were such that the \fIrm\fP command
+needs confirmation as to whether to remove the file.  \fIRm\fP displays
+the protections (given by \fInnn\fP) and waits for a response.  If you
+type a `y', the file is removed;  any other response leaves the file intact.
+.IP "rm: cannot remove `..'" 10
+.br
+You cannot remove the parent directory of the directory you are
+currently positioned in.
+.IP "rm: \fIfilename\fP nonexistent" 10
+.br
+The file specified by \fIfilename\fP does not exists \(em check that you
+spelled the name correctly or that you typed the correct pathname.
+.IP "\fIfilename\fP not changed" 10
+.br
+The protections and/or ownership of the file specified by \fIfilename\fP
+were such that \fIrm\fP did not actually remove the file.
+.IP "rm: cannot read \fIdirname\fP?" 10
+.br
+One or more of the directories in the path to a specified file are not
+readable (the permissions do not allow reading).
+.IP "rm: \fIdirname\fP directory" 10
+.br
+You are asking \fIrm\fP to remove a directory specified by
+\fIdirname\fP.  Use \fIrmdir\fP to remove directories.
+.IP "rm: \fIfilename\fP not removed" 10
+.br
+The protections and/or ownership of the file specified by \fIfilename\fP
+were such that \fIrm\fP did not actually remove the file.
