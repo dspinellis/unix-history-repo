@@ -1,30 +1,30 @@
-/*	saio.h	4.13	%G%	*/
+/*	saio.h	4.14	%G%	*/
 
 /*
- * header file for standalone package
+ * Header file for standalone package
  */
 
 /*
- * io block: includes an
+ * Io block: includes an
  * inode, cells for the use of seek, etc,
  * and a buffer.
  */
 struct	iob {
-	int	i_flgs;
-	struct	inode i_ino;
-	int	i_unit;
-	daddr_t	i_boff;
-	daddr_t	i_cyloff;
-	off_t	i_offset;
-	daddr_t	i_bn;
-	char	*i_ma;
-	int	i_cc;
-	int	i_error;
-	int	i_errcnt;
-	int	i_errblk;
-	char	i_buf[MAXBSIZE];
+	int	i_flgs;		/* see F_ below */
+	struct	inode i_ino;	/* inode, if file */
+	int	i_unit;		/* pseudo device unit */
+	daddr_t	i_boff;		/* block offset on device */
+	daddr_t	i_cyloff;	/* cylinder offset on device */
+	off_t	i_offset;	/* seek offset in file */
+	daddr_t	i_bn;		/* 1st block # of next read */
+	char	*i_ma;		/* memory address of i/o buffer */
+	int	i_cc;		/* character count of transfer */
+	int	i_error;	/* error # return */
+	int	i_errcnt;	/* error count for driver retries */
+	int	i_errblk;	/* block # in error for error reporting */
+	char	i_buf[MAXBSIZE];/* i/o buffer */
 	union {
-		struct fs ui_fs;
+		struct fs ui_fs;	/* file system super block info */
 		char dummy[SBSIZE];
 	} i_un;
 };
@@ -48,7 +48,7 @@ struct	iob {
 #define	F_TYPEMASK	0xff00
 
 /*
- * dev switch
+ * Device switch.
  */
 struct devsw {
 	char	*dv_name;
@@ -66,14 +66,14 @@ struct devsw devsw[];
  */
 struct st {
 	short	nsect;		/* # sectors/track */
-	short	ntrak;		/* # tracks/surfaces/heads... */
+	short	ntrak;		/* # tracks/surfaces/heads */
 	short	nspc;		/* # sectors/cylinder */
 	short	ncyl;		/* # cylinders */
 	short	*off;		/* partition offset table (cylinders) */
 };
 
 /*
- * request codes. Must be the same a F_XXX above
+ * Request codes. Must be the same a F_XXX above
  */
 #define	READ	1
 #define	WRITE	2
@@ -83,13 +83,8 @@ struct st {
 char	b[NBUFS][MAXBSIZE];
 daddr_t	blknos[NBUFS];
 
-#define NFILES	4
+#define	NFILES	4
 struct	iob iob[NFILES];
-
-#define	PHYSUBA0	0x20006000
-#define	PHYSMBA0	0x20010000
-#define	PHYSMBA1	0x20012000
-#define	PHYSUMEM	0x2013e000
 
 extern	int errno;	/* just like unix */
 
@@ -101,11 +96,11 @@ extern	int errno;	/* just like unix */
 #define	EUNIT	5	/* improper unit specification */
 #define	ESRCH	6	/* directory search for file failed */
 #define	EIO	7	/* generic error */
-#define ECMD	10	/* undefined driver command */
-#define EBSE	11	/* bad sector error */
-#define EWCK	12	/* write check error */
-#define EHER	13	/* hard error */
-#define EECC	14	/* uncorrectable ecc error */
+#define	ECMD	10	/* undefined driver command */
+#define	EBSE	11	/* bad sector error */
+#define	EWCK	12	/* write check error */
+#define	EECC	13	/* uncorrectable ecc error */
+#define	EHER	14	/* hard error */
 
 /* ioctl's -- for disks just now */
 #define	SAIOHDR		(('d'<<8)|1)	/* next i/o includes header */
@@ -115,12 +110,13 @@ extern	int errno;	/* just like unix */
 #define	SAIODOBAD	(('d'<<8)|5)	/* enable bad sector forwarding */
 #define	SAIOECCLIM	(('d'<<8)|6)	/* limit ecc correction to 5 bits */
 #define	SAIOECCUNL	(('d'<<8)|7)	/* use standard ecc procedures */
-#define SAIODEVDATA	(('d'<<8)|8)	/* get device data */
-#define SAIOSSI		(('d'<<8)|9)	/* set skip sector inhibit */
-#define SAIONOSSI	(('d'<<8)|10)	/* inhibit skip sector handling */
-#define SAIOSSDEV	(('d'<<8)|11)	/* is device skip sector type? */
+#define	SAIODEVDATA	(('d'<<8)|8)	/* get device data */
+#define	SAIOSSI		(('d'<<8)|9)	/* set skip sector inhibit */
+#define	SAIONOSSI	(('d'<<8)|10)	/* inhibit skip sector handling */
+#define	SAIOSSDEV	(('d'<<8)|11)	/* is device skip sector type? */
+#define	SAIODEBUG	(('d'<<8)|12)	/* enable/disable debugging */
 
 /* codes for sector header word 1 */
-#define HDR1_FMT22	0x1000	/* standard 16 bit format */
-#define HDR1_OKSCT	0xc000	/* sector ok */
-#define HDR1_SSF	0x2000	/* skip sector flag */
+#define	HDR1_FMT22	0x1000	/* standard 16 bit format */
+#define	HDR1_OKSCT	0xc000	/* sector ok */
+#define	HDR1_SSF	0x2000	/* skip sector flag */
