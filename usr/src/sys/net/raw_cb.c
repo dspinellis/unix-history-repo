@@ -1,4 +1,4 @@
-/*	raw_cb.c	4.10	82/06/26	*/
+/*	raw_cb.c	4.11	82/07/24	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -120,7 +120,7 @@ raw_disconnect(rp)
 	struct rawcb *rp;
 {
 	rp->rcb_flags &= ~RAW_FADDR;
-	if (rp->rcb_socket->so_state & SS_USERGONE)
+	if (rp->rcb_socket->so_state & SS_NOFDREF)
 		raw_detach(rp);
 }
 

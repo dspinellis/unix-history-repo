@@ -1,4 +1,4 @@
-/*	raw_usrreq.c	4.17	82/06/20	*/
+/*	raw_usrreq.c	4.18	82/07/24	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -112,7 +112,7 @@ next:
 			continue;
 		if (last) {
 			struct mbuf *n;
-			if (n = m_copy(m->m_next, 0, (int)M_COPYALL))
+			if ((n = m_copy(m->m_next, 0, (int)M_COPYALL)) == 0)
 				goto nospace;
 			if (sbappendaddr(&last->so_rcv, &rh->raw_src, n)==0) {
 				/* should notify about lost packet */
