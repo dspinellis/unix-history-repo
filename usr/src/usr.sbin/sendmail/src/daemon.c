@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.93 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.94 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.93 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.94 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
