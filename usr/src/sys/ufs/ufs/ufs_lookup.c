@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_lookup.c	8.8 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	8.9 (Berkeley) %G%
  */
 
 #include <sys/param.h>
