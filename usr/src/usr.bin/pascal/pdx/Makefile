@@ -1,6 +1,6 @@
 #/* Copyright (c) 1982 Regents of the University of California */
 #
-# static char sccsid[] = "@(#)Makefile 1.4 %G%";
+# static char sccsid[] = "@(#)Makefile 1.4 1/23/82";
 #
 # make file for pdx
 #
@@ -24,7 +24,7 @@
 #
 
 HOME	= /usr/src/cmd/pdx
-LIB		= ${HOME}/library/pdxlib
+LIB	= ${HOME}/library/pdxlib
 PASCAL	= /usr/src/cmd/pascal/
 INSTALL	= /usr/ucb/pdx
 
@@ -35,14 +35,13 @@ INSTALL	= /usr/ucb/pdx
 CFLAGS	= -Disvaxpx -I.. -I${PASCAL} -DOBJ -DVAX -O
 LDFLAGS	=
 
-#
-# Regardless of what CFLAGS is, the file "compile.csh" controls
-# how compilation is done for the majority of the source files.
-#
-
 .c.o:
 	@echo "compiling $*.c"
-	@csh -f compile.csh $*.c
+	@csh -f -c ' \
+	    set a=$*.c; \
+	    if ($$a:h != $$a) chdir $$a:h; \
+	    ${CC} ${CFLAGS} -c $$a:t \
+	'
 
 #
 # source directory specifications
