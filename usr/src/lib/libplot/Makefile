@@ -1,9 +1,10 @@
-#	Makefile	4.8	85/05/30
+#	Makefile	4.9	85/09/21
 #
 ALL=	libf77plot libplot lib300 lib300s lib4013 lib4014 lib450 libvt0 \
-	libplotaed libplotbg libplotdumb libplotgigi libplot2648 libplot7221
+	libplotaed libplotbg libplotdumb libplotgigi libplot2648 \
+	libplot7221 libimagen
 SUBDIRS=tf77 plot t4013 t4014 t300 t300s t450 vt0 \
-	aed bitgraph dumb gigi hp2648 hp7221
+	aed bitgraph dumb gigi hp2648 hp7221 imagen
 
 all:	${ALL}
 
@@ -48,6 +49,9 @@ libplot2648: FRC
 
 libplot7221: FRC
 	cd hp7221; make ${MFLAGS}
+
+libimagen: FRC
+	cd imagen; make ${MFLAGS}
 
 FRC:
 
