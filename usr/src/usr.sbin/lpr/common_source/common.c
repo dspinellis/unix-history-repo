@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)common.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)common.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -72,6 +72,7 @@ char	*name;		/* program name */
 char	*printer;	/* printer name */
 char	host[32];	/* host machine name */
 char	*from = host;	/* client's machine name */
+int	sendtorem;	/* are we sending to a remote? */
 
 /*
  * Create a connection to the remote printer server.
@@ -109,7 +110,7 @@ retry:
 	s = rresvport(&lport);
 	if (s < 0)
 		return(-1);
-	if (connect(s, (caddr_t)&sin, sizeof(sin), 0) < 0) {
+	if (connect(s, (caddr_t)&sin, sizeof(sin)) < 0) {
 		err = errno;
 		(void) close(s);
 		errno = err;
@@ -231,6 +232,49 @@ compar(p1, p2)
 	if ((*p1)->q_time > (*p2)->q_time)
 		return(1);
 	return(0);
+}
+
+/*
+ * Figure out whether the local machine is the same
+ * as the remote machine (RM) entry (if it exists).
+ */
+char *
+checkremote()
+{
+	char name[MAXHOSTNAMELEN];
+	register struct hostent *hp;
+	static char errbuf[128];
+
+	sendtorem = 0;	/* assume printer is local */
+	if (RM != (char *)NULL) {
+		/* get the official name of the local host */
+		gethostname(name, sizeof(name));
+		name[sizeof(name)-1] = '\0';
+		hp = gethostbyname(name);
+		if (hp == (struct hostent *) NULL) {
+		    (void) sprintf(errbuf,
+			"unable to get official name for local machine %s",
+			name);
+		    return errbuf;
+		} else (void) strcpy(name, hp->h_name);
+
+		/* get the official name of RM */
+		hp = gethostbyname(RM);
+		if (hp == (struct hostent *) NULL) {
+		    (void) sprintf(errbuf,
+			"unable to get official name for remote machine %s",
+			RM);
+		    return errbuf;
+		}
+
+		/*
+		 * if the two hosts are not the same,
+		 * then the printer must be remote.
+		 */
+		if (strcmp(name, hp->h_name) != 0)
+			sendtorem = 1;
+	}
+	return (char *)0;
 }
 
 /*VARARGS1*/

@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)lp.h	5.3 (Berkeley) %G%
+ *	@(#)lp.h	5.4 (Berkeley) %G%
  */
 
 /*
@@ -86,6 +86,7 @@ extern char	*name;		/* program name */
 extern char	*printer;	/* printer name */
 extern char	host[32];	/* host machine name */
 extern char	*from;		/* client's machine name */
+extern int	sendtorem;	/* are we sending to a remote? */
 extern int	errno;
 
 /*
@@ -101,3 +102,4 @@ char	*malloc();
 char	*getenv();
 char	*index();
 char	*rindex();
+char	*checkremote();

@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)rmjob.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)rmjob.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -47,6 +47,7 @@ rmjob()
 	register int i, nitems;
 	int assasinated = 0;
 	struct direct **files;
+	char *cp;
 
 	if ((i = pgetent(line, printer)) < 0)
 		fatal("cannot open printer description file");
@@ -61,36 +62,8 @@ rmjob()
 	if ((RP = pgetstr("rp", &bp)) == NULL)
 		RP = DEFLP;
 	RM = pgetstr("rm", &bp);
-	/*
-	 * Figure out whether the local machine is the same as the remote 
-	 * machine entry (if it exists).  If not, then ignore the local
-	 * queue information.
-	 */
-	 if (RM != (char *) NULL) {
-		char name[256];
-		struct hostent *hp;
-
-		/* get the standard network name of the local host */
-		gethostname(name, sizeof(name));
-		name[sizeof(name)-1] = '\0';
-		hp = gethostbyname(name);
-		if (hp == (struct hostent *) NULL) {
-		    printf("unable to get network name for local machine %s",
-			name);
-		    goto localcheck_done;
-		} else strcpy(name, hp->h_name);
-
-		/* get the standard network name of RM */
-		hp = gethostbyname(RM);
-		if (hp == (struct hostent *) NULL) {
-		    printf("unable to get hostname for remote machine %s", RM);
-		    goto localcheck_done;
-		}
-
-		/* if printer is not on local machine, ignore LP */
-		if (strcmp(name, hp->h_name) != 0) *LP = '\0';
-	}
-localcheck_done:
+	if (cp = checkremote())
+		printf("Warning: %s\n", cp);
 
 	/*
 	 * If the format was `lprm -' and the user isn't the super-user,
@@ -133,7 +106,7 @@ localcheck_done:
 		for (i = 0; i < nitems; i++)
 			process(files[i]->d_name);
 	}
-	chkremote();
+	rmremote();
 	/*
 	 * Restart the printer daemon if it was killed
 	 */
@@ -280,13 +253,13 @@ isowner(owner, file)
  * Check to see if we are sending files to a remote machine. If we are,
  * then try removing files on the remote machine.
  */
-chkremote()
+rmremote()
 {
 	register char *cp;
 	register int i, rem;
 	char buf[BUFSIZ];
 
-	if (*LP || RM == NULL)
+	if (!sendtorem)
 		return;	/* not sending to a remote machine */
 
 	/*
