@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 #
 
 # Makefile for f77 I/O lib, libI77.a
@@ -123,14 +123,14 @@ Version:	$(SRCS) mkvers
 		@rm -f Version.c
 		./mkvers $(LIBRARY) $(SRCS) > Version.c
 		$(CC) -c Version.c
-		mv Version.o Version
+		mv -f Version.o Version
 		@rm -f profiled/Version
 		ln Version profiled/Version
 
 mkvers:		mkvers.c
 		@$(CC) mkvers.c -o mkvers
 
-clean:;		@rm -f $(OBJS) profiled/*.o $(LIBRARY) $(LIBRARY_P) libI66.o
+clean:;		@rm -f $(OBJS) profiled/*.o $(LIBRARY) $(LIBRARY_P) libI66.o mkvers
 
 depend:;	@echo Construct dependencies manually
 
