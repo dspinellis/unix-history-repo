@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_syscalls.c	6.9 (Berkeley) %G%
+ *	@(#)uipc_syscalls.c	6.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -134,6 +134,7 @@ noname:
 	}
 	if (so->so_error) {
 		u.u_error = so->so_error;
+		so->so_error = 0;
 		splx(s);
 		return;
 	}
