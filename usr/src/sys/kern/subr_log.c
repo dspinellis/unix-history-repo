@@ -1,4 +1,4 @@
-/*	subr_log.c	6.1	84/07/16	*/
+/*	subr_log.c	6.2	84/07/17	*/
 
 /*
  * Error log buffer for kernel printf's.
@@ -26,15 +26,26 @@ struct logsoftc {
 	int	sc_pgrp;		/* process group for async I/O */
 } logsoftc;
 
+#ifdef LOGDEBUG
+/*VARARGS1*/
+xprintf(fmt, x1)
+	char *fmt;
+	unsigned x1;
+{
+
+	prf(fmt, &x1, 1, (struct tty *)0);
+}
+#endif
+
 logopen(dev)
 	dev_t dev;
 {
 
 #ifdef LOGDEBUG
-	printf("logopen: dev=0x%x\n", dev);
+	xprintf("logopen: dev=0x%x\n", dev);
 #endif
 	if (logsoftc.sc_state & LOG_OPEN)
-		return(EBUSY);
+		return (EBUSY);
 	logsoftc.sc_state |= LOG_OPEN;
 	logsoftc.sc_selp = 0;
 	logsoftc.sc_pgrp = u.u_procp->p_pgrp;
@@ -51,7 +62,10 @@ logopen(dev)
 		for (i=0; i < MSG_BSIZE; i++)
 			msgbuf.msg_bufc[i] = 0;
 	}
-	return(0);
+#ifdef LOGDEBUG
+	xprintf("logopen: bufx=%d, bufr=%d\n", msgbuf.msg_bufx, msgbuf.msg_bufr);
+#endif
+	return (0);
 }
 
 logclose(dev, flag)
@@ -61,7 +75,7 @@ logclose(dev, flag)
 	logsoftc.sc_selp = 0;
 	logsoftc.sc_pgrp = 0;
 #ifdef LOGDEBUG
-	printf("logclose: dev=0x%x\n", dev);
+	xprintf("logclose: dev=0x%x\n", dev);
 #endif
 }
 
@@ -76,14 +90,14 @@ logread(dev, uio)
 	int error = 0;
 
 #ifdef LOGDEBUG
-	printf("logread: dev=0x%x\n", dev);
+	xprintf("logread: dev=0x%x\n", dev);
 #endif
 
 	s = splhigh();
 	while (msgbuf.msg_bufr == msgbuf.msg_bufx) {
 		if (logsoftc.sc_state & LOG_NBIO) {
 			splx(s);
-			return(EWOULDBLOCK);
+			return (EWOULDBLOCK);
 		}
 		logsoftc.sc_state |= LOG_RDWAIT;
 		sleep((caddr_t)&msgbuf, LOG_RDPRI);
@@ -96,6 +110,12 @@ logread(dev, uio)
 		if (l < 0)
 			l = MSG_BSIZE - msgbuf.msg_bufr;
 		c = min((u_int) l, (u_int)uio->uio_resid);
+#ifdef LOGDEBUG
+		xprintf("logread: bufx=%d, bufr=%d, l=%d, c=%d\n",
+			msgbuf.msg_bufx, msgbuf.msg_bufr, l, c);
+#endif
+		if (c <= 0)
+			break;
 		error = uiomove((caddr_t)&msgbuf.msg_bufc[msgbuf.msg_bufr],
 			(int)c, UIO_READ, uio);
 		if (error)
@@ -104,7 +124,7 @@ logread(dev, uio)
 		if (msgbuf.msg_bufr < 0 || msgbuf.msg_bufr >= MSG_BSIZE)
 			msgbuf.msg_bufr = 0;
 	}
-	return(error);
+	return (error);
 }
 
 logselect(dev, rw)
@@ -120,22 +140,22 @@ logselect(dev, rw)
 			goto win;
 #ifdef LOGDEBUG
 		if (logsoftc.sc_selp)
-			printf("logselect: collision\n");
+			xprintf("logselect: collision\n");
 #endif
 		logsoftc.sc_selp = u.u_procp;
 		break;
 
 	case FWRITE:
 #ifdef LOGDEBUG
-		printf("logselect: FWRITE\n");
+		xprintf("logselect: FWRITE\n");
 #endif
 		break;
 	}
 	splx(s);
-	return(0);
+	return (0);
 win:
 	splx(s);
-	return(1);
+	return (1);
 }
 
 logwakeup()
@@ -195,7 +215,7 @@ logioctl(com, data, flag)
 		break;
 
 	default:
-		return(-1);
+		return (-1);
 	}
-	return(0);
+	return (0);
 }
