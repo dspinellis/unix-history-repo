@@ -1,7 +1,9 @@
-.\"	@(#)tbl	5.1 (Berkeley) %G%
+.\"	@(#)tbl	6.1 (Berkeley) %G%
 .\"
-.if \nM=0 .RP
-.TM 76-1274-5 39199 39199-11
+.EH 'USD:28-%''Tbl \(em A Program to Format Tables'
+.OH 'Tbl \(em A Program to Format Tables''USD:28-%'
+.if \nM=1 .RP
+\" .TM 76-1274-5 39199 39199-11
 .if \n(tm>0 .ND June 11, 1976*
 .TL
 Tbl \(em A Program to Format Tables
@@ -30,12 +32,9 @@ fairly complex tables easy to specify and enter.
 It is available on
 the
 .SM
-PDP-11 UNIX*
+.UX
 .NL
 system
-.FS
-* UNIX is a Trademark/Service Mark of the Bell System
-.FE
 and on Honeywell 6000
 .SM
 GCOS.
@@ -114,7 +113,7 @@ program (list of commands) that prints the table.
 Tbl
 .R
 may be used on the
-\s-2PDP-\s011 \s-2UNIX\s0
+.UX
 .NL
 [2] system and on the Honeywell 6000
 .SM
@@ -297,26 +296,26 @@ column by spaces or tabs.
 Each key-letter is one of the following:
 .RS
 .cs B 25
-.IP "##\fBL\fR#or#\fBl\fR" 10
+.IP "\ \ \fBL\fR\ or\ \fBl\fR" 10
 to indicate a left-adjusted column entry;
-.IP "##\fBR\fR#or#\fBr\fR
+.IP "\ \ \fBR\fR\ or\ \fBr\fR
 to indicate a right-adjusted column entry;
-.IP "##\fBC\fR#or#\fBc\fR
+.IP "\ \ \fBC\fR\ or\ \fBc\fR
 to indicate a centered column entry;
-.IP "##\fBN\fR#or#\fBn\fR
+.IP "\ \ \fBN\fR\ or\ \fBn\fR
 to indicate a numerical column entry, to be aligned with other
 numerical entries so that the units digits of numbers line up;
-.IP "##\fBA\fR#or#\fBa\fR
+.IP "\ \ \fBA\fR\ or\ \fBa\fR
 to indicate an alphabetic subcolumn;
 all corresponding entries are aligned on the left, and positioned
 so that the widest is centered within the column (see
 example on page 12);
-.IP "##\fBS\fR#or#\fBs\fR
+.IP "\ \ \fBS\fR\ ori\ \fBs\fR
 to indicate a spanned heading, i.e. to indicate that the
 entry from the previous column continues across this
 column
 (not allowed for the first column, obviously); or
-.IP ##\fB\s+4\v'6p'^\v'-6p'\s0\fR
+.IP \ \ \fB\s+4\v'6p'^\v'-6p'\s0\fR
 to indicate a vertically spanned heading, i.e. to indicate that
 the entry from the previous row continues down through this row.
 (Not allowed for the first row of the table, obviously).
@@ -662,8 +661,8 @@ that cannot conveniently be typed as a simple string between
 tabs.
 Note that the $fat roman "T}" $ end delimiter must begin a line;
 additional columns of data may follow after a tab on the same line.
-See the example on page 10 for an illustration of included text blocks
-.e1 aa 10
+See the example on page 11 for an illustration of included text blocks
+.e1 aa 11
 in a table.
 If more than twenty or thirty text blocks are used in a table,
 various limits in the
@@ -773,9 +772,9 @@ The outline of such a table input is:
 .ft R
 \&\*.TE
 .DE
-as in the examples on pages 10 and 12.
+as in the examples on pages 10 and 13.
 .e1 ab 10
-.e1 ac 12
+.e1 ac 13
 Using this procedure, each table line can be close to its corresponding format line.
 .bd I 3
 .br
@@ -1618,7 +1617,7 @@ Indian Hill	Naperville, Illinois 60540	312	690-2000
 \&box;
 \&cb   s   s   s
 \&c | c | c   s
-\&ltiw(1i) | ltw(2i) | lp8 | lw(1\*.6i)p8\*.
+\&ltiw(1i) | ltw(2i) | lp8 | lw(1\*.5i)p8\*.
 \&Some Interesting Places
 \&_
 \&Name\*TDescription\*TPractical Information
@@ -1661,7 +1660,7 @@ Indian Hill	Naperville, Illinois 60540	312	690-2000
 \&T}
 \&\e^\*T\e^\*TAdmission\*TFree
 \&\e^\*T\e^\*TSubway\*T2,3 to Eastern Parkway\*.
-\&\e^\*T\e^\*TTelephone\*T212-638-5000
+\&\e^\*T\e^\*TTelephone\*T718-638-5000
 \&_
 \&T{
 \&New-York Historical Society
@@ -1706,7 +1705,7 @@ Indian Hill	Naperville, Illinois 60540	312	690-2000
 box;
 cb   s   s   s
 c | c | c   s
-ltiw(1i) | ltw(2i) | lp8| lw(1.6i)p8.
+ltiw(1i) | ltw(2i) | lp8| lw(1.5i)p8.
 Some Interesting Places
 _
 Name	Description	Practical Information
@@ -1749,7 +1748,7 @@ Eastern Parkway & Washington Ave., Brooklyn.
 T}
 \^	\^	Admission	Free
 \^	\^	Subway	2,3 to Eastern Parkway.
-\^	\^	Telephone	212-638-5000
+\^	\^	Telephone	718-638-5000
 _
 T{
 New-York Historical Society
@@ -1887,5 +1886,5 @@ w W	Minimum width value	2
 \e\&\s+4\v'4p'^\v'-4p'\s0	Vertical span	3
 \&=	Double horizontal line	2,3
 \&$fat "_"$	Horizontal line	2,3
-\&$fat "\e_"$	Short horizontal line	3
+\&$fat "\e\|_"$	Short horizontal line	3
 .TE
