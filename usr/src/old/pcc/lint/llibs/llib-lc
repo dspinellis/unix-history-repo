@@ -1,4 +1,4 @@
-/*	llib-lc	1.14	84/11/21	*/
+/*	llib-lc	1.15	84/12/11	*/
 /* LINTLIBRARY */
 #include <sys/types.h>
 #include <fstab.h>
@@ -114,7 +114,7 @@ int	setsockopt( s, level, opt, buf, len ) { return 0;}
 int	settimeofday( t, z ) struct timeval *t; struct timezone *z; { return 0;}
 int	shutdown( s, h ){ return 0;}
 int	(*signal(c, f))() int (*f)(); { return(f); }
-int	(*sigvec(c, f, m))() int (*f)(); { return(f); }
+int	sigvec(c, f, m) struct sigvec *f, *m; { return 0; }
 int	sigblock(m) { return (m); }
 int	sigsetmask(m) { return (m); }
 	sigpause(m) { ; }
