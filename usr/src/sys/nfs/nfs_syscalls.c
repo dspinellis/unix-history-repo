@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_syscalls.c	7.10 (Berkeley) %G%
+ *	@(#)nfs_syscalls.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
