@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)patch.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)patch.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 /* patch - a program to apply diffs to original files
@@ -152,6 +152,8 @@ int debug = 0;
 #endif
 bool verbose = TRUE;
 bool reverse = FALSE;
+bool noreverse = FALSE;
+bool skip_this_patch = FALSE;
 bool usepath = FALSE;
 bool canonicalize = FALSE;
 
@@ -275,6 +277,11 @@ char **argv;
 		if (where == Null(LINENUM)) {
 		    pch_swap();		/* no, put it back to normal */
 		    reverse = !reverse;
+		} else if (noreverse) {
+		    pch_swap();		/* put it back to normal */
+		    reverse = !reverse;
+		    say("Ignoring previously applied (or reversed) patch.\n");
+		    skip_this_patch = TRUE;
 		}
 		else {
 		    say("%seversed (or previously applied) patch detected!  %s -R.\n",
@@ -282,7 +289,7 @@ char **argv;
 			reverse ? "Assuming" : "Ignoring");
 		}
 	    }
-	    if (where == Null(LINENUM)) {
+	    if (where == Null(LINENUM) || skip_this_patch) {
 		abort_hunk();
 		failed++;
 		if (verbose)
@@ -352,6 +359,7 @@ reinitialize_almost_everything()
     }
 
     reverse = FALSE;
+    skip_this_patch = FALSE;
 
     get_some_switches();
 
@@ -419,6 +427,9 @@ get_some_switches()
 		break;
 	    case 'R':
 		reverse = TRUE;
+		break;
+	    case 'N':
+		noreverse = TRUE;
 		break;
 	    case 's':
 		verbose = FALSE;
@@ -1175,11 +1186,11 @@ there_is_another_patch()
 	say("(Patch is indented %d space%s.)\n",p_indent,p_indent==1?"":"s");
     skip_to(p_start);
     if (no_input_file) {
-	if (filearg[0] == Nullch) {
+	while (filearg[0] == Nullch) {
 	    ask("File to patch: ");
 	    filearg[0] = fetchname(buf);
 	}
-	else if (verbose) {
+	if (verbose) {
 	    say("Patching file %s...\n",filearg[0]);
 	}
     }
@@ -1481,8 +1492,18 @@ another_hunk()
 	    p_input_line++;
 	    p_char[++p_end] = *buf;
 	    switch (*buf) {
-	    case '*':
-		if (strnEQ(buf,"********",8)) {
+	    case '*':	/* another hunk */
+	    case 'd':	/* another hunk in a different file */
+	    case 'B':	/* ditto */
+	    case 'C':	/* ditto */
+	    case 'F':	/* ditto */
+	    case 'O':	/* ditto */
+		if (strnEQ(buf,"********",8) ||
+		    strnEQ(buf,"diff",4) ||
+	    	    strnEQ(buf,"Binary files ",13) ||
+	    	    strnEQ(buf,"Files ",6) ||
+		    strnEQ(buf,"Common subdirectories: ",23) ||
+		    strnEQ(buf,"Only in ",8)) {
 		    if (p_end != repl_beginning + 1)
 			fatal("Unexpected end of hunk at line %d.\n",
 				p_input_line);
@@ -1569,8 +1590,6 @@ another_hunk()
 		p_len[filldst] = p_len[fillsrc];
 		fillsrc++; filldst++;
 	    }
-	    assert(fillsrc==p_end+1 || fillsrc==repl_beginning);
-	    assert(filldst==p_end+1 || filldst==repl_beginning);
 	}
 	p_repl_lines = p_end - repl_beginning;
     }
