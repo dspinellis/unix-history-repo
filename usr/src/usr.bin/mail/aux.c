@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)aux.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)aux.c	5.10 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -623,20 +623,6 @@ copy(s1, s2)
 	while (*s2++ = *s1++)
 		;
 	return s2 - 1;
-}
-
-/*
- * Add a single character onto a string.
- */
-
-stradd(str, c)
-	register char *str;
-{
-
-	while (*str++)
-		;
-	str[-1] = c;
-	*str = 0;
 }
 
 /*
