@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)buf.h	7.20 (Berkeley) %G%
+ *	@(#)buf.h	7.21 (Berkeley) %G%
  */
 
 #ifndef _BUF_H_
@@ -76,6 +76,21 @@ struct buf {
 #define	b_active b_bcount		/* driver queue head: drive active */
 #define	b_errcnt b_resid		/* while i/o in progress: # retries */
 
+/*
+ * This structure describes a clustered I/O.  It is
+ * stored in the b_saveaddr field of the buffer on
+ * which I/O is performed.  At I/O completion, cluster
+ * callback uses the structure to parcel I/Os to
+ * individual buffers, and then frees this structure.
+ */
+struct cluster_save {
+	long	bs_bcount;
+	long	bs_bufsize;
+	caddr_t	bs_saveaddr;
+	int	bs_nchildren;
+	struct buf **bs_children;
+};
+
 #ifdef KERNEL
 struct	buf *buf;		/* the buffer pool itself */
 char	*buffers;
@@ -99,6 +114,10 @@ int	breadn __P((struct vnode *, daddr_t, int, daddr_t *, int *, int,
 int	brelse __P((struct buf *));
 void	bufinit __P((void));
 int	bwrite __P((struct buf *));
+void	cluster_callback __P((struct buf *));
+int	cluster_read __P((struct vnode *, u_quad_t, daddr_t, long,
+	    struct ucred *, struct buf **));
+void	cluster_write __P((struct buf *, u_quad_t));
 struct buf *getblk __P((struct vnode *, daddr_t, int));
 struct buf *geteblk __P((int));
 struct buf *getnewbuf __P((void));
