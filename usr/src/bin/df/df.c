@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)df.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)df.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -90,7 +90,7 @@ main(argc, argv)
 			continue;
 		} else if ((stbuf.st_mode & S_IFMT) == S_IFBLK) {
 			if ((mntpt = getmntpt(*argv)) == 0) {
-				mntpt = mktemp("/tmp/df.XXXXXX");
+				mntpt = mktemp(strdup("/tmp/df.XXXXXX"));
 				mdev.fspec = *argv;
 				if (mkdir(mntpt, DEFFILEMODE) != 0) {
 					fprintf(stderr, "df: %s: %s\n",
