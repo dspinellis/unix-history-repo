@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.5	(Berkeley)	%G%
+#	@(#)Makefile	4.6	(Berkeley)	%G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -30,7 +30,7 @@ profile: awk.g.o ${OBJS} mon.o
 	${CC} -p -i awk.g.o ${OBJS} mon.o -lm
 
 proctab.c: proc
-	proc > proctab.c
+	./proc > proctab.c
 
 proc:	awk.h proc.o token.o
 	${CC} -o $@ proc.o token.o
@@ -55,6 +55,7 @@ FRC:
 # DO NOT DELETE THIS LINE -- mkdep uses it.
 # DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
 
+awk.lx.o: awk.lx.c /usr/include/stdio.h awk.h awk.def
 b.o: b.c awk.def /usr/include/stdio.h awk.h
 lib.o: lib.c /usr/include/stdio.h awk.def awk.h /usr/include/ctype.h
 main.o: main.c /usr/include/stdio.h /usr/include/ctype.h awk.def awk.h
