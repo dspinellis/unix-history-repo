@@ -1,5 +1,5 @@
 /*
-char id_close[] = "@(#)close.c	1.1";
+char id_close[] = "@(#)close.c	1.2";
  *
  * close.c  -  f77 file close, flush, exit routines
  */
@@ -15,11 +15,11 @@ f_clos(a) cllist *a;
 	external = YES;
 	errflag = a->cerr;
 	lunit = a->cunit;
-	if(not_legal(lunit)) err(errflag,101,"close");
+	if(not_legal(lunit)) err(errflag,F_ERUNIT,"close");
 	if(lunit==STDERR && (!a->csta || *a->csta != FROM_OPEN))
-		err(errflag,101,"can't close stderr");
+		err(errflag,F_ERUNIT,"can't close stderr");
 	b= &units[lunit];
-	if(!b->ufd) err(errflag,114,"close");
+	if(!b->ufd) err(errflag,F_ERNOPEN,"close");
 	if(a->csta)
 		switch(lcase(*a->csta))
 		{
@@ -64,5 +64,5 @@ flush_(u) ftnint *u;
 	if(F)
 		return(fflush(F));
 	else
-		return(114);
+		return(F_ERNOPEN);
 }
