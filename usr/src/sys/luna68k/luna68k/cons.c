@@ -14,7 +14,7 @@
  *
  * from: hp300/hp300/cons.c	7.1 (Berkeley) 6/4/92
  *
- *	@(#)cons.c	7.2 (Berkeley) %G%
+ *	@(#)cons.c	7.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -28,19 +28,27 @@
 
 #include <luna68k/luna68k/cons.h>
 
-/* XXX - all this could be autoconfig()ed */
+#include "bmc.h"
 #include "sio.h"
+
+#if NBMC > 0
+int bmccnprobe(), bmccninit(), bmccngetc(), bmccnputc();
+#endif
+
 #if NSIO > 0
 int siocnprobe(), siocninit(), siocngetc(), siocnputc();
 #endif
 
 struct	consdev constab[] = {
+#if NBMC > 0
+	{ bmccnprobe,	bmccninit,	bmccngetc,	bmccnputc },
+#endif
 #if NSIO > 0
 	{ siocnprobe,	siocninit,	siocngetc,	siocnputc },
 #endif
 	{ 0 },
 };
-/* end XXX */
+
 
 struct	tty *constty = 0;	/* virtual console output device */
 struct	consdev *cn_tab;	/* physical console device info */
