@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pat_rep.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)pat_rep.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -22,7 +22,6 @@ static char sccsid[] = "@(#)pat_rep.c	8.1 (Berkeley) %G%";
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <fnmatch.h>
 #ifdef NET2_REGEX
 #include <regexp.h>
 #else
@@ -48,6 +47,8 @@ static REPLACE *reptail = NULL;		/* replacement string list tail */
 static int rep_name __P((char *, int *, int));
 static int tty_rename __P((register ARCHD *));
 static int fix_path __P((char *, int *, char *, int));
+static int fn_match __P((register char *, register char *, char **));
+static char * range_match __P((register char *, register int));
 #ifdef NET2_REGEX
 static int resub __P((regexp *, char *, char *, register char *));
 #else
@@ -228,6 +229,7 @@ pat_add(str)
 	}
 
 	pt->pstr = str;
+	pt->pend = NULL;
 	pt->plen = strlen(str);
 	pt->fow = NULL;
 	pt->flgs = 0;
@@ -309,48 +311,54 @@ pat_sel(arcn)
 
 	/*
 	 * when we are NOT limited to a single match per pattern mark the
-	 * the pattern and return
+	 * pattern and return
 	 */
 	if (!nflag) {
 		pt->flgs |= MTCH;
-		if (dflag || (arcn->type != PAX_DIR))
-			return(0);
-		/*
-		 * ok we matched a directory and we are allowing
-		 * subtree matches. We add this as a DIR_MTCH pattern
-		 * so all its children will match. Note we know that
-		 * when successful, pat_add() puts the pattern at the
-		 * tail (yup a kludge). In the code below will make
-		 * a dir match pattern
-		 */
-		if ((pat_add(arcn->name) < 0) || ((pt = pattail) == NULL))
-			return(-1);
-		arcn->pat = pt;
+		return(0);
 	}
 
 	/*
 	 * we reach this point only when we allow a single selected match per
-	 * pattern, or we have to add a DIR_MATCH pattern. if the pattern
-	 * matched a directory and we do not have -d * (dflag) we are done
-	 * with this pattern. We may also be handed a file in the subtree of a
-	 * directory. in that case when we are operating with -d, this pattern
-	 * was already selected and we are done
+	 * pattern, if the pattern matches a directory and we do not have -d 
+	 * (dflag) we are done with this pattern. We may also be handed a file
+	 * in the subtree of a directory. in that case when we are operating
+	 * with -d, this pattern was already selected and we are done
 	 */
 	if (pt->flgs & DIR_MTCH)
 		return(0);
 
-	if (!dflag && (arcn->type == PAX_DIR)) {
+	if (!dflag && ((pt->pend != NULL) || (arcn->type == PAX_DIR))) {
 		/*
-		 * we are allowing subtree matches at directories, mark the
-		 * node as a directory match so pat_match() will only match
-		 * children of this directory (we replace the pattern with the
-		 * directory name to enforce this subtree only match)
-		 * pat_match() looks for DIR_MTCH to determine what comparison
-		 * technique to use when it checks for a pattern match
-	 	 */
+		 * ok we matched a directory and we are allowing
+		 * subtree matches but because of the -n only its children will
+		 * match. This is tagged as a DIR_MTCH type.
+		 * WATCH IT, the code assumes that pt->pend points
+		 * into arcn->name and arcn->name has not been modified.
+		 * If not we will have a big mess. Yup this is another kludge
+		 */
+
+		/*
+		 * if this was a prefix match, remove trailing part of path
+		 * so we can copy it. Future matches will be exact prefix match
+		 */
+		if (pt->pend != NULL)
+			*pt->pend = '\0';
+			
 		if ((pt->pstr = strdup(arcn->name)) == NULL) {
 			warn(1, "Pattern select out of memory");
+			if (pt->pend != NULL)
+				*pt->pend = '/';
+			pt->pend = NULL;
 			return(-1);
+		}
+
+		/*
+		 * put the trailing / back in the source string
+		 */
+		if (pt->pend != NULL) {
+			*pt->pend = '/';
+			pt->pend = NULL;
 		}
 		pt->plen = strlen(pt->pstr);
 
@@ -362,13 +370,14 @@ pat_sel(arcn)
 			*(pt->pstr + len) = '\0';
 			pt->plen = len;
 		} 
-		pt->flgs |= DIR_MTCH | MTCH;
+		pt->flgs = DIR_MTCH | MTCH;
+		arcn->pat = pt;
 		return(0);
 	}
 
 	/*
-	 * it is not a directory, we are then done with this pattern, so we
-	 * delete it from the list, as it can never be used for another match
+	 * we are then done with this pattern, so we delete it from the list
+	 * because it can never be used for another match.
 	 * Seems kind of strange to do for a -c, but the pax spec is really
 	 * vague on the interaction of -c -n and -d. We assume that when -c
 	 * and the pattern rejects a member (i.e. it matched it) it is done.
@@ -438,18 +447,17 @@ pat_match(arcn)
 		 * check for a file name match unless we have DIR_MTCH set in
 		 * this pattern then we want a prefix match
 		 */
-
 		if (pt->flgs & DIR_MTCH) {
 			/*
 			 * this pattern was matched before to a directory
 			 * as we must have -n set for this (but not -d). We can
 			 * only match CHILDREN of that directory so we must use
-			 * an exact prefix match
+			 * an exact prefix match (no wildcards).
 			 */
-			if ((strncmp(pt->pstr, arcn->name, pt->plen) == 0) &&
-			    (arcn->name[pt->plen] == '/'))
+			if ((arcn->name[pt->plen] == '/') &&
+			    (strncmp(pt->pstr, arcn->name, pt->plen) == 0))
 				break;
-		} else if (fnmatch(pt->pstr, arcn->name, 0) == 0)
+		} else if (fn_match(pt->pstr, arcn->name, &pt->pend) == 0)
 			break;
 		pt = pt->fow;
 	}
@@ -474,6 +482,132 @@ pat_match(arcn)
 		return(-1);
 	arcn->pat = NULL;
 	return(1);
+}
+
+/*
+ * fn_match()
+ * Return:
+ *	0 if this archive member should be processed, 1 if it should be 
+ *	skipped and -1 if we are done with all patterns (and pax should quit
+ *	looking for more members)
+ *	Note: *pend may be changed to show where the prefix ends.
+ */
+
+#if __STDC__
+static int
+fn_match(register char *pattern, register char *string, char **pend)
+#else
+static int
+fn_match(pattern, string, pend)
+	register char *pattern;
+	register char *string;
+	char **pend;
+#endif
+{
+	register char c;
+	char test;
+
+	*pend = NULL;
+	for (;;) {
+		switch (c = *pattern++) {
+		case '\0':
+			/*
+			 * Ok we found an exact match
+			 */
+			if (*string == '\0')
+				return(0);
+
+			/*
+			 * Check if it is a prefix match
+			 */
+			if ((dflag == 1) || (*string != '/'))
+				return(-1);
+
+			/*
+			 * It is a prefix match, remember where the trailing
+			 * / is located
+			 */
+			*pend = string;
+			return(0);
+		case '?':
+			if ((test = *string++) == '\0')
+				return (-1);
+			break;
+		case '*':
+			c = *pattern;
+			/*
+			 * Collapse multiple *'s. 
+			 */
+			while (c == '*')
+				c = *++pattern;
+
+			/*
+			 * Optimized hack for pattern with a * at the end
+			 */
+			if (c == '\0')
+				return (0);
+
+			/*
+			 * General case, use recursion.
+			 */
+			while ((test = *string) != '\0') {
+				if (!fn_match(pattern, string, pend))
+					return (0);
+				++string;
+			}
+			return (-1);
+		case '[':
+			/*
+			 * range match
+			 */
+			if (((test = *string++) == '\0') ||
+			    ((pattern = range_match(pattern, test)) == NULL))
+				return (-1);
+			break;
+		case '\\':
+		default:
+			if (c != *string++)
+				return (-1);
+			break;
+		}
+	}
+	/* NOTREACHED */
+}
+
+#ifdef __STDC__
+static char *
+range_match(register char *pattern, register int test)
+#else
+static char *
+range_match(pattern, test)
+	register char *pattern;
+	register int test;
+#endif
+{
+	register char c;
+	register char c2;
+	int negate;
+	int ok = 0;
+
+	if (negate = (*pattern == '!'))
+		++pattern;
+
+	while ((c = *pattern++) != ']') {
+		/*
+		 * Illegal pattern
+		 */
+		if (c == '\0')
+			return (NULL);
+
+		if ((*pattern == '-') && ((c2 = pattern[1]) != '\0') &&
+		    (c2 != ']')) {
+			if ((c <= test) && (test <= c2))
+				ok = 1;
+			pattern += 2;
+		} else if (c == test)
+			ok = 1;
+	}
+	return (ok == negate ? NULL : pattern);
 }
 
 /*
@@ -575,7 +709,7 @@ tty_rename(arcn)
 	 * on them with the same name (from updates etc). We print verbose info
 	 * on the file so the user knows what is up.
 	 */
-	tty_prnt("\nATTENTION: Pax interactive file rename operation.\n");
+	tty_prnt("\nATTENTION: %s interactive file rename operation.\n", argv0);
 
 	for (;;) {
 		ls_tty(arcn);

@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	8.1 (Berkeley) %G%
+ *	@(#)extern.h	8.2 (Berkeley) %G%
  */
 
 /*
@@ -197,8 +197,8 @@ extern int exit_val;
 extern int docrc;
 extern char *dirptr;
 extern char *ltmfrmt;
+extern char *argv0;
 int main __P((int, char **));
-void usage __P((void));
 void sig_cleanup __P((int));
 
 /*

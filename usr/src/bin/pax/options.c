@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)options.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)options.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -27,6 +27,7 @@ static char sccsid[] = "@(#)options.c	8.1 (Berkeley) %G%";
 #include "pax.h"
 #include "options.h"
 #include "cpio.h"
+#include "tar.h"
 #include "extern.h"
 
 /*
@@ -41,6 +42,14 @@ static int no_op __P((void));
 static void printflg __P((unsigned int));
 static int c_frmt __P((const void *, const void *));
 static off_t str_offt __P((char *));
+static void pax_options __P((register int, register char **));
+static void pax_usage __P((void));
+static void tar_options __P((register int, register char **));
+static void tar_usage __P((void));
+#ifdef notdef
+static void cpio_options __P((register int, register char **));
+static void cpio_usage __P((void));
+#endif
 
 /*
  *	Format specific routine table - MUST BE IN SORTED ORDER BY NAME
@@ -82,6 +91,7 @@ FSUB fsub[] = {
 	ustar_rd, tar_endrd, ustar_stwr, ustar_wr, tar_endwr, tar_trail,
 	rd_wrfile, wr_rdfile, bad_opt,
 };
+#define F_TAR	4	/* format when called as tar */
 #define DEFLT	5	/* default write format from list above */
 
 /*
@@ -93,8 +103,8 @@ int ford[] = {5, 4, 3, 2, 1, 0, -1 };
 
 /*
  * options()
- *	look at the user specified flags. set globals as required and check if
- *	the user specified a legal set of flags. If not, complain and exit
+ *	figure out if we are pax, tar or cpio. Call the appropriate options
+ *	parser
  */
 
 #if __STDC__
@@ -103,6 +113,44 @@ options(register int argc, register char **argv)
 #else
 void
 options(argc, argv)
+	register int argc;
+	register char **argv;
+#endif
+{
+
+	/*
+	 * Are we acting like pax, tar or cpio (based on argv[0])
+	 */
+	if ((argv0 = strrchr(argv[0], '/')) != NULL)
+		argv0++;
+	else
+		argv0 = argv[0];
+
+	if (strcmp(NM_TAR, argv0) == 0)
+		return(tar_options(argc, argv));
+#	ifdef notdef
+	else if (strcmp(NM_CPIO, argv0) == 0)
+		return(cpio_options(argc, argv));
+#	endif
+	/*
+	 * assume pax as the default
+	 */
+	argv0 = NM_PAX;
+	return(pax_options(argc, argv));
+}
+
+/*
+ * pax_options()
+ *	look at the user specified flags. set globals as required and check if
+ *	the user specified a legal set of flags. If not, complain and exit
+ */
+
+#if __STDC__
+static void
+pax_options(register int argc, register char **argv)
+#else
+static void
+pax_options(argc, argv)
 	register int argc;
 	register char **argv;
 #endif
@@ -119,7 +167,7 @@ options(argc, argv)
 	/*
 	 * process option flags
 	 */
-	while ((c=getopt(argc,argv,"ab:cdf:iklno:p:rs:tuvwx:B:DE:G:HLT:U:XYZ"))
+	while ((c=getopt(argc,argv,"ab:cdf:iklno:p:rs:tuvwx:B:DE:G:HLPT:U:XYZ"))
 	    != EOF) {
 		switch (c) {
 		case 'a':
@@ -130,12 +178,12 @@ options(argc, argv)
 			break;
 		case 'b':
 			/*
-			 * specify blocksize on write
+			 * specify blocksize
 			 */
 			flg |= BF;
 			if ((wrblksz = (int)str_offt(optarg)) <= 0) {
 				warn(1, "Invalid block size %s", optarg);
-				usage();
+				pax_usage();
 			}
 			break;
 		case 'c':
@@ -193,7 +241,7 @@ options(argc, argv)
 			 */
 			flg |= OF;
 			if (opt_add(optarg) < 0)
-				usage();
+				pax_usage();
 			break;
 		case 'p':
 			/*
@@ -237,7 +285,7 @@ options(argc, argv)
 					break;
 				default:
 					warn(1, "Invalid -p string: %c", *pt);
-					usage();
+					pax_usage();
 					break;
 				}
 			}
@@ -254,7 +302,7 @@ options(argc, argv)
 			 * file name substitution name pattern
 			 */
 			if (rep_add(optarg) < 0) {
-				usage();
+				pax_usage();
 				break;
 			}
 			flg |= SF;
@@ -301,7 +349,7 @@ options(argc, argv)
 			for (i = 0; i < (sizeof(fsub)/sizeof(FSUB)); ++i)
 				(void)fprintf(stderr, " %s", fsub[i].name);
 			(void)fputs("\n\n", stderr);
-			usage();
+			pax_usage();
 			break;
 		case 'B':
 			/*
@@ -310,12 +358,12 @@ options(argc, argv)
 			 */
 			if ((wrlimit = str_offt(optarg)) <= 0) {
 				warn(1, "Invalid write limit %s", optarg);
-				usage();
+				pax_usage();
 			}
 			if (wrlimit % BLKMULT) {
 				warn(1, "Write limit is not a %d byte multiple",
 				    BLKMULT);
-				usage();
+				pax_usage();
 			}
 			flg |= CBF;
 			break;
@@ -338,7 +386,7 @@ options(argc, argv)
 				maxflt = -1;
 			else if ((maxflt = atoi(optarg)) < 0) {
 				warn(1, "Error count value must be positive");
-				usage();
+				pax_usage();
 			}
 			break;
 		case 'G':
@@ -347,7 +395,7 @@ options(argc, argv)
 			 * archive by group (gid or name)
 			 */
 			if (grp_add(optarg) < 0) {
-				usage();
+				pax_usage();
 				break;
 			}
 			flg |= CGF;
@@ -366,13 +414,20 @@ options(argc, argv)
 			Lflag = 1;
 			flg |= CLF;
 			break;
+		case 'P':
+			/*
+			 * do NOT follow symlinks (default)
+			 */
+			Lflag = 0;
+			flg |= CPF;
+			break;
 		case 'T':
 			/*
 			 * non-standard option for selecting files within an
 			 * archive by modification time range (lower,upper)
 			 */
 			if (trng_add(optarg) < 0) {
-				usage();
+				pax_usage();
 				break;
 			}
 			flg |= CTF;
@@ -383,7 +438,7 @@ options(argc, argv)
 			 * archive by user (uid or name)
 			 */
 			if (usr_add(optarg) < 0) {
-				usage();
+				pax_usage();
 				break;
 			}
 			flg |= CUF;
@@ -413,7 +468,7 @@ options(argc, argv)
 			break;
 		case '?':
 		default:
-			usage();
+			pax_usage();
 			break;
 		}
 	}
@@ -439,10 +494,10 @@ options(argc, argv)
 		act = COPY;
 		bflg = flg & BDCOPY;
 	} else
-		usage();
+		pax_usage();
 	if (bflg) {
 		printflg(flg);
-		usage();
+		pax_usage();
 	}
 
 	/*
@@ -461,12 +516,12 @@ options(argc, argv)
 	case EXTRACT:
 		for (; optind < argc; optind++)
 			if (pat_add(argv[optind]) < 0)
-				usage();
+				pax_usage();
 		break;
 	case COPY:
 		if (optind >= argc) {
 			warn(0, "Destination directory was not supplied");
-			usage();
+			pax_usage();
 		}
 		--argc;
 		dirptr = argv[argc];
@@ -475,7 +530,7 @@ options(argc, argv)
 	case APPND:
 		for (; optind < argc; optind++)
 			if (ftree_add(argv[optind]) < 0)
-				usage();
+				pax_usage();
 		/*
 		 * no read errors allowed on updates/append operation!
 		 */
@@ -483,6 +538,244 @@ options(argc, argv)
 		break;
 	}
 }
+
+
+/*
+ * tar_options()
+ *	look at the user specified flags. set globals as required and check if
+ *	the user specified a legal set of flags. If not, complain and exit
+ */
+
+#if __STDC__
+static void
+tar_options(register int argc, register char **argv)
+#else
+static void
+tar_options(argc, argv)
+	register int argc;
+	register char **argv;
+#endif
+{
+	register char *cp;
+	int fstdin = 0;
+
+	if (argc < 2)
+		tar_usage();
+	/*
+	 * process option flags
+	 */
+	++argv;
+	for (cp = *argv++; *cp != '\0'; ++cp) {
+		switch (*cp) {
+		case '-':
+			/*
+			 * skip over -
+			 */
+			break;
+		case 'b':
+			/*
+			 * specify blocksize
+			 */
+			if (*argv == (char *)NULL) {
+				warn(1,"blocksize must be specified with 'b'");
+				tar_usage();
+			}
+			if ((wrblksz = (int)str_offt(*argv)) <= 0) {
+				warn(1, "Invalid block size %s", *argv);
+				tar_usage();
+			}
+			++argv;
+			break;
+		case 'c':
+			/*
+			 * create an archive
+			 */
+			act = ARCHIVE;
+			break;
+		case 'e':
+			/*
+			 * stop after first error
+			 */
+			maxflt = 0;
+			break;
+		case 'f':
+			/*
+			 * filename where the archive is stored
+			 */
+			if (*argv == (char *)NULL) {
+				warn(1, "filename must be specified with 'f'");
+				tar_usage();
+			}
+			if ((argv[0][0] == '-') && (argv[0][1]== '\0')) {
+				/*
+				 * treat a - as stdin
+				 */
+				++argv;
+				++fstdin;
+				arcname = (char *)0;
+				break;
+			}
+			fstdin = 0;
+			arcname = *argv++;
+			break;
+		case 'm':
+			/*
+			 * do not preserve modification time
+			 */
+			pmtime = 0;
+			break;
+		case 'o':
+			if (opt_add("write_opt=nodir") < 0)
+				tar_usage();
+			break;
+		case 'p':
+			/*
+			 * preserve user id, group id, file
+			 * mode, access/modification times
+			 */
+			pids = 1;
+			pmode = 1;
+			patime = 1;
+			pmtime = 1;
+			break;
+		case 'r':
+		case 'u':
+			/*
+			 * append to the archive
+			 */
+			act = APPND;
+			break;
+		case 't':
+			/*
+			 * list contents of the tape
+			 */
+			act = LIST;
+			break;
+		case 'v':
+			/*
+			 * verbose operation mode
+			 */
+			vflag = 1;
+			break;
+		case 'w':
+			/*
+			 * interactive file rename
+			 */
+			iflag = 1;
+			break;
+		case 'x':
+			/*
+			 * write an archive
+			 */
+			act = EXTRACT;
+			break;
+		case 'B':
+			/*
+			 * Nothing to do here, this is pax default
+			 */
+			break;
+		case 'H':
+			/*
+			 * follow command line symlinks only
+			 */
+			Hflag = 1;
+			break;
+		case 'L':
+			/*
+			 * follow symlinks
+			 */
+			Lflag = 1;
+			break;
+		case 'P':
+			/*
+			 * do not follow symlinks
+			 */
+			Lflag = 0;
+			break;
+		case 'X':
+			/*
+			 * do not pass over mount points in the file system
+			 */
+			Xflag = 1;
+			break;
+		case '0':
+			arcname = DEV_0;
+			break;
+		case '1':
+			arcname = DEV_1;
+			break;
+		case '4':
+			arcname = DEV_4;
+			break;
+		case '5':
+			arcname = DEV_5;
+			break;
+		case '7':
+			arcname = DEV_7;
+			break;
+		case '8':
+			arcname = DEV_8;
+			break;
+		default:
+			tar_usage();
+			break;
+		}
+	}
+
+	/*
+	 * if we are writing (ARCHIVE) specify tar, otherwise run like pax
+	 */
+	if (act == ARCHIVE)
+		frmt = &(fsub[F_TAR]);
+
+	/*
+	 * process the args as they are interpreted by the operation mode
+	 */
+	switch (act) {
+	case LIST:
+	case EXTRACT:
+	default:
+		while (*argv != (char *)NULL)
+			if (pat_add(*argv++) < 0)
+				tar_usage();
+		break;
+	case ARCHIVE:
+	case APPND:
+		while (*argv != (char *)NULL)
+			if (ftree_add(*argv++) < 0)
+				tar_usage();
+		/*
+		 * no read errors allowed on updates/append operation!
+		 */
+		maxflt = 0;
+		break;
+	}
+	if (!fstdin && ((arcname == (char *)NULL) || (*arcname == '\0'))) {
+		arcname = getenv("TAPE");
+		if ((arcname == (char *)NULL) || (*arcname == '\0'))
+			arcname = DEV_8;
+	}
+}
+
+#ifdef notdef
+/*
+ * cpio_options()
+ *	look at the user specified flags. set globals as required and check if
+ *	the user specified a legal set of flags. If not, complain and exit
+ */
+
+#if __STDC__
+static void
+cpio_options(register int argc, register char **argv)
+#else
+static void
+cpio_options(argc, argv)
+	register int argc;
+	register char **argv;
+#endif
+{
+}
+#endif
 
 /*
  * printflg()
@@ -501,7 +794,7 @@ printflg(flg)
 	int nxt;
 	int pos = 0;
 
-	(void)fputs("pax: Invalid combination of options:", stderr);
+	(void)fprintf(stderr,"%s: Invalid combination of options:", argv0);
 	while (nxt = ffs(flg)) {
 		flg = flg >> nxt;
 		pos += nxt;
@@ -576,7 +869,7 @@ bad_opt()
 	warn(1,"These format options are not supported");
 	while ((opt = opt_next()) != NULL)
 		(void)fprintf(stderr, "\t%s = %s\n", opt->name, opt->value);
-	usage();
+	pax_usage();
 	return(0);
 }
 
@@ -743,3 +1036,79 @@ no_op()
 {
 	return(0);
 }
+
+/*
+ * pax_usage()
+ *	print the usage summary to the user
+ */
+
+#if __STDC__
+void
+pax_usage(void)
+#else
+void
+pax_usage()
+#endif
+{
+	(void)fputs("usage: pax [-cdnv] [-E limit] [-f archive] ", stderr);
+	(void)fputs("[-s replstr] ... [-U user] ...", stderr);
+	(void)fputs("\n           [-G group] ... ", stderr);
+	(void)fputs("[-T [from_date][,to_date]] ... ", stderr);
+	(void)fputs("[pattern ...]\n", stderr);
+	(void)fputs("       pax -r [-cdiknuvDYZ] [-E limit] ", stderr);
+	(void)fputs("[-f archive] [-o options] ... \n", stderr);
+	(void)fputs("           [-p string] ... [-s replstr] ... ", stderr);
+	(void)fputs("[-U user] ... [-G group] ...\n           ", stderr);
+	(void)fputs("[-T [from_date][,to_date]] ... ", stderr);
+	(void)fputs(" [pattern ...]\n", stderr);
+	(void)fputs("       pax -w [-dituvHLPX] [-b blocksize] ", stderr);
+	(void)fputs("[ [-a] [-f archive] ] [-x format] \n", stderr);
+	(void)fputs("           [-B bytes] [-s replstr] ... ", stderr);
+	(void)fputs("[-o options] ... [-U user] ...", stderr);
+	(void)fputs("\n           [-G group] ... ", stderr);
+	(void)fputs("[-T [from_date][,to_date][/[c][m]]] ... ", stderr);
+	(void)fputs("[file ...]\n", stderr);
+	(void)fputs("       pax -r -w [-diklntuvDHLPXYZ] ", stderr);
+	(void)fputs("[-p string] ... [-s replstr] ...", stderr);
+	(void)fputs("\n           [-U user] ... [-G group] ... ", stderr);
+	(void)fputs("[-T [from_date][,to_date][/[c][m]]] ... ", stderr);
+	(void)fputs("\n           [file ...] directory\n", stderr);
+	exit(1);
+}
+
+/*
+ * tar_usage()
+ *	print the usage summary to the user
+ */
+
+#if __STDC__
+void
+tar_usage(void)
+#else
+void
+tar_usage()
+#endif
+{
+	(void)fputs("usage: tar -{txru}[cevfbmopwBHLPX014578] [tapefile] ",
+		 stderr);
+	(void)fputs("[blocksize] file1 file2...\n", stderr);
+	exit(1);
+}
+
+#ifdef notdef
+/*
+ * cpio_usage()
+ *	print the usage summary to the user
+ */
+
+#if __STDC__
+void
+cpio_usage(void)
+#else
+void
+cpio_usage()
+#endif
+{
+	exit(1);
+}
+#endif
