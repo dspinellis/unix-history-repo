@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)vax.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)vax.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 static char rcsid[] = "$Header: machine.c,v 1.5 84/12/26 10:40:05 linton Exp $";
@@ -27,13 +27,6 @@ static char rcsid[] = "$Header: machine.c,v 1.5 84/12/26 10:40:05 linton Exp $";
 #include "keywords.h"
 #include "ops.h"
 #include <signal.h>
-#include <sys/param.h>
-#include <sys/dir.h>
-#include <machine/psl.h>
-#include <machine/pte.h>
-#include <sys/user.h>
-#include <sys/vm.h>
-#include <machine/reg.h>
 
 #ifndef public
 typedef unsigned int Address;
@@ -74,14 +67,15 @@ typedef unsigned int Word;
 #define	SYSBASE	0x80000000		/* base of system address space */
 #define	physaddr(a)	((a) & 0x7fffffff)
 
-/*
- * Indices into u. for use in collecting registers values.
- */
-int rloc[] =
-    { R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, AP, FP, SP, PC };
-
 #include "source.h"
 #include "symbols.h"
+#include <sys/param.h>
+#include <sys/dir.h>
+#include <machine/psl.h>
+#include <machine/pte.h>
+#include <sys/user.h>
+#include <sys/vm.h>
+#include <machine/reg.h>
 
 Address pc;
 Address prtaddr;
@@ -89,6 +83,12 @@ Address prtaddr;
 #endif
 
 private Address printop();
+
+/*
+ * Indices into u. for use in collecting registers values.
+ */
+public int rloc[] =
+    { R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, AP, FP, SP, PC };
 
 /*
  * Decode and print the instructions within the given address range.
