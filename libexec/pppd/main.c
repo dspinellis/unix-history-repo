@@ -161,7 +161,7 @@ int debug = 0;		        /* Debug flag */
 static char user[80];		/* User name */
 static char passwd[80];		/* password */
 static char *connector = NULL;	/* "connect" command */
-static char inspeed = 0;	/* Input/Output speed */
+static int inspeed = 0;		/* Input/Output speed */
 static u_long netmask = 0;	/* netmask to use on ppp interface */
 static int crtscts = 0;		/* use h/w flow control */
 static int nodetach = 0;	/* don't fork */
@@ -747,6 +747,10 @@ int flow;
     tios.c_cc[VERASE] = tios.c_cc[VKILL] = 0;
     tios.c_cc[VMIN] = 1;
     tios.c_cc[VTIME] = 0;
+    if (inspeed) {
+        tios.c_ispeed = inspeed;
+        tios.c_ospeed = inspeed;
+    }
 
     if (ioctl(fd, TIOCSETA, &tios) < 0) {
 	syslog(LOG_ERR, "ioctl(TIOCSETA): %m");
