@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.160 (Berkeley) %G%
+ *	@(#)conf.h	8.161 (Berkeley) %G%
  */
 
 /*
@@ -444,6 +444,7 @@ typedef int		pid_t;
 # define HASUNSETENV	1	/* has unsetenv(3) call */
 # include <sys/cdefs.h>
 # define ERRLIST_PREDEFINED	/* don't declare sys_errlist */
+# define BSD4_4_SOCKADDR	/* has sa_len */
 # ifndef LA_TYPE
 #  define LA_TYPE	LA_SUBR
 # endif
@@ -462,6 +463,7 @@ typedef int		pid_t;
 # define HASSETSID	1	/* has the setsid(2) POSIX syscall */
 # include <sys/cdefs.h>
 # define ERRLIST_PREDEFINED	/* don't declare sys_errlist */
+# define BSD4_4_SOCKADDR	/* has sa_len */
 # define SFS_TYPE	SFS_MOUNT	/* use <sys/mount.h> statfs() impl */
 # ifndef LA_TYPE
 #  define LA_TYPE	LA_SUBR
@@ -498,6 +500,7 @@ typedef int		pid_t;
 # endif
 # include <sys/cdefs.h>
 # define ERRLIST_PREDEFINED	/* don't declare sys_errlist */
+# define BSD4_4_SOCKADDR	/* has sa_len */
 # ifndef LA_TYPE
 #  define LA_TYPE	LA_SUBR
 # endif

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.167 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.168 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -2984,52 +2984,61 @@ void
 load_if_names()
 {
 #ifdef SIOCGIFCONF
-	struct hostent *hp;
 	int s;
+	int i;
         struct ifconf ifc;
-        struct ifreq *ifr;
 	char interfacebuf[1024];
-	int n;
-	extern char *inet_ntoa();
-	extern struct hostent *gethostbyaddr();
 
 	s = socket(AF_INET, SOCK_DGRAM, 0);
 	if (s == -1)
 		return;
 
 	/* get the list of known IP address from the kernel */
-        ifc.ifc_len = sizeof(interfacebuf);
         ifc.ifc_buf = interfacebuf;
+        ifc.ifc_len = sizeof interfacebuf;
 	if (ioctl(s, SIOCGIFCONF, (char *)&ifc) < 0)
 	{
 		if (tTd(0, 4))
 			printf("SIOGIFCONF failed: %s\n", errstring(errno));
+		close(s);
 		return;
 	}
+	close(s);
 
 	/* scan the list of IP address */
 	if (tTd(0, 4))
 		printf("scanning for interface specific names, ifc_len=%d\n",
 			ifc.ifc_len);
 
-        ifr = ifc.ifc_req;
-        for (n = ifc.ifc_len / sizeof(struct ifreq); n > 0; n--, ifr++)
-        {
+	for (i = 0; i < ifc.ifc_len; )
+	{
+		struct ifreq *ifr = (struct ifreq *) &ifc.ifc_buf[i];
+		struct sockaddr *sa = &ifr->ifr_addr;
 		struct in_addr ia;
+		struct hostent *hp;
 		char ip_addr[256];
+		extern char *inet_ntoa();
+		extern struct hostent *gethostbyaddr();
+
+#ifdef BSD4_4_SOCKADDR
+		if (sa->sa_len > sizeof ifr->ifr_addr)
+			i += sizeof ifr->ifr_name + sa->sa_len;
+		else
+#endif
+			i += sizeof *ifr;
 
 		if (tTd(0, 20))
-			printf("%s\n", anynet_ntoa((SOCKADDR *) &ifr->ifr_addr));
+			printf("%s\n", anynet_ntoa((SOCKADDR *) sa));
 
 		if (ifr->ifr_addr.sa_family != AF_INET)
 			continue;
 
 		/* extract IP address from the list*/
-		ia = (((struct sockaddr_in *) (&ifr->ifr_addr))->sin_addr);
+		ia = (((struct sockaddr_in *) sa)->sin_addr);
 
 		/* save IP address in text from */
 		(void) sprintf(ip_addr, "[%s]",
-			inet_ntoa(((struct sockaddr_in *)(&ifr->ifr_addr))->sin_addr));
+			inet_ntoa(((struct sockaddr_in *) sa)->sin_addr));
 		if (!wordinclass(ip_addr, 'w'))
 		{
 			setclass('w', ip_addr);
