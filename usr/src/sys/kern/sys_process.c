@@ -1,4 +1,4 @@
-/*	sys_process.c	6.2	84/08/29	*/
+/*	sys_process.c	6.3	84/11/20	*/
 
 #include "../machine/reg.h"
 #include "../machine/psl.h"
@@ -137,7 +137,7 @@ procxmt()
 		if (xp = u.u_procp->p_textp) {
 			if (xp->x_count!=1 || xp->x_iptr->i_mode&ISVTX)
 				goto error;
-			xp->x_iptr->i_flag &= ~ITEXT;
+			xp->x_iptr->i_flag |= IXMOD;	/* XXX */
 		}
 		i = -1;
 		if ((i = suiword((caddr_t)ipc.ip_addr, ipc.ip_data)) < 0) {
