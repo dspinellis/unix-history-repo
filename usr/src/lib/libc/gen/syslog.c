@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)syslog.c	4.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslog.c	4.6 (Berkeley) %G%";
 #endif
 
 /*
@@ -28,6 +28,11 @@ static char sccsid[] = "@(#)syslog.c	4.5 (Berkeley) %G%";
 #define	MAXLINE	1024			/* max message size */
 #define NULL	0			/* manifest */
 
+#define mask(p)	(1 << (p))
+#define IMPORTANT (mask(KERN_EMERG)|mask(KERN_ALERT)|mask(KERN_ERR)|mask(KERN_FAIL)\
+	|mask(KERN_RECOV)|mask(KERN_INFO)|mask(LOG_EMERG)|mask(LOG_ALERT)\
+	|mask(LOG_CRIT)|mask(LOG_ERR)|mask(LOG_FAIL))
+
 static char	logname[] = "/dev/log";
 static char	ctty[] = "/dev/console";
 
@@ -52,10 +57,10 @@ syslog(pri, fmt, p0, p1, p2, p3, p4)
 	int pid, olderrno = errno;
 
 	/* see if we should just throw out this message */
-	if (pri <= 0 || pri >= 32 || ((1 << pri) & LogMask) == 0)
+	if (pri <= 0 || pri >= 32 || (mask(pri) & LogMask) == 0)
 		return;
 	if (LogFile < 0)
-		openlog(NULL, 0, 0);
+		openlog(LogTag, LogStat & ~LOG_ODELAY, 0);
 	o = outline;
 	sprintf(o, "<%d>", pri);
 	o += strlen(o);
@@ -97,14 +102,15 @@ syslog(pri, fmt, p0, p1, p2, p3, p4)
 		c = MAXLINE;
 	if (sendto(LogFile, outline, c, 0, &SyslogAddr, sizeof SyslogAddr) >= 0)
 		return;
-	if (pri > LOG_CRIT)
+	if (!(LogStat & LOG_CONS) && !(mask(pri) & IMPORTANT))
 		return;
 	pid = fork();
 	if (pid == -1)
 		return;
 	if (pid == 0) {
 		LogFile = open(ctty, O_RDWR);
-		write(LogFile, outline, c);
+		strcat(o, "\r");
+		write(LogFile, outline, c+1);
 		close(LogFile);
 		exit(0);
 	}
@@ -128,8 +134,10 @@ openlog(ident, logstat, logmask)
 		return;
 	SyslogAddr.sa_family = AF_UNIX;
 	strncpy(SyslogAddr.sa_data, logname, sizeof SyslogAddr.sa_data);
-	LogFile = socket(AF_UNIX, SOCK_DGRAM, 0);
-	fcntl(LogFile, F_SETFD, 1);
+	if (!(LogStat & LOG_ODELAY)) {
+		LogFile = socket(AF_UNIX, SOCK_DGRAM, 0);
+		fcntl(LogFile, F_SETFD, 1);
+	}
 }
 
 /*
