@@ -1,4 +1,4 @@
-/*	vmparam.h	1.6	86/04/19	*/
+/*	vmparam.h	1.7	87/06/01	*/
 
 /*
  * Machine dependent constants for tahoe.
@@ -48,13 +48,8 @@
  * Sizes of the system and user portions of the system page table.
  */
 /* SYSPTSIZE IS SILLY; IT SHOULD BE COMPUTED AT BOOT TIME */
-#ifdef notdef
-#define	SYSPTSIZE	((20+MAXUSERS)*NPTEPG)
-#define	USRPTSIZE 	(32*NPTEPG)
-#else
-#define	SYSPTSIZE	((128*NPTEPG/2)+(MAXUSERS*NPTEPG/16))
+#define	SYSPTSIZE	((20+MAXUSERS/2)*NPTEPG)
 #define	USRPTSIZE 	(4*NPTEPG)
-#endif
 
 /*
  * The size of the clock loop.
