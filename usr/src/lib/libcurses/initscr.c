@@ -7,61 +7,58 @@
 
 #ifndef lint
 static char sccsid[] = "@(#)initscr.c	5.7 (Berkeley) %G%";
-#endif /* not lint */
+#endif	/* not lint */
 
-# include	"curses.ext"
-# include	<signal.h>
-
-extern char	*getenv();
+#include <curses.h>
+#include <signal.h>
+#include <stdlib.h>
 
 /*
- *	This routine initializes the current and standard screen.
- *
+ * initscr --
+ *	Initialize the current and standard screen.
  */
 WINDOW *
-initscr() {
+initscr()
+{
+	register char *sp;
 
-	reg char	*sp;
-	void		tstp();
-
-# ifdef DEBUG
-	fprintf(outf, "INITSCR()\n");
-# endif
-	if (My_term)
-		setterm(Def_term);
-	else {
+#ifdef DEBUG
+	__TRACE("initscr\n");
+#endif
+	if (My_term) {
+		if (setterm(Def_term) == ERR)
+			return (NULL);
+	} else {
 		gettmode();
 		if ((sp = getenv("TERM")) == NULL)
 			sp = Def_term;
-		setterm(sp);
-# ifdef DEBUG
-		fprintf(outf, "INITSCR: term = %s\n", sp);
-# endif
+		if (setterm(sp) == ERR)
+			return (NULL);
+#ifdef DEBUG
+		__TRACE("initscr: term = %s\n", sp);
+#endif
 	}
-	_puts(TI);
-	_puts(VS);
-# ifdef SIGTSTP
-	signal(SIGTSTP, tstp);
-# endif
+	tputs(TI, 0, __cputchar);
+	tputs(VS, 0, __cputchar);
+	(void)signal(SIGTSTP, tstp);
 	if (curscr != NULL) {
-# ifdef DEBUG
-		fprintf(outf, "INITSCR: curscr = 0%o\n", curscr);
-# endif
+#ifdef DEBUG
+		__TRACE("initscr: curscr = 0%o\n", curscr);
+#endif
 		delwin(curscr);
 	}
-# ifdef DEBUG
-	fprintf(outf, "LINES = %d, COLS = %d\n", LINES, COLS);
-# endif
+#ifdef DEBUG
+	__TRACE("initscr: LINES = %d, COLS = %d\n", LINES, COLS);
+#endif
 	if ((curscr = newwin(LINES, COLS, 0, 0)) == ERR)
-		return ERR;
-	clearok(curscr, TRUE);
+		return (NULL);
+	clearok(curscr, 1);
 	curscr->_flags &= ~_FULLLINE;
 	if (stdscr != NULL) {
-# ifdef DEBUG
-		fprintf(outf, "INITSCR: stdscr = 0%o\n", stdscr);
-# endif
+#ifdef DEBUG
+		__TRACE("initscr: stdscr = 0%o\n", stdscr);
+#endif
 		delwin(stdscr);
 	}
-	stdscr = newwin(LINES, COLS, 0, 0);
-	return stdscr;
+	return(stdscr = newwin(LINES, COLS, 0, 0));
 }
