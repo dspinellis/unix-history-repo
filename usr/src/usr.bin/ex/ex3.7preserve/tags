@@ -1,0 +1,5 @@
+Mex3.7preserve	ex3.7preserve.c	/^main(argc, argv)$/
+copyout	ex3.7preserve.c	/^copyout(name)$/
+error	ex3.7preserve.c	/^error(msg)$/
+notify	ex3.7preserve.c	/^notify(uid, fname, flag, time)$/
+usage	ex3.7preserve.c	/^usage()$/
