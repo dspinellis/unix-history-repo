@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vfs_cluster.c	7.2 (Berkeley) %G%
+ *	@(#)vfs_cluster.c	7.3 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -44,7 +44,7 @@ bread(dev, blkno, size)
 #else SECSIZE
 	bp = getblk(dev, blkno, size);
 #endif SECSIZE
-	if (bp->b_flags&B_DONE) {
+	if (bp->b_flags&(B_DONE|B_DELWRI)) {
 		trace(TR_BREADHIT, pack(dev, size), blkno);
 		return (bp);
 	}
@@ -89,7 +89,7 @@ breada(dev, blkno, size, rablkno, rabsize)
 #else SECSIZE
 		bp = getblk(dev, blkno, size);
 #endif SECSIZE
-		if ((bp->b_flags&B_DONE) == 0) {
+		if ((bp->b_flags&(B_DONE|B_DELWRI)) == 0) {
 			bp->b_flags |= B_READ;
 			if (bp->b_bcount > bp->b_bufsize)
 				panic("breada");
@@ -110,7 +110,7 @@ breada(dev, blkno, size, rablkno, rabsize)
 #else SECSIZE
 		rabp = getblk(dev, rablkno, rabsize);
 #endif SECSIZE
-		if (rabp->b_flags & B_DONE) {
+		if (rabp->b_flags & (B_DONE|B_DELWRI)) {
 			brelse(rabp);
 			trace(TR_BREADHITRA, pack(dev, rabsize), blkno);
 		} else {
@@ -299,6 +299,13 @@ baddr(dev, blkno, size)
  * block is already associated, return it; otherwise search
  * for the oldest non-busy buffer and reassign it.
  *
+ * If we find the buffer, but it is dirty (marked DELWRI) and
+ * its size is changing, we must write it out first. When the
+ * buffer is shrinking, the write is done by brealloc to avoid
+ * losing the unwritten data. When the buffer is growing, the
+ * write is done by getblk, so that bread will not read stale
+ * disk data over the modified data in the buffer.
+ *
  * We use splx here because this routine may be called
  * on the interrupt stack during a dump, and we don't
  * want to lower the ipl back to 0.
@@ -351,6 +358,15 @@ loop:
 		}
 		splx(s);
 		notavail(bp);
+		if (bp->b_bcount != size) {
+			if (bp->b_bcount < size && (bp->b_flags&B_DELWRI)) {
+				bp->b_flags &= ~B_ASYNC;
+				bwrite(bp);
+				goto loop;
+			}
+			if (brealloc(bp, size) == 0)
+				goto loop;
+		}
 		if (bp->b_bcount != size && brealloc(bp, size) == 0)
 			goto loop;
 		bp->b_flags |= B_CACHE;
