@@ -755,10 +755,9 @@ extern void		*malloc();
 **	Florian La Roche <rzsfl@rz.uni-sb.de>
 **	Karl London <karl@borg.demon.co.uk>
 **
-**  Last compiled against:	[12/14/94 @ 11:38:41 PM (Wednesday)]
-**	sendmail 8.7.a.5	named 4.9.3-beta12-p1	db-1.85
-**	gcc 2.6.2		libc.so.4.6.20
-**	slackware 2.1.0		linux 1.1.70
+**  Last compiled against:	[05/25/95 @ 11:39:31 AM (Thursday)]
+**	sendmail 8.7.b.0	named 4.9.3-beta17	db-1.85
+**	gcc 2.6.4-950518	libc-5.0.9		linux 1.2.8
 */
 
 #ifdef __linux__
@@ -769,6 +768,7 @@ extern void		*malloc();
 # define ERRLIST_PREDEFINED	/* don't declare sys_errlist */
 # define GIDSET_T	gid_t	/* from <linux/types.h> */
 # define HASGETUSERSHELL 0	/* getusershell(3) broken in Slackware 2.0 */
+# define IP_SRCROUTE	0	/* linux <= 1.2.8 doesn't support IP_OPTIONS */
 # ifndef HASFLOCK
 #  define HASFLOCK	0	/* flock(2) is broken after 0.99.13 */
 # endif
