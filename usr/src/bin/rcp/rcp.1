@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)rcp.1	6.6 (Berkeley) %G%
+.\"	@(#)rcp.1	6.7 (Berkeley) %G%
 .\"
 .TH RCP 1 ""
 .UC 5
@@ -23,6 +23,8 @@ rcp \- remote file copy
 .B rcp
 [
 .B \-p
+] [
+.B \-k realm
 ] file1 file2
 .br
 .B rcp
@@ -30,6 +32,8 @@ rcp \- remote file copy
 .B \-p
 ] [
 .B \-r
+] [
+.B \-k realm
 ] file ... directory
 .SH DESCRIPTION
 .I Rcp
@@ -38,7 +42,7 @@ copies files between machines.  Each
 or
 .I directory
 argument is either a remote file name of the
-form ``rhost:path'', or a local file name (containing no `:' characters,
+form ``rname@rhost:path'', or a local file name (containing no `:' characters,
 or a `/' before any `:'s).
 .PP
 If the
@@ -63,29 +67,38 @@ to attempt to preserve (duplicate) in its copies the modification
 times and modes of the source files, ignoring the
 .IR umask .
 .PP
+The
+.B \-k
+option requests
+.I rcp
+to obtain tickets
+for the remote host in realm
+.I realm
+instead of the remote host's realm as determined by
+.IR krb_realmofhost (3).
+.PP
 If
 .I path
 is not a full path name, it is interpreted relative to
-your login directory on 
-.IR rhost .
+the login directory of the specified user
+.I ruser
+on 
+.IR rhost ,
+or your current user name if no other remote user name is specified.
 A 
 .I path
 on a remote host may be quoted (using \e, ", or \(aa)
 so that the metacharacters are interpreted remotely.
 .PP
 .I Rcp
-does not prompt for passwords; your current local user name
-must exist on
-.I rhost
-and allow remote command execution via
-.IR rsh (1).
+does not prompt for passwords; it performs remote execution
+via
+.IR rsh (1),
+and requires the same authorization.
 .PP
 .I Rcp
 handles third party copies, where neither source nor target files
 are on the current machine.
-Hostnames may also take the form ``rname@rhost'' to use
-.I rname
-rather than the current user name on the remote host.
 .SH SEE ALSO
 cp(1), ftp(1), rsh(1), rlogin(1)
 .SH BUGS
