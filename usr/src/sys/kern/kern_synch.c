@@ -1,4 +1,4 @@
-/*	kern_synch.c	3.3	%H%	*/
+/*	kern_synch.c	3.4	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -76,6 +76,50 @@ caddr_t chan;
 psig:
 	longjmp(u.u_qsav);
 	/*NOTREACHED*/
+}
+
+/*
+ * Sleep on chan at pri.
+ * Return in no more than the indicated number of seconds.
+ * (If seconds==0, no timeout implied)
+ * Return	TS_OK if chan was awakened normally
+ *		TS_TIME if timeout occurred
+ *		TS_SIG if asynchronous signal occurred
+ */
+tsleep(chan, pri, seconds)
+caddr_t chan;
+{
+	label_t lqsav;
+	register struct proc *pp;
+	register sec, n, rval;
+
+	pp = u.u_procp;
+	sec = 0;
+	rval = 0;
+	n = spl7();
+	if (pp->p_clktim && pp->p_clktim<seconds)
+		seconds = 0;
+	if (seconds) {
+		pp->p_flag |= STIMO;
+		if ((sec = pp->p_clktim-seconds) < 0)
+			sec = 0;
+		pp->p_clktim = seconds;
+	}
+	bcopy((caddr_t)u.u_qsav, (caddr_t)lqsav, sizeof (label_t));
+	if (setjmp(u.u_qsav))
+		rval = TS_SIG;
+	else {
+		sleep(chan, pri);
+		if ((pp->p_flag&STIMO)==0 && seconds)
+			rval = TS_TIME;
+		else
+			rval = TS_OK;
+	}
+	pp->p_flag &= ~STIMO;
+	bcopy((caddr_t)lqsav, (caddr_t)u.u_qsav, sizeof (label_t));
+	pp->p_clktim += sec;
+	splx(n);
+	return(rval);
 }
 
 /*
