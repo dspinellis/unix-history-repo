@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	6.4 (Berkeley) %G%
+ *	@(#)conf.h	6.5 (Berkeley) %G%
  */
 
 /*
@@ -128,4 +128,8 @@ struct utsname
 
 #ifdef sun
 # include <vfork.h>
+#endif
+
+#ifndef MAXHOSTNAMELEN
+#define MAXHOSTNAMELEN	256
 #endif
