@@ -344,14 +344,13 @@ char randomize, nodriver;
     char message[60];
     int load = ROUND, ready = -30000;
     int people = 0;
-    int pid;
+    int pid, omask;
     register int n;
     register int k;
     struct stat Stat;
     char *nameptr;
 
     srand(pid = getpid());
-    umask(0111);
     initscr();
     view = newwin(ROWSINVIEW, COLSINVIEW, 2, 1);
     slot = newwin(ROWSINVIEW, 3, 2, 1+COLSINVIEW);
@@ -379,9 +378,15 @@ reprint:
 	exit(1);
     }
     sprintf(file, "/tmp/.%d", game);
-    if (stat(file, &Stat) < 0 )
+    if (stat(file, &Stat) < 0 ) {
+#ifdef SETUID
+	omask = umask(077);
+#else
+	omask = umask(011);
+#endif
 	syncfile = fopen(file, "w+");
-    else {
+	umask(omask);
+    } else {
 	syncfile = fopen(file, "r+");
 	people = 1;
     }
