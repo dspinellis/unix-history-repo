@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
 
 # Makefile for f77 I/O lib, libI77.a
@@ -48,7 +48,6 @@ OBJS	      = backspace.o \
 		inquire.o \
 		lread.o \
 		lwrite.o \
-		no_lg.o \
 		open.o \
 		rdfe.o \
 		rdfmt.o \
@@ -86,7 +85,6 @@ SRCS	      = backspace.c \
 		inquire.c \
 		lread.c \
 		lwrite.c \
-		no_lg.c \
 		open.c \
 		rdfe.c \
 		rdfmt.c \
@@ -199,4 +197,3 @@ wrtfmt.o:	fio.h f_errno.h fiodefs.h format.h wrtfmt.c
 err.o:		fio.h f_errno.h fiodefs.h err.c
 fmtlib.o:	fio.h f_errno.h fiodefs.h fmtlib.c
 f77_abort.o:	fio.h f_errno.h fiodefs.h f77_abort.c
-no_lg.o:	no_lg.c

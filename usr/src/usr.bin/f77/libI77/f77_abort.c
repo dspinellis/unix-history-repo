@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)f77_abort.c	5.1	%G%
+ *	@(#)f77_abort.c	5.2	%G%
  *
  *	all f77 aborts eventually call f77_abort.
  *	f77_abort cleans up open files and terminates with a dump if needed,
@@ -16,7 +16,7 @@
 
 char *getenv();
 extern int errno;
-extern int _dbsubc;	/* dbsubc is non-zero if -lg was specified to ld */
+int _lg_flag;	/* _lg_flag is non-zero if -lg was specified to ld */
 
 f77_abort( err_val, act_core )
 {
@@ -34,7 +34,7 @@ f77_abort( err_val, act_core )
 		second line checks if -lg specified to ld (e.g. by saying
 			-g to f77) and checks the f77_dump_flag var. */
 	core_dump = ((nargs() != 2) || act_core) &&
-	    ( (_dbsubc && (first_char != 'n')) || first_char == 'y');
+	    ( (_lg_flag && (first_char != 'n')) || first_char == 'y');
 
 	if( !core_dump )
 		fprintf(units[STDERR].ufd,"*** Execution terminated\n");
