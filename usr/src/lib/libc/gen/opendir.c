@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)opendir.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)opendir.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -61,8 +61,5 @@ opendir(name)
 	dirp->dd_fd = fd;
 	dirp->dd_loc = 0;
 	dirp->dd_seek = 0;
-	dirp->dd_loccnt = 1;
-	for (i = 0; i < NDIRHASH; i++)
-		dirp->dd_hash[i] = NULL;
 	return dirp;
 }
