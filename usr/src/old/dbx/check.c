@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)check.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)check.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 static char rcsid[] = "$Header: check.c,v 1.5 84/12/26 10:38:35 linton Exp $";
@@ -48,7 +48,11 @@ register Node p;
 	case O_ASSIGN:
 	    p1 = p->value.arg[0];
 	    p2 = p->value.arg[1];
-	    if (not compatible(p1->nodetype, p2->nodetype)) {
+	    if (varIsSet("$unsafeassign")) {
+		if (size(p1->nodetype) != size(p2->nodetype)) {
+		    error("incompatible sizes");
+		}
+	    } else if (not compatible(p1->nodetype, p2->nodetype)) {
 		error("incompatible types");
 	    }
 	    break;
