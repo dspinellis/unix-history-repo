@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)vipw.c	4.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)vipw.c	4.6 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -34,7 +34,6 @@ main(argc, argv)
 	signal(SIGHUP, SIG_IGN);
 	signal(SIGINT, SIG_IGN);
 	signal(SIGQUIT, SIG_IGN);
-	signal(SIGTSTP, SIG_IGN);
 	setbuf(stderr, NULL);
 	umask(0);
 	fd = open(temp, O_WRONLY|O_CREAT|O_EXCL, 0644);
