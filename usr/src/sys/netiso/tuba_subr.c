@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tuba_subr.c	7.10 (Berkeley) %G%
+ *	@(#)tuba_subr.c	7.11 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -145,10 +145,10 @@ tuba_refcnt(isop, delta)
 	    (delta == 1 && isop->isop_tuba_cached != 0))
 		return;
 	isop->isop_tuba_cached = (delta == 1);
-	if ((index = tuba_lookup(&isop->isop_sfaddr.siso_addr, M_DONTWAIT)) != 0 &&
+	if ((index = tuba_lookup(isop->isop_faddr, M_DONTWAIT)) != 0 &&
 	    (tc = tuba_table[index]) != 0 && (delta == 1 || tc->tc_refcnt > 0))
 		tc->tc_refcnt += delta;
-	if ((index = tuba_lookup(&isop->isop_sladdr.siso_addr, M_DONTWAIT)) != 0 &&
+	if ((index = tuba_lookup(isop->isop_laddr, M_DONTWAIT)) != 0 &&
 	    (tc = tuba_table[index]) != 0 && (delta == 1 || tc->tc_refcnt > 0))
 		tc->tc_refcnt += delta;
 }
@@ -170,20 +170,29 @@ tuba_pcbconnect(inp, nam)
 	register struct inpcb *inp;
 	struct mbuf *nam;
 {
-	register struct sockaddr_iso *siso = mtod(nam, struct sockaddr_iso *);
+	register struct sockaddr_iso *siso;
 	struct sockaddr_in *sin = mtod(nam, struct sockaddr_in *);
 	struct tcpcb *tp = intotcpcb(inp);
-	unsigned index = sin->sin_addr.s_addr;
-	struct tuba_cache *tc = tuba_table[index];
 	struct isopcb *isop = (struct isopcb *)tp->t_tuba_pcb;
 	int error;
 
-	inp->inp_faddr.s_addr = index;
+	/* hardwire iso_pcbbind() here */
+	siso = isop->isop_laddr = &isop->isop_sladdr;
+	*siso = tuba_table[inp->inp_laddr.s_addr]->tc_siso;
+	siso->siso_tlen = sizeof(inp->inp_lport);
+	bcopy((caddr_t)&inp->inp_lport, TSEL(siso), sizeof(inp->inp_lport));
+
+	/* hardwire in_pcbconnect() here without assigning route */
 	inp->inp_fport = sin->sin_port;
-	*siso = tc->tc_siso;
+	inp->inp_faddr = sin->sin_addr;
+
+	/* reuse nam argument to call iso_pcbconnect() */
+	nam->m_len = sizeof(*siso);
+	siso = mtod(nam, struct sockaddr_iso *);
+	*siso = tuba_table[inp->inp_faddr.s_addr]->tc_siso;
 	siso->siso_tlen = sizeof(inp->inp_fport);
 	bcopy((caddr_t)&inp->inp_fport, TSEL(siso), sizeof(inp->inp_fport));
-	nam->m_len = sizeof(*siso);
+
 	if ((error = iso_pcbconnect(isop, nam)) == 0)
 		tuba_refcnt(isop, 1);
 	return (error);
@@ -204,7 +213,7 @@ tuba_tcpinput(m, src, dst)
 	unsigned long sum, lindex, findex;
 	register struct tcpiphdr *ti;
 	register struct inpcb *inp;
-	struct mbuf *om;
+	struct mbuf *om = 0;
 	int len, tlen, off;
 	register struct tcpcb *tp = 0;
 	int tiflags;
@@ -221,8 +230,8 @@ tuba_tcpinput(m, src, dst)
 	 * If we are out of space might as well drop the packet now.
 	 */
 	tcpstat.tcps_rcvtotal++;
-	lindex = tuba_lookup(&dst->siso_addr, M_DONTWAIT);
-	findex = tuba_lookup(&src->siso_addr, M_DONTWAIT);
+	lindex = tuba_lookup(dst, M_DONTWAIT);
+	findex = tuba_lookup(src, M_DONTWAIT);
 	if (lindex == 0 || findex == 0)
 		goto drop;
 	/*
@@ -234,6 +243,7 @@ tuba_tcpinput(m, src, dst)
 	m->m_data -= sizeof(struct ip);
 	m->m_len += sizeof(struct ip);
 	m->m_pkthdr.len += sizeof(struct ip);
+	m->m_flags &= ~(M_MCAST|M_BCAST); /* XXX should do this in clnp_input */
 	/*
 	 * The reassembly code assumes it will be overwriting a useless
 	 * part of the packet, which is why we need to have it point
@@ -255,16 +265,17 @@ tuba_tcpinput(m, src, dst)
 		}
 		m->m_next = m0;
 		m->m_data += max_linkhdr;
-		m->m_pkthdr = m->m_pkthdr;
-		m->m_flags = m->m_flags & M_COPYFLAGS;
+		m->m_pkthdr = m0->m_pkthdr;
+		m->m_flags = m0->m_flags & M_COPYFLAGS;
 		if (len < sizeof(struct tcphdr)) {
+			m->m_len = 0;
 			if ((m = m_pullup(m, sizeof(struct tcpiphdr))) == 0) {
 				tcpstat.tcps_rcvshort++;
 				return;
 			}
 		} else {
-			bcopy(mtod(m, caddr_t) + sizeof(struct ip),
-			      mtod(m0, caddr_t) + sizeof(struct ip),
+			bcopy(mtod(m0, caddr_t) + sizeof(struct ip),
+			      mtod(m, caddr_t) + sizeof(struct ip),
 			      sizeof(struct tcphdr));
 			m0->m_len -= sizeof(struct tcpiphdr);
 			m0->m_data += sizeof(struct tcpiphdr);
