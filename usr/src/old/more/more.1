@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)more.1	5.1 (Berkeley) %G%
+.\"	@(#)more.1	6.1 (Berkeley) %G%
 .\"
-.TH MORE 1 "27 April 1981"
+.TH MORE 1 ""
 .UC 4
 .SH NAME
 more, page \- file perusal filter for crt viewing
@@ -54,8 +54,10 @@ to clear to the end of a line.
 .TP
 .B \-d
 .I More
-will prompt the user with the message "Hit
-space to continue, Rubout to abort" at the end of each screenful.
+will prompt the user with the message "Press
+space to continue, \'q\' to quit." at the end of each screenful,
+and will respond to subsequent illegal user input by
+printing "Press \'h\' for instructions." instead of ringing the bell.
 This is useful if
 .I more
 is being used as a filter in some setting,
@@ -232,7 +234,7 @@ Erasing back past the first column cancels the search command.
 .IP \fIi\|\fPn
 search for the \fIi\|\fP-th occurrence of the last regular expression entered.
 .PP
-.IP '
+.IP \'
 (single quote) Go to the point from which the last search started.
 If no search has been performed in the current file, this command
 goes back to the beginning of the file.
