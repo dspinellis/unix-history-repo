@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)rm.c	4.6 (Berkeley) %G%";
+static char *sccsid = "@(#)rm.c	4.7 (Berkeley) %G%";
 int	errcode;
 
 #include <stdio.h>
@@ -64,7 +64,7 @@ char arg[];
 	char name[BUFSIZ];
 	int d;
 
-	if(stat(arg, &buf)) {
+	if(lstat(arg, &buf)) {
 		if (fflg==0) {
 			printf("rm: %s nonexistent\n", arg);
 			++errcode;
