@@ -72,7 +72,7 @@ all:	a.out exrecover expreserve tags
 tags:	/tmp
 	${CTAGS} -w ex.[hc] ex_*.[hc]
 
-${OBJS}: ex_vars.h
+${OBJS}: ${HDRS}
 
 # ex_vars.h:
 # 	csh makeoptions ${CFLAGS}
@@ -101,7 +101,7 @@ expreserve.o:
 	${CC} ${CFLAGS} -c -O expreserve.c
 
 clean:
-#	If we dont have ex we cant make it so dont rm ex_vars.h
+#	If we dont have ex we cant make it so don't rm ex_vars.h
 	-rm -f a.out exrecover expreserve strings core errs trace
 	-rm -f *.o x*.[cs]
 
@@ -116,14 +116,13 @@ ninstall: a.out
 
 # install in standard place (/usr/ucb)
 install: a.out exrecover expreserve
-	strip a.out
 	-rm -f ${DESTDIR}${BINDIR}/ex
 	-rm -f ${DESTDIR}${BINDIR}/vi
 	-rm -f ${DESTDIR}${BINDIR}/view
 	-rm -f ${DESTDIR}${BINDIR}/edit
 	-rm -f ${DESTDIR}${BINDIR}/e
 	-rm -f ${DESTDIR}/usr/bin/ex
-	cp a.out ${DESTDIR}${BINDIR}/ex
+	install -s -m 1755 a.out ${DESTDIR}${BINDIR}/ex
 #	cp ex${VERSION}strings ${DESTDIR}/${LIBDIR}/ex${VERSION}strings
 	ln ${DESTDIR}${BINDIR}/ex ${DESTDIR}${BINDIR}/edit
 	ln ${DESTDIR}${BINDIR}/ex ${DESTDIR}${BINDIR}/e
@@ -131,9 +130,8 @@ install: a.out exrecover expreserve
 	ln ${DESTDIR}${BINDIR}/ex ${DESTDIR}${BINDIR}/view
 	ln ${DESTDIR}${BINDIR}/ex ${DESTDIR}/usr/bin/ex
 	chmod 1755 ${DESTDIR}${BINDIR}/ex
-	cp exrecover ${DESTDIR}${LIBDIR}/ex${VERSION}recover
-	cp expreserve ${DESTDIR}${LIBDIR}/ex${VERSION}preserve
-	chmod 4755 ${DESTDIR}${LIBDIR}/ex${VERSION}recover ${DESTDIR}${LIBDIR}/ex${VERSION}preserve
+	install -m 4755 exrecover ${DESTDIR}${LIBDIR}/ex${VERSION}recover
+	install -m 4755 expreserve ${DESTDIR}${LIBDIR}/ex${VERSION}preserve
 # The following line normally fails.  This is OK.
 	-mkdir ${DESTDIR}/usr/preserve
 
