@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	6.8 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	6.9 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	6.8 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	6.9 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -302,6 +302,7 @@ getcanonname(host, hbsize)
 	char **dp;
 	char *mxmatch;
 	bool amatch;
+	bool gotmx;
 	int qtype;
 	char nbuf[MAX(PACKETSZ, MAXDNAME*2+2)];
 	char *searchlist[MAXDNSRCH+2];
@@ -329,10 +330,14 @@ getcanonname(host, hbsize)
 	dp = searchlist;
 	if (n > 0)
 		*dp++ = "";
-	if (n == 0 || n > 0 && *--cp != '.')
+	if (n >= 0 && *--cp != '.' && bitset(RES_DNSRCH, _res.options))
 	{
 		for (domain = _res.dnsrch; *domain != NULL; )
 			*dp++ = *domain++;
+	}
+	else if (n == 0 && bitset(RES_DEFNAMES, _res.options))
+	{
+		*dp++ = _res.defdname;
 	}
 	*dp = NULL;
 
@@ -346,6 +351,8 @@ getcanonname(host, hbsize)
 
 	for (dp = searchlist; *dp != NULL; )
 	{
+		if (qtype == T_ANY)
+			gotmx = FALSE;
 		if (tTd(8, 5))
 			printf("getcanonname: trying %s.%s\n", host, *dp);
 		ret = res_querydomain(host, *dp, C_IN, qtype,
@@ -417,6 +424,7 @@ getcanonname(host, hbsize)
 			switch (type)
 			{
 			  case T_MX:
+				gotmx = TRUE;
 				if (**dp != '\0')
 				{
 					/* got a match -- save that info */
@@ -464,7 +472,7 @@ getcanonname(host, hbsize)
 
 		if (qtype == T_ANY)
 			qtype = T_A;
-		else if (qtype = T_A)
+		else if (qtype == T_A && !gotmx)
 			qtype = T_MX;
 		else
 		{
