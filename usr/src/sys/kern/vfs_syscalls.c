@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	8.27 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	8.28 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -222,7 +222,6 @@ checkdirs(olddp)
 			vrele(fdp->fd_cdir);
 			VREF(newdp);
 			fdp->fd_cdir = newdp;
-			printf("patch cdir for proc %d\n", p->p_pid);
 		}
 		if (fdp->fd_rdir == olddp) {
 			vrele(fdp->fd_rdir);
@@ -2092,13 +2091,13 @@ unionread:
 #ifdef UNION
 {
 	extern int (**union_vnodeop_p)();
-	extern struct vnode *union_lowervp __P((struct vnode *));
+	extern struct vnode *union_dircache __P((struct vnode *));
 
 	if ((uap->count == auio.uio_resid) &&
 	    (vp->v_op == union_vnodeop_p)) {
 		struct vnode *lvp;
 
-		lvp = union_lowervp(vp);
+		lvp = union_dircache(vp);
 		if (lvp != NULLVP) {
 			struct vattr va;
 
@@ -2108,13 +2107,12 @@ unionread:
 			 */
 			error = VOP_GETATTR(vp, &va, fp->f_cred, p);
 			if (va.va_flags & OPAQUE) {
-				vrele(lvp);
+				vput(lvp);
 				lvp = NULL;
 			}
 		}
 		
 		if (lvp != NULLVP) {
-			VOP_LOCK(lvp);
 			error = VOP_OPEN(lvp, FREAD, fp->f_cred, p);
 			VOP_UNLOCK(lvp);
 
@@ -2199,13 +2197,13 @@ unionread:
 #ifdef UNION
 {
 	extern int (**union_vnodeop_p)();
-	extern struct vnode *union_lowervp __P((struct vnode *));
+	extern struct vnode *union_dircache __P((struct vnode *));
 
 	if ((uap->count == auio.uio_resid) &&
 	    (vp->v_op == union_vnodeop_p)) {
 		struct vnode *lvp;
 
-		lvp = union_lowervp(vp);
+		lvp = union_dircache(vp);
 		if (lvp != NULLVP) {
 			struct vattr va;
 
@@ -2215,13 +2213,12 @@ unionread:
 			 */
 			error = VOP_GETATTR(vp, &va, fp->f_cred, p);
 			if (va.va_flags & OPAQUE) {
-				vrele(lvp);
+				vput(lvp);
 				lvp = NULL;
 			}
 		}
 		
 		if (lvp != NULLVP) {
-			VOP_LOCK(lvp);
 			error = VOP_OPEN(lvp, FREAD, fp->f_cred, p);
 			VOP_UNLOCK(lvp);
 
