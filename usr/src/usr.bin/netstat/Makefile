@@ -1,5 +1,5 @@
-# @(#)Makefile	4.4 %G%
-OBJS=	host.o inet.o if.o main.o mbuf.o route.o
+#	Makefile (Berkeley) %G%
+OBJS=	host.o inet.o if.o main.o mbuf.o route.o unix.o
 CFLAGS=-O
 DESTDIR=
 
