@@ -1,53 +1,75 @@
-.ps 11
-.vs 1.5v
-.ce 3
-Site Information Form
-July 1, 1985
-.b "PLEASE TYPE"
-.sp -3.5
+.\" @(#)siteinfo	1.2 (CSRG - distribution) %G%
+.nr PS 11
 .in +4i
-.(l
 .TS
 box;
-cc
+c
+c
 ll.
 .ft B
-Tape Density
-
-1600  \(ci	6250  \(ci  
+VAX Hardware
+.ps 8
+(for 4.3BSD or 4.3BSD-Reno)
+.sp 5p
+.ps 11
+.ft
+Tape Density:  \fB 1600 \(ci                     6250 \(ci  
 .ft
 .TE
-.sp 2
-.)l
-.in -4i
+.TS
+box;
+c
+c
+ll.
+.ft B
+TAHOE Hardware
+.ps 8
+(for 4.3BSD-Tahoe or 4.3BSD-Reno)
+.sp 5p
 .ps 11
-.nf
-.ta \w'Mailing Address (no P.O. Boxes):'uR +.25i
-.nr l 6i
-	Organization:	\l'|\nlu'
-	No. of BSD Users:	\l'|\nlu'
-	Site Type (check one):	Educational\l'.25i' Governmental\l'.25i' Commercial\l'|\nlu'
-	Site Mailing Address:	\l'|\nlu'
-		\l'|\nlu'
-		\l'|\nlu'
-	Site Network Addresses:	(please specify complete path to UCBVAX)
-		Internet\l'|\nlu'
-		UUCP\l'|\nlu'
-		Other\l'|\nlu'
-.sp 1.5
-	Administrative Contact:	\l'|\nlu'
-	Mailing Address (no P.O. Boxes):	_\l'|\nlu'
-		\l'|\nlu'
-		\l'|\nlu'
-	Telephone:	\l'|\nlu'
-	Network Address:	\l'|\nlu'
-.sp 1.5
-	Technical Contact:	\l'|\nlu'
-	Mailing Address (no P.O. Boxes):	\l'|\nlu'
-		\l'|\nlu'
-		\l'|\nlu'
-	Telephone:	\l'|\nlu'
-	Network Address:	\l'|\nlu'
-.sp 1.5
-	Applications:	\l'|\nlu'
-	Comments:	\l'|\nlu'
+.ft
+Tape Density:  \fB 1600 \(ci                     6250 \(ci  
+.ft
+.TE
+.sp -60p
+.ll 4i
+.in 0
+.ce 2
+.B "Site Information Form"
+.B "PLEASE TYPE"
+.vs 1.5v
+.sp 2.5
+.ll 6.8i
+.in 0
+.TS
+rw0 l.
+Organization:	\l'4i'
+No. of BSD Users:	\l'4i'
+Site Type (check one):	Educational___ Governmental___ Commercial___
+Site Mailing Address:	\l'4i'
+	\l'4i'
+	\l'4i'
+	\l'4i'
+Site Network Address:	(please specify complete path to UUNET if UUCP address)
+	\l'4i'
+.sp 1
+Administrative Contact:	\l'4i'
+Mailing Address (no P.O. Boxes):	\l'4i'
+	\l'4i'
+	\l'4i'
+	\l'4i'
+Telephone:	\l'4i'
+Facsimile:	\l'4i'
+E-mail Address:	\l'4i'
+.sp 1
+Technical Contact:	\l'4i'
+Mailing Address (no P.O. Boxes):	\l'4i'
+	\l'4i'
+	\l'4i'
+	\l'4i'
+Telephone:	\l'4i'
+E-mail Address:	\l'4i'
+.sp 1
+Current AT&T Agreement:	32V___sysIII___sysV___(Release No.______) 
+Title of Signatory:	\l'4i'
+.TE
