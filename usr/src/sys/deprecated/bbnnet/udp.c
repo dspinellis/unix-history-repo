@@ -74,7 +74,7 @@ register struct mbuf *mp;
 	 * from IP; u_len is what UDP says we should have
 	 * (sizeof(udp_specific) + datalen)
 	 */
-	log(KERN_RECOV, "UDP len %d, but got %d\n", ntohs(p->u_len), ulen);
+	log(LOG_WARNING, "UDP len %d, but got %d\n", ntohs(p->u_len), ulen);
 	netlog (mp);
 	return;
     }
