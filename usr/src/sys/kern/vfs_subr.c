@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	7.91 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.92 (Berkeley) %G%
  */
 
 /*
@@ -305,7 +305,6 @@ vwakeup(bp)
 {
 	register struct vnode *vp;
 
-	bp->b_dirtyoff = bp->b_dirtyend = 0;
 	if (vp = bp->b_vp) {
 		vp->v_numoutput--;
 		if (vp->v_numoutput < 0)
@@ -324,11 +323,12 @@ vwakeup(bp)
  * Called with the underlying object locked.
  */
 int
-vinvalbuf(vp, flags, cred, p)
+vinvalbuf(vp, flags, cred, p, slpflag, slptimeo)
 	register struct vnode *vp;
 	int flags;
 	struct ucred *cred;
 	struct proc *p;
+	int slpflag, slptimeo;
 {
 	register struct buf *bp;
 	struct buf *nbp, *blist;
@@ -358,13 +358,26 @@ vinvalbuf(vp, flags, cred, p)
 			s = splbio();
 			if (bp->b_flags & B_BUSY) {
 				bp->b_flags |= B_WANTED;
-				sleep((caddr_t)bp, PRIBIO + 1);
+				error = tsleep((caddr_t)bp,
+					slpflag | (PRIBIO + 1), "vinvalbuf",
+					slptimeo);
 				splx(s);
+				if (error)
+					return (error);
 				break;
 			}
 			bremfree(bp);
 			bp->b_flags |= B_BUSY;
 			splx(s);
+			/*
+			 * XXX Since there are no node locks for NFS, I believe
+			 * there is a slight chance that a delayed write will
+			 * occur while sleeping just above, so check for it.
+			 */
+			if ((bp->b_flags & B_DELWRI) && (flags & V_SAVE)) {
+				(void) VOP_BWRITE(bp);
+				break;
+			}
 			bp->b_flags |= B_INVAL;
 			brelse(bp);
 		}
@@ -766,7 +779,7 @@ vclean(vp, flags)
 	 * Clean out any buffers associated with the vnode.
 	 */
 	if (flags & DOCLOSE)
-		vinvalbuf(vp, 1, NOCRED, NULL);
+		vinvalbuf(vp, V_SAVE, NOCRED, NULL, 0, 0);
 	/*
 	 * Any other processes trying to obtain this lock must first
 	 * wait for VXLOCK to clear, then call the new lock operation.
