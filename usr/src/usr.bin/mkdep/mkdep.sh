@@ -10,7 +10,7 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)mkdep.sh	5.10 (Berkeley) %G%
+#	@(#)mkdep.sh	5.11 (Berkeley) %G%
 #
 
 PATH=/bin:/usr/bin:/usr/ucb
@@ -58,6 +58,14 @@ cat << _EOF_ >> $TMP
 # DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
 
 _EOF_
+
+# If your compiler doesn't have -M, add it.  If you can't, the next two
+# lines will try and replace the "cc -M".  The real problem is that this
+# hack can't deal with anything that requires a search path, and doesn't
+# even try for anything using bracket (<>) syntax.
+#
+# egrep '^#include[ 	]*".*"' /dev/null $* |
+# sed -e 's/:[^"]*"\([^"]*\)".*/: \1/' -e 's/\.c/.o/' |
 
 cc -M $* |
 sed "
