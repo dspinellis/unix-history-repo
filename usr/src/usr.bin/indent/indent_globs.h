@@ -6,10 +6,8 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)indent_globs.h	5.10 (Berkeley) %G%
+ *	@(#)indent_globs.h	5.11 (Berkeley) %G%
  */
-
-#include <stdio.h>
 
 #define BACKSLASH '\\'
 #define bufsize 200		/* size of internal buffers */

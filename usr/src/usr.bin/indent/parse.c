@@ -8,9 +8,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parse.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)parse.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <stdio.h>
 #include "indent_globs.h"
 #include "indent_codes.h"
 

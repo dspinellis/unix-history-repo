@@ -16,10 +16,15 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)indent.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)indent.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "indent_globs.h"
 #include "indent_codes.h"
 #include <ctype.h>

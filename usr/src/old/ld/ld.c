@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ld.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)ld.c	5.18 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -20,13 +20,15 @@ static char sccsid[] = "@(#)ld.c	5.17 (Berkeley) %G%";
 
 #include <sys/param.h>
 #include <sys/stat.h>
-#include <sys/file.h>
-#include <sys/signal.h>
+#include <fcntl.h>
+#include <signal.h>
 #include <ar.h>
 #include <a.out.h>
 #include <ranlib.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <stdlib.h>
 #include <string.h>
 #include "pathnames.h"
 
@@ -343,12 +345,12 @@ char	*curstr;
 int	pagesize;
 
 char 	get();
-int	delexit();
+void	delexit();
 char	*savestr();
-char	*malloc();
 
 main(argc, argv)
-char **argv;
+	int argc;
+	char **argv;
 {
 	register int c, i; 
 	int num;
@@ -543,6 +545,7 @@ htoi(p)
 	return (n);
 }
 
+void
 delexit()
 {
 	struct stat stbuf;

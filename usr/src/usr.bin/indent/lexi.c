@@ -8,7 +8,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lexi.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)lexi.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -17,9 +17,12 @@ static char sccsid[] = "@(#)lexi.c	5.15 (Berkeley) %G%";
  * of token scanned.
  */
 
+#include <stdio.h>
+#include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
 #include "indent_globs.h"
 #include "indent_codes.h"
-#include <ctype.h>
 
 #define alphanum 1
 #define opchar 3
