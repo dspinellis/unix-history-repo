@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ts.c	7.11 (Berkeley) %G%
+ *	@(#)ts.c	7.12 (Berkeley) %G%
  */
 
 #include "ts.h"
@@ -21,8 +21,6 @@
 #include "systm.h"
 #include "buf.h"
 #include "conf.h"
-#include "user.h"
-#include "proc.h"
 #include "file.h"
 #include "map.h"
 #include "vm.h"
@@ -30,8 +28,8 @@
 #include "mtio.h"
 #include "cmap.h"
 #include "uio.h"
-#include "tty.h"
 #include "syslog.h"
+#include "tprintf.h"
 
 #include "machine/pte.h"
 #include "../vax/cpu.h"
@@ -96,7 +94,7 @@ struct	ts_softc {
 	struct	ts_tsdata *sc_ubaddr; /* Unibus address of tsdata structure */
 	u_short	sc_uba;		/* Unibus addr of cmd pkt for tsdb */
 	short	sc_density;	/* value |'ed into char_mode for TC13 density */
-	caddr_t	sc_ctty;	/* user's controlling tty (vnode) */
+	tpr_t	sc_tpr;		/* tprintf handle */
 	int	sc_blks;	/* number of I/O operations since open */
 	int	sc_softerrs;	/* number of soft I/O errors since open */
 } ts_softc[NTS];
@@ -254,8 +252,7 @@ tsopen(dev, flag)
 	sc->sc_lastiow = 0;
 	sc->sc_blks = 0;
 	sc->sc_softerrs = 0;
-	sc->sc_ctty = (caddr_t)(u.u_procp->p_flag&SCTTY ? 
-			u.u_procp->p_session->s_ttyvp : 0);
+	sc->sc_tpr = tprintf_open();
 	return (0);
 }
 
@@ -289,6 +286,7 @@ tsclose(dev, flag)
 	if (sc->sc_blks > 100 && sc->sc_softerrs > sc->sc_blks / 100)
 		log(LOG_INFO, "ts%d: %d soft errors in %d blocks\n",
 		    TSUNIT(dev), sc->sc_softerrs, sc->sc_blks);
+	tprintf_close(sc->sc_tpr);
 	sc->sc_openf = 0;
 	return (0);
 }
@@ -670,29 +668,29 @@ tsintr(tsunit)
 
 		case TS_REJECT:		/* function reject */
 			if (state == SIO && sc->sc_ts.t_sts.s_xs0 & TS_WLE)
-				tprintf(sc->sc_ctty, "ts%d: write locked\n",
+				tprintf(sc->sc_tpr, "ts%d: write locked\n",
 				    tsunit);
 			if ((sc->sc_ts.t_sts.s_xs0 & TS_ONL) == 0)
-				tprintf(sc->sc_ctty, "ts%d: offline\n",
+				tprintf(sc->sc_tpr, "ts%d: offline\n",
 				    tsunit);
 			break;
 		}
 		/*
 		 * Couldn't recover error
 		 */
-		tprintf(sc->sc_ctty, "ts%d: hard error bn%d tssr=%b xs0=%b",
+		tprintf(sc->sc_tpr, "ts%d: hard error bn%d tssr=%b xs0=%b",
 		    tsunit, bp->b_blkno, addr->tssr, TSSR_BITS,
 		    sc->sc_ts.t_sts.s_xs0, TSXS0_BITS);
 		if (sc->sc_ts.t_sts.s_xs1)
-			tprintf(sc->sc_ctty, " xs1=%b", sc->sc_ts.t_sts.s_xs1,
+			tprintf(sc->sc_tpr, " xs1=%b", sc->sc_ts.t_sts.s_xs1,
 			    TSXS1_BITS);
 		if (sc->sc_ts.t_sts.s_xs2)
-			tprintf(sc->sc_ctty, " xs2=%b", sc->sc_ts.t_sts.s_xs2,
+			tprintf(sc->sc_tpr, " xs2=%b", sc->sc_ts.t_sts.s_xs2,
 			    TSXS2_BITS);
 		if (sc->sc_ts.t_sts.s_xs3)
-			tprintf(sc->sc_ctty, " xs3=%b", sc->sc_ts.t_sts.s_xs3,
+			tprintf(sc->sc_tpr, " xs3=%b", sc->sc_ts.t_sts.s_xs3,
 			    TSXS3_BITS);
-		tprintf(sc->sc_ctty, "\n");
+		tprintf(sc->sc_tpr, "\n");
 		bp->b_flags |= B_ERROR;
 		goto opdone;
 	}

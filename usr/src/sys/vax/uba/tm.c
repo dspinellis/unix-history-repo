@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tm.c	7.11 (Berkeley) %G%
+ *	@(#)tm.c	7.12 (Berkeley) %G%
  */
 
 #include "te.h"
@@ -23,8 +23,6 @@
 #include "buf.h"
 #include "conf.h"
 #include "user.h"
-#include "proc.h"
-#include "file.h"
 #include "map.h"
 #include "vm.h"
 #include "ioctl.h"
@@ -32,8 +30,8 @@
 #include "cmap.h"
 #include "uio.h"
 #include "kernel.h"
-#include "tty.h"
 #include "syslog.h"
+#include "tprintf.h"
 
 #include "machine/pte.h"
 #include "../vax/cpu.h"
@@ -104,7 +102,7 @@ struct	te_softc {
 	daddr_t	sc_timo;	/* time until timeout expires */
 	int	sc_blks;	/* number of I/O operations since open */
 	int	sc_softerrs;	/* number of soft I/O errors since open */
-	caddr_t	sc_ctty;	/* users controlling terminal (vnode) */
+	tpr_t	sc_tpr;		/* tprintf handle */
 } te_softc[NTE];
 #ifdef unneeded
 int	tmgapsdcnt;		/* DEBUG */
@@ -250,8 +248,7 @@ get:
 	sc->sc_dens = dens;
 	sc->sc_blks = 0;
 	sc->sc_softerrs = 0;
-	sc->sc_ctty = (caddr_t)(u.u_procp->p_flag&SCTTY ? 
-			u.u_procp->p_session->s_ttyvp : 0);
+	sc->sc_tpr = tprintf_open();
 	s = splclock();
 	if (sc->sc_tact == 0) {
 		sc->sc_timo = INF;
@@ -292,6 +289,7 @@ tmclose(dev, flag)
 	if (sc->sc_blks > 100 && sc->sc_softerrs > sc->sc_blks / 100)
 		log(LOG_INFO, "te%d: %d soft errors in %d blocks\n",
 		    TEUNIT(dev), sc->sc_softerrs, sc->sc_blks);
+	tprintf_close(sc->sc_tpr);
 	sc->sc_openf = 0;
 	return (0);
 }
@@ -673,7 +671,7 @@ tmintr(tm11)
 		/*
 		 * Couldn't recover error
 		 */
-		tprintf(sc->sc_ctty,
+		tprintf(sc->sc_tpr,
 		    "te%d: hard error bn%d er=%b\n", minor(bp->b_dev)&03,
 		    bp->b_blkno, sc->sc_erreg, TMER_BITS);
 #ifdef	AVIV
