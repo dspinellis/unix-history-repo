@@ -7,9 +7,5 @@ CFLAGS+=	-I. -I$(.CURDIR)/../cc1 -I$(.CURDIR)/../cc1/config
 
 .include "../../Makefile.inc"
 
-afterinstall:
-	-rm -f $(DESTDIR)$(BINDIR)/gcc
-	cd $(DESTDIR)$(BINDIR); ln -s cc gcc
-
 .include <bsd.prog.mk>
 .include "../Makefile.symlinks"
