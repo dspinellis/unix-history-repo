@@ -1,6 +1,14 @@
+/*
+ * Copyright (c) 1985 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ */
+
+
 #ifndef lint
-static char rcsid[] = "$Header$";
-#endif
+static char sccsid[] = "@(#)tables.c	5.3 (Berkeley) %G%";
+#endif not lint
 
 /*
  * Routing Table Management Daemon
@@ -76,10 +84,11 @@ again:
 		if (doinghost) {
 			if (equal(&rt->rt_dst, dst))
 				return (rt);
+		} else {
+			if (rt->rt_dst.sa_family == af &&
+			    (*match)(&rt->rt_dst, dst))
+				return (rt);
 		}
-		if (rt->rt_dst.sa_family == af &&
-		    (*match)(&rt->rt_dst, dst))
-			return (rt);
 	}
 	if (doinghost) {
 		doinghost = 0;

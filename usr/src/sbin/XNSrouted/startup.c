@@ -1,6 +1,16 @@
+/*
+ * Copyright (c) 1985 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ * Includes material written at Cornell University by Bill Nesheim,
+ * by permission of the author.
+ */
+
+
 #ifndef lint
-static char rcsid[] = "$Header$";
-#endif
+static char sccsid[] = "@(#)startup.c	5.3 (Berkeley) %G%";
+#endif not lint
 
 /*
  * Routing Table Management Daemon
@@ -62,8 +72,8 @@ ifinit()
 			continue;
 		}
 		/* already known to us? */
-		if (if_ifwithaddr(&ifs.int_addr))
-			continue;
+		/*if (if_ifwithaddr(&ifs.int_addr))
+			continue;*/
 		/* argh, this'll have to change sometime */
 		if (ifs.int_addr.sa_family != AF_NS)
 			continue;
@@ -130,9 +140,26 @@ addrouteforif(ifp)
 	int state, metric;
 	struct rt_entry *rt;
 
-	if (ifp->int_flags & IFF_POINTOPOINT)
+	if (ifp->int_flags & IFF_POINTOPOINT) {
+		int (*match)();
+		register struct interface *ifp2 = ifnet;
+		register struct interface *ifprev = ifnet;
+		
 		dst = &ifp->int_dstaddr;
-	else {
+
+		/* Search for interfaces with the same net */
+		ifp->int_sq.n = ifp->int_sq.p = &(ifp->int_sq);
+		match = afswitch[dst->sa_family].af_netmatch;
+		if (match)
+		for (ifp2 = ifnet; ifp2; ifp2 =ifp2->int_next) {
+			if (ifp->int_flags & IFF_POINTOPOINT == 0)
+				continue;
+			if ((*match)(&ifp2->int_dstaddr,&ifp->int_dstaddr)) {
+				insque(&ifp2->int_sq,&ifp->int_sq);
+				break;
+			}
+		}
+	} else {
 		dst = &ifp->int_broadaddr;
 	}
 	rt = rtlookup(dst);
@@ -141,4 +168,3 @@ addrouteforif(ifp)
 	rtadd(dst, &ifp->int_addr, ifp->int_metric,
 		ifp->int_flags & (IFF_INTERFACE|IFF_PASSIVE|IFF_REMOTE));
 }
-

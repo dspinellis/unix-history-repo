@@ -1,6 +1,21 @@
+/*
+ * Copyright (c) 1985 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ * Includes material written at Cornell University by Bill Nesheim
+ * with permission of the author.
+ */
+
 #ifndef lint
-static char rcsid[] = "$Header$";
-#endif
+char copyright[] =
+"@(#) Copyright (c) 1983 Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif not lint
+
+#ifndef lint
+static char sccsid[] = "@(#)main.c	5.3 (Berkeley) %G%";
+#endif not lint
 
 /*
  * XNS Routing Information Protocol Daemon
@@ -31,11 +46,6 @@ main(argc, argv)
 	u_char retry;
 	
 	argv0 = argv;
-	addr.sns_family = AF_NS;
-	addr.sns_port = htons(IDPPORT_RIF);
-	s = getsocket(SOCK_DGRAM, 0, &addr);
-	if (s < 0)
-		exit(1);
 	argv++, argc--;
 	while (argc > 0 && **argv == '-') {
 		if (strcmp(*argv, "-s") == 0) {
@@ -88,6 +98,11 @@ main(argc, argv)
 		}
 	}
 #endif
+	addr.sns_family = AF_NS;
+	addr.sns_port = htons(IDPPORT_RIF);
+	s = getsocket(SOCK_DGRAM, 0, &addr);
+	if (s < 0)
+		exit(1);
 	/*
 	 * Any extra argument is considered
 	 * a tracing log file.
@@ -143,22 +158,25 @@ process(fd)
 			perror("recvfrom");
 		return;
 	}
-	/* We get the IDP header in front of the RIF packet*/
 	if (tracepackets > 1) {
-	    fprintf(ftrace,"rcv %d bytes on %s ",
-		cc, xns_ntoa(&idp->idp_dna));
+	    fprintf(ftrace,"rcv %d bytes on %s ", cc, xns_ntoa(&idp->idp_dna));
 	    fprintf(ftrace," from %s\n", xns_ntoa(&idp->idp_sna));
 	}
-	
-	if (ns_netof(idp->idp_sna) != ns_netof(idp->idp_dna)) {
-		fprintf(ftrace, "XNSrouted: net of interface (%d) != net on ether (%d)!\n",
-			ns_netof(idp->idp_dna), ns_netof(idp->idp_sna));
+	if (tracepackets > 0) {
+	    if (ns_netof(idp->idp_sna) != ns_netof(idp->idp_dna)) {
+		    fprintf(ftrace,
+			    "XNSrouted: net of interface (%d) ",
+			    ns_netof(idp->idp_dna));
+		    fprintf(ftrace,
+			    "!= net on ether (%d)!\n", ns_netof(idp->idp_sna));
+	    }
+	    if (fromlen != sizeof (struct sockaddr_ns))
+		    fprintf(ftrace, "fromlen is %d instead of %d\n",
+		    fromlen, sizeof (struct sockaddr_ns));
 	}
 			
+	/* We get the IDP header in front of the RIF packet*/
 	cc -= sizeof (struct idp);
-	if (fromlen != sizeof (struct sockaddr_ns))
-		fprintf(ftrace, "fromlen is %d instead of %d\n",
-		fromlen, sizeof (struct sockaddr_ns));
 #define	mask(s)	(1<<((s)-1))
 	omask = sigblock(mask(SIGALRM));
 	rip_input(&from, cc);

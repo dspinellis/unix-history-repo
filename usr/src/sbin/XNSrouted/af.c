@@ -1,6 +1,16 @@
+/*
+ * Copyright (c) 1985 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ * This file include significant work done at Cornell University
+ * by Bill Nesheim.  That work included by permission.
+ */
+
 #ifndef lint
-static char rcsid[] = "$Header$";
-#endif
+static char sccsid[] = "@(#)af.c	5.3 (Berkeley) %G%";
+#endif not lint
+
 
 #include "defs.h"
 
@@ -81,13 +91,20 @@ xnnet_output(flags, sns, size)
 }
 
 /*
- * Return 1 if the address is believed
- *  -- THIS IS A KLUDGE.
+ * Return 1 if we want this route.
+ * We use this to disallow route net G entries for one for multiple
+ * point to point links.
  */
 xnnet_checkhost(sns)
 	struct sockaddr_ns *sns;
 {
-	return (1);
+	register struct interface *ifp = if_ifwithnet(sns);
+	/*
+	 * We want this route if there is no more than one 
+	 * point to point interface with this network.
+	 */
+	if (ifp == 0 || (ifp->int_flags & IFF_POINTOPOINT)==0) return (1);
+	return (ifp->int_sq.n == ifp->int_sq.p);
 }
 
 /*
