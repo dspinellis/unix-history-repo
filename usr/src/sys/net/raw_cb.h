@@ -1,4 +1,4 @@
-/*	raw_cb.h	6.1	83/07/29	*/
+/*	raw_cb.h	6.2	85/06/02	*/
 
 /*
  * Raw protocol interface control block.  Used
@@ -10,6 +10,7 @@ struct rawcb {
 	struct	socket *rcb_socket;	/* back pointer to socket */
 	struct	sockaddr rcb_faddr;	/* destination address */
 	struct	sockaddr rcb_laddr;	/* socket's address */
+	struct	sockproto rcb_proto;	/* protocol family, protocol */
 	caddr_t	rcb_pcb;		/* protocol specific stuff */
 	struct	route rcb_route;	/* routing information */
 	short	rcb_flags;
