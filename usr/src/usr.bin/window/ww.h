@@ -1,5 +1,5 @@
 /*
- *	@(#)ww.h	3.21 83/12/02	
+ *	@(#)ww.h	3.22 83/12/17	
  */
 
 #include <stdio.h>
@@ -7,6 +7,7 @@
 
 #define NWW	30
 
+	/* a rectangle */
 struct ww_dim {
 	int nr;			/* number of rows */
 	int nc;			/* number of columns */
@@ -14,11 +15,13 @@ struct ww_dim {
 	int l, r;		/* left, right */
 };
 
+	/* a coordinate */
 struct ww_pos {
 	int r;			/* row */
 	int c;			/* column */
 };
 
+	/* the window structure */
 struct ww {
 	struct ww *ww_forw;	/* doubly linked list, for overlapping info */
 	struct ww *ww_back;
@@ -56,13 +59,13 @@ struct ww {
 	struct ww_pos ww_altpos;/* alternate position */
 };
 
+	/* state of a tty */
 struct ww_tty {
 	struct sgttyb ww_sgttyb;
 	struct tchars ww_tchars;
 	struct ltchars ww_ltchars;
 	int ww_lmode;
 	int ww_ldisc;
-	int ww_pgrp;
 };
 
 union ww_char {
@@ -93,8 +96,7 @@ union ww_char {
 
 	/* ww_state values */
 #define WWS_INITIAL	0	/* just opened */
-#define WWS_HASPROC	1	/* forked, in parent */
-#define WWS_INCHILD	2	/* forked, in child */
+#define WWS_HASPROC	1	/* has process on pty */
 #define WWS_DEAD	3	/* child died */
 
 	/* flags for ww_fmap */
