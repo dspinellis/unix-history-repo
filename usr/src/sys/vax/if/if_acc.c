@@ -1,4 +1,4 @@
-/*	if_acc.c	4.4	82/02/16	*/
+/*	if_acc.c	4.5	82/02/21	*/
 
 #include "acc.h"
 #ifdef NACC > 0
@@ -223,11 +223,9 @@ accstart(dev)
 	dev_t dev;
 {
 	int unit = ACCUNIT(dev), info;
-	struct uba_device *ui = accinfo[unit];
 	register struct acc_softc *sc = &acc_softc[unit];
 	register struct accdevice *addr;
 	struct mbuf *m;
-	struct imp_leader *ip;
 	u_short cmd;
 
 COUNT(ACCSTART);
@@ -253,7 +251,7 @@ restart:
 	 */
 	if (sc->acc_ifuba.ifu_flags & UBA_NEEDBDP)
 		UBAPURGE(sc->acc_ifuba.ifu_uba, sc->acc_ifuba.ifu_w.ifrw_bdp);
-	addr = (struct accdevice *)ui->ui_addr;
+	addr = (struct accdevice *)accinfo[unit]->ui_addr;
 	info = sc->acc_ifuba.ifu_w.ifrw_info;
 	addr->oba = (u_short)info;
 	addr->owc = -((sc->acc_olen + 1) >> 1);
@@ -270,7 +268,6 @@ restart:
  */
 accxint(unit)
 {
-	register struct uba_device *ui = accinfo[unit];
 	register struct acc_softc *sc = &acc_softc[unit];
 	register struct accdevice *addr;
 
@@ -279,7 +276,7 @@ COUNT(ACCXINT);
 		printf("acc%d: stray xmit interrupt\n", unit);
 		return;
 	}
-	addr = (struct accdevice *)ui->ui_addr;
+	addr = (struct accdevice *)accinfo[unit]->ui_addr;
 	sc->acc_if->if_opackets++;
 	sc->acc_ic->ic_oactive = 0;
 	if (addr->ocsr & ACC_ERR) {
@@ -348,8 +345,8 @@ COUNT(ACCRINT);
 			sc->acc_iq = m;
 		goto setup;
 	}
-	/* adjust message length for padding. */
 #ifdef notdef
+	/* adjust message length for padding. */
 	m->m_len -= 2;
 #endif
 	if (sc->acc_iq) {
