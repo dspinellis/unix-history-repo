@@ -1,5 +1,6 @@
-static	char *sccsid = "@(#)misc.c	4.5 (Berkeley) 87/10/22";
+static	char *sccsid = "@(#)misc.c	4.6 (Berkeley) 93/03/23";
 #include "defs"
+#include <stdlib.h>
 
 FSTATIC struct nameblock *hashtab[HASHSIZE];
 FSTATIC int nhashed	= 0;
@@ -83,7 +84,6 @@ return(NO);
 char *copys(s)
 register char *s;
 {
-char *calloc();
 register char *t, *t0;
 
 if( (t = t0 = calloc( strlen(s)+1 , sizeof(char)) ) == NULL)
