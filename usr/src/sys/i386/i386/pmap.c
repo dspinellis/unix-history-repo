@@ -9,6 +9,8 @@
  * The CMU software License Agreement specifies the terms and conditions
  * for use and redistribution.
  *
+ * This version by William Jolitz for UUNET Technologies, Inc.
+ *
  * Derived from hp300 version by Mike Hibler, this version by William
  * Jolitz uses a recursive map [a pde points to the page directory] to
  * map the page tables using the pagetables themselves. This is done to
@@ -16,7 +18,7 @@
  * space, and to reduce the cost of memory to each process.
  *
  *	Derived from: hp300/@(#)pmap.c	7.1 (Berkeley) 12/5/90
- *	@(#)pmap.c	7.2	%G%
+ *	@(#)pmap.c	7.3	%G%
  */
 
 /*
