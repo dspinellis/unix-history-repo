@@ -1,5 +1,5 @@
-/* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_re.c	6.2 %G%";
+/* Copyright (c) 1981 Regents of the University of California */
+static char *sccsid = "@(#)ex_re.c	7.1	%G%";
 #include "ex.h"
 #include "ex_re.h"
 
@@ -423,6 +423,10 @@ dosub()
 		*sp++ = *lp++;
 	casecnt = 0;
 	while (c = *rp++) {
+		/* ^V <return> from vi to split lines */
+		if (c == '\r')
+			c = '\n';
+
 		if (c & QUOTE)
 			switch (c & TRIM) {
 

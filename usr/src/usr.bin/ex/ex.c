@@ -1,5 +1,5 @@
-/* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex.c	6.4 %G%";
+/* Copyright (c) 1981 Regents of the University of California */
+static char *sccsid = "@(#)ex.c	7.1	%G%";
 #include "ex.h"
 #include "ex_argv.h"
 #include "ex_temp.h"
@@ -187,9 +187,11 @@ main(ac, av)
 					tracef[9] = 0;
 			}
 			trace = fopen(tracef, "w");
+#define tracbuf NULL
 			if (trace == NULL)
 				printf("Trace create error\n");
-			setbuf(trace, tracbuf);
+			else
+				setbuf(trace, tracbuf);
 			break;
 
 #endif
@@ -300,7 +302,7 @@ main(ac, av)
 				setterm(cp);
 		}
 	}
-	if (setexit() == 0 && !fast && intty)
+	if (setexit() == 0 && !fast && intty) {
 		if ((globp = getenv("EXINIT")) && *globp)
 			commands(1,1);
 		else {
@@ -308,6 +310,14 @@ main(ac, av)
 			if ((cp = getenv("HOME")) != 0 && *cp)
 				source(strcat(strcpy(genbuf, cp), "/.exrc"), 1);
 		}
+		/*
+		 * Allow local .exrc too.  This loses if . is $HOME,
+		 * but nobody should notice unless they do stupid things
+		 * like putting a version command in .exrc.  Besides,
+		 * they should be using EXINIT, not .exrc, right?
+		 */
+		source(".exrc", 1);
+	}
 	init();	/* moved after prev 2 chunks to fix directory option */
 
 	/*

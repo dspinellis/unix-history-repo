@@ -1,5 +1,5 @@
-/* Copyright (c) 1980 Regents of the University of California */
-/* sccs id:	@(#)ex_re.h	6.1 %G%  */
+/* Copyright (c) 1981 Regents of the University of California */
+/* sccs id:	@(#)ex_re.h	7.1	%G%  */
 /*
  * Regular expression definitions.
  * The regular expressions in ex are similar to those in ed,
@@ -21,9 +21,9 @@ struct	regexp {
  * It would be possible to get rid of "re" by making it a stack parameter
  * to the appropriate routines.
  */
-struct	regexp re;		/* Last re */
-struct	regexp scanre;		/* Last scanning re */
-struct	regexp subre;		/* Last substitute re */
+extern struct	regexp re;		/* Last re */
+extern struct	regexp scanre;		/* Last scanning re */
+extern struct	regexp subre;		/* Last substitute re */
 
 /*
  * Defining circfl and expbuf like this saves us from having to change
@@ -43,9 +43,9 @@ struct	regexp subre;		/* Last substitute re */
 /*
  * Definitions for substitute
  */
-char	*braslist[NBRA];	/* Starts of \(\)'ed text in lhs */
-char	*braelist[NBRA];	/* Ends... */
-char	rhsbuf[RHSSIZE];	/* Rhs of last substitute */
+extern char	*braslist[NBRA];	/* Starts of \(\)'ed text in lhs */
+extern char	*braelist[NBRA];	/* Ends... */
+extern char	rhsbuf[RHSSIZE];	/* Rhs of last substitute */
 
 /*
  * Definitions of codes for the compiled re's.

@@ -1,5 +1,5 @@
-/* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_vput.c	6.1 %G%";
+/* Copyright (c) 1981 Regents of the University of California */
+static char *sccsid = "@(#)ex_vput.c	7.1	%G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -484,7 +484,7 @@ vmaktop(p, cp)
  * to make life simpler.
  */
 vinschar(c)
-	char c;
+	int c;		/* mjm: char --> int */
 {
 	register int i;
 	register char *tp;
@@ -829,7 +829,7 @@ vishft()
  * Now do the insert of the characters (finally).
  */
 viin(c)
-	char c;
+	int c;		/* mjm: char --> int */
 {
 	register char *tp, *up;
 	register int i, j;
@@ -1197,9 +1197,13 @@ def:
 		 * CONCEPT braindamage in early models:  after a wraparound
 		 * the next newline is eaten.  It's hungry so we just
 		 * feed it now rather than worrying about it.
+		 * Fixed to use	return linefeed to work right
+		 * on vt100/tab132 as well as concept.
 		 */
-		if (XN && outcol % WCOLS == 0)
-			vputc('\n');
+		if (XN && outcol % WCOLS == 0) {
+			vputc('\r', 0);
+			vputc('\n', 0);
+		}
 	}
 }
 
@@ -1325,13 +1329,15 @@ tvliny()
 }
 
 tracec(c)
-	char c;
+	int c;		/* mjm: char --> int */
 {
 
 	if (!techoin)
 		trubble = 1;
 	if (c == ESCAPE)
 		fprintf(trace, "$");
+	else if (c & QUOTE)	/* mjm: for 3B (no sign extension) */
+		fprintf(trace, "~%c", ctlof(c&TRIM));
 	else if (c < ' ' || c == DELETE)
 		fprintf(trace, "^%c", ctlof(c));
 	else

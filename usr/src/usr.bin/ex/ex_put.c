@@ -1,5 +1,5 @@
-/* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_put.c	6.4 %G%";
+/* Copyright (c) 1981 Regents of the University of California */
+static char *sccsid = "@(#)ex_put.c	7.1	%G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -300,7 +300,7 @@ flush1()
 					outcol++;
 					destcol++;
 					if (XN && outcol % COLUMNS == 0)
-						putch('\n');
+						putch('\r'), putch('\n');
 				}
 				c = *lp++;
 				if (c <= ' ')
@@ -636,6 +636,8 @@ dontcr:
 		if (!inopen || vtube[outline]==NULL ||
 			(i=vtube[outline][outcol]) < ' ')
 			i = ' ';
+		if(i & QUOTE)		/* mjm: no sign extension on 3B */
+			i = ' ';
 		if (insmode && ND)
 			tputs(ND, 0, plodput);
 		else
@@ -735,6 +737,10 @@ putch(c)
 	int c;
 {
 
+#ifdef OLD3BTTY		/* mjm */
+	if(c == '\n')	/* mjm: Fake "\n\r" for '\n' til fix in 3B firmware */
+		putch('\r');	/* mjm: vi does "stty -icanon" => -onlcr !! */
+#endif
 	*obp++ = c & 0177;
 	if (obp >= &obuf[sizeof obuf])
 		flusho();

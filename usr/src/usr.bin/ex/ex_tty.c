@@ -1,5 +1,5 @@
-/* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_tty.c	6.2 %G%";
+/* Copyright (c) 1981 Regents of the University of California */
+static char *sccsid = "@(#)ex_tty.c	7.1	%G%";
 #include "ex.h"
 #include "ex_tty.h"
 
@@ -8,7 +8,7 @@ static char *sccsid = "@(#)ex_tty.c	6.2 %G%";
  * and calculation of flags at entry or after
  * a shell escape which may change them.
  */
-short	ospeed = -1;
+/* short	ospeed = -1;	mjm: def also in tputs.c of termcap.a  */
 
 gettmode()
 {
@@ -26,7 +26,7 @@ gettmode()
 #else
 	if (ioctl(1, TCGETA, &tty) < 0)
 		return;
-	if (ospeed != tty.c_cflag & CBAUD)
+	if (ospeed != (tty.c_cflag & CBAUD))	/* mjm */
 		value(SLOWOPEN) = (tty.c_cflag & CBAUD) < B1200;
 	ospeed = tty.c_cflag & CBAUD;
 	normf = tty;
@@ -45,7 +45,7 @@ char **sstrs[] = {
 };
 bool *sflags[] = {
 	&AM, &BS, &DA, &DB, &EO, &HC, &HZ, &IN, &MI, &NC, &NS, &OS, &UL,
-	&XB, &XN, &XT, &XX
+	&XB, &XN, &XT, &XV, &XX
 };
 char **fkeys[10] = {
 	&F0, &F1, &F2, &F3, &F4, &F5, &F6, &F7, &F8, &F9
@@ -146,7 +146,7 @@ zap()
 	register bool **fp;
 	register char ***sp;
 
- 	namp = "ambsdadbeohchzinmincnsosulxbxnxtxx";
+	namp = "ambsdadbeohchzinmincnsosulxbxnxtxvxx";
 	fp = sflags;
 	do {
 		*(*fp++) = tgetflag(namp);

@@ -1,5 +1,5 @@
-/* Copyright (c) 1980 Regents of the University of California */
-/* sccs id:	@(#)ex.h	6.1 %G%  */
+/* Copyright (c) 1981 Regents of the University of California */
+/* sccs id:	@(#)ex.h	7.1	%G%  */
 #ifdef V6
 #include <retrofit.h>
 #endif
@@ -100,7 +100,7 @@ struct	option {
 #define	value(a)	options[a].ovalue
 #define	svalue(a)	options[a].osvalue
 
-struct	option options[NOPTS + 1];
+extern struct	option options[NOPTS + 1];
 
 
 /*
@@ -117,10 +117,10 @@ struct	option options[NOPTS + 1];
  */
 #ifdef TRACE
 #	include <stdio.h>
-	FILE	*trace;
-	bool	trubble;
-	bool	techoin;
-	char	tracbuf[BUFSIZ];
+	extern FILE	*trace;
+	extern bool	trubble;
+	extern bool	techoin;
+	extern char	tracbuf[BUFSIZ];
 #	undef	putchar
 #	undef	getchar
 #else
@@ -152,67 +152,67 @@ struct	option options[NOPTS + 1];
 /*
  * Miscellaneous random variables used in more than one place
  */
-bool	aiflag;			/* Append/change/insert with autoindent */
-bool	anymarks;		/* We have used '[a-z] */
-int	chng;			/* Warn "No write" */
-char	*Command;
-short	defwind;		/* -w# change default window size */
-int	dirtcnt;		/* When >= MAXDIRT, should sync temporary */
+extern bool	aiflag;		/* Append/change/insert with autoindent */
+extern bool	anymarks;	/* We have used '[a-z] */
+extern int	chng;		/* Warn "No write" */
+extern char	*Command;
+extern short	defwind;	/* -w# change default window size */
+extern int	dirtcnt;	/* When >= MAXDIRT, should sync temporary */
 #ifdef TIOCLGET
-bool	dosusp;			/* Do SIGTSTP in visual when ^Z typed */
+extern bool	dosusp;		/* Do SIGTSTP in visual when ^Z typed */
 #endif
-bool	edited;			/* Current file is [Edited] */
-line	*endcore;		/* Last available core location */
-bool	endline;		/* Last cmd mode command ended with \n */
+extern bool	edited;		/* Current file is [Edited] */
+extern line	*endcore;	/* Last available core location */
+extern bool	endline;	/* Last cmd mode command ended with \n */
 #ifndef VMUNIX
-short	erfile;			/* Error message file unit */
+extern short	erfile;		/* Error message file unit */
 #endif
-line	*fendcore;		/* First address in line pointer space */
-char	file[FNSIZE];		/* Working file name */
-char	genbuf[LBSIZE];		/* Working buffer when manipulating linebuf */
-bool	hush;			/* Command line option - was given, hush up! */
-char	*globp;			/* (Untyped) input string to command mode */
-bool	holdcm;			/* Don't cursor address */
-bool	inappend;		/* in ex command append mode */
-bool	inglobal;		/* Inside g//... or v//... */
-char	*initev;		/* Initial : escape for visual */
-bool	inopen;			/* Inside open or visual */
-char	*input;			/* Current position in cmd line input buffer */
-bool	intty;			/* Input is a tty */
-short	io;			/* General i/o unit (auto-closed on error!) */
-short	lastc;			/* Last character ret'd from cmd input */
-bool	laste;			/* Last command was an "e" (or "rec") */
-char	lastmac;		/* Last macro called for ** */
-char	lasttag[TAGSIZE];	/* Last argument to a tag command */
-char	*linebp;		/* Used in substituting in \n */
-char	linebuf[LBSIZE];	/* The primary line buffer */
-bool	listf;			/* Command should run in list mode */
-char	*loc1;			/* Where re began to match (in linebuf) */
-char	*loc2;			/* First char after re match (") */
-line	names['z'-'a'+2];	/* Mark registers a-z,' */
-int	notecnt;		/* Count for notify (to visual from cmd) */
-bool	numberf;		/* Command should run in number mode */
-char	obuf[BUFSIZ];		/* Buffer for tty output */
-short	oprompt;		/* Saved during source */
-short	ospeed;			/* Output speed (from gtty) */
-int	otchng;			/* Backup tchng to find changes in macros */
-short	peekc;			/* Peek ahead character (cmd mode input) */
-char	*pkill[2];		/* Trim for put with ragged (LISP) delete */
-bool	pfast;			/* Have stty -nl'ed to go faster */
-int	pid;			/* Process id of child */
-int	ppid;			/* Process id of parent (e.g. main ex proc) */
-jmp_buf	resetlab;		/* For error throws to top level (cmd mode) */
-int	rpid;			/* Pid returned from wait() */
-bool	ruptible;		/* Interruptible is normal state */
-bool	seenprompt;		/* 1 if have gotten user input */
-bool	shudclob;		/* Have a prompt to clobber (e.g. on ^D) */
-int	status;			/* Status returned from wait() */
-int	tchng;			/* If nonzero, then [Modified] */
-short	tfile;			/* Temporary file unit */
-bool	vcatch;			/* Want to catch an error (open/visual) */
-jmp_buf	vreslab;		/* For error throws to a visual catch */
-bool	writing;		/* 1 if in middle of a file write */
-int	xchng;			/* Suppresses multiple "No writes" in !cmd */
+extern line	*fendcore;	/* First address in line pointer space */
+extern char	file[FNSIZE];	/* Working file name */
+extern char	genbuf[LBSIZE];	/* Working buffer when manipulating linebuf */
+extern bool	hush;		/* Command line option - was given, hush up! */
+extern char	*globp;		/* (Untyped) input string to command mode */
+extern bool	holdcm;		/* Don't cursor address */
+extern bool	inappend;	/* in ex command append mode */
+extern bool	inglobal;	/* Inside g//... or v//... */
+extern char	*initev;	/* Initial : escape for visual */
+extern bool	inopen;		/* Inside open or visual */
+extern char	*input;		/* Current position in cmd line input buffer */
+extern bool	intty;		/* Input is a tty */
+extern short	io;		/* General i/o unit (auto-closed on error!) */
+extern short	lastc;		/* Last character ret'd from cmd input */
+extern bool	laste;		/* Last command was an "e" (or "rec") */
+extern char	lastmac;	/* Last macro called for ** */
+extern char	lasttag[TAGSIZE];	/* Last argument to a tag command */
+extern char	*linebp;	/* Used in substituting in \n */
+extern char	linebuf[LBSIZE];	/* The primary line buffer */
+extern bool	listf;		/* Command should run in list mode */
+extern char	*loc1;		/* Where re began to match (in linebuf) */
+extern char	*loc2;		/* First char after re match (") */
+extern line	names['z'-'a'+2];	/* Mark registers a-z,' */
+extern int	notecnt;	/* Count for notify (to visual from cmd) */
+extern bool	numberf;	/* Command should run in number mode */
+extern char	obuf[BUFSIZ];	/* Buffer for tty output */
+extern short	oprompt;	/* Saved during source */
+extern short	ospeed;		/* Output speed (from gtty) */
+extern int	otchng;		/* Backup tchng to find changes in macros */
+extern short	peekc;		/* Peek ahead character (cmd mode input) */
+extern char	*pkill[2];	/* Trim for put with ragged (LISP) delete */
+extern bool	pfast;		/* Have stty -nl'ed to go faster */
+extern int	pid;		/* Process id of child */
+extern int	ppid;		/* Process id of parent (e.g. main ex proc) */
+extern jmp_buf	resetlab;	/* For error throws to top level (cmd mode) */
+extern int	rpid;		/* Pid returned from wait() */
+extern bool	ruptible;	/* Interruptible is normal state */
+extern bool	seenprompt;	/* 1 if have gotten user input */
+extern bool	shudclob;	/* Have a prompt to clobber (e.g. on ^D) */
+extern int	status;		/* Status returned from wait() */
+extern int	tchng;		/* If nonzero, then [Modified] */
+extern short	tfile;		/* Temporary file unit */
+extern bool	vcatch;		/* Want to catch an error (open/visual) */
+extern jmp_buf	vreslab;	/* For error throws to a visual catch */
+extern bool	writing;	/* 1 if in middle of a file write */
+extern int	xchng;		/* Suppresses multiple "No writes" in !cmd */
 
 /*
  * Macros
@@ -244,11 +244,11 @@ int	xchng;			/* Suppresses multiple "No writes" in !cmd */
 /*
  * Environment like memory
  */
-char	altfile[FNSIZE];	/* Alternate file name */
-char	direct[ONMSZ];		/* Temp file goes here */
-char	shell[ONMSZ];		/* Copied to be settable */
-char	ttytype[ONMSZ];		/* A long and pretty name */
-char	uxb[UXBSIZE + 2];	/* Last !command for !! */
+extern char	altfile[FNSIZE];	/* Alternate file name */
+extern char	direct[ONMSZ];		/* Temp file goes here */
+extern char	shell[ONMSZ];		/* Copied to be settable */
+extern char	ttytype[ONMSZ];		/* A long and pretty name */
+extern char	uxb[UXBSIZE + 2];	/* Last !command for !! */
 
 /*
  * The editor data structure for accessing the current file consists
@@ -263,14 +263,14 @@ char	uxb[UXBSIZE + 2];	/* Last !command for !! */
  * dol and unddol, a copy of the entire, pre-command buffer state
  * is saved between unddol and truedol.
  */
-line	*addr1;			/* First addressed line in a command */
-line	*addr2;			/* Second addressed line */
-line	*dol;			/* Last line in buffer */
-line	*dot;			/* Current line */
-line	*one;			/* First line */
-line	*truedol;		/* End of all lines, including saves */
-line	*unddol;		/* End of undo saved lines */
-line	*zero;			/* Points to empty slot before one */
+extern line	*addr1;			/* First addressed line in a command */
+extern line	*addr2;			/* Second addressed line */
+extern line	*dol;			/* Last line in buffer */
+extern line	*dot;			/* Current line */
+extern line	*one;			/* First line */
+extern line	*truedol;		/* End of all lines, including saves */
+extern line	*unddol;		/* End of undo saved lines */
+extern line	*zero;			/* Points to empty slot before one */
 
 /*
  * Undo information
@@ -286,12 +286,12 @@ line	*zero;			/* Points to empty slot before one */
  * are lines saved between dol and unddol we don't stick these back
  * into the buffer.
  */
-short	undkind;
+extern short	undkind;
 
-line	*unddel;		/* Saved deleted lines go after here */
-line	*undap1;		/* Beginning of new lines */
-line	*undap2;		/* New lines end before undap2 */
-line	*undadot;		/* If we saved all lines, dot reverts here */
+extern line	*unddel;	/* Saved deleted lines go after here */
+extern line	*undap1;	/* Beginning of new lines */
+extern line	*undap2;	/* New lines end before undap2 */
+extern line	*undadot;	/* If we saved all lines, dot reverts here */
 
 #define	UNDCHANGE	0
 #define	UNDMOVE		1
@@ -305,13 +305,13 @@ line	*undadot;		/* If we saved all lines, dot reverts here */
  */
 #define	KSIZE   9       /* key size for encryption */
 #define	KEYPROMPT       "Key: "
-int	xflag;		/* True if we are in encryption mode */
-int	xtflag;		/* True if the temp file is being encrypted */
-int	kflag;		/* True if the key has been accepted */
-char	perm[768];
-char	tperm[768];
-char	*key;
-char	crbuf[CRSIZE];
+extern int	xflag;		/* True if we are in encryption mode */
+extern int	xtflag;		/* True if the temp file is being encrypted */
+extern int	kflag;		/* True if the key has been accepted */
+extern char	perm[768];
+extern char	tperm[768];
+extern char	*key;
+extern char	crbuf[CRSIZE];
 char	*getpass();
 #endif
 
@@ -321,10 +321,10 @@ char	*getpass();
 #define	NOSTR	(char *) 0
 #define	NOLINE	(line *) 0
 
-int	(*Outchar)();
-int	(*Pline)();
-int	(*Putchar)();
-int	(*oldhup)();
+extern int	(*Outchar)();
+extern int	(*Pline)();
+extern int	(*Putchar)();
+extern int	(*oldhup)();
 int	(*setlist())();
 int	(*setnorm())();
 int	(*setnorm())();
@@ -369,7 +369,7 @@ off_t	lseek();
 int	normchar();
 int	normline();
 int	numbline();
-int	(*oldquit)();
+extern int	(*oldquit)();
 int	onhup();
 int	onintr();
 int	onsusp();

@@ -1,5 +1,5 @@
-/* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex3.7preserve.c	6.1 %G%";
+/* Copyright (c) 1981 Regents of the University of California */
+static char *sccsid = "@(#)ex3.7preserve.c	7.1	%G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <sys/types.h>
@@ -7,11 +7,11 @@ static char *sccsid = "@(#)ex3.7preserve.c	6.1 %G%";
 #include <sys/dir.h>
 #include <pwd.h>
 #include "local/uparm.h"
+				/* mjm: "/tmp" --> TMP */
+#define TMP	"/3b/tmp"
 
 #ifdef VMUNIX
 #define	HBLKS	2
-#else
-#define	HBLKS	1
 #endif
 
 /*
@@ -94,14 +94,14 @@ main(argc)
 	 */
 	if (chdir("/tmp") < 0) {
 		perror("/tmp");
-		exit(1);
-	}
+	if (chdir(TMP) < 0) {
+		perror(TMP);
 
 	tf = fopen(".", "r");
 	if (tf == NULL) {
 		perror("/tmp");
 		exit(1);
-	}
+		perror(TMP);
 	while (fread((char *) &dirent, sizeof dirent, 1, tf) == 1) {
 		if (dirent.d_ino == 0)
 			continue;

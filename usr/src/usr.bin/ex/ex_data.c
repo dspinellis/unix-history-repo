@@ -1,5 +1,5 @@
-/* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_data.c	6.1 %G%";
+/* Copyright (c) 1981 Regents of the University of California */
+static char *sccsid = "@(#)ex_data.c	7.1	%G%";
 #include "ex.h"
 #include "ex_tty.h"
 
@@ -12,15 +12,17 @@ static char *sccsid = "@(#)ex_data.c	6.1 %G%";
  * to confuse xstr so it will leave them alone.
  */
 char	direct[ONMSZ] =
-	{ '/', 't', 'm', 'p' };
+	{'/', 't', 'm', 'p'}; 
 char	paragraphs[ONMSZ] = {
 	'I', 'P', 'L', 'P', 'P', 'P', 'Q', 'P',		/* -ms macros */
 	'P', ' ', 'L', 'I',				/* -mm macros */
+	'p', 'p', 'l', 'p', 'i', 'p',			/* -me macros */
 	'b', 'p'					/* bare nroff */
 };
 char	sections[ONMSZ] = {
 	'N', 'H', 'S', 'H',				/* -ms macros */
-	'H', ' ', 'H', 'U'				/* -mm macros */
+	'H', ' ', 'H', 'U',				/* -mm macros */
+	'n', 'h', 's', 'h'				/* -me macros */
 };
 char	shell[ONMSZ] =
 	{ '/', 'b', 'i', 'n', '/', 's', 'h' };

@@ -1,6 +1,6 @@
-VERSION=3.6
+VERSION=3.7
 #
-# Ex skeletal makefile for VAX VM/Unix version 7
+# Ex skeletal makefile for VAX VM/Unix 4.1BSD
 #
 # NB: This makefile doesn't indicate any dependencies on header files.
 #
@@ -36,7 +36,7 @@ CXREF=	${BINDIR}/cxref
 INCLUDE=/usr/include
 PR=	pr
 OBJS=	ex.o ex_addr.o ex_cmds.o ex_cmds2.o ex_cmdsub.o \
-	ex_data.o ex_get.o ex_io.o ex_put.o ex_re.o \
+	ex_data.o ex_extern.o ex_get.o ex_io.o ex_put.o ex_re.o \
 	ex_set.o ex_subr.o ex_temp.o ex_tty.o ex_unix.o \
 	ex_v.o ex_vadj.o ex_vget.o ex_vmain.o ex_voper.o \
 	ex_vops.o ex_vops2.o ex_vops3.o ex_vput.o ex_vwind.o \
@@ -48,7 +48,7 @@ SRC3=	ex_set.c ex_subr.c ex_temp.c ex_tty.c ex_unix.c
 SRC4=	ex_v.c ex_vadj.c ex_vget.c ex_vmain.c ex_voper.c
 SRC5=	ex_vops.c ex_vops2.c ex_vops3.c ex_vput.c ex_vwind.c
 SRC6=	printf.c bcopy.c expreserve.c exrecover.c
-MISC=	makefile READ_ME :rofix
+MISC=	makefile READ_ME rofix
 VGRIND=	csh /usr/ucb/vgrind
 VHDR=	"Ex Version ${VERSION}"
 
@@ -83,7 +83,7 @@ bcopy.o:	bcopy.c
 strings.o: strings
 	${XSTR}
 	${CC} -c -S xs.c
-	ed - <:rofix xs.s
+	ed - <rofix xs.s
 	${AS} -o strings.o xs.s
 	rm xs.s
 	

@@ -1,7 +1,7 @@
 /* The pwb version this is based on */
 static char *printf_id = "@(#) printf.c:2.2 6/5/79";
 /* The local sccs version within ex */
-static char *sccsid = "@(#)printf.c	6.1 %G%";
+static char *sccsid = "@(#)printf.c	7.1	%G%";
 #include "varargs.h"
 /*
  * This version of printf is compatible with the Version 7 C

@@ -1,5 +1,5 @@
-/* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_v.c	6.1 %G%";
+/* Copyright (c) 1981 Regents of the University of California */
+static char *sccsid = "@(#)ex_v.c	7.1	%G%";
 #include "ex.h"
 #include "ex_re.h"
 #include "ex_tty.h"
@@ -54,7 +54,7 @@ oop()
 {
 	register char *ic;
 	char atube[TUBESIZE + LBSIZE];
-	register ttymode f;
+	ttymode f;	/* mjm: was register */
 
 	ovbeg();
 	if (peekchar() == '/') {
@@ -154,7 +154,7 @@ vop()
 {
 	register int c;
 	char atube[TUBESIZE + LBSIZE];
-	register ttymode f;
+	ttymode f;	/* mjm: was register */
 
 	if (!CA && UP == NOSTR) {
 		if (initev) {
