@@ -95,6 +95,12 @@ int count;
 {
     ring->consume = ring_increment(ring, ring->consume, count);
     ring->consumetime = ++ring_clock;
+    /*
+     * Try to encourage "ring_empty_consecutive()" to be large.
+     */
+    if (ring_empty(ring)) {
+	ring->consume = ring->supply = ring->bottom;
+    }
 }
 
 
