@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)pr.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)pr.c	4.3 (Berkeley) %G%";
 
 /*
  *   print file with headings
@@ -287,6 +287,7 @@ putpage()
 		while (line<plength) {
 			while((c = tpgetc(0)) && c!='\n' && c!=FF)
 				putcp(c);
+			if (c==0) break;
 			putcp('\n');
 			line++;
 			if (c==FF)
