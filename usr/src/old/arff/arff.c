@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)arff.c	4.9 (Berkeley) 82/06/27";
+static	char *sccsid = "@(#)arff.c	4.10 (Berkeley) 82/06/27";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -716,7 +716,7 @@ mkent(de, segnum, bufp, name)
 overwrite:
 	srad50(name,de->rt_name);
 	timp = localtime(&bufp->st_mtime);
-	de->rt_date.rt_dy = timp->tm_mday + 1;
+	de->rt_date.rt_dy = timp->tm_mday;
 	de->rt_date.rt_mo = timp->tm_mon + 1;
 	de->rt_date.rt_yr = timp->tm_year - 72;
 	de->rt_stat = RT_FILE;
