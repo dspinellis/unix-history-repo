@@ -1,0 +1,23 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)lock.1	4.1 (Berkeley) %G%
+.\"
+.TH LOCK 1 2/24/79
+.UC
+.SH NAME
+lock \- reserve a terminal
+.SH SYNOPSIS
+.B lock
+.SH DESCRIPTION
+.I Lock
+requests a password from the user, then prints "LOCKED" on
+the terminal and refuses to relinquish the terminal until
+the password is repeated.  If the user forgets the password,
+he has no other recourse but to login elsewhere and kill
+the lock process.
+.SH AUTHOR
+Kurt Shoens
+.SH BUGS
+Should timeout after 15 minutes.
