@@ -1,25 +1,26 @@
 /*-
- * Copyright (c) 1990, 1993
+ * Copyright (c) 1990, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)pty.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)pty.c	8.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-#include <sys/cdefs.h>
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <sys/ioctl.h>
-#include <fcntl.h>
-#include <termios.h>
+#include <sys/stat.h>
+
 #include <errno.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <string.h>
+#include <fcntl.h>
 #include <grp.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <termios.h>
+#include <unistd.h>
 
 openpty(amaster, aslave, name, termp, winp)
 	int *amaster, *aslave;
