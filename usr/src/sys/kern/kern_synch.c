@@ -1,4 +1,4 @@
-/*	kern_synch.c	4.3	%G%	*/
+/*	kern_synch.c	4.4	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -357,9 +357,17 @@ retry:
 
 	for(n=0; n<NOFILE; n++)
 		if(u.u_ofile[n] != NULL) {
-			u.u_ofile[n]->f_count++;
-			if(!isvfork && u.u_vrpages[n])
-				u.u_ofile[n]->f_inode->i_vfdcnt++;
+#ifdef UCBIPC
+			if (u.u_pofile[n] & ISPORT)
+				u.u_oport[n]->pt_count++;
+			else {
+#endif
+				u.u_ofile[n]->f_count++;
+				if(!isvfork && u.u_vrpages[n])
+					u.u_ofile[n]->f_inode->i_vfdcnt++;
+#ifdef UCBIPC
+			}
+#endif UCBIPC
 		}
 
 	u.u_cdir->i_count++;
