@@ -1,16 +1,15 @@
-.\" Copyright (c) 1980, 1986, 1988, 1993
+\" Copyright (c) 1980, 1986, 1988, 1993
 .\"	 The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)3.t	6.28 (Berkeley) %G%
+.\"	@(#)3.t	6.29 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
 .ds RH "Upgrading a \*(Ps System
 .ds CF \*(Dy
-.NH 1
-Upgrading a \*(Ps System
+.Sh 1 "Upgrading a \*(Ps System"
 .PP
 This section describes the procedure for upgrading a \*(Ps
 system to \*(4B.  This procedure may vary according to the version of
@@ -57,8 +56,7 @@ this release has the \*(4B filesystem and networking code
 as well as some utilities, but still has a \*(Ps hierarchy.
 No filesystem conversions are necessary for this upgrade,
 but files will still need to be moved around.
-.NH 2
-Installation overview
+.Sh 2 "Installation overview"
 .PP
 If you are running \*(Ps, upgrading your system
 involves replacing your kernel and system utilities.
@@ -161,8 +159,7 @@ Section 3.5 gives an overview of the major
 bug fixes and changes between \*(Ps and \*(4B.
 Section 3.6 provides general hints on possible problems to be
 aware of when converting from \*(Ps to \*(4B.
-.NH 2
-Files to save
+.Sh 2 "Files to save"
 .PP
 The following list enumerates the standard set of files you will want to
 save and suggests directories in which site-specific files should be present.
@@ -228,8 +225,7 @@ lfC c l.
 \(dd\|Files that need local changes merged into \*(4B files.
 *\|Files that require special work to merge and are discussed in section 3.4.
 .DE
-.NH 2
-Installing \*(4B
+.Sh 2 "Installing \*(4B"
 .PP
 The next step is to build a working \*(4B system.
 This can be done by following the steps in section 2 of
@@ -446,8 +442,7 @@ The new filesystem formats are incompatible with older systems.
 If you wish to continue using these filesystems with the older
 systems you should make only the compatible changes using
 \fIfsck \-c 1\fP.
-.NH 2
-Merging your files from \*(Ps into \*(4B
+.Sh 2 "Merging your files from \*(Ps into \*(4B"
 .PP
 When your system is booting reliably and you have the \*(4B root and
 .Pn /usr
@@ -554,10 +549,7 @@ Once a filesystem has been made for
 can be used to create a directory hierarchy there
 or you can simply use tar to extract the prototype from
 the second file of the distribution tape.
-.NH 3
-Changes in the
-.Pn /etc
-directory
+.Sh 3 "Changes in the \f(CW/etc\fP directory"
 .PP
 The
 .Pn /etc
@@ -754,7 +746,7 @@ since the last run of
 .Pn /etc/security .
 Backup copies of the files are saved in
 .Pn /var/backups .
-Finally, the system binaries are checksum'd and their permissions
+Finally, the system binaries are checksummed and their permissions
 validated against the
 .Xr mtree (8)
 specifications in
@@ -792,8 +784,7 @@ configuration files in
 The aliases file,
 .Pn /etc/aliases
 has also been changed to add certain well-known addresses.
-.NH 3
-Shadow password files
+.Sh 3 "Shadow password files"
 .PP
 The password file format adds change and expiration fields
 and its location has changed to protect
@@ -857,10 +848,7 @@ Note that
 is run whenever
 .Xr vipw (8)
 is run.
-.NH 3
-The
-.Pn /var
-filesystem
+.Sh 3 "The \f(CW/var\fP filesystem"
 .PP
 The spooling directories saved on tape may be restored in their
 eventual resting places without too much concern.  Be sure to
@@ -926,8 +914,7 @@ mv messages messages.[0-9] ../log
 mv wtmp wtmp.[0-9] ../log
 mv lastlog ../log
 .DE
-.NH 2
-Bug fixes and changes between \*(Ps and \*(4B
+.Sh 2 "Bug fixes and changes between \*(Ps and \*(4B"
 .PP
 The major new facilities available in the \*(4B release are
 a new virtual memory system,
@@ -953,8 +940,7 @@ The system and include files have been converted to be compatible
 with ANSI C, including function prototypes for most of the exported
 functions.
 There are numerous other changes throughout the system.
-.NH 3
-Changes to the kernel
+.Sh 3 "Changes to the kernel"
 .PP
 This release includes several important structural kernel changes.
 The kernel uses a new internal system call convention;
@@ -986,8 +972,8 @@ A new utility,
 .Xr sysctl (8),
 retrieves kernel state and allows processes with appropriate
 privilege to set kernel state.
-.NH 3
-Security
+.Sh 3 "Security"
+.PP
 The kernel runs with four different levels of security.
 Any superuser process can raise the security level, but only 
 .Fn init (8)
@@ -1032,8 +1018,7 @@ the administrator must build a kernel with the variable
 in the kernel source file
 .Pn /sys/kern/kern_sysctl.c
 initialized to \-1.
-.NH 4
-Virtual memory changes
+.Sh 4 "Virtual memory changes"
 .PP
 The new virtual memory implementation is derived from the Mach
 operating system developed at Carnegie-Mellon,
@@ -1080,8 +1065,7 @@ but the memory sharing aspect is not.
 In practice this has been enough for backward compatibility,
 but newer code should just use
 .Xr fork (2).
-.NH 4
-Networking additions and changes
+.Sh 4 "Networking additions and changes"
 .PP
 The ISO/OSI Networking consists of a kernel implementation of
 transport class 4 (TP-4),
@@ -1199,8 +1183,7 @@ field when iterating through the array of addresses returned,
 as not all the structures returned have the same length
 (this variance in length is nearly guaranteed by the presence of link-layer
 address structures).
-.NH 4
-Additions and changes to filesystems
+.Sh 4 "Additions and changes to filesystems"
 .PP
 The \*(4B distribution contains most of the interfaces
 specified in the IEEE Std1003.1 system interface standard.
@@ -1404,8 +1387,7 @@ See
 and
 .Xr mount_fdesc (8)
 for more information.
-.NH 4
-POSIX terminal driver changes
+.Sh 4 "POSIX terminal driver changes"
 .PP
 The \*(4B system uses the IEEE P1003.1 (POSIX.1) terminal interface
 rather than the previous \*(Bs terminal interface.
@@ -1457,8 +1439,7 @@ with the new system.
 Most of the other kernel interfaces have been changed to correspond
 with the POSIX.1 interface, although that work is not complete.
 See the relevant manual pages and the IEEE POSIX standard.
-.NH 4
-Native operating system compatibility
+.Sh 4 "Native operating system compatibility"
 .PP
 Both the HP300 and SPARC ports feature the ability to run binaries
 built for the native operating system (HP-UX or SunOS) by emulating
@@ -1490,8 +1471,7 @@ The DECstation port also has code for ULTRIX emulation
 but it was used primarily for initially bootstrapping the port and
 has not been used since.
 Hence, some work may be required to make it generally useful.
-.NH 3
-Changes to the utilities
+.Sh 3 "Changes to the utilities"
 .PP
 We have been tracking the IEEE Std1003.2 shell and utility work
 and have included prototypes of many of the proposed utilities
@@ -1511,8 +1491,7 @@ The shipped compiler (gcc) is a superset of ANSI C,
 but supports traditional C as a command-line option.
 The system libraries and utilities all compile
 with either ANSI or traditional C.
-.NH 4
-Make and Makefiles
+.Sh 4 "Make and Makefiles"
 .PP
 This release uses a completely new version of the
 .Xr make
@@ -1554,8 +1533,10 @@ subdirectories in
 as symbolic links to the corresponding directories in
 .Pn /var/obj .
 (This step is automated.
-The command ``make obj'' builds both
-the local symlink and the shadow directory, using
+The command ``make obj'' in
+.Pn /usr/src
+builds both the local symlink and the shadow directory,
+using
 .Pn /usr/obj ,
 that may be a symbolic link, as the root of the shadow tree.
 The use of
@@ -1569,18 +1550,19 @@ We have one
 .Pn /var/obj
 hierarchy on the local system, and another on each
 system that shares the source filesystem.
-All the programs in
+All the sources in
 .Pn /usr/src
-except
+except for
 .Pn /usr/src/contrib
+and portions of
+.Pn /usr/src/old
 have been converted to use the new make and
 .Pn obj
 subdirectories;
 this change allows compilation for multiple
 architectures from the same source tree
 (that may be mounted read-only).
-.NH 4
-Kerberos
+.Sh 4 "Kerberos"
 .PP
 The Kerberos authentication server from MIT (version 4)
 is included in this release.
@@ -1625,107 +1607,8 @@ changes the ``local'' password if one exists.
 .PP
 Note that Version 5 of Kerberos will be released soon;
 Version 4 should probably be replaced at that time.
-.NH 4
-Additions and changes to the libraries
+.Sh 4 "Timezone support"
 .PP
-Notable additions to the libraries include functions to traverse a
-filesystem hierarchy, database interfaces to btree and hashing functions,
-a new, fast implementation of stdio and a radix and merge sort functions.
-.PP
-The
-.Xr fts (3)
-functions will do either physical or logical traversal of
-a file hierarchy as well as handle almost infinite depth
-file systems and file systems with directory loops.
-All the utilities in \*(4B which traverse file hierarchies
-have been converted to use
-.Xr fts (3).
-The conversion has always resulted in a significant performance
-gain, often of four or five to one in system time.
-.PP
-The
-.Xr dbopen (3)
-functions are intended to be a family of database access methods.
-Currently, they consist of
-.Xr hash (3) ,
-an extensible, dynamic hashing scheme,
-.Xr btree (3) ,
-a sorted, balanced tree structure (B+tree's), and
-.Xr recno (3) ,
-a flat-file interface for fixed or variable length records
-referenced by logical record number.
-Each of the access methods stores associated key/data pairs and
-uses the same record oriented interface for access.
-.PP
-The
-.Xr qsort (3)
-function has been rewritten for additional performance.
-In addition, three new types of sorting functions,
-.Xr heapsort (3) ,
-.Xr mergesort (3)
-and
-.Xr radixsort (3)
-have been added to the system.
-The
-.Xr mergesort
-function is optimized for data with pre-existing order,
-in which case it usually significantly outperforms
-.Xr qsort .
-The
-.Xr radixsort (3)
-functions are variants of most-significant-byte radix sorting.
-They take time linear to the number of bytes to be
-sorted, usually significantly outperforming
-.Xr qsort
-on data that can be sorted in this fashion.
-An implementation of the POSIX 1003.2 standard
-.Xr sort 1 ,
-based on
-.Xr radixsort ,
-is included in
-.Pn /usr/src/contrib/sort .
-.PP
-Some additional comments about the \*(4B C library:
-.IP \(bu
-The floating point support in the C library has been replaced
-and is now accurate.
-.IP \(bu
-The C functions specified by both ANSI C, POSIX 1003.1 and
-1003.2 are now part of the C library.
-This includes support for file name matching, shell globbing
-and both basic and extended regular expressions.
-.IP \(bu
-ANSI C multibyte and wide character support has been integrated.
-The rune functionality from the Bell Labs' Plan 9 system is provided
-as well.
-.IP \(bu
-The
-.Xr termcap (3)
-functions have been generalized and replaced with a general
-purpose interface named
-.Xr getcap (3) .
-.IP \(bu
-The
-.Xr stdio (3)
-routines have been replaced, and, are usually much faster.
-In addition, the
-.Xr funopen (3)
-interface permits applications to provide their own I/O stream
-function support.
-.PP
-The
-.Xr curses (3)
-library has been largely rewritten.
-Important additional features include support for scrolling and
-.Xr termios (3) .
-.PP
-An application front-end editing library, named libedit, has been
-added to the system.
-.PP
-A superset implementation of the SunOS kernel memory interface library,
-libkvm, has been integrated into the system.
-.PP
-Timezone support
 The timezone conversion code in the C library uses data files installed in
 .Pn /usr/share/zoneinfo
 to convert from ``GMT'' to various timezones.  The data file for the default
@@ -1777,78 +1660,206 @@ Each contain a complete set of zone files.
 See
 .Pn /usr/src/share/zoneinfo/Makefile
 for details.
-.NH 4
-Additions and changes to other utilities
+.Sh 4 "Additions and changes to the libraries"
 .PP
+Notable additions to the libraries include functions to traverse a
+filesystem hierarchy, database interfaces to btree and hashing functions,
+a new, faster implementation of stdio and a radix and merge sort
+functions.
+.PP
+The
+.Xr fts (3)
+functions will do either physical or logical traversal of
+a file hierarchy as well as handle essentially infinite depth
+file systems and file systems with cycles.
+All the utilities in \*(4B which traverse file hierarchies
+have been converted to use
+.Xr fts (3).
+The conversion has always resulted in a significant performance
+gain, often of four or five to one in system time.
+.PP
+The
+.Xr dbopen (3)
+functions are intended to be a family of database access methods.
+Currently, they consist of
+.Xr hash (3),
+an extensible, dynamic hashing scheme,
+.Xr btree (3),
+a sorted, balanced tree structure (B+tree's), and
+.Xr recno (3),
+a flat-file interface for fixed or variable length records
+referenced by logical record number.
+Each of the access methods stores associated key/data pairs and
+uses the same record oriented interface for access.
+.PP
+The
+.Xr qsort (3)
+function has been rewritten for additional performance.
+In addition, three new types of sorting functions,
+.Xr heapsort (3),
+.Xr mergesort (3)
+and
+.Xr radixsort (3)
+have been added to the system.
+The
+.Xr mergesort
+function is optimized for data with pre-existing order,
+in which case it usually significantly outperforms
+.Xr qsort .
+The
+.Xr radixsort (3)
+functions are variants of most-significant-byte radix sorting.
+They take time linear to the number of bytes to be
+sorted, usually significantly outperforming
+.Xr qsort
+on data that can be sorted in this fashion.
+An implementation of the POSIX 1003.2 standard
+.Xr sort (1),
+based on
+.Xr radixsort ,
+is included in
+.Pn /usr/src/contrib/sort .
+.PP
+Some additional comments about the \*(4B C library:
+.IP \(bu
+The floating point support in the C library has been replaced
+and is now accurate.
+.IP \(bu
+The C functions specified by both ANSI C, POSIX 1003.1 and
+1003.2 are now part of the C library.
+This includes support for file name matching, shell globbing
+and both basic and extended regular expressions.
+.IP \(bu
+ANSI C multibyte and wide character support has been integrated.
+The rune functionality from the Bell Labs' Plan 9 system is provided
+as well.
+.IP \(bu
+The
+.Xr termcap (3)
+functions have been generalized and replaced with a general
+purpose interface named
+.Xr getcap (3).
+.IP \(bu
+The
+.Xr stdio (3)
+routines have been replaced, and are usually much faster.
+In addition, the
+.Xr funopen (3)
+interface permits applications to provide their own I/O stream
+function support.
+.PP
+The
+.Xr curses (3)
+library has been largely rewritten.
+Important additional features include support for scrolling and
+.Xr termios (3).
+.PP
+An application front-end editing library, named libedit, has been
+added to the system.
+.PP
+A superset implementation of the SunOS kernel memory interface library,
+libkvm, has been integrated into the system.
+.PP
+.Sh 4 "Additions and changes to other utilities"
+.PP
+There are many new utilities, offering many new capabilities,
+in \*(4B.
+Skimming through the section 1 and section 8 manual pages is sure
+to be useful.
 The additions to the utility suite include greatly enhanced versions of
 programs that display system status information, implementations of
 various traditional tools described in the IEEE Std1003.2 standard,
+new tools not previous available on Berkeley UNIX systems,
 and many others.
-Also, with only a few exceptions, all the utilities from
-\*(Ps that included proprietary source code have been replaced
+Also, with only a very few exceptions, all the utilities from
+\*(Ps that included proprietary source code have been replaced,
 and their \*(4B counterparts are freely redistributable.
+Normally, this replacement resulted in significant performance
+improvements and the increase of the limits imposed on data by
+the utility as well.
 .PP
-The  new version of
-.Xr csh (1)
-is significantly cleaner, freely redistributable, and 8-bit clean.
+Examples of specific additions and changes are as follows:
+.TS
+lfC l.
+amd	An auto-mounter implementation.
+ar	Replacement of the historic archive format with a new one.
+awk	Replaced by gawk; see /usr/src/old/awk for the historic version.
+bdes	Utility implementing DES modes of operation described in FIPS PUB 81.
+calendar	Addition of an interface for system calendars.
+cap_mkdb	Utility for building hashed versions of termcap style databases.
+cc	Replacement of pcc with gcc suite.
+chflags	A utility for setting the per-file user and system flags.
+chfn	An editor based replacement for changing user information.
+chpass	An editor based replacement for changing user information.
+chsh	An editor based replacement for changing user information.
+cksum	The POSIX 1003.2 checksum utility; compatible with sum.
+column	A columnar text formatting utility.
+cp	POSIX 1003.2 compatible, able to copy special files.
+csh	Freely redistributable and 8-bit clean.
+date	User specified formats added.
+dd	New EBCDIC conversion tables, major performance improvments.
+dev_mkdb	Hashed interface to devices.
+dm	Dungeon master.
+find	Several new options and primaries, major performance improvments.
+fstat	Utility displaying information on files open on the system.
+ftpd	Connection logging added.
+hexdump	A binary dump utility, superseding od.
+id	The POSIX 1003.2 user identification utility.
+inetd	Tcpmux added.
+jot	A text formatting utility.
+kdump	A system-call tracing facility.
+ktrace	A system-call tracing facility.
+kvm_mkdb	Hashed interface to the kernel name list.
+lam	A text formatting utility.
+lex	A new, freely redistributable, significantly faster version.
+locate	A database of the system files, by name, constructed weekly.
+logname	The POSIX 1003.2 user identification utility.
+mail.local	New local mail delivery agent, replacing mail.
+make	Replaced with a new, more powerful make, supporting include files.
+man	Added support for man page location configuration.
+mkdep	A new utility for generating make dependency lists.
+mkfifo	The POSIX 1003.2 FIFO creation utility.
+mtree	A new utility for mapping file hierarchies to a file.
+nfsstat	An NFS statistics utility.
+nvi	A freely redistributable replacement for the ex/vi editors.
+pax	The POSIX 1003.2 replacement for cpio and tar.
+printf	The POSIX 1003.2 replacement for echo.
+roff	Replaced by groff; see /usr/src/old/roff for the historic versions.
+rs	New utility for text formatting.
+shar	An archive building utility.
+sysctl	MIB-style interface to kernel state.
+tcopy	Fast tape-to-tape copying and verification.
+touch	Time and file reference specifications.
+tput	The POSIX 1003.2 terminal display utility.
+tr	Addition of character classes.
+uname	The POSIX 1003.2 system identification utility.
+vis	A filter for converting and displaying non-printable characters.
+xargs	The POSIX 1003.2 argument list constructor utility.
+yacc	A new, freely redistributable, significantly faster version.
+.TE
 .PP
-The POSIX 1003.2 replacement for
-.Xr cpio (1)
-and
-.Xr tar (1) ,
-named
-.Xr pax (1)
-is included with the system.
-.PP
-New versions of
+The new versions of
 .Xr lex (1)
 (``flex'') and 
 .Xr yacc (1)
-(``zoo'')
-have replaced their AT&T-derived predecessors.
-These should be installed early on if attempting to cross-compile \*(4B
-on another system.
+(``zoo'') should be installed early on if attempting to
+cross-compile \*(4B on another system.
 Note that the new
 .Xr lex
 program is not completely backward compatible with historic versions of
 .Xr lex ,
 although it is believed that all documented features are supported.
 .PP
-A system-call tracing facility is provided in \*(4B
-that records all the system calls made by a process or group of processes
-and their outcomes.
-See
-.Xr ktrace (1)
-and
-.Xr kdump (1).
-.PP
-The system now has a database of file names,
-constructed once a week from
-.Xr cron .
-To find a file by name only,
-the command \fIlocate name\fP will look in the database for
-files that match the name.
-This command is much faster than the full filesystem traversal
-done by find:
-.DS
-find / \-name name \-print
-.DE
-.PP
-.Xr Find
-itself has two new options that are important to be aware of
-if you intend to use NFS.
+The
+.Xr find
+utility has two new options that are important to be aware of if you
+intend to use NFS.
 The ``fstype'' and ``prune'' options can be used together to prevent
 find from crossing NFS mount points.
 See
 .Pn /etc/daily
-for an example use.
-.PP
-Finally, there are many new utilities offering many new capabilities,
-in \*(4B.
-Skimming through the section 1 and section 8 manual pages is sure
-to be useful.
-.NH 2
-Hints on converting from \*(Ps to \*(4B
+for an example of their use.
+.Sh 2 "Hints on converting from \*(Ps to \*(4B"
 .PP
 This section summarizes changes between
 \*(Ps and \*(4B that are likely to 
