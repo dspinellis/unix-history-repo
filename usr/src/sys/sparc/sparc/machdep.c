@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	7.5 (Berkeley) %G%
+ *	@(#)machdep.c	7.6 (Berkeley) %G%
  *
- * from: $Header: machdep.c,v 1.40 93/04/20 11:16:12 torek Exp $
+ * from: $Header: machdep.c,v 1.41 93/05/27 04:39:05 torek Exp $
  */
 
 #include <sys/param.h>
@@ -38,6 +38,7 @@
 #include <sys/shm.h>
 #endif
 #include <sys/exec.h>
+#include <sys/sysctl.h>
 
 #include <machine/autoconf.h>
 #include <machine/frame.h>
@@ -311,6 +312,30 @@ struct sigframe {
 	int	sf_addr;		/* SunOS compat, always 0 for now */
 	struct	sigcontext sf_sc;	/* actual sigcontext */
 };
+
+/*
+ * machine dependent system variables.
+ */
+cpu_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
+	int *name;
+	u_int namelen;
+	void *oldp;
+	size_t *oldlenp;
+	void *newp;
+	size_t newlen;
+	struct proc *p;
+{
+
+	/* all sysctl names are this level are terminal */
+	if (namelen != 1)
+		return (ENOTDIR);	/* overloaded */
+
+	switch (name[0]) {
+	default:
+		return (EOPNOTSUPP);
+	}
+	/* NOTREACHED */
+}
 
 /*
  * Send an interrupt to process.
