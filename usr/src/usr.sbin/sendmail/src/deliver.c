@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.44 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.45 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1739,6 +1739,10 @@ giveresponse(stat, m, mci, ctladdr, e)
 /*
 **  LOGDELIVERY -- log the delivery in the system log
 **
+**	Care is taken to avoid logging lines that are too long, because
+**	some versions of syslog have an unfortunate proclivity for core
+**	dumping.  This is a hack, to be sure, that is at best empirical.
+**
 **	Parameters:
 **		m -- the mailer info.  Can be NULL for initial queue.
 **		mci -- the mailer connection info -- can be NULL if the
@@ -1754,6 +1758,10 @@ giveresponse(stat, m, mci, ctladdr, e)
 **		none
 */
 
+#ifndef SYSLOG_BUFSIZE
+# define SYSLOG_BUFSIZE	1024
+#endif
+
 logdelivery(m, mci, stat, ctladdr, e)
 	MAILER *m;
 	register MCI *mci;
@@ -1763,13 +1771,20 @@ logdelivery(m, mci, stat, ctladdr, e)
 {
 # ifdef LOG
 	register char *bp;
+	register char *p;
+	int l;
 	char buf[512];
 
 	bp = buf;
 	if (ctladdr != NULL)
 	{
 		strcpy(bp, ", ctladdr=");
-		strcat(bp, ctladdr->q_paddr);
+		l = strlen(ctladdr->q_paddr);
+		if (l > 83)
+			sprintf(bp, "%.40s...%s",
+				ctladdr->q_paddr, ctladdr->q_paddr + l - 40);
+		else
+			strcat(bp, ctladdr->q_paddr);
 		bp += strlen(bp);
 		if (bitset(QGOODUID, ctladdr->q_flags))
 		{
@@ -1815,9 +1830,45 @@ logdelivery(m, mci, stat, ctladdr, e)
 		}
 	}
 	bp += strlen(bp);
+
+	if ((bp - buf) > (sizeof buf - 220))
+	{
+		/* desperation move -- truncate data */
+		bp = buf + sizeof buf - 217;
+		strcpy(bp, "...");
+		bp += 3;
+	}
+
+	(void) strcpy(bp, ", stat=");
+	bp += strlen(bp);
+	l = strlen(stat);
+#define STATLEN		(((SYSLOG_BUFSIZE) - 100) / 8)
+#if (STATLEN) < 30
+# undef STATLEN
+# define STATLEN	30
+#endif
+#if (STATLEN) > 100
+# undef STATLEN
+# define STATLEN	100
+#endif
+	if (l > (STATLEN * 2 + 3))
+		sprintf(bp, "%.*s...%s", STATLEN, stat, stat + l - STATLEN);
+	else
+		(void) strcpy(bp, stat);
 		
-	syslog(LOG_INFO, "%s: to=%s%s, stat=%s",
-	       e->e_id, e->e_to, buf, stat);
+	l = SYSLOG_BUFSIZE - 100 - strlen(buf);
+	p = e->e_to;
+	while (strlen(p) >= l)
+	{
+		register char *q = strchr(p + l, ',');
+
+		if (*q == NULL)
+			break;
+		syslog(LOG_INFO, "%s: to=%.*s [more]%s",
+			e->e_id, ++q - p, p, buf);
+		p = q;
+	}
+	syslog(LOG_INFO, "%s: to=%s%s", e->e_id, p, buf);
 # endif /* LOG */
 }
 /*
