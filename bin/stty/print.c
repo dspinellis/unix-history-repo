@@ -90,10 +90,10 @@ print(tp, wp, ldisc, fmt)
 	if (cnt)
 		(void)printf("\n");
 
-#define	on(f)	((tmp&f) != 0)
+#define	on(f)	((tmp & (f)) != 0)
 #define put(n, f, d) \
-	if (fmt >= BSD || on(f) != d) \
-		bput(n + on(f));
+	if (fmt >= BSD || on(f) != (d)) \
+		bput((n) + on(f));
 
 	/* "local" flags */
 	tmp = tp->c_lflag;
@@ -164,7 +164,19 @@ print(tp, wp, ldisc, fmt)
 	put("-hupcl", HUPCL, 1);
 	put("-clocal", CLOCAL, 0);
 	put("-cstopb", CSTOPB, 0);
-	put("-crtscts", CRTSCTS, 0);
+	switch(tmp & (CCTS_OFLOW | CRTS_IFLOW)) {
+	case CCTS_OFLOW:
+		bput("ctsflow");
+		break;
+	case CRTS_IFLOW:
+		bput("rtsflow");
+		break;
+	default:
+		put("-crtscts", CCTS_OFLOW | CRTS_IFLOW, 0);
+		break;
+	}
+	put("-dsrflow", CDSR_OFLOW, 0);
+	put("-dtrflow", CDTR_IFLOW, 0);
 
 	/* special control characters */
 	cc = tp->c_cc;
