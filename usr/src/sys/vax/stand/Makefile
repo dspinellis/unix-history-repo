@@ -6,9 +6,10 @@
 #	@(#)Makefile	6.11 (Berkeley) %G%
 #
 DESTDIR=/
-CFLAGS=	-O -I../h -DSTANDALONE ${COPTS} 
+INCPATH=-I..
+CFLAGS=	-O ${INCPATH} -DSTANDALONE ${COPTS} 
 COPTS=	-DVAX780 -DVAX750 -DVAX730 -DVAX8600
-730OPTS=-O -I../h -DSTANDALONE -DVAX730
+730OPTS=-O ${INCPATH} -DSTANDALONE -DVAX730
 RELOC=	70000
 
 SRCS=	sys.c conf.c prf.c machdep.c \
@@ -16,6 +17,7 @@ SRCS=	sys.c conf.c prf.c machdep.c \
 	rl.c tm.c ts.c \
 	up.c upmaptype.c uba.c uda.c ut.c \
 	drtest.c format.c up.old.c hp.old.c
+DUMMIES= bootxx.c confxx.c
 DRIVERS=autoconf.o hp.o hpmaptype.o ht.o idc.o mba.o mt.o \
 	rk.o rl.o tm.o ts.o \
 	up.o upmaptype.o uba.o uda.o ut.o
@@ -82,8 +84,7 @@ tpformat: format.o tpsrt0.o confhpup.o ${LIBSA}
 boot:	boot.o relsrt0.o bootconf.o ${LIBSA}
 	ld -N -T ${RELOC} -o boot relsrt0.o boot.o bootconf.o ${LIBSA} -lc
 
-bootconf.o: conf.c ../h/param.h ../h/inode.h ../machine/pte.h
-bootconf.o: ../h/fs.h saio.h ../vaxmba/mbareg.h
+bootconf.o: conf.o
 	cp conf.c bootconf.c
 	cc -c ${COPTS} -DBOOT bootconf.c
 	rm -f bootconf.c
@@ -100,8 +101,7 @@ drtest:	drtest.o srt0.o confhpup.o ${LIBSA}
 # for 730s minimize size to avoid microcode botch
 # (won't load files larger than 12.5 Kbytes)
 
-730boot.o: boot.c ../h/param.h ../h/inode.h ../h/fs.h
-730boot.o: saio.h ../h/reboot.h ../h/vm.h 
+730boot.o: boot.o
 	cp boot.c 730boot.c; chmod +w 730boot.c
 	cc -c ${730OPTS} 730boot.c
 	rm -f 730boot.c
@@ -109,8 +109,7 @@ drtest:	drtest.o srt0.o confhpup.o ${LIBSA}
 730boot: 730boot.o relsrt0.o 730bootconf.o ${LIBSA}
 	ld -N -T ${RELOC} -o 730boot relsrt0.o 730boot.o 730bootconf.o ${LIBSA} -lc
 
-730bootconf.o: conf.c ../h/param.h ../h/inode.h ../machine/pte.h
-730bootconf.o: ../h/fs.h saio.h
+730bootconf.o: conf.o
 	cp conf.c 730bootconf.c
 	cc -c ${730OPTS} -DBOOT 730bootconf.c
 	rm -f 730bootconf.c
@@ -124,8 +123,7 @@ drtest:	drtest.o srt0.o confhpup.o ${LIBSA}
 730format: format.o srt0.o confup.o ${LIBSA}
 	ld -N -o 730format srt0.o format.o confup.o ${LIBSA} -lc
 
-730conf.o: conf.c ../h/param.h ../h/inode.h ../machine/pte.h
-730conf.o: ../h/fs.h saio.h
+730conf.o: conf.o
 	cp conf.c 730conf.c
 	cc -c ${730OPTS} 730conf.c
 	rm -f 730conf.c
@@ -156,18 +154,16 @@ bootrl: relsrt0.o bootrl.o confrl.o smsys.o ${LIBSA}
 	ld -N -T ${RELOC} relsrt0.o bootrl.o confrl.o smsys.o ${LIBSA} -lc
 	strip a.out;dd if=a.out of=bootrl ibs=32 skip=1;rm -f a.out
 
-boothp.o: boothp.c ../h/param.h ../h/inode.h ../machine/pte.h ../h/reboot.h
-boothp.o: ../h/fs.h saio.h
-boothk.o: boothk.c ../h/param.h ../h/inode.h ../machine/pte.h ../h/reboot.h
-boothk.o: ../h/fs.h saio.h
-bootup.o: bootup.c ../h/param.h ../h/inode.h ../machine/pte.h ../h/reboot.h
-bootup.o: ../h/fs.h saio.h
-bootra.o: bootra.c ../h/param.h ../h/inode.h ../machine/pte.h ../h/reboot.h
-bootra.o: ../h/fs.h saio.h
-bootrl.o: bootrl.c ../h/param.h ../h/inode.h ../machine/pte.h ../h/reboot.h
-bootrl.o: ../h/fs.h saio.h
+boothp.o: boothp.c bootxx.o
+boothk.o: boothk.c bootxx.o
+bootup.o: bootup.c bootxx.o
+bootra.o: bootra.c bootxx.o
+bootrl.o: bootrl.c bootxx.o
 
-smsys.o: sys.c
+bootxx.o:
+	touch bootxx.o
+
+smsys.o: sys.o
 	-rm -f smsys.c
 	-ln -s sys.c smsys.c
 	cc -c -DSMALL ${CFLAGS} smsys.c
@@ -189,11 +185,14 @@ bootrl.c: bootxx.c
 	-rm -f bootrl.c
 	sed -e 's/xx/rl/g' <bootxx.c >bootrl.c
 
-confrk.o: confrk.c ../h/param.h ../h/fs.h ../machine/pte.h ../h/inode.h saio.h
-confhp.o: confhp.c ../h/param.h ../h/fs.h ../machine/pte.h ../h/inode.h saio.h
-confup.o: confup.c ../h/param.h ../h/fs.h ../machine/pte.h ../h/inode.h saio.h
-confra.o: confra.c ../h/param.h ../h/fs.h ../machine/pte.h ../h/inode.h saio.h
-confrl.o: confrl.c ../h/param.h ../h/fs.h ../machine/pte.h ../h/inode.h saio.h
+confrk.o: confrk.c confxx.o
+confhp.o: confhp.c confxx.o
+confup.o: confup.c confxx.o
+confra.o: confra.c confxx.o
+confrl.o: confrl.c confxx.o
+
+confxx.o:
+	touch confxx.o
 
 confrk.c: confxx.c
 	-rm -f confrk.c
@@ -262,4 +261,143 @@ install: ${ALL}
 	cp ../floppy/drtest ../consolerl/drtest
 	cp bootup boothk boothp bootra bootrl ${DESTDIR}/usr/mdec
 
-# beware...
+depend:
+	for i in ${SRCS} ${DUMMIES}; do \
+	    cc -M ${INCPATH} $$i | \
+	    awk ' { if ($$1 != prev) { print rec; rec = $$0; prev = $$1; } \
+		else { if (length(rec $$2) > 78) { print rec; rec = $$0; } \
+		else rec = rec " " $$2 } } \
+		END { print rec } ' >> makedep; done
+	echo '/^# DO NOT DELETE THIS LINE/+2,$$d' >eddep
+	echo '$$r makedep' >>eddep
+	echo 'w' >>eddep
+	cp Makefile Makefile.bak
+	ed - Makefile < eddep
+	rm eddep makedep
+	echo '# DEPENDENCIES MUST END AT END OF FILE' >> Makefile
+	echo '# IF YOU PUT STUFF HERE IT WILL GO AWAY' >> Makefile
+	echo '# see make depend above' >> Makefile
+
+# DO NOT DELETE THIS LINE -- make depend uses it
+
+
+sys.o: sys.c ./../h/param.h ../machine/machparam.h /usr/include/signal.h
+sys.o: /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h ./../h/dir.h
+sys.o: ./saio.h
+
+conf.o: conf.c ./../machine/pte.h ./../h/param.h ../machine/machparam.h
+conf.o: /usr/include/signal.h /usr/include/sys/types.h ./../h/inode.h
+conf.o: ./../h/fs.h ./../vaxmba/mbareg.h ./saio.h
+
+prf.o: prf.c ./../h/param.h ../machine/machparam.h /usr/include/signal.h
+prf.o: /usr/include/sys/types.h ./../vax/mtpr.h ./../vax/cons.h
+
+machdep.o: machdep.c ./../h/param.h ../machine/machparam.h
+machdep.o: /usr/include/signal.h /usr/include/sys/types.h ./../vax/mtpr.h
+
+autoconf.o: autoconf.c ./../machine/pte.h ./../h/param.h ../machine/machparam.h
+autoconf.o: /usr/include/signal.h /usr/include/sys/types.h ./../vax/cpu.h
+autoconf.o: ./../vax/nexus.h ./../vaxuba/ubareg.h ./../vaxmba/mbareg.h
+autoconf.o: ./../vax/mtpr.h ./savax.h
+
+hp.o: hp.c ./../h/param.h ../machine/machparam.h /usr/include/signal.h
+hp.o: /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h ./../h/dkbad.h
+hp.o: ./../vax/pte.h ./../vaxmba/hpreg.h ./../vaxmba/mbareg.h ./saio.h
+hp.o: ./savax.h
+
+hpmaptype.o: hpmaptype.c ./../machine/pte.h ./../h/param.h
+hpmaptype.o: ../machine/machparam.h /usr/include/signal.h
+hpmaptype.o: /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h
+hpmaptype.o: ./../vaxmba/hpreg.h ./../vaxmba/mbareg.h ./saio.h ./savax.h
+
+ht.o: ht.c ./../machine/pte.h ./../h/param.h ../machine/machparam.h
+ht.o: /usr/include/signal.h /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h
+ht.o: ./../vaxmba/htreg.h ./../vaxmba/mbareg.h ./saio.h ./savax.h
+
+idc.o: idc.c ./../machine/pte.h ./../h/param.h ../machine/machparam.h
+idc.o: /usr/include/signal.h /usr/include/sys/types.h ./../h/inode.h
+idc.o: ./../h/fs.h ./../vaxuba/idcreg.h ./../vaxuba/ubareg.h ./saio.h ./savax.h
+
+mba.o: mba.c ./../machine/pte.h ./../h/param.h ../machine/machparam.h
+mba.o: /usr/include/signal.h /usr/include/sys/types.h ./../h/inode.h
+mba.o: ./../h/fs.h ./../h/vm.h /usr/include/sys/vmparam.h ../machine/vmparam.h
+mba.o: /usr/include/sys/vmmac.h /usr/include/sys/vmmeter.h
+mba.o: /usr/include/sys/vmsystm.h ./../vax/mtpr.h ./../vaxmba/mbareg.h
+mba.o: ./../vaxmba/hpreg.h ./saio.h ./savax.h
+
+mt.o: mt.c ./../machine/pte.h ./../h/param.h ../machine/machparam.h
+mt.o: /usr/include/signal.h /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h
+mt.o: ./../vaxmba/mtreg.h ./../vaxmba/mbareg.h ./saio.h ./savax.h
+
+rk.o: rk.c ./../machine/pte.h ./../h/param.h ../machine/machparam.h
+rk.o: /usr/include/signal.h /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h
+rk.o: ./../vaxuba/ubareg.h ./../vaxuba/rkreg.h ./saio.h ./savax.h
+
+rl.o: rl.c ./../machine/pte.h ./../h/param.h ../machine/machparam.h
+rl.o: /usr/include/signal.h /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h
+rl.o: ./../vaxuba/rlreg.h ./../vaxuba/ubareg.h ./saio.h ./savax.h
+
+tm.o: tm.c ./../machine/pte.h ./../h/param.h ../machine/machparam.h
+tm.o: /usr/include/signal.h /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h
+tm.o: ./../vaxuba/ubareg.h ./../vaxuba/tmreg.h ./saio.h ./savax.h
+
+ts.o: ts.c ./../machine/pte.h ./../h/param.h ../machine/machparam.h
+ts.o: /usr/include/signal.h /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h
+ts.o: ./../vaxuba/tsreg.h ./../vaxuba/ubareg.h ./saio.h ./savax.h
+
+up.o: up.c ./../h/param.h ../machine/machparam.h /usr/include/signal.h
+up.o: /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h ./../h/dkbad.h
+up.o: ./../h/vmmac.h ./../vax/pte.h ./../vaxuba/upreg.h ./../vaxuba/ubareg.h
+up.o: ./saio.h ./savax.h
+
+upmaptype.o: upmaptype.c ./../h/param.h ../machine/machparam.h
+upmaptype.o: /usr/include/signal.h /usr/include/sys/types.h ./../h/inode.h
+upmaptype.o: ./../h/fs.h ./../h/dkbad.h ./../h/vmmac.h ./../vax/pte.h
+upmaptype.o: ./../vaxuba/upreg.h ./../vaxuba/ubareg.h ./saio.h ./savax.h
+
+uba.o: uba.c ./../machine/pte.h ./../h/param.h ../machine/machparam.h
+uba.o: /usr/include/signal.h /usr/include/sys/types.h ./../h/inode.h
+uba.o: ./../h/vm.h /usr/include/sys/vmparam.h ../machine/vmparam.h
+uba.o: /usr/include/sys/vmmac.h /usr/include/sys/vmmeter.h
+uba.o: /usr/include/sys/vmsystm.h ./../h/fs.h ./../vax/cpu.h
+uba.o: ./../vaxuba/ubareg.h ./saio.h ./savax.h
+
+uda.o: uda.c ./../machine/pte.h ./../h/param.h ../machine/machparam.h
+uda.o: /usr/include/signal.h /usr/include/sys/types.h ./../h/inode.h
+uda.o: ./../h/fs.h ./saio.h ./savax.h ./../vaxuba/udareg.h ./../vaxuba/ubareg.h
+uda.o: ./../vax/mscp.h
+
+ut.o: ut.c ./../machine/pte.h ./../h/param.h ../machine/machparam.h
+ut.o: /usr/include/signal.h /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h
+ut.o: ./../vaxuba/ubareg.h ./../vaxuba/utreg.h ./saio.h ./savax.h
+
+drtest.o: drtest.c ./../h/param.h ../machine/machparam.h /usr/include/signal.h
+drtest.o: /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h ./saio.h
+
+format.o: format.c ./../h/param.h ../machine/machparam.h /usr/include/signal.h
+format.o: /usr/include/sys/types.h ./../h/fs.h ./../h/inode.h ./../h/dkbad.h
+format.o: ./../h/vmmac.h ./saio.h ./savax.h
+
+up.old.o: up.old.c ./../machine/pte.h ./../h/param.h ../machine/machparam.h
+up.old.o: /usr/include/signal.h /usr/include/sys/types.h ./../h/inode.h
+up.old.o: ./../h/fs.h ./../vaxuba/upreg.h ./../vaxuba/ubareg.h ./saio.h
+up.old.o: ./savax.h
+
+hp.old.o: hp.old.c ./../machine/pte.h ./../h/param.h ../machine/machparam.h
+hp.old.o: /usr/include/signal.h /usr/include/sys/types.h ./../h/inode.h
+hp.old.o: ./../h/fs.h ./../vaxmba/hpreg.h ./../vaxmba/mbareg.h ./saio.h
+hp.old.o: ./savax.h
+
+bootxx.o: bootxx.c ./../h/param.h ../machine/machparam.h /usr/include/signal.h
+bootxx.o: /usr/include/sys/types.h ./../h/inode.h ./../h/fs.h ./../h/vm.h
+bootxx.o: /usr/include/sys/vmparam.h ../machine/vmparam.h
+bootxx.o: /usr/include/sys/vmmac.h /usr/include/sys/vmmeter.h
+bootxx.o: /usr/include/sys/vmsystm.h /usr/include/a.out.h
+bootxx.o: /usr/include/sys/exec.h ./saio.h ./../h/reboot.h
+
+confxx.o: confxx.c ./../machine/pte.h ./../h/param.h ../machine/machparam.h
+confxx.o: /usr/include/signal.h /usr/include/sys/types.h ./../h/inode.h
+confxx.o: ./../h/fs.h ./saio.h
+# DEPENDENCIES MUST END AT END OF FILE
+# IF YOU PUT STUFF HERE IT WILL GO AWAY
+# see make depend above
