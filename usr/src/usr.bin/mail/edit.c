@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)edit.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)edit.c	5.6 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -58,93 +58,73 @@ visual(msgvec)
  * (which should not exist) and forking an editor on it.
  * We get the editor from the stuff above.
  */
-
 edit1(msgvec, ed)
 	int *msgvec;
 	char *ed;
 {
 	register int c;
-	int *ip, pid, mesg;
+	int i, pid;
 	int (*sigint)(), (*sigquit)();
-	FILE *ibuf, *obuf;
-	char edname[15];
-	register struct message *mp;
+	FILE *fp;
 	extern char tempEdit[];
+	char *edname = tempEdit;
+	register struct message *mp;
 	off_t fsize(), size;
 	struct stat statb;
-	long modtime;
+	time_t modtime;
 	union wait status;
 
 	/*
 	 * Set signals; locate editor.
 	 */
-
 	sigint = signal(SIGINT, SIG_IGN);
 	sigquit = signal(SIGQUIT, SIG_IGN);
-
 	/*
 	 * Deal with each message to be edited . . .
 	 */
-
-	for (ip = msgvec; *ip && ip-msgvec < msgCount; ip++) {
-		mesg = *ip;
-		mp = &message[mesg-1];
+	for (i = 0; msgvec[i] && i < msgCount; i++) {
+		mp = &message[msgvec[i] - 1];
 		mp->m_flag |= MODIFY;
-		touch(mesg);
+		touch(msgvec[i]);
 		dot = mp;
-
-		/*
-		 * Make up a name for the edit file of the
-		 * form "Message%d" and make sure it doesn't
-		 * already exist.
-		 */
-		(void) sprintf(edname, "Message%d", mesg);
-		if (!access(edname, 2)) {
-			printf("%s: file exists\n", edname);
-			goto out;
-		}
-
 		/*
 		 * Copy the message into the edit file.
-		 */
-		(void) close(creat(edname, 0600));
-		if ((obuf = fopen(edname, "w")) == NULL) {
-			perror(edname);
-			goto out;
-		}
-		if (send(mp, obuf, 0) < 0) {
-			perror(edname);
-			(void) fclose(obuf);
-			(void) remove(edname);
-			goto out;
-		}
-		(void) fflush(obuf);
-		if (ferror(obuf)) {
-			(void) remove(edname);
-			(void) fclose(obuf);
-			goto out;
-		}
-		(void) fclose(obuf);
-
-		/*
 		 * If we are in read only mode, make the
 		 * temporary message file readonly as well.
 		 */
-
-		if (readonly)
-			(void) chmod(edname, 0400);
-
+		if ((c = creat(edname, readonly ? 0400 : 0600)) < 0) {
+			perror(edname);
+			goto out;
+		}
+		if ((fp = fdopen(c, "w")) == NULL) {
+			perror(edname);
+			(void) unlink(edname);
+			goto out;
+		}
+		if (send(mp, fp, 0) < 0) {
+			perror(edname);
+			(void) fclose(fp);
+			(void) unlink(edname);
+			goto out;
+		}
+		(void) fflush(fp);
+		if (ferror(fp)) {
+			(void) unlink(edname);
+			(void) fclose(fp);
+			goto out;
+		}
+		if (fstat(fileno(fp), &statb) < 0)
+			modtime = 0;
+		else
+			modtime = statb.st_mtime;
+		(void) fclose(fp);
 		/*
 		 * Fork/execl the editor on the edit file.
 		 */
-
-		if (stat(edname, &statb) < 0)
-			modtime = 0;
-		modtime = statb.st_mtime;
 		pid = vfork();
 		if (pid == -1) {
 			perror("fork");
-			(void) remove(edname);
+			(void) unlink(edname);
 			goto out;
 		}
 		if (pid == 0) {
@@ -158,43 +138,39 @@ edit1(msgvec, ed)
 		}
 		while (wait(&status) != pid)
 			;
-
 		/*
 		 * If in read only mode, just remove the editor
 		 * temporary and return.
 		 */
-
 		if (readonly) {
-			(void) remove(edname);
+			(void) unlink(edname);
 			continue;
 		}
-
 		/*
 		 * Now copy the message to the end of the
 		 * temp file.
 		 */
-
 		if (stat(edname, &statb) < 0) {
 			perror(edname);
 			goto out;
 		}
 		if (modtime == statb.st_mtime) {
-			(void) remove(edname);
+			(void) unlink(edname);
 			goto out;
 		}
-		if ((ibuf = fopen(edname, "r")) == NULL) {
+		if ((fp = fopen(edname, "r")) == NULL) {
 			perror(edname);
-			(void) remove(edname);
+			(void) unlink(edname);
 			goto out;
 		}
-		(void) remove(edname);
+		(void) unlink(edname);
 		(void) fseek(otf, (long) 0, 2);
 		size = ftell(otf);
 		mp->m_block = blockof(size);
 		mp->m_offset = offsetof(size);
-		mp->m_size = fsize(ibuf);
+		mp->m_size = fsize(fp);
 		mp->m_lines = 0;
-		while ((c = getc(ibuf)) != EOF) {
+		while ((c = getc(fp)) != EOF) {
 			if (c == '\n')
 				mp->m_lines++;
 			(void) putc(c, otf);
@@ -203,13 +179,11 @@ edit1(msgvec, ed)
 		}
 		if (ferror(otf))
 			perror("/tmp");
-		(void) fclose(ibuf);
+		(void) fclose(fp);
 	}
-
 	/*
 	 * Restore signals and return.
 	 */
-
 out:
 	(void) signal(SIGINT, sigint);
 	(void) signal(SIGQUIT, sigquit);
