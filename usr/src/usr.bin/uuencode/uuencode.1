@@ -2,12 +2,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)uuencode.1	4.1 (Berkeley) %G%
+.\"	@(#)uuencode.1	5.1 (Berkeley) %G%
 .\"
-.TH UUENCODE 1C 6/1/80
+.TH UUENCODE 1C "1 June 1980"
 .UC 4
 .SH NAME
-uuencode,uudecode \- encode/decode a binary file for tranmission via mail
+uuencode,uudecode \- encode/decode a binary file for transmission via mail
 .SH SYNOPSIS
 .B uuencode
 [ source ] remotedest |
@@ -23,7 +23,7 @@ and
 are used to send a binary file via uucp (or other) mail.
 This combination can be used over indirect mail links
 even when
-.I uusend(1)
+.IR uusend (1C)
 is not available.
 .PP
 .I Uuencode
@@ -43,7 +43,7 @@ The intent is that all mail to the user ``decode'' should be filtered
 through the uudecode program.  This way the file is created automatically
 without human intervention.
 This is possible on the uucp network by either using
-.I delivermail
+.I sendmail
 or by making
 .I rmail
 be a link to
@@ -59,7 +59,7 @@ user on the remote machine who can uudecode it manually.
 The encode file has an ordinary text form and can be edited
 by any text editor to change the mode or remote name.
 .SH SEE\ ALSO
-uuencode(5), uusend(1), uucp(1), uux(1), mail(1)
+uuencode(5), uusend(1C), uucp(1C), uux(1C), mail(1)
 .SH AUTHOR
 Mark Horton
 .SH BUGS
