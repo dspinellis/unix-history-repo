@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	4.12 (Berkeley) %G%
+#	@(#)Makefile	4.13 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -94,7 +94,7 @@ install: ${MAN}
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 	rm -f ${DESTDIR}/usr/man/cat1/indxbib.0
 	ln ${DESTDIR}/usr/man/cat1/lookbib.0 ${DESTDIR}/usr/man/cat1/indxbib.0
-	(cd /usr/share/dict/papers; runinv)
+	sh runinv /usr/share/dict/papers
 
 lint: FRC
 	lint ${CFLAGS} ${DLSRCS}
