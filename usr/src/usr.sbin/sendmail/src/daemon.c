@@ -2,14 +2,14 @@
 # include "sendmail.h"
 
 #ifndef DAEMON
-SCCSID(@(#)daemon.c	3.20		%G%	(w/o daemon mode));
+SCCSID(@(#)daemon.c	3.21		%G%	(w/o daemon mode));
 #else
 
 # include <sys/socket.h>
 # include <net/in.h>
 # include <wait.h>
 
-SCCSID(@(#)daemon.c	3.20		%G%	(with daemon mode));
+SCCSID(@(#)daemon.c	3.21		%G%	(with daemon mode));
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
@@ -192,6 +192,8 @@ getconnection()
 			break;
 
 		/* probably innocuous -- retry */
+		if (errno == ETIMEDOUT)
+			continue;
 		syserr("getconnection: accept");
 		(void) close(s);
 		sleep(20);
