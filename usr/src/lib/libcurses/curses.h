@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)curses.h	8.4 (Berkeley) %G%
+ *	@(#)curses.h	8.5 (Berkeley) %G%
  */
 
 #ifndef _CURSES_H_
@@ -19,7 +19,9 @@
  * START BACKWARD COMPATIBILITY ONLY.
  */
 #ifndef _CURSES_PRIVATE
+#ifndef __cplusplus
 #define	bool	char
+#endif
 #define	reg	register
 
 #ifndef TRUE
