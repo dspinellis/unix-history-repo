@@ -1,7 +1,7 @@
 /*
 **  SENDMAIL.H -- Global definitions for sendmail.
 **
-**	@(#)sendmail.h	3.14	%G%
+**	@(#)sendmail.h	3.15	%G%
 */
 
 
@@ -205,6 +205,7 @@ extern bool	ForceMail;	/* if set, mail even if already got a copy */
 extern bool	MeToo;		/* send to the sender also */
 extern bool	IgnrDot;	/* don't let dot end messages */
 extern bool	SaveFrom;	/* save leading "From" lines */
+extern bool	Verbose;	/* set if blow-by-blow desired */
 extern int	Errors;		/* set if errors */
 extern int	ExitStat;	/* exit status code */
 extern char	InFileName[];	/* input file name */
