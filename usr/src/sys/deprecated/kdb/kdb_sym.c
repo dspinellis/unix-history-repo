@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kdb_sym.c	7.2 (Berkeley) %G%
+ *	@(#)kdb_sym.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -15,16 +15,16 @@
 /*
  * Initialize the symbol table.
  */
-setsym(sym, esym, strtab, strsize)
+kdbsetsym(sym, esym, strtab, strsize)
 	char *sym, *esym, *strtab;
 {
 	register struct nlist *sp;
 
-	symtab = (struct nlist *)sym, esymtab = (struct nlist *)esym;
-	for (sp = symtab; sp < esymtab; sp++)
+	kdbsymtab = (struct nlist *)sym, kdbesymtab = (struct nlist *)esym;
+	for (sp = kdbsymtab; sp < kdbesymtab; sp++)
 		if (sp->n_un.n_strx) {
 			if (sp->n_un.n_strx > strsize) {
-				printf("setsym: Bad string table index (%d)\n",
+				kdbprintf("setsym: Bad string table index (%d)\n",
 				    sp->n_un.n_strx);
 				sp->n_un.n_strx = 0;	/* XXX */
 				continue;
@@ -37,17 +37,17 @@ setsym(sym, esym, strtab, strsize)
  * Lookup a symbol by name.
  */
 struct nlist *
-lookup(symstr)
+kdblookup(symstr)
 	char *symstr;
 {
 	register struct nlist *sp;
 
-	cursym = 0;
-	if (symtab)
-	for (sp = symtab; sp < esymtab; sp++)
+	kdbcursym = 0;
+	if (kdbsymtab)
+	for (sp = kdbsymtab; sp < kdbesymtab; sp++)
 		/* SHOULD DO SOME OF EQSYM INLINE TO SAVE TIME */
-		if ((sp->n_type&N_STAB)==0 && eqsym(sp->n_un.n_name, symstr, '_'))
-			return(cursym = sp);
+		if ((sp->n_type&N_STAB)==0 && kdbeqsym(sp->n_un.n_name, symstr, '_'))
+			return(kdbcursym = sp);
 	return (0);
 }
 
@@ -56,23 +56,23 @@ lookup(symstr)
  * the difference between val and the symbol found.
  * Leave a pointer to the symbol found as cursym.
  */
-findsym(val, type)
+kdbfindsym(val, type)
 	register long val;
 	int type;
 {
 	register diff;
 	register struct nlist *sp;
 
-	cursym = 0;
+	kdbcursym = 0;
 	diff = MAXINT;
-	if (type == NSYM || symtab == 0)
+	if (type == NSYM || kdbsymtab == 0)
 		return (diff);
-	for (sp = symtab; sp < esymtab; sp++) {
+	for (sp = kdbsymtab; sp < kdbesymtab; sp++) {
 		if (sp->n_type&N_STAB || (sp->n_type&N_EXT)==0)
 			continue;
 		if (val - sp->n_value < diff && val >= sp->n_value) {
 			diff = val - sp->n_value;
-			cursym = sp;
+			kdbcursym = sp;
 			if (diff == 0)
 				break;
 		}
@@ -85,14 +85,14 @@ findsym(val, type)
  * Leave its value in localval as a side effect.
  * Return 0 at end of file.
  */
-localsym(cframe)
+kdblocalsym(cframe)
 	long cframe;
 {
 	register int type;
 	register struct nlist *sp;
 
-	if (cursym)
-	for (sp = cursym; ++sp < esymtab; ) {
+	if (kdbcursym)
+	for (sp = kdbcursym; ++sp < kdbesymtab; ) {
 		type = sp->n_type;
 		if (sp->n_un.n_name[0] =='_' || type == N_FN)
 			return (0);
@@ -104,23 +104,23 @@ localsym(cframe)
 		case N_DATA|N_EXT:
 		case N_BSS:
 		case N_BSS|N_EXT:
-			localval = sp->n_value;
-			cursym = sp;
+			kdblocalval = sp->n_value;
+			kdbcursym = sp;
 			return (1);
 
 		case N_LSYM:
-			localval = cframe - sp->n_value;
-			cursym = sp;
+			kdblocalval = cframe - sp->n_value;
+			kdbcursym = sp;
 			return (1);
 
 		case N_PSYM:
 		case N_ABS:
-			localval = cframe + sp->n_value;
-			cursym = sp;
+			kdblocalval = cframe + sp->n_value;
+			kdbcursym = sp;
 			return (1);
 		}
 	}
-	cursym = 0;
+	kdbcursym = 0;
 	return (0);
 }
 
@@ -134,7 +134,7 @@ localsym(cframe)
  * that they match exactly or that they be more than maxoff
  * bytes into kernel space.
  */
-psymoff(v, type, s)
+kdbpsymoff(v, type, s)
 	register long v;
 	int type;
 	char *s;
@@ -142,15 +142,15 @@ psymoff(v, type, s)
 	register w;
 
 	if (v) 
-		w = findsym(v, type);
-	if (v==0 || w >= maxoff)
-		printf(LPRMODE, v);
+		w = kdbfindsym(v, type);
+	if (v==0 || w >= kdbmaxoff)
+		kdbprintf(LPRMODE, v);
 	else {
-		printf("%s", cursym->n_un.n_name);
+		kdbprintf("%s", kdbcursym->n_un.n_name);
 		if (w)
-			printf(OFFMODE, w);
+			kdbprintf(OFFMODE, w);
 	}
-	printf(s);
+	kdbprintf(s);
 }
 
 /*
@@ -158,15 +158,15 @@ psymoff(v, type, s)
  * interpretation as name+offset.  If not, print nothing.
  * Used in printing out registers $r.
  */
-valpr(v, idsp)
+kdbvalpr(v, idsp)
 	long v;
 {
 	register off_t d;
 
-	d = findsym(v, idsp);
-	if (d >= maxoff)
+	d = kdbfindsym(v, idsp);
+	if (d >= kdbmaxoff)
 		return;
-	printf("%s", cursym->n_un.n_name);
+	kdbprintf("%s", kdbcursym->n_un.n_name);
 	if (d)
-		printf(OFFMODE, d);
+		kdbprintf(OFFMODE, d);
 }
