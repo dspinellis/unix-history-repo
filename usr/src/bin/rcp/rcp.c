@@ -1,13 +1,15 @@
 #ifndef lint
-static char sccsid[] = "@(#)rcp.c	4.3 82/05/09";
+static char sccsid[] = "@(#)rcp.c	4.4 82/11/14";
 #endif
 
-#include <stdio.h>
-#include <signal.h>
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
-#include <net/in.h>
+
+#include <netinet/in.h>
+
+#include <stdio.h>
+#include <signal.h>
 #include <pwd.h>
 #include <ctype.h>
 #include <errno.h>
