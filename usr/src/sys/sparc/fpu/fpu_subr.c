@@ -9,13 +9,13 @@
  * All advertising materials mentioning features or use of this software
  * must display the following acknowledgement:
  *	This product includes software developed by the University of
- *	California, Lawrence Berkeley Laboratories.
+ *	California, Lawrence Berkeley Laboratory.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fpu_subr.c	7.3 (Berkeley) %G%
+ *	@(#)fpu_subr.c	7.4 (Berkeley) %G%
  *
- * from: $Header: fpu_subr.c,v 1.2 92/06/17 05:41:35 torek Exp $
+ * from: $Header: fpu_subr.c,v 1.4 92/12/01 08:46:52 torek Exp $
  */
 
 /*
@@ -128,7 +128,7 @@ fpu_norm(register struct fpn *fp)
 		else if (m2)
 			m0 = m2, m1 = m3, m2 = 0, m3 = 0, exp -= 2 * 32;
 		else if (m3)
-			m0 = m2, m1 = m3, m2 = 0, m3 = 0, exp -= 2 * 32;
+			m0 = m3, m1 = 0, m2 = 0, m3 = 0, exp -= 3 * 32;
 		else {
 			fp->fp_class = FPC_ZERO;
 			return;
