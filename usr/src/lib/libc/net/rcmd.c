@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rcmd.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)rcmd.c	5.21 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
@@ -230,7 +230,7 @@ ruserok(rhost, superuser, ruser, luser)
 		}
 	}
 	*p = '\0';
-	hostf = superuser ? (FILE *)0 : fopen("/etc/hosts.equiv", "r");
+	hostf = superuser ? (FILE *)0 : fopen(_PATH_HEQUIV, "r");
 again:
 	if (hostf) {
 		if (!_validuser(hostf, fhost, luser, ruser, baselen)) {

@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getprotoent.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)getprotoent.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
@@ -27,7 +27,6 @@ static char sccsid[] = "@(#)getprotoent.c	5.5 (Berkeley) %G%";
 
 #define	MAXALIASES	35
 
-static char PROTODB[] = "/etc/protocols";
 static FILE *protof = NULL;
 static char line[BUFSIZ+1];
 static struct protoent proto;
@@ -39,7 +38,7 @@ setprotoent(f)
 	int f;
 {
 	if (protof == NULL)
-		protof = fopen(PROTODB, "r" );
+		protof = fopen(_PATH_PROTOCOLS, "r" );
 	else
 		rewind(protof);
 	_proto_stayopen |= f;
@@ -60,7 +59,7 @@ getprotoent()
 	char *p;
 	register char *cp, **q;
 
-	if (protof == NULL && (protof = fopen(PROTODB, "r" )) == NULL)
+	if (protof == NULL && (protof = fopen(_PATH_PROTOCOLS, "r" )) == NULL)
 		return (NULL);
 again:
 	if ((p = fgets(line, BUFSIZ, protof)) == NULL)
