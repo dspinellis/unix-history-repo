@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parser.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)parser.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "shell.h"
@@ -203,9 +203,16 @@ andor() {
 
 STATIC union node *
 pipeline() {
-	union node *n1, *pipenode;
+	union node *n1, *pipenode, *notnode;
 	struct nodelist *lp, *prev;
+	int negate = 0;
 
+	TRACE(("pipeline: entered\n"));
+	while (readtoken() == TNOT) {
+		TRACE(("pipeline: TNOT recognized\n"));
+		negate = !negate;
+	}
+	tokpushback++;
 	n1 = command();
 	if (readtoken() == TPIPE) {
 		pipenode = (union node *)stalloc(sizeof (struct npipe));
@@ -224,6 +231,12 @@ pipeline() {
 		n1 = pipenode;
 	}
 	tokpushback++;
+	if (negate) {
+		notnode = (union node *)stalloc(sizeof (struct nnot));
+		notnode->type = NNOT;
+		notnode->nnot.com = n1;
+		n1 = notnode;
+	}
 	return n1;
 }
 
