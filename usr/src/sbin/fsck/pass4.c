@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass4.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass4.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -37,6 +37,10 @@ pass4()
 			else {
 				for (zlnp = zlnhead; zlnp; zlnp = zlnp->next)
 					if (zlnp->zlncnt == inumber) {
+						zlnp->zlncnt = zlnhead->zlncnt;
+						zlnp = zlnhead;
+						zlnhead = zlnhead->next;
+						free(zlnp);
 						clri(&idesc, "UNREF", 1);
 						break;
 					}
@@ -72,7 +76,7 @@ pass4check(idesc)
 				dlp->dup = duplist->dup;
 				dlp = duplist;
 				duplist = duplist->next;
-				/* free(dlp); */
+				free(dlp);
 				break;
 			}
 			if (dlp == 0) {
