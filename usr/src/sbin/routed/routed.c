@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)routed.c	4.1 %G%";
+static char sccsid[] = "@(#)routed.c	4.2 %G%";
 #endif
 
 #include <sys/param.h>
@@ -45,7 +45,7 @@ int	trace = 0;
 char	packet[MAXPACKETSIZE];
 
 extern char *malloc();
-extern int errno;
+extern int errno, exit();
 
 main(argc, argv)
 	int argc;
@@ -91,6 +91,7 @@ again:
 			supplier = 0;
 		argv++, argc--;
 	}
+	sigset(SIGTERM, exit);
 	sigset(SIGALRM, timer);
 	alarm(TIMER_RATE);
 
