@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_exec.c	7.37 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.38 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -36,22 +36,6 @@
 
 #ifdef HPUXCOMPAT
 #include "hp300/hpux/hpux_exec.h"
-#endif
-
-#ifdef COMPAT_43
-execv(p, uap, retval)
-	struct proc *p;
-	struct args {
-		char	*fname;
-		char	**argp;
-		char	**envp;
-	} *uap;
-	int *retval;
-{
-
-	uap->envp = NULL;
-	return (execve(p, uap, retval));
-}
 #endif
 
 /*
