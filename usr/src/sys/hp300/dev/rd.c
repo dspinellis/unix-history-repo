@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: rd.c 1.44 92/12/26$
  *
- *	@(#)rd.c	7.18 (Berkeley) %G%
+ *	@(#)rd.c	7.19 (Berkeley) %G%
  */
 
 /*
@@ -342,6 +342,7 @@ rdgetinfo(dev)
 	lp->d_secsize = DEV_BSIZE;
 	lp->d_nsectors = 32;
 	lp->d_ntracks = 20;
+	lp->d_ncylinders = 1;
 	lp->d_secpercyl = 32*20;
 	lp->d_npartitions = 3;
 	lp->d_partitions[2].p_offset = 0;
