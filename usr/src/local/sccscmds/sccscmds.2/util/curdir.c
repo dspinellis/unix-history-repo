@@ -1,110 +1,87 @@
-# include	"../hdr/macros.h"
-# include	"dir.h"
-
-#define IROOT 2
-SCCSID(@(#)curdir.c	4.3);
 /*
-	current directory.
-	Places the full pathname of the current directory in `str'.
-	Handles file systems not mounted on a root directory
-	via /etc/mtab (see mtab(V)).
-	NOTE: PWB systems don't use mtab(V), but they don't mount
-	file systems anywhere but on a root directory (so far, at least).
+ * SCCSID(@(#)curdir.c	4.4);
+ */
+#include	<sys/param.h>
+#include	<sys/stat.h>
+#include	<sys/dir.h>
 
-	returns 0 on success
-	< 0 on failure.
+#define	dot	"."
+#define	dotdot	".."
 
-	Current directory on return:
-		success: same as on entry
-		failure: UNKNOWN!
-*/
+static	char	*name;
 
+static	int	off	= -1;
+static	struct	stat	d, dd;
+static	struct	direct	*dir;
+static	DIR	*dirp;
+static	int	cat(), prexit();
 
-static char *curdirp;
-
-struct mtab {
-	char	m_dir[32];
-	char	m_spcl[32];
-};
-
-static struct mtab mtab;
-
-curdir(str)
-char *str;
+char *
+curdir(np)
+char *np;
 {
-	register int n;
+	int rdev, rino;
 
-	curdirp = str;
-	n = findir(0);
-	return(n+chdir(str));
+	*np++ = '/';
+	name = np;
+	stat("/", &d);
+	rdev = d.st_dev;
+	rino = d.st_ino;
+	for (;;) {
+		stat(dot, &d);
+		if (d.st_ino==rino && d.st_dev==rdev)
+			goto done;
+		if ((dirp = opendir(dotdot)) == 0)
+			prexit("curdir: cannot open ..\n");
+		fstat(dirp->dd_fd, &dd);
+		chdir(dotdot);
+		if(d.st_dev == dd.st_dev) {
+			if(d.st_ino == dd.st_ino)
+				goto done;
+			do
+				if ((dir = readdir(dirp)) == 0)
+					prexit("curdir: read error in ..\n");
+			while (dir->d_ino != d.st_ino);
+		} else
+			do {
+				if ((dir = readdir(dirp)) == 0)
+					prexit("curdir: read error in ..\n");
+				stat(dir->d_name, &dd);
+			} while(dd.st_ino != d.st_ino || dd.st_dev != d.st_dev);
+		closedir(dirp);
+		cat();
+	}
+done:
+	name--;
+	if (chdir(name) < 0) {
+		write(2, name, strlen(name));
+		prexit(": can't change back\n");
+	}
+	return (0);
 }
 
-
-# define ADDSLASH	if (flag) *curdirp++ = '/';
-# define QUIT		{ close(fd); return(-1); }
-
-findir(flag)
+static
+cat()
 {
-	register int fd,inum;
-	register char *tp;
-	char *slashp;
-	int dev, r;
-	struct dir entry;
-	struct stat s;
+	register i, j;
 
-	if (stat(".",&s)<0) return(-1);
-	if ((inum = s.st_ino) == IROOT) {
-		dev = s.st_dev;
-		if ((fd = open("/",0))<0) return(-1);
-		if (fstat(fd,&s)<0)
-			QUIT;
-		if (dev == s.st_dev) {
-			*curdirp++ = '/';
-			*curdirp = 0;
-			close(fd);
-			return(0);
-		}
-		slashp = entry.d_name;
-		slashp--;
-		while (read(fd,&entry,sizeof(entry)) == sizeof(entry)) {
-			if (entry.d_ino == 0) continue;
-			*slashp = '/';
-			if (stat(slashp,&s)<0) continue;
-			if (s.st_dev != dev) continue;
-			if ((s.st_mode&S_IFMT) != S_IFDIR) continue;
-			for (tp = slashp; *curdirp = (*tp++); curdirp++);
-			ADDSLASH;
-			*curdirp = 0;
-			close(fd);
-			return(0);
-		}
-		close(fd);
-		if ((fd = open("/etc/mtab", 0))<0) return(-1);
-		while (read(fd,&mtab,64) == 64) {
-			char devstr[40];
-			strcpy(devstr, "/dev/");
-			strcat(devstr, mtab.m_spcl);
-			if (stat(devstr,&s)<0)
-				continue;
-			if (s.st_rdev != dev) continue;
-			for (tp = mtab.m_dir; *curdirp = *tp++; curdirp++);
-			ADDSLASH;
-			*curdirp = 0;
-			close(fd);
-			return(0);
-		}
-		QUIT;
-	}
-	if ((fd = open("..",0))<0) return(-1);
-	for (entry.d_ino = 0; entry.d_ino != inum; )
-		if (read(fd,&entry,sizeof(entry)) != sizeof(entry))
-			QUIT;
-	close(fd);
-	if (chdir("..")<0) return(-1);
-	if (findir(-1)<0) r = -1;
-	else r = 0;
-	for (tp = entry.d_name; *curdirp = (*tp++); curdirp++);
-	ADDSLASH;
-	*curdirp = 0;
-	return(r);
+	i = dir->d_namlen;
+	if ((off+i+2) > 1024-1)
+		return;
+	for(j=off+1; j>=0; --j)
+		name[j+i+1] = name[j];
+	if (off >= 0)
+		name[i] = '/';
+	off += i+1;
+	name[off] = 0;
+	for(--i; i>=0; --i)
+		name[i] = dir->d_name[i];
+}
+
+static
+prexit(cp)
+char *cp;
+{
+	write(2, cp, strlen(cp));
+	exit(1);
 }
