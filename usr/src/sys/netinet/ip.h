@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)ip.h	7.5 (Berkeley) %G%
+ *	@(#)ip.h	7.6 (Berkeley) %G%
  */
 
 /*
@@ -45,6 +45,8 @@ struct ip {
 	u_short	ip_sum;			/* checksum */
 	struct	in_addr ip_src,ip_dst;	/* source and dest address */
 };
+
+#define	IP_MAXPACKET	65535		/* maximum packet size */
 
 /*
  * Definitions for options.
