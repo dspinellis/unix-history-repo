@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-xinu43.h	5.3 (Berkeley) %G%
+ *	@(#)os-xinu43.h	5.4 (Berkeley) %G%
  *
- * $Id: os-xinu43.h,v 5.2.1.3 91/05/07 22:20:07 jsp Alpha $
+ * $Id: os-xinu43.h,v 5.2.2.1 1992/02/09 15:10:58 jsp beta $
  *
  * mt Xinu 4.3 (MORE/bsd) definitions for Amd (automounter)
  * Should work on both Vax and HP ...

@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)am_ops.c	5.3 (Berkeley) %G%
+ *	@(#)am_ops.c	5.4 (Berkeley) %G%
  *
- * $Id: am_ops.c,v 5.2.1.5 91/05/07 22:17:46 jsp Alpha $
+ * $Id: am_ops.c,v 5.2.2.1 1992/02/09 15:08:17 jsp beta $
  *
  */
 
@@ -32,6 +32,9 @@ static am_ops *vops[] = {
 #endif
 #ifdef HAS_SFS
 	&sfs_ops,
+#endif
+#ifdef HAS_SFSX
+	&sfsx_ops,
 #endif
 #ifdef HAS_LOFS
 	&lofs_ops,
@@ -54,11 +57,13 @@ void ops_showfstypes(fp)
 FILE *fp;
 {
 	struct am_ops **ap;
-	char *sep = "";
+	int l = 0;
 
 	for (ap = vops; *ap; ap++) {
-		fprintf(fp, "%s%s", sep, (*ap)->fs_type);
-		sep = ", ";
+		fputs((*ap)->fs_type, fp);
+		if (ap[1]) fputs(", ", fp);
+		l += strlen((*ap)->fs_type) + 2;
+		if (l > 60) { l = 0; fputs("\n    ", fp); }
 	}
 }
 

@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-aix3.h	5.3 (Berkeley) %G%
+ *	@(#)os-aix3.h	5.4 (Berkeley) %G%
  *
- * $Id: os-aix3.h,v 5.2.1.2 91/05/07 22:19:25 jsp Alpha $
+ * $Id: os-aix3.h,v 5.2.2.1 1992/02/09 15:10:03 jsp beta $
  *
  * AIX 3.1 definitions for Amd (automounter)
  */

@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount_xdr.c	5.3 (Berkeley) %G%
+ *	@(#)mount_xdr.c	5.4 (Berkeley) %G%
  *
- * $Id: mount_xdr.c,v 5.2.1.2 91/05/07 22:18:55 jsp Alpha $
+ * $Id: mount_xdr.c,v 5.2.2.1 1992/02/09 15:09:28 jsp beta $
  *
  */
 

@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)efs_ops.c	5.3 (Berkeley) %G%
+ *	@(#)efs_ops.c	5.4 (Berkeley) %G%
  *
- * $Id: efs_ops.c,v 5.2.1.3 91/05/07 22:17:50 jsp Alpha $
+ * $Id: efs_ops.c,v 5.2.2.1 1992/02/09 15:08:21 jsp beta $
  *
  */
 

@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_ops.c	5.3 (Berkeley) %G%
+ *	@(#)nfs_ops.c	1.3 (Berkeley) 6/26/91
  *
- * $Id: nfs_ops.c,v 5.2.1.6 91/05/07 22:18:16 jsp Alpha $
+ * $Id: nfs_ops.c,v 5.2.2.1 1992/02/09 15:08:47 jsp beta $
  *
  */
 
@@ -426,6 +426,7 @@ mntfs *mf;
 	return 0;
 }
 
+int mount_nfs_fh P((struct fhstatus *fhp, char *dir, char *fs_name, char *opts, mntfs *mf));
 int mount_nfs_fh(fhp, dir, fs_name, opts, mf)
 struct fhstatus *fhp;
 char *dir;
@@ -441,6 +442,8 @@ mntfs *mf;
 	char host[MAXHOSTNAMELEN + MAXPATHLEN + 2];
 	fserver *fs = mf->mf_server;
 	int flags;
+	char *xopts;
+	int error;
 #ifdef notdef
 	unsigned short port;
 #endif /* notdef */
@@ -463,12 +466,17 @@ mntfs *mf;
 #endif /* NFS_ARGS_NEEDS_PATH */
 	/*path = colon + 1;*/
 
+	if (mf->mf_remopts && *mf->mf_remopts && !islocalnet(fs->fs_ip->sin_addr.s_addr))
+		xopts = strdup(mf->mf_remopts);
+	else
+		xopts = strdup(opts);
+
 	bzero((voidp) &nfs_args, sizeof(nfs_args));
 
 	mnt.mnt_dir = dir;
 	mnt.mnt_fsname = fs_name;
 	mnt.mnt_type = MTAB_TYPE_NFS;
-	mnt.mnt_opts = opts;
+	mnt.mnt_opts = xopts;
 	mnt.mnt_freq = 0;
 	mnt.mnt_passno = 0;
 
@@ -596,7 +604,9 @@ mntfs *mf;
 		nfs_args.flags |= NFSMNT_RONLY;
 #endif /* ULTRIX_HACK */
 
-	return mount_fs(&mnt, flags, (caddr_t) &nfs_args, retry, type);
+	error = mount_fs(&mnt, flags, (caddr_t) &nfs_args, retry, type);
+	free(xopts);
+	return error;
 }
 
 static int mount_nfs(dir, fs_name, opts, mf)

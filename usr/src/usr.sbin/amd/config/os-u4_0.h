@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-u4_0.h	5.3 (Berkeley) %G%
+ *	@(#)os-u4_0.h	5.4 (Berkeley) %G%
  *
- * $Id: os-u4_0.h,v 5.2.1.1 91/05/07 22:20:04 jsp Alpha $
+ * $Id: os-u4_0.h,v 5.2.2.1 1992/02/09 15:10:53 jsp beta $
  *
  * Ultrix 4.0 definitions for Amd (automounter)
  *		from Chris Lindblad <cjl@ai.mit.edu>

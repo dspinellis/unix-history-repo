@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)umount_fs.c	5.3 (Berkeley) %G%
+ *	@(#)umount_fs.c	5.4 (Berkeley) %G%
  *
- * $Id: umount_fs.c,v 5.2.1.3 91/05/07 22:18:39 jsp Alpha $
+ * $Id: umount_fs.c,v 5.2.2.1 1992/02/09 15:09:10 jsp beta $
  *
  */
 
@@ -59,6 +59,50 @@ eintr:
 
 #endif /* NEED_UMOUNT_BSD */
 
+#ifdef NEED_UMOUNT_OSF
+
+#include <sys/mount.h>		/* For MNT_NOFORCE */
+
+int umount_fs(fs_name)
+char *fs_name;
+{
+	int error;
+
+eintr:
+	error = umount(fs_name, MNT_NOFORCE);
+	if (error < 0)
+		error = errno;
+
+	switch (error) {
+	case EINVAL:
+	case ENOTBLK:
+		plog(XLOG_WARNING, "unmount: %s is not mounted", fs_name);
+		error = 0;	/* Not really an error */
+		break;
+
+	case ENOENT:
+		plog(XLOG_ERROR, "mount point %s: %m", fs_name);
+		break;
+
+	case EINTR:
+#ifdef DEBUG
+		/* not sure why this happens, but it does.  ask kirk one day... */
+		dlog("%s: unmount: %m", fs_name);
+#endif /* DEBUG */
+		goto eintr;
+
+#ifdef DEBUG
+	default:
+		dlog("%s: unmount: %m", fs_name);
+		break;
+#endif /* DEBUG */
+	}
+
+	return error;
+}
+
+#endif /* NEED_UMOUNT_OSF */
+
 #ifdef NEED_UMOUNT_FS
 
 int umount_fs(fs_name)
@@ -84,6 +128,15 @@ char *fs_name;
 #ifdef DEBUG
 		dlog("Trying unmount(%s)", mp_save->mnt->mnt_dir);
 #endif /* DEBUG */
+		/*
+		 * This unmount may hang leaving this
+		 * process with an exlusive lock on
+		 * /etc/mtab. Therefore it is necessary
+		 * to unlock mtab, do the unmount, then
+		 * lock mtab (again) and reread it and
+		 * finally update it.
+		 */
+		unlock_mntlist();
 		if (UNMOUNT_TRAP(mp_save->mnt) < 0) {
 			switch (error = errno) {
 			case EINVAL:
@@ -103,13 +156,33 @@ char *fs_name;
 				break;
 			}
 		}
+#ifdef DEBUG
+		dlog("Finished unmount(%s)", mp_save->mnt->mnt_dir);
+#endif
+
 
 #ifdef UPDATE_MTAB
 		if (!error) {
-			mnt_free(mp_save->mnt);
-			mp_save->mnt = 0;
-
-			rewrite_mtab(mlist);
+		        free_mntlist(mlist);
+			mp = mlist = read_mtab(fs_name);
+			
+			/*
+			 * Search the mount table looking for
+			 * the correct (ie last) matching entry
+			 */
+			mp_save = 0;
+			while (mp) {
+				if (strcmp(mp->mnt->mnt_fsname, fs_name) == 0 ||
+						strcmp(mp->mnt->mnt_dir, fs_name) == 0)
+					mp_save = mp;
+				mp = mp->mnext;
+			}
+			
+			if (mp_save) {
+				mnt_free(mp_save->mnt);
+				mp_save->mnt = 0;
+				rewrite_mtab(mlist);
+			}
 		}
 #endif /* UPDATE_MTAB */
 	} else {

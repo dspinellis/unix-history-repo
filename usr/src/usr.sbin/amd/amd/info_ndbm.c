@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)info_ndbm.c	5.3 (Berkeley) %G%
+ *	@(#)info_ndbm.c	5.4 (Berkeley) %G%
  *
- * $Id: info_ndbm.c,v 5.2.1.3 91/05/07 22:18:00 jsp Alpha $
+ * $Id: info_ndbm.c,v 5.2.2.1 1992/02/09 15:08:31 jsp beta $
  *
  */
 

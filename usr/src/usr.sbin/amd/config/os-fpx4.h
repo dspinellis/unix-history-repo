@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-fpx4.h	5.3 (Berkeley) %G%
+ *	@(#)os-fpx4.h	5.4 (Berkeley) %G%
  *
- * $Id: os-fpx4.h,v 5.2.1.2 91/05/07 22:19:40 jsp Alpha $
+ * $Id: os-fpx4.h,v 5.2.2.1 1992/02/09 15:10:19 jsp beta $
  *
  * Celerity FPX 4.1/2 definitions for Amd (automounter)
  *      from Stephen Pope <scp@grizzly.acl.lanl.gov>

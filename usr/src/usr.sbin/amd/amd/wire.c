@@ -9,19 +9,22 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)wire.c	5.3 (Berkeley) %G%
+ *	@(#)wire.c	5.4 (Berkeley) %G%
  *
- * $Id: wire.c,v 5.2.1.5 91/05/07 22:14:21 jsp Alpha $
+ * $Id: wire.c,v 5.2.2.1 1992/02/09 15:09:15 jsp beta $
  *
  */
 
 /*
- * This routine returns the subnet (address&netmask) for the primary network
+ * This function returns the subnet (address&netmask) for the primary network
  * interface.  If the resulting address has an entry in the hosts file, the
  * corresponding name is retuned, otherwise the address is returned in
  * standard internet format.
+ * As a side-effect, a list of local IP/net address is recorded for use
+ * by the islocalnet() function.
  *
- * From: Paul Anderson (23/4/90)
+ * Derived from original by Paul Anderson (23/4/90)
+ * Updates from Dirk Grunwald (11/11/91)
  */
 
 #include "am.h"
@@ -30,7 +33,21 @@
 
 #define NO_SUBNET "notknown"
 
+/*
+ * List of locally connected networks
+ */
+typedef struct addrlist addrlist;
+struct addrlist {
+	addrlist *ip_next;
+	unsigned long ip_addr;
+	unsigned long ip_mask;
+};
+static addrlist *localnets = 0;
+
 #ifdef SIOCGIFFLAGS
+#ifdef STELLIX
+#include <sys/sema.h>
+#endif /* STELLIX */
 #include <net/if.h>
 #include <netdb.h>
 
@@ -53,6 +70,7 @@ char *getwire()
 	unsigned long address, netmask, subnet;
 	char buf[GFBUFLEN], *s;
 	int sk = -1;
+	char *netname = 0;
 
 	/*
 	 * Get suitable socket
@@ -93,6 +111,7 @@ char *getwire()
 	 * Scan the list looking for a suitable interface
 	 */
 	for (cp = buf; cp < cplim; cp += size(ifr)) {
+		addrlist *al;
 		ifr = (struct ifreq *) cp;
 
 		if (ifr->ifr_addr.sa_family != AF_INET)
@@ -104,7 +123,7 @@ char *getwire()
 		 * Get interface flags
 		 */
 		if (ioctl(sk, SIOCGIFFLAGS, (caddr_t) ifr) < 0)
-			goto out;
+			continue;
 
 		/*
 		 * If the interface is a loopback, or its not running
@@ -119,48 +138,86 @@ char *getwire()
 		 * Get the netmask of this interface
 		 */
 		if (ioctl(sk, SIOCGIFNETMASK, (caddr_t) ifr) < 0)
-			goto out;
+			continue;
 
 		netmask = ((struct sockaddr_in *) &ifr->ifr_addr)->sin_addr.s_addr;
 
-		(void) close(sk);
+		/*
+		 * Add interface to local network list
+		 */
+		al = ALLOC(addrlist);
+		al->ip_addr = address;
+		al->ip_mask = netmask;
+		al->ip_next = localnets;
+		localnets = al;
 
-		/*
-		 * Figure out the subnet's network address
-		 */
-		subnet = address & netmask;
-#ifdef IN_CLASSA
-		if (IN_CLASSA(subnet))
-			subnet >>= IN_CLASSA_NSHIFT;
-		else if (IN_CLASSB(subnet))
-			subnet >>= IN_CLASSB_NSHIFT;
-		else if (IN_CLASSC(subnet))
-			subnet >>= IN_CLASSC_NSHIFT;
-#endif
-		/*
-		 * Now get a usable name.
-		 * First use the network database,
-		 * then the host database,
-		 * and finally just make a dotted quad.
-		 */
-		np = getnetbyaddr(subnet, AF_INET);
-		if (np)
-			s = np->n_name;
-		else {
+		if (netname == 0) {
+			unsigned long net;
+			unsigned long mask;
+			unsigned long subnetshift;
+			/*
+			 * Figure out the subnet's network address
+			 */
 			subnet = address & netmask;
-			hp = gethostbyaddr((char *) &subnet, 4, AF_INET);
-			if (hp)
-				s = hp->h_name;
-			else
-				s = inet_dquad(buf, subnet);
-		}
+		  
+#ifdef IN_CLASSA
+			subnet = ntohl(subnet); 
 
-		return strdup(s);
+			if (IN_CLASSA(subnet)) {
+				mask = IN_CLASSA_NET;
+				subnetshift = 8;
+			} else if (IN_CLASSB(subnet)) {
+				mask = IN_CLASSB_NET;
+				subnetshift = 8;
+			} else {
+				mask = IN_CLASSC_NET;
+				subnetshift = 4;
+			}
+
+			/*
+			 * If there are more bits than the standard mask
+			 * would suggest, subnets must be in use.
+			 * Guess at the subnet mask, assuming reasonable
+			 * width subnet fields.
+			 */
+			while (subnet &~ mask)
+		  		mask = (long)mask >> subnetshift;
+
+			net = subnet & mask;
+			while ((mask & 1) == 0)
+				mask >>= 1, net >>= 1;
+
+			/*
+			 * Now get a usable name.
+			 * First use the network database,
+			 * then the host database,
+			 * and finally just make a dotted quad.
+			 */
+
+			np = getnetbyaddr(net, AF_INET);
+#else
+			/* This is probably very wrong. */
+			np = getnetbyaddr(subnet, AF_INET);
+#endif /* IN_CLASSA */
+			if (np)
+				s = np->n_name;
+			else {
+				subnet = address & netmask;
+				hp = gethostbyaddr((char *) &subnet, 4, AF_INET);
+				if (hp)
+					s = hp->h_name;
+				else
+					s = inet_dquad(buf, subnet);
+			}
+			netname = strdup(s);
+		}
 	}
 
 out:
 	if (sk >= 0)
 		(void) close(sk); 
+	if (netname)
+		return netname;
 	return strdup(NO_SUBNET);
 }
 
@@ -172,3 +229,25 @@ char *getwire()
 	return strdup(NO_SUBNET);
 }
 #endif /* SIOCGIFFLAGS */
+
+/*
+ * Determine whether a network is on a local network
+ * (addr) is in network byte order.
+ */
+int islocalnet P((unsigned long addr));
+int islocalnet(addr)
+unsigned long addr;
+{
+	addrlist *al;
+
+	for (al = localnets; al; al = al->ip_next)
+		if (((addr ^ al->ip_addr) & al->ip_mask) == 0)
+			return TRUE;
+
+#ifdef DEBUG
+	{ char buf[16];
+	plog(XLOG_INFO, "%s is on a remote network", inet_dquad(buf, addr));
+	}
+#endif
+	return FALSE;
+}

@@ -10,9 +10,9 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)arch	5.3 (Berkeley) %G%
+#	@(#)arch	5.4 (Berkeley) %G%
 #
-# $Id: arch,v 5.2.1.4 91/05/07 22:20:31 jsp Alpha $
+# $Id: arch,v 5.2.2.1 1992/02/09 15:11:21 jsp beta $
 #
 # Figure out machine architecture
 #

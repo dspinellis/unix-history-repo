@@ -10,9 +10,9 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)newvers.sh	5.4 (Berkeley) %G%
+#	@(#)newvers.sh	5.5 (Berkeley) %G%
 #
-# $Id: newvers.sh,v 5.2.1.4 91/05/07 22:20:29 jsp Alpha $
+# $Id: newvers.sh,v 5.2.2.1 1992/02/09 15:11:19 jsp beta $
 #
 PATH=/usr/ucb:/bin:/usr/bin:$PATH
 if [ $# -ne 3 ]; then echo "Usage: newvers program arch os" >&2; exit 1; fi

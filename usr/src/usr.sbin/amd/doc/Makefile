@@ -11,7 +11,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
 
 PROG = amdref

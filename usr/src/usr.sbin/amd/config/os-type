@@ -10,9 +10,9 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)os-type	5.4 (Berkeley) %G%
+#	@(#)os-type	5.5 (Berkeley) %G%
 #
-# $Id: os-type,v 5.2.1.5 91/05/07 22:20:32 jsp Alpha $
+# $Id: os-type,v 5.2.2.1 1992/02/09 15:11:23 jsp beta $
 #
 
 #
@@ -33,6 +33,7 @@ case "`exec 2>/dev/null; head -2 /etc/motd`" in
 *"Ultrix V3."*)			OS=u3_0;;
 *"Ultrix-32 V3."*)		OS=u3_0;;
 *"Ultrix Worksystem V2."*)	OS=u3_0;;
+*"ULTRIX V4.2"*)		OS=u4_2;;
 *"ULTRIX V4."*)			OS=u4_0;;
 *"HLH OTS Version 1."*)		OS=hlh42;;
 *"RISC iX release 1."*)		OS=riscix;;
@@ -84,6 +85,8 @@ case "`exec 2>/dev/null; head -2 /etc/motd`" in
 					OS=next
 				elif [ -f /usr/lib/libgl.a ]; then
 					OS=irix
+				elif [ -f /stellix ]; then
+					OS=stellix
 				else
 					case "`(sh ../config/arch)2>/dev/null`" in
 					ibm032)    OS=acis43;;

@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)wr_dumpset.c	5.3 (Berkeley) %G%
+ *	@(#)wr_dumpset.c	5.4 (Berkeley) %G%
  *
- * $Id: wr_dumpset.c,v 5.2.1.3 91/05/07 22:19:11 jsp Alpha $
+ * $Id: wr_dumpset.c,v 5.2.2.1 1992/02/09 15:09:47 jsp beta $
  *
  */
 

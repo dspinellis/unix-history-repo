@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mtab_file.c	5.3 (Berkeley) %G%
+ *	@(#)mtab_file.c	5.4 (Berkeley) %G%
  *
- * $Id: mtab_file.c,v 5.2.1.3 91/05/07 22:19:58 jsp Alpha $
+ * $Id: mtab_file.c,v 5.2.2.1 1992/02/09 15:10:42 jsp beta $
  *
  */
 
@@ -238,6 +238,7 @@ void rewrite_mtab(mp)
 mntlist *mp;
 {
 	FILE *mfp;
+	int error = 0;
 
 	/*
 	 * Concoct a temporary name in the same
@@ -281,23 +282,46 @@ enfile2:
 			goto enfile2;
 		}
 		plog(XLOG_ERROR, "setmntent(\"%s\", \"w\"): %m", tmpname);
-		return;
+		error = 1;
+		goto out;
 	}
 
 	while (mp) {
-		if (mp->mnt)
-			if (addmntent(mfp, mp->mnt))
+		if (mp->mnt) {
+			if (addmntent(mfp, mp->mnt)) {
 				plog(XLOG_ERROR, "Can't write entry to %s", tmpname);
+				error = 1;
+				goto out;
+			}
+		}
 		mp = mp->mnext;
 	}
 
-	endmntent(mfp);
+	/*
+	 * SunOS 4.1 manuals say that the return code from entmntent()
+	 * is always 1 and to treat as a void.  That means we need to
+	 * call fflush() to make sure the new mtab file got written.
+	 */
+	if (fflush(mfp)) {
+		plog(XLOG_ERROR, "flush new mtab file: %m");
+		error = 1;
+		goto out;
+	}
+
+	(void) endmntent(mfp);
 
 	/*
 	 * Rename temporary mtab to real mtab
 	 */
-	if (rename(tmpname, mtab) < 0)
+	if (rename(tmpname, mtab) < 0) {
 		plog(XLOG_ERROR, "rename %s to %s: %m", tmpname, mtab);
+		error = 1;
+		goto out;
+	}
+
+out:
+	if (error)
+		(void) unlink(tmpname);
 }
 
 #ifdef MTAB_STRIPNL
@@ -329,7 +353,9 @@ enfile:
 #endif /* MTAB_STRIPNL */
 		if (addmntent(mfp, mp))
 			plog(XLOG_ERROR, "Couldn't write %s: %m", mtab);
-		endmntent(mfp);
+		if (fflush(mfp))
+			plog(XLOG_ERROR, "Couldn't flush %s: %m", mtab);
+		(void) endmntent(mfp);
 	} else {
 		if (errno == ENFILE && retries < NFILE_RETRIES) {
 			sleep(1);

@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)amq_svc.c	5.3 (Berkeley) %G%
+ *	@(#)amq_svc.c	5.4 (Berkeley) %G%
  *
- * $Id: amq_svc.c,v 5.2.1.3 91/05/07 22:18:53 jsp Alpha $
+ * $Id: amq_svc.c,v 5.2.2.1 1992/02/09 15:09:26 jsp beta $
  *
  */
 

@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-dgux.h	5.3 (Berkeley) %G%
+ *	@(#)os-dgux.h	5.4 (Berkeley) %G%
  *
- * $Id: os-dgux.h,v 5.2.1.2 91/05/07 22:19:39 jsp Alpha $
+ * $Id: os-dgux.h,v 5.2.2.1 1992/02/09 15:10:18 jsp beta $
  *
  * dg/ux definitions for Amd (automounter)
  */

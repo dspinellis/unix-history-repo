@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)host_ops.c	5.3 (Berkeley) %G%
+ *	@(#)host_ops.c	5.4 (Berkeley) %G%
  *
- * $Id: host_ops.c,v 5.2.1.6 91/05/07 22:17:53 jsp Alpha $
+ * $Id: host_ops.c,v 5.2.2.1 1992/02/09 15:08:24 jsp beta $
  *
  */
 
@@ -34,7 +34,7 @@
  * Define HOST_RPC_UDP to use dgram instead of stream RPC.
  * Datagrams are generally much faster.
  */
-#define	HOST_RPC_UDP
+/*#define	HOST_RPC_UDP*/
 
 /*
  * Define HOST_MKDIRS to make Amd automatically try
@@ -220,11 +220,8 @@ mntfs *mf;
 	mntlist *mlist;
 	char fs_name[MAXPATHLEN], *rfs_dir;
 	char mntpt[MAXPATHLEN];
-
-#ifdef HOST_RPC_UDP
 	struct timeval tv;
 	tv.tv_sec = 10; tv.tv_usec = 0;
-#endif /* HOST_RPC_UDP */
 
 	/*
 	 * Read the mount list
@@ -246,14 +243,11 @@ mntfs *mf;
 	 */
 	sin.sin_port = 0;
 	/*
-	 * Make a client end-point
+	 * Make a client end-point.
+	 * Try TCP first
 	 */
-#ifdef HOST_RPC_UDP
-	if ((client = clntudp_create(&sin, MOUNTPROG, MOUNTVERS, tv, &sock)) == NULL)
-#else
-	if ((client = clnttcp_create(&sin, MOUNTPROG, MOUNTVERS, &sock, 0, 0)) == NULL)
-#endif /* HOST_RPC_UDP */
-	{
+	if ((client = clnttcp_create(&sin, MOUNTPROG, MOUNTVERS, &sock, 0, 0)) == NULL &&
+		(client = clntudp_create(&sin, MOUNTPROG, MOUNTVERS, tv, &sock)) == NULL) {
 		plog(XLOG_ERROR, "Failed to make rpc connection to mountd on %s", host);
 		error = EIO;
 		goto out;

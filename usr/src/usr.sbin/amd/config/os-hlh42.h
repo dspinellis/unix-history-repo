@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-hlh42.h	5.3 (Berkeley) %G%
+ *	@(#)os-hlh42.h	5.4 (Berkeley) %G%
  *
- * $Id: os-hlh42.h,v 5.2.1.3 91/05/07 22:19:42 jsp Alpha $
+ * $Id: os-hlh42.h,v 5.2.2.1 1992/02/09 15:10:22 jsp beta $
  *
  * HLH OTS definitions for Amd (automounter)
  */

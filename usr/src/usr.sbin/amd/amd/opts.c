@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)opts.c	5.3 (Berkeley) %G%
+ *	@(#)opts.c	1.3 (Berkeley) 6/26/91
  *
- * $Id: opts.c,v 5.2.1.7 91/05/07 22:18:24 jsp Alpha $
+ * $Id: opts.c,v 5.2.2.1 1992/02/09 15:08:54 jsp beta $
  *
  */
 
@@ -68,6 +68,7 @@ static struct opt {
 	{ S("wire"), 0, &wire },
 	{ S("byte"), 0, &endian },
 	{ S("os"), 0, &op_sys },
+	{ S("remopts"), &fs_static.opt_remopts, 0 },
 	{ S("mount"), &fs_static.opt_mount, 0 },
 	{ S("unmount"), &fs_static.opt_unmount, 0 },
 	{ S("cache"), &fs_static.opt_cache, 0 },
@@ -107,6 +108,7 @@ static opt_apply expansions[] = {
 	{ &fs_static.opt_rfs, "${path}" },
 	{ &fs_static.opt_fs, "${autodir}/${rhost}${rfs}" },
 	{ &fs_static.opt_opts, "rw" },
+	{ &fs_static.opt_remopts, "${opts}" },
 	{ &fs_static.opt_mount, 0 },
 	{ &fs_static.opt_unmount, 0 },
 	{ 0, 0 },
@@ -125,6 +127,7 @@ static opt_apply to_free[] = {
 	{ &fs_static.opt_fs, 0 },
 	{ &fs_static.opt_rhost, 0 },
 	{ &fs_static.opt_opts, 0 },
+	{ &fs_static.opt_remopts, 0 },
 	{ &fs_static.opt_mount, 0 },
 	{ &fs_static.opt_unmount, 0 },
 	{ &vars[0], 0 },
@@ -321,8 +324,14 @@ char *p;
 		char *t = f;
 		do {
 			/* assert(*f == '/'); */
-			/* copy a single / across */
-			*t++ = *f++;
+			if (f == t && f[0] == '/' && f[1] == '/') {
+				/* copy double slash iff first */
+				*t++ = *f++;
+				*t++ = *f++;
+			} else {
+				/* copy a single / across */
+				*t++ = *f++;
+			}
 
 			/* assert(f[-1] == '/'); */
 			/* skip past more /'s */

@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)info_nis.c	5.3 (Berkeley) %G%
+ *	@(#)info_nis.c	5.4 (Berkeley) %G%
  *
- * $Id: info_nis.c,v 5.2.1.4 91/05/07 22:18:01 jsp Alpha $
+ * $Id: info_nis.c,v 5.2.2.1 1992/02/09 15:08:32 jsp beta $
  *
  */
 
@@ -30,17 +30,25 @@
  */
 static int determine_nis_domain(P_void)
 {
+static	int nis_not_running = 0;
+
 	char default_domain[YPMAXDOMAIN];
 
+	if (nis_not_running)
+		return ENOENT;
+
 	if (getdomainname(default_domain, sizeof(default_domain)) < 0) {
+		nis_not_running = 1;
 		plog(XLOG_ERROR, "getdomainname: %m");
 		return EIO;
 	}
 
 	if (!*default_domain) {
-		plog(XLOG_ERROR, "NIS domain name is not set");
+		nis_not_running = 1;
+		plog(XLOG_WARNING, "NIS domain name is not set.  NIS ignored.");
 		return ENOENT;
 	}
+
 	domain = strdup(default_domain);
 
 	return 0;

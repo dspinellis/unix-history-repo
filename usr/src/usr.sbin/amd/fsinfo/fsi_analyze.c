@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fsi_analyze.c	5.3 (Berkeley) %G%
+ *	@(#)fsi_analyze.c	5.4 (Berkeley) %G%
  *
- * $Id: fsi_analyze.c,v 5.2.1.3 91/05/07 22:19:06 jsp Alpha $
+ * $Id: fsi_analyze.c,v 5.2.2.1 1992/02/09 15:09:41 jsp beta $
  *
  */
 

@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-hpux.h	5.3 (Berkeley) %G%
+ *	@(#)os-hpux.h	5.4 (Berkeley) %G%
  *
- * $Id: os-hpux.h,v 5.2.1.5 91/05/07 22:19:44 jsp Alpha $
+ * $Id: os-hpux.h,v 5.2.2.1 1992/02/09 15:10:23 jsp beta $
  *
  * HP/9000 HP-UX definitions for Amd (automounter)
  */

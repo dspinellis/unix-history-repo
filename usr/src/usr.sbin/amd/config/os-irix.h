@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-irix.h	5.3 (Berkeley) %G%
+ *	@(#)os-irix.h	5.4 (Berkeley) %G%
  *
- * $Id: os-irix.h,v 5.2.1.4 91/05/07 22:19:47 jsp Alpha $
+ * $Id: os-irix.h,v 5.2.2.1 1992/02/09 15:10:28 jsp beta $
  *
  * IRIX 3.3 definitions for Amd (automounter)
  * Contributed by Scott R. Presnell <srp@cgl.ucsf.edu>

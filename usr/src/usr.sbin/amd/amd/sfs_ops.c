@@ -9,20 +9,28 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sfs_ops.c	5.3 (Berkeley) %G%
+ *	@(#)sfs_ops.c	5.4 (Berkeley) %G%
  *
- * $Id: sfs_ops.c,v 5.2.1.3 91/05/07 22:18:33 jsp Alpha $
+ * $Id: sfs_ops.c,v 5.2.2.1 1992/02/09 15:09:04 jsp beta $
  *
  */
 
 #include "am.h"
 
-#ifdef HAS_SFS
+#if defined(HAS_SFS) || defined(HAS_SFSX)
+#define NEED_SFS_MATCH
+#define NEED_SFS_UMOUNT
+#endif
 
 /*
  * Symbol-link file system
  */
 
+#ifdef HAS_SFSX
+#include <sys/stat.h>
+#endif
+
+#ifdef NEED_SFS_MATCH
 /*
  * SFS needs a link.
  */
@@ -69,7 +77,38 @@ am_opts *fo;
 
 	return strdup(fo->opt_fs);
 }
+#endif
 
+#ifdef HAS_SFSX
+/*ARGUSED*/
+static int sfsx_mount P((am_node *mp));
+static int sfsx_mount(mp)
+am_node *mp;
+{
+	/*
+	 * Check for existence of target.
+	 */
+	struct stat stb;
+	char *ln;
+
+	if (mp->am_link)
+		ln = mp->am_link;
+	else /* should never occur */
+		ln = mp->am_mnt->mf_mount;
+
+	/*
+	 * Use lstat, not stat, since we don't
+	 * want to know if the ultimate target of
+	 * a symlink chain exists, just the first.
+	 */
+	if (lstat(ln, &stb) < 0)
+		return errno;
+
+	return 0;
+}
+#endif
+
+#ifdef HAS_SFS
 /*ARGUSED*/
 static int sfs_fmount(mf)
 mntfs *mf;
@@ -80,17 +119,21 @@ mntfs *mf;
 
 	return 0;
 }
+#endif
 
+#ifdef NEED_SFS_UMOUNT
 /*ARGUSED*/
 static int sfs_fumount(mf)
 mntfs *mf;
 {
 	return 0;
 }
+#endif
 
 /*
- * Ops structure
+ * Ops structures
  */
+#ifdef HAS_SFS
 am_ops sfs_ops = {
 	"link",
 	sfs_match,
@@ -113,3 +156,27 @@ am_ops sfs_ops = {
 };
 
 #endif /* HAS_SFS */
+
+#ifdef HAS_SFSX
+struct am_ops sfsx_ops = {
+	"linkx",
+	sfs_match,
+	0, /* sfsx_init */
+	sfsx_mount,
+	0,
+	auto_fumount,
+	sfs_fumount,
+	efs_lookuppn,
+	efs_readdir,
+	0, /* sfsx_readlink */
+	0, /* sfsx_mounted */
+	0, /* sfsx_umounted */
+	find_afs_srvr,
+#ifdef FLUSH_KERNEL_NAME_CACHE
+	FS_BACKGROUND
+#else /* FLUSH_KERNEL_NAME_CACHE */
+	FS_MBACKGROUND
+#endif /* FLUSH_KERNEL_NAME_CACHE */
+};
+
+#endif /* HAS_SFSX */
