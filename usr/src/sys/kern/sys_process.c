@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys_process.c	7.13 (Berkeley) %G%
+ *	@(#)sys_process.c	7.14 (Berkeley) %G%
  */
 
 #define IPCREG
@@ -11,14 +11,14 @@
 #include "user.h"
 #include "proc.h"
 #include "vnode.h"
-#include "text.h"
 #include "seg.h"
 #include "buf.h"
 #include "ptrace.h"
 
 #include "machine/reg.h"
 #include "machine/psl.h"
-#include "machine/pte.h"
+#include "../vm/vm_page.h"
+#include "../vm/vm_prot.h"
 
 /*
  * Priority for tracing
@@ -95,8 +95,6 @@ procxmt(p)
 	register struct proc *p;
 {
 	register int i, *poff;
-	register struct text *xp;
-	struct vattr vattr;
 
 	if (ipc.ip_lock != p->p_pid)
 		return (0);
@@ -130,37 +128,22 @@ procxmt(p)
 		break;
 
 	case PT_WRITE_I:		/* write the child's text space */
-		/*
-		 * If text, must assure exclusive use
-		 */
-		if (xp = p->p_textp) {
-			if (xp->x_count != 1 ||
-			    VOP_GETATTR(xp->x_vptr, &vattr, u.u_cred) ||
-			    (vattr.va_mode & VSVTX))
-				goto error;
-			xp->x_flag |= XTRC;
-		}
-		i = -1;
 		if ((i = suiword((caddr_t)ipc.ip_addr, ipc.ip_data)) < 0) {
-			if (!chgprot((caddr_t)ipc.ip_addr, RW) &&
-			    !chgprot((caddr_t)ipc.ip_addr+(sizeof(int)-1), RW))
+			vm_offset_t sa, ea;
+			int rv;
+
+			sa = trunc_page((vm_offset_t)ipc.ip_addr);
+			ea = round_page((vm_offset_t)ipc.ip_addr+sizeof(int)-1);
+			rv = vm_map_protect(p->p_map, sa, ea,
+					VM_PROT_DEFAULT, FALSE);
+			if (rv == KERN_SUCCESS) {
 				i = suiword((caddr_t)ipc.ip_addr, ipc.ip_data);
-			(void) chgprot((caddr_t)ipc.ip_addr, RO);
-			(void) chgprot((caddr_t)ipc.ip_addr+(sizeof(int)-1), RO);
+				(void) vm_map_protect(p->p_map, sa, ea,
+					VM_PROT_READ|VM_PROT_EXECUTE, FALSE);
+			}
 		}
 		if (i < 0)
 			goto error;
-#if defined(tahoe)
-		/* make sure the old value is not in cache */
-		ckeyrelease(p->p_ckey);
-		p->p_ckey = getcodekey();
-#endif
-		if (xp) {
-			xp->x_flag |= XWRIT;
-#if defined(tahoe)
-			xp->x_ckey = p->p_ckey;
-#endif
-		}
 		break;
 
 	case PT_WRITE_D:		/* write the child's data space */

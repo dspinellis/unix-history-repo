@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_proc.c	7.12 (Berkeley) %G%
+ *	@(#)kern_proc.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -17,8 +17,6 @@
 #include "seg.h"
 #include "acct.h"
 #include "wait.h"
-#include "vm.h"
-#include "text.h"
 #include "file.h"
 #include "../ufs/quota.h"
 #include "uio.h"
@@ -28,7 +26,6 @@
 #include "tty.h"
 
 #include "machine/reg.h"
-#include "machine/pte.h"
 #include "machine/psl.h"
 
 /*

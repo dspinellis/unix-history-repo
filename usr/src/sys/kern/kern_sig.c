@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_sig.c	7.24 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.25 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -14,9 +14,7 @@
 #include "timeb.h"
 #include "times.h"
 #include "buf.h"
-#include "text.h"
 #include "seg.h"
-#include "vm.h"
 #include "acct.h"
 #include "uio.h"
 #include "kernel.h"
@@ -24,9 +22,9 @@
 #include "ktrace.h"
 
 #include "machine/reg.h"
-#include "machine/pte.h"
 #include "machine/psl.h"
 #include "machine/mtpr.h"
+#include "../vm/vm_param.h"
 
 #define	ttystopsigmask	(sigmask(SIGTSTP)|sigmask(SIGTTIN)|sigmask(SIGTTOU))
 #define	stopsigmask	(sigmask(SIGSTOP)|ttystopsigmask)
@@ -587,7 +585,7 @@ psignal(p, sig)
 		 * and don't clear any pending SIGCONT.
 		 */
 		if (p->p_pgrp->pg_jobc == 0 && action == SIG_DFL)
-			return;
+		        return;
 		/* FALLTHROUGH */
 
 	case SIGSTOP:
@@ -988,12 +986,6 @@ core()
 		vput(vp);
 		return (EFAULT);
 	}
-#ifdef MAPMEM
-	if (error = mmcore(p)) {
-		vput(vp);
-		return (error);
-	}
-#endif
 	itrunc(ip, (u_long)0);
 	u.u_acflag |= ACORE;
 #ifdef HPUXCOMPAT
@@ -1012,12 +1004,12 @@ core()
 	    (off_t)0, 1, (int *)0);
 	if (u.u_error == 0)
 		u.u_error = rdwri(UIO_WRITE, ip,
-		    (caddr_t)ctob(dptov(p, 0)),
+		error = vn_rdwr(UIO_WRITE, vp, u.u_daddr,
 		    (int)ctob(u.u_dsize),
 		    (off_t)ctob(UPAGES), 0, (int *)0);
 	if (u.u_error == 0)
 		u.u_error = rdwri(UIO_WRITE, ip,
-		    (caddr_t)ctob(sptov(p, u.u_ssize - 1)),
-		    (int)ctob(u.u_ssize),
+		    trunc_page(USRSTACK - ctob(u.u_ssize)),
+		    round_page(ctob(u.u_ssize)),
 		    (off_t)ctob(UPAGES)+ctob(u.u_dsize), 0, (int *)0);
 }
