@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)gettimeofday.2	6.7 (Berkeley) %G%
+.\"	@(#)gettimeofday.2	6.8 (Berkeley) %G%
 .\"
 .TH GETTIMEOFDAY 2 ""
 .UC 4
@@ -24,20 +24,13 @@ struct timeval *tp;
 struct timezone *tzp;
 .fi
 .SH DESCRIPTION
-The system's notion of the current Greenwich time and
-the current time zone
-is obtained with the
-.I gettimeofday
-call, and set with the
-.I settimeofday
-call.
-The time is expressed
-in seconds and microseconds since midnight (0 hour), January 1, 1970.
-The resolution of the system clock is hardware dependent,
-and the time may be updated continuously or in ``ticks.''
-If
-.I tzp
-is zero, the time zone information will not be returned or set.
+The system's notion of the current Greenwich time and the current time
+zone is obtained with the \fIgettimeofday\fP call, and set with the
+\fIsettimeofday\fP call.  The time is expressed in seconds and microseconds
+since midnight (0 hour), January 1, 1970.  The resolution of the system
+clock is hardware dependent, and the time may be updated continuously or
+in ``ticks.''  If \fItp\fP or \fItzp\fP is NULL, the associated time
+information will not be returned or set.
 .PP
 The structures pointed to by
 .I tp
