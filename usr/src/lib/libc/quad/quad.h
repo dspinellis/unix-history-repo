@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)quad.h	5.8 (Berkeley) %G%
+ *	@(#)quad.h	5.9 (Berkeley) %G%
  */
 
 /*
@@ -77,7 +77,7 @@ extern u_quad_t __qdivrem __P((u_quad_t u, u_quad_t v, u_quad_t *rem));
  * as u_quad_t, while gcc 2 correctly uses int.  Unfortunately, we still use
  * both compilers.
  */
-#ifdef sparc
+#if __GNUC__ >= 2
 typedef unsigned int	qshift_t;
 #else
 typedef u_quad_t	qshift_t;
