@@ -1,5 +1,5 @@
 /*
- * sccsid = "@(#)player.h	2.1 %G%";
+ * sccsid = "@(#)player.h	2.2 %G%";
  */
 #include <curses.h>
 #include "externs.h"
@@ -80,3 +80,4 @@ struct shipspecs *mc;		/* ms->specs */
 #define LEAVE_CAPTURED	1
 #define LEAVE_HURRICAN	2
 #define LEAVE_DRIVER	3
+#define LEAVE_FORK	4
