@@ -1,7 +1,21 @@
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ */
+
 #ifndef lint
-static char sccsid[] = "@(#)sliplogin.c	1.4 (Berkeley) %G%";
+char copyright[] =
+"@(#) Copyright (c) 1990 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)sliplogin.c	5.1 (Berkeley) %G%";
+#endif /* not lint */
+
 /* from static char *sccsid = "@(#)sliplogin.c	1.3	MS/ACF	89/04/18"; */
-#endif
 
 /*
  * sliplogin.c
