@@ -10,7 +10,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)moddi3.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)moddi3.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include "quad.h"
@@ -35,6 +35,6 @@ __moddi3(quad a, quad b)
 		ub = -(u_quad)b, neg ^= 1;
 	else
 		ub = b;
-	(void)__qdivmod(ua, ub, &ur);
+	(void)__qdivrem(ua, ub, &ur);
 	return (neg ? -ur : ur);
 }
