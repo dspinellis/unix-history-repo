@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)udp_usrreq.c	8.1 (Berkeley) %G%
+ *	@(#)udp_usrreq.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -228,6 +228,10 @@ udp_input(m, iphlen)
 	}
 	if (inp == 0) {
 		udpstat.udps_noport++;
+		if (m->m_flags & (M_BCAST | M_MCAST)) {
+			udpstat.udps_noportbcast++;
+			goto bad;
+		}
 		*ip = save_ip;
 		ip->ip_len += iphlen;
 		icmp_error(m, ICMP_UNREACH, ICMP_UNREACH_PORT, 0, 0);
