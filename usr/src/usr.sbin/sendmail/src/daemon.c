@@ -11,9 +11,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.45 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.46 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.45 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.46 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -123,7 +123,7 @@ getrequests()
 		printf("getrequests: port 0x%x\n", DaemonAddr.sin.sin_port);
 
 	/* get a socket for the SMTP connection */
-	socksize = opendaemonsocket();
+	socksize = opendaemonsocket(TRUE);
 
 	(void) setsignal(SIGCHLD, reapchild);
 
@@ -181,8 +181,7 @@ getrequests()
 		if (refusingconnections)
 		{
 			/* start listening again */
-			if (DaemonSocket < 0)
-				(void) opendaemonsocket();
+			(void) opendaemonsocket(FALSE);
 			setproctitle("accepting connections");
 			refusingconnections = FALSE;
 		}
@@ -307,7 +306,7 @@ getrequests()
 **	be set up in advance.
 **
 **	Parameters:
-**		none
+**		firsttime -- set if this is the initial open.
 **
 **	Returns:
 **		Size in bytes of the daemon socket addr.
@@ -318,7 +317,8 @@ getrequests()
 */
 
 int
-opendaemonsocket()
+opendaemonsocket(firsttime)
+	bool firsttime;
 {
 	int on = 1;
 	int socksize;
@@ -326,62 +326,65 @@ opendaemonsocket()
 	if (tTd(15, 2))
 		printf("opendaemonsocket()\n");
 
-	DaemonSocket = socket(DaemonAddr.sa.sa_family, SOCK_STREAM, 0);
-	if (DaemonSocket < 0)
+	if (firsttime || DaemonSocket < 0)
 	{
-		/* probably another daemon already */
-		syserr("opendaemonsocket: can't create server SMTP socket");
-	  severe:
+		DaemonSocket = socket(DaemonAddr.sa.sa_family, SOCK_STREAM, 0);
+		if (DaemonSocket < 0)
+		{
+			/* probably another daemon already */
+			syserr("opendaemonsocket: can't create server SMTP socket");
+		  severe:
 # ifdef LOG
-		if (LogLevel > 0)
-			syslog(LOG_ALERT, "problem creating SMTP socket");
+			if (LogLevel > 0)
+				syslog(LOG_ALERT, "problem creating SMTP socket");
 # endif /* LOG */
-		finis();
-	}
+			finis();
+		}
 
-	/* turn on network debugging? */
-	if (tTd(15, 101))
-		(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_DEBUG, (char *)&on, sizeof on);
+		/* turn on network debugging? */
+		if (tTd(15, 101))
+			(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_DEBUG, (char *)&on, sizeof on);
 
-	(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof on);
-	(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_KEEPALIVE, (char *)&on, sizeof on);
+		(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof on);
+		(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_KEEPALIVE, (char *)&on, sizeof on);
 
 #ifdef SO_RCVBUF
-	if (TcpRcvBufferSize > 0)
-	{
-		if (setsockopt(DaemonSocket, SOL_SOCKET, SO_RCVBUF,
-			       (char *) &TcpRcvBufferSize,
-			       sizeof(TcpRcvBufferSize)) < 0)
-			syserr("getrequests: setsockopt(SO_RCVBUF)");
-	}
+		if (TcpRcvBufferSize > 0)
+		{
+			if (setsockopt(DaemonSocket, SOL_SOCKET, SO_RCVBUF,
+				       (char *) &TcpRcvBufferSize,
+				       sizeof(TcpRcvBufferSize)) < 0)
+				syserr("getrequests: setsockopt(SO_RCVBUF)");
+		}
 #endif
 
-	switch (DaemonAddr.sa.sa_family)
-	{
+		switch (DaemonAddr.sa.sa_family)
+		{
 # ifdef NETINET
-	  case AF_INET:
-		socksize = sizeof DaemonAddr.sin;
-		break;
+		  case AF_INET:
+			socksize = sizeof DaemonAddr.sin;
+			break;
 # endif
 
 # ifdef NETISO
-	  case AF_ISO:
-		socksize = sizeof DaemonAddr.siso;
-		break;
+		  case AF_ISO:
+			socksize = sizeof DaemonAddr.siso;
+			break;
 # endif
 
-	  default:
-		socksize = sizeof DaemonAddr;
-		break;
-	}
+		  default:
+			socksize = sizeof DaemonAddr;
+			break;
+		}
 
-	if (bind(DaemonSocket, &DaemonAddr.sa, socksize) < 0)
-	{
-		syserr("getrequests: cannot bind");
-		(void) close(DaemonSocket);
-		goto severe;
+		if (bind(DaemonSocket, &DaemonAddr.sa, socksize) < 0)
+		{
+			syserr("getrequests: cannot bind");
+			(void) close(DaemonSocket);
+			goto severe;
+		}
 	}
-	if (listen(DaemonSocket, ListenQueueSize) < 0)
+	if (!firsttime && listen(DaemonSocket, ListenQueueSize) < 0)
 	{
 		syserr("getrequests: cannot listen");
 		(void) close(DaemonSocket);
