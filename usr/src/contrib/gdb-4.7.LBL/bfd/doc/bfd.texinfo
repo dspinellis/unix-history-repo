@@ -1,0 +1,471 @@
+\input texinfo.tex
+@setfilename bfd.info
+@c $Id: bfd.texinfo,v 1.12 1991/12/20 00:48:42 pesch Exp $
+@tex
+% NOTE LOCAL KLUGE TO AVOID TOO MUCH WHITESPACE
+\global\long\def\example{%
+\begingroup
+\let\aboveenvbreak=\par
+\let\afterenvbreak=\par
+\parskip=0pt
+\lisp}
+\global\long\def\Eexample{%
+\Elisp
+\endgroup
+\vskip -\parskip% to cancel out effect of following \par
+}
+@end tex
+@synindex fn cp
+
+@ifinfo
+@format
+START-INFO-DIR-ENTRY
+* Bfd: (bfd).			The Binary File Descriptor library.
+END-INFO-DIR-ENTRY
+@end format
+@end ifinfo
+
+@ifinfo
+This file documents the BFD library.
+
+Copyright (C) 1991 Free Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+@ignore
+Permission is granted to process this file through Tex and print the
+results, provided the printed document carries copying permission
+notice identical to this one except for the removal of this paragraph
+(this paragraph not being relevant to the printed manual).
+
+@end ignore
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, subject to the terms
+of the GNU General Public License, which includes the provision that the
+entire resulting derived work is distributed under the terms of a
+permission notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions.
+@end ifinfo
+@iftex
+@c@finalout
+@setchapternewpage on
+@c@setchapternewpage odd
+@settitle LIB BFD, the Binary File Descriptor Library
+@titlepage
+@title{libbfd}
+@subtitle{The Binary File Descriptor Library}
+@sp 1
+@subtitle First Edition---BFD version < 2.0
+@subtitle April 1991
+@author {Steve Chamberlain}
+@author {Cygnus Support}
+@page
+
+@tex
+\def\$#1${{#1}}  % Kluge: collect RCS revision info without $...$
+\xdef\manvers{\$Revision: 1.12 $}  % For use in headers, footers too
+{\parskip=0pt
+\hfill Cygnus Support\par
+\hfill sac\@cygnus.com\par
+\hfill {\it BFD}, \manvers\par
+\hfill \TeX{}info \texinfoversion\par
+}
+\global\parindent=0pt % Steve likes it this way
+@end tex
+
+@vskip 0pt plus 1filll
+Copyright @copyright{} 1991 Free Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, subject to the terms
+of the GNU General Public License, which includes the provision that the
+entire resulting derived work is distributed under the terms of a
+permission notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions.
+@end titlepage
+@end iftex
+
+@node Top, Overview, (dir), (dir)
+@ifinfo
+This file documents the binary file descriptor library libbfd.
+@end ifinfo
+
+@menu
+* Overview::			Overview of BFD
+* BFD front end::		BFD front end
+* BFD back end::		BFD back end
+* Index::			Index
+@end menu
+
+@node Overview, BFD front end, Top, Top
+@chapter Introduction
+@cindex BFD
+@cindex what is it?
+Simply put, BFD is a package which allows applications to use the
+same routines to operate on object files whatever the object file
+format.  A different object file format can be supported simply by
+creating a new BFD back end and adding it to the library.
+
+BFD is split into two parts; the front end and the many back ends.
+@itemize @bullet
+@item The front end of BFD provides the interface to the user. It manages
+memory, and various canonical data structures. The front end also
+decides which back end to use, and when to call back end routines.
+@item The back ends provide BFD its view of the real world. Each back
+end provides a set of calls which the BFD front end can use to maintain
+its canonical form. The back ends also may keep around information for
+their own use, for greater efficiency.
+@end itemize
+@menu
+* History::			History
+* How It Works::		How It Works
+* What BFD Version 1 Can Do::	What BFD Version 1 Can Do
+@end menu
+
+@node History, How It Works, Overview, Overview
+@section History
+
+One spur behind BFD was the desire, on the part of the GNU 960 team at
+Intel Oregon, for interoperability of applications on their COFF and
+b.out file formats.  Cygnus was providing GNU support for the team, and
+Cygnus was contracted to provide the required functionality.
+
+The name came from a conversation David Wallace was having with Richard
+Stallman about the library: RMS said that it would be quite hard---David
+said ``BFD''.  Stallman was right, but the name stuck.
+
+At the same time, Ready Systems wanted much the same thing, but for
+different object file formats: IEEE-695, Oasys, Srecords, a.out and 68k
+coff.
+
+BFD was first implemented by members of Cygnus Support; Steve
+Chamberlain (sac@@cygnus.com), John Gilmore (gnu@@cygnus.com), K.
+Richard Pixley (rich@@cygnus.com) and David Henkel-Wallace
+(gumby@@cygnus.com).
+
+
+
+@node How It Works, What BFD Version 1 Can Do, History, Overview
+@section How It Works
+
+To use the library, include @code{bfd.h} and link with @code{libbfd.a}.	
+
+BFD provides a common interface to the parts of an object file
+for a calling application. 
+
+When an application sucessfully opens a target file (object, archive or
+whatever) a pointer to an internal structure is returned. This pointer
+points to a structure called @code{bfd}, described in
+@code{include/bfd.h}.  Our convention is to call this pointer a BFD, and
+instances of it within code @code{abfd}.  All operations on
+the target object file are applied as methods to the BFD.  The mapping is
+defined within @code{bfd.h} in a set of macros, all beginning
+@samp{bfd}_.
+
+For example, this sequence would do what you would probably expect:
+return the number of sections in an object file attached to a BFD
+@code{abfd}. 
+
+@lisp
+@c @cartouche
+#include "bfd.h"
+
+unsigned int number_of_sections(abfd)
+bfd *abfd;
+@{
+  return bfd_count_sections(abfd);
+@}
+@c @end cartouche
+@end lisp
+
+The abstraction used within BFD is that an object file has a header,
+a number of sections containing raw data, a set of relocations, and some
+symbol information. Also, BFDs opened for archives have the
+additional attribute of an index and contain subordinate BFDs. This approach is
+fine for a.out and coff, but loses efficiency when applied to formats
+such as S-records and IEEE-695. 
+
+@node What BFD Version 1 Can Do,  , How It Works, Overview
+@section What BFD Version 1 Can Do
+As different information from the the object files is required,
+BFD reads from different sections of the file and processes them.
+For example a very common operation for the linker is processing symbol
+tables.  Each BFD back end provides a routine for converting
+between the object file's representation of symbols and an internal
+canonical format. When the linker asks for the symbol table of an object
+file, it calls through the memory pointer to the relevant BFD
+back end routine which reads and converts the table into a canonical
+form.  The linker then operates upon the canonical form. When the link is
+finished and the linker writes the output file's symbol table,
+another BFD back end routine is called which takes the newly
+created symbol table and converts it into the chosen output format.
+
+@menu
+* BFD information loss::	Information Loss
+* Mechanism::			Mechanism 
+@end menu
+
+@node BFD information loss, Mechanism, What BFD Version 1 Can Do, What BFD Version 1 Can Do
+@subsection Information Loss
+@emph{Some information is lost due to the nature of the file format.} The output targets
+supported by BFD do not provide identical facilities, and
+information which may be described in one form has nowhere to go in
+another format. One example of this is alignment information in
+@code{b.out}. There is nowhere in an @code{a.out} format file to store
+alignment information on the contained data, so when a file is linked
+from @code{b.out} and an @code{a.out} image is produced, alignment
+information will not propagate to the output file. (The linker will
+still use the alignment information internally, so the link is performed
+correctly).
+
+Another example is COFF section names. COFF files may contain an
+unlimited number of sections, each one with a textual section name. If
+the target of the link is a format which does not have many sections (eg
+@code{a.out}) or has sections without names (eg the Oasys format) the
+link cannot be done simply. You can circumvent this problem by
+describing the desired input-to-output section mapping with the linker command
+language.
+
+@emph{Information can be lost during canonicalization.} The BFD
+internal canonical form of the external formats is not exhaustive; there
+are structures in input formats for which there is no direct
+representation internally.  This means that the BFD back ends
+cannot maintain all possible data richness through the transformation
+between external to internal and back to external formats.
+
+This limitation is only a problem when an application reads one
+format and writes another.  Each BFD back end is responsible for
+maintaining as much data as possible, and the internal BFD
+canonical form has structures which are opaque to the BFD core,
+and exported only to the back ends. When a file is read in one format,
+the canonical form is generated for BFD and the application. At the
+same time, the back end saves away any information which may otherwise
+be lost. If the data is then written back in the same format, the back
+end routine will be able to use the canonical form provided by the
+BFD core as well as the information it prepared earlier.  Since
+there is a great deal of commonality between back ends, this mechanism
+is very useful. There is no information lost for this reason when
+linking or copying big endian COFF to little endian COFF, or @code{a.out} to
+@code{b.out}.  When a mixture of formats is linked, the information is
+only lost from the files whose format differs from the destination.
+
+@node Mechanism,  , BFD information loss, What BFD Version 1 Can Do
+@subsection Mechanism 
+The greatest potential for loss of information is when there is least
+overlap between the information provided by the source format, that
+stored by the canonical format, and the information needed by the
+destination format. A brief description of the canonical form may help
+you appreciate what kinds of data you can count on preserving across
+conversions.
+@cindex BFD canonical format
+@cindex internal object-file format
+
+@table @emph
+@item files
+Information on target machine architecture, particular implementation
+and format type are stored on a per-file basis. Other information
+includes a demand pageable bit and a write protected bit.  Note that
+information like Unix magic numbers is not stored here---only the magic
+numbers' meaning, so a @code{ZMAGIC} file would have both the demand
+pageable bit and the write protected text bit set.  The byte order of
+the target is stored on a per-file basis, so that big- and little-endian
+object files may be linked with one another.
+@c FIXME: generalize above from "link"?
+
+@item sections
+Each section in the input file contains the name of the section, the
+original address in the object file, various flags, size and alignment
+information and pointers into other BFD data structures.
+
+@item symbols
+Each symbol contains a pointer to the object file which originally
+defined it, its name, its value, and various flag bits.  When a
+BFD back end reads in a symbol table, the back end relocates all
+symbols to make them relative to the base of the section where they were
+defined.  This ensures that each symbol points to its containing
+section.  Each symbol also has a varying amount of hidden data to contain
+private data for the BFD back end.  Since the symbol points to the
+original file, the private data format for that symbol is accessible.
+@code{gld} can operate on a collection of symbols of wildly different
+formats without problems.
+
+Normal global and simple local symbols are maintained on output, so an
+output file (no matter its format) will retain symbols pointing to
+functions and to global, static, and common variables.  Some symbol
+information is not worth retaining; in @code{a.out} type information is
+stored in the symbol table as long symbol names.  This information would
+be useless to most COFF debuggers; the linker has command line switches
+to allow users to throw it away.
+
+There is one word of type information within the symbol, so if the
+format supports symbol type information within symbols (for example COFF,
+IEEE, Oasys) and the type is simple enough to fit within one word
+(nearly everything but aggregates) the information will be preserved.
+
+@item relocation level
+Each canonical BFD relocation record contains a pointer to the symbol to
+relocate to, the offset of the data to relocate, the section the data
+is in and a pointer to a relocation type descriptor. Relocation is
+performed effectively by message passing through the relocation type
+descriptor and symbol pointer. It allows relocations to be performed
+on output data using a relocation method only available in one of the
+input formats. For instance, Oasys provides a byte relocation format.
+A relocation record requesting this relocation type would point
+indirectly to a routine to perform this, so the relocation may be
+performed on a byte being written to a COFF file, even though 68k COFF
+has no such relocation type.
+
+@item line numbers
+Object formats can contain, for debugging purposes, some form of mapping
+between symbols, source line numbers, and addresses in the output file.
+These addresses have to be relocated along with the symbol information.
+Each symbol with an associated list of line number records points to the
+first record of the list.  The head of a line number list consists of a
+pointer to the symbol, which allows divination of the address of the
+function whose line number is being described. The rest of the list is
+made up of pairs: offsets into the section and line numbers. Any format
+which can simply derive this information can pass it successfully
+between formats (COFF, IEEE and Oasys).
+@end table
+
+@c FIXME: what is this line about?  Do we want introductory remarks 
+@c FIXME... on back ends?  commented out for now.
+@c What is a backend
+
+
+@node BFD front end, BFD back end, Overview, Top
+@chapter BFD front end
+@include  bfd.texi
+
+@menu
+* Memory Usage::
+* Initialization::
+* Sections::
+* Symbols::
+* Archives::
+* Formats::
+* Relocations::
+* Core Files::
+* Targets::
+* Architectures::
+* Opening and Closing::
+* Constructors::
+* Internal::
+* File Caching::
+@end menu
+
+@node Memory Usage, Initialization, BFD front end, BFD front end
+@section Memory Usage
+BFD keeps all its internal structures in obstacks. There is one obstack
+per open BFD file, into which the current state is stored. When a BFD is
+closed, the obstack is deleted, and so everything which has been
+allocated by libbfd for the closing file will be thrown away.
+
+BFD will not free anything created by an application, but pointers into
+@code{bfd} structures will be invalidated on a @code{bfd_close}; for example,
+after a @code{bfd_close} the vector passed to
+@code{bfd_canonicalize_symtab} will still be around, since it has been
+allocated by the application, but the data that it pointed to will be
+lost.
+
+The general rule is not to close a BFD until all operations dependent
+upon data from the BFD have been completed, or all the data from within
+the file has been copied. To help with the management of memory, there is a function
+(@code{bfd_alloc_size}) which returns the number of bytes in obstacks
+associated with the supplied BFD. This could be used to select the
+greediest open BFD, close it to reclaim the memory, perform some
+operation and reopen the BFD again, to get a fresh copy of the data structures.
+
+@node Initialization, Sections, Memory Usage, BFD front end
+@include  init.texi
+
+@node Sections, Symbols, Initialization, BFD front end
+@include  section.texi
+
+@node Symbols, Archives, Sections, BFD front end
+@include  syms.texi
+
+@node Archives, Formats, Symbols, BFD front end
+@include  archive.texi
+
+@node Formats, Relocations, Archives, BFD front end
+@include  format.texi
+
+@node Relocations, Core Files, Formats, BFD front end
+@include  reloc.texi
+
+@node Core Files, Targets, Relocations, BFD front end
+@include  core.texi
+
+@node Targets, Architectures, Core Files, BFD front end
+@include  targets.texi
+
+@node Architectures, Opening and Closing, Targets, BFD front end
+@include  archures.texi
+
+@node Opening and Closing, Constructors, Architectures, BFD front end
+@include  opncls.texi
+
+@node Constructors, Internal, Opening and Closing, BFD front end
+@include  ctor.texi
+
+@node Internal, File Caching, Constructors, BFD front end
+@include  libbfd.texi
+
+@node File Caching,  , Internal, BFD front end
+@include  cache.texi
+
+@node BFD back end, Index, BFD front end, Top
+@chapter BFD back end
+@menu
+* What to put where::
+* aout ::	a.out backends
+* coff ::	coff backends
+@ignore
+* oasys ::	oasys backends
+* ieee ::	ieee backend
+* srecord ::	s-record backend
+@end ignore
+@end menu
+@node What to Put Where, aout, BFD back end, BFD back end
+All of BFD lives in one directory.
+
+@node aout, coff, What to Put Where, BFD back end
+@include  aoutx.texi
+
+@node coff,  , aout, BFD back end
+@include  coffcode.texi
+
+@node Index,  , BFD back end, Top
+@unnumbered Index
+@printindex cp
+
+@tex
+% I think something like @colophon should be in texinfo.  In the
+% meantime:
+\long\def\colophon{\hbox to0pt{}\vfill
+\centerline{The body of this manual is set in}
+\centerline{\fontname\tenrm,}
+\centerline{with headings in {\bf\fontname\tenbf}}
+\centerline{and examples in {\tt\fontname\tentt}.}
+\centerline{{\it\fontname\tenit\/} and}
+\centerline{{\sl\fontname\tensl\/}}
+\centerline{are used for emphasis.}\vfill}
+\page\colophon
+% Blame: pesch@cygnus.com, 28mar91.
+@end tex
+
+@contents
+@bye
+
+
