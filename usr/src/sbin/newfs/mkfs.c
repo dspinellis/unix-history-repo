@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkfs.c	8.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkfs.c	8.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <unistd.h>
@@ -722,7 +722,7 @@ initcg(cylno, utime)
 		}
 	}
 	if (sblock.fs_contigsumsize > 0) {
-		long *sump = cg_clustersum(&acg);
+		int32_t *sump = cg_clustersum(&acg);
 		u_char *mapp = cg_clustersfree(&acg);
 		int map = *mapp++;
 		int bit = 1;
