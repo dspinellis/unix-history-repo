@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)routed.c	4.9 %G%";
+static char sccsid[] = "@(#)routed.c	4.10 %G%";
 #endif
 
 /*
@@ -140,7 +140,7 @@ getothers()
 		rtadd((struct sockaddr *)&dst, (struct sockaddr *)&gate, 1);
 		rt = rtlookup((struct sockaddr *)&dst);
 		if (rt)
-			rt->rt_state |= RTS_SILENT;
+			rt->rt_state |= RTS_HIDDEN;
 	}
 	fclose(fp);
 }
@@ -172,11 +172,11 @@ again:
 
 			/*
 			 * If the host is indicated to be
-			 * "silent" (i.e. it's one we got
+			 * "hidden" (i.e. it's one we got
 			 * from the initialization file),
 			 * don't time out it's entry.
 			 */
-			if ((rt->rt_state & RTS_SILENT) == 0)
+			if ((rt->rt_state & RTS_HIDDEN) == 0)
 				rt->rt_timer += TIMER_RATE;
 			log("", rt);
 
@@ -396,7 +396,7 @@ sendall()
 again:
 	for (rh = base; rh < &base[ROUTEHASHSIZ]; rh++)
 	for (rt = rh->rt_forw; rt != (struct rt_entry *)rh; rt = rt->rt_forw) {
-		if ((rt->rt_state & RTS_SILENT) || rt->rt_metric > 0)
+		if ((rt->rt_state & RTS_HIDDEN) || rt->rt_metric > 0)
 			continue;
 		if (rt->rt_ifp && (rt->rt_ifp->if_flags & IFF_BROADCAST))
 			dst = &rt->rt_ifp->if_broadaddr;
@@ -426,7 +426,7 @@ supplyall()
 again:
 	for (rh = base; rh < &base[ROUTEHASHSIZ]; rh++)
 	for (rt = rh->rt_forw; rt != (struct rt_entry *)rh; rt = rt->rt_forw) {
-		if ((rt->rt_state & RTS_SILENT) || rt->rt_metric > 0)
+		if ((rt->rt_state & RTS_HIDDEN) || rt->rt_metric > 0)
 			continue;
 		if (rt->rt_ifp && (rt->rt_ifp->if_flags & IFF_BROADCAST))
 			dst = &rt->rt_ifp->if_broadaddr;
@@ -790,7 +790,7 @@ log(operation, rt)
 	}, statebits[] = {
 		{ RTS_DELRT,	"DELETE" },
 		{ RTS_CHGRT,	"CHANGE" },
-		{ RTS_SILENT,	"SILENT" },
+		{ RTS_HIDDEN,	"HIDDEN" },
 		{ 0 }
 	};
 	register struct bits *p;
