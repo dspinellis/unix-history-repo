@@ -3,10 +3,10 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)printn.c	7.1 (Berkeley) %G%
+ *	@(#)printn.c	7.2 (Berkeley) %G%
  */
 
-#include "param.h"
+#include "sys/param.h"
 
 /*
  * Printn prints a number n in base b.
