@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)1.2.t	6.6 (Berkeley) %G%
+.\"	@(#)1.2.t	6.7 (Berkeley) %G%
 .\"
 .sh "Memory management\(dg
 .NH 3
@@ -99,11 +99,20 @@ Possible types include MAP_FILE,
 mapping a regular file or character-special device memory,
 and MAP_ANON, which maps memory not associated with any specific file.
 The file descriptor used for creating MAP_ANON regions is used only
-for naming, and may be given as -1 if no name is associated with the region.
+for naming, and may be given as \-1 if no name
+is associated with the region\(dd.
+.FS
+\(dd The current design does not allow a process
+to specify the location of swap space.
+In the future we may define an additional mapping type, MAP_SWAP,
+in which the file descriptor argument specifies a file
+or device to which swapping should be done.
+.FE
 The MAP_NOEXTEND flag prevents the mapped file from being extended
 despite rounding due to the granularity of mapping.
-Other flags allow special handling for regions that may contain semaphores
-or that may be inherited after an \fIexec\fP.
+The MAP_HASSEMAPHORE flag allows special handling for
+regions that may contain semaphores.
+The MAP_INHERIT flag allows a region to be inherited after an \fIexec\fP.
 .PP
 A facility is provided to synchronize a mapped region with the file
 it maps; the call
@@ -158,6 +167,7 @@ in \fI<sys/mman.h>\fP:
 #define	MADV_SEQUENTIAL	2	/* expect sequential references */
 #define	MADV_WILLNEED	3	/* will need these pages */
 #define	MADV_DONTNEED	4	/* don't need these pages */
+#define	MADV_SPACEAVAIL	5	/* insure that resources are reserved */
 .DE
 Finally, a process may obtain information about whether pages are
 core resident by using the call
@@ -218,4 +228,3 @@ semaphore *sem;
 .DE
 An \fImwakeup\fP may awaken all sleepers on the semaphore,
 or may awaken only the next sleeper on a queue.
-.PP
