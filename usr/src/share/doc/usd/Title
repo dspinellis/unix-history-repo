@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)Title	8.3 (Berkeley) %G%
+.\"	@(#)Title	8.4 (Berkeley) %G%
 .\"
 .af % i
 .nr LL 6.5i
@@ -125,6 +125,8 @@ Sebastopol, CA 94572
 .nr VS 11
 .LP
 First Printing, 1994
+.br
+Second Printing, 1995
 .sp 2
 .LP
 Copyright 1979, 1980, 1983, 1986, 1988, 1989, 1991, 1992, 1993, 1994
@@ -185,6 +187,10 @@ authors and should not be interpreted as representing official policies,
 either expressed or implied, of the Regents of the University of California.
 .sp 2
 .LP
+The 4.4BSD Daemon used on the cover is
+copyright 1994 by Marshall Kirk McKusick
+and is reproduced with permission.
+.br
 This book was printed and bound in the United States of America.
 .br
 Distributed by O'Reilly & Associates, Inc.
