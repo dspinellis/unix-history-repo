@@ -1,0 +1,34 @@
+.pa 1
+.he 'OPEN (II)'3/15/72'OPEN (II)'
+.ti 0
+NAME		open  --  open for reading or writing
+.sp
+.ti 0
+SYNOPSIS	sys open; name; mode  / open = 5.
+.br
+(descriptor in r0)
+.sp
+.ti 0
+DESCRIPTION	open____ opens the file name____ for reading
+(if mode____ is 0) or writing (if mode____ is non-zero).
+name____ is the address of a string of ASCII characters representing
+a path name, terminated by a null character.
+.sp
+The file descriptor should be saved for subsequent calls
+to read (or write) and close.
+.sp
+In both the read and write case the file pointer
+is set to the beginning of the file.
+.sp
+.ti 0
+SEE ALSO	creat(II), read(II), write(II), close(II)
+.sp
+.ti 0
+DIAGNOSTICS	The error bit
+(c-bit) is set if the file does not exist,
+if one of the necessary directories
+does not exist or is unreadable, if the file is not
+readable (resp. writable), or if 10 files are open.
+.sp
+.ti 0
+BUGS		--
