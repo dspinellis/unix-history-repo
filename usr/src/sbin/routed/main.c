@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	4.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	4.10 (Berkeley) %G%";
 #endif
 
 /*
@@ -16,6 +16,7 @@ static char sccsid[] = "@(#)main.c	4.9 (Berkeley) %G%";
 #include <signal.h>
 
 int	supplier = -1;		/* process should supply updates */
+extern int gateway;
 
 struct	rip *msg = (struct rip *)packet;
 int	hup();
@@ -67,7 +68,18 @@ main(argc, argv)
 			argv++, argc--;
 			continue;
 		}
-		fprintf(stderr, "usage: routed [ -s ] [ -q ] [ -t ]\n");
+		if (strcmp(*argv, "-g") == 0) {
+			gateway = 1;
+			argv++, argc--;
+			continue;
+		}
+		if (strcmp(*argv, "-l") == 0) {
+			gateway = -1;
+			argv++, argc--;
+			continue;
+		}
+		fprintf(stderr,
+			"usage: routed [ -s ] [ -q ] [ -t ] [ -g ] [ -l ]\n");
 		exit(1);
 	}
 #ifndef DEBUG
