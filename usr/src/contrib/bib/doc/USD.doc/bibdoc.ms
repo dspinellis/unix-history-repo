@@ -1,14 +1,14 @@
-.\"	"@(#)bibdoc.ms	4.2	%G%";
+.\"	"@(#)bibdoc.ms	4.3	%G%";
 .if n .ND
 .TL
 BIB \- A Program for Formatting Bibliographies
 .AU
 Timothy A. Budd
-Gary M. Levin
 .AI
+The University of Arizona
 Department of Computer Science
-University of Arizona
-Tucson, Arizona 85721
+Tucson, Arizona
+85721
 .PP
 \fIBib\fP is a program for collecting and formatting reference lists in
 documents.  It is a preprocessor to the nroff/troff typesetting systems,
@@ -36,7 +36,7 @@ For example:
 ..
 .2Q
 .PP
-In Brooks\*(CQs interesting book [\&. brooks mythical.] various reasons ...
+In Brooks' interesting book [\&. brooks mythical.] various reasons ...
 .2E
 .PP
 Multiple citations are indicated by simply placing a comma in the imprecise
@@ -92,7 +92,7 @@ By default \fIinvert\fP places an inverted index for the
 reference list in the file INDEX.  Unless the user specifies an
 alternative (see the \-p switch described below), this is the first file
 searched in attempting to locate a reference.  If the entry is not found
-in the user\*(CQs file, a standard system-wide index is searched.  If the
+in the user's file, a standard system-wide index is searched.  If the
 entry is still not found in the system file, a warning message is produced
 and a blank citation is generated.
 .PP
@@ -118,7 +118,7 @@ A reference can have more than one editor field, and editors names
 can be abbreviated, reversed, and/or printed in cap/small caps style,
 independent of any processing done to authors names.
 .PP
-Since the user\*(CQs index is searched before the system index, if the
+Since the user's index is searched before the system index, if the
 user wants to alter a specific entry in the system index (say to change
 the name W. E. Howden to William E. Howden, for example) it is a simple
 matter to copy the system information into a private database and make
@@ -209,7 +209,7 @@ This movement is not done for citations given in the alternative style.
 The following is a complete list of options for \fIbib\fP:
 .IP \-c\fIstr\fP
 build citations according to the template \fIstr\fP.  See the reference
-format designer\*(CQs guide for more information on templates.
+format designer's guide for more information on templates.
 .IP \-aa
 abbreviate authors names
 .IP \-ax
@@ -584,7 +584,7 @@ The format file name is always prefixed with the string bib.
 Thus the format file for a standard document type, such as stdn, is found
 in /usr/lib/bmac/bib.stdn.
 .PP
-When \fIbib\fP encounters a \-t switch, the user\*(CQs directory is first searched for
+When \fIbib\fP encounters a \-t switch, the user's directory is first searched for
 a format file matching the given name, before the system area is examined.
 Thus the user can create individual style database files.
 .PP
@@ -723,7 +723,7 @@ sort objects.  Each sort object consists of an optional negative sign, followed
 by a field character, followed by an optional signed size.  The leading negative
 sign, if present, specifies the sort is to be in decreasing order, rather than
 increasing.  The field character indicates which field in the reference
-is to be compared.  The entire field is used, except in the case of the \*(OQA\*(CQ
+is to be compared.  The entire field is used, except in the case of the `A'
 field, in which case only the senior authors last name is used.
 If the author's name is the sort key, and a particular reference has
 no author field, then first the editor's name, then the %F field,
@@ -748,8 +748,8 @@ of the authors last name.  For two author papers, this is the first two
 characters of the senior author, followed by the first character of the second
 author.  For papers with three or more authors the first letter of the first
 three authors is used.
-Finally each object can be followed by either of the letters \*(OQu\*(CQ or
-\*(OQl\*(CQ and the field will be printed in all upper or all lower case,
+Finally each object can be followed by either of the letters `u' or
+`l' and the field will be printed in all upper or all lower case,
 respectively.
 .PP
 If necessary for disambiguating, the character \*(oq@\*(cq can be used as
