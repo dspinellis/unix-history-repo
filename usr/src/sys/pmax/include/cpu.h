@@ -1,13 +1,13 @@
-/*
- * Copyright (c) 1992 Regents of the University of California.
+/*-
+ * Copyright (c) 1992 The Regents of the University of California.
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
- * Ralph Campbell.
+ * Ralph Campbell and Rick Macklem.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cpu.h	7.6 (Berkeley) %G%
+ *	@(#)cpu.h	7.7 (Berkeley) %G%
  */
 
 #ifndef _CPU_H_
@@ -92,21 +92,19 @@ union cpuprid {
 /*
  * MIPS CPU types (cp_imp).
  */
-#define	MIPS_R2000	0x02
-#define	MIPS_R3000	0x03
+#define	MIPS_R2000	0x01
+#define	MIPS_R3000	0x02
+#define	MIPS_R6000	0x03
 #define	MIPS_R4000	0x04
+#define	MIPS_R6000A	0x06
 
 /*
  * MIPS FPU types
  */
-#define	MIPS_R2010	0x03
-#define	MIPS_R3010	0x04
+#define	MIPS_R2010	0x02
+#define	MIPS_R3010	0x03
+#define	MIPS_R6010	0x04
 #define	MIPS_R4010	0x05
-
-struct intr_tab {
-	void	(*func)();	/* pointer to interrupt routine */
-	int	unit;		/* logical unit number */
-};
 
 #ifdef KERNEL
 union	cpuprid cpu;
