@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_vnops.c	7.10 (Berkeley) %G%
+ *	@(#)ffs_vnops.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -884,8 +884,9 @@ bad:
 	if (error) {
 		ip->i_nlink = 0;
 		ip->i_flag |= ICHG;
-	}
-	iput(ip);
+		iput(ip);
+	} else
+		ndp->ni_vp = ITOV(ip);
 	if (dp)
 		iput(dp);
 	return (error);
