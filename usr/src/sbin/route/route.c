@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -31,6 +31,7 @@ static char sccsid[] = "@(#)route.c	5.10 (Berkeley) %G%";
 #include <sys/mbuf.h>
 
 #include <net/route.h>
+#include <net/radix.h>
 #include <netinet/in.h>
 #include <netns/ns.h>
 
@@ -41,18 +42,22 @@ static char sccsid[] = "@(#)route.c	5.10 (Berkeley) %G%";
 
 struct	rtentry route;
 int	s;
-int	forcehost, forcenet, doflush, nflag;
-struct	sockaddr_in sin = { AF_INET };
+int	forcehost, forcenet, doflush, nflag, xnsflag;
+struct	sockaddr_in sin = { sizeof(sin), AF_INET };
 struct	in_addr inet_makeaddr();
-char	*malloc();
+char	*malloc(), *vmunix = "/vmunix";
+#define kget(p, d) \
+	(lseek(kmem, (off_t)(p), 0), read(kmem, (char *)&(d), sizeof (d)))
 
 main(argc, argv)
 	int argc;
 	char *argv[];
 {
 
+	char *argvp;
 	if (argc < 2)
-		printf("usage: route [ -n ] [ -f ] [ cmd [ net | host ] args ]\n"),
+		fprintf(stderr,
+		    "usage: route [ -n ] [ -f ] [ cmd [ net | host ] args ]\n"),
 		exit(1);
 	s = socket(AF_INET, SOCK_RAW, 0);
 	if (s < 0) {
@@ -61,13 +66,20 @@ main(argc, argv)
 	}
 	argc--, argv++;
 	for (; argc >  0 && argv[0][0] == '-'; argc--, argv++) {
-		for (argv[0]++; *argv[0]; argv[0]++)
+		for (argvp = argv[0]++; *argvp; argvp++)
 			switch (*argv[0]) {
 			case 'f':
 				doflush++;
 				break;
 			case 'n':
 				nflag++;
+				break;
+			case 'x':
+				xnsflag++;
+				break;
+			case 'k':
+				vmunix = *++argv;
+				argc--;
 				break;
 			}
 	}
@@ -81,7 +93,7 @@ main(argc, argv)
 		else if (strcmp(*argv, "change") == 0)
 			changeroute(argc-1, argv+1);
 		else
-			printf("%s: huh?\n", *argv);
+			fprintf(stderr, "%s: huh?\n", *argv);
 	}
 }
 
@@ -98,38 +110,45 @@ struct nlist nl[] = {
 	{ "_rtnet" },
 #define N_RTHASHSIZE	2
 	{ "_rthashsize" },
+#define N_RTREE		3
+	{ "_radix_node_head" },
 	"",
 };
 
+int kmem;
 flushroutes()
 {
 	struct mbuf mb;
 	register struct rtentry *rt;
 	register struct mbuf *m;
 	struct mbuf **routehash;
-	int rthashsize, i, doinghost = 1, kmem;
+	int rthashsize, i, doinghost = 1;
 	char *routename(), *netname();
 
-	nlist("/vmunix", nl);
-	if (nl[N_RTHOST].n_value == 0) {
-		printf("route: \"rthost\", symbol not in namelist\n");
-		exit(1);
-	}
-	if (nl[N_RTNET].n_value == 0) {
-		printf("route: \"rtnet\", symbol not in namelist\n");
-		exit(1);
-	}
-	if (nl[N_RTHASHSIZE].n_value == 0) {
-		printf("route: \"rthashsize\", symbol not in namelist\n");
-		exit(1);
-	}
+	nlist(vmunix, nl);
 	kmem = open("/dev/kmem", 0);
 	if (kmem < 0) {
 		perror("route: /dev/kmem");
 		exit(1);
 	}
-	lseek(kmem, nl[N_RTHASHSIZE].n_value, 0);
-	read(kmem, &rthashsize, sizeof (rthashsize));
+	if (nl[N_RTREE].n_value)
+		return (treestuff(nl[N_RTREE].n_value));
+	if (nl[N_RTHOST].n_value == 0) {
+		fprintf(stderr,
+		    "route: \"rthost\", symbol not in namelist\n");
+		exit(1);
+	}
+	if (nl[N_RTNET].n_value == 0) {
+		fprintf(stderr,
+		    "route: \"rtnet\", symbol not in namelist\n");
+		exit(1);
+	}
+	if (nl[N_RTHASHSIZE].n_value == 0) {
+		fprintf(stderr,
+		    "route: \"rthashsize\", symbol not in namelist\n");
+		exit(1);
+	}
+	kget(nl[N_RTHASHSIZE].n_value, rthashsize);
 	routehash = (struct mbuf **)malloc(rthashsize*sizeof (struct mbuf *));
 
 	lseek(kmem, nl[N_RTHOST].n_value, 0);
@@ -141,19 +160,8 @@ again:
 			continue;
 		m = routehash[i];
 		while (m) {
-			lseek(kmem, m, 0);
-			read(kmem, &mb, sizeof (mb));
-			rt = mtod(&mb, struct rtentry *);
-			if (rt->rt_flags & RTF_GATEWAY) {
-				printf("%-20.20s ", doinghost ?
-				    routename(&rt->rt_dst) :
-				    netname(&rt->rt_dst));
-				printf("%-20.20s ", routename(&rt->rt_gateway));
-				if (ioctl(s, SIOCDELRT, (caddr_t)rt) < 0)
-					error("delete");
-				else
-					printf("done\n");
-			}
+			kget(m, mb);
+			d_rtentry((struct rtentry *)(mb.m_dat), doinghost);
 			m = mb.m_next;
 		}
 	}
@@ -165,6 +173,79 @@ again:
 	}
 	close(kmem);
 	free(routehash);
+	return;
+}
+
+treestuff(rtree)
+off_t rtree;
+{
+	struct radix_node_head *rnh, head;
+	    
+	for (kget(rtree, rnh); rnh; rnh = head.rnh_next) {
+		kget(rnh, head);
+		if (head.rnh_af) {
+			printf("\nFlushing routes for protocol family %d:\n",
+								head.rnh_af);
+			f_tree(head.rnh_treetop);
+		}
+	}
+}
+
+/*
+ * This is not a simple tree walk
+ * because the deleting a leaf may change the value of pointers
+ * up the tree from us.
+ */
+
+f_tree(rn)
+struct radix_node *rn;
+{
+	struct radix_node rnode, *found;
+	struct nrtentry nrtentry;
+	int doinghost;
+
+	while (find1(rn, &found)) {
+		kget(found, nrtentry);
+		doinghost = nrtentry.nrt_nodes[0].rn_mask ? 0 : 1;
+		d_rtentry(&nrtentry.nrt_rt, doinghost);
+	}
+}
+
+find1(rn, rnp)
+struct radix_node *rn, **rnp;
+{
+	struct radix_node rnode;
+	kget(rn, rnode);
+	if (rnode.rn_b < 0) {
+		if (rnode.rn_dupedkey && find1(rnode.rn_dupedkey, rnp))
+			return 1;
+		if ((rnode.rn_flags & RNF_ROOT) == 0) {
+			*rnp = rn;
+			return 1;
+		}
+	} else {
+		if (rnode.rn_l && find1(rnode.rn_l, rnp))
+			return 1;
+		if (rnode.rn_r && find1(rnode.rn_r, rnp))
+			return 1;
+	}
+	return 0;
+}
+
+d_rtentry(rt, doinghost)
+register struct rtentry *rt;
+{
+	if (rt->rt_flags & RTF_GATEWAY) {
+		printf("%-20.20s ", doinghost ?
+		    routename(&rt->rt_dst) :
+		    netname(&rt->rt_dst));
+		printf("%-20.20s ", routename(&rt->rt_gateway));
+		if (ioctl(s, SIOCDELRT, (caddr_t)rt) < 0) {
+			fflush(stdout);
+			error("delete");
+		} else
+			printf("done\n");
+	}
 }
 
 char *
@@ -441,10 +522,14 @@ getaddr(s, sin, hpp, name, isnet)
 	char **name;
 	int isnet;
 {
+	struct sockaddr_ns *sns = (struct sockaddr_ns *)sin;
+	struct	ns_addr ns_addr();
 	struct hostent *hp;
 	struct netent *np;
 	u_long val;
 
+	if (xnsflag)
+		goto do_xns;
 	*hpp = 0;
 	if (strcmp(s, "default") == 0) {
 		sin->sin_family = AF_INET;
@@ -484,6 +569,15 @@ getaddr(s, sin, hpp, name, isnet)
 	}
 	fprintf(stderr, "%s: bad value\n", s);
 	exit(1);
+do_xns:
+	bzero((char *)sns, sizeof (*sns));
+	sns->sns_family = AF_NS;
+	if (strcmp(s, "default") == 0) {
+		*name = "default";
+		return(0);
+	}
+	sns->sns_addr = ns_addr(s);
+	return (!ns_nullhost(sns->sns_addr));
 }
 
 short ns_nullh[] = {0,0,0};
