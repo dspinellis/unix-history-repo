@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)mdoc.samples.7	5.8 (Berkeley) %G%
+.\"     @(#)mdoc.samples.7	5.9 (Berkeley) %G%
 .\"
 .\" This tutorial sampler invokes every macro in the package several
 .\" times and is guaranteed to give a worst case performance
@@ -35,7 +35,7 @@ package for
 Its predecessor, the
 .Xr \-man 7
 package,
-addressed page structure content leaving the
+addressed page layout leaving the
 manipulation of fonts and other
 typesetting details to the individual author.
 In
@@ -259,7 +259,7 @@ string from being interpreted as a macro name, precede
 the string with the
 escape sequence
 .Ql \e& :
-.Bl -tag -width "[\&Fl s \&Ar bytes]" -offset indent
+.Bl -tag -width "\&.Op \&Fl s \&Ar bytes" -offset indent
 .It Op \&Fl s \&Ar bytes
 is produced by
 .Li \&.Op \e&Fl s \e&Ar bytes
@@ -269,16 +269,21 @@ Here the strings
 .Ql \&Fl
 and
 .Ql \&Ar
-were not interpreted as macros.
-Macros which are parsed for callable arguments are referred to
-as parsed macros and macros which may be called from an argument
-list (are defined as executable) are simply referred to as callable
+are not interpreted as macros.
+Macros whose argument lists are parsed for callable arguments
+are referred to
+as parsed and macros which may be called from an argument
+list are referred to as callable
 through out this document and in the companion quick reference
-document
+manual
 .Xr mdoc 7 .
-More details on callable macros are presented in the
-section on
-.Sx MANUAL DOMAIN MACROS .
+This is a technical
+.Em faux pas
+as almost all of the macros in 
+.Nm \-mdoc
+are parsed, but as it was cumbersome to constantly refer to macros
+as being callable and being able to call other macros,
+the term parsed has been used.
 .Ss Passing Space Characters in an Argument
 Sometimes it is desirable to give as one argument a string
 containing one or more blank space characters.
@@ -692,7 +697,7 @@ The
 .Ql \&.Bk
 and
 .Ql \&.Ek
-are explained in
+macros are explained in
 .Sx Keeps .
 .Ss General Syntax
 The manual domain and general text domain macros share a similar
@@ -781,7 +786,7 @@ It is an error to call
 .Li \&.Ad
 without arguments.
 .Li \&.Ad
-is callable by other macros and may call other macros.
+is callable by other macros and is parsed.
 .Ss Argument Macro
 The
 .Li \&.Ar
@@ -811,8 +816,7 @@ is called without arguments
 is assumed.
 The
 .Li \&.Ar
-macro may call other macros, and may be
-called by other macros.
+macro is parsed and is callable.
 .Ss Configuration Declaration (section four only)
 The
 .Ql \&.Cd
@@ -857,8 +861,7 @@ It is an error to call
 .Ql \&.Dv
 without arguments.
 .Ql \&.Dv
-may call other macros and
-may be called by other macros.
+is parsed and is callable.
 .Ss Errno's (Section two only)
 The
 .Ql \&.Er
@@ -887,8 +890,7 @@ It is an error to call
 without arguments.
 The
 .Ql \&.Er
-macro
-is callable and may call other macros.
+macro is parsed and is callable.
 .Ss Environment Variables
 The
 .Ql \&.Ev
@@ -909,8 +911,7 @@ It is an error to call
 without arguments.
 The
 .Ql \&.Ev
-macro
-is callable by other macros and may call other macros.
+macro is parsed and is callable.
 .Ss Function Argument
 The
 .Ql \&.Fa
@@ -943,7 +944,7 @@ It is an error to call
 .Ql \&.Fa
 without arguments.
 .Ql \&.Fa
-is callable by other macros and may call other macros.
+is parsed and is callable.
 .Ss Function Declaration
 The
 .Ql \&.Fd
@@ -1006,8 +1007,7 @@ Note that giving
 a single dash, will result in two dashes.
 The
 .Ql \&.Fl
-macro
-is callable and may call other macros.
+macro is parsed and is callable.
 .Ss Functions (library routines)
 The .Fn macro is modeled on ANSI C conventions.
 .Bd -literal
@@ -1109,7 +1109,6 @@ of sections two and three
 on the next line).
 .Pp
 .Dl Usage: .Ft type ... \*(Pu
-.Pp
 .Bl -tag -width "\&.Ft struct stat" -offset 14n -compact
 .It Li \&.Ft struct stat
 .Ft struct stat
@@ -1124,7 +1123,7 @@ The
 macro designates an interactive or internal command.
 .Pp
 .Dl Usage: .Li argument ... \*(Pu
-.Bl -tag -width ".Ic setenv , unsetenv" -compact -offset 14n
+.Bl -tag -width ".Ic setenv , unsetenvxx" -compact -offset 14n
 .It Li \&.Ic :wq
 .Ic :wq
 .It Li \&.Ic do while {...}
@@ -1138,7 +1137,7 @@ It is an error to call
 without arguments.
 The
 .Ql \&.Ic
-macro may call other macros and is callable.
+macro is parsed and is callable.
 .Ss Literals
 The
 .Ql \&.Li
@@ -1160,8 +1159,7 @@ would be typed.
 .Pp
 The
 .Ql \&.Li
-macro
-is callable by other macros and may call other macros.
+macro is parsed and is callable.
 .Ss Name Macro
 The
 .Ql \&.Nm
@@ -1203,7 +1201,7 @@ it can not recall the first argument it was invoked with.
 .Bl -tag -width ".Nm mdoc.sample" -compact -offset 14n
 .It Li \&.Nm mdoc.sample
 .Nm  mdoc.sample
-.It Li \&.Nm \-mdoc
+.It Li \&.Nm \e-mdoc
 .Nm \-mdoc .
 .It Li \&.Nm foo\ )\ )\ ,
 .Nm foo ) ) ,
@@ -1213,8 +1211,7 @@ it can not recall the first argument it was invoked with.
 .Pp
 The
 .Ql \&.Nm
-macro
-is callable by other macros and may call other macros.
+macro is parsed and is callable.
 .Ss Options
 The
 .Ql \&.Op
@@ -1273,7 +1270,7 @@ The macros
 .Ql \&.Oc
 and
 .Ql \&.Oo
-are callable and may call other macros.
+are parsed and are callable.
 .Ss Pathnames
 The
 .Ql \&.Pa
@@ -1289,8 +1286,7 @@ macro formats path or file names.
 .Pp
 The
 .Ql \&.Pa
-macro
-is callable by other macros and may call other macros.
+macro is parsed and is callable.
 .Ss Variables
 Generic variable reference:
 .Pp
@@ -1311,8 +1307,7 @@ It is an error to call
 without any arguments.
 The
 .Ql \&.Va
-macro
-is callable by other macros and may call other macros.
+macro is parsed and is callable.
 .Ss Manual Page Cross References
 The
 .Ql \&.Xr
@@ -1336,8 +1331,7 @@ remaining arguments are assumed to be punctuation.
 .Pp
 The
 .Ql \&.Xr
-macro
-is callable by other macros and may call other macros.
+macro is parsed and is callable.
 It is an error to call
 .Ql \&.Xr
 without
@@ -1398,27 +1392,26 @@ The usual font for emphasis is italic.
 .It Li ".Em vide infra ) ) ,"
 .Em vide infra ) ) ,
 .El
-.Pp
-The emphasis can be forced across several lines of text by using
-the
-.Ql \&.Bf
-macro discussed in
-.Sx Modes
-under
-.Sx PAGE LAYOUT .
 .\" .Pp
-.\" .Em
+.\" The emphasis can be forced across several lines of text by using
+.\" the
+.\" .Ql \&.Bf
+.\" macro discussed in
+.\" .Sx Modes
+.\" under
+.\" .Sx PAGE STRUCTURE DOMAIN .
+.\" .Pp
+.\" .Bf -emphasis
 .\" We are certain the reason most people desire a Harvard MBA
 .\" so they can become to be successful philanthropists.  Only
 .\" mathematicians and physicists go to graduate school strictly
 .\" to acquire infinite wealthy and fame. Its that inifinity
 .\" word that does it to them. Ruins them.
-.\" .Em
+.\" .Ef
 .Pp
 The
 .Ql \&.Em
-macro
-is callable and may call other macros.
+macro is parsed and is callable.
 It is an error to call
 .Ql \&.Em
 without arguments.
@@ -1444,9 +1437,8 @@ These can be used across one or more lines of text
 and while they have nesting limitations, the one line quote macros
 can be used inside
 of them.
-For a good example of one these macros, see
-.Sx Options .
 .Pp
+.ne 5
 .Bd -filled -offset indent
 .Bl -column "quote " "close " "open " "Enclose Stringx(in XX) " XXstringXX
 .Em " Quote	 Close	 Open	Function	Result"
@@ -1461,7 +1453,7 @@ For a good example of one these macros, see
 .El
 .Ed
 .Pp
-Except for the following irregular macros, all
+Except for the irregular macros noted below, all
 of the quoting macros are parsed and callable.
 All handle punctuation properly, as long as it
 is presented one character at a time and separated by spaces.
@@ -1486,11 +1478,12 @@ This is to make short strings more visible where the font change
 to literal (constant width) is less noticeable.
 .It Li \&.Pf
 The prefix macro is not callable, but it is parsed:
-.Pp
-.Dl ".Pf ( Fa name2"
-.Pp
+.Bl -tag -width "(namexx" -offset indent
+.It Li ".Pf ( Fa name2"
 becomes
 .Pf ( Fa name2 .
+.El
+.Pp
 The
 .Ql \&.Ns
 (no space) macro performs the analogous suffix function.
@@ -1519,6 +1512,8 @@ Examples of quoting:
 .Qq
 .It Li "\&.Qq string ) ,"
 .Qq string ) ,
+.It Li "\&.Qq string Ns ),"
+.Qq string Ns ),
 .It Li \&.Sq
 .Sq
 .It Li "\&.Sq string
@@ -1568,14 +1563,13 @@ macro after eliminating the space unless another macro name
 follows it.
 The macro
 .Ql \&.Ns
-is callable and may call other macros.
+is parsed and is callable.
 .Ss Section Cross References
 The
 .Ql \&.Sx
 macro designates a reference to a section header
 within the same document.
-It is callable by other macros and may
-call other macros.
+It is parsed and is callable.
 .Pp
 .Bl -tag -width "Li \&.Sx FILES" -offset 14n
 .It Li \&.Sx FILES
@@ -1593,9 +1587,7 @@ either the symbolic sense or the traditional English usage.
 .Pp
 The
 .Ql \&.Sy
-macro
-is callable by other macros and may call other macros, except
-in the second form.
+macro is parsed and is callable.
 Arguments to
 .Ql \&.Sy
 may be quoted.
@@ -1643,7 +1635,9 @@ are not callable, and are parsed only for the trade name macro which
 returns to its caller.
 (And not very predictably at the moment either.)
 The purpose is to allow trade names
-to be pretty printed in troff/ditroff output.
+to be pretty printed in
+.Xr troff Ns / Ns Xr ditroff
+output.
 .Ss Trade Names (or Acronyms and Type Names)
 The trade name macro is generally a small caps macro for
 all upper case words longer than two characters.
@@ -1679,7 +1673,7 @@ using the space mode macro to turn spacing off:
 .Bd -literal -offset indent
 \&.Sm off
 \&.It Xo Sy I Ar operation
-\&.No \en Ar count No \en
+\&.No \een Ar count No \een
 \&.Xc
 \&.Sm on
 .Ed
@@ -1769,7 +1763,7 @@ The
 (no space macro)
 must not occur as the first or last macro on a line
 in this situation.
-Out of 900 manual pages (about 1800 actual pages)
+Out of 900 manual pages (about 1500 actual pages)
 currently released with
 .Bx
 only fifteen use the
@@ -1788,8 +1782,7 @@ writing the manual page.
 The
 .Ql \&.Sh
 macro can take up to nine arguments.
-It may call
-other macros, but it may not be called by other macros.
+It is parsed and but is not callable.
 .Bl -tag -width ".Sh SYNOPSIS"
 .It \&.Sh NAME
 The
@@ -1856,6 +1849,7 @@ The following macros were used:
 .Dl \&.Op \&Fl benstuv
 .Dl \&.Op \&Fl
 .Dl \&.Ar
+.Pp
 .Sy Note :
 The macros
 .Ql \&.Op ,
@@ -1863,12 +1857,12 @@ The macros
 and
 .Ql \&.Ar
 recognize the pipe bar character
-.Ql \*(Ba , so
-a command line such as:
+.Ql \*(Ba ,
+so a command line such as:
 .Pp
 .Dl ".Op Fl a | Fl b"
 .Pp
-will not go into outer space.
+will not go orbital.
 .Xr Troff
 normally interprets a \*(Ba as a special operator.
 See
@@ -2272,7 +2266,7 @@ Columns may be used inside of lists, but lists are unproven
 inside of columns.
 .Pp
 In addition, several list attributes may be specified such as
-the width of a tag, the list offset, and compactness specified
+the width of a tag, the list offset, and compactness
 (blank lines between items allowed or disallowed).
 Most of this document has been formatted with a tag style list
 .Pq Fl tag .
@@ -2281,7 +2275,7 @@ is an over-hanging list
 .Pq Fl ohang .
 This type of list is quite popular with
 .Tn TeX
-users, but looks a bit funny after having read many pages of
+users, but might look a bit funny after having read many pages of
 tagged lists.
 The following list types are accepted by
 .Ql ".Bl" :
@@ -2352,7 +2346,7 @@ into the forth coming text,
 .Em hanged
 from the forth coming text,
 .Em overhanged
-hung above and not offset from the forth coming paragraph or
+from above and not indented or
 .Em tagged .
 This
 list was constructed with the
@@ -2360,9 +2354,8 @@ list was constructed with the
 list-type.
 The
 .Ql \&.It
-macro may call any callable macros for the inset, hang
-and tag list-types, but will not call macros for the
-diag type.
+macro is parsed only for the inset, hang
+and tag list-types and is not callable.
 Here is an example of inset labels:
 .Bl -inset -offset indent
 .It Em Tag
@@ -2430,30 +2423,34 @@ And the unformatted text which created it:
 The tagged list which follows uses an optional width specifier to control
 the width of the tag.
 .Pp
-.Bl -tag -width "PAGEIN 10" -compact -offset indent
-.It SL 10
+.Bl -tag -width "PAGEIN" -compact -offset indent
+.It SL
 sleep time of the process (seconds blocked)
-.It PAGEIN 10
-number of disk I/O's resulting from references
+.It PAGEIN
+number of disk
+.Tn I/O Ns 's
+resulting from references
 by the process to pages not loaded in core.
-.It UID 10
+.It UID
 numerical user-id of process owner
-.It PPID 10
+.It PPID
 numerical id of parent of process process priority
 (non-positive when in non-interruptible wait)
 .El
 .Pp
 The raw text:
 .Bd -literal -offset indent
-\&.Bl -tag -width "PAGEIN 10" -compact -offset indent
-\&.It SL 10
+\&.Bl -tag -width "PAGEIN" -compact -offset indent
+\&.It SL
 \&sleep time of the process (seconds blocked)
-\&.It PAGEIN 10
-\&number of disk I/O's resulting from references
+\&.It PAGEIN
+\&number of disk
+\&.Tn I/O Ns 's
+\&resulting from references
 \&by the process to pages not loaded in core.
-\&.It UID 10
+\&.It UID
 \&numerical user-id of process owner
-\&.It PPID 10
+\&.It PPID
 \&numerical id of parent of process process priority
 \&(non-positive when in non-interruptible wait)
 \&.El
@@ -2537,7 +2534,8 @@ The interpreting sequence may be used any where in the text.
 The string named
 .Ql q
 should be written as
-\e*q since it is only one char.
+.Ql \e*q
+since it is only one char.
 .Sh DIAGNOSTICS
 The debugging facilities for
 .Nm \-mdoc
@@ -2697,6 +2695,29 @@ named
 was not found and the type classified as string.
 .Pp
 Other diagnostics consist of usage statements and are self explanatory.
+.Sh GROFF, TROFF AND NROFF
+The
+.Nm \-mdoc
+package does not need compatibility mode with
+.Xr groff .
+.Pp
+The package inhibits page breaks, and the headers and footers
+which normally occur at those breaks with
+.Xr nroff ,
+to make the manual more efficient for viewing on-line.
+At the moment,
+.Xr groff
+with
+.Fl T Ns Ar ascii
+does eject the imaginary remainder of the page at end of file.
+The inhibiting of the page breaks makes
+.Xr nroff Ns 'd
+files unsuitable for hardcopy.
+There is a register named
+.Ql \&cR
+which can be set to zero in the site dependent style file
+.Pa /usr/src/share/tmac/doc-nroff
+to restore the old style behavior.
 .Sh FILES
 .Bl -tag -width /usr/share/man0/template.doc -compact
 .It Pa /usr/share/tmac/tmac.doc
@@ -2733,14 +2754,14 @@ section.
 .Ql \&.Fn
 needs to have a check to prevent splitting up
 if the line length is too short.
-Right now it
+Occasionally it
 separates the last parenthesis, and sometimes
 looks ridiculous if a line is in fill mode.
 .Pp
 The method used to prevent header and footer page
 breaks (other than the initial header and footer) when using
-nroff seems to be putting out a partially filled line
-at the bottom of the page leaving an unsightly blank space.
+nroff occasionally places an unsightly partially filled line (blank)
+at the would be bottom of the page.
 .Pp
 The list and display macros to not do any keeps
 and certainly should be able to.
