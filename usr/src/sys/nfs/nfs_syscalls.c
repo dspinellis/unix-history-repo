@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_syscalls.c	7.21 (Berkeley) %G%
+ *	@(#)nfs_syscalls.c	7.22 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -90,12 +90,12 @@ getfh(p, uap, retval)
 	/*
 	 * Must be super user
 	 */
-	if (error = suser(ndp->ni_cred, &u.u_acflag))
+	if (error = suser(p->p_ucred, &p->p_acflag))
 		return (error);
 	ndp->ni_nameiop = LOOKUP | LOCKLEAF | FOLLOW;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->fname;
-	if (error = namei(ndp))
+	if (error = namei(ndp, p))
 		return (error);
 	vp = ndp->ni_vp;
 	bzero((caddr_t)&fh, sizeof(fh));
@@ -138,7 +138,7 @@ nfssvc(p, uap, retval)
 	/*
 	 * Must be super user
 	 */
-	if (error = suser(u.u_cred, &u.u_acflag))
+	if (error = suser(p->p_ucred, &p->p_acflag))
 		return (error);
 	if (error = getsock(p->p_fd, uap->s, &fp))
 		return (error);
@@ -161,7 +161,7 @@ nfssvc(p, uap, retval)
 	m_freem(nam);
 
 	/* Copy the cred so others don't see changes */
-	cr = u.u_cred = crcopy(u.u_cred);
+	cr = p->p_ucred = crcopy(p->p_ucred);
 
 	/*
 	 * Set protocol specific options { for now TCP only } and
@@ -292,7 +292,7 @@ async_daemon(p, uap, retval)
 	/*
 	 * Must be super user
 	 */
-	if (error = suser(u.u_cred, &u.u_acflag))
+	if (error = suser(p->p_ucred, &p->p_acflag))
 		return (error);
 	/*
 	 * Assign my position or return error if too many already running
