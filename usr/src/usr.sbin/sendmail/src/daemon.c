@@ -17,14 +17,14 @@
  */
 
 #include <errno.h>
-#include <sendmail.h>
+#include "sendmail.h"
 # include <sys/mx.h>
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	5.32 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	5.33 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	5.32 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	5.33 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
