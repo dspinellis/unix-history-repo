@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)dbopen.3	5.15 (Berkeley) %G%
+.\"	@(#)dbopen.3	5.16 (Berkeley) %G%
 .\"
 .TH DB 3  ""
 .UC 7
@@ -78,6 +78,7 @@ int (*put)(const DB *db, const DBT *key, const DBT *data,
 .ti +5
 u_int flags);
 int (*seq)(const DB *db, DBT *key, DBT *data, u_int flags);
+int type;
 void *openinfo;
 .RE
 } DB;
@@ -91,6 +92,10 @@ and, optionally, a flag value.
 .TP
 openinfo
 A pointer to an internal structure specific to the access method.
+.TP
+type
+The type of the underlying access method; either DB_BTREE, DB_HASH
+or DB_RECNO.
 .TP
 close
 A pointer to a routine to flush any cached information to disk, free any
@@ -280,7 +285,7 @@ Both keys and data are represented by the following data structure:
 .PP
 typedef struct {
 .RS
-u_char *data;
+void *data;
 .br
 size_t size;
 .RE
@@ -421,17 +426,17 @@ is as follows:
 .sp
 typedef struct {
 .RS
-int bsize;
+u_long (*hash)(const void *, const size_t);
 .br
 u_int cachesize;
 .br
+int bsize;
+.br
 int ffactor;
 .br
-int nelem;
-.br
-u_long (*hash)(const void *, const size_t);
-.br
 int lorder;
+.br
+int nelem;
 .RE
 } HASHINFO;
 .PP
@@ -631,15 +636,15 @@ and
 .IR malloc (3)
 or the following:
 .TP
+[EFTYPE]
+A file used by one of the
+.I open
+routines is incorrectly formatted.
+.TP
 [EINVAL]
 A parameter has been specified (hash function, pad byte etc.) that is
 incompatible with the current file specification or there is a mismatch
 between the version number of file and the software.
-.TP
-[EBADFORMAT]
-A file used by one of the
-.I open
-routines is incorrectly formatted.
 .PP
 The
 .I close
@@ -677,7 +682,7 @@ for any of the errors specified for the library routine
 .SH "SEE ALSO"
 .IR "Dynamic Hash Tables" ,
 Per-Ake Larson, Communications of the ACM, April 1988.
-.sp
+.br
 .IR "A New Hash Package for UNIX" ,
 Margo Seltzer, USENIX Proceedings, Winter 1991.
 .SH BUGS
