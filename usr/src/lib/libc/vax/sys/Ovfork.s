@@ -6,13 +6,15 @@
  */
 
 #if defined(SYSLIBC_SCCS) && !defined(lint)
-	.asciz "@(#)Ovfork.s	5.6 (Berkeley) %G%"
+	.asciz "@(#)Ovfork.s	5.7 (Berkeley) %G%"
 #endif /* SYSLIBC_SCCS and not lint */
 
 /*
  * @(#)vfork.s	4.1 (Berkeley) 12/21/80
  * C library -- vfork
  */
+
+#include "SYS.h"
 
 /*
  * pid = vfork();
@@ -25,28 +27,19 @@
  * with a ret off this stack... we do the ret before we vfork!
  */
 
-	.set	vfork,66
-.globl	_vfork
-
-_vfork:
-	.word	0x0000
-	movl	16(fp),r2
+ENTRY(vfork)
+	movl	16(fp),r2	# save return address before we smash it
 	movab	here,16(fp)
 	ret
 here:
-	chmk	$vfork
-	bcc	vforkok
-	jmp	verror
-vforkok:
-	tstl	r1		# child process ?
-	bneq	child	# yes
-	bcc 	parent		# if c-bit not set, fork ok
-.globl	_errno
-verror:
+	chmk	$SYS_vfork
+	bcs	err		# if failed, set errno and return -1
+	/* this next trick is Chris Torek's fault */
+	mnegl	r1,r1		# r1 = 0xffffffff if child, 0 if parent
+	bicl2	r1,r0		# r0 &= ~r1, i.e., 0 if child, else unchanged
+	jmp	(r2)
+
+err:
 	movl	r0,_errno
 	mnegl	$1,r0
-	jmp	(r2)
-child:
-	clrl	r0
-parent:
 	jmp	(r2)
