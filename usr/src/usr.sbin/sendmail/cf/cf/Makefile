@@ -1,4 +1,14 @@
-#	@(#)Makefile	8.9 (Berkeley) %G%
+#	@(#)Makefile	8.10 (Berkeley) %G%
+
+#
+#  This Makefile uses the new Berkeley "make" program.  See Makefile.dist
+#  for a more vanilla version.
+#
+#  Configuration files are created using "m4 file.mc > file.cf";
+#  this may be easier than tweaking the Makefile.  You do need to
+#  have a fairly modern M4 available (GNU m4 works).  On SunOS, use
+#  /usr/5bin/m4.
+#
 
 M4=	m4
 #M4=	/usr/src/usr.bin/m4/obj/m4
@@ -13,17 +23,13 @@ RM=	rm -f
 	(cd ${.CURDIR} && $(M4) ${@:R}.mc > obj/$@)
 	$(CHMOD) $(ROMODE) $@
 
-ALL=	cs-hidden.cf cs-exposed.cf \
-	hpux-cs-exposed.cf hpux-cs-hidden.cf \
-	riscos-cs-exposed.cf \
-	sunos3.5-cs-exposed.cf sunos3.5-cs-hidden.cf \
-	sunos4.1-cs-exposed.cf sunos4.1-cs-hidden.cf \
-	ultrix4.1-cs-exposed.cf ultrix4.1-cs-hidden.cf \
-	osf1-cs-exposed.cf osf1-cs-hidden.cf \
-	mail.cs.cf mail.eecs.cf huginn.cf ucbvax.cf vangogh.cf \
-	chez.cf knecht.cf cogsci.cf alpha.cf s2k.cf auspex.cf \
-	python.cf \
-	clientproto.cf tcpproto.cf uucpproto.cf
+ALL=	generic-hpux9.cf generic-osf1.cf generic-solaris2.cf \
+		generic-sunos4.1.cf generic-ultrix4.cf \
+	cs-hpux9.cf cs-riscos.cf cs-solarix2.cf \
+		cs-sunos4.1.cf cs-ultrix4.1.cf cs-osf1-cs.cf \
+	s2k-ultrix4.1.cf s2k-osf1.cf \
+	chez.cs.cf huginn.cs.cf mail.cs.cf mail.eecs.cf python.cs.cf \
+		ucbarpa.cf ucbvax.cf vangogh.cs.cf
 
 all: $(ALL)
 
@@ -34,13 +40,13 @@ depend install:
 
 # this is overkill, but....
 M4FILES=\
-	../domain/Berkeley.m4 \
-	../domain/cs.exposed.m4 \
-	../domain/cs.hidden.m4 \
-	../domain/eecs.hidden.m4 \
-	../domain/s2k.m4 \
+	../domain/Berkeley.EDU.m4 \
+	../domain/CS.Berkeley.EDU.m4 \
+	../domain/EECS.Berkeley.EDU.m4 \
+	../domain/S2K.Berkeley.EDU.m4 \
 	../feature/allmasquerade.m4 \
 	../feature/always_add_domain.m4 \
+	../feature/bestmx_is_local.m4 \
 	../feature/bitdomain.m4 \
 	../feature/domaintable.m4 \
 	../feature/local_procmail.m4 \
@@ -51,6 +57,7 @@ M4FILES=\
 	../feature/nouucp.m4 \
 	../feature/nullclient.m4 \
 	../feature/redirect.m4 \
+	../feature/smrsh.m4 \
 	../feature/stickyhost.m4 \
 	../feature/use_cw_file.m4 \
 	../feature/uucpdomain.m4 \
@@ -61,24 +68,33 @@ M4FILES=\
 	../m4/version.m4 \
 	../mailer/fax.m4 \
 	../mailer/local.m4 \
+	../mailer/pop.m4 \
 	../mailer/procmail.m4 \
 	../mailer/smtp.m4 \
 	../mailer/usenet.m4 \
 	../mailer/uucp.m4 \
 	../ostype/aix3.m4 \
+	../ostype/amdahl-uts.m4 \
+	../ostype/aux.m4 \
 	../ostype/bsd4.3.m4 \
 	../ostype/bsd4.4.m4 \
-	../ostype/hpux.m4 \
+	../ostype/bsdi1.0.m4 \
+	../ostype/dgux.m4 \
+	../ostype/domainos.m4 \
+	../ostype/dynix3.2.m4 \
+	../ostype/hpux9.m4 \
 	../ostype/irix.m4 \
 	../ostype/linux.m4 \
 	../ostype/nextstep.m4 \
 	../ostype/osf1.m4 \
+	../ostype/ptx2.m4 \
 	../ostype/riscos4.5.m4 \
+	../ostype/sco3.2.m4 \
 	../ostype/solaris2.m4 \
 	../ostype/sunos3.5.m4 \
 	../ostype/sunos4.1.m4 \
 	../ostype/svr4.m4 \
-	../ostype/ultrix4.1.m4 \
+	../ostype/ultrix4.m4 \
 	../siteconfig/uucp.cogsci.m4 \
 	../siteconfig/uucp.old.arpa.m4 \
 	../siteconfig/uucp.ucbarpa.m4 \

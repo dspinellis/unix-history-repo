@@ -7,8 +7,17 @@ divert(-1)
 # %sccs.include.redist.sh%
 #
 
+#
+#  This is a Berkeley-specific configuration file for a specific
+#  machine in Electrical Engineering and Computer Sciences at Berkeley,
+#  and should not be used elsewhere.   It is provided on the sendmail
+#  distribution as a sample only.
+#
+#  This file is for the primary EECS mail server.
+#
+
 include(`../m4/cf.m4')
-VERSIONID(`@(#)mail.eecs.mc	8.5 (Berkeley) %G%')
+VERSIONID(`@(#)mail.eecs.mc	8.6 (Berkeley) %G%')
 OSTYPE(ultrix4.1)dnl
 DOMAIN(eecs.hidden)dnl
 FEATURE(use_cw_file)dnl

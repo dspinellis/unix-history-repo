@@ -7,10 +7,17 @@ divert(-1)
 # %sccs.include.redist.sh%
 #
 
+#
+#  This is a Berkeley-specific configuration file for a specific
+#  machine in the Computer Science Division at Berkeley, and should
+#  not be used elsewhere.   It is provided on the sendmail distribution
+#  as a sample only.
+#
+
 include(`../m4/cf.m4')
-VERSIONID(`@(#)knecht.cs.mc	8.1 (Berkeley) %G%')
-OSTYPE(ultrix4.1)dnl
-DOMAIN(cs.exposed)dnl
+VERSIONID(`@(#)knecht.cs.mc	8.2 (Berkeley) %G%')
+OSTYPE(hpux9)dnl
+DOMAIN(CS.Berkeley.EDU)dnl
 define(`LOCAL_RELAY', CS.Berkeley.EDU)dnl
 MAILER(smtp)dnl
 
