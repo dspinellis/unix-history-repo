@@ -1,6 +1,6 @@
 # include "../hdr/defines.h"
 
-static char Sccsid[] = "@(#)bdiff.c	4.4	%G%";
+static char Sccsid[] = "@(#)bdiff.c	4.5	%G%";
 
 /*
 	This program segments two files into pieces of <= seglim lines
@@ -22,7 +22,7 @@ static char Sccsid[] = "@(#)bdiff.c	4.4	%G%";
 
 int seglim;	/* limit of size of file segment to be generated */
 
-char diff[] = "/bin/diff";
+char diff[] = "/usr/bin/diff";
 char tempskel[] = "/tmp/bdXXXXX";		/* used to generate temp file names */
 char tempfile[32];
 char otmp[32], ntmp[32];
