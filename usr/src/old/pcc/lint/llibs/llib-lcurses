@@ -1,0 +1,62 @@
+/* @(#)llib-lcurses	1.1 (Berkeley) %G% */
+
+# include	"curses.h"
+
+void	box(win,vert,hor) WINDOW *win; int vert, hor; {}
+void	delwin(win) WINDOW *win; {}
+void	endwin() {}
+void	gettmode() {}
+WINDOW *initscr() { return (WINDOW *) 0;}
+char *	longname(bp, def) char *bp, *def; { return bp; }
+	mvcur(ly,lx,y,x) int ly, lx, y, x; { }
+/* VARARGS3 */
+	mvprintw(y,x,fmt) int y, x; char *fmt; { }
+/* VARARGS3 */
+	mvscanw(y,x,fmt) int y, x; char *fmt; { }
+/* VARARGS4 */
+	mvwprintw(win,y,x,fmt) WINDOW *win; int y, x; char *fmt; { }
+/* VARARGS4 */
+	mvwscanw(win,y,x,fmt) WINDOW *win; int y, x; char *fmt; { }
+WINDOW *newwin(Nl, Nc, by, bx) int Nl, Nc, by, bx; { return (WINDOW *) 0; }
+void	overlay(win1, win2) WINDOW *win1, *win2; { }
+void	overwrite(win1, win2) WINDOW *win1, *win2; { }
+/* VARARGS1 */
+	printw(fmt) char *fmt; { }
+/* VARARGS1 */
+	scanw(fmt) char *fmt; { }
+void	scroll(win) WINDOW *win; { }
+void	startwin() { }
+void	setterm(type) char *type; { }
+WINDOW *subwin(o, Nl, Nc, by, bx) WINDOW *o; int Nl, Nc, by, bx; { return o; }
+	waddch(win,ch) WINDOW *win; char ch; { }
+	waddstr(win,str) WINDOW *win; char *str; { }
+void	wclear(win) WINDOW *win; { }
+void	wclrtobot(win) WINDOW *win; { }
+void	wclrtoeol(win) WINDOW *win; { }
+void	wdeleteln(win) WINDOW *win; { }
+void	werase(win) WINDOW *win; { }
+	wgetch(win) WINDOW *win; { }
+	wgetstr(win,str) WINDOW *win; char *str; { }
+void	winsertln(win) WINDOW *win; { }
+	wmove(win,y,x) WINDOW *win; int y, x; { }
+/* VARARGS2 */
+	wprintw(win,fmt) WINDOW *win; char *fmt; { }
+	wrefresh(win) WINDOW *win; { }
+/* VARARGS2 */
+	wscanw(win,fmt) WINDOW *win; char *fmt; { }
+void	wstandout(win) WINDOW *win; { }
+void	wstandend(win) WINDOW *win; { }
+
+bool	AM, BS, CA, DA, DB, EO, GT, HZ, IN, MI, My_term, _echoit,
+	_rawmode, NC, NONL, OS, UL, UPPERCASE, XN, normtty, pfast;
+
+char    *AL, *BC, *BT, *CD, *CE, *CL, *CM, *DC, *DL, *DM, *DO,
+	*Def_term, ttytype[], *ED, *EI, *HO, *IC, *IM, *IP, *LL, *MA,
+	*ND, *SE, *SF, *SO, *SR, *TA, *TE, *TI, *UE, *UP, *US, *VB,
+	*VE, *VS, PC;
+
+int	LINES, COLS, _tty_ch, _res_flg;
+
+SGTTY	_tty;
+
+WINDOW	*stdscr, *curscr;
