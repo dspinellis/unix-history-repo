@@ -2,17 +2,19 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)pstat.8	6.6 (Berkeley) %G%
+.\"	@(#)pstat.8	6.7 (Berkeley) %G%
 .\"
 .TH PSTAT 8 ""
 .UC 4
 .SH NAME
-pstat \- print system facts
+pstat \- display system data structures
 .SH SYNOPSIS
 .B pstat
-.B \-aixptufT
 [
-.B suboptions
+.B \-Tpfvtsxn
+] [
+.B \-U
+.I pid
 ] [
 .B system
 ] [
@@ -20,10 +22,10 @@ pstat \- print system facts
 ]
 .SH DESCRIPTION
 .I Pstat
-interprets the contents of certain system tables.
+displays certain system data structures.
 If
 .I corefile
-is given, the tables are sought there, otherwise
+is given, the information is sought there, otherwise
 in
 .I /dev/kmem.
 The required namelist is taken from
@@ -32,14 +34,43 @@ unless
 .I system
 is specified.
 Options are
-.TP \w'WCHAN\ 'u
-.B \-a
-Under
-.BR \-p ,
-describe all process slots rather than just active ones.
+.\" ??? .TP \w'WCHAN\ 'u
 .TP
-.B \-i
-Print the inode table with the these headings:
+.B \-v
+Print the active vnodes.  Each group of vnodes coresponding
+to a particular filesystem is preceded by a two line header.  The
+first line consists of the following:
+.sp
+*** MOUNT \fIfstype from \fPon \fIon fsflags\fP
+.sp
+where \fIfstype\fP is one of \fBufs, nfs, mfs, or pc\fP; \fIfrom\fP
+is the filesystem is mounted from; \fIon\fP is the directory
+the filesystem is mounted on; and \fIfsflags\fP is a list
+of optional flags applied to the mount (see
+.IR mount (8)).  The second line is a header for the individual fields,
+the first part of which are fixed, and the second part are filesystem
+type specific.  The headers common to all vnodes are:
+.IP ADDR
+Location of this vnode.
+.IP TYP
+File type.
+.IP VFLAG
+A list of letters representing vnode flags:
+.nf
+.sp
+R - VROOT
+T - VTEXT
+L - VXLOCK
+W - VXWANT
+E - VEXLOCK
+S - VSHLOCK
+T - VLWAIT
+A - VALIASED
+B - VBWAIT
+.sp
+**** WAS HERE *****
+.fi
+Next
 .IP LOC
 The core location of this table entry.
 .PD 0
