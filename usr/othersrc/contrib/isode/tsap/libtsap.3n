@@ -1,0 +1,182 @@
+.TH LIBTSAP 3N "31 May 1988"
+.\" $Header: /f/osi/tsap/RCS/libtsap.3n,v 7.1 91/02/22 09:47:06 mrose Interim $
+.\"
+.\"
+.\" $Log:	libtsap.3n,v $
+.\" Revision 7.1  91/02/22  09:47:06  mrose
+.\" Interim 6.8
+.\" 
+.\" Revision 7.0  89/11/23  22:30:28  mrose
+.\" Release 6.0
+.\" 
+.SH NAME
+libtsap \- Transport Services library
+.SH SYNOPSIS
+.B "#include <isode/tsap.h>"
+.sp
+\fIcc\fR\0...\0\fB\-ltsap\fR
+.SH DESCRIPTION
+The \fIlibtsap\fR library contains a set of routines which implement
+transport services on top of the TCP.
+In essence,
+they implement a Transport Service Access Point (TSAP) interface to the
+native TCP/IP implementation on Berkeley UNIX.
+.PP
+Although the ISO model is symmetric,
+the TCP/IP model (and this implementation) is based on a client/server
+paradigm and hence asymmetric.
+The information herein is skeletal:
+consult the \fIUser's Manual\fR for actual examples of how ISO servers and
+clients are coded and interact with the \fIlibtsap\fR library.
+.SH ADDRESSES
+TSAP addresses are represented by the \fBTSAPaddr\fR structure.
+This contains one more more network addresses,
+and a transport-selector as found in the \fIisoservices\fR\0(5)
+database.
+.SH "SERVER INITIALIZATION"
+A program providing an ISO service is invoked under \fItsapd\fR\0(8c),
+with the argument vector listed in the ISODE services database.
+The server's very first action is to re\-capture the TSAP
+state as recorded by \fItsapd\fR.
+This is accomplished by calling \fBTInit\fR.
+Information returned by this call is equivalent to the parameters passed by a
+T\-CONNECTION.INDICATION event.
+If the call is successful,
+the program can then examine the argument vector that was passed via
+\fIexecvp\fR
+(it's important to call \fBTInit\fR prior to reading \fBargc\fR and
+\fBargv\fR).
+If the call to \fBTInit\fR is not successful,
+information returned by the call indicates the reason for failure.
+.PP
+After examining the information provided by \fBTInit\fR
+(and possibly the argument vector),
+the server should either accept or reject the connection.
+If accepting, the \fBTConnResponse\fR routine is called
+(which corresponds to the T\-CONNECT.RESPONSE action).
+If the call is successful,
+the interaction is henceforth symmetric.
+If un\-successful,
+information returned by the call indicates the reason for failure.
+If rejecting, the \fBTDiscRequest\fR routine is called
+(which corresponds to the T\-DISCONNECT.REQUEST action),
+and the program may exit.
+.SH "CLIENT INITIALIZATION"
+A program requesting an ISO service calls \fBTConnRequest\fR
+(which corresponds to the T\-CONNECT.REQUEST action).
+If successful,
+the interaction is henceforth symmetric.
+If un\-successful,
+information returned by the call indicates the reason for failure.
+.SH TRANSPORT\-DESCRIPTORS
+Once a connection has been established via a successful return from
+\fBTConnResponse\fR (for servers) or \fBTConnRequest\fR (for clients),
+a connection is referenced by a small integer
+(returned in a structure passed to these calls) called a
+\fItransport\-descriptor\fR.
+The transport\-descriptor appears as an argument to the peer routines described
+below.
+.PP
+By default,
+events associated with a transport\-descriptor are synchronous in nature:
+activity in the network won't generate an INDICATION event without program
+first asking to be told of any activity.
+To mark a transport\-descriptor as asynchronous,
+a call to \fBTSetIndications\fR is made with the addresses of an integer
+function to handle these events:
+.sp
+.in +.5i
+.nf
+.ta \w'\fIroutine\fR  'u
+\fIroutine\fR	\fIevents\fR
+\fBfunc1\fR	T\-DATA.INDICATION, T\-EXPEDITED DATA.INDICATION
+\fBfunc2\fR	T\-DISCONNECT.INDICATION
+.re
+.fi
+.in -.5i
+.sp
+Upon a successful return from \fBTSetIndications\fR,
+these functions will be called as appropriate in this fashion:
+.sp
+.in +.5i
+.B "(*func1) (sd, tx);"
+.sp
+.B "(*func2) (sd, td);"
+.in -.5i
+.sp
+where \fBsd\fR is the transport\-descriptor,
+\fBtx\fR is a pointer to a \fBTSAPdata\fR structure,
+and \fBtd\fR is a pointer to a \fBTSAPdisconnect\fR structure.
+Any value returned by these functions is ignored.
+.PP
+Note well: the \fB\-ltsap\fR library uses the SIGEMT signal to provide this
+interface.
+Programs loaded with \fB\-ltsap\fR that use asynchronous transport\-descriptors
+should NOT use SIGEMT for other purposes.
+.PP
+For synchronous multiplexing of several connections,
+the routine \fBTSelectMask\fR updates a file\-descriptor mask and counter for
+use with \fIselect\fR\0(2).
+.SH PEER
+As a rule,
+a fatal failure (consult the \fIUser's Manual\fR)
+on return from any of these routines is equivalent to a
+T\-DISCONNECT.INDICATION.
+.sp
+.in +.5i
+.nf
+.ta \w'\fBTWriteRequest\fR  'u
+\fIroutine\fR	\fIaction\fR
+\fBTDataRequest\fR	T\-DATA.REQUEST
+\fBTExpdRequest\fR	T\-EXPEDITED\-DATA.REQUEST
+\fBTWriteRequest\fR	T\-WRITE.REQUEST (write user data vectors)
+\fBTReadRequest\fR	T\-READ.REQUEST (synchronous read)
+\fBTDiscRequest\fR	T\-DISCONNECT.REQUEST
+.re
+.fi
+.in -.5i
+.sp
+Note that the \fBTReadRequest\fR routine returns data from the peer by
+allocating memory.
+It should be freed before the structure is re\-used.
+.PP
+Finally,
+the routine \fBTErrString\fR takes a failure code from a \fBTSAPdisconnect\fR
+structure and returns a null\-terminated diagnostic string.
+Also,
+the routine \fBTLocalHostName\fR returns a null\-terminated string
+denoting the name of the localhost.
+.SH FILES
+.nf
+.ta \w'\*(EDisoservices  'u
+\*(EDisoservices	ISODE services database
+.re
+.fi
+.SH "SEE ALSO"
+isoc(1c), isoservices(5), isod(8c), isore(8c), tsapd(8c),
+.br
+\fIThe ISO Development Environment: User's Manual\fR,
+.br
+\fIRFC1006: ISO Transport Services on top of the TCP, Version: 3\fR,
+.br
+ISO 8072:
+\fIInformation Processing Systems \-\- Open Systems Interconnection \-\-
+Transport Service Definition\fR,
+.br
+CCITT Recommendation X.214:
+\fITransport Service Definition for Open Systems Interconnection (OSI) for
+CCITT Applications\fR
+.SH DIAGNOSTICS
+All routines return the manifest constant \fBNOTOK\fR (\-1) on error.
+In addition,
+those routines which take a pointer to a \fBTSAPdisconnect\fR structure
+fill\-in the structure as appropriate.
+.SH AUTHORS
+Marshall T. Rose
+.br
+Dwight E. Cass,
+Northrop Research and Technology Center
+.SH BUGS
+Do not confuse transport\-descriptors with file\-descriptors.
+Unlike file\-descriptors which are implemented by the kernel,
+transport\-descriptors do not work across \fIfork\fRs and \fIexec\fRs.

@@ -1,0 +1,71 @@
+.TH ISOC 1C "31 May 1988"
+.\" $Header: /f/osi/support/RCS/isoc.1c,v 7.1 91/02/22 09:46:28 mrose Interim $
+.\"
+.\"
+.\" $Log:	isoc.1c,v $
+.\" Revision 7.1  91/02/22  09:46:28  mrose
+.\" Interim 6.8
+.\" 
+.\" Revision 7.0  89/11/23  22:27:14  mrose
+.\" Release 6.0
+.\" 
+.SH NAME
+isoc \- minimal ISODE client for testing
+.SH SYNOPSIS
+.in +.5i
+.ti -.5i
+.B isoc
+host provider entity
+.in -.5i
+.SH DESCRIPTION
+The \fIisoc\fR program requests a few minimal ISODE services
+and is useful primarily for debugging purposes.
+Currently,
+several entities can be requested, depending on the provider selected.
+The echo entities will verify that the data they send is received correctly.
+The \fIisode/\fR entities use association control (when applicable)
+in order to test out these newer facilities.
+.PP
+Further,
+to measure raw TCP performance, the \fIsink\fR entity can be requested of
+the \fIraw\fR provider.
+This option depends on the target system already having a TCP sink server in
+place.
+Berkeley UNIX sites usually have such a server.
+.PP
+To summarize:
+.sp
+.in +.5i
+.nf
+.ta \w'\fIprovider\fR  'u
+\fIprovider\fR	\fIentity\fR
+raw	sink
+tsap	echo, sink
+ssap	echo, sink
+psap	echo, sink,
+	isode/echo, isode/sink
+rtsap	echo, sink,
+	ros_echo, ros_sink,
+	\*(lqisode/rtse echo\*(rq, \*(rqisode/rtse sink\*(rq
+	isode/ros_echo, isode/ros_sink
+rosap	echo, sink,
+	isode/echo, isode/sink
+.re
+.fi
+.in -.5i
+.sp
+.PP
+Finally,
+on those hosts with sub\-second timing facilities,
+by redirecting \fIisoc\fR's standard input to a file,
+raw performance at a given layer can be measured.
+.SH FILES
+.nf
+.ta \w'\*(EDisoservices  'u
+\*(EDisoservices	ISODE services database
+.re
+.fi
+.SH "SEE ALSO"
+isoservices(5), isore(8c)
+.SH AUTHOR
+Marshall T. Rose

@@ -1,0 +1,145 @@
+.TH VT 1C "21 Nov 1988"
+.\" $Header: /f/osi/vt/RCS/vt.1c,v 7.1 91/02/22 09:48:21 mrose Interim $
+.\"
+.\"
+.\" $Log:	vt.1c,v $
+.\" Revision 7.1  91/02/22  09:48:21  mrose
+.\" Interim 6.8
+.\" 
+.\" Revision 7.0  89/11/23  22:31:48  mrose
+.\" Release 6.0
+.\" 
+.SH NAME
+vt \- VT interactive remote login initiator
+.SH SYNOPSIS
+.in +.5i
+.ti -.5i
+.B vt
+\%[-g]
+\%[-D]
+\%[-f]
+\%[-F logfile]
+\%[-B]
+\%[host]
+.in -.5i
+.SH DESCRIPTION
+The \fIvt\fR program implements the initiator side of 
+a remote login service based on the Virtual Terminal (VT)
+standard and the VT TELNET profile from the NIST OSI Workshop
+Implementor's Agreements.
+.PP
+The user interface to the service is based on BSD 4.2 TELNET.
+Command mode is entered by typing an escape character (``^]'' by default)
+as in TELNET.
+.SH OPTIONS
+.TP
+.B -g
+Use only the G0 character set for the \fIascii\fR repertoire (graphics only).
+.TP
+.B -D
+Use the VT asynchronous default profile (see ISO 9040) rather than
+the TELNET profile.
+.TP
+.B -B
+Do not use the VT-BREAK functional unit (see ISO 9040) in negotiating
+the VT association.
+.TP
+.B -F logfile
+Sets the VT logfile.
+Note that the pathname of this file is interpreted relatively to the
+ISODE logging area.
+To have tracing information written to a file in the current
+directory,
+start the filename with \*(lq./\*(rq.
+.TP
+.B -f
+Do not read and execute the commands in the file \fI$HOME/.vtrc\fR on startup.
+.SH COMMANDS
+.TP
+.B open\0host
+Open an association with the remote login service on the named host.
+.TP
+.B close\fR
+Close the existing association.
+.TP
+.B quit\fR
+Close the association and exit the remote login initiator process.
+.TP
+.B escape
+Set the ``escape character'' used to enter command mode. Control  characters
+may  be  specified  as ``^'' followed by a single letter;
+e.g. ``control-X'' is ``^X''.
+.TP
+.B ayt
+Send an ``are you there'' message to the remote login server.
+.TP
+.B break
+Send a ``break'' message to flush data queued in both directions
+and interrupt the remote process.
+.TP
+.B help
+Print a description of the available commands.
+.TP
+.B set
+Configure the VT variables listed below.
+.TP
+.B status
+Prints the current status of VT.
+.TP
+.B suspend
+Suspend
+.IR vt .
+This command only works when the user is using the
+.IR csh .
+.PP
+VT commands in $HOME/.vtrc are executed when \fIvt\fR starts
+up unless the \fI-f\fR flag is used.
+.SH Variables
+.PP
+Variables that can be manipulated with the \fIset\fR
+command include:
+.TP
+.B crmod
+Toggle carriage return mode.  When this mode is enabled
+any carriage return characters received from the remote
+host will be mapped into a carriage return and  a  line
+feed.  This mode does not affect those characters
+typed by the user, only those received.
+.TP
+.B echo
+Sets the echo mode to remote (ie. responder echoes) with ``set
+echo remote'' or local (ie. initiator echoes) with ``set
+echo local''.
+.TP
+.B repertoire
+Sets the character set to \fIascii \fRor \fItransparent\fR
+(binary).
+.SH FILES
+.nf
+.ta \w'\*(EDisoentities    'u
+\*(EDisoentities	ISODE application entity title database
+$HOME/\&.vtrc	runcom file
+.fi
+.SH "SEE ALSO"
+vtd(8c),
+.br
+\fIThe ISO Development Environment: User's Manual\fR,
+.br
+ISO DIS 9040, 9041:
+\fIInformation Processing Systems \-\-
+Virtual Terminal Service and Protocol\fR
+.br
+Implementation Agreements for Open Systems Interconnection Protocols
+.SH AUTHORS
+Rick Wilder and Don Chirieleison,
+The MITRE Corporation.
+.br
+Parts of this program are based on the \fItelnet\fR(1c) program supplied with
+Berkeley UNIX.
+.SH BUGS
+.PP
+\fIvt\fR and \fIvtd\fR need to be brought up to date with BSD 4.3(4?)
+TELNET.
+.PP
+The encodings of the VT PDUs may need to be updated when 
+the International Standard version of ISO 9041 is available.
