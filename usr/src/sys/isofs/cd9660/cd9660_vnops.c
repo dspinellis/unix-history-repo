@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cd9660_vnops.c	8.1 (Berkeley) %G%
+ *	@(#)cd9660_vnops.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -227,7 +227,6 @@ isofs_read(ap)
 			n = diff;
 		size = iso_blksize(imp, ip, lbn);
 		rablock = lbn + 1;
-#if 1
 		if (doclusterread) {
 			if (iso_lblktosize(imp, rablock) <= ip->i_size)
 				error = cluster_read(vp, (off_t)ip->i_size,
@@ -243,7 +242,6 @@ isofs_read(ap)
 			} else
 				error = bread(vp, lbn, size, NOCRED, &bp);
 		}
-#endif
 		vp->v_lastr = lbn;
 		n = min(n, size - bp->b_resid);
 		if (error) {
