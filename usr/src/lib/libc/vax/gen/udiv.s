@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	.asciz "@(#)udiv.s	5.4 (Berkeley) %G%"
+	.asciz "@(#)udiv.s	5.5 (Berkeley) %G%"
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -41,9 +41,9 @@ Lone:
 	ret
 
 ASENTRY(audiv,0)
+	movl	DIVIDEND,r3
 	movl	DIVISOR,r2
 	jlss	La_easy		# big divisor: settle by comparison
-	movl	DIVIDEND,r3
 	movl	(r3),r0
 	jlss	La_hard		# big dividend: extended division
 	divl2	r2,r0		# small divisor and dividend: signed division
