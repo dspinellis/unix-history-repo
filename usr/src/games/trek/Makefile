@@ -1,7 +1,7 @@
-#	@(#)Makefile	4.1	(Berkeley)	83/03/25
+#	@(#)Makefile	4.2	(Berkeley)	83/05/27
 #
 DESTDIR=
-CFLAGS=	-O
+CFLAGS=	# -O
 LFLAGS=	
 
 # The program itself
@@ -17,7 +17,7 @@ SRCS=	abandon.c attack.c autover.c capture.c check_out.c checkcond.c \
 	lose.c lrscan.c main.c move.c nova.c out.c phaser.c play.c ram.c \
 	ranf.c rest.c schedule.c score.c setup.c setwarp.c shell.c \
 	shield.c snova.c srscan.c systemname.c torped.c utility.c \
-	visual.c warp.c win.c
+	visual.c warp.c win.c cgetc.c
 
 # Objects
 #
@@ -28,14 +28,14 @@ OBJS=	abandon.o attack.o autover.o capture.o check_out.o checkcond.o \
 	lose.o lrscan.o main.o move.o nova.o out.o phaser.o play.o ram.o \
 	ranf.o rest.o schedule.o score.o setup.o setwarp.o shell.o \
 	shield.o snova.o srscan.o systemname.o torped.o utility.o \
-	visual.o warp.o win.o
+	visual.o warp.o win.o cgetc.o
 
 # Header files
 #
 HDRS=	getpar.h trek.h
 
 ${PROG}: ${OBJS} ${HDRS}
-	cc ${LFLAGS} -o ${PROG} ${OBJS}
+	cc ${LFLAGS} -o ${PROG} ${OBJS} -lm
 
 ${OBJS}:
 	cc ${CFLAGS} -c $*.c

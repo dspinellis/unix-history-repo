@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)getcodi.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)getcodi.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 # include	"getpar.h"
@@ -16,7 +16,7 @@ static char sccsid[] = "@(#)getcodi.c	4.1	(Berkeley)	%G%";
 
 getcodi(co, di)
 int	*co;
-float	*di;
+double	*di;
 {
 
 	*co = getintpar("Course");

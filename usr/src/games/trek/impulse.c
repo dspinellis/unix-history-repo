@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)impulse.c	4.2	(Berkeley)	%G%";
+static char sccsid[] = "@(#)impulse.c	4.3	(Berkeley)	%G%";
 #endif not lint
 
 # include	"trek.h"
@@ -12,9 +12,9 @@ impulse()
 {
 	int			course;
 	register int		power;
-	float			dist, time;
+	double			dist, time;
 	register int		percent;
-	extern float		move();
+	extern double		move();
 
 	if (Ship.cond == DOCKED)
 		return (printf("Scotty: Sorry captain, but we are still docked.\n"));

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)schedule.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)schedule.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 # include	"trek.h"
@@ -16,13 +16,13 @@ static char sccsid[] = "@(#)schedule.c	4.1	(Berkeley)	%G%";
 
 struct event *schedule(type, offset, x, y, z)
 int	type;
-float	offset;
+double	offset;
 char	x, y;
 char	z;
 {
 	register struct event	*e;
 	register int		i;
-	float			date;
+	double			date;
 
 	date = Now.date + offset;
 	for (i = 0; i < MAXEVENTS; i++)
@@ -57,9 +57,9 @@ char	z;
 
 reschedule(e1, offset)
 struct event	*e1;
-float		offset;
+double		offset;
 {
-	float			date;
+	double			date;
 	register struct event	*e;
 
 	e = e1;

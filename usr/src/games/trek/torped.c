@@ -1,7 +1,8 @@
 #ifndef lint
-static char sccsid[] = "@(#)torped.c	4.2	(Berkeley)	%G%";
+static char sccsid[] = "@(#)torped.c	4.3	(Berkeley)	%G%";
 #endif not lint
 
+# include	<stdio.h>
 # include	"trek.h"
 
 /*
@@ -64,7 +65,7 @@ torped()
 		/* see if the user wants one */
 		if (!testnl())
 		{
-			k = ungetc(cgetc(0), 0);
+			k = ungetc(cgetc(0), stdin);
 			if (k >= '0' && k <= '9')
 				burst = 1;
 		}

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)move.c	4.2	(Berkeley)	%G%";
+static char sccsid[] = "@(#)move.c	4.3	(Berkeley)	%G%";
 #endif not lint
 
 # include	"trek.h"
@@ -39,22 +39,22 @@ static char sccsid[] = "@(#)move.c	4.2	(Berkeley)	%G%";
 **	Uses trace flag 4.
 */
 
-float move(ramflag, course, time, speed)
+double move(ramflag, course, time, speed)
 int	ramflag;
 int	course;
-float	time;
-float	speed;
+double	time;
+double	speed;
 {
 	double			angle;
-	float			x, y, dx, dy;
+	double			x, y, dx, dy;
 	register int		ix, iy;
 	double			bigger;
 	int			n;
 	register int		i;
-	float			dist;
-	float			sectsize;
+	double			dist;
+	double			sectsize;
 	double			xn;
-	float			evtime;
+	double			evtime;
 
 #	ifdef xTRACE
 	if (Trace)

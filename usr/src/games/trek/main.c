@@ -1,11 +1,13 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)main.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 # include	"trek.h"
-# define	PRIO		10	/* default priority */
+# include	<stdio.h>
+# include	<sgtty.h>
+# define	PRIO		00	/* default priority */
 
-int	Mother	51 + (51 << 8);
+int	Mother	= 51 + (51 << 8);
 
 /*
 **	 ####  #####    #    ####          #####  ####   #####  #   #
@@ -82,7 +84,7 @@ int	Mother	51 + (51 << 8);
 **	Many things in trek are not as clear as they might be, but are
 **	done to reduce space.  I compile with the -f and -O flags.  I
 **	am constrained to running with non-seperated I/D space, since
-**	we don't have floating point hardware here; even if we did, I
+**	we don't have doubleing point hardware here; even if we did, I
 **	would like trek to be available to the large number of people
 **	who either have an 11/40 or do not have FP hardware.  I also
 **	found it desirable to make the code run reentrant, so this
@@ -90,7 +92,7 @@ int	Mother	51 + (51 << 8);
 **
 **	I use the portable C library to do my I/O.  This is done be-
 **	cause I wanted the game easily transportable to other C
-**	implementations, and because I was too lazy to do the floating
+**	implementations, and because I was too lazy to do the doubleing
 **	point input myself.  Little did I know.  The portable C library
 **	released by Bell Labs has more bugs than you would believe, so
 **	I ended up rewriting the whole blessed thing.  Trek excercises
@@ -108,23 +110,25 @@ main(argc, argv)
 int	argc;
 char	**argv;
 {
-	int			vect[3];
-	extern int		f_log;
+	long			vect;
+	/* extern FILE		*f_log; */
 	register char		opencode;
 	int			prio;
 	register int		ac;
 	register char		**av;
+	struct	sgttyb		argp;
+	int			been_here = 0;
 
 	av = argv;
 	ac = argc;
 	av++;
-	time(vect);
-	srand(vect[1]);
+	time(&vect);
+	srand(vect);
 	opencode = 'w';
 	prio = PRIO;
-	if (gtty(1, vect) == 0)
+	if (gtty(1, &argp) == 0)
 	{
-		if ((vect[0] & 0377) > 8)
+		if ((argp.sg_ispeed ) < B1200)
 			Etc.fast++;
 	}
 	while (ac > 1 && av[0][0] == '-')
@@ -167,19 +171,38 @@ char	**argv;
 	}
 	if (ac > 2)
 		syserr(0, "arg count");
+		/*
 	if (ac > 1)
-		f_log = copen(av[0], opencode);
+		f_log = fopen(av[0], opencode);
+		*/
 
 	printf("\n   * * *   S T A R   T R E K   * * *\n\n");
-	ungetc('\n', 0);		/* prime the standard input */
-	ungetc('y', 0);
-	nice(prio);
 
+	play_with(stdin);
+	ungetc('\n',stdin);
 	setexit();
-	while (getynpar("Another game"))
+	if ( been_here == 1 )
+	{
+		if ( !getynpar("Another game") )
+			exit(0);
+	}
+	been_here = 1;
+	do
 	{
 		setup();
 		play();
-	}
-	flush();
+	} while (getynpar("Another game"));
+
+	fflush(stdout);
+}
+
+play_with(iop)
+register	FILE	*iop;
+{
+	extern	char	_sibuf[];
+
+	iop->_cnt = 0;
+	iop->_base = _sibuf;
+	iop->_ptr = iop->_base;
+	iop->_bufsiz = BUFSIZ;
 }

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)initquad.c	4.2	(Berkeley)	%G%";
+static char sccsid[] = "@(#)initquad.c	4.3	(Berkeley)	%G%";
 #endif not lint
 
 # include	"trek.h"
@@ -79,7 +79,7 @@ int	f;
 	}
 
 	/* initialize inhabited starsystem */
-	if (q->systemname != 0)
+	if (q->qsystemname != 0)
 	{
 		sector(&rx, &ry);
 		Sect[rx][ry] = INHABIT;

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)events.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)events.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 # include	"trek.h"
@@ -22,7 +22,7 @@ int	warp;		/* set if called in a time warp */
 	double			rtime;
 	double			xdate;
 	double			idate;
-	struct event		*ev;
+	struct event		*ev, *xsched(), *schedule();
 	int			ix, iy;
 	register struct quad	*q;
 	register struct event	*e;
@@ -73,7 +73,7 @@ int	warp;		/* set if called in a time warp */
 		rtime = xdate - Now.date;
 
 		/* decrement the magic "Federation Resources" pseudo-variable */
-		Now.resource =- Now.klings * rtime;
+		Now.resource -= Now.klings * rtime;
 		/* and recompute the time left */
 		Now.time = Now.resource / Now.klings;
 
@@ -118,7 +118,7 @@ int	warp;		/* set if called in a time warp */
 					{
 						q = &Quad[ix][iy];
 						if (q->stars >= 0)
-							if ((i =- q->klings) <= 0)
+							if ((i -= q->klings) <= 0)
 								break;
 					}
 					if (i <= 0)
@@ -197,7 +197,7 @@ int	warp;		/* set if called in a time warp */
 			else
 				/* SSRADIO out, make it so we can't see the distress call */
 				/* but it's still there!!! */
-				e->evcode =| E_HIDDEN;
+				e->evcode |= E_HIDDEN;
 			break;
 
 		  case E_KDESB:			/* Klingon destroys starbase */
@@ -235,8 +235,8 @@ int	warp;		/* set if called in a time warp */
 				   not already under attack, which is not
 				   supernova'ed, and which has some Klingons in it */
 				if (!((ix == Ship.quadx && iy == Ship.quady) || q->stars < 0 ||
-				    (q->systemname & Q_DISTRESSED) ||
-				    (q->systemname & Q_SYSTEM) == 0 || q->klings <= 0))
+				    (q->qsystemname & Q_DISTRESSED) ||
+				    (q->qsystemname & Q_SYSTEM) == 0 || q->klings <= 0))
 					break;
 			}
 			if (i >= 100)
@@ -244,9 +244,9 @@ int	warp;		/* set if called in a time warp */
 				break;
 
 			/* got one!!  Schedule its enslavement */
-			Ship.distressed =+ 1;
-			e = xsched(E_ENSLV, 1, ix, iy, q->systemname);
-			q->systemname = (e - Event) | Q_DISTRESSED;
+			Ship.distressed++;
+			e = xsched(E_ENSLV, 1, ix, iy, q->qsystemname);
+			q->qsystemname = (e - Event) | Q_DISTRESSED;
 
 			/* tell the captain about it if we can */
 			if (!damaged(SSRADIO))
@@ -257,7 +257,7 @@ int	warp;		/* set if called in a time warp */
 			}
 			else
 				/* if we can't tell him, make it invisible */
-				e->evcode =| E_HIDDEN;
+				e->evcode |= E_HIDDEN;
 			break;
 
 		  case E_ENSLV:		/* starsystem is enslaved */
@@ -268,7 +268,7 @@ int	warp;		/* set if called in a time warp */
 			{
 				/* no Klingons, clean up */
 				/* restore the system name */
-				q->systemname = e->systemname;
+				q->qsystemname = e->systemname;
 				break;
 			}
 
@@ -284,7 +284,7 @@ int	warp;		/* set if called in a time warp */
 					e->x, e->y);
 			}
 			else
-				e->evcode =| E_HIDDEN;
+				e->evcode |= E_HIDDEN;
 			break;
 
 		  case E_REPRO:		/* Klingon reproduces */
@@ -293,7 +293,7 @@ int	warp;		/* set if called in a time warp */
 			if (q->klings <= 0)
 			{
 				unschedule(e);
-				q->systemname = e->systemname;
+				q->qsystemname = e->systemname;
 				break;
 			}
 			xresched(e, E_REPRO, 1);
@@ -329,8 +329,8 @@ int	warp;		/* set if called in a time warp */
 				iy = j;
 			}
 			/* deliver the child */
-			q->klings =+ 1;
-			Now.klings =+ 1;
+			q->klings++;
+			Now.klings++;
 			if (ix == Ship.quadx && iy == Ship.quady)
 			{
 				/* we must position Klingon */
@@ -350,10 +350,10 @@ int	warp;		/* set if called in a time warp */
 
 		  case E_SNAP:		/* take a snapshot of the galaxy */
 			xresched(e, E_SNAP, 1);
-			i = Etc.snapshot;
-			i = bmove(&Quad, i, sizeof Quad);
-			i = bmove(&Event, i, sizeof Event);
-			i = bmove(&Now, i, sizeof Now);
+			i = (int) Etc.snapshot;
+			i = bmove(Quad, i, sizeof (Quad));
+			i = bmove(Event, i, sizeof (Event));
+			i = bmove(Now, i, sizeof (Now));
 			Game.snap = 1;
 			break;
 
@@ -415,16 +415,16 @@ int	warp;		/* set if called in a time warp */
 	{
 		/* eat up energy if cloaked */
 		if (Ship.cloaked)
-			Ship.energy =- Param.cloakenergy * Move.time;
+			Ship.energy -= Param.cloakenergy * Move.time;
 
 		/* regenerate resources */
 		rtime = 1.0 - exp(-Param.regenfac * Move.time);
-		Ship.shield =+ (Param.shield - Ship.shield) * rtime;
-		Ship.energy =+ (Param.energy - Ship.energy) * rtime;
+		Ship.shield += (Param.shield - Ship.shield) * rtime;
+		Ship.energy += (Param.energy - Ship.energy) * rtime;
 
 		/* decrement life support reserves */
 		if (damaged(LIFESUP) && Ship.cond != DOCKED)
-			Ship.reserves =- Move.time;
+			Ship.reserves -= Move.time;
 	}
 	return (0);
 }

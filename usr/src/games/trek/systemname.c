@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)systemname.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)systemname.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 # include	"trek.h"
@@ -23,11 +23,11 @@ struct quad	*q1;
 
 	q = q1;
 
-	i = q->systemname;
+	i = q->qsystemname;
 	if (i & Q_DISTRESSED)
 		i = Event[i & Q_SYSTEM].systemname;
 
-	i =& Q_SYSTEM;
+	i &= Q_SYSTEM;
 	if (i == 0)
 		return (0);
 	return (Systemname[i]);

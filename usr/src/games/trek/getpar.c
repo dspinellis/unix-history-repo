@@ -1,7 +1,8 @@
 #ifndef lint
-static char sccsid[] = "@(#)getpar.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)getpar.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
+# include	<stdio.h>
 # include	"getpar.h"
 
 /**
@@ -47,7 +48,7 @@ char	*s;
 			exit(1);
 		if (i > 0 && testterm())
 			return (d);
-		printf("invalid input; please enter a float\n");
+		printf("invalid input; please enter a double\n");
 		skiptonl(0);
 	}
 }
@@ -56,10 +57,10 @@ char	*s;
  **	get yes/no parameter
  **/
 
-struct cvntab	Yntab[]
+struct cvntab	Yntab[] =
 {
-	"y",	"es",	1,	0,
-	"n",	"o",	0,	0,
+	"y",	"es",	(int (*)())1,	0,
+	"n",	"o",	(int (*)())0,	0,
 	0
 };
 
@@ -91,7 +92,7 @@ struct cvntab	tab[];
 	flag = 0;
 	while (1)
 	{
-		flag =| (f = testnl());
+		flag |= (f = testnl());
 		if (flag)
 			printf("%s: ", s);
 		if (f)
@@ -166,7 +167,7 @@ char	*t;
 
 	if (t == 0)
 		t = " \t\n;";
-	printf(-1, format, "%%%d[^%s]", l, t);
+	sprintf(format, "%%%d[^%s]", l, t);
 	while (1)
 	{
 		if ((f = testnl()) && s)
@@ -196,10 +197,10 @@ testnl()
 				(c >= 'A' && c <= 'Z') ||
 				(c >= 'a' && c <= 'z') || c == '-')
 		{
-			ungetc(c, 0);
+			ungetc(c, stdin);
 			return(0);
 		}
-	ungetc(c, 0);
+	ungetc(c, stdin);
 	return (1);
 }
 
@@ -214,7 +215,7 @@ char	c;
 	while (c != '\n')
 		if (!(c = cgetc(0)))
 			return;
-	ungetc('\n', 0);
+	ungetc('\n', stdin);
 	return;
 }
 
@@ -232,7 +233,7 @@ testterm()
 	if (c == '.')
 		return (0);
 	if (c == '\n' || c == ';')
-		ungetc(c, 0);
+		ungetc(c, stdin);
 	return (1);
 }
 
@@ -256,7 +257,7 @@ char	d;
 			return (1);
 		if (c == ' ')
 			continue;
-		ungetc(c, 0);
+		ungetc(c, stdin);
 		break;
 	}
 	return (0);

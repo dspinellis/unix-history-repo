@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)damage.c	4.2	(Berkeley)	%G%";
+static char sccsid[] = "@(#)damage.c	4.3	(Berkeley)	%G%";
 #endif not lint
 
 # include	"trek.h"
@@ -18,7 +18,7 @@ static char sccsid[] = "@(#)damage.c	4.2	(Berkeley)	%G%";
 
 damage(dev1, dam)
 int	dev1;		/*  device index */
-float	dam;		/* time to repair */
+double	dam;		/* time to repair */
 {
 	register int		i;
 	register struct event	*e;
