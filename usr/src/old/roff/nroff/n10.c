@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)n10.c	4.1 %G%";
+static char sccsid[] = "@(#)n10.c	4.2 %G%";
 #endif lint
 
 #include "tdef.h"
@@ -233,7 +233,7 @@ move(){
 		}else{
 			j = " ";
 			if(hflg)while((dt = dtab - (iesct%dtab)) <= esc){
-				if(dt%t.Em)break;
+				if(dt%t.Em || dt==t.Em)break;
 				oput(TAB);
 				esc -= dt;
 				iesct += dt;
