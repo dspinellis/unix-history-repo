@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lock.h	8.8 (Berkeley) %G%
+ *	@(#)lock.h	8.9 (Berkeley) %G%
  */
 
 #ifndef	_LOCK_H_
@@ -63,7 +63,7 @@ struct lock {
  *
  * These are flags that are passed to the lockmgr routine.
  */
-#define LK_TYPE_MASK	0x00000007	/* type of lock sought */
+#define LK_TYPE_MASK	0x0000000f	/* type of lock sought */
 #define LK_SHARED	0x00000001	/* shared lock */
 #define LK_EXCLUSIVE	0x00000002	/* exclusive lock */
 #define LK_UPGRADE	0x00000003	/* shared-to-exclusive upgrade */
@@ -90,7 +90,8 @@ struct lock {
 #define LK_WANT_EXCL	0x00000200	/* exclusive lock sought */
 #define LK_HAVE_EXCL	0x00000400	/* exclusive lock obtained */
 #define LK_WAITDRAIN	0x00000800	/* process waiting for lock to drain */
-#define LK_DRAINED	0x00001000	/* lock has been decommissioned */
+#define LK_DRAINING	0x00001000	/* lock is being drained */
+#define LK_DRAINED	0x00002000	/* lock has been decommissioned */
 /*
  * Control flags
  *
@@ -123,10 +124,12 @@ struct lock {
 #define LK_KERNPROC ((pid_t) -2)
 #define LK_NOPROC ((pid_t) -1)
 
+struct proc;
+
 void	lockinit __P((struct lock *, int prio, char *wmesg, int timo,
 			int flags));
 int	lockmgr __P((__volatile struct lock *, u_int flags,
-			struct simple_lock *, pid_t pid));
+			struct simple_lock *, struct proc *p));
 int	lockstatus __P((struct lock *));
 
 #ifdef DEBUG
