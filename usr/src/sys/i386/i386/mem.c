@@ -11,7 +11,7 @@
  * %sccs.include.redist.c%
  *
  * from: Utah $Hdr: mem.c 1.13 89/10/08$
- *	@(#)mem.c	7.4 (Berkeley) %G%
+ *	@(#)mem.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -59,7 +59,7 @@ mmrw(dev, uio, flags)
 /* minor device 0 is physical memory */
 		case 0:
 			v = uio->uio_offset;
-			pmap_enter(pmap_kernel(), vmmap, v,
+			pmap_enter(kernel_pmap, vmmap, v,
 				uio->uio_rw == UIO_READ ? VM_PROT_READ : VM_PROT_WRITE,
 				TRUE);
 			o = (int)uio->uio_offset & PGOFSET;
@@ -67,7 +67,7 @@ mmrw(dev, uio, flags)
 			c = MIN(c, (u_int)(NBPG - o));
 			c = MIN(c, (u_int)iov->iov_len);
 			error = uiomove((caddr_t)&vmmap[o], (int)c, uio);
-			pmap_remove(pmap_kernel(), vmmap, &vmmap[NBPG]);
+			pmap_remove(kernel_pmap, vmmap, &vmmap[NBPG]);
 			continue;
 
 /* minor device 1 is kernel memory */
