@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)halt.8	6.1 (Berkeley) %G%
+.\"	@(#)halt.8	6.2 (Berkeley) %G%
 .\"
 .TH HALT 8 ""
 .UC 4
@@ -32,8 +32,19 @@ option prevents the sync before stopping.  The
 option causes a quick halt, no graceful shutdown is attempted.  The
 .B \-y
 option is needed if you are trying to halt the system from a dialup.
+.PP
+.I Halt
+normally logs the shutdown using
+.IR syslog (8)
+and places a shutdown record in the login accounting file
+/usr/adm/wtmp.
+These actions are inhibited if the
+.B \-n
+or
+.B \-q
+options are present.
 .SH SEE ALSO
-reboot(8), shutdown(8)
+reboot(8), shutdown(8), syslogd(8)
 .SH BUGS
 It is very difficult to halt a VAX, as the machine wants to then
 reboot itself.  A rather tight loop suffices.

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)savecore.8	6.2 (Berkeley) %G%
+.\"	@(#)savecore.8	6.3 (Berkeley) %G%
 .\"
 .TH SAVECORE 8 ""
 .UC 4
@@ -23,7 +23,7 @@ write a reboot message in the shutdown log.
 Savecore checks the core dump to be certain it corresponds with the
 current running unix.  If it does it saves the core image in the file
 .IR dirname /vmcore.n
-and it's brother, the namelist,
+and its brother, the namelist,
 .IR dirname /vmunix.n
 The trailing ".n" in the pathnames is replaced by a number which grows
 every time
@@ -32,18 +32,19 @@ is run in that directory.
 .PP
 Before savecore writes out a core image, it reads a number from the file
 .IR dirname /minfree.
-If the number of free bytes on the filesystem which contains
+If the number of free kilobytes on the filesystem which contains
 .I dirname
-is less than the number obtained from the minfree file times 1024,
-the core dump is not done.
+is less than the number obtained from the minfree file,
+the core dump is not saved.
 If the minfree file does not exist, savecore always writes out the core
 file (assuming that a core dump was taken).
 .PP
 .I Savecore
-also writes a reboot message in the shut down log.  If the system crashed
-as a result of a panic,
+also logs a reboot message using facility LOG_AUTH (see
+.IR syslog (3))
+If the system crashed as a result of a panic,
 .I savecore
-records the panic string in the shut down log too.
+logs the panic string too.
 .PP
 If the core dump was from a system other than /vmunix, the name
 of that system must be supplied as

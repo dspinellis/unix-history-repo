@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)boot_vax.8	6.2 (Berkeley) %G%
+.\"	@(#)boot_vax.8	6.3 (Berkeley) %G%
 .\"
 .TH REBOOT 8 ""
 .UC 4
@@ -44,6 +44,17 @@ is on fire.
 .B \-q
 reboots quickly and ungracefully, without shutting down running
 processes first.
+.PP
+.I Reboot
+normally logs the reboot using
+.IR syslog (8)
+and places a shutdown record in the login accounting file
+/usr/adm/wtmp.
+These actions are inhibited if the
+.B \-n
+or
+.B \-q
+options are present.
 .PP
 .B "Power fail and crash recovery."
 Normally, the system will reboot itself at power-up or after crashes.
@@ -197,4 +208,5 @@ halt(8),
 init(8),
 newfs(8),
 rc(8),
-shutdown(8)
+shutdown(8),
+syslogd(8)
