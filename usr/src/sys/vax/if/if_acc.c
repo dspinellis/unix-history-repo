@@ -1,4 +1,4 @@
-/*	if_acc.c	4.1	82/02/01	*/
+/*	if_acc.c	4.2	82/02/01	*/
 
 #include "acc.h"
 #ifdef NACC > 0
@@ -59,7 +59,6 @@ struct	acc_softc {
 	struct	mbuf *acc_iq;		/* input reassembly queue */
 	short	acc_olen;		/* size of last message sent */
 	char	acc_flush;		/* flush remainder of message */
-	char	acc_previous;		/* something on input queue */
 } acc_softc[NACC];
 
 /*
@@ -159,11 +158,17 @@ COUNT(ACCINIT);
 	}
 	addr = (struct accdevice *)ui->ui_addr;
 
-	/* reset the imp interface. */
+	/*
+	 * Reset the imp interface.
+	 * the delays are totally guesses
+	 */
 	x = spl5();
 	addr->acc_icsr = ACC_RESET;
+	DELAY(100);
         addr->acc_ocsr = ACC_RESET;
+	DELAY(1000);
 	addr->acc_ocsr = OUT_BBACK;	/* reset host master ready */
+	DELAY(1000);
 	addr->acc_ocsr = 0;
 	addr->acc_icsr = IN_MRDY;	/* close the relay */
 	splx(x);
@@ -173,7 +178,7 @@ COUNT(ACCINIT);
 	       (addr->acc_icsr & (IN_RMR | IN_IMPBSY))) {
 		/* keep turning IN_RMR off */
 		addr->acc_icsr = IN_MRDY;
-		sleep((caddr_t)&lbolt, PZERO);
+		sleep((caddr_t)&lbolt, PZERO);	/* ??? */
 	}
 
 	/*
@@ -245,17 +250,18 @@ accxint(unit)
 
 COUNT(ACCXINT);
 	if (sc->acc_ic->ic_oactive == 0) {
-		printf("acc%d: stray output interrupt\n", unit);
+		printf("acc%d: stray send interrupt\n", unit);
 		return;
 	}
 	addr = (struct accdevice *)ui->ui_addr;
 	sc->acc_if->if_opackets++;
 	sc->acc_ic->ic_oactive = 0;
-	if (addr->acc_ocsr & ACC_ERR)
-		printf("acc%d: output error, csr=%b\n", unit,
+	if (addr->acc_ocsr & ACC_ERR) {
+		printf("acc%d: send error, csr=%b\n", unit,
 			addr->acc_ocsr, ACC_OUTBITS);
-	if (sc->acc_if->if_snd.ifq_head == 0) {
 		sc->acc_if->if_oerrors++;
+	}
+	if (sc->acc_if->if_snd.ifq_head == 0) {
 		if (sc->acc_ifuba.ifu_xtofree) {
 			m_freem(sc->acc_ifuba.ifu_xtofree);
 			sc->acc_ifuba.ifu_xtofree = 0;
@@ -306,21 +312,18 @@ COUNT(ACCRINT);
 	if (m == 0)
 		goto setup;
 	if ((addr->acc_icsr & IN_EOM) == 0) {
-		if (sc->acc_previous)
+		if (sc->acc_iq)
 			m_cat(sc->acc_iq, m);
-		else {
+		else
 			sc->acc_iq = m;
-			sc->acc_previous = 1;
-		}
 		goto setup;
 	}
 	/* adjust message length for padding. */
 	m->m_len -= 2;
-	if (sc->acc_previous) {
+	if (sc->acc_iq) {
 		m_cat(sc->acc_iq, m);
 		m = sc->acc_iq;
 		sc->acc_iq = 0;
-		sc->acc_previous = 0;
 	}
 	impinput(unit, m);
 

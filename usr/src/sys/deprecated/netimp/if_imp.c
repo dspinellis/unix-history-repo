@@ -1,4 +1,4 @@
-/*	if_imp.c	4.2	82/02/01	*/
+/*	if_imp.c	4.3	82/02/01	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -127,12 +127,20 @@ impinput(unit, m0)
 
 COUNT(IMP_INPUT);
 	m = m0;
+
+	/*
+	 * We should generate a "bad leader" message
+	 * to the IMP about messages too short.
+	 */
 	if (m->m_len < sizeof(struct imp_leader) &&
 	    m_pullup(m, sizeof(struct imp_leader)) == 0)
 		goto drop;
 	ip = mtod(m, struct imp_leader *);
 
-	/* check leader type. */
+	/*
+	 * Check leader type -- should notify IMP
+	 * in case of failure...
+	 */
 	if (ip->il_format != IMP_NFF)
 		goto drop;
 
@@ -147,7 +155,7 @@ COUNT(IMP_INPUT);
 	case IMPTYPE_HOSTDEAD:
 	case IMPTYPE_HOSTUNREACH:
 	case IMPTYPE_BADDATA:
-		addr.s_host = ntohs(ip->il_host);
+		addr.s_host = ntohs(ip->il_host);	/* XXX */
 		hp = h_lookup(addr);
 		break;
 	}
@@ -158,7 +166,7 @@ COUNT(IMP_INPUT);
 	 * Data for a protocol.  Dispatch to the appropriate
 	 * protocol routine (running at software interrupt).
 	 * If this isn't a raw interface, advance pointer
-	 * into mbuf past leader.
+	 * into mbuf past leader (done below).
 	 */
 	case IMPTYPE_DATA:
 		ip->il_length = ntohs(ip->il_length) >> 3;
@@ -168,9 +176,17 @@ COUNT(IMP_INPUT);
 	 * IMP leader error.  Reset the IMP and discard the packet.
 	 */
 	case IMPTYPE_BADLEADER:
-		imperr(sc, "leader error");
-		h_reset(sc->imp_if.if_net);	/* XXX */
-		impnoops(sc);
+		/*
+		 * According to 1822 document, this message
+		 * will be generated in response to the
+		 * first noop sent to the IMP after
+		 * the host resets the IMP interface.
+		 */
+		if (sc->imp_state != IMPS_RESET) {
+			imperr(sc, "leader error");
+			h_reset(sc->imp_if.if_net);	/* XXX */
+			impnoops(sc);
+		}
 		goto drop;
 
 	/*
@@ -181,7 +197,7 @@ COUNT(IMP_INPUT);
 	case IMPTYPE_DOWN:
 		if ((ip->il_link & IMP_DMASK) == 0) {
 			sc->imp_state = IMPS_GOINGDOWN;
-			sc->imp_timer = IMPTV_DOWN;
+			timeout(impdown, sc, 30 * 60 * HZ);
 		}
 		imperr(sc, "going down %s", impmsg[ip->il_link & IMP_DMASK]);
 		goto drop;
@@ -192,6 +208,10 @@ COUNT(IMP_INPUT);
 	 * Reset the local address notion if it doesn't match.
 	 */
 	case IMPTYPE_NOOP:
+		if (sc->imp_state == IMPS_DOWN) {
+			sc->imp_state = IMPS_INIT;
+			sc->imp_dropcnt = IMP_DROPCNT;
+		}
 		if (sc->imp_state == IMPS_INIT && --sc->imp_dropcnt == 0) {
 			sc->imp_state = IMPS_UP;
 			/* restart output in case something was q'd */
@@ -210,7 +230,7 @@ COUNT(IMP_INPUT);
 	 * RFNM or INCOMPLETE message, record in
 	 * host table and prime output routine.
 	 *
-	 * SHOULD RETRANSMIT ON INCOMPLETE.
+	 * SHOULD NOTIFY PROTOCOL ABOUT INCOMPLETES.
 	 */
 	case IMPTYPE_RFNM:
 	case IMPTYPE_INCOMPLETE:
@@ -256,13 +276,12 @@ COUNT(IMP_INPUT);
 		break;
 
 	/*
-	 * IMP reset complete.
+	 * Interface reset.
 	 */
 	case IMPTYPE_RESET:
-		if (sc->imp_state == IMPS_DOWN)
-			sc->imp_state = IMPS_UP;
-		else
-			imperr(sc, "unexpected reset");
+		imperr(sc, "interface reset");
+		sc->imp_state = IMPS_RESET;
+		impnoops(sc);
 		goto drop;
 
 	default:
@@ -300,6 +319,16 @@ drop:
 	m_freem(m);
 }
 
+/*
+ * Bring the IMP down after notification.
+ */
+impdown(sc)
+	struct imp_softc *sc;
+{
+	sc->imp_state = IMPS_DOWN;
+	/* notify protocols with messages waiting? */
+}
+
 /*VARARGS*/
 imperr(sc, fmt, a1, a2)
 	struct imp_softc *sc;
@@ -327,10 +356,9 @@ impoutput(ifp, m0, pf)
 	/*
 	 * Don't even try if the IMP is unavailable.
 	 */
-	if (imp_softc[ifp->if_unit].imp_state == IMPS_DOWN) {
-		m_freem(m0);
-		return (0);
-	}
+	x = imp_softc[ifp->if_unit].imp_state;
+	if (x == IMPS_DOWN || x == IMPS_GOINGDOWN)
+		goto drop;
 
 	switch (pf) {
 
@@ -350,8 +378,7 @@ impoutput(ifp, m0, pf)
 
 	default:
 		printf("imp%d: can't encapsulate pf%d\n", ifp->if_unit, pf);
-		m_freem(m0);
-		return (0);
+		goto drop;
 	}
 
 	/*
@@ -362,10 +389,8 @@ impoutput(ifp, m0, pf)
 	if (m->m_off > MMAXOFF ||
 	    MMINOFF + sizeof(struct imp_leader) > m->m_off) {
 		m = m_get(M_DONTWAIT);
-		if (m == 0) {
-			m_freem(m0);
-			return (0);
-		}
+		if (m == 0)
+			goto drop;
 		m->m_next = m0;
 		m->m_off = MMINOFF;
 		m->m_len = sizeof(struct imp_leader);
@@ -386,6 +411,9 @@ leaderexists:
 	 * and eventual transmission.
 	 */
 	return (impsnd(ifp, m));
+drop:
+	m_freem(m0);
+	return (0);
 }
 
 /* 
@@ -417,7 +445,7 @@ impsnd(ifp, m)
         	hp = h_enter(addr);
 
 		/*
-		 * If IMP would block, queue until rfnm
+		 * If IMP would block, queue until RFNM
 		 */
 		if (hp) {
 			register struct mbuf *n;
@@ -436,6 +464,11 @@ impsnd(ifp, m)
 				cnt++;
 			if (cnt >= 8)
 				goto drop;
+
+			/*
+			 * Q is kept as circulare list with h_q
+			 * (head) pointing to the last entry.
+			 */
 			if ((n = hp->h_q) == 0)
 				hp->h_q = m->m_act = m;
 			else {
