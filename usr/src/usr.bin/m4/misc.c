@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)misc.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)misc.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -145,11 +145,7 @@ getdiv(ind) {
                         putc(c, active);
         (void) fclose(dfil);
 
-#if vms
-        if (remove(m4temp))
-#else
 	if (unlink(m4temp) == -1)
-#endif
                 error("m4: cannot unlink.");
 }
  
@@ -185,11 +181,7 @@ killdiv() {
                 if (outfile[n] != NULL) {
                         (void) fclose (outfile[n]);
                         m4temp[UNIQUE] = n + '0';
-#if vms
-			(void) remove (m4temp);
-#else
                         (void) unlink (m4temp);
-#endif
                 }
 }
  

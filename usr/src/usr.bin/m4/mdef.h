@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mdef.h	5.2 (Berkeley) %G%
+ *	@(#)mdef.h	5.3 (Berkeley) %G%
  */
 
 /*
@@ -26,27 +26,9 @@
  * by: oz
  */
 
-#ifndef unix
-#define unix 0
-#endif 
-
-#ifndef vms
-#define vms 0
-#endif
-
-#if vms
-
-#include stdio
-#include ctype
-#include signal
-
-#else 
-
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
-
-#endif
 
 /*
  *
@@ -109,18 +91,8 @@
  * wildcard (*) character in the filename.
  */
 
-#if unix
 #define DIVNAM  "/tmp/m4*XXXXXX"        /* unix diversion files    */
 #define UNIQUE          7               /* unique char location    */
-#else
-#if vms
-#define DIVNAM  "sys$login:m4*XXXXXX"   /* vms diversion files     */
-#define UNIQUE          12              /* unique char location    */
-#else
-#define DIVNAM	"\M4*XXXXXX"		/* msdos diversion files   */
-#define	UNIQUE	    3			/* unique char location    */
-#endif
-#endif
 
 /*
  * other important constants
