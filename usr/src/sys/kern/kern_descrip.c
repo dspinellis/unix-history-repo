@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_descrip.c	7.33 (Berkeley) %G%
+ *	@(#)kern_descrip.c	7.34 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -735,7 +735,6 @@ fdopen(dev, mode, type, p)
 	int mode, type;
 	struct proc *p;
 {
-	USES_VOP_OPEN;
 
 	/*
 	 * XXX Kludge: set curproc->p_dupfd to contain the value of the
@@ -752,10 +751,11 @@ fdopen(dev, mode, type, p)
 /*
  * Duplicate the specified descriptor to a free descriptor.
  */
-dupfdopen(fdp, indx, dfd, mode)
+dupfdopen(fdp, indx, dfd, mode, error)
 	register struct filedesc *fdp;
 	register int indx, dfd;
 	int mode;
+	int error;
 {
 	register struct file *wfp;
 	struct file *fp;
@@ -773,15 +773,56 @@ dupfdopen(fdp, indx, dfd, mode)
 		return (EBADF);
 
 	/*
-	 * Check that the mode the file is being opened for is a subset 
-	 * of the mode of the existing descriptor.
+	 * There are two cases of interest here.
+	 *
+	 * For ENODEV simply dup (dfd) to file descriptor
+	 * (indx) and return.
+	 *
+	 * For ENXIO steal away the file structure from (dfd) and
+	 * store it in (indx).  (dfd) is effectively closed by
+	 * this operation.
+	 *
+	 * Any other error code is just returned.
 	 */
-	if (((mode & (FREAD|FWRITE)) | wfp->f_flag) != wfp->f_flag)
-		return (EACCES);
-	fdp->fd_ofiles[indx] = wfp;
-	fdp->fd_ofileflags[indx] = fdp->fd_ofileflags[dfd];
-	wfp->f_count++;
-	if (indx > fdp->fd_lastfile)
-		fdp->fd_lastfile = indx;
-	return (0);
+	switch (error) {
+	case ENODEV:
+		/*
+		 * Check that the mode the file is being opened for is a
+		 * subset of the mode of the existing descriptor.
+		 */
+		if (((mode & (FREAD|FWRITE)) | wfp->f_flag) != wfp->f_flag)
+			return (EACCES);
+		fdp->fd_ofiles[indx] = wfp;
+		fdp->fd_ofileflags[indx] = fdp->fd_ofileflags[dfd];
+		wfp->f_count++;
+		if (indx > fdp->fd_lastfile)
+			fdp->fd_lastfile = indx;
+		return (0);
+
+	case ENXIO:
+		/*
+		 * Steal away the file pointer from dfd, and stuff it into indx.
+		 */
+		fdp->fd_ofiles[indx] = fdp->fd_ofiles[dfd];
+		fdp->fd_ofiles[dfd] = NULL;
+		fdp->fd_ofileflags[indx] = fdp->fd_ofileflags[dfd];
+		fdp->fd_ofileflags[dfd] = 0;
+		/*
+		 * Complete the clean up of the filedesc structure by
+		 * recomputing the various hints.
+		 */
+		if (indx > fdp->fd_lastfile)
+			fdp->fd_lastfile = indx;
+		else
+			while (fdp->fd_lastfile > 0 &&
+			       fdp->fd_ofiles[fdp->fd_lastfile] == NULL)
+				fdp->fd_lastfile--;
+			if (dfd < fdp->fd_freefile)
+				fdp->fd_freefile = dfd;
+		return (0);
+
+	default:
+		return (error);
+	}
+	/* NOTREACHED */
 }
