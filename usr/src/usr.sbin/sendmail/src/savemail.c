@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	6.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	6.22 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <pwd.h>
@@ -58,7 +58,10 @@ savemail(e)
 	typedef int (*fnptr)();
 
 	if (tTd(6, 1))
-		printf("\nsavemail, ErrorMode = %c\n", ErrorMode);
+	{
+		printf("\nsavemail, ErrorMode = %c\n  e_from=", ErrorMode);
+		printaddr(&e->e_from, FALSE);
+	}
 
 	if (exclusive++ || CurEnv->e_class <= PRI_JUNK)
 		return;
@@ -174,14 +177,13 @@ savemail(e)
 				while (fgets(buf, sizeof buf, fp) != NULL &&
 				       !ferror(stdout))
 					fputs(buf, stdout);
-				(void) fclose(fp);
+				(void) xfclose(fp, "savemail transcript", e->e_id);
 			}
 			printf("Original message will be saved in dead.letter.\r\n");
 			state = ESM_DEADLETTER;
 			break;
 
 		  case ESM_MAIL:
-		  case ESM_POSTMASTER:
 			/*
 			**  If mailing back, do it.
 			**	Throw away all further output.  Don't alias,
@@ -191,52 +193,30 @@ savemail(e)
 			**	joe@x, which gives a response, etc.  Also force
 			**	the mail to be delivered even if a version of
 			**	it has already been sent to the sender.
-			**
-			**	Clever technique for computing rpath from
-			**	Eric Wassenaar <e07@nikhef.nl>.
 			*/
 
-			if (state == ESM_MAIL)
-			{
-				char *rpath;
+			if (strcmp(e->e_from.q_paddr, "<>") != 0)
+				(void) sendtolist(e->e_from.q_paddr,
+					  (ADDRESS *) NULL,
+					  &e->e_errorqueue, e);
 
-				if (e->e_returnpath != e->e_sender)
-					rpath = e->e_returnpath;
-				else
-					rpath = e->e_from.q_paddr;
-				if (strcmp(rpath, "<>") != 0)
-					(void) sendtolist(rpath,
+			/* deliver a cc: to the postmaster if desired */
+			if (PostMasterCopy != NULL)
+			{
+				auto ADDRESS *rlist = NULL;
+
+				(void) sendtolist(PostMasterCopy,
 						  (ADDRESS *) NULL,
-						  &e->e_errorqueue, e);
-
-				/* deliver a cc: to the postmaster if desired */
-				if (PostMasterCopy != NULL)
-				{
-					auto ADDRESS *rlist = NULL;
-
-					(void) sendtolist(PostMasterCopy,
-							  (ADDRESS *) NULL,
-							  &rlist, e);
-					(void) returntosender(e->e_message,
-							      rlist, FALSE, e);
-				}
-				q = e->e_errorqueue;
-				if (q == NULL)
-				{
-					/* this is an error-error */
-					state = ESM_USRTMP;
-					break;
-				}
+						  &rlist, e);
+				(void) returntosender(e->e_message,
+						      rlist, FALSE, e);
 			}
-			else
+			q = e->e_errorqueue;
+			if (q == NULL)
 			{
-				if (parseaddr("postmaster", q, 0, '\0', NULL, e) == NULL)
-				{
-					syserr("553 cannot parse postmaster!");
-					ExitStat = EX_SOFTWARE;
-					state = ESM_USRTMP;
-					break;
-				}
+				/* this is an error-error */
+				state = ESM_POSTMASTER;
+				break;
 			}
 			if (returntosender(e->e_message != NULL ? e->e_message :
 					   "Unable to deliver mail",
@@ -246,7 +226,32 @@ savemail(e)
 				break;
 			}
 
-			state = state == ESM_MAIL ? ESM_POSTMASTER : ESM_USRTMP;
+			/* didn't work -- return to postmaster */
+			state = ESM_POSTMASTER;
+			break;
+
+		  case ESM_POSTMASTER:
+			/*
+			**  Similar to previous case, but to system postmaster.
+			*/
+
+			if (parseaddr("postmaster", q, 0, '\0', NULL, e) == NULL)
+			{
+				syserr("553 cannot parse postmaster!");
+				ExitStat = EX_SOFTWARE;
+				state = ESM_USRTMP;
+				break;
+			}
+			if (returntosender(e->e_message != NULL ? e->e_message :
+					   "Unable to deliver mail",
+					   q, (e->e_class >= 0), e) == 0)
+			{
+				state = ESM_DONE;
+				break;
+			}
+
+			/* didn't work -- last resort */
+			state = ESM_USRTMP;
 			break;
 
 		  case ESM_DEADLETTER:
@@ -324,7 +329,7 @@ savemail(e)
 			putline("\n", fp, FileMailer);
 			(void) fflush(fp);
 			state = ferror(fp) ? ESM_PANIC : ESM_DONE;
-			(void) fclose(fp);
+			(void) xfclose(fp, "savemail", "/usr/tmp/dead.letter");
 			break;
 
 		  default:
@@ -373,9 +378,8 @@ returntosender(msg, sendbody)
 
 	if (tTd(6, 1))
 	{
-		printf("Return To Sender: msg=\"%s\", depth=%d, e=%x,\n",
+		printf("Return To Sender: msg=\"%s\", depth=%d, e=%x, returnq=",
 		       msg, returndepth, e);
-		printf("\treturnq=");
 		printaddr(returnq, TRUE);
 	}
 
@@ -437,6 +441,14 @@ errhdr(fp, m, xdot)
 	char *oldfmac;
 	char *oldgmac;
 
+	if (e->e_parent == NULL)
+	{
+		syserr("errbody: null parent");
+		putline("\n", fp, m);
+		putline("   ----- Original message lost -----\n", fp, m);
+		return;
+	}
+
 	/*
 	**  Output error message header (if specified and available).
 	*/
@@ -480,16 +492,16 @@ errhdr(fp, m, xdot)
 	if ((xfile = fopen(p, "r")) == NULL)
 	{
 		syserr("Cannot open %s", p);
-		fprintf(fp, "  ----- Transcript of session is unavailable -----\n");
+		putline("  ----- Transcript of session is unavailable -----\n", fp, m);
 	}
 	else
 	{
-		fprintf(fp, "   ----- Transcript of session follows -----\n");
+		putline("   ----- Transcript of session follows -----\n", fp, m);
 		if (e->e_xfp != NULL)
 			(void) fflush(e->e_xfp);
 		while (fgets(buf, sizeof buf, xfile) != NULL)
 			putline(buf, fp, m);
-		(void) fclose(xfile);
+		(void) xfclose(xfile, "errbody xscript", p);
 	}
 	errno = 0;
 
@@ -533,7 +545,7 @@ errhdr(fp, m, xdot)
 
 	if (NoReturn)
 		SendBody = FALSE;
-	if (e->e_parent->e_dfp != NULL)
+	if (e->e_parent->e_df != NULL)
 	{
 		if (SendBody)
 		{

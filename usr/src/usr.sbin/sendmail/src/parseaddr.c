@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	6.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	6.28 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1056,7 +1056,7 @@ buildaddr(tv, a)
 		return (NULL);
 	}
 	tv++;
-	if (!strcasecmp(*tv, "error"))
+	if (strcasecmp(*tv, "error") == 0)
 	{
 		if ((**++tv & 0377) == CANONHOST)
 		{
@@ -1085,7 +1085,7 @@ buildaddr(tv, a)
 
 	for (mp = Mailer; (m = *mp++) != NULL; )
 	{
-		if (!strcasecmp(m->m_name, *tv))
+		if (strcasecmp(m->m_name, *tv) == 0)
 			break;
 	}
 	if (m == NULL)
@@ -1329,7 +1329,7 @@ printaddr(a, follow)
 			m->m_name = "NULL";
 		}
 
-		printf("%s: mailer %d (%s), host `%s', user `%s', ruser `%s'\n",
+		printf("%s:\n\tmailer %d (%s), host `%s', user `%s', ruser `%s'\n",
 		       a->q_paddr, m->m_mno, m->m_name,
 		       a->q_host, a->q_user, a->q_ruser? a->q_ruser: "<null>");
 		printf("\tnext=%x, flags=%o, alias %x\n", a->q_next, a->q_flags,

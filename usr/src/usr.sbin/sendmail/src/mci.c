@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mci.c	6.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)mci.c	6.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -172,9 +172,9 @@ mci_uncache(mcislot, doquit)
 	else
 	{
 		if (mci->mci_in != NULL)
-			fclose(mci->mci_in);
+			xfclose(mci->mci_in, "mci_uncache", "mci_in");
 		if (mci->mci_out != NULL)
-			fclose(mci->mci_out);
+			xfclose(mci->mci_out, "mci_uncache", "mci_out");
 		mci->mci_in = mci->mci_out = NULL;
 		mci->mci_state = MCIS_CLOSED;
 		mci->mci_exitstat = EX_OK;
