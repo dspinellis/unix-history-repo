@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vfsops.c	8.11 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	8.12 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -75,7 +75,7 @@ void nfsargs_ntoh __P((struct nfs_args *));
 int nfs_fsinfo __P((struct nfsmount *, struct vnode *, struct ucred *, 
 	struct proc *));
 static int nfs_mountdiskless __P((char *, char *, int, struct sockaddr_in *,
-	struct nfs_args *, struct vnode **, struct mount **));
+	struct nfs_args *, struct proc *, struct vnode **, struct mount **));
 
 /*
  * nfs statfs call
@@ -225,7 +225,7 @@ nfs_fsinfo(nmp, vp, cred, p)
 int
 nfs_mountroot()
 {
-	struct mount *mp;
+	struct mount *mp, *swap_mp;
 	struct nfs_diskless *nd = &nfs_diskless;
 	struct socket *so;
 	struct vnode *vp;
@@ -308,6 +308,7 @@ nfs_mountroot()
 		}
 	}
 
+	swap_mp = NULL;
 	if (nd->swap_nblks) {
 		/*
 		 * Create a fake mount point just for the swap vnode so that the
@@ -325,8 +326,9 @@ nfs_mountroot()
 			(l >>  8) & 0xff, (l >>  0) & 0xff,nd->swap_hostnam);
 		printf("NFS SWAP: %s\n",buf);
 		if (error = nfs_mountdiskless(buf, "/swap", 0,
-		    &nd->swap_saddr, &nd->swap_args, &vp, &mp))
+		    &nd->swap_saddr, &nd->swap_args, p, &vp, &swap_mp))
 			return (error);
+		vfs_unbusy(swap_mp, p);
 
 		for (i=0;swdevt[i].sw_dev != NODEV;i++) ;
 
@@ -363,16 +365,19 @@ nfs_mountroot()
 		(l >>  8) & 0xff, (l >>  0) & 0xff,nd->root_hostnam);
 	printf("NFS ROOT: %s\n",buf);
 	if (error = nfs_mountdiskless(buf, "/", MNT_RDONLY,
-	    &nd->root_saddr, &nd->root_args, &vp, &mp))
-		return (error);
-
-	if (error = vfs_lock(mp)) {
-		printf("nfs_mountroot: vfs_lock");
+	    &nd->root_saddr, &nd->root_args, p, &vp, &mp)) {
+		if (swap_mp) {
+			mp->mnt_vfc->vfc_refcount--;
+			free(swap_mp, M_MOUNT);
+		}
 		return (error);
 	}
+
+	simple_lock(&mountlist_slock);
 	CIRCLEQ_INSERT_TAIL(&mountlist, mp, mnt_list);
-	vfs_unlock(mp);
+	simple_unlock(&mountlist_slock);
 	rootvp = vp;
+	vfs_unbusy(mp, p);
 
 	/*
 	 * This is not really an nfs issue, but it is much easier to
@@ -393,12 +398,13 @@ nfs_mountroot()
  * Internal version of mount system call for diskless setup.
  */
 static int
-nfs_mountdiskless(path, which, mountflag, sin, args, vpp, mpp)
+nfs_mountdiskless(path, which, mountflag, sin, args, p, vpp, mpp)
 	char *path;
 	char *which;
 	int mountflag;
 	struct sockaddr_in *sin;
 	struct nfs_args *args;
+	struct proc *p;
 	struct vnode **vpp;
 	struct mount **mpp;
 {
@@ -411,15 +417,14 @@ nfs_mountdiskless(path, which, mountflag, sin, args, vpp, mpp)
 		return (error);
 	}
 	mp->mnt_flag = mountflag;
-	MGET(m, MT_SONAME, M_DONTWAIT);
-	if (m == NULL) {
-		printf("nfs_mountroot: %s mount mbuf", which);
-		return (error);
-	}
+	MGET(m, MT_SONAME, M_WAITOK);
 	bcopy((caddr_t)sin, mtod(m, caddr_t), sin->sin_len);
 	m->m_len = sin->sin_len;
 	if (error = mountnfs(args, mp, m, which, path, vpp)) {
 		printf("nfs_mountroot: mount %s on %s: %d", path, which, error);
+		mp->mnt_vfc->vfc_refcount--;
+		vfs_unbusy(mp, p);
+		free(mp, M_MOUNT);
 		return (error);
 	}
 	(void) copystr(which, mp->mnt_stat.f_mntonname, MNAMELEN - 1, 0);

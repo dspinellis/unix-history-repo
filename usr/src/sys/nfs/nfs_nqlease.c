@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_nqlease.c	8.8 (Berkeley) %G%
+ *	@(#)nfs_nqlease.c	8.9 (Berkeley) %G%
  */
 
 
@@ -1109,9 +1109,10 @@ void
 nqnfs_lease_updatetime(deltat)
 	register int deltat;
 {
-	register struct nqlease *lp;
-	register struct nfsnode *np;
-	struct mount *mp;
+	struct proc *p = curproc;	/* XXX */
+	struct nqlease *lp;
+	struct nfsnode *np;
+	struct mount *mp, *nxtmp;
 	struct nfsmount *nmp;
 	int s;
 
@@ -1127,19 +1128,27 @@ nqnfs_lease_updatetime(deltat)
 	 * Search the mount list for all nqnfs mounts and do their timer
 	 * queues.
 	 */
-	for (mp = mountlist.cqh_first; mp != (void *)&mountlist;
-	     mp = mp->mnt_list.cqe_next) {
-		if (mp->mnt_stat.f_type != nfs_mount_type)
+	simple_lock(&mountlist_slock);
+	for (mp = mountlist.cqh_first; mp != (void *)&mountlist; mp = nxtmp) {
+		if (vfs_busy(mp, LK_NOWAIT, &mountlist_slock, p)) {
+			nxtmp = mp->mnt_list.cqe_next;
 			continue;
-		nmp = VFSTONFS(mp);
-		if (nmp->nm_flag & NFSMNT_NQNFS) {
-			for (np = nmp->nm_timerhead.cqh_first;
-			    np != (void *)&nmp->nm_timerhead;
-			    np = np->n_timer.cqe_next) {
-				np->n_expiry += deltat;
+		}
+		if (mp->mnt_stat.f_type == nfs_mount_type) {
+			nmp = VFSTONFS(mp);
+			if (nmp->nm_flag & NFSMNT_NQNFS) {
+				for (np = nmp->nm_timerhead.cqh_first;
+				    np != (void *)&nmp->nm_timerhead;
+				    np = np->n_timer.cqe_next) {
+					np->n_expiry += deltat;
+				}
 			}
 		}
+		simple_lock(&mountlist_slock);
+		nxtmp = mp->mnt_list.cqe_next;
+		vfs_unbusy(mp, p);
 	}
+	simple_unlock(&mountlist_slock);
 }
 
 /*
