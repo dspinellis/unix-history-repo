@@ -3,10 +3,10 @@
 # include <signal.h>
 
 # ifndef SMTP
-SCCSID(@(#)srvrsmtp.c	4.1		%G%	(no SMTP));
+SCCSID(@(#)srvrsmtp.c	4.2		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)srvrsmtp.c	4.1		%G%);
+SCCSID(@(#)srvrsmtp.c	4.2		%G%);
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -213,7 +213,10 @@ smtp()
 
 		  case CMDRCPT:		/* rcpt -- designate recipient */
 			if (setjmp(TopFrame) > 0)
+			{
+				CurEnv->e_flags &= ~EF_FATALERRS;
 				break;
+			}
 			QuickAbort = TRUE;
 			p = skipword(p, "to");
 			if (p == NULL)
@@ -222,7 +225,6 @@ smtp()
 			if (a == NULL)
 				break;
 			a = recipient(a, &CurEnv->e_sendqueue);
-			CurEnv->e_flags &= ~EF_FATALERRS;
 			if (Errors != 0)
 				break;
 
