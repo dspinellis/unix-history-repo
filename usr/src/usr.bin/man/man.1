@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)man.1	8.1 (Berkeley) %G%
+.\"     @(#)man.1	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MAN 1
@@ -14,6 +14,7 @@
 .Sh SYNOPSIS
 .Nm man
 .Op Fl achw
+.Op Fl C Ar file
 .Op Fl M Ar path
 .Op Fl m Ar path
 .Op Ar section
@@ -36,6 +37,14 @@ and
 .Ar name
 combination.
 (Normally, only the first manual page found is displayed.)
+.It Fl C
+Use the specified 
+.Ar file
+instead of the default configuration file.
+This permits users to configure their own manual environment.
+See
+.Xr man.conf 5
+for a description of the contents of this file.
 .It Fl c
 Copy the manual page to the standard output instead of using
 .Xr more 1
@@ -54,7 +63,7 @@ The supplied
 must be a colon (``:'') separated list of directories.
 This search path may also be set using the environment variable
 .Ev MANPATH .
-The subdirectories to be searched as well as their search order
+The subdirectories to be searched, and their search order,
 is specified by the ``_subdir'' line in the
 .Nm man
 configuration file.
@@ -71,6 +80,10 @@ the directories specified using the
 option or the
 .Ev MANPATH
 environment variable.
+The subdirectories to be searched, and their search order,
+is specified by the ``_subdir'' line in the
+.Nm man
+configuration file.
 .It Fl w
 List the pathnames of the manual pages which
 .Nm man
@@ -83,13 +96,13 @@ combination.
 .Pp
 The optional
 .Ar section
-restricts the directories that
+argument restricts the directories that
 .Nm man
 will search.
 The
 .Nm man
 configuration file (see
-.Xr man_conf 5 )
+.Xr man.conf 5 )
 specifies the possible
 .Ar section
 values that are currently available.
@@ -100,16 +113,16 @@ assumes that the argument is the name of a manual page to be displayed.
 .Sh ENVIRONMENT
 .Bl -tag -width MANPATHX
 .It Ev MACHINE
-As some manual pages are intended only for use on certain architectures,
+As some manual pages are intended only for specific architectures,
 .Nm man
-searches certain directories applicable to the current machine.
-Man's
-determination of the current machine type may be overridden by setting
-the environment variable
-.Ev MACHINE
-to the name of an architecture (see
-.Xr machine 1 ) .
+searches any subdirectories,
+with the same name as the current architecture,
+in every directory which it searches.
 Machine specific areas are checked before general areas.
+The current machine type may be overridden by setting the environment
+variable
+.Ev MACHINE
+to the name of a specific architecture.
 .It Ev MANPATH
 The standard search path used by
 .Nm man
@@ -125,25 +138,23 @@ configuration file.
 .It Ev PAGER
 Any value of the environment variable
 .Ev PAGER
-will be used instead of the standard pagination program
+will be used instead of the standard pagination program,
 .Xr more 1 .
 .El
 .Sh FILES
 .Bl -tag -width /etc/man.conf -compact
 .It Pa /etc/man.conf
-man configuration file (see
-.Xr man_conf 5 )
+default man configuration file.
 .El
 .Sh SEE ALSO
 .Xr apropos 1 ,
-.Xr machine 1 ,
 .Xr whatis 1 ,
 .Xr whereis 1 ,
-.Xr man_conf 5
+.Xr man.conf 5
 .Sh BUGS
 The on-line manual pages are, by necessity, forgiving toward stupid
-display devices, causing some manual pages to not be as good as their
-typeset counterparts.
+display devices, causing a few manual pages to not as nicely formatted
+as their typeset counterparts.
 .Sh HISTORY
 A
 .Nm
