@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)symorder.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)symorder.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -41,7 +41,7 @@ struct	exec exec;
 struct	stat stb;
 struct	nlist *newtab, *symtab;
 off_t	sa;
-int	nsym, strtabsize, symfound; 
+int	nsym, strtabsize, symfound, small; 
 char	*kfile, *newstrings, *strings, asym[BUFSIZ];
 
 main(argc, argv)
@@ -54,9 +54,13 @@ main(argc, argv)
 	register char *start, *t;
 	int n, o;
 
-	if (argc != 3) {
-		(void)fprintf(stderr, "usage: symorder orderlist file\n");
+	if (argc != 3 && argc != 4) {
+		(void)fprintf(stderr, "usage: symorder [-T] orderlist file\n");
 		exit(ERREXIT);
+	}
+	if (argc == 4 && strcmp(argv[1],"-T") == 0) {
+		argv++;
+		small++;
 	}
 	if ((f = fopen(argv[1], "r")) == NULL)
 		error(argv[1]);
@@ -131,10 +135,22 @@ main(argc, argv)
 	for (symp = symtab; --i >= 0; symp++) {
 		if (symp->n_un.n_strx == 0)
 			continue;
+		if (small && inlist(symp) < 0) continue;
 		symp->n_un.n_strx -= sizeof(int);
 		(void)strcpy(t, &strings[symp->n_un.n_strx]);
 		symp->n_un.n_strx = (t - newstrings) + sizeof(int);
 		t += strlen(t) + 1;
+	}
+
+	/* update shrunk sizes */
+	if(small) {
+		strtabsize = t - newstrings + sizeof(int);
+		n = symfound * sizeof(struct nlist);
+		/* fix exec sym size */
+		(void)lseek(o, 0, SEEK_SET);
+		exec.a_syms = n;
+		if (write(o, (char *)&exec, sizeof(exec)) != sizeof(exec))
+			error(kfile);
 	}
 
 	(void)lseek(o, sa, SEEK_SET);
@@ -145,6 +161,9 @@ main(argc, argv)
 	if (write(o, newstrings, strtabsize - sizeof(int)) !=
 	    strtabsize - sizeof(int))
 		error(kfile);
+
+	if (small) ftruncate(o, lseek(o, 0, SEEK_CUR));
+
 	if ((i = nsym - symfound) > 0) {
 		(void)printf("symorder: %d symbol%s not found:\n",
 		    i, i == 1 ? "" : "s");
