@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: grf.c 1.32 92/01/21$
+ * from: Utah $Hdr: grf.c 1.36 93/08/13$
  *
- *	@(#)grf.c	8.1 (Berkeley) %G%
+ *	@(#)grf.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -110,7 +110,9 @@ grfclose(dev, flags)
 	register struct grf_softc *gp = &grf_softc[GRFUNIT(dev)];
 
 	(void) grfoff(dev);
+#ifdef HPUXCOMPAT
 	(void) grfunlock(gp);
+#endif
 	gp->g_flags &= GF_ALIVE;
 	return(0);
 }
@@ -168,93 +170,6 @@ grfselect(dev, rw)
 	return(1);
 }
 
-grflock(gp, block)
-	register struct grf_softc *gp;
-	int block;
-{
-	struct proc *p = curproc;		/* XXX */
-	int error;
-	extern char devioc[];
-
-#ifdef DEBUG
-	if (grfdebug & GDB_LOCK)
-		printf("grflock(%d): dev %x flags %x lockpid %x\n",
-		       p->p_pid, gp-grf_softc, gp->g_flags,
-		       gp->g_lockp ? gp->g_lockp->p_pid : -1);
-#endif
-#ifdef HPUXCOMPAT
-	if (gp->g_pid) {
-#ifdef DEBUG
-		if (grfdebug & GDB_LOCK)
-			printf(" lockpslot %d lockslot %d lock[lockslot] %d\n",
-			       gp->g_lock->gl_lockslot, gp->g_lockpslot,
-			       gp->g_lock->gl_locks[gp->g_lockpslot]);
-#endif
-		gp->g_lock->gl_lockslot = 0;
-		if (gp->g_lock->gl_locks[gp->g_lockpslot] == 0) {
-			gp->g_lockp = NULL;
-			gp->g_lockpslot = 0;
-		}
-	}
-#endif
-	if (gp->g_lockp) {
-		if (gp->g_lockp == p)
-			return(EBUSY);
-		if (!block)
-			return(EAGAIN);
-		do {
-			gp->g_flags |= GF_WANTED;
-			if (error = tsleep((caddr_t)&gp->g_flags,
-					   (PZERO+1) | PCATCH, devioc, 0))
-				return (error);
-		} while (gp->g_lockp);
-	}
-	gp->g_lockp = p;
-#ifdef HPUXCOMPAT
-	if (gp->g_pid) {
-		int slot = grffindpid(gp);
-#ifdef DEBUG
-		if (grfdebug & GDB_LOCK)
-			printf("  slot %d\n", slot);
-#endif
-		gp->g_lockpslot = gp->g_lock->gl_lockslot = slot;
-		gp->g_lock->gl_locks[slot] = 1;
-	}
-#endif
-	return(0);
-}
-
-grfunlock(gp)
-	register struct grf_softc *gp;
-{
-#ifdef DEBUG
-	if (grfdebug & GDB_LOCK)
-		printf("grfunlock(%d): dev %x flags %x lockpid %d\n",
-		       curproc->p_pid, gp-grf_softc, gp->g_flags,
-		       gp->g_lockp ? gp->g_lockp->p_pid : -1);
-#endif
-	if (gp->g_lockp != curproc)
-		return(EBUSY);
-#ifdef HPUXCOMPAT
-	if (gp->g_pid) {
-#ifdef DEBUG
-		if (grfdebug & GDB_LOCK)
-			printf(" lockpslot %d lockslot %d lock[lockslot] %d\n",
-			       gp->g_lock->gl_lockslot, gp->g_lockpslot,
-			       gp->g_lock->gl_locks[gp->g_lockpslot]);
-#endif
-		gp->g_lock->gl_locks[gp->g_lockpslot] = 0;
-		gp->g_lockpslot = gp->g_lock->gl_lockslot = 0;
-	}
-#endif
-	if (gp->g_flags & GF_WANTED) {
-		wakeup((caddr_t)&gp->g_flags); 
-		gp->g_flags &= ~GF_WANTED;
-	}
-	gp->g_lockp = NULL;
-	return(0);
-}
-
 /*ARGSUSED*/
 grfmap(dev, off, prot)
 	dev_t dev;
@@ -262,6 +177,61 @@ grfmap(dev, off, prot)
 	return(grfaddr(&grf_softc[GRFUNIT(dev)], off));
 }
 
+grfon(dev)
+	dev_t dev;
+{
+	int unit = GRFUNIT(dev);
+	struct grf_softc *gp = &grf_softc[unit];
+
+	/*
+	 * XXX: iteoff call relies on devices being in same order
+	 * as ITEs and the fact that iteoff only uses the minor part
+	 * of the dev arg.
+	 */
+	iteoff(unit, 3);
+	return((*gp->g_sw->gd_mode)(gp,
+				    (dev&GRFOVDEV) ? GM_GRFOVON : GM_GRFON,
+				    (caddr_t)0));
+}
+
+grfoff(dev)
+	dev_t dev;
+{
+	int unit = GRFUNIT(dev);
+	struct grf_softc *gp = &grf_softc[unit];
+	int error;
+
+	(void) grfunmmap(dev, (caddr_t)0, curproc);
+	error = (*gp->g_sw->gd_mode)(gp,
+				     (dev&GRFOVDEV) ? GM_GRFOVOFF : GM_GRFOFF,
+				     (caddr_t)0);
+	/* XXX: see comment for iteoff above */
+	iteon(unit, 2);
+	return(error);
+}
+
+grfaddr(gp, off)
+	struct grf_softc *gp;
+	register int off;
+{
+	register struct grfinfo *gi = &gp->g_display;
+
+	/* control registers */
+	if (off >= 0 && off < gi->gd_regsize)
+		return(((u_int)gi->gd_regaddr + off) >> PGSHIFT);
+
+	/* frame buffer */
+	if (off >= gi->gd_regsize && off < gi->gd_regsize+gi->gd_fbsize) {
+		off -= gi->gd_regsize;
+		return(((u_int)gi->gd_fbaddr + off) >> PGSHIFT);
+	}
+	/* bogus */
+	return(-1);
+}
+
+/*
+ * HP-UX compatibility routines
+ */
 #ifdef HPUXCOMPAT
 
 /*ARGSUSED*/
@@ -333,6 +303,10 @@ hpuxgrfioctl(dev, cmd, data, flag, p)
 		break;
 	}
 
+	case GCDESCRIBE:
+		error = (*gp->g_sw->gd_mode)(gp, GM_DESCRIBE, data);
+		break;
+
 	/*
 	 * XXX: only used right now to map in rbox control registers
 	 * Will be replaced in the future with a real IOMAP interface.
@@ -363,61 +337,88 @@ hpuxgrfioctl(dev, cmd, data, flag, p)
 	return(error);
 }
 
-#endif
-
-grfon(dev)
-	dev_t dev;
+grflock(gp, block)
+	register struct grf_softc *gp;
+	int block;
 {
-	int unit = GRFUNIT(dev);
-	struct grf_softc *gp = &grf_softc[unit];
-
-	/*
-	 * XXX: iteoff call relies on devices being in same order
-	 * as ITEs and the fact that iteoff only uses the minor part
-	 * of the dev arg.
-	 */
-	iteoff(unit, 3);
-	return((*gp->g_sw->gd_mode)(gp,
-				    (dev&GRFOVDEV) ? GM_GRFOVON : GM_GRFON,
-				    (caddr_t)0));
-}
-
-grfoff(dev)
-	dev_t dev;
-{
-	int unit = GRFUNIT(dev);
-	struct grf_softc *gp = &grf_softc[unit];
+	struct proc *p = curproc;		/* XXX */
 	int error;
+	extern char devioc[];
 
-	(void) grfunmmap(dev, (caddr_t)0, curproc);
-	error = (*gp->g_sw->gd_mode)(gp,
-				     (dev&GRFOVDEV) ? GM_GRFOVOFF : GM_GRFOFF,
-				     (caddr_t)0);
-	/* XXX: see comment for iteoff above */
-	iteon(unit, 2);
-	return(error);
-}
-
-grfaddr(gp, off)
-	struct grf_softc *gp;
-	register int off;
-{
-	register struct grfinfo *gi = &gp->g_display;
-
-	/* control registers */
-	if (off >= 0 && off < gi->gd_regsize)
-		return(((u_int)gi->gd_regaddr + off) >> PGSHIFT);
-
-	/* frame buffer */
-	if (off >= gi->gd_regsize && off < gi->gd_regsize+gi->gd_fbsize) {
-		off -= gi->gd_regsize;
-		return(((u_int)gi->gd_fbaddr + off) >> PGSHIFT);
+#ifdef DEBUG
+	if (grfdebug & GDB_LOCK)
+		printf("grflock(%d): dev %x flags %x lockpid %x\n",
+		       p->p_pid, gp-grf_softc, gp->g_flags,
+		       gp->g_lockp ? gp->g_lockp->p_pid : -1);
+#endif
+	if (gp->g_pid) {
+#ifdef DEBUG
+		if (grfdebug & GDB_LOCK)
+			printf(" lockpslot %d lockslot %d lock[lockslot] %d\n",
+			       gp->g_lock->gl_lockslot, gp->g_lockpslot,
+			       gp->g_lock->gl_locks[gp->g_lockpslot]);
+#endif
+		gp->g_lock->gl_lockslot = 0;
+		if (gp->g_lock->gl_locks[gp->g_lockpslot] == 0) {
+			gp->g_lockp = NULL;
+			gp->g_lockpslot = 0;
+		}
 	}
-	/* bogus */
-	return(-1);
+	if (gp->g_lockp) {
+		if (gp->g_lockp == p)
+			return(EBUSY);
+		if (!block)
+			return(OEAGAIN);
+		do {
+			gp->g_flags |= GF_WANTED;
+			if (error = tsleep((caddr_t)&gp->g_flags,
+					   (PZERO+1) | PCATCH, devioc, 0))
+				return (error);
+		} while (gp->g_lockp);
+	}
+	gp->g_lockp = p;
+	if (gp->g_pid) {
+		int slot = grffindpid(gp);
+
+#ifdef DEBUG
+		if (grfdebug & GDB_LOCK)
+			printf("  slot %d\n", slot);
+#endif
+		gp->g_lockpslot = gp->g_lock->gl_lockslot = slot;
+		gp->g_lock->gl_locks[slot] = 1;
+	}
+	return(0);
 }
 
-#ifdef HPUXCOMPAT
+grfunlock(gp)
+	register struct grf_softc *gp;
+{
+#ifdef DEBUG
+	if (grfdebug & GDB_LOCK)
+		printf("grfunlock(%d): dev %x flags %x lockpid %d\n",
+		       curproc->p_pid, gp-grf_softc, gp->g_flags,
+		       gp->g_lockp ? gp->g_lockp->p_pid : -1);
+#endif
+	if (gp->g_lockp != curproc)
+		return(EBUSY);
+	if (gp->g_pid) {
+#ifdef DEBUG
+		if (grfdebug & GDB_LOCK)
+			printf(" lockpslot %d lockslot %d lock[lockslot] %d\n",
+			       gp->g_lock->gl_lockslot, gp->g_lockpslot,
+			       gp->g_lock->gl_locks[gp->g_lockpslot]);
+#endif
+		gp->g_lock->gl_locks[gp->g_lockpslot] = 0;
+		gp->g_lockpslot = gp->g_lock->gl_lockslot = 0;
+	}
+	if (gp->g_flags & GF_WANTED) {
+		wakeup((caddr_t)&gp->g_flags); 
+		gp->g_flags &= ~GF_WANTED;
+	}
+	gp->g_lockp = NULL;
+	return(0);
+}
+
 /*
  * Convert a BSD style minor devno to HPUX style.
  * We cannot just create HPUX style nodes as they require 24 bits
@@ -451,7 +452,8 @@ grfdevno(dev)
 #endif
 	return(newdev);
 }
-#endif
+
+#endif	/* HPUXCOMPAT */
 
 grfmmap(dev, addrp, p)
 	dev_t dev;
@@ -480,6 +482,8 @@ grfmmap(dev, addrp, p)
 	error = vm_mmap(&p->p_vmspace->vm_map, (vm_offset_t *)addrp,
 			(vm_size_t)len, VM_PROT_ALL, VM_PROT_ALL,
 			flags, (caddr_t)&vn, 0);
+	if (error == 0)
+		(void) (*gp->g_sw->gd_mode)(gp, GM_MAP, *addrp);
 	return(error);
 }
 
@@ -498,6 +502,7 @@ grfunmmap(dev, addr, p)
 #endif
 	if (addr == 0)
 		return(EINVAL);		/* XXX: how do we deal with this? */
+	(void) (*gp->g_sw->gd_mode)(gp, GM_UNMAP, 0);
 	size = round_page(gp->g_display.gd_regsize + gp->g_display.gd_fbsize);
 	rv = vm_deallocate(&p->p_vmspace->vm_map, (vm_offset_t)addr, size);
 	return(rv == KERN_SUCCESS ? 0 : EINVAL);
