@@ -1,4 +1,4 @@
-/*	kern_proc.c	3.5	%H%	*/
+/*	kern_proc.c	3.6	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -356,14 +356,10 @@ setregs()
 
 		default:
 			/*
-			 * Normal or deferring catch.
-			 * If deferred, now hold it, else
-			 * revert to default.
+			 * Normal or deferring catch; revert to default.
 			 */
-			if (SIGISDEFER(*rp))
-				*rp = SIG_HOLD;
-			else
-				*rp = SIG_DFL;
+			(void) spl6();
+			*rp = SIG_DFL;
 			if ((int)*rp & 1)
 				u.u_procp->p_siga0 |= sigmask;
 			else
@@ -372,6 +368,7 @@ setregs()
 				u.u_procp->p_siga1 |= sigmask;
 			else
 				u.u_procp->p_siga1 &= ~sigmask;
+			(void) spl0();
 			continue;
 		}
 	}
@@ -437,7 +434,7 @@ exit(rv)
 	if ((int)SIG_IGN & 2)
 		p->p_siga1 = ~0;
 	else
-		p->p_siga0 = 0;
+		p->p_siga1 = 0;
 	(void) spl0();
 	rate.v_pgin -= p->p_aveflt;
 	p->p_aveflt = 0;
@@ -581,10 +578,12 @@ loop:
 		u.u_r.r_val1 = 0;
 		return;
 	}
+/*
 	if (setjmp(u.u_qsav)) {
 		u.u_eosys = RESTARTSYS;
 		return;
 	}
+*/
 	sleep((caddr_t)u.u_procp, PWAIT);
 	goto loop;
 }

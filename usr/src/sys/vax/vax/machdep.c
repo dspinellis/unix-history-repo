@@ -1,4 +1,4 @@
-/*	machdep.c	3.6	%H%	*/
+/*	machdep.c	3.7	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -13,7 +13,7 @@
 #include "../h/proc.h"
 #include "../h/psl.h"
 
-char	version[] = "VM/UNIX (Berkeley Version 3.6) %H% \n";
+char	version[] = "VM/UNIX (Berkeley Version 3.7) %H% \n";
 int	icode[] =
 {
 	0x9f19af9f,	/* pushab [&"init.vm",0]; pushab */
@@ -177,7 +177,6 @@ dorti()
 	register int sp;
 	register int reg, mask;
 	extern int ipcreg[];
-	int n;
 
 	(void) copyin((caddr_t)u.u_ar0[FP], (caddr_t)&frame, sizeof (frame));
 	sp = u.u_ar0[FP] + sizeof (frame);
@@ -195,7 +194,7 @@ dorti()
 	sp += frame.spa;
 	u.u_ar0[PS] = (u.u_ar0[PS] & 0xffff0000) | frame.psw;
 	if (frame.s)
-		sp += 4 + (fuword(sp) & 0xff) << 2;
+		sp += 4 + 4 * (fuword(sp) & 0xff);
 	/* phew, now the rei */
 	u.u_ar0[PC] = fuword(sp);
 	sp += 4;
