@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-/* sccs id:	@(#)ex_tune.h	7.4	%G%  */
+/*	ex_tune.h	7.5	83/07/02	*/
 /*
  * Definitions of editor parameters and limits
  */
@@ -10,7 +10,12 @@
  * Only exstrings is looked at "+4", i.e. if you give
  * "/usr/lib/..." here, "/lib" will be tried only for strings.
  */
-#include "local/uparm.h"
+#define libpath(file) "/usr/lib/file"
+#define loclibpath(file) "/usr/local/lib/file"
+#define binpath(file) "/usr/ucb/file"
+#define usrpath(file) "/usr/file"
+#define E_TERMCAP	"/etc/termcap"
+#define B_CSH		"/bin/csh"
 #define	EXRECOVER	libpath(ex3.7recover)
 #define	EXPRESERVE	libpath(ex3.7preserve)
 #ifndef VMUNIX
