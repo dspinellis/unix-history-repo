@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	6.59 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	6.60 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	6.59 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	6.60 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -209,6 +209,7 @@ notemp:
 	*/
 
 	fflush(tfp);
+	fsync(fileno(tfp));
 	if (ferror(tfp))
 	{
 		if (newid)
