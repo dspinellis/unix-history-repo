@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)cp.1	4.1 (Berkeley) %G%
+.\"	@(#)cp.1	5.1 (Berkeley) %G%
 .\"
-.TH CP 1 
+.TH CP 1 "1 April 1982"
 .UC 4
 .SH NAME
 cp \- copy
@@ -12,11 +12,15 @@ cp \- copy
 .B cp
 [
 .B \-i
+] [
+.B \-r
 ] file1 file2
 .PP
 .B cp
 [
 .B \-i
+] [
+.B \-r
 ] file ... directory
 .SH DESCRIPTION
 .I File1
@@ -47,5 +51,12 @@ overwritten. An answer of 'y' will cause
 .I cp
 to continue. Any other answer will prevent it
 from overwriting the file.
+.PP
+If the
+.B \-r
+option is specified and any of the source files are directories,
+.I cp
+copies each subtree rooted at that name; in this case
+the destination must be a directory.
 .SH "SEE ALSO"
 cat(1), pr(1), mv(1)
