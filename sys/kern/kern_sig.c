@@ -1048,8 +1048,11 @@ sigexit(p, sig)
 		p->p_sigacts->ps_sig = sig;
 		/*
 		 * Log signals which would cause core dumps
+		 * (Log as LOG_INFO to appease those who don't want 
+		 * these messages.)
+		 * XXX : Todo, as well as euid, write out ruid too
 		 */
-		log(LOG_ERR, "pid %d : %s : uid %d : exited on signal %d\n",
+		log(LOG_INFO, "pid %d : %s : uid %d : exited on signal %d\n",
 			p->p_pid, p->p_comm, p->p_ucred->cr_uid, sig);
 		if (coredump(p) == 0)
 			sig |= WCOREFLAG;
