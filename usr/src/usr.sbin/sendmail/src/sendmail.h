@@ -1,7 +1,7 @@
 /*
 **  SENDMAIL.H -- Global definitions for sendmail.
 **
-**	@(#)sendmail.h	3.45	%G%
+**	@(#)sendmail.h	3.46	%G%
 */
 
 
@@ -193,6 +193,7 @@ extern struct rewrite	*RewriteRules[];
 # define MATCHANY	'\020'	/* match one or more tokens */
 # define MATCHONE	'\021'	/* match exactly one token */
 # define MATCHCLASS	'\022'	/* match one token in a class */
+# define MATCHREPL	'\023'	/* replacement on RHS for above */
 
 # define CANONNET	'\025'	/* canonical net, next token */
 # define CANONHOST	'\026'	/* canonical host, next token */
