@@ -9,7 +9,7 @@
  * The CMU software License Agreement specifies the terms and conditions
  * for use and redistribution.
  *
- *	@(#)pmap.c	7.4 (Berkeley) %G%
+ *	@(#)pmap.c	7.5 (Berkeley) %G%
  */
 
 /*
