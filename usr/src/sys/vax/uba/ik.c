@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ik.c	7.5 (Berkeley) %G%
+ *	@(#)ik.c	7.6 (Berkeley) %G%
  */
 
 #include "ik.h"
@@ -20,7 +20,6 @@
 #include "map.h"
 #include "uio.h"
 #include "ioctl.h"
-#include "tsleep.h"
 
 #include "ubareg.h"
 #include "ubavar.h"
@@ -103,6 +102,7 @@ ikclose(dev)
 	ik_softc[minor(dev)].ik_open = 0;
 	ik_softc[minor(dev)].ik_state = 0;
 	unmaptouser(ikdinfo[IKUNIT(dev)]->ui_addr);
+	return (0);
 }
 
 ikread(dev, uio)
@@ -147,7 +147,7 @@ ikstrategy(bp)
 		goto bad;
 	(void) spl5();
 	while (ikp->ik_state & IKBUSY)
-		sleep((caddr_t)ikp, IKDMAPRI+1);
+		(void) tsleep((caddr_t)ikp, IKDMAPRI+1, devout, 0);
 	ikp->ik_state |= IKBUSY;
 	ikp->ik_bp = bp;
 	ikp->ik_ubinfo = ubasetup(ui->ui_ubanum, bp, UBA_NEEDBDP);
@@ -155,7 +155,7 @@ ikstrategy(bp)
 	ikp->ik_count = -(bp->b_bcount>>1);	/* its a word count */
 	ikstart(ui);
 	while (ikp->ik_state&IKBUSY)
-		sleep((caddr_t)ikp, IKDMAPRI);
+		(void) tsleep((caddr_t)ikp, IKDMAPRI, devout, 0);
 	ikp->ik_count = 0;
 	ikp->ik_bufp = 0;
 	(void) spl0();
@@ -193,6 +193,7 @@ ikioctl(dev, cmd, data, flag)
 {
 	register struct uba_device *ui = ikdinfo[IKUNIT(dev)];
 	register struct ik_softc *ikp;
+	int error = 0;
 
 	switch (cmd) {
 
@@ -203,14 +204,15 @@ ikioctl(dev, cmd, data, flag)
 	case IKIOWAITINT:
 		ikp = &ik_softc[IKUNIT(dev)];
 		ikp->ik_state |= IKBUSY;
-		while (ikp->ik_state&IKBUSY)
-			tsleep((caddr_t)ikp, IKWAITPRI, SLP_IK_BUSY, 0);
+		while (ikp->ik_state&IKBUSY && error == 0)
+			error = tsleep((caddr_t)ikp, IKWAITPRI | PCATCH,
+			    devwait, 0);
 		break;
 
 	default:
 		return (ENOTTY);
 	}
-	return (0);
+	return (error);
 }
 
 /*ARGSUSED*/

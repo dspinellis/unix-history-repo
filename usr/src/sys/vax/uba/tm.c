@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tm.c	7.8 (Berkeley) %G%
+ *	@(#)tm.c	7.9 (Berkeley) %G%
  */
 
 #include "te.h"
@@ -33,7 +33,6 @@
 #include "kernel.h"
 #include "tty.h"
 #include "syslog.h"
-#include "tsleep.h"
 
 #include "machine/pte.h"
 #include "../vax/cpu.h"
@@ -201,7 +200,7 @@ tmopen(dev, flag)
 	register int teunit;
 	register struct uba_device *ui;
 	register struct te_softc *sc;
-	int olddens, dens;
+	int olddens, dens, error;
 	int s;
 
 	teunit = TEUNIT(dev);
@@ -222,7 +221,9 @@ tmopen(dev, flag)
 get:
 	tmcommand(dev, TM_SENSE, 1);
 	if (sc->sc_erreg&TMER_SDWN) {
-		tsleep((caddr_t)&lbolt, PZERO+1, SLP_TM_OPN, 0); 
+		if (error = tsleep((caddr_t)&lbolt, (PZERO+1) | PCATCH,
+		    devopn, 0))
+			return (error); 
 		goto get;
 	}
 	sc->sc_dens = olddens;

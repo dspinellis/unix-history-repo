@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ps.c	7.4 (Berkeley) %G%
+ *	@(#)ps.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -30,7 +30,6 @@
 #include "conf.h"
 #include "user.h"
 #include "uio.h"
-#include "tsleep.h"
 
 #include "ubareg.h"
 #include "ubavar.h"
@@ -207,6 +206,7 @@ psclose(dev)
 	PSWAIT(psaddr); psaddr->ps_addr = RFSR;	 /* set in auto refresh mode */
 	PSWAIT(psaddr); psaddr->ps_data = AUTOREF;
 	unmaptouser((caddr_t)psaddr);
+	return (0);
 }
 
 /*ARGSUSED*/
@@ -230,7 +230,7 @@ psioctl(dev, cmd, data, flag)
 	register struct uba_device *ui = psdinfo[PSUNIT(dev)];
 	register struct ps *psp = &ps[PSUNIT(dev)];
 	int *waddr = *(int **)data;
-	int n, arg, i;
+	int n, arg, i, error = 0;
 
 	switch (cmd) {
 
@@ -325,9 +325,12 @@ psioctl(dev, cmd, data, flag)
 		(void) spl5();
 		psp->ps_refresh.waiting = 1;
 		while (psp->ps_refresh.waiting)
-			tsleep(&psp->ps_refresh.waiting, PSPRI,
-				SLP_PS_REFRESH, 0);
+			if (error = tsleep(&psp->ps_refresh.waiting,
+			    PSPRI | PCATCH, devwait, 0))
+				break;
 		(void) spl0();
+		if (error)
+			return (error);
 		if (cmd == PSIOSTOPREFRESH)
 			psp->ps_refresh.mode = STOPPED_RF;
 		if (psp->ps_refresh.state == TIME_RF)
@@ -345,7 +348,9 @@ psioctl(dev, cmd, data, flag)
 		(void) spl5();
 		psp->ps_map.waiting = 1;
 		while (psp->ps_map.waiting)
-			tsleep(&psp->ps_map.waiting, PSPRI, SLP_PS_MAP, 0);
+			if (error = tsleep(&psp->ps_map.waiting, PSPRI | PCATCH,
+			    devwait, 0))
+				break;
 		(void) spl0();
 		break;
 
@@ -353,7 +358,7 @@ psioctl(dev, cmd, data, flag)
 		return (ENOTTY);
 		break;
 	}
-	return (0);
+	return (error);
 }
 
 #define SAVEPSADDR(psaddr, savepsaddr) { \

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dn.c	7.5 (Berkeley) %G%
+ *	@(#)dn.c	7.6 (Berkeley) %G%
  */
 
 #include "dn.h"
@@ -20,7 +20,6 @@
 #include "map.h"
 #include "conf.h"
 #include "uio.h"
-#include "tsleep.h"
 
 #include "ubavar.h"
 
@@ -117,6 +116,7 @@ dnclose(dev, flag)
 
 	dp = (struct dndevice *)dninfo[DNUNIT(dev)]->ui_addr;
 	dp->dn_reg[DNREG(dev)] = MENABLE;
+	return (0);
 }
 
 dnwrite(dev, uio)
@@ -138,20 +138,25 @@ dnwrite(dev, uio)
 	error = uiomove(cp, cc, uio);
 	if (error)
 		return (error);
-	while ((*dnreg & (PWI|ACR|DSS)) == 0 && cc >= 0) {
+	while ((*dnreg & (PWI|ACR|DSS)) == 0 && cc >= 0 && error == 0) {
 		(void) spl4();
 		if ((*dnreg & PND) == 0 || cc == 0)
-			tsleep((caddr_t)dnreg, DNPRI, SLP_DN_REG, 0);
+			error = tsleep((caddr_t)dnreg, DNPRI | PCATCH,
+			   devout, 0);
 		else switch(*cp) {
 		
 		case '-':
-			tsleep((caddr_t)&lbolt, DNPRI, SLP_DN_PAUSE, 0);
-			tsleep((caddr_t)&lbolt, DNPRI, SLP_DN_PAUSE, 0);
+			error = tsleep((caddr_t)&lbolt, DNPRI | PCATCH,
+			    devout, 0);
+			if (error == 0)
+				error = tsleep((caddr_t)&lbolt, DNPRI | PCATCH,
+				    devout, 0);
 			break;
 
 		case 'f':
 			*dnreg &= ~CRQ;
-			tsleep((caddr_t)&lbolt, DNPRI, SLP_DN_PAUSE, 0);
+			error = tsleep((caddr_t)&lbolt, DNPRI | PCATCH,
+			    devout, 0);
 			*dnreg |= CRQ;
 			break;
 
@@ -176,11 +181,14 @@ dnwrite(dev, uio)
 				break;
 		dial:
 			*dnreg = (*cp << 8) | (IENABLE|MENABLE|DPR|CRQ);
-			tsleep((caddr_t)dnreg, DNPRI, SLP_DN_REG, 0);
+			error = tsleep((caddr_t)dnreg, DNPRI | PCATCH,
+			    devout, 0);
 		}
 		cp++, cc--;
 		spl0();
 	}
+	if (error)
+		return (error);
 	if (*dnreg & (PWI|ACR))
 		return (EIO);
 	return (0);

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dmz.c	7.7 (Berkeley) %G%
+ *	@(#)dmz.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -175,7 +175,7 @@ dmzclose(dev, flag)
 	int flag;
 {
 
-	dmxclose(&dmz_tty[minor(dev)]);
+	return (dmxclose(&dmz_tty[minor(dev)]));
 }
 
 dmzread(dev, uio, flag)

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dh.c	7.10 (Berkeley) %G%
+ *	@(#)dh.c	7.11 (Berkeley) %G%
  */
 
 #include "dh.h"
@@ -26,7 +26,6 @@
 #include "vm.h"
 #include "kernel.h"
 #include "syslog.h"
-#include "tsleep.h"
 
 #include "ubareg.h"
 #include "ubavar.h"
@@ -201,7 +200,7 @@ dhopen(dev, flag)
 	register int unit, dh;
 	register struct dhdevice *addr;
 	register struct uba_device *ui;
-	int s;
+	int s, error;
 	int dhparam();
 
 	unit = minor(dev);
@@ -261,7 +260,8 @@ dhopen(dev, flag)
 	/*
 	 * Wait for carrier, then process line discipline specific open.
 	 */
-	dmopen(dev, flag);
+	if (error = dmopen(dev, flag))
+		return (error);
 	return ((*linesw[tp->t_line].l_open)(dev, tp));
 }
 
@@ -282,7 +282,7 @@ dhclose(dev, flag)
 	((struct dhdevice *)(tp->t_addr))->dhbreak &= ~(1<<(unit&017));
 	if (tp->t_cflag&HUPCL || (tp->t_state&TS_ISOPEN)==0)
 		dmctl(unit, DML_OFF, DMSET);
-	ttyclose(tp);
+	return (ttyclose(tp));
 }
 
 dhread(dev, uio, flag)
@@ -711,7 +711,7 @@ dmopen(dev, flag)
 	register struct uba_device *ui;
 	register int unit;
 	register int dm;
-	int s;
+	int s, error = 0;
 
 	unit = minor(dev);
 	dm = unit >> 4;
@@ -719,7 +719,7 @@ dmopen(dev, flag)
 	unit &= 0xf;
 	if (dm >= NDH || (ui = dminfo[dm]) == 0 || ui->ui_alive == 0) {
 		tp->t_state |= TS_CARR_ON;
-		return;
+		return (0);
 	}
 	addr = (struct dmdevice *)ui->ui_addr;
 	s = spl5();
@@ -735,9 +735,12 @@ dmopen(dev, flag)
 		if (tp->t_state&TS_CARR_ON || flag&O_NONBLOCK || 
 		    tp->t_cflag&CLOCAL)
 			break;
-		tsleep((caddr_t)&tp->t_rawq, TTIPRI, SLP_DH_OPN, 0);
+		if (error = tsleep((caddr_t)&tp->t_rawq, TTIPRI | PCATCH,
+		    ttopen, 0))
+			break;
 	}
 	splx(s);
+	return (error);
 }
 
 /*

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dhu.c	7.9 (Berkeley) %G%
+ *	@(#)dhu.c	7.10 (Berkeley) %G%
  */
 
 /*
@@ -33,7 +33,6 @@
 #include "vm.h"
 #include "kernel.h"
 #include "syslog.h"
-#include "tsleep.h"
 
 #include "uba.h"
 #include "ubareg.h"
@@ -198,7 +197,7 @@ dhuopen(dev, flag)
 	register int unit, dhu;
 	register struct dhudevice *addr;
 	register struct uba_device *ui;
-	int s;
+	int s, error = 0;
 	extern dhuparam();
 
 	unit = UNIT(dev);
@@ -259,12 +258,16 @@ dhuopen(dev, flag)
 	if ((dhumctl(dev, DHU_ON, DMSET) & DHU_CAR) ||
 	    (dhusoftCAR[dhu] & (1<<(unit&0xf))))
 		tp->t_state |= TS_CARR_ON;
-	while (!(flag&O_NONBLOCK) && !(tp->t_cflag&CLOCAL) &&
-	       (tp->t_state & TS_CARR_ON) == 0) {
+	while ((flag&O_NONBLOCK) == 0 && (tp->t_cflag&CLOCAL) == 0 &&
+	    (tp->t_state & TS_CARR_ON) == 0) {
 		tp->t_state |= TS_WOPEN;
-		tsleep((caddr_t)&tp->t_rawq, TTIPRI, SLP_DHU_OPN, 0);
+		if (error = tsleep((caddr_t)&tp->t_rawq, TTIPRI | PCATCH,
+		    ttopen, 0))
+			break;
 	}
 	(void) splx(s);
+	if (error)
+		return (error);
 	return ((*linesw[tp->t_line].l_open)(dev, tp));
 }
 
@@ -284,20 +287,16 @@ dhuclose(dev, flag)
 	(*linesw[tp->t_line].l_close)(tp);
 	(void) dhumctl(unit, DHU_BRK, DMBIC);
 	if ((tp->t_state&TS_WOPEN) || (tp->t_cflag&HUPCL) || 
-	    (tp->t_state&TS_ISOPEN)==0)
+	    (tp->t_state&TS_ISOPEN) == 0) {
 #ifdef PORTSELECTOR
-	{
-		extern int wakeup();
-
 		(void) dhumctl(unit, DHU_OFF, DMSET);
 		/* Hold DTR low for 0.5 seconds */
-		timeout(wakeup, (caddr_t) &tp->t_dev, hz/2);
-		sleep((caddr_t) &tp->t_dev, PZERO);
-	}
+		(void) tsleep((caddr_t) &tp->t_dev, PZERO, ttclos, hz/2);
 #else
 		(void) dhumctl(unit, DHU_OFF, DMSET);
 #endif PORTSELECTOR
-	ttyclose(tp);
+	}
+	return (ttyclose(tp));
 }
 
 dhuread(dev, uio, flag)

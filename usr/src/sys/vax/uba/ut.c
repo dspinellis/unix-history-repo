@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ut.c	7.6 (Berkeley) %G%
+ *	@(#)ut.c	7.7 (Berkeley) %G%
  */
 
 #include "tj.h"
@@ -30,7 +30,6 @@
 #include "kernel.h"
 #include "tty.h"
 #include "syslog.h"
-#include "tsleep.h"
 
 #include "machine/pte.h"
 #include "../vax/cpu.h"
@@ -136,7 +135,7 @@ utopen(dev, flag)
 	register int tjunit = TJUNIT(dev);
 	register struct uba_device *ui;
 	register struct tj_softc *sc;
-	int olddens, dens;
+	int olddens, dens, error;
 	register int s;
 
 	if (tjunit >= NTJ || (ui = tjdinfo[tjunit]) == 0 || ui->ui_alive == 0)
@@ -151,7 +150,9 @@ utopen(dev, flag)
 get:
 	utcommand(dev, UT_SENSE, 1);
 	if (sc->sc_dsreg&UTDS_PIP) {
-		tsleep((caddr_t)&lbolt, PZERO+1, SLP_UT_OPN, 0);
+		if (error = tsleep((caddr_t)&lbolt, (PZERO+1) | PCATCH,
+		    devopn, 0))
+			return (error);
 		goto get;
 	}
 	sc->sc_dens = olddens;
@@ -210,6 +211,7 @@ utclose(dev, flag)
 		log(LOG_INFO, "tj%d: %d soft errors in %d blocks\n",
 		    TJUNIT(dev), sc->sc_softerrs, sc->sc_blks);
 	sc->sc_openf = 0;
+	return (0);
 }
 
 utcommand(dev, com, count)
