@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	5.37 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	5.38 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -848,6 +848,10 @@ setoption(opt, val, sticky)
 
 	  case 'f':		/* save Unix-style From lines on front */
 		SaveFrom = atobool(val);
+		break;
+
+	  case 'G':		/* match recipients against GECOS field */
+		MatchGecos = atobool(val);
 		break;
 
 	  case 'g':		/* default gid */

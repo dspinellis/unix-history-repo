@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	5.28 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -217,6 +217,7 @@ recipient(a, sendq)
 	register struct mailer *m;
 	register char *p;
 	bool quoted = FALSE;		/* set if the addr has a quote bit */
+	int findusercount = 0;
 	char buf[MAXNAME];		/* unquoted image of the user name */
 	extern bool safefile();
 
@@ -338,6 +339,7 @@ recipient(a, sendq)
 	**  Alias the name and handle :include: specs.
 	*/
 
+  trylocaluser:
 	if (m == LocalMailer && !bitset(QDONTSEND, a->q_flags))
 	{
 		if (strncmp(a->q_user, ":include:", 9) == 0)
@@ -458,8 +460,18 @@ recipient(a, sendq)
 
 			if (strcmp(a->q_user, pw->pw_name) != 0)
 			{
+				/* name was a fuzzy match */
 				a->q_user = newstr(pw->pw_name);
+				if (findusercount++ > 3)
+				{
+					usrerr("aliasing/forwarding loop for %s broken",
+						pw->pw_name);
+					return (a);
+				}
+
+				/* see if it aliases */
 				(void) strcpy(buf, pw->pw_name);
+				goto trylocaluser;
 			}
 			a->q_home = newstr(pw->pw_dir);
 			a->q_uid = pw->pw_uid;
@@ -516,6 +528,11 @@ finduser(name)
 	if ((pw = getpwnam(name)) != NULL)
 		return (pw);
 
+#ifdef MATCHGECOS
+	/* see if fuzzy matching allowed */
+	if (!MatchGecos)
+		return NULL;
+
 	/* search for a matching full name instead */
 	for (p = name; *p != '\0'; p++)
 	{
@@ -535,6 +552,7 @@ finduser(name)
 			return (pw);
 		}
 	}
+#endif
 	return (NULL);
 }
 /*

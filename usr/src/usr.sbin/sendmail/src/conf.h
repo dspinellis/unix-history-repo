@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	5.24 (Berkeley) %G%
+ *	@(#)conf.h	5.25 (Berkeley) %G%
  */
 
 /*
@@ -56,6 +56,7 @@
 # define SETPROCTITLE	1	/* munge argv to display current status */
 # define NAMED_BIND	1	/* use Berkeley Internet Domain Server */
 # define USERDB		1	/* look in user database */
+# define MATCHGECOS	1	/* match user names from gecos field */
 
 # ifdef SYSTEM5
 # define LOCKF		1	/* use System V lockf instead of flock */
