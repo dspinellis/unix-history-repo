@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_exit.c	6.10 (Berkeley) %G%
+ *	@(#)kern_exit.c	6.11 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -169,7 +169,7 @@ done:
 		 * Protect this process from future
 		 * tty signals, clear TSTP/TTIN/TTOU if pending.
 		 */
-		(void) spgrp(q, -1);
+		(void) spgrp(q);
 	}
 	p->p_cptr = NULL;
 	psignal(p->p_pptr, SIGCHLD);
