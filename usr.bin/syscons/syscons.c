@@ -76,12 +76,12 @@ int		opt;
 	prgname = argv[0];
 	if (!is_syscons(0))
 		exit(1);
-	while((opt = getopt(argc, argv, "s:S:m:r:k:f:t:F:M:vd")) != -1)
+	while((opt = getopt(argc, argv, "s:S:m:r:k:f:t:F:V:vd")) != -1)
 		switch(opt) {
 			case 's':
 				screensaver(optarg);
 				break;
-			case 'S':
+			case 'V':
 				screensavertype(optarg);
 				break;
 			case 'm':
@@ -93,7 +93,7 @@ int		opt;
 			case 'k':
 				keymap(optarg);
 				break;
-			case 'M':
+			case 'S':
 				mapscr(optarg);
 				break;
 			case 'f':
@@ -154,7 +154,7 @@ usage(void)
 const char	usagestr[] = {"\
 Usage: syscons  -v               (be verbose)\n\
                 -s {TIME|off}    (set screensaver timeout to TIME seconds)\n\
-		-S {NAME|list}   (set screensaver type or list available types\n\
+		-V {NAME|list}   (set screensaver type or list available types\n\
                 -m {80x25|80x50} (set screen to 25 or 50 lines)\n\
                 -r DELAY.REPEAT  (set keyboard delay & repeat rate)\n\
                 -r fast		 (set keyboard delay & repeat to fast)\n\
@@ -164,7 +164,7 @@ Usage: syscons  -v               (be verbose)\n\
                 -f SIZE FILE     (load font file of size 8, 14 or 16)\n\
                 -t SCRNUM        (switch to specified VT)\n\
                 -F NUM STRING    (set function key NUM to send STRING)\n\
-                -M SCRNMAP       (load screen map file)\n\
+		-S SCRNMAP       (load screen map file)\n\
 "};
 	fprintf(stderr, usagestr);
 }
