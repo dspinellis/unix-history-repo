@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	1.14 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.15 (Berkeley) %G%";
 #include "dump.h"
 
 int	notify = 0;	/* notify operator flag */
@@ -248,7 +248,6 @@ main(argc, argv)
 			  esize		/* blocks */
 			* (1.0/ntrec)	/* IRG's / block */
 			* tenthsperirg	/* 0.1" / IRG */
-			* 7		/* 0.1" / IRG */
 		) * (1.0 / tsize );	/* tape / 0.1" */
 	}
 	etapes = fetapes;		/* truncating assignment */
