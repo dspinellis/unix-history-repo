@@ -1,22 +1,30 @@
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * William Jolitz.
+ *
+ * %sccs.include.redist%
+ *
+ *	@(#)isa.c	1.4 (Berkeley) %G%
+ */
+
 /*
  * code to manage AT bus
- * @(#)isa.c	1.3 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
 #include "conf.h"
 #include "file.h"
-#include "dir.h"
 #include "user.h"
 #include "buf.h"
-#include "vm.h"
 #include "uio.h"
 #include "syslog.h"
 #include "machine/segments.h"
-#include "machine/pte.h"
-#include "machine/isa/isa_device.h"
-#include "machine/isa/icu.h"
+#include "i386/isa/isa_device.h"
+#include "i386/isa/icu.h"
 
 /*
  * Configure all ISA devices
@@ -52,10 +60,10 @@ config_isadev(isdp, mp)
  
 	if (dp = isdp->id_driver) {
 		if (isdp->id_maddr) {
-			extern int atdevbase[];
+			extern int atdevbase;
 
 			isdp->id_maddr -= 0xa0000;
-			isdp->id_maddr += (int)&atdevbase;
+			isdp->id_maddr += atdevbase;
 		}
 		isdp->id_alive = (*dp->probe)(isdp);
 		if (isdp->id_alive) {
