@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd1.c	3.18 83/12/17";
+static	char *sccsid = "@(#)cmd1.c	3.19 84/01/13";
 #endif
 
 #include "defs.h"
@@ -69,24 +69,6 @@ dowindow()
 			wwputs("Can't open window.  ", cmdwin);
 }
 
-findid()
-{
-	register id;
-	char ids[10];
-	register struct ww *w;
-
-	for (id = 1; id <= NWINDOW; id++)
-		ids[id] = 0;
-	for (w = wwhead; w; w = w->ww_next) {
-		if (w->ww_ident < 1 || w->ww_ident > NWINDOW)
-			continue;
-		ids[w->ww_ident]++;
-	}
-	for (id = 1; id <= NWINDOW && ids[id]; id++)
-		;
-	return id < 10 ? id : -1;
-}
-
 getpos(row, col, minrow, mincol, maxrow, maxcol)
 register int *row, *col;
 int minrow, mincol;
@@ -148,32 +130,4 @@ int maxrow, maxcol;
 		}
 	}
 	return oldrow != *row || oldcol != *col;
-}
-
-struct ww *
-doopen(id, nrow, ncol, row, col)
-int id, nrow, ncol, row, col;
-char *label;
-{
-	register struct ww *w;
-
-	if (id < 0 && (id = findid()) < 0)
-		return 0;
-	if ((w = wwopen(WW_PTY, id, nrow, ncol, row, col)) == 0)
-		return 0;
-	}
-	if ((w = wwopen(WWO_PTY, nrow, ncol, row, col, nline)) == 0) {
-		error("%s.", wwerror());
-		return 0;
-	}
-	reframe();
-	if (selwin == 0)
-		setselwin(w);
-	else
-		wwsetcurwin(cmdwin);
-	if (wwspawn(w, shell, shellname, (char *)0) < 0) {
-		doclose(w);
-		return 0;
-	}
-	return w;
 }
