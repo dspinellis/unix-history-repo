@@ -4,11 +4,10 @@
 .\" This code is derived from software contributed to Berkeley by
 .\" the Institute of Electrical and Electronics Engineers, Inc.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)rm.1	6.8 (Berkeley) %G%
+.\"	@(#)rm.1	6.9 (Berkeley) %G%
 .\"
-.Vx
 .Dd 
 .Dt RM 1
 .Os
@@ -17,7 +16,7 @@
 .Nd remove directory entries
 .Sh SYNOPSIS
 .Nm rm
-.Op Fl f Li \&| Fl i
+.Op Fl f | Fl i
 .Op Fl dRr
 .Ar file ...
 .Sh DESCRIPTION
@@ -30,10 +29,10 @@ input device is a terminal, the user is prompted (on the standard error
 output) for confirmation.
 .Pp
 The options are as follows:
-.Tw 8n
-.Tp Fl d
+.Bl -tag -width flag
+.It Fl d
 Attempt to remove directories as well as other types of files.
-.Tp Fl f
+.It Fl f
 Attempt to remove the files without prompting for confirmation,
 regardless of the file's permissions.
 If the file does not exist, do not display a diagnostic message or modify
@@ -43,7 +42,7 @@ The
 option overrides any previous
 .Fl i 
 options.
-.Tp Fl i
+.It Fl i
 Request confirmation before attempting to remove each file, regardless of
 the file's permissions, or whether or not the standard input device is a
 terminal.
@@ -52,7 +51,7 @@ The
 option overrides any previous
 .Fl f 
 options.
-.Tp Fl R
+.It Fl R
 Attempt to remove the file hierarchy rooted in each file argument.
 The 
 .Fl R
@@ -67,10 +66,10 @@ is made to remove the directory).
 If the user does not respond affirmatively, the file hierarchy rooted in
 that directory is skipped.
 .Pp
-.Tp Fl r
+.It Fl r
 Equivalent to
 .Fl R .
-.Tp
+.El
 .Pp
 The
 .Nm rm
@@ -100,9 +99,13 @@ utility differs from historical implementations in that the
 option only masks attempts to remove non-existent files instead of
 masking a large variety of errors.
 .Pp
-Also, historical BSD implementations prompted on the standard output,
+Also, historical
+.Bx
+implementations prompted on the standard output,
 not the standard error output.
 .Sh STANDARDS
 The
 .Nm rm
-function is expected to be POSIX 1003.2 compatible.
+command is expected to be
+.St -p1003.2
+compatible.
