@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)umap_vnops.c	1.3 (Berkeley) %G%
+ *	@(#)umap_vnops.c	1.4 (Berkeley) %G%
  */
 
 /*
@@ -399,8 +399,10 @@ umap_rename(ap)
 	struct ucred *compcredp, *savecompcredp;
 	struct vnode *vp;
 
-	/* Now map the second componentname structure kept in this vop's
-	 * arguments. 
+	/*
+	 * Rename is irregular, having two componentname structures.
+	 * We need to map the cre in the second structure,
+	 * and then bypass takes care of the rest.
 	 */
 
 	vp = ap->a_fdvp;
@@ -422,14 +424,14 @@ umap_rename(ap)
 		printf("umap_rename: rename component credit user now %d, group %d\n", 
 		    compcredp->cr_uid,compcredp->cr_gid);
 
-	if (error = umap_bypass(ap))
-		return (error);
+	error = umap_bypass(ap);
 	
 	/* Restore the additional mapped componentname cred structure. */
 
 	crfree(compcredp);
 	compnamep->cn_cred = savecompcredp;
-	
+
+	return error;
 }
 
 /*
@@ -448,6 +450,7 @@ struct vnodeopv_entry_desc umap_vnodeop_entries[] = {
 	{ &vop_inactive_desc, umap_inactive },
 	{ &vop_reclaim_desc, umap_reclaim },
 	{ &vop_print_desc, umap_print },
+	{ &vop_rename_desc, umap_rename },
 
 	{ &vop_strategy_desc, umap_strategy },
 	{ &vop_bwrite_desc, umap_bwrite },
