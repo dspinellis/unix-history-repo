@@ -1,5 +1,5 @@
 #
-#	@(#)aliases	5.7 (Berkeley) %G%
+#	@(#)aliases	8.1 (Berkeley) %G%
 #
 #  Aliases in this file will NOT be expanded in the header from
 #  Mail, but WILL be visible over networks or from /bin/mail.

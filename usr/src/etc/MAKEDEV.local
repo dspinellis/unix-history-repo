@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)MAKEDEV.local	5.2 (Berkeley) %G%
+#	@(#)MAKEDEV.local	8.1 (Berkeley) %G%
 #
 
 # Local device MAKEDEV script.
