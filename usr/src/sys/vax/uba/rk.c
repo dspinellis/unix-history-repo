@@ -1,5 +1,6 @@
 #define	RKDEBUG
-/*	rk.c	4.40	82/06/05	*/
+#define RKBDEBUG
+/*	rk.c	4.41	82/06/14	*/
 
 #include "rk.h"
 #if NHK > 0
@@ -418,8 +419,13 @@ hard:
 				else
 #endif
 					goto hard;
-			} else
-				um->um_tab.b_active = 0;
+			} else {
+				if ((er & (RKER_DCK|RKER_ECH)) == RKER_DCK) {
+					if (rkecc(ui, ECC))
+						return;
+				} else
+					um->um_tab.b_active = 0;
+			}
 			if (cs2&RKCS2_MDS) {
 				rkaddr->rkcs2 = RKCS2_SCLR;
 				goto retry;
@@ -428,9 +434,6 @@ hard:
 			if (ds&RKDS_DROT || er&(RKER_OPI|RKER_SKI|RKER_UNS) ||
 			    (um->um_tab.b_errcnt&07) == 4)
 				recal = 1;
-			if ((er & (RKER_DCK|RKER_ECH)) == RKER_DCK)
-				if (rkecc(ui, ECC))
-					return;
 			rkaddr->rkcs1 = RK_CCLR;
 			rkaddr->rkcs2 = ui->ui_slave;
 			rkaddr->rkcs1 = rktypes[ui->ui_type]|RK_DCLR|RK_GO;
@@ -584,8 +587,10 @@ rkecc(ui, flag)
 			i++;
 			bit -= 8;
 		}
-		if (rk->rkwc == 0)
+		if (rk->rkwc == 0) {
+			um->um_tab.b_active = 0;
 			return (0);
+		}
 		npf++;
 		reg++;
 		break;
@@ -620,8 +625,10 @@ rkecc(ui, flag)
 #endif
 		bp->b_flags &= ~B_BAD;
 		rk->rkwc = -((bp->b_bcount - (int)ptob(npf)) / sizeof (short));
-		if (rk->rkwc == 0)
-			return(0);
+		if (rk->rkwc == 0) {
+			um->um_tab.b_active = 0;
+			return (0);
+		}
 		break;
 #endif
 	}
