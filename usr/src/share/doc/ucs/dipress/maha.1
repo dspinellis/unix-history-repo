@@ -1,0 +1,392 @@
+.ds f. maha.1.tbl
+.\" tbl maha.1.tbl | troff -man
+.TH MAHA 1 5/23/85
+.UC 4
+.tr -\-
+.\" differences between troff and nroff compensated here:
+.ie t .ds sc \(sc
+.el .ds sc section\ 
+.ds lq \&"\"
+.ds rq \&"\"
+.if t \
+.	ds lq ``
+.if t \
+.	ds rq ''
+.SH NAME
+maha - make and print interpress files
+.SH SYNOPSIS
+.B maha
+[ options ] [ files ]
+.SH DESCRIPTION
+.I Maha
+(maharani-the Interpress version of the program czarina) reads in text
+files, converts them to interpress format and ships them to an
+interpress printer.  It also performs some simple page formatting.
+.PP
+The environment variable MAHA may be used to specify default options.
+The value of MAHA is parsed as a string of arguments before the arguments
+that appear on the command line.  For example, "MAHA=`-f Classic/8'" sets
+your default body font to 8 point Classic.
+.PP
+The possible options are:
+.TP
+.BI - n
+Prints output
+.I n
+columns per page (note that
+.I n
+is limited to one digit)
+.TP
+.BI -b \ banner
+Uses
+.I
+banner
+to label the output.  It will appear on the cover page
+on the line labeled \*(lqDocument\*(rq.
+.TP
+.BI -c \ n
+Causes
+.I n
+copies of the output to be printed.  The default is 1.
+.TP
+.BI -f \ font\ \ \ \ \ 
+Sets the font to be used for the body of each page.
+The default is \*(lqVintage-Printwheel/10\*(rq.
+.TP
+.BI -F \ font
+Sets the font to be used for page headings.
+The default is \*(lqModern-Bold/12\*(rq.
+.TP
+.BI -H \ header
+Sets the format for page headings to the string
+.IR header .
+Certain formatting options can be embedded in this string.  See the
+section below entitled \*(lqHeader Format\*(rq.
+The default header is constructed from the file name, its last
+modification date, and a page and line number.
+.TP
+.BI -h \ header
+Appends the string
+.I header
+to the current header format string.  This can be used to append
+something to the default header.
+.TP
+.B -l
+Causes line printer simulation mode to be used:  pages will be 66 lines
+long and headers will be omitted.
+.TP
+.BI -n \ name
+Sets the delivery address of your output (the \*(lqFor\*(rq field on the
+cover sheet) to
+.IR name .
+The default is your full name as recorded in the gecos field of the password
+file (\*(lq/etc/passwd\*(rq).
+.TP
+.BI -o \ file\ \ \ \ \ 
+The interpress code is written into
+.IR file .
+The default is generated from the process i.d. of the program.
+.TP
+.B -r
+Rotates the output 90 degrees on the page (landscape mode).
+This is good for output that requires a wide paeg or for program listings
+when specifying two columns.  Some people like the program listings produced
+by the command \*(lq\fBmaha -2 -r\fP files\*(rq.
+.TP
+.B -R
+Forces portrait mode.  This overrides the
+.B -r
+option.  It is useful if the environment variable MAHA sets
+.BR -r .
+.TP
+.BI -s \ pages
+Selects pages to be printed.
+.I Pages
+may be a single page specification (eg. \*(lq5\*(rq), a range
+of pages (\*(lq5-10\*(rq),
+or a list of page specifications (eg. \*(lq3,11-13\*(rq).  Note
+that this syntax is identical to that accepted by the
+.B -o
+option of
+.IR troff .
+.TP
+.B -t
+Causes page headings (titles) to be omitted.
+.sp 
+.PP
+.B "Specifying Fonts"
+.PP
+The naming scheme for fonts is a slight variant on the universal naming 
+scheme used by interpress.  See \*(sc3.2.2 in
+.I "Interpress Electronic Printing Standard"
+(\s8XSIS\s0 048404) for a description of universal names.
+Each identifier of a universal font name is
+separated by a slash (\*(lq/\*(rq).  If the final identifier in
+the name is nothing more than a series of digits,
+as in \*(lqClassic/8\*(rq, then it is taken to be a point size.  The actual
+universal name is formed by removing this last identifier.
+If the last part of the name is not strictly a number, then the
+point size is assumed to be 10.
+Since most
+environments use the same prefix for a universal font name, 
+A standard prefix of several identifiers
+is prepended to every font name given on the command line.
+This can be overridden by placing a slash at the front of the given name
+in which case the universal name is formed by simply removing the slash
+from the front of the name.  Note that the point size calculation mentioned
+above will still be performed on this type of name.
+.PP
+Here are some examples that should clear the air:
+.sp
+.TS
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81 82
+.nr 80 0
+.nr 38 \wName Given
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wClassic
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wModern/12
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w/Rice/TimesRoman
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w/Rice/TimesRoman/Italic/8
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w/Rice/VileBlob/8/10
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.nr 38 \wUniversal Name
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wXerox/XC1-1-1/Classic
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wXerox/XC1-1-1/Modern
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wRice/TimesRoman
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wRice/TimesRoman/Italic
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wRice/VileBlob/8
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 82 0
+.nr 38 \wPoint Size
+.if \n(82<\n(38 .nr 82 \n(38
+.nr 38 \w10
+.if \n(82<\n(38 .nr 82 \n(38
+.nr 38 \w12
+.if \n(82<\n(38 .nr 82 \n(38
+.nr 38 \w10
+.if \n(82<\n(38 .nr 82 \n(38
+.nr 38 \w8
+.if \n(82<\n(38 .nr 82 \n(38
+.nr 38 \w10
+.if \n(82<\n(38 .nr 82 \n(38
+.82
+.rm 82
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr 42 \n(81+(3*\n(38)
+.nr 82 +\n(42
+.nr TW \n(82
+.if t .if (\n(TW+\n(.o)>7.65i .tm Table at line 150 file maha.1.tbl is too wide - \n(TW units
+.nr #I \n(.i
+.in +(\n(.lu-\n(TWu-\n(.iu)/2u
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u \n(82u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'Name Given\h'|\n(41u'Universal Name\h'|\n(42u'Point Size
+.ta \n(80u \n(81u \n(82u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\h'|\n(41u'\h'|\n(42u'
+.ta \n(80u \n(81u \n(82u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'Classic\h'|\n(41u'Xerox/XC1-1-1/Classic\h'|\n(42u'10
+.ta \n(80u \n(81u \n(82u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'Modern/12\h'|\n(41u'Xerox/XC1-1-1/Modern\h'|\n(42u'12
+.ta \n(80u \n(81u \n(82u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'/Rice/TimesRoman\h'|\n(41u'Rice/TimesRoman\h'|\n(42u'10
+.ta \n(80u \n(81u \n(82u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'/Rice/TimesRoman/Italic/8\h'|\n(41u'Rice/TimesRoman/Italic\h'|\n(42u'8
+.ta \n(80u \n(81u \n(82u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'/Rice/VileBlob/8/10\h'|\n(41u'Rice/VileBlob/8\h'|\n(42u'10
+.fc
+.nr T. 1
+.T# 1
+.in \n(#Iu
+.35
+.TE
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-10
+.sp
+If a font name has the unfortunate characteristic of containing nothing but
+numbers in its last identifier, it can still be specified by always appending
+a point size to the name, as in the last example above.
+.sp
+.PP
+.B "Header Format"
+.PP
+The string that is used to build the header can have format options embedded
+in it.  Each formatting option is preceded with the character \*(lq%\*(rq in
+a manner similar to 
+.IR printf (3S)
+strings in C.  The following format characters are recognized:
+.sp
+.TS
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81
+.nr 80 0
+.nr 38 \wf
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wt
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wp
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wl
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.nr 38 \wcurrent file name
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wlast modified time of the current file
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wcurrent page number
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wline number for the top line of the current page
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr TW \n(81
+.if t .if (\n(TW+\n(.o)>7.65i .tm Table at line 172 file maha.1.tbl is too wide - \n(TW units
+.nr #I \n(.i
+.in +(\n(.lu-\n(TWu-\n(.iu)/2u
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'f\h'|\n(41u'current file name
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u't\h'|\n(41u'last modified time of the current file
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'p\h'|\n(41u'current page number
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'l\h'|\n(41u'line number for the top line of the current page
+.fc
+.nr T. 1
+.T# 1
+.in \n(#Iu
+.35
+.TE
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-7
+.sp
+If a percent sign is followed by a character not in the list above, then
+that character gets printed (without the leading percent sign).  Note that a
+percent sign can still be printed in the header by placing two in the
+format.  The default format string is:
+.sp
+.nf
+.ce
+"%f            %t            Page %p, line %l"
+.fi
+.SH ENVIRONMENT
+.DT
+MAHA		strings of options to be used by
+.IR maha .
+.PP
+.SH FILES
+/etc/passwd	contains information about system users
+.SH "SEE ALSO"
+cz(1)		czarina
+.PP
+Interpress Electronic Printing Standard, \s8XSIS\s0 048404
+.SH BUGS
+The document name doesn't appear on the banner page like it should.
+This is really the fault of the queueing software.
+.PP
+Maha will not
+realize that a file is already in interpress format and skip the 
+conversion phase.
+.PP

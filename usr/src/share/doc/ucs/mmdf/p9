@@ -1,0 +1,84 @@
+.SH
+Using Domain Name Servers
+.PP
+The use of domain name servers
+will have some interesting effects
+on the address verification aspects of mail submission.
+In the current system, all the information
+necessary for verification of addresses is in a local
+data base.
+When we are using name servers, we can no longer be guaranteed
+that all the needed information will be locally cached.
+In addition, we are not guaranteed that we will be able to
+reach all the necessary name servers at submission time (although
+duplicate name servers will make this possibility small).
+The \fBsubmit\fR program will call the local domain resolver to
+verify each address, and there will be some time limit in which to
+complete this task.
+The resolver will be expected to first
+consult the local cache of domain data
+and, if the information is not found,
+contact as many servers as
+necessary to resolve the address.
+.PP
+The possible lack of information will force us to provide a
+contingent submission queue for those messages that
+cannot be verified at submission time.
+This does not imply that there will we be no verification.
+We will verify that we at least know the top level domain
+of each address and verify each sub-domain when possible.
+If some sub-domain of the full address is known to be bogus, the
+address can be flushed.
+Knowing that we have authoritative information that a domain
+does not exist is just as important as knowing that it does exist.
+.PP
+A new channel, much like the list channel, will be used to process
+the partially-accepted address for a message.
+This channel will continually try to verify the address until
+it is known to be good or bad.  It will have the message
+returned to the sender, with an explanation, if one or more addresses
+is bad.
+Most systems will run with a fairly rich cache of host information.
+For those systems which cannot afford to keep this information
+around, the submission time verification might be a considerable
+delay which would be unacceptable for a user interface.
+On these systems it will possible to force all message to be accepted for
+background verification (via the "verification" channel).
+.SH
+Conclusion
+.PP
+MMDFII had some early problems and as a result may have gotten
+some initial bad press, but MMDFII has shown that it is
+a capable mail system which is both robust and able to handle
+very large mail loads.
+There now exist a growing number of tools to analyze and manage
+large flows of mail in a MMDF system.  These tools include status
+programs, sophisticated logging, and log analysis programs.
+Because of the separation of mail into separate queues,
+multiprocessing of the mail queues is not only possible, but
+routinely used to both increase throughput and decrease
+delays.
+MMDF is also a flexible system.
+Runtime reconfiguration is simple, generally easy to understand,
+and can be done at any time.
+Since the MMDF core software is free of channel specific or
+network specific information, one can easily add additional channels
+for new networks or protocols without affecting the existing
+software.
+MMDFII represents a stable, production mail system,
+providing a strong base for the development of
+new network interconnections and mail handling environments
+which are essential in today's distributed computing environment.
+.sp 2
+.PP
+The MMDFII software is available under license,
+free of charge
+(with the possible exception of a tape copy fee),
+for internal use only as follows:
+to U.S. Government agencies through the Ballistic Research Labs,
+to CSNET sites through the CSNET Coordination and Information Center at BBN,
+and to others through Prof. David Farber at the University
+of Delaware, Electrical Engineering and
+Computer Science Department.
+Commercial concerns interested in MMDF for other than internal
+use should contact Prof. Farber.

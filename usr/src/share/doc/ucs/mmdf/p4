@@ -1,0 +1,83 @@
+.SH
+Submit
+.PP
+For all the changes to its internals, the external interface of
+\fBsubmit\fR has changed remarkably little since MMDFI.
+The only notable external changes to \fBsubmit\fR are that it now
+processes domain-style addresses (both forward and reverse!)
+and both RFC822
+and RFC733 format addresses.
+.FN
+D. Crocker, J. Vittal, K. Pogran, D. Henderson, ``RFC733 - Standard
+for the Format of ARPA Network Text Message'',
+Network Information Center, SRI International, November 1977.
+
+D. Crocker, ``RFC822 - Standard
+for the Format of ARPA Network Text Message'',
+Network Information Center, SRI International, August 1982.
+.FE
+A couple of new options have been added to \fBsubmit\fR to give some
+control over the handling of returned mail in the event that a message
+cannot be delivered.  This is
+useful if the user is a program and does not care if
+the message is undeliverable!
+It is also now possible to feed a bare message to \fBsubmit\fR and tell
+\fBsubmit\fR to find all the addresses and show them and their validity
+on a one-by-one basis.  This makes it convenient
+to feed mail to \fBsubmit\fR from a smart mail composer that doesn't want to
+know how to parse addresses (a major task these days!).
+.PP
+The \fBsubmit\fR program can operate in one of two modes.
+In \fIprotocol\fR mode, \fBsubmit\fR accepts options, a return address,
+and optionally a list of addresses for each message, followed by the
+message text.  Multiple messages can be submitted
+one after another without reinvoking the \fBsubmit\fR process.
+Each address is individually acknowledged.  If there is an error,
+the submission of that letter is aborted and a new submission
+may be made.
+In \fIone-shot\fR mode a single message is submitted on the standard
+input.
+As in \fIprotocol\fR mode, it can be preceded by options and addresses,
+or the options can be given on the command line and the addresses taken
+from the message text.
+.PP
+The internal address verification process of \fBsubmit\fR has changed
+greatly since MMDFI.  Most of the changes
+have been made to properly support domain style addresses.
+Additional changes were made to support per-channel
+and per-user access
+controls.
+While \fBsubmit\fR is checking each address, regardless
+of origin, it is also compiling the address
+list for the message.
+Each address list entry contains the destination domain,
+.FN
+By ``domain'' we mean the full domain specification of a host, e.g.
+VAX1.UDEL.ARPA.
+.FE
+the destination mailbox,
+and the channel in whose channel table \fBsubmit\fR first found the destination
+host.
+The lookup is somewhat complicated.
+The destination domain is looked up in the domain tables;
+the first entry found is used.
+Each domain table entry has associated with it the routing to be used to reach
+that domain/host.  Normally this is just the name of the host itself
+if the host is directly accessible, but it can be a sequence of hosts if the
+destination is not directly accessible.
+This ``routing host'' is then looked up in the channel tables
+to find a channel which can reach it.  The routing host specifications
+and the entries in the channel tables are always full domain specifications,
+so as to be unambiguous.
+.PP
+Authorization is checked after a valid channel for a host is found.
+Access to send via a given channel
+depends on the originating channel and/or the submitting user.
+If access to a given channel is denied, \fBsubmit\fR will continue to look
+at subsequent channels to see if some other channel has access to the
+same host and is authorized.  This mechanism is commonly used
+to restrict access to expensive transport systems or to restrict
+message transfer between channels representing private and public
+data networks.
+It can also be used to restrict relaying of messages between two
+"controlled-access" networks.

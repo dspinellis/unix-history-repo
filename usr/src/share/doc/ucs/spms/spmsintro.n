@@ -1,0 +1,225 @@
+.TH SPMSINTRO 1P "1 July 1985"
+.UC 4
+.SH NAME
+spmsintro - introduction to SPMS commands
+.SH INTRODUCTION
+The Software Project Management System (SPMS) is a system for the management
+of medium- to large-scale software systems. SPMS provides, within the
+UNIX environment, a number of commands which can greatly simplify many tasks
+associated with program development and maintenance. SPMS does not
+attempt to duplicate existing UNIX program development tools such as
+.I make
+or
+.I SCCS,
+but instead provides a way of coordinating these tools.
+.PP
+Each software package managed by SPMS is organized as a project. A
+project is a collection of directories, each of which supports a
+specific activity such as program development, testing, or
+documentation. There is no restriction on the number of directories
+belonging to a project. The directory layout is arbitrary, and can be
+altered to reflect the changing needs of the package. Projects can be
+nested to any level and a mechanism is provided for executing commands
+globally over an entire project hierarchy.
+.SH DESCRIPTION
+.PP
+\fBGetting Started\fR
+.PP
+Before using SPMS for the first time you must do the following \-
+.PP
+If you are a \fBC shell\fR, (\fIcsh\fR), user:
+.IP 1.
+Include the directory `/usr/new' in the
+command search path. This is done by altering the PATH variable
+in one of the startup files, `.cshrc'  or `.login', in the home directory.
+.IP 2.
+Add the following aliases to the `.cshrc' file
+.br
+	alias chproject  \'eval \`\^"chproject"  \\!*\`\^\'
+.br
+	alias pd  \'eval \`\^"pd"  \\!*\`\^\'
+.IP 3.
+Add the following command to the `.login' file
+.br
+	chproject  ^
+.IP 4.
+Convert the home directory to a project root directory by typing
+.br
+	/usr/new/mkproject  \-d  ^
+.IP 5.
+Execute the `.cshrc' and `.login' files by typing
+.br
+	source .cshrc
+.br
+	source .login
+.PP
+If you are a \fBBourne shell\fR, (\fIsh\fR), user:
+.IP 1.
+Include the directory `/usr/new' in the command search path. This is
+done by altering the PATH variable in the startup file, `.profile', in
+the home directory.
+.IP 2.
+Add the following command to the `.profile' file:
+.br
+	eval  \`chproject  \\^\^\`
+.IP 3.
+Convert the home directory to a project root directory by typing
+.br
+	/usr/new/mkproject  \-d  \\^
+.IP 4.
+Execute the `.profile' file by typing
+.br
+	.  .profile
+.PP
+\fBGlobal Operations\fR
+.PP
+The means for executing a command over an entire software package
+is provided by the
+.I pexec
+command. By labeling each project directory according to the type of
+activity that it supports, global operations can be restricted to
+specific directories. These labels are known as \fItype labels\fR. In
+some instances, the directories affected by a global command must be
+processed in a particular order. This ordering is achieved by appending
+priorities to type labels. For example, if the project directories
+`include', `cmd1', `cmd2', `lib1', and `lib2' have the following
+labels,
+.PP
+.nf
+.ta 1.0i 2.5i
+	include	print.0, src, update.100, include
+	cmd1	print.1, src, update.300, cmdsrc
+	cmd2	print.1, src, update.300, cmdsrc
+	lib1	print.2, src, update.200, libsrc
+	lib2	print.2, src, update.200, libsrc
+.DT
+.fi
+.PP
+the entire software package can be updated by the command
+.PP
+	pexec  \-Tupdate  make update
+.PP
+in the order `include', `lib1', `lib2', `cmd1', `cmd2'.
+.PP
+Global commands can be made even more precise by using boolean expressions
+on type labels to select project directories. The formal definition of
+a boolean type label expression is
+.LP
+.ce
+\fIE\fR \(-> \fIE\fB or \fIE\fR  | \fIE\fB and \fIE\fR  | \fBnot\fI E\fR  | ( E ) | \fBid\fR
+.LP
+where
+.I E
+is a boolean expression; \fBand\fR, \fBor\fR, and \fBnot\fR are
+boolean operators; and
+.B id
+is a type label.
+.B Or
+and
+.B and
+are left-associative.
+.B Or
+has the lowest precedence, then \fBand\fR, then
+.B not.
+In terms of entering the boolean expression on the command line, `\fBor\fR'
+is represented by the character `|', `\fBand\fR' by the character `&', and
+`\fBnot\fR' by `!'. Since these characters, together with `(' and `)',
+are meaningful to the command shell, it is good idea to enclose the
+whole expression in quotes. However, even if this is done, the `!'
+character must still be escaped by a backslash `\\' if it precedes a
+type label to prevent it from being interpreted by the
+.I csh
+history mechanism. The command
+.PP
+	pexec  "\-Tprint\|&\|(libsrc\||\|cmdsrc)"  \'pr *.h *.c\'  | lpr
+.PP
+prints the source code in the command and library directories, but not
+the directory containing header files. Alternatively,
+.PP
+	pexec  "\-Tprint\|&\|\\!include"  \'pr *.h *.c\'  | lpr
+.PP
+achieves the same result.
+.PP
+\fBProject Pathnames\fR
+.PP
+\fIProject pathnames\fR provide a convenient way for accessing a
+particular directory or file within a project hierarchy. A project
+pathname is formed by a succession of project names separated by `^'
+characters, followed by the name of the directory or file. For instance,
+to describe a file `main.c' in the project directory `work' in the project
+`spms', the project pathname is
+.PP
+	^spms^work/main.c
+.PP
+The project at the top of each user's project hierarchy is called the
+\fIroot project\fR and is given the special name `^'. If a project
+pathname begins with the character `^', it is interpreted relative
+to the root project and is called an \fIabsolute project pathname\fR.
+However, a project pathname not beginning with `^' is interpreted with
+respect to the current working project and is therefore called a
+\fIrelative project pathname\fR. The parent of the working project is
+called `....' and the alternative name for the current project is
+`...'.
+.PP
+Project pathnames may have a prepended ~\fIusername\fR, and an appended
+regular pathname. For example, the pathname
+.PP
+	~pjn^spms^work/old/main.c
+.PP
+represents the path to `main.c' located in the directory `old' in the
+project `spms' owned by `pjn'.
+.SH OPTIONS
+The options to SPMS commands follow certain conventions. Keyword
+options are uppercase (with the exception of the
+.B \-f
+option). The keyword can immediately follow the option, or be
+separated by an arbitrary amount of space. The following options
+are uniformly recognized.
+.IP "\fB\-P \fIpdirname\fR"
+Specify a project other than the current working project.
+.IP "\fB\-T \fItypexpr\fR"
+Only use project directories corresponding to boolean type label
+expression,
+.I typexpr.
+.PP
+Non-keyword options are lowercase (with the exception of the
+.B \-D
+option). The following options are standard.
+.IP \fB\-q\fR
+Quiet mode. Do not print titles.
+.IP \fB\-r\fR
+Apply the command recursively to subprojects.
+.IP \fB\-x\fR
+Trace and print, but do not execute.
+.IP \fB\-D\fR
+Print the expanded pathname when a project pathname is converted to a
+regular pathname.
+.PP
+An option specified as {+\^\-}\fIx\fR means +\fIx\fR or \-\fIx\fR.
+.SH "ENVIRONMENT VARIABLES"
+.IP PROJECT \w'ROOTPROJECT'u+.5i
+Absolute pathname of the current working project root directory.
+This variable is set by
+.I chproject.
+.IP ROOTPROJECT
+Absolute pathname of the root project directory. The default is the
+user's home directory.
+.SH FILES
+.ta \w'ROOTPROJECT'u+.5i
+\&...	Project link directory.
+.DT
+.SH "SEE ALSO"
+mkmf(1), chproject(1P), mkproject(1P), pcp(1P), pd(1P), pdiff(1P), pexec(1P),
+pfind(1P), pgrep(1P), phelp(1P), plog(1P), pman(1P), pmkdir(1P), pmv(1P),
+ppd(1P), prmdir(1P), ptest(1P), pwp(1P), rmproject(1P)
+
+Peter J. Nicklin  \fIThe SPMS Software Project Management System\fR
+.SH AUTHOR
+Peter J. Nicklin
+.SH BUGS
+At present, project pathnames are only recognized by SPMS commands.
+.PP
+Since the Bourne shell,
+.I sh,
+recognizes the `^' character as an alternative pipe
+symbol, Bourne shell users must type `\\^' instead.
