@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)glob.c	5.8 (Berkeley) %G%";
+static char *sccsid = "@(#)glob.c	5.9 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -326,7 +326,7 @@ globone(str)
 			/*NOTREACHED*/
 		}
 	}
-	return(strip(nstr));
+	return(nstr ? strip(nstr) : (char *) 0);
 }
 
 char **
