@@ -1,125 +1,125 @@
 #
-# Copyright (c) 1980 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1980, 1987 Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)Makefile	5.6 (Berkeley) 11/17/86
+# Redistribution and use in source and binary forms are permitted
+# provided that this notice is preserved and that due credit is given
+# to the University of California at Berkeley. The name of the University
+# may not be used to endorse or promote products derived from this
+# software without specific prior written permission. This software
+# is provided ``as is'' without express or implied warranty.
+#
+#	@(#)Makefile	5.9 (Berkeley) %G%
 #
 DESTDIR=
 CFLAGS=	-O
+LIBC=	/lib/libc.a
 
 # Programs that live in subdirectories, and have makefiles of their own.
 #
-SUBDIR=	adventure backgammon battlestar boggle cribbage fortune \
-	hangman hunt mille monop quiz robots sail snake trek
+# doctor removed until lisp works
+SUBDIR=	adventure atc backgammon battlestar boggle btlgammon canfield \
+	cribbage dm fortune gnuchess hack hangman hunt larn mille monop \
+	phantasia quiz robots rogue sail snake trek \
+	games.${MACHINE}
 
 # Shell scripts that need only be installed and are never removed.
 #
 SCRIPT=	wargames
 
+# C sources that live in the current directory
+#
+SRCS=	arithmetic.c banner.c bcd.c factor.c fish.c number.c primes.c \
+	rain.c worm.c worms.c wump.c
+
 # C programs that live in the current directory and do not need
 # explicit make lines.
 #
-STD=	arithmetic btlgammon banner bcd cfscores factor fish number wump
+STD=	arithmetic banner bcd factor fish number wump
 
 # C programs that live in the current directory and need explicit make lines.
 #
-NSTD=	canfield primes rain worm worms
+NSTD=	primes rain worm worms
+
+# programs that get hidden
+HIDE=	fish wump worm
+
+# programs that don't
+NOHIDE=	arithmetic banner bcd factor number primes rain worms
 
 # Programs that require a lisp interpreter or compiler
 LISP=	doctor
 
 all:	${SUBDIR} ${STD} ${NSTD}
-	cd games.${MACHINE}; make ${MFLAGS}
 
 ${SUBDIR}: FRC
 	cd $@; make ${MFLAGS}
 
-FRC:
+${STD}: ${LIBC}
+	${CC} ${CFLAGS} -o $@ $@.c
 
-${STD}:
-	cc ${CFLAGS} -o $@ $@.c
-
-install:
+install: FRC
 	-for i in ${SUBDIR}; do \
 		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install); done
 	-for i in ${SCRIPT}; do \
-		(install -c $$i.sh ${DESTDIR}/usr/games/$$i); done
-	-for i in ${STD} ${NSTD}; do \
-		(install -s $$i ${DESTDIR}/usr/games/$$i); done
-	-if [ ! -f ${DESTDIR}/usr/games/lib/cfscores ]; then \
-		cat >${DESTDIR}/usr/games/lib/cfscores </dev/null; \
-		chmod 777 ${DESTDIR}/usr/games/lib/cfscores; fi
-	cd games.${MACHINE}; make ${MFLAGS} DESTDIR=${DESTDIR} install
+		(install -c -o games -g bin -m 755 $$i.sh ${DESTDIR}/usr/games/$$i); done
+	install -s -o games -g bin -m 700 ${HIDE} ${DESTDIR}/usr/games/hide
+	install -s -o games -g bin -m 755 ${NOHIDE} ${DESTDIR}/usr/games
+	-for i in ${HIDE}; do \
+		(cd ${DESTDIR}/usr/games; rm -f $$i; ln -s dm $$i; chown games.bin $$i) \
+	done
 
-clean:
-	rm -f a.out core *.s *.o
-	-for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean); done
-	rm -f ${STD} ${NSTD}
-	cd games.${MACHINE}; make ${MFLAGS} DESTDIR=${DESTDIR} clean
+clean: FRC
+	-for i in ${SUBDIR} games.vax games.tahoe; do \
+		(cd $$i; make ${MFLAGS} clean); \
+	done
+	rm -f ${STD} ${NSTD} a.out core *.s *.o
 
-depend:
+depend: ldepend
 	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} depend); done
-	for i in ${STD} ${NSTD}; do \
-	    cc -M ${INCPATH} $$i.c | sed 's/\.o//' | \
-	    awk ' { if ($$1 != prev) \
-		{ if (rec != "") print rec; rec = $$0; prev = $$1; } \
-		else { if (length(rec $$2) > 78) { print rec; rec = $$0; } \
-		else rec = rec " " $$2 } } \
-		END { print rec } ' >> makedep; done
-	echo '/^# DO NOT DELETE THIS LINE/+2,$$d' >eddep
-	echo '$$r makedep' >>eddep
-	echo 'w' >>eddep
-	cp Makefile Makefile.bak
-	ed - Makefile < eddep
-	rm eddep makedep
-	echo '# DEPENDENCIES MUST END AT END OF FILE' >> Makefile
-	echo '# IF YOU PUT STUFF HERE IT WILL GO AWAY' >> Makefile
-	echo '# see make depend above' >> Makefile
+
+ldepend: FRC
+	mkdep -p ${CFLAGS} ${SRCS}
+
+FRC:
 
 # Files listed in ${NSTD} have explicit make lines given below.
 
-canfield:
-	cc -o canfield ${CFLAGS} canfield.c -lcurses -ltermcap
-
 primes:
-	cc -o primes ${CFLAGS} primes.c -lm
+	${CC} -o $@ ${CFLAGS} primes.c -lm
 
 rain:
-	cc -o rain ${CFLAGS} rain.c -lcurses -ltermcap
+	${CC} -o $@ ${CFLAGS} rain.c -lcurses -ltermcap
 
 worm:
-	cc -o worm ${CFLAGS} worm.c -lcurses -ltermcap
+	${CC} -o $@ ${CFLAGS} worm.c -lcurses -ltermcap
 
 worms:
-	cc -o worms ${CFLAGS} worms.c -lcurses -ltermcap
+	${CC} -o $@ ${CFLAGS} worms.c -lcurses -ltermcap
 
-# DO NOT DELETE THIS LINE -- make depend uses it
+# DO NOT DELETE THIS LINE -- mkdep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
 
 arithmetic: arithmetic.c /usr/include/stdio.h /usr/include/signal.h
-btlgammon: btlgammon.c /usr/include/stdio.h
+arithmetic: /usr/include/machine/trap.h
 banner: banner.c /usr/include/stdio.h
 bcd: bcd.c
-cfscores: cfscores.c /usr/include/pwd.h
 factor: factor.c
 fish: fish.c /usr/include/stdio.h
-number: number.c
-wump: wump.c /usr/include/stdio.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
-wump: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-canfield: canfield.c /usr/include/curses.h /usr/include/stdio.h
-canfield: /usr/include/sgtty.h /usr/include/sys/ioctl.h
-canfield: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-canfield: /usr/include/ctype.h /usr/include/signal.h /usr/include/sys/types.h
+number: number.c /usr/include/stdio.h /usr/include/ctype.h
 primes: primes.c /usr/include/stdio.h /usr/include/math.h
 rain: rain.c /usr/include/stdio.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
 rain: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-rain: /usr/include/signal.h
+rain: /usr/include/signal.h /usr/include/machine/trap.h
 worm: worm.c /usr/include/ctype.h /usr/include/curses.h /usr/include/stdio.h
 worm: /usr/include/sgtty.h /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
 worm: /usr/include/sys/ttydev.h /usr/include/signal.h
+worm: /usr/include/machine/trap.h
 worms: worms.c /usr/include/stdio.h /usr/include/sgtty.h
 worms: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
 worms: /usr/include/sys/ttydev.h /usr/include/signal.h
-# DEPENDENCIES MUST END AT END OF FILE
-# IF YOU PUT STUFF HERE IT WILL GO AWAY
-# see make depend above
+worms: /usr/include/machine/trap.h
+wump: wump.c /usr/include/stdio.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
+wump: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
