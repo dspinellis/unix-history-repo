@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.5 (Berkeley) %G%
+ *	@(#)sendmail.h	8.6 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.5		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.6		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -408,7 +408,7 @@ EXTERN struct rewrite	*RewriteRules[MAXRWSETS];
 struct metamac
 {
 	char	metaname;	/* external code (after $) */
-	char	metaval;	/* internal code (as above) */
+	u_char	metaval;	/* internal code (as above) */
 };
 /*
 **  Information about currently open connections to mailers, or to
