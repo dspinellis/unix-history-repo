@@ -1,0 +1,84 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)wait.2	4.1 (Berkeley) %G%
+.\"
+.TH WAIT 2 
+.UC 4
+.SH NAME
+wait \- wait for process to terminate
+.SH SYNOPSIS
+.nf
+.B wait(status)
+.B int *status;
+.fi
+.PP
+.B wait(0)
+.SH DESCRIPTION
+.I Wait
+causes its caller to delay until a signal is received or
+one of its child
+processes terminates.
+If any child has died since the last
+.I wait,
+return is immediate;
+if there are no children, return is immediate with
+the error bit set
+(resp. with a value of \-1 returned).
+The normal return yields the process ID of the terminated child.
+In the case of several children several
+.I wait
+calls are needed
+to learn of all the deaths.
+.PP
+If
+.RI (int) status
+is nonzero, the high byte of the word pointed to
+receives the low byte of the
+argument of
+.I exit
+when the child terminated.
+The low byte
+receives the termination status
+of the process.
+See
+.IR signal (2)
+for a list of termination statuses (signals);
+0 status indicates normal termination.
+A special status (0177) is returned for a stopped process
+which has not terminated and can be restarted.
+See
+.IR ptrace (2).
+If the 0200 bit of the termination status
+is set,
+a core image of the process was produced
+by the system.
+.PP
+If the parent process terminates without
+waiting on its children,
+the initialization process
+(process ID = 1)
+inherits the children.
+.PP
+There is another entry
+.IR wait3 (2)
+which is provides additional options needed by the shell
+.IR csh (1)
+to do job control.
+.SH "SEE ALSO"
+wait3(2), exit(2), fork(2), signal(2)
+.SH DIAGNOSTICS
+Returns
+\-1 if there are no children not previously waited for.
+.SH "ASSEMBLER (PDP-11)"
+(wait = 7.)
+.br
+.B sys  wait
+.br
+(process ID in r0)
+.br
+(status in r1)
+.PP
+The high byte of the status is
+the low byte of r0 in the child at termination.
