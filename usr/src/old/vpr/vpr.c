@@ -39,6 +39,7 @@ main(argc, argv)
 	int c, f, fv, flag;
 	int out();
 
+	umask(0);
 	if (signal(SIGINT, SIG_IGN) == SIG_DFL)
 		signal(SIGINT, out);
 	if (signal(SIGQUIT, SIG_IGN) == SIG_DFL)
