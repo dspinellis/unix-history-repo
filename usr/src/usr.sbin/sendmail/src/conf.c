@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.104 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.105 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -978,11 +978,26 @@ shouldqueue(pri, ctime)
 	long pri;
 	time_t ctime;
 {
+	bool rval;
+
+	if (tTd(3, 30))
+		printf("shouldqueue: CurrentLA=%d, pri=%d: ", CurrentLA, pri);
 	if (CurrentLA < QueueLA)
+	{
+		if (tTd(3, 30))
+			printf("FALSE (CurrentLA < QueueLA)\n");
 		return (FALSE);
+	}
 	if (CurrentLA >= RefuseLA)
+	{
+		if (tTd(3, 30))
+			printf("TRUE (CurrentLA >= RefuseLA)\n");
 		return (TRUE);
-	return (pri > (QueueFactor / (CurrentLA - QueueLA + 1)));
+	}
+	rval = pri > (QueueFactor / (CurrentLA - QueueLA + 1));
+	if (tTd(3, 30))
+		printf("%s (by calculation)\n", rval ? "TRUE" : "FALSE");
+	return rval;
 }
 /*
 **  REFUSECONNECTIONS -- decide if connections should be refused
