@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tio.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)tio.c	4.4 (Berkeley) %G%";
 #endif
 
 #include <signal.h>
@@ -219,8 +219,10 @@ FILE *fp2;
 	return SUCCESS;
 }
 
+#if !defined(BSD4_2) && !defined(USG)
 #define	TC	1024
 static	int tc = TC;
+#endif !BSD4_2 && !USG
 
 trdblk(blk, len,  fn)
 register int len;
@@ -228,11 +230,13 @@ char *blk;
 {
 	register int i, ret;
 
+#if !defined(BSD4_2) && !defined(USG)
 	/* call ultouch occasionally */
 	if (--tc < 0) {
 		tc = TC;
 		ultouch();
 	}
+#endif !BSD4_2 && !USG
 	for (i = 0; i < len; i += ret) {
 		ret = read(fn, blk, len - i);
 		if (ret < 0)
@@ -248,12 +252,12 @@ char *blk;
 twrblk(blk, len, fn)
 register char *blk;
 {
-	register int ret;
+#if !defined(BSD4_2) && !defined(USG)
 	/* call ultouch occasionally */
 	if (--tc < 0) {
 		tc = TC;
 		ultouch();
 	}
-	ret = write(fn, blk, len);
-	return ret;
+#endif !BSD4_2 && !USG
+	return write(fn, blk, len);
 }
