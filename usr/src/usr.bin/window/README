@@ -1,4 +1,4 @@
-@(#)README	3.7 %G%
+@(#)README	3.8 %G%
 
 /*
  * Copyright (c) 1983 Regents of the University of California,
@@ -10,13 +10,22 @@ Compilation notes:
 
      There is only one compiler option:
 
-	mc68000		use 68000 byte ordering
+	vax		use Vax byte ordering (found in ww.h)
 			It should already be defined in the preprocessor.
+			It turns out that all of the other machines that
+			I know are running window (68000, CCI, MIPS) are
+			big endians, so the single "#ifdef vax" suffices.
+
+     Ok, there's another one, STR_DEBUG.  It turns on consistency checks
+     in the string allocator.  It's been left on since performace doesn't
+     seem to suffer.  There's an abort() somewhere when an inconsistency
+     is found.  It hasn't happened in years.
 
      The file local.h contains locally tunable constants.
 
-     The makefile should be updated with mkmf.  The only library it needs
-is termcap.
+     The makefile used to be updated with mkmf; it has been changed
+at various times to use cpp -M and, currently, mkdep.  The only library
+it needs is termcap.
 
      Window, as is, only runs on 4.3 machines.
 
@@ -40,10 +49,12 @@ Wwwrite() is the primitive for writing to windows.  Wwputc(), wwputs(),
 and wwprintf() are also supported.  Some of the outputs to windows are
 delayed.  Wwupdate() updates the terminal to match the internal screen
 buffer.  Wwspawn() spawns a child process on the other end of a window,
-with it's environment tailored to the window.  Visible windows are
+with its environment tailored to the window.  Visible windows are
 doubly linked in the order of their overlap.  Wwadd() inserts a window
 into the list at a given place.  Wwdelete() deletes it.  Windows not in
-the list are not visible, though wwwrite() still works.
+the list are not visible, though wwwrite() still works.  Window was
+written before the days of X and Sunview, so some of the terminology
+is not standard.
 
      Most functions return -1 on error.  Wwopen() returns the null
 pointer.  An error number is saved in wwerrno.  Wwerror() returns an
@@ -58,11 +69,13 @@ driver, matches all terminals and uses the termcap database.  The
 interface between the window package the terminal driver is the `tt'
 structure.  It contains pointers to functions to perform special
 functions and terminal output, as well as flags about the
-characteristics of the terminal.
+characteristics of the terminal.  Most of these ideas are borrowed
+from the Maryland window package, which in turn is based on Goslin's
+Emacs.
 
      The IO system is semi-synchronous.  Terminal input is signal
 driven, and everything else is done synchronously with a single
-select().
+select().  It is roughly event-driven, though not in a clean way.
 
      Normally, in both conversation mode and command mode, window
 sleeps in a select() in wwiomux() waiting for data from the
@@ -80,21 +93,34 @@ into a linear buffer accessed through four pointers:
 	|	|		|		 |
        wwib    wwibp	       wwibq		wwibe
 
-Wwrint() appends characters at the end and increments wwibq (*wwibq++ =
-c), and characters are taken from the buffer at wwibp using the
-wwgetc() and wwpeekc() macros.  As is the convention in C, wwibq and
-wwibe point to one position beyond the end.  In addition, wwrint() will
-do a longjmp(wwjmpbuf) if wwsetjmp is true.  This is used by wwiomux()
-to interrupt the select() which would otherwise resume after the
-interrupt.  The macro wwinterrupt() returns true if the input buffer is
-non-empty.  Wwupdate(), wwwrite(), and wwiomux() check this condition
-and will return at the first convenient opportunity when it becomes
-true.  In the case of wwwrite(), the flag ww_nointr in the window
-structure overrides this.  This feature allows the user to interrupt
-lengthy outputs safely.  The structure of the input buffer is designed
-to avoid race conditions without blocking interrupts.
+Wwrint() appends characters at the end and increments wwibq (*wwibq++
+= c), and characters are taken off the buffer at wwibp using the
+wwgetc() and wwpeekc() macros.  As is the convention in C, wwibq
+and wwibe point to one position beyond the end.  In addition,
+wwrint() will do a longjmp(wwjmpbuf) if wwsetjmp is true.  This is
+used by wwiomux() to interrupt the select() which would otherwise
+resume after the interrupt.  (Actually, I hear this is not true,
+but the longjmp feature is used to avoid a race condition as well.
+Anyway, it means I didn't have to depend on a feature in a
+daily-changing kernel, but that's another story.) The macro
+wwinterrupt() returns true if the input buffer is non-empty.
+Wwupdate(), wwwrite(), and wwiomux() check this condition and will
+return at the first convenient opportunity when it becomes true.
+In the case of wwwrite(), the flag ww_nointr in the window structure
+overrides this.  This feature allows the user to interrupt lengthy
+outputs safely.  The structure of the input buffer is designed to
+avoid race conditions without blocking interrupts.
 
-     Wwiomux() copies pseudo-terminal outputs into their corresponding
+     Actually, wwsetjmp and wwinterrupt() are part of a software
+interrupt scheme used by the two interrupt catchers wwrint() and
+wwchild().  Asserting the interrupt lets the synchronous parts of
+the program know that there's an interesting asynchronous condition
+(i.e., got a keyboard character, or a child process died) that they
+might want to process before anything else.  The synchronous routines
+can check for this condition with wwinterrupt() or by arranging
+that a longjmp() be done.
+
+     Wwiomux() copies pseudo-terminal output into their corresponding
 windows.  Without anything to do, it blocks in a select(), waiting for
 read ready on pseudo-terminals.  Reads are done into per-window buffers
 in the window structures.  When there is at least one buffer non-empty,
