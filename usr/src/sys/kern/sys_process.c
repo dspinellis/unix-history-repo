@@ -1,4 +1,4 @@
-/*	sys_process.c	5.8	82/12/17	*/
+/*	sys_process.c	5.9	83/05/18	*/
 
 #include "../machine/reg.h"
 #include "../machine/psl.h"
@@ -55,7 +55,8 @@ ptrace()
 		return;
 	}
 	p = pfind(uap->pid);
-	if (p == 0 || p->p_stat != SSTOP || p->p_ppid != u.u_procp->p_pid) {
+	if (p == 0 || p->p_stat != SSTOP || p->p_ppid != u.u_procp->p_pid ||
+	    !(p->p_flag & STRC)) {
 		u.u_error = ESRCH;
 		return;
 	}
