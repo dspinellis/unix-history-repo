@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	8.65 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	8.66 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1323,11 +1323,14 @@ buildaddr(tv, a, flags, e)
 {
 	struct mailer **mp;
 	register struct mailer *m;
+	register char *p;
 	char *bp;
-	int spaceleft;
+	char *mname;
+	char **hostp;
+	char hbuf[MAXNAME + 1];
 	static MAILER errormailer;
 	static char *errorargv[] = { "ERROR", NULL };
-	static char buf[MAXNAME + 1];
+	static char ubuf[MAXNAME + 1];
 
 	if (tTd(24, 5))
 	{
@@ -1358,42 +1361,61 @@ badaddr:
 		}
 		return a;
 	}
-	tv++;
-	if (strcasecmp(*tv, "error") == 0)
+	mname = *++tv;
+
+	/* extract host and user portions */
+	if ((**++tv & 0377) == CANONHOST)
+		hostp = ++tv;
+	else
+		hostp = NULL;
+	while (*tv != NULL && (**tv & 0377) != CANONUSER)
+		tv++;
+	if (*tv == NULL)
 	{
-		if ((**++tv & 0377) == CANONHOST)
+		syserr("554 buildaddr: no user");
+		goto badaddr;
+	}
+	if (hostp != NULL)
+		cataddr(hostp, tv - 1, hbuf, sizeof hbuf, '\0');
+	cataddr(++tv, NULL, ubuf, sizeof ubuf, '\0');
+
+	/* save away the host name */
+	if (strcasecmp(mname, "error") == 0)
+	{
+		if (hostp != NULL)
 		{
 			register struct errcodes *ep;
 
-			if (isascii(**++tv) && isdigit(**tv))
+			if (strchr(hbuf, '.') != NULL)
 			{
-				setstat(atoi(*tv));
+				a->q_status = newstr(hbuf);
+				setstat(dsntoexitstat(hbuf));
+			}
+			else if (isascii(hbuf[0]) && isdigit(hbuf[0]))
+			{
+				setstat(atoi(hbuf));
 			}
 			else
 			{
 				for (ep = ErrorCodes; ep->ec_name != NULL; ep++)
-					if (strcasecmp(ep->ec_name, *tv) == 0)
+					if (strcasecmp(ep->ec_name, hbuf) == 0)
 						break;
 				setstat(ep->ec_code);
 			}
-			tv++;
 		}
 		else
 			setstat(EX_UNAVAILABLE);
-		if ((**tv & 0377) != CANONUSER)
-			syserr("554 buildaddr: error: no user");
-		cataddr(++tv, NULL, buf, sizeof buf, ' ');
-		stripquotes(buf);
-		if (isascii(buf[0]) && isdigit(buf[0]) &&
-		    isascii(buf[1]) && isdigit(buf[1]) &&
-		    isascii(buf[2]) && isdigit(buf[2]) &&
-		    buf[3] == ' ')
+		stripquotes(ubuf);
+		if (isascii(ubuf[0]) && isdigit(ubuf[0]) &&
+		    isascii(ubuf[1]) && isdigit(ubuf[1]) &&
+		    isascii(ubuf[2]) && isdigit(ubuf[2]) &&
+		    ubuf[3] == ' ')
 		{
 			char fmt[10];
 
-			strncpy(fmt, buf, 3);
+			strncpy(fmt, ubuf, 3);
 			strcpy(&fmt[3], " %s");
-			usrerr(fmt, buf + 4);
+			usrerr(fmt, ubuf + 4);
 
 			/*
 			**  If this is a 4xx code and we aren't running
@@ -1409,14 +1431,14 @@ badaddr:
 		}
 		else
 		{
-			usrerr("553 %s", buf);
+			usrerr("553 %s", ubuf);
 		}
 		goto badaddr;
 	}
 
 	for (mp = Mailer; (m = *mp++) != NULL; )
 	{
-		if (strcasecmp(m->m_name, *tv) == 0)
+		if (strcasecmp(m->m_name, mname) == 0)
 			break;
 	}
 	if (m == NULL)
@@ -1427,34 +1449,7 @@ badaddr:
 	a->q_mailer = m;
 
 	/* figure out what host (if any) */
-	tv++;
-	if ((**tv & 0377) == CANONHOST)
-	{
-		bp = buf;
-		spaceleft = sizeof buf - 1;
-		while (*++tv != NULL && (**tv & 0377) != CANONUSER)
-		{
-			int i = strlen(*tv);
-
-			if (i > spaceleft)
-			{
-				/* out of space for this address */
-				if (spaceleft >= 0)
-					syserr("554 buildaddr: host too long (%.40s...)",
-						buf);
-				i = spaceleft;
-				spaceleft = 0;
-			}
-			if (i <= 0)
-				continue;
-			bcopy(*tv, bp, i);
-			bp += i;
-			spaceleft -= i;
-		}
-		*bp = '\0';
-		a->q_host = newstr(buf);
-	}
-	else
+	if (hostp == NULL)
 	{
 		if (!bitnset(M_LOCALMAILER, m->m_flags))
 		{
@@ -1463,45 +1458,35 @@ badaddr:
 		}
 		a->q_host = NULL;
 	}
+	else
+		a->q_host = newstr(hbuf);
 
 	/* figure out the user */
-	if (*tv == NULL || (**tv & 0377) != CANONUSER)
+	p = ubuf;
+	if (bitnset(M_CHECKUDB, m->m_flags) && *p == '@')
 	{
-		syserr("554 buildaddr: no user");
-		goto badaddr;
-	}
-	tv++;
-
-	if (bitnset(M_CHECKUDB, m->m_flags) && *tv != NULL &&
-	    strcmp(*tv, "@") == 0)
-	{
+		p++;
 		tv++;
 		a->q_flags |= QNOTREMOTE;
 	}
 
 	/* do special mapping for local mailer */
-	if (*tv != NULL)
+	if (*p == '"')
+		p++;
+	if (*p == '|' && bitnset(M_CHECKPROG, m->m_flags))
+		a->q_mailer = m = ProgMailer;
+	else if (*p == '/' && bitnset(M_CHECKFILE, m->m_flags))
+		a->q_mailer = m = FileMailer;
+	else if (*p == ':' && bitnset(M_CHECKINCLUDE, m->m_flags))
 	{
-		register char *p = *tv;
-
-		if (*p == '"')
-			p++;
-		if (*p == '|' && bitnset(M_CHECKPROG, m->m_flags))
-			a->q_mailer = m = ProgMailer;
-		else if (*p == '/' && bitnset(M_CHECKFILE, m->m_flags))
-			a->q_mailer = m = FileMailer;
-		else if (*p == ':' && bitnset(M_CHECKINCLUDE, m->m_flags))
+		/* may be :include: */
+		stripquotes(ubuf);
+		if (strncasecmp(ubuf, ":include:", 9) == 0)
 		{
-			/* may be :include: */
-			cataddr(tv, NULL, buf, sizeof buf, '\0');
-			stripquotes(buf);
-			if (strncasecmp(buf, ":include:", 9) == 0)
-			{
-				/* if :include:, don't need further rewriting */
-				a->q_mailer = m = InclMailer;
-				a->q_user = &buf[9];
-				return (a);
-			}
+			/* if :include:, don't need further rewriting */
+			a->q_mailer = m = InclMailer;
+			a->q_user = newstr(&ubuf[9]);
+			return a;
 		}
 	}
 
@@ -1517,8 +1502,8 @@ badaddr:
 	(void) rewrite(tv, 4, 0, e);
 
 	/* save the result for the command line/RCPT argument */
-	cataddr(tv, NULL, buf, sizeof buf, '\0');
-	a->q_user = buf;
+	cataddr(tv, NULL, ubuf, sizeof ubuf, '\0');
+	a->q_user = ubuf;
 
 	/*
 	**  Do mapping to lower case as requested by mailer
@@ -1529,7 +1514,7 @@ badaddr:
 	if (!bitnset(M_USR_UPPER, m->m_flags))
 		makelower(a->q_user);
 
-	return (a);
+	return a;
 }
 /*
 **  CATADDR -- concatenate pieces of addresses (putting in <LWSP> subs)
