@@ -1,0 +1,9 @@
+This is kermit version 5A ported to 386bsd.  I've used it for several
+weeks now without any troubles.  ckufio.c, ckutio.c and makefile are
+in RCS.  Revision 1.1 of each is the virgin sources, and 
+revision 1.2 is the version for 396bsd.  To build it type:
+co *,v
+make 386bsd
+
+then edit the makefile to specify BINDIR and MANDIR, the destinations
+for the executable and man page.  Then type 'make install'.  Rich@rice.edu
