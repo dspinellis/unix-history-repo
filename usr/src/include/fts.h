@@ -14,19 +14,19 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)fts.h	5.1 (Berkeley) %G%
+ *	@(#)fts.h	5.2 (Berkeley) %G%
  */
 
 typedef struct fts {
-	struct ftsent *cur;		/* current node */
-	struct ftsent *child;		/* linked list of children */
-	struct ftsent *savelink;	/* saved link if node had a cycle */
-	struct ftsent **array;		/* sort array */
-	char *path;			/* path for this descent */
-	char *wd;			/* starting directory */
-	int pathlen;			/* sizeof(path) */
-	int nitems;			/* elements in the sort array */
-	int (*compar)();		/* compare function */
+	struct ftsent *fts_cur;		/* current node */
+	struct ftsent *fts_child;	/* linked list of children */
+	struct ftsent *fts_savelink;	/* saved link if node had a cycle */
+	struct ftsent **fts_array;	/* sort array */
+	char *fts_path;			/* path for this descent */
+	char *fts_wd;			/* starting directory */
+	int fts_pathlen;		/* sizeof(path) */
+	int fts_nitems;			/* elements in the sort array */
+	int (*fts_compar)();		/* compare function */
 #define	FTS__STOP	0x001		/* private: unrecoverable error */
 #define	FTS_LOGICAL	0x002		/* user: use stat(2) */
 #define	FTS_MULTIPLE	0x004		/* user: multiple args */
@@ -34,21 +34,21 @@ typedef struct fts {
 #define	FTS_NOSTAT	0x010		/* user: don't require stat info */
 #define	FTS_PHYSICAL	0x020		/* user: use lstat(2) */
 #define	FTS_SEEDOT	0x040		/* user: return dot and dot-dot */
-	int options;			/* openfts() options */
+	int fts_options;		/* openfts() options */
 } FTS;
 
 typedef struct ftsent {
-	struct ftsent *parent;		/* parent directory */
-	struct ftsent *link;		/* next/cycle node */
+	struct ftsent *fts_parent;	/* parent directory */
+	struct ftsent *fts_link;	/* next/cycle node */
 	union {
 		long number;		/* local numeric value */
 		void *pointer;		/* local address value */
-	} local;
-	char *accpath;			/* path from current directory */
-	char *path;			/* path from starting directory */
-	short pathlen;			/* strlen(path) */
-	short namelen;			/* strlen(name) */
-	short level;			/* depth (-1 to N) */
+	} fts_local;
+	char *fts_accpath;		/* path from current directory */
+	char *fts_path;			/* path from starting directory */
+	short fts_pathlen;		/* strlen(path) */
+	short fts_namelen;		/* strlen(name) */
+	short fts_level;		/* depth (-1 to N) */
 #define	FTS_D		 1		/* preorder directory */
 #define	FTS_DC		 2		/* directory that causes cycles */
 #define	FTS_DNR		 3		/* unreadable directory */
@@ -60,15 +60,23 @@ typedef struct ftsent {
 #define	FTS_SL		 9		/* symbolic link */
 #define	FTS_SLNONE	10		/* symbolic link without target */
 #define	FTS_DEFAULT	11		/* none of the above */
-	u_short	info;			/* file information */
+	u_short fts_info;		/* file information */
 #define	FTS_AGAIN	 1		/* user: read node again */
 #define	FTS_SKIP	 2		/* user: discard node */
 #define	FTS_FOLLOW	 3		/* user: follow symbolic link */
-	short instr;			/* setfts() instructions */
-	struct stat statb;		/* stat(2) information */
-	char name[1];			/* file name */
+	short fts_instr;		/* setfts() instructions */
+	struct stat fts_statb;		/* stat(2) information */
+	char fts_name[1];		/* file name */
 } FTSENT;
 
-FTS *ftsopen();
-FTSENT *ftschildren(), *ftsread();
-int ftsclose(), ftsset();
+#ifdef __STDC__
+extern FTS *ftsopen(const char **, int, int (*)(const FTSENT *, const FTSENT *);
+extern FTSENT *ftsread(FTS *);
+extern FTSENT *ftschildren(FTS *);
+extern int ftsset(FTS *, FTSENT *, int);
+extern int ftsclose(FTS *);
+#else
+extern FTS *ftsopen();
+extern FTSENT *ftschildren(), *ftsread();
+extern int ftsclose(), ftsset();
+#endif
