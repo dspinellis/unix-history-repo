@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwopen.c	3.9 83/08/26";
+static	char *sccsid = "@(#)wwopen.c	3.10 83/08/26";
 #endif
 
 #include "ww.h"
@@ -7,7 +7,7 @@ static	char *sccsid = "@(#)wwopen.c	3.9 83/08/26";
 struct ww *
 wwopen(flags, nrow, ncol, row, col, nline)
 {
-	register struct ww *w = 0;
+	register struct ww *w;
 	register i, j;
 	char m;
 	short nvis;
@@ -37,11 +37,10 @@ wwopen(flags, nrow, ncol, row, col, nline)
 	}
 	w->ww_nline = MAX(nline, w->ww_w.nr);
 
-	w->ww_pty = w->ww_tty = -1;	/* closing by mistake is still safe */
 	if (flags & WWO_PTY) {
-		w->ww_haspty = 1;
 		if (wwgetpty(w) < 0)
 			goto bad;
+		w->ww_haspty = 1;
 		if (wwsettty(w->ww_pty, &wwwintty) < 0)
 			goto bad;
 	}
@@ -105,8 +104,10 @@ bad:
 			wwfree((char **)w->ww_buf);
 		if (w->ww_nvis != 0)
 			free((char *)w->ww_nvis);
-		(void) close(w->ww_tty);
-		(void) close(w->ww_pty);
+		if (w->ww_haspty) {
+			(void) close(w->ww_tty);
+			(void) close(w->ww_pty);
+		}
 		free((char *)w);
 	}
 	return 0;
