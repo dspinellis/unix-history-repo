@@ -1,4 +1,4 @@
-/*	uda.c	4.24	83/05/27	*/
+/*	uda.c	4.25	83/07/09	*/
 
 #include "ra.h"
 #if NUDA > 0
@@ -69,7 +69,6 @@ struct size {
 	daddr_t	nblocks;
 	daddr_t	blkoff;
 } ra_sizes[8] ={
-#ifdef notdef
 	15884,	0,		/* A=blk 0 thru 15883 */
 	33440,	15884,		/* B=blk 15884 thru 49323 */
 	-1,	0,		/* C=blk 0 thru end */
@@ -78,16 +77,6 @@ struct size {
 	-1,	412490,		/* F=blk 412490 thru end */
 	82080,	49324,		/* G=blk 49324 thru 131403 */
 	-1,	131404,		/* H=blk 131404 thru end */
-} ra81_sizes[8] = {
-#endif
-	15884,	0,		/* A=cyl 0 thru 22 */
-	66880,	16422,		/* B=cyl 23 thru 116 */
-	-1,	0,		/* C=cyl 0 thru end */
-	15884,	375564,		/* D=cyl 526 thru 548 */
-	307200,	391986,		/* E=cyl 549 thru 979 */
-	-1,	699720,		/* F=cyl 980 thru end */
-	-1,	375564,		/* G=cyl 526 thru end */
-	291346,	83538,		/* H=cyl 117 thru 525 */
 };
 /* END OF STUFF WHICH SHOULD BE READ IN PER DISK */
 
@@ -632,8 +621,10 @@ udrsp(um, ud, sc, i)
 			ui->ui_flags = 1;	/* mark it online */
 			radsize[ui->ui_unit] = (daddr_t)mp->mscp_untsize;
 			printd("uda: unit %d online\n", mp->mscp_unit);
-/*** New for ***/       printf("uda%d: online, size=%d\n",
-/*** debugging **/              mp->mscp_unit, (daddr_t)mp->mscp_untsize);
+#ifdef notdef
+			printf("uda%d: online, size=%d\n",
+			      mp->mscp_unit, (daddr_t)mp->mscp_untsize);
+#endif
 		} else {
 			harderr(dp->b_actf, "ra");
 			printf("OFFLINE\n");
