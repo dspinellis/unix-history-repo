@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_fault.c	8.1 (Berkeley) %G%
+ *	@(#)vm_fault.c	8.2 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -461,6 +461,7 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 
 			vm_page_lock_queues();
 			vm_page_activate(m);
+			vm_page_deactivate(m);
 			pmap_page_protect(VM_PAGE_TO_PHYS(m), VM_PROT_NONE);
 			vm_page_unlock_queues();
 
