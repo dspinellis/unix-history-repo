@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogin.c	5.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogin.c	5.31 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -136,7 +136,7 @@ main(argc, argv)
 		case 'l':
 			user = optarg;
 			break;
-#ifdef KERBEROS
+#if defined(KERBEROS) && defined(CRYPT)
 		case 'x':
 			encrypt = 1;
 			des_set_key(cred.session, schedule);
@@ -368,7 +368,7 @@ writer()
 				continue;
 			}
 			if (c != escapechar)
-#ifdef KERBEROS
+#if defined(KERBEROS) && defined(CRYPT)
 				if (encrypt)
 					(void)des_write(rem, &escapechar, 1);
 				else
@@ -376,7 +376,7 @@ writer()
 					(void)write(rem, &escapechar, 1);
 		}
 
-#ifdef KERBEROS
+#if defined(KERBEROS) && defined(CRYPT)
 		if (encrypt) {
 			if (des_write(rem, &c, 1) == 0) {
 				msg("line gone");
@@ -550,7 +550,7 @@ reader(omask)
 		rcvcnt = 0;
 		rcvstate = READING;
 
-#ifdef KERBEROS
+#if defined(KERBEROS) && defined(CRYPT)
 		if (encrypt)
 			rcvcnt = des_read(rem, rcvbuf, sizeof(rcvbuf));
 		else
@@ -652,7 +652,11 @@ usage()
 	(void)fprintf(stderr,
 	    "usage: rlogin [ -%s]%s[-e char] [ -l username ] host\n",
 #ifdef KERBEROS
+#ifdef CRYPT
 	    "8ELx", " [-k realm] ");
+#else
+	    "8EL", " [-k realm] ");
+#endif
 #else
 	    "8EL", " ");
 #endif
