@@ -1,8 +1,8 @@
-
 /*
  * Datakit driver
  * Common subroutines for all drivers
  *	SCCSID[] = "@(#)dksub.c	1.2 Garage 84/03/27"
+ *		   "@(#)dksub.c	1.3 (Berkeley) %G%"
  */
 
 #include "datakit.h"
@@ -53,12 +53,10 @@ register struct uio *uio;
 	if (mm == NULL)
 		return ENOBUFS;
 	if (uio->uio_resid >= MLEN) {
-		register struct mbuf *p;
-		MCLALLOC(p, 1);
-		if (p == 0)
+		MCLGET(mm, M_WAIT);
+		if ((mm->m_flags & M_EXT) == 0)
 			goto nopages;
-		mm->m_off = (int)p - (int)mm;
-		blen = CLBYTES;
+		blen = MCLBYTES;
 	} else {
 nopages:
 		blen = MIN(MLEN, uio->uio_resid);
@@ -146,12 +144,10 @@ short xc;
 			if (m == NULL)
 				return ENOBUFS;
 			if (iov->iov_len >= MLEN) {
-				register struct mbuf *p;
-				MCLALLOC(p, 1);
-				if (p == 0)
+				MCLGET(m, M_WAIT);
+				if ((m->m_flags & M_EXT) == 0)
 					goto nopages;
-				m->m_off = (int)p - (int)m;
-				len = MIN(CLBYTES, iov->iov_len);
+				len = MIN(MCLBYTES, iov->iov_len);
 			} else {
 nopages:
 				len = MIN(MLEN, iov->iov_len);
