@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	6.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	6.23 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -244,28 +244,32 @@ putmsg(msg, holdmsg)
 		fprintf(CurEnv->e_xfp, "%s\n", msg);
 
 	/* output to channel if appropriate */
-	if (!holdmsg && (Verbose || msg[0] != '0'))
-	{
-		(void) fflush(stdout);
-		if (OpMode == MD_SMTP)
-			fprintf(OutChannel, "%s\r\n", msg);
-		else
-			fprintf(OutChannel, "%s\n", &msg[4]);
-		if (msg[3] == ' ')
-			(void) fflush(OutChannel);
-		if (ferror(OutChannel))
-		{
-			/* can't call syserr, 'cause we are using MsgBuf */
-			HoldErrs = TRUE;
+	if (holdmsg || (!Verbose && msg[0] == '0'))
+		return;
+
+	(void) fflush(stdout);
+	if (OpMode == MD_SMTP)
+		fprintf(OutChannel, "%s\r\n", msg);
+	else
+		fprintf(OutChannel, "%s\n", &msg[4]);
+	if (msg[3] == ' ')
+		(void) fflush(OutChannel);
+	if (!ferror(OutChannel))
+		return;
+
+	/* error on output -- if reporting lost channel, just ignore it */
+	if (feof(InChannel) || ferror(InChannel))
+		return;
+
+	/* can't call syserr, 'cause we are using MsgBuf */
+	HoldErrs = TRUE;
 #ifdef LOG
-			if (LogLevel > 0)
-				syslog(LOG_CRIT,
-					"%s: SYSERR: putmsg (%s): error on output channel sending \"%s\"",
-					CurEnv->e_id == NULL ? "NOQUEUE" : CurEnv->e_id,
-					CurHostName, msg);
+	if (LogLevel > 0)
+		syslog(LOG_CRIT,
+			"%s: SYSERR: putmsg (%s): error on output channel sending \"%s\"",
+			CurEnv->e_id == NULL ? "NOQUEUE" : CurEnv->e_id,
+			CurHostName, msg);
 #endif
-		}
-	}
 }
 /*
 **  PUTERRMSG -- like putmsg, but does special processing for error messages
