@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	6.12 (Berkeley) %G%
+#	@(#)Makefile	6.13 (Berkeley) %G%
 #
 DESTDIR=/
 INCPATH=-I. -I../h
@@ -26,7 +26,7 @@ DRIVERS=autoconf.o hp.o hpmaptype.o ht.o idc.o mba.o mt.o \
 ODRIVERS=hp.old.o up.old.o
 LIBSA=	libsa.a
 
-ALL=	${LIBSA} srt0.o boot tpboot copy tpcopy \
+ALL=	boot tpboot copy tpcopy \
 	format tpformat drtest boothp boothk bootup bootra bootrl \
 	730boot 730copy 730format 730drtest
 
@@ -231,31 +231,35 @@ lint:
 install: ${ALL}
 	cp boot ${DESTDIR}/boot
 	cp format ${DESTDIR}/format
+	cp copy ${DESTDIR}/copy
+	cp drtest ${DESTDIR}/drtest
+	strip ${DESTDIR}/format ${DESTDIR}/copy ${DESTDIR}/drtest
+	cp pcs750.bin ${DESTDIR}/pcs750.bin
 	cp tpcopy ../dist/tp/copy
 	cp tpboot ../dist/tp/boot
 	cp tpformat ../dist/tp/format
 	cp boot a.out; strip a.out; \
-		dd if=a.out of=../floppy/boot bs=32 skip=1
+		dd if=a.out of=../floppy/boot bs=32 skip=1; rm a.out
 	cp 730boot a.out; strip a.out; \
-		dd if=a.out of=../cassette/boot.730 bs=32 skip=1
+		dd if=a.out of=../cassette/boot.730 bs=32 skip=1; rm a.out
 	cp ../floppy/boot ../cassette/boot.750
 	cp ../floppy/boot ../consolerl/boot
 	cp copy a.out; strip a.out; \
-		dd if=a.out of=../floppy/copy bs=32 skip=1
+		dd if=a.out of=../floppy/copy bs=32 skip=1; rm a.out
 	cp 730copy a.out; strip a.out; \
-		dd if=a.out of=../cassette/copy.730 bs=32 skip=1
+		dd if=a.out of=../cassette/copy.730 bs=32 skip=1; rm a.out
 	cp ../floppy/copy ../cassette/copy.750
 	cp ../floppy/copy ../consolerl/copy
 	cp format a.out; strip a.out; \
-		dd if=a.out of=../floppy/format bs=32 skip=1
+		dd if=a.out of=../floppy/format bs=32 skip=1; rm a.out
 	cp 730format a.out; strip a.out; \
-		dd if=a.out of=../cassette/format.730 bs=32 skip=1
+		dd if=a.out of=../cassette/format.730 bs=32 skip=1; rm a.out
 	cp ../floppy/format ../cassette/format.750
 	cp ../floppy/format ../consolerl/format
 	cp drtest a.out; strip a.out; \
-		dd if=a.out of=../floppy/drtest bs=32 skip=1
+		dd if=a.out of=../floppy/drtest bs=32 skip=1; rm a.out
 	cp 730drtest a.out; strip a.out; \
-		dd if=a.out of=../cassette/drtest.730 bs=32 skip=1
+		dd if=a.out of=../cassette/drtest.730 bs=32 skip=1; rm a.out
 	cp ../floppy/drtest ../cassette/drtest.750
 	cp ../floppy/drtest ../consolerl/drtest
 	cp bootup boothk boothp bootra bootrl ${DESTDIR}/usr/mdec
