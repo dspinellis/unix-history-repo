@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	7.9.1.2 (Berkeley) %G%
+ *	@(#)machdep.c	7.11 (Berkeley) %G%
  */
 
 #include "reg.h"
@@ -57,6 +57,7 @@ int	bufpages = BUFPAGES;
 #else
 int	bufpages = 0;
 #endif
+int	msgbufmapped;		/* set when safe to use msgbuf */
 
 /*
  * Machine-dependent startup code
@@ -86,6 +87,7 @@ startup(firstaddr)
 	for (i = 0; i < btoc(sizeof (struct msgbuf)); i++)
 		*(int *)pte++ = PG_V | PG_KW | (maxmem + i);
 	mtpr(TBIA, 0);
+	msgbufmapped = 1;
 
 #if VAX630
 #include "qv.h"
@@ -893,12 +895,9 @@ dumpsys()
 {
 
 	rpb.rp_flag = 1;
+	msgbufmapped = 0;
 	if (dumpdev == NODEV)
 		return;
-#ifdef notdef
-	if ((minor(dumpdev)&07) != 1)
-		return;
-#endif
 	/*
 	 * For dumps during autoconfiguration,
 	 * if dump device has already configured...
