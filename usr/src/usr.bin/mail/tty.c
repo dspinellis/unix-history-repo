@@ -8,7 +8,7 @@
 
 #include "rcv.h"
 
-static char *SccsId = "@(#)tty.c	2.4 %G%";
+static char *SccsId = "@(#)tty.c	2.5 %G%";
 
 static	int	c_erase;		/* Current erase char */
 static	int	c_kill;			/* Current kill char */
@@ -207,7 +207,6 @@ ttycont(s)
 {
 
 	hadcont++;
-	sigrelse(SIGCONT);
 	longjmp(rewrite, 1);
 }
 

@@ -1,7 +1,7 @@
 #
 # Unix version 7.
 #
-# Sccs Id = "@(#)Makefile	2.12 %G%";
+# Sccs Id = "@(#)Makefile	2.13 %G%";
 #
 
 CFLAGS=-O -DVMUNIX -DV7
@@ -13,7 +13,7 @@ CGRAF=/ja/rigel/rigel/bin/cgraf
 CGRAPH=/ja/rigel/rigel/bin/cgraph
 NMKINDEX=/ja/rigel/rigel/bin/nmkindex
 DIRTCLOD=/ja/rigel/rigel/bin/dirtclod
-LIBES=-ljobs
+LIBES=
 ED=-ed
 AS=-as
 RM=-rm

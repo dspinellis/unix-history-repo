@@ -8,7 +8,7 @@
  * Lexical processing of commands.
  */
 
-static char *SccsId = "@(#)lex.c	2.11 %G%";
+static char *SccsId = "@(#)lex.c	2.12 %G%";
 
 char	*prompt = "& ";
 
@@ -514,7 +514,6 @@ stop(s)
 	}
 	clrbuf(stdout);
 	printf("Interrupt\n");
-	sigrelse(s);
 	reset(0);
 }
 

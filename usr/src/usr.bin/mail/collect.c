@@ -7,7 +7,7 @@
  * ~ escapes.
  */
 
-static char *SccsId = "@(#)collect.c	2.13 %G%";
+static char *SccsId = "@(#)collect.c	2.14 %G%";
 
 #include "rcv.h"
 #include <sys/stat.h>
@@ -54,7 +54,7 @@ collect(hp)
 		hf = 0;
 	hadintr = 0;
 	if ((savesig = sigset(SIGINT, SIG_IGN)) != SIG_IGN)
-		sigset(SIGINT, hf ? intack : collrub), sighold(SIGINT);
+		sigset(SIGINT, hf ? intack : collrub), sigblock(mask(SIGINT));
 	if ((savehup = sigset(SIGHUP, SIG_IGN)) != SIG_IGN)
 		sigset(SIGHUP, collrub), sighold(SIGINT);
 	savecont = sigset(SIGCONT, collcont);
@@ -95,9 +95,10 @@ collect(hp)
 		escape = *cp;
 	eof = 0;
 	for (;;) {
+		int omask = sigblock(0) &~ (mask(SIGINT)|mask(SIGHUP));
+
 		setjmp(coljmp);
-		sigrelse(SIGINT);
-		sigrelse(SIGHUP);
+		sigsetmask(omask);
 		flush();
 		if (readline(stdin, linebuf) <= 0) {
 			if (intty && value("ignoreeof") != NOSTR) {
@@ -383,6 +384,7 @@ eof:
 	sigset(SIGINT, savesig);
 	sigset(SIGHUP, savehup);
 	sigset(SIGCONT, savecont);
+	sigsetmask(0);
 	noreset = 0;
 	return(ibuf);
 
@@ -394,6 +396,7 @@ err:
 	sigset(SIGINT, savesig);
 	sigset(SIGHUP, savehup);
 	sigset(SIGCONT, savecont);
+	sigsetmask(0);
 	noreset = 0;
 	return(NULL);
 }
@@ -758,7 +761,6 @@ collrub(s)
 		hadintr++;
 		clrbuf(stdout);
 		printf("\n(Interrupt -- one more to kill letter)\n");
-		sigrelse(s);
 		longjmp(coljmp, 1);
 	}
 	fclose(newo);
