@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd.c	3.10 83/09/01";
+static	char *sccsid = "@(#)cmd.c	3.11 83/09/02";
 #endif
 
 #include "defs.h"
@@ -219,12 +219,22 @@ struct ww *w;
 		front(w);
 }
 
+/*
+ * This is all heuristic.
+ * wwvisible() doesn't work for partially tinted windows.
+ * and wwmoveup() doesn't work for transparent (completely or in part) windows.
+ * But anything to make it faster.
+ */
 front(w)
 register struct ww *w;
 {
 	struct ww *oldselwin = selwin;
 
-	}
+	else
+		while (w->ww_back != framewin) {
+			wwmoveup(w);
+			moved = 1;
+		}
 }
 
 labelwin(w)
