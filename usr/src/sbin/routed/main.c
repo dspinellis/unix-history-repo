@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -43,7 +43,7 @@ main(argc, argv)
 	
 	argv0 = argv;
 	openlog("routed", LOG_PID | LOG_ODELAY, LOG_DAEMON);
-	setlogmask(LOG_UPTO(LOG_WARNING));
+	setlogmask(LOG_WARNING);
 	sp = getservbyname("router", "udp");
 	if (sp == NULL) {
 		fprintf(stderr, "routed: router/udp: unknown service\n");
@@ -68,12 +68,12 @@ main(argc, argv)
 		}
 		if (strcmp(*argv, "-t") == 0) {
 			tracepackets++;
-			setlogmask(LOG_UPTO(LOG_DEBUG));
+			setlogmask(LOG_DEBUG);
 			argv++, argc--;
 			continue;
 		}
 		if (strcmp(*argv, "-d") == 0) {
-			setlogmask(LOG_UPTO(LOG_DEBUG));
+			setlogmask(LOG_DEBUG);
 			argv++, argc--;
 			continue;
 		}
