@@ -1,4 +1,4 @@
-# sccsid = "@(#)Makefile	1.8 (Berkeley) %G%"
+# sccsid = "@(#)Makefile	1.9 (Berkeley) %G%"
 #
 #	dump.h			header file
 #	dumpitime.c		reads /etc/ddate
@@ -11,8 +11,6 @@
 #	DEBUG			use local directory to find ddate and dumpdates
 #	TDEBUG			trace out the process forking
 #
-NETSER=	/usr/src/ucb/netser
-
 PSRCS = \
 	/usr/include/dumprestor.h dump.h \
 	dumpmain.c dumptraverse.c dumptape.c dumpoptr.c dumpitime.c unctime.c
@@ -26,7 +24,7 @@ OBJS = dumpitime.o dumpmain.o dumpoptr.o \
 	dumptape.o dumptraverse.o unctime.o
 
 ROBJS = dumpitime.o dumprmain.o dumpoptr.o \
-	dumprmt.o dumprtape.o dumptraverse.o unctime.o $(NETSER)/rcmd.o
+	dumprmt.o dumprtape.o dumptraverse.o unctime.o
 
 DFLAGS =
 CFLAGS = -O $(DFLAGS)
