@@ -4,9 +4,9 @@
 .PATH: ${.CURDIR}/${MACHINE}/sys ${.CURDIR}/sys
 
 # modules with non-default implementations on at least one architecture:
-SRCS+=	Ovfork.s brk.s cerror.s exect.s fork.s pipe.s ptrace.s reboot.s \
-	sbrk.s setlogin.s sigpending.s sigprocmask.s sigreturn.s \
-	sigsuspend.s syscall.s
+SRCS+=	Ovfork.S brk.S cerror.S exect.S fork.S pipe.S ptrace.S reboot.S \
+	sbrk.S setlogin.S sigpending.S sigprocmask.S sigreturn.S \
+	sigsuspend.S syscall.S
 
 # modules with default implementations on all architectures:
 ASM=	accept.o access.o acct.o adjtime.o async_daemon.o bind.o chdir.o \
