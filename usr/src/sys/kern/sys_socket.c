@@ -1,4 +1,4 @@
-/*	sys_socket.c	4.4	83/06/12	*/
+/*	sys_socket.c	4.5	83/06/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -114,11 +114,15 @@ soo_select(fp, which)
 	return (0);
 }
 
+/*ARGSUSED*/
 soo_stat(so, ub)
 	register struct socket *so;
 	register struct stat *ub;
 {
 
+#ifdef lint
+	so = so;
+#endif
 	bzero((caddr_t)ub, sizeof (*ub));
 #ifdef notdef
 	return ((*so->so_proto->pr_usrreq)(so, PRU_SENSE,
@@ -135,23 +139,4 @@ soo_close(fp)
 
 	fp->f_data = 0;
 	return (error);
-}
-
-/*ARGSUSED*/
-soo_lock(so, pf, how)
-	struct socket *so;
-	u_char *pf;
-	int how;
-{
-
-	return (EOPNOTSUPP);
-}
-
-/*ARGSUSED*/
-soo_unlock(so, flags)
-	struct socket *so;
-	int flags;
-{
-
-	panic("soo_unlock");
 }
