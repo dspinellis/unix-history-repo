@@ -1,4 +1,4 @@
-#	@(#)Makefile.pmax	8.1 (Berkeley) %G%
+#	@(#)Makefile.pmax	8.2 (Berkeley) %G%
 #
 # Makefile for 4.4 BSD
 #
@@ -119,7 +119,7 @@ autoconf.o: Makefile
 clock.o machdep.o autoconf.o conf.o: Makefile
 
 # depend on network configuration
-af.o uipc_proto.o vfs_conf.o: Makefile
+uipc_proto.o vfs_conf.o: Makefile
 
 assym.h: genassym
 	./genassym >assym.h
