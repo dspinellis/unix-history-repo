@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ptrace.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)ptrace.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -27,8 +27,14 @@ static char sccsid[] = "@(#)ptrace.c	8.2 (Berkeley) %G%";
 #       include "pxinfo.h"
 
 #ifdef mc68000
+#if defined(hp300) || defined(luna68k)
+#include <sys/user.h>
+#	define U_PAGE 0xfff00000
+#	define U_AR0  (int)&((struct user *)0)->u_ar0
+#else
 #	define U_PAGE 0x2400
 #	define U_AR0  (14*sizeof(int))
+#endif
 	LOCAL int ar0val = -1;
 #endif
 
@@ -40,7 +46,12 @@ static char sccsid[] = "@(#)ptrace.c	8.2 (Berkeley) %G%";
 #if defined(vax) || defined(tahoe)
 #	define regloc(reg)     (ctob(UPAGES) + ( sizeof(int) * (reg) ))
 #else
+#if defined(hp300) || defined(luna68k)
+#	define regloc(reg)     \
+	(ar0val + ( sizeof(int) * (reg) + ((reg) >= PS ? 2 : 0) ))
+#else
 #	define regloc(reg)     (ar0val + ( sizeof(int) * (reg) ))
+#endif
 #endif
 
 #define WMASK           (~(sizeof(WORD) - 1))
