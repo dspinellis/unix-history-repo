@@ -1,9 +1,9 @@
 #
-# Copyright (c) 1980 Regents of the University of California.
+# Copyright (c) 1985 Regents of the University of California.
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 CFLAGS=	-O
 OBJS=	arc.o box.o circle.o close.o cont.o dot.o erase.o label.o line.o \
@@ -18,4 +18,4 @@ close.o erase.o label.o line.o open.o: imp.h imPcodes.h
 cont.o move.o:	imp.h
 
 clean:
-	rm -f *.o
+	rm -f ${OBJS} a.out core errs
