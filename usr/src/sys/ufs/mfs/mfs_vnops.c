@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mfs_vnops.c	7.1 (Berkeley) %G%
+ *	@(#)mfs_vnops.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -31,7 +31,6 @@
 #include "../machine/pte.h"
 #include "../machine/mtpr.h"
 
-int mfs_running;		/* 1 => daemon has started running */
 static int mfsmap_want;		/* 1 => need kernel I/O resources */
 struct map mfsmap[MFS_MAPSIZE];
 extern char mfsiobuf[];
@@ -125,7 +124,7 @@ mfs_strategy(bp)
 	int error;
 
 	ILOCK(ip);
-	if (!mfs_running) {
+	if (bp->b_vp->v_mount == NULL) {
 		mfs_doio(bp, (caddr_t)ip->i_diroff);
 	} else {
 		ip->i_spare[0] = (long)bp;

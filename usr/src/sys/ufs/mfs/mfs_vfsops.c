@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mfs_vfsops.c	7.1 (Berkeley) %G%
+ *	@(#)mfs_vfsops.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -26,7 +26,6 @@
 #include "../ufs/inode.h"
 #include "../ufs/fs.h"
 
-extern int mfs_running;			/* 1 => daemon has started running */
 extern struct vnodeops mfs_vnodeops;
 
 /*
@@ -111,7 +110,6 @@ mfs_start(mp, flags)
 	register struct buf *bp;
 	register caddr_t base;
 
-	mfs_running++;
 	sleep((caddr_t)vp, PRIBIO);
 	base = (caddr_t)ip->i_diroff;
 	while (bp = (struct buf *)ip->i_spare[0]) {
