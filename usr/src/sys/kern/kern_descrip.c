@@ -231,11 +231,13 @@ fcntl(p, uap, retval)
 		case F_RDLCK:
 			if ((fp->f_flag & FREAD) == 0)
 				return (EBADF);
+			p->p_flag |= SADVLCK;
 			return (VOP_ADVLOCK(vp, (caddr_t)p, F_SETLK, &fl, flg));
 
 		case F_WRLCK:
 			if ((fp->f_flag & FWRITE) == 0)
 				return (EBADF);
+			p->p_flag |= SADVLCK;
 			return (VOP_ADVLOCK(vp, (caddr_t)p, F_SETLK, &fl, flg));
 
 		case F_UNLCK:
@@ -565,7 +567,7 @@ closef(fp, p)
 	 * a flag in the unlock to free ONLY locks obeying POSIX
 	 * semantics, and not to free BSD-style file locks.
 	 */
-	if (fp->f_type == DTYPE_VNODE) {
+	if ((p->p_flag & SADVLCK) && fp->f_type == DTYPE_VNODE) {
 		lf.l_whence = SEEK_SET;
 		lf.l_start = 0;
 		lf.l_len = 0;
@@ -577,8 +579,14 @@ closef(fp, p)
 		return (0);
 	if (fp->f_count < 0)
 		panic("closef: count < 0");
-	if (fp->f_type == DTYPE_VNODE)
+	if ((fp->f_flag & FHASLOCK) && fp->f_type == DTYPE_VNODE) {
+		lf.l_whence = SEEK_SET;
+		lf.l_start = 0;
+		lf.l_len = 0;
+		lf.l_type = F_UNLCK;
+		vp = (struct vnode *)fp->f_data;
 		(void) VOP_ADVLOCK(vp, (caddr_t)fp, F_UNLCK, &lf, F_FLOCK);
+	}
 	error = (*fp->f_ops->fo_close)(fp, p);
 	crfree(fp->f_cred);
 	fp->f_count = 0;
@@ -618,6 +626,7 @@ flock(p, uap, retval)
 	lf.l_len = 0;
 	if (uap->how & LOCK_UN) {
 		lf.l_type = F_UNLCK;
+		fp->f_flag &= ~FHASLOCK;
 		return (VOP_ADVLOCK(vp, (caddr_t)fp, F_UNLCK, &lf, F_FLOCK));
 	}
 	if (uap->how & LOCK_EX)
@@ -626,6 +635,7 @@ flock(p, uap, retval)
 		lf.l_type = F_RDLCK;
 	else
 		return (EBADF);
+	fp->f_flag |= FHASLOCK;
 	if (uap->how & LOCK_NB)
 		return (VOP_ADVLOCK(vp, (caddr_t)fp, F_SETLK, &lf, F_FLOCK));
 	return (VOP_ADVLOCK(vp, (caddr_t)fp, F_SETLK, &lf, F_FLOCK|F_WAIT));
