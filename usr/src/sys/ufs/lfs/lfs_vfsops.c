@@ -14,24 +14,24 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)lfs_vfsops.c	7.39 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	7.40 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "time.h"
+#include "user.h"
+#include "proc.h"
 #include "kernel.h"
-#include "namei.h"
 #include "vnode.h"
 #include "specdev.h"
 #include "mount.h"
 #include "buf.h"
-#include "ucred.h"
 #include "file.h"
 #include "disklabel.h"
 #include "ioctl.h"
 #include "errno.h"
 #include "malloc.h"
+#include "../ufs/quota.h"
 #include "../ufs/fs.h"
 #include "../ufs/ufsmount.h"
 #include "../ufs/inode.h"
@@ -46,6 +46,7 @@ int ufs_mount();
 int ufs_start();
 int ufs_unmount();
 int ufs_root();
+int ufs_quotactl();
 int ufs_statfs();
 int ufs_sync();
 int ufs_fhtovp();
@@ -57,17 +58,13 @@ struct vfsops ufs_vfsops = {
 	ufs_start,
 	ufs_unmount,
 	ufs_root,
+	ufs_quotactl,
 	ufs_statfs,
 	ufs_sync,
 	ufs_fhtovp,
 	ufs_vptofh,
 	ufs_init
 };
-
-/*
- * ufs mount table.
- */
-struct ufsmount mounttab[NMOUNT];
 
 /*
  * Called by vfs_mountroot when ufs is going to be mounted as root.
@@ -195,7 +192,7 @@ mountfs(devvp, mp)
 	register struct vnode *devvp;
 	struct mount *mp;
 {
-	register struct ufsmount *ump;
+	register struct ufsmount *ump = (struct ufsmount *)0;
 	struct buf *bp = NULL;
 	register struct fs *fs;
 	dev_t dev = devvp->v_rdev;
@@ -207,28 +204,22 @@ mountfs(devvp, mp)
 	int needclose = 0;
 	int ronly = (mp->m_flag & M_RDONLY) != 0;
 
-	    (*bdevsw[major(dev)].d_open)(dev, ronly ? FREAD : FREAD|FWRITE,
-	        S_IFBLK);
-	if (error) {
-		ump->um_fs = NULL;
+	if (error = VOP_OPEN(devvp, ronly ? FREAD : FREAD|FWRITE, NOCRED))
 		return (error);
-	}
 	needclose = 1;
-	if (VOP_IOCTL(devvp, DIOCGPART, (caddr_t)&dpart, FREAD, NOCRED) != 0)
+	if (VOP_IOCTL(devvp, DIOCGPART, (caddr_t)&dpart, FREAD, NOCRED) != 0) {
 		size = DEV_BSIZE;
-	else {
+	} else {
 		havepart = 1;
 		size = dpart.disklab->d_secsize;
 	}
-	if (error = bread(devvp, SBLOCK, SBSIZE, NOCRED, &bp)) {
-		ump->um_fs = NULL;
+	if (error = bread(devvp, SBLOCK, SBSIZE, NOCRED, &bp))
 		goto out;
-	}
 	fs = bp->b_un.b_fs;
-		ump->um_fs = NULL;
-		error = EINVAL;		/* XXX also needs translation */
+		error = EINVAL;		/* XXX needs translation */
 		goto out;
 	}
+	ump = (struct ufsmount *)malloc(sizeof *ump, M_UFSMNT, M_WAITOK);
 	ump->um_fs = (struct fs *)malloc((u_long)fs->fs_sbsize, M_SUPERBLK,
 	    M_WAITOK);
 	bcopy((caddr_t)bp->b_un.b_addr, (caddr_t)ump->um_fs,
@@ -298,10 +289,12 @@ mountfs(devvp, mp)
 	mp->m_data = (qaddr_t)ump;
 	mp->m_stat.f_fsid.val[0] = (long)dev;
 	mp->m_stat.f_fsid.val[1] = MOUNT_UFS;
+	mp->m_flag |= M_LOCAL;
 	ump->um_mountp = mp;
 	ump->um_dev = dev;
 	ump->um_devvp = devvp;
-	ump->um_qinod = NULL;
+	for (i = 0; i < MAXQUOTAS; i++)
+		ump->um_quotas[i] = NULLVP;
 	devvp->v_specflags |= SI_MOUNTEDON;
 
 	/* Sanity checks for old file systems.			   XXX */
@@ -316,9 +309,10 @@ out:
 		brelse(bp);
 	if (needclose)
 		(void) VOP_CLOSE(devvp, ronly ? FREAD : FREAD|FWRITE, NOCRED);
-	if (ump->um_fs) {
+	if (ump) {
 		free((caddr_t)ump->um_fs, M_SUPERBLK);
-		ump->um_fs = NULL;
+		free((caddr_t)ump, M_UFSMNT);
+		mp->m_data = (qaddr_t)0;
 	}
 	return (error);
 }
@@ -339,40 +333,42 @@ ufs_start(mp, flags)
 /*
  * unmount system call
  */
-ufs_unmount(mp, flags)
+ufs_unmount(mp, mntflags)
 	struct mount *mp;
-	int flags;
+	int mntflags;
 {
 	register struct ufsmount *ump;
 	register struct fs *fs;
-	int error, ronly;
+	int i, error, ronly, flags = 0;
 
-	if (flags & MNT_FORCE)
+	if (mntflags & MNT_FORCE)
 		return (EINVAL);
+	if (mntflags & MNT_FORCE)
+		flags |= FORCECLOSE;
 	mntflushbuf(mp, 0);
 	if (mntinvalbuf(mp))
 		return (EBUSY);
 	ump = VFSTOUFS(mp);
 		return (error);
 #ifdef QUOTA
-	if (ump->um_qinod) {
-		if (error = vflush(mp, ITOV(ump->um_qinod), flags))
+	if (mp->m_flag & M_QUOTA) {
+		if (error = vflush(mp, NULLVP, SKIPSYSTEM|flags))
 			return (error);
-		(void) closedq(ump);
+		for (i = 0; i < MAXQUOTAS; i++) {
+			if (ump->um_quotas[i] == NULLVP)
+				continue;
+			quotaoff(mp, i);
+		}
 		/*
-		 * Here we have to vflush again to get rid of the quota inode.
-		 * A drag, but it would be ugly to cheat, and this system
-		 * call does not happen often.
+		 * Here we fall through to vflush again to ensure
+		 * that we have gotten rid of all the system vnodes.
 		 */
-		if (vflush(mp, (struct vnode *)NULL, MNT_NOFORCE))
-			panic("ufs_unmount: quota");
-	} else
+	}
 #endif
-	if (error = vflush(mp, (struct vnode *)NULL, flags))
+	if (error = vflush(mp, NULLVP, flags))
 		return (error);
 	fs = ump->um_fs;
 	ronly = !fs->fs_ronly;
-	free((caddr_t)fs->fs_csp[0], M_SUPERBLK);
 	error = closei(dev, IFBLK, fs->fs_ronly? FREAD : FREAD|FWRITE);
 	irele(ip);
 	return (error);
@@ -399,6 +395,76 @@ ufs_root(mp, vpp)
 		return (error);
 	*vpp = ITOV(nip);
 	return (0);
+}
+
+/*
+ * Do operations associated with quotas
+ */
+ufs_quotactl(mp, cmds, uid, arg)
+	struct mount *mp;
+	int cmds;
+	uid_t uid;
+	caddr_t arg;
+{
+	register struct nameidata *ndp = &u.u_nd;
+	struct ufsmount *ump = VFSTOUFS(mp);
+	int cmd, type, error;
+
+#ifndef QUOTA
+	return (EOPNOTSUPP);
+#else
+	if (uid == -1)
+		uid = u.u_ruid;
+	cmd = cmds >> SUBCMDSHIFT;
+
+	switch (cmd) {
+	case Q_GETQUOTA:
+	case Q_SYNC:
+		if (uid == u.u_ruid)
+			break;
+		/* fall through */
+	default:
+		if (error = suser(ndp->ni_cred, &u.u_acflag))
+			return (error);
+	}
+
+	type = cmd & SUBCMDMASK;
+	if ((u_int)type >= MAXQUOTAS)
+		return (EINVAL);
+
+	switch (cmd) {
+
+	case Q_QUOTAON:
+		return (quotaon(ndp, mp, type, arg));
+
+	case Q_QUOTAOFF:
+		if (vfs_busy(mp))
+			return (0);
+		error = quotaoff(mp, type);
+		vfs_unbusy(mp);
+		return (error);
+
+	case Q_SETQUOTA:
+		return (setquota(mp, uid, type, arg));
+
+	case Q_SETUSE:
+		return (setuse(mp, uid, type, arg));
+
+	case Q_GETQUOTA:
+		return (getquota(mp, uid, type, arg));
+
+	case Q_SYNC:
+		if (vfs_busy(mp))
+			return (0);
+		error = qsync(mp);
+		vfs_unbusy(mp);
+		return (error);
+
+	default:
+		return (EINVAL);
+	}
+	/* NOTREACHED */
+#endif
 }
 
 /*
@@ -440,6 +506,8 @@ int	syncprt = 0;
  * Go through the disk queues to initiate sandbagged IO;
  * go through the inodes to write those that have been modified;
  * initiate the writing of the super block if it has been modified.
+ *
+ * Note: we are always called with the filesystem marked `MPBUSY'.
  */
 ufs_sync(mp, waitfor)
 	struct mount *mp;
@@ -499,6 +567,9 @@ loop:
 	 * Force stale file system control information to be flushed.
 	 */
 	vflushbuf(ump->um_devvp, waitfor == MNT_WAIT ? B_SYNC : 0);
+#ifdef QUOTA
+	qsync(mp);
+#endif
 	return (allerror);
 }
 
