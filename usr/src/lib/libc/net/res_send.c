@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)res_send.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_send.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -164,7 +164,7 @@ res_send(buf, buflen, answer, anslen)
 				continue;
 			}
 			if ((resplen = recvfrom(s, answer, anslen,
-			    0, 0, 0)) <= 0) {
+			    0, (struct sockaddr *)0, (int *)0)) <= 0) {
 #ifdef DEBUG
 				if (_res.options & RES_DEBUG)
 					printf("recvfrom, errno=%d\n", errno);
