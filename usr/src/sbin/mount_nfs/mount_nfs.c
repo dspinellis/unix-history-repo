@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1992, 1993
+ * Copyright (c) 1992, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -10,12 +10,12 @@
 
 #ifndef lint
 static char copyright[] =
-"@(#) Copyright (c) 1992, 1993\n\
+"@(#) Copyright (c) 1992, 1993, 1994\n\
 	The Regents of the University of California.  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount_nfs.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount_nfs.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -48,6 +48,7 @@ static char sccsid[] = "@(#)mount_nfs.c	8.1 (Berkeley) %G%";
 #include <arpa/inet.h>
 
 #include <ctype.h>
+#include <err.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <netdb.h>
@@ -56,6 +57,22 @@ static char sccsid[] = "@(#)mount_nfs.c	8.1 (Berkeley) %G%";
 #include <stdlib.h>
 #include <strings.h>
 #include <unistd.h>
+
+#include "mntopts.h"
+
+/*
+ * XXX
+ * This is without question incorrect -- not sure what the right
+ * values are.
+ */
+struct mntopt mopts[] = {
+	MOPT_STDOPTS,
+	MOPT_ASYNC,
+	MOPT_FORCE,
+	MOPT_SYNCHRONOUS,
+	MOPT_UPDATE,
+	{ NULL }
+};
 
 struct nfs_args nfsdefargs = {
 	(struct sockaddr *)0,
@@ -91,14 +108,12 @@ char realm[REALM_SZ];
 KTEXT_ST kt;
 #endif
 
-void	err __P((const char *, ...));
 int	getnfsargs __P((char *, struct nfs_args *));
 #ifdef ISO
 struct	iso_addr *iso_addr __P((const char *));
 #endif
 void	set_rpc_maxgrouplist __P((int));
 __dead	void usage __P((void));
-void	warn __P((const char *, ...));
 int	xdr_dir __P((XDR *, char *));
 int	xdr_fh __P((XDR *, struct nfhret *));
 
@@ -111,8 +126,9 @@ main(argc, argv)
 	register struct nfs_args *nfsargsp;
 	struct nfs_args nfsargs;
 	struct nfsd_cargs ncd;
-	int flags, i, nfssvc_flag, num;
+	int mntflags, i, nfssvc_flag, num;
 	char *name, *p, *spec;
+	int error = 0;
 #ifdef KERBEROS
 	uid_t last_ruid;
 #endif
@@ -123,19 +139,16 @@ main(argc, argv)
 #endif
 	retrycnt = DEF_RETRY;
 
-	if (argc <= 1)
-		usage();
-
-	flags = 0;
+	mntflags = 0;
 	nfsargs = nfsdefargs;
 	nfsargsp = &nfsargs;
 	while ((c = getopt(argc, argv,
-	    "a:bcdD:F:g:iKklL:Mm:PpqR:r:sTt:w:x:")) != EOF)
+	    "a:bcdD:g:iKklL:Mm:o:PpqR:r:sTt:w:x:")) != EOF)
 		switch (c) {
 		case 'a':
 			num = strtol(optarg, &p, 10);
 			if (*p || num < 0)
-				err("illegal -a value -- %s", optarg);
+				errx(1, "illegal -a value -- %s", optarg);
 			nfsargsp->readahead = num;
 			nfsargsp->flags |= NFSMNT_READAHEAD;
 			break;
@@ -148,24 +161,17 @@ main(argc, argv)
 		case 'D':
 			num = strtol(optarg, &p, 10);
 			if (*p || num <= 0)
-				err("illegal -D value -- %s", optarg);
+				errx(1, "illegal -D value -- %s", optarg);
 			nfsargsp->deadthresh = num;
 			nfsargsp->flags |= NFSMNT_DEADTHRESH;
 			break;
 		case 'd':
 			nfsargsp->flags |= NFSMNT_DUMBTIMR;
 			break;
-		case 'F':
-			num = strtol(optarg, &p, 10);
-			if (*p)
-				err("illegal -F value -- %s", optarg);
-			if (num != 0)
-				flags = num;
-			break;
 		case 'g':
 			num = strtol(optarg, &p, 10);
 			if (*p || num <= 0)
-				err("illegal -g value -- %s", optarg);
+				errx(1, "illegal -g value -- %s", optarg);
 			set_rpc_maxgrouplist(num);
 			nfsargsp->maxgrouplist = num;
 			nfsargsp->flags |= NFSMNT_MAXGRPS;
@@ -184,7 +190,7 @@ main(argc, argv)
 		case 'L':
 			num = strtol(optarg, &p, 10);
 			if (*p || num < 2)
-				err("illegal -L value -- %s", optarg);
+				errx(1, "illegal -L value -- %s", optarg);
 			nfsargsp->leaseterm = num;
 			nfsargsp->flags |= NFSMNT_LEASETERM;
 			break;
@@ -200,6 +206,9 @@ main(argc, argv)
 			realm[REALM_SZ - 1] = '\0';
 			break;
 #endif
+		case 'o':
+			getmntopts(optarg, mopts, &mntflags);
+			break;
 		case 'P':
 			nfsargsp->flags |= NFSMNT_RESVPORT;
 			break;
@@ -214,13 +223,13 @@ main(argc, argv)
 		case 'R':
 			num = strtol(optarg, &p, 10);
 			if (*p || num <= 0)
-				err("illegal -R value -- %s", optarg);
+				errx(1, "illegal -R value -- %s", optarg);
 			retrycnt = num;
 			break;
 		case 'r':
 			num = strtol(optarg, &p, 10);
 			if (*p || num <= 0)
-				err("illegal -r value -- %s", optarg);
+				errx(1, "illegal -r value -- %s", optarg);
 			nfsargsp->rsize = num;
 			nfsargsp->flags |= NFSMNT_RSIZE;
 			break;
@@ -233,43 +242,46 @@ main(argc, argv)
 		case 't':
 			num = strtol(optarg, &p, 10);
 			if (*p || num <= 0)
-				err("illegal -t value -- %s", optarg);
+				errx(1, "illegal -t value -- %s", optarg);
 			nfsargsp->timeo = num;
 			nfsargsp->flags |= NFSMNT_TIMEO;
 			break;
 		case 'w':
 			num = strtol(optarg, &p, 10);
 			if (*p || num <= 0)
-				err("illegal -w value -- %s", optarg);
+				errx(1, "illegal -w value -- %s", optarg);
 			nfsargsp->wsize = num;
 			nfsargsp->flags |= NFSMNT_WSIZE;
 			break;
 		case 'x':
 			num = strtol(optarg, &p, 10);
 			if (*p || num <= 0)
-				err("illegal -x value -- %s", optarg);
+				errx(1, "illegal -x value -- %s", optarg);
 			nfsargsp->retrans = num;
 			nfsargsp->flags |= NFSMNT_RETRANS;
 			break;
 		default:
 			usage();
-		};
+			break;
+		}
+	argc -= optind;
+	argv += optind;
 
-	if ((argc - optind) != 2)
-		usage();
+	if (argc != 2)
+		error = 1;
 
-	spec = argv[optind];
-	name = argv[optind + 1];
+	spec = *argv++;
+	name = *argv;
 
 	if (!getnfsargs(spec, nfsargsp))
 		exit(1);
-	if (mount(MOUNT_NFS, name, flags, nfsargsp))
-		err("mount: %s: %s", name, strerror(errno));
+	if (mount(MOUNT_NFS, name, mntflags, nfsargsp))
+		err(1, "%s", name);
 	if (nfsargsp->flags & (NFSMNT_NQNFS | NFSMNT_KERB)) {
 		if ((opflags & ISBGRND) == 0) {
 			if (i = fork()) {
 				if (i == -1)
-					err("nqnfs 1: %s", strerror(errno));
+					err(1, "nqnfs 1");
 				exit(0);
 			}
 			(void) setsid();
@@ -342,13 +354,13 @@ getnfsargs(spec, nfsargsp)
 
 	strncpy(nam, spec, MNAMELEN);
 	nam[MNAMELEN] = '\0';
-	if ((delimp = index(spec, '@')) != NULL) {
+	if ((delimp = strchr(spec, '@')) != NULL) {
 		hostp = delimp + 1;
-	} else if ((delimp = index(spec, ':')) != NULL) {
+	} else if ((delimp = strchr(spec, ':')) != NULL) {
 		hostp = spec;
 		spec = delimp + 1;
 	} else {
-		warn("no <host>:<dirpath> or <dirpath>@<host> spec");
+		warnx("no <host>:<dirpath> or <dirpath>@<host> spec");
 		return (0);
 	}
 	*delimp = '\0';
@@ -362,13 +374,13 @@ getnfsargs(spec, nfsargsp)
 
 		hostp += 4;
 		isoflag++;
-		if ((delimp = index(hostp, '+')) == NULL) {
-			warn("no iso+inet address");
+		if ((delimp = strchr(hostp, '+')) == NULL) {
+			warnx("no iso+inet address");
 			return (0);
 		}
 		*delimp = '\0';
 		if ((isop = iso_addr(hostp)) == NULL) {
-			warn("bad ISO address");
+			warnx("bad ISO address");
 			return (0);
 		}
 		bzero((caddr_t)&isoaddr, sizeof (isoaddr));
@@ -389,24 +401,24 @@ getnfsargs(spec, nfsargsp)
 	 */
 	if (isdigit(*hostp)) {
 		if ((saddr.sin_addr.s_addr = inet_addr(hostp)) == -1) {
-			warn("bad net address %s\n", hostp);
+			warnx("bad net address %s", hostp);
 			return (0);
 		}
 		if ((nfsargsp->flags & NFSMNT_KERB) &&
 		    (hp = gethostbyaddr((char *)&saddr.sin_addr.s_addr,
 		    sizeof (u_long), AF_INET)) == (struct hostent *)0) {
-			warn("can't reverse resolve net address");
+			warnx("can't reverse resolve net address");
 			return (0);
 		}
 	} else if ((hp = gethostbyname(hostp)) == NULL) {
-		warn("can't get net id for host");
+		warnx("can't get net id for host");
 		return (0);
 	}
 #ifdef KERBEROS
 	if (nfsargsp->flags & NFSMNT_KERB) {
 		strncpy(inst, hp->h_name, INST_SZ);
 		inst[INST_SZ - 1] = '\0';
-		if (cp = index(inst, '.'))
+		if (cp = strchr(inst, '.'))
 			*cp = '\0';
 	}
 #endif /* KERBEROS */
@@ -435,10 +447,9 @@ getnfsargs(spec, nfsargsp)
 				clnt_stat = clnt_call(clp, RPCMNT_MOUNT,
 				    xdr_dir, spec, xdr_fh, &nfhret, try);
 				if (clnt_stat != RPC_SUCCESS) {
-					if ((opflags & ISBGRND) == 0) {
-						warn("%s", clnt_sperror(clp,
+					if ((opflags & ISBGRND) == 0)
+						warnx("%s", clnt_sperror(clp,
 						    "bad MNT RPC"));
-					}
 				} else {
 					auth_destroy(clp->cl_auth);
 					clnt_destroy(clp);
@@ -451,8 +462,7 @@ getnfsargs(spec, nfsargsp)
 				opflags &= ~BGRND;
 				if (i = fork()) {
 					if (i == -1)
-						err("nqnfs 2: %s",
-						    strerror(errno));
+						err(1, "nqnfs 2");
 					exit(0);
 				}
 				(void) setsid();
@@ -468,7 +478,7 @@ getnfsargs(spec, nfsargsp)
 	if (nfhret.stat) {
 		if (opflags & ISBGRND)
 			exit(1);
-		warn("can't access %s: %s\n", spec, strerror(nfhret.stat));
+		warn("can't access %s", spec);
 		return (0);
 	}
 	saddr.sin_port = htons(tport);
@@ -515,58 +525,8 @@ usage()
 {
 	(void)fprintf(stderr, "usage: mount_nfs %s\n%s\n%s\n%s\n",
 "[-bcdiKklMPqsT] [-a maxreadahead] [-D deadthresh]",
-"\t[-g maxgroups] [-L leaseterm] [-m realm] [-R retrycnt]",
+"\t[-g maxgroups] [-L leaseterm] [-m realm] [-o options] [-R retrycnt]",
 "\t[-r readsize] [-t timeout] [-w writesize] [-x retrans]",
 "\trhost:path node");
 	exit(1);
-}
-
-#if __STDC__
-#include <stdarg.h>
-#else
-#include <varargs.h>
-#endif
-
-void
-#if __STDC__
-err(const char *fmt, ...)
-#else
-err(fmt, va_alist)
-	char *fmt;
-        va_dcl
-#endif
-{
-	va_list ap;
-#if __STDC__
-	va_start(ap, fmt);
-#else
-	va_start(ap);
-#endif
-	(void)fprintf(stderr, "mount_nfs: ");
-	(void)vfprintf(stderr, fmt, ap);
-	va_end(ap);
-	(void)fprintf(stderr, "\n");
-	exit(1);
-	/* NOTREACHED */
-}
-
-void
-#if __STDC__
-warn(const char *fmt, ...)
-#else
-warn(fmt, va_alist)
-	char *fmt;
-        va_dcl
-#endif
-{
-	va_list ap;
-#if __STDC__
-	va_start(ap, fmt);
-#else
-	va_start(ap);
-#endif
-	(void)fprintf(stderr, "mount_nfs: ");
-	(void)vfprintf(stderr, fmt, ap);
-	va_end(ap);
-	(void)fprintf(stderr, "\n");
 }
