@@ -1,4 +1,4 @@
-/*	awk.g.y	4.1	82/05/07	*/
+/*	awk.g.y	4.2	87/09/16	*/
 
 %token	FIRSTTOKEN	/*must be first*/
 %token	FINAL FATAL
@@ -235,7 +235,7 @@ simple_stat:
 		{ PUTS("printf list"); $$ = stat3($1, $2, nullstat, nullstat); }
 	| expr	{ PUTS("expr"); $$ = exptostat($1); }
 	|		{ PUTS("null simple statement"); $$ = (hack)nullstat; }
-	| error		{ yyclearin; yyerror("illegal statement"); }
+	| error		{ yyclearin; yyerror("illegal statement"); $$ = (hack)nullstat; }
 	;
 
 statement:
