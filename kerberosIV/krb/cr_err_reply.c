@@ -1,6 +1,6 @@
 /*
- * $Source: /usr/src/kerberosIV/krb/RCS/cr_err_reply.c,v $
- * $Author: kfall $
+ * $Source: /home/cvs/386BSD/src/kerberosIV/krb/cr_err_reply.c,v $
+ * $Author: wollman $
  *
  * Copyright 1985, 1986, 1987, 1988 by the Massachusetts Institute
  * of Technology.
@@ -11,7 +11,7 @@
 
 #ifndef lint
 static char *rcsid_cr_err_reply_c =
-"$Header: /usr/src/kerberosIV/krb/RCS/cr_err_reply.c,v 4.11 90/06/25 20:55:11 kfall Exp $";
+"$Header: /home/cvs/386BSD/src/kerberosIV/krb/cr_err_reply.c,v 1.1.1.1 1994/02/25 01:14:11 wollman Exp $";
 #endif /* lint */
 
 #include <mit-copyright.h>
@@ -21,8 +21,8 @@ static char *rcsid_cr_err_reply_c =
 #include <prot.h>
 #include <strings.h>
 
-extern int req_act_vno;		/* this is defined in the kerberos
-				 * server code */
+int req_act_vno = KRB_PROT_VERSION; /* Temporary for version skew */
+
 
 /*
  * This routine is used by the Kerberos authentication server to

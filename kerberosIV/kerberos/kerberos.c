@@ -1,6 +1,6 @@
 /*
- * $Source: /usr/src/kerberosIV/kerberos/RCS/kerberos.c,v $
- * $Author: bostic $
+ * $Source: /home/cvs/386BSD/src/kerberosIV/kerberos/kerberos.c,v $
+ * $Author: wollman $
  *
  * Copyright 1985, 1986, 1987, 1988 by the Massachusetts Institute
  * of Technology.
@@ -11,7 +11,7 @@
 
 #ifndef lint
 static char *rcsid_kerberos_c =
-"$Id: /usr/src/kerberosIV/kerberos/RCS/kerberos.c,v 4.21 91/02/25 15:40:32 bostic Exp Locker: bostic $";
+"$Id: kerberos.c,v 1.1.1.1 1994/02/25 01:14:04 wollman Exp $";
 #endif  lint
 
 #include <mit-copyright.h>
@@ -72,7 +72,7 @@ static char *req_realm_ptr;
 static u_char req_no_req;
 static u_long req_time_ws;
 
-int req_act_vno = KRB_PROT_VERSION; /* Temporary for version skew */
+extern int req_act_vno;
 
 static char local_realm[REALM_SZ];
 
