@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)commands.c	1.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)commands.c	1.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -47,9 +47,9 @@ static char sccsid[] = "@(#)commands.c	1.22 (Berkeley) %G%";
 #ifdef	SRCRT
 # ifndef CRAY
 # include <netinet/in_systm.h>
-#  ifndef sun
+#  if defined(vax) || defined(tahoe)
 #  include <machine/endian.h>
-#  endif /* sun */
+#  endif /* vax */
 # endif /* CRAY */
 #include <netinet/ip.h>
 #endif /* SRCRT */
@@ -758,7 +758,7 @@ struct setlist {
     char *name;				/* name */
     char *help;				/* help information */
     void (*handler)();
-    char *charp;			/* where it is located at */
+    unsigned char *charp;			/* where it is located at */
 };
 
 static struct setlist Setlist[] = {
@@ -767,9 +767,7 @@ static struct setlist Setlist[] = {
     { "tracefile", "file to write trace intormation to", SetNetTrace, NetTraceFile},
     { " ", "" },
     { " ", "The following need 'localchars' to be toggled true", 0, 0 },
-#ifndef	CRAY
     { "flushoutput", "character to cause an Abort Oubput", 0, termFlushCharp },
-#endif
     { "interrupt", "character to cause an Interrupt Process", 0, termIntCharp },
     { "quit",	"character to cause an Abort process", 0, termQuitCharp },
     { "eof",	"character to cause an EOF ", 0, termEofCharp },
@@ -777,14 +775,12 @@ static struct setlist Setlist[] = {
     { " ", "The following are for local editing in linemode", 0, 0 },
     { "erase",	"character to use to erase a character", 0, termEraseCharp },
     { "kill",	"character to use to erase a line", 0, termKillCharp },
-#ifndef	CRAY
     { "lnext",	"character to use for literal next", 0, termLiteralNextCharp },
     { "susp",	"character to cuase a Suspend Process", 0, termSuspCharp },
     { "reprint", "character to use for line reprint", 0, termRprntCharp },
     { "worderase", "character to use to erase a word", 0, termWerasCharp },
     { "start",	"character to use for XON", 0, termStartCharp },
     { "stop",	"character to sue for XOFF", 0, termStopCharp },
-#endif
     { 0 }
 };
 
@@ -792,11 +788,18 @@ static struct setlist Setlist[] = {
 /* Work around compiler bug */
 _setlist_init()
 {
+	Setlist[5].charp = &termFlushChar;
 	Setlist[6].charp = &termIntChar;
 	Setlist[7].charp = &termQuitChar;
 	Setlist[8].charp = &termEofChar;
 	Setlist[11].charp = &termEraseChar;
 	Setlist[12].charp = &termKillChar;
+	Setlist[13].charp = &termLiteralNextChar;
+	Setlist[14].charp = &termSuspChar;
+	Setlist[15].charp = &termRprntChar;
+	Setlist[16].charp = &termWerasChar;
+	Setlist[17].charp = &termStartChar;
+	Setlist[18].charp = &termStopChar;
 }
 #endif	/* CRAY */
 
@@ -1030,12 +1033,12 @@ extern int modehelp();
 
 static struct modelist ModeList[] = {
     { "character", "Disable LINEMODE option",	docharmode, 1 },
-#ifdef	KLUDEGLINEMODE
-    { "",	"(or disable obsolete line-by-line mode)", 0 };
+#ifdef	KLUDGELINEMODE
+    { "",	"(or disable obsolete line-by-line mode)", 0 },
 #endif
     { "line",	"Enable LINEMODE option",	dolinemode, 1 },
-#ifdef	KLUDEGLINEMODE
-    { "",	"(or enable obsolete line-by-line mode)", 0 };
+#ifdef	KLUDGELINEMODE
+    { "",	"(or enable obsolete line-by-line mode)", 0 },
 #endif
     { "", "", 0 },
     { "",	"These require the LINEMODE option to be enabled", 0 },
@@ -1241,9 +1244,6 @@ suspend()
 }
 
 #if	!defined(TN3270)
-#ifdef	CRAY
-#define	vfork	fork
-#endif
 shell(argc, argv)
 int argc;
 char *argv[];
@@ -1513,7 +1513,7 @@ char	*argv[];
 					(mode&MODE_TRAPSIG) ? "Local" : "No");
 		slcstate();
 #ifdef	KLUDGELINEMODE
-	    } else if (kludgelinemode && my_want_state_is_wont(TELOPT_SGA)) {
+	    } else if (kludgelinemode && my_want_state_is_dont(TELOPT_SGA)) {
 		printf("Operating in obsolete linemode\n");
 #endif
 	    } else {
@@ -1581,10 +1581,6 @@ tn(argc, argv)
 #endif
 
 
-#if defined(MSDOS)
-    char *cp;
-#endif	/* defined(MSDOS) */
-
     if (connected) {
 	printf("?Already connected to %s\n", hostname);
 	return 0;
@@ -1601,13 +1597,6 @@ tn(argc, argv)
 	printf("usage: %s host-name [port]\n", argv[0]);
 	return 0;
     }
-#if	defined(MSDOS)
-    for (cp = argv[1]; *cp; cp++) {
-	if (isupper(*cp)) {
-	    *cp = tolower(*cp);
-	}
-    }
-#endif	/* defined(MSDOS) */
 #if	defined(SRCRT) && defined(IPPROTO_IP)
     if (argv[1][0] == '@' || argv[1][0] == '!') {
 	if ((hostname = strrchr(argv[1], ':')) == NULL)

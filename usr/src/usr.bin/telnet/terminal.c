@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)terminal.c	1.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)terminal.c	1.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <arpa/telnet.h>
@@ -33,14 +33,27 @@ char	ttyobuf[2*BUFSIZ], ttyibuf[BUFSIZ];
 int termdata;			/* Debugging flag */
 
 #ifdef	USE_TERMIO
-char
-    termFlushChar,
-    termLiteralNextChar,
-    termSuspChar,
-    termWerasChar,
-    termRprntChar,
-    termStartChar,
-    termStopChar;
+# ifndef VFLUSHO
+char termFlushChar;
+# endif
+# ifndef VLNEXT
+char termLiteralNextChar;
+# endif
+# ifndef VSUSP
+char termSuspChar;
+# endif
+# ifndef VWERASE
+char termWerasChar;
+# endif
+# ifndef VREPRINT
+char termRprntChar;
+# endif
+# ifndef VSTART
+char termStartChar;
+# endif
+# ifndef VSTOP
+char termStopChar;
+# endif
 #endif
 
 /*
@@ -136,6 +149,12 @@ getconnmode()
 
     if (localflow)
 	mode |= MODE_FLOW;
+
+    if (my_want_state_is_will(TELOPT_BINARY))
+	mode |= MODE_INBIN;
+
+    if (his_want_state_is_will(TELOPT_BINARY))
+	mode |= MODE_OUTBIN;
 
 #ifdef	KLUDGELINEMODE
     if (kludgelinemode) {

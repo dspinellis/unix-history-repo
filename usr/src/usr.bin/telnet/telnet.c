@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	5.43 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	5.44 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -27,7 +27,6 @@ static char sccsid[] = "@(#)telnet.c	5.43 (Berkeley) %G%";
  * among other things, telnet.h #defines 'DO', which is a variable
  * declared in curses.h.
  */
-#include <curses.h>
 #endif	/* defined(unix) */
 
 #include <arpa/telnet.h>
@@ -91,7 +90,7 @@ int
 
 #define	CONTROL(x)	((x)&0x1f)		/* CTRL(x) is not portable */
 
-char
+unsigned char
 	*prompt = 0,
 	escape,
 	echoc;
@@ -513,6 +512,7 @@ dontoption(option)
 	    /* we always accept a DONT */
 	    set_my_want_state_wont(option);
 	    send_wont(option, 0);
+	    setconnmode(0);			/* Set new tty mode */
 	}
 	set_my_state_wont(option);
 }
@@ -646,13 +646,13 @@ register char *name, **as, **ae;
 }
 
 #ifdef	TERMCAP
-char ttytype[1024];
+char termbuf[1024];
 setupterm(tname, fd, errp)
 char *tname;
 int fd, *errp;
 {
-	if (tgetent(ttytype, tname) == 1) {
-		ttytype[1023] = '\0';
+	if (tgetent(termbuf, tname) == 1) {
+		termbuf[1023] = '\0';
 		if (errp)
 			*errp = 1;
 		return(0);
@@ -661,6 +661,9 @@ int fd, *errp;
 		*errp = 0;
 	return(-1);
 }
+#else
+#define	termbuf	ttytype
+extern char ttytype[];
 #endif
 
 char *
@@ -668,7 +671,6 @@ gettermname()
 {
 	char *tname;
 	static int first = 1;
-	extern char ttytype[];
 	static char **tnamep;
 	static char **next;
 	char *getenv();
@@ -678,7 +680,7 @@ gettermname()
 		first = 0;
 		if ((tname = getenv("TERM")) &&
 				(setupterm(tname, 1, &err) == 0)) {
-			tnamep = mklist(ttytype, tname);
+			tnamep = mklist(termbuf, tname);
 		} else {
 			if (tname && (strlen(tname) <= 40)) {
 				unknown[0] = tname;
@@ -934,19 +936,19 @@ slc_init()
 	/* No EOR */
 	initfunc(SLC_ABORT, SLC_FLUSHIN|SLC_FLUSHOUT);
 	initfunc(SLC_EOF, 0);
-#ifndef	CRAY
+#ifndef	SYSV_TERMIO
 	initfunc(SLC_SUSP, SLC_FLUSHIN);
 #endif
 	initfunc(SLC_EC, 0);
 	initfunc(SLC_EL, 0);
-#ifndef	CRAY
+#ifndef	SYSV_TERMIO
 	initfunc(SLC_EW, 0);
 	initfunc(SLC_RP, 0);
 	initfunc(SLC_LNEXT, 0);
 #endif
 	initfunc(SLC_XON, 0);
 	initfunc(SLC_XOFF, 0);
-#ifdef	CRAY
+#ifdef	SYSV_TERMIO
 	spc_data[SLC_XON].mylevel = SLC_CANTCHANGE;
 	spc_data[SLC_XOFF].mylevel = SLC_CANTCHANGE;
 #endif
@@ -1206,7 +1208,8 @@ telrcv()
 	    telrcv_state = TS_DATA;
 	    if (c == '\0') {
 		break;	/* Ignore \0 after CR */
-	    } else if ((c == '\n') && my_want_state_is_dont(TELOPT_ECHO) && !crmod) {
+	    }
+	    else if ((c == '\n') && my_want_state_is_dont(TELOPT_ECHO) && !crmod) {
 		TTYADD(c);
 		break;
 	    }
