@@ -7,14 +7,14 @@
  *
  * %sccs.include.noredist.c%
  *
- *	@(#)pcb.h	5.1 (Berkeley) %G%
+ *	@(#)pcb.h	5.2 (Berkeley) %G%
  */
 
 /*
  * Intel 386 process control block
  */
 #include "tss.h"
-#include "fpu.h"
+#include "npx.h"
 
 struct pcb {
 	struct	i386tss pcbtss;
@@ -30,7 +30,9 @@ struct pcb {
 	int	pcb_fpsav;
 #define	FP_NEEDSAVE	0x1	/* need save on next context switch */
 #define	FP_NEEDRESTORE	0x2	/* need restore on next DNA fault */
+#define	FP_USESEMC	0x4	/* process uses EMC memory-mapped mode */
 	struct	save87	pcb_savefpu;
+	struct	emcsts	pcb_saveemc;
 	struct	pte	*pcb_p0br;
 	struct	pte	*pcb_p1br;
 	int	pcb_p0lr;
@@ -38,5 +40,6 @@ struct pcb {
 	int	pcb_szpt; 	/* number of pages of user page table */
 	int	pcb_cmap2;
 	int	*pcb_sswap;
-	long	pcb_sigc[5];	/* sigcode actually 19 bytes */
+	long	pcb_sigc[8];	/* sigcode actually 19 bytes */
+	int	pcb_iml;	/* interrupt mask level */
 };
