@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)mkfs.c	1.19 (Berkeley) %G%";
+static	char *sccsid = "@(#)mkfs.c	1.20 (Berkeley) %G%";
 
 /*
  * make file system for cylinder-group style file systems
@@ -319,7 +319,7 @@ next:
 	sblock.fs_magic = FS_MAGIC;
 	sblock.fs_rotdelay = ROTDELAY;
 	sblock.fs_minfree = MINFREE;
-	sblock.fs_rps = HZ;	/* assume disk speed == HZ */
+	sblock.fs_rps = 60;	/* assume disk speed == 60 HZ */
 	sblock.fs_cgrotor = 0;
 	sblock.fs_cstotal.cs_ndir = 0;
 	sblock.fs_cstotal.cs_nbfree = 0;
