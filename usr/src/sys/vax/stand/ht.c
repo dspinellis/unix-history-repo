@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ht.c	7.2 (Berkeley) %G%
+ *	@(#)ht.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -29,26 +29,25 @@ short	httypes[] =
 htopen(io)
 	register struct iob *io;
 {
-	register int skip;
-	register struct htdevice *htaddr =
-	   (struct htdevice *)mbadrv(io->i_unit);
-	register int i;
+	register struct htdevice *htaddr;
+	register int i, skip;
 
-	if (mbainit(UNITTOMBA(io->i_unit)) == 0)
-		return (ENXIO);
-	for (i = 0; httypes[i]; i++)
+	htaddr = (struct htdevice *)mbadrv(io->i_adapt, io->i_ctlr);
+	if (mbainit(io->i_adapt) == 0)
+		return (EADAPT);
+	for (i = 0;; i++) {
+		if (!httypes[i]) {
+			printf("ht: not a tape\n");
+			return (ENXIO);
+		}
 		if (httypes[i] == (htaddr->htdt&MBDT_TYPE))
-			goto found;
-	printf("not a tape\n");
-	return (ENXIO);
-found:
+			break;
+	}
 	htaddr->htcs1 = HT_DCLR|HT_GO;
 	htstrategy(io, HT_REW);
-	skip = io->i_boff;
-	while (skip--) {
+	for (skip = io->i_part; skip--;) {
 		io->i_cc = -1;
-		while (htstrategy(io, HT_SFORW))
-			;
+		while (htstrategy(io, HT_SFORW));
 		DELAY(65536);
 		htstrategy(io, HT_SENSE);
 	}
@@ -58,7 +57,6 @@ found:
 htclose(io)
 	register struct iob *io;
 {
-
 	htstrategy(io, HT_REW);
 }
 
@@ -66,15 +64,15 @@ htstrategy(io, func)
 	register struct iob *io;
 	int func;
 {
+	register struct htdevice *htaddr;
 	register int den, errcnt, ds;
 	int er;
 	short fc;
-	register struct htdevice *htaddr =
-	    (struct htdevice *)mbadrv(io->i_unit);
 
 	errcnt = 0;
+	htaddr = (struct htdevice *)mbadrv(io->i_adapt, io->i_ctlr);
 retry:
-	den = HTTC_1600BPI|HTTC_PDP11;
+	den = HTTC_1600BPI | HTTC_PDP11 | io->i_unit;
 	htquiet(htaddr);
 	htaddr->htcs1 = HT_DCLR|HT_GO;
 	htaddr->httc = den;
@@ -85,7 +83,7 @@ retry:
 		return (0);
 	}
 	if (func == READ || func == WRITE)
-		mbastart(io, func);
+		mbastart(io, io->i_ctlr, func);
 	else
 		htaddr->htcs1 = func|HT_GO;
 	htquiet(htaddr);
@@ -101,11 +99,10 @@ retry:
 			printf("ht error: ds=%b, er=%b\n",
 			    MASKREG(ds), HTDS_BITS,
 			    MASKREG(er), HTER_BITS);
-			if (errcnt == 10) {
+			if (errcnt++ == 10) {
 				printf("ht: unrecovered error\n");
 				return (-1);
 			}
-			errcnt++;
 			htstrategy(io, HT_SREV);
 			goto retry;
 		}
@@ -116,6 +113,7 @@ retry:
 	return (io->i_cc+fc);
 }
 
+static
 htquiet(htaddr)
 	register struct htdevice *htaddr;
 {
