@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)sa.c	4.10 (Berkeley) %G%";
+static char *sccsid = "@(#)sa.c	4.11 (Berkeley) %G%";
 #endif
 
 /*
@@ -24,6 +24,7 @@ static char *sccsid = "@(#)sa.c	4.10 (Berkeley) %G%";
 #include <signal.h>
 #include <utmp.h>
 #include <pwd.h>
+#include "pathnames.h"
 
 /* interpret command time accounting */
 
@@ -250,9 +251,9 @@ char	*getname();
 #define	SAVACCT	"./savacct"
 #define	ACCT	"./acct"
 #else
-#define	USRACCT "/usr/adm/usracct"
-#define	SAVACCT	"/usr/adm/savacct"
-#define	ACCT	"/usr/adm/acct"
+#define	USRACCT _PATH_USRACCT
+#define	SAVACCT	_PATH_SAVACCT
+#define	ACCT	_PATH_ACCT
 #endif	DEBUG
 
 
