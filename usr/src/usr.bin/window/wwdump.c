@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwdump.c	3.7 83/09/15";
+static	char *sccsid = "@(#)wwdump.c	3.8 83/11/15";
 #endif
 
 #include "ww.h"
@@ -39,14 +39,14 @@ wwdumpnvis(w)
 register struct ww *w;
 {
 	register i;
+	char buf[20];
 
 	tt.tt_nmodes = 0;
 	(*tt.tt_clear)();
-	for (i = 0; i < w->ww_w.nr; i++) {
-		(*tt.tt_move)(i, w->ww_w.l);
-		(*tt.tt_putc)(w->ww_nvis[i] / 100 % 10 + '0');
-		(*tt.tt_putc)(w->ww_nvis[i] / 10 % 10 + '0');
-		(*tt.tt_putc)(w->ww_nvis[i] % 10 + '0');
+	for (i = w->ww_i.t; i < w->ww_i.b; i++) {
+		(*tt.tt_move)(i, w->ww_i.l);
+		(void) sprintf(buf, "%d", w->ww_nvis[i]);
+		(*tt.tt_write)(buf, strlen(buf));
 	}
 }
 
