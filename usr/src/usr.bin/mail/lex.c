@@ -8,7 +8,7 @@
  * Lexical processing of commands.
  */
 
-static char *SccsId = "@(#)lex.c	1.8 %G%";
+static char *SccsId = "@(#)lex.c	1.9 %G%";
 
 /*
  * Set up editing on the given file name.
@@ -251,7 +251,7 @@ execute(linebuf)
 	 * we always execute it, otherwise, check the state of cond.
 	 */
 
-	if ((com->c_argtype & C) == 0)
+	if ((com->c_argtype & F) == 0)
 		if (cond == CRCV && !rcvmode || cond == CSEND && rcvmode)
 			return(0);
 
@@ -297,7 +297,7 @@ execute(linebuf)
 		return(0);
 	}
 	e = 1;
-	switch (com->c_argtype & ~(C|P|I|M|T|W)) {
+	switch (com->c_argtype & ~(F|P|I|M|T|W)) {
 	case MSGLIST:
 		/*
 		 * A message list defaulting to nearest forward
