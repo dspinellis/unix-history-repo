@@ -6,22 +6,20 @@ PUSHDIVERT(-1)
 #
 # %sccs.include.redist.sh%
 #
-ifdef(`SMTP_MAILER_FLAGS',,
-	`define(`SMTP_MAILER_FLAGS',
-		`ifdef(`_OLD_SENDMAIL_', `L', `')')')
+ifdef(`SMTP_MAILER_FLAGS',, `define(`SMTP_MAILER_FLAGS', `')')
 POPDIVERT
 #####################################
 ###   SMTP Mailer specification   ###
 #####################################
 
-VERSIONID(`@(#)smtp.m4	8.15 (Berkeley) %G%')
+VERSIONID(`@(#)smtp.m4	8.16 (Berkeley) %G%')
 
 Msmtp,		P=[IPC], F=CONCAT(mDFMuX, SMTP_MAILER_FLAGS), S=11/31, R=ifdef(`_ALL_MASQUERADE_', `11/31', `21'), E=\r\n,
-		ifdef(`_OLD_SENDMAIL_',, `L=990, ')ifdef(`SMTP_MAILER_MAX', `M=SMTP_MAILER_MAX, ')A=IPC $h
+		L=990, ifdef(`SMTP_MAILER_MAX', `M=SMTP_MAILER_MAX, ')A=IPC $h
 Mesmtp,		P=[IPC], F=CONCAT(mDFMuXa, SMTP_MAILER_FLAGS), S=11/31, R=ifdef(`_ALL_MASQUERADE_', `11/31', `21'), E=\r\n,
-		ifdef(`_OLD_SENDMAIL_',, `L=990, ')ifdef(`SMTP_MAILER_MAX', `M=SMTP_MAILER_MAX, ')A=IPC $h
+		L=990, ifdef(`SMTP_MAILER_MAX', `M=SMTP_MAILER_MAX, ')A=IPC $h
 Mrelay,		P=[IPC], F=CONCAT(mDFMuXa, SMTP_MAILER_FLAGS), S=11/31, R=61, E=\r\n,
-		ifdef(`_OLD_SENDMAIL_',, `L=2040, ')A=IPC $h
+		L=2040, A=IPC $h
 
 #
 #  envelope sender and masquerading recipient rewriting
