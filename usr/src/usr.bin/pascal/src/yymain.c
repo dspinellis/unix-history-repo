@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)yymain.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)yymain.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "whoami.h"
@@ -115,7 +115,8 @@ copyfile()
 		perror(firstname);
 		pexit(ERRS);
 	}
-	(void) lseek(fout[0], 0l, 0);
+	if (lseek(fout[0], (off_t)0, 0) == -1)
+		perror("copyfile: lseek"), panic("copyfile");
 	while ((c = read(fout[0], &fout[3], 512)) > 0) {
 		if (write(1, &fout[3], c) != c) {
 			perror(firstname);
@@ -160,7 +161,6 @@ magic()
 magic2()
 {
 	struct pxhdr pxhd;
-	extern long lseek();
 
 	if  (magichdr.a_magic != 0407)
 		panic ( "magic2" );
@@ -172,9 +172,11 @@ magic2()
 	magichdr.a_data += pxhd.symtabsize;
 	(void) time((long *) (&pxhd.maketime));
 	pxhd.magicnum = MAGICNUM;
-	(void) lseek(ofil, 0l, 0);
+	if (lseek(ofil, (off_t)0, 0) == -1)
+		perror("magic2: lseek1"), panic("magic2");
 	write(ofil, (char *) (&magichdr), sizeof(struct exec));
-	(void) lseek(ofil, ( long ) ( HEADER_BYTES - sizeof ( pxhd ) ) , 0);
+	if (lseek(ofil, (off_t)(HEADER_BYTES - sizeof(pxhd)), 0) == -1)
+		perror("magic2: lseek2"), panic("magic2");
 	write(ofil, (char *) (&pxhd), sizeof (pxhd));
 }
 #endif OBJ

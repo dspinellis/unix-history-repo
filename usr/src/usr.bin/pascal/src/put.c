@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)put.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)put.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "whoami.h"
@@ -697,7 +697,6 @@ patchfil(loc, jmploc, words)
 	int words;
 {
 	register i;
-	extern long lseek();
 	short val;
 
 	if ( !CGENNING )
@@ -720,9 +719,12 @@ patchfil(loc, jmploc, words)
 		if (i >= 0 && i < 1024) {
 			obuf[i] = val;
 		} else {
-			(void) lseek(ofil, (long) loc+2, 0);
-			write(ofil, (char *) (&val), 2);
-			(void) lseek(ofil, (long) 0, 2);
+			if (lseek(ofil, (off_t) loc+2, 0) == -1)
+				perror("patchfil: lseek1"), panic("patchfil");
+			if (write(ofil, (char *) (&val), 2) != 2)
+				perror("patchfil: write"), panic("patchfil");
+			if (lseek(ofil, (off_t) 0, 2) == -1)
+				perror("patchfil: lseek2"), panic("patchfil");
 		}
 		loc += 2;
 #		ifdef DEC11
