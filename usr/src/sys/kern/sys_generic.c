@@ -1,22 +1,15 @@
-/*	sys_generic.c	5.35	83/05/21	*/
+/*	sys_generic.c	5.36	83/05/27	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/dir.h"
 #include "../h/user.h"
 #include "../h/ioctl.h"
-#include "../h/tty.h"
 #include "../h/file.h"
-#include "../h/inode.h"
-#include "../h/buf.h"
 #include "../h/proc.h"
-#include "../h/conf.h"
-#include "../h/socket.h"
-#include "../h/socketvar.h"
-#include "../h/fs.h"
-#include "../h/descrip.h"
 #include "../h/uio.h"
-#include "../h/cmap.h"
+#include "../h/kernel.h"
+#include "../h/stat.h"
 
 /*
  * Read system call.
@@ -113,7 +106,6 @@ rwuio(uio, rw)
 	};
 	register struct file *fp;
 	register struct iovec *iov;
-	register struct inode *ip;
 	int i, count;
 
 	GETF(fp, ((struct a *)u.u_ap)->fdes);
@@ -136,318 +128,18 @@ rwuio(uio, rw)
 		}
 	}
 	count = uio->uio_resid;
+	uio->uio_offset = fp->f_offset;
 	if ((u.u_procp->p_flag&SNUSIG) && setjmp(&u.u_qsave)) {
 		if (uio->uio_resid == count)
 			u.u_eosys = RESTARTSYS;
-	} else if (fp->f_type == DTYPE_SOCKET) {
-		int sosend(), soreceive();
-		u.u_error = 
-		    (*(rw==UIO_READ?soreceive:sosend))
-		      (fp->f_socket, (struct sockaddr *)0, uio, 0);
-	} else {
-		ip = fp->f_inode;
-		uio->uio_offset = fp->f_offset;
-		if ((ip->i_mode&IFMT) == IFREG) {
-			ILOCK(ip);
-			if (fp->f_flag&FAPPEND && rw == UIO_WRITE)
-				uio->uio_offset = fp->f_offset = ip->i_size;
-			u.u_error = rwip(ip, uio, rw);
-			IUNLOCK(ip);
-		} else
-			u.u_error = rwip(ip, uio, rw);
-		fp->f_offset += count - uio->uio_resid;
-	}
-	u.u_r.r_val1 = count - uio->uio_resid;
-}
-
-rdwri(rw, ip, base, len, offset, segflg, aresid)
-	struct inode *ip;
-	caddr_t base;
-	int len, offset, segflg;
-	int *aresid;
-	enum uio_rw rw;
-{
-	struct uio auio;
-	struct iovec aiov;
-	int error;
-
-	auio.uio_iov = &aiov;
-	auio.uio_iovcnt = 1;
-	aiov.iov_base = base;
-	aiov.iov_len = len;
-	auio.uio_resid = len;
-	auio.uio_offset = offset;
-	auio.uio_segflg = segflg;
-	error = rwip(ip, &auio, rw);
-	if (aresid)
-		*aresid = auio.uio_resid;
-	else
-		if (auio.uio_resid)
-			error = EIO;
-	return (error);
-}
-
-rwip(ip, uio, rw)
-	register struct inode *ip;
-	register struct uio *uio;
-	enum uio_rw rw;
-{
-	dev_t dev = (dev_t)ip->i_rdev;
-	struct buf *bp;
-	struct fs *fs;
-	daddr_t lbn, bn;
-	register int n, on, type;
-	int size;
-	long bsize;
-	extern int mem_no;
-	int error = 0;
-
-	if (rw != UIO_READ && rw != UIO_WRITE)
-		panic("rwip");
-	if (rw == UIO_READ && uio->uio_resid == 0)
-		return (0);
-	if (uio->uio_offset < 0 &&
-	    ((ip->i_mode&IFMT) != IFCHR || mem_no != major(dev)))
-		return (EINVAL);
-	if (rw == UIO_READ)
-		ip->i_flag |= IACC;
-	type = ip->i_mode&IFMT;
-	if (type == IFCHR) {
-		if (rw == UIO_READ)
-			u.u_error = (*cdevsw[major(dev)].d_read)(dev, uio);
-		else {
-			ip->i_flag |= IUPD|ICHG;
-			u.u_error = (*cdevsw[major(dev)].d_write)(dev, uio);
-		}
-		return (u.u_error);
-	}
-	if (uio->uio_resid == 0)
-		return (0);
-	if (rw == UIO_WRITE && type == IFREG &&
-	    uio->uio_offset + uio->uio_resid >
-	      u.u_rlimit[RLIMIT_FSIZE].rlim_cur) {
-		psignal(u.u_procp, SIGXFSZ);
-		return (EMFILE);
-	}
-	if (type != IFBLK) {
-		dev = ip->i_dev;
-		fs = ip->i_fs;
-		bsize = fs->fs_bsize;
 	} else
-		bsize = BLKDEV_IOSIZE;
-	do {
-		lbn = uio->uio_offset / bsize;
-		on = uio->uio_offset % bsize;
-		n = MIN((unsigned)(bsize - on), uio->uio_resid);
-		if (type != IFBLK) {
-			if (rw == UIO_READ) {
-				int diff = ip->i_size - uio->uio_offset;
-				if (diff <= 0)
-					return (0);
-				if (diff < n)
-					n = diff;
-			}
-			bn = fsbtodb(fs,
-			    bmap(ip, lbn, rw == UIO_WRITE ? B_WRITE: B_READ, (int)(on+n)));
-			if (u.u_error || rw == UIO_WRITE && (long)bn<0)
-				return (u.u_error);
-			if (rw == UIO_WRITE && uio->uio_offset + n > ip->i_size &&
-			   (type == IFDIR || type == IFREG || type == IFLNK))
-				ip->i_size = uio->uio_offset + n;
-			size = blksize(fs, ip, lbn);
-		} else {
-			bn = lbn * (BLKDEV_IOSIZE/DEV_BSIZE);
-			rablock = bn + (BLKDEV_IOSIZE/DEV_BSIZE);
-			rasize = size = bsize;
-		}
-		if (rw == UIO_READ) {
-			if ((long)bn<0) {
-				bp = geteblk(size);
-				clrbuf(bp);
-			} else if (ip->i_lastr + 1 == lbn)
-				bp = breada(dev, bn, size, rablock, rasize);
-			else
-				bp = bread(dev, bn, size);
-			ip->i_lastr = lbn;
-		} else {
-			int i, count;
-			extern struct cmap *mfind();
-
-			count = howmany(size, DEV_BSIZE);
-			for (i = 0; i < count; i += CLSIZE)
-				if (mfind(dev, bn + i))
-					munhash(dev, bn + i);
-			if (n == bsize) 
-				bp = getblk(dev, bn, size);
-			else
-				bp = bread(dev, bn, size);
-		}
-		n = MIN(n, size - bp->b_resid);
-		if (bp->b_flags & B_ERROR) {
-			error = EIO;
-			brelse(bp);
-			goto bad;
-		}
-		u.u_error =
-		    uiomove(bp->b_un.b_addr+on, n, rw, uio);
-		if (rw == UIO_READ) {
-			if (n + on == bsize || uio->uio_offset == ip->i_size)
-				bp->b_flags |= B_AGE;
-			brelse(bp);
-		} else {
-			if ((ip->i_mode&IFMT) == IFDIR)
-				bwrite(bp);
-			else if (n + on == bsize) {
-				bp->b_flags |= B_AGE;
-				bawrite(bp);
-			} else
-				bdwrite(bp);
-			ip->i_flag |= IUPD|ICHG;
-			if (u.u_ruid != 0)
-				ip->i_mode &= ~(ISUID|ISGID);
-		}
-	} while (u.u_error == 0 && uio->uio_resid > 0 && n != 0);
-bad:
-	return (error);
+		u.u_error = (*fp->f_ops->fo_rw)(fp, rw, uio);
+	u.u_r.r_val1 = count - uio->uio_resid;
+	fp->f_offset += u.u_r.r_val1;
 }
-
-uiomove(cp, n, rw, uio)
-	register caddr_t cp;
-	register int n;
-	enum uio_rw rw;
-	register struct uio *uio;
-{
-	register struct iovec *iov;
-	u_int cnt;
-	int error = 0;
-
-	while (n > 0 && uio->uio_resid) {
-		iov = uio->uio_iov;
-		cnt = iov->iov_len;
-		if (cnt == 0) {
-			uio->uio_iov++;
-			uio->uio_iovcnt--;
-			continue;
-		}
-		if (cnt > n)
-			cnt = n;
-		switch (uio->uio_segflg) {
-
-		case 0:
-		case 2:
-			if (rw == UIO_READ)
-				error = copyout(cp, iov->iov_base, cnt);
-			else
-				error = copyin(iov->iov_base, cp, cnt);
-			if (error)
-				return (error);
-			break;
-
-		case 1:
-			if (rw == UIO_READ)
-				bcopy((caddr_t)cp, iov->iov_base, cnt);
-			else
-				bcopy(iov->iov_base, (caddr_t)cp, cnt);
-			break;
-		}
-		iov->iov_base += cnt;
-		iov->iov_len -= cnt;
-		uio->uio_resid -= cnt;
-		uio->uio_offset += cnt;
-		cp += cnt;
-		n -= cnt;
-	}
-	return (error);
-}
-
-/*
- * Give next character to user as result of read.
- */
-ureadc(c, uio)
-	register int c;
-	register struct uio *uio;
-{
-	register struct iovec *iov;
-
-again:
-	if (uio->uio_iovcnt == 0)
-		panic("ureadc");
-	iov = uio->uio_iov;
-	if (iov->iov_len <= 0 || uio->uio_resid <= 0) {
-		uio->uio_iovcnt--;
-		uio->uio_iov++;
-		goto again;
-	}
-	switch (uio->uio_segflg) {
-
-	case 0:
-		if (subyte(iov->iov_base, c) < 0)
-			return (EFAULT);
-		break;
-
-	case 1:
-		*iov->iov_base = c;
-		break;
-
-	case 2:
-		if (suibyte(iov->iov_base, c) < 0)
-			return (EFAULT);
-		break;
-	}
-	iov->iov_base++;
-	iov->iov_len--;
-	uio->uio_resid--;
-	uio->uio_offset++;
-	return (0);
-}
-
-#ifdef notdef
-/*
- * Get next character written in by user from uio.
- */
-uwritec(uio)
-	struct uio *uio;
-{
-	register struct iovec *iov;
-	register int c;
-
-again:
-	if (uio->uio_iovcnt <= 0 || uio->uio_resid <= 0)
-		panic("uwritec");
-	iov = uio->uio_iov;
-	if (iov->iov_len == 0) {
-		uio->uio_iovcnt--;
-		uio->uio_iov++;
-		goto again;
-	}
-	switch (uio->uio_segflg) {
-
-	case 0:
-		c = fubyte(iov->iov_base);
-		break;
-
-	case 1:
-		c = *iov->iov_base & 0377;
-		break;
-
-	case 2:
-		c = fuibyte(iov->iov_base);
-		break;
-	}
-	if (c < 0)
-		return (-1);
-	iov->iov_base++;
-	iov->iov_len--;
-	uio->uio_resid--;
-	uio->uio_offset++;
-	return (c & 0377);
-}
-#endif
 
 /*
  * Ioctl system call
- * Check legality, execute common code,
- * and switch out to individual device routine.
  */
 ioctl()
 {
@@ -470,7 +162,7 @@ ioctl()
 	}
 	com = uap->cmd;
 
-#ifndef NOCOMPAT
+#if defined(vax) && !defined(NOCOMPAT)
 	/*
 	 * Map old style ioctl's into new for the
 	 * sake of backwards compatibility (sigh).
@@ -519,33 +211,25 @@ ioctl()
 	else if (com&IOC_VOID)
 		*(caddr_t *)data = uap->cmarg;
 
-	if (fp->f_type == DTYPE_SOCKET)
-		u.u_error = soioctl(fp->f_socket, com, data);
-	else {
-		register struct inode *ip = fp->f_inode;
-		int fmt = ip->i_mode & IFMT;
-		dev_t dev;
+	switch (com) {
 
-		if (fmt != IFCHR) {
-			if (com == FIONREAD && (fmt == IFREG || fmt == IFDIR)) {
-				*(off_t *)data = ip->i_size - fp->f_offset;
-				goto returndata;
-			}
-			if (com != FIONBIO && com != FIOASYNC)
-				u.u_error = ENOTTY;
-			return;
-		}
-		dev = ip->i_rdev;
-		u.u_r.r_val1 = 0;
-		if ((u.u_procp->p_flag&SNUSIG) && setjmp(&u.u_qsave)) {
-			u.u_eosys = RESTARTSYS;
-			return;
-		}
-		u.u_error =
-		   (*cdevsw[major(dev)].d_ioctl)(dev, com, data, fp->f_flag);
+	case FIONBIO:
+		u.u_error = fset(fp, FNDELAY, *(int *)data);
+		return;
+
+	case FIOASYNC:
+		u.u_error = fset(fp, FASYNC, *(int *)data);
+		return;
+
+	case FIOSETOWN:
+		u.u_error = fsetown(fp, *(int *)data);
+		return;
+
+	case FIOGETOWN:
+		u.u_error = fgetown(fp, (int *)data);
+		return;
 	}
-
-returndata:
+	u.u_error = (*fp->f_ops->fo_ioctl)(fp, com, data);
 	/*
 	 * Copy any data to user, size was
 	 * already set and checked above.
@@ -554,29 +238,197 @@ returndata:
 		u.u_error = copyout(data, uap->cmarg, (u_int)size);
 }
 
+int	unselect();
+int	nselcoll;
 /*
- * Do nothing specific version of line
- * discipline specific ioctl command.
+ * Select system call.
  */
+select()
+{
+	register struct uap  {
+		int	nd;
+		long	*in, *ou, *ex;
+		struct	timeval *tv;
+	} *uap = (struct uap *)u.u_ap;
+	int ibits[3], obits[3];
+	struct timeval atv;
+	int s, ncoll;
+	label_t lqsave;
+
+	obits[0] = obits[1] = obits[2] = 0;
+	if (uap->nd > NOFILE)
+		uap->nd = NOFILE;	/* forgiving, if slightly wrong */
+
+#define	getbits(name, x) \
+	if (uap->name) { \
+		u.u_error = copyin((caddr_t)uap->name, (caddr_t)&ibits[x], \
+		    sizeof (ibits[x])); \
+		if (u.u_error) \
+			goto done; \
+	} else \
+		ibits[x] = 0;
+	getbits(in, 0);
+	getbits(ou, 1);
+	getbits(ex, 2);
+#undef	getbits
+
+	if (uap->tv) {
+		u.u_error = copyin((caddr_t)uap->tv, (caddr_t)&atv,
+			sizeof (atv));
+		if (u.u_error)
+			goto done;
+		if (itimerfix(&atv)) {
+			u.u_error = EINVAL;
+			goto done;
+		}
+		s = spl7(); timevaladd(&atv, &time); splx(s);
+	}
+retry:
+	ncoll = nselcoll;
+	u.u_procp->p_flag |= SSEL;
+	u.u_r.r_val1 = selscan(ibits, obits);
+	if (u.u_error || u.u_r.r_val1)
+		goto done;
+	s = spl6();
+	if (uap->tv && timercmp(&time, &atv, >=)) {
+		splx(s);
+		goto done;
+	}
+	if ((u.u_procp->p_flag & SSEL) == 0 || nselcoll != ncoll) {
+		u.u_procp->p_flag &= ~SSEL;
+		splx(s);
+		goto retry;
+	}
+	u.u_procp->p_flag &= ~SSEL;
+	if (uap->tv) {
+		lqsave = u.u_qsave;
+		if (setjmp(&u.u_qsave)) {
+			untimeout(unselect, (caddr_t)u.u_procp);
+			u.u_error = EINTR;
+			splx(s);
+			goto done;
+		}
+		timeout(unselect, (caddr_t)u.u_procp, hzto(&atv));
+	}
+	sleep((caddr_t)&selwait, PZERO+1);
+	if (uap->tv) {
+		u.u_qsave = lqsave;
+		untimeout(unselect, (caddr_t)u.u_procp);
+	}
+	splx(s);
+	goto retry;
+done:
+#define	putbits(name, x) \
+	if (uap->name) { \
+		int error = copyout((caddr_t)&obits[x], (caddr_t)uap->name, \
+		    sizeof (obits[x])); \
+		if (error) \
+			u.u_error = error; \
+	}
+	putbits(in, 0);
+	putbits(ou, 1);
+	putbits(ex, 2);
+#undef putbits
+}
+
+unselect(p)
+	register struct proc *p;
+{
+	register int s = spl6();
+
+	switch (p->p_stat) {
+
+	case SSLEEP:
+		setrun(p);
+		break;
+
+	case SSTOP:
+		unsleep(p);
+		break;
+	}
+	splx(s);
+}
+
+selscan(ibits, obits)
+	int *ibits, *obits;
+{
+	register int which, bits, i;
+	int flag;
+	struct file *fp;
+	int n = 0;
+
+	for (which = 0; which < 3; which++) {
+		bits = ibits[which];
+		obits[which] = 0;
+		switch (which) {
+
+		case 0:
+			flag = FREAD; break;
+
+		case 1:
+			flag = FWRITE; break;
+
+		case 2:
+			flag = 0; break;
+		}
+		while (i = ffs(bits)) {
+			bits &= ~(1<<(i-1));
+			fp = u.u_ofile[i-1];
+			if (fp == NULL) {
+				u.u_error = EBADF;
+				break;
+			}
+			if ((*fp->f_ops->fo_select)(fp, flag)) {
+				obits[which] |= (1<<(i-1));
+				n++;
+			}
+		}
+	}
+	return (n);
+}
+
 /*ARGSUSED*/
-nullioctl(tp, cmd, data, flags)
-	struct tty *tp;
-	char *data;
-	int flags;
+seltrue(dev, flag)
+	dev_t dev;
+	int flag;
 {
 
-#ifdef lint
-	tp = tp; data = data; flags = flags;
-#endif
-	return (-1);
+	return (1);
 }
 
-ostty()
+selwakeup(p, coll)
+	register struct proc *p;
+	int coll;
 {
 
+	if (coll) {
+		nselcoll++;
+		wakeup((caddr_t)&selwait);
+	}
+	if (p) {
+		int s = spl6();
+		if (p->p_wchan == (caddr_t)&selwait)
+			setrun(p);
+		else if (p->p_flag & SSEL)
+			p->p_flag &= ~SSEL;
+		splx(s);
+	}
 }
 
-ogtty()
+fstat()
 {
+	register struct file *fp;
+	register struct a {
+		int	fdes;
+		struct	stat *sb;
+	} *uap;
+	struct stat ub;
 
+	uap = (struct a *)u.u_ap;
+	fp = getf(uap->fdes);
+	if (fp == 0)
+		return;
+	u.u_error = (*fp->f_ops->fo_stat)(fp, &ub);
+	if (u.u_error == 0)
+		u.u_error = copyout(&ub, uap->sb, sizeof (ub));
 }

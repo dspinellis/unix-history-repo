@@ -1,4 +1,4 @@
-/*	tty.c	4.40	83/02/10	*/
+/*	tty.c	4.41	83/05/27	*/
 
 #include "../machine/reg.h"
 
@@ -112,26 +112,32 @@ ttychars(tp)
 /*
  * Wait for output to drain, then flush input waiting.
  */
-wflushtty(tp)
+ttywflush(tp)
 	register struct tty *tp;
 {
-	int s;
 
-	s = spl5();
+	ttywait(tp);
+	ttyflush(tp, FREAD);
+}
+
+ttywait(tp)
+	register struct tty *tp;
+{
+	register int s = spl5();
+
 	while (tp->t_outq.c_cc && tp->t_state&TS_CARR_ON
 	    && tp->t_oproc) {		/* kludge for pty */
 		(*tp->t_oproc)(tp);
 		tp->t_state |= TS_ASLEEP;
 		sleep((caddr_t)&tp->t_outq, TTOPRI);
 	}
-	flushtty(tp, FREAD);
 	splx(s);
 }
 
 /*
  * Flush all TTY queues
  */
-flushtty(tp, rw)
+ttyflush(tp, rw)
 	register struct tty *tp;
 {
 	register s;
@@ -170,7 +176,7 @@ ttyblock(tp)
 
 	x = tp->t_rawq.c_cc + tp->t_canq.c_cc;
 	if (tp->t_rawq.c_cc > TTYHOG) {
-		flushtty(tp, FREAD|FWRITE);
+		ttyflush(tp, FREAD|FWRITE);
 		tp->t_state &= ~TS_TBLOCK;
 	}
 	if (x >= TTYHOG/2 && putc(tp->t_stopc, &tp->t_outq) == 0) {
@@ -224,6 +230,7 @@ ttioctl(tp, com, data, flag)
 	int dev = tp->t_dev;
 	extern int nldisp;
 	int s;
+	register int newflags;
 
 	/*
 	 * If the ioctl involves modification,
@@ -300,64 +307,9 @@ ttioctl(tp, com, data, flag)
 		tp->t_state &= ~TS_XCLUDE;
 		break;
 
-	case TIOCSET:
-	case TIOCBIS: {
-		u_long newflags = *(u_long *)data;
-
-		s = spl5();
-		if (tp->t_flags&RAW || newflags&RAW)
-			wflushtty(tp);
-		else if ((tp->t_flags&CBREAK) != (newflags&CBREAK))
-			if (newflags&CBREAK) {
-				struct clist tq;
-
-				catq(&tp->t_rawq, &tp->t_canq);
-				tq = tp->t_rawq;
-				tp->t_rawq = tp->t_canq;
-				tp->t_canq = tq;
-			} else {
-				tp->t_flags |= PENDIN;
-				ttwakeup(tp);
-			}
-		if (com == TIOCSET)
-			tp->t_flags = newflags;
-		else
-			tp->t_flags |= newflags;
-		if (tp->t_flags&RAW) {
-			tp->t_state &= ~TS_TTSTOP;
-			ttstart(tp);
-		}
-		splx(s);
-		break;
-	}
-
-	case TIOCBIC: {
-		u_long newflags = *(long *)data;
-
-		if (tp->t_flags&RAW)
-			wflushtty(tp);
-		else if ((tp->t_flags&CBREAK) != (CBREAK&~newflags))
-			if (newflags&CBREAK) {
-				tp->t_flags |= PENDIN;
-				ttwakeup(tp);
-			} else {
-				struct clist tq;
-
-				catq(&tp->t_rawq, &tp->t_canq);
-				tq = tp->t_rawq;
-				tp->t_rawq = tp->t_canq;
-				tp->t_canq = tq;
-			}
-		if (tp->t_flags&RAW) {
-			tp->t_state &= ~TS_TTSTOP;
-			ttstart(tp);
-		}
-		splx(s);
-		break;
-	}
 
 	case TIOCGET:
-		*(long *)data = tp->t_flags;
+		*(int *)data = tp->t_flags;
 		break;
 
 	case TIOCCGET:
@@ -380,7 +332,7 @@ ttioctl(tp, com, data, flag)
 			flags = FREAD|FWRITE;
 		else
 			flags &= FREAD|FWRITE;
-		flushtty(tp, flags);
+		ttyflush(tp, flags);
 		break;
 	}
 
@@ -417,12 +369,118 @@ ttioctl(tp, com, data, flag)
 		(*linesw[tp->t_line].l_rint)(*(char *)data, tp);
 		break;
 
+	case TIOCSET:
+	case TIOCBIS:
+	case TIOCBIC:
+		newflags = *(int *)data;
+		if (com == TIOCBIS)
+			newflags |= tp->t_flags;
+		else if (com == TIOCBIC)
+			newflags = tp->t_flags &~ newflags;
+		goto setin;
+
+	case TIOCSETP:
+	case TIOCSETN: {
+		register struct sgttyb *sg = (struct sgttyb *)data;
+
+		tp->t_erase = sg->sg_erase;
+		tp->t_kill = sg->sg_kill;
+		tp->t_ispeed = sg->sg_ispeed;
+		tp->t_ospeed = sg->sg_ospeed;
+		newflags = (tp->t_flags&0xffff0000) | (sg->sg_flags&0xffff);
+setin:
+		s = spl5();
+		if (tp->t_flags&RAW || newflags&RAW || com == TIOCSETP) {
+			ttywait(tp);
+			ttyflush(tp, FREAD);
+		} else if ((tp->t_flags&CBREAK) != (newflags&CBREAK)) {
+			if (newflags&CBREAK) {
+				struct clist tq;
+
+				catq(&tp->t_rawq, &tp->t_canq);
+				tq = tp->t_rawq;
+				tp->t_rawq = tp->t_canq;
+				tp->t_canq = tq;
+			} else {
+				tp->t_flags |= PENDIN;
+				ttwakeup(tp);
+			}
+		}
+		tp->t_flags = newflags;
+		if (tp->t_flags&RAW) {
+			tp->t_state &= ~TS_TTSTOP;
+			ttstart(tp);
+		}
+		splx(s);
+		break;
+	}
+
+	/* send current parameters to user */
+	case TIOCGETP: {
+		register struct sgttyb *sg = (struct sgttyb *)data;
+
+		sg->sg_ispeed = tp->t_ispeed;
+		sg->sg_ospeed = tp->t_ospeed;
+		sg->sg_erase = tp->t_erase;
+		sg->sg_kill = tp->t_kill;
+		sg->sg_flags = tp->t_flags;
+		break;
+	}
+
+	case FIONBIO:
+		if (*(int *)data)
+			tp->t_state |= TS_NBIO;
+		else
+			tp->t_state &= ~TS_NBIO;
+		break;
+
+	case FIOASYNC:
+		if (*(int *)data)
+			tp->t_state |= TS_ASYNC;
+		else
+			tp->t_state &= ~TS_ASYNC;
+		break;
+
+	/* set/get local special characters */
+	case TIOCSLTC:
+		bcopy(data, (caddr_t)&tp->t_suspc, sizeof (struct ltchars));
+		break;
+
+	case TIOCGLTC:
+		bcopy((caddr_t)&tp->t_suspc, data, sizeof (struct ltchars));
+		break;
+
+	/*
+	 * Modify local mode word.
+	 */
+	case TIOCLBIS:
+		tp->t_flags |= *(int *)data << 16;
+		break;
+
+	case TIOCLBIC:
+		tp->t_flags &= ~(*(int *)data << 16);
+		break;
+
+	case TIOCLSET:
+		tp->t_flags &= 0xffff;
+		tp->t_flags |= *(int *)data << 16;
+		break;
+
+	case TIOCLGET:
+		*(int *)data = tp->t_flags >> 16;
+		break;
+
+	/* should allow SPGRP and GPGRP only if tty open for reading */
+	case TIOCSPGRP:
+		tp->t_pgrp = *(int *)data;
+		break;
+
+	case TIOCGPGRP:
+		*(int *)data = tp->t_pgrp;
+		break;
+
 	default:
-#ifndef NOCOMPAT
-		return (ottioctl(tp, com, data, flag));
-#else
 		return (-1);
-#endif
 	}
 	return (0);
 }
@@ -498,7 +556,7 @@ ttyopen(dev, tp)
 	tp->t_state &= ~TS_WOPEN;
 	tp->t_state |= TS_ISOPEN;
 	if (tp->t_line != NTTYDISC)
-		wflushtty(tp);
+		ttywflush(tp);
 	return (0);
 }
 
@@ -510,12 +568,12 @@ ttyclose(tp)
 {
 
 	if (tp->t_line) {
-		wflushtty(tp);
+		ttywflush(tp);
 		tp->t_line = 0;
 		return;
 	}
 	tp->t_pgrp = 0;
-	wflushtty(tp);
+	ttywflush(tp);
 	tp->t_state = 0;
 }
 
@@ -573,7 +631,7 @@ ttyinput(c, tp)
 		 * in input q w/o interpretation.
 		 */
 		if (tp->t_rawq.c_cc > TTYHOG) 
-			flushtty(tp, FREAD|FWRITE);
+			ttyflush(tp, FREAD|FWRITE);
 		else {
 			if (putc(c, &tp->t_rawq) >= 0)
 				ttwakeup(tp);
@@ -614,7 +672,7 @@ ttyinput(c, tp)
 			if (tp->t_flags&FLUSHO)
 				tp->t_flags &= ~FLUSHO;
 			else {
-				flushtty(tp, FWRITE);
+				ttyflush(tp, FWRITE);
 				ttyecho(c, tp);
 				if (tp->t_rawq.c_cc + tp->t_canq.c_cc)
 					ttyretype(tp);
@@ -624,7 +682,7 @@ ttyinput(c, tp)
 		}
 		if (c == tp->t_suspc) {
 			if ((tp->t_flags&NOFLSH) == 0)
-				flushtty(tp, FREAD);
+				ttyflush(tp, FREAD);
 			ttyecho(c, tp);
 			gsignal(tp->t_pgrp, SIGTSTP);
 			goto endcase;
@@ -652,7 +710,7 @@ ttyinput(c, tp)
 	 */
 	if (c == tp->t_intrc || c == tp->t_quitc) {
 		if ((tp->t_flags&NOFLSH) == 0)
-			flushtty(tp, FREAD|FWRITE);
+			ttyflush(tp, FREAD|FWRITE);
 		ttyecho(c, tp);
 		gsignal(tp->t_pgrp, c == tp->t_intrc ? SIGINT : SIGQUIT);
 		goto endcase;
@@ -898,7 +956,7 @@ ttyoutput(c, tp)
 	case NEWLINE:
 		ctype = (tp->t_flags >> 8) & 03;
 		if (ctype == 1) { /* tty 37 */
-			if (*colp)
+			if (*colp > 0)
 				c = max(((unsigned)*colp>>4) + 3, (unsigned)6);
 		} else if (ctype == 2) /* vt05 */
 			c = 6;
@@ -1153,7 +1211,7 @@ loop:
 		if (cc > OBUFSIZ)
 			cc = OBUFSIZ;
 		cp = obuf;
-		error = uiomove(cp, (unsigned)cc, UIO_WRITE, uio);
+		error = uiomove(cp, cc, UIO_WRITE, uio);
 		if (error)
 			break;
 		if (tp->t_outq.c_cc > hiwat)
@@ -1194,7 +1252,8 @@ loop:
 			if (tp->t_flags & (RAW|LITOUT))
 				ce = cc;
 			else {
-				ce = cc - scanc(cc, cp, partab, 077);
+				ce = cc - scanc((unsigned)cc, (caddr_t)cp,
+				   (caddr_t)partab, 077);
 				/*
 				 * If ce is zero, then we're processing
 				 * a special character through ttyoutput.
@@ -1460,6 +1519,8 @@ ttwakeup(tp)
 		tp->t_state &= ~TS_RCOLL;
 		tp->t_rsel = 0;
 	}
+	if (tp->t_state & TS_ASYNC)
+		gsignal(tp->t_pgrp, SIGIO); 
 	wakeup((caddr_t)&tp->t_rawq);
 }
 

@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.74	83/05/18	*/
+/*	uipc_socket.c	4.75	83/05/27	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -9,6 +9,7 @@
 #include "../h/inode.h"
 #include "../h/buf.h"
 #include "../h/mbuf.h"
+#include "../h/un.h"
 #include "../h/protosw.h"
 #include "../h/socket.h"
 #include "../h/socketvar.h"
@@ -16,6 +17,7 @@
 #include "../h/ioctl.h"
 #include "../h/uio.h"
 #include "../net/route.h"
+#include "../netinet/in.h"
 #include "../net/if.h"
 
 /*
@@ -24,17 +26,24 @@
  * sys_socket.c or from a system process, and
  * implement the semantics of socket operations by
  * switching out to the protocol specific routines.
+ *
+ * TODO:
+ *	sostat
+ *	test socketpair
+ *	PR_RIGHTS
+ *	clean up select, async
+ *	out-of-band is a kludge
  */
-
 /*ARGSUSED*/
 socreate(dom, aso, type, proto)
 	struct socket **aso;
-	int type, proto;
+	register int type;
+	int proto;
 {
 	register struct protosw *prp;
 	register struct socket *so;
-	struct mbuf *m;
-	int error;
+	register struct mbuf *m;
+	register int error;
 
 	if (proto)
 		prp = pffindproto(dom, proto);
@@ -48,14 +57,15 @@ socreate(dom, aso, type, proto)
 	if (m == 0)
 		return (ENOBUFS);
 	so = mtod(m, struct socket *);
-	so->so_options = SO_LINGER;
+	so->so_options = 0;
 	so->so_state = 0;
 	so->so_type = type;
 	if (u.u_uid == 0)
 		so->so_state = SS_PRIV;
 	so->so_proto = prp;
-	error = (*prp->pr_usrreq)(so, PRU_ATTACH,
-	    (struct mbuf *)0, (struct mbuf *)0);
+	error =
+	    (*prp->pr_usrreq)(so, PRU_ATTACH,
+		(struct mbuf *)0, (struct mbuf *)0, (struct mbuf *)0);
 	if (error) {
 		so->so_state |= SS_NOFDREF;
 		sofree(so);
@@ -73,20 +83,21 @@ sobind(so, nam)
 	int error;
 
 	error =
-	    (*so->so_proto->pr_usrreq)(so, PRU_BIND, (struct mbuf *)0, nam);
+	    (*so->so_proto->pr_usrreq)(so, PRU_BIND,
+		(struct mbuf *)0, nam, (struct mbuf *)0);
 	splx(s);
 	return (error);
 }
 
 solisten(so, backlog)
-	struct socket *so;
+	register struct socket *so;
 	int backlog;
 {
-	int s = splnet();
-	int error;
+	int s = splnet(), error;
 
-	error = (*so->so_proto->pr_usrreq)(so, PRU_LISTEN,
-	    (struct mbuf *)0, (struct mbuf *)0);
+	error =
+	    (*so->so_proto->pr_usrreq)(so, PRU_LISTEN,
+		(struct mbuf *)0, (struct mbuf *)0, (struct mbuf *)0);
 	if (error) {
 		splx(s);
 		return (error);
@@ -98,15 +109,13 @@ solisten(so, backlog)
 	}
 	if (backlog < 0)
 		backlog = 0;
-#define	SOMAXCONN	5
 	so->so_qlimit = MIN(backlog, SOMAXCONN);
-	so->so_options |= SO_NEWFDONCONN;
 	splx(s);
 	return (0);
 }
 
 sofree(so)
-	struct socket *so;
+	register struct socket *so;
 {
 
 	if (so->so_head) {
@@ -117,7 +126,7 @@ sofree(so)
 	if (so->so_pcb || (so->so_state & SS_NOFDREF) == 0)
 		return;
 	sbrelease(&so->so_snd);
-	sbrelease(&so->so_rcv);
+	sorflush(so);
 	(void) m_free(dtom(so));
 }
 
@@ -126,9 +135,8 @@ sofree(so)
  * Initiate disconnect if connected.
  * Free socket when disconnect complete.
  */
-soclose(so, exiting)
+soclose(so)
 	register struct socket *so;
-	int exiting;
 {
 	int s = splnet();		/* conservative */
 	int error;
@@ -141,36 +149,27 @@ soclose(so, exiting)
 	}
 	if (so->so_pcb == 0)
 		goto discard;
-	if (exiting)
-		so->so_options |= SO_KEEPALIVE;
 	if (so->so_state & SS_ISCONNECTED) {
 		if ((so->so_state & SS_ISDISCONNECTING) == 0) {
 			error = sodisconnect(so, (struct mbuf *)0);
-			if (error) {
-				if (exiting)
-					goto drop;
-				splx(s);
-				return (error);
-			}
+			if (error)
+				goto drop;
 		}
 		if (so->so_options & SO_LINGER) {
 			if ((so->so_state & SS_ISDISCONNECTING) &&
-			    (so->so_state & SS_NBIO) &&
-			    exiting == 0)
-				return (EINPROGRESS);
-			/* should use tsleep here, for at most linger */
+			    (so->so_state & SS_NBIO))
+				goto drop;
 			while (so->so_state & SS_ISCONNECTED)
 				sleep((caddr_t)&so->so_timeo, PZERO+1);
 		}
 	}
 drop:
 	if (so->so_pcb) {
-		error = (*so->so_proto->pr_usrreq)(so, PRU_DETACH,
-		    (struct mbuf *)0, (struct mbuf *)0);
-		if (exiting == 0 && error) {
-			splx(s);
-			return (error);
-		}
+		int error2 =
+		    (*so->so_proto->pr_usrreq)(so, PRU_DETACH,
+			(struct mbuf *)0, (struct mbuf *)0, (struct mbuf *)0);
+		if (error == 0)
+			error = error2;
 	}
 discard:
 	if (so->so_state & SS_NOFDREF)
@@ -178,7 +177,7 @@ discard:
 	so->so_state |= SS_NOFDREF;
 	sofree(so);
 	splx(s);
-	return (0);
+	return (error);
 }
 
 /*
@@ -187,27 +186,14 @@ discard:
 soabort(so)
 	struct socket *so;
 {
-	int error;
 
-	error = (*so->so_proto->pr_usrreq)(so, PRU_ABORT,
-	   (struct mbuf *)0, (struct mbuf *)0);
-	return (error);
-}
-
-/*ARGSUSED*/
-sostat(so, ub)
-	struct socket *so;
-	struct stat *ub;
-{
-	struct stat sb;
-
-	bzero((caddr_t)&sb, sizeof (sb));		/* XXX */
-	(void) copyout((caddr_t)&sb, (caddr_t)ub, sizeof (sb));/* XXX */
-	return (0);					/* XXX */
+	return (
+	    (*so->so_proto->pr_usrreq)(so, PRU_ABORT,
+		(struct mbuf *)0, (struct mbuf *)0, (struct mbuf *)0));
 }
 
 soaccept(so, nam)
-	struct socket *so;
+	register struct socket *so;
 	struct mbuf *nam;
 {
 	int s = splnet();
@@ -217,13 +203,13 @@ soaccept(so, nam)
 		panic("soaccept: !NOFDREF");
 	so->so_state &= ~SS_NOFDREF;
 	error = (*so->so_proto->pr_usrreq)(so, PRU_ACCEPT,
-	    (struct mbuf *)0, nam);
+	    (struct mbuf *)0, nam, (struct mbuf *)0);
 	splx(s);
 	return (error);
 }
 
 soconnect(so, nam)
-	struct socket *so;
+	register struct socket *so;
 	struct mbuf *nam;
 {
 	int s = splnet();
@@ -234,14 +220,30 @@ soconnect(so, nam)
 		goto bad;
 	}
 	error = (*so->so_proto->pr_usrreq)(so, PRU_CONNECT,
-	    (struct mbuf *)0, nam);
+	    (struct mbuf *)0, nam, (struct mbuf *)0);
 bad:
 	splx(s);
 	return (error);
 }
 
+#ifdef notdef
+soconnect2(so1, so2)
+	register struct socket *so1;
+	struct socket *so2;
+{
+	int s = splnet();
+	int error;
+
+	error =
+	    (*so1->so_proto->pr_usrreq)(so, PRU_CONNECT2,
+		(struct mbuf *)0, (struct mbuf *)so2, (struct mbuf *)0);
+	splx(s);
+	return (error);
+}
+#endif
+
 sodisconnect(so, nam)
-	struct socket *so;
+	register struct socket *so;
 	struct mbuf *nam;
 {
 	int s = splnet();
@@ -256,7 +258,7 @@ sodisconnect(so, nam)
 		goto bad;
 	}
 	error = (*so->so_proto->pr_usrreq)(so, PRU_DISCONNECT,
-	    (struct mbuf *)0, nam);
+	    (struct mbuf *)0, nam, (struct mbuf *)0);
 bad:
 	splx(s);
 	return (error);
@@ -270,22 +272,23 @@ bad:
  * If must go all at once and not enough room now, then
  * inform user that this would block and do nothing.
  */
-sosend(so, nam, uio, flags)
+sosend(so, nam, uio, flags, rights)
 	register struct socket *so;
 	struct mbuf *nam;
-	struct uio *uio;
+	register struct uio *uio;
 	int flags;
+	struct mbuf *rights;
 {
 	struct mbuf *top = 0;
 	register struct mbuf *m, **mp = &top;
-	register int len;
-	int error = 0, space, s, dontroute;
+	register int space;
+	int len, error = 0, s, dontroute;
 
 	if (sosendallatonce(so) && uio->uio_resid > so->so_snd.sb_hiwat)
 		return (EMSGSIZE);
-	dontroute = (flags & SOF_DONTROUTE) &&
-		(so->so_options & SO_DONTROUTE) == 0 &&
-		(so->so_proto->pr_flags & PR_ATOMIC);
+	dontroute =
+	    (flags & MSG_DONTROUTE) && (so->so_options & SO_DONTROUTE) == 0 &&
+	    (so->so_proto->pr_flags & PR_ATOMIC);
 restart:
 	sblock(&so->so_snd);
 #define	snderr(errno)	{ error = errno; splx(s); goto release; }
@@ -313,8 +316,8 @@ again:
 		if (dontroute)
 			so->so_options |= SO_DONTROUTE;
 		error = (*so->so_proto->pr_usrreq)(so,
-		    (flags & SOF_OOB) ? PRU_SENDOOB : PRU_SEND,
-		    top, (caddr_t)nam);
+		    (flags & MSG_OOB) ? PRU_SENDOOB : PRU_SEND,
+		    top, (caddr_t)nam, rights);
 		if (dontroute)
 			so->so_options &= ~SO_DONTROUTE;
 		top = 0;
@@ -328,7 +331,7 @@ again:
 		splx(s);
 		goto release;
 	}
-	if (flags & SOF_OOB)
+	if (flags & MSG_OOB)
 		space = 1024;
 	else {
 		space = sbspace(&so->so_snd);
@@ -373,7 +376,7 @@ nopages:
 		m->m_len = len;
 		*mp = m;
 		mp = &m->m_next;
-		if (flags & SOF_OOB)
+		if (flags & MSG_OOB)
 			space -= len;
 		else
 			space = sbspace(&so->so_snd);
@@ -387,22 +390,28 @@ release:
 	return (error);
 }
 
-soreceive(so, aname, uio, flags)
+soreceive(so, aname, uio, flags, rightsp)
 	register struct socket *so;
 	struct mbuf **aname;
-	struct uio *uio;
+	register struct uio *uio;
 	int flags;
+	struct mbuf **rightsp;
 {
 	register struct mbuf *m, *n;
-	int len;
-	int eor, s, error = 0, moff, tomark;
+	register int len, error = 0, s, eor, tomark;
+	struct protosw *pr = so->so_proto;
+	int moff;
 
-	if (flags & SOF_OOB) {
+	if (rightsp)
+		*rightsp = 0;
+	if (aname)
+		*aname = 0;
+	if (flags & MSG_OOB) {
 		m = m_get(M_WAIT, MT_DATA);
-		if (m == NULL)
+		if (m == 0)
 			return (ENOBUFS);
-		error = (*so->so_proto->pr_usrreq)(so, PRU_RCVOOB,
-		    m, (struct mbuf *)0);
+		error = (*pr->pr_usrreq)(so, PRU_RCVOOB,
+		    m, (struct mbuf *)0, (struct mbuf *)0);
 		if (error)
 			goto bad;
 		do {
@@ -449,13 +458,13 @@ restart:
 	m = so->so_rcv.sb_mb;
 	if (m == 0)
 		panic("receive");
-	if (so->so_proto->pr_flags & PR_ADDR) {
-		if ((flags & SOF_PREVIEW) == 0) {
+	if (pr->pr_flags & PR_ADDR) {
+		if ((flags & MSG_PEEK) == 0) {
 			so->so_rcv.sb_cc -= m->m_len;
 			so->so_rcv.sb_mbcnt -= MSIZE;
 		}
 		if (aname) {
-			if (flags & SOF_PREVIEW) {
+			if (flags & MSG_PEEK) {
 				*aname = m_copy(m, 0, m->m_len);
 				if (*aname == NULL)
 					panic("receive 2");
@@ -464,13 +473,33 @@ restart:
 			m = m->m_next;
 			(*aname)->m_next = 0;
 		} else
-			if (flags & SOF_PREVIEW)
+			if (flags & MSG_PEEK)
 				m = m->m_next;
 			else
 				m = m_free(m);
 		if (m == 0)
+			panic("receive 2a");
+		if (rightsp) {
+			if (m->m_len)
+				*rightsp = m_copy(m, 0, m->m_len);
+			else {
+				*rightsp = m_get(M_DONTWAIT, MT_SONAME);
+				if (*rightsp)
+					(*rightsp)->m_len = 0;
+			}
+			if (*rightsp == NULL)
+				panic("receive 2b");
+		}
+		if (flags & MSG_PEEK)
+			m = m->m_next;
+		else {
+			so->so_rcv.sb_cc -= m->m_len;
+			so->so_rcv.sb_mbcnt -= MSIZE;
+			m = m_free(m);
+		}
+		if (m == 0)
 			panic("receive 3");
-		if ((flags & SOF_PREVIEW) == 0)
+		if ((flags & MSG_PEEK) == 0)
 			so->so_rcv.sb_mb = m;
 	}
 	eor = 0;
@@ -491,7 +520,7 @@ restart:
 		s = splnet();
 		if (len == m->m_len) {
 			eor = (int)m->m_act;
-			if (flags & SOF_PREVIEW)
+			if (flags & MSG_PEEK)
 				m = m->m_next;
 			else {
 				sbfree(&so->so_rcv, m);
@@ -501,7 +530,7 @@ restart:
 			}
 			moff = 0;
 		} else {
-			if (flags & SOF_PREVIEW)
+			if (flags & MSG_PEEK)
 				moff += len;
 			else {
 				m->m_off += len;
@@ -509,7 +538,7 @@ restart:
 				so->so_rcv.sb_cc -= len;
 			}
 		}
-		if ((flags & SOF_PREVIEW) == 0 && so->so_oobmark) {
+		if ((flags & MSG_PEEK) == 0 && so->so_oobmark) {
 			so->so_oobmark -= len;
 			if (so->so_oobmark == 0) {
 				so->so_state |= SS_RCVATMARK;
@@ -522,7 +551,7 @@ restart:
 				break;
 		}
 	} while (m && error == 0 && !eor);
-	if (flags & SOF_PREVIEW)
+	if (flags & MSG_PEEK)
 		goto release;
 	if ((so->so_proto->pr_flags & PR_ATOMIC) && eor == 0)
 		do {
@@ -536,35 +565,55 @@ restart:
 		} while (eor == 0);
 	if ((so->so_proto->pr_flags & PR_WANTRCVD) && so->so_pcb)
 		(*so->so_proto->pr_usrreq)(so, PRU_RCVD,
-		    (struct mbuf *)0, (struct mbuf *)0);
+		    (struct mbuf *)0, (struct mbuf *)0, (struct mbuf *)0);
 release:
 	sbunlock(&so->so_rcv);
+	if (error == 0 && rightsp &&
+	    *rightsp && so->so_proto->pr_family == AF_UNIX)
+		error = unp_externalize(*rightsp);
 	splx(s);
 	return (error);
 }
 
 soshutdown(so, how)
-	struct socket *so;
-	int how;
+	register struct socket *so;
+	register int how;
 {
+	register struct protosw *pr = so->so_proto;
 
 	how++;
-	if (how & FREAD) {
-		int s = splimp();
-		socantrcvmore(so);
-		sbflush(&so->so_rcv);
-		splx(s);
-	}
+	if (how & FREAD)
+		sorflush(so);
 	if (how & FWRITE)
-		return ((*so->so_proto->pr_usrreq)(so, PRU_SHUTDOWN,
-		    (struct mbuf *)0, (struct mbuf *)0));
+		return ((*pr->pr_usrreq)(so, PRU_SHUTDOWN,
+		    (struct mbuf *)0, (struct mbuf *)0, (struct mbuf *)0));
 	return (0);
 }
 
+sorflush(so)
+	register struct socket *so;
+{
+	register struct sockbuf *sb = &so->so_rcv;
+	register struct protosw *pr = so->so_proto;
+	register int s;
+	struct sockbuf asb;
+
+	sblock(sb);
+	s = splimp();
+	socantrcvmore(so);
+	sbunlock(sb);
+	asb = *sb;
+	bzero((caddr_t)sb, sizeof (*sb));
+	splx(s);
+	if (pr->pr_family == AF_UNIX && (pr->pr_flags & PR_RIGHTS))
+		unp_scan(asb.sb_mb, unp_discard);
+	sbrelease(&asb);
+}
+
 sosetopt(so, level, optname, m)
-	struct socket *so;
+	register struct socket *so;
 	int level, optname;
-	struct mbuf *m;
+	register struct mbuf *m;
 {
 
 	if (level != SOL_SOCKET)
@@ -598,9 +647,9 @@ sosetopt(so, level, optname, m)
 }
 
 sogetopt(so, level, optname, m)
-	struct socket *so;
+	register struct socket *so;
 	int level, optname;
-	struct mbuf *m;
+	register struct mbuf *m;
 {
 
 	if (level != SOL_SOCKET)
@@ -628,7 +677,7 @@ sogetopt(so, level, optname, m)
 }
 
 sohasoutofband(so)
-	struct socket *so;
+	register struct socket *so;
 {
 
 	if (so->so_pgrp == 0)
@@ -641,69 +690,4 @@ sohasoutofband(so)
 		if (p)
 			psignal(p, SIGURG);
 	}
-}
-
-/*ARGSUSED*/
-soioctl(so, cmd, data)
-	register struct socket *so;
-	int cmd;
-	register char *data;
-{
-
-	switch (cmd) {
-
-	case FIONBIO:
-		if (*(int *)data)
-			so->so_state |= SS_NBIO;
-		else
-			so->so_state &= ~SS_NBIO;
-		break;
-
-	case FIOASYNC:
-		if (*(int *)data)
-			so->so_state |= SS_ASYNC;
-		else
-			so->so_state &= ~SS_ASYNC;
-		break;
-
-	case SIOCSPGRP:
-		so->so_pgrp = *(int *)data;
-		break;
-
-	case SIOCGPGRP:
-		*(int *)data = so->so_pgrp;
-		break;
-
-	case SIOCATMARK:
-		*(int *)data = (so->so_state&SS_RCVATMARK) != 0;
-		break;
-
-	/* routing table update calls */
-	case SIOCADDRT:
-	case SIOCDELRT:
-		if (!suser())
-			return (u.u_error);
-		return (rtrequest(cmd, (struct rtentry *)data));
-
-	/* interface parameter requests */
-	case SIOCSIFADDR:
-	case SIOCSIFFLAGS:
-	case SIOCSIFDSTADDR:
-		if (!suser())
-			return (u.u_error);
-		return (ifrequest(cmd, data));
-
-	case SIOCGIFADDR:
-	case SIOCGIFFLAGS:
-	case SIOCGIFDSTADDR:
-		return (ifrequest(cmd, data));
-
-	case SIOCGIFCONF:
-		return (ifconf(cmd, data));
-
-	/* type/protocol specific ioctls */
-	default:
-		return (ENOTTY);		/* XXX */
-	}
-	return (0);
 }

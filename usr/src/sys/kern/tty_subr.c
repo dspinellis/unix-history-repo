@@ -1,4 +1,4 @@
-/*	tty_subr.c	4.19	83/02/06	*/
+/*	tty_subr.c	4.20	83/05/27	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -13,7 +13,7 @@ char	cwaiting;
  * Character list get/put
  */
 getc(p)
-register struct clist *p;
+	register struct clist *p;
 {
 	register struct cblock *bp;
 	register int c, s;
@@ -54,6 +54,7 @@ register struct clist *p;
 	return(c);
 }
 
+#ifdef notdef
 /*
  * copy clist to buffer.
  * return number of bytes moved.
@@ -109,6 +110,7 @@ q_to_b(q, cp, cc)
 	splx(s);
 	return(cp-acp);
 }
+#endif
 
 /*
  * Return count of contiguous characters
@@ -156,13 +158,12 @@ out:
  * Flush cc bytes from q.
  */
 ndflush(q, cc)
-register struct clist *q;
-register cc;
+	register struct clist *q;
+	register cc;
 {
-register struct cblock *bp;
-char *end;
-int rem;
-register s;
+	register struct cblock *bp;
+	char *end;
+	int rem, s;
 
 	s = spl5();
 	if (q->c_cc <= 0) {
@@ -212,7 +213,7 @@ out:
 
 
 putc(c, p)
-register struct clist *p;
+	register struct clist *p;
 {
 	register struct cblock *bp;
 	register char *cp;
@@ -254,9 +255,9 @@ register struct clist *p;
  * return number of bytes not transfered.
  */
 b_to_q(cp, cc, q)
-register char *cp;
-struct clist *q;
-register int cc;
+	register char *cp;
+	struct clist *q;
+	register int cc;
 {
 	register char *cq;
 	register struct cblock *bp;
@@ -308,8 +309,8 @@ out:
  */
 char *
 nextc(p, cp)
-register struct clist *p;
-register char *cp;
+	register struct clist *p;
+	register char *cp;
 {
 
 	if (p->c_cc && ++cp != p->c_cl) {
@@ -324,7 +325,7 @@ register char *cp;
  * Remove the last character in the list and return it.
  */
 unputc(p)
-register struct clist *p;
+	register struct clist *p;
 {
 	register struct cblock *bp;
 	register int c, s;
@@ -368,7 +369,7 @@ register struct clist *p;
  * SHOULD JUST USE q_to_b AND THEN b_to_q HERE.
  */
 catq(from, to)
-struct clist *from, *to;
+	struct clist *from, *to;
 {
 	register c;
 

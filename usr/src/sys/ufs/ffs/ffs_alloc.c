@@ -1,4 +1,4 @@
-/*	ffs_alloc.c	2.25	83/05/21	*/
+/*	ffs_alloc.c	2.26	83/05/27	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -887,13 +887,15 @@ mapsearch(fs, cgp, bpref, allocsiz)
 	else
 		start = cgp->cg_frotor / NBBY;
 	len = howmany(fs->fs_fpg, NBBY) - start;
-	loc = scanc(len, &cgp->cg_free[start], fragtbl[fs->fs_frag],
-		1 << (allocsiz - 1 + (fs->fs_frag % NBBY)));
+	loc = scanc((unsigned)len, (caddr_t)&cgp->cg_free[start],
+		(caddr_t)fragtbl[fs->fs_frag],
+		(int)(1 << (allocsiz - 1 + (fs->fs_frag % NBBY))));
 	if (loc == 0) {
 		len = start + 1;
 		start = 0;
-		loc = scanc(len, &cgp->cg_free[start], fragtbl[fs->fs_frag],
-			1 << (allocsiz - 1 + (fs->fs_frag % NBBY)));
+		loc = scanc((unsigned)len, (caddr_t)&cgp->cg_free[start],
+			(caddr_t)fragtbl[fs->fs_frag],
+			(int)(1 << (allocsiz - 1 + (fs->fs_frag % NBBY))));
 		if (loc == 0)
 			return (-1);
 	}

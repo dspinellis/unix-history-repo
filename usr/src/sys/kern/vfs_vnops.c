@@ -1,4 +1,4 @@
-/*	vfs_vnops.c	4.34	83/03/31	*/
+/*	vfs_vnops.c	4.35	83/05/27	*/
 
 #include "../machine/reg.h"
 
@@ -16,32 +16,6 @@
 #include "../h/socketvar.h"
 #include "../h/proc.h"
 #include "../h/nami.h"
-
-/*
- * Openi called to allow handler
- * of special files to initialize and
- * validate before actual IO.
- */
-openi(ip, mode)
-	register struct inode *ip;
-{
-	dev_t dev = (dev_t)ip->i_rdev;
-	register u_int maj = major(dev);
-
-	switch (ip->i_mode&IFMT) {
-
-	case IFCHR:
-		if (maj >= nchrdev)
-			return (ENXIO);
-		return ((*cdevsw[maj].d_open)(dev, mode));
-
-	case IFBLK:
-		if (maj >= nblkdev)
-			return (ENXIO);
-		return ((*bdevsw[maj].d_open)(dev, mode));
-	}
-	return (0);
-}
 
 /*
  * Check mode permission on inode pointer.

@@ -1,4 +1,4 @@
-/*	subr_prf.c	4.26	83/05/18	*/
+/*	subr_prf.c	4.27	83/05/27	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -202,6 +202,7 @@ tablefull(tab)
 	printf("%s: table is full\n", tab);
 }
 
+#ifdef vax
 /*
  * Hard error is the preface to plaintive error messages
  * about failing disk transfers.
@@ -214,6 +215,7 @@ harderr(bp, cp)
 	printf("%s%d%c: hard error sn%d ", cp,
 	    dkunit(bp), 'a'+(minor(bp->b_dev)&07), bp->b_blkno);
 }
+#endif
 
 /*
  * Print a character on console or users terminal.

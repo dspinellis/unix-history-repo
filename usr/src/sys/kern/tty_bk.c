@@ -1,4 +1,4 @@
-/*	tty_bk.c	4.8	82/12/05	*/
+/*	tty_bk.c	4.9	83/05/27	*/
 
 #include "bk.h"
 
@@ -44,7 +44,7 @@ bkopen(dev, tp)
 	if (tp->t_line == NETLDISC)
 		return (EBUSY);	/* sometimes the network opens /dev/tty */
 	bp = geteblk(1024);
-	flushtty(tp, FREAD|FWRITE);
+	ttyflush(tp, FREAD|FWRITE);
 	tp->t_bufp = bp;
 	tp->t_cp = (char *)bp->b_un.b_addr;
 	tp->t_inbuf = 0;

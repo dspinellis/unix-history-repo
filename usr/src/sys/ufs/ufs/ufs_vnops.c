@@ -1,4 +1,4 @@
-/*	ufs_vnops.c	4.56	83/05/21	*/
+/*	ufs_vnops.c	4.57	83/05/27	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -12,11 +12,14 @@
 #include "../h/buf.h"
 #include "../h/proc.h"
 #include "../h/quota.h"
-#include "../h/descrip.h"
 #include "../h/uio.h"
 #include "../h/socket.h"
 #include "../h/socketvar.h"
 #include "../h/nami.h"
+#include "../h/mount.h"
+
+extern	struct fileops inodeops;
+struct	file *getinode();
 
 /*
  * Change current working directory (``.'').
@@ -72,76 +75,74 @@ bad:
  */
 open()
 {
-	register struct inode *ip;
-	register struct a {
+	struct a {
 		char	*fname;
-		int	flags;
 		int	mode;
-	} *uap;
-	int checkpermissions = 1, flags;
+		int	crtmode;
+	} *uap = (struct a *) u.u_ap;
 
-	uap = (struct a *)u.u_ap;
-	flags = uap->flags + 1;
-	if ((flags&FTRUNCATE) && (flags&FWRITE) == 0) {
+	copen(uap->mode-FOPEN, uap->crtmode);
+}
+
+/*
+ * Creat system call.
+ */
+creat()
+{
+	struct a {
+		char	*fname;
+		int	fmode;
+	} *uap = (struct a *)u.u_ap;
+
+	copen(FWRITE|FCREAT|FTRUNC, uap->fmode);
+}
+
+/*
+ * Common code for open and creat.
+ * Check permissions, allocate an open file structure,
+ * and call the device open routine if any.
+ */
+copen(mode, arg)
+	register int mode;
+	int arg;
+{
+	register struct inode *ip;
+	register struct file *fp;
+	int i;
+
+#ifdef notdef
+	if ((mode&(FREAD|FWRITE)) == 0) {
 		u.u_error = EINVAL;
 		return;
 	}
-	if (flags&FCREATE) {
+#endif
+	if (mode&FCREAT) {
 		ip = namei(uchar, CREATE, 1);
 		if (ip == NULL) {
 			if (u.u_error)
 				return;
-			ip = maknode(uap->mode&07777&(~ISVTX));
-			checkpermissions = 0;
-			flags &= ~FTRUNCATE;
+			ip = maknode(arg&07777&(~ISVTX));
+			if (ip == NULL)
+				return;
+			mode &= ~FTRUNC;
+		} else {
+			if (mode&FEXCL) {
+				u.u_error = EEXIST;
+				iput(ip);
+				return;
+			}
+			mode &= ~FCREAT;
 		}
-	} else
+	} else {
 		ip = namei(uchar, LOOKUP, 1);
-	if (ip == NULL)
-		return;
-	open1(ip, flags, checkpermissions);
-}
-
-#ifndef NOCOMPAT
-/*
- * Creat system call.
- */
-ocreat()
-{
-	register struct inode *ip;
-	register struct a {
-		char	*fname;
-		int	fmode;
-	} *uap;
-
-	uap = (struct a *)u.u_ap;
-	ip = namei(uchar, CREATE, 1);
-	if (ip == NULL) {
-		if (u.u_error)
-			return;
-		ip = maknode(uap->fmode&07777&(~ISVTX));
 		if (ip == NULL)
 			return;
-		open1(ip, FWRITE, 0);
-	} else
-		open1(ip, FWRITE|FTRUNCATE, 1);
-}
-#endif
-
-/*
- * Common code for open and creat.
- * Check permissions (if we haven't done so already),
- * allocate an open file structure, and call
- * the device open routine, if any.
- */
-open1(ip, mode, checkpermissions)
-	register struct inode *ip;
-	register mode;
-{
-	register struct file *fp;
-	int i, flags;
-
-	if (checkpermissions) {
+	}
+	if ((ip->i_mode & IFMT) == IFSOCK) {
+		u.u_error = EOPNOTSUPP;
+		goto bad;
+	}
+	if ((mode&FCREAT) == 0) {
 		if (mode&FREAD)
 			if (access(ip, IREAD))
 				goto bad;
@@ -154,36 +155,31 @@ open1(ip, mode, checkpermissions)
 			}
 		}
 	}
-
-	/*
-	 * Check locking on inode.  Release "inode lock"
-	 * while doing so in case we block inside flocki.
-	 */
-	flags = 0;
-	if (mode&(FSHLOCK|FEXLOCK)) {
-		iunlock(ip);
-		flags = flocki(ip, 0, mode);
-		ilock(ip);
-		if (u.u_error)
-			goto bad;
-	}
-	if (mode&FTRUNCATE)
+	fp = falloc();
+	if (fp == NULL)
+		goto bad;
+	if (mode&FTRUNC)
 		itrunc(ip, (u_long)0);
 	iunlock(ip);
-	if ((fp = falloc()) == NULL)
-		goto out;
-	fp->f_flag = mode & FMODES;
-	fp->f_type = DTYPE_FILE;
+	fp->f_flag = mode&FMASK;
+	fp->f_type = DTYPE_INODE;
+	fp->f_ops = &inodeops;
+	fp->f_data = (caddr_t)ip;
 	i = u.u_r.r_val1;
-	fp->f_inode = ip;
-	u.u_error = openi(ip, mode);
-	if (u.u_error == 0) {
-		u.u_pofile[i] = flags;
+#ifdef notdef
+	if (setjmp(&u.u_qsave)) {
+		if (u.u_error == 0)
+			u.u_error = EINTR;
+		u.u_ofile[i] = NULL;
+		closef(fp);
 		return;
 	}
+#endif
+	u.u_error = openi(ip, mode);
+	if (u.u_error == 0)
+		return;
 	u.u_ofile[i] = NULL;
 	fp->f_count--;
-out:
 	irele(ip);
 	return;
 bad:
@@ -203,25 +199,30 @@ mknod()
 	} *uap;
 
 	uap = (struct a *)u.u_ap;
-	if (suser()) {
-		ip = namei(uchar, CREATE, 0);
-		if (ip != NULL) {
-			u.u_error = EEXIST;
-			goto out;
-		}
+	if (!suser())
+		return;
+	ip = namei(uchar, CREATE, 0);
+	if (ip != NULL) {
+		u.u_error = EEXIST;
+		goto out;
 	}
 	if (u.u_error)
 		return;
 	ip = maknode(uap->fmode);
 	if (ip == NULL)
 		return;
-	if (uap->dev) {
-		/*
-		 * Want to be able to use this to make badblock
-		 * inodes, so don't truncate the dev number.
-		 */
-		ip->i_rdev = uap->dev;
-		ip->i_flag |= IACC|IUPD|ICHG;
+	switch (ip->i_mode & IFMT) {
+
+	case IFCHR:
+	case IFBLK:
+		if (uap->dev) {
+			/*
+			 * Want to be able to use this to make badblock
+			 * inodes, so don't truncate the dev number.
+			 */
+			ip->i_rdev = uap->dev;
+			ip->i_flag |= IACC|IUPD|ICHG;
+		}
 	}
 
 out:
@@ -367,17 +368,13 @@ lseek()
 	} *uap;
 
 	uap = (struct a *)u.u_ap;
-	fp = getf(uap->fd);
+	fp = getinode(uap->fd);
 	if (fp == NULL)
 		return;
-	if (fp->f_type == DTYPE_SOCKET) {
-		u.u_error = ESPIPE;
-		return;
-	}
-	if (uap->sbase == FSEEK_RELATIVE)
+	if (uap->sbase == L_INCR)
 		uap->off += fp->f_offset;
-	else if (uap->sbase == FSEEK_EOF)
-		uap->off += fp->f_inode->i_size;
+	else if (uap->sbase == L_XTND)
+		uap->off += ((struct inode *)fp->f_data)->i_size;
 	fp->f_offset = uap->off;
 	u.u_r.r_off = uap->off;
 }
@@ -401,11 +398,11 @@ saccess()
 	u.u_gid = u.u_rgid;
 	ip = namei(uchar, LOOKUP, 1);
 	if (ip != NULL) {
-		if ((uap->fmode&FACCESS_READ) && access(ip, IREAD))
+		if ((uap->fmode&R_OK) && access(ip, IREAD))
 			goto done;
-		if ((uap->fmode&FACCESS_WRITE) && access(ip, IWRITE))
+		if ((uap->fmode&W_OK) && access(ip, IWRITE))
 			goto done;
-		if ((uap->fmode&FACCESS_EXECUTE) && access(ip, IEXEC))
+		if ((uap->fmode&X_OK) && access(ip, IEXEC))
 			goto done;
 done:
 		iput(ip);
@@ -415,43 +412,12 @@ done:
 }
 
 /*
- * the fstat system call.
- */
-fstat()
-{
-	register struct file *fp;
-	register struct a {
-		int	fd;
-		struct stat *sb;
-	} *uap;
-
-	uap = (struct a *)u.u_ap;
-	fp = getf(uap->fd);
-	if (fp == NULL)
-		return;
-	if (fp->f_type == DTYPE_SOCKET)
-		u.u_error = sostat(fp->f_socket, uap->sb);
-	else
-		stat1(fp->f_inode, uap->sb);
-}
-
-/*
  * Stat system call.  This version follows links.
  */
 stat()
 {
-	register struct inode *ip;
-	register struct a {
-		char	*fname;
-		struct stat *sb;
-	} *uap;
 
-	uap = (struct a *)u.u_ap;
-	ip = namei(uchar, LOOKUP, 1);
-	if (ip == NULL)
-		return;
-	stat1(ip, uap->sb);
-	iput(ip);
+	stat1(1);
 }
 
 /*
@@ -459,58 +425,27 @@ stat()
  */
 lstat()
 {
+
+	stat1(0);
+}
+
+stat1(follow)
+	int follow;
+{
 	register struct inode *ip;
 	register struct a {
 		char	*fname;
-		struct stat *sb;
+		struct stat *ub;
 	} *uap;
+	struct stat sb;
 
 	uap = (struct a *)u.u_ap;
-	ip = namei(uchar, LOOKUP, 0);
+	ip = namei(uchar, LOOKUP, follow);
 	if (ip == NULL)
 		return;
-	stat1(ip, uap->sb);
+	(void) statinode(ip, &sb);
 	iput(ip);
-}
-
-/*
- * The basic routine for fstat and stat:
- * get the inode and pass appropriate parts back.
- */
-stat1(ip, ub)
-	register struct inode *ip;
-	struct stat *ub;
-{
-	struct stat ds;
-
-	IUPDAT(ip, &time, &time, 0);
-	/*
-	 * Copy from inode table
-	 */
-	ds.st_dev = ip->i_dev;
-	ds.st_ino = ip->i_number;
-	ds.st_mode = ip->i_mode;
-	ds.st_nlink = ip->i_nlink;
-	ds.st_uid = ip->i_uid;
-	ds.st_gid = ip->i_gid;
-	ds.st_rdev = (dev_t)ip->i_rdev;
-	ds.st_size = ip->i_size;
-	ds.st_atime = ip->i_atime;
-	ds.st_spare1 = 0;
-	ds.st_mtime = ip->i_mtime;
-	ds.st_spare2 = 0;
-	ds.st_ctime = ip->i_ctime;
-	ds.st_spare3 = 0;
-	/* this doesn't belong here */
-	if ((ip->i_mode&IFMT) == IFBLK)
-		ds.st_blksize = BLKDEV_IOSIZE;
-	else if ((ip->i_mode&IFMT) == IFCHR)
-		ds.st_blksize = MAXBSIZE;
-	else
-		ds.st_blksize = ip->i_fs->fs_bsize;
-	ds.st_blocks = ip->i_blocks;
-	ds.st_spare4[0] = ds.st_spare4[1] = 0;
-	u.u_error = copyout((caddr_t)&ds, (caddr_t)ub, sizeof(ds));
+	u.u_error = copyout((caddr_t)&sb, (caddr_t)uap->ub, sizeof (sb));
 }
 
 /*
@@ -570,14 +505,10 @@ fchmod()
 	register struct file *fp;
 
 	uap = (struct a *)u.u_ap;
-	fp = getf(uap->fd);
+	fp = getinode(uap->fd);
 	if (fp == NULL)
 		return;
-	if (fp->f_type == DTYPE_SOCKET) {
-		u.u_error = EINVAL;
-		return;
-	}
-	ip = fp->f_inode;
+	ip = (struct inode *)fp->f_data;
 	if (u.u_uid != ip->i_uid && !suser())
 		return;
 	ilock(ip);
@@ -593,7 +524,6 @@ chmod1(ip, mode)
 	register struct inode *ip;
 	register int mode;
 {
-	register int *gp;
 
 	ip->i_mode &= ~07777;
 	if (u.u_uid) {
@@ -640,14 +570,10 @@ fchown()
 	register struct file *fp;
 
 	uap = (struct a *)u.u_ap;
-	fp = getf(uap->fd);
+	fp = getinode(uap->fd);
 	if (fp == NULL)
 		return;
-	if (fp->f_type == DTYPE_SOCKET) {
-		u.u_error = EINVAL;
-		return;
-	}
-	ip = fp->f_inode;
+	ip = (struct inode *)fp->f_data;
 	if (!suser())
 		return;
 	ilock(ip);
@@ -756,29 +682,24 @@ sync()
  */
 flock()
 {
-	struct a {
+	register struct a {
 		int	fd;
 		int	how;
-	} *uap;
+	} *uap = (struct a *)u.u_ap;
 	register struct file *fp;
 	register int cmd, flags;
 
-	uap = (struct a *)u.u_ap;
-	fp = getf(uap->fd);
+	fp = getinode(uap->fd);
 	if (fp == NULL)
 		return;
-	if (fp->f_type == DTYPE_SOCKET) {		/* XXX */
-		u.u_error = EINVAL;
-		return;
-	}
 	cmd = uap->how;
 	flags = u.u_pofile[uap->fd] & (UF_SHLOCK|UF_EXLOCK);
-	if (cmd&FUNLOCK) {
+	if (cmd&LOCK_UN) {
 		if (flags == 0) {
 			u.u_error = EINVAL;
 			return;
 		}
-		funlocki(fp->f_inode, flags);
+		funlocki((struct inode *)fp->f_data, flags);
 		u.u_pofile[uap->fd] &= ~(UF_SHLOCK|UF_EXLOCK);
 		return;
 	}
@@ -786,10 +707,11 @@ flock()
 	 * No reason to write lock a file we've already
 	 * write locked, similarly with a read lock.
 	 */
-	if ((flags&UF_EXLOCK) && (cmd&FEXLOCK) ||
-	    (flags&UF_SHLOCK) && (cmd&FSHLOCK))
+	if ((flags&UF_EXLOCK) && (cmd&LOCK_EX) ||
+	    (flags&UF_SHLOCK) && (cmd&LOCK_SH))
 		return;
-	u.u_pofile[uap->fd] = flocki(fp->f_inode, u.u_pofile[uap->fd], cmd);
+	u.u_pofile[uap->fd] =
+	    flocki((struct inode *)fp->f_data, u.u_pofile[uap->fd], cmd);
 }
 
 /*
@@ -829,18 +751,14 @@ ftruncate()
 	struct inode *ip;
 	struct file *fp;
 
-	fp = getf(uap->fd);
+	fp = getinode(uap->fd);
 	if (fp == NULL)
 		return;
-	if (fp->f_type == DTYPE_SOCKET) {
-		u.u_error = EINVAL;
-		return;
-	}
 	if ((fp->f_flag&FWRITE) == 0) {
 		u.u_error = EINVAL;
 		return;
 	}
-	ip = fp->f_inode;
+	ip = (struct inode *)fp->f_data;
 	ilock(ip);
 	itrunc(ip, uap->length);
 	iunlock(ip);
@@ -857,14 +775,10 @@ fsync()
 	struct inode *ip;
 	struct file *fp;
 
-	fp = getf(uap->fd);
+	fp = getinode(uap->fd);
 	if (fp == NULL)
 		return;
-	if (fp->f_type == DTYPE_SOCKET) {
-		u.u_error = EINVAL;
-		return;
-	}
-	ip = fp->f_inode;
+	ip = (struct inode *)fp->f_data;
 	ilock(ip);
 	syncip(ip);
 	iunlock(ip);
@@ -1197,4 +1111,221 @@ maknode(mode)
 		return (NULL);
 	}
 	return (ip);
+}
+
+/*
+ * A virgin directory (no blushing please).
+ */
+struct dirtemplate mastertemplate = {
+	0, 12, 1, ".",
+	0, DIRBLKSIZ - 12, 2, ".."
+};
+
+/*
+ * Mkdir system call
+ */
+mkdir()
+{
+	struct a {
+		char	*name;
+		int	dmode;
+	} *uap;
+	register struct inode *ip, *dp;
+	struct dirtemplate dirtemplate;
+
+	uap = (struct a *)u.u_ap;
+	ip = namei(uchar, CREATE, 0);
+	if (u.u_error)
+		return;
+	if (ip != NULL) {
+		iput(ip);
+		u.u_error = EEXIST;
+		return;
+	}
+	dp = u.u_pdir;
+	uap->dmode &= 0777;
+	uap->dmode |= IFDIR;
+	/*
+	 * Must simulate part of maknode here
+	 * in order to acquire the inode, but
+	 * not have it entered in the parent
+	 * directory.  The entry is made later
+	 * after writing "." and ".." entries out.
+	 */
+	ip = ialloc(dp, dirpref(dp->i_fs), uap->dmode);
+	if (ip == NULL) {
+		iput(dp);
+		return;
+	}
+#ifdef QUOTA
+	if (ip->i_dquot != NODQUOT)
+		panic("mkdir: dquot");
+#endif
+	ip->i_flag |= IACC|IUPD|ICHG;
+	ip->i_mode = uap->dmode & ~u.u_cmask;
+	ip->i_nlink = 2;
+	ip->i_uid = u.u_uid;
+	ip->i_gid = dp->i_gid;
+#ifdef QUOTA
+	ip->i_dquot = inoquota(ip);
+#endif
+	iupdat(ip, &time, &time, 1);
+
+	/*
+	 * Bump link count in parent directory
+	 * to reflect work done below.  Should
+	 * be done before reference is created
+	 * so reparation is possible if we crash.
+	 */
+	dp->i_nlink++;
+	dp->i_flag |= ICHG;
+	iupdat(dp, &time, &time, 1);
+
+	/*
+	 * Initialize directory with "."
+	 * and ".." from static template.
+	 */
+	dirtemplate = mastertemplate;
+	dirtemplate.dot_ino = ip->i_number;
+	dirtemplate.dotdot_ino = dp->i_number;
+	u.u_error = rdwri(UIO_WRITE, ip, (caddr_t)&dirtemplate,
+		sizeof (dirtemplate), (off_t)0, 1, (int *)0);
+	if (u.u_error) {
+		dp->i_nlink--;
+		dp->i_flag |= ICHG;
+		goto bad;
+	}
+	/*
+	 * Directory all set up, now
+	 * install the entry for it in
+	 * the parent directory.
+	 */
+	u.u_error = direnter(ip);
+	dp = NULL;
+	if (u.u_error) {
+		u.u_dirp = uap->name;
+		dp = namei(uchar, LOOKUP, 0);
+		if (dp) {
+			dp->i_nlink--;
+			dp->i_flag |= ICHG;
+		}
+	}
+bad:
+	/*
+	 * No need to do an explicit itrunc here,
+	 * irele will do this for us because we set
+	 * the link count to 0.
+	 */
+	if (u.u_error) {
+		ip->i_nlink = 0;
+		ip->i_flag |= ICHG;
+	}
+	if (dp)
+		iput(dp);
+	iput(ip);
+}
+
+/*
+ * Rmdir system call.
+ */
+rmdir()
+{
+	struct a {
+		char	*name;
+	};
+	register struct inode *ip, *dp;
+
+	ip = namei(uchar, DELETE | LOCKPARENT, 0);
+	if (ip == NULL)
+		return;
+	dp = u.u_pdir;
+	/*
+	 * No rmdir "." please.
+	 */
+	if (dp == ip) {
+		irele(dp);
+		iput(ip);
+		u.u_error = EINVAL;
+		return;
+	}
+	if ((ip->i_mode&IFMT) != IFDIR) {
+		u.u_error = ENOTDIR;
+		goto out;
+	}
+	/*
+	 * Don't remove a mounted on directory.
+	 */
+	if (ip->i_dev != dp->i_dev) {
+		u.u_error = EBUSY;
+		goto out;
+	}
+	/*
+	 * Verify the directory is empty (and valid).
+	 * (Rmdir ".." won't be valid since
+	 *  ".." will contain a reference to
+	 *  the current directory and thus be
+	 *  non-empty.)
+	 */
+	if (ip->i_nlink != 2 || !dirempty(ip)) {
+		u.u_error = ENOTEMPTY;
+		goto out;
+	}
+	/*
+	 * Delete reference to directory before purging
+	 * inode.  If we crash in between, the directory
+	 * will be reattached to lost+found,
+	 */
+	if (dirremove() == 0)
+		goto out;
+	dp->i_nlink--;
+	dp->i_flag |= ICHG;
+	iput(dp);
+	dp = NULL;
+	/*
+	 * Truncate inode.  The only stuff left
+	 * in the directory is "." and "..".  The
+	 * "." reference is inconsequential since
+	 * we're quashing it.  The ".." reference
+	 * has already been adjusted above.  We've
+	 * removed the "." reference and the reference
+	 * in the parent directory, but there may be
+	 * other hard links so decrement by 2 and
+	 * worry about them later.
+	 */
+	ip->i_nlink -= 2;
+	itrunc(ip, (u_long)0);
+out:
+	if (dp)
+		iput(dp);
+	iput(ip);
+}
+
+struct file *
+getinode(fdes)
+	int fdes;
+{
+	register struct file *fp;
+
+	fp = getf(fdes);
+	if (fp == 0)
+		return (0);
+	if (fp->f_type != DTYPE_INODE) {
+		u.u_error = EINVAL;
+		return (0);
+	}
+	return (fp);
+}
+
+/*
+ * mode mask for creation of files
+ */
+umask()
+{
+	register struct a {
+		int	mask;
+	} *uap;
+
+	uap = (struct a *)u.u_ap;
+	u.u_r.r_val1 = u.u_cmask;
+	u.u_cmask = uap->mask & 07777;
 }

@@ -1,4 +1,4 @@
-/*	kern_sig.c	5.16	83/05/21	*/
+/*	kern_sig.c	5.17	83/05/27	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -57,7 +57,6 @@ kill()
 }
 #endif
 
-/* TEMPORARY */
 killpg()
 {
 	register struct a {
@@ -65,22 +64,10 @@ killpg()
 		int	signo;
 	} *uap = (struct a *)u.u_ap;
 
-	u.u_error = okill1(1, uap->signo, uap->pgrp);
+	u.u_error = kill1(1, uap->signo, uap->pgrp);
 }
 
-/* BEGIN DEFUNCT */
-okill()
-{
-	register struct a {
-		int	pid;
-		int	signo;
-	} *uap = (struct a *)u.u_ap;
-
-	u.u_error = okill1(uap->signo < 0,
-		uap->signo < 0 ? -uap->signo : uap->signo, uap->pid);
-}
-
-okill1(ispgrp, signo, who)
+kill1(ispgrp, signo, who)
 	int ispgrp, signo, who;
 {
 	register struct proc *p;
@@ -121,70 +108,7 @@ okill1(ispgrp, signo, who)
 		f++;
 		psignal(p, signo);
 	}
-	return (f == 0? ESRCH : 0);
-}
-
-ossig()
-{
-	register int (*f)();
-	struct a {
-		int	signo;
-		int	(*fun)();
-	} *uap;
-	register struct proc *p = u.u_procp;
-	register a;
-	long sigmask;
-
-	uap = (struct a *)u.u_ap;
-	a = uap->signo & SIGNUMMASK;
-	f = uap->fun;
-	if (a<=0 || a>=NSIG || a==SIGKILL || a==SIGSTOP ||
-	    a==SIGCONT && (f == SIG_IGN || f == SIG_HOLD)) {
-		u.u_error = EINVAL;
-		return;
-	}
-	if ((uap->signo &~ SIGNUMMASK) || (f != SIG_DFL && f != SIG_IGN &&
-	    SIGISDEFER(f)))
-		u.u_procp->p_flag |= SNUSIG;
-	/* 
-	 * Don't clobber registers if we are to simulate
-	 * a ret+rti.
-	 */
-	if ((uap->signo&SIGDORTI) == 0)
-		u.u_r.r_val1 = (int)u.u_signal[a];
-	/*
-	 * Change setting atomically.
-	 */
-	(void) spl6();
-	sigmask = 1L << (a-1);
-	if (f == SIG_IGN)
-		p->p_sig &= ~sigmask;		/* never to be seen again */
-	u.u_signal[a] = f;
-	if (f != SIG_DFL && f != SIG_IGN && f != SIG_HOLD)
-		f = SIG_CATCH;
-	if ((int)f & 1)
-		p->p_siga0 |= sigmask;
-	else
-		p->p_siga0 &= ~sigmask;
-	if ((int)f & 2)
-		p->p_siga1 |= sigmask;
-	else
-		p->p_siga1 &= ~sigmask;
-	(void) spl0();
-	/*
-	 * Now handle options.
-	 */
-	if (uap->signo & SIGDOPAUSE) {
-		/*
-		 * Simulate a PDP11 style wait instrution which
-		 * atomically lowers priority, enables interrupts
-		 * and hangs.
-		 */
-		opause();
-		/*NOTREACHED*/
-	}
-	if (uap->signo & SIGDORTI)
-		u.u_eosys = SIMULATERTI;
+	return (f == 0 ? ESRCH : 0);
 }
 
 /*
@@ -617,14 +541,9 @@ psig()
 		 */
 		if (SIGISDEFER(action)) {
 			(void) spl6();
-			if ((int)SIG_HOLD & 1)
-				rp->p_siga0 |= sigmask;
-			else
-				rp->p_siga0 &= ~sigmask;
-			if ((int)SIG_HOLD & 2)
-				rp->p_siga1 |= sigmask;
-			else
-				rp->p_siga1 &= ~sigmask;
+			/* SIG_HOLD known to be 3 */
+			rp->p_siga0 |= sigmask;
+			rp->p_siga1 |= sigmask;
 			u.u_signal[n] = SIG_HOLD;
 			(void) spl0();
 			action = SIGUNDEFER(action);
@@ -653,9 +572,6 @@ psig()
 	exit(n);
 }
 
-#ifdef unneeded
-int	corestop = 0;
-#endif
 /*
  * Create a core image on the file "core"
  * If you are looking for protection glitches,
@@ -671,17 +587,6 @@ core()
 	register struct inode *ip;
 	extern schar();
 
-#ifdef unneeded
-	if (corestop) {
-		int i;
-		for (i = 0; i < 10; i++)
-			if (u.u_comm[i])
-				putchar(u.u_comm[i], 0);
-		printf(", uid %d\n", u.u_uid);
-		if (corestop&2)
-			asm("halt");
-	}
-#endif
 	if (u.u_uid != u.u_ruid || u.u_gid != u.u_rgid)
 		return (0);
 	if (ctob(UPAGES+u.u_dsize+u.u_ssize) >=

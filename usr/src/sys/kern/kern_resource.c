@@ -1,4 +1,4 @@
-/*	kern_resource.c	4.21	83/05/23	*/
+/*	kern_resource.c	4.22	83/05/27	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -235,87 +235,4 @@ ruadd(ru, ru2)
 	ip = &ru->ru_first; ip2 = &ru2->ru_first;
 	for (i = &ru->ru_last - &ru->ru_first; i > 0; i--)
 		*ip++ += *ip2++;
-}
-
-#ifndef NOCOMPAT
-onice()
-{
-	register struct a {
-		int	niceness;
-	} *uap = (struct a *)u.u_ap;
-	register struct proc *p = u.u_procp;
-
-	donice(p, (p->p_nice-NZERO)+uap->niceness);
-}
-
-#include "../h/times.h"
-
-otimes()
-{
-	register struct a {
-		struct	tms *tmsb;
-	} *uap = (struct a *)u.u_ap;
-	struct tms atms;
-
-	atms.tms_utime = scale60(&u.u_ru.ru_utime);
-	atms.tms_stime = scale60(&u.u_ru.ru_stime);
-	atms.tms_cutime = scale60(&u.u_cru.ru_utime);
-	atms.tms_cstime = scale60(&u.u_cru.ru_stime);
-	u.u_error = copyout((caddr_t)&atms, (caddr_t)uap->tmsb, sizeof (atms));
-}
-
-scale60(tvp)
-	register struct timeval *tvp;
-{
-
-	return (tvp->tv_sec * 60 + tvp->tv_usec / 16667);
-}
-
-#include "../h/vtimes.h"
-
-ovtimes()
-{
-	register struct a {
-		struct	vtimes *par;
-		struct	vtimes *chi;
-	} *uap = (struct a *)u.u_ap;
-	struct vtimes avt;
-
-	if (uap->par) {
-		getvtimes(&u.u_ru, &avt);
-		u.u_error = copyout((caddr_t)&avt, (caddr_t)uap->par,
-			sizeof (avt));
-		if (u.u_error)
-			return;
-	}
-	if (uap->chi) {
-		getvtimes(&u.u_cru, &avt);
-		u.u_error = copyout((caddr_t)&avt, (caddr_t)uap->chi,
-			sizeof (avt));
-		if (u.u_error)
-			return;
-	}
-}
-
-getvtimes(aru, avt)
-	register struct rusage *aru;
-	register struct vtimes *avt;
-{
-
-	avt->vm_utime = scale60(&aru->ru_utime);
-	avt->vm_stime = scale60(&aru->ru_stime);
-	avt->vm_idsrss = ((aru->ru_idrss+aru->ru_isrss) / hz) * 60;
-	avt->vm_ixrss = aru->ru_ixrss / hz * 60;
-	avt->vm_maxrss = aru->ru_maxrss;
-	avt->vm_majflt = aru->ru_majflt;
-	avt->vm_minflt = aru->ru_minflt;
-	avt->vm_nswap = aru->ru_nswap;
-	avt->vm_inblk = aru->ru_inblock;
-	avt->vm_oublk = aru->ru_oublock;
-}
-
-ovlimit()
-{
-
-	u.u_error = EACCES;
 }

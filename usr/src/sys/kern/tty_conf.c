@@ -1,4 +1,4 @@
-/*	tty_conf.c	4.2	82/10/17	*/
+/*	tty_conf.c	4.3	83/05/27	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -52,3 +52,20 @@ struct	linesw linesw[] =
 };
 
 int	nldisp = sizeof (linesw) / sizeof (linesw[0]);
+
+/*
+ * Do nothing specific version of line
+ * discipline specific ioctl command.
+ */
+/*ARGSUSED*/
+nullioctl(tp, cmd, data, flags)
+	struct tty *tp;
+	char *data;
+	int flags;
+{
+
+#ifdef lint
+	tp = tp; data = data; flags = flags;
+#endif
+	return (-1);
+}

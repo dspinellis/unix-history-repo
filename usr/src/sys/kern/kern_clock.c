@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.53	83/05/21	*/
+/*	kern_clock.c	4.54	83/05/27	*/
 
 #include "../machine/reg.h"
 #include "../machine/psl.h"
@@ -43,20 +43,9 @@ extern int phz;
 
 /*
  * TODO:
- *	* Keep more accurate statistics by simulating good interval timers.
- *	* Use the time-of-day clock on the VAX to keep more accurate time
- *	  than is possible by repeated use of the interval timer.
- *	* Allocate more timeout table slots when table overflows.
- *	* Get all resource allocation to use second timer.
+ *	time of day, system/user timing, timeouts, profiling on separate timers
+ *	allocate more timeout table slots when table overflows.
  */
-
-/* bump a timeval by a small number of usec's */
-#define	bumptime(tp, usec) \
-	(tp)->tv_usec += usec; \
-	if ((tp)->tv_usec >= 1000000) { \
-		(tp)->tv_usec -= 1000000; \
-		(tp)->tv_sec++; \
-	}
 
 /*
  * The hz hardware interval timer.
@@ -75,17 +64,14 @@ hardclock(pc, ps)
 hardclock(regs)
 	struct regs regs;
 {
-	int ps = regs.r_sr;
-	caddr_t pc = (caddr_t)regs.r_pc;
+#define	ps	regs.r_sr
+#define	pc	(caddr_t)regs.r_pc
 #endif
 	register struct callout *p1;
 	register struct proc *p;
 	register int s, cpstate;
+	int needsoft = 0;
 
-#ifdef sun
-	if (USERMODE(ps))		/* aston needs ar0 */
-		u.u_ar0 = &regs.r_r0;
-#endif
 	/*
 	 * Update real-time timeout queue.
 	 * At front of queue are some number of events which are ``due''.
@@ -96,10 +82,15 @@ hardclock(regs)
 	 * Decrementing just the first of these serves to decrement the time
 	 * to all events.
 	 */
-	for (p1 = calltodo.c_next; p1 && p1->c_time <= 0; p1 = p1->c_next)
-		--p1->c_time;
-	if (p1)
-		--p1->c_time;
+	p1 = calltodo.c_next;
+	while (p1) {
+		if (--p1->c_time > 0)
+			break;
+		needsoft = 1;
+		if (p1->c_time == 0)
+			break;
+		p1 = p1->c_next;
+	}
 
 	/*
 	 * Charge the time out based on the mode the cpu is in.
@@ -108,6 +99,11 @@ hardclock(regs)
 	 * one tick.
 	 */
 	if (USERMODE(ps)) {
+#ifdef sun
+		u.u_ar0 = &regs.r_r0;	/* aston needs ar0 */
+#endif
+		if (u.u_prof.pr_scale)
+			needsoft = 1;
 		/*
 		 * CPU was in user state.  Increment
 		 * user time counter, and process process-virtual time
@@ -221,8 +217,13 @@ hardclock(regs)
 	 * priority any longer than necessary.
 	 */
 	bumptime(&time, tick);
-	setsoftclock();
+	if (needsoft)
+		setsoftclock();
 }
+#ifdef sun
+#undef pc
+#undef ps
+#endif
 
 /*
  * Gather statistics on resource utilization.
@@ -232,6 +233,7 @@ hardclock(regs)
  * or idle state) for the entire last time interval, and
  * update statistics accordingly.
  */
+/*ARGSUSED*/
 gatherstats(pc, ps)
 	caddr_t pc;
 	int ps;
@@ -288,8 +290,8 @@ softclock(pc, ps)
 #ifdef sun
 softclock()
 {
-	int ps = u.u_ar0[PS];
-	caddr_t pc = (caddr_t)u.u_ar0[PC];
+#define	pc	(caddr_t)u.u_ar0[PC]
+#define	ps	u.u_ar0[PS]
 #endif
 
 	for (;;) {
@@ -320,19 +322,33 @@ softclock()
 }
 
 /*
- * Arrange that (*fun)(arg) is called in tim/hz seconds.
+ * Bump a timeval by a small number of usec's.
  */
-timeout(fun, arg, tim)
+bumptime(tp, usec)
+	register struct timeval *tp;
+	int usec;
+{
+
+	tp->tv_usec += usec;
+	if (tp->tv_usec >= 1000000) {
+		tp->tv_usec -= 1000000;
+		tp->tv_sec++;
+	}
+}
+
+/*
+ * Arrange that (*fun)(arg) is called in t/hz seconds.
+ */
+timeout(fun, arg, t)
 	int (*fun)();
 	caddr_t arg;
-	int tim;
+	register int t;
 {
 	register struct callout *p1, *p2, *pnew;
-	register int t;
-	int s;
+	register int s = spl7();
 
-	t = tim;
-	s = spl7();
+	if (t == 0)
+		t = 1;
 	pnew = callfree;
 	if (pnew == NULL)
 		panic("timeout table overflow");
@@ -406,4 +422,27 @@ hzto(tv)
 		ticks = 0x7fffffff;
 	splx(s);
 	return (ticks);
+}
+
+profil()
+{
+	register struct a {
+		short	*bufbase;
+		unsigned bufsize;
+		unsigned pcoffset;
+		unsigned pcscale;
+	} *uap = (struct a *)u.u_ap;
+	register struct uprof *upp = &u.u_prof;
+
+	upp->pr_base = uap->bufbase;
+	upp->pr_size = uap->bufsize;
+	upp->pr_off = uap->pcoffset;
+	upp->pr_scale = uap->pcscale;
+}
+
+opause()
+{
+
+	for (;;)
+		sleep((caddr_t)&u, PSLEP);
 }
