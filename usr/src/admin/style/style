@@ -1,7 +1,7 @@
 /*
  * Style guide for the 4BSD KNF (Kernel Normal Form).
  *
- *	@(#)style	1.13 (Berkeley) %G%
+ *	@(#)style	1.14 (Berkeley) %G%
  */
 
 /*
@@ -211,7 +211,7 @@ function(a1, a2, fl, a4)
 	 * When declaring variables in functions declare them sorted by size,
 	 * then in alphabetical order; multiple ones per line are okay.  Old
 	 * style function declarations can go on the same line.  ANSI style
-	 * function declarations should go in the include file "externs.h".
+	 * function declarations should go in the include file "extern.h".
 	 * If a line overflows reuse the type keyword.
 	 *
 	 * DO NOT initialize variables in the declarations.
