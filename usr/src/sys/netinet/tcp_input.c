@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_input.c	6.21 (Berkeley) %G%
+ *	@(#)tcp_input.c	6.22 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -171,7 +171,7 @@ tcp_input(m0)
 	register struct tcpcb *tp = 0;
 	register int tiflags;
 	struct socket *so;
-	int todrop, acked, newwin;
+	int todrop, acked, needoutput = 0;
 	short ostate;
 	struct in_addr laddr;
 	int dropsocket = 0;
@@ -634,9 +634,16 @@ trimthenstep6:
 			tp->t_rtt = 0;
 		}
 
-		if (ti->ti_ack == tp->snd_max)
+		/*
+		 * If all outstanding data is acked, stop retransmit
+		 * timer and remember to restart (more output or persist).
+		 * If there is more data to be acked, restart retransmit
+		 * timer.
+		 */
+		if (ti->ti_ack == tp->snd_max) {
 			tp->t_timer[TCPT_REXMT] = 0;
-		else {
+			needoutput = 1;
+		} else if (tp->t_timer[TCPT_PERSIST] == 0) {
 			TCPT_RANGESET(tp->t_timer[TCPT_REXMT],
 			    tcp_beta * tp->t_srtt, TCPTV_MIN, TCPTV_MAX);
 			tp->t_rxtshift = 0;
@@ -736,9 +743,8 @@ step6:
 		tp->snd_wl2 = ti->ti_ack;
 		if (tp->snd_wnd > tp->max_sndwnd)
 			tp->max_sndwnd = tp->snd_wnd;
-		newwin = 1;
-	} else
-		newwin = 0;
+		needoutput = 1;
+	}
 
 	/*
 	 * Process segments with URG.
@@ -873,7 +879,7 @@ dodata:							/* XXX */
 	/*
 	 * Return any desired output.
 	 */
-	if (newwin || (tp->t_flags & TF_ACKNOW))
+	if (needoutput || (tp->t_flags & TF_ACKNOW))
 		(void) tcp_output(tp);
 	return;
 
