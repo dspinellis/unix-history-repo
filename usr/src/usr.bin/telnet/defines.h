@@ -2,25 +2,23 @@
 
 #if	!defined(TN3270)
 
-#define	ExitString(f,s,r)	{ fprintf(f, s); exit(r); }
+#define	ExitString(s,r)	{ fprintf(stderr, s); exit(r); }
 #define	Exit(x)			exit(x)
 #define	SetIn3270()
 
 #endif	/* !defined(TN3270) */
 
-#define	NETADD(c)	{ *nfrontp++ = c; }
+#define	NETADD(c)	{ *netoring.send = c; ring_added(&netoring, 1); }
 #define	NET2ADD(c1,c2)	{ NETADD(c1); NETADD(c2); }
-#define NETLOC()	(nfrontp)
-#define	NETMAX()	(netobuf+sizeof netobuf-1)
-#define	NETBYTES()	(nfrontp-nbackp)
-#define	NETROOM()	(NETMAX()-NETLOC()+1)
+#define	NETBYTES()	(ring_unsent_count(&netoring))
+#define	NETROOM()	(ring_empty_count(&netoring))
 
-#define	TTYADD(c)	{ if (!(SYNCHing||flushout)) { *tfrontp++ = c; } }
-#define	TTYLOC()	(tfrontp)
-#define	TTYMAX()	(ttyobuf+sizeof ttyobuf-1)
-#define	TTYMIN()	(netobuf)
-#define	TTYBYTES()	(tfrontp-tbackp)
-#define	TTYROOM()	(TTYMAX()-TTYLOC()+1)
+#define	TTYADD(c)	if (!(SYNCHing||flushout)) { \
+				*ttyoring.send = c; \
+				ring_added(&ttyoring, 1); \
+			}
+#define	TTYBYTES()	(ring_unsent_count(&ttyoring))
+#define	TTYROOM()	(ring_empty_count(&ttyoring))
 
 /*	Various modes */
 #define	MODE_LINE(m)	(modelist[m].modetype & LINE)

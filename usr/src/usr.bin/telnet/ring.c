@@ -30,11 +30,12 @@
 
 /* Internal macros */
 
-#if	!defined(min)
-#define	min(a,b)	(((a)<(b))? (a):(b))
-#endif	/* !defined(min) */
+#if	!defined(MIN)
+#define	MIN(a,b)	(((a)<(b))? (a):(b))
+#endif	/* !defined(MIN) */
 
-#define	ring_subtract(d,a,b)	((((int)(a))-((int)(b)) >= 0)? (a)-(b): (((a)-(b))+(d)->size))
+#define	ring_subtract(d,a,b)	((((int)(a))-((int)(b)) >= 0)? \
+					(a)-(b): (((a)-(b))+(d)->size))
 
 #define	ring_increment(d,a,c)	(((a)+(c) < (d)->top)? \
 					(a)+(c) : (((a)+(c))-(d)->size))
@@ -64,6 +65,21 @@ static u_long ring_clock = 0;
 
 /* Buffer state transition routines */
 
+ring_init(ring, buffer, count)
+Ring *ring;
+char *buffer;
+int count;
+{
+    memset((char *)ring, 0, sizeof *ring);
+
+    ring->size = count;
+
+    ring->add = ring->send = ring->ack = ring->bottom = buffer;
+
+    ring->top = ring->bottom+ring->size;
+
+    return 1;
+}
 
 /*
  * Add characters from current segment to ring buffer.
@@ -185,7 +201,7 @@ int count;
     int i;
 
     while (count) {
-	i = min(count, ring_empty_consecutive(ring));
+	i = MIN(count, ring_empty_consecutive(ring));
 	memcpy(ring->add, buffer, i);
 	ring_added(ring, i);
 	count -= i;
@@ -206,10 +222,32 @@ int count;
     int i;
 
     while (count) {
-	i = min(count, ring_unsent_consecutive(ring));
+	i = MIN(count, ring_unsent_consecutive(ring));
 	memcpy(buffer, ring->send, i);
 	ring_sent(ring, i);
 	count -= i;
 	buffer += i;
     }
+}
+
+/* Mark routines */
+
+/* XXX do something here */
+void
+ring_mark(ring)
+Ring *ring;
+{
+}
+
+int
+ring_at_mark(ring)
+Ring *ring;
+{
+    return 0;
+}
+
+void
+ring_clear_mark(ring)
+Ring *ring;
+{
 }

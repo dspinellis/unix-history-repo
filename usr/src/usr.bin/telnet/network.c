@@ -6,11 +6,13 @@
 
 #include <arpa/telnet.h>
 
+#include "ring.h"
+
 #include "defines.h"
 #include "externs.h"
 
-char	netobuf[2*BUFSIZ], *nfrontp, *nbackp;
-static char	*neturg;		/* one past last byte of urgent data */
+Ring	netoring;
+char	netobuf[2*BUFSIZ];
 
 /*
  * Initialize internal network data structures.
@@ -18,7 +20,7 @@ static char	*neturg;		/* one past last byte of urgent data */
 
 init_network()
 {
-    nfrontp = nbackp = netobuf;
+    ring_init(&netoring, netobuf, sizeof netobuf);
     NetTrace = stdout;
 }
 
@@ -63,7 +65,7 @@ int	s;		/* socket number */
 void
 setneturg()
 {
-    neturg = NETLOC()-1;	/* Some systems are off by one XXX */
+    ring_mark(&netoring);
 }
 
 
@@ -82,11 +84,10 @@ netflush()
 {
     int n;
 
-    if ((n = nfrontp - nbackp) > 0) {
-	if (!neturg) {
-	    n = send(net, nbackp, n, 0);	/* normal write */
+    if ((n = ring_unsent_consecutive(&netoring)) > 0) {
+	if (!ring_at_mark(&netoring)) {
+	    n = send(net, netoring.send, n, 0);	/* normal write */
 	} else {
-	    n = neturg - nbackp;
 	    /*
 	     * In 4.2 (and 4.3) systems, there is some question about
 	     * what byte in a sendOOB operation is the "OOB" data.
@@ -95,11 +96,7 @@ netflush()
 	     * we really have more the TCP philosophy of urgent data
 	     * rather than the Unix philosophy of OOB data).
 	     */
-	    if (n > 1) {
-		n = send(net, nbackp, n-1, 0);	/* send URGENT all by itself */
-	    } else {
-		n = send(net, nbackp, n, MSG_OOB);	/* URGENT data */
-	    }
+	    n = send(net, netoring.send, 1, MSG_OOB);/* URGENT data */
 	}
     }
     if (n < 0) {
@@ -107,22 +104,16 @@ netflush()
 	    setcommandmode();
 	    perror(hostname);
 	    NetClose(net);
-	    neturg = 0;
+	    ring_clear_mark(&netoring);
 	    longjmp(peerdied, -1);
 	    /*NOTREACHED*/
 	}
 	n = 0;
     }
     if (netdata && n) {
-	Dump('>', nbackp, n);
+	Dump('>', netoring.send, n);
     }
-    nbackp += n;
-    if (nbackp >= neturg) {
-	neturg = 0;
-    }
-    if (nbackp == nfrontp) {
-	nbackp = nfrontp = netobuf;
-    }
+    ring_sent(&netoring, n);
     return n > 0;
 }
 
@@ -166,6 +157,7 @@ char	*current;
 	return current+2;
     }
 }
+
 /*
  * netclear()
  *
@@ -186,6 +178,7 @@ char	*current;
 void
 netclear()
 {
+#if	0	/* XXX */
     register char *thisitem, *next;
     char *good;
 #define	wewant(p)	((nfrontp > p) && ((*p&0xff) == IAC) && \
@@ -193,7 +186,7 @@ netclear()
 
     thisitem = netobuf;
 
-    while ((next = nextitem(thisitem)) <= nbackp) {
+    while ((next = nextitem(thisitem)) <= netobuf.send) {
 	thisitem = next;
     }
 
@@ -201,7 +194,7 @@ netclear()
 
     good = netobuf;	/* where the good bytes go */
 
-    while (nfrontp > thisitem) {
+    while (netoring.add > thisitem) {
 	if (wewant(thisitem)) {
 	    int length;
 
@@ -218,7 +211,44 @@ netclear()
 	}
     }
 
-    nbackp = netobuf;
-    nfrontp = good;		/* next byte to be sent */
-    neturg = 0;
+#endif	/* 0 */
+    ring_init(&netoring, netobuf, sizeof netobuf);
+}
+
+#include <varargs.h>
+
+void
+netoprint(va_alist)
+va_dcl
+{
+    va_list ap;
+    char buffer[100];		/* where things go */
+    char *ptr = buffer;
+    char *format;
+    int i;
+
+    va_start(ap);
+
+    format = va_arg(ap, char *);
+
+    while ((i = *format++) != 0) {
+	if (i == '%') {
+	    i = *format++;
+	    switch (i) {
+	    case 'c':
+		i = va_arg(ap, char);
+		NETADD(i);
+		break;
+	    case 0:
+		ExitString("netoprint: trailing %.\n", 1);
+		/*NOTREACHED*/
+	    default:
+		ExitString("netoprint: unknown format character.\n", 1);
+		/*NOTREACHED*/
+	    }
+	} else {
+	    *ptr++ = i;
+	}
+    }
+    ring_add_data(&netoring, buffer, ptr-buffer);
 }

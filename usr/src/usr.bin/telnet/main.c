@@ -1,3 +1,7 @@
+#include <sys/types.h>
+
+#include "ring.h"
+
 #include "externs.h"
 #include "defines.h"
 

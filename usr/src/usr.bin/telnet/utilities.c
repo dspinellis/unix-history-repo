@@ -1,7 +1,10 @@
 #define	TELOPTS
 #include <arpa/telnet.h>
+#include <sys/types.h>
 
 #include <ctype.h>
+
+#include "ring.h"
 
 #include "externs.h"
 

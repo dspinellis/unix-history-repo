@@ -30,6 +30,10 @@ typedef struct {
 
 #if	defined(LINT_ARGS)
 
+/* Initialization routine */
+extern int
+	ring_init(Ring *ring, char *buffer, int count);
+
 /* Data movement routines */
 extern void
 	ring_add_data(Ring *ring, char *buffer, int count),

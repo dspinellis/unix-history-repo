@@ -6,8 +6,11 @@
 #if	defined(unix)
 
 #include <sys/ioctl.h>
+#include <sys/types.h>
 #include <sys/time.h>
 #include <signal.h>
+
+#include "ring.h"
 
 #include "defines.h"
 #include "externs.h"

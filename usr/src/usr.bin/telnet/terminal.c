@@ -1,9 +1,13 @@
 #include <arpa/telnet.h>
+#include <sys/types.h>
+
+#include "ring.h"
 
 #include "externs.h"
 #include "types.h"
 
-char	ttyobuf[2*BUFSIZ], *tfrontp, *tbackp;
+Ring	ttyoring;
+char	ttyobuf[2*BUFSIZ];
 
 char
     termEofChar,
@@ -20,7 +24,7 @@ char
 
 init_terminal()
 {
-    tfrontp = tbackp = ttyobuf;
+    ring_init(&ttyoring, ttyobuf, sizeof ttyobuf);
     autoflush = TerminalAutoFlush();
 }
 
@@ -39,19 +43,16 @@ int drop;
 {
     int n;
 
-    if ((n = tfrontp - tbackp) > 0) {
+    if ((n = ring_unsent_consecutive(&ttyoring)) > 0) {
 	if (drop) {
 	    TerminalFlushOutput();
 	    /* we leave 'n' alone! */
 	} else {
-	    n = TerminalWrite(tout, tbackp, n);
+	    n = TerminalWrite(tout, ttyoring.send, n);
 	}
     }
     if (n >= 0) {
-	tbackp += n;
-	if (tbackp == tfrontp) {
-	    tbackp = tfrontp = ttyobuf;
-	}
+	ring_sent(&ttyoring, n);
     }
     return n > 0;
 }

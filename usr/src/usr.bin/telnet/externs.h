@@ -37,13 +37,7 @@ extern char
 	myopts[],
 	subbuffer[SUBBUFSIZE],
 	*hostname,		/* Who are we connected to? */
-	*prompt,		/* Prompt for command. */
-	*nfrontp,
-	*nbackp,
-	netobuf[2*BUFSIZ],
-	ttyobuf[2*BUFSIZ],
-	*tfrontp,
-	*tbackp;
+	*prompt;		/* Prompt for command. */
 
 extern FILE
 	*NetTrace;		/* Where debugging output goes */
@@ -69,3 +63,11 @@ extern char
     termKillChar,
     termLiteralNextChar,
     termQuitChar;
+
+/* Ring buffer structures which are shared */
+
+extern Ring
+	netoring,
+	netiring,
+	ttyoring,
+	ttyiring;
