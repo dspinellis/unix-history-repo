@@ -4,37 +4,49 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kernel.h	7.5 (Berkeley) %G%
+ *	@(#)kernel.h	7.6 (Berkeley) %G%
  */
 
 /* Global variables for the kernel. */
 long rmalloc();
 
 /* 1.1 */
-long hostid;
-char hostname[MAXHOSTNAMELEN];
-int hostnamelen;
+extern long hostid;
+extern char hostname[MAXHOSTNAMELEN];
+extern int hostnamelen;
 
 /* 1.2 */
-struct timeval mono_time;
-struct timeval boottime;
-struct timeval time;
-struct timezone tz;			/* XXX */
+extern struct timeval mono_time;
+extern struct timeval boottime;
+extern struct timeval time;
+extern struct timezone tz;			/* XXX */
 
-int hz;					/* clock frequency */
-int phz;				/* alternate clock's frequency */
-int tick;
-int lbolt;				/* once a second sleep address */
-int realitexpire();
+extern int hz;				/* clock frequency */
+extern int phz;				/* alternate clock's frequency */
+extern int tick;			/* usec per tick */
+extern int profhz;			/* profiling clock's frequency */
+extern int lbolt;			/* once a second sleep address */
+extern int realitexpire();
 
-fixpt_t	averunnable[3];
+struct clockinfo {
+	int hz;		/* clock frequency */
+	int tick;	/* micro-seconds per hz tick */
+	int phz;	/* alternate clock frequency */
+	int profhz;	/* profiling clock frequency */
+};
+
+struct loadavg {
+	fixpt_t ldavg[3];
+	long fscale;
+};
+extern struct loadavg averunnable;
 #if defined(COMPAT_43) && (defined(vax) || defined(tahoe))
 double	avenrun[3];
 #endif /* COMPAT_43 */
 
 #ifdef GPROF
-u_long s_textsize;
-int profiling;
-u_short *kcount;
-char *s_lowpc;
+extern u_long s_textsize;
+extern int profiling;
+extern u_short *kcount;
+extern char *s_lowpc;
 #endif
