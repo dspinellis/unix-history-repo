@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)dd.1	8.1 (Berkeley) %G%
+.\"     @(#)dd.1	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt DD 1
@@ -214,6 +214,15 @@ by
 The
 .Cm notrunc
 value is not supported for tapes.
+.It Cm osync
+Pad the final output block to the full output block size.
+If the input file is not a multiple of the output block size
+after conversion, this conversion forces the final output block
+to be the same size as preceding blocks for use on devices that require
+regularly sized blocks to be written.
+This option is incompatible with use of the
+.Cm bs= Ns Ar n
+block size specification.
 .It Cm swab
 Swap every pair of input bytes.
 If an input buffer has an odd number of bytes, the last byte will be

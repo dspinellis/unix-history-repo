@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dd.h	8.1 (Berkeley) %G%
+ *	@(#)dd.h	8.2 (Berkeley) %G%
  */
 
 /* Input/output stream state. */
@@ -67,3 +67,4 @@ typedef struct {
 #define	C_SYNC		0x20000
 #define	C_UCASE		0x40000
 #define	C_UNBLOCK	0x80000
+#define	C_OSYNC		0x100000

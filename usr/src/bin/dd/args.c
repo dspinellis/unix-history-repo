@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)args.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)args.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -41,7 +41,7 @@ static struct arg {
 	void (*f) __P((char *));
 	u_int set, noset;
 } args[] = {
-	"bs",		f_bs,		C_BS,		C_BS|C_IBS|C_OBS,
+	"bs",		f_bs,		C_BS,		C_BS|C_IBS|C_OBS|C_OSYNC,
 	"cbs",		f_cbs,		C_CBS,		C_CBS,
 	"conv",		f_conv,		0,		0,
 	"count",	f_count,	C_COUNT,	C_COUNT,
@@ -240,6 +240,7 @@ static struct conv {
 	"oldascii",	C_ASCII,	C_EBCDIC,	e2a_32V,
 	"oldebcdic",	C_EBCDIC,	C_ASCII,	a2e_32V,
 	"oldibm",	C_EBCDIC,	C_ASCII,	a2ibm_32V,
+	"osync",	C_OSYNC,	C_BS,		NULL,
 	"swab",		C_SWAB,		0,		NULL,
 	"sync",		C_SYNC,		0,		NULL,
 	"ucase",	C_UCASE,	C_LCASE,	NULL,
