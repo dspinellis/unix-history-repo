@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	7.69 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.70 (Berkeley) %G%
  */
 
 /*
@@ -510,8 +510,10 @@ reassignbuf(bp, newvp)
 {
 	register struct buf *bq, **listheadp;
 
-	if (newvp == NULL)
-		panic("reassignbuf: NULL");
+	if (newvp == NULL) {
+		printf("reassignbuf: NULL");
+		return;
+	}
 	/*
 	 * Delete from old vnode list, if on one.
 	 */
