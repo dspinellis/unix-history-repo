@@ -53,7 +53,7 @@ static char *okshells[] =
 
 static char **shells, *strings;
 static char **curshell = NULL;
-extern char **initshells();
+static char **initshells();
 
 /*
  * Get a list of shells from SHELLS, if it exists.
