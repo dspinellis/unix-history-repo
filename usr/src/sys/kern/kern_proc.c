@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.44	82/10/22	*/
+/*	kern_proc.c	4.45	82/10/23	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -519,6 +519,7 @@ exit(rv)
 	register int i;
 	register struct proc *p, *q;
 	register int x;
+	struct mbuf *m = m_getclr(M_WAIT);
 
 #ifdef PGINPROF
 	vmsizmon();
@@ -600,7 +601,7 @@ exit(rv)
 		panic("init died");
 done:
 	p->p_xstat = rv;
-	{ struct mbuf *m = m_getclr(M_DONTWAIT); p->p_ru = mtod(m, struct rusage *); }
+	p->p_ru = mtod(m, struct rusage *);
 	*p->p_ru = u.u_ru;
 	ruadd(p->p_ru, &u.u_cru);
 	for (q = proc; q < procNPROC; q++)
