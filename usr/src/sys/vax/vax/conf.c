@@ -1,4 +1,4 @@
-/*	conf.c	4.9	%G%	*/
+/*	conf.c	4.10	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -278,6 +278,22 @@ int	mxopen(),mxclose(),mxread(),mxwrite(),mxioctl();
 int	mcread();
 char	*mcwrite();
 
+#if WANTPTY > 0
+int	ptsopen(), ptsclose(), ptsread(), ptswrite();
+int	ptcopen(), ptcclose(), ptcread(), ptcwrite();
+int	ptyioctl();
+#else
+#define ptsopen nodev
+#define ptsclose nodev
+#define ptsread nodev
+#define ptswrite nodev
+#define ptcopen nodev
+#define ptcclose nodev
+#define ptcread nodev
+#define ptcwrite nodev
+#define ptyioctl nodev
+#endif
+
 struct cdevsw	cdevsw[] =
 {
 	cnopen,		cnclose,	cnread,		cnwrite,	/*0*/
@@ -326,9 +342,13 @@ struct cdevsw	cdevsw[] =
 	chopen,		chclose,	chread,		chwrite,	/*19*/
 	chioctl,	nulldev,	chreset,	0,
 #define CHAOSDEV 19
-/* 25-29 reserved to local sites */
-	nodev,		nodev,		nodev,		nodev,		/*20*/
+	ptsopen,	ptsclose,	ptsread,	ptswrite,	/*20*/
+	ptyioctl,	nodev,		nodev,		0,
+	ptcopen,	ptcclose,	ptcread,	ptcwrite,	/*21*/
+	ptyioctl,	nodev,		nodev,		0,
+	nodev,		nodev,		nodev,		nodev,		/*22*/
 	nodev,		nodev,		nodev,		0,
+/* 25-29 reserved to local sites */
 	0,	
 };
 
