@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkglue.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkglue.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -332,7 +332,7 @@ vector() {
 	fprintf(fp,"\
 	.globl	_hardclock\n\
 VEC(clk)\n\
-	INTR(0, _highmask, 0)\n\
+	INTR1(0, _highmask, 0)\n\
 	call	_hardclock \n\
 	INTREXIT1\n\n\n");
 
@@ -351,8 +351,9 @@ VEC(clk)\n\
 				id->id, dp->d_name, dp->d_unit);
 			fprintf(fp,"_%s%dmask:\t.long 0\n\t.text\n",
 				dp->d_name, dp->d_unit);
-			fprintf(fp,"VEC(%s%d)\n\tINTR(%d, ",
-				dp->d_name, dp->d_unit, dp->d_unit);
+			fprintf(fp,"VEC(%s%d)\n\tINTR%d(%d, ",
+				dp->d_name, dp->d_unit,
+				dp->d_irq / 8 + 1, dp->d_unit);
 					if(eq(dp->d_mask,"null"))
 		 				fprintf(fp,"_%s%dmask, ",
 							dp->d_name, dp->d_unit);
