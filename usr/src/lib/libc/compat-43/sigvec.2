@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)sigvec.2	6.8 (Berkeley) %G%
+.\"     @(#)sigvec.2	6.9 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SIGVEC 2
@@ -98,7 +98,7 @@ bit is set in
 the system will deliver the signal to the process on a
 .Em "signal stack" ,
 specified with
-.Xr sigstack 2 .
+.Xr sigaltstack 2 .
 If 
 .Fa ovec
 is non-zero, the previous handling information for the signal
@@ -255,11 +255,11 @@ or
 .Xr kill 2 ,
 .Xr ptrace 2 ,
 .Xr sigaction 2 ,
+.Xr sigaltstack 2 ,
 .Xr sigblock 2 ,
 .Xr sigpause 2 ,
 .Xr sigprocmask 2 ,
 .Xr sigsetmask 2 ,
-.Xr sigstack 2 ,
 .Xr sigsuspend 2 ,
 .Xr setjmp 3 ,
 .Xr siginterrupt 3 ,
