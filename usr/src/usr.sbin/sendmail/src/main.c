@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.64 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.65 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -237,16 +237,16 @@ main(argc, argv, envp)
 	*/
 
 #if defined(__osf__) || defined(_AIX3)
-# define OPTIONS	"B:b:C:cd:e:F:f:h:Iimno:p:q:r:sTtvX:x"
+# define OPTIONS	"B:b:C:cd:e:F:f:h:IimnO:o:p:q:r:sTtvX:x"
 #endif
 #if defined(ultrix)
-# define OPTIONS	"B:b:C:cd:e:F:f:h:IiM:mno:p:q:r:sTtvX:"
+# define OPTIONS	"B:b:C:cd:e:F:f:h:IiM:mnO:o:p:q:r:sTtvX:"
 #endif
 #if defined(NeXT)
-# define OPTIONS	"B:b:C:cd:e:F:f:h:IimnOo:p:q:r:sTtvX:"
+# define OPTIONS	"B:b:C:cd:e:F:f:h:IimnO:o:p:q:r:sTtvX:"
 #endif
 #ifndef OPTIONS
-# define OPTIONS	"B:b:C:cd:e:F:f:h:Iimno:p:q:r:sTtvX:"
+# define OPTIONS	"B:b:C:cd:e:F:f:h:IimnO:o:p:q:r:sTtvX:"
 #endif
 	while ((j = getopt(argc, argv, OPTIONS)) != EOF)
 	{
@@ -505,6 +505,10 @@ main(argc, argv, envp)
 
 		  case 'o':	/* set option */
 			setoption(*optarg, optarg + 1, FALSE, TRUE, CurEnv);
+			break;
+
+		  case 'O':	/* set option (long form) */
+			setoption(' ', optarg, FALSE, TRUE, CurEnv);
 			break;
 
 		  case 'p':	/* set protocol */
