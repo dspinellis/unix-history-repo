@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_subr.c	7.8 (Berkeley) %G%
+ *	@(#)lfs_subr.c	7.9 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -50,26 +50,4 @@ lfs_blkatoff(vp, offset, res, bpp)
 		*res = bp->b_un.b_addr + blkoff(fs, offset);
 	*bpp = bp;
 	return (0);
-}
-
-/* Search a block for a specific dinode. */
-DINODE *
-lfs_ifind(fs, ino, page)
-	struct lfs *fs;
-	ino_t ino;
-	void *page;
-{
-	register DINODE *dip;
-	register int cnt;
-
-#ifdef VERBOSE
-	printf("lfs_ifind: inode %d\n", ino);
-#endif
-	dip = page;
-	for (cnt = INOPB(fs); cnt--; ++dip)
-		if (dip->di_inum == ino)
-			return (dip);
-
-	panic("lfs_ifind: dinode %u not found", ino);
-	/* NOTREACHED */
 }
