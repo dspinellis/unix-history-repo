@@ -9,11 +9,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)verbose.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)verbose.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
-
 
 static short *null_rules;
 
@@ -105,54 +104,44 @@ int state;
 print_conflicts(state)
 int state;
 {
-    register int symbol;
-    register action *p, *q, *r;
+    register int symbol, act, number;
+    register action *p;
 
-    for (p = parser[state]; p; p = q->next)
+    symbol = -1;
+    for (p = parser[state]; p; p = p->next)
     {
-	q = p;
-	if (p->action_code == ERROR || p->suppressed == 2)
+	if (p->suppressed == 2)
 	    continue;
 
-	symbol = p->symbol;
-	while (q->next && q->next->symbol == symbol)
-	    q = q->next;
-	if (state == final_state && symbol == 0)
+	if (p->symbol != symbol)
 	{
-	    r = p;
-	    for (;;)
+	    symbol = p->symbol;
+	    number = p->number;
+	    if (p->action_code == SHIFT)
+		act = SHIFT;
+	    else
+		act = REDUCE;
+	}
+	else if (p->suppressed == 1)
+	{
+	    if (state == final_state && symbol == 0)
 	    {
 		fprintf(verbose_file, "%d: shift/reduce conflict \
-(accept, reduce %d) on $end\n", state, r->number - 2);
-		if (r == q) break;
-		r = r->next;
-	    }
-	}
-	else if (p != q)
-	{
-	    r = p->next;
-	    if (p->action_code == SHIFT)
-	    {
-		for (;;)
-		{
-		    if (r->action_code == REDUCE && p->suppressed != 2)
-			fprintf(verbose_file, "%d: shift/reduce conflict \
-(shift %d, reduce %d) on %s\n", state, p->number, r->number - 2,
-				symbol_name[symbol]);
-		    if (r == q) break;
-		    r = r->next;
-		}
+(accept, reduce %d) on $end\n", state, p->number - 2);
 	    }
 	    else
 	    {
-		for (;;)
+		if (act == SHIFT)
 		{
-		    if (r->action_code == REDUCE && p->suppressed != 2)
-			fprintf(verbose_file, "%d: reduce/reduce conflict \
-(reduce %d, reduce %d) on %s\n", state, p->number - 2, r->number - 2,
-				symbol_name[symbol]);
-		    if (r == q) break;
-		    r = r->next;
+		    fprintf(verbose_file, "%d: shift/reduce conflict \
+(shift %d, reduce %d) on %s\n", state, number, p->number - 2,
+			    symbol_name[symbol]);
+		}
+		else
+		{
+		    fprintf(verbose_file, "%d: reduce/reduce conflict \
+(reduce %d, reduce %d) on %s\n", state, number - 2, p->number - 2,
+			    symbol_name[symbol]);
 		}
 	    }
 	}
