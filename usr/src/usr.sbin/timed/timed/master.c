@@ -5,25 +5,16 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)master.c	1.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)master.c	2.1 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
 #include <protocols/timed.h>
 #include <setjmp.h>
 
-extern struct sockaddr_in from;
-extern struct sockaddr_in server;
-
-extern int trace;
 extern int machup;
-extern int slvcount;
 extern int measure_delta;
-extern int sock;
-extern char hostname[];
-extern struct host hp[];
-extern char *fj;
-extern FILE *fd;
+extern jmp_buf jmpenv;
 
 #ifdef MEASURE
 int header;
@@ -44,7 +35,6 @@ FILE *fp;
 master()
 {
 	int ind;
-	int length;
 	long pollingtime;
 	struct timeval wait;
 	struct timeval time;
@@ -52,13 +42,13 @@ master()
 	struct timeval mytime;
 	struct tsp *msg, to;
 	struct sockaddr_in saveaddr;
-	extern jmp_buf jmpenv;
 	int findhost();
 	char *date();
-	char *strcpy();
 	struct tsp *readmsg();
 	struct tsp *answer, *acksend();
 	char olddate[32];
+	struct sockaddr_in server;
+	register struct netinfo *ntp;
 
 #ifdef MEASURE
 	fi = "/usr/adm/timed.masterlog";
@@ -70,31 +60,30 @@ master()
 	if (trace)
 		fprintf(fd, "THIS MACHINE IS MASTER\n");
 
-	masterup();
+	for (ntp = nettab; ntp != NULL; ntp = ntp->next)
+		if (ntp->status == MASTER)
+			masterup(ntp);
 	pollingtime = 0;
 
 loop:
 	(void)gettimeofday(&time, (struct timezone *)0);
 	if (time.tv_sec >= pollingtime) {
 		pollingtime = time.tv_sec + SAMPLEINTVL;
-		synch();
+		synch(0L);
 	}
 
 	wait.tv_sec = pollingtime - time.tv_sec;
 	wait.tv_usec = 0;
-	msg = readmsg(TSP_ANY, (char *)ANYADDR, &wait);
+	msg = readmsg(TSP_ANY, (char *)ANYADDR, &wait, (struct netinfo *)NULL);
 	if (msg != NULL) {
 		switch (msg->tsp_type) {
 
 		case TSP_MASTERREQ:
-			ind = addmach(msg->tsp_name);
+			ind = addmach(msg->tsp_name, &from);
 			if (trace)
 				prthp();
 			if (hp[ind].seq !=  msg->tsp_seq) {
 				hp[ind].seq = msg->tsp_seq;
-				bcopy((char *)&hp[ind].addr, 
-					    (char *)&(server.sin_addr.s_addr),
-					    hp[ind].length);
 				to.tsp_type = TSP_SETTIME;
 				(void)strcpy(to.tsp_name, hostname);
 				/*
@@ -104,17 +93,22 @@ loop:
 				 */
 				sleep(1);
 				to.tsp_time.tv_usec = 0;
-				(void)gettimeofday(&mytime, (struct timezone *)0);
+				(void) gettimeofday(&mytime,
+				    (struct timezone *)0);
 				to.tsp_time.tv_sec = mytime.tv_sec;
-				answer = acksend(&to, hp[ind].name, TSP_ACK);
+				answer = acksend(&to, &hp[ind].addr,
+				    hp[ind].name, TSP_ACK,
+				    (struct netinfo *)NULL);
 				if (answer == NULL) {
-					syslog(LOG_ERR, "ERROR ON SETTIME machine: %s", hp[ind].name);
+					syslog(LOG_ERR,
+					    "ERROR ON SETTIME machine: %s",
+					    hp[ind].name);
 					slvcount--;
 				}
 			}
 			break;
 		case TSP_SLAVEUP:
-			(void) addmach(msg->tsp_name);
+			(void) addmach(msg->tsp_name, &from);
 			break;
 		case TSP_DATE:
 			saveaddr = from;
@@ -133,9 +127,8 @@ loop:
 			msg->tsp_vers = TSPVERSION;
 			(void)strcpy(msg->tsp_name, hostname);
 			bytenetorder(msg);
-			length = sizeof(struct sockaddr_in);
 			if (sendto(sock, (char *)msg, sizeof(struct tsp), 0,
-						&saveaddr, length) < 0) {
+			    &saveaddr, sizeof(struct sockaddr_in)) < 0) {
 				syslog(LOG_ERR, "sendto: %m");
 				exit(1);
 			}
@@ -169,22 +162,11 @@ loop:
 			}
 			break;
 		case TSP_MSITE:
-			msg->tsp_type = TSP_ACK;
-			msg->tsp_vers = TSPVERSION;
-			(void)strcpy(msg->tsp_name, hostname);
-			bytenetorder(msg);
-			length = sizeof(struct sockaddr_in);
-			if (sendto(sock, (char *)msg, sizeof(struct tsp), 0,
-						&from, length) < 0) {
-				syslog(LOG_ERR, "sendto: %m");
-				exit(1);
-			}
-			break;
 		case TSP_MSITEREQ:
 			break;
 		case TSP_TRACEON:
 			if (!(trace)) {
-				fd = fopen(fj, "w");
+				fd = fopen(tracefile, "w");
 				setlinebuf(fd);
 				fprintf(fd, "Tracing started on: %s\n\n", 
 							date());
@@ -196,17 +178,23 @@ loop:
 				fprintf(fd, "Tracing ended on: %s\n", date());
 				(void)fclose(fd);
 			}
+#ifdef GPROF
+			moncontrol(0);
+			_mcleanup();
+			moncontrol(1);
+#endif
 			trace = OFF;
 			break;
 		case TSP_ELECTION:
 			to.tsp_type = TSP_QUIT;
 			(void)strcpy(to.tsp_name, hostname);
 			server = from;
-			answer = acksend(&to, msg->tsp_name, TSP_ACK);
+			answer = acksend(&to, &server, msg->tsp_name, TSP_ACK,
+			    (struct netinfo *)NULL);
 			if (answer == NULL) {
 				syslog(LOG_ERR, "election error");
 			} else {
-				(void) addmach(msg->tsp_name);
+				(void) addmach(msg->tsp_name, &from);
 			}
 			pollingtime = 0;
 			break;
@@ -219,23 +207,30 @@ loop:
 
 			(void)strcpy(to.tsp_name, hostname);
 
+			for (ntp = nettab; ntp != NULL; ntp = ntp->next) {
+				if ((ntp->mask & from.sin_addr.s_addr) ==
+				    ntp->net)
+					break;
+			}
+			if (ntp == NULL)
+				break;
 			for(;;) {
 				to.tsp_type = TSP_RESOLVE;
-				answer = acksend(&to, (char *)ANYADDR, 
-								TSP_MASTERACK);
+				answer = acksend(&to, &ntp->dest_addr,
+				    (char *)ANYADDR, TSP_MASTERACK, ntp);
 				if (answer == NULL)
 					break;
 				to.tsp_type = TSP_QUIT;
 				server = from;
-				msg = acksend(&to, answer->tsp_name, 
-								TSP_MASTERACK);
+				msg = acksend(&to, &server, answer->tsp_name, 
+				    TSP_MASTERACK, (struct netinfo *)NULL);
 				if (msg == NULL) {
 					syslog(LOG_ERR, "error on sending QUIT");
 				} else {
-					(void) addmach(answer->tsp_name);
+					(void) addmach(answer->tsp_name, &from);
 				}
 			}
-			masterup();
+			masterup(ntp);
 			pollingtime = 0;
 			break;
 		case TSP_RESOLVE:
@@ -269,7 +264,8 @@ loop:
  * networkdelta and correct 
  */
 
-synch()
+synch(mydelta)
+long mydelta;
 {
 	int i;
 	int measure_status;
@@ -300,12 +296,10 @@ synch()
 		machup = 1;
 		hp[0].delta = 0;
 		for(i=1; i<slvcount; i++) {
-			bcopy((char *)&hp[i].addr, 
-					(char *)&(server.sin_addr.s_addr), 
-					hp[i].length); 
 			tack.tv_sec = 0;
 			tack.tv_usec = 100000;
-			if ((measure_status = measure(&tack, ON)) < 0) {
+			if ((measure_status = measure(&tack, &hp[i].addr,
+			    ON)) < 0) {
 				syslog(LOG_ERR, "measure: %m");
 				exit(1);
 			}
@@ -313,9 +307,21 @@ synch()
 			if (measure_status == GOOD)
 				machup++;
 		}
-		if (machup > 1) {
-			netdelta = networkdelta();
-			correct(netdelta);
+		if (status & SLAVE) {
+			/* called by a submaster */
+			if (trace)
+				fprintf(fd, "submaster correct: %d ms.\n",
+				    mydelta);
+			correct(mydelta);	
+		} else {
+			if (machup > 1) {
+				netdelta = networkdelta();
+				if (trace)
+					fprintf(fd,
+					    "master correct: %d ms.\n",
+					    mydelta);
+				correct(netdelta);
+			}
 		}
 #ifdef MEASURE
 		gettimeofday(&end, 0);
@@ -336,6 +342,10 @@ synch()
 #endif
 			}
 		}
+	} else {
+		if (status & SLAVE) {
+			correct(mydelta);
+		}
 	}
 }
 
@@ -351,12 +361,11 @@ spreadtime()
 	struct tsp *answer, *acksend();
 
 	for(i=1; i<slvcount; i++) {
-		bcopy((char *)&hp[i].addr, (char *)&(server.sin_addr.s_addr), 
-						hp[i].length); 
 		to.tsp_type = TSP_SETTIME;
 		(void)strcpy(to.tsp_name, hostname);
 		(void)gettimeofday(&to.tsp_time, (struct timezone *)0);
-		answer = acksend(&to, hp[i].name, TSP_ACK);
+		answer = acksend(&to, &hp[i].addr, hp[i].name, TSP_ACK,
+		    (struct netinfo *)NULL);
 		if (answer == NULL) {
 			syslog(LOG_ERR, "ERROR ON SETTIME machine: %s", hp[i].name);
 		}
@@ -384,24 +393,16 @@ char *name;
  * if not already there 
  */
 
-addmach(name)
+addmach(name, addr)
 char *name;
+struct sockaddr_in *addr;
 {
 	int ret;
 	int findhost();
-	char *malloc();
-	struct hostent *hptmp, *gethostbyname();
 
 	ret = findhost(name);
 	if (ret < 0) {
-		hptmp = gethostbyname(name);
-		if (hptmp == NULL) {
-			syslog(LOG_ERR, "gethostbyname: %m");
-			exit(1);
-		}
-		hp[slvcount].length = hptmp->h_length;
-		bcopy((char *)hptmp->h_addr, (char *)&hp[slvcount].addr, 
-						hptmp->h_length); 
+		hp[slvcount].addr = *addr;
 		hp[slvcount].name = (char *)malloc(MAXHOSTNAMELEN);
 		(void)strcpy(hp[slvcount].name, name);
 		hp[slvcount].seq = 0;
@@ -431,23 +432,28 @@ prthp()
 	fprintf(fd, "\n");
 }
 
-masterup()
+masterup(net)
+struct netinfo *net;
 {
 	struct timeval wait;
-	char *strcpy();
 	struct tsp to, *msg, *readmsg();
 
 	to.tsp_type = TSP_MASTERUP;
+	to.tsp_vers = TSPVERSION;
 	(void)strcpy(to.tsp_name, hostname);
-	bytenetorder(&msg);
-	broadcast(&to);
+	bytenetorder(&to);
+	if (sendto(sock, (char *)&to, sizeof(struct tsp), 0, &net->dest_addr,
+	    sizeof(struct sockaddr_in)) < 0) {
+		syslog(LOG_ERR, "sendto: %m");
+		exit(1);
+	}
 
 	for (;;) {
 		wait.tv_sec = 1;
 		wait.tv_usec = 0;
-		msg = readmsg(TSP_SLAVEUP, (char *)ANYADDR, &wait);
+		msg = readmsg(TSP_SLAVEUP, (char *)ANYADDR, &wait, net);
 		if (msg != NULL) {
-			(void) addmach(msg->tsp_name);
+			(void) addmach(msg->tsp_name, &from);
 		} else
 			break;
 	}

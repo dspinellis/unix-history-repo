@@ -5,16 +5,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)correct.c	1.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)correct.c	2.1 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
 #include <protocols/timed.h>
 
-extern int slvcount;
-extern struct host hp[];
-extern char hostname[];
-extern struct sockaddr_in server;
 #ifdef MEASURE
 extern FILE *fp;
 #endif
@@ -28,7 +24,6 @@ long avdelta;
 {
 	int i;
 	int corr;
-	char *strcpy();
 	struct timeval adjlocal;
 	struct tsp msgs;
 	struct timeval mstotvround();
@@ -53,14 +48,12 @@ long avdelta;
 
 	for(i=1; i<slvcount; i++) {
 		if (hp[i].delta != HOSTDOWN)  {
-			bcopy((char *)&hp[i].addr, 
-					(char *)&(server.sin_addr.s_addr),
-						hp[i].length);
 			corr = avdelta - hp[i].delta;
 			msgs.tsp_time = mstotvround(&corr);
 			msgs.tsp_type = (u_char)TSP_ADJTIME;
 			(void)strcpy(msgs.tsp_name, hostname);
-			answer = acksend(&msgs, hp[i].name, TSP_ACK);
+			answer = acksend(&msgs, &hp[i].addr, hp[i].name,
+			    TSP_ACK, (struct netinfo *)NULL);
 			if (answer == NULL) {
 				hp[i].delta = HOSTDOWN;
 #ifdef MEASURE

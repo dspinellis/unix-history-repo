@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readmsg.c	1.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)readmsg.c	2.1 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -18,9 +18,11 @@ extern char *tsptype[];
  * the right machine, returning 1 in case of affirmative answer 
  */
 
-#define LOOKAT(msg, mtype, mfrom) \
+#define LOOKAT(msg, mtype, mfrom, netp, froms) \
 	(((((mtype) == TSP_ANY) || ((mtype) == (msg).tsp_type)) && \
-	(((mfrom) == NULL) || (strcmp((mfrom), (msg).tsp_name) == 0))) \
+	(((mfrom) == NULL) || (strcmp((mfrom), (msg).tsp_name) == 0)) && \
+	(((netp) == NULL) || \
+	(((netp)->mask & (froms).sin_addr.s_addr) == (netp)->net))) \
 	? 1 : 0)
 
 #define ISTOUTOFF(rtime, rtout) \
@@ -36,12 +38,7 @@ static struct tsplist {
 	struct sockaddr_in addr;
 	struct tsplist *p;
 } msgslist;
-struct tsplist *ptr, *prev;
 struct sockaddr_in from;
-extern int trace;
-extern int sock;
-extern char hostname[];
-extern FILE *fd;
 
 /*
  * `readmsg' returns message `type' sent by `machfrom' if it finds it 
@@ -51,20 +48,24 @@ extern FILE *fd;
  * `intvl' seconds. If not, it returns NULL.
  */
 
-struct tsp *readmsg(type, machfrom, intvl)
+struct tsp *
+readmsg(type, machfrom, intvl, netfrom)
+
 int type;
 char *machfrom;
 struct timeval *intvl;
+struct netinfo *netfrom;
 {
 	int length;
 	fd_set ready;
 	struct tsp *ret = NULL;
-	extern int status;
 	static struct tsplist *head = &msgslist;
 	static struct tsplist *tail = &msgslist;
 	int inet_netof();
-	char *malloc(), *strcpy();
 	int bytenetorder(), bytehostorder();
+	struct tsplist *prev;
+	register struct netinfo *ntp;
+	register struct tsplist *ptr;
 
 	if (trace) {
 		fprintf(fd, "looking for %s from %s\n",
@@ -87,7 +88,7 @@ struct timeval *intvl;
 	 */
 
 	while (ptr != NULL) {
-		if (LOOKAT(ptr->info, type, machfrom)) {
+		if (LOOKAT(ptr->info, type, machfrom, netfrom, ptr->addr)) {
 			ret = (struct tsp *)malloc(sizeof(struct tsp)); 
 			*ret = ptr->info;
 			from = ptr->addr;
@@ -120,6 +121,7 @@ struct timeval *intvl;
 		rtout.tv_sec++;
 	}
 
+	FD_ZERO(&ready);
 	for (;;) {
 		rwait.tv_sec = rtout.tv_sec - rtime.tv_sec;
 		rwait.tv_usec = rtout.tv_usec - rtime.tv_usec;
@@ -134,7 +136,6 @@ struct timeval *intvl;
 			fprintf(fd, "readmsg: wait: (%d %d)\n", 
 						rwait.tv_sec, rwait.tv_usec);
 		}
-		FD_ZERO(&ready);
 		FD_SET(sock, &ready);
 		if (select(FD_SETSIZE, &ready, (fd_set *)0, (fd_set *)0,
 		    &rwait)) {
@@ -147,17 +148,6 @@ struct timeval *intvl;
 
 			bytehostorder(&msgin);
 
-			if ((from.sin_addr.s_addr & netmask) != mynet) {
-				if (trace) {
-					fprintf(fd, "readmsg: wrong network: ");
-					print(&msgin);
-				}
-				(void)gettimeofday(&rtime,(struct timezone *)0);
-				if (ISTOUTOFF(rtime, rtout))
-					break;
-				else
-					continue;
-			}
 			/*
 			 * Throw away messages coming from this machine, unless
 			 * they are of some particular type.
@@ -189,12 +179,18 @@ struct timeval *intvl;
 			 * higher level routine.  Different acknowledgements are
 			 * necessary, depending on status.
 			 */
-			if (status == MASTER)
-				masterack();
-			else 
-				slaveack();
+			for (ntp = nettab; ntp != NULL; ntp = ntp->next) {
+				if ((ntp->mask & from.sin_addr.s_addr) ==
+				    ntp->net) {
+					if (ntp->status == MASTER)
+						masterack();
+					else 
+						slaveack();
+					break;
+				}
+			}
 
-			if (LOOKAT(msgin, type, machfrom)) {
+			if (LOOKAT(msgin, type, machfrom, netfrom, from)) {
 				ret = &msgin;
 				break;
 			} else {
@@ -336,8 +332,6 @@ masterack()
 print(msg)
 struct tsp *msg;
 {
-	extern char *tsptype[];
-
  	fprintf(fd, "%s %d %d (%d, %d) %s\n",
 		tsptype[msg->tsp_type],
 		msg->tsp_vers,

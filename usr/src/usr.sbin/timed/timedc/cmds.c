@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	2.1 (Berkeley) %G%";
 #endif not lint
 
 #include "timedc.h"
@@ -74,7 +74,7 @@ char *argv[];
 		bcopy(hp->h_addr, &(server.sin_addr.s_addr), hp->h_length); 
 		ack.tv_sec = 1;
 		ack.tv_usec = 500000;
-		if ((measure_status = measure(&ack, OFF)) < 0) {
+		if ((measure_status = measure(&ack, &server, OFF)) < 0) {
 			perror("measure");
 			return;
 		}
@@ -118,7 +118,8 @@ msite(argc)
 int argc;
 {
 	int length;
-	int cc, ready, found;
+	int cc;
+	fd_set ready;
 	struct sockaddr_in dest;
 	struct timeval tout;
 	struct sockaddr_in from;
@@ -159,9 +160,9 @@ int argc;
 
 	tout.tv_sec = 15;
 	tout.tv_usec = 0;
-	ready = 1<<sock;
-	found = select(20, &ready, (int *)0, (int *)0, &tout);
-	if (found) {
+	FD_ZERO(&ready);
+	FD_SET(sock, &ready);
+	if (select(FD_SETSIZE, &ready, (fd_set *)0, (fd_set *)0, &tout)) {
 		length = sizeof(struct sockaddr_in);
 		cc = recvfrom(sock, (char *)&msg, sizeof(struct tsp), 0, 
 							&from, &length);
@@ -258,7 +259,8 @@ char *argv[];
 {
 	int onflag;
 	int length;
-	int cc, ready, found;
+	int cc;
+	fd_set ready;
 	struct sockaddr_in dest;
 	struct timeval tout;
 	struct sockaddr_in from;
@@ -302,9 +304,9 @@ char *argv[];
 
 	tout.tv_sec = 5;
 	tout.tv_usec = 0;
-	ready = 1<<sock;
-	found = select(20, &ready, (int *)0, (int *)0, &tout);
-	if (found) {
+	FD_ZERO(&ready);
+	FD_SET(sock, &ready);
+	if (select(FD_SETSIZE, &ready, (fd_set *)0, (fd_set *)0, &tout)) {
 		length = sizeof(struct sockaddr_in);
 		cc = recvfrom(sock, (char *)&msg, sizeof(struct tsp), 0, 
 							&from, &length);

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmdtab.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmdtab.c	2.1 (Berkeley) %G%";
 #endif not lint
 
 #include "timedc.h"

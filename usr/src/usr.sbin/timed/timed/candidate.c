@@ -5,22 +5,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)candidate.c	1.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)candidate.c	2.1 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
 #include <protocols/timed.h>
 
 #define ELECTIONWAIT	3	/* seconds */
-
-extern int trace;
-extern int slvcount;
-extern int backoff;
-extern long delay2;
-extern char hostname[];
-extern struct sockaddr_in from;
-extern struct sockaddr_in server;
-extern FILE *fd;
 
 /*
  * `election' candidates a host as master: it is called by a slave 
@@ -29,14 +20,15 @@ extern FILE *fd;
  * candidate sends an election request, the candidature is withdrawn.
  */
 
-election()
+election(net)
+struct netinfo *net;
 {
 	int ret;
-	char *strcpy();
 	struct tsp *resp, msg, *readmsg();
 	struct timeval wait;
 	struct tsp *answer, *acksend();
 	long casual();
+	struct sockaddr_in server;
 
 	syslog(LOG_INFO, "THIS MACHINE IS A CANDIDATE");
 	if (trace) {
@@ -47,19 +39,24 @@ election()
 	slvcount = 1;
 
 	msg.tsp_type = TSP_ELECTION;
+	msg.tsp_vers = TSPVERSION;
 	(void)strcpy(msg.tsp_name, hostname);
 	bytenetorder(&msg);
-	broadcast(&msg);
+	if (sendto(sock, (char *)&msg, sizeof(struct tsp), 0, &net->dest_addr,
+	    sizeof(struct sockaddr_in)) < 0) {
+		syslog(LOG_ERR, "sendto: %m");
+		exit(1);
+	}
 
 	do {
 		wait.tv_sec = ELECTIONWAIT;
 		wait.tv_usec = 0;
-		resp = readmsg(TSP_ANY, (char *)ANYADDR, &wait);
+		resp = readmsg(TSP_ANY, (char *)ANYADDR, &wait, net);
 		if (resp != NULL) {
 			switch (resp->tsp_type) {
 
 			case TSP_ACCEPT:
-				(void) addmach(resp->tsp_name);
+				(void) addmach(resp->tsp_name, &from);
 				break;
 
 			case TSP_MASTERUP:
@@ -91,16 +88,17 @@ election()
 				msg.tsp_type = TSP_REFUSE;
 				(void)strcpy(msg.tsp_name, hostname);
 				server = from;
-				answer = acksend(&msg, resp->tsp_name, TSP_ACK);
+				answer = acksend(&msg, &server, resp->tsp_name,
+				    TSP_ACK, (struct netinfo *)NULL);
 				if (answer == NULL) {
 					syslog(LOG_ERR, "error in election");
 				} else {
-					(void) addmach(resp->tsp_name);
+					(void) addmach(resp->tsp_name, &from);
 				}
 				break;
 
 			case TSP_SLAVEUP:
-				(void) addmach(resp->tsp_name);
+				(void) addmach(resp->tsp_name, &from);
 				break;
 
 			case TSP_DATE:
