@@ -1,0 +1,58 @@
+New versions of the tn3270 and mset commands, used to logon to CMS from
+unix, are now available.
+
+The following bugs have been fixed in version 4.1:
+
+	o	This version corrects an earlier bug in tn3270 (telnet,
+		actually) which prevented tn3270 from running on a
+		Sun 4.
+
+	o	This version corrects for a bug on some SunOS 4.0 systems
+		(running on Sun 3's is where this has been noticed) which
+		causes screen corruption when making extensive use of
+		highlighting (which tn3270 does and "man", for some reason,
+		doesn't).
+
+	o	This version corrects a bug which caused unformatted
+		screens to behave incorrectly (the so-called CICS bug).
+
+	o	This version works correctly with VM/XA.
+
+	o	Various bugs have been fixed.
+
+The previous version of tn3270 supported an MS-DOS environment; this
+version doesn't.  See tn3270/README for some alternatives.
+
+Features include:
+
+	o	Error messages, in English, overlay a portion of the
+		screen when the user types an erroneous entry (invalid
+		control sequence, attempt to enter data in an "input
+		disallowed" field, etc.).
+
+	o	Ability to "escape to shell".  This, by itself, is
+		mostly useful in a non-BSD system.
+
+	o	An Application Programming Interface (API).  This allows
+		programs, running under Unix, to read and
+		write the 3270 screen, and to send keystrokes (3270)
+		to tn3270.  This makes use of the "escape to shell"
+		feature.  Included in the (beta) distribution is a
+		program which uses the API to receive files sent from
+		the IBM host (we don't supply the IBM side at this point,
+		and the rather stupid protocol is likely to change in
+		the future).
+
+	o	Yale ASCII/7171/4994 "transparent" mode should now
+		be fully implemented.  SAS-Graph, for example,
+		supports doing graphics to TEK terminals over
+		this interface.  Locally, we use the X windowing
+		system terminal emulator (xterm), which provides
+		some TEK emulation, to display SAS-Graph graphics
+		on our workstations.
+
+	o	Mset now prints out program function (PF) keys in
+		numerical order.
+
+Greg Minshall
+minshall@berkeley.edu
