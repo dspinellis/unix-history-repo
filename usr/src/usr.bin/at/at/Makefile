@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
 #       Makefile for at, atq, atrm, and atrun
 #
@@ -35,11 +35,11 @@ install: all
 	chown daemon $(SPOOLDIRS)
 	chgrp daemon $(SPOOLDIRS)
 	chmod 755    $(SPOOLDIRS)
-	for i in $(SPOOLFILES); do if [ ! -f $$i ]; then echo 0 > $$i; fi; done
+	-for i in $(SPOOLFILES); do if [ ! -f $$i ]; then echo 0 > $$i; fi; done
 	chown daemon $(SPOOLFILES)
 	chgrp daemon $(SPOOLFILES)
 	install -s atrun $(ATRUNDIR)
-	install -s atq $(DESTDIR)/usr/bin
+	install -s -o daemon -m 4755 atq $(DESTDIR)/usr/bin
 	install -s -o daemon -m 4755 at $(DESTDIR)/usr/bin
 	install -s -o daemon -m 4755 atrm $(DESTDIR)/usr/bin
 

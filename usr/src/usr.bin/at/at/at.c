@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)at.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)at.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -149,6 +149,7 @@ char **argv;
 	char pwbuf[MAXPATHLEN];		/* the current working directory */
 	char *jobfile = "stdin";	/* file containing job to be run */
 	char *getname();		/* get the login name of a user */
+	int pid;			/* For forking for security reasons */
 
 
 
@@ -299,16 +300,10 @@ char **argv;
 
 	/*
 	 * Start off assuming we're going to read from standard input,
-	 * but if a filename has been given to read from, open it.
+	 * but if a filename has been given to read from, we will open it
+	 * later.
 	 */
 	inputfile = stdin;
-	if (!standardin) {
-		jobfile = *argv;
-		if ((inputfile = fopen(jobfile, "r")) == NULL) {
-			perror(jobfile);
-			exit(1);
-		}
-	}
 
 	/*
 	 * Create the filename for the spoolfile.
@@ -324,11 +319,70 @@ char **argv;
 	}
 
 	/*
-	 * On an interrupt signal, clean up any open files and unlink the
-	 * spoolfile.
+	 * Make the file not world readable.
 	 */
-	signal(SIGINT, cleanup);
-	
+	fchmod(fileno(spoolfile), 0400);
+
+	/*
+	 * The protection mechanism works like this:
+	 * We are running ruid=user, euid=daemon.  So far we have been
+	 * messing around in the spool directory, so we needed the
+	 * daemon stuff.  Now, we want to read the users file,
+	 * so we must give up the daemon protection,  but we might
+	 * need the daemon's protection if the user interrupts and
+	 * we need to remove the spool files.
+	 * So, we fork and let the kid set the real and effective
+	 * user id's to the user, so he can read everything of his
+	 * own, but not his professor's final exam and not stuff
+	 * owned by daemon.  If the kid exits with non-zero status,
+	 * that means that the user typed interrupt, and the parent
+	 * (still with daemon permissions) removes the spool file.
+	 */
+	signal(SIGINT, SIG_IGN);
+	pid = fork();
+	if (pid == -1) {
+		perror("fork");
+		exit(1);
+	}
+	if (pid) {
+		int wpid, status;
+
+		/*
+		 * We are the parent. If the kid has problems,
+		 * cleanup the spool directory.
+		 */
+		wpid = wait(&status);
+		if (wpid != pid || status) {
+			cleanup();
+			exit(1);
+		}
+		/*
+		 * The kid should have alread flushed the buffers.
+		 */
+		_exit(0);
+	}
+
+	/*
+	 * Exit on interrupt.
+	 */
+	signal(SIGINT, SIG_DFL);
+
+	/*
+	 * We are the kid, give up daemon permissions.
+	 */
+	setuid(getuid());
+
+	/*
+	 * Open the input file with the user's permissions.
+	 */
+	if (!standardin) {
+		jobfile = *argv;
+		if ((inputfile = fopen(jobfile, "r")) == NULL) {
+			perror(jobfile);
+			exit(1);
+		}
+	}
+		
 	/*
 	 * Determine what shell we should use to run the job. If the user
 	 * didn't explicitly request that his/her current shell be over-
@@ -399,7 +453,6 @@ char **argv;
 	 */
 	fclose(inputfile);
 	fclose(spoolfile);
-	chmod(atfile,0444);
 
 	exit(0);
 
@@ -869,8 +922,6 @@ int uid;
  */
 cleanup()
 {
-	fclose(inputfile);
-	fclose(spoolfile);
 	if (unlink(atfile) == -1)
 		perror(atfile);
 	exit(1);
