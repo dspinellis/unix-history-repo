@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	4.11 %G%";
+static char sccsid[] = "@(#)newfs.c	4.12 %G%";
 #endif
 
 /*
@@ -26,6 +26,7 @@ int	sectorsize;		/* bytes/sector */
 int	cpg;			/* cylinders/cylinder group */
 int	minfree = -1;		/* free space threshold */
 int	rpm;			/* revolutions/minute of drive */
+int	density;		/* number of bytes per inode */
 
 char	*av[20];		/* argv array and buffers for exec */
 char	a2[20];
@@ -36,6 +37,7 @@ char	a6[20];
 char	a7[20];
 char	a8[20];
 char	a9[20];
+char	a10[20];
 char	device[MAXPATHLEN];
 char	cmd[BUFSIZ];
 
@@ -141,6 +143,16 @@ main(argc, argv)
 					fatal("%s: bad revs/minute\n", *argv);
 				goto next;
 
+			case 'i':
+				if (argc < 1)
+					fatal("-i: missing bytes per inode\n");
+				argc--, argv++;
+				density = atoi(*argv);
+				if (density < 0)
+					fatal("%s: bad bytes per inode\n",
+						*argv);
+				goto next;
+
 			default:
 				fatal("-%c: unknown flag", cp);
 			}
@@ -159,6 +171,7 @@ next:
 		fprintf(stderr, "\t-m minimum free space %%\n");
 		fprintf(stderr, "\t-r revolutions/minute\n");
 		fprintf(stderr, "\t-S sector size\n");
+		fprintf(stderr, "\t-i number of bytes per inode\n");
 		exit(1);
 	}
 	special = argv[0];
@@ -220,6 +233,8 @@ next:
 			fatal("%s: no default revolutions/minute value",
 				argv[1]);
 	}
+	if (density <= 0)
+		density = 2048;
 	if (minfree < 0)
 		minfree = 10;
 	if (cpg == 0)
@@ -233,6 +248,7 @@ next:
 	av[i++] = sprintf(a7, "%d", cpg);
 	av[i++] = sprintf(a8, "%d", minfree);
 	av[i++] = sprintf(a9, "%d", rpm / 60);
+	av[i++] = sprintf(a10, "%d", density);
 	av[i++] = 0;
 	sprintf(cmd, "/etc/mkfs %s", special);
 	for (i = 0; av[i] != 0; i++) {
