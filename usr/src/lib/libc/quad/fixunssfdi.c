@@ -10,7 +10,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fixunssfdi.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)fixunssfdi.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include "quad.h"
@@ -36,8 +36,13 @@ __fixunssfdi(float f)
 
 	if (f < 0)
 		return (UQUAD_MAX);	/* ??? should be 0?  ERANGE??? */
+#ifdef notdef				/* this falls afoul of a GCC bug */
 	if (f >= UQUAD_MAX)
 		return (UQUAD_MAX);
+#else					/* so we wire in 2^64-1 instead */
+	if (f >= 18446744073709551615.0)
+		return (UQUAD_MAX);
+#endif
 	x = f;
 	/*
 	 * Get the upper part of the result.  Note that the divide
