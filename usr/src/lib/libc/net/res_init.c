@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_init.c	6.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_init.c	6.6 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <sys/types.h>
@@ -31,15 +31,11 @@ char    *conffile = "/etc/resolv.conf";
  * Resolver state default settings
  */
 
-#ifndef RES_TIMEOUT
-#define RES_TIMEOUT 4
-#endif
-
 struct state _res = {
-    RES_TIMEOUT,                 /* retransmition time interval */
-    4,                           /* number of times to retransmit */
-    RES_RECURSE|RES_DEFNAMES,    /* options flags */
-    1,                           /* number of name servers */
+    RES_TIMEOUT,               	/* retransmition time interval */
+    4,                         	/* number of times to retransmit */
+    RES_DEFAULT,		/* options flags */
+    1,                         	/* number of name servers */
 };
 
 /*
@@ -55,13 +51,12 @@ struct state _res = {
 res_init()
 {
     register FILE *fp;
-    char buf[BUFSIZ], *cp;
+    register char *cp, **pp;
+    char buf[BUFSIZ];
     extern u_long inet_addr();
     extern char *index();
     extern char *strcpy(), *strncpy();
-#ifdef DEBUG
     extern char *getenv();
-#endif DEBUG
     int n = 0;    /* number of nameserver records read from file */
 
     _res.nsaddr.sin_addr.s_addr = INADDR_ANY;
@@ -119,11 +114,21 @@ res_init()
              (void)strcpy(_res.defdname, cp + 1);
     }
 
-#ifdef DEBUG
     /* Allow user to override the local domain definition */
     if ((cp = getenv("LOCALDOMAIN")) != NULL)
         (void)strncpy(_res.defdname, cp, sizeof(_res.defdname));
-#endif DEBUG
+
+    /* find components of local domain that might be searched */
+    pp = _res.dnsrch;
+    *pp++ = _res.defdname;
+    for (cp = _res.defdname, n = 0; *cp; cp++)
+	if (*cp == '.')
+	    n++;
+    cp = _res.defdname;
+    for (; n >= LOCALDOMAINPARTS && pp < _res.dnsrch + MAXDNSRCH; n--) {
+	cp = index(cp, '.');
+	*pp++ = ++cp;
+    }
     _res.options |= RES_INIT;
     return(0);
 }
