@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)main.c	5.4	%G%
+ *	@(#)main.c	5.5	%G%
  */
 #include <stdio.h>
 #include <signal.h>
@@ -19,7 +19,7 @@ int argc;
 char **argv;
 char **arge;
 {
-sig_t sigdie;
+void sigdie();
 sig_t sigf;
 int signum;
 
@@ -106,11 +106,13 @@ struct action act_ill[] = {
 };
 
 #if (defined(vax) || defined(tahoe))
+void
 sigdie(s, t, sc)
 int s; int t; struct sigcontext *sc;
 
 #else	pdp11
 
+void
 sigdie(s, t, pc)
 int s; int t; long pc;
 
