@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)uipc_socket2.c	7.3 (Berkeley) %G%
+ *	@(#)uipc_socket2.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -136,6 +136,7 @@ sonewconn(head)
 	so->so_proto = head->so_proto;
 	so->so_timeo = head->so_timeo;
 	so->so_pgrp = head->so_pgrp;
+	(void) soreserve(so, head->so_snd.sb_hiwat, head->so_snd.sb_hiwat);
 	soqinsque(head, so, 0);
 	if ((*so->so_proto->pr_usrreq)(so, PRU_ATTACH,
 	    (struct mbuf *)0, (struct mbuf *)0, (struct mbuf *)0)) {
