@@ -1,4 +1,4 @@
-/*	kern_synch.c	3.7	%H%	*/
+/*	kern_synch.c	3.8	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -9,6 +9,7 @@
 #include "../h/inode.h"
 #include "../h/vm.h"
 #include "../h/pte.h"
+#include "../h/inline.h"
 
 
 #define SQSIZE 0100	/* Must be power of 2 */
@@ -44,7 +45,7 @@ caddr_t chan;
 	rp->p_link = slpque[h];
 	slpque[h] = rp;
 	if(pri > PZERO) {
-		if(rp->p_sig && issig()) {
+		if(ISSIG(rp)) {
 			rp->p_wchan = 0;
 			rp->p_stat = SRUN;
 			slpque[h] = rp->p_link;
@@ -57,7 +58,7 @@ caddr_t chan;
 			wakeup((caddr_t)&runin);
 		}
 		swtch();
-		if(rp->p_sig && issig())
+		if(ISSIG(rp))
 			goto psig;
 	} else {
 		(void) spl0();
@@ -125,6 +126,26 @@ caddr_t chan;
 }
 
 /*
+ * Remove a process from its wait queue
+ */
+unsleep(p)
+register struct proc *p;
+{
+	register struct proc **hp;
+	register s;
+
+	s = spl6();
+	if (p->p_wchan) {
+		hp = &slpque[HASH(p->p_wchan)];
+		while (*hp != p)
+			hp = &(*hp)->p_link;
+		*hp = p->p_link;
+		p->p_wchan = 0;
+	}
+	splx(s);
+}
+
+/*
  * Wake up all processes sleeping on chan.
  */
 wakeup(chan)
@@ -140,7 +161,7 @@ restart:
 	p = slpque[i];
 	q = NULL;
 	while(p != NULL) {
-		if (p->p_rlink || p->p_stat != SSLEEP)
+		if (p->p_rlink || p->p_stat != SSLEEP && p->p_stat != SSTOP)
 			panic("wakeup");
 		if (p->p_wchan==chan && p->p_stat!=SZOMB) {
 			if (q == NULL)
@@ -149,23 +170,25 @@ restart:
 				q->p_link = p->p_link;
 			p->p_wchan = 0;
 			p->p_slptime = 0;
-			/* OPTIMIZED INLINE EXPANSION OF setrun(p) */
-			p->p_stat = SRUN;
-			if (p->p_flag & SLOAD) {
+			if (p->p_stat == SSLEEP) {
+				/* OPTIMIZED INLINE EXPANSION OF setrun(p) */
+				p->p_stat = SRUN;
+				if (p->p_flag & SLOAD) {
 #ifndef FASTVAX
-				p->p_link = runq;
-				runq = p->p_link;
+					p->p_link = runq;
+					runq = p->p_link;
 #else
-				setrq(p);
+					setrq(p);
 #endif
+				}
+				if(p->p_pri < curpri)
+					runrun++;
+				if(runout != 0 && (p->p_flag&SLOAD) == 0) {
+					runout = 0;
+					wakeup((caddr_t)&runout);
+				}
+				/* END INLINE EXPANSION */
 			}
-			if(p->p_pri < curpri)
-				runrun++;
-			if(runout != 0 && (p->p_flag&SLOAD) == 0) {
-				runout = 0;
-				wakeup((caddr_t)&runout);
-			}
-			/* END INLINE EXPANSION */
 			goto restart;
 		}
 		q = p;
@@ -209,11 +232,7 @@ register struct proc *p;
 		panic("setrun");
 
 	case SSLEEP:
-		if (w = p->p_wchan) {
-			wakeup(w);
-			splx(s);
-			return;
-		}
+		unsleep(p);		/* e.g. when sending signals */
 		break;
 
 	case SIDL:
@@ -305,8 +324,12 @@ retry:
 	rpp->p_textp = isvfork ? 0 : rip->p_textp;
 	rpp->p_pid = mpid;
 	rpp->p_ppid = rip->p_pid;
+	rpp->p_pptr = rip;
 	rpp->p_time = 0;
 	rpp->p_cpu = 0;
+	rpp->p_siga0 = rip->p_siga0;
+	rpp->p_siga1 = rip->p_siga1;
+	/* take along any pending signals, like stops? */
 	if (isvfork) {
 		rpp->p_tsize = rpp->p_dsize = rpp->p_ssize = 0;
 		rpp->p_szpt = clrnd(ctopt(UPAGES));
