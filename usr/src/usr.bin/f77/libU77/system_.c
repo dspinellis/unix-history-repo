@@ -1,5 +1,5 @@
 /*
-char id_system[] = "@(#)system_.c	1.3";
+char id_system[] = "@(#)system_.c	1.4";
  *
  * execute a unix command
  *
@@ -19,11 +19,12 @@ char *s;
 long n;
 {
 	char buf[256];
-	int i;
+	long i;
 
 	if (n >= sizeof buf)
 		return(-(long)(errno=F_ERARG));
-	for (i = 0; i < MXUNIT; flush(i++)) ;
+	for (i = 0; i < MXUNIT; i++)
+		flush_(&i);
 	g_char(s, n, buf);
 	return((long)system(buf));
 }
