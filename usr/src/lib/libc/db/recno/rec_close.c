@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_close.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_close.c	5.10 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -47,9 +47,13 @@ __rec_close(dbp)
 	if (ISSET(t, BTF_MEMMAPPED) && munmap(t->bt_smap, t->bt_msize))
 		rval = RET_ERROR;
 
-	if (!ISSET(t, BTF_RINMEM) &&
-	    ISSET(t, BTF_CLOSEFP) ? fclose(t->bt_rfp) : close(t->bt_rfd))
-		rval = RET_ERROR;
+	if (!ISSET(t, BTF_RINMEM))
+		if (ISSET(t, BTF_CLOSEFP)) {
+			if (fclose(t->bt_rfp))
+				rval = RET_ERROR;
+		} else
+			if (close(t->bt_rfd))
+				rval = RET_ERROR;
 
 	if (__bt_close(dbp) == RET_ERROR)
 		rval = RET_ERROR;
