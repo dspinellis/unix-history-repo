@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)vcat.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)vcat.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -325,7 +325,7 @@ char spectab[128] = {
 	'{',	/*{*/
 	'}',	/*}*/
 	'\'',	/*' acute accent*/
-	'\`',	/*` grave accent*/
+	'`',	/*` grave accent*/
 	'^',	/*^*/
 	'#',	/*sharp*/
 	'\036',	/*left hand*/
