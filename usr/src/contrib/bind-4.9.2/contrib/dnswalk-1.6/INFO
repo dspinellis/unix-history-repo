@@ -1,0 +1,75 @@
+Return-Path: hamjavar@unm.edu
+Received: by gw.home.vix.com; id AA20199; Sat, 25 Sep 93 13:11:55 -0700
+Received: by lacerta.unm.edu (Smail3.1.28.1 #4)
+	id m0ogfN7-0000XPC; Sat, 25 Sep 93 13:33 MDT
+Date: Sat, 25 Sep 1993 13:33:09 -0600 (MDT)
+From: Farid Hamjavar <hamjavar@unm.edu>
+Subject: Re: ask!
+To: Paul A Vixie <paul>
+Cc: bind@uunet.uu.net
+In-Reply-To: <VIXIE.93Sep25033128@gw.home.vix.com>
+Message-Id: <Pine.3.04.9309251309.A16999-c100000@lacerta.unm.edu>
+Mime-Version: 1.0
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+
+
+dnswalk is a DNS debugger.  It performs zone transfers of specified domains,
+and checks the database in numerous ways for internal consistency, as well
+as accuracy.
+
+dnswalk requires perl and dig.  (Tested under perl-4.036, dig 2.0, and the
+dig shipped with BIND 4.9.x) If you do not have these tools, get them.
+(perl is assumed to be in /usr/local/bin, edit the first line of dnswalk
+if it is not)
+
+They can be found by anonymous ftp at:
+ftp.uu.net:/networking/ip/dns/dig.2.0.tar.Z
+ftp.uu.net:/systems/gnu/perl-*.tar.Z
+gatekeeper.dec.com:/pub/BSD/bind/4.9/4.9.*.tar.Z
+
+dnswalk works much better if you use the dig that is packaged with the
+BIND 4.9.x distribution.  (It is much less buggy than its predecessor)
+
+dnswalk is not the be-all end-all tool for checking the integrity of your
+DNS database.  I would suggest it be used after using 'doc', written by
+Steve Hotz (hotz@isi.edu) and Paul Mockapetris (pvm@isi.edu).  It can be
+found via FTP from: ftp.uu.net:/networking/ip/dns/doc.2.0.tar.Z [and in
+the contrib/ subdir of 4.9.x's source kit]
+
+dnswalk is not a replacement for doc.  This was written to check individual
+database entries, while 'doc' ensures that the overall database structure
+and authority records are consistent.  dnswalk may not even function correctly
+if authority records are missing or incorrect.
+
+This program may be freely distributed, as long as this notice and
+documentation are distributed with the program.  This program is
+released as-is, with no warranty expressed or implied.  Some assembly
+required, contents may settle during shipment.  This program can be
+found at ftp.pop.psu.edu:/pub/src/dnswalk/dnswalk.1.6.tar.Z,
+ftp.univ-lyon1.fr:/pub/mirrors/unix/dnswalk, and probably also in
+ftp.uu.net:/networking/ip/dns.
+
+Farid
+
+
+On Sat, 25 Sep 1993, Paul A Vixie wrote:
+
+> Date: Sat, 25 Sep 93 03:31:38 -0700
+> From: Paul A Vixie <paul@vix.com>
+> To: bind@uunet.uu.net
+> Subject: Re: ask!
+> 
+> >>	Can you say me, what is "dnswalk" and what it do? 
+> 
+> I don't remember.  I don't keep a close eye on things in the contrib/
+> subdirectory of the BIND source pool; if it looks interesting I grab 
+> it and put it in contrib/ so that folks who grab BIND will get a pile
+> of goodies with it.  I have no idea what "dnswalk" does but it sounds
+> like a domain verification tool.  I recommend reading the sources.
+> --
+> Paul Vixie
+> Redwood City, CA
+> <paul@vix.com>
+> decwrl!vixie!paul
+
+
