@@ -113,7 +113,6 @@
 /usr/src/sbin/slattach/slattach.8
 /usr/src/usr.sbin/sliplogin/sliplogin.8
 /usr/src/share/man/man8/sticky.8
-/usr/src/games/fortune/strfile/strfile.8
 /usr/src/sbin/swapon/swapon.8
 /usr/src/bin/sync/sync.8
 /usr/src/usr.sbin/sysctl/sysctl.8
