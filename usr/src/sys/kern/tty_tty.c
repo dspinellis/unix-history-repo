@@ -1,4 +1,4 @@
-/*	tty_tty.c	4.12	82/10/17	*/
+/*	tty_tty.c	4.13	82/10/17	*/
 
 /*
  * Indirect driver for controlling tty.
@@ -66,7 +66,10 @@ syioctl(dev, cmd, addr, flag)
 	return ((*cdevsw[major(u.u_ttyd)].d_ioctl)(u.u_ttyd, cmd, addr, flag));
 }
 
+/*ARGSUSED*/
 syselect(dev, flag)
+	dev_t dev;
+	int flag;
 {
 
 	if (u.u_ttyp == NULL) {

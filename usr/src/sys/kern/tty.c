@@ -1,4 +1,4 @@
-/*	tty.c	4.31	82/10/17	*/
+/*	tty.c	4.32	82/10/17	*/
 
 /*
  * TTY subroutines common to more than one line discipline
@@ -434,20 +434,17 @@ ttioctl(tp, com, data, flag)
 		*(int *)data = tp->t_local;
 		break;
 
-	case TIOCSTOP: {
-		int s = spl5();
-
+	case TIOCSTOP:
+		s = spl5();
 		if ((tp->t_state & TS_TTSTOP) == 0) {
 			tp->t_state |= TS_TTSTOP;
 			(*cdevsw[major(tp->t_dev)].d_stop)(tp, 0);
 		}
 		splx(s);
 		break;
-	}
 
-	case TIOCSTART: {
-		int s = spl5();
-
+	case TIOCSTART:
+		s = spl5();
 		if ((tp->t_state & TS_TTSTOP) || (tp->t_local & LFLUSHO)) {
 			tp->t_state &= ~TS_TTSTOP;
 			tp->t_local &= ~LFLUSHO;
@@ -455,7 +452,6 @@ ttioctl(tp, com, data, flag)
 		}
 		splx(s);
 		break;
-	}
 
 	default:
 		return (-1);

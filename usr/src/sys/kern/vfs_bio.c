@@ -1,4 +1,4 @@
-/*	vfs_bio.c	4.36	82/09/04	*/
+/*	vfs_bio.c	4.37	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -43,10 +43,10 @@ bread(dev, blkno, size)
  * read-ahead block (which is not allocated to the caller)
  */
 struct buf *
-breada(dev, blkno, size, rablkno, rasize)
+breada(dev, blkno, size, rablkno, rabsize)
 	dev_t dev;
 	daddr_t blkno; int size;
-	daddr_t rablkno; int rasize;
+	daddr_t rablkno; int rabsize;
 {
 	register struct buf *bp, *rabp;
 
@@ -72,7 +72,7 @@ breada(dev, blkno, size, rablkno, rasize)
 	 * on it also (as above).
 	 */
 	if (rablkno && !incore(dev, rablkno)) {
-		rabp = getblk(dev, rablkno, rasize);
+		rabp = getblk(dev, rablkno, rabsize);
 		if (rabp->b_flags & B_DONE) {
 			brelse(rabp);
 			trace(TR_BREADHITRA, dev, blkno);

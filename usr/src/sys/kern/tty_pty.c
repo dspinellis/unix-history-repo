@@ -1,4 +1,4 @@
-/*	tty_pty.c	4.27	82/10/17	*/
+/*	tty_pty.c	4.28	82/10/17	*/
 
 /*
  * Pseudo-teletype Driver
@@ -219,7 +219,7 @@ ptcread(dev, uio)
 	int error = 0;
 
 	if ((tp->t_state&(TS_CARR_ON|TS_ISOPEN)) == 0)
-		return;
+		return (EIO);
 	pti = &pt_ioctl[minor(dev)];
 	if (pti->pt_flags & PF_PKT) {
 		if (pti->pt_send) {

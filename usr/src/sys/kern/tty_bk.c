@@ -1,4 +1,4 @@
-/*	tty_bk.c	4.6	82/10/17	*/
+/*	tty_bk.c	4.7	82/10/17	*/
 
 #include "bk.h"
 
@@ -86,7 +86,7 @@ bkread(tp, uio)
 	register struct tty *tp;
 	struct uio *uio;
 {
-	register int i, s;
+	register int s;
 	int error;
 
 	if ((tp->t_state&TS_CARR_ON)==0)

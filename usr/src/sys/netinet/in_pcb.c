@@ -1,4 +1,4 @@
-/*	in_pcb.c	4.32	82/10/09	*/
+/*	in_pcb.c	4.33	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -81,7 +81,7 @@ in_pcbbind(inp, nam)
 		u_short aport = lport;
 		int wild = 0;
 
-#if vax
+#if vax || pdp11 || ns16032
 		aport = htons(aport);
 #endif
 		/* GROSS */

@@ -1,4 +1,4 @@
-/*	ip_input.c	1.51	82/10/09	*/
+/*	ip_input.c	1.52	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -6,6 +6,7 @@
 #include "../h/protosw.h"
 #include "../h/socket.h"
 #include "../netinet/in.h"
+#include "../netinet/in_pcb.h"
 #include "../netinet/in_systm.h"
 #include "../net/if.h"
 #include "../netinet/ip.h"			/* belongs before in.h */
@@ -57,7 +58,7 @@ ipintr()
 {
 	register struct ip *ip;
 	register struct mbuf *m;
-	struct mbuf *m0, *mopt;
+	struct mbuf *m0;
 	register int i;
 	register struct ipq *fp;
 	int hlen, s;
@@ -88,7 +89,7 @@ next:
 			goto bad;
 		}
 
-#if vax
+#if vax || pdp11 || ns16032
 	/*
 	 * Convert fields to host representation.
 	 */
@@ -577,6 +578,7 @@ ip_ctlinput(cmd, arg)
 		sin = (struct in_addr *)arg;
 	else
 		sin = &((struct icmp *)arg)->icmp_ip.ip_dst;
+/* THIS IS VERY QUESTIONABLE, SHOULD HIT ALL PROTOCOLS */
 	in_pcbnotify(&tcb, sin, inetctlerrmap[cmd], tcp_abort);
 	in_pcbnotify(&udb, sin, inetctlerrmap[cmd], udp_abort);
 }

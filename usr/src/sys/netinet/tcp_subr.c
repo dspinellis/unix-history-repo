@@ -1,4 +1,4 @@
-/*	tcp_subr.c	4.30	82/10/09	*/
+/*	tcp_subr.c	4.31	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -126,7 +126,7 @@ tcp_respond(tp, ti, ack, seq, flags)
 	ti->ti_len = sizeof (struct tcphdr) + tlen;
 	ti->ti_seq = seq;
 	ti->ti_ack = ack;
-#if vax
+#if vax || pdp11 || ns16032
 	ti->ti_len = htons((u_short)ti->ti_len);
 	ti->ti_seq = htonl(ti->ti_seq);
 	ti->ti_ack = htonl(ti->ti_ack);
@@ -135,7 +135,7 @@ tcp_respond(tp, ti, ack, seq, flags)
 	ti->ti_off = sizeof (struct tcphdr) >> 2;
 	ti->ti_flags = flags;
 	ti->ti_win = win;
-#if vax
+#if vax || pdp11 || ns16032
 	ti->ti_win = htons(ti->ti_win);
 #endif
 	ti->ti_urp = 0;
