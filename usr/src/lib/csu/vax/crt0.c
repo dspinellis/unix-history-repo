@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)crt0.c	4.5 (Berkeley) %G%";
+static	char *sccsid = "@(#)crt0.c	4.6 (Berkeley) %G%";
 
 /*
  *	C start up routine.
@@ -76,8 +76,14 @@ exit(code)
 
 #ifdef CRT0
 /*
- * null mcount, just in case some routine is compiled for profiling
+ * null mcount and moncontrol,
+ * just in case some routine is compiled for profiling
  */
+moncontrol(val)
+	int val;
+{
+
+}
 asm("	.globl	mcount");
 asm("mcount:	rsb");
 #endif CRT0
