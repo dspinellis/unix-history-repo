@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tz.c	7.4 (Berkeley) %G%
+ *	@(#)tz.c	7.5 (Berkeley) %G%
  *
  * from: $Header: /sprite/src/kernel/dev/RCS/devSCSITape.c,
  *	v 8.14 89/07/31 17:26:13 mendel Exp $ SPRITE (Berkeley)
@@ -499,7 +499,6 @@ tzopen(dev, flags, type, p)
 	case MT_ISAR:
 	case MT_ISHPDAT:
 	case MT_ISVIPER1:
-	case MT_ISPYTHON:
 		sc->sc_blklen = 512;
 		break;
 
@@ -512,6 +511,7 @@ tzopen(dev, flags, type, p)
 #endif
 		break;
 
+	case MT_ISPYTHON:
 	case MT_ISMFOUR:
 	case MT_ISTK50:
 		sc->sc_blklen = 0;
