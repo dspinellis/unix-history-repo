@@ -448,7 +448,10 @@ makecg()
 		cgrp.cg_time = time(0);
 		cgrp.cg_magic = CG_MAGIC;
 		cgrp.cg_cgx = c;
-		cgrp.cg_ncyl = sblock.fs_cpg;
+		if (c == sblock.fs_ncg - 1)
+			cgrp.cg_ncyl = sblock.fs_ncyl % sblock.fs_cpg;
+		else
+			cgrp.cg_ncyl = sblock.fs_cpg;
 		cgrp.cg_niblk = sblock.fs_ipg;
 		cgrp.cg_ndblk = dmax - dbase;
 		cgrp.cg_cs.cs_ndir = 0;
@@ -521,12 +524,14 @@ makecg()
 			} else
 				clrbit(cgrp.cg_free, d);
 		}
+		for (; d % sblock.fs_frag != 0; d++)
+			clrbit(cgrp.cg_free, d);
 		if (j != d) {
 			blk = blkmap(&sblock, cgrp.cg_free, j);
 			fragacct(&sblock, blk, cgrp.cg_frsum, 1);
 		}
-		for (; d < MAXBPG(&sblock); d++)
-			clrbit(cgrp.cg_free, d);
+		for (d /= sblock.fs_frag; d < MAXBPG(&sblock); d ++)
+			clrblock(&sblock, cgrp.cg_free, d);
 		sblock.fs_cstotal.cs_nffree += cgrp.cg_cs.cs_nffree;
 		sblock.fs_cstotal.cs_nbfree += cgrp.cg_cs.cs_nbfree;
 		sblock.fs_cstotal.cs_nifree += cgrp.cg_cs.cs_nifree;
@@ -642,9 +647,8 @@ bread(bno, buf, cnt)
 }
 
 /*
- * block operations
+ * check if a block is available
  */
-
 isblock(fs, cp, h)
 	struct fs *fs;
 	unsigned char *cp;
@@ -665,11 +669,49 @@ isblock(fs, cp, h)
 		mask = 0x01 << (h & 0x7);
 		return ((cp[h >> 3] & mask) == mask);
 	default:
+#ifdef STANDALONE
+		printf("isblock bad fs_frag %d\n", fs->fs_frag);
+#else
 		fprintf(stderr, "isblock bad fs_frag %d\n", fs->fs_frag);
+#endif
 		return;
 	}
 }
 
+/*
+ * take a block out of the map
+ */
+clrblock(fs, cp, h)
+	struct fs *fs;
+	unsigned char *cp;
+	int h;
+{
+	switch ((fs)->fs_frag) {
+	case 8:
+		cp[h] = 0;
+		return;
+	case 4:
+		cp[h >> 1] &= ~(0x0f << ((h & 0x1) << 2));
+		return;
+	case 2:
+		cp[h >> 2] &= ~(0x03 << ((h & 0x3) << 1));
+		return;
+	case 1:
+		cp[h >> 3] &= ~(0x01 << (h & 0x7));
+		return;
+	default:
+#ifdef STANDALONE
+		printf("clrblock bad fs_frag %d\n", fs->fs_frag);
+#else
+		fprintf(stderr, "clrblock bad fs_frag %d\n", fs->fs_frag);
+#endif
+		return;
+	}
+}
+
+/*
+ * put a block into the map
+ */
 setblock(fs, cp, h)
 	struct fs *fs;
 	unsigned char *cp;
@@ -689,7 +731,11 @@ setblock(fs, cp, h)
 		cp[h >> 3] |= (0x01 << (h & 0x7));
 		return;
 	default:
+#ifdef STANDALONE
+		printf("setblock bad fs_frag %d\n", fs->fs_frag);
+#else
 		fprintf(stderr, "setblock bad fs_frag %d\n", fs->fs_frag);
+#endif
 		return;
 	}
 }
