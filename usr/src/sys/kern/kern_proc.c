@@ -1,4 +1,4 @@
-/*	kern_proc.c	3.24	%G%	*/
+/*	kern_proc.c	3.25	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -411,7 +411,8 @@ exit(rv)
 	else
 		p->p_siga1 = 0;
 	(void) spl0();
-	p->p_aveflt = 0;
+	p->p_cpticks = 0;
+	p->p_pctcpu = 0;
 	for(i=0; i<NSIG; i++)
 		u.u_signal[i] = SIG_IGN;
 	/*

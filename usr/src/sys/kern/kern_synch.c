@@ -1,4 +1,4 @@
-/*	kern_synch.c	3.14	%G%	*/
+/*	kern_synch.c	3.15	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -342,8 +342,8 @@ retry:
 	rpp->p_rssize = 0;
 	rpp->p_wchan = 0;
 	rpp->p_slptime = 0;
-	rpp->p_aveflt = rip->p_aveflt;
-	rpp->p_faults = 0;
+	rpp->p_pctcpu = 0;
+	rpp->p_cpticks = 0;
 	n = PIDHASH(rpp->p_pid);
 	p->p_idhash = pidhash[n];
 	pidhash[n] = rpp - proc;

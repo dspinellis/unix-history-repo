@@ -1,4 +1,4 @@
-/*	%H%	3.19	kern_clock.c	*/
+/*	%H%	3.20	kern_clock.c	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -19,9 +19,13 @@
 
 #define	SCHMAG	9/10
 
+/*
+ * Constant for decay filter for cpu usage.
+ */
+double	ccpu = 0.93550698503161773774;		/* exp(-1/15) */
 
 /*
- * clock is called straight from
+ * Clock is called straight from
  * the real time clock interrupt.
  *
  * Functions:
@@ -150,6 +154,7 @@ out:
 	dk_time[cpstate][dk_busy&(DK_NSTATES-1)]++;
 	if (!noproc) {
 		pp = u.u_procp;
+		pp->p_cpticks++;
 		if(++pp->p_cpu == 0)
 			pp->p_cpu--;
 		if(pp->p_cpu % 16 == 0) {
@@ -206,10 +211,10 @@ out:
 			if(pp->p_stat==SSLEEP||pp->p_stat==SSTOP)
 				if (pp->p_slptime != 127)
 					pp->p_slptime++;
-			if(pp->p_flag&SLOAD) {
-				ave(pp->p_aveflt, pp->p_faults, 5);
-				pp->p_faults = 0;
-			}
+			if (pp->p_flag&SLOAD)
+				pp->p_pctcpu = ccpu * pp->p_pctcpu +
+				    (1.0 - ccpu) * (pp->p_cpticks/(float)HZ);
+			pp->p_cpticks = 0;
 			a = (pp->p_cpu & 0377)*SCHMAG + pp->p_nice - NZERO;
 			if(a < 0)
 				a = 0;
