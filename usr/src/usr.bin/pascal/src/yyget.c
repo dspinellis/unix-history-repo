@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)yyget.c 1.3 %G%";
+static	char sccsid[] = "@(#)yyget.c 1.4 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -62,7 +62,7 @@ struct inc {
 	int	yyLinpt;
 } incs[MAXINC];
 
-extern	char *printed;
+extern	char printed;
 
 int	inclev	= -1;
 
@@ -208,7 +208,7 @@ includ()
  *		pexit(DIED);
  *	}
  */
-	if ((!dotted(cp, 'i')) && (!dotted(cp, 'h'))) {
+	if (!dotted(cp, 'i') && !dotted(cp, 'h')) {
 		line = yyline;
 		error("Include filename must end in .i or .h");
 	}
