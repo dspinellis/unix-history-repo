@@ -1,0 +1,111 @@
+#!/bin/make -f
+# pathalias -- by steve bellovin, as told to peter honeyman
+
+### configuration section
+###
+# if you can't or don't intend to use dbm files,
+# don't bother with DBM or makedb
+DBM = -ldbm
+# or if you roll your own ...
+# DBM = dbm.o
+###
+# where is getopt (if not in the c library)?
+# GETOPT = -lgetopt
+###
+# where is the resolver (if not in the c library)?
+RESOLV = -lresolv
+### end of configuration section 
+
+CC = cc -g
+CFLAGS =  
+LDFLAGS =$(DBM) $(GETOPT) $(RESOLV)
+YFLAGS = -dD
+YYDEBUG=0
+
+OBJ = addlink.o addnode.o domain.o local.o main.o mapit.o mapaux.o mem.o parse.o printit.o
+OFILES = addlink.O addnode.O domain.O local.O main.O mapit.O mapaux.O mem.O parse.O printit.O
+HDRS = def.h config.h
+CSRC = addlink.c addnode.c domain.c local.c main.c mapit.c mapaux.c mem.c printit.c
+LSRC = $(CSRC) parse.c
+SRC = $(CSRC) parse.y makedb.c
+
+pathalias: & $(OBJ)
+	$(CC) $(OBJ) $(LDFLAGS) -o pathalias
+
+all: pathalias makedb
+
+$(OBJ):	$(HDRS)
+
+parse.c: parse.y $(HDRS)
+	$(YACC) $(YFLAGS) parse.y
+	mv y.tab.c parse.c
+#	echo '#define YYDEBUG' > parse.c
+#	sed -e '/^# line/d' -e 's/yydebug = 0/yydebug = $(YYDEBUG)/' y.tab.c >> parse.c
+
+makedb: makedb.o
+	$(CC) makedb.o $(LDFLAGS) -o makedb
+
+makedb.o: config.h
+
+clean:
+	rm -f *.o y.tab.? parse.c
+
+tags: $(SRC) $(HDRS)
+	ctags -w $(SRC) $(HDRS)
+
+bundle: README CHANGES pathalias.8 Makefile ${HDRS} ${SRC} make.honey
+	@bundle README CHANGES pathalias.8 Makefile ${HDRS} ${SRC} make.honey
+
+bundle1: README CHANGES pathalias.8 Makefile make.honey ${HDRS}
+	@bundle README CHANGES pathalias.8 Makefile make.honey ${HDRS} 
+
+bundle2: addlink.c addnode.c domain.c local.c main.c
+	@bundle addlink.c addnode.c domain.c local.c main.c
+
+bundle3: mapaux.c mapit.c
+	@bundle mapaux.c mapit.c 
+
+bundle4: mem.c printit.c parse.y makedb.c
+	@bundle mem.c printit.c parse.y makedb.c 
+
+ftp:
+	@make -s bundle | compress > /usr/ftp/usr/honey/pathalias/pathalias.Z
+
+make.honey: makefile
+	@cp makefile make.honey
+
+lint:	$(LSRC)
+	lint -hbu $(CFLAGS) $(LSRC)
+	lint makedb.c
+
+
+# the remainder is site specific.
+
+LOCAL = paths/citi # paths/internet
+FILES = uumap/* $(LOCAL)
+
+AVOID =
+
+# map output (input, really) to lower case; verbose; terminal domains
+ARGS = -iDI
+
+PARGS=$(ARGS) $(AVOID) $(FILES)
+# desperation debugging -- examine the costs.
+costs:
+	pathalias -icvvD ${PARGS} 2>error.costs | awk '{printf("%s\t%s\t%s\n", $$2, $$1, $$3)}' | sort -o pa.costs 
+
+# make one BIG file.  a BIG bad idea.
+cat:
+	for i in $(FILES); do echo "file {$$i}"; cat $$i; echo 'private {}'; done > CAT
+
+# make a pathparse database.  -g is undocumented.
+edges:
+	pathalias -g edges $(PARGS) 2>ERRORS > edges.hosts
+#	makedb edges pa
+
+# let dns do its job
+POSTPROC = egrep -v '(\.(com|edu|mil|gov|net|org|arpa|int|[a-z][a-z])	)' | sort
+
+# round up the usual suspects
+citi doom: $(LOCAL) uumap
+	time pathalias -l $@ $(PARGS) | $(POSTPROC) > $@
