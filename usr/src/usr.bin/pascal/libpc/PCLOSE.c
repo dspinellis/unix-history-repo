@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)PCLOSE.c 1.2 %G%";
+static char sccsid[] = "@(#)PCLOSE.c 1.3 %G%";
 
 #include "h00vars.h"
 #include "h01errs.h"
@@ -16,7 +16,7 @@ PCLOSE(level)
 		if (next->fbuf != 0) {
 			if ((next->funit & FDEF) == 0) {
 				if (next->fblk > PREDEF) {
-					fflush(next->fblk);
+					fflush(next->fbuf);
 					setbuf(next->fbuf, NULL);
 				}
 				fclose(next->fbuf);
