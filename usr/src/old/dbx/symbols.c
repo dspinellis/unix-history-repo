@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)symbols.c 1.2 %G%";
+static char sccsid[] = "@(#)symbols.c 1.3 %G%";
 
 /*
  * Symbol management.
@@ -125,7 +125,7 @@ private Symbol hashtab[HASHTABLESIZE];
  * Allocate a new symbol.
  */
 
-#define SYMBLOCKSIZE 1000
+#define SYMBLOCKSIZE 100
 
 typedef struct Sympool {
     struct Symbol sym[SYMBLOCKSIZE];
@@ -134,7 +134,6 @@ typedef struct Sympool {
 
 private Sympool sympool = nil;
 private Integer nleft = 0;
-private struct Sympool zeropool;
 
 public Symbol symbol_alloc()
 {
@@ -142,7 +141,7 @@ public Symbol symbol_alloc()
 
     if (nleft <= 0) {
 	newpool = new(Sympool);
-	*newpool = zeropool;
+	bzero(newpool, sizeof(newpool));
 	newpool->prevpool = sympool;
 	sympool = newpool;
 	nleft = SYMBLOCKSIZE;
@@ -807,23 +806,11 @@ register Node p;
 	 */
 	case O_CALL:
 	    p1 = p->value.arg[0];
-	    if (p1->op == O_SYM and
-	      (p1->value.sym->class == TYPE or p1->value.sym->class == TAG)) {
-		s = p1->value.sym;
-		dispose(p1);
-		p1 = p->value.arg[1];
-		assert(p1->op == O_COMMA);
-		if (p1->value.arg[1] != nil) {
-		    error("unexpected comma within type conversion");
-		}
-		p->op = O_RVAL;
-		p->value.arg[0] = p1->value.arg[0];
-		p->nodetype = s;
-		p->value.arg[0]->nodetype = s;
-		dispose(p1);
-	    } else {
-		p->nodetype = rtype(p1->nodetype)->type;
-	    }
+	    p->nodetype = rtype(p1->nodetype)->type;
+	    break;
+
+	case O_TYPERENAME:
+	    p->nodetype = p->value.arg[1]->nodetype;
 	    break;
 
 	case O_ITOF:
