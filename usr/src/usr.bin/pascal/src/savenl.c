@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)savenl.c 1.1 %G%";
+static char sccsid[] = "@(#)savenl.c 1.2 %G%";
 
 /*
  * savenl - routines for saving namelist and line number information
@@ -32,6 +32,7 @@ static char sccsid[] = "@(#)savenl.c 1.1 %G%";
 
 #include "whoami.h"
 #include "0.h"
+#include "objfmt.h"
 
 #undef NIL
 
@@ -55,12 +56,15 @@ LOCAL FILE *strfp;
 LOCAL FILE *filesfp;
 LOCAL FILE *linesfp;
 
+LOCAL long nlsize;
+
 /*
  * create temporary files for the namelist info
  */
 
 startnlfile()
 {
+	nlsize = 0;
 	mktemp(symname);
 	mktemp(strname);
 	mktemp(filesname);
@@ -93,6 +97,10 @@ copynlfile()
 	fclose(strfp);
 	fclose(filesfp);
 	fclose(linesfp);
+	if (!opt('g')) {
+		removenlfile();
+		return;
+	}
 	symfd = open(symname, 0);
 	strfd = open(strname, 0);
 	filesfd = open(filesname, 0);
@@ -130,6 +138,18 @@ removenlfile()
 	unlink(strname);
 	unlink(filesname);
 	unlink(linesname);
+}
+
+nlhdrsize()
+{
+	int r;
+
+	if (!opt('g')) {
+		r = 0;
+	} else {
+		r = nlsize + sizeof(nlhdr);
+	}
+	return r;
 }
 
 #define isblock(s)	(s->class == FUNC || s->class == PROC)
@@ -171,6 +191,7 @@ struct nl *to;
 			continue;
 		}
 		nlhdr.nsyms++;
+		nlsize += sizeof(OBJSYM) + sizeof(int);
 		putw(symno(p), symfp);
 		if (p->symbol != NULL) {
 			s->strindex = nlhdr.stringsize;
@@ -202,13 +223,14 @@ struct nl *to;
  */
 
 LOCAL int oline = 0;
-LOCAL int olc = BASEADDR;
+LOCAL int olc = HEADER_BYTES;
 
 lineno(line)
 int line;
 {
 	if (line != oline) {
 		nlhdr.nlines++;
+		nlsize += 2;
 		putc(line - oline, linesfp);
 		putc(lc - olc, linesfp);
 		oline = line;
@@ -232,12 +254,13 @@ int line;
 	FILETAB ft;
 
 	nlhdr.nfiles++;
+	nlsize += sizeof(FILETAB);
 	ft.line = line;
 	oline = line;
 	if (lc == 0) {
 		ft.addr = 0;
 	} else {
-		ft.addr = lc - BASEADDR;
+		ft.addr = lc - HEADER_BYTES;
 	}
 	ft.filename = (char *) nlhdr.stringsize;
 	putstring(s);
@@ -256,6 +279,7 @@ char *s;
 	static OBJSYM zerosym;
 
 	nlhdr.nsyms++;
+	nlsize += sizeof(OBJSYM) + sizeof(int);
 	putw(0, symfp);
 	zerosym.strindex = nlhdr.stringsize;
 	putstring(s);
@@ -271,8 +295,10 @@ char *s;
 {
 	register char *p;
 
-	for (p = s; *p != '\0'; p++)
+	for (p = s; *p != '\0'; p++) {
 		putc(*p, strfp);
+	}
 	nlhdr.stringsize += (p - s + 1);
+	nlsize += (p - s + 1);
 	putc('\0', strfp);
 }
