@@ -1,0 +1,124 @@
+Configure          A shell script that installs everything system dependent.
+EXTERN.h           When included, makes other includes not belong to me.
+HACKERSGUIDE       A brief guide to the contorted innards of [t]rn.
+HINTS              Some helpful hints to get the most out of using trn.
+INIT               Sample system-wide switch file.
+INSTALL            Installation instructions.
+INTERN.h           When included, makes other includes belong to me.
+MANIFEST           This list of files.
+Makefile.SH        Shell script to generate the makefile.
+NEW                List of new features with trn 3.0.
+Pnews.1            Manual page for Pnews.
+Pnews.SH           A news posting shell script that knows about -h.
+README             Start by reading this file.
+Rnmail.1           Manual page for Rnmail.
+Rnmail.SH          A mailer that knows about -h.
+Speller.SH         An ispell wrapper that understands news articles.
+addng.c            Routines for scanning the active file for new newsgroups.
+addng.h            Public info regarding addng.c.
+art.c              Routines to display an article.
+art.h              Public info regarding art.c.
+artio.c            Reserved for the article abstract type, someday.
+artio.h            Public info regarding artio.c.
+artsrch.c          Routines for searching among articles.
+artsrch.h          Public info regarding artsrch.c.
+artstate.h         Info on the current state of the article.
+autosub.c          Routines to allow automatic subscription management
+autosub.h          Public info regarding autosub.c
+backpage.c         Routines for paging backwards in articles.
+backpage.h         Public info regarding backpage.c.
+bits.c             Bitmap management functions.
+bits.h             Public info regarding bits.c.
+cache.c            Routines to handle caching of articles.
+cache.h            Public info regarding cache.c.
+common.h           Global info.
+config.h.SH        Shell script to create config.h
+decode.c           Routines common to the binary decoders
+decode.h           Public info for the binary decoders.
+edit_dist.c        Routines to find the edit distance between two strings.
+final.c            Finalization (exit) routines.
+final.h            Public info regarding final.c.
+getactive.c        Used by shell scripts to get the active file (NNTP only).
+hash.c             Hashing routines.
+hash.h             Public/private info for hashing routines.
+head.c             Header parsing routines.
+head.h             Public info regarding head.c.
+help.c             Help routines.
+help.h             Public info regarding help.c.
+init.c             Initialization (startup) routines.
+init.h             Public info regarding init.c.
+intrp.c            Filename expansion and % interpretation routines.
+intrp.h            Public info regarding intrp.c.
+kfile.c            KILL file routines.
+kfile.h            Public info regarding kfile.c.
+last.c             Routines for handling the .rnlast file.
+last.h             Public info regarding last.c.
+makedepend.SH      Shell script to generate make dependencies.
+makedir.SH         Shell script to make nested subdirectories.
+mbox.saver.SH      Shell script to save an article to a mailbox.
+ndir.c             BSD 4.2 directory routine emulation.
+ndir.h             Public directory info.
+newsetup.1         Manual page for newsetup.
+newsetup.SH        Shell script to create a .newsrc file.
+newsgroups.1       Manual page for newsgroups.
+newsgroups.SH      Shell script to list unsubscribed newsgroups.
+newsnews.SH        A motd-like file that trn may print at startup.
+ng.c               Routines to display a newsgroup.
+ng.h               Public info regarding ng.c.
+ngdata.c           General data fetching routines for a newsgroup.
+ngdata.h           Public info regarding ngdata.c.
+nghash.c           Some hashing routines to speed up active file handling.
+ngsrch.c           Routines to search among newsgroups.
+ngsrch.h           Public info regarding ngsrch.c.
+ngstuff.c          Support routines for ng.c.
+ngstuff.h          Public info regarding ng.c.
+nntp.c             Routines for accessing NNTP commands.
+nntp.h             Public info regarding the NNTP routines.
+nntpclient.c       Custom version of the nntp client library.
+nntpclient.h       Public info for the nntp client library.
+nntpinit.c         Routines to implement server_init().
+norm.saver.SH      Shell script to save an article to a normal file.
+only.c             Routines to perform newsgroup restriction.
+only.h             Public info regarding only.c.
+overview.h         Defines for customizing the overview handling.
+parsedate.y        A yacc script for date parsing.
+patchlevel.h       Indicates current patch level.
+rcln.c             Routines to mung a .newsrc line.
+rcln.h             Public info regarding rcln.c.
+rcstuff.c          Routines to mung the .newsrc file.
+rcstuff.h          Public info regarding rcstuff.c.
+respond.c          Various routines for doing things with articles.
+respond.h          Public info regarding respond.c.
+rt-mt.c            Support for the mthread's .thread file format.
+rt-mt.h            Public/private info for rt-mt.c.
+rt-ov.c            Support for .overview files.
+rt-ov.h            Public info for rt-ov.c.
+rt-page.c          Routines to manipulate pages in the selector.
+rt-page.h          Public info for rt-page.c.
+rt-process.c       The thread-processing code.
+rt-process.h       Public info for rt-process.c.
+rt-select.c        The thread/subject/article selector.
+rt-select.h        Public/private info for rt-select.c.
+rt-util.c          Utility routines for reading threads.
+rt-util.h          Public info for rt-util.c.
+rt-wumpus.c        Routines to draw the character-oriented tree display.
+rt-wumpus.h        Public info for rt-wumpus.c.
+rthread.c          The basic routines added to init and read threads.
+rthread.h          Public info for rthread.c.
+search.c           Regular expression processing ala emacs.
+search.h           Public info regarding search.c.
+sw.c               Switch processing routines.
+sw.h               Public info regarding switch.c.
+term.c             Terminal interface routines.
+term.h             Public info regarding term.c.
+trn.1              Manual pages for trn -- PLEASE READ.
+trn.c              The main program.
+trn.h              Public info for trn.c.
+unipatch.c         A unified diff filter for use with old versions of patch.
+unship.c           Decodes ship files.
+util.c             Utility routines.
+util.h             Public info regarding util.c.
+uudecode.c         Decodes uuencoded files.
+nntp/nntp.patch    A patch for NNTP to add XTHREAD, XOVER, and LISTGROUP.
+nntp/acttimes.c    A program to maintain active.times for NNTP or standalone
+nntp/support.patch A patch for NNTP's support dir to use acttimes.c.
