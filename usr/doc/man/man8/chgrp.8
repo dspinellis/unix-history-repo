@@ -1,0 +1,19 @@
+.th CHGRP VIII 2/8/75
+.sh NAME
+chgrp \*- change group
+.sh SYNOPSIS
+.bd chgrp
+group file ...
+.sh DESCRIPTION
+The group-ID of the files is changed to
+.it group.
+The group may be either a decimal GID or
+a group name found in the group-ID file.
+.s3
+Only the super-user is allowed to change the group of a file,
+in order to simplify as yet unimplemented accounting procedures.
+.sh "SEE ALSO"
+chown (VIII)
+.sh FILES
+/etc/group
+.sh BUGS
