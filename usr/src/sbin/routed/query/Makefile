@@ -13,22 +13,16 @@ all:	routed query trace
 routed: routed.o af.o
 	${CC} -o routed ${LDFLAGS} routed.o af.o -ljobs
 
-routed.o: rip.h router.h
-af.o: router.h
+routed.o query.o: rip.h
+routed.o af.o: router.h
 
-query:	query.o raddr.o
-	${CC} -o query ${LDFLAGS} query.o raddr.o
-
-query.o: rip.h
-raddr.o: ../raddr.c
-	${CC} -S ${CFLAGS} ../raddr.c
-	sed -f ../asm.sed raddr.s | ${AS} -o raddr.o
-	rm -f raddr.s
+query:	query.o
+	${CC} -o query ${LDFLAGS} query.o
 
 trace:	trace.o
 	${CC} -o trace ${LDFLAGS} trace.o
 
-install: ${ALL}
+install: routed trace query
 	install -s routed /etc
 
 lint:
