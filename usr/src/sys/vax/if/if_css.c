@@ -1,4 +1,4 @@
-/*      if_css.c     4.7     82/12/22     */
+/*      if_css.c     4.8     83/05/27     */
 
 #include "css.h"
 
@@ -326,7 +326,6 @@ cssrint(unit)
 {
         register struct css_softc *sc = &css_softc[unit];
         register struct cssdevice *addr;
-        register struct ifqueue *inq;
         struct mbuf *m;
         int len, info;
 

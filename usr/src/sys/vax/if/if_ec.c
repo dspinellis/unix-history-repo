@@ -1,4 +1,4 @@
-/*	if_ec.c	4.33	83/03/15	*/
+/*	if_ec.c	4.34	83/05/27	*/
 
 #include "ec.h"
 
@@ -177,21 +177,9 @@ ecattach(ui)
 		}
 		cp++;
 	}
-#ifdef notdef
-	printf("ec%d: addr=%x:%x:%x:%x:%x:%x\n", ui->ui_unit,
-		es->es_addr[0]&0xff, es->es_addr[1]&0xff,
-		es->es_addr[2]&0xff, es->es_addr[3]&0xff,
-		es->es_addr[4]&0xff, es->es_addr[5]&0xff);
-#endif
 	sin = (struct sockaddr_in *)&es->es_if.if_addr;
 	sin->sin_family = AF_INET;
-	if (ui->ui_flags) {
-		i = ((es->es_addr[3]&0xff)<<16) |
-		    ((es->es_addr[4]&0xff)<<8) |
-		    (es->es_addr[5]&0xff);
-		sin->sin_addr = if_makeaddr(ui->ui_flags, i);
-	} else
-		sin->sin_addr = arpmyaddr();
+	sin->sin_addr = arpmyaddr((struct arpcom *)0);
 	ifp->if_init = ecinit;
 	ifp->if_output = ecoutput;
 	ifp->if_reset = ecreset;
@@ -519,7 +507,7 @@ ecoutput(ifp, m0, dst)
 	register struct ec_softc *es = &ec_softc[ifp->if_unit];
 	register struct mbuf *m = m0;
 	register struct ether_header *ec;
-	register int off, i;
+	register int off;
 	struct mbuf *mcopy = (struct mbuf *)0;
 
 	switch (dst->sa_family) {
@@ -548,7 +536,7 @@ ecoutput(ifp, m0, dst)
 
 	case AF_UNSPEC:
 		ec = (struct ether_header *)dst->sa_data;
-		bcopy(ec->ether_dhost, edst, sizeof edst);
+		bcopy((caddr_t)ec->ether_dhost, (caddr_t)edst, sizeof (edst));
 		type = ec->ether_type;
 		goto gottype;
 
@@ -591,7 +579,7 @@ gottype:
 		m->m_len += sizeof (struct ether_header);
 	}
 	ec = mtod(m, struct ether_header *);
-	bcopy(edst, ec->ether_dhost, sizeof (edst));
+	bcopy((caddr_t)edst, (caddr_t)ec->ether_dhost, sizeof (edst));
 	ec->ether_type = htons((u_short)type);
 	bcopy((caddr_t)es->es_addr, (caddr_t)ec->ether_shost, 6);
 
@@ -609,16 +597,14 @@ gottype:
 	if (es->es_oactive == 0)
 		ecstart(ifp->if_unit);
 	splx(s);
-
-gotlocal:
-	return(mcopy ? looutput(&loif, mcopy, dst) : 0);
+	return (mcopy ? looutput(&loif, mcopy, dst) : 0);
 
 qfull:
 	m0 = m;
 	splx(s);
 bad:
 	m_freem(m0);
-	return(error);
+	return (error);
 }
 
 /*

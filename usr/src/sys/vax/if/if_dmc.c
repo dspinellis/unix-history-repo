@@ -1,4 +1,4 @@
-/*	if_dmc.c	4.25	83/02/21	*/
+/*	if_dmc.c	4.26	83/05/27	*/
 
 #include "dmc.h"
 #if NDMC > 0
@@ -205,7 +205,6 @@ dmcstart(dev)
 	dev_t dev;
 {
 	int unit = minor(dev);
-	struct uba_device *ui = dmcinfo[unit];
 	register struct dmc_softc *sc = &dmc_softc[unit];
 	int addr, len;
 	struct mbuf *m;

@@ -1,4 +1,4 @@
-/*	va.c	4.21	83/03/10	*/
+/*	va.c	4.22	83/05/27	*/
 
 #include "va.h"
 #if NVA > 0
@@ -261,7 +261,6 @@ vadgo(um)
 vaioctl(dev, cmd, data, flag)
 	register caddr_t data;
 {
-	register int vcmd;
 	register struct va_softc *sc = &va_softc[VAUNIT(dev)];
 
 	switch (cmd) {
@@ -272,7 +271,6 @@ vaioctl(dev, cmd, data, flag)
 
 	case VSETSTATE:
 		return (vacmd(dev, *(int *)data));
-		break;
 
 	default:
 		return (ENOTTY);

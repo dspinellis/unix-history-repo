@@ -1,4 +1,4 @@
-/*	dmf.c	4.18	83/05/14	*/
+/*	dmf.c	4.19	83/05/27	*/
 
 #include "dmf.h"
 #if NDMF > 0
@@ -255,7 +255,7 @@ dmfrint(dmf)
 					addr->dmfcsr = DMF_IE | DMFIR_LCR |
 						((c>>8)&07);
 					addr->dmftms = 0;
-					flushtty(tp, FREAD|FWRITE);
+					ttyflush(tp, FREAD|FWRITE);
 				}
 				tp->t_state &= ~TS_CARR_ON;
 			}

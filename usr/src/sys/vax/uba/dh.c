@@ -1,4 +1,4 @@
-/*	dh.c	4.57	82/12/30	*/
+/*	dh.c	4.58	83/05/27	*/
 
 #include "dh.h"
 #if NDH > 0
@@ -723,7 +723,7 @@ dmintr(dm)
 					gsignal(tp->t_pgrp, SIGHUP);
 					gsignal(tp->t_pgrp, SIGCONT);
 					addr->dmlstat = 0;
-					flushtty(tp, FREAD|FWRITE);
+					ttyflush(tp, FREAD|FWRITE);
 				}
 				tp->t_state &= ~TS_CARR_ON;
 			} else

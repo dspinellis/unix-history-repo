@@ -1,4 +1,4 @@
-/*	if_vv.c	4.19	83/05/10	*/
+/*	if_vv.c	4.20	83/05/27	*/
 
 #include "vv.h"
 
@@ -136,7 +136,7 @@ vvprobe(reg)
 	register struct vvreg *addr = (struct vvreg *)reg;
 
 #ifdef lint
-	br = 0; cvec = br; br = cvec;
+	br = 0; cvec = br; br = cvec; vvrint(0);
 #endif
 	/* reset interface, enable, and wait till dust settles */
 	addr->vvicsr = VV_RST;
@@ -276,16 +276,15 @@ vvidentify(unit)
 	register struct vvreg *addr;
 	struct mbuf *m;
 	struct vv_header *v;
-	int ubainfo, retrying, attempts, waitcount, s;
+	int ubainfo, attempts, waitcount;
 
 	/*
 	 * Build a multicast message to identify our address
 	 */
 	addr = (struct vvreg *)ui->ui_addr;
 	attempts = 0;		/* total attempts, including bad msg type */
-	retrying = 0;		/* first time through */
 	m = m_get(M_DONTWAIT, MT_HEADER);
-	if (m == 0)
+	if (m == NULL)
 		panic("vvinit: can't get mbuf");
 	m->m_next = 0;
 	m->m_off = MMINOFF;
@@ -337,7 +336,7 @@ retry:
 			printf("vvinit loopwait: icsr = %b\n",
 				0xffff&(addr->vvicsr), VV_IBITS);
 			vs->vs_if.if_flags &= ~IFF_UP;
-			return;
+			return (0);
 		}
 		goto retry;
 	}
@@ -365,6 +364,7 @@ retry:
  * down for a while.  If the condition persists, the interface
  * is marked down.
  */
+/*ARGSUSED*/
 vvtimeout(junk)
 	int junk;
 {
@@ -377,7 +377,8 @@ vvtimeout(junk)
 	for (i = 0; i < NVV; i++) {
 		vs = &vv_softc[i];
 		addr = (struct vvreg *)vvinfo[i]->ui_addr;
-		if (vs->vs_if.if_flags & IFF_UP == 0) continue;
+		if ((vs->vs_if.if_flags & IFF_UP) == 0)
+			continue;
 		switch (vs->vs_major) {
 
 		/*
@@ -876,6 +877,7 @@ vvprt_hdr(s, v)
 		0xffff & (int)(v->vh_info));
 }
 
+#ifdef notdef
 /*
  * print "l" hex bytes starting at "s"
  */
@@ -894,3 +896,4 @@ vvprt_hex(s, l)
 		);
 	}
 }
+#endif

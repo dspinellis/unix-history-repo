@@ -1,4 +1,4 @@
-/*	dz.c	4.50	83/02/10	*/
+/*	dz.c	4.51	83/05/27	*/
 
 #include "dz.h"
 #if NDZ > 0
@@ -233,7 +233,7 @@ dzrint(dz)
 				gsignal(tp->t_pgrp, SIGHUP);
 				gsignal(tp->t_pgrp, SIGCONT);
 				dzaddr->dzlcs = DZ_ACK|(c&7);
-				flushtty(tp, FREAD|FWRITE);
+				ttyflush(tp, FREAD|FWRITE);
 			}
 			tp->t_state &= ~TS_CARR_ON;
 		}
@@ -586,7 +586,7 @@ dzscan()
 					gsignal(tp->t_pgrp, SIGHUP);
 					gsignal(tp->t_pgrp, SIGCONT);
 					dzaddr->dzdtr &= ~bit;
-					flushtty(tp, FREAD|FWRITE);
+					ttyflush(tp, FREAD|FWRITE);
 				}
 				tp->t_state &= ~TS_CARR_ON;
 			}

@@ -1,4 +1,4 @@
-/*	up.c	4.73	83/05/18	*/
+/*	up.c	4.74	83/05/27	*/
 
 #include "up.h"
 #if NSC > 0
@@ -156,7 +156,7 @@ upprobe(reg)
 	register int br, cvec;
 
 #ifdef lint	
-	br = 0; cvec = br; br = cvec;
+	br = 0; cvec = br; br = cvec; upintr(0);
 #endif
 	((struct updevice *)reg)->upcs1 = UP_IE|UP_RDY;
 	DELAY(10);
