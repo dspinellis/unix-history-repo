@@ -3,10 +3,10 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
 DESTDIR=
-CFLAGS=	-g
+CFLAGS=	-O
 OBJS=	indent.o io.o lexi.o parse.o pr_comment.o
 
 indent: indent.o io.o lexi.o parse.o pr_comment.o
@@ -26,4 +26,4 @@ $(OBJS): indent_globs.h indent_codes.h
 	sccs get $<
 
 install: indent
-	install -s indent ${DESTDIR}/usr/bin/indent
+	install -s indent ${DESTDIR}/usr/ucb/indent
