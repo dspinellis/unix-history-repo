@@ -40,7 +40,7 @@ extern "C" {
 WINDOW * (newwin)(int lines, int cols, int sy, int sx);
 WINDOW * (subwin)(WINDOW *w, int lines, int cols, int sy, int sx);
 WINDOW * (initscr)();
-int      (box) (WINDOW*, _G_chtype, _G_chtype);
+int      (box) (WINDOW*, int, int);
 int      (delwin)(WINDOW*);
 int      (getcurx)(WINDOW*);
 int      (getcury)(WINDOW*);
@@ -49,7 +49,7 @@ int      (overlay)(WINDOW*, WINDOW*);
 int      (overwrite)(WINDOW*, WINDOW*);
 int      (scroll)(WINDOW*);
 int      (touchwin)(WINDOW*);
-int      (waddch)(WINDOW*, _G_chtype);
+int      (waddch)(WINDOW*, int);
 int      (waddstr)(WINDOW*, _C_const char*);
 int      (wclear)(WINDOW*);
 int      (wclrtobot)(WINDOW*);
@@ -59,12 +59,12 @@ int      (wdeleteln)(WINDOW*);
 int      (werase)(WINDOW*);
 int      (wgetch)(WINDOW*);
 int      (wgetstr)(WINDOW*, char*);
-int      (winsch)(WINDOW*, _G_chtype);
+int      (winsch)(WINDOW*, int);
 int      (winsertln)(WINDOW*);
 int      (wmove)(WINDOW*, int, int);
 int      (wrefresh)(WINDOW*);
-int      (wstandend)(WINDOW*);
-int      (wstandout)(WINDOW*);
+char     *(wstandend)(WINDOW*);
+char     *(wstandout)(WINDOW*);
 
 // SVR4 rather inanely bundles the format-string parameter with the '...'.
 // This breaks VMS, and I don't want to penalize VMS for being right for once!

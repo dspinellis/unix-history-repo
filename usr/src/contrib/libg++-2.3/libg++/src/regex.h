@@ -237,8 +237,8 @@ extern int re_match_2 (struct re_pattern_buffer *, char *, int,
 		       char *, int, int, struct re_registers *, int);
 
 /* 4.2 bsd compatibility.  */
-extern char *re_comp (char *);
-extern int re_exec (char *);
+extern char *re_comp (const char *);
+extern int re_exec (const char *);
 
 #else /* !__STDC__ */
 

@@ -122,11 +122,11 @@ extern "C" int scrollok(WINDOW*, char);
 #endif
 #endif
 #ifdef standend
-inline int (standend)()  { return standend(); }
+inline char * (standend)()  { return standend(); }
 #undef standend
 #endif
 #ifdef standout
-inline int (standout)()  { return standout(); }
+inline char * (standout)()  { return standout(); }
 #undef standout
 #endif
 #ifdef winch
@@ -309,8 +309,8 @@ public:
 #ifndef _no_flushok
   int            flushok(int bf);
 #endif
-  int            standout();
-  int            standend();
+  char*            standout();
+  char*            standend();
 
 // multiple window control
   int            overlay(CursesWindow &win);
@@ -326,22 +326,22 @@ public:
 
 inline int CursesWindow::begx()
 {
-  return w->_begx;
+  return w->begx;
 }
 
 inline int CursesWindow::begy()
 {
-  return w->_begy;
+  return w->begy;
 }
 
 inline int CursesWindow::maxx()
 {
-  return w->_maxx;
+  return w->maxx;
 }
 
 inline int CursesWindow::maxy()
 {
-  return w->_maxy;
+  return w->maxy;
 }
 
 inline int CursesWindow::height()
@@ -525,12 +525,12 @@ inline void CursesWindow::getyx(int& y, int& x)
   ::getyx(w, y, x); 
 }
 
-inline int CursesWindow::standout()                   
+inline char *CursesWindow::standout()                   
 {
   return ::wstandout(w); 
 }
 
-inline int CursesWindow::standend()                   
+inline char *CursesWindow::standend()                   
 {
   return ::wstandend(w); 
 }
@@ -561,4 +561,5 @@ inline CursesWindow* CursesWindow::sibling()
 }
 
 #endif /* _G_HAVE_CURSES */
+
 #endif
