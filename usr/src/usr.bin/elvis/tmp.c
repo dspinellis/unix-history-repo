@@ -5,6 +5,13 @@
  *	14407 SW Teal Blvd. #C
  *	Beaverton, OR 97005
  *	kirkenda@cs.pdx.edu
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00041
+ * --------------------         -----   ----------------------
+ *
+ *  12 Aug 92	Bob Wilcox		Fixed named yank buffer problem
  */
 
 
@@ -594,9 +601,11 @@ int tmpabort(bang)
 	blkinit();
 	nlines = 0;
 	initflags();
+#ifdef BROKEN_YANK_BUFFERS				/* 12 Aug 92*/
 	close(tmpfd);
 	tmpfd = -1;
 	unlink(tmpname);
+#endif	/* BROKEN_YANK_BUFFERS*/
 	return TRUE;
 }
 
