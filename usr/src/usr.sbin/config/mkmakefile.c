@@ -1,5 +1,5 @@
 /*
- * mkmakefile.c	1.14	82/06/14
+ * mkmakefile.c	1.15	82/07/13
  *	Functions in this file build the makefile from the files list
  *	and the information in the config table
  */
@@ -319,14 +319,14 @@ FILE *f;
 	else if (ftp->f_type == NORMAL)
 	{
 	    fprintf(f, "\t${CC} -I. -c -S ${COPTS} ../%sc\n", np);
-	    fprintf(f, "\t${C2} %ss | sed -f ../sys/asm.sed | ${AS} -o %so\n",
+	    fprintf(f, "\t${C2} %ss | sed -f ../conf/asm.sed | ${AS} -o %so\n",
 		    tp, tp);
 	    fprintf(f, "\trm -f %ss\n\n", tp);
 	}
 	else if (ftp->f_type == DEVICE)
 	{
 	    fprintf(f, "\t${CC} -I. -c -S ${COPTS} ../%sc\n", np);
-	    fprintf(f,"\t${C2} -i %ss | sed -f ../sys/asm.sed | ${AS} -o %so\n",
+	    fprintf(f,"\t${C2} -i %ss | sed -f ../conf/asm.sed | ${AS} -o %so\n",
 		    tp, tp);
 	    fprintf(f, "\trm -f %ss\n\n", tp);
 	}
@@ -362,7 +362,7 @@ register FILE *f;
 	    "\t@ld -n -o %s -e start -x -T 80000000 locore.o ${OBJS} vers.o ioconf.o param.o swap%s.o\n",
 	    fl->f_needs, fl->f_fn);
 	fprintf(f, "\t@echo rearranging symbols\n");
-	fprintf(f, "\t@-symorder ../sys/symbols.sort %s\n", fl->f_needs);
+	fprintf(f, "\t@-symorder ../conf/symbols.sort %s\n", fl->f_needs);
 	fprintf(f, "\t@size %s\n", fl->f_needs);
 	fprintf(f, "\t@chmod 755 %s\n\n", fl->f_needs);
     }
@@ -371,7 +371,7 @@ register FILE *f;
 	fprintf(f, "swap%s.o: ../dev/swap%s.c\n", fl->f_fn, fl->f_fn);
 	fprintf(f, "\t${CC} -I. -c -S ${COPTS} ../dev/swap%s.c\n", fl->f_fn);
 	fprintf(f,
-	    "\t${C2} swap%s.s | sed -f ../sys/asm.sed | ${AS} -o swap%s.o\n",
+	    "\t${C2} swap%s.s | sed -f ../conf/asm.sed | ${AS} -o swap%s.o\n",
 	    fl->f_fn, fl->f_fn);
 	fprintf(f, "\trm -f swap%s.s\n\n", fl->f_fn);
     }
