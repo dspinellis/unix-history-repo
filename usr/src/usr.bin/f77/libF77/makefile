@@ -1,6 +1,6 @@
 # Makefile for the f77 math & startup lib - libF77.a
 
-#	@(#)makefile	1.15	%G%
+#	@(#)makefile	1.16	%G%
 
 DESTDIR =
 LIB = libF77.a
@@ -16,7 +16,7 @@ LIBDIR = ${DESTDIR}/usr/lib
 TAPE = /dev/rnmt0.1600
 OPTIONS = -DUCBVAX
 
-MISC =	main.o s_rnge.o abort_.o exit_.o \
+MISC =	main.o s_rnge.o abort_.o exit_.o long_.o short_.o \
 	s_stop.o s_paus.o rand_.o range.o traper_.o trapov_.o \
 	dbesj0_.o dbesj1_.o dbesjn_.o dbesy0_.o dbesy1_.o dbesyn_.o \
 	besj0_.o besj1_.o besjn_.o besy0_.o besy1_.o besyn_.o
@@ -74,7 +74,7 @@ $(LIBDIR)/$(LIB):	$(LIB)
 clean:
 	rm -f $(ALL) $(LIB)
 
-SOURCES = main.c s_rnge.c abort_.c exit_.c opcodes.h \
+SOURCES = main.c s_rnge.c abort_.c exit_.c opcodes.h long_.c short_.c \
 	s_stop.c s_paus.c rand_.c bit.c range.c traper_.c trapov_.c \
 	dbesj0_.c dbesj1_.c dbesjn_.c dbesy0_.c dbesy1_.c dbesyn_.c \
 	besj0_.c besj1_.c besjn_.c besy0_.c besy1_.c besyn_.c \
