@@ -36,7 +36,7 @@
 
 #if defined(LIBC_SCCS) && !defined(lint)
 /* from static char sccsid[] = "@(#)crypt.c	5.11 (Berkeley) 6/25/91"; */
-static char rcsid[] = "$Header: /b/source/CVS/src/lib/libc/gen/crypt.c,v 1.2 1993/04/26 13:02:16 cgd Exp $";
+static char rcsid[] = "$Header: /a/cvs/386BSD/src/lib/libc/gen/crypt.c,v 1.2 1993/07/20 20:30:32 nate Exp $";
 #endif /* LIBC_SCCS and not lint */
 
 #include <unistd.h>
@@ -71,7 +71,8 @@ crypt(key, setting)
 
 char *
 crypt(pw, salt)
-	char *pw, *salt;
+	register const char *pw;
+	register const char *salt;
 {
 	static char     password[14];
 	long            matrix[128], *m, vector[2];
