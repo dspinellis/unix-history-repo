@@ -1,4 +1,4 @@
-/*	if_ace.c	1.1	85/07/21	*/
+/*	if_ace.c	1.2	86/01/05	*/
 
 /*
  * ACC VERSAbus Ethernet controller
@@ -8,30 +8,30 @@
 
 #include "../machine/pte.h"
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/mbuf.h"
-#include "../h/buf.h"
-#include "../h/protosw.h"
-#include "../h/socket.h"
-#include "../h/vmmac.h"
-#include "../h/ioctl.h"
-#include "../h/errno.h"
-#include "../h/vmparam.h"
+#include "param.h"
+#include "systm.h"
+#include "mbuf.h"
+#include "buf.h"
+#include "protosw.h"
+#include "socket.h"
+#include "vmmac.h"
+#include "ioctl.h"
+#include "errno.h"
+#include "vmparam.h"
 
 #include "../net/if.h"
 #include "../net/netisr.h"
 #include "../net/route.h"
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
+#include "../netinet/in_var.h"
 #include "../netinet/ip.h"
 #include "../netinet/ip_var.h"
 #include "../netinet/if_ether.h"
-#include "../netpup/pup.h"
 
 #include "../tahoe/mtpr.h"
 #include "../tahoeif/if_acereg.h"
-#include "../vba/vbavar.h"
+#include "../tahoevba/vbavar.h"
 
 #define	LONET	124
 
@@ -43,9 +43,9 @@ long	acestd[] = { 0x0ff0000, 0xff0100 };		/* controller */
 
 extern	char ace0utl[], ace1utl[];			/* dpm */
 char	*acemap[]= { ace0utl, ace1utl };
-extern	long ACE0map[], ACE1map[];
-long	*ACEmap[] = { ACE0map, ACE1map };
-long	ACEmapa[] = { 0xfff80000, 0xfff90000 };
+extern	struct pte ACE0map[], ACE1map[];
+struct	pte *ACEmap[] = { ACE0map, ACE1map };
+caddr_t	ACEmapa[] = { (caddr_t)0xfff80000, (caddr_t)0xfff90000 };
 
 /* station address */
 char	ace_station[6] = { ~0x8, ~0x0, ~0x3, ~0x0, ~0x0, ~0x1 };
@@ -104,7 +104,7 @@ aceprobe(reg)
 #endif
 	if (badaddr(reg, 2))
 		return(0);
-	movew((short)CSR_RESET, &addr->csr);
+	movow(&addr->csr, CSR_RESET);
 	DELAY(10000);
 	return (sizeof (struct acedevice));
 }
@@ -122,7 +122,6 @@ aceattach(ui)
 	register struct ifnet *ifp = &is->is_if;
 	register struct acedevice *addr = (struct acedevice *)ui->ui_addr;
 	register short *wp, i;
-	struct sockaddr_in *sin;
 
 	ifp->if_unit = unit;
 	ifp->if_name = "ace";
@@ -136,16 +135,15 @@ aceattach(ui)
 	is->is_promiscuous = 0;
 	wp = (short *)addr->hash;
 	for (i =  0; i < 8; i++)
-		movew((short)ace_hash[i], wp++); 
-	movew((short)~0xffff, &addr->bcastena[0]); 
-	movew((short)~0xffff, &addr->bcastena[1]);
+		movow(wp++, ace_hash[i]); 
+	movow(&addr->bcastena[0], ~0xffff); 
+	movow(&addr->bcastena[1], ~0xffff);
 	aceclean(unit);
-	sin = (struct sockaddr_in *)&ifp->if_addr;
-	sin->sin_family = AF_INET;
 	ifp->if_init = aceinit;
 	ifp->if_output = aceoutput;
 	ifp->if_ioctl = aceioctl;
 	ifp->if_reset = acereset;
+	ifp->if_flags = IFF_BROADCAST;
 	if_attach(ifp);
 }
 
@@ -161,9 +159,9 @@ acesetetaddr(unit, addr, station_addr)
 	wp = (short *)addr->station;
 	cp = station_addr;
 	for (i = 0; i < 6; i++)
-		movew((short)*cp++, wp++); 
+		movow(wp++, *cp++); 
 	wp = (short *)addr->station;
-	cp = (char *)&is->is_addr;
+	cp = (char *)is->is_addr;
 	for (i = 0; i < 6; i++)
 		*cp++ = ~(*wp++);
 }
@@ -193,12 +191,10 @@ aceinit(unit)
 	register struct vba_device *ui = aceinfo[unit];
 	register struct acedevice *addr;
 	register struct ifnet *ifp = &is->is_if;
-	register struct sockaddr_in *sin;
 	register short Csr;
-	register int i, s;
+	register int s;
 
-	sin = (struct sockaddr_in *)&ifp->if_addr;
-	if (sin->sin_addr.s_addr == 0)		/* address still unknown */
+	if (ifp->if_addrlist == (struct ifaddr *)0)
 		return;
 	if ((ifp->if_flags & IFF_RUNNING) == 0) {
 		/*
@@ -207,7 +203,7 @@ aceinit(unit)
 		 */
 		addr = (struct acedevice *)ui->ui_addr;
 		s = splimp();
-		movew((short)CSR_RESET, &addr->csr);
+		movow(&addr->csr, CSR_RESET);
 		DELAY(10000);
 
 		/*
@@ -215,26 +211,24 @@ aceinit(unit)
 		 * jumble dpm after reset
 		 */
 		aceclean(unit);
-		movew((short)CSR_GO, &addr->csr);
+		movow(&addr->csr, CSR_GO);
 		Csr = addr->csr;
 		if (Csr & CSR_ACTIVE) {
-			movew((short)(ACEVECTOR + unit*8), &addr->ivct);
+			movow(&addr->ivct, ACEVECTOR + unit*8);
 			Csr |= CSR_IENA | is->is_promiscuous;
+#ifdef notdef
 			if (ifp->if_net == LONET)
 				Csr |= CSR_LOOP3;
-			movew(Csr, &addr->csr);
+#endif
+			movow(&addr->csr, Csr);
 			is->is_flags = 0;
 			is->is_xcnt = 0;
-			is->is_if.if_flags |= IFF_UP|IFF_RUNNING;
+			is->is_if.if_flags |= IFF_RUNNING;
 		}
 		splx(s);
 	}
-
-	if (is->is_if.if_flags & IFF_UP) {
-		if_rtinit(&is->is_if, RTF_UP);
+	if (is->is_if.if_snd.ifq_head)
 		aceStart(unit);
-	}
-	arpwhohas(&is->is_ac, &sin->sin_addr);
 }
 
 /*
@@ -247,13 +241,12 @@ acestart(dev)
 	dev_t dev;
 {
 	register struct tx_segment *txs;
-	register long len, x;
+	register long len;
+	register int s;
 	int unit = ACEUNIT(dev);
-	struct vba_device *ui = aceinfo[unit];
-	register struct acedevice *addr = (struct acedevice *)ui->ui_addr;
 	register struct ace_softc *is = &ace_softc[unit];
 	struct mbuf *m;
-	short retries, idx;
+	short retries;
 
 again:
 	txs = (struct tx_segment*)(is->is_dpm + (is->is_txnext << 11));
@@ -261,9 +254,9 @@ again:
 		is->is_stats.tx_busy++;
 		return;
 	}
-	x = splimp();
+	s = splimp();
 	IF_DEQUEUE(&is->is_if.if_snd, m);
-	splx(x);
+	splx(s);
 	if (m == 0)
 		return;
 	len = aceput(unit, txs->tx_data, m);
@@ -290,7 +283,7 @@ again:
 	is->is_if.if_opackets++;
 	is->is_xcnt++;
 	len = (len & 0x7fff) | TCS_TBFULL;
-	movew((short)len, txs);
+	movow(txs, len);
 	goto again;
 }
 
@@ -301,17 +294,15 @@ acecint(unit)
 	int unit;
 {
 	register struct ace_softc *is = &ace_softc[unit];
-	struct vba_device *ui = aceinfo[unit];
-	register struct acedevice *addr = (struct acedevice *)ui->ui_addr;
 	register struct tx_segment *txseg;
-	short txidx, eostat;
+	short eostat;
 
 	if (is->is_xcnt <= 0)  {
-		txidx = (addr->tseg >> 11) & 0xf;
 		printf("ace%d: stray xmit interrupt, xcnt %d\n",
 		    unit, is->is_xcnt);
 		is->is_xcnt = 0;
-		aceStart(unit);
+		if (is->is_if.if_snd.ifq_head)
+			aceStart(unit);
 		return;
 	}
 	is->is_xcnt--;
@@ -327,7 +318,8 @@ acecint(unit)
 		if (++is->is_eoctr >= 16)
 			is->is_eoctr = is->is_segboundry; 
 	} 
-	aceStart(unit);
+	if (is->is_if.if_snd.ifq_head)
+		aceStart(unit);
 }
 
 /*
@@ -346,11 +338,12 @@ acerint(unit)
 	register struct ifqueue *inq;
 	register struct ether_header *ace;
 	register struct rx_segment *rxseg;
-	struct acedevice *addr = (struct acedevice *)aceinfo[unit]->ui_addr;
 	int len, s, off, resid;
 	struct mbuf *m;
 	short eistat;
 
+	if ((is->is_if.if_flags&IFF_RUNNING) == 0)
+		return;
 again:
 	rxseg = (struct rx_segment *)((is->is_eictr << 11) + is->is_dpm);
 	eistat = rxseg->rx_csr;
@@ -384,7 +377,7 @@ again:
 	len -= 14;
 #endif
 	/*
-	 * Deal with trailer protocol: if type is PUP trailer
+	 * Deal with trailer protocol: if type is trailer
 	 * get true type from first 16-bit word past data.
 	 * Remember that type was trailer by setting off.
 	 */
@@ -396,9 +389,9 @@ again:
 #define	acedataaddr(ace, off, type) \
     ((type)(((caddr_t)(((char *)ace)+14)+(off))))
 #endif
-	if (ace->ether_type >= ETHERPUP_TRAIL &&
-	    ace->ether_type < ETHERPUP_TRAIL+ETHERPUP_NTRAILER) {
-		off = (ace->ether_type - ETHERPUP_TRAIL) * 512;
+	if (ace->ether_type >= ETHERTYPE_TRAIL &&
+	    ace->ether_type < ETHERTYPE_TRAIL+ETHERTYPE_NTRAILER) {
+		off = (ace->ether_type - ETHERTYPE_TRAIL) * 512;
 		if (off >= ETHERMTU)
 			goto setup;		/* sanity */
 		ace->ether_type = ntohs(*acedataaddr(ace, off, u_short *));
@@ -417,7 +410,7 @@ again:
 	 * information to be at the front, but we still have to drop
 	 * the type and length which are at the front of any trailer data.
 	 */
-	m = aceget(unit, rxseg->rx_data, len, off);
+	m = aceget(unit, (u_char *)rxseg->rx_data, len, off);
 	if (m == 0)
 		goto setup;
 	if (off) {
@@ -427,14 +420,21 @@ again:
 	switch (ace->ether_type) {
 
 #ifdef INET
-	case ETHERPUP_IPTYPE:
+	case ETHERTYPE_IP:
 		schednetisr(NETISR_IP);
 		inq = &ipintrq;
 		break;
 
-	case ETHERPUP_ARPTYPE:
+	case ETHERTYPE_ARP:
 		arpinput(&is->is_ac, m);
 		goto setup;
+#endif
+#ifdef NS
+	case ETHERTYPE_NS:
+		schednetisr(NETISR_NS);
+		inq = &nsintrq;
+		break;
+
 #endif
 	default:
 		m_freem(m);
@@ -470,7 +470,7 @@ aceoutput(ifp, m0, dst)
 	register int off;
 	struct mbuf *mcopy = (struct mbuf *)0;
 	int type, s, error;
-	struct ether_addr edst;
+	u_char edst[6];
 	struct in_addr idst;
 
 	switch (dst->sa_family) {
@@ -478,34 +478,44 @@ aceoutput(ifp, m0, dst)
 #ifdef INET
 	case AF_INET:
 		idst = ((struct sockaddr_in *)dst)->sin_addr;
-		if (!arpresolve(&is->is_ac, m, &idst, &edst))
+		if (!arpresolve(&is->is_ac, m, &idst, edst))
 			return (0);	/* if not yet resolved */
-		if (in_lnaof(idst) == INADDR_ANY)
+		if (!bcmp((caddr_t)edst, (caddr_t)etherbroadcastaddr,
+		    sizeof(edst)))
 			mcopy = m_copy(m, 0, (int)M_COPYALL);
 		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
 		/* need per host negotiation */
 		if ((ifp->if_flags & IFF_NOTRAILERS) == 0 && off > 0 &&
 		    (off & 0x1ff) == 0 &&
 		    m->m_off >= MMINOFF + 2 * sizeof (u_short)) {
-			type = ETHERPUP_TRAIL + (off>>9);
+			type = ETHERTYPE_TRAIL + (off>>9);
 			m->m_off -= 2 * sizeof (u_short);
 			m->m_len += 2 * sizeof (u_short);
-			*mtod(m, u_short *) = htons((u_short)ETHERPUP_IPTYPE);
+			*mtod(m, u_short *) = htons((u_short)ETHERTYPE_IP);
 			*(mtod(m, u_short *) + 1) = htons((u_short)m->m_len);
 			goto gottrailertype;
 		}
-		type = ETHERPUP_IPTYPE;
+		type = ETHERTYPE_IP;
+		off = 0;
+		goto gottype;
+#endif
+#ifdef NS
+	case AF_NS:
+ 		bcopy((caddr_t)&(((struct sockaddr_ns *)dst)->sns_addr.x_host),
+		    (caddr_t)edst, sizeof (edst));
+		if (!bcmp((caddr_t)edst, (caddr_t)&ns_broadhost,sizeof(edst)))
+			mcopy = m_copy(m, 0, (int)M_COPYALL);
+		else if (!bcmp((caddr_t)edst, (caddr_t)&ns_thishost,
+		    sizeof(edst)))
+			return(looutput(&loif, m, dst));
+		type = ETHERTYPE_NS;
 		off = 0;
 		goto gottype;
 #endif
 
 	case AF_UNSPEC:
 		ace = (struct ether_header *)dst->sa_data;
-#ifdef notdef
-		edst = ace->ether_dhost;
-#else
-		bcopy((caddr_t)ace->ether_dhost, (caddr_t)&edst, 6);
-#endif
+		bcopy((caddr_t)ace->ether_dhost, (caddr_t)edst, sizeof (edst));
 		type = ace->ether_type;
 		goto gottype;
 
@@ -561,13 +571,9 @@ gottype:
 #endif
 	}
 	ace = mtod(m, struct ether_header *);
-#ifdef notdef
-	ace->ether_dhost = edst;
-	ace->ether_shost = is->is_addr;
-#else
-	bcopy((caddr_t)&edst, (caddr_t)ace->ether_dhost, 6);
-	bcopy((caddr_t)&is->is_addr, (caddr_t)ace->ether_shost, 6);
-#endif
+	bcopy((caddr_t)edst, (caddr_t)ace->ether_dhost, sizeof (edst));
+	bcopy((caddr_t)is->is_addr, (caddr_t)ace->ether_shost,
+	    sizeof (is->is_addr));
 	ace->ether_type = htons((u_short)type);
 
 	/*
@@ -612,20 +618,21 @@ aceStart(unit)
  * the buffer is expanded.  We probably should zero out the extra
  * bytes for security, but that would slow things down.
  */
+/*ARGSUSED*/
 aceput(unit, txbuf, m)
 	int unit;			/* for statistics collection */
-	u_char *txbuf;
+	char *txbuf;
 	struct mbuf *m;
 {
 	register u_char *bp, *mcp;	/* known to be r12, r11 */
 	register short *s1, *s2;	/* known to be r10, r9 */
-	register unsigned len;
+	register u_int len;
 	register struct mbuf *mp;
-	int total, idx;
+	int total;
 
 	total = 0;
-	bp = txbuf;
-	for (mp = m;(mp); mp = mp->m_next) {
+	bp = (u_char *)txbuf;
+	for (mp = m; (mp); mp = mp->m_next) {
 		len = mp->m_len;
 		if (len == 0)
 			continue;
@@ -633,41 +640,26 @@ aceput(unit, txbuf, m)
 		mcp = mtod(mp, u_char *);
 		if (((int)mcp & 01) && ((int)bp & 01)) {
 			/* source & destination at odd addresses */
-			/* *bp++ = *mcp++; */
-			asm("movob (r11),(r12)");
-			bp++, mcp++;
+			movob(bp++, *mcp++);
 			--len;
 		}
 		if (len > 1 && (((int)mcp & 01)==0) && (((int)bp & 01)==0)) {
-			register int l;
+			register u_int l;
 
 			s1 = (short *)bp;
 			s2 = (short *)mcp;
 			l = len >> 1;		/* count # of shorts */
-			while (l-- > 0) {
-				/* *s1++ = *s2++; */
-				asm("movow (r9),(r10)");
-				s1++, s2++;
-			}
+			while (l-- != 0)
+				movow(s1++, *s2++);
 			len &= 1;		/* # remaining bytes */
 			bp = (u_char *)s1;
 			mcp = (u_char *)s2;
 		}
-		while (len-- > 0) {
-			/* *bp++ = *mcp++;  */
-			asm("movob (r11),(r12)");
-			bp++, mcp++;
-		}
+		while (len-- != 0)
+			movob(bp++, *mcp++);
 	}
 	m_freem(m);
 	return (total);
-}
-
-movew(data, to)
-	short data, *to;
-{
-
-	asm("movow 6(fp),*8(fp)");
 }
 
 /*
@@ -676,6 +668,7 @@ movew(data, to)
  * Warning: This makes the fairly safe assumption that
  * mbufs have even lengths.
  */
+/*ARGSUSED*/
 struct mbuf *
 aceget(unit, rxbuf, totlen, off0)
 	int unit;			/* for statistics collection */
@@ -694,8 +687,6 @@ aceget(unit, rxbuf, totlen, off0)
 	cp = rxbuf + 14;
 #endif
 	while (totlen > 0) {
-		register int words;
-
 		MGET(m, M_DONTWAIT, MT_DATA);
 		if (m == 0)
 			goto bad;
@@ -795,17 +786,16 @@ aceioctl(ifp, cmd, data)
 	int cmd;
 	caddr_t data;
 {
-	register struct ifreq *ifr = (struct ifreq *)data;
-	int s, error = 0;
+	register struct ifaddr *ifa = (struct ifaddr *)data;
+	int s = splimp(), error = 0;
 
-	s = splimp();
 	switch (cmd) {
 
 	case SIOCSIFADDR:
-		if (ifp->if_flags & IFF_RUNNING)
-			if_rtinit(ifp, -1);	/* delete previous route */
-		acesetaddr(ifp, (struct sockaddr_in *)&ifr->ifr_addr);
+		ifp->if_flags |= IFF_UP;
 		aceinit(ifp->if_unit);
+		((struct arpcom *)ifp)->ac_ipaddr = IA_SIN(ifa)->sin_addr;
+		arpwhohas((struct arpcom *)ifp, &IA_SIN(ifa)->sin_addr);
 		break;
 
 #ifdef notdef
@@ -818,7 +808,7 @@ aceioctl(ifp, cmd, data)
 		sin = (struct sockaddr_in *)&ifr->ifr_addr;
 		ui = aceinfo[ifp->if_unit];
 		addr = (struct acedevice *)ui->ui_addr;
-		movew((short)CSR_RESET, &addr->csr);
+		movow(&addr->csr, CSR_RESET);
 		DELAY(10000);
 		/* set station address and copy addr to arp struct */
 		acesetetaddr(ifp->if_unit, addr, &sin->sin_zero[2]);
@@ -834,28 +824,13 @@ aceioctl(ifp, cmd, data)
 	return (error);
 }
 
-acesetaddr(ifp, sin)
-	register struct ifnet *ifp;
-	register struct sockaddr_in *sin;
-{
-
-	ifp->if_addr = *(struct sockaddr *)sin;
-	ifp->if_net = in_netof(sin->sin_addr);
-	ifp->if_host[0] = in_lnaof(sin->sin_addr);
-	sin = (struct sockaddr_in *)&ifp->if_broadaddr;
-	sin->sin_family = AF_INET;
-	sin->sin_addr = if_makeaddr(ifp->if_net, INADDR_ANY);
-	ifp->if_flags |= IFF_BROADCAST;
-}
-
 aceclean(unit)
 	int unit;
 {
 	register struct ace_softc *is = &ace_softc[unit];
-	register struct ifnet *ifp = &is->is_if;
 	register struct vba_device *ui = aceinfo[unit];
 	register struct acedevice *addr = (struct acedevice *)ui->ui_addr;
-	register short i, data;
+	register short i;
 	register char *pData1;
 
 	ioaccess(ACEmap[unit], ACEmapa[unit], ACEBPTE);
