@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)cc.c 4.7 %G%";
+static	char sccsid[] = "@(#)cc.c 4.8 %G%";
 /*
  * cc - front end for C compiler
  */
@@ -22,7 +22,7 @@ char	*savestr(), *strspl(), *setsuf();
 int	idexit();
 char	**av, **clist, **llist, **plist;
 int	cflag, eflag, oflag, pflag, sflag, wflag, Rflag, exflag, proflag;
-int	gflag, Gflag;
+int	gflag, Gflag, Mflag, debug;
 char	*dflag;
 int	exfail;
 char	*chpass;
@@ -97,6 +97,11 @@ main(argc, argv)
 		case 'c':
 			cflag++;
 			continue;
+		case 'M':
+			exflag++;
+			pflag++;
+			Mflag++;
+			/* and fall through */
 		case 'D':
 		case 'I':
 		case 'U':
@@ -118,6 +123,10 @@ main(argc, argv)
 				npassname = "/usr/c/o";
 			continue;
 		case 'd':
+			if (argv[i][2] == '\0') {
+				debug++;
+				continue;
+			}
 			dflag = argv[i];
 			continue;
 		}
@@ -173,7 +182,7 @@ main(argc, argv)
 	if (oflag)
 		tmp5 = strspl(tmp0, "5");
 	for (i=0; i<nc; i++) {
-		if (nc > 1) {
+		if (nc > 1 && !Mflag) {
 			printf("%s:\n", clist[i]);
 			fflush(stdout);
 		}
@@ -184,8 +193,10 @@ main(argc, argv)
 			assource = tmp3;
 		if (pflag)
 			tmp4 = setsuf(clist[i], 'i');
-		av[0] = "cpp"; av[1] = clist[i]; av[2] = exflag ? "-" : tmp4;
-		na = 3;
+		av[0] = "cpp"; av[1] = clist[i];
+		na = 2;
+		if (!exflag)
+			av[na++] = tmp4;
 		for (j = 0; j < np; j++)
 			av[na++] = plist[j];
 		av[na++] = 0;
@@ -337,7 +348,14 @@ callsys(f, v)
 	char *f, **v;
 {
 	int t, status;
+	char **cpp;
 
+	if (debug) {
+		fprintf(stderr, "%s:", f);
+		for (cpp = v; *cpp != 0; cpp++)
+			fprintf(stderr, " %s", *cpp);
+		fprintf(stderr, "\n");
+	}
 	t = vfork();
 	if (t == -1) {
 		printf("No more processes\n");
