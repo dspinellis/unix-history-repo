@@ -1,4 +1,4 @@
-/* main.c	1.6	83/06/17
+/* main.c	1.7	83/06/24
  *
  * Copyright -C- 1982 Barry S. Roitblat
  *
@@ -217,8 +217,7 @@ char *argv[];
 	if (WriteRaster) {		/* over-ride dimension settings */
 		DevRange = Vxlen;	/* if printing to file to be gdumped */
 		DevRange8 = Vxlen/8;
-		BytPrLin = Vbytperlin;
-		NumOfLin = Wylen;
+		BytPrLin = DevRange8;
 	}
 
 	signal(SIGTERM, cleanup);
@@ -279,7 +278,9 @@ char *argv[];
 			HGPrintElt(e);	/* traverse picture;  print elements */
 			e = DBNextElt(e);
 		}
-		for (cp1 = obuf; cp1 < cp2; ) {
+		if (WriteRaster)	/* if -t then cut image length */
+		    while (!*--cp2);
+		for (cp1 = obuf; cp1 < cp2; ) {			/* write file */
 			for (i = DevRange8; i--; cp1++)
 				putc(*cp1, pfp);
 			for (i = BytPrLin - DevRange8; i--; )
