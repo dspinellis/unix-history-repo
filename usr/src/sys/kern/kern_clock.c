@@ -1,4 +1,4 @@
-/*	kern_clock.c	3.2	%H%	*/
+/*	kern_clock.c	3.3	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -30,7 +30,7 @@
  *	jab the scheduler
  */
 #ifdef KPROF
-short	kcount[20000];
+unsigned short kcount[20000];
 #endif
 
 clock(pc, ps)
@@ -213,10 +213,11 @@ out:
 	}
 #ifdef KPROF
 	else if (!noproc) {
-		register int indx = ((int)pc & 0x7fffffff) / 8;
+		register int indx = ((int)pc & 0x7fffffff) / 4;
 
 		if (indx >= 0 && indx < 20000)
-			kcount[indx]++;
+			if (++kcount[indx] == 0)
+				--kcount[indx];
 	}
 #endif
 }
