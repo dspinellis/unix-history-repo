@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)date.c	4.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)date.c	4.9 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -7,7 +7,7 @@ static char sccsid[] = "@(#)date.c	4.8 (Berkeley) %G%";
  * Modified by Riccardo Gusella to work with timed 
  */
 
-#include <sys/types.h>
+#include <sys/param.h>
 #include <stdio.h>
 #include <sys/time.h>
 #include <sys/socket.h>
@@ -21,6 +21,9 @@ static char sccsid[] = "@(#)date.c	4.8 (Berkeley) %G%";
 #include <utmp.h>
 
 #define WTMP "/usr/adm/wtmp"
+#define	TRIES		3	/* attempts to contact time server */
+#define WAITACK		2	/* seconds */
+#define WAITDATEACK	5	/* seconds */
 
 struct	timeval tv, now;
 struct	timezone tz;
@@ -45,15 +48,10 @@ struct	tm *gmtime();
 char *strcpy();
 char *username, *getlogin();
 
-#define WAITACK		10	/* seconds */
-#define WAITDATEACK	5	/* seconds */
-
 int sock, length, port;
-int ready, found;
-char hostname[32];
+char hostname[MAXHOSTNAMELEN];
 struct timeval tout;
 struct servent *srvp;
-struct hostent *hp, *gethostbyname();
 struct tsp msg;
 struct sockaddr_in sin, dest, from;
 
@@ -62,12 +60,15 @@ main(argc, argv)
 	char *argv[];
 {
 	int wf;
-	int timed_ack;
+	int timed_ack, found;
+	long waittime;
 	register char *tzn;
+	fd_set ready;
 	extern int errno;
 	int bytenetorder(), bytehostorder();
 
 	(void) gettimeofday(&tv, &tz);
+	now = tv;
 
 	if (argc > 1 && strcmp(argv[1], "-u") == 0) {
 		argc--;
@@ -83,43 +84,27 @@ main(argc, argv)
 
 	if (getuid() != 0) {
 		printf("You are not superuser: date not set\n");
-		exit(1);
+		goto display;
 	}
 	username = getlogin();
-	if (username == NULL) {
-		printf("Cannot record your name: date not set\n");
-		exit(1);
-	}
-	syslog(LOG_ERR, "date: set by %s", username);
+	if (username == NULL)		/* single-user or no tty */
+		username = "root";
+	syslog(LOG_SECURITY, "date: set by %s", username);
 
 	ap = argv[1];
 	wtmp[0].ut_time = tv.tv_sec;
 	if (gtime()) {
 		printf(usage);
-		exit(1);
+		goto display;
 	}
 	/* convert to GMT assuming local time */
 	if (uflag == 0) {
 		tv.tv_sec += (long)tz.tz_minuteswest*60;
 		/* now fix up local daylight time */
-		if (localtime((long *)&tv.tv_sec)->tm_isdst)
+		if (localtime((time_t *)&tv.tv_sec)->tm_isdst)
 			tv.tv_sec -= 60*60;
 	}
-	(void) open("/etc/timed", O_WRONLY, 01700);
-	if (errno != ETXTBSY) {
-		if (settimeofday(&tv, (struct timezone *)0) < 0) {
-			perror("settimeofday");
-			exit(1);
-		}
-		if ((wf = open(WTMP, 1)) >= 0) {
-			(void) time((long *)&wtmp[1].ut_time);
-			(void) lseek(wf, (off_t)0L, 2);
-			(void) write(wf, (char *)wtmp, sizeof(wtmp));
-			(void) close(wf);
-		}
-		goto display;
-	}
-
+	
 /*
  * Here we set the date in the machines controlled by timedaemons
  * by communicating the new date to the local timedaemon. 
@@ -131,14 +116,16 @@ main(argc, argv)
 	srvp = getservbyname("timed", "udp");
 	if (srvp == 0) {
 		fprintf(stderr, "udp/timed: unknown service\n");
-		exit(1);
+		goto oldway;
 	}	
 	dest.sin_port = srvp->s_port;
 	dest.sin_family = AF_INET;
+	dest.sin_addr.s_addr = htonl((u_long)INADDR_ANY);
 	sock = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sock < 0) {
-		perror("opening socket");
-		exit(1);
+		if (errno != EPROTONOSUPPORT)
+			perror("socket");
+		goto oldway;
 	}
 
 	sin.sin_family = AF_INET;
@@ -146,51 +133,47 @@ main(argc, argv)
 		sin.sin_port = htons((u_short)port);
 		if (bind(sock, (struct sockaddr *)&sin, sizeof (sin)) >= 0)
 			break;
-		if (errno != EADDRINUSE && errno != EADDRNOTAVAIL) {
+		if (errno != EADDRINUSE) {
 			perror("bind");
 			(void) close(sock);
-			exit(1);
+			goto oldway;
 		}
 	}
 	if (port == IPPORT_RESERVED / 2) {
 		fprintf(stderr, "socket: All ports in use\n");
 		(void) close(sock);
-		exit(1);
+		goto oldway;
 	}
-
-	(void) gethostname(hostname,sizeof(hostname));
-	hp = gethostbyname(hostname);
-	if (hp == NULL) {
-		perror("gethostbyname");
-		exit(1);
-	}
-	bcopy(hp->h_addr, &dest.sin_addr.s_addr, hp->h_length);
 
 	msg.tsp_type = TSP_DATE;
+	msg.tsp_vers = TSPVERSION;
+	(void) gethostname(hostname, sizeof(hostname));
 	(void) strcpy(msg.tsp_name, hostname);
-	(void) gettimeofday(&now, (struct timezone *)0);
 	timevalsub(&tv, &now);
 	msg.tsp_time = tv;
 	bytenetorder(&msg);
 	length = sizeof(struct sockaddr_in);
 	if (sendto(sock, (char *)&msg, sizeof(struct tsp), 0, 
 						&dest, length) < 0) {
-		perror("sendto");
-		exit(1);
+		if (errno != ECONNREFUSED)
+			perror("sendto");
+		goto oldway;
 	}
 
 	timed_ack = -1;
-	tout.tv_sec = WAITACK;
-	tout.tv_usec = 0;
+	waittime = WAITACK;
 loop:
-	ready = 1<<sock;
-	found = select(20, &ready, (int *)0, (int *)0, &tout);
-	if (found) {
+	tout.tv_sec = waittime;
+	tout.tv_usec = 0;
+	FD_ZERO(&ready);
+	FD_SET(sock, &ready);
+	found = select(FD_SETSIZE, &ready, (fd_set *)0, (fd_set *)0, &tout);
+	if (found > 0 && FD_ISSET(sock, &ready)) {
 		length = sizeof(struct sockaddr_in);
 		if (recvfrom(sock, (char *)&msg, sizeof(struct tsp), 0, 
 							&from, &length) < 0) {
 			perror("recvfrom");
-			exit(1);
+			goto oldway;
 		}
 		bytehostorder(&msg);
 
@@ -198,37 +181,43 @@ loop:
 
 		case TSP_ACK:
 			timed_ack = TSP_ACK;
-			tout.tv_sec = WAITDATEACK;
-			tout.tv_usec = 0;
+			waittime = WAITDATEACK;
 			goto loop;
-			break;
 		case TSP_DATEACK:
-			goto display;
-			break;
+			goto oldway;
 		default:
-			printf("Wrong ack received: %s\n", 
+			printf("Wrong ack received from timed: %s\n", 
 						tsptype[msg.tsp_type]);
 			timed_ack = -1;
 			break;
 		}
 	}
 
-	if (timed_ack == TSP_ACK) {
+	if (timed_ack == TSP_ACK)
 		printf("Network date being set\n");
-		exit(0);
-	} else {
-		printf("Communication problems\n");
-		exit(1);
+	else {
+		printf("Communication error with timed\n");
+oldway:
+		if (settimeofday(&tv, (struct timezone *)0) < 0) {
+			perror("settimeofday");
+			goto display;
+		}
+		if ((wf = open(WTMP, 1)) >= 0) {
+			(void) time((time_t *)&wtmp[1].ut_time);
+			(void) lseek(wf, (off_t)0L, 2);
+			(void) write(wf, (char *)wtmp, sizeof(wtmp));
+			(void) close(wf);
+		}
 	}
 
 display:
 	(void) gettimeofday(&tv, (struct timezone *)0);
 	if (uflag) {
-		ap = asctime(gmtime((long *)&tv.tv_sec));
+		ap = asctime(gmtime((time_t *)&tv.tv_sec));
 		tzn = "GMT";
 	} else {
 		struct tm *tp;
-		tp = localtime((long *)&tv.tv_sec);
+		tp = localtime((time_t *)&tv.tv_sec);
 		ap = asctime(tp);
 		tzn = timezone(tz.tz_minuteswest, tp->tm_isdst);
 	}
@@ -255,7 +244,7 @@ gtime()
 	}
 	sp = ap;
 	(void) gettimeofday(&tv, (struct timezone *)0);
-	L = localtime((long *)&tv.tv_sec);
+	L = localtime((time_t *)&tv.tv_sec);
 	secs = gp(-1);
 	if (*sp != '.') {
 		mins = secs;
