@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)diffreg.c 4.9 %G%";
+static	char sccsid[] = "@(#)diffreg.c 4.10 %G%";
 
 #include "diff.h"
 /*
@@ -94,6 +94,49 @@ int	clen = 0;
 int	*J;		/* will be overlaid on class */
 long	*ixold;		/* will be overlaid on klist */
 long	*ixnew;		/* will be overlaid on file[1] */
+char	*chrtran;	/* translation table for case-folding */
+
+/* chrtran points to one of 2 translation tables:
+ *	cup2low if folding upper to lower case
+ *	clow2low if not folding case
+ */
+char	clow2low[256] = {
+0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,
+0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f,
+0x20,0x21,0x22,0x23,0x24,0x25,0x26,0x27,0x28,0x29,0x2a,0x2b,0x2c,0x2d,0x2e,0x2f,
+0x30,0x31,0x32,0x33,0x34,0x35,0x36,0x37,0x38,0x39,0x3a,0x3b,0x3c,0x3d,0x3e,0x3f,
+0x40,0x41,0x42,0x43,0x44,0x45,0x46,0x47,0x48,0x49,0x4a,0x4b,0x4c,0x4d,0x4e,0x4f,
+0x50,0x51,0x52,0x53,0x54,0x55,0x56,0x57,0x58,0x59,0x5a,0x5b,0x5c,0x5d,0x5e,0x5f,
+0x60,0x61,0x62,0x63,0x64,0x65,0x66,0x67,0x68,0x69,0x6a,0x6b,0x6c,0x6d,0x6e,0x6f,
+0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,0x78,0x79,0x7a,0x7b,0x7c,0x7d,0x7e,0x7f,
+0x80,0x81,0x82,0x83,0x84,0x85,0x86,0x87,0x88,0x89,0x8a,0x8b,0x8c,0x8d,0x8e,0x8f,
+0x90,0x91,0x92,0x93,0x94,0x95,0x96,0x97,0x98,0x99,0x9a,0x9b,0x9c,0x9d,0x9e,0x9f,
+0xa0,0xa1,0xa2,0xa3,0xa4,0xa5,0xa6,0xa7,0xa8,0xa9,0xaa,0xab,0xac,0xad,0xae,0xaf,
+0xb0,0xb1,0xb2,0xb3,0xb4,0xb5,0xb6,0xb7,0xb8,0xb9,0xba,0xbb,0xbc,0xbd,0xbe,0xbf,
+0xc0,0xc1,0xc2,0xc3,0xc4,0xc5,0xc6,0xc7,0xc8,0xc9,0xca,0xcb,0xcc,0xcd,0xce,0xcf,
+0xd0,0xd1,0xd2,0xd3,0xd4,0xd5,0xd6,0xd7,0xd8,0xd9,0xda,0xdb,0xdc,0xdd,0xde,0xdf,
+0xe0,0xe1,0xe2,0xe3,0xe4,0xe5,0xe6,0xe7,0xe8,0xe9,0xea,0xeb,0xec,0xed,0xee,0xef,
+0xf0,0xf1,0xf2,0xf3,0xf4,0xf5,0xf6,0xf7,0xf8,0xf9,0xfa,0xfb,0xfc,0xfd,0xfe,0xff
+};
+
+char	cup2low[256] = {
+0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,
+0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f,
+0x20,0x21,0x22,0x23,0x24,0x25,0x26,0x27,0x28,0x29,0x2a,0x2b,0x2c,0x2d,0x2e,0x2f,
+0x30,0x31,0x32,0x33,0x34,0x35,0x36,0x37,0x38,0x39,0x3a,0x3b,0x3c,0x3d,0x3e,0x3f,
+0x60,0x61,0x62,0x63,0x64,0x65,0x66,0x67,0x68,0x69,0x6a,0x6b,0x6c,0x6d,0x6e,0x6f,
+0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,0x78,0x79,0x7a,0x7b,0x7c,0x7d,0x7e,0x7f,
+0x60,0x61,0x62,0x63,0x64,0x65,0x66,0x67,0x68,0x69,0x6a,0x6b,0x6c,0x6d,0x6e,0x6f,
+0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,0x78,0x79,0x7a,0x7b,0x7c,0x7d,0x7e,0x7f,
+0x80,0x81,0x82,0x83,0x84,0x85,0x86,0x87,0x88,0x89,0x8a,0x8b,0x8c,0x8d,0x8e,0x8f,
+0x90,0x91,0x92,0x93,0x94,0x95,0x96,0x97,0x98,0x99,0x9a,0x9b,0x9c,0x9d,0x9e,0x9f,
+0xa0,0xa1,0xa2,0xa3,0xa4,0xa5,0xa6,0xa7,0xa8,0xa9,0xaa,0xab,0xac,0xad,0xae,0xaf,
+0xb0,0xb1,0xb2,0xb3,0xb4,0xb5,0xb6,0xb7,0xb8,0xb9,0xba,0xbb,0xbc,0xbd,0xbe,0xbf,
+0xc0,0xc1,0xc2,0xc3,0xc4,0xc5,0xc6,0xc7,0xc8,0xc9,0xca,0xcb,0xcc,0xcd,0xce,0xcf,
+0xd0,0xd1,0xd2,0xd3,0xd4,0xd5,0xd6,0xd7,0xd8,0xd9,0xda,0xdb,0xdc,0xdd,0xde,0xdf,
+0xe0,0xe1,0xe2,0xe3,0xe4,0xe5,0xe6,0xe7,0xe8,0xe9,0xea,0xeb,0xec,0xed,0xee,0xef,
+0xf0,0xf1,0xf2,0xf3,0xf4,0xf5,0xf6,0xf7,0xf8,0xf9,0xfa,0xfb,0xfc,0xfd,0xfe,0xff
+};
 
 diffreg()
 {
@@ -108,6 +151,7 @@ diffreg()
 		perror(diffh);
 		done();
 	}
+	chrtran = (iflag? cup2low : clow2low);
 	if ((stb1.st_mode & S_IFMT) == S_IFDIR)
 		file1 = splice(file1, file2);
 	else if ((stb2.st_mode & S_IFMT) == S_IFDIR)
@@ -427,32 +471,61 @@ check()
 			ixnew[j] = ctnew += skipline(1);
 			j++;
 		}
-		for(;;) {
-			c = getc(input[0]);
-			d = getc(input[1]);
-			ctold++;
-			ctnew++;
-			if(bflag && isspace(c) && isspace(d)) {
-				do {
-					if(c=='\n') break;
-					ctold++;
-				} while(isspace(c=getc(input[0])));
-				do {
-					if(d=='\n') break;
-					ctnew++;
-				} while(isspace(d=getc(input[1])));
+		if(bflag || wflag || iflag) {
+			for(;;) {
+				c = getc(input[0]);
+				d = getc(input[1]);
+				ctold++;
+				ctnew++;
+				if(bflag && isspace(c) && isspace(d)) {
+					do {
+						if(c=='\n')
+							break;
+						ctold++;
+					} while(isspace(c=getc(input[0])));
+					do {
+						if(d=='\n')
+							break;
+						ctnew++;
+					} while(isspace(d=getc(input[1])));
+				} else if ( wflag ) {
+					while( isspace(c) && c!='\n' ) {
+						c=getc(input[0]);
+						ctold++;
+					}
+					while( isspace(d) && d!='\n' ) {
+						d=getc(input[1]);
+						ctnew++;
+					}
+				}
+				if(chrtran[c] != chrtran[d]) {
+					jackpot++;
+					J[i] = 0;
+					if(c!='\n')
+						ctold += skipline(0);
+					if(d!='\n')
+						ctnew += skipline(1);
+					break;
+				}
+				if(c=='\n')
+					break;
 			}
-			if(c!=d) {
-				jackpot++;
-				J[i] = 0;
-				if(c!='\n')
-					ctold += skipline(0);
-				if(d!='\n')
-					ctnew += skipline(1);
-				break;
+		} else {
+			for(;;) {
+				ctold++;
+				ctnew++;
+				if((c=getc(input[0])) != (d=getc(input[1]))) {
+					/* jackpot++; */
+					J[i] = 0;
+					if(c!='\n')
+						ctold += skipline(0);
+					if(d!='\n')
+						ctnew += skipline(1);
+					break;
+				}
+				if(c=='\n')
+					break;
 			}
-			if(c=='\n')
-				break;
 		}
 		ixold[i] = ctold;
 		ixnew[j] = ctnew;
@@ -565,7 +638,27 @@ output()
 		}
 #undef c
 	}
+	if (opt == D_CONTEXT)
+		dump_context_vec();
 }
+
+/*
+ * The following struct is used to record change information when
+ * doing a "context" diff.  (see routine "change" to understand the
+ * highly mneumonic field names)
+ */
+struct context_vec {
+	int	a;	/* start line in old file */
+	int	b;	/* end line in old file */
+	int	c;	/* start line in new file */
+	int	d;	/* end line in new file */
+};
+
+struct	context_vec	*context_vec_start,
+			*context_vec_end,
+			*context_vec_ptr;
+
+#define	MAX_CONTEXT	128
 
 /* indicate that there is a difference between lines a and b of the from file
    to get to lines c to d of the to file.
@@ -590,6 +683,12 @@ change(a,b,c,d)
 			    ctime(&stbuf.st_mtime), file2);
 			stat(file2, &stbuf);
 			printf("%s", ctime(&stbuf.st_mtime));
+
+			context_vec_start = (struct context_vec *) 
+						malloc(MAX_CONTEXT *
+						   sizeof(struct context_vec));
+			context_vec_end = context_vec_start + MAX_CONTEXT;
+			context_vec_ptr = context_vec_start - 1;
 		}
 	}
 	if (a <= b && c <= d)
@@ -597,33 +696,24 @@ change(a,b,c,d)
 	else
 		ch = (a <= b) ? 'd' : 'a';
 	if(opt == D_CONTEXT) {
-		lowa = max(1, a-context);
-		upb  = min(len[0], b+context);
-		lowc = max(1, c-context);
-		upd  = min(len[1], d+context);
+		/*
+		 * if this new change is within 'context' lines of
+		 * the previous change, just add it to the change
+		 * record.  If the record is full or if this
+		 * change is more than 'context' lines from the previous
+		 * change, dump the record, reset it & add the new change.
+		 */
+		if ( context_vec_ptr >= context_vec_end ||
+		     ( context_vec_ptr >= context_vec_start &&
+		       a > (context_vec_ptr->b + 2*context) &&
+		       c > (context_vec_ptr->d + 2*context) ) )
+			dump_context_vec();
 
-		/* print out from file */
-		printf("***************\n*** ");
-		range(lowa,upb,",");
-		printf("\n");
-		if (ch == 'a')
-			fetch(ixold,lowa,upb,input[0],"  ");
-		else {
-			fetch(ixold,lowa,a-1,input[0],"  ");
-			fetch(ixold,a,b,input[0],ch == 'c' ? "! " : "- ");
-			fetch(ixold,b+1,upb,input[0],"  ");
-		}
-		putchar('\n');
-		printf("--- ");
-		range(lowc,upd,",");
-		printf(" -----\n");
-		if (ch == 'd')
-			fetch(ixnew,lowc,upd,input[1],"  ");
-		else {
-			fetch(ixnew,lowc,c-1,input[1],"  ");
-			fetch(ixnew,c,d,input[1],ch == 'c' ? "! " : "+ ");
-			fetch(ixnew,d+1,upd,input[1],"  ");
-		}
+		context_vec_ptr++;
+		context_vec_ptr->a = a;
+		context_vec_ptr->b = b;
+		context_vec_ptr->c = c;
+		context_vec_ptr->d = d;
 		return;
 	}
 	switch (opt) {
@@ -671,6 +761,8 @@ FILE *lb;
 char *s;
 {
 	register int i, j;
+	register int c;
+	register int col;
 	register int nc;
 	int oneflag = (*ifdef1!='\0') != (*ifdef2!='\0');
 
@@ -706,14 +798,26 @@ char *s;
 		}
 		inifdef = 1+oldfile;
 	}
+
 	for(i=a;i<=b;i++) {
 		fseek(lb,f[i-1],0);
 		nc = f[i]-f[i-1];
 		if (opt != D_IFDEF)
 			prints(s);
-		for(j=0;j<nc;j++)
-			putchar(getc(lb));
+		col = 0;
+		for(j=0;j<nc;j++) {
+			c = getc(lb);
+			if (c == '\t' && tflag)
+				do
+					putchar(' ');
+				while (++col & 7);
+			else {
+				putchar(c);
+				col++;
+			}
+		}
 	}
+
 	if (inifdef && !wantelses) {
 		fprintf(stdout, "#endif %s\n", endifname);
 		inifdef = 0;
@@ -732,37 +836,48 @@ char *s;
 readhash(f)
 register FILE *f;
 {
-	long sum;
+	register long sum;
 	register unsigned shift;
-	register space;
 	register t;
+	register space;
+
 	sum = 1;
 	space = 0;
-	if(!bflag) for(shift=0;(t=getc(f))!='\n';shift+=7) {
-		if(t==-1)
-			return(0);
-		sum += (long)t << (shift &= HALFLONG - 1);
-	}
-	else for(shift=0;;) {
-		switch(t=getc(f)) {
-		case -1:
-			return(0);
-		case '\t':
-		case ' ':
-			space++;
-			continue;
-		default:
-			if(space) {
-				shift += 7;
-				space = 0;
+	if(!bflag && !wflag) {
+		if(iflag)
+			for(shift=0;(t=getc(f))!='\n';shift+=7) {
+				if(t==-1)
+					return(0);
+				sum += (long)chrtran[t] << (shift%=HALFLONG);
 			}
-			sum += (long)t << (shift &= HALFLONG - 1);
-			shift += 7;
-			continue;
-		case '\n':
+		else
+			for(shift=0;(t=getc(f))!='\n';shift+=7) {
+				if(t==-1)
+					return(0);
+				sum += (long)t << (shift%=HALFLONG);
+			}
+	} else {
+		for(shift=0;;) {
+			switch(t=getc(f)) {
+			case -1:
+				return(0);
+			case '\t':
+			case ' ':
+				space++;
+				continue;
+			default:
+				if(space && !wflag) {
+					shift += 7;
+					space = 0;
+				}
+				sum += (long)chrtran[t] << (shift%=HALFLONG);
+				shift += 7;
+				continue;
+			case '\n':
+				break;
+			}
 			break;
 		}
-		break;
 	}
 	sum = low(sum) + high(sum);
 	return((short)low(sum) + (short)high(sum));
@@ -790,4 +905,92 @@ asciifile(f)
 		if (*cp++ & 0200)
 			return (0);
 	return (1);
+}
+
+
+/* dump accumulated "context" diff changes */
+dump_context_vec()
+{
+	register int	a, b, c, d;
+	register char	ch;
+	register struct	context_vec *cvp = context_vec_start;
+	register int	lowa, upb, lowc, upd;
+
+	if ( cvp > context_vec_ptr )
+		return;
+
+	lowa = max(1, cvp->a - context);
+	upb  = min(len[0], context_vec_ptr->b + context);
+	lowc = max(1, cvp->c - context);
+	upd  = min(len[1], context_vec_ptr->d + context);
+
+	printf("***************\n*** ");
+	range(lowa,upb,",");
+	printf(" ****\n--- ");
+	range(lowc,upd,",");
+	printf(" ----\n");
+
+	/*
+	 * output changes to the "old" file.  The first loop is a
+	 * hack that suppresses the output if there were no changes to
+	 * the "old" file (we'll see the "old" lines as context in the
+	 * "new" list).
+	 */
+	while (cvp <= context_vec_ptr) {
+		if (cvp->a <= cvp->b) {
+			cvp = context_vec_start;
+			break;
+		}
+		cvp++;
+	}
+	while (cvp <= context_vec_ptr) {
+		a = cvp->a; b = cvp->b; c = cvp->c; d = cvp->d;
+
+		if (a <= b && c <= d)
+			ch = 'c';
+		else
+			ch = (a <= b) ? 'd' : 'a';
+
+		if (ch == 'a')
+			fetch(ixold,lowa,b,input[0],"  ");
+		else {
+			fetch(ixold,lowa,a-1,input[0],"  ");
+			fetch(ixold,a,b,input[0],ch == 'c' ? "!<" : "-<");
+		}
+		lowa = b + 1;
+		cvp++;
+	}
+	fetch(ixold, b+1, upb, input[0], "  ");
+
+	/* output changes to the "new" file */
+	printf("---------------\n");
+
+	cvp = context_vec_start;
+	while (cvp <= context_vec_ptr) {
+		if (cvp->c <= cvp->d) {
+			cvp = context_vec_start;
+			break;
+		}
+		cvp++;
+	}
+	while (cvp <= context_vec_ptr) {
+		a = cvp->a; b = cvp->b; c = cvp->c; d = cvp->d;
+
+		if (a <= b && c <= d)
+			ch = 'c';
+		else
+			ch = (a <= b) ? 'd' : 'a';
+
+		if (ch == 'd')
+			fetch(ixnew,lowc,d,input[1],"  ");
+		else {
+			fetch(ixnew,lowc,c-1,input[1],"  ");
+			fetch(ixnew,c,d,input[1],ch == 'c' ? "!>" : "+>");
+		}
+		lowc = d + 1;
+		cvp++;
+	}
+	fetch(ixnew, d+1, upd, input[1], "  ");
+
+	context_vec_ptr = context_vec_start - 1;
 }
