@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)dirs.c	3.2	(Berkeley)	83/02/27";
+static char sccsid[] = "@(#)dirs.c	3.3	(Berkeley)	83/02/28";
 #endif
 
 #include "restore.h"
@@ -20,6 +20,7 @@ struct inotab {
 };
 static struct inotab *inotab[HASHSIZE];
 extern struct inotab *inotablookup();
+extern struct inotab *allocinotab();
 
 struct modeinfo {
 	ino_t ino;
@@ -52,6 +53,7 @@ extractdirs(modefile)
 {
 	register int i;
 	register struct dinode *ip;
+	struct inotab *itp;
 	struct direct nulldir;
 	int putdir(), null();
 
@@ -75,7 +77,7 @@ extractdirs(modefile)
 			done(1);
 		}
 	}
-	nulldir.d_ino = 1;
+	nulldir.d_ino = 0;
 	nulldir.d_namlen = 1;
 	strncpy(nulldir.d_name, "/", nulldir.d_namlen);
 	nulldir.d_reclen = DIRSIZ(&nulldir);
@@ -93,10 +95,22 @@ extractdirs(modefile)
 				fclose(mf);
 			return;
 		}
-		allocinotab(curfile.ino, ip, seekpt);
+		itp = allocinotab(curfile.ino, ip, seekpt);
 		getfile(putdir, null);
 		putent(&nulldir);
 		flushent();
+		itp->t_size = seekpt - itp->t_seekpt;
+	}
+}
+
+/*
+ * skip over all the directories on the tape
+ */
+skipdirs()
+{
+
+	while ((curfile.dip->di_mode & IFMT) == IFDIR) {
+		skipfile();
 	}
 }
 
@@ -268,8 +282,7 @@ long prev = 0;
 putent(dp)
 	struct direct *dp;
 {
-	if (dp->d_ino == 0)
-		return;
+	dp->d_reclen = DIRSIZ(dp);
 	if (dirloc + dp->d_reclen > DIRBLKSIZ) {
 		((struct direct *)(dirbuf + prev))->d_reclen =
 		    DIRBLKSIZ - prev;
@@ -380,8 +393,6 @@ readdir(dirp)
 		    dp->d_reclen > DIRBLKSIZ + 1 - dirp->dd_loc)
 			return NULL;
 		dirp->dd_loc += dp->d_reclen;
-		if (dp->d_ino == 0)
-			continue;
 		return (dp);
 	}
 }
@@ -438,7 +449,7 @@ genliteraldir(name, ino)
 
 	itp = inotablookup(ino);
 	if (itp == NULL)
-		panic("cannot find directory inode %d named %s\n", ino, name);
+		panic("Cannot find directory inode %d named %s\n", ino, name);
 	if ((ofile = open(name, FWRONLY|FCREATE, 0666)) < 0) {
 		fprintf(stderr, "%s: cannot create file\n", name);
 		return (FAIL);
@@ -468,9 +479,24 @@ genliteraldir(name, ino)
 }
 
 /*
+ * Determine the type of an inode
+ */
+inodetype(ino)
+	ino_t ino;
+{
+	struct inotab *itp;
+
+	itp = inotablookup(ino);
+	if (itp == NULL)
+		return (LEAF);
+	return (NODE);
+}
+
+/*
  * Allocate and initialize a directory inode entry.
  * If requested, save its pertinent mode, owner, and time info.
  */
+struct inotab *
 allocinotab(ino, dip, seekpt)
 	ino_t ino;
 	struct dinode *dip;
@@ -478,17 +504,14 @@ allocinotab(ino, dip, seekpt)
 {
 	register struct inotab	*itp;
 	struct modeinfo node;
-	static int prevseekpt = 0;
 
 	itp = (struct inotab *)calloc(1, sizeof(struct inotab));
 	itp->t_next = inotab[INOHASH(ino)];
 	inotab[INOHASH(ino)] = itp;
 	itp->t_ino = ino;
 	itp->t_seekpt = seekpt;
-	itp->t_size = seekpt - prevseekpt;
-	prevseekpt = seekpt;
 	if (mf == NULL)
-		return;
+		return(itp);
 	node.ino = ino;
 	node.timep[0] = dip->di_atime;
 	node.timep[1] = dip->di_mtime;
@@ -496,6 +519,7 @@ allocinotab(ino, dip, seekpt)
 	node.uid = dip->di_uid;
 	node.gid = dip->di_gid;
 	fwrite((char *)&node, 1, sizeof(struct modeinfo), mf);
+	return(itp);
 }
 
 /*
