@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)primes.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)primes.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -43,6 +43,7 @@ static char sccsid[] = "@(#)primes.c	8.4 (Berkeley) %G%";
 #include <memory.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "primes.h"
 
