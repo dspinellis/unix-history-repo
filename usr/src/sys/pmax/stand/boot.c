@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)boot.c	7.7 (Berkeley) %G%
+ *	@(#)boot.c	7.8 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -34,35 +34,13 @@ main(argc, argv)
 #ifdef JUSTASK
 	ask = 1;
 #else
-	ask = 0;
-#ifdef DS3100
-	for (cp = argv[0]; *cp; cp++) {
-		if (*cp == ')' && cp[1]) {
-			cp = argv[0];
-			goto fnd;
-		}
-	}
-#endif
-#ifdef DS5000
-	if (argc > 1) {
+	/* check for DS5000 boot */
+	if (strcmp(argv[0], "boot") == 0) {
 		argc--;
 		argv++;
-		/* look for second '/' as in '5/rz0/vmunix' */
-		for (cp = argv[0]; *cp; cp++) {
-			if (*cp == '/') {
-				while (*++cp) {
-					if (*cp == '/' && cp[1]) {
-						cp = argv[0];
-						goto fnd;
-					}
-				}
-			}
-		}
 	}
-#endif
-	ask = 1;
-fnd:
-	;
+	cp = *argv;
+	ask = 0;
 #endif /* JUSTASK */
 	for (;;) {
 		if (ask) {

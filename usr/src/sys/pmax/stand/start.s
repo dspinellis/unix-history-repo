@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)start.s	7.6 (Berkeley) %G%
+ *	@(#)start.s	7.7 (Berkeley) %G%
  *
  * start.s -
  *
@@ -43,16 +43,14 @@ start:
 	sw	zero, START_FRAME - 8(sp)	# Zero out old fp for debugger
 	move	s0, a0				# save argc
 	move	s1, a1				# save argv
-#ifdef DS5000
+	beq	a3, 0x30464354, 1f		# jump if boot from DS5000
 	move	s3, a3				# save call vector
-#endif
+	la	s3, callvec			# init call vector
+1:
 	la	a0, edata			# clear BSS
 	la	a1, end
 	jal	bzero				# bzero(edata, end - edata)
 	subu	a1, a1, a0
-#ifdef DS3100
-	la	s3, callvec			# init call vector
-#endif
 	sw	s3, callv			# save call vector
 	move	a0, s0				# restore argc
 	jal	main				# main(argc, argv)
