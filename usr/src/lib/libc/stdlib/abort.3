@@ -1,6 +1,6 @@
-.\"	@(#)abort.3	4.1 (Berkeley) %G%
+.\"	@(#)abort.3	5.1 (Berkeley) %G%
 .\"
-.TH ABORT 3
+.TH ABORT 3 "18 January 1983"
 .AT 3
 .SH NAME
 abort \- generate a fault
@@ -10,6 +10,9 @@ executes an instruction which is illegal in user mode.
 This causes a signal that normally terminates
 the process with a core dump, which may be used for debugging.
 .SH SEE ALSO
-adb(1), signal(2), exit(2)
+adb(1), sigvec(2), exit(2)
 .SH DIAGNOSTICS
 Usually `IOT trap \- core dumped' from the shell.
+.SH BUGS
+The abort() function does not flush standard I/O buffers.  Use
+\fIfflush\fP\|(3S).
