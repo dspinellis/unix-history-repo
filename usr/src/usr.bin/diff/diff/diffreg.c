@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)diffreg.c 4.15 %G%";
+static	char sccsid[] = "@(#)diffreg.c 4.16 %G%";
 
 #include "diff.h"
 /*
@@ -571,6 +571,9 @@ struct line *a;
 	struct line *ai;
 	register struct line *aim;
 	int k;
+
+	if (n == 0)
+		return;
 	for(j=1;j<=n;j*= 2)
 		m = 2*j - 1;
 	for(m/=2;m!=0;m/=2) {
