@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vnops.c	7.61 (Berkeley) %G%
+ *	@(#)ffs_vnops.c	7.62 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -523,7 +523,7 @@ ufs_write(vp, uio, ioflag, cred)
 	 * Maybe this should be above the vnode op call, but so long as
 	 * file servers have no limits, i don't think it matters
 	 */
-	if (vp->v_type == VREG &&
+	if (vp->v_type == VREG && p &&
 	    uio->uio_offset + uio->uio_resid >
 	      p->p_rlimit[RLIMIT_FSIZE].rlim_cur) {
 		psignal(p, SIGXFSZ);
