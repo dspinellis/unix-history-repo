@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	8.14 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.15 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	8.14 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.15 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -192,8 +192,13 @@ tryhelo:
 			goto tempfail2;
 	}
 
-	mci->mci_state = MCIS_OPEN;
-	return;
+	if (mci->mci_state != MCIS_CLOSED)
+	{
+		mci->mci_state = MCIS_OPEN;
+		return;
+	}
+
+	/* got a 421 error code during startup */
 
   tempfail1:
   tempfail2:
