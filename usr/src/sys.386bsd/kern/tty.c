@@ -32,6 +32,13 @@
  * SUCH DAMAGE.
  *
  *	@(#)tty.c	7.44 (Berkeley) 5/28/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00061
+ * --------------------         -----   ----------------------
+ *
+ * 11 Dec 92	Williams Jolitz		Fixed tty handling
  */
 static char rcsid[] = "$Header: /usr/bill/working/sys/kern/RCS/tty.c,v 1.3 92/01/21 21:31:11 william Exp $";
 
@@ -601,6 +608,7 @@ ttselect(dev, rw, p)
 	register struct tty *tp = &cdevsw[major(dev)].d_ttys[minor(dev)];
 	int nread;
 	int s = spltty();
+	struct proc *selp;
 
 	switch (rw) {
 
@@ -609,19 +617,19 @@ ttselect(dev, rw, p)
 		if (nread > 0 || 
 		   ((tp->t_cflag&CLOCAL) == 0 && (tp->t_state&TS_CARR_ON) == 0))
 			goto win;
-		if (tp->t_rsel && tp->t_rsel->p_wchan == (caddr_t)&selwait)
+		if (tp->t_rsel && (selp = pfind(tp->t_rsel)) && selp->p_wchan == (caddr_t)&selwait)
 			tp->t_state |= TS_RCOLL;
 		else
-			tp->t_rsel = p;
+			tp->t_rsel = p->p_pid;
 		break;
 
 	case FWRITE:
 		if (RB_LEN(&tp->t_out) <= tp->t_lowat)
 			goto win;
-		if (tp->t_wsel && tp->t_wsel->p_wchan == (caddr_t)&selwait)
+		if (tp->t_wsel && (selp = pfind(tp->t_wsel)) && selp->p_wchan == (caddr_t)&selwait)
 			tp->t_state |= TS_WCOLL;
 		else
-			tp->t_wsel = p;
+			tp->t_wsel = p->p_pid;
 		break;
 	}
 	splx(s);

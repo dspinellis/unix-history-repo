@@ -31,6 +31,13 @@
  * SUCH DAMAGE.
  *
  *	@(#)uipc_socket2.c	7.17 (Berkeley) 5/4/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00061
+ * --------------------         -----   ----------------------
+ *
+ * 11 Dec 92	Williams Jolitz		Fixed tty handling
  */
 
 #include "param.h"
@@ -269,10 +276,10 @@ sbselqueue(sb, cp)
 {
 	struct proc *p;
 
-	if ((p = sb->sb_sel) && p->p_wchan == (caddr_t)&selwait)
+	if (sb->sb_sel && (p = pfind(sb->sb_sel)) && p->p_wchan == (caddr_t)&selwait)
 		sb->sb_flags |= SB_COLL;
 	else {
-		sb->sb_sel = cp;
+		sb->sb_sel = cp->p_pid;
 		sb->sb_flags |= SB_SEL;
 	}
 }

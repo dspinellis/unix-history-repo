@@ -31,6 +31,13 @@
  * SUCH DAMAGE.
  *
  *	@(#)sys_generic.c	7.30 (Berkeley) 5/30/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00061
+ * --------------------         -----   ----------------------
+ *
+ * 11 Dec 92	Williams Jolitz		Fixed tty handling
  */
 
 #include "param.h"
@@ -567,10 +574,8 @@ done:
 	return (error);
 }
 
-selscan(p, ibits, obits, nfd, retval)
-	struct proc *p;
-	fd_set *ibits, *obits;
-	int nfd, *retval;
+int
+selscan(struct proc *p, fd_set *ibits, fd_set *obits, int nfd, int *retval)
 {
 	register struct filedesc *fdp = p->p_fd;
 	register int which, i, j;
@@ -612,29 +617,23 @@ selscan(p, ibits, obits, nfd, retval)
 }
 
 /*ARGSUSED*/
-#ifdef __STDC__
+int
 seltrue(dev_t dev, int which, struct proc *p)
-#else
-seltrue(dev, flag, p)
-	dev_t dev;
-	int flag;
-	struct proc *p;
-#endif
 {
 
 	return (1);
 }
 
-selwakeup(p, coll)
-	register struct proc *p;
-	int coll;
+void
+selwakeup(pid_t pid, int coll)
 {
+	register struct proc *p;
 
 	if (coll) {
 		nselcoll++;
 		wakeup((caddr_t)&selwait);
 	}
-	if (p) {
+	if (pid && (p = pfind(pid))) {
 		int s = splhigh();
 		if (p->p_wchan == (caddr_t)&selwait) {
 			if (p->p_stat == SSLEEP)
