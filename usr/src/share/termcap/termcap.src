@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file @(#)termcap.src	1.14	(Berkeley) %G%
+#	Termcap source file @(#)termcap.src	1.15	(Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -1258,17 +1258,28 @@ c8|c108-w|c108-w-8p|concept108-w-8p|concept 108 w/8 pages in wide mode:\
 	:is=\EU\E F\Ef\E7\E5\E8\El\ENH\EK\E\200\Eo&\200\Eo\47\E\E"\E^G!\E^HA@ :\
 	:ti=\EU\Ev  8^AD\Ep\r:te=\Ev  ^A0^AD\Ep\r\n:pt@:cm@:\
 	:co#132:tc=c108-8p
-cA|avt|concept avt w/4 or 8 pages, 80 columns:\
-	:is=\E[1*q\E[2!t\E[7!t\E[=4;101;103;119;205l\E[=107;118;207h\E)1\E[1Q\EW\E[!y\E[!z\E>\E[0\0720\07232!r\E[w\E2\r\n:\
-	:ae=^O:al=\E[L:am:as=^N:bs:bt=\E[Z:cd=\E[J:ce=\E[K:ch=\E[%i%2G:\
-	:cl=\E[H\E[J:cm=\E[%i%2;%2H:co#80:cv=\E[%i%2d:dc=\E[P:dl=\E[M:\
-	:do=\E[B:ei=\E1:eo:ho=\E[H:im=\E1:kb=^H:kd=\E[B:\
+cA|avtw|HDS concept avt w/4 or 8 pages; 132 columns:\
+	:is=\E[1*q\E[2!t\E[7!t\E[=4;101;119l\E[=103;107;118;207h\E)1\E[1Q\EW\E[7!y\E[0\0720\07232!r\E[w\E2\r\n:\
+	:ch=\E[%i%3G:cm=\E[%i%2;%3H:co#132:tc=avt:
+cB|avt-8p-s|concept avt w/8 pages & 80 cols running sysline:\
+	:is=\E[1*q\E[2!t\E[7!t\E[=4;101;103;119l\E[=107;118;207h\E)1\E[1Q\EW\E[0!y\E[0\0720\07232!r\E[2!w\E[192w\E[2*w\E[!w\E[1;191w\E2\r\n:\
+	:hs:es:ts=\E[2!w\E[H\E[J\E[%i%dG:fs=\E[!w:\
+	:ds=\E[2!w\E[2J\E[!w\E[*w:te=\E[1;191w\E2\n:tc=avt:
+cC|avt-4p-s|concept avt w/4 pages & 80 cols running sysline:\
+	:is=\E[1*q\E[2!t\E[7!t\E[=4;101;103;119l\E[=107;118;207h\E)1\E[1Q\EW\E[0!y\E[0\0720\07232!r\E[2!w\E[96w\E[2*w\E[!w\E[1;95w\E2\r\n:\
+	:hs:es:ts=\E[2!w\E[H\E[J\E[%i%dG:fs=\E[!w:\
+	:ds=\E[2!w\E[2J\E[!w\E[*w:te=\E[1;95w\E2\n:tc=avt:
+cD|avt|HDS concept avt w/4 or 8 pages, 80 columns:\
+	:is=\E[1*q\E[2!t\E[7!t\E[=4;101;103;119l\E[=107;118;207h\E)1\E[1Q\EW\E[0!y\E[0\0720\07232!r\E[w\E2\r\n:\
+	:ae=^O:al=\E[L:am:as=^N:bs:bt=\E[Z:cd=\E[J:ce=\E[K:\
+	:ch=\E[%i%2G:cl=\E[H\E[J:cm=\E[%i%2;%2H:co#80:cv=\E[%i%2d:\
+	:dc=\E[P:dl=\E[M:do=\E[B:ei=\E1:eo:ho=\E[H:im=\E1:kb=^H:kd=\E[B:\
 	:kh=\E[H:kl=\E[D:ko=do,ho,nd,up:kr=\E[C:\
-	:ku=\E[A:li#24:mi:nd=\E[C:pt:se=\E[7!{:so=\E[7m:te=\E[w\E2\r\n:\
-	:ti=\E[1;24w\E2\r:ue=\E[4!{:ul:up=\E[A:us=\E[4m:\
-	:ve=\E[=4l\E[8V:vs=\E[8U\E[=4l:xn:
-cB|avt-rv|concept avt w/4 or 8 pages, reverse video, 80 columns:\
-	:is=\E[1*q\E[2!t\E[7!t\E[=4;101;103;119l\E[=107;118;205;207h\E)1\E[1Q\EW\E[!y\E[!z\E>\E[0\0720\07232!r\E[w\E2\r\n:tc=avt
+	:ks=\E[1;4!z\E[1;8!z\E[1;10!z\E[1;11!z\E[1;12!z\E[1;14!z\E[3;7!z\E[3;9!z:\
+	:ke=\E[;4!z\E[;8!z\E[;10!z\E[;11!z\E[;12!z\E[3;14!z\E[;7!z\E[;9!z:\
+	:ku=\E[A:li#24:mi:nd=\E[C:pt:se=\E[7!{:so=\E[7m:\
+	:te=\E[w\E2\n:ti=\E[1;24w\E2\n:ue=\E[4!{:ul:\
+	:up=\E[A:us=\E[4m:ve=\E[=4;119l:vs=\E[4l\E[=119h:xn:
 #
 # Concepts have only window relative cursor addressing, not screen relative.
 # To get it to work right here, ti/te (which were invented for the concept)
@@ -1363,14 +1374,15 @@ d4|gt40|dec gt40:\
 d5|vt50|dec vt50:\
 	:cr=^M:do=^J:nl=^J:bl=^G:\
 	:le=^H:bs:cd=\EJ:ce=\EK:cl=\EH\EJ:co#80:li#12:nd=\EC:ta=^I:pt:up=\EA:
-d6|vt125|vt125-am|vt125:\
-	:cr=^M:do=^J:nl=^J:bl=^G:co#80:li#24:cl=50\E[;H\E[2J:le=^H:am:bs:\
+# From tut@Topaz.CC Thu May 12 14:49:02 1983
+d6|vt125|vt125-am|DEC vt125:\
+	:cr=^M:do=^J:nl=^J:bl=^G:co#80:li#24:cl=50\E[H\E[2J:le=^H:am:bs:\
 	:cm=5\E[%i%d;%dH:nd=2\E[C:up=2\E[A:ce=3\E[K:cd=50\E[J:so=2\E[7m:\
-	:se=2\E[m:us=2\E[4m:ue=2\E[m:md=2\E[1m:mr=2\E[7m:mb=2\E[5m:me=2\E[m:\
-	:is=\E[1;24r\E[24;1H:rs=\E>\E[?3l\E[?4l\E[?5l\E[?7h\E[?8h:ks=\E[?1h\E=:\
-	:ke=\E[?1l\E>:rf=/usr/lib/tabset/vt100:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:\
-	:kb=^H:ho=\E[H:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:ta=^I:pt:sr=5\EM:vt#3:\
-	:sc=\E7:rc=\E8:cs=\E[%i%d;%dr:
+	:se=2\E[m:us=2\E[4m:ue=2\E[m:md=2\E[1m:mr=2\E[7m:mb=2\E[5m:\
+	:me=2\E[m:is=\E[1;24r\E[24;1H\E>\E[?3l\E[?4l\E[?5l\E[?7h\E[?8h:\
+	:ks=\E[?1h\E=:ke=\E[?1l\E>:if=/usr/lib/tabset/vt100:ku=\EOA:\
+	:kd=\EOB:kr=\EOC:kl=\EOD:kb=^H:ho=\E[H:k1=\EOP:k2=\EOQ:k3=\EOR:\
+	:k4=\EOS:ta=^I:pt:sr=5\EM:vt#3:sc=\E7:rc=\E8:cs=\E[%i%d;%dr:
 # DEC gigi color graphic terminal , same as vt52
 d7|gigi|dec gigi terminal:\
 	:co#80:is=200\E>\E[?4l\E[?5l\E[?7h\E[?8h:\
@@ -1383,7 +1395,11 @@ d7|gigi|dec gigi terminal:\
 dI|dw1|decwriter I:\
 	:cr=^M:do=^J:nl=^J:bl=^G:\
 	:le=^H:bs:co#72:hc:os:
-# From cbosg!ucbvax!G:tut Thu Sep 24 22:10:46 1981
+# From tut@Topaz.CC Thu May 12 14:49:02 1983
+dJ|dw3|la120|decwriter III:\
+	:bs:kb=^H:co#132:hc:os:pt:\
+	:is=\E(B\E[20l\E[w\E[1;132s\E[2g\E[9;17;25;33;41;49;57;65;73;81;89;97;105;113;121;129u\E[z\E[66t\E[1;66r\E[4g\E>\r:
+# From tut@topaz.CC Thu Sep 24 22:10:46 1981
 df|dw4|decwriter IV:\
 	:cr=^M:do=^J:nl=^J:bl=^G:le=^H:bs:co#132:hc:os:am:\
 	:ta=^I:pt:is=\Ec:k0=\EOP:k1=\EOQ:k2=\EOR:k3=\EOS:kb=^H:
