@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount.h	8.18 (Berkeley) %G%
+ *	@(#)mount.h	8.19 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -181,6 +181,7 @@ struct vfsconf {
 	int	vfc_typenum;		/* historic filesystem type number */
 	int	vfc_refcount;		/* number mounted of this type */
 	int	vfc_flags;		/* permanent flags */
+	int	(*vfc_mountroot)(void);	/* if != NULL, routine to mount root */
 	struct	vfsconf *vfc_next;	/* next in list */
 };
 
