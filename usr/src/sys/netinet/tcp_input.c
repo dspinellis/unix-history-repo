@@ -1,4 +1,4 @@
-/*	tcp_input.c	6.1	83/07/29	*/
+/*	tcp_input.c	6.2	83/11/04	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -501,8 +501,8 @@ trimthenstep6:
 			tp->t_rxtshift = 0;
 		}
 		if (acked > so->so_snd.sb_cc) {
-			sbdrop(&so->so_snd, so->so_snd.sb_cc);
 			tp->snd_wnd -= so->so_snd.sb_cc;
+			sbdrop(&so->so_snd, so->so_snd.sb_cc);
 		} else {
 			sbdrop(&so->so_snd, acked);
 			tp->snd_wnd -= acked;
