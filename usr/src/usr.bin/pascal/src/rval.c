@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)rval.c 1.12 %G%";
+static char sccsid[] = "@(#)rval.c 1.13 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -752,8 +752,14 @@ cstrng:
 			     *	for sets, strings, records
 			     */
 			p = rvalue( r[ 2 ] , contype , LREQ );
+			if ( p == NIL ) {
+			    return NIL;
+			}
 			putop( P2LISTOP , P2INT );
 			p1 = rvalue( r[ 3 ] , p , LREQ );
+			if ( p1 == NIL ) {
+			    return NIL;
+			}
 			putop( P2LISTOP , P2INT );
 			putop( P2CALL , P2INT );
 		    } else {
@@ -773,6 +779,9 @@ cstrng:
 			    putop( P2SCONV , P2DOUBLE );
 			}
 			p1 = rvalue( r[ 3 ] , p , RREQ );
+			if ( p1 == NIL ) {
+			    return NIL;
+			}
 			if ( isa( p , "d" ) && isa( p1 , "i" ) )
 			    putop( P2SCONV , P2DOUBLE );
 			putop( relops[ r[0] - T_EQ ] , P2INT );
@@ -924,6 +933,9 @@ nonident:
 			putleaf( P2ICON , set.uprbp , 0 , P2INT , 0 );
 			putop( P2LISTOP , P2INT );
 			p1 = rvalue( r[3] , NIL , LREQ );
+			if ( p1 == NIL ) {
+			    return NIL;
+			}
 			putop( P2LISTOP , P2INT );
 		    } else if ( csetd.comptime ) {
 			putleaf( P2ICON , set.lwrb , 0 , P2INT , 0 );
