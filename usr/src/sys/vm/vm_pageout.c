@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_pageout.c	8.1 (Berkeley) %G%
+ *	@(#)vm_pageout.c	8.2 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -197,7 +197,8 @@ vm_pageout_scan()
 		 */
 		if ((pager = object->pager) == NULL) {
 			pager = vm_pager_allocate(PG_DFLT, (caddr_t)0,
-						  object->size, VM_PROT_ALL);
+						  object->size, VM_PROT_ALL,
+						  (vm_offset_t)0);
 			if (pager != NULL)
 				vm_object_setpager(object, pager, 0, FALSE);
 		}

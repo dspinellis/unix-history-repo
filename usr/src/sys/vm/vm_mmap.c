@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_mmap.c 1.6 91/10/21$
  *
- *	@(#)vm_mmap.c	8.1 (Berkeley) %G%
+ *	@(#)vm_mmap.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -575,7 +575,7 @@ vm_mmap(map, addr, size, prot, maxprot, flags, handle, foff)
 		} else
 			type = PG_VNODE;
 	}
-	pager = vm_pager_allocate(type, handle, size, prot);
+	pager = vm_pager_allocate(type, handle, size, prot, foff);
 	if (pager == NULL)
 		return (type == PG_DEVICE ? EINVAL : ENOMEM);
 	/*
