@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)chmod.c	4.3 %G%";
+static char *sccsid = "@(#)chmod.c	4.4 %G%";
 
 /*
  * chmod options mode files
@@ -57,7 +57,7 @@ char **argv;
 	(void) newmode(0);
 	for (i = 1; i < argc; i++) {
 		p = argv[i];
-		if (lstat(p, &st) < 0) {
+		if (stat(p, &st) < 0) {
 			fprintf(stderr, "chmod: can't access %s\n", p);
 			++status;
 			continue;
@@ -77,7 +77,7 @@ chmodr(dir, mode)
 	char	*dir;
 {
 #define CHECK(name,sbuf)\
-	if (lstat(name, sbuf) < 0) {\
+	if (stat(name, sbuf) < 0) {\
 		fprintf(stderr, "chmod: can't access %s\n", dp->d_name);\
 		return(1);\
 	}
@@ -235,6 +235,9 @@ register om;
 		continue;
 	case 'x':
 		m |= EXEC;
+		continue;
+	case 'X':
+		Xflag++;
 		continue;
 	case 's':
 		m |= SETID;
