@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)vd.c	7.1 (Berkeley) %G%
+ *	@(#)vd.c	7.2 (Berkeley) %G%
  */
 
 #include "dk.h"
@@ -892,7 +892,7 @@ vdioctl(dev, cmd, data, flag)
 	register int unit = vdunit(dev);
 	register struct disklabel *lp = &dklabel[unit];
 	register struct dksoftc *dk = &dksoftc[unit];
-	int error = 0, wlab, vdformat();
+	int error = 0, vdformat();
 
 	switch (cmd) {
 
@@ -925,19 +925,21 @@ vdioctl(dev, cmd, data, flag)
 		break;
 
 	case DIOCWDINFO:
-		/* simulate opening partition 0 so write succeeds */
-		dk->dk_openpart |= (1 << 0);		/* XXX */
-		wlab = dk->dk_wlabel;
-		dk->dk_wlabel = 1;
 		if ((flag & FWRITE) == 0)
 			error = EBADF;
 		else if ((error = setdisklabel(lp, (struct disklabel *)data,
 		    (dk->dk_state == OPENRAW) ? 0 : dk->dk_openpart)) == 0) {
+			int wlab;
+
 			dk->dk_state = OPEN;
+			/* simulate opening partition 0 so write succeeds */
+			dk->dk_openpart |= (1 << 0);		/* XXX */
+			wlab = dk->dk_wlabel;
+			dk->dk_wlabel = 1;
 			error = writedisklabel(dev, vdstrategy, lp);
+			dk->dk_openpart = dk->dk_copenpart | dk->dk_bopenpart;
+			dk->dk_wlabel = wlab;
 		}
-		dk->dk_openpart = dk->dk_copenpart | dk->dk_bopenpart;
-		dk->dk_wlabel = wlab;
 		break;
 
 	case DIOCWFORMAT:
