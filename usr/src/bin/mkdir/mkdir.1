@@ -6,11 +6,10 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)mkdir.1	6.10 (Berkeley) %G%
+.\"	@(#)mkdir.1	6.11 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MKDIR 1
-.Os
 .Sh NAME
 .Nm mkdir
 .Nd make directories
@@ -27,7 +26,8 @@ modified by the current
 .Xr umask  2  .
 .Pp
 The options are as follows:
-.Bl -tag -width Ds
+.Pp
+.Bl -tag -width indent
 .It Fl p
 Create intermediate directories as required.  If this option is not
 specified, the full path prefix of each operand must already exist.
@@ -42,9 +42,6 @@ exits 0 if successful, and >0 if an error occurred.
 .Sh STANDARDS
 The
 .Nm mkdir
-command is
+utility is expected to be
 .St -p1003.2
-compliant.
-This manual page is derived from the
-.St -p1003.2
-manual page.
+compatible.
