@@ -1,4 +1,4 @@
-/*	tcp_subr.c	4.25	82/04/25	*/
+/*	tcp_subr.c	4.26	82/04/30	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -166,7 +166,7 @@ COUNT(TCP_NEWTCPCB);
 		return (0);
 	tp = mtod(m, struct tcpcb *);
 	tp->seg_next = tp->seg_prev = (struct tcpiphdr *)tp;
-	tp->t_maxseg = 1024;
+	tp->t_maxseg = 576;		/* satisfy the rest of the world */
 	tp->t_flags = 0;		/* sends options! */
 	tp->t_inpcb = inp;
 	inp->inp_ppcb = (caddr_t)tp;
