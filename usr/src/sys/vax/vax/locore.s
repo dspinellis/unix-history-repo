@@ -1,4 +1,4 @@
-/*	locore.s	4.84	83/07/07	*/
+/*	locore.s	4.84	83/07/09	*/
 
 #include "../machine/psl.h"
 #include "../machine/pte.h"
@@ -208,7 +208,7 @@ SCBVEC(netintr):
 #if defined(VAX750) || defined(VAX730)
 SCBVEC(consdin):
 	PUSHR;
-#if defined(VAX750) && !defined(MRSP)
+#if defined(VAX750) && !defined(VAX730) && !defined(MRSP)
 	jsb	tudma
 #endif
 	calls $0,_turintr;
@@ -345,9 +345,9 @@ uudma:
 	rsb				# continue processing in uurintr
 #endif
 
-#if defined(VAX750) && !defined(MRSP)
+#if defined(VAX750) && !defined(VAX730) && !defined(MRSP)
 /*
- * Pseudo DMA routine for console tu58 
+ * Pseudo DMA routine for VAX-11/750 console tu58 
  *   	    (without MRSP)
  */
 	.align	1
@@ -419,8 +419,6 @@ tudma:
  * the tu58, make sure we don't loop forever
  */
 5:
-	mfpr	$IPL,-(sp)		# can't loop at ipl7, better
-	mtpr	$0x15,$IPL		# move down to 5
 	movl	$5000,r5		# loop max 5000 times
 1:
 	mfpr	$CSRS,r2
@@ -428,11 +426,8 @@ tudma:
 	sobgtr	r5,1b
 	movab	_tu,r5
 	movl	$13,16(r5)		# return TUS_RCVERR
-	mtpr	(sp)+,$IPL
 	tstl	(sp)+			# and let turintr handle it
-	rsb				# before we go back to turintr
 1:
-	mtpr	(sp)+,$IPL
 	rsb
 #endif
 
