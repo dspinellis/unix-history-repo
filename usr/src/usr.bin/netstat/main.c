@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -20,14 +20,16 @@ static char sccsid[] = "@(#)main.c	5.20 (Berkeley) %G%";
 #include <sys/socket.h>
 #include <sys/file.h>
 #include <machine/pte.h>
-#include <ctype.h>
 #include <errno.h>
 #include <netdb.h>
 #include <nlist.h>
+#include <kvm.h>
 #include <stdio.h>
+#include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
 #include <paths.h>
 
-#define nl netstatnl
 struct nlist nl[] = {
 #define	N_MBSTAT	0
 	{ "_mbstat" },
@@ -41,63 +43,56 @@ struct nlist nl[] = {
 	{ "_udb" },
 #define	N_UDPSTAT	5
 	{ "_udpstat" },
-#define	N_RAWCB		6
-	{ "_rawcb" },
-#define	N_SYSMAP	7
-	{ "_Sysmap" },
-#define	N_SYSSIZE	8
-	{ "_Syssize" },
-#define	N_IFNET		9
+#define	N_IFNET		6
 	{ "_ifnet" },
-#define	N_IMP		10
+#define	N_IMP		7
 	{ "_imp_softc" },
-#define	N_RTHOST	11
+#define	N_RTHOST	8
 	{ "_rthost" },
-#define	N_RTNET		12
+#define	N_RTNET		9
 	{ "_rtnet" },
-#define	N_ICMPSTAT	13
+#define	N_ICMPSTAT	10
 	{ "_icmpstat" },
-#define	N_RTSTAT	14
+#define	N_RTSTAT	11
 	{ "_rtstat" },
-#define	N_NFILE		15
+#define	N_NFILE		12
 	{ "_nfile" },
-#define	N_FILE		16
+#define	N_FILE		13
 	{ "_file" },
-#define	N_UNIXSW	17
+#define	N_UNIXSW	14
 	{ "_unixsw" },
-#define N_RTHASHSIZE	18
+#define N_RTHASHSIZE	15
 	{ "_rthashsize" },
-#define N_IDP		19
+#define N_IDP		16
 	{ "_nspcb"},
-#define N_IDPSTAT	20
+#define N_IDPSTAT	17
 	{ "_idpstat"},
-#define N_SPPSTAT	21
+#define N_SPPSTAT	18
 	{ "_spp_istat"},
-#define N_NSERR		22
+#define N_NSERR		19
 	{ "_ns_errstat"},
-#define	N_CLNPSTAT	23
+#define	N_CLNPSTAT	20
 	{ "_clnp_stat"},
-#define	IN_TP		24
+#define	IN_TP		21
 	{ "_tp_inpcb" },
-#define	ISO_TP		25
+#define	ISO_TP		22
 	{ "_tp_isopcb" },
-#define	ISO_X25		26
+#define	ISO_X25		23
 	{ /*"_x25_isopcb"*/ "_file"}, /* fast gross hack to speed up */
-#define	N_TPSTAT	27
+#define	N_TPSTAT	24
 	{ "_tp_stat" },
-#define	N_X25STAT	28
+#define	N_X25STAT	25
 	{ /*"_x25_stat"*/ "_file"},
-#define	N_ESISSTAT	29
+#define	N_ESISSTAT	26
 	{ "_esis_stat"},
-#define N_NIMP		30
+#define N_NIMP		27
 	{ "_nimp"},
-#define N_RTREE		31
+#define N_RTREE		28
 	{ "_radix_node_head"},
-#define N_CLTP		32
+#define N_CLTP		29
 	{ "_cltb"},
-#define N_CLTPSTAT	33
+#define N_CLTPSTAT	30
 	{ "_cltpstat"},
-
 
     /* BBN Internet protocol implementation */
 #define	N_TCP		23
@@ -123,7 +118,6 @@ extern	int spp_stats(), idp_stats(), nserr_stats();
 extern	int iso_protopr();
 extern	int tp_stats(), esis_stats(), clnp_stats(), cltp_stats();
 
-#define NULLPROTOX	((struct protox *) 0)
 struct protox {
 	u_char	pr_index;		/* index into nlist of cb head */
 	u_char	pr_sindex;		/* index into nlist of stat block */
@@ -193,11 +187,9 @@ struct protox isoprotox[] = {
 	  0,		0 }
 };
 
-struct protox *protoprotox[] = { protox, nsprotox, isoprotox, NULLPROTOX };
+struct protox *protoprotox[] = { protox, nsprotox, isoprotox, NULL };
 
-struct	pte *Sysmap;
-
-char	*system = _PATH_UNIX;
+char	*vmunix = _PATH_UNIX;
 char	*kmemf;
 int	kmem;
 int	kflag;
@@ -218,12 +210,9 @@ int	unit;
 
 int	af = AF_UNSPEC;
 
-extern	char *malloc();
-extern	off_t lseek();
-
 main(argc, argv)
 	int argc;
-	char *argv[];
+	char **argv;
 {
 	extern char *optarg;
 	extern int optind;
@@ -231,26 +220,18 @@ main(argc, argv)
 	register struct protox *tp;	/* for printing cblocks & stats */
 	struct protox *name2protox();	/* for -p */
 	int ch;
+	void usage(); 
 
-	while ((ch = getopt(argc, argv, "AI:af:himnp:drstu")) != EOF)
+	while ((ch = getopt(argc, argv, "Aadf:hI:iM:mN:np:rstuw")) != EOF)
 		switch((char)ch) {
 		case 'A':
-			Aflag++;
+			Aflag = 1;
 			break;
-		case 'I': {
-			char *cp;
-
-			iflag++;
-			for (cp = interface = optarg; isalpha(*cp); cp++);
-			unit = atoi(cp);
-			*cp = '\0';
-			break;
-		}
 		case 'a':
-			aflag++;
+			aflag = 1;
 			break;
 		case 'd':
-			dflag++;
+			dflag = 1;
 			break;
 		case 'f':
 			if (strcmp(optarg, "ns") == 0)
@@ -262,40 +243,62 @@ main(argc, argv)
 			else if (strcmp(optarg, "iso") == 0)
 				af = AF_ISO;
 			else {
-				fprintf(stderr, "%s: unknown address family\n", optarg);
-				exit(10);
+				(void)fprintf(stderr,
+				    "%s: unknown address family\n", optarg);
+				exit(1);
 			}
 			break;
 		case 'h':
-			hflag++;
+			hflag = 1;
 			break;
+		case 'I': {
+			char *cp;
+
+			iflag = 1;
+			for (cp = interface = optarg; isalpha(*cp); cp++);
+			unit = atoi(cp);
+			*cp = '\0';
+			break;
+		}
 		case 'i':
-			iflag++;
+			iflag = 1;
+			break;
+		case 'M':
+			kmemf = optarg;
+			kflag = 1;
 			break;
 		case 'm':
-			mflag++;
+			mflag = 1;
+			break;
+		case 'N':
+			vmunix = optarg;
 			break;
 		case 'n':
-			nflag++;
+			nflag = 1;
 			break;
 		case 'p':
-			if ((tp = name2protox(optarg)) == NULLPROTOX) {
-				fprintf(stderr, "%s: unknown or uninstrumented protocol\n", optarg);
-				exit(10);
+			if ((tp = name2protox(optarg)) == NULL) {
+				(void)fprintf(stderr,
+				    "%s: unknown or uninstrumented protocol\n",
+				    optarg);
+				exit(1);
 			}
-			pflag++;
+			pflag = 1;
 			break;
 		case 'r':
-			rflag++;
+			rflag = 1;
 			break;
 		case 's':
-			sflag++;
+			sflag = 1;
 			break;
 		case 't':
-			tflag++;
+			tflag = 1;
 			break;
 		case 'u':
 			af = AF_UNIX;
+			break;
+		case 'w':
+			interval = atoi(optarg);
 			break;
 		case '?':
 		default:
@@ -304,29 +307,31 @@ main(argc, argv)
 	argv += optind;
 	argc -= optind;
 
-	if (argc > 0) {
-		if (isdigit(argv[0][0])) {
-			interval = atoi(argv[0]);
+#define	BACKWARD_COMPATIBILITY
+#ifdef	BACKWARD_COMPATIBILITY
+	if (*argv) {
+		if (isdigit(**argv)) {
+			interval = atoi(*argv);
 			if (interval <= 0)
 				usage();
-			argv++, argc--;
-			iflag++;
+			++argv;
+			iflag = 1;
 		}
-		if (argc > 0) {
-			system = *argv;
-			argv++, argc--;
-			if (argc > 0) {
+		if (*argv) {
+			vmunix = *argv;
+			if (*++argv) {
 				kmemf = *argv;
-				kflag++;
+				kflag = 1;
 			}
 		}
 	}
-	if (kvm_openfiles(system, kmemf, (char *)0) == -1) {
-		fprintf(stderr, "netstat(kvm_openfiles): %s\n", kvm_geterr());
+#endif
+	if (kvm_openfiles(vmunix, kmemf, NULL) == -1) {
+		fprintf(stderr, "netstat: kvm_openfiles: %s\n", kvm_geterr());
 		exit(1);
 	}
 	if (kvm_nlist(nl) < 0 || nl[0].n_type == 0) {
-		fprintf(stderr, "%s: no namelist\n", system);
+		fprintf(stderr, "%s: no namelist\n", vmunix);
 		exit(1);
 	}
 	if (mflag) {
@@ -416,12 +421,10 @@ main(argc, argv)
     exit(0);
 }
 
-
 char *
 plural(n)
 	int n;
 {
-
 	return (n != 1 ? "s" : "");
 }
 
@@ -438,7 +441,7 @@ knownname(name)
 	    for (tp = *tpp; tp->pr_name; tp++)
 		if (strcmp(tp->pr_name, name) == 0)
 			return(tp);
-	return(NULLPROTOX);
+	return(NULL);
 }
 
 /*
@@ -469,11 +472,19 @@ name2protox(name)
 			}
 	}
 	endprotoent();
-	return(NULLPROTOX);
+	return(NULL);
 }
 
+void
 usage()
 {
-	fputs("usage: netstat [-Aan] [-f address_family] [system] [core]\n               [-himnrs] [-f address_family] [system] [core]\n               [-n] [-I interface] interval [system] [core]\n", stderr);
+	(void)fprintf(stderr,
+"usage: netstat [-Aan] [-f address_family] [-M core] [-N system]\n");
+	(void)fprintf(stderr,
+"               [-himnrs] [-f address_family] [-M core] [-N system]\n");
+	(void)fprintf(stderr,
+"               [-n] [-I interface] [-M core] [-N system] [-w wait]\n");
+	(void)fprintf(stderr,
+"               [-M core] [-N system] [-p protocol]\n");
 	exit(1);
 }
