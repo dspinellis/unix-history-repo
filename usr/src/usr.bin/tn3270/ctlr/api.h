@@ -14,6 +14,12 @@
 #define	GATE_COPY	3
 #define	GATE_OIAM	4
 
+#define	NAME_SESSMGR	"SESSMGR"
+#define	NAME_KEYBOARD	"KEYBOARD"
+#define	NAME_COPY	"COPY"
+#define	NAME_OIAM	"OIAM"
+
+
 /*
  * Name Resolution is specified in AH.
  */

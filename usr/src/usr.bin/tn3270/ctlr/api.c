@@ -20,6 +20,24 @@ name_resolve(regs, sregs)
 union REGS *regs;
 struct SREGS *sregs;
 {
+    char buffer[9];
+
+    movetous(buffer, sregs->es, regs->x.di, sizeof buffer-1);
+
+    regs->h.cl = 0;
+    if (strcmp(buffer, NAME_SESSMGR) == 0) {
+	regs->x.dx = GATE_SESSMGR;
+    } else if (strcmp(buffer, NAME_KEYBOARD) == 0) {
+	regs->x.dx = GATE_KEYBOARD;
+    } else if (strcmp(buffer, NAME_COPY) == 0) {
+	regs->x.dx = GATE_COPY;
+    } else if (strcmp(buffer, NAME_OIAM) == 0) {
+	regs->x.dx = GATE_OIAM;
+    } else {
+	regs->h.cl = 0x2e;	/* Name not found */
+    }
+    regs->h.ch = 0x12;
+    regs->h.bh = 7;
 }
 
 /*
@@ -31,6 +49,24 @@ query_session_id(regs, sregs)
 union REGS *regs;
 struct SREGS *sregs;
 {
+    char buffer[16];
+
+    movetous(buffer, sregs->es, regs->h.di, sizeof buffer);
+
+    if (buffer[0] != 0) {
+	regs->cl = 0x0c;
+    } else {
+	if (buffer[2] != 0x01) {
+	    regs->h.cl = 0x0d;	/* Invalid option code */
+	} else if (buffer[3] != 0x45) {
+	    regs->h.cl = 0x0b;
+	} else {
+	    buffer[0] = 0;
+	    buffer[1] = 0x6d;
+	    regs->h.cl = 0;
+	}
+    }
+    movetothem(sregs->es, regs->h.di, sizeof buffer);
 }
 
 static void
