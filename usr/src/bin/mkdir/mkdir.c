@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1983 Regents of the University of California.
+ * Copyright (c) 1983, 1992 Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
@@ -7,28 +7,34 @@
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1983 Regents of the University of California.\n\
+"@(#) Copyright (c) 1983, 1992 Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkdir.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkdir.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/stat.h>
+
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-extern int errno;
+int exitval;
 
+void build __P((char *));
+void usage __P((void));
+void err __P((const char *, ...));
+
+int
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
-	extern int optind;
-	int ch, exitval, pflag;
+	int ch, pflag;
 
 	pflag = 0;
 	while ((ch = getopt(argc, argv, "p")) != EOF)
@@ -44,49 +50,75 @@ main(argc, argv)
 	if (!*(argv += optind))
 		usage();
 
-	for (exitval = 0; *argv; ++argv)
+	for (; *argv; ++argv)
 		if (pflag)
-			exitval |= build(*argv);
-		else if (mkdir(*argv, 0777) < 0) {
-			(void)fprintf(stderr, "mkdir: %s: %s\n",
-			    *argv, strerror(errno));
-			exitval = 1;
-		}
+			build(*argv);
+		else if (mkdir(*argv, S_IRWXU | S_IRWXG | S_IRWXO) < 0)
+			err("%s: %s", *argv, strerror(errno));
 	exit(exitval);
 }
 
+void
 build(path)
 	char *path;
 {
 	register char *p;
 	struct stat sb;
-	int create, ch;
+	int create, savech;
 
-	for (create = 0, p = path;; ++p)
-		if (!*p || *p  == '/') {
-			ch = *p;
+	p = path;
+	if (*p)				/* Skip leading '/'. */
+		++p;
+	for (create = 0;; ++p)
+		if (!*p || *p == '/') {
+			savech = *p;
 			*p = '\0';
 			if (stat(path, &sb)) {
-				if (errno != ENOENT || mkdir(path, 0777) < 0) {
-					(void)fprintf(stderr, "mkdir: %s: %s\n",
-					    path, strerror(errno));
-					return(1);
+				if (errno != ENOENT || mkdir(path,
+				    S_IRWXU | S_IRWXG | S_IRWXO) < 0) {
+					err("%s: %s", path, strerror(errno));
+					return;
 				}
 				create = 1;
 			}
-			if (!(*p = ch))
+			if (!(*p = savech))
 				break;
 		}
-	if (!create) {
-		(void)fprintf(stderr, "mkdir: %s: %s\n", path,
-		    strerror(EEXIST));
-		return(1);
-	}
-	return(0);
+	if (!create)
+		err("%s: %s", path, strerror(EEXIST));
 }
 
+void
 usage()
 {
-	(void)fprintf(stderr, "usage: mkdir [-p] dirname ...\n");
+	(void)fprintf(stderr, "usage: mkdir [-p] directory ...\n");
 	exit(1);
+}
+
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+
+void
+#if __STDC__
+err(const char *fmt, ...)
+#else
+err(fmt, va_alist)
+	char *fmt;
+	va_dcl
+#endif
+{
+	va_list ap;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	(void)fprintf(stderr, "mkdir: ");
+	(void)vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	(void)fprintf(stderr, "\n");
+	exitval = 1;
 }
