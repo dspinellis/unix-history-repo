@@ -9,7 +9,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)cpp.sh	6.2 (Berkeley) %G%
+#	@(#)cpp.sh	6.3 (Berkeley) %G%
 #
 # Transitional front end to CCCP to make it behave like (Reiser) CCP:
 #	specifies -traditional
@@ -21,7 +21,8 @@ NSI=no
 ARGS=""
 INCS=""
 
-for A do
+for A
+do
 	case $A in
 	-nostdinc)
 		NSI=yes
