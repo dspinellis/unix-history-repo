@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)invert.c	2.5	%G%";
+static char sccsid[] = "@(#)invert.c	2.6	%G%";
 #endif not lint
 #
 /*  input:  records of lines, separated by blank lines
@@ -21,7 +21,7 @@ char    *common =           /*  name of file of common words            */
 char    *INDEX=             /*  name of output file                     */
             INDXFILE;
 
-char    *tmpfile =          /*  name of temporary file                  */
+char    *bibtmpfile =          /*  name of temporary file                  */
             INVTEMPFILE;
 
 int	silent = 0;	    /*  0 => statistics printed			*/
@@ -54,8 +54,8 @@ char **arglist;
 
     argc= argcount-1;
     argv= arglist+1;
-    mktemp(tmpfile);
-    output= fopen(tmpfile,"w");
+    mktemp(bibtmpfile);
+    output= fopen(bibtmpfile,"w");
 
     for ( flags() ; argc>0 ; argc--, argv++ ,flags() )
     {   /* open input file              */
@@ -90,10 +90,10 @@ char **arglist;
     }
     fclose(output);
 
-    sprintf(sortcmd, sort_it, tmpfile, tmpfile);
+    sprintf(sortcmd, sort_it, bibtmpfile, bibtmpfile);
     system(sortcmd);
 
-    distinct = shorten(tmpfile,INDEX);
+    distinct = shorten(bibtmpfile,INDEX);
     if( silent == 0 )
 	fprintf(stderr,
 	    "%d documents   %d distinct keys  %d key occurrences\n",

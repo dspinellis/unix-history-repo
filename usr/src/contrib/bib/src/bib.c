@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)bib.c	2.9	%G%";
+static char sccsid[] = "@(#)bib.c	2.10	%G%";
 #endif not lint
 /*
         Bib - bibliographic formatter
@@ -41,7 +41,7 @@ static char sccsid[] = "@(#)bib.c	2.9	%G%";
    long int rend = 1;           /* last position in rfd (first char unused)*/
    int numrefs = 0;            /* number of references generated so far */
    FILE *tfd;                   /* output of pass 1 of file(s)           */
-   char tmpfile[] = TMPTEXTFILE ; /* output of pass 1                    */
+   char bibtmpfile[] = TMPTEXTFILE ; /* output of pass 1                    */
    char *common = COMFILE;       /* common word file                      */
    int  findex = false;         /* can we read the file INDEX ?          */
 
@@ -74,7 +74,7 @@ main(argc, argv)
 
 #ifndef INCORE
    /* open temporaries, reffile will contain references collected in
-      pass 1, and tmpfile will contain text.
+      pass 1, and bibtmpfile will contain text.
    */
    mktemp(reffile);
    rfd = fopen(reffile,"w+");
@@ -82,10 +82,10 @@ main(argc, argv)
       error("can't open temporary reference file, %s", reffile);
    putc('x', rfd);      /* put garbage in first position (not used) */
 #endif not INCORE
-   mktemp(tmpfile);
-   tfd = fopen(tmpfile,"w");
+   mktemp(bibtmpfile);
+   tfd = fopen(bibtmpfile,"w");
    if (tfd == NULL)
-      error("can't open temporary output file, %s", tmpfile);
+      error("can't open temporary output file, %s", bibtmpfile);
 
     /*
        pass1 - read files, looking for citations
@@ -111,9 +111,9 @@ main(argc, argv)
    */
 
    fclose(tfd);
-   tfd = fopen(tmpfile,"r");
+   tfd = fopen(bibtmpfile,"r");
    if (tfd == NULL)
-      error("can't open temporary output file %s for reading", tmpfile);
+      error("can't open temporary output file %s for reading", bibtmpfile);
    /*
    pass 2 - reread files, replacing references
    */
@@ -134,7 +134,7 @@ cleanup(val)
    unlink(reffile);
 #endif INCORE
 #ifndef DEBUG
-   unlink(tmpfile);
+   unlink(bibtmpfile);
 #endif DEBUG
    exit(val);
 }
