@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)df.c	5.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)df.c	5.31 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -25,7 +25,7 @@ static char sccsid[] = "@(#)df.c	5.30 (Berkeley) %G%";
 #include <string.h>
 #include <unistd.h>
 
-int	 bread __P((long, char *, int));
+int	 bread __P((off_t, void *, int));
 char	*getbsize __P((char *, int *, long *));
 char	*getmntpt __P((char *));
 void	 prtstat __P((struct statfs *, long));
@@ -188,7 +188,7 @@ prtstat(sfsp, maxwidth)
 }
 
 /*
- * This code constitutes the old df code for extracting
+ * This code constitutes the pre-system call Berkeley df code for extracting
  * information from filesystem superblocks.
  */
 #include <ufs/ffs/fs.h>
@@ -201,7 +201,7 @@ union {
 } sb;
 #define sblock sb.iu_fs
 
-int	fi;
+int	rfd;
 
 void
 ufs_df(file, maxwidth)
@@ -216,12 +216,12 @@ ufs_df(file, maxwidth)
 	if (synced++ == 0)
 		sync();
 
-	if ((fi = open(file, O_RDONLY)) < 0) {
+	if ((rfd = open(file, O_RDONLY)) < 0) {
 		(void)fprintf(stderr, "df: %s: %s\n", file, strerror(errno));
 		return;
 	}
-	if (bread((long)SBOFF, (char *)&sblock, SBSIZE) == 0) {
-		(void)close(fi);
+	if (bread((off_t)SBOFF, &sblock, SBSIZE) == 0) {
+		(void)close(rfd);
 		return;
 	}
 	sfsp = &statfsbuf;
@@ -245,24 +245,23 @@ ufs_df(file, maxwidth)
 	bcopy((caddr_t)mntpt, (caddr_t)&sfsp->f_mntonname[0], MNAMELEN);
 	bcopy((caddr_t)file, (caddr_t)&sfsp->f_mntfromname[0], MNAMELEN);
 	prtstat(sfsp, maxwidth);
-	(void) close(fi);
+	(void)close(rfd);
 }
 
 int
 bread(off, buf, cnt)
-	long off;
-	char *buf;
+	off_t off;
+	void *buf;
 	int cnt;
 {
-	int n;
+	int nr;
 
-	(void) lseek(fi, off, SEEK_SET);
-	if ((n=read(fi, buf, cnt)) != cnt) {
-		/* probably a dismounted disk if errno == EIO */
-		if (errno != EIO) {
-			(void)printf("\nread error off = %ld\n", off);
-			(void)printf("count = %d: %s\n", n, strerror(errno));
-		}
+	(void)lseek(rfd, off, SEEK_SET);
+	if ((nr = read(rfd, buf, cnt)) != cnt) {
+		/* Probably a dismounted disk if errno == EIO. */
+		if (errno != EIO)
+			(void)fprintf(stderr, "\ndf: %qd: %s\n",
+			    off, strerror(nr > 0 ? EIO : errno));
 		return (0);
 	}
 	return (1);
