@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "pathnames.h"
@@ -58,6 +58,7 @@ static char sccsid[] = "@(#)mount.c	5.21 (Berkeley) %G%";
 
 int fake, verbose, updateflg, mnttype;
 char *mntname, **envp;
+char **vfslist, **makevfslist();
 
 #ifdef NFS
 int xdr_dir(), xdr_fh();
@@ -77,7 +78,8 @@ struct nfhret {
 	u_long	stat;
 	nfsv2fh_t nfh;
 };
-int retrycnt = 10000;
+#define	DEF_RETRY	10000
+int retrycnt;
 #define	BGRND	1
 #define	ISBGRND	2
 int opflags = 0;
@@ -126,6 +128,7 @@ main(argc, argv, arge)
 			options = optarg;
 			break;
 		case 't':
+			vfslist = makevfslist(optarg);
 			mnttype = getmnttype(optarg);
 			break;
 		case '?':
@@ -142,6 +145,8 @@ main(argc, argv, arge)
 		rval = 0;
 		while (fs = getfsent()) {
 			if (BADTYPE(fs->fs_type))
+				continue;
+			if (badvfstype(fs->fs_vfstype, vfslist))
 				continue;
 			/* `/' is special, it's always mounted */
 			if (!strcmp(fs->fs_file, "/"))
@@ -233,6 +238,7 @@ mountfs(spec, name, flags, type, options, mntopts)
 
 #ifdef NFS
 	case MOUNT_NFS:
+		retrycnt = DEF_RETRY;
 		if (mntopts)
 			getnfsopts(mntopts, &nfsargs, &opflags, &retrycnt);
 		if (options)
@@ -473,6 +479,54 @@ getmntpt(name)
 			return (&mntbuf[i]);
 	}
 	return ((struct statfs *)0);
+}
+
+static int skipvfs;
+
+badvfstype(vfstype, vfslist)
+	char *vfstype;
+	char **vfslist;
+{
+
+	if (vfslist == 0)
+		return(0);
+	while (*vfslist) {
+		if (strcmp(vfstype, *vfslist) == 0)
+			return(skipvfs);
+		vfslist++;
+	}
+	return (!skipvfs);
+}
+
+char **
+makevfslist(fslist)
+	char *fslist;
+{
+	register char **av, *nextcp;
+	register int i;
+	char *malloc();
+
+	if (fslist == NULL)
+		return (NULL);
+	if (fslist[0] == 'n' && fslist[1] == 'o') {
+		fslist += 2;
+		skipvfs = 1;
+	}
+	for (i = 0, nextcp = fslist; *nextcp; nextcp++)
+		if (*nextcp == ',')
+			i++;
+	av = (char **)malloc((i+2) * sizeof(char *));
+	if (av == NULL)
+		return (NULL);
+	nextcp = fslist;
+	i = 0;
+	av[i++] = nextcp;
+	while (nextcp = index(nextcp, ',')) {
+		*nextcp++ = '\0';
+		av[i++] = nextcp;
+	}
+	av[i++] = 0;
+	return (av);
 }
 
 #ifdef NFS
