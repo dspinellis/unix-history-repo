@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)inet.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)inet.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -124,26 +124,29 @@ inet_rtflags(sin)
 		host = i & IN_CLASSC_HOST;
 	}
 
-	if (host == 0)
-		return (0);	/* network */
 	/*
 	 * Check whether this network is subnetted;
 	 * if so, check whether this is a subnet or a host.
 	 */
 	for (ifp = ifnet; ifp; ifp = ifp->int_next)
 		if (net == ifp->int_net) {
-			if ((host &~ ifp->int_subnetmask) == 0)
+			if (host &~ ifp->int_subnetmask)
+				return (RTF_HOST);
+			else if (ifp->int_subnetmask != ifp->int_netmask)
 				return (RTF_SUBNET);
 			else
-				return (RTF_HOST);
+				return (0);		/* network */
 		}
-	return (RTF_HOST);
+	if (host == 0)
+		return (0);	/* network */
+	else
+		return (RTF_HOST);
 }
 
 /*
- * Return true if a route to subnet rtsin should be sent to dst.
+ * Return true if a route to subnet of route rt should be sent to dst.
  * Send it only if dst is on the same logical network,
- * or the route turns out to be for the net (aka subnet 0).
+ * or the route is the "internal" route for the net.
  */
 inet_sendsubnet(rt, dst)
 	struct rt_entry *rt;
@@ -159,20 +162,26 @@ inet_sendsubnet(rt, dst)
 				return ((rt->rt_state & RTS_INTERNAL) == 0);
 			return (1);
 		}
-		return ((r & IN_CLASSA_HOST) == 0);
+		if (r & IN_CLASSA_HOST)
+			return (0);
+		return ((rt->rt_state & RTS_INTERNAL) != 0);
 	} else if (IN_CLASSB(r)) {
 		if ((r & IN_CLASSB_NET) == (d & IN_CLASSB_NET)) {
 			if ((r & IN_CLASSB_HOST) == 0)
 				return ((rt->rt_state & RTS_INTERNAL) == 0);
 			return (1);
 		}
-		return ((r & IN_CLASSB_HOST) == 0);
+		if (r & IN_CLASSB_HOST)
+			return (0);
+		return ((rt->rt_state & RTS_INTERNAL) != 0);
 	} else {
 		if ((r & IN_CLASSC_NET) == (d & IN_CLASSC_NET)) {
 			if ((r & IN_CLASSC_HOST) == 0)
 				return ((rt->rt_state & RTS_INTERNAL) == 0);
 			return (1);
 		}
-		return ((r & IN_CLASSC_HOST) == 0);
+		if (r & IN_CLASSC_HOST)
+			return (0);
+		return ((rt->rt_state & RTS_INTERNAL) != 0);
 	}
 }

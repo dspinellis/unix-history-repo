@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)startup.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)startup.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -193,11 +193,12 @@ addrouteforif(ifp)
 	if ((ifp->int_flags & (IFF_SUBNET|IFF_POINTOPOINT)) == IFF_SUBNET) {
 		net.sin_addr = inet_makeaddr(ifp->int_net, INADDR_ANY);
 		rt = rtfind(dst);
-		if (rt && (rt->rt_state & RTS_INTERFACE))
+		if (rt && (rt->rt_state & (RTS_INTERNAL | RTS_INTERFACE)) ==
+		    (RTS_INTERNAL | RTS_INTERFACE))
 			return;
 		rtadd(dst, &ifp->int_addr, ifp->int_metric,
-		    (ifp->int_flags & (IFF_INTERFACE|IFF_PASSIVE|IFF_REMOTE) |
-			RTS_INTERNAL | RTS_SUBNET));
+		    ((ifp->int_flags & (IFF_INTERFACE|IFF_REMOTE)) |
+			RTS_PASSIVE | RTS_INTERNAL | RTS_SUBNET));
 	}
 }
 
