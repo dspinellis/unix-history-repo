@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pcfunc.c 1.7 %G%";
+static	char sccsid[] = "@(#)pcfunc.c 1.8 %G%";
 
 #include "whoami.h"
 #ifdef PC
@@ -286,9 +286,10 @@ mathfunc:
 				    , ADDTYPE( P2FTN | P2INT , P2PTR )
 				    , op == O_SUCC2 ? "_SUCC" : "_PRED" );
 			    p1 = stkrval( (int *) argv[1] , NLNIL , RREQ );
-			    putleaf( P2ICON , p1 -> range[0] , 0 , P2INT , 0 );
+			    tempnlp = p1 -> class == TYPE ? p1 -> type : p1;
+			    putleaf( P2ICON, tempnlp -> range[0], 0, P2INT, 0 );
 			    putop( P2LISTOP , P2INT );
-			    putleaf( P2ICON , p1 -> range[1] , 0 , P2INT , 0 );
+			    putleaf( P2ICON, tempnlp -> range[1], 0, P2INT, 0 );
 			    putop( P2LISTOP , P2INT );
 			    putop( P2CALL , P2INT );
 			} else {

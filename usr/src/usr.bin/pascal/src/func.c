@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)func.c 1.7 %G%";
+static char sccsid[] = "@(#)func.c 1.8 %G%";
 
 #include "whoami.h"
 #ifdef OBJ
@@ -22,6 +22,7 @@ funccod(r)
 {
 	struct nl *p;
 	register struct nl *p1;
+	struct nl *tempnlp;
 	register int *al;
 	register op;
 	int argc, *argv;
@@ -179,18 +180,21 @@ funccod(r)
 				error("%s's argument must be of scalar type, not %s", p->symbol, nameof(p1));
 				return NIL;
 			}
+			tempnlp = p1 -> class == TYPE ? p1 -> type : p1;
 			if (isa(p1, "i")) {
 				if (width(p1) <= 2) {
 					op += O_PRED24 - O_PRED2;
-					put(3, op, (int)p1->range[0],
-						(int)p1->range[1]);
+					put(3, op, (int)tempnlp->range[0],
+						(int)tempnlp->range[1]);
 				} else {
 					op++;
-					put(3, op, p1->range[0], p1->range[1]);
+					put(3, op, tempnlp->range[0],
+						tempnlp->range[1]);
 				}
 				return nl + T4INT;
 			} else {
-				put(3, op, (int)p1->range[0], (int)p1->range[1]);
+				put(3, op, (int)tempnlp->range[0],
+					(int)tempnlp->range[1]);
 				return p1;
 			}
 		case O_ODD2:
