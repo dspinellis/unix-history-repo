@@ -2,11 +2,11 @@
 #
 # %sccs.include.proprietary.sh%
 #
-#	@(#)style.sh	4.8 (Berkeley) %G%
+#	@(#)style.sh	4.9 (Berkeley) %G%
 #
 
 L=/usr/libexec
-B=/usr/ucb
+B=/usr/bin
 echo " " $*
 sflag=-s
 eflag=
