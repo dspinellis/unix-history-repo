@@ -1,4 +1,4 @@
-/*	cpu.h	4.3	81/02/26	*/
+/*	cpu.h	4.4	81/03/13	*/
 
 #ifndef LOCORE
 /*
@@ -34,11 +34,23 @@ union cpusid {
  * Per-cpu information for system.
  */
 struct	percpu {
-	int	(*pc_config)();
-	short	pc_cputype;
+	short	pc_cputype;		/* cpu type code */
+	short	pc_nnexus;		/* number of nexus slots */
+	struct	nexus *pc_nexbase;	/* base of nexus space */
+/* we should be able to have just one address for the unibus memories */
+/* and calculate successive addresses by adding to the base, but the 750 */
+/* doesn't obey the sensible rule: uba1 has a lower address than uba0! */
+	caddr_t	*pc_umaddr;		/* unibus memory addresses */
+	short	pc_nubabdp;		/* number of bdp's per uba */
+	short	pc_haveubasr;		/* have uba status register */
+/* the 750 has some slots which don't promise to tell you their types */
+/* if this pointer is non-zero, then you get the type from this array */
+/* rather than from the (much more sensible) low byte of the config register */
+	short	*pc_nextype;		/* botch */
 };
 
 #ifdef KERNEL
 int	cpu;
+struct	percpu percpu[];
 #endif
 #endif
