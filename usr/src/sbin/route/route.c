@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)route.c	4.4 82/11/14";
+static char sccsid[] = "@(#)route.c	4.5 82/11/15";
 #endif
 
 #include <sys/types.h>
@@ -26,9 +26,9 @@ main(argc, argv)
 
 	if (argc < 2)
 		printf("usage: route [ cmd ] [ args ]\n"), exit(1);
-	s = socket(SOCK_RAW, 0, 0, options);
+	s = socket(AF_INET, SOCK_RAW, 0, 0);
 	if (s < 0) {
-		perror("socket");
+		perror("route: socket");
 		exit(1);
 	}
 	argc--, argv++;
