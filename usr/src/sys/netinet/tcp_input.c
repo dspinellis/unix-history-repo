@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_input.c	7.8 (Berkeley) %G%
+ *	@(#)tcp_input.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -1007,8 +1007,7 @@ dropafterack:
 	 */
 	if (tiflags & TH_RST)
 		goto drop;
-	if (tp->t_inpcb->inp_socket->so_options & SO_DEBUG)
-		tcp_trace(TA_RESPOND, ostate, tp, &tcp_saveti, 0);
+	m_freem(m);
 	tp->t_flags |= TF_ACKNOW;
 	(void) tcp_output(tp);
 	return;
