@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.40 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	5.41 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -70,7 +70,7 @@ struct	in_addr inet_makeaddr();
 char	*routename(), *netname();
 void	flushroutes(), newroute(), monitor(), sockaddr();
 void	print_getmsg(), print_rtmsg(), pmsg_common(), sodump(), bprintf();
-int	getaddr(), rtmsg();
+int	getaddr(), rtmsg(), x25_makemask();
 extern	char *inet_ntoa(), *iso_ntoa(), *link_ntoa();
 
 void
@@ -783,7 +783,7 @@ getaddr(which, s, hpp)
 
 	case AF_CCITT:
 		ccitt_addr(s, &su->sx25);
-		return (1);
+		return (which == RTA_DST ? x25_makemask() : 1);
 
 	case PF_ROUTE:
 		su->sa.sa_len = sizeof(*su);
@@ -808,9 +808,8 @@ getaddr(which, s, hpp)
 			goto netdone;
 		}
 	}
-	val = inet_network(s);
-	if (val == -1 && (np = getnetbyname(s)) != NULL) {
-		val = np->n_net;
+	if ((val = inet_network(s)) != -1 ||
+	    ((np = getnetbyname(s)) != NULL && (val = np->n_net) != 0)) {
 netdone:
 		if (which == RTA_DST)
 			inet_makenetandmask(val, &su->sin);
@@ -825,6 +824,20 @@ netdone:
 	}
 	(void) fprintf(stderr, "%s: bad value\n", s);
 	exit(1);
+}
+
+x25_makemask()
+{
+	register char *cp;
+
+	if ((rtm_addrs & RTA_NETMASK) == 0) {
+		rtm_addrs |= RTA_NETMASK;
+		for (cp = (char *)&so_mask.sx25.x25_net;
+		     cp < &so_mask.sx25.x25_opts.op_flags; cp++)
+			*cp = -1;
+		so_mask.sx25.x25_len = (u_char)&(((sup)0)->sx25.x25_opts);
+	}
+	return 0;
 }
 
 short ns_nullh[] = {0,0,0};
