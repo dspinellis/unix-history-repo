@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)nlist.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)nlist.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -16,6 +16,7 @@ static char sccsid[] = "@(#)nlist.c	5.5 (Berkeley) %G%";
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <kvm.h>
 
 #ifdef SPPWAIT
 #define NEWVM
@@ -43,8 +44,10 @@ int	nlistread;			/* if nlist already read. */
 int	mempages;			/* number of pages of phys. memory */
 int	fscale;				/* kernel _fscale variable */
 
+extern kvm_t *kd;
+
 #define kread(x, v) \
-	kvm_read(psnl[x].n_value, (char *)&v, sizeof v) != sizeof(v)
+	kvm_read(kd, psnl[x].n_value, (char *)&v, sizeof v) != sizeof(v)
 
 donlist()
 {
@@ -56,33 +59,33 @@ donlist()
 
 	rval = 0;
 	nlistread = 1;
-	if (kvm_nlist(psnl)) {
+	if (kvm_nlist(kd, psnl)) {
 		nlisterr(psnl);
 		eval = 1;
 		return(1);
 	}
 	if (kread(X_FSCALE, fscale)) {
-		(void)fprintf(stderr, "ps: fscale: %s\n", kvm_geterr());
+		(void)fprintf(stderr, "ps: fscale: %s\n", kvm_geterr(kd));
 		eval = rval = 1;
 	}
 #ifdef NEWVM
 	if (kread(X_AVAILEND, mempages)) {
-		(void)fprintf(stderr, "ps: avail_start: %s\n", kvm_geterr());
+		(void)fprintf(stderr, "ps: avail_start: %s\n", kvm_geterr(kd));
 		eval = rval = 1;
 	}
 	if (kread(X_AVAILSTART, tmp)) {
-		(void)fprintf(stderr, "ps: avail_end: %s\n", kvm_geterr());
+		(void)fprintf(stderr, "ps: avail_end: %s\n", kvm_geterr(kd));
 		eval = rval = 1;
 	}
 	mempages -= tmp;
 #else
 	if (kread(X_ECMX, mempages)) {
-		(void)fprintf(stderr, "ps: ecmx: %s\n", kvm_geterr());
+		(void)fprintf(stderr, "ps: ecmx: %s\n", kvm_geterr(kd));
 		eval = rval = 1;
 	}
 #endif
 	if (kread(X_CCPU, ccpu)) {
-		(void)fprintf(stderr, "ps: ccpu: %s\n", kvm_geterr());
+		(void)fprintf(stderr, "ps: ccpu: %s\n", kvm_geterr(kd));
 		eval = rval = 1;
 	}
 	return(rval);

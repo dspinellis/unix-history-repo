@@ -4,26 +4,28 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ps.h	5.3 (Berkeley) %G%
+ *	@(#)ps.h	5.4 (Berkeley) %G%
  */
 
 #define	UNLIMITED	0	/* unlimited terminal width */
 enum type { CHAR, UCHAR, SHORT, USHORT, LONG, ULONG, KPTR };
 
 struct usave {
-	struct	proc *u_procp;
 	struct	timeval u_start;
 	struct	rusage u_ru;
 	struct	rusage u_cru;
 	char	u_acflag;
+	char	u_valid;
 };
 
+#define KI_PROC(ki) (&(ki)->ki_p->kp_proc)
+#define KI_EPROC(ki) (&(ki)->ki_p->kp_eproc)
+
 typedef struct _kinfo {
-	struct proc *ki_p;	/* proc structure */
-	struct eproc *ki_e;	/* extra stuff */
-	struct usave *ki_u;	/* interesting parts of user */
-	char *ki_args;		/* exec args (should be char **) */
-	char *ki_env;		/* environment (should be char **) */
+	struct kinfo_proc *ki_p;	/* proc structure */
+	struct usave ki_u;	/* interesting parts of user */
+	char *ki_args;		/* exec args */
+	char *ki_env;		/* environment */
 } KINFO;
 
 /* Variables. */
