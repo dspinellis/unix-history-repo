@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	8.9 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	8.10 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -112,9 +112,9 @@ ufs_mknod(ap)
 		ip->i_rdev = vap->va_rdev;
 	}
 	/*
-	 * Remove inode so that it will be reloaded by iget and
-	 * checked to see if it is an alias of an existing entry
-	 * in the inode cache.
+	 * Remove inode so that it will be reloaded by VFS_VGET and
+	 * checked to see if it is an alias of an existing entry in
+	 * the inode cache.
 	 */
 	vput(*vpp);
 	(*vpp)->v_type = VNON;
@@ -1293,7 +1293,7 @@ ufs_mkdir(ap)
 #endif
 	ip->i_flag |= IN_ACCESS | IN_CHANGE | IN_UPDATE;
 	ip->i_mode = dmode;
-	tvp->v_type = VDIR;	/* Rest init'd in iget() */
+	tvp->v_type = VDIR;	/* Rest init'd in getnewvnode(). */
 	ip->i_nlink = 2;
 	tv = time;
 	error = VOP_UPDATE(tvp, &tv, &tv, 1);
@@ -2132,7 +2132,7 @@ ufs_makeinode(mode, dvp, vpp, cnp)
 #endif
 	ip->i_flag |= IN_ACCESS | IN_CHANGE | IN_UPDATE;
 	ip->i_mode = mode;
-	tvp->v_type = IFTOVT(mode);	/* Rest init'd in iget() */
+	tvp->v_type = IFTOVT(mode);	/* Rest init'd in getnewvnode(). */
 	ip->i_nlink = 1;
 	if ((ip->i_mode & ISGID) && !groupmember(ip->i_gid, cnp->cn_cred) &&
 	    suser(cnp->cn_cred, NULL))
