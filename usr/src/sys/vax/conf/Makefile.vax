@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile.vax	7.10 (Berkeley) %G%
+#	@(#)Makefile.vax	7.11 (Berkeley) %G%
 #
 # Makefile for 4.3 BSD
 #
@@ -30,7 +30,7 @@ INLINECMD= ../vax/inline/inline
 INLINE=	${INLINECMD} ${INLINEOPTS}
 TOUCH=	touch -f -c
 
-INCLUDES= -I. -I../h
+INCLUDES= -I. -I../sys
 COPTS=	${INCLUDES} ${IDENT} -DKERNEL
 CFLAGS=	-O ${COPTS}
 
@@ -91,10 +91,10 @@ trap.o:	Makefile
 # depend on maxusers
 assym.s: Makefile
 
-assym.s: ../h/param.h machine/pte.h ../h/buf.h ../h/vmparam.h \
-    ../h/vmmeter.h ../h/dir.h ../h/cmap.h ../h/map.h ../vaxuba/ubavar.h \
-    ../vaxuba/ubareg.h ../h/proc.h ../h/msgbuf.h ../h/text.h ../h/user.h \
-    ../vax/rpb.h machine/vmparam.h
+assym.s: ../sys/param.h machine/pte.h ../sys/buf.h ../sys/vmparam.h \
+    ../sys/vmmeter.h ../ufs/dir.h ../sys/cmap.h ../sys/map.h \
+    ../vaxuba/ubavar.h ../vaxuba/ubareg.h ../sys/proc.h ../sys/msgbuf.h \
+    ../sys/text.h ../sys/user.h ../vax/rpb.h machine/vmparam.h
 	cc ${INCLUDES} ${IDENT} ${PARAM} ../vax/genassym.c
 	./a.out >assym.s; rm -f a.out
 
@@ -119,14 +119,14 @@ print:
 	@/usr/ucb/ctags -x ${CFILES} | pr -f -h XREF
 	@(size vmunix *.o) | pr -f -h sizes
 	@ls -ls | pr -f
-	@cd ../h; ls -ls | pr -f ; pr -f *.m *.h
+	@cd ../sys; ls -ls | pr -f ; pr -f *.m *.h
 	@echo 'once upon a time ...'
 	@cd ../vax; pr -f Locore.c scb.s locore.s
 	@cd ../vax/inline; make print
 	@pr -f ${CFILES}
 
-ioconf.o: ioconf.c ../h/param.h machine/pte.h ../h/buf.h ../h/map.h \
-    ../vaxmba/mbavar.h ../h/vm.h ../vaxuba/ubavar.h
+ioconf.o: ioconf.c ../sys/param.h machine/pte.h ../sys/buf.h ../sys/map.h \
+    ../vaxmba/mbavar.h ../sys/vm.h ../vaxuba/ubavar.h
 	${CC} -c -S ${COPTS} ioconf.c
 	${C2} ioconf.s | ../vax/inline/inline | ${AS} -o ioconf.o
 	rm -f ioconf.s

@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -110,7 +110,7 @@ usage:		fputs("usage: config [-p] sysname\n", stderr);
 	{
 	char xxx[80];
 
-	(void) symlink("../h", path("sys"));
+	(void) symlink("../sys", path("sys"));
 	(void) sprintf(xxx, "../%s", machinename);
 	(void) symlink(xxx, path("machine"));
 	}
