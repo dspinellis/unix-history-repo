@@ -1,12 +1,12 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	1.8 83/07/28";
+static	char *sccsid = "@(#)main.c	1.9 83/07/29";
 #endif
 
 #include "defs.h"
 
-char escapec = CTRL(l);
+char escapec = CTRL(p);
 
-#define next(a) (**(a) ? *(a) : (*++(a) ? *(a) : (char *)usage()))
+#define next(a) (*++*(a) ? *(a) : (*++(a) ? *(a) : (char *)usage()))
 
 /*ARGUSED*/
 main(argc, argv)
@@ -14,17 +14,31 @@ char **argv;
 {
 	register n;
 	register char *p;
+	char fast = 0;
 	int wwchild();
 	int imask;
+	char *rindex();
+	char *getenv();
 
+	if (p = rindex(*argv, '/'))
+		p++;
+	else
+		p = *argv;
+	debug = strcmp(p, "a.out") == 0;
 	while (*++argv) {
 		if (**argv == '-') {
 			switch (*++*argv) {
+			case 'f':
+				fast++;
+				break;
 			case 'e':
 				setescape(next(argv));
 				break;
 			case 't':
 				terse++;
+				break;
+			case 'd':
+				debug++;
 				break;
 			default:
 				usage();
@@ -32,11 +46,21 @@ char **argv;
 		} else
 			usage();
 	}
+	if ((shell = getenv("SHELL")) == 0)
+		shell = "/bin/csh";
+	if (shellname = rindex(shell, '/'))
+		shellname++;
+	else
+		shellname = shell;
 	gettimeofday(&starttime, &timezone);
 	if (wwinit() < 0) {
 		fflush(stdout);
 		fprintf("Can't do windows on this terminal.\n");
 		exit(1);
+	}
+	if (debug) {
+		wwnewtty.ww_tchars.t_quitc = wwoldtty.ww_tchars.t_quitc;
+		wwsettty(0, &wwnewtty);
 	}
 	if ((cmdwin = wwopen(WW_NONE, 0, 1, wwncol, 0, 0)) == 0) {
 		fflush(stdout);
@@ -50,10 +74,12 @@ char **argv;
 		Waputc(0, WINVERSE|WBUF, cmdwin->ww_win);
 	wwflush();
 	(void) signal(SIGCHLD, wwchild);
-	if (doconfig() < 0)
-		dodefault();
-	if (selwin != 0)
-		wwsetcurwin(selwin);
+	if (!fast) {
+		if (doconfig() < 0)
+			dodefault();
+		if (selwin != 0)
+			wwsetcurwin(selwin);
+	}
 	while (!quit) {
 		if (curwin == cmdwin) {
 			docmd();
