@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)slave.c	2.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)slave.c	2.16 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -40,7 +40,6 @@ slave()
 	extern int Mflag;
 	extern int justquit;
 #ifdef MEASURE
-	int tempstat;
 	extern FILE *fp;
 #endif
 	if (slavenet) {
@@ -57,8 +56,10 @@ slave()
 
 	if (status & MASTER) {
 #ifdef MEASURE
-		fp = fopen("/usr/adm/timed.masterlog", "w");
-		setlinebuf(fp);
+		if (fp == NULL) {
+			fp = fopen("/usr/adm/timed.masterlog", "w");
+			setlinebuf(fp);
+		}
 #endif
 		syslog(LOG_INFO, "THIS MACHINE IS A SUBMASTER");
 		if (trace) {
@@ -111,15 +112,13 @@ loop:
 						ntp->status = IGNORE;
 				}
 			}
-#ifdef MEASURE
-			tempstat = status;
-#endif
 			setstatus();
 #ifdef MEASURE
 			/*
 			 * Check to see if we just became master
+			 * (file not open)
 			 */
-			if ((status & MASTER) && !(tempstat & MASTER)) {
+			if (fp == NULL) {
 				fp = fopen("/usr/adm/timed.masterlog", "w");
 				setlinebuf(fp);
 			}
@@ -435,7 +434,10 @@ loop:
 		case TSP_QUIT:
 			/* become slave */
 #ifdef MEASURE
-			(void)fclose(fp);
+			if (fp != NULL) {
+				(void)fclose(fp);
+				fp = NULL;
+			}
 #endif
 			longjmp(jmpenv, 2);
 			break;
