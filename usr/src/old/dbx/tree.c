@@ -4,7 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-static char sccsid[] = "@(#)tree.c 5.2 %G%";
+static char sccsid[] = "@(#)tree.c 5.3 %G%";
 /*
  * Parse tree management.
  */
@@ -252,6 +252,7 @@ Node p;
 	case O_TYPERENAME:
 	    r = p;
 	    r->nodetype = newSymbol(nil, 0, PTR, r->nodetype, nil);
+	    r->nodetype->language = p->nodetype->language;
 	    break;
 
 	case O_SYM:

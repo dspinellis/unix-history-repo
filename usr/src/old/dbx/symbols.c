@@ -4,7 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-static char sccsid[] = "@(#)symbols.c 5.3 %G%";
+static char sccsid[] = "@(#)symbols.c 5.4 %G%";
 /*
  * Symbol management.
  */
@@ -36,7 +36,8 @@ typedef struct Symbol *Symbol;
  */
 
 typedef enum {
-    BADUSE, CONST, TYPE, VAR, ARRAY, DYNARRAY, SUBARRAY, PTRFILE, RECORD, FIELD,
+    BADUSE, CONST, TYPE, VAR, ARRAY, OPENARRAY, DYNARRAY, SUBARRAY,
+    PTRFILE, RECORD, FIELD,
     PROC, FUNC, FVAR, REF, PTR, FILET, SET, RANGE, 
     LABEL, WITHPTR, SCAL, STR, PROG, IMPROPER, VARNT,
     FPROC, FFUNC, MODULE, TAG, COMMON, TYPEREF
@@ -44,11 +45,18 @@ typedef enum {
 
 typedef enum { R_CONST, R_TEMP, R_ARG, R_ADJUST } Rangetype; 
 
+#define INREG 0
+#define STK 1
+#define EXT 2
+
+typedef unsigned integer Storage;
+
 struct Symbol {
     Name name;
     Language language;
-    Symclass class;
-    Integer level;
+    Symclass class : 8;
+    Storage storage : 2;
+    unsigned int level : 6;	/* for variables stored on stack only */
     Symbol type;
     Symbol chain;
     union {
@@ -112,7 +120,7 @@ boolean showaggrs;
 #define nosource(f) (not (f)->symvalue.funcv.src)
 #define isinline(f) ((f)->symvalue.funcv.inline)
 
-#define isreg(s)		(s->level < 0)
+#define isreg(s)		(s->storage == INREG)
 
 #include "tree.h"
 
@@ -136,19 +144,21 @@ boolean showaggrs;
 
 /*
  * Symbol table structure currently does not support deletions.
+ * Hash table size is a power of two to make hashing faster.
+ * Using a non-prime is ok since we aren't doing rehashing.
  */
 
-#define HASHTABLESIZE 2003
+#define HASHTABLESIZE 8192
 
 private Symbol hashtab[HASHTABLESIZE];
 
-#define hash(name) ((((unsigned) name) >> 2) mod HASHTABLESIZE)
+#define hash(name) ((((unsigned) name) >> 2) & (HASHTABLESIZE - 1))
 
 /*
  * Allocate a new symbol.
  */
 
-#define SYMBLOCKSIZE 100
+#define SYMBLOCKSIZE 1000
 
 typedef struct Sympool {
     struct Symbol sym[SYMBLOCKSIZE];
@@ -164,7 +174,7 @@ public Symbol symbol_alloc()
 
     if (nleft <= 0) {
 	newpool = new(Sympool);
-	bzero(newpool, sizeof(newpool));
+	bzero(newpool, sizeof(*newpool));
 	newpool->prevpool = sympool;
 	sympool = newpool;
 	nleft = SYMBLOCKSIZE;
@@ -228,6 +238,7 @@ Symbol chain;
     s = symbol_alloc();
     s->name = name;
     s->language = primlang;
+    s->storage = EXT;
     s->level = blevel;
     s->class = class;
     s->type = type;
@@ -399,7 +410,7 @@ Symbol s;
     integer r;
 
     checkref(s);
-    if (s->level < 0) {
+    if (s->storage == INREG) {
 	r = s->symvalue.offset;
     } else {
 	r = -1;
@@ -496,7 +507,8 @@ integer r;
     s = insert(n);
     s->language = t_addr->language;
     s->class = VAR;
-    s->level = -3;
+    s->storage = INREG;
+    s->level = 3;
     s->type = t_addr;
     s->symvalue.offset = r;
 }
@@ -613,6 +625,7 @@ public Integer size(sym)
 	    r = nel*elsize;
 	    break;
 
+	case OPENARRAY:
 	case DYNARRAY:
 	    r = (t->symvalue.ndims + 1) * sizeof(Word);
 	    break;
@@ -639,9 +652,16 @@ public Integer size(sym)
 	    break;
 
 	case TYPE:
+	    /*
+	     * This causes problems on the IRIS because of the compiler bug
+	     * with stab offsets for parameters.  Not sure it's really
+	     * necessary anyway.
+	     */
+#	    ifndef IRIS
 	    if (t->type->class == PTR and t->type->type->class == BADUSE) {
 		findtype(t);
 	    }
+#	    endif
 	    r = size(t->type);
 	    break;
 
@@ -713,7 +733,7 @@ Symbol s;
 
     if (s->class == REF) {
 	t = rtype(s->type);
-	if (t->class == DYNARRAY) {
+	if (t->class == OPENARRAY) {
 	    r = (t->symvalue.ndims + 1) * sizeof(Word);
 	} else if (t->class == SUBARRAY) {
 	    r = (2 * t->symvalue.ndims + 1) * sizeof(Word);
