@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.26 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -256,8 +256,8 @@ savemail(e)
 				state = ESM_POSTMASTER;
 				break;
 			}
-			if (returntosender(e->e_message,
-					   q, (e->e_class >= 0), e) == 0)
+			if (returntosender(e->e_message, e->e_errorqueue,
+					   (e->e_class >= 0), e) == 0)
 			{
 				state = ESM_DONE;
 				break;
