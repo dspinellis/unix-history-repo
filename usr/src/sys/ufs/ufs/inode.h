@@ -1,4 +1,4 @@
-/*	inode.h	6.6	84/12/20	*/
+/*	inode.h	6.7	85/01/10	*/
 
 /*
  * The I node is the focus of all file activity in UNIX.
@@ -103,13 +103,9 @@ struct dinode {
  * table invalidation should only occur once every 16 months.
  */
 #define cacheinval(ip)	\
-{ \
-	struct inode *xp; \
 	(ip)->i_id = ++nextinodeid; \
 	if (nextinodeid == 0) \
-		for (nextinodeid = 0, xp = inode; xp < inodeNINODE; xp++) \
-			xp->i_id = 0; \
-}
+		cacheinvalall();
 
 struct inode *inode;		/* the inode table itself */
 struct inode *inodeNINODE;	/* the end of the inode table */
