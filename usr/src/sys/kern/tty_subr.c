@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)tty_subr.c	7.11 (Berkeley) %G%
+ *	@(#)tty_subr.c	7.12 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -560,4 +560,4 @@ putw(c, p)
 	splx(s);
 	return (0);
 }
-#endif unneeded
+#endif /* unneeded */

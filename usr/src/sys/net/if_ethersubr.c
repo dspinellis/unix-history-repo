@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_ethersubr.c	7.24 (Berkeley) %G%
+ *	@(#)if_ethersubr.c	7.25 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -175,7 +175,7 @@ ether_output(ifp, m0, dst, rt0)
 			printf("\n");
 		ENDDEBUG
 		} break;
-#endif	ISO
+#endif /* ISO */
 #ifdef	LLC
 /*	case AF_NSAP: */
 	case AF_CCITT: {
@@ -212,9 +212,9 @@ ether_output(ifp, m0, dst, rt0)
 			       l->llc_control & 0xff);
 
 		}
-#endif LLC_DEBUG
+#endif /* LLC_DEBUG */
 		} break;
-#endif/* LLC */	
+#endif /* LLC */	
 
 	case AF_UNSPEC:
 		eh = (struct ether_header *)dst->sa_data;
@@ -405,7 +405,7 @@ ether_input(ifp, eh, m)
 			mtod(m, struct sdl_hdr *)->sdlhdr_len = eh->ether_type;
 #ifdef LLC_DEBUG
 				printf("llc packet\n");
-#endif LLC_DEBUG
+#endif /* LLC_DEBUG */
 			schednetisr(NETISR_CCITT);
 			inq = &llcintrq;
 			break;
