@@ -14,14 +14,15 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)un.h	7.3 (Berkeley) %G%
+ *	@(#)un.h	7.4 (Berkeley) %G%
  */
 
 /*
  * Definitions for UNIX IPC domain.
  */
 struct	sockaddr_un {
-	short	sun_family;		/* AF_UNIX */
+	u_char	sun_len;		/* sockaddr len including null */
+	u_char	sun_family;		/* AF_UNIX */
 	char	sun_path[108];		/* path name (gag) */
 };
 
