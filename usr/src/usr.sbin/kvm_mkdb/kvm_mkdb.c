@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)kvm_mkdb.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)kvm_mkdb.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -88,7 +88,7 @@ rmdb(file)
 		syserrexit("can't unlink %s", file);
 	*(file+len) = '\0';
 }
-	
+
 mvdb(from, to)
 	char *from;
 	char *to;
@@ -186,12 +186,15 @@ create_knlist(name, db)
 			long versoff;
 			long reloffset;
 
-			/*
-			 * Offset relative to start of text image in VM.
-			 * On tahoe, first 0x800 is reserved for
-			 * communication with the console processor.
-			 */
+			/* offset relative to start of text image in VM. */
+#ifdef hp300
+			reloffset = s->n_value;
+#endif
 #ifdef tahoe
+			/*
+			 * on tahoe, first 0x800 is reserved for communication
+			 * with the console processor.
+			 */
 			reloffset = ((s->n_value & ~KERNBASE) - 0x800);
 #endif
 #ifdef vax
@@ -199,9 +202,9 @@ create_knlist(name, db)
 #endif
 			/*
 			 * When loaded, data is rounded
-			 * to next 1024 after text, but not in file.
+			 * to next page cluster after text, but not in file.
 			 */
-			reloffset -= 1024 - (ebuf.a_text % 1024);
+			reloffset -= CLBYTES - (ebuf.a_text % CLBYTES);
 			versoff = N_TXTOFF(ebuf) + reloffset;
 			if (fseek(fstr, versoff, SEEK_SET) == -1)
 				syserrexit("seek (version): %x", s->n_value);
