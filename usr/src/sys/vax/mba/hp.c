@@ -1,5 +1,7 @@
-/*	hp.c	3.16	%G%	*/
+/*	hp.c	3.17	%G%	*/
 
+#include "../conf/hp.h"
+#if NHP > 0
 /*
  * RP06/RM03/RM05 disk driver
  */
@@ -16,9 +18,6 @@
 #include "../h/mba.h"
 #include "../h/mtpr.h"
 #include "../h/vm.h"
-
-#define	DK_N	0
-#define	DK_NMAX	1
 
 struct	device
 {
@@ -40,10 +39,6 @@ struct	device
 	int	hpec2;		/* Burst error bit pattern */
 };
 
-#define	HPMBA		MBA0
-#define	HPMBANUM	0
-
-#define	NHP	2
 #define	RP	022
 #define	RM	024
 #define	RM5	027
@@ -536,3 +531,4 @@ register struct buf *bp;
 	rp->hpcs1 = RCOM|GO;
 	return (1);
 }
+#endif

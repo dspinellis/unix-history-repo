@@ -1,5 +1,11 @@
-/*	va.c	3.6	%G%	*/
+/*	va.c	3.7	%G%	*/
 
+#include "../conf/va.h"
+#if NVA > 0
+/*
+ * Benson-Varian matrix printer/plotter
+ * dma interface driver
+ */
 #include "../h/param.h"
 #include "../h/dir.h"
 #include "../h/user.h"
@@ -10,10 +16,6 @@
 #include "../h/uba.h"
 #include "../h/vcmd.h"
 
-/*
- * Benson-Varian matrix printer/plotter
- * dma interface driver
- */
 int	vabdp = 1;
 
 unsigned minvaph();
@@ -38,24 +40,22 @@ struct	varegs {
 #define	vacsh	vacs.vacsr.Vacsh
 #define	vacsl	vacs.vacsr.Vacsl
 
-#define	VAADDR	((struct varegs *)(UBA0_DEV + 0164000))
-
 /* vacsw bits */
 #define	ERROR		0100000		/* Some error has occurred */
-#define NPRTIMO		01000		/* DMA timeout error */
-#define NOTREADY	0400		/* Something besides NPRTIMO */
-#define DONE		0200
+#define	NPRTIMO		01000		/* DMA timeout error */
+#define	NOTREADY	0400		/* Something besides NPRTIMO */
+#define	DONE		0200
 #define	IENABLE		0100		/* Interrupt enable */
 #define	SUPPLIESLOW	04
-#define BOTOFFORM	02
-#define BYTEREVERSE	01		/* Reverse byte order in words */
+#define	BOTOFFORM	02
+#define	BYTEREVERSE	01		/* Reverse byte order in words */
 
 /* vacsh command bytes */
-#define VAPLOT		0340
-#define VAPRINT		0100
-#define VAPRINTPLOT	0160
-#define VAAUTOSTEP	0244
-#define VANOAUTOSTEP	0045		/* unused */
+#define	VAPLOT		0340
+#define	VAPRINT		0100
+#define	VAPRINTPLOT	0160
+#define	VAAUTOSTEP	0244
+#define	VANOAUTOSTEP	0045		/* unused */
 #define	VAFORMFEED	0263		/* unused */
 #define	VASLEW		0265		/* unused */
 #define	VASTEP		0064		/* unused */
@@ -288,3 +288,4 @@ vareset()
 	/* End badly placed code */
 	vastart();
 }
+#endif

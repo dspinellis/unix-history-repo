@@ -1,5 +1,7 @@
-/*	ht.c	3.5	%G%	*/
+/*	ht.c	3.6	%G%	*/
 
+#include "../conf/ht.h"
+#if NHT > 0
 /*
  * TJU16 tape driver
  */
@@ -33,17 +35,13 @@ struct	buf	httab;
 struct	buf	rhtbuf;
 struct	buf	chtbuf;
 
-#define	NUNIT	1
-#define	BUNIT	2
+#define	NHT	1
 #define	INF	1000000
 
-char	h_openf[NUNIT];
-daddr_t	h_blkno[NUNIT];
-char	h_flags[NUNIT];
-daddr_t	h_nxrec[NUNIT];
-
-#define	HTMBA		MBA1
-#define	HTMBANUM	1
+char	h_openf[NHT];
+daddr_t	h_blkno[NHT];
+char	h_flags[NHT];
+daddr_t	h_nxrec[NHT];
 
 #define	GO	01
 #define	WCOM	060
@@ -89,7 +87,7 @@ htopen(dev, flag)
 		mbainit(HTMBANUM);
 	httab.b_flags |= B_TAPE;
 	unit = minor(dev) & 03;
-	if (unit >= NUNIT || h_openf[unit]) {
+	if (unit >= NHT || h_openf[unit]) {
 		u.u_error = ENXIO;
 		return;
 	}
@@ -348,9 +346,10 @@ htphys(dev)
 	daddr_t a;
 
 	unit = minor(dev) & 03;
-	if(unit < NUNIT) {
+	if(unit < NHT) {
 		a = u.u_offset >> 9;
 		h_blkno[unit] = dbtofsb(a);
 		h_nxrec[unit] = dbtofsb(a)+1;
 	}
 }
+#endif

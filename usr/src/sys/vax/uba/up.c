@@ -1,5 +1,6 @@
-/*	up.c	3.25	%G%	*/
+/*	up.c	3.26	%G%	*/
 
+#include "../conf/up.h"
 /*
  * UNIBUS disk driver with overlapped seeks and ECC recovery.
  *
@@ -42,12 +43,6 @@
 #include "../h/uba.h"
 #include "../h/vm.h"
 
-/*
- * Drive stats are gathered in dk_*[DK_N].. dk_*[DK_NMAX]
- */
-#define	DK_N	2
-#define	DK_NMAX	3
-
 #define	ushort	unsigned short
 
 struct	device
@@ -86,10 +81,6 @@ int	upsoftas;
  * settle for a SEEK to the correct cylinder.
  */
 int	upseek;
-
-#define	UPADDR	((struct device *)(UBA0_DEV + 0176700))
-
-#define	NUP	2		/* Number of drives this installation */
 
 #define	NSECT	32
 #define	NTRAC	19
