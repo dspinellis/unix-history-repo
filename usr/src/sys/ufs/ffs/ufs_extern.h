@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_extern.h	7.3 (Berkeley) %G%
+ *	@(#)ufs_extern.h	7.4 (Berkeley) %G%
  */
 
 struct buf;
@@ -40,7 +40,7 @@ int	 ufs_chown __P((struct vnode *, u_int, u_int, struct proc *));
 int	 ufs_close __P((struct vnode *, int, struct ucred *, struct proc *));
 int	 ufs_create __P((struct vnode *, struct vnode **,
 			 struct componentname *, struct vattr *));
-void	 ufs_dirbad __P((struct inode *, off_t, char *));
+void	 ufs_dirbad __P((struct inode *, doff_t, char *));
 int	 ufs_dirbadentry __P((struct direct *, int));
 int	 ufs_dirempty __P((struct inode *, ino_t, struct ucred *));
 int	 ufs_direnter __P((struct inode *, struct vnode *,struct componentname *));
