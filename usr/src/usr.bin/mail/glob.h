@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)glob.h	5.11 (Berkeley) %G%
+ *	@(#)glob.h	5.12 (Berkeley) %G%
  */
 
 /*
@@ -42,7 +42,6 @@ int	image;				/* File descriptor for image of msg */
 FILE	*input;				/* Current command input file */
 char	mailname[PATHSIZE];		/* Name of current file */
 char	prevfile[PATHSIZE];		/* Name of previous file */
-int	uid;				/* The invoker's user id */
 char	mailrc[PATHSIZE];		/* Name of startup file */
 char	deadletter[PATHSIZE];		/* Name of #/dead.letter */
 char	homedir[PATHSIZE];		/* Path name of home directory */
