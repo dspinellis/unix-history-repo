@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vnops.c	1.7 (Berkeley) %G%
+ *	@(#)union_vnops.c	1.8 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -402,7 +402,7 @@ union_open(ap)
 					VOP_UNLOCK(tvp);
 				}
 				VOP_UNLOCK(un->un_uppervp);
-				union_vn_close(un->un_uppervp, FWRITE);
+				union_vn_close(un->un_uppervp, FWRITE, cred, p);
 				VOP_LOCK(un->un_uppervp);
 				if (!error)
 					uprintf("union: copied up %s\n",
@@ -966,7 +966,7 @@ union_readdir(ap)
 	struct union_node *un = VTOUNION(ap->a_vp);
 
 	if (un->un_uppervp) {
-		struct vnode *vp = OTHERVP(ap->a_vp);
+		struct vnode *vp = un->un_uppervp;
 
 		VOP_LOCK(vp);
 		error = VOP_READLINK(vp, ap->a_uio, ap->a_cred);
@@ -1102,6 +1102,8 @@ union_lock(ap)
 	else
 		un->un_pid = -1;
 #endif
+
+	return (0);
 }
 
 int
@@ -1127,6 +1129,8 @@ union_unlock(ap)
 #ifdef DIAGNOSTIC
 	un->un_pid = 0;
 #endif
+
+	return (0);
 }
 
 int

@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union.h	1.7 (Berkeley) %G%
+ *	@(#)union.h	1.8 (Berkeley) %G%
  */
 
 struct union_args {
@@ -63,7 +63,10 @@ extern int union_mkshadow __P((struct union_mount *, struct vnode *,
 				struct componentname *, struct vnode **));
 extern int union_vn_create __P((struct vnode **, struct union_node *,
 				struct proc *));
+extern int union_cn_close __P((struct vnode *, int, struct ucred *,
+				struct proc *));
 extern void union_removed_upper __P((struct union_node *un));
+extern struct vnode *union_lowervp __P((struct vnode *));
 
 #define	MOUNTTOUNIONMOUNT(mp) ((struct union_mount *)((mp)->mnt_data))
 #define	VTOUNION(vp) ((struct union_node *)(vp)->v_data)
