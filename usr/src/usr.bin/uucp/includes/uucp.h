@@ -1,4 +1,4 @@
-/*	uucp.h	5.6	85/04/10	*/
+/*	uucp.h	5.7	85/06/23	*/
 
 #include <stdio.h>
 
@@ -34,10 +34,14 @@
  * It stops on the first method that returns a non null name.
  * If everything fails, it uses "unknown" for the system name.
  */
-#define	GETHOSTNAME
-/*#define CCWHOAMI	*/
+#define	GETHOSTNAME	/**/
+/* #define UNAME	/**/
+/* #define WHOAMI	/**/
+/* #define CCWHOAMI	/**/
+/* #define UUNAME	/**/
+/* #define GETMYHNAME	/**/
 /* If the above fails ... */
-#define	MYNAME	"erewhon"
+#define	MYNAME	"erehwon"
 
 /*
  * If you have it, include <sysexits.h> to use exit
@@ -45,9 +49,9 @@
  * Otherwise, define EX_NOHOST, EX_CANTCREAT, and EX_NOINPUT.
  */
 #include <sysexits.h>
-/*#define EX_NOINPUT	66*/
-/*#define EX_NOHOST	68*/
-/*#define EX_CANTCREAT	73*/
+/*#define EX_NOINPUT	66	/**/
+/*#define EX_NOHOST	68	/**/
+/*#define EX_CANTCREAT	73	/**/
 
 /*
  * Define the various kinds of connections to include.
@@ -59,7 +63,7 @@
 #define DF02		/* Dec's DF02/DF03 */
 #define DF112		/* Dec's DF112 */
 #define HAYES		/* Hayes' Smartmodem */
-#define VENTEL		/* ventel dialer */
+#define VENTEL		/* Ventel Dialer */
 #define PENRIL		/* PENRIL Dialer */
 #define VADIC		/* Racal-Vadic 345x */
 #define VA212		/* Racal-Vadic 212 */
@@ -68,7 +72,7 @@
 #define RVMACS		/* Racal-Vadic MACS  820 dialer, 831 adaptor */
 #define VMACS		/* Racal-Vadic MACS  811 dialer, 831 adaptor */
 /*#define UNETTCP	/* 3Com's UNET */
-#define BSDTCP		/* 4.2bsd TCP/IP */
+#define BSDTCP		/* 4.2bsd or 2.9bsd TCP/IP */
 #define PAD		/* X.25 PAD */
 /*#define MICOM		/* micom mux port */
 #define NOVATION	/* Novation modem */
@@ -86,7 +90,7 @@
  * define BUSYLOOP if you must do a busy loop.
  * Look at uucpdelay() in condevs.c for details.
  */
-#define	FTIME
+#define	INTERVALTIMER
 #endif VENTEL || NOVATION || DF112 || PENRIL
 
 /*
@@ -95,22 +99,27 @@
  * You will probably also have to set LIBNDIR in Makefile.
  * Otherwise, <dir.h> is assumed to have the Berkeley directory definitions.
  */
-/*#define	NDIR	*/
+/*#define	NDIR	/**/
 
 /*
- * If yours is a BTL system III, IV, or so-on site, define USG.
+ * If yours is a BTL system III, IV, V or so-on site, define USG.
  */
-/*#define	USG	*/
+/*#define	USG	/**/
 
 /*
  * If you are running 4.2bsd, define BSD4_2
  */
-#define BSD4_2
+#define BSD4_2 	/**/
+
+/*
+ * If you are running 2.9bsd, define BSD2_9
+ */
+/*#define BSD2_9 	/**/
 
 /*
  * If you are using /etc/inetd with 4.2bsd, define BSDINETD
  */
-#define BSDINETD
+#define BSDINETD	/**/
 
 /*#define VMSDTR	/* Turn on modem control on vms(works DTR) for
 			   develcon and gandalf ports to gain access */
@@ -118,22 +127,24 @@
  *	If you want to use the same modem for dialing in and out define
  *	DIALINOUT to be the localtion of the acucntrl program
  */
-/* #define DIALINOUT	"/usr/lib/uucp/acucntrl" */
+/* #define DIALINOUT	"/usr/lib/uucp/acucntrl" /**/
 
-/* define the last characters for ACU */
-#define ACULAST "-<"
+/*
+ *	If you want all ACU lines to be DIALINOUT, define ALLACUINOUT
+ */
+/* #define ALLACUINOUT	/**/
 
 /* define the value of WFMASK - for umask call - used for all uucp work files */
 #define WFMASK 0137
 
 /* define UUSTAT if you need "uustat" command */
-/* #define UUSTAT	*/
+/* #define UUSTAT	/**/
 
-/*	define UUSUB if you need "uusub" command */
+/* define UUSUB if you need "uusub" command */
 /* #define UUSUB /**/
 
 /* define the value of LOGMASK - for LOGFILE, SYSLOG, ERRLOG */
-#define	LOGMASK	0133
+#define	LOGMASK		0133
 
 /* All files are given at least the following at the final destination */
 /* It is also the default mode, so '666' is recommended */
@@ -144,7 +155,7 @@
  * Define NOSTRANGERS if you don't want to accept transactions from
  * sites that are not in your L.sys file (see cico.c)
  */
-#define NOSTRANGERS
+#define NOSTRANGERS	/**/
 /*
  * Traditionally LCK (lock) files have been kept in /usr/spool/uucp.
  * If you want that define LOCKDIR to be ".".
@@ -156,8 +167,8 @@
  * know where the LCK files are kept, and you have to change your /etc/rc
  * if your rc cleans out the lock files (as it should).
  */
-/*#define	LOCKDIR	"LCK" */
-#define	LOCKDIR	"."
+/*#define	LOCKDIR	"LCK."	/**/
+#define LOCKDIR	"." /**/
 
 /* 
  * If you want uucp and uux to copy the data files by default,
@@ -165,21 +176,21 @@
  * If you want uucp and uux to use the original files instead of
  * copies, define DONTCOPY (This is the way System III and V work)
  */
-#define DONTCOPY
+#define DONTCOPY	/**/
 
 /*
  * Very few (that I know of) systems use the sequence checking feature.
  * If you are not going to use it (hint: you are not),
  * do not define GNXSEQ.  This saves precious room on PDP11s.
  */
-/*#define	GNXSEQ/* comment this out to save space */
+/*#define	GNXSEQ	/* comment this out to save space */
 
 /*
  * If you want the logfile stored in a file for each site instead
  * of one file
  * define LOGBYSITE as the directory to put the files in
  */
-/*#define LOGBYSITE	"/usr/spool/uucp/LOG"	*/
+/*#define LOGBYSITE	"/usr/spool/uucp/LOG" /**/
 
 #define XQTDIR		"/usr/spool/uucp/XTMP"
 #define SQFILE		"/usr/lib/uucp/SQFILE"
@@ -203,11 +214,11 @@
 #define DATAPRE		'D'
 #define XQTPRE		'X'
 
-#define LOGFILE	"/usr/spool/uucp/LOGFILE"
-#define ERRLOG	"/usr/spool/uucp/ERRLOG"
-#define CMDSDIR	"/usr/spool/uucp/C."
-#define DATADIR	"/usr/spool/uucp/D."
-#define XEQTDIR	"/usr/spool/uucp/X."
+#define LOGFILE		"/usr/spool/uucp/LOGFILE"
+#define ERRLOG		"/usr/spool/uucp/ERRLOG"
+#define CMDSDIR		"/usr/spool/uucp/C."
+#define DATADIR		"/usr/spool/uucp/D."
+#define XEQTDIR		"/usr/spool/uucp/X."
 
 #define RMTDEBUG	"AUDIT"
 #define CORRUPT		"CORRUPT"
@@ -221,21 +232,23 @@
 
 #define ASSERT(e, s1, s2, i1) if (!(e)) {assert(s1, s2, i1);cleanup(FAIL);}else
 
-#define SAME 0
-#define ANYREAD 0004
-#define ANYWRITE 02
-#define FAIL -1
-#define SUCCESS 0
-#define CNULL (char *) 0
-#define STBNULL (struct sgttyb *) 0
-#define MASTER 1
-#define SLAVE 0
-#define MAXFULLNAME 255
-#define MAXMSGTIME 45
-#define NAMESIZE 255
-#define EOTMSG "\04\n\04\n"
-#define CALLBACK 1
-#define ONEDAY	86400L
+#define SAME		0
+#define ANYREAD		0004
+#define ANYWRITE	02
+#define FAIL		-1
+#define SUCCESS		0
+#define CNULL		(char *) 0
+#define STBNULL		(struct sgttyb *) 0
+#define MASTER		1
+#define SLAVE		0
+#define MAXFULLNAME	255
+#define MAXMSGTIME	45
+#define NAMESIZE	255
+#define MAXBASENAME	14
+#define SYSNSIZE	(MAXBASENAME-1-1-1-4)
+#define EOTMSG		"\04\n\04\n"
+#define CALLBACK	1
+#define ONEDAY		86400L
 
 	/*  commands  */
 #define SHELL		"/bin/sh"
@@ -252,14 +265,14 @@
 #define CF_DIAL		-5
 #define CF_LOGIN	-6
 
-#define F_NAME 0
-#define F_TIME 1
-#define F_LINE 2
-#define F_CLASS 3	/* an optional prefix and the speed */
-#define F_PHONE 4
-#define F_LOGIN 5
+#define F_NAME		0
+#define F_TIME		1
+#define F_LINE		2
+#define F_CLASS		3	/* an optional prefix and the speed */
+#define F_PHONE		4
+#define F_LOGIN		5
 
-#define MAXPH	60	/* maximum length of a phone number */
+#define MAXPH		60	/* maximum length of a phone number */
 
 	/* This structure tells how to get to a device */
 struct condev {
@@ -286,16 +299,16 @@ struct Devices {
 
 	/*  system status stuff  */
 #define SS_OK		0
-#define SS_FAIL		4
 #define SS_NODEVICE	1
 #define SS_CALLBACK	2
 #define SS_INPROGRESS	3
+#define SS_FAIL		4
 #define SS_BADSEQ	5
 #define SS_WRONGTIME	6
 
 	/*  fail/retry parameters  */
-#define RETRYTIME 600
-#define MAXRECALLS 20
+#define RETRYTIME	600
+#define MAXRECALLS	25
 
 	/*  stuff for command execution  */
 #define X_RQDFILE	'F'
@@ -308,9 +321,9 @@ struct Devices {
 #define X_RETURNTO	'R'
 #define	X_NONZERO	'Z'
 #define X_LOCK		"LCK.XQT"
-#define X_LOCKTIME	3600
+#define X_LOCKTIME	3600L
 
-#define WKDSIZE 100	/*  size of work dir name  */
+#define WKDSIZE		100	/*  size of work dir name  */
 
 #include <sys/types.h>
 #ifndef USG
@@ -323,6 +336,8 @@ struct timeb
 	short	timezone;
 	short	dstflag;
 };
+#define rindex strrchr
+#define index strchr
 #endif USG
 
 extern struct timeb Now;
@@ -337,7 +352,7 @@ extern char Myfullname[];
 extern int Debug;
 extern int Bspeed;
 extern char Wrkdir[];
-extern long Retrytime;
+extern time_t Retrytime;
 extern short Usrf;
 extern int IsTcpIp;
 extern char Progname[];
@@ -351,8 +366,24 @@ extern	char DLocal[], DLocalX[], *subfile(), *subdir();
 /* Commonly called routines which return non-int value */
 extern	char *ttyname(), *strcpy(), *strcat(), *index(), *rindex(),
 		*fgets(), *calloc(), *malloc(), *fdig(), *ttyname(),
-		*cfgets();
+		*cfgets(), *getwd(), *strpbrk(), *strncpy();
 extern	long lseek();
 extern	FILE *rpopen();
+extern time_t time();
 
 extern char _FAILED[], CANTOPEN[], DEVNULL[];
+
+#ifdef lint
+/* This horrible gross kludge is the only way I know to
+ * convince lint that signal(SIGINT,SIG_IGN) is legal. It hates SIG_IGN.
+ */
+#ifdef SIG_IGN
+#undef SIG_IGN
+#endif /* SIG_IGN */
+#define SIG_IGN	main
+extern int main();
+#ifdef DEBUG
+#undef DEBUG
+#endif DEBUG
+#define DEBUG(a,b,c)
+#endif /* lint */
