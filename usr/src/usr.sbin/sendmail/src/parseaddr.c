@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -103,7 +103,11 @@ parseaddr(addr, a, copyf, delim, e)
 
 	pvp = prescan(addr, delim, pvpbuf);
 	if (pvp == NULL)
+	{
+		if (tTd(20, 1))
+			printf("parseaddr-->NULL\n");
 		return (NULL);
+	}
 
 	/*
 	**  Apply rewriting rules.
