@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1980, 1986, 1991 Regents of the University of California.
+ * Copyright (c) 1992 Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tuba_table.c	7.1 (Berkeley) %G%
+ *	@(#)tuba_table.c	7.2 (Berkeley) %G%
  */
 #include "param.h"
 #include "systm.h"
@@ -20,11 +20,8 @@
 #include "net/af.h"
 #include "net/radix.h"
 
-#include "tuba_addr.h"
-
 #include "netiso/iso.h"
-
-#define	SA(p) ((struct sockaddr *)(p))
+#include "tuba_addr.h"
 
 int	tuba_table_size;
 struct	tuba_cache **tuba_table;
@@ -50,7 +47,7 @@ tuba_timer()
 	splx(s);
 }
 
-tuba_init()
+tuba_timer_init()
 {
 	rn_inithead((void **)&tuba_tree, 40);
 	timeout(tuba_timer, (caddr_t)0, arpt_prune * hz);

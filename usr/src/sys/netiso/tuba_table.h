@@ -1,10 +1,10 @@
 /*-
- * Copyright (c) 1991 The Regents of the University of California.
+ * Copyright (c) 1992 The Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tuba_table.h	7.1 (Berkeley) %G%
+ *	@(#)tuba_table.h	7.2 (Berkeley) %G%
  */
 
 struct tuba_cache {
