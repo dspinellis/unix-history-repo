@@ -3,9 +3,8 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_prf.c	7.5 (Berkeley) %G%
+ *	@(#)subr_prf.c	7.6 (Berkeley) %G%
  */
-#include "../machine/mtpr.h"
 
 #include "param.h"
 #include "systm.h"
@@ -21,6 +20,11 @@
 #include "ioctl.h"
 #include "tty.h"
 #include "syslog.h"
+
+#include "../machine/mtpr.h"
+#ifdef KDB
+#include "../machine/kdbparam.h"
+#endif
 
 #define TOCONS	0x1
 #define TOTTY	0x2
@@ -293,6 +297,14 @@ panic(s)
 		panicstr = s;
 	}
 	printf("panic: %s\n", s);
+#ifdef KDB
+	if (boothowto & RB_KDB) {
+		int s = splnet();	/* below kdb pri */
+
+		setsoftkdb();
+		splx(s);
+	}
+#endif
 	boot(bootopt);
 }
 
