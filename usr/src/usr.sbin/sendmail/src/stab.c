@@ -9,12 +9,10 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)stab.c	5.1 (Berkeley) %G%";
+static char	SccsId[] = "@(#)stab.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 # include "sendmail.h"
-
-SCCSID(@(#)stab.c	5.1		%G%);
 
 /*
 **  STAB -- manage the symbol table
