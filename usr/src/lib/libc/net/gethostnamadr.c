@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)gethostnamadr.c	6.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethostnamadr.c	6.28 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <sys/param.h>
@@ -80,7 +80,7 @@ getanswer(msg, msglen, iquery)
 		errno = terrno;
 #endif
 		h_errno = TRY_AGAIN;
-		return (NULL);
+		return ((struct hostent *) NULL);
 	}
 	eom = (char *)&answer + n;
 	/*
@@ -116,7 +116,7 @@ getanswer(msg, msglen, iquery)
 			case REFUSED:
 				h_errno = NO_RECOVERY;
 		}
-		return (NULL);
+		return ((struct hostent *) NULL);
 	}
 	bp = hostbuf;
 	buflen = sizeof(hostbuf);
@@ -126,7 +126,7 @@ getanswer(msg, msglen, iquery)
 			if ((n = dn_expand((char *)&answer, eom,
 			     cp, bp, buflen)) < 0) {
 				h_errno = NO_RECOVERY;
-				return (NULL);
+				return ((struct hostent *) NULL);
 			}
 			cp += n + QFIXEDSZ;
 			host.h_name = bp;
@@ -142,7 +142,7 @@ getanswer(msg, msglen, iquery)
 			h_errno = HOST_NOT_FOUND;
 		else
 			h_errno = TRY_AGAIN;
-		return (NULL);
+		return ((struct hostent *) NULL);
 	}
 	ap = host_aliases;
 	host.h_aliases = host_aliases;
@@ -233,7 +233,7 @@ getanswer(msg, msglen, iquery)
 		return (&host);
 	} else {
 		h_errno = TRY_AGAIN;
-		return (NULL);
+		return ((struct hostent *) NULL);
 	}
 }
 
@@ -248,7 +248,7 @@ gethostbyname(name)
 	extern struct hostent *_gethtbyname();
 
 	if (!(_res.options & RES_INIT) && res_init() == -1)
-		return (NULL);
+		return ((struct hostent *) NULL);
 	/*
 	 * disallow names consisting only of digits/dots, unless
 	 * they end in a dot.
@@ -259,7 +259,7 @@ gethostbyname(name)
 				if (*--cp == '.')
 					break;
 				h_errno = HOST_NOT_FOUND;
-				return (NULL);
+				return ((struct hostent *) NULL);
 			}
 			if (!isdigit(*cp) && *cp != '.') 
 				break;
@@ -268,22 +268,10 @@ gethostbyname(name)
 	for (cp = name, n = 0; *cp; cp++)
 		if (*cp == '.')
 			n++;
-	if ((n && *--cp == '.') || (_res.options & RES_DEFNAMES) == 0) {
-		int defflag = _res.options & RES_DEFNAMES;
-
-		_res.options &= ~RES_DEFNAMES;			/* XXX */
-		if (n && *cp == '.')
-			*cp = '\0';
-		hp = gethostdomain(name, (char *)NULL);
-		if (n && *cp == '\0')
-			*cp = '.';
-		if (defflag)
-			_res.options |= RES_DEFNAMES;
-		return (hp);
-	}
 	if (n == 0 && (cp = hostalias(name)))
 		return (gethostdomain(cp, (char *)NULL));
-	for (domain = _res.dnsrch; *domain; domain++) {
+	if ((n == 0 || *--cp != '.') && (_res.options & RES_DEFNAMES))
+	    for (domain = _res.dnsrch; *domain; domain++) {
 		hp = gethostdomain(name, *domain);
 		if (hp)
 			return (hp);
@@ -292,19 +280,27 @@ gethostbyname(name)
 		 * If host isn't found in this domain,
 		 * keep trying higher domains in the search list
 		 * (if that's enabled).
-		 * On a NO_ADDRESS error, keep trying,
-		 * or a wildcard MX entry could keep us from finding
+		 * On a NO_ADDRESS error, keep trying, otherwise
+		 * a wildcard MX entry could keep us from finding
 		 * host entries higher in the domain.
+		 * If we get some other error (non-authoritative negative
+		 * answer or server failure), then stop searching up,
+		 * but try the input name below in case it's fully-qualified.
 		 */
 		if (errno == ECONNREFUSED)
 			return (_gethtbyname(name));
-		if ((h_errno != HOST_NOT_FOUND &&
-		    h_errno != NO_ADDRESS) ||
+		if ((h_errno != HOST_NOT_FOUND && h_errno != NO_ADDRESS) ||
 		    (_res.options & RES_DNSRCH) == 0)
-			return (NULL);
+			break;
 		h_errno = 0;
 	}
-	return (gethostdomain(name, (char *)NULL));
+	/*
+	 * If the search/default failed, try the name as fully-qualified,
+	 * but only if it contained at least one dot (even trailing).
+	 */
+	if (n)
+		return (gethostdomain(name, (char *)NULL));
+	return ((struct hostent *) NULL);
 }
 
 static struct hostent *
@@ -313,21 +309,31 @@ gethostdomain(name, domain)
 {
 	querybuf buf;
 	char nbuf[2*MAXDNAME+2];
+	char *longname = nbuf;
 	int n;
 
-	if (domain == NULL)
-		(void)sprintf(nbuf, "%.*s", MAXDNAME, name);
-	else
+	if (domain == NULL) {
+		/*
+		 * Check for trailing '.';
+		 * copy without '.' if present.
+		 */
+		n = strlen(name) - 1;
+		if (name[n] == '.' && n < sizeof(nbuf) - 1) {
+			bcopy(name, nbuf, n);
+			nbuf[n] = '\0';
+		} else
+			longname = name;
+	} else
 		(void)sprintf(nbuf, "%.*s.%.*s",
 		    MAXDNAME, name, MAXDNAME, domain);
-	n = res_mkquery(QUERY, nbuf, C_IN, T_A, (char *)NULL, 0, NULL,
+	n = res_mkquery(QUERY, longname, C_IN, T_A, (char *)NULL, 0, NULL,
 		(char *)&buf, sizeof(buf));
 	if (n < 0) {
 #ifdef DEBUG
 		if (_res.options & RES_DEBUG)
 			printf("res_mkquery failed\n");
 #endif
-		return (NULL);
+		return ((struct hostent *) NULL);
 	}
 	return (getanswer((char *)&buf, n, 0));
 }
@@ -344,7 +350,7 @@ gethostbyaddr(addr, len, type)
 	extern struct hostent *_gethtbyaddr();
 	
 	if (type != AF_INET)
-		return (NULL);
+		return ((struct hostent *) NULL);
 	(void)sprintf(qbuf, "%d.%d.%d.%d.in-addr.arpa",
 		((unsigned)addr[3] & 0xff),
 		((unsigned)addr[2] & 0xff),
@@ -357,13 +363,13 @@ gethostbyaddr(addr, len, type)
 		if (_res.options & RES_DEBUG)
 			printf("res_mkquery failed\n");
 #endif
-		return (NULL);
+		return ((struct hostent *) NULL);
 	}
 	hp = getanswer((char *)&buf, n, 1);
 	if (hp == NULL && errno == ECONNREFUSED)
 		hp = _gethtbyaddr(addr, len, type);
 	if (hp == NULL)
-		return(NULL);
+		return ((struct hostent *) NULL);
 	hp->h_addrtype = type;
 	hp->h_length = len;
 	h_addr_ptrs[0] = (char *)&host_addr;
