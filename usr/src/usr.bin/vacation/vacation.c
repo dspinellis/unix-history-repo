@@ -3,195 +3,154 @@
 **  Copyright (c) 1983  Eric P. Allman
 **  Berkeley, California
 **
-**  Copyright (c) 1983 Regents of the University of California.
+**  Copyright (c) 1983, 1987 Regents of the University of California.
 **  All rights reserved.  The Berkeley software License Agreement
 **  specifies the terms and conditions for redistribution.
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)vacation.c	4.1.1.1 (Berkeley) %G%";
+static char	SccsId[] = "@(#)vacation.c	5.4 (Berkeley) %G%";
 #endif not lint
 
-# include <sys/types.h>
-# include <pwd.h>
-# include <stdio.h>
-# include <sysexits.h>
-# include <ctype.h>
+#include <sys/param.h>
+#include <sys/file.h>
+#include <pwd.h>
+#include <stdio.h>
+#include <ctype.h>
 
 /*
 **  VACATION -- return a message to the sender when on vacation.
 **
-**	This program could be invoked as a message receiver
-**	when someone is on vacation.  It returns a message
-**	specified by the user to whoever sent the mail, taking
-**	care not to return a message too often to prevent
-**	"I am on vacation" loops.
-**
-**	Positional Parameters:
-**		the user to collect the vacation message from.
-**
-**	Flag Parameters:
-**		-I	initialize the database.
-**		-d	turn on debugging.
-**
-**	Side Effects:
-**		A message is sent back to the sender.
-**
-**	Author:
-**		Eric Allman
-**		UCB/INGRES
+**	This program could be invoked as a message receiver when someone is
+**	on vacation.  It returns a message specified by the user to whoever
+**	sent the mail, taking care not to return a message too often to
+**	prevent "I am on vacation" loops.
 */
 
-typedef int	bool;
+#define	NO	0			/* no/false */
+#define	YES	1			/* yes/true */
+#define	EOS	'\0'			/* end of string */
+#define	MAXLINE	500			/* max line from mail header */
+#define	PERIOD	(60L*60L*24L*7L)	/* week between notifications */
+#define	VACAT	".vacation"		/* dbm's database prefix */
+#define	VDIR	".vacation.dir"		/* dbm's DB prefix, part 1 */
+#define	VIGN	".vacation.ignore"	/* addresses never replied to */
+#define	VMSG	".vacation.msg"		/* vacation message */
+#define	VPAG	".vacation.pag"		/* dbm's DB prefix, part 2 */
 
-# define TRUE		1
-# define FALSE		0
-
-# define MAXLINE	256	/* max size of a line */
-
-# define ONEWEEK	(60L*60L*24L*7L)
-
-time_t	Timeout = ONEWEEK;	/* timeout between notices per user */
-
-struct dbrec {
-	time_t	sentdate;
-};
-
-typedef struct
-{
+typedef struct {
 	char	*dptr;
 	int	dsize;
 } DATUM;
 
-extern DATUM fetch();
+typedef struct {
+	time_t	sentdate;
+} DBREC;
 
-
-
-bool	Debug = FALSE;
+static int	debug = NO;		/* debugging flag */
 
 main(argc, argv)
-	char **argv;
+	int	argc;
+	char	**argv;
 {
-	char *from;
-	register char *p;
-	struct passwd *pw;
-	char *homedir;
-	char *myname;
-	char *shortfrom;
-	char buf[MAXLINE];
-	extern struct passwd *getpwnam();
-	extern char *newstr();
-	extern char *getfrom();
-	extern bool knows();
-	extern bool junkmail();
-	extern time_t convtime();
+	extern int	optind;
+	struct passwd	*pw;
+	int	ch, iflag = NO;
+	char	*from,
+		*getfrom();
 
-	/* process arguments */
-	while (--argc > 0 && (p = *++argv) != NULL && *p == '-')
-	{
-		switch (*++p)
-		{
-		  case 'I':	/* initialize */
-			initialize();
-			exit(EX_OK);
-
-		  case 'd':	/* debug */
-			Debug = TRUE;
+	while ((ch = getopt(argc, argv, "Idi")) != EOF)
+		switch((char)ch) {
+		case 'd':			/* debug */
+			debug = YES;
 			break;
-
-		  default:
-			usrerr("Unknown flag -%s", p);
-			exit(EX_USAGE);
+		case 'i': case 'I':		/* re-init the database */
+			iflag = YES;
+			break;
+		case '?':
+		default:
+			usage();
 		}
-	}
+	argv += optind;
+	argc -= optind;
 
-	/* verify recipient argument */
 	if (argc != 1)
-	{
-		usrerr("Usage: vacation username (or) vacation -I");
-		exit(EX_USAGE);
+		usage();
+
+	/* find and move to user's home directory */
+	if (!(pw = getpwnam(*argv))) {
+		fprintf(stderr, "vacation: unknown user %s.\n", *argv);
+		exit(1);
+	}
+	if (chdir(pw->pw_dir)) {
+		perror("vacation: chdir");
+		exit(1);
 	}
 
-	myname = p;
-
-	/* find user's home directory */
-	pw = getpwnam(myname);
-	if (pw == NULL)
-	{
-		usrerr("Unknown user %s", myname);
-		exit(EX_NOUSER);
+	/* iflag cleans out the database */
+	if (iflag) {
+		initialize();
+		exit(0);
 	}
-	homedir = newstr(pw->pw_dir);
-	(void) strcpy(buf, homedir);
-	(void) strcat(buf, "/.vacation");
-	dbminit(buf);
 
-	/* read message from standard input (just from line) */
+	/*
+	 * if database missing, we create it and do a dbminit;
+	 * otherwise, just do the dbminit.
+	 */
+	if (access(VDIR, F_OK))
+		initialize();
+	else
+		dbminit(VACAT);
+
+	/* find out who sent us mail */
 	from = getfrom(&shortfrom);
 #ifdef VDEBUG
 	printf("from='%s'\nshortfrom='%s'\n", from, shortfrom);
 	exit(0);
 #endif
 
-	/* check if junk mail or this person is already informed */
-	if (!junkmail(from) && !knows(from))
-	{
-		/* mark this person as knowing */
 		setknows(shortfrom);
 
-		/* send the message back */
-		(void) strcpy(buf, homedir);
-		(void) strcat(buf, "/.vacation.msg");
-		if (Debug)
-			printf("Sending %s to %s\n", buf, from);
-		else
-		{
-			sendmessage(buf, from, myname);
-			/*NOTREACHED*/
-		}
+	/*
+	 * ignore if recently replied to this address,
+	 * else note the time and send a reply
+	 */
+	if (!knows(from)) {
+		setknows(from, NO);
+		sendmessage(from, *argv);
 	}
-	exit (EX_OK);
+	exit(0);
 }
-/*
-**  GETFROM -- read message from standard input and return sender
-**
-**	Parameters:
-**		none.
-**
-**	Returns:
-**		pointer to the sender address.
-**
-**	Side Effects:
-**		Reads first line from standard input.
-*/
 
-char *
+/*
+ * getfrom --
+ *	read mail "From" line and return sender's address
+ */
+static char *
 getfrom(shortp)
 char **shortp;
 {
-	static char line[MAXLINE];
-	register char *p, *start, *at, *bang;
-	char saveat;
-	extern char *index();
+	register char	*p;
+	char	buf[MAXLINE],
+		*malloc(), *strcpy();
 
 	/* read the from line */
-	if (fgets(line, sizeof line, stdin) == NULL ||
-	    strncmp(line, "From ", 5) != NULL)
-	{
-		usrerr("No initial From line");
-		exit(EX_USAGE);
+	if (!gets(buf) || strncmp(buf, "From ", 5)) {
+		fputs("vacation: no initial From line.\n", stderr);
+		exit(1);
 	}
 
 	/* find the end of the sender address and terminate it */
-	start = &line[5];
-	p = index(start, ' ');
-	if (p == NULL)
-	{
-		usrerr("Funny From line '%s'", line);
-		exit(EX_USAGE);
+	for (p = &buf[5]; *p && *p != ' '; ++p);
+	if (!*p) {
+		fprintf(stderr, "vacation: address terminated From line '%s'", buf);
+		exit(1);
 	}
-	*p = '\0';
-
+	*p = EOS;
+	if (!(p = malloc((u_int)(strlen(&buf[5]) + 1)))) {
+		fputs("vacation: out of space.\n", stderr);
+		exit(1);
+	}
 	/*
 	 * Strip all but the rightmost UUCP host
 	 * to prevent loops due to forwarding.
@@ -224,96 +183,84 @@ printf("place='%s'\n", *shortp);
 	/* return the sender address */
 	return start;
 }
-/*
-**  JUNKMAIL -- read the header and tell us if this is junk/bulk mail.
-**
-**	Parameters:
-**		from -- the Return-Path of the sender.  We assume that
-**			anything from "*-REQUEST@*" is bulk mail.
-**
-**	Returns:
-**		TRUE -- if this is junk or bulk mail (that is, if the
-**			sender shouldn't receive a response).
-**		FALSE -- if the sender deserves a response.
-**
-**	Side Effects:
-**		May read the header from standard input.  When this
-**		returns the position on stdin is undefined.
-*/
 
-bool
+/*
+ * junkmail --
+ *	read the header and return if automagic/junk/bulk mail
+ */
+static
 junkmail(from)
-	char *from;
+	char	*from;
 {
-	register char *p;
-	char buf[MAXLINE+1];
-	extern char *index();
-	extern char *rindex();
-	extern bool sameword();
+	static struct ignore {
+		char	*name;
+		int	len;
+	} ignore[] = {
+		"-REQUEST", 8, 		"Postmaster", 10,
+		"uucp", 4,		"MAILER-DAEMON", 13,
+		"MAILER", 6,		NULL, NULL,
+	};
+	register struct ignore	*I;
+	register int	len;
+	register char	*p;
+	char	buf[MAXLINE],
+		*index();
 
-	/* test for inhuman sender */
-	p = rindex(from, '@');
-	if (p != NULL)
-	{
-		*p = '\0';
-		if (sameword(&p[-8],  "-REQUEST") ||
-		    sameword(&p[-10], "Postmaster") ||
-		    sameword(&p[-13], "MAILER-DAEMON"))
-		{
-			*p = '@';
-			return (TRUE);
-		}
-		*p = '@';
-	}
+	/*
+	 * This is mildly amusing, and I'm not positive it's right; what
+	 * we're trying to do is find the "real" name of the sender.  I'm
+	 * assuming that addresses will be some variant of:
+	 *
+	 * From ADDRESS
+	 * From ADDRESS@seismo.css.gov
+	 * From ADDRESS%site.BITNET@seismo.css.gov
+	 * From site1!site2!ADDRESS@seismo.css.gov
+	 *
+	 * Therefore, the following search order:
+	 */
+	if (!(p = index(from, '%')))
+		if (!(p = index(from, '@')))
+			if (!(p = index(from, '!')))
+				for (p = from; *p; ++p);
+	len = p - from + 1;
+	for (I = ignore; I->name; ++I)
+		if (len >= I->len && !strcasencmp(I->name, p - I->len, I->len))
+			return(YES);
 
 	/* read the header looking for a "Precedence:" line */
-	while (fgets(buf, MAXLINE, stdin) != NULL && buf[0] != '\n')
-	{
-		/* should ignore case, but this is reasonably safe */
-		if (strncmp(buf, "Precedence", 10) != 0 ||
-		    !(buf[10] == ':' || buf[10] == ' ' || buf[10] == '\t'))
-		{
+	while (gets(buf) && *buf) {
+		if (strcasencmp(buf, "Precedence", 10) ||
+		   buf[10] != ':' && buf[10] != ' ' && buf[10] != '\t')
 			continue;
-		}
 
 		/* find the value of this field */
-		p = index(buf, ':');
-		if (p == NULL)
+		if (!(p = index(buf, ':')))
 			continue;
-		while (*++p != '\0' && isspace(*p))
-			continue;
-		if (*p == '\0')
+		while (*++p && isspace(*p));
+		if (!*p)
 			continue;
 
 		/* see if it is "junk" or "bulk" */
-		p[4] = '\0';
-		if (sameword(p, "junk") || sameword(p, "bulk"))
-			return (TRUE);
+		if (!strcasencmp(p, "junk", 4) || !strcasecmp(p, "bulk", 4)) {
+			puts("found junk or bulk");
+			return(YES);
+		}
 	}
-	return (FALSE);
+	return(NO);
 }
-/*
-**  KNOWS -- predicate telling if user has already been informed.
-**
-**	Parameters:
-**		user -- the user who sent this message.
-**
-**	Returns:
-**		TRUE if 'user' has already been informed that the
-**			recipient is on vacation.
-**		FALSE otherwise.
-**
-**	Side Effects:
-**		none.
-*/
 
-bool
+/*
+ * knows --
+ *	find out if user has gotten a vacation message recently.
+ */
+static
 knows(user)
 char *user;
 {
-	DATUM k, d;
-	struct dbrec ldbrec;
-	auto long then;
+	DATUM	k, d,
+		fetch();
+	time_t	now, then,
+		time();
 
 	k.dptr = user;
 	k.dsize = strlen(user) + 1;
@@ -333,205 +280,94 @@ register unsigned size;
 		*to++ = *from++;
 }
 #endif
-/*
-**  SETKNOWS -- set that this user knows about the vacation.
-**
-**	Parameters:
-**		user -- the user who should be marked.
-**
-**	Returns:
-**		none.
-**
-**	Side Effects:
-**		The dbm file is updated as appropriate.
-*/
 
-setknows(user)
-	char *user;
+/*
+ * setknows --
+ *	store that this user knows about the vacation.
+ */
+static
+setknows(user, forever)
+	char	*user;
+	int	forever;
 {
-	DATUM k, d;
-	struct dbrec xrec;
+	DBREC	xrec;
+	DATUM	k, d;
+	time_t	time();
 
 	k.dptr = user;
 	k.dsize = strlen(user) + 1;
-	time(&xrec.sentdate);
-	d.dptr = (char *) &xrec;
-	d.dsize = sizeof xrec;
+	if (forever)
+		/* zero is the flag value meaning *never* reply */
+		xrec.sentdate = 0;
+	else
+		(void)time(&xrec.sentdate);
+	d.dptr = (char *)&xrec;
+	d.dsize = sizeof(xrec);
 	store(k, d);
 }
-/*
-**  SENDMESSAGE -- send a message to a particular user.
-**
-**	Parameters:
-**		msgf -- filename containing the message.
-**		user -- user who should receive it.
-**
-**	Returns:
-**		none.
-**
-**	Side Effects:
-**		sends mail to 'user' using /usr/lib/sendmail.
-*/
 
-sendmessage(msgf, user, myname)
-	char *msgf;
-	char *user;
-	char *myname;
+/*
+ * sendmessage --
+ *	exec sendmail to send the vacation file to the user "user".
+ */
+static
+sendmessage(user, myname)
+	char	*user, *myname;
 {
-	FILE *f;
-
-	/* find the message to send */
-	f = freopen(msgf, "r", stdin);
-	if (f == NULL)
-	{
-		f = freopen("/usr/lib/vacation.def", "r", stdin);
-		if (f == NULL)
-			syserr("No message to send");
+	if (debug)
+		printf("sending {%s} to {%s}\n", VMSG, user);
+	else {
+		if (!freopen(VMSG, "r", stdin)) {
+			fputs("vacation: no message to send.\n", stderr);
+			exit(1);
+		}
+		execl("/usr/lib/sendmail", "sendmail", "-f", myname, user, NULL);
+		fputs("vacation: cannot exec /usr/lib/sendmail\n", stderr);
+		exit(1);
 	}
-
-	execl("/usr/lib/sendmail", "sendmail", "-f", myname, user, NULL);
-	syserr("Cannot exec /usr/lib/sendmail");
 }
-/*
-**  INITIALIZE -- initialize the database before leaving for vacation
-**
-**	Parameters:
-**		none.
-**
-**	Returns:
-**		none.
-**
-**	Side Effects:
-**		Initializes the files .vacation.{pag,dir} in the
-**		caller's home directory.
-*/
 
+/*
+ * initialize --
+ *	initialize the database
+ */
+static
 initialize()
 {
-	char *homedir;
-	char buf[MAXLINE];
-	extern char *getenv();
+	FILE	*fp;
+	int	fd;
 
-	setgid(getgid());
-	setuid(getuid());
-	homedir = getenv("HOME");
-	if (homedir == NULL)
-		syserr("No home!");
-	(void) strcpy(buf, homedir);
-	(void) strcat(buf, "/.vacation.dir");
-	if (close(creat(buf, 0644)) < 0)
-		syserr("Cannot create %s", buf);
-	(void) strcpy(buf, homedir);
-	(void) strcat(buf, "/.vacation.pag");
-	if (close(creat(buf, 0644)) < 0)
-		syserr("Cannot create %s", buf);
-}
-/*
-**  USRERR -- print user error
-**
-**	Parameters:
-**		f -- format.
-**		p -- first parameter.
-**
-**	Returns:
-**		none.
-**
-**	Side Effects:
-**		none.
-*/
-
-/* VARARGS 1 */
-usrerr(f, p)
-	char *f;
-	char *p;
-{
-	fprintf(stderr, "vacation: ");
-	_doprnt(f, &p, stderr);
-	fprintf(stderr, "\n");
-}
-/*
-**  SYSERR -- print system error
-**
-**	Parameters:
-**		f -- format.
-**		p -- first parameter.
-**
-**	Returns:
-**		none.
-**
-**	Side Effects:
-**		none.
-*/
-
-/* VARARGS 1 */
-syserr(f, p)
-	char *f;
-	char *p;
-{
-	fprintf(stderr, "vacation: ");
-	_doprnt(f, &p, stderr);
-	fprintf(stderr, "\n");
-	exit(EX_USAGE);
-}
-/*
-**  NEWSTR -- copy a string
-**
-**	Parameters:
-**		s -- the string to copy.
-**
-**	Returns:
-**		A copy of the string.
-**
-**	Side Effects:
-**		none.
-*/
-
-char *
-newstr(s)
-	char *s;
-{
-	char *p;
-	extern char *malloc();
-
-	p = malloc((unsigned)strlen(s) + 1);
-	if (p == NULL)
-	{
-		syserr("newstr: cannot alloc memory");
-		exit(EX_OSERR);
+	if ((fd = open(VDIR, O_WRONLY|O_CREAT|O_TRUNC, 0644)) < 0) {
+		perror("vacation: .vacation.dir");
+		exit(1);
 	}
-	strcpy(p, s);
+	(void)close(fd);
+	if ((fd = open(VPAG, O_WRONLY|O_CREAT|O_TRUNC, 0644)) < 0) {
+		perror("vacation: .vacation.page");
+		exit(1);
+	}
+	(void)close(fd);
+	dbminit(VACAT);
+	if (fp = fopen(VIGN, "r")) {
+		char	buf[MAXLINE];
+
+/* VARARGS 1 */
+		while (fgets(buf, sizeof(buf), fp)) {
+			*(index(buf, '\n')) = EOS;
+			setknows(buf, YES);
+		}
+		(void)fclose(fp);
+	}
 	return p;
 }
-/*
-**  SAMEWORD -- return TRUE if the words are the same
-**
-**	Ignores case.
-**
-**	Parameters:
-**		a, b -- the words to compare.
-**
-**	Returns:
-**		TRUE if a & b match exactly (modulo case)
-**		FALSE otherwise.
-**
-**	Side Effects:
-**		none.
-*/
 
-bool
-sameword(a, b)
-	register char *a, *b;
+/*
+ * usage --
+ *	print out a usage message and die
+ */
+static
+usage()
 {
-	char ca, cb;
-
-	do
-	{
-		ca = *a++;
-		cb = *b++;
-		if (isascii(ca) && isupper(ca))
-			ca = ca - 'A' + 'a';
-		if (isascii(cb) && isupper(cb))
-			cb = cb - 'A' + 'a';
-	} while (ca != '\0' && ca == cb);
-	return (ca == cb);
+	fputs("vacation [-i] username\n", stderr);
+	exit(1);
 }
