@@ -1,7 +1,7 @@
 #
 # cursor package maker
 #
-# @(#)Makefile	1.12 (Berkeley) %G%
+# @(#)Makefile	1.13 (Berkeley) %G%
 #
 HEADERS=curses.h unctrl.h curses.ext
 CFILES=	box.c clear.c initscr.c endwin.c mvprintw.c mvscanw.c mvwin.c \
@@ -25,7 +25,6 @@ POBJS=	box.p clear.p initscr.p endwin.p mvprintw.p mvscanw.p mvwin.p \
 	getch.p addstr.p addch.p move.p curses.p unctrl.p standout.p \
 	tstp.p insch.p delch.p
 
-
 CTAGS=	ctags
 CC=	cc
 LINT=	lint
@@ -36,6 +35,9 @@ LN=	ln
 CFL=	
 CFLAGS=	-O ${CFL}
 LDFLAGS=-n
+INSTALL=${DESTDIR}/usr/lib/libcurses.a ${DESTDIR}/usr/include/curses.h \
+	${DESTDIR}/usr/include/unctrl.h ${DESTDIR}/usr/lib/lint/llib-lcurses.ln
+
 .SUFFIXES: .p
 
 .c.p:
@@ -95,6 +97,18 @@ ar:
 llib-lcurses.ln: llib-lcurses
 	-(/lib/cpp -C -Dlint llib-lcurses | ${LPASS1} > llib-lcurses.ln ) 2>&1 | grep -v warning
 
-install:
+install: ${INSTALL}
+
+${DESTDIR}/usr/lib/libcurses.a: crlib
 	install -c crlib ${DESTDIR}/usr/lib/libcurses.a
 	ranlib ${DESTDIR}/usr/lib/libcurses.a
+
+${DESTDIR}/usr/include/curses.h: curses.h
+	install -c curses.h ${DESTDIR}/usr/include/
+
+${DESTDIR}/usr/include/unctrl.h: unctrl.h
+	install -c unctrl.h ${DESTDIR}/usr/include/
+
+${DESTDIR}/usr/lib/lint/llib-lcurses.ln: llib-lcurses.ln
+	install -c llib-lcurses ${DESTDIR}/usr/lib/lint
+	install -c llib-lcurses.ln ${DESTDIR}/usr/lib/lint
