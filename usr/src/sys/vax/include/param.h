@@ -3,19 +3,22 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)param.h	7.8 (Berkeley) %G%
+ *	@(#)param.h	7.9 (Berkeley) %G%
  */
 
-#ifndef ENDIAN
 /*
- * Machine dependent constants for vax.
+ * Machine dependent constants for VAX.
  */
 #define	MACHINE	"vax"
+
+#ifndef ENDIAN
+#include <machine/endian.h>
+#endif
 
 #define	CHAR_BIT	NBBY
 #define	CHAR_MAX	0x7f
 #define	CHAR_MIN	0x80
-#define	CLK_TCK		UNDEFINED_FOR_NOW
+#define	CLK_TCK		60			/* for times() */
 #define	INT_MAX		0x7fffffff
 #define	INT_MIN		0x80000000
 #define	LONG_MAX	0x7fffffff
@@ -29,31 +32,6 @@
 #define	ULONG_MAX	0xffffffff
 #define	USHRT_MAX	0xffff
 
-/*
- * Definitions for byte order,
- * according to byte significance from low address to high.
- */
-#define	LITTLE	1234		/* least-significant byte first (vax) */
-#define	BIG	4321		/* most-significant byte first */
-#define	PDP	3412		/* LSB first in word, MSW first in long (pdp) */
-#define	ENDIAN	LITTLE		/* byte order on vax */
-
-/*
- * Macros for network/external number representation conversion.
- */
-#if ENDIAN == BIG && !defined(lint)
-#define	ntohl(x)	(x)
-#define	ntohs(x)	(x)
-#define	htonl(x)	(x)
-#define	htons(x)	(x)
-#else
-unsigned short	ntohs(), htons();
-unsigned long	ntohl(), htonl();
-#endif
-
-#define	KERNBASE	0x80000000	/* start of kernel virtual */
-#define	BTOPKERNBASE	((u_long)KERNBASE >> PGSHIFT)
-
 #define	KERNBASE	0x80000000	/* start of kernel virtual */
 #define	BTOPKERNBASE	((u_long)KERNBASE >> PGSHIFT)
 
@@ -61,6 +39,9 @@ unsigned long	ntohl(), htonl();
 #define	PGOFSET		(NBPG-1)	/* byte offset into page */
 #define	PGSHIFT		9		/* LOG2(NBPG) */
 #define	NPTEPG		(NBPG/(sizeof (struct pte)))
+
+#define	KERNBASE	0x80000000	/* start of kernel virtual */
+#define	BTOPKERNBASE	((u_long)KERNBASE >> PGSHIFT)
 
 #ifndef SECSIZE
 #define	DEV_BSIZE	512
@@ -146,4 +127,3 @@ int	cpuspeed;
 #else KERNEL
 #define	DELAY(n)	{ register int N = (n); while (--N > 0); }
 #endif KERNEL
-#endif ENDIAN
