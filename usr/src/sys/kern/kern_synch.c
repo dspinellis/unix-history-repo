@@ -1,4 +1,4 @@
-/*	kern_synch.c	6.7	85/05/22	*/
+/*	kern_synch.c	6.7	85/05/27	*/
 
 #include "../machine/pte.h"
 
@@ -116,7 +116,10 @@ updatepri(p)
 
 #define SQSIZE 0100	/* Must be power of 2 */
 #define HASH(x)	(( (int) x >> 5) & (SQSIZE-1))
-struct proc *slpque[SQSIZE];
+struct slpque {
+	struct proc *sq_head;
+	struct proc **sq_tailp;
+} slpque[SQSIZE];
 
 /*
  * Give up the processor till a wakeup occurs
@@ -133,7 +136,8 @@ sleep(chan, pri)
 	caddr_t chan;
 	int pri;
 {
-	register struct proc *rp, **hp;
+	register struct proc *rp;
+	register struct slpque *qp;
 	register s;
 
 	rp = u.u_procp;
@@ -157,9 +161,12 @@ sleep(chan, pri)
 	rp->p_wchan = chan;
 	rp->p_slptime = 0;
 	rp->p_pri = pri;
-	hp = &slpque[HASH(chan)];
-	rp->p_link = *hp;
-	*hp = rp;
+	qp = &slpque[HASH(chan)];
+	if (qp->sq_head == 0)
+		qp->sq_head = rp;
+	else
+		*qp->sq_tailp = rp;
+	*(qp->sq_tailp = &rp->p_link) = 0;
 	if (pri > PZERO) {
 		if (ISSIG(rp)) {
 			if (rp->p_wchan)
@@ -203,15 +210,18 @@ psig:
 unsleep(p)
 	register struct proc *p;
 {
+	register struct slpque *qp;
 	register struct proc **hp;
-	register s;
+	int s;
 
 	s = splhigh();
 	if (p->p_wchan) {
-		hp = &slpque[HASH(p->p_wchan)];
+		hp = &(qp = &slpque[HASH(p->p_wchan)])->sq_head;
 		while (*hp != p)
 			hp = &(*hp)->p_link;
 		*hp = p->p_link;
+		if (qp->sq_tailp == &p->p_link)
+			qp->sq_tailp = hp;
 		p->p_wchan = 0;
 	}
 	splx(s);
@@ -223,13 +233,14 @@ unsleep(p)
 wakeup(chan)
 	register caddr_t chan;
 {
-	register struct proc *p, **q, **h;
+	register struct slpque *qp;
+	register struct proc *p, **q;
 	int s;
 
 	s = splhigh();
-	h = &slpque[HASH(chan)];
+	qp = &slpque[HASH(chan)];
 restart:
-	for (q = h; p = *q; ) {
+	for (q = &qp->sq_head; p = *q; ) {
 		if (p->p_rlink || p->p_stat != SSLEEP && p->p_stat != SSTOP)
 			panic("wakeup");
 		if (p->p_wchan==chan) {
@@ -237,6 +248,8 @@ restart:
 			*q = p->p_link;
 			if (p->p_slptime > 1)
 				updatepri(p);
+			if (qp->sq_tailp == &p->p_link)
+				qp->sq_tailp = q;
 			p->p_slptime = 0;
 			if (p->p_stat == SSLEEP) {
 				/* OPTIMIZED INLINE EXPANSION OF setrun(p) */
