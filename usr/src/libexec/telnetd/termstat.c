@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)termstat.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)termstat.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -14,13 +14,13 @@ static char sccsid[] = "@(#)termstat.c	5.8 (Berkeley) %G%";
 /*
  * local variables
  */
+int def_tspeed = -1, def_rspeed = -1;
+#ifdef	TIOCSWINSZ
+int def_row = 0, def_col = 0;
+#endif
 #ifdef	LINEMODE
 static int _terminit = 0;
-static int def_tspeed = -1, def_rspeed = -1;
-#ifdef	TIOCSWINSZ
-static int def_row = 0, def_col = 0;
-#endif
-#endif	LINEMODE
+#endif	/* LINEMODE */
 
 #if	defined(CRAY2) && defined(UNICOS5)
 int	newmap = 1;	/* nonzero if \n maps to ^M^J */
@@ -101,9 +101,11 @@ int	newmap = 1;	/* nonzero if \n maps to ^M^J */
  *	   then linemode is off, if server won't SGA, then linemode
  *	   is on.
  */
+	void
 localstat()
 {
 	void netflush();
+	int need_will_echo = 0;
 
 #if	defined(CRAY2) && defined(UNICOS5)
 	/*
@@ -111,7 +113,7 @@ localstat()
 	 * neighborhood.
 	 */
 	newmap = tty_isnewmap();
-#endif	defined(CRAY2) && defined(UNICOS5)
+#endif	/* defined(CRAY2) && defined(UNICOS5) */
 
 	/*
 	 * Check for state of BINARY options.
@@ -167,12 +169,20 @@ localstat()
 	 * client should do local echoing.  The state machine will
 	 * not send anything if it is unnecessary, so don't worry
 	 * about that here.
+	 *
+	 * If we need to send the WILL ECHO (because echo is off),
+	 * then delay that until after we have changed the MODE.
+	 * This way, when the user is turning off both editing
+	 * and echo, the client will get editing turned off first.
+	 * This keeps the client from going into encryption mode
+	 * and then right back out if it is doing auto-encryption
+	 * when passwords are being typed.
 	 */
 	if (uselinemode) {
 		if (tty_isecho())
 			send_wont(TELOPT_ECHO, 1);
 		else
-			send_will(TELOPT_ECHO, 1);
+			need_will_echo = 1;
 	}
 
 	/*
@@ -181,13 +191,14 @@ localstat()
 	 */
 	 if (!uselinemode && linemode) {
 # ifdef	KLUDGELINEMODE
-		if (lmodetype == REAL_LINEMODE)
+		if (lmodetype == REAL_LINEMODE) {
 # endif	/* KLUDGELINEMODE */
 			send_dont(TELOPT_LINEMODE, 1);
 # ifdef	KLUDGELINEMODE
-		else if (lmodetype == KLUDGE_LINEMODE)
+		} else if (lmodetype == KLUDGE_LINEMODE)
 			send_will(TELOPT_SGA, 1);
 # endif	/* KLUDGELINEMODE */
+		send_will(TELOPT_ECHO, 1);
 		linemode = uselinemode;
 		goto done;
 	}
@@ -271,10 +282,12 @@ localstat()
 		 */
 		start_slc(0);
 		check_slc();
-		end_slc(0);
+		(void) end_slc(0);
 	}
 
 done:
+	if (need_will_echo)
+		send_will(TELOPT_ECHO, 1);
 	/*
 	 * Some things should be deferred until after the pty state has
 	 * been set by the local process.  Do those things that have been
@@ -301,8 +314,9 @@ done:
  * at a time, and if using kludge linemode, then only linemode may be
  * affected.
  */
+	void
 clientstat(code, parm1, parm2)
-register int code, parm1, parm2;
+	register int code, parm1, parm2;
 {
 	void netflush();
 
@@ -354,7 +368,7 @@ register int code, parm1, parm2;
 				useeditmode = 0;
 				if (tty_isediting())
 					useeditmode |= MODE_EDIT;
-				if (tty_istrapsig())
+				if (tty_istrapsig)
 					useeditmode |= MODE_TRAPSIG;
 				if (tty_issofttab())
 					useeditmode |= MODE_SOFT_TAB;
@@ -391,6 +405,17 @@ register int code, parm1, parm2;
 		 useeditmode &= ~MODE_ACK;
 
 		 if (changed = (useeditmode ^ editmode)) {
+			/*
+			 * This check is for a timing problem.  If the
+			 * state of the tty has changed (due to the user
+			 * application) we need to process that info
+			 * before we write in the state contained in the
+			 * ack!!!  This gets out the new MODE request,
+			 * and when the ack to that command comes back
+			 * we'll set it and be in the right mode.
+			 */
+			if (ack)
+				localstat();
 			if (changed & MODE_EDIT)
 				tty_setedit(useeditmode & MODE_EDIT);
 
@@ -426,16 +451,15 @@ register int code, parm1, parm2;
 	    {
 		struct winsize ws;
 
+		def_col = parm1;
+		def_row = parm2;
 #ifdef	LINEMODE
 		/*
 		 * Defer changing window size until after terminal is
 		 * initialized.
 		 */
-		if (terminit() == 0) {
-			def_col = parm1;
-			def_row = parm2;
+		if (terminit() == 0)
 			return;
-		}
 #endif	/* LINEMODE */
 
 		/*
@@ -452,21 +476,23 @@ register int code, parm1, parm2;
 	
 	case TELOPT_TSPEED:
 	    {
+		def_tspeed = parm1;
+		def_rspeed = parm2;
 #ifdef	LINEMODE
 		/*
 		 * Defer changing the terminal speed.
 		 */
-		if (terminit() == 0) {
-			def_tspeed = parm1;
-			def_rspeed = parm2;
+		if (terminit() == 0)
 			return;
-		}
 #endif	/* LINEMODE */
 		/*
 		 * Change terminal speed as requested by client.
+		 * We set the receive speed first, so that if we can't
+		 * store seperate receive and transmit speeds, the transmit
+		 * speed will take precedence.
 		 */
-		tty_tspeed(parm1);
 		tty_rspeed(parm2);
+		tty_tspeed(parm1);
 		set_termbuf();
 
 		break;
@@ -490,11 +516,13 @@ register int code, parm1, parm2;
 }  /* end of clientstat */
 
 #if	defined(CRAY2) && defined(UNICOS5)
+	void
 termstat()
 {
 	needtermstat = 1;
 }
 
+	void
 _termstat()
 {
 	needtermstat = 0;
@@ -513,6 +541,7 @@ _termstat()
  * function is called when the pty state has been processed for the first time. 
  * It calls other functions that do things that were deferred in each module.
  */
+	void
 defer_terminit()
 {
 
@@ -528,6 +557,7 @@ defer_terminit()
 	if (def_col || def_row) {
 		struct winsize ws;
 
+		bzero((char *)&ws, sizeof(ws));
 		ws.ws_col = def_col;
 		ws.ws_row = def_row;
 		(void) ioctl(pty, TIOCSWINSZ, (char *)&ws);
@@ -546,7 +576,8 @@ defer_terminit()
  *
  * Returns true if the pty state has been processed yet.
  */
-int terminit()
+	int
+terminit()
 {
 	return _terminit;
 

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)slc.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)slc.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -26,6 +26,7 @@ static unsigned char	slcbuf[NSLC*6];	/* buffer for slc negotiation */
  *
  * Write out the current special characters to the client.
  */
+	void
 send_slc()
 {
 	register int i;
@@ -49,6 +50,7 @@ send_slc()
  *
  * Set pty special characters to all the defaults.
  */
+	void
 default_slc()
 {
 	register int i;
@@ -66,13 +68,14 @@ default_slc()
 	slcchange = 1;
 
 }  /* end of default_slc */
-#endif	LINEMODE
+#endif	/* LINEMODE */
 
 /*
  * get_slc_defaults
  *
  * Initialize the slc mapping table.
  */
+	void
 get_slc_defaults()
 {
 	register int i;
@@ -94,15 +97,16 @@ get_slc_defaults()
  *
  * Add an slc triplet to the slc buffer.
  */
+	void
 add_slc(func, flag, val)
-	register unsigned char func, flag;
-	cc_t val;
+	register char func, flag;
+	register cc_t val;
 {
 
-	if ((*slcptr++ = func) == 0xff)
+	if ((*slcptr++ = (unsigned char)func) == 0xff)
 		*slcptr++ = 0xff;
 
-	if ((*slcptr++ = flag) == 0xff)
+	if ((*slcptr++ = (unsigned char)flag) == 0xff)
 		*slcptr++ = 0xff;
 
 	if ((*slcptr++ = (unsigned char)val) == 0xff)
@@ -118,6 +122,7 @@ add_slc(func, flag, val)
  * The parameter getit is non-zero if it is necessary to grab a copy
  * of the terminal control structures.
  */
+	void
 start_slc(getit)
 	register int getit;
 {
@@ -125,8 +130,8 @@ start_slc(getit)
 	slcchange = 0;
 	if (getit)
 		init_termbuf();
-	(void) sprintf((char *)slcbuf,
-	    "%c%c%c%c", IAC, SB, TELOPT_LINEMODE, LM_SLC);
+	(void) sprintf((char *)slcbuf, "%c%c%c%c",
+					IAC, SB, TELOPT_LINEMODE, LM_SLC);
 	slcptr = slcbuf + 4;
 
 }  /* end of start_slc */
@@ -136,8 +141,9 @@ start_slc(getit)
  *
  * Finish up the slc negotiation.  If something to send, then send it.
  */
+	int
 end_slc(bufp)
-register unsigned char **bufp;
+	register unsigned char **bufp;
 {
 	register int len;
 	void netflush();
@@ -157,7 +163,7 @@ register unsigned char **bufp;
 	 * request very soon.
 	 */
 	if (def_slcbuf && (terminit() == 0)) {
-		return;
+		return(0);
 	}
 
 	if (slcptr > (slcbuf + 4)) {
@@ -172,6 +178,7 @@ register unsigned char **bufp;
 			netflush();  /* force it out immediately */
 		}
 	}
+	return (0);
 
 }  /* end of end_slc */
 
@@ -180,9 +187,10 @@ register unsigned char **bufp;
  *
  * Figure out what to do about the client's slc
  */
+	void
 process_slc(func, flag, val)
 	register unsigned char func, flag;
-	cc_t val;
+	register cc_t val;
 {
 	register int hislevel, mylevel, ack;
 
@@ -202,9 +210,9 @@ process_slc(func, flag, val)
 	if (func == 0) {
 		if ((flag = flag & SLC_LEVELBITS) == SLC_DEFAULT) {
 			default_slc();
-			send_slc(1);
+			send_slc();
 		} else if (flag == SLC_VARIABLE) {
-			send_slc(0);
+			send_slc();
 		}
 		return;
 	}
@@ -245,9 +253,10 @@ process_slc(func, flag, val)
  * Process a request to change one of our special characters.
  * Compare client's request with what we are capable of supporting.
  */
+	void
 change_slc(func, flag, val)
-	register unsigned char func, flag;
-	cc_t val;
+	register char func, flag;
+	register cc_t val;
 {
 	register int hislevel, mylevel;
 	
@@ -355,6 +364,7 @@ cc_t oldeofc = '\004';
  * likely to have changed.  If a local change occurs, kick the support level
  * and flags up to the defaults.
  */
+	void
 check_slc()
 {
 	register int i;
@@ -398,14 +408,14 @@ check_slc()
  *
  * ptr points to the beginning of the buffer, len is the length.
  */
+	void
 do_opt_slc(ptr, len)
-register char *ptr;
-register int len;
+	register unsigned char *ptr;
+	register int len;
 {
 	register unsigned char func, flag;
 	cc_t val;
-	register char *end = (char *)(ptr + len);
-	char *malloc();
+	register unsigned char *end = ptr + len;
 
 	if (terminit()) {  /* go ahead */
 		while (ptr < end) {
@@ -439,12 +449,13 @@ register int len;
  *
  * Do slc stuff that was deferred.
  */
+	void
 deferslc()
 {
 	if (def_slcbuf) {
 		start_slc(1);
 		do_opt_slc(def_slcbuf, def_slclen);
-		end_slc(0);
+		(void) end_slc(0);
 		free(def_slcbuf);
 		def_slcbuf = (unsigned char *)0;
 		def_slclen = 0;
