@@ -1,4 +1,4 @@
-/*	dip.c	1.8	(Berkeley)	84/04/13
+/*	dip.c	1.8	(Berkeley)	84/04/17
  *	dip
  *	driver for impress/imagen canon laser printer
  */
@@ -9,6 +9,7 @@ all numbers are character strings
 
 sn	size in points
 fn	font as number from 1-n
+in	stipple `font' as number from 1-n
 cx	ascii character x
 Cxyz	funny char xyz. terminated by white space
 Hn	go to absolute horizontal position n
@@ -19,11 +20,15 @@ nnc	move right nn, then print c (exactly 2 digits!)
 		(this wart is an optimization that shrinks output file size
 		 about 35% and run-time about 15% while preserving ascii-ness)
 Dt ...\n	draw operation 't':
+	Dt d		line thickness set to d
+	Ds d		line style (coordinate bit map) set to d
 	Dl x y		line from here by x,y
 	Dc d		circle of diameter d with left side here
 	De x y		ellipse of axes x,y with left side here
 	Da x y r	arc counter-clockwise by x,y of radius r
 	D~ x y x y ...	wiggly line by x,y then x,y ...
+	Dg x y x y ...	gremlin spline by x,y then x,y ...
+	Dp s x y ...	polygon filled with s by x,y then ...
 nb a	end of line (information only -- no action needed)
 	b = space before line, a = after
 pn	new page begins -- set v to 0
@@ -61,7 +66,7 @@ x ...\n	device control functions:
 
 #define	FATAL	1
 #define	BMASK	0377
-#define	NFONT	30		/* maximum forever */
+#define	NFONT	35		/* maximum forever */
 
 #ifndef FONTDIR
 #define FONTDIR	"/usr/lib/font";
@@ -93,6 +98,7 @@ struct font *fontbase[NFONT+1];
 short *	pstab;
 int	nsizes = 1;
 int	nfonts;
+int	nstips;
 int	nchtab;
 char *	chname;
 short *	chtab;
@@ -115,6 +121,7 @@ int	maxglyph= MEMSIZE - BUFFER;		/* maximum space for glyphs */
 
 int	size = 1;
 int	font = 1;
+int	stip = 1;
 int	family;
 int	hpos;		/* current horizontal position (left = 0) */
 int	vpos;		/* current vertical position (down positive) */
@@ -125,6 +132,8 @@ extern int style;		/*   and type (SOLID, DOTTED, . . . ) */
 typedef struct {
 	int	font;
 	int	size;
+	short	first;
+	short	last;
 	unsigned char chused[CHARRAY];	/* test array - character downloaded? */
 	glyph_dir *glyph;		/* array of character descriptions */
 	unsigned char *cdp;		/* char data pointer */
@@ -138,6 +147,8 @@ int	lastfont	= -1;
 int	lastx		= -1;
 int	lasty		= -1;
 int	lastfam		= -1;
+int	laststip	= -1;
+int	laststipmem	= -1;
 
 
 
@@ -319,6 +330,14 @@ register FILE *fp;
 				sscanf(buf+1, "%d %d %d %d", &n, &m, &n1, &m1);
 				drawarc(n, m, n1, m1);
 				break;
+			case 'p':	/* polygon */
+				sscanf(buf+1, "%d", &m);/* get stipple */
+				n = 1;			/* number first */
+				while (buf[++n] == ' ');
+				while (isdigit(buf[n])) n++;
+				setfill(m);		/* set up stipple */
+				drawwig(buf+n, fp, -1);	/* draw polygon */
+				break;
 			case 'g':	/* gremlin curve */
 				drawwig(buf+1, fp, 0);
 				break;
@@ -345,6 +364,10 @@ register FILE *fp;
 		case 'f':
 			fscanf(fp, "%s", str);
 			setfont(t_font(str));
+			break;
+		case 'i':
+			fscanf(fp, "%d", &n);
+			setstip(n);
 			break;
 		case 'H':	/* absolute horizontal motion */
 			/* fscanf(fp, "%d", &n); */
@@ -410,7 +433,7 @@ FILE *fp;		/* returns -1 upon "stop" command */
 	switch (str[0]) {	/* crude for now */
 	case 'i':	/* initialize */
 		fileinit();
-		t_init(0);
+		t_init();
 		break;
 	case 'T':	/* device name */
 	case 't':	/* trailer */
@@ -466,6 +489,7 @@ fileinit()	/* read in font and code files, etc. */
 		error(FATAL, "can't open tables for %s", temp);
 	read(fin, &dev, sizeof(struct dev));
 	nfonts = dev.nfonts;
+	nstips = dev.nstips;
 	nsizes = dev.nsizes;
 	nchtab = dev.nchtab;
 	filebase = malloc(dev.filesize);	/* enough room for whole file */
@@ -486,6 +510,11 @@ fileinit()	/* read in font and code files, etc. */
 #ifdef DEBUGABLE
 		if (dbg > 1) fontprint(i);
 #endif
+	}
+	for (i = 1; i <= nstips; i++) {		/* add in Stipple "filenames" */
+		if (nfonts + i <= NFONT)
+		    t_fp(nfonts + i, p, (char *)0);
+		p += strlen(p) + 1;
 	}
 	fontbase[0] = NULL;
 	close(fin);				/* no fonts loaded yet */
@@ -575,12 +604,9 @@ char *s;
 }
 
 
-t_init(reinit)	/* initialize device */
-int reinit;
+t_init()	/* initialize device */
 {
-	if (! reinit) {
-		drawthick(3);		/* set the line thickness parameter */
-	}
+	drawthick(3);		/* set the line thickness parameter */
 	hpos = vpos = 0;
 	setsize(t_size(10));	/* start somewhere */
 }
@@ -619,7 +645,7 @@ t_page(pg)	/* do whatever new page functions */
 	    }
 	}
 	lastx = lasty = -1;
-	t_init(1);
+	hpos = vpos = 0;
 }
 
 
@@ -629,7 +655,7 @@ int n;
 	int i;
 
 	if (n <= pstab[0])
-		return(1);
+		return(0);
 	else if (n >= pstab[nsizes-1])
 		return(nsizes-1);
 	for (i = 0; n > pstab[i]; i++)
@@ -790,9 +816,20 @@ int n;
 {
 	if (!output)
 		return;
-	if (n < 0 || n > NFONT)
+	if (n < 0 || n > nfonts)
 		error(FATAL, "illegal font %d", n);
 	font = n;
+}
+
+
+setstip(n)	/* set stipple "font" to n */
+int n;
+{
+	if (!output)
+		return;
+	if (n < 1 || n > nstips)
+		error(FATAL, "illegal stipple %d", n);
+	stip = n;
 }
 
 
@@ -858,7 +895,6 @@ int s;
 	register int fam;
 	register int bitbase;
 	register glyph_dir *maxgp;
-	register glyph_dir *mingp;
 	register glyph_dir *gp;
 	preamble p;
 
@@ -891,15 +927,16 @@ int s;
 	if (p.p_version)
 		error(FATAL, "wrong version of Font file: %s.", name);
 	p.p_glyph = rd3(fd);
-	p.p_first = rd2(fd);
-	p.p_last = rd2(fd);
+	fs->first = p.p_first = rd2(fd);
+	fs->last = p.p_last = rd2(fd);
 				/* skip rest of preamble */
 	i = p.p_glyph - 18;
 	while (i--) getc(fd);
 	fs->glyph = (glyph_dir *)	/* allocate first */
 		((char *) malloc((p.p_last - p.p_first + 1) * sizeof(glyph_dir))
 		- (char *) (p.p_first * sizeof(glyph_dir)));
-	mingp = maxgp = gp = &(fs->glyph[p.p_first]);
+	maxgp = gp = &(fs->glyph[p.p_first]);
+	bitbase = maxgp->g_bitp;
 	for (i = p.p_first; i++ <= p.p_last; gp++) {
 	    gp->g_height = rd2(fd);
 	    gp->g_width = rd2(fd);
@@ -907,11 +944,11 @@ int s;
 	    gp->g_left = rd2(fd);
 	    gp->g_pwidth = rd4(fd);
 	    if ((gp->g_bitp = rd3(fd)) > maxgp->g_bitp)	/* find the glyphs */
-		maxgp = gp;				/* farthest and */
-	    else if(gp->g_bitp < mingp->g_bitp)		/* nearest to the */
-		mingp = gp;				/* start of the file */
+		maxgp = gp;				/* farthest from and */
+	    else if(gp->g_bitp < bitbase)		/* nearest to the */
+		bitbase = gp->g_bitp;			/* start of the file */
 	}
-	bitbase = mingp->g_bitp;	/* remove file offset in bit pointers */
+					/* remove file offset in bit pointers */
 	for (gp = fs->glyph, i = p.p_first; i++ <= p.p_last; gp++)
 	    gp->g_bitp -= bitbase;
 
@@ -926,6 +963,61 @@ int s;
 	fs->font = f;
 	for (i = 0; i < CHARRAY; fs->chused[i++] = 0);
 	return (fam);
+}
+
+
+/*----------------------------------------------------------------------------*
+ | Routine:	setfill(stipple_number)
+ |
+ | Results:	sends the appropriate command to set the fill-pattern
+ |		for a particular stipple.  Sends the glyph if necessary,
+ |		and does nothing if the pattern is the same.  Takes stipple
+ |		font from current "stip" number.
+ *----------------------------------------------------------------------------*/
+
+setfill(number)
+register int number;
+{
+	register int fam;
+	register int gsize;
+	register glyph_dir *par;
+	register unsigned char *p;
+	register fontset *savefs;
+
+	if (stip == laststip && number == laststipmem)
+		return;
+
+	savefs = fs;			/* getfontdata sets fs, so we have to */
+					/* save it before calling getfontdata */
+	fam = getfontdata(nfonts + stip, nsizes);
+	laststip = stip;
+	laststipmem = number;		/* must be set before call to polygon */
+
+	if (!number || number < fs->first || number > fs->last) {
+		fs = savefs;		/* forget it if it's out of range */
+		laststipmem = 0;	/* force NO stipple */
+		return;
+	}
+	if (fs->chused[number] == 0) {		/* stipple not down-loaded */
+		totglyph += glspace(par = &(fs->glyph[number]));
+		putc(ABGLY, tf);
+		putint((fam << 7) | number, tf);
+ 		putint(par->g_pwidth, tf);
+		putint(par->g_width, tf);
+		putint(par->g_left, tf);
+		putint(par->g_height, tf);
+		putint(par->g_up, tf);
+		gsize = ((par->g_width + 7)/8) * par->g_height;
+		p = fs->cdp + par->g_bitp;
+		while (gsize--)
+			putc(*p++, tf);
+	}
+						/* mark that it's been used */
+	if (fs->chused[number] != BMASK)
+		fs->chused[number]++;
+	putc(ASTEXTURE, tf);			/* set the texture */
+	putint((fam << 7) | number, tf);
+	fs = savefs;				/* return fs to proper spot */
 }
 
 
@@ -957,7 +1049,6 @@ register int c;
 
 	if (fs->chused[c] == 0) {	/* 1st use of this character */
 		totglyph += glspace(par);
-		if ((fs->chused[c])++ == BMASK) fs->chused[c] = BMASK;
 		putc(ABGLY, tf);
 		putint((family << 7) | c, tf);
  		putint(lastw, tf);		/* use troff's width, not */
@@ -969,7 +1060,9 @@ register int c;
 		while (gsize--)
 			putc(*p++, tf);
 	}
-
+					/* note that character's been used */
+	if (fs->chused[c] != BMASK)
+		fs->chused[c]++;
 	hvflush();
 	putc(c, tf);		/* guaranteed to be in range */
 	lastx += lastw;		/* take account of the automatic advance */
