@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)callproc.c 1.1 %G%";
+static char sccsid[] = "@(#)callproc.c 1.2 %G%";
 
 /*
  * Evaluate a call to a procedure.
@@ -47,8 +47,8 @@ NODE *arglist;
 	if (!isblock(proc)) {
 		error("\"%s\" is not a procedure or function", proc->symbol);
 	}
-	pushenv(proc->symvalue.funcv.codeloc);
 	pushargs(proc, arglist);
+	pushenv(proc->symvalue.funcv.codeloc);
 	pushframe(proc->blkno);
 	execute(proc);
 	/* NOTREACHED */
