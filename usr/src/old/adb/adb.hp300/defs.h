@@ -9,6 +9,7 @@
 #ifdef NEWVM
 typedef	unsigned long Ooff_t;
 #define	off_t Ooff_t
+#define lseek Lseek
 #include <hp300/pte.h>
 #else
 #include <machine/pte.h>
