@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	3.13 83/11/02";
+static	char *sccsid = "@(#)main.c	3.14 83/12/06";
 #endif
 
 #include "defs.h"
@@ -85,6 +85,7 @@ char **argv;
 		Waputc(0, WINVERSE|WBUF, cmdwin->ww_win);
 	wwflush();
 	(void) signal(SIGCHLD, wwchild);
+	setvars();
 	if (fflag)
 		incmd = 1;
 	else {
