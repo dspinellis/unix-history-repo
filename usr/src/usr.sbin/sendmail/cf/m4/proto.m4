@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.15 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.16 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -276,7 +276,7 @@ OT`'confMESSAGE_TIMEOUT
 #  if defined but null, use TZ envariable passed in
 #  if defined and non-null, use that info
 ifelse(confTIME_ZONE, `USE_SYSTEM', `#Ot',
-	confTIME_ZONE, `USE_TZ', `',
+	confTIME_ZONE, `USE_TZ', `Ot',
 	`Ot`'confTIME_ZONE')
 
 # default UID
