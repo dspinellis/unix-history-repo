@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)more.1	6.2 (Berkeley) %G%
+.\"	@(#)more.1	6.3 (Berkeley) %G%
 .\"
 .TH MORE 1 ""
 .UC 4
@@ -318,8 +318,6 @@ in previewing
 output would be
 .PP
 	nroff \-ms +2 doc.n | more -s
-.SH AUTHOR
-Eric Shienbrood, minor revisions by John Foderaro and Geoffrey Peck
 .SH FILES
 .DT
 /etc/termcap		Terminal data base
@@ -327,3 +325,5 @@ Eric Shienbrood, minor revisions by John Foderaro and Geoffrey Peck
 /usr/lib/more.help	Help file
 .SH "SEE ALSO"
 csh(1), man(1), msgs(1), script(1), sh(1), environ(7)
+.SH BUGS
+Skipping backwards is too slow on large files.
