@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_data.c	7.9 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_data.c	7.10 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -40,7 +40,8 @@ char	shell[ONMSZ] =
 	{ '/', 'b', 'i', 'n', '/', 's', 'h' };
 char	tags[ONMSZ] = {
 	't', 'a', 'g', 's', ' ',
-	'/', 'v', 'a', 'r', '/', 'd', 'b', '/', 't', 'a', 'g', 's'
+	'/', 'v', 'a', 'r', '/', 'd', 'b', '/', 'l', 'i', 'b', 'c', '.',
+	    't', 'a', 'g', 's'
 };
 char	ttytype[ONMSZ] =
 	{ 'd', 'u', 'm', 'b' };
