@@ -1,5 +1,5 @@
 #ifndef LINT
-static char *sccsid="@(#)showtc.c	1.4	(Berkeley) %G%";
+static char *sccsid="@(#)showtc.c	1.5	(Berkeley) %G%";
 #endif
 
 /*
@@ -40,7 +40,7 @@ struct TcName {
 	long	file_pos;
 } tcNames[NOENTRIES];
 
-#define NOCAPS	95
+#define NOCAPS	97
 
 struct Caps {
 	char	*cap;
@@ -75,10 +75,12 @@ struct Caps {
 	"dm",	"Start Delete mode",
 	"dN",	"Number of millisec of nl delay needed",
 	"do",	"Down one line",
+	"ds",	"Disable status display",
 	"dT",	"Number of millisec of tab delay needed",
 	"ed",	"End delete mode",
 	"ei",	"End insert mode;give \":ei=:\" if ic",
 	"eo",	"Can erase overstrikes with a blank",
+	"es",	"Escape seq's ok on status line",
 	"ff",	"Hardcopy page eject (default ^L)",
 	"fs",	"From status line sequence",
 	"hc",	"Hardcopy terminal",
@@ -93,7 +95,7 @@ struct Caps {
 	"in",	"Insert mode distinguishes nulls on display",
 	"ip",	"Insert pad after character inserted",
 	"is",	"Initialization string",
-	"i2",	"Alternate initialization string",
+	"i2",	"Initialization string (used by sysline(1))",
 	"kb",	"Sent by backspace key",
 	"kd",	"Sent down arrow key",
 	"ke",	"Out of \"keypad transmit\" mode",
