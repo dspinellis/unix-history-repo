@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)rexec.3	6.4 (Berkeley) %G%
+.\"	@(#)rexec.3	6.5 (Berkeley) %G%
 .\"
 .TH REXEC 3 ""
 .UC 5
@@ -45,7 +45,8 @@ necessary port.
 The protocol for connection is described in detail in
 .IR rexecd (8C).
 .PP
-If the call succeeds, a socket of type SOCK_STREAM is returned to
+If the connection succeeds,
+a socket in the Internet domain of type SOCK_STREAM is returned to
 the caller, and given to the remote command as
 .B stdin
 and
