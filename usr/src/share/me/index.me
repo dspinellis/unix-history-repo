@@ -1,8 +1,9 @@
 .nr _0 \n(c.
-.\"	@(#)index.me	2.2	%G%
+.\"	@(#)index.me	2.3	%G%
 .\"	%beginstrip%
 .de (x			\" *** begin index entry
-.ie "\\n(.z"" \
+.ie !"\\n(.z"" \!.(x \\$1
+.el \
 \{\
 .	ds |X x
 .	if \\n(.$ \
@@ -10,7 +11,6 @@
 .	am %\\*(|X )x
 .	sp \\n(xsu
 .\}
-.el \!.(x \\$1
 ..
 .de )x			\" *** end index entry
 .ie "\\n(.z"" \
