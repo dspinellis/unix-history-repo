@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)dirs.c	3.10	(Berkeley)	83/05/14";
+static char sccsid[] = "@(#)dirs.c	3.11	(Berkeley)	83/05/19";
 #endif
 
 #include "restore.h"
@@ -44,6 +44,8 @@ static DIR	*dirp;
 static char	dirfile[32] = "#";	/* No file */
 static char	modefile[32] = "#";	/* No file */
 extern ino_t	search();
+struct direct 	*rst_readdir();
+extern void 	rst_seekdir();
 
 /*
  * Format of old style directories.
@@ -178,10 +180,10 @@ treescan(pname, ino, todo)
 	(void) strncpy(locname, pname, MAXPATHLEN);
 	(void) strncat(locname, "/", MAXPATHLEN);
 	namelen = strlen(locname);
-	seekdir(dirp, itp->t_seekpt, itp->t_seekpt);
-	dp = readdir(dirp); /* "." */
+	rst_seekdir(dirp, itp->t_seekpt, itp->t_seekpt);
+	dp = rst_readdir(dirp); /* "." */
 	if (dp != NULL && strcmp(dp->d_name, ".") == 0) {
-		dp = readdir(dirp); /* ".." */
+		dp = rst_readdir(dirp); /* ".." */
 	} else {
 		np = lookupino(ino);
 		if (np == NULL)
@@ -189,7 +191,7 @@ treescan(pname, ino, todo)
 		fprintf(stderr, ". missing from directory %s\n", myname(np));
 	}
 	if (dp != NULL && strcmp(dp->d_name, "..") == 0) {
-		dp = readdir(dirp); /* first real entry */
+		dp = rst_readdir(dirp); /* first real entry */
 	} else {
 		np = lookupino(ino);
 		if (np == NULL)
@@ -208,9 +210,9 @@ treescan(pname, ino, todo)
 		} else {
 			(void) strncat(locname, dp->d_name, (int)dp->d_namlen);
 			treescan(locname, dp->d_ino, todo);
-			seekdir(dirp, bpt, itp->t_seekpt);
+			rst_seekdir(dirp, bpt, itp->t_seekpt);
 		}
-		dp = readdir(dirp);
+		dp = rst_readdir(dirp);
 		bpt = telldir(dirp);
 	}
 	if (dp == NULL)
@@ -267,10 +269,10 @@ search(inum, cp)
 	itp = inotablookup(inum);
 	if (itp == NULL)
 		return(0);
-	seekdir(dirp, itp->t_seekpt, itp->t_seekpt);
+	rst_seekdir(dirp, itp->t_seekpt, itp->t_seekpt);
 	len = strlen(cp);
 	do {
-		dp = readdir(dirp);
+		dp = rst_readdir(dirp);
 		if (dp == NULL || dp->d_ino == 0)
 			return (0);
 	} while (dp->d_namlen != len || strncmp(dp->d_name, cp, len) != 0);
@@ -364,13 +366,13 @@ dcvt(odp, ndp)
 
 /*
  * Seek to an entry in a directory.
- * Only values returned by ``telldir'' should be passed to seekdir.
+ * Only values returned by ``telldir'' should be passed to rst_seekdir.
  * This routine handles many directories in a single file.
  * It takes the base of the directory in the file, plus
  * the desired seek offset into it.
  */
 void
-seekdir(dirp, loc, base)
+rst_seekdir(dirp, loc, base)
 	register DIR *dirp;
 	daddr_t loc, base;
 {
@@ -379,7 +381,7 @@ seekdir(dirp, loc, base)
 		return;
 	loc -= base;
 	if (loc < 0)
-		fprintf(stderr, "bad seek pointer to seekdir %d\n", loc);
+		fprintf(stderr, "bad seek pointer to rst_seekdir %d\n", loc);
 	(void) lseek(dirp->dd_fd, base + (loc & ~(DIRBLKSIZ - 1)), 0);
 	dirp->dd_loc = loc & (DIRBLKSIZ - 1);
 	if (dirp->dd_loc != 0)
@@ -390,7 +392,7 @@ seekdir(dirp, loc, base)
  * get next entry in a directory.
  */
 struct direct *
-readdir(dirp)
+rst_readdir(dirp)
 	register DIR *dirp;
 {
 	register struct direct *dp;
@@ -418,7 +420,7 @@ readdir(dirp)
 		dirp->dd_loc += dp->d_reclen;
 		if (dp->d_ino == 0 && strcmp(dp->d_name, "/") != 0)
 			continue;
-		if (dp->d_ino < 0 || dp->d_ino >= maxino) {
+		if (dp->d_ino >= maxino) {
 			dprintf(stderr, "corrupted directory: bad inum %d\n",
 				dp->d_ino);
 			continue;
@@ -480,10 +482,12 @@ genliteraldir(name, ino)
 	if (itp == NULL)
 		panic("Cannot find directory inode %d named %s\n", ino, name);
 	if ((ofile = open(name, FWRONLY|FCREATE, 0666)) < 0) {
-		fprintf(stderr, "%s: cannot create file\n", name);
+		fprintf(stderr, "%s: ", name);
+		(void) fflush(stderr);
+		perror("cannot create file");
 		return (FAIL);
 	}
-	seekdir(dirp, itp->t_seekpt, itp->t_seekpt);
+	rst_seekdir(dirp, itp->t_seekpt, itp->t_seekpt);
 	dp = dup(dirp->dd_fd);
 	for (i = itp->t_size; i > 0; i -= BUFSIZ) {
 		size = i < BUFSIZ ? i : BUFSIZ;
@@ -526,7 +530,7 @@ printlist(name, ino)
 		dfp0 = &single;
 		dfplast = dfp0 + 1;
 	} else {
-		seekdir(dirp, itp->t_seekpt, itp->t_seekpt);
+		rst_seekdir(dirp, itp->t_seekpt, itp->t_seekpt);
 		if (getdir(dirp, &dfp0, &dfplast) == FAIL)
 			return;
 	}
@@ -553,7 +557,7 @@ getdir(dirp, pfp0, pfplast)
 			sizeof (struct afile));
 	fp = *pfp0 = basefp;
 	*pfplast = *pfp0 + nent;
-	while (dp = readdir(dirp)) {
+	while (dp = rst_readdir(dirp)) {
 		if (dp == NULL || dp->d_ino == 0)
 			break;
 		if (!dflag && BIT(dp->d_ino, dumpmap) == 0)

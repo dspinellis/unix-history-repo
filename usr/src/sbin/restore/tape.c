@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	3.16	(Berkeley)	83/05/14";
+static char sccsid[] = "@(#)tape.c	3.17	(Berkeley)	83/05/19";
 #endif
 
 #include "restore.h"
@@ -34,10 +34,12 @@ static int	pathlen;
 setinput(source)
 	char *source;
 {
+#ifdef RRESTORE
 	char *host;
+#endif RRESTORE
 
 	terminal = stdin;
-#ifdef RRESTOR
+#ifdef RRESTORE
 	host = source;
 	magtape = index(host, ':');
 	if (magtape == 0) {
@@ -63,7 +65,7 @@ nohost:
 		pipein++;
 	}
 	magtape = source;
-#endif RRESTOR
+#endif RRESTORE
 }
 
 /*
@@ -78,7 +80,7 @@ setup()
 	extern int xtrmap(), xtrmapskip();
 
 	vprintf(stdout, "Verify tape and initialize maps\n");
-#ifdef RRESTOR
+#ifdef RRESTORE
 	if ((mt = rmtopen(magtape, 0)) < 0)
 #else
 	if (pipein)
@@ -86,7 +88,7 @@ setup()
 	else if ((mt = open(magtape, 0)) < 0)
 #endif
 	{
-		fprintf(stderr, "%s: cannot open tape\n", magtape);
+		perror(magtape);
 		done(1);
 	}
 	volno = 1;
@@ -119,7 +121,7 @@ setup()
 	dumptime = spcl.c_ddate;
 	dumpdate = spcl.c_date;
 	if (stat(".", &stbuf) < 0) {
-		fprintf(stderr, "cannot stat .\n");
+		perror("cannot stat .");
 		done(1);
 	}
 	fssize = stbuf.st_blksize;
@@ -202,7 +204,7 @@ again:
 	(void) fflush(stderr);
 	while (getc(terminal) != '\n')
 		;
-#ifdef RRESTOR
+#ifdef RRESTORE
 	if ((mt = rmtopen(magtape, 0)) == -1)
 #else
 	if ((mt = open(magtape, 0)) == -1)
@@ -262,7 +264,7 @@ setdumpnum()
 	}
 	tcom.mt_op = MTFSF;
 	tcom.mt_count = dumpnum - 1;
-#ifdef RRESTOR
+#ifdef RRESTORE
 	rmtioctl(MTFSF, dumpnum - 1);
 #else
 	if (ioctl(mt, (int)MTIOCTOP, (char *)&tcom) < 0)
@@ -310,8 +312,9 @@ extractfile(name)
 			vprintf(stdout,
 			    "%s: zero length symbolic link (ignored)\n", name);
 		} else if (symlink(lnkbuf, name) < 0) {
-			fprintf(stderr, "%s: cannot create symbolic link\n",
-			    name);
+			fprintf(stderr, "%s: ", name);
+			(void) fflush(stderr);
+			perror("cannot create symbolic link");
 			return (FAIL);
 		} else
 			vprintf(stdout, "extract symbolic link %s\n", name);
@@ -321,8 +324,9 @@ extractfile(name)
 	case IFBLK:
 		vprintf(stdout, "extract special file %s\n", name);
 		if (mknod(name, mode, (int)curfile.dip->di_rdev) < 0) {
-			fprintf(stderr, "%s: cannot create special file\n",
-			    name);
+			fprintf(stderr, "%s: ", name);
+			(void) fflush(stderr);
+			perror("cannot create special file");
 			skipfile();
 			return (FAIL);
 		}
@@ -335,7 +339,9 @@ extractfile(name)
 	case IFREG:
 		vprintf(stdout, "extract file %s\n", name);
 		if ((ofile = open(name, FWRONLY|FCREATE, 0666)) < 0) {
-			fprintf(stderr, "%s: cannot create file\n", name);
+			fprintf(stderr, "%s: ", name);
+			(void) fflush(stderr);
+			perror("cannot create file");
 			skipfile();
 			return (FAIL);
 		}
@@ -527,7 +533,7 @@ readtape(b)
 		cnt = NTREC*TP_BSIZE;
 		rd = 0;
 	getmore:
-#ifdef RRESTOR
+#ifdef RRESTORE
 		i = rmtread(&tbf[rd], cnt);
 #else
 		i = read(mt, &tbf[rd], cnt);
@@ -563,13 +569,13 @@ readtape(b)
 				done(1);
 			i = NTREC*TP_BSIZE;
 			bzero(tbf, i);
-#ifdef RRESTOR
+#ifdef RRESTORE
 			if (rmtseek(i, 1) < 0)
 #else
 			if (lseek(mt, i, 1) == (long)-1)
 #endif
 			{
-				fprintf(stderr, "continuation failed\n");
+				perror("continuation failed");
 				done(1);
 			}
 		}
@@ -601,7 +607,7 @@ closemt()
 {
 	if (mt < 0)
 		return;
-#ifdef RRESTOR
+#ifdef RRESTORE
 	rmtclose();
 #else
 	(void) close(mt);
@@ -864,7 +870,7 @@ checksum(b)
 	return(GOOD);
 }
 
-#ifdef RRESTOR
+#ifdef RRESTORE
 /* VARARGS1 */
 msg(cp, a1, a2, a3)
 	char *cp;
@@ -872,4 +878,4 @@ msg(cp, a1, a2, a3)
 
 	fprintf(stderr, cp, a1, a2, a3);
 }
-#endif RRESTOR
+#endif RRESTORE
