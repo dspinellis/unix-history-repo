@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)dumplabel.c	1.2 (UKC) %G%";
+static char *sccsid = "@(#)dumplabel.c	1.3 (UKC) %G%";
 #endif not lint
 /***
 
@@ -274,6 +274,12 @@ dolabel(index)
 	{	fprintf(stderr, "Tape open error\n");
 		askformount(index);
 	}
+	if (spcl.c_host[0] == '\0') 
+	{	gethostname(spcl.c_host, NAMELEN);
+		spcl.c_level = 0;
+		strcpy(spcl.c_filesys, "Tape has only been labelled");
+		strcpy(spcl.c_dev, "???????????");
+	}
 	strcpy(spcl.c_label, createlabel(index));
 	if (write(fd, (char *)&u_spcl, sizeof (u_spcl)) != sizeof (u_spcl))
 	{	perror("Tape write error");
@@ -385,6 +391,14 @@ printlabel()
 		perror("Tape read");
 		exit(1);
 	}
-	printf("%s\n", spcl.c_label);
+	printf("Dump   date: %s", ctime(&spcl.c_date));
+	printf("Dumped from: %s", ctime(&spcl.c_ddate));
+	if (spcl.c_host[0] == '\0')
+		return;
+	printf("Level %d dump of %s on %s:%s\n",
+		spcl.c_level, spcl.c_filesys, spcl.c_host, spcl.c_dev);
+	printf("Label: %s\n", spcl.c_label);
+	printf("Volume %d of the dump, starting at inode %d\n",
+			spcl.c_volume, spcl.c_inumber);
 	close(fd);
 }
