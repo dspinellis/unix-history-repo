@@ -1,4 +1,4 @@
-/*	locore.s	4.53	81/10/10	*/
+/*	locore.s	4.54	81/10/16	*/
 
 #include "../h/mtpr.h"
 #include "../h/trap.h"
@@ -169,6 +169,13 @@ SCBVEC(softclock):
 	calls $2,_softclock			# softclock(pc,psl)
 	POPR; 
 	rei
+#ifdef BBNNET
+SCBVEC(netintr):
+	PUSHR
+	calls $0,_netintr
+	POPR
+	rei
+#endif
 SCBVEC(consdin):
 	halt
 SCBVEC(consdout):
