@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_vfsops.c	7.16 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	7.17 (Berkeley) %G%
  */
 
 
@@ -554,7 +554,7 @@ ufs_fhtovp(mp, fhp, vpp)
 }
 
 /*
- * Vnode pointer to File handle, should never happen.
+ * Vnode pointer to File handle
  */
 /* ARGSUSED */
 ufs_vptofh(vp, fhp)
