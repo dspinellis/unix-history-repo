@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.56		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.57		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -113,20 +113,22 @@ struct mailer
 
 typedef struct mailer	MAILER;
 
-# define M_FOPT		000001	/* mailer takes picky -f flag */
-# define M_ROPT		000002	/* mailer takes picky -r flag */
-# define M_QUIET	000004	/* don't print error on bad status */
-# define M_RESTR	000010	/* must be daemon to execute */
-# define M_NHDR		000020	/* don't insert From line */
-# define M_LOCAL	000040	/* delivery is to this host */
-# define M_STRIPQ	000100	/* strip quote characters from user/host */
-# define M_MUSER	000200	/* mailer can handle multiple users at once */
-# define M_NEEDFROM	000400	/* need arpa-style From: line */
-# define M_NEEDDATE	001000	/* need arpa-style Date: line */
-# define M_MSGID	002000	/* need Message-Id: field */
-# define M_USR_UPPER	010000	/* preserve user case distinction */
-# define M_HST_UPPER	020000	/* preserve host case distinction */
-# define M_FULLNAME	040000	/* want Full-Name field */
+/* bits for m_flags */
+# define M_FOPT		000000001	/* mailer takes picky -f flag */
+# define M_ROPT		000000002	/* mailer takes picky -r flag */
+# define M_QUIET	000000004	/* don't print error on bad status */
+# define M_RESTR	000000010	/* must be daemon to execute */
+# define M_NHDR		000000020	/* don't insert From line */
+# define M_LOCAL	000000040	/* delivery is to this host */
+# define M_STRIPQ	000000100	/* strip quote chars from user/host */
+# define M_MUSER	000000200	/* can handle multiple users at once */
+# define M_NEEDFROM	000000400	/* need arpa-style From: line */
+# define M_NEEDDATE	000001000	/* need arpa-style Date: line */
+# define M_MSGID	000002000	/* need Message-Id: field */
+# define M_USR_UPPER	000010000	/* preserve user case distinction */
+# define M_HST_UPPER	000020000	/* preserve host case distinction */
+# define M_FULLNAME	000040000	/* want Full-Name field */
+# define M_UGLYUUCP	000100000	/* this wants an ugly UUCP from line */
 
 # define M_ARPAFMT	(M_NEEDDATE|M_NEEDFROM|M_MSGID)
 
