@@ -1,0 +1,84 @@
+/*
+ * Courier connection management.
+ */
+#include <stdio.h>
+#include <errno.h>
+#include <courier.h>
+
+#if DEBUG
+extern int CourierClientDebuggingFlag;
+#endif
+
+#define NBINDINGS	30
+
+struct binding {
+	char *program;		/* Courier program name or 0 */
+	char *machine;		/* machine name */
+	int connection;		/* open connection descriptor or -1 */
+} btab[NBINDINGS];
+
+static struct binding *
+victim(openflag)
+	int openflag;
+{
+	static struct binding *next_victim = &btab[0];
+	register struct binding *bp;
+
+	for (;;) {
+		bp = next_victim++;
+		if (next_victim == &btab[NBINDINGS])
+			next_victim = &btab[0];
+		if (!openflag)
+			break;
+		if (bp->connection >= 0) {
+			close(bp->connection);
+			bp->connection = -1;
+			break;
+		}
+	}
+#if DEBUG
+	if (CourierClientDebuggingFlag)
+		fprintf(stderr, "[victim: releasing binding for %s on %s]\n",
+			bp->program, bp->machine);
+#endif
+	return (bp);
+}
+
+CourierProgram(program, machine)
+	char *program, *machine;
+{
+	register struct binding *bp, *x;
+	extern int errno;
+	extern char *malloc();
+
+	x = 0;
+	for (bp = &btab[0]; bp < &btab[NBINDINGS]; bp++)
+		if (bp->program != 0) {
+			if (strcmp(bp->program, program) == 0 &&
+			    strcmp(bp->machine, machine) == 0)
+				if (bp->connection >= 0)
+					return (bp->connection);
+				else
+					goto connect;
+		} else
+			x = bp;
+	if (x == 0) {
+		bp = victim(0);
+		free(bp->program);
+		free(bp->machine);
+	} else
+		bp = x;
+	bp->program = malloc(strlen(program)+1);
+	strcpy(bp->program, program);
+	bp->machine = malloc(strlen(machine)+1);
+	strcpy(bp->machine, machine);
+connect:
+	for (;;) {
+		bp->connection = CourierActivate(bp->program, bp->machine);
+		if (bp->connection >= 0)
+			return (bp->connection);
+		if (errno != EMFILE)
+			exit(1);
+		(void) victim(1);
+	}
+}
