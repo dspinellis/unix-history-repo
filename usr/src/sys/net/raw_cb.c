@@ -1,4 +1,4 @@
-/*	raw_cb.c	6.2	84/08/29	*/
+/*	raw_cb.c	6.3	85/03/19	*/
 
 #include "param.h"
 #include "systm.h"
@@ -101,7 +101,7 @@ raw_bind(so, nam)
 	case AF_IMPLINK:
 	case AF_INET: {
 		if (((struct sockaddr_in *)addr)->sin_addr.s_addr &&
-		    if_ifwithaddr(addr) == 0)
+		    ifa_ifwithaddr(addr) == 0)
 			return (EADDRNOTAVAIL);
 		break;
 	}
@@ -121,9 +121,9 @@ raw_bind(so, nam)
 
 		bzero((caddr_t)&inpup, (unsigned)sizeof(inpup));
 		inpup.sin_family = AF_INET;
-		inpup.sin_addr = if_makeaddr(spup->spup_net, spup->spup_host);
+		inpup.sin_addr = in_makeaddr(spup->spup_net, spup->spup_host);
 		if (inpup.sin_addr.s_addr &&
-		    if_ifwithaddr((struct sockaddr *)&inpup) == 0)
+		    ifa_ifwithaddr((struct sockaddr *)&inpup) == 0)
 			return (EADDRNOTAVAIL);
 		break;
 	}

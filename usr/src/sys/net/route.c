@@ -1,4 +1,4 @@
-/*	route.c	6.7	84/09/05	*/
+/*	route.c	6.8	85/03/19	*/
 
 #include "param.h"
 #include "systm.h"
@@ -115,7 +115,7 @@ rtredirect(dst, gateway, flags)
 	register struct rtentry *rt;
 
 	/* verify the gateway is directly reachable */
-	if (if_ifwithnet(gateway) == 0) {
+	if (ifa_ifwithnet(gateway) == 0) {
 		rtstat.rts_badredirect++;
 		return;
 	}
@@ -196,7 +196,7 @@ rtrequest(req, entry)
 	int s, error = 0, (*match)();
 	u_int af;
 	u_long hash;
-	struct ifnet *ifp;
+	struct ifaddr *ifa;
 
 	af = entry->rt_dst.sa_family;
 	if (af >= AF_MAX)
@@ -249,10 +249,10 @@ rtrequest(req, entry)
 			error = EEXIST;
 			goto bad;
 		}
-		ifp = if_ifwithaddr(&entry->rt_gateway);
-		if (ifp == 0) {
-			ifp = if_ifwithnet(&entry->rt_gateway);
-			if (ifp == 0) {
+		ifa = ifa_ifwithaddr(&entry->rt_gateway);
+		if (ifa == 0) {
+			ifa = ifa_ifwithnet(&entry->rt_gateway);
+			if (ifa == 0) {
 				error = ENETUNREACH;
 				goto bad;
 			}
@@ -273,7 +273,7 @@ rtrequest(req, entry)
 		    RTF_UP | (entry->rt_flags & (RTF_HOST|RTF_GATEWAY));
 		rt->rt_refcnt = 0;
 		rt->rt_use = 0;
-		rt->rt_ifp = ifp;
+		rt->rt_ifp = ifa->ifa_ifp;
 		break;
 	}
 bad:
