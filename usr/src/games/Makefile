@@ -3,16 +3,15 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 #
 DESTDIR=
 CFLAGS=	-O
 
 # Programs that live in subdirectories, and have makefiles of their own.
 #
-SUBDIR=	aard adventure backgammon battlestar boggle ching compat \
-	cribbage ddl doctor fortune hangman hunt mille monop quiz \
-	robots rogue sail snake trek zork
+SUBDIR=	adventure backgammon battlestar boggle cribbage fortune \
+	hangman hunt mille monop quiz robots sail snake trek
 
 # Shell scripts that need only be installed and are never removed.
 #
@@ -21,14 +20,17 @@ SCRIPT=	wargames
 # C programs that live in the current directory and do not need
 # explicit make lines.
 #
-STD=	arithmetic btlgammon banner bcd cfscores chess factor \
-	fish number wump
+STD=	arithmetic btlgammon banner bcd cfscores factor fish number wump
 
 # C programs that live in the current directory and need explicit make lines.
 #
 NSTD=	canfield primes rain worm worms
 
+# Programs that require a lisp interpreter or compiler
+LISP=	doctor
+
 all:	${SUBDIR} ${STD} ${NSTD}
+	cd games.`machine`; make ${MFLAGS}
 
 ${SUBDIR}: FRC
 	cd $@; make ${MFLAGS}
@@ -45,9 +47,10 @@ install:
 		(install -c $$i.sh ${DESTDIR}/usr/games/$$i); done
 	-for i in ${STD} ${NSTD}; do \
 		(install -s $$i ${DESTDIR}/usr/games/$$i); done
-	install -c chess.bin ${DESTDIR}/usr/games/lib/chess
-	cat >${DESTDIR}/usr/games/lib/cfscores </dev/null
-	chmod 777 ${DESTDIR}/usr/games/lib/cfscores
+	-if [ ! -f ${DESTDIR}/usr/games/lib/cfscores ]; then \
+		cat >${DESTDIR}/usr/games/lib/cfscores </dev/null; \
+		chmod 777 ${DESTDIR}/usr/games/lib/cfscores; fi
+	cd games.`machine`; make ${MFLAGS} DESTDIR=${DESTDIR} install
 
 clean:
 	rm -f a.out core *.s *.o
@@ -96,7 +99,6 @@ btlgammon: btlgammon.c /usr/include/stdio.h
 banner: banner.c /usr/include/stdio.h
 bcd: bcd.c
 cfscores: cfscores.c /usr/include/pwd.h
-chess: chess.c /usr/include/stdio.h
 factor: factor.c
 fish: fish.c /usr/include/stdio.h
 number: number.c
