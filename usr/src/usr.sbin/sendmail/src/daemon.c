@@ -2,14 +2,14 @@
 # include "sendmail.h"
 
 #ifndef DAEMON
-SCCSID(@(#)daemon.c	3.27		%G%	(w/o daemon mode));
+SCCSID(@(#)daemon.c	3.28		%G%	(w/o daemon mode));
 #else
 
 # include <sys/socket.h>
 # include <net/in.h>
 # include <wait.h>
 
-SCCSID(@(#)daemon.c	3.27		%G%	(with daemon mode));
+SCCSID(@(#)daemon.c	3.28		%G%	(with daemon mode));
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
@@ -175,7 +175,7 @@ getconnection()
 		printf("getconnection\n");
 # endif DEBUG
 
-	for (;; sleep(10))
+	for (;;)
 	{
 		/* get a socket for the SMTP connection */
 		s = socket(SOCK_STREAM, 0, &SendmailAddress, SO_ACCEPTCONN);
@@ -192,14 +192,16 @@ getconnection()
 # endif DEBUG
 
 		/* wait for a connection */
-		do
-		{
-			errno = 0;
-			if (accept(s, &otherend) >= 0)
-				return (s);
-		} while (errno == EINTR);
-		syserr("getconnection: accept");
+		/* contorted code is due to a 4.1a kernel bug */
+		errno = 0;
+		if (accept(s, &otherend) >= 0)
+			return (s);
 		(void) close(s);
+		if (errno != EINTR)
+		{
+			syserr("getconnection: accept");
+			sleep(5);
+		}
 	}
 }
 /*
