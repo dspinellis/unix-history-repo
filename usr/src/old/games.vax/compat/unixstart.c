@@ -1,5 +1,5 @@
 #
-static char sccsid[] = "	unixstart.c	1.1	82/05/12	";
+static char sccsid[] = "	unixstart.c	4.1	82/05/12	";
 /*	Start up a version 6 or version 7 pdp-11 UNIX compatability mode
  *	program. Must set up the memory layout with args etc.
  *	Art Wetzel	August 1979

@@ -1,5 +1,5 @@
 /*
- * 	rt11.h	1.1	82/05/12
+ * 	rt11.h	4.1	82/05/12
  */
 #define	RTHDRSIZ	060
 #define	RTPC	040/2

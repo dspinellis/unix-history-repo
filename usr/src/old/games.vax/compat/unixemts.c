@@ -1,4 +1,4 @@
-static char sccsid[] = "	unixemts.c	1.1	82/05/12	";
+static char sccsid[] = "	unixemts.c	4.1	82/05/12	";
 
 #include <stdio.h>
 doemt(code) int code; {

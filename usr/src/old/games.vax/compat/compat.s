@@ -1,5 +1,5 @@
 .data 0
-	.asciz "	compat.s	1.1	82/05/12	"
+	.asciz "	compat.s	4.1	82/05/12	"
 .text
 	.globl _regs
 	.globl _psl

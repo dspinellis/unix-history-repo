@@ -1,4 +1,4 @@
-static char sccsid[] = "	runcompat.c	1.1	82/05/12	";
+static char sccsid[] = "	runcompat.c	4.1	82/05/12	";
 
 #define FBSD
 /*

@@ -1,4 +1,4 @@
-static char sccsid[] = "	bcopy.c	1.1	82/05/12	";
+static char sccsid[] = "	bcopy.c	4.1	82/05/12	";
 
 bcopy(from, to, count)
 	char *from, *to;

@@ -1,5 +1,5 @@
 .data 0
-	.asciz "	memsiz.s	1.1	82/05/12	"
+	.asciz "	memsiz.s	4.1	82/05/12	"
 .text 0
 	.set MEMSIZ,0x10000
 	.text

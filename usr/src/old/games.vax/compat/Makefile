@@ -1,5 +1,5 @@
 #
-# 	Makefile	1.1	82/05/12
+# 	Makefile	4.1	82/05/12
 #
 MISCSRCS = Readme v6run.1
 SSRCS = compat.s memsiz.s

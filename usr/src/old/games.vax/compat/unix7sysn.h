@@ -1,4 +1,4 @@
-static char sysn7_sccsid[] = "	unix7sysn.h	1.1	82/05/12	";
+static char sysn7_sccsid[] = "	unix7sysn.h	4.1	82/05/12	";
 
 char	*sysnames[] = {
 	"indir",

@@ -1,5 +1,5 @@
 #
-static char sccsid[] = "	unixtraps.c	1.1	82/05/12	";
+static char sccsid[] = "	unixtraps.c	4.1	82/05/12	";
 /*	Function to execute version 6 and version 7 UNIX system calls from
  *	compatability mode on UNIX-32V.
  *	Art Wetzel	August 1979
