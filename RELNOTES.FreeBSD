@@ -43,7 +43,8 @@ this.
 
 2.1. Disk Controllers
 
-WD1003 (any generic IDE/MFM/RLL/ESDI)
+WD1003 (any generic MFM/RLL)
+WD1007 (any generic IDE/ESDI)
 
 Adaptec 1542{A,B,C} ISA SCSI controller.
 
@@ -241,4 +242,4 @@ hope you enjoy this release of FreeBSD!
 
 			The FreeBSD Core Group
 
-$Id: RELNOTES.FreeBSD,v 1.7 1993/09/04 16:22:04 jkh Exp $
+$Id: RELNOTES.FreeBSD,v 1.8 1993/09/08 00:00:48 nate Exp $
