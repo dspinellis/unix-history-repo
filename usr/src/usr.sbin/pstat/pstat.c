@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#) (Berkeley) 82/12/24";
+static char *sccsid = "@(#) (Berkeley) 83/04/15";
 #endif
 /*
  * Print system stuff
@@ -69,6 +69,10 @@ struct nlist nl[] = {
 	{ "_nswapmap" },
 #define	SPTY	18
 	{ "_pt_tty" },
+#define SDMF	19
+	{ "_dmf_tty" },
+#define SNDMF	20
+	{ "_ndmf" },
 	0,
 };
 
@@ -372,12 +376,12 @@ dotty()
 	register struct tty *tp;
 	register char *mesg;
 
+	mesg = " # RAW CAN OUT     MODE     ADDR DEL COL STATE     PGRP DISC\n";
 	printf("1 cons\n");
 	if (kflg)
 		nl[SKL].n_value = clear(nl[SKL].n_value);
 	lseek(fc, (long)nl[SKL].n_value, 0);
 	read(fc, dz_tty, sizeof(dz_tty[0]));
-	mesg = " # RAW CAN OUT   MODE    ADDR   DEL COL  STATE   PGRP DISC\n";
 	printf(mesg);
 	ttyprt(&dz_tty[0], 0);
 	if (nl[SNDZ].n_type == 0)
@@ -391,11 +395,12 @@ dotty()
 	printf("%d dz lines\n", ndz);
 	lseek(fc, (long)nl[SDZ].n_value, 0);
 	read(fc, dz_tty, ndz * sizeof (struct tty));
+	printf(mesg);
 	for (tp = dz_tty; tp < &dz_tty[ndz]; tp++)
 		ttyprt(tp, tp - dz_tty);
 dh:
 	if (nl[SNDH].n_type == 0)
-		goto pty;
+		goto dmf;
 	if (kflg) {
 		nl[SNDH].n_value = clear(nl[SNDH].n_value);
 		nl[SDH].n_value = clear(nl[SDH].n_value);
@@ -405,6 +410,22 @@ dh:
 	printf("%d dh lines\n", ndz);
 	lseek(fc, (long)nl[SDH].n_value, 0);
 	read(fc, dz_tty, ndz * sizeof(struct tty));
+	printf(mesg);
+	for (tp = dz_tty; tp < &dz_tty[ndz]; tp++)
+		ttyprt(tp, tp - dz_tty);
+dmf:
+	if (nl[SNDMF].n_type == 0)
+		goto pty;
+	if (kflg) {
+		nl[SNDMF].n_value = clear(nl[SNDMF].n_value);
+		nl[SDMF].n_value = clear(nl[SDMF].n_value);
+	}
+	lseek(fc, (long)nl[SNDMF].n_value, 0);
+	read(fc, &ndz, sizeof(ndz));
+	printf("%d dmf lines\n", ndz);
+	lseek(fc, (long)nl[SDMF].n_value, 0);
+	read(fc, dz_tty, ndz * sizeof(struct tty));
+	printf(mesg);
 	for (tp = dz_tty; tp < &dz_tty[ndz]; tp++)
 		ttyprt(tp, tp - dz_tty);
 pty:
@@ -416,6 +437,7 @@ pty:
 	printf("32 pty lines\n");
 	lseek(fc, (long)nl[SPTY].n_value, 0);
 	read(fc, dz_tty, 32*sizeof(struct tty));
+	printf(mesg);
 	for (tp = dz_tty; tp < &dz_tty[32]; tp++)
 		ttyprt(tp, tp - dz_tty);
 }
@@ -443,9 +465,9 @@ struct tty *atp;
 		printf("%4d", tp->t_canq.c_cc);
 	}
 	printf("%4d", tp->t_outq.c_cc);
-	printf("%8.1x", tp->t_flags);
+	printf(" %8.1x", tp->t_flags);
 	printf(" %8.1x", tp->t_addr);
-	printf("%3d", tp->t_delct);
+	printf(" %3d", tp->t_delct);
 	printf("%4d ", tp->t_col);
 	putf(tp->t_state&TS_TIMEOUT, 'T');
 	putf(tp->t_state&TS_WOPEN, 'W');
