@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)unistd.h	5.8 (Berkeley) %G%
+ *	@(#)unistd.h	5.9 (Berkeley) %G%
  */
 
 #include <sys/cdefs.h>
@@ -86,6 +86,8 @@ char	*brk __P((const char *));
 int	 chflags __P((const char *, long));
 int	 chroot __P((const char *));
 char	*crypt __P((const char *, const char *));
+void	 des_cipher __P((const char *, char *, u_long, int));
+void	 des_setkey __P((const char *key));
 void	 encrypt __P((char *, int));
 void	 endusershell __P((void));
 int	 exect __P((const char *, char * const *, char * const *));
