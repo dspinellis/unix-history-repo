@@ -1,6 +1,6 @@
-#	@(#)Makefile	4.1	(Berkeley)	82/10/27
+#	@(#)Makefile	4.2	(Berkeley)	82/10/27
 #
-CFLAGS=-c -d2 -w -DCOPYCODE -DC2
+CFLAGS=-c -w -DCOPYCODE -DC2
 LDFLAGS=
 ASDIR = /usr/src/bin/as
 
