@@ -100,9 +100,9 @@ CFLAGS=	-Demkdir=mkdir -DTM_GMTOFF=tm_gmtoff -DTM_ZONE=tm_zone -DNOSOLAR \
 	-DTZDIR=\"$(TZDIR)\"
 MAN=	tzfile.0
 
-TZCOBJS=	zic.o scheck.o ialloc.o
-TZDOBJS=	zdump.o ialloc.o
-SRCS=	zic.c zdump.c scheck.c ialloc.c
+OBJS=	zic.o scheck.o ialloc.o
+SRCS=	zic.c scheck.c ialloc.c
+
 YDATA=	africa antarctica asia australasia europe northamerica \
 	southamerica pacificnew etcetera factory
 NDATA=	systemv
@@ -111,13 +111,10 @@ TDATA=	$(YDATA) $(NDATA) $(SDATA)
 DATA=	$(YDATA) $(NDATA) $(SDATA) leapseconds
 USNO=	usno1988 usno1989
 
-all: zic zdump
+all: zic
 
-zic: $(TZCOBJS)
-	$(CC) $(CFLAGS) $(LFLAGS) $(TZCOBJS) -o $@
-
-zdump: $(TZDOBJS)
-	$(CC) $(CFLAGS) $(LFLAGS) $(TZDOBJS) -o $@
+zic: $(OBJS)
+	$(CC) $(CFLAGS) $(LFLAGS) $(OBJS) -o $@
 
 posix_only: $(TDATA)
 	./zic -d $(TZDIR) -L /dev/null $(TDATA)
@@ -133,17 +130,14 @@ posix_right: posix_only other_two
 
 right_posix: right_only other_two
 
-install: install1 ${MAN} $(DATA) $(REDO)
+install: ${MAN} $(DATA) $(REDO)
 	./zic -d $(TZDIR) -l $(LOCALTIME) -p $(POSIXRULES)
 	install -c -o bin -g bin -m 444 tzfile.0 ${DESTDIR}/usr/man/man5
 	chown -R bin.bin $(TZDIR)
 	chmod 775 $(TZDIR)
 
-install1:
-	-mkdir $(TZDIR)
-
 clean:
-	rm -f core *.o zdump zic
+	rm -f core *.o zic
 
 cleandir: clean
 	rm -f ${MAN} tags .depend
