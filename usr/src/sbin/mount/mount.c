@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -102,7 +102,11 @@ top:
 		fs = getfsfile(argv[1]);
 		if (fs == NULL)
 			goto argcnt;
-		mountfs(fs->fs_spec, fs->fs_file, type);
+		if (strcmp(fs->fs_type, FSTAB_RO) &&
+		    strcmp(fs->fs_type, FSTAB_RW) &&
+		    strcmp(fs->fs_type, FSTAB_RQ))
+			goto argcnt;
+		mountfs(fs->fs_spec, fs->fs_file, fs->fs_type);
 		exit(0);
 	}
 	if (argc != 3) {
