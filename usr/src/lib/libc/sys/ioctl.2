@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ioctl.2	6.2 (Berkeley) %G%
+.\"	@(#)ioctl.2	6.3 (Berkeley) %G%
 .\"
 .TH IOCTL 2 ""
 .UC 4
@@ -15,7 +15,8 @@ ioctl \- control device
 .PP
 .ft B
 ioctl(d, request, argp)
-int d, request;
+int d;
+unsigned long request;
 char *argp;
 .fi
 .ft R
