@@ -1,4 +1,4 @@
-/*	reboot.h	3.1	%G%	*/
+/*	reboot.h	4.1	%G%	*/
 
 /*
  * Arguments to reboot system call.

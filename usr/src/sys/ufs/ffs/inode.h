@@ -1,4 +1,4 @@
-/*	inode.h	3.6	%G%	*/
+/*	inode.h	4.1	%G%	*/
 
 /*
  * The I node is the focus of all

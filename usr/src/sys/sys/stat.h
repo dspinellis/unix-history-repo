@@ -1,4 +1,4 @@
-/*	stat.h	3.2	%G%	*/
+/*	stat.h	4.1	%G%	*/
 
 struct	stat
 {
