@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)1.2.t	6.7 (Berkeley) %G%
+.\"	@(#)1.2.t	6.8 (Berkeley) %G%
 .\"
 .sh "Memory management\(dg
 .NH 3
@@ -41,7 +41,7 @@ pages may be \fIshared\fP with other processes or \fIprivate\fP
 to the process.
 Protection and sharing options are defined in \fI<sys/mman.h>\fP as:
 .DS
-._d
+.ta \w'#define\ \ 'u +\w'MAP_HASSEMPHORE\ \ 'u +\w'0x0080\ \ 'u
 /* protections are chosen from these bits, or-ed together */
 #define	PROT_READ	0x04	/* pages can be read */
 #define	PROT_WRITE	0x02	/* pages can be written */
@@ -161,7 +161,7 @@ caddr_t addr; int len, behav;
 \fIBehav\fP describes expected behavior, as given
 in \fI<sys/mman.h>\fP:
 .DS
-._d
+.ta \w'#define\ \ 'u +\w'MADV_SEQUENTIAL\ \ 'u +\w'00\ \ \ \ 'u
 #define	MADV_NORMAL	0	/* no further special treatment */
 #define	MADV_RANDOM	1	/* expect random page references */
 #define	MADV_SEQUENTIAL	2	/* expect sequential references */
