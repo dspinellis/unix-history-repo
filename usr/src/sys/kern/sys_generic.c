@@ -1,4 +1,4 @@
-/*	sys_generic.c	6.8	85/03/12	*/
+/*	sys_generic.c	6.9	85/05/22	*/
 
 #include "param.h"
 #include "systm.h"
@@ -132,8 +132,7 @@ rwuio(uio, rw)
 	uio->uio_offset = fp->f_offset;
 	if (setjmp(&u.u_qsave)) {
 		if (uio->uio_resid == count) {
-			if ((u.u_sigintr & sigmask(u.u_procp->p_cursig)) != 0 ||
-			    (u.u_procp->p_flag & SOUSIG) != 0)
+			if ((u.u_sigintr & sigmask(u.u_procp->p_cursig)) != 0)
 				u.u_error = EINTR;
 			else
 				u.u_eosys = RESTARTSYS;
