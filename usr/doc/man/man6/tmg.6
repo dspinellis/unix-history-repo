@@ -1,0 +1,51 @@
+.th TMG VI 10/21/72
+.sh NAME
+tmg \*- compiler-compiler
+.sh SYNOPSIS
+.bd tmg
+name
+.sh DESCRIPTION
+.it Tmg
+produces a translator for the language whose parsing
+and translation rules are described in file \fIname\fB.t\fR.
+The new translator appears
+in a.out and may be used thus:
+.s3
+.bd a.out
+input [ output ]
+.s3
+Except in rare cases input must be a randomly
+addressable file.
+If no output file is specified, the standard output file
+is assumed.
+.sh FILES
+.nf
+\fIname\fB.s\fR: assembly language version of \fIname\fB.t\fR
+/usr/lib/tmg: the compiler-compiler
+/usr/lib/tmg[abc], /lib/libs.a: libraries
+alloc.d: scratch file for table storage
+.fi
+.sh "SEE ALSO"
+A Manual for the Tmg Compiler-writing Language,
+internal memorandum.
+.sh DIAGNOSTICS
+Syntactic errors result in "???" followed by the
+offending line.
+.br
+Situations such as space overflow
+with which the Tmg processor or a Tmg-produced
+processor can not cope result in a descriptive comment and 
+a dump.
+.sh AUTHOR
+M. D. McIlroy
+.sh BUGS
+Footnote 1 of Section 9.2 of Tmg Manual is not enforced,
+causing trouble.
+.br
+Restrictions (7.) against mixing bundling primitives
+should be lifted.
+.br
+Certain hidden reserved words exist: gpar, classtab, trans,
+goto, alt, salt.
+.br
+Octal digits include 8=10 and 9=11.
