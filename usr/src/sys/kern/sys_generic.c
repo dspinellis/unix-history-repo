@@ -1,4 +1,4 @@
-/*	sys_generic.c	5.16	82/10/13	*/
+/*	sys_generic.c	5.17	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -518,7 +518,7 @@ ioctl()
 		bzero((caddr_t)data, size);
 
 	if (fp->f_type == DTYPE_SOCKET)
-		soioctl(fp->f_socket, com, data);
+		u.u_error = soioctl(fp->f_socket, com, data);
 	else {
 		register struct inode *ip = fp->f_inode;
 		int fmt = ip->i_mode & IFMT;
@@ -539,7 +539,7 @@ ioctl()
 			u.u_eosys = RESTARTSYS;
 			return;
 		}
-		(*cdevsw[major(dev)].d_ioctl)(dev, com, data, 0);
+		u.u_error = (*cdevsw[major(dev)].d_ioctl)(dev, com, data, 0);
 	}
 
 returndata:
@@ -566,7 +566,7 @@ nullioctl(tp, cmd, data, flags)
 #ifdef lint
 	tp = tp; data = data; flags = flags;
 #endif
-	return (cmd);
+	return (-1);
 }
 
 ostty()
