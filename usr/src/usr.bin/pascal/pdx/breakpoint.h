@@ -1,6 +1,10 @@
-/* Copyright (c) 1982 Regents of the University of California */
-
-/* static char sccsid[] = "@(#)breakpoint.h 1.2 %G%"; */
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)breakpoint.h	5.1 (Berkeley) %G%
+ */
 
 /*
  * Breakpoint module definitions.
