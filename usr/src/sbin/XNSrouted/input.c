@@ -9,7 +9,7 @@
 
 
 #ifndef lint
-static char sccsid[] = "@(#)input.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)input.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -134,7 +134,7 @@ rip_input(from, size)
 			struct sockaddr *sa;
 			if (size < sizeof (struct netinfo))
 				break;
-			if ((unsigned) ntohs(n->rip_metric) > HOPCNT_INFINITY)
+			if ((unsigned) ntohs(n->rip_metric) >= HOPCNT_INFINITY)
 				continue;
 			rt = rtfind(sa = xns_nettosa(n->rip_dst));
 			if (rt == 0) {
