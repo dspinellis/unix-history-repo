@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.27 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -67,7 +67,8 @@ static char sccsid[] = "@(#)login.c	5.26 (Berkeley) %G%";
 int	timeout = 300;
 
 struct passwd *pwd;
-char term[64], *hostname, *username;
+int repeatcnt;
+char term[64], *hostname, *username, *tty;
 
 struct sgttyb sgttyb;
 struct tchars tc = {
@@ -86,9 +87,9 @@ main(argc, argv)
 	struct group *gr;
 	register int ch;
 	register char *p;
-	int fflag, hflag, pflag, cnt;
+	int ask, fflag, hflag, pflag, cnt;
 	int quietlog, passwd_req, ioctlval, timedout();
-	char *domain, *salt, *envinit[1], *ttyn, *tty;
+	char *domain, *salt, *envinit[1], *ttyn;
 	char tbuf[MAXPATHLEN + 2];
 	char *ttyname(), *stypeof(), *crypt(), *getpass();
 	time_t time();
@@ -139,8 +140,12 @@ main(argc, argv)
 		}
 	argc -= optind;
 	argv += optind;
-	if (*argv)
+	if (*argv) {
+		ask = 0;
 		username = *argv;
+	}
+	else
+		ask = 1;
 
 	ioctlval = 0;
 	(void)ioctl(0, TIOCLSET, &ioctlval);
@@ -166,13 +171,27 @@ main(argc, argv)
 
 	openlog("login", LOG_ODELAY, LOG_AUTH);
 
-	for (cnt = 0;; username = NULL) {
+	for (cnt = 0;; ask = 1) {
 		ioctlval = 0;
 		(void)ioctl(0, TIOCSETD, &ioctlval);
 
-		if (username == NULL) {
+		if (ask) {
 			fflag = 0;
 			getloginname();
+		}
+		/* note if trying multiple login's */
+		if (repeatcnt) {
+			if (strcmp(tbuf, username)) {
+				badlogin(tbuf);
+				repeatcnt = 1;
+				(void)strcpy(tbuf, username);
+			}
+			else
+				++repeatcnt;
+		}
+		else {
+			repeatcnt = 1;
+			(void)strcpy(tbuf, username);
 		}
 		if (pwd = getpwnam(username))
 			salt = pwd->pw_passwd;
@@ -208,32 +227,32 @@ main(argc, argv)
 			break;
 
 		printf("Login incorrect\n");
-		if (++cnt >= 5) {
-			if (hostname)
-			    syslog(LOG_ERR,
-				"REPEATED LOGIN FAILURES ON %s FROM %.*s, %.*s",
-				tty, UT_HOSTSIZE, hostname, UT_NAMESIZE,
-				username);
-			else
-			    syslog(LOG_ERR,
-				"REPEATED LOGIN FAILURES ON %s, %.*s",
-				tty, UT_NAMESIZE, username);
-			(void)ioctl(0, TIOCHPCL, (struct sgttyb *)NULL);
-			sleepexit(1);
+		/* we allow 10 tries, but after 3 we start backing off */
+		if (++cnt > 3) {
+			if (cnt >= 10) {
+				badlogin(username);
+				(void)ioctl(0, TIOCHPCL, (struct sgttyb *)NULL);
+				sleepexit(1);
+			}
+			sleep((u_int)((cnt - 3) * 5));
 		}
 	}
 
 	/* committed to login -- turn off timeout */
 	(void)alarm((u_int)0);
 
+	/* log any mistakes -- don't count last one */
+	--repeatcnt;
+	badlogin(username);
+
 	/*
 	 * If valid so far and root is logging in, see if root logins on
 	 * this terminal are permitted.
 	 */
-	if (pwd->pw_uid == 0 && !rootterm(tty)) {
+	if (pwd->pw_uid == 0 && !rootterm()) {
 		if (hostname)
-			syslog(LOG_ERR, "ROOT LOGIN REFUSED ON %s FROM %.*s",
-			    tty, UT_HOSTSIZE, hostname);
+			syslog(LOG_ERR, "ROOT LOGIN REFUSED ON %s FROM %s",
+			    tty, hostname);
 		else
 			syslog(LOG_ERR, "ROOT LOGIN REFUSED ON %s", tty);
 		printf("Login incorrect\n");
@@ -276,7 +295,7 @@ main(argc, argv)
 	}
 
 	quietlog = access(HUSHLOGIN, F_OK) == 0;
-	dolastlog(quietlog, tty);
+	dolastlog(quietlog);
 
 	if (!hflag) {					/* XXX */
 		static struct winsize win = { 0, 0, 0, 0 };
@@ -308,7 +327,7 @@ main(argc, argv)
 	(void)setenv("HOME", pwd->pw_dir, 1);
 	(void)setenv("SHELL", pwd->pw_shell, 1);
 	if (term[0] == '\0')
-		strncpy(term, stypeof(tty), sizeof(term));
+		strncpy(term, stypeof(), sizeof(term));
 	(void)setenv("TERM", term, 0);
 	(void)setenv("USER", pwd->pw_name, 1);
 	(void)setenv("PATH", "/usr/ucb:/bin:/usr/bin:", 0);
@@ -317,8 +336,8 @@ main(argc, argv)
 		syslog(LOG_INFO, "DIALUP %s, %s", tty, pwd->pw_name);
 	if (pwd->pw_uid == 0)
 		if (hostname)
-			syslog(LOG_NOTICE, "ROOT LOGIN %s FROM %.*s",
-			    tty, UT_HOSTSIZE, hostname);
+			syslog(LOG_NOTICE, "ROOT LOGIN %s FROM %s",
+			    tty, hostname);
 		else
 			syslog(LOG_NOTICE, "ROOT LOGIN %s", tty);
 
@@ -355,8 +374,10 @@ getloginname()
 	for (;;) {
 		printf("login: ");
 		for (p = nbuf; (ch = getchar()) != '\n'; ) {
-			if (ch == EOF)
+			if (ch == EOF) {
+				badlogin(username);
 				exit(0);
+			}
 			if (p < nbuf + UT_NAMESIZE)
 				*p++ = ch;
 		}
@@ -378,8 +399,7 @@ timedout()
 	exit(0);
 }
 
-rootterm(tty)
-	char *tty;
+rootterm()
 {
 	struct ttyent *t;
 
@@ -421,9 +441,8 @@ checknologin()
 	}
 }
 
-dolastlog(quiet, tty)
+dolastlog(quiet)
 	int quiet;
-	char *tty;
 {
 	struct lastlog ll;
 	int fd;
@@ -452,16 +471,28 @@ dolastlog(quiet, tty)
 	}
 }
 
+badlogin(name)
+	char *name;
+{
+	if (!repeatcnt)
+		return;
+	if (hostname)
+		syslog(LOG_ERR, "%d LOGIN FAILURE%s ON %s FROM %s, %s",
+		    repeatcnt, repeatcnt > 1 ? "S" : "", tty, hostname, name);
+	else
+		syslog(LOG_ERR, "%d LOGIN FAILURE%s ON %s, %s",
+		    repeatcnt, repeatcnt > 1 ? "S" : "", tty, name);
+}
+
 #undef	UNKNOWN
 #define	UNKNOWN	"su"
 
 char *
-stypeof(ttyid)
-	char *ttyid;
+stypeof()
 {
 	struct ttyent *t;
 
-	return(ttyid && (t = getttynam(ttyid)) ? t->ty_type : UNKNOWN);
+	return(tty && (t = getttynam(tty)) ? t->ty_type : UNKNOWN);
 }
 
 getstr(buf, cnt, err)
