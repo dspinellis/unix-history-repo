@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_subs.c	7.57 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.58 (Berkeley) %G%
  */
 
 /*
@@ -25,9 +25,6 @@
 #include <sys/mbuf.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
-
-#include <ufs/ufs/quota.h>		/* XXX for nfsrv_fhtovp */
-#include <ufs/ufs/ufsmount.h>		/* XXX for nfsrv_fhtovp */
 
 #include <nfs/rpcv2.h>
 #include <nfs/nfsv2.h>
@@ -970,10 +967,9 @@ nfsm_adj(mp, len, nul)
 /*
  * nfsrv_fhtovp() - convert a fh to a vnode ptr (optionally locked)
  * 	- look up fsid in mount list (if not found ret error)
- *	- check that it is exported
- *	- get vp by calling VFS_FHTOVP() macro
+ *	- get vp and export rights by calling VFS_FHTOVP()
+ *	- if cred->cr_uid == 0 or MNT_EXPORTANON set it to credanon
  *	- if not lockflag unlock it with VOP_UNLOCK()
- *	- if cred->cr_uid == 0 or MNT_EXPORTANON set it to neth_anon
  */
 nfsrv_fhtovp(fhp, lockflag, vpp, cred, slp, nam, rdonlyp)
 	fhandle_t *fhp;
@@ -985,64 +981,19 @@ nfsrv_fhtovp(fhp, lockflag, vpp, cred, slp, nam, rdonlyp)
 	int *rdonlyp;
 {
 	register struct mount *mp;
-	register struct netaddrhash *np;
-	register struct ufsmount *ump;
 	register struct nfsuid *uidp;
-	struct sockaddr *saddr;
-	int error;
+	struct ucred *credanon;
+	int error, exflags;
 
 	*vpp = (struct vnode *)0;
 	if ((mp = getvfs(&fhp->fh_fsid)) == NULL)
 		return (ESTALE);
-	if ((mp->mnt_flag & MNT_EXPORTED) == 0)
-		return (EACCES);
-
-	/*
-	 * Get the export permission structure for this <mp, client> tuple.
-	 */
-	ump = VFSTOUFS(mp);
-	if (nam) {
-
-		/*
-		 * First search for a network match.
-		 */
-		np = ump->um_netaddr[NETMASK_HASH];
-		while (np) {
-		    if (netaddr_match(np->neth_family, &np->neth_haddr,
-			&np->neth_hmask, nam))
-			break;
-			np = np->neth_next;
-		}
-
-		/*
-		 * If not found, try for an address match.
-		 */
-		if (np == (struct netaddrhash *)0) {
-		    saddr = mtod(nam, struct sockaddr *);
-		    np = ump->um_netaddr[NETADDRHASH(saddr)];
-		    while (np) {
-			if (netaddr_match(np->neth_family, &np->neth_haddr,
-			    (struct netaddrhash *)0, nam))
-			    break;
-			np = np->neth_next;
-		    }
-		}
-	} else
-		np = (struct netaddrhash *)0;
-	if (np == (struct netaddrhash *)0) {
-
-		/*
-		 * If no address match, use the default if it exists.
-		 */
-		if ((mp->mnt_flag & MNT_DEFEXPORTED) == 0)
-			return (EACCES);
-		np = &ump->um_defexported;
-	}
-
+	if (error = VFS_FHTOVP(mp, &fhp->fh_fid, nam, vpp, &exflags, &credanon))
+		return (error);
 	/*
 	 * Check/setup credentials.
 	 */
-	if (np->neth_exflags & MNT_EXKERB) {
+	if (exflags & MNT_EXKERB) {
 		uidp = slp->ns_uidh[NUIDHASH(cred->cr_uid)];
 		while (uidp) {
 			if (uidp->nu_uid == cred->cr_uid)
@@ -1055,11 +1006,9 @@ nfsrv_fhtovp(fhp, lockflag, vpp, cred, slp, nam, rdonlyp)
 			*cred = uidp->nu_cr;
 		} else
 			return (NQNFS_AUTHERR);
-	} else if (cred->cr_uid == 0 || (np->neth_exflags & MNT_EXPORTANON))
-		*cred = np->neth_anon;
-	if (error = VFS_FHTOVP(mp, &fhp->fh_fid, vpp))
-		return (ESTALE);
-	if (np->neth_exflags & MNT_EXRDONLY)
+	} else if (cred->cr_uid == 0 || (exflags & MNT_EXPORTANON))
+		*cred = *credanon;
+	if (exflags & MNT_EXRDONLY)
 		*rdonlyp = 1;
 	else
 		*rdonlyp = 0;
