@@ -1,0 +1,33 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)getc.3	5.1 (Berkeley) %G%
+.\"
+.TH GETC 3F "13 June 1983"
+.UC 5
+.SH NAME
+getc, fgetc \- get a character from a logical unit
+.SH SYNOPSIS
+.B integer function getc (char)
+.br
+.B character char
+.sp 1
+.B integer function fgetc (lunit, char)
+.br
+.B character char
+.SH DESCRIPTION
+These routines return the next character from a file associated with a
+fortran logical unit, bypassing normal fortran I/O.
+.I Getc
+reads from logical unit 5, normally connected to the control terminal input.
+.PP
+The value of each function is a system status code. Zero indicates no
+error occured on the read; \-1 indicates end of file was detected.
+A positive value will be either a UNIX system error code or an f77 I/O error
+code. See perror(3F).
+.SH FILES
+.ie \nM /usr/ucb/lib/libU77.a
+.el /usr/lib/libU77.a
+.SH "SEE ALSO"
+getc(3S), intro(2), perror(3F)
