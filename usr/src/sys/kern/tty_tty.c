@@ -1,4 +1,4 @@
-/*	tty_tty.c	4.7	82/01/24	*/
+/*	tty_tty.c	4.8	82/01/24	*/
 
 /*
  * Indirect driver for controlling tty.
@@ -58,7 +58,6 @@ syioctl(dev, cmd, addr, flag)
 		u.u_ttyp = 0;
 		u.u_ttyd = 0;
 		u.u_procp->p_pgrp = 0;
-		u.u_procp->p_flags &= ~SDETACH;
 		return;
 	}
 	if (u.u_ttyp == NULL) {
