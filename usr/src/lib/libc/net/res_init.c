@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)res_init.c	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_init.c	4.2 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -28,30 +28,27 @@ res_init()
 	char buf[BUFSIZ], *cp;
 	int n;
 	extern u_long inet_addr();
-	extern char *index();
+	extern char *index(), *getenv();
 
 	_res.options |= RES_INIT;
 	_res.nsaddr.sin_family = AF_INET;
 	_res.nsaddr.sin_addr.s_addr = INADDR_ANY;
-	_res.nsaddr.sin_port = HTONS(53);	/* well known port number */
+	_res.nsaddr.sin_port = HTONS(NAMESERVER_PORT);
 
 	/* first try reading the config file */
 	if ((fp = fopen(CONFFILE, "r")) != NULL) {
-		if (fgets(_res.defdname, MAXDNAME, fp) == NULL)
+		if (fgets(_res.defdname, sizeof(_res.defdname), fp) == NULL)
 			_res.defdname[0] = '\0';
 		else if ((cp = index(_res.defdname, '\n')) != NULL)
 			*cp = '\0';
-		if (fgets(buf, sizeof (buf), fp) != NULL) {
-			(void) fclose(fp);
+		if (fgets(buf, sizeof (buf), fp) != NULL)
 			_res.nsaddr.sin_addr.s_addr = inet_addr(buf);
-			return (1);
-		}
 		(void) fclose(fp);
 	}
 
-	/* next, try getting the address of this host */
-
-	/* finally, try broadcast */
+	/* Allow user to override the local domain definition */
+	if ((cp = getenv("LOCALDOMAIN")) != NULL)
+		strncpy(_res.defdname, cp, sizeof(_res.defdname));
 
 	return (0);
 }
