@@ -4,70 +4,79 @@
 .\" This code is derived from software contributed to Berkeley by
 .\" Jef Poskanzer and Craig Leres of the Lawrence Berkeley Laboratory.
 .\"
-.\" %sccs.include.redist.roff%
+.\" %sccs.include.redist.man%
 .\"
-.\"	@(#)write.1	6.4 (Berkeley) %G%
+.\"     @(#)write.1	6.5 (Berkeley) %G%
 .\"
-.TH WRITE 1 ""
-.UC 4
-.SH NAME
-write - send a message to another user
-.SH SYNOPSIS
-.B write user
-[
-.B ttyname
-]
-.ft R
-.SH DESCRIPTION
-.I Write
+.Dd 
+.Dt WRITE 1
+.Os
+.Sh NAME
+.Nm write
+.Nd send a message to another user
+.Sh SYNOPSIS
+.Nm write
+.Ar user
+.Op Ar ttyname
+.Sh DESCRIPTION
+.Nm Write
 allows you to communicate with other users, by copying lines from
 your terminal to theirs.
-.PP
+.Pp
 When you run the
-.I write
+.Nm write
 command, the user you are writing to gets a message of the form:
-.sp
-.nf
-.ti +5
-Message from yourname@yourhost on yourtty at hh:mm ...
-.fi
-.sp
+.Pp
+.Dl Message from yourname@yourhost on yourtty at hh:mm ...
+.Pp
 Any further lines you enter will be copied to the specified user's
 terminal.
 If the other user wants to reply, they must run
-.I write
+.Nm write
 as well.
-.PP
+.Pp
 When you are done, type an end-of-file or interrupt character.
-The other user will see the message ``EOF'' indicating that the
+The other user will see the message
+.Ql EOF
+indicating that the
 conversation is over.
-.PP
+.Pp
 You can prevent people (other than the super-user) from writing to you
 with the
-.IR mesg (1)
+.Xr mesg 1
 command.
 Some commands, for example
-.I nroff
+.Xr nroff 1
 and
-.IR pr ,
+.Xr pr 1 ,
 disallow writing automatically, so that your output isn't overwritten.
-.PP
+.Pp
 If the user you want to write to is logged in on more than one terminal,
 you can specify which terminal to write to by specifying the terminal
 name as the second operand to the
-.I write
+.Nm write
 command.
 Alternatively, you can let
-.I write
+.Nm write
 select one of the terminals \- it will pick the one with the shortest
 idle time.
 This is so that if the user is logged in at work and also dialed up from
 home, the message will go to the right place.
-.PP
-The traditional protocol for writing to someone is that the string ``-o'',
+.Pp
+The traditional protocol for writing to someone is that the string
+.Ql \-o ,
 either at the end of a line or on a line by itself, means that it's the
 other person's turn to talk.
-The string ``o-o'' means that the person believes the conversation to be
+The string
+.Ql oo
+means that the person believes the conversation to be
 over.
-.SH "SEE ALSO"
-mesg(1), talk(1), who(1)
+.Sh SEE ALSO
+.Xr mesg 1 ,
+.Xr talk 1 ,
+.Xr who 1
+.Sh HISTORY
+A
+.Nm
+command appeared in
+.At v6 .
