@@ -2,54 +2,106 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)access.2	4.1 (Berkeley) %G%
+.\"	@(#)access.2	5.1 (Berkeley) %G%
 .\"
-.TH ACCESS 2 
+.TH ACCESS 2 "18 July 1983"
 .UC 4
 .SH NAME
 access \- determine accessibility of file
 .SH SYNOPSIS
 .nf
-.B access(name, mode)
-.B char *name;
+.ft B
+#include <sys/file.h>
+.PP
+.ft B
+.ta 1.25i 1.6i
+#define R_OK	4	/* test for read permission */
+#define W_OK	2	/* test for write permission */
+#define X_OK	1	/* test for execute (search) permission */
+#define F_OK	0	/* test for presence of file */
+.PP
+.ft B
+accessible = access(path, mode)
+int accessible;
+char *path;
+int mode;
+.ft R
 .fi
 .SH DESCRIPTION
 .I Access
 checks the given
 file
-.I name
+.I path
 for accessibility according to
-.I mode,
-which is 4 (read), 2 (write) or 1 (execute) or a combination thereof.
-Specifying mode 0
+.IR mode ,
+which is an inclusive or of the bits
+R_OK,
+W_OK
+and
+X_OK.
+Specifying
+.I mode
+as F_OK (i.e. 0)
 tests whether the directories leading to the file can be
 searched and the file exists.
 .PP
-An appropriate error indication is returned if 
-.I name
-cannot be found or if any
-of the desired access modes would not be granted.
-On disallowed accesses
-\-1 is returned and the error code is in
-.IR errno .
-0 is returned from successful tests.
+The real user ID and the group access list
+(including the real group ID) are
+used in verifying permission, so this call
+is useful to set-UID programs.
 .PP
-The user and group IDs with respect to which permission is checked
-are the real UID and GID of the process, so this call is
-useful to set-UID programs.
-.PP
-Notice that it is only access bits that are checked.
-A directory may be announced as writable by
-.I access,
+Notice that only access bits are checked.
+A directory may be indicated as writable by
+.IR access ,
 but an attempt to open it for writing will fail
 (although files may be created there);
 a file may look executable, but
-.I exec
+.I execve
 will fail unless it is in proper format.
-.PP
-.SH SEE ALSO
-stat(2)
-.SH "ASSEMBLER (PDP-11)"
-(access = 33.)
-.br
-.B sys access; name; mode
+.SH "RETURN VALUE
+If
+.I path
+cannot be found or if any of the desired access modes would
+not be granted, then a \-1 value is returned; otherwise
+a 0 value is returned.
+.SH "ERRORS
+Access to the file is denied if one or more of the following are true:
+.TP 15
+[ENOTDIR]
+A component of the path prefix is not a directory.
+.TP 15
+[ENOENT]
+The argument path name was too long.
+.TP 15
+[ENOENT]
+Read, write, or execute (search) permission is requested for a null
+path name or the named file does not exist.
+.TP 15
+[EPERM]
+The argument contains a byte with the high-order bit set.
+.TP 15
+[ELOOP]
+Too many symbolic links were encountered in translating the pathname.
+.TP 15
+[EROFS]
+Write access is requested for a file on a read-only file system.
+.TP 15
+[ETXTBSY]
+Write access is requested for a pure procedure (shared text)
+file that is being executed.
+.TP 15
+[EACCES]
+Permission bits of the file mode do not permit the requested
+access; or search permission is denied on a component of the
+path prefix.  The owner of a file has permission checked with
+respect to the ``owner'' read, write, and execute mode bits,
+members of the file's group other than the owner have permission
+checked with respect to the ``group'' mode bits, and all
+others have permissions checked with respect to the ``other''
+mode bits.
+.TP 15
+[EFAULT]
+.I Path
+points outside the process's allocated address space.
+.SH "SEE ALSO
+chmod(2), stat(2)
