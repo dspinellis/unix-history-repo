@@ -108,14 +108,18 @@ makeboard()
     extern int	Lastscore[];
 
     mvaddstr(SCORE_Y + 0, SCORE_X, "+---------------------------------------+");
-    mvaddstr(SCORE_Y + 1, SCORE_X, "|                                       |");
+    mvaddstr(SCORE_Y + 1, SCORE_X, "|                 YOU                   |");
     mvaddstr(SCORE_Y + 2, SCORE_X, "| *.....:.....:.....:.....:.....:.....  |");
     mvaddstr(SCORE_Y + 3, SCORE_X, "| *.....:.....:.....:.....:.....:.....  |");
     mvaddstr(SCORE_Y + 4, SCORE_X, "|                                       |");
     mvaddstr(SCORE_Y + 5, SCORE_X, "| *.....:.....:.....:.....:.....:.....  |");
     mvaddstr(SCORE_Y + 6, SCORE_X, "| *.....:.....:.....:.....:.....:.....  |");
-    mvaddstr(SCORE_Y + 7, SCORE_X, "|                                       |");
+    mvaddstr(SCORE_Y + 7, SCORE_X, "|                  ME                   |");
     mvaddstr(SCORE_Y + 8, SCORE_X, "+---------------------------------------+");
+    if (pgames || cgames) {
+	    mvprintw(SCORE_Y + 1, SCORE_X + 28, "Games: %3d", pgames);
+	    mvprintw(SCORE_Y + 7, SCORE_X + 28, "Games: %3d", cgames);
+    }
     Lastscore[0] = -1;
     Lastscore[1] = -1;
 }
@@ -425,7 +429,8 @@ BOOLEAN		mycrib;
 		    sum += VAL(crd.rank);
 		    Table[Tcnt++] = crd;
 		    if (k > 0) {
-			addmsg(quiet ? "I get %d playing " : "I get %d points playing ", k);
+			addmsg(quiet ? "I get %d playing " :
+			    "I get %d points playing ", k);
 			msgcard(crd, FALSE);
 			endmsg();
 			if (chkscr(&cscore, k))
