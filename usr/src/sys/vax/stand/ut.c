@@ -1,4 +1,4 @@
-/*	ut.c	4.5	82/12/17	*/
+/*	ut.c	4.6	83/02/20	*/
 
 /*
  * SI Model 9700 -- emulates TU45 on the UNIBUS
@@ -15,6 +15,7 @@
 #include "saio.h"
 #include "savax.h"
 
+#define	MASKREG(reg)	((reg)&0xffff)
 
 u_short	utstd[] = { 0172440 };		/* non-standard */
 
@@ -34,6 +35,7 @@ utopen(io)
 utclose(io)
 	register struct iob *io;
 {
+
 	utstrategy(io, UT_REW);
 }
 
@@ -46,7 +48,7 @@ utstrategy(io, func)
 	register int errcnt;
 	register struct utdevice *addr =
 	    (struct utdevice *)ubamem(io->i_unit, utstd[0]);
-	int info;
+	int info, resid;
 	u_short dens;
 
 	dens = (io->i_unit&07) | PDP11FMT | UT_PE;
@@ -73,16 +75,16 @@ retry:
 	word = addr->utds;
 	if (word&(UTDS_EOT|UTDS_TM)) {
 		addr->utcs1 = UT_CLEAR | UT_GO;
-		return(0);
+		goto done;
 	}
 	if ((word&UTDS_ERR) || (addr->utcs1&UT_TRE)) {
 		if (errcnt == 0)
 			printf("tj error: cs1=%b er=%b cs2=%b ds=%b",
-				addr->utcs1, UT_BITS, addr->uter, UTER_BITS,
-				addr->utcs2, UTCS2_BITS, word, UTDS_BITS);
+			  addr->utcs1, UT_BITS, addr->uter, UTER_BITS,
+			  addr->utcs2, UTCS2_BITS, word, UTDS_BITS);
 		if (errcnt == 10) {
 			printf("\n");
-			return(-1);
+			return (-1);
 		}
 		errcnt++;
 		if (addr->utcs1&UT_TRE)
@@ -98,8 +100,14 @@ retry:
 	}
 	if (errcnt)
 		printf(" recovered by retry\n");
-	return (func == READ ?
-		io->i_cc - ((-addr->utfc) & 0xffff) : -addr->utwc << 1);
+done:
+	if (func == READ) {
+		resid = 0;
+		if (io->i_cc > MASKREG(addr->utfc))
+			resid = io->i_cc - MASKREG(addr->utfc);
+	} else
+		resid = MASKREG(-addr->utfc);
+	return (io->i_cc - resid);
 }
 
 utquiet(addr)
