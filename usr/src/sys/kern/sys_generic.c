@@ -1,4 +1,4 @@
-/*	sys_generic.c	5.9	82/08/14	*/
+/*	sys_generic.c	5.10	82/08/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -259,111 +259,6 @@ nullioctl(tp, cmd, data, flags)
 }
 
 /*
- * Read the file corresponding to
- * the inode pointed at by the argument.
- * The actual read arguments are found
- * in the variables:
- *	u_base		core address for destination
- *	u_offset	byte offset in file
- *	u_count		number of bytes to read
- *	u_segflg	read to kernel/user/user I
- */
-readi(ip)
-	register struct inode *ip;
-{
-	struct buf *bp;
-	struct fs *fs;
-	dev_t dev;
-	daddr_t lbn, bn;
-	off_t diff;
-	register int on, type;
-	register unsigned n;
-	int size;
-	long bsize;
-	extern int mem_no;
-
-	if (u.u_count == 0)
-		return;
-	dev = (dev_t)ip->i_rdev;
-	if (u.u_offset < 0 && ((ip->i_mode&IFMT) != IFCHR ||
-	    mem_no != major(dev))) {
-		u.u_error = EINVAL;
-		return;
-	}
-	ip->i_flag |= IACC;
-	type = ip->i_mode&IFMT;
-	if (type == IFCHR) {
-		register c = u.u_count;
-		struct uio auio;
-		struct iovec aiov;
-		auio.uio_iov = &aiov;
-		auio.uio_iovcnt = 1;
-		aiov.iov_base = u.u_base;
-		aiov.iov_len = u.u_count;
-		auio.uio_offset = u.u_offset;
-		auio.uio_segflg = u.u_segflg;
-		auio.uio_resid = u.u_count;
-		(*cdevsw[major(dev)].d_read)(dev, &auio);
-		CHARGE(sc_tio * (c - auio.uio_resid));
-		u.u_count = auio.uio_resid;
-		return;
-	}
-	if (type != IFBLK) {
-		dev = ip->i_dev;
-		fs = ip->i_fs;
-		bsize = fs->fs_bsize;
-	} else
-		bsize = BLKDEV_IOSIZE;
-	do {
-		lbn = u.u_offset / bsize;
-		on = u.u_offset % bsize;
-		n = MIN((unsigned)(bsize - on), u.u_count);
-		if (type != IFBLK) {
-			diff = ip->i_size - u.u_offset;
-			if (diff <= 0)
-				return;
-			if (diff < n)
-				n = diff;
-			bn = fsbtodb(fs, bmap(ip, lbn, B_READ));
-			if (u.u_error)
-				return;
-			size = blksize(fs, ip, lbn);
-		} else {
-			size = bsize;
-			bn = lbn * (BLKDEV_IOSIZE/DEV_BSIZE);
-			rablock = bn + (BLKDEV_IOSIZE/DEV_BSIZE);
-			rasize = bsize;
-		}
-		if ((long)bn<0) {
-			bp = geteblk(size);
-			clrbuf(bp);
-		} else if (ip->i_lastr + 1 == lbn)
-			bp = breada(dev, bn, size, rablock, rasize);
-		else
-			bp = bread(dev, bn, size);
-		ip->i_lastr = lbn;
-		n = MIN(n, size - bp->b_resid);
-		if (n != 0) {
-			if (u.u_segflg != 1) {
-				if (copyout(bp->b_un.b_addr+on, u.u_base, n)) {
-					u.u_error = EFAULT;
-					goto bad;
-				}
-			} else
-				bcopy(bp->b_un.b_addr + on, u.u_base, n);
-			u.u_base += n;
-			u.u_offset += n;
-			u.u_count -= n;
-bad:
-			;
-		}
-		if (n + on == bsize || u.u_offset == ip->i_size)
-			bp->b_flags |= B_AGE;
-		brelse(bp);
-	} while (u.u_error == 0 && u.u_count != 0 && n != 0);
-}
-
-/*
  * Write the file corresponding to
  * the inode pointed at by the argument.
  * The actual write arguments are found
@@ -506,6 +401,32 @@ iomove(cp, n, flag)
 	u.u_base += n;
 	u.u_offset += n;
 	u.u_count -= n;
+}
+
+readip1(ip, base, len, offset, segflg, aresid)
+	struct inode *ip;
+	caddr_t base;
+	int len, offset, segflg;
+	int *aresid;
+{
+	struct uio auio;
+	struct iovec aiov;
+	int error;
+
+	auio.uio_iov = &aiov;
+	auio.uio_iovcnt = 1;
+	aiov.iov_base = base;
+	aiov.iov_len = len;
+	auio.uio_resid = len;
+	auio.uio_offset = offset;
+	auio.uio_segflg = segflg;
+	error = readip(ip, &auio);
+	if (aresid)
+		*aresid = auio.uio_resid;
+	else
+		if (auio.uio_resid)
+			error = EIO;
+	return (error);
 }
 
 readip(ip, uio)

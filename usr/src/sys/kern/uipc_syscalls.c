@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	4.22	82/08/08	*/
+/*	uipc_syscalls.c	4.23	82/08/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -15,6 +15,7 @@
 #include "../net/in.h"
 #include "../net/in_systm.h"
 #include "../h/descrip.h"
+#include "../h/uio.h"
 
 ssocreate()
 {
@@ -349,6 +350,8 @@ sreceive()
 	} *uap = (struct a *)u.u_ap;
 	register struct file *fp;
 	struct sockaddr sa;
+	struct uio auio;
+	struct iovec aiov;
 
 	fp = getf(uap->fdes);
 	if (fp == 0)
@@ -357,15 +360,19 @@ sreceive()
 		u.u_error = ENOTSOCK;
 		return;
 	}
-	u.u_base = uap->cbuf;
-	u.u_count = uap->count;
-	u.u_segflg = 0;
+	auio.uio_iov = &aiov;
+	auio.uio_iovcnt = 1;
+	aiov.iov_base = uap->cbuf;
+	aiov.iov_len = uap->count;
+	auio.uio_resid = uap->count;
+	auio.uio_segflg = 0;
+	auio.uio_offset = 0;	/* XXX */
 	if (useracc(uap->cbuf, uap->count, B_WRITE) == 0 ||
 	    uap->asa && copyin((caddr_t)uap->asa, (caddr_t)&sa, sizeof (sa))) {
 		u.u_error = EFAULT;
 		return;
 	}
-	u.u_error = soreceive(fp->f_socket, uap->asa ? &sa : 0);
+	u.u_error = soreceive(fp->f_socket, uap->asa ? &sa : 0, &auio);
 	if (u.u_error)
 		return;
 	if (uap->asa)
