@@ -22,24 +22,26 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)quotacheck.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)quotacheck.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * Fix up / report on disc quotas & usage
  */
-#include <stdio.h>
-#include <ctype.h>
-#include <signal.h>
-#include <errno.h>
 #include <sys/param.h>
-#include <sys/inode.h>
-#include <sys/fs.h>
-#include <sys/quota.h>
+#include <sys/time.h>
+#include <sys/vnode.h>
+#include <sys/signal.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+#include <ufs/inode.h>
+#include <ufs/fs.h>
+#include <ufs/quota.h>
 #include <fstab.h>
 #include <pwd.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <errno.h>
 
 union {
 	struct	fs	sblk;
