@@ -27,7 +27,7 @@ SOFTWARE.
 /*
  * $Header: iso.c,v 4.11 88/09/19 14:58:35 root Exp $ 
  * $Source: /usr/argo/sys/netiso/RCS/iso.c,v $ 
- *	@(#)iso.c	7.3 (Berkeley) %G%
+ *	@(#)iso.c	7.4 (Berkeley) %G%
  *
  * iso.c: miscellaneous routines to support the iso address family
  */
@@ -45,8 +45,6 @@ static char *rcsid = "$Header: iso.c,v 4.11 88/09/19 14:58:35 root Exp $";
 #include "protosw.h"
 #include "socket.h"
 #include "socketvar.h"
-#include "uio.h"
-#include "dir.h"
 #include "user.h"
 #include "errno.h"
 

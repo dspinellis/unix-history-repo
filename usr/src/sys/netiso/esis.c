@@ -35,7 +35,6 @@ static char *rcsid = "$Header: esis.c,v 4.10 88/09/15 18:57:03 hagens Exp $";
 #include "mbuf.h"
 #include "domain.h"
 #include "protosw.h"
-#include "dir.h"
 #include "user.h"
 #include "socket.h"
 #include "socketvar.h"
