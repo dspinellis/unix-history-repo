@@ -26,7 +26,7 @@ static char copyright[] =
 #endif	/* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	6.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	6.2 (Berkeley) %G%";
 #endif	/* not lint */
 
 /*
@@ -911,11 +911,20 @@ register int f;
 	    segregs.ds = FP_SEG(foo_subr);
 	    intdosx(&inregs, &inregs, &segregs);
 	}
-	if (setmode(fileno(stdout), O_BINARY) == -1) {
-	    ExitPerror("setmode (binary)", 1);
-	}
-	if (setmode(fileno(stdin), O_BINARY) == -1) {
-	    ExitPerror("setmode (binary)", 1);
+	if (MODE_LOCAL_CHARS(f)) {
+	    if (setmode(fileno(stdout), O_TEXT) == -1) {
+		ExitPerror("setmode (text)", 1);
+	    }
+	    if (setmode(fileno(stdin), O_TEXT) == -1) {
+		ExitPerror("setmode (text)", 1);
+	    }
+	} else {
+	    if (setmode(fileno(stdout), O_BINARY) == -1) {
+		ExitPerror("setmode (binary)", 1);
+	    }
+	    if (setmode(fileno(stdin), O_BINARY) == -1) {
+		ExitPerror("setmode (binary)", 1);
+	    }
 	}
     }
 }
