@@ -1,15 +1,15 @@
-#	@(#)Makefile.inc	5.12 (Berkeley) %G%
+#	@(#)Makefile.inc	5.13 (Berkeley) %G%
 
 # gen sources
 .PATH: ${.CURDIR}/${MACHINE}/gen ${.CURDIR}/gen ${.CURDIR}/gen/regexp
 
 SRCS+=	alarm.c clock.c closedir.c crypt.c ctime.c ctype_.c difftime.c \
-	disklabel.c errlst.c execvp.c fakcu.c fnmatch.c fstab.c fts.c \
+	disklabel.c errlst.c execvp.c fnmatch.c fstab.c fts.c \
 	getgrent.c getlogin.c getmntinfo.c getopt.c getpass.c \
 	getpwent.c getttyent.c getusershell.c getwd.c glob.c initgroups.c \
 	isatty.c isctype.c mktemp.c ndbm.c nice.c nlist.c opendir.c \
-	pause.c perror.c popen.c psignal.c random.c readdir.c \
-	regex.c remove.c rewinddir.c scandir.c seekdir.c setjmperr.c \
+	pause.c popen.c psignal.c random.c readdir.c \
+	regex.c rewinddir.c scandir.c seekdir.c setjmperr.c \
 	setmode.c setrgid.c setruid.c siginterrupt.c sigsetjmp.c \
 	siglist.c signal.c sigsetops.c sleep.c syslog.c telldir.c \
 	termios.c time.c times.c timezone.c tmpnam.c ttyname.c ttyslot.c \
@@ -45,7 +45,7 @@ MAN3+=	alarm.0 clock.0 crypt.0 ctime.0 ctype.0 directory.0 execvp.0 \
 	fnmatch.0 frexp.0 fts.0 getdiskbyname.0 getfsent.0 \
 	getgrent.0 getmntinfo.0 getopt.0 getpass.0 getpwent.0 \
 	getttyent.0 getusershell.0 getwd.0 glob.0 initgroups.0 insque.0 \
-	mktemp.0 ndbm.0 nice.0 nlist.0 pause.0 perror.0 popen.0 psignal.0 \
+	mktemp.0 ndbm.0 nice.0 nlist.0 pause.0 popen.0 psignal.0 \
 	random.0 regex.0 regexp.0 scandir.0 setjmp.0 setmode.0 \
 	setuid.0 siginterrupt.0 signal.0 sigsetops.0 sleep.0 syslog.0 time.0 \
 	times.0 tmpnam.0 ttyname.0 tzset.0 ualarm.0 unvis.0 usleep.0 utime.0 \
@@ -80,7 +80,6 @@ MLINKS+=mktemp.3 mkstemp.3
 MLINKS+=ndbm.3 dbm_clearerr.3 ndbm.3 dbm_close.3 ndbm.3 dbm_delete.3 \
 	ndbm.3 dbm_error.3 ndbm.3 dbm_fetch.3 ndbm.3 dbm_firstkey.3 \
 	ndbm.3 dbm_nextkey.3 ndbm.3 dbm_open.3 ndbm.3 dbm_store.3
-MLINKS+=perror.3 strerror.3 perror.3 sys_errlist.3 perror.3 sys_nerr.3
 MLINKS+=popen.3 pclose.3
 MLINKS+=psignal.3 sys_siglist.3
 MLINKS+=random.3 initstate.3 random.3 setstate.3 random.3 srandom.3
