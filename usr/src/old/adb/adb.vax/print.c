@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)print.c 4.8 %G%";
+static	char sccsid[] = "@(#)print.c 4.9 %G%";
 /*
  *
  *	UNIX debugger
@@ -232,7 +232,7 @@ printtrace(modif)
 		FOR i=0;i<=35;i++
 		DO	IF var[i]
 			THEN printc((i<=9 ? '0' : 'a'-10) + i);
-				printf(" = %X\n",var[i]);
+				printf(" = %x\n",var[i]);
 			FI
 		OD
 		break;
@@ -303,7 +303,7 @@ printtrace(modif)
 				printf("%R", get(argp += 4, DSP));
 				IF --narg!=0 THEN printc(','); FI
 			POOL
-			printf(") from %X\n",callpc);
+			printf(") from %x\n",callpc);
 
 			IF modif=='C'
 			THEN	WHILE localsym(frame,argp)
