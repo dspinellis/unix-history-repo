@@ -1,18 +1,24 @@
 /*
  * Copyright (c) 1987 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific written prior permission. This software
+ * is provided ``as is'' without express or implied warranty.
  */
 
-#ifndef	lint
+#ifndef lint
 char copyright[] =
 "@(#) Copyright (c) 1987 Regents of the University of California.\n\
  All rights reserved.\n";
-#endif	/* !lint */
+#endif /* not lint */
 
-#ifndef	lint
-static char sccsid[] = "@(#)ln.c	4.9 (Berkeley) %G%";
-#endif	/* !lint */
+#ifndef lint
+static char sccsid[] = "@(#)ln.c	4.10 (Berkeley) %G%";
+#endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
