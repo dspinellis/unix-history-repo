@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)af.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)af.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -103,12 +103,14 @@ xnnet_output(flags, sns, size)
 		for (ifp = ifnet; ifp; ifp = ifp->int_next) {
 			sns->sns_addr.x_net = 
 				satons_addr(ifp->int_addr).x_net;
-			(void) sendto(s, msg, size, flags, sns, sizeof (*sns));
+			(void) sendto(s, msg, size, flags,
+			    (struct sockaddr *)sns, sizeof (*sns));
 		}
 		return;
 	}
 	
-	(void) sendto(s, msg, size, flags, sns, sizeof (*sns));
+	(void) sendto(s, msg, size, flags,
+	    (struct sockaddr *)sns, sizeof (*sns));
 }
 
 /*
