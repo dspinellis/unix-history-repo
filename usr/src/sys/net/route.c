@@ -1,4 +1,4 @@
-/*	route.c	4.15	83/02/02	*/
+/*	route.c	4.16	83/02/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -6,10 +6,11 @@
 #include "../h/protosw.h"
 #include "../h/socket.h"
 #include "../h/ioctl.h"
+#include "../h/errno.h"
+
 #include "../net/if.h"
 #include "../net/af.h"
 #include "../net/route.h"
-#include <errno.h>
 
 int	rttrash;		/* routes not in table but not freed */
 /*

@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	4.43	83/01/13	*/
+/*	udp_usrreq.c	4.44	83/02/10	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -7,9 +7,12 @@
 #include "../h/protosw.h"
 #include "../h/socket.h"
 #include "../h/socketvar.h"
-#include "../netinet/in.h"
+#include "../h/errno.h"
+
 #include "../net/if.h"
 #include "../net/route.h"
+
+#include "../netinet/in.h"
 #include "../netinet/in_pcb.h"
 #include "../netinet/in_systm.h"
 #include "../netinet/ip.h"
@@ -17,7 +20,6 @@
 #include "../netinet/ip_icmp.h"
 #include "../netinet/udp.h"
 #include "../netinet/udp_var.h"
-#include <errno.h>
 
 /*
  * UDP protocol implementation.

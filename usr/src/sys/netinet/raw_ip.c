@@ -1,18 +1,20 @@
-/*	raw_ip.c	4.16	82/12/14	*/
+/*	raw_ip.c	4.17	83/02/10	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
 #include "../h/socket.h"
 #include "../h/protosw.h"
 #include "../h/socketvar.h"
+#include "../h/errno.h"
+
 #include "../net/if.h"
+#include "../net/raw_cb.h"
+#include "../net/route.h"
+
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
 #include "../netinet/ip.h"
 #include "../netinet/ip_var.h"
-#include "../net/raw_cb.h"
-#include "../net/route.h"
-#include <errno.h>
 
 /*
  * Raw interface to IP protocol.

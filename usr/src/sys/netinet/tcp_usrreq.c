@@ -1,4 +1,4 @@
-/*	tcp_usrreq.c	1.73	83/01/17	*/
+/*	tcp_usrreq.c	1.74	83/02/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -6,9 +6,11 @@
 #include "../h/socket.h"
 #include "../h/socketvar.h"
 #include "../h/protosw.h"
+#include "../h/errno.h"
 
 #include "../net/if.h"
 #include "../net/route.h"
+
 #include "../netinet/in.h"
 #include "../netinet/in_pcb.h"
 #include "../netinet/in_systm.h"
@@ -21,7 +23,6 @@
 #include "../netinet/tcp_var.h"
 #include "../netinet/tcpip.h"
 #include "../netinet/tcp_debug.h"
-#include <errno.h>
 
 /*
  * TCP protocol interface to socket abstraction.

@@ -1,4 +1,4 @@
-/*	tcp_output.c	4.50	83/01/04	*/
+/*	tcp_output.c	4.51	83/02/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -6,8 +6,11 @@
 #include "../h/protosw.h"
 #include "../h/socket.h"
 #include "../h/socketvar.h"
-#include "../netinet/in.h"
+#include "../h/errno.h"
+
 #include "../net/route.h"
+
+#include "../netinet/in.h"
 #include "../netinet/in_pcb.h"
 #include "../netinet/in_systm.h"
 #include "../netinet/ip.h"
@@ -20,7 +23,6 @@
 #include "../netinet/tcp_var.h"
 #include "../netinet/tcpip.h"
 #include "../netinet/tcp_debug.h"
-#include <errno.h>
 
 /*
  * Initial options.

@@ -1,14 +1,16 @@
-/*	raw_cb.c	4.15	82/12/14	*/
+/*	raw_cb.c	4.16	83/02/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/mbuf.h"
 #include "../h/socket.h"
 #include "../h/socketvar.h"
-#include "../vax/mtpr.h"
+#include "../h/errno.h"
+
 #include "../net/if.h"
 #include "../net/raw_cb.h"
-#include <errno.h>
+
+#include "../vax/mtpr.h"
 
 /*
  * Routines to manage the raw protocol control blocks. 

@@ -1,17 +1,20 @@
-/*	ip_output.c	1.45	83/01/17	*/
+/*	ip_output.c	1.46	83/02/10	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
-#include "../vax/mtpr.h"
+#include "../h/errno.h"
 #include "../h/socket.h"
 #include "../h/socketvar.h"
+
+#include "../net/if.h"
+#include "../net/route.h"
+
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
-#include "../net/if.h"
 #include "../netinet/ip.h"
 #include "../netinet/ip_var.h"
-#include "../net/route.h"
-#include <errno.h>
+
+#include "../machine/mtpr.h"
 
 int	ipnorouteprint = 0;
 

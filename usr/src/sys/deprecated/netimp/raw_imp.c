@@ -1,16 +1,18 @@
-/*	raw_imp.c	4.14	82/10/21	*/
+/*	raw_imp.c	4.15	83/02/10	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
 #include "../h/socket.h"
 #include "../h/protosw.h"
 #include "../h/socketvar.h"
+#include "../h/errno.h"
+
+#include "../net/if.h"
+#include "../net/raw_cb.h"
+
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
-#include "../net/if.h"
 #include "../netimp/if_imp.h"
-#include "../net/raw_cb.h"
-#include <errno.h>
 
 /*
  * Raw interface to IMP.
