@@ -1,42 +1,83 @@
 /*
  * Copyright (c) 1985 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
+ *
+ * All recipients should regard themselves as participants in an ongoing
+ * research project and hence should feel obligated to report their
+ * experiences (good or bad) with these elementary function codes, using
+ * the sendbug(8) program, to the authors.
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)floor.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)floor.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
+#if defined(vax)||defined(tahoe)
+#ifdef vax
+#define _0x(A,B)	0x/**/A/**/B
+#else	/* vax */
+#define _0x(A,B)	0x/**/B/**/A
+#endif	/* vax */
+static long Lx[] = {_0x(0000,5c00),_0x(0000,0000)};	/* 2**55 */
+#define L *(double *) Lx
+#else	/* defined(vax)||defined(tahoe) */
+static double L = 4503599627370496.0E0;		/* 2**52 */
+#endif	/* defined(vax)||defined(tahoe) */
+
 /*
- * floor and ceil-- greatest integer <= arg
- * (resp least >=)
+ * floor(x) := the largest integer no larger than x;
+ * ceil(x) := -floor(-x), for all real x.
+ *
+ * Note: Inexact will be signaled if x is not an integer, as is
+ *	customary for IEEE 754.  No other signal can be emitted.
  */
-
-double	modf();
-
 double
-floor(d)
-double d;
+floor(x)
+double x;
 {
-	double fract;
+	double y,ceil();
 
-	if (d<0.0) {
-		d = -d;
-		fract = modf(d, &d);
-		if (fract != 0.0)
-			d += 1;
-		d = -d;
-	} else
-		modf(d, &d);
-	return(d);
+	if (
+#if !defined(vax)&&!defined(tahoe)
+		x != x ||	/* NaN */
+#endif	/* !defined(vax)&&!defined(tahoe) */
+		x >= L)		/* already an even integer */
+		return x;
+	else if (x < (double)0)
+		return -ceil(-x);
+	else {			/* now 0 <= x < L */
+		y = L+x;		/* destructive store must be forced */
+		y -= L;			/* an integer, and |x-y| < 1 */
+		return x < y ? y-(double)1 : y;
+	}
 }
 
 double
-ceil(d)
-double d;
+ceil(x)
+double x;
 {
-	return(-floor(-d));
+	double y,floor();
+
+	if (
+#if !defined(vax)&&!defined(tahoe)
+		x != x ||	/* NaN */
+#endif	/* !defined(vax)&&!defined(tahoe) */
+		x >= L)		/* already an even integer */
+		return x;
+	else if (x < (double)0)
+		return -floor(-x);
+	else {			/* now 0 <= x < L */
+		y = L+x;		/* destructive store must be forced */
+		y -= L;			/* an integer, and |x-y| < 1 */
+		return x > y ? y+(double)1 : y;
+	}
 }
 
 #ifndef national			/* rint() is in ./NATIONAL/support.s */
@@ -61,17 +102,6 @@ double d;
  * Note: Inexact will be signaled if x is not an integer, as is
  *	customary for IEEE 754.  No other signal can be emitted.
  */
-#if defined(vax)||defined(tahoe)
-#ifdef vax
-#define _0x(A,B)	0x/**/A/**/B
-#else	/* vax */
-#define _0x(A,B)	0x/**/B/**/A
-#endif	/* vax */
-static long Lx[] = {_0x(0000,5c00),_0x(0000,0000)};	/* 2**55 */
-#define L *(double *) Lx
-#else	/* defined(vax)||defined(tahoe) */
-static double L = 4503599627370496.0E0;		/* 2**52 */
-#endif	/* defined(vax)||defined(tahoe) */
 double
 rint(x)
 double x;
