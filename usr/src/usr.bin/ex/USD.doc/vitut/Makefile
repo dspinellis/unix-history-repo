@@ -1,8 +1,8 @@
-#	@(#)Makefile	8.2 (Berkeley) %G%
+#	@(#)Makefile	8.3 (Berkeley) %G%
 
 DIR=	usd/11.vitut
 SRCS=	vi.in vi.chars vi.summary vi.apwh.ms
-MACROS=	-msU
+MACROS=	-ms
 CLEANFILES+=summary.* viapwh.*
 
 paper.ps: ${SRCS} summary.ps viapwh.ps
@@ -12,6 +12,6 @@ summary.ps: vi.summary
 	${TBL} vi.summary | ${ROFF}  > ${.TARGET}
 
 viapwh.ps: vi.apwh.ms
-	${ROFF} vi.apwh.ms > ${.TARGET}
+	${TBL} vi.apwh.ms | ${ROFF} > ${.TARGET}
 
 .include <bsd.doc.mk>
