@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)hist.c	4.9 (Berkeley) %G%";
+static	char *sccsid = "@(#)hist.c	4.10 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -77,13 +77,23 @@ dohist(vp)
 		return;
 	if (setintr)
 		(void) sigsetmask(sigblock(0) & ~sigmask(SIGINT));
-	vp++;
-	while (*vp && *vp[0] == '-') {
-		if (*vp && eq(*vp, "-h"))
-			hflg++;
-		else if (*vp && eq(*vp, "-r"))
-			rflg++;
-		vp++;
+ 	while (*++vp && **vp == '-') {
+ 		char *vp2 = *vp;
+ 
+ 		while (*++vp2)
+ 			switch (*vp2) {
+ 			case 'h':
+ 				hflg++;
+ 				break;
+ 			case 'r':
+ 				rflg++;
+ 				break;
+ 			case '-':	/* ignore multiple '-'s */
+ 				break;
+ 			default:
+ 				printf("Unknown flag: -%c\n", *vp2);
+ 				error("Usage: history [-rh] [# number of events]");
+			}
 	}
 	if (*vp)
 		n = getn(*vp);
