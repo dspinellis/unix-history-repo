@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1983 Regents of the University of California.
+ * Copyright (c) 1983, 1988 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)output.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)output.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -107,12 +107,19 @@ again:
 		if (size > MAXPACKETSIZE - sizeof (struct netinfo)) {
 			(*output)(s, flags, dst, size);
 			TRACE_OUTPUT(ifp, dst, size);
+			/*
+			 * If only sending to ourselves,
+			 * one packet is enough to monitor interface.
+			 */
+			if ((ifp->int_flags &
+			   (IFF_BROADCAST | IFF_POINTOPOINT | IFF_REMOTE)) == 0)
+				return;
 			n = msg->rip_nets;
 			npackets++;
 		}
 		n->rip_dst = rt->rt_dst;
 		n->rip_dst.sa_family = htons(n->rip_dst.sa_family);
-		n->rip_metric = htonl(min(rt->rt_metric + 1, HOPCNT_INFINITY));
+		n->rip_metric = htonl(rt->rt_metric);
 		n++;
 	}
 	if (doinghost) {
