@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -19,7 +19,12 @@ static char sccsid[] = "@(#)pstat.c	5.8 (Berkeley) %G%";
  */
 
 #define mask(x) (x&0377)
+#ifdef vax
 #define	clear(x) ((int)x&0x7fffffff)
+#endif
+#ifdef tahoe
+#define	clear(x) ((int)x&~0xc0000000)
+#endif
 
 #include <sys/param.h>
 #include <sys/dir.h>
@@ -51,60 +56,68 @@ struct nlist nl[] = {
 	{ "_text" },
 #define	SPROC	2
 	{ "_proc" },
-#define	SDZ	3
-	{ "_dz_tty" },
-#define	SNDZ	4
-	{ "_dz_cnt" },
-#define	SKL	5
+#define	SCONS	3
 	{ "_cons" },
-#define	SFIL	6
+#define	SFIL	4
 	{ "_file" },
-#define	USRPTMA	7
+#define	USRPTMA	5
 	{ "_Usrptmap" },
-#define	USRPT	8
+#define	USRPT	6
 	{ "_usrpt" },
-#define	SWAPMAP	9
+#define	SWAPMAP	7
 	{ "_swapmap" },
-#define	SDH	10
-	{ "_dh11" },
-#define	SNDH	11
-	{ "_ndh11" },
-#define	SNPROC	12
+#define	SNPROC	8
 	{ "_nproc" },
-#define	SNTEXT	13
+#define	SNTEXT	9
 	{ "_ntext" },
-#define	SNFILE	14
+#define	SNFILE	10
 	{ "_nfile" },
-#define	SNINODE	15
+#define	SNINODE	11
 	{ "_ninode" },
-#define	SNSWAPMAP 16
+#define	SNSWAPMAP 12
 	{ "_nswapmap" },
-#define	SPTY	17
+#define	SPTY	13
 	{ "_pt_tty" },
-#define	SDMMIN	18
+#define	SDMMIN	14
 	{ "_dmmin" },
-#define	SDMMAX	19
+#define	SDMMAX	15
 	{ "_dmmax" },
-#define	SNSWDEV	20
+#define	SNSWDEV	16
 	{ "_nswdev" },
-#define	SSWDEVT	21
+#define	SSWDEVT	17
 	{ "_swdevt" },
-#define	SDMF	22
-	{ "_dmf_tty" },
-#define	SNDMF	23
-	{ "_ndmf" },
-#define	SNPTY	24
-	{ "_npty" },
-#define	SDHU	25
-	{ "_dhu_tty" },
-#define	SNDHU	26
-	{ "_ndhu" },
-#define	SYSMAP	27
+#define	SYSMAP	18
 	{ "_Sysmap" },
-#define	SDMZ	28
+#define	SNPTY	19
+	{ "_npty" },
+#ifdef vax
+#define	SDZ	(SNPTY+1)
+	{ "_dz_tty" },
+#define	SNDZ	(SNPTY+2)
+	{ "_dz_cnt" },
+#define	SDMF	(SNPTY+3)
+	{ "_dmf_tty" },
+#define	SNDMF	(SNPTY+4)
+	{ "_ndmf" },
+#define	SDH	(SNPTY+5)
+	{ "_dh11" },
+#define	SNDH	(SNPTY+6)
+	{ "_ndh11" },
+#define	SDHU	(SNPTY+7)
+	{ "_dhu_tty" },
+#define	SNDHU	(SNPTY+8)
+	{ "_ndhu" },
+#define	SDMZ	(SNPTY+9)
 	{ "_dmz_tty" },
-#define	SNDMZ	29
+#define	SNDMZ	(SNPTY+10)
 	{ "_ndmz" },
+#endif
+#ifdef tahoe
+#define	SVX	(SNPTY+1)
+	{ "_vx_tty" },
+#define	SNVX	(SNPTY+2)
+	{ "_nvx" },
+#endif
 	{ "" }
 };
 
@@ -306,7 +319,7 @@ getw(loc)
 	u_long word;
 
 	if (kflg)
-		loc &= 0x7fffffff;
+		loc = clear(loc);
 	lseek(fc, loc, 0);
 	read(fc, &word, sizeof (word));
 	return (word);
@@ -463,11 +476,12 @@ dotty()
 	}
 	printf("1 cons\n");
 	if (kflg)
-		nl[SKL].n_value = clear(nl[SKL].n_value);
-	lseek(fc, (long)nl[SKL].n_value, 0);
+		nl[SCONS].n_value = clear(nl[SCONS].n_value);
+	lseek(fc, (long)nl[SCONS].n_value, 0);
 	read(fc, tty, sizeof(*tty));
 	printf(mesg);
 	ttyprt(&tty[0], 0);
+#ifdef vax
 	if (nl[SNDZ].n_type != 0)
 		dottytype("dz", SDZ, SNDZ);
 	if (nl[SNDH].n_type != 0)
@@ -478,6 +492,11 @@ dotty()
 		dottytype("dhu", SDHU, SNDHU);
 	if (nl[SNDMZ].n_type != 0)
 		dottytype("dmz", SDMZ, SNDMZ);
+#endif
+#ifdef tahoe
+	if (nl[SNVX].n_type != 0)
+		dottytype("vx", SVX, SNVX);
+#endif
 	if (nl[SNPTY].n_type != 0)
 		dottytype("pty", SPTY, SNPTY);
 }
@@ -521,14 +540,14 @@ struct tty *atp;
 	tp = atp;
 	switch (tp->t_line) {
 
-/*
+#ifdef notdef
 	case NETLDISC:
 		if (tp->t_rec)
 			printf("%4d%4d", 0, tp->t_inbuf);
 		else
 			printf("%4d%4d", tp->t_inbuf, 0);
 		break;
-*/
+#endif
 
 	default:
 		printf("%4d%4d", tp->t_rawq.c_cc, tp->t_canq.c_cc);
@@ -672,7 +691,7 @@ dousr()
 	for (i = 0; i < sizeof(U.u_cru)/sizeof(int); i++)
 		printf("%D ", ip[i]);
 	printf("\n");
-/*
+#ifdef notdef
 	i =  U.u_stack - &U;
 	while (U[++i] == 0);
 	i &= ~07;
@@ -682,7 +701,7 @@ dousr()
 			printf("%9x", U[i++]);
 		printf("\n");
 	}
-*/
+#endif
 }
 
 oatoi(s)
