@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.97		%G%);
+SCCSID(@(#)deliver.c	3.98		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -978,6 +978,7 @@ putheader(fp, m, e)
 			nooutput = TRUE;
 
 		/* use From: line from message if generated is the same */
+		p = h->h_value;
 		if (strcmp(h->h_field, "from") == 0 && origfrom != NULL &&
 		    strcmp(m->m_from, "$f") == 0 && of_line == NULL)
 		{
@@ -992,118 +993,11 @@ putheader(fp, m, e)
 		}
 		else if (bitset(H_ADDR, h->h_flags))
 		{
-			register int opos;
-			bool firstone = TRUE;
-
-			/*
-			**  Output the address list translated by the
-			**  mailer and with commas.
-			*/
-
-			p = h->h_value;
 			if (p == NULL || *p == '\0' || nooutput)
 				continue;
-			obp = obuf;
-			(void) sprintf(obp, "%s: ", capitalize(h->h_field));
-			opos = strlen(h->h_field) + 2;
-			obp += opos;
-
-			/*
-			**  Run through the list of values.
-			*/
-
-			while (*p != '\0')
-			{
-				register char *name;
-				extern char *remotename();
-				char savechar;
-
-				/*
-				**  Find the end of the name.  New style names
-				**  end with a comma, old style names end with
-				**  a space character.  However, spaces do not
-				**  necessarily delimit an old-style name -- at
-				**  signs mean keep going.
-				*/
-
-				/* clean up the leading trash in source */
-				while (*p != '\0' && (isspace(*p) || *p == ','))
-					p++;
-				name = p;
-
-				/* find end of name */
-				while (*p != '\0' && *p != ',')
-				{
-					extern bool isatword();
-					char *oldp;
-
-					if (!e->e_oldstyle || !isspace(*p))
-					{
-						p++;
-						continue;
-					}
-
-					/* look to see if we have an at sign */
-					oldp = p;
-					while (*p != '\0' && isspace(*p))
-						p++;
-
-					if (*p != '@' && !isatword(p))
-					{
-						p = oldp;
-						break;
-					}
-					p += *p == '@' ? 1 : 2;
-					while (*p != '\0' && isspace(*p))
-						p++;
-				}
-				/* at the end of one complete name */
-
-				/* strip off trailing white space */
-				while (p >= name && (isspace(*p) || *p == ','))
-					p--;
-				if (++p == name)
-					continue;
-				savechar = *p;
-				*p = '\0';
-
-				/* translate the name to be relative */
-				name = remotename(name, m, FALSE);
-				if (*name == '\0')
-				{
-					*p = savechar;
-					continue;
-				}
-
-				/* output the name with nice formatting */
-				opos += strlen(name);
-				if (!firstone)
-					opos += 2;
-				if (opos > 78 && !firstone)
-				{
-					(void) sprintf(obp, ",\n");
-					putline(obuf, fp, fullsmtp);
-					obp = obuf;
-					(void) sprintf(obp, "        ");
-					obp += strlen(obp);
-					opos = 8 + strlen(name);
-				}
-				else if (!firstone)
-				{
-					(void) sprintf(obp, ", ");
-					obp += 2;
-				}
-				(void) sprintf(obp, "%s", name);
-				obp += strlen(obp);
-				firstone = FALSE;
-				*p = savechar;
-			}
-			(void) strcpy(obp, "\n");
-			putline(obuf, fp, fullsmtp);
+			commaize(p, capitalize(h->h_field), fp, e->e_oldstyle, m);
 			nooutput = TRUE;
 		}
-		else
-			p = h->h_value;
 		if (p == NULL || *p == '\0')
 			continue;
 
@@ -1134,6 +1028,144 @@ putheader(fp, m, e)
 			h->h_flags |= H_USED;
 		}
 	}
+}
+/*
+**  COMMAIZE -- output a header field, making a comma-translated list.
+**
+**	Parameters:
+**		p -- the field to output.
+**		tag -- the tag to associate with it.
+**		fp -- file to put it to.
+**		oldstyle -- TRUE if this is an old style header.
+**		m -- a pointer to the mailer descriptor.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		outputs "p" to file "fp".
+*/
+
+commaize(p, tag, fp, oldstyle, m)
+	register char *p;
+	char *tag;
+	FILE *fp;
+	bool oldstyle;
+	MAILER *m;
+{
+	register int opos;
+	bool firstone = TRUE;
+	char obuf[MAXLINE];
+	register char *obp;
+	bool fullsmtp = bitset(M_FULLSMTP, m->m_flags);
+
+	/*
+	**  Output the address list translated by the
+	**  mailer and with commas.
+	*/
+
+# ifdef DEBUG
+	if (tTd(14, 2))
+		printf("commaize(%s: %s)\n", tag, p);
+# endif DEBUG
+
+	obp = obuf;
+	(void) sprintf(obp, "%s: ", tag);
+	opos = strlen(tag) + 2;
+	obp += opos;
+
+	/*
+	**  Run through the list of values.
+	*/
+
+	while (*p != '\0')
+	{
+		register char *name;
+		extern char *remotename();
+		char savechar;
+
+		/*
+		**  Find the end of the name.  New style names
+		**  end with a comma, old style names end with
+		**  a space character.  However, spaces do not
+		**  necessarily delimit an old-style name -- at
+		**  signs mean keep going.
+		*/
+
+		/* clean up the leading trash in source */
+		while (*p != '\0' && (isspace(*p) || *p == ','))
+			p++;
+		name = p;
+
+		/* find end of name */
+		while (*p != '\0' && *p != ',')
+		{
+			extern bool isatword();
+			char *oldp;
+
+			if (!oldstyle || !isspace(*p))
+			{
+				p++;
+				continue;
+			}
+
+			/* look to see if we have an at sign */
+			oldp = p;
+			while (*p != '\0' && isspace(*p))
+				p++;
+
+			if (*p != '@' && !isatword(p))
+			{
+				p = oldp;
+				break;
+			}
+			p += *p == '@' ? 1 : 2;
+			while (*p != '\0' && isspace(*p))
+				p++;
+		}
+		/* at the end of one complete name */
+
+		/* strip off trailing white space */
+		while (p >= name && (isspace(*p) || *p == ',' || *p == '\0'))
+			p--;
+		if (++p == name)
+			continue;
+		savechar = *p;
+		*p = '\0';
+
+		/* translate the name to be relative */
+		name = remotename(name, m, FALSE);
+		if (*name == '\0')
+		{
+			*p = savechar;
+			continue;
+		}
+
+		/* output the name with nice formatting */
+		opos += strlen(name);
+		if (!firstone)
+			opos += 2;
+		if (opos > 78 && !firstone)
+		{
+			(void) sprintf(obp, ",\n");
+			putline(obuf, fp, fullsmtp);
+			obp = obuf;
+			(void) sprintf(obp, "        ");
+			obp += strlen(obp);
+			opos = 8 + strlen(name);
+		}
+		else if (!firstone)
+		{
+			(void) sprintf(obp, ", ");
+			obp += 2;
+		}
+		(void) sprintf(obp, "%s", name);
+		obp += strlen(obp);
+		firstone = FALSE;
+		*p = savechar;
+	}
+	(void) strcpy(obp, "\n");
+	putline(obuf, fp, fullsmtp);
 }
 /*
 **  PUTBODY -- put the body of a message.
