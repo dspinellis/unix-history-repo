@@ -4,12 +4,13 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_time.c	7.16 (Berkeley) %G%
+ *	@(#)kern_time.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "resourcevar.h"
 #include "kernel.h"
+#include "systm.h"
 #include "proc.h"
 #include "vnode.h"
 
@@ -57,26 +58,38 @@ settimeofday(p, uap, retval)
 	} *uap;
 	int *retval;
 {
-	struct timeval atv;
+	struct timeval atv, delta;
 	struct timezone atz;
 	int error, s;
 
 	if (error = suser(p->p_ucred, &p->p_acflag))
 		return (error);
+	/* Verify all parameters before changing time. */
+	if (uap->tv &&
+	    (error = copyin((caddr_t)uap->tv, (caddr_t)&atv, sizeof(atv))))
+		return (error);
+	if (uap->tzp &&
+	    (error = copyin((caddr_t)uap->tzp, (caddr_t)&atz, sizeof(atz))))
+		return (error);
 	if (uap->tv) {
-		if (error = copyin((caddr_t)uap->tv, (caddr_t)&atv,
-		    sizeof (struct timeval)))
-			return (error);
 		/* WHAT DO WE DO ABOUT PENDING REAL-TIME TIMEOUTS??? */
-		boottime.tv_sec += atv.tv_sec - time.tv_sec;
-		LEASE_UPDATETIME(atv.tv_sec - time.tv_sec);
-		s = splhigh(); time = atv; splx(s);
+		s = splclock();
+		/* nb. delta.tv_usec may be < 0, but this is OK here */
+		delta.tv_sec = atv.tv_sec - time.tv_sec;
+		delta.tv_usec = atv.tv_usec - time.tv_usec;
+		time = atv;
+		(void) splsoftclock();
+		timevaladd(&boottime, &delta);
+		timevalfix(&boottime);
+		timevaladd(&runtime, &delta);
+		timevalfix(&runtime);
+		LEASE_UPDATETIME(delta.tv_sec);
+		splx(s);
 		resettodr();
 	}
-	if (uap->tzp && (error = copyin((caddr_t)uap->tzp, (caddr_t)&atz,
-	    sizeof (atz))) == 0)
+	if (uap->tzp)
 		tz = atz;
-	return (error);
+	return (0);
 }
 
 extern	int tickadj;			/* "standard" clock skew, us./tick */
@@ -173,7 +186,8 @@ getitimer(p, uap, retval)
 			if (timercmp(&aitv.it_value, &time, <))
 				timerclear(&aitv.it_value);
 			else
-				timevalsub(&aitv.it_value, &time);
+				timevalsub(&aitv.it_value,
+				    (struct timeval *)&time);
 	} else
 		aitv = p->p_stats->p_timer[uap->which];
 	splx(s);
@@ -210,7 +224,7 @@ setitimer(p, uap, retval)
 	if (uap->which == ITIMER_REAL) {
 		untimeout(realitexpire, (caddr_t)p);
 		if (timerisset(&aitv.it_value)) {
-			timevaladd(&aitv.it_value, &time);
+			timevaladd(&aitv.it_value, (struct timeval *)&time);
 			timeout(realitexpire, (caddr_t)p, hzto(&aitv.it_value));
 		}
 		p->p_realtimer = aitv;
@@ -228,11 +242,14 @@ setitimer(p, uap, retval)
  * This is where delay in processing this timeout causes multiple
  * SIGALRM calls to be compressed into one.
  */
-realitexpire(p)
-	register struct proc *p;
+void
+realitexpire(arg)
+	void *arg;
 {
+	register struct proc *p;
 	int s;
 
+	p = (struct proc *)arg;
 	psignal(p, SIGALRM);
 	if (!timerisset(&p->p_realtimer.it_interval)) {
 		timerclear(&p->p_realtimer.it_value);
@@ -275,7 +292,7 @@ itimerfix(tv)
  * of microseconds, which must be less than a second,
  * i.e. < 1000000.  If the timer expires, then reload
  * it.  In this case, carry over (usec - old value) to
- * reducint the value reloaded into the timer so that
+ * reduce the value reloaded into the timer so that
  * the timer does not drift.  This routine assumes
  * that it is called in a context where the timers
  * on which it is operating cannot change in value.
