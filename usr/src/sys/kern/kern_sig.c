@@ -1,4 +1,4 @@
-/*	kern_sig.c	5.4	82/08/22	*/
+/*	kern_sig.c	5.5	82/09/04	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -7,7 +7,6 @@
 #include "../h/reg.h"
 #include "../h/inode.h"
 #include "../h/proc.h"
-#include "../h/clock.h"
 #include "../h/mtpr.h"
 #include "../h/timeb.h"
 #include "../h/times.h"
@@ -19,7 +18,6 @@
 #include "../h/pte.h"
 #include "../h/psl.h"
 #include "../h/vm.h"
-#include "../h/vlimit.h"
 #include "../h/acct.h"
 #include "../h/uio.h"
 
@@ -46,6 +44,16 @@ sigpause()
 }
 
 sigstack()
+{
+
+}
+
+kill()
+{
+
+}
+
+killpg()
 {
 
 }
@@ -622,6 +630,7 @@ psig()
 			(void) spl0();
 			action = SIGUNDEFER(action);
 		}
+		u.u_ru.ru_nsignals++;
 		sendsig(action, n);
 		rp->p_cursig = 0;
 		return;
@@ -676,7 +685,8 @@ core()
 #endif
 	if (u.u_uid != u.u_ruid)
 		return (0);
-	if (ctob(UPAGES+u.u_dsize+u.u_ssize) >= u.u_limit[LIM_CORE])
+	if (ctob(UPAGES+u.u_dsize+u.u_ssize) >=
+	    u.u_rlimit[RLIMIT_CORE].rlim_cur)
 		return (0);
 	u.u_error = 0;
 	u.u_dirp = "core";
@@ -717,17 +727,17 @@ out:
  */
 oalarm()
 {
-	register struct proc *p;
-	register c;
 	register struct a {
 		int	deltat;
-	} *uap;
+	} *uap = (struct a *)u.u_ap;
+	register struct proc *p = u.u_procp;
+	int s = spl7();
 
-	uap = (struct a *)u.u_ap;
-	p = u.u_procp;
-	c = p->p_clktim;
-	p->p_clktim = uap->deltat;
-	u.u_r.r_val1 = c;
+	p->p_realtimer.itimer_reload = 0;
+	u.u_r.r_val1 = p->p_realtimer.itimer_value.tv_sec;
+	p->p_realtimer.itimer_value.tv_sec = uap->deltat;
+	p->p_realtimer.itimer_value.tv_usec = 0;
+	splx(s);
 }
 
 /*
