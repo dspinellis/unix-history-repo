@@ -18,9 +18,9 @@ kern/kern_subr.c	standard
 kern/kern_synch.c	standard
 kern/kern_time.c	standard
 kern/kern_xxx.c		standard
-kern/dead_vnops.c	standard
-kern/spec_vnops.c	standard
-kern/fifo_vnops.c	optional fifo
+miscfs/deadfs/dead_vnops.c	standard
+miscfs/specfs/spec_vnops.c	standard
+miscfs/fifofs/fifo_vnops.c	optional fifo
 kern/subr_log.c		standard
 kern/subr_prf.c		standard
 kern/subr_prof.c	standard
@@ -231,16 +231,16 @@ netccitt/pk_output.c	optional ccitt
 netccitt/pk_subr.c	optional ccitt
 netccitt/pk_timer.c	optional ccitt
 netccitt/pk_usrreq.c	optional ccitt
-lofs/lofs_subr.c	optional lofs
-lofs/lofs_vfsops.c	optional lofs
-lofs/lofs_vnops.c	optional lofs
-fdesc/fdesc_vfsops.c	optional fdesc
-fdesc/fdesc_vnops.c	optional fdesc
-portal/portal_vfsops.c	optional portal
-portal/portal_vnops.c	optional portal
-nullfs/null_vnops.c	optional nullfs
-nullfs/null_vfsops.c	optional nullfs
-nullfs/null_subr.c	optional nullfs
-umapfs/umap_vnops.c	optional umapfs
-umapfs/umap_vfsops.c	optional umapfs
-umapfs/umap_subr.c	optional umapfs
+miscfs/lofs/lofs_subr.c	optional lofs
+miscfs/lofs/lofs_vfsops.c	optional lofs
+miscfs/lofs/lofs_vnops.c	optional lofs
+miscfs/fdesc/fdesc_vfsops.c	optional fdesc
+miscfs/fdesc/fdesc_vnops.c	optional fdesc
+miscfs/portal/portal_vfsops.c	optional portal
+miscfs/portal/portal_vnops.c	optional portal
+miscfs/nullfs/null_vnops.c	optional nullfs
+miscfs/nullfs/null_vfsops.c	optional nullfs
+miscfs/nullfs/null_subr.c	optional nullfs
+miscfs/umapfs/umap_vnops.c	optional umapfs
+miscfs/umapfs/umap_vfsops.c	optional umapfs
+miscfs/umapfs/umap_subr.c	optional umapfs
