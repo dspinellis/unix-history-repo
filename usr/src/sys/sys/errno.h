@@ -14,55 +14,55 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)errno.h	7.5 (Berkeley) %G%
+ *	@(#)errno.h	7.6 (Berkeley) %G%
  */
 
-#define	EPERM		1		/* Operation not permitted */
+#define	EPERM		1		/* Not owner */
 #define	ENOENT		2		/* No such file or directory */
 #define	ESRCH		3		/* No such process */
-#define	EINTR		4		/* Interrupted function call */
-#define	EIO		5		/* Input/output error */
+#define	EINTR		4		/* Interrupted system call */
+#define	EIO		5		/* I/O error */
 #define	ENXIO		6		/* No such device or address */
 #define	E2BIG		7		/* Arg list too long */
 #define	ENOEXEC		8		/* Exec format error */
 #define	EBADF		9		/* Bad file descriptor */
-#define	ECHILD		10		/* No child processes */
-					/* 11 - was EAGAIN */
-#define	ENOMEM		12		/* Not enough space */
+#define	ECHILD		10		/* No children */
+#define	EDEADLK		11		/* Resource deadlock avoided */
+					/* 11 was EAGAIN */
+#define	ENOMEM		12		/* Not enough memory */
 #define	EACCES		13		/* Permission denied */
 #define	EFAULT		14		/* Bad address */
 #ifndef _POSIX_SOURCE
 #define	ENOTBLK		15		/* Block device required */
+#define	EBUSY		16		/* Device busy */
 #endif
-#define	EBUSY		16		/* Resource busy */
 #define	EEXIST		17		/* File exists */
-#define	EXDEV		18		/* Improper link */
+#define	EXDEV		18		/* Cross-device link */
 #define	ENODEV		19		/* No such device */
 #define	ENOTDIR		20		/* Not a directory */
 #define	EISDIR		21		/* Is a directory */
 #define	EINVAL		22		/* Invalid argument */
-#define	ENFILE		23		/* Too many open files in system */
+#define	ENFILE		23		/* File table overflow */
 #define	EMFILE		24		/* Too many open files */
-#define	ENOTTY		25		/* Inappropriate I/O control op. */
+#define	ENOTTY		25		/* Inappropriate ioctl for device */
 #ifndef _POSIX_SOURCE
 #define	ETXTBSY		26		/* Text file busy */
 #endif
 #define	EFBIG		27		/* File too large */
 #define	ENOSPC		28		/* No space left on device */
-#define	ESPIPE		29		/* Invalid seek */
+#define	ESPIPE		29		/* Illegal seek */
 #define	EROFS		30		/* Read-only file system */
 #define	EMLINK		31		/* Too many links */
 #define	EPIPE		32		/* Broken pipe */
 
 /* math software */
-#define	EDOM		33		/* Domain error */
+#define	EDOM		33		/* Argument too large */
 #define	ERANGE		34		/* Result too large */
 
 /* non-blocking and interrupt i/o */
-#define	EDEADLK		35		/* Resource deadlock avoided */
-#define	EAGAIN		EDEADLK		/* Resource temporarily unavailable */
+#define	EAGAIN		35		/* Resource temporarily unavailable */
 #ifndef _POSIX_SOURCE
-#define	EWOULDBLOCK	EDEADLK		/* Operation would block */
+#define	EWOULDBLOCK	EAGAIN		/* Operation would block */
 #define	EINPROGRESS	36		/* Operation now in progress */
 #define	EALREADY	37		/* Operation already in progress */
 
@@ -98,14 +98,14 @@
 
 	/* */
 #define	ELOOP		62		/* Too many levels of symbolic links */
-#endif
-#define	ENAMETOOLONG	63		/* Filename too long */
+#endif /* _POSIX_SOURCE */
+#define	ENAMETOOLONG	63		/* File name too long */
 
 /* should be rearranged */
 #ifndef _POSIX_SOURCE
 #define	EHOSTDOWN	64		/* Host is down */
 #define	EHOSTUNREACH	65		/* No route to host */
-#endif
+#endif /* _POSIX_SOURCE */
 #define	ENOTEMPTY	66		/* Directory not empty */
 
 /* quotas & mush */
@@ -122,7 +122,7 @@
 #define	EPROGUNAVAIL	74		/* RPC prog. not avail */
 #define	EPROGMISMATCH	75		/* Program version wrong */
 #define	EPROCUNAVAIL	76		/* Bad procedure for program */
-#endif
+#endif /* _POSIX_SOURCE */
 
 #define	ENOLCK		77		/* No locks available */
 #define	ENOSYS		78		/* Function not implemented */
