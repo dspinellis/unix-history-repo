@@ -1,17 +1,21 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)seekdir.c 1.1 %G%";
+static char sccsid[] = "@(#)seekdir.c 1.2 %G%";
 
 #include <sys/types.h>
 #include <ndir.h>
 
 /*
- * reset a directory.
+ * seek to an entry in a directory.
+ * Only values returned by ``telldir'' should be passed to seekdir.
  */
 void
-resetdir(dirp)
-	DIR *dirp;
+seekdir(dirp, loc)
+	register DIR *dirp;
+	long loc;
 {
-	lseek(dirp->dd_fd, (long)0, 0);
-	dirp->dd_loc = 0;
+	lseek(dirp->dd_fd, loc & ~(DIRBLKSIZ - 1), 0);
+	dirp->dd_loc = loc % DIRBLKSIZ;
+	if (dirp->dd_loc != 0)
+		dirp->dd_size = read(dirp->dd_fd, dirp->dd_buf, DIRBLKSIZ);
 }
