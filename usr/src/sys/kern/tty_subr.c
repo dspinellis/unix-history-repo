@@ -1,4 +1,4 @@
-/*	tty_subr.c	3.2	%H%	*/
+/*	tty_subr.c	3.3	%H%	*/
 
 #include "../h/param.h"
 #include "../h/tty.h"
@@ -12,6 +12,7 @@ struct cblock {
 };
 
 struct	cblock	cfree[NCLIST];
+int	cbad;
 struct	cblock	*cfreelist;
 
 /*
@@ -94,7 +95,6 @@ register char *cp;
 	return(cp-acp);
 }
 
-
 /*
  * Return count of contiguous characters
  * in clist starting at q->c_cf.
@@ -134,8 +134,6 @@ out:
 	return(cc);
 }
 
-
-
 /*
  * Update clist to show that cc characters
  * were removed.  It is assumed that cc < CBSIZE.
@@ -159,6 +157,10 @@ register s;
 		goto out;
 	}
 	if (q->c_cc == 0) {
+		goto out;
+	}
+	if (cc > CBSIZE || cc <= 0) {
+		cbad++;
 		goto out;
 	}
 	q->c_cc -= cc;
@@ -186,6 +188,10 @@ register s;
 out:
 	splx(s);
 }
+
+/*
+ * Put character c in queue p.
+ */
 putc(c, p)
 register struct clist *p;
 {
@@ -219,8 +225,6 @@ register struct clist *p;
 	splx(s);
 	return(0);
 }
-
-
 
 /*
  * copy buffer to clist.
@@ -265,6 +269,82 @@ out:
 	q->c_cc += acc-cc;
 	splx(s);
 	return(cc);
+}
+
+/*
+ * Given a non-NULL pointter into the list (like c_cf which
+ * always points to a real character if non-NULL) return the pointer
+ * to the next character in the list or return NULL if no more chars.
+ *
+ * Callers must not allow getc's to happen between nextc's so that the
+ * pointer becomes invalid.  Note that interrupts are NOT masked.
+ */
+char *
+nextc(p, cp)
+register struct clist *p;
+register char *cp;
+{
+
+	if (p->c_cc && ++cp != p->c_cl) {
+		if (((int)cp & CROUND) == 0)
+			return (((struct cblock *)cp)[-1].c_next->c_info);
+		return (cp);
+	}
+	return (0);
+}
+
+/*
+ * Remove the last character in the list and return it.
+ */
+unputc(p)
+register struct clist *p;
+{
+	register struct cblock *bp;
+	register int c, s;
+	struct cblock *obp;
+
+	s = spl6();
+	if (p->c_cc <= 0)
+		c = -1;
+	else {
+		c = *--p->c_cl;
+		if (--p->c_cc <= 0) {
+			bp = (struct cblock *)p->c_cl;
+			bp = (struct cblock *)((int)bp & ~CROUND);
+			p->c_cl = p->c_cf = NULL;
+			bp->c_next = cfreelist;
+			cfreelist = bp;
+		} else if (((int)p->c_cl & CROUND) == sizeof(bp->c_next)) {
+			p->c_cl = (char *)((int)p->c_cl & ~CROUND);
+			bp = (struct cblock *)p->c_cf;
+			bp = (struct cblock *)((int)bp & ~CROUND);
+			while (bp->c_next != (struct cblock *)p->c_cl)
+				bp = bp->c_next;
+			obp = bp;
+			p->c_cl = (char *)(bp + 1);
+			bp = bp->c_next;
+			bp->c_next = cfreelist;
+			cfreelist = bp;
+			obp->c_next = NULL;
+		}
+	}
+	splx(s);
+	return (c);
+}
+
+/*
+ * Put the chars in the from que
+ * on the end of the to que.
+ *
+ * SHOULD JUST USE q_to_b AND THEN b_to_q HERE.
+ */
+catq(from, to)
+struct clist *from, *to;
+{
+	register c;
+
+	while ((c = getc(from)) >= 0)
+		(void) putc(c, to);
 }
 
 /*
