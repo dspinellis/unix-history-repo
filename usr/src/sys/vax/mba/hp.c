@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hp.c	6.17 (Berkeley) %G%
+ *	@(#)hp.c	6.18 (Berkeley) %G%
  */
 
 #ifdef HPDEBUG
@@ -591,6 +591,7 @@ hpstart(mi)
 		hpaddr->hpda = (tn << 8) + sn;
 		hpaddr->hpdc = cn;
 	}
+	mi->mi_tab.b_bdone = dbtob(sc->sc_blkdone);
 	if (sc->sc_hdr) {
 		if (bp->b_flags & B_READ)
 			return (HP_RHDR|HP_GO);
@@ -610,11 +611,24 @@ hpdtint(mi, mbsr)
 	register int er1, er2;
 	struct hpsoftc *sc = &hpsoftc[mi->mi_unit];
 	int retry = 0, i;
+	int npf;
+	daddr_t bn;
+	int bcr;
 
+	bcr = MASKREG(-mi->mi_mba->mba_bcr);
 	st = &hpst[mi->mi_type];
 	if (hpaddr->hpds&HPDS_ERR || mbsr&MBSR_EBITS) {
 		er1 = hpaddr->hper1;
 		er2 = hpaddr->hper2;
+		if (bp->b_flags & B_BAD) {
+			npf = bp->b_error;
+			bn = sc->sc_badbn;
+		} else {
+			npf = btop(bp->b_bcount - bcr);
+			if (er1 & (HPER1_DCK | HPER1_ECH))
+				npf--;
+			bn = bp->b_blkno + npf;
+		}
 		if (HPWAIT(mi, hpaddr) == 0)
 			goto hard;
 #ifdef HPDEBUG
@@ -623,12 +637,13 @@ hpdtint(mi, mbsr)
 
 			log(LOG_DEBUG,
 		    "hperr: bp %x cyl %d blk %d blkdone %d as %o dc %x da %x\n",
-				bp, bp->b_cylin, bp->b_blkno, sc->sc_blkdone,
+				bp, bp->b_cylin, bn, sc->sc_blkdone,
 				hpaddr->hpas&0xff, MASKREG(dc), MASKREG(da));
-			log(LOG_DEBUG, "errcnt %d mbsr=%b er1=%b er2=%b\n",
+			log(LOG_DEBUG,
+				"errcnt %d mbsr=%b er1=%b er2=%b bcr -%d\n",
 				mi->mi_tab.b_errcnt, mbsr, mbsr_bits,
 				MASKREG(er1), HPER1_BITS,
-				MASKREG(er2), HPER2_BITS);
+				MASKREG(er2), HPER2_BITS, bcr);
 		}
 #endif
 		if (er1 & HPER1_HCRC) {
@@ -676,14 +691,7 @@ hpdtint(mi, mbsr)
 		    er1 & HPER1_HARD ||
 		    (!ML11 && (er2 & HPER2_HARD))) {
 hard:
-			if (bp->b_flags & B_BAD)
-				bp->b_blkno = sc->sc_badbn;
-			else {
-				bp->b_blkno = bp->b_blkno + btop(bp->b_bcount -
-				    MASKREG(-mi->mi_mba->mba_bcr));
-				if (er1 & (HPER1_DCK | HPER1_ECH))
-					bp->b_blkno--;
-			}
+			bp->b_blkno = bn;		/* XXX */
 			harderr(bp, "hp");
 			if (mbsr & (MBSR_EBITS &~ (MBSR_DTABT|MBSR_MBEXC)))
 				printf("mbsr=%b ", mbsr, mbsr_bits);
@@ -737,7 +745,7 @@ hard:
 		return (MBD_RESTARTED);
 	sc->sc_hdr = 0;
 	sc->sc_blkdone = 0;
-	bp->b_resid = MASKREG(-mi->mi_mba->mba_bcr);
+	bp->b_resid = bcr;
 	if (!ML11) {
 		hpaddr->hpof = HPOF_FMT22;
 		hpaddr->hpcs1 = HP_RELEASE|HP_GO;
@@ -820,7 +828,7 @@ hpecc(mi, flag)
 	if (bp->b_flags & B_BAD)
 		npf = bp->b_error;
 	else
-		npf = btop(bp->b_bcount - bcr);
+		npf = btodb(bp->b_bcount - bcr);
 	o = (int)bp->b_un.b_addr & PGOFSET;
 	bn = bp->b_blkno;
 	cn = bp->b_cylin;
@@ -848,7 +856,7 @@ hpecc(mi, flag)
 		bit = i&07;
 		i = (i&~07)>>3;
 		byte = i + o;
-		while (i < 512 && (int)ptob(npf)+i < bp->b_bcount && bit > -11) {
+		while (i < 512 && (int)dbtob(npf)+i < bp->b_bcount && bit > -11) {
 			mpte = mbp->mba_map[npf+btop(byte)];
 			addr = ptob(mpte.pg_pfnum) + (byte & PGOFSET);
 			putmemc(addr, getmemc(addr)^(mask<<bit));

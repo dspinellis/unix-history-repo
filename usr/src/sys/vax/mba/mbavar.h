@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mbavar.h	6.3 (Berkeley) %G%
+ *	@(#)mbavar.h	6.4 (Berkeley) %G%
  */
 
 /*
@@ -66,6 +66,8 @@ struct	mba_device {
 	struct	mba_drv *mi_drv;
 	struct	mba_hd *mi_hd;
 };
+
+#define	b_bdone	b_bufsize		/* redefinition for mi_tab XXX */
 
 /*
  * Tape formatter slaves are specified by
