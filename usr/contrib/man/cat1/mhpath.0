@@ -1,0 +1,198 @@
+
+
+
+MHPATH(1)              BSD Reference Manual             MHPATH(1)
+
+
+NNAAMMEE
+       mhpath - print full pathnames of MH messages and folders
+
+SSYYNNOOPPSSIISS
+       mhpath [+folder] [msgs] [-help]
+
+DDEESSCCRRIIPPTTIIOONN
+       _M_h_p_a_t_h  expands  and  sorts  the  message  list `msgs' and
+       writes the full pathnames of the messages to the  standard
+       output separated by newlines.  If no `msgs' are specified,
+       _m_h_p_a_t_h outputs the folder pathname instead.  If  the  only
+       argument  is `+', your MH _P_a_t_h is output; this can be use-
+       ful is shell scripts.
+
+       Contrasted with other MH commands, a message  argument  to
+       _m_h_p_a_t_h  may  often  be  intended  for _w_r_i_t_i_n_g.  Because of
+       this:
+
+       1) the name "new" has  been  added  to  _m_h_p_a_t_h's  list  of
+       reserved  message  names  (the others are "first", "last",
+       "prev", "next", "cur", and "all").   The  new  message  is
+       equivalent  to  the  message  after  the last message in a
+       folder (and equivalent to 1 in a folder without messages).
+       The  "new"  message  may  not be used as part of a message
+       range.
+
+       2) Within a message list, the following  designations  may
+       refer to messages that do not exist: a single numeric mes-
+       sage name, the single message name "cur", and  (obviously)
+       the single message name "new".  All other message designa-
+       tions must refer to at least one existing message.
+
+       3) An empty folder is not in itself an error.
+
+       Message numbers greater than the highest existing  message
+       in  a  folder  as part of a range designation are replaced
+       with the next free message number.
+
+       Examples: The current folder foo contains messages 3 5  6.
+       Cur is 4.
+
+            % mhpath
+            /r/phyl/Mail/foo
+
+            % mhpath all
+            /r/phyl/Mail/foo/3
+            /r/phyl/Mail/foo/5
+            /r/phyl/Mail/foo/6
+
+            % mhpath 2001
+            /r/phyl/Mail/foo/7
+
+
+
+[mh.6]                        MH.6.8                            1
+
+
+
+
+
+
+
+
+MHPATH(1)              BSD Reference Manual             MHPATH(1)
+
+
+            % mhpath 1-2001
+            /r/phyl/Mail/foo/3
+            /r/phyl/Mail/foo/5
+            /r/phyl/Mail/foo/6
+
+            % mhpath new
+            /r/phyl/Mail/foo/7
+
+            % mhpath last new
+            /r/phyl/Mail/foo/6
+            /r/phyl/Mail/foo/7
+
+            % mhpath last-new
+            bad message list "last-new".
+
+            % mhpath cur
+            /r/phyl/Mail/foo/4
+
+            % mhpath 1-2
+            no messages in range "1-2".
+
+            % mhpath first:2
+            /r/phyl/Mail/foo/3
+            /r/phyl/Mail/foo/5
+
+            % mhpath 1 2
+            /r/phyl/Mail/foo/1
+            /r/phyl/Mail/foo/2
+
+       _M_H_p_a_t_h is also useful in back-quoted operations:
+
+            % cd `mhpath +inbox`
+
+            % echo `mhpath +`
+            /r/phyl/Mail
+
+FFIILLEESS
+       $HOME/.mh_profile                         The user profile
+
+PPRROOFFIILLEE CCOOMMPPOONNEENNTTSS
+       Path:                To determine the user's MH directory
+       Current-Folder:      To find the default current folder
+
+SSEEEE AALLSSOO
+       folder(1)
+
+DDEEFFAAUULLTTSS
+       `+folder' defaults to the current folder
+       `msgs' defaults to none
+
+
+
+
+
+[mh.6]                        MH.6.8                            2
+
+
+
+
+
+
+
+
+MHPATH(1)              BSD Reference Manual             MHPATH(1)
+
+
+CCOONNTTEEXXTT
+       None
+
+BBUUGGSS
+       Like all MH commands, _m_h_p_a_t_h expands and sorts [msgs].  So
+       don't expect
+
+            mv `mhpath 501 500`
+
+       to move 501 to 500.  Quite the reverse.  But
+
+            mv `mhpath 501` `mhpath 500`
+
+       will do the trick.
+
+       Out of range message 0 is treated far more  severely  than
+       large out of range message numbers.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[mh.6]                        MH.6.8                            3
+
+
+
+
+

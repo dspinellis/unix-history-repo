@@ -1,0 +1,264 @@
+
+
+
+SEND(1)                BSD Reference Manual               SEND(1)
+
+
+NNAAMMEE
+       send - send a message
+
+SSYYNNOOPPSSIISS
+       send  [-alias aliasfile]  [-draft]  [-draftfolder +folder]
+            [-draftmessage msg] [-nodraftfolder] [-filter filter-
+            file]  [-nofilter]  [-format]  [-noformat] [-forward]
+            [-noforward] [-mime]  [-nomime]  [-msgid]  [-nomsgid]
+            [-push]    [-nopush]    [-split seconds]   [-verbose]
+            [-noverbose]  [-watch]  [-nowatch]   [-width columns]
+            [file ...]  [-help]
+
+DDEESSCCRRIIPPTTIIOONN
+       _S_e_n_d  will  cause each of the specified files to be deliv-
+       ered (via _p_o_s_t (8)) to each of  the  destinations  in  the
+       "To:",  "cc:",  "Bcc:",  and "Fcc:" fields of the message.
+       If _s_e_n_d is re-distributing  a  message,  as  invoked  from
+       _d_i_s_t, then the corresponding "Resent-xxx" fields are exam-
+       ined instead.
+
+       If `-push' is specified, _s_e_n_d will detach itself from  the
+       user's terminal and perform its actions in the background.
+       If _p_u_s_h 'd and the draft can't be sent,  then  the  `-for-
+       ward'  switch says that draft should be forwarded with the
+       failure notice  sent  to  the  user.   This  differs  from
+       putting  _s_e_n_d  in  the  background  because  the output is
+       trapped and analyzed by _M_H.
+
+       If `-verbose' is specified, _s_e_n_d will indicate the  inter-
+       actions  occurring  with  the  transport  system, prior to
+       actual delivery.  If `-watch' is specified _s_e_n_d will moni-
+       tor  the  delivery  of  local and network mail.  Hence, by
+       specifying both switches, a large  detail  of  information
+       can  be  gathered  about  each step of the message's entry
+       into the transport system.
+
+       The   `-draftfolder +folder'    and    `-draftmessage msg'
+       switches  invoke the _M_H draft folder facility.  This is an
+       advanced  (and  highly  useful)  feature.    Consult   the
+       AAddvvaanncceedd FFeeaattuurreess section of the _M_H manual for more infor-
+       mation.
+
+       If `-split' is specified, _s_e_n_d will split the  draft  into
+       one or more partial messages prior to sending.  This makes
+       use of the multi-media content feature in MH.   Note  how-
+       ever  that  if  _s_e_n_d  is invoked under _d_i_s_t (1), then this
+       switch is ignored -- it makes no sense to  redistribute  a
+       message in this fashion.  Sometimes you want _s_e_n_d to pause
+       after posting a partial message.  This is usually the case
+       when you are running _s_e_n_d_m_a_i_l and expect to generate a lot
+       of partial messages.  The argument to  `-split'  tells  it
+
+
+
+[mh.6]                        MH.6.8                            1
+
+
+
+
+
+
+
+
+SEND(1)                BSD Reference Manual               SEND(1)
+
+
+       how long to pause between postings.
+
+       _S_e_n_d with no _f_i_l_e argument will query whether the draft is
+       the intended file, whereas  `-draft'  will  suppress  this
+       question.   Once  the  transport  system  has successfully
+       accepted custody of the message, the file will be  renamed
+       with  a  leading  comma,  which  allows it to be retrieved
+       until the next draft message is sent.  If there are errors
+       in  the  formatting of the message, _s_e_n_d will abort with a
+       (hopefully) helpful error message.
+
+       If a "Bcc:" field is encountered, its  addresses  will  be
+       used  for  delivery,  and the "Bcc:" field will be removed
+       from the message sent to sighted  recipients.   The  blind
+       recipients  will  receive  an  entirely new message with a
+       minimal set of headers.  Included in the body of the  mes-
+       sage  will  be  a  copy of the message sent to the sighted
+       recipients.  If `-filter filterfile'  is  specified,  then
+       this  copy  is filtered (re-formatted) prior to being sent
+       to the blind recipients.  Otherwise, to use the MIME rules
+       for encapsulation, specify the `-mime' switch.
+
+       Prior    to    sending    the    message,    the    fields
+       "From: user@local", and "Date: now" will  be  appended  to
+       the  headers in the message.  If the envariable $$SSIIGGNNAATTUURREE
+       is set, then its value is used as your personal name  when
+       constructing  the  "From:"  line  of the message.  If this
+       envariable is not set, then _s_e_n_d will consult the  profile
+       entry "Signature" for this information.  On hosts where _M_H
+       was configured with the UCI option, if $$SSIIGGNNAATTUURREE  is  not
+       set and the "Signature" profile entry is not present, then
+       the file $$HHOOMMEE/.signature is consulted.   If  `-msgid'  is
+       specified,  then  a "Message-ID:" field will also be added
+       to the message.
+
+       If _s_e_n_d is re-distributing  a  message  (when  invoked  by
+       _d_i_s_t ),  then "Resent-" will be prepended to each of these
+       fields: "From:", "Date:", and "Message-ID:".  If the  mes-
+       sage  already  contains  a  "From:" field, then a "Sender:
+       user@local" field will be  added  as  well.   (An  already
+       existing "Sender:" field is an error!)
+
+       By  using the `-format' switch, each of the entries in the
+       "To:" and "cc:" fields will be  replaced  with  "standard"
+       format  entries.   This  standard format is designed to be
+       usable by all of the message handlers on the various  sys-
+       tems  around  the Internet.  If `-noformat' is given, then
+       headers are output exactly as they appear in  the  message
+       draft.
+
+       If  an  "Fcc: folder"  is encountered, the message will be
+
+
+
+[mh.6]                        MH.6.8                            2
+
+
+
+
+
+
+
+
+SEND(1)                BSD Reference Manual               SEND(1)
+
+
+       copied to the specified folder for the sender in the  for-
+       mat  in  which  it will appear to any non-Bcc receivers of
+       the message.  That is, it will have  the  appended  fields
+       and field reformatting.  The "Fcc:" fields will be removed
+       from all outgoing copies of the message.
+
+       By using the `-width columns' switch, the user can  direct
+       _s_e_n_d as to how long it should make header lines containing
+       addresses.
+
+       The files specified by the profile entry "Aliasfile:"  and
+       any additional alias files given by the `-alias aliasfile'
+       switch will be read (more than one file,  each   preceeded
+       by  `-alias',  can  be  named).  See _m_h_-_a_l_i_a_s (5) for more
+       information.
+
+FFIILLEESS
+       $HOME/.mh_profile                         The user profile
+
+PPRROOFFIILLEE CCOOMMPPOONNEENNTTSS
+       Path:                To determine the user's MH directory
+       Draft-Folder:        To find the default draft-folder
+       Aliasfile:           For a default alias file
+       Signature:           To determine the user's mail signature
+       mailproc:            Program to post failure notices
+       postproc:            Program to post the message
+
+SSEEEE AALLSSOO
+       comp(1), dist(1), forw(1), repl(1), mh-alias(5), post(8)
+
+DDEEFFAAUULLTTSS
+       `file' defaults to <mh-dir>/draft
+       `-alias /usr/contrib/mh-6.8/lib/MailAliases'
+       `-nodraftfolder'
+       `-nofilter'
+       `-format'
+       `-forward'
+       `-nomime'
+       `-nomsgid'
+       `-nopush'
+       `-noverbose'
+       `-nowatch'
+       `-width 72'
+
+CCOONNTTEEXXTT
+       None
+
+BBUUGGSS
+       Under some configurations, it is not possible  to  mointor
+       the  mail  delivery  transaction;  `-watch'  is a no-op on
+       those systems.
+
+
+
+[mh.6]                        MH.6.8                            3
+
+
+
+
+
+
+
+
+SEND(1)                BSD Reference Manual               SEND(1)
+
+
+       Using `-split 0' doesn't work correctly.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[mh.6]                        MH.6.8                            4
+
+
+
+
+

@@ -1,0 +1,198 @@
+
+
+
+WHATNOW(1)             BSD Reference Manual            WHATNOW(1)
+
+
+NNAAMMEE
+       whatnow - prompting front-end for send
+
+SSYYNNOOPPSSIISS
+       whatnow     [-draftfolder +folder]     [-draftmessage msg]
+            [-nodraftfolder]      [-editor editor]      [-noedit]
+            [-prompt string] [file] [-help]
+
+DDEESSCCRRIIPPTTIIOONN
+       _W_h_a_t_n_o_w is the default program that queries the user about
+       the disposition of  a  composed  draft.   It  is  normally
+       invoked by one of _c_o_m_p, _d_i_s_t, _f_o_r_w, or _r_e_p_l after the ini-
+       tial edit.
+
+       When started, the editor is started on the  draft  (unless
+       `-noedit' is given, in which case the initial edit is sup-
+       pressed).  Then, _w_h_a_t_n_o_w  repetitively  prompts  the  user
+       with  "What  now?"  and  awaits  a  response.   The  valid
+       responses are:
+
+     ddiissppllaayy         to list the message being distributed/replied-to on
+                     the terminal
+     eeddiitt            to re-edit using the same editor that was used on the
+                     preceding round unless a profile entry
+                     "<lasteditor>-next: <editor>" names an alternate editor
+     eeddiitt <<eeddiittoorr>>   to invoke <editor> for further editing
+     lliisstt            to list the draft on the terminal
+     ppuusshh            to send the message in the background
+     qquuiitt            to terminate the session and preserve the draft
+     qquuiitt --ddeelleettee    to terminate, then delete the draft
+     rreeffiillee ++ffoollddeerr  to refile the draft into the given folder
+     sseenndd            to send the message
+     sseenndd --wwaattcchh     to cause the delivery process to be monitored
+     wwhhoomm            to list the addresses that the message will go to
+     wwhhoomm --cchheecckk     to list the addresses and verify that they are
+                     acceptable to the transport service
+
+     For the eeddiitt response, any valid switch  to  the  editor  is
+     valid.   Similarly,  for  the  sseenndd  and wwhhoomm responses, any
+     valid switch to  _s_e_n_d (1)  and  _w_h_o_m (1)  commands,  respec-
+     tively,  are valid.  For the ppuusshh response, any valid switch
+     to _s_e_n_d (1) is valid (as this merely invokes _s_e_n_d  with  the
+     `-push'  option).  For the _r_e_f_i_l_e response, any valid switch
+     to  the  _f_i_l_e_p_r_o_c  is  valid.   For  the  ddiissppllaayy  and  lliisstt
+     responses, any valid argument to the _l_p_r_o_c is valid.  If any
+     non-switch arguments are present, then the pathname  of  the
+     draft  will  be excluded from the argument list given to the
+     _l_p_r_o_c (this is useful for listing another _M_H message).
+
+     See _m_h_-_p_r_o_f_i_l_e (5) for further information about how editors
+     are  used  by MH.  It also discusses how complex envariables
+
+
+
+[mh.6]                        MH.6.8                            1
+
+
+
+
+
+
+
+
+WHATNOW(1)             BSD Reference Manual            WHATNOW(1)
+
+
+     can be used to direct _w_h_a_t_n_o_w's actions.
+
+     The `-prompt string' switch sets the  prompting  string  for
+     _w_h_a_t_n_o_w.
+
+     The  `-draftfolder +folder' and `-draftmessage msg' switches
+     invoke the _M_H draft folder facility.  This  is  an  advanced
+     (and  highly useful) feature.  Consult the AAddvvaanncceedd FFeeaattuurreess
+     section of the _M_H manual for more information.
+
+FFIILLEESS
+       $HOME/.mh_profile                         The user profile
+       <mh-dir>/draft                            The draft file
+
+PPRROOFFIILLEE CCOOMMPPOONNEENNTTSS
+       Path:                To determine the user's MH directory
+       Draft-Folder:        To find the default draft-folder
+       Editor:              To override the default editor
+       <lasteditor>-next:   To name an editor to be used after exit from <lasteditor>
+       automhnproc:         Program to automatically run prior to sending
+                            if the draft is an _m_h_n composition file
+       fileproc:            Program to refile the message
+       lproc:               Program to list the contents of a message
+       sendproc:            Program to use to send the message
+       whomproc:            Program to determine who a message would go to
+
+SSEEEE AALLSSOO
+       send(1), whom(1)
+
+DDEEFFAAUULLTTSS
+       `-prompt "What Now? "'
+
+CCOONNTTEEXXTT
+       None
+
+BBUUGGSS
+       The argument to the `-prompt' switch must  be  interpreted
+       as  a  single  token  by  the  shell that invokes _w_h_a_t_n_o_w.
+       Therefore, one must usually place  the  argument  to  this
+       switch inside double-quotes.
+
+       If  the initial edit fails, _w_h_a_t_n_o_w deletes your draft (by
+       renaming it with a leading comma); failure of a later edit
+       preverves the draft.
+
+       If _w_h_a_t_n_o_w_p_r_o_c is _w_h_a_t_n_o_w, then _c_o_m_p, _d_i_s_t, _f_o_r_w, and _r_e_p_l
+       use a built-in _w_h_a_t_n_o_w, and do not actually run the  _w_h_a_t_-
+       _n_o_w  program.   Hence, if you define your own _w_h_a_t_n_o_w_p_r_o_c,
+       don't call it _w_h_a_t_n_o_w since it won't be run.
+
+       If _s_e_n_d_p_r_o_c is _s_e_n_d, then _w_h_a_t_n_o_w uses a built-in _s_e_n_d, it
+
+
+
+[mh.6]                        MH.6.8                            2
+
+
+
+
+
+
+
+
+WHATNOW(1)             BSD Reference Manual            WHATNOW(1)
+
+
+       does  not  actually  run  the _s_e_n_d program.  Hence, if you
+       define your own _s_e_n_d_p_r_o_c, don't call it _s_e_n_d since _w_h_a_t_n_o_w
+       won't run it.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[mh.6]                        MH.6.8                            3
+
+
+
+
+

@@ -1,0 +1,264 @@
+
+
+
+MH-MAIL(5)           BSD Programmer's Manual           MH-MAIL(5)
+
+
+NNAAMMEE
+       mh-mail - message format for MH message system
+
+SSYYNNOOPPSSIISS
+       any _M_H command
+
+DDEESSCCRRIIPPTTIIOONN
+       _M_H  processes  messages in a particular format.  It should
+       be noted that although neither Bell nor  Berkeley  mailers
+       produce  message  files  in the format that _M_H prefers, _M_H
+       can read message files in that antiquated format.
+
+       Each user  possesses  a  mail  drop  box  which  initially
+       receives all messages processed by _p_o_s_t (8).  _I_n_c (1) will
+       read from that drop box and incorporate the  new  messages
+       found  there  into  the user's own mail folders (typically
+       `+inbox').  The mail drop box consists of one or more mes-
+       sages.
+
+       Messages are expected to consist of lines of text.  Graph-
+       ics and binary data are not handled.  No data  compression
+       is accepted.  All text is clear ASCII 7-bit data.
+
+       The  general  "memo" framework of RFC-822 is used.  A mes-
+       sage consists of a block of information in a rigid format,
+       followed  by  general  text with no specified format.  The
+       rigidly formatted first part of a message  is  called  the
+       header,  and  the  free-format portion is called the body.
+       The header must always exist, but the  body  is  optional.
+       These parts are separated by an empty line, i.e., two con-
+       secutive newline characters.  Within _M_H,  the  header  and
+       body may be separated by a line consisting of dashes:
+
+            To:
+            cc:
+            Subject:
+            --------
+
+       The  header is composed of one or more header items.  Each
+       header item can be viewed as  a  single  logical  line  of
+       ASCII  characters.   If  the text of a header item extends
+       across several real  lines,  the  continuation  lines  are
+       indicated by leading spaces or tabs.
+
+       Each  header item is called a component and is composed of
+       a keyword or name, along with associated text.   The  key-
+       word  begins at the left margin, may NOT contain spaces or
+       tabs, may  not  exceed  63  characters  (as  specified  by
+       RFC-822),  and  is  terminated  by a colon (`:').  Certain
+       components (as identified by their keywords)  must  follow
+       rigidly defined formats in their text portions.
+
+
+
+[mh.6]                        MH.6.8                            1
+
+
+
+
+
+
+
+
+MH-MAIL(5)           BSD Programmer's Manual           MH-MAIL(5)
+
+
+       The  text for most formatted components (e.g., "Date:" and
+       "Message-Id:") is produced automatically.  The  only  ones
+       entered  by  the  user  are  address fields such as "To:",
+       "cc:", etc.  Internet addresses are assigned mailbox names
+       and  host  computer  specifications.   The rough format is
+       "local@domain", such as "MH@UCI",  or  "MH@UCI-ICSA.ARPA".
+       Multiple  addresses  are  separated  by commas.  A missing
+       host/domain is assumed to be the local host/domain.
+
+       As mentioned above, a blank line (or  a  line  of  dashes)
+       signals  that all following text up to the end of the file
+       is the body.  No formatting is expected or enforced within
+       the body.
+
+       Following  is a list of header components that are consid-
+       ered meaningful to various MH programs.
+       Date:
+            Added by _p_o_s_t (8), contains date and time of the mes-
+            sage's entry into the transport system.
+
+       From:
+            Added by _p_o_s_t (8), contains the address of the author
+            or authors (may be more than one if a "Sender:" field
+            is  present).   Replies  are  typically  directed  to
+            addresses in the "Reply-To:" or  "From:"  field  (the
+            former has precedence if present).
+
+       Sender:
+            Added  by  _p_o_s_t (8)  in  the  event  that the message
+            already has a "From:" line.  This line  contains  the
+            address of the actual sender.  Replies are never sent
+            to addresses in the "Sender:" field.
+
+       To:
+            Contains addresses of primary recipients.
+
+       cc:
+            Contains addresses of secondary recipients.
+
+       Bcc:
+            Still more recipients.  However, the "Bcc:"  line  is
+            not  copied  onto  the message as delivered, so these
+            recipients are not listed.  _M_H uses an  encapsulation
+            method for blind copies, see _s_e_n_d (1).
+
+       Fcc:
+            Causes  _p_o_s_t (8)  to copy the message into the speci-
+            fied folder for the sender, if the message  was  suc-
+            cessfully given to the transport system.
+
+       Message-ID:
+
+
+
+[mh.6]                        MH.6.8                            2
+
+
+
+
+
+
+
+
+MH-MAIL(5)           BSD Programmer's Manual           MH-MAIL(5)
+
+
+            A  unique message identifier added by _p_o_s_t (8) if the
+            `-msgid' flag is set.
+
+       Subject:
+            Sender's commentary.  It is displayed by _s_c_a_n (1).
+
+       In-Reply-To:
+            A commentary line added by _r_e_p_l (1) when replying  to
+            a message.
+
+       Resent-Date:
+            Added when redistributing a message by _p_o_s_t (8).
+
+       Resent-From:
+            Added when redistributing a message by _p_o_s_t (8).
+
+       Resent-To:
+            New recipients for a message resent by _d_i_s_t (1).
+
+       Resent-cc:
+            Still more recipients.  See "cc:" and "Resent-To:".
+
+       Resent-Bcc:
+            Even more recipients.  See "Bcc:" and "Resent-To:".
+
+       Resent-Fcc:
+            Copy  resent  message  into a folder.  See "Fcc:" and
+            "Resent-To:".
+
+       Resent-Message-Id:
+            A unique identifier  glued  on  by  _p_o_s_t (8)  if  the
+            `-msgid'   flag   is   set.   See  "Message-Id:"  and
+            "Resent-To:".
+
+       Resent:
+            Annotation for _d_i_s_t (1) under the `-annotate' option.
+
+       Forwarded:
+            Annotation for _f_o_r_w (1) under the `-annotate' option.
+
+       Replied:
+            Annotation for _r_e_p_l (1) under the `-annotate' option.
+
+
+FFIILLEESS
+       /var/mail/$USER                           Location of mail drop
+
+PPRROOFFIILLEE CCOOMMPPOONNEENNTTSS
+       None
+
+
+
+
+
+[mh.6]                        MH.6.8                            3
+
+
+
+
+
+
+
+
+MH-MAIL(5)           BSD Programmer's Manual           MH-MAIL(5)
+
+
+SSEEEE AALLSSOO
+       _S_t_a_n_d_a_r_d  _f_o_r  _t_h_e  _F_o_r_m_a_t  _o_f _A_R_P_A _I_n_t_e_r_n_e_t _T_e_x_t _M_e_s_s_a_g_e_s
+       (aka RFC-822)
+
+DDEEFFAAUULLTTSS
+       None
+
+CCOONNTTEEXXTT
+       None
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[mh.6]                        MH.6.8                            4
+
+
+
+
+

@@ -1,0 +1,330 @@
+
+
+
+PICK(1)                BSD Reference Manual               PICK(1)
+
+
+NNAAMMEE
+       pick - select messages by content
+
+SSYYNNOOPPSSIISS
+     pick   [+folder]   [msgs]  [-and ...]  [-or ...]  [-not ...]
+            [-lbrace ... -rbrace] [--component pattern] [-cc pat-
+            tern]  [-date pattern]  [-from pattern] [-search pat-
+            tern] [-subject pattern] [-to pattern]  [-after date]
+            [-before date]                     [-datefield field]
+            [-sequence name ...]  [-public]  [-nopublic]  [-zero]
+            [-nozero] [-list] [-nolist] [-help]
+
+     typically:
+            scan `pick -from jones`
+            pick -to holloway -sequence select
+            show `pick -before friday`
+
+DDEESSCCRRIIPPTTIIOONN
+       _P_i_c_k  searches  messages within a folder for the specified
+       contents, and then identifies those messages.   Two  types
+       of  search  primitives are available: pattern matching and
+       date constraint operations.
+
+       A modified _g_r_e_p(1) is used to perform the matching, so the
+       full  regular expression (see _e_d(1)) facility is available
+       within  `pattern'.   With  `-search',  `pattern'  is  used
+       directly,  and  with  the  others,  the  grep pattern con-
+       structed is:
+
+            "component[ \t]*:.*pattern"
+
+       This means that the pattern specified for a `-search' will
+       be  found  everywhere in the message, including the header
+       and the body, while the other  pattern  matching  requests
+       are  limited  to  the  single  specified  component.   The
+       expression
+
+            `--component pattern'
+
+       is a shorthand for specifying
+
+            `-search "component[ \t]*:.*pattern" '
+
+       It is used to pick a component which is not one of  "To:",
+       "cc:",  "Date:",  "From:",  or  "Subject:".  An example is
+       `pick --reply-to pooh'.
+
+       Pattern matching is performed on a per-line basis.  Within
+       the  header  of  the message, each component is treated as
+       one long line, but in the body,  each  line  is  separate.
+       Lower-case letters in the search pattern will match either
+
+
+
+[mh.6]                        MH.6.8                            1
+
+
+
+
+
+
+
+
+PICK(1)                BSD Reference Manual               PICK(1)
+
+
+       lower or upper case in the message, while upper case  will
+       match only upper case.
+
+       Note  that  since the `-date' switch is a pattern matching
+       operation (as described above), to find messages sent on a
+       certain date the pattern string must match the text of the
+       "Date:" field of the message.
+
+       Independent of any pattern matching operations  requested,
+       the  switches  `-after date' or `-before date' may also be
+       used to introduce date/time contraints on all of the  mes-
+       sages.  By default, the "Date:" field is consulted, but if
+       another date  yielding  field  (such  as  "BB-Posted:"  or
+       "Delivery-Date:")  should  be used, the `-datefield field'
+       switch may be used.
+
+       With `-before' and `-after', _p_i_c_k will actually parse  the
+       date  fields  in  each of the messages specified in `msgs'
+       and compare them to the date/time specified.  If  `-after'
+       is  given,  then  only  those messages whose "Date:" field
+       value is chronologically after the date specified will  be
+       considered.  The `-before' switch specifies the complimen-
+       tary action.
+
+       Both  the  `-after'  and  `-before'  switches  take  legal
+       822-style  date  specifications  as  arguments.  _P_i_c_k will
+       default certain missing fields so  that  the  entire  date
+       need  not  be  specified.   These  fields are (in order of
+       defaulting): timezone, time and timezone, date,  date  and
+       timezone.   All  defaults are taken from the current date,
+       time, and timezone.
+
+       In addition to 822-style dates, _p_i_c_k will  also  recognize
+       any  of  the  days of the week ("sunday", "monday", and so
+       on), and the special dates "today", "yesterday" (24  hours
+       ago), and "tomorrow" (24 hours from now).  All days of the
+       week are judged to refer to  a  day  in  the  past  (e.g.,
+       telling  _p_i_c_k "saturday" on a "tuesday" means "last satur-
+       day" not "this saturday").
+
+       Finally, in addition to these special specifications, _p_i_c_k
+       will  also  honor a specification of the form "-dd", which
+       means "dd days ago".
+
+       _P_i_c_k supports complex boolean operations on the  searching
+       primitives   with   the   `-and',   `-or',   `-not',   and
+       `-lbrace ... -rbrace' switches.  For example,
+
+            pick -after yesterday -and
+                 -lbrace -from freida -or -from fear -rbrace
+
+
+
+
+[mh.6]                        MH.6.8                            2
+
+
+
+
+
+
+
+
+PICK(1)                BSD Reference Manual               PICK(1)
+
+
+       identifies messages recently sent by "frieda" or "fear".
+
+       The matching primitives take precedence  over  the  `-not'
+       switch,  which  in turn takes precedence over `-and' which
+       in turn takes precedence  over  `-or'.   To  override  the
+       default  precedence,  the `-lbrace' and `-rbrace' switches
+       are provided, which act  just  like  opening  and  closing
+       parentheses in logical expressions.
+
+       If  no  search criteria are given, all the messages speci-
+       fied on the command line are selected  (this  defaults  to
+       "all").
+
+       Once  the search has been performed, if the `-list' switch
+       is given, the message numbers of the selected messages are
+       written  to  the  standard  output  separated by newlines.
+       This is _e_x_t_r_e_m_e_l_y useful for quickly generating  arguments
+       for other _M_H programs by using the "backquoting" syntax of
+       the shell.  For example, the command
+
+            scan `pick +todo -after "31 Mar 83 0123 PST"`
+
+       says to _s_c_a_n those messages in the indicated folder  which
+       meet  the  appropriate criterion.  Note that since _p_i_c_k 's
+       context changes are written out prior to  _s_c_a_n 's  invoca-
+       tion,  you  need  not  give the folder argument to _s_c_a_n as
+       well.
+
+       Regardless of the operation of  the  `-list'  switch,  the
+       `-sequence  name'  switch  may  be  given  once  for  each
+       sequence the user wishes to  define.   For  each  sequence
+       named, that sequence will be defined to mean exactly those
+       messages selected by _p_i_c_k.  For example,
+
+            pick -from frated -seq fred
+
+       defines a new message  sequence  for  the  current  folder
+       called  "fred"  which contains exactly those messages that
+       were selected.
+
+       Note  that  whenever  _p_i_c_k  processes  a  `-sequence name'
+       switch, it sets `-nolist'.
+
+       By  default, _p_i_c_k will zero the sequence before adding it.
+       This action can be disabled  with  the  `-nozero'  switch,
+       which  means  that  the  messages selected by _p_i_c_k will be
+       added to the sequence, if it already exists, and any  mes-
+       sages already a part of that sequence will remain so.
+
+       The `-public' and `-nopublic' switches are used by _p_i_c_k in
+       the same way _m_a_r_k uses them.
+
+
+
+[mh.6]                        MH.6.8                            3
+
+
+
+
+
+
+
+
+PICK(1)                BSD Reference Manual               PICK(1)
+
+
+FFIILLEESS
+       $HOME/.mh_profile                         The user profile
+
+PPRROOFFIILLEE CCOOMMPPOONNEENNTTSS
+       Path:                To determine the user's MH directory
+       Current-Folder:      To find the default current folder
+
+SSEEEE AALLSSOO
+       mark(1)
+
+DDEEFFAAUULLTTSS
+       `+folder' defaults to the current folder
+       `msgs' defaults to all
+       `-datefield date'
+       `-nopublic' if the folder is read-only, `-public' otherwise
+       `-zero'
+       `-list' is the default if no `-sequence', `-nolist' otherwise
+
+CCOONNTTEEXXTT
+       If a folder is given, it will become the current folder.
+
+HHIISSTTOORRYY
+       In previous versions of _M_H, the _p_i_c_k command  would  _s_h_o_w,
+       _s_c_a_n,  or  _r_e_f_i_l_e  the selected messages.  This was rather
+       "inverted logic" from the UNIX point of view, so _p_i_c_k  was
+       changed  to  define  sequences and output those sequences.
+       Hence, _p_i_c_k can be used to generate the arguments for  all
+       other _M_H commands, instead of giving _p_i_c_k endless switches
+       for invoking those commands itself.
+
+       Also, previous versions of _p_i_c_k balked if you didn't spec-
+       ify  a  search string or a date/time constraint.  The cur-
+       rent version does not, and merely matches the messages you
+       specify.  This lets you type something like:
+
+            show `pick last:20 -seq fear`
+
+       instead of typing
+
+            mark -add -nozero -seq fear last:20
+            show fear
+
+       Finally,  timezones  used  to  be  ignored  when comparing
+       dates: they aren't any more.
+
+HHEELLPPFFUULL HHIINNTTSS
+       Use "pick sequence -list" to enumerate the messages  in  a
+       sequence (such as for use by a shell script).
+
+BBUUGGSS
+       The  argument  to the `-after' and `-before' switches must
+
+
+
+[mh.6]                        MH.6.8                            4
+
+
+
+
+
+
+
+
+PICK(1)                BSD Reference Manual               PICK(1)
+
+
+       be interpreted as a single token by the shell that invokes
+       _p_i_c_k.   Therefore,  one must usually place the argument to
+       this switch inside double-quotes.  Furthermore, any  occu-
+       rance  of `-datefield' must occur prior to the `-after' or
+       `-before' switch it applies to.
+
+       If _p_i_c_k is used in a back-quoted operation, such as
+
+            scan `pick -from jones`
+
+       and _p_i_c_k selects no messages (e.g., no messages  are  from
+       "jones"),  then the shell will still run the outer command
+       (e.g., "scan").  Since no messages were matched, _p_i_c_k pro-
+       duced  no output, and the argument given to the outer com-
+       mand as a result of backquoting _p_i_c_k  is  empty.   In  the
+       case  of _M_H programs, the outer command now acts as if the
+       default `msg' or `msgs' should be used (e.g., "all" in the
+       case  of  _s_c_a_n ).  To prevent this unexpected behavior, if
+       `-list' was given, and if its standard  output  is  not  a
+       tty, then _p_i_c_k outputs the illegal message number "0" when
+       it fails.  This lets the outer command fail gracefully  as
+       well.
+
+       The  pattern  syntax "[l-r]" is not supported; each letter
+       to be matched must be included within the square brackets.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[mh.6]                        MH.6.8                            5
+
+
+
+
+

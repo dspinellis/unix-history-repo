@@ -1,0 +1,66 @@
+
+
+
+PACKF(1)               BSD Reference Manual              PACKF(1)
+
+
+NNAAMMEE
+       packf - compress an MH folder into a single file
+
+SSYYNNOOPPSSIISS
+       packf [+folder] [msgs] [-file name] [-help]
+
+DDEESSCCRRIIPPTTIIOONN
+       _P_a_c_k_f  takes  messages  from a folder and copies them to a
+       single file.  Each message in the  file  is  separated  by
+       four  CTRL-A's  and  a  newline.   Messages  packed can be
+       unpacked using _i_n_c.
+
+       If the _n_a_m_e given to the `-file name' switch exists,  then
+       the  messages specified will be appended to the end of the
+       file, otherwise the file will be created and the  messages
+       appended.
+
+FFIILLEESS
+       $HOME/.mh_profile                         The user profile
+       .msgbox.map                               A binary index of the file
+
+PPRROOFFIILLEE CCOOMMPPOONNEENNTTSS
+       Path:                To determine the user's MH directory
+       Current-Folder:      To find the default current folder
+       Msg-Protect:         To set mode when creating a new `file'
+
+SSEEEE AALLSSOO
+       inc(1)
+
+DDEEFFAAUULLTTSS
+       `+folder' defaults to the current folder
+       `msgs' defaults to all
+       `-file ./msgbox'
+
+CCOONNTTEEXXTT
+       If  a  folder is given, it will become the current folder.
+       The first message packed will become the current  message.
+
+BBUUGGSS
+       _P_a_c_k_f  doesn't  handle  the  old  UUCP-style "mbox" format
+       (used by _S_e_n_d_M_a_i_l).  To pack messages  into  this  format,
+       use  the  script  _/_u_s_r_/_c_o_n_t_r_i_b_/_m_h_-_6_._8_/_l_i_b_/_p_a_c_k_m_b_o_x.   Note
+       that _p_a_c_k_m_b_o_x does not take the `-file' option  of  _p_a_c_k_f,
+       and instead writes its output on _s_t_d_o_u_t.
+
+
+
+
+
+
+
+
+
+
+[mh.6]                        MH.6.8                            1
+
+
+
+
+
