@@ -1,0 +1,16 @@
+- Add UnshiftedSelection a .Xdefaults option.
+- Add X11 style cursorshape .Xdefaults option.
+- Allow dynamic font changes. Use: alias newfont 'echo -n "^[]47;\!*^["'
+- Don't do X I/O in onalarm(), we might screw up X I/O already in progress.
+- Don't put hostname in utmp for unix domain socket xterms.
+- Fix resize and font change bugs that made size of scroll region too small.
+- Fix resize that caused problems when the number of lines got smaller.
+- Make DropMenu a .Xdefaults option.
+- Make UniqueSuffix a .Xdefaults option.
+- Make icon open failure non-fatal.
+- Make scrollbars work like xterm 6.6A and more like SunView.
+
+    xterm.DropMenu: on			# drop menus from cursor
+    xterm.UniqueSuffix: off		# don't append " # %d" to title
+    xterm.UnshiftedSelection: on	# do text editing without shift key
+    xterm.cursorShape: arrow		# Use left_ptr for cursor
