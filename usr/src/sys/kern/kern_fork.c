@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_fork.c	7.14 (Berkeley) %G%
+ *	@(#)kern_fork.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -84,8 +84,8 @@ fork1(isvfork)
 	if (p2==NULL || (u.u_uid!=0 && (p2->p_nxt == NULL || a>MAXUPRC))) {
 		u.u_error = EAGAIN;
 		if (!isvfork) {
-			(void) vsexpand((size_t)0, &u.u_cdmap, 1);
-			(void) vsexpand((size_t)0, &u.u_csmap, 1);
+			(void) vsexpand((segsz_t)0, &u.u_cdmap, 1);
+			(void) vsexpand((segsz_t)0, &u.u_csmap, 1);
 		}
 		goto out;
 	}
