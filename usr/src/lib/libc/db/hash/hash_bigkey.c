@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash_bigkey.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash_bigkey.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /******************************************************************************
@@ -45,6 +45,9 @@ ROUTINES:
 /* Externals */
 /* buf.c */
 extern BUFHEAD *__get_buf();
+
+/* dynahash.c */
+extern	u_int call_hash();
 
 /* page.c */
 extern BUFHEAD *__add_ovflpage();
@@ -550,7 +553,7 @@ BUFHEAD	*op;		/* Pointer to where to put keys that go in old bucket */
 BUFHEAD	*np;		/* Pointer to new bucket page */
 BUFHEAD	*big_keyp;	/* Pointer to first page containing the big key/data */
 u_short	addr;		/* Address of big_keyp */
-int	obucket;	/* Old Bucket */
+u_int	obucket;	/* Old Bucket */
 SPLIT_RETURN	*ret;
 {
     register	u_short	*prev_pagep;
@@ -562,7 +565,7 @@ SPLIT_RETURN	*ret;
 
     DBT		key, val;
 
-    int		change;
+    u_int	change;
 
     /* Now figure out where the big key/data goes */
     if (__big_keydata ( big_keyp, 1, &key, &val, 0 )) {
