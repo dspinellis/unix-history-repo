@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sys_term.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)sys_term.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -62,19 +62,39 @@ struct termbuf {
 	int state;
 	int lflags;
 } termbuf, termbuf2;
+# define	cfsetospeed(tp, val)	(tp)->sg.sg_ospeed = (val)
+# define	cfsetispeed(tp, val)	(tp)->sg.sg_ispeed = (val)
 #else	/* USE_TERMIO */
 # ifdef	SYSV_TERMIO
 #	define termios termio
 # endif
-# ifndef TCSETA
+# ifndef	TCSANOW
 #  ifdef TCSETS
-#   define TCSETA TCSETS
-#   define TCGETA TCGETS
+#   define	TCSANOW		TCSETS
+#   define	TCSADRAIN	TCSETSW
+#   define	tcgetattr(f, t)	iotcl(f, TCGETS, t)
 #  else
-#   define TCSETA TIOCSETAW
-#   define TCGETA TIOCGETA
+#   ifdef TCSETA
+#    define	TCSANOW		TCSETA
+#    define	TCSADRAIN	TCSETAW
+#    define	tcgetattr(f, t)	ioctl(f, TCGETA, t)
+#   else
+#    define	TCSANOW		TIOCSETA
+#    define	TCSADRAIN	TIOCSETAW
+#    define	tcgetattr(f, t)	iotcl(f, TIOCGETA, t)
+#   endif
 #  endif
-# endif /* 4.4BSD */
+#  define	tcsetattr(f, a, t)	ioctl(f, a, t)
+#  define	cfsetospeed(tp, val)	(tp)->c_cflag &= ~CBAUD; \
+					(tp)->c_cflag |= (val)
+#  ifdef CIBAUD
+#   define	cfsetispeed(tp, val)	(tp)->c_cflag &= ~CIBAUD; \
+					(tp)->c_cflag |= ((val)<<IBSHIFT)
+#  else
+#   define	cfsetispeed(tp, val)	(tp)->c_cflag &= ~CBAUD; \
+					(tp)->c_cflag |= (val)
+#  endif
+# endif /* TCSANOW */
 struct termios termbuf, termbuf2;	/* pty control structure */
 #endif	/* USE_TERMIO */
 
@@ -99,7 +119,7 @@ init_termbuf()
 	(void) ioctl(pty, TIOCGSTATE, (char *)&termbuf.state);
 # endif
 #else
-	(void) ioctl(pty, TCGETA, (char *)&termbuf);
+	(void) tcgetattr(pty, (char *)&termbuf);
 #endif
 	termbuf2 = termbuf;
 }
@@ -123,7 +143,7 @@ set_termbuf()
 	 */
 #ifndef	USE_TERMIO
 	if (bcmp((char *)&termbuf.sg, (char *)&termbuf2.sg, sizeof(termbuf.sg)))
-		(void) ioctl(pty, TIOCSETP, (char *)&termbuf.sg);
+		(void) ioctl(pty, TIOCSETN, (char *)&termbuf.sg);
 	if (bcmp((char *)&termbuf.tc, (char *)&termbuf2.tc, sizeof(termbuf.tc)))
 		(void) ioctl(pty, TIOCSETC, (char *)&termbuf.tc);
 	if (bcmp((char *)&termbuf.ltc, (char *)&termbuf2.ltc,
@@ -133,7 +153,7 @@ set_termbuf()
 		(void) ioctl(pty, TIOCLSET, (char *)&termbuf.lflags);
 #else	/* USE_TERMIO */
 	if (bcmp((char *)&termbuf, (char *)&termbuf2, sizeof(termbuf)))
-		(void) ioctl(pty, TCSETA, (char *)&termbuf);
+		(void) tcsetattr(pty, TCSADRAIN, (char *)&termbuf);
 # if	defined(CRAY2) && defined(UNCIOS5)
 	needtermstat = 1;
 # endif
@@ -280,8 +300,11 @@ cc_t **valpp;
 		defval(0);
 #endif
 	case SLC_AO:
-#ifdef	VFLUSHO
-		setval(VFLUSHO, SLC_VARIABLE|SLC_FLUSHOUT);
+#if	!defined(VDISCARD) && defined(VFLUSHO)
+# define VDISCARD VFLUSHO
+#endif
+#ifdef	VDISCARD
+		setval(VDISCARD, SLC_VARIABLE|SLC_FLUSHOUT);
 #else
 		defval(0);
 #endif
@@ -299,10 +322,15 @@ cc_t **valpp;
 	case SLC_FORW2:
 		setval(VEOL2, SLC_VARIABLE);
 #endif
+	case SLC_AYT:
+#ifdef	VSTATUS
+		setval(VSTATUS, SLC_VARIABLE);
+#else
+		defval(0);
+#endif
 
 	case SLC_BRK:
 	case SLC_SYNCH:
-	case SLC_AYT:
 	case SLC_EOR:
 		defval(0);
 
@@ -330,6 +358,7 @@ getnpty()
 }
 #endif /* CRAY */
 
+#ifndef	convex
 /*
  * getpty()
  *
@@ -338,7 +367,15 @@ getnpty()
  *
  * Returns the file descriptor of the opened pty.
  */
+#ifndef	__GNUC__
 char *line = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
+#else
+static char Xline[] = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
+char *line = Xline;
+#endif
+#ifdef	CRAY
+char *myline = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
+#endif	/* CRAY */
 
 getpty()
 {
@@ -370,13 +407,33 @@ getpty()
 #else	/* CRAY */
 	register int npty;
 	extern lowpty, highpty;
+	struct stat sb;
 
 	for (npty = lowpty; npty <= highpty; npty++) {
-		(void) sprintf(line, "/dev/pty/%03d", npty);
-		p = open(line, 2);
+		(void) sprintf(myline, "/dev/pty/%03d", npty);
+		p = open(myline, 2);
 		if (p < 0)
 			continue;
 		(void) sprintf(line, "/dev/ttyp%03d", npty);
+		/*
+		 * Here are some shenanigans to make sure that there
+		 * are no listeners lurking on the line.
+		 */
+		if(stat(line, &sb) < 0) {
+			(void) close(p);
+			continue;
+		}
+		if(sb.st_uid || sb.st_gid || sb.st_mode != 0600) {
+			chown(line, 0, 0);
+			chmod(line, 0600);
+			(void)close(p);
+			p = open(myline, 2);
+			if (p < 0)
+				continue;
+		}
+		/*
+		 * Now it should be safe...check for accessability.
+		 */
 		if (access(line, 6) == 0)
 			return(p);
 		else {
@@ -387,6 +444,7 @@ getpty()
 #endif	/* CRAY */
 	return(-1);
 }
+#endif	/* convex */
 
 #ifdef	LINEMODE
 /*
@@ -419,12 +477,20 @@ tty_flowmode()
 #endif
 }
 
+#ifdef convex
+static int linestate;
+#endif
+
 tty_linemode()
 {
+#ifndef convex
 #ifndef	USE_TERMIO
 	return(termbuf.state & TS_EXTPROC);
 #else
 	return(termbuf.c_lflag & EXTPROC);
+#endif
+#else
+	return(linestate);
 #endif
 }
 
@@ -432,15 +498,22 @@ tty_setlinemode(on)
 int on;
 {
 #ifdef	TIOCEXT
+# ifndef convex
+	set_termbuf();
+# else
+	linestate = on;
+# endif
 	(void) ioctl(pty, TIOCEXT, (char *)&on);
+# ifndef convex
+	init_termbuf();
+# endif
 #else	/* !TIOCEXT */
-#ifdef	EXTPROC
+# ifdef	EXTPROC
 	if (on)
 		termbuf.c_lflag |= EXTPROC;
 	else
 		termbuf.c_lflag &= ~EXTPROC;
-#endif
-	set_termbuf();
+# endif
 #endif	/* TIOCEXT */
 }
 
@@ -689,16 +762,7 @@ tty_tspeed(val)
 
 	for (tp = termspeeds; (tp->speed != -1) && (val > tp->speed); tp++)
 		;
-#ifndef	USE_TERMIO
-	termbuf.sg.sg_ospeed = tp->value;
-#else
-# ifdef	CBAUD
-	termbuf.c_cflag &= ~CBAUD;
-	termbuf.c_cflag |= tp->value;
-# else
-	termbuf.c_ospeed = tp->value;
-# endif
-#endif
+	cfsetospeed(&termbuf, tp->value);
 }
 
 tty_rspeed(val)
@@ -707,16 +771,7 @@ tty_rspeed(val)
 
 	for (tp = termspeeds; (tp->speed != -1) && (val > tp->speed); tp++)
 		;
-#ifndef	USE_TERMIO
-	termbuf.sg.sg_ispeed = tp->value;
-#else
-# ifdef	CBAUD
-	termbuf.c_cflag &= ~CBAUD;
-	termbuf.c_cflag |= tp->value;
-# else
-	termbuf.c_ispeed = tp->value;
-# endif
-#endif
+	cfsetispeed(&termbuf, tp->value);
 }
 
 #if	defined(CRAY2) && defined(UNICOS5)
@@ -754,72 +809,195 @@ getptyslave()
 {
 	register int t = -1;
 
-#ifndef	CRAY
+#if	!defined(CRAY) || !defined(NEWINIT)
+# ifdef	LINEMODE
 	/*
-	 * Disassociate self from control terminal and open ttyp side.
-	 * Set important flags on ttyp and ptyp.
+	 * Opening the slave side may cause initilization of the
+	 * kernel tty structure.  We need remember whether or not
+	 * linemode was turned on, so that we can re-set it if we
+	 * need to.
 	 */
+	int waslm = tty_linemode();
+# endif
+
+
+	/*
+	 * Make sure that we don't have a controlling tty, and
+	 * that we are the session (process group) leader.
+	 */
+# ifdef	TIOCNOTTY
 	t = open(_PATH_TTY, O_RDWR);
 	if (t >= 0) {
 		(void) ioctl(t, TIOCNOTTY, (char *)0);
 		(void) close(t);
 	}
+# endif
 
-	t = open(line, O_RDWR);
+
+# ifdef	CRAY
+	/*
+	 * Wait for our parent to get the utmp stuff to get done.
+	 */
+	utmp_sig_wait();
+# endif
+
+	t = cleanopen(line);
 	if (t < 0)
 		fatalperror(net, line);
-	if (fchmod(t, 0))
-		fatalperror(net, line);
-#if BSD <= 43
-	(void) signal(SIGHUP, SIG_IGN);
-	vhangup();
-	(void) signal(SIGHUP, SIG_DFL);
-	t = open(line, O_RDWR);
-	if (t < 0)
-		fatalperror(net, line);
-#endif
 
+	/*
+	 * set up the tty modes as we like them to be.
+	 */
 	init_termbuf();
-#ifndef	USE_TERMIO
+# ifdef	LINEMODE
+	if (waslm)
+		tty_setlinemode();
+# endif	LINEMODE
+
+	/*
+	 * Settings for sgtty based systems
+	 */
+# ifndef	USE_TERMIO
 	termbuf.sg.sg_flags |= CRMOD|ANYP|ECHO|XTABS;
 	termbuf.sg.sg_ospeed = termbuf.sg.sg_ispeed = B9600;
-#else
+# endif	/* USE_TERMIO */
+
+	/*
+	 * Settings for UNICOS
+	 */
+# ifdef	CRAY
+	termbuf.c_oflag = OPOST|ONLCR|TAB3;
+	termbuf.c_iflag = IGNPAR|ISTRIP|ICRNL|IXON;
+	termbuf.c_lflag = ISIG|ICANON|ECHO|ECHOE|ECHOK;
+	termbuf.c_cflag = EXTB|HUPCL|CS8;
+# endif
+
+	/*
+	 * Settings for all other termios/termio based
+	 * systems, other than 4.4BSD.  In 4.4BSD the
+	 * kernel does the initial terminal setup.
+	 */
+# if defined(USE_TERMIO) && !defined(CRAY) && (BSD <= 43)
+#  ifndef	OXTABS
+#   define OXTABS	0
+#  endif
 	termbuf.c_lflag |= ECHO;
-#ifndef	OXTABS
-#define OXTABS	0
-#endif
 	termbuf.c_oflag |= ONLCR|OXTABS;
 	termbuf.c_iflag |= ICRNL;
 	termbuf.c_iflag &= ~IXOFF;
-# ifdef	CBAUD
-	termbuf.c_cflag &= ~CBAUD;
-	termbuf.c_cflag |= B9600;
-# else	/* CBAUD */
-	termbuf.c_ospeed = termbuf.c_ispeed = B9600;
-# endif	/* CBAUD */
-#endif
+	cfsetospeed(&termbuf, B9600);
+	cfsetispeed(&termbuf, B9600);
+# endif /* defined(USE_TERMIO) && !defined(CRAY) && (BSD <= 43) */
+
+	/*
+	 * Set the tty modes, and make this our controlling tty.
+	 */
 	set_termbuf();
-#else	/* CRAY */
+	if (login_tty(t) == -1)
+		fatalperror(net, "login_tty");
+#endif	/* !defined(CRAY) || !defined(NEWINIT) */
+	if (net > 2)
+		(void) close(net);
+	if (pty > 2)
+		(void) close(pty);
+}
+
+#if	!defined(CRAY) || !defined(NEWINIT)
+#ifndef	O_NOCTTY
+#define	O_NOCTTY	0
+#endif
+/*
+ * Open the specified slave side of the pty,
+ * making sure that we have a clean tty.
+ */
+cleanopen(line)
+char *line;
+{
+	register int t;
+
+	/*
+	 * Make sure that other people can't open the
+	 * slave side of the connection.
+	 */
 	(void) chown(line, 0, 0);
 	(void) chmod(line, 0600);
-#endif	/* CRAY */
+
+# if !defined(CRAY) && (BSD > 43)
+	(void) revoke(line);
+# endif
+	t = open(line, O_RDWR|O_NOCTTY);
+	if (t < 0)
+		return(-1);
+
+	/*
+	 * Hangup anybody else using this ttyp, then reopen it for
+	 * ourselves.
+	 */
+# if !defined(CRAY) && (BSD <= 43)
+	(void) signal(SIGHUP, SIG_IGN);
+	vhangup();
+	(void) signal(SIGHUP, SIG_DFL);
+	t = open(line, O_RDWR|O_NOCTTY);
+	if (t < 0)
+		return(-1);
+# endif
+# if	defined(CRAY) && defined(TCVHUP)
+	{
+		register int i;
+		(void) signal(SIGHUP, SIG_IGN);
+		(void) ioctl(t, TCVHUP, (char *)0);
+		(void) signal(SIGHUP, SIG_DFL);
+		setpgrp();
+		i = open(line, O_RDWR);
+		if (i < 0)
+			return(-1)
+		(void) close(t);
+		t = i;
+	}
+# endif	/* defined(CRAY) && defined(TCVHUP) */
 	return(t);
 }
+#endif	/* !defined(CRAY) || !defined(NEWINIT) */
+
+#if BSD <= 43
+login_tty(t)
+int t;
+{
+# ifndef NO_SETSID
+	if (setsid() < 0)
+		fatalperror(net, "setsid()");
+# else
+#  ifndef convex
+	if (setpgrp(0,0) < 0)
+		fatalperror(net, "setpgrp()");
+#  endif
+# endif
+# ifdef	TIOCSCTTY
+	if (ioctl(t, TIOCSCTTY, (char *)0) < 0)
+		fatalperror(net, "ioctl(sctty)");
+# else
+	close(open(line, O_RDWR));
+# endif
+	(void) dup2(t, 0);
+	(void) dup2(t, 1);
+	(void) dup2(t, 2);
+	close(t);
+}
+#endif	/* BSD <= 43 */
 
 #ifdef	NEWINIT
 char *gen_id = "fe";
 #endif
 
 /*
- * startslave(t, host)
+ * startslave(host)
  *
- * Given a file descriptor (t) for a tty, and a hostname, do whatever
+ * Given a hostname, do whatever
  * is necessary to startup the login process on the slave side of the pty.
  */
 
 /* ARGSUSED */
-startslave(t, host)
-int t;
+startslave(host)
 char *host;
 {
 	register int i;
@@ -861,9 +1039,9 @@ char *host;
 		}
 		utmp_sig_notify(pid);
 # endif	/* CRAY */
-		(void) close(t);
 	} else {
-		start_login(t, host);
+		getptyslave();
+		start_login(host);
 		/*NOTREACHED*/
 	}
 #else	/* NEWINIT */
@@ -968,14 +1146,13 @@ char *invalid[] = {
 #ifndef	NEWINIT
 
 /*
- * start_login(t, host)
+ * start_login(host)
  *
  * Assuming that we are now running as a child processes, this
  * function will turn us into the login process.
  */
 
-start_login(t, host)
-int t;
+start_login(host)
 char *host;
 {
 	register char *cp;
@@ -983,57 +1160,8 @@ char *host;
 	char **addarg();
 #ifdef	CRAY
 	register char **cpp, **cpp2;
-	utmp_sig_wait();
-# ifndef TCVHUP
-	setpgrp();
-# endif
-	t = open(line, 2);	/* open ttyp */
-	if (t < 0)
-		fatalperror(net, line);
-# ifdef	TCVHUP
-	/*
-	 * Hangup anybody else using this ttyp, then reopen it for
-	 * ourselves.
-	 */
-	(void) chown(line, 0, 0);
-	(void) chmod(line, 0600);
-	(void) signal(SIGHUP, SIG_IGN);
-	(void) ioctl(t, TCVHUP, (char *)0);
-	(void) signal(SIGHUP, SIG_DFL);
-	setpgrp();
-	i = open(line, 2);
-	if (i < 0)
-		fatalperror(net, line);
-	(void) close(t);
-	t = i;
-# endif	/* TCVHUP */
-	/*
-	 * set ttyp modes as we like them to be
-	 */
-	init_termbuf();
-	termbuf.c_oflag = OPOST|ONLCR|TAB3;
-	termbuf.c_iflag = IGNPAR|ISTRIP|ICRNL|IXON;
-	termbuf.c_lflag = ISIG|ICANON|ECHO|ECHOE|ECHOK;
-	termbuf.c_cflag = EXTB|HUPCL|CS8;
-	set_termbuf();
 #endif	/* CRAY */
 
-	/*
-	 * set up standard paths before forking to login
-	 */
-#if BSD > 43
-	if (login_tty(t) == -1)
-		fatalperror(net, "login_tty");
-#else
-	(void) dup2(t, 0);
-	(void) dup2(t, 1);
-	(void) dup2(t, 2);
-	(void) close(t);
-#endif
-	if (net > 2)
-		(void) close(net);
-	if (pty > 2)
-		(void) close(pty);
 	/*
 	 * -h : pass on name of host.
 	 *		WARNING:  -h is accepted by login if and only if
@@ -1118,11 +1246,12 @@ register char *val;
  * This is the routine to call when we are all through, to
  * clean up anything that needs to be cleaned up.
  */
+void
 cleanup()
 {
 
 #ifndef	CRAY
-# if BSD > 43
+# if (BSD > 43) || defined(convex)
 	char *p;
 
 	p = line + sizeof("/dev/") - 1;

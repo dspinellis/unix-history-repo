@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)defs.h	5.8 (Berkeley) %G%
+ *	@(#)defs.h	5.9 (Berkeley) %G%
  */
 
 /*
@@ -88,6 +88,15 @@
 #if !defined(USE_TERMIO) || defined(NO_CC_T)
 typedef unsigned char cc_t;
 #endif
+
+#ifndef _POSIX_VDISABLE
+# ifdef VDISABLE
+#  define _POSIX_VDISABLE VDISABLE
+# else
+#  define _POSIX_VDISABLE ((unsigned char)'\377')
+# endif
+#endif
+
 
 #ifdef	CRAY
 #include <sys/fcntl.h>

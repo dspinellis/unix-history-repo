@@ -12,10 +12,11 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	5.46 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	5.47 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
+#include "pathnames.h"
 
 /*
  * I/O data buffers,
@@ -24,9 +25,7 @@ static char sccsid[] = "@(#)telnetd.c	5.46 (Berkeley) %G%";
 char	ptyibuf[BUFSIZ], *ptyip = ptyibuf;
 char	ptyibuf2[BUFSIZ];
 
-#ifdef	CRAY
 int	hostinfo = 1;			/* do we print login banner? */
-#endif
 
 #ifdef	CRAY
 extern int      newmap; /* nonzero if \n maps to ^M^J */
@@ -84,6 +83,10 @@ main(argc, argv)
 
 top:
 	argc--, argv++;
+#ifdef convex
+	if (argc == 1 && !debug)
+		argc--;			/* ignore the host/port name */
+#endif
 
 	if (argc > 0 && strcmp(*argv, "-debug") == 0) {
 		debug++;
@@ -97,12 +100,12 @@ top:
 	}
 #endif	/* LINEMODE */
 
-#ifdef CRAY
 	if (argc > 0 && !strcmp(*argv, "-h")) {
 		hostinfo = 0;
 		goto top;
 	}
 
+#ifdef CRAY
 	if (argc > 0 && !strncmp(*argv, "-r", 2)) {
 		char *strchr();
 		char *c;
@@ -387,7 +390,7 @@ getterminaltype()
 		     * We've hit the end.  If this is the same as
 		     * the first name, just go with it.
 		     */
-		    if (strncmp(first, terminaltype, sizeof(first) == 0))
+		    if (strncmp(first, terminaltype, sizeof(first)) == 0)
 			break;
 		    /*
 		     * Get the terminal name one more time, so that
@@ -395,7 +398,7 @@ getterminaltype()
 		     * the start of the list.
 		     */
 		     _gettermname();
-		    if (strncmp(first, terminaltype, sizeof(first) != 0))
+		    if (strncmp(first, terminaltype, sizeof(first)) != 0)
 			(void) strncpy(terminaltype, first, sizeof(first));
 		    break;
 		}
@@ -449,22 +452,28 @@ doit(who)
 	char *host, *inet_ntoa();
 	int t;
 	struct hostent *hp;
-#if BSD > 43
-	extern char *line;
 
-	if (openpty(&pty, &t, line, NULL, NULL) == -1)
-		fatal(net, "All network ports in use");
-	init_termbuf();
-#else
-	
 	/*
 	 * Find an available pty to use.
 	 */
+#ifndef	convex
 	pty = getpty();
 	if (pty < 0)
 		fatal(net, "All network ports in use");
+#else
+	for (;;) {
+		char *lp;
+		extern char *line, *getpty();
 
-	t = getptyslave();
+		if ((lp = getpty()) == NULL)
+			fatal(net, "Out of ptys");
+
+		if ((pty = open(lp, 2)) >= 0) {
+			strcpy(line,lp);
+			line[5] = 't';
+			break;
+		}
+	}
 #endif
 
 	/* get name of connected client */
@@ -485,9 +494,13 @@ doit(who)
 	/*
 	 * Start up the login process on the slave side of the terminal
 	 */
-	startslave(t, host);
+#ifndef	convex
+	startslave(host);
 
 	telnet(net, pty);  /* begin server processing */
+#else
+	telnet(net, pty, host);
+#endif
 	/*NOTREACHED*/
 }  /* end of doit */
 
@@ -498,8 +511,15 @@ doit(who)
  * Main loop.  Select from pty and network, and
  * hand data to telnet receiver finite state machine.
  */
+#ifndef	convex
 telnet(f, p)
+#else
+telnet(f, p, host)
+#endif
 int f, p;
+#ifdef convex
+char *host;
+#endif
 {
 	int on = 1;
 	char hostname[MAXHOSTNAMELEN];
@@ -616,13 +636,10 @@ int f, p;
 		send_will(TELOPT_ECHO, 1);
 
 	/*
-	 * Turn on packet mode, and default to line at at time mode.
+	 * Turn on packet mode
 	 */
 	(void) ioctl(p, TIOCPKT, (char *)&on);
-#ifdef	LINEMODE
-	tty_setlinemode(1);
-
-# ifdef	KLUDGELINEMODE
+#ifdef	KLUDGELINEMODE
 	/*
 	 * Continuing line mode support.  If client does not support
 	 * real linemode, attempt to negotiate kludge linemode by sending
@@ -630,8 +647,7 @@ int f, p;
 	 */
 	if (lmodetype < REAL_LINEMODE)
 		send_do(TELOPT_TM, 1);
-# endif	/* KLUDGELINEMODE */
-#endif	/* LINEMODE */
+#endif	/* KLUDGELINEMODE */
 
 	/*
 	 * Call telrcv() once to pick up anything received during
@@ -678,12 +694,19 @@ int f, p;
 	termstat();
 #endif
 
-#ifdef	NO_SETSID
-	(void) setpgrp(0, 0);
-#else
-	(void) setsid();
+#ifdef  TIOCNOTTY
+	{
+		register int t;
+		t = open(_PATH_TTY, O_RDWR);
+		if (t >= 0) {
+			(void) ioctl(t, TIOCNOTTY, (char *)0);
+			(void) close(t);
+		}
+	}
 #endif
+
 #if	defined(TIOCSCTTY) && defined(CRAY)
+	(void) setsid();
 	ioctl(p, TIOCSCTTY, 0);
 #endif
 
@@ -695,6 +718,10 @@ int f, p;
 	 * other pty --> client data.
 	 */
 
+#if	!defined(CRAY) || !defined(NEWINIT)
+	if (getenv("USER"))
+		hostinfo = 0;
+#endif
 	(void) gethostname(hostname, sizeof (hostname));
 
 	if (getent(defent, "default") == 1) {
@@ -709,16 +736,11 @@ int f, p;
 		if (IM == 0)
 			IM = "";
 	} else {
-#ifdef	CRAY
-		if (hostinfo == 0)
-			IM = 0;
-		else
-#endif
-			IM = DEFAULT_IM;
+		IM = DEFAULT_IM;
 		HE = 0;
 	}
 	edithost(HE, hostname);
-	if (IM && *IM)
+	if (hostinfo && *IM)
 		putf(IM, ptyibuf2);
 
 	if (pcc)
@@ -739,6 +761,10 @@ int f, p;
 		nfrontp += strlen(nfrontp);
 	}
 #endif /* DIAGNOSTICS */
+
+#ifdef	convex
+	startslave(host);
+#endif
 
 	for (;;) {
 		fd_set ibits, obits, xbits;
@@ -892,14 +918,12 @@ int f, p;
 #endif	LINEMODE
 				if (ptyibuf[0] & TIOCPKT_FLUSHWRITE) {
 					netclear();	/* clear buffer back */
-#ifdef	notdef
+#ifndef	NO_URGENT
 					/*
-					 * We really should have this in, but
-					 * there are client telnets on some
+					 * There are client telnets on some
 					 * operating systems get screwed up
 					 * royally if we send them urgent
-					 * mode data.  So, for now, we'll not
-					 * do this...
+					 * mode data.
 					 */
 					*nfrontp++ = IAC;
 					*nfrontp++ = DM;
@@ -1026,14 +1050,30 @@ sendsusp()
 #endif	/* SIGTSTP */
 }
 
+/*
+ * When we get an AYT, if ^T is enabled, use that.  Otherwise,
+ * just send back "[Yes]".
+ */
+recv_ayt()
+{
+#if	defined(SIGINFO) && defined(TCSIG)
+	if (slctab[SLC_AYT].sptr && *slctab[SLC_AYT].sptr != _POSIX_VDISABLE) {
+		(void) ioctl(pty, TCSIG, (char *)SIGINFO);
+		return;
+	}
+#endif
+	(void) strcpy(nfrontp, "\r\n[Yes]\r\n");
+	nfrontp += 9;
+}
+
 doeof()
 {
-#if	defined(USE_TERMIO) && defined(SYSV_TERMIO)
+#if	defined(LINEMODE) && defined(USE_TERMIO) && (VEOF == VMIN)
 	extern char oldeofc;
 #endif
 	init_termbuf();
 
-#if	defined(USE_TERMIO) && defined(SYSV_TERMIO)
+#if	defined(LINEMODE) && defined(USE_TERMIO) && (VEOF == VMIN)
 	if (!tty_isediting()) {
 		*pfrontp++ = oldeofc;
 		return;

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)slc.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)slc.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -36,10 +36,10 @@ send_slc()
 	 * that are currently supported.
 	 */
 	for (i = 1; i <= NSLC; i++) {
-		if ((slctab[i].current.flag & SLC_LEVELBITS) != SLC_NOSUPPORT) {
-			add_slc((unsigned char)i, slctab[i].current.flag,
+		if ((slctab[i].defset.flag & SLC_LEVELBITS) == SLC_NOSUPPORT)
+			continue;
+		add_slc((unsigned char)i, slctab[i].current.flag,
 							slctab[i].current.val);
-		}
 	}
 
 }  /* end of send_slc */
@@ -54,8 +54,11 @@ default_slc()
 	register int i;
 
 	for (i = 1; i <= NSLC; i++) {
-		slctab[i].current.flag = slctab[i].defset.flag;
 		slctab[i].current.val = slctab[i].defset.val;
+		if (slctab[i].current.val == (cc_t)(_POSIX_VDISABLE))
+			slctab[i].current.flag = SLC_NOSUPPORT;
+		else
+			slctab[i].current.flag = slctab[i].defset.flag;
 		if (slctab[i].sptr) {
 			*(slctab[i].sptr) = slctab[i].defset.val;
 		}
@@ -198,9 +201,9 @@ process_slc(func, flag, val)
 	if (func == 0) {
 		if ((flag = flag & SLC_LEVELBITS) == SLC_DEFAULT) {
 			default_slc();
-		}
-		if (flag == SLC_DEFAULT || flag == SLC_VARIABLE) {
-			send_slc();
+			send_slc(1);
+		} else if (flag == SLC_VARIABLE) {
+			send_slc(0);
 		}
 		return;
 	}
@@ -219,6 +222,15 @@ process_slc(func, flag, val)
 	 * or the level is the same and the ack bit is set
 	 */
 	if (hislevel == mylevel && (val == slctab[func].current.val || ack)) {
+		return;
+	} else if (ack) {
+		/*
+		 * If we get here, we got an ack, but the levels don't match.
+		 * This shouldn't happen.  If it does, it is probably because
+		 * we have sent two requests to set a variable without getting
+		 * a response between them, and this is the first response.
+		 * So, ignore it, and wait for the next response.
+		 */
 		return;
 	} else {
 		change_slc(func, flag, val);
@@ -247,7 +259,7 @@ change_slc(func, flag, val)
 	 */
 	if (hislevel == SLC_NOSUPPORT) {
 		slctab[func].current.flag = flag;
-		slctab[func].current.val = val;
+		slctab[func].current.val = (cc_t)_POSIX_VDISABLE;
 		flag |= SLC_ACK;
 		add_slc(func, flag, val);
 		return;
@@ -330,7 +342,7 @@ change_slc(func, flag, val)
 
 }  /* end of change_slc */
 
-#if	defined(USE_TERMIO) && defined(SYSV_TERMIO)
+#if	defined(USE_TERMIO) && (VEOF == VMIN)
 cc_t oldeofc = '\004';
 #endif
 
@@ -347,7 +359,7 @@ check_slc()
 	register int i;
 
 	for (i = 1; i <= NSLC; i++) {
-#if	defined(USE_TERMIO) && defined(SYSV_TERMIO)
+#if	defined(USE_TERMIO) && (VEOF == VMIN)
 		/*
 		 * In a perfect world this would be a neat little
 		 * function.  But in this world, we should not notify
@@ -365,7 +377,10 @@ check_slc()
 		if (slctab[i].sptr &&
 				(*(slctab[i].sptr) != slctab[i].current.val)) {
 			slctab[i].current.val = *(slctab[i].sptr);
-			slctab[i].current.flag = slctab[i].defset.flag;
+			if (*(slctab[i].sptr) == (cc_t)_POSIX_VDISABLE)
+				slctab[i].current.flag = SLC_NOSUPPORT;
+			else
+				slctab[i].current.flag = slctab[i].defset.flag;
 			add_slc((unsigned char)i, slctab[i].current.flag,
 						slctab[i].current.val);
 		}
