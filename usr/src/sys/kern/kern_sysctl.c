@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sysctl.c	7.34 (Berkeley) %G%
+ *	@(#)kern_sysctl.c	7.35 (Berkeley) %G%
  */
 
 /*
@@ -19,6 +19,7 @@
 #include <sys/malloc.h>
 #include <sys/proc.h>
 #include <sys/file.h>
+#include <sys/vnode.h>
 #include <sys/sysctl.h>
 #include <sys/unistd.h>
 #include <sys/buf.h>
@@ -186,6 +187,8 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 		return (sysctl_int(oldp, oldlenp, newp, newlen, &maxproc));
 	case KERN_MAXFILES:
 		return (sysctl_int(oldp, oldlenp, newp, newlen, &maxfiles));
+	case KERN_MAXVNODES:
+		return(sysctl_int(oldp, oldlenp, newp, newlen, &desiredvnodes));
 	case KERN_ARGMAX:
 		return (sysctl_rdint(oldp, oldlenp, newp, ARG_MAX));
 	case KERN_HOSTNAME:
