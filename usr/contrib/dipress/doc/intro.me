@@ -1,0 +1,96 @@
+.de @m
+..
+.de CM
+..
+.ds TR "Troff
+.ds IP "Interpress
+.de RS
+.br
+.ba +5n
+..
+.de RE
+.br
+.ba -5n
+..
+.po 1.25i
+.nr PO 1.25i
+.lp
+.ce 999
+.sz +4
+.b
+Interpress Toolkit
+.r
+.sz -4
+
+(Release 2.0)
+January, 1985
+
+.i
+Ed Flint
+Bill LeFebvre
+Lee Moore
+.r
+
+Imaging Systems Laboratory
+Webster Research Center
+Mailstop 128-29E
+Xerox Corporation
+800 Phillips Road
+Webster, NY  14580
+.ce 0
+.sp 2
+.(q
+The Interpress Electronic Printing Standard, as proposed by Xerox Corporation,
+defines the digital representation of printed material for exchange between a
+creator and printer.  This document is provided as an installation and
+user's guide for a package
+of Interpress generation software which runs under both the 4.2BSD UNIX\(dg
+and VAX/VMS\(dd operating systems.  Through these routines, Interpress 
+masters can be created with relative ease.
+.)q
+.(f
+.ti -\nfiu
+\(dgUNIX is a trademark of AT&T Bell Laboratories
+.)f
+.(f
+.ti -\nfiu
+\(ddVAX and VMS are trademarks of Digital Equipment Corp.
+.)f
+.(f
+.ti +w'\(dg'u
+XEROX and Interpress are trademarks of Xerox Corporation.
+.)f
+.eh '%'Interpress Toolkit''
+.oh ''Interpress Toolkit'%'
+.sh 1 Overview
+.lp
+The package consists of a programmer's library for creating \*(IP masters
+and the following programs:
+.RS
+.ip "maha"
+A program which converts a text file into a ``line-printer'' like 
+\*(IP file.
+.ip "dipress"
+A program to post-process the output from typesetter-independent \*(TR
+and create an \*(IP master.
+.ip "iptroff"
+A shell script which will call typesetter-independent \*(TR and then
+``dipress''.
+.ip "iptotext"
+A program to convert an encoded \*(IP master (a binary file) to a text
+readable representation called ``Intertext''.
+.ip "texttoip"
+A program to reverse the above transformation. (i.e., turn an Intertext file
+into encoded Interpress.
+.ip "charset"
+A program to create an \*(IP master which will image a complete character set
+of a font.
+.ip "ipmetrics"
+A program to convert fonts metrics from the Interpress metric master format
+to that of specific composing systems.
+.ip "restotext"
+A program to convert a RES (Raster Encoding Standard) file to a
+textual representation similar to ``Intertest''.
+.ip "stackres"
+Execute a RES file and print the results on top of the stack.
+.RE
