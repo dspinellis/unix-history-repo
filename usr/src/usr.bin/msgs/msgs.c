@@ -519,6 +519,15 @@ cmnd:
 			break;
 	}
 
+	/*
+	 * Make sure .rc file gets updated
+	 */
+	if (--msg >= nextmsg) {
+		nextmsg = msg + 1;
+		fseek(msgsrc, 0L, 0);
+		fprintf(msgsrc, "%d\n", nextmsg);
+		fflush(msgsrc);
+	}
 	if (already && !quitit && lastcmd && totty) {
 		/*
 		 * save or reply to last message?
