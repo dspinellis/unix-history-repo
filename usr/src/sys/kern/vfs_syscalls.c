@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	8.3 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -157,17 +157,15 @@ update:
 	/*
 	 * Put the new filesystem on the mount list after root.
 	 */
-	mp->mnt_next = rootfs->mnt_next;
-	mp->mnt_prev = rootfs;
-	rootfs->mnt_next = mp;
-	mp->mnt_next->mnt_prev = mp;
 	cache_purge(vp);
 	if (!error) {
+		TAILQ_INSERT_TAIL(&mountlist, mp, mnt_list);
 		VOP_UNLOCK(vp);
 		vfs_unlock(mp);
 		error = VFS_START(mp, 0, p);
 	} else {
-		vfs_remove(mp);
+		mp->mnt_vnodecovered->v_mountedhere = (struct mount *)0;
+		vfs_unlock(mp);
 		free((caddr_t)mp, M_MOUNT);
 		vput(vp);
 	}
@@ -246,8 +244,10 @@ dounmount(mp, flags, p)
 		vfs_unlock(mp);
 	} else {
 		vrele(coveredvp);
-		vfs_remove(mp);
-		if (mp->mnt_mounth != NULL)
+		TAILQ_REMOVE(&mountlist, mp, mnt_list);
+		mp->mnt_vnodecovered->v_mountedhere = (struct mount *)0;
+		vfs_unlock(mp);
+		if (mp->mnt_vnodelist.lh_first != NULL)
 			panic("unmount: dangling vnode");
 		free((caddr_t)mp, M_MOUNT);
 	}
@@ -271,11 +271,10 @@ sync(p, uap, retval)
 	struct sync_args *uap;
 	int *retval;
 {
-	register struct mount *mp;
-	struct mount *omp;
+	register struct mount *mp, *nmp;
 
-	mp = rootfs;
-	do {
+	for (mp = mountlist.tqh_first; mp != NULL; mp = nmp) {
+		nmp = mp->mnt_list.tqe_next;
 		/*
 		 * The lock check below is to avoid races with mount
 		 * and unmount.
@@ -283,12 +282,9 @@ sync(p, uap, retval)
 		if ((mp->mnt_flag & (MNT_MLOCK|MNT_RDONLY|MNT_MPBUSY)) == 0 &&
 		    !vfs_busy(mp)) {
 			VFS_SYNC(mp, MNT_NOWAIT, p->p_ucred, p);
-			omp = mp;
-			mp = mp->mnt_next;
-			vfs_unbusy(omp);
-		} else
-			mp = mp->mnt_next;
-	} while (mp != rootfs);
+			vfs_unbusy(mp);
+		}
+	}
 #ifdef DIAGNOSTIC
 	if (syncprt)
 		vfs_bufstats();
@@ -394,16 +390,15 @@ getfsstat(p, uap, retval)
 	register struct getfsstat_args *uap;
 	int *retval;
 {
-	register struct mount *mp;
+	register struct mount *mp, *nmp;
 	register struct statfs *sp;
 	caddr_t sfsp;
 	long count, maxcount, error;
 
 	maxcount = uap->bufsize / sizeof(struct statfs);
 	sfsp = (caddr_t)uap->buf;
-	mp = rootfs;
-	count = 0;
-	do {
+	for (count = 0, mp = mountlist.tqh_first; mp != NULL; mp = nmp) {
+		nmp = mp->mnt_list.tqe_next;
 		if (sfsp && count < maxcount &&
 		    ((mp->mnt_flag & MNT_MLOCK) == 0)) {
 			sp = &mp->mnt_stat;
@@ -413,18 +408,15 @@ getfsstat(p, uap, retval)
 			 */
 			if (((uap->flags & MNT_NOWAIT) == 0 ||
 			    (uap->flags & MNT_WAIT)) &&
-			    (error = VFS_STATFS(mp, sp, p))) {
-				mp = mp->mnt_prev;
+			    (error = VFS_STATFS(mp, sp, p)))
 				continue;
-			}
 			sp->f_flags = mp->mnt_flag & MNT_VISFLAGMASK;
 			if (error = copyout((caddr_t)sp, sfsp, sizeof(*sp)))
 				return (error);
 			sfsp += sizeof(*sp);
 		}
 		count++;
-		mp = mp->mnt_prev;
-	} while (mp != rootfs);
+	}
 	if (sfsp && count > maxcount)
 		*retval = maxcount;
 	else
