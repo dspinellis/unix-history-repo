@@ -1,4 +1,4 @@
-/*	@(#)ld.c	6.3 (Berkeley) %G%
+/*	@(#)ld.c	6.4 (Berkeley) %G%
 
 Modified for Berkeley Unix by Donn Seeley, donn@okeeffe.berkeley.edu  */
 
@@ -2059,7 +2059,7 @@ symdef_library (desc, entry, member_length)
 
   if (length_of_strings < 0
       || number_of_symdefs * sizeof (struct symdef) + length_of_strings
-	  + 2 * sizeof (int) != member_length)
+	  + 2 * sizeof (int) > member_length)
     fatal_with_file ("malformatted __.SYMDEF in ", entry);
 
   sym_name_base = sizeof (int) + (char *) (symdef_base + number_of_symdefs);
