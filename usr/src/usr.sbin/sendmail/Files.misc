@@ -1,4 +1,4 @@
-#	@(#)Files.misc	8.4 (Berkeley) %G%
+#	@(#)Files.misc	8.5 (Berkeley) %G%
 praliases/Makefile
 praliases/Makefile.dist
 praliases/praliases.c
@@ -15,7 +15,6 @@ contrib/mailprio
 contrib/mh.patch
 contrib/mmuegel
 contrib/oldbind.compat.c
-contrib/rcpt-streaming
 contrib/rmail.oldsys.patch
 contrib/xla/README
 contrib/xla/xla.c
