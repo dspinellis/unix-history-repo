@@ -74,7 +74,7 @@
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-char	*vis __P((char *, char, int, char));
+char	*vis __P((char *, int, int, int));
 int	strvis __P((char *, const char *, int));
 int	strvisx __P((char *, const char *, size_t, int));
 int	strunvis __P((char *, const char *));
