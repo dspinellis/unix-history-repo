@@ -1,4 +1,4 @@
-#	@(#)config.include	5.1 (Berkeley) %G%
+#	@(#)config.include	8.1 (Berkeley) %G%
 
 VERSION=	3.1
 DATE=		%G%
