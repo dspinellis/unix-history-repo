@@ -1,135 +1,134 @@
-.\" Copyright (c) 1983, 1987 The Regents of the University of California.
+.\" Copyright (c) 1983, 1987, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" Redistribution and use in source and binary forms are permitted
-.\" provided that the above copyright notice and this paragraph are
-.\" duplicated in all such forms and that any documentation,
-.\" advertising materials, and other materials related to such
-.\" distribution and use acknowledge that the software was developed
-.\" by the University of California, Berkeley.  The name of the
-.\" University may not be used to endorse or promote products derived
-.\" from this software without specific prior written permission.
-.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\" %sccs.include.redist.man%
 .\"
-.\"	@(#)mailaddr.7	6.5 (Berkeley) %G%
+.\"     @(#)mailaddr.7	6.6 (Berkeley) %G%
 .\"
-.TH MAILADDR 7 ""
-.UC 5
-.SH NAME
-mailaddr \- mail addressing description
-.SH DESCRIPTION
+.Dd 
+.Dt MAILADDR 7
+.Os BSD 4.2
+.Sh NAME
+.Nm mailaddr
+.Nd mail addressing description
+.Sh DESCRIPTION
 Mail addresses are based on the ARPANET protocol listed at the end of this
 manual page.  These addresses are in the general format
-.PP
-		user@domain
-.PP
+.Pp
+.Dl user@domain
+.Pp
 where a domain is a hierarchical dot separated list of subdomains.  For
 example, the address
-.PP
-		eric@monet.berkeley.edu
-.PP
+.Pp
+.Dl eric@monet.berkeley.edu
+.Pp
 is normally interpreted from right to left: the message should go to the
 ARPA name tables (which do not correspond exactly to the physical ARPANET),
 then to the Berkeley gateway, after which it should go to the local host
 monet.  When the message reaches monet it is delivered to the user ``eric''.
-.PP
+.Pp
 Unlike some other forms of addressing, this does not imply any routing.
 Thus, although this address is specified as an ARPA address, it might
 travel by an alternate route if that were more convenient or efficient.
 For example, at Berkeley, the associated message would probably go directly
 to monet over the Ethernet rather than going via the Berkeley ARPANET
 gateway.
-.SS Abbreviation.
-.PP
+.Ss Abbreviation.
 Under certain circumstances it may not be necessary to type the entire
 domain name.  In general, anything following the first dot may be omitted
 if it is the same as the domain from which you are sending the message.
 For example, a user on ``calder.berkeley.edu'' could send to ``eric@monet''
 without adding the ``berkeley.edu'' since it is the same on both sending
 and receiving hosts.
-.PP
+.Pp
 Certain other abbreviations may be permitted as special cases.  For
 example, at Berkeley, ARPANET hosts may be referenced without adding
 the ``berkeley.edu'' as long as their names do not conflict with a local
 host name.
-.SS Compatibility.
-.PP
+.Ss Compatibility.
+.Pp
 Certain old address formats are converted to the new format to provide
 compatibility with the previous mail system.  In particular,
-.PP
-		user@host.ARPA
-.PP
+.Pp
+.Dl user@host.ARPA
+.Pp
 is allowed and
-.PP
-		host:user
-.PP
+.Pp
+.Dl host:user
+.Pp
 is converted to
-.PP
-		user@host
-.PP
-to be consistent with the \fIrcp\fP(1) command.
-.PP
+.Pp
+.Dl user@host
+.Pp
+to be consistent with the
+.Xr rcp 1
+command.
+.Pp
 Also, the syntax
-.PP
-		host!user
-.PP
+.Pp
+.Dl host!user
+.Pp
 is converted to:
-.PP
-		user@host.UUCP
-.PP
+.Pp
+.Dl user@host.UUCP
+.Pp
 This is normally converted back to the ``host!user'' form before being sent
 on for compatibility with older UUCP hosts.
-.PP
+.Pp
 The current implementation is not able to route messages automatically through
 the UUCP network.  Until that time you must explicitly tell the mail system
 which hosts to send your message through to get to your final destination.
-.SS Case Distinctions.
-.PP
+.Ss Case Distinctions.
+.Pp
 Domain names (i.e., anything after the ``@'' sign) may be given in any mixture
 of upper and lower case with the exception of UUCP hostnames.  Most hosts
 accept any combination of case in user names, with the notable exception of
 MULTICS sites.
-.SS Route-addrs.
-.PP
+.Ss Route-addrs.
+.Pp
 Under some circumstances it may be necessary to route a message through
 several hosts to get it to the final destination.  Normally this routing
 is done automatically, but sometimes it is desirable to route the message
 manually.  Addresses which show these relays are termed ``route-addrs.''
 These use the syntax:
-.PP
-		<@hosta,@hostb:user@hostc>
-.PP
+.Pp
+.Dl <@hosta,@hostb:user@hostc>
+.Pp
 This specifies that the message should be sent to hosta, from there to hostb,
 and finally to hostc.  This path is forced even if there is a more efficient
 path to hostc.
-.PP
+.Pp
 Route-addrs occur frequently on return addresses, since these are generally
 augmented by the software at each host.  It is generally possible to ignore
 all but the ``user@domain'' part of the address to determine the actual
 sender.
-.SS Postmaster.
-.PP
+.Ss Postmaster.
+.Pp
 Every site is required to have a user or user alias designated ``postmaster''
 to which problems with the mail system may be addressed.
-.SS Other Networks.
-.PP
+.Ss Other Networks.
+.Pp
 Some other networks can be reached by giving the name of the network as the
-last component of the domain.  \fIThis is not a standard feature\fP and may
+last component of the domain.
+.Em This is not a standard feature
+and may
 not be supported at all sites.  For example, messages to CSNET or BITNET sites
 can often be sent to ``user@host.CSNET'' or ``user@host.BITNET'' respectively.
-.SH BUGS
+.Sh SEE ALSO
+.Xr mail 1 ,
+.Xr sendmail 8 ;
+.br
+Crocker, D. H.,
+.Em Standard for the Format of Arpa Internet Text Messages,
+RFC822.
+.Sh HISTORY
+.Nm Mailaddr
+appeared in 4.2 BSD.
+.Sh BUGS
 The RFC822 group syntax (``group:user1,user2,user3;'') is not supported
 except in the special case of ``group:;'' because of a conflict with old
 berknet-style addresses.
-.PP
+.Pp
 Route-Address syntax is grotty.
-.PP
+.Pp
 UUCP- and ARPANET-style addresses do not coexist politely.
-.SH SEE ALSO
-mail(1), sendmail(8);
-Crocker, D. H.,
-.ul
-Standard for the Format of Arpa Internet Text Messages,
-RFC822.

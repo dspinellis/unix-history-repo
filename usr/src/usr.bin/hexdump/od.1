@@ -3,28 +3,38 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)od.1	5.1 (Berkeley) %G%
+.\"     @(#)od.1	5.2 (Berkeley) %G%
 .\"
-.TH OD 1 ""
-.UC 7
+.Dd %Q
+.Os BSD 4.4
+.Dt OD 1
 .SH NAME
-od \- octal, decimal, hex, ascii dump
-.SH SYNOPSIS
-od [ \-aBbcDdeFfHhIiLlOoPpvXx ] [ file ]
-.SH DESCRIPTION
-.I Od
+.Nm od
+.Nd octal, decimal, hex, ascii dump
+.Sh SYNOPSIS
+.Nm od
+.Op Fl aBbcDdeFfHhIiLlOoPpvXx
+.Ar file
+.Sh DESCRIPTION
+.Nm Od
 has been deprecated in favor of
-.IR hexdump (1).
-.PP
-.IR Hexdump ,
+.Xr hexdump 1 .
+.Pp
+.Xr Hexdump 1 ,
 if called as
-.IR od ,
+.Nm od ,
 provides compatibility for the options listed above.
-.PP
+.Pp
 It does not provide compatibility for the options ``-s'' and ``-w'',
 nor is compatibility provided for the extended argument syntax of
-``[ [\fB+\fP]offset[\fB.\fP][\fBb\fP] [label] ]''.
-.SH SEE ALSO
-hexdump(1)
-.SH BUGS
+``[
+.Cx Op Sy \&+
+.Li offset
+.Op Sy \&.
+.Op Sy b
+.Cx [label] ]''.
+.Cx
+.Sh SEE ALSO
+.Xr hexdump 1
+.Sh BUGS
 Quite a few.
