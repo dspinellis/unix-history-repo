@@ -1,0 +1,55 @@
+This directory contains perl-4.019 compiled for 386bsd.
+
+To install it, put this directory containing bin and lib
+in /usr/src/contrib/perl-4.019.  Then link the executables
+and man pages into /usr/contrib:
+
+cd /usr/contrib/bin
+ln -s /usr/src/contrib/perl-4.019/bin/* .
+cd /usr/contrib/man/cat1
+ln -s /usr/src/contrib/perl-4.019/man/cat1/* .
+
+The path to the libraries is compiled in, so the only firm reqirement
+for installation is that /usr/src/contrib/perl-4.019/lib must contain
+the perl library files.
+
+Taintperl is not included due to problems with cc running out of
+virtual memory.  Perl failed the following tests:
+
+io/dup.........FAILED on test 0
+io/pipe........FAILED on test 5
+op/dbm.........FAILED on test 2
+lib/big........FAILED on test 73
+
+----------------------------------------------------------------
+Notes on what was done to build perl 4.019 on 386bsd:
+
+I did not do a 'make realclean' so the Makefile, config.h and
+parser are already present in the source directory, perl-4.019.
+Here are the steps taken to generate them and the executables
+in the bin directory.
+
+Bash works with Configure while ash did not.  Ash has not handled
+other GNU configure scripts, so use 'bash Configure' to set up the
+Makefile, etc.
+
+Make would not generate the parser.  Type 'make -n' to find out
+what it needs to do (yacc, etc.) and type it in by hand.
+
+THe supplied setenv function in util.c takes fewer arguments than
+the systems version in libc.a.  I #ifdefed out the one in perl's
+util.c and added the needed third argument to the calls in eval.c
+and stub.c
+
+Taintperl would not compile because cc exausted virtual memory
+compiling teval.c.  Surprisingly, adding another 30Mb swap partition
+did not help.  So, taintperl is not included.  If you don't plan
+on running suid perl scripts, you probably won't miss it.
+
+Perl's realloc failed, so I recompiled with out it and used the
+malloc/realloc in libc.a insead.
+
+Nroff ran out of memory formatting the perl manual page, so cat1/perl.0
+is incomplete.  The GNU texinfo formated documentation should be complete
+though.
+ 
