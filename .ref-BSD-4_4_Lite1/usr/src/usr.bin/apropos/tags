@@ -1,9 +1,0 @@
-Mapropos	apropos.c	/^main(argc, argv)$/
-addlist	../man/config.c	/^addlist(name)$/
-apropos	apropos.c	/^apropos(argv, path, buildpath)$/
-config	../man/config.c	/^config(fname)$/
-debug	../man/config.c	/^debug(l)$/
-getlist	../man/config.c	/^getlist(name)$/
-lowstr	apropos.c	/^lowstr(from, to)$/
-match	apropos.c	/^match(bp, str)$/
-usage	apropos.c	/^usage()$/

@@ -1,3 +1,0 @@
-Mswapon	swapon.c	/^main(argc, argv)$/
-add	swapon.c	/^add(name, ignoreebusy)$/
-usage	swapon.c	/^usage()$/
