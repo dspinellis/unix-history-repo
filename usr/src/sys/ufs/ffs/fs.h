@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)fs.h	6.4 (Berkeley) %G%
+ *	@(#)fs.h	6.5 (Berkeley) %G%
  */
 
 /*
@@ -168,7 +168,8 @@ struct	fs
 	long	fs_nindir;		/* value of NINDIR */
 	long	fs_inopb;		/* value of INOPB */
 	long	fs_nspf;		/* value of NSPF */
-	long	fs_sparecon[6];		/* reserved for future constants */
+	long	fs_optim;		/* optimization preference, see below */
+	long	fs_sparecon[5];		/* reserved for future constants */
 /* sizes determined by number of cylinder groups and their sizes */
 	daddr_t fs_csaddr;		/* blk addr of cyl grp summary area */
 	long	fs_cssize;		/* size of cyl grp summary area */
@@ -200,6 +201,11 @@ struct	fs
 	u_char	fs_rotbl[1];		/* list of blocks for each rotation */
 /* actually longer */
 };
+/*
+ * Preference for optimization.
+ */
+#define FS_OPTTIME	0	/* minimize allocation time */
+#define FS_OPTSPACE	1	/* minimize disk fragmentation */
 
 /*
  * Convert cylinder group to base address of its global summary info.
