@@ -52,7 +52,7 @@ typedef struct same {
 %token <intval> ':' '=' '$' '{' '}' ';' '-' '@' '(' ')' ' ' '\t'
 %type <same> target target1 assignment assign1 actions action
 %type <same> command_list command list
-%type <same> for_statement maybe_at_minus ignore_ws tokens token
+%type <same> for_statement maybe_at_minus tokens token
 %type <same> maybe_white_space
 %type <intval> white_space macro_char
 %%
@@ -69,7 +69,7 @@ line : NL
     ;
 
 assignment :
-    assign1 ignore_ws NL
+    assign1 tokens NL
     {
 	assign($1, $2);
     }
@@ -88,7 +88,7 @@ target_action: target actions
     }
     | target
     {
-	add_targets_actions($1, same_copy(null));
+	add_targets_actions($1, 0);
     }
     ;
 
@@ -104,6 +104,9 @@ target :
     ;
 
 target1: tokens maybe_white_space ':' maybe_white_space
+    {
+	$$ = ws_merge($1);
+    }
     ;
 
 actions: action
@@ -124,7 +127,7 @@ action:	white_space command_list NL
     ;
 
 for_statement: maybe_at_minus FOR white_space token
-		in ignore_ws semi_colon
+		in tokens semi_colon
     {
 	$$ = for_statement($1, $4, expand_variables($6, 0));
     }
@@ -179,13 +182,6 @@ maybe_at_minus: /* empty */
     }
     ;
 
-ignore_ws: token
-    | ignore_ws maybe_white_space token
-    {
-	$$ = same_cat($1, $3);
-    }
-    ;
-
 tokens : token
     | tokens maybe_white_space token
     {
@@ -211,17 +207,25 @@ token: TOKEN
 
 	$$ = same_item(string_lookup(buffer));
     }
-    | '$' '$' token
+    | '$' '$' TOKEN
     {
-	$$ = shell_variable($3);
+	$$ = shell_variable(same_item($3));
     }
     | MACRO_CHAR
     {
 	$$ = same_char($1);
     }
-    | '$' '{' token '}'
+    | '$' '{' TOKEN '}'
     {
-	$$ = variable($3);
+	$$ = variable(same_item($3));
+    }
+    | '$' '(' TOKEN ')'
+    {
+	$$ = variable(same_item($3));
+    }
+    | '$' TOKEN
+    {
+	$$ = variable(same_item($2));
     }
     | '-'
     {
@@ -252,6 +256,7 @@ white_space : WHITE_SPACE
     ;
 %%
 #include <stdio.h>
+#include <ctype.h>
 
 static int last_char, last_saved = 0;
 static int column = 0, lineno = 1;
@@ -366,6 +371,8 @@ char *string;
     return ptr;
 }
 
+#define	same_singleton(s)	((s)->nexttoken == (s))
+
 same_t *
 same_search(list, token)
 same_t
@@ -444,11 +451,43 @@ same_t *same;
     return head;
 }
 
+
+same_t *
+same_merge(t1, t2)
+same_t
+    *t1,
+    *t2;
+{
+    if (same_singleton(t1) && same_singleton(t2)) {
+	int length = strlen(t1->string->string)+strlen(t2->string->string);
+	char *buffer = malloc(length+1);
+	same_t *value;
+
+	if (buffer == 0) {
+	    yyerror("No space to merge strings in same_merge!");
+	    exit(1);
+	}
+	strcpy(buffer, t1->string->string);
+	strcat(buffer, t2->string->string);
+	value = same_item(string_lookup(buffer));
+	free(buffer);
+	return value;
+    } else {
+	yyerror("Internal error - same_merge with non-singletons");
+	exit(1);
+    }
+}
+
+
 void
 same_free(list)
 same_t *list;
 {
     same_t *token, *ptr;
+
+    if (list == 0) {
+	return;
+    }
 
     token = list;
     do {
@@ -508,20 +547,25 @@ char ch;
 }
 
 
-same_t *
-add_target(target)
+void
+add_target(target, actions)
 same_t
-    *target;
+    *target,
+    *actions;
 {
     same_t *ptr;
 
     if ((ptr = same_search(targets, target)) == 0) {
 	targets = same_cat(targets, target);
-	return target;
+	ptr = target;
     } else {
-	ptr->action_list = same_cat(ptr->action_list, target->action_list);
 	ptr->depend_list = same_cat(ptr->depend_list, target->depend_list);
-	return ptr;
+    }
+    if (actions) {
+	if (ptr->action_list) {
+	    same_free(ptr->action_list);
+	}
+	ptr->action_list = same_copy(actions);
     }
 }
 
@@ -538,10 +582,8 @@ same_t
 	return 0;
     }
     do {
-	target->action_list = same_cat(target->action_list,
-						same_copy(actions));
 	ptr = same_unlink(target);
-	add_target(target);
+	add_target(target, actions);
 	target = ptr;
     } while (target);
 
@@ -583,7 +625,7 @@ same_t
 
     if ((ptr = same_search(variables, variable)) != 0) {
 	same_free(ptr->value_list);
-	(void) same_unlink(ptr);
+	variables = same_unlink(ptr);
 	same_free(ptr);
     }
     variable->value_list = value;
@@ -626,13 +668,48 @@ int	free;
 	    head = same_cat(head, expand_variables(
 			value_of(same_item(string_lookup(string+2))), 1));
 	    string[len-1] = '}';
-	} else {
+	} else if (!isspace(string[0])) {
 	    head = same_cat(head, token);
 	}
 	token = tmp;
     }
     return head;
 }
+
+
+same_t *
+ws_merge(list)
+same_t *list;
+{
+    same_t *newlist = 0, *item;
+    int what = 0;
+
+    while (list) {
+	switch (what) {
+	case 0:
+	    if (isspace(list->string->string[0])) {
+		;
+	    } else {
+		item = same_item(list->string);
+		what = 1;
+	    }
+	    break;
+	case 1:
+	    if (isspace(list->string->string[0])) {
+		newlist = same_cat(newlist, item);
+		item = 0;
+		what = 0;
+	    } else {
+		item = same_merge(item, same_item(list->string));
+		what = 1;
+	    }
+	    break;
+	}
+	list = same_unlink(list);
+    }
+    return same_cat(newlist, item);
+}
+
 
 same_t *
 variable(var_name)
@@ -941,7 +1018,7 @@ do_dump()
 	printf("%s =\t", same->string->string);
 	for (visit(same->value_list, same2); !visited(same2);
 						visit_next(same2)) {
-	    printf("%s ", same2->string->string);
+	    printf(same2->string->string);
 	}
 	visit_end();
 	printf("\n");
@@ -950,7 +1027,7 @@ do_dump()
 
     printf("#targets...\n");
     for (visit(targets, same); !visited(same); visit_next(same)) {
-	printf("%s :\t", same->string->string);
+	printf("%s:\t", same->string->string);
 	for (visit(same->depend_list, same2); !visited(same2);
 						visit_next(same2)) {
 	    printf(same2->string->string);
