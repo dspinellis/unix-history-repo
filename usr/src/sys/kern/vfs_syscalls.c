@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_syscalls.c	7.18 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -186,9 +186,8 @@ unmount(scp)
 		int	flags;
 	} *uap = (struct a *)scp->sc_ap;
 	register struct vnode *vp;
-	register struct mount *mp;
 	register struct nameidata *ndp = &scp->sc_nd;
-	struct vnode *coveredvp;
+	struct mount *mp;
 	int error;
 
 	/*
@@ -212,18 +211,28 @@ unmount(scp)
 	}
 	mp = vp->v_mount;
 	vput(vp);
-	/*
-	 * Do the unmount.
-	 */
+	RETURN (dounmount(mp, uap->flags));
+}
+
+/*
+ * Do an unmount.
+ */
+dounmount(mp, flags)
+	register struct mount *mp;
+	int flags;
+{
+	struct vnode *coveredvp;
+	int error;
+
 	coveredvp = mp->m_vnodecovered;
 	if (error = vfs_lock(mp))
-		RETURN (error);
+		return (error);
 
 	xumount(mp);		/* remove unused sticky files from text table */
 	cache_purgevfs(mp);	/* remove cache entries for this file sys */
 	VFS_SYNC(mp, MNT_WAIT);
 
-	error = VFS_UNMOUNT(mp, uap->flags);
+	error = VFS_UNMOUNT(mp, flags);
 	if (error) {
 		vfs_unlock(mp);
 	} else {
@@ -231,7 +240,7 @@ unmount(scp)
 		vfs_remove(mp);
 		free((caddr_t)mp, M_MOUNT);
 	}
-	RETURN (error);
+	return (error);
 }
 
 /*
