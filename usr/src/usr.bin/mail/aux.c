@@ -16,11 +16,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)aux.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)aux.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
 #include <sys/stat.h>
+#include <sys/time.h>
 
 /*
  * Mail -- a mail program
@@ -298,17 +299,18 @@ unstack()
  * This is nifty for the shell.
  */
 alter(name)
-	char name[];
+	char *name;
 {
-	struct stat statb;
-	long time();
-	time_t time_p[2];
+	struct stat sb;
+	struct timeval tv[2];
+	time_t time();
 
-	if (stat(name, &statb) < 0)
+	if (stat(name, &sb))
 		return;
-	time_p[0] = time((long *) 0) + 1;
-	time_p[1] = statb.st_mtime;
-	utime(name, time_p);
+	tv[0].tv_sec = time((time_t *)0) + 1;
+	tv[1].tv_sec = sb.st_mtime;
+	tv[0].tv_usec = tv[1].tv_usec = 0;
+	(void)utimes(name, tv);
 }
 
 /*

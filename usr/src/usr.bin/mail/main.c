@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -258,7 +258,7 @@ setscreensize()
 
 	if (ioctl(1, TIOCGWINSZ, (char *) &ws) < 0)
 		ws.ws_col = ws.ws_row = 0;
-	if (gtty(1, &tbuf) < 0)
+	if (ioctl(1, TIOCGETP, &tbuf) < 0)
 		tbuf.sg_ospeed = B9600;
 	if (tbuf.sg_ospeed < B1200)
 		screenheight = 9;
