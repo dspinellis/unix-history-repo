@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tree.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)tree.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -81,7 +81,7 @@ register ARGLIST ap;
 	    return rtype(p->left->nodetype)->type;
 
 	case O_RVAL: {
-	    NODE *p1, *q;
+	    NODE *p1;
 
 	    p1 = p->left;
 	    p->nodetype = p1->nodetype;
@@ -406,16 +406,14 @@ SYM *f;
     /*
      * Don't do this for compiled code.
      */
-#   if (!isvax)
-	for (s = r->nodetype->chain; s != NIL; s = s->chain) {
-	    if (s == f) {
-		break;
-	    }
+    for (s = r->nodetype->chain; s != NIL; s = s->chain) {
+	if (s == f) {
+	    break;
 	}
-	if (s == NIL) {
-	    error("\"%s\" is not a field in specified record", f->symbol);
-	}
-#   endif
+    }
+    if (s == NIL) {
+	error("\"%s\" is not a field in specified record", f->symbol);
+    }
 }
 
 /*

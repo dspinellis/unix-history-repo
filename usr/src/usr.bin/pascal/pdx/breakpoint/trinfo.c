@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)trinfo.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)trinfo.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -24,6 +24,8 @@ static char sccsid[] = "@(#)trinfo.c	5.1 (Berkeley) %G%";
 #include "source.h"
 #include "object.h"
 #include "tree/tree.rep"
+#include "process/process.rep"
+#include "process/pxinfo.h"
 
 /*
  * When tracing variables we keep a copy of their most recent value
@@ -141,6 +143,9 @@ prvarnews()
 	    mov(buff, tp->trvalue, n);
 	    mov(buff, sp, n);
 	    sp += n;
+#ifdef tahoe
+	    alignstack();
+#endif
 	    if (tp->trtype == TRPRINT) {
 		printf("initially (at ");
 		printwhere(curline, srcfilename(pc));
@@ -154,6 +159,9 @@ prvarnews()
 	    mov(buff, tp->trvalue, n);
 	    mov(buff, sp, n);
 	    sp += n;
+#ifdef tahoe
+	    alignstack();
+#endif
 	    printf("after ");
 	    printwhere(prevline, srcfilename(pc));
 	    printf(":\t");

@@ -5,10 +5,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)rdwr.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)rdwr.c	5.3 (Berkeley) %G%";
 #endif not lint
+
 /*
- * These routines are used to access the debuggee process from
+ * This routine is used to access the debuggee process from
  * outside the "process" module.
  *
  * They invoke "pio" which eventually leads to a call to "ptrace".
@@ -21,68 +22,22 @@ static char sccsid[] = "@(#)rdwr.c	5.2 (Berkeley) %G%";
 #include "process.h"
 #include "process.rep"
 
-#	if (isvaxpx)
-#		include "pxinfo.h"
-#	endif
+#	include "pxinfo.h"
 
 typedef int INTFUNC();
 
 extern INTFUNC *onsyserr();
 
 LOCAL badaddr;
+LOCAL PIO_OP rwflg;
 LOCAL rwerr();
 
 /*
- * Read from the process' instruction area.  For px, this is actually
- * the data area.
+ * Read/Write to the process' data area.
  */
 
-iread(buff, addr, nbytes)
-char *buff;
-ADDRESS addr;
-int nbytes;
-{
-	INTFUNC *f;
-
-	f = onsyserr(EIO, rwerr);
-#	if (isvaxpx)
-		badaddr = addr + ENDOFF;
-		pio(process, PREAD, DATASEG, buff, addr + ENDOFF, nbytes);
-#	else
-		badaddr = addr;
-		pio(process, PREAD, TEXTSEG, buff, addr, nbytes);
-#	endif
-	onsyserr(EIO, f);
-}
-
-/* 
- * Write to the process' instruction area, usually in order to set
- * or unset a breakpoint.
- */
-
-iwrite(buff, addr, nbytes)
-char *buff;
-ADDRESS addr;
-int nbytes;
-{
-	INTFUNC *f;
-
-	f = onsyserr(EIO, rwerr);
-#	if (isvaxpx)
-		badaddr = addr + ENDOFF;
-		pio(process, PWRITE, DATASEG, buff, addr + ENDOFF, nbytes);
-#	else
-		badaddr = addr;
-		pio(process, PWRITE, TEXTSEG, buff, addr, nbytes);
-#	endif
-	onsyserr(EIO, f);
-}
-
-/*
- * Read for the process' data area.
- */
-
-dread(buff, addr, nbytes)
+drdwr(rw, buff, addr, nbytes)
+PIO_OP rw;
 char *buff;
 ADDRESS addr;
 int nbytes;
@@ -91,24 +46,8 @@ int nbytes;
 
 	f = onsyserr(EIO, rwerr);
 	badaddr = addr;
-	pio(process, PREAD, DATASEG, buff, addr, nbytes);
-	onsyserr(EIO, f);
-}
-
-/*
- * Write to the process' data area.
- */
-
-dwrite(buff, addr, nbytes)
-char *buff;
-ADDRESS addr;
-int nbytes;
-{
-	INTFUNC *f;
-
-	f = onsyserr(EIO, rwerr);
-	badaddr = addr;
-	pio(process, PWRITE, DATASEG, buff, addr, nbytes);
+	rwflg = rw;
+	pio(process, rw, DATASEG, buff, addr, nbytes);
 	onsyserr(EIO, f);
 }
 
@@ -118,5 +57,6 @@ int nbytes;
 
 LOCAL rwerr()
 {
-	error("bad read/write process address 0x%x", badaddr);
+	error("bad %s process address 0x%x",
+		rwflg == PREAD ? "read" : "write", badaddr);
 }

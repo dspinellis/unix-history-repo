@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)printinst.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)printinst.c	5.2 (Berkeley) %G%";
 #endif not lint
 /*
  * decode and print the instructions
@@ -17,6 +17,8 @@ static char sccsid[] = "@(#)printinst.c	5.1 (Berkeley) %G%";
 #include "pxops.h"
 #include "optab.h"
 #include "object.h"
+#include "process/process.rep"
+#include "process/pxinfo.h"
 
 LOCAL ADDRESS printop(), docase();
 
@@ -31,21 +33,6 @@ ADDRESS highaddr;
     register ADDRESS addr;
 
     for (addr = lowaddr; addr <= highaddr; ) {
-	addr = printop(addr);
-    }
-}
-
-/*
- * print count instructions from given address
- */
-
-printninst(count, addr)
-int count;
-ADDRESS addr;
-{
-    int i;
-
-    for (i = 0; i < count; i++) {
 	addr = printop(addr);
     }
 }
@@ -84,6 +71,9 @@ register ADDRESS addr;
 	switch(o->argtype[i]) {
 	    case ADDR4:
 	    case LWORD:
+#ifdef tahoe
+		addr = (ADDRESS)(((int)addr + 3) & ~3);
+#endif
 		iread(&longarg, addr, sizeof(longarg));
 		printf("%d", longarg);
 		addr += sizeof(long);
@@ -122,9 +112,13 @@ register ADDRESS addr;
 		}
 		addr++;
 		putchar('\'');
+#ifdef tahoe
+		addr = (ADDRESS)(((int)addr + 3) & ~3);
+#else
 		if ((addr&1) != 0) {
 		    addr++;
 		}
+#endif
 		break;
 	    }
 
@@ -136,6 +130,9 @@ register ADDRESS addr;
     switch(op) {
 	case O_CON:
 	    addr += arg;
+#ifdef tahoe
+	    addr = (ADDRESS)(((int)addr + 3) & ~3);
+#endif
 	    break;
 
 	case O_CASE1OP:
@@ -190,6 +187,9 @@ int n;
 		break;
 
 	    case 4:
+#ifdef tahoe
+		addr = (ADDRESS)(((int)addr + 3) & ~3);
+#endif
 		iread(&longarg, addr, sizeof(longarg));
 		printf("%5d", longarg);
 		break;
@@ -199,8 +199,12 @@ int n;
 	    printf(", ");
 	}
     }
+#ifdef tahoe
+    addr = (ADDRESS)(((int)addr + 3) & ~3);
+#else
     if ((addr&01) == 01) {
 	addr++;
     }
+#endif
     return(addr);
 }

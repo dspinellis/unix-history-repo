@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)build.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)build.c	5.2 (Berkeley) %G%";
 #endif not lint
 /*
  * parse tree building routines
@@ -38,21 +38,19 @@ NODE *build(op, args)
 OP op;
 {
 	register NODE *p;
-	NODE *p1, *p2;
 	register ARGLIST ap;
-	SYM *s;
 
 	p = alloc(1, NODE);
 	p->op = op;
 	ap = (ARGLIST) &args;
 	switch(degree(op)) {
 		case BINARY:
-			p->left = p1 = nextarg(ap, NODE *);
-			p->right = p2 = nextarg(ap, NODE *);
+			p->left = nextarg(ap, NODE *);
+			p->right = nextarg(ap, NODE *);
 			break;
 
 		case UNARY:
-			p->left = p1 = nextarg(ap, NODE *);
+			p->left = nextarg(ap, NODE *);
 			p->right = NIL;
 			break;
 

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)token.l	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)token.l	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -330,33 +330,6 @@ LOCAL int input()
 		}
 	}
 	return(c);
-}
-
-/*
- * Handle an input string by stripping the quotes and converting
- * two interior quotes to one.  Copy to newly allocated space and
- * return a pointer to it.
- *
- * The handling of strings here is not particularly efficient,
- * nor need it be.
- */
-
-LOCAL char *pstring(p)
-char *p;
-{
-	int i, len;
-	char *r, *newp;
-
-	len = strlen(p);
-	r = newp = alloc(len - 2 + 1, char);
-	for (i = 1; i < len - 1; i++) {
-		if (p[i] == '\'' && p[i+1] == '\'') {
-			i++;
-		}
-		*newp++ = p[i];
-	}
-	*newp = '\0';
-	return(r);
 }
 
 /*

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)printval.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)printval.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -38,6 +38,9 @@ SYM *s;
 	    if (t == t_char || (t->class == RANGE && t->type == t_char)) {
 		len = size(s);
 		sp -= len;
+#ifdef tahoe
+		downalignstack();
+#endif
 		printf("'%.*s'", len, sp);
 		break;
 	    } else {
@@ -108,7 +111,6 @@ printordinal(v, t)
 long v;
 SYM *t;
 {
-    BOOLEAN found;
     SYM *c;
     int iv;
 
@@ -146,6 +148,9 @@ SYM *s;
     }
     printf("(");
     sp -= size(s);
+#ifdef tahoe
+    downalignstack();
+#endif
     printfield(t);
     printf(")");
 }
@@ -167,6 +172,9 @@ SYM *s;
     printf("%s = ", s->symbol);
     savesp = sp;
     sp += (s->symvalue.offset + size(s->type));
+#ifdef tahoe
+    alignstack();
+#endif
     printval(s->type);
     sp = savesp;
 }
@@ -180,6 +188,70 @@ SYM *s;
  * The "2*elsize" is there since "printval" drops the stack by elsize.
  */
 
+#ifdef tahoe
+LOCAL printarray(a)
+SYM *a;
+{
+    STACK *savesp, *newsp;
+    SYM *eltype;
+    long elsize;
+
+    savesp = (STACK *)(((int)sp + 3) & ~3);
+    eltype = a->type;
+    printf("(");
+    elsize = size(eltype);
+    if (eltype->class == ARRAY)
+	savesp += elsize;
+    if (elsize < sizeof(int)) {
+	register char *cp = sp - ((size(a) + 3) & ~3);
+	int psh;
+	register char *cp1, *end = cp + size(a);
+	register int savestack;
+
+	while (cp < end) {
+	    psh = 0;
+	    cp1 = (char *)&psh + sizeof(int) - elsize;
+	    while (cp1 < (char *)&psh + sizeof psh)
+		*cp1++ = *cp++;
+	    if (end - size(a) != cp - elsize) {
+		printf(", ");
+	    }
+	    switch (elsize) {
+		case sizeof(char):
+		    savestack = *(char *)sp;
+		    push(char, psh);
+	    	    printval(eltype);
+		    *(char *)sp = savestack;
+		    break;
+		case sizeof(short):
+		    savestack = *(short *)sp;
+		    push(short, psh);
+	    	    printval(eltype);
+		    *(short *)sp = savestack;
+		    break;
+		default:
+		   panic("bad size on runtime stack");
+	    }
+	}
+    } else {
+	sp -= size(a);
+	downalignstack();
+	newsp = sp;
+	for (sp += elsize, alignstack(); sp <= savesp; sp += 2*elsize) {
+	    if (sp - 2*elsize >= newsp) {
+		printf(", ");
+	    }
+	    printval(eltype);
+	    if (eltype->class == ARRAY) {
+		sp -= elsize;
+	    }
+	}
+	sp = newsp;
+    }
+    printf(")");
+}
+#else
+
 LOCAL printarray(a)
 SYM *a;
 {
@@ -188,10 +260,10 @@ SYM *a;
     long elsize;
 
     savesp = sp;
-    sp -= size(a);
-    newsp = sp;
     eltype = a->type;
     elsize = size(eltype);
+    sp -= size(a);
+    newsp = sp;
     printf("(");
     for (sp += elsize; sp <= savesp; sp += 2*elsize) {
 	if (sp - elsize != newsp) {
@@ -202,6 +274,7 @@ SYM *a;
     sp = newsp;
     printf(")");
 }
+#endif tahoe
 
 /*
  * Print out the value of a real number.
@@ -213,7 +286,7 @@ LOCAL prtreal(r)
 double r;
 {
     extern char *index();
-    char *p, buf[256];
+    char buf[256];
 
     sprintf(buf, "%g", r);
     if (buf[0] == '.') {

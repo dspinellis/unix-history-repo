@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.2 (Berkeley) %G%";
 #endif not lint
 /*
  * Routines to print out symbols.
@@ -65,7 +65,6 @@ SYM *s, *t;
 printrtn(s)
 SYM *s;
 {
-	register SYM *t;
 	register int len;
 
 	printf("returning ");
@@ -73,6 +72,9 @@ SYM *s;
 		len = size(s->type);
 		dread(sp, process->sp, len);
 		sp += len;
+#ifdef tahoe
+		alignstack();
+#endif
 		printval(s->type);
 		putchar(' ');
 	}

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)misc.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)misc.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -69,7 +69,7 @@ char *filename;
 
 gripe()
 {
-	char *maintainer = "linton@ucbvax";
+	char *maintainer = "4bsd-bugs@Berkeley.EDU";
 
 	puts("Type control-D to end your message.  Be sure to include");
 	puts("your name and the name of the file you are debugging.");

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)eval.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)eval.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -21,6 +21,8 @@ static char sccsid[] = "@(#)eval.c	5.1 (Berkeley) %G%";
 #include "breakpoint.h"
 #include "machine.h"
 #include "tree.rep"
+#include "process/process.rep"
+#include "process/pxinfo.h"
 
 #define Boolean char	/* underlying representation type for booleans */
 
@@ -110,12 +112,16 @@ register NODE *p;
 	    len = size(p->nodetype);
 	    mov(p->sconval, sp, len);
 	    sp += len;
+#ifdef tahoe
+	    alignstack();
+#endif tahoe
 	    break;
 	}
 
 	case O_INDEX: {
 	    long n;	/* base address for array */
 	    long i;	/* index - lower bound */
+	    long evalindex();
 
 	    n = pop(long);
 	    i = evalindex(p->left->nodetype, p->right);
@@ -142,7 +148,6 @@ register NODE *p;
 
 	case O_RVAL: {
 	    ADDRESS addr, len;
-	    long i;
 
 	    addr = pop(long);
 	    if (addr == 0) {
@@ -296,7 +301,7 @@ register NODE *p;
 		    error("\"%s\" is not a procedure or function", name(b));
 		}
 		addr = firstline(b);
-		if (addr == -1) {
+		if ((int)addr == -1) {
 		    error("\"%s\" is empty", name(b));
 		}
 		skimsource(srcfilename(addr));
@@ -458,13 +463,23 @@ ADDRESS addr;
 int len;
 {
     BOOLEAN success;
+#ifdef tahoe
+    register char *savesp = sp;
+#endif
 
     if (sp + len >= &stack[STACKSIZE]) {
 	success = FALSE;
     } else {
 	dread(sp, addr, len);
 	sp += len;
-	success = TRUE;
+#ifdef tahoe
+        alignstack();
+	if (sp >= &stack[STACKSIZE]) {
+		success = FALSE;
+		sp = savesp;
+	} else
+#endif
+	    success = TRUE;
     }
     return success;
 }

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readsym.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)readsym.c	5.2 (Berkeley) %G%";
 #endif not lint
 /*
  * SYM representation dependent routines for reading in the
@@ -41,11 +41,9 @@ FILE *fp;
     t = &cursym;
     getsym(fp, t);
     if (isblock(t)) {
-#       if (isvaxpx)
-	    if (t->class == PROG) {
-		t->symvalue.funcv.codeloc = HEADER_BYTES;
-	    }
-#       endif
+	if (t->class == PROG) {
+	    t->symvalue.funcv.codeloc = HEADER_BYTES;
+	}
 	s = findblock(t);
 	if (s->class == PROG) {
 	    program = s;

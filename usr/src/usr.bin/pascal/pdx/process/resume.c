@@ -5,8 +5,9 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)resume.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)resume.c	5.2 (Berkeley) %G%";
 #endif not lint
+
 /*
  * Resume execution, first setting appropriate registers.
  */
@@ -22,11 +23,19 @@ static char sccsid[] = "@(#)resume.c	5.1 (Berkeley) %G%";
 #include "machine/pxerrors.h"
 #include "pxinfo.h"
 
-#ifdef vax
+#if defined(vax) || defined(tahoe)
     LOCAL ADDRESS fetchpc();
 #endif
+#ifdef vax
+#define	PCREG	11	/* where px holds virtual pc (see interp.sed) */
+#endif
+#ifdef tahoe
+#define	PCREG	12	/* where px holds virtual pc (see interp.sed) */
+#endif
 
+#ifdef sun
 LOCAL ADDRESS *pcaddr;
+#endif
 
 /*
  * Resume execution, set (get) pcode location counter before (after) resuming.
@@ -35,7 +44,6 @@ LOCAL ADDRESS *pcaddr;
 resume()
 {
     register PROCESS *p;
-    int oldsigno;
 
     p = process;
     do {
@@ -49,13 +57,17 @@ resume()
 		dread(&pcaddr, PCADDRP, sizeof(pcaddr));
 	    }
 	    dread(&pc, pcaddr, sizeof(pc));
-#       else ifdef vax
+#       else vax || tahoe
 	    if (p->status == STOPPED) {
 		if (isbperr()) {
-		    pc = p->reg[11];
+		    pc = p->reg[PCREG];
 		} else {
 		    dread(&pcframe, PCADDRP, sizeof(pcframe));
+#ifdef tahoe
+		    pcframe += 14;
+#else
 		    pcframe++;
+#endif
 		    pc = fetchpc(pcframe);
 		}
 		pc -= (sizeof(char) + ENDOFF);
@@ -65,9 +77,6 @@ resume()
 	    printf("execution stops at pc 0x%x, lc %d on sig %d\n",
 		process->pc, pc, p->signo);
 	    fflush(stdout);
-	}
-	if (p->status == STOPPED) {
-	    errnum = 0;
 	}
     } while (p->signo == SIGCONT);
     if (option('r') && p->signo != 0) {
@@ -86,18 +95,19 @@ resume()
      */
 }
 
-#ifdef vax
+#if defined(vax) || defined(tahoe)
 
 /*
  * Find the location in the Pascal object where execution was suspended.
  *
  * We basically walk back through the frames looking for saved
- * register 11's.  Each time we find one, we remember it.  When we reach
+ * register PCREG's.  Each time we find one, we remember it.  When we reach
  * the frame associated with the interpreter procedure, the most recently
- * saved register 11 is the one we want.
+ * saved register PCREG is the one we want.
  */
 
 typedef struct {
+#ifdef vax
     int fr_handler;
     unsigned int fr_psw : 16;   /* saved psw */
     unsigned int fr_mask : 12;  /* register save mask */
@@ -107,7 +117,14 @@ typedef struct {
     unsigned int fr_savap;      /* saved arg pointer */
     unsigned int fr_savfp;      /* saved frame pointer */
     int fr_savpc;           /* saved program counter */
-} Vaxframe;
+#endif
+#ifdef tahoe
+    int fr_savpc;           /* saved program counter */
+    unsigned short fr_mask;     /* register save mask */
+    unsigned short fr_removed;  /* (nargs+1)*4 */
+    unsigned int fr_savfp;      /* saved frame pointer */
+#endif
+} Stkframe;
 
 #define regsaved(frame, n) ((frame.fr_mask&(1 << n)) != 0)
 
@@ -115,30 +132,41 @@ LOCAL ADDRESS fetchpc(framep)
 ADDRESS *framep;
 {
     register PROCESS *p;
-    Vaxframe vframe;
+    Stkframe sframe;
+#ifdef tahoe
+#define	PCREGLOC	(-1)
+#else
+#define	PCREGLOC	(sizeof sframe/sizeof(ADDRESS))
+#endif
     ADDRESS *savfp;
     ADDRESS r;
 
     p = process;
-    r = p->reg[11];
+    r = p->reg[PCREG];
     if (p->fp == (ADDRESS) framep) {
 	return r;
     }
     savfp = (ADDRESS *) p->fp;
-    dread(&vframe, savfp, sizeof(vframe));
-    while (vframe.fr_savfp != (int) framep && vframe.fr_savfp != 0) {
-	if (regsaved(vframe, 11)) {
-	    dread(&r, savfp + 5, sizeof(r));
+#ifdef tahoe
+    savfp -= 2;
+#endif
+    dread(&sframe, savfp, sizeof(sframe));
+    while (sframe.fr_savfp != (int) framep && sframe.fr_savfp != 0) {
+	if (regsaved(sframe, PCREG)) {
+	    dread(&r, savfp + PCREGLOC, sizeof(r));
 	    r -= sizeof(char);
 	}
-	savfp = (ADDRESS *) vframe.fr_savfp;
-	dread(&vframe, savfp, sizeof(vframe));
+	savfp = (ADDRESS *) sframe.fr_savfp;
+#ifdef tahoe
+	savfp -= 2;
+#endif
+	dread(&sframe, savfp, sizeof(sframe));
     }
-    if (vframe.fr_savfp == 0) {
+    if (sframe.fr_savfp == 0) {
 	panic("resume: can't find interpreter frame 0x%x", framep);
     }
-    if (regsaved(vframe, 11)) {
-	dread(&r, savfp + 5, sizeof(r));
+    if (regsaved(sframe, PCREG)) {
+	dread(&r, savfp + PCREGLOC, sizeof(r));
 	r -= sizeof(char);
     }
     return(r);
@@ -167,9 +195,6 @@ LOCAL choose()
 	}
     }
     fprintf(stderr, "\nProgram error");
-    if (errnum != 0) {
-	fprintf(stderr, " -- %s", pxerrmsg[errnum]);
-    }
     fprintf(stderr, "\nDo you wish to enter the debugger? ");
     c = getchar();
     if (c == 'n') {

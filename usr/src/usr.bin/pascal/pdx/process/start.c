@@ -5,8 +5,9 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)start.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)start.c	5.2 (Berkeley) %G%";
 #endif not lint
+
 /*
  * Begin execution.
  *
@@ -31,9 +32,7 @@ static char sccsid[] = "@(#)start.c	5.1 (Berkeley) %G%";
 #include "sym.h"
 #include "process.rep"
 
-#   if (isvaxpx)
-#       include "pxinfo.h"
-#   endif
+#include "pxinfo.h"
 
 start(argv, infile, outfile)
 char **argv;
@@ -42,41 +41,50 @@ char *infile, *outfile;
     char *cmd;
 
     setsigtrace();
-#   if (isvaxpx)
-	cmd = "px";
-#   else
-	cmd = argv[0];
-#   endif
+    cmd = "/usr/ucb/px";
     pstart(process, cmd, argv, infile, outfile);
     if (process->status == STOPPED) {
-#       if (isvaxpx)
-	    TRAPARGS *ap, t;
+	TRAPARGS *ap, t;
 
-	    pcont(process);
-	    if (process->status != STOPPED) {
-		if (option('t')) {
-		    quit(process->exitval);
-		} else {
-		    panic("px exited with %d", process->exitval);
-		}
+	pcont(process);
+	if (process->status != STOPPED) {
+	    if (option('t')) {
+		quit(process->exitval);
+	    } else {
+		panic("px exited with %d", process->exitval);
 	    }
-	    dread(&ap, process->fp + 2*sizeof(int), sizeof(ap));
-	    dread(&t, ap, sizeof(TRAPARGS));
-	    if (t.nargs != 5) {
-		if (option('t')) {
-		    unsetsigtraces(process);
-		    pcont(process);
-		    quit(process->exitval);
-		} else {
-		    panic("start: args out of sync");
-		}
+	}
+#ifdef tahoe
+	dread(&ap, process->fp, sizeof(ap));
+	ap = (TRAPARGS *)((unsigned)ap - 4);
+	dread(&RETLOC, process->fp - 8, sizeof(RETLOC));
+#else
+	dread(&ap, process->fp + 2*sizeof(int), sizeof(ap));
+#endif
+	dread(&t, ap, sizeof(TRAPARGS));
+
+#define NARGS 5
+#ifdef tahoe
+#	define STKNARGS (sizeof(int)*(NARGS+1))
+#	define NARGLOC  t.trp_removed
+#else
+#	define STKNARGS (NARGS)
+#	define NARGLOC  t.nargs
+#endif
+	if (NARGLOC != STKNARGS) {
+	    if (option('t')) {
+		unsetsigtraces(process);
+		pcont(process);
+		quit(process->exitval);
+	    } else {
+		panic("start: args out of sync");
 	    }
-	    DISPLAY = t.disp;
-	    DP = t.dp;
-	    ENDOFF = t.objstart;
-	    PCADDRP = t.pcaddrp;
-	    LOOPADDR = t.loopaddr;
-#       endif
+	}
+	DISPLAY = t.disp;
+	DP = t.dp;
+	ENDOFF = t.objstart;
+	PCADDRP = t.pcaddrp;
+	LOOPADDR = t.loopaddr;
 	pc = 0;
 	curfunc = program;
 	if (objsize != 0) {
@@ -112,7 +120,6 @@ endprogram()
 
 LOCAL setsigtrace()
 {
-    register int i;
     register PROCESS *p;
 
     p = process;
