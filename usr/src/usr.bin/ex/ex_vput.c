@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_vput.c	5.1 %G%";
+static char *sccsid = "@(#)ex_vput.c	6.1 %G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -715,9 +715,10 @@ vnpins(dosync)
 		e = vglitchup(vcline, d);
 		vigoto(e, 0); vclreol();
 		if (dosync) {
+			int (*Ooutchar)() = Outchar;
 			Outchar = vputchar;
 			vsync(e + 1);
-			Outchar = vinschar;
+			Outchar = Ooutchar;
 		}
 	} else {
 		vup1();
