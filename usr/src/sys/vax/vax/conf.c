@@ -1,4 +1,4 @@
-/*	conf.c	4.49	82/03/14	*/
+/*	conf.c	4.50	82/05/04	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -284,21 +284,16 @@ int	dnopen(), dnclose(), dnwrite();
 #define	dnwrite		nodev
 #endif
 
-/*
-#include "un.h"
-#if NUN > 0
-int	unopen(), unclose(), unread(), unwrite(), unioctl(), unreset();
+#include "gpib.h"
+#if NGPIB > 0
+int	gpibopen(),gpibclose(),gpibread(),gpibwrite(),gpibioctl();
 #else
-*/
-#define	unopen		nodev
-#define unclose		nodev
-#define unread		nodev
-#define unwrite		nodev
-#define unioctl		nodev
-#define unreset		nulldev
-/*
+#define	gpibopen	nodev
+#define	gpibclose	nodev
+#define	gpibread	nodev
+#define	gpibwrite	nodev
+#define	gpibioctl	nodev
 #endif
-*/
 
 int	ttselect(), seltrue();
 
@@ -377,7 +372,7 @@ struct cdevsw	cdevsw[] =
 	ptyioctl,	nulldev,	nodev,		pt_tty,
 	ptcselect,
 	nodev,		nodev,		nodev,		nodev,		/*22*/
-	nodev,		nodev,		accreset,	0,
+	nodev,		nodev,		nodev,		0,
 	nodev,
 	nodev,		nodev,		nodev,		nodev,		/*23*/
 	nodev,		nodev,		nodev,		0,
@@ -385,10 +380,10 @@ struct cdevsw	cdevsw[] =
 	dnopen,		dnclose,	nodev,		dnwrite,	/*24*/
 	nodev,		nodev,		nodev,		0,
 	seltrue,
-	unopen,		unclose,	unread,		unwrite,	/*25*/
-	unioctl,	nodev,		unreset,	0,
-	seltrue,
 /* 25-29 reserved to local sites */
+	gpibopen,	gpibclose,	gpibread,	gpibwrite,	/*25*/
+	gpibioctl,	nulldev,	nodev,		0,
+	seltrue,
 	0,	
 };
 

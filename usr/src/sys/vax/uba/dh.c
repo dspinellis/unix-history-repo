@@ -1,4 +1,4 @@
-/*	dh.c	4.43	82/03/31	*/
+/*	dh.c	4.44	82/05/04	*/
 
 #include "dh.h"
 #if NDH > 0
@@ -52,6 +52,14 @@ struct dhdevice
 	short	dhbreak;		/* break control register */
 	short	dhsilo;			/* silo status register */
 };
+
+#ifndef	PORTSELECTOR
+#define	ISPEED	B300
+#define	IFLAGS	(EVENP|ODDP|ECHO)
+#else
+#define	ISPEED	B4800
+#define	IFLAGS	(EVENP|ODDP)
+#endif
 
 /* Bits in dhcsr */
 #define	DH_TI	0100000		/* transmit interrupt */
@@ -260,11 +268,15 @@ dhopen(dev, flag)
 	 */
 	if ((tp->t_state&TS_ISOPEN) == 0) {
 		ttychars(tp);
+#ifndef PORTSELECTOR
 		if (tp->t_ispeed == 0) {
-			tp->t_ispeed = B300;
-			tp->t_ospeed = B300;
-			tp->t_flags = ODDP|EVENP|ECHO;
+#endif
+			tp->t_ispeed = ISPEED;
+			tp->t_ospeed = ISPEED;
+			tp->t_flags = IFLAGS;
+#ifndef PORTSELECTOR
 		}
+#endif
 		dhparam(unit);
 	}
 	/*
@@ -336,7 +348,11 @@ dhrint(dh)
 	 */
 	while ((c = addr->dhrcr) < 0) {
 		tp = tp0 + ((c>>8)&0xf);
+#ifndef PORTSELECTOR
 		if ((tp->t_state&TS_ISOPEN)==0) {
+#else
+		if ((tp->t_state&(TS_ISOPEN|TS_WOPEN))==0) {
+#endif
 			wakeup((caddr_t)tp);
 			continue;
 		}
