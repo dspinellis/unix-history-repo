@@ -13,6 +13,19 @@ tn3270_init()
 
 #if	defined(TN3270)
 
+
+static char	Ibuf[8*BUFSIZ], *Ifrontp, *Ibackp;
+
+static char	sb_terminal[] = { IAC, SB,
+			TELOPT_TTYPE, TELQUAL_IS,
+			'I', 'B', 'M', '-', '3', '2', '7', '8', '-', '2',
+			IAC, SE };
+#define	SBTERMMODEL	13
+
+static int
+	Sent3270TerminalType;	/* Have we said we are a 3270? */
+
+
 /*
  * DataToNetwork - queue up some data to go to network.  If "done" is set,
  * then when last byte is queued, we add on an IAC EOR sequence (so,
@@ -230,4 +243,122 @@ char c;
 }
 #endif	/* ((!defined(NOT43)) || defined(PUTCHAR)) */
 
+void
+SetForExit()
+{
+    setconnmode();
+    if (In3270) {
+	Finish3270();
+    }
+    setcommandmode();
+    fflush(stdout);
+    fflush(stderr);
+    if (In3270) {
+	StopScreen(1);
+    }
+    setconnmode();
+    setcommandmode();
+}
+
+void
+Exit(returnCode)
+int returnCode;
+{
+    SetForExit();
+    exit(returnCode);
+}
+
+void
+ExitString(string, returnCode)
+char *string;
+int returnCode;
+{
+    SetForExit();
+    fwrite(string, 1, strlen(string), stderr);
+    exit(returnCode);
+}
+
+void
+ExitPerror(string, returnCode)
+char *string;
+int returnCode;
+{
+    SetForExit();
+    perror(string);
+    exit(returnCode);
+}
+
+void
+SetIn3270()
+{
+    if (Sent3270TerminalType && myopts[TELOPT_BINARY]
+			    && hisopts[TELOPT_BINARY] && !donebinarytoggle) {
+	if (!In3270) {
+	    In3270 = 1;
+	    Init3270();		/* Initialize 3270 functions */
+	    /* initialize terminal key mapping */
+	    InitTerminal();	/* Start terminal going */
+	    setconnmode();
+	}
+    } else {
+	if (In3270) {
+	    StopScreen(1);
+	    In3270 = 0;
+	    Stop3270();		/* Tell 3270 we aren't here anymore */
+	    setconnmode();
+	}
+    }
+}
+
+/*
+ * tn3270_ttype()
+ *
+ *	Send a response to a terminal type negotiation.
+ *
+ *	Return '0' if no more responses to send; '1' if a response sent.
+ */
+
+int
+tn3270_ttype()
+{
+    /*
+     * Try to send a 3270 type terminal name.  Decide which one based
+     * on the format of our screen, and (in the future) color
+     * capaiblities.
+     */
+    InitTerminal();		/* Sets MaxNumberColumns, MaxNumberLines */
+    if ((MaxNumberLines >= 24) && (MaxNumberColumns >= 80)) {
+	Sent3270TerminalType = 1;
+	if ((MaxNumberLines >= 27) && (MaxNumberColumns >= 132)) {
+	    MaxNumberLines = 27;
+	    MaxNumberColumns = 132;
+	    sb_terminal[SBTERMMODEL] = '5';
+	} else if (MaxNumberLines >= 43) {
+	    MaxNumberLines = 43;
+	    MaxNumberColumns = 80;
+	    sb_terminal[SBTERMMODEL] = '4';
+	} else if (MaxNumberLines >= 32) {
+	    MaxNumberLines = 32;
+	    MaxNumberColumns = 80;
+	    sb_terminal[SBTERMMODEL] = '3';
+	} else {
+	    MaxNumberLines = 24;
+	    MaxNumberColumns = 80;
+	    sb_terminal[SBTERMMODEL] = '2';
+	}
+	NumberLines = 24;		/* before we start out... */
+	NumberColumns = 80;
+	ScreenSize = NumberLines*NumberColumns;
+	if ((MaxNumberLines*MaxNumberColumns) > MAXSCREENSIZE) {
+	    ExitString("Programming error:  MAXSCREENSIZE too small.\n",
+								1);
+	    /*NOTREACHED*/
+	}
+	printsub(">", sb_terminal+2, sizeof sb_terminal-2);
+	ring_supply_data(&netoring, sb_terminal, sizeof sb_terminal);
+	return 1;
+    } else {
+	return 0;
+    }
+}
 #endif	/* defined(TN3270) */

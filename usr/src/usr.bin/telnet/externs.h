@@ -20,6 +20,7 @@ extern int
 	crlf,		/* Should '\r' be mapped to <CR><LF> (or <CR><NUL>)? */
 	autoflush,		/* flush output when interrupting? */
 	autosynch,		/* send interrupt characters with SYNCH? */
+	SYNCHing,		/* Is the stream in telnet SYNCH mode? */
 	donebinarytoggle,	/* the user has put us in binary */
 	dontlecho,		/* do we suppress local echoing right now? */
 	crmod,

@@ -6,8 +6,8 @@
 #include "externs.h"
 #include "types.h"
 
-Ring	ttyoring;
-char	ttyobuf[2*BUFSIZ];
+Ring	ttyoring, ttyiring;
+char	ttyobuf[2*BUFSIZ], ttyibuf[BUFSIZ];
 
 char
     termEofChar,
@@ -25,6 +25,7 @@ char
 init_terminal()
 {
     ring_init(&ttyoring, ttyobuf, sizeof ttyobuf);
+    ring_init(&ttyiring, ttyibuf, sizeof ttyibuf);
     autoflush = TerminalAutoFlush();
 }
 
