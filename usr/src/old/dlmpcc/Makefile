@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.1	(Berkeley)	%G%
+#	@(#)Makefile	5.2	(Berkeley)	%G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -19,8 +19,9 @@ clean:
 depend:
 	mkdep -p ${CFLAGS} dlmpcc.c
 
-install: dlmpcc
+install:
 	install -s -o bin -g bin -m 755 dlmpcc ${DESTDIR}/etc/dlmpcc
+	install -c -o bin -g bin -m 444 firmware/* ${DESTDIR}/etc
 
 # DO NOT DELETE THIS LINE -- mkdep uses it.
 # DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
