@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.57	82/03/09	*/
+/*	tcp_input.c	1.58	82/03/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -111,6 +111,13 @@ COUNT(TCP_INPUT);
 		}
 	}
 	tiflags = ti->ti_flags;
+
+	/*
+	 * drop IP header
+	 */
+	off += sizeof (struct ip);
+	m->m_off += off;
+	m->m_len -= off;
 
 #if vax
 	/*
@@ -601,8 +608,6 @@ step6:
 	 */
 	if ((ti->ti_len || (tiflags&TH_FIN)) &&
 	    TCPS_HAVERCVDFIN(tp->t_state) == 0) {
-		off += sizeof (struct ip);		/* drop IP header */
-		m_drop(m, off);
 		tiflags = tcp_reass(tp, ti);
 		if (tcpnodelack == 0)
 			tp->t_flags |= TF_DELACK;
