@@ -82,9 +82,6 @@ void
 init_ctlr()
 {
     LastWasTerminated = 1;
-#if	!defined(PURE3274)
-    OutputClock = TransparentClock = 0;
-#endif	/* !defined(PURE3274) */
     init_inbound();
     init_oia();
 }
@@ -186,6 +183,10 @@ int	control;				/* this buffer ended block? */
 
     origCount = count;
 
+    /*
+     * If this is the start of a new data stream, then look
+     * for an op-code and (possibly) a WCC.
+     */
     if (LastWasTerminated) {
 
 	if (count < 2) {
@@ -322,6 +323,13 @@ int	control;				/* this buffer ended block? */
 	count -= 2;			/* strip off command and wcc */
 	buffer += 2;
 
+    } else {
+#if	!defined(PURE3274)
+	if (TransparentClock == OutputClock) {
+	    TransOut(buffer, count, -1, control);
+	    count = 0;
+	}
+#endif	/* !defined(PURE3274) */
     }
     LastWasTerminated = 0;		/* then, reset at end... */
 
@@ -356,17 +364,12 @@ int	control;				/* this buffer ended block? */
 		i = buffer[0];
 		c = buffer[1];
 #if	!defined(PURE3274)
-		if (!i && !c) { /* transparent write */
-		    if (!control) {
-			return(origCount-(count+1));
-		    } else {
-			TransparentClock = OutputClock;		/* clock next */
-			TransOut(buffer+2, count-2);		/* output */
-			SendToIBM();				/* ack block */
-			TransparentClock = OutputClock+1;	/* clock next */
-			buffer += count;
-			count -= count;
-		    }
+		/* Check for transparent write */
+		if ((i == 0) && ((c == 0) || (c == 1) || (c == 5))) {
+		    TransparentClock = OutputClock+1;
+		    TransOut(buffer+2, count-2, c, control);
+		    buffer += count;
+		    count -= count;
 		    break;
 		}
 #endif	/* !defined(PURE3274) */
@@ -494,10 +497,10 @@ int	control;				/* this buffer ended block? */
 	}
     }
     if (count == 0) {
-#if	!defined(PURE3274)
-	OutputClock++;		/* time rolls on */
-#endif	/* !defined(PURE3274) */
 	if (control) {
+#if	!defined(PURE3274)
+	    OutputClock++;		/* time rolls on */
+#endif	/* !defined(PURE3274) */
 	    if (Wcc & WCC_RESTORE) {
 #if	!defined(PURE3274)
 		if (TransparentClock != OutputClock) {
@@ -549,8 +552,10 @@ Init3270()
     Highest = LowestScreen()-1;
     CursorAddress = BufferAddress = SetBufferAddress(0,0);
     UnLocked = 1;
+#if	!defined(PURE3274)
     OutputClock = 1;
     TransparentClock = -1;
+#endif	/* !defined(PURE3274) */
     SetOiaReady3274(&OperatorInformationArea);
 }
 
