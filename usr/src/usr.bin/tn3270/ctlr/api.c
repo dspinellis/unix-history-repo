@@ -8,16 +8,54 @@
 #include "../general/general.h"
 
 #include "../ctlr/screen.h"
+#include "../ctlr/oia.h"
+
 #include "../general/globals.h"
 
 int ApiDisableInput = 0;
+
+/*
+ * General utility routines.
+ */
+
+#if	defined(MSDOS)
+static int ourds = 0;		/* Safe */
+
+static void
+movetous(parms, es, di, length)
+char *parms;
+{
+    if (ourds == 0) {
+	struct SREGS sregs;
+
+	segread(&sregs);
+	ourds = sregs.ds;
+    }
+    movedata(es, di, ourds, (int)parms, length);
+}
+
+static void
+movetothem(parms, es, di, length)
+{
+    if (ourds == 0) {
+	struct SREGS sregs;
+
+	segread(&sregs);
+	ourds = sregs.es;
+    }
+    movedata(ourds, (int)parms, es, di, length);
+}
+#endif	/* defined(MSDOS) */
+
+/* No Unix version yet... */
+
 
 /*
  * Supervisor Services.
  */
 
 static void
-name_resolve(regs, sregs)
+name_resolution(regs, sregs)
 union REGS *regs;
 struct SREGS *sregs;
 {
@@ -26,13 +64,14 @@ struct SREGS *sregs;
     movetous((char *) &parms, sregs->es, regs->x.di, sizeof parms);
 
     regs->h.cl = 0;
-    if (strcmp((char *)&parms, NAME_SESSMGR) == 0) {
+    if (memcmp((char *)&parms, NAME_SESSMGR, sizeof parms.gate_name) == 0) {
 	regs->x.dx = GATE_SESSMGR;
-    } else if (strcmp((char *)&parms, NAME_KEYBOARD) == 0) {
+    } else if (memcmp((char *)&parms, NAME_KEYBOARD,
+					sizeof parms.gate_name) == 0) {
 	regs->x.dx = GATE_KEYBOARD;
-    } else if (strcmp((char *)&parms, NAME_COPY) == 0) {
+    } else if (memcmp((char *)&parms, NAME_COPY, sizeof parms.gate_name) == 0) {
 	regs->x.dx = GATE_COPY;
-    } else if (strcmp((char *)&parms, NAME_OIAM) == 0) {
+    } else if (memcmp((char *)&parms, NAME_OIAM, sizeof parms.gate_name) == 0) {
 	regs->x.dx = GATE_OIAM;
     } else {
 	regs->h.cl = 0x2e;	/* Name not found */
@@ -67,7 +106,7 @@ struct SREGS *sregs;
 	NameArrayElement element;
 
 	movetous((char *)&list, FP_SEG(parms.name_array),
-			    FP_OFFSET(parms.name_array), sizeof list);
+			    FP_OFF(parms.name_array), sizeof list);
 	if ((list.length < 14) || (list.length > 170)) {
 	    parms.rc = 0x12;
 	    regs->h.cl = 0x12;
@@ -79,7 +118,7 @@ struct SREGS *sregs;
 	    memcpy(list.name_array_element.long_name, "ONLYSESS",
 			    sizeof list.name_array_element.long_name);
 	    movetothem(FP_SEG(parms.name_array),
-		FP_OFFSET(parms.name_array), (char *)&list, sizeof list);
+		FP_OFF(parms.name_array), (char *)&list, sizeof list);
 	    parms.rc = 0;
 	    regs->h.cl = 0;
 	}
@@ -287,79 +326,23 @@ struct SREGS *sregs;
 	parms.rc = 0x02;
     } else {
 	int group = parms.oia_group_number;
-	char far *where = parms.oia_buffer;
+	char *from;
+	int size;
 
-	switch (group) {
-	case OIA_ALL_GROUPS:
-	case OIA_ONLINE_OWNERSHIP:
-	    if (group != OIA_ALL_GROUPS) {
-		break;
-	    } /* else, fall through */
-	case OIA_CHARACTER_SELECTION:
-	    if (group != OIA_ALL_GROUPS) {
-		break;
-	    } /* else, fall through */
-	case OIA_SHIFT_STATE:
-	    if (group != OIA_ALL_GROUPS) {
-		break;
-	    } /* else, fall through */
-	case OIA_PSS_GROUP_1:
-	    if (group != OIA_ALL_GROUPS) {
-		break;
-	    } /* else, fall through */
-	case OIA_HIGHLIGHT_GROUP_1:
-	    if (group != OIA_ALL_GROUPS) {
-		break;
-	    } /* else, fall through */
-	case OIA_COLOR_GROUP_1:
-	    if (group != OIA_ALL_GROUPS) {
-		break;
-	    } /* else, fall through */
-	case OIA_INSERT:
-	    if (group != OIA_ALL_GROUPS) {
-		break;
-	    } /* else, fall through */
-	case OIA_INPUT_INHIBITED:
-	    if (group != OIA_ALL_GROUPS) {
-		break;
-	    } /* else, fall through */
-	case OIA_PSS_GROUP_2:
-	    if (group != OIA_ALL_GROUPS) {
-		break;
-	    } /* else, fall through */
-	case OIA_HIGHLIGHT_GROUP_2:
-	    if (group != OIA_ALL_GROUPS) {
-		break;
-	    } /* else, fall through */
-	case OIA_COLOR_GROUP_2:
-	    if (group != OIA_ALL_GROUPS) {
-		break;
-	    } /* else, fall through */
-	case OIA_COMM_ERROR_REMINDER:
-	    if (group != OIA_ALL_GROUPS) {
-		break;
-	    } /* else, fall through */
-	case OIA_PRINTER_STATUS:
-	    if (group != OIA_ALL_GROUPS) {
-		break;
-	    } /* else, fall through */
-	case OIA_AUTOKEY_PLAY_RECORD_STATUS:
-	    if (group != OIA_ALL_GROUPS) {
-		break;
-	    } /* else, fall through */
-	case OIA_AUTOKEY_ABORT_PAUSE_STATUS:
-	    if (group != OIA_ALL_GROUPS) {
-		break;
-	    } /* else, fall through */
-	case OIA_ENLARGE_STATE:
-	    if (group != OIA_ALL_GROUPS) {
-		break;
-	    } /* else, fall through */
-
-	    /* oops, we are done! */
-	    break;
-	default:
-	    break;
+	if (group > API_OIA_LAST_LEGAL_GROUP) {
+	} else {
+	    if (group == API_OIA_ALL_GROUPS) {
+		size = API_OIA_BYTES_ALL_GROUPS;
+		from = (char *)&OperatorInformationArea;
+	    } else if (group == API_OIA_INPUT_INHIBITED) {
+		size = sizeof OperatorInformationArea.input_inhibited;
+		from = (char *)&OperatorInformationArea.input_inhibited[0];
+	    } else {
+		size = 1;
+		from = ((char *)&OperatorInformationArea)+group;
+	    }
+	    movetothem(FP_SEG(parms.oia_buffer), FP_OFF(parms.oia_buffer),
+			from, size);
 	}
     }
     parms.function_id = 0x6d;
@@ -404,7 +387,7 @@ struct SREGS *sregs;
 	    case QUERY_SESSION_PARMS:
 		if (regs->h.cl != 0) {
 		} else {
-		    query_session_parms(regs, sregs);
+		    query_session_parameters(regs, sregs);
 		}
 		break;
 	    case QUERY_SESSION_CURSOR:

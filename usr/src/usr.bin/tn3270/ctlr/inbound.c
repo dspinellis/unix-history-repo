@@ -30,6 +30,7 @@ static	char	sccsid[] = "@(#)inbound.c	3.1  10/29/86";
 #include "../general/general.h"
 #include "function.h"
 #include "hostctlr.h"
+#include "oia.h"
 #include "scrnctlr.h"
 #include "screen.h"
 #include "options.h"
@@ -650,11 +651,12 @@ int	count;				/* how much data there is */
 	    if (c == AID_CLEAR) {
 		LocalClearScreen();	/* Side effect is to clear 3270 */
 	    }
-	    OiaOnlineA(0);
-	    OiaTWait(1);
-	    OiaInsert(0);
+	    ResetOiaOnlineA(&OperatorInformationArea);
+	    SetOiaTWait(&OperatorInformationArea);
+	    ResetOiaInsert(&OperatorInformationArea);
 	    InsertMode = 0;		/* just like a 3278 */
-	    OiaSystemLocked(1);
+	    SetOiaSystemLocked(&OperatorInformationArea);
+	    SetOiaModified();
 	    UnLocked = 0;
 	    AidByte = c;
 	    HadAid = 1;
@@ -702,10 +704,11 @@ int	count;				/* how much data there is */
 						|| c == DISP_AMPERSAND) {
 			UnLocked = 0;
 			InsertMode = 0;
-			OiaOnlineA(0);
-			OiaTWait(1);
-			OiaSystemLocked(1);
-			OiaInsert(0);
+			ResetOiaOnlineA(&OperatorInformationArea);
+			SetOiaTWait(&OperatorInformationArea);
+			SetOiaSystemLocked(&OperatorInformationArea);
+			ResetOiaInsert(&OperatorInformationArea);
+			SetOiaModified();
 			if (c == DISP_AMPERSAND) {
 			    TurnOnMdt(i);	/* Only for & type */
 			    AidByte = AID_ENTER;
@@ -769,13 +772,15 @@ int	count;				/* how much data there is */
 	    case FCN_RESET:
 		if (InsertMode) {
 		    InsertMode = 0;
-		    OiaInsert(0);
+		    ResetOiaInsert(&OperatorInformationArea);
+		    SetOiaModified();
 		}
 		break;
 	    case FCN_MASTER_RESET:
 		if (InsertMode) {
 		    InsertMode = 0;
-		    OiaInsert(0);
+		    ResetOiaInsert(&OperatorInformationArea);
+		    SetOiaModified();
 		}
 		RefreshScreen();
 		break;
@@ -807,7 +812,12 @@ int	count;				/* how much data there is */
 
 	    case FCN_INSRT:
 		InsertMode = !InsertMode;
-		OiaInsert(InsertMode);
+		if (InsertMode) {
+		    SetOiaInsert(&OperatorInformationArea);
+		} else {
+		    ResetOiaInsert(&OperatorInformationArea);
+		}
+		SetOiaModified();
 		break;
 
 	    case FCN_HOME:

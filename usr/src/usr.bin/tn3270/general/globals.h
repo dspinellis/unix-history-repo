@@ -89,6 +89,8 @@ EXTERN int Initialized;	/* are we initialized? */
 
 #if	defined(INCLUDED_OIA)
 
-OIA OperatorInformationArea;
+EXTERN OIA OperatorInformationArea;
+
+EXTERN int oia_modified;		/* Has the oia been modified */
 
 #endif	/* defined(INCLUDED_OIA) */
