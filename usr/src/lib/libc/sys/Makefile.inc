@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.14 (Berkeley) %G%
+#	@(#)Makefile.inc	5.15 (Berkeley) %G%
 
 # Missing: profil.0, ptrace.0
 
@@ -19,7 +19,7 @@ ASM=	accept.o access.o acct.o adjtime.o async_daemon.o bind.o chdir.o \
 	getgroups.o gethostid.o gethostname.o getitimer.o getkerninfo.o \
 	getpagesize.o getpeername.o getpgrp.o getpid.o getppid.o \
 	getpriority.o getrlimit.o getrusage.o getsockname.o getsockopt.o \
-	gettimeofday.o getuid.o ioctl.o kill.o ktrace.o \
+	gettimeofday.o getuid.o indir.o ioctl.o kill.o ktrace.o \
 	lfs_bmapv.o lfs_markv.o lfs_segclean.o lfs_segwait.o \
 	link.o listen.o \
 	lseek.o lstat.o madvise.o mincore.o mkdir.o mkfifo.o mknod.o \
