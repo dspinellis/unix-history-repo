@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_uba.c	7.5.1.1 (Berkeley) %G%
+ *	@(#)if_uba.c	7.6 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -47,30 +47,30 @@ if_ubaminit(ifu, uban, hlen, nmr, ifr, nr, ifw, nw)
 {
 	register caddr_t p;
 	caddr_t cp;
-	int i, ncl, off;
+	int i, nclbytes, off;
 
 	if (hlen)
 		off = CLBYTES - hlen;
 	else
 		off = 0;
-	ncl = clrnd(nmr) / CLSIZE;
+	nclbytes = CLBYTES * (clrnd(nmr) / CLSIZE);
 	if (hlen)
-		ncl++;
+		nclbytes += CLBYTES;
 	if (ifr[0].ifrw_addr)
 		cp = ifr[0].ifrw_addr - off;
 	else {
-		cp = m_clalloc((nr + nw) * ncl, MPG_SPACE, M_DONTWAIT);
+		cp = (caddr_t)malloc((nr + nw) * nclbytes, M_DEVBUF, M_NOWAIT);
 		if (cp == 0)
 			return (0);
 		p = cp;
 		for (i = 0; i < nr; i++) {
 			ifr[i].ifrw_addr = p + off;
-			p += ncl * CLBYTES;
+			p += nclbytes;
 		}
 		for (i = 0; i < nw; i++) {
 			ifw[i].ifw_base = p;
 			ifw[i].ifw_addr = p + off;
-			p += ncl * CLBYTES;
+			p += nclbytes;
 		}
 		ifu->iff_hlen = hlen;
 		ifu->iff_uban = uban;
@@ -100,7 +100,7 @@ bad:
 		ubarelse(ifu->iff_uban, &ifw[nw].ifw_info);
 	while (--nr >= 0)
 		ubarelse(ifu->iff_uban, &ifr[nr].ifrw_info);
-	m_pgfree(cp, (nr + nw) * ncl);
+	free(cp, M_DEVBUF);
 	ifr[0].ifrw_addr = 0;
 	return (0);
 }
