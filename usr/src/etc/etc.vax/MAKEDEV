@@ -1,5 +1,5 @@
 #! /bin/sh
-#	@(#)MAKEDEV	4.3	%G%
+#	@(#)MAKEDEV	4.4	%G%
 #
 # Device "make" file.  Valid arguments:
 #	std	standard devices (for 730 must be followed by tu0 & tu1)
@@ -202,7 +202,7 @@ dn*)
 	;;
 
 local)
-	echo 'no "local" devices defined'
+	sh MAKEDEV.local
 	;;
 esac
 done
