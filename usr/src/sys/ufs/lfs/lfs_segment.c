@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_segment.c	8.5 (Berkeley) %G%
+ *	@(#)lfs_segment.c	8.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -660,7 +660,7 @@ lfs_initseg(fs)
 	ssp->ss_nfinfo = ssp->ss_ninos = 0;
 
 	/* Set pointer to first FINFO, initialize it. */
-	sp->fip = (struct finfo *)(sp->segsum + sizeof(SEGSUM));
+	sp->fip = (struct finfo *)((caddr_t)sp->segsum + sizeof(SEGSUM));
 	sp->fip->fi_nblocks = 0;
 	sp->start_lbp = &sp->fip->fi_blocks[0];
 
