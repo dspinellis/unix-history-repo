@@ -10,7 +10,7 @@
 # include <string.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)mime.c	8.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)mime.c	8.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -458,4 +458,31 @@ mimeboundary(line, boundary)
 	if (tTd(43, 5))
 		printf("%d\n", type);
 	return type;
+}
+/*
+**  DEFCHARSET -- return default character set for message
+**
+**	The first choice for character set is for the mailer
+**	corresponding to the envelope sender.  If neither that
+**	nor the global configuration file has a default character
+**	set defined, return "unknown-8bit" as recommended by
+**	RFC 1428 section 3.
+**
+**	Parameters:
+**		e -- the envelope for this message.
+**
+**	Returns:
+**		The default character set for that mailer.
+*/
+
+char *
+defcharset(e)
+	register ENVELOPE *e;
+{
+	if (e != NULL && e->e_from.q_mailer != NULL &&
+	    e->e_from.q_mailer->m_defcharset != NULL)
+		return e->e_from.q_mailer->m_defcharset;
+	if (DefaultCharSet != NULL)
+		return DefaultCharSet;
+	return "unknown-8bit";
 }
