@@ -1,0 +1,57 @@
+SETUID(2)                   BSD Programmer's Manual                  SETUID(2)
+
+NNAAMMEE
+     sseettuuiidd, sseetteeuuiidd, sseettggiidd, sseetteeggiidd, - set user and group ID
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<uunniissttdd..hh>>
+
+     _i_n_t
+     sseettuuiidd(_u_i_d___t _u_i_d);
+
+     _i_n_t
+     sseetteeuuiidd(_u_i_d___t _e_u_i_d);
+
+     _i_n_t
+     sseettggiidd(_g_i_d___t _g_i_d);
+
+     _i_n_t
+     sseetteeggiidd(_g_i_d___t _e_g_i_d);
+
+DDEESSCCRRIIPPTTIIOONN
+     The sseettuuiidd() function sets the real and effective user IDs and the saved
+     set-user-ID of the current process to the specified value.  The sseettuuiidd()
+     function is permitted if the specified ID is equal to the real user ID of
+     the process, or if the effective user ID is that of the super user.
+
+     The sseettggiidd() function sets the real and effective group IDs and the saved
+     set-group-ID of the current process to the specified value.  The sseettggiidd()
+     function is permitted if the specified ID is equal to the real group ID
+     of the process, or if the effective user ID is that of the super user.
+
+     The sseetteeuuiidd() function (sseetteeggiidd()) sets the effective user ID (group ID)
+     of the current process.  The effective user ID may be set to the value of
+     the real user ID or the saved set-user-ID (see intro(2) and execve(2));
+     in this way, the effective user ID of a set-user-ID executable may be
+     toggled by switching to the real user ID, then re-enabled by reverting to
+     the set-user-ID value.  Similarly, the effective group ID may be set to
+     the value of the real group ID or the saved set-user-ID.
+
+RREETTUURRNN VVAALLUUEESS
+     Upon success, these functions return 0; otherwise -1 is returned.
+
+     If the user is not the super user, or the uid specified is not the real,
+     effective ID, or saved ID, these functions return -1.
+
+SSEEEE AALLSSOO
+     getuid(2),  getgid(2)
+
+SSTTAANNDDAARRDDSS
+     The sseettuuiidd() and sseettggiidd() functions are compliant with the IEEE
+     Std1003.1-1988 (``POSIX'') specification with _POSIX_SAVED_IDS not de-
+     fined.  The sseetteeuuiidd() and sseetteeggiidd() functions are extensions based on the
+     POSIX concept of _POSIX_SAVED_IDS, and have been proposed for a future
+     revision of the standard.
+
+4.2 Berkeley Distribution        June 4, 1993                                1

@@ -1,0 +1,104 @@
+INET(3)                     BSD Programmer's Manual                    INET(3)
+
+NNAAMMEE
+     iinneett__aattoonn, iinneett__aaddddrr, iinneett__nneettwwoorrkk, iinneett__nnttooaa, iinneett__mmaakkeeaaddddrr, iinneett__llnnaaooff,
+     iinneett__nneettooff - Internet address manipulation routines
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ssoocckkeett..hh>>
+     ##iinncclluuddee <<nneettiinneett//iinn..hh>>
+     ##iinncclluuddee <<aarrppaa//iinneett..hh>>
+
+     _i_n_t
+     iinneett__aattoonn(_c_h_a_r _*_c_p, _s_t_r_u_c_t _i_n___a_d_d_r _*_p_i_n);
+
+     _u_n_s_i_g_n_e_d _l_o_n_g
+     iinneett__aaddddrr(_c_h_a_r _*_c_p);
+
+     _u_n_s_i_g_n_e_d _l_o_n_g
+     iinneett__nneettwwoorrkk(_c_h_a_r _*_c_p);
+
+     _c_h_a_r _*
+     iinneett__nnttooaa(_s_t_r_u_c_t _i_n___a_d_d_r _i_n);
+
+     _s_t_r_u_c_t _i_n___a_d_d_r
+     iinneett__mmaakkeeaaddddrr(_i_n_t _n_e_t, _i_n_t _l_n_a);
+
+     _u_n_s_i_g_n_e_d _l_o_n_g
+     iinneett__llnnaaooff(_s_t_r_u_c_t _i_n___a_d_d_r _i_n);
+
+     _u_n_s_i_g_n_e_d _l_o_n_g
+     iinneett__nneettooff(_s_t_r_u_c_t _i_n___a_d_d_r _i_n);
+
+DDEESSCCRRIIPPTTIIOONN
+     The routines iinneett__aattoonn(), iinneett__aaddddrr() and iinneett__nneettwwoorrkk() interpret char-
+     acter strings representing numbers expressed in the Internet standard `.'
+     notation.  The iinneett__aattoonn() routine interprets the specified character
+     string as an Internet address, placing the address into the structure
+     provided.  It returns 1 if the string was successfully interpreted, or 0
+     if the string is invalid.  The iinneett__aaddddrr() and iinneett__nneettwwoorrkk() functions
+     return numbers suitable for use as Internet addresses and Internet net-
+     work numbers, respectively.  The routine iinneett__nnttooaa() takes an Internet
+     address and returns an ASCII string representing the address in `.' nota-
+     tion.  The routine iinneett__mmaakkeeaaddddrr() takes an Internet network number and a
+     local network address and constructs an Internet address from it.  The
+     routines iinneett__nneettooff() and iinneett__llnnaaooff() break apart Internet host address-
+     es, returning the network number and local network address part, respec-
+     tively.
+
+     All Internet addresses are returned in network order (bytes ordered from
+     left to right).  All network numbers and local address parts are returned
+     as machine format integer values.
+
+IINNTTEERRNNEETT AADDDDRREESSSSEESS
+     Values specified using the `.' notation take one of the following forms:
+
+           a.b.c.d
+           a.b.c
+           a.b
+           a
+
+     When four parts are specified, each is interpreted as a byte of data and
+     assigned, from left to right, to the four bytes of an Internet address.
+     Note that when an Internet address is viewed as a 32-bit integer quantity
+     on the VAX the bytes referred to above appear as ``d.c.b.a''. That is,
+     VAX bytes are ordered from right to left.
+
+     When a three part address is specified, the last part is interpreted as a
+     16-bit quantity and placed in the right-most two bytes of the network ad-
+     dress.  This makes the three part address format convenient for specify-
+     ing Class B network addresses as ``128.net.host''.
+
+     When a two part address is supplied, the last part is interpreted as a
+     24-bit quantity and placed in the right most three bytes of the network
+     address.  This makes the two part address format convenient for specify-
+     ing Class A network addresses as ``net.host''.
+
+     When only one part is given, the value is stored directly in the network
+     address without any byte rearrangement.
+
+     All numbers supplied as ``parts'' in a `.' notation may be decimal, oc-
+     tal, or hexadecimal, as specified in the C language (i.e., a leading 0x
+     or 0X implies hexadecimal; otherwise, a leading 0 implies octal; other-
+     wise, the number is interpreted as decimal).
+
+DDIIAAGGNNOOSSTTIICCSS
+     The constant INADDR_NONE is returned by iinneett__aaddddrr() and iinneett__nneettwwoorrkk()
+     for malformed requests.
+
+SSEEEE AALLSSOO
+     gethostbyname(3),  getnetent(3),  hosts(5),  networks(5),
+
+HHIISSTTOORRYY
+     These functions appeared in 4.2BSD.
+
+BBUUGGSS
+     The value INADDR_NONE (0xffffffff) is a valid broadcast address, but
+     iinneett__aaddddrr() cannot return that value without indicating failure.  The
+     newer iinneett__aattoonn() function does not share this problem.  The problem of
+     host byte ordering versus network byte ordering is confusing.  The string
+     returned by iinneett__nnttooaa() resides in a static memory area.
+
+     Inet_addr should return a _s_t_r_u_c_t _i_n___a_d_d_r.
+
+4.2 Berkeley Distribution        June 4, 1993                                2

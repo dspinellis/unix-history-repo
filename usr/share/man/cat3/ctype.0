@@ -1,0 +1,58 @@
+CTYPE(3)                    BSD Programmer's Manual                   CTYPE(3)
+
+NNAAMMEE
+     iissaallnnuumm, iissaallpphhaa, iissaasscciiii, iissbbllaannkk, iissccnnttrrll, iissddiiggiitt, iissggrraapphh, iisslloowweerr,
+     iisspprriinntt, iissppuunncctt, iissssppaaccee, iissuuppppeerr, iissxxddiiggiitt, ttooaasscciiii ttoolloowweerr, ttoouuppppeerr, -
+     character classification macros
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ccttyyppee..hh>>
+     _i_n_t _c
+
+     iissaallnnuumm(_i_n_t _c);
+
+     iissaallpphhaa(_i_n_t _c);
+
+     iissaasscciiii(_i_n_t _c);
+
+     iissccnnttrrll(_i_n_t _c);
+
+     iissddiiggiitt(_i_n_t _c);
+
+     iissggrraapphh(_i_n_t _c);
+
+     iisslloowweerr(_i_n_t _c);
+
+     iisspprriinntt(_i_n_t _c);
+
+     iissppuunncctt(_i_n_t _c);
+
+     iissssppaaccee(_i_n_t _c);
+
+     iissuuppppeerr(_i_n_t _c);
+
+     iissxxddiiggiitt(_i_n_t _c);
+
+     ttooaasscciiii(_i_n_t _c);
+
+     ttoolloowweerr(_i_n_t _c);
+
+     ttoouuppppeerr(_i_n_t _c);
+
+DDEESSCCRRIIPPTTIIOONN
+     The above functions perform character tests and conversions on the inte-
+     ger _c. They are available as macros, defined in the include file
+     <_c_t_y_p_e_._h>, or as true functions in the C library.  See the specific manu-
+     al pages for more information.
+
+SSEEEE AALLSSOO
+     isalnum(3),  isalpha(3),  isascii(3),  isblank(3),  iscntrl(3),
+     isdigit(3),  isgraph(3),  islower(3),  isprint(3),  ispunct(3),
+     isspace(3),  isupper(3),  isxdigit(3),  toascii(3),  tolower(3),
+     toupper(3),  ascii(7)
+
+SSTTAANNDDAARRDDSS
+     These functions, except for iissbbllaannkk(), ttoouuppppeerr(), ttoolloowweerr() and
+     ttooaasscciiii(), conform to ANSI C X3.159-1989 (``ANSI C '').
+
+4.4BSD                           June 4, 1993                                1

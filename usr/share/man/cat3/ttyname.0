@@ -1,0 +1,58 @@
+TTYNAME(3)                  BSD Programmer's Manual                 TTYNAME(3)
+
+NNAAMMEE
+     ttttyynnaammee, iissaattttyy, ttttyysslloott - get name of associated terminal (tty) from
+     file descriptor
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<uunniissttdd..hh>>
+
+     _c_h_a_r _*
+     ttttyynnaammee(_i_n_t _f_d);
+
+     _i_n_t
+     iissaattttyy(_i_n_t _f_d);
+
+     _i_n_t
+     ttttyysslloott();
+
+DDEESSCCRRIIPPTTIIOONN
+     These functions operate on the system file descriptors for terminal type
+     devices. These descriptors are not related to the standard I/O FILE type-
+     def, but refer to the special device files found in _/_d_e_v and named
+     _/_d_e_v_/_t_t_y_x_x and for which an entry exists in the initialization file
+     _/_e_t_c_/_t_t_y_s_. (See ttys(5).)
+
+     The iissaattttyy() function determines if the file descriptor _f_d refers to a
+     valid terminal type device.
+
+     The ttttyynnaammee() function gets the related device name of a file descriptor
+     for which iissaattttyy() is true
+
+     The ttttyysslloott() function fetches the current process' control terminal num-
+     ber from the ttys(5) file entry.
+
+RREETTUURRNN VVAALLUUEESS
+     The ttttyynnaammee() function returns the null terminated name if the device is
+     found and iissaattttyy() is true; otherwise a NULL pointer is returned.
+
+     The ttttyysslloott() function returns the unit number of the device file if
+     found; otherwise the value zero is returned.
+
+FFIILLEESS
+     /dev/*
+     /etc/ttys
+
+SSEEEE AALLSSOO
+     ioctl(2),  ttys(5)
+
+HHIISSTTOORRYY
+     A iissaattttyy(), ttttyynnaammee(), and ttttyysslloott() function appeared in Version 7 AT&T
+     UNIX.
+
+BBUUGGSS
+     The ttttyynnaammee() function leaves its result in an internal static object and
+     returns a pointer to that object. Subsequent calls to ttttyynnaammee() will mod-
+     ify the same object.
+
+4.4BSD                           June 4, 1993                                1

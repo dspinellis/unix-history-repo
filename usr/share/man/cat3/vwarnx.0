@@ -1,0 +1,74 @@
+ERR(3)                      BSD Programmer's Manual                     ERR(3)
+
+NNAAMMEE
+     eerrrr, vveerrrr, eerrrrxx, vveerrrrxx, wwaarrnn, vvwwaarrnn, wwaarrnnxx, vvwwaarrnnxx - formatted error mes-
+     sages
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<eerrrr..hh>>
+
+     _v_o_i_d
+     eerrrr(_i_n_t _e_v_a_l, _c_o_n_s_t _c_h_a_r _*_f_m_t, _._._.);
+
+     _v_o_i_d
+     vveerrrr(_i_n_t _e_v_a_l, _c_o_n_s_t _c_h_a_r _*_f_m_t, _v_a___l_i_s_t _a_r_g_s);
+
+     _v_o_i_d
+     eerrrrxx(_i_n_t _e_v_a_l, _c_o_n_s_t _c_h_a_r _*_f_m_t, _._._.);
+
+     _v_o_i_d
+     vveerrrrxx(_i_n_t _e_v_a_l, _c_o_n_s_t _c_h_a_r _*_f_m_t, _v_a___l_i_s_t _a_r_g_s);
+
+     _v_o_i_d
+     wwaarrnn(_c_o_n_s_t _c_h_a_r _*_f_m_t, _._._.);
+
+     _v_o_i_d
+     vvwwaarrnn(_c_o_n_s_t _c_h_a_r _*_f_m_t, _v_a___l_i_s_t _a_r_g_s);
+
+     _v_o_i_d
+     wwaarrnnxx(_c_o_n_s_t _c_h_a_r _*_f_m_t, _._._.);
+
+     _v_o_i_d
+     vvwwaarrnnxx(_c_o_n_s_t _c_h_a_r _*_f_m_t, _v_a___l_i_s_t _a_r_g_s);
+
+DDEESSCCRRIIPPTTIIOONN
+     The eerrrr() and wwaarrnn() family of functions display a formatted error mes-
+     sage on the standard error output.  In all cases, the last component of
+     the program name, a colon character, and a space are output.  If the _f_m_t
+     argument is not NULL, the formatted error message, a colon character, and
+     a space are output.  In the case of the eerrrr(), vveerrrr(), wwaarrnn(), and
+     vvwwaarrnn() functions, the error message string affiliated with the current
+     value of the global variable _e_r_r_n_o is output.  In all cases, the output
+     is followed by a newline character.
+
+     The eerrrr(), vveerrrr(), eerrrrxx(), and vveerrrrxx() functions do not return, but exit
+     with the value of the argument _e_v_a_l.
+
+EEXXAAMMPPLLEESS
+     Display the current errno information string and exit:
+
+           if ((p = malloc(size)) == NULL)
+                   err(1, NULL);
+           if ((fd = open(file_name, O_RDONLY, 0)) == -1)
+                   err(1, "%s", file_name);
+
+     Display an error message and exit:
+
+           if (tm.tm_hour < START_TIME)
+                   errx(1, "too early, wait until %s", start_time_string);
+
+     Warn of an error:
+
+           if ((fd = open(raw_device, O_RDONLY, 0)) == -1)
+                   warnx("%s: %s: trying the block device",
+                       raw_device, strerror(errno));
+           if ((fd = open(block_device, O_RDONLY, 0)) == -1)
+                   err(1, "%s", block_device);
+
+SSEEEE AALLSSOO
+     strerror(3)
+
+HHIISSTTOORRYY
+     The eerrrr() and wwaarrnn() functions first appeared in 4.4BSD.
+
+4th Berkeley Distribution        June 9, 1993                                2

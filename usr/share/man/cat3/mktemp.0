@@ -1,0 +1,55 @@
+MKTEMP(3)                   BSD Programmer's Manual                  MKTEMP(3)
+
+NNAAMMEE
+     mmkktteemmpp - make temporary file name (unique)
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<uunniissttdd..hh>>
+
+     _c_h_a_r _*
+     mmkktteemmpp(_c_h_a_r _*_t_e_m_p_l_a_t_e);
+
+     _i_n_t
+     mmkksstteemmpp(_c_h_a_r _*_t_e_m_p_l_a_t_e);
+
+DDEESSCCRRIIPPTTIIOONN
+     The mmkktteemmpp() function takes the given file name template and overwrites a
+     portion of it to create a file name.  This file name is unique and suit-
+     able for use by the application.  The template may be any file name with
+     some number of `Xs' appended to it, for example _/_t_m_p_/_t_e_m_p_._X_X_X_X. The
+     trailing `Xs' are replaced with the current process number and/or a
+     unique letter combination.  The number of unique file names mmkktteemmpp() can
+     return depends on the number of `Xs' provided; six `Xs' will result in
+     mmkktteemmpp() testing roughly 26 ** 6 combinations.
+
+     The mmkksstteemmpp() function makes the same replacement to the template and
+     creates the template file, mode 0600, returning a file descriptor opened
+     for reading and writing.  This avoids the race between testing for a
+     file's existence and opening it for use.
+
+RREETTUURRNN VVAALLUUEESS
+     The mmkktteemmpp() function returns a pointer to the template on success and
+     NULL on failure.  The mmkksstteemmpp() function returns -1 if no suitable file
+     could be created.  If either call fails an error code is placed in the
+     global variable _e_r_r_n_o.
+
+EERRRROORRSS
+     The mmkktteemmpp() and mmkksstteemmpp() functions may set _e_r_r_n_o to one of the follow-
+     ing values:
+
+     [ENOTDIR]  The pathname portion of the template is not an existing direc-
+                tory.
+
+     The mmkktteemmpp() and mmkksstteemmpp() functions may also set _e_r_r_n_o to any value
+     specified by the stat(2) function.
+
+     The mmkksstteemmpp() function may also set _e_r_r_n_o to any value specified by the
+     open(2) function.
+
+SSEEEE AALLSSOO
+     chmod(2),  getpid(2),  open(2),  stat(2)
+
+HHIISSTTOORRYY
+     A mmkktteemmpp function appeared in Version 7 AT&T UNIX.
+
+4.4BSD                           June 4, 1993                                1

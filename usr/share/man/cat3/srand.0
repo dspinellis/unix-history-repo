@@ -1,0 +1,35 @@
+RAND(3)                     BSD Programmer's Manual                    RAND(3)
+
+NNAAMMEE
+     rraanndd, ssrraanndd - bad random number generator
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddlliibb..hh>>
+
+     _v_o_i_d
+     ssrraanndd(_u_n_s_i_g_n_e_d _s_e_e_d);
+
+     _i_n_t
+     rraanndd(_v_o_i_d);
+
+DDEESSCCRRIIPPTTIIOONN
+     TThheessee iinntteerrffaacceess aarree oobbssoolleetteedd bbyy rraannddoomm((33))..
+
+     The rraanndd() function computes a sequence of pseudo-random integers in the
+     range of 0 to RAND_MAX (as defined by the header file <_s_t_d_l_i_b_._h>).
+
+     The ssrraanndd() function sets its argument as the seed for a new sequence of
+     pseudo-random numbers to be returned by rraanndd().  These sequences are re-
+     peatable by calling ssrraanndd() with the same seed value.
+
+     If no seed value is provided, the functions are automatically seeded with
+     a value of 1.
+
+SSEEEE AALLSSOO
+     random(3)
+
+SSTTAANNDDAARRDDSS
+     The rraanndd() and ssrraanndd() functions conform to ANSI C X3.159-1989 (``ANSI C
+     '').
+
+4.4BSD                           June 4, 1993                                1

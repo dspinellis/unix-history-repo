@@ -1,0 +1,33 @@
+PWCACHE(3)                  BSD Programmer's Manual                 PWCACHE(3)
+
+NNAAMMEE
+     ppwwccaacchhee - cache password and group entries
+
+SSYYNNOOPPSSIISS
+     uusseerr__ffrroomm__uuiidd(_u_i_d___t _u_i_d, _i_n_t _n_o_u_s_e_r);
+
+     ggrroouupp__ffrroomm__ggiidd(_g_i_d___t _g_i_d, _i_n_t _n_o_g_r_o_u_p);
+
+DDEESSCCRRIIPPTTIIOONN
+     The uusseerr__ffrroomm__uuiidd() function returns the user name associated with the
+     argument _u_i_d. The user name is cached so that multiple calls with the
+     same _u_i_d do not require additional calls to getpwuid(3).  If there is no
+     user associated with the _u_i_d, a pointer is returned to a string represen-
+     tation of the _u_i_d, unless the argument _n_o_u_s_e_r is non-zero, in which case
+     a NULL pointer is returned.
+
+     The ggrroouupp__ffrroomm__ggiidd() function returns the group name associated with the
+     argument _g_i_d. The group name is cached so that multiple calls with the
+     same _g_i_d do not require additional calls to getgrgid(3).  If there is no
+     group associated with the _g_i_d, a pointer is returned to a string repre-
+     sentation of the _g_i_d, unless the argument _n_o_g_r_o_u_p is non-zero, in which
+     case a NULL pointer is returned.
+
+SSEEEE AALLSSOO
+     getgrgid(3),  getpwuid(3)
+
+HHIISSTTOORRYY
+     The uusseerr__ffrroomm__iidd() and ggrroouupp__ffrroomm__iidd() functions first appeared in
+     4.4BSD.
+
+4.4BSD                           June 9, 1993                                1

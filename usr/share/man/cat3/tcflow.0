@@ -1,0 +1,81 @@
+TCSENDBREAK(3)              BSD Programmer's Manual             TCSENDBREAK(3)
+
+NNAAMMEE
+     ttccsseennddbbrreeaakk, ttccddrraaiinn, ttccfflluusshh, ttccffllooww - line control functions
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<tteerrmmiiooss..hh>>
+
+     _i_n_t
+     ttccddrraaiinn(_i_n_t _f_d);
+
+     _i_n_t
+     ttccffllooww(_i_n_t _f_d, _i_n_t _a_c_t_i_o_n);
+
+     _i_n_t
+     ttccfflluusshh(_i_n_t _f_d, _i_n_t _a_c_t_i_o_n);
+
+     _i_n_t
+     ttccsseennddbbrreeaakk(_i_n_t _f_d, _i_n_t _l_e_n);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ttccddrraaiinn function waits until all output written to the terminal ref-
+     erenced by _f_d has been transmitted to the terminal.
+
+     The ttccffllooww function suspends transmission of data to or the reception of
+     data from the terminal referenced by _f_d depending on the value of _a_c_t_i_o_n.
+     The value of _a_c_t_i_o_n must be one of the following:
+
+     _T_C_O_O_F_F  Suspend output.
+
+     _T_C_O_O_N   Restart suspended output.
+
+     _T_C_I_O_F_F  Transmit a STOP character, which is intended to cause the termi-
+             nal to stop transmitting data to the system.  (See the descrip-
+             tion of IXOFF in the `Input Modes' section of termios(4)).
+
+     _T_C_I_O_N   Transmit a START character, which is intended to cause the termi-
+             nal to start transmitting data to the system.  (See the descrip-
+             tion of IXOFF in the `Input Modes' section of termios(4)).
+
+     The ttccfflluusshh function discards any data written to the terminal referenced
+     by _f_d which has not been transmitted to the terminal, or any data re-
+     ceived from the terminal but not yet read, depending on the value of
+     _a_c_t_i_o_n. The value of _a_c_t_i_o_n must be one of the following:
+
+     _T_C_I_F_L_U_S_H   Flush data received but not read.
+
+     _T_C_O_F_L_U_S_H   Flush data written but not transmitted.
+
+     _T_C_I_O_F_L_U_S_H  Flush both data received but not read and data written but not
+                transmitted.
+
+     The ttccsseennddbbrreeaakk function transmits a continuous stream of zero-valued
+     bits for four-tenths of a second to the terminal referenced by _f_d. The
+     _l_e_n parameter is ignored in this implementation.
+
+RREETTUURRNN VVAALLUUEESS
+     Upon successful completion, all of these functions return a value of ze-
+     ro.
+
+EERRRROORRSS
+     If any error occurs, a value of -1 is returned and the global variable
+     _e_r_r_n_o is set to indicate the error, as follows:
+
+
+     [EBADF]       The _f_d argument is not a valid file descriptor.
+
+     [EINVAL]      The _a_c_t_i_o_n argument is not a proper value.
+
+     [ENOTTY]      The file associated with _f_d is not a terminal.
+
+     [EINTR]       A signal interrupted the ttccddrraaiinn function.
+
+SSEEEE AALLSSOO
+     tcsetattr(3),  termios(4)
+
+SSTTAANNDDAARRDDSS
+     The ttccsseennddbbrreeaakk, ttccddrraaiinn, ttccfflluusshh and ttccffllooww functions are expected to be
+     compliant with the IEEE Std1003.1-1988 (``POSIX'') specification.
+
+4.4BSD                           June 4, 1993                                2

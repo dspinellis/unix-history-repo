@@ -1,0 +1,54 @@
+PROFIL(2)                   BSD Programmer's Manual                  PROFIL(2)
+
+NNAAMMEE
+     pprrooffiill - control process profiling
+
+SSYYNNOOPPSSIISS
+     _i_n_t
+     pprrooffiill(_c_h_a_r _*_s_a_m_p_l_e_s, _i_n_t _s_i_z_e, _i_n_t _o_f_f_s_e_t, _i_n_t _s_c_a_l_e);
+
+DDEESSCCRRIIPPTTIIOONN
+     The pprrooffiill() function enables or disables program counter profiling of
+     the current process.  If profiling is enabled, then at every clock tick,
+     the kernel updates an appropriate count in the _s_a_m_p_l_e_s buffer.
+
+     The buffer _s_a_m_p_l_e_s contains _s_i_z_e bytes and is divided into a series of
+     16-bit bins.  Each bin counts the number of times the program counter was
+     in a particular address range in the process when a clock tick occurred
+     while profiling was enabled.  For a given program counter address, the
+     number of the corresponding bin is given by the relation:
+
+           [(pc - offset) / 2] * scale / 65536
+
+     The _o_f_f_s_e_t parameter is the lowest address at which the kernel takes pro-
+     gram counter samples.  The _s_c_a_l_e parameter ranges from 1 to 65536 and can
+     be used to change the span of the bins.  A scale of 65536 maps each bin
+     to 2 bytes of address range; a scale of 32768 gives 4 bytes, 16384 gives
+     8 bytes and so on.  Intermediate values provide approximate intermediate
+     ranges.  A _s_c_a_l_e value of 0 disables profiling.
+
+RREETTUURRNN VVAALLUUEESS
+     If the _s_c_a_l_e value is nonzero and the buffer _s_a_m_p_l_e_s contains an illegal
+     address, pprrooffiill() returns -1, profiling is terminated and _e_r_r_n_o is set
+     appropriately.  Otherwise pprrooffiill() returns 0.
+
+FFIILLEESS
+     /usr/lib/gcrt0.o  profiling C run-time startup file
+     gmon.out          conventional name for profiling output file
+
+EERRRROORRSS
+     The following error may be reported:
+
+     [EFAULT]      The buffer _s_a_m_p_l_e_s contains an invalid address.
+
+SSEEEE AALLSSOO
+     gprof(1)
+
+BBUUGGSS
+     This routine should be named pprrooffiillee().
+
+     The _s_a_m_p_l_e_s argument should really be a vector of type _u_n_s_i_g_n_e_d _s_h_o_r_t.
+
+     The format of the gmon.out file is undocumented.
+
+4.4BSD                           June 4, 1993                                1

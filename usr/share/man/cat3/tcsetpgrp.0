@@ -1,0 +1,47 @@
+TCSETPGRP(3)                BSD Programmer's Manual               TCSETPGRP(3)
+
+NNAAMMEE
+     ttccsseettppggrrpp - set foreground process group ID
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<uunniissttdd..hh>>
+
+     _i_n_t
+     ttccsseettppggrrpp(_i_n_t _f_d, _p_i_d___t _p_g_r_p___i_d);
+
+DDEESSCCRRIIPPTTIIOONN
+     If the process has a controlling terminal, the ttccsseettppggrrpp function sets
+     the foreground process group ID associated with the terminal device to
+     _p_g_r_p___i_d. The terminal device associated with _f_d must be the controlling
+     terminal of the calling process and the controlling terminal must be cur-
+     rently associated with the session of the calling process.  The value of
+     _p_g_r_p___i_d must be the same as the process group ID of a process in the same
+     session as the calling process.
+
+     Upon successful completion, ttccsseettppggrrpp returns a value of zero.
+
+EERRRROORRSS
+     If an error occurs, ttccggeettppggrrpp returns -1 and the global variable _e_r_r_n_o is
+     set to indicate the error, as follows:
+
+     [EBADF]       The _f_d argument is not a valid file descriptor.
+
+     [EINVAL]      An invalid value of _p_g_r_p___i_d was specified.
+
+     [ENOTTY]      The calling process does not have a controlling terminal,
+                   or the file represented by _f_d is not the controlling termi-
+                   nal, or the controlling terminal is no longer associated
+                   with the session of the calling process.
+
+     [EPERM]       The _p_g_r_p___i_d argument does not match the process group ID of
+                   a process in the same session as the calling process.
+
+SSEEEE AALLSSOO
+     setpgid(3),  setsid(2),  tcgetpgrp(3)
+
+SSTTAANNDDAARRDDSS
+     The ttccsseettppggpprrpp function is expected to be compliant with the IEEE
+     Std1003.1-1988 (``POSIX'') specification.
+
+4.4BSD                           June 4, 1993                                1

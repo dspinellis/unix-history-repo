@@ -1,0 +1,55 @@
+BSTRING(3)                  BSD Programmer's Manual                 BSTRING(3)
+
+NNAAMMEE
+     bbccmmpp, bbccooppyy, bbzzeerroo, mmeemmccccppyy, mmeemmcchhrr, mmeemmccmmpp, mmeemmccppyy, mmeemmmmoovvee,, mmeemmsseett -
+     byte string operations
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttrriinngg..hh>>
+
+     _i_n_t
+     bbccmmpp(_c_o_n_s_t _v_o_i_d _*_b_1, _c_o_n_s_t _v_o_i_d _*_b_2, _s_i_z_e___t _l_e_n);
+
+     _v_o_i_d
+     bbccooppyy(_c_o_n_s_t _v_o_i_d _*_s_r_c, _v_o_i_d _*_d_s_t, _s_i_z_e___t _l_e_n);
+
+     _v_o_i_d
+     bbzzeerroo(_v_o_i_d _*_b, _s_i_z_e___t _l_e_n);
+
+     _v_o_i_d _*
+     mmeemmcchhrr(_c_o_n_s_t _v_o_i_d _*_b, _i_n_t _c, _s_i_z_e___t _l_e_n);
+
+     _i_n_t
+     mmeemmccmmpp(_c_o_n_s_t _v_o_i_d _*_b_1, _c_o_n_s_t _v_o_i_d _*_b_2, _s_i_z_e___t _l_e_n);
+
+     _v_o_i_d _*
+     mmeemmccccppyy(_v_o_i_d _*_d_s_t, _c_o_n_s_t _v_o_i_d _*_s_r_c, _i_n_t _c, _s_i_z_e___t _l_e_n);
+
+     _v_o_i_d _*
+     mmeemmccppyy(_v_o_i_d _*_d_s_t, _c_o_n_s_t _v_o_i_d _*_s_r_c, _s_i_z_e___t _l_e_n);
+
+     _v_o_i_d _*
+     mmeemmmmoovvee(_v_o_i_d _*_d_s_t, _c_o_n_s_t _v_o_i_d _*_s_r_c, _s_i_z_e___t _l_e_n);
+
+     _v_o_i_d _*
+     mmeemmsseett(_v_o_i_d _*_b, _i_n_t _c, _s_i_z_e___t _l_e_n);
+
+DDEESSCCRRIIPPTTIIOONN
+     These functions operate on variable length strings of bytes.  They do not
+     check for terminating null bytes as the routines listed in string(3) do.
+
+     See the specific manual pages for more information.
+
+SSEEEE AALLSSOO
+     bcmp(3),  bcopy(3),  bzero(3),  memccpy(3),  memchr(3),  memcmp(3),
+     memcpy(3),  memmove(3),  memset(3)
+
+SSTTAANNDDAARRDDSS
+     The functions mmeemmcchhrr(), mmeemmccmmpp(), mmeemmccppyy(), mmeemmmmoovvee(), and mmeemmsseett() con-
+     form to ANSI C X3.159-1989 (``ANSI C '').
+
+HHIISSTTOORRYY
+     The functions bbzzeerroo() and mmeemmccccppyy() appeared in 4.3BSD; the functions
+     bbccmmpp(), bbccooppyy(), appeared in 4.2BSD.
+
+4.4BSD                           June 4, 1993                                1

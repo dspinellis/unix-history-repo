@@ -1,0 +1,56 @@
+GETC(3)                     BSD Programmer's Manual                    GETC(3)
+
+NNAAMMEE
+     ffggeettcc, ggeettcc, ggeettcchhaarr, ggeettww - get next character or word from input stream
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddiioo..hh>>
+
+     _i_n_t
+     ffggeettcc(_F_I_L_E _*_s_t_r_e_a_m);
+
+     _i_n_t
+     ggeettcc(_F_I_L_E _*_s_t_r_e_a_m);
+
+     _i_n_t
+     ggeettcchhaarr();
+
+     _i_n_t
+     ggeettww(_F_I_L_E _*_s_t_r_e_a_m);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ffggeettcc() function obtains the next input character (if present) from
+     the stream pointed at by _s_t_r_e_a_m, or the next character pushed back on the
+     stream via ungetc.
+
+     The ggeettcc() function acts essentially identically to ffggeettcc(), but is a
+     macro that expands in-line.
+
+     The ggeettcchhaarr() function is equivalent to: getc with the argument stdin.
+
+     The ggeettww() function obtains the next _i_n_t (if present) from the stream
+     pointed at by _s_t_r_e_a_m.
+
+RREETTUURRNN VVAALLUUEESS
+     If successful, these routines return the next requested object from the
+     _s_t_r_e_a_m. If the stream is at end-of-file or a read error occurs, the rou-
+     tines return EOF. The routines feof(3) and ferror(3) must be used to dis-
+     tinguish between end-of-file and error.  If an error occurs, the global
+     variable _e_r_r_n_o is set to indicate the error.  The end-of-file condition
+     is remembered, even on a terminal, and all subsequent attempts to read
+     will return EOF until the condition is cleared with clearerr.
+
+SSEEEE AALLSSOO
+     ferror(3),  fread(3),  fopen(3),  putc(3),  ungetc(3)
+
+SSTTAANNDDAARRDDSS
+     The ffggeettcc(), ggeettcc() and ggeettcchhaarr() functions conform to ANSI C X3.159-1989
+     (``ANSI C '').
+
+BBUUGGSS
+     Since EOF is a valid integer value, feof and ferror must be used to check
+     for failure after calling ggeettww().  The size and byte order of an _i_n_t
+     varies from one machine to another, and ggeettww() is not recommended for
+     portable applications.
+
+4.4BSD                           June 4, 1993                                1

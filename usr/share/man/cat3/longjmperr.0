@@ -1,0 +1,79 @@
+SETJMP(3)                   BSD Programmer's Manual                  SETJMP(3)
+
+NNAAMMEE
+     ssiiggsseettjjmmpp, ssiigglloonnggjjmmpp, sseettjjmmpp, lloonnggjjmmpp, __sseettjjmmpp, __lloonnggjjmmpp lloonnggjjmmppeerrrroorr -
+     non-local jumps
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<sseettjjmmpp..hh>>
+
+     _i_n_t
+     ssiiggsseettjjmmpp(_s_i_g_j_m_p___b_u_f _e_n_v, _i_n_t _s_a_v_e_m_a_s_k);
+
+     _v_o_i_d
+     ssiigglloonnggjjmmpp(_s_i_g_j_m_p___b_u_f _e_n_v, _i_n_t _v_a_l);
+
+     _i_n_t
+     sseettjjmmpp(_j_m_p___b_u_f _e_n_v);
+
+     _v_o_i_d
+     lloonnggjjmmpp(_j_m_p___b_u_f _e_n_v, _i_n_t _v_a_l);
+
+     _i_n_t
+     __sseettjjmmpp(_j_m_p___b_u_f _e_n_v);
+
+     _v_o_i_d
+     __lloonnggjjmmpp(_j_m_p___b_u_f _e_n_v, _i_n_t _v_a_l);
+
+     _v_o_i_d
+     lloonnggjjmmppeerrrroorr(_v_o_i_d);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ssiiggsseettjjmmpp(), sseettjjmmpp(), and __sseettjjmmpp() functions save their calling en-
+     vironment in _e_n_v. Each of these functions returns 0.
+
+     The corresponding lloonnggjjmmpp() functions restore the environment saved by
+     their most recent respective invocations of the sseettjjmmpp() function.  They
+     then return so that program execution continues as if the corresponding
+     invocation of the sseettjjmmpp() call had just returned  the value specified by
+     _v_a_l, instead of 0.
+
+     Pairs of calls may be intermixed, i.e. both ssiiggsseettjjmmpp() and ssiigglloonnggjjmmpp()
+     and sseettjjmmpp() and lloonnggjjmmpp() combinations may be used in the same program,
+     however, individual calls may not, e.g. the _e_n_v argument to sseettjjmmpp() may
+     not be passed to ssiigglloonnggjjmmpp().
+
+     The lloonnggjjmmpp() routines may not be called after the routine which called
+     the sseettjjmmpp() routines returns.
+
+     All accessible objects have values as of the time lloonnggjjmmpp() routine was
+     called, except that the values of objects of automatic storage invocation
+     duration that do not have the _v_o_l_a_t_i_l_e type and have been changed between
+     the sseettjjmmpp() invocation and lloonnggjjmmpp() call are indeterminate.
+
+     The sseettjjmmpp()/lloonnggjjmmpp() pairs save and restore the signal mask while
+     __sseettjjmmpp()/__lloonnggjjmmpp() pairs save and restore only the register set and the
+     stack.  (See ssiiggmmaasskk(_2).)
+
+     The ssiiggsseettjjmmpp()/ssiigglloonnggjjmmpp() function pairs save and restore the signal
+     mask if the argument _s_a_v_e_m_a_s_k is non-zero, otherwise only the register
+     set and the stack are saved.
+
+EERRRROORRSS
+     If the contents of the _e_n_v are corrupted, or correspond to an environment
+     that has already returned, the lloonnggjjmmpp() routine calls the routine
+     lloonnggjjmmppeerrrroorr(_3).  If lloonnggjjmmppeerrrroorr() returns the program is aborted (see
+     abort(2)).  The default version of lloonnggjjmmppeerrrroorr() prints the message
+     ``longjmp botch'' to standard error and returns.  User programs wishing
+     to exit more gracefully should write their own versions of
+     lloonnggjjmmppeerrrroorr().
+
+SSEEEE AALLSSOO
+     sigaction(2),  sigaltstack(2),  signal(3)
+
+SSTTAANNDDAARRDDSS
+     The sseettjjmmpp() and lloonnggjjmmpp() functions conform to ANSI C X3.159-1989
+     (``ANSI C ''). The ssiiggsseettjjmmpp() and ssiigglloonnggjjmmpp() functions conform to IEEE
+     Std1003.1-1988 (``POSIX'').
+
+4th Berkeley Distribution        June 4, 1993                                2

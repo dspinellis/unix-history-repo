@@ -1,0 +1,47 @@
+GETPGRP(2)                  BSD Programmer's Manual                 GETPGRP(2)
+
+NNAAMMEE
+     ggeettppggrrpp - get process group
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<uunniissttdd..hh>>
+
+     _p_i_d___t
+     ggeettppggrrpp(_v_o_i_d);
+
+DDEESSCCRRIIPPTTIIOONN
+     The process group of the current process is returned by ggeettppggrrpp().
+
+     Process groups are used for distribution of signals, and by terminals to
+     arbitrate requests for their input: processes that have the same process
+     group as the terminal are foreground and may read, while others will
+     block with a signal if they attempt to read.
+
+     This call is thus used by programs such as csh(1) to create process
+     groups in implementing job control.  The ttccggeettppggrrpp() and ttccsseettppggrrpp()
+     calls are used to get/set the process group of the control terminal.
+
+SSEEEE AALLSSOO
+     setpgid(2),  termios(4)
+
+HHIISSTTOORRYY
+     The ggeettppggrrpp function call appeared in 4.0BSD.
+
+SSTTAANNDDAARRDDSS
+     The ggeettppggrrpp() function conforms to IEEE Std 1003.1-1988 (``POSIX'').
+
+CCOOMMPPAATTAABBIILLIITTYY
+     This version of ggeettppggrrpp() differs from past Berkeley versions by not tak-
+     ing a _p_i_d___t _p_i_d argument.  This incompatibility is required by IEEE
+     Std1003.1-1988 (``POSIX'').
+
+     From the IEEE Std1003.1-1988 (``POSIX'') Rationale:
+
+     4.3BSD provides a ggeettppggrrpp() function that returns the process group ID
+     for a specified process.  Although this function is used to support job
+     control, all known job-control shells always specify the calling process
+     with this function.  Thus, the simpler System V ggeettppggrrpp() suffices, and
+     the added complexity of the 4.3BSD ggeettppggrrpp() has been omitted from
+     POSIX.1.
+
+4.2 Berkeley Distribution        June 4, 1993                                1

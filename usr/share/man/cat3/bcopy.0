@@ -1,0 +1,22 @@
+BCOPY(3)                    BSD Programmer's Manual                   BCOPY(3)
+
+NNAAMMEE
+     bbccooppyy - copy byte string
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttrriinngg..hh>>
+
+     _v_o_i_d
+     bbccooppyy(_c_o_n_s_t _v_o_i_d _*_s_r_c, _v_o_i_d _*_d_s_t, _s_i_z_e___t _l_e_n);
+
+DDEESSCCRRIIPPTTIIOONN
+     The bbccooppyy() function copies _l_e_n bytes from string _s_r_c to string _d_s_t. The
+     two strings may overlap.  If _l_e_n is zero, no bytes are copied.
+
+SSEEEE AALLSSOO
+     memccpy(3),  memcpy(3),  memmove(3),  strcpy(3),  strncpy(3)
+
+HHIISSTTOORRYY
+     A bbccooppyy() function appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 4, 1993                                1

@@ -1,0 +1,27 @@
+RINDEX(3)                   BSD Programmer's Manual                  RINDEX(3)
+
+NNAAMMEE
+     rriinnddeexx - locate character in string
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttrriinngg..hh>>
+
+     _c_h_a_r _*
+     rriinnddeexx(_c_o_n_s_t _c_h_a_r _*_s, _i_n_t _c);
+
+DDEESSCCRRIIPPTTIIOONN
+     The rriinnddeexx() function locates the last character matching _c (converted to
+     a _c_h_a_r) in the null-terminated string _s.
+
+RREETTUURRNN VVAALLUUEESS
+     A pointer to the character is returned if it is found; otherwise NULL is
+     returned.  If _c is `\0', rriinnddeexx() locates the terminating `\0'.
+
+SSEEEE AALLSSOO
+     index(3),  memchr(3),  strchr(3),  strcspn(3),  strpbrk(3),  strrchr(3),
+     strsep(3),  strspn(3),  strstr(3),  strtok(3)
+
+HHIISSTTOORRYY
+     A rriinnddeexx() function appeared in Version 6 AT&T UNIX.
+
+4.4BSD                           June 4, 1993                                1

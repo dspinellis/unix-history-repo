@@ -1,0 +1,46 @@
+UNAME(3)                    BSD Programmer's Manual                   UNAME(3)
+
+NNAAMMEE
+     uunnaammee - get system identification
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//uuttssnnaammee..hh>>
+
+     _i_n_t
+     uunnaammee(_s_t_r_u_c_t _u_t_s_n_a_m_e _*_n_a_m_e);
+
+DDEESSCCRRIIPPTTIIOONN
+     The uunnaammee() function stores nul-terminated strings of information identi-
+     fying the current system into the structure referenced by _n_a_m_e.
+
+     The utsname structure is defined in the <sys/utsname.h> header file, and
+     contains the following members:
+
+           sysname       Name of the operating system implementation.
+
+           nodename      Network name of this machine.
+
+           release       Release level of the operating system.
+
+           version       Version level of the operating system.
+
+           machine       Machine hardware platform.
+
+RREETTUURRNN VVAALLUUEESS
+     If uunnaammee is successful, 0 is returned, otherwise, -1 is returned and
+     _e_r_r_n_o is set appropriately.
+
+EERRRROORRSS
+     The uunnaammee() function may fail and set _e_r_r_n_o for any of the errors speci-
+     fied for the library functions sysctl(3).
+
+SSEEEE AALLSSOO
+     uname(1),  sysctl(3)
+
+SSTTAANNDDAARRDDSS
+     The uunnaammee() function conforms to IEEE Std1003.1-1988 (``POSIX'').
+
+HHIISSTTOORRYY
+     The uunnaammee function first appeared in 4.4BSD.
+
+4.4BSD                          January 4, 1994                              1

@@ -1,0 +1,21 @@
+MPROTECT(2)                 BSD Programmer's Manual                MPROTECT(2)
+
+NNAAMMEE
+     mmpprrootteecctt - control the protection of pages
+
+SSYYNNOOPPSSIISS
+     mmpprrootteecctt(_c_a_d_d_r___t _a_d_d_r, _i_n_t _l_e_n, _i_n_t _p_r_o_t);
+
+DDEESSCCRRIIPPTTIIOONN
+     The mmpprrootteecctt() system call changes the specified pages to have protection
+     _p_r_o_t. Not all implementations will guarantee protection on a page basis;
+     the granularity of protection changes may be as large as an entire re-
+     gion.
+
+SSEEEE AALLSSOO
+     msync(2),  munmap(2),  madvise(2),  mincore(2)
+
+HHIISSTTOORRYY
+     The mmpprrootteecctt() function first appeared in 4.4BSD.
+
+4.4BSD                           June 9, 1993                                1

@@ -1,0 +1,52 @@
+PIPE(2)                     BSD Programmer's Manual                    PIPE(2)
+
+NNAAMMEE
+     ppiippee - create descriptor pair for interprocess communication
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<uunniissttdd..hh>>
+
+     _i_n_t
+     ppiippee(_i_n_t _*_f_i_l_d_e_s);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ppiippee() function creates a _p_i_p_e, which is an object allowing unidirec-
+     tional data flow, and allocates a pair of file descriptors.  The first
+     descriptor connects to the _r_e_a_d _e_n_d of the pipe, and the second connects
+     to the _w_r_i_t_e _e_n_d, so that data written to _f_i_l_d_e_s_[_1_] appears on (i.e., can
+     be read from) _f_i_l_d_e_s_[_0_]. This allows the output of one program to be sent
+     to another program: the source's standard output is set up to be the
+     write end of the pipe, and the sink's standard input is set up to be the
+     read end of the pipe.  The pipe itself persists until all its associated
+     descriptors are closed.
+
+     A pipe whose read or write end has been closed is considered _w_i_d_o_w_e_d.
+     Writing on such a pipe causes the writing process to receive a SIGPIPE
+     signal.  Widowing a pipe is the only way to deliver end-of-file to a
+     reader: after the reader consumes any buffered data, reading a widowed
+     pipe returns a zero count.
+
+     Pipes are really a special case of the socketpair(2) call and, in fact,
+     are implemented as such in the system.
+
+RREETTUURRNN VVAALLUUEESS
+     On successful creation of the pipe, zero is returned. Otherwise, a value
+     of -1 is returned and the variable _e_r_r_n_o set to indicate the error.
+
+EERRRROORRSS
+     The ppiippee() call will fail if:
+
+     [EMFILE]  Too many descriptors are active.
+
+     [ENFILE]  The system file table is full.
+
+     [EFAULT]  The _f_i_l_d_e_s buffer is in an invalid area of the process's ad-
+               dress space.
+
+SSEEEE AALLSSOO
+     sh(1),  read(2),  write(2),  fork(2),  socketpair(2)
+
+HHIISSTTOORRYY
+     A ppiippee function call appeared in Version 6 AT&T UNIX.
+
+4th Berkeley Distribution        June 4, 1993                                1

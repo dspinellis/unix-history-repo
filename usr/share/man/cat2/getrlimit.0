@@ -1,0 +1,113 @@
+GETRLIMIT(2)                BSD Programmer's Manual               GETRLIMIT(2)
+
+NNAAMMEE
+     ggeettrrlliimmiitt, sseettrrlliimmiitt - control maximum system resource consumption
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<ssyyss//ttiimmee..hh>>
+     ##iinncclluuddee <<ssyyss//rreessoouurrccee..hh>>
+
+     _i_n_t
+     ggeettrrlliimmiitt(_i_n_t _r_e_s_o_u_r_c_e, _s_t_r_u_c_t _r_l_i_m_i_t _*_r_l_p);
+
+     _i_n_t
+     sseettrrlliimmiitt(_i_n_t _r_e_s_o_u_r_c_e, _s_t_r_u_c_t _r_l_i_m_i_t _*_r_l_p);
+
+DDEESSCCRRIIPPTTIIOONN
+     Limits on the consumption of system resources by the current process and
+     each process it creates may be obtained with the ggeettrrlliimmiitt() call, and
+     set with the sseettrrlliimmiitt() call.
+
+     The _r_e_s_o_u_r_c_e parameter is one of the following:
+
+     RLIMIT_CORE     The largest size (in bytes) core file that may be creat-
+                     ed.
+
+     RLIMIT_CPU      The maximum amount of cpu time (in seconds) to be used by
+                     each process.
+
+     RLIMIT_DATA     The maximum size (in bytes) of the data segment for a
+                     process; this defines how far a program may extend its
+                     break with the sbrk(2) system call.
+
+     RLIMIT_FSIZE    The largest size (in bytes) file that may be created.
+
+     RLIMIT_MEMLOCK  The maximum size (in bytes) which a process may lock into
+                     memory using the mlock(2) function.
+
+     RLIMIT_NOFILE   The maximum number of open files for this process.
+
+     RLIMIT_NPROC    The maximum number of simultaneous processes for this us-
+                     er id.
+
+     RLIMIT_RSS      The maximum size (in bytes) to which a process's resident
+                     set size may grow.  This imposes a limit on the amount of
+                     physical memory to be given to a process; if memory is
+                     tight, the system will prefer to take memory from pro-
+                     cesses that are exceeding their declared resident set
+                     size.
+
+     RLIMIT_STACK    The maximum size (in bytes) of the stack segment for a
+                     process; this defines how far a program's stack segment
+                     may be extended.  Stack extension is performed automati-
+                     cally by the system.
+
+     A resource limit is specified as a soft limit and a hard limit.  When a
+     soft limit is exceeded a process may receive a signal (for example, if
+     the cpu time or file size is exceeded), but it will be allowed to contin-
+     ue execution until it reaches the hard limit (or modifies its resource
+     limit).  The _r_l_i_m_i_t structure is used to specify the hard and soft limits
+     on a resource,
+
+           struct rlimit {
+                   quad_t  rlim_cur;       /* current (soft) limit */
+                   quad_t  rlim_max;       /* hard limit */
+           };
+
+     Only the super-user may raise the maximum limits.  Other users may only
+     alter _r_l_i_m___c_u_r within the range from 0 to _r_l_i_m___m_a_x or (irreversibly) low-
+     er _r_l_i_m___m_a_x.
+
+     An ``infinite'' value for a limit is defined as RLIM_INFINITY.
+
+     Because this information is stored in the per-process information, this
+     system call must be executed directly by the shell if it is to affect all
+     future processes created by the shell; lliimmiitt is thus a built-in command
+     to csh(1).
+
+     The system refuses to extend the data or stack space when the limits
+     would be exceeded in the normal way: a break call fails if the data space
+     limit is reached.  When the stack limit is reached, the process receives
+     a segmentation fault (SIGSEGV); if this signal is not caught by a handler
+     using the signal stack, this signal will kill the process.
+
+     A file I/O operation that would create a file larger that the process'
+     soft limit will cause the write to fail and a signal SIGXFSZ to be gener-
+     ated; this normally terminates the process, but may be caught.  When the
+     soft cpu time limit is exceeded, a signal SIGXCPU is sent to the offend-
+     ing process.
+
+RREETTUURRNN VVAALLUUEESS
+     A 0 return value indicates that the call succeeded, changing or returning
+     the resource limit.   A return value of -1 indicates that an error oc-
+     curred, and an error code is stored in the global location _e_r_r_n_o.
+
+EERRRROORRSS
+     GGeettrrlliimmiitt() and sseettrrlliimmiitt() will fail if:
+
+     [EFAULT]      The address specified for _r_l_p is invalid.
+
+     [EPERM]       The limit specified to sseettrrlliimmiitt() would have raised the
+                   maximum limit value, and the caller is not the super-user.
+
+SSEEEE AALLSSOO
+     csh(1),  quota(2),  sigaltstack(2),  sigvec(2),  sysctl(3)
+
+BBUUGGSS
+     There should be lliimmiitt and uunnlliimmiitt commands in sh(1) as well as in csh.
+
+HHIISSTTOORRYY
+     The ggeettrrlliimmiitt function call appeared in 4.2BSD.
+
+4th Berkeley Distribution        June 4, 1993                                2

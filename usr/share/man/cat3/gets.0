@@ -1,0 +1,58 @@
+FGETS(3)                    BSD Programmer's Manual                   FGETS(3)
+
+NNAAMMEE
+     ffggeettss, ggeettss - get a line from a stream
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddiioo..hh>>
+
+     _c_h_a_r _*
+     ffggeettss(_c_h_a_r _*_s_t_r, _s_i_z_e___t _s_i_z_e, _F_I_L_E _*_s_t_r_e_a_m);
+
+     _c_h_a_r _*
+     ggeettss(_c_h_a_r _*_s_t_r);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ffggeettss() function reads at most one less than the number of characters
+     specified by size from the given _s_t_r_e_a_m and stores them in the string
+     _s_t_r. Reading stops when a newline character is found, at end-of-file or
+     error.  The newline, if any, is retained.  In any case a `\0' character
+     is appended to end the string.
+
+     The ggeettss() function is equivalent to ffggeettss() with an infinite size and a
+     _s_t_r_e_a_m of _s_t_d_i_n, except that the newline character (if any) is not stored
+     in the string.  It is the caller's responsibility to ensure that the in-
+     put line, if any, is sufficiently short to fit in the string.
+
+RREETTUURRNN VVAALLUUEESS
+     Upon successful completion, ffggeettss() and ggeettss() return a pointer to the
+     string.  If end-of-file or an error occurs before any characters are
+     read, they return NULL. The ffggeettss() and functions ggeettss() do not distin-
+     guish between end-of-file and error, and callers must use feof(3) and
+     ferror(3) to determine which occurred.
+
+EERRRROORRSS
+     [EBADF]  The given _s_t_r_e_a_m is not a readable stream.
+
+     The function ffggeettss() may also fail and set _e_r_r_n_o for any of the errors
+     specified for the routines fflush(3),  fstat(2),  read(2),  or malloc(3).
+
+
+     The function ggeettss() may also fail and set _e_r_r_n_o for any of the errors
+     specified for the routine getchar(3).
+
+SSEEEE AALLSSOO
+     feof(3),  ferror(3),  fgetline(3)
+
+SSTTAANNDDAARRDDSS
+     The functions ffggeettss() and ggeettss() conform to ANSI C X3.159-1989 (``ANSI C
+     '').
+
+BBUUGGSS
+     Since it is usually impossible to ensure that the next input line is less
+     than some arbitrary length, and because overflowing the input buffer is
+     almost invariably a security violation, programs should _N_E_V_E_R use ggeettss().
+     The ggeettss() function exists purely to conform to ANSI C X3.159-1989
+     (``ANSI C '').
+
+4.4BSD                           June 4, 1993                                1

@@ -1,0 +1,25 @@
+CREAT(2)                    BSD Programmer's Manual                   CREAT(2)
+
+NNAAMMEE
+     ccrreeaatt - create a new file
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ffccnnttll..hh>>
+
+     _i_n_t
+     ccrreeaatt(_c_h_a_r _*_p_a_t_h, _m_o_d_e___t _m_o_d_e);
+
+DDEESSCCRRIIPPTTIIOONN
+     TThhiiss iinntteerrffaaccee iiss mmaaddee oobbssoolleettee bbyy::  open(2).
+
+     CCrreeaatt() is the same as:
+
+           open(path, O_CREAT | O_TRUNC | O_WRONLY, mode);
+
+SSEEEE AALLSSOO
+     open(2)
+
+HHIISSTTOORRYY
+     The ccrreeaatt function call appeared in Version 6 AT&T UNIX.
+
+4th Berkeley Distribution        June 2, 1993                                1

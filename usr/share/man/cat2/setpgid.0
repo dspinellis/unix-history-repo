@@ -1,0 +1,50 @@
+SETPGID(2)                  BSD Programmer's Manual                 SETPGID(2)
+
+NNAAMMEE
+     sseettppggiidd, sseettppggrrpp - set process group
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<uunniissttdd..hh>>
+
+     _i_n_t
+     sseettppggiidd(_p_i_d___t_p_i_d, _p_i_d___t_p_g_r_p);
+
+     _i_n_t
+     sseettppggrrpp(_p_i_d___t_p_i_d, _p_i_d___t_p_g_r_p);
+
+DDEESSCCRRIIPPTTIIOONN
+     SSeettppggiidd() sets the process group of the specified process _p_i_d to the
+     specified _p_g_r_p. If _p_i_d is zero, then the call applies to the current pro-
+     cess.
+
+     If the invoker is not the super-user, then the affected process must have
+     the same effective user-id as the invoker or be a descendant of the in-
+     voking process.
+
+RREETTUURRNN VVAALLUUEESS
+     SSeettppggiidd() returns 0 when the operation was successful.  If the request
+     failed, -1 is returned and the global variable _e_r_r_n_o indicates the rea-
+     son.
+
+EERRRROORRSS
+     SSeettppggiidd() will fail and the process group will not be altered if:
+
+     [ESRCH]
+             The requested process does not exist.
+
+     [EPERM]
+             The effective user ID of the requested process is different from
+             that of the caller and the process is not a descendent of the
+             calling process.
+
+SSEEEE AALLSSOO
+     getpgrp(2)
+
+SSTTAANNDDAARRDDSS
+     SSeettppggiidd() conforms to IEEE Std 1003.1-1988 (``POSIX'').
+
+CCOOMMPPAATTIIBBIILLIITTYY
+     SSeettppggrrpp() is identical to sseettppggiidd(), and is retained for calling conven-
+     tion compatibility with historical versions of BSD.
+
+4th Berkeley Distribution        June 4, 1993                                1

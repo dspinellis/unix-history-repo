@@ -1,0 +1,74 @@
+SWAPON(2)                   BSD Programmer's Manual                  SWAPON(2)
+
+NNAAMMEE
+     sswwaappoonn - add a swap device for interleaved paging/swapping
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<uunniissttdd..hh>>
+
+     _i_n_t
+     sswwaappoonn(_c_o_n_s_t _c_h_a_r _*_s_p_e_c_i_a_l);
+
+DDEESSCCRRIIPPTTIIOONN
+     SSwwaappoonn() makes the block device _s_p_e_c_i_a_l available to the system for allo-
+     cation for paging and swapping.  The names of potentially available de-
+     vices are known to the system and defined at system configuration time.
+     The size of the swap area on _s_p_e_c_i_a_l is calculated at the time the device
+     is first made available for swapping.
+
+RREETTUURRNN VVAALLUUEESS
+     If an error has occurred, a value of -1 is returned and _e_r_r_n_o is set to
+     indicate the error.
+
+EERRRROORRSS
+     SSwwaappoonn() succeeds unless:
+
+     [ENOTDIR]     A component of the path prefix is not a directory.
+
+     [EINVAL]      The pathname contains a character with the high-order bit
+                   set.
+
+     [ENAMETOOLONG]
+                   A component of a pathname exceeded 255 characters, or an
+                   entire path name exceeded 1023 characters.
+
+     [ENOENT]      The named device does not exist.
+
+     [EACCES]      Search permission is denied for a component of the path
+                   prefix.
+
+     [ELOOP]       Too many symbolic links were encountered in translating the
+                   pathname.
+
+     [EPERM]       The caller is not the super-user.
+
+     [ENOTBLK]     _S_p_e_c_i_a_l is not a block device.
+
+     [EBUSY]       The device specified by _s_p_e_c_i_a_l has already been made
+                   available for swapping
+
+     [EINVAL]      The device configured by _s_p_e_c_i_a_l was not configured into
+                   the system as a swap device.
+
+     [ENXIO]       The major device number of _s_p_e_c_i_a_l is out of range (this
+                   indicates no device driver exists for the associated hard-
+                   ware).
+
+     [EIO]         An I/O error occurred while opening the swap device.
+
+     [EFAULT]      _S_p_e_c_i_a_l points outside the process's allocated address
+                   space.
+
+SSEEEE AALLSSOO
+     swapon(8),  config(8)
+
+BBUUGGSS
+     There is no way to stop swapping on a disk so that the pack may be dis-
+     mounted.
+
+     This call will be upgraded in future versions of the system.
+
+HHIISSTTOORRYY
+     The sswwaappoonn function call appeared in 4.0BSD.
+
+4th Berkeley Distribution        June 4, 1993                                2

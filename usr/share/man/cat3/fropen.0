@@ -1,0 +1,74 @@
+FUNOPEN(3)                  BSD Programmer's Manual                 FUNOPEN(3)
+
+NNAAMMEE
+     ffuunnooppeenn, ffrrooppeenn, ffwwooppeenn - open a stream
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddiioo..hh>>
+
+     _F_I_L_E _*
+     ffuunnooppeenn(_v_o_i_d _*_c_o_o_k_i_e, _i_n_t _(_*_r_e_a_d_f_n_)_(_v_o_i_d _*_, _c_h_a_r _*_, _i_n_t_),
+             _i_n_t _(_w_r_i_t_e_f_n_*_)_(_v_o_i_d _*_, _c_o_n_s_t _c_h_a_r _*_, _i_n_t_),
+             _f_p_o_s___t _(_s_e_e_k_f_n_*_)_(_v_o_i_d _*_, _f_p_o_s___t_, _i_n_t_), _i_n_t _(_c_l_o_s_e_f_n_*_)_(_v_o_i_d _*_));
+
+     _F_I_L_E _*
+     ffrrooppeenn(_v_o_i_d _*_c_o_o_k_i_e, _i_n_t _(_*_r_e_a_d_f_n_)_(_v_o_i_d _*_, _c_h_a_r _*_, _i_n_t_));
+
+     _F_I_L_E _*
+     ffwwooppeenn(_v_o_i_d _*_c_o_o_k_i_e, _i_n_t _(_*_w_r_i_t_e_f_n_)_(_v_o_i_d _*_, _c_h_a_r _*_, _i_n_t_));
+
+DDEESSCCRRIIPPTTIIOONN
+     The ffuunnooppeenn() function associates a stream with up to four ``I/O
+     functions''. Either _r_e_a_d_f_n or _w_r_i_t_e_f_n must be specified; the others can
+     be given as an appropriately-typed NULL pointer.  These I/O functions
+     will be used to read, write, seek and close the new stream.
+
+     In general, omitting a function means that any attempt to perform the as-
+     sociated operation on the resulting stream will fail.  If the close func-
+     tion is omitted, closing the stream will flush any buffered output and
+     then succeed.
+
+     The calling conventions of _r_e_a_d_f_n, _w_r_i_t_e_f_n, _s_e_e_k_f_n and _c_l_o_s_e_f_n must match
+     those, respectively, of read(2),  write(2),  seek(2),  and close(2) with
+     the single exception that they are passed the _c_o_o_k_i_e argument specified
+     to ffuunnooppeenn() in place of the traditional file descriptor argument.
+
+     Read and write I/O functions are allowed to change the underlying buffer
+     on fully buffered or line buffered streams by calling setvbuf(3).  They
+     are also not required to completely fill or empty the buffer.  They are
+     not, however, allowed to change streams from unbuffered to buffered or to
+     change the state of the line buffering flag.  They must also be prepared
+     to have read or write calls occur on buffers other than the one most re-
+     cently specified.
+
+     All user I/O functions can report an error by returning -1.  Additional-
+     ly, all of the functions should set the external variable _e_r_r_n_o appropri-
+     ately if an error occurs.
+
+     An error on cclloosseeffnn() does not keep the stream open.
+
+     As a convenience, the include file <_s_t_d_i_o_._h> defines the macros ffrrooppeenn()
+     and ffwwooppeenn() as calls to ffuunnooppeenn() with only a read or write function
+     specified.
+
+RREETTUURRNN VVAALLUUEESS
+     Upon successful completion, ffuunnooppeenn() returns a FILE pointer.  Otherwise,
+     NULL is returned and the global variable _e_r_r_n_o is set to indicate the er-
+     ror.
+
+EERRRROORRSS
+     [EINVAL]  The ffuunnooppeenn() function was called without either a read or
+               write function.  The ffuunnooppeenn() function may also fail and set
+               _e_r_r_n_o for any of the errors specified for the routine
+               malloc(3).
+
+SSEEEE AALLSSOO
+     fcntl(2),  open(2),  fclose(3),  fopen(3),  fseek(3),  setbuf(3)
+
+HHIISSTTOORRYY
+     The ffuunnooppeenn() functions first appeared in 4.4BSD.
+
+BBUUGGSS
+     The ffuunnooppeenn() function may not be portable to systems other than BSD.
+
+4.4BSD                           June 9, 1993                                2

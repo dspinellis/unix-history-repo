@@ -1,0 +1,75 @@
+FSEEK(3)                    BSD Programmer's Manual                   FSEEK(3)
+
+NNAAMMEE
+     ffggeettppooss, ffsseeeekk, ffsseettppooss, fftteellll, rreewwiinndd - reposition a stream
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddiioo..hh>>
+
+     _i_n_t
+     ffsseeeekk(_F_I_L_E _*_s_t_r_e_a_m, _l_o_n_g _o_f_f_s_e_t, _i_n_t _w_h_e_n_c_e);
+
+     _l_o_n_g
+     fftteellll(_F_I_L_E _*_s_t_r_e_a_m);
+
+     _v_o_i_d
+     rreewwiinndd(_F_I_L_E _*_s_t_r_e_a_m);
+
+     _i_n_t
+     ffggeettppooss(_F_I_L_E _*_s_t_r_e_a_m, _f_p_o_s___t _*_p_o_s);
+
+     _i_n_t
+     ffsseettppooss(_F_I_L_E _*_s_t_r_e_a_m, _f_p_o_s___t _*_p_o_s);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ffsseeeekk() function sets the file position indicator for the stream
+     pointed to by _s_t_r_e_a_m. The new position, measured in bytes, is obtained by
+     adding _o_f_f_s_e_t bytes to the position specified by _w_h_e_n_c_e. If _w_h_e_n_c_e is set
+     to SEEK_SET, SEEK_CUR, or SEEK_END, the offset is relative to the start
+     of the file, the current position indicator, or end-of-file, respective-
+     ly.  A successful call to the ffsseeeekk() function clears the end-of-file in-
+     dicator for the stream and undoes any effects of the ungetc(3) function
+     on the same stream.
+
+     The fftteellll() function obtains the current value of the file position indi-
+     cator for the stream pointed to by _s_t_r_e_a_m.
+
+     The rreewwiinndd() function sets the file position indicator for the stream
+     pointed to by _s_t_r_e_a_m to the beginning of the file.  It is equivalent to:
+
+           (void)fseek(stream, 0L, SEEK_SET)
+
+     except that the error indicator for the stream is also cleared (see
+     clearerr(3)).
+
+     The ffggeettppooss() and ffsseettppooss() functions are alternate interfaces equivalent
+     to fftteellll() and ffsseeeekk() (with whence set to SEEK_SET ), setting and stor-
+     ing the current value of the file offset into or from the object refer-
+     enced by _p_o_s. On some (non-UNIX) systems an ``_f_p_o_s___t'' object may be a
+     complex object and these routines may be the only way to portably reposi-
+     tion a text stream.
+
+RREETTUURRNN VVAALLUUEESS
+     The rreewwiinndd() function returns no value.  Upon successful completion,
+     ffggeettppooss(), ffsseeeekk(), ffsseettppooss() return 0, and fftteellll() returns the current
+     offset.  Otherwise, -1 is returned and the global variable errno is set
+     to indicate the error.
+
+EERRRROORRSS
+     [EBADF]   The _s_t_r_e_a_m specified is not a seekable stream.
+
+     [EINVAL]  The _w_h_e_n_c_e argument to ffsseeeekk() was not SEEK_SET, SEEK_END, or
+               SEEK_CUR.
+
+     The function ffggeettppooss(), ffsseeeekk(), ffsseettppooss(), and fftteellll() may also fail and
+     set _e_r_r_n_o for any of the errors specified for the routines fflush(3),
+     fstat(2),  lseek(2),  and malloc(3).
+
+SSEEEE AALLSSOO
+     lseek(2)
+
+SSTTAANNDDAARRDDSS
+     The ffggeettppooss(), ffsseettppooss(), ffsseeeekk(), fftteellll(), and rreewwiinndd() functions con-
+     form to ANSI C X3.159-1989 (``ANSI C '').
+
+4.4BSD                           June 4, 1993                                2

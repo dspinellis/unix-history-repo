@@ -1,0 +1,26 @@
+ALLOCA(3)                   BSD Programmer's Manual                  ALLOCA(3)
+
+NNAAMMEE
+     aallllooccaa - memory allocator
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddlliibb..hh>>
+
+     _v_o_i_d _*
+     aallllooccaa(_s_i_z_e___t _s_i_z_e);
+
+DDEESSCCRRIIPPTTIIOONN
+     The aallllooccaa() function allocates _s_i_z_e bytes of space in the stack frame of
+     the caller.  This temporary space is automatically freed on return.
+
+RREETTUURRNN VVAALLUUEESS
+     The aallllooccaa() function returns a pointer to the beginning of the allocated
+     space.  If the allocation failed, a NULL pointer is returned.
+
+SSEEEE AALLSSOO
+     brk(2),  pagesize(2) calloc(3),  malloc(3),  realloc(3),
+
+BBUUGGSS
+     The aallllooccaa() function is machine dependent; its use is discouraged.
+
+4th Berkeley Distribution        June 4, 1993                                1

@@ -1,0 +1,24 @@
+SWAB(3)                     BSD Programmer's Manual                    SWAB(3)
+
+NNAAMMEE
+     sswwaabb - swap adjacent bytes
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttrriinngg..hh>>
+
+     _v_o_i_d
+     sswwaabb(_c_o_n_s_t _v_o_i_d _*_s_r_c, _v_o_i_d _*_d_s_t, _s_i_z_e___t _l_e_n);
+
+DDEESSCCRRIIPPTTIIOONN
+     The function sswwaabb() copies _l_e_n bytes from the location referenced by _s_r_c
+     to the location referenced by _d_s_t, swapping adjacent bytes.
+
+     The argument _l_e_n must be even number.
+
+SSEEEE AALLSSOO
+     bzero(3),  memset(3)
+
+HHIISSTTOORRYY
+     A sswwaabb() function appeared in Version 7 AT&T UNIX.
+
+4.4BSD                           June 4, 1993                                1

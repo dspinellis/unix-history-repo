@@ -1,0 +1,86 @@
+DIRECTORY(3)                BSD Programmer's Manual               DIRECTORY(3)
+
+NNAAMMEE
+     ooppeennddiirr, rreeaaddddiirr, tteellllddiirr, sseeeekkddiirr, rreewwiinnddddiirr, cclloosseeddiirr, ddiirrffdd - directo-
+     ry operations
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<ddiirreenntt..hh>>
+
+     _D_I_R _*
+     ooppeennddiirr(_c_o_n_s_t _c_h_a_r _*_f_i_l_e_n_a_m_e);
+
+     _s_t_r_u_c_t _d_i_r_e_n_t _*
+     rreeaaddddiirr(_D_I_R _*_d_i_r_p);
+
+     _l_o_n_g
+     tteellllddiirr(_c_o_n_s_t _D_I_R _*_d_i_r_p);
+
+     _v_o_i_d
+     sseeeekkddiirr(_D_I_R _*_d_i_r_p, _l_o_n_g _l_o_c);
+
+     _v_o_i_d
+     rreewwiinnddddiirr(_D_I_R _*_d_i_r_p);
+
+     _i_n_t
+     cclloosseeddiirr(_D_I_R _*_d_i_r_p);
+
+     _i_n_t
+     ddiirrffdd(_D_I_R _*_d_i_r_p);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ooppeennddiirr() function opens the directory named by _f_i_l_e_n_a_m_e, associates
+     a _d_i_r_e_c_t_o_r_y _s_t_r_e_a_m with it and returns a pointer to be used to identify
+     the _d_i_r_e_c_t_o_r_y _s_t_r_e_a_m in subsequent operations.  The pointer NULL is re-
+     turned if _f_i_l_e_n_a_m_e cannot be accessed, or if it cannot malloc(3) enough
+     memory to hold the whole thing.
+
+     The rreeaaddddiirr() function returns a pointer to the next directory entry.  It
+     returns NULL upon reaching the end of the directory or detecting an in-
+     valid sseeeekkddiirr() operation.
+
+     The tteellllddiirr() function returns the current location associated with the
+     named _d_i_r_e_c_t_o_r_y _s_t_r_e_a_m.
+
+     The sseeeekkddiirr() function sets the position of the next rreeaaddddiirr() operation
+     on the _d_i_r_e_c_t_o_r_y _s_t_r_e_a_m. The new position reverts to the one associated
+     with the _d_i_r_e_c_t_o_r_y _s_t_r_e_a_m when the tteellllddiirr() operation was performed.
+     Values returned by tteellllddiirr() are good only for the lifetime of the DIR
+     pointer, _d_i_r_p, from which they are derived.  If the directory is closed
+     and then reopened, the tteellllddiirr() value may be invalidated due to unde-
+     tected directory compaction.  It is safe to use a previous tteellllddiirr() val-
+     ue immediately after a call to ooppeennddiirr() and before any calls to
+     rreeaaddddiirr().
+
+     The rreewwiinnddddiirr() function resets the position of the named _d_i_r_e_c_t_o_r_y
+     _s_t_r_e_a_m to the beginning of the directory.
+
+     The cclloosseeddiirr() function closes the named _d_i_r_e_c_t_o_r_y _s_t_r_e_a_m and frees the
+     structure associated with the _d_i_r_p pointer, returning 0 on success.  On
+     failure, -1 is returned and the global variable _e_r_r_n_o is set to indicate
+     the error.
+
+     The ddiirrffdd() function returns the integer file descriptor associated with
+     the named _d_i_r_e_c_t_o_r_y _s_t_r_e_a_m, see open(2).
+
+     Sample code which searchs a directory for entry ``name'' is:
+
+           len = strlen(name);
+           dirp = opendir(".");
+           while ((dp = readdir(dirp)) != NULL)
+                   if (dp->d_namlen == len && !strcmp(dp->d_name, name)) {
+                           (void)closedir(dirp);
+                           return FOUND;
+                   }
+           (void)closedir(dirp);
+           return NOT_FOUND;
+
+SSEEEE AALLSSOO
+     open(2),  close(2),  read(2),  lseek(2),  dir(5)
+
+HHIISSTTOORRYY
+     The ooppeennddiirr(), rreeaaddddiirr(), tteellllddiirr(), sseeeekkddiirr(), rreewwiinnddddiirr(), cclloosseeddiirr(),
+     and ddiirrffdd() functions appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 4, 1993                                2

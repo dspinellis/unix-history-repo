@@ -1,0 +1,25 @@
+MEMCCPY(3)                  BSD Programmer's Manual                 MEMCCPY(3)
+
+NNAAMMEE
+     mmeemmccccppyy - copy string until character found
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttrriinngg..hh>>
+
+     _v_o_i_d _*
+     mmeemmccccppyy(_v_o_i_d _*_d_s_t, _c_o_n_s_t _v_o_i_d _*_s_r_c, _i_n_t _c, _s_i_z_e___t _l_e_n);
+
+DDEESSCCRRIIPPTTIIOONN
+     The mmeemmccccppyy() function copies bytes from string _s_r_c to string _d_s_t. If the
+     character _c (as converted to an unsigned char) occurs in the string _s_r_c,
+     the copy stops and a pointer to the byte after the copy of _c in the
+     string _d_s_t is returned.  Otherwise, _l_e_n bytes are copied, and a NULL
+     pointer is returned.
+
+SSEEEE AALLSSOO
+     bcopy(3),  memcpy(3),  memmove(3),  strcpy(3)
+
+HHIISSTTOORRYY
+     The mmeemmccccppyy() function first appeared in 4.4BSD.
+
+4.4BSD                           June 9, 1993                                1

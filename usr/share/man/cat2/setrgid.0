@@ -1,0 +1,35 @@
+SETRUID(3)                  BSD Programmer's Manual                 SETRUID(3)
+
+NNAAMMEE
+     sseettrruuiidd, sseettrrggiidd - set user and group ID
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+
+     _i_n_t
+     sseettrruuiidd(_u_i_d___t _r_u_i_d);
+
+     _i_n_t
+     sseettrrggiidd(_g_i_d___t _r_g_i_d);
+
+DDEESSCCRRIIPPTTIIOONN
+     The sseettrruuiidd() function (sseettrrggiidd()) sets the real user ID (group ID) of
+     the current process.
+
+RREETTUURRNN VVAALLUUEESS
+     Upon success, these functions return 0; otherwise -1 is returned.
+
+     If the user is not the super user, or the uid specified is not the real
+     or effective ID, these functions return -1.
+
+     The use of these calls is not portable.  Their use is discouraged; they
+     will be removed in the future.
+
+SSEEEE AALLSSOO
+     setuid(2),  setgid(2),  seteuid(2),  setegid(2),  getuid(2),  getgid(2)
+
+HHIISSTTOORRYY
+     The sseettrruuiidd() and sseettrrggiidd() syscalls appeared in 4.2BSD and were dropped
+     in 4.4BSD.
+
+4.2 Berkeley Distribution        June 2, 1993                                1
