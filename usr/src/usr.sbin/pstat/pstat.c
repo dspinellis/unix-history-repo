@@ -11,7 +11,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	5.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	5.35 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -73,12 +73,8 @@ struct nlist nl[] = {
 	{ "_nswdev" },
 #define	SSWDEVT	5
 	{ "_swdevt" },
-#define	SFIL	6
-	{ "_file" },
-#define	SNFILE	7
-	{ "_nfile" },
 #ifdef NEWVM
-#define NLMANDATORY SNFILE	/* names up to here are mandatory */
+#define NLMANDATORY SSWDEVT	/* names up to here are mandatory */
 #else
 #define	STEXT	8
 	{ "_text" },
@@ -660,7 +656,10 @@ loadvnodes(avnodes)
 	struct e_vnode *vnodebase;
 
 	if (fcore != NULL) {
-		error("vnodes on dead kernel, not impl yet\n");
+		/*
+		 * add emulation of KINFO_VNODE here
+		 */
+		error("vnodes on dead kernel, not impl\n");
 		exit(1);
 	}
 	if ((ret = getkerninfo(KINFO_VNODE, NULL, NULL, 0)) == -1) {
@@ -771,7 +770,7 @@ dotext()
 doproc()
 {
 #ifdef NEWVM
-	printf("pstat: -p no longer supported\n");
+	printf("pstat: -p no longer supported (use ps)\n");
 #else
 	struct proc *xproc, *aproc;
 	int nproc;
@@ -1127,40 +1126,46 @@ char *s;
 
 dofile()
 {
-	int nfile;
-	struct file *xfile, *afile;
 	register struct file *fp;
-	register nf;
-	int loc;
+	struct file *addr;
+	char *buf;
+	int len, maxfile, nfile;
+	struct nlist fnl[] = {
+#define	FNL_NFILE	0
+		{"_nfiles"},
+#define FNL_MAXFILE	1
+		{"_maxfiles"},
+		{""}
+	};
 	static char *dtypes[] = { "???", "inode", "socket" };
 
-	nf = 0;
-	nfile = getword(nl[SNFILE].n_value);
-	xfile = (struct file *)calloc(nfile, sizeof (struct file));
-	afile = (struct file *)getword(nl[SFIL].n_value);
-	if (nfile < 0 || nfile > 100000) {
-		fprintf(stderr, "number of files is preposterous (%d)\n",
-			nfile);
+	if (kvm_nlist(fnl) != 0) {
+		error("kvm_nlist: no _nfiles or _maxfiles: %s", 
+			kvm_geterr());
 		return;
 	}
-	if (xfile == NULL) {
-		fprintf(stderr, "can't allocate memory for file table\n");
-		return;
-	}
-	kvm_read(afile, xfile, nfile * sizeof (struct file));
-	for (fp=xfile; fp < &xfile[nfile]; fp++)
-		if (fp->f_count)
-			nf++;
+	kvm_read(V(fnl[FNL_MAXFILE].n_value), &maxfile,
+		sizeof (maxfile));
 	if (totflg) {
-		printf("%3d/%3d files\n", nf, nfile);
+		kvm_read(V(fnl[FNL_NFILE].n_value), &nfile, sizeof (nfile));
+		printf("%3d/%3d files\n", nfile, maxfile);
 		return;
 	}
-	printf("%d/%d open files\n", nf, nfile);
+	if (getfiles(&buf, &len) == -1)
+		return;
+	/*
+	 * getfiles returns in malloc'd buf a pointer to the first file
+	 * structure, and then an array of file structs (whose
+	 * addresses are derivable from the previous entry)
+	 */
+	addr = *((struct file **)buf);
+	fp = (struct file *)(buf + sizeof (struct file *));
+	nfile = (len - sizeof (struct file *)) / sizeof (struct file);
+	
+	printf("%d/%d open files\n", nfile, maxfile);
 	printf("   LOC   TYPE    FLG     CNT  MSG    DATA    OFFSET\n");
-	for (fp=xfile,loc=(int)afile; fp < &xfile[nfile]; fp++,loc+=sizeof(xfile[0])) {
-		if (fp->f_count==0)
-			continue;
-		printf("%x ", loc);
+	for (; (char *)fp < buf + len; addr = fp->f_filef, fp++) {
+		printf("%x ", addr);
 		if (fp->f_type <= DTYPE_SOCKET)
 			printf("%-8.8s", dtypes[fp->f_type]);
 		else
@@ -1171,18 +1176,53 @@ dofile()
 #ifdef FSHLOCK	/* currently gone */
 		putf(fp->f_flag&FSHLOCK, 'S');
 		putf(fp->f_flag&FEXLOCK, 'X');
+#else
+		putf(0, ' ');
+		putf(0, ' ');
 #endif
 		putf(fp->f_flag&FASYNC, 'I');
-		printf("  %3d", mask(fp->f_count));
-		printf("  %3d", mask(fp->f_msgcount));
+		printf("  %3d", fp->f_count);
+		printf("  %3d", fp->f_msgcount);
 		printf("  %8.1x", fp->f_data);
 		if (fp->f_offset < 0)
 			printf("  %x\n", fp->f_offset);
 		else
 			printf("  %ld\n", fp->f_offset);
 	}
-	free(xfile);
+	free(buf);
 }
+
+getfiles(abuf, alen)
+	char **abuf;
+	int *alen;
+{
+	char *buf;
+	int len;
+
+	if (fcore != NULL) {
+		/*
+		 * add emulation of KINFO_FILE here
+		 */
+		error("files on dead kernel, not impl\n");
+		exit(1);
+	}
+	if ((len = getkerninfo(KINFO_FILE, NULL, NULL, 0)) == -1) {
+		syserror("getkerninfo estimate");
+		return (-1);
+	}
+	if ((buf = (char *)malloc(len)) == NULL) {
+		error("out of memory");
+		return (-1);
+	}
+	if ((len = getkerninfo(KINFO_FILE, buf, &len, 0)) == -1) {
+		syserror("getkerninfo");
+		return (-1);
+	}
+	*abuf = buf;
+	*alen = len;
+	return (0);
+}
+
 
 #ifdef NEWVM
 doswap()
