@@ -1,6 +1,6 @@
 # include	"../hdr/macros.h"
 
-SCCSID(@(#)date_ab.c	4.1);
+SCCSID(@(#)date_ab.c	4.2);
 
 /*
 	Function to convert date in the form "yymmddhhmmss" to
@@ -59,10 +59,10 @@ long *bdt;
 	tim =+ h;
 	tim =* 60;
 	tim =+ m;
+	tim =+ timeb.timezone;			/* GMT correction */
 	tim =* 60;
 	tim =+ s;
 
-	tim =+ timeb.timezone;			/* GMT correction */
 	if(localtime(&tim)[8])
 		tim =+ -1*60*60;		/* daylight savings */
 	*bdt = tim;
