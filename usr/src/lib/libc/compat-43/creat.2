@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)creat.2	4.1 (Berkeley) %G%
+.\"	@(#)creat.2	5.1 (Berkeley) %G%
 .\"
-.TH CREAT 2 
+.TH CREAT 2 "2 July 1983"
 .UC 4
 .SH NAME
 creat \- create a new file
@@ -14,10 +14,12 @@ creat \- create a new file
 .B char *name;
 .fi
 .SH DESCRIPTION
+.B "This interface is obsoleted by open(2).
+.PP
 .I Creat
 creates a new file or prepares to rewrite an existing
 file called 
-.I name,
+.IR name ,
 given as the address of a null-terminated string.
 If the file did not exist, it is given
 mode
@@ -36,39 +38,68 @@ but it is truncated to 0 length.
 .PP
 The file is also opened for writing, and its file descriptor
 is returned.
-.PP
+.SH NOTES
 The
 .I mode
 given is arbitrary; it need not allow
 writing.
-This feature is used by programs which deal with temporary
-files of fixed names.
-The creation is done with
-a mode that forbids writing.
-Then if a second
-instance of the program attempts a
-.I creat,
-an error is
-returned and the program knows that the name is unusable
-for the moment.
+This feature has been used in the past by
+programs to construct a simple exclusive locking
+mechanism.  It is replaced by the O_EXCL open
+mode, or 
+.IR flock (2)
+facilitity.
+.SH "RETURN VALUE
+The value \-1 is returned if an error occurs.  Otherwise,
+the call returns a non-negative descriptor which only permits
+writing.
+.SH ERRORS
+.I Creat
+will fail and the file will not be created or truncated
+if one of the following occur:
+.TP 15
+[EPERM]
+The argument contains a byte with the high-order bit set.
+.TP 15
+[ENOTDIR]
+A component of the path prefix is not a directory.
+.TP 15
+[EACCES]
+A needed directory does not have search permission.
+.TP 15
+[EACCES]
+The file does not exist and the directory
+in which it is to be created is not writable.
+.TP 15
+[EACCES]
+The file exists, but it is unwritable.
+.TP 15
+[EISDIR]
+The file is a directory.
+.TP 15
+[EMFILE]
+There are already too many files open.
+.TP 15
+[EROFS]
+The named file resides on a read-only file system.
+.TP 15
+[ENXIO]
+The file is a character special or block special file, and
+the associated device does not exist.
+.TP 15
+[ETXTBSY]
+The file is a pure procedure (shared text) file that is being
+executed.
+.TP 15
+[EFAULT]
+.I Name
+points outside the process's allocated address space.
+.TP 15
+[ELOOP]
+Too many symbolic links were encountered in translating the
+pathname.
+.TP 15
+[EOPNOTSUPP]
+The file was a socket (not currently implemented).
 .SH "SEE ALSO"
-write(2), close(2), chmod(2), umask (2)
-.SH DIAGNOSTICS
-The value \-1 is returned if:
-a needed directory is not searchable;
-the file does not exist and the directory
-in which it is to be created is not writable; the file
-does exist and is unwritable;
-the file is a directory;
-there are already too many files open.
-.SH "ASSEMBLER (PDP-11)"
-(creat = 8.)
-.br
-.B sys creat; name; mode
-.br
-(file descriptor in r0)
-.SH BUGS
-A file cannot be truncated while any process
-has pages set up by a
-.I vread
-on that file which have not been referenced.
+open(2), write(2), close(2), chmod(2), umask(2)
