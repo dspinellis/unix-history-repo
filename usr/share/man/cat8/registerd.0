@@ -1,0 +1,31 @@
+REGISTERD(8)              BSD System Manager's Manual             REGISTERD(8)
+
+NNAAMMEE
+     rreeggiisstteerrdd - Kerberos registration daemon
+
+SSYYNNOOPPSSIISS
+     rreeggiisstteerrdd
+
+DDEESSCCRRIIPPTTIIOONN
+     (filler for now)
+
+FFIILLEESS
+     /.update.keyxx.xx.xx.xx        shared DES key with server
+     /etc/kerberosIV/principal*     Kerberos database
+     /etc/kerberosIV/register_keys  directory containing keys for trusted
+                                    hosts
+
+SSEEEE AALLSSOO
+     registerd(8),  kerberos(1)
+
+DDIIAAGGNNOOSSTTIICCSS
+     ``Already exists'', if the user already exists in the Kerberos database.
+
+     ``Permission Denied'', if the host on which register is being run is un-
+     trusted.
+
+HHIISSTTOORRYY
+     The rreeggiisstteerrdd utility first appeared in 4.4BSD.
+
+
+4.4BSD                           June 9, 1993                                1
