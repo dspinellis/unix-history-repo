@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ps.1	6.1 (Berkeley) %G%
+.\"	@(#)ps.1	6.2 (Berkeley) %G%
 .\"
 .TH PS 1 ""
 .UC 4
@@ -11,7 +11,7 @@ ps \- process status
 .SH SYNOPSIS
 .B ps
 [
-.B acegklstuvwxU#
+.B acegklnstuvwxU#
 ]
 .SH DESCRIPTION
 .I Ps
@@ -92,6 +92,12 @@ postmortem system debugging.
 .B l
 asks for a long listing, with fields PPID, CP, PRI, NI, ADDR, SIZE, RSS and
 WCHAN as described below.
+.TP 5
+.B n
+Asks for numerical output.
+In a long listing, the WCHAN field is printed numerically rather than
+symbolically, or, in a user listing, the USER field is replaced by a
+UID field.
 .TP 5
 .B s
 Adds the size SSIZ of the kernel stack of each process (for use by system
@@ -201,9 +207,13 @@ process priority (non-positive when in non-interruptible wait)
 .IP ADDR 10
 swap address of the process
 .IP WCHAN 10
-event on which process is waiting (an address in the system), with
-the initial part of the address trimmed off e.g. 80004000 prints
-as 4000.
+event on which process is waiting (an address in the system).
+A symbol is chosen that classifies the address, unless numerical
+output is requested (see the 
+.B n
+flag).
+In this case, the initial part of the address is
+trimmed off and is printed hexadecimally, e.g., 0x80004000 prints as 4000.
 .sp
 .IP F 10
 flags associated with process as in
@@ -259,7 +269,7 @@ so the names cannot be counted on too much.
 .br
 /dev	searched to find swap device and tty names
 .br
-/etc/psdatabase	system namelist and device information
+/etc/psdatabase	system namelist, device, and wait channel information
 .SH "SEE ALSO"
 kill(1), w(1)
 .SH BUGS
