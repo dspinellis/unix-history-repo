@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)syslog.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslog.c	5.14 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 
@@ -74,7 +74,7 @@ syslog(pri, fmt, p0, p1, p2, p3, p4)
 	/* see if we should just throw out this message */
 	if ((unsigned) PRIFAC(pri) >= LOG_NFACILITIES ||
 	    (LOG_MASK(pri & LOG_PRIMASK) & LogMask) == 0 ||
-	    (pri &~ (LOG_PRIMASK|LOG_PRIMASK)) != 0)
+	    (pri &~ (LOG_PRIMASK|LOG_FACMASK)) != 0)
 		return;
 	if (LogFile < 0)
 		openlog(LogTag, LogStat | LOG_NDELAY, 0);
