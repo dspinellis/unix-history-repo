@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)table.c	1.6 (Berkeley) %G%";
+static char *sccsid ="@(#)table.c	1.7 (Berkeley) %G%";
 #endif lint
 
 # include "mfile2"
@@ -216,27 +216,11 @@ CCODES,	INAREG|INTAREG,
 		NAREG,	RESC1,
 		"	movl	$1,A1\nZN",
 
-#if defined(FORT) || defined(SPRECC)
-UNARY CALL,	INTAREG,
-	SCON,	TANY,
-	SANY,	TFLOAT,
-		NAREG|NASL,	RESC1,
-		"	calls	ZC,CL\n",
-
-UNARY CALL,	INTAREG,
-	SCON,	TANY,
-	SANY,	TWORD|TCHAR|TUCHAR|TSHORT|TUSHORT|TDOUBLE,
-		NAREG|NASL,	RESC1, /* should be register 0 */
-		"	calls	ZC,CL\n",
-
-#else
-
 UNARY CALL,	INTAREG,
 	SCON,	TANY,
 	SANY,	TWORD|TCHAR|TUCHAR|TSHORT|TUSHORT|TFLOAT|TDOUBLE,
 		NAREG|NASL,	RESC1,
 		"	calls	ZC,CL\n",
-#endif
 
 UNARY CALL,	INTAREG,
 	SAREG,	TANY,
