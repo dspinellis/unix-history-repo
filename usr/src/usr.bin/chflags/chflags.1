@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)chflags.1	8.3 (Berkeley) %G%
+.\"	@(#)chflags.1	8.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CHFLAGS 1
@@ -54,8 +54,8 @@ Flags are a comma separated list of keywords.
 The following keywords are currently defined:
 .Bd -literal -offset indent compact
 .\"arch	nothing yet.
-opaque	set the opaque flag
-dump	set the dump flag
+opaque	set the opaque flag (owner or super-user only)
+nodump	set the nodump flag (owner or super-user only)
 sappnd	set the system append-only flag (super-user only)
 schg	set the system immutable flag (super-user only)
 uappnd	set the user append-only flag (owner or super-user only)
@@ -67,7 +67,7 @@ Putting the letters
 before an option causes the flag to be turned off.
 For example:
 .Bd -literal -offset indent compact
-nodump	the file should never be dumped
+nouchg	the immutable bit should be cleared
 .Ed
 .Pp
 Symbolic links do not have flags, so unless the
