@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	6.43 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.44 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	6.43 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.44 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -327,12 +327,37 @@ smtp(e)
 
 				if (strcasecmp(kp, "size") == 0)
 				{
-					if (kp == NULL)
+					if (vp == NULL)
 					{
 						usrerr("501 SIZE requires a value");
 						/* NOTREACHED */
 					}
 					msize = atol(vp);
+				}
+				else if (strcasecmp(kp, "body") == 0)
+				{
+					if (vp == NULL)
+					{
+						usrerr("501 BODY requires a value");
+						/* NOTREACHED */
+					}
+# ifdef MIME
+					if (strcasecmp(vp, "8bitmime") == 0)
+					{
+						e->e_bodytype = "8BITMIME";
+						EightBit = TRUE;
+					}
+					else if (strcasecmp(vp, "7bit") == 0)
+					{
+						e->e_bodytype = "7BIT";
+						EightBit = FALSE;
+					}
+					else
+					{
+						usrerr("501 Unknown BODY type %s",
+							vp);
+					}
+# endif
 				}
 				else
 				{

@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	6.46 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	6.47 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	6.46 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	6.47 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -153,7 +153,9 @@ notemp:
 	/* output creation time */
 	fprintf(tfp, "T%ld\n", e->e_ctime);
 
-	/* output name of data file */
+	/* output type and name of data file */
+	if (e->e_bodytype != NULL)
+		fprintf(tfp, "B%s\n", e->e_bodytype);
 	fprintf(tfp, "D%s\n", e->e_df);
 
 	/* message from envelope, if it exists */
@@ -986,6 +988,10 @@ readqf(e)
 			setsender(newstr(&bp[1]), e, NULL, TRUE);
 			break;
 
+		  case 'B':		/* body type */
+			e->e_bodytype = newstr(&bp[1]);
+			break;
+
 		  case 'D':		/* data file name */
 			e->e_df = newstr(&bp[1]);
 			e->e_dfp = fopen(e->e_df, "r");
@@ -1141,6 +1147,7 @@ printqueue()
 		long dfsize = -1;
 		int flags = 0;
 		char message[MAXLINE];
+		char bodytype[MAXNAME];
 		extern bool shouldqueue();
 		extern bool lockfile();
 
@@ -1159,7 +1166,7 @@ printqueue()
 			printf(" ");
 		errno = 0;
 
-		message[0] = '\0';
+		message[0] = bodytype[0] = '\0';
 		while (fgets(buf, sizeof buf, f) != NULL)
 		{
 			register int i;
@@ -1175,6 +1182,13 @@ printqueue()
 				message[i] = '\0';
 				break;
 
+			  case 'B':	/* body type */
+				if ((i = strlen(&buf[1])) >= sizeof bodytype)
+					i = sizeof bodytype - 1;
+				bcopy(&buf[1], bodytype, i);
+				bodytype[i] = '\0';
+				break;
+
 			  case 'S':	/* sender name */
 				if (Verbose)
 					printf("%8ld %10ld%c%.12s %.38s",
@@ -1186,8 +1200,12 @@ printqueue()
 				else
 					printf("%8ld %.16s %.45s", dfsize,
 					    ctime(&submittime), &buf[1]);
-				if (message[0] != '\0')
-					printf("\n\t\t (%.60s)", message);
+				if (message[0] != '\0' || bodytype[0] != '\0')
+				{
+					printf("\n    %10.10s", bodytype);
+					if (message[0] != '\0')
+						printf("   (%.60s)", message);
+				}
 				break;
 
 			  case 'C':	/* controlling user */
