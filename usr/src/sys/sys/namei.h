@@ -1,4 +1,4 @@
-/*	namei.h	6.7	84/08/28	*/
+/*	namei.h	6.8	85/02/15	*/
 
 #ifndef _NAMEI_
 #define	_NAMEI_
@@ -18,6 +18,7 @@ struct nameidata {
 	caddr_t	ni_dirp;		/* pathname pointer */
 	short	ni_nameiop;		/* see below */
 	short	ni_error;		/* error return if any */
+	off_t	ni_endoff;		/* end of useful stuff in directory */
 	struct	inode *ni_pdir;		/* inode of parent directory of dirp */
 	struct	buf *ni_pathbp;		/* unresolved pathname */
 	struct	iovec ni_iovec;		/* MUST be pointed to by ni_iov */
