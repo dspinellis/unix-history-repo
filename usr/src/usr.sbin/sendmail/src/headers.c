@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	6.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	6.23 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -253,7 +253,6 @@ eatheader(e)
 			expand(h->h_value, buf, &buf[sizeof buf], e);
 			if (buf[0] != '\0')
 			{
-				free(h->h_value);
 				h->h_value = newstr(buf);
 				h->h_flags &= ~H_DEFAULT;
 			}
