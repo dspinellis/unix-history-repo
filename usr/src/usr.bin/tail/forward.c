@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)forward.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)forward.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -201,7 +201,7 @@ rlines(fp, off, sbp)
 		ierr();
 		return;
 	}
-	if (munmap(start, (size_t)size)) {
+	if (munmap(start, (size_t)sbp->st_size)) {
 		err(0, "%s: %s", fname, strerror(errno));
 		return;
 	}
