@@ -477,11 +477,12 @@ char	*argv[];
     char ascii[8];			/* Lots of room */
     FILE *outfile;
     char *data;
-    extern int optind;
 
+    argc--;
+    argv++;
     /* Process any flags */
-    while ((i = getopt(argc, argv, "vb")) != EOF) {
-	switch (i) {
+    while (argv[0][0] == '-') {
+	switch (argv[0][1]) {
 	case 'v':
 	    verbose = 1;
 	    break;
@@ -489,20 +490,22 @@ char	*argv[];
 	    blocks = 1;
 	    break;
 	}
+	argc--;
+	argv++;
     }
 
-    if ((argc-optind) < 2) {
+    if ((argc) < 2) {
 	fprintf(stderr, "usage: %s local.file remote.file [remote.options]\n");
 	exit(1);
     }
 
     /* Open the local file */
-    if ((outfile = fopen(argv[optind], "w")) == NULL) {
+    if ((outfile = fopen(argv[0], "w")) == NULL) {
 	perror("fopen");
 	exit(2);
     }
-
-    optind++;
+    argc--;
+    argv++;
 
     if (initialize() == -1) {
 	return -1;
@@ -512,10 +515,11 @@ char	*argv[];
     data = data_array;
     strcpy(data, "TNCOMP SEND");
     data += strlen(data);
-    for (; optind < argc; optind++) {
+    while (argc--) {
 	*data++ = ' ';
-	strcpy(data, argv[optind]);
-	data += strlen(argv[optind]);
+	strcpy(data, argv[0]);
+	data += strlen(argv[0]);
+	argv++;
     }
     if (verbose) {
 	printf("%s\n", data_array);
