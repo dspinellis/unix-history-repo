@@ -108,7 +108,7 @@ links:
 	sh makelinks && rm -f dontlink
 
 tags:
-	/usr/ucb/ctags ${CFILES}
+	@echo "see ../sys/Makefile for tags"
 
 print:
 	@pr -f Makefile ../sys/TODO linterrs
