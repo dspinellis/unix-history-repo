@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	6.33 (Berkeley) %G%
+ *	@(#)locore.s	6.34 (Berkeley) %G%
  */
 
 #include "psl.h"
@@ -163,6 +163,8 @@ SCBVEC(mba0int):
 #define	rUVEC	r3
 #define	rUBA	r4
 /* r2,r5 are scratch */
+
+#define	I_UBA	I_UBA0		/* base of UBA interrupt counters */
 
 #if NUBA > 4
 SCBVEC(ua7int):
