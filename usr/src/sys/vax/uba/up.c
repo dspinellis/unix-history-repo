@@ -1,4 +1,5 @@
-/*	up.c	4.59	82/09/12	*/
+/*	up.c	4.60	82/10/10	*/
+.f
 
 #include "up.h"
 #if NSC > 0
@@ -12,8 +13,6 @@
 
 #include "../h/param.h"
 #include "../h/systm.h"
-#include "../h/cpu.h"
-#include "../h/nexus.h"
 #include "../h/dk.h"
 #include "../h/buf.h"
 #include "../h/conf.h"
@@ -21,14 +20,15 @@
 #include "../h/user.h"
 #include "../h/map.h"
 #include "../h/pte.h"
-#include "../h/mtpr.h"
 #include "../h/vm.h"
-#include "../h/ubavar.h"
-#include "../h/ubareg.h"
 #include "../h/cmap.h"
 #include "../h/uio.h"
 
-#include "../h/upreg.h"
+#include "../vax/cpu.h"
+#include "../vax/nexus.h"
+#include "../vaxuba/ubavar.h"
+#include "../vaxuba/ubareg.h"
+#include "../vaxuba/upreg.h"
 
 struct	up_softc {
 	int	sc_softas;
