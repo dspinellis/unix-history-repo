@@ -6,10 +6,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
+#include <sys/protosw.h>
 #include <sys/socket.h>
 #include <sys/mbuf.h>
 
@@ -23,17 +24,16 @@ static char sccsid[] = "@(#)route.c	5.22 (Berkeley) %G%";
 
 #include <netns/ns.h>
 
-#include <netdb.h>
 #include <sys/kinfo.h>
 
+#include <netdb.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include "netstat.h"
 
-extern	int nflag, aflag, Aflag, af;
-extern	char *routename(), *netname(), *ns_print(), *plural();
-extern	char *malloc();
 #define kget(p, d) \
-	(kvm_read((off_t)(p), (char *)&(d), sizeof (d)))
+	(kread((off_t)(p), (char *)&(d), sizeof (d)))
 
 /*
  * Definitions for showing gateway flags.
@@ -67,9 +67,19 @@ struct	radix_mask rmask;
 
 int	NewTree = 0;
 
+static struct sockaddr *kgetsa __P((struct sockaddr *));
+static void p_tree __P((struct radix_node *));
+static void p_rtnode __P(());
+static void ntreestuff __P(());
+static void np_rtentry __P((struct rt_msghdr *));
+static void p_sockaddr __P((struct sockaddr *, int, int));
+static void p_flags __P((int, char *));
+static void p_rtentry __P((struct rtentry *));
+
 /*
  * Print routing tables.
  */
+void
 routepr(rtree)
 	off_t rtree;
 {
@@ -92,7 +102,7 @@ routepr(rtree)
 				continue;
 			kget(rnh, head);
 			if (i == AF_UNSPEC) {
-				if (Aflag && af == 0) { 
+				if (Aflag && af == 0) {
 					printf("Netmasks:\n");
 					p_tree(head.rnh_treetop);
 				}
@@ -109,6 +119,7 @@ routepr(rtree)
 /*
  * Print address family header before a section of the routing table.
  */
+void
 pr_family(af)
 	int af;
 {
@@ -144,6 +155,7 @@ pr_family(af)
 /*
  * Print header for routing table columns.
  */
+void
 pr_rthdr()
 {
 
@@ -155,17 +167,18 @@ pr_rthdr()
 		"Flags", "Refs", "Use", "Interface");
 }
 
-struct sockaddr *
+static struct sockaddr *
 kgetsa(dst)
 	register struct sockaddr *dst;
 {
 
 	kget(dst, pt_u.u_sa);
 	if (pt_u.u_sa.sa_len > sizeof (pt_u.u_sa))
-		kvm_read((off_t)dst, pt_u.u_data, pt_u.u_sa.sa_len);
+		kread((off_t)dst, (char *)pt_u.u_data, pt_u.u_sa.sa_len);
 	return (&pt_u.u_sa);
 }
 
+static void
 p_tree(rn)
 	struct radix_node *rn;
 {
@@ -204,6 +217,7 @@ again:
 
 char	nbuf[20];
 
+static void
 p_rtnode()
 {
 	struct radix_mask *rm = rnode.rn_mklist;
@@ -232,6 +246,7 @@ p_rtnode()
 	putchar('\n');
 }
 
+static void
 ntreestuff()
 {
 	int needed;
@@ -251,11 +266,15 @@ ntreestuff()
 	}
 }
 
+static void
 np_rtentry(rtm)
 	register struct rt_msghdr *rtm;
 {
 	register struct sockaddr *sa = (struct sockaddr *)(rtm + 1);
-	static int masks_done, old_af, banner_printed;
+#ifdef notdef
+	static int masks_done, banner_printed;
+#endif
+	static int old_af;
 	int af = 0, interesting = RTF_UP | RTF_GATEWAY | RTF_HOST;
 
 #ifdef notdef
@@ -289,11 +308,12 @@ np_rtentry(rtm)
 	putchar('\n');
 }
 
+static void
 p_sockaddr(sa, flags, width)
 	struct sockaddr *sa;
 	int flags, width;
 {
-	char format[20], workbuf[128], *cplim;
+	char workbuf[128], *cplim;
 	register char *cp = workbuf;
 
 	switch(sa->sa_family) {
@@ -303,18 +323,18 @@ p_sockaddr(sa, flags, width)
 
 		cp = (sin->sin_addr.s_addr == 0) ? "default" :
 		      ((flags & RTF_HOST) ?
-			routename(sin->sin_addr) : netname(sin->sin_addr, 0L));
+			routename(sin->sin_addr.s_addr) :
+			netname(sin->sin_addr.s_addr, 0L));
 		break;
 	    }
 
 	case AF_NS:
-		cp = ns_print((struct sockaddr_ns *)sa);
+		cp = ns_print(sa);
 		break;
 
 	case AF_LINK:
 	    {
 		register struct sockaddr_dl *sdl = (struct sockaddr_dl *)sa;
-		extern char *link_ntoa();
 
 		if (sdl->sdl_nlen == 0 && sdl->sdl_alen == 0 &&
 		    sdl->sdl_slen == 0)
@@ -364,6 +384,7 @@ p_sockaddr(sa, flags, width)
 	}
 }
 
+static void
 p_flags(f, format)
 	register int f;
 	char *format;
@@ -378,10 +399,10 @@ p_flags(f, format)
 	printf(format, name);
 }
 
+static void
 p_rtentry(rt)
-register struct rtentry *rt;
+	register struct rtentry *rt;
 {
-	register struct sockaddr *sa;
 	static struct ifnet ifnet, *lastif;
 	static char name[16];
 
@@ -392,7 +413,7 @@ register struct rtentry *rt;
 	if (rt->rt_ifp) {
 		if (rt->rt_ifp != lastif) {
 			kget(rt->rt_ifp, ifnet);
-			kvm_read((off_t)ifnet.if_name, name, 16);
+			kread((off_t)ifnet.if_name, name, 16);
 			lastif = rt->rt_ifp;
 		}
 		printf(" %.15s%d%s", name, ifnet.if_unit,
@@ -403,14 +424,13 @@ register struct rtentry *rt;
 
 char *
 routename(in)
-	struct in_addr in;
+	u_long in;
 {
 	register char *cp;
 	static char line[MAXHOSTNAMELEN + 1];
 	struct hostent *hp;
 	static char domain[MAXHOSTNAMELEN + 1];
 	static int first = 1;
-	char *index();
 
 	if (first) {
 		first = 0;
@@ -435,9 +455,9 @@ routename(in)
 		strncpy(line, cp, sizeof(line) - 1);
 	else {
 #define C(x)	((x) & 0xff)
-		in.s_addr = ntohl(in.s_addr);
-		sprintf(line, "%u.%u.%u.%u", C(in.s_addr >> 24),
-			C(in.s_addr >> 16), C(in.s_addr >> 8), C(in.s_addr));
+		in = ntohl(in);
+		sprintf(line, "%u.%u.%u.%u",
+		    C(in >> 24), C(in >> 16), C(in >> 8), C(in));
 	}
 	return (line);
 }
@@ -448,17 +468,16 @@ routename(in)
  */
 char *
 netname(in, mask)
-	struct in_addr in;
-	u_long mask;
+	u_long in, mask;
 {
 	char *cp = 0;
 	static char line[MAXHOSTNAMELEN + 1];
 	struct netent *np = 0;
 	u_long net;
-	register i;
+	register int i;
 	int subnetshift;
 
-	i = ntohl(in.s_addr);
+	i = ntohl(in);
 	if (!nflag && i) {
 		if (mask == 0) {
 			if (IN_CLASSA(i)) {
@@ -486,7 +505,7 @@ netname(in, mask)
 		np = getnetbyaddr(net, AF_INET);
 		if (np)
 			cp = np->n_name;
-	}	
+	}
 	if (cp)
 		strncpy(line, cp, sizeof(line) - 1);
 	else if ((i & 0xffffff) == 0)
@@ -504,6 +523,7 @@ netname(in, mask)
 /*
  * Print routing statistics
  */
+void
 rt_stats(off)
 	off_t off;
 {
@@ -513,7 +533,7 @@ rt_stats(off)
 		printf("rtstat: symbol not in namelist\n");
 		return;
 	}
-	kvm_read(off, (char *)&rtstat, sizeof (rtstat));
+	kread(off, (char *)&rtstat, sizeof (rtstat));
 	printf("routing:\n");
 	printf("\t%u bad routing redirect%s\n",
 		rtstat.rts_badredirect, plural(rtstat.rts_badredirect));
@@ -530,9 +550,10 @@ short ns_nullh[] = {0,0,0};
 short ns_bh[] = {-1,-1,-1};
 
 char *
-ns_print(sns)
-struct sockaddr_ns *sns;
+ns_print(sa)
+	register struct sockaddr *sa;
 {
+	register struct sockaddr_ns *sns = (struct sockaddr_ns*)sa;
 	struct ns_addr work;
 	union { union ns_net net_e; u_long long_e; } net;
 	u_short port;
@@ -561,7 +582,8 @@ struct sockaddr_ns *sns;
 		q = work.x_host.c_host;
 		sprintf(chost, "%02x%02x%02x%02x%02x%02xH",
 			q[0], q[1], q[2], q[3], q[4], q[5]);
-		for (p = chost; *p == '0' && p < chost + 12; p++);
+		for (p = chost; *p == '0' && p < chost + 12; p++)
+			continue;
 		host = p;
 	}
 	if (port)
@@ -575,23 +597,26 @@ struct sockaddr_ns *sns;
 }
 
 char *
-ns_phost(sns)
-struct sockaddr_ns *sns;
+ns_phost(sa)
+	struct sockaddr *sa;
 {
+	register struct sockaddr_ns *sns = (struct sockaddr_ns *)sa;
 	struct sockaddr_ns work;
 	static union ns_net ns_zeronet;
 	char *p;
-	
+
 	work = *sns;
 	work.sns_addr.x_port = 0;
 	work.sns_addr.x_net = ns_zeronet;
 
-	p = ns_print(&work);
+	p = ns_print((struct sockaddr *)&work);
 	if (strncmp("0H.", p, 3) == 0) p += 3;
 	return(p);
 }
+
+void
 upHex(p0)
-char *p0;
+	char *p0;
 {
 	register char *p = p0;
 	for (; *p; p++) switch (*p) {

@@ -6,78 +6,65 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)unix.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)unix.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * Display protocol blocks in the unix domain.
  */
+#include <kvm.h>
 #include <sys/param.h>
 #include <sys/protosw.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
 #include <sys/mbuf.h>
+#include <sys/kinfo.h>
 #include <sys/un.h>
 #include <sys/unpcb.h>
 #define KERNEL
 struct uio;
+struct proc;
 #include <sys/file.h>
+#include <stdlib.h>
+#include "netstat.h"
+
+static void unixdomainpr __P((struct socket *, caddr_t));
+
 struct file *file, *fileNFILE;
-int nfile;
+int nfiles;
+extern	kvm_t *kvmd;
 
-int	Aflag;
-extern	char *calloc();
-
-unixpr(nfileaddr, fileaddr, unixsw)
-	off_t nfileaddr, fileaddr;
+void
+unixpr(unixsw)
 	struct protosw *unixsw;
 {
 	register struct file *fp;
-	struct file *filep;
 	struct socket sock, *so = &sock;
+	char *filebuf;
 
-	if (nfileaddr == 0 || fileaddr == 0) {
-		printf("nfile or file not in namelist.\n");
-		return;
-	}
-	if (kvm_read(nfileaddr, (char *)&nfile, sizeof (nfile)) !=
-						sizeof (nfile)) {
-		printf("nfile: bad read.\n");
-		return;
-	}
-	if (kvm_read(fileaddr, (char *)&filep, sizeof (filep))
-						!= sizeof (filep)) {
-		printf("File table address, bad read.\n");
-		return;
-	}
-	file = (struct file *)calloc(nfile, sizeof (struct file));
-	if (file == (struct file *)0) {
+	filebuf = (char *)kvm_getfiles(kvmd, KINFO_FILE, 0, &nfiles);
+	if (filebuf == 0) {
 		printf("Out of memory (file table).\n");
 		return;
 	}
-	if (kvm_read((off_t)filep, (char *)file, nfile * sizeof (struct file))
-					!= nfile * sizeof (struct file)) {
-		printf("File table read error.\n");
-		return;
-	}
-	fileNFILE = file + nfile;
+	file = (struct file *)(filebuf + sizeof(fp));
+	fileNFILE = file + nfiles;
 	for (fp = file; fp < fileNFILE; fp++) {
 		if (fp->f_count == 0 || fp->f_type != DTYPE_SOCKET)
 			continue;
-		if (kvm_read((off_t)fp->f_data, (char *)so, sizeof (*so))
-					!= sizeof (*so))
+		if (kread((off_t)fp->f_data, (char *)so, sizeof (*so)))
 			continue;
 		/* kludge */
 		if (so->so_proto >= unixsw && so->so_proto <= unixsw + 2)
 			if (so->so_pcb)
 				unixdomainpr(so, fp->f_data);
 	}
-	free((char *)file);
 }
 
 static	char *socktype[] =
     { "#0", "stream", "dgram", "raw", "rdm", "seqpacket" };
 
+static void
 unixdomainpr(so, soaddr)
 	register struct socket *so;
 	caddr_t soaddr;
@@ -87,13 +74,11 @@ unixdomainpr(so, soaddr)
 	struct sockaddr_un *sa;
 	static int first = 1;
 
-	if (kvm_read((off_t)so->so_pcb, (char *)unp, sizeof (*unp))
-				!= sizeof (*unp))
+	if (kread((off_t)so->so_pcb, (char *)unp, sizeof (*unp)))
 		return;
 	if (unp->unp_addr) {
 		m = &mbuf;
-		if (kvm_read((off_t)unp->unp_addr, (char *)m, sizeof (*m))
-				!= sizeof (*m))
+		if (kread((off_t)unp->unp_addr, (char *)m, sizeof (*m)))
 			m = (struct mbuf *)0;
 		sa = (struct sockaddr_un *)(m->m_dat);
 	} else
