@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)f77.1	6.2 (Berkeley) %G%
+.\"	@(#)f77.1	6.3 (Berkeley) %G%
 .\"
 .TH F77 1 ""
 .UC 4
@@ -133,6 +133,12 @@ it with the Ratfor or EFL preprocessor.
 Compile DO loops that are performed at least once if reached.
 (Fortran 77 DO loops are not performed at all if the upper limit is smaller than the lower limit.)
 .TP
+.BR \-r8
+Treat all floating point variables,
+constants, functions and intrinsics
+as double precision and all complex
+quantities as double complex.
+.TP
 .BR \-u
 Make the default type of a variable `undefined' rather than using the default Fortran rules.
 .TP
@@ -208,7 +214,9 @@ flag was specified during loading.
 If the environment variable
 .I f77_dump_flag
 is set to a value beginning with
-.BR y or n ,
+.B y
+or
+.BR n ,
 dumps for abnormal terminations are respectively forced or
 suppressed.
 .SH FILES
