@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pt_exec.c	1.1 (Berkeley) %G%
+ *	@(#)pt_exec.c	1.2 (Berkeley) %G%
  *
  * $Id: pt_exec.c,v 1.1 1992/05/25 21:43:09 jsp Exp jsp $
  */
@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <sys/types.h>
+#include <sys/param.h>
 #include <sys/syslog.h>
 
 #include "portald.h"
