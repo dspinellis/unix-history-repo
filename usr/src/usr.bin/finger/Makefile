@@ -14,19 +14,19 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.1 (Berkeley) %G%
+# @(#)Makefile	5.2 (Berkeley) %G%
 #
 
 CFLAGS=	-O
 LIBC=	/lib/libc.a
-SRCS=	finger.c
-OBJS=
+SRCS=	finger.c lprint.c net.c sprint.c util.c
+OBJS=	finger.o lprint.o net.o sprint.o util.o
 MAN=	finger.0
 
 all: finger
 
-finger: ${LIBC}
-	${CC} -o $@ ${CFLAGS} $@.c
+finger: ${LIBC} ${OBJS}
+	${CC} -o $@ ${CFLAGS} ${OBJS}
 
 clean:
 	rm -f ${OBJS} core finger
@@ -38,12 +38,8 @@ depend: ${SRCS}
 	mkdep -p ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 finger ${DESTDIR}/usr/ucb/finger
+	install -s -o bin -g bin -m 755 finger ${DESTDIR}/usr/bin
 	install -c -o bin -g bin -m 444 finger.0 ${DESTDIR}/usr/man/cat1
-	rm -f ${DESTDIR}/usr/ucb/f
-	ln ${DESTDIR}/usr/ucb/finger ${DESTDIR}/usr/ucb/f
-	rm -f ${DESTDIR}/usr/man/cat1/f.0
-	ln ${DESTDIR}/usr/man/cat1/finger.0 ${DESTDIR}/usr/man/cat1/f.0
 
 lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
