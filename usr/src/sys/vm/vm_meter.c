@@ -4,16 +4,15 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_meter.c	7.20 (Berkeley) %G%
+ *	@(#)vm_meter.c	7.21 (Berkeley) %G%
  */
 
 #include <sys/param.h>
 #include <sys/proc.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
-#include <sys/sysctl.h>
-
 #include <vm/vm.h>
+#include <sys/sysctl.h>
 
 struct	loadavg averunnable;		/* load average, of runnable procs */
 
