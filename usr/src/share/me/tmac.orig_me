@@ -12,14 +12,14 @@
 .\"*		1919 Addison Street Suite 304				*
 .\"*		Berkeley, California  94704				*
 .\"*									*
-.\"*	VERSION 2.20	First Release: 11 Sept 1978			*
+.\"*	VERSION 2.21	First Release: 11 Sept 1978			*
 .\"*	See file \*(||/revisions for revision history			*
 .\"*									*
 .\"*	Documentation is available.					*
 .\"*									*
 .\"**********************************************************************
 .\"
-.\"	@(#)tmac.orig_me	2.20	%G%
+.\"	@(#)tmac.orig_me	2.21	%G%
 .\"	%beginstrip%
 .\"
 .\"	Code on .de commands:
@@ -987,7 +987,7 @@
 .nr tf 3			\" title font: (real) Times Bold
 .nr tp 10			\" title point size
 .hy 14
-.nr bi 4n			\" indent for blocks
+.nr bi 4m			\" indent for blocks
 .nr pi 5n			\" indent for paragraphs
 .nr pf 1			\" normal text font
 .nr pp 10			\" normal text point size
@@ -1011,7 +1011,7 @@
 .	ds ] \s0\v'0.4m'
 .	ds < \v'0.4m'\x'0.2m'\s-3
 .	ds > \s0\v'-0.4m'
-.	ds - \-
+.	ds - \(em
 .	nr fi 0.3i
 .\}
 .if n \
