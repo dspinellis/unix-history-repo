@@ -1,4 +1,4 @@
-/*	autoconf.c	4.10	81/02/22	*/
+/*	autoconf.c	4.11	81/02/23	*/
 
 /*
  * Configure the system for the current machine.
@@ -53,17 +53,19 @@ configure()
 {
 	union cpusid cpusid;
 	register struct percpu *ocp;
-	register int i;
+	register int i, *ip;
+	extern char Sysbase[];
 
 	cpusid.cpusid = mfpr(SID);
 	for (ocp = percpu; ocp < &percpu[NCPU]; ocp++)
 		if (ocp->pc_cputype == cpusid.cpuany.cp_type) {
 			cpu = ocp->pc_cputype;
 			(*ocp->pc_config)(ocp);
-#if GENERIC
+#if VAX==ANY
 			setconf();
 #endif
-			/* WRITE PROTECT SCB */
+			ip = (int *)Sysmap; *ip &= ~PG_PROT; *ip |= PG_KR;
+			mtpr(TBIS, Sysbase);
 			cold = 0;
 			return;
 		}
@@ -136,6 +138,7 @@ c780(pcpu)
 				printf("%d mcr's", 4);
 				goto unsupp;
 			}
+			printf("mcr%d at tr%d\n", nmcr, nexnum);
 			mcraddr[nmcr++] = (struct mcr *)nxv;
 			break;
 
@@ -168,19 +171,22 @@ c750(pcpu)
 	register struct nexus *nxv = nexus;
 	struct nexus *nxp = NEX750;
 
+	printf("mcr at %x\n", MCR_750);
+	nxaccess((caddr_t)MCR_750, Nexmap[nexnum]);
+	mcraddr[nmcr++] = nxv;
 	for (nexnum = 0; nexnum < NNEX750; nexnum++, nxp++, nxv++) {
 		nxaccess((caddr_t)nxp, Nexmap[nexnum]);
 		if (badaddr((caddr_t)nxv, 4))
 			continue;
+		printf("mba%d at %x\n", nummba, nxp);
 		mbafind(nxv, nxp);
 		nummba++;
 	}
+	printf("uba at %x\n", nxp);
 	nxaccess((caddr_t)nxp, Nexmap[nexnum++]);
 	unifind((struct uba_regs *)nxv++, (struct uba_regs *)nxp,
 	    umem[0], UMEM750);
 	numuba = 1;
-	nxaccess((caddr_t)MCR_750, Nexmap[nexnum]);
-	mcraddr[nmcr++] = nxv;
 }
 #endif
 
