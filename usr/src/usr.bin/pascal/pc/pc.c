@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)pc.c 3.3 %G%";
+static	char sccsid[] = "@(#)pc.c 3.4 %G%";
 #include <stdio.h>
 #include <signal.h>
 #include <wait.h>
@@ -115,7 +115,7 @@ main(argc, argv)
 			switch (argp[2]) {
 
 			case '0':
-				pc0 = "/vb/grad/peter/pc/npc0/src/a.pc";
+				pc0 = "/vb/grad/peter/pc/pc0/src/a.out";
 				continue;
 			case '1':
 				pc1 = "/usr/src/new/pcc/pc1";
@@ -309,8 +309,8 @@ duplicate:
 	ldargs[ldargx++] = lpc;
 	if (gflag)
 		ldargs[ldargx++] = "-lg";
-	ldargs[ldargx++] = "-lc";
 	ldargs[ldargx++] = "-lm";
+	ldargs[ldargx++] = "-lc";
 	ldargs[ldargx] = 0;
 	if (dosys(ld, ldargs, 0, 0)==0 && np == 1 && nxo == 0)
 		unlink(onepso);
