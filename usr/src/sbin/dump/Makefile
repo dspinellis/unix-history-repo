@@ -1,4 +1,4 @@
-# sccsid = "@(#)Makefile	1.1 (Berkeley) %G%"
+# sccsid = "@(#)Makefile	1.2 (Berkeley) %G%"
 #
 #	dump.h			header file
 #	dumpitime.c		reads /etc/ddate
@@ -30,9 +30,7 @@ CFLAGS = -O $(DFLAGS)
 dump:	$(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) -o dump
 install:
-	install -s dump $(DESTDIR)/bin
-/etc/dump:
-	cp dump.csh $(DESTDIR)/etc/dump
+	install -s dump $(DESTDIR)/etc
 clean:
 	rm -f *.o dump
 
