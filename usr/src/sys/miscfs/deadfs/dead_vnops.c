@@ -4,72 +4,204 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dead_vnops.c	7.12 (Berkeley) %G%
+ *	@(#)dead_vnops.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
+#include "systm.h"
 #include "time.h"
 #include "vnode.h"
 #include "errno.h"
 #include "namei.h"
 #include "buf.h"
 
-int	dead_lookup(),
-	dead_open(),
-	dead_read(),
-	dead_write(),
-	dead_strategy(),
-	dead_ioctl(),
-	dead_select(),
-	dead_lock(),
-	dead_bmap(),
-	dead_print(),
-	dead_ebadf(),
-	dead_badop(),
-	dead_nullop();
+/*
+ * Prototypes for dead operations on vnodes.
+ */
+int	dead_badop(),
+	dead_ebadf();
+int	dead_lookup __P((
+		struct vnode *vp,
+		struct nameidata *ndp,
+		struct proc *p));
+#define dead_create ((int (*) __P(( \
+		struct nameidata *ndp, \
+		struct vattr *vap, \
+		struct proc *p))) dead_badop)
+#define dead_mknod ((int (*) __P(( \
+		struct nameidata *ndp, \
+		struct vattr *vap, \
+		struct ucred *cred, \
+		struct proc *p))) dead_badop)
+int	dead_open __P((
+		struct vnode *vp,
+		int mode,
+		struct ucred *cred,
+		struct proc *p));
+#define dead_close ((int (*) __P(( \
+		struct vnode *vp, \
+		int fflag, \
+		struct ucred *cred, \
+		struct proc *p))) nullop)
+#define dead_access ((int (*) __P(( \
+		struct vnode *vp, \
+		int mode, \
+		struct ucred *cred, \
+		struct proc *p))) dead_ebadf)
+#define dead_getattr ((int (*) __P(( \
+		struct vnode *vp, \
+		struct vattr *vap, \
+		struct ucred *cred, \
+		struct proc *p))) dead_ebadf)
+#define dead_setattr ((int (*) __P(( \
+		struct vnode *vp, \
+		struct vattr *vap, \
+		struct ucred *cred, \
+		struct proc *p))) dead_ebadf)
+int	dead_read __P((
+		struct vnode *vp,
+		struct uio *uio,
+		int ioflag,
+		struct ucred *cred));
+int	dead_write __P((
+		struct vnode *vp,
+		struct uio *uio,
+		int ioflag,
+		struct ucred *cred));
+int	dead_ioctl __P((
+		struct vnode *vp,
+		int command,
+		caddr_t data,
+		int fflag,
+		struct ucred *cred,
+		struct proc *p));
+int	dead_select __P((
+		struct vnode *vp,
+		int which,
+		int fflags,
+		struct ucred *cred,
+		struct proc *p));
+#define dead_mmap ((int (*) __P(( \
+		struct vnode *vp, \
+		int fflags, \
+		struct ucred *cred, \
+		struct proc *p))) dead_badop)
+#define dead_fsync ((int (*) __P(( \
+		struct vnode *vp, \
+		int fflags, \
+		struct ucred *cred, \
+		int waitfor, \
+		struct proc *p))) nullop)
+#define dead_seek ((int (*) __P(( \
+		struct vnode *vp, \
+		off_t oldoff, \
+		off_t newoff, \
+		struct ucred *cred))) nullop)
+#define dead_remove ((int (*) __P(( \
+		struct nameidata *ndp, \
+		struct proc *p))) dead_badop)
+#define dead_link ((int (*) __P(( \
+		struct vnode *vp, \
+		struct nameidata *ndp, \
+		struct proc *p))) dead_badop)
+#define dead_rename ((int (*) __P(( \
+		struct nameidata *fndp, \
+		struct nameidata *tdnp, \
+		struct proc *p))) dead_badop)
+#define dead_mkdir ((int (*) __P(( \
+		struct nameidata *ndp, \
+		struct vattr *vap, \
+		struct proc *p))) dead_badop)
+#define dead_rmdir ((int (*) __P(( \
+		struct nameidata *ndp, \
+		struct proc *p))) dead_badop)
+#define dead_symlink ((int (*) __P(( \
+		struct nameidata *ndp, \
+		struct vattr *vap, \
+		char *target, \
+		struct proc *p))) dead_badop)
+#define dead_readdir ((int (*) __P(( \
+		struct vnode *vp, \
+		struct uio *uio, \
+		struct ucred *cred, \
+		int *eofflagp))) dead_ebadf)
+#define dead_readlink ((int (*) __P(( \
+		struct vnode *vp, \
+		struct uio *uio, \
+		struct ucred *cred))) dead_ebadf)
+#define dead_abortop ((int (*) __P(( \
+		struct nameidata *ndp))) dead_badop)
+#define dead_inactive ((int (*) __P(( \
+		struct vnode *vp, \
+		struct proc *p))) nullop)
+#define dead_reclaim ((int (*) __P(( \
+		struct vnode *vp))) nullop)
+int	dead_lock __P((
+		struct vnode *vp));
+#define dead_unlock ((int (*) __P(( \
+		struct vnode *vp))) nullop)
+int	dead_bmap __P((
+		struct vnode *vp,
+		daddr_t bn,
+		struct vnode **vpp,
+		daddr_t *bnp));
+int	dead_strategy __P((
+		struct buf *bp));
+int	dead_print __P((
+		struct vnode *vp));
+#define dead_islocked ((int (*) __P(( \
+		struct vnode *vp))) nullop)
+#define dead_advlock ((int (*) __P(( \
+		struct vnode *vp, \
+		caddr_t id, \
+		int op, \
+		struct flock *fl, \
+		int flags))) dead_ebadf)
 
 struct vnodeops dead_vnodeops = {
 	dead_lookup,	/* lookup */
-	dead_badop,	/* create */
-	dead_badop,	/* mknod */
+	dead_create,	/* create */
+	dead_mknod,	/* mknod */
 	dead_open,	/* open */
-	dead_nullop,	/* close */
-	dead_ebadf,	/* access */
-	dead_ebadf,	/* getattr */
-	dead_ebadf,	/* setattr */
+	dead_close,	/* close */
+	dead_access,	/* access */
+	dead_getattr,	/* getattr */
+	dead_setattr,	/* setattr */
 	dead_read,	/* read */
 	dead_write,	/* write */
 	dead_ioctl,	/* ioctl */
 	dead_select,	/* select */
-	dead_badop,	/* mmap */
-	dead_nullop,	/* fsync */
-	dead_nullop,	/* seek */
-	dead_badop,	/* remove */
-	dead_badop,	/* link */
-	dead_badop,	/* rename */
-	dead_badop,	/* mkdir */
-	dead_badop,	/* rmdir */
-	dead_badop,	/* symlink */
-	dead_ebadf,	/* readdir */
-	dead_ebadf,	/* readlink */
-	dead_badop,	/* abortop */
-	dead_nullop,	/* inactive */
-	dead_nullop,	/* reclaim */
+	dead_mmap,	/* mmap */
+	dead_fsync,	/* fsync */
+	dead_seek,	/* seek */
+	dead_remove,	/* remove */
+	dead_link,	/* link */
+	dead_rename,	/* rename */
+	dead_mkdir,	/* mkdir */
+	dead_rmdir,	/* rmdir */
+	dead_symlink,	/* symlink */
+	dead_readdir,	/* readdir */
+	dead_readlink,	/* readlink */
+	dead_abortop,	/* abortop */
+	dead_inactive,	/* inactive */
+	dead_reclaim,	/* reclaim */
 	dead_lock,	/* lock */
-	dead_nullop,	/* unlock */
+	dead_unlock,	/* unlock */
 	dead_bmap,	/* bmap */
 	dead_strategy,	/* strategy */
 	dead_print,	/* print */
-	dead_nullop,	/* islocked */
-	dead_ebadf,	/* advlock */
+	dead_islocked,	/* islocked */
+	dead_advlock,	/* advlock */
 };
 
 /*
  * Trivial lookup routine that always fails.
  */
-dead_lookup(vp, ndp)
+/* ARGSUSED */
+dead_lookup(vp, ndp, p)
 	struct vnode *vp;
 	struct nameidata *ndp;
+	struct proc *p;
 {
 
 	ndp->ni_dvp = vp;
@@ -81,10 +213,11 @@ dead_lookup(vp, ndp)
  * Open always fails as if device did not exist.
  */
 /* ARGSUSED */
-dead_open(vp, mode, cred)
+dead_open(vp, mode, cred, p)
 	struct vnode *vp;
 	int mode;
 	struct ucred *cred;
+	struct proc *p;
 {
 
 	return (ENXIO);
@@ -131,24 +264,26 @@ dead_write(vp, uio, ioflag, cred)
  * Device ioctl operation.
  */
 /* ARGSUSED */
-dead_ioctl(vp, com, data, fflag, cred)
+dead_ioctl(vp, com, data, fflag, cred, p)
 	struct vnode *vp;
 	register int com;
 	caddr_t data;
 	int fflag;
 	struct ucred *cred;
+	struct proc *p;
 {
 
 	if (!chkvnlock(vp))
 		return (EBADF);
-	return (VOP_IOCTL(vp, com, data, fflag, cred));
+	return (VOP_IOCTL(vp, com, data, fflag, cred, p));
 }
 
 /* ARGSUSED */
-dead_select(vp, which, fflags, cred)
+dead_select(vp, which, fflags, cred, p)
 	struct vnode *vp;
 	int which, fflags;
 	struct ucred *cred;
+	struct proc *p;
 {
 
 	/*
