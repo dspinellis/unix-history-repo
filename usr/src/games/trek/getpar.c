@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)getpar.c	4.2	(Berkeley)	%G%";
+static char sccsid[] = "@(#)getpar.c	4.3	(Berkeley)	%G%";
 #endif not lint
 
 # include	<stdio.h>
@@ -70,7 +70,7 @@ char	*s;
 	struct cvntab		*r;
 
 	r = getcodpar(s, Yntab);
-	return (r->value);
+	return ((int) r->value);
 }
 
 
