@@ -528,6 +528,9 @@ evalbackcmd(n, result)
 	result->buf = NULL;
 	result->nleft = 0;
 	result->jp = NULL;
+	exitstatus = 0;
+	if (n == NULL)
+		goto out;
 	if (n->type == NCMD) {
 		evalcommand(n, EV_BACKCMD, result);
 	} else {
@@ -548,6 +551,7 @@ evalbackcmd(n, result)
 		result->fd = pip[0];
 		result->jp = jp;
 	}
+out:
 	popstackmark(&smark);
 	TRACE(("evalbackcmd done: fd=%d buf=0x%x nleft=%d jp=0x%x\n",
 		result->fd, result->buf, result->nleft, result->jp));
