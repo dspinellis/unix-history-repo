@@ -1,0 +1,4 @@
+cc -O -c code2.c
+cc -O -o courier y.tab.o main.o sem.o code1.o code2.o -ll
+install -s courier /usr/local
+/usr/local/courier: Not owner
