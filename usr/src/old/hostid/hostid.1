@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)hostid.1	6.1 (Berkeley) %G%
+.\"	@(#)hostid.1	6.2 (Berkeley) %G%
 .\"
 .TH HOSTID 1 ""
 .UC 5
@@ -16,8 +16,9 @@ The
 .I hostid
 command prints the identifier of the current host in hexadecimal.
 This numeric value is expected to be unique across all hosts and
-is normally set to the host's Internet address.
+is commonly set to the host's Internet address.
 The super-user can set the hostid by giving a hexadecimal
-argument; this is usually done in the startup script /etc/rc.local.
+argument or the hostname;
+this is usually done in the startup script /etc/rc.local.
 .SH SEE ALSO
 gethostid(2), sethostid(2)
