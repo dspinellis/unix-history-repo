@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.40	81/12/12	*/
+/*	tcp_input.c	1.41	81/12/19	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -202,10 +202,10 @@ COUNT(TCP_INPUT);
 		tcp_rcvseqinit(tp);
 		tp->t_flags |= TF_ACKNOW;
 		if (SEQ_GT(tp->snd_una, tp->iss)) {
+			so->so_state |= SS_CONNAWAITING;
 			soisconnected(so);
 			tp->t_state = TCPS_ESTABLISHED;
 			(void) tcp_reass(tp, (struct tcpiphdr *)0);
-			tp->snd_wl1 = ti->ti_seq;
 		} else
 			tp->t_state = TCPS_SYN_RECEIVED;
 		goto trimthenstep6;
@@ -223,6 +223,7 @@ trimthenstep6:
 			ti->ti_len = tp->rcv_wnd;
 			ti->ti_flags &= ~TH_FIN;
 		}
+		tp->snd_wl1 = ti->ti_seq - 1;
 		goto step6;
 	}
 
@@ -357,6 +358,7 @@ trimthenstep6:
 			goto dropwithreset;
 		tp->snd_una++;			/* SYN acked */
 		tp->t_timer[TCPT_REXMT] = 0;
+		so->so_state |= SS_CONNAWAITING;
 		soisconnected(so);
 		tp->t_state = TCPS_ESTABLISHED;
 		(void) tcp_reass(tp, (struct tcpiphdr *)0);
@@ -388,9 +390,11 @@ trimthenstep6:
 		if (acked >= so->so_snd.sb_cc) {
 			acked -= so->so_snd.sb_cc;
 			/* if acked > 0 our FIN is acked */
+if (so->so_snd.sb_cc)
 			sbdrop(&so->so_snd, so->so_snd.sb_cc);
 			tp->t_timer[TCPT_REXMT] = 0;
 		} else {
+if (acked)
 			sbdrop(&so->so_snd, acked);
 			acked = 0;
 			TCPT_RANGESET(tp->t_timer[TCPT_REXMT],
@@ -499,7 +503,8 @@ step6:
 	 * case PRU_RCVD).  If a FIN has already been received on this
 	 * connection then we just ignore the text.
 	 */
-	if (ti->ti_len && TCPS_HAVERCVDFIN(tp->t_state) == 0) {
+	if ((ti->ti_len || (tiflags&TH_FIN)) &&
+	    TCPS_HAVERCVDFIN(tp->t_state) == 0) {
 		off += sizeof (struct ip);		/* drop IP header */
 		m->m_off += off;
 		m->m_len -= off;
@@ -507,16 +512,14 @@ step6:
 		tp->t_flags |= TF_ACKNOW;		/* XXX TF_DELACK */
 	} else {
 		m_freem(m);
+		tiflags &= ~TH_FIN;
 	}
 
 	/*
-	 * If FIN is received then if we haven't received SYN and
-	 * therefore can't validate drop the segment.  Otherwise ACK
-	 * the FIN and let the user know that the connection is closing.
+	 * If FIN is received ACK the FIN and let the user know
+	 * that the connection is closing.
 	 */
-	if ((tiflags & TH_FIN)) {
-		if (TCPS_HAVERCVDSYN(tp->t_state) == 0)
-			goto drop;
+	if (tiflags & TH_FIN) {
 		if (TCPS_HAVERCVDFIN(tp->t_state) == 0) {
 			socantrcvmore(so);
 			tp->t_flags |= TF_ACKNOW;
@@ -612,7 +615,8 @@ tcp_reass(tp, ti)
 {
 	register struct tcpiphdr *q;
 	struct socket *so = tp->t_inpcb->inp_socket;
-	int flags = 0;		/* no FIN */
+	struct mbuf *m;
+	int flags;
 COUNT(TCP_REASS);
 
 	/*
@@ -677,22 +681,27 @@ present:
 	 * Present data to user, advancing rcv_nxt through
 	 * completed sequence space.
 	 */
-	if (tp->t_state < TCPS_ESTABLISHED)
+	if (TCPS_HAVERCVDSYN(tp->t_state) == 0)
 		return (0);
 	ti = tp->seg_next;
-	while (ti != (struct tcpiphdr *)tp && ti->ti_seq == tp->rcv_nxt) {
+	if (ti == (struct tcpiphdr *)tp || ti->ti_seq != tp->rcv_nxt)
+		return (0);
+	if (tp->t_state == TCPS_SYN_RECEIVED && ti->ti_len)
+		return (0);
+	do {
 		tp->rcv_nxt += ti->ti_len;
 		flags = ti->ti_flags & TH_FIN;
 		remque(ti);
-		sbappend(&so->so_rcv, dtom(ti));
+		m = dtom(ti);
 		ti = (struct tcpiphdr *)ti->ti_next;
-	}
-	if (so->so_state & SS_CANTRCVMORE)
-		sbflush(&so->so_rcv);
-	else
-		sorwakeup(so);
+		if (so->so_state & SS_CANTRCVMORE)
+			(void) m_freem(m);
+		else
+			sbappend(&so->so_rcv, m);
+	} while (ti != (struct tcpiphdr *)tp && ti->ti_seq == tp->rcv_nxt);
+	sorwakeup(so);
 	return (flags);
 drop:
 	m_freem(dtom(ti));
-	return (flags);
+	return (0);
 }
