@@ -6,7 +6,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#       @(#)makesendmail	8.21 (Berkeley) %G%
+#       @(#)makesendmail	8.22 (Berkeley) %G%
 #
 
 #
@@ -33,15 +33,15 @@ elif [ -d /usr/omron -a -f /bin/luna ]
 then
 	# probably a Omron LUNA
 	os=LUNA
-	if [ -f /bin/luna1 -a /bin/luna1 ]
+	if [ -f /bin/luna1 ] && /bin/luna1
 	then
 		rel=unios-b
 		arch=luna1
-	elif [ -f /bin/luna2 -a /bin/luna2 ]
+	elif [ -f /bin/luna2 ] && /bin/luna2
 	then
 		rel=Mach
 		arch=luna2
-	elif [ -f /bin/luna88k -a /bin/luna88k ]
+	elif [ -f /bin/luna88k ] && /bin/luna88k
 	then
 		rel=Mach
 		arch=luna88k
