@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)bsdtcp.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)bsdtcp.c	4.3 (Berkeley) %G%";
 #endif
 
 #include "../condevs.h"
@@ -22,7 +22,7 @@ register char *flds[];
 	struct servent *sp;
 	struct hostent *hp;
 	struct	sockaddr_in hisctladdr;
-	int s, port;
+	int s = -1, port;
 	extern int errno;
 	extern char *sys_errlist[];
 
@@ -38,6 +38,7 @@ register char *flds[];
 	DEBUG(4, "bsdtcpopn host %s, ", flds[F_PHONE]);
 	DEBUG(4, "port %d\n", ntohs(port));
 	if (setjmp(Sjbuf)) {
+		bsdtcpcls(s);
 		logent("tcpopen", "TIMEOUT");
 		return CF_DIAL;
 	}
@@ -75,7 +76,7 @@ register char *flds[];
 	return s;
 bad:
 	alarm(0);
-	close(s);
+	bsdtcpcls(s);
 	DEBUG(5, "tcpopen failed: errno %d\n", errno);
 	logent(sys_errlist[errno], _FAILED);
 	return CF_DIAL;
