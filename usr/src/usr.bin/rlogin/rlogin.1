@@ -1,0 +1,67 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)rlogin.1	5.1 (Berkeley) %G%
+.\"
+.TH RLOGIN 1C "10 February 1983"
+.UC 5
+.SH NAME
+rlogin \- remote login
+.SH SYNOPSIS
+.B rlogin
+rhost [
+\fB\-e\fR\fI\|c\fR
+] [
+.B \-l
+username ]
+.br
+rhost [
+\fB\-e\fR\fIc\fR
+] [
+.B \-l
+username ]
+.SH DESCRIPTION
+.I Rlogin
+connects your terminal on the current local host system
+.I lhost
+to the remote host system
+.I rhost.
+.PP
+Each host has a file
+.I /etc/hosts.equiv
+which contains a list of \fIrhost\fR's with which it shares account names.
+(The host names must be the standard names as described in
+.IR rsh (1C).)
+When you
+.I rlogin
+as the same user on an equivalent host, you don't need
+to give a password.
+Each user may also have a private equivalence list in a file \&.rhosts
+in his login directory.  Each line in this file should contain a \fIrhost\fP
+and a \fIusername\fP separated by a space, giving additional cases
+where logins without passwords are to be permitted.
+If the originating user is not equivalent to the remote user, then
+a login and password will be prompted for on the remote machine as in
+.IR login (1).
+To avoid some security problems, the \&.rhosts file must be owned by
+either the remote user or root and may not be a symbolic link.
+.PP
+Your remote terminal type is the same as your local
+terminal type (as given in your environment TERM variable).
+All echoing takes place at the remote site, so that (except for
+delays) the rlogin is transparent.  Flow control via ^S and ^Q and
+flushing of input and output on interrupts are handled properly.
+A line of the form ``~.'' disconnects from the remote host, where
+``~'' is the escape character.  A different escape character may
+be specified by the
+.B \-e
+option.
+There is no space separating this option flag and the argument
+character.
+.SH SEE ALSO
+rsh(1C)
+.SH FILES
+/usr/hosts/*		for \fIrhost\fP version of the command
+.SH BUGS
+More terminal characteristics should be propagated.
