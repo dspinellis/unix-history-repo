@@ -1,4 +1,4 @@
-/*	srt0.c	4.11	83/05/06	*/
+/*	srt0.c	4.11	83/05/11	*/
 
 #include "../vax/mtpr.h"
 #define	LOCORE
@@ -34,7 +34,20 @@ clr:
 	cmpl	r0,sp
 	jlss	clr
 #ifdef REL
-	movc3	aend,*$0,(sp)
+	movc3	aedata,*$0,(sp)
+/*
+ * Reclear bss segment separately from text and data
+ * since movc3 can't move more than 64K bytes
+ */
+dclr:
+	clrl	(r3)+
+	cmpl	r3,$_end
+	jlss	dclr
+/* this loop shouldn't be necessary, but is when booting from an ra81 */
+xclr:	
+	clrl	(r3)+
+	cmpl	r3,$0x100000
+	jlss	xclr
 	jmp	*abegin
 begin:
 #endif
@@ -51,7 +64,6 @@ begin:
 	.data
 #ifdef REL
 abegin:	.long	begin
-aend:	.long	_end-RELOC
 aedata:	.long	_edata-RELOC
 #else
 aedata:	.long	_edata
