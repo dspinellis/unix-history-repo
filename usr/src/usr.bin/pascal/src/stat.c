@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)stat.c 1.1 %G%";
+static	char sccsid[] = "@(#)stat.c 1.2 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -98,12 +98,7 @@ top:
 					break;
 				case T_FORU:
 				case T_FORD:
-#					ifdef OBJ
-					    forop(s);
-#					endif OBJ
-#					ifdef PC
-					    pcforop( s );
-#					endif PC
+				        forop(s);
 					noreach = 0;
 					break;
 				case T_BLOCK:
@@ -443,124 +438,6 @@ asgnop1(r, p)
 	}
 	return (p);	/* Used by for statement */
 }
-
-#ifdef OBJ
-/*
- * for var := expr [down]to expr do stat
- */
-forop(r)
-	int *r;
-{
-	register struct nl *t1, *t2;
-	int l1, l2, l3;
-	long soffset;
-	register op;
-	struct nl *p;
-	int *rr, goc, i;
-
-	p = NIL;
-	goc = gocnt;
-	if (r == NIL)
-		goto aloha;
-	putline();
-	/*
-	 * Start with assignment
-	 * of initial value to for variable
-	 */
-	t1 = asgnop1(r[2], NIL);
-	if (t1 == NIL) {
-		rvalue(r[3], NIL , RREQ );
-		statement(r[4]);
-		goto aloha;
-	}
-	rr = r[2];		/* Assignment */
-	rr = rr[2];		/* Lhs variable */
-	if (rr[3] != NIL) {
-		error("For variable must be unqualified");
-		rvalue(r[3], NIL , RREQ );
-		statement(r[4]);
-		goto aloha;
-	}
-	p = lookup(rr[2]);
-	p->value[NL_FORV] = 1;
-	if (isnta(t1, "bcis")) {
-		error("For variables cannot be %ss", nameof(t1));
-		statement(r[4]);
-		goto aloha;
-	}
-	/*
-	 * Allocate automatic
-	 * space for limit variable
-	 */
-	sizes[cbn].om_off -= 4;
-	if (sizes[cbn].om_off < sizes[cbn].om_max)
-		sizes[cbn].om_max = sizes[cbn].om_off;
-	i = sizes[cbn].om_off;
-	/*
-	 * Initialize the limit variable
-	 */
-	put2(O_LV | cbn<<8+INDX, i);
-	t2 = rvalue(r[3], NIL , RREQ );
-	if (incompat(t2, t1, r[3])) {
-		cerror("Limit type clashed with index type in 'for' statement");
-		statement(r[4]);
-		goto aloha;
-	}
-	put1(width(t2) <= 2 ? O_AS24 : O_AS4);
-	/*
-	 * See if we can skip the loop altogether
-	 */
-	rr = r[2];
-	if (rr != NIL)
-		rvalue(rr[2], NIL , RREQ );
-	put2(O_RV4 | cbn<<8+INDX, i);
-	gen(NIL, r[0] == T_FORU ? T_LE : T_GE, width(t1), 4);
-	/*
-	 * L1 will be patched to skip the body of the loop.
-	 * L2 marks the top of the loop when we go around.
-	 */
-	put2(O_IF, (l1 = getlab()));
-	putlab(l2 = getlab());
-	putcnt();
-	statement(r[4]);
-	/*
-	 * now we see if we get to go again
-	 */
-	if (opt('t') == 0) {
-		/*
-		 * Easy if we dont have to test
-		 */
-		put2(O_RV4 | cbn<<8+INDX, i);
-		if (rr != NIL)
-			lvalue(rr[2], MOD , RREQ );
-		put2((r[0] == T_FORU ? O_FOR1U : O_FOR1D) + (width(t1) >> 1), l2);
-	} else {
-		line = r[1];
-		putline();
-		if (rr != NIL)
-			rvalue(rr[2], NIL , RREQ );
-		put2(O_RV4 | cbn << 8+INDX, i);
-		gen(NIL, (r[0] == T_FORU ? T_LT : T_GT), width(t1), 4);
-		l3 = put2(O_IF, getlab());
-		lvalue((int *) rr[2], MOD , RREQ );
-		rvalue(rr[2], NIL , RREQ );
-		put2(O_CON2, 1);
-		t2 = gen(NIL, r[0] == T_FORU ? T_ADD: T_SUB, width(t1), 2);
-		rangechk(t1, t2);	/* The point of all this */
-		gen(O_AS2, O_AS2, width(t1), width(t2));
-		put2(O_TRA, l2);
-		patch(l3);
-	}
-	sizes[cbn].om_off += 4;
-	patch(l1);
-aloha:
-	noreach = 0;
-	if (p != NIL)
-		p->value[NL_FORV] = 0;
-	if (goc != gocnt)
-		putcnt();
-}
-#endif OBJ
 
 /*
  * if expr then stat [ else stat ]

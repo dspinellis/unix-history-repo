@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)put.c 1.6 %G%";
+static	char sccsid[] = "@(#)put.c 1.7 %G%";
 
 #include "whoami.h"
 #include "opcode.h"
@@ -152,14 +152,15 @@ put(a)
 /*****
 			codeline = 0;
 *****/
+			/* relative addressing */
+			p[1] -= ( unsigned ) lc + sizeof(short);
+			break;
 		case O_FOR1U:
 		case O_FOR2U:
-		case O_FOR4U:
 		case O_FOR1D:
 		case O_FOR2D:
-		case O_FOR4D:
 			/* relative addressing */
-			p[1] -= ( unsigned ) lc + 2;
+			p[3] -= ( unsigned ) lc + 3 * sizeof(short);
 			break;
 		case O_CONG:
 			i = p[1];
@@ -258,6 +259,12 @@ around:
 				break;
 			}
 			goto longgen;
+		case O_FOR4U:
+		case O_FOR4D:
+			/* relative addressing */
+			p[3] -= ( unsigned ) lc +
+				(sizeof(short) + 2 * sizeof(long));
+			goto longgen;
 		case O_TRA4:
 		case O_CALL:
 		case O_FSAV:
@@ -311,7 +318,7 @@ around:
 			long	*lp = &p[1];
 
 			n = (n << 1) - 1;
-			if ( op == O_LRV )
+			if ( op == O_LRV || op == O_FOR4U || op == O_FOR4D)
 				n--;
 #ifdef DEBUG
 			if (opt('k'))
