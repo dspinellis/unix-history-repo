@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_nqlease.c	8.3 (Berkeley) %G%
+ *	@(#)nfs_nqlease.c	8.4 (Berkeley) %G%
  */
 
 /*
@@ -292,21 +292,23 @@ doreply:
  * Local lease check for server syscalls.
  * Just set up args and let nqsrv_getlease() do the rest.
  */
-void
-lease_check(vp, p, cred, flag)
-	struct vnode *vp;
-	struct proc *p;
-	struct ucred *cred;
-	int flag;
+lease_check(ap)
+	struct vop_lease_args /* {
+		struct vnode *a_vp;
+		struct proc *a_p;
+		struct ucred *a_cred;
+		int a_flag;
+	} */ *ap;
 {
 	int duration = 0, cache;
 	struct nfsd nfsd;
 	u_quad_t frev;
 
 	nfsd.nd_slp = NQLOCALSLP;
-	nfsd.nd_procp = p;
-	(void) nqsrv_getlease(vp, &duration, NQL_CHECK | flag, &nfsd,
-		(struct mbuf *)0, &cache, &frev, cred);
+	nfsd.nd_procp = ap->a_p;
+	(void) nqsrv_getlease(ap->a_vp, &duration, NQL_CHECK | ap->a_flag,
+		&nfsd, (struct mbuf *)0, &cache, &frev, ap->a_cred);
+	return (0);
 }
 
 /*
