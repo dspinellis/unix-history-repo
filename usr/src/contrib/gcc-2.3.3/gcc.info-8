@@ -1,0 +1,1026 @@
+This is Info file gcc.info, produced by Makeinfo-1.49 from the input
+file gcc.texi.
+
+   This file documents the use and the internals of the GNU compiler.
+
+   Copyright (C) 1988, 1989, 1992 Free Software Foundation, Inc.
+
+   Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+   Permission is granted to copy and distribute modified versions of
+this manual under the conditions for verbatim copying, provided also
+that the sections entitled "GNU General Public License" and "Protect
+Your Freedom--Fight `Look And Feel'" are included exactly as in the
+original, and provided that the entire resulting derived work is
+distributed under the terms of a permission notice identical to this
+one.
+
+   Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that the sections entitled "GNU General Public
+License" and "Protect Your Freedom--Fight `Look And Feel'", and this
+permission notice, may be included in translations approved by the Free
+Software Foundation instead of in the original English.
+
+
+File: gcc.info,  Node: Sending Patches,  Prev: Bug Reporting,  Up: Bugs
+
+Sending Patches for GNU CC
+==========================
+
+   If you would like to write bug fixes or improvements for the GNU C
+compiler, that is very helpful.  When you send your changes, please
+follow these guidelines to avoid causing extra work for us in studying
+the patches.
+
+   If you don't follow these guidelines, your information might still be
+useful, but using it will take extra work.  Maintaining GNU C is a lot
+of work in the best of circumstances, and we can't keep up unless you do
+your best to help.
+
+   * Send an explanation with your changes of what problem they fix or
+     what improvement they bring about.  For a bug fix, just include a
+     copy of the bug report, and explain why the change fixes the bug.
+
+     (Referring to a bug report is not as good as including it, because
+     then we will have to look it up, and we have probably already
+     deleted it if we've already fixed the bug.)
+
+   * Always include a proper bug report for the problem you think you
+     have fixed.  We need to convince ourselves that the change is
+     right before installing it.  Even if it is right, we might have
+     trouble judging it if we don't have a way to reproduce the problem.
+
+   * Include all the comments that are appropriate to help people
+     reading the source in the future understand why this change was
+     needed.
+
+   * Don't mix together changes made for different reasons. Send them
+     *individually*.
+
+     If you make two changes for separate reasons, then we might not
+     want to install them both.  We might want to install just one.  If
+     you send them all jumbled together in a single set of diffs, we
+     have to do extra work to disentangle them--to figure out which
+     parts of the change serve which purpose.  If we don't have time
+     for this, we might have to ignore your changes entirely.
+
+     If you send each change as soon as you have written it, with its
+     own explanation, then the two changes never get tangled up, and we
+     can consider each one properly without any extra work to
+     disentangle them.
+
+     Ideally, each change you send should be impossible to subdivide
+     into parts that we might want to consider separately, because each
+     of its parts gets its motivation from the other parts.
+
+   * Send each change as soon as that change is finished.  Sometimes
+     people think they are helping us by accumulating many changes to
+     send them all together.  As explained above, this is absolutely
+     the worst thing you could do.
+
+     Since you should send each change separately, you might as well
+     send it right away.  That gives us the option of installing it
+     immediately if it is important.
+
+   * Use `diff -c' to make your diffs.  Diffs without context are hard
+     for us to install reliably.  More than that, they make it hard for
+     us to study the diffs to decide whether we want to install them. 
+     Unidiff format is better than contextless diffs, but not as easy
+     to read as `-c' format.
+
+     If you have GNU diff, use `diff -cp', which shows the name of the
+     function that each change occurs in.
+
+   * Write the change log entries for your changes.  We get lots of
+     changes, and we don't have time to do all the change log writing
+     ourselves.
+
+     Read the `ChangeLog' file to see what sorts of information to put
+     in, and to learn the style that we use.  The purpose of the change
+     log is to show people where to find what was changed.  So you need
+     to be specific about what functions you changed; in large
+     functions, it's often helpful to indicate where within the
+     function the change was.
+
+     On the other hand, once you have shown people where to find the
+     change, you need not explain its purpose. Thus, if you add a new
+     function, all you need to say about it is that it is new.  If you
+     feel that the purpose needs explaining, it probably does--but the
+     explanation will be much more useful if you put it in comments in
+     the code.
+
+     If you would like your name to appear in the header line for who
+     made the change, send us the header line.
+
+   * When you write the fix, keep in mind that we can't install a
+     change that would break other systems.
+
+     People often suggest fixing a problem by changing
+     machine-independent files such as `toplev.c' to do something
+     special that a particular system needs.  Sometimes it is totally
+     obvious that such changes would break GNU CC for almost all users.
+      We can't possibly make a change like that.  At best it might tell
+     us how to write another patch that would solve the problem
+     acceptably.
+
+     Sometimes people send fixes that *might* be an improvement in
+     general--but it is hard to be sure of this.  It's hard to install
+     such changes because we have to study them very carefully.  Of
+     course, a good explanation of the reasoning by which you concluded
+     the change was correct can help convince us.
+
+     The safest changes are changes to the configuration files for a
+     particular machine.  These are safe because they can't create new
+     bugs on other machines.
+
+     Please help us keep up with the workload by designing the patch in
+     a form that is good to install.
+
+
+File: gcc.info,  Node: Service,  Next: VMS,  Prev: Bugs,  Up: Top
+
+How To Get Help with GNU CC
+***************************
+
+   If you need help installing, using or changing GNU CC, there are two
+ways to find it:
+
+   * Send a message to a suitable network mailing list.  First try
+     `bug-gcc@prep.ai.mit.edu', and if that brings no response, try
+     `help-gcc@prep.ai.mit.edu'.
+
+   * Look in the service directory for someone who might help you for a
+     fee. The service directory is found in the file named `SERVICE' in
+     the GNU CC distribution.
+
+
+File: gcc.info,  Node: VMS,  Next: Portability,  Prev: Service,  Up: Top
+
+Using GNU CC on VMS
+*******************
+
+* Menu:
+
+* Include Files and VMS::  Where the preprocessor looks for the include files.
+* Global Declarations::    How to do globaldef, globalref and globalvalue with
+                           GNU CC.
+* VMS Misc::		   Misc information.
+
+
+File: gcc.info,  Node: Include Files and VMS,  Next: Global Declarations,  Up: VMS
+
+Include Files and VMS
+=====================
+
+   Due to the differences between the filesystems of Unix and VMS, GNU
+CC attempts to translate file names in `#include' into names that VMS
+will understand.  The basic strategy is to prepend a prefix to the
+specification of the include file, convert the whole filename to a VMS
+filename, and then try to open the file.  GNU CC tries various prefixes
+one by one until one of them succeeds:
+
+  1. The first prefix is the `GNU_CC_INCLUDE:' logical name: this is
+     where GNU C header files are traditionally stored.  If you wish to
+     store header files in non-standard locations, then you can assign
+     the logical `GNU_CC_INCLUDE' to be a search list, where each
+     element of the list is suitable for use with a rooted logical.
+
+  2. The next prefix tried is `SYS$SYSROOT:[SYSLIB.]'.  This is where
+     VAX-C header files are traditionally stored.
+
+  3. If the include file specification by itself is a valid VMS
+     filename, the preprocessor then uses this name with no prefix in
+     an attempt to open the include file.
+
+  4. If the file specification is not a valid VMS filename (i.e. does
+     not contain a device or a directory specifier, and contains a `/'
+     character), the preprocessor tries to convert it from Unix syntax
+     to VMS syntax.
+
+     Conversion works like this: the first directory name becomes a
+     device, and the rest of the directories are converted into
+     VMS-format directory names.  For example, `X11/foobar.h' is
+     translated to `X11:[000000]foobar.h' or `X11:foobar.h', whichever
+     one can be opened.  This strategy allows you to assign a logical
+     name to point to the actual location of the header files.
+
+  5. If none of these strategies succeeds, the `#include' fails.
+
+   Include directives of the form:
+
+     #include foobar
+
+are a common source of incompatibility between VAX-C and GNU CC.  VAX-C
+treats this much like a standard `#include <foobar.h>' directive. That
+is incompatible with the ANSI C behavior implemented by GNU CC: to
+expand the name `foobar' as a macro.  Macro expansion should eventually
+yield one of the two standard formats for `#include':
+
+     #include "FILE"
+     #include <FILE>
+
+   If you have this problem, the best solution is to modify the source
+to convert the `#include' directives to one of the two standard forms.
+That will work with either compiler.  If you want a quick and dirty fix,
+define the file names as macros with the proper expansion, like this:
+
+     #define stdio <stdio.h>
+
+This will work, as long as the name doesn't conflict with anything else
+in the program.
+
+   Another source of incompatibility is that VAX-C assumes that:
+
+     #include "foobar"
+
+is actually asking for the file `foobar.h'.  GNU CC does not make this
+assumption, and instead takes what you ask for literally; it tries to
+read the file `foobar'.  The best way to avoid this problem is to
+always specify the desired file extension in your include directives.
+
+   GNU CC for VMS is distributed with a set of include files that is
+sufficient to compile most general purpose programs.  Even though the
+GNU CC distribution does not contain header files to define constants
+and structures for some VMS system-specific functions, there is no
+reason why you cannot use GNU CC with any of these functions.  You first
+may have to generate or create header files, either by using the public
+domain utility `UNSDL' (which can be found on a DECUS tape), or by
+extracting the relevant modules from one of the system macro libraries,
+and using an editor to construct a C header file.
+
+   A `#include' file name cannot contain a DECNET node name.  The
+preprocessor reports an I/O error if you attempt to use a node name,
+whether explicitly, or implicitly via a logical name.
+
+
+File: gcc.info,  Node: Global Declarations,  Next: VMS Misc,  Prev: Include Files and VMS,  Up: VMS
+
+Global Declarations and VMS
+===========================
+
+   GNU CC does not provide the `globalref', `globaldef' and
+`globalvalue' keywords of VAX-C.  You can get the same effect with an
+obscure feature of GAS, the GNU assembler.  (This requires GAS version
+1.39 or later.)  The following macros allow you to use this feature in
+a fairly natural way:
+
+     #ifdef __GNUC__
+     #define GLOBALREF(TYPE,NAME)                      \
+       TYPE NAME                                       \
+       asm ("_$$PsectAttributes_GLOBALSYMBOL$$" #NAME)
+     #define GLOBALDEF(TYPE,NAME,VALUE)                \
+       TYPE NAME                                       \
+       asm ("_$$PsectAttributes_GLOBALSYMBOL$$" #NAME) \
+         = VALUE
+     #define GLOBALVALUEREF(TYPE,NAME)                 \
+       const TYPE NAME[1]                              \
+       asm ("_$$PsectAttributes_GLOBALVALUE$$" #NAME)
+     #define GLOBALVALUEDEF(TYPE,NAME,VALUE)           \
+       const TYPE NAME[1]                              \
+       asm ("_$$PsectAttributes_GLOBALVALUE$$" #NAME)  \
+         = {VALUE}
+     #else
+     #define GLOBALREF(TYPE,NAME) \
+       globalref TYPE NAME
+     #define GLOBALDEF(TYPE,NAME,VALUE) \
+       globaldef TYPE NAME = VALUE
+     #define GLOBALVALUEDEF(TYPE,NAME,VALUE) \
+       globalvalue TYPE NAME = VALUE
+     #define GLOBALVALUEREF(TYPE,NAME) \
+       globalvalue TYPE NAME
+     #endif
+
+(The `_$$PsectAttributes_GLOBALSYMBOL' prefix at the start of the name
+is removed by the assembler, after it has modified the attributes of
+the symbol).  These macros are provided in the VMS binaries
+distribution in a header file `GNU_HACKS.H'.  An example of the usage
+is:
+
+     GLOBALREF (int, ijk);
+     GLOBALDEF (int, jkl, 0);
+
+   The macros `GLOBALREF' and `GLOBALDEF' cannot be used
+straightforwardly for arrays, since there is no way to insert the array
+dimension into the declaration at the right place.  However, you can
+declare an array with these macros if you first define a typedef for the
+array type, like this:
+
+     typedef int intvector[10];
+     GLOBALREF (intvector, foo);
+
+   Array and structure initializers will also break the macros; you can
+define the initializer to be a macro of its own, or you can expand the
+`GLOBALDEF' macro by hand.  You may find a case where you wish to use
+the `GLOBALDEF' macro with a large array, but you are not interested in
+explicitly initializing each element of the array.  In such cases you
+can use an initializer like: `{0,}', which will initialize the entire
+array to `0'.
+
+   A shortcoming of this implementation is that a variable declared with
+`GLOBALVALUEREF' or `GLOBALVALUEDEF' is always an array.  For example,
+the declaration:
+
+     GLOBALVALUEREF(int, ijk);
+
+declares the variable `ijk' as an array of type `int [1]'. This is done
+because a globalvalue is actually a constant; its "value" is what the
+linker would normally consider an address.  That is not how an integer
+value works in C, but it is how an array works.  So treating the symbol
+as an array name gives consistent results--with the exception that the
+value seems to have the wrong type.  *Don't try to access an element of
+the array.*  It doesn't have any elements. The array "address" may not
+be the address of actual storage.
+
+   The fact that the symbol is an array may lead to warnings where the
+variable is used.  Insert type casts to avoid the warnings.  Here is an
+example; it takes advantage of the ANSI C feature allowing macros that
+expand to use the same name as the macro itself.
+
+     GLOBALVALUEREF (int, ss$_normal);
+     GLOBALVALUEDEF (int, xyzzy,123);
+     #ifdef __GNUC__
+     #define ss$_normal ((int) ss$_normal)
+     #define xyzzy ((int) xyzzy)
+     #endif
+
+   Don't use `globaldef' or `globalref' with a variable whose type is
+an enumeration type; this is not implemented.  Instead, make the
+variable an integer, and use a `globalvaluedef' for each of the
+enumeration values.  An example of this would be:
+
+     #ifdef __GNUC__
+     GLOBALDEF (int, color, 0);
+     GLOBALVALUEDEF (int, RED, 0);
+     GLOBALVALUEDEF (int, BLUE, 1);
+     GLOBALVALUEDEF (int, GREEN, 3);
+     #else
+     enum globaldef color {RED, BLUE, GREEN = 3};
+     #endif
+
+
+File: gcc.info,  Node: VMS Misc,  Prev: Global Declarations,  Up: VMS
+
+Other VMS Issues
+================
+
+   GNU CC automatically arranges for `main' to return 1 by default if
+you fail to specify an explicit return value.  This will be interpreted
+by VMS as a status code indicating a normal successful completion.
+Version 1 of GNU CC did not provide this default.
+
+   GNU CC on VMS works only with the GNU assembler, GAS.  You need
+version 1.37 or later of GAS in order to produce value debugging
+information for the VMS debugger.  Use the ordinary VMS linker with the
+object files produced by GAS.
+
+   Under previous versions of GNU CC, the generated code would
+occasionally give strange results when linked to the sharable `VAXCRTL'
+library. Now this should work.
+
+   A caveat for use of `const' global variables: the `const' modifier
+must be specified in every external declaration of the variable in all
+of the source files that use that variable.  Otherwise the linker will
+issue warnings about conflicting attributes for the variable.  Your
+program will still work despite the warnings, but the variable will be
+placed in writable storage.
+
+   Although the VMS linker does distinguish between upper and lower case
+letters in global symbols, most VMS compilers convert all such symbols
+into upper case and most run-time library routines also have upper case
+names.  To be able to reliably call such routines, GNU CC (by means of
+the assembler GAS) converts global symbols into upper case like other
+VMS compilers.  However, since the usual practice in C is to distinguish
+case, GNU CC (via GAS) tries to preserve usual C behavior by augmenting
+each name that is not all lower case.  This means truncating the name
+to at most 23 characters and then adding more characters at the end
+which encode the case pattern of those 23.   Names which contain at
+least one dollar sign are an exception; they are converted directly into
+upper case without augmentation.
+
+   Name augmentation yields bad results for programs that use
+precompiled libraries (such as Xlib) which were generated by another
+compiler.  You can use the compiler option `/NOCASE_HACK' to inhibit
+augmentation; it makes external C functions and variables
+case-independent as is usual on VMS.  Alternatively, you could write
+all references to the functions and variables in such libraries using
+lower case; this will work on VMS, but is not portable to other
+systems.  The compiler option `/NAMES' also provides control over
+global name handling.
+
+   Function and variable names are handled somewhat differently with GNU
+C++.  The GNU C++ compiler performs "name mangling" on function names,
+which means that it adds information to the function name to describe
+the data types of the arguments that the function takes. One result of
+this is that the name of a function can become very long. Since the VMS
+linker only recognizes the first 31 characters in a name, special
+action is taken to ensure that each function and variable has a unique
+name that can be represented in 31 characters.
+
+   If the name (plus a name augmentation, if required) is less than 32
+characters in length, then no special action is performed. If the name
+is longer than 31 characters, the assembler (GAS) will generate a hash
+string based upon the function name, truncate the function name to 23
+characters, and append the hash string to the truncated name.  If the
+`/VERBOSE' compiler option is used, the assembler will print both the
+full and truncated names of each symbol that is truncated.
+
+   The `/NOCASE_HACK' compiler option should not be used when you are
+compiling programs that use libg++. libg++ has several instances of
+objects (i.e.  `Filebuf' and `filebuf') which become indistinguishable
+in a case-insensitive environment.  This leads to cases where you need
+to inhibit augmentation selectively (if you were using libg++ and Xlib
+in the same program, for example).  There is no special feature for
+doing this, but you can get the result by defining a macro for each
+mixed case symbol for which you wish to inhibit augmentation.  The
+macro should expand into the lower case equivalent of itself.  For
+example:
+
+     #define StuDlyCapS studlycaps
+
+   These macro definitions can be placed in a header file to minimize
+the number of changes to your source code.
+
+
+File: gcc.info,  Node: Portability,  Next: Interface,  Prev: VMS,  Up: Top
+
+GNU CC and Portability
+**********************
+
+   The main goal of GNU CC was to make a good, fast compiler for
+machines in the class that the GNU system aims to run on: 32-bit
+machines that address 8-bit bytes and have several general registers. 
+Elegance, theoretical power and simplicity are only secondary.
+
+   GNU CC gets most of the information about the target machine from a
+machine description which gives an algebraic formula for each of the
+machine's instructions.  This is a very clean way to describe the
+target.  But when the compiler needs information that is difficult to
+express in this fashion, I have not hesitated to define an ad-hoc
+parameter to the machine description.  The purpose of portability is to
+reduce the total work needed on the compiler; it was not of interest
+for its own sake.
+
+   GNU CC does not contain machine dependent code, but it does contain
+code that depends on machine parameters such as endianness (whether the
+most significant byte has the highest or lowest address of the bytes in
+a word) and the availability of autoincrement addressing.  In the
+RTL-generation pass, it is often necessary to have multiple strategies
+for generating code for a particular kind of syntax tree, strategies
+that are usable for different combinations of parameters.  Often I have
+not tried to address all possible cases, but only the common ones or
+only the ones that I have encountered. As a result, a new target may
+require additional strategies.  You will know if this happens because
+the compiler will call `abort'.  Fortunately, the new strategies can be
+added in a machine-independent fashion, and will affect only the target
+machines that need them.
+
+
+File: gcc.info,  Node: Interface,  Next: Passes,  Prev: Portability,  Up: Top
+
+Interfacing to GNU CC Output
+****************************
+
+   GNU CC is normally configured to use the same function calling
+convention normally in use on the target system.  This is done with the
+machine-description macros described (*note Target Macros::.).
+
+   However, returning of structure and union values is done differently
+on some target machines.  As a result, functions compiled with PCC
+returning such types cannot be called from code compiled with GNU CC,
+and vice versa.  This does not cause trouble often because few Unix
+library routines return structures or unions.
+
+   GNU CC code returns structures and unions that are 1, 2, 4 or 8 bytes
+long in the same registers used for `int' or `double' return values. 
+(GNU CC typically allocates variables of such types in registers also.)
+ Structures and unions of other sizes are returned by storing them into
+an address passed by the caller (usually in a register).  The
+machine-description macros `STRUCT_VALUE' and `STRUCT_INCOMING_VALUE'
+tell GNU CC where to pass this address.
+
+   By contrast, PCC on most target machines returns structures and
+unions of any size by copying the data into an area of static storage,
+and then returning the address of that storage as if it were a pointer
+value. The caller must copy the data from that memory area to the place
+where the value is wanted.  This is slower than the method used by GNU
+CC, and fails to be reentrant.
+
+   On some target machines, such as RISC machines and the 80386, the
+standard system convention is to pass to the subroutine the address of
+where to return the value.  On these machines, GNU CC has been
+configured to be compatible with the standard compiler, when this method
+is used.  It may not be compatible for structures of 1, 2, 4 or 8 bytes.
+
+   GNU CC uses the system's standard convention for passing arguments. 
+On some machines, the first few arguments are passed in registers; in
+others, all are passed on the stack.  It would be possible to use
+registers for argument passing on any machine, and this would probably
+result in a significant speedup.  But the result would be complete
+incompatibility with code that follows the standard convention.  So this
+change is practical only if you are switching to GNU CC as the sole C
+compiler for the system.  We may implement register argument passing on
+certain machines once we have a complete GNU system so that we can
+compile the libraries with GNU CC.
+
+   On some machines (particularly the Sparc), certain types of arguments
+are passed "by invisible reference".  This means that the value is
+stored in memory, and the address of the memory location is passed to
+the subroutine.
+
+   If you use `longjmp', beware of automatic variables.  ANSI C says
+that automatic variables that are not declared `volatile' have undefined
+values after a `longjmp'.  And this is all GNU CC promises to do,
+because it is very difficult to restore register variables correctly,
+and one of GNU CC's features is that it can put variables in registers
+without your asking it to.
+
+   If you want a variable to be unaltered by `longjmp', and you don't
+want to write `volatile' because old C compilers don't accept it, just
+take the address of the variable.  If a variable's address is ever
+taken, even if just to compute it and ignore it, then the variable
+cannot go in a register:
+
+     {
+       int careful;
+       &careful;
+       ...
+     }
+
+   Code compiled with GNU CC may call certain library routines.  Most of
+them handle arithmetic for which there are no instructions.  This
+includes multiply and divide on some machines, and floating point
+operations on any machine for which floating point support is disabled
+with `-msoft-float'.  Some standard parts of the C library, such as
+`bcopy' or `memcpy', are also called automatically.  The usual function
+call interface is used for calling the library routines.
+
+   These library routines should be defined in the library `libgcc.a',
+which GNU CC automatically searches whenever it links a program.  On
+machines that have multiply and divide instructions, if hardware
+floating point is in use, normally `libgcc.a' is not needed, but it is
+searched just in case.
+
+   Each arithmetic function is defined in `libgcc1.c' to use the
+corresponding C arithmetic operator.  As long as the file is compiled
+with another C compiler, which supports all the C arithmetic operators,
+this file will work portably.  However, `libgcc1.c' does not work if
+compiled with GNU CC, because each arithmetic function would compile
+into a call to itself!
+
+
+File: gcc.info,  Node: Passes,  Next: RTL,  Prev: Interface,  Up: Top
+
+Passes and Files of the Compiler
+********************************
+
+   The overall control structure of the compiler is in `toplev.c'.  This
+file is responsible for initialization, decoding arguments, opening and
+closing files, and sequencing the passes.
+
+   The parsing pass is invoked only once, to parse the entire input. 
+The RTL intermediate code for a function is generated as the function
+is parsed, a statement at a time.  Each statement is read in as a
+syntax tree and then converted to RTL; then the storage for the tree
+for the statement is reclaimed.  Storage for types (and the expressions
+for their sizes), declarations, and a representation of the binding
+contours and how they nest, remain until the function is finished being
+compiled; these are all needed to output the debugging information.
+
+   Each time the parsing pass reads a complete function definition or
+top-level declaration, it calls the function `rest_of_compilation' or
+`rest_of_decl_compilation' in `toplev.c', which are responsible for all
+further processing necessary, ending with output of the assembler
+language.  All other compiler passes run, in sequence, within
+`rest_of_compilation'. When that function returns from compiling a
+function definition, the storage used for that function definition's
+compilation is entirely freed, unless it is an inline function (*note
+Inline::.).
+
+   Here is a list of all the passes of the compiler and their source
+files. Also included is a description of where debugging dumps can be
+requested with `-d' options.
+
+   * Parsing.  This pass reads the entire text of a function definition,
+     constructing partial syntax trees.  This and RTL generation are no
+     longer truly separate passes (formerly they were), but it is
+     easier to think of them as separate.
+
+     The tree representation does not entirely follow C syntax, because
+     it is intended to support other languages as well.
+
+     Language-specific data type analysis is also done in this pass,
+     and every tree node that represents an expression has a data type
+     attached. Variables are represented as declaration nodes.
+
+     Constant folding and some arithmetic simplifications are also done
+     during this pass.
+
+     The language-independent source files for parsing are
+     `stor-layout.c', `fold-const.c', and `tree.c'. There are also
+     header files `tree.h' and `tree.def' which define the format of
+     the tree representation.
+
+     The source files for parsing C are `c-parse.y', `c-decl.c',
+     `c-typeck.c', `c-convert.c', `c-lang.c', and `c-aux-info.c' along
+     with header files `c-lex.h', and `c-tree.h'.
+
+     The source files for parsing C++ are `cp-parse.y', `cp-class.c',
+     `cp-cvt.c', `cp-decl.c', `cp-decl2.c', `cp-dem.c', `cp-except.c',
+     `cp-expr.c', `cp-init.c', `cp-lex.c', `cp-method.c', `cp-ptree.c',
+     `cp-search.c', `cp-tree.c', `cp-type2.c', and `cp-typeck.c', along
+     with header files `cp-tree.def', `cp-tree.h', and `cp-decl.h'.
+
+     The special source files for parsing Objective C are
+     `objc-parse.y', `objc-actions.c', `objc-tree.def', and
+     `objc-actions.h'.  Certain C-specific files are used for this as
+     well.
+
+     The file `c-common.c' is also used for all of the above languages.
+
+   * RTL generation.  This is the conversion of syntax tree into RTL
+     code. It is actually done statement-by-statement during parsing,
+     but for most purposes it can be thought of as a separate pass.
+
+     This is where the bulk of target-parameter-dependent code is found,
+     since often it is necessary for strategies to apply only when
+     certain standard kinds of instructions are available.  The purpose
+     of named instruction patterns is to provide this information to
+     the RTL generation pass.
+
+     Optimization is done in this pass for `if'-conditions that are
+     comparisons, boolean operations or conditional expressions.  Tail
+     recursion is detected at this time also.  Decisions are made about
+     how best to arrange loops and how to output `switch' statements.
+
+     The source files for RTL generation include `stmt.c',
+     `function.c', `expr.c', `calls.c', `explow.c', `expmed.c',
+     `optabs.c' and `emit-rtl.c'.  Also, the file `insn-emit.c',
+     generated from the machine description by the program `genemit',
+     is used in this pass.  The header file `expr.h' is used for
+     communication within this pass.
+
+     The header files `insn-flags.h' and `insn-codes.h', generated from
+     the machine description by the programs `genflags' and `gencodes',
+     tell this pass which standard names are available for use and
+     which patterns correspond to them.
+
+     Aside from debugging information output, none of the following
+     passes refers to the tree structure representation of the function
+     (only part of which is saved).
+
+     The decision of whether the function can and should be expanded
+     inline in its subsequent callers is made at the end of rtl
+     generation.  The function must meet certain criteria, currently
+     related to the size of the function and the types and number of
+     parameters it has.  Note that this function may contain loops,
+     recursive calls to itself (tail-recursive functions can be
+     inlined!), gotos, in short, all constructs supported by GNU CC. 
+     The file `integrate.c' contains the code to save a function's rtl
+     for later inlining and to inline that rtl when the function is
+     called.  The header file `integrate.h' is also used for this
+     purpose.
+
+     The option `-dr' causes a debugging dump of the RTL code after
+     this pass.  This dump file's name is made by appending `.rtl' to
+     the input file name.
+
+   * Jump optimization.  This pass simplifies jumps to the following
+     instruction, jumps across jumps, and jumps to jumps.  It deletes
+     unreferenced labels and unreachable code, except that unreachable
+     code that contains a loop is not recognized as unreachable in this
+     pass. (Such loops are deleted later in the basic block analysis.) 
+     It also converts some code originally written with jumps into
+     sequences of instructions that directly set values from the
+     results of comparisons, if the machine has such instructions.
+
+     Jump optimization is performed two or three times.  The first time
+     is immediately following RTL generation.  The second time is after
+     CSE, but only if CSE says repeated jump optimization is needed. 
+     The last time is right before the final pass.  That time,
+     cross-jumping and deletion of no-op move instructions are done
+     together with the optimizations described above.
+
+     The source file of this pass is `jump.c'.
+
+     The option `-dj' causes a debugging dump of the RTL code after
+     this pass is run for the first time.  This dump file's name is
+     made by appending `.jump' to the input file name.
+
+   * Register scan.  This pass finds the first and last use of each
+     register, as a guide for common subexpression elimination.  Its
+     source is in `regclass.c'.
+
+   * Jump threading.  This pass detects a condition jump that branches
+     to an identical or inverse test.  Such jumps can be `threaded'
+     through the second conditional test.  The source code for this
+     pass is in `jump.c'.  This optimization is only performed if
+     `-fthread-jumps' is enabled.
+
+   * Common subexpression elimination.  This pass also does constant
+     propagation.  Its source file is `cse.c'.  If constant propagation
+     causes conditional jumps to become unconditional or to become
+     no-ops, jump optimization is run again when CSE is finished.
+
+     The option `-ds' causes a debugging dump of the RTL code after
+     this pass.  This dump file's name is made by appending `.cse' to
+     the input file name.
+
+   * Loop optimization.  This pass moves constant expressions out of
+     loops, and optionally does strength-reduction and loop unrolling
+     as well. Its source files are `loop.c' and `unroll.c', plus the
+     header `loop.h' used for communication between them.  Loop
+     unrolling uses some functions in `integrate.c' and the header
+     `integrate.h'.
+
+     The option `-dL' causes a debugging dump of the RTL code after
+     this pass.  This dump file's name is made by appending `.loop' to
+     the input file name.
+
+   * If `-frerun-cse-after-loop' was enabled, a second common
+     subexpression elimination pass is performed after the loop
+     optimization pass.  Jump threading is also done again at this time
+     if it was specified.
+
+     The option `-dt' causes a debugging dump of the RTL code after
+     this pass.  This dump file's name is made by appending `.cse2' to
+     the input file name.
+
+   * Stupid register allocation is performed at this point in a
+     nonoptimizing compilation.  It does a little data flow analysis as
+     well.  When stupid register allocation is in use, the next pass
+     executed is the reloading pass; the others in between are skipped.
+     The source file is `stupid.c'.
+
+   * Data flow analysis (`flow.c').  This pass divides the program into
+     basic blocks (and in the process deletes unreachable loops); then
+     it computes which pseudo-registers are live at each point in the
+     program, and makes the first instruction that uses a value point at
+     the instruction that computed the value.
+
+     This pass also deletes computations whose results are never used,
+     and combines memory references with add or subtract instructions
+     to make autoincrement or autodecrement addressing.
+
+     The option `-df' causes a debugging dump of the RTL code after
+     this pass.  This dump file's name is made by appending `.flow' to
+     the input file name.  If stupid register allocation is in use, this
+     dump file reflects the full results of such allocation.
+
+   * Instruction combination (`combine.c').  This pass attempts to
+     combine groups of two or three instructions that are related by
+     data flow into single instructions.  It combines the RTL
+     expressions for the instructions by substitution, simplifies the
+     result using algebra, and then attempts to match the result
+     against the machine description.
+
+     The option `-dc' causes a debugging dump of the RTL code after
+     this pass.  This dump file's name is made by appending `.combine'
+     to the input file name.
+
+   * Instruction scheduling (`sched.c').  This pass looks for
+     instructions whose output will not be available by the time that
+     it is used in subsequent instructions.  (Memory loads and floating
+     point instructions often have this behavior on RISC machines).  It
+     re-orders instructions within a basic block to try to separate the
+     definition and use of items that otherwise would cause pipeline
+     stalls.
+
+     Instruction scheduling is performed twice.  The first time is
+     immediately after instruction combination and the second is
+     immediately after reload.
+
+     The option `-dS' causes a debugging dump of the RTL code after this
+     pass is run for the first time.  The dump file's name is made by
+     appending `.sched' to the input file name.
+
+   * Register class preferencing.  The RTL code is scanned to find out
+     which register class is best for each pseudo register.  The source
+     file is `regclass.c'.
+
+   * Local register allocation (`local-alloc.c').  This pass allocates
+     hard registers to pseudo registers that are used only within one
+     basic block.  Because the basic block is linear, it can use fast
+     and powerful techniques to do a very good job.
+
+     The option `-dl' causes a debugging dump of the RTL code after
+     this pass.  This dump file's name is made by appending `.lreg' to
+     the input file name.
+
+   * Global register allocation (`global.c').  This pass allocates hard
+     registers for the remaining pseudo registers (those whose life
+     spans are not contained in one basic block).
+
+   * Reloading.  This pass renumbers pseudo registers with the hardware
+     registers numbers they were allocated.  Pseudo registers that did
+     not get hard registers are replaced with stack slots.  Then it
+     finds instructions that are invalid because a value has failed to
+     end up in a register, or has ended up in a register of the wrong
+     kind.  It fixes up these instructions by reloading the
+     problematical values temporarily into registers.  Additional
+     instructions are generated to do the copying.
+
+     The reload pass also optionally eliminates the frame pointer and
+     inserts instructions to save and restore call-clobbered registers
+     around calls.
+
+     Source files are `reload.c' and `reload1.c', plus the header
+     `reload.h' used for communication between them.
+
+     The option `-dg' causes a debugging dump of the RTL code after
+     this pass.  This dump file's name is made by appending `.greg' to
+     the input file name.
+
+   * Instruction scheduling is repeated here to try to avoid pipeline
+     stalls due to memory loads generated for spilled pseudo registers.
+
+     The option `-dR' causes a debugging dump of the RTL code after
+     this pass.  This dump file's name is made by appending `.sched2'
+     to the input file name.
+
+   * Jump optimization is repeated, this time including cross-jumping
+     and deletion of no-op move instructions.
+
+     The option `-dJ' causes a debugging dump of the RTL code after
+     this pass.  This dump file's name is made by appending `.jump2' to
+     the input file name.
+
+   * Delayed branch scheduling.  This optional pass attempts to find
+     instructions that can go into the delay slots of other
+     instructions, usually jumps and calls.  The source file name is
+     `reorg.c'.
+
+     The option `-dd' causes a debugging dump of the RTL code after
+     this pass.  This dump file's name is made by appending `.dbr' to
+     the input file name.
+
+   * Conversion from usage of some hard registers to usage of a register
+     stack may be done at this point.  Currently, this is supported only
+     for the floating-point registers of the Intel 80387 coprocessor.  
+     The source file name is `reg-stack.c'.
+
+     The options `-dk' causes a debugging dump of the RTL code after
+     this pass.  This dump file's name is made by appending `.stack' to
+     the input file name.
+
+   * Final.  This pass outputs the assembler code for the function.  It
+     is also responsible for identifying spurious test and compare
+     instructions.  Machine-specific peephole optimizations are
+     performed at the same time.  The function entry and exit sequences
+     are generated directly as assembler code in this pass; they never
+     exist as RTL.
+
+     The source files are `final.c' plus `insn-output.c'; the latter is
+     generated automatically from the machine description by the tool
+     `genoutput'.  The header file `conditions.h' is used for
+     communication between these files.
+
+   * Debugging information output.  This is run after final because it
+     must output the stack slot offsets for pseudo registers that did
+     not get hard registers.  Source files are `dbxout.c' for DBX
+     symbol table format, `sdbout.c' for SDB symbol table format, and
+     `dwarfout.c' for DWARF symbol table format.
+
+   Some additional files are used by all or many passes:
+
+   * Every pass uses `machmode.def' and `machmode.h' which define the
+     machine modes.
+
+   * Several passes use `real.h', which defines the default
+     representation of floating point constants and how to operate on
+     them.
+
+   * All the passes that work with RTL use the header files `rtl.h' and
+     `rtl.def', and subroutines in file `rtl.c'.  The tools `gen*' also
+     use these files to read and work with the machine description RTL.
+
+   * Several passes refer to the header file `insn-config.h' which
+     contains a few parameters (C macro definitions) generated
+     automatically from the machine description RTL by the tool
+     `genconfig'.
+
+   * Several passes use the instruction recognizer, which consists of
+     `recog.c' and `recog.h', plus the files `insn-recog.c' and
+     `insn-extract.c' that are generated automatically from the machine
+     description by the tools `genrecog' and `genextract'.
+
+   * Several passes use the header files `regs.h' which defines the
+     information recorded about pseudo register usage, and
+     `basic-block.h' which defines the information recorded about basic
+     blocks.
+
+   * `hard-reg-set.h' defines the type `HARD_REG_SET', a bit-vector
+     with a bit for each hard register, and some macros to manipulate
+     it. This type is just `int' if the machine has few enough hard
+     registers; otherwise it is an array of `int' and some of the
+     macros expand into loops.
+
+   * Several passes use instruction attributes.  A definition of the
+     attributes defined for a particular machine is in file
+     `insn-attr.h', which is generated from the machine description by
+     the program `genattr'.  The file `insn-attrtab.c' contains
+     subroutines to obtain the attribute values for insns.  It is
+     generated from the machine description by the program `genattrtab'.
+
+
+File: gcc.info,  Node: RTL,  Next: Machine Desc,  Prev: Passes,  Up: Top
+
+RTL Representation
+******************
+
+   Most of the work of the compiler is done on an intermediate
+representation called register transfer language.  In this language,
+the instructions to be output are described, pretty much one by one, in
+an algebraic form that describes what the instruction does.
+
+   RTL is inspired by Lisp lists.  It has both an internal form, made
+up of structures that point at other structures, and a textual form
+that is used in the machine description and in printed debugging dumps.
+ The textual form uses nested parentheses to indicate the pointers in
+the internal form.
+
+* Menu:
+
+* RTL Objects::       Expressions vs vectors vs strings vs integers.
+* Accessors::         Macros to access expression operands or vector elts.
+* Flags::             Other flags in an RTL expression.
+* Machine Modes::     Describing the size and format of a datum.
+* Constants::         Expressions with constant values.
+* Regs and Memory::   Expressions representing register contents or memory.
+* Arithmetic::        Expressions representing arithmetic on other expressions.
+* Comparisons::       Expressions representing comparison of expressions.
+* Bit Fields::        Expressions representing bit-fields in memory or reg.
+* Conversions::       Extending, truncating, floating or fixing.
+* RTL Declarations::  Declaring volatility, constancy, etc.
+* Side Effects::      Expressions for storing in registers, etc.
+* Incdec::            Embedded side-effects for autoincrement addressing.
+* Assembler::         Representing `asm' with operands.
+* Insns::             Expression types for entire insns.
+* Calls::             RTL representation of function call insns.
+* Sharing::           Some expressions are unique; others *must* be copied.
+
+
+File: gcc.info,  Node: RTL Objects,  Next: Accessors,  Prev: RTL,  Up: RTL
+
+RTL Object Types
+================
+
+   RTL uses five kinds of objects: expressions, integers, wide integers,
+strings and vectors.  Expressions are the most important ones.  An RTL
+expression ("RTX", for short) is a C structure, but it is usually
+referred to with a pointer; a type that is given the typedef name `rtx'.
+
+   An integer is simply an `int'; their written form uses decimal
+digits. A wide integer is an integral object whose type is
+`HOST_WIDE_INT' (*note Config::.); their written form used decimal
+digits.
+
+   A string is a sequence of characters.  In core it is represented as a
+`char *' in usual C fashion, and it is written in C syntax as well.
+However, strings in RTL may never be null.  If you write an empty
+string in a machine description, it is represented in core as a null
+pointer rather than as a pointer to a null character.  In certain
+contexts, these null pointers instead of strings are valid.  Within RTL
+code, strings are most commonly found inside `symbol_ref' expressions,
+but they appear in other contexts in the RTL expressions that make up
+machine descriptions.
+
+   A vector contains an arbitrary number of pointers to expressions. 
+The number of elements in the vector is explicitly present in the
+vector. The written form of a vector consists of square brackets
+(`[...]') surrounding the elements, in sequence and with whitespace
+separating them.  Vectors of length zero are not created; null pointers
+are used instead.
+
+   Expressions are classified by "expression codes" (also called RTX
+codes).  The expression code is a name defined in `rtl.def', which is
+also (in upper case) a C enumeration constant.  The possible expression
+codes and their meanings are machine-independent.  The code of an RTX
+can be extracted with the macro `GET_CODE (X)' and altered with
+`PUT_CODE (X, NEWCODE)'.
+
+   The expression code determines how many operands the expression
+contains, and what kinds of objects they are.  In RTL, unlike Lisp, you
+cannot tell by looking at an operand what kind of object it is. 
+Instead, you must know from its context--from the expression code of
+the containing expression. For example, in an expression of code
+`subreg', the first operand is to be regarded as an expression and the
+second operand as an integer.  In an expression of code `plus', there
+are two operands, both of which are to be regarded as expressions.  In
+a `symbol_ref' expression, there is one operand, which is to be
+regarded as a string.
+
+   Expressions are written as parentheses containing the name of the
+expression type, its flags and machine mode if any, and then the
+operands of the expression (separated by spaces).
+
+   Expression code names in the `md' file are written in lower case,
+but when they appear in C code they are written in upper case.  In this
+manual, they are shown as follows: `const_int'.
+
+   In a few contexts a null pointer is valid where an expression is
+normally wanted.  The written form of this is `(nil)'.
+
+
