@@ -9,7 +9,7 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
 MDIR=	/usr/man/cat3
 SRCS=	abort.3 abs.3 alarm.3 asinh.3 assert.3 atof.3 \
@@ -66,7 +66,7 @@ LINKS=	edata.0 etext.0 j1.0 jn.0 y0.0 y1.0 yn.0 acos.0 ns_addr.0 ns_ntoa.0 \
 	fdopen.0 free.0 freopen.0 fscanf.0 ftell.0 fwrite.0 index.0 \
 	initstate.0 longjmp.0 openlog.0 realloc.0 remque.0 rewind.0 \
 	rindex.0 setegid.0 seteuid.0 setgid.0 setlogmask.0 setrgid.0 \
-	setruid.0 setstate.0 srandom.0 sscanf.0 strcasecmp.0 strcasencmp.0 \
+	setruid.0 setstate.0 srandom.0 sscanf.0 strcasecmp.0 strncasecmp.0 \
 	strcat.0 strcmp.0 strcpy.0 \
 	strlen.0 strncat.0 strncmp.0 strncpy.0 sys.0 sys_errlist.0 sys_nerr.0 \
 	mkstemp.0 rint.0 setenv.0 unsetenv.0 alphasort.0 bcmp.0 bcopy.0 \
@@ -256,7 +256,7 @@ install: FRC
 	ln ${DESTDIR}${MDIR}/string.0 ${DESTDIR}${MDIR}/strncat.0
 	ln ${DESTDIR}${MDIR}/string.0 ${DESTDIR}${MDIR}/strncmp.0
 	ln ${DESTDIR}${MDIR}/string.0 ${DESTDIR}${MDIR}/strcasecmp.0
-	ln ${DESTDIR}${MDIR}/string.0 ${DESTDIR}${MDIR}/strcasencmp.0
+	ln ${DESTDIR}${MDIR}/string.0 ${DESTDIR}${MDIR}/strncasecmp.0
 	ln ${DESTDIR}${MDIR}/string.0 ${DESTDIR}${MDIR}/strncpy.0
 	ln ${DESTDIR}${MDIR}/perror.0 ${DESTDIR}${MDIR}/sys.0
 	ln ${DESTDIR}${MDIR}/perror.0 ${DESTDIR}${MDIR}/sys_errlist.0
