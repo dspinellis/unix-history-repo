@@ -11,11 +11,9 @@
  * %sccs.include.redist.c%
  *
  * from: Utah $Hdr: machparam.h 1.11 89/08/14$
- * OMRON: $Id: param.h,v 1.3 92/06/14 06:28:28 moti Exp $
+ * from: hp300/include/param.h	7.13 (Berkeley) 12/27/92
  *
- * from: hp300/include/param.h	7.12 (Berkeley) 7/8/92
- *
- *	@(#)param.h	7.2 (Berkeley) %G%
+ *	@(#)param.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -56,7 +54,7 @@
 #define	SSIZE		1		/* initial stack size/NBPG */
 #define	SINCR		1		/* increment of stack/NBPG */
 
-#define	UPAGES		3		/* pages of u-area */
+#define	UPAGES		2		/* pages of u-area */
 
 /*
  * Constants related to network buffer management.
@@ -66,8 +64,8 @@
  * of the hardware page size.
  */
 #define	MSIZE		128		/* size of an mbuf */
-#define	MCLBYTES	1024
-#define	MCLSHIFT	10
+#define	MCLBYTES	2048		/* large enough for ether MTU */
+#define	MCLSHIFT	11
 #define	MCLOFSET	(MCLBYTES - 1)
 #ifndef NMBCLUSTERS
 #ifdef GATEWAY
