@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_clock.c	7.16 (Berkeley) 5/9/91
- *	$Id: kern_clock.c,v 1.12 1994/03/01 23:21:44 phk Exp $
+ *	$Id: kern_clock.c,v 1.13 1994/03/15 01:58:28 wollman Exp $
  */
 
 /* Portions of this software are covered by the following: */
@@ -587,24 +587,14 @@ hardclock(frame)
 	}
 
 	if (needsoft) {
-#if 0
-/*
- * XXX - hardclock runs at splhigh, so the splsoftclock is useless and
- * softclock runs at splhigh as well if we do this.  It is not much of
- * an optimization, since the "software interrupt" is done with a call
- * from doreti, and the overhead of checking there is sometimes less
- * than checking here.  Moreover, the whole %$$%$^ frame is passed by
- * value here.
- */
 		if (CLKF_BASEPRI(&frame)) {
 			/*
 			 * Save the overhead of a software interrupt;
 			 * it will happen as soon as we return, so do it now.
 			 */
 			(void) splsoftclock();
-			softclock(frame);
+			softclock(CLKF_USERMODE(&frame));
 		} else
-#endif
 			setsoftclock();
 	}
 }
@@ -650,9 +640,9 @@ gatherstats(framep)
 		cpstate = CP_SYS;
 		if (curproc == NULL && CLKF_BASEPRI(framep))
 			cpstate = CP_IDLE;
-#ifdef GPROF
+#if defined(GPROF) && !defined(GUPROF)
 		s = (u_long) CLKF_PC(framep) - (u_long) s_lowpc;
-		if (profiling < 2 && s < s_textsize)
+		if (_profiling < 2 && s < s_textsize)
 			kcount[s / (HISTFRACTION * sizeof (*kcount))]++;
 #endif
 	}
@@ -671,10 +661,9 @@ gatherstats(framep)
  * Software priority level clock interrupt.
  * Run periodic events from timeout queue.
  */
-/*ARGSUSED*/
 void
-softclock(frame)
-	clockframe frame;
+softclock(usermode)
+	int usermode;
 {
 
 	for (;;) {
@@ -705,11 +694,11 @@ softclock(frame)
 	 * If trapped user-mode and profiling, give it
 	 * a profiling tick.
 	 */
-	if (CLKF_USERMODE(&frame)) {
+	if (usermode) {
 		register struct proc *p = curproc;
 
 		if (p->p_stats->p_prof.pr_scale)
-			profile_tick(p, &frame);
+			profile_tick(p, unused was &frame);
 		/*
 		 * Check to see if process has accumulated
 		 * more than 10 minutes of user time.  If so
