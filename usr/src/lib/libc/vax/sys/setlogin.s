@@ -16,7 +16,7 @@
  */
 
 #if defined(SYSLIBC_SCCS) && !defined(lint)
-	.asciz "@(#)setlogin.s	5.2 (Berkeley) %G%"
+	.asciz "@(#)setlogin.s	5.3 (Berkeley) %G%"
 #endif /* SYSLIBC_SCCS and not lint */
 
 #include "SYS.h"
@@ -25,4 +25,4 @@
 
 SYSCALL(setlogin)
 	movl	$0,__logname_valid
-	ret				# setlogin(name)
+	ret			/* setlogin(name); */
