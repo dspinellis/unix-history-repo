@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap.h	7.4 (Berkeley) %G%
+ *	@(#)pmap.h	7.5 (Berkeley) %G%
  *
- * from: $Header: pmap.h,v 1.10 92/11/26 02:04:40 torek Exp $
+ * from: $Header: pmap.h,v 1.11 93/05/25 10:36:09 torek Exp $
  */
 
 #ifndef	_SPARC_PMAP_H_
@@ -147,6 +147,6 @@ extern struct kpmap kernel_pmap_store;
 #define	PMAP_NC		4		/* tells pmap_enter to set PG_NC */
 #define	PMAP_TNC	7		/* mask to get PG_TYPE & PG_NC */
 
-#endif	KERNEL
+#endif /* KERNEL */
 
 #endif /* _SPARC_PMAP_H_ */
