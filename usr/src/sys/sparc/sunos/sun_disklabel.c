@@ -9,11 +9,11 @@
  * All advertising materials mentioning features or use of this software
  * must display the following acknowledgement:
  *	This product includes software developed by the University of
- *	California, Lawrence Berkeley Laboratories.
+ *	California, Lawrence Berkeley Laboratory.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sun_disklabel.c	7.3 (Berkeley) %G%
+ *	@(#)sun_disklabel.c	7.4 (Berkeley) %G%
  *
  * from: $Header: sun_disklabel.c,v 1.5 92/06/17 07:04:12 torek Exp $
  */
