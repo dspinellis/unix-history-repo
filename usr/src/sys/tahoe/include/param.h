@@ -1,4 +1,4 @@
-/*	param.h	1.6.1.1	87/04/02	*/
+/*	param.h	1.7	87/04/02	*/
 
 /*
  * Machine dependent constants for TAHOE.
@@ -35,10 +35,14 @@ u_long	ntohl(), htonl();
 #define	KERNBASE	0xc0000000	/* start of kernel virtual */
 #define	BTOPKERNBASE	((u_long)KERNBASE >> PGSHIFT)
 
+#define	KERNBASE	0xc0000000	/* start of kernel virtual */
+#define	BTOPKERNBASE	((u_long)KERNBASE >> PGSHIFT)
+
 #ifndef SECSIZE
 #define	DEV_BSIZE	1024
 #define	DEV_BSHIFT	10		/* log2(DEV_BSIZE) */
 #define BLKDEV_IOSIZE	1024		/* NBPG for physical controllers */
+#define	MAXPHYS		(64 * 1024)	/* max raw I/O transfer size */
 #else SECSIZE
 /*
  * Devices without disk labels and the swap virtual device

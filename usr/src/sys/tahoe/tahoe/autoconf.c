@@ -1,4 +1,4 @@
-/*	autoconf.c	1.12.1.1	87/04/02	*/
+/*	autoconf.c	1.13	87/04/02	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -17,6 +17,13 @@
 #include "conf.h"
 #include "dmap.h"
 #include "reboot.h"
+
+#include "pte.h"
+#include "mem.h"
+#include "mtpr.h"
+#include "scb.h"
+
+#include "vba.h"
 #ifdef SECSIZE
 #include "file.h"
 #include "ioctl.h"
