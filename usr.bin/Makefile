@@ -12,7 +12,7 @@ SUBDIR=	ar basename bdes biff cal calendar checknr chat chpass cksum cmp col \
 	rpcgen rpcinfo rsh rup ruptime rusers rwall rwho sccs script sed shar \
 	showmount size soelim split strings strip su symorder syscons tail \
 	talk tcopy tee telnet tftp time tip tn3270 touch tput tr true tset \
-	tsort tty ul unexpand unifdef uniq unvis users uudecode uuencode \
+	tsort tty ul uname unexpand unifdef uniq unvis users uudecode uuencode \
 	vacation vgrind vis vmstat w wall wc what whereis which who whoami \
 	whois window write xargs xinstall xstr yacc yes
 	
