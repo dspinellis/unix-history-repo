@@ -1,4 +1,4 @@
-/*	ioctl.h	4.20	82/06/26	*/
+/*	ioctl.h	4.21	82/08/01	*/
 /*
  * ioctl definitions, and special character and local tty definitions
  */
@@ -63,41 +63,55 @@ struct ltchars {
 #define	MDSR	0400		/* data set ready */
 
 /*
+ * Ioctl's have the command encoded in the lower word,
+ * and the size of any in or out parameters in the upper
+ * word.  The high 2 bits of the upper word are used
+ * to encode the in/out status of the parameter; for now
+ * we restrict parameters to at most 128 bytes.
+ */
+#define	IOCPARM_MASK	0x7f		/* parameters must be < 128 bytes */
+#define	IOC_VOID	0x20000000	/* no parameters */
+#define	IOC_OUT		0x40000000	/* copy out parameters */
+#define	IOC_IN		0x80000000	/* copy in parameters */
+#define	IOC_INOUT	(IOC_IN|IOC_OUT)
+/* the 0x20000000 is so we can distinguish new ioctl's from old */
+#define	_IO(x,y)	(IOC_VOID|('x'<<8)|y)
+#define	_IOR(x,y,t)	(IOC_OUT|((sizeof(t)&IOCPARM_MASK)<<16)|('x'<<8)|y)
+#define	_IOW(x,y,t)	(IOC_IN|((sizeof(t)&IOCPARM_MASK)<<16)|('x'<<8)|y)
+/* this should be _IORW, but stdio got there first */
+#define	_IOWR(x,y,t)	(IOC_INOUT|((sizeof(t)&IOCPARM_MASK)<<16)|('x'<<8)|y)
+
+/*
  * tty ioctl commands
  */
-#define	TIOCGETD	(('t'<<8)|0)	/* get line discipline */
-#define	TIOCSETD	(('t'<<8)|1)	/* set line discipline */
-#define	TIOCHPCL	(('t'<<8)|2)	/* set hangup line on close bit */
-#define	TIOCMODG	(('t'<<8)|3)	/* modem bits get (???) */
-#define	TIOCMODS	(('t'<<8)|4)	/* modem bits set (???) */
-#define	TIOCGETP	(('t'<<8)|8)	/* get parameters - like old gtty */
-#define	TIOCSETP	(('t'<<8)|9)	/* set parameters - like old stty */
-#define	TIOCSETN	(('t'<<8)|10)	/* set params w/o flushing buffers */
-#define	TIOCEXCL	(('t'<<8)|13)	/* set exclusive use of tty */
-#define	TIOCNXCL	(('t'<<8)|14)	/* reset exclusive use of tty */
-#define	TIOCFLUSH	(('t'<<8)|16)	/* flush buffers */
-#define	TIOCSETC	(('t'<<8)|17)	/* set special characters */
-#define	TIOCGETC	(('t'<<8)|18)	/* get special characters */
-#define	TIOCIOANS	(('t'<<8)|20)
-#define	TIOCSIGNAL	(('t'<<8)|21)
-#define	TIOCUTTY	(('t'<<8)|22)
+#define	TIOCGETD	_IOR(t, 0, int)		/* get line discipline */
+#define	TIOCSETD	_IOW(t, 1, int)		/* set line discipline */
+#define	TIOCHPCL	_IO(t, 2)		/* hang up on last close */
+#define	TIOCMODG	_IOR(t, 3, int)		/* get modem control state */
+#define	TIOCMODS	_IOW(t, 4, int)		/* set modem control state */
+#define	TIOCGETP	_IOR(t, 8,struct sgttyb)/* get parameters -- gtty */
+#define	TIOCSETP	_IOW(t, 9,struct sgttyb)/* set parameters -- stty */
+#define	TIOCSETN	_IOW(t,10,struct sgttyb)/* as above, but no flushtty */
+#define	TIOCEXCL	_IO(t, 13)		/* set exclusive use of tty */
+#define	TIOCNXCL	_IO(t, 14)		/* reset exclusive use of tty */
+#define	TIOCFLUSH	_IOW(t, 16, int)	/* flush buffers */
+#define	TIOCSETC	_IOW(t,17,struct tchars)/* set special characters */
+#define	TIOCGETC	_IOR(t,18,struct tchars)/* get special characters */
 /* locals, from 127 down */
-#define	TIOCLBIS	(('t'<<8)|127)	/* bis local mode bits */
-#define	TIOCLBIC	(('t'<<8)|126)	/* bic local mode bits */
-#define	TIOCLSET	(('t'<<8)|125)	/* set entire local mode word */
-#define	TIOCLGET	(('t'<<8)|124)	/* get local modes */
-#define	TIOCSBRK	(('t'<<8)|123)	/* set break bit */
-#define	TIOCCBRK	(('t'<<8)|122)	/* clear break bit */
-#define	TIOCSDTR	(('t'<<8)|121)	/* set data terminal ready */
-#define	TIOCCDTR	(('t'<<8)|120)	/* clear data terminal ready */
-#define	TIOCGPGRP	(('t'<<8)|119)	/* get pgrp of tty */
-#define	TIOCSPGRP	(('t'<<8)|118)	/* set pgrp of tty */
-#define	TIOCSLTC	(('t'<<8)|117)	/* set local special characters */
-#define	TIOCGLTC	(('t'<<8)|116)	/* get local special characters */
-#define	TIOCOUTQ	(('t'<<8)|115)	/* number of chars in output queue */
-#define	TIOCSTI		(('t'<<8)|114)	/* simulate a terminal in character */
-#define	TIOCNOTTY	(('t'<<8)|113)	/* get rid of tty association */
-#define	TIOCPKT		(('t'<<8)|112)	/* on pty: set/clear packet mode */
+#define	TIOCLBIS	_IOW(t, 127, int)	/* bis local mode bits */
+#define	TIOCLBIC	_IOW(t, 126, int)	/* bic local mode bits */
+#define	TIOCLSET	_IOW(t, 125, int)	/* set entire local mode word */
+#define	TIOCLGET	_IOR(t, 124, int)	/* get local modes */
+#define	TIOCSBRK	_IO(t, 123)		/* set break bit */
+#define	TIOCCBRK	_IO(t, 122)		/* clear break bit */
+#define	TIOCSDTR	_IO(t, 121)		/* set data terminal ready */
+#define	TIOCCDTR	_IO(t, 120)		/* clear data terminal ready */
+#define	TIOCGPGRP	_IOR(t, 119, int)	/* get pgrp of tty */
+#define	TIOCSPGRP	_IOW(t, 118, int)	/* set pgrp of tty */
+#define	TIOCSLTC	_IOW(t,117,struct ltchars)/* set local special chars */
+#define	TIOCGLTC	_IOR(t,116,struct ltchars)/* get local special chars */
+#define	TIOCNOTTY	_IO(t, 113)		/* void tty association */
+#define	TIOCPKT		_IOW(t, 112, int)	/* pty: set/clear packet mode */
 #define		TIOCPKT_DATA		0x00	/* data packet */
 #define		TIOCPKT_FLUSHREAD	0x01	/* flush packet */
 #define		TIOCPKT_FLUSHWRITE	0x02	/* flush packet */
@@ -105,13 +119,13 @@ struct ltchars {
 #define		TIOCPKT_START		0x08	/* start output */
 #define		TIOCPKT_NOSTOP		0x10	/* no more ^S, ^Q */
 #define		TIOCPKT_DOSTOP		0x20	/* now do ^S ^Q */
-#define	TIOCSTOP	(('t'<<8)|111)	/* stop output, like ^S */
-#define	TIOCSTART	(('t'<<8)|110)	/* start output, like ^Q */
-#define	TIOCMSET	(('t'<<8)|109)	/* set all modem bits */
-#define	TIOCMBIS	(('t'<<8)|108)	/* bis modem bits */
-#define	TIOCMBIC	(('t'<<8)|107)	/* bic modem bits */
-#define	TIOCMGET	(('t'<<8)|106)	/* get all modem bits */
-#define	TIOCREMOTE	(('t'<<8)|105)	/* remote input editing */
+#define	TIOCSTOP	_IO(t, 111)		/* stop output, like ^S */
+#define	TIOCSTART	_IO(t, 110)		/* start output, like ^Q */
+#define	TIOCMSET	_IOW(t, 109, int)	/* set all modem bits */
+#define	TIOCMBIS	_IOW(t, 108, int)	/* bis modem bits */
+#define	TIOCMBIC	_IOW(t, 107, int)	/* bic modem bits */
+#define	TIOCMGET	_IOR(t, 106, int)	/* get all modem bits */
+#define	TIOCREMOTE	_IO(t, 105)		/* remote input editing */
 
 #define	OTTYDISC	0		/* old, v7 std tty driver */
 #define	NETLDISC	1		/* line discip for berk net */
@@ -119,24 +133,25 @@ struct ltchars {
 #define	TABLDISC	3		/* hitachi tablet discipline */
 #define	NTABLDISC	4		/* gtco tablet discipline */
 
-#define	FIOCLEX		(('f'<<8)|1)
-#define	FIONCLEX	(('f'<<8)|2)
+#define	FIOCLEX		_IO(f, 1)		/* set exclusive use on fd */
+#define	FIONCLEX	_IO(f, 2)		/* remove exclusive use */
 /* another local */
-#define	FIONREAD	(('f'<<8)|127)	/* get # bytes to read */
-#define	FIONBIO		(('f'<<8)|126)
-#define	FIOASYNC	(('f'<<8)|125)
+#define	FIONREAD	_IOR(f, 127, int)	/* get # bytes to read */
+#define	FIONBIO		_IOW(f, 126, int)	/* set/clear non-blocking i/o */
+#define	FIOASYNC	_IOW(f, 125, int)	/* set/clear async i/o */
 
-#define	SIOCDONE	(('s'<<8)|0)	/* shutdown read/write on socket */
-#define	SIOCSKEEP	(('s'<<8)|1)	/* set keep alive */
-#define	SIOCGKEEP	(('s'<<8)|2)	/* inspect keep alive */
-#define	SIOCSLINGER	(('s'<<8)|3)	/* set linger time */
-#define	SIOCGLINGER	(('s'<<8)|4)	/* get linger time */
-#define	SIOCSENDOOB	(('s'<<8)|5)	/* send out of band */
-#define	SIOCRCVOOB	(('s'<<8)|6)	/* get out of band */
-#define	SIOCATMARK	(('s'<<8)|7)	/* at out of band mark? */
-#define	SIOCSPGRP	(('s'<<8)|8)	/* set process group */
-#define	SIOCGPGRP	(('s'<<8)|9)	/* get process group */
-#define	SIOCADDRT	(('s'<<8)|10)	/* add a routing table entry */
-#define	SIOCDELRT	(('s'<<8)|11)	/* delete a routing table entry */
-#define	SIOCCHGRT	(('s'<<8)|12)	/* change a routing table entry */
+/* socket i/o controls */
+#define	SIOCDONE	_IOW(s, 0, int)		/* shutdown read/write */
+#define	SIOCSKEEP	_IOW(s, 1, int)		/* set keep alive */
+#define	SIOCGKEEP	_IOR(s, 2, int)		/* inspect keep alive */
+#define	SIOCSLINGER	_IOW(s, 3, int)		/* set linger time */
+#define	SIOCGLINGER	_IOR(s, 4, int)		/* get linger time */
+/* these are really variable length */
+#define	SIOCSENDOOB	_IOW(s, 5, char)	/* send out of band */
+#define	SIOCRCVOOB	_IOR(s, 6, char)	/* get out of band */
+#define	SIOCATMARK	_IOR(s, 7, int)		/* at out of band mark? */
+#define	SIOCSPGRP	_IOW(s, 8, int)		/* set process group */
+#define	SIOCGPGRP	_IOR(s, 9, int)		/* get process group */
+#define	SIOCADDRT	_IOW(s,10, struct rtentry)/* add route */
+#define	SIOCDELRT	_IOW(s,11, struct rtentry)/* delete route */
 #endif

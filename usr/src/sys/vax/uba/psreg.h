@@ -1,4 +1,4 @@
-/*	psreg.h	4.1	82/06/26	*/
+/*	psreg.h	4.2	82/08/01	*/
 
 
 /*
@@ -16,19 +16,18 @@ struct psdevice {
 /*
  *	Possible ioctl's
  */
-
-#define PSAUTOREFRESH			(0)
-#define PSSINGLEREFRESH			(1)
-#define PSAUTOMAP			(2)
-#define PSSINGLEMAP			(3)
-#define PSDOUBLEBUFFER			(4)
-#define PSSINGLEBUFFER			(5)
-#define PSWAITREFRESH			(6)
-#define PSWAITMAP			(7)
-#define PSWAITHIT			(8)
-#define PSSTOPREFRESH			(9)
-#define PSSTOPMAP			(10)
-#define PSGETADDR			(11)
+#define PSIOAUTOREFRESH		_IO(p, 0)	/* auto refresh */
+#define PSIOSINGLEREFRESH	_IO(p, 1)	/* single refresh */
+#define PSIOAUTOMAP		_IO(p, 2)	/* auto map */
+#define PSIOSINGLEMAP		_IO(p, 3)	/* single map */
+#define PSIODOUBLEBUFFER	_IO(p, 4)	/* double buffer */
+#define PSIOSINGLEBUFFER	_IO(p, 5)	/* single buffer */
+#define PSIOWAITREFRESH		_IO(p, 6)	/* await refresh */
+#define PSIOWAITMAP		_IO(p, 7)	/* await map */
+#define PSIOWAITHIT		_IO(p, 8)	/* await hit */
+#define PSIOSTOPREFRESH		_IO(p, 9)	/* stop refresh */
+#define PSIOSTOPMAP		_IO(p,10)	/* stop map */
+#define PSIOGETADDR		_IOR(p,11, int)	/* get Unibus address */
 
 /*
  *	Picture system io status register bits

@@ -1,4 +1,4 @@
-/*	sys_generic.c	5.4	82/07/25	*/
+/*	sys_generic.c	5.5	82/08/01	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -129,20 +129,19 @@ writev()
 
 /*
  * Ioctl system call
- * Check legality, execute common code, and switch out to individual
- * device routine.
+ * Check legality, execute common code,
+ * and switch out to individual device routine.
  */
 ioctl()
 {
 	register struct file *fp;
-	register struct inode *ip;
-	register struct a {
+	struct a {
 		int	fdes;
 		int	cmd;
 		caddr_t	cmarg;
 	} *uap;
-	register dev_t dev;
-	register fmt;
+	register int com, size;
+	char data[IOCPARM_MASK+1];
 
 	uap = (struct a *)u.u_ap;
 	if ((fp = getf(uap->fdes)) == NULL)
@@ -151,39 +150,87 @@ ioctl()
 		u.u_error = EBADF;
 		return;
 	}
-	if (uap->cmd==FIOCLEX) {
+	com = uap->cmd;
+
+#ifndef ONLYNEWIOCTLS
+	/*
+	 * Map old style ioctl's into new for the
+	 * sake of backwards compatibility (sigh).
+	 */
+	if ((com&~0xffff) == 0) {
+		com = mapioctl(com);
+		if (com == 0) {
+			u.u_error = EINVAL;
+			return;
+		}
+	}
+#endif
+	if (com == FIOCLEX) {
 		u.u_pofile[uap->fdes] |= EXCLOSE;
 		return;
 	}
-	if (uap->cmd==FIONCLEX) {
+	if (com == FIONCLEX) {
 		u.u_pofile[uap->fdes] &= ~EXCLOSE;
 		return;
 	}
-	if (fp->f_type == DTYPE_SOCKET) {
-		soioctl(fp->f_socket, uap->cmd, uap->cmarg);
-		return;
-	}
-	ip = fp->f_inode;
-	fmt = ip->i_mode & IFMT;
-	if (fmt != IFCHR) {
-		if (uap->cmd==FIONREAD && (fmt == IFREG || fmt == IFDIR)) {
-			off_t nread = ip->i_size - fp->f_offset;
 
-			if (copyout((caddr_t)&nread, uap->cmarg, sizeof(off_t)))
-				u.u_error = EFAULT;
-		} else if (uap->cmd == FIONBIO || uap->cmd == FIOASYNC)
+	/*
+	 * Interpret high order word to find
+	 * amount of data to be copied to/from the
+	 * user's address space.
+	 * (this'll have to change if we have in+out ioctls)
+	 */
+	size = (com &~ (IOC_INOUT|IOC_VOID)) >> 16;
+	if (size > sizeof (data)) {
+		u.u_error = EFAULT;
+		return;
+	}
+	if ((com&IOC_IN) && size) {
+		if (copyin(uap->cmarg, (caddr_t)data, size)) {
+			u.u_error = EFAULT;
 			return;
-		else
-			u.u_error = ENOTTY;
-		return;
+		}
+	} else
+		*(caddr_t *)data = uap->cmarg;
+	/*
+	 * Zero the buffer on the stack so the user
+	 * always gets back something deterministic.
+	 */
+	if ((com&IOC_OUT) && size)
+		bzero((caddr_t)data, size);
+
+	if (fp->f_type == DTYPE_SOCKET)
+		soioctl(fp->f_socket, com, data);
+	else {
+		register struct inode *ip = fp->f_inode;
+		int fmt = ip->i_mode & IFMT;
+		dev_t dev;
+
+		if (fmt != IFCHR) {
+			if (com == FIONREAD && (fmt == IFREG || fmt == IFDIR)) {
+				*(off_t *)data = ip->i_size - fp->f_offset;
+				goto returndata;
+			}
+			if (com != FIONBIO && com != FIOASYNC)
+				u.u_error = ENOTTY;
+			return;
+		}
+		dev = ip->i_rdev;
+		u.u_r.r_val1 = 0;
+		if ((u.u_procp->p_flag&SNUSIG) && setjmp(u.u_qsav)) {
+			u.u_eosys = RESTARTSYS;
+			return;
+		}
+		(*cdevsw[major(dev)].d_ioctl)(dev, com, data, 0);
 	}
-	dev = ip->i_rdev;
-	u.u_r.r_val1 = 0;
-	if ((u.u_procp->p_flag&SNUSIG) && setjmp(u.u_qsav)) {
-		u.u_eosys = RESTARTSYS;
-		return;
-	}
-	(*cdevsw[major(dev)].d_ioctl)(dev, uap->cmd, uap->cmarg, 0);
+
+returndata:
+	/*
+	 * Copy any data to user, size was
+	 * already set and checked above.
+	 */
+	if ((com&IOC_OUT) && size && copyout(data, uap->cmarg, size))
+		u.u_error = EFAULT;
 }
 
 /*
@@ -191,11 +238,15 @@ ioctl()
  * discipline specific ioctl command.
  */
 /*ARGSUSED*/
-nullioctl(tp, cmd, addr)
+nullioctl(tp, cmd, data, flags)
 	struct tty *tp;
-	caddr_t addr;
+	char *data;
+	int flags;
 {
 
+#ifdef lint
+	tp = tp; data = data; flags = flags;
+#endif
 	return (cmd);
 }
 

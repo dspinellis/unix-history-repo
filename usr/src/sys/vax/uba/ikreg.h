@@ -1,4 +1,4 @@
-/*	ikreg.h	4.1	82/06/26	*/
+/*	ikreg.h	4.2	82/08/01	*/
 
 struct ikdevice {
 	short int ik_wc;			/* Unibus word count reg */
@@ -11,8 +11,10 @@ struct ikdevice {
 	unsigned short int ik_dummy;
 };
 
-#define IK_GETADDR (('i'<<8)|0)
-#define IK_WAITINT (('i'<<8)|1)
+#define IK_GETADDR 	IKIOGETADDR
+#define IK_WAITINT 	IKIOWAITINT
+#define	IKIOGETADDR	_IOR(i, 0, caddr_t)	/* get Unibus device address */
+#define	IKIOWAITINT	_IO(i, 1)		/* await device interrupt */
 
 /*
  * Unibus status/command register bits

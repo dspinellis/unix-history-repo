@@ -1,4 +1,4 @@
-/*	tty_pty.c	4.22	82/07/21	*/
+/*	tty_pty.c	4.23	82/08/01	*/
 
 /*
  * Pseudo-teletype Driver
@@ -364,56 +364,45 @@ again:
 }
 
 /*ARGSUSED*/
-ptyioctl(dev, cmd, addr, flag)
-	caddr_t addr;
+ptyioctl(dev, cmd, data, flag)
+	caddr_t data;
 	dev_t dev;
 {
 	register struct tty *tp = &pt_tty[minor(dev)];
 	register struct pt_ioctl *pti = &pt_ioctl[minor(dev)];
 
 	/* IF CONTROLLER STTY THEN MUST FLUSH TO PREVENT A HANG ??? */
-	if (cdevsw[major(dev)].d_open == ptcopen) {
-		if (cmd == TIOCPKT) {
-			int packet;
-			if (copyin((caddr_t)addr, (caddr_t)&packet, sizeof (packet))) {
-				u.u_error = EFAULT;
-				return;
-			}
-			if (packet)
+	if (cdevsw[major(dev)].d_open == ptcopen)
+		switch (cmd) {
+
+		case TIOCPKT:
+			if (*(int *)data)
 				pti->pt_flags |= PF_PKT;
 			else
 				pti->pt_flags &= ~PF_PKT;
 			return;
-		}
-		if (cmd == TIOCREMOTE) {
-			int remote;
-			if (copyin((caddr_t)addr, (caddr_t)&remote, sizeof (remote))) {
-				u.u_error = EFAULT;
-				return;
-			}
-			if (remote)
+
+		case TIOCREMOTE:
+			if (*(int *)data)
 				pti->pt_flags |= PF_REMOTE;
 			else
 				pti->pt_flags &= ~PF_REMOTE;
 			flushtty(tp, FREAD|FWRITE);
 			return;
-		}
-		if (cmd == FIONBIO) {
-			int nbio;
-			if (copyin((caddr_t)addr, (caddr_t)&nbio, sizeof (nbio))) {
-				u.u_error = EFAULT;
-				return;
-			}
-			if (nbio)
+
+		case FIONBIO:
+			if (*(int *)data)
 				pti->pt_flags |= PF_NBIO;
 			else
 				pti->pt_flags &= ~PF_NBIO;
 			return;
+
+		case TIOCSETP:
+			while (getc(&tp->t_outq) >= 0)
+				;
+			break;
 		}
-		if (cmd == TIOCSETP)
-			while (getc(&tp->t_outq) >= 0);
-	}
-	if (ttioctl(tp, cmd, addr, dev) == 0)
+	if (ttioctl(tp, cmd, data, dev) == 0)
 		u.u_error = ENOTTY;
 	{ int stop = (tp->t_un.t_chr.t_stopc == ('s'&037) &&
 		      tp->t_un.t_chr.t_startc == ('q'&037));

@@ -1,4 +1,4 @@
-/*	efs.h	4.2	82/06/26	*/
+/*	efs.h	4.3	82/08/01	*/
 
 /*
  *	Extended File System
@@ -74,10 +74,6 @@
  *	reply:	EFS_ERROR	<errno>
  *
  */
-
-#define	EFSIOSHTAB	(('e'<<8)|0)		/* set hosttable */
-#define	EFSIOGHTAB	(('e'<<8)|1)		/* get hosttable */
-
 #define EFS_NHT 	10
 #define EFS_HTMAX	32
 #define EFS_NPB		32
@@ -149,6 +145,9 @@ struct hosttable {
 	char ht_name[EFS_HTMAX];
 	struct sockaddr_in ht_addr;
 } efs_hosttable[EFS_NHT];
+
+#define	EFSIOSHTAB	_IOW(e, 0, struct efs_hosttable) /* set hosttable */
+#define	EFSIOGHTAB	_IOR(e, 1, struct efs_hosttable) /* get hosttable */
 
 #ifdef KERNEL
 int efs_major;		/* major device of efs char special routines */

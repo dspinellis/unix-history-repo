@@ -1,12 +1,8 @@
-/*	mtio.h	4.6	81/11/07	*/
+/*	mtio.h	4.7	82/08/01	*/
 
 /*
  * Structures and definitions for mag tape io control commands
  */
-
-/* mag tape io control commands */
-#define MTIOCTOP	(('m'<<8)|1)	/* do a mag tape op */
-#define MTIOCGET	(('m'<<8)|2)	/* get mag tape status */
 
 /* structure for MTIOCTOP - mag tape op command */
 struct	mtop	{
@@ -47,3 +43,7 @@ struct	mtget	{
 #define MT_ISTM		03
 #define MT_ISMT		04
 #define MT_ISUT		05
+
+/* mag tape io control commands */
+#define MTIOCTOP	_IOW(m, 1, struct mtop)		/* do a mag tape op */
+#define MTIOCGET	_IOR(m, 2, struct mtget)	/* get tape status */
