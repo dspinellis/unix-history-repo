@@ -1,4 +1,4 @@
-/*	init_main.c	4.45	83/01/16	*/
+/*	init_main.c	4.46	83/01/23	*/
 
 #include "../machine/pte.h"
 
@@ -23,11 +23,8 @@
 #include "../h/protosw.h"
 #endif
 #include "../h/quota.h"
-
-#ifdef sun
-#include "../sun/reg.h"
-#include "../sun/cpu.h"
-#endif
+#include "../machine/reg.h"
+#include "../machine/cpu.h"
 
 extern	struct user u;		/* have to declare it somewhere! */
 /*
