@@ -1,12 +1,12 @@
 /*
-char id_endfile[] = "@(#)endfile.c	1.2";
+char id_endfile[] = "@(#)endfile.c	1.3";
  *
  * endfile
  */
 
 #include "fio.h"
 
-char *endf = "endfile";
+char endf[] = "endfile";
 extern char *tmplate;
 
 f_end(a) alist *a;
@@ -32,7 +32,7 @@ t_runc(b,flag) unit *b; ioflag flag;
 	int n,m;
 	long loc,len;
 	fflush(b->ufd);
-	if(b->uwrt) nowreading(b);
+	if(b->uwrt && ! nowreading(b)) err(errflag, errno, endf);
 	if(b->url || !b->useek || !b->ufnm) return(OK); /*don't trunc dir files*/
 	loc=ftell(b->ufd);
 	fseek(b->ufd,0L,2);
