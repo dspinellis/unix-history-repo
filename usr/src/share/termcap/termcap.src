@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)termcap.src	5.74 (Berkeley) %G%
+#	@(#)termcap.src	5.75 (Berkeley) %G%
 #
 #	Termcap source file
 #	John Kunze, Berkeley
@@ -427,6 +427,22 @@ Ie|ibmmono|ibmconsole|ibm5151|IBM workstation monochrome:\
 	:ts=\Ej\EY8%+ \Eo:fs=\Ek:ds=\Ej\EY8\40\EI\Ek:es:hs:sb:tc=ibm3101:
 If|ibmega-c|ibm5154-c|IBM Enhanced Color Display color termcap:\
 	:se=\EB:so=\EF\Ef3;:ue=\EB:us=\EF\Ef2;:tc=ibmconsole:
+Ig|hft|hft-c|ibm8512|ibm8513|IBM High Function Terminal:\
+	:co#80:li#25:am:ht:\
+	:cm=\E[%i%d;%dH:ti=\E[20;4l\E[?7h\Eb:te=\E[20h:\
+	:nd=\E[C:up=\E[A:do=^J:ho=\E[H:\
+	:ec=\E[%dX:\
+	:cl=\E[H\E[J:cd=\E[J:el=\E[K:\
+	:AL=\E[%dL:DL=\E[%dM:al=\E[L:dl=\E[M:\
+	:im=\E[4h:ei=\E[4l:mi:\
+	:dm=\E[4h:ed=\E[4l:\
+	:so=\E[7m:se=\E[m:ul=\E[4m:ue=\E[m:ms:\
+	:md=\E[1m:mr=\E[7m:mb=\E[5m:me=\E[m:\
+	:ac=^N:ae=^O:sc=\E[s:rc=\E[u:\
+	:kb=\E[D:kf=\E[C:ku=\E[A:kd=\E[B:kh=\E[H:\
+	:k1=\E[001q:k2=\E[002q:k3=\E[003q:k4=\E[004q:k5=\E[005q:\
+	:k6=\E[006q:k7=\E[007q:k8=\E[008q:k9=\E[009q:k0=\E[010q:\
+	:is=\Eb\E[m^O\E[?7h:rs=\Eb\E[m^O\E[?7h\E[H\E[J:
 # # --------------------------------
 #
 # M: MISCELLANEOUS TERMINALS
