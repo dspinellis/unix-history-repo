@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pcproc.c 1.10 %G%";
+static	char sccsid[] = "@(#)pcproc.c 1.11 %G%";
 
 #include "whoami.h"
 #ifdef PC
@@ -47,7 +47,7 @@ pcproc(r)
 	register int *alv, *al, op;
 	struct nl *filetype, *ap;
 	int argc, *argv, typ, fmtspec, strfmt, stkcnt, *file;
-	char fmt, format[20], *strptr;
+	char fmt, format[20], *strptr, *cmd;
 	int prec, field, strnglen, fmtlen, fmtstart, pu;
 	int *pua, *pui, *puz;
 	int i, j, k;
@@ -1178,10 +1178,9 @@ pcproc(r)
 			error("%s expects at least one argument", p->symbol);
 			return;
 		}
-		putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
-			, op == O_DISPOSE ? "_DISPOSE" :
-				opt('t') ? "_NEWZ" : "_NEW" );
+		codeoff();
 		ap = stklval(argv[1], op == O_NEW ? ( MOD | NOUSE ) : MOD );
+		codeon();
 		if (ap == NIL)
 			return;
 		if (ap->class != PTR) {
@@ -1191,6 +1190,17 @@ pcproc(r)
 		ap = ap->type;
 		if (ap == NIL)
 			return;
+		if (op == O_DISPOSE)
+			if ((ap->nl_flags & NFILES) != 0)
+				cmd = "_DFDISPOSE";
+			else
+				cmd = "_DISPOSE";
+		else if (opt('t'))
+			cmd = "_NEWZ";
+		else
+			cmd = "_NEW";
+		putleaf( P2ICON, 0, 0, ADDTYPE( P2FTN | P2INT , P2PTR ), cmd);
+		stklval(argv[1], op == O_NEW ? ( MOD | NOUSE ) : MOD );
 		argv = argv[2];
 		if (argv != NIL) {
 			if (ap->class != RECORD) {

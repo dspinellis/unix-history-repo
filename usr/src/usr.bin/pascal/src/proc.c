@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)proc.c 1.12 %G%";
+static char sccsid[] = "@(#)proc.c 1.13 %G%";
 
 #include "whoami.h"
 #ifdef OBJ
@@ -850,6 +850,8 @@ proc(r)
 		ap = ap->type;
 		if (ap == NIL)
 			return;
+		if ((ap->nl_flags & NFILES) && op == O_DISPOSE)
+			op = O_DFDISP;
 		argv = argv[2];
 		if (argv != NIL) {
 			if (ap->class != RECORD) {
