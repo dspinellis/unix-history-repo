@@ -1,4 +1,4 @@
-/*	ffs_subr.c	4.4	82/12/17	*/
+/*	ffs_subr.c	4.5	83/03/21	*/
 
 #ifdef KERNEL
 #include "../h/param.h"
@@ -103,6 +103,8 @@ syncip(ip)
 		blkno = fsbtodb(fs, bmap(ip, lbn, B_READ));
 		blkflush(ip->i_dev, blkno, blksize(fs, ip, lbn));
 	}
+	ip->i_flag |= ICHG;
+	iupdat(ip, &time, &time, 1);
 }
 #endif
 
