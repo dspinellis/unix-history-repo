@@ -1,112 +1,76 @@
-#	 This is the description file used by the make(I) command
-#	 to reconstruct all or part of SCCS
+#	makefile	4.2	83/12/22
+#
+CFLAGS=	-O -w
+LIBS=	../libpw.a ../libPW.a ../libwrt.a
 
-#	(All Macro Definitions are described on line following definition)
-
-GET = get 
-#	SCCS command get(I)
-REL =
-#	Null string used to specify release to get in make(I) command line
-CFLAGS = -O
-#	Flags used by C compiler
-LDFLAGS =
-#	Load flags used by C compiler
-LIBES = -lpw -lPW -lwrt
-#	Libraries used during loading
-
-SCCS:		admin bdiff chghist comb scv \
-	delta get help prt rmdel sccsdiff \
-	what val snull vc cmt
+all:	admin bdiff chghist comb delta get help prt rmdel sccsdiff.sh \
+	what val snull cmt prs
 
 admin:	admin.o ../com/comobj.a ctime.o alloc.o
-	$(CC) $(LDFLAGS) -o admin admin.o ../com/comobj.a $(LIBES)
+	$(CC) -o admin admin.o ../com/comobj.a $(LIBS) ctime.o alloc.o
 
 admin.o:	admin.c ../hdr/defines.h ../hdr/had.h
-	$(CC) $(CFLAGS) admin.c
+	$(CC) -c $(CFLAGS) admin.c
 
-admin.c:	s.admin.c
-	$(GET) $(REL) s.admin.c
-
-cmt:	cmt.o ../com/comobj.a
-	$(CC) $(LDFLAGS) -o cmt cmt.o ../com/comobj.a $(LIBES)
+cmt:	cmt.o ../com/comobj.a ctime.o alloc.o
+	$(CC) -o cmt cmt.o ../com/comobj.a $(LIBS) ctime.o alloc.o
 
 cmt.o:	cmt.c ../hdr/defines.h ../hdr/had.h
-	$(CC) $(CFLAGS) cmt.c
+	$(CC) -c $(CFLAGS) cmt.c
 
-cmt.c:		s.cmt.c
-	$(GET) $(REL) s.cmt.c
-
-bdiff:	bdiff.o ../com/comobj.a
-	$(CC) $(LDFLAGS) -o bdiff bdiff.o ../com/comobj.a $(LIBES)
+bdiff:	bdiff.o ../com/comobj.a ctime.o alloc.o
+	$(CC) -o bdiff bdiff.o ../com/comobj.a $(LIBS) ctime.o alloc.o
 
 bdiff.o:	bdiff.c ../hdr/defines.h ../hdr/had.h
-	$(CC) $(CFLAGS) bdiff.c
+	$(CC) -c $(CFLAGS) bdiff.c
 
-bdiff.c:	s.bdiff.c
-	$(GET) $(REL) s.bdiff.c
-
-comb:	comb.o ../com/comobj.a
-	$(CC) $(LDFLAGS) -o comb comb.o ../com/comobj.a $(LIBES)
+comb:	comb.o ../com/comobj.a ctime.o alloc.o
+	$(CC) -o comb comb.o ../com/comobj.a $(LIBS) ctime.o alloc.o
 
 comb.o:		comb.c ../hdr/defines.h ../hdr/had.h
-	$(CC) $(CFLAGS) comb.c
+	$(CC) -c $(CFLAGS) comb.c
 
-comb.c:		s.comb.c
-	$(GET) $(REL) s.comb.c
-
-scv:	scv.o ../com/comobj.a
-	$(CC) $(LDFLAGS) -o scv scv.o ../com/comobj.a $(LIBES)
+scv:	scv.o ../com/comobj.a ctime.o alloc.o
+	$(CC) -o scv scv.o ../com/comobj.a $(LIBS) ctime.o alloc.o
 
 scv.o:		scv.c ../hdr/defines.h ../hdr/had.h
-	$(CC) $(CFLAGS) scv.c
+	$(CC) -c $(CFLAGS) scv.c
 
-scv.c:		s.scv.c
-	$(GET) $(REL) s.scv.c
-
-snull:	snull.o ../com/comobj.a
-	$(CC) $(LDFLAGS) -o snull snull.o ../com/comobj.a $(LIBES)
+snull:	snull.o ../com/comobj.a ctime.o alloc.o
+	$(CC) -o snull snull.o ../com/comobj.a $(LIBS) ctime.o alloc.o
 
 snull.o:		snull.c ../hdr/defines.h ../hdr/had.h
-	$(CC) $(CFLAGS) snull.c
+	$(CC) -c $(CFLAGS) snull.c
 
-snull.c:		s.snull.c
-	$(GET) $(REL) s.snull.c
-
-delta:	delta.o ../com/comobj.a
-	$(CC) $(LDFLAGS) -o delta delta.o ../com/comobj.a $(LIBES) ctime.o alloc.o
+delta:	delta.o ../com/comobj.a ctime.o alloc.o
+	$(CC) -o delta delta.o ../com/comobj.a $(LIBS) ctime.o alloc.o
 
 delta.o:	delta.c ../hdr/defines.h ../hdr/had.h
-	$(CC) $(CFLAGS) delta.c
+	$(CC) -c $(CFLAGS) delta.c
 
-delta.c:	s.delta.c
-	$(GET) $(REL) s.delta.c
-
-get:	get.o ../com/comobj.a
-	$(CC) $(LDFLAGS) -o get get.o ../com/comobj.a $(LIBES) ctime.o alloc.o
+get:	get.o ../com/comobj.a ctime.o alloc.o
+	$(CC) -y_getwd -o get get.o ../com/comobj.a $(LIBS) ctime.o alloc.o
 
 get.o:		get.c ../hdr/defines.h ../hdr/had.h
-	$(CC) $(CFLAGS) get.c
+	$(CC) -c $(CFLAGS) get.c
 
-get.c:		s.get.c
-	$(GET) $(REL) s.get.c
-
-help:	help.o ../com/comobj.a
-	$(CC) $(LDFLAGS) -o help help.o ../com/comobj.a $(LIBES)
+help:	help.o ../com/comobj.a ctime.o alloc.o
+	$(CC) -o help help.o ../com/comobj.a $(LIBS) ctime.o alloc.o
 
 help.o:		help.c ../hdr/defines.h ../hdr/had.h
-	$(CC) $(CFLAGS) help.c
+	$(CC) -c $(CFLAGS) help.c
 
-help.c:		s.help.c
-	$(GET) $(REL) s.help.c
-
-prt:	prt.o ../com/comobj.a
-	$(CC) $(LDFLAGS) -o prt prt.o ../com/comobj.a $(LIBES) ctime.o alloc.o
+prt:	prt.o ../com/comobj.a ctime.o alloc.o
+	$(CC) -o prt prt.o ../com/comobj.a $(LIBS) ctime.o alloc.o
 
 prt.o:		prt.c ../hdr/defines.h ../hdr/had.h
-	$(CC) $(CFLAGS) prt.c
+	$(CC) -c $(CFLAGS) prt.c
 
-prt.c:		s.prt.c
-	$(GET) $(REL) s.prt.c
+prs:	prs.o ../com/comobj.a ctime.o alloc.o
+	$(CC) -o prs prs.o ../com/comobj.a $(LIBS) ctime.o alloc.o
+
+prs.o:		prs.c ../hdr/defines.h ../hdr/had.h
+	$(CC) -c $(CFLAGS) prs.c
 
 chghist:	rmchg
 	-rm -f chghist
@@ -116,60 +80,48 @@ rmdel:	rmchg
 	-rm -f rmdel
 	ln rmchg rmdel
 
-rmchg:	rmchg.o ../com/comobj.a
-	$(CC) $(LDFLAGS) -o rmchg rmchg.o ../com/comobj.a $(LIBES)
+rmchg:	rmchg.o ../com/comobj.a ctime.o alloc.o
+	$(CC) -o rmchg rmchg.o ../com/comobj.a $(LIBS) ctime.o alloc.o
 
 rmchg.o:	rmchg.c ../hdr/defines.h ../hdr/had.h
-	$(CC) $(CFLAGS) rmchg.c
+	$(CC) -c $(CFLAGS) rmchg.c
 
-rmchg.c:		s.rmchg.c
-	$(GET) $(REL) s.rmchg.c
-
-sccsdiff:	s.sccsdiff
-		$(GET) $(REL) s.sccsdiff; chmod 555 sccsdiff
-
-what:	what.o ../com/comobj.a
-	$(CC) $(LDFLAGS) -o what what.o ../com/comobj.a $(LIBES) $(LIBES) ctime.o alloc.o
+what:	what.o ../com/comobj.a ctime.o alloc.o
+	$(CC) -o what what.o ../com/comobj.a $(LIBS) $(LIBES) ctime.o alloc.o
 
 what.o:		what.c ../hdr/defines.h ../hdr/had.h
-	$(CC) $(CFLAGS) what.c
+	$(CC) -c $(CFLAGS) what.c
 
-what.c:		s.what.c
-	$(GET) $(REL) s.what.c
-
-val:	val.o ../com/comobj.a
-	$(CC) $(LDFLAGS) -o val val.o ../com/comobj.a $(LIBES) $(LIBES)
+val:	val.o ../com/comobj.a ctime.o alloc.o
+	$(CC) -o val val.o ../com/comobj.a $(LIBS) $(LIBES) ctime.o alloc.o
 
 val.o:	val.c ../hdr/defines.h ../hdr/had.h
-	$(CC) $(CFLAGS) val.c
-
-val.c:		s.val.c
-	$(GET) $(REL) s.val.c
-
-vc:	vc.o ../com/comobj.a
-	$(CC) $(LDFLAGS) -o vc vc.o ../com/comobj.a $(LIBES) $(LIBES)
-
-vc.o:	vc.c ../hdr/defines.h ../hdr/had.h
-	$(CC) $(CFLAGS) vc.c
-
-vc.c:		s.vc.c
-	$(GET) $(REL) s.vc.c
-
-#../hdr/defines.h:		../hdr/s.defines.h
-#	-chdir ../hdr; $(GET) $(REL) -s s.defines.h
-
-#../hdr/had.h:		../hdr/s.had.h
-#	-chdir ../hdr; $(GET) $(REL) -s s.had.h
+	$(CC) -c $(CFLAGS) val.c
 
 ../com/comobj.a:
-	-chdir ../com; Compile
+	chdir ../com; make comobj.a
 
-clean:		# Procedure to clean up unwanted files
-	-rm -f *.o
-	-rm -f admin.c bdiff.c comb.c rmchg.c scv.c \
-	       delta.c get.c help.c prt.c what.c val.c snull.c vc.c \
-		cmt.c
-	-rm -f admin	bdiff	comb	rmchg	scv	chghist	\
-		delta	get	help	prt	what	rmdel	sccsdiff \
-		val snull vc cmt
-	-rm -f ../errors ../logs
+clean:
+	rm -f *.o
+	rm -f admin bdiff chghist comb scv delta get help prt rmdel \
+	    what val snull cmt rmchg prs
+
+install: all
+	install -s admin ${DESTDIR}/usr/local
+	install -s bdiff ${DESTDIR}/usr/local
+	install -s chghist ${DESTDIR}/usr/local
+	rm -f ${DESTDIR}/usr/local/rmdel ${DESTDIR}/usr/local/rmchg
+	ln ${DESTDIR}/usr/local/chghist ${DESTDIR}/usr/local/rmchg
+	ln ${DESTDIR}/usr/local/chghist ${DESTDIR}/usr/local/rmdel
+	install -s comb ${DESTDIR}/usr/local
+	install -s delta ${DESTDIR}/usr/local
+	install -s help ${DESTDIR}/usr/local
+	install -s prt ${DESTDIR}/usr/local
+	install -s prs ${DESTDIR}/usr/local
+	install -s rmdel ${DESTDIR}/usr/local
+	install -c sccsdiff.sh ${DESTDIR}/usr/local/sccsdiff
+	install -s what ${DESTDIR}/usr/local
+	install -s val ${DESTDIR}/usr/local
+	install -s snull ${DESTDIR}/usr/local
+	install -s get ${DESTDIR}/usr/local
+#	install -s scv ${DESTDIR}/usr/local
