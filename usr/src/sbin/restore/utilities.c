@@ -1,10 +1,12 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	3.13	(Berkeley)	83/05/19";
+static char sccsid[] = "@(#)utilities.c	3.14	(Berkeley)	83/08/11";
 #endif
 
 #include "restore.h"
+
+char *copynext();
 
 /*
  * Insure that all the components of a pathname exist.
@@ -359,17 +361,17 @@ reply(question)
 getcmd(curdir, cmd, name)
 	char *curdir, *cmd, *name;
 {
-	register char *cp, *bp;
-	char output[BUFSIZ];
-	static char input[BUFSIZ];
+	register char *cp;
 	static char *nextarg = NULL;
+	static char input[BUFSIZ];
+	char output[BUFSIZ];
+#	define rawname input	/* save space by reusing input buffer */
 
 	/*
 	 * Check to see if still processing arguments.
 	 */
 	if (nextarg != NULL)
 		goto getnext;
-	nextarg = NULL;
 	/*
 	 * Read a command line and trim off trailing white space.
 	 */
@@ -388,11 +390,7 @@ getcmd(curdir, cmd, name)
 	/*
 	 * Copy the command into "cmd".
 	 */
-	for (cp = input; *cp == ' ' || *cp == '\t'; cp++)
-		/* skip to command */;
-	for (bp = cmd; *cp != ' ' && *cp != '\t' && *cp != '\0'; )
-		*bp++ = *cp++;
-	*bp = '\0';
+	cp = copynext(input, cmd);
 	/*
 	 * If no argument, use curdir as the default.
 	 */
@@ -405,20 +403,16 @@ getcmd(curdir, cmd, name)
 	 * Find the next argument.
 	 */
 getnext:
-	for (cp = nextarg + 1; *cp == ' ' || *cp == '\t'; cp++)
-		/* skip to argument */;
-	for (bp = cp; *cp != ' ' && *cp != '\t' && *cp != '\0'; cp++)
-		/* skip to end of argument */;
+	cp = copynext(nextarg, rawname);
 	if (*cp == '\0')
 		nextarg = NULL;
 	else
 		nextarg = cp;
-	*cp = '\0';
 	/*
 	 * If it an absolute pathname, canonicalize it and return it.
 	 */
-	if (*bp == '/') {
-		canon(bp, name);
+	if (rawname[0] == '/') {
+		canon(rawname, name);
 		return;
 	}
 	/*
@@ -427,8 +421,58 @@ getnext:
 	 */
 	(void) strcpy(output, curdir);
 	(void) strcat(output, "/");
-	(void) strcat(output, bp);
+	(void) strcat(output, rawname);
 	canon(output, name);
+#	undef rawname
+}
+
+/*
+ * Strip off the next token of the input.
+ */
+char *
+copynext(input, output)
+	char *input, *output;
+{
+	register char *cp, *bp;
+	char quote;
+
+	for (cp = input; *cp == ' ' || *cp == '\t'; cp++)
+		/* skip to argument */;
+	bp = output;
+	while (*cp != ' ' && *cp != '\t' && *cp != '\0') {
+		/*
+		 * Handle back slashes.
+		 */
+		if (*cp == '\\') {
+			if (*++cp == '\0') {
+				fprintf(stderr,
+					"command lines cannot be continued\n");
+				continue;
+			}
+			*bp++ = *cp++;
+			continue;
+		}
+		/*
+		 * The usual unquoted case.
+		 */
+		if (*cp != '\'' && *cp != '"') {
+			*bp++ = *cp++;
+			continue;
+		}
+		/*
+		 * Handle single and double quotes.
+		 */
+		quote = *cp++;
+		while (*cp != quote && *cp != '\0')
+			*bp++ = *cp++;
+		if (*cp++ == '\0') {
+			fprintf(stderr, "missing %c\n", quote);
+			cp--;
+			continue;
+		}
+	}
+	*bp = '\0';
+	return (cp);
 }
 
 /*
