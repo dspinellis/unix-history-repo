@@ -1,0 +1,32 @@
+
+rm -f Makefile
+cp Makefile.dst Makefile
+chmod u+w Makefile
+ed Makefile  <<'EOF'
+/UUXFLAGS/s/-r -z/-r -z -n -gd/
+g/^#V7 /s///
+w
+q
+EOF
+rm -f defs.h
+cp defs.dist defs.h
+chmod u+w defs.h
+ed - defs.h <<'EOF'
+/ROOTID/s/10/352/
+/N_UMASK/s/000/002/
+/DFTXMIT/s/-z/-z -gd/
+/UXMIT/s/-z/-z -gd/
+/INTERNET/s;/\* ;;
+/MYDOMAIN/s;.UUCP;.CSS.GOV;
+/GHNAME/s;/\* ;;
+/DOXREFS/s;/\* ;;
+/BSD4_2/s;/\* ;;
+/SENDMAIL/s;/\* ;;
+/HIDDENNET/s;frooz;seismo;
+s;/\* ;;
+/MYORG/s/Frobozz Inc., St. Louis/Center for Seismic Studies, Arlington, VA/
+/NICENESS/s;/\* ;;
+/NICENESS/s;4;2;
+w
+q
+EOF
