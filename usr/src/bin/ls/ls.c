@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.33 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -49,6 +49,7 @@ int f_column;			/* columnated format */
 int f_group;			/* show group ownership of a file */
 int f_ignorelink;		/* indirect through symbolic link operands */
 int f_inode;			/* print inode */
+int f_kblocks;			/* print size in kilobytes */
 int f_listalldot;		/* list . and .. as well */
 int f_listdir;			/* list actual directory, not contents */
 int f_listdot;			/* list files beginning with . */
@@ -95,7 +96,7 @@ main(argc, argv)
 	if (!getuid())
 		f_listdot = 1;
 
-	while ((ch = getopt(argc, argv, "1ACFLRacdgilqrstu")) != EOF) {
+	while ((ch = getopt(argc, argv, "1ACFLRacdgiklqrstu")) != EOF) {
 		switch (ch) {
 		/*
 		 * -1, -C and -l all override each other
@@ -147,6 +148,9 @@ main(argc, argv)
 			break;
 		case 'i':
 			f_inode = 1;
+			break;
+		case 'k':
+			f_kblocks = 1;
 			break;
 		case 'q':
 			f_nonprint = 1;
