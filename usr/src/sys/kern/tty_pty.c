@@ -1,4 +1,4 @@
-/*	tty_pty.c	4.7	81/03/11	*/
+/*	tty_pty.c	4.8	81/08/14	*/
 
 /*
  * Pseudo-teletype Driver
@@ -190,7 +190,7 @@ dev_t dev;
 				/* Wait for something to be read */
 				sleep((caddr_t)&tp->t_rawq.c_cf, TTOPRI);
 			}
-			ttyinput(*cp++, tp);
+			(*linesw[tp->t_line].l_rint)(*cp++, tp);
 		}
 	}
 }
