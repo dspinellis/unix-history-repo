@@ -92,6 +92,10 @@ With either interface display (option
 .Fl i
 or an interval, as described below),
 show the number of dropped packets.
+.It Fl g
+Show multicast routing statistics.  When
+.Fl s
+is also present, show multicast routing statistics instead.
 .It Fl h
 Show the state of the
 .Tn IMP
@@ -139,10 +143,6 @@ Show the routing tables.
 When
 .Fl s
 is also present, show routing statistics instead.
-.It Fl R
-Show multicast routing statistics.  When
-.Fl s
-is also present, show multicast routing statistics instead.
 .It Fl f Ar address_family 
 Limit statistics or address control block reports to those
 of the specified
