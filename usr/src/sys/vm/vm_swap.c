@@ -1,4 +1,4 @@
-/*	vm_swap.c	4.7	82/07/15	*/
+/*	vm_swap.c	4.8	82/08/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -8,6 +8,7 @@
 #include "../h/user.h"
 #include "../h/inode.h"
 #include "../h/map.h"
+#include "../h/uio.h"
 
 struct	buf rswbuf;
 /*
@@ -47,16 +48,20 @@ swstrategy(bp)
 	(*bdevsw[major(dev)].d_strategy)(bp);
 }
 
-swread(dev)
+swread(dev, uio)
+	dev_t dev;
+	struct uio *uio;
 {
 
-	physio(swstrategy, &rswbuf, dev, B_READ, minphys);
+	physio(swstrategy, &rswbuf, dev, B_READ, minphys, uio);
 }
 
-swwrite(dev)
+swwrite(dev, uio)
+	dev_t dev;
+	struct uio *uio;
 {
 
-	physio(swstrategy, &rswbuf, dev, B_WRITE, minphys);
+	physio(swstrategy, &rswbuf, dev, B_WRITE, minphys, uio);
 }
 
 /*
