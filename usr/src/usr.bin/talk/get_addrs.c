@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)get_addrs.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)get_addrs.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "talk_ctl.h"
@@ -31,10 +31,9 @@ get_addrs(my_machine_name, his_machine_name)
 	msg.pid = htonl(getpid());
 	/* look up the address of the local host */
 	hp = gethostbyname(my_machine_name);
-	if (hp == (struct hostent *) 0) {
-		fprintf(stderr,
-		    "talk: %s: Can't figure out network address.\n",
-		    my_machine_name);
+	if (hp == NULL) {
+		fprintf(stderr, "talk: %s: ", my_machine_name);
+		herror((char *)NULL);
 		exit(-1);
 	}
 	bcopy(hp->h_addr, (char *)&my_machine_addr, hp->h_length);
@@ -44,10 +43,9 @@ get_addrs(my_machine_name, his_machine_name)
 	 */
 	if (strcmp(his_machine_name, my_machine_name)) {
 		hp = gethostbyname(his_machine_name);
-		if (hp == (struct hostent *) 0 ) {
-			fprintf(stderr,
-			    "talk: %s: Can't figure out network address.\n",
-			    his_machine_name);
+		if (hp == NULL) {
+			fprintf(stderr, "talk: %s: ", his_machine_name);
+			herror((char *)NULL);
 			exit(-1);
 		}
 		bcopy(hp->h_addr, (char *) &his_machine_addr, hp->h_length);

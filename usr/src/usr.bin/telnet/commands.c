@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)commands.c	1.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)commands.c	1.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -984,7 +984,7 @@ tn(argc, argv)
 #endif	/* defined(h_addr) */
 	    hostname = host->h_name;
 	} else {
-	    printf("%s: unknown host\n", argv[1]);
+	    herror(argv[1]);
 	    return 0;
 	}
     }
