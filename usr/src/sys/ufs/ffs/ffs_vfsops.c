@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	7.66 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	7.67 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -66,9 +66,9 @@ ffs_mountroot()
 	int error;
 
 	mp = malloc((u_long)sizeof(struct mount), M_MOUNT, M_WAITOK);
+	bzero((char *)mp, (u_long)sizeof(struct mount));
 	mp->mnt_op = &ufs_vfsops;
 	mp->mnt_flag = MNT_RDONLY;
-	mp->mnt_mounth = NULLVP;
 	if (error = ffs_mountfs(rootvp, mp, p)) {
 		free(mp, M_MOUNT);
 		return (error);
@@ -298,6 +298,7 @@ ffs_mountfs(devvp, mp, p)
 	mp->mnt_data = (qaddr_t)ump;
 	mp->mnt_stat.f_fsid.val[0] = (long)dev;
 	mp->mnt_stat.f_fsid.val[1] = MOUNT_UFS;
+	mp->mnt_maxsymlinklen = fs->fs_maxsymlinklen;
 	mp->mnt_flag |= MNT_LOCAL;
 	ump->um_mountp = mp;
 	ump->um_dev = dev;
