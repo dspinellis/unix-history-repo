@@ -5,7 +5,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)vnode_if.sh	7.2 (Berkeley) %G%
+#	@(#)vnode_if.sh	7.3 (Berkeley) %G%
 #
 
 # Script to produce VFS front-end sugar.
@@ -33,10 +33,10 @@ HEADER=vnode_if.h
 # Print out header information for vnode_if.h.
 cat << END_OF_LEADING_COMMENT > $HEADER
 /*
- * This file is produced by the script /sys/kern/vnode_if.sh.
+ * This file is produced automatically.
  * Do not modify anything in here by hand.
  *
- *	@(#)vnode_if.sh	7.2 (Berkeley) %G%
+ * Created from @(#)vnode_if.sh	7.3 (Berkeley) %G%
  */
 
 extern struct vnodeop_desc vop_default_desc;
@@ -118,10 +118,10 @@ awk '
 # Print out header information for vnode_if.c.
 cat << END_OF_LEADING_COMMENT > $CFILE
 /*
- * This file is produced by the script /sys/kern/vnode_if.sh.
+ * This file is produced automatically.
  * Do not modify anything in here by hand.
  *
- *	@(#)vnode_if.sh	7.2 (Berkeley) %G%
+ * Created from @(#)vnode_if.sh	7.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
