@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.40	%G%";
+static char	SccsId[] = "@(#)main.c	3.41	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -424,10 +424,12 @@ main(argc, argv)
 
 	/*
 	**  Figure out the real user executing us.
+	**	Getlogin can return errno != 0 on non-errors.
 	*/
 
 	errno = 0;
 	p = getlogin();
+	errno = 0;
 	if (p == NULL)
 	{
 		extern struct passwd *getpwuid();
@@ -504,9 +506,9 @@ main(argc, argv)
 
 	DontSend = FALSE;
 	To = NULL;
-	errno = 0;
 	if (!verifyonly || GrabTo)
 		collect();
+	errno = 0;
 
 	/* collect statistics */
 	Stat.stat_nf[From.q_mailer]++;
@@ -629,6 +631,9 @@ setfrom(from, realname)
 	if (from != NULL)
 	{
 		if (strcmp(realname, "network") != 0 && strcmp(realname, "uucp") != 0 &&
+# ifdef DEBUG
+		    (Debug == 0 || getuid() != geteuid()) &&
+# endif DEBUG
 		    index(from, '!') == NULL && getuid() != 0)
 		{
 			/* network sends -r regardless (why why why?) */
