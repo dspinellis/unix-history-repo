@@ -1,248 +1,311 @@
-#ifndef	lint
-static char *sccsid = "@(#)write.c	4.15 %G%";
-#endif
 /*
- * write to another user
+ * Copyright (c) 1989 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Jef Poskanzer and Craig Leres of the Lawrence Berkeley Laboratory.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-#include <sys/types.h>
-#include <sys/stat.h>
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1989 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)write.c	4.16 (Berkeley) %G%";
+#endif /* not lint */
+
+#include <sys/param.h>
 #include <sys/signal.h>
+#include <sys/stat.h>
+#include <sys/file.h>
 #include <sys/time.h>
 #include <utmp.h>
-#include <stdio.h>
 #include <ctype.h>
 #include <paths.h>
+#include <pwd.h>
+#include <stdio.h>
+#include <strings.h>
 
-#define	NMAX	sizeof(ubuf.ut_name)
-#define	LMAX	sizeof(ubuf.ut_line)
+#define STRCPY(s1, s2) \
+    { (void)strncpy(s1, s2, sizeof(s1)); s1[sizeof(s1) - 1] = '\0'; }
 
-char	*strcat();
-char	*strcpy();
-struct	utmp ubuf;
-int	signum[] = {SIGHUP, SIGINT, SIGQUIT, 0};
-char	me[NMAX + 1]	= "???";
-char	*him;
-char	*mytty;
-char	histty[32];
-char	ttybuf[32];
-char	*histtya;
-char	*ttyname();
-char	*rindex();
-int	logcnt;
-int	eof();
-int	timout();
-FILE	*tf;
-char	*getenv();
+int uid;					/* myuid */
 
 main(argc, argv)
 	int argc;
-	char *argv[];
+	char **argv;
 {
-	struct stat stbuf;
-	register i;
-	register FILE *uf;
-	int c1, c2;
-	long clock = time(0);
-	int suser = getuid() == 0;
-	int nomesg = 0;
-	struct tm *localtime();
-	struct tm *localclock = localtime( &clock );
+	extern int errno;
+	register char *cp;
+	char tty[MAXPATHLEN];
+	int msgsok, myttyfd;
+	time_t atime;
+	char *mytty, *getlogin(), *ttyname();
+	void done();
 
-	if (argc < 2) {
-		fprintf(stderr, "Usage: write user [ttyname]\n");
+	/* check that sender has write enabled. */
+	if (isatty(fileno(stdin)))
+		myttyfd = fileno(stdin);
+	else if (isatty(fileno(stdout)))
+		myttyfd = fileno(stdout);
+	else if (isatty(fileno(stderr)))
+		myttyfd = fileno(stderr);
+	else {
+		(void)fprintf(stderr, "write: can't find your tty\n");
 		exit(1);
 	}
-	him = argv[1];
-	if (argc > 2)
-		histtya = argv[2];
-	if ((uf = fopen(_PATH_UTMP, "r")) == NULL) {
-		fprintf(stderr, "write: can't read %s\n", _PATH_UTMP);
-		if (histtya == 0)
-			exit(10);
-		goto cont;
-	}
-	mytty = ttyname(2);
-	if (mytty == NULL) {
-		fprintf(stderr, "write: Can't find your tty\n");
+	if (!(mytty = ttyname(myttyfd))) {
+		(void)fprintf(stderr, "write: can't find your tty's name\n");
 		exit(1);
 	}
-	if (stat(mytty, &stbuf) < 0) {
-		perror("write: Can't stat your tty");
+	if (cp = rindex(mytty, '/'))
+		mytty = cp + 1;
+	if (term_chk(mytty, &msgsok, &atime, 1))
+		exit(1);
+	if (!msgsok) {
+		(void)fprintf(stderr,
+		    "write: you have write permission turned off.\n");
 		exit(1);
 	}
-	if ((stbuf.st_mode&020) == 0) {
-		fprintf(stderr,
-			"write: You have write permission turned off\n");
-		if (!suser)
+
+	uid = getuid();
+
+	/* check args */
+	switch (argc) {
+	case 2:
+		search_utmp(argv[1], tty, mytty);
+		do_write(tty, mytty);
+		break;
+	case 3:
+		if (!strncmp(argv[2], "/dev/", 5))
+			argv[2] += 5;
+		if (utmp_chk(argv[1], argv[2])) {
+			(void)fprintf(stderr,
+			    "write: %s is not logged in on %s.\n",
+			    argv[1], argv[2]);
 			exit(1);
-	}
-	mytty = rindex(mytty, '/') + 1;
-	if (histtya) {
-		strcpy(histty, _PATH_DEV);
-		strcat(histty, histtya);
-	}
-	while (fread((char *)&ubuf, sizeof(ubuf), 1, uf) == 1) {
-		if (ubuf.ut_name[0] == '\0')
-			continue;
-		if (strcmp(ubuf.ut_line, mytty)==0) {
-			for (i=0; i<NMAX; i++) {
-				c1 = ubuf.ut_name[i];
-				if (c1 == ' ')
-					c1 = 0;
-				me[i] = c1;
-				if (c1 == 0)
-					break;
-			}
 		}
-		if (him[0] == '-' && him[1] == 0)
-			goto nomat;
-		for (i=0; i<NMAX; i++) {
-			c1 = him[i];
-			c2 = ubuf.ut_name[i];
-			if (c1 == 0)
-				if (c2 == 0 || c2 == ' ')
-					break;
-			if (c1 != c2)
-				goto nomat;
+		if (term_chk(argv[2], &msgsok, &atime, 1))
+			exit(1);
+		if (uid && !msgsok) {
+			(void)fprintf(stderr,
+			    "write: %s has messages disabled on %s\n",
+			    argv[1], argv[2]);
+			exit(1);
 		}
-		if (histtya && strncmp(histtya, ubuf.ut_line,
-		    sizeof(ubuf.ut_line)))
-			continue;
-		logcnt++;
-		if (histty[0]==0 || nomesg && histtya == 0) {
-			strcpy(ttybuf, _PATH_DEV);
-			strcat(ttybuf, ubuf.ut_line);
-			if (histty[0]==0)
-				strcpy(histty, ttybuf);
-			if (access(ttybuf, 0) < 0 || stat(ttybuf, &stbuf) < 0 ||
-			    (stbuf.st_mode&020) == 0)
-				nomesg++;
-			else {
-				strcpy(histty, ttybuf);
-				nomesg = 0;
-			}
-		}
-	nomat:
-		;
-	}
-	fclose(uf);
-	if (logcnt==0) {
-		fprintf(stderr, "write: %s not logged in%s\n", him,
-			histtya ? " on that tty" : "");
+		do_write(argv[2], mytty);
+		break;
+	default:
+		(void)fprintf(stderr, "usage: write user [tty]\n");
 		exit(1);
 	}
-	if (histtya==0 && logcnt > 1) {
-		fprintf(stderr,
-		"write: %s logged in more than once ... writing to %s\n",
-			him, histty+5);
-	}
-cont:
-	if (access(histty, 0) < 0) {
-		fprintf(stderr, "write: No such tty\n");
+	done();
+	/* NOTREACHED */
+}
+
+/*
+ * utmp_chk - checks that the given user is actually logged in on
+ *     the given tty
+ */
+utmp_chk(user, tty)
+	char *user, *tty;
+{
+	struct utmp u;
+	int ufd;
+
+	if ((ufd = open(_PATH_UTMP, O_RDONLY)) < 0)
+		return(0);	/* ignore error, shouldn't happen anyway */
+
+	while (read(ufd, (char *) &u, sizeof(u)) == sizeof(u))
+		if (strncmp(user, u.ut_name, sizeof(u.ut_name)) == 0 &&
+		    strncmp(tty, u.ut_line, sizeof(u.ut_line)) == 0) {
+			(void)close(ufd);
+			return(0);
+		}
+
+	(void)close(ufd);
+	return(1);
+}
+
+/*
+ * search_utmp - search utmp for the "best" terminal to write to
+ *
+ * Ignores terminals with messages disabled, and of the rest, returns
+ * the one with the most recent access time.  Returns as value the number
+ * of the user's terminals with messages enabled, or -1 if the user is
+ * not logged in at all.
+ *
+ * Special case for writing to yourself - ignore the terminal you're
+ * writing from, unless that's the only terminal with messages enabled.
+ */
+search_utmp(user, tty, mytty)
+	char *user, *tty, *mytty;
+{
+	struct utmp u;
+	time_t bestatime, atime;
+	int ufd, nloggedttys, nttys, msgsok, user_is_me;
+	char atty[UT_LINESIZE + 1];
+
+	if ((ufd = open(_PATH_UTMP, O_RDONLY)) < 0) {
+		perror("utmp");
 		exit(1);
 	}
-	signal(SIGALRM, timout);
-	alarm(5);
-	if ((tf = fopen(histty, "w")) == NULL) {
-		fprintf(stderr, "write: Permission denied\n");
+
+	nloggedttys = nttys = 0;
+	bestatime = 0;
+	user_is_me = 0;
+	while (read(ufd, (char *) &u, sizeof(u)) == sizeof(u))
+		if (strncmp(user, u.ut_name, sizeof(u.ut_name)) == 0) {
+			++nloggedttys;
+			STRCPY(atty, u.ut_line);
+			if (term_chk(atty, &msgsok, &atime, 0))
+				continue;	/* bad term? skip */
+			if (uid && !msgsok)
+				continue;	/* skip ttys with msgs off */
+			if (strcmp(atty, mytty) == 0) {
+				user_is_me = 1;
+				continue;	/* don't write to yourself */
+			}
+			++nttys;
+			if (atime > bestatime) {
+				bestatime = atime;
+				(void)strcpy(tty, atty);
+			}
+		}
+
+	(void)close(ufd);
+	if (nloggedttys == 0) {
+		(void)fprintf(stderr, "write: %s is not logged in\n", user);
 		exit(1);
 	}
-	alarm(0);
-	sigs(eof);
-	{ char hostname[32];
-	  gethostname(hostname, sizeof (hostname));
-	  fprintf(tf,
-	      "\r\nMessage from %s@%s on %s at %d:%02d ...\r\n\007\007\007",
-	      me, hostname, mytty, localclock->tm_hour, localclock->tm_min);
-	fflush(tf);
-	}
-	for (;;) {
-		char buf[BUFSIZ];
-		register char *bp;
-		i = read(0, buf, sizeof buf);
-		if (i <= 0)
-			eof();
-		if (buf[0] == '!') {
-			buf[i] = 0;
-			ex(buf);
-			continue;
+	if (nttys == 0) {
+		if (user_is_me) {		/* ok, so write to yourself! */
+			(void)strcpy(tty, mytty);
+			return;
 		}
-		for (bp = buf; --i >= 0; bp++) {
-			if (*bp == '\n')
-				putc('\r', tf);
-
-			if (!isascii(*bp)) {
-				putc('M', tf);
-				putc('-', tf);
-				*bp = toascii(*bp);
-			}
-
-			if (isprint(*bp) ||
-			    *bp == ' ' || *bp == '\t' || *bp == '\n') {
-				putc(*bp, tf);
-			} else {
-				putc('^', tf);
-				putc(*bp ^ 0100, tf);
-			}
-
-			if (*bp == '\n')
-				fflush(tf);
-
-			if (ferror(tf) || feof(tf)) {
-				printf("\n\007Write failed (%s logged out?)\n",
-					him);
-				exit(1);
-			}
-		}
+		(void)fprintf(stderr,
+		    "write: %s has messages disabled\n", user);
+		exit(1);
+	} else if (nttys > 1) {
+		(void)fprintf(stderr,
+		    "write: %s is logged in more than once; writing to %s\n",
+		    user, tty);
 	}
 }
 
-timout()
+/*
+ * term_chk - check that a terminal exists, and get the message bit
+ *     and the access time
+ */
+term_chk(tty, msgsokP, atimeP, showerror)
+	char *tty;
+	int *msgsokP, showerror;
+	time_t *atimeP;
 {
+	struct stat s;
+	char path[MAXPATHLEN];
 
-	fprintf(stderr, "write: Timeout opening their tty\n");
-	exit(1);
+	(void)sprintf(path, "/dev/%s", tty);
+	if (stat(path, &s) < 0) {
+		if (showerror)
+			(void)fprintf(stderr, "write: %s: %s\n",
+			    path, strerror(errno));
+		return(1);
+	}
+	*msgsokP = (s.st_mode & (S_IWRITE >> 3)) != 0;	/* group write bit */
+	*atimeP = s.st_atime;
+	return(0);
 }
 
-eof()
+/*
+ * do_write - actually make the connection
+ */
+do_write(tty, mytty)
+	char *tty, *mytty;
 {
+	register char *login, *nows;
+	register struct passwd *pwd;
+	time_t now, time();
+	char path[MAXPATHLEN], host[MAXHOSTNAMELEN], line[512];
+	void done();
 
-	fprintf(tf, "EOF\r\n");
+	(void)sprintf(path, "/dev/%s", tty);
+	if ((freopen(path, "w", stdout)) == NULL) {
+		(void)fprintf(stderr,
+		    "write: %s: %s\n", path, strerror(errno));
+		exit(1);
+	}
+
+	/* catch ^C. */
+	(void)signal(SIGINT, done);
+
+	/* print greeting. */
+	if ((login = getlogin()) == NULL)
+		if (pwd = getpwuid(getuid()))
+			login = pwd->pw_name;
+		else
+			login = "???";
+	if (gethostname(host, sizeof(host)) < 0)
+		(void)strcpy(host, "???");
+	now = time((time_t *)NULL);
+	nows = ctime(&now);
+	nows[16] = '\0';
+	(void)printf("\r\n\007\007\007Message from %s@%s on %s at %s ...\r\n",
+	    login, host, mytty, nows  + 11);
+
+	while (fgets(line, sizeof(line), stdin) != NULL)
+		massage_fputs(line);
+}
+
+/*
+ * done - cleanup and exit
+ */
+void
+done()
+{
+	(void)printf("EOF\r\n");
 	exit(0);
 }
 
-ex(bp)
-	char *bp;
+/*
+ * massage_fputs - like fputs(), but makes control characters visible and
+ *     turns \n into \r\n
+ */
+massage_fputs(s)
+	register char *s;
 {
-	register i;
+	register char c;
 
-	sigs(SIG_IGN);
-	i = fork();
-	if (i < 0) {
-		printf("Try again\n");
-		goto out;
+#define	PUTC(c)	if (putchar(c) == EOF) goto err;
+
+	for (; *s != '\0'; ++s) {
+		c = toascii(*s);
+		if (c == '\n') {
+			PUTC('\r');
+			PUTC('\n');
+		} else if (!isprint(c) && !isspace(c) && c != '\007') {
+			PUTC('^');
+			PUTC(c^0x40);	/* DEL to ?, others to alpha */
+		} else
+			PUTC(c);
 	}
-	if (i == 0) {
-		fclose(tf);		/* Close his terminal */
-		setgid(getgid());	/* Give up effective group privs */
-		sigs((int (*)())0);
-		execl(getenv("SHELL") ?
-		    getenv("SHELL") : _PATH_BSHELL, "sh", "-c", bp+1, 0);
-		exit(0);
-	}
-	while (wait((int *)NULL) != i)
-		;
-	printf("!\n");
-out:
-	sigs(eof);
-}
+	return;
 
-sigs(sig)
-	int (*sig)();
-{
-	register i;
-
-	for (i=0; signum[i]; i++)
-		signal(signum[i], sig);
+err:	(void)fprintf(stderr, "write: %s\n", strerror(errno));
+	exit(1);
+#undef PUTC
 }
