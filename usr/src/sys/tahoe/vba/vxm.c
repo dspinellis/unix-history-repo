@@ -1,4 +1,4 @@
-/*	vxm.c	1.2	86/01/05	*/
+/*	vxm.c	1.3	86/01/12	*/
 
 #include "vx.h"
 #if NVX > 0
@@ -6,16 +6,17 @@
  *	VIOC-X Modem control
  */
 
-#include "../h/param.h"
-#include "../h/file.h"
-#include "../h/ioctl.h"
-#include "../h/tty.h"
-#include "../h/conf.h"
+#include "param.h"
+#include "file.h"
+#include "ioctl.h"
+#include "tty.h"
+#include "conf.h"
+
 #include "../tahoevba/vioc.h"
 #include "vbsc.h"
 #if NVBSC > 0
-#include "../bsc/bscio.h"
-#include "../bsc/bsc.h"
+#include "../tahoebsc/bscio.h"
+#include "../tahoebsc/bsc.h"
 extern char bscport[];
 #endif
 

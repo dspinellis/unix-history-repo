@@ -1,4 +1,4 @@
-/*	vx.c	1.3	86/01/12	*/
+/*	vx.c	1.4	86/01/12	*/
 
 #include "vx.h"
 #if NVX > 0
@@ -27,19 +27,19 @@
 #endif VXPERF
 #include "vbsc.h"
 #if NVBSC > 0
-#include "../bsc/bscio.h"
-#include "../bsc/bsc.h"
+#include "../tahoebsc/bscio.h"
+#include "../tahoebsc/bsc.h"
 char bscport[NVXPORTS];
 #endif
 
 #ifdef BSC_DEBUG
-#include "../bsc/bscdebug.h"
+#include "../tahoebsc/bscdebug.h"
 #endif
 
 #ifdef	VX_DEBUG
 long vxintr4 = 0;
 long vxdebug = 0;
-#include "../vba/vxdebug.h"
+#include "../tahoevba/vxdebug.h"
 #endif
 
 #define RSPquals	1

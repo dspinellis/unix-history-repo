@@ -1,20 +1,21 @@
-/*	vxc.c	1.3	86/01/12	*/
+/*	vxc.c	1.4	86/01/12	*/
 
 #include "vx.h"
 #if NVX > 0
 /*
  *  VIOC driver
  */
-#include "../h/param.h"
-#include "../h/file.h"
-#include "../h/ioctl.h"
-#include "../h/tty.h"
-#include "../h/errno.h"
-#include "../h/time.h"
-#include "../h/kernel.h"
-#include "../h/proc.h"
+#include "param.h"
+#include "file.h"
+#include "ioctl.h"
+#include "tty.h"
+#include "errno.h"
+#include "time.h"
+#include "kernel.h"
+#include "proc.h"
+
 #include "../tahoevba/vioc.h"
-#include "../sna/snadebug.h"
+#include "../tahoesna/snadebug.h"
 #ifdef VXPERF
 #include "../tahoevba/scope.h"
 #endif VXPERF
