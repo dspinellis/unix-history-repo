@@ -1,6 +1,7 @@
+/*	mkubglue.c	1.6	82/10/24	*/
+
 /*
  * Make the uba interrupt file ubglue.s
- *	mkubglue.c	1.5	82/06/16
  */
 #include <stdio.h>
 #include "config.h"
