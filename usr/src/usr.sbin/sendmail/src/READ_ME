@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.23 (Berkeley) %G%
+#	@(#)READ_ME	8.24 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -332,6 +332,10 @@ Both NEWDB and NDBM
 	ndbm.h).  This compatibility module maps ndbm calls into DB
 	calls, and breaks things rather badly.
 
+GNU getopt
+	I'm told that GNU getopt has a problem in that it gets confused
+	by the double call.  Use the version in conf.c instead.
+
 
 +-----------------------------+
 | DESCRIPTION OF SOURCE FILES |
@@ -396,4 +400,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.23, last update %G% 19:38:17)
+(Version 8.24, last update %G% 09:13:44)
