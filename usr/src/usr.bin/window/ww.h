@@ -1,4 +1,4 @@
-/*	@(#)ww.h	3.29 84/04/08		*/
+/*	@(#)ww.h	3.30 84/04/09		*/
 
 #include <sgtty.h>
 #include <setjmp.h>
@@ -131,6 +131,5 @@ extern int wwnrow, wwncol;		/* the screen size */
 #define wwflush()	Wrefresh(1)
 
 	/* quicky macros */
-#define wwbell()	write(1, "\7", 1)
 struct ww *wwopen();
 int wwchild();
