@@ -23,7 +23,7 @@
  * from: $Header: /sprite/src/kernel/vm/ds3100.md/vmPmaxAsm.s,
  *	v 1.1 89/07/10 14:27:41 nelson Exp $ SPRITE (DECWRL)
  *
- *	@(#)locore.s	7.3 (Berkeley) %G%
+ *	@(#)locore.s	7.4 (Berkeley) %G%
  */
 
 /*
@@ -2077,7 +2077,6 @@ LEAF(splx)
  *
  *----------------------------------------------------------------------------
  */
-#ifdef NOTDEF
 LEAF(MachEmptyWriteBuffer)
 	.set	noreorder
 	nop
@@ -2090,7 +2089,6 @@ LEAF(MachEmptyWriteBuffer)
 	nop
 	.set	reorder
 END(MachEmptyWriteBuffer)
-#endif /* NOTDEF */
 
 /*--------------------------------------------------------------------------
  *
@@ -3233,7 +3231,6 @@ END(kdbpanic)
 #endif /* NOTDEF */
 #endif /* KADB */
 
-#ifdef CPU_SINGLE
 LEAF(to_monitor)
 	.set	noreorder
 #ifdef RB_PWOFF
@@ -3258,4 +3255,3 @@ LEAF(to_monitor)
 	nop
 	.set	reorder
 END(to_monitor)
-#endif /* CPU_SINGLE */
