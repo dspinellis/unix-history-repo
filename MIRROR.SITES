@@ -8,7 +8,7 @@ Austria		ftp.tu-graz.ac.at:/pub/FreeBSD
 		<ftp@ftp.tu-graz.ac.at>
 
 Finland		ftp.funet.fi:/pub/unix/FreeBSD
-		<unknown>
+		<unix-adm@nic.funet.fi>
 
 France		ftp.ibp.fr:/pub/FreeBSD
 		<ftp@ftp.ibp.fr>
@@ -38,4 +38,4 @@ USA		ftp.dsu.edu:/pub/FreeBSD
 		<ghelmer@alpha.dsu.edu>
 
 
-$Id: MIRROR.SITES,v 1.7 1994/02/22 18:23:27 rgrimes Exp $
+$Id: MIRROR.SITES,v 1.8 1994/03/14 19:20:45 rgrimes Exp $
