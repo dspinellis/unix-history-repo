@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)esp.c	8.2 (Berkeley) %G%
+ *	@(#)esp.c	8.3 (Berkeley) %G%
  *
  * from: $Header: esp.c,v 1.28 93/04/27 14:40:44 torek Exp $ (LBL)
  *
@@ -160,6 +160,7 @@ struct esp_softc {
 	 */
 	char	sc_probing;		/* used during autoconf; see below */
 	char	sc_clearing;		/* true => cmd is just to clear targ */
+	char	sc_iwant;		/* true => icmd needs wakeup on idle */
 	char	sc_state;		/* SCSI protocol state; see below */
 	char	sc_sentcmd;		/* set once we get cmd out */
 	char	sc_dmaactive;		/* true => doing dma */
@@ -486,6 +487,7 @@ espdoattach(unit)
  * while it is still thinking about a request (DMA_RP).
  */
 #define	DMAWAIT(dma)	while ((dma)->dma_csr & DMA_RP) DELAY(1)
+#define	DMAWAIT1(dma)	while ((dma)->dma_csr & DMA_PC) DELAY(1)
 
 /*
  * Reset the DMA chip.
@@ -500,7 +502,6 @@ dmareset(sc)
 	dma->dma_csr |= DMA_RESET;
 	DELAY(200);
 	dma->dma_csr &= ~DMA_RESET;	/* ??? */
-	sc->sc_state = S_IDLE;
 	sc->sc_dmaactive = 0;
 	if (sc->sc_dc->dc_dmarev == DMAREV_2 && sc->sc_esptype != ESP100)
 		dma->dma_csr |= DMA_TURBO;
@@ -552,7 +553,11 @@ espreset(sc, how)
 		(void)esp->esp_intr;
 		esp->esp_conf1 = sc->sc_conf1;
 	}
-
+	sc->sc_state = S_IDLE;
+	if (sc->sc_iwant) {
+		wakeup((caddr_t)&sc->sc_iwant);
+		sc->sc_iwant = 0;
+	}
 	sc->sc_needclear = 0xff;
 }
 
@@ -678,6 +683,7 @@ espact(sc)
 		esperror(sc, "DMA error");
 		DMAWAIT(dma);
 		dma->dma_csr |= DMA_FLUSH;
+		DMAWAIT1(dma);
 		return (ACT_ERROR);
 	}
 	reg = sc->sc_espstat;
@@ -824,7 +830,7 @@ esperror(sc, "DIAG: CMDSVC, fifo not empty");
 		 */
 		DMAWAIT(dma);
 		dma->dma_csr |= DMA_DRAIN;
-		DELAY(1);
+		DMAWAIT1(dma);
 		resid = 0;
 		goto dma_data_done;
 
@@ -1049,7 +1055,19 @@ espicmd(hba, targ, cdb, buf, len, rw)
 	register struct esp_softc *sc = (struct esp_softc *)hba;
 	register volatile struct espreg *esp = sc->sc_esp;
 	register volatile struct dmareg *dma = sc->sc_dma;
-	register int r, wait;
+	register int r, s, wait;
+	register struct sq *sq;
+
+	/*
+	 * Wait for any ongoing operation to complete.
+	 */
+	s = splbio();
+	while (sc->sc_state != S_IDLE) {
+		sc->sc_iwant = 1;
+		tsleep((caddr_t)&sc->sc_iwant, PRIBIO, "espicmd", 0);
+	}
+	sc->sc_hba.hba_busy = 1;
+	splx(s);
 
 	/*
 	 * Clear the target if necessary.
@@ -1099,16 +1117,15 @@ espicmd(hba, targ, cdb, buf, len, rw)
 			break;
 
 		case ACT_RESET:
-			sc->sc_state = S_IDLE;
 			goto reset;
 
 		case ACT_DONE:
-			sc->sc_state = S_IDLE;
-			return (sc->sc_stat[0]);
+			r = sc->sc_stat[0];
+			goto done;
 
 		case ACT_ERROR:
-			sc->sc_state = S_IDLE;
-			return (-1);
+			r = -1;
+			goto done;
 
 		default:
 			panic("espicmd action");
@@ -1116,7 +1133,20 @@ espicmd(hba, targ, cdb, buf, len, rw)
 	}
 reset:
 	espreset(sc, RESET_ESPCHIP);		/* ??? */
-	return (-1);
+	r = -1;
+done:
+	sc->sc_state = S_IDLE;
+	s = splbio();
+	if (sc->sc_iwant) {
+		sc->sc_iwant = 0;
+		wakeup((caddr_t)&sc->sc_iwant);
+	} else if ((sq = sc->sc_hba.hba_head) != NULL) {
+		sc->sc_hba.hba_head = sq->sq_forw;
+		(*sq->sq_dgo)(sq->sq_dev, &sc->sc_cdbspace);
+	} else
+		sc->sc_hba.hba_busy = 0;
+	splx(s);
+	return (r);
 }
 
 /*
@@ -1132,7 +1162,13 @@ espdump(hba, targ, cdb, buf, len)
 	caddr_t buf;
 	register int len;
 {
+	register struct esp_softc *sc = (struct esp_softc *)hba;
 
+	/*
+	 * If we crashed in the middle of a bus transaction...
+	 */
+	if (sc->sc_state != S_IDLE)
+		espreset(sc, RESET_BOTH);       /* ??? */
 	return (espicmd(hba, targ, cdb, buf, len, B_WRITE));
 }
 
@@ -1252,17 +1288,24 @@ reset:
 
 	case ACT_DONE:		/* this one is done, successfully */
 	case ACT_ERROR:		/* this one is done due to `severe' error */
-		sc->sc_state = S_IDLE;
 		if (!sc->sc_hba.hba_busy)
 			panic("espintr sq");
 		/*
-		 * This transaction is done.
-		 * Call the driver's intr routine,
-		 * then start the next guy if any.
+		 * This transaction is done.  Call the driver's intr routine.
+		 * If an immediate command is pending, let it run in front
+		 * of us, otherwise start the next transation.  Note that
+		 * the interrupt routine may run its own immediate commands
+		 * (`request sense' for errors, eg) before we get around to
+		 * the process waiting to do immediate command, but that
+		 * is OK; if we did not set S_IDLE here we could deadlock.
 		 */
+		sc->sc_state = S_IDLE;
 		(*sc->sc_hba.hba_intr)(sc->sc_hba.hba_intrdev,
 		    r == ACT_DONE ? sc->sc_stat[0] : -1, sc->sc_resid);
-		if ((sq = sc->sc_hba.hba_head) != NULL) {
+		if (sc->sc_iwant) {
+			wakeup((caddr_t)&sc->sc_iwant);
+			sc->sc_iwant = 0;
+		} else if ((sq = sc->sc_hba.hba_head) != NULL) {
 			sc->sc_hba.hba_head = sq->sq_forw;
 			(*sq->sq_dgo)(sq->sq_dev, &sc->sc_cdbspace);
 		} else
