@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_inode.c	7.83 (Berkeley) %G%
+ *	@(#)lfs_inode.c	7.84 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -325,7 +325,8 @@ lfs_truncate(ap)
 		    " blocks left on inode");
 #endif
 	fs->lfs_avail += fsbtodb(fs, a_released);
-	e1 = vinvalbuf(vp, (length > 0) ? V_SAVE : 0, ap->a_cred, ap->a_p); 
+	e1 = vinvalbuf(vp, (length > 0) ? V_SAVE : 0, ap->a_cred, ap->a_p,
+	    0, 0); 
 	e2 = VOP_UPDATE(vp, &tv, &tv, 0);
 	return (e1 ? e1 : e2 ? e2 : 0);
 }
