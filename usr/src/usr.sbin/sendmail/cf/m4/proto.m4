@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(@(#)proto.m4	2.11 (Berkeley) %G%)
+VERSIONID(@(#)proto.m4	2.12 (Berkeley) %G%)
 
 
 ##################
@@ -239,6 +239,9 @@ R$* < @ $* > $*		$# smtp $@ $2 $: $1 < @ $2 > $3		user@host.domain
 
 # see if we forward local names
 R$=L			$# local $: $1			special local names
+`R:include:$+		$# local $: :include: $1	included lists'
+R|$+			$# local $: |$1			pipes to programs
+R/$+			$# local $: /$1			and files
 R$+			$: $1 @ $R
 R$+ @			$: $1				no, we don't
 R$+ @ $+		$# smtp $@ $2 $: $1		yes, we do
