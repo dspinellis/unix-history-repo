@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)proc.h	7.11 (Berkeley) %G%
+ *	@(#)proc.h	7.12 (Berkeley) %G%
  */
 
 /*
@@ -71,6 +71,7 @@ struct	proc {
 	short	p_szpt;		/* copy of page table size */
 	size_t	p_tsize;	/* size of text (clicks) */
 	size_t	p_dsize;	/* size of data space (clicks) */
+	size_t	p_mmsize;	/* size of mapmem beyond p_dsize (clicks) */
 	size_t	p_ssize;	/* copy of stack size (clicks) */
 	size_t 	p_rssize; 	/* current resident set size in clicks */
 	size_t	p_maxrss;	/* copy of u.u_limit[MAXRSS] */
@@ -93,7 +94,6 @@ struct	proc {
 #define p_pgid	p_pgrp->pg_id
 	struct	proc *p_pgrpnxt; /* pointer to next process in process group */
 	struct	itimerval p_realtimer;
-	struct	quota *p_quota;	/* quotas for this process */
 	int	p_traceflag;	/* kernel trace points */
 	struct	vnode *p_tracep;/* trace to vnode */
 	char	p_comm[MAXCOMLEN+1];
@@ -188,5 +188,6 @@ int	whichqs;		/* bit mask summarizing non-empty qs's */
 #define	SSEL	0x0400000	/* selecting; wakeup/waiting danger */
 #define SEXEC	0x0800000	/* process called exec */
 #define	SULOCK	0x1000000	/* locked in core after swap error XXX */
+#define	SHPUX	0x2000000	/* HP-UX process (HPUXCOMPAT) */
 
 #define	SPTECHG	0x0000000	/* pte's for process have changed XXX */
