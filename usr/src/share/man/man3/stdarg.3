@@ -3,11 +3,11 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)stdarg.3	6.6 (Berkeley) %G%
+.\"     @(#)stdarg.3	6.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt STDARG 3
-.Os ATT 7th
+.Os
 .Sh NAME
 .Nm stdarg
 .Nd variable argument lists
@@ -115,7 +115,7 @@ The function
 takes a string of format characters and prints out the argument
 associated with each format character based on the type.
 .Bd -literal -offset indent
-foo(char *fmt)
+void foo(char *fmt, ...)
 {
 	va_list ap;
 	int d;
@@ -155,3 +155,21 @@ compatible with the historic macros they replace.
 A backward compatible version can be found in the include
 file 
 .Aq Pa varargs.h .
+.Sh BUGS
+Unlike the
+.Em varargs
+macros, the
+.Nm stdarg
+macros do not permit programmers to
+code a function with no fixed arguments.
+This problem generates work mainly when converting
+.Em varargs
+code to
+.Nm stdarg
+code,
+but it also creates difficulties for variadic functions that
+wish to pass all of their arguments on to a function
+that takes a
+.Em va_list
+argument, such as
+.Xr vfprintf 3 .
