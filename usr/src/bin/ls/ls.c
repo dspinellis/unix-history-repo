@@ -15,10 +15,10 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.61 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.62 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <sys/types.h>	
+#include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <dirent.h>
@@ -31,21 +31,24 @@ static char sccsid[] = "@(#)ls.c	5.61 (Berkeley) %G%";
 #include "ls.h"
 #include "extern.h"
 
-void	 display __P((FTSENT *, FTSENT *));
-char	*getbsize __P((char *, int *, int *));
-int	 mastercmp __P((const FTSENT **, const FTSENT **));
-void	 traverse __P((int, char **, int));
+char	*getbsize __P((char *, int *, long *));
+char	*group_from_gid __P((u_int, int));
+char	*user_from_uid __P((u_int, int));
 
-static void (*printfcn) __P((FTSENT *, int, u_long, int));
+static void	 display __P((FTSENT *, FTSENT *));
+static char	*flags_from_fid __P((u_long));
+static int	 mastercmp __P((const FTSENT **, const FTSENT **));
+static void	 traverse __P((int, char **, int));
+
+static void (*printfcn) __P((DISPLAY *));
 static int (*sortfcn) __P((const FTSENT *, const FTSENT *));
 
+long blocksize;			/* block size units */
 int termwidth = 80;		/* default terminal width */
-int blocksize;			/* block size units */
 
 /* flags */
 int f_accesstime;		/* use time of last access */
 int f_column;			/* columnated format */
-int f_group;			/* show group ownership of a file */
 int f_flags;			/* show flags associated with a file */
 int f_inode;			/* print inode */
 int f_listdir;			/* list actual directory, not contents */
@@ -145,8 +148,7 @@ main(argc, argv)
 		case 'f':
 			f_nosort = 1;
 			break;
-		case 'g':
-			f_group = 1;
+		case 'g':		/* Compatibility with 4.3BSD. */
 			break;
 		case 'i':
 			f_inode = 1;
@@ -244,7 +246,7 @@ static int output;			/* If anything output. */
  * traversal it passes linked lists of structures to display() which represent
  * a superset (may be exact set) of the files to be displayed.
  */
-void
+static void
 traverse(argc, argv, options)
 	int argc, options;
 	char *argv[];
@@ -252,7 +254,7 @@ traverse(argc, argv, options)
 	register FTS *ftsp;
 	register FTSENT *p;
 	int ch_options;
-	
+
 	if ((ftsp =
 	    fts_open(argv, options, f_nosort ? NULL : mastercmp)) == NULL)
 		err(1, "fts_open: %s", strerror(errno));
@@ -308,15 +310,21 @@ traverse(argc, argv, options)
  * with any other necessary information to the print function (printfcn()).
  * P points to the parent directory of the display list.
  */
-void
+static void
 display(p, list)
 	register FTSENT *p;
 	FTSENT *list;
 {
 	register FTSENT *cur;
-	u_long btotal;
-	int entries, maxlen;
-	
+	struct stat *sp;
+	DISPLAY d;
+	NAMES *np;
+	u_long btotal, flen, glen, ulen;
+	u_long maxblock, maxgroup, maxinode, maxlen, maxnlink, maxsize;
+	u_long maxuser, maxflags;
+	int entries, needstats;
+	char *user, *group, *flags, buf[20];	/* 32 bits == 10 digits */
+
 	/*
 	 * If list is NULL there are two possibilities: that the parent
 	 * directory p has no children, or that fts_children() returned an
@@ -327,8 +335,10 @@ display(p, list)
 	if (list == NULL)
 		return;
 
-	btotal = 0;
-	maxlen = 0;
+	needstats = f_inode || f_longform || f_size;
+	flen = 0;
+	btotal = maxblock = maxinode = maxlen = maxnlink = maxsize = 0;
+	maxuser = maxgroup = maxflags = 0;
 	for (cur = list, entries = 0; cur; cur = cur->fts_link) {
 		if (cur->fts_info == FTS_ERR || cur->fts_info == FTS_NS) {
 			err(0, "%s: %s",
@@ -338,8 +348,8 @@ display(p, list)
 		}
 
 		/*
-		 * P is NULL if list is the argv list.  Different rules apply
-		 * to this list.
+		 * P is NULL if list is the argv list, to which different rules
+		 * apply.
 		 */
 		if (p == NULL) {
 			/* Directories will be displayed later. */
@@ -353,21 +363,79 @@ display(p, list)
 				cur->fts_number = NO_PRINT;
 				continue;
 			}
-			
-			if (f_longform || f_size)
-				btotal += cur->fts_statp->st_blocks;
 		}
 		if (f_nonprint)
 			prcopy(cur->fts_name, cur->fts_name, cur->fts_namelen);
-		if (f_column && cur->fts_namelen > maxlen)
+		if (cur->fts_namelen > maxlen)
 			maxlen = cur->fts_namelen;
+		if (needstats) {
+			sp = cur->fts_statp;
+			if (sp->st_blocks > maxblock)
+				maxblock = sp->st_blocks;
+			if (sp->st_ino > maxinode)
+				maxinode = sp->st_ino;
+			if (sp->st_nlink > maxnlink)
+				maxnlink = sp->st_nlink;
+			if (sp->st_size > maxsize)
+				maxsize = sp->st_size;
+
+			btotal += sp->st_blocks;
+			if (f_longform) {
+				user = user_from_uid(sp->st_uid, 0);
+				if ((ulen = strlen(user)) > maxuser)
+					maxuser = ulen;
+				group = group_from_gid(sp->st_gid, 0);
+				if ((glen = strlen(group)) > maxgroup)
+					maxgroup = glen;
+				if (f_flags) {
+					flags = flags_from_fid(sp->st_flags);
+					if ((flen = strlen(flags)) > maxflags)
+						maxflags = flen;
+				} else
+					flen = 0;
+
+				if ((np = malloc(sizeof(NAMES) +
+				    ulen + glen + flen + 3)) == NULL)
+					err(1, "%s", strerror(errno));
+
+				np->user = &np->data[0];
+				(void)strcpy(np->user, user);
+				np->group = &np->data[ulen + 1];
+				(void)strcpy(np->group, group);
+
+				if (f_flags) {
+					np->flags = &np->data[ulen + glen + 2];
+				  	(void)strcpy(np->flags, flags);
+				}
+				cur->fts_pointer = np;
+			}
+		}
 		++entries;
 	}
 
-	if (entries) {
-		printfcn(list, entries, btotal, maxlen);
-		output = 1;
+	if (!entries)
+		return;
+
+	d.list = list;
+	d.entries = entries;
+	d.maxlen = maxlen;
+	if (needstats) {
+		d.btotal = btotal;
+		d.s_block = snprintf(buf, sizeof(buf), "%d", maxblock);
+		d.s_flags = maxflags;
+		d.s_group = maxgroup;
+		d.s_inode = snprintf(buf, sizeof(buf), "%d", maxinode);
+		d.s_nlink = snprintf(buf, sizeof(buf), "%d", maxnlink);
+		d.s_size = snprintf(buf, sizeof(buf), "%d", maxsize);
+		d.s_user = maxuser;
 	}
+
+	printfcn(&d);
+	output = 1;
+
+	if (f_longform)
+		for (cur = list; cur; cur = cur->fts_link)
+			free(cur->fts_pointer);
 }
 
 /*
@@ -376,7 +444,7 @@ display(p, list)
  * as larger than directories.  Within either group, use the sort function.
  * All other levels use the sort function.  Error entries remain unsorted.
  */
-int
+static int
 mastercmp(a, b)
 	const FTSENT **a, **b;
 {
@@ -392,11 +460,11 @@ mastercmp(a, b)
 	if (a_info == FTS_NS || b_info == FTS_NS)
 		return (namecmp(*a, *b));
 
-	if (a_info == b_info)  
+	if (a_info == b_info)
 		return (sortfcn(*a, *b));
 
 	if ((*a)->fts_level == FTS_ROOTLEVEL)
-		if (a_info == FTS_D)        
+		if (a_info == FTS_D)
 			return (1);
 		else if (b_info == FTS_D)
 			return (-1);
@@ -404,4 +472,34 @@ mastercmp(a, b)
 			return (sortfcn(*a, *b));
 	else
 		return (sortfcn(*a, *b));
+}
+
+static char *
+flags_from_fid(flags)
+	u_long flags;
+{
+	static char buf[20];
+	register int comma;
+	register char *p;
+
+	p = buf;
+	if (flags & ARCHIVED) {
+		(void)strcpy(p, "arch");
+		p += sizeof("arch") - 1;
+		comma = 1;
+	} else
+		comma = 0;
+	if (flags & NODUMP) {
+		if (comma)
+			*p++ = ',';
+		(void)strcpy(p, "nodump");
+		p += sizeof("nodump") - 1;
+	}
+	if (flags & IMMUTABLE) {
+		if (comma)
+			*p++ = ',';
+		(void)strcpy(p, "nochg");
+		p += sizeof("nochg") - 1;
+	}
+	return (buf);
 }

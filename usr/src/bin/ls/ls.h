@@ -7,27 +7,39 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ls.h	5.15 (Berkeley) %G%
+ *	@(#)ls.h	5.16 (Berkeley) %G%
  */
 
-/*
- * Specify maximum width of flags output. Determined from flags_from_fid
- * routine in print.c
- */
-#define FLAGSWIDTH	10
-	
 #define NO_PRINT	1
 
-extern int blocksize;		/* block size units */
+extern long blocksize;		/* block size units */
 
 extern int f_accesstime;	/* use time of last access */
-extern int f_group;		/* show group ownership of a file */
 extern int f_flags;		/* show flags associated with a file */
 extern int f_inode;		/* print inode */
 extern int f_longform;		/* long listing format */
 extern int f_sectime;		/* print the real time for all files */
-extern int f_singlecol;		/* use single column output */
 extern int f_size;		/* list size in short listing */
 extern int f_statustime;	/* use time of last mode change */
-extern int f_total;		/* if precede with "total" line */
 extern int f_type;		/* add type character for non-regular files */
+
+typedef struct {
+	FTSENT *list;
+	int entries;
+	int maxlen;
+	u_long btotal;
+	u_long s_block;
+	u_long s_inode;
+	u_long s_nlink;
+	u_long s_size;
+	u_long s_user;
+	u_long s_group;
+	u_long s_flags;
+} DISPLAY;
+
+typedef struct {
+	char *user;
+	char *group;
+	char *flags;
+	char data[1];
+} NAMES;
