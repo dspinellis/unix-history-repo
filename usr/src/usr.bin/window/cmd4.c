@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd4.c	1.3 83/07/22";
+static	char *sccsid = "@(#)cmd4.c	1.4 83/07/28";
 #endif
 
 #include "defs.h"
@@ -8,7 +8,7 @@ struct ww *getwin();
 struct ww *openwin();
 char *strtime();
 
-doquery()
+doshow()
 {
 	register i;
 	register struct ww *w = 0;
@@ -32,7 +32,10 @@ doquery()
 				bread();
 				continue;
 			default:
-				wwputs("\rType return to continue, escape to select.", cmdwin);
+				if (terse)
+					Ding();
+				else
+					wwputs("\rType return to continue, escape to select.", cmdwin);
 				wwsetcurwin(cmdwin);
 				Ding();
 				continue;
@@ -41,10 +44,26 @@ doquery()
 		}
 	}
 out:
-	if (!done_it)
-		wwputs("No windows.  ", cmdwin);
-	else {
+	if (!done_it) {
+		if (!terse)
+			wwputs("No windows.  ", cmdwin);
+	} else {
 		wwsetcurwin(cmdwin);
-		wwputs("\r\n", cmdwin);
+		if (!terse)
+			wwputs("\r\n", cmdwin);
 	}
+}
+
+docolon()
+{
+	char buf[512];
+
+	if (terse)
+		Wunhide(cmdwin->ww_win);
+	wwputc(':', cmdwin);
+	bgets(buf, wwncol - 3, cmdwin);
+	wwputs("\r\n", cmdwin);
+	if (terse)
+		Whide(cmdwin->ww_win);
+	dolongcmd(buf);
 }

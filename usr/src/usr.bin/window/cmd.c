@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd.c	1.7 83/07/28";
+static	char *sccsid = "@(#)cmd.c	1.8 83/07/28";
 #endif
 
 #include "defs.h"
@@ -11,20 +11,19 @@ docmd()
 	register char c;
 	register struct ww *w;
 
-top:
 	if (!terse)
 		Wunhide(cmdwin->ww_win);
 	if (selwin != 0)
 		Woncursor(selwin->ww_win, 1);
+top:
 	while ((c = bgetc()) >= 0) {
-		wwputs("\r\n", cmdwin);
+		if (!terse)
+			wwputs("\r\n", cmdwin);
 		switch (c) {
 		default:
 			if (c == escapec)
 				goto foo;
 			break;
-		case 'r':
-		case 'R':
 		case 'h': case 'j': case 'k': case 'l':
 		case CTRL(u):
 		case CTRL(d):
@@ -33,7 +32,8 @@ top:
 		case CTRL([):
 		foo:
 			if (selwin == 0) {
-				wwputs("No window.  ", cmdwin);
+				if (!terse)
+					wwputs("No window.  ", cmdwin);
 				continue;
 			}
 		}
@@ -58,7 +58,10 @@ top:
 			doclose((struct ww *)0);
 			break;
 		case 'Z':
-			wwputs("Command Z is now C.  ", cmdwin);
+			if (terse)
+				Ding();
+			else
+				wwputs("Command Z is now C.  ", cmdwin);
 			break;
 		case 'w':
 			dowindow();
@@ -66,6 +69,10 @@ top:
 		case 'S':
 			doshow();
 			break;
+		case 'L':
+			dolist();
+			break;
+		/*
 		case 'e':
 			doescape();
 			break;
@@ -78,6 +85,7 @@ top:
 		case 'R':
 			selwin->ww_refresh = 1;
 			break;
+		*/
 		case 's':
 			dostat();
 			break;
@@ -125,10 +133,16 @@ top:
 		case CTRL(z):
 			wwsuspend();
 			break;
-		case '.':
+		case 'q':
 			doquit();
 			if (quit)
 				goto out;
+			break;
+		case '.':
+			if (terse)
+				Ding();
+			else
+				wwputs("Use q to quit.  ", cmdwin);
 			break;
 		default:
 			if (c == escapec) {
@@ -136,12 +150,18 @@ top:
 				goto out;
 			}
 			Ding();
-			wwprintf(cmdwin, "Type ? for help.  ");
+			if (!terse)
+				wwprintf(cmdwin, "Type ? for help.  ");
 			break;
 		}
 	}
-	wwputs("Command: ", cmdwin);
-	wwsetcursor(WCurRow(cmdwin->ww_win), WCurCol(cmdwin->ww_win));
+	if (terse)
+		wwsetcursor(0, 0);
+	else {
+		if (!terse)
+			wwputs("Command: ", cmdwin);
+		wwsetcursor(WCurRow(cmdwin->ww_win), WCurCol(cmdwin->ww_win));
+	}
 	while (bpeekc() < 0)
 		bread();
 	goto top;
@@ -160,13 +180,15 @@ getwin()
 	register int c;
 	struct ww *w = 0;
 
-	wwputs("Which window? ", cmdwin);
+	if (!terse)
+		wwputs("Which window? ", cmdwin);
 	wwsetcursor(WCurRow(cmdwin->ww_win), WCurCol(cmdwin->ww_win));
 	while ((c = bgetc()) < 0)
 		bread();
 	if (c < '1' || c > '9' || (w = wwfind(c - '0')) == 0)
 		Ding();
-	wwputs("\r\n", cmdwin);
+	if (!terse)
+		wwputs("\r\n", cmdwin);
 	return w;
 }
 

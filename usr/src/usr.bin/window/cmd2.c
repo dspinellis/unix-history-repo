@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd2.c	1.7 83/07/28";
+static	char *sccsid = "@(#)cmd2.c	1.8 83/07/28";
 #endif
 
 #include "defs.h"
@@ -12,32 +12,40 @@ dohelp()
 {
 	register struct ww *w;
 
-	if ((w = openwin(wwncol - 1, "Help")) == 0) {
-		wwputs("Can't open help window.  ", cmdwin);
+	if ((w = openwin(wwnrow - 1, "Help")) == 0) {
+		if (terse)
+			Ding();
+		else
+			wwputs("Can't open help window.  ", cmdwin);
 		return;
 	}
-	wwprintf(w, "The escape character is ^P, which gets you into command mode.\r\n");
-	wwprintf(w, "The commands are:\r\n");
-	wwprintf(w, "[1-9]   Select window [1-9] and exit command mode.\r\n");
-	wwprintf(w, "%%[1-9]  Select window [1-9].\r\n");
-	wwprintf(w, "c[1-9]  Close window [1-9].\r\n");
+	wwprintf(w, "The escape character is %s, which gets you into command mode.\r\n\n",
+		unctrl(escapec));
+	wwprintf(w, "Short commands:\r\n\n");
+	wwprintf(w, "{1-9}   Select window {1-9} and return to conversation mode.\r\n");
+	wwprintf(w, "%%{1-9}  Select window {1-9}.\r\n");
+	wwprintf(w, "c{1-9}  Close window {1-9}.\r\n");
 	wwprintf(w, "C       Close all windows.\r\n");
 	wwprintf(w, "S       Show all windows in sequence.\r\n");
-	wwprintf(w, "R       Force refresh after every newline (current window only).\r\n");
-	wwprintf(w, "r       Don't refresh every line.\r\n");
+	wwprintf(w, "L       List all windows with their labels.\r\n");
 	wwprintf(w, "w       Open a new window.\r\n");
-	wwprintf(w, "^U      Scroll up.\r\n");
-	wwprintf(w, "^D      Scroll down.\r\n");
+	wwprintf(w, "[^U^D]  Scroll [up, down] half a window.\r\n");
+	wwprintf(w, "[^B^F]  Scroll [up, down] a full window.\r\n");
 	wwprintf(w, "[hjkl]  Move cursor [left, down, up, right].\r\n");
-	/*
-	wwprintf(w, "s       Print IO statistics.\r\n");
-	wwprintf(w, "t       Print resource usage of this program.\r\n");
-	wwprintf(w, "T       Print resource usage of children.\r\n");
-	*/
 	wwprintf(w, "escape  Exit command mode.\r\n");
 	wwprintf(w, "^L      Redraw screen.\r\n");
 	wwprintf(w, "^Z      Suspend.\r\n");
 	wwprintf(w, ".       Quit.\r\n");
+	waitnl(w);
+	wwprintf(w, "Long commands:\r\n\n");
+	wwprintf(w, ":terse [off]            Turn on (or off) terse mode.\r\n");
+	wwprintf(w, ":refresh {1-9} [off]    Turn on (or off) refresh after every newline\r\n");
+	wwprintf(w, "                        for window {1-9}.\r\n");
+	wwprintf(w, ":label {1-9} string     Label window {1-9}.\r\n");
+	wwprintf(w, ":escape c               Set escape character to c.\r\n");
+	wwprintf(w, ":%{1-9}                 Select window {1-9}.\r\n");
+	wwprintf(w, ":window r c nr nc       Open a window at row r column c\r\n");
+	wwprintf(w, "                        with nr rows and nc colomns\r\n");
 	waitnl(w);
 	closewin(w);
 }
@@ -49,7 +57,10 @@ dotime(flag)
 	struct timeval timeval;
 
 	if ((w = openwin(8, "Timing and Resource Usage")) == 0) {
-		wwputs("Can't open time window.  ", cmdwin);
+		if (terse)
+			Ding();
+		else
+			wwputs("Can't open time window.  ", cmdwin);
 		return;
 	}
 
@@ -113,7 +124,10 @@ dostat()
 	register struct ww *w;
 
 	if ((w = openwin(6, "IO Statics")) == 0) {
-		wwputs("Can't open statistics window.  ", cmdwin);
+		if (terse)
+			Ding();
+		else
+			wwputs("Can't open statistics window.  ", cmdwin);
 		return;
 	}
 	wwprintf(w, "nread\tnreadz\tnreade\tnreadc\tnwrite\tnwritec\r\n");
@@ -123,8 +137,35 @@ dostat()
 	closewin(w);
 }
 
+dolist()
+{
+	register struct ww *w, *w1;
+	int id;
+	char doneit = 0;
+
+	if ((w = openwin(14, "Active Windows")) == 0) {
+		if (terse)
+			Ding();
+		else
+			wwputs("Can't open listing window.  ", cmdwin);
+		return;
+	}
+	for (id = 1; id <= NWINDOW; id++) {
+		if ((w1 = wwfind(id)) == 0)
+			continue;
+		doneit = 1;
+		wwprintf(w, "%d   %s\r\n", id, w1->ww_label);
+	}
+	if (!doneit)
+		wwprintf(w, "No windows.\r\n");
+	waitnl(w);
+	closewin(w);
+}
+
 doquit()
 {
+	if (terse)
+		Wunhide(cmdwin->ww_win);
 	wwputs("Really quit [yn]? ", cmdwin);
 	wwsetcursor(WCurRow(cmdwin->ww_win), WCurCol(cmdwin->ww_win));
 	while (bpeekc() < 0)
@@ -134,6 +175,8 @@ doquit()
 		quit++;
 	} else
 		wwputs("\r\n", cmdwin);
+	if (terse)
+		Whide(cmdwin->ww_win);
 }
 
 struct ww *
@@ -141,11 +184,14 @@ openwin(nrow, label)
 char *label;
 {
 	register struct ww *w;
+	int startcol;
 
-	if ((w = wwopen(WW_NONE, 0, nrow, wwncol, 1, 0)) == 0)
+	if ((w = wwopen(WW_NONE, 0, nrow, wwncol, 0, 0)) == 0)
 		return 0;
 	wwframe(w);
-	wwlabel(w, (wwncol - strlen(label)) / 2 + 1, label, WINVERSE);
+	if ((startcol = (wwncol - strlen(label)) / 2) <= 0)
+		startcol = 1;
+	wwlabel(w, startcol, label, WINVERSE);
 	wwsetcurwin(w);
 	return w;
 }
@@ -158,6 +204,7 @@ register struct ww *w;
 	wwsetcursor(WCurRow(w->ww_win), WCurCol(w->ww_win));
 	while (bgetc() < 0)
 		bread();
+	wwputs("\033E", w);			/* clear and home cursor */
 }
 
 closewin(w)
