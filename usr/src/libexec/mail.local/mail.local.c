@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mail.local.c	8.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)mail.local.c	8.21 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -560,7 +560,7 @@ vwarn(fmt, ap)
 	(void)vfprintf(stderr, fmt, ap);
 	(void)fprintf(stderr, "\n");
 
-#ifndef ultrix
+#if !defined(ultrix) && !defined(__osf__)
 	/* Log the message to syslog. */
 	vsyslog(LOG_ERR, fmt, ap);
 #else
@@ -668,6 +668,7 @@ e_to_sys(num)
 
 #ifndef BSD4_4
 
+# ifndef __osf__
 char *
 strerror(eno)
 	int eno;
@@ -681,24 +682,25 @@ strerror(eno)
 	(void) sprintf(ebuf, "Error %d", eno);
 	return ebuf;
 }
+# endif
 
-#if __STDC__
+# if __STDC__
 snprintf(char *buf, int bufsiz, const char *fmt, ...)
-#else
+# else
 snprintf(buf, bufsiz, fmt, va_alist)
 	char *buf;
 	int bufsiz;
 	const char *fmt;
 	va_dcl
-#endif
+# endif
 {
 	va_list ap;
 
-#if __STDC__
+# if __STDC__
 	va_start(ap, fmt);
-#else
+# else
 	va_start(ap);
-#endif
+# endif
 	vsprintf(buf, fmt, ap);
 	va_end(ap);
 }
