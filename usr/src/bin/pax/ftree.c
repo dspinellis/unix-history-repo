@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftree.c	1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftree.c	1.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -182,9 +182,8 @@ ftree_sel(arcn)
 {
 	/*
 	 * set reference bit for this pattern. This linked list is only used
-	 * when files trees are supplied pax as args. The list is not used when
-	 * the trees are read from stdin. stdin processing uses a global
-	 * reference count for the last path input.
+	 * when file trees are supplied pax as args. The list is not used when
+	 * the trees are read from stdin.
 	 */
 	if (ftcur != NULL) 
 		ftcur->refcnt = 1;
@@ -200,6 +199,7 @@ ftree_sel(arcn)
 
 	if (!dflag || (arcn->type != PAX_DIR))
 		return;
+
 	if (ftent != NULL)
 		(void)fts_set(ftsp, ftent, FTS_SKIP);
 }
@@ -269,6 +269,7 @@ ftree_arg()
 		(void)fts_close(ftsp);
 		ftsp = NULL;
 	}
+
 	/*
 	 * keep looping until we get a valid file tree to process. Stop when we
 	 * reach the end of the list (or get an eof on stdin)
@@ -289,7 +290,7 @@ ftree_arg()
 			 */
 			if (ftcur == NULL)
 				ftcur = fthead;
-			else if ((ftcur != NULL)&&((ftcur=ftcur->fow) == NULL))
+			else if ((ftcur = ftcur->fow) == NULL)
 				return(-1);
 			farray[0] = ftcur->fname;
 		}
@@ -333,7 +334,7 @@ next_file(arcn)
 	 * ftree_sel() might have set the ftree_skip flag if the user has the
 	 * -n option and a file was selected from this file arg tree. (-n says
 	 * only one member is matched for each pattern) ftree_skip being 1 
-	 ( forces us to go to the next arg now.
+	 * forces us to go to the next arg now.
 	 */
 	if (ftree_skip) {
 		/*
@@ -509,6 +510,7 @@ next_file(arcn)
 	 * copy file name, set file name length
 	 */
 	arcn->nlen = l_strncpy(arcn->name, ftent->fts_path, PAXPATHLEN+1);
+	arcn->name[arcn->nlen] = '\0';
 	arcn->org_name = ftent->fts_path;
 	return(0);
 }
