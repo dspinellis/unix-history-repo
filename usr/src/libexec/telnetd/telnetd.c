@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	5.24 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -382,6 +382,7 @@ telnet(f, p)
 
 	ioctl(f, FIONBIO, &on);
 	ioctl(p, FIONBIO, &on);
+	ioctl(p, TIOCPKT, &on);
 #if	defined(SO_OOBINLINE)
 	setsockopt(net, SOL_SOCKET, SO_OOBINLINE, &on, sizeof on);
 #endif	/* defined(SO_OOBINLINE) */
@@ -433,6 +434,8 @@ telnet(f, p)
 	bcopy(BANNER2, nfrontp, sizeof BANNER2 -1);
 	nfrontp += sizeof BANNER2 - 1;
 
+	/* Clear ptybuf[0] - where the packet information is received */
+	ptyibuf[0] = 0;
 	/*
 	 * Call telrcv() once to pick up anything received during
 	 * terminal type negotiation.
@@ -455,6 +458,7 @@ telnet(f, p)
 		 */
 		if (nfrontp - nbackp || pcc > 0) {
 			FD_SET(f, &obits);
+			FD_SET(p, &xbits);
 		} else {
 			FD_SET(p, &ibits);
 		}
@@ -558,6 +562,11 @@ telnet(f, p)
 		/*
 		 * Something to read from the pty...
 		 */
+		if (FD_ISSET(p, &xbits)) {
+			if (read(p, ptyibuf, 1) != 1) {
+				break;
+			}
+		}
 		if (FD_ISSET(p, &ibits)) {
 			pcc = read(p, ptyibuf, BUFSIZ);
 			if (pcc < 0 && errno == EWOULDBLOCK)
@@ -565,8 +574,17 @@ telnet(f, p)
 			else {
 				if (pcc <= 0)
 					break;
-				ptyip = ptyibuf;
+				/* Skip past "packet" */
+				pcc--;
+				ptyip = ptyibuf+1;
 			}
+		}
+		if (ptyibuf[0] & TIOCPKT_FLUSHWRITE) {
+			netclear();	/* clear buffer back */
+			*nfrontp++ = IAC;
+			*nfrontp++ = DM;
+			neturg = nfrontp-1;  /* off by one XXX */
+			ptyibuf[0] = 0;
 		}
 
 		while (pcc > 0) {
