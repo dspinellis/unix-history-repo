@@ -1,27 +1,36 @@
 /*
- * Copyright (c) 1983, 1987 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1989 The Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)time.h	1.2 (Berkeley) %G%
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ *	@(#)time.h	5.1 (Berkeley) %G%
  */
 
-/*
- * Structure returned by gmtime and localtime calls (see ctime(3)).
- */
 struct tm {
-	int	tm_sec;
-	int	tm_min;
-	int	tm_hour;
-	int	tm_mday;
-	int	tm_mon;
-	int	tm_year;
-	int	tm_wday;
-	int	tm_yday;
-	int	tm_isdst;
-	long	tm_gmtoff;
-	char	*tm_zone;
+	int	tm_sec;		/* seconds after the minute [0-60] */
+	int	tm_min;		/* minutes after the hour [0-59] */
+	int	tm_hour;	/* hours since midnight [0-23] */
+	int	tm_mday;	/* day of the month [1-31] */
+	int	tm_mon;		/* months since January [0-11] */
+	int	tm_year;	/* years since 1900 */
+	int	tm_wday;	/* days since Sunday [0-6] */
+	int	tm_yday;	/* days since January 1 [0-365] */
+	int	tm_isdst;	/* Daylight Savings Time flag */
+	long	tm_gmtoff;	/* offset from CUT in seconds */
+	char	*tm_zone;	/* timezone abbreviation */
 };
 
-extern	struct tm *gmtime(), *localtime();
-extern	char *asctime(), *ctime();
+void tzset();
+struct tm *gmtime(), *localtime();
+char *asctime(), *ctime(), *timezone();
