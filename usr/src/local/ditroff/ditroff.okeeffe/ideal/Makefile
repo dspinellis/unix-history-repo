@@ -26,7 +26,7 @@ ${SUBDIR}: /tmp
 
 # ideal is a shell file. It needs to know where it can find the real binary
 ideal.sh: ideal.cmd
-	sed "s#IDDIR=.*#IDLIB= ${DESTDIR}${LIBDIR}#" < ideal.cmd > ideal.sh
+	sed "s#IDDIR=.*#IDDIR=${DESTDIR}${LIBDIR}#" < ideal.cmd > ideal.sh
 
 ideal:	$(OBJECTS)
 	cc -o ideal $(OBJECTS) -ll -lm
