@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tuba_table.c	7.12 (Berkeley) %G%
+ *	@(#)tuba_table.c	7.13 (Berkeley) %G%
  */
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -43,8 +43,7 @@ tuba_timer()
 		if ((tc = tuba_table[i]) && (tc->tc_refcnt == 0) &&
 		    (tc->tc_time < timelimit)) {
 			tuba_table[i] = 0;
-			rn_delete((caddr_t)&tc->tc_siso.siso_addr, (caddr_t)0,
-					tuba_tree->rnh_treetop);
+			rn_delete(&tc->tc_siso.siso_addr, NULL, tuba_tree);
 			free((caddr_t)tc, M_RTABLE);
 		}
 	splx(s);
@@ -77,8 +76,7 @@ tuba_lookup(siso, wait)
 	bzero((caddr_t)tc, sizeof (*tc));
 	bcopy(siso->siso_data, tc->tc_siso.siso_data,
 		tc->tc_siso.siso_nlen =  siso->siso_nlen);
-	rn_insert((caddr_t)&tc->tc_siso.siso_addr,
-		  tuba_tree->rnh_treetop, &dupentry, tc->tc_nodes);
+	rn_insert(&tc->tc_siso.siso_addr, tuba_tree, &dupentry, tc->tc_nodes);
 	if (dupentry)
 		panic("tuba_lookup 1");
 	tc->tc_siso.siso_family = AF_ISO;
@@ -102,8 +100,7 @@ tuba_lookup(siso, wait)
 	new = (struct tuba_cache **)malloc((unsigned)i, M_RTABLE, wait);
 	if (new == 0) {
 		tuba_table_size = old_size;
-		rn_delete((caddr_t)&tc->tc_siso.siso_addr,
-			  (caddr_t)0, tuba_tree->rnh_treetop);
+		rn_delete(&tc->tc_siso.siso_addr, NULL, tuba_tree);
 		free((caddr_t)tc, M_RTABLE);
 		return (0);
 	}
