@@ -1,9 +1,9 @@
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 # if you have bugs in your C compiler dont use -O
 COMFLAGS=-DBSD4_2 -O -DSACREDMEM=256000
-BIN=${DESTDIR}/usr/local
+BIN=${DESTDIR}/usr/ucb
 
 compress : compress.c USERMEM
 	cc $(COMFLAGS) -DUSERMEM=`cat USERMEM` -o compress compress.c
