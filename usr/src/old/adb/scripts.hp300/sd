@@ -1,0 +1,10 @@
+./"hd"nX
++/"dq"n
+.$<<devqueue
++/"formatpid"16t"flags"8t"type"8t"punit"8t"bshift"nDxddd
++/"blks"16t"blksize"16t"wpms"n3D
++/"label"n
+.$<<disklabel
++/"bopen"16t"copen"16t"open"n3Xn
+.,8/DDDn
++,<9-1$<sd
