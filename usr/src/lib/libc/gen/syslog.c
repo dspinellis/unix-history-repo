@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)syslog.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslog.c	4.5 (Berkeley) %G%";
 #endif
 
 /*
@@ -34,7 +34,7 @@ static char	ctty[] = "/dev/console";
 static int	LogFile = -1;		/* fd for log */
 static int	LogStat	= 0;		/* status bits, set by openlog() */
 static char	*LogTag = NULL;		/* string to tag the entry with */
-static int	LogMask = LOG_DEBUG;	/* lowest priority to be logged */
+static int	LogMask = 0xffffffff;	/* mask of priorities to be logged */
 
 static struct sockaddr SyslogAddr;
 
@@ -52,7 +52,7 @@ syslog(pri, fmt, p0, p1, p2, p3, p4)
 	int pid, olderrno = errno;
 
 	/* see if we should just throw out this message */
-	if (pri < LOG_ALERT || pri > LogMask)
+	if (pri <= 0 || pri >= 32 || ((1 << pri) & LogMask) == 0)
 		return;
 	if (LogFile < 0)
 		openlog(NULL, 0, 0);
@@ -122,7 +122,7 @@ openlog(ident, logstat, logmask)
 
 	LogTag = (ident != NULL) ? ident : "syslog";
 	LogStat = logstat;
-	if (logmask > 0 && logmask <= LOG_DEBUG)
+	if (logmask != 0)
 		LogMask = logmask;
 	if (LogFile >= 0)
 		return;
@@ -145,13 +145,13 @@ closelog()
 /*
  * SETLOGMASK -- set the log mask level
  */
-setlogmask(pri)
-	int pri;
+setlogmask(pmask)
+	int pmask;
 {
-	int opri;
+	int omask;
 
-	opri = LogMask;
-	if (pri > 0 && pri <= LOG_DEBUG)
-		LogMask = pri;
-	return (opri);
+	omask = LogMask;
+	if (pmask != 0)
+		LogMask = pmask;
+	return (omask);
 }
