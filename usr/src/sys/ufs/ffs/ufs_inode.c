@@ -1,4 +1,4 @@
-/*	ufs_inode.c	4.31	82/11/13	*/
+/*	ufs_inode.c	4.32	83/02/05	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -317,121 +317,95 @@ iupdat(ip, ta, tm, waitfor)
 	}
 }
 
+#define	SINGLE	0	/* index of single indirect block */
+#define	DOUBLE	1	/* index of double indirect block */
+#define	TRIPLE	2	/* index of triple indirect block */
 /*
  * Truncate the inode ip to at most
  * length size.  Free affected disk
  * blocks -- the blocks of the file
  * are removed in reverse order.
+ *
+ * NB: triple indirect blocks are untested.
  */
-itrunc(ip, length)
-	register struct inode *ip;
+itrunc(oip, length)
+	struct inode *oip;
 	u_long length;
 {
 	register i;
 	register daddr_t lastblock;
-	daddr_t bn, lastdiblock, lastsiblock;
+	daddr_t bn, lastiblock[NIADDR];
 	register struct fs *fs;
-	int j;
+	register struct inode *ip;
+	struct inode tip;
+	int level;
 #ifdef QUOTA
 	long blocksreleased = 0, nblocks;
 	long indirtrunc();
 #endif
 
-	if (ip->i_size <= length)
+	if (oip->i_size <= length)
 		return;
-#ifdef notdef
-	/* this is superfluous given size check above */
-	i = ip->i_mode & IFMT;
-	if (i != IFREG && i != IFDIR && i != IFLNK) {
-		printf("itrunc: i# %d, size %d\n", ip->i_number, ip->i_size);
-		return;
-	}
-#endif
 	/*
-	 * Update size of file on disk before
-	 * we start freeing blocks.  If we crash
-	 * while free'ing blocks below, the file
-	 * size will be believed and the blocks
-	 * returned to the free list.
-	 * After updating the copy on disk we
-	 * put the old size back so macros like
-	 * blksize will work.
+	 * Calculate index into inode's block list of
+	 * last direct and indirect blocks (if any)
+	 * which we want to keep.  Lastblock is -1 when
+	 * the file is truncated to 0.
 	 */
-	j = ip->i_size;
-	ip->i_size = length;
-	ip->i_flag |= ICHG|IUPD;
-	iupdat(ip, &time, &time, 1);
-	ip->i_size = j;
-
-	/*
-	 * Calculate last direct, single indirect and
-	 * double indirect block (if any) which we want
-	 * to keep.  Lastblock is -1 when the file is
-	 * truncated to 0.
-	 */
-	fs = ip->i_fs;
+	fs = oip->i_fs;
 	lastblock = lblkno(fs, length + fs->fs_bsize - 1) - 1;
-	lastsiblock = lastblock - NDADDR;
-	lastdiblock = lastsiblock - NINDIR(fs);
+	lastiblock[SINGLE] = lastblock - NDADDR;
+	lastiblock[DOUBLE] = lastiblock[SINGLE] - NINDIR(fs);
+	lastiblock[TRIPLE] = lastiblock[DOUBLE] - NINDIR(fs) * NINDIR(fs);
 #ifdef QUOTA
 	nblocks = fs->fs_bsize / DEV_BSIZE;
 #endif
 	/*
-	 * Double indirect block first
+	 * Update size of file and block pointers
+	 * on disk before we start freeing blocks.
+	 * If we crash before free'ing blocks below,
+	 * the blocks will be returned to the free list.
+	 * lastiblock values are also normalized to -1
+	 * for calls to indirtrunc below.
+	 * (? fsck doesn't check validity of pointers in indirect blocks)
 	 */
-	bn = ip->i_ib[NIADDR - 1];
-	if (bn != 0) {
-		/*
-		 * If lastdiblock is negative, it's value
-		 * is meaningless; in this case we set it to
-		 * -NINDIR(fs) so calculations performed in
-		 * indirtrunc come out right.
-		 */
-		if (lastdiblock < 0)
-			lastdiblock -= lastsiblock;
-#ifdef QUOTA
-		blocksreleased +=
-#endif
-			indirtrunc(ip, bn, lastdiblock, 1);
-		if (lastdiblock < 0) {
-			ip->i_ib[NIADDR - 1] = 0;
-			free(ip, bn, (off_t)fs->fs_bsize);
-#ifdef QUOTA
-			blocksreleased += nblocks;
-#endif
+	tip = *oip;
+	for (level = TRIPLE; level >= SINGLE; level--)
+		if (lastiblock[level] < 0) {
+			oip->i_ib[level] = 0;
+			lastiblock[level] = -1;
 		}
-	}
-	if (lastdiblock >= 0)
-		goto done;
+	for (i = NDADDR - 1; i > lastblock; i--)
+		oip->i_db[i] = 0;
+	oip->i_size = length;
+	oip->i_flag |= ICHG|IUPD;
+	iupdat(oip, &time, &time, 1);
+	ip = &tip;
+
 	/*
-	 * Single indirect blocks second.
-	 * First, those which can be totally
-	 * zapped, then possibly one which
-	 * needs to be partially cleared.
+	 * Indirect blocks first.
 	 */
-	j = lastsiblock < 0 ? -1 : lastsiblock / NINDIR(fs);
-	for (i = NIADDR - 2; i > j; i--) {
-		bn = ip->i_ib[i];
+	for (level = TRIPLE; level >= SINGLE; level--) {
+		bn = ip->i_ib[level];
 		if (bn != 0) {
-#ifdef QUOTA
-			blocksreleased += nblocks +
-#endif
-				indirtrunc(ip, bn, (daddr_t)-1, 0);
-			ip->i_ib[i] = 0;
-			free(ip, bn, (off_t)fs->fs_bsize);
-		}
-	}
-	if (lastsiblock >= 0) {
-		bn = ip->i_ib[j];
-		if (bn != 0)
 #ifdef QUOTA
 			blocksreleased +=
 #endif
-				indirtrunc(ip, bn, lastsiblock, 0);
-		goto done;
+				indirtrunc(ip, bn, lastiblock[level], level);
+			if (lastiblock[level] < 0) {
+				ip->i_ib[level] = 0;
+				free(ip, bn, (off_t)fs->fs_bsize);
+#ifdef QUOTA
+				blocksreleased += nblocks;
+#endif
+			}
+		}
+		if (lastiblock[level] >= 0)
+			goto done;
 	}
+
 	/*
-	 * All whole direct blocks.
+	 * All whole direct blocks or frags.
 	 */
 	for (i = NDADDR - 1; i > lastblock; i--) {
 		register int size;
@@ -446,130 +420,147 @@ itrunc(ip, length)
 		blocksreleased += size / DEV_BSIZE;
 #endif
 	}
+	if (lastblock < 0)
+		goto done;
+
 	/*
 	 * Finally, look for a change in size of the
 	 * last direct block; release any frags.
 	 */
-	if (lastblock >= 0 && ip->i_db[lastblock] != 0) {
+	bn = ip->i_db[lastblock];
+	if (bn != 0) {
+		int oldspace, newspace;
+
 		/*
 		 * Calculate amount of space we're giving
 		 * back as old block size minus new block size.
 		 */
-		i = blksize(fs, ip, lastblock);
+		oldspace = blksize(fs, ip, lastblock);
 		ip->i_size = length;
-		i = i - blksize(fs, ip, lastblock);
-		if (i > 0) {
+		newspace = blksize(fs, ip, lastblock);
+		if (newspace == 0)
+			panic("itrunc: newspace");
+		if (oldspace - newspace > 0) {
 			/*
 			 * Block number of space to be free'd is
 			 * the old block # plus the number of frags
 			 * required for the storage we're keeping.
 			 */
-			bn = ip->i_db[lastblock] +
-				numfrags(fs, fs->fs_bsize - i);
-			free(ip, bn, i);
+			bn += numfrags(fs, newspace);
+			free(ip, bn, oldspace - newspace);
 #ifdef QUOTA
-			blocksreleased += i / DEV_BSIZE;
+			blocksreleased += (oldspace - newspace) / DEV_BSIZE;
 #endif
 		}
 	}
 done:
-	/*
-	 * Finished free'ing blocks, complete
-	 * inode update to reflect new length.
-	 */
+/* BEGIN PARANOIA */
+	for (level = SINGLE; level <= TRIPLE; level++)
+		if (ip->i_ib[level] != oip->i_ib[level])
+			panic("itrunc1");
+	for (i = 0; i < NDADDR; i++)
+		if (ip->i_db[i] != oip->i_db[i])
+			panic("itrunc2");
+/* END PARANOIA */
 #ifdef QUOTA
 	(void) chkdq(ip, -blocksreleased, 0);
 #endif
-	ip->i_size = length;
-	ip->i_flag |= ICHG|IUPD;
-	iupdat(ip, &time, &time, 1);
 }
 
 /*
  * Release blocks associated with the inode ip and
  * stored in the indirect block bn.  Blocks are free'd
  * in LIFO order up to (but not including) lastbn.  If
- * doubleindirect is indicated, this block is a double
- * indirect block and recursive calls to indirtrunc must
- * be used to cleanse single indirect blocks instead of
- * a simple free.
+ * level is greater than SINGLE, the block is an indirect
+ * block and recursive calls to indirtrunc must be used to
+ * cleanse other indirect blocks.
+ *
+ * NB: triple indirect blocks are untested.
  */
 #ifdef QUOTA
 long
 #endif
-indirtrunc(ip, bn, lastbn, doubleindirect)
+indirtrunc(ip, bn, lastbn, level)
 	register struct inode *ip;
 	daddr_t bn, lastbn;
-	int doubleindirect;
+	int level;
 {
 	register int i;
-	struct buf *bp;
+	struct buf *bp, *copy;
 	register daddr_t *bap;
-	register struct fs *fs;
+	register struct fs *fs = ip->i_fs;
 	daddr_t nb, last;
+	long factor;
 #ifdef QUOTA
 	int blocksreleased = 0, nblocks;
 #endif
 
-	bp = NULL;
-	fs = ip->i_fs;
+	/*
+	 * Calculate index in current block of last
+	 * block to be kept.  -1 indicates the entire
+	 * block so we need not calculate the index.
+	 */
+	factor = 1;
+	for (i = SINGLE; i < level; i++)
+		factor *= NINDIR(fs);
 	last = lastbn;
-	if (doubleindirect)
-		last /= NINDIR(fs);
+	if (lastbn > 0)
+		last /= factor;
 #ifdef QUOTA
 	nblocks = fs->fs_bsize / DEV_BSIZE;
 #endif
-	for (i = NINDIR(fs) - 1; i > last; i--) {
-		if (bp == NULL) {
-			struct buf *copy;
+	/*
+	 * Get buffer of block pointers, zero those 
+	 * entries corresponding to blocks to be free'd,
+	 * and update on disk copy first.
+	 */
+	copy = geteblk((int)fs->fs_bsize);
+	bp = bread(ip->i_dev, fsbtodb(fs, bn), (int)fs->fs_bsize);
+	if (bp->b_flags&B_ERROR) {
+		brelse(copy);
+		brelse(bp);
+#ifdef QUOTA
+		return (0);
+#endif
+	}
+	bap = bp->b_un.b_daddr;
+	bcopy((caddr_t)bap, (caddr_t)copy->b_un.b_daddr, (u_int)fs->fs_bsize);
+	bzero((caddr_t)&bap[last + 1],
+	  (u_int)(NINDIR(fs) - (last + 1)) * sizeof (daddr_t));
+	bwrite(bp);
+	bp = copy, bap = bp->b_un.b_daddr;
 
-			copy = geteblk((int)fs->fs_bsize);
-			bp = bread(ip->i_dev, fsbtodb(fs, bn),
-				(int)fs->fs_bsize);
-			if (bp->b_flags&B_ERROR) {
-				brelse(copy);
-				brelse(bp);
-				return (NULL);
-			}
-			bap = bp->b_un.b_daddr;
-			/*
-			 * Update pointers before freeing blocks.
-			 * If we crash before freeing the blocks
-			 * they'll be recovered as missing.
-			 */
-			bcopy((caddr_t)bap, (caddr_t)copy->b_un.b_daddr,
-				(u_int)fs->fs_bsize);
-			bzero((caddr_t)&bap[last + 1],
-			  (u_int)(NINDIR(fs) - (last + 1)) * sizeof (daddr_t));
-			bwrite(bp);
-			bp = copy, bap = bp->b_un.b_daddr;
-		}
+	/*
+	 * Recursively free totally unused blocks.
+	 */
+	for (i = NINDIR(fs) - 1; i > last; i--) {
 		nb = bap[i];
 		if (nb == 0)
 			continue;
-		if (doubleindirect)
+		if (level > SINGLE)
 #ifdef QUOTA
 			blocksreleased +=
 #endif
-				indirtrunc(ip, nb, (daddr_t)-1, 0);
+				indirtrunc(ip, nb, (daddr_t)-1, level - 1);
 		free(ip, nb, (int)fs->fs_bsize);
 #ifdef QUOTA
 		blocksreleased += nblocks;
 #endif
 	}
-	if (doubleindirect && lastbn >= 0) {
-		last = lastbn % NINDIR(fs);
-		if (bp == NULL)
-			panic("indirtrunc");
+
+	/*
+	 * Recursively free last partial block.
+	 */
+	if (level > SINGLE && lastbn >= 0) {
+		last = lastbn % factor;
 		nb = bap[i];
 		if (nb != 0)
 #ifdef QUOTA
 			blocksreleased +=
 #endif
-				indirtrunc(ip, nb, last, 0);
+				indirtrunc(ip, nb, last, level - 1);
 	}
-	if (bp != NULL)
-		brelse(bp);
+	brelse(bp);
 #ifdef QUOTA
 	return (blocksreleased);
 #endif
