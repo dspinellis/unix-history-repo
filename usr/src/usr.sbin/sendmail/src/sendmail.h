@@ -1,7 +1,7 @@
 /*
 **  SENDMAIL.H -- Global definitions for sendmail.
 **
-**	@(#)sendmail.h	3.18	%G%
+**	@(#)sendmail.h	3.19	%G%
 */
 
 
@@ -39,6 +39,7 @@ struct address
 	short		q_mailer;	/* mailer to use */
 	short		q_rmailer;	/* real mailer (before mapping) */
 	short		q_flags;	/* status flags, see below */
+	char		*q_home;	/* home dir (local mailer only) */
 	struct address	*q_next;	/* chain */
 };
 
@@ -46,7 +47,6 @@ typedef struct address ADDRESS;
 
 # define QDONTSEND	000001	/* don't send to this address */
 # define QBADADDR	000002	/* this address is verified bad */
-# define QGOODADDR	000004	/* this address is verified good */
 
 
 
@@ -101,6 +101,12 @@ struct mailer
 # define M_ARPAFMT	(M_NEEDDATE|M_NEEDFROM|M_NEEDDATE)
 
 extern struct mailer *Mailer[];
+
+/* special mailer numbers */
+# define M_LOCAL	0	/* local mailer */
+# define M_PROG		1	/* program mailer */
+# define M_PRIVATE	2	/* user's private mailer */
+/* mailers from 3 on are arbitrary */
 
 
 

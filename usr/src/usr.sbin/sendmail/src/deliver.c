@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.15	%G%";
+static char SccsId[] = "@(#)deliver.c	3.16	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -184,7 +184,7 @@ deliver(to, editfcn)
 		**	with the others, so we fudge on the To person.
 		*/
 
-		if (m == Mailer[0])
+		if (m == Mailer[M_LOCAL])
 		{
 			if (index(user, '/') != NULL)
 			{
@@ -204,13 +204,10 @@ deliver(to, editfcn)
 		**	>>>>>>>>>> function is subsumed by sendmail.
 		*/
 
-		if (m == Mailer[0] && !bitset(QGOODADDR, to->q_flags))
+		if (bitset(QBADADDR, to->q_flags))
 		{
-			if (bitset(QBADADDR, to->q_flags) || getpwnam(user) == NULL)
-			{
-				giveresponse(EX_NOUSER, TRUE, m);
-				continue;
-			}
+			giveresponse(EX_NOUSER, TRUE, m);
+			continue;
 		}
 
 		/* create list of users for error messages */
@@ -218,6 +215,7 @@ deliver(to, editfcn)
 			strcat(tobuf, ",");
 		strcat(tobuf, to->q_paddr);
 		define('u', user);		/* to user */
+		define('z', to->q_home);	/* user's home */
 
 		/* expand out this user */
 		expand(user, buf, &buf[sizeof buf - 1]);
@@ -254,10 +252,17 @@ deliver(to, editfcn)
 	**	The argument vector gets built, pipes
 	**	are created as necessary, and we fork & exec as
 	**	appropriate.
+	**
+	**	Notice the tacky hack to handle private mailers.
 	*/
 
 	if (editfcn == NULL)
 		editfcn = putmessage;
+	if (m == Mailer[M_PRIVATE])
+	{
+		expand("$z/.mailer", buf, &buf[sizeof buf - 1]);
+		m->m_mailer = buf;
+	}
 	i = sendoff(m, pv, editfcn);
 
 	return (i);
@@ -670,11 +675,35 @@ recipient(a)
 	**  Do sickly crude mapping for program mailing, etc.
 	*/
 
-	if (a->q_mailer == 0 && a->q_user[0] == '|')
+	if (a->q_mailer == M_LOCAL)
 	{
-		a->q_mailer = 1;
-		m = Mailer[1];
-		a->q_user++;
+		if (a->q_user[0] == '|')
+		{
+			a->q_mailer = M_PROG;
+			m = Mailer[M_PROG];
+			a->q_user++;
+		}
+		else
+		{
+			register struct passwd *pw;
+
+			pw = getpwnam(a->q_user);
+			if (pw == NULL)
+				a->q_flags |= QBADADDR;
+			else
+			{
+				char xbuf[60];
+
+				a->q_home = newstr(pw->pw_dir);
+				define('z', a->q_home);
+				expand("$z/.mailer", xbuf, &xbuf[sizeof xbuf - 1]);
+				if (access(xbuf, 1) == 0)
+				{
+					a->q_mailer = M_PRIVATE;
+					m = Mailer[M_PROG];
+				}
+			}
+		}
 	}
 
 	/*
@@ -716,7 +745,7 @@ recipient(a)
 	**	`Forward' must do the forwarding recursively.
 	*/
 
-	if (m == Mailer[0] && !NoAlias && forward(a))
+	if (m == Mailer[M_LOCAL] && !NoAlias && forward(a))
 		a->q_flags |= QDONTSEND;
 
 	return;

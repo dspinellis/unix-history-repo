@@ -2,7 +2,7 @@
 # include <ctype.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)parseaddr.c	3.14	%G%";
+static char	SccsId[] = "@(#)parseaddr.c	3.15	%G%";
 
 /*
 **  PARSE -- Parse an address
@@ -792,6 +792,7 @@ buildaddr(tv, a)
 	if (a == NULL)
 		a = (ADDRESS *) xalloc(sizeof *a);
 	a->q_flags = 0;
+	a->q_home = NULL;
 
 	/* figure out what net/mailer to use */
 	if (**tv != CANONNET)
