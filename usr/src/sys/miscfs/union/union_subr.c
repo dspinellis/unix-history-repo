@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_subr.c	8.2 (Berkeley) %G%
+ *	@(#)union_subr.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -556,7 +556,7 @@ union_mkshadow(um, dvp, cnp, vpp)
 	cn.cn_pnbuf[cnp->cn_namelen] = '\0';
 
 	cn.cn_nameiop = CREATE;
-	cn.cn_flags = (LOCKPARENT|HASBUF|SAVENAME|ISLASTCN);
+	cn.cn_flags = (LOCKPARENT|HASBUF|SAVENAME|SAVESTART|ISLASTCN);
 	cn.cn_proc = cnp->cn_proc;
 	cn.cn_cred = um->um_cred;
 	cn.cn_nameptr = cn.cn_pnbuf;
@@ -584,7 +584,6 @@ union_mkshadow(um, dvp, cnp, vpp)
 	/* LEASE_CHECK: dvp is locked */
 	LEASE_CHECK(dvp, p, p->p_ucred, LEASE_WRITE);
 
-	VREF(dvp);
 	error = VOP_MKDIR(dvp, vpp, &cn, &va);
 	return (error);
 }
@@ -628,7 +627,7 @@ union_vn_create(vpp, un, p)
 	cn.cn_pnbuf = (caddr_t) malloc(cn.cn_namelen, M_NAMEI, M_WAITOK);
 	bcopy(un->un_path, cn.cn_pnbuf, cn.cn_namelen+1);
 	cn.cn_nameiop = CREATE;
-	cn.cn_flags = (LOCKLEAF|LOCKPARENT|HASBUF|SAVENAME|ISLASTCN);
+	cn.cn_flags = (LOCKPARENT|HASBUF|SAVENAME|SAVESTART|ISLASTCN);
 	cn.cn_proc = p;
 	cn.cn_cred = p->p_ucred;
 	cn.cn_nameptr = cn.cn_pnbuf;
@@ -640,56 +639,41 @@ union_vn_create(vpp, un, p)
 		return (error);
 	vrele(un->un_dirvp);
 
-	if (vp == NULLVP) {
-		/*
-		 * Good - there was no race to create the file
-		 * so go ahead and create it.  The permissions
-		 * on the file will be 0666 modified by the
-		 * current user's umask.  Access to the file, while
-		 * it is unioned, will require access to the top *and*
-		 * bottom files.  Access when not unioned will simply
-		 * require access to the top-level file.
-		 * TODO: confirm choice of access permissions.
-		 */
-		VATTR_NULL(vap);
-		vap->va_type = VREG;
-		vap->va_mode = cmode;
-		LEASE_CHECK(un->un_dirvp, p, cred, LEASE_WRITE);
-		if (error = VOP_CREATE(un->un_dirvp, &vp,
-		    &cn, vap))
-			return (error);
-	} else {
+	if (vp) {
 		VOP_ABORTOP(un->un_dirvp, &cn);
 		if (un->un_dirvp == vp)
 			vrele(un->un_dirvp);
 		else
-			vput(vp);
-		error = EEXIST;
-		goto bad;
+			vput(un->un_dirvp);
+		vrele(vp);
+		return (EEXIST);
 	}
 
-	if (vp->v_type != VREG) {
-		error = EOPNOTSUPP;
-		goto bad;
-	}
-
-	VOP_UNLOCK(vp);				/* XXX */
-	LEASE_CHECK(vp, p, cred, LEASE_WRITE);
-	VOP_LOCK(vp);				/* XXX */
+	/*
+	 * Good - there was no race to create the file
+	 * so go ahead and create it.  The permissions
+	 * on the file will be 0666 modified by the
+	 * current user's umask.  Access to the file, while
+	 * it is unioned, will require access to the top *and*
+	 * bottom files.  Access when not unioned will simply
+	 * require access to the top-level file.
+	 * TODO: confirm choice of access permissions.
+	 */
 	VATTR_NULL(vap);
-	vap->va_size = 0;
-	if (error = VOP_SETATTR(vp, vap, cred, p))
-		goto bad;
+	vap->va_type = VREG;
+	vap->va_mode = cmode;
+	LEASE_CHECK(un->un_dirvp, p, cred, LEASE_WRITE);
+	if (error = VOP_CREATE(un->un_dirvp, &vp, &cn, vap))
+		return (error);
 
-	if (error = VOP_OPEN(vp, fmode, cred, p))
-		goto bad;
+	if (error = VOP_OPEN(vp, fmode, cred, p)) {
+		vput(vp);
+		return (error);
+	}
 
 	vp->v_writecount++;
 	*vpp = vp;
 	return (0);
-bad:
-	vput(vp);
-	return (error);
 }
 
 int
