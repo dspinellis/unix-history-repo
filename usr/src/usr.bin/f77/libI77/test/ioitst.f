@@ -1,3 +1,12 @@
+C
+C Copyright (c) 1980 The Regents of the University of California.
+C All rights reserved.
+C
+C %sccs.include.proprietary.f%
+C
+C	@(#)ioitst.f	5.2 (Berkeley) %G%
+C
+
 	program ioitst
 
 	character*80 buf
