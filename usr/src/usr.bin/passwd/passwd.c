@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)passwd.c	4.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)passwd.c	4.12 (Berkeley) %G%";
 #endif
 
 /*
@@ -106,6 +106,7 @@ main(argc, argv)
 	signal(SIGHUP, SIG_IGN);
 	signal(SIGINT, SIG_IGN);
 	signal(SIGQUIT, SIG_IGN);
+	signal(SIGTSTP, SIG_IGN);
 	(void) umask(0);
 	fd = open(temp, O_WRONLY|O_CREAT|O_EXCL, 0644);
 	if (fd < 0) {
@@ -116,7 +117,6 @@ main(argc, argv)
 			perror(temp);
 		exit(1);
 	}
-	signal(SIGTSTP, SIG_IGN);
 	if ((tf = fdopen(fd, "w")) == NULL) {
 		fprintf(stderr, "passwd: fdopen failed?\n");
 		exit(1);
