@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_exec.c	7.40 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.41 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -22,6 +22,7 @@
 #include "ktrace.h"
 #include "resourcevar.h"
 
+#include "machine/cpu.h"
 #include "machine/reg.h"
 
 #include "mman.h"
@@ -33,10 +34,17 @@
 
 #include "signalvar.h"
 #include "kinfo_proc.h"
-#include "user.h"			/* for pcb, sigc */
 
 #ifdef HPUXCOMPAT
+#include "user.h"			/* for pcb */
 #include "hp300/hpux/hpux_exec.h"
+#endif
+
+#ifdef COPY_SIGCODE
+extern char sigcode[], esigcode[];
+#define	szsigcode	(esigcode - sigcode)
+#else
+#define	szsigcode	0
 #endif
 
 /*
@@ -348,15 +356,15 @@ execve(p, uap, retval)
 	 * We are now committed to the exec so we can save the exec
 	 * header in the pcb where we can dump it if necessary in core()
 	 */
-	if (u.u_pcb.pcb_flags & PCB_HPUXBIN)
+	if (p->p_addr->u_pcb.pcb_flags & PCB_HPUXBIN)
 		bcopy((caddr_t)&hhead,
-		      (caddr_t)u.u_pcb.pcb_exec, sizeof hhead);
+		      (caddr_t)p->p_addr->u_pcb.pcb_exec, sizeof hhead);
 #endif
 
 	/*
 	 * Copy back arglist.
 	 */
-	ucp = USRSTACK - sizeof(u.u_pcb.pcb_sigc) - nc - NBPW;
+	ucp = USRSTACK - szsigcode - nc - NBPW;
 	ap = ucp - na*NBPW - 3*NBPW;
 	p->p_regs[SP] = ap;
 	(void) suword((caddr_t)ap, na-ne);
@@ -404,12 +412,12 @@ execve(p, uap, retval)
 	while (fdp->fd_lastfile > 0 && fdp->fd_ofiles[fdp->fd_lastfile] == NULL)
 		fdp->fd_lastfile--;
 	setregs(exdata.ex_exec.a_entry, retval);
+#ifdef COPY_SIGCODE
 	/*
 	 * Install sigcode at top of user stack.
 	 */
-	copyout((caddr_t)u.u_pcb.pcb_sigc,
-		(caddr_t)(USRSTACK - sizeof(u.u_pcb.pcb_sigc)),
-		sizeof(u.u_pcb.pcb_sigc));
+	copyout((caddr_t)sigcode, (caddr_t)(USRSTACK - szsigcode), szsigcode);
+#endif
 	/*
 	 * Remember file name for accounting.
 	 */
@@ -422,6 +430,7 @@ execve(p, uap, retval)
 		bcopy((caddr_t)ndp->ni_dent.d_name, (caddr_t)p->p_comm,
 		    (unsigned)(ndp->ni_dent.d_namlen + 1));
 	}
+	cpu_exec(p);
 bad:
 	if (execargs)
 		kmem_free_wakeup(exec_map, execargs, NCARGS);
@@ -483,7 +492,7 @@ getxfile(p, vp, ep, paged, nargc, uid, gid)
 	 */
 	ts = clrnd(btoc(ep->a_text));
 	ds = clrnd(btoc(ep->a_data + ep->a_bss));
-	ss = clrnd(SSIZE + btoc(nargc + sizeof(u.u_pcb.pcb_sigc)));
+	ss = clrnd(SSIZE + btoc(nargc + szsigcode));
 
 	/*
 	 * If we're sharing the address space, allocate a new space
@@ -511,17 +520,15 @@ getxfile(p, vp, ep, paged, nargc, uid, gid)
 		p->p_flag &= ~SPPWAIT;
 		wakeup((caddr_t) p->p_pptr);
 	}
-#ifdef hp300
-	u.u_pcb.pcb_flags &= ~(PCB_AST|PCB_HPUXMMAP|PCB_HPUXBIN);
 #ifdef HPUXCOMPAT
+	p->p_addr->u_pcb.pcb_flags &= ~(PCB_HPUXMMAP|PCB_HPUXBIN);
 	/* remember that we were loaded from an HPUX format file */
 	if (ep->a_mid == MID_HPUX)
-		u.u_pcb.pcb_flags |= PCB_HPUXBIN;
+		p->p_addr->u_pcb.pcb_flags |= PCB_HPUXBIN;
 	if (hpux)
 		p->p_flag |= SHPUX;
 	else
 		p->p_flag &= ~SHPUX;
-#endif
 #endif
 	p->p_flag |= SEXEC;
 	addr = VM_MIN_ADDRESS;
@@ -611,7 +618,8 @@ badmap:
 	vm->vm_ssize = ss;
 	p->p_stats->p_prof.pr_scale = 0;
 #if defined(tahoe)
-	u.u_pcb.pcb_savacc.faddr = (float *)NULL;
+	/* move this when tahoe cpu_exec is created */
+	p->p_addr->u_pcb.pcb_savacc.faddr = (float *)NULL;
 #endif
 	return (0);
 }
