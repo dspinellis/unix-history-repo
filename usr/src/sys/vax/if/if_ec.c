@@ -1,4 +1,4 @@
-/*	if_ec.c	4.30	82/12/14	*/
+/*	if_ec.c	4.31	82/12/16	*/
 
 #include "ec.h"
 
@@ -27,14 +27,12 @@
 
 #include "../vax/cpu.h"
 #include "../vax/mtpr.h"
-#include "../vaxif/if_ec.h"
+#include "../vaxif/if_ether.h"
 #include "../vaxif/if_ecreg.h"
 #include "../vaxif/if_uba.h"
 #include "../vaxuba/ubareg.h"
 #include "../vaxuba/ubavar.h"
 
-#define	ECMTU	1500
-#define	ECMIN	(60-14)
 #define	ECMEM	0000000
 
 int	ecprobe(), ecattach(), ecrint(), ecxint(), eccollide();
@@ -43,6 +41,7 @@ u_short ecstd[] = { 0 };
 struct	uba_driver ecdriver =
 	{ ecprobe, 0, ecattach, 0, ecstd, "ec", ecinfo };
 u_char	ec_iltop[3] = { 0x02, 0x07, 0x01 };
+u_char	ecbroadcastaddr[6] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 #define	ECUNIT(x)	minor(x)
 
 int	ecinit(),ecoutput(),ecreset();
@@ -162,7 +161,7 @@ ecattach(ui)
 
 	ifp->if_unit = ui->ui_unit;
 	ifp->if_name = "ec";
-	ifp->if_mtu = ECMTU;
+	ifp->if_mtu = ETHERMTU;
 	ifp->if_net = ui->ui_flags;
 
 	/*
@@ -399,7 +398,7 @@ ecread(unit)
 {
 	register struct ec_softc *es = &ec_softc[unit];
 	struct ecdevice *addr = (struct ecdevice *)ecinfo[unit]->ui_addr;
-	register struct ec_header *ec;
+	register struct ether_header *ec;
     	struct mbuf *m;
 	int len, off, resid, ecoff, rbuf;
 	register struct ifqueue *inq;
@@ -427,16 +426,17 @@ ecread(unit)
 	 * get true type from first 16-bit word past data.
 	 * Remember that type was trailer by setting off.
 	 */
-	len = ecoff - ECRDOFF - sizeof (struct ec_header);
-	ec = (struct ec_header *)(ecbuf + ECRDOFF);
+	len = ecoff - ECRDOFF - sizeof (struct ether_header);
+	ec = (struct ether_header *)(ecbuf + ECRDOFF);
+	ec->ether_type = ntohs((u_short)ec->ether_type);
 #define	ecdataaddr(ec, off, type)	((type)(((caddr_t)((ec)+1)+(off))))
-	if (ec->ec_type >= ECPUP_TRAIL &&
-	    ec->ec_type < ECPUP_TRAIL+ECPUP_NTRAILER) {
-		off = (ec->ec_type - ECPUP_TRAIL) * 512;
-		if (off >= ECMTU)
+	if (ec->ether_type >= ETHERPUP_TRAIL &&
+	    ec->ether_type < ETHERPUP_TRAIL+ETHERPUP_NTRAILER) {
+		off = (ec->ether_type - ETHERPUP_TRAIL) * 512;
+		if (off >= ETHERMTU)
 			goto setup;		/* sanity */
-		ec->ec_type = *ecdataaddr(ec, off, u_short *);
-		resid = *(ecdataaddr(ec, off+2, u_short *));
+		ec->ether_type = ntohs(*ecdataaddr(ec, off, u_short *));
+		resid = ntohs(*(ecdataaddr(ec, off+2, u_short *)));
 		if (off + resid > len)
 			goto setup;		/* sanity */
 		len = off + resid;
@@ -458,10 +458,10 @@ ecread(unit)
 		m->m_off += 2 * sizeof (u_short);
 		m->m_len -= 2 * sizeof (u_short);
 	}
-	switch (ec->ec_type) {
+	switch (ec->ether_type) {
 
 #ifdef INET
-	case ECPUP_IPTYPE:
+	case ETHERPUP_IPTYPE:
 		schednetisr(NETISR_IP);
 		inq = &ipintrq;
 		break;
@@ -502,7 +502,7 @@ ecoutput(ifp, m0, dst)
 	int type, dest, s, error;
 	register struct ec_softc *es = &ec_softc[ifp->if_unit];
 	register struct mbuf *m = m0;
-	register struct ec_header *ec;
+	register struct ether_header *ec;
 	register int off, i;
 	struct mbuf *mcopy = (struct mbuf *) 0;		/* Null */
 
@@ -521,14 +521,14 @@ ecoutput(ifp, m0, dst)
 		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
 		if (off > 0 && (off & 0x1ff) == 0 &&
 		    m->m_off >= MMINOFF + 2 * sizeof (u_short)) {
-			type = ECPUP_TRAIL + (off>>9);
+			type = ETHERPUP_TRAIL + (off>>9);
 			m->m_off -= 2 * sizeof (u_short);
 			m->m_len += 2 * sizeof (u_short);
-			*mtod(m, u_short *) = ECPUP_IPTYPE;
-			*(mtod(m, u_short *) + 1) = m->m_len;
+			*mtod(m, u_short *) = ntohs((u_short)ETHERPUP_IPTYPE);
+			*(mtod(m, u_short *) + 1) = ntohs((u_short)m->m_len);
 			goto gottrailertype;
 		}
-		type = ECPUP_IPTYPE;
+		type = ETHERPUP_IPTYPE;
 		off = 0;
 		goto gottype;
 #endif
@@ -558,7 +558,7 @@ gottype:
 	 * allocate another.
 	 */
 	if (m->m_off > MMAXOFF ||
-	    MMINOFF + sizeof (struct ec_header) > m->m_off) {
+	    MMINOFF + sizeof (struct ether_header) > m->m_off) {
 		m = m_get(M_DONTWAIT, MT_HEADER);
 		if (m == 0) {
 			error = ENOBUFS;
@@ -566,33 +566,24 @@ gottype:
 		}
 		m->m_next = m0;
 		m->m_off = MMINOFF;
-		m->m_len = sizeof (struct ec_header);
+		m->m_len = sizeof (struct ether_header);
 	} else {
-		m->m_off -= sizeof (struct ec_header);
-		m->m_len += sizeof (struct ec_header);
+		m->m_off -= sizeof (struct ether_header);
+		m->m_len += sizeof (struct ether_header);
 	}
-	ec = mtod(m, struct ec_header *);
-	for (i=0; i<6; i++)
-		ec->ec_shost[i] = es->es_enaddr[i];
+	ec = mtod(m, struct ether_header *);
+	bcopy((caddr_t)es->es_enaddr, (caddr_t)ec->ether_shost, 6);
 	if ((dest &~ 0xff) == 0)
-		/* broadcast address */
-		for (i=0; i<6; i++)
-			ec->ec_dhost[i] = 0xff;
+		bcopy((caddr_t)ecbroadcastaddr, (caddr_t)ec->ether_dhost, 6);
 	else {
-		if (dest & 0x8000) {
-			ec->ec_dhost[0] = ec_iltop[0];
-			ec->ec_dhost[1] = ec_iltop[1];
-			ec->ec_dhost[2] = ec_iltop[2];
-		} else {
-			ec->ec_dhost[0] = es->es_enaddr[0];
-			ec->ec_dhost[1] = es->es_enaddr[1];
-			ec->ec_dhost[2] = es->es_enaddr[2];
-		}
-		ec->ec_dhost[3] = (dest>>8) & 0x7f;
-		ec->ec_dhost[4] = (dest>>16) & 0xff;
-		ec->ec_dhost[5] = (dest>>24) & 0xff;
+		u_char *to = dest & 0x8000 ? ec_iltop : es->es_enaddr;
+
+		bcopy((caddr_t)to, (caddr_t)ec->ether_dhost, 3);
+		ec->ether_dhost[3] = (dest>>8) & 0x7f;
+		ec->ether_dhost[4] = (dest>>16) & 0xff;
+		ec->ether_dhost[5] = (dest>>24) & 0xff;
 	}
-	ec->ec_type = type;
+	ec->ether_type = htons((u_short)type);
 
 	/*
 	 * Queue message on interface, and start output if interface
@@ -637,8 +628,8 @@ ecput(ecbuf, m)
 
 	for (off = 2048, mp = m; mp; mp = mp->m_next)
 		off -= mp->m_len;
-	if (2048 - off < ECMIN + sizeof (struct ec_header))
-		off = 2048 - ECMIN - sizeof (struct ec_header);
+	if (2048 - off < ETHERMIN + sizeof (struct ether_header))
+		off = 2048 - ETHERMIN - sizeof (struct ether_header);
 	*(u_short *)ecbuf = off;
 	bp = (u_char *)(ecbuf + off);
 	for (mp = m; mp; mp = mp->m_next) {
@@ -666,10 +657,6 @@ ecput(ecbuf, m)
 		if (len & 01)
 			*bp++ = *mcp++;
 	}
-#ifdef notdef
-	if (bp - ecbuf != 2048)
-		printf("ec: bad ecput, diff=%d\n", bp-ecbuf);
-#endif
 	m_freem(m);
 }
 
@@ -690,7 +677,7 @@ ecget(ecbuf, totlen, off0)
 	register int off = off0, len;
 	u_char *cp;
 
-	cp = ecbuf + ECRDOFF + sizeof (struct ec_header);
+	cp = ecbuf + ECRDOFF + sizeof (struct ether_header);
 	while (totlen > 0) {
 		register int words;
 		u_char *mcp;
@@ -700,7 +687,8 @@ ecget(ecbuf, totlen, off0)
 			goto bad;
 		if (off) {
 			len = totlen - off;
-			cp = ecbuf + ECRDOFF + sizeof (struct ec_header) + off;
+			cp = ecbuf + ECRDOFF +
+				sizeof (struct ether_header) + off;
 		} else
 			len = totlen;
 		if (len >= CLBYTES) {
@@ -740,7 +728,7 @@ ecget(ecbuf, totlen, off0)
 		}
 		off += len;
 		if (off == totlen) {
-			cp = ecbuf + ECRDOFF + sizeof (struct ec_header);
+			cp = ecbuf + ECRDOFF + sizeof (struct ether_header);
 			off = 0;
 			totlen = off0;
 		}
