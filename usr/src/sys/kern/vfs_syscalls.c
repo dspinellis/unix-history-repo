@@ -1,4 +1,4 @@
-/*	vfs_syscalls.c	4.59	83/05/31	*/
+/*	vfs_syscalls.c	4.60	83/06/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -443,7 +443,7 @@ stat1(follow)
 	ip = namei(uchar, LOOKUP, follow);
 	if (ip == NULL)
 		return;
-	(void) statinode(ip, &sb);
+	(void) ino_stat(ip, &sb);
 	iput(ip);
 	u.u_error = copyout((caddr_t)&sb, (caddr_t)uap->ub, sizeof (sb));
 }
@@ -647,43 +647,6 @@ sync()
 {
 
 	update();
-}
-
-/*
- * Apply an advisory lock on a file descriptor.
- */
-flock()
-{
-	register struct a {
-		int	fd;
-		int	how;
-	} *uap = (struct a *)u.u_ap;
-	register struct file *fp;
-	register int cmd, flags;
-
-	fp = getinode(uap->fd);
-	if (fp == NULL)
-		return;
-	cmd = uap->how;
-	flags = u.u_pofile[uap->fd] & (UF_SHLOCK|UF_EXLOCK);
-	if (cmd&LOCK_UN) {
-		if (flags == 0) {
-			u.u_error = EINVAL;
-			return;
-		}
-		funlocki((struct inode *)fp->f_data, flags);
-		u.u_pofile[uap->fd] &= ~(UF_SHLOCK|UF_EXLOCK);
-		return;
-	}
-	/*
-	 * No reason to write lock a file we've already
-	 * write locked, similarly with a read lock.
-	 */
-	if ((flags&UF_EXLOCK) && (cmd&LOCK_EX) ||
-	    (flags&UF_SHLOCK) && (cmd&LOCK_SH))
-		return;
-	u.u_pofile[uap->fd] =
-	    flocki((struct inode *)fp->f_data, u.u_pofile[uap->fd], cmd);
 }
 
 /*
