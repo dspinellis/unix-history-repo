@@ -1,6 +1,11 @@
-/*	user.h	4.20	82/09/12	*/
+/*	user.h	4.21	82/10/31	*/
 
-#include <sys/pcb.h>
+#ifdef vax
+#include <vax/pcb.h>
+#endif
+#ifdef sun
+#include <sun/pcb.h>
+#endif
 #include <sys/dmap.h>
 #include <time.h>
 #include <resource.h>
@@ -59,15 +64,14 @@ struct	user {
 	int	u_code;			/* ``code'' to trap */
 	caddr_t	u_sigstack;		/* 0 means no sigstack */
 	int	u_onsigstack;
-/* on SIGILL code passes compatibility mode fault address  */
-/* on SIGFPE code passes more specific kind of floating point fault */
 
 /* 1.4 - descriptor management */
 	struct	file *u_ofile[NOFILE];	/* file structures for open files */
 	char	u_pofile[NOFILE];	/* per-process flags of open files */
-#define	EXCLOSE 01		/* auto-close on exec */
-#define	RDLOCK	02		/* read lock present */
-#define	WRLOCK	04		/* write lock present */
+#define	EXCLOSE 	0x1		/* auto-close on exec */
+#define	RDLOCK		0x2		/* read lock present */
+#define	WRLOCK		0x4		/* write lock present */
+#define	UF_MAPPED 	0x8
 	struct	inode *u_cdir;		/* current directory */
 	struct	inode *u_rdir;		/* root directory of current process */
 	struct	tty *u_ttyp;		/* controlling tty pointer */
@@ -124,6 +128,7 @@ struct	user {
 #define	JUSTRETURN	0
 #define	RESTARTSYS	1
 #define	SIMULATERTI	2
+#define	REALLYRETURN	3
 
 /* u_error codes */
 #include <errno.h>
