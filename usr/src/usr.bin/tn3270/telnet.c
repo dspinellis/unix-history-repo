@@ -610,6 +610,7 @@ int fd;
 #if	defined(MSDOS)
 #include <time.h>
 #include <signal.h>
+#include <process.h>
 
 #if	!defined(SO_OOBINLINE)
 #define	SO_OOBINLINE
@@ -787,11 +788,20 @@ inputExists()
     if (lineend) {
 	return 1;
     }
-    if (!kbhit()) {
+#if	1	/* For BIOS variety of calls */
+    if (kbhit() == 0) {
 	return lineend;
     }
     input = getch();			/* MSC - get console character */
-#if	0	/* For BIOS variety of calls */
+    if ((input&0xff) == 0) {
+	DoNextChar(0x01);		/* ^A */
+    } else {
+	DoNextChar(input&0xff);
+    }
+#else	/* 0 */
+    if ((input = dirconio()) == -1) {
+	return lineend;
+    }
     if ((input&0xff) == 0) {
 	if ((input&0xff00) == 0x0300) {		/* Null */
 	    DoNextChar(0);
@@ -808,11 +818,6 @@ inputExists()
 	DoNextChar(input&0xff);
     }
 #endif	/* 0 */
-    if ((input&0xff) == 0) {
-	DoNextChar(0x01);		/* ^A */
-    } else {
-	DoNextChar(input&0xff);
-    }
     return lineend;
 }
 
@@ -825,7 +830,7 @@ CtrlCInterrupt()
 	signal(SIGINT, CtrlCInterrupt);
     } else {
 	closeallsockets();
-	exit();
+	exit(1);
     }
 }
 
@@ -3493,6 +3498,7 @@ settranscom(argc, argv)
 #endif	/* defined(TN3270) && defined(unix) */
 
 
+
 static
 tn(argc, argv)
 	int argc;
@@ -3624,7 +3630,6 @@ static char
 	openhelp[] =	"connect to a site",
 	closehelp[] =	"close current connection",
 	quithelp[] =	"exit telnet",
-	zhelp[] =	"suspend telnet",
 	statushelp[] =	"print status information",
 	helphelp[] =	"print help information",
 	sendhelp[] =	"transmit special characters ('send ?' for more)",
@@ -3634,9 +3639,15 @@ static char
 #if	defined(TN3270) && defined(unix)
 	transcomhelp[] = "specify Unix command for transparent mode pipe",
 #endif	/* defined(TN3270) && defined(unix) */
+#if	defined(unix)
+	zhelp[] =	"suspend telnet",
+#endif	/* defined(unix */
+#if	defined(MSDOS)
+	shellhelp[] =	"invoke a subshell",
+#endif	/* defined(MSDOS) */
 	modehelp[] = "try to enter line-by-line or character-at-a-time mode";
 
-extern int	help();
+extern int	help(), shell();
 
 static struct cmd cmdtab[] = {
 	{ "close",	closehelp,	bye,		1, 1 },
@@ -3651,7 +3662,12 @@ static struct cmd cmdtab[] = {
 #if	defined(TN3270) && defined(unix)
 	{ "transcom",	transcomhelp,	settranscom,	1, 0 },
 #endif	/* defined(TN3270) && defined(unix) */
+#if	defined(unix)
 	{ "z",		zhelp,		suspend,	1, 0 },
+#endif	/* defined(unix) */
+#if	defined(MSDOS)
+	{ "!",		shellhelp,	shell,		1, 0 },
+#endif	/* defined(MSDOS) */
 	{ "?",		helphelp,	help,		1, 0 },
 	0
 };
