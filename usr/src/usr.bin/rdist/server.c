@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)server.c	4.20 (Berkeley) 84/09/21";
+static	char *sccsid = "@(#)server.c	4.21 (Berkeley) 84/12/06";
 #endif
 
 #include "defs.h"
@@ -255,8 +255,7 @@ sendf(rname, opts)
 
 	if (except(target))
 		return;
-	if (access(target, 4) < 0 ||
-	    (opts & FOLLOW ? stat(target, &stb) : lstat(target, &stb)) < 0) {
+	if ((opts & FOLLOW ? stat(target, &stb) : lstat(target, &stb)) < 0) {
 		error("%s: %s\n", target, sys_errlist[errno]);
 		return;
 	}
@@ -334,7 +333,7 @@ sendf(rname, opts)
 	case S_IFLNK:
 		if (u != 1)
 			opts |= COMPARE;
-		(void) sprintf(buf, "K%o %o %D %D %s %s %s\n", opts,
+		(void) sprintf(buf, "K%o %o %ld %ld %s %s %s\n", opts,
 			stb.st_mode & 07777, stb.st_size, stb.st_mtime,
 			pw->pw_name, gr->gr_name, rname);
 		if (debug)
@@ -383,7 +382,7 @@ sendf(rname, opts)
 		error("%s: %s\n", target, sys_errlist[errno]);
 		return;
 	}
-	(void) sprintf(buf, "R%o %o %D %D %s %s %s\n", opts,
+	(void) sprintf(buf, "R%o %o %ld %ld %s %s %s\n", opts,
 		stb.st_mode & 07777, stb.st_size, stb.st_mtime,
 		pw->pw_name, gr->gr_name, rname);
 	if (debug)
@@ -416,12 +415,12 @@ dospecial:
 	for (sc = subcmds; sc != NULL; sc = sc->sc_next) {
 		if (sc->sc_type != SPECIAL)
 			continue;
-		if (!inlist(sc->sc_args, target))
+		if (sc->sc_args != NULL && !inlist(sc->sc_args, target))
 			continue;
 		log(lfp, "special \"%s\"\n", sc->sc_name);
 		if (opts & VERIFY)
 			continue;
-		(void) sprintf(buf, "S%s\n", sc->sc_name);
+		(void) sprintf(buf, "SFILE=%s;%s\n", target, sc->sc_name);
 		if (debug)
 			printf("buf = %s", buf);
 		(void) write(rem, buf, strlen(buf));
@@ -562,14 +561,17 @@ query(name)
 		(void) sprintf(tp, "/%s", name);
 
 	if (lstat(target, &stb) < 0) {
-		(void) write(rem, "N\n", 2);
+		if (errno == ENOENT)
+			(void) write(rem, "N\n", 2);
+		else
+			error("%s:%s: %s\n", host, target, sys_errlist[errno]);
 		*tp = '\0';
 		return;
 	}
 
 	switch (stb.st_mode & S_IFMT) {
 	case S_IFREG:
-		(void) sprintf(buf, "Y%D %D\n", stb.st_size, stb.st_mtime);
+		(void) sprintf(buf, "Y%ld %ld\n", stb.st_size, stb.st_mtime);
 		(void) write(rem, buf, strlen(buf));
 		break;
 
@@ -595,7 +597,7 @@ recvf(cmd, type)
 	time_t mtime;
 	struct stat stb;
 	struct timeval tvp[2];
-	char *owner, *group, *dir;
+	char *owner, *group;
 	char new[BUFSIZ];
 	extern char *tmpname;
 
@@ -664,52 +666,42 @@ recvf(cmd, type)
 		}
 		if (lstat(target, &stb) == 0) {
 			if (ISDIR(stb.st_mode)) {
-				if ((stb.st_mode & 0777) == mode) {
+				if ((stb.st_mode & 07777) == mode) {
 					ack();
 					return;
 				}
 				buf[0] = '\0';
 				(void) sprintf(buf + 1,
-					"%s:%s: Warning: mode %o != %o\n",
-					host, target, stb.st_mode & 0777, mode);
+					"%s:%s: Warning: remote mode %o != local mode %o\n",
+					host, target, stb.st_mode & 07777, mode);
 				(void) write(rem, buf, strlen(buf + 1) + 1);
 				return;
 			}
-			error("%s:%s: %s\n", host,target,sys_errlist[ENOTDIR]);
-		} else if (chkparent(target) < 0 || mkdir(target, mode) < 0)
-			error("%s:%s: %s\n", host, target, sys_errlist[errno]);
-		else if (chog(target, owner, group, mode) == 0) {
-			ack();
+			errno = ENOTDIR;
+		} else if (errno == ENOENT && (mkdir(target, mode) == 0 ||
+		    chkparent(target) == 0 && mkdir(target, mode) == 0)) {
+			if (chog(target, owner, group, mode) == 0)
+				ack();
 			return;
 		}
+		error("%s:%s: %s\n", host, target, sys_errlist[errno]);
 		tp = stp[--catname];
 		*tp = '\0';
 		return;
 	}
 
-	new[0] = '\0';
 	if (catname)
 		(void) sprintf(tp, "/%s", cp);
-	if (lstat(target, &stb) == 0 && (f = stb.st_mode & S_IFMT) != S_IFREG &&
-	    f != S_IFLNK) {
-		error("%s:%s: not a regular file\n", host, target);
-		return;
-	}
-	if (chkparent(target) < 0)
-		goto bad;
 	cp = rindex(target, '/');
 	if (cp == NULL)
-		dir = ".";
-	else if (cp == target) {
-		dir = "";
-		cp = NULL;
-	} else {
-		dir = target;
+		strcpy(new, tmpname);
+	else if (cp == target)
+		(void) sprintf(new, "/%s", tmpname);
+	else {
 		*cp = '\0';
-	}
-	(void) sprintf(new, "%s/%s", dir, tmpname);
-	if (cp != NULL)
+		(void) sprintf(new, "%s/%s", target, tmpname);
 		*cp = '/';
+	}
 
 	if (type == S_IFLNK) {
 		int j;
@@ -722,18 +714,18 @@ recvf(cmd, type)
 			cp += j;
 		}
 		*cp = '\0';
-		umask(~mode & 0777);
-		j = symlink(buf, new);
-		umask(0);
-		(void) response();
-		if (j < 0)
-			goto bad1;
+		if (response() < 0) {
+			err();
+			return;
+		}
+		if (symlink(buf, new) < 0)
+			goto badn;
 		mode &= 0777;
 		if (opts & COMPARE) {
 			char tbuf[BUFSIZ];
 
 			if ((i = readlink(target, tbuf, BUFSIZ)) < 0)
-				goto bad;
+				goto badt;
 			if (i == size && strncmp(buf, tbuf, size) == 0) {
 				(void) unlink(new);
 				ack();
@@ -745,8 +737,12 @@ recvf(cmd, type)
 		goto fixup;
 	}
 
-	if ((f = creat(new, mode)) < 0)
-		goto bad1;
+	if ((f = creat(new, mode)) < 0) {
+		if (errno != ENOENT || chkparent(new) < 0 ||
+		    (f = creat(new, mode)) < 0)
+			goto badt;
+	}
+
 	ack();
 	wrerr = 0;
 	for (i = 0; i < size; i += BUFSIZ) {
@@ -775,7 +771,11 @@ recvf(cmd, type)
 		}
 	}
 	(void) close(f);
-	(void) response();
+	if (response() < 0) {
+		err();
+		(void) unlink(new);
+		return;
+	}
 	if (wrerr) {
 		error("%s:%s: %s\n", host, cp, sys_errlist[olderrno]);
 		(void) unlink(new);
@@ -786,9 +786,9 @@ recvf(cmd, type)
 		int c;
 
 		if ((f1 = fopen(target, "r")) == NULL)
-			goto bad;
+			goto badt;
 		if ((f2 = fopen(new, "r")) == NULL)
-			goto bad1;
+			goto badn;
 		while ((c = getc(f1)) == getc(f2))
 			if (c == EOF) {
 				(void) fclose(f1);
@@ -803,8 +803,7 @@ recvf(cmd, type)
 		differ:
 			(void) unlink(new);
 			buf[0] = '\0';
-			(void) sprintf(buf + 1, "need to update %s:%s\n",
-				host, target);
+			(void) sprintf(buf + 1, "need to update: %s\n",target);
 			(void) write(rem, buf, strlen(buf + 1) + 1);
 			return;
 		}
@@ -818,7 +817,7 @@ recvf(cmd, type)
 	tvp[1].tv_sec = mtime;
 	tvp[1].tv_usec = 0;
 	if (utimes(new, tvp) < 0) {
-bad1:
+badn:
 		error("%s:%s: %s\n", host, new, sys_errlist[errno]);
 		(void) unlink(new);
 		return;
@@ -830,10 +829,9 @@ fixup:
 	}
 	
 	if (rename(new, target) < 0) {
-bad:
+badt:
 		error("%s:%s: %s\n", host, target, sys_errlist[errno]);
-		if (new[0])
-			(void) unlink(new);
+		(void) unlink(new);
 		return;
 	}
 	if (opts & COMPARE) {
@@ -891,49 +889,29 @@ hardlink(cmd)
 }
 
 /*
- * Check parent directory for write permission and create if it doesn't
- * exist.
+ * Check to see if parent directory exists and create one if not.
  */
 chkparent(name)
 	char *name;
 {
-	register char *cp, *dir;
-	extern int userid, groupid;
+	register char *cp;
+	struct stat stb;
 
 	cp = rindex(name, '/');
-	if (cp == NULL)
-		dir = ".";
-	else if (cp == name) {
-		dir = "/";
-		cp = NULL;
-	} else {
-		dir = name;
-		*cp = '\0';
-	}
-	if (access(dir, 2) == 0) {
-		if (cp != NULL)
-			*cp = '/';
+	if (cp == NULL || cp == name)
 		return(0);
-	}
-	if (errno == ENOENT) {
-		if (rindex(dir, '/') != NULL && chkparent(dir) < 0)
-			goto bad;
-		if (!strcmp(dir, ".") || !strcmp(dir, "/"))
-			goto bad;
-		if (mkdir(dir, 0777 & ~oumask) < 0)
-			goto bad;
-		if (chown(dir, userid, groupid) < 0) {
-			(void) unlink(dir);
-			goto bad;
+	*cp = '\0';
+	if (lstat(name, &stb) < 0) {
+		if (errno == ENOENT && chkparent(name) >= 0 &&
+		    mkdir(name, 0777 & ~oumask) >= 0) {
+			*cp = '/';
+			return(0);
 		}
-		if (cp != NULL)
-			*cp = '/';
+	} else if (ISDIR(stb.st_mode)) {
+		*cp = '/';
 		return(0);
 	}
-
-bad:
-	if (cp != NULL)
-		*cp = '/';
+	*cp = '/';
 	return(-1);
 }
 
@@ -944,10 +922,10 @@ chog(file, owner, group, mode)
 	char *file, *owner, *group;
 	int mode;
 {
-	extern int userid, groupid;
-	extern char user[];
 	register int i;
 	int uid, gid;
+	extern char user[];
+	extern int userid;
 
 	uid = userid;
 	if (userid == 0) {
@@ -964,7 +942,7 @@ chog(file, owner, group, mode)
 			uid = pw->pw_uid;
 	} else if ((mode & 04000) && strcmp(user, owner) != 0)
 		mode &= ~04000;
-	gid = groupid;
+	gid = -1;
 	if (gr == NULL || strcmp(group, gr->gr_name) != 0) {
 		if ((gr = getgrnam(group)) == NULL) {
 			if (mode & 02000) {
@@ -975,25 +953,25 @@ chog(file, owner, group, mode)
 			gid = gr->gr_gid;
 	} else
 		gid = gr->gr_gid;
-	if (userid && groupid != gid) {
+	if (userid && gid >= 0) {
 		for (i = 0; gr->gr_mem[i] != NULL; i++)
 			if (!(strcmp(user, gr->gr_mem[i])))
 				goto ok;
 		mode &= ~02000;
-		gid = groupid;
+		gid = -1;
 	}
 ok:
-	if (chown(file, uid, gid) < 0) {
+	if (userid)
+		setreuid(userid, 0);
+	if (chown(file, uid, gid) < 0 ||
+	    (mode & 06000) && chmod(file, mode) < 0) {
+		if (userid)
+			setreuid(0, userid);
 		error("%s:%s: %s\n", host, file, sys_errlist[errno]);
 		return(-1);
 	}
-	/*
-	 * Restore set-user-id or set-group-id bit if appropriate.
-	 */
-	if ((mode & 06000) && chmod(file, mode) < 0) {
-		error("%s:%s: %s\n", host, file, sys_errlist[errno]);
-		return(-1);
-	}
+	if (userid)
+		setreuid(0, userid);
 	return(0);
 }
 
@@ -1098,7 +1076,7 @@ clean(cp)
 		error("clean: options not delimited\n");
 		return;
 	}
-	if (access(target, 6) < 0 || (d = opendir(target)) == NULL) {
+	if ((d = opendir(target)) == NULL) {
 		error("%s:%s: %s\n", host, target, sys_errlist[errno]);
 		return;
 	}
@@ -1138,7 +1116,7 @@ clean(cp)
 		if (opts & VERIFY) {
 			cp = buf;
 			*cp++ = '\0';
-			(void) sprintf(cp, "need to remove %s\n", target);
+			(void) sprintf(cp, "need to remove: %s\n", target);
 			(void) write(rem, buf, strlen(cp) + 1);
 		} else
 			remove(&stb);
@@ -1179,7 +1157,7 @@ remove(stp)
 		return;
 	}
 
-	if (access(target, 6) < 0 || (d = opendir(target)) == NULL)
+	if ((d = opendir(target)) == NULL)
 		goto bad;
 
 	otp = tp;
@@ -1228,6 +1206,7 @@ dospecial(cmd)
 	int fd[2], status, pid, i;
 	register char *cp, *s;
 	char sbuf[BUFSIZ];
+	extern int userid, groupid;
 
 	if (pipe(fd) < 0) {
 		error("%s\n", sys_errlist[errno]);
@@ -1245,6 +1224,7 @@ dospecial(cmd)
 		(void) dup(fd[1]);
 		(void) close(fd[0]);
 		(void) close(fd[1]);
+		setgid(groupid);
 		setuid(userid);
 		execl("/bin/sh", "sh", "-c", cmd, 0);
 		_exit(127);
@@ -1280,6 +1260,7 @@ dospecial(cmd)
 		;
 	if (i == -1)
 		status = -1;
+	(void) close(fd[0]);
 	if (status)
 		error("shell returned %d\n", status);
 	else
