@@ -8,11 +8,13 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)regex.h	5.3 (Berkeley) %G%
+ *	@(#)regex.h	5.4 (Berkeley) %G%
  */
 
 #ifndef _REGEX_H_
 #define	_REGEX_H_
+
+#include <sys/cdefs.h>
 
 /* types */
 typedef off_t regoff_t;
@@ -66,8 +68,6 @@ typedef struct {
 #define	REG_TRACE	00400	/* tracing of execution */
 #define	REG_LARGE	01000	/* force large representation */
 #define	REG_BACKR	02000	/* force use of backref code */
-
-#include <sys/cdefs.h>
 
 __BEGIN_DECLS
 int	regcomp __P((regex_t *, const char *, int));
