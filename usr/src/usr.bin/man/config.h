@@ -1,10 +1,11 @@
 /*-
- * Copyright (c) 1993 The Regents of the University of California.
+ * Copyright (c) 1993
+ *	The Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)config.h	8.3 (Berkeley) %G%
+ *	@(#)config.h	8.4 (Berkeley) %G%
  */
 
 typedef struct _tag {
