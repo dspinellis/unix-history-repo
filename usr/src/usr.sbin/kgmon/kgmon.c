@@ -1,7 +1,7 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)kgmon.c	4.7 83/03/10";
+static char sccsid[] = "@(#)kgmon.c	4.8 83/07/01";
 #endif
 
 #include <sys/param.h>
@@ -62,7 +62,7 @@ main(argc, argv)
 	int mode, disp, openmode = 0;
 
 	argc--, argv++;
-	while (argv[0][0] == '-') {
+	while (argc > 0 && argv[0][0] == '-') {
 		switch (argv[0][1]) {
 		case 'b':
 			bflag++;
