@@ -1,11 +1,8 @@
 /*
- *	@(#)zabs.c	5.1	%G%
+ *	@(#)zabs.c	5.2	%G%
  */
 
-/*
- *	"@(#)zabs.c	1.1"
- */
-
+#ifdef tahoe
 /* THIS IS BASED ON TAHOE FP REPRESENTATION */
 #include <tahoemath/FP.h>
 
@@ -30,3 +27,4 @@ temp = imag/real;
 temp = real*sqrt(1.0 + temp*temp);  /*overflow!!*/
 return(temp);
 }
+#endif tahoe
