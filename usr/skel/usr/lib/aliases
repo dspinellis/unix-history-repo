@@ -1,0 +1,49 @@
+#
+#  Aliases in this file will NOT be expanded in the header from
+#  Mail, but WILL be visible over networks or from /bin/mail.
+#
+#	>>>>>>>>>>	The program "newaliases" must be run after
+#	>> NOTE >>	this file is updated for any changes to
+#	>>>>>>>>>>	show through to delivermail.
+#
+
+# Aliases to handle mail to msgs and news
+
+msgs: "|/usr/ucb/msgs -s"
+bsd-bugs: root
+bsd-ideas: root
+wnj:ucbvax!wnj
+mct:ucbvax!toy
+ozalp:ucbvax!ozalp
+schmidt:ucbvax!schmidt
+sklower:ucbvax!sklower
+aps:decvax!aps
+shannon:decvax!shannon
+tbl:vax135!tbl
+jfr:vax135!jfr
+dmr:research!dmr
+ken:research!ken
+mark:ucbvax!mark
+
+### The rest of the aliases are for illustration only ###
+
+allmsgs:a:msgs,b:msgs,c:msgs,d:msgs,e:msgs,f:msgs,i:msgs,j:msgs,m:msgs,o:msgs,t:msgs,msgs,s:msgs,v:msgs,x:msgs,y:msgs,z:msgs
+csmsgs:i:msgs,v:msgs,y:msgs,j:msgs,msgs
+trouble:y:trouble,\trouble
+schmidt:csvax:schmidt
+presotto:v:presotto
+fortune:arnold
+eric:eric,IngVAX:eric
+mark:csvax:mark
+feldman-test: "|/ra/csr/feldman/=mailer/qmail"
+rnews:"|/usr/local/uurec"
+laura:v:laura
+jkf:v:jkf
+jfk:v:jkf
+quest:j:kalash,r:toy,r:hickman,r:arnold,y:charles
+rogue:toy,arnold
+alonso:v:alonso
+dmu:v:dmu
+croft:croft@sri-unix
+jek:jekulp@mit-mc
+fateman:v:fateman
