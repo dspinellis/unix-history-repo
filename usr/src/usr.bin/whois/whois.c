@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)whois.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)whois.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -21,7 +21,7 @@ static char sccsid[] = "@(#)whois.c	5.11 (Berkeley) %G%";
 #include <netdb.h>
 #include <stdio.h>
 
-#define	NICHOST	"nic.ddn.mil"
+#define	NICHOST	"whois.internic.net"
 
 main(argc, argv)
 	int argc;
