@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.47	82/01/13	*/
+/*	tcp_input.c	1.48	82/01/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -508,20 +508,24 @@ printf("wl1 %x seq %x wl2 %x ack %x win %x wnd %x\n", tp->snd_wl1, ti->ti_seq, t
 	}
 
 	/*
-	 * If an URG bit is set in the segment and is greater than the
+	 * If an URG bit is set and in the segment and is greater than the
 	 * current known urgent pointer, then signal the user that the
 	 * remote side has out of band data.  This should not happen
 	 * in CLOSE_WAIT, CLOSING, LAST-ACK or TIME_WAIT STATES since
 	 * a FIN has been received from the remote side.  In these states
 	 * we ignore the URG.
 	 */
-	if ((tiflags & TH_URG) == 0 && TCPS_HAVERCVDFIN(tp->t_state) == 0)
-		if (SEQ_GT(ti->ti_urp, tp->rcv_up)) {
-			tp->rcv_up = ti->ti_urp;
-#if 0
-			sohasoutofband(so);		/* XXX */
-#endif
-		}
+	if ((tiflags & TH_URG) && TCPS_HAVERCVDFIN(tp->t_state) == 0 &&
+	    ti->ti_urp <= ti->ti_len &&
+	    SEQ_GT(ti->ti_seq+ti->ti_urp, tp->rcv_up)) {
+		tp->rcv_up = ti->ti_seq + ti->ti_urp;
+		so->so_oobmark = so->so_rcv.sb_cc +
+		    (tp->rcv_up - tp->rcv_nxt) - 1;
+		if (so->so_oobmark == 0)
+			so->so_state |= SS_RCVATMARK;
+		tcp_pulloutofband(so, ti);
+		sohasoutofband(so);
+	}
 
 	/*
 	 * Process the segment text, merging it into the TCP sequencing queue,
@@ -636,6 +640,39 @@ drop:
 	 */
 	m_freem(m);
 	return;
+}
+
+/*
+ * Pull the character before the urgent pointer into
+ * the TCP control block for presentation as out-of-band data.
+ * We leave ti->ti_len reflecting the out-of-band data,
+ * so that sequencing will continue to work.
+ */
+tcp_pulloutofband(so, ti)
+	struct socket *so;
+	struct tcpiphdr *ti;
+{
+	register struct mbuf *m;
+	int cnt = sizeof (struct tcpiphdr) + ti->ti_urp - 1;
+	
+	m = dtom(ti);
+	while (cnt >= 0) {
+		if (m->m_len > cnt) {
+			char *cp = mtod(m, caddr_t) + cnt;
+			struct tcpcb *tp = sototcpcb(so);
+
+			tp->t_oobc = *cp;
+			tp->t_haveoob = 1;
+			bcopy(cp+1, cp, m->m_len - cnt - 1);
+			m->m_len--;
+			return;
+		}
+		cnt -= m->m_len;
+		m = m->m_next;
+		if (m == 0)
+			break;
+	}
+	panic("tcp_pulloutofband");
 }
 
 /*
