@@ -2,7 +2,7 @@
  * make the current screen look like "win" over the area coverd by
  * win.
  *
- * %G% (Berkeley) @(#)refresh.c	1.8
+ * @(#)refresh.c	1.9 (Berkeley) %G%
  */
 
 # include	"curses.ext"
@@ -24,6 +24,7 @@ reg WINDOW	*win;
 {
 	reg short	wy;
 	reg int		retval;
+	reg WINDOW	*orig;
 
 	/*
 	 * make sure were in visual state
@@ -61,7 +62,7 @@ reg WINDOW	*win;
 	}
 	if (!CA) {
 		if (win->_curx != 0)
-			putchar('\n');
+			_putchar('\n');
 		if (!curwin)
 			werase(curscr);
 	}
@@ -71,32 +72,50 @@ reg WINDOW	*win;
 # endif
 	for (wy = 0; wy < win->_maxy; wy++) {
 # ifdef DEBUG
-		fprintf(outf, "%d\t%d\t%d\n", wy, win->_firstch[wy], win->_lastch[wy]);
+		fprintf(outf, "%d\t%d\t%d\n", wy, win->_firstch[wy],
+			win->_lastch[wy]);
 # endif
 		if (win->_firstch[wy] != _NOCHANGE)
 			if (makech(win, wy) == ERR)
 				return ERR;
-			else
-				win->_firstch[wy] = _NOCHANGE;
+			else {
+				if (win->_firstch[wy] >= win->_ch_off)
+					win->_firstch[wy] = win->_maxx +
+							    win->_ch_off;
+				if (win->_lastch[wy] < win->_maxx +
+						       win->_ch_off)
+					win->_lastch[wy] = win->_ch_off;
+				if (win->_lastch[wy] < win->_firstch[wy])
+					win->_firstch[wy] = _NOCHANGE;
+			}
+# ifdef DEBUG
+		fprintf(outf, "\t%d\t%d\n", win->_firstch[wy],
+			win->_lastch[wy]);
+# endif
 	}
+
 	if (win == curscr)
 		domvcur(ly, lx, win->_cury, win->_curx);
-	else if (win->_leave) {
-		curscr->_cury = ly;
-		curscr->_curx = lx;
-		ly -= win->_begy;
-		lx -= win->_begx;
-		if (ly >= 0 && ly < win->_maxy && lx >= 0 && lx < win->_maxx) {
-			win->_cury = ly;
-			win->_curx = lx;
-		}
-		else
-			win->_cury = win->_curx = 0;
-	}
 	else {
-		domvcur(ly, lx, win->_cury+win->_begy, win->_curx+win->_begx);
-		curscr->_cury = win->_cury + win->_begy;
-		curscr->_curx = win->_curx + win->_begx;
+		if (win->_leave) {
+			curscr->_cury = ly;
+			curscr->_curx = lx;
+			ly -= win->_begy;
+			lx -= win->_begx;
+			if (ly >= 0 && ly < win->_maxy && lx >= 0 &&
+			    lx < win->_maxx) {
+				win->_cury = ly;
+				win->_curx = lx;
+			}
+			else
+				win->_cury = win->_curx = 0;
+		}
+		else {
+			domvcur(ly, lx, win->_cury + win->_begy,
+				win->_curx + win->_begx);
+			curscr->_cury = win->_cury + win->_begy;
+			curscr->_curx = win->_curx + win->_begx;
+		}
 	}
 	retval = OK;
 ret:
@@ -117,13 +136,23 @@ short		wy;
 	reg short	wx, lch, y;
 	reg int		nlsp, clsp;	/* last space in lines		*/
 
-	wx = win->_firstch[wy];
+	wx = win->_firstch[wy] - win->_ch_off;
+	if (wx >= win->_maxx)
+		return OK;
+	else if (wx < 0)
+		wx = 0;
+	lch = win->_lastch[wy] - win->_ch_off;
+	if (lch < 0)
+		return OK;
+	else if (lch >= win->_maxx)
+		lch = win->_maxx - 1;;
 	y = wy + win->_begy;
-	lch = win->_lastch[wy];
+
 	if (curwin)
 		csp = " ";
 	else
 		csp = &curscr->_y[wy + win->_begy][wx + win->_begx];
+
 	nsp = &win->_y[wy][wx];
 	if (CE && !curwin) {
 		for (ce = &win->_y[wy][win->_maxx - 1]; *ce == ' '; ce--)
@@ -131,10 +160,12 @@ short		wy;
 				break;
 		nlsp = ce - win->_y[wy];
 	}
+
 	if (!curwin)
 		ce = CE;
 	else
 		ce = NULL;
+
 	while (wx <= lch) {
 		if (*nsp != *csp) {
 			domvcur(ly, lx, y, wx + win->_begx);
@@ -165,7 +196,7 @@ short		wy;
 						lx = wx + win->_begx;
 						while (wx++ <= clsp)
 							*csp++ = ' ';
-						goto ret;
+						return OK;
 					}
 					ce = NULL;
 				}
@@ -192,10 +223,9 @@ short		wy;
 							curscr->_flags &= ~_STANDOUT;
 						    }
 					    if (!curwin)
-						putchar((*csp = *nsp) & 0177);
+						_putchar((*csp = *nsp) & 0177);
 					    else
-						putchar(*nsp & 0177);
-					    scroll(win);
+						_putchar(*nsp & 0177);
 					    if (win->_flags&_FULLWIN && !curwin)
 						scroll(curscr);
 					    ly = win->_begy+win->_cury;
@@ -207,11 +237,15 @@ short		wy;
 					    return ERR;
 					}
 				if (!curwin)
-					putchar((*csp++ = *nsp) & 0177);
+					_putchar((*csp++ = *nsp) & 0177);
 				else
-					putchar(*nsp & 0177);
+					_putchar(*nsp & 0177);
+# ifdef FULLDEBUG
+				fprintf(outf,
+					"MAKECH:putchar(%c)\n", *nsp & 0177);
+# endif
 				if (UC && (*nsp & _STANDOUT)) {
-					putchar('\b');
+					_putchar('\b');
 					_puts(UC);
 				}
 				nsp++;
@@ -224,7 +258,7 @@ short		wy;
 			lx = wx + win->_begx;
 		}
 		else if (wx < lch)
-			while (*nsp == *csp) {
+			while (*nsp == *csp && wx < lch) {
 				nsp++;
 				if (!curwin)
 					csp++;
@@ -236,14 +270,13 @@ short		wy;
 		fprintf(outf, "MAKECH: 3: wx = %d, lx = %d\n", wx, lx);
 # endif	
 	}
-ret:
 	return OK;
 }
 
 /*
  * perform a mvcur, leaving standout mode if necessary
  */
-static
+STATIC
 domvcur(oy, ox, ny, nx)
 int	oy, ox, ny, nx; {
 
