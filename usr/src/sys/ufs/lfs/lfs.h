@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs.h	8.3 (Berkeley) %G%
+ *	@(#)lfs.h	8.4 (Berkeley) %G%
  */
 
 #define	LFS_LABELPAD	8192		/* LFS label size */
@@ -130,6 +130,7 @@ struct lfs {
 
 /* Checksum; valid on disk. */
 	u_long	lfs_cksum;		/* checksum for superblock checking */
+	long	lfs_maxsymlinklen;	/* max length of an internal symlink */
 };
 
 /*
