@@ -5,7 +5,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)run.test	5.7 (Berkeley) %G%
+#	@(#)run.test	5.8 (Berkeley) %G%
 #
 
 # db regression tests
@@ -300,7 +300,7 @@ test8()
 	printf "Test 8: btree, hash: repeated small key, big data pairs\n"
 	rm -f $TMP1
 	awk 'BEGIN {
-		for (i = 1; i <= 75; ++i) {
+		for (i = 1; i <= 10; ++i) {
 			printf("p\nkkey1\nD/bin/sh\n");
 			printf("p\nkkey2\nD/bin/csh\n");
 			if (i % 8 == 0) {
@@ -311,6 +311,8 @@ test8()
 				printf("e\t%d of 75             \r\n", i);
 			printf("r\nkkey1\nr\nkkey2\n");
 		}
+		printf("e\n");
+		printf("eend of test8 run\n");
 	}' > $TMP1
 	$PROG btree $TMP1
 	$PROG hash $TMP1
