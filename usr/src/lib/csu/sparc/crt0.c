@@ -10,20 +10,25 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)crt0.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)crt0.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  *	C start up routine.
  */
 
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
+
 char **environ = (char **)0;
+static char empty[1];
+char *__progname = empty;
 
 extern unsigned char etext[];
 extern volatile void start() asm("start0");
 extern unsigned char eprol[] asm("eprol");
 extern void _mcleanup(void);
-volatile void exit(int);
 
 volatile void
 start(void)
@@ -69,8 +74,12 @@ asm("eprol:");
 	atexit(_mcleanup);
 	errno = 0;
 #endif
+	if (argv[0])
+		if ((__progname = strrchr(argv[0], '/')) == NULL)
+			__progname = argv[0];
+		else
+			++__progname;
 	exit(main(argc, argv, envp));
-	/* NOTREACHED */
 }
 
 #ifdef CRT0
@@ -81,4 +90,4 @@ asm("eprol:");
 asm(".globl mcount");
 asm(".globl _moncontrol");
 asm("mcount: _moncontrol: retl; nop");
-#endif CRT0
+#endif
