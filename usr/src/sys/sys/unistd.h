@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)unistd.h	5.15 (Berkeley) %G%
+ *	@(#)unistd.h	5.16 (Berkeley) %G%
  */
 
 #ifndef _SYS_UNISTD_H_
