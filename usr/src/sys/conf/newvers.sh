@@ -1,4 +1,11 @@
-#sccsid	newvers.sh	1.4	85/06/03
+#!/bin/sh -
+#
+# Copyright (c) 1980 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)newvers.sh	1.5 (Berkeley) %G%
+#
 if [ ! -r version ]; then echo 0 > version; fi
 touch version
 echo `cat version` ${USER-root} `pwd` `date` `hostname` | \

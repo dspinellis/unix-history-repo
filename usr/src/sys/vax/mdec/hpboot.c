@@ -1,4 +1,13 @@
-/*	hpboot.c	6.1	83/07/29	*/
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+_sccsid:.asciz	"@(#)hpboot.c	6.2 (Berkeley) %G%"
+#endif not lint
+
 
 /*
  * RP??/RM?? 1st level boot program: loads next 7.5Kbytes from

@@ -1,5 +1,10 @@
-#! /bin/sh
-#	@(#)get	4.15	%G%
+#!/bin/sh -
+#
+# Copyright (c) 1980 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)get	4.16 (Berkeley) %G%
 #
 # Shell script to build a mini-root file system
 # in preparation for building a distribution tape.
