@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.9	%G%";
+static char SccsId[] = "@(#)deliver.c	3.10	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -518,8 +518,9 @@ putmessage(fp, m)
 	/* output all header lines */
 	for (h = Header; h != NULL; h = h->h_link)
 	{
-		if (bitset(H_CHECK, h->h_flags) && bitset(H_DEFAULT, h->h_flags) &&
-		    !bitset(h->h_mflags, m->m_flags))
+		if (bitset(H_DELETE, h->h_flags))
+			continue;
+		if (bitset(H_CHECK|H_ACHECK, h->h_flags) && !bitset(h->h_mflags, m->m_flags))
 			continue;
 		if (bitset(H_DEFAULT, h->h_flags))
 		{
@@ -528,6 +529,8 @@ putmessage(fp, m)
 		}
 		else
 			p = h->h_value;
+		if (*p == '\0')
+			continue;
 		fprintf(fp, "%s: %s\n", capitalize(h->h_field), p);
 		h->h_flags |= H_USED;
 		anyheader = TRUE;
