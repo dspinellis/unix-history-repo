@@ -1,4 +1,4 @@
-/*	hp.c	4.51	82/08/01	*/
+/*	hp.c	4.52	82/08/13	*/
 
 #ifdef HPDEBUG
 int	hpdebug;
@@ -36,6 +36,7 @@ int	hpbdebug;
 #include "../h/dkbad.h"
 #include "../h/ioctl.h"
 #include "../h/dkio.h"
+#include "../h/uio.h"
 
 #include "../h/hpreg.h"
 
@@ -623,15 +624,16 @@ hard:
 	return (MBD_DONE);
 }
 
-hpread(dev)
+hpread(dev, uio)
 	dev_t dev;
+	struct uio *uio;
 {
 	register int unit = minor(dev) >> 3;
 
 	if (unit >= NHP)
 		u.u_error = ENXIO;
 	else
-		physio(hpstrategy, &rhpbuf[unit], dev, B_READ, minphys);
+		physio(hpstrategy, &rhpbuf[unit], dev, B_READ, minphys, uio);
 }
 
 hpwrite(dev)
@@ -642,7 +644,7 @@ hpwrite(dev)
 	if (unit >= NHP)
 		u.u_error = ENXIO;
 	else
-		physio(hpstrategy, &rhpbuf[unit], dev, B_WRITE, minphys);
+		physio(hpstrategy, &rhpbuf[unit], dev, B_WRITE, minphys, 0);
 }
 
 /*ARGSUSED*/
