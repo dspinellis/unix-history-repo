@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)glob.c	5.7 (Berkeley) %G%";
+static char *sccsid = "@(#)glob.c	5.8 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -380,6 +380,8 @@ globall(v)
 			gappend = GLOB_APPEND;
 		}
 		while (*++vl);
+		if (gflag & G_CSH)
+			blkfree(vo);
 		if (globv.gl_pathc)
 			vl = saveblk(globv.gl_pathv);
 		else
