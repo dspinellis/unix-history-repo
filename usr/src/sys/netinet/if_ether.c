@@ -59,7 +59,20 @@ int	arpt_age;		/* aging timer */
 u_char	etherbroadcastaddr[6] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 extern struct ifnet loif;
 
-#define	OLDMAP	1		/* if LNA > 1023 use old 3COM mapping */
+/*
+ * Local addresses in the range oldmap to infinity are
+ * mapped according to the old mapping scheme.  That is,
+ * mapping of Internet to Ethernet addresses is performed
+ * by taking the high three bytes of the network interface's
+ * address and the low three bytes of the local address part.
+ * This only allows boards from the same manufacturer to
+ * communicate unless the on-board address is overridden
+ * (not possible in many manufacture's hardware).
+ *
+ * NB: setting oldmap to zero completely disables ARP
+ *     (i.e. identical to setting IFF_NOARP with an ioctl).
+ */
+int	oldmap = 1024;
 
 /*
  * Attach an ethernet interface to the list "arpcom" where
@@ -173,6 +186,7 @@ arpresolve(ac, m, destip, desten)
 	register u_char *desten;
 {
 	register struct arptab *at;
+	register struct ifnet *ifp;
 	struct sockaddr_in sin;
 	int s, lna;
 
@@ -182,21 +196,21 @@ arpresolve(ac, m, destip, desten)
 		   sizeof (etherbroadcastaddr));
 		return (1);
 	}
-	if (destip->s_addr == ((struct sockaddr_in *)&ac->ac_if.if_addr)->
-	    sin_addr.s_addr) {			/* if for us, use lo driver */
+	ifp = &ac->ac_if;
+	/* if for us, then use software loopback driver */
+	if (destip->s_addr ==
+	    ((struct sockaddr_in *)&ifp->if_addr)-> sin_addr.s_addr) {
 		sin.sin_family = AF_INET;
 		sin.sin_addr = *destip;
 		return (looutput(&loif, m, (struct sockaddr *)&sin));
 	}
-#ifdef OLDMAP
-	if (lna >= 1024) {
+	if ((ifp->if_flags & IFF_NOARP) || lna >= oldmap) {
 		bcopy((caddr_t)ac->ac_enaddr, (caddr_t)desten, 3);
 		desten[3] = (lna >> 16) & 0x7f;
 		desten[4] = (lna >> 8) & 0xff;
 		desten[5] = lna & 0xff;
 		return (1);
 	}
-#endif OLDMAP
 	s = splimp();
 	ARPTAB_LOOK(at, destip->s_addr);
 	if (at == 0) {			/* not found */
