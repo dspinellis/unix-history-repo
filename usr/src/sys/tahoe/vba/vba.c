@@ -1,4 +1,4 @@
-/*	vba.c	1.3	86/01/24	*/
+/*	vba.c	1.4	86/12/16	*/
 
 #include "../tahoe/mtpr.h"
 #include "../tahoe/pte.h"
@@ -127,9 +127,6 @@ vbadone(bp, v, map, utl)
 					& ~PG_PROT | PG_V | PG_KW;
 				mtpr(TBIS, utl + i*NBPG);
 			}
-if (bp->b_resid != 0)
-	log(LOG_NOTICE, "vbadone: dev %o bcount %d resid %d\n",
-	    bp->b_dev, bp->b_bcount, bp->b_resid);
 			bcopy(v, ((int)bp->b_un.b_addr & PGOFSET)+utl,
 			    (unsigned)(bp->b_bcount - bp->b_resid));
 		} else
