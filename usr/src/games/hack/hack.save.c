@@ -5,10 +5,10 @@
 extern char genocided[60];	/* defined in Decl.c */
 extern char fut_geno[60];	/* idem */
 #include <signal.h>
+#include <unistd.h>
 
 extern char SAVEF[], nul[];
 extern char pl_character[PL_CSIZ];
-extern long lseek();
 extern struct obj *restobjchn();
 extern struct monst *restmonchn();
 
@@ -133,7 +133,7 @@ register fd;
 		savelev(nfd,tmp);
 		(void) close(nfd);
 	}
-	(void) lseek(fd, 0L, 0);
+	(void) lseek(fd, (off_t)0, 0);
 	getlev(fd, 0, 0);
 	(void) close(fd);
 	(void) unlink(SAVEF);
