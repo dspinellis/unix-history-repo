@@ -77,6 +77,22 @@ static Key_schedule master_key_schedule;
 static char pw_str[255];
 static long master_key_version;
 
+#define	gets(buf) _gets(buf, sizeof(buf))	/* hack */
+
+char *
+_gets(p, n)
+	char *p;
+	int n;
+{
+	char *rv, *fgets();
+	
+	if ((rv = fgets(p, n, stdin)) == NULL)
+		return (rv);
+	if (p = index(p, '\n'))
+		*p = '\0';
+	return (rv);
+}
+
 main(argc, argv)
     int     argc;
     char   *argv[];
@@ -197,7 +213,8 @@ change_principal()
     j = kerb_get_principal(input_name, input_instance, principal_data,
 			   MAX_PRINCIPAL, &more);
     if (!j) {
-	fprintf(stdout, "\n\07\07<Not found>, Create [y] ? ");
+	fprintf(stdout, "%s.%s not found, Create [y] ? ", input_name,
+	    input_instance);
 	gets(temp);		/* Default case should work, it didn't */
 	if (temp[0] != 'y' && temp[0] != 'Y' && temp[0] != '\0')
 	    return -1;
@@ -220,7 +237,7 @@ change_principal()
     for (i = 0; i < j; i++) {
 	for (;;) {
 	    fprintf(stdout,
-		    "\nPrincipal: %s, Instance: %s, kdc_key_ver: %d",
+		    "Principal: %s, Instance: %s, kdc_key_ver: %d\n",
 		    principal_data[i].name, principal_data[i].instance,
 		    principal_data[i].kdc_key_ver);
 	    editpw = 1;
@@ -233,7 +250,7 @@ change_principal()
 		principal_data[i].old = (char *) &old_principal;
 		bcopy(&principal_data[i], &old_principal,
 		      sizeof(old_principal));
-		printf("\nChange password [n] ? ");
+		printf("Change password [n] ? ");
 		gets(temp);
 		if (strcmp("y", temp) && strcmp("Y", temp))
 		    editpw = 0;
@@ -242,13 +259,13 @@ change_principal()
 	    if (editpw) {
 #ifdef NOENCRYPTION
 		placebo_read_pw_string(pw_str, sizeof pw_str,
-		    "\nNew Password: ", TRUE);
+		    "New Password: ", TRUE);
 #else
 		des_read_pw_string(pw_str, sizeof pw_str,
-		    "\nNew Password: ", TRUE);
+		    "New Password: ", TRUE);
 #endif
-		if (!strcmp(pw_str, "RANDOM")) {
-		    printf("\nRandom password [y] ? ");
+		if (pw_str[0] == '\0' || !strcmp(pw_str, "RANDOM")) {
+		    printf("Random password [y] ? ");
 		    gets(temp);
 		    if (!strcmp("n", temp) || !strcmp("N", temp)) {
 			/* no, use literal */
