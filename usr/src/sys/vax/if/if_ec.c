@@ -1,4 +1,4 @@
-/*	if_ec.c	4.32	82/12/17	*/
+/*	if_ec.c	4.33	83/03/15	*/
 
 #include "ec.h"
 
@@ -23,11 +23,11 @@
 #include "../netinet/in_systm.h"
 #include "../netinet/ip.h"
 #include "../netinet/ip_var.h"
+#include "../netinet/if_ether.h"
 #include "../netpup/pup.h"
 
 #include "../vax/cpu.h"
 #include "../vax/mtpr.h"
-#include "../vaxif/if_ether.h"
 #include "../vaxif/if_ecreg.h"
 #include "../vaxif/if_uba.h"
 #include "../vaxuba/ubareg.h"
@@ -40,8 +40,6 @@ struct	uba_device *ecinfo[NEC];
 u_short ecstd[] = { 0 };
 struct	uba_driver ecdriver =
 	{ ecprobe, 0, ecattach, 0, ecstd, "ec", ecinfo };
-u_char	ec_iltop[3] = { 0x02, 0x07, 0x01 };
-u_char	ecbroadcastaddr[6] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 #define	ECUNIT(x)	minor(x)
 
 int	ecinit(),ecoutput(),ecreset();
@@ -62,12 +60,13 @@ extern struct ifnet loif;
  * efficiently.
  */
 struct	ec_softc {
-	struct	ifnet es_if;		/* network-visible interface */
+	struct	arpcom es_ac;		/* common Ethernet structures */
+#define	es_if	es_ac.ac_if		/* network-visible interface */
+#define	es_addr	es_ac.ac_enaddr		/* hardware Ethernet address */
 	struct	ifuba es_ifuba;		/* UNIBUS resources */
 	short	es_mask;		/* mask for current output delay */
 	short	es_oactive;		/* is output active? */
 	u_char	*es_buf[16];		/* virtual addresses of buffers */
-	u_char	es_enaddr[6];		/* board's ethernet address */
 } ec_softc[NEC];
 
 /*
@@ -162,14 +161,13 @@ ecattach(ui)
 	ifp->if_unit = ui->ui_unit;
 	ifp->if_name = "ec";
 	ifp->if_mtu = ETHERMTU;
-	ifp->if_net = ui->ui_flags;
 
 	/*
 	 * Read the ethernet address off the board, one nibble at a time.
 	 */
 	addr->ec_xcr = EC_UECLR;
 	addr->ec_rcr = EC_AROM;
-	cp = es->es_enaddr;
+	cp = es->es_addr;
 #define	NEXTBIT	addr->ec_rcr = EC_AROM|EC_ASTEP; addr->ec_rcr = EC_AROM
 	for (i=0; i<6; i++) {
 		*cp = 0;
@@ -181,21 +179,19 @@ ecattach(ui)
 	}
 #ifdef notdef
 	printf("ec%d: addr=%x:%x:%x:%x:%x:%x\n", ui->ui_unit,
-		es->es_enaddr[0]&0xff, es->es_enaddr[1]&0xff,
-		es->es_enaddr[2]&0xff, es->es_enaddr[3]&0xff,
-		es->es_enaddr[4]&0xff, es->es_enaddr[5]&0xff);
+		es->es_addr[0]&0xff, es->es_addr[1]&0xff,
+		es->es_addr[2]&0xff, es->es_addr[3]&0xff,
+		es->es_addr[4]&0xff, es->es_addr[5]&0xff);
 #endif
-	ifp->if_host[0] = ((es->es_enaddr[3]&0xff)<<16) |
-	    ((es->es_enaddr[4]&0xff)<<8) | (es->es_enaddr[5]&0xff);
 	sin = (struct sockaddr_in *)&es->es_if.if_addr;
 	sin->sin_family = AF_INET;
-	sin->sin_addr = if_makeaddr(ifp->if_net, ifp->if_host[0]);
-
-	sin = (struct sockaddr_in *)&ifp->if_broadaddr;
-	sin->sin_family = AF_INET;
-	sin->sin_addr = if_makeaddr(ifp->if_net, INADDR_ANY);
-	ifp->if_flags = IFF_BROADCAST;
-
+	if (ui->ui_flags) {
+		i = ((es->es_addr[3]&0xff)<<16) |
+		    ((es->es_addr[4]&0xff)<<8) |
+		    (es->es_addr[5]&0xff);
+		sin->sin_addr = if_makeaddr(ui->ui_flags, i);
+	} else
+		sin->sin_addr = arpmyaddr();
 	ifp->if_init = ecinit;
 	ifp->if_output = ecoutput;
 	ifp->if_reset = ecreset;
@@ -231,6 +227,18 @@ ecinit(unit)
 	struct ec_softc *es = &ec_softc[unit];
 	struct ecdevice *addr;
 	int i, s;
+	register struct ifnet *ifp = &es->es_if;
+	register struct sockaddr_in *sin, *sinb;
+
+	sin = (struct sockaddr_in *)&ifp->if_addr;
+	if (sin->sin_addr.s_addr == 0)	/* if address still unknown */
+		return;
+	ifp->if_net = in_netof(sin->sin_addr);
+	ifp->if_host[0] = in_lnaof(sin->sin_addr);
+	sinb = (struct sockaddr_in *)&ifp->if_broadaddr;
+	sinb->sin_family = AF_INET;
+	sinb->sin_addr = if_makeaddr(ifp->if_net, INADDR_ANY);
+	ifp->if_flags = IFF_BROADCAST;
 
 	/*
 	 * Hang receive buffers and start any pending writes.
@@ -248,6 +256,8 @@ ecinit(unit)
 		ecstart(unit);
 	splx(s);
 	if_rtinit(&es->es_if, RTF_UP);
+	arpattach(&es->es_ac);
+	arpwhohas(&es->es_ac, &sin->sin_addr);
 }
 
 /*
@@ -465,6 +475,10 @@ ecread(unit)
 		schednetisr(NETISR_IP);
 		inq = &ipintrq;
 		break;
+
+	case ETHERPUP_ARPTYPE:
+		arpinput(&es->es_ac, m);
+		return;
 #endif
 	default:
 		m_freem(m);
@@ -499,25 +513,24 @@ ecoutput(ifp, m0, dst)
 	struct mbuf *m0;
 	struct sockaddr *dst;
 {
-	int type, dest, s, error;
+	int type, s, error;
+	u_char edst[6];
+	struct in_addr idst;
 	register struct ec_softc *es = &ec_softc[ifp->if_unit];
 	register struct mbuf *m = m0;
 	register struct ether_header *ec;
 	register int off, i;
-	struct mbuf *mcopy = (struct mbuf *) 0;		/* Null */
+	struct mbuf *mcopy = (struct mbuf *)0;
 
 	switch (dst->sa_family) {
 
 #ifdef INET
 	case AF_INET:
-		dest = ((struct sockaddr_in *)dst)->sin_addr.s_addr;
-		if ((dest &~ 0xff) == 0)
+		idst = ((struct sockaddr_in *)dst)->sin_addr;
+		if (!arpresolve(&es->es_ac, m, &idst, edst))
+			return (0);	/* if not yet resolved */
+		if (in_lnaof(idst) == INADDR_ANY)
 			mcopy = m_copy(m, 0, (int)M_COPYALL);
-		else if (dest == ((struct sockaddr_in *)&es->es_if.if_addr)->
-		    sin_addr.s_addr) {
-			mcopy = m;
-			goto gotlocal;
-		}
 		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
 		if (off > 0 && (off & 0x1ff) == 0 &&
 		    m->m_off >= MMINOFF + 2 * sizeof (u_short)) {
@@ -532,6 +545,12 @@ ecoutput(ifp, m0, dst)
 		off = 0;
 		goto gottype;
 #endif
+
+	case AF_UNSPEC:
+		ec = (struct ether_header *)dst->sa_data;
+		bcopy(ec->ether_dhost, edst, sizeof edst);
+		type = ec->ether_type;
+		goto gottype;
 
 	default:
 		printf("ec%d: can't handle af%d\n", ifp->if_unit,
@@ -572,18 +591,9 @@ gottype:
 		m->m_len += sizeof (struct ether_header);
 	}
 	ec = mtod(m, struct ether_header *);
-	bcopy((caddr_t)es->es_enaddr, (caddr_t)ec->ether_shost, 6);
-	if ((dest &~ 0xff) == 0)
-		bcopy((caddr_t)ecbroadcastaddr, (caddr_t)ec->ether_dhost, 6);
-	else {
-		u_char *to = dest & 0x8000 ? ec_iltop : es->es_enaddr;
-
-		bcopy((caddr_t)to, (caddr_t)ec->ether_dhost, 3);
-		ec->ether_dhost[3] = (dest>>8) & 0x7f;
-		ec->ether_dhost[4] = (dest>>16) & 0xff;
-		ec->ether_dhost[5] = (dest>>24) & 0xff;
-	}
+	bcopy(edst, ec->ether_dhost, sizeof (edst));
 	ec->ether_type = htons((u_short)type);
+	bcopy((caddr_t)es->es_addr, (caddr_t)ec->ether_shost, 6);
 
 	/*
 	 * Queue message on interface, and start output if interface
