@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)keyword.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)keyword.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -99,9 +99,9 @@ VAR var[] = {
 	{"pcpu", "", "%cpu"},
 	{"pending", "", "sig"},
 	{"pgid", "PGID", NULL, 0, evar, PIDLEN, EOFF(e_pgid), USHORT, PIDFMT},
-	{"pid", "PID", NULL, 0, pvar, PIDLEN, POFF(p_pid),SHORT, PIDFMT},
+	{"pid", "PID", NULL, 0, pvar, PIDLEN, POFF(p_pid), LONG, PIDFMT},
 	{"pmem", "", "%mem"},
-	{"ppid", "PPID", NULL, 0, evar, PIDLEN, EOFF(e_ppid), SHORT, PIDFMT},
+	{"ppid", "PPID", NULL, 0, evar, PIDLEN, EOFF(e_ppid), LONG, PIDFMT},
 	{"pri", "PRI", NULL, 0, pri, 3},
 	{"re", "RE", NULL, 0, pvar, 3, POFF(p_time), CHAR, "d"},
 	{"rgid", "RGID", NULL, 0, evar, UIDLEN, EOFF(e_pcred.p_rgid),
@@ -185,10 +185,10 @@ VAR var[] = {
 	{"pcpu", "", "%cpu"},
 	{"pending", "", "sig"},
 	{"pgid", "PGID", NULL, 0, evar, PIDLEN, EOFF(e_pgid), USHORT, PIDFMT},
-	{"pid", "PID", NULL, 0, pvar, PIDLEN, POFF(p_pid),SHORT, PIDFMT},
+	{"pid", "PID", NULL, 0, pvar, PIDLEN, POFF(p_pid), LONG, PIDFMT},
 	{"pmem", "", "%mem"},
 	{"poip", "POIP", NULL, 0, pvar, 4, POFF(p_poip), SHORT, "d"},
-	{"ppid", "PPID", NULL, 0, pvar, PIDLEN, POFF(p_ppid), SHORT, PIDFMT},
+	{"ppid", "PPID", NULL, 0, pvar, PIDLEN, POFF(p_ppid), LONG, PIDFMT},
 	{"pri", "PRI", NULL, 0, pri, 3},
 	{"re", "RE", NULL, 0, pvar, 3, POFF(p_time), CHAR, "d"},
 	{"rgid", "RGID", NULL, 0, pvar, UIDLEN, POFF(p_rgid), USHORT, UIDFMT},
