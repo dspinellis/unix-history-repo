@@ -1,11 +1,12 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)interp.c 1.27 %G%";
+static char sccsid[] = "@(#)interp.c 1.28 %G%";
 
 #include <math.h>
+#include <signal.h>
 #include "whoami.h"
-#include "objfmt.h"
 #include "vars.h"
+#include "objfmt.h"
 #include "h02opcs.h"
 #include "machdep.h"
 #include "libpc.h"
@@ -13,22 +14,23 @@ static char sccsid[] = "@(#)interp.c 1.27 %G%";
 /*
  * program variables
  */
-union disply	_display;
-struct disp	*_dp;
+union display _display;
+struct dispsave	*_dp;
 long	_lino = 0;
 int	_argc;
 char	**_argv;
 long	_mode;
-bool	_runtst = TRUE;
+long	_runtst = (long)TRUE;
 bool	_nodump = FALSE;
 long	_stlim = 500000;
 long	_stcnt = 0;
 long	_seed = 1;
-#ifdef VAX
+#ifdef ADDR32
 char	*_minptr = (char *)0x7fffffff;
-#else
+#endif ADDR32
+#ifdef ADDR16
 char	*_minptr = (char *)0xffff;
-#endif VAX
+#endif ADDR16
 char	*_maxptr = (char *)0;
 long	*_pcpcount = (long *)0;
 long	_cntrs = 0;
@@ -117,20 +119,21 @@ interpreter(base)
 	union progcntr pc;		/* interpreted program cntr */
 	register char *vpc;		/* register used for "pc" */
 	struct iorec *curfile;		/* active file */
-	register struct stack *stp;	/* active stack frame ptr */
+	register struct blockmark *stp;	/* active stack frame ptr */
 	/*
 	 * the following variables are used as scratch
 	 */
 	register char *tcp;
+	register short *tsp;
 	register long tl, tl1, tl2;
 	double td, td1;
 	struct sze8 t8;
+	register short *tsp1;
 	long *tlp;
-	register short *tsp, *tsp1, ts;
-	bool tb;
 	char *tcp1;
-	struct stack *tstp;
-	struct formalrtn *tfp;
+	bool tb;
+	struct blockmark *tstp;
+	register struct formalrtn *tfp;
 	union progcntr tpc;
 	struct iorec **ip;
 
@@ -155,7 +158,7 @@ interpreter(base)
 	_display.frame[0].locvars += 2 * sizeof(struct iorec *);
 	*(struct iorec **)(_display.frame[0].locvars + OUTPUT_OFF) = OUTPUT;
 	*(struct iorec **)(_display.frame[0].locvars + INPUT_OFF) = INPUT;
-	stp = (struct stack *)pushsp((long)(sizeof(struct stack)));
+	stp = (struct blockmark *)pushsp((long)(sizeof(struct blockmark)));
 	_dp = &_display.frame[0];
 	pc.cp = base;
 
@@ -172,7 +175,7 @@ interpreter(base)
 		switch (*pc.ucp++) {
 		case O_BPT:			/* breakpoint trap */
 			PFLUSH();
-			asm(".byte 0");
+			kill(getpid(), SIGILL);
 			pc.ucp--;
 			continue;
 		case O_NODUMP:
@@ -207,25 +210,25 @@ interpreter(base)
 			if (_dp == &_display.frame[1])
 				return;		/* exiting main proc ??? */
 			_lino = stp->lino;	/* restore lino, pc, dp */
-			pc.cp = stp->pc.cp;
+			pc.cp = stp->pc;
 			_dp = stp->dp;
 			_runtst = stp->entry->tests;
 			disableovrflo();
 			if (_runtst)
 				enableovrflo();
 			popsp(stp->entry->framesze +	/* pop local vars */
-			      sizeof(struct stack) +	/* pop stack frame */
-			      stp->entry->nargs);	/* pop parms */
+			     sizeof(struct blockmark) +	/* pop stack frame */
+			     stp->entry->nargs);	/* pop parms */
 			continue;
 		case O_CALL:
 			tl = *pc.cp++;
 			tcp = base + *pc.lp++;/* calc new entry point */
 			tcp += sizeof(short);
 			tcp = base + *(long *)tcp;
-			stp = (struct stack *)
-				pushsp((long)(sizeof(struct stack)));
+			stp = (struct blockmark *)
+				pushsp((long)(sizeof(struct blockmark)));
 			stp->lino = _lino;	/* save lino, pc, dp */
-			stp->pc.cp = pc.cp;
+			stp->pc = pc.cp;
 			stp->dp = _dp;
 			_dp = &_display.frame[tl]; /* set up new display ptr */
 			pc.cp = tcp;
@@ -234,17 +237,17 @@ interpreter(base)
 			pc.cp++;
  			tcp = popaddr(); /* ptr to display save area */
 			tfp = (struct formalrtn *)popaddr();
-			stp = (struct stack *)
-				pushsp((long)(sizeof(struct stack)));
+			stp = (struct blockmark *)
+				pushsp((long)(sizeof(struct blockmark)));
 			stp->lino = _lino;	/* save lino, pc, dp */
-			stp->pc.cp = pc.cp;
+			stp->pc = pc.cp;
 			stp->dp = _dp;
-			pc.cp = tfp->fentryaddr;/* calc new entry point */
+			pc.cp = (char *)(tfp->fentryaddr);/* new entry point */
 			_dp = &_display.frame[tfp->fbn];/* new display ptr */
  			blkcpy(&_display.frame[1], tcp,
-				tfp->fbn * sizeof(struct disp));
+				tfp->fbn * sizeof(struct dispsave));
 			blkcpy(&tfp->fdisp[0], &_display.frame[1],
-				tfp->fbn * sizeof(struct disp));
+				tfp->fbn * sizeof(struct dispsave));
 			continue;
 		case O_FRTN:
 			tl = *pc.cp++;		/* tl = size of return obj */
@@ -261,16 +264,16 @@ interpreter(base)
  			popsp((long)
  			    (sizeof(struct formalrtn *) + sizeof (char *)));
  			blkcpy(tcp1, &_display.frame[1],
-			    tfp->fbn * sizeof(struct disp));
+			    tfp->fbn * sizeof(struct dispsave));
 			continue;
 		case O_FSAV:
 			tfp = (struct formalrtn *)popaddr();
 			tfp->fbn = *pc.cp++;	/* blk number of routine */
 			tcp = base + *pc.lp++;	/* calc new entry point */
 			tcp += sizeof(short);
-			tfp->fentryaddr = base + *(long *)tcp;
+			tfp->fentryaddr = (long (*)())(base + *(long *)tcp);
 			blkcpy(&_display.frame[1], &tfp->fdisp[0],
-				tfp->fbn * sizeof(struct disp));
+				tfp->fbn * sizeof(struct dispsave));
 			pushaddr(tfp);
 			continue;
 		case O_SDUP2:
@@ -486,15 +489,20 @@ interpreter(base)
 			}
 		case O_AND:
 			pc.cp++;
-			push2(pop2() & pop2());
+			tl = pop2();
+			tl1 = pop2();
+			push2(tl & tl1);
 			continue;
 		case O_OR:
 			pc.cp++;
-			push2(pop2() | pop2());
+			tl = pop2();
+			tl1 = pop2();
+			push2(tl | tl1);
 			continue;
 		case O_NOT:
 			pc.cp++;
-			push2(pop2() ^ 1);
+			tl = pop2();
+			push2(tl ^ 1);
 			continue;
 		case O_AS2:
 			pc.cp++;
@@ -552,13 +560,17 @@ interpreter(base)
 			continue;
 		case O_INX2P2:
 			tl = *pc.cp++;		/* tl has shift amount */
-			tl1 = (pop2() - *pc.sp++) << tl;
-			pushaddr(popaddr() + tl1);
+			tl1 = pop2();
+			tl1 = (tl1 - *pc.sp++) << tl;
+			tcp = popaddr();
+			pushaddr(tcp + tl1);
 			continue;
 		case O_INX4P2:
 			tl = *pc.cp++;		/* tl has shift amount */
-			tl1 = (pop4() - *pc.sp++) << tl;
-			pushaddr(popaddr() + tl1);
+			tl1 = pop4();
+			tl1 = (tl1 - *pc.sp++) << tl;
+			tcp = popaddr();
+			pushaddr(tcp + tl1);
 			continue;
 		case O_INX2:
 			tl = *pc.cp++;		/* tl has element size */
@@ -566,7 +578,8 @@ interpreter(base)
 				tl = *pc.usp++;
 			tl1 = pop2();		/* index */
 			tl2 = *pc.sp++;
-			pushaddr(popaddr() + (tl1 - tl2) * tl);
+			tcp = popaddr();
+			pushaddr(tcp + (tl1 - tl2) * tl);
 			tl = *pc.usp++;
 			if (_runtst)
 				SUBSC(tl1, tl2, tl); /* range check */
@@ -577,7 +590,8 @@ interpreter(base)
 				tl = *pc.usp++;
 			tl1 = pop4();		/* index */
 			tl2 = *pc.sp++;
-			pushaddr(popaddr() + (tl1 - tl2) * tl);
+			tcp = popaddr();
+			pushaddr(tcp + (tl1 - tl2) * tl);
 			tl = *pc.usp++;
 			if (_runtst)
 				SUBSC(tl1, tl2, tl); /* range check */
@@ -586,7 +600,8 @@ interpreter(base)
 			tl = *pc.cp++;
 			if (tl == 0)
 				tl = *pc.usp++;
-			pushaddr(popaddr() + tl);
+			tcp = popaddr();
+			pushaddr(tcp + tl);
 			continue;
 		case O_NIL:
 			pc.cp++;
@@ -594,119 +609,147 @@ interpreter(base)
 			continue;
 		case O_ADD2:
 			pc.cp++;
-			push4((long)(pop2() + pop2()));
+			tl = pop2();
+			tl1 = pop2();
+			push4(tl1 + tl);
 			continue;
 		case O_ADD4:
 			pc.cp++;
-			push4(pop4() + pop4());
+			tl = pop4();
+			tl1 = pop4();
+			push4(tl1 + tl);
 			continue;
 		case O_ADD24:
 			pc.cp++;
 			tl = pop2();
-			push4(pop4() + tl);
+			tl1 = pop4();
+			push4(tl1 + tl);
 			continue;
 		case O_ADD42:
 			pc.cp++;
 			tl = pop4();
-			push4(pop2() + tl);
+			tl1 = pop2();
+			push4(tl1 + tl);
 			continue;
 		case O_ADD28:
 			pc.cp++;
 			tl = pop2();
-			push8(pop8() + tl);
+			td = pop8();
+			push8(td + tl);
 			continue;
 		case O_ADD48:
 			pc.cp++;
 			tl = pop4();
-			push8(pop8() + tl);
+			td = pop8();
+			push8(td + tl);
 			continue;
 		case O_ADD82:
 			pc.cp++;
 			td = pop8();
-			push8(pop2() + td);
+			td1 = pop2();
+			push8(td1 + td);
 			continue;
 		case O_ADD84:
 			pc.cp++;
 			td = pop8();
-			push8(pop4() + td);
+			td1 = pop4();
+			push8(td1 + td);
 			continue;
 		case O_SUB2:
 			pc.cp++;
 			tl = pop2();
-			push4(pop2() - tl);
+			tl1 = pop2();
+			push4(tl1 - tl);
 			continue;
 		case O_SUB4:
 			pc.cp++;
 			tl = pop4();
-			push4(pop4() - tl);
+			tl1 = pop4();
+			push4(tl1 - tl);
 			continue;
 		case O_SUB24:
 			pc.cp++;
 			tl = pop2();
-			push4(pop4() - tl);
+			tl1 = pop4();
+			push4(tl1 - tl);
 			continue;
 		case O_SUB42:
 			pc.cp++;
 			tl = pop4();
-			push4(pop2() - tl);
+			tl1 = pop2();
+			push4(tl1 - tl);
 			continue;
 		case O_SUB28:
 			pc.cp++;
 			tl = pop2();
-			push8(pop8() - tl);
+			td = pop8();
+			push8(td - tl);
 			continue;
 		case O_SUB48:
 			pc.cp++;
 			tl = pop4();
-			push8(pop8() - tl);
+			td = pop8();
+			push8(td - tl);
 			continue;
 		case O_SUB82:
 			pc.cp++;
 			td = pop8();
-			push8(pop2() - td);
+			td1 = pop2();
+			push8(td1 - td);
 			continue;
 		case O_SUB84:
 			pc.cp++;
 			td = pop8();
-			push8(pop4() - td);
+			td1 = pop4();
+			push8(td1 - td);
 			continue;
 		case O_MUL2:
 			pc.cp++;
-			push4((long)(pop2() * pop2()));
+			tl = pop2();
+			tl1 = pop2();
+			push4(tl1 * tl);
 			continue;
 		case O_MUL4:
 			pc.cp++;
-			push4(pop4() * pop4());
+			tl = pop4();
+			tl1 = pop4();
+			push4(tl1 * tl);
 			continue;
 		case O_MUL24:
 			pc.cp++;
 			tl = pop2();
-			push4(pop4() * tl);
+			tl1 = pop4();
+			push4(tl1 * tl);
 			continue;
 		case O_MUL42:
 			pc.cp++;
 			tl = pop4();
-			push4(pop2() * tl);
+			tl1 = pop2();
+			push4(tl1 * tl);
 			continue;
 		case O_MUL28:
 			pc.cp++;
 			tl = pop2();
-			push8(pop8() * tl);
+			td = pop8();
+			push8(td * tl);
 			continue;
 		case O_MUL48:
 			pc.cp++;
 			tl = pop4();
-			push8(pop8() * tl);
+			td = pop8();
+			push8(td * tl);
 			continue;
 		case O_MUL82:
 			pc.cp++;
 			td = pop8();
-			push8(pop2() * td);
+			td1 = pop2();
+			push8(td1 * td);
 			continue;
 		case O_MUL84:
 			pc.cp++;
 			td = pop8();
-			push8(pop4() * td);
+			td1 = pop4();
+			push8(td1 * td);
 			continue;
 		case O_ABS2:
 		case O_ABS4:
@@ -734,60 +777,74 @@ interpreter(base)
 		case O_DIV2:
 			pc.cp++;
 			tl = pop2();
-			push4(pop2() / tl);
+			tl1 = pop2();
+			push4(tl1 / tl);
 			continue;
 		case O_DIV4:
 			pc.cp++;
 			tl = pop4();
-			push4(pop4() / tl);
+			tl1 = pop4();
+			push4(tl1 / tl);
 			continue;
 		case O_DIV24:
 			pc.cp++;
 			tl = pop2();
-			push4(pop4() / tl);
+			tl1 = pop4();
+			push4(tl1 / tl);
 			continue;
 		case O_DIV42:
 			pc.cp++;
 			tl = pop4();
-			push4(pop2() / tl);
+			tl1 = pop2();
+			push4(tl1 / tl);
 			continue;
 		case O_MOD2:
 			pc.cp++;
 			tl = pop2();
-			push4(pop2() % tl);
+			tl1 = pop2();
+			push4(tl1 % tl);
 			continue;
 		case O_MOD4:
 			pc.cp++;
 			tl = pop4();
-			push4(pop4() % tl);
+			tl1 = pop4();
+			push4(tl1 % tl);
 			continue;
 		case O_MOD24:
 			pc.cp++;
 			tl = pop2();
-			push4(pop4() % tl);
+			tl1 = pop4();
+			push4(tl1 % tl);
 			continue;
 		case O_MOD42:
 			pc.cp++;
 			tl = pop4();
-			push4(pop2() % tl);
+			tl1 = pop2();
+			push4(tl1 % tl);
 			continue;
 		case O_ADD8:
 			pc.cp++;
-			push8(pop8() + pop8());
+			td = pop8();
+			td1 = pop8();
+			push8(td + td1);
 			continue;
 		case O_SUB8:
 			pc.cp++;
 			td = pop8();
-			push8(pop8() - td);
+			td1 = pop8();
+			push8(td - td1);
 			continue;
 		case O_MUL8:
 			pc.cp++;
-			push8(pop8() * pop8());
+			td = pop8();
+			td1 = pop8();
+			push8(td * td1);
 			continue;
 		case O_DVD8:
 			pc.cp++;
 			td = pop8();
-			push8(pop8() / td);
+			td1 = pop8();
+			push8(td / td1);
 			continue;
 		case O_STOI:
 			pc.cp++;
@@ -810,42 +867,50 @@ interpreter(base)
 		case O_DVD2:
 			pc.cp++;
 			td = pop2();
-			push8(pop2() / td);
+			td1 = pop2();
+			push8(td1 / td);
 			continue;
 		case O_DVD4:
 			pc.cp++;
 			td = pop4();
-			push8(pop4() / td);
+			td1 = pop4();
+			push8(td1 / td);
 			continue;
 		case O_DVD24:
 			pc.cp++;
 			td = pop2();
-			push8(pop4() / td);
+			td1 = pop4();
+			push8(td1 / td);
 			continue;
 		case O_DVD42:
 			pc.cp++;
 			td = pop4();
-			push8(pop2() / td);
+			td1 = pop2();
+			push8(td1 / td);
 			continue;
 		case O_DVD28:
 			pc.cp++;
 			td = pop2();
-			push8(pop8() / td);
+			td1 = pop8();
+			push8(td1 / td);
 			continue;
 		case O_DVD48:
 			pc.cp++;
-			td = pop4();
-			push8(pop8() / td);
+			td1 = pop4();
+			td = pop8();
+			push8(td / td1);
 			continue;
 		case O_DVD82:
 			pc.cp++;
 			td = pop8();
-			push8(pop2() / td);
+			td1 = pop2();
+			push8(td1 / td);
 			continue;
 		case O_DVD84:
 			pc.cp++;
 			td = pop8();
-			push8(pop4() / td);
+			td1 = pop4();
+			push8(td1 / td);
 			continue;
 		case O_RV1:
 			tcp = _display.raw[*pc.ucp++];
@@ -1194,23 +1259,34 @@ interpreter(base)
 			popsp((long)(sizeof(long)+sizeof(char *)));
 			continue;
 		case O_FOR1U:
-			/*
-			 * with the shadowing of for loop variables
-			 * the variable is always sizeof(long) hence
-			 * nullifying the need for shorter length
-			 * assignments
-			 */
+			tl1 = *pc.cp++;		/* tl1 index lower bound */
+			if (tl1 == 0)
+				tl1 = *pc.sp++;
+			tcp = popaddr();	/* tcp = ptr to index var */
+			tl = pop4();
+			if (*tcp < tl) {	/* still going up */
+				tl = *tcp + 1;	/* inc index var */
+				tl2 = *pc.sp++;	/* index upper bound */
+				if (_runtst)
+					RANG4(tl, tl1, tl2);
+				*tcp = tl;	/* update index var */
+				pc.cp += *pc.sp;/* return to top of loop */
+				continue;
+			}
+			pc.sp += 2;		/* else fall through */
+			continue;
 		case O_FOR2U:
 			tl1 = *pc.cp++;		/* tl1 index lower bound */
 			if (tl1 == 0)
 				tl1 = *pc.sp++;
-			tlp = (long *)popaddr(); /* tlp = ptr to index var */
-			if (*tlp < pop4()) {	/* still going up */
-				tl = *tlp + 1;	/* inc index var */
+			tsp = (short *)popaddr(); /* tsp = ptr to index var */
+			tl = pop4();
+			if (*tsp < tl) {	/* still going up */
+				tl = *tsp + 1;	/* inc index var */
 				tl2 = *pc.sp++;	/* index upper bound */
 				if (_runtst)
 					RANG4(tl, tl1, tl2);
-				*tlp = tl;	/* update index var */
+				*tsp = tl;	/* update index var */
 				pc.cp += *pc.sp;/* return to top of loop */
 				continue;
 			}
@@ -1221,7 +1297,8 @@ interpreter(base)
 			if (tl1 == 0)
 				tl1 = *pc.lp++;
 			tlp = (long *)popaddr(); /* tlp = ptr to index var */
-			if (*tlp < pop4()) {	/* still going up */
+			tl = pop4();
+			if (*tlp < tl) {	/* still going up */
 				tl = *tlp + 1;	/* inc index var */
 				tl2 = *pc.lp++;	/* index upper bound */
 				if (_runtst)
@@ -1233,23 +1310,34 @@ interpreter(base)
 			pc.sp += 3;		/* else fall through */
 			continue;
 		case O_FOR1D:
-			/*
-			 * with the shadowing of for loop variables
-			 * the variable is always sizeof(long) hence
-			 * nullifying the need for shorter length
-			 * assignments
-			 */
+			tl1 = *pc.cp++;		/* tl1 index lower bound */
+			if (tl1 == 0)
+				tl1 = *pc.sp++;
+			tcp = popaddr();	/* tcp = ptr to index var */
+			tl = pop4();
+			if (*tcp > tl) {	/* still going down */
+				tl = *tcp - 1;	/* inc index var */
+				tl2 = *pc.sp++;	/* index upper bound */
+				if (_runtst)
+					RANG4(tl, tl1, tl2);
+				*tcp = tl;	/* update index var */
+				pc.cp += *pc.sp;/* return to top of loop */
+				continue;
+			}
+			pc.sp += 2;		/* else fall through */
+			continue;
 		case O_FOR2D:
 			tl1 = *pc.cp++;		/* tl1 index lower bound */
 			if (tl1 == 0)
 				tl1 = *pc.sp++;
-			tlp = (long *)popaddr(); /* tlp = ptr to index var */
-			if (*tlp > pop4()) {	/* still going down */
-				tl = *tlp - 1;	/* inc index var */
+			tsp = (short *)popaddr(); /* tsp = ptr to index var */
+			tl = pop4();
+			if (*tsp > tl) {	/* still going down */
+				tl = *tsp - 1;	/* inc index var */
 				tl2 = *pc.sp++;	/* index upper bound */
 				if (_runtst)
 					RANG4(tl, tl1, tl2);
-				*tlp = tl;	/* update index var */
+				*tsp = tl;	/* update index var */
 				pc.cp += *pc.sp;/* return to top of loop */
 				continue;
 			}
@@ -1260,7 +1348,8 @@ interpreter(base)
 			if (tl1 == 0)
 				tl1 = *pc.lp++;
 			tlp = (long *)popaddr(); /* tlp = ptr to index var */
-			if (*tlp > pop4()) {	/* still going down */
+			tl = pop4();
+			if (*tlp > tl) {	/* still going down */
 				tl = *tlp - 1;	/* inc index var */
 				tl2 = *pc.lp++;	/* index upper bound */
 				if (_runtst)
@@ -1558,7 +1647,8 @@ interpreter(base)
 		case O_ODD2:
 		case O_ODD4:
 			pc.cp++;
-			push2((short)(pop4() & 1));
+			tl = pop4();
+			push2((short)(tl & 1));
 			continue;
 		case O_SUCC2:
 			tl = *pc.cp++;
