@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.22 (Berkeley) %G%
+#	@(#)Makefile	4.23 (Berkeley) %G%
 
 SUBDIR=	bin contrib games include kerberosIV lib libexec old pgrm sbin \
 	share usr.bin usr.sbin
@@ -33,15 +33,5 @@ build:
 	    install -c -o ${BINOWN} -g ${BINGRP} -m 444 tags /usr/libdata/tags
 
 	${MAKE} depend all
-
-OBJ=	/usr/obj
-shadow:
-	@-for file in \
-	    `find ${SUBDIR:S/^/-f /g} name SCCS prune or name obj print`; do \
-		d=`dirname $$file`; \
-		echo ${OBJ}/$$d; \
-		mkdir -p ${OBJ}/$$d > /dev/null 2>&1 ; \
-		chown bin.bin ${OBJ}/$$d; \
-	done
 
 .include <bsd.subdir.mk>
