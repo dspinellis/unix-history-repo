@@ -1,5 +1,0 @@
-Mtput	tput.c	/^main(argc, argv)$/
-outc	tput.c	/^outc(c)$/
-prlongname	tput.c	/^prlongname(buf)$/
-setospeed	tput.c	/^setospeed()$/
-usage	tput.c	/^usage()$/

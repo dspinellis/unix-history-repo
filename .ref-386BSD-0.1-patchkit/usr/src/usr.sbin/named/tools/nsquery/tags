@@ -1,2 +1,0 @@
-Mnsquery	nsquery.c	/^main(argc, argv)$/
-printanswer	nsquery.c	/^printanswer(hp)$/
