@@ -1,4 +1,4 @@
-/*	kern_sig.c	6.9	84/12/31	*/
+/*	kern_sig.c	6.10	85/03/12	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -23,32 +23,6 @@
 #include "kernel.h"
 
 #define	cantmask	(sigmask(SIGKILL)|sigmask(SIGCONT)|sigmask(SIGSTOP))
-
-/*
- * Quick interface to signal handler.
- */
-signal()
-{
-	register struct a {
-		int	signo;
-		int	(*handler)();	/* signal handler */
-	} *uap = (struct a  *)u.u_ap;
-	struct sigvec vec;
-	register struct sigvec *sv = &vec;
-	register int sig;
-
-	sig = uap->signo;
-	if (sig <= 0 || sig >= NSIG || sig == SIGKILL || sig == SIGSTOP ||
-	    (sig == SIGCONT && uap->handler == SIG_IGN)) {
-		u.u_error = EINVAL;
-		return;
-	}
-	sv->sv_handler = uap->handler;
-	sv->sv_mask = 0;
-	sv->sv_onstack = 0;
-	u.u_r.r_val1 = (int)u.u_signal[sig];
-	setsigvec(sig, sv);
-}
 
 /*
  * Generalized interface signal handler.
