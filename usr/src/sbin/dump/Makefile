@@ -1,4 +1,4 @@
-#	Makefile	1.12	83/07/03
+#	Makefile	1.13	84/10/05
 #
 #	dump.h			header file
 #	dumpitime.c		reads /etc/ddate
@@ -38,8 +38,8 @@ dump:	$(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) -o dump
 
 install: rdump dump
-	install -s rdump $(DESTDIR)/etc
-	install -s dump $(DESTDIR)/etc
+	install -s -m 4750 -g operator rdump $(DESTDIR)/etc
+	install -s -m 4750 -g operator dump $(DESTDIR)/etc
 
 dumprmain.o: dumpmain.c
 	cp dumpmain.c dumprmain.c
