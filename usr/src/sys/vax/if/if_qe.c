@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_qe.c	7.17 (Berkeley) %G%
+ *	@(#)if_qe.c	7.18 (Berkeley) %G%
  */
 
 /* from  @(#)if_qe.c	1.15	(ULTRIX)	4/16/86 */
@@ -144,7 +144,7 @@
 #ifdef ISO
 #include "../netiso/iso.h"
 #include "../netiso/iso_var.h"
-extern char all_es_snpa[], all_is_snpa[];
+extern char all_es_snpa[], all_is_snpa[], all_l1is_snpa[], all_l2is_snpa[];
 #endif
 
 #include "../vax/pte.h"
@@ -324,7 +324,11 @@ qeattach(ui)
 	ifp->if_unit = ui->ui_unit;
 	ifp->if_name = "qe";
 	ifp->if_mtu = ETHERMTU;
-	ifp->if_flags = IFF_BROADCAST;
+	/*
+	 * The Deqna is cable of transmitting broadcasts, but
+	 * doesn't listen to its own.
+	 */
+	ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX;
 
 	/*
 	 * Read the address from the prom and save it.
@@ -621,17 +625,7 @@ qetint(unit)
 			sc->qe_if.if_collisions += ( status1 & QE_CCNT ) >> 4;
 			if (status1 & QE_ERROR)
 				sc->qe_if.if_oerrors++;
-			/*
-			 * If this was a broadcast packet loop it
-			 * back because the hardware can't hear its own
-			 * transmits.
-			 */
 			ifxp = &sc->qe_ifw[sc->otindex];
-			if (bcmp((caddr_t)((struct ether_header *)ifxp->ifw_addr)->ether_dhost,
-			   (caddr_t)etherbroadcastaddr,
-			   sizeof(etherbroadcastaddr)) == 0)
-				qeread(sc, &ifxp->ifrw,
-				    len - sizeof(struct ether_header));
 			if (ifxp->ifw_xtofree) {
 				m_freem(ifxp->ifw_xtofree);
 				ifxp->ifw_xtofree = 0;
@@ -826,6 +820,8 @@ struct qe_softc *sc;
 #ifdef ISO
 		sc->setup_pkt[i][3] = all_es_snpa[i];
 		sc->setup_pkt[i][4] = all_is_snpa[i];
+		sc->setup_pkt[i][5] = all_l1is_snpa[i];
+		sc->setup_pkt[i][6] = all_l2is_snpa[i];
 #endif
 	}
 	sc->setupqueued++;
