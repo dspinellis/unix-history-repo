@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)lastcomm.1	5.1 (Berkeley) %G%
+.\"	@(#)lastcomm.1	6.1 (Berkeley) %G%
 .\"
-.TH LASTCOMM 1 "4 April 1983"
+.TH LASTCOMM 1 ""
 .UC
 .SH NAME
 lastcomm \- show last commands executed in reverse order
@@ -56,8 +56,10 @@ a fork, but without a following
 .I core
 file, and ``X'' indicates the command was terminated with the signal
 SIGTERM.
+.SH FILES
+/usr/adm/acct
 .SH "SEE ALSO"
 last(1),
 sigvec(2),
-acct(5),
+acct(8),
 core(5)
