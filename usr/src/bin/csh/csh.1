@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)csh.1	6.1 (Berkeley) %G%
+.\"	@(#)csh.1	6.2 (Berkeley) %G%
 .\"
 .TH CSH 1 ""
 .UC 4
@@ -1467,13 +1467,24 @@ These arguments may be repeated to set multiple values in a single set command.
 Note however, that variable expansion happens for all arguments before any
 setting occurs.
 .HP 5
+.BR setenv
+.br
+.ns
+.HP 5
 .BR setenv " name value"
 .br
-Sets the value of environment variable
+.ns
+.HP 5
+.BR setenv " name"
+.br
+The first form lists all current environment variables.
+The last form sets the value of environment variable
 .I name
 to be
 .I value,
-a single string.
+a single string.  The second form sets
+.I name
+to an empty string.
 The most commonly used environment variable USER, TERM, and PATH
 are automatically imported to and exported from the
 .I csh
