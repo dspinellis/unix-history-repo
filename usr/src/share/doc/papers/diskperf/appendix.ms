@@ -1,8 +1,9 @@
-.\" Copyright (c) 1983 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1983 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)appendix.ms	6.1 (Berkeley) %G%
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)appendix.ms	6.2 (Berkeley) %G%
 .\"
 .nr H2 1
 .ds RH Appendix A
