@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)apply.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)apply.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/wait.h>
@@ -80,9 +80,10 @@ main(argc, argv)
 	 * If there were any %digit references, then use those, otherwise
 	 * build a new command string with sufficient %digit references at
 	 * the end to consume (nargs) arguments each time round the loop.
+	 * Allocate enough space to hold the maximum command.
 	 */
-	if ((cmd =
-	    malloc(sizeof("exec") + strlen(argv[0]) + 3 * nargs + 1)) == NULL)
+	if ((cmd = malloc(sizeof("exec ") - 1 +
+	    strlen(argv[0]) + 9 * (sizeof(" %1") - 1) + 1)) == NULL)
 		err(1, NULL);
 		
 	if (n == 0) {
