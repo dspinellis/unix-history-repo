@@ -6,18 +6,17 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
+#include <sys/errno.h>
 #include <tzfile.h>
 #include <utmp.h>
 #include <stdio.h>
 
 /* Derived from the print routines in the ls(1) source code. */
-
-extern int errno;
 
 void
 printlong(name, accpath, sb)
@@ -25,7 +24,6 @@ printlong(name, accpath, sb)
 	char *accpath;			/* current valid path to filename */
 	struct stat *sb;		/* stat buffer */
 {
-	extern int errno;
 	char modep[15], *user_from_uid(), *group_from_gid(), *strerror();
 
 	(void)printf("%6lu %4ld ", sb->st_ino, sb->st_blocks);
