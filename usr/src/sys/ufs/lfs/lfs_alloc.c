@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-static char vers[] = "@(#)lfs_alloc.c 1.11 %G%";
+static char vers[] = "@(#)lfs_alloc.c 1.12 %G%";
 
 /*	alloc.c	4.8	81/03/08	*/
 
@@ -808,7 +808,7 @@ update()
 				continue;
 			if (fs->fs_ronly != 0)
 				panic("update: rofs mod");
-			bp = getblk(mp->m_dev, SBLOCK, MAXBSIZE);
+			bp = getblk(mp->m_dev, SBLOCK, SBSIZE);
 			fs->fs_fmod = 0;
 			fs->fs_time = TIME;
 			if (bp->b_un.b_fs != fs)
