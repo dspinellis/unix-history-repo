@@ -74,8 +74,8 @@ void nfs_disconnect __P((struct nfsmount *));
 void nfsargs_ntoh __P((struct nfs_args *));
 int nfs_fsinfo __P((struct nfsmount *, struct vnode *, struct ucred *, 
 	struct proc *));
-static struct mount *nfs_mountdiskless __P((char *, char *, int,
-    struct sockaddr_in *, struct nfs_args *, register struct vnode **));
+static int nfs_mountdiskless __P((char *, char *, int, struct sockaddr_in *,
+	struct nfs_args *, struct vnode **, struct mount **));
 
 /*
  * nfs statfs call
@@ -225,8 +225,8 @@ nfs_fsinfo(nmp, vp, cred, p)
 int
 nfs_mountroot()
 {
-	register struct mount *mp;
-	register struct nfs_diskless *nd = &nfs_diskless;
+	struct mount *mp;
+	struct nfs_diskless *nd = &nfs_diskless;
 	struct socket *so;
 	struct vnode *vp;
 	struct proc *p = curproc;		/* XXX */
@@ -262,9 +262,11 @@ nfs_mountroot()
 	 * talk to the server.
 	 */
 	error = socreate(nd->myif.ifra_addr.sa_family, &so, SOCK_DGRAM, 0);
-	if (error)
-		panic("nfs_mountroot: socreate(%04x): %d",
+	if (error) {
+		printf("nfs_mountroot: socreate(%04x): %d",
 			nd->myif.ifra_addr.sa_family, error);
+		return (error);
+	}
 
 	/*
 	 * We might not have been told the right interface, so we pass
@@ -280,8 +282,10 @@ nfs_mountroot()
 		if(!error) 
 			break;
 	}
-	if (error)
-		panic("nfs_mountroot: SIOCAIFADDR: %d", error);
+	if (error) {
+		printf("nfs_mountroot: SIOCAIFADDR: %d", error);
+		return (error);
+	}
 	soclose(so);
 
 	/*
@@ -298,8 +302,10 @@ nfs_mountroot()
 		    (struct sockaddr *)&nd->mygateway,
 		    (struct sockaddr *)&mask,
 		    RTF_UP | RTF_GATEWAY, (struct rtentry **)0);
-		if (error)
-			panic("nfs_mountroot: RTM_ADD: %d", error);
+		if (error) {
+			printf("nfs_mountroot: RTM_ADD: %d", error);
+			return (error);
+		}
 	}
 
 	if (nd->swap_nblks) {
@@ -318,8 +324,9 @@ nfs_mountroot()
 			(l >> 24) & 0xff, (l >> 16) & 0xff,
 			(l >>  8) & 0xff, (l >>  0) & 0xff,nd->swap_hostnam);
 		printf("NFS SWAP: %s\n",buf);
-		(void) nfs_mountdiskless(buf, "/swap", 0,
-		    &nd->swap_saddr, &nd->swap_args, &vp);
+		if (error = nfs_mountdiskless(buf, "/swap", 0,
+		    &nd->swap_saddr, &nd->swap_args, &vp, &mp))
+			return (error);
 
 		for (i=0;swdevt[i].sw_dev != NODEV;i++) ;
 
@@ -355,13 +362,15 @@ nfs_mountroot()
 		(l >> 24) & 0xff, (l >> 16) & 0xff,
 		(l >>  8) & 0xff, (l >>  0) & 0xff,nd->root_hostnam);
 	printf("NFS ROOT: %s\n",buf);
-	mp = nfs_mountdiskless(buf, "/", MNT_RDONLY,
-	    &nd->root_saddr, &nd->root_args, &vp);
+	if (error = nfs_mountdiskless(buf, "/", MNT_RDONLY,
+	    &nd->root_saddr, &nd->root_args, &vp, &mp))
+		return (error);
 
-	if (vfs_lock(mp))
-		panic("nfs_mountroot: vfs_lock");
+	if (error = vfs_lock(mp)) {
+		printf("nfs_mountroot: vfs_lock");
+		return (error);
+	}
 	CIRCLEQ_INSERT_TAIL(&mountlist, mp, mnt_list);
-	mp->mnt_vnodecovered = NULLVP;
 	vfs_unlock(mp);
 	rootvp = vp;
 
@@ -383,45 +392,40 @@ nfs_mountroot()
 /*
  * Internal version of mount system call for diskless setup.
  */
-static struct mount *
-nfs_mountdiskless(path, which, mountflag, sin, args, vpp)
+static int
+nfs_mountdiskless(path, which, mountflag, sin, args, vpp, mpp)
 	char *path;
 	char *which;
 	int mountflag;
 	struct sockaddr_in *sin;
 	struct nfs_args *args;
-	register struct vnode **vpp;
+	struct vnode **vpp;
+	struct mount **mpp;
 {
-	register struct mount *mp;
-	register struct mbuf *m;
-	register int error;
-	struct vfsconf *vfsp;
+	struct mount *mp;
+	struct mbuf *m;
+	int error;
 
-	for (vfsp = vfsconf; vfsp; vfsp = vfsp->vfc_next)
-		if (!strcmp(vfsp->vfc_name, "nfs"))
-			break;
-	if (vfsp == NULL)
-		panic("nfs_mountroot: NFS not configured");
-	mp = malloc((u_long)sizeof(struct mount), M_MOUNT, M_WAITOK);
-	bzero((char *)mp, (u_long)sizeof(struct mount));
-	mp->mnt_vfc = vfsp;
-	mp->mnt_op = vfsp->vfc_vfsops;
+	if (error = vfs_rootmountalloc("nfs", path, &mp)) {
+		printf("nfs_mountroot: NFS not configured");
+		return (error);
+	}
 	mp->mnt_flag = mountflag;
 	MGET(m, MT_SONAME, M_DONTWAIT);
-	if (m == NULL)
-		panic("nfs_mountroot: %s mount mbuf", which);
+	if (m == NULL) {
+		printf("nfs_mountroot: %s mount mbuf", which);
+		return (error);
+	}
 	bcopy((caddr_t)sin, mtod(m, caddr_t), sin->sin_len);
 	m->m_len = sin->sin_len;
-	if (error = mountnfs(args, mp, m, which, path, vpp))
-		panic("nfs_mountroot: mount %s on %s: %d", path, which, error);
-	vfsp->vfc_refcount++;
-	mp->mnt_stat.f_type = vfsp->vfc_typenum;
-	mp->mnt_flag |= (vfsp->vfc_flags & MNT_VISFLAGMASK) | MNT_ROOTFS;
-	strncpy(mp->mnt_stat.f_fstypename, vfsp->vfc_name, MFSNAMELEN);
-
-	return (mp);
+	if (error = mountnfs(args, mp, m, which, path, vpp)) {
+		printf("nfs_mountroot: mount %s on %s: %d", path, which, error);
+		return (error);
+	}
+	(void) copystr(which, mp->mnt_stat.f_mntonname, MNAMELEN - 1, 0);
+	*mpp = mp;
+	return (0);
 }
-
 
 /*
  * VFS Operations.
