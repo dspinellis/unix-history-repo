@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty_tty.c	7.2 (Berkeley) %G%
+ *	@(#)tty_tty.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -33,25 +33,25 @@ syopen(dev, flag)
 }
 
 /*ARGSUSED*/
-syread(dev, uio)
+syread(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
 {
 
 	if (u.u_ttyp == NULL)
 		return (ENXIO);
-	return ((*cdevsw[major(u.u_ttyd)].d_read)(u.u_ttyd, uio));
+	return ((*cdevsw[major(u.u_ttyd)].d_read)(u.u_ttyd, uio, flag));
 }
 
 /*ARGSUSED*/
-sywrite(dev, uio)
+sywrite(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
 {
 
 	if (u.u_ttyp == NULL)
 		return (ENXIO);
-	return ((*cdevsw[major(u.u_ttyd)].d_write)(u.u_ttyd, uio));
+	return ((*cdevsw[major(u.u_ttyd)].d_write)(u.u_ttyd, uio, flag));
 }
 
 /*ARGSUSED*/
@@ -63,8 +63,6 @@ syioctl(dev, cmd, addr, flag)
 {
 
 	if (cmd == TIOCNOTTY) {
-		u.u_ttyp = 0;
-		u.u_ttyd = 0;
 		if (SESS_LEADER(u.u_procp)) {
 			/* 
 			 * XXX - check posix draft
@@ -72,6 +70,8 @@ syioctl(dev, cmd, addr, flag)
 			u.u_ttyp->t_session = 0;
 			u.u_ttyp->t_pgid = 0;
 		}
+		u.u_ttyp = 0;
+		u.u_ttyd = 0;
 		return (0);
 	}
 	if (u.u_ttyp == NULL)
