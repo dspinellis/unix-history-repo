@@ -1,9 +1,9 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)runcont.c 1.1 %G%";
+static char sccsid[] = "@(#)runcont.c 1.2 %G%";
 
 /*
- * execution management
+ * Execution management.
  */
 
 #include "defs.h"
@@ -11,22 +11,38 @@ static char sccsid[] = "@(#)runcont.c 1.1 %G%";
 #include "process.h"
 #include "machine.h"
 #include "object.h"
+#include "main.h"
 #include "breakpoint.h"
 #include "command.h"
 #include "process.rep"
 
-#define MAXNARGS 10			/* maximum number of arguments to RUN */
+#define MAXNARGS 100		/* maximum number of arguments to RUN */
 
-typedef char *string;
+typedef char *String;
 
 LOCAL BOOLEAN just_started;
 LOCAL int argc;
-LOCAL string argv[MAXNARGS];
-LOCAL string infile;
-LOCAL string outfile;
+LOCAL String argv[MAXNARGS];
+LOCAL String infile;
+LOCAL String outfile;
 
 /*
- * initialize the argument list
+ * This is a px-related kludge to deal with the possibility
+ * of object code magically coming from a tmp file.
+ */
+
+LOCAL String mode;
+LOCAL String realname;
+
+setargs(m, r)
+char *m, *r;
+{
+	mode = m;
+	realname = r;
+}
+
+/*
+ * Initialize the argument list.
  */
 
 arginit()
@@ -34,10 +50,14 @@ arginit()
 	infile = NIL;
 	outfile = NIL;
 #	if (isvaxpx)
-		argv[0] = "px";
-		argv[1] = "-d";
-		argv[2] = objname;
-		argc = 3;
+		argv[0] = mode;
+		argv[1] = objname;
+		if (option('t') && realname == NIL) {
+			argc = 2;
+		} else {
+			argv[2] = realname;
+			argc = 3;
+		}
 #	else
 		argv[0] = objname;
 		argc = 1;
@@ -45,24 +65,24 @@ arginit()
 }
 
 /*
- * add an argument to the list for the debuggee
+ * Add an argument to the list for the debuggee.
  */
 
 newarg(arg)
-string arg;
+String arg;
 {
 	if (argc >= MAXNARGS) {
-		error("too many arguments");
+		error("too many arguments to run");
 	}
 	argv[argc++] = arg;
 }
 
 /*
- * set the standard input for the debuggee
+ * Set the standard input for the debuggee.
  */
 
 inarg(filename)
-string filename;
+String filename;
 {
 	if (infile != NIL) {
 		error("multiple input redirects");
@@ -71,12 +91,12 @@ string filename;
 }
 
 /*
- * set the standard output for the debuggee
- * should probably check to avoid overwriting an existing file
+ * Set the standard output for the debuggee.
+ * Probably should check to avoid overwriting an existing file.
  */
 
 outarg(filename)
-string filename;
+String filename;
 {
 	if (outfile != NIL) {
 		error("multiple output redirect");
@@ -85,13 +105,26 @@ string filename;
 }
 
 /*
- * run starts debuggee executing
+ * Initial start of the process.  The idea is to get it to the point
+ * where the object code has been loaded but execution has not begun.
+ */
+
+initstart()
+{
+	arginit();
+	argv[argc] = NIL;
+	start(argv, infile, outfile);
+}
+
+/*
+ * Run starts debuggee executing.
  */
 
 run()
 {
 	fixbps();
 	curline = 0;
+	argv[argc] = NIL;
 	start(argv, infile, outfile);
 	just_started = TRUE;
 	isstopped = FALSE;
@@ -99,7 +132,7 @@ run()
 }
 
 /*
- * continue execution wherever we left off
+ * Continue execution wherever we left off.
  *
  * Note that this routine never returns.  Eventually bpact() will fail
  * and we'll call printstatus or step will call it.
@@ -138,7 +171,7 @@ cont()
 		}
 		step();
 	}
-	/*NOTREACHED*/
+	/* NOTREACHED */
 }
 
 /*
