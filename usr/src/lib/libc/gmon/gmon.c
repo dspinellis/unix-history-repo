@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)gmon.c	4.12 (Berkeley) %G%";
+static	char *sccsid = "@(#)gmon.c	4.13 (Berkeley) %G%";
 
 #ifdef DEBUG
 #include <stdio.h>
@@ -16,7 +16,6 @@ static long		tolimit = 0;
 static char		*s_lowpc = 0;
 static char		*s_highpc = 0;
 static unsigned long	s_textsize = 0;
-static char		*minsbrk = 0;
 
 static int	ssiz;
 static char	*sbuf;
@@ -33,6 +32,7 @@ monstartup(lowpc, highpc)
     int			monsize;
     char		*buffer;
     char		*sbrk();
+    extern char		*minbrk;
 
 	/*
 	 *	round lowpc and highpc to multiples of the density we're using
@@ -70,7 +70,7 @@ monstartup(lowpc, highpc)
 	tos = 0;
 	return;
     }
-    minsbrk = sbrk(0);
+    minbrk = sbrk(0);
     tos[0].link = 0;
     monitor( lowpc , highpc , buffer , monsize , tolimit );
 }
@@ -291,25 +291,4 @@ moncontrol(mode)
 	profil((char *)0, 0, 0, 0);
 	profiling = 3;
     }
-}
-
-/*
- * This is a stub for the "brk" system call, which we want to
- * catch so that it will not deallocate our data space.
- * (of which the program is not aware)
- */
-extern char *curbrk;
-
-brk(addr)
-	char *addr;
-{
-
-	if (addr < minsbrk)
-		addr = minsbrk;
-	asm("	chmk	$17");
-	asm("	jcc	1f");
-	asm("	jmp	cerror");
-asm("1:");
-	curbrk = addr;
-	return (0);
 }
