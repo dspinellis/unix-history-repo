@@ -1,4 +1,4 @@
-/*	conf.c	3.12	%G%	*/
+/*	conf.c	3.13	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -18,14 +18,42 @@
 int	nulldev();
 int	nodev();
 
+#include "hp.h"
+#if NHP > 0
 int	hpstrategy(),hpread(),hpwrite(),hpintr();
 struct	buf	hptab;
+#else
+#define	hpstrategy	nodev
+#define	hpread		nodev
+#define	hpwrite		nodev
+#define	hpintr		nodev
+#define	hptab		0
+#endif
  
+#include "ht.h"
+#if NHT > 0
 int	htopen(),htclose(),htstrategy(),htread(),htwrite();
 struct	buf	httab;
+#else
+#define	htopen		nodev
+#define	htclose		nodev
+#define	htstrategy	nodev
+#define	htread		nodev
+#define	htwrite		nodev
+#define	httab		0
+#endif
 
+#include "up.h"
+#if NUP > 0
 int	upstrategy(),upread(),upwrite(),upreset();
 struct	buf	uptab;
+#else
+#define	upstrategy	nodev
+#define	upread		nodev
+#define	upwrite		nodev
+#define	upreset		nulldev
+#define	uptab		0
+#endif
 
 int	swstrategy(),swread(),swwrite();
 
@@ -34,27 +62,73 @@ struct bdevsw	bdevsw[] =
 	nulldev,	nulldev,	hpstrategy,	&hptab,		/*0*/
 	htopen,		htclose,	htstrategy,	&httab,		/*1*/
 	nulldev,	nulldev,	upstrategy,	&uptab,		/*2*/
+/* 3 reserved for rk07 */
 	nodev,		nodev,		nodev,		0,		/*3*/
 	nodev,		nodev,		swstrategy,	0,		/*4*/
+/* 5 reserved for tm03 */
 	0,
 };
 
 int	cnopen(),cnclose(),cnread(),cnwrite(),cnioctl();
 
+#include "dh.h"
+#if NDH11 == 0
+#define	dhopen	nodev
+#define	dhclose	nodev
+#define	dhread	nodev
+#define	dhwrite	nodev
+#define	dhioctl	nodev
+#define	dhstop	nodev
+#define	dhreset	nulldev
+#define	dh11	0
+#else
 int	dhopen(),dhclose(),dhread(),dhwrite(),dhioctl(),dhstop(),dhreset();
 struct	tty dh11[];
+#endif
 
 int	flopen(),flclose(),flread(),flwrite();
 
+#include "../conf/dz.h"
+#if NDZ11 == 0
+#define	dzopen	nodev
+#define	dzclose	nodev
+#define	dzread	nodev
+#define	dzwrite	nodev
+#define	dzioctl	nodev
+#define	dzstop	nodev
+#define	dzreset	nulldev
+#define	dz_tty	0
+#else
 int	dzopen(),dzclose(),dzread(),dzwrite(),dzioctl(),dzstop(),dzreset();
 struct	tty dz_tty[];
+#endif
 
 int	syopen(),syread(),sywrite(),syioctl();
 
 int 	mmread(),mmwrite();
 
-int	vpopen(),vpclose(),vpwrite(),vpioctl(),vpreset();
+#include "va.h"
+#if NVA > 0
 int	vaopen(),vaclose(),vawrite(),vaioctl(),vareset();
+#else
+#define	vaopen	nodev
+#define	vaclose	nodev
+#define	vawrite	nodev
+#define	vaopen	nodev
+#define	vaioctl	nodev
+#define	vareset	nulldev
+#endif
+
+#include "vp.h"
+#if NVP > 0
+int	vpopen(),vpclose(),vpwrite(),vpioctl(),vpreset();
+#else
+#define	vpopen	nodev
+#define	vpclose	nodev
+#define	vpwrite	nodev
+#define	vpioctl	nodev
+#define	vpreset	nulldev
+#endif
 
 int	mxopen(),mxclose(),mxread(),mxwrite(),mxioctl();
 int	mcread();
@@ -84,12 +158,15 @@ struct cdevsw	cdevsw[] =
 	mxioctl,	nulldev,	nulldev,	0,
 	vaopen,		vaclose,	nodev,		vawrite,	/*10*/
 	vaioctl,	nulldev,	vareset,	0,
+/* 11 reserved for rk07 */
 	nodev,		nodev,		nodev,		nodev,		/*11*/
 	nodev,		nodev,		nulldev,	0,
 	dhopen,		dhclose,	dhread,		dhwrite,	/*12*/
 	dhioctl,	dhstop,		dhreset,	dh11,
 	nulldev,	nulldev,	upread,		upwrite,	/*13*/
 	nodev,		nodev,		upreset,	0,
+/* 14 reserved for tm03 */
+/* 15 reserved for lp11 */
 	0,	
 };
 
@@ -141,9 +218,11 @@ int	mem_no = 3; 	/* major device number of memory special file */
  */
 dev_t	swapdev = makedev(4, 0);
 
-
 extern struct user u;
 
+/*
+ * This is stupid, and will go away soon.
+ */
 int	mbanum[] = {	/* mba number of major device */
 	0,		/* disk */
 	1,		/* tape */
