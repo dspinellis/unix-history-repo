@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)init_main.c	7.11 (Berkeley) %G%
+ *	@(#)init_main.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -106,8 +106,11 @@ main(firstaddr)
 	 * handled when copying the u. area in newproc().
 	 */
 	u.u_nd.ni_iov = &u.u_nd.ni_nd.nd_iovec;
-	u.u_ap = u.u_arg;
 	u.u_nd.ni_iovcnt = 1;
+	u.u_nd.ni_base = (caddr_t)&u.u_nd.ni_dent;
+	u.u_nd.ni_rw = UIO_WRITE;
+	u.u_nd.ni_segflg = UIO_SYSSPACE;
+	u.u_ap = u.u_arg;
 
 	u.u_cmask = cmask;
 	u.u_lastfile = -1;
