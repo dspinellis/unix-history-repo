@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_le.c	7.2 (Berkeley) %G%
+ *	@(#)if_le.c	7.3 (Berkeley) %G%
  */
 
 #include "le.h"
@@ -376,7 +376,7 @@ leintr(unit)
 	ler1 = le->sc_r1;
 	stat = ler1->ler1_rdp;
 	if (!(stat & LE_INTR)) {
-		printf("le?: spurrious interrupt\n");
+		printf("le%d: spurrious interrupt\n", unit);
 		return;
 	}
 	if (stat & LE_SERR) {
