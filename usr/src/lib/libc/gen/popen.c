@@ -1,80 +1,110 @@
 /*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1988 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software written by Ken Arnold and published
+ * in UNIX Review, Vol. 6, No. 8.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)popen.c	5.5 (Berkeley) %G%";
-#endif LIBC_SCCS and not lint
+static char sccsid[] = "@(#)popen.c	5.6 (Berkeley) %G%";
+#endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
-#include <signal.h>
 
-#define	tst(a,b)	(*mode == 'r'? (b) : (a))
-#define	RDR	0
-#define	WTR	1
+#define	MAXFILES	32
 
-extern	char *malloc();
+typedef struct {
+	int pid;
+	int status;
+} PID_STRUCT;
 
-static	int *popen_pid;
-static	int nfiles;
+PID_STRUCT pids[MAXFILES];
 
 FILE *
-popen(cmd,mode)
-	char *cmd;
-	char *mode;
+popen(program, type)
+char *program, *type;
 {
-	int p[2];
-	int myside, hisside, pid;
+	char **argv;
+	int pdes[2], pid;
+	FILE *iop;
 
-	if (nfiles <= 0)
-		nfiles = getdtablesize();
-	if (popen_pid == NULL) {
-		popen_pid = (int *)malloc(nfiles * sizeof *popen_pid);
-		if (popen_pid == NULL)
-			return (NULL);
-		for (pid = 0; pid < nfiles; pid++)
-			popen_pid[pid] = -1;
-	}
-	if (pipe(p) < 0)
-		return (NULL);
-	myside = tst(p[WTR], p[RDR]);
-	hisside = tst(p[RDR], p[WTR]);
-	if ((pid = vfork()) == 0) {
-		/* myside and hisside reverse roles in child */
-		close(myside);
-		if (hisside != tst(0, 1)) {
-			dup2(hisside, tst(0, 1));
-			close(hisside);
+	if (*type != 'r' && *type != 'w')
+		return NULL;
+	if (pipe(pdes) < 0)
+		return NULL;
+	switch(pid = fork()) {
+	case -1:
+		iop = NULL;
+		break;
+	case 0:			/* child */
+		if (*type == 'r') {
+			close(1);
+			dup(pdes[1]);
 		}
-		execl("/bin/sh", "sh", "-c", cmd, (char *)NULL);
-		_exit(127);
+		else {
+			close(0);
+			dup(pdes[0]);
+		}
+		close(pdes[1]);
+		close(pdes[0]);
+		execl("/bin/sh", "sh", "-c", program, NULL);
+		exit(-1);
+		/* NOTREACHED */
+	default:
+		if (*type == 'r') {
+			iop = fdopen(pdes[0], "r");
+			close(pdes[1]);
+		} else {
+			iop = fdopen(pdes[0], "w");
+			close(pdes[0]);
+		}
+		break;
 	}
-	if (pid == -1) {
-		close(myside);
-		close(hisside);
-		return (NULL);
+	if (iop != NULL)
+		pids[fileno(iop)].pid = pid;
+	else {
+		close(pdes[0]);
+		close(pdes[1]);
 	}
-	popen_pid[myside] = pid;
-	close(hisside);
-	return (fdopen(myside, mode));
+	return iop;
 }
 
-pclose(ptr)
-	FILE *ptr;
+pclose(iop)
+FILE *iop;
 {
-	long omask;
-	int child, pid, status;
+	int status;
+	int pid, fdes, i;
 
-	child = popen_pid[fileno(ptr)];
-	popen_pid[fileno(ptr)] = -1;
-	fclose(ptr);
-	if (child == -1)
-		return (-1);
-	omask = sigblock(sigmask(SIGINT)|sigmask(SIGQUIT)|sigmask(SIGHUP));
-	while ((pid = wait(&status)) != child && pid != -1)
-		;
-	(void) sigsetmask(omask);
-	return (pid == -1 ? -1 : status);
+	fdes = fileno(iop);
+	fclose(iop);
+	if (pids[fdes].pid == 0)
+		return pids[fdes].status;
+	for (;;) {
+		pid = wait(&status);
+		if (pid < 0)
+			return -1;
+		if (pid == pids[fdes].pid) {
+			pids[fdes].pid = 0;
+			return status;
+		}
+		for (i = 0; i < MAXFILES; i++)
+			if (pids[i].pid == pid) {
+				pids[i].pid = 0;
+				pids[i].status = status;
+				break;
+			}
+	}
 }
