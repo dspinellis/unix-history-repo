@@ -45,11 +45,13 @@ maninstall:
 	while test $$# -ge 2; do \
 		name=$$1; \
 		shift; \
-		dir=${DESTDIR}${MANDIR}`expr $$name : '[^\.]*\.\(.*\)'`; \
+		sect=`expr $$name : '.*\.\([^.]*\)'`; \
+		dir=${DESTDIR}${MANDIR}$$sect; \
 		l=$${dir}${MANSUBDIR}/$$name; \
 		name=$$1; \
 		shift; \
-		dir=${DESTDIR}${MANDIR}`expr $$name : '[^\.]*\.\(.*\)'`; \
+		sect=`expr $$name : '.*\.\([^.]*\)'`; \
+		dir=${DESTDIR}${MANDIR}$$sect; \
 		t=$${dir}${MANSUBDIR}/$$name; \
 		echo $$t -\> $$l; \
 		rm -f $$t; \
