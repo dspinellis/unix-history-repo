@@ -1,4 +1,4 @@
-/*	mem.h	4.9	81/04/03	*/
+/*	mem.h	4.10	82/05/26	*/
 
 /*
  * Memory controller registers
@@ -50,15 +50,15 @@ struct	mcr {
 #if VAX750
 #define	M750_ICRD	0x10000000	/* inhibit crd interrupts, in [1] */
 #define	M750_UNCORR	0xc0000000	/* uncorrectable error, in [0] */
-#define	M750_CORERR	0x40000000	/* correctable error, in [0] */
+#define	M750_CORERR	0x20000000	/* correctable error, in [0] */
 
 #define	M750_INH(mcr)	((mcr)->mc_reg[1] = M750_ICRD)
 #define	M750_ENA(mcr)	((mcr)->mc_reg[0] = (M750_UNCORR|M750_CORERR), \
 			    (mcr)->mc_reg[1] = 0)
 #define	M750_ERR(mcr)	((mcr)->mc_reg[0] & (M750_UNCORR|M750_CORERR))
 
-#define	M750_SYN(mcr)	((mcr)->mc_reg[0] & 0x3f)
-#define	M750_ADDR(mcr)	(((mcr)->mc_reg[0] >> 8) & 0x7fff)
+#define	M750_SYN(mcr)	((mcr)->mc_reg[0] & 0x7f)
+#define	M750_ADDR(mcr)	(((mcr)->mc_reg[0] >> 9) & 0x7fff)
 #endif
 
 #if VAX7ZZ
