@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)scanner.c	3.2 83/11/22";
+static	char *sccsid = "@(#)scanner.c	3.3 83/12/12";
 #endif
 
 #include <stdio.h>
@@ -91,7 +91,7 @@ loop:
 		case 'P': case 'Q': case 'R': case 'S': case 'T':
 		case 'U': case 'V': case 'W': case 'X': case 'Y':
 		case 'Z':
-		case '_':
+		case '_': case '.':
 			*p++ = c;
 			state = 2;
 			break;
@@ -203,7 +203,7 @@ loop:
 		case 'P': case 'Q': case 'R': case 'S': case 'T':
 		case 'U': case 'V': case 'W': case 'X': case 'Y':
 		case 'Z':
-		case '_':
+		case '_': case '.':
 		case '0': case '1': case '2': case '3': case '4':
 		case '5': case '6': case '7': case '8': case '9':
 			if (p < buf + sizeof buf - 1)
