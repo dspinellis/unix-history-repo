@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)edit.c	5.3 (Berkeley) %G%";
+static char *sccsid = "@(#)edit.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include "rcv.h"
@@ -61,7 +61,7 @@ edit1(msgvec, ed)
 	int *ip, pid, mesg;
 	int (*sigint)(), (*sigquit)();
 	FILE *ibuf, *obuf;
-	char edname[15], nbuf[10];
+	char edname[15];
 	register struct message *mp;
 	extern char tempEdit[];
 	off_t fsize(), size;
@@ -92,7 +92,7 @@ edit1(msgvec, ed)
 		 * form "Message%d" and make sure it doesn't
 		 * already exist.
 		 */
-		sprintf(edname, "Message%d", mesg);
+		(void) sprintf(edname, "Message%d", mesg);
 		if (!access(edname, 2)) {
 			printf("%s: file exists\n", edname);
 			goto out;
@@ -101,24 +101,24 @@ edit1(msgvec, ed)
 		/*
 		 * Copy the message into the edit file.
 		 */
-		close(creat(edname, 0600));
+		(void) close(creat(edname, 0600));
 		if ((obuf = fopen(edname, "w")) == NULL) {
 			perror(edname);
 			goto out;
 		}
 		if (send(mp, obuf, 0) < 0) {
 			perror(edname);
-			fclose(obuf);
-			remove(edname);
+			(void) fclose(obuf);
+			(void) remove(edname);
 			goto out;
 		}
-		fflush(obuf);
+		(void) fflush(obuf);
 		if (ferror(obuf)) {
-			remove(edname);
-			fclose(obuf);
+			(void) remove(edname);
+			(void) fclose(obuf);
 			goto out;
 		}
-		fclose(obuf);
+		(void) fclose(obuf);
 
 		/*
 		 * If we are in read only mode, make the
@@ -126,7 +126,7 @@ edit1(msgvec, ed)
 		 */
 
 		if (readonly)
-			chmod(edname, 0400);
+			(void) chmod(edname, 0400);
 
 		/*
 		 * Fork/execl the editor on the edit file.
@@ -138,14 +138,14 @@ edit1(msgvec, ed)
 		pid = vfork();
 		if (pid == -1) {
 			perror("fork");
-			remove(edname);
+			(void) remove(edname);
 			goto out;
 		}
 		if (pid == 0) {
 			if (sigint != SIG_IGN)
-				signal(SIGINT, SIG_DFL);
+				(void) signal(SIGINT, SIG_DFL);
 			if (sigquit != SIG_IGN)
-				signal(SIGQUIT, SIG_DFL);
+				(void) signal(SIGQUIT, SIG_DFL);
 			execl(ed, ed, edname, 0);
 			perror(ed);
 			_exit(1);
@@ -159,7 +159,7 @@ edit1(msgvec, ed)
 		 */
 
 		if (readonly) {
-			remove(edname);
+			(void) remove(edname);
 			continue;
 		}
 
@@ -173,16 +173,16 @@ edit1(msgvec, ed)
 			goto out;
 		}
 		if (modtime == statb.st_mtime) {
-			remove(edname);
+			(void) remove(edname);
 			goto out;
 		}
 		if ((ibuf = fopen(edname, "r")) == NULL) {
 			perror(edname);
-			remove(edname);
+			(void) remove(edname);
 			goto out;
 		}
-		remove(edname);
-		fseek(otf, (long) 0, 2);
+		(void) remove(edname);
+		(void) fseek(otf, (long) 0, 2);
 		size = ftell(otf);
 		mp->m_block = blockof(size);
 		mp->m_offset = offsetof(size);
@@ -191,13 +191,13 @@ edit1(msgvec, ed)
 		while ((c = getc(ibuf)) != EOF) {
 			if (c == '\n')
 				mp->m_lines++;
-			putc(c, otf);
+			(void) putc(c, otf);
 			if (ferror(otf))
 				break;
 		}
 		if (ferror(otf))
 			perror("/tmp");
-		fclose(ibuf);
+		(void) fclose(ibuf);
 	}
 
 	/*
@@ -205,7 +205,7 @@ edit1(msgvec, ed)
 	 */
 
 out:
-	signal(SIGINT, sigint);
-	signal(SIGQUIT, sigquit);
+	(void) signal(SIGINT, sigint);
+	(void) signal(SIGQUIT, sigquit);
 	return 0;
 }

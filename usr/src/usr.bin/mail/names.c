@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)names.c	5.4 (Berkeley) %G%";
+static char *sccsid = "@(#)names.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -76,14 +76,14 @@ extract(line, ntype)
 	cp = line;
 	while ((cp = yankword(cp, nbuf)) != NOSTR) {
 		if (np != NIL && equal(nbuf, "at")) {
-			strcpy(abuf, nbuf);
+			(void) strcpy(abuf, nbuf);
 			if ((cp = yankword(cp, nbuf)) == NOSTR) {
-				strcpy(nbuf, abuf);
+				(void) strcpy(nbuf, abuf);
 				goto normal;
 			}
-			strcpy(abuf, np->n_name);
+			(void) strcpy(abuf, np->n_name);
 			stradd(abuf, '@');
-			strcat(abuf, nbuf);
+			(void) strcat(abuf, nbuf);
 			np->n_name = savestr(abuf);
 			continue;
 		}
@@ -273,7 +273,7 @@ outof(names, fo, hp)
 
 	top = names;
 	np = names;
-	time(&now);
+	(void) time(&now);
 	date = ctime(&now);
 	while (np != NIL) {
 		if (!isfileaddr(np->n_name) && np->n_name[0] != '|') {
@@ -298,7 +298,7 @@ outof(names, fo, hp)
 				goto cant;
 			}
 			image = open(tempEdit, 2);
-			unlink(tempEdit);
+			(void) unlink(tempEdit);
 			if (image < 0) {
 				perror(tempEdit);
 				senderr++;
@@ -309,13 +309,13 @@ outof(names, fo, hp)
 				fprintf(fout, "From %s %s", myname, date);
 				puthead(hp, fout, GTO|GSUBJECT|GCC|GNL);
 				while ((c = getc(fo)) != EOF)
-					putc(c, fout);
+					(void) putc(c, fout);
 				rewind(fo);
-				putc('\n', fout);
-				fflush(fout);
+				(void) putc('\n', fout);
+				(void) fflush(fout);
 				if (ferror(fout))
 					perror(tempEdit);
-				fclose(fout);
+				(void) fclose(fout);
 			}
 		}
 
@@ -326,15 +326,15 @@ outof(names, fo, hp)
 		 */
 
 		if (ispipe) {
-			wait(&s);
+			(void) wait(&s);
 			switch (fork()) {
 			case 0:
-				signal(SIGHUP, SIG_IGN);
-				signal(SIGINT, SIG_IGN);
-				signal(SIGQUIT, SIG_IGN);
-				close(0);
-				dup(image);
-				close(image);
+				(void) signal(SIGHUP, SIG_IGN);
+				(void) signal(SIGINT, SIG_IGN);
+				(void) signal(SIGQUIT, SIG_IGN);
+				(void) close(0);
+				(void) dup(image);
+				(void) close(image);
 				if ((shell = value("SHELL")) == NOSTR)
 					shell = SHELL;
 				execl(shell, shell, "-c", fname, 0);
@@ -357,17 +357,17 @@ outof(names, fo, hp)
 			fin = Fdopen(image, "r");
 			if (fin == NULL) {
 				fprintf(stderr, "Can't reopen image\n");
-				fclose(fout);
+				(void) fclose(fout);
 				senderr++;
 				goto cant;
 			}
 			rewind(fin);
 			while ((c = getc(fin)) != EOF)
-				putc(c, fout);
+				(void) putc(c, fout);
 			if (ferror(fout))
 				senderr++, perror(fname);
-			fclose(fout);
-			fclose(fin);
+			(void) fclose(fout);
+			(void) fclose(fin);
 		}
 
 cant:
@@ -398,7 +398,7 @@ cant:
 		np = np->n_flink;
 	}
 	if (image >= 0) {
-		close(image);
+		(void) close(image);
 		image = -1;
 	}
 	return(top);
@@ -565,7 +565,6 @@ unpack(np)
 {
 	register char **ap, **top;
 	register struct name *n;
-	char *cp;
 	char hbuf[10];
 	int t, extra, metoo, verbose;
 
@@ -594,7 +593,7 @@ unpack(np)
 #endif SENDMAIL
 	if (hflag)
 		extra += 2;
-	top = (char **) salloc((t + extra) * sizeof cp);
+	top = (char **) salloc((t + extra) * sizeof *top);
 	ap = top;
 	*ap++ = "send-mail";
 	if (rflag != NOSTR) {
@@ -610,8 +609,7 @@ unpack(np)
 #endif SENDMAIL
 	if (hflag) {
 		*ap++ = "-h";
-		sprintf(hbuf, "%d", hflag);
-		*ap++ = savestr(hbuf);
+		*ap++ = savestr(sprintf(hbuf, "%d", hflag));
 	}
 	while (n != NIL) {
 		if (n->n_type & GDEL) {
