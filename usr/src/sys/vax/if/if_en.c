@@ -1,4 +1,4 @@
-/*	if_en.c	6.4	84/08/29	*/
+/*	if_en.c	6.5	84/12/20	*/
 
 #include "en.h"
 
@@ -551,7 +551,7 @@ gottype:
 	 */
 	if (m->m_off > MMAXOFF ||
 	    MMINOFF + sizeof (struct en_header) > m->m_off) {
-		m = m_get(M_DONTWAIT, MT_HEADER);
+		MGET(m, M_DONTWAIT, MT_HEADER);
 		if (m == 0) {
 			error = ENOBUFS;
 			goto bad;
