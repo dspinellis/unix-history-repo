@@ -1,4 +1,4 @@
-static char Sccsid[] "@(#)xpipe	2.1";
+static char Sccsid[] = "@(#)xpipe.c	1.2	%G%";
 /*
 	Interface to pipe(II) which handles all error conditions.
 	Returns 0 on success,
@@ -8,7 +8,7 @@ static char Sccsid[] "@(#)xpipe	2.1";
 xpipe(t)
 int *t;
 {
-	static char p[] "pipe";
+	static char p[] = "pipe";
 
 	if (pipe(t) == 0)
 		return(0);

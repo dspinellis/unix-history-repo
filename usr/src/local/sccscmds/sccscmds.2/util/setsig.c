@@ -1,3 +1,5 @@
+static char Sccsid[] = "@(#)setsig.c	1.2	%G%";
+
 # include	"signal.h"
 #undef NSIG
 # ifdef PWB
@@ -6,7 +8,6 @@
 #define NSIG 4
 # endif
 # include	"../hdr/macros.h"
-SCCSID(@(#)setsig	2.1);
 
 /*
 	General-purpose signal setting routine.
@@ -27,7 +28,7 @@ SCCSID(@(#)setsig	2.1);
 */
 
 
-char	*Mesg[NSIG] {
+char	*Mesg[NSIG] = {
 	0,
 	0,	/* Hangup */
 	0,	/* Interrupt */
@@ -60,8 +61,8 @@ setsig()
 }
 
 
-static char preface[]	"SIGNAL: ";
-static char endmsg[]	" (ut12)\n";
+static char preface[] = "SIGNAL: ";
+static char endmsg[] = " (ut12)\n";
 
 setsig1(sig)
 int sig;
