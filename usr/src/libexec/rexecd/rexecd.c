@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rexecd.c	4.5 82/12/25";
+static char sccsid[] = "@(#)rexecd.c	4.6 83/01/07";
 #endif
 
 #include <sys/ioctl.h>
@@ -192,8 +192,7 @@ doit(f, fromp)
 				if (ready & (1<<pv[0])) {
 					cc = read(pv[0], buf, sizeof (buf));
 					if (cc <= 0) {
-						int done = 1+1;
-						ioctl(s, SIOCDONE, (char *)&done);
+						shutdown(s, 1+1);
 						readfrom &= ~(1<<pv[0]);
 					} else
 						(void) write(s, buf, cc);
