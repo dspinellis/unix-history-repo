@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cico.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)cico.c	5.8 (Berkeley) %G%";
 #endif
 
 #include <signal.h>
@@ -87,7 +87,7 @@ register char *argv[];
 	register char *p;
 	extern onintr(), timeout(), setdebug();
 	extern char *pskip();
-	char rflags[30];
+	char rflags[MAXFULLNAME];
 	char *ttyn;
 #ifdef NOGETPEER
 	u_long Hostnumber = 0;
@@ -278,14 +278,15 @@ register char *argv[];
 		if (link(file, wkpre) == 0)
 			unlink(file);
 		DEBUG(4, "sys-%s\n", Rmtname);
-#ifdef	NOSTRANGERS
-		/* If we don't know them, we won't talk to them... */
+		/* The versys will also do an alias on the incoming name */
 		if (versys(&Rmtname)) {
+			/* If we don't know them, we won't talk to them... */
+#ifdef	NOSTRANGERS
 			logent(Rmtname, "UNKNOWN HOST");
 			omsg('R', "You are unknown to me", Ofn);
 			cleanup(0);
-		}
 #endif	NOSTRANGERS
+		}
 #ifdef BSDTCP
 		/* we must make sure they are really who they say they
 		 * are. We compare the hostnumber with the number in the hosts
@@ -327,14 +328,14 @@ register char *argv[];
 			 * given its network number (remote machine) in our
 			 * host table.
 			 */
-			if (strncmp(q, hp->h_name, MAXBASENAME) == 0) {
+			if (strncmp(q, hp->h_name, SYSNSIZE) == 0) {
 				if (Debug > 99)
 					logent(q,"Found in host Tables");
 			} else { /* Scan The host aliases */
 				for(alias=hp->h_aliases; *alias!=0 &&
-				    strncmp(q, *alias, MAXBASENAME) != 0; ++alias)
+				    strncmp(q, *alias, SYSNSIZE) != 0; ++alias)
 					;
-				if (strncmp(q, *alias, MAXBASENAME) != 0) {
+				if (strncmp(q, *alias, SYSNSIZE) != 0) {
 					logent(q, "FORGED HOSTNAME");
 					logent(inet_ntoa(from.sin_addr), "ORIGINATED AT");
 					omsg('R',"You're not who you claim to be", Ofn);
@@ -533,7 +534,7 @@ loop:
 		seq = 0;
 #endif !GNXSEQ
 		if (MaxGrade != '\177') {
-			char buf[10];
+			char buf[MAXFULLNAME];
 			sprintf(buf, " -p%c -vgrade=%c", MaxGrade, MaxGrade);
 			strcat(rflags, buf);
 		}
