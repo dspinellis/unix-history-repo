@@ -56,6 +56,7 @@ options		SYSVSHM		# System V shmem (ugly but HP-UX uses it)
 options		HPUXCOMPAT	# HP-UX binary compatibility
 options		COMPAT_OHPUX	# Needed at least through HP-UX 7.05
 options		HPFPLIB		# floating point emulation for MC68040
+options		COMPAT_NOLABEL	# default partitioning for unlabeled disks
 
 
 config		vmunix swap generic
