@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_inode.c	7.28 (Berkeley) %G%
+ *	@(#)ffs_inode.c	7.29 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -157,6 +157,16 @@ loop:
 	 */
 	vp = ITOV(ip);
 	vp->v_type = IFTOVT(ip->i_mode);
+	if (vp->v_type == VFIFO) {
+#ifdef FIFO
+		extern struct vnodeops fifo_inodeops;
+		vp->v_op = &fifo_inodeops;
+#else
+		iput(ip);
+		*ipp = 0;
+		return (EOPNOTSUPP);
+#endif /* FIFO */
+	}
 	if (vp->v_type == VCHR || vp->v_type == VBLK) {
 		vp->v_op = &spec_inodeops;
 		if (nvp = checkalias(vp, ip->i_rdev, mntp)) {
