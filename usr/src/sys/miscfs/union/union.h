@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union.h	8.2 (Berkeley) %G%
+ *	@(#)union.h	8.3 (Berkeley) %G%
  */
 
 struct union_args {
@@ -51,7 +51,7 @@ struct union_node {
 	char			*un_path;	/* saved component name */
 	int			un_hash;	/* saved un_path hash value */
 	int			un_openl;	/* # of opens on lowervp */
-	int			un_flags;
+	unsigned int		un_flags;
 #ifdef DIAGNOSTIC
 	pid_t			un_pid;
 #endif
@@ -61,6 +61,7 @@ struct union_node {
 #define UN_LOCKED	0x02
 #define UN_ULOCK	0x04		/* Upper node is locked */
 #define UN_KLOCK	0x08		/* Keep upper node locked on vput */
+#define UN_CACHED	0x10		/* In union cache */
 
 extern int union_allocvp __P((struct vnode **, struct mount *,
 				struct vnode *, struct vnode *,
