@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vfs_syscalls.c	7.74 (Berkeley) 6/21/91
- *	$Id: vfs_syscalls.c,v 1.7 1993/12/13 11:58:07 davidg Exp $
+ *	$Id: vfs_syscalls.c,v 1.8 1993/12/19 00:51:50 wollman Exp $
  */
 
 #include "param.h"
@@ -1463,8 +1463,13 @@ utimes(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
-	if (error = copyin((caddr_t)uap->tptr, (caddr_t)tv, sizeof (tv)))
-		return (error);
+	if ((caddr_t)uap->tptr == NULL) {
+		microtime(&tv[0]);
+		tv[1] = tv[0];
+	} else {
+		if (error = copyin((caddr_t)uap->tptr, (caddr_t)tv, sizeof (tv)))
+			return (error);
+	}
 	ndp = &nd;
 	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
 	ndp->ni_segflg = UIO_USERSPACE;
