@@ -1,4 +1,4 @@
-/* tcp_timer.c 4.13 82/01/19 */
+/* tcp_timer.c 4.14 82/02/03 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -31,7 +31,9 @@ tcp_fasttimo()
 	int s = splnet();
 COUNT(TCP_FASTTIMO);
 
-	for (inp = tcb.inp_next; inp != &tcb; inp = inp->inp_next)
+	inp = tcb.inp_next;
+	if (inp)
+	for (; inp != &tcb; inp = inp->inp_next)
 		if ((tp = (struct tcpcb *)inp->inp_ppcb) &&
 		    (tp->t_flags & TF_DELACK)) {
 			tp->t_flags &= ~TF_DELACK;
@@ -120,16 +122,16 @@ COUNT(TCP_TIMERS);
 	 */
 	case TCPT_REXMT:
 		tp->t_rxtshift++;
+		if (tp->t_rxtshift > TCP_MAXRXTSHIFT) {
+			tcp_drop(tp, ETIMEDOUT);
+			return;
+		}
 		TCPT_RANGESET(tp->t_timer[TCPT_REXMT],
 		    ((int)(2 * tp->t_srtt)),
 		    TCPTV_MIN, TCPTV_MAX);
 		TCPT_RANGESET(tp->t_timer[TCPT_REXMT],
 		    tp->t_timer[TCPT_REXMT] << tp->t_rxtshift,
 		    TCPTV_MIN, TCPTV_MAX);
-		if (tp->t_timer[TCPT_REXMT] > TCPTV_MAXIDLE / 2) {
-			tcp_drop(tp, ETIMEDOUT);
-			return;
-		}
 /* printf("rexmt set to %d\n", tp->t_timer[TCPT_REXMT]); */
 		tp->snd_nxt = tp->snd_una;
 		/* this only transmits one segment! */
