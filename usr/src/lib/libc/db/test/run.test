@@ -5,7 +5,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)run.test	5.3 (Berkeley) %G%
+#	@(#)run.test	5.4 (Berkeley) %G%
 #
 
 # db regression tests
@@ -25,6 +25,7 @@ main()
 	test5
 	test6
 	test7
+	test8
 	rm -f $TMP1 $TMP2 $TMP3
 }
 
@@ -33,9 +34,7 @@ main()
 test1()
 {
 	printf "Test 1: btree, hash: small key, small data pairs\n"
-	for i in `sed 200q $DICT`; do
-		printf "%s\n" $i
-	done > $TMP1
+	sed 200q $DICT > $TMP1
 	for type in btree hash; do
 		rm -f $TMP2 $TMP3
 		for i in `sed 200q $DICT`; do
@@ -289,6 +288,107 @@ test7()
 		if (cmp -s $TMP1 $TMP3) ; then
 		else
 			printf "test7: type $type: failed\n"
+			exit 1
+		fi
+	done
+}
+
+# Try a variety of bucketsizes and fill factors for hashing
+test8()
+{
+	printf\
+    "Test 8: hash: bucketsize, fill factor; nelem 25000 cachesize 65536\n"
+	awk 'BEGIN {
+		for (i = 1; i <= 10000; ++i)
+			printf("%.*s\n", i % 34,
+		    "abcdefg abcdefg abcdefg abcdefg abcdefg abcdefg abcdefg");
+	}' > $TMP1
+	sed 10000q $DICT |
+	awk '{
+		++i;
+		printf("p\nk%s\nd%.*s\n", $0, i % 34,
+		    "abcdefg abcdefg abcdefg abcdefg abcdefg abcdefg abcdefg");
+	}' > $TMP2
+	sed 10000q $DICT |
+	awk '{
+		++i;
+		printf("g\nk%s\n", $0);
+	}' >> $TMP2
+	bsize=256
+	for ffactor in 11 14 21; do
+		printf "\tbucketsize %d, fill factor %d\n" $bsize, $ffactor
+		$PROG -ot3 \
+		    -ibsize=$bsize,ffactor=$ffactor,nelem=25000,cachesize=65536\
+		    hash $TMP2
+		if (cmp -s $TMP1 $TMP3) ; then
+		else
+			printf "test8: type hash:\
+bsize=$bsize ffactor=$ffactor nelem=25000 cachesize=65536 failed\n"
+			exit 1
+		fi
+	done
+	bsize=512
+	for ffactor in 21 28 43; do
+		printf "\tbucketsize %d, fill factor %d\n" $bsize, $ffactor
+		$PROG -ot3 \
+		    -ibsize=$bsize,ffactor=$ffactor,nelem=25000,cachesize=65536\
+		    hash $TMP2
+		if (cmp -s $TMP1 $TMP3) ; then
+		else
+			printf "test8: type hash:\
+bsize=$bsize ffactor=$ffactor nelem=25000 cachesize=65536 failed\n"
+			exit 1
+		fi
+	done
+	bsize=1024
+	for ffactor in 43 57 85; do
+		printf "\tbucketsize %d, fill factor %d\n" $bsize, $ffactor
+		$PROG -ot3 \
+		    -ibsize=$bsize,ffactor=$ffactor,nelem=25000,cachesize=65536\
+		    hash $TMP2
+		if (cmp -s $TMP1 $TMP3) ; then
+		else
+			printf "test8: type hash:\
+bsize=$bsize ffactor=$ffactor nelem=25000 cachesize=65536 failed\n"
+			exit 1
+		fi
+	done
+	bsize=2048
+	for ffactor in 85 114 171; do
+		printf "\tbucketsize %d, fill factor %d\n" $bsize, $ffactor
+		$PROG -ot3 \
+		    -ibsize=$bsize,ffactor=$ffactor,nelem=25000,cachesize=65536\
+		    hash $TMP2
+		if (cmp -s $TMP1 $TMP3) ; then
+		else
+			printf "test8: type hash:\
+bsize=$bsize ffactor=$ffactor nelem=25000 cachesize=65536 failed\n"
+			exit 1
+		fi
+	done
+	bsize=4096
+	for ffactor in 171 228 341; do
+		printf "\tbucketsize %d, fill factor %d\n" $bsize, $ffactor
+		$PROG -ot3 \
+		    -ibsize=$bsize,ffactor=$ffactor,nelem=25000,cachesize=65536\
+		    hash $TMP2
+		if (cmp -s $TMP1 $TMP3) ; then
+		else
+			printf "test8: type hash:\
+bsize=$bsize ffactor=$ffactor nelem=25000 cachesize=65536 failed\n"
+			exit 1
+		fi
+	done
+	bsize=8192
+	for ffactor in 341 455 683; do
+		printf "\tbucketsize %d, fill factor %d\n" $bsize, $ffactor
+		$PROG -ot3 \
+		    -ibsize=$bsize,ffactor=$ffactor,nelem=25000,cachesize=65536\
+		    hash $TMP2
+		if (cmp -s $TMP1 $TMP3) ; then
+		else
+			printf "test8: type hash:\
+bsize=$bsize ffactor=$ffactor nelem=25000 cachesize=65536 failed\n"
 			exit 1
 		fi
 	done
