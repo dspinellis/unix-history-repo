@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_sl.c	8.3 (Berkeley) %G%
+ *	@(#)if_sl.c	8.4 (Berkeley) %G%
  */
 
 /*
@@ -41,6 +41,8 @@
 #include "sl.h"
 #if NSL > 0
 
+#include "bpfilter.h"
+
 #include <sys/param.h>
 #include <sys/proc.h>
 #include <sys/mbuf.h>
@@ -71,6 +73,11 @@ Huh? Slip without inet?
 
 #include <net/slcompress.h>
 #include <net/if_slvar.h>
+
+#if NBPFILTER > 0
+#include <sys/time.h>
+#include <net/bpf.h>
+#endif
 
 /*
  * SLMAX is a hard limit on input packet size.  To simplify the code
@@ -112,7 +119,11 @@ Huh? Slip without inet?
  * time.  So, setting SLIP_HIWAT to ~100 guarantees that we'll lose
  * at most 1% while maintaining good interactive response.
  */
-#define BUFOFFSET	128
+#if NBPFILTER > 0
+#define	BUFOFFSET	(128+sizeof(struct ifnet **)+SLIP_HDRLEN)
+#else
+#define	BUFOFFSET	(128+sizeof(struct ifnet **))
+#endif
 #define	SLMAX		(MCLBYTES - BUFOFFSET)
 #define	SLBUFSIZE	(SLMAX + BUFOFFSET)
 #define	SLMTU		296
@@ -127,9 +138,9 @@ Huh? Slip without inet?
  *	if the IFF_DEBUG flag is on.
  */
 #define	ABT_ESC		'\033'	/* can't be t_intr - distant host must know it*/
-#define ABT_IDLE	1	/* in seconds - idle before an escape */
-#define ABT_COUNT	3	/* count of escapes for abort */
-#define ABT_WINDOW	(ABT_COUNT*2+2)	/* in seconds - time to count */
+#define	ABT_IDLE	1	/* in seconds - idle before an escape */
+#define	ABT_COUNT	3	/* count of escapes for abort */
+#define	ABT_WINDOW	(ABT_COUNT*2+2)	/* in seconds - time to count */
 
 struct sl_softc sl_softc[NSL];
 
@@ -165,6 +176,9 @@ slattach()
 		sc->sc_if.if_snd.ifq_maxlen = 50;
 		sc->sc_fastq.ifq_maxlen = 32;
 		if_attach(&sc->sc_if);
+#if NBPFILTER > 0
+		bpfattach(&sc->sc_bpf, &sc->sc_if, DLT_SLIP, SLIP_HDRLEN);
+#endif
 	}
 }
 
@@ -264,6 +278,7 @@ sltioctl(tp, cmd, data, flag)
 	int flag;
 {
 	struct sl_softc *sc = (struct sl_softc *)tp->t_sc;
+	int s;
 
 	switch (cmd) {
 	case SLIOCGUNIT:
@@ -278,6 +293,9 @@ sltioctl(tp, cmd, data, flag)
 
 /*
  * Queue a packet.  Start transmission if not active.
+ * Compression happens in slstart; if we do it here, IP TOS
+ * will cause us to not compress "background" packets, because
+ * ordering gets trashed.  It can be done for all packets in slstart.
  */
 int
 sloutput(ifp, m, dst, rtp)
@@ -289,7 +307,6 @@ sloutput(ifp, m, dst, rtp)
 	register struct sl_softc *sc = &sl_softc[ifp->if_unit];
 	register struct ip *ip;
 	register struct ifqueue *ifq;
-	register int p;
 	int s;
 
 	/*
@@ -308,33 +325,19 @@ sloutput(ifp, m, dst, rtp)
 		m_freem(m);
 		return (ENETDOWN);	/* sort of */
 	}
-	if ((sc->sc_ttyp->t_state & TS_CARR_ON) == 0) {
+	if ((sc->sc_ttyp->t_state & TS_CARR_ON) == 0 &&
+	    (sc->sc_ttyp->t_cflag & CLOCAL) == 0) {
 		m_freem(m);
 		return (EHOSTUNREACH);
 	}
 	ifq = &sc->sc_if.if_snd;
 	ip = mtod(m, struct ip *);
-	if (ip->ip_tos & IPTOS_LOWDELAY) {
-		ifq = &sc->sc_fastq;
-		p = 1;
-	} else
-		p = 0;
-	if (ip->ip_p == IPPROTO_TCP) {
-		if (sc->sc_if.if_flags & SC_COMPRESS) {
-			/*
-			 * The last parameter turns off connection id
-			 * compression for background traffic:  Since
-			 * fastq traffic can jump ahead of the background
-			 * traffic, we don't know what order packets will
-			 * go on the line.
-			 */
-			p = sl_compress_tcp(m, ip, &sc->sc_comp, p);
-			*mtod(m, u_char *) |= p;
-		}
-	} else if (sc->sc_if.if_flags & SC_NOICMP && ip->ip_p == IPPROTO_ICMP) {
+	if (sc->sc_if.if_flags & SC_NOICMP && ip->ip_p == IPPROTO_ICMP) {
 		m_freem(m);
 		return (ENETRESET);		/* XXX ? */
 	}
+	if (ip->ip_tos & IPTOS_LOWDELAY)
+		ifq = &sc->sc_fastq;
 	s = splimp();
 	if (IF_QFULL(ifq)) {
 		IF_DROP(ifq);
@@ -363,8 +366,13 @@ slstart(tp)
 	register struct sl_softc *sc = (struct sl_softc *)tp->t_sc;
 	register struct mbuf *m;
 	register u_char *cp;
+	register struct ip *ip;
 	int s;
 	struct mbuf *m2;
+#if NBPFILTER > 0
+	u_char bpfbuf[SLMTU + SLIP_HDRLEN];
+	register int len;
+#endif
 	extern int cfreecount;
 
 	for (;;) {
@@ -396,6 +404,53 @@ slstart(tp)
 		splx(s);
 		if (m == NULL)
 			return;
+
+		/*
+		 * We do the header compression here rather than in sloutput
+		 * because the packets will be out of order if we are using TOS
+		 * queueing, and the connection id compression will get
+		 * munged when this happens.
+		 */
+#if NBPFILTER > 0
+		if (sc->sc_bpf) {
+			/*
+			 * We need to save the TCP/IP header before it's
+			 * compressed.  To avoid complicated code, we just
+			 * copy the entire packet into a stack buffer (since
+			 * this is a serial line, packets should be short
+			 * and/or the copy should be negligible cost compared
+			 * to the packet transmission time).
+			 */
+			register struct mbuf *m1 = m;
+			register u_char *cp = bpfbuf + SLIP_HDRLEN;
+
+			len = 0;
+			do {
+				register int mlen = m1->m_len;
+
+				bcopy(mtod(m1, caddr_t), cp, mlen);
+				cp += mlen;
+				len += mlen;
+			} while (m1 = m1->m_next);
+		}
+#endif
+		if ((ip = mtod(m, struct ip *))->ip_p == IPPROTO_TCP) {
+			if (sc->sc_if.if_flags & SC_COMPRESS)
+				*mtod(m, u_char *) |= sl_compress_tcp(m, ip,
+				    &sc->sc_comp, 1);
+		}
+#if NBPFILTER > 0
+		if (sc->sc_bpf) {
+			/*
+			 * Put the SLIP pseudo-"link header" in place.  The
+			 * compressed header is now at the beginning of the
+			 * mbuf.
+			 */
+			bpfbuf[SLX_DIR] = SLIPDIR_OUT;
+			bcopy(mtod(m, caddr_t), &bpfbuf[SLX_CHDR], CHDR_LEN);
+			bpf_tap(sc->sc_bpf, bpfbuf, len + SLIP_HDRLEN);
+		}
+#endif
 		sc->sc_if.if_lastchange = time;
 
 		/*
@@ -443,7 +498,8 @@ slstart(tp)
 					 * Put n characters at once
 					 * into the tty output queue.
 					 */
-					if (b_to_q((char *)bp, cp - bp, &tp->t_outq))
+					if (b_to_q((char *)bp, cp - bp,
+					    &tp->t_outq))
 						break;
 					sc->sc_if.if_obytes += cp - bp;
 				}
@@ -541,18 +597,23 @@ slinput(c, tp)
 	register struct mbuf *m;
 	register int len;
 	int s;
+#if NBPFILTER > 0
+	u_char chdr[CHDR_LEN];
+#endif
 
 	tk_nin++;
 	sc = (struct sl_softc *)tp->t_sc;
 	if (sc == NULL)
 		return;
-	if (!(tp->t_state&TS_CARR_ON))	/* XXX */
+	if (c & TTY_ERRORMASK || ((tp->t_state & TS_CARR_ON) == 0 &&
+	    (tp->t_cflag & CLOCAL) == 0)) {
+		sc->sc_flags |= SC_ERROR;
 		return;
+	}
+	c &= TTY_CHARMASK;
 
 	++sc->sc_if.if_ibytes;
-	c &= 0xff;			/* XXX */
 
-#ifdef ABT_ESC
 	if (sc->sc_if.if_flags & IFF_DEBUG) {
 		if (c == ABT_ESC) {
 			/*
@@ -578,7 +639,6 @@ slinput(c, tp)
 			sc->sc_abortcount = 0;
 		sc->sc_lasttime = time.tv_sec;
 	}
-#endif
 
 	switch (c) {
 
@@ -597,10 +657,28 @@ slinput(c, tp)
 		return;
 
 	case FRAME_END:
+		if(sc->sc_flags & SC_ERROR) {
+			sc->sc_flags &= ~SC_ERROR;
+			goto newpack;
+		}
 		len = sc->sc_mp - sc->sc_buf;
 		if (len < 3)
 			/* less than min length packet - ignore */
 			goto newpack;
+
+#if NBPFILTER > 0
+		if (sc->sc_bpf) {
+			/*
+			 * Save the compressed header, so we
+			 * can tack it on later.  Note that we
+			 * will end up copying garbage in some
+			 * cases but this is okay.  We remember
+			 * where the buffer started so we can
+			 * compute the new header length.
+			 */
+			bcopy(sc->sc_buf, chdr, CHDR_LEN);
+		}
+#endif
 
 		if ((c = (*sc->sc_buf & 0xf0)) != (IPVERSION << 4)) {
 			if (c & 0x80)
@@ -629,6 +707,21 @@ slinput(c, tp)
 			} else
 				goto error;
 		}
+#if NBPFILTER > 0
+		if (sc->sc_bpf) {
+			/*
+			 * Put the SLIP pseudo-"link header" in place.
+			 * We couldn't do this any earlier since
+			 * decompression probably moved the buffer
+			 * pointer.  Then, invoke BPF.
+			 */
+			register u_char *hp = sc->sc_buf - SLIP_HDRLEN;
+
+			hp[SLX_DIR] = SLIPDIR_IN;
+			bcopy(chdr, &hp[SLX_CHDR], CHDR_LEN);
+			bpf_tap(sc->sc_bpf, hp, len + SLIP_HDRLEN);
+		}
+#endif
 		m = sl_btom(sc, len);
 		if (m == NULL)
 			goto error;
@@ -653,6 +746,10 @@ slinput(c, tp)
 		sc->sc_escape = 0;
 		return;
 	}
+
+	/* can't put lower; would miss an extra frame */
+	sc->sc_flags |= SC_ERROR;
+
 error:
 	sc->sc_if.if_ierrors++;
 newpack:
@@ -706,7 +803,6 @@ slioctl(ifp, cmd, data)
 			break;
 		}
 		break;
-#endif
 
 	default:
 		error = EINVAL;
@@ -714,3 +810,4 @@ slioctl(ifp, cmd, data)
 	splx(s);
 	return (error);
 }
+#endif
