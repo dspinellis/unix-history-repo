@@ -1,4 +1,4 @@
-/*	kgclock.c	4.1	83/03/01	*/
+/*	kgclock.c	4.2	83/03/01	*/
 
 #ifdef KGCLOCK		/* kl-11 as profiling clock */
 
@@ -8,6 +8,7 @@
 #include "../h/ubavar.h"
 #include "../h/psl.h"
 
+int	phz = 0;
 int	kgprobe(), kgattach();
 struct	uba_device *kginfo[1];
 u_short	kgstd[] = { 0177560, 0 };
@@ -53,8 +54,23 @@ kgclock(dev, r0, r1, r2, r3, r4 ,r5, pc, ps)
 caddr_t pc;
 {
 	register int k;
+	static int otime = 0;
+	static int calibrate;
 
 	klbase->tbuf = 0377;	/* reprime clock (scope sync too) */
+	if (phz == 0) {
+		if (otime == 0) {
+			otime = time + 1;
+			calibrate = 0;
+		}
+		if (time >= otime)
+			calibrate++;
+		if (time >= otime + 4) {
+			phz = calibrate / 4;
+			otime = 0;
+		}
+		return;
+	}
 	gatherstats();		/* this routine lives in kern_clock.c */
 }
 #endif KGCLOCK
