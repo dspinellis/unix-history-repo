@@ -1,4 +1,4 @@
-/*	uba.c	4.31	81/05/12	*/
+/*	uba.c	4.32	81/06/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -438,7 +438,6 @@ ubaerror(uban, uh, xx, uvec, uba)
 }
 #endif
 
-#ifdef BBNNET
 /*
  * This routine allows remapping of previously
  * allocated UNIBUS bdp and map resources
@@ -501,4 +500,3 @@ ubaremap(uban, ubinfo, addr)
 	 */
 	return (ubinfo | o);
 }
-#endif
