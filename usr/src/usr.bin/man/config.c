@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)config.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)config.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -66,20 +66,19 @@ getpath(sects)
 }
 
 cadd(add1, len1, add2)
-char *add1, *add2;
-register size_t len1;
+	char *add1, *add2;
+	register size_t len1;
 {
 	static size_t buflen;
 	static char *bp, *endp;
 	register size_t len2;
 
 	len2 = add2 ? strlen(add2) : 0;
-	if (!bp || bp + len1 + len2 + 2 >= endp) {
-		if (!(pathbuf = realloc(pathbuf, buflen += 1024)))
+	if (bp == NULL || bp + len1 + len2 + 2 >= endp) {
+		buflen += MAX(len1 + len2 + 2, 1024);
+		if ((pathbuf = realloc(pathbuf, buflen)) == NULL)
 			enomem();
-		if (!bp)
-			bp = pathbuf;
-		endp = pathbuf + buflen;
+		endp = (bp = pathbuf) + buflen;
 	}
 	bcopy(add1, bp, len1);
 	bp += len1;
