@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)overlay.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)overlay.c	5.9 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <ctype.h>
@@ -44,8 +44,11 @@ overlay(win1, win2)
 		x = startx - win2->begx;
 		for (sp = &win1->lines[y1]->line[startx - win1->begx]; 
 		     sp < end; sp++) {
-			if (!isspace(*sp))
-				mvwaddch(win2, y2, x, *sp);
+			if (!isspace(*sp)) {
+				wmove(win2, y2, x);
+				__waddch(win2, y2, x, *sp, 
+					 *(sp + win1->maxx) & __STANDOUT);
+			}
 			x++;
 		}
 	}

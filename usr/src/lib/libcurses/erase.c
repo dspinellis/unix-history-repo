@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)erase.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)erase.c	5.7 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -31,11 +31,12 @@ werase(win)
 		start = win->lines[y]->line;
 		end = &start[win->maxx];
 		for (sp = start; sp < end; sp++)
-			if (*sp != ' ') {
+			if (*sp != ' ' || *(sp + win->maxx) & __STANDOUT) {
 				maxx = sp;
 				if (minx == -1)
 					minx = sp - start;
 				*sp = ' ';
+				*(sp + win->maxx) &= ~__STANDOUT;
 			}
 		if (minx != -1)
 			touchline(win, y, minx, maxx - win->lines[y]->line);

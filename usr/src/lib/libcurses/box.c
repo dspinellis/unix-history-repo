@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)box.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)box.c	5.7 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -22,19 +22,32 @@ box(win, vert, hor)
 	int vert, hor;
 {
 	register int endy, endx, i;
-	register char *fp, *lp;
+	register char *fp, *lp, *sfp, *slp;
 
 	endx = win->maxx;
 	endy = win->maxy - 1;
-	fp = win->topline->line;
+	fp = win->lines[0]->line;
 	lp = win->lines[endy]->line;
-	for (i = 0; i < endx; i++)
+	sfp = win->lines[0]->standout;
+	slp = win->lines[endy]->standout;
+	for (i = 0; i < endx; i++) {
 		fp[i] = lp[i] = hor;
+		sfp[i] &= ~__STANDOUT;
+		slp[i] &= ~__STANDOUT;
+	}
 	endx--;
-	for (i = 0; i <= endy; i++)
+	for (i = 0; i <= endy; i++) {
 		win->lines[i]->line[0] = (win->lines[i]->line[endx] = vert);
-	if (!(win->flags & __SCROLLOK) && (win->flags & __SCROLLWIN))
+		win->lines[i]->standout[0] &= ~__STANDOUT;
+		win->lines[i]->standout[endx] &= ~__STANDOUT;
+	}
+	if (!(win->flags & __SCROLLOK) && (win->flags & __SCROLLWIN)) {
 		fp[0] = fp[endx] = lp[0] = lp[endx] = ' ';
+		sfp[0] &= ~__STANDOUT;
+		sfp[endx] &= ~__STANDOUT;
+		slp[0] &= ~__STANDOUT;
+		slp[endx] &= ~__STANDOUT;
+	}
 	touchwin(win);
 	return (OK);
 }

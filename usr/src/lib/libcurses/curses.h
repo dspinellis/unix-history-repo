@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)curses.h	5.15 (Berkeley) %G%
+ *	@(#)curses.h	5.16 (Berkeley) %G%
  */
 
 #ifndef _CURSES_H_
@@ -62,13 +62,16 @@ typedef struct __line {
 	u_int flags;
 	u_int hash;			/* Hash value for the line. */
 	size_t firstch, lastch;		/* First and last changed columns. */
-	char *standout;			/* standout character markers */
-/* 
- * XXX
- * _STANDOUT is the 8th bit, characters themselves are encoded.
- */
-#define	__STANDOUT	0x080		/* Added characters are standout. */
-	char *line;			/* Pointer to line itself. */
+
+#define	__STANDOUT	0x01  		/* Added characters are standout. */
+	char *standout;			/* Standout character markers.
+					 * This field is stored as an 
+					 * extension to the line, i.e., 
+					 * lp->standout = lp->line + win->maxx
+					 * is an invariant.
+					 */
+	
+	char *line;			/* Pointer to the line text. */
 } LINE;
 
 typedef struct __window {		/* Window structure. */
