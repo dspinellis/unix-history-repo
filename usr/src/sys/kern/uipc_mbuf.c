@@ -1,4 +1,4 @@
-/*	uipc_mbuf.c	1.24	81/12/21	*/
+/*	uipc_mbuf.c	1.25	81/12/23	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -310,11 +310,42 @@ COUNT(M_ADJ);
 	}
 }
 
-/*ARGSUSED*/
-m_pullup(m, len)
-	struct mbuf *m;
+struct mbuf *
+m_pullup(m0, len)
+	struct mbuf *m0;
 	int len;
 {
+	register struct mbuf *m, *n;
+	int cnt;
 
+	if (len > MLEN)
+		goto bad;
+	MGET(m, 0);
+	if (m == 0)
+		goto bad;
+	m->m_off = MMINOFF;
+	m->m_len = 0;
+	n = m0;
+	do {
+		cnt = MIN(MLEN - m->m_len, len);
+		if (cnt > n->m_len)
+			cnt = n->m_len;
+		bcopy(mtod(n, caddr_t), mtod(m, caddr_t)+m->m_len, cnt);
+		len -= cnt;
+		m->m_len += cnt;
+		n->m_off += cnt;
+		n->m_len -= cnt;
+		if (n->m_len)
+			break;
+		n = m_free(n);
+	} while (n);
+	if (len) {
+		(void) m_free(m);
+		goto bad;
+	}
+	m->m_next = n;
+	return (m);
+bad:
+	m_freem(m0);
 	return (0);
 }
