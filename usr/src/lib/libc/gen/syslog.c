@@ -93,18 +93,17 @@ vsyslog(pri, fmt, ap)
 
 	/* build the message */
 	(void)time(&now);
-	(void)sprintf(tbuf, "<%d>%.15s ", pri, ctime(&now) + 4);
-	for (p = tbuf; *p; ++p);
+	p = tbuf + sprintf(tbuf, "<%d>", pri);
+	p += strftime(p, sizeof (tbuf) - (p - tbuf), "%h %e %T ",
+	    localtime(&now));
 	if (LogStat & LOG_PERROR)
 		stdp = p;
 	if (LogTag) {
 		(void)strcpy(p, LogTag);
 		for (; *p; ++p);
 	}
-	if (LogStat & LOG_PID) {
-		(void)sprintf(p, "[%d]", getpid());
-		for (; *p; ++p);
-	}
+	if (LogStat & LOG_PID)
+		p += sprintf(p, "[%d]", getpid());
 	if (LogTag) {
 		*p++ = ':';
 		*p++ = ' ';
@@ -113,7 +112,6 @@ vsyslog(pri, fmt, ap)
 	/* substitute error message for %m */
 	{
 		register char ch, *t1, *t2;
-		char *strerror();
 
 		for (t1 = fmt_cpy; ch = *fmt; ++fmt)
 			if (ch == '%' && fmt[1] == 'm') {
@@ -126,9 +124,8 @@ vsyslog(pri, fmt, ap)
 		*t1 = '\0';
 	}
 
-	(void)vsprintf(p, fmt_cpy, ap);
-
-	cnt = strlen(tbuf);
+	p += vsprintf(p, fmt_cpy, ap);
+	cnt = p - tbuf;
 
 	/* output to stderr if requested */
 	if (LogStat & LOG_PERROR) {
