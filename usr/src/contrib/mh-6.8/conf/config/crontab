@@ -1,0 +1,3 @@
+00 5 * * * @(MHETCPATH)/conflict -mail PostMaster
+05 5 * * * su bboards < @(BBHOME)/etc/bboards.daily
+10 5 * * 0 su bboards < @(BBHOME)/etc/bboards.weekly
