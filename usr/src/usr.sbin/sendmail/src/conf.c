@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -153,7 +153,26 @@ setdefaults()
 	FileMode = 0644;
 	DefUid = 1;
 	DefGid = 1;
+	setdefuser();
 }
+
+
+/*
+**  SETDEFUSER -- set/reset DefUser using DefUid (for initgroups())
+*/
+
+setdefuser()
+{
+	struct passwd *defpwent;
+
+	if (DefUser != NULL)
+		free(DefUser);
+	if ((defpwent = getpwuid(DefUid)) != NULL)
+		DefUser = newstr(defpwent->pw_name);
+	else
+		DefUser = newstr("nobody");
+}
+
 
 /*
 **  GETRUID -- get real user id (V7)

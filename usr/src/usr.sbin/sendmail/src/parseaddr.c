@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1082,7 +1082,6 @@ printaddr(a, follow)
 			printf("\t");
 		printf("%x=", a);
 		(void) fflush(stdout);
-		printf("%s: mailer %d (%s), host `%s', user `%s'\n", a->q_paddr,
 		for (i = indent; i > 0; i--)
 			printf("\t");
 		printf("\tnext=%x, flags=%o, rmailer %d, alias=%x, sibling=%x, child=%x\n",

@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -136,6 +136,7 @@ sendto(list, copyf, ctladdr, qflags)
 		extern ADDRESS *recipient();
 
 		al = a->q_next;
+		setctladdr(a);
 		sibl = recipient(a);
 		if (sibl != NULL)
 		{

@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.31 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -371,8 +371,6 @@ deliver(e, firstto)
 	**	If we are running SMTP, we just need to clean up.
 	*/
 
-	if (ctladdr == NULL)
-		ctladdr = &e->e_from;
 #ifdef NAMED_BIND
 	_res.options &= ~(RES_DEFNAMES | RES_DNSRCH);		/* XXX */
 #endif
@@ -882,11 +880,15 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 			if (ctladdr == NULL || ctladdr->q_uid == 0)
 			{
 				(void) setgid(DefGid);
+				(void) initgroups(DefUser, DefGid);
 				(void) setuid(DefUid);
 			}
 			else
 			{
 				(void) setgid(ctladdr->q_gid);
+				(void) initgroups(ctladdr->q_ruser?
+					ctladdr->q_ruser: ctladdr->q_user,
+					ctladdr->q_gid);
 				(void) setuid(ctladdr->q_uid);
 			}
 		}
@@ -1267,10 +1269,15 @@ mailfile(filename, ctladdr)
 
 		if (!bitset(S_ISGID, stb.st_mode) || setgid(stb.st_gid) < 0)
 		{
-			if (ctladdr->q_uid == 0)
+			if (ctladdr->q_uid == 0) {
 				(void) setgid(DefGid);
-			else
+				(void) initgroups(DefUser, DefGid);
+			} else {
 				(void) setgid(ctladdr->q_gid);
+				(void) initgroups(ctladdr->q_ruser?
+					ctladdr->q_ruser: ctladdr->q_user,
+					ctladdr->q_gid);
+			}
 		}
 		if (!bitset(S_ISUID, stb.st_mode) || setuid(stb.st_uid) < 0)
 		{

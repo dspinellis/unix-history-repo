@@ -15,7 +15,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)sendmail.h	5.14 (Berkeley) %G%
+ *	@(#)sendmail.h	5.15 (Berkeley) %G%
  */
 
 /*
@@ -25,7 +25,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	5.14		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	5.15		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -100,6 +100,7 @@ struct address
 {
 	char		*q_paddr;	/* the printname for the address */
 	char		*q_user;	/* user name */
+	char		*q_ruser;	/* real user name, or NULL if q_user */
 	char		*q_host;	/* host name */
 	struct mailer	*q_mailer;	/* mailer to use */
 	u_short		q_flags;	/* status flags, see below */
@@ -518,6 +519,7 @@ EXTERN FILE	*OutChannel;	/* output connection */
 EXTERN int	RealUid;	/* when Daemon, real uid of caller */
 EXTERN int	RealGid;	/* when Daemon, real gid of caller */
 EXTERN int	DefUid;		/* default uid to run as */
+EXTERN char	*DefUser;	/* default user to run as (from DefUid) */
 EXTERN int	DefGid;		/* default gid to run as */
 EXTERN int	OldUmask;	/* umask when sendmail starts up */
 EXTERN int	Errors;		/* set if errors (local to single pass) */
