@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 1980, 1991, 1993
+ * Copyright (c) 1980, 1991, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
@@ -7,12 +7,12 @@
 
 #ifndef lint
 static char copyright[] =
-"@(#) Copyright (c) 1980, 1991, 1993\n\
+"@(#) Copyright (c) 1980, 1991, 1993, 1994\n\
 	The Regents of the University of California.  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	8.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	8.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -27,6 +27,9 @@ static char sccsid[] = "@(#)pstat.c	8.9 (Berkeley) %G%";
 #define NFS
 #include <sys/mount.h>
 #undef NFS
+#include <sys/uio.h>
+#include <sys/namei.h>
+#include <miscfs/union/union.h>
 #undef KERNEL
 #include <sys/stat.h>
 #include <nfs/nfsnode.h>
@@ -113,6 +116,43 @@ char	*nlistf	= NULL;
 char	*memf	= NULL;
 kvm_t	*kd;
 
+const char *mountname[] = INITMOUNTNAMES;
+struct {
+	int m_flag;
+	const char *m_name;
+} mnt_flags[] = {
+	{ MNT_RDONLY, "rdonly" },
+	{ MNT_SYNCHRONOUS, "sync" },
+	{ MNT_NOEXEC, "noexec" },
+	{ MNT_NOSUID, "nosuid" },
+	{ MNT_NODEV, "nodev" },
+	{ MNT_UNION, "union" },
+	{ MNT_ASYNC, "async" },
+	{ MNT_EXRDONLY, "exrdonly" },
+	{ MNT_EXPORTED, "exported" },
+	{ MNT_DEFEXPORTED, "defexported" },
+	{ MNT_EXPORTANON, "exportanon" },
+	{ MNT_EXKERB, "exkerb" },
+	{ MNT_LOCAL, "local" },
+	{ MNT_QUOTA, "quota" },
+	{ MNT_ROOTFS, "rootfs" },
+	{ MNT_USER, "user" },
+	{ MNT_UPDATE, "update" },
+	{ MNT_DELEXPORT },
+	{ MNT_UPDATE, "update" },
+	{ MNT_DELEXPORT, "delexport" },
+	{ MNT_RELOAD, "reload" },
+	{ MNT_FORCE, "force" },
+	{ MNT_MLOCK, "mlock" },
+	{ MNT_WAIT, "wait" },
+	{ MNT_MPBUSY, "mpbusy" },
+	{ MNT_MPWANT, "mpwant" },
+	{ MNT_UNMOUNT, "unmount" },
+	{ MNT_WANTRDWR, "wantrdwr" },
+	{ 0 }
+};
+
+
 #define	SVAR(var) __STRING(var)	/* to force expansion */
 #define	KGET(idx, var)							\
 	KGET1(idx, &var, sizeof(var), SVAR(var))
@@ -144,6 +184,8 @@ void	ttyprt __P((struct tty *, int));
 void	ttytype __P((struct tty *, char *, int, int));
 void	ufs_header __P((void));
 int	ufs_print __P((struct vnode *));
+void	union_header __P((void));
+int	union_print __P((struct vnode *));
 void	usage __P((void));
 void	vnode_header __P((void));
 void	vnode_print __P((struct vnode *, struct vnode *));
@@ -235,9 +277,9 @@ struct e_vnode {
 void
 vnodemode()
 {
-	register struct e_vnode *e_vnodebase, *endvnode, *evp;
-	register struct vnode *vp;
-	register struct mount *maddr, *mp;
+	struct e_vnode *e_vnodebase, *endvnode, *evp;
+	struct vnode *vp;
+	struct mount *maddr, *mp;
 	int numvnodes;
 
 	e_vnodebase = loadvnodes(&numvnodes);
@@ -262,13 +304,16 @@ vnodemode()
 			maddr = vp->v_mount;
 			mount_print(mp);
 			vnode_header();
-			switch(ST.f_type) {
+			switch (ST.f_type) {
 			case MOUNT_UFS:
 			case MOUNT_MFS:
 				ufs_header();
 				break;
 			case MOUNT_NFS:
 				nfs_header();
+				break;
+			case MOUNT_UNION:
+				union_header();
 				break;
 			case MOUNT_NONE:
 			case MOUNT_MSDOS:
@@ -278,13 +323,16 @@ vnodemode()
 			(void)printf("\n");
 		}
 		vnode_print(evp->avnode, vp);
-		switch(ST.f_type) {
+		switch (ST.f_type) {
 		case MOUNT_UFS:
 		case MOUNT_MFS:
 			ufs_print(vp);
 			break;
 		case MOUNT_NFS:
 			nfs_print(vp);
+			break;
+		case MOUNT_UNION:
+			union_print(vp);
 			break;
 		case MOUNT_NONE:
 		case MOUNT_MSDOS:
@@ -309,12 +357,12 @@ vnode_print(avnode, vp)
 {
 	char *type, flags[16]; 
 	char *fp = flags;
-	register int flag;
+	int flag;
 
 	/*
 	 * set type
 	 */
-	switch(vp->v_type) {
+	switch (vp->v_type) {
 	case VNON:
 		type = "non"; break;
 	case VREG:
@@ -371,7 +419,7 @@ int
 ufs_print(vp) 
 	struct vnode *vp;
 {
-	register int flag;
+	int flag;
 	struct inode inode, *ip = &inode;
 	char flagbuf[16], *flags = flagbuf;
 	char *name;
@@ -428,7 +476,7 @@ nfs_print(vp)
 {
 	struct nfsnode nfsnode, *np = &nfsnode;
 	char flagbuf[16], *flags = flagbuf;
-	register int flag;
+	int flag;
 	char *name;
 	mode_t type;
 
@@ -465,6 +513,24 @@ nfs_print(vp)
 		(void)printf(" %7qd", np->n_size);
 	return (0);
 }
+
+void
+union_header() 
+{
+	(void)printf("    UPPER    LOWER");
+}
+
+int
+union_print(vp) 
+	struct vnode *vp;
+{
+	struct union_node unode, *up = &unode;
+
+	KGETRET(VTOUNION(vp), &unode, sizeof(unode), "vnode's unode");
+
+	(void)printf(" %8x %8x", up->un_uppervp, up->un_lowervp);
+	return (0);
+}
 	
 /*
  * Given a pointer to a mount structure in kernel space,
@@ -479,7 +545,7 @@ getmnt(maddr)
 		struct mount *maddr;
 		struct mount mount;
 	} *mhead = NULL;
-	register struct mtab *mt;
+	struct mtab *mt;
 
 	for (mt = mhead; mt != NULL; mt = mt->next)
 		if (maddr == mt->maddr)
@@ -497,115 +563,29 @@ void
 mount_print(mp)
 	struct mount *mp;
 {
-	register int flags;
-	char *type;
+	int flags;
+	const char *type;
 
 #define ST	mp->mnt_stat
 	(void)printf("*** MOUNT ");
-	switch (ST.f_type) {
-	case MOUNT_NONE:
-		type = "none";
-		break;
-	case MOUNT_UFS:
-		type = "ufs";
-		break;
-	case MOUNT_NFS:
-		type = "nfs";
-		break;
-	case MOUNT_MFS:
-		type = "mfs";
-		break;
-	case MOUNT_MSDOS:
-		type = "pc";
-		break;
-	default:
+	if (ST.f_type >= sizeof(mountname)/sizeof(mountname[0]))
 		type = "unknown";
-		break;
-	}
+	else
+		type = mountname[ST.f_type];
 	(void)printf("%s %s on %s", type, ST.f_mntfromname, ST.f_mntonname);
 	if (flags = mp->mnt_flag) {
-		char *comma = "(";
+		int i;
+		const char *sep = " (";
 
-		putchar(' ');
-		/* user visable flags */
-		if (flags & MNT_RDONLY) {
-			(void)printf("%srdonly", comma);
-			flags &= ~MNT_RDONLY;
-			comma = ",";
-		}
-		if (flags & MNT_SYNCHRONOUS) {
-			(void)printf("%ssynchronous", comma);
-			flags &= ~MNT_SYNCHRONOUS;
-			comma = ",";
-		}
-		if (flags & MNT_NOEXEC) {
-			(void)printf("%snoexec", comma);
-			flags &= ~MNT_NOEXEC;
-			comma = ",";
-		}
-		if (flags & MNT_NOSUID) {
-			(void)printf("%snosuid", comma);
-			flags &= ~MNT_NOSUID;
-			comma = ",";
-		}
-		if (flags & MNT_NODEV) {
-			(void)printf("%snodev", comma);
-			flags &= ~MNT_NODEV;
-			comma = ",";
-		}
-		if (flags & MNT_EXPORTED) {
-			(void)printf("%sexport", comma);
-			flags &= ~MNT_EXPORTED;
-			comma = ",";
-		}
-		if (flags & MNT_EXRDONLY) {
-			(void)printf("%sexrdonly", comma);
-			flags &= ~MNT_EXRDONLY;
-			comma = ",";
-		}
-		if (flags & MNT_LOCAL) {
-			(void)printf("%slocal", comma);
-			flags &= ~MNT_LOCAL;
-			comma = ",";
-		}
-		if (flags & MNT_QUOTA) {
-			(void)printf("%squota", comma);
-			flags &= ~MNT_QUOTA;
-			comma = ",";
-		}
-		/* filesystem control flags */
-		if (flags & MNT_UPDATE) {
-			(void)printf("%supdate", comma);
-			flags &= ~MNT_UPDATE;
-			comma = ",";
-		}
-		if (flags & MNT_MLOCK) {
-			(void)printf("%slock", comma);
-			flags &= ~MNT_MLOCK;
-			comma = ",";
-		}
-		if (flags & MNT_MWAIT) {
-			(void)printf("%swait", comma);
-			flags &= ~MNT_MWAIT;
-			comma = ",";
-		}
-		if (flags & MNT_MPBUSY) {
-			(void)printf("%sbusy", comma);
-			flags &= ~MNT_MPBUSY;
-			comma = ",";
-		}
-		if (flags & MNT_MPWANT) {
-			(void)printf("%swant", comma);
-			flags &= ~MNT_MPWANT;
-			comma = ",";
-		}
-		if (flags & MNT_UNMOUNT) {
-			(void)printf("%sunmount", comma);
-			flags &= ~MNT_UNMOUNT;
-			comma = ",";
+		for (i = 0; mnt_flags[i].m_flag; i++) {
+			if (flags & mnt_flags[i].m_flag) {
+				(void)printf("%s%s", sep, mnt_flags[i].m_name);
+				flags &= ~mnt_flags[i].m_flag;
+				sep = ",";
+			}
 		}
 		if (flags)
-			(void)printf("%sunknown_flags:%x", comma, flags);
+			(void)printf("%sunknown_flags:%x", sep, flags);
 		(void)printf(")");
 	}
 	(void)printf("\n");
@@ -739,11 +719,11 @@ ttymode()
 
 void
 ttytype(tty, name, type, number)
-	register struct tty *tty;
+	struct tty *tty;
 	char *name;
 	int type, number;
 {
-	register struct tty *tp;
+	struct tty *tp;
 	int ntty;
 
 	if (tty == NULL)
@@ -786,10 +766,10 @@ struct {
 
 void
 ttyprt(tp, line)
-	register struct tty *tp;
+	struct tty *tp;
 	int line;
 {
-	register int i, j;
+	int i, j;
 	pid_t pgid;
 	char *name, state[20];
 
@@ -831,7 +811,7 @@ ttyprt(tp, line)
 void
 filemode()
 {
-	register struct file *fp;
+	struct file *fp;
 	struct file *addr;
 	char *buf, flagbuf[16], *fbp;
 	int len, maxfile, nfile;
