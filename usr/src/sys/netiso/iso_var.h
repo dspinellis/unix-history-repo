@@ -37,7 +37,7 @@ SOFTWARE.
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)iso_var.h	7.2 (Berkeley) %G%
+ *	@(#)iso_var.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -56,7 +56,7 @@ SOFTWARE.
 struct iso_ifaddr {
 	struct ifaddr		ia_ifa;		/* protocol-independent info */
 #define ia_ifp		ia_ifa.ifa_ifp
-	int					ia_flags;
+#define	ia_flags	ia_ifa.ifa_flags
 	int					ia_snpaoffset;
 	struct iso_ifaddr	*ia_next;	/* next in list of iso addresses */
 	struct	sockaddr_iso ia_addr;	/* reserve space for interface name */
@@ -94,20 +94,6 @@ struct	iso_ifreq {
 #define	SIOCGIFDSTADDR_ISO _IOWR('i',34, struct iso_ifreq) /* get dst address */
 #define	SIOCGIFNETMASK_ISO _IOWR('i',37, struct iso_ifreq) /* get dst address */
 
-#ifndef IFA_ROUTE
-#define	IFA_ROUTE	0x01		/* routing entry installed */
-#endif
-
-/* ISO arp IOCTL data structures */
-struct arpreq_iso {
-	int	arp_flags;			/* flags */
-	struct	sockaddr_iso arp_pa;		/* protocol address */
-	struct	sockaddr arp_ha;		/* hardware address */
-};
-
-#define	SIOCSISOMAP	_IOW('a',30, struct arpreq_iso)	/* set arp entry */
-#define	SIOCGISOMAP	_IOWR('a',38, struct arpreq_iso)/* get arp entry */
-#define	SIOCDISOMAP	_IOW('a',31, struct arpreq_iso)	/* delete arp entry */
 /*
  * This stuff should go in if.h or if_llc.h or someplace else,
  * but for now . . .
