@@ -10,13 +10,14 @@ maxusers	10
 # Standard options
 options		QUOTA
 options		INET
-options		MFS,NFS,FIFO
+options		FFS,MFS,NFS,FIFO
 options		"COMPAT_43"
 options		"COMPAT_42","TCP_COMPAT_42"
 
 # Options specific to this host.
 options		DEBUG,DIAGNOSTIC
 options		KTRACE
+options		NPX
 options		"NKMEMCLUSTERS=256"
 
 config		vmunix	root on dk0 swap on dk0
