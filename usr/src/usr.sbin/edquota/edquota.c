@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)edquota.c	4.5 (Berkeley, from Melbourne) %G%";
+static char sccsid[] = "@(#)edquota.c	4.6 (Berkeley, from Melbourne) %G%";
 #endif
 
 /*
@@ -318,13 +318,15 @@ getdiscq(uid, dq, dqf)
 {
 	register struct fstab *fs;
 	char qfilename[MAXPATHLEN + 1];
+	struct stat statb;
+	struct dqblk dqblk;
+	dev_t fsdev;
+	int fd;
+	static int warned = 0;
+	extern int errno;
 
 	setfsent();
 	while (fs = getfsent()) {
-		struct	stat statb;
-		struct	dqblk dqblk;
-		dev_t	fsdev;
-
 		if (stat(fs->fs_spec, &statb) < 0)
 			continue;
 		fsdev = statb.st_rdev;
@@ -332,8 +334,13 @@ getdiscq(uid, dq, dqf)
 		if (stat(qfilename, &statb) < 0 || statb.st_dev != fsdev)
 			continue;
 		if (quota(Q_GETDLIM, uid, fsdev, &dqblk) != 0) {
-			register fd = open(qfilename, O_RDONLY);
-
+	    		if (errno == EINVAL && !warned) {
+				warned++;
+				fprintf(stderr, "Warning: %s\n",
+				    "Quotas are not compiled into this kernel");
+				sleep(3);
+			}
+			fd = open(qfilename, O_RDONLY);
 			if (fd < 0)
 				continue;
 			lseek(fd, (long)(uid * sizeof dqblk), L_SET);
