@@ -1,4 +1,4 @@
-static char sccsid[] = "@(#)regexp.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)regexp.c	4.2	(Berkeley)	%G%";
 
 #include <ctype.h>
 
@@ -133,6 +133,7 @@ expconv()
 
     /* let the conversion begin */
     acs = NIL;
+    cs = NIL;
     while (*ure != NIL) {
 	switch (c = *ure++) {
 
@@ -141,7 +142,7 @@ expconv()
 
 	    /* escaped characters are just characters */
 	    default:
-		if ((*cs & STR) == 0) {
+		if (cs == NIL || (*cs & STR) == 0) {
 		    cs = ccre;
 		    *cs = STR;
 		    SCNT(cs) = 1;
@@ -191,7 +192,8 @@ expconv()
 
 	/* mark the last match sequence as optional */
 	case '?':
-	    *cs = *cs | OPT;
+	    if (cs)
+	    	*cs = *cs | OPT;
 	    break;
 
 	/* recurse and define a subexpression */
@@ -246,7 +248,7 @@ expconv()
 
 	/* if its not a metasymbol just build a scharacter string */
 	default:
-	    if ((*cs & STR) == 0) {
+	    if (cs == NIL || (*cs & STR) == 0) {
 		cs = ccre;
 		*cs = STR;
 		SCNT(cs) = 1;

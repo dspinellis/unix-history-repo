@@ -1,4 +1,4 @@
-static char sccsid[] = "@(#)vfontedpr.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)vfontedpr.c	4.2	(Berkeley)	%G%";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -28,6 +28,7 @@ static char sccsid[] = "@(#)vfontedpr.c	4.1	(Berkeley)	%G%";
 char	*expmatch();		/* match a string to an expression */
 char	*STRNCMP();		/* a different kindof strncmp */
 char	*convexp();		/* convert expression to internal form */
+char	*tgetstr();
 
 boolean	isproc();
 
@@ -448,7 +449,7 @@ skip:
 		ps("\\c\n'-C\n");
 		continue;
 	    } else {
-		putKcp (s, s + strlen(s) -1);
+		putKcp (s, s + strlen(s) -1, TRUE);
 		s = s + strlen(s);
 		continue;
 	    }
