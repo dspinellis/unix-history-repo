@@ -1,4 +1,4 @@
-/*	user.h	4.1	%G%	*/
+/*	user.h	4.2	%G%	*/
 
 #ifdef KERNEL
 #include "../h/pcb.h"
@@ -28,6 +28,7 @@ asm(".set U_QSAV,140");
  */
  
 #define	EXCLOSE 01
+#define	SHSIZE	32
  
 struct	user
 {
@@ -77,16 +78,28 @@ struct	user
 	char	u_sep;			/* flag for I and D separation */
 	struct	tty *u_ttyp;		/* controlling tty pointer */
 	dev_t	u_ttyd;			/* controlling tty dev */
-	struct {			/* header of executable file */
-		int	ux_mag;		/* magic number */
-		unsigned ux_tsize;	/* text size */
-		unsigned ux_dsize;	/* data size */
-		unsigned ux_bsize;	/* bss size */
-		unsigned ux_ssize;	/* symbol table size */
-		unsigned ux_entloc;	/* entry location */
-		unsigned ux_unused;
-		unsigned ux_relflg;
+	union {
+	   struct {			/* header of executable file */
+		int	Ux_mag;		/* magic number */
+		unsigned Ux_tsize;	/* text size */
+		unsigned Ux_dsize;	/* data size */
+		unsigned Ux_bsize;	/* bss size */
+		unsigned Ux_ssize;	/* symbol table size */
+		unsigned Ux_entloc;	/* entry location */
+		unsigned Ux_unused;
+		unsigned Ux_relflg;
+	   } Ux_A;
+	   char ux_shell[SHSIZE];	/* #! and name of interpreter */
 	} u_exdata;
+#define	ux_mag		Ux_A.Ux_mag
+#define	ux_tsize	Ux_A.Ux_tsize
+#define	ux_dsize	Ux_A.Ux_dsize
+#define	ux_bsize	Ux_A.Ux_bsize
+#define	ux_ssize	Ux_A.Ux_ssize
+#define	ux_entloc	Ux_A.Ux_entloc
+#define	ux_unused	Ux_A.Ux_unused
+#define	ux_relflg	Ux_A.Ux_relflg
+
 	char	u_comm[DIRSIZ];
 	time_t	u_start;
 	char	u_acflag;
