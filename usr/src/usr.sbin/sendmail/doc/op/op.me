@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.8 (Berkeley) %G%
+.\"	@(#)op.me	6.9 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,7 +40,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.8
+Version 6.9
 .sp
 For Sendmail Version 6.11
 .)l
@@ -4218,7 +4218,8 @@ Use System V
 .b lockf
 instead of Berkeley
 .b flock .
-Due to brain damage in
+Due to the highly unusual semantics of locks
+across forks in
 .b lockf ,
 this should never be used unless absolutely necessary.
 .ip SYS5TZ
@@ -5336,7 +5337,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.8
+.\"Version 6.9
 .\".ce 0
 .pn 2
 .bp
