@@ -1,0 +1,90 @@
+This file is shift.def, from which is created shift.c.
+It implements the builtin "shift" in Bash.
+
+Copyright (C) 1987, 1989, 1991 Free Software Foundation, Inc.
+
+This file is part of GNU Bash, the Bourne Again SHell.
+
+Bash is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any later
+version.
+
+Bash is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+for more details.
+
+You should have received a copy of the GNU General Public License along
+with Bash; see the file COPYING.  If not, write to the Free Software
+Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+
+$PRODUCES shift.c
+
+#include "../shell.h"
+
+$BUILTIN shift
+$FUNCTION shift_builtin
+$SHORT_DOC shift [n]
+The positional parameters from $N+1 ... are renamed to $1 ...  If N is
+not given, it is assumed to be 1.
+$END
+
+/* Shift the arguments ``left''.  Shift DOLLAR_VARS down then take one
+   off of REST_OF_ARGS and place it into DOLLAR_VARS[9].  If LIST has
+   anything in it, it is a number which says where to start the
+   shifting.  Return > 0 if `times' > $#, otherwise 0. */
+int
+shift_builtin (list)
+     WORD_LIST *list;
+{
+  int times = get_numeric_arg (list);
+  int number, r;
+  WORD_LIST *args;
+  extern WORD_LIST *list_rest_of_args ();
+
+  if (!times)
+    return (EXECUTION_SUCCESS);
+
+  if (times < 0)
+    {
+      builtin_error ("shift count must be >= 0");
+      return (EXECUTION_FAILURE);
+    }
+
+  args = list_rest_of_args ();
+  number = list_length (args);
+  dispose_words (args);
+
+  r = EXECUTION_SUCCESS;
+
+  if (times > number)
+    {
+      times = number;
+      r = EXECUTION_FAILURE;
+    }
+
+  while (times-- > 0)
+    {
+      register int count;
+
+      if (dollar_vars[1])
+	free (dollar_vars[1]);
+
+      for (count = 1; count < 9; count++)
+	dollar_vars[count] = dollar_vars[count + 1];
+
+      if (rest_of_args)
+	{
+	  WORD_LIST *temp = rest_of_args;
+
+	  dollar_vars[9] = savestring (temp->word->word);
+	  rest_of_args = rest_of_args->next;
+	  dispose_word (temp->word);
+	}
+      else
+	dollar_vars[9] = (char *)NULL;
+    }
+  return (r);
+}
+
