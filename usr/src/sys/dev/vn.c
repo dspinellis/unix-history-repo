@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vn.c 1.1 91/04/30$
  *
- *	@(#)vn.c	7.5 (Berkeley) %G%
+ *	@(#)vn.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -318,19 +318,18 @@ vnioctl(dev, cmd, data, flag, p)
 		 */
 		nd.ni_segflg = UIO_USERSPACE;
 		nd.ni_dirp = vio->vn_file;
-		error = vn_open(&nd, p, FREAD|FWRITE, 0);
-		if (error)
+		if (error = vn_open(&nd, p, FREAD|FWRITE, 0))
 			return(error);
-		error = VOP_GETATTR(nd.ni_vp, &vattr, p->p_ucred, p);
-		if (error) {
-			vrele(nd.ni_vp);
+		if (error = VOP_GETATTR(nd.ni_vp, &vattr, p->p_ucred, p)) {
+			VOP_UNLOCK(nd.ni_vp);
+			(void) vn_close(nd.ni_vp, FREAD|FWRITE, p->p_ucred, p);
 			return(error);
 		}
+		VOP_UNLOCK(nd.ni_vp);
 		vn->sc_vp = nd.ni_vp;
 		vn->sc_size = btodb(vattr.va_size);	/* note truncation */
-		error = vnsetcred(vn, p->p_ucred);
-		if (error) {
-			vrele(vn->sc_vp);
+		if (error = vnsetcred(vn, p->p_ucred)) {
+			(void) vn_close(vn->sc_vp, FREAD|FWRITE, p->p_ucred, p);
 			return(error);
 		}
 		vnthrottle(vn, vn->sc_vp);
@@ -417,6 +416,7 @@ vnclear(vn)
 	register struct vn_softc *vn;
 {
 	register struct vnode *vp = vn->sc_vp;
+	struct proc *p = curproc;		/* XXX */
 
 #ifdef DEBUG
 	if (vndebug & VDB_FOLLOW)
@@ -429,7 +429,7 @@ vnclear(vn)
 	/* XXX - this doesn't work right now */
 	(void) VOP_FSYNC(vp, 0, vn->sc_cred, MNT_WAIT, p);
 #endif
-	vrele(vp);
+	(void) vn_close(vp, FREAD|FWRITE, vn->sc_cred, p);
 	crfree(vn->sc_cred);
 	vn->sc_vp = (struct vnode *)0;
 	vn->sc_cred = (struct ucred *)0;
