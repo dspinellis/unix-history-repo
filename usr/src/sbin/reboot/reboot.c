@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)reboot.c	4.2 (Berkeley) %G%";
+static	char *sccsid = "@(#)reboot.c	4.3 (Berkeley) %G%";
 /*
  * Reboot
  */
@@ -6,6 +6,10 @@ static	char *sccsid = "@(#)reboot.c	4.2 (Berkeley) %G%";
 #include <sys/reboot.h>
 #include <errno.h>
 #include <signal.h>
+#include <sys/types.h>
+#include <time.h>
+
+#define SHUTDOWNLOG "/usr/adm/shutdownlog"
 
 main(argc, argv)
 	int argc;
@@ -98,4 +102,29 @@ markdown()
 		write(f, (char *)&wtmp, sizeof(wtmp));
 		close(f);
 	}
+}
+
+char *days[] = {
+	"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
+};
+
+char *months[] = {
+	"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep",
+	"Oct", "Nov", "Dec"
+};
+
+log_entry()
+{
+	FILE *fp;
+	struct tm *tm, *localtime();
+	time_t now;
+
+	time(&now);
+	tm = localtime(&now);
+	fp = fopen(SHUTDOWNLOG, "a");
+	fseek(fp, 0L, 2);
+	fprintf(fp, "%02d:%02d  %s %s %2d, %4d.  Halted for reboot.\n", tm->tm_hour,
+		tm->tm_min, days[tm->tm_wday], months[tm->tm_mon],
+		tm->tm_mday, tm->tm_year + 1900);
+	fclose(fp);
 }
