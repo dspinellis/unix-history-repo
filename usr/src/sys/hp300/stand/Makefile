@@ -1,4 +1,4 @@
-#	@(#)Makefile	7.13 (Berkeley) %G%
+#	@(#)Makefile	7.14 (Berkeley) %G%
 
 DESTDIR=
 STAND=	../../stand
@@ -129,3 +129,4 @@ install:
 depend: ${SRCS}
 	mkdep ${INCPATH} ${DEFS} ${SRCS}
 	mkdep -a -p ${INCPATH} ${DEFS} mkboot.c installboot.c
+	cd libsa; make depend
