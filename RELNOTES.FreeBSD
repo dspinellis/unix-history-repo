@@ -217,7 +217,7 @@ Bill Jolitz, for his extensive work with 386BSD.
 
 The FreeBSD "core" group:
 
-		J.T. Conklin
+		Andrew A. Chernov
 		David Greenman
 		Rodney W. Grimes
 		Jordan K. Hubbard
@@ -244,14 +244,15 @@ Special mention to:
 	Additional FreeBSD helpers and beta testers:
 
 	Gary Browing				Jon Cargille
-	Chris Demetriou				Julian Elischer
-	Bruce Evans				Sean Eric Fagan
-	Guy Helmer				Terry Lambert
-	Gary Moyer				Jaye Mathisen
-	L Jonas Olsson				Chris Provenzano
-	Dave Rivers				Guido van Rooij
-	Steven Wallace				Rick Weldon
-	Terry Williams				Garrett Wollman
+	J.T. Conklin				Chris Demetriou
+	Julian Elischer				Bruce Evans
+	Sean Eric Fagan				Guy Helmer
+	Terry Lambert				Gary Moyer
+	Jaye Mathisen				L Jonas Olsson
+	Chris Provenzano			Dave Rivers
+	Guido van Rooij				Steven Wallace
+	Rick Weldon				Terry Williams
+	Garrett Wollman
 
 	And everyone at Montana State University for their initial support.
 
@@ -262,4 +263,4 @@ hope you enjoy this release of FreeBSD!
 
 			The FreeBSD Core Group
 
-$Id: RELNOTES.FreeBSD,v 1.16 1993/12/13 08:36:31 rgrimes Exp $
+$Id: RELNOTES.FreeBSD,v 1.17 1994/01/29 10:13:22 rgrimes Exp $
