@@ -6,7 +6,7 @@
 # include <log.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	1.9	%G%";
+static char	SccsId[] = "@(#)main.c	1.10	%G%";
 
 /*
 **  DELIVERMAIL -- Deliver mail to a set of destinations
@@ -120,7 +120,6 @@ char	InFileName[] = "/tmp/mailtXXXXXX";
 char	Transcript[] = "/tmp/mailxXXXXXX";
 addrq	From;		/* the from person */
 char	*To;		/* the target person */
-char	MsgId[MAXNAME];	/* the message-id for this letter */
 int	HopCount;	/* hop count */
 int	ExitStat;	/* the exit status byte */
 addrq	SendQ;		/* queue of people to send to */
