@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)printcap.5	5.1 (Berkeley) %G%
+.\"	@(#)printcap.5	6.1 (Berkeley) %G%
 .\"
-.TH PRINTCAP 5 "18 July 1983"
+.TH PRINTCAP 5 ""
 .UC 5
 .ad
 .SH NAME
@@ -53,6 +53,7 @@ ff	str	``\ef''	string to send for a form feed
 fo	bool	false	print a form feed when device is opened
 fs	num	0	like `fc' but set bits
 gf	str	NULL	graph data filter (plot (3X) format)
+hl	bool	false	print the burst header page last
 ic	bool	false	driver supports (non standard) ioctl to indent printout
 if	str	NULL	name of text filter which does accounting
 lf	str	``/dev/console''	error logging file name
@@ -67,6 +68,7 @@ pw	num	132	page width (in characters)
 px	num	0	page width in pixels (horizontal)
 py	num	0	page length in pixels (vertical)
 rf	str	NULL	filter for printing FORTRAN style text files
+rg	str	NULL	restricted group. Only members of group allowed access
 rm	str	NULL	machine name for remote printer
 rp	str	``lp''	remote printer name argument
 rs	bool	false	restrict remote users to those with local accounts
