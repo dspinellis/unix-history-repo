@@ -6,7 +6,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)main.c	3.141		%G%);
+SCCSID(@(#)main.c	3.142		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -459,7 +459,7 @@ main(argc, argv)
 			MotherPid = getpid();
 
 			/* disconnect from our controlling tty */
-			disconnect(FALSE);
+			disconnect();
 		}
 
 # ifdef QUEUE
@@ -1399,7 +1399,7 @@ thaw(freezefile)
 **  DISCONNECT -- remove our connection with any foreground process
 **
 **	Parameters:
-**		all -- if set, disconnect InChannel and OutChannel also.
+**		none.
 **
 **	Returns:
 **		none
@@ -1409,15 +1409,14 @@ thaw(freezefile)
 **		the controlling tty.
 */
 
-disconnect(all)
-	bool all;
+disconnect()
 {
 	int fd;
 
 #ifdef DEBUG
 	if (tTd(52, 1))
-		printf("disconnect(%d): In %d Out %d Xs %d\n", all,
-			fileno(InChannel), fileno(OutChannel), fileno(Xscript));
+		printf("disconnect: In %d Out %d\n", fileno(InChannel),
+						fileno(OutChannel));
 	if (tTd(52, 5))
 	{
 		printf("don't\n");
@@ -1436,25 +1435,26 @@ disconnect(all)
 	Verbose = FALSE;
 
 	/* all input from /dev/null */
-	if (all)
-		(void) freopen("/dev/null", "r", InChannel);
 	if (InChannel != stdin)
-		(void) freopen("/dev/null", "r", stdin);
+	{
+		(void) fclose(InChannel);
+		InChannel = stdin;
+	}
+	(void) freopen("/dev/null", "r", stdin);
 
 	/* output to the transcript */
-	if (all || OutChannel != stdout)
+	if (OutChannel != stdout)
 	{
-		if (OutChannel != stdout)
-		{
-			(void) fclose(OutChannel);
-			OutChannel = Xscript;
-		}
-		(void) fflush(stdout);
-		(void) close(1);
-		(void) close(2);
-		while ((fd = dup(fileno(Xscript))) < 2 && fd > 0)
-			continue;
+		(void) fclose(OutChannel);
+		OutChannel = stdout;
 	}
+	if (Xscript == NULL)
+		Xscript = fopen("/dev/null", "w");
+	(void) fflush(stdout);
+	(void) close(1);
+	(void) close(2);
+	while ((fd = dup(fileno(Xscript))) < 2 && fd > 0)
+		continue;
 
 #ifdef TIOCNOTTY
 	/* drop our controlling TTY completely if possible */
