@@ -3,64 +3,64 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kdb_command.c	7.3 (Berkeley) %G%
+ *	@(#)kdb_command.c	7.4 (Berkeley) %G%
  */
 
 #include "../kdb/defs.h"
 
-char	*BADEQ;
-char	*NOMATCH;
-char	*BADVAR;
-char	*BADCOM;
+char	*kdbBADEQ;
+char	*kdbNOMATCH;
+char	*kdbBADVAR;
+char	*kdbBADCOM;
 
-int	executing;
-char	*lp;
+int	kdbexecuting;
+char	*kdblp;
 
-char	lastc;
-char	eqformat[512] = "z";
-char	stformat[512] = "X\"= \"^i";
+char	kdblastc;
+char	kdbeqformat[512] = "z";
+char	kdbstformat[512] = "X\"= \"^i";
 
-long	ditto;
-int	lastcom = '=';
-long	locval;
-long	locmsk;
-long	expv;
+long	kdbditto;
+int	kdblastcom = '=';
+long	kdblocval;
+long	kdblocmsk;
+long	kdbexpv;
 
 /* command decoding */
 
-command(buf, defcom)
+kdbcommand(buf, defcom)
 	char *buf, defcom;
 {
 	register itype, ptype, modifier, regptr;
 	int longpr, eqcom;
 	char wformat[1], savc;
 	register long w, savdot;
-	char *savlp=lp;
+	char *savlp=kdblp;
 
 	if (buf) {
 		if (*buf==EOR)
 			return (0);
-		lp=buf;
+		kdblp=buf;
 	}
 
 	do {
-		if (adrflg=expr(0)) {
-			dot=expv;
-			ditto=dot;
+		if (kdbadrflg=kdbexpr(0)) {
+			kdbdot=kdbexpv;
+			kdbditto=kdbdot;
 		}
-		adrval=dot;
-		cntflg = (rdc() == ',' && expr(0));
-		if (cntflg)
-			cntval=expv;
+		kdbadrval=kdbdot;
+		kdbcntflg = (kdbrdc() == ',' && kdbexpr(0));
+		if (kdbcntflg)
+			kdbcntval=kdbexpv;
 		else
-			cntval=1, lp--;
-		if (eol(rdc())) {
-			if (!adrflg)
-				dot=inkdot(dotinc);
-			lp--; lastcom=defcom;
+			kdbcntval=1, kdblp--;
+		if (kdbeol(kdbrdc())) {
+			if (!kdbadrflg)
+				kdbdot=kdbinkdot(kdbdotinc);
+			kdblp--; kdblastcom=defcom;
 		} else
-			lastcom=lastc;
-		switch (lastcom&STRIP) {
+			kdblastcom=kdblastc;
+		switch (kdblastcom&STRIP) {
 
 		case '/':
 			itype=DSP; ptype=DSYM;
@@ -75,117 +75,117 @@ command(buf, defcom)
 			goto trystar;
 
 		trystar:
-			if (rdc()=='*')
-				lastcom |= QUOTE;
+			if (kdbrdc()=='*')
+				kdblastcom |= QUOTE;
 			else
-				lp--;
-			if (lastcom&QUOTE) {
+				kdblp--;
+			if (kdblastcom&QUOTE) {
 				itype |= STAR;
 				ptype = (DSYM+ISYM)-ptype;
 			}
 
 		trypr:
-			longpr=0; eqcom=lastcom=='=';
-			switch (rdc()) {
+			longpr=0; eqcom=kdblastcom=='=';
+			switch (kdbrdc()) {
 
 			case 'L':
 				longpr=1;
 			case 'l':
 				/*search for exp*/
 				if (eqcom)
-					error(BADEQ);
-				dotinc=(longpr?4:2); savdot=dot;
-				(void) expr(1); locval=expv;
-				if (expr(0))
-					locmsk=expv;
+					kdberror(kdbBADEQ);
+				kdbdotinc=(longpr?4:2); savdot=kdbdot;
+				(void) kdbexpr(1); kdblocval=kdbexpv;
+				if (kdbexpr(0))
+					kdblocmsk=kdbexpv;
 				else
-					locmsk = -1L;
+					kdblocmsk = -1L;
 				if (!longpr) {
-					locmsk &= 0xFFFF;
-					locval &= 0xFFFF;
+					kdblocmsk &= 0xFFFF;
+					kdblocval &= 0xFFFF;
 				}
 				for (;;) {
-					w=get(dot,itype);
-					if (errflg || mkfault ||
-					    (w&locmsk)==locval)
+					w=kdbget(kdbdot,itype);
+					if (kdberrflg || kdbmkfault ||
+					    (w&kdblocmsk)==kdblocval)
 						break;
-					 dot=inkdot(dotinc);
+					 kdbdot=kdbinkdot(kdbdotinc);
 				}
-				if (errflg) {
-					dot=savdot;
-					errflg=NOMATCH;
+				if (kdberrflg) {
+					kdbdot=savdot;
+					kdberrflg=kdbNOMATCH;
 				}
-				psymoff(dot,ptype,"");
+				kdbpsymoff(kdbdot,ptype,"");
 				break;
 
 			case 'W':
 				longpr=1;
 			case 'w':
 				if (eqcom)
-					error(BADEQ);
-				wformat[0]=lastc; (void) expr(1);
+					kdberror(kdbBADEQ);
+				wformat[0]=kdblastc; (void) kdbexpr(1);
 				do {
-					savdot=dot;
-					psymoff(dot,ptype,":%16t");
-					(void) exform(1,wformat,itype,ptype);
-					errflg=0; dot=savdot;
+					savdot=kdbdot;
+					kdbpsymoff(kdbdot,ptype,":%16t");
+					(void) kdbexform(1,wformat,itype,ptype);
+					kdberrflg=0; kdbdot=savdot;
 					if (longpr)
-						put(dot,itype,expv);
+						kdbput(kdbdot,itype,kdbexpv);
 					else
-						put(dot,itype,
-						    itol(expv,get(dot,itype)));
-					savdot=dot;
-					printf("=%8t");
-					(void) exform(1,wformat,itype,ptype);
-					printc(EOR);
-				} while (expr(0) && errflg==0);
-				dot=savdot;
-				chkerr();
+						kdbput(kdbdot,itype,
+						    itol(kdbexpv,kdbget(kdbdot,itype)));
+					savdot=kdbdot;
+					kdbprintf("=%8t");
+					(void) kdbexform(1,wformat,itype,ptype);
+					kdbprintc(EOR);
+				} while (kdbexpr(0) && kdberrflg==0);
+				kdbdot=savdot;
+				kdbchkerr();
 				break;
 
 			default:
-				lp--;
-				getformat(eqcom ? eqformat : stformat);
+				kdblp--;
+				kdbgetformat(eqcom ? kdbeqformat : kdbstformat);
 				if (!eqcom)
-					psymoff(dot,ptype,":%16t");
-				scanform(cntval,
-				    (eqcom?eqformat:stformat),itype,ptype);
+					kdbpsymoff(kdbdot,ptype,":%16t");
+				kdbscanform(kdbcntval,
+				    (eqcom?kdbeqformat:kdbstformat),itype,ptype);
 			}
 			break;
 
 		case '>':
-			lastcom=0; savc=rdc();
-			if ((regptr=getreg(savc)) != -1)
-				*(int *)regptr = dot;
-			else if ((modifier=varchk(savc)) != -1)
-				var[modifier]=dot;
+			kdblastcom=0; savc=kdbrdc();
+			if ((regptr=kdbgetreg(savc)) != -1)
+				*(int *)regptr = kdbdot;
+			else if ((modifier=kdbvarchk(savc)) != -1)
+				kdbvar[modifier]=kdbdot;
 			else
-				error(BADVAR);
+				kdberror(kdbBADVAR);
 			break;
 
 		case '$':
-			lastcom=0;
-			printtrace(nextchar());
+			kdblastcom=0;
+			kdbprinttrace(kdbnextchar());
 			break;
 
 		case ':':
-			if (executing)
+			if (kdbexecuting)
 				break;
-			executing=1; subpcs(nextchar()); executing=0;
-			lastcom=0;
+			kdbexecuting=1; kdbsubpcs(kdbnextchar()); kdbexecuting=0;
+			kdblastcom=0;
 			break;
 
 		case '\0':
 			break;
 
 		default:
-			error(BADCOM);
+			kdberror(kdbBADCOM);
 		}
-		flushbuf();
-	} while (rdc()==';');
+		kdbflushbuf();
+	} while (kdbrdc()==';');
 	if (buf)
-		lp=savlp;
+		kdblp=savlp;
 	else
-		lp--;
-	return (adrflg && dot!=0);
+		kdblp--;
+	return (kdbadrflg && kdbdot!=0);
 }
