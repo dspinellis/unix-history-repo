@@ -13,9 +13,9 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)icmp.4	6.3 (Berkeley) %G%
+.\"	@(#)icmp.4	6.4 (Berkeley) %G%
 .\"
-.TH ICMP 4P ""
+.TH ICMP 4 ""
 .UC 6
 .SH NAME
 icmp \- Internet Control Message Protocol
@@ -34,7 +34,7 @@ The
 .I proto
 parameter to the socket call to create an ICMP socket
 is obtained from
-.IR getprotobyname (3N).
+.IR getprotobyname (3).
 ICMP sockets are connectionless,
 and are normally used with the
 .I sendto 
@@ -78,4 +78,4 @@ when an attempt is made to create a
 socket with a network address for which no network interface
 exists.
 .SH SEE ALSO
-send(2), recv(2), intro(4N), inet(4F), ip(4P)
+send(2), recv(2), intro(4), inet(4), ip(4)
