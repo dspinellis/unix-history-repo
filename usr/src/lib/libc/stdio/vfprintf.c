@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vfprintf.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)vfprintf.c	5.16 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -192,6 +192,15 @@ rflag:		switch (*++fmt) {
 			base = 8;
 			goto num;
 		case 'p':
+			/*
+			 * the argument shall be a pointer to void.  The value
+			 * of the pointer is converted to a sequence of
+			 * printable characters, in an implementation-defined
+			 * manner.
+			 */
+			_ulong = (u_long)va_arg(argp, void *);
+			base = 16;
+			goto num;
 		case 's':
 			if (!(t = va_arg(argp, char *)))
 				t = "(null)";
