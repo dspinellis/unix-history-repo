@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)types.h	7.2 (Berkeley) %G%
+ *	@(#)types.h	7.3 (Berkeley) %G%
  */
 
 #ifndef	_MACHTYPES_H_
@@ -21,10 +21,12 @@
  *
  * Thanks, ANSI!
  */
+#define	_CLOCK_T_	unsigned long		/* clock() */
 #define	_PTRDIFF_T_	int			/* ptr1 - ptr2 */
+#define	_SIZE_T_	unsigned int		/* sizeof() */
+#define	_TIME_T_	long			/* time() */
 #define	_VA_LIST_	char *			/* va_list */
 #define	_WCHAR_T_	unsigned short		/* wchar_t */
-#define	_SIZE_T_	unsigned int		/* sizeof() */
 
 #ifndef _ANSI_SOURCE
 typedef	struct	_physadr { short r[1]; } *physadr;
