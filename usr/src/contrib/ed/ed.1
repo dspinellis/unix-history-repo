@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)ed.1	5.6 (Berkeley) %G%
+.\"	@(#)ed.1	5.7 (Berkeley) %G%
 .\"
 .TH ED 1 ""
 .SH NAME
@@ -305,7 +305,8 @@ The number of characters read is printed (unless -s is specified
 at startup). If `filename' is missing, the remembered
 name is used.
 If `filename' is lead by ! then it shall be interpreted as a shell
-command from which the output will be used as a non-remembered name.
+command to be executed, from which the standard output will be
+placed into the buffer; `filename' will be non-remembered.
 Undo will not restore the
 .B buffer
 to its state before the edit command.
@@ -327,7 +328,8 @@ If `filename' is specified the
 .B "remembered filename"
 will be set to `filename'.
 If `filename' is lead by ! then it shall be interpreted as a shell
-command from which the output will be used as a non-remembered name.
+command to be executed, from which the standard output will be used as
+the new remembered filename.
 .B Current
 is unchanged.
 .TP 5
@@ -534,7 +536,8 @@ is used. Address 0 is valid for this command.
 If read is successful then the number of characters
 read is printed (unless the -s option is specified).
 If `filename' is lead by ! then it shall be interpreted as a shell
-command from which the output will be used as a non-remembered name.
+command to be executed, from which the standard output will be
+placed in the buffer; `filename' will be non-remembered.
 .B Current
 is the last line read.
 .TP 5
@@ -581,7 +584,8 @@ When spliting lines using \fIs\fR with the global commands (\fIg\fR,
 \fIG\fR, \fIv\fR, or \fIV\fR) the new-line in the replacement string
 must be escaped by preceding it with `\e\e\e' (three adjacent `\e'\|s \-
 the first \e escapes the second \e so that it is passed to \fIs\fR
-to escape the <newline>).
+to escape the <newline>). [N.B. Other \fIed\fR's do not allow line
+splitting within the global commands].
 .IP
 The \fBflags\fR may be any combination of:
 .RS
@@ -695,7 +699,8 @@ is written.
 If the command is successful, the number of characters written is
 printed (unless the -s option is specified).
 If `filename' is lead by ! then it shall be interpreted as a shell
-command from which the output will be used as a non-remembered name.
+command to be executed which will accept on its standard input
+the section of the buffer specified for writting.
 \fBCurrent\fR is unchanged.
 .TP
 (1, $)\|W [filename]
@@ -706,7 +711,11 @@ command does except the addressed contents of the
 .B buffer
 are appended to `filename' (or the
 .B "remember filename"
-if `filename' is not specified).
+if `filename' is not specified). If `filename' is lead by ! then
+.I W
+will act exactly as the
+.I w
+command.
 \fBCurrent\fR is unchanged.
 .TP 5
 (1, $)\|wq [filename]
@@ -813,10 +822,12 @@ compile. Two methods work with a temporary file (stdio and db), while the
 third uses memory.
 The limit on the number of lines depends on the amount of memory.
 .SH FILES
+/tmp/_bsd44_ed*
+.br
 .XP
 ed.hup: the buffer is written to this file in the current
-directory if possible and in the HOME directory if it is not
-when the signal SIGHUP (hangup) is received.
+directory if possible and in the HOME directory is not
+(if the signal SIGHUP (hangup) is received).
 .SH "SEE ALSO"
 B. W. Kernighan,
 .I
@@ -835,12 +846,15 @@ a directory. `?'
 for all other errors unless the help messages have been toggled on (with
 the H command) in which case a descriptive message will be printed.
 .PP
-EOF is treated as a newline so that characters after the last <newline>
-are included into the \fBbuffer\fR.
+EOF is treated as a newline during input so that characters after the last <newline>
+are included into the \fBbuffer\fR; the message "<newline> added at
+end of line" is printed.
 .PP
 .I Ed
-returns 0 on successful completion. A value >0 is returned
-when an \fIed\fR command failed.
+Returns an exit status of 0 on successful completion. A value >0 is returned
+to indicate an \fIed\fR error: 1 for a command line error, 2 for HUP
+signal received, 4 for an \fIed\fR command error; these error values
+will be or'd together when appropriate.
 .SH NOTES
 .PP
 Regular expressions are now described on regex(7).
@@ -848,7 +862,7 @@ Regular expressions are now described on regex(7).
 follows basic regular expressions (BRE's) as described on regex(7).
 BRE's, for the most part, are the same as previous
 .I ed
-RE's. The changes to the RE's are extension for internationalization
+RE's. The changes to the RE's are extensions for internationalization
 under POSIX 1003.2. Old scripts with RE's should work without
 modification.
 .PP
