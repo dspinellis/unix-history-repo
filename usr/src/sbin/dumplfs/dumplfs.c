@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dumplfs.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)dumplfs.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -56,9 +56,12 @@ char *special;
 /* Segment Usage formats */
 #define print_suheader \
 	(void)printf("segnum\tstatus\tnbytes\t\tlastmod\n")
+
 #define print_suentry(i, sp) \
-	(void)printf("%d\t%s\t%d\t%s", \
-	    i, (((sp)->su_flags) ? "DIRTY" : "CLEAN"), \
+	(void)printf("%d\t%c%c%c\t%d\t%s", i, \
+	    (((sp)->su_flags & SEGUSE_ACTIVE) ? 'A' : ' '), \
+	    (((sp)->su_flags & SEGUSE_DIRTY) ? 'D' : 'C'), \
+	    (((sp)->su_flags & SEGUSE_SUPERBLOCK) ? 'S' : ' '), \
 	    (sp)->su_nbytes, ctime((time_t *)&(sp)->su_lastmod))
 
 /* Ifile formats */
@@ -531,7 +534,11 @@ dump_cleaner_info(lfsp, ipage)
 	struct lfs *lfsp;
 	void *ipage;
 {
-	return;
+	CLEANERINFO *cip;
+
+	cip = (CLEANERINFO *)ipage;
+	(void)printf("Cleaner Info\nclean\t%d\tdirty\t%d\n",
+	    cip->clean, cip->dirty);
 }
 
 static void
