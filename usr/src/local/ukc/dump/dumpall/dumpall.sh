@@ -1,5 +1,5 @@
 #!/bin/sh
-#	dumpall.sh	1.2	%G%
+#	dumpall.sh	1.3	%G%
 #	shell script to do all pending dumps
 #	Asks for confirmation before proceeding
 PATH=:/etc:/bin:/usr/bin:
@@ -14,6 +14,7 @@ do
 	if [ "$ans" = "yes" -o "$ans" = "y" -o "$ans" = "Y" ]
 	then
 		doadump $fi
+		/etc/dumplogclean
 	else
 		exit 1
 	fi
