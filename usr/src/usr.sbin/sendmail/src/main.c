@@ -8,7 +8,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)main.c	3.92		%G%);
+SCCSID(@(#)main.c	3.93		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -18,14 +18,16 @@ SCCSID(@(#)main.c	3.92		%G%);
 **	turn calls a bunch of mail servers that do the real work of
 **	delivering the mail.
 **
-**	Sendmail is driven by tables defined in conf.c.  This
-**	file will be different from system to system, but the rest
-**	of the code will be the same.  This table could be read in,
-**	but it seemed nicer to have it compiled in, since deliver-
-**	mail will potentially be exercised a lot.
+**	Sendmail is driven by tables read in from /usr/lib/sendmail.cf
+**	(read by readcf.c).  Some more static configuration info,
+**	including some code that you may want to tailor for your
+**	installation, is in conf.c.  You may also want to touch
+**	daemon.c (if you have some other IPC mechanism), acct.c
+**	(to change your accounting), names.c (to adjust the name
+**	server mechanism).
 **
 **	Usage:
-**		/etc/sendmail [-f name] [-a] [-q] [-v] [-n] [-m] addr ...
+**		/etc/sendmail [flags] addr ...
 **
 **	Positional Parameters:
 **		addr -- the address to deliver the mail to.  There
@@ -44,12 +46,11 @@ SCCSID(@(#)main.c	3.92		%G%);
 **				listed as.
 **		-a		This mail should be in ARPANET std
 **				format (obsolete version).
-**		-am		Called from an FTP "MAIL" command.
-**		-af		Called from an FTP "MLFL" command.
+**		-as		Speak SMTP.
 **		-n		Don't do aliasing.  This might be used
 **				when delivering responses, for
 **				instance.
-**		-d		Run in debug mode.
+**		-dN		Run with debugging set to level N.
 **		-em		Mail back a response if there was an
 **				error in processing.  This should be
 **				used when the origin of this message
@@ -84,6 +85,11 @@ SCCSID(@(#)main.c	3.92		%G%);
 **		-Cfilename	Use alternate configuration file.
 **		-Afilename	Use alternate alias file.
 **		-DXvalue	Define macro X to have value.
+**		-bv		Verify addresses only.
+**		-bd		Run as a daemon.  Berkeley 4.2 only.
+**		-bf		Fork after address verification.
+**		-bq		Queue up for later delivery.
+**		-ba		Process mail completely.
 **
 **	Return Codes:
 **		As defined in <sysexits.h>.
