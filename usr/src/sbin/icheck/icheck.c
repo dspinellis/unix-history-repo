@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)icheck.c	1.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)icheck.c	1.2 (Berkeley) %G%";
 /*
  * icheck
  */
@@ -11,7 +11,6 @@ static	char *sccsid = "@(#)icheck.c	1.1 (Berkeley) %G%";
 #endif
 #include "../h/param.h"
 #include "../h/inode.h"
-#include "../h/ino.h"
 #include "../h/fs.h"
 
 #define	setbit(a, i)	((a)[(i)/NBBY] |= 1<<((i)%NBBY))
@@ -31,7 +30,6 @@ union {
 #define	cgrp cgun.cg
 
 struct	dinode	itab[MAXIPG];
-daddr_t	iaddr[NDADDR+NIADDR];
 daddr_t	blist[NB];
 char	*bmap;
 
@@ -311,25 +309,24 @@ register struct dinode *ip;
 		printf("bad mode %u\n", ino);
 		return;
 	}
-	l3tol(iaddr, ip->di_addr, NDADDR+NIADDR);
 	ndb = howmany(ip->di_size, BSIZE)-1;
 	for(i=0; i<NDADDR; i++) {
-		if(iaddr[i] == 0)
+		if(ip->di_db[i] == 0)
 			continue;
 		if (i==ndb && (ip->di_size&BMASK)) {
 			sz = howmany(ip->di_size - i * BSIZE, FSIZE);
 			for (l = 0; l < sz; l++)
-				chk(iaddr[i]+l, "data (frag)");
+				chk(ip->di_db[i]+l, "data (frag)");
 			szfrag += sz;
 			nfrag++;
 		} else {
 			for (l = 0; l < FRAG; l++)
-				chk(iaddr[i]+l, "data (block)");
+				chk(ip->di_db[i]+l, "data (block)");
 			nblock++;
 		}
 	}
 	for(i=NDADDR; i<NDADDR+NIADDR;i++) {
-		if(iaddr[i] == 0)
+		if(ip->di_ib[i] == 0)
 			continue;
 		nindir++;
 		if (i==NDADDR) {
@@ -340,9 +337,9 @@ register struct dinode *ip;
 		} else
 			sz = FRAG;
 		for (j = 0; j < FRAG; j++)
-			if (chk(iaddr[i]+j, "1st indirect"))
+			if (chk(ip->di_ib[i]+j, "1st indirect"))
 				continue;
-		bread(iaddr[i], (char *)ind1, sz*FSIZE);
+		bread(ip->di_ib[i], (char *)ind1, sz*FSIZE);
 		nib = sz * (NINDIR/FRAG);
 		for(j=0; j<nib; j++) {
 			if(ind1[j] == 0)

@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)dcheck.c	1.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)dcheck.c	1.2 (Berkeley) %G%";
 /*
  * dcheck - check directory consistency
  */
@@ -8,7 +8,6 @@ static	char *sccsid = "@(#)dcheck.c	1.1 (Berkeley) %G%";
 #include <stdio.h>
 #include "../h/param.h"
 #include "../h/inode.h"
-#include "../h/ino.h"
 #include "../h/dir.h"
 #include "../h/fs.h"
 
@@ -19,7 +18,7 @@ union {
 #define	sblock	fsun.fs
 
 struct	dinode	itab[MAXIPG];
-daddr_t	iaddr[NDADDR+NIADDR];
+struct	dinode	*gip;
 ino_t	ilist[NB];
 
 int	fi;
@@ -132,7 +131,7 @@ register struct dinode *ip;
 
 	if((ip->di_mode&IFMT) != IFDIR)
 		return;
-	l3tol(iaddr, ip->di_addr, NDADDR+NIADDR);
+	gip = ip;
 	doff = 0;
 	for(i=0;; i++) {
 		if(doff >= ip->di_size)
@@ -204,12 +203,12 @@ bmap(i)
 	daddr_t ibuf[NINDIR];
 
 	if(i < NDADDR)
-		return(iaddr[i]);
+		return(gip->di_db[i]);
 	i -= NDADDR;
 	if(i > NINDIR) {
 		printf("%u - huge directory\n", ino);
 		return((daddr_t)0);
 	}
-	bread(iaddr[NDADDR], (char *)ibuf, sizeof(ibuf));
+	bread(gip->di_ib[i], (char *)ibuf, sizeof(ibuf));
 	return(ibuf[i]);
 }
