@@ -1,5 +1,5 @@
 /*
-char id_lwrite[] = "@(#)lwrite.c	1.3";
+char id_lwrite[] = "@(#)lwrite.c	1.4";
  *
  * list directed write
  */
@@ -128,7 +128,7 @@ lwrt_F(fn) float fn;
 	else
 	{
 		scale = 1;
-		return(wrt_E(&f,LEW,LED-scale,LEE,(ftnlen)sizeof(float)));
+		return(wrt_E(&f,LEW,LED-scale,LEE,(ftnlen)sizeof(float),'e'));
 	}
 }
 
@@ -147,7 +147,7 @@ lwrt_D(dn) double dn;
 	else
 	{
 		scale = 1;
-		return(wrt_E(&f,LDEW,LDED-scale,LDEE,(ftnlen)sizeof(double)));
+		return(wrt_E(&f,LDEW,LDED-scale,LDEE,(ftnlen)sizeof(double),'d'));
 	}
 }
 
