@@ -6,14 +6,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)acu.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)acu.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "tip.h"
 
 static acu_t *acu = NOACU;
 static int conflag;
-static int acuabort();
+static void acuabort();
 static acu_t *acutype();
 static jmp_buf jmpbuf;
 /*
@@ -145,7 +145,7 @@ disconnect(reason)
 	(*acu->acu_disconnect)();
 }
 
-static int
+static void
 acuabort(s)
 {
 	signal(s, SIG_IGN);

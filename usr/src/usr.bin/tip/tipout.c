@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tipout.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)tipout.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "tip.h"
@@ -23,6 +23,7 @@ static	jmp_buf sigbuf;
  * TIPOUT wait state routine --
  *   sent by TIPIN when it wants to posses the remote host
  */
+void
 intIOT()
 {
 
@@ -35,6 +36,7 @@ intIOT()
  * Scripting command interpreter --
  *  accepts script file name over the pipe and acts accordingly
  */
+void
 intEMT()
 {
 	char c, line[256];
@@ -64,6 +66,7 @@ intEMT()
 	longjmp(sigbuf, 1);
 }
 
+void
 intTERM()
 {
 
@@ -72,6 +75,7 @@ intTERM()
 	exit(0);
 }
 
+void
 intSYS()
 {
 
