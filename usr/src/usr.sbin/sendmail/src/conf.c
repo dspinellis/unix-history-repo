@@ -36,10 +36,8 @@
 
 
 
-SCCSID(@(#)conf.c	3.44		%G%);
+SCCSID(@(#)conf.c	3.45		%G%);
 
-
-# include <whoami.h>		/* definitions of machine id's at berkeley */
 
 
 /*
