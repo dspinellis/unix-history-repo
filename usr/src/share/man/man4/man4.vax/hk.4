@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)hk.4	6.2 (Berkeley) %G%
+.\"	@(#)hk.4	6.3 (Berkeley) %G%
 .\"
 .TH HK 4 ""
 .UC 4
@@ -76,9 +76,11 @@ uda(4),
 up(4),
 syslogd(8)
 .SH DIAGNOSTICS
-\fBrk%d%c: hard error sn%d cs2=%b ds=%b er=%b\fR.  An unrecoverable
-error occurred during transfer of the specified sector of the specified
-disk partition.  The contents of the cs2, ds and er registers are printed
+\fBhk%d%c: hard error %sing fsbn %d[-%d] cs2=%b ds=%b er=%b\fR.
+An unrecoverable error occurred during transfer of the specified
+filesystem block number(s),
+which are logical block numbers on the indicated partition.
+The contents of the cs2, ds and er registers are printed
 in octal and symbolically with bits decoded.
 The error was either unrecoverable, or a large number of retry attempts
 (including offset positioning and drive recalibration) could not
@@ -95,8 +97,9 @@ printing the message about being not ready (which takes a fraction
 of a second) was ready.  The operation is recovered if no further
 errors occur.
 .PP
-\fBrk%d%c: soft ecc sn%d\fR.  A recoverable ECC error occurred on the
-specified sector in the specified disk partition. 
+\fBup%d%c: soft ecc reading fsbn %d[-%d]\fP.
+A recoverable ECC error occurred on the
+specified sector(s) in the specified disk partition. 
 This happens normally
 a few times a week.  If it happens more frequently than
 this the sectors where the errors are occurring should be checked to see
