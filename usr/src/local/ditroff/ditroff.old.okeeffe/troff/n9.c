@@ -231,7 +231,7 @@ setvline()
 
 setdraw()	/* generate internal cookies for a drawing function */
 {
-	int i, j, k, dx[100], dy[100], delim, type, temp;
+	int i, j, k, dx[NC / 2], dy[NC / 2], delim, type, temp;
 	tchar c;
 	/* input is \D'f x y x y ... c' (or at least it had better be) */
 	/* this does drawing function f with character c and the */
@@ -251,7 +251,11 @@ setdraw()	/* generate internal cookies for a drawing function */
 		return;
 	delim = cbits(c);
 	type = cbits(getch());
-	for (i = 0; i < 50 ; i++) {
+	for (i = 0; ; i++) {
+		if (i > (NC / 2 - 3))
+			i--;
+		if (nlflg)
+			break;
 		c = getch();
 		if (cbits(c) == delim)
 			break;
