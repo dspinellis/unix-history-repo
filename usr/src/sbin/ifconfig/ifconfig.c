@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ifconfig.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)ifconfig.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -60,7 +60,7 @@ extern	int errno;
 
 int	setifflags(), setifaddr(), setifdstaddr(), setifnetmask();
 int	setifmetric(), setifbroadaddr(), setifipdst();
-int	notealias(), setsnpaoffset(), setnsellength();
+int	notealias(), setsnpaoffset(), setnsellength(), notrailers();
 
 #define	NEXTARG		0xffffff
 
@@ -71,8 +71,8 @@ struct	cmd {
 } cmds[] = {
 	{ "up",		IFF_UP,		setifflags } ,
 	{ "down",	-IFF_UP,	setifflags },
-	{ "trailers",	-IFF_NOTRAILERS,setifflags },
-	{ "-trailers",	IFF_NOTRAILERS,	setifflags },
+	{ "trailers",	-1,		notrailers },
+	{ "-trailers",	1,		notrailers },
 	{ "arp",	-IFF_NOARP,	setifflags },
 	{ "-arp",	IFF_NOARP,	setifflags },
 	{ "debug",	IFF_DEBUG,	setifflags },
@@ -141,11 +141,10 @@ main(argc, argv)
 	register struct afswtch *rafp;
 
 	if (argc < 2) {
-		fprintf(stderr, "usage: ifconfig interface\n%s%s%s%s%s%s",
+		fprintf(stderr, "usage: ifconfig interface\n%s%s%s%s%s",
 		    "\t[ af [ address [ dest_addr ] ] [ up ] [ down ]",
 			    "[ netmask mask ] ]\n",
 		    "\t[ metric n ]\n",
-		    "\t[ trailers | -trailers ]\n",
 		    "\t[ arp | -arp ]\n",
 		    "\t[ link0 | -link0 ] [ link1 | -link1 ] [ link2 | -link2 ] \n");
 		exit(1);
@@ -287,6 +286,14 @@ notealias(addr, param)
 }
 
 /*ARGSUSED*/
+notrailers(vname, value)
+	char *vname;
+	int value;
+{
+	printf("Note: trailers are no longer sent, but always received\n");
+}
+
+/*ARGSUSED*/
 setifdstaddr(addr, param)
 	char *addr;
 	int param;
@@ -332,7 +339,7 @@ setsnpaoffset(val)
 
 #define	IFFBITS \
 "\020\1UP\2BROADCAST\3DEBUG\4LOOPBACK\5POINTOPOINT\6NOTRAILERS\7RUNNING\10NOARP\
-\11PROMISC\12ALLMULTI\13OACTIVE\14SIMPLEX\15LINK0\16LINK1\17LINK2"
+\11PROMISC\12ALLMULTI\13OACTIVE\14SIMPLEX\15LINK0\16LINK1\17LINK2\20MULTICAST"
 
 /*
  * Print the status of the interface.  If an address family was
