@@ -1,11 +1,13 @@
-#       @(#)Makefile	8.9 (Berkeley) %G%
+#       @(#)Makefile	8.10 (Berkeley) %G%
 
 SUBDIR= src mailstats makemap praliases cf/cf
 FTPDIR=	mastodon:/disks/barad-dur/ftp/sendmail/.
 VER=	XX
 FILES=	Files.base Files.cf Files.misc Files.xdoc
 
-tar: Files.base Files.cf Files.misc Files.xdoc
+tar: sccs-check compile-world run-pax
+
+sccs-check:
 	(cd src; sccs check)
 	(cd doc/op; sccs check)
 	(cd doc/intro; sccs check)
@@ -17,12 +19,19 @@ tar: Files.base Files.cf Files.misc Files.xdoc
 	(cd cf/cf; sccs check)
 	(cd cf/ostype; sccs check)
 	(cd cf/domain; sccs check)
+
+compile-world:
 	(cd src; ${MAKE})
 	(cd doc; PRINTER=ps ${MAKE})
 	(cd doc; chmod 444 op/op.ps intro/intro.ps usenix/usenix.ps)
 	(cd cf/cf; ${MAKE})
+
+run-pax: Files.base Files.cf Files.misc Files.xdoc
 	chmod +x src/makesendmail
-	pax -w -x tar -L -s ,^,sendmail-${VER}/, -f sendmail.${VER}.tar \
+	pax -w -x tar -L \
+		-s ",cf/domain/unspecified-domain,sendmail-${VER}/cf/domain/berkeley-only,p" \
+		-s ",^,sendmail-${VER}/," \
+		-f sendmail.${VER}.tar \
 		`cat ${FILES} | grep -v ^#`
 	compress sendmail.${VER}.tar
 
