@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ex.rm	4.1 (Berkeley) %G%
+.\"	@(#)ex.rm	5.1 (Berkeley) %G%
 .\"
 .de v2
 \(dd
