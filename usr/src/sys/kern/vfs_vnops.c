@@ -1,4 +1,4 @@
-/*	vfs_vnops.c	4.23	82/04/19	*/
+/*	vfs_vnops.c	4.24	82/07/15	*/
 
 /* merged into kernel:	@(#)fio.c 2.2 4/8/82 */
 
@@ -16,6 +16,10 @@
 #include "../h/socket.h"
 #include "../h/socketvar.h"
 #include "../h/proc.h"
+#ifdef EFS
+#include "../net/in.h"
+#include "../h/efs.h"
+#endif
 
 /*
  * Convert a user supplied file descriptor into a pointer
@@ -84,6 +88,18 @@ closef(fp, nouser)
 
 	case IFCHR:
 		cfunc = cdevsw[major(dev)].d_close;
+#ifdef EFS
+		/*
+		 * Every close() must call the driver if the
+		 * extended file system is being used -- not
+		 * just the last close.  Pass along the file
+		 * pointer for reference later.
+		 */
+		if (major(dev) == efs_major) {
+			(*cfunc)(dev, flag, fp, nouser);
+			return;
+		}
+#endif
 		break;
 
 	case IFBLK:
@@ -122,7 +138,11 @@ closef(fp, nouser)
  * of special files to initialize and
  * validate before actual IO.
  */
+#ifdef EFS
+openi(ip, rw, trf)
+#else
 openi(ip, rw)
+#endif
 	register struct inode *ip;
 {
 	dev_t dev;
@@ -135,7 +155,11 @@ openi(ip, rw)
 	case IFCHR:
 		if (maj >= nchrdev)
 			goto bad;
+#ifdef EFS
+		(*cdevsw[maj].d_open)(dev, rw, trf);
+#else
 		(*cdevsw[maj].d_open)(dev, rw);
+#endif
 		break;
 
 	case IFBLK:
@@ -213,6 +237,14 @@ owner(follow)
 	ip = namei(uchar, 0, follow);
 	if (ip == NULL)
 		return (NULL);
+#ifdef EFS
+	/*
+	 * References to extended file system are
+	 * returned to the caller.
+	 */
+	if (efsinode(ip))
+		return (ip);
+#endif
 	if (u.u_uid == ip->i_uid)
 		return (ip);
 	if (suser())
