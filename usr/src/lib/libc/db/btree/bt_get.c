@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_get.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_get.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -142,20 +142,19 @@ __bt_first(t, key, exactp)
 		 * original) match was on, but also make sure it's unpinned
 		 * if an error occurs.
 		 */
-		if (e->index == 0)
-			do {
-				if (h->prevpg == P_INVALID)
-					goto done1;
-				if (h->pgno != save.page->pgno)
-					mpool_put(t->bt_mp, h, 0);
-				if ((h = mpool_get(t->bt_mp,
-				    h->prevpg, 0)) == NULL) {
-					if (h->pgno == save.page->pgno)
-						mpool_put(t->bt_mp,
-						    save.page, 0);
-					return (NULL);
-				}
-			} while ((e->index = NEXTINDEX(h)) == 0);
+		while (e->index == 0) {
+			if (h->prevpg == P_INVALID)
+				goto done1;
+			if (h->pgno != save.page->pgno)
+				mpool_put(t->bt_mp, h, 0);
+			if ((h = mpool_get(t->bt_mp, h->prevpg, 0)) == NULL) {
+				if (h->pgno == save.page->pgno)
+					mpool_put(t->bt_mp, save.page, 0);
+				return (NULL);
+			}
+			e->page = h;
+			e->index = NEXTINDEX(h);
+		}
 		--e->index;
 	} while (__bt_cmp(t, key, e) == 0);
 
