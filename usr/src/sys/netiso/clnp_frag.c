@@ -26,7 +26,7 @@ SOFTWARE.
  */
 /* $Header: /var/src/sys/netiso/RCS/clnp_frag.c,v 5.1 89/02/09 16:20:26 hagens Exp $ */
 /* $Source: /var/src/sys/netiso/RCS/clnp_frag.c,v $ */
-/*	@(#)clnp_frag.c	7.9 (Berkeley) %G% */
+/*	@(#)clnp_frag.c	7.10 (Berkeley) %G% */
 
 #ifndef lint
 static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_frag.c,v 5.1 89/02/09 16:20:26 hagens Exp $";
@@ -96,7 +96,7 @@ struct rtentry *rt;			/* route if direct ether */
 		struct mbuf			*frag_hdr = NULL;
 		struct mbuf			*frag_data = NULL;
 		struct clnp_segment	seg_part;			/* segmentation header */
-		int					frag_size, frag_base;
+		int					frag_base;
 		int					error = 0;
 
 
