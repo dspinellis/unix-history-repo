@@ -1,0 +1,28 @@
+# sys5r4	- a SYS5 R4 system
+# contributed by andrew@werple.pub.uu.oz.au
+#
+bin	/usr/local/bin
+etc	/usr/local/lib/mh
+bboards	on
+chown	/usr/bin/chown
+editor	/usr/bin/vi
+mail	/var/mail
+mandir	/usr/local/man
+manuals	local
+mts	sendmail
+options	BSD42
+options	MORE='"/usr/local/bin/less"'
+options	MSGPROT='"0600"'SHADOW
+options	SYS5
+options	SVR4
+options	SYS5DIR
+options	TYPESIG=void
+options	UK
+options	on
+sprintf	int
+cc	cc
+ccoptions -O
+ldoptions -s
+curses	-lcurses
+sharedlib sys5
+slibdir	/usr/local/lib/mh

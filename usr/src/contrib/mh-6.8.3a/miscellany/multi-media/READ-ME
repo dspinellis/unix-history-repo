@@ -1,0 +1,257 @@
+$Id: READ-ME,v 1.3 1992/10/26 16:57:51 jromine Exp $
+
+[ READ-ME - Wed Sep  1 19:07:25 1993 - multi-media MH - /mtr ]
+
+
+				   NOTICE
+
+     This package is openly available but is NOT in the public domain.
+     You are allowed and encouraged to take this software and use it for
+     any lawful purpose.  However, as a condition of use, you are required
+     to "hold harmless" all contributors.
+
+     Permission to use, copy, modify, and distribute this software and
+     its documentation for any purpose and without fee is hereby
+     granted, provided that this notice be retained unaltered,  and that
+     the name of any contributors shall not be used in advertising or
+     publicity pertaining to distribution of the software without
+     specific written prior permission.   No contributor makes any
+     representations about the suitability of this software for any
+     purpose.  It is provided "as is" without express or implied
+     warranty.
+
+	ALL CONTRIBUTORS DISCLAIM ALL WARRANTIES WITH REGARD TO THIS
+	SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+	AND FITNESS FOR THE PARTICULAR PURPOSE, TITLE, AND
+	NON-INFRINGEMENT.
+
+	IN NO EVENT SHALL ANY CONTRIBUTOR BE LIABLE FOR ANY SPECIAL,
+	INDIRECT OR CONSEQUENTIAL DAMAGES, WHETHER IN CONTRACT, TORT, OR
+	OTHER TORTUOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH, THE
+	USE OR PERFORMANCE OF THIS SOFTWARE.
+
+
+     Following are sources of software for manipulating various MIME content
+     types.  The script support/general/bootmhn.sh (which is run when
+     you do "make inst-all") will look for these programs and create the
+     global mhn_defaults file accordingly.  Since this script will
+     look for the programs detailed below, you should do all of the
+     installation here prior to running "make inst-all".  Also, the
+     programs should be installed in either the MH library area
+     (e.g., /usr/local/lib/mh/) or in your $PATH.
+
+
+				text/richtext
+
+     There are two programs for rendering text/richtext, rt2raw and
+     richtext. 
+
+     1. r2raw - a really dumb richtext interpreter
+
+     This is found in the MH distribution:
+
+	% cd miscellany/multi-media/misc/
+	% cc -o rt2raw rt2raw.c
+
+     and then copy rt2raw to your MH library area.
+
+
+     2. richtext - a termcap-based interpreter
+
+     This is found in the MetaMail distribution:    
+
+	host	thumper.bellcore.com
+	dir	pub/nsb/
+	file	mm.tar.Z
+	mode	binary
+
+     Now run these commands
+
+	% mkdir mm
+	% cd mm
+	% uncompress < ../mm.tar.Z | tar xvpf -
+	% cd richmail
+	% make richtext
+
+     and then copy richtext to your MH library area.
+
+
+				    image
+
+     There are several programs available for rending images: xv, pbmplus,
+     and jpeg.  To use any of these, you need to be running under the
+     X window system.  When bootmhn.sh runs, it will generate commands
+     for a monochrome monitor.  If you're running on a greyscale or
+     color monitor, you should change the commands accordingly.
+
+     1. xv version 2.11
+
+     There may be a more recent version by the time you read this file:
+
+	host	ftp.cis.upenn.edu
+	dir	pub/
+	file	xv-2.11.tar.Z
+	mode	binary
+
+     Read the installation instructions and install the xv binary
+     somewhere in your $PATH.
+
+     2. pbmplus
+
+     There may be a more recent version by the time you read this file:
+
+	host	ftp.uu.net
+	dir	pub/window-sys/X/contrib
+	file	pbmplus10dec91.tar.Z
+	mode	binary
+
+     3. JPEG
+
+     There may be a more recent version by the time you read this file:
+
+	host	ftp.uu.net
+	dir	graphics/jpeg/
+	file	jpegsrc.v3.tar.Z
+	mode	binary
+
+     Read the installation instructions and install the djpeg binary
+     somewhere in your $PATH.
+
+
+				    audio
+
+     This is platform dependent.  At present, only detailed information
+     for the SPARC and the HP 9000/710 is presented.
+
+     1. SPARC
+
+     The SPARC has a telephone-quality audio-chip and an internal
+     speaker.  If you want to record audio, you'll need to buy a
+     microphone.  For reasons not worth going into, most mic's don't
+     have enough gain, and you have to put the thing right next to your
+     lips.  However, Isaac Salzman of SMI suggests, and I concur, that
+     the best mic to get is SONY's ECM-K7.  This costs about US$50, but
+     is well worth it: you can put the mic on your desk and it will
+     still pick up your voice.
+
+     The "native" encoding for the audio-chip is 8-bit u-law sampled at
+     8000/second .  Prior to SunOS 4.1, audio files contained simply the
+     encoded audio.  However, in SunOS 4.1 or later, SMI introduced a
+     file format containing a header followed by the encoded audio.  For
+     now, we'll use the content type audio/basic to refer to the raw
+     audio, and the content type audio/x-next to refer to the file
+     format (NeXT developed the file format and SMI supports a subset of
+     it).  When dealing audio/basic, you simply cat to/from /dev/audio.
+     When dealing with audio/x-next, you can use the play and record
+     programs found in the /usr/demo/SOUND/ directory.
+
+     In addition, in OpenWindows 3.0 or later, SMI added support for a
+     compressed u-law encoding based on the CCITT G.721 ADPCM algorithm.
+     Before audio encoded in this fashion can be heard, it must be
+     converted back to 8-bit u-law.  Conversions to and from the two
+     encodings can be done with the adpcm_enc and adpcm_dec programs
+     found in the $OPENWINHOME/bin/xview/ directory.
+
+     If you are running something earlier than SunOS 4.1, I suggest that
+     you immediately get a copy of the raw2audio, play, and record
+     programs, so you can generate audio files.  The source is avilable
+     in the SunOS 4.1 Demos installation.  If you can't find these
+     programs, then when bootmhn.sh runs, it will just cat directly
+     to/from /dev/audio.
+
+     If you do have the raw2audio, play, and record programs (regardless
+     of the version of SunOS you're running), then apply some patches:
+
+	% (cd /usr/demo/SOUND; patch) < miscellany/multi-media/SPARC/SOUND.diff
+	% cd /usr/demo/SOUND
+	% make raw2audio
+
+     Be sure to put /usr/demo/SOUND in your $PATH so that bootmhn.sh can
+     find the programs there.  (Alternately, you could copy these
+     programs to another directory which is in your $PATH.)
+
+     You might also consider running /usr/demo/SOUND/x_gaintool, so you
+     can fiddle with the volume controls whenever you like.
+
+     2. HP 9000/710
+
+     The HP-Apollo 9000/710 workstation has a telephone-quality audio
+     chip and an internal speaker.  If you want to record audio, you'll
+     need to buy a microphone.  As with the SPARC, just about any
+     microphone with a standard mini jack will do.  Comments in the
+     preceding section that apply to selections of a microphone for the
+     SPARC probably also apply here. 
+
+     The audio programs that may be used with mhn -- player, splayer,
+     recorder, and srecorder -- are provided by HP in source form in the
+     directory /usr/audio/examples/.  The README file in that directory
+     documents the various audio utility programs for recording and
+     playing sounds.  Be sure to put /usr/audio/examples in your $PATH
+     so that bootmhn.sh can find the programs there.  (Alternately, you
+     could copy these programs to another directory which is in your
+     $PATH.)
+
+     Before any of the aforementioned programs can be used, the audio
+     device files must be created by running
+     /usr/audio/bin/make_audio_dev, and two daemons must be started:
+     /usr/etc/ncs/llbd and /usr/audio/bin/Aserver.  Refer to Audio(5)
+     for detailed, step by step instructions on how to do these things.
+     Alternatively, refer to the HP publication "Audio Users Guide"
+     (HP order number A1991-90609, November 1991 version).
+
+     The audio devices support several "native" encodings that vary as
+     to which of the audio device files is used: one of
+     /dev/audio[BEI][ALU], where E=external jack, I=internal speaker,
+     B=both; A=8-bit ALaw, L=16-bit linear, U=8-bit MuLaw.  It is
+     possible to "cat" a raw audio data file of the appropriate type to
+     or from one of these devices. For example, a SPARC .au file may be
+     played by running this command:
+
+        cat bark.au >/dev/audioIU
+
+     (You must create the audio device files before you can cat anything
+     to them; again, refer to Audio(5) for information on how to do this.)
+
+     There is, as of HP-UX 8.07, no supplied tool a la the SPARC's raw2audio
+     to add headers to audio data files that describe the audio data
+     encodings.  Rather than looking for headers in the sound data, the
+     audio tools rely on user-supplied information, such as file
+     extensions or command line options, to inform the tools about the
+     types and sampling rates of the audio data.
+
+     Audio file names have the form 
+
+        <file name>[["."<sample rate>]"."<type>]
+
+    where
+
+        <sample rate> ::= 1#DIGIT"000"/ 1#DIGIT"k"
+        <type> ::= "u" / "al" / "au" / "wav" / "snd" / "l8" / 
+                        "lo8" / "l16"
+
+	Mulaw                           u
+	Alaw                            al
+	Sun                             au
+	Microsoft RIFF Waveform         wav
+	Macintosh                       snd
+	Linear8                         l8
+	Linear8Offset                   lo8
+	Linear16                        l16
+
+    Examples: 
+
+        bark.au
+        bark.8000.au
+        bark.8k.au
+
+     As with the SPARC, the default sample rate is 8000 Hz.
+
+     The /usr/audio/bin/audio_demo program may be used to convert
+     manually among different sound types, as well as to play, to
+     record, and to edit the sounds.  Unfortunately, the audio_demo
+     program does not accept command line arguments, so it is not quite
+     as suitable for invocation from mhn as are the player and recorder
+     programs.
+
+     You might also consider running /usr/audio/examples/acontrol, so you
+     can fiddle with the volume controls whenever you like.

@@ -1,0 +1,45 @@
+: run this script through /bin/sh
+
+M="`basename $0`"
+
+case "$mhaltmsg" in
+    "")	    ;;
+
+    *)	    editalt="$mhaltmsg" ; export editalt ;;
+esac
+
+case "$mheditor" in
+    "")	    ;;
+
+    *)	    trap "" 1 2 3 15
+	    if $mheditor $mhdraft
+	    then
+		trap 1 2 3 15
+	    else
+		case "$mhuse" in
+		    0)     echo $M: removing $mhdraft 1>&2; rm -f $mhdraft ;;
+		esac
+		exit 1
+	    fi ;;
+esac
+
+PS1="`rprompt %U\("$M:"\`expr $mhdraft : '.*/\(.*/.*\)'\`\)%U%b`"
+
+while :
+do
+    echo -n "$PS1"; read C
+    case "$?$C" in 1) C="quit" ; esac
+    set x $C ; shift
+    case "$1" in
+	quit)     case "$2" in
+		      -d*|d*)     rm $mhdraft ;;
+		      "")	  echo $M: draft left on $mhdraft 1>&2 ;;
+		  esac
+		  exit 1 ;;
+
+	push|send|refile)
+		  if eval "$@"; then exit 0; fi ;;
+
+	*)	  eval "$@" ;;
+    esac
+done

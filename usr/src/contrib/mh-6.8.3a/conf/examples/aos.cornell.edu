@@ -1,0 +1,36 @@
+# aos.cornell.edu - MH 6.8 Configuration for IBM/PC-RT running IBM/4.3
+# Jeffrey C Honig <jch@nr-tech.cit.cornell.EDU>
+# Wed, 02 Dec 92 14:55:44 -0500
+#
+#	Configuration for IBM/PC-RT running IBM/4.3
+#
+#
+# System stuff
+#
+bin		/usr/local/bin
+ccoptions	-U__STDC__
+chown		/etc/chown
+editor		prompter
+etc		/usr/local/lib/mh
+mail		/usr/spool/mail
+mandir		/usr/local/man
+manuals		standard
+mts		sendmail/smtp
+mf		off
+options		BSD42 BSD43 BIND NTOHLSWAP DBMPWD LOCKF ZONEINFO
+options 	UCI
+options		RENAME
+signal		int
+#
+# Options
+#
+bboards		off
+options		MHE MHRC MIME MSGID
+options 	SBACKUP='"\\043"'
+remove		mv -f
+#
+# POP
+#
+pop		on
+popdir		/usr/local/sbin
+options		RPOP POPSERVICE='"pop3"' DPOP APOP

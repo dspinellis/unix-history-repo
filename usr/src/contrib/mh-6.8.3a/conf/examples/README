@@ -1,0 +1,46 @@
+$Id: README,v 1.8 1992/12/14 18:12:18 jromine Exp jromine $
+These files are contributed MH config files from various sites.
+Newer files give the version of MH and OS release number which
+they are configured for.
+
+# 386bsd        - MH 6.8, 386BSD system running SendMail
+# aix.sap-ag.de	- MH 6.8 options for AIX (AIX 3.2 on RS/6000 350).
+# aix31.rpi.edu	- MH 6.8, RS6000 AIX 3.1 with AFS Kerberos
+# aos.cornell.edu - MH 6.8 Configuration for IBM/PC-RT running IBM/4.3
+# aux.rand.org - MH 6.8 under AUX in SYS5 mode
+# bsd43.uiuc.edu - MH 6.8 VAX running 4.3 BSD-reno
+# bsd44.berkeley.edu - MH 6.8, 4.4BSD system running SendMail
+# convex.uiuc.edu - MH 6.8 Convex C240 running ConvexOS v9.1
+# dbc		- DBC's MH 6.8 config file
+# dynix.uiuc.edu - MH 6.8 Sequent Symmetry running Dynix 3.1.2
+# encore
+# fujitsu.clcs.com.au - MH 6.8 for Fujitsu/ICL DRS6000 running System V R4
+# gould
+# hplpm.hpl.hp.com - Hewlett-Packard 9000 machines
+# hpux.sap-ag.de - MH 6.8 options for HPUX (HPUX 8.05 on HP9000/720).
+# hpux.uiuc.edu	- MH 6.8 HP-9000/700 with HP-UX 8.0 and sendmail
+# kosciusko.esd.3com.com - SunOS 4.0.3 
+# krusty.smsc.sony.COM - System V Release 4 running mailsurr
+# mhmts		- stand-alone mhmts template
+# mmdf 		- template using mts: mmdf
+# ridge		- ROS
+# rs6000	- RISC 6000/320, with AIX 3.1 (3.03)
+# sendmail 	- template using mts: sendmail
+# shrike.irvine.com - MH 6.7.2 - HP 9000/700 HP/UX 8.x sendmail version
+# solaris2.sun.com - MH 6.8 - Solaris 2.x
+# sun3.5	- MH 6.8 configuration file for SunOS 3.5
+# sun4.0	- For Sun OS 4.* with SendMail, Yellow Pages and /etc/named.
+# sun4.1.1	- MH 6.8 configuration file for SunOS 4.1.1
+# sun411.rpi.edu - MH 6.8, Sparcstation SunOS 4.1.1 with AFS Kerberos
+# sys5r3.2	- SVr3.2 configuration file for MH 6.7.1:
+# sys5r4	- a SYS5 R4 system
+# sys5r4-ncr	- an NCR system: Unix System V Release 4.0.2.0 (WINS)
+# system5 	- template
+# uci.gcc	- MH 6.8 - Sun3 or Sun4 running Sun OS 4.1
+# uci.hp-pa	- MH 6.8 options for HPUX (HPUX 8.05 on HP9000/720).
+# uci.sequent	- MH 6.8 - Sequent running Dynix 3.1
+# uci.sun	- MH 6.8 - Sun3 or Sun4 running Sun OS 4.1
+# uci.sun.debug	- MH 6.8 - Sun3 or Sun4 running Sun OS 4.1
+# udel		- UDel template
+# ultrix.sap-ag.de - MH 6.8 options for ULTRIX (ULTRIX 4.2 on RISC).
+

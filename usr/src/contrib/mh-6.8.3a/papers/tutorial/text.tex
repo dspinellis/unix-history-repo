@@ -1,0 +1,803 @@
+% begin text
+
+\banner
+
+\section{Acknowledgements}
+The \MH/ system described herein is based on the original Rand \MH/ system.
+It has been extensively developed (perhaps too much so) by Marshall Rose and
+John Romine at the University of California, Irvine.
+Einar Stefferud, Jerry Sweet, and Terry Domae provided numerous suggestions
+to improve the UCI version of \MH/.
+
+Parts of this document are taken from a Rand tutorial \cite{SPayn85} by
+Sue Payne.
+
+\section{Disclaimer}
+The Regents of the University of California issue the following
+disclaimer concerning the UCI version of MH:
+\bigquote
+Although each program has been tested by its contributor,
+no warranty, express or implied,
+is made by the contributor or the University of California,
+as to the accuracy and functioning of the program
+and related program material,
+nor shall the fact of distribution constitute any such warranty,
+and no responsibility is assumed by the contributor
+or the University of California in connection herewith.
+\endbigquote
+
+\section{Scope}
+This document assumes that you have no knowledge of \MH/.
+However, to use \MH/ you should have some familiarity with the \unix/ 
+operating system,
+particularly with the way commands are given,
+how files are named,
+the jargon (e.g. {\it shell}, {\it argument}, {\it home directory},
+{\it pathname\/}),
+and how to use a text editor (such as \pgm{ex}, \pgm{vi}, or \pgm{emacs\/}).
+
+This tutorial covers only basic material.
+For additional information about \MH/,
+consult the {\it User's Manual} \cite{MRose85a}.
+Other documents of possible interest to you include
+{\it The UCI BBoards Facility} \cite{MRose84}
+and
+the {\it MH Administrator's Guide} \cite{MRose85b}.
+
+\section{How To Use This Tutorial}
+Different typefaces and symbols are used in this document to denote the
+kinds of things you (the user) must type on your keyboard.
+\smallskip
+{\advance\leftskip by\parindent
+\item{1.} The names of programs are given in {\it text italics}:
+\smallskip\hskip 1in \pgm{comp}\smallskip
+\item{2.} Arguments to programs are given in {\tt typewriter style},
+delimited by single-quotes:
+\smallskip\hskip 1in \arg{msgs}\smallskip
+\item{3.} \unix/ pathnames are given in {\sl slanted roman}:
+\smallskip\hskip 1in \file{/usr/uci/}\smallskip
+\item{4.} Text giving a full example is presented in {\tt typewriter style}:
+\example comp\ -editor\ vi\endexample
+The ``\hbox{\tt\char`\ }'' glyph % (visible space glyph)
+is used to indicate an explicit space (the kind you make with the
+space bar on your keyboard).
+\smallskip}
+
+\section{Introduction}
+With \MH/ you can send messages to other people on your system
+and read messages that other people send to you.
+Depending on how things have been set up on your system,
+it may be possible for you to send messages to people on remote systems.
+You can also reply to messages that you have received,
+review them,
+organize them in {\it folders},
+and delete them.
+
+\MH/ differs from other mail programs in that it is composed of many
+small programs instead of just one very large program.
+Among new users this sometimes causes some confusion
+along the lines of ``what program do I run?''
+With \MH/, you use the shell to invoke one program at a time.
+This means that when you handle mail,
+the entire power of the shell is at your disposal
+in addition to the facilities that \MH/ provides.
+In the beginning, this may not make much sense or may not seem important.
+However, we have found that as new users of \MH/ gain experience, 
+they find this style of interface to be very useful.
+
+\section{Summary}
+The most minimal list of \MH/ commands that you can get by with is:
+\smallskip
+{\advance\leftskip by\parindent
+\item{\pgm{inc}}	- incorporate mail (get new mail)
+\item{\pgm{show}}	- show the first message
+\item{\pgm{next}}	- show the next message
+\item{\pgm{prev}}	- show the previous message
+\item{\pgm{comp}}	- compose a new message to send
+\item{\pgm{repl}}	- reply to a received message
+\smallskip}
+\pgm{Comp} and \pgm{repl} give enough prompting possibly to get you along.
+However, it is suggested that you take the time to peruse this
+tutorial before leaping into things.
+
+\section{Messages and Folders}
+A message takes the form of a memorandum,
+and is composed of two major parts:
+a {\it header},
+which contains such information as
+\eg{To} and \eg{From} addresses, \eg{Subject}, \eg{Date}, etc.;
+and the {\it body},
+which is the actual text of the message.
+Each {\it component} in the header starts with a keyword followed by
+a colon and additional information.
+For example, in the message:
+\example
+    Date: 10 Oct 84 17:41:14 EDT (Wed)\\
+    To: News@udel-dewey\\
+    Subject: UCI Software Talk\\
+    From: UCI Portal (agent: Marshall Rose) <uci@udel-dewey>\\\\
+    This is the text.
+\endexample
+there are four header items, and one line of text in the body.
+Note that a blank line separates the body from the headers.
+
+\MH/ stores a message as an ordinary file in a \unix/ directory.
+This directory is called a {\it folder}.
+If you choose to keep and organize your messages,
+you may create as many folders as you wish.
+There is no limit as to the number of messages in a folder.
+Typically messages are numbered from~1 up.
+All of your personal folders,
+along with some other information that \MH/ needs to know,
+are kept in a special directory called \file{Mail} under your home directory.
+Normally, \MH/ manages these files and directories automatically,
+so you needn't muck around with them directly unless you really want to.
+
+You won't have any folders until somebody sends mail to you, as a rule.
+If you are anxious to try out \MH/, but no one has sent you mail yet,
+try sending mail to yourself to start out with.
+
+\section{Reading New Mail}
+When you are notified that you have mail (usually when you log in),
+perhaps with the message
+\example You have mail.\endexample
+then you know that messages are waiting in your {\it maildrop}.
+To read these messages, you first have to {\it incorporate} the mail
+into your ``in-box'' by typing the command:
+\example inc\endexample
+This incorporates the new mail from your mail drop to your in-box,
+which is a folder named (naturally enough) \arg{+inbox}.
+As \pgm{inc} incorporates your new mail,
+it generates a {\it scan listing} of the mail:
+$$\vbox{\tenpoint\tx\halign{\hfil#&#\hfil&&	\quad#\hfil\cr
+\noalign{\noindent Incorporating new mail into inbox...\medskip}
+2&+&	10/10&	WESTINE\%USC-ISIF&	RFC 916 Now Available&
+					<<A new Request for Co\cr
+3&&	10/10&	G B Reilly&		Gosling EMACS manual&
+					<<Marshall, I am lookin\cr
+4&&	10/11&	WESTINE\%USC-ISIF&	Internet Monthly Report&\cr
+}}$$
+Each time \pgm{inc} is invoked,
+any new messages are added to the end of your \eg{+inbox} folder.
+
+To read the first message,
+use the \pgm{show} command:
+\example show\endexample
+This displays the current message.
+To read each subsequent message,
+use the \pgm{next} command:
+\example next\endexample
+If you want to back up,
+the command \pgm{prev} shows the previous message.
+Another way to read your messages is to name them all at once:
+\example show\ all\endexample
+This command displays them all, one after the other.
+The \arg{all} argument to \pgm{show} above might also be replaced
+with \arg{next} or \arg{prev}, as in
+\example
+    show\ next\\
+    show\ prev
+\endexample
+which are respectively equivalent to the \pgm{next} and \pgm{prev}
+commands.
+
+If you have had occasion to type \pgm{inc} more than once, then
+you will find that \eg{show\ all} is showing not only the new messages,
+but also the old messages that you've already seen.
+Therefore, you might find it better to use
+\example show\ cur-last\endexample
+instead.
+This command displays messages from the current message (\arg{cur})
+to the last message (\arg{last}).
+Each time \pgm{inc} is invoked, it makes the first new message
+the current message.
+It should be noted here that the name \arg{all} given in a previous
+example is equivalent to the {\it message range} \arg{first-last},
+where \arg{first} is the name of the first message in \arg{+inbox}.
+Also, \eg{show} by itself is equivalent to
+\example show\ cur\endexample
+
+As mentioned earlier,
+with the \unix/ shell as your interface to \MH/,
+it becomes easy to list a message on a line printer or to another file.
+For example,
+\example show\ all\ |\ lpr\endexample
+lists all the messages in the current folder to the line printer.
+
+To summarize, the preceding has introduced these important concepts:
+{\it folders} (in particular, the \arg{+inbox} folder),
+{\it messages},
+{\it message names} (e.g. \arg{prev}, \arg{next}, \arg{cur}, \arg{last}),
+and {\it message ranges} (e.g. \arg{cur-last}, \arg{all}).
+More will be said about folders and messages in succeeding sections.
+
+\section{Sending Messages}
+To send a message, you compose a message {\it draft},
+either by replying to a message that someone sent to you,
+or by creating a draft from scratch.
+The \pgm{send} command is used {\bf after} completing the final draft
+of a message, 
+in the same way that you mail a paper letter only after you are finished
+writing it.
+This is a common source of confusion among new \MH/ users who
+may have had experience with other mail systems.
+
+This section discusses how to originate messages
+and how to reply to messages that were previously received,
+along with a word or two about addresses.
+
+\subsection{Originating Messages}
+To create a message draft from scratch,
+use the \pgm{comp} program.
+You will be prompted for the header components
+and then the body of the message.
+If you make a mistake, you may correct it later with a text editor.
+The draft will be sent only if you give an explicit \pgm{send} command,
+so you do not have to worry about the draft getting away from you
+prematurely.
+
+To start, you simply type:
+\example comp\endexample
+
+{\bf To:}
+First, the prompt \arg{To:} appears.
+Here you type the address of the person to whom you wish the message sent.
+If this person is on the same computer system as you,
+then that person's login ID should serve as the address
+(e.g. \arg{mrose} or \arg{jsweet}).
+
+Here we digress briefly to discuss addresses.
+A full discussion of addresses is beyond the scope of this
+tutorial, but it should be mentioned that there are other
+kinds of addresses besides login IDs.
+To send messages to people on remote systems, 
+the usual way is to type \arg{login-id@host} in the \arg{To:} component,
+as in \arg{MRose@UCI-ICSA}.
+Examples of \arg{host} names at UCI include
+\arg{uci-icsa},
+\arg{uci-icse},
+and \arg{uci-cip1}.
+Upper and lower case letters may be used interchangeably.
+Sometimes a person's last name (e.g. \arg{Rose}, \arg{Sweet}) can be used
+instead of a login ID,
+but this cannot be relied upon in a world without unique surnames.
+
+{\bf cc:}
+After you have given an address to the \arg{To:} prompt, 
+you are prompted for the \arg{cc:}
+(``carbon copy''--an archaism)
+address.
+It is customary, but not required, to put your own address
+here so that you get a copy of the message when it is sent.
+
+To put more than one address in the \arg{To:} and
+\arg{cc:} components,
+just use a comma (``,'') between each address on a line.
+
+{\bf Subject:}
+The third prompt is for the \arg{Subject:} component.
+Here a line of any descriptive text will do.
+Once you have typed a line of text, a dashed line is printed,
+and you are then expected to type the body of the message.
+End the body with EOT (usually CTRL-D).
+
+An example of a complete message draft, as it appears on your screen,
+might be:
+\example
+    To: News\\
+    cc: farber, mrose\\
+    Subject: UCI Software Talk\\
+    --------\\
+    A presentation on the UCI software suite, including\\
+    the Rand/UCI Mail Handling System (MH), will be given\\
+    in CS220 on October 31st at 2:30 PM.  Refreshments\\
+    will be served afterward.\\\\
+    /mtr\\
+    \^{}D
+\endexample
+(The ``\^{}D'' does not appear in the draft.)
+
+At this point, you are asked
+\example What\ now?\endexample
+This is known as being at \whatnow/ level.
+For now, there are probably only four options that will interest you:
+\smallskip
+{\advance\leftskip by\parindent
+\item{\pgm{edit}} - edit the draft
+\item{\pgm{list}} - list the draft on your screen
+\item{\pgm{quit}} - quit, without sending the draft
+\item{\pgm{send}} - send the draft, then quit
+\medskip}
+\noindent
+All of these options take various arguments,
+but only \pgm{edit} really needs an argument.
+
+{\bf Edit:}
+The \pgm{edit} option will let you edit the draft before sending it.
+If your favorite text editor is \pgm{vi},
+then you would use the \pgm{edit} option as:
+\example edit\ vi\endexample
+Just specifying \pgm{edit} with no argument
+will only let you append text to the body of the
+message draft.
+Another editor (e.g. \pgm{vi}, \pgm{ex}, \pgm{emacs\/})
+should really be run to finish the draft up.
+When you leave the editor, you will come back to the \whatnow/ level,
+where you can re-edit the draft, send it, list it, or simply quit
+without sending the draft at all.
+
+Caution: while in the editor,
+you should not delete colons in the headers
+or change the spelling of \arg{To:}, \arg{cc:}, or \arg{Subject:};
+and do not leave blank lines between these lines.
+Feel free to change the addresses that you typed previously,
+or to add these lines if they are missing.
+Do not delete the dashes that separate the header lines from
+the text of the message.
+You should not add additional header lines unless you understand
+precisely what you are doing.  
+This means particularly that you should not type or fill in a \arg{From:}
+line.
+When the message is sent, the system automatically adds this line.
+Also, you should not type a \arg{Date:} line in the header.
+When the message is sent, the system automatically adds the current
+date and time.
+
+{\bf Quit:}
+If you \pgm{quit} without sending the draft,
+the draft is saved in a file called \file{Mail/draft} under your
+home directory.
+This file can be recalled later using the \arg{-use} argument
+to \pgm{comp}:
+\example comp\ -use\endexample
+The \whatnow/ level will permit you to do further editing
+and to send the final draft when you are ready.
+
+{\bf Send:}
+When it is time to send the draft on its way,
+use the \pgm{send} option by itself.
+If there are any problems with the draft 
+(for example,
+if one or more of the people whom you specified in the \arg{To:} and \arg{cc:}
+components do not exist)
+then you will be notified at this time.
+
+\subsection{Replying to Messages}
+To reply to a message,
+use the \pgm{repl} command.
+For example,
+\example repl\endexample
+creates a reply to the current message.
+You may also reply to a specific message (other than the current one)
+by giving a {\it message number} (e.g. \arg{1}, \arg{4}, etc.)
+or a {\it message name} (e.g. \arg{first}, \arg{last}, \arg{prev}):
+\example repl\ prev\endexample
+We haven't really introduced message numbers yet.
+They will be discussed in the next section.
+
+The process of replying to a message is very similar to composing
+a message from scratch (see the previous section),
+but \pgm{repl} conveniently constructs and displays the header
+of the reply draft for you.
+You need only type in the text of the reply.
+An EOT (usually CTRL-D) indicates that you are done typing.
+If you make a mistake, you may correct it later with a text editor.
+The draft will be sent only if you give an explicit \pgm{send} command,
+so you do not have to worry about the draft getting away from you
+prematurely.
+
+An example of a complete reply draft, as it appears on your screen might be:
+\example
+    To: MRose\\
+    cc: JSweet\\
+    Subject: Re: UCI Software Talk\\
+    In-reply-to: Your message of 10 Oct 84 18:15:08 PDT (Wed).\\
+    --------\\
+    I'll be there.\\
+    -jns\\
+    \^{}D	
+\endexample
+(The ``\^{}D'' does not appear in the draft.)
+
+At this point, you are asked
+\example What\ now?\endexample
+This is known as being at \whatnow/ level.
+Refer to the previous section regarding how to edit,
+display, or send the draft at this point.
+
+As with \pgm{comp}, 
+if you \pgm{quit} without sending the reply draft,
+the draft is saved in a file called \file{Mail/draft} under your
+home directory.
+This file can be recalled later using the \arg{-use} argument
+to \pgm{comp}:
+\example comp\ -use\endexample
+The \whatnow/ level will permit you to do further editing
+and to send the final draft when you are ready.
+
+\section{Scanning Messages}
+The scan listing created by \pgm{inc} shows the {\it message number},
+the date on which the message was sent,
+the sender,
+and the subject of the message.
+If there is sufficient space remaining on the line,
+the beginning of the text of the message is displayed as well,
+preceded by two left angle brackets (``{\tenpoint\tx$<<$\/}'').
+An example of a scan listing is:
+$$\vbox{\tenpoint\tx\halign{\hfil#&#\hfil&&	\quad#\hfil\cr
+1&+&	10/10&	WESTINE\%USC-ISIF&	RFC 916 Now Available&
+					<<A new Request for Co\cr
+2&&	10/10&	G B Reilly&		Gosling EMACS manual&
+					<<Marshall, I am lookin\cr
+3&&	10/11&	WESTINE\%USC-ISIF&	Internet Monthly Report&\cr
+}}$$
+Note that all messages have message numbers.
+
+To generate your own scan listing, use the \pgm{scan} program.
+Typing simply
+\example scan\endexample
+will list all the messages in the current folder.
+To scan a subset of these messages,
+you can specify the numbers of the messages that you consider interesting,
+e.g.,
+\example scan\ 2\ 3\endexample
+Message names may be specified in addition to discrete message numbers.
+The built-in message names recognized by \MH/ are:
+\smallskip
+{\advance\leftskip by\parindent
+\item{\underbar{all}:}	all messages in the folder (\arg{first-last})
+\item{\underbar{first}:}	the first message in the folder
+\item{\underbar{last}:}	the last message in the folder
+\item{\underbar{prev}:}	the message immediately before the current message
+\item{\underbar{cur}:}	the current message
+\item{\underbar{next}:}	the message immediately after the current message
+\medskip}
+\noindent
+
+Message ranges may be specified in addition to discrete message numbers
+or names by separating the beginning
+and final message numbers with a dash (``-'').
+For example,
+\example scan\ 5-10\endexample
+scans messages~5 through~10 inclusive.
+A range of messages may also be specified by separating a beginning
+message number and a relative number of messages with
+a colon (``:'').
+For example,
+\example scan\ last:3\endexample
+scans the last three messages in the folder.
+Similarly,
+\example scan\ first:3\endexample
+scans the first three messages in the folder;
+\example scan\ next:3\endexample
+scans the next three messages;
+\example scan\ cur:3\endexample
+scans the three messages beginning from the current message;
+\example scan\ 100:4\endexample
+scans four messages beginning from message number 100.
+
+To summarize, the important concepts that have been discussed
+in the section are:
+{\it message ranges},
+{\it message numbers},
+and {\it message names}.
+When an \MH/ command is described as taking a \arg{msg} argument,
+it accepts either a message name or a message number.
+Most \MH/ commands are described as taking \arg{msgs} arguments,
+meaning that more than one message or message range is accepted.
+
+\section{Deleting Messages}
+To delete a message, use the \pgm{rmm} program.
+By default, \pgm{rmm} deletes the current message,
+but you can give \pgm{rmm} a list of messages to be removed as well.
+There is no corresponding ``\pgm{unrmm}'' program,
+but clever users with a need will find out how to change the way \pgm{rmm}
+works so that it simply moves messages to another folder
+(say, \arg{+wastebasket}).
+
+\section{Filing Messages}
+The possibility of having folders other than \eg{+inbox} has been mentioned
+previously.
+The methods for moving messages between folders and manipulating folders
+are discussed here.
+
+The \pgm{refile} command moves messages from a {\it source folder} to one or
+more {\it destination folders}.
+By default, the current message is moved from the {\it current folder} 
+(typically \arg{+inbox}) to another folder specified as an
+argument to \pgm{refile}.
+For example,
+\example refile\ +todo\endexample
+moves the current message from the current folder to the folder \eg{+todo}.
+To move messages from a folder other than the current folder,
+use the \switch{src +folder} switch, as in
+\example refile\ -src\ +todo\ last\ +save\ +notes\endexample
+which moves the last message in the \eg{+todo} folder to the folders
+\eg{+save} and \eg{+notes}.
+Note that this operation is a {\it move}, not a {\it copy};
+it removes the message from the source folder.
+To keep a copy in the source folder as well, use the \switch{link} switch
+\example refile\ -link\ -src\ +todo\ last\ +save\ +notes\endexample
+
+Whenever a folder argument is given to an \MH/ command,
+that folder becomes the {\it current folder}.
+To find out which folder is current, use the command
+\example folder\endexample
+The \pgm{inc} command sets the current folder back to \arg{+inbox}
+by default.
+To find out about all of a user's folders, use the command
+\example folders\endexample
+Since folders can contain other folders,
+the command
+\example folders\ -recurse\endexample
+will recursively examine each folder for you.
+
+To set the current folder, without doing anything else,
+use the \pgm{folder} program with a folder argument.
+Hence,
+\example folder\ +inbox\endexample
+makes \eg{+inbox} the current folder.
+
+After a using \pgm{rmm} and \pgm{refile} on a folder a number of times,
+there tend to be gaps in the numbering sequence.
+To compress the numbers for the all messages in a folder,
+use
+\example folder\ -pack\endexample
+
+\section{The Profile}
+You can customize the \MH/ environment by editing your \profile/ file.
+Although there are lots of options,
+here are the most useful:
+\smallskip
+{\advance\leftskip by\parindent
+\item{\underbar{Editor}:} lists the default editor that \pgm{comp} and
+\pgm{repl} should use.
+The default is
+\example editor:\ prompter\endexample
+but another editor might be preferred.
+
+\item{\underbar{{\it editor}-next}:} lists the editor that should be used
+after the last edit with {\it editor}.
+Hence, if you have a profile entry
+\example prompter-next:\ vi\endexample
+after editing a draft with \pgm{prompter},
+and being at \whatnow/ level,
+you could say \eg{edit} (instead of \eg{edit vi})
+to continue to edit the draft with \pgm{vi}.
+
+\item{\underbar{Msg-Protect}:}
+Whenever \MH/ creates a message (for example, with \pgm{inc\/}),
+this is the octal protection mode that the message is created with.
+The default is
+\example Msg-Protect:\ 644\endexample
+This protection mode permits all other users on the system to read
+your messages.
+To maintain privacy, the mode 600 should be used.
+Note that changing the mode in the profile does not change the modes
+of messages that have been created already.
+Use the \unix/ command \pgm{chmod} to change the modes of your
+existing messages.
+
+\item{\underbar{Folder-Protect}:}
+Whenever \MH/ creates a folder (for example, with \pgm{refile\/}),
+this is the octal mode that the folder is created with.
+The default is
+\example Folder-Protect:\ 711\endexample
+This mode permits other users on the system to make access to
+specific messages in your folders.
+To maintain stricter privacy, the mode 700 should be used.
+
+\item{\underbar{{\it program\/}}:}
+Each \MH/ program that reads user's \profile/ file
+looks for an entry beginning with its own
+name to determine its initial defaults.
+For example,
+if you want the default editor for \pgm{repl} to be \pgm{emacs},
+the line
+\example repl:\ -editor\ emacs\endexample
+is sufficient.
+Command line arguments tend to override profile settings.
+Given the profile setting for \pgm{repl} above,
+if you invoked \pgm{repl} with
+\example repl\ -editor\ vi\endexample
+\pgm{repl} would use the \pgm{vi} editor instead
+of \pgm{emacs}.
+
+\item{\underbar{signature}:}
+When \MH/ posts mail for you,
+it looks for this profile entry for your ``real world'' name.
+For example,
+\example signature:\ Marshall\ Rose\endexample
+The contents of the \eg{signature:} entry in the profile should be a simple
+phrase, with no embedded periods (e.g. ``Marshall T.~Rose'').
+\medskip}
+\noindent
+Note that your profile resembles the header portion of a message.
+Be sure that it is properly formatted by placing a colon after each entry
+name,
+and keep each entry on a single line.
+
+\section{Conventions}
+Now let's summarize the conventions that \MH/ programs use:
+\smallskip
+{\advance\leftskip by\parindent
+\item{1.} Any \MH/ command that deals with messages can be given a
+\arg{+folder} argument to say which folder to use.
+However, only one \arg{+folder} argument may be given per command
+in most cases.
+
+\item{2.} If an \MH/ command accepts a \arg{msgs} argument,
+then any number of messages can be given to the command.
+The \MH/ command will expand all the ranges and process each message,
+starting with the lowest numbered one and working its way to the message with
+the highest number.
+
+\item{3.} If an \MH/ command accepts a \arg{msg} argument,
+then at most one message can be given.
+
+\item{4.} Switches (options) to \MH/ commands start with a dash.
+Unlike the standard \unix/ convention,
+each switch consists of more than one character,
+for example \switch{header}.
+To minimize typing,
+only a unique abbreviation of the switch need be typed;
+thus for \switch{header}, \switch{hea} is probably sufficient,
+depending on the other switches accepted by the command.
+
+\item{5.} All \MH/ commands have a \switch{help} switch,
+which {\it must} be spelled out fully.
+When an \MH/ command encounters the \switch{help} switch,
+it prints out the syntax of the command,
+the switches that it accepts,
+and version information.
+In the list of switches,
+parentheses indicate required characters.
+For example,
+all \switch{help} switches will appear as \switch{(help)},
+indicating that no abbreviation is accepted.
+
+\item{6.} Many \MH/ switches have both on and off forms,
+such as \switch{format} and \switch{noformat}.
+In these cases,
+the last occurrence of the switch on the command line determines the setting
+of the option.
+
+\item{7.} All \MH/ commands that read your \MH/ profile operate the
+same way:
+\underbar{first},
+the profile is consulted for an entry matching the name with which
+the command was invoked;
+\underbar{second},
+if such an entry was found,
+then the command immediately uses the arguments listed;
+\underbar{third},
+any arguments on the command line are then interpreted.
+Since most switches have both on and off forms,
+it's easy to customize the default options for each \MH/ command in the
+\profile/,
+and to override those defaults on the command line.
+\smallskip}
+
+\section{Online Documentation}
+Each \MH/ program has its own \unix/ manual entry.
+For example, to get information about \pgm{comp},
+type
+\example man\ comp\endexample
+The manual entry for \man mh(1) lists all \MH/ commands,
+while the manual entry for \man mh-chart(1) lists the syntax and switches for
+all \MH/ commands.
+
+In addition,
+here are a few other manual entries might be found useful:
+\smallskip
+{\advance\leftskip by\parindent
+\item{\man mh-alias(5)} to find out how aliases in \MH/ work;
+\item{\man mh-mail(5)} to find out how \MH/ stores and interprets messages
+(this manual entry explains all of the standard header components);
+\item{\man mh-profile(5)} to find out about the \MH/ user-environment.
+\smallskip}
+
+The manual pages for \MH/ are in the standard \unix/ format,
+but contain additional sections unique to \MH/.
+Here's a summary of the sections one might find in an \MH/ manual entry:
+\smallskip
+{\advance\leftskip by\parindent
+\item{\sc Name} command name and one-line description.
+
+\item{\sc Synopsis} syntax of the command.\hbreak
+All commands accept a \switch{help} switch.
+
+\item{\sc Description} semantics of the command.
+
+\item{\sc Files} files used by the command\hbreak
+Almost always this includes \file{.mh\_profile}.
+
+\item{\sc Profile} entries in the \profile/ used by the command;
+\vskip -\parskip
+\item{\sc Components} these do not include the profile entry for the
+command itself.
+
+\item{\sc See Also} other \unix/ manual entries (usually \MH/ programs) that
+are related to this command.
+
+\item{\sc Defaults} default arguments for the command\hbreak
+If the command takes a \arg{+folder} argument,
+this defaults to the current folder.
+If the command takes a \arg{msg} argument,
+this defaults to the current message.
+If the command takes a \arg{msgs} argument,
+this defaults to the current message or all messages,
+depending on which one makes more sense.
+
+\item{\sc Context} changes to your \MH/ context made by the command.
+
+\item{\sc Hints} Helpful hints discussing the easy way to do things.
+
+\item{\sc History} A historical perspective on why \MH/ works the way it does.
+
+\item{\sc Bugs} Too embarrassing to mention.\hbreak
+Just kidding.
+\medskip}
+\noindent
+Obviously, not all \MH/ manual entries may have all of these sections.
+
+\section{Reporting Problems}
+If problems are encountered with an \MH/ program,
+the problems should be reported to the local maintainers of \MH/.
+When doing this,
+the name of the program should be reported,
+along with the version information for the program.
+To find out what version of an \MH/ program is being run,
+invoke the program with the \switch{help} switch.
+In addition to listing the syntax of the command,
+the program will list information pertaining to its version.
+This information includes the version of \MH/,
+the host it was generated on,
+the date the program was loaded,
+and the configuration options in effect when \MH/ was generated.
+For example,
+\example
+    version: MH 6.1 \#1[UCI] (gremlin) of Wed Nov  6 01:13:53 PST 1985\\
+    options: [BSD42] [MHE] [NETWORK] [SENDMTS] [MMDFII] [SMTP] [POP]\endexample
+The \eg{6.1~\#1[UCI]} indicates that the program is from the UCI \mh6
+version of \MH/.
+The program was generated on the host \eg{gremlin} on
+\eg{Wed Nov  6 01:13:53 PST 1985}.
+It's usually a good idea to send the output of the \switch{help} switch along
+with your report.
+
+If there is no local \MH/ maintainer,
+try the address {\tx Bug-MH}.
+If that fails, use the Internet mailbox {\tx Bug-MH@UCI.ARPA}.
+
+\section{More on MH}
+There are myriad aspects of \MH/ that this tutorial hasn't touched upon.
+Here are a few to whet your appetite:
+\smallskip
+{\advance\leftskip by\parindent
+\item{1.} user-defined sequences\hbreak
+Define {\it meaningful} message names and shorten type-in considerably
+(see \man pick(1) for details).
+
+\item{2.} draft folders\hbreak
+Maintain a folder of drafts so that more than one draft can be edited at a
+time,
+and allow a draft to be edited over several \unix/ sessions independently of
+other drafts
+(see the {\bf Advanced Features} section of the \MH/ user's manual for
+details).
+
+\item{3.} draft pushing\hbreak
+Post a draft in the background
+and immediately free your terminal for other activities
+(see the {\bf Advanced Features} section of the \MH/ user's manual for
+details).
+
+\item{4.} aliases\hbreak
+Maintain one or more alias files containing the addresses of the people
+frequently (or infrequently) sent to.
+This lets you shorten type-in of addressees
+and saves you from looking up
+their addresses all the time.
+(see \man mh-alias(5) for details).
+\smallskip}

@@ -1,0 +1,46 @@
+% run this through PhD-TeX
+
+\input dcustom
+\articlestyle
+\draftfalse
+\input version
+
+\input sfwmac
+
+\header
+    The Rand MH Message Handling System:\\\\
+	Tutorial\title
+    Marshall T.~Rose$^\dagger$\\
+    Jerry N.~Sweet$^\ddagger$\author
+    \versiondate/\info
+\footnote{}{\hskip -\parindent Computer Mail:
+$^\dagger$ {\tx MRose@NRTC.NORTHROP.COM},
+$^\ddagger$ {\tx JSweet@ICS.UCI.EDU}.}
+
+\centerline{\sc Abstract}
+{\rightskip=0pt\narrower\narrower
+\noindent
+This document introduces the UCI version of the Rand \MH/ system to novice
+users.
+In particular, this tutorial discusses
+how to read, send, reply to, and review mail;
+aspects of the \MH/ user profile affecting these activities;
+and other reference works on \MH/.
+
+Although this document is based on the standard \MH/ user
+manual\cite{MRose85a},
+this document is meant to supplement, not supersede,
+that lengthier work.
+
+Comments concerning this documentation should be addressed to the Internet
+mailbox {\tx Bug-MH@ICS.UCI.EDU}.
+\par}
+
+\input text
+\input refs
+\printcontents
+\unskip\footnote{}{\hskip -\parskip This document (version \versiontag/)
+was \TeX set \today\ with DISS.STY v\version.}
+\showsummary
+
+\bye

@@ -1,0 +1,28 @@
+From: Ipse dixit <ken@rochester.ARPA>
+
+This evening a friend asked me how to save his outgoing responses to
+netnews in mh folders. I realized that was easy to use mh as the mail
+interface to rn. Below is how. You will need to customize a bit.
+
+Look at login for stuff to put in your .login file
+
+Look at bin/rnmail for a shell script for your bin/ directory
+
+Have fun.
+
+	Ken
+--
+UUCP: ..!{allegra,decvax,seismo}!rochester!ken ARPA: ken@rochester.arpa
+Snail: Comp. of Disp. Science, U of Roch., NY 14627. Voice: Ken!
+Phone: (716) 275-2569 (office), (716) 262-5298 (home)
+
+From: Robert Virding <robert@erix.uucp>
+
+There's an easier way to do it which also allows using draft folders
+in MH.  Look at rninit for stuff to put in your .rninit file.
+
+Look at bin/mh for a shell script for your bin/ directory.
+This file is fine for running a subshell for MH as well.
+
+			Robert Virding  @ L M Ericsson, Stockholm
+			UUCP: {decvax,philabs,seismo}!mcvax!enea!erix!robert

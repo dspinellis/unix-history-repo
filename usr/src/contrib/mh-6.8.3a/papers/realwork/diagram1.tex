@@ -1,0 +1,45 @@
+% diagram 1
+
+\verbatimlines
+% inc
+Incorporating new mail into inbox...
+
+   1+ 03/16 Rand MH System    MH transcript  <<Here's the body of a sample m
+					       
+% show
+(Message inbox:1)
+To: jromine@uci-icsa
+Subject: MH transcript
+Date: 16 Mar 85 18:28:59 PST (Sat)
+From: Rand MH System <mh@uci-icsa>
+
+Here's the body of a sample message.
+% repl
+To: Rand MH System <mh@uci-icsa>
+cc: jromine@uci-icsa
+Subject: Re: MH transcript
+In-reply-to: Your message of 16 Mar 85 18:28:59 PST (Sat).
+--------
+Thanks for the test.
+
+/JLR
+^D
+
+What now?? send
+% comp
+To: MRose@UCI
+cc: 
+Subject: sample comp
+--------
+Here's a sample compose for the MH transcript.
+
+/JLR
+^D
+
+What now?? send -verbose
+ -- Posting for All Recipients --
+  -- Local Recipients --
+  MRose: address ok
+ -- Recipient Copies Posted --
+Message Processed
+?endverbatim

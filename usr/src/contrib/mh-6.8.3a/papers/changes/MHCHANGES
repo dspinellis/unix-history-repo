@@ -1,0 +1,1539 @@
+		       MHCHANGES from MH 6.1 to MH 6.5
+
+
+Tue Nov 12 11:24:46 1985  /mtr <mrose@nrtc-gremlin>
+
+	MH 6.1 is official.
+
+
+Fri Nov 15 19:14:44 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/{rcvtty,slocal}.c: touch-ups
+
+
+Sun Nov 17 16:28:23 1985  /mtr <mrose@nrtc-gremlin>
+
+	conf/doc/{ap,mhl,repl,scan}.rf: note that #ifdef BERK kills
+	    address parsing
+	conf/makefiles/{doc,uip,support/*,zotnet/*}: make tar command visible
+	sbr/m_convert.c: oops, new message numbering resulted in bad
+	    diagnostic
+	papers/*/Makefile: fix LaTeX rule for v2.08
+
+
+Tue Nov 19 23:06:16 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/send.c: de-referencing NULL due to bad precedence, tsk
+
+
+Wed Nov 20 10:58:40 1985  /mtr <mrose@nrtc-gremlin>
+
+	MH 6.1 covert update for sbr/m_convert.c, uip/send.c
+
+
+Sun Nov 24 18:58:41 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/slocal.c: some tuning, also fix a bug in usr_pipe()
+	uip/dropsbr.c: have mbx_copy support noisy
+	uip/{packf,post,rcvpack,sbboards,slocal}.c: use this change
+
+
+Tue Nov 26 00:22:17 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/refile.c: oops, forgot copy-back on optimzied m_remsg
+
+
+Sat Nov 30 22:36:49 1985  /mtr <mrose@nrtc-gremlin>
+
+	zotnet/tws/dtime.c: add #ifdef INETONLY
+	uip/post.c: for #ifdef BERK don't say {Local,UUCP,Network}
+	    Recipients
+	conf/doc/sortm.rf: note problem with errors
+	uip/bbc.c: for getbbvis() insist on readability
+	support/bboards/bbexp.c: oops, calling pick wrong
+	conf/doc/pick.rf: document -datefield anomaly
+	conf/makefiles/support/bboards: oops, left context owned by root
+	h/mh.h: ruserpass -> _ruserpass for SUN.  why?
+
+
+Sun Dec  1 07:58:50 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/vmh.c: remove double-scroll
+	uip/annosbr.c: oops, closing fd: without unlocking!
+	sbr/makedir.c: plug an obscure security hole in inc
+	uip/mhlsbr.c: read_termcap being called prematurely
+	zotnet/tws/dtime.c: load tw_sday appropriately
+	zotnet/tws/*.c: try using numeric timezone for official renditions,
+	    under #ifdef MTR for now
+
+
+Sun Dec  1 16:11:03 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/inc.c: more idiotic de-referncing of NULL, found on SUNs
+	uip/replsbr.c: ditto
+	uip/show.c: recognize more of mhl's switches
+
+
+Wed Dec  4 23:38:06 1985  /mtr <mrose@nrtc-gremlin>
+
+	zotnet/mts/mts.h: oops for MMDFONLY
+	conf/{mh-gen.8,makefiles/zotnet/mts}: talk about -Dlocname
+
+
+Thu Dec  5 19:55:11 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/scansbr.c: fix machine dependency pointed out by Chuck Collins
+	dist/READ-ME: new file talking about make bug
+	COVER-LETTER, conf/{mh-gen.8,doc/MH.rf}: change UCI -> UCI.EDU
+
+
+Fri Dec  6 11:08:20 1985  /mtr <mrose@nrtc-gremlin>
+
+	support/bboards/mmdfII/gen: wrong filename
+
+
+Sun Dec  8 18:39:01 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/send.c: always remove dist file
+	uip/vmh.c: work on erase-word handling, a bit
+	uip/folder.c: -fast -vs- -pack fixup
+	uip/mhlsbr.c: %text defined for date fields
+
+
+Tue Dec 10 18:39:37 1985  /mtr <mrose@nrtc-gremlin>
+
+	zotnet/mts/client.c: moved from mts/sendmail/client.c
+	conf/makefiles/{mts/sendmail,zotnet/mts}: changed
+	mts/support/llib-lsendmail, zotnet/mts/llib-lmts: changed
+	mts/sendmail/client.c: 4.2BSD specific only!
+	conf/config/mts.c, zotnet/mts/mts.h: update
+	conf/mhconfig.c: update
+	conf/Makefile: simplify
+
+
+Tue Dec 10 21:11:45 1985  /mtr <mrose@nrtc-gremlin>
+
+	conf/mh-gen.8: clear up some sys5 stuff
+	zotnet/mf/umhook.c: sys5-ize
+	uip/addrsbr.c: alternate-mailboxes: defaulted wrong under #ifdef
+	    BERK, it's now "<userid>*"
+	conf/doc/mh-profile.rf: fix documentation to reflect reality
+
+
+Tue Dec 10 22:38:23 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/addrsbr.c: normalize a bit (finally)
+	uip/addrsbr.c: new routine adrsprintf() to remove #ifdef BANG
+		dependencies
+	uip/{post,rcvdist,replsbr,sbboards}.c: use adrsprintf()
+	uip/post.c: remove #ifdef MF dependency for stand-alone MH,
+	    remove #ifdef DUMB dependency by making addrsbr.c smarter
+	    about being dumber
+	mts/mmdf/hosts.c: remove #ifdef DUMB dependency (right now,
+	    addrsbr:getm() is the only one that calls it and it doesn't
+	    call it under #ifdef DUMB...
+
+
+Tue Dec 10 23:28:20 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/sbboards.c: oops, typo found by lint
+
+
+Wed Dec 11 19:08:20 1985  /mtr <mrose@nrtc-gremlin>
+
+	miscellany/libndir: -lndir for non-BSD sites, graciously supplied
+	    by Kirk McKusick
+
+
+Tue Dec 17 08:36:59 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/send.c: different alert announcement based on -forward
+
+
+Tue Dec 17 08:53:52 1985  /mtr <mrose@nrtc-gremlin>
+
+	conf/makefiles/sbr, sbr/cndfree.c: clean-up a bit
+
+
+Tue Dec 17 18:26:34 1985  /mtr <mrose@nrtc-gremlin>
+
+	sbr/m_getfld.c, uip/{format,mhl,pick}sbr.c: clean-up indirection
+	    code for less tolerant compilers
+	uip/bbc.c: add -[no]rcfile switch
+	uip/msh.c: clean up a diagnostic
+
+
+Tue Dec 17 21:42:44 1985  /mtr <mrose@nrtc-gremlin>
+
+	conf/makefiles/sbr, h/mh.h, sbr/llib-lmh: cndfree() removed
+	sbr/{add,m_{delete,replace}}.c, uip/{mhl,vmh}sbr.c: replace cndfree
+	sbr/m_foil.c, uip/install-mh.c: compensate
+
+
+Wed Dec 18 13:37:09 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/bbc.c: make second, optimized pass to catch private bboards
+	    that the user knows about
+	uip/popsbr.c: ditto
+	uip/popser.c: slight tune-up
+
+
+Wed Dec 18 20:27:38 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/slocal.c: minor touch up
+	uip/umhook.c: moved from zotnet/mf
+
+
+Wed Dec 18 22:51:58 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/bbc.c: optimize on calling mshproc, check size of maildrop
+	    first; if empty, don't invoke it!
+
+
+Thu Dec 19 08:16:54 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/refile.c: better diagnostic from Fred Blonder
+
+
+Thu Dec 19 22:34:23 1985  /mtr <mrose@nrtc-gremlin>
+
+	zotnet/mts/client.c: #ifdef BIND code when no gethostent()
+	conf/{mh-gen.8,doc/mh-tailor.rf}: document it
+
+
+Thu Dec 19 23:58:44 1985  /mtr <mrose@nrtc-gremlin>
+
+	Release MH 6.2 to selected sites, including Berkeley for 4.3BSD testing
+
+
+Sun Dec 29 19:58:43 1985  /mtr <mrose@nrtc>
+
+	zotnet/mts/client.c: fix #ifdef BIND stuff a bit
+	h/mshsbr.h, uip/{mhlsbr,msh,mshcmds}.c: try to fix lost peer
+	    problems...
+	conf/doc/vmh.rf: update
+	zotnet/drop/lock.c: not returning right errno
+	uip/dropsbr.c: ditto, plus not trying enough
+	conf/makefiles/doc: "make tar" forgetting tmac.h
+	uip/addrsbr.c: strcpy de-referencing NULL
+	uip/refile.c: got rid of a spurious \n (!!)
+	conf/examples/{udel,nrtc-mtr}: new files
+	h/mh.h, sbr/m_{convert,gmsg}.c, uip/{msh,rcvstore,refile}.c: fix
+	    LOWSEL logic
+	uip/vmh.c: fix slight bug in sideground handling (misspelled
+	    #ifdef, oops!)
+	conf/{mh-gen.8,config/mts.c},mts/*/hosts.c: remove the NETWORK option
+
+
+Mon Dec 30 20:03:25 1985  /mtr <mrose@nrtc>
+
+	conf/Makefile: options mangled(!?!)
+	uip/msh.c: if update of mailbox fails, it gets zero'd(!!)
+	    (oops, not checking error condition)
+	support/pop/popser.c: if update of mailbox fails, clean-up
+	    correctly (no zero problem here!)
+	uip/inc.c: on truncate of maildrop, remove mailbox map (XXX)
+	conf/makefiles/uip, uip/{send,whatnowsbr}.c: move send into
+	    the WhatNow shell
+	uip/sendsbr.c: new file
+	conf/doc/whatnow.rf: update
+
+
+Tue Dec 31 10:13:44 1985  /mtr <mrose@nrtc>
+
+	conf/doc/vmh.rf: back-down last update
+	conf/mh-gen.8: forgot an \&
+	conf/examples/nrtc-{gw,mtr}, h/rcvmail.h: tsk, NRTC running an old
+	    MMDF-II
+
+
+Tue Dec 31 13:53:14 1985  /mtr <mrose@nrtc>
+
+	conf/doc/whatnow.rf, uip/whatnowsbr.c: remove "headers" option
+	conf/doc/ADMIN.rf: clear-up post -debug documentation
+	conf/doc/{mh-chart,send,post}.rf, uip/{post,send,whatnowsbr}.c: remove
+	    -[no]remove switches
+	uip/{repl,post}.c: some touch-ups
+
+
+Tue Dec 31 19:16:23 1985  /mtr <mrose@nrtc>
+
+	zotnet/tws/{dtime,dtimep}.c: dst fix-ups
+	conf/doc/send.rf: append, not prepend
+	uip/rmail.c: slight touch-up
+	uip/ap.c: oops, not printing all info
+	zotnet/mf/mf.c: botching trailing comment handling!
+	uip/scansbr.c: have cpy() omit trailing >>blank<<
+	sbr/m_gmsg.c: not zero'ing msgstats[] under non-MTR code
+
+
+Tue Dec 31 22:23:43 1985  /mtr <mrose@nrtc>
+
+	conf/doc/mhook.rf: minor typos
+	miscellany/rcvtrip/*: update
+
+
+Tue Dec 31 23:21:21 1985  /mtr <mrose@nrtc>
+
+	uip/mhlsbr.c: a bit more pipe trickyness (this gets old real fast)
+	conf/doc/ADMIN.rf: talk about popd and /etc/rc.local
+	papers/{myths,mznet}/Makefile: update
+	uip/bbc.c: augment XTND2 botch diagnostic
+	uip/msh.c: if popd says BBoard-ID: for a message is 0, read it
+	    ourselves
+
+
+Fri Jan  3 13:11:03 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/bbc.c: SIGTSTP race condition, #undef for now
+
+
+Sun Jan  5 20:06:03 1986  /mtr (agent: Marshall Rose) <uci@dewey>
+
+		  -- Interface TTI TMA to MH #6.2 --
+	[ N.B.: The TTI TMA is NOT in the public domain; the MH support for
+		the TTI TMA IS in the public domain! ]
+	conf/{mh-gen.8,mhconfig.c,doc/ADMIN.rf}: support "tma on"
+	conf/makefiles/{doc,uip}: ditto
+	Makefile: for the moment
+
+
+Mon Jan  6 15:25:20 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/{msh,mshcmds}.c: work on refile
+	uip/{vmh,msh}.c: support FAST quit (no final refresh on
+	    updated mailbox)
+
+
+Tue Jan  7 15:06:05 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/bbc.c: got the SIGTSTP problem, now wait on child to stop prior
+	    to stopping ourselves...
+
+
+Wed Jan  8 23:16:10 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/trmsbr.c: better defaults for "li" and "co"
+
+
+Thu Jan  9 15:29:09 1986  /mtr <mrose@nrtc-gremlin>
+
+		   -- Fixes Suggested by Craig Partridge --
+	support/bboards/mmdfII/bboards/mmdfonly.h: if V4_2BSD on, set BSD42
+	conf/doc/{mhl,show}.rf: talk more about moreproc
+	uip/mhlsbr.c: have INTR work as advertised
+	uip/{send,whatnowsbr}.c: link on dist botched, oops!
+
+
+Thu Jan  9 16:31:28 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/mshcmds.c: don't rmm() messages which don't get refiled
+	uip/vmh.c: truncate stuff on Scan window (finally)
+	uip/scansbr.c: work on diagnostics a bit
+
+
+Thu Jan  9 22:37:29 1986  /mtr <mrose@nrtc-gremlin>
+
+	MH 6.2 is official, awaiting enhancements Berkeley!
+
+
+Fri Jan 10 10:17:57 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/sbboards.c: botch multiple bboard handling (forgot to rewind
+	    input, thanks to Larry Henry)
+	support/bboards/mmdfII/bboards/bb_wtmail.c: not handling errors
+	    right
+	sbr/cpydgst.c: stay symmetric with change to bb_wtmail.c, the code
+	    worked fine, adding matching braces for clarity (!!)
+
+
+Sun Jan 12 14:01:25 1986  /mtr <mrose@nrtc-gremlin>
+
+	miscellany/mh-e: new version from James Larus
+
+
+Sun Jan 12 22:58:34 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/bbc.c: getbbvis a bit too agressive, use popd algorithm
+
+
+Wed Jan 15 04:43:33 1986  /mtr <mrose@nrtc-gremlin>
+
+	miscellany/netnews/: more stuff
+
+
+Wed Jan 15 18:44:32 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/addrsbr.c: ismymbox() losing under #ifdef DUMB, oops!
+
+
+Wed Jan 15 19:03:54 1986  /mtr <mrose@nrtc-gremlin>
+
+	COVER-LETTER: update
+
+
+Wed Jan 15 23:15:54 1986  /mtr <mrose@nrtc-gremlin>
+
+	support/pop/popsbr.c: pophack on PASS command
+
+
+Fri Jan 17 13:19:23 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/ali.c: add -noalias for RaJ
+
+
+Wed Jan 22 11:13:08 1986  /mtr <mrose@nrtc-gremlin>
+
+	support/pop/popwrd.c: squash bug
+	h/mh.h: remove sigmask definition
+	uip/{bbc,vmh}.c: add sigmask if not defined in <signal.h>
+	    (4.3BSD finally wised up!)
+
+
+Sun Jan 26 16:57:18 1986  /mtr <mrose@nrtc-gremlin>
+
+	{conf/makefiles/uip,uip/post.c}: lint touch-up
+	conf/doc/{inc,mh-chart,send,post}.rf: add the #ifdef TMA stuff
+	sbr/m_remsg.c: tuning
+	uip/mark.c: re-arrange debug output slightly
+	h/mh.h: add some padding to fix some m_remsg bugs
+	uip/{inc,rcvstore}.c: oops, mp -> hghmsg not keeping pace with
+	    m_remsg!
+
+
+Mon Jan 27 17:51:07 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/whatnowsbr.c: forgot to put -[no]push for built-in send
+	h/addrsbr.h, uip/{addrsbr,post}.c: introduce auxformat(), the
+	    back-end to adrformat(); post calls auxformat directly in
+	    certain cases
+	uip/{dp,forw}.c: was cheating on adrformat, now on auxformat
+
+
+Fri Jan 31 13:25:17 1986  /mtr <mrose@nrtc-gremlin>
+
+	COVER-LETTER: update
+	support/general/mhl.format: Remove length/width constraints
+
+
+Sun Feb  2 14:01:28 1986  /mtr <mrose@nrtc-gremlin>
+
+	zotnet/tws/dtime.c: twsort() fix from John Romine for ALTOS
+	uip/addrsbr.c: smarter ismymbox for default case
+	conf/{mh-gen.8,doc/repl.rf}, uip/repl.c: add #ifdef ATHENA code
+
+
+Sun Feb  2 20:47:36 1986  /mtr <mrose@nrtc-gremlin>
+
+	miscellany/replies/: new directory
+
+
+Mon Feb  3 11:21:49 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/whatnowsbr.c: oops, slight dist botch
+	support/general/mhl.format: make date display user-friendly
+	conf/mh-gen.8: clean-up descriptions of options
+	uip/sbboards.c: normalize code wrt to MMDF-II BBoards channel
+	uip/msh.c: when running under vmh and not in control of TTY,
+	    ignore TSTP so BPOP can spool ahead!
+	papers/{usenix/usenix,multifarious/multifarios,trusted/trusted}.tex:
+	    fix up banners a bit
+
+
+Wed Feb  5 09:32:08 1986  /mtr <mrose@nrtc-gremlin>
+
+	support/bboards/mmdfII/READ-ME: update
+
+
+Wed Feb  5 11:25:05 1986  /mtr <mrose@nrtc-gremlin>
+	
+	MH 6.3 #1[UCI] (nrtc-gremlin) is official, still awaiting Berkeley
+	    enhancements
+
+
+Wed Feb  5 14:42:55 1986  /mtr <mrose@nrtc-gremlin>
+
+	zotnet/tws/{tws.h,dtime.c}: new argument to dasctime()
+	uip/{format,pick}sbr.c: make use of it
+
+
+Sun Feb  9 22:14:10 1986  /mtr <mrose@nrtc-gremlin>
+
+	support/pop/syslog.c: #ifdef BSD43 means use standard syslog
+
+
+Sun Feb 16 15:40:20 1986  /mtr <mrose@nrtc-gremlin>
+
+	sbr/m_setvis.c: oops, fix-up unseen sequence stuff
+	uip/whatnowsbr.c: oops, a couple of typos
+
+
+Sun Feb 16 19:11:33 1986  /mtr <mrose@nrtc-gremlin>
+
+	-- Incorporate Berkeley enhancements, courtesy of Van Jacobson --
+	h/{format,scan}sbr.h: updated for new formatsbr stuff
+	h/mh.h: updated for new m_getfld
+	conf/MH: new default file
+	conf/config/config.c: support spost under BERK and SENDMTS
+	conf/mhconfig.c: support new zotnet/fmt/ directory
+	conf/makefiles/uip: support spost
+	conf/makefiles/zotnetM: support new zotnet/fmt/ directory
+	conf/makefiles/zotnet/fmt: new Makefile
+	conf/makefiles/zotnet/tws: support for new lex-based date parser
+	sbr/m_gmsg.c,uip/msh.c: change init of READONLY
+	sbr/m_getfld.c: re-written, super optimized!
+	support/general/{digestcomps,mhl.digest,mhl.forward,scan.*}: use
+	    new fmt stuff
+	zotnet/fmt/: new directory
+	zotnet/tws/{dtimep.lex,lexedit.sed,lexstring.c}: new files
+	zotnet/tws/dtime.c: update
+	uip/{forw,scan,scansbr}.c: use new format stuff
+	uip/{inc,mhlsbr,mshcmds,replsbr}.c: use new format stuff
+	uip/trmsbr.c: use stderr for ioctl()s
+	uip/spost.c: new file
+	uip/{addr,format}sbr.c: remove, they're in zotnet/fmt/
+
+
+Sun Feb 16 23:04:34 1986  /mtr <mrose@nrtc-gremlin>
+
+	zotnet/fmt/: move into sbr/ to avoid loading problems
+	sbr/{addrsbr,formatsbr,fmtcompile,formataddr}.c: new files
+	h/fmtcompile.h: new file
+	conf/makefiles/{sbr,zotnetM}: update
+	sbr/llib-lmh: update
+
+
+Mon Feb 17 20:14:35 1986  /mtr <mrose@nrtc-gremlin>
+
+	support/general/scan.{time,size}: mday/month inverted
+	sbr/{formatsbr,fmtcompile}.c: bring upto date with MH 6.3+
+	sbr/formatsbr.c: missing tzone/sday/dst handling!
+	h/scansbr.h: slight update
+	uip/scansbr.c: try using formataddr() routine to do "correct"
+	    formatting of scan'd addresses, didn't work! use friendly
+	zotnet/tws/dtimep.lex: tsk, use lint!  also, fix numeric timezones
+	sbr/addrsbr.c: some ismymbox fixes for non-BERK code (from 6.3)
+	sbr/formatsbr.c: not priming the pump!
+	h/fmtcompile.h, sbr/{formatsbr,fmtcompile}.c: add "friendly"
+	support/general/scan.time2: call it scan.timely
+	conf/makefiles/support/general: support scan.timely
+
+
+Tue Feb 18 01:13:51 1986  /mtr <mrose@nrtc-gremlin>
+
+	h/formatsbr.h: updates from Van
+
+
+Tue Feb 18 02:15:00 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/bbc.c: upgrade for new m_getfld()
+	support/general/scan.*, h/scansbr.h: still more changes
+	support/general/replcomps: still more changes
+
+
+Tue Feb 18 22:14:51 1986  /mtr <mrose@nrtc-gremlin>
+
+	sbr/m_getfld.c: eom_action() lacking argument
+	sbr/m_getfld.c: not working right on packf'd files
+	uip/{msh,mshcmds}.c: under BPOP, need to fix things so m_getfld()
+	    doesn't dump core!
+
+
+Wed Feb 19 00:16:55 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/dist.c, support/general/distcomps, sbr/fmtcompile.c: updates
+	    from Van
+	sbr/formatsbr.c: remove ismymbox prime
+	sbr/fmtcompile.c: use adios(), not exit()!
+
+
+Wed Feb 19 00:56:30 1986  /mtr <mrose@nrtc-gremlin>
+
+	sbr/m_getfld.c: different fix for packf'd files from Van
+
+
+Wed Feb 19 01:55:40 1986  /mtr <mrose@nrtc-gremlin>
+
+	h/mh.h: add msg_* vars in m_getfld() as externs
+	uip/{msh,{repl,scan}sbr}.c: remove msg_* declarations
+	sbr/m_getfld.c: add a bit of BODYEOF support (without slowing it
+	    down, wouldn't want to upset Van!)
+
+
+Wed Feb 19 03:11:42 1986  /mtr <mrose@nrtc-gremlin>
+
+	sbr/{formataddr,fmtcompile,m_{draft,getfld,maildir},printsw,pwd}.c:
+	    lint it
+	uip/{formatsbr,forw,msh,replsbr,scan,scansbr,spost}.c: lint it
+	support/pop/popser.c: lint it
+	sbr/formatsbr.c: remove MHFMTDEBUG code
+	*/Makefile: depend 'em
+
+
+Wed Feb 19 10:50:04 1986  /mtr <mrose@nrtc-gremlin>
+
+	papers/mh6.4: new interim documentation directory, for 4.3BSD
+	conf/doc/{MH,ap,dp,mh,mh-chart,mhl,repl,scan}.rf: update
+	conf/doc/mh-format.rf: new file
+	support/general/replcomps: oops, should call formataddr on all
+	    addrs
+
+
+Thu Feb 20 08:07:49 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/{a,d}p.c: start working on it
+	h/formatsbr.h: new variable fmt_norm
+	sbr/formatsbr.c: use it
+	h/fmtcompile.c, sbr/{fmtcompile,formatsbr}.c: define "pretty"
+	sbr/formataddr.c: sight touch-up
+	uip/formatsbr.c: oops, bug in PUTD()
+	uip/{fmtcompile,formatsbr}.c: init mn structures in case of error.
+	    This is still buggy since: 1) the structure still doesn't get
+	    reset on errors, and 2) you can still dereference nulls
+	zotnet/tws/dtimep.lex: slight touch-up
+
+
+Thu Feb 20 19:55:20 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/mhlsbr.c: add formatsbr support
+	sbr/addrsbr.c: use better default matching in ismymbox
+	miscellany/mtrenv: update
+	support/general/mhl.*: update
+
+
+Thu Feb 20 22:57:33 1986  /mtr <mrose@nrtc-gremlin>
+	
+	MH 6.4 #1[UCI] (nrtc-gremlin) made available to Van Jacobson
+	    for inclusion in 4.3BSD UNIX
+
+
+Sun Feb 23 13:59:46 1986  /mtr <mrose@nrtc-gremlin>
+
+	sbr/m_gmsg.c: big bug fix from Terry West.  Thanks, Terry!
+	h/strings.h: System5 bcopy-equivalents from Doug Gwyn
+	zotnet/tws/tws.h: support #ifdef ATZ
+	conf/makefiles/uip: slight lint botch
+
+
+Mon Feb 24 17:14:39 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/inc.c: have -host/-file ask if file doesn't exist
+	uip/{packf,mshcmds}.c: ditto
+
+
+Tue Feb 25 08:08:43 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/burst.c: another realloc() fix from Terry West
+	sbr/vfgets.c: ditto
+	support/pop/popser.c: enhancmenets from Dave Cohrs
+	conf/doc/pop5.rf: document it
+	conf/mhconfig.c: support "debug" directive
+	makefiles/*: use it
+
+
+Tue Feb 25 09:47:09 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/{scan,mshcmds}.c: slight touch-ups
+	uip/mhlsbr.c: fix up SIGPIPE handling, again
+	support/general/scan.time: fix up for numeric timezone
+	uip/scansbr.c: re-support "encrypted"
+	uip/msh.c: add "exit" command for Dave Farber
+	miscellany/convert: new directory
+
+
+Tue Feb 25 17:45:28 1986  /mtr <mrose@nrtc-gremlin>
+
+	h/mshsbr.h, uip/msh*.c: add direct folder support for symmetry's
+	    sake, ugh!
+
+
+Wed Feb 26 21:05:46 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/sendsbr.c: better diagnostics when post fails
+
+
+Thu Feb 27 22:12:53 1986  /mtr <mrose@nrtc-gremlin>
+
+			     -- Van sends updates --
+	conf/makefiles/uip, h/fmtcompile.h,
+	sbr/{format{addr,sbr},fmtcompile,addrsbr}.c,
+	support/general/replcomps, uip/{repl,mhl,scan,whatnow}sbr.c
+
+
+Thu Feb 27 22:16:43 1986  /mtr <mrose@nrtc-gremlin>
+
+	sbr/formataddr.c: remove <strings.h>
+	sbr/addrsbr.c: Van doesn't like "user*" instead of "user" as the
+	    default is-my-mailbox for BERK.  Since he's the BERK-author, I'll
+	    assume he knows what he's doing...
+	support/general/replcomps: Use "tws", instead of "pretty" for
+	    in-reply-to:
+	uip/whatnowsbr.c: If -draft{folder,message} and -nodraftfolder are
+	    added as no-ops, make them "hidden" from -help output
+	uip/{{a,d}p,forw,mhlsbr}.c: update
+
+
+Mon Mar  3 10:18:40 1986  /mtr <mrose@nrtc-gremlin>
+
+		       -- Van sends fixes to my updates --
+	uip/mshcmds.c: not resetting scansbr for formatting
+	uip/scansbr.c: oops, typo!
+
+
+Mon Mar  3 16:53:19 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/sendsbr.c: oops, close() on an uninitialized variable! (thanks
+	    to Jim Koda)
+
+
+Tue Mar  4 08:15:17 1986  /mtr <mrose@nrtc-gremlin>
+
+		       -- Van sends fixes to my updates --
+	uip/mhlsbr.c: not resetting mhlsbr for formatting
+	zotnet/tws/dtimep.lex: not getting MIL-TZ's right
+
+
+Tue Mar  4 09:53:31 1986  /mtr <mrose@nrtc-gremlin>
+
+	papers/usenix/: change to realwork/
+
+
+Wed Mar  5 12:48:58 1986  /mtr <mrose@nrtc-gremlin>
+
+	dist/READ-ME: oops, forgot usenix name change
+	conf/makefiles/uip: hmm, interesting loader problem
+
+
+Thu Mar  6 13:36:26 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/addrsbr.c: yet another fix for ismymbox()
+	uip/replsbr.c: #ifdef ISI code to avoid duplicate replies (due to
+	    Jim Koda)
+
+
+Sun Mar  9 14:04:26 1986  /mtr <mrose@nrtc-gremlin>
+
+	conf/mh-gen.8: add a line about chown and sys5
+	sbr/m_convert.c: better BADRNG diagnostic
+	uip/mshcmds.c: oops, typo
+
+
+Sun Mar  9 14:06:54 1986  /mtr <mrose@nrtc-gremlin>
+
+	h/scansbr.h, sbr/fmtcompile.c: better versions from Van
+	support/general/{replcomps,scan.timely}: better versions from Van
+	    (snuck the %pretty instead of %tws in, eh Van?)
+	support/general/{digestcomps,mhl.forward,scan.{size,time}}: update
+
+
+Sun Mar  9 18:52:37 1986  /mtr <mrose@nrtc-gremlin>
+
+	h/scansbr.h, support/general/{digestcomps,mhl.forward,scan.*}: update
+
+
+Sun Mar  9 20:09:35 1986  /mtr <mrose@nrtc-gremlin>
+
+	zotnet/bboards/bboards.h: add BB_REMOTE flag for bbc
+	uip/bbc.c: support BB_REMOTE, under #ifdef MTR for the moment
+	uip/bbc.c: allow bb_aka (again?!?)
+
+
+Mon Mar 10 00:43:19 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/{msh,mshcmds}.c: packf hack, ala refile hack
+	uip/{post,rcvdist}.c, support/bboards/mmdfII/bboards/bb_wtmail.c:
+	    MMDF-II nameserver support from Steve Kille
+
+
+Mon Mar 10 10:17:29 1986  /mtr <mrose@nrtc-gremlin>
+
+	{sbr/formatsbr,uip/scansbr}.c: more optimizations from Van!
+	sbr/m_getfld.c: Van fixes problems due to losing vanilla-4.2 C
+	    optimizer!
+	sbr/m_getfld.c: slight touch-up by MTR
+	uip/bbc.c: remove #ifdef MTR bracketing, code works fine
+	uip/refile.c: slight touch-ups
+	sbr/m_getfld.c: on xxxERR returns, forgetting to zero value buffer
+
+
+Mon Mar 10 18:08:37 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/post.c: fix handling of (in)visible addresses
+	uip/rcvdist.c: re-do to use format facility
+	uip/{replsbr,forw}.c: touch-ups
+	conf/config/config.c, h/mh.h: new variable rcvdistcomps
+	conf/{makefiles/{uip,support/general},doc/mhook.rf}: update
+	sbr/m_getfld.c: bstring() support for non BSD42, SYS5 systems
+	conf/doc/ADMIN.rf: update
+
+
+Tue Mar 11 19:43:27 1986  /mtr <mrose@nrtc-gremlin>
+
+	h/dropsbr.h, uip/dropsbr.c: new routines mbx_read() and mbx_write()
+	uip/{msh,mshcmds}.c, support/pop/popser.c: use it
+	h/{addr,format,scan}sbr.h, sbr/addrsbr.c: slight touch-up
+	uip/inc.c: slight touch-up
+
+
+Sun Mar 16 15:20:27 1986  /mtr <mrose@nrtc-gremlin>
+
+	miscellany/mem: appointment diary support from Ken Yap
+
+
+Wed Mar 19 23:00:53 1986  /mtr <mrose@nrtc-gremlin>
+
+	support/pop/popser.c: one last fix for ENOENT mailboxes
+
+
+Wed Mar 19 23:12:54 1986  /mtr <mrose@nrtc-gremlin>
+
+			   -- Changes for MMDF-IIb --
+	uip/post.c, support/bboards/mmdfII/bboards/bb_wtmail.c: know about
+	    new mm_winit protocol and RP_NS/RP_DOK responses
+
+
+Thu Mar 20 23:05:10 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/mhlsbr.c: mhl enhancement from JLR permitting a prefix string
+	    for each line of the body (e.g, "component="    > ")
+
+
+Fri Mar 21 21:12:39 1986  /mtr <mrose@nrtc-gremlin>
+
+	conf/doc/{MH,mh-format}.rf: typos
+
+
+Sat Mar 22 11:51:45 1986  /mtr <mrose@nrtc-gremlin>
+
+			 -- Fixes from Phyllis Kantar --
+	uip/dropsbr.c: typo
+	conf/doc/{send,pick}.rf: typos
+	conf/makefiles/doc: forgot $(OPTIONSn) in $(MAN1) definition
+
+
+Sat Mar 22 18:24:35 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/mhmail.c: handle -body better
+
+
+Mon Mar 31 15:07:26 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/replsbr.c: handle bad addresses with better diagnostics
+
+
+Wed Apr  2 17:17:32 1986  /mtr <mrose@nrtc-gremlin>
+
+	sbr/addrsbr.c: slight typo in comment
+
+
+Sun Apr  6 19:22:52 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/inc.c: forgot to initialize some FILE*'s; dumps core on
+	    celerity
+
+
+Mon Apr  7 09:55:23 1986  /mtr <mrose@nrtc-gremlin>
+
+	mts/sendmail/smail.c: slight "client" check
+
+
+Wed Apr  9 12:04:56 1986  /mtr <mrose@nrtc-gremlin>
+
+			 -- Van fixes some more bugs --
+	sbr/m_getfld.c: not handling buffer boundary cases right
+	uip/replsbr.c: not adding "," correctly when concatenating an
+	    address string during message scan
+	sbr/formatsbr.c: mymbox test dumped core if address parse failed
+	h/{fmtcompile,formatsbr}.h, sbr/{fmtcompile,formatsbr}.c: more
+	    enhancements
+
+
+Wed Apr  9 12:36:58 1986  /mtr <mrose@nrtc-gremlin>
+
+		    -- MTR actually gets to fix something! --
+	sbr/m_getfld.c: messages with an empty body caused inc to
+	    prematurely think the maildrop had reached EOF.  Believe it
+	    or not, the mhmail fix last month exercised this!
+
+
+Wed Apr  9 22:08:37 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/vmh.c: output non-standard control characters in carat format
+
+
+Thu Apr 10 02:26:52 1986  /mtr <mrose@nrtc-gremlin>
+
+	Makefile: touch-up "make distribution"
+	conf/examples/nrtc-*-mtr: remove
+	conf/makefiles/uip: touch-up
+	conf/doc/MH.rf: add TMA stuff, conditionally
+
+
+Thu Apr 10 03:47:48 1986  /mtr <mrose@nrtc-gremlin>
+
+	sbr/m_getfld.c: Van fixes Marshall's fix
+
+
+Thu Apr 10 10:42:25 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/scansbr.c: recognize the 822 "Encrypted:" header instead of
+	    doing a uprf() on the body
+	uip/{scan,mshcmds}.c: recognize SCNENC return from scan ()
+
+
+Thu Apr 10 15:06:59 1986  /mtr <mrose@nrtc-gremlin>
+
+	conf/config/bboards.*: mail reports to PostMaster
+
+
+Sat Apr 12 16:32:21 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/post.c: try to keep fcc:s under MH-directory so links are
+	    maintained
+
+
+Mon Apr 14 22:56:46 1986  /mtr <mrose@nrtc-gremlin>
+
+	support/bboards/bbexp.c: not ending msh correctly, msh tried
+	    to update the maildrop even though it was already locked
+	    by bbexp
+
+
+
+Mon Apr 14 23:52:03 1986  /mtr <mrose@nrtc-gremlin>
+
+	sbr/m_getfld.c: locc() not range checking on cnt
+
+
+Thu Apr 17 13:25:20 1986  /mtr <mrose@nrtc-gremlin>
+
+	sbr/addrsbr.c: fix from Terry West, more alternate-mailbox misery
+
+
+Thu Apr 17 20:51:53 1986  /mtr <mrose@nrtc-gremlin>
+
+	zotnet/mts/lock.c: add some more #ifdefs to support stand-alone
+	    locking library
+	conf/examples/udel*: update
+	papers/myths/: remove
+	conf/makefile/papers: update
+
+
+Mon Apr 21 10:22:09 1986  /mtr <mrose@nrtc-gremlin>
+
+	zotnet/mf/mf.c: sanity check in getadrx() on string to parse
+
+
+Mon Apr 21 17:31:43 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/{inc,post}.c: slight mods for TMA mods
+	conf/doc/mh-chart.rf: ditto
+
+
+Thu Apr 24 00:19:35 1986  /mtr <mrose@nrtc-gremlin>
+
+	conf/doc/mh-chart.rf: slight mods for TMA mods
+
+
+Thu Apr 24 10:34:06 1986  /mtr <mrose@nrtc-gremlin>
+
+	zotnet/mts/lock.c: lint touch-up
+	support/pop/popd.c: ditto
+
+
+Thu Apr 24 19:37:09 1986  /mtr <mrose@nrtc-gremlin>
+
+	conf/doc/ADMIN.rf: typos
+
+
+Thu Apr 24 20:13:28 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/msgchk.c: print out last read date
+	conf/makefiles/uip: add tws dependency
+
+
+Thu Apr 24 23:53:57 1986  /mtr <mrose@nrtc-gremlin>
+
+			      -- From Craig Partridge --
+	support/bboards/mmdfII/bboards/*: bug fixes for MMDF-IIb
+	conf/mh-gen.8: mention that MMDF-IIb has the BBoards distribution
+
+
+Fri Apr 25 00:01:50 1986  /mtr <mrose@nrtc-gremlin>
+
+	conf/ADMIN.rf: slight touch-up
+
+
+Fri Apr 25 10:47:19 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/trmsbr.c: use stdout (not stderr) for termcap checking
+
+
+Fri Apr 25 13:39:55 1986  /mtr <mrose@nrtc-gremlin>
+
+			   -- From Craig Partridge --
+	support/bboards/mmdfII/bboards/getbbent.c: bad field in BBoards file
+	    causes hang, note it and skip!
+
+
+Sun Apr 27 17:23:56 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/scansbr.c: recognition of 822 Encrypted: header a bit botched
+	h/scansbr.h, support/general/scan.*: support encrypted
+
+
+Mon Apr 28 21:00:21 1986  /mtr <mrose@nrtc-gremlin>
+
+			-- Yet Another Fix from Terry --
+	uip/dropsbr.c: another typo
+
+
+Tue Apr 29 20:17:11 1986  /mtr <mrose@nrtc-gremlin>
+
+	conf/doc/mhook.rf: extra tip with SendMail and slocal
+
+
+Thu May  1 15:30:07 1986  /mtr <mrose@nrtc-gremlin>
+
+			   -- From Craig Partridge --
+	support/pop/mmdfII/pop/READ-ME: fixes
+
+
+Fri May  2 16:35:11 1986  /mtr <mrose@nrtc-gremlin>
+
+			  -- More Bug Fixes from Van --
+	uip/scansbr.c: check return from fclose()
+	uip/inc.c: avoid locking/stat race condition
+	sbr/m_sync.c: lock signals out during update of sequences
+
+
+Fri May  2 17:02:01 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/show.c: WHATNOW botch fixed by Jim Valerio
+
+
+Sat May  3 01:37:15 1986  /mtr <mrose@nrtc-gremlin>
+
+	sbr/{m_{sync,update},pidwait}.c, uip/{bbc,sendsbr,vmh}: inspired
+	    by Van's 4.2BSD signal optimizations
+
+
+Sat May  3 02:49:29 1986  /mtr <mrose@nrtc-gremlin>
+
+	zotnet/tws/{tws.h,dtime.c,dtimep.lex}: fixes for DST
+	conf/makefiles/zotnet/tws: add -n to lex's invocation
+
+
+Sun May  4 13:28:23 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/msgchk.c: change the "last read" message to use alpha-timezones
+
+
+Sun May  4 14:18:15 1986  /mtr <mrose@nrtc-gremlin>
+
+	support/general/replcomps: use %tws instead of %pretty
+	support/general/mhl.*: streamline slight
+
+
+Sun May  4 16:10:36 1986  /mtr <mrose@nrtc-gremlin>
+
+	conf/doc/mh.rf: forgot about TMA stuff
+	conf/makefiles/doc: forgot rcvstore
+
+
+Sun May  4 17:49:43 1986  /mtr <mrose@nrtc-gremlin>
+
+	sbr/pidwait.c, uip/{bbc,sendsbr,vmh}.c: back off signal handling
+	    modifications
+
+Sun May  4 18:08:47 1986  /mtr <mrose@nrtc-gremlin>
+
+	MH 6.5 #1[UCI] (nrtc-gremlin) made available to Van Jacobson
+	    for inclusion in 4.3BSD UNIX
+
+
+Mon May  5 13:32:37 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/trmsbr.c: try Van's version for a while
+	miscellany/patch: updates from Van
+
+
+Mon May  5 16:07:12 1986  /mtr <mrose@nrtc-gremlin>
+
+	support/bboards/mmdfII/bboards/bb_wtmail.c: patch for IDIOTIC change
+	    in qu_rtxt()
+
+
+Wed May  7 13:16:45 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/post.c: modification for fcc:s broke stand-alone behavior for
+	    daemons, etc.; use old method as a fall-back
+	sbr/m_foil.c: also improve modification a bit
+	support/pop/smtpd.c: dead weight
+
+
+Thu May  8 17:50:22 1986  /mtr <mrose@nrtc-gremlin>
+
+	support/bboards/bbexp.c: set the mode on the archive file if
+	    creating it, since m_gmprot() isn't a good default for this
+	    application
+
+
+Sun May 11 12:40:34 1986  /mtr <mrose@nrtc-gremlin>
+
+	miscellany/scripts/READ-ME: add amhmail description
+	miscellany/scripts/amhmail.sh: new script
+
+
+Mon May 12 09:12:39 1986  /mtr <mrose@nrtc-gremlin>
+
+	sbr/m_getfld.c: new version of matchc() from Van that doesn't
+	    give the SUN indigestion
+
+
+Tue May 13 07:59:36 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/replsbr.c: some fixes from Van
+
+
+Tue May 13 15:14:07 1986  /mtr <mrose@nrtc-gremlin>
+
+			   -- Some Fixes from Hokey --
+	uip/vmh.c: a few more SYS5 dependencies
+	zotnet/tws/dtimep.lex: added #include strings.h
+	conf/makefiles/zotnet/tws: added dependency for above
+	uip/post.c: pre-emptive reference of discard to help SYS5 loader
+	conf/examples/plus5: update
+	miscellany/less/Makefile: add SHELL=/bin/sh
+	sbr/m_getfld.c: slight redeclaration for SYS5
+
+
+Tue May 13 17:44:47 1986  /mtr <mrose@nrtc-gremlin>
+
+	sbr/{fmtcompile,formatsbr}.c, support/pop/popwrd.c,
+	uip/{ap,inc,rcvtty,post,spost,whatnowsbr}.c:
+	    add some lint stuff
+	conf/makefiles/uip: better lint support for TMA
+
+
+Thu May 15 16:36:19 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/{inc,msgchk,post,send}.c: improve #define-dependent
+	    switches declarations
+
+
+Thu May 15 17:09:34 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/msgchk.c, conf/doc/{mh-chart,msgchk}.rf: add -[no]date,
+	    and -[no]notify type switches
+
+
+Tue May 20 19:09:15 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/scan.c: free'ing a static, tsk
+
+
+Tue May 20 22:51:13 1986  /mtr <mrose@nrtc-gremlin>
+
+			     -- From Steve Smith --
+	conf/examples/ridge: config file
+	sbr/{m_gmsg,pwd}.c: although SYS5, uses <ndir.h>
+	uip/show.c: not null-terminating argvector
+	uip/{bbc,vmh}.c: although SYS5, has SIGTSTP
+	uip/sbboards.c: pre-emptive reference of discard to help SYS5 loader
+	conf/{mh-gen.8,mhconfig.c}: add "oldload none"
+
+
+Wed May 21 10:10:21 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/{rcvdist,replsbr}.c: malloc/free fixes from Steve Smith
+
+
+Wed May 21 20:51:47 1986  /mtr <mrose@nrtc-gremlin>
+
+	conf/{mh-gen.8,doc/{ADMIN,MH}.rf, papers/*/*, COVER-LETTER: update
+	    mail addresses
+
+
+Thu May 22 08:05:03 1986  /mtr <mrose@nrtc-gremlin>
+
+			-- Two New Documents from UCI --
+	conf/makefiles/{papers,dist}: update
+	dist/READ-ME: remove
+	conf/doc/MH.rf: update
+	papers/beginners: new paper "MH for Beginners"
+	papers/mh4mm: new paper "MH for MM Users"
+
+
+Thu May 22 08:13:17 1986  /mtr <mrose@nrtc-gremlin>
+
+	conf/mh-gen.rf: update
+
+
+Thu May 22 15:08:06 1986  /mtr <mrose@nrtc-gremlin>
+
+	support/general/replcomps: typo
+
+
+Tue May 27 19:35:38 1986  /mtr <mrose@nrtc-gremlin>
+
+	support/pop/popd.c: support for 4.3BSD syslog
+
+
+Wed May 28 12:44:21 1986  /mtr <mrose@nrtc-gremlin>
+
+	sbr/fmtcompile.c: allow literal '%'s in format files
+
+
+Wed May 28 16:56:40 1986  /mtr <mrose@nrtc-gremlin>
+
+	conf/examples/nrtc-gremlin: add -125 switch for GHS compiler
+	sbr/getans.c,uip/{mhlsbr,prompter,rcvtty,sendsbr}.c: a bit more
+	    careful with the setjmp()
+
+
+Thu May 29 23:42:54 1986  /mtr <mrose@nrtc-gremlin>
+
+	support/general/scan.mailx: mailx scan format from Bob Simpson of
+	    plus5
+	support/general/mhl.body: format from mtrenv
+
+
+Sun Jun  1 23:07:24 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/trmsbr.c: add sc_hardcopy()
+	uip/mhlsbr.c: use it so we don't fork a more on hardcopy ttys
+	conf/doc/mhl.rf: document it
+
+
+Fri Jun  6 10:56:40 1986  /mtr <mrose@nrtc-gremlin>
+
+	miscellany/less/screen.c: handle HP terminals better
+
+Tue 10 Jun 86 15:34	John Romine	<jromine@nrtc-gremlin>
+
+	h/scansbr.h: eliminate superfluous space from default format
+	    string
+
+
+Fri 13 Jun 86 10:29	John Romine	<jromine@nrtc-gremlin>
+
+	h/scansbr.h, support/general/scan.{timely,time,size}: add ">>" at
+	    end of body in format string
+
+
+Fri Jun 13 15:28:10 1986  /mtr <mrose@nrtc-gremlin>
+
+	sbr/addrsbr.c: another #ifdef BERK fix for the SUN
+
+
+Fri Jun 13 20:08:36 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/aliasbr.c: not testing for relative names correctly
+
+
+Sun Jun 15 14:20:10 1986  /mtr <mrose@nrtc-gremlin>
+
+	h/scansbr.h, support/general/scan.{timely,time,size}: remove JLR's
+	    fix since it doesn't work right
+
+
+Mon Jun 16 19:56:09 1986  /mtr <mrose@nrtc-gremlin>
+
+	sbr/{m_gmsg,pwd}.c, uip/{bbl,conflict,folder,rmf}.c: add NDIR
+	    compile-time option if -lndir include file is called <ndir.h>
+	    instead of <dir.h> (non BSD systems)
+	h/local.h: new file to make this easier
+
+
+Tue Jun 17 10:44:06 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/trmsbr.c: no TIOCGWINSZ working on 4.2BSD ULTRIX!
+
+
+Tue Jun 17 14:21:08 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/scan.c: forgot to make -header always force ATZ behavior
+
+
+Tue Jun 17 15:23:27 1986  /mtr <mrose@nrtc-gremlin>
+
+	h/mh.h: add vfork for hpux
+
+
+Wed Jun 18 11:05:40 1986  /mtr <mrose@nrtc-gremlin>
+
+	support/bboards/bbexp.c: create archives in BBMODE format, private
+	    bboards should have archives created by the BBoards user (just
+	    like the standard file)
+
+
+Wed Jun 18 19:57:09 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/vmh.c: sanitize for 8-bit whacko characters
+
+
+Thu Jun 19 19:51:43 1986  /mtr <mrose@nrtc-gremlin>
+
+	zotnet/tws/dtimep.lex: fix spelling for august
+
+
+Mon Jun 23 20:45:35 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/vmh.c: Bob gives us another sys5 fix
+
+
+Sun Jun 29 21:11:30 1986  /mtr <mrose@nrtc-gremlin>
+
+	sbr/addrsbr.c: yet another fix for the SUN (yaffts)
+	conf/mhconfig.c: if both mts/smtp and options BERK, turn off
+	    SMTP
+
+
+Tue Jul  8 10:50:39 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/scansbr.c: split-up a statement for the RT compiler
+	conf/mh-gen.8: add some stuff on POP
+	conf/doc/{ADMIN,popaka}.rf: ditto
+
+
+Fri Jul 11 10:50:31 1986  /mtr <mrose@nrtc-gremlin>
+
+	MH 6.5 official, out of beta, released for UCI distribution
+
+
+Tue Jul 15 20:26:05 1986  /mtr <mrose@nrtc-gremlin>
+
+	papers/{bboards/bboards,tutorial/tutorial}.tex: botched MTR's
+	    address
+
+
+Sun Jul 27 11:52:37 1986  /mtr <mrose@nrtc-gremlin>
+
+	conf/doc/show.rf: typos
+
+
+Fri Aug  8 12:57:35 1986  /mtr (agent: Marshall Rose) <mother@killer-rat>
+
+	conf/config/config.c, h/mh.h, sbr/m_readefs.c, uip/mhlsbr.c:
+	    add support for "faceproc"
+
+
+Mon Aug 11 10:10:33 1986  /mtr (agent: Marshall Rose) <mother@killer-rat>
+
+	uip/mhlsbr.c: choose default face from from: line
+
+
+Tue Aug 12 10:53:47 1986  /mtr (agent: Marshall Rose) <mother@killer-rat>
+
+	uip/mhlsbr.c: finally stabilize it
+
+
+Tue Aug 12 10:54:47 1986  /mtr (agent: Marshall Rose) <mother@killer-rat>
+
+	support/pop/popser.c: small fix from Dave Cohrs
+
+
+Thu Aug 14 22:25:23 1986  /mtr <mrose@nrtc-gremlin>
+
+	support/general/replcomps: add return-path to To: list
+
+
+Fri Aug 15 13:58:25 1986  /mtr (agent: Marshall Rose) <mother@killer-rat>
+
+	uip/vmh.c: slight clean-up
+
+
+Fri Aug 15 23:01:06 1986  /mtr <mrose@nrtc-gremlin>
+
+	sbr/advertise.c: slight touch-up
+
+
+Mon Aug 18 10:38:34 1986  /mtr (agent: Marshall Rose) <mother@killer-rat>
+
+	uip/wmh.c: new program--Windowing MH for Integrated Solutions
+	    Graphics Workstations; not standardly installed for now since
+	    requires special load libraries
+	conf/doc/wmh.rf: man page
+	conf/makefiles/uip: support wmh
+
+
+Wed Aug 20 14:16:12 1986  /mtr (agent: Marshall Rose) <mother@killer-rat>
+
+	conf/config/MakeBBoards: smarter rule
+
+
+Wed Aug 20 17:23:39 1986  /mtr (agent: Marshall Rose) <mother@killer-rat>
+
+	uip/mhlsbr.c: a bit less demanding on errors when processing the
+	    face
+
+
+Thu Aug 28 19:39:47 1986  /mtr (agent: Marshall Rose) <mother@killer-rat>
+
+	uip/send.c: handle dist in a read-only folder
+	support/pop/popser.c: anonymous fix for DPOP/BPOP
+
+
+
+Fri Aug 29 09:08:15 1986  /mtr (agent: Marshall Rose) <mother@killer-rat>
+
+	uip/wmh.c: for pTTY() make original window the top one
+
+
+Tue Sep  2 15:27:34 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/{bbc,burst,popsbr}.c: ULTRIX loses on ferror() vs. feof()
+	sbr/vfgets.c: ditto
+
+
+
+Fri Sep  5 09:08:17 1986  /mtr (agent: Marshall Rose) <mother@killer-rat>
+
+	mts/sendmail/smail.c: define discard() as void
+
+
+Fri Sep  5 09:40:35 1986  /mtr (agent: Marshall Rose) <mother@killer-rat>
+
+	uip/msh.c: add hidden "advance" command
+	uip/wmh.c: use it
+
+
+Fri Sep  5 14:02:36 1986  /mtr (agent: Marshall Rose) <mother@killer-rat>
+
+	zotnet/bboards/bboards.h: add BB_SEEN to fix list-handling bug in bbc
+	uip/bbc.c: use it
+
+
+Mon Sep  8 12:47:58 1986  /mtr (agent: Marshall Rose) <mother@killer-rat>
+
+	conf/config/MakeBBoards: smarter
+
+
+Thu Oct  2 12:37:57 1986  /mtr <mrose@nrtc-gremlin>
+
+	support/pop/popd.c: fixes for 4.3BSD set setsockopt
+
+
+Mon Oct  6 12:07:02 1986  /mtr (agent: Marshall Rose) <mother@killer-rat>
+
+	conf/examples/encore: config file for Encore Multimax, from Mike
+	    Iglesias of UCI
+
+
+Wed Oct  8 15:59:05 1986  /mtr (agent: Marshall Rose) <mother@killer-rat>
+
+	uip/vmh.c: more SYS5 mods from Bob Desinger
+
+
+Thu Oct  9 12:52:41 1986  /mtr (agent: Marshall Rose) <mother@killer-rat>
+
+	h/mh.h: make ruserpass nonsense based on NFS not SUN
+
+
+Thu Oct 30 12:57:52 1986  /mtr (agent: Marshall Rose) <mother@killer-rat>
+
+	sbr/formataddr.c, uip/replsbr.c: another realloc() bug found by
+	    Terry West
+
+
+Thu Oct 30 13:03:02 1986  /mtr (agent: Marshall Rose) <mother@killer-rat>
+
+	uip/{rcvtty,ttyw}.c: if no BSD42, turn off TTYD
+
+
+Mon Nov  3 14:11:48 1986  /mtr (agent: Marshall Rose) <mother@killer-rat>
+
+	uip/msgchk.c: another SUN fix
+
+
+Mon Nov  3 15:21:38 1986  /mtr (agent: Marshall Rose) <mother@killer-rat>
+
+	sbr/m_sync.c: fix for sequent machines
+
+
+Mon Nov 10 08:12:16 1986  /mtr <mrose@nrtc-gremlin>
+
+			-- Stuff from Jef Poskanzer --
+	uip/forw.c: add -[no]dashmunging, a hidden option
+	uip/mhlsbr.c: add -[no]dashmunging, a hidden option
+	{conf/doc/mhl.rf,uip/mhlsbr.c}: add [no]split variable
+
+
+Mon Nov 10 16:57:41 1986  /mtr (agent: Marshall Rose) <mother@killer-rat>
+
+			    -- More stuff from Jef --
+	zotnet/tws/dtimep.lex: default timezone to localone one
+
+
+Fri Nov 14 17:25:23 1986  /mtr <mrose@nrtc-gremlin>
+
+	conf/doc/mhook: typo found by Phyl
+
+
+Fri Nov 21 14:33:28 1986  /mtr (agent: Marshall Rose) <mother@killer-rat>
+
+	sbr/smatch.c: deref null bug
+
+
+Sat Nov 22 20:36:31 1986  /mtr <mrose@nrtc-gremlin>
+
+	uip/bbc.c: set up time-bomb after HUP
+
+
+Tue Dec  2 13:57:41 1986  /mtr (agent: Marshall Rose) <mother@killer-rat>
+
+	support/bboards/bbtar.c: fix for sequent machines
+
+
+Wed Dec  3 22:03:58 1986  /mtr <mrose@nrtc-gremlin>
+
+	support/pop/popd.c: minor fix
+
+
+Mon Dec 15 11:11:32 1986  /mtr (agent: Marshall Rose) <mother@killer-rat>
+
+	uip/post.c: patch for MMDF-IIb submit
+
+
+Mon Dec 22 12:32:45 1986  /mtr (agent: Marshall Rose) <mother@killer-rat>
+
+			       -- From Stanford --
+	h/dropsbr.h, uip/dropsbr.c, support/pop/popser.c: support LAST
+		command in POP service
+	uip/{inc,mshcmds}.c: ditto
+
+
+Fri Jan  2 18:42:55 1987  /mtr <mrose@nrtc-gremlin>
+
+	uip/dropsbr.c: fixes
+	uip/msh.c, support/pop/popser.c: ditto
+
+
+Fri Jan  2 18:43:09 1987  /mtr <mrose@nrtc-gremlin>
+
+	zotnet/tws/dtimep.lex: ctime w/o TZ hack
+
+
+Fri Jan  2 23:41:19 1987  /mtr <mrose@nrtc-gremlin>
+
+	uip/rcvdist.c: touch-ups to sync with replsbr.c
+	uip/scansbr.c: trash trailing whitespace in header components for
+	    formating
+
+
+Sat Jan  3 13:11:22 1987  /mtr <mrose@nrtc-gremlin>
+
+	conf/config/mts.c, mts/sendmail/hosts.c: BIND fix-up
+
+
+Sat Jan  3 15:03:00 1987  /mtr <mrose@nrtc-gremlin>
+
+	h/formatsbr.h: parenthesize better, use case-sensitive in
+	    bucket search since hashing is case-sensitive
+	uip/{rcvdist,replsbr}.c: CT_ADDR hacks
+
+
+Sun Jan  4 11:16:54 1987  /mtr <mrose@nrtc-gremlin>
+
+	uip/mhlsbr.c: "extras" hack for Elz
