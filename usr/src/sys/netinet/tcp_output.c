@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_output.c	6.10 (Berkeley) %G%
+ *	@(#)tcp_output.c	6.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -101,6 +101,8 @@ again:
 	 * and can send all data, a maximum segment,
 	 * at least a maximum default-size segment do it,
 	 * or are forced, do it; otherwise don't bother.
+	 * If peer's buffer is tiny, then send
+	 * when window is at least half open.
 	 * If retransmitting (possibly after persist timer forced us
 	 * to send into a small window), then must resend.
 	 */
@@ -110,6 +112,8 @@ again:
 		if (len >= TCP_MSS)	/* a lot */
 			goto send;
 		if (tp->t_force)
+			goto send;
+		if (len >= tp->max_sndwnd / 2)
 			goto send;
 		if (SEQ_LT(tp->snd_nxt, tp->snd_max))
 			goto send;

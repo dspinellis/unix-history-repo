@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_input.c	6.15 (Berkeley) %G%
+ *	@(#)tcp_input.c	6.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -731,6 +731,8 @@ step6:
 		tp->snd_wnd = ti->ti_win;
 		tp->snd_wl1 = ti->ti_seq;
 		tp->snd_wl2 = ti->ti_ack;
+		if (tp->snd_wnd > tp->max_sndwnd)
+			tp->max_sndwnd = tp->snd_wnd;
 	}
 
 	/*
@@ -792,6 +794,14 @@ badurp:							/* XXX */
 			tp->t_flags |= TF_DELACK;
 		else
 			tp->t_flags |= TF_ACKNOW;
+		/*
+		 * Note the amount of data that peer has sent into
+		 * our window, in order to estimate the sender's
+		 * buffer size.
+		 */
+		len = so->so_rcv.sb_hiwat - (tp->rcv_nxt - tp->rcv_adv);
+		if (len > tp->max_rcvd)
+			tp->max_rcvd = len;
 	} else {
 		m_freem(m);
 		tiflags &= ~TH_FIN;

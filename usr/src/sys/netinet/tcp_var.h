@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_var.h	6.4 (Berkeley) %G%
+ *	@(#)tcp_var.h	6.5 (Berkeley) %G%
  */
 
 /*
@@ -63,6 +63,7 @@ struct tcpcb {
 	u_short max_rcvd;		/* most peer has sent into window */
 	tcp_seq	t_rtseq;		/* sequence number being timed */
 	float	t_srtt;			/* smoothed round-trip time */
+	u_short	max_sndwnd;		/* largest window peer has offered */
 /* out-of-band data */
 	char	t_oobflags;		/* have some */
 	char	t_iobc;			/* input character */
