@@ -1,4 +1,4 @@
-/*	proc.h	4.23	83/06/02	*/
+/*	proc.h	4.24	83/07/01	*/
 
 /*
  * One structure allocated per active
@@ -54,9 +54,6 @@ struct	proc {
 	struct	proc *p_ysptr;	/* pointer to younger siblings */
 	struct	itimerval p_realtimer;
 	struct	quota *p_quota;	/* quotas for this process */
-#ifdef sun
-	struct	context *p_ctx;	/* pointer to current context */
-#endif
 };
 
 #define	PIDHSZ		63

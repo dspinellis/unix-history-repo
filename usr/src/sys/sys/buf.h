@@ -1,4 +1,4 @@
-/*	buf.h	4.21	83/05/18	*/
+/*	buf.h	4.22	83/07/01	*/
 
 /*
  * The header for buffers in the buffer pool and otherwise used
@@ -58,11 +58,6 @@ struct buf
 	struct  proc *b_proc;		/* proc doing physical or swap I/O */
 	int	(*b_iodone)();		/* function called by iodone */
 	int	b_pfcent;		/* center page when swapping cluster */
-#ifdef sun
-	caddr_t	b_saddr;		/* saved address */
-	short	b_kmx;			/* saved kernelmap index */
-	short	b_npte;			/* number of pte's mapped */
-#endif
 };
 
 #define	BQUEUES		4		/* number of free buffer queues */
@@ -182,22 +177,3 @@ unsigned minphys();
 	blkclr(bp->b_un.b_addr, bp->b_bcount); \
 	bp->b_resid = 0; \
 }
-
-#ifdef sun
-/*
- * Declarations for buffer space rmaps
- */
-struct map *buffermap;
-#define BUFMAPSIZE	256
-
-/*
- * "Average" size of a buffer
- * nbuf*AVGBSIZE is total amount of buffer data
- */
-#define	AVGBSIZE	2048
-
-/*
- * Unit of buffer space allocation
- */
-#define	BUFALLOCSIZE	1024
-#endif

@@ -1,4 +1,4 @@
-/*	user.h	4.29	83/06/20	*/
+/*	user.h	4.30	83/07/01	*/
 
 #ifdef KERNEL
 #include "../machine/pcb.h"
@@ -8,8 +8,8 @@
 #else
 #include <machine/pcb.h>
 #include <sys/dmap.h>
-#include <time.h>
-#include <resource.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 #endif
 
 /*
@@ -132,9 +132,6 @@ struct	user {
 		unsigned pr_off;	/* pc offset */
 		unsigned pr_scale;	/* pc scaling */
 	} u_prof;
-#ifdef sun
-	int	u_lofault;		/* catch faults in locore.s */
-#endif
 	int	u_stack[1];
 };
 
