@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)startup.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)startup.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -60,6 +60,9 @@ ifinit()
                         continue;
                 }
 		ifs.int_flags = ifreq.ifr_flags | IFF_INTERFACE;
+		/* no one cares about software loopback interfaces */
+		if (ifs.int_flags & IFF_LOOPBACK)
+			continue;
 		if ((ifs.int_flags & IFF_UP) == 0 ||
 		    ifr->ifr_addr.sa_family == AF_UNSPEC) {
 			lookforinterfaces = 1;
@@ -85,6 +88,10 @@ ifinit()
                         }
 			ifs.int_broadaddr = ifreq.ifr_broadaddr;
 		}
+		if (ioctl(s, SIOCGIFMETRIC, (char *)&ifreq) < 0)
+			syslog(LOG_ERR, "ioctl (get metric)");
+		else
+			ifs.int_metric = ifreq.ifr_metric;
 		if (ioctl(s, SIOCGIFNETMASK, (char *)&ifreq) < 0) {
 			syslog(LOG_ERR, "ioctl (get netmask)");
 			continue;
@@ -101,9 +108,6 @@ ifinit()
 			ifs.int_netmask = IN_CLASSC_NET;
 		ifs.int_net = i & ifs.int_netmask;
 		ifs.int_subnet = i & ifs.int_subnetmask;
-		/* no one cares about software loopback interfaces */
-		if (ifs.int_net == LOOPBACKNET)
-			continue;
 		ifp = (struct interface *)malloc(sizeof (struct interface));
 		if (ifp == 0) {
 			printf("routed: out of memory\n");
@@ -133,7 +137,6 @@ ifinit()
 			goto bad;		/* ??? */
 		}
 		strcpy(ifp->int_name, ifr->ifr_name);
-		ifp->int_metric = 0;
 		ifp->int_next = ifnet;
 		ifnet = ifp;
 		traceinit(ifp);
