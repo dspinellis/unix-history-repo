@@ -1,6 +1,6 @@
 # include	"../hdr/defines.h"
 
-SCCSID(@(#)pf_ab	2.1.1.1);
+SCCSID(@(#)pf_ab.c	1.2	%G%);
 
 pf_ab(s,pp,all)
 char *s;
@@ -26,7 +26,7 @@ int all;
 	++p;
 	i = index(p," ");
 	pp->pf_user[0] = 0;
-	if (((unsigned)i) < 8) {
+	if (((unsigned)i) < SZLNAM) {
 		move(p,pp->pf_user,i);
 		pp->pf_user[i] = 0;
 	}
