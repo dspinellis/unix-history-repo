@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vnops.c	7.95 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.96 (Berkeley) %G%
  */
 
 /*
@@ -206,8 +206,7 @@ extern char nfsiobuf[MAXPHYS+NBPG];
 struct proc *nfs_iodwant[NFS_MAXASYNCDAEMON];
 int nfs_numasync = 0;
 /* Queue head for nfsiod's */
-struct buf *nfs_bqueuehead;
-struct buf **nfs_bqueuetail = &nfs_bqueuehead;
+struct queue_entry nfs_bufq;
 #define	DIRHDSIZ	(sizeof (struct dirent) - (MAXNAMLEN + 1))
 
 /*
@@ -1988,10 +1987,7 @@ nfs_strategy(ap)
 		return (nfs_doio(bp));
 	for (i = 0; i < NFS_MAXASYNCDAEMON; i++) {
 		if (nfs_iodwant[i]) {
-			bp->b_actf = NULL;
-			bp->b_actb = nfs_bqueuetail;
-			*nfs_bqueuetail = bp;
-			nfs_bqueuetail = &bp->b_actf;
+			queue_enter_tail(&nfs_bufq, bp, struct buf *, b_freelist);
 			fnd++;
 			wakeup((caddr_t)&nfs_iodwant[i]);
 			break;
@@ -2161,8 +2157,8 @@ nfs_fsync(ap)
 
 loop:
 	s = splbio();
-	for (bp = vp->v_dirtyblkhd; bp; bp = nbp) {
-		nbp = bp->b_blockf;
+	for (bp = vp->v_dirtyblkhd.le_next; bp; bp = nbp) {
+		nbp = bp->b_vnbufs.qe_next;
 		if ((bp->b_flags & B_BUSY))
 			continue;
 		if ((bp->b_flags & B_DELWRI) == 0)
@@ -2179,7 +2175,7 @@ loop:
 			sleep((caddr_t)&vp->v_numoutput, PRIBIO + 1);
 		}
 #ifdef DIAGNOSTIC
-		if (vp->v_dirtyblkhd) {
+		if (vp->v_dirtyblkhd.le_next) {
 			vprint("nfs_fsync: dirty", vp);
 			goto loop;
 		}
