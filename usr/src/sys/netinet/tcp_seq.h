@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_seq.h	7.4 (Berkeley) %G%
+ *	@(#)tcp_seq.h	7.5 (Berkeley) %G%
  */
 
 /*
