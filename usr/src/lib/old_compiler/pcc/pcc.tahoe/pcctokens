@@ -1,0 +1,111 @@
+%term	TOKENS	0
+%term	ERROR	1	/* an error node */
+%term	FREE	2	/* an unused node */
+%term	STRING	3	/* a string constant */
+%term	ICON	4	/* an integer constant */
+%term	FCON	5	/* a floating point constant */
+%term	DCON	6	/* a double precision f.p. constant */
+%term	NAME	7	/* an identifier */
+%term	REG		8	/* a register */
+%term	OREG	9	/* register and offset */
+%term	CCODES	10	/* condition codes */
+%term	FLD		11	/* a bit field */
+%term	PLUS	12	/* + */
+%term	PLUSEQ	13	/* += */
+%term	UPLUS	14	/* unary + (for completeness) */
+%term	MINUS	15	/* - */
+%term	MINUSEQ	16	/* -= */
+%term	UMINUS	17	/* unary - */
+%term	MUL		18	/* * */
+%term	MULEQ	19	/* *= */
+%term	DIV		21	/* / */
+%term	DIVEQ	22	/* /= */
+%term	MOD		23	/* % */
+%term	MODEQ	24	/* %= */
+%term	INCR	25	/* ++ */
+%term	DECR	26	/* -- */
+%term	ASSIGN	27	/* = (these last 3 are stretching it) */
+%term	AND		28	/* & */
+%term	ANDEQ	29	/* &= */
+%term	OR		31	/* | */
+%term	OREQ	32	/* |= */
+%term	ER		33	/* ^ */
+%term	EREQ	34	/* ^= */
+%term	LS		35	/* << */
+%term	LSEQ	36	/* <<= */
+%term	RS		37	/* >> */
+%term	RSEQ	38	/* >>= */
+%term	COMPL	39	/* ~ */
+%term	EQ		40	/* == */
+%term	NE		41	/* != */
+%term	LE		42	/* <= */
+%term	LT		43	/* < */
+%term	GE		44	/* >= */
+%term	GT		45	/* > */
+%term	ULE		46	/* unsigned <= */
+%term	ULT		47	/* unsigned < */
+%term	UGE		48	/* unsigned >= */
+%term	UGT		49	/* unsigned > */
+%term	QUEST	50	/* ? (for conditional expressions) */
+%term	COLON	51	/* : (for conditional expressions) */
+%term	ANDAND	52	/* && */
+%term	OROR	53	/* || */
+%term	NOT		54	/* ! */
+%term	CALL	55	/* call by value */
+%term	UCALL	57	/* call with no arguments */
+%term	FORTCALL	58	/* call by reference? */
+%term	UFORTCALL	60	/* ??? */
+%term	INLINE	61	/* inline function */
+%term	UINLINE	63	/* inline with no arguments */
+%term	DEREF	20	/* * */
+%term	ADDROF	30	/* & */
+%term	DOT		64	/* . */
+%term	STREF	65	/* -> */
+%term	STASG	66	/* structure assignment */
+%term	STARG	67	/* an argument of type structure */
+%term	STCALL	68	/* a function of type structure */
+%term	USTCALL	70	/* unary structure function */
+%term	SCONV	71	/* scalar conversion */
+%term	PCONV	72	/* pointer conversion */
+%term	PMCONV	73	/* pointer multiply conversion */
+%term	PVCONV	74	/* pointer divide conversion */
+%term	CAST	75	/* redundant? */
+%term	LB		76	/* [ */
+%term	RB		77	/* ] */
+%term	COMOP	78	/* , (in expressions) */
+%term	CM		79	/* , (in argument lists) */
+%term	FORCE	80	/* result of last expression goes in r0 */
+%term	GOTO	81	/* unconditional goto */
+%term	CBRANCH	82	/* goto label if !test */
+%term	RETURN	83	/* return from function */
+%term	INIT	84	/* initialized data */
+%term	TYPE	85	/* a type */
+%term	CLASS	86	/* a storage class */
+%term	MAXOP	86	/* highest numbered PCC op */
+%term	LOCALTOKENS	100
+%term	ASOP	100	/* assignment ops */
+%term	RELOP	101	/* <=, <, >=, > */
+%term	EQUOP	102	/* ==, != */
+%term	DIVOP	103	/* /, % */
+%term	SHIFTOP	104	/* <<, >> */
+%term	INCOP	105	/* ++, -- */
+%term	UNOP	106	/* !, ~ */
+%term	STROP	107	/* ., -> */
+%term	LP		108	/* ( */
+%term	RP		109	/* ) */
+%term	LC		110	/* { */
+%term	RC		111	/* } */
+%term	STRUCT	112
+%term	IF		113
+%term	ELSE	114
+%term	SWITCH	115
+%term	BREAK	116
+%term	CONTINUE	117
+%term	WHILE	118
+%term	DO		119
+%term	FOR		120
+%term	DEFAULT	121
+%term	CASE	122
+%term	SIZEOF	123
+%term	ENUM	124
+%term	SM		125
