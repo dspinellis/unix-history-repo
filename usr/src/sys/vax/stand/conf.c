@@ -1,4 +1,4 @@
-/*	conf.c	1.2	%G%	*/
+/*	conf.c	4.1	%G%	*/
 
 #include "../h/param.h"
 #include "../h/inode.h"

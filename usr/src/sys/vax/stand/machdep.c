@@ -1,4 +1,4 @@
-/*	machdep.c	1.1	%G%	*/
+/*	machdep.c	4.1	%G%	*/
 
 #include "../h/param.h"
 #include "../h/mtpr.h"
