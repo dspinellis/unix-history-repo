@@ -22,8 +22,10 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)basename.c	4.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)basename.c	4.6 (Berkeley) %G%";
 #endif /* not lint */
+
+#include <stdio.h>
 
 main(argc, argv)
 	int argc;
@@ -32,14 +34,14 @@ main(argc, argv)
 	register char *p, *t;
 	char *base;
 
-	if (argc <= 1) {	/* backward compatible */
-		putchar('\n');
+	if (argc < 2 || argc > 3) {
+		fprintf(stderr, "usage: basename string [suffix]\n");
 		exit(1);
 	}
 	for (p = base = *++argv; *p;)
 		if (*p++ == '/')
 			base = p;
-	if (argc > 2) {		/* original version allows any # of args */
+	if (argc == 3) {
 		for (t = *++argv; *t; ++t);
 		do {
 			if (t == *argv) {
@@ -48,6 +50,6 @@ main(argc, argv)
 			}
 		} while (p >= base && *--t == *--p);
 	}
-	puts(base);
+	printf("%s\n", base);
 	exit(0);
 }
