@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)l.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)l.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -28,7 +28,7 @@ static char sccsid[] = "@(#)l.c	5.3 (Berkeley) %G%";
 
 /*
  * This is the list command. It's not wrapped in with n and p because
- * of the unambiguous printing needed.
+ * of the unambiguous printing need.
  */
 void
 l(inputt, errnum)
