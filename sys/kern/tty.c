@@ -32,7 +32,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tty.c	7.44 (Berkeley) 5/28/91
- *	$Id: tty.c,v 1.18 1994/02/08 06:46:47 ache Exp $
+ *	$Id: tty.c,v 1.19 1994/02/13 17:21:31 ache Exp $
  */
 
 #include "param.h"
@@ -638,7 +638,9 @@ ttioctl(tp, com, data, flag)
 	case TIOCSPGRP: {
 		register struct pgrp *pgrp = pgfind(*(int *)data);
 
-		if (!isctty(p, tp))
+		if (!suser(p->p_ucred, &p->p_acflag))
+			;
+		else if (!isctty(p, tp))
 			return (ENOTTY);
 		else if (pgrp == NULL || pgrp->pg_session != p->p_session)
 			return (EPERM);
