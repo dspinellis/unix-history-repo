@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_param.h,v 5.3 88/11/18 17:28:18 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_param.h,v $
- *	@(#)tp_param.h	7.5 (Berkeley) %G% *
+ *	@(#)tp_param.h	7.6 (Berkeley) %G% *
  *
  */
 
@@ -45,7 +45,10 @@ SOFTWARE.
 
 #define		TP_DECBIT_CLEAR_COUNT	3
 
-#define 	N_TPREF				100
+/*#define 	N_TPREF				100 */
+#ifdef KERNEL
+extern int N_TPREF;
+#endif
 
 #define 	TP_SOCKBUFSIZE		((u_long)4096)
 #define 	TP0_SOCKBUFSIZE		((u_long)512)
@@ -59,7 +62,7 @@ SOFTWARE.
 	 * wraparound in checksumming
 	 * (No mtu is likely to be larger than 4K anyway...)
 	 */
-#define		TP_NRETRANS			1
+#define		TP_NRETRANS			5 /* was 1; cray uses 6 */
 #define		TP_MAXPORT			0xefff
 
 #define		TP_RTT_NUM			0x7
