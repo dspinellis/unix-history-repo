@@ -1,4 +1,4 @@
-	@(#)syscalls.master	7.3 (Berkeley) %G%
+	@(#)syscalls.master	8.1 (Berkeley) %G%
 ; System call name/number master file (or rather, slave, from SunOS).
 ; Processed to created sun_sysent.c, sun_syscalls.c and sun_syscall.h.
 
