@@ -1,9 +1,9 @@
-#	@(#)VERSION	8.8 (Berkeley) %G%
+#	@(#)VERSION	8.9 (Berkeley) %G%
 
-This is version 1.73 of the Berkeley DB code.
+This is version 1.74 of the Berkeley DB code.
 
-If your version of the DB code doesn't have a copy of
-this version file, it's really old, please update it!
+If your version of the DB code doesn't have a copy
+of this version file, it's really old, please update it!
 
 New versions of this software are periodically made
 available by anonymous ftp from ftp.cs.berkeley.edu,
@@ -16,6 +16,34 @@ Email questions may be addressed to Keith Bostic at
 bostic@cs.berkeley.edu.
 
 ============================================
+Distribution contents:
+
+Makefile.inc	Ignore this, it's the 4.4BSD subsystem Makefile.
+PORT		The per OS/architecture directories to use to build
+		libdb.a, if you're not running 4.4BSD.  See the file
+		PORT/README for more information.
+README		This file.
+VERSION		This file.
+btree		B+tree routines.
+db		Dbopen(3) interface routine.
+doc		USENIX papers, formatted manual pages.
+hash		Extended linear hashing routines.
+man		Unformatted manual pages.
+mpool		Memory pool routines.
+recno		Fixed/variable length record routines.
+test		Test package.
+
+============================================
+1.73 -> 1.74
+	recno:	Don't put the record if rec_search fails, in rec_rdelete.
+		Create fixed-length intermediate records past "end" of DB
+		correctly.
+		Realloc bug when reading in fixed records.
+	all:	First cut at port to Alpha (64-bit architecture) using
+		4.4BSD basic integral types typedef's.
+		Cast allocation pointers to shut up old compilers.
+		Rework PORT directory into OS/machine directories.
+
 1.72 -> 1.73
 	btree:	If enough duplicate records were inserted and then deleted
 		that internal pages had references to empty pages of the
@@ -67,18 +95,3 @@ bostic@cs.berkeley.edu.
 
 1.1  -> 1.2	15 Apr 1993
 		No bug fixes, only compatibility hacks.
-============================================
-
-Distribution contents:
-	Makefile.inc	Ignore this, it's Berkeley's internal Makefile.
-	PORT		The directory to build in.
-	README		This file.
-	VERSION		This file.
-	btree		B+tree routines.
-	db		Dbopen(3) interface routine.
-	doc		USENIX papers, formatted man pages.
-	hash		Extended linear hashing routines.
-	man		Unformatted man pages.
-	mpool		Memory pool routines.
-	recno		Fixed/variable length record routines.
-	test		Test package.
