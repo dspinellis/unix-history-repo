@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)stty.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)stty.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -35,7 +35,7 @@ main(argc, argv)
 	char **argv;
 {
 	extern char *optarg;
-	extern int optind;
+	extern int opterr, optind;
 	extern struct cchar cchars1[], cchars2[];
 	extern struct modes cmodes[], imodes[], lmodes[], omodes[];
 	register struct modes *mp;
@@ -47,6 +47,7 @@ main(argc, argv)
 
 	ctl = STDIN_FILENO;
 	fmt = NOTSET;
+	opterr = 0;
 	while ((ch = getopt(argc, argv, "aef:g")) != EOF)
 		switch(ch) {
 		case 'a':		/* undocumented: POSIX compatibility */
@@ -63,9 +64,7 @@ main(argc, argv)
 			fmt = GFLAG;
 			break;
 		case '?':
-			usage();
 		default:
-			--optind;
 			goto args;
 		}
 
