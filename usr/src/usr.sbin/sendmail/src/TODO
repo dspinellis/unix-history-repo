@@ -1,4 +1,4 @@
-(Version 6.10 of %G%)
+(Version 6.11 of %G%)
 
 *****	Database (keyed lookup) locking and rebuild.
 
@@ -7,6 +7,8 @@
 ***	NIS support for aliases.
 
 ***	cf/cf/Makefile.dist
+
+**	Handle Expires: header field (if still in queue).
 
 **	Find a good test suite and include in the distribution.
 
