@@ -3,19 +3,31 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)config.8	8.1 (Berkeley) %G%
+.\"     @(#)config.8	8.2 (Berkeley) %G%
 .\"
 .Dd 
-.Dt CONFIG 8
+.Dt CONFIG.NEW 8
 .Os BSD 4
 .Sh NAME
-.Nm config
+.Nm config.new
 .Nd build kernel compilation directories
 .Sh SYNOPSIS
 .Nm config
 .Op Fl p
 .Ar system-name
 .Sh DESCRIPTION
+.Pp
+This is the new version of the
+.Nm config
+program.
+It understands the more modern autoconfiguration scheme
+used on the SPARC and i386 platforms.
+The old version of config is still used with the
+HP300, DECstation, and derivative platforms.
+Only the version of 
+.Nm config
+applicable to the architecture that you are running
+will be installed on your machine.
 .Pp
 .Nm Config
 builds a set of configuration files from the file
@@ -118,6 +130,8 @@ The SYNOPSIS portion of each device in section 4.
 .%T "Building 4.4 BSD Systems with Config"
 .\" .%T "Device Support in 4.4BSD"
 .Re
+.sp
+.Xr config 8
 .Sh HISTORY
 The
 .Nm
