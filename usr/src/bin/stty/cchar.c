@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cchar.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)cchar.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -37,14 +37,14 @@ struct cchar cchars1[] = {
 	{ "intr",	VINTR,		CINTR },
 	{ "kill",	VKILL,		CKILL },
 	{ "lnext",	VLNEXT,		CLNEXT },
+	{ "min",	VMIN,		CMIN },
 	{ "quit",	VQUIT,		CQUIT },
 	{ "reprint",	VREPRINT, 	CREPRINT },
 	{ "start",	VSTART,		CSTART },
 	{ "status",	VSTATUS, 	CSTATUS },
 	{ "stop",	VSTOP,		CSTOP },
 	{ "susp",	VSUSP,		CSUSP },
-	{ "vmin",	VMIN,		CMIN },
-	{ "vtime",	VTIME,		CTIME },
+	{ "time",	VTIME,		CTIME },
 	{ "werase",	VWERASE,	CWERASE },
 	{ NULL },
 };
