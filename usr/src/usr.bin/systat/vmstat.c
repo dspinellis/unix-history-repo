@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.13 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -20,6 +20,7 @@ static char sccsid[] = "@(#)vmstat.c	5.12 (Berkeley) %G%";
 #include <sys/vm.h>
 #include <sys/buf.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <sys/user.h>
 #include <sys/proc.h>
 #include <sys/namei.h>
@@ -50,7 +51,6 @@ closekre(w)
 	wrefresh(w);
 }
 
-long	time();
 float	cputime();
 struct	utmp utmp;
 
@@ -130,6 +130,10 @@ static	char **intrname;
 static	int nextintsrow;
 
 static	enum state { BOOT, TIME, RUN } state = TIME;
+
+static void putint(), putfloat(), putrate();
+static void getinfo(), allocinfo(), copyinfo(), dinfo();
+static int ucount();
 
 /*
  * These constants define where the major pieces are laid out
@@ -543,7 +547,7 @@ cmdkre(cmd, args)
 }
 
 /* calculate number of users on the system */
-static
+static int
 ucount()
 {
 	register int nusers = 0;
@@ -573,8 +577,9 @@ cputime(indx)
 	return (s.time[indx] * 100.0 / t);
 }
 
-static
+static void
 putrate(r, or, l, c, w)
+	int r, or, l, c, w;
 {
 
 	if (state != TIME) {
@@ -585,8 +590,9 @@ putrate(r, or, l, c, w)
 		putint(r, l, c, w);
 }
 
-static
+static void
 putint(n, l, c, w)
+	int n, l, c, w;
 {
 	char b[128];
 
@@ -605,28 +611,29 @@ putint(n, l, c, w)
 	addstr(b);
 }
 
-static
+static void
 putfloat(f, l, c, w, d, nz)
 	float f;
+	int l, c, w, d, nz;
 {
 	char b[128];
 
 	move(l, c);
 	if (nz && f == 0.0) {
-		while (w-- > 0)
+		while (--w >= 0)
 			addch(' ');
 		return;
 	}
 	sprintf(b, "%*.*f", w, d, f);
 	if (strlen(b) > w) {
-		while (w-- > 0)
+		while (--w >= 0)
 			addch('*');
 		return;
 	}
 	addstr(b);
 }
 
-static
+static void
 getinfo(s, st)
 	struct Info *s;
 	enum state st;
@@ -643,7 +650,7 @@ getinfo(s, st)
 	}
 	lseek(kmem, (long)name[X_TOTAL].n_value, L_SET);
 	read(kmem, &s->Total, sizeof s->Total);
-	s->dk_busy = getw(name[X_DK_BUSY].n_value);
+	s->dk_busy = getword(name[X_DK_BUSY].n_value);
  	lseek(kmem, (long)name[X_DK_TIME].n_value,  L_SET);
  	read(kmem, s->dk_time, dk_ndrive * sizeof (long));
  	lseek(kmem, (long)name[X_DK_XFER].n_value,  L_SET);
@@ -652,15 +659,15 @@ getinfo(s, st)
  	read(kmem, s->dk_wds, dk_ndrive * sizeof (long));
 	lseek(kmem, (long)name[X_DK_SEEK].n_value,  L_SET);
 	read(kmem, s->dk_seek, dk_ndrive * sizeof (long));
-	s->tk_nin = getw(name[X_TK_NIN].n_value);
-	s->tk_nout = getw(name[X_TK_NOUT].n_value);
+	s->tk_nin = getword(name[X_TK_NIN].n_value);
+	s->tk_nout = getword(name[X_TK_NOUT].n_value);
 	lseek(kmem, (long)name[X_NCHSTATS].n_value,  L_SET);
 	read(kmem, &s->nchstats, sizeof s->nchstats);
 	lseek(kmem, (long)name[X_INTRCNT].n_value,  L_SET);
 	read(kmem, s->intrcnt, nintr * sizeof (long));
 }
 
-static
+static void
 allocinfo(s)
 	struct Info *s;
 {
@@ -672,7 +679,7 @@ allocinfo(s)
 	}
 }
 
-static
+static void
 copyinfo(from, to)
 	register struct Info *from, *to;
 {
@@ -689,8 +696,9 @@ copyinfo(from, to)
 	bcopy(from->intrcnt, to->intrcnt = intrcnt, nintr * sizeof (int));
 }
 
-static
+static void
 dinfo(dn, c)
+	int dn, c;
 {
 	double words, atime, itime, xtime;
 

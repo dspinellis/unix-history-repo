@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pigs.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)pigs.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -38,7 +38,6 @@ closepigs(w)
 int	maxind;
 int     factor;
 float   total;
-struct  passwd *getpwuid();
 char    pidname[30];
 long	stime[CPUSTATES];
 double	idle;
@@ -167,8 +166,8 @@ initpigs()
 		}
 	}
 	if (procp == NULL) {
-		procp = getw(nlst[X_PROC].n_value);
-		nproc = getw(nlst[X_NPROC].n_value);
+		procp = getword(nlst[X_PROC].n_value);
+		nproc = getword(nlst[X_NPROC].n_value);
 	}
 	if (kprocp == NULL)
 		kprocp = (struct proc *)calloc(nproc, sizeof (struct proc));

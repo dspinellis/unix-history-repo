@@ -11,10 +11,11 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 #include "systat.h"
+#include <varargs.h>
 #include <paths.h>
 
 static struct nlist nlst[] = {
@@ -115,11 +116,11 @@ main(argc, argv)
 	}
 
 	gethostname(hostname, sizeof (hostname));
-	ccpu = getw(nlst[X_CCPU].n_value);
-	fscale = getw(nlst[X_FSCALE].n_value);
+	ccpu = getword(nlst[X_CCPU].n_value);
+	fscale = getword(nlst[X_FSCALE].n_value);
 	lccpu = log((double) ccpu / fscale);
-	hz = getw(nlst[X_HZ].n_value);
-	phz = getw(nlst[X_PHZ].n_value);
+	hz = getword(nlst[X_HZ].n_value);
+	phz = getword(nlst[X_PHZ].n_value);
 	(*curcmd->c_init)();
 	curcmd->c_flags |= CF_INIT;
 	labels();
@@ -208,9 +209,17 @@ die()
 	exit(0);
 }
 
-error(fmt, a1, a2, a3)
+error(va_alist)
+	va_dcl
 {
-	mvprintw(CMDLINE, 0, fmt, a1, a2, a3);
+	va_list ap;
+	char *fmt, msg[200];
+
+	va_start(ap);
+	fmt = va_arg(ap, char *);
+	(void) vsnprintf(msg, sizeof msg, fmt, ap);
+	va_end(ap);
+	mvaddstr(CMDLINE, 0, msg);
 	clrtoeol();
 	refresh();
 }

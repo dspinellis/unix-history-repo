@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)fetch.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)fetch.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "systat.h"
@@ -16,7 +16,7 @@ static char sccsid[] = "@(#)fetch.c	5.2 (Berkeley) %G%";
 #include <pwd.h>
 
 long
-getw(loc)
+getword(loc)
         int loc;
 {
         long word;
@@ -43,16 +43,14 @@ getpname(pid, mproc)
                         return (pp->cmd);
                 pp++;
         }
-        if (j < 0) {
-                if (numprocs < 200) {
-                        pp = &procs[numprocs];
-                        namp = strncpy(pp->cmd, getcmd(pid, mproc), 15);
-                        pp->cmd[15] = 0;
-                        pp->pid = pid;
-                        numprocs++;
-                } else
-                        namp = getcmd(pid, mproc);
-        }
+	if (numprocs < 200) {
+		pp = &procs[numprocs];
+		namp = strncpy(pp->cmd, getcmd(pid, mproc), 15);
+		pp->cmd[15] = 0;
+		pp->pid = pid;
+		numprocs++;
+	} else
+		namp = getcmd(pid, mproc);
         return (namp);
 }
 
