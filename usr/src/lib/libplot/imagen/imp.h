@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)imp.h	5.1 (Berkeley) %G%
+ *	@(#)imp.h	5.2 (Berkeley) %G%
  */
 
 #include <stdio.h>
@@ -14,3 +14,5 @@ extern float oboty;
 extern float scalex;
 extern float scaley;
 int imPx, imPy;
+extern int imPcsize;
+extern char *imP_charset;

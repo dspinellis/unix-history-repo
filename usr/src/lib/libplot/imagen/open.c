@@ -5,18 +5,19 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)open.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)open.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "imPcodes.h"
 #include "imp.h"
-int imPcsize = 12;
+
 openpl(){
+
 	putch(imP_SET_HV_SYSTEM);
 	  putch((3<<3)|5);
 	putch(imP_SET_FAMILY);
 	  putch(2);
-	setfont("cmasc7",imPcsize);
+	setfont(imP_charset,imPcsize);
 	putch(imP_SET_IL);
 	  putwd(imPcsize+3);
 	putch(imP_SET_SP);
