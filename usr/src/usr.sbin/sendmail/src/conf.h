@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	6.27 (Berkeley) %G%
+ *	@(#)conf.h	6.28 (Berkeley) %G%
  */
 
 /*
@@ -62,6 +62,11 @@
 # define USERDB		1	/* look in user database (requires NEWDB) */
 # define BTREE_MAP	1	/* enable BTREE mapping type (requires NEWDB) */
 # define HASH_MAP	1	/* enable HASH mapping type (requires NEWDB) */
+# endif
+
+# ifdef NIS
+# define NIS_ALIASES	1	/* include NIS support for aliases */
+# define NIS_MAP	1	/* include NIS mapping type */
 # endif
 
 # ifdef NDBM
