@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_subr.c	8.17 (Berkeley) %G%
+ *	@(#)union_subr.c	8.18 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -88,22 +88,25 @@ union_updatevp(un, uppervp, lowervp)
 	int ohash = UNION_HASH(un->un_uppervp, un->un_lowervp);
 	int nhash = UNION_HASH(uppervp, lowervp);
 	int docache = (lowervp != NULLVP || uppervp != NULLVP);
+	int lhash, hhash, uhash;
 
 	/*
 	 * Ensure locking is ordered from lower to higher
 	 * to avoid deadlocks.
 	 */
 	if (nhash < ohash) {
-		int t = ohash;
-		ohash = nhash;
-		nhash = t;
+		lhash = nhash;
+		uhash = ohash;
+	} else {
+		lhash = ohash;
+		uhash = nhash;
 	}
 
-	if (ohash != nhash)
-		while (union_list_lock(ohash))
+	if (lhash != uhash)
+		while (union_list_lock(lhash))
 			continue;
 
-	while (union_list_lock(nhash))
+	while (union_list_lock(uhash))
 		continue;
 
 	if (ohash != nhash || !docache) {
@@ -921,14 +924,15 @@ union_removed_upper(un)
 	struct union_node *un;
 {
 
-	if (un->un_flags & UN_ULOCK) {
-		un->un_flags &= ~UN_ULOCK;
-		VOP_UNLOCK(un->un_uppervp);
-	}
-
+	union_newupper(un, NULLVP);
 	if (un->un_flags & UN_CACHED) {
 		un->un_flags &= ~UN_CACHED;
 		LIST_REMOVE(un, un_cache);
+	}
+
+	if (un->un_flags & UN_ULOCK) {
+		un->un_flags &= ~UN_ULOCK;
+		VOP_UNLOCK(un->un_uppervp);
 	}
 }
 
