@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_nqlease.c	7.7 (Berkeley) %G%
+ *	@(#)nfs_nqlease.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -23,29 +23,28 @@
  *		Performance of Cache-Consistency Protocols", Digital
  *		Equipment Corporation WRL Research Report 89/5, May 1989.
  */
-#include "param.h"
-#include "vnode.h"
-#include "mount.h"
-#include "kernel.h"
-#include "proc.h"
-#include "systm.h"
-#include "mbuf.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "file.h"
-#include "buf.h"
-#include "stat.h"
-#include "protosw.h"
-#include "machine/endian.h"
-#include "netinet/in.h"
-#include "rpcv2.h"
-#include "nfsv2.h"
-#include "nfs.h"
-#include "nfsm_subs.h"
-#include "xdr_subs.h"
-#include "nqnfs.h"
-#include "nfsnode.h"
-#include "nfsmount.h"
+#include <sys/param.h>
+#include <sys/vnode.h>
+#include <sys/mount.h>
+#include <sys/kernel.h>
+#include <sys/proc.h>
+#include <sys/systm.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/file.h>
+#include <sys/buf.h>
+#include <sys/stat.h>
+#include <sys/protosw.h>
+#include <netinet/in.h>
+#include <nfs/rpcv2.h>
+#include <nfs/nfsv2.h>
+#include <nfs/nfs.h>
+#include <nfs/nfsm_subs.h>
+#include <nfs/xdr_subs.h>
+#include <nfs/nqnfs.h>
+#include <nfs/nfsnode.h>
+#include <nfs/nfsmount.h>
 
 /*
  * List head for the lease queue and other global data.
@@ -402,10 +401,10 @@ nqsrv_cmpnam(slp, nam, lph)
 	else
 		addr = slp->ns_nam;
 	if (lph->lph_flag & LC_UDP)
-		ret = nfs_netaddr_match(AF_INET, &lph->lph_haddr,
+		ret = netaddr_match(AF_INET, &lph->lph_haddr,
 			(union nethostaddr *)0, addr);
 	else if (lph->lph_flag & LC_CLTP)
-		ret = nfs_netaddr_match(AF_ISO, &lph->lph_claddr,
+		ret = netaddr_match(AF_ISO, &lph->lph_claddr,
 			(union nethostaddr *)0, addr);
 	else {
 		if ((lph->lph_slp->ns_flag & SLP_VALID) == 0)
@@ -415,7 +414,7 @@ nqsrv_cmpnam(slp, nam, lph)
 			lhaddr.had_inetaddr = saddr->sin_addr.s_addr;
 		else
 			lhaddr.had_nam = lph->lph_slp->ns_nam;
-		ret = nfs_netaddr_match(saddr->sin_family, &lhaddr,
+		ret = netaddr_match(saddr->sin_family, &lhaddr,
 			(union nethostaddr *)0, addr);
 	}
 	return (ret);
