@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)pmerge.c 1.2 %G%";
+static char sccsid[] = "@(#)pmerge.c 1.3 %G%";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -27,6 +27,7 @@ FILE	*curfile;		/* current output file */
 FILE	*fopen();
 char	labelopen = FALSE, constopen = FALSE, typeopen = FALSE, varopen = FALSE;
 char	*mktemp();
+char	*malloc();
 
 /*
  * Remove temporary files if interrupted
@@ -52,16 +53,20 @@ main(argc, argv)
 	long	inclcnt = 0;	/* incl index */
 	char	*name[MAXNAM];	/* include names seen so far */
 	long	namcnt = 0;	/* next name ptr slot available */
-	char	nambuf[BUFSIZ];	/* string table for names */
+	char	*nambuf;	/* string table for names */
 	char	line[BUFSIZ];	/* input line buffer */
-	char	*next = nambuf;	/* next name space available */
+	char	*next;		/* next name space available */
 	FILE	*input = stdin;	/* current input file */
 	long	ac = 0;		/* argv index */
 	char	**cpp, *cp, *fp;/* char ptrs */
 	char	quote;		/* include quote character */
 	int	i;		/* index var */
 
+	for (i = 0; i < MAXNAM ; i++)
+		name[i] = 0;
+
 	signal(SIGINT, onintr);
+
 	curfile = files[PRGFILE] = fopen(names[PRGFILE] = mktemp(TMPNAME), "w");
 	files[LABELFILE] = fopen(names[LABELFILE] = mktemp(TMPNAME), "w");
 	files[CONSTFILE] = fopen(names[CONSTFILE] = mktemp(TMPNAME), "w");
@@ -69,9 +74,15 @@ main(argc, argv)
 	files[VARFILE] = fopen(names[VARFILE] = mktemp(TMPNAME), "w");
 	files[RTNFILE] = fopen(names[RTNFILE] = mktemp(TMPNAME), "w");
 	files[BODYFILE] = fopen(names[BODYFILE] = mktemp(TMPNAME), "w");
+
 	for (i = 0; i < NUMFILES; i++)
 		if (files[i] == NULL)
 			quit(names[i]);
+	if ((nambuf = malloc(BUFSIZ)) == NULL) {
+		fputs("no space for string table\n", stderr);
+		quit(NULL);
+	}
+	next = nambuf;
 	name[namcnt] = next;
 	for(;;) {
 		if (inclcnt > 0) {
@@ -102,6 +113,15 @@ main(argc, argv)
 				/* void */;
 			if (*cp != '\'' && *cp != '"')
 				goto bad;
+			if (&nambuf[BUFSIZ] < next + strlen(cp)) {
+				if ((nambuf = malloc(BUFSIZ)) == NULL) {
+					fputs("no space for string table\n",
+						stderr);
+					quit(NULL);
+				}
+				next = nambuf;
+				name[namcnt] = next;
+			}
 			for (fp = next, quote = *cp++;
 			     *cp != '\0' && *cp != quote; )
 				*fp++ = *cp++;
@@ -118,7 +138,7 @@ main(argc, argv)
 						stderr);
 					quit(NULL);
 				}
-				if (namcnt++ == MAXNAM) {
+				if (++namcnt == MAXNAM) {
 					fputs("include name table overflow\n",
 						stderr);
 					quit(NULL);
@@ -150,6 +170,7 @@ char instr = FALSE;	/* TRUE => in quoted string */
 char inprog = FALSE;	/* TRUE => program statement has been found */
 int  beginnest = 0;	/* routine nesting level */
 int  nest = 0;		/* begin block nesting level */
+int  paren_level = 0;	/* nesting level of parentheses */
 
 split(line)
 	char *line;
@@ -163,16 +184,24 @@ split(line)
 	cp = line;
 	while (*cp) {
 		switch(*cp) {
-		case '*':
-			if (!incom && ch1 == '(') {
+		case '(':
+			if (incom)
+				break;
+			if (*(cp+1) == '*') {
+				fputc(*cp, curfile);
+				cp++;
 				incom = TRUE;
 				incur = TRUE;
+			} else {
+				paren_level++;
 			}
 			break;
 		case ')':
 			if (incur && ch1 == '*') {
 				incom = FALSE;
 				incur = FALSE;
+			} else if (!incom) {
+				paren_level--;
 			}
 			break;
 		case '{':
@@ -203,7 +232,7 @@ split(line)
 			continue;
 		}
 		word = cp;
-		while (isalpha(*cp))
+		while (isalnum(*cp))
 			cp++;
 		len = cp - word;
 		switch (*word) {
@@ -261,7 +290,9 @@ split(line)
 			if (len == 8 && !strcmpn(word, "external", 8)) {
 				fputs("forward", curfile);
 				prt = FALSE;
-				nest--;
+				if (paren_level == 0) {
+					nest--;
+				}
 			}
 			break;
 		case 'f':
@@ -269,11 +300,15 @@ split(line)
 				if (nest == 0) {
 					curfile = files[RTNFILE];
 				}
-				nest++;
+				if (paren_level == 0) {
+					nest++;
+				}
 				break;
 			}
 			if (len == 7 && !strcmpn(word, "forward", 7)) {
-				nest--;
+				if (paren_level == 0) {
+					nest--;
+				}
 			}
 			break;
 		case 'l':
@@ -293,7 +328,9 @@ split(line)
 				if (nest == 0) {
 					curfile = files[RTNFILE];
 				}
-				nest++;
+				if (paren_level == 0) {
+					nest++;
+				}
 				break;
 			}
 			if (len == 7 && !strcmpn(word, "program", 7)) {
