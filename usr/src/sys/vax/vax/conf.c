@@ -1,4 +1,4 @@
-/*	conf.c	4.54	82/06/03	*/
+/*	conf.c	4.55	82/06/26	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -318,6 +318,66 @@ int	gpibopen(),gpibclose(),gpibread(),gpibwrite(),gpibioctl();
 #define	gpibioctl	nodev
 #endif
 
+#include "ik.h"
+#if NIK > 0
+int	ikopen(), ikclose(), ikread(), ikwrite();
+int	ikioctl(), ikreset();
+#else
+#define ikopen nodev
+#define ikclose nodev
+#define ikread nodev
+#define ikwrite nodev
+#define ikioctl nodev
+#define ikreset nodev
+#endif
+
+#include "ps.h"
+#if NPS > 0
+int	psopen(), psclose(), psread(), pswrite();
+int	psioctl(), psreset();
+#else
+#define psopen nodev
+#define psclose nodev
+#define psread nodev
+#define pswrite nodev
+#define psopen nodev
+#define psioctl nodev
+#define psreset nodev
+#endif
+
+#include "ib.h"
+#if NIB > 0
+int	ibopen(), ibclose(), ibread(), ibwrite(), ibioctl();
+#else
+#define	ibopen	nodev
+#define	ibclose	nodev
+#define	ibread	nodev
+#define	ibwrite	nodev
+#define	ibioctl	nodev
+#endif
+
+#include "ad.h"
+#if NAD > 0
+int	adopen(), adclose(), adioctl(), adreset();
+#else
+#define adopen nodev
+#define adclose nodev
+#define adioctl nodev
+#define adreset nodev
+#endif
+
+#include "efs.h"
+#if NEFS > 0
+int	efsopen(), efsclose(), efsread(), efswrite(), efsioctl(), efsreset();
+#else
+#define efsopen nodev
+#define efsclose nodev
+#define efsread nodev
+#define efswrite nodev
+#define efsioctl nodev
+#define efsreset nodev
+#endif
+
 int	ttselect(), seltrue();
 
 struct cdevsw	cdevsw[] =
@@ -410,6 +470,21 @@ struct cdevsw	cdevsw[] =
 	lpaopen,	lpaclose,	lparead,	lpawrite,	/*26*/
 	lpaioctl,	nodev,		nulldev,	0,
 	seltrue,
+	psopen,		psclose,	psread,		pswrite,	/*27*/
+	psioctl,	nodev,		psreset,	0,
+	seltrue,
+	ibopen,		ibclose,	ibread,		ibwrite,	/*28*/
+	ibioctl,	nodev,		nodev,		0,
+	seltrue,
+	adopen,		adclose,	nodev,		nodev,		/*29*/
+	adioctl,	nodev,		adreset,	0,
+	seltrue,
+	efsopen,	efsclose,	efsread,	efswrite,	/*30*/
+	efsioctl,	nodev,		efsreset,	0,
+	seltrue,
+	ikopen,		ikclose,	ikread,		ikwrite,	/*31*/
+	ikioctl,	nodev,		ikreset,	0,
+	seltrue,
 	0,	
 };
 
@@ -420,6 +495,11 @@ int	ttyinput();
 #include "bk.h"
 #if NBK > 0
 int	bkopen(),bkclose(),bkread(),bkinput(),bkioctl();
+#endif
+
+#include "tb.h"
+#if NTB > 0
+int	tbopen(),tbclose(),tbread(),tbinput(),tbioctl();
 #endif
 
 struct	linesw linesw[] =
@@ -435,10 +515,24 @@ struct	linesw linesw[] =
 #endif
 	ttyopen, ttyclose, ttread, ttwrite, nullioctl,
 	ttyinput, nodev, nulldev, ttstart, nulldev,
+#if NTB > 0
+	tbopen, tbclose, tbread, (char *(*)())nodev, tbioctl,
+	tbinput, nodev, nulldev, ttstart, nulldev,		/* 3 */
+#else
+	nodev, nodev, nodev, (char *(*)())nodev, nodev,
+	nodev, nodev, nodev, nodev, nodev,
+#endif
+#if NTB > 0
+	tbopen, tbclose, tbread, (char *(*)())nodev, tbioctl,
+	tbinput, nodev, nulldev, ttstart, nulldev,		/* 4 */
+#else
+	nodev, nodev, nodev, (char *(*)())nodev, nodev,
+	nodev, nodev, nodev, nodev, nodev,
+#endif
 	0
 };
 
-int	nldisp = 3;
+int	nldisp = 5;
 
 struct	buf	bfreelist[BQUEUES];	/* buffer chain headers */
 struct	buf	bswlist;	/* free list of swap headers */
