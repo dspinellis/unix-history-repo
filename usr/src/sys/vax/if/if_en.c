@@ -1,4 +1,4 @@
-/*	if_en.c	4.76	83/05/10	*/
+/*	if_en.c	4.77	83/05/10	*/
 
 #include "en.h"
 
@@ -396,14 +396,15 @@ enrint(unit)
 	if (len > ENMRU)
 		goto setup;			/* sanity */
 	en = (struct en_header *)(es->es_ifuba.ifu_r.ifrw_addr);
+	en->en_type = ntohs(en->en_type);
 #define	endataaddr(en, off, type)	((type)(((caddr_t)((en)+1)+(off))))
-	if (en->en_type >= ENPUP_TRAIL &&
-	    en->en_type < ENPUP_TRAIL+ENPUP_NTRAILER) {
-		off = (en->en_type - ENPUP_TRAIL) * 512;
+	if (en->en_type >= ENTYPE_TRAIL &&
+	    en->en_type < ENTYPE_TRAIL+ENTYPE_NTRAILER) {
+		off = (en->en_type - ENTYPE_TRAIL) * 512;
 		if (off > ENMTU)
 			goto setup;		/* sanity */
-		en->en_type = *endataaddr(en, off, u_short *);
-		resid = *(endataaddr(en, off+2, u_short *));
+		en->en_type = ntohs(*endataaddr(en, off, u_short *));
+		resid = ntohs(*(endataaddr(en, off+2, u_short *)));
 		if (off + resid > len)
 			goto setup;		/* sanity */
 		len = off + resid;
@@ -427,13 +428,13 @@ enrint(unit)
 	switch (en->en_type) {
 
 #ifdef INET
-	case ENPUP_IPTYPE:
+	case ENTYPE_IP:
 		schednetisr(NETISR_IP);
 		inq = &ipintrq;
 		break;
 #endif
 #ifdef PUP
-	case ENPUP_PUPTYPE: {
+	case ENTYPE_PUP: {
 		struct pup_header *pup = mtod(m, struct pup_header *);
 
 		pupproto.sp_protocol = pup->pup_type;
@@ -493,21 +494,21 @@ enoutput(ifp, m0, dst)
 		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
 		if (off > 0 && (off & 0x1ff) == 0 &&
 		    m->m_off >= MMINOFF + 2 * sizeof (u_short)) {
-			type = ENPUP_TRAIL + (off>>9);
+			type = ENTYPE_TRAIL + (off>>9);
 			m->m_off -= 2 * sizeof (u_short);
 			m->m_len += 2 * sizeof (u_short);
-			*mtod(m, u_short *) = ENPUP_IPTYPE;
-			*(mtod(m, u_short *) + 1) = m->m_len;
+			*mtod(m, u_short *) = htons((u_short)ENTYPE_IP);
+			*(mtod(m, u_short *) + 1) = ntohs((u_short)m->m_len);
 			goto gottrailertype;
 		}
-		type = ENPUP_IPTYPE;
+		type = ENTYPE_IP;
 		off = 0;
 		goto gottype;
 #endif
 #ifdef PUP
 	case AF_PUP:
 		dest = ((struct sockaddr_pup *)dst)->spup_addr.pp_host;
-		type = ENPUP_PUPTYPE;
+		type = ENTYPE_PUP;
 		off = 0;
 		goto gottype;
 #endif
@@ -553,7 +554,7 @@ gottype:
 	en = mtod(m, struct en_header *);
 	en->en_shost = ifp->if_host[0];
 	en->en_dhost = dest;
-	en->en_type = type;
+	en->en_type = htons((u_short)type);
 
 	/*
 	 * Queue message on interface, and start output if interface
