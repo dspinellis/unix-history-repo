@@ -6,7 +6,7 @@
 
 # ifdef _DEFINE
 # define EXTERN
-static char SmailSccsId[] =	"@(#)sendmail.h	3.51	%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.52	%G%";
 # else  _DEFINE
 # define EXTERN extern
 # endif _DEFINE
@@ -32,13 +32,6 @@ static char SmailSccsId[] =	"@(#)sendmail.h	3.51	%G%";
 # define MAXATOM	30		/* max atoms per address */
 # define MAXMAILERS	10		/* maximum mailers known to system */
 # define SPACESUB	('.'|0200)	/* substitution for <lwsp> */
-
-/* values for ArpaMode -- these are ordered!! */
-# define ARPA_NONE	0	/* not in arpanet mode */
-# define ARPA_OLD	1	/* in old arpanet mode */
-# define ARPA_MAIL	2	/* in regular arpanet mail */
-# define ARPA_FILE	3	/* reading over data connection */
-# define ARPA_SMTP	4	/* running SMTP protocol */
 
 extern char	Arpa_Info[];	/* the message number for Arpanet info */
 
@@ -320,17 +313,19 @@ EXTERN bool	Smtp;		/* using SMTP over connection */
 EXTERN bool	SuprErrs;	/* set if we are suppressing errors */
 EXTERN bool	QueueUp;	/* queue this message for future xmission */
 EXTERN bool	QueueRun;	/* currently running something from the queue */
+EXTERN bool	HoldErrs;	/* only output errors to transcript */
+EXTERN bool	ArpaMode;	/* set if running arpanet protocol */
 extern time_t	TimeOut;	/* time until timeout */
 EXTERN FILE	*InChannel;	/* input connection */
 EXTERN FILE	*OutChannel;	/* output connection */
 EXTERN FILE	*TempFile;	/* mail temp file */
+EXTERN FILE	*Xscript;	/* mail transcript file */
 EXTERN int	RealUid;	/* when Daemon, real uid of caller */
 EXTERN int	RealGid;	/* when Daemon, real gid of caller */
 EXTERN int	OldUmask;	/* umask when sendmail starts up */
 EXTERN int	Debug;		/* debugging level */
 EXTERN int	Errors;		/* set if errors */
 EXTERN int	ExitStat;	/* exit status code */
-EXTERN int	ArpaMode;	/* ARPANET handling mode */
 EXTERN int	HopCount;	/* hop count */
 EXTERN int	AliasLevel;	/* depth of aliasing */
 EXTERN time_t	QueueIntvl;	/* intervals between running the queue */

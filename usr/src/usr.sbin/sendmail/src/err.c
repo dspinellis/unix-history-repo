@@ -3,7 +3,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)err.c	3.13	%G%";
+static char	SccsId[] = "@(#)err.c	3.14	%G%";
 
 /*
 **  SYSERR -- Print error message.
@@ -33,35 +33,24 @@ syserr(fmt, a, b, c, d, e)
 	char *fmt;
 {
 	static char errbuf[MAXLINE+1];
-	extern char *sys_errlist[];
-	extern int sys_nerr;
-	register char *eb = errbuf;
 	extern char Arpa_Syserr[];
 
-	/* add arpanet error number if not present */
-	if (!isdigit(*fmt))
-	{
-		(void) strcpy(eb, Arpa_Syserr);
-		eb[3] = ' ';
-		eb += 4;
-	}
+	/* format the error message */
+	fmtmsg(errbuf, Arpa_Syserr, NULL, fmt, a, b, c, d, e);
 
-	/* put error message into buffer */
-	(void) sprintf(eb, fmt, a, b, c, d, e);
-	if (errno != 0)
+	/* output error message to transcript */
+	fprintf(Xscript, "%s\n", errbuf);
+
+	/* output error message to output channel if appropriate */
+	if (!HoldErrs)
 	{
-		eb += strlen(eb);
-		if (errno < sys_nerr && errno > 0)
-			(void) sprintf(eb, ": %s", sys_errlist[errno]);
+		if (ArpaMode)
+			fprintf(OutChannel, "%s\r\n", errbuf);
 		else
-			(void) sprintf(eb, ": error %d", errno);
+			fprintf(OutChannel, "sendmail: %s\n", &errbuf[4]);
+		(void) fflush(OutChannel);
 	}
 
-	if (ArpaMode != ARPA_NONE && Transcript == NULL)
-		fprintf(OutChannel, "%s\r\n", errbuf);
-	else
-		fprintf(OutChannel, "sendmail: %s\n", &errbuf[4]);
-	(void) fflush(OutChannel);
 	Errors++;
 
 	/* determine exit status if not already set */
@@ -127,30 +116,83 @@ message(num, msg, a, b, c, d, e)
 	register char *num;
 	register char *msg;
 {
-	/* compute error number */
-	if (isdigit(*msg))
-	{
-		num = msg;
-		msg += 4;
-	}
+	char errbuf[MAXLINE];
 
-	/* print arpa format header if needed */
-	if (ArpaMode != ARPA_NONE && Transcript == NULL)
-	{
-		register char del;
+	errno = 0;
+	fmtmsg(errbuf, To, num, msg, a, b, c, d, e);
 
-		if (num[3] == '-')
-			del = '-';
+	/* output to transcript */
+	fprintf(Xscript, "%s\n", errbuf);
+
+	/* output to channel if appropriate */
+	if (!HoldErrs)
+	{
+		if (ArpaMode)
+			fprintf(OutChannel, "%s\r\n", errbuf);
 		else
-			del = ' ';
-		fprintf(OutChannel, "%3.3s%c", num, del);
+			fprintf(OutChannel, "%s\n", &errbuf[4]);
+		(void) fflush(OutChannel);
+	}
+}
+/*
+**  FMTMSG -- format a message into buffer.
+**
+**	Parameters:
+**		eb -- error buffer to get result.
+**		to -- the recipient tag for this message.
+**		num -- arpanet error number.
+**		fmt -- format of string.
+**		a, b, c, d, e -- arguments.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		none.
+*/
+
+static
+fmtmsg(eb, to, num, fmt, a, b, c, d, e)
+	register char *eb;
+	char *to;
+	char *num;
+	char *fmt;
+{
+	char del;
+
+	/* output the reply code */
+	if (isdigit(*fmt))
+	{
+		num = fmt;
+		fmt += 4;
+	}
+	if (num[3] == '-')
+		del = '-';
+	else
+		del = ' ';
+	(void) sprintf(eb, "%3.3s%c", num, del);
+	eb += 4;
+
+	/* output the "to" person */
+	if (to != NULL && to[0] != '\0')
+	{
+		(void) sprintf(eb, "%s... ", to);
+		eb += strlen(eb);
 	}
 
-	if (To != NULL && To[0] != '\0')
-		fprintf(OutChannel, "%s... ", To);
-	fprintf(OutChannel, msg, a, b, c, d, e);
-	if (ArpaMode != ARPA_NONE && Transcript == NULL)
-		fprintf(OutChannel, "\r");
-	fprintf(OutChannel, "\n");
-	(void) fflush(OutChannel);
+	/* output the message */
+	(void) sprintf(eb, fmt, a, b, c, d, e);
+	eb += strlen(eb);
+
+	/* output the error code, if any */
+	if (errno != 0)
+	{
+		extern int sys_nerr;
+		extern char *sys_errlist[];
+		if (errno < sys_nerr && errno > 0)
+			(void) sprintf(eb, ": %s", sys_errlist[errno]);
+		else
+			(void) sprintf(eb, ": error %d", errno);
+		eb += strlen(eb);
+	}
 }

@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.50	%G%";
+static char	SccsId[] = "@(#)main.c	3.51	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -144,6 +144,7 @@ main(argc, argv)
 # ifdef LOG
 	openlog("sendmail", 0);
 # endif LOG
+	openxscrpt();
 # ifdef DEBUG
 # ifdef DEBUGFILE
 	if ((i = open(DEBUGFILE, 1)) > 0)
@@ -232,18 +233,18 @@ main(argc, argv)
 				break;
 
 			  case 'm':	/* mail back */
-				MailBack++;
-				openxscrpt();
+				MailBack = TRUE;
+				HoldErrs = TRUE;
 				break;
 
 			  case 'e':	/* do berknet error processing */
-				BerkNet++;
-				openxscrpt();
+				BerkNet = TRUE;
+				HoldErrs = TRUE;
 				break;
 
 			  case 'w':	/* write back (or mail) */
-				WriteBack++;
-				openxscrpt();
+				WriteBack = TRUE;
+				HoldErrs = TRUE;
 				break;
 			}
 			break;
@@ -312,19 +313,11 @@ main(argc, argv)
 			break;
 
 		  case 'a':	/* arpanet format */
-			switch (p[2])
+			ArpaMode = TRUE;
+			if (p[2] == 's')
 			{
-			  case 'f':	/* mail from file connection */
-				ArpaMode = ARPA_FILE;
-				break;
-
-			  case 'm':	/* mail over telnet connection */
-				ArpaMode = ARPA_MAIL;
-				break;
-
-			  default:
-				ArpaMode = ARPA_OLD;
-				break;
+				/* running smtp */
+				Smtp = TRUE;
 			}
 			break;
 		
@@ -343,11 +336,6 @@ main(argc, argv)
 		  case 'D':	/* run as a daemon */
 			Daemon = TRUE;
 			/* explicit fall-through */
-
-		  case 'p':	/* run SMTP protocol */
-			Smtp = TRUE;
-			ArpaMode = ARPA_SMTP;
-			break;
 
 		  case 'q':	/* run queue files at intervals */
 			queuemode = TRUE;
@@ -472,8 +460,6 @@ main(argc, argv)
 	/* if we have had errors sofar, drop out now */
 	if (Errors > 0 && ExitStat == EX_OK)
 		ExitStat = EX_USAGE;
-	if (ArpaMode > ARPA_OLD && ExitStat != EX_OK)
-		finis();
 
 	/*
 	**  Read the input mail.
@@ -482,7 +468,7 @@ main(argc, argv)
 	DontSend = FALSE;
 	To = NULL;
 	if (!verifyonly || GrabTo)
-		collect();
+		collect(FALSE);
 	errno = 0;
 	initsys();
 
@@ -517,22 +503,6 @@ main(argc, argv)
 	*/
 
 	To = NULL;
-	if (Errors == 0)
-	{
-		switch (ArpaMode)
-		{
-			static char *okmsg = "Mail accepted";
-			extern char Arpa_Fmsg[], Arpa_Mmsg[];
-
-		  case ARPA_FILE:
-			message(Arpa_Fmsg, okmsg);
-			break;
-
-		  case ARPA_MAIL:
-			message(Arpa_Mmsg, okmsg);
-			break;
-		}
-	}
 	if (!verifyonly)
 		poststats(StatFile);
 	finis();
@@ -683,16 +653,18 @@ finis()
 openxscrpt()
 {
 	extern char *mktemp();
+	register char *p;
 
-	(void) mktemp(XcriptFile);
-	OutChannel = fopen(XcriptFile, "w");
-	if (OutChannel == NULL)
+	p = newstr(XcriptFile);
+	(void) mktemp(p);
+	Xscript = fopen(p, "w");
+	if (Xscript == NULL)
 	{
-		OutChannel = stdout;
-		syserr("Can't create %s", XcriptFile);
+		Xscript = stdout;
+		syserr("Can't create %s", p);
 	}
-	(void) chmod(XcriptFile, 0600);
-	Transcript = XcriptFile;
+	Transcript = p;
+	(void) chmod(p, 0600);
 }
 /*
 **  SETSENDER -- set sendmail's idea of the sender.

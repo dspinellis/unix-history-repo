@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)collect.c	3.27	%G%";
+static char	SccsId[] = "@(#)collect.c	3.28	%G%";
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -67,12 +67,8 @@ maketemp(from)
 	**  Tell ARPANET to go ahead.
 	*/
 
-	if (ArpaMode == ARPA_MAIL)
-	{
-		extern char Arpa_Enter[];
-
-		message(Arpa_Enter, "Enter mail, end with \".\" on a line by itself");
-	}
+	if (sayok)
+		message("354", "Enter mail, end with \".\" on a line by itself");
 
 	/*
 	**  Try to read a UNIX-style From line
@@ -210,7 +206,7 @@ maketemp(from)
 	xfrom = hvalue("sender");
 	if (xfrom == NULL)
 		xfrom = OrigFrom;
-	if (ArpaMode != ARPA_NONE)
+	if (ArpaMode)
 		setfrom(xfrom, (char *) NULL);
 
 	/* full name of from person */

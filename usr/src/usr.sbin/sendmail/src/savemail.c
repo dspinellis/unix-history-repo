@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)savemail.c	3.21	%G%";
+static char	SccsId[] = "@(#)savemail.c	3.22	%G%";
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -84,6 +84,7 @@ savemail()
 		}
 		else
 		{
+			(void) fflush(Xscript);
 			xfile = fopen(Transcript, "r");
 			if (xfile == NULL)
 				syserr("Cannot open %s", Transcript);
@@ -123,7 +124,7 @@ savemail()
 	**	and we all know what poor typists programmers are.
 	*/
 
-	if (ArpaMode != ARPA_NONE)
+	if (ArpaMode)
 		return;
 	p = NULL;
 	if (From.q_mailer == LocalMailer)
@@ -239,6 +240,7 @@ errhdr(fp, m)
 	define('g', m->m_from);
 
 	(void) fflush(stdout);
+	(void) fflush(Xscript);
 	if ((xfile = fopen(Transcript, "r")) == NULL)
 		syserr("Cannot open %s", Transcript);
 	errno = 0;
@@ -282,6 +284,7 @@ errhdr(fp, m)
 	*/
 
 	fprintf(fp, "\n   ----- Transcript of session follows -----\n");
+	(void) fflush(Xscript);
 	while (fgets(buf, sizeof buf, xfile) != NULL)
 		fputs(buf, fp);
 

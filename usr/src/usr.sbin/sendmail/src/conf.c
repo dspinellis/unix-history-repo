@@ -36,7 +36,7 @@
 
 
 
-static char SccsId[] = "@(#)conf.c	3.37	%G%";
+static char SccsId[] = "@(#)conf.c	3.38	%G%";
 /*
 **  Header info table
 **	Final (null) entry contains the flags used for any other field.
@@ -74,22 +74,9 @@ struct hdrinfo	HdrInfo[] =
 **  ARPANET error message numbers.
 */
 
-# ifdef NEWFTP
-/* these are almost all unchecked */
-char	Arpa_Info[] =	"010";	/* arbitrary info: this is WRONG! */
-char	Arpa_Enter[] =	"354";	/* start mail input */
-char	Arpa_Mmsg[] =	"250";	/* mail successful (MAIL cmd) */
-char	Arpa_Fmsg[] =	"250";	/* mail successful (MLFL cmd) */
-char	Arpa_Syserr[] =	"450";	/* some (transient) system error */
-char	Arpa_Usrerr[] =	"550";	/* some (fatal) user error */
-# else NEWFTP
 char	Arpa_Info[] =	"050";	/* arbitrary info */
-char	Arpa_Enter[] =	"350";	/* start mail input */
-char	Arpa_Mmsg[] =	"256";	/* mail successful (MAIL cmd) */
-char	Arpa_Fmsg[] =	"250";	/* mail successful (MLFL cmd) */
-char	Arpa_Syserr[] =	"455";	/* some (transient) system error */
-char	Arpa_Usrerr[] =	"450";	/* some (fatal) user error */
-# endif NEWFTP
+char	Arpa_Syserr[] =	"451";	/* some (transient) system error */
+char	Arpa_Usrerr[] =	"554";	/* some (fatal) user error */
 
 
 
