@@ -1,4 +1,4 @@
-/*	tcp_timer.h	6.1	83/07/29	*/
+/*	tcp_timer.h	6.2	85/04/17	*/
 
 /*
  * Definitions of the TCP timers.  These timers are counted
@@ -48,7 +48,8 @@
  * Time constants.
  */
 #define	TCPTV_MSL	( 30*PR_SLOWHZ)		/* max seg lifetime */
-#define	TCPTV_SRTTBASE	(  1*PR_SLOWHZ)		/* base roundtrip time */
+#define	TCPTV_SRTTBASE	0			/* base roundtrip time;
+						   if 0, no idea yet */
 #define	TCPTV_KEEP	( 45*PR_SLOWHZ)		/* keep alive - 45 secs */
 #define	TCPTV_PERSMIN	(  5*PR_SLOWHZ)		/* retransmit persistance */
 
