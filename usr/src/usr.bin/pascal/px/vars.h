@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)vars.h 1.1 %G%"; */
+/* static char sccsid[] = "@(#)vars.h 1.2 %G%"; */
 
 #include <stdio.h>
 
@@ -56,11 +56,11 @@
 #define	PIX	1	/* load and go */
 #define	PIPE	2	/* bootstrap via a pipe */
 #define releq 0
-#define relne 1
-#define rellt 2
-#define relgt 3
-#define relle 4
-#define relge 5
+#define relne 2
+#define rellt 4
+#define relgt 6
+#define relle 8
+#define relge 10
 
 /*
  * interrupt and allocation routines
@@ -108,8 +108,8 @@ union progcntr {
  *		  |		|
  *		  | block mark  |
  *		  |		|
- *		  ---------------  <-- display entry points here
- *		  |             |
+ *		  ---------------  <-- display entry "stp" points here
+ *		  |             |  <-- display entry "locvars" points here
  *		  |   local	|
  *		  |  variables  |
  *		  |		|
@@ -122,9 +122,10 @@ union progcntr {
  *		  - - - - - - - -
  *
  * The information in the block mark is thus at positive offsets from
- * the display pointer entries while the local variables are at negative
- * offsets. The block mark actually consists of two parts. The first
- * part is created at CALL and the second at entry, i.e. BEGIN. Thus:
+ * the display.stp pointer entries while the local variables are at negative
+ * offsets from display.locvars. The block mark actually consists of
+ * two parts. The first part is created at CALL and the second at entry,
+ * i.e. BEGIN. Thus:
  *
  *		-------------------------
  *		|			|
@@ -136,11 +137,11 @@ union progcntr {
  *		|			|
  *		|  Saved (dp)		|
  *		|			|
- *		|  Current section name	|
- *		|   and entry line ptr	|
+ *		|  Pointer to current 	|
+ *		|   routine header info	|
  *		|			|
- *		|  Saved file name and	|
- *		|   file buffer ptr	|
+ *		|  Saved value of	|
+ *		|   "curfile"		|
  *		|			|
  *		|  Empty tos value	|
  *		|			|
@@ -170,6 +171,11 @@ struct stack {
 	long lino;		/* previous line number */
 };
 
+union disply {
+	struct disp frame[MAXLVL];
+	char *raw[2*MAXLVL];
+};
+
 /*
  * formal routine structure
  */
@@ -182,21 +188,21 @@ struct formalrtn {
 /*
  * program variables
  */
-extern struct disp	_display[MAXLVL];	/* runtime display */
-extern struct disp	*_dp;			/* runtime display */
-extern long		_lino;			/* current line number */
-extern int		_argc;			/* number of passed args */
-extern char		**_argv;		/* values of passed args */
-extern long		_nodump;		/* 1 => no post mortum dump */
-extern long		_mode;			/* execl by PX, PIPE, or PIX */
-extern long		_stlim;			/* statement limit */
-extern long		_stcnt;			/* statement count */
-extern char		*_maxptr;		/* maximum valid pointer */
-extern char		*_minptr;		/* minimum valid pointer */
-extern long		*_pcpcount;		/* pointer to pxp buffer */
-extern long		_cntrs;			/* number of counters */
-extern long		_rtns;			/* number of routine cntrs */
-
+extern union disply	_display;	/* runtime display */
+extern struct disp	*_dp;		/* ptr to active frame */
+extern long		_lino;		/* current line number */
+extern int		_argc;		/* number of passed args */
+extern char		**_argv;	/* values of passed args */
+extern long		_nodump;	/* 1 => no post mortum dump */
+extern long		_mode;		/* execl by PX, PIPE, or PIX */
+extern long		_stlim;		/* statement limit */
+extern long		_stcnt;		/* statement count */
+extern char		*_maxptr;	/* maximum valid pointer */
+extern char		*_minptr;	/* minimum valid pointer */
+extern long		*_pcpcount;	/* pointer to pxp buffer */
+extern long		_cntrs;		/* number of counters */
+extern long		_rtns;		/* number of routine cntrs */
+
 /*
  * The file i/o routines maintain a notion of a "current file".
  * A pointer to this file structure is kept in "curfile".
@@ -232,7 +238,7 @@ struct iorec {
 	char		buf[BUFSIZ];	/* I/O buffer */
 	char		window[1];	/* file window element */
 };
-
+
 /*
  * unit flags
  */
@@ -264,23 +270,11 @@ extern long		_filefre;	/* last used entry in _actfile */
 extern struct iorechd	input;
 extern struct iorechd	output;
 extern struct iorechd	_err;
-
-#ifdef profile
+
 /*
- * Px execution profile data
+ * Px execution profile array
  */
-#define	numops 256
-struct cntrec {
-	double	counts[numops];	/* instruction counts */
-	long	runs;		/* number of interpreter runs */
-	long	startdate;	/* date profile started */
-	long	usrtime;	/* total user time consumed */
-	long	systime;	/* total system time consumed */
-	double	stmts;		/* number of pascal statements executed */
-	} profdata;
-long	profcnts[numops];
-#define	proffile	"/usr/grad/mckusick/px/profile/pcnt.out"
-FILE	*datafile;		/* input datafiles */
-#else
-int	profcnts;	/* dummy just to keep the linker happy */
-#endif
+#ifdef PROFILE
+#define	NUMOPS 256
+extern long _profcnts[NUMOPS];
+#endif PROFILE

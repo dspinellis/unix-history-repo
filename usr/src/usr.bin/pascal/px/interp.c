@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)interp.c 1.1 %G%";
+static char sccsid[] = "@(#)interp.c 1.2 %G%";
 
 #include <math.h>
 #include "vars.h"
@@ -10,14 +10,10 @@ static char sccsid[] = "@(#)interp.c 1.1 %G%";
 #include "h01errs.h"
 #include "libpc.h"
 
-/* debugging variables */
-char opc[10];
-long opcptr = 9;
-
 /*
  * program variables
  */
-struct disp	_display[MAXLVL];
+union disply	_display;
 struct disp	*_dp;
 long	_lino = 0;
 int	_argc;
@@ -87,6 +83,21 @@ struct iorechd	_err = {
 	1			/* fsize   */
 };
 
+/*
+ * Px profile array
+ */
+#ifdef PROFILE
+long _profcnts[NUMOPS];
+#endif PROFILE
+
+/*
+ * debugging variables
+ */
+#ifdef DEBUG
+char opc[10];
+long opcptr = 9;
+#endif DEBUG
+
 interpreter(base)
 	char *base;
 {
@@ -117,54 +128,59 @@ interpreter(base)
 	/*
 	 * set up global environment, then ``call'' the main program
 	 */
-	_display[0].locvars = pushsp(2 * sizeof(struct iorec *));
-	*(struct iorec **)(_display[0].locvars + 4) = OUTPUT;
-	*(struct iorec **)(_display[0].locvars) = INPUT;
-	_display[0].locvars += 8;	/* >>> kludge <<< */
-	asm("	bispsw	$0xe0");	/* enable overflow traps */
+	_display.frame[0].locvars = pushsp(2 * sizeof(struct iorec *));
+	_display.frame[0].locvars += 8;	/* local offsets are negative */
+	*(struct iorec **)(_display.frame[0].locvars - 4) = OUTPUT;
+	*(struct iorec **)(_display.frame[0].locvars - 8) = INPUT;
+	enableovrflo();
 	stp = (struct stack *)pushsp(sizeof(struct stack));
-	_dp = &_display[0];
+	_dp = &_display.frame[0];
 	pc.cp = base;
 	for(;;) {
+#		ifdef DEBUG
 		if (++opcptr == 10)
 			opcptr = 0;
 		opc[opcptr] = *pc.ucp;
+#		endif DEBUG
+#		ifdef PROFILE
+		_profcnts[*pc.ucp]++;
+#		endif PROFILE
 		switch (*pc.ucp++) {
 		default:
 			panic(PBADOP);
 			continue;
 		case O_NODUMP:
 			_nodump++;
-			asm("	bicpsw	$0xe0");/* disable overflow checks */
+			disableovrflo();
 			/* and fall through */
 		case O_BEG:
 			_dp += 1;		/* enter local scope */
 			stp->odisp = *_dp;	/* save old display value */
 			tl = *pc.ucp++;		/* tl = name size */
 			stp->entry = pc.hdrp;	/* pointer to entry info */
-			tl1 = -*pc.lp++;	/* tl1 = local variable size */
+			tl1 = *pc.lp++;		/* tl1 = local variable size */
 			pc.lp++;		/* skip over number of args */
 			_lino = *pc.usp++;	/* set new lino */
 			pc.cp += tl;		/* skip over name text */
 			stp->file = curfile;	/* save active file */
 			tcp = pushsp(tl1);	/* tcp = new top of stack */
 			blkclr(tl1, tcp);	/* zero stack frame */
+			tcp += tl1;		/* offsets of locals are neg */
+			_dp->locvars = tcp;	/* set new display pointer */
+			_dp->stp = stp;
 			stp->tos = pushsp(0);	/* set top of stack pointer */
-			_dp->stp = stp;		/* set new display pointer */
-			/* _dp->locvars = tcp; */
-			_dp->locvars = (char *)stp; /* kludge, use prev line */
 			continue;
 		case O_END:
 			PCLOSE(_dp->locvars);	/* flush & close local files */
 			stp = _dp->stp;
 			curfile = stp->file;	/* restore old active file */
 			*_dp = stp->odisp;	/* restore old display entry */
-			if (_dp == &_display[1])
+			if (_dp == &_display.frame[1])
 				return;		/* exiting main proc ??? */
 			_lino = stp->lino;	/* restore lino, pc, dp */
 			pc.cp = stp->pc.cp;
 			_dp = stp->dp;
-			popsp(-stp->entry->framesze +	/* pop local vars */
+			popsp(stp->entry->framesze +	/* pop local vars */
 			      sizeof(struct stack) +	/* pop stack frame */
 			      stp->entry->nargs);	/* pop parms */
 			continue;
@@ -177,7 +193,7 @@ interpreter(base)
 			stp->lino = _lino;	/* save lino, pc, dp */
 			stp->pc.cp = pc.cp;
 			stp->dp = _dp;
-			_dp = &_display[tl];	/* set up new display ptr */
+			_dp = &_display.frame[tl]; /* set up new display ptr */
 			pc.cp = tcp;
 			continue;
 		case O_FCALL:
@@ -199,11 +215,11 @@ interpreter(base)
 					tl -= sizeof(int) - 1;
 				ERROR(ENARGS, tl / sizeof(int));
 			}
-			_dp = &_display[tfp->cbn];/* set up new display ptr */
+			_dp = &_display.frame[tfp->cbn];/* new display ptr */
 			blkcpy(sizeof(struct disp) * tfp->cbn,
-				&_display[1], &tfp->disp[tfp->cbn]);
+				&_display.frame[1], &tfp->disp[tfp->cbn]);
 			blkcpy(sizeof(struct disp) * tfp->cbn,
-				&tfp->disp[0], &_display[1]);
+				&tfp->disp[0], &_display.frame[1]);
 			continue;
 		case O_FRTN:
 			tl = *pc.cp++;		/* tl = size of return obj */
@@ -214,7 +230,7 @@ interpreter(base)
 			blkcpy(tl, tcp, tcp + sizeof(struct formalrtn *));
 			popsp(sizeof(struct formalrtn *));
 			blkcpy(sizeof(struct disp) * tfp->cbn,
-				&tfp->disp[tfp->cbn], &_display[1]);
+				&tfp->disp[tfp->cbn], &_display.frame[1]);
 			continue;
 		case O_FSAV:
 			tfp = (struct formalrtn *)popaddr();
@@ -223,7 +239,7 @@ interpreter(base)
 			tcp += sizeof(short);
 			tfp->entryaddr = base + *(long *)tcp;
 			blkcpy(sizeof(struct disp) * tfp->cbn,
-				&_display[1], &tfp->disp[0]);
+				&_display.frame[1], &tfp->disp[0]);
 			pushaddr(tfp);
 			continue;
 		case O_SDUP2:
@@ -247,11 +263,12 @@ interpreter(base)
 			pc.cp = base + *pc.lp;
 			continue;
 		case O_GOTO:
-			tstp = _display[*pc.cp++].stp; /* ptr to exit frame */
+			tstp = _display.frame[*pc.cp++].stp; /* ptr to
+								exit frame */
 			pc.cp = base + *pc.lp;
 			stp = _dp->stp;
 			while (tstp != stp) {
-				if (_dp == &_display[1])
+				if (_dp == &_display.frame[1])
 					ERROR(EGOTO); /* exiting prog ??? */
 				PCLOSE(_dp->locvars); /* close local files */
 				curfile = stp->file;  /* restore active file */
@@ -511,7 +528,7 @@ interpreter(base)
 				tl = *pc.usp++;
 			tl1 = pop2();		/* index */
 			tl2 = *pc.sp++;
-			SUBSC(tl1, tl2, tl2 + *pc.usp++); /* range check */
+			SUBSC(tl1, tl2, *pc.usp++); /* range check */
 			pushaddr(popaddr() + (tl1 - tl2) * tl);
 			continue;
 		case O_INX4:
@@ -520,7 +537,7 @@ interpreter(base)
 				tl = *pc.usp++;
 			tl1 = pop4();		/* index */
 			tl2 = *pc.sp++;
-			SUBSC(tl1, tl2, tl2 + *pc.usp++); /* range check */
+			SUBSC(tl1, tl2, *pc.usp++); /* range check */
 			pushaddr(popaddr() + (tl1 - tl2) * tl);
 			continue;
 		case O_OFF:
@@ -789,73 +806,73 @@ interpreter(base)
 			push8(pop4() / td);
 			continue;
 		case O_RV1:
-			tcp = _display[*pc.ucp++].locvars;
+			tcp = _display.raw[*pc.ucp++];
 			push2(*(tcp + *pc.sp++));
 			continue;
 		case O_RV14:
-			tcp = _display[*pc.ucp++].locvars;
+			tcp = _display.raw[*pc.ucp++];
 			push4(*(tcp + *pc.sp++));
 			continue;
 		case O_RV2:
-			tcp = _display[*pc.ucp++].locvars;
+			tcp = _display.raw[*pc.ucp++];
 			push2(*(short *)(tcp + *pc.sp++));
 			continue;
 		case O_RV24:
-			tcp = _display[*pc.ucp++].locvars;
+			tcp = _display.raw[*pc.ucp++];
 			push4(*(short *)(tcp + *pc.sp++));
 			continue;
 		case O_RV4:
-			tcp = _display[*pc.ucp++].locvars;
+			tcp = _display.raw[*pc.ucp++];
 			push4(*(long *)(tcp + *pc.sp++));
 			continue;
 		case O_RV8:
-			tcp = _display[*pc.ucp++].locvars;
+			tcp = _display.raw[*pc.ucp++];
 			push8(*(double *)(tcp + *pc.sp++));
 			continue;
 		case O_RV:
-			tcp = _display[*pc.ucp++].locvars;
+			tcp = _display.raw[*pc.ucp++];
 			tcp += *pc.sp++;
 			tl = *pc.usp++;
 			tcp1 = pushsp(tl);
 			blkcpy(tl, tcp, tcp1);
 			continue;
 		case O_LV:
-			tcp = _display[*pc.ucp++].locvars;
+			tcp = _display.raw[*pc.ucp++];
 			pushaddr(tcp + *pc.sp++);
 			continue;
 		case O_LRV1:
-			tcp = _display[*pc.ucp++].locvars;
+			tcp = _display.raw[*pc.ucp++];
 			push2(*(tcp + *pc.lp++));
 			continue;
 		case O_LRV14:
-			tcp = _display[*pc.ucp++].locvars;
+			tcp = _display.raw[*pc.ucp++];
 			push4(*(tcp + *pc.lp++));
 			continue;
 		case O_LRV2:
-			tcp = _display[*pc.ucp++].locvars;
+			tcp = _display.raw[*pc.ucp++];
 			push2(*(short *)(tcp + *pc.lp++));
 			continue;
 		case O_LRV24:
-			tcp = _display[*pc.ucp++].locvars;
+			tcp = _display.raw[*pc.ucp++];
 			push4(*(short *)(tcp + *pc.lp++));
 			continue;
 		case O_LRV4:
-			tcp = _display[*pc.ucp++].locvars;
+			tcp = _display.raw[*pc.ucp++];
 			push4(*(long *)(tcp + *pc.lp++));
 			continue;
 		case O_LRV8:
-			tcp = _display[*pc.ucp++].locvars;
+			tcp = _display.raw[*pc.ucp++];
 			push8(*(double *)(tcp + *pc.lp++));
 			continue;
 		case O_LRV:
-			tcp = _display[*pc.ucp++].locvars;
+			tcp = _display.raw[*pc.ucp++];
 			tcp += *pc.lp++;
 			tl = *pc.usp++;
 			tcp1 = pushsp(tl);
 			blkcpy(tl, tcp, tcp1);
 			continue;
 		case O_LLV:
-			tcp = _display[*pc.ucp++].locvars;
+			tcp = _display.raw[*pc.ucp++];
 			pushaddr(tcp + *pc.lp++);
 			continue;
 		case O_IND1:
@@ -1112,7 +1129,7 @@ interpreter(base)
 			continue;
 		case O_ASRT:
 			pc.cp++;
-			ASRT(pop2());
+			ASRT(pop2(), "");
 			continue;
 		case O_FOR1U:
 			pc.cp++;
@@ -1260,6 +1277,10 @@ interpreter(base)
 			PFLUSH();
 			curfile = ERR;
 			continue;
+		case O_PUT:
+			pc.cp++;
+			PUT(curfile);
+			continue;
 		case O_GET:
 			pc.cp++;
 			GET(curfile);
@@ -1394,64 +1415,46 @@ interpreter(base)
 			push2(pop4() & 1);
 			continue;
 		case O_SUCC2:
-			/* Pi should be fixed to gen code for:
-			 *	tl = *pc.cp++;
-			 *	if (tl == 0)
-			 *		tl = *pc.sp++;
-			 *	tl1 = pop4();
-			 *	push2(SUCC(tl1, tl, *pc.sp++));
-			 */
-			pc.cp++;
-			push2(pop4() + 1);
+			tl = *pc.cp++;
+			if (tl == 0)
+				tl = *pc.sp++;
+			tl1 = pop4();
+			push2(SUCC(tl1, tl, *pc.sp++));
 			continue;
 		case O_SUCC24:
-			/* Pi should be fixed to gen code for:
-			 *	tl = *pc.cp++;
-			 *	if (tl == 0)
-			 *		tl = *pc.sp++;
-			 *	tl1 = pop4();
-			 *	push4(SUCC(tl1, tl, *pc.sp++));
-			 */
+			tl = *pc.cp++;
+			if (tl == 0)
+				tl = *pc.sp++;
+			tl1 = pop4();
+			push4(SUCC(tl1, tl, *pc.sp++));
+			continue;
 		case O_SUCC4:
-			/* Pi should be fixed to gen code for:
-			 *	tl = *pc.cp++;
-			 *	if (tl == 0)
-			 *		tl = *pc.lp++;
-			 *	tl1 = pop4();
-			 *	push4(SUCC(tl1, tl, *pc.lp++));
-			 */
-			pc.cp++;
-			push4(pop4() + 1);
+			tl = *pc.cp++;
+			if (tl == 0)
+				tl = *pc.lp++;
+			tl1 = pop4();
+			push4(SUCC(tl1, tl, *pc.lp++));
 			continue;
 		case O_PRED2:
-			/* Pi should be fixed to gen code for:
-			 *	tl = *pc.cp++;
-			 *	if (tl == 0)
-			 *		tl = *pc.sp++;
-			 *	tl1 = pop4();
-			 *	push2(PRED(tl1, tl, *pc.sp++));
-			 */
-			pc.cp++;
-			push2(pop4() - 1);
+			tl = *pc.cp++;
+			if (tl == 0)
+				tl = *pc.sp++;
+			tl1 = pop4();
+			push2(PRED(tl1, tl, *pc.sp++));
 			continue;
 		case O_PRED24:
-			/* Pi should be fixed to gen code for:
-			 *	tl = *pc.cp++;
-			 *	if (tl == 0)
-			 *		tl = *pc.sp++;
-			 *	tl1 = pop4();
-			 *	push4(PRED(tl1, tl, *pc.sp++));
-			 */
+			tl = *pc.cp++;
+			if (tl == 0)
+				tl = *pc.sp++;
+			tl1 = pop4();
+			push4(PRED(tl1, tl, *pc.sp++));
+			continue;
 		case O_PRED4:
-			/* Pi should be fixed to gen code for:
-			 *	tl = *pc.cp++;
-			 *	if (tl == 0)
-			 *		tl = *pc.lp++;
-			 *	tl1 = pop4();
-			 *	push4(PRED(tl1, tl, *pc.lp++));
-			 */
-			pc.cp++;
-			push4(pop4() - 1);
+			tl = *pc.cp++;
+			if (tl == 0)
+				tl = *pc.lp++;
+			tl1 = pop4();
+			push4(PRED(tl1, tl, *pc.lp++));
 			continue;
 		case O_SEED:
 			pc.cp++;
