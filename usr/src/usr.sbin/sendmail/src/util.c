@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.62 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.63 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1516,7 +1516,7 @@ dumpfd(fd, printclosed, logit)
 		p += strlen(p);
 		slen = sizeof sa;
 		if (getsockname(fd, &sa.sa, &slen) < 0)
-			sprintf(p, "(badsock)");
+			sprintf(p, "(%s)", errstring(errno));
 		else
 		{
 			hp = hostnamebyanyaddr(&sa);
@@ -1530,7 +1530,7 @@ dumpfd(fd, printclosed, logit)
 		p += strlen(p);
 		slen = sizeof sa;
 		if (getpeername(fd, &sa.sa, &slen) < 0)
-			sprintf(p, "(badsock)");
+			sprintf(p, "(%s)", errstring(errno));
 		else
 		{
 			hp = hostnamebyanyaddr(&sa);
