@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)w.c	4.9 (Berkeley) %G%";
+static char *sccsid = "@(#)w.c	4.10 (Berkeley) %G%";
 /*
  * w - print system status (who and what)
  *
@@ -54,7 +54,7 @@ struct	nlist nl[] = {
 #define	X_BOOTTIME	6
 	{ "_nproc" },
 #define	X_NPROC		7
-	{ 0 },
+	{ "" },
 };
 
 FILE	*ps;
@@ -97,8 +97,11 @@ time_t	uptime;			/* time of last reboot & elapsed time since */
 int	np;			/* number of processes currently active */
 struct	utmp utmp;
 struct	proc mproc;
-struct	user up;
-char	fill[512];
+union {
+	struct user U_up;
+	char	pad[NBPG][UPAGES];
+} Up;
+#define	up	Up.U_up
 
 main(argc, argv)
 	char **argv;
@@ -331,9 +334,9 @@ putline()
 
 	if (lflag) {
 		/* print CPU time for all processes & children */
-		prttime(jobtime," ");
+		prttime(DIV60(jobtime)," ");
 		/* print cpu time for interesting process */
-		prttime(proctime," ");
+		prttime(DIV60(proctime)," ");
 	}
 
 	/* what user is doing, either command tail or args */
@@ -449,7 +452,7 @@ readpr()
 		/* find & read in the user structure */
 		if ((mproc.p_flag & SLOAD) == 0) {
 			/* not in memory - get from swap device */
-			addr = mproc.p_swaddr<<9;
+			addr = dtob(mproc.p_swaddr);
 			lseek(swap, (long)addr, 0);
 			if (read(swap, &up, sizeof(up)) != sizeof(up)) {
 				continue;
@@ -479,7 +482,7 @@ cont:
 			pr[np].w_seekaddr = ctob(apte.pg_pfnum);
 		}
 		vstodb(0, CLSIZE, &up.u_smap, &db, 1);
-		pr[np].w_lastpg = ctob(db.db_base);
+		pr[np].w_lastpg = dtob(db.db_base);
 		if (up.u_ttyp == NULL)
 			continue;
 
@@ -487,7 +490,9 @@ cont:
 		pr[np].w_pid = mproc.p_pid;
 		pr[np].w_flag = mproc.p_flag;
 		pr[np].w_size = mproc.p_dsize + mproc.p_ssize;
-		pr[np].w_igintr = (((int)up.u_signal[2]==1) + 2*((int)up.u_signal[2]>1) + 3*((int)up.u_signal[3]==1)) + 6*((int)up.u_signal[3]>1);
+		pr[np].w_igintr = (((int)up.u_signal[2]==1) +
+		    2*((int)up.u_signal[2]>1) + 3*((int)up.u_signal[3]==1)) +
+		    6*((int)up.u_signal[3]>1);
 		pr[np].w_time =
 		    up.u_ru.ru_utime.tv_sec + up.u_ru.ru_stime.tv_sec;
 		pr[np].w_ctime =
@@ -593,6 +598,8 @@ vstodb(vsbase, vssize, dmp, dbp, rev)
 	register int blk = DMMIN;
 	register swblk_t *ip = dmp->dm_map;
 
+	vsbase = ctod(vsbase);
+	vssize = ctod(vssize);
 	if (vsbase < 0 || vsbase + vssize > dmp->dm_size)
 		panic("vstodb");
 	while (vsbase >= blk) {
