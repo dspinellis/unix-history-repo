@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vnops.c	8.7 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	8.8 (Berkeley) %G%
  */
 
 /*
@@ -884,10 +884,7 @@ nfs_writerpc(vp, uiop, cred, ioflags)
 		if (nmp->nm_flag & NFSMNT_NQNFS) {
 			txdr_hyper(&uiop->uio_offset, tl);
 			tl += 2;
-			if (ioflags & IO_APPEND)
-				*tl++ = txdr_unsigned(1);
-			else
-				*tl++ = 0;
+			*tl++ = 0;
 		} else {
 			*++tl = txdr_unsigned(uiop->uio_offset);
 			tl += 2;
