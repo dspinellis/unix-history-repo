@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)function.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)function.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -168,7 +168,6 @@ f_always_true(plan, entry)
 PLAN *
 c_depth()
 {
-	extern int depth;
 	PLAN *new;
     
 	isdepth = 1;
@@ -196,14 +195,14 @@ f_exec(plan, entry)
 	register int cnt;
 	union wait pstat;
 	pid_t pid, waitpid();
-	void find_subst();
+	void brace_subst();
 
 	for (cnt = 0; plan->e_argv[cnt]; ++cnt)
 		if (plan->e_len[cnt])
-			find_subst(plan->e_orig[cnt], &plan->e_argv[cnt],
+			brace_subst(plan->e_orig[cnt], &plan->e_argv[cnt],
 			    entry->fts_accpath, plan->e_len[cnt]);
 
-	if (plan->flags && !find_queryuser(plan->e_argv))
+	if (plan->flags && !queryuser(plan->e_argv))
 		return(0);
 
 	switch(pid = vfork()) {
@@ -454,7 +453,7 @@ c_links(arg)
 	ftsoptions &= ~FTS_NOSTAT;
     
 	NEW(T_LINKS, f_links);
-	new->l_data = find_parsenum(new, "-links", arg, (char *)NULL);
+	new->l_data = (nlink_t)find_parsenum(new, "-links", arg, (char *)NULL);
 	return(new);
 }
  
