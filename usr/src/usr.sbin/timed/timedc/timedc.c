@@ -11,13 +11,14 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)timedc.c	1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)timedc.c	1.3 (Berkeley) %G%";
 #endif not lint
 
 #include "timedc.h"
 #include <signal.h>
 #include <ctype.h>
 #include <setjmp.h>
+#include <syslog.h>
 
 int	top;
 int	margc;
