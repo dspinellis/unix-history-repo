@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -606,15 +606,16 @@ main(argc, argv, envp)
 
 	if (tTd(0, 1))
 	{
-		printf("SYSTEM IDENTITY (after readcf):\n");
-		printf("\t    (short domain name) $w = %s\n",
-			macvalue('w', CurEnv));
-		printf("\t(canonical domain name) $j = %s\n",
-			macvalue('j', CurEnv));
-		printf("\t       (subdomain name) $m = %s\n",
-			macvalue('m', CurEnv));
-		printf("\t            (node name) $k = %s\n",
-			macvalue('k', CurEnv));
+		printf("SYSTEM IDENTITY (after readcf):");
+		printf("\n\t    (short domain name) $w = ");
+		xputs(macvalue('w', CurEnv));
+		printf("\n\t(canonical domain name) $j = ");
+		xputs(macvalue('j', CurEnv));
+		printf("\n\t       (subdomain name) $m = ");
+		xputs(macvalue('m', CurEnv));
+		printf("\n\t            (node name) $k = ");
+		xputs(macvalue('k', CurEnv));
+		printf("\n");
 	}
 
 	/* Enforce use of local time (null string overrides this) */
