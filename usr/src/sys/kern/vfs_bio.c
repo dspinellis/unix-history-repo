@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_bio.c	7.28 (Berkeley) %G%
+ *	@(#)vfs_bio.c	7.29 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -347,20 +347,6 @@ getblk(vp, blkno, size)
 
 	if (size > MAXBSIZE)
 		panic("getblk: size too big");
-	/*
-	 * To prevent overflow of 32-bit ints when converting block
-	 * numbers to byte offsets, blknos > 2^32 / DEV_BSIZE are set
-	 * to the maximum number that can be converted to a byte offset
-	 * without overflow. This is historic code; what bug it fixed,
-	 * or whether it is still a reasonable thing to do is open to
-	 * dispute. mkm 9/85
-	 *
-	 * Make it a panic to see if it ever really happens. mkm 11/89
-	 */
-	if ((unsigned)blkno >= 1 << (sizeof(int)*NBBY-DEV_BSHIFT)) {
-		panic("getblk: blkno too big");
-		blkno = 1 << ((sizeof(int)*NBBY-DEV_BSHIFT) + 1);
-	}
 	/*
 	 * Search the cache for the block.  If we hit, but
 	 * the buffer is in use for i/o, then we wait until
