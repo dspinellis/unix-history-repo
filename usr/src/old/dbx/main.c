@@ -4,7 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-static char sccsid[] = "@(#)main.c 5.1 %G%";
+static char sccsid[] = "@(#)main.c 5.2 %G%";
 /*
  * Debugger main routine.
  */
@@ -79,6 +79,7 @@ String argv[];
     symbols_init();
     symbols_init();
     process_init();
+    optab_init();
     if (runfirst) {
 	if (setjmp(env) == FIRST_TIME) {
 	    arginit();
