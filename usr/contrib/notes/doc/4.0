@@ -1,0 +1,10 @@
+.ls 1
+.ch "Other Notesfile Utilities"
+
+	The notesfile distribution includes utility programs to
+provide hard copy output,
+additional interfaces to user programs,
+and
+statistics.
+They are described below.
+
