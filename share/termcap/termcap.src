@@ -3249,6 +3249,8 @@ pc|ibmpc|ibm pc PC/IX:\
 pc3mono|IBM PC 386BSD Console with monochrome monitor:\
 	:so=\E[0;1r\E[m:tc=pc3:
 pc3|ibmpc3|IBM PC 386BSD Console:\
+	:AL=\E[%dL:\
+	:DL=\E[%dM:\
 	:DO=\E[%dB:\
 	:K1=\E[H:\
 	:K2=\E[I:\
@@ -3258,6 +3260,7 @@ pc3|ibmpc3|IBM PC 386BSD Console:\
 	:LE=\E[%dD:\
 	:RI=\E[%dC:\
 	:UP=\E[%dA:\
+	:al=\E[L:\
 	:am:\
 	:bl=^G:\
 	:bs:\
@@ -3268,6 +3271,7 @@ pc3|ibmpc3|IBM PC 386BSD Console:\
 	:cm=\E[%i%d;%dH:\
 	:co#80:\
 	:cr=^M:\
+	:dl=\E[M:\
 	:do=^J:\
 	:ho=\E[H:\
 	:is=\E[m:\
