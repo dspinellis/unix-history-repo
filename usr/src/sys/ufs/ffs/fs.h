@@ -187,7 +187,15 @@ struct	fs
 	long	fs_fshift;		/* ``numfrags'' calc number of frags */
 	long	fs_maxcontig;		/* max number of contiguous blks */
 	long	fs_maxbpg;		/* max number of blks per cyl group */
-	long	fs_sparecon[14];	/* reserved for future constants */
+	long	fs_fragshift;		/* block to frag shift */
+	long	fs_fsbtodb;		/* fsbtodb and dbtofsb shift constant */
+	long	fs_sbsize;		/* actual size of super block */
+	long	fs_csmask;		/* csum block offset */
+	long	fs_csshift;		/* csum block number */
+	long	fs_nindir;		/* value of NINDIR */
+	long	fs_inopb;		/* value of INOPB */
+	long	fs_nspf;		/* value of NSPF */
+	long	fs_sparecon[6];		/* reserved for future constants */
 /* sizes determined by number of cylinder groups and their sizes */
 	daddr_t fs_csaddr;		/* blk addr of cyl grp summary area */
 	long	fs_cssize;		/* size of cyl grp summary area */
