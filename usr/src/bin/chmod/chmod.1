@@ -3,17 +3,17 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)chmod.1	6.12 (Berkeley) %G%
+.\"     @(#)chmod.1	6.13 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CHMOD 1
 .Os BSD 4.4
 .Sh NAME
 .Nm chmod
-change file modes
+.Nd change file modes
 .Sh SYNOPSIS
 .Nm chmod
-.Op Fl fR
+.Op Fl R
 .Ar mode
 .Ar file ...
 .Sh DESCRIPTION
@@ -25,18 +25,14 @@ as specified by the
 operand.
 .Pp
 The options are as follows:
-.Tw Ds
-.Tp Fl f
-.Nm chmod
-will still exit 0 and not complain if it fails to change the mode
-on a file.
-.Tp Fl R
+.Bl -tag -width Ds
+.It Fl R
 Traverse a file hierarchy.
 For each file that is of type directory,
 .Nm chmod
 changes the mode of all files in the file hierarchy below it followed
 by the mode of the directory itself.
-.Tp
+.El
 .Pp
 Symbolic links are not indirected through, nor are their modes altered.
 .Pp
@@ -49,56 +45,41 @@ utility exits 0 on success, and >0 if an error occurs.
 .Sh MODES
 Modes may be absolute or symbolic.
 An absolute mode is an octal number constructed by
-.Cx Ar or
-.Cx 'ing
-.Cx
+.Ar or Ap ing
 the following values:
-.Df I
-.Dw Fl
-.Dp Li 4000
+.Pp
+.Bl -tag -width 6n -compact -offset indent
+.It Li 4000
 set-user-ID-on-execution
-.Dp Li 2000
+.It Li 2000
 set-group-ID-on-execution
-.Dp Li 1000
+.It Li 1000
 sticky bit, see chmod(2)
-.Dp Li 0400
+.It Li 0400
 read by owner
-.Dp Li 0200
+.It Li 0200
 write by owner
-.Dp Li 0100
+.It Li 0100
 execute (or search for directories) by owner
-.Dp Li 0070
+.It Li 0070
 read, write, execute/search by group
-.Dp Li 0007
+.It Li 0007
 read, write, execute/search by others
-.Dp
-.De
+.El
 .Pp
 The read, write, and execute/search values for group and others
 are encoded as described for owner.
 .Pp
 The symbolic mode is described by the following grammar:
-.Dp Li mode
-::= clause
-.Op  \&, clause
-...
-.Dp Li clause
-::=
-.Op  who ...
-.Op  action ...
-last_action
-.Dp Li action
-::= op perm ...
-.Dp Li last_action
-::= op
-.Op  perm ...
-.Dp Li who
-.Li ::= a | u | g | o
-.Dp Li op
-.Li ::= + |  - |  =
-.Dp Li perm
-.Li ::= r |  s |  t |  w |  X |  x |  u |  g |  o
-.Dp
+.Bd -literal -offset indent
+mode         ::= clause [, clause ...]
+clause       ::= [who ...] [action ...] last_action
+action       ::= op [perm ...]
+last_action  ::= op [perm ...]
+who          ::= a | u | g | o
+op           ::= + | \- | =
+perm         ::= r | s | t | w | X | x | u | g | o
+.Ed
 .Pp
 The
 .Ar who
@@ -111,18 +92,19 @@ symbol ``a'' is equivalent to ``ugo''.
 The
 .Ar perm
 symbols represent the portions of the mode bits as follows:
-.Dw Ds
-.Dp r
+.Pp
+.Bl -tag -width Ds -compact -offset indent
+.It r
 The read bits.
-.Dp s
+.It s
 The set-user-ID-on-execution and set-group-ID-on-execution bits.
-.Dp t
+.It t
 The sticky bit.
-.Dp w
+.It w
 The write bits.
-.Dp x
+.It x
 The execute/search bits.
-.Dp X
+.It X
 The execute/search bits if the file is a directory or any of the
 execute/search bits are set in the original (unmodified) mode.
 Operations with the
@@ -130,13 +112,13 @@ Operations with the
 symbol ``X'' are only meaningful in conjunction with the
 .Ar op
 symbol ``+'', and it is ignored in all other cases.
-.Dp
+.El
 .Pp
 The
 .Ar op
 symbols represent the operation performed, as follows:
-.Tw Ds
-.Tp \&+
+.Bl -tag -width 4n
+.It +
 If no value is supplied for
 .Ar perm ,
 the ``+'' operation has no effect.
@@ -151,10 +133,10 @@ Otherwise, the mode bits represented by the specified
 and
 .Ar perm
 values are set.
-.Tp \&-
+.It \&\-
 If no value is supplied for
 .Ar perm ,
-the ``-'' operation has no effect.
+the ``\-'' operation has no effect.
 If no value is supplied for
 .Ar who ,
 the mode bits represented by
@@ -165,7 +147,7 @@ Otherwise, the mode bits represented by the specified
 and
 .Ar perm
 values are cleared.
-.Tp \&=
+.It =
 The mode bits specified by the
 .Ar who
 value are cleared, or, if no who value is specified, the owner, group
@@ -181,7 +163,7 @@ Otherwise, the mode bits represented by the specified
 and
 .Ar perm
 values are set.
-.Tp
+.El
 .Pp
 Each
 .Ar clause
@@ -194,24 +176,32 @@ Operations upon the other permissions only (specified by the symbol
 .Ar perm
 symbols ``s'' or ``t'', are ignored.
 .Sh EXAMPLES
-.Tw Ar
-.Tp ``644''
+.Bl -tag -width "u=rwx,go=u-w" -compact
+.It Li 644
 make a file readable by anyone and writable by the owner only.
-.Tp ``go-w''
+.Pp
+.It Li go-w
 deny write permission to group and others.
-.Tp ``=rw,+X''
+.Pp
+.It Li =rw,+X
 set the read and write permissions to the usual defaults, but
 retain any execute permissions that are currently set.
-.Tp ``+X''
+.Pp
+.It Li +X
 make a directory or file searchable/executable by everyone if it is
 already searchable/executable by anyone.
-.Tp ``755'', ``u=rwx,go=rx'' or ``u=rwx,go=u-w''
+.Pp
+.It Li 755
+.It Li u=rwx,go=rx
+.It Li u=rwx,go=u-w
 make a file readable/executable by everyone and writeable by the owner only.
-.Tp ``go=''
+.Pp
+.It Li go=
 clear all mode bits for group and others.
-.Tp ``g=u-w''
+.Pp
+.It Li g=u-w
 set the group bits equal to the user bits, but clear the group write bit.
-.Tp
+.El
 .Sh BUGS
 There's no
 .Ar perm
@@ -230,4 +220,8 @@ The
 utility is expected to be POSIX 1003.2 compatible with the exception
 of the
 .Ar perm
-symbols ``t'' and ``X'' which are not included in that standard.
+symbols
+.Dq t
+and
+.Dq X
+which are not included in that standard.
