@@ -1,4 +1,4 @@
-#	@(#)vchain	7.2 (Berkeley) %G%
+#	@(#)vchain	8.1 (Berkeley) %G%
 #
 # Given a vnode, follow its mount pointers
 define vchain
