@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)output.c	4.4 %G%";
+static	char sccsid[] = "@(#)output.c	4.5 %G%";
 #endif
 /*
  *
@@ -172,7 +172,7 @@ printf(fmat,a1)
 		    case 'F':
 #ifdef vax
 			dptr++;
-			sprintf(s=digits,"%+.16e",*rptr,*(rptr+4)); prec= -1; break;
+			sprintf(s=digits,"%+.16e",*rptr); prec= -1; break;
 #else
 			vptr += 7;
 			s=ecvt(*rptr, prec, &decpt, &n);
