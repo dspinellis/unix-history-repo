@@ -18,7 +18,7 @@
 /*
  * Generic configuration;  all in one
  */
-dev_t	rootdev, pipedev, argdev, dumpdev;
+dev_t	rootdev, argdev, dumpdev;
 int	nswap;
 struct	swdevt swdevt[] =
 {
@@ -54,7 +54,7 @@ setconf()
 	register struct mba_device *mi;
 	register struct uba_device *ui;
 	register struct genericconf *gc;
-	int unit;
+	int unit, swaponroot = 0;
 
 	if (boothowto & RB_ASKNAME) {
 		char name[128];
@@ -67,6 +67,10 @@ retry:
 				goto gotit;
 		goto bad;
 gotit:
+		if (name[3] == '*') {
+			name[3] = name[4];
+			swaponroot++;
+		}
 		if (name[2] >= '0' && name[2] <= '7' && name[3] == 0) {
 			unit = name[2] - '0';
 			goto found;
@@ -102,11 +106,13 @@ bad:
 	asm("halt");
 found:
 	gc->gc_root = makedev(major(gc->gc_root), unit*8);
-	rootdev = pipedev = gc->gc_root;
+	rootdev = gc->gc_root;
 	swdevt[0].sw_dev = argdev = dumpdev =
 	    makedev(major(rootdev), minor(rootdev)+1);
 	nswap = gc->gc_nswap;
 	dumplo = gc->gc_dumplo;
+	if (swaponroot)
+		rootdev = dumpdev;
 }
 
 getchar()
