@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	6.16 (Berkeley) %G%
+ *	@(#)conf.h	6.17 (Berkeley) %G%
  */
 
 /*
@@ -85,11 +85,24 @@
 # define SYS5TZ		1	/* use System V style timezones */
 # define HASUNAME	1	/* use System V uname system call */
 
+# endif
+
 #ifdef sun
 # include <vfork.h>
 #endif
 
-# endif
+/*
+**  Due to a "feature" in Ultrix, if you receive an ICMP_UNREACH_HOST
+**  on _any_ connection, all connections to that host are closed.  Some
+**  firewalls return this error if you try to connect to the IDENT port
+**  (113), so you can't receive email from these hosts on Ultrix.  The
+**  firewall really should use ICMP_UNREACH_PROTOCOL or _PORT or
+**  _NET_PROHIB instead.
+*/
+
+#ifndef ultrix
+# define IDENTPROTO	1	/* use IDENT proto (RFC 1413) */
+#endif
 
 /*
 **  Remaining definitions should never have to be changed.  They are
