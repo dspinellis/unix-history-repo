@@ -129,7 +129,8 @@ dinit(hp)
 		    swd.st_ino == shp.st_ino)
 		    tcp = cwd;
 	    }
-	    cp = dcanon(str2short(tcp), STRNULL);
+	    /* EWS: dcanon frees its argument; can't just use str2short */
+	    cp = dcanon(Strsave(str2short(tcp)), STRNULL);
 	}
     }
 
