@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_input.c	7.33 (Berkeley) %G%
+ *	@(#)tcp_input.c	7.34 (Berkeley) %G%
  */
 
 #ifndef TUBA_INCLUDE
@@ -621,6 +621,14 @@ findpcb:
 			tp->t_state = TCPS_SYN_RECEIVED;
 
 trimthenstep6:
+		/*
+		 * Must not talk to ourselves.
+		 */
+		if (inp->inp_laddr.s_addr == inp->inp_faddr.s_addr &&
+		    inp->inp_lport == inp->inp_fport) {
+			dropsocket = 1; /* do an ECONNRESET */
+			goto dropwithreset;
+		}
 		/*
 		 * Advance ti->ti_seq to correspond to first data byte.
 		 * If data, trim to stay within window,
