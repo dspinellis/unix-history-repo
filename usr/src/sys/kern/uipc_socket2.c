@@ -1,4 +1,4 @@
-/*	uipc_socket2.c	4.4	81/11/21	*/
+/*	uipc_socket2.c	4.5	81/11/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -137,7 +137,7 @@ sbwakeup(sb)
 	}
 	if (sb->sb_flags & SB_WAIT) {
 		sb->sb_flags &= ~SB_WAIT;
-		wakeup((caddr_t)sb->sb_cc);
+		wakeup((caddr_t)&sb->sb_cc);
 	}
 }
 
@@ -182,8 +182,11 @@ sbappend(sb, m)
 	register struct mbuf **np, *n;
 
 	np = &sb->sb_mb;
-	while ((n = *np) && n->m_next)
+	n = 0;
+	while (*np) {
+		n = *np;
 		np = &n->m_next;
+	}
 	while (m) {
 		if (n && n->m_off <= MMAXOFF && m->m_off <= MMAXOFF &&
 		   (int)n->m_act == 0 && (int)m->m_act == 0 &&
