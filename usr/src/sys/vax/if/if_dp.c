@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_dp.c	7.9 (Berkeley) %G%
+ *	@(#)if_dp.c	7.10 (Berkeley) %G%
  */
 
 #include "dp.h"
@@ -442,76 +442,6 @@ register struct dpdevice *addr;
 		log(LOG_DEBUG, "if_dp%d: impossible state in dpxint\n");
 	}
 }
-/*
- * Routine to copy from device buffer into mbufs.
- *
- * Warning: This makes the fairly safe assumption that
- * mbufs have even lengths.
- */
-struct mbuf *
-dpget(rxbuf, totlen, off, ifp)
-	caddr_t rxbuf;
-	int totlen, off;
-	struct ifnet *ifp;
-{
-	register caddr_t cp;
-	register struct mbuf *m;
-	struct mbuf *top = 0, **mp = &top;
-	int len;
-	caddr_t packet_end;
-
-	cp = rxbuf;
-	packet_end = cp + totlen;
-	if (off) {
-		off += 2 * sizeof(u_short);
-		totlen -= 2 *sizeof(u_short);
-		cp = rxbuf + off;
-	}
-
-	MGETHDR(m, M_DONTWAIT, MT_DATA);
-	if (m == 0)
-		return (0);
-	m->m_pkthdr.rcvif = ifp;
-	m->m_pkthdr.len = totlen;
-	m->m_len = MHLEN;
-
-	while (totlen > 0) {
-		if (top) {
-			MGET(m, M_DONTWAIT, MT_DATA);
-			if (m == 0) {
-				m_freem(top);
-				return (0);
-			}
-			m->m_len = MLEN;
-		}
-		len = min(totlen, (packet_end - cp));
-		if (len >= MINCLSIZE) {
-			MCLGET(m, M_DONTWAIT);
-			if (m->m_flags & M_EXT)
-				m->m_len = len = min(len, MCLBYTES);
-			else
-				len = m->m_len;
-		} else {
-			/*
-			 * Place initial small packet/header at end of mbuf.
-			 */
-			if (len < m->m_len) {
-				if (top == 0 && len + max_linkhdr <= m->m_len)
-					m->m_data += max_linkhdr;
-				m->m_len = len;
-			} else
-				len = m->m_len;
-		}
-		bcopy(cp, mtod(m, caddr_t), (u_int)len);
-		*mp = m;
-		mp = &m->m_next;
-		totlen -= len;
-		cp += len;
-		if (cp == packet_end)
-			cp = rxbuf;
-	}
-	return (top);
-}
 
 dpinput(ifp, len, buffer)
 register struct ifnet *ifp;
@@ -521,6 +451,7 @@ caddr_t buffer;
 	register struct mbuf *m;
 	extern struct ifqueue hdintrq, ipintrq;
 	int isr;
+	extern struct mbuf *m_devget();
 
 	ifp->if_ipackets++;
 	if (dp_log) {
@@ -551,7 +482,7 @@ caddr_t buffer;
 	if (len <= 0)
 		return;
 
-	m = dpget(buffer, len , 0, ifp);
+	m = m_devget(buffer, len , 0, ifp, 0);
 	if (m == 0)
 		return;
 
