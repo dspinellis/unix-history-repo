@@ -15,7 +15,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mountd.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)mountd.c	5.13 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -445,8 +445,12 @@ get_exportlist()
 		 */
 		savedc = *endcp;
 		*endcp = '\0';
-		if (stat(cp, &sb) < 0 || (sb.st_mode & S_IFMT) != S_IFDIR)
-			goto err;
+		if (stat(cp, &sb) < 0 || (sb.st_mode & S_IFMT) != S_IFDIR) {
+			syslog(LOG_ERR,
+			    "Bad Exports File, %s: %s, mountd Failed",
+			    cp, "Not a directory");
+			exit(2);
+		}
 		fep = (struct exportlist *)0;
 		ep = exphead.ex_next;
 		while (ep) {
@@ -464,74 +468,86 @@ get_exportlist()
 		len = endcp-cp;
 		if (len <= RPCMNT_PATHLEN && len > 0) {
 			ep = (struct exportlist *)malloc(sizeof(*ep));
+			if (ep == NULL)
+				goto err;
 			ep->ex_next = ep->ex_prev = (struct exportlist *)0;
 			ep->ex_groups = (struct grouplist *)0;
 			bcopy(cp, ep->ex_dirp, len);
 			ep->ex_dirp[len] = '\0';
 			dirplen = len;
-		} else
-			goto err;
+		} else {
+			syslog(LOG_ERR, "Bad Exports File, mountd Failed");
+			exit(2);
+		}
 		cp = endcp;
 		nextfield(&cp, &endcp);
 		len = endcp-cp;
 		while (len > 0) {
 			savedc = *endcp;
 			*endcp = '\0';
-			if (len <= RPCMNT_NAMELEN) {
-				if (*cp == '-') {
-				    do_opt(cp+1, fep, ep, &exflags, &rootuid);
-				} else {
-				    if (isdigit(*cp)) {
-					saddr = inet_addr(cp);
-					if (saddr == -1 ||
-					    (hp = gethostbyaddr((caddr_t)&saddr,
-					     sizeof(saddr), AF_INET)) == NULL)
-						goto err;
-				    } else if ((hp = gethostbyname(cp)) == NULL)
-					goto err;
-				    grp = (struct grouplist *)
-					    malloc(sizeof(struct grouplist));
-				    if (grp == NULL)
-					    goto err;
-				    nhp = grp->gr_hp = (struct hostent *)
-					    malloc(sizeof(struct hostent));
-				    if (nhp == NULL)
-					    goto err;
-				    bcopy((caddr_t)hp, (caddr_t)nhp,
-					    sizeof(struct hostent));
-				    i = strlen(hp->h_name)+1;
-				    nhp->h_name = (char *)malloc(i);
-				    if (nhp->h_name == NULL)
-					    goto err;
-				    bcopy(hp->h_name, nhp->h_name, i);
-				    addrp = hp->h_addr_list;
-				    i = 1;
-				    while (*addrp++)
-					    i++;
-				    naddrp = nhp->h_addr_list = (char **)
-					    malloc(i*sizeof(char *));
-				    if (naddrp == NULL)
-					    goto err;
-				    addrp = hp->h_addr_list;
-				    while (*addrp) {
-					    *naddrp = (char *)
-					        malloc(hp->h_length);
-					    if (*naddrp == NULL)
-						goto err;
-					    bcopy(*addrp, *naddrp,
-						    hp->h_length);
-					    addrp++;
-					    naddrp++;
-				    }
-				    *naddrp = (char *)0;
-				    grp->gr_next = ep->ex_groups;
-				    ep->ex_groups = grp;
-				}
+			if (len > RPCMNT_NAMELEN)
+				goto more;
+			if (*cp == '-') {
+				do_opt(cp + 1, fep, ep, &exflags, &rootuid);
+				goto more;
 			}
+			if (isdigit(*cp)) {
+				saddr = inet_addr(cp);
+				if (saddr == -1 ||
+				    (hp = gethostbyaddr((caddr_t)&saddr,
+				     sizeof(saddr), AF_INET)) == NULL) {
+					syslog(LOG_ERR,
+					    "Bad Exports File, %s: %s", cp,
+					    "Gethostbyaddr failed, ignored");
+					goto more;
+				}
+			} else if ((hp = gethostbyname(cp)) == NULL) {
+				syslog(LOG_ERR, "Bad Exports File, %s: %s",
+				    cp, "Gethostbyname failed, ignored");
+				goto more;
+			}
+			grp = (struct grouplist *)
+				malloc(sizeof(struct grouplist));
+			if (grp == NULL)
+				goto err;
+			nhp = grp->gr_hp = (struct hostent *)
+				malloc(sizeof(struct hostent));
+			if (nhp == NULL)
+				goto err;
+			bcopy((caddr_t)hp, (caddr_t)nhp,
+				sizeof(struct hostent));
+			i = strlen(hp->h_name)+1;
+			nhp->h_name = (char *)malloc(i);
+			if (nhp->h_name == NULL)
+				goto err;
+			bcopy(hp->h_name, nhp->h_name, i);
+			addrp = hp->h_addr_list;
+			i = 1;
+			while (*addrp++)
+				i++;
+			naddrp = nhp->h_addr_list = (char **)
+				malloc(i*sizeof(char *));
+			if (naddrp == NULL)
+				goto err;
+			addrp = hp->h_addr_list;
+			while (*addrp) {
+				*naddrp = (char *)
+				    malloc(hp->h_length);
+				if (*naddrp == NULL)
+				    goto err;
+				bcopy(*addrp, *naddrp,
+					hp->h_length);
+				addrp++;
+				naddrp++;
+			}
+			*naddrp = (char *)0;
+			grp->gr_next = ep->ex_groups;
+			ep->ex_groups = grp;
+		more:
 			cp = endcp;
 			*cp = savedc;
 			nextfield(&cp, &endcp);
-			len = endcp-cp;
+			len = endcp - cp;
 		}
 		if (fep == NULL) {
 			args.fspec = 0;
@@ -579,7 +595,7 @@ nextline:
 	fclose(inf);
 	return;
 err:
-	syslog(LOG_ERR, "Bad Exports File, mountd Failed");
+	syslog(LOG_ERR, "No more memory: mountd Failed");
 	exit(2);
 }
 
