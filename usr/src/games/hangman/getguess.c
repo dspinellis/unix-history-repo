@@ -6,10 +6,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)getguess.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)getguess.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
-# include	"hangman.h"
+#include <sys/ttydefaults.h>
+#include "hangman.h"
 
 /*
  * getguess:
