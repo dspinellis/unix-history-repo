@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: scsi.c 1.3 90/01/27$
  *
- *	@(#)scsi.c	7.6 (Berkeley) %G%
+ *	@(#)scsi.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -125,7 +125,7 @@ scsiabort(hs, hd)
 	printf("scsi%d error: scsiabort\n", hs - scsi_softc);
 
 	scsireset(hs - scsi_softc);
-	return (0);
+	DELAY(1000000);
 }
 
 static int

@@ -9,15 +9,16 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: rd.c 1.17 92/06/18$
+ * from: Utah $Hdr: rd.c 1.20 92/12/21$
  *
- *	@(#)rd.c	7.6 (Berkeley) %G%
+ *	@(#)rd.c	7.7 (Berkeley) %G%
  */
 
 /*
  * CS80/SS80 disk driver
  */
 #include <sys/param.h>
+#include <sys/disklabel.h>
 #include <stand/saio.h>
 #include <hp300/stand/samachdep.h>
 
@@ -28,60 +29,49 @@ struct	rd_rscmd rd_rsc;
 struct	rd_stat rd_stat;
 struct	rd_ssmcmd rd_ssmc;
 
+struct	disklabel rdlabel;
+
+struct	rdminilabel {
+	u_short	npart;
+	u_long	offset[MAXPARTITIONS];
+};
+
 struct	rd_softc {
 	char	sc_retry;
 	char	sc_alive;
 	short	sc_type;
+	struct	rdminilabel sc_pinfo;
 } rd_softc[NHPIB][NRD];
 
 #define	RDRETRY		5
 
-int rdcyloff[][8] = {
-	{ 1, 143, 0, 143, 0,   0,   323, 503, },	/* 7945A */
-	{ 1, 167, 0, 0,   0,   0,   0,   0,   },	/* 9134D */
-	{ 0, 0,   0, 0,   0,   0,   0,   0,   },	/* 9122S */
-	{ 0, 71,  0, 221, 292, 542, 221, 0,   },	/* 7912P */
-	{ 1, 72,  0, 72,  362, 802, 252, 362, },	/* 7914P */
-	{ 1, 28,  0, 140, 167, 444, 140, 721, },	/* 7933H */
-	{ 1, 200, 0, 200, 0,   0,   450, 600, },	/* 9134L */
-	{ 1, 105, 0, 105, 380, 736, 265, 380, },	/* 7957A */
-	{ 1, 65,  0, 65,  257, 657, 193, 257, },	/* 7958A */
-	{ 1, 128, 0, 128, 518, 918, 388, 518, },	/* 7957B */
-	{ 1, 44,  0, 44,  174, 496, 131, 174, },	/* 7958B */
-	{ 1, 44,  0, 44,  218, 1022,174, 218, },	/* 7959B */
-	{ 1, 37,  0, 37,  183, 857, 147, 183, },	/* 2200A */
-	{ 1, 19,  0, 94,  112, 450, 94,  788, },	/* 2203A */
-	{ 1, 20,  0, 98,  117, 256, 98,  397, },	/* 7936H */
-	{ 1, 11,  0, 53,  63,  217, 53,  371, },	/* 7937H */
+struct	rdidentinfo {
+	short	ri_hwid;
+	short	ri_maxunum;
+	int	ri_nblocks;
+} rdidentinfo[] = {
+	{ RD7946AID,	0,	 108416 },
+	{ RD9134DID,	1,	  29088 },
+	{ RD9134LID,	1,	   1232 },
+	{ RD7912PID,	0,	 128128 },
+	{ RD7914PID,	0,	 258048 },
+	{ RD7958AID,	0,	 255276 },
+	{ RD7957AID,	0,	 159544 },
+	{ RD7933HID,	0,	 789958 },
+	{ RD9134LID,	1,	  77840 },
+	{ RD7936HID,	0,	 600978 },
+	{ RD7937HID,	0,	1116102 },
+	{ RD7914CTID,	0,	 258048 },
+	{ RD7946AID,	0,	 108416 },
+	{ RD9134LID,	1,	   1232 },
+	{ RD7957BID,	0,	 159894 },
+	{ RD7958BID,	0,	 297108 },
+	{ RD7959BID,	0,	 594216 },
+	{ RD2200AID,	0,	 654948 },
+	{ RD2203AID,	0,	1309896 }
 };
+int numrdidentinfo = sizeof(rdidentinfo) / sizeof(rdidentinfo[0]);
 
-struct rdinfo {
-	int	nbpc;
-	int	hwid;
-	int	*cyloff;
-} rdinfo[] = {
-	NRD7945ABPT*NRD7945ATRK, RD7946AID, rdcyloff[0],
-	NRD9134DBPT*NRD9134DTRK, RD9134DID, rdcyloff[1],
-	NRD9122SBPT*NRD9122STRK, RD9134LID, rdcyloff[2],
-	NRD7912PBPT*NRD7912PTRK, RD7912PID, rdcyloff[3],
-	NRD7914PBPT*NRD7914PTRK, RD7914PID, rdcyloff[4],
-	NRD7958ABPT*NRD7958ATRK, RD7958AID, rdcyloff[8],
-	NRD7957ABPT*NRD7957ATRK, RD7957AID, rdcyloff[7],
-	NRD7933HBPT*NRD7933HTRK, RD7933HID, rdcyloff[5],
-	NRD9134LBPT*NRD9134LTRK, RD9134LID, rdcyloff[6],
-	NRD7936HBPT*NRD7936HTRK, RD7936HID, rdcyloff[14],
-	NRD7937HBPT*NRD7937HTRK, RD7937HID, rdcyloff[15],
-	NRD7914PBPT*NRD7914PTRK, RD7914CTID,rdcyloff[4],
-	NRD7945ABPT*NRD7945ATRK, RD7946AID, rdcyloff[0],
-	NRD9122SBPT*NRD9122STRK, RD9134LID, rdcyloff[2],
-	NRD7957BBPT*NRD7957BTRK, RD7957BID, rdcyloff[9],
-	NRD7958BBPT*NRD7958BTRK, RD7958BID, rdcyloff[10],
-	NRD7959BBPT*NRD7959BTRK, RD7959BID, rdcyloff[11],
-	NRD2200ABPT*NRD2200ATRK, RD2200AID, rdcyloff[12],
-	NRD2203ABPT*NRD2203ATRK, RD2203AID, rdcyloff[13],
-};
-int	nrdinfo = sizeof(rdinfo) / sizeof(rdinfo[0]);
-					
 rdinit(ctlr, unit)
 	int ctlr, unit;
 {
@@ -122,10 +112,10 @@ rdident(ctlr, unit)
 	id = hpibid(ctlr, unit);
 	if ((id & 0x200) == 0)
 		return(-1);
-	for (i = 0; i < nrdinfo; i++)
-		if (id == rdinfo[i].hwid)
+	for (i = 0; i < numrdidentinfo; i++)
+		if (id == rdidentinfo[i].ri_hwid)
 			break;
-	if (i == nrdinfo)
+	if (i == numrdidentinfo || unit > rdidentinfo[i].ri_maxunum)
 		return(-1);
 	id = i;
 	rdreset(ctlr, unit);
@@ -149,7 +139,7 @@ rdident(ctlr, unit)
 	 * 2. 9122S and 9134D both return same HW id
 	 * 3. 9122D and 9134L both return same HW id
 	 */
-	switch (rdinfo[id].hwid) {
+	switch (rdidentinfo[id].ri_hwid) {
 	case RD7946AID:
 		if (bcmp(name, "079450", 6) == 0)
 			id = RD7945A;
@@ -174,6 +164,93 @@ rdident(ctlr, unit)
 	return(id);
 }
 
+#ifdef COMPAT_NOLABEL
+int rdcyloff[][8] = {
+	{ 1, 143, 0, 143, 0,   0,   323, 503, },	/* 7945A */
+	{ 1, 167, 0, 0,   0,   0,   0,   0,   },	/* 9134D */
+	{ 0, 0,   0, 0,   0,   0,   0,   0,   },	/* 9122S */
+	{ 0, 71,  0, 221, 292, 542, 221, 0,   },	/* 7912P */
+	{ 1, 72,  0, 72,  362, 802, 252, 362, },	/* 7914P */
+	{ 1, 28,  0, 140, 167, 444, 140, 721, },	/* 7933H */
+	{ 1, 200, 0, 200, 0,   0,   450, 600, },	/* 9134L */
+	{ 1, 105, 0, 105, 380, 736, 265, 380, },	/* 7957A */
+	{ 1, 65,  0, 65,  257, 657, 193, 257, },	/* 7958A */
+	{ 1, 128, 0, 128, 518, 918, 388, 518, },	/* 7957B */
+	{ 1, 44,  0, 44,  174, 496, 131, 174, },	/* 7958B */
+	{ 1, 44,  0, 44,  218, 1022,174, 218, },	/* 7959B */
+	{ 1, 37,  0, 37,  183, 857, 147, 183, },	/* 2200A */
+	{ 1, 19,  0, 94,  112, 450, 94,  788, },	/* 2203A */
+	{ 1, 20,  0, 98,  117, 256, 98,  397, },	/* 7936H */
+	{ 1, 11,  0, 53,  63,  217, 53,  371, },	/* 7937H */
+};
+
+struct rdcompatinfo {
+	int	nbpc;
+	int	*cyloff;
+} rdcompatinfo[] = {
+	NRD7945ABPT*NRD7945ATRK, rdcyloff[0],
+	NRD9134DBPT*NRD9134DTRK, rdcyloff[1],
+	NRD9122SBPT*NRD9122STRK, rdcyloff[2],
+	NRD7912PBPT*NRD7912PTRK, rdcyloff[3],
+	NRD7914PBPT*NRD7914PTRK, rdcyloff[4],
+	NRD7958ABPT*NRD7958ATRK, rdcyloff[8],
+	NRD7957ABPT*NRD7957ATRK, rdcyloff[7],
+	NRD7933HBPT*NRD7933HTRK, rdcyloff[5],
+	NRD9134LBPT*NRD9134LTRK, rdcyloff[6],
+	NRD7936HBPT*NRD7936HTRK, rdcyloff[14],
+	NRD7937HBPT*NRD7937HTRK, rdcyloff[15],
+	NRD7914PBPT*NRD7914PTRK, rdcyloff[4],
+	NRD7945ABPT*NRD7945ATRK, rdcyloff[0],
+	NRD9122SBPT*NRD9122STRK, rdcyloff[2],
+	NRD7957BBPT*NRD7957BTRK, rdcyloff[9],
+	NRD7958BBPT*NRD7958BTRK, rdcyloff[10],
+	NRD7959BBPT*NRD7959BTRK, rdcyloff[11],
+	NRD2200ABPT*NRD2200ATRK, rdcyloff[12],
+	NRD2203ABPT*NRD2203ATRK, rdcyloff[13],
+};
+int	nrdcompatinfo = sizeof(rdcompatinfo) / sizeof(rdcompatinfo[0]);
+#endif					
+
+rdgetinfo(io)
+	register struct iob *io;
+{
+	struct rd_softc *rs = &rd_softc[io->i_adapt][io->i_ctlr];
+	register struct rdminilabel *pi = &rs->sc_pinfo;
+	register struct disklabel *lp = &rdlabel;
+	char *msg, *readdisklabel();
+	int rdstrategy(), i;
+
+	bzero((caddr_t)lp, sizeof *lp);
+	lp->d_secsize = DEV_BSIZE;
+	msg = readdisklabel(io, rdstrategy, lp);
+	if (msg) {
+		printf("rd(%d,%d,%d,%d): WARNING: %s, ",
+		       io->i_adapt, io->i_ctlr, io->i_unit, io->i_part, msg);
+#ifdef COMPAT_NOLABEL
+		{
+			register struct rdcompatinfo *ci;
+
+			printf("using old default partitioning\n");
+			ci = &rdcompatinfo[rs->sc_type];
+			pi->npart = 8;
+			for (i = 0; i < pi->npart; i++)
+				pi->offset[i] = ci->cyloff[i] * ci->nbpc;
+		}
+#else
+		printf("defining `c' partition as entire disk\n");
+		pi->npart = 3;
+		pi->offset[0] = pi->offset[1] = -1;
+		pi->offset[2] = 0;
+#endif
+	} else {
+		pi->npart = lp->d_npartitions;
+		for (i = 0; i < pi->npart; i++)
+			pi->offset[i] = lp->d_partitions[i].p_size == 0 ?
+				-1 : lp->d_partitions[i].p_offset;
+	}
+	return(1);
+}
+
 rdopen(io)
 	struct iob *io;
 {
@@ -190,14 +267,16 @@ rdopen(io)
 	if (unit >= NRD)
 		return (ECTLR);
 	rs = &rd_softc[ctlr][unit];
-	if (rs->sc_alive == 0)
+	if (rs->sc_alive == 0) {
 		if (rdinit(ctlr, unit) == 0)
 			return (ENXIO);
+		if (rdgetinfo(io) == 0)
+			return (ERDLAB);
+	}
 	part = io->i_part;
-	if (part >= 8)
+	if (part >= rs->sc_pinfo.npart || rs->sc_pinfo.offset[part] == -1)
 		return (EPART);
-	ri = &rdinfo[rs->sc_type];
-	io->i_boff = ri->cyloff[part] * ri->nbpc;
+	io->i_boff = rs->sc_pinfo.offset[part];
 	return (0);
 }
 

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)boot.c	7.6 (Berkeley) %G%
+ *	@(#)boot.c	7.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -61,6 +61,8 @@ main()
 		cp = "345/375/400"; break;
 	case HP_380:
 		cp = "380/425"; break;
+	case HP_433:
+		cp = "433"; break;
 	default:
 		cp = "???"; break;
 	}

@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: autoconf.c 1.16 92/05/29$
  *
- *	@(#)autoconf.c	7.7 (Berkeley) %G%
+ *	@(#)autoconf.c	7.8 (Berkeley) %G%
  */
 
 #include <hp300/stand/samachdep.h>
@@ -75,8 +75,11 @@ configure()
 	case HP_380:
 		cpuspeed = MHZ_25 * 2;	/* XXX */
 		break;
-	default:	/* assume the slowest */
-		cpuspeed = MHZ_16;
+	case HP_433:
+		cpuspeed = MHZ_33 * 2;	/* XXX */
+		break;
+	default:	/* assume the fastest (largest delay value) */
+		cpuspeed = MHZ_50;
 		break;
 	}
 	find_devs();

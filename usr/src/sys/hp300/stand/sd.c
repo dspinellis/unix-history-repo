@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: sd.c 1.2 90/01/23$
+ * from: Utah $Hdr: sd.c 1.9 92/12/21$
  *
- *	@(#)sd.c	7.7 (Berkeley) %G%
+ *	@(#)sd.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -19,21 +19,25 @@
  */
 
 #include <sys/param.h>
+#include <sys/disklabel.h>
 #include <stand/saio.h>
 #include <hp300/stand/samachdep.h>
 
 #include <hp300/dev/scsireg.h>
 
+struct	disklabel sdlabel;
+
+struct	sdminilabel {
+	u_short	npart;
+	u_long	offset[MAXPARTITIONS];
+};
+
 struct	sd_softc {
 	char	sc_retry;
 	char	sc_alive;
 	short	sc_blkshift;
+	struct	sdminilabel sc_pinfo;
 } sd_softc[NSCSI][NSD];
-
-int sdpartoff[] = {
-	1024,	17408,	0,	17408,
-	115712,	218112,	82944,	115712
-};
 
 #define	SDRETRY		2
 
@@ -78,6 +82,46 @@ sdreset(ctlr, unit)
 {
 }
 
+#ifdef COMPAT_NOLABEL
+struct	sdminilabel defaultpinfo = {
+	8,
+	{ 1024, 17408, 0, 17408, 115712, 218112, 82944, 115712 }
+};
+#endif
+
+sdgetinfo(io)
+	register struct iob *io;
+{
+	struct sd_softc *ss = &sd_softc[io->i_adapt][io->i_ctlr];
+	register struct sdminilabel *pi = &ss->sc_pinfo;
+	register struct disklabel *lp = &sdlabel;
+	char *msg, *readdisklabel();
+	int sdstrategy(), i;
+
+	bzero((caddr_t)lp, sizeof *lp);
+	lp->d_secsize = (DEV_BSIZE << ss->sc_blkshift);
+	msg = readdisklabel(io, sdstrategy, lp);
+	if (msg) {
+		printf("sd(%d,%d,%d,%d): WARNING: %s, ",
+		       io->i_adapt, io->i_ctlr, io->i_unit, io->i_part, msg);
+#ifdef COMPAT_NOLABEL
+		printf("using old default partitioning\n");
+		*pi = defaultpinfo;
+#else
+		printf("defining `c' partition as entire disk\n");
+		pi->npart = 3;
+		pi->offset[0] = pi->offset[1] = -1;
+		pi->offset[2] = 0;
+#endif
+	} else {
+		pi->npart = lp->d_npartitions;
+		for (i = 0; i < pi->npart; i++)
+			pi->offset[i] = lp->d_partitions[i].p_size == 0 ?
+				-1 : lp->d_partitions[i].p_offset;
+	}
+	return(1);
+}
+
 sdopen(io)
 	struct iob *io;
 {
@@ -93,13 +137,16 @@ sdopen(io)
 	if (unit >= NSD)
 		return (ECTLR);
 	ss = &sd_softc[ctlr][unit];
-	if (ss->sc_alive == 0)
+	if (ss->sc_alive == 0) {
 		if (sdinit(ctlr, unit) == 0)
 			return (ENXIO);
+		if (sdgetinfo(io) == 0)
+			return (ERDLAB);
+	}
 	part = io->i_part;
-	if (part >= 8)
+	if (part >= ss->sc_pinfo.npart || ss->sc_pinfo.offset[part] == -1)
 		return (EPART);
-	io->i_boff = sdpartoff[part];
+	io->i_boff = ss->sc_pinfo.offset[part];
 	return (0);
 }
 

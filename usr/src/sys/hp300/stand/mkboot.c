@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mkboot.c	7.4 (Berkeley) %G%
+ *	@(#)mkboot.c	7.5 (Berkeley) %G%
  */
 
 #ifndef lint
@@ -26,14 +26,41 @@ static char sccsid[] = "@(#)mkboot.c	7.2 (Berkeley) 12/16/90";
 #include <stdio.h>
 #include <ctype.h>
 
+#define LIF_NUMDIR	8
+
+#define LIF_VOLSTART	0
+#define LIF_VOLSIZE	sizeof(struct lifvol)
+#define LIF_DIRSTART	512
+#define LIF_DIRSIZE	(LIF_NUMDIR * sizeof(struct lifdir))
+#define LIF_FILESTART	8192
+
+#define btolifs(b)	(((b) + (SECTSIZE - 1)) / SECTSIZE)
+#define lifstob(s)	((s) * SECTSIZE)
+
 int lpflag;
 int loadpoint;
 struct load ld;
 struct lifvol lifv;
-struct lifdir lifd[8];
+struct lifdir lifd[LIF_NUMDIR];
 struct exec ex;
 char buf[10240];
 
+/*
+ * Old Format:
+ *	sector 0:	LIF volume header (40 bytes)
+ *	sector 1:	<unused>
+ *	sector 2:	LIF directory (8 x 32 == 256 bytes)
+ *	sector 3-:	LIF file 0, LIF file 1, etc.
+ * where sectors are 256 bytes.
+ *
+ * New Format:
+ *	sector 0:	LIF volume header (40 bytes)
+ *	sector 1:	<unused>
+ *	sector 2:	LIF directory (8 x 32 == 256 bytes)
+ *	sector 3:	<unused>
+ *	sector 4-31:	disklabel (~300 bytes right now)
+ *	sector 32-:	LIF file 0, LIF file 1, etc.
+ */
 main(argc, argv)
 	char **argv;
 {
@@ -96,17 +123,17 @@ main(argc, argv)
 	/* record volume info */
 	lifv.vol_id = VOL_ID;
 	strncpy(lifv.vol_label, "BOOT43", 6);
-	lifv.vol_addr = 2;
+	lifv.vol_addr = btolifs(LIF_DIRSTART);
 	lifv.vol_oct = VOL_OCT;
-	lifv.vol_dirsize = 1;
+	lifv.vol_dirsize = btolifs(LIF_DIRSIZE);
 	lifv.vol_version = 1;
 	/* output bootfile one */
-	lseek(to, 3 * SECTSIZE, 0);
+	lseek(to, LIF_FILESTART, 0);
 	putfile(from1, to);
-	n = (ld.count + sizeof(ld) + (SECTSIZE - 1)) / SECTSIZE;
+	n = btolifs(ld.count + sizeof(ld));
 	strcpy(lifd[0].dir_name, lifname(n1));
 	lifd[0].dir_type = DIR_TYPE;
-	lifd[0].dir_addr = 3;
+	lifd[0].dir_addr = btolifs(LIF_FILESTART);
 	lifd[0].dir_length = n;
 	bcddate(from1, lifd[0].dir_toc);
 	lifd[0].dir_flag = DIR_FLAG;
@@ -114,12 +141,12 @@ main(argc, argv)
 	lifv.vol_length = lifd[0].dir_addr + lifd[0].dir_length;
 	/* if there is an optional second boot program, output it */
 	if (from2 >= 0) {
-		lseek(to, (3 + n) * SECTSIZE, 0);
+		lseek(to, LIF_FILESTART+lifstob(n), 0);
 		putfile(from2, to);
-		n = (ld.count + sizeof(ld) + (SECTSIZE - 1)) / SECTSIZE;
+		n = btolifs(ld.count + sizeof(ld));
 		strcpy(lifd[1].dir_name, lifname(n2));
 		lifd[1].dir_type = DIR_TYPE;
-		lifd[1].dir_addr = 3 + lifd[0].dir_length;
+		lifd[1].dir_addr = lifv.vol_length;
 		lifd[1].dir_length = n;
 		bcddate(from2, lifd[1].dir_toc);
 		lifd[1].dir_flag = DIR_FLAG;
@@ -127,10 +154,10 @@ main(argc, argv)
 		lifv.vol_length = lifd[1].dir_addr + lifd[1].dir_length;
 	}
 	/* output volume/directory header info */
-	lseek(to, 0 * SECTSIZE, 0);
-	write(to, &lifv, sizeof(lifv));
-	lseek(to, 2 * SECTSIZE, 0);
-	write(to, lifd, sizeof(lifd));
+	lseek(to, LIF_VOLSTART, 0);
+	write(to, &lifv, LIF_VOLSIZE);
+	lseek(to, LIF_DIRSTART, 0);
+	write(to, lifd, LIF_DIRSIZE);
 	exit(0);
 }
 
