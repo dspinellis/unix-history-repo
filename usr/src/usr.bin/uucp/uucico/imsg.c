@@ -1,8 +1,9 @@
 #ifndef lint
-static char sccsid[] = "@(#)imsg.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)imsg.c	5.3 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
+#include <ctype.h>
 
 char Msync[2] = "\020";
 
@@ -22,53 +23,49 @@ char Mend = '\0';
  *	used before a protocol is agreed upon.
  *
  *	return codes:
- *		EOF - no more messages
- *		0 - message returned
+ *		FAIL - no more messages
+ *		SUCCESS - message returned
  */
 
-imsg(msg, fn)
-register char *msg;
+imsg(amsg, fn)
+char *amsg;
 register int fn;
 {
-	register int ret;
-	char *amsg;
+	register char *msg = amsg;
+	int foundsync = FAIL;
+	char c;
 
-	DEBUG(5, "imsg %s<", "sync");
-	while ((ret = read(fn, msg, 1)) == 1) {
-		*msg &= 0177;
-		DEBUG(5, (*msg>037 && *msg<0177) ? "%c" : "\\%03o", *msg & 0377);
-		if (*msg == Msync[0])
-			break;
-		fflush(stderr);
-	}
-	DEBUG(5, ">got %s\n", ret == 1 ? "it" : "EOF");
-	if (ret < 1)
-		return EOF;
-	amsg = msg;
-resync:
-	DEBUG(5, "imsg %s<", "input");
-	while (read(fn, msg, 1) == 1) {
-		*msg &= 0177;
-		DEBUG(5, (*msg>037 && *msg<0177) ? "%c" : "\\%03o", *msg & 0377);
-		if (*msg == Msync[0]) {
-			DEBUG(5, "%s\n", ">found sync");
+	DEBUG(5, "imsg looking for SYNC<", CNULL);
+	for (;;) {
+		if (read(fn, &c, 1) != 1)
+			return FAIL;
+		c &= 0177;
+		if (c == '\n' || c == '\r')
+			DEBUG(5, "%c", c);
+		else 
+			DEBUG(5, (isprint(c) || isspace(c)) ? "%c" : "\\%o",
+				c & 0377);
+		if (c == Msync[0]) {
+			DEBUG(5, ">\nimsg input<", CNULL);
 			msg = amsg;
-			goto resync;
-		}
-		if (*msg == '\n' || *msg == '\0') {
+			foundsync = SUCCESS;
+			continue;
+		} else if (foundsync != SUCCESS)
+				continue;
+		if (c == '\n' || c == '\0') {
 			if (!seenend) {
-				Mend = *msg;
+				Mend = c;
 				seenend++;
-				DEBUG(6,"\nUsing \\%o as End of message char\n", Mend);
+				DEBUG(9, "\nUsing \\%o as End of message char\n", Mend);
 			}
 			break;
 		}
-		msg++;
+		*msg++ = c;
 		fflush(stderr);
 	}
 	*msg = '\0';
-	DEBUG(5, ">got %d\n", strlen(amsg));
-	return 0;
+	DEBUG(5, ">got %d characters\n", strlen(amsg));
+	return foundsync;
 }
 
 

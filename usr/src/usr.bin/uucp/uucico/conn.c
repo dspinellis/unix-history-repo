@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)conn.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)conn.c	5.9 (Berkeley) %G%";
 #endif
 
 #include <signal.h>
@@ -40,7 +40,8 @@ char 	*AbortOn = NULL;
 char	par_tab[128];	/* must be power of two */
 int	linebaudrate;	/* used for the sleep test in pk1.c */
 int next_fd = -1;	/* predicted fd to close interrupted opens */
-				/* rti!trt, courtesy unc!smb */
+
+char *PCP = "PCP";	/* PC Pursuit device type */
 /*
  *	catch alarm routine for "expect".
  */
@@ -54,6 +55,37 @@ alarmtr()
 	}
 	longjmp(Sjbuf, 1);
 }
+
+/* This template is for seismo to call ihnp4 
+ * the 3 lines marked ---> will be overwritten for the appropriate city
+ */
+#define PCP_BAUD	3
+#define PCP_PHONE	4
+#define PCP_CALLBACK	8
+#define PCP_CITY	10
+#define PCP_RPHONE	12
+#define NPCFIELDS	15
+
+static char *PCFlds[] = {
+	"PC-PURSUIT",
+	"Any",
+	"ACU",
+	"1200",
+	CNULL,	/* <--- **** Welcome to Telenet PC Pursuit ***** */
+	"ABORT",
+	"Good",	/* Abort of Good bye! */
+	")", 	/* <--- Enter your 7-digit phone number (xxx-xxxx) */
+	CNULL,	/* ---> 528-1234 */
+	"call?", 	/* <--- Which city do you wish to call? */
+	CNULL,	/* ---> CHICAGO */
+	")", 	/* <--- Enter the phone number you wish to call (xxx-xxxx) */
+	CNULL,	/* ---> 690-7171 */
+	"R)?", 	/* <--- You are #1 in the queue. Do you want to wait, or Restart (Y/N/R)? */
+	"Y",
+	CNULL 	/* <--- .....Good Bye! */
+};
+
+static char PCP_brand[20];
 
 /*
  *	place a telephone call to system and login, etc.
@@ -75,8 +107,7 @@ extern int LocalOnly;
 conn(system)
 char *system;
 {
-	int ret, nf;
-	register int fn = 0;
+	int nf;
 	char info[MAXC], wkpre[NAMESIZE], file[NAMESIZE];
 	register FILE *fsys;
 	int fcode = 0;
@@ -92,18 +123,56 @@ keeplooking:
 		if (LocalOnly) {
 			if (strcmp("TCP", Flds[F_LINE])
 				&& strcmp("DIR", Flds[F_LINE])
-				&& strcmp("LOCAL", Flds[F_LINE]) )
-					fn = CF_TIME;
+				&& strcmp("LOCAL", Flds[F_LINE]) ) {
+					fcode = CF_TIME;
+					continue;
+			}
 		}
 		sprintf(wkpre, "%c.%.*s", CMDPRE, SYSNSIZE, Rmtname);
 		if (!onesys && MaxGrade != DefMaxGrade &&
-			!iswrk(file, "chk", Spool, wkpre)) 
-				fn = CF_TIME;
-		if (fn != CF_TIME && (fn = getto(Flds)) > 0) {
-			Dcf = fn;
-			break;
+			!iswrk(file, "chk", Spool, wkpre))  {
+				fcode = CF_TIME;
+				continue;
 		}
-		fcode = (fn == FAIL ? CF_DIAL : fn);
+		/* For GTE's PC Pursuit */
+		if (snccmp(Flds[F_LINE], PCP) == SAME) {
+			FILE *dfp;
+			int status;
+			static struct Devices dev;
+			dfp = fopen(DEVFILE, "r");
+			ASSERT(dfp != NULL, "Can't open", DEVFILE, 0);
+			while ((status=rddev(dfp, &dev)) != FAIL
+				&& strcmp(PCP, dev.D_type) != SAME)
+					;
+			fclose(dfp);
+			if (status == FAIL)
+				continue;
+			if (mlock(PCP) == FAIL) {
+				fcode = CF_NODEV;
+				logent("DEVICE", "NO");
+				continue;
+			}
+			PCFlds[PCP_BAUD] = dev.D_class;
+			PCFlds[PCP_PHONE] = dev.D_calldev;
+			PCFlds[PCP_CALLBACK] = dev.D_arg[D_CHAT];
+			PCFlds[PCP_CITY] = Flds[F_CLASS];
+			PCFlds[PCP_RPHONE] = Flds[F_PHONE];
+			strncpy(PCP_brand, dev.D_brand, sizeof(PCP_brand));
+			if ((fcode = getto(PCFlds)) < 0)
+				continue;
+			Dcf = fcode;
+			fcode = login(NPCFIELDS, PCFlds, Dcf);
+			clsacu(); /* Hang up, they'll call back */
+			if (fcode != SUCCESS) {
+				fcode = CF_DIAL;
+				continue;
+			}
+			Flds[F_CLASS] = dev.D_class;
+			Flds[F_PHONE] = dev.D_line;
+			
+		} /* end PC Pursuit */
+		if ((fcode = getto(Flds)) > 0) 
+			break;
 	}
 
 	if (nf <= 0) {
@@ -111,11 +180,23 @@ keeplooking:
 		return fcode ? fcode : nf;
 	}
 
-	DEBUG(4, "login %s\n", "called");
-	ret = login(nf, Flds, fn);
-	if (ret != SUCCESS) {
+	Dcf = fcode;
+
+	if (fcode >= 0 && snccmp(Flds[F_LINE], PCP) == SAME) {
+		AbortOn = "Good";	/* .... Good Bye */
+		fcode = expect("****~300", Dcf);
+		if (fcode != SUCCESS) {
+			DEBUG(4, "\nexpect timed out\n", CNULL);
+			fcode = CF_DIAL;
+		}
+	}
+	if (fcode >= 0) {
+		DEBUG(4, "login %s\n", "called");
+		fcode = login(nf, Flds, Dcf);
+	}
+	if (fcode < 0) {
 		clsacu();
-		if (ret == ABORT) {
+		if (fcode == ABORT) {
 			fcode = CF_DIAL;
 			goto  keeplooking;
 		} else {
@@ -124,8 +205,8 @@ keeplooking:
 		}
 	}
 	fclose(fsys);
-	fioclex(fn);
-	return fn;
+	fioclex(Dcf);
+	return Dcf;
 }
 
 /*
@@ -155,13 +236,23 @@ register char *flds[];
 		reenable();
 #endif DIALINOUT
 	CU_end = nulldev;
-	for (cd = condevs; cd->CU_meth != NULL; cd++) {
-		if (snccmp(cd->CU_meth, line) == SAME) {
-			DEBUG(4, "Using %s to call\n", cd->CU_meth);
-			return (*(cd->CU_gen))(flds);
+	if (snccmp(line, PCP) == SAME) {
+		for(cd = condevs; cd->CU_meth != NULL; cd++) {
+			if (snccmp(PCP_brand, cd->CU_brand) == SAME) {
+				CU_end = cd->CU_clos;
+				return diropn(flds);
+			}
 		}
+		logent(PCP_brand, "UNSUPPORTED ACU TYPE");
+	} else {
+		for (cd = condevs; cd->CU_meth != NULL; cd++) {
+			if (snccmp(cd->CU_meth, line) == SAME) {
+				DEBUG(4, "Using %s to call\n", cd->CU_meth);
+				return (*(cd->CU_gen))(flds);
+			}
+		}
+		DEBUG(1, "Can't find %s, assuming DIR\n", flds[F_LINE]);
 	}
-	DEBUG(1, "Can't find %s, assuming DIR\n", flds[F_LINE]);
 	return diropn(flds);	/* search failed, so use direct */
 }
 
@@ -180,7 +271,7 @@ clsacu()
 	 * easiest place to put the call.
 	 * Hopefully everyone honors the LCK protocol, of course
 	 */
-#ifndef	USG
+#ifdef	TIOCNXCL
 	if (!IsTcpIp && Dcf >= 0 && ioctl(Dcf, TIOCNXCL, STBNULL) < 0)
 		DEBUG(5, "clsacu ioctl %s\n", sys_errlist[errno]);
 #endif
@@ -336,7 +427,7 @@ int nf, fn;
 				DEBUG(4, "ABORT ON: %s\n", AbortOn);
 				goto nextfield;
 			}
-			DEBUG(4, "wanted: %s\n", want);
+			DEBUG(4, "wanted \"%s\"\n", want);
 			ok = expect(want, fn);
 			DEBUG(4, "got: %s\n", ok ? "?" : "that");
 			if (ok == FAIL) {
@@ -471,7 +562,7 @@ int tty, spwant;
 	return SUCCESS;
 }
 
-/***
+/*
  *	getbaud(tty)	set linebaudrate variable
  *
  *	return codes:  none
@@ -558,6 +649,7 @@ int fn;
 	alarm(timo);
 	*rp = 0;
 	while (notin(str, rdvec)) {
+		int c;
 		if(AbortOn != NULL && !notin(AbortOn, rdvec)) {
 			DEBUG(1, "Call aborted on '%s'\n", AbortOn);
 			alarm(0);
@@ -570,15 +662,11 @@ int fn;
 			logent("LOGIN", "LOST LINE");
 			return FAIL;
 		}
-		{
-		int c;
 		c = nextch & 0177;
-		DEBUG(4, c >= 040 ? "%c" : "\\%03o", c);
-		if (c == '\n')
-			DEBUG(4,"\n", CNULL);
-		}
-		if ((*rp = nextch & 0177) != '\0')
-			rp++;
+		if (c == '\0')
+			continue;
+		DEBUG(4, (isprint(c) || isspace(c)) ? "%c" : "\\%03o", c);
+		*rp++ = c;
 		if (rp >= rdvec + MR) {
 			register char *p;
 			for (p = rdvec+MR/2; p < rp; p++)
@@ -617,7 +705,7 @@ int fn;
 	register char c;
 	static int p_init = 0;
 
-	DEBUG(5, "send %s\n", str);
+	DEBUG(5, "send \"%s\"\n", str);
 
 	if (!p_init) {
 		p_init++;
@@ -648,12 +736,16 @@ int fn;
 	}
 
 	/* Send a '\n' */
-	if (strcmp(str, "LF") == SAME)
-		str = "\\n\\c";
+	if (strcmp(str, "LF") == SAME) {
+		p_chwrite(fn, '\n');
+		return;
+	}
 
 	/* Send a '\r' */
-	if (strcmp(str, "CR") == SAME)
-		str = "\\r\\c";
+	if (strcmp(str, "CR") == SAME) {
+		p_chwrite(fn, '\r');
+		return;
+	}
 
 	/* Set parity as needed */
 	if (strcmp(str, "P_ZERO") == SAME) {
@@ -679,20 +771,29 @@ int fn;
 		return;
 	}
 
-	for (strptr = str; c = *strptr++;) {
+	strptr = str;
+	while ((c = *strptr++) != '\0') {
 		if (c == '\\') {
 			switch(*strptr++) {
+			case '\0':
+				DEBUG(5, "TRAILING BACKSLASH IGNORED\n", CNULL);
+				--strptr;
+				continue;
 			case 's':
 				DEBUG(5, "BLANK\n", CNULL);
-				p_chwrite(fn, ' ');
+				c = ' ';
 				break;
 			case 'd':
 				DEBUG(5, "DELAY\n", CNULL);
 				sleep(1);
 				continue;
+			case 'n':
+				DEBUG(5, "NEW LINE\n", CNULL);
+				c = '\n';
+				break;
 			case 'r':
 				DEBUG(5, "RETURN\n", CNULL);
-				p_chwrite(fn, '\r');
+				c = '\r';
 				break;
 			case 'b':
 				if (isdigit(*strptr)) {
@@ -710,24 +811,24 @@ int fn;
 				if (*strptr == '\0') {
 					DEBUG(5, "NO CR\n", CNULL);
 					cr = 0;
-					continue;
-				}
-				DEBUG(5, "NO CR - MIDDLE IGNORED\n", CNULL);
+				} else
+					DEBUG(5, "NO CR - IGNORED NOT EOL\n", CNULL);
 				continue;
+#define isoctal(x)	((x >= '0') && (x <= '7'))
 			default:
-				if (isdigit(*strptr)) {
+				if (isoctal(strptr[-1])) {
 					i = 0;
 					n = 0;
-					while (isdigit(*strptr) && ++n <= 3)
-						i = i*8 + (*strptr++ - '0');
+					--strptr;
+					while (isoctal(*strptr) && ++n <= 3)
+						i = i * 8 + (*strptr++ - '0');
+					DEBUG(5, "\\%o\n", i);
 					p_chwrite(fn, (char)i);
 					continue;
 				}
-				DEBUG(5, "BACKSLASH\n", CNULL);
-				--strptr;
 			}
-		} else
-			p_chwrite(fn, c);
+		}
+		p_chwrite(fn, c);
 	}
 
 	if (cr)
@@ -766,53 +867,6 @@ int type;
 	}
 }
 
-#define BSPEED B150
-
-/*
- *	send a break
- */
-genbrk(fn, bnulls)
-register int fn, bnulls;
-{
-#ifdef	USG
-	if (ioctl(fn, TCSBRK, STBNULL) < 0)
-		DEBUG(5, "break ioctl %s\n", sys_errlist[errno]);
-#else	!USG
-	struct sgttyb ttbuf;
-	register int sospeed;
-# ifdef	TIOCSBRK
-	if (ioctl(fn, TIOCSBRK, STBNULL) < 0)
-		DEBUG(5, "break ioctl %s\n", sys_errlist[errno]);
-# ifdef	TIOCCBRK
-	sleep(1);
-	if (ioctl(fn, TIOCCBRK, STBNULL) < 0)
-		DEBUG(5, "break ioctl %s\n", sys_errlist[errno]);
-# endif TIOCCBRK
-	DEBUG(4, "ioctl %d second break\n", bnulls );
-# else !TIOCSBRK
-
-	if (ioctl(fn, TIOCGETP, &ttbuf) < 0)
-		DEBUG(5, "break ioctl %s\n", sys_errlist[errno]);
-	sospeed = ttbuf.sg_ospeed;
-	ttbuf.sg_ospeed = BSPEED;
-	if (ioctl(fn, TIOCSETP, &ttbuf) < 0)
-		DEBUG(5, "break ioctl %s\n", sys_errlist[errno]);
-	if (write(fn, "\0\0\0\0\0\0\0\0\0\0\0\0", bnulls) != bnulls) {
-badbreak:
-		logent(sys_errlist[errno], "BAD WRITE genbrk");
-		alarm(0);
-		longjmp(Sjbuf, 3);
-	}
-	ttbuf.sg_ospeed = sospeed;
-	if (ioctl(fn, TIOCSETP, &ttbuf) < 0)
-		DEBUG(5, "break ioctl %s\n", sys_errlist[errno]);
-	if (write(fn, "@", 1) != 1)
-		goto badbreak;
-	DEBUG(4, "sent BREAK nulls - %d\n", bnulls);
-#endif !TIOCSBRK
-#endif !USG
-}
-
 /*
  *	check for occurrence of substring "sh"
  *
@@ -838,7 +892,7 @@ register char *sh, *lg;
 ifdate(p)
 register char *p;
 {
-	register char *np, c;
+	register char *np;
 	register int ret, g;
 	int rtime, i;
 
@@ -929,6 +983,12 @@ char *string;
 				|| tp->tm_hour >= 23 || tp->tm_hour < 8
 					/* Sunday before 5pm */
 				|| (tp->tm_wday == 0 && tp->tm_hour < 17))
+					dayok = 1;
+		}
+		if (prefix("NonPeak", s)) { /* For Tymnet and PC Pursuit */
+			/* Sat or Sun */
+			if (tp->tm_wday == 6 || tp->tm_wday == 0
+				|| tp->tm_hour >= 18 || tp->tm_hour < 7)
 					dayok = 1;
 		}
 		s++;
@@ -1078,3 +1138,47 @@ int fd;
 		sleep(2);
 	return(i);
 }
+
+/*
+ *	fix kill/echo/raw on line
+ *
+ *	return codes:  none
+ */
+fixmode(tty)
+register int tty;
+{
+#ifdef	USG
+	struct termio ttbuf;
+#else	!USG
+	struct sgttyb ttbuf;
+#endif	!USG
+	register struct sg_spds *ps;
+	int speed;
+
+	if (IsTcpIp)
+		return;
+#ifdef	USG
+	ioctl(tty, TCGETA, &ttbuf);
+	ttbuf.c_iflag = ttbuf.c_oflag = ttbuf.c_lflag = (ushort)0;
+	speed = ttbuf.c_cflag &= (CBAUD);
+	ttbuf.c_cflag |= (CS8|CREAD);
+	ttbuf.c_cc[VMIN] = 6;
+	ttbuf.c_cc[VTIME] = 1;
+	ioctl(tty, TCSETA, &ttbuf);
+#else	!USG
+	ioctl(tty, TIOCGETP, &ttbuf);
+	ttbuf.sg_flags = (ANYP | RAW);
+	ioctl(tty, TIOCSETP, &ttbuf);
+	speed = ttbuf.sg_ispeed;
+	ioctl(tty, TIOCEXCL, STBNULL);
+#endif	!USG
+
+	for (ps = spds; ps->sp_val; ps++)
+		if (ps->sp_name == speed) {
+			linebaudrate = ps->sp_val;
+			DEBUG(9,"Incoming baudrate is %d\n", linebaudrate);
+			return;
+		}
+	ASSERT(linebaudrate >= 0, "BAD SPEED", CNULL, speed);
+}
+

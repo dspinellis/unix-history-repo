@@ -1,5 +1,5 @@
 List of Changes to UUCP
-CHANGES	5.4	85/10/09
+CHANGES	5.5	86/01/06
 
 Added support for Eunice.
 
@@ -155,3 +155,9 @@ of getting the default MAXMSGTIME. E.g.
 	system Any ACU 1200 1234567 ogin~20-\r-ogin~10-\b-ogin user password pw
 will look for ogin for 20 seconds, send CR, look for ogin for 10
 seconds, send a BREAK and look for ogin for MAXMSGTIME seconds
+
+Added code to support GTEs PC Pursuit service. It's mainly the handling of the
+dialback they use.
+
+Added time "NonPeak" for Tymnet/Telenet services that charge lower
+rates from 6pm-7am M-F and Sat & Sun.
