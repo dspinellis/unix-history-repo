@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)@(#)coredump.c 1.1 %G%";
+static char sccsid[] = "@(#)coredump.c 1.2 %G%";
 
 /*
  * Deal with the core dump anachronism.
