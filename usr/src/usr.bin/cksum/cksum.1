@@ -1,0 +1,72 @@
+.\" Copyright (c) 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)cksum.1	5.1 (Berkeley) %G%
+.\"
+.TH CKSUM 1 ""
+.UC 7
+.SH NAME
+cksum \- display file checksums and block counts
+.SH SYNOPSIS
+.ft B
+.nf
+cksum [file ...]
+.fi
+.ft R
+.SH DESCRIPTION
+The
+.I cksum
+utility calculates and writes to standard output a total number of bytes,
+a checksum CRC and the file name for each input file (or the standard input
+by default).
+.PP
+The CRC used is based on the polynomial used for CRC error checking in
+the networking standard ISO 8802-3: 1989.
+The CRC checksum encoding is defined by the generating polynomial:
+.sp
+.RS
+G(x) =
+.RS
+x^32 + x^26 + x^23 + x^22 + x^16 + x^12 +
+x^11 + x^10 + x^8 + x^7 + x^5 + x^4 + x^2 + x + 1
+.RE
+.RE
+.PP
+Mathematically, the CRC value corresponding to a given file is defined by
+the following procedure:
+.RS
+.PP
+The
+.I n
+bits of the file are considered to be the coefficients of a mod 2
+polynomial M(x) of degree
+.IR n -1.
+.PP
+M(x) is multiplied by x^32 (i.e., shifted left 32 bits) and divided by
+G(x) using mod 2 division, producing a remainder R(x) of degree <= 31.
+During the division, each time the intermediate remainder is zero, it
+is changed to the next value from a predefined sequence of 32-bit
+integers before completing the division.
+This sequence is long and complex -- see the source code for more
+information.
+.PP
+The coefficients of R(x) are considered to be a 32-bit sequence.
+.RE
+.PP
+The calculation used is identical to that given in pseudo-code in
+the ACM article listed below.
+.PP
+The
+.I cksum
+utility exits 0 on success, and >0 if an error occurs.
+.SH SEE ALSO
+.IR "Computation of Cyclic Redundancy Checks Via Table Lookup" ,
+Dilip V. Sarwate, Communications of the ACM, August 1988.
+.SH STANDARDS
+.I Cksum
+is expected to conform to IEEE Std 1003.2 (``POSIX'').
+.SH HISTORY
+.I Cksum
+first appeared in 4.4BSD.
