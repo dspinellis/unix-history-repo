@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)savecore.c	5.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)savecore.c	5.35 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -255,8 +255,9 @@ dump_exists()
 	Lseek(dumpfd, (off_t)(dumplo + ok(dump_nl[X_DUMPMAG].n_value)), L_SET);
 	(void)Read(dumpfd, &newdumpmag, sizeof(newdumpmag));
 	if (newdumpmag != dumpmag) {
-		syslog(LOG_WARNING, "magic number mismatch (%x != %x)",
-		    newdumpmag, dumpmag);
+		if (verbose)
+			syslog(LOG_WARNING, "magic number mismatch (%x != %x)",
+			    newdumpmag, dumpmag);
 		syslog(LOG_WARNING, "no core dump");
 		return (0);
 	}
