@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1980, 1986 Regents of the University of California.
+ * Copyright (c) 1980, 1986, 1991 Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
@@ -275,7 +275,7 @@ ifa_ifwithroute(flags, dst, gateway)
 int	flags;
 struct sockaddr	*dst, *gateway;
 {
-	struct ifaddr *ifa;
+	register struct ifaddr *ifa;
 	if ((flags & RTF_GATEWAY) == 0) {
 		/*
 		 * If we are adding a route to an interface,
@@ -299,6 +299,20 @@ struct sockaddr	*dst, *gateway;
 	}
 	if (ifa == 0)
 		ifa = ifa_ifwithnet(gateway);
+	if (ifa == 0) {
+		struct rtentry *rt = rtalloc1(dst, 0);
+		if (rt == 0)
+			return (0);
+		rt->rt_refcnt--;
+		if ((ifa = rt->rt_ifa) == 0)
+			return (0);
+	}
+	if (ifa->ifa_addr->sa_family != dst->sa_family) {
+		struct ifaddr *oifa = ifa, *ifaof_ifpforaddr();
+		ifa = ifaof_ifpforaddr(dst, ifa->ifa_ifp);
+		if (ifa == 0)
+			ifa = oifa;
+	}
 	return (ifa);
 }
 
