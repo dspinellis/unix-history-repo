@@ -1,4 +1,4 @@
-/*	param.c	6.6	84/07/08	*/
+/*	param.c	6.7	84/08/23	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -41,8 +41,8 @@ int	nclist = 100 + 16 * MAXUSERS;
 int	nport = NPROC / 2;
 int     nmbclusters = NMBCLUSTERS;
 #ifdef QUOTA
-int	nquota = (MAXUSERS * 9)/7 + 3;
-int	ndquot = (MAXUSERS*NMOUNT)/4 + NPROC;
+int	nquota = (MAXUSERS * 9) / 7 + 3;
+int	ndquot = NINODE + (MAXUSERS * NMOUNT) / 4;
 #endif
 
 /*
