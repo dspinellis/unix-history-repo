@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	6.33 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.34 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	6.33 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.34 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -353,7 +353,7 @@ smtp(e)
 			gotmail = TRUE;
 
 			/* optimize: non-interactive, don't expand aliases */
-			if (e->e_sendmode != SM_INTERACTIVE)
+			if (e->e_sendmode != SM_DELIVER)
 				e->e_flags |= EF_VRFYONLY;
 
 			break;
