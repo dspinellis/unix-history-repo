@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode.h	7.63 (Berkeley) %G%
+ *	@(#)vnode.h	7.64 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -59,7 +59,12 @@ struct vnode {
 		struct fifoinfo	*vu_fifoinfo;	/* fifo (VFIFO) */
 	} v_un;
 	struct	nqlease *v_lease;		/* Soft reference to lease */
-	long	v_spare[13];			/* round to 128 bytes */
+	daddr_t	v_lastw;			/* last write (write cluster) */
+	daddr_t	v_cstart;			/* start block of cluster */
+	daddr_t	v_lasta;			/* last allocation */
+	int	v_clen;				/* length of current cluster */
+	int	v_ralen;			/* Read-ahead length */
+	long	v_spare[8];			/* round to 128 bytes */
 	enum	vtagtype v_tag;			/* type of underlying data */
 	void 	*v_data;			/* private data for fs */
 };
