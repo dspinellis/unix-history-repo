@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)np.c	7.7 (Berkeley) %G%
+ *	@(#)np.c	7.8 (Berkeley) %G%
  *
  * From:
  *	np.c version 1.5
@@ -44,6 +44,7 @@
 #if NNP > 0
 #include "param.h"
 #include "buf.h"
+#include "conf.h"
 #include "ubavar.h"
 #include "signal.h"
 #include "systm.h"
@@ -51,6 +52,7 @@
 #include "proc.h"
 #include "uio.h"
 #include "errno.h"
+#include "ioctl.h"
 
 #include "../vaxuba/npreg.h"
 

@@ -400,14 +400,6 @@ struct npbase {
  *	This version retrieved: 8/18/86 @ 18:58:45
  *	    This delta created: 8/18/86 @ 18:27:38
  */
-#ifndef IOC_VOID
-#    ifdef KERNEL
-#         include "../h/ioctl.h"
-#    else
-#         include <sys/ioctl.h>
-#    endif
-#endif
-
 #ifdef KERNEL
 #    define IoVOID 0
 #else
