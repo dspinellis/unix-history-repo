@@ -1,4 +1,4 @@
-/*	if.c	4.26	83/03/15	*/
+/*	if.c	4.27	83/03/19	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -262,21 +262,22 @@ ifconf(cmd, data)
 {
 	register struct ifconf *ifc = (struct ifconf *)data;
 	register struct ifnet *ifp = ifnet;
-	register char *cp;
-	struct ifreq ifr;
+	register char *cp, *ep;
+	struct ifreq ifr, *ifrp;
 	int space = ifc->ifc_len, error = 0;
 
+	ifrp = ifc->ifc_req;
+	ep = ifr.ifr_name + sizeof (ifr.ifr_name) - 2;
 	for (; space > sizeof (ifr) && ifp; ifp = ifp->if_next) {
-		bcopy(ifp->if_name, ifr.ifr_name, sizeof (ifr.ifr_name));
-		for (cp = ifr.ifr_name; *cp; cp++)
+		bcopy(ifp->if_name, ifr.ifr_name, sizeof (ifr.ifr_name) - 2);
+		for (cp = ifr.ifr_name; cp < ep && *cp; cp++)
 			;
-		*cp = '0' + ifp->if_unit;
+		*cp++ = '0' + ifp->if_unit; *cp = '\0';
 		ifr.ifr_addr = ifp->if_addr;
-		error = copyout((caddr_t)&ifr, ifc->ifc_buf, sizeof (ifr));
+		error = copyout((caddr_t)&ifr, (caddr_t)ifrp, sizeof (ifr));
 		if (error)
 			break;
-		space -= sizeof (ifr);
-		ifc->ifc_req++;
+		space -= sizeof (ifr), ifrp++;
 	}
 	ifc->ifc_len -= space;
 	return (error);
