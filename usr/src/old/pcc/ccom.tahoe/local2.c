@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)local2.c	1.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)local2.c	1.6 (Berkeley) %G%";
 #endif
 
 # include "pass2.h"
@@ -453,7 +453,6 @@ stasg(p)
 		putchar(',');
 		adrput(l);
 		putchar('\n');
-werror("optimized structure assignment (size %d alignment %d)", size, p->stn.stalign);
 		break;
 
 	case 2:
