@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)vhangup.2	4.1 (Berkeley) %G%
+.\"	@(#)vhangup.2	5.1 (Berkeley) %G%
 .\"
-.TH VHANGUP 2V
+.TH VHANGUP 2 "12 Febuary 1983"
 .UC 4
 .SH NAME
 vhangup \- virtually ``hangup'' the current control terminal
@@ -14,7 +14,8 @@ vhangup \- virtually ``hangup'' the current control terminal
 .I Vhangup
 is used by the initialization process
 .IR init (8)
-to arrange that users are given \*(lqclean\*(rq' terminals at login,
+(among others) to arrange that users are given
+\*(lqclean\*(rq' terminals at login,
 by revoking access of the previous users' processes to the terminal.
 To effect this,
 .I vhangup
@@ -34,6 +35,5 @@ the control terminal via
 .B /dev/tty
 is still possible.
 .PP
-This call is peculiar to this version of UNIX.
-The options and specifications of this system call and even the call itself
-are subject to change.
+This call should be replaced by an automatic mechanism which
+takes place on process exit.
