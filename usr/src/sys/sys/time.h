@@ -1,4 +1,4 @@
-/*	time.h	4.3	83/06/10	*/
+/*	time.h	4.4	83/07/09	*/
 
 /*
  * Structure returned by gettimeofday(2) system call,
@@ -14,8 +14,11 @@ struct timezone {
 	int	tz_dsttime;	/* type of dst correction */
 };
 #define	DST_NONE	0	/* not on dst */
-#define	DST_USA		1	/* usa style dst */
+#define	DST_USA		1	/* USA style dst */
 #define	DST_AUST	2	/* Australian style dst */
+#define	DST_WET		3	/* Western European dst */
+#define	DST_MET		4	/* Middle European dst */
+#define	DST_EET		5	/* Eastern European dst */
 
 /*
  * Operations on timevals.
