@@ -1,4 +1,4 @@
-#	@(#)bsd.subdir.mk	5.6 (Berkeley) %G%
+#	@(#)bsd.subdir.mk	5.7 (Berkeley) %G%
 
 .MAIN: all
 
@@ -11,7 +11,7 @@ _SUBDIRUSE: .USE
 			echo "===> $$entry"; \
 			cd ${.CURDIR}/$${entry}; \
 		fi; \
-		${MAKE} ${.TARGET}) \
+		${MAKE} ${.TARGET:realinstall=install}) \
 	done
 
 ${SUBDIR}:
@@ -38,19 +38,22 @@ cleandir: _SUBDIRUSE
 depend: _SUBDIRUSE
 .endif
 
+.if !target(install)
+.if !target(beforeinstall)
+beforeinstall:
+.endif
+.if !target(afterinstall)
+afterinstall:
+.endif
+install: afterinstall
+afterinstall: realinstall
+realinstall: beforeinstall _SUBDIRUSE
+.endif
+
 .if !target(lint)
 lint: _SUBDIRUSE
 .endif
 
 .if !target(tags)
 tags: _SUBDIRUSE
-.endif
-
-.if !target(install)
-.if target(beforeinstall)
-beforeinstall:
-.endif
-realinstall: _SUBDIRUSE
-install: afterinstall
-afterinall: realinstall
 .endif
