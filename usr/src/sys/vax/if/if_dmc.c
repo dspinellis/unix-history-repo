@@ -1,4 +1,4 @@
-/*	if_dmc.c	4.16	82/06/13	*/
+/*	if_dmc.c	4.17	82/06/20	*/
 
 #include "dmc.h"
 #if NDMC > 0
@@ -85,7 +85,6 @@ dmcprobe(reg)
 	register struct dmcdevice *addr = (struct dmcdevice *)reg;
 	register int i;
 
-COUNT(DMCPROBE);
 #ifdef lint
 	br = 0; cvec = br; br = cvec;
 	dmcrint(0); dmcxint(0);
@@ -118,7 +117,6 @@ dmcattach(ui)
 	register struct dmc_softc *sc = &dmc_softc[ui->ui_unit];
 	register struct sockaddr_in *sin;
 
-COUNT(DMCATTACH);
 	sc->sc_if.if_unit = ui->ui_unit;
 	sc->sc_if.if_name = "dmc";
 	sc->sc_if.if_mtu = DMCMTU;
@@ -144,7 +142,6 @@ dmcreset(unit, uban)
 {
 	register struct uba_device *ui;
 
-COUNT(DMCRESET);
 	if (unit >= NDMC || (ui = dmcinfo[unit]) == 0 || ui->ui_alive == 0 ||
 	    ui->ui_ubanum != uban)
 		return;
@@ -163,7 +160,6 @@ dmcinit(unit)
 	register struct dmcdevice *addr;
 	int base;
 
-COUNT(DMCINIT);
 	printd("dmcinit\n");
 	if ((sc->sc_flag&DMCBMAPPED) == 0) {
 		sc->sc_ubinfo = uballoc(ui->ui_ubanum,
@@ -207,7 +203,6 @@ dmcstart(dev)
 	int addr, len;
 	struct mbuf *m;
 
-COUNT(DMCSTART);
 	printd("dmcstart\n");
 	/*
 	 * Dequeue a request and map it to the UNIBUS.
@@ -241,7 +236,6 @@ dmcload(sc, type, w0, w1)
 	register struct dmcdevice *addr;
 	register int unit, sps, n;
 
-COUNT(DMCLOAD);
 	printd("dmcload: 0x%x 0x%x 0x%x\n", type, w0, w1);
 	unit = sc - dmc_softc;
 	addr = (struct dmcdevice *)dmcinfo[unit]->ui_addr;
@@ -269,7 +263,6 @@ dmcrint(unit)
 	register struct dmcdevice *addr;
 	register int n;
 
-COUNT(DMCRINT);
 	addr = (struct dmcdevice *)dmcinfo[unit]->ui_addr;
 	sc = &dmc_softc[unit];
 	while (addr->bsel0&DMC_RDYI) {
@@ -305,7 +298,6 @@ dmcxint(unit)
 	register struct ifqueue *inq;
 	int arg, cmd, len;
 
-COUNT(DMCXINT);
 	addr = (struct dmcdevice *)ui->ui_addr;
 	arg = addr->sel6;
 	cmd = addr->bsel2&7;
@@ -403,7 +395,6 @@ dmcoutput(ifp, m, dst)
 	struct uba_device *ui = dmcinfo[ifp->if_unit];
 	int s;
 
-COUNT(DMCOUTPUT);
 	printd("dmcoutput\n");
 	if (dst->sa_family != (ui->ui_flags & DMC_AF)) {
 		printf("dmc%d: af%d not supported\n", ifp->if_unit, pf);

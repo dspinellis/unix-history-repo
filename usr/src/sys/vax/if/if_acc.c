@@ -1,4 +1,4 @@
-/*	if_acc.c	4.18	82/06/15	*/
+/*	if_acc.c	4.19	82/06/20	*/
 
 #include "acc.h"
 #ifdef NACC > 0
@@ -71,7 +71,6 @@ accprobe(reg)
 	register int br, cvec;		/* r11, r10 value-result */
 	register struct accdevice *addr = (struct accdevice *)reg;
 
-COUNT(ACCPROBE);
 #ifdef lint
 	br = 0; cvec = br; br = cvec;
 	accrint(0); accxint(0);
@@ -105,7 +104,6 @@ accattach(ui)
 		struct	impcb ifimp_impcb;
 	} *ifimp;
 
-COUNT(ACCATTACH);
 	if ((ifimp = (struct ifimpcb *)impattach(ui)) == 0)
 		panic("accattach");
 	sc->acc_if = &ifimp->ifimp_if;
@@ -129,7 +127,6 @@ accreset(unit, uban)
 	register struct uba_device *ui;
 	struct acc_softc *sc;
 
-COUNT(ACCRESET);
 	if (unit >= NACC || (ui = accinfo[unit]) == 0 || ui->ui_alive == 0 ||
 	    ui->ui_ubanum != uban)
 		return;
@@ -153,7 +150,6 @@ accinit(unit)
 	register struct accdevice *addr;
 	int info, i;
 
-COUNT(ACCINIT);
 	if (unit >= NACC || (ui = accinfo[unit]) == 0 || ui->ui_alive == 0) {
 		printf("acc%d: not alive\n", unit);
 		return (0);
@@ -237,7 +233,6 @@ accstart(dev)
 	struct mbuf *m;
 	u_short cmd;
 
-COUNT(ACCSTART);
 	if (sc->acc_ic->ic_oactive)
 		goto restart;
 	
@@ -280,7 +275,6 @@ accxint(unit)
 	register struct acc_softc *sc = &acc_softc[unit];
 	register struct accdevice *addr;
 
-COUNT(ACCXINT);
 	addr = (struct accdevice *)accinfo[unit]->ui_addr;
 	if (sc->acc_ic->ic_oactive == 0) {
 		printf("acc%d: stray xmit interrupt, csr=%b\n", unit,
@@ -312,7 +306,6 @@ accrint(unit)
     	struct mbuf *m;
 	int len, info;
 
-COUNT(ACCRINT);
 	addr = (struct accdevice *)accinfo[unit]->ui_addr;
 	sc->acc_if->if_ipackets++;
 

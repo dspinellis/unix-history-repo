@@ -1,4 +1,4 @@
-/*	raw_ip.c	4.12	82/06/12	*/
+/*	raw_ip.c	4.13	82/06/20	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -31,7 +31,6 @@ rip_input(m)
 {
 	register struct ip *ip = mtod(m, struct ip *);
 
-COUNT(RIP_INPUT);
 	ripproto.sp_protocol = ip->ip_p;
 	ripdst.sin_addr = ip->ip_dst;
 	ripsrc.sin_addr = ip->ip_src;
@@ -54,7 +53,6 @@ rip_output(m0, so)
 	struct ifnet *ifp;
 	struct sockaddr_in *sin;
 
-COUNT(RIP_OUTPUT);
 	/*
 	 * Calculate data length and get an mbuf
 	 * for IP header.

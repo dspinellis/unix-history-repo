@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.67	82/04/10	*/
+/*	tcp_input.c	1.68	82/06/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -48,7 +48,6 @@ tcp_input(m0)
 	short ostate;
 	struct in_addr laddr;
 
-COUNT(TCP_INPUT);
 	/*
 	 * Get IP and TCP header together in first mbuf.
 	 * Note: IP leaves IP header in first mbuf.
@@ -866,7 +865,6 @@ tcp_reass(tp, ti)
 	struct socket *so = tp->t_inpcb->inp_socket;
 	struct mbuf *m;
 	int flags;
-COUNT(TCP_REASS);
 
 	/*
 	 * Call with ti==0 after become established to

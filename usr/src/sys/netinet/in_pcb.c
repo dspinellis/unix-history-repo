@@ -1,4 +1,4 @@
-/*	in_pcb.c	4.27	82/06/13	*/
+/*	in_pcb.c	4.28	82/06/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -63,7 +63,6 @@ in_pcbattach(so, head, sndcc, rcvcc, sin)
 	register struct inpcb *inp;
 	u_short lport = 0;
 
-COUNT(IN_PCBATTACH);
 	if (ifnet == 0)
 		return (EADDRNOTAVAIL);
 	if (sin) {
@@ -138,7 +137,6 @@ in_pcbconnect(inp, sin)
 	struct ifnet *ifp;
 	struct sockaddr_in *ifaddr;
 
-COUNT(IN_PCBCONNECT);
 	if (sin->sin_family != AF_INET)
 		return (EAFNOSUPPORT);
 	if (sin->sin_addr.s_addr == 0 || sin->sin_port == 0)
@@ -176,7 +174,6 @@ in_pcbdisconnect(inp)
 	struct inpcb *inp;
 {
 
-COUNT(IN_PCBDISCONNECT);
 	inp->inp_faddr.s_addr = 0;
 	inp->inp_fport = 0;
 	if (inp->inp_socket->so_state & SS_USERGONE)
@@ -188,7 +185,6 @@ in_pcbdetach(inp)
 {
 	struct socket *so = inp->inp_socket;
 
-COUNT(IN_PCBDETACH);
 	so->so_pcb = 0;
 	sofree(so);
 	if (inp->inp_route.ro_rt)
@@ -201,7 +197,6 @@ in_setsockaddr(sin, inp)
 	register struct sockaddr_in *sin;
 	register struct inpcb *inp;
 {
-COUNT(IN_SETSOCKADDR);
 	if (sin == 0 || inp == 0)
 		panic("setsockaddr_in");
 	bzero((caddr_t)sin, sizeof (*sin));
@@ -224,7 +219,6 @@ in_pcbnotify(head, dst, errno, abort)
 	register struct inpcb *inp, *oinp;
 	int s = splimp();
 
-COUNT(INP_PCBNOTIFY);
 	for (inp = head->inp_next; inp != head;) {
 		if (inp->inp_faddr.s_addr != dst->s_addr) {
 	next:

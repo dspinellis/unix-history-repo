@@ -1,4 +1,4 @@
-/*	if_ec.c	4.18	82/06/17	*/
+/*	if_ec.c	4.19	82/06/20	*/
 
 #include "ec.h"
 
@@ -77,7 +77,6 @@ ecprobe(reg)
 	register struct ecdevice *addr = (struct ecdevice *)reg;
 	register caddr_t ecbuf = (caddr_t) &umem[0][0600000];
 
-COUNT(ECPROBE);
 #ifdef lint
 	br = 0; cvec = br; br = cvec;
 	ecrint(0); ecxint(0); eccollide(0);
@@ -133,7 +132,6 @@ ecattach(ui)
 	struct sockaddr_in *sin;
 	int i, j;
 	u_char *cp;
-COUNT(ECATTACH);
 
 	ifp->if_unit = ui->ui_unit;
 	ifp->if_name = "ec";
@@ -188,7 +186,6 @@ ecreset(unit, uban)
 	int unit, uban;
 {
 	register struct uba_device *ui;
-COUNT(ECRESET);
 
 	if (unit >= NEC || (ui = ecinfo[unit]) == 0 || ui->ui_alive == 0 ||
 	    ui->ui_ubanum != uban)
@@ -242,7 +239,6 @@ ecstart(dev)
 	struct ecdevice *addr;
 	struct mbuf *m;
 	caddr_t ecbuf;
-COUNT(ECSTART);
 
 	if (es->es_oactive)
 		goto restart;
@@ -270,7 +266,6 @@ ecxint(unit)
 	register struct ec_softc *es = &ec_softc[unit];
 	register struct ecdevice *addr =
 		(struct ecdevice *)ecinfo[unit]->ui_addr;
-COUNT(ECXINT);
 
 	if (es->es_oactive == 0)
 		return;
@@ -305,7 +300,6 @@ eccollide(unit)
 	int unit;
 {
 	struct ec_softc *es = &ec_softc[unit];
-COUNT(ECCOLLIDE);
 
 	printf("ec%d: collision\n", unit);
 	es->es_if.if_collisions++;
@@ -376,7 +370,6 @@ ecrint(unit)
 	int unit;
 {
 	struct ecdevice *addr = (struct ecdevice *)ecinfo[unit]->ui_addr;
-COUNT(ECRINT);
 
 	while (addr->ec_rcr & EC_RDONE)
 		ecread(unit);
@@ -392,7 +385,6 @@ ecread(unit)
 	int len, off, resid, ecoff, buf;
 	register struct ifqueue *inq;
 	caddr_t ecbuf;
-COUNT(ECREAD);
 
 	es->es_if.if_ipackets++;
 	buf = addr->ec_rcr & EC_RBN;
@@ -496,7 +488,6 @@ ecoutput(ifp, m0, dst)
 	register int off, i;
 	struct mbuf *mcopy = (struct mbuf *) 0;		/* Null */
 
-COUNT(ECOUTPUT);
 	switch (dst->sa_family) {
 
 #ifdef INET
@@ -623,7 +614,6 @@ ecput(ecbuf, m)
 	register u_char *bp;
 	register int off;
 
-COUNT(ECPUT);
 	for (off = 2048, mp = m; mp; mp = mp->m_next)
 		off -= mp->m_len;
 	*(u_short *)ecbuf = off;
@@ -671,7 +661,6 @@ ecget(ecbuf, totlen, off0)
 	register char *cp, *mcp;
 	register int i;
 
-COUNT(ECGET);
 	top = 0;
 	mp = &top;
 	cp = ecbuf + ECRDOFF + sizeof (struct ec_header);

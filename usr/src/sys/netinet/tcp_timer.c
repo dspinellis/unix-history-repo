@@ -1,4 +1,4 @@
-/*	tcp_timer.c	4.22	82/06/12	*/
+/*	tcp_timer.c	4.23	82/06/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -30,7 +30,6 @@ tcp_fasttimo()
 	register struct inpcb *inp;
 	register struct tcpcb *tp;
 	int s = splnet();
-COUNT(TCP_FASTTIMO);
 
 	inp = tcb.inp_next;
 	if (inp)
@@ -55,7 +54,6 @@ tcp_slowtimo()
 	register struct tcpcb *tp;
 	int s = splnet();
 	register int i;
-COUNT(TCP_SLOWTIMO);
 
 	/*
 	 * Search through tcb's and update active timers.
@@ -97,7 +95,6 @@ tcp_canceltimers(tp)
 {
 	register int i;
 
-COUNT(TCP_CANCELTIMERS);
 	for (i = 0; i < TCPT_NTIMERS; i++)
 		tp->t_timer[i] = 0;
 }
@@ -114,7 +111,6 @@ tcp_timers(tp, timer)
 	int timer;
 {
 
-COUNT(TCP_TIMERS);
 	switch (timer) {
 
 	/*

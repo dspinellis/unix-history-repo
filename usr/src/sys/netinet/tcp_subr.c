@@ -1,4 +1,4 @@
-/*	tcp_subr.c	4.26	82/04/30	*/
+/*	tcp_subr.c	4.27	82/06/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -28,7 +28,6 @@
 tcp_init()
 {
 
-COUNT(TCP_INIT);
 	tcp_iss = 1;		/* wrong */
 	tcb.inp_next = tcb.inp_prev = &tcb;
 	tcp_alpha = TCP_ALPHA;
@@ -49,7 +48,6 @@ tcp_template(tp)
 	register struct mbuf *m;
 	register struct tcpiphdr *n;
 
-COUNT(TCP_TEMPLATE);
 	m = m_get(M_WAIT);
 	if (m == 0)
 		return (0);
@@ -98,7 +96,6 @@ tcp_respond(tp, ti, ack, seq, flags)
 	int win = 0, tlen;
 	struct route *ro = 0;
 
-COUNT(TCP_RESPOND);
 	if (tp) {
 		win = sbspace(&tp->t_inpcb->inp_socket->so_rcv);
 		ro = &tp->t_inpcb->inp_route;
@@ -160,7 +157,6 @@ tcp_newtcpcb(inp)
 {
 	struct mbuf *m = m_getclr(M_DONTWAIT);
 	register struct tcpcb *tp;
-COUNT(TCP_NEWTCPCB);
 
 	if (m == 0)
 		return (0);
@@ -184,7 +180,6 @@ tcp_drop(tp, errno)
 {
 	struct socket *so = tp->t_inpcb->inp_socket;
 
-COUNT(TCP_DROP);
 	if (TCPS_HAVERCVDSYN(tp->t_state)) {
 		tp->t_state = TCPS_CLOSED;
 		tcp_output(tp);
@@ -212,7 +207,6 @@ tcp_close(tp)
 	struct inpcb *inp = tp->t_inpcb;
 	struct socket *so = inp->inp_socket;
 
-COUNT(TCP_CLOSE);
 	t = tp->seg_next;
 	for (; t != (struct tcpiphdr *)tp; t = (struct tcpiphdr *)t->ti_next)
 		m_freem(dtom(t));
@@ -231,7 +225,6 @@ COUNT(TCP_CLOSE);
 tcp_drain()
 {
 
-COUNT(TCP_DRAIN);
 }
 
 tcp_ctlinput(cmd, arg)
@@ -240,7 +233,6 @@ tcp_ctlinput(cmd, arg)
 {
 	struct in_addr *sin;
 	extern u_char inetctlerrmap[];
-COUNT(TCP_CTLINPUT);
 
 	if (cmd < 0 || cmd > PRC_NCMDS)
 		return;

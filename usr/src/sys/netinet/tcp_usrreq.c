@@ -1,4 +1,4 @@
-/*	tcp_usrreq.c	1.58	82/06/12	*/
+/*	tcp_usrreq.c	1.59	82/06/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -44,7 +44,6 @@ tcp_usrreq(so, req, m, addr)
 	int s = splnet();
 	int error = 0;
 	int ostate;
-COUNT(TCP_USRREQ);
 
 	/*
 	 * When a TCP is attached to a socket, then there will be

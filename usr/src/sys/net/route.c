@@ -1,4 +1,4 @@
-/*	route.c	4.10	82/06/12	*/
+/*	route.c	4.11	82/06/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -27,7 +27,6 @@ rtalloc(ro)
 	struct sockaddr *dst = &ro->ro_dst;
 	int af = dst->sa_family;
 
-COUNT(RTALLOC);
 	if (ro->ro_rt && ro->ro_rt->rt_ifp)			/* XXX */
 		return;
 	if (af >= AF_MAX)
@@ -98,7 +97,6 @@ rtrequest(req, entry)
 	int af, s, error = 0, hash, (*match)();
 	struct ifnet *ifp;
 
-COUNT(RTREQUEST);
 	af = entry->rt_dst.sa_family;
 	if (af >= AF_MAX)
 		return (EAFNOSUPPORT);

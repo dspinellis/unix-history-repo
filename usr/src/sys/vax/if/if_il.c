@@ -1,4 +1,4 @@
-/*	if_il.c	4.7	82/06/18	*/
+/*	if_il.c	4.8	82/06/20	*/
 
 #include "il.h"
 
@@ -73,7 +73,6 @@ ilprobe(reg)
 	register struct ildevice *addr = (struct ildevice *)reg;
 	register i;
 
-COUNT(ILPROBE);
 #ifdef lint
 	br = 0; cvec = br; br = cvec;
 	ilrint(0); ilcint(0);
@@ -103,7 +102,6 @@ ilattach(ui)
 	register short csr;
 	struct sockaddr_in *sin;
 	int i, s, ubaddr;
-COUNT(ILATTACH);
 
 	ifp->if_unit = ui->ui_unit;
 	ifp->if_name = "il";
@@ -179,7 +177,6 @@ ilreset(unit, uban)
 	int unit, uban;
 {
 	register struct uba_device *ui;
-COUNT(ILRESET);
 
 	if (unit >= NIL || (ui = ilinfo[unit]) == 0 || ui->ui_alive == 0 ||
 	    ui->ui_ubanum != uban)
@@ -248,7 +245,6 @@ ilstart(dev)
 	register struct ildevice *addr;
 	struct mbuf *m;
 	short csr;
-COUNT(ILSTART);
 
 	IF_DEQUEUE(&is->is_if.if_snd, m);
 	if (m == 0)
@@ -277,7 +273,6 @@ ilcint(unit)
 	struct uba_device *ui = ilinfo[unit];
 	register struct ildevice *addr = (struct ildevice *)ui->ui_addr;
 	short csr;
-COUNT(ILCINT);
 
 	csr = addr->il_csr;
 	if (is->is_oactive == 0) {
@@ -332,7 +327,6 @@ ilrint(unit)
 	register struct ifqueue *inq;
 	short csr;
 
-COUNT(ILRINT);
 	is->is_if.if_ipackets++;
 	if (is->is_ifuba.ifu_flags & UBA_NEEDBDP)
 		UBAPURGE(is->is_ifuba.ifu_uba, is->is_ifuba.ifu_r.ifrw_bdp);
@@ -438,7 +432,6 @@ iloutput(ifp, m0, dst)
 	register struct il_xheader *il;
 	register int off, i;
 
-COUNT(ILOUTPUT);
 	switch (dst->sa_family) {
 
 #ifdef INET

@@ -1,4 +1,4 @@
-/*	raw_imp.c	4.11	82/04/11	*/
+/*	raw_imp.c	4.12	82/06/20	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -35,7 +35,6 @@ rimp_output(m, so)
 	struct ifnet *ifp;
 	struct control_leader *cp;
 
-COUNT(RIMP_OUTPUT);
 	/*
 	 * Verify user has supplied necessary space
 	 * for the leader and check parameters in it.

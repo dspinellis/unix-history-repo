@@ -1,4 +1,4 @@
-/*	if_imp.c	4.36	82/06/15	*/
+/*	if_imp.c	4.37	82/06/20	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -80,7 +80,6 @@ impattach(ui)
 	register struct ifnet *ifp = &sc->imp_if;
 	struct sockaddr_in *sin;
 
-COUNT(IMPATTACH);
 	/* UNIT COULD BE AMBIGUOUS */
 	ifp->if_unit = ui->ui_unit;
 	ifp->if_name = "imp";
@@ -108,7 +107,6 @@ impinit(unit)
 	int s = splimp();
 	register struct imp_softc *sc = &imp_softc[unit];
 
-COUNT(IMPINIT);
 	if ((*sc->imp_cb.ic_init)(unit) == 0) {
 		sc->imp_state = IMPS_DOWN;
 		sc->imp_if.if_flags &= ~IFF_UP;
@@ -147,7 +145,6 @@ impinput(unit, m)
 	struct mbuf *next;
 	struct sockaddr_in *sin;
 
-COUNT(IMPINPUT);
 	/* verify leader length. */
 	if (m->m_len < sizeof(struct control_leader) &&
 	    (m = m_pullup(m, sizeof(struct control_leader))) == 0)
@@ -346,7 +343,6 @@ impdown(sc)
 	struct imp_softc *sc;
 {
 
-COUNT(IMPDOWN);
 	sc->imp_state = IMPS_DOWN;
 	impmsg(sc, "marked down");
 	hostreset(sc->imp_if.if_net);
@@ -360,7 +356,6 @@ impmsg(sc, fmt, a1, a2)
 	u_int a1;
 {
 
-COUNT(IMPMSG);
 	printf("imp%d: ", sc->imp_if.if_unit);
 	printf(fmt, a1, a2);
 	printf("\n");
@@ -377,7 +372,6 @@ impnotify(what, cp, hp)
 {
 	struct in_addr in;
 
-COUNT(IMPNOTIFY);
 #ifdef notdef
 	in.s_net = cp->dl_network;
 #else
@@ -411,7 +405,6 @@ impoutput(ifp, m0, dst)
 	int x, dhost, dimp, dlink, len, dnet;
 	int error = 0;
 
-COUNT(IMPOUTPUT);
 	/*
 	 * Don't even try if the IMP is unavailable.
 	 */
@@ -496,7 +489,6 @@ impsnd(ifp, m)
 	struct impcb *icp;
 	int s, error;
 
-COUNT(IMPSND);
 	ip = mtod(m, struct imp_leader *);
 
 	/*
@@ -573,7 +565,6 @@ impnoops(sc)
 	register struct control_leader *cp;
 	int x;
 
-COUNT(IMPNOOPS);
 	sc->imp_dropcnt = IMP_DROPCNT;
 	for (i = 0; i < IMP_DROPCNT + 1; i++ ) { 
 		if ((m = m_getclr(M_DONTWAIT)) == 0) 

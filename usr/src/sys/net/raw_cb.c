@@ -1,4 +1,4 @@
-/*	raw_cb.c	4.8	82/04/11	*/
+/*	raw_cb.c	4.9	82/06/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -33,7 +33,6 @@ raw_attach(so, addr)
 	struct mbuf *m;
 	register struct rawcb *rp;
 
-COUNT(RAW_ATTACH);
 	if (ifnet == 0)
 		return (EADDRNOTAVAIL);
 	/*
@@ -108,7 +107,6 @@ raw_detach(rp)
 {
 	struct socket *so = rp->rcb_socket;
 
-COUNT(RAW_DETACH);
 	so->so_pcb = 0;
 	sofree(so);
 	remque(rp);
@@ -121,7 +119,6 @@ COUNT(RAW_DETACH);
 raw_disconnect(rp)
 	struct rawcb *rp;
 {
-COUNT(RAW_DISCONNECT);
 	rp->rcb_flags &= ~RAW_FADDR;
 	if (rp->rcb_socket->so_state & SS_USERGONE)
 		raw_detach(rp);
@@ -135,7 +132,6 @@ raw_connaddr(rp, addr)
 	struct rawcb *rp;
 	struct sockaddr *addr;
 {
-COUNT(RAW_CONNADDR);
 	bcopy((caddr_t)addr, (caddr_t)&rp->rcb_faddr, sizeof(*addr));
 	rp->rcb_flags |= RAW_FADDR;
 }
