@@ -10,23 +10,23 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)misc.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)misc.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 
+#include <err.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 
 #include "dd.h"
 #include "extern.h"
 
-/* ARGSUSED */
 void
-summary(notused)
-	int notused;
+summary()
 {
 	time_t secs;
 	char buf[100];
@@ -57,62 +57,18 @@ summary(notused)
 
 /* ARGSUSED */
 void
+summaryx(notused)
+	int notused;
+{
+
+	summary();
+}
+
+/* ARGSUSED */
+void
 terminate(notused)
 	int notused;
 {
-	summary(0);
+
 	exit(0);
-}
-
-#if __STDC__
-#include <stdarg.h>
-#else
-#include <varargs.h>
-#endif
-
-void
-#if __STDC__
-err(const char *fmt, ...)
-#else
-err(fmt, va_alist)
-	char *fmt;
-	va_dcl
-#endif
-{
-	extern int errstats;
-	va_list ap;
-#if __STDC__
-	va_start(ap, fmt);
-#else
-	va_start(ap);
-#endif
-	(void)fprintf(stderr, "dd: ");
-	(void)vfprintf(stderr, fmt, ap);
-	va_end(ap);
-	(void)fprintf(stderr, "\n");
-	if (errstats)
-		summary(0);
-	exit(1);
-	/* NOTREACHED */
-}
-
-void
-#if __STDC__
-warn(const char *fmt, ...)
-#else
-warn(fmt, va_alist)
-	char *fmt;
-	va_dcl
-#endif
-{
-	va_list ap;
-#if __STDC__
-	va_start(ap, fmt);
-#else
-	va_start(ap);
-#endif
-	(void)fprintf(stderr, "dd: ");
-	(void)vfprintf(stderr, fmt, ap);
-	va_end(ap);
-	(void)fprintf(stderr, "\n");
 }

@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 1991, 1993
+ * Copyright (c) 1991, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -10,48 +10,52 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)args.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)args.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
-#include <limits.h>
+
+#include <err.h>
 #include <errno.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "dd.h"
 #include "extern.h"
 
-static u_long get_bsz __P((char *));
-
-static void f_bs __P((char *));
-static void f_cbs __P((char *));
-static void f_conv __P((char *));
-static void f_count __P((char *));
-static void f_files __P((char *));
-static void f_ibs __P((char *));
-static void f_if __P((char *));
-static void f_obs __P((char *));
-static void f_of __P((char *));
-static void f_seek __P((char *));
-static void f_skip __P((char *));
+static int	c_arg __P((const void *, const void *));
+static int	c_conv __P((const void *, const void *));
+static void	f_bs __P((char *));
+static void	f_cbs __P((char *));
+static void	f_conv __P((char *));
+static void	f_count __P((char *));
+static void	f_files __P((char *));
+static void	f_ibs __P((char *));
+static void	f_if __P((char *));
+static void	f_obs __P((char *));
+static void	f_of __P((char *));
+static void	f_seek __P((char *));
+static void	f_skip __P((char *));
+static u_long	get_bsz __P((char *));
 
 static struct arg {
 	char *name;
 	void (*f) __P((char *));
 	u_int set, noset;
 } args[] = {
-	"bs",		f_bs,		C_BS,		C_BS|C_IBS|C_OBS|C_OSYNC,
-	"cbs",		f_cbs,		C_CBS,		C_CBS,
-	"conv",		f_conv,		0,		0,
-	"count",	f_count,	C_COUNT,	C_COUNT,
-	"files",	f_files,	C_FILES,	C_FILES,
-	"ibs",		f_ibs,		C_IBS,		C_BS|C_IBS,
-	"if",		f_if,		C_IF,		C_IF,
-	"obs",		f_obs,		C_OBS,		C_BS|C_OBS,
-	"of",		f_of,		C_OF,		C_OF,
-	"seek",		f_seek,		C_SEEK,		C_SEEK,
-	"skip",		f_skip,		C_SKIP,		C_SKIP,
+	{ "bs",		f_bs,		C_BS,	 C_BS|C_IBS|C_OBS|C_OSYNC },
+	{ "cbs",	f_cbs,		C_CBS,	 C_CBS },
+	{ "conv",	f_conv,		0,	 0 },
+	{ "count",	f_count,	C_COUNT, C_COUNT },
+	{ "files",	f_files,	C_FILES, C_FILES },
+	{ "ibs",	f_ibs,		C_IBS,	 C_BS|C_IBS },
+	{ "if",		f_if,		C_IF,	 C_IF },
+	{ "obs",	f_obs,		C_OBS,	 C_BS|C_OBS },
+	{ "of",		f_of,		C_OF,	 C_OF },
+	{ "seek",	f_seek,		C_SEEK,	 C_SEEK },
+	{ "skip",	f_skip,		C_SKIP,	 C_SKIP },
 };
 
 static char *oper;
@@ -61,28 +65,26 @@ static char *oper;
  */
 void
 jcl(argv)
-	register char **argv;
+	char **argv;
 {
-	register struct arg *ap;
-	struct arg tmp;
+	struct arg *ap, tmp;
 	char *arg;
-	static int c_arg __P((const void *, const void *));
 
 	in.dbsz = out.dbsz = 512;
 
 	while (oper = *++argv) {
-		if ((arg = index(oper, '=')) == NULL)
-			err("unknown operand %s", oper);
+		if ((arg = strchr(oper, '=')) == NULL)
+			errx(1, "unknown operand %s", oper);
 		*arg++ = '\0';
 		if (!*arg)
-			err("no value specified for %s", oper);
+			errx(1, "no value specified for %s", oper);
 		tmp.name = oper;
 		if (!(ap = (struct arg *)bsearch(&tmp, args,
 		    sizeof(args)/sizeof(struct arg), sizeof(struct arg),
 		    c_arg)))
-			err("unknown operand %s", tmp.name);
+			errx(1, "unknown operand %s", tmp.name);
 		if (ddflags & ap->noset)
-			err("%s: illegal argument combination or already set",
+			errx(1, "%s: illegal argument combination or already set",
 			    tmp.name);
 		ddflags |= ap->set;
 		ap->f(arg);
@@ -101,7 +103,7 @@ jcl(argv)
 
 		/* Bs supersedes ibs and obs. */
 		if (ddflags & C_BS && ddflags & (C_IBS|C_OBS))
-			warn("bs supersedes ibs and obs");
+			warnx("bs supersedes ibs and obs");
 	}
 
 	/*
@@ -110,9 +112,9 @@ jcl(argv)
 	 */
 	if (ddflags & (C_BLOCK|C_UNBLOCK)) {
 		if (!(ddflags & C_CBS))
-			err("record operations require cbs");
+			errx(1, "record operations require cbs");
 		if (cbsz == 0)
-			err("cbs cannot be zero");
+			errx(1, "cbs cannot be zero");
 		cfunc = ddflags & C_BLOCK ? block : unblock;
 	} else if (ddflags & C_CBS) {
 		if (ddflags & (C_ASCII|C_EBCDIC)) {
@@ -124,14 +126,14 @@ jcl(argv)
 				cfunc = block;
 			}
 		} else
-			err("cbs meaningless if not doing record operations");
+			errx(1, "cbs meaningless if not doing record operations");
 		if (cbsz == 0)
-			err("cbs cannot be zero");
+			errx(1, "cbs cannot be zero");
 	} else
 		cfunc = def;
 
 	if (in.dbsz == 0 || out.dbsz == 0)
-		err("buffer sizes cannot be zero");
+		errx(1, "buffer sizes cannot be zero");
 
 	/*
 	 * Read, write and seek calls take ints as arguments.  Seek sizes
@@ -139,15 +141,16 @@ jcl(argv)
 	 * regular files, but it's probably not worth it.
 	 */
 	if (in.dbsz > INT_MAX || out.dbsz > INT_MAX)
-		err("buffer sizes cannot be greater than %d", INT_MAX);
+		errx(1, "buffer sizes cannot be greater than %d", INT_MAX);
 	if (in.offset > INT_MAX / in.dbsz || out.offset > INT_MAX / out.dbsz)
-		err("seek offsets cannot be larger than %d", INT_MAX);
+		errx(1, "seek offsets cannot be larger than %d", INT_MAX);
 }
 
 static int
 c_arg(a, b)
 	const void *a, *b;
 {
+
 	return (strcmp(((struct arg *)a)->name, ((struct arg *)b)->name));
 }
 
@@ -155,6 +158,7 @@ static void
 f_bs(arg)
 	char *arg;
 {
+
 	in.dbsz = out.dbsz = (int)get_bsz(arg);
 }
 
@@ -162,6 +166,7 @@ static void
 f_cbs(arg)
 	char *arg;
 {
+
 	cbsz = (int)get_bsz(arg);
 }
 
@@ -169,6 +174,7 @@ static void
 f_count(arg)
 	char *arg;
 {
+
 	cpy_cnt = (u_int)get_bsz(arg);
 	if (!cpy_cnt)
 		terminate(0);
@@ -178,6 +184,7 @@ static void
 f_files(arg)
 	char *arg;
 {
+
 	files_cnt = (int)get_bsz(arg);
 }
 
@@ -185,6 +192,7 @@ static void
 f_ibs(arg)
 	char *arg;
 {
+
 	if (!(ddflags & C_BS))
 		in.dbsz = (int)get_bsz(arg);
 }
@@ -193,6 +201,7 @@ static void
 f_if(arg)
 	char *arg;
 {
+
 	in.name = arg;
 }
 
@@ -200,6 +209,7 @@ static void
 f_obs(arg)
 	char *arg;
 {
+
 	if (!(ddflags & C_BS))
 		out.dbsz = (int)get_bsz(arg);
 }
@@ -208,6 +218,7 @@ static void
 f_of(arg)
 	char *arg;
 {
+
 	out.name = arg;
 }
 
@@ -215,6 +226,7 @@ static void
 f_seek(arg)
 	char *arg;
 {
+
 	out.offset = (u_int)get_bsz(arg);
 }
 
@@ -222,6 +234,7 @@ static void
 f_skip(arg)
 	char *arg;
 {
+
 	in.offset = (u_int)get_bsz(arg);
 }
 
@@ -230,39 +243,37 @@ static struct conv {
 	u_int set, noset;
 	u_char *ctab;
 } clist[] = {
-	"ascii",	C_ASCII,	C_EBCDIC,	e2a_POSIX,
-	"block",	C_BLOCK,	C_UNBLOCK,	NULL,
-	"ebcdic",	C_EBCDIC,	C_ASCII,	a2e_POSIX,
-	"ibm",		C_EBCDIC,	C_ASCII,	a2ibm_POSIX,
-	"lcase",	C_LCASE,	C_UCASE,	NULL,
-	"noerror",	C_NOERROR,	0,		NULL,
-	"notrunc",	C_NOTRUNC,	0,		NULL,
-	"oldascii",	C_ASCII,	C_EBCDIC,	e2a_32V,
-	"oldebcdic",	C_EBCDIC,	C_ASCII,	a2e_32V,
-	"oldibm",	C_EBCDIC,	C_ASCII,	a2ibm_32V,
-	"osync",	C_OSYNC,	C_BS,		NULL,
-	"swab",		C_SWAB,		0,		NULL,
-	"sync",		C_SYNC,		0,		NULL,
-	"ucase",	C_UCASE,	C_LCASE,	NULL,
-	"unblock",	C_UNBLOCK,	C_BLOCK,	NULL,
+	{ "ascii",	C_ASCII,	C_EBCDIC,	e2a_POSIX },
+	{ "block",	C_BLOCK,	C_UNBLOCK,	NULL },
+	{ "ebcdic",	C_EBCDIC,	C_ASCII,	a2e_POSIX },
+	{ "ibm",	C_EBCDIC,	C_ASCII,	a2ibm_POSIX },
+	{ "lcase",	C_LCASE,	C_UCASE,	NULL },
+	{ "noerror",	C_NOERROR,	0,		NULL },
+	{ "notrunc",	C_NOTRUNC,	0,		NULL },
+	{ "oldascii",	C_ASCII,	C_EBCDIC,	e2a_32V },
+	{ "oldebcdic",	C_EBCDIC,	C_ASCII,	a2e_32V },
+	{ "oldibm",	C_EBCDIC,	C_ASCII,	a2ibm_32V },
+	{ "osync",	C_OSYNC,	C_BS,		NULL },
+	{ "swab",	C_SWAB,		0,		NULL },
+	{ "sync",	C_SYNC,		0,		NULL },
+	{ "ucase",	C_UCASE,	C_LCASE,	NULL },
+	{ "unblock",	C_UNBLOCK,	C_BLOCK,	NULL },
 };
 
 static void
 f_conv(arg)
 	char *arg;
 {
-	register struct conv *cp;
-	struct conv tmp;
-	static int c_conv __P((const void *, const void *));
+	struct conv *cp, tmp;
 
 	while (arg != NULL) {
 		tmp.name = strsep(&arg, ",");
 		if (!(cp = (struct conv *)bsearch(&tmp, clist,
 		    sizeof(clist)/sizeof(struct conv), sizeof(struct conv),
 		    c_conv)))
-			err("unknown conversion %s", tmp.name);
+			errx(1, "unknown conversion %s", tmp.name);
 		if (ddflags & cp->noset)
-			err("%s: illegal conversion combination", tmp.name);
+			errx(1, "%s: illegal conversion combination", tmp.name);
 		ddflags |= cp->set;
 		if (cp->ctab)
 			ctab = cp->ctab;
@@ -273,6 +284,7 @@ static int
 c_conv(a, b)
 	const void *a, *b;
 {
+
 	return (strcmp(((struct conv *)a)->name, ((struct conv *)b)->name));
 }
 
@@ -291,14 +303,14 @@ static u_long
 get_bsz(val)
 	char *val;
 {
-	char *expr;
 	u_long num, t;
+	char *expr;
 
 	num = strtoul(val, &expr, 0);
 	if (num == ULONG_MAX)			/* Overflow. */
-		err("%s: %s", oper, strerror(errno));
+		err(1, "%s", oper);
 	if (expr == val)			/* No digits. */
-		err("%s: illegal numeric value", oper);
+		errx(1, "%s: illegal numeric value", oper);
 
 	switch(*expr) {
 	case 'b':
@@ -339,10 +351,10 @@ get_bsz(val)
 			t = num;
 			num *= get_bsz(expr + 1);
 			if (t > num)
-erange:				err("%s: %s", oper, strerror(ERANGE));
+erange:				errx(1, "%s: %s", oper, strerror(ERANGE));
 			break;
 		default:
-			err("%s: illegal numeric value", oper);
+			errx(1, "%s: illegal numeric value", oper);
 	}
-	return(num);
+	return (num);
 }
