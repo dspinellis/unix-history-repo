@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file	@(#)termcap.src	5.51 (Berkeley) %G%
+#	Termcap source file	@(#)termcap.src	5.52 (Berkeley) %G%
 #	John Kunze, Berkeley
 #	Craig Leres, Berkeley
 #
@@ -1998,6 +1998,15 @@ hc|300h|hp300h|HP Catseye console:\
 	:se=\E&d@:ue=\E&d@:im=\EQ:so=\E&dB:us=\E&dD:me=\E&d@:ei=\ER:\
 	:if=/usr/share/tabset/stdcrt:al=\EL:kb=\b:kd=\EB:kh=\Eh:kl=\ED:\
 	:kr=\EC:ku=\EA:ke=\E&s0A:ks=\E&s1A:sf=\n:ta=\t:
+# From: vic@fine.Princeton.EDU (Victor Duchovni)
+hy|hp700-wy|HP700/41 emulating wyse30:\
+	:al=0.7*\EE:am:bl=^G:bs:bt=\EI:bw:cd=\EY:ce=10\ET:cl=^Z:cm=\E=%+ %+ :\
+	:co#80:cr=^M:ct=\E0:cv=\E[%+ :dc=\EW:dl=\ER:do=^V:ei=\Er:\
+	:ho=^^:if=/usr/share/tabset/hp700-wy:ll=^^^K:mi:ms:nd=^L:nl=^J:pt:\
+	:im=\Eq:is=\E~"\EC\Er\E(\EG0^C\E`9\E`1:kb=^?:kd=^V:\
+	:kh=^^:kl=^H:ko=cl,ho,ce,bt,ta,im,ei,ce,cd:kr=:ku=:le=^H:li#24:\
+	:rs=\E~"\EC\Er\E(\EG0^C\E`9\E`1:se=10\EG0:sg#1:so=10\EG4:sr=\Ej:\
+	:st=\E1:ue=10\EG0:up=^K:ug#1:us=10\EG8:
 # # --------------------------------
 #
 # i: INFOTON (GENERAL TERMINAL)
