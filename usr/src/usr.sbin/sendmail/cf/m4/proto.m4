@@ -364,6 +364,9 @@ _OPTION(SafeFileEnvironment, `confSAFE_FILE_ENV', /arch)
 # are colons OK in addresses?
 _OPTION(ColonOkInAddr, `confCOLON_OK_IN_ADDR')
 
+# how many jobs can you process in the queue?
+_OPTION(MaxQueueRunSize, `confMAX_QUEUE_RUN_SIZE', 10000)
+
 ###########################
 #   Message precedences   #
 ###########################
