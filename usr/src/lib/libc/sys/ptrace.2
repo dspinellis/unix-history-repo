@@ -3,7 +3,7 @@
 .\"
 .\"     %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)ptrace.2	6.5 (Berkeley) %G%
+.\"	@(#)ptrace.2	6.6 (Berkeley) %G%
 .\"
 .TH PTRACE 2 ""
 .UC 4
@@ -12,8 +12,8 @@ ptrace \- process trace
 .SH SYNOPSIS
 .nf
 .ft B
-#include <sys/signal.h>
 #include <sys/ptrace.h>
+#include <signal.h>
 .PP
 .ft B
 ptrace(request, pid, addr, data)

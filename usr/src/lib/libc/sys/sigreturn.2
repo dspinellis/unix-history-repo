@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)sigreturn.2	6.5 (Berkeley) %G%
+.\"     @(#)sigreturn.2	6.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SIGRETURN 2
@@ -12,7 +12,7 @@
 .Nm sigreturn
 .Nd return from signal
 .Sh SYNOPSIS
-.Fd #include <sys/signal.h>
+.Fd #include <signal.h>
 .Bd -literal
 struct sigcontext {
 	int sc_onstack;
