@@ -34,7 +34,7 @@ Andrew Moore <alm@netcom.com>
 Andreas Schulz <ats@g386bsd.first.bmd.de>
 John Dyson <dyson@implode.rain.com>
 Christoph Robitschko <chmr@edvz.tu-graz.ac.at>
-David Greenman <davidg@implode.rain.com>
+David Greenman <davidg@Root.COM>
 Jordan K. Hubbard <jkh@whisker.hubbard.ie>
 Nate Williams <nate@bsd.coe.montana.edu>
 Paul Richards <paul@isl.cf.ac.uk>
@@ -110,7 +110,7 @@ Daniel Poirot <poirot@aio.jsc.nasa.gov>
 Dave Burgess <burgess@hrd769.brooks.af.mil>
 Dave Rivers <rivers@ponds.uucp>
 David Dawes <dawes@physics.su.OZ.AU>
-David Greenman <davidg@implode.rain.com>
+David Greenman <davidg@Root.COM>
 Eric J. Haug <ejh@slustl.slu.edu>
 Felix Gaehtgens <felix@escape.vsse.in-berlin.de>
 Frank Maclachlan <fpm@crash.cts.com>
@@ -179,4 +179,4 @@ Wolfgang Solfrank <ws@tools.de>
 Wolfgang Stanglmeier <wolf@dentaro.GUN.de>
 Yuval Yarom <yval@cs.huji.ac.il>
 
-$Id: CONTRIB.FreeBSD,v 1.26 1994/01/31 06:53:04 wollman Exp $
+$Id: CONTRIB.FreeBSD,v 1.27 1994/02/13 02:59:49 jkh Exp $
