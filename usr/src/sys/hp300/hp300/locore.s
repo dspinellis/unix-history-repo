@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: locore.s 1.58 91/04/22$
  *
- *	@(#)locore.s	7.11 (Berkeley) %G%
+ *	@(#)locore.s	7.12 (Berkeley) %G%
  */
 
 #include "assym.s"
@@ -1070,6 +1070,7 @@ Linitmem:
 	subl	d0,d1			| compute amount of RAM present
 	movl	d1,_physmem		| and physmem
 /*
+ * First we have to select the software page size, then set up the pmap.
  * pmap_bootstrap is supposed to be called with mapping off early on
  * to set up the kernel VA space.  However, this only works easily if
  * you have a kernel PA == VA mapping.  Since we do not, we just set
@@ -1078,6 +1079,7 @@ Linitmem:
  */
 	.globl	_avail_start
 	lea	tmpstk,sp		| temporary stack
+	jbsr	_vm_set_page_size	| select software page size
 	movl	a5,sp@-			| phys load address (assumes VA 0)
 	movl	a4,sp@-			| first available PA
 	jbsr	_pmap_bootstrap		| sync up pmap module
