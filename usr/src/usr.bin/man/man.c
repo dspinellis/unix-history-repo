@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)man.c	8.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)man.c	8.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -158,7 +158,9 @@ main(argc, argv)
 	 * 2: If the user did not specify MANPATH, -M or a section, rewrite
 	 *    the _default list to include the _subdir list and the machine.
 	 */
-	if ((section = getlist(*argv)) != NULL)
+	if (argv[1] == NULL)
+		section = NULL;
+	else if ((section = getlist(*argv)) != NULL)
 		++argv;
 	if (p_path == NULL && section == NULL) {
 		defnewp = addlist("_default_new");
