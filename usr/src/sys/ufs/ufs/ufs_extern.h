@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_extern.h	7.1 (Berkeley) %G%
+ *	@(#)ufs_extern.h	7.2 (Berkeley) %G%
  */
 
 struct buf;
@@ -33,7 +33,6 @@ int	 writedisklabel __P((dev_t, int (*)(), struct disklabel *));
 int	 ufs_abortop __P((struct nameidata *));
 int	 ufs_access __P((struct vnode *, int, struct ucred *, struct proc *));
 int	 ufs_advlock __P((struct vnode *, caddr_t, int, struct flock *, int));
-int	 ufs_bmap __P((struct vnode *, daddr_t, struct vnode **, daddr_t *));
 void	 ufs_bufstats __P((void));
 int	 ufs_checkpath __P((struct inode *, struct inode *, struct ucred *));
 int	 ufs_chmod __P((struct vnode *, int, struct proc *));
@@ -47,15 +46,13 @@ int	 ufs_direnter __P((struct inode *, struct nameidata *));
 int	 ufs_dirremove __P((struct nameidata *));
 int	 ufs_dirrewrite
 	    __P((struct inode *, struct inode *, struct nameidata *));
-int	 ufs_fhtovp __P((struct mount *, struct fid *, struct vnode **));
 int	 ufs_getattr __P((struct vnode *,
 	    struct vattr *, struct ucred *, struct proc *));
-struct inode *
+struct vnode *
 	 ufs_ihashget __P((int, ino_t));
 void	 ufs_ihashinit __P((void));
 void	 ufs_ihashins __P((struct inode *));
 void	 ufs_ilock __P((struct inode *));
-int	 ufs_inactive __P((struct vnode *, struct proc *));
 int	 ufs_init __P((void));
 int	 ufs_ioctl __P((struct vnode *,
 	    int, caddr_t, int, struct ucred *, struct proc *));
@@ -65,6 +62,7 @@ void	 ufs_iunlock __P((struct inode *));
 int	 ufs_link __P((struct vnode *, struct nameidata *, struct proc *));
 int	 ufs_lock __P((struct vnode *));
 int	 ufs_lookup __P((struct vnode *, struct nameidata *, struct proc *));
+int	 ufs_makeinode __P((int mode, struct nameidata *, struct vnode **));
 int	 ufs_mkdir __P((struct nameidata *, struct vattr *, struct proc *));
 int	 ufs_mknod __P((struct nameidata *,
 	    struct vattr *, struct ucred *, struct proc *));
@@ -79,7 +77,6 @@ int	 ufs_remove __P((struct nameidata *, struct proc *));
 int	 ufs_rename
 	    __P((struct nameidata *, struct nameidata *, struct proc *));
 int	 ufs_rmdir __P((struct nameidata *, struct proc *));
-int	 ufs_root __P((struct mount *, struct vnode **));
 int	 ufs_seek __P((struct vnode *, off_t, off_t, struct ucred *));
 int	 ufs_select
 	    __P((struct vnode *, int, int, struct ucred *, struct proc *));
@@ -90,8 +87,8 @@ int	 ufs_strategy __P((struct buf *));
 int	 ufs_symlink
 	    __P((struct nameidata *, struct vattr *, char *, struct proc *));
 int	 ufs_unlock __P((struct vnode *));
-int	 ufs_vinit __P((struct mount *, struct vnode **));
-int	 ufs_vptofh __P((struct vnode *, struct fid *));
+int	 ufs_vinit __P((struct mount *,
+	    struct vnodeops *, struct vnodeops *, struct vnode **));
 int	 ufsspec_close
 	    __P((struct vnode *, int, struct ucred *, struct proc *));
 int	 ufsspec_read __P((struct vnode *, struct uio *, int, struct ucred *));
