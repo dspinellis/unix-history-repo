@@ -1,6 +1,8 @@
-#	Makefile	4.1	83/06/27
+#	Makefile	4.2	83/07/03
 #
-all: libplot.a libt4014.a libt300.a libt300s.a libt450.a libvt0.a
+ALL=	libplot.a libt4014.a libt300.a libt300s.a libt450.a libvt0.a
+
+all:	${ALL}
 
 libplot.a: FRC
 	cd plot; make ${MFLAGS}
