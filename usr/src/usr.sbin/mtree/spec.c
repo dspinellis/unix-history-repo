@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)spec.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)spec.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -142,11 +142,12 @@ set(t, ip)
 	struct group *gr;
 	struct passwd *pw;
 	mode_t *m;
+	int value;
 	char *ep;
 
 	for (; kw = strtok(t, "= \t\n"); t = NULL) {
-		ip->flags |= type = parsekey(kw);
-		if ((val = strtok(NULL, " \t\n")) == NULL)
+		ip->flags |= type = parsekey(kw, &value);
+		if (value && (val = strtok(NULL, " \t\n")) == NULL)
 			err("missing value");
 		switch(type) {
 		case F_CKSUM:
@@ -245,5 +246,5 @@ unset(t, ip)
 	register char *p;
 
 	while (p = strtok(t, "\n\t "))
-		ip->flags &= ~parsekey(p);
+		ip->flags &= ~parsekey(p, NULL);
 }
