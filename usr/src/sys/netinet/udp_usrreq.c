@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)udp_usrreq.c	7.12 (Berkeley) %G%
+ *	@(#)udp_usrreq.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -31,9 +31,9 @@
 #include "../net/route.h"
 
 #include "in.h"
-#include "in_pcb.h"
 #include "in_systm.h"
 #include "ip.h"
+#include "in_pcb.h"
 #include "ip_var.h"
 #include "ip_icmp.h"
 #include "udp.h"
@@ -62,52 +62,57 @@ udp_input(m, iphlen)
 	register struct mbuf *m;
 	int iphlen;
 {
-	register struct udpiphdr *ui;
+	register struct ip *ip;
+	register struct udphdr *uh;
 	register struct inpcb *inp;
 	int len;
-	struct ip ip;
+	struct ip save_ip;
 
-	/*
-	 * Get IP and UDP header together in first mbuf.
-	 * Note: IP leaves IP header in first mbuf.
-	 */
-	ui = mtod(m, struct udpiphdr *);
+#ifndef notyet
 	if (iphlen > sizeof (struct ip))
 		ip_stripoptions(m, (struct mbuf *)0);
-	if (m->m_len < sizeof (struct udpiphdr)) {
-		if ((m = m_pullup(m, sizeof (struct udpiphdr))) == 0) {
+#endif
+	/*
+	 * Get IP and UDP header together in first mbuf.
+	 */
+	ip = mtod(m, struct ip *);
+	if (m->m_len < iphlen + sizeof(struct udphdr)) {
+		if ((m = m_pullup(m, iphlen + sizeof(struct udphdr))) == 0) {
 			udpstat.udps_hdrops++;
 			return;
 		}
-		ui = mtod(m, struct udpiphdr *);
+		ip = mtod(m, struct ip *);
 	}
+	uh = (struct udphdr *)((caddr_t)ip + iphlen);
 
 	/*
 	 * Make mbuf data length reflect UDP length.
 	 * If not enough data to reflect UDP length, drop.
 	 */
-	len = ntohs((u_short)ui->ui_ulen);
-	if (((struct ip *)ui)->ip_len != len) {
-		if (len > ((struct ip *)ui)->ip_len) {
+	len = ntohs((u_short)uh->uh_ulen);
+	if (ip->ip_len != len) {
+		if (len > ip->ip_len) {
 			udpstat.udps_badlen++;
 			goto bad;
 		}
-		m_adj(m, len - ((struct ip *)ui)->ip_len);
-		/* ((struct ip *)ui)->ip_len = len; */
+		m_adj(m, len - ip->ip_len);
+		/* ip->ip_len = len; */
 	}
 	/*
-	 * Save a copy of the IP header in case we want restore it for ICMP.
+	 * Save a copy of the IP header in case we want restore it
+	 * for sending an ICMP error message in response.
 	 */
-	ip = *(struct ip *)ui;
+	save_ip = *ip;
 
 	/*
 	 * Checksum extended UDP header and data.
 	 */
-	if (udpcksum && ui->ui_sum) {
-		ui->ui_next = ui->ui_prev = 0;
-		ui->ui_x1 = 0;
-		ui->ui_len = ui->ui_ulen;
-		if (ui->ui_sum = in_cksum(m, len + sizeof (struct ip))) {
+	if (udpcksum && uh->uh_sum) {
+		((struct ipovly *)ip)->ih_next = 0;
+		((struct ipovly *)ip)->ih_prev = 0;
+		((struct ipovly *)ip)->ih_x1 = 0;
+		((struct ipovly *)ip)->ih_len = uh->uh_ulen;
+		if (uh->uh_sum = in_cksum(m, len + sizeof (struct ip))) {
 			udpstat.udps_badsum++;
 			m_freem(m);
 			return;
@@ -118,13 +123,14 @@ udp_input(m, iphlen)
 	 * Locate pcb for datagram.
 	 */
 	inp = in_pcblookup(&udb,
-	    ui->ui_src, ui->ui_sport, ui->ui_dst, ui->ui_dport,
-		INPLOOKUP_WILDCARD);
+	    ip->ip_src, uh->uh_sport, ip->ip_dst, uh->uh_dport,
+	    INPLOOKUP_WILDCARD);
 	if (inp == 0) {
 		/* don't send ICMP response for broadcast packet */
+		udpstat.udps_noport++;
 		if (m->m_flags & M_BCAST)
 			goto bad;
-		*(struct ip *)ui = ip;
+		*ip = save_ip;
 		icmp_error(m, ICMP_UNREACH, ICMP_UNREACH_PORT);
 		return;
 	}
@@ -133,14 +139,17 @@ udp_input(m, iphlen)
 	 * Construct sockaddr format source address.
 	 * Stuff source address and datagram in user buffer.
 	 */
-	udp_in.sin_port = ui->ui_sport;
-	udp_in.sin_addr = ui->ui_src;
-	m->m_len -= sizeof (struct udpiphdr);
-	m->m_pkthdr.len -= sizeof (struct udpiphdr);
-	m->m_data += sizeof (struct udpiphdr);
+	udp_in.sin_port = uh->uh_sport;
+	udp_in.sin_addr = ip->ip_src;
+iphlen = sizeof(struct ip);
+	iphlen += sizeof(struct udphdr);
+	m->m_len -= iphlen;
+	m->m_pkthdr.len -= iphlen;
+	m->m_data += iphlen;
 	if (sbappendaddr(&inp->inp_socket->so_rcv, (struct sockaddr *)&udp_in,
 	    m, (struct mbuf *)0) == 0)
 		goto bad;
+	udpstat.udps_ipackets++;
 	sorwakeup(inp->inp_socket);
 	return;
 bad:
@@ -159,41 +168,23 @@ udp_notify(inp)
 	sowwakeup(inp->inp_socket);
 }
 
-udp_ctlinput(cmd, sa)
+udp_ctlinput(cmd, sa, ip)
 	int cmd;
 	struct sockaddr *sa;
+	register struct ip *ip;
 {
+	register struct udphdr *uh;
+	extern struct in_addr zeroin_addr;
 	extern u_char inetctlerrmap[];
-	struct sockaddr_in *sin;
-	int in_rtchange();
 
-	if ((unsigned)cmd > PRC_NCMDS)
+	if ((unsigned)cmd > PRC_NCMDS || inetctlerrmap[cmd] == 0)
 		return;
-	if (sa->sa_family != AF_INET && sa->sa_family != AF_IMPLINK)
-		return;
-	sin = (struct sockaddr_in *)sa;
-	if (sin->sin_addr.s_addr == INADDR_ANY)
-		return;
-
-	switch (cmd) {
-
-	case PRC_QUENCH:
-		break;
-
-	case PRC_ROUTEDEAD:
-	case PRC_REDIRECT_NET:
-	case PRC_REDIRECT_HOST:
-	case PRC_REDIRECT_TOSNET:
-	case PRC_REDIRECT_TOSHOST:
-		in_pcbnotify(&udb, &sin->sin_addr, 0, in_rtchange);
-		break;
-
-	default:
-		if (inetctlerrmap[cmd] == 0)
-			return;		/* XXX */
-		in_pcbnotify(&udb, &sin->sin_addr, (int)inetctlerrmap[cmd],
-			udp_notify);
-	}
+	if (ip) {
+		uh = (struct udphdr *)((caddr_t)ip + (ip->ip_hl << 2));
+		in_pcbnotify(&udb, sa, uh->uh_dport, ip->ip_src, uh->uh_sport,
+			cmd, udp_notify);
+	} else
+		in_pcbnotify(&udb, sa, 0, zeroin_addr, 0, cmd, udp_notify);
 }
 
 udp_output(inp, m)
@@ -234,6 +225,7 @@ udp_output(inp, m)
 	}
 	((struct ip *)ui)->ip_len = sizeof (struct udpiphdr) + len;
 	((struct ip *)ui)->ip_ttl = udp_ttl;
+	udpstat.udps_opackets++;
 	return (ip_output(m, inp->inp_options, &inp->inp_route,
 	    inp->inp_socket->so_options & (SO_DONTROUTE | SO_BROADCAST)));
 }
@@ -243,21 +235,17 @@ u_long	udp_recvspace = 40 * (1024 + sizeof(struct sockaddr_in));
 					/* 40 1K datagrams */
 
 /*ARGSUSED*/
-udp_usrreq(so, req, m, nam, rights, control)
+udp_usrreq(so, req, m, nam, control)
 	struct socket *so;
 	int req;
-	struct mbuf *m, *nam, *rights, *control;
+	struct mbuf *m, *nam, *control;
 {
 	struct inpcb *inp = sotoinpcb(so);
 	int error = 0;
 
 	if (req == PRU_CONTROL)
 		return (in_control(so, (int)m, (caddr_t)nam,
-			(struct ifnet *)rights));
-	if (rights && rights->m_len) {
-		error = EINVAL;
-		goto release;
-	}
+			(struct ifnet *)control));
 	if (inp == NULL && req != PRU_ATTACH) {
 		error = EINVAL;
 		goto release;
@@ -313,6 +301,7 @@ udp_usrreq(so, req, m, nam, rights, control)
 			break;
 		}
 		in_pcbdisconnect(inp);
+		inp->inp_laddr.s_addr = INADDR_ANY;
 		so->so_state &= ~SS_ISCONNECTED;		/* XXX */
 		break;
 
