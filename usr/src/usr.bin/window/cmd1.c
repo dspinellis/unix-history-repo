@@ -77,7 +77,7 @@ register int *row, *col;
 int minrow, mincol;
 int maxrow, maxcol;
 {
-	static int scount = 0;
+	static int scount;
 	int count;
 	char c;
 	int oldrow = *row, oldcol = *col;
