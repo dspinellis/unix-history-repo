@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)window.1	6.7 (Berkeley) %G%
+.\"	@(#)window.1	6.8 (Berkeley) %G%
 .\"
 .TH WINDOW 1 ""
 .UC 6
@@ -185,7 +185,7 @@ cancels this command.
 .IP
 This window becomes the current window,
 and is given the first available ID.  The default buffer size
-is used (see \fInline\fP command below).
+is used (see \fIdefault_nline\fP command below).
 .IP
 Only fully visible windows can be created this way.
 .TP
@@ -403,6 +403,10 @@ the argument list may be omitted.  Aliases return no value.
 The arguments are listed by name in their natural
 order.  Optional arguments are in square brackets (``[ ]'').  Arguments
 that have no names are in angle brackets (``<>'').
+An argument meant to be a boolean flag (often named \fIflag\fP)
+can be one of \fIon\fP, \fIoff\fP, \fIyes\fP, \fIno\fP, \fItrue\fP,
+or \fIfalse\fP, with obvious meanings, or it can be a numeric expression,
+in which case a non-zero value is true.
 .TP
 .B alias([<string>], [<string-list>])
 If no argument is given, all currently defined alias macros are
@@ -424,6 +428,26 @@ value is the previous modes.  Default is no change.
 For example, cursor($m_rev|$m_blk) sets the window cursors to blinking
 reverse video.
 .TP
+.B default_nline([nline])
+Set the default buffer size to \fInline\fP.  Initially, it is
+48 lines.  Returns the old default buffer size.  Default is
+no change.  Using a very large buffer can slow the program down
+considerably.
+.TP
+.B default_shell([<string-list>])
+Set the default window shell program to \fI<string-list>\fP.  Returns
+the first string in the old shell setting.  Default is no change.  Initially,
+the default shell is taken from the environment variable \fISHELL\fP.
+.TP
+.B default_smooth([flag])
+Set the default value of the \fIsmooth\fP argument
+to the command \fIwindow\fP (see below).  The argument
+is a boolean flag (one of \fIon\fP, \fIoff\fP,
+\fIyes\fP, \fIno\fP, \fItrue\fP, \fIfalse\fP, or a number,
+as described above).  Default is no change.
+The old value (as a number) is returned.
+The initial value is 1 (true).
+.TP
 .B echo([window], [<string-list>])
 Write the list of strings, \fI<string-list>\fP, to \fIwindow\fP, separated
 by spaces and terminated with a new line.  The strings are only
@@ -439,11 +463,8 @@ in the form \fI^X\fP, meaning control-\fIX\fP.
 .TP
 .B foreground([window], [flag])
 Move \fIwindow\fP in or out of foreground.  \fIFlag\fP
-can be one of \fIon\fP, \fIoff\fP,
-\fIyes\fP, \fIno\fP, \fItrue\fP, or \fIfalse\fP, with obvious
-meanings, or it can be a numeric expression, in which case
-a non-zero value is true.  Returns the old foreground flag
-as a number.  Default for \fIwindow\fP is the current window,
+is a boolean value.  The old foreground flag
+is returned.  Default for \fIwindow\fP is the current window,
 default for \fIflag\fP is no change.
 .TP
 .B label([window], [label])
@@ -456,20 +477,9 @@ off a label, set it to an empty string ("").
 No arguments.  List the identifiers and labels of all windows.  No
 value is returned.
 .TP
-.B nline([nline])
-Set the default buffer size to \fInline\fP.  Initially, it is
-48 lines.  Returns the old default buffer size.  Default is
-no change.  Using a very large buffer can slow the program down
-considerably.
-.TP
 .B select([window])
 Make \fIwindow\fP the current window.  The previous current window
 is returned.  Default is no change.
-.TP
-.B shell([<string-list>])
-Set the default window shell program to \fI<string-list>\fP.  Returns
-the first string in the old shell setting.  Default is no change.  Initially,
-the default shell is taken from the environment variable \fISHELL\fP.
 .TP
 .B source(filename)
 Read and execute the long commands in \fIfilename\fP.  Returns
@@ -493,8 +503,8 @@ Undefine \fIvariable\fP.  Returns -1 if \fIvariable\fP does not exist,
 .B variables()
 No arguments.  List all variables.  No value is returned.
 .TP
-.B window([row], [column], [nrow], [ncol], [nline], [frame],
-.B [pty], [mapnl], [shell])
+.B window([row], [column], [nrow], [ncol], [nline], [label],
+.B [pty], [frame], [mapnl], [keepopen], [smooth], [shell])
 .br
 Open a window with upper left corner at \fIrow\fP, \fIcolumn\fP
 and size \fInrow\fP, \fIncol\fP.  If \fInline\fP is specified,
@@ -502,15 +512,22 @@ then that many lines are allocated for the text buffer.  Otherwise,
 the default buffer size is used.  Default values for
 \fIrow\fP, \fIcolumn\fP, \fInrow\fP, and \fIncol\fP are, respectively,
 the upper, left-most, lower, or right-most extremes of the
-screen.  \fIFrame\fP, \fIpty\fP, and \fImapnl\fP are flag values
+screen.  \fILabel\fP is the label string.
+\fIFrame\fP, \fIpty\fP, and \fImapnl\fP are flag values
 interpreted in the same way as the argument to \fIforeground\fP (see above);
 they mean, respectively, put a frame around this window (default true),
 allocate pseudo-terminal for this window rather than socketpair (default
 true), and map new line characters in this window to carriage return
 and line feed (default true if socketpair is used, false otherwise).
+Normally, a window is automatically closed when its process
+exits.  Setting \fIkeepopen\fP to true (default false) prevents this
+action.  When \fIsmooth\fP is true, the screen is updated more frequently
+(for this window) to produce a more terminal-like behavior.
+The default value of \fIsmooth\fP is set by the \fIdefault_smooth\fP
+command (see above).
 \fIShell\fP is a list of strings that will be used as the shell
 program to place in the window (default is the program specified
-by \fIshell\fP, see below).  The created window's identifier
+by \fIdefault_shell\fP, see above).  The created window's identifier
 is returned as a number.
 .TP
 .B write([window], [<string-list>])
@@ -557,7 +574,7 @@ field of the terminal's \fITERMCAP\fP entry, is used.
 .ta 15
 ~/.windowrc	startup command file.
 .br
-/dev/[pt]ty[pq]?	pseudo-terminal devices.
+/dev/[pt]ty[p-t]?	pseudo-terminal devices.
 .SH DIAGNOSTICS
 Should be self explanatory.
 .SH BUGS
