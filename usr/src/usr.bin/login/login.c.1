@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)login.c.1	4.35 (Berkeley) 85/01/08";
+static	char *sccsid = "@(#)login.c.1	4.36 (Berkeley) 85/04/01";
 #endif
 
 /*
@@ -41,22 +41,17 @@ struct	passwd nouser = {"", "nope", -1, -1, -1, "", "", "", "" };
 struct	sgttyb ttyb;
 struct	utmp utmp;
 char	minusnam[16] = "-";
+char	*envinit[] = { 0 };		/* now set by setenv calls */
 /*
  * This bounds the time given to login.  We initialize it here
  * so it can be patched on machines where it's too small.
  */
 int	timeout = 60;
 
-char	homedir[64] = "HOME=";
-char	shell[64] = "SHELL=";
-char	term[64] = "TERM=";
-char	user[20] = "USER=";
-
-char	*envinit[] =
-    { homedir, shell, "PATH=:/usr/ucb:/bin:/usr/bin", term, user, 0 };
+char	term[64];
 
 struct	passwd *pwd;
-char	*strcat(), *rindex(), *index();
+char	*strcat(), *rindex(), *index(), *malloc(), *realloc();
 int	timedout();
 char	*ttyname();
 char	*crypt();
@@ -72,6 +67,8 @@ struct	ltchars ltc = {
 	CSUSP, CDSUSP, CRPRNT, CFLUSH, CWERASE, CLNEXT
 };
 
+struct winsize win = { 0, 0, 0, 0 };
+
 int	rflag;
 char	rusername[NMAX+1], lusername[NMAX+1];
 char	rpassword[NMAX+1];
@@ -82,11 +79,12 @@ main(argc, argv)
 	char *argv[];
 {
 	register char *namep;
-	int t, f, c;
+	int pflag = 0, hflag = 0, t, f, c;
 	int invalid, quietlog;
 	FILE *nlfd;
 	char *ttyn, *tty;
-	int ldisc = 0, zero = 0;
+	int ldisc = 0, zero = 0, i;
+	char **envnew;
 
 	signal(SIGALRM, timedout);
 	alarm(timeout);
@@ -95,6 +93,7 @@ main(argc, argv)
 	setpriority(PRIO_PROCESS, 0, 0);
 	quota(Q_SETUID, 0, 0, 0);
 	/*
+	 * -p is used by getty to tell login not to destroy the environment
 	 * -r is used by rlogind to cause the autologin protocol;
 	 * -h is used by other servers to pass the name of the
 	 * remote host to login so that it may be placed in utmp and wtmp
@@ -106,8 +105,14 @@ main(argc, argv)
 			argc = 0;
 		}
 		if (strcmp(argv[1], "-h") == 0 && getuid() == 0) {
+			hflag = 1;
 			SCPYN(utmp.ut_host, argv[2]);
 			argc = 0;
+		}
+		if (strcmp(argv[1], "-p") == 0) {
+			argc--;
+			argv++;
+			pflag = 1;
 		}
 	}
 	ioctl(0, TIOCLSET, &zero);
@@ -135,7 +140,7 @@ main(argc, argv)
 		tty = ttyn;
 	else
 		tty++;
-	openlog("login", 0, 0);
+	openlog("login", LOG_ODELAY, 0);
 	t = 0;
 	do {
 		ldisc = 0;
@@ -194,19 +199,17 @@ main(argc, argv)
 		 * see if root logins on this terminal are permitted.
 		 */
 		if (!invalid && pwd->pw_uid == 0 && !rootterm(tty)) {
-			syslog(LOG_INFO, "ROOT LOGIN REFUSED %s", tty);
+			syslog(LOG_SECURITY, "ROOT LOGIN REFUSED %s", tty);
 			invalid = TRUE;
 		}
 		if (invalid) {
 			printf("Login incorrect\n");
 			if (++t >= 5) {
-				syslog(LOG_INFO,
+				syslog(LOG_SECURITY,
 				    "REPEATED LOGIN FAILURES %s, %s",
 					tty, utmp.ut_name);
 				ioctl(0, TIOCHPCL, (struct sgttyb *) 0);
-				close(0);
-				close(1);
-				close(2);
+				close(0), close(1), close(2);
 				sleep(10);
 				exit(1);
 			}
@@ -281,6 +284,8 @@ main(argc, argv)
 		close(f);
 	}
 	chown(ttyn, pwd->pw_uid, pwd->pw_gid);
+	if (!hflag)					/* XXX */
+		ioctl(0, TIOCSWINSZ, &win);
 	chmod(ttyn, 0622);
 	setgid(pwd->pw_gid);
 	strncpy(name, utmp.ut_name, NMAX);
@@ -288,26 +293,45 @@ main(argc, argv)
 	initgroups(name, pwd->pw_gid);
 	quota(Q_DOWARN, pwd->pw_uid, (dev_t)-1, 0);
 	setuid(pwd->pw_uid);
-	environ = envinit;
-	strncat(homedir, pwd->pw_dir, sizeof(homedir)-6);
-	strncat(shell, pwd->pw_shell, sizeof(shell)-7);
-	if (term[sizeof("TERM=")-1] == 0)
-		strncat(term, stypeof(tty), sizeof(term)-6);
-	strncat(user, pwd->pw_name, sizeof(user)-6);
+	/* destroy environment unless user has asked to preserve it */
+	if (!pflag)
+		environ = envinit;
+
+	/* set up environment, this time without destruction */
+	/* copy the environment before setenving */
+	i = 0;
+	while (environ[i] != NULL)
+		i++;
+	envnew = (char **) malloc(sizeof (char *) * (i + 1));
+	for (; i >= 0; i--)
+		envnew[i] = environ[i];
+	environ = envnew;
+
+	setenv("HOME=", pwd->pw_dir);
+	setenv("SHELL=", pwd->pw_shell);
+	if (term[0] == '\0')
+		strncpy(term, stypeof(tty), sizeof(term));
+	setenv("TERM=", term);
+	setenv("USER=", pwd->pw_name);
+	setenv("PATH=", ":/usr/ucb:/bin:/usr/bin");
+
 	if ((namep = rindex(pwd->pw_shell, '/')) == NULL)
 		namep = pwd->pw_shell;
 	else
 		namep++;
 	strcat(minusnam, namep);
 	if (tty[sizeof("tty")-1] == 'd')
-		syslog(LOG_INFO, "DIALUP %s %s", tty, pwd->pw_name);
+		syslog(LOG_INFO, "DIALUP %s, %s", tty, pwd->pw_name);
+	if (pwd->pw_uid == 0)
+		syslog(LOG_SECURITY, "ROOT LOGIN %s", tty);
 	if (!quietlog) {
 		struct stat st;
+
 		showmotd();
 		strcat(maildir, pwd->pw_name);
 		if (stat(maildir, &st) == 0 && st.st_size != 0)
 			printf("You have %smail.\n",
-				(st.st_mtime > st.st_atime) ? "new" : "");
+				(st.st_mtime > st.st_atime) ? "new " : "");
 	}
 	signal(SIGALRM, SIG_DFL);
 	signal(SIGQUIT, SIG_DFL);
@@ -406,7 +430,7 @@ doremotelogin(host)
 
 	getstr(rusername, sizeof (rusername), "remuser");
 	getstr(lusername, sizeof (lusername), "locuser");
-	getstr(term+5, sizeof(term)-5, "Terminal type");
+	getstr(term, sizeof(term), "Terminal type");
 	if (getuid()) {
 		pwd = &nouser;
 		goto bad;
@@ -422,14 +446,24 @@ again:
 		char ahost[32];
 
 		while (fgets(ahost, sizeof (ahost), hostf)) {
+			register char *p;
 			char *user;
 
-			if ((user = index(ahost, '\n')) != 0)
-				*user++ = '\0';
-			if ((user = index(ahost, ' ')) != 0)
-				*user++ = '\0';
+			p = ahost;
+			while (*p != '\n' && *p != ' ' && *p != '\t' && *p != '\0')
+				p++;
+			if (*p == ' ' || *p == '\t') {
+				*p++ = '\0';
+				while (*p == ' ' || *p == '\t')
+					p++;
+				user = p;
+				while (*p != '\n' && *p != ' ' && *p != '\t' && *p != '\0')
+					p++;
+			} else
+				user = p;
+			*p = '\0';
 			if (!strcmp(host, ahost) &&
-			    !strcmp(rusername, user ? user : lusername)) {
+			    !strcmp(rusername, *user ? user : lusername)) {
 				fclose(hostf);
 				return (1);
 			}
@@ -489,16 +523,77 @@ doremoteterm(term, tp)
 	char *term;
 	struct sgttyb *tp;
 {
-	char *cp = index(term, '/');
-	register int i;
+	register char *cp = index(term, '/'), **cpp;
+	char *speed;
+	struct winsize ws;
 
 	if (cp) {
-		*cp++ = 0;
-		for (i = 0; i < NSPEEDS; i++)
-			if (!strcmp(speeds[i], cp)) {
-				tp->sg_ispeed = tp->sg_ospeed = i;
+		*cp++ = '\0';
+		speed = cp;
+		cp = index(speed, '/');
+		if (cp)
+			*cp++ = '\0';
+		for (cpp = speeds; cpp < &speeds[NSPEEDS]; cpp++)
+			if (strcmp(*cpp, speed) == 0) {
+				tp->sg_ispeed = tp->sg_ospeed = cpp-speeds;
 				break;
 			}
+		ws.ws_row = ws.ws_col = -1;
+		ws.ws_xpixel = ws.ws_ypixel = -1;
+		if (cp) {
+			ws.ws_row = atoi(++cp);
+			cp = index(cp, ',');
+			if (cp == 0)
+				goto done;
+			ws.ws_col = atoi(++cp);
+			cp = index(cp, ',');
+			if (cp == 0)
+				goto done;
+			ws.ws_xpixel = atoi(++cp);
+			cp = index(cp, ',');
+			if (cp == 0)
+				goto done;
+			ws.ws_ypixel = atoi(++cp);
+		}
+done:
+		if (ws.ws_row != -1 && ws.ws_col != -1 &&
+		    ws.ws_xpixel != -1 && ws.ws_ypixel != -1)
+			win = ws;
 	}
 	tp->sg_flags = ECHO|CRMOD|ANYP|XTABS;
+}
+
+/*
+ * Set the value of var to be arg in the Unix 4.2 BSD environment env.
+ * Var should end with '='.
+ * (bindings are of the form "var=value")
+ * This procedure assumes the memory for the first level of environ
+ * was allocated using malloc.
+ */
+setenv(var, value)
+	char *var, *value;
+{
+	extern char **environ;
+	int index = 0;
+	int varlen = strlen(var);
+	int vallen = strlen(value);
+
+	for (index = 0; environ[index] != NULL; index++) {
+		if (strncmp(environ[index], var, varlen) == 0) {
+			/* found it */
+			environ[index] = malloc(varlen + vallen + 1);
+			strcpy(environ[index], var);
+			strcat(environ[index], value);
+			return;
+		}
+	}
+	environ = (char **) realloc(environ, sizeof (char *) * (index + 2));
+	if (environ == NULL) {
+		fprintf(stderr, "login: malloc out of memory\n");
+		exit(1);
+	}
+	environ[index] = malloc(varlen + vallen + 1);
+	strcpy(environ[index], var);
+	strcat(environ[index], value);
+	environ[++index] = NULL;
 }
