@@ -1,0 +1,651 @@
+:
+# Guess values for system-dependent variables and create `Makefile'.
+# Copyright (C) 1991 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+# Usage:
+#configure [--srcdir=DIR] [--prefix=DIR] [--host=HOST] [--gas] [--nfp] [TARGET]
+#All args except --srcdir=DIR, --prefix=DIR, and --exec_prefix=DIR are ignored.
+
+# @(#)configure 1.26 92/04/10
+
+trap 'rm -f conftest* core* uttest; exit 1' 1 2 3 15
+
+# Uncomment out the next line if your sh aborts if an unset variable
+# is referenced; some popular systems do not understand +u and most
+# bourne shells should already have this set as the default...
+#set +u
+
+# Make sure we don't find the System V /etc/install.
+PATH=`echo $PATH|sed '
+s,^:,|,
+s,:$,|,
+s,:/usr/etc\([:|]\),\1,g
+s,:/usr/etc$,,g
+s,\([:|]\)/usr/etc:,\1,g
+s,^/usr/etc:,,g
+s,:/usr/sbin\([:|]\),\1,g
+s,:/usr/sbin$,,g
+s,\([:|]\)/usr/sbin:,\1,g
+s,^/usr/sbin:,,g
+s,:/etc\([:|]\),\1,g
+s,:/etc$,,g
+s,\([:|]\)/etc:,\1,g
+s,^/etc:,,g
+s,|,:,g'`
+
+# A filename unique to this package, relative to the directory that
+# configure is in, which we can look for to find out if srcdir is correct.
+unique_file=src/update.c
+
+# Default destination directory is /usr/local
+# Binaries go in "bin", libraries in "lib", manual pages in "man".
+prefix=/usr/local
+
+for arg in $*; do
+  # Handle --srcdir with a space before the argument.
+  if [ x$next_srcdir = xyes ]; then srcdir=$arg; next_srcdir=
+  # Handle --prefix with a space before the argument.
+  elif [ x$next_prefix = xyes ]; then prefix=$arg; next_prefix=
+  # Handle --exec_prefix with a space before the argument.
+  elif [ x$next_exec_prefix = xyes ]; then exec_prefix=$arg; next_prefix=
+  # Handle --host with a space before the argument.
+  elif [ x$next_host = xyes ]; then next_host=
+  else 
+    case $arg in
+     -srcdir=* | --srcdir=* | --srcdi=* | --srcd=* | --src=* | --sr=* | --s=*)
+	srcdir=`echo $arg | sed 's/^[-a-z]*=//'` ;;
+     -srcdir | --srcdir | --srcdi | --srcd | --src | --sr | --s)
+	next_srcdir=yes ;;
+     -prefix=* | --prefix=* | --prefi=* | --pref=* | --pre=* | --pr=* | --p=*)
+	prefix=`echo $arg | sed 's/^[-a-z]*=//'` ;;
+     -prefix | --prefix | --prefi | --pref | --pre | --pr | --p)
+	next_prefix=yes ;;
+     -exec_prefix=* | --exec_prefix=* | --exec_prefi=* | --exec_pref=* | --exec_pre=* | --exec_pr=* | --exec_p=* | --exec_=* | --exec=* | --exe=* | --ex=* | --e=*)
+	exec_prefix=`echo $arg | sed 's/^[-a-z_]*=//'` ;;
+     -exec_prefix | --exec_prefix | --exec_prefi | --exec_pref | --exec_pre | --exec_pr | --exec_p | --exec_ | --exec | --exe | --ex | --e)
+	next_exec_prefix=yes ;;
+     -host=* | --host=* | --hos=* | --ho=* | --h=*) ;;
+     -host | --host | --hos | --ho | --h)
+	next_host=yes ;;
+     -gas | --gas | --ga | --g) ;;
+     -nfp | --nfp | --nf | --n) ;;
+     *) ;;
+    esac
+  fi
+done
+
+if [ -z "${exec_prefix}" ] ; then exec_prefix=${prefix} ; fi
+
+vpsub='s@\$\([-./a-zA-Z0-9]*\)<@\1@g'
+# Find the source files, if location was not specified.
+if [ x$srcdir = x ]; then
+  srcdirdefaulted=yes; srcdir=.
+  if [ ! -r $unique_file ]; then srcdir=`pwd`/..; fi
+fi
+if [ $srcdir != . ]; then
+  VPATH='VPATH = $(srcdir)'
+  vpsub='s@\$\([-./a-zA-Z0-9]*\)<@\$<@g'
+fi
+
+if [ ! -r $srcdir/$unique_file ]; then
+  if [ x$srcdirdefaulted = xyes ]; then
+    echo "$0: Can not find sources in \`.' or \`..'." 1>&2
+  else
+    echo "$0: Can not find sources in \`${srcdir}'." 1>&2
+  fi
+  exit 1
+fi
+
+if grep '^#.*define.*MY_NDBM' ${srcdir}/src/config.h >/dev/null 2>/dev/null; then :
+  CC1=gcc
+  CC2=cc
+else
+  CC1=cc
+  CC2=gcc
+fi
+
+if test "$RANDOM" = "$RANDOM"; then
+  # Plain old Bourne shell.
+  if test -z "$CC"; then
+    echo checking for cc/gcc
+    test -n "`$CC1 / 2>&1`" && CC="$CC1"
+    if test -z "$CC"; then
+      test -n "`$CC2 2>&1`" && CC="$CC2"
+    fi
+  fi
+
+  echo checking for install
+  if test -z "$INSTALL" && test -n "`install 2>&1`"; then
+    INSTALL="install -c"
+    INSTALLDATA="install -c -m 644"
+  fi
+
+  echo checking for ranlib
+  test -z "$RANLIB" && test -n "`ranlib conftest 2>&1`" && RANLIB=ranlib
+  rm -f conftest*
+
+  echo checking for bison/yacc
+  test -z "$YACC" && test -n "`bison 2>&1`" && YACC="bison -y"
+else
+  # ksh, bash or zsh.  ksh and zsh write "command not found" to stderr.
+  if test -z "$CC"; then
+    echo checking for cc/gcc
+    type $CC1 && CC="$CC1"
+    test -z "$CC" && type $CC2 && CC="$CC2"
+  fi
+
+  echo checking for install
+  if test -z "$INSTALL" && type install; then
+    INSTALL="install -c"
+    INSTALLDATA="install -c -m 644"
+  fi
+
+  echo checking for ranlib
+  test -z "$RANLIB" && type ranlib && RANLIB=ranlib
+
+  echo checking for bison/yacc
+  test -z "$YACC" && type bison && YACC="bison -y"
+fi
+
+CC=${CC-cc}
+INSTALL=${INSTALL-cp}
+INSTALLDATA=${INSTALLDATA-cp}
+RANLIB=${RANLIB-echo}
+YACC=${YACC-yacc}
+
+rm -f conftest*
+compile='$CC $DEFS $TDEFS conftest.c -o conftest $TLIBS $LIBS >/dev/null 2>&1'
+
+# Check for various header files.
+
+echo checking for Minix
+if test -d /usr/include/minix; then
+  DEFS="$DEFS -UUSG -D_POSIX_SOURCE -D_POSIX_1_SOURCE=2 -D_POSIX_C_SOURCE=2 -D_MINIX"
+else
+  echo checking for BSD string and memory functions
+  echo "
+#include <strings.h>
+main() { exit(0); } t() { rindex(0, 0); bzero(0, 0); }" > conftest.c
+  eval $compile
+  if test -s conftest && (./conftest) >/dev/null 2>/dev/null; then :
+    else DEFS="$DEFS -DUSG"
+  fi
+  rm -f conftest*
+fi
+
+echo checking signal handler return type
+echo "
+#include <sys/types.h>
+#include <signal.h>
+void foo() { exit(0); }
+main() { exit(0); } t() { signal(SIGINT, foo); kill(getpid(), SIGINT); }" > conftest.c
+eval $compile
+if test -s conftest && (./conftest) >/dev/null 2>/dev/null; then :
+  else DEFS="$DEFS -DSIGTYPE=int"
+fi
+rm -f conftest*
+
+echo checking for directory library header
+echo '
+#include <sys/types.h>
+#ifdef DIRENT
+#include <dirent.h>
+#ifdef direct
+#undef direct
+#endif
+#define direct dirent
+#else
+#ifdef SYSNDIR
+#include <sys/ndir.h>
+#else
+#ifdef NDIR
+#include <ndir.h>
+#else /* must be BSD */
+#include <sys/dir.h>
+#endif
+#endif
+#endif
+main() { DIR *d = opendir(".");
+	struct direct *e;
+	while ((e = readdir(d)))
+		if (strcmp(e->d_name, "conftestfile") == 0)
+			exit(0);
+	exit(1);
+}' > conftest.c
+> conftestfile
+TDEFS=-DDIRENT
+eval $compile
+TDEFS=
+if test -s conftest && (./conftest) >/dev/null 2>/dev/null; then
+  DEFS="$DEFS -DDIRENT"
+else
+  rm -f conftest
+  TDEFS=-DDIRENT
+  TLIBS=-ldir
+  eval $compile 
+  TDEFS=
+  TLIBS=
+  if test -s conftest && (./conftest) >/dev/null 2>/dev/null; then
+    DEFS="$DEFS -DDIRENT"
+    LIBS="-ldir $LIBS"
+  else
+    rm -f conftest
+    TDEFS=-DSYSNDIR
+    eval $compile
+    TDEFS=
+    if test -s conftest && (./conftest) >/dev/null 2>/dev/null; then
+      DEFS="$DEFS -DSYSNDIR"
+    else
+      rm -f conftest
+      TDEFS=-DSYSNDIR
+      TLIBS=-lx
+      eval $compile
+      TDEFS=
+      TLIBS=
+      if test -s conftest && (./conftest) >/dev/null 2>/dev/null; then
+	DEFS="$DEFS -DSYSNDIR"
+	LIBS="$LIBS -lx"
+      else
+	rm -f conftest
+	TDEFS=-DNDIR
+	eval $compile
+	TDEFS=
+	if test -s conftest && (./conftest) >/dev/null 2>/dev/null; then
+	  DEFS="$DEFS -DNDIR"
+	else
+	  eval $compile
+	  if test -s conftest && (./conftest) >/dev/null 2>/dev/null; then :
+	  else
+	    echo >&2 "configure: opendir() is missing; cannot continue"
+	    rm -f conftest*
+	    exit 1
+	  fi
+	fi
+      fi
+    fi
+  fi
+fi
+rm -f foo conftest*
+
+echo checking for ANSI C header files
+echo "#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
+main() { exit(0); }" > conftest.c
+eval $compile
+if test -s conftest && (./conftest) >/dev/null 2>/dev/null; then
+  DEFS="$DEFS -DSTDC_HEADERS"
+fi
+rm -f conftest*
+
+echo checking for POSIX.1 header files
+echo "#include <unistd.h>
+main() {
+#ifdef _POSIX_VERSION
+exit(0);
+#else
+exit(1);
+#endif
+}" > conftest.c
+eval $compile
+if test -s conftest && (./conftest) >/dev/null 2>/dev/null; then
+  DEFS="$DEFS -DPOSIX"
+fi
+rm -f conftest*
+
+echo checking for uid_t in sys/types.h
+echo "#include <sys/types.h>
+main() { exit(0); } t() { uid_t x; }" > conftest.c
+eval $compile
+if test -s conftest && (./conftest) >/dev/null 2>/dev/null; then :
+else
+  DEFS="$DEFS -Duid_t=int -Dgid_t=int"
+fi
+rm -f conftest*
+
+echo checking for mode_t in sys/types.h
+echo "#include <sys/types.h>
+main() { exit(0); } t() { mode_t x; }" > conftest.c
+eval $compile
+if test -s conftest && (./conftest) >/dev/null 2>/dev/null; then :
+else
+  DEFS="$DEFS -Dmode_t=int"
+fi
+rm -f conftest*
+
+echo checking for size_t in sys/types.h
+echo "#include <sys/types.h>
+main() { exit(0); } t() { size_t x; }" > conftest.c
+eval $compile
+if test -s conftest && (./conftest) >/dev/null 2>/dev/null; then :
+else
+  DEFS="$DEFS -Dsize_t=unsigned"
+fi
+rm -f conftest*
+
+echo checking for unsigned characters
+echo 'main() { char c = 255; exit(c < 0); }' > conftest.c
+eval $compile
+if test -s conftest && (./conftest) >/dev/null 2>/dev/null; then
+  DEFS="$DEFS -D__CHAR_UNSIGNED__"
+fi
+rm -f conftest*
+
+echo checking whether time.h has struct tm
+echo '#include <sys/types.h>
+#include <time.h>
+main() { struct tm *tp; exit(0); }' > conftest.c
+eval $compile
+if test -s conftest && (./conftest) >/dev/null 2>/dev/null; then :
+  else DEFS="$DEFS -DTM_IN_SYS_TIME"
+fi
+rm -f conftest*
+
+# Check whether various functions exist.
+
+# Functions we provide replacements for.
+for func in fnmatch getwd mkdir rename strdup
+do
+  echo checking for $func
+  echo "main() { exit(0); } t() { ${func}(); }" > conftest.c
+  eval $compile
+  if test -s conftest && (./conftest) >/dev/null 2>/dev/null; then :
+  else LIBOBJS="$LIBOBJS ${func}.o"
+  fi
+  rm -f conftest*
+done
+
+func=gethostname
+echo checking for $func
+echo "main() { exit(0); } t() { ${func}(); }" > conftest.c
+eval $compile
+if test -s conftest && (./conftest) >/dev/null 2>/dev/null; then :
+  else LIBOBJS="$LIBOBJS hostname.o"
+fi
+rm -f conftest*
+
+func=re_exec
+echo checking for $func
+echo "main() { exit(0); } t() { ${func}(); }" > conftest.c
+eval $compile
+if test -s conftest && (./conftest) >/dev/null 2>/dev/null; then :
+  else LIBOBJS="$LIBOBJS regex.o"
+fi
+rm -f conftest*
+
+func=dup2
+echo checking for $func
+echo "main() { exit(0); } t() { ${func}(); }" > conftest.c
+eval $compile
+if test -s conftest && (./conftest) >/dev/null 2>/dev/null; then :
+  else LIBOBJS="$LIBOBJS dup2.o"
+fi
+rm -f conftest*
+
+# Functions whose absence we work around.
+for func in fchmod fsync ftime mkfifo putenv strerror setvbuf vfork vprintf
+do
+  echo checking for $func
+  echo "main() { exit(0); } t() { ${func}(); }" > conftest.c
+  eval $compile
+  if test -s conftest && (./conftest) >/dev/null 2>/dev/null; then :
+  else DEFS="$DEFS -D`echo $func|tr '[a-z]' '[A-Z]'`_MISSING"
+  fi
+  rm -f conftest*
+done
+
+echo checking for timeb.h header file
+echo '
+#include <stdio.h>
+#include <sys/types.h>
+#ifdef TM_IN_SYS_TIME
+#include <sys/time.h>
+#else
+#include <time.h>
+#endif
+#include <sys/timeb.h>
+main() { exit(0); } t() { struct timeb tb; printf("%d", sizeof(tb)); }' > conftest.c
+eval $compile
+if test -s conftest && (./conftest) >/dev/null 2>/dev/null; then :
+else
+  DEFS="$DEFS -DTIMEB_H_MISSING"
+fi
+rm -f conftest*
+
+case "$DEFS" in
+*VPRINTF_MISSING*)
+  func=_doprnt
+  echo checking for $func
+  echo "main() { exit(0); } t() { ${func}(); }" > conftest.c
+  eval $compile
+  if test -s conftest && (./conftest) >/dev/null 2>/dev/null; then :
+  else DEFS="$DEFS -DDOPRNT_MISSING"
+  fi
+  rm -f conftest*
+  ;;
+esac
+
+case "$DEFS" in
+*FTIME_MISSING*)
+  echo checking for timezone
+  echo "main() { extern char *timezone(); printf(\"%s\",timezone(0,0)); exit(0); }" > conftest.c
+  eval $compile
+  if test -s conftest && (./conftest) >/dev/null 2>/dev/null; then
+    DEFS="$DEFS -DHAVE_TIMEZONE"
+  fi
+  rm -f conftest* core*
+  ;;
+esac
+
+case "$DEFS" in
+*POSIX*)
+  ;;
+*)
+  echo checking for BSD signals
+  echo "
+#include <signal.h>
+main() { exit(0); } t() { sigvec(); sigblock(); }" > conftest.c
+  eval $compile
+  if test -s conftest && (./conftest) >/dev/null 2>/dev/null; then
+    DEFS="$DEFS -DBSD_SIGNALS"
+  fi
+  rm -f conftest*
+  ;;
+esac
+
+func=ftruncate
+echo checking for $func
+echo "main() { exit(0); } t() { ${func}(); }" > conftest.c
+eval $compile
+if test -s conftest && (./conftest) >/dev/null 2>/dev/null; then :
+else
+  rm -f conftest*
+  echo "
+#include <sys/types.h>
+#include <fcntl.h>
+main() { exit(0); }
+#if !defined(F_CHSIZE) && !defined(F_FREESP)
+t() { chsize(); }
+#endif
+" > conftest.c
+  eval $compile
+  if test -s conftest && (./conftest) >/dev/null 2>/dev/null; then
+    LIBOBJS="$LIBOBJS ${func}.o"
+  else DEFS="$DEFS -D`echo $func|tr '[a-z]' '[A-Z]'`_MISSING"
+  fi
+fi
+rm -f conftest*
+
+# Check other misc. things.
+
+echo checking utime with null argument
+rm -f uttest; > uttest
+# Sequent interprets utime(file, 0) to mean use start of epoch.  Wrong.
+echo '#include <sys/types.h>
+#include <sys/stat.h>
+main() {
+struct stat s, t;
+exit(!(stat ("uttest", &s) == 0 && utime("uttest", (long *)0) == 0
+&& stat("uttest", &t) == 0 && t.st_mtime - s.st_mtime < 120));
+}' > conftest.c
+eval $compile
+test -s conftest && (./conftest) >/dev/null 2>/dev/null || DEFS="$DEFS -DUTIME_NULL_MISSING"
+rm -f conftest* core* uttest
+
+case "$LIBOBJS" in
+*rename.o*)
+  LIBPROGS="$LIBPROGS mvdir"
+  DEFS="$DEFS -DMVDIR="'\\"$(libdir)/mvdir\\"'
+  ;;
+esac
+
+echo checking how to get alloca
+echo '
+#ifdef __GNUC__
+#define alloca __builtin_alloca
+#else
+#ifdef sparc
+#include <alloca.h>
+#else
+#ifdef _AIX
+ #pragma alloca
+#else
+char *alloca ();
+#endif
+#endif
+#endif
+main() { char *p = (char *) alloca(1); exit(0); }' > conftest.c
+eval $compile
+if test -s conftest && (./conftest) >/dev/null 2>/dev/null; then :
+else
+  # I've had some problems with this stuff.  If you need -lPW for some
+  # reason, try uncommenting the lines below
+  #  rm -f conftest*
+  #  echo 'char *alloca();
+  #main() { char *p = alloca(1); exit(0); }' > conftest.c
+  #  eval $compile -lPW
+  #  if test -s conftest && (./conftest) >/dev/null 2>/dev/null; then LIBS="$LIBS -lPW"
+  #  else
+  LIBOBJS="$LIBOBJS alloca.o"
+  #  fi
+fi
+rm -f conftest*
+
+if grep '^#.*define.*MY_NDBM' ${srcdir}/src/config.h >/dev/null 2>/dev/null; then :
+else
+  echo checking for ndbm support
+  echo '#include <ndbm.h>
+  main() { exit(0); } t() { dbm_open(0); dbm_close(0); }' > conftest.c
+  eval $compile
+  if test -s conftest && (./conftest) >/dev/null 2>/dev/null; then :
+  else
+    TLIBS=-lgdbm
+    eval $compile
+    TLIBS=
+    if test -s conftest && (./conftest) >/dev/null 2>/dev/null; then
+      LIBS="$LIBS -lgdbm"
+    else
+      TDEFS="-I${prefix}/include"
+      TLIBS="-L${prefix}/lib -lgdbm"
+      eval $compile
+      TDEFS=
+      TLIBS=
+      if test -s conftest && (./conftest) >/dev/null 2>/dev/null; then
+        DEFS="$DEFS -I${prefix}/include"
+        LIBS="$LIBS -L${prefix}/lib -lgdbm"
+      else
+        echo 'configure: Warning: you will likely have to install GNU dbm'
+        echo '                    (including the <ndbm.h> header file)'
+        echo '                    and re-run this configure script'
+      fi
+    fi
+  fi
+  rm -f conftest*
+fi
+
+echo checking for $CC -g -O combination
+echo "main() { exit(0); }" > conftest.c
+if test -n "`$CC -g -O -o conftest conftest.c 2>&1`"; then
+  if test -n "`$CC -g -o conftest conftest.c 2>&1`"; then
+    CDEBUG=
+  else
+    CDEBUG="-g"
+  fi
+else
+  CDEBUG="-g -O"
+fi
+rm -f conftest*
+
+trap 'rm -f Makefile lib/Makefile src/Makefile man/Makefile doc/Makefile examples/Makefile contrib/Makefile config.status conftest*; exit 1' 1 2 3 15
+
+for dir in . lib src man doc examples contrib
+do
+  test -d $dir || mkdir $dir
+  if test "$srcdir" = "."; then
+    xsrcdir="."
+    includeopt=
+  else
+    case $srcdir in
+    /*)
+      xsrcdir=$srcdir/$dir
+      includeopt="-I$srcdir/lib"
+      ;;
+    *)
+      xsrcdir=../$srcdir/$dir
+      includeopt="-I../$srcdir/lib"
+      ;;
+    esac
+    if test "$dir" = "."; then
+      xsrcdir=$srcdir
+    fi
+  fi
+  echo '# Generated automatically from Makefile.in by configure.' > $dir/Makefile
+  sed -e "
+$vpsub
+s,@srcdir@,$xsrcdir,
+s,@prefix@,$prefix,
+s,@exec_prefix@,$exec_prefix,
+s,@includeopt@,$includeopt,
+s,@VPATH@,$VPATH,
+s,@CC@,$CC,
+s,@RANLIB@,$RANLIB,
+s,@YACC@,$YACC,
+s,@INSTALL@,$INSTALL,
+s,@INSTALLDATA@,$INSTALLDATA,
+s,@DEFS@,$DEFS,
+s,@LIBS@,$LIBS,
+s,@LIBPROGS@,$LIBPROGS,
+s,@LIBOBJS@,$LIBOBJS,
+s,@CDEBUG@,$CDEBUG,
+" $srcdir/$dir/Makefile.in >> $dir/Makefile
+done
+
+echo "srcdir = $srcdir
+prefix = $prefix
+exec_prefix = $exec_prefix
+includeopt = $includeopt
+VPATH = $VPATH
+CC = $CC
+RANLIB = $RANLIB
+YACC = $YACC
+INSTALL = $INSTALL
+INSTALLDATA = $INSTALLDATA
+DEFS = $DEFS
+LIBS = $LIBS
+LIBPROGS = $LIBPROGS
+LIBOBJS = $LIBOBJS
+CDEBUG = $CDEBUG" > config.status
