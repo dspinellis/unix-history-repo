@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount_union.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount_union.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -50,18 +50,9 @@ main(argc, argv)
 
 	mntflags = 0;
 	args.mntflags = UNMNT_ABOVE;
-
-	while ((ch = getopt(argc, argv, "a:b:o:r:")) != EOF) {
+	while ((ch = getopt(argc, argv, "bo:r")) != EOF)
 		switch (ch) {
-		case 'a':
-			if (strcmp(optarg, "bove") != 0)
-				usage();
-			args.mntflags &= ~UNMNT_OPMASK;
-			args.mntflags |= UNMNT_ABOVE;
-			break;
 		case 'b':
-			if (strcmp(optarg, "elow") != 0)
-				usage();
 			args.mntflags &= ~UNMNT_OPMASK;
 			args.mntflags |= UNMNT_BELOW;
 			break;
@@ -69,16 +60,14 @@ main(argc, argv)
 			getmntopts(optarg, mopts, &mntflags);
 			break;
 		case 'r':
-			if (strcmp(optarg, "eplace") != 0)
-				usage();
 			args.mntflags &= ~UNMNT_OPMASK;
 			args.mntflags |= UNMNT_REPLACE;
 			break;
 		case '?':
 		default:
 			usage();
+			/* NOTREACHED */
 		}
-	}
 	argc -= optind;
 	argv += optind;
 
@@ -120,6 +109,6 @@ void
 usage()
 {
 	(void)fprintf(stderr,
-		"usage: mount_union [-o options] target_fs mount_point\n");
+		"usage: mount_union [-br] [-o options] target_fs mount_point\n");
 	exit(1);
 }
