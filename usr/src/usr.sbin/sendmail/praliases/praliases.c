@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)praliases.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)praliases.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <ndbm.h>
@@ -59,15 +59,16 @@ main(argc, argv)
 	if (db = dbopen(buf, O_RDONLY, 0444 , DB_HASH, NULL)) {
 		if (!argc) {
 			while(!db->seq(db, &newdbkey, &newdbcontent, R_NEXT))
-				printf("%s:%s\n", newdbkey.data,
-						newdbcontent.data);
+				printf("%.*s:%.*s\n",
+					newdbkey.size, newdbkey.data,
+					newdbcontent.size, newdbcontent.data);
 		}
 		else for (; *argv; ++argv) {
 			newdbkey.data = *argv;
 			newdbkey.size = strlen(*argv) + 1;
-			if ( !db->get(db, &newdbkey, &newdbcontent, 0) )
-				printf("%s:%s\n", newdbkey.data,
-					newdbcontent.data);
+			if (!db->get(db, &newdbkey, &newdbcontent, 0))
+				printf("%s:%.*s\n", newdbkey.data,
+					newdbcontent.size, newdbcontent.data);
 			else
 				printf("%s: No such key\n",
 					newdbkey.data);
@@ -84,7 +85,9 @@ main(argc, argv)
 			for (key = dbm_firstkey(dbp);
 			    key.dptr != NULL; key = dbm_nextkey(dbp)) {
 				content = dbm_fetch(dbp, key);
-				(void)printf("%s:%s\n", key.dptr, content.dptr);
+				(void)printf("%.*s:%.*s\n",
+					key.dsize, key.dptr,
+					content.dsize, content.dptr);
 			}
 		else for (; *argv; ++argv) {
 			key.dptr = *argv;
@@ -93,7 +96,8 @@ main(argc, argv)
 			if (!content.dptr)
 				(void)printf("%s: No such key\n", key.dptr);
 			else
-				(void)printf("%s:%s\n", key.dptr, content.dptr);
+				(void)printf("%s:%.*s\n", key.dptr,
+					content.dsize, content.dptr);
 		}
 #ifdef NEWDB
 	}
