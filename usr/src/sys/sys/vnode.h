@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode.h	7.49 (Berkeley) %G%
+ *	@(#)vnode.h	7.50 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -99,7 +99,6 @@ struct vattr {
 	u_long		va_gen;		/* generation number of file */
 	u_long		va_flags;	/* flags defined for file */
 	dev_t		va_rdev;	/* device the special file represents */
-	short		va_pad;		/* pad out to long */
 	u_quad_t	va_qbytes;	/* bytes of disk space held by file */
 	u_quad_t	va_filerev;	/* file modification number */
 };
@@ -296,10 +295,9 @@ int	vn_select __P((struct file *fp, int which, struct proc *p));
 int 	vn_closefile __P((struct file *fp, struct proc *p));
 int 	getnewvnode __P((enum vtagtype tag, struct mount *mp,
 	    struct vnodeops *vops, struct vnode **vpp));
-int 	bdevvp __P((int dev, struct vnode **vpp));
+int 	bdevvp __P((dev_t dev, struct vnode **vpp));
 	/* check for special device aliases */
-	/* XXX nvp_rdev should be type dev_t, not int */
-struct 	vnode *checkalias __P((struct vnode *vp, int nvp_rdev,
+struct 	vnode *checkalias __P((struct vnode *vp, dev_t nvp_rdev,
 	    struct mount *mp));
 void 	vattr_null __P((struct vattr *vap));
 int 	vcount __P((struct vnode *vp));	/* total references to a device */
@@ -327,6 +325,11 @@ void 	vgoneall __P((struct vnode *vp));/* recycle vnode and all its aliases */
 #define	VHOLD(vp)	vhold(vp)
 #define	HOLDRELE(vp)	holdrele(vp)
 #define	VATTR_NULL(vap)	vattr_null(vap)
+
+void	holdrele __P((struct vnode *));
+void	vattr_null __P((struct vattr *));
+void	vhold __P((struct vnode *));
+void	vref __P((struct vnode *));
 #endif
 
 #define	NULLVP	((struct vnode *)NULL)
