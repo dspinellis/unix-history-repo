@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.65 (Berkeley) %G%
+#	@(#)READ_ME	8.66 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -215,6 +215,12 @@ HASLSTAT	Define this if you have symbolic links (and thus the
 		most other options, this one is on by default, so you
 		need to #undef it in conf.h if you don't have symbolic
 		links (these days everyone does).
+HASSETRLIMIT	Define this to 1 if you have the setrlimit(2) syscall.
+		You can define it to 0 to force it off.  It is assumed
+		if you are running a BSD-like system.
+HASULIMIT	Define this if you have the ulimit(2) syscall (System V
+		style systems).  HASSETRLIMIT overrides, as it is more
+		general.
 NEEDGETOPT	Define this if you need a reimplementation of getopt(3).
 		On some systems, getopt does very odd things if called
 		to scan the arguments twice.  This flag will ask sendmail
@@ -863,4 +869,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.65, last update %G% 06:37:14)
+(Version 8.66, last update %G% 07:34:08)
