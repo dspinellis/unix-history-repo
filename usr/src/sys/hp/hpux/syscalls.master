@@ -1,4 +1,4 @@
-	@(#)syscalls.master	8.1 (Berkeley) %G%
+	@(#)syscalls.master	7.5 (Berkeley) %G%
 ; System call name/number master file (or rather, slave, from HP-UX).
 ; Processed to created hpux_sysent.c, hpux_syscalls.c and hpux_syscall.h.
 ;
@@ -24,7 +24,7 @@
 ; #ifdef's, etc. may be included, and are copied to the output files.
 
 0	UNIMPL	0 indir or out-of-range
-1	STD	1 rexit exit
+1	STD	1 exit
 2	STD	0 fork
 3	STD	3 hpuxread read
 4	STD	3 hpuxwrite write
@@ -56,7 +56,7 @@
 30	COMPAT	2 hpuxutime utime
 31	COMPAT	2 hpuxstty stty
 32	COMPAT	2 hpuxgtty gtty
-33	STD	2 saccess access
+33	STD	2 access
 34	COMPAT	1 hpuxnice nice
 35	COMPAT	1 hpuxftime ftime
 36	STD	0 sync
