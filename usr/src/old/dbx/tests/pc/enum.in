@@ -1,0 +1,8 @@
+whatis Color
+whatis c1
+stop in P
+run
+where
+print c
+print c1, c2
+quit
