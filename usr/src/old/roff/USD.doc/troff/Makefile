@@ -1,4 +1,4 @@
-#	@(#)Makefile	6.5 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 DIR=	usd/21.troff
 INTRO=	m0
