@@ -1,4 +1,4 @@
-/*	if_loop.c	6.2	84/08/29	*/
+/*	if_loop.c	6.3	85/03/18	*/
 
 /*
  * Loopback interface driver for protocol testing and timing.
@@ -38,16 +38,9 @@ loattach()
 
 	ifp->if_name = "lo";
 	ifp->if_mtu = LOMTU;
-	ifp->if_net = LONET;
-	ifp->if_host[0] = LOHOST;
-	sin = (struct sockaddr_in *)&ifp->if_addr;
-	sin->sin_family = AF_INET;
-	sin->sin_addr = if_makeaddr(LONET, LOHOST);
-	ifp->if_flags = IFF_UP | IFF_RUNNING;
 	ifp->if_ioctl = loioctl;
 	ifp->if_output = looutput;
 	if_attach(ifp);
-	if_rtinit(ifp, RTF_UP);
 }
 
 looutput(ifp, m0, dst)
@@ -89,30 +82,25 @@ looutput(ifp, m0, dst)
 /*
  * Process an ioctl request.
  */
+/* ARGSUSED */
 loioctl(ifp, cmd, data)
 	register struct ifnet *ifp;
 	int cmd;
 	caddr_t data;
 {
-	struct ifreq *ifr = (struct ifreq *)data;
-	struct sockaddr_in *sin;
-	int s = splimp(), error = 0;
+	int error = 0;
 
 	switch (cmd) {
 
 	case SIOCSIFADDR:
-		if (ifp->if_flags & IFF_RUNNING)
-			if_rtinit(ifp, -1);	/* delete previous route */
-		ifp->if_addr = ifr->ifr_addr;
-		sin = (struct sockaddr_in *)&ifp->if_addr;
-		ifp->if_net = in_netof(sin->sin_addr);
-		ifp->if_host[0] = in_lnaof(sin->sin_addr);
-		if_rtinit(ifp, RTF_UP);
+		ifp->if_flags |= IFF_UP;
+		/*
+		 * Everything else is done at a higher level.
+		 */
 		break;
 
 	default:
 		error = EINVAL;
 	}
-	splx(s);
 	return (error);
 }
