@@ -1,4 +1,4 @@
-/*	param.h	4.26	82/12/17	*/
+/*	param.h	4.27	83/01/17	*/
 
 /*
  * Macine type dependent parameters.
@@ -96,7 +96,9 @@
 #ifndef KERNEL
 #include	<sys/types.h>
 #else
+#ifndef LOCORE
 #include	"../h/types.h"
+#endif
 #endif
 
 /*
