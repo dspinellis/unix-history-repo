@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)find.c	4.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)find.c	4.35 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -88,8 +88,8 @@ find_formplan(argv)
 	char **argv;
 {
 	PLAN *plan, *tail, *new;
-	PLAN *c_print(), *find_create(), *find_squish_not(), *find_squish_or();
-	PLAN *find_squish_paren();
+	PLAN *c_print(), *find_create(), *not_squish(), *or_squish();
+	PLAN *paren_squish();
 
 	/*
 	 * for each argument in the command line, determine what kind of node
@@ -157,9 +157,9 @@ find_formplan(argv)
 	 * operators are handled in order of precedence.
 	 */
 
-	plan = find_squish_paren(plan);		/* ()'s */
-	plan = find_squish_not(plan);		/* !'s */
-	plan = find_squish_or(plan);		/* -o's */
+	plan = paren_squish(plan);		/* ()'s */
+	plan = not_squish(plan);		/* !'s */
+	plan = or_squish(plan);			/* -o's */
 	return(plan);
 }
  

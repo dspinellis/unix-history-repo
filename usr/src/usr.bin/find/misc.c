@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)misc.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)misc.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -17,18 +17,20 @@ static char sccsid[] = "@(#)misc.c	5.4 (Berkeley) %G%";
 #include <sys/errno.h>
 #include <stdio.h>
 #include "find.h"
+#include <stdlib.h>
+#include <string.h>
  
 /*
- * find_subst --
+ * brace_subst --
  *	Replace occurrences of {} in s1 with s2 and return the result string.
  */
-find_subst(orig, store, path, len)
+void
+brace_subst(orig, store, path, len)
 	char *orig, **store, *path;
 	int len;
 {
 	register int plen;
 	register char ch, *p;
-	char *realloc(), *strerror();
 
 	plen = strlen(path);
 	for (p = *store; ch = *orig; ++orig)
@@ -48,21 +50,37 @@ find_subst(orig, store, path, len)
 }
 
 /*
- * find_queryuser --
+ * queryuser --
  *	print a message to standard error and then read input from standard
  *	input. If the input is 'y' then 1 is returned.
  */
-find_queryuser(argv)
+queryuser(argv)
 	register char **argv;
 {
-	char buf[10];
+	int ch, first, nl;
 
 	(void)fprintf(stderr, "\"%s", *argv);
 	while (*++argv)
 		(void)fprintf(stderr, " %s", *argv);
 	(void)fprintf(stderr, "\"? ");
 	(void)fflush(stderr);
-	return(!fgets(buf, sizeof(buf), stdin) || buf[0] != 'y' ? 0 : 1);
+
+	first = ch = getchar();
+	for (nl = 0;;) {
+		if (ch == '\n') {
+			nl = 1;
+			break;
+		}
+		if (ch == EOF)
+			break;
+		ch = getchar();
+	}
+
+	if (!nl) {
+		(void)fprintf(stderr, "\n");
+		(void)fflush(stderr);
+	}
+        return(first == 'y');
 }
  
 /*
@@ -81,11 +99,11 @@ bad_arg(option, error)
  * emalloc --
  *	malloc with error checking.
  */
-char *
+void *
 emalloc(len)
 	u_int len;
 {
-	char *p, *malloc(), *strerror();
+	void *p;
 
 	if (!(p = malloc(len))) {
 		(void)fprintf(stderr, "find: %s.\n", strerror(errno));
