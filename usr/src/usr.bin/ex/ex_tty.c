@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_tty.c	6.1 %G%";
+static char *sccsid = "@(#)ex_tty.c	6.2 %G%";
 #include "ex.h"
 #include "ex_tty.h"
 
@@ -69,13 +69,15 @@ setterm(type)
 	i = LINES = tgetnum("li");
 	if (LINES <= 5)
 		LINES = 24;
-	if (LINES > 48)
-		LINES = 48;
+	if (LINES > TUBELINES)
+		LINES = TUBELINES;
 	l = LINES;
 	if (ospeed < B1200)
 		l = 9;	/* including the message line at the bottom */
 	else if (ospeed < B2400)
 		l = 17;
+	if (l > LINES)
+		l = LINES;
 	aoftspace = tspace;
 	zap();
 	/*
