@@ -1,4 +1,4 @@
-/*	@(#)shutdown.c	4.4 (Berkeley/Melbourne) 81/04/21	*/
+/*	@(#)shutdown.c	4.5 (Berkeley/Melbourne) 81/05/04	*/
 
 #include <stdio.h>
 #include <ctype.h>
@@ -47,6 +47,7 @@ char	tpath[] =	"/dev/";
 int	nlflag = 1;		/* nolog yet to be done */
 int	killflg = 1;
 int	reboot = 0;
+int	noroot = 0;
 int	halt = 0;
 char	term[sizeof tpath + sizeof utmp.ut_line];
 char	tbuf[BUFSIZ];
@@ -98,6 +99,9 @@ main(argc,argv)
 		case 'h':
 			halt = 1;
 			continue;
+		case 'y':
+			noroot = 1;
+			continue;
 		default:
 			fprintf(stderr, "shutdown: '%c' - unknown flag\n", i);
 			exit(1);
@@ -105,8 +109,13 @@ main(argc,argv)
 		argc--, argv++;
 	}
 	if (argc < 1) {
-		printf("Usage: %s [-krd] shutdowntime [nologmessage]\n",
+		printf("Usage: %s [-krdy] shutdowntime [nologmessage]\n",
 		    argv[0]);
+		finish();
+	}
+	if (noroot == 0 && geteuid() != 0)
+	{
+		printf("Must specify -y flag to run as normal user.\n");
 		finish();
 	}
 	sdt = getsdt(argv[0]);
