@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	8.24 (Berkeley) %G%
+ *	@(#)vfs_subr.c	8.25 (Berkeley) %G%
  */
 
 /*
@@ -813,8 +813,31 @@ vput(vp)
 {
 	struct proc *p = curproc;	/* XXX */
 
-	VOP_UNLOCK(vp, 0, p);
-	vrele(vp);
+#ifdef DIGANOSTIC
+	if (vp == NULL)
+		panic("vput: null vp");
+#endif
+	simple_lock(&vp->v_interlock);
+	vp->v_usecount--;
+	if (vp->v_usecount > 0) {
+		simple_unlock(&vp->v_interlock);
+		VOP_UNLOCK(vp, 0, p);
+		return;
+	}
+#ifdef DIAGNOSTIC
+	if (vp->v_usecount < 0 || vp->v_writecount != 0) {
+		vprint("vput: bad ref count", vp);
+		panic("vput: ref cnt");
+	}
+#endif
+	/*
+	 * insert at tail of LRU list
+	 */
+	simple_lock(&vnode_free_list_slock);
+	TAILQ_INSERT_TAIL(&vnode_free_list, vp, v_freelist);
+	simple_unlock(&vnode_free_list_slock);
+	simple_unlock(&vp->v_interlock);
+	VOP_INACTIVE(vp, p);
 }
 
 /*
