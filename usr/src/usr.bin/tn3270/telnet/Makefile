@@ -8,7 +8,7 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	1.4 (Berkeley) %G%
+#	@(#)Makefile	1.5 (Berkeley) %G%
 #
 
 # The following is the telnet makefile for tn3270, using the shared telnet
@@ -43,7 +43,7 @@ telprog.o:	${OBJS} ${LIBC}
 	${LD} ${LDFLAGS} -o $@ ${OBJS}
 
 clean: FRC
-	rm -f ${OBJS} core telnet
+	rm -f telprog.o ${OBJS} core telnet
 
 depend: FRC ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
