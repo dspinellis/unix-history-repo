@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)server.c	4.21 (Berkeley) 84/12/06";
+static	char *sccsid = "@(#)server.c	4.22 (Berkeley) 84/12/07";
 #endif
 
 #include "defs.h"
@@ -718,15 +718,17 @@ recvf(cmd, type)
 			err();
 			return;
 		}
-		if (symlink(buf, new) < 0)
-			goto badn;
+		if (symlink(buf, new) < 0) {
+			if (errno != ENOENT || chkparent(new) < 0 ||
+			    symlink(buf, new) < 0)
+				goto badn;
+		}
 		mode &= 0777;
 		if (opts & COMPARE) {
 			char tbuf[BUFSIZ];
 
-			if ((i = readlink(target, tbuf, BUFSIZ)) < 0)
-				goto badt;
-			if (i == size && strncmp(buf, tbuf, size) == 0) {
+			if ((i = readlink(target, tbuf, BUFSIZ)) >= 0 &&
+			    i == size && strncmp(buf, tbuf, size) == 0) {
 				(void) unlink(new);
 				ack();
 				return;
@@ -740,7 +742,7 @@ recvf(cmd, type)
 	if ((f = creat(new, mode)) < 0) {
 		if (errno != ENOENT || chkparent(new) < 0 ||
 		    (f = creat(new, mode)) < 0)
-			goto badt;
+			goto badn;
 	}
 
 	ack();
@@ -822,12 +824,11 @@ badn:
 		(void) unlink(new);
 		return;
 	}
-fixup:
 	if (chog(new, owner, group, mode) < 0) {
 		(void) unlink(new);
 		return;
 	}
-	
+fixup:
 	if (rename(new, target) < 0) {
 badt:
 		error("%s:%s: %s\n", host, target, sys_errlist[errno]);
