@@ -15,7 +15,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mountd.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)mountd.c	5.21 (Berkeley) %G%";
 #endif not lint
 
 #include <pwd.h>
@@ -44,6 +44,9 @@ static char sccsid[] = "@(#)mountd.c	5.20 (Berkeley) %G%";
 #include <nfs/rpcv2.h>
 #include <nfs/nfsv2.h>
 #include "pathnames.h"
+#ifdef DEBUG
+#include <stdarg.h>
+#endif
 
 /*
  * Structures for keeping the mount list and export list
@@ -110,6 +113,7 @@ int mntsrv(), umntall_each(), xdr_fhs(), xdr_mlist(), xdr_dir(), xdr_explist();
 void get_exportlist(), send_umntall(), nextfield(), out_of_mem();
 void get_mountlist(), add_mlist(), del_mlist(), free_exp(), free_grp();
 void getexp_err(), hang_dirp(), add_dlist(), free_dir(), free_host();
+void setnetgrent(), endnetgrent();
 struct exportlist *ex_search(), *get_exp();
 struct grouplist *get_grp();
 char *realpath(), *add_expdir();
@@ -524,9 +528,8 @@ get_exportlist()
 	struct hostent *hpe;
 	struct ucred anon;
 	struct ufs_args targs;
-	char *cp, *endcp, *dirp;
-	char savedc;
-	int len, has_host, exflags, got_nondir, dirplen, num, i;
+	char *cp, *endcp, *dirp, *hst, *usr, *dom, savedc;
+	int len, has_host, exflags, got_nondir, dirplen, num, i, netgrp;
 
 	/*
 	 * First, get rid of the old list
@@ -597,15 +600,15 @@ get_exportlist()
 		 * Create new exports list entry
 		 */
 		len = endcp-cp;
-		grp = get_grp();
+		tgrp = grp = get_grp();
 		while (len > 0) {
 			if (len > RPCMNT_NAMELEN) {
-			    getexp_err(ep, grp);
+			    getexp_err(ep, tgrp);
 			    goto nextline;
 			}
 			if (*cp == '-') {
 			    if (ep == (struct exportlist *)0) {
-				getexp_err(ep, grp);
+				getexp_err(ep, tgrp);
 				goto nextline;
 			    }
 			    if (debug)
@@ -613,7 +616,7 @@ get_exportlist()
 			    got_nondir = 1;
 			    if (do_opt(&cp, &endcp, ep, grp, &has_host,
 				&exflags, &anon)) {
-				getexp_err(ep, grp);
+				getexp_err(ep, tgrp);
 				goto nextline;
 			    }
 			} else if (*cp == '/') {
@@ -624,13 +627,13 @@ get_exportlist()
 				statfs(cp, &fsb) >= 0) {
 				if (got_nondir) {
 				    syslog(LOG_ERR, "Dirs must be first");
-				    getexp_err(ep, grp);
+				    getexp_err(ep, tgrp);
 				    goto nextline;
 				}
 				if (ep) {
 				    if (ep->ex_fs.val[0] != fsb.f_fsid.val[0] ||
 					ep->ex_fs.val[1] != fsb.f_fsid.val[1]) {
-					getexp_err(ep, grp);
+					getexp_err(ep, tgrp);
 					goto nextline;
 				    }
 				} else {
@@ -667,7 +670,7 @@ get_exportlist()
 				dirp = add_expdir(&dirhead, cp, len);
 				dirplen = len;
 			    } else {
-				getexp_err(ep, grp);
+				getexp_err(ep, tgrp);
 				goto nextline;
 			    }
 			    *endcp = savedc;
@@ -675,15 +678,34 @@ get_exportlist()
 			    savedc = *endcp;
 			    *endcp = '\0';
 			    got_nondir = 1;
-			    if (ep == (struct exportlist *)0 || has_host) {
-				getexp_err(ep, grp);
+			    if (ep == (struct exportlist *)0) {
+				getexp_err(ep, tgrp);
 				goto nextline;
 			    }
-			    if (get_host(cp, grp)) {
-				getexp_err(ep, grp);
-				goto nextline;
-			    }
-			    has_host = TRUE;
+
+			    /*
+			     * Get the host or netgroup.
+			     */
+			    setnetgrent(cp);
+			    netgrp = getnetgrent(&hst, &usr, &dom);
+			    do {
+				if (has_host) {
+				    grp->gr_next = get_grp();
+				    grp = grp->gr_next;
+				}
+				if (netgrp) {
+				    if (get_host(hst, grp)) {
+					syslog(LOG_ERR, "Bad netgroup %s", cp);
+					getexp_err(ep, tgrp);
+					goto nextline;
+				    }
+				} else if (get_host(cp, grp)) {
+				    getexp_err(ep, tgrp);
+				    goto nextline;
+				}
+				has_host = TRUE;
+			    } while (netgrp && getnetgrent(&hst, &usr, &dom));
+			    endnetgrent();
 			    *endcp = savedc;
 			}
 			cp = endcp;
@@ -691,7 +713,7 @@ get_exportlist()
 			len = endcp - cp;
 		}
 		if (check_options(dirhead)) {
-			getexp_err(ep, grp);
+			getexp_err(ep, tgrp);
 			goto nextline;
 		}
 		if (!has_host) {
@@ -707,23 +729,40 @@ get_exportlist()
 			hpe->h_length = sizeof (u_long);
 			hpe->h_addr_list = (char **)0;
 			grp->gr_ptr.gt_hostent = hpe;
-		}
-		if (do_mount(ep, grp, exflags, &anon, dirp,
-			dirplen, &fsb)) {
-			getexp_err(ep, grp);
+
+		/*
+		 * Don't allow a network export coincide with a list of
+		 * host(s) on the same line.
+		 */
+		} else if ((opt_flags & OP_NET) && tgrp->gr_next) {
+			getexp_err(ep, tgrp);
 			goto nextline;
 		}
+
+		/*
+		 * Loop through hosts, pushing the exports into the kernel.
+		 * After loop, tgrp points to the start of the list and
+		 * grp points to the last entry in the list.
+		 */
+		grp = tgrp;
+		do {
+		    if (do_mount(ep, grp, exflags, &anon, dirp,
+			dirplen, &fsb)) {
+			getexp_err(ep, tgrp);
+			goto nextline;
+		    }
+		} while (grp->gr_next && (grp = grp->gr_next));
 
 		/*
 		 * Success. Update the data structures.
 		 */
 		if (has_host) {
+			hang_dirp(dirhead, tgrp, ep, (opt_flags & OP_ALLDIRS));
 			grp->gr_next = grphead;
-			grphead = grp;
-			hang_dirp(dirhead, grp, ep, (opt_flags & OP_ALLDIRS));
+			grphead = tgrp;
 		} else {
 			hang_dirp(dirhead, (struct grouplist *)0, ep,
-				(opt_flags & OP_ALLDIRS));
+			(opt_flags & OP_ALLDIRS));
 			free_grp(grp);
 		}
 		dirhead = (struct dirlist *)0;
@@ -790,12 +829,16 @@ getexp_err(ep, grp)
 	struct exportlist *ep;
 	struct grouplist *grp;
 {
+	struct grouplist *tgrp;
 
 	syslog(LOG_ERR, "Bad exports list line %s", line);
 	if (ep && ep->ex_next == (struct exportlist *)0)
 		free_exp(ep);
-	if (grp && grp->gr_next == (struct grouplist *)0)
-		free_grp(grp);
+	while (grp) {
+		tgrp = grp;
+		grp = grp->gr_next;
+		free_grp(tgrp);
+	}
 }
 
 /*
@@ -865,14 +908,13 @@ hang_dirp(dp, grp, ep, alldirs)
 		} else
 			ep->ex_defdir->dp_flag |= DP_DEFSET;
 	} else {
+
+		/*
+		 * Loop throught the directories adding them to the tree.
+		 */
 		while (dp) {
-			if (grp) {
-				hp = get_ht();
-				hp->ht_grp = grp;
-			} else
-				hp = (struct hostlist *)0;
 			dp2 = dp->dp_left;
-			add_dlist(&ep->ex_dirl, dp, hp);
+			add_dlist(&ep->ex_dirl, dp, grp);
 			dp = dp2;
 		}
 	}
@@ -883,22 +925,23 @@ hang_dirp(dp, grp, ep, alldirs)
  * for the new directory or adding the new node.
  */
 void
-add_dlist(dpp, newdp, hp)
+add_dlist(dpp, newdp, grp)
 	struct dirlist **dpp;
 	struct dirlist *newdp;
-	struct hostlist *hp;
+	register struct grouplist *grp;
 {
 	register struct dirlist *dp;
+	register struct hostlist *hp;
 	int cmp;
 
 	dp = *dpp;
 	if (dp) {
 		cmp = strcmp(dp->dp_dirp, newdp->dp_dirp);
 		if (cmp > 0) {
-			add_dlist(&dp->dp_left, newdp, hp);
+			add_dlist(&dp->dp_left, newdp, grp);
 			return;
 		} else if (cmp < 0) {
-			add_dlist(&dp->dp_right, newdp, hp);
+			add_dlist(&dp->dp_right, newdp, grp);
 			return;
 		} else
 			free((caddr_t)newdp);
@@ -907,9 +950,18 @@ add_dlist(dpp, newdp, hp)
 		dp->dp_left = (struct dirlist *)0;
 		*dpp = dp;
 	}
-	if (hp) {
-		hp->ht_next = dp->dp_hosts;
-		dp->dp_hosts = hp;
+	if (grp) {
+
+		/*
+		 * Hang all of the host(s) off of the directory point.
+		 */
+		do {
+			hp = get_ht();
+			hp->ht_grp = grp;
+			hp->ht_next = dp->dp_hosts;
+			dp->dp_hosts = hp;
+			grp = grp->gr_next;
+		} while (grp);
 	} else
 		dp->dp_flag |= DP_DEFSET;
 }
@@ -1071,14 +1123,16 @@ do_opt(cpp, endcpp, ep, grp, has_hostp, exflagsp, cr)
 		} else if (!strcmp(cpopt, "kerb") || !strcmp(cpopt, "k")) {
 			*exflagsp |= MNT_EXKERB;
 			opt_flags |= OP_KERB;
-		} else if (cpoptarg && !strcmp(cpopt, "mask")) {
+		} else if (cpoptarg && (!strcmp(cpopt, "mask") ||
+			!strcmp(cpopt, "m"))) {
 			if (get_net(cpoptarg, &grp->gr_ptr.gt_net, 1)) {
 				syslog(LOG_ERR, "Bad mask: %s", cpoptarg);
 				return (1);
 			}
 			usedarg++;
 			opt_flags |= OP_MASK;
-		} else if (cpoptarg && !strcmp(cpopt, "network")) {
+		} else if (cpoptarg && (!strcmp(cpopt, "network") ||
+			!strcmp(cpopt, "n"))) {
 			if (grp->gr_type != GT_NULL) {
 				syslog(LOG_ERR, "Network/host conflict");
 				return (1);
@@ -1192,6 +1246,8 @@ get_host(cp, grp)
 		naddrp++;
 	}
 	*naddrp = (char *)0;
+	if (debug)
+		fprintf(stderr, "got host %s\n", hp->h_name);
 	return (0);
 }
 
