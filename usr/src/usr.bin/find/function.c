@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)function.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)function.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -307,6 +307,7 @@ f_fstype(plan, entry)
 
 	/* only check when we cross mount point */
 	if (first || curdev != entry->fts_statb.st_dev) {
+		curdev = entry->fts_statb.st_dev;
 		if (statfs(entry->fts_accpath, &sb)) {
 			(void)fprintf(stderr, "find: %s: %s.\n",
 			    entry->fts_accpath, strerror(errno));
