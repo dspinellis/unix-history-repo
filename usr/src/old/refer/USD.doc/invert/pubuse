@@ -1,4 +1,4 @@
-.\"	@(#)pubuse	5.1 (Berkeley) %G%
+.\"	@(#)pubuse	6.1 (Berkeley) %G%
 .\"
 ..... use tbl and troff \-ms
 .if \nP=0 .IM
