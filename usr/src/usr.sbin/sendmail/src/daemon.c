@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	6.28 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.29 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	6.28 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.29 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -25,10 +25,6 @@ static char sccsid[] = "@(#)daemon.c	6.28 (Berkeley) %G% (without daemon mode)";
 # include <netdb.h>
 # include <sys/wait.h>
 # include <sys/time.h>
-
-#ifdef NETISO
-# include <netiso/iso.h>
-#endif
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
@@ -332,6 +328,9 @@ clrdaemon()
 setdaemonoptions(p)
 	register char *p;
 {
+	if (DaemonAddr.sa.sa_family == AF_UNSPEC)
+		DaemonAddr.sa.sa_family = AF_INET;
+
 	while (p != NULL)
 	{
 		register char *f;
@@ -353,35 +352,101 @@ setdaemonoptions(p)
 
 		switch (*f)
 		{
-		  case 'P':		/* port */
-		  case 'p':
+		  case 'F':		/* address family */
 			if (isascii(*v) && isdigit(*v))
-				DaemonAddr.sin.sin_port = atoi(v);
+				DaemonAddr.sa.sa_family = atoi(v);
+#ifdef NETINET
+			else if (strcasecmp(v, "inet") == 0)
+				DaemonAddr.sa.sa_family = AF_INET;
+#endif
+#ifdef NETISO
+			else if (strcasecmp(v, "iso") == 0)
+				DaemonAddr.sa.sa_family = AF_ISO;
+#endif
+#ifdef NETNS
+			else if (strcasecmp(v, "ns") == 0)
+				DaemonAddr.sa.sa_family = AF_NS;
+#endif
+#ifdef NETX25
+			else if (strcasecmp(v, "x.25") == 0)
+				DaemonAddr.sa.sa_family = AF_CCITT;
+#endif
 			else
-			{
-				register struct servent *sp;
-
-				sp = getservbyname(v, "tcp");
-				if (sp == NULL)
-					syserr("554 server \"%s\" unknown", v);
-				else
-					DaemonAddr.sin.sin_port = sp->s_port;
-			}
+				syserr("554 Unknown address family %s in Family=option", v);
 			break;
 
 		  case 'A':		/* address */
-		  case 'a':
-			if (isascii(*v) && isdigit(*v))
-				DaemonAddr.sin.sin_addr.s_addr = inet_network(v);
-			else
+			switch (DaemonAddr.sa.sa_family)
 			{
-				register struct netent *np;
-
-				np = getnetbyname(v);
-				if (np == NULL)
-					syserr("554 network \"%s\" unknown", v);
+#ifdef NETINET
+			  case AF_INET:
+				if (isascii(*v) && isdigit(*v))
+					DaemonAddr.sin.sin_addr.s_addr = inet_network(v);
 				else
-					DaemonAddr.sin.sin_addr.s_addr = np->n_net;
+				{
+					register struct netent *np;
+
+					np = getnetbyname(v);
+					if (np == NULL)
+						syserr("554 network \"%s\" unknown", v);
+					else
+						DaemonAddr.sin.sin_addr.s_addr = np->n_net;
+				}
+				break;
+#endif
+
+			  default:
+				syserr("554 Address= option unsupported for family %d",
+					DaemonAddr.sa.sa_family);
+				break;
+			}
+			break;
+
+		  case 'P':		/* port */
+			switch (DaemonAddr.sa.sa_family)
+			{
+				short port;
+
+#ifdef NETINET
+			  case AF_INET:
+				if (isascii(*v) && isdigit(*v))
+					DaemonAddr.sin.sin_port = atoi(v);
+				else
+				{
+					register struct servent *sp;
+
+					sp = getservbyname(v, "tcp");
+					if (sp == NULL)
+						syserr("554 server \"%s\" unknown", v);
+					else
+						DaemonAddr.sin.sin_port = sp->s_port;
+				}
+				break;
+#endif
+
+#ifdef NETISO
+			  case AF_ISO:
+				/* assume two byte transport selector */
+				if (isascii(*v) && isdigit(*v))
+					port = atoi(v);
+				else
+				{
+					register struct servent *sp;
+
+					sp = getservbyname(v, "tcp");
+					if (sp == NULL)
+						syserr("554 server \"%s\" unknown", v);
+					else
+						port = sp->s_port;
+				}
+				bcopy((char *) &port, TSEL(&DaemonAddr.siso), 2);
+				break;
+#endif
+
+			  default:
+				syserr("554 Port= option unsupported for family %d",
+					DaemonAddr.sa.sa_family);
+				break;
 			}
 			break;
 		}
