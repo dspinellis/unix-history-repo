@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.94 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.95 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -2209,11 +2209,13 @@ strtol(nptr, endptr, base)
 /*
 **  SOLARIS_GETHOSTBY{NAME,ADDR} -- compatibility routines for gethostbyXXX
 **
-**	Solaris versions prior through 2.3 don't properly deliver a
+**	Solaris versions at least through 2.3 don't properly deliver a
 **	canonical h_name field.  This tries to work around it.
 */
 
 #ifdef SOLARIS
+
+extern int	h_errno;
 
 struct hostent *
 solaris_gethostbyname(name)
