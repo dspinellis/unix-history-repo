@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)makefile	4.1 (Berkeley) %G%
+#	@(#)makefile	4.2 (Berkeley) %G%
 # msdos versus unix defines
 O	= .o
 #PC_O	= .obj
@@ -73,8 +73,8 @@ ALLSOURCE = ${ALLPRINT} makefile makefile.mak
 ALLO = apilib$O api_bsd$O api_exch$O astosc$O asc_ebc$O dctype$O \
 		disp_asc$O ebc_disp$O
 
-.c.obj:
-	${CC} ${CFLAGS} -c $<
+#.c.obj:
+#	${CC} ${CFLAGS} -c $<
 
 apilib.a: ${ALLO}
 	${RM} $@
@@ -87,6 +87,7 @@ apilib.a: ${ALLO}
 clean:
 	for i in ${ALLO} errs apilib.a makefile.bak \
 		disp_out asc_disp.out astosc.out disp_asc.out \
+		astosc.OUT disp_asc.OUT \
 		test* test$O t1* t1$O t2* t2$O; \
 			do (${RM} $$i); done
 
@@ -121,20 +122,24 @@ sourcelist:	${ALLSOURCE}
 	@for i in ${ALLSOURCE}; \
 		do (echo ${DIRPATH}$$i); done
 
-astosc.out:	../ctlr/function.h ../ctlr/hostctlr.h ../ctlr/$(KBD)
-	(cd ../tools; make mkastosc$X )
-	${RM} $@
-	../tools/mkastosc < ../ctlr/$(KBD) > $@
+astosc.OUT:	../ctlr/function.h ../ctlr/hostctlr.h ../ctlr/$(KBD)
+	(cd ${.CURDIR}/../tools; make mkastosc$X )
+	${RM} $@ astosc.out
+	../tools/mkastosc ${.CURDIR}/../ctlr/hostctlr.h \
+		${.CURDIR}/../ctlr/function.h < \
+				${.CURDIR}/../ctlr/$(KBD) > $@
+	ln $@ astosc.out
 
 asc_disp.out:	ebc_disp$O
-	(cd ../tools; make mkastods$X )
+	(cd ${.CURDIR}/../tools; make mkastods$X )
 	${RM} $@
 	../tools/mkastods > $@
 
-disp_asc.out:	ebc_disp$O
-	(cd ../tools; make mkdstoas$X )
-	${RM} $@
+disp_asc.OUT:	ebc_disp$O
+	(cd ${.CURDIR}/../tools; make mkdstoas$X )
+	${RM} $@ disp_asc.out
 	../tools/mkdstoas > $@
+	ln $@ disp_asc.out
 
 depend:
 	grep '^#include' ${ALLC} | grep -v '<' | \
@@ -159,6 +164,6 @@ apilib$O: ../ctlr/api.h apilib.h
 api_bsd$O: ../ctlr/api.h api_exch.h
 api_exch$O: ../general/general.h api_exch.h
 asc_ebc$O: asc_ebc.h
-astosc$O: ../general/general.h ../ctlr/function.h astosc.h astosc.out
+astosc$O: ../general/general.h ../ctlr/function.h astosc.h astosc.OUT
 dctype$O: dctype.h
-disp_asc$O: disp_asc.h asc_disp.out disp_asc.out
+disp_asc$O: disp_asc.h asc_disp.out disp_asc.OUT
