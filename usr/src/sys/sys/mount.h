@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount.h	7.32 (Berkeley) %G%
+ *	@(#)mount.h	7.33 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -73,6 +73,7 @@ struct mount {
 	struct vnode	*mnt_vnodecovered;	/* vnode we mounted on */
 	struct vnode	*mnt_mounth;		/* list of vnodes this mount */
 	int		mnt_flag;		/* flags */
+	int		mnt_maxsymlinklen;	/* max size of short symlink */
 	struct statfs	mnt_stat;		/* cache of filesystem stats */
 	qaddr_t		mnt_data;		/* private data */
 };
