@@ -1,4 +1,4 @@
-/*	dz.c	3.7	%H%	*/
+/*	dz.c	3.8	%H%	*/
 
 /*
  *  DZ-11 Driver
@@ -403,16 +403,13 @@ dzscan()
 		} else {
 			if ((tp->t_state & CARR_ON)) {
 				/* carrier lost */
-/*
 				if (tp->t_state&ISOPEN &&
 				    (tp->t_local&LNOHANG) == 0) {
- */
 					gsignal(tp->t_pgrp, SIGHUP);
+					gsignal(tp->t_pgrp, SIGCONT);
 					dzaddr->dzdtr &= ~bit;
 					flushtty(tp);
-/*
 				}
- */
 				tp->t_state &= ~CARR_ON;
 			}
 		}
