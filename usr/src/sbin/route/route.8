@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)route.8	6.1 (Berkeley) %G%
+.\"	@(#)route.8	6.2 (Berkeley) %G%
 .\"
 .TH ROUTE 8C ""
 .UC 5
@@ -12,6 +12,8 @@ route \- manually manipulate the routing tables
 .B /etc/route
 [
 .B \-f
+] [
+.B \-n
 ] [
 .I command args
 ]
@@ -24,43 +26,57 @@ system routing table management daemon,
 should tend to this task.
 .PP
 .I Route
-accepts three commands:
+accepts two commands:
 .IR add ,
-to add a route;
+to add a route, and
 .IR delete ,
-to delete a route; and
-.IR change ,
-to modify an existing route.
+to delete a route.
 .PP
 All commands have the following syntax:
 .PP
-.ti +0.5i
+.ti +0.25i
 .B /etc/route 
 .I command
-.B destination gateway
 [
-.B metric
+.B net
+|
+.B host
+]
+.I destination gateway
+[
+.I metric
 ]
 .PP
 where
 .I destination
-is a host or network for which
-the route is ``to'',
+is the destination host or network,
 .I gateway
-is the gateway to which packets should be addressed, and
+is the next-hop gateway to which packets should be addressed, and
 .I metric
-is an optional count indicating the number of hops to
+is a count indicating the number of hops to
 the
 .IR destination .
-If no metric is specified, 
-.I route
-assumes a value of 0.
+The metric is required for
+.I add
+commands; it must be zero if the destination is on a directly-attached network,
+and nonzero if the route utilizes one or more gateways.
+If adding a route with metric 0,
+the gateway given is the address of this host on the common network,
+indicating the interface to be used for transmission.
 Routes to a particular host are distinguished from those to
 a network by interpreting the Internet address associated with
 .IR destination .
-If the 
+The optional keywords
+.B net
+and
+.B host
+force the destination to be interpreted as a network or a host, respectively.
+Otherwise, if the 
 .I destination
-has a ``local address part'' of INADDR_ANY, then the route is
+has a ``local address part'' of INADDR_ANY,
+or if the
+.I destination
+is the symbolic name of a network, then the route is
 assumed to be to a network; otherwise, it is presumed to be a
 route to a host.  If the route is to a destination connected
 via a gateway, the 
@@ -69,11 +85,11 @@ should be greater than 0.  All symbolic names specified for a
 .I destination 
 or 
 .I gateway
-are looked up first in the host name database,
-.IR hosts (5).
-If this lookup fails, the name is then looked for
-in the network name database,
-.IR networks (5).
+are looked up first as a host name using
+.IR gethostbyname (3N).
+If this lookup fails,
+.IR getnetbyname (3N)
+is then used to interpret the name as that of a network.
 .PP
 .I Route
 uses a raw socket and the SIOCADDRT and SIOCDELRT
@@ -89,39 +105,52 @@ will ``flush'' the routing tables of all gateway entries.
 If this is used in conjunction with one of the commands
 described above, the tables are flushed prior to the command's
 application.
+.PP
+The
+.B \-n
+option prevents attempts to print host and network names symbolically
+when reporting actions.
 .SH DIAGNOSTICS
-.B ``add %s: gateway %s flags %x''
+``\fBadd [ host | network ] %s: gateway %s flags %x\fP''
 .br
 The specified route is being added to the tables.  The
 values printed are from the routing table entry supplied
 in the 
 .I ioctl
 call.
+If the gateway address used was not the primary address of the gateway
+(the first one returned by
+.IR gethostbyname ),
+the gateway address is printed numerically as well as symbolically.
 .PP
-.B ``delete %s: gateway %s flags %x''
+``\fBdelete [ host | network ] %s: gateway %s flags %x\fP''
 .br
 As above, but when deleting an entry.
 .PP
-.B ``%s %s done''
+``\fB%s %s done\fP''
 .br
 When the 
 .B \-f
 flag is specified, each routing table entry deleted
 is indicated with a message of this form.
 .PP
-.B  ``not in table''
+``\fBNetwork is unreachable\fP''
+.br
+An attempt to add a route failed because the gateway listed was not
+on a directly-connected network.
+The next-hop gateway must be given.
+.PP
+``\fBnot in table\fP''
 .br
 A delete operation was attempted for an entry which
 wasn't present in the tables.
 .PP
-.B ``routing table overflow''
+``\fBrouting table overflow\fP''
 .br
 An add operation was attempted, but the system was
 low on resources and was unable to allocate memory
 to create the new entry.
 .SH "SEE ALSO"
 intro(4N),
-routed(8C)
-.SH BUGS
-The change operation is not implemented, one should add
-the new route, then delete the old one.
+routed(8C),
+XNSrouted(8C)
