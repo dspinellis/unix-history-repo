@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.t	6.20 (Berkeley) %G%
+.\"	@(#)2.t	6.21 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -1426,7 +1426,7 @@ lw(2i) l.
 \fB#\fP \fIcd /\fP	(make / the current directory)
 \fB#\fP \fIumount /dev/\*(Dk#p\fP	(unmount from tmp mount point)
 (ignore ``fstab'' error message)
-\fB#\fP \fIrm -r /usr/*	(remove excess bootstrap binaries)
+\fB#\fP \fIrm -r /usr/*\fP	(remove excess bootstrap binaries)
 \fB#\fP \fImount /dev/\*(Dk#p /usr\fP	(remount /usr)
 .TE
 .DE
