@@ -1,4 +1,4 @@
-/*	param.h	6.1	83/07/29	*/
+/*	param.h	6.2	84/12/20	*/
 
 /*
  * Machine dependent constants for vax.
@@ -13,7 +13,7 @@
 #define	SSIZE	4		/* initial stack size/NBPG */
 #define	SINCR	4		/* increment of stack/NBPG */
 
-#define	UPAGES	8		/* pages of u-area */
+#define	UPAGES	10		/* pages of u-area */
 
 /*
  * Some macros for units conversion
