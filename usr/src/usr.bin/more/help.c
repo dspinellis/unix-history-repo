@@ -20,7 +20,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)help.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)help.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include  "less.h"
@@ -37,9 +37,9 @@ static char sccsid[] = "@(#)help.c	5.1 (Berkeley) %G%";
 	public void
 help()
 {
-	char cmd[FILENAME+100];
+	char cmd[MAXPATHLEN+100];
 
-	sprintf(cmd, 
+	(void)sprintf(cmd,
 	 "-less -m '-PmHELP -- ?eEND -- Press g to see it again:Press RETURN for more., or q when done ' %s",
 	 HELPFILE);
 	lsystem(cmd);
