@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)function.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)function.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -29,9 +29,6 @@ static char sccsid[] = "@(#)function.c	5.3 (Berkeley) %G%";
 #define	FIND_LESSTHAN	1
 #define	FIND_GREATER	2
 
-#define	FIND_FALSE	0
-#define	FIND_TRUE	1
-
 #define	COMPARE(a, b) { \
 	switch(plan->flags) { \
 	case FIND_EQUAL: \
@@ -41,7 +38,7 @@ static char sccsid[] = "@(#)function.c	5.3 (Berkeley) %G%";
 	case FIND_GREATER: \
 		return(a > b); \
 	} \
-	return(FIND_FALSE); \
+	return(0); \
 }
 
 #define NEW(t, f) { \
@@ -106,8 +103,8 @@ f_atime(plan, entry)
 {
 	extern time_t now;
 
-	COMPARE((now - entry->statb.st_atime + SECSPERDAY - 1) / SECSPERDAY,
-	    plan->t_data);
+	COMPARE((now - entry->fts_statb.st_atime +
+	    SECSPERDAY - 1) / SECSPERDAY, plan->t_data);
 }
  
 PLAN *
@@ -134,8 +131,8 @@ f_ctime(plan, entry)
 {
 	extern time_t now;
 
-	COMPARE((now - entry->statb.st_ctime + SECSPERDAY - 1) / SECSPERDAY,
-	    plan->t_data);
+	COMPARE((now - entry->fts_statb.st_ctime +
+	    SECSPERDAY - 1) / SECSPERDAY, plan->t_data);
 }
  
 PLAN *
@@ -163,7 +160,7 @@ f_always_true(plan, entry)
 	PLAN *plan;
 	FTSENT *entry;
 {
-	return(FIND_TRUE);
+	return(1);
 }
  
 PLAN *
@@ -202,10 +199,10 @@ f_exec(plan, entry)
 	for (cnt = 0; plan->e_argv[cnt]; ++cnt)
 		if (plan->e_len[cnt])
 			find_subst(plan->e_orig[cnt], &plan->e_argv[cnt],
-			    entry->path, plan->e_len[cnt]);
+			    entry->fts_path, plan->e_len[cnt]);
 
 	if (plan->flags && !find_queryuser(plan->e_argv))
-		return(FIND_FALSE);
+		return(0);
 
 	switch(pid = vfork()) {
 	case -1:
@@ -220,7 +217,7 @@ f_exec(plan, entry)
 		/* NOTREACHED */
 	}
 	pid = waitpid(pid, &pstat, 0);
-	return(pid == -1 || pstat.w_status ? FIND_FALSE : FIND_TRUE);
+	return(pid != -1 && !pstat.w_status);
 }
  
 /*
@@ -305,18 +302,19 @@ f_fstype(plan, entry)
 {
 	extern dev_t curdev;
 	struct statfs sb;
-	static short curtype;
+	static short val;
 
 	/* only check when we cross mount point */
-	if (curdev != entry->statb.st_dev) {
-		if (statfs(entry->name, &sb)) {
+	if (curdev != entry->fts_statb.st_dev) {
+		if (statfs(entry->fts_accpath, &sb)) {
 			(void)fprintf(stderr, "find: %s: %s.\n",
-			    entry->name, strerror(errno));
+			    entry->fts_accpath, strerror(errno));
 			exit(1);
 		}
-		curtype = sb.f_type;
+		val = plan->flags == MOUNT_NONE ? sb.f_flags : sb.f_type;
 	}
-	return(plan->flags == curtype);
+	return(plan->flags == MOUNT_NONE ?
+	    val & MNT_LOCAL : val == plan->flags);
 }
  
 PLAN *
@@ -329,6 +327,12 @@ c_fstype(arg)
     
 	NEW(T_FSTYPE, f_fstype);
 	switch(*arg) {
+	case 'l':
+		if (!strcmp(arg, "local")) {
+			new->flags = MOUNT_NONE;
+			return(new);
+		}
+		break;
 	case 'm':
 		if (!strcmp(arg, "mfs")) {
 			new->flags = MOUNT_MFS;
@@ -370,7 +374,7 @@ f_group(plan, entry)
 	PLAN *plan;
 	FTSENT *entry;
 {
-	return(entry->statb.st_gid == plan->g_data ? FIND_TRUE : FIND_FALSE);
+	return(entry->fts_statb.st_gid == plan->g_data);
 }
  
 PLAN *
@@ -405,7 +409,7 @@ f_inum(plan, entry)
 	PLAN *plan;
 	FTSENT *entry;
 {
-	COMPARE(entry->statb.st_ino, plan->i_data);
+	COMPARE(entry->fts_statb.st_ino, plan->i_data);
 }
  
 PLAN *
@@ -430,7 +434,7 @@ f_links(plan, entry)
 	PLAN *plan;
 	FTSENT *entry;
 {
-	COMPARE(entry->statb.st_nlink, plan->l_data);
+	COMPARE(entry->fts_statb.st_nlink, plan->l_data);
 }
  
 PLAN *
@@ -456,8 +460,8 @@ f_ls(plan, entry)
 	PLAN *plan;
 	FTSENT *entry;
 {
-	printlong(entry->path, entry->accpath, &entry->statb);
-	return(FIND_TRUE);
+	printlong(entry->fts_path, entry->fts_accpath, &entry->fts_statb);
+	return(1);
 }
  
 PLAN *
@@ -482,8 +486,7 @@ f_name(plan, entry)
 	PLAN *plan;
 	FTSENT *entry;
 {
-	return(fnmatch(plan->c_data, entry->name, FNM_QUOTE) ?
-	    FIND_TRUE : FIND_FALSE);
+	return(fnmatch(plan->c_data, entry->fts_name, FNM_QUOTE));
 }
  
 PLAN *
@@ -508,7 +511,7 @@ f_newer(plan, entry)
 	PLAN *plan;
 	FTSENT *entry;
 {
-	return(entry->statb.st_mtime > plan->t_data ? FIND_TRUE : FIND_FALSE);
+	return(entry->fts_statb.st_mtime > plan->t_data);
 }
  
 PLAN *
@@ -541,7 +544,7 @@ f_nogroup(plan, entry)
 	PLAN *plan;
 	FTSENT *entry;
 {
-	return(group_from_gid(entry->statb.st_gid, 1) ? FIND_FALSE : FIND_TRUE);
+	return(group_from_gid(entry->fts_statb.st_gid, 1));
 }
  
 PLAN *
@@ -566,7 +569,7 @@ f_nouser(plan, entry)
 	PLAN *plan;
 	FTSENT *entry;
 {
-	return(user_from_uid(entry->statb.st_uid, 1) ? FIND_FALSE : FIND_TRUE);
+	return(user_from_uid(entry->fts_statb.st_uid, 1));
 }
  
 PLAN *
@@ -593,7 +596,7 @@ f_perm(plan, entry)
 {
 	mode_t mode;
 
-	mode = entry->statb.st_mode &
+	mode = entry->fts_statb.st_mode &
 	    (S_ISUID|S_ISGID|S_ISTXT|S_IRWXU|S_IRWXG|S_IRWXO);
 	if (plan->flags)
 		return((plan->m_data | mode) == mode);
@@ -635,8 +638,8 @@ f_print(plan, entry)
 	PLAN *plan;
 	FTSENT *entry;
 {
-	(void)printf("%s\n", entry->path);
-	return(FIND_TRUE);
+	(void)printf("%s\n", entry->fts_path);
+	return(1);
 }
  
 PLAN *
@@ -664,10 +667,10 @@ f_prune(plan, entry)
 
 	if (ftsset(tree, entry, FTS_SKIP)) {
 		(void)fprintf(stderr,
-		    "find: %s: %s.\n", entry->path, strerror(errno));
+		    "find: %s: %s.\n", entry->fts_path, strerror(errno));
 		exit(1);
 	}
-	return(FIND_TRUE);
+	return(1);
 }
  
 PLAN *
@@ -695,9 +698,8 @@ f_size(plan, entry)
 {
 	off_t size;
 
-	size = divsize ?
-	    (entry->statb.st_size + FIND_SIZE - 1) / FIND_SIZE :
-	    entry->statb.st_size;
+	size = divsize ? (entry->fts_statb.st_size + FIND_SIZE - 1) /
+	    FIND_SIZE : entry->fts_statb.st_size;
 	COMPARE(size, plan->o_data);
 }
  
@@ -728,7 +730,7 @@ f_type(plan, entry)
 	PLAN *plan;
 	FTSENT *entry;
 {
-	return(entry->statb.st_mode & plan->m_data ? FIND_TRUE : FIND_FALSE);
+	return(entry->fts_statb.st_mode & plan->m_data);
 }
  
 PLAN *
@@ -782,7 +784,7 @@ f_user(plan, entry)
 	PLAN *plan;
 	FTSENT *entry;
 {
-	return(entry->statb.st_uid == plan->u_data ? FIND_TRUE : FIND_FALSE);
+	return(entry->fts_statb.st_uid == plan->u_data);
 }
  
 PLAN *
@@ -881,8 +883,8 @@ f_mtime(plan, entry)
 {
 	extern time_t now;
 
-	COMPARE((now - entry->statb.st_mtime + SECSPERDAY - 1) / SECSPERDAY,
-	    plan->t_data);
+	COMPARE((now - entry->fts_statb.st_mtime + SECSPERDAY - 1) /
+	    SECSPERDAY, plan->t_data);
 }
  
 PLAN *
@@ -941,7 +943,7 @@ f_or(plan, entry)
 	    p && (state = (p->eval)(p, entry)); p = p->next);
 
 	if (state)
-		return(FIND_TRUE);
+		return(1);
 
 	for (p = plan->p_data[1];
 	    p && (state = (p->eval)(p, entry)); p = p->next);
