@@ -1,6 +1,16 @@
+/*
+ * Copyright (c) 1985 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ * Includes material written at Cornell University by Bill Nesheim,
+ * by permission of the author.
+ */
+
+
 #ifndef lint
-static char sccsid[] = "@(#)trace.c	4.6 (Berkeley) 4/9/84";
-#endif
+static char sccsid[] = "@(#)trace.c	5.4 (Berkeley) %G%";
+#endif not lint
 
 /*
  * Routing Table Management Daemon
