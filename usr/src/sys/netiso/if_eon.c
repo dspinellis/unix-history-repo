@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_eon.c	7.20 (Berkeley) %G%
+ *	@(#)if_eon.c	7.21 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -91,7 +91,6 @@ int						eonioctl();
 int						eonattach();
 int						eoninit();
 void						eonrtrequest();
-extern 	int				ip_output();
 struct ifnet			eonif[1];
 
 eonprotoinit() {
@@ -406,7 +405,7 @@ send:
 		dump_buf(ei, sizeof(struct eon_iphdr));
 	ENDDEBUG
 
-	error = ip_output(m, (struct mbuf *)0, ro, 0);
+	error = ip_output(m, (struct mbuf *)0, ro, 0, NULL);
 	m = 0;
 	if (error) {
 		ifp->if_oerrors++;
