@@ -1,4 +1,4 @@
-/*	@(#)if_hdh.c	6.4 (Berkeley) %G% */
+/*	@(#)if_hdh.c	6.5 (Berkeley) %G% */
 
 
 /************************************************************************\
@@ -532,7 +532,7 @@ int unit;
 		if (lcn > HDHSUPW)
 			hdh_data(unit, lcn, cc, cnt);
 		else
-			hdh_supr(unit, lcn, cc, cnt);
+			hdh_supr(unit, lcn, cc);
 
 	}
 
@@ -587,8 +587,8 @@ int unit, lcn, cc, rcnt;
 /*
  * supervisor channel interrupt completion handler
  */
-hdh_supr(unit, lcn, cc, rcnt)
-int unit, lcn, cc, rcnt;
+hdh_supr(unit, lcn, cc)
+int unit, lcn, cc;
 {
 	register struct hdh_softc *sc = &hdh_softc[unit];
 	register struct hdh_chan *hc = &sc->hdh_chan[lcn];
