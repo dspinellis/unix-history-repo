@@ -1,0 +1,5 @@
+#!/bin/sh
+echo Searching for People matching  \"$1\" under: 
+showname $2 
+echo "" 
+search -filter "cn~=$1 | cn=\*$1\*" -type telephonenumber -show -subtree $2

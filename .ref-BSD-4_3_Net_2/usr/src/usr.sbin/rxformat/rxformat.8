@@ -1,0 +1,102 @@
+.\" Copyright (c) 1983, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. All advertising materials mentioning features or use of this software
+.\"    must display the following acknowledgement:
+.\"	This product includes software developed by the University of
+.\"	California, Berkeley and its contributors.
+.\" 4. Neither the name of the University nor the names of its contributors
+.\"    may be used to endorse or promote products derived from this software
+.\"    without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\"     @(#)rxformat.8	6.6 (Berkeley) 3/16/91
+.\"
+.Dd March 16, 1991
+.Dt RXFORMAT 8
+.Os BSD 4.2
+.Sh NAME
+.Nm rxformat
+.Nd format floppy disks
+.Sh SYNOPSIS
+.Nm rxformat
+.Op Fl d
+.Ar special
+.Sh DESCRIPTION
+The
+.Nm rxformat
+program formats a diskette in the specified drive
+associated with the special device
+.Ar special .
+.Pf ( Ar Special
+is normally
+.Pa /dev/rx0 ,
+for drive 0, or
+.Pa /dev/rx1 ,
+for drive 1.)
+.Pp
+Available option:
+.Bl -tag -width Ds
+.It Fl d
+Force double density formatting.
+By default, the diskette is formatted single density;
+Single density is compatible 
+with the
+.Tn IBM
+3740 standard (128 bytes/sector). 
+In double density, each sector
+contains 256 bytes of data.
+.El
+.Pp
+Before formatting a diskette
+.Nm rxformat
+prompts for verification if standard input is a tty
+(this allows a user to cleanly
+abort the operation; note that
+formatting a diskette will destroy any existing data).
+Formatting is done by the hardware.
+All sectors are zero-filled.
+.Sh DIAGNOSTICS
+.Bl -tag -width Ds
+.It Sy \&No such device
+means that the drive is not ready, 
+usually because no disk is in the drive or the drive door is open.
+Other error messages are selfexplanatory.
+.El
+.Sh FILES
+.Bl -tag -width /dev/rx? -compact
+.It Pa /dev/rx?
+.El
+.Sh SEE ALSO
+.Xr rx 4
+.Sh AUTHOR
+Helge Skrivervik
+.Sh BUGS
+A floppy may not be formatted if the
+header info on sector 1, track 0 has been damaged.  Hence, it is not
+possible to format a completely degaussed disk. 
+(This is actually a problem in the DEC hardware.)
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 4.2 .

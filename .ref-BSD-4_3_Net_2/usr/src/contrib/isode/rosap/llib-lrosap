@@ -1,0 +1,230 @@
+/* llib-lrosap - lint library for -lrosap */
+
+/* 
+ * $Header: /f/osi/rosap/RCS/llib-lrosap,v 7.1 91/02/22 09:41:08 mrose Interim $
+ *
+ *
+ * Based on an TCP-based implementation by George Michaelson of University
+ * College London.
+ *
+ * $Log:	llib-lrosap,v $
+ * Revision 7.1  91/02/22  09:41:08  mrose
+ * Interim 6.8
+ * 
+ * Revision 7.0  89/11/23  22:21:12  mrose
+ * Release 6.0
+ * 
+ */
+
+/*
+ *				  NOTICE
+ *
+ *    Acquisition, use, and distribution of this module and related
+ *    materials are subject to the restrictions of a license agreement.
+ *    Consult the Preface in the User's Manual for the full terms of
+ *    this agreement.
+ *
+ */
+
+
+/* LINTLIBRARY */
+
+#include "rosap.h"
+
+/*  */
+
+/* SERVER only */
+
+int	RoExec (ss, roi, arg1, arg2, hook, setperms)
+struct SSAPstart *ss;
+char   *arg1,
+       *arg2;
+struct RoSAPindication *roi;
+IFP	hook,
+	setperms;
+{
+    return RoExec (ss, roi, arg1, arg2, hook, setperms);
+}
+
+/* RO-BEGIN.INDICATION */
+
+int	RoInit (vecp, vec, ros, roi)
+int	vecp;
+char  **vec;
+struct RoSAPstart *ros;
+struct RoSAPindication *roi;
+{
+    return RoInit (vecp, vec, ros, roi);
+}
+
+/* RO-BEGIN.RESPONSE */
+
+int	RoBeginResponse (sd, status, data, roi)
+int	sd;
+int	status;
+PE	data;
+struct RoSAPindication *roi;
+{
+    return RoBeginResponse (sd, status, data, roi);
+}
+
+/* RO-BEGIN.REQUEST */
+
+int	RoBeginRequest (called, data, roc, roi)
+struct	RoSAPaddr *called;
+PE	data;
+struct RoSAPconnect *roc;
+struct RoSAPindication *roi;
+{
+    return RoBeginRequest (called, data, roc, roi);
+}
+
+/* RO-INVOKE.REQUEST */
+
+int	RoInvokeRequest (sd, op, class, args, invokeID, linkedID, priority, roi)
+int	sd;
+int	op,
+	class,
+	invokeID,
+       *linkedID,
+	priority;
+PE	args;
+struct RoSAPindication *roi;
+{
+    return RoInvokeRequest (sd, op, class, args, invokeID, linkedID, priority,
+		roi);
+}
+
+/* RO-RESULT.REQUEST */
+
+int	RoResultRequest (sd, invokeID, op, result, priority, roi)
+int	sd;
+int	invokeID,
+	op,
+	priority;
+PE	result;
+struct RoSAPindication *roi;
+{
+    return RoResultRequest (sd, invokeID, op, result, priority, roi);
+}
+
+/* RO-ERROR.REQUEST */
+
+int	RoErrorRequest (sd, invokeID, error, params, priority, roi)
+int	sd;
+int	invokeID,
+	error,
+	priority;
+PE	params;
+struct RoSAPindication *roi;
+{
+    return RoErrorRequest (sd, invokeID, error, params, priority, roi);
+}
+
+/* RO-U-REJECT.REQUEST */
+
+int	RoURejectRequest (sd, invokeID, reason, priority, roi)
+int	sd;
+int    *invokeID,
+	reason,
+	priority;
+struct RoSAPindication *roi;
+{
+    return RoURejectRequest (sd, invokeID, reason, priority, roi);
+}
+
+/* RO-INVOKE.REQUEST (interruptable) */
+
+int	RoIntrRequest (sd, op, args, invokeID, linkedID, priority, roi)
+int	sd;
+int	op,
+	invokeID,
+       *linkedID,
+	priority;
+PE	args;
+struct RoSAPindication *roi;
+{
+    return RoIntrRequest (sd, op, args, invokeID, linkedID, priority, roi);
+}
+
+/* RO-WAIT.REQUEST (pseudo) */
+
+int	RoWaitRequest (sd, secs, roi)
+int	sd;
+int	secs;
+struct RoSAPindication *roi;
+{
+    return RoWaitRequest (sd, secs, roi);
+}
+
+/* RO-END.REQUEST */
+
+int	RoEndRequest (sd, priority, roi)
+int	sd;
+int	priority;
+struct RoSAPindication *roi;
+{
+    return RoEndRequest (sd, priority, roi);
+}
+
+/* RO-END.RESPONSE */
+
+int	RoEndResponse (sd, roi)
+int	sd;
+struct RoSAPindication *roi;
+{
+    return RoEndResponse (sd, roi);
+}
+
+
+/* define vectors for INDICATION events */
+
+int	RoSetIndications (sd, indication, roi)
+int	sd;
+IFP	indication;
+struct RoSAPindication *roi;
+{
+    return RoSetIndications (sd, indication, roi);
+}
+
+
+/* map association descriptors for select() */
+
+int	RoSelectMask (sd, mask, nfds, roi)
+int	sd;
+fd_set *mask;
+int    *nfds;
+struct RoSAPindication *roi;
+{
+    return RoSelectMask (sd, mask, nfds, roi);
+}
+
+
+/* bind underlying service */
+
+int	RoSetService (sd, bfunc, roi)
+int	sd;
+IFP	bfunc;
+struct RoSAPindication *roi;
+{
+    return RoSetService (sd, bfunc, roi);
+}
+
+
+/* modify underyling service */
+
+int	RoSetThorn (sd, roi)
+int	sd;
+struct RoSAPindication *roi;
+{
+    return RoSetThorn (sd, roi);
+}
+
+
+/* return RoSAP error code in string form */
+
+char   *RoErrString (c)
+int	c;
+{
+    return RoErrString (c);
+}

@@ -1,0 +1,22 @@
+###############################################################################
+#
+# $Header: /f/osi/support/RCS/macros.db,v 7.1 91/02/22 09:46:52 mrose Interim $
+#
+#
+# $Log:	macros.db,v $
+# Revision 7.1  91/02/22  09:46:52  mrose
+# Interim 6.8
+# 
+# Revision 7.0  89/11/23  22:27:41  mrose
+# Release 6.0
+# 
+###############################################################################
+
+
+# US GOSIP v2 Addresses
+
+us	NS+47000580
+nsfnet  us=ffff00
+psinet	us=fffc00
+
+

@@ -1,0 +1,1245 @@
+-- appletalk.my - Appletalk MIB
+
+-- $Header: /f/osi/snmp/RCS/appletalk.my,v 7.3 91/02/22 09:42:49 mrose Interim $
+--
+-- 
+-- $Log:	appletalk.my,v $
+-- Revision 7.3  91/02/22  09:42:49  mrose
+-- Interim 6.8
+-- 
+-- Revision 7.2  91/01/11  13:02:16  mrose
+-- update
+-- 
+-- Revision 7.1  90/11/04  19:16:26  mrose
+-- update
+-- 
+-- Revision 7.0  90/09/26  21:19:29  mrose
+-- *** empty log message ***
+-- 
+
+--
+--				  NOTICE
+--
+--    Acquisition, use, and distribution of this module and related
+--    materials are subject to the restrictions of a license agreement.
+--    Consult the Preface in the User's Manual for the full terms of
+--    this agreement.
+--
+--
+
+
+          RFCxxxx-MIB DEFINITIONS ::= BEGIN
+
+          IMPORTS
+                  experimental, OBJECT-TYPE, Counter, IpAddress
+                          FROM RFC1155-SMI
+                  DisplayString
+                      FROM RFC1158-MIB
+                  OBJECT-TYPE
+                          FROM RFC-oooo;
+
+          --  This MIB module uses the extended OBJECT-TYPE macro as
+          --  defined in [9]
+
+
+          --  AppleTalk MIB
+
+                  appletalk    OBJECT IDENTIFIER ::= { experimental 17 }
+
+
+
+                  DdpAddress ::=  -- 2 octets of net number
+                                  -- 1 octet of node number
+                          OCTET STRING (SIZE (3))
+                  -- This data type is used for encoding a DDP protocol
+                  -- address.  The format of this address is a serial
+                  -- encoding of the two octets of network number in network
+                  -- byte order, followed by the 1 octet node number.
+
+                  llap     OBJECT IDENTIFIER ::= { appletalk 1 }
+                  aarp     OBJECT IDENTIFIER ::= { appletalk 2 }
+                  atport   OBJECT IDENTIFIER ::= { appletalk 3 }
+                  ddp      OBJECT IDENTIFIER ::= { appletalk 4 }
+                  rtmp     OBJECT IDENTIFIER ::= { appletalk 5 }
+                  kip      OBJECT IDENTIFIER ::= { appletalk 6 }
+                  zip      OBJECT IDENTIFIER ::= { appletalk 7 }
+                  nbp      OBJECT IDENTIFIER ::= { appletalk 8 }
+                  atecho   OBJECT IDENTIFIER ::= { appletalk 9 }
+
+          -- The LLAP Group
+
+
+
+
+
+
+
+
+          llapTable OBJECT-TYPE
+                  SYNTAX SEQUENCE OF LlapEntry
+                  ACCESS not-accessible
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The list of LLAP entries."
+                  ::= { llap 1 }
+
+          llapEntry OBJECT-TYPE
+                  SYNTAX LlapEntry
+                  ACCESS not-accessible
+                  STATUS mandatory
+                  DESCRIPTION
+                      "An LLAP entry containing objects for the LocalTalk Link
+                      Access Protocol for a particular LocalTalk interface."
+                  INDEX { llapIfIndex }
+                  ::= { llapTable 1 }
+
+          LlapEntry ::= SEQUENCE {
+                  llapIfIndex             INTEGER,
+                  llapInPkts              Counter,
+                  llapOutPkts             Counter,
+                  llapInNoHandlers        Counter,
+                  llapInLengthErrors      Counter,
+                  llapInBads              Counter,
+                  llapCollisions          Counter,
+                  llapDefers              Counter,
+                  llapNoDataErrors        Counter,
+                  llapRandomCTSErrors     Counter,
+                  llapCRCErrors           Counter
+          }
+
+          llapIfIndex OBJECT-TYPE
+                  SYNTAX INTEGER
+                  ACCESS read-only
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The ifIndex that identifies the interface to which this
+                      entry pertains"
+                  ::= { llapEntry 1 }
+
+          llapInPkts OBJECT-TYPE
+                  SYNTAX Counter
+                  ACCESS read-only
+                  STATUS mandatory
+
+
+
+
+
+
+
+                  DESCRIPTION
+                      "The total number of good packets received on this
+                      LocalTalk interface."
+                  ::= { llapEntry 2 }
+
+          llapOutPkts OBJECT-TYPE
+                  SYNTAX Counter
+                  ACCESS read-only
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The total number of packets transmitted on this
+                      LocalTalk interface."
+                  ::= { llapEntry 3 }
+
+          llapInNoHandlers OBJECT-TYPE
+                  SYNTAX Counter
+                  ACCESS read-only
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The total number of good packets received on this
+                      LocalTalk interface for which there was no protocol
+                      handler."
+                  ::= { llapEntry 4 }
+
+          llapInLengthErrors OBJECT-TYPE
+                  SYNTAX Counter
+                  ACCESS read-only
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The total number of packets received on this LocalTalk
+                      interface whose actual length did not match the length
+                      in the header."
+                  ::= { llapEntry 5 }
+
+          llapInBads OBJECT-TYPE
+                  SYNTAX Counter
+                  ACCESS read-only
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The total number of packets containing errors received
+                      on this LocalTalk interface."
+                  ::= { llapEntry 6 }
+
+          llapCollisions OBJECT-TYPE
+                  SYNTAX Counter
+
+
+
+
+
+
+
+                  ACCESS read-only
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The total number of collisions assumed on this
+                      LocalTalk interface due to the lack of a lapCTS reply."
+                  ::= { llapEntry 7 }
+
+          llapDefers OBJECT-TYPE
+                  SYNTAX Counter
+                  ACCESS read-only
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The total number of times this LocalTalk interface
+                      deferred to other packets."
+                  ::= { llapEntry 8 }
+
+          llapNoDataErrors OBJECT-TYPE
+                  SYNTAX Counter
+                  ACCESS read-only
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The total number of times this LocalTalk interface
+                      received a lapRTS packet and expected a data packet,
+                      but did not receive any data packet."
+                  ::= { llapEntry 9 }
+
+          llapRandomCTSErrors OBJECT-TYPE
+                  SYNTAX Counter
+                  ACCESS read-only
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The total number of times this LocalTalk interface
+                      received a lapCTS packet that was not solicited by a
+                      lapRTS packet."
+                  ::= { llapEntry 10 }
+
+          llapFCSErrors OBJECT-TYPE
+                  SYNTAX Counter
+                  ACCESS read-only
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The total number of times this LocalTalk interface
+                      received a packet with an FCS (Frame Check Sequence)
+                      error."
+                  ::= { llapEntry 11 }
+
+
+
+
+
+
+
+          -- The AARP Group
+
+          aarpTable OBJECT-TYPE
+                  SYNTAX SEQUENCE OF AarpEntry
+                  ACCESS not-accessible
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The AppleTalk Address Translation Table contains an
+                      equivalence of AppleTalk Network Addresses to the link
+                      layer physical address."
+                  ::= { aarp 1 }
+
+          aarpEntry OBJECT-TYPE
+                  SYNTAX AarpEntry
+                  ACCESS not-accessible
+                  STATUS mandatory
+                  DESCRIPTION
+                      "Each entry contains one AppleTalk Network Address to
+                      physical address equivalence."
+                  INDEX { aarpIfIndex, aarpNetAddress }
+                  ::= { aarpTable 1 }
+
+          AarpEntry ::= SEQUENCE {
+                  aarpIfIndex     INTEGER,
+                  aarpPhysAddress OCTET STRING,
+                  aarpNetAddress  DdpAddress
+          }
+
+          aarpIfIndex OBJECT-TYPE
+                  SYNTAX INTEGER
+                  ACCESS read-only
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The interface on which this entry's equivalence is
+                      effective.  The interface identified by a particular
+                      value of this index is the same interface as identified
+                      by the same value of ifIndex."
+                  ::= { aarpEntry 1 }
+
+          aarpPhysAddress OBJECT-TYPE
+                  SYNTAX OCTET STRING
+                  ACCESS read-only
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The media-dependent physical address"
+
+
+
+
+
+
+
+                  ::= { aarpEntry 2 }
+
+          aarpNetAddress OBJECT-TYPE
+                  SYNTAX DdpAddress
+                  ACCESS read-only
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The AppleTalk Network Address corresponding to the
+                      media-dependent physical address."
+                  ::= { aarpEntry 3 }
+
+          -- The ATPort Group
+
+          atportTable OBJECT-TYPE
+                  SYNTAX SEQUENCE OF AtportEntry
+                  ACCESS not-accessible
+                  STATUS mandatory
+                  DESCRIPTION
+                      "A list of AppleTalk ports for this entity."
+                  ::= { atport 1 }
+
+          atportEntry OBJECT-TYPE
+                  SYNTAX AtportEntry
+                  ACCESS not-accessible
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The description of one of the AppleTalk
+                      ports on this entity."
+                  INDEX { atportIndex }
+                  ::= { atportTable 1 }
+
+          AtportEntry ::= SEQUENCE {
+                  atportIndex               INTEGER,
+                  atportDescr               DisplayString,
+                  atportType                INTEGER,
+                  atportNetStart            OCTET STRING (SIZE(2)),
+                  atportNetEnd              OCTET STRING (SIZE(2)),
+                  atportNetAddress          DdpAddress,
+                  atportStatus              INTEGER,
+                  atportNetConfig           INTEGER,
+                  atportZoneConfig          INTEGER,
+                  atportZone                OCTET STRING,
+                  atportIfIndex             INTEGER
+          }
+
+
+
+
+
+
+
+
+          atportIndex OBJECT-TYPE
+                  SYNTAX INTEGER
+                  ACCESS read-only
+                  STATUS mandatory
+                  DESCRIPTION
+                      "A unique value for each AppleTalk port.
+                      Its value is between 1 and the total number of
+                      AppleTalk ports.  The value for each port must
+                      remain constant at least from the re-initialization of
+                      the entity's network management system to the next
+                      re-initialization."
+                  ::= { atportEntry 1 }
+
+          atportDescr OBJECT-TYPE
+                  SYNTAX DisplayString
+                  ACCESS read-only
+                  STATUS mandatory
+                  DESCRIPTION
+                      "A text string containing information about the
+                      port.  This string is intended for presentation
+                      to a human; it must not contain anything but printable
+                      ASCII characters."
+                  ::= { atportEntry 2 }
+
+          atportType OBJECT-TYPE
+                  SYNTAX INTEGER {
+                       other(1),       -- none of the following
+                       localtalk(2),
+                       ethertalk1(3),
+                       ethertalk2(4),
+                       tokentalk(5),
+                       iptalk(6),
+                       serial-ppp(7),
+                       serial-nonstandard(8)
+                  }
+                  ACCESS read-only
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The type of port, distinguished by the protocol
+                      immediately below DDP in the protocol stack."
+                  ::= { atportEntry 3 }
+
+          atportNetStart OBJECT-TYPE
+                  SYNTAX OCTET STRING (SIZE(2))
+                  ACCESS read-write
+
+
+
+
+
+
+
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The first AppleTalk network address in the range
+                      configured for this port.  This is a two octet
+                      DDP network address in network byte order."
+                  ::= { atportEntry 4 }
+
+          atportNetEnd OBJECT-TYPE
+                  SYNTAX OCTET STRING (SIZE(2))
+                  ACCESS read-write
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The last AppleTalk network address in the range
+                      configured for this port.  This is a two octet
+                      DDP network address in network byte order.  If the
+                      network to which this AppleTalk port is
+                      connected is a Phase 1 network, the value for
+                      atportNetEnd shall be two octets of zero."
+                  ::= { atportEntry 5 }
+
+          atportNetAddress OBJECT-TYPE
+                  SYNTAX DdpAddress
+                  ACCESS read-write
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The AppleTalk network address configured for this
+                      port."
+                  ::= { atportEntry 6 }
+
+          atportStatus OBJECT-TYPE
+                  SYNTAX INTEGER {
+                       operational(1),
+                       unconfigured(2),
+                       off(3),
+                       invalid(4)
+                  }
+                  ACCESS read-write
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The configuration status of this port.
+
+                      Setting this object to the value invalid(4) has the
+                      effect of invalidating the corresponding entry in the
+                      atportTable.  That is, it effectively disassociates the
+                      mapping identified with said entry.  It is an
+
+
+
+
+
+
+
+                      implementation-specific matter as to whether the agent
+                      removes an invalidated entry from the table.
+                      Accordingly, management stations must be prepared to
+                      receive from agents tabular information corresponding
+                      to entries not currently in use.  Proper
+                      interpretation of such entries requires examination
+                      of the relevant atportStatus object."
+                          ::= { atportEntry 7 }
+
+          atportNetConfig OBJECT-TYPE
+                  SYNTAX INTEGER {
+                      configured(1),  -- explicit configuration.
+                      garnered(2),    -- assumed from inspection of net.
+                      guessed(3),     -- a "random" configuration.
+                      unconfigured(4)
+                  }
+                  ACCESS read-only
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The configuration status of this port."
+                  ::= { atportEntry 8 }
+
+          atportZoneConfig OBJECT-TYPE
+                  SYNTAX INTEGER {
+                      configured(1),  -- explicit configuration
+                      garnered(2),    -- assumed from inspection of net.
+                      guessed(3),     -- a "random" configuration.
+                      unconfigured(4)
+                  }
+                  ACCESS read-only
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The configuration status of the zone information
+                      for this port."
+                  ::= { atportEntry 9 }
+
+          atportZone OBJECT-TYPE
+                  SYNTAX OCTET STRING
+                  ACCESS read-write
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The zone name configured for this AppleTalk port."
+                  ::= { atportEntry 10 }
+
+          atportIfIndex OBJECT-TYPE
+
+
+
+
+
+
+
+                  SYNTAX INTEGER
+                  ACCESS read-write
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The physical interface associated with this AppleTalk
+                      port.  The interface identified by a particular
+                      value of this index is the same interface as identified
+                      by the same value of ifIndex."
+                  ::= { atportEntry 11 }
+
+          -- The DDP Group
+
+          ddpOutRequests OBJECT-TYPE
+                  SYNTAX Counter
+                  ACCESS read-only
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The total number of DDP datagrams which were supplied
+                      to DDP in requests for transmission."
+                  ::= { ddp 1 }
+
+          ddpOutShorts OBJECT-TYPE
+                  SYNTAX Counter
+                  ACCESS read-only
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The total number of short DDP datagrams which were
+                      transmitted from this entity."
+                  ::= { ddp 2 }
+
+          ddpOutLongs OBJECT-TYPE
+                  SYNTAX Counter
+                  ACCESS read-only
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The total number of long DDP datagrams which were
+                      transmitted from this entity."
+                  ::= { ddp 3 }
+
+          ddpInReceives OBJECT-TYPE
+                  SYNTAX Counter
+                  ACCESS read-only
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The total number of input datagrams received by DDP,
+
+
+
+
+
+
+
+                      including those received in error."
+                  ::= { ddp 4 }
+
+          ddpForwRequests OBJECT-TYPE
+                  SYNTAX Counter
+                  ACCESS read-only
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The number of input datagrams for which this entity was
+                      not their final DDP destination, as a result of which an
+                      attempt was made to find a route to forward them to that
+                      final destination."
+                  ::= { ddp 5 }
+
+          ddpForwDatagrams OBJECT-TYPE
+                  SYNTAX Counter
+                  ACCESS read-only
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The number of input datagrams for which this entity was
+                      not their final DDP destination and a route to their
+                      final destination was found, as a result of which
+                      they were forwarded to their final destination."
+                  ::= { ddp 6 }
+
+          ddpInLocalDatagrams OBJECT-TYPE
+                  SYNTAX Counter
+                  ACCESS read-only
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The total number of input DDP datagrams for which this
+                      entity was their final DDP destination."
+                  ::= { ddp 7 }
+
+          ddpNoProtocolHandlers OBJECT-TYPE
+                  SYNTAX Counter
+                  ACCESS read-only
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The total number of DDP datagrams addressed to this
+                      entity that were addressed to an upper layer protocol
+                      for which no protocol handler existed."
+                  ::= { ddp 8 }
+
+          ddpOutNoRoutes OBJECT-TYPE
+
+
+
+
+
+
+
+                  SYNTAX Counter
+                  ACCESS read-only
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The total number of DDP datagrams dropped because a
+                      route could not be found to their final destination."
+                  ::= { ddp 9 }
+
+          ddpTooShortErrors OBJECT-TYPE
+                  SYNTAX Counter
+                  ACCESS read-only
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The total number of input DDP datagrams dropped because
+                      the received data length was less than the data length
+                      in the DDP header."
+                  ::= { ddp 10 }
+
+          ddpTooLongErrors OBJECT-TYPE
+                  SYNTAX Counter
+                  ACCESS read-only
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The total number of input DDP datagrams dropped because
+                      they exceeded the maximum DDP datagram size or because
+                      their header size was greater than the received length."
+                  ::= { ddp 11 }
+
+          ddpBroadcastErrors OBJECT-TYPE
+                  SYNTAX Counter
+                  ACCESS read-only
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The total number of input DDP datagrams dropped because
+                      this entity was not their final destination and they
+                      were addressed to the link level broadcast."
+                  ::= { ddp 12 }
+
+          ddpShortDDPErrors OBJECT-TYPE
+                  SYNTAX Counter
+                  ACCESS read-only
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The total number of input DDP datagrams dropped because
+                      this entity was not their final destination and their
+
+
+
+
+
+
+
+                      type was short DDP."
+                  ::= { ddp 13 }
+
+          ddpHopCountErrors OBJECT-TYPE
+                  SYNTAX Counter
+                  ACCESS read-only
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The total number of input DDP datagrams dropped because
+                      this entity was not their final destination and their
+                      hop count would exceed 15."
+                  ::= { ddp 14 }
+
+          ddpChecksumErrors OBJECT-TYPE
+                  SYNTAX Counter
+                  ACCESS read-only
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The total number of input DDP datagrams dropped because
+                       of a checksum error."
+                  ::= { ddp 15 }
+
+          -- The RTMP Group
+
+          rtmpTable OBJECT-TYPE
+                  SYNTAX SEQUENCE OF RtmpEntry
+                  ACCESS not-accessible
+                  STATUS mandatory
+                  DESCRIPTION
+                      "A list of Routing Table Maintenance Protocol entries for
+                      this entity."
+                  ::= { rtmp 1 }
+
+          rtmpEntry OBJECT-TYPE
+                  SYNTAX RtmpEntry
+                  ACCESS not-accessible
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The route entry to a particular network range."
+                  INDEX { rtmpRangeStart }
+                  ::= { rtmpTable 1 }
+
+          RtmpEntry ::= SEQUENCE {
+                  rtmpRangeStart  OCTET STRING (SIZE(2)),
+                  rtmpRangeEnd    OCTET STRING (SIZE(2)),
+
+
+
+
+
+
+
+                  rtmpNextHop     OCTET STRING,
+                  rtmpType        INTEGER,
+                  rtmpPort        INTEGER,
+                  rtmpHops        INTEGER,
+                  rtmpState       INTEGER
+          }
+
+          rtmpRangeStart OBJECT-TYPE
+                  SYNTAX OCTET STRING (SIZE(2))
+                  ACCESS read-write
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The first DDP network address in the network range
+                      to which this routing entry pertains.  This is a two
+                      octet DDP network address in network byte order."
+                  ::= { rtmpEntry 1 }
+
+          rtmpRangeEnd OBJECT-TYPE
+                  SYNTAX OCTET STRING (SIZE(2))
+                  ACCESS read-write
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The last DDP network address in the network range
+                      to which this routing entry pertains.  This is a two
+                      octet DDP network address in network byte order.  If
+                      the network to which this routing entry pertains is a
+                      Phase 1 network, the value for rtmpRangeEnd shall be
+                      two octets of zero."
+                  ::= { rtmpEntry 2 }
+
+          rtmpNextHop OBJECT-TYPE
+                  SYNTAX OCTET STRING
+                  ACCESS read-write
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The next hop in the route to this entry's destination
+                      network.  If the type of this route is Appletalk, this
+                      address takes the same form as DDPAddress."
+                  ::= { rtmpEntry 3 }
+
+          rtmpType OBJECT-TYPE
+                  SYNTAX INTEGER {
+                          other(1),
+                          appletalk(2),
+                          serial-ppp(3),
+
+
+
+
+
+
+
+                          serial-nonstandard(4)
+                  }
+                  ACCESS read-write
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The type of network over which this route points."
+                  ::= { rtmpEntry 4 }
+
+          rtmpPort OBJECT-TYPE
+                  SYNTAX INTEGER
+                  ACCESS read-write
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The index of the AppleTalk port over which
+                      this route points."
+                  ::= { rtmpEntry 5 }
+
+          rtmpHops OBJECT-TYPE
+                  SYNTAX INTEGER
+                  ACCESS read-write
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The number of hops required to reach the destination
+                      networks to which this routing entry pertains."
+                  ::= { rtmpEntry 6 }
+
+          rtmpState OBJECT-TYPE
+                  SYNTAX INTEGER {
+                      good(1),
+                      suspect(2),
+                      goingBad(3), -- ???
+                      bad(4) -- may be removed from table
+                  }
+                  ACCESS read-write
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The status of the information contained in this route
+                      entry.
+
+                      Setting this object to the value bad(4) has the
+                      effect of invalidating the corresponding entry in the
+                      rtmpTable.  That is, it  effectively disassociates the
+                      mapping identified with said entry.  It is an
+                      implementation-specific matter as to whether the agent
+                      removes an invalidated entry from the table.
+
+
+
+
+
+
+
+                      Accordingly, management stations must be prepared to
+                      receive from agents tabular information corresponding
+                      to entries not currently in use.  Proper
+                      interpretation of such entries requires examination
+                      of the relevant rtmpState object."
+                  ::= { rtmpEntry 7 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+          -- The KIP Group
+
+          kipTable OBJECT-TYPE
+                  SYNTAX SEQUENCE OF KipEntry
+                  ACCESS not-accessible
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The table of routing information for KIP networks."
+                  ::= { kip 1 }
+
+          kipEntry OBJECT-TYPE
+                  SYNTAX KipEntry
+                  ACCESS not-accessible
+                  STATUS mandatory
+                  DESCRIPTION
+                      "An entry in the routing table for KIP networks."
+                  INDEX { kipNetStart }
+                  ::= { kipTable 1 }
+
+          KipEntry ::= SEQUENCE {
+                  kipNetStart     OCTET STRING (SIZE(2)),
+                  kipNetEnd       OCTET STRING (SIZE(2)),
+                  kipNextHop      IpAddress,
+                  kipHopCount     INTEGER,
+                  kipBCastAddr    IpAddress,
+                  kipCore         INTEGER,
+                  kipType         INTEGER,
+                  kipState        INTEGER,
+                  kipShare        INTEGER
+	}
+
+          kipNetStart OBJECT-TYPE
+                  SYNTAX OCTET STRING (SIZE(2))
+                  ACCESS read-write
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The first AppleTalk network address in the range for
+                      this routing entry.  This address is a two octet DDP
+                      network address in network byte order."
+                  ::= { kipEntry 1 }
+
+          kipNetEnd OBJECT-TYPE
+                  SYNTAX OCTET STRING (SIZE(2))
+                  ACCESS read-write
+                  STATUS mandatory
+                  DESCRIPTION
+
+
+
+
+
+
+
+                      "The last AppleTalk network address in the range for
+                      this routing entry.  This address is a two octet DDP
+                      network address in network byte order.  If the network
+                      to which this AppleTalk port is connected
+                      is a Phase 1 network, the value for kipNetEnd shall be
+                      two octets of zero."
+                  ::= { kipEntry 2 }
+
+          kipNextHop OBJECT-TYPE
+                  SYNTAX IpAddress
+                  ACCESS read-write
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The IP address of the next hop in the route to this
+                      entry's destination network."
+                  ::= { kipEntry 3 }
+
+          kipHopCount OBJECT-TYPE
+                  SYNTAX INTEGER
+                  ACCESS read-write
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The number of hops required to reach the destination
+                      network to which this entry pertains."
+                  ::= { kipEntry 4 }
+
+          kipBCastAddr OBJECT-TYPE
+                  SYNTAX IpAddress
+                  ACCESS read-write
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The form of the IP address used to broadcast on this
+                      network."
+                  ::= { kipEntry 5 }
+
+          kipCore OBJECT-TYPE
+                  SYNTAX INTEGER {
+                       core(1),
+                       notcore(2)
+                  }
+                  ACCESS read-write
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The status of this network as a Kip Core network."
+                  ::= { kipEntry 6 }
+
+
+
+
+
+
+
+          kipType OBJECT-TYPE
+                  SYNTAX INTEGER {
+                       kipRouter(1),
+                       net(2),
+                       host(3),
+                       other(4)
+                  }
+                  ACCESS read-write
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The type of the entity that this route points to."
+                  ::= { kipEntry 7 }
+
+          kipState OBJECT-TYPE
+                  SYNTAX INTEGER {
+                       configured(1),
+                       learned(2),
+                       invalid(3)
+                  }
+                  ACCESS read-write
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The state of this network entry.
+
+                      Setting this object to the value invalid(3) has the
+                      effect of invalidating the corresponding entry in the
+                      kipTable.  That is, it  effectively disassociates the
+                      mapping identified with said entry.  It is an
+                      implementation-specific matter as to whether the agent
+                      removes an invalidated entry from the table.
+                      Accordingly, management stations must be prepared to
+                      receive from agents tabular information corresponding
+                      to entries not currently in use.  Proper
+                      interpretation of such entries requires examination
+                      of the relevant kipState object."
+                  ::= { kipEntry 8 }
+
+          kipShare OBJECT-TYPE
+                  SYNTAX INTEGER {
+                       shared(1),
+                       private(2)
+                  }
+                  ACCESS read-write
+                  STATUS mandatory
+                  DESCRIPTION
+
+
+
+
+
+
+
+                      "If the information in this entry is propagated to other
+                       routers as part of a routing protocol the value of this
+                       variable is equal to shared(1).  Otherwise its value is
+                       private(2)."
+                  ::= { kipEntry 9 }
+
+          -- The ZIP Group
+
+          zipTable OBJECT-TYPE
+                  SYNTAX SEQUENCE OF ZipEntry
+                  ACCESS not-accessible
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The table of zone information for reachable AppleTalk
+                      networks."
+                  ::= { zip 1 }
+
+          zipEntry OBJECT-TYPE
+                  SYNTAX ZipEntry
+                  ACCESS not-accessible
+                  STATUS mandatory
+                  DESCRIPTION
+                      "An entry of zone information for a particular zone and
+                      network combination."
+                  INDEX { zipZoneNetStart, zipZoneIndex }
+                  ::= { zipTable 1 }
+
+          ZipEntry ::= SEQUENCE {
+                  zipZoneName     OCTET STRING,
+                  zipZoneIndex    INTEGER,
+                  zipZoneNetStart OCTET STRING (SIZE(2)),
+                  zipZoneNetEnd   OCTET STRING (SIZE(2)),
+                  zipZoneState    INTEGER
+          }
+
+          zipZoneName OBJECT-TYPE
+                  SYNTAX OCTET STRING
+                  ACCESS read-write
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The ASCII zone name of this entry."
+                  ::= { zipEntry 1 }
+
+          zipZoneIndex OBJECT-TYPE
+                  SYNTAX INTEGER
+
+
+
+
+
+
+
+                  ACCESS read-only
+                  STATUS mandatory
+                  DESCRIPTION
+                      "An integer that is unique to the zipZoneName that is
+                      present in this entry.  For any given zone name, every
+                      zipEntry that has an equal zone name will have the same
+                      zipZoneIndex."
+                  ::= { zipEntry 2 }
+
+          zipZoneNetStart OBJECT-TYPE
+                  SYNTAX OCTET STRING (SIZE(2))
+                  ACCESS read-write
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The network that starts the range for this entry.  This
+                      address is a two octet DDP network address in network
+                      byte order."
+                  ::= { zipEntry 3 }
+
+          zipZoneNetEnd OBJECT-TYPE
+                  SYNTAX OCTET STRING (SIZE(2))
+                  ACCESS read-write
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The network that ends the range for this entry.  This
+                      address is a two octet DDP network address in network
+                      byte order.  If the network to which this zip entry
+                      pertains is a Phase 1 network, the value for
+                      zipZoneNetEnd shall be two bytes of zero."
+                  ::= { zipEntry 4 }
+
+          zipZoneState OBJECT-TYPE
+                  SYNTAX INTEGER {
+                          valid(1),
+                          invalid(2)
+                  }
+                  ACCESS read-write
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The state of this zip entry.
+
+                      Setting this object to the value invalid(2) has the
+                      effect of invalidating the corresponding entry in the
+                      zipTable.  That is, it  effectively disassociates the
+                      mapping identified with said entry.  It is an
+
+
+
+
+
+
+
+                      implementation-specific matter as to whether the agent
+                      removes an invalidated entry from the table.
+                      Accordingly, management stations must be prepared to
+                      receive from agents tabular information corresponding
+                      to entries not currently in use.  Proper
+                      interpretation of such entries requires examination
+                      of the relevant zipZoneState object."
+                  ::= { zipEntry 5 }
+
+          -- The NBP Group
+
+          nbpTable OBJECT-TYPE
+                  SYNTAX SEQUENCE OF NbpEntry
+                  ACCESS not-accessible
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The table of NBP services registered on this entity."
+                  ::= { nbp 1 }
+
+          nbpEntry OBJECT-TYPE
+                  SYNTAX NbpEntry
+                  ACCESS not-accessible
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The description of an NBP service registered on this
+                      entity."
+                  INDEX { nbpIndex }
+                  ::= { nbpTable  1 }
+
+           NbpEntry ::= SEQUENCE {
+                  nbpIndex        INTEGER,
+                  nbpObject       OCTET STRING,
+                  nbpType         OCTET STRING,
+                  nbpZone         OCTET STRING,
+                  nbpState        INTEGER
+           }
+
+          nbpIndex OBJECT-TYPE
+                  SYNTAX INTEGER
+                  ACCESS read-only
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The index of this NBP entry.  This value ranges from 1
+                      to the number of NBP entries currently registered on
+                      this entity."
+
+
+
+
+
+
+
+                  ::= { nbpEntry 1 }
+
+          nbpObject OBJECT-TYPE
+                  SYNTAX OCTET STRING
+                  ACCESS read-write
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The name of the service described by this entity."
+                  ::= { nbpEntry 2 }
+
+          nbpType OBJECT-TYPE
+                  SYNTAX OCTET STRING
+                  ACCESS read-write
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The type of the service described by this entity."
+                  ::= { nbpEntry 3 }
+
+          nbpZone OBJECT-TYPE
+                  SYNTAX OCTET STRING
+                  ACCESS read-write
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The zone the service described by this entity is
+                      registered in."
+                  ::= { nbpEntry 4 }
+
+          nbpState OBJECT-TYPE
+                  SYNTAX INTEGER {
+                          valid(1),
+                          invalid(2)
+                  }
+                  ACCESS read-write
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The state of this NBP entry.
+
+                      Setting this object to the value invalid(2) has the
+                      effect of invalidating the corresponding entry in the
+                      nbpTable.  That is, it  effectively disassociates the
+                      mapping identified with said entry.  It is an
+                      implementation-specific matter as to whether the agent
+                      removes an invalidated entry from the table.
+                      Accordingly, management stations must be prepared to
+                      receive from agents tabular information corresponding
+
+
+
+
+
+
+
+                      to entries not currently in use.  Proper
+                      interpretation of such entries requires examination
+                      of the relevant nbpState object."
+                  ::= { nbpEntry 5 }
+
+          -- The ATEcho Group
+
+          atechoRequests OBJECT-TYPE
+                  SYNTAX Counter
+                  ACCESS read-only
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The number of AppleTalk echo requests received."
+                  ::= { atecho 1 }
+
+          atechoReplies OBJECT-TYPE
+                  SYNTAX Counter
+                  ACCESS read-only
+                  STATUS mandatory
+                  DESCRIPTION
+                      "The number of AppleTalk echo replies sent."
+                  ::= { atecho 2 }
+          END

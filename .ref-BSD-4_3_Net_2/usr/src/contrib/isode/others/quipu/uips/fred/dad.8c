@@ -1,0 +1,56 @@
+.TH DAD 8C "11 Dec 1990"
+.\" $Header: /f/osi/others/quipu/uips/fred/RCS/dad.8c,v 7.2 91/02/22 09:30:34 mrose Interim $
+.\"
+.\"
+.\" $Log:	dad.8c,v $
+.\" Revision 7.2  91/02/22  09:30:34  mrose
+.\" Interim 6.8
+.\" 
+.\" Revision 7.1  90/12/19  09:17:03  mrose
+.\" touch-up
+.\" 
+.\" Revision 7.0  90/12/12  00:22:35  mrose
+.\" *** empty log message ***
+.\" 
+.SH NAME
+dad \- directory assistance server
+.SH SYNOPSIS
+.in +.5i
+.ti -.5i
+.B \*(SDdad
+\%[\-d]
+\%[\-p\0portno]
+.in -.5i
+(under /etc/rc.local)
+.SH DESCRIPTION
+The \fIdad\fR program implements a lightweight interface to the OSI
+Directory Service,
+termed the \*(lqdirectory assistance\*(rq protocol
+(it helps other programs use the Directory,
+it doesn't directly help people find things using the Directory).
+.SH "DEBUG OPERATION"
+If \fIdad\fR is started interactively,
+or if the `\-d' switch is given,
+then debug mode is entered.
+In this case,
+all logging activity is displayed on the user's terminal,
+the logging information is more verbose,
+and \fIdad\fR will terminate after it handles the first incoming connection
+(this allows \fIdad\fR to be run under a debugger).
+.SH FILES
+.nf
+.ta \w'\*(EDdsaptailor  'u
+\*(EDdsaptailor	system QUIPU tailoring file
+\*(EDfredrc	system runcom file
+.re
+.fi
+.SH "SEE ALSO"
+dish(1c),
+.br
+\fIDirectory Assistance Service\fR
+.SH DIAGNOSTICS
+All obvious.
+.SH AUTHOR
+Marshall T. Rose,
+Performance Systens International
+

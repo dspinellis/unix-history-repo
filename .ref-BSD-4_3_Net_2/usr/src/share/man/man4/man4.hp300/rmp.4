@@ -1,0 +1,162 @@
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the Systems Programming Group of the University of Utah Computer
+.\" Science Department.
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. All advertising materials mentioning features or use of this software
+.\"    must display the following acknowledgement:
+.\"	This product includes software developed by the University of
+.\"	California, Berkeley and its contributors.
+.\" 4. Neither the name of the University nor the names of its contributors
+.\"    may be used to endorse or promote products derived from this software
+.\"    without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\"     @(#)rmp.4	5.2 (Berkeley) 3/27/91
+.\"
+.Dd March 27, 1991
+.Dt RMP 4 hp300
+.Os
+.Sh NAME
+.Nm rmp
+.Nd
+.Tn HP
+Remote Maintenance Protocol Family
+.Sh SYNOPSIS
+.Cd "options RMP"
+.Fd #include <sys/types.h>
+.Fd #include <sys/socket.h>
+.Fd #include <netrmp/rmp.h>
+.Fd #include <netrmp/rmp_var.h>
+.Ft int
+.Fn socket AF_RMP SOCK_RAW proto
+.Sh DESCRIPTION
+Hewlett-Packard's Remote Maintenance Protocol family is a collection
+of protocols layered atop
+.Tn IEEE  802.3 .
+The current implementation of the RMP family provides protocol support only
+for the
+.Dv SOCK_RAW
+socket type.
+As a result,
+.Xr sendto 2
+and
+.Xr recvfrom 2
+must be used to send and
+receive
+.Tn RMP
+packets.
+.Pp
+The format of an
+.Tn RMP
+packet is defined in the include file
+.Aq Pa netrmp/rmp_var.h .
+The
+.Tn RMP
+packet arrives encapsulated in an
+.Pf ( Tn HP
+extended)
+.Tn IEEE  802.2
+packet.
+The
+.Tn IEEE  802.2
+packet
+is preceded by the kernel address of an
+.Ar ifnet struct
+which is used to `route' a packet out the same interface it
+arrived on.
+Outgoing packets are encapsulated in a standard
+.Tn IEEE  802.3
+packet, while incoming packets have this information stripped away.
+.Sh ADDRESSING
+.Tn RMP
+.Pf ( Tn IEEE
+802.3) addresses are 6 octets in length (48 bytes).
+Sockets in the Remote Maintenance Protocol family use the following
+addressing structure:
+.Bd -literal -offset indent
+struct sockaddr_rmp {
+	short		srmp_family;
+	u_char		srmp_dhost[6];
+};
+.Ed
+.Sh PROTOCOLS
+The
+.Tn RMP
+protocol family supported by the operating system
+is currently comprised of the Boot Protocol
+.Pq Em proto= Ns Dv RMPPROTO_BOOT .
+Unfortunately, we have no documentation on the Remote Maintenance
+Protocol and only sketchy information about the Boot Protocol.
+.Sh SEE ALSO
+.Xr socket 2 ,
+.Xr bind 2 ,
+.Xr sendto 2 ,
+.Xr recvfrom 2 ,
+.Xr intro 4 ,
+.Xr rbootd 8
+.Rs
+.%T "An Advanced 4.3 BSD Interprocess Communication Tutorial"
+.Re
+.Sh HISTORY
+The
+.Nm
+protocol interface
+.Ud
+.Sh BUGS
+.Bl -bullet
+.It
+The
+.Tn HP ROM
+uses
+.Tn IEEE
+802.3 (as opposed to Ethernet) packets.  While the
+kernel heuristically recognizes these packets, a more general mechanism
+for doing so should be provided.
+.It
+The
+.Tn HP ROM
+uses a multicast address when first trying to locate boot
+servers.  While the Ethernet [sic] board is programmed to recognize
+this particular multicast address (9:0:9:0:0:4), a more general
+mechanism for doing so should be provided.
+.It
+The kernel supports only
+.Tn RAW
+sockets for the
+.Tn RMP
+protocol.
+This is either a bug or a feature, since the kernel is smaller at the
+price of greater complexity in the server.
+.It
+There is no support for
+.Xr bind Ns 'ing
+an address in the
+.Tn RMP
+domain.
+Something like an
+.Dv RMPADDR_ANY
+should be provided to prevent more than one
+.Xr rbootd
+server from running at the same time.
+.El

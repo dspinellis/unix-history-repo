@@ -1,0 +1,1257 @@
+.ta 5n 10n 15n 20n 25n 30n 35n 40n 45n 50n 55n 60n
+.if n .po 1.25i
+.if t .po 1.0i
+.hy 14
+.de hd
+'sp 3
+'if \\n%-1 'tl ''- % -''
+'sp 2
+.if \\n(vq>0 .xj
+.nr vq 0
+'ns
+..
+.de fo
+.nr vk 0
+.nr dn 0
+.nr wf \\n(.pu-\\n(nlu-\\n(vmu-1v
+.if \\n(vs>0 .if \\n(wf>0 .xn
+.if \\n(vs>0 .if \\n(wf<=0 .xo
+.ch fo -\\n(vmu
+.nr vs 0
+.nr vo \\n(vmu
+'bp
+..
+.de fe
+.br
+.di
+.ev
+.if \\n(vs=1 .nr dn +1v
+.nr vo +\\n(dnu
+.nr dn 0
+.if \\n(vou>=\\n(.pu-\\n(nlu-.5v .nr vo \\n(.pu-\\n(nlu-.5v
+.if \\n(vou<\\n(vmu .nr vo \\n(vmu
+.ch fo -\\n(vou
+..
+.de xj
+.nr vs 1
+.nr vn 1
+.di
+.ev 1
+.da zb
+.ns
+.za
+.zc
+.fe
+.rm za
+.rm zc
+..
+.de xn
+.ev 1
+'in 0
+'ti 0
+.ie \\n(vn \l\|6.0i\(ru\|
+.el \l\|15\(ru\|
+.nr vn 0
+.br
+.ns
+.zb
+.br
+.di
+.rm zb
+.nr vq \\n(dnu
+.nr dn 0
+.nr vs 0
+.ev
+..
+.de xo
+.ev 1
+.di zc
+.zb
+.br
+.di
+.rm zb
+.nr vq \\n(dnu
+.nr dn 0
+.nr vs 0
+.nr vn 1
+.ev
+..
+.de xp
+.di za
+..
+.nr vm 6v
+.nr vo \n(vmu
+.wh 0 hd
+.wh -1.0i fo
+.ch fo 15i
+.wh -\n(vmu xp
+.ch fo -\n(vmu
+.if n .ll 6.5i
+.if t .ll 6.0i
+.if n .lt 6.5i
+.if t .lt 6.0i
+.ev 1
+.if n .ll 6.5i
+.if t .ll 6.0i
+.if n .lt 6.5i
+.if t .lt 6.0i
+.ev
+.nr ap 1
+.af ap A
+.sp 6
+.ps +2
+.ce
+\fBAn Introduction to Pdx\fP
+.ps -2
+.sp 1
+.ce
+\fIMark Linton\fR
+.sp 1
+.ce
+September 27, 1981
+.sp 1
+.br
+.nr wg 2v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ne 6
+\fBIntroduction\fP
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ti +5n
+\fIPdx\fP is a tool for debugging Pascal programs
+that are translated by the Berkeley Pascal translator \fIpi\fP
+[Joy, Graham, and Haley 80].
+This tutorial introduces \fIpdx\fP and the basic ways that it can be used.
+For a complete reference, consult the \fIpdx\fP manual page.
+.br
+.nr wg 2v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ne 6
+\fBGetting Started\fP
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ti +5n
+Suppose the program we are working on is in a file called ``prog.p''.
+Before using \fIpdx\fP, we must translate it with \fIpi\fP.
+\fIPdx\fP cannot be used if \fIpi\fP reports any errors during translation.
+To enter \fIpdx\fP, we type the following: (in examples,
+the user types is in boldface, what \fIpdx\fP prints
+is in normal type).
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in +8n
+.nf
+.ne 5
+% \fBpdx\fP
+>
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in -8n
+.fi
+The ``>'' is a prompt from \fIpdx\fP.
+Like the shell or editor, \fIpdx\fP prints the prompt when it
+is waiting for a command.
+.br
+.nr wg 2v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ne 6
+\fBRunning the Program\fP
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ti +5n
+Once in \fIpdx\fP, we can begin executing our program
+by typing the command ``run''.
+Programs don't usually work the first time;
+with one of two things happening:
+.if n .nr In 5
+.if t .nr In 8
+.in +\n(Inn
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ti -5n
+\h'1n'1.\h'2n'\c
+The program tries to do something that isn't
+allowed in Pascal, such as dividing by 0.
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ti -5n
+\h'1n'2.\h'2n'\c
+The program runs but produces incorrect results.
+.in -\n(Inn
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+Let's consider the first case.
+Suppose ``prog.p'' contains the declarations
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in +8n
+.nf
+.ne 5
+var
+	sum, count : integer;
+	avg : real;
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in -8n
+.fi
+and the statement
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in +8n
+.nf
+.ne 5
+	avg := sum / count;
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in -8n
+.fi
+at line 15.
+Suppose further that when the program is run
+``count'' has the value 0.
+Running under \fIpdx\fP, the following would be printed:
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in +8n
+.nf
+.ne 5
+> \fBrun\fP
+.sp 1
+error at line 15:  real divide by zero
+      15	avg := sum / count;
+>
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in -8n
+.fi
+.br
+.nr wg 2v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ne 6
+\fBPrinting Out Variables\fP
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ti +5n
+When a program stops because of an execution error,
+\fIpdx\fP prints the error and the line in the program where
+the error occurred.
+We can then examine the program's ``state'', that is,
+print out the values of any variables that might be
+of interest.
+In the above example, we might want to know the value
+of \fIsum\fP, so we say
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in +8n
+.nf
+.ne 5
+> \fBprint sum\fP
+5
+>
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in -8n
+.fi
+The print command can be given any number of Pascal expressions
+separated by commas.
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ne 3
+.ti +5n
+We can print the values of all variables by using
+the ``dump'' command.
+Continuing our example, we might get
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in +8n
+.nf
+.ne 5
+> \fBdump\fP
+sum = 5
+count = 0
+avg = 0.0
+>
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in -8n
+.fi
+Frequently there are many variables active
+so that we want to print the list of a file for perusal.
+This is done by saying
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in +8n
+.nf
+.ne 5
+> \fBdump > out\fP
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in -8n
+.fi
+where ``out'' is the name of file which does not exist.
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ne 3
+.ti +5n
+There are two other commands useful for printing information
+about variables.
+The command ``whatis'' prints out the declaration of a variable.
+Using the above example,
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in +8n
+.nf
+.ne 5
+> \fBwhatis\fP sum
+var sum : integer;
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in -8n
+.fi
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ne 3
+.ti +5n
+It is possible for a program to have the same name given
+to two or more different variables when they are local to
+different procedures.
+\fIPi\fP distinguishes the variables according to which procedure
+it is looking at;
+however, when debugging it is possible that both procedures
+are active (for example, one procedure could call the other).
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ne 3
+.ti +5n
+\fIPdx\fP normally allows printing of any variable declared within
+the most recently called procedure or any variables accessible
+to this procedure.
+A variable in an active procedure that is not normally accessible
+can be printed by preceding its name with the procedure it is in
+and a ``.''.
+It can sometimes become difficult to remember the variable
+that a given name is currently associated with.
+The ``which'' command is useful in resolving this confusion.
+It prints the variable name along with the procedure that it is contained in.
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ne 3
+.ti +5n
+Usually we want to know not only what the values of variables
+are, but how the program got to where it is.
+The ``where'' command lists the procedures that were called
+for the program to reach its current point.
+It might print, for example,
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in +8n
+.nf
+.ne 5
+> \fBwhere\fP
+LastCalled(parameters), line 15
+OneBeforeThat(parameters), line 30
+MainProgram, line 45
+>
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in -8n
+.fi
+.br
+.nr wg 2v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ne 6
+\fBExecution Tracing\fP
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ti +5n
+Now let's look at the possibility that our program doesn't
+get an execution error but doesn't produce the correct results.
+To figure out what and where something is going wrong, we
+wish to ``watch'' execution information more closely.
+The \fBtrace\fP command in \fIpdx\fP allows us to do this.
+There are five classes of information that
+we can watch:
+.if n .nr In 5
+.if t .nr In 8
+.in +\n(Inn
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ti -3n
+-\h'2n'\c
+The execution of a particular source line.
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ti -3n
+-\h'2n'\c
+A call to a particular procedure or function.
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ti -3n
+-\h'2n'\c
+The value of an expression at a particular source line.
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ti -3n
+-\h'2n'\c
+The value of a variable whenever it changes; and the
+line at which it changes.
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ti -3n
+-\h'2n'\c
+The execution of all source lines.
+.in -\n(Inn
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+It should be noted that the last two kinds of information
+are expensive to obtain and will cause your program to run
+much more slowly than normal.
+They should be used sparingly.
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ne 3
+.ti +5n
+These forms of tracing can be combined and there is no
+limit to the number of things you can trace at any given time.
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ne 3
+.ti +5n
+To trace the execution of a particular source line,
+type
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in +8n
+.nf
+.ne 5
+> \fBtrace\fP \fIline-number\fP
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in -8n
+.fi
+The next time the \fBrun\fP command is given
+\fIpdx\fP will execute the program, printing the specified line
+each time it is about to be executed.
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ne 3
+.ti +5n
+To trace every call to a procedure,
+type
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in +8n
+.nf
+.ne 5
+> \fBtrace\fP \fIprocedure-name\fP
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in -8n
+.fi
+For each call to the named procedure during execution,
+\fIpdx\fP will print the name of the procedure, the procedure
+and line it was called from, and what parameters (if any) it was called with.
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ne 3
+.ti +5n
+To see the value of an expression at a particular line,
+type
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in +8n
+.nf
+.ne 5
+> \fBtrace\fP \fIexpression\fP \fBat\fP \fIsource-line-number\fP
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in -8n
+.fi
+To see whenever the value of a variable is changed,
+we type
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in +8n
+.nf
+.ne 5
+> \fBtrace\fP \fIvariable\fP
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in -8n
+.fi
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ne 3
+.ti +5n
+Finally, to have each source line printed
+as it's about to be executed, we simply say
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in +8n
+.nf
+.ne 5
+\fBtrace\fP
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in -8n
+.fi
+After issuing a trace command, \fIpdx\fP
+displays all currently active traces.
+Each command is identified with a number in parentheses.
+To turn off a trace,
+give the command
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in +8n
+.nf
+.ne 5
+> \fBdelete\fP \fIcommand-number\fP
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in -8n
+.fi
+Tracing information will be printed every time the program is run until
+it is explicitly turned off by giving the \fBdelete\fP command.
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ne 3
+.ti +5n
+To display the information that you are currently tracing, say
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in +8n
+.nf
+.ne 5
+> \fBstatus\fP
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in -8n
+.fi
+.br
+.nr wg 2v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ne 6
+\fBStopping and Continuing\fP
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ti +5n
+Sometimes, when debugging, we want to stop our program,
+look at some data, and then continue execution.
+The \fBstop\fP command allows the suspension of execution.
+To continue execution from where it was suspended,
+the \fBcont\fP command is used.
+There are four ways to describe when execution should be stopped:
+.in +5n
+.if n .nr In 5
+.if t .nr In 8
+.in +\n(Inn
+.ta \n(Inn
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ti -\n(Inn
+\&\fBstop\fP \fBif\fP \fIcondition\fP
+.br
+\c
+Execution is stopped if the specified condition becomes true.
+The condition can be any Pascal boolean expression.
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ti -\n(Inn
+\&\fBstop\fP \fBat\fP \fIsource-line-number\fP
+.br
+\c
+Execution is stopped when the \fIline\fP is about to executed.
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ti -\n(Inn
+\&\fBstop\fP \fBin\fP \fIprocedure\fP
+.br
+\c
+Execution is stopped when the \fIprocedure\fP is called.
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ti -\n(Inn
+\&\fBstop\fP \fIvariable\fP
+.br
+\c
+Execution is stopped when the \fIvariable\fP is about to be changed.
+.in -\n(Inn
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in -5n
+Execution is also stopped by an interrupt, i.e.
+by typing the RUB or DEL key.
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ne 3
+.ti +5n
+Execution can be momentarily continued by the commands \fBnext\fP
+and \fBstep\fP.
+The \fBnext\fP command stops after one source line has been executed.
+The \fBstep\fP command stops at the next source line to be executed.
+These are only different when the current source line
+contains a call to a procedure or function.
+\fBStep\fP will stop at the beginning of the subprogram, \fBnext\fP will not.
+As in tracing, stops are set until explicitly unset
+with the \fBdelete\fP command.
+.br
+.nr wg 2v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ne 6
+\fBSource Program Manipulation\fP
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ti +5n
+\fIPdx\fP allows you to view your program during debugging.
+For example, to print lines 10 to 20 from ``prog.p'', you would type
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in +8n
+.nf
+.ne 5
+> \fBlist\fP 10,20
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in -8n
+.fi
+If you actually wish to change your program, or look at it
+in a more sophisticated manner, the command
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in +8n
+.nf
+.ne 5
+> \fBedit\fP
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in -8n
+.fi
+will invoke the editor on your program.
+You can also say
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in +8n
+.nf
+.ne 5
+> \fBedit\fP \fIprocedure\fP
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in -8n
+.fi
+and \fIpdx\fP will invoke the editor on your program
+and position the current line on the first line of
+the \fIprocedure\fP.
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ne 3
+.ti +5n
+If you change your program and wish to start debugging the
+new version, you should give the command
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in +8n
+.nf
+.ne 5
+> \fBpi\fP
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in -8n
+.fi
+This command runs \fIpi\fP on your program, and automatically
+reads in the new information that \fIpdx\fP needs from the new \fIobj\fP file.
+.br
+.nr wg 2v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ne 6
+\fBCommand Aliasing\fP
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ti +5n
+The \fBalias\fP command is used to create a new name for a command.
+This is especially useful for saving typing by defining
+abbreviations as aliases.
+For example, if you gave the command
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in +8n
+.nf
+.ne 5
+> \fBalias\fP r run
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.in -8n
+.fi
+then you could use ``r'' to run your program.
+.br
+.nr wg 2v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ne 6
+\fBWhere to go from here\fP
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ti +5n
+If you feel comfortable what we've discussed here,
+you're ready to read the \fIpdx\fP manual page.
+It contains a complete, but brief, description of the
+commands discussed here along with some other commands that you
+might find useful.
+.br
+.nr wg 2v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ne 6
+\fBReferences\fP
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ti +5n
+.ti -5n
+.if n .nr In 5
+.if t .nr In 8
+.in +\n(Inn
+.ta \n(Inn
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h
+.ti -\n(Inn
+\&[Joy, Graham and Haley 80]
+.br
+\c
+Joy, W., Graham, S., and Haley, C.,
+``Berkeley Pascal User's Manual'',
+version 2.0, EECS Dept., Univ. of Calif. at Berkeley, October 1980.
+.in -\n(Inn
+.br
+.nr wg 1v
+.ie \n(.h=\n(vk .nr wg -\n(vhu
+.el .nr vh 0
+.if \n(wg>0 \{\
+.sp \n(wgu
+.nr vh +\n(wgu \}
+.nr vk \n(.h

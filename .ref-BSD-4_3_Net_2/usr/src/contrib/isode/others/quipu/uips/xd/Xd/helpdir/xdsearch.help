@@ -1,0 +1,41 @@
+ Xd - Search
+
+ The `Search' function will look for a given entry
+ associated  with the  real  world  object that 
+ matches the value shown in the Search For 
+ dialogue box.  This object must be of the type 
+ shown in the `Type' field, and the given value 
+ must describe some aspect of this target object.
+
+ Values are entered by pointing the mouse at 
+ the dialogue box next to the `Search' button 
+ and typing in a string. 
+
+ The contents of the `Type' field can be changed 
+ by clicking on the `Type' button and then 
+ selecting the desired type from the resulting 
+ pop-up menu.  The contents of the `Type' will 
+ not normally have to be set as `Xd' should 
+ automatically set this to what seems the most 
+ obvious and sensible type for the current 
+ directory position. Currently defined types are
+ `Person',  `Place',  `Organization'  and 
+ `Department'.
+
+ As an example, suppose you wish to search for
+ the entry of `Polonius Plum', a person, of 
+ Brunel University, then a possible search 
+ strategy would be as follows:
+	
+   i) Move to a suitable directory position, in
+      this case `Brunel University'.
+
+  ii) Make sure that the correct `Type' has been 
+      selected. For this example the correct type
+      would be `Person'.
+
+ iii) Enter a suitable value, this might simply be
+      `Polo' or `Plum', then click on `Search' or
+      simply press <Return> whilst in the Search
+      For field.
+

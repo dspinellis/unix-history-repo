@@ -1,0 +1,39 @@
+.TH RTF 1C "02 Nov 1988"
+.\" $Header: /f/osi/others/rtf/RCS/rtf.1c,v 7.1 91/02/22 09:34:15 mrose Interim $
+.\"
+.\"
+.\" $Log:	rtf.1c,v $
+.\" Revision 7.1  91/02/22  09:34:15  mrose
+.\" Interim 6.8
+.\" 
+.\" Revision 7.0  89/11/23  22:10:45  mrose
+.\" Release 6.0
+.\" 
+.SH NAME
+rtf \- RT-file transfer utility -- initiator
+.SH SYNOPSIS
+.in +.5i
+.ti -.5i
+.B rtf
+\%[\-l\0username]
+host
+\%[get\0|\0put]
+source
+destination
+.in -.5i
+.SH DESCRIPTION
+This is a simple program which uses the new upcall facilities in RTS.
+Think of this program as the TFTP of OSI.
+Use \fIftam\fR\0(1c) instead.
+.SH FILES
+.nf
+.ta \w'\*(EDisoservices  'u
+\*(EDisoentities	ISODE entities database
+\*(EDisobjects	ISODE objects database
+\*(EDisoservices	ISODE services database
+.re
+.fi
+.SH DIAGNOSTICS
+Obvious.
+.SH AUTHOR
+Marshall T. Rose

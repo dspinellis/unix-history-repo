@@ -1,0 +1,187 @@
+###############################################################################
+#
+# oidtable.at - OSI Directory OID Table for Attributes
+#
+# $Header: /f/osi/dsap/RCS/oidtable.at,v 7.3 91/03/09 11:53:42 mrose Exp $
+#
+#
+# $Log:	oidtable.at,v $
+# Revision 7.3  91/03/09  11:53:42  mrose
+# update
+# 
+# Revision 7.2  91/02/22  09:17:50  mrose
+# Interim 6.8
+# 
+# Revision 7.1  90/10/17  11:40:36  mrose
+# sync
+# 
+# Revision 7.0  89/11/23  21:39:13  mrose
+# Release 6.0
+# 
+###############################################################################
+
+
+# format:-
+#
+# name:                         oid            :syntax
+#
+
+# CCITT X.520/ISO 9594-6 defined attribute types
+
+objectClass:                    attributeType.0         :ObjectClass
+aliasedObjectName:              attributeType.1         :DN
+knowledgeInformation:           attributeType.2         :CaseIgnoreString
+commonName,cn:			attributeType.3         :CaseIgnoreString
+surname,sn:                     attributeType.4         :CaseIgnoreString
+serialNumber:                   attributeType.5         :PrintableString
+countryName,c:			attributeType.6         :CountryString
+localityName,l:			attributeType.7         :CaseIgnoreString
+stateOrProvinceName,st:         attributeType.8         :CaseIgnoreString
+streetAddress:                  attributeType.9         :CaseIgnoreString
+organizationName,o:		attributeType.10        :CaseIgnoreString
+organizationalUnitName,ou:	attributeType.11        :CaseIgnoreString
+title:                          attributeType.12        :CaseIgnoreString
+description:                    attributeType.13        :CaseIgnoreString
+searchGuide:                    attributeType.14        :Guide
+businessCategory:               attributeType.15        :CaseIgnoreString
+postalAddress:                  attributeType.16        :PostalAddress
+postalCode:                     attributeType.17        :CaseIgnoreString
+postOfficeBox:                  attributeType.18        :CaseIgnoreString
+physicalDeliveryOfficeName:     attributeType.19        :CaseIgnoreString
+telephoneNumber:		attributeType.20        :TelephoneNumber
+telexNumber:                    attributeType.21        :TelexNumber
+teletexTerminalIdentifier:      attributeType.22        :TeletexTerminalIdentifier
+facsimileTelephoneNumber:       attributeType.23        :FacsimileTelephoneNumber
+x121Address:                    attributeType.24        :NumericString
+internationaliSDNNumber:        attributeType.25        :NumericString
+registeredAddress:              attributeType.26        :PostalAddress
+destinationIndicator:           attributeType.27        :DestinationString
+preferredDeliveryMethod:        attributeType.28        :DeliveryMethod
+presentationAddress:            attributeType.29        :PresentationAddress
+supportedApplicationContext:    attributeType.30        :OID
+member:                         attributeType.31        :DN
+owner:                          attributeType.32        :DN
+roleOccupant:                   attributeType.33        :DN
+seeAlso:                        attributeType.34        :DN
+userPassword:                   attributeType.35        :Password
+userCertificate:                attributeType.36        :Certificate
+cACertificate:                  attributeType.37        :Certificate
+authorityRevocationList:        attributeType.38        :CertificateList
+certificateRevocationList:      attributeType.39        :CertificateList
+crossCertificatePair:		attributeType.40	:CertificatePair
+
+# THORN and RARE defined attributes
+
+userid,uid:                     thornAttributeType.1    :CaseIgnoreString
+textEncodedORaddress:           thornAttributeType.2    :CaseIgnoreString
+rfc822Mailbox,mail:             thornAttributeType.3    :CaseIgnoreIA5String
+info:                           thornAttributeType.4    :CaseIgnoreString
+favouriteDrink,drink:           thornAttributeType.5    :CaseIgnoreString
+roomNumber:                	thornAttributeType.6    :CaseIgnoreString
+photo:                          thornAttributeType.7    :Photo:file
+userClass:                      thornAttributeType.8    :CaseIgnoreString
+host:                           thornAttributeType.9    :CaseIgnoreString
+manager:                        thornAttributeType.10   :DN
+documentIdentifier:             thornAttributeType.11   :CaseIgnoreString
+documentTitle:                  thornAttributeType.12   :CaseIgnoreString
+documentVersion:                thornAttributeType.13   :CaseIgnoreString
+documentAuthor:                 thornAttributeType.14   :DN
+documentLocation:               thornAttributeType.15   :CaseIgnoreString
+durName:			thornAttributeType.16	:CaseIgnoreString
+wkdName:			thornAttributeType.17	:CaseIgnoreString
+protocolProfile:		thornAttributeType.18	:CaseIgnoreString
+objectID:			thornAttributeType.19	:CaseIgnoreString
+homePhone:			thornAttributeType.20	:TelephoneNumber
+secretary:			thornAttributeType.21	:DN
+otherMailbox:			thornAttributeType.22	:Mailbox
+lastModifiedTime:		thornAttributeType.23	:UTCTime
+lastModifiedBy:			thornAttributeType.24	:DN
+
+domainComponent:		thornAttributeType.25	:CaseIgnoreIA5String
+aRecord:			thornAttributeType.26	:IA5String
+mDRecord:			thornAttributeType.27	:IA5String
+mXRecord:			thornAttributeType.28	:IA5String
+nSRecord:			thornAttributeType.29	:IA5String
+sOARecord:			thornAttributeType.30	:IA5String
+cNAMERecord:			thornAttributeType.31	:IA5String
+nRSSystemDescription:		thornAttributeType.32	:VisibleString
+forwardOnlyInformation:		thornAttributeType.33	:nRSInformation
+reverseOnlyInformation:		thornAttributeType.34	:nRSInformation
+forwardAndReverseInformation:	thornAttributeType.35	:nRSInformation
+nRSTextualDescription:		thornAttributeType.36	:IA5String
+associatedDomain:		thornAttributeType.37	:IA5String
+associatedName:			thornAttributeType.38	:DN
+homePostalAddress:		thornAttributeType.39	:PostalAddress
+personalTitle:			thornAttributeType.40	:CaseIgnoreString
+
+thornACL:			thornSystemAttributeType.1	:ThornACL
+timeStamp:			thornSystemAttributeType.2	:UTCTime
+ruleDescription:		thornSystemAttributeType.3	:RDType
+objectDescription:		thornSystemAttributeType.4	:ODType
+attributeDescription:		thornSystemAttributeType.5	:ADType
+thornRule:			thornSystemAttributeType.6	:OID
+knowledgeReference:		thornSystemAttributeType.7	:KnowledgeReference
+
+# QUIPU defined attributes types
+
+treeStructure:                  quipuAttributeType.1    :Schema
+accessControlList,acl:          quipuAttributeType.2    :Acl
+eDBinfo:                        quipuAttributeType.3    :Edbinfo
+masterDSA:                      quipuAttributeType.4    :DN
+slaveDSA:                       quipuAttributeType.5    :DN
+friendlyCountryName,co:		quipuAttributeType.8	:CaseIgnoreString
+control:                        quipuAttributeType.15   :IA5String
+quipuVersion:                   quipuAttributeType.16   :IA5String
+protectedPassword:		quipuAttributeType.17	:ProtectedPassword
+entrySecurityPolicy:		quipuAttributeType.18	:SecurityPolicy
+dsaDefaultSecurityPolicy:	quipuAttributeType.19	:SecurityPolicy
+dsaPermittedSecurityPolicy:	quipuAttributeType.20	:SecurityPolicy
+inheritedAttribute,iattr:	quipuAttributeType.21	:InheritedAttribute
+execVector:			quipuAttributeType.22	:PrintableString
+relayDSA:			quipuAttributeType.23	:DN
+audio:				quipuAttributeType.24	:Audio:file
+subordinateReference:		quipuAttributeType.25	:AccessPoint
+crossReference:			quipuAttributeType.26	:AccessPoint
+nonSpecificSubordinateReference,NSSR:	quipuAttributeType.27 :AccessPoint
+listenAddress:			quipuAttributeType.28	:PresentationAddress
+cachedEDB:			quipuAttributeType.29	:DN
+
+# ISODE defined attributes types
+
+#	none defined yet...
+
+# PSI defined attribute types
+
+mobileTelephoneNumber,mobile:	psiAttributeType.1	:TelephoneNumber
+pagerTelephoneNumber,pager:	psiAttributeType.2	:TelephoneNumber
+obsoletesDocument:		psiAttributeType.3	:DN
+obsoletedByDocument:		psiAttributeType.4	:DN
+updatesDocument:		psiAttributeType.5	:DN
+updatedByDocument:		psiAttributeType.6	:DN
+keywords:			psiAttributeType.7	:CaseIgnoreString
+subject:			psiAttributeType.8	:CaseIgnoreString
+abstract:			psiAttributeType.9	:CaseIgnoreString
+documentStore:			psiAttributeType.10	:DocumentStoreSyntax
+documentAuthorCommonName,authorCN: psiAttributeType.11	:CaseIgnoreString
+documentAuthorSurName,authorSN:	psiAttributeType.12	:CaseIgnoreString
+
+# MHS defined attribute types
+
+mhsDeliverableContentLength:	mhsAttributeType.0	:Integer
+mhsDeliverableContentTypes:	mhsAttributeType.1	:OID
+mhsDeliverableEits:		mhsAttributeType.2	:OID
+mhsDLMembers:			mhsAttributeType.3	:ORName
+mhsDLSubmitPermissions:		mhsAttributeType.4	:DLSubmitPermission
+mhsMessageStoreName:		mhsAttributeType.5	:DN
+mhsORAddresses:			mhsAttributeType.6	:ORAddress
+mhsPreferredDeliveryMethods:	mhsAttributeType.7	:DeliveryMethod
+mhsSupportedAutomaticActions:	mhsAttributeType.8	:OID
+mhsSupportedContentTypes:	mhsAttributeType.9	:OID
+mhsSupportedOptionalAttributes:	mhsAttributeType.10	:OID
+
+# PP defined attribute types.
+
+dl-policy:                      ppAttributeType.3       :DlPolicy
+
+# end of attributes
+

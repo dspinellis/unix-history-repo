@@ -1,0 +1,24 @@
+Mrcp	rcp.c	/^main(argc, argv)$/
+SCREWUP	rcp.c	/^#define	SCREWUP(str)	{ why = str; goto screwup; }$/
+allocbuf	rcp.c	/^allocbuf(bp, fd, blksize)$/
+colon	rcp.c	/^colon(cp)$/
+error	rcp.c	/^error(fmt, a1, a2, a3)$/
+getnum	rcp.c	/^#define getnum(t) (t) = 0; while (isdigit(*cp)) (t/
+getport	../../usr.bin/rlogin/kcmd.c	/^getport(alport)$/
+kcmd	../../usr.bin/rlogin/kcmd.c	/^kcmd(sock, ahost, rport, locuser, remuser, cmd, fd/
+kerberos	rcp.c	/^kerberos(host, bp, locuser, user)$/
+krcmd	../../usr.bin/rlogin/krcmd.c	/^krcmd(ahost, rport, remuser, cmd, fd2p, realm)$/
+krcmd_mutual	../../usr.bin/rlogin/krcmd.c	/^krcmd_mutual(ahost, rport, remuser, cmd, fd2p, rea/
+lostconn	rcp.c	/^lostconn()$/
+nospace	rcp.c	/^nospace()$/
+okname	rcp.c	/^okname(cp0)$/
+old_warning	rcp.c	/^old_warning(str)$/
+response	rcp.c	/^response()$/
+rsource	rcp.c	/^rsource(name, statp)$/
+sink	rcp.c	/^sink(argc, argv)$/
+source	rcp.c	/^source(argc, argv)$/
+susystem	rcp.c	/^susystem(s)$/
+tolocal	rcp.c	/^tolocal(argc, argv)$/
+toremote	rcp.c	/^toremote(targ, argc, argv)$/
+usage	rcp.c	/^usage()$/
+verifydir	rcp.c	/^verifydir(cp)$/

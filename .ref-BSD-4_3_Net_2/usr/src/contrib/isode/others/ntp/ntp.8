@@ -1,0 +1,123 @@
+.TH NTP 8 "30 July 1988"
+.SH NAME
+ntp \- query an ntp clock
+.SH SYNOPSIS
+.B ntp
+[-v] [-s] [-f]
+.I hosts...
+.SH DESCRIPTION
+\fIntp\fP sends an ntp packet to the ntp daemon running on each of the given
+hosts.  A daemon fills in fields of the ntp packet as per RFC-????
+and sends the packet back.
+\fIntp\fP then formats and prints the result on the standard output.
+.PP
+The default output shows the delay, offset, and date in
+.I ctime()
+format.
+.PP
+Options can reset the time of the local system clock.
+.SH OPTIONS
+.TP
+-v
+Verbose output, showing the full contents of received ntp packets,
+plus caluclated offset, displacement, etc.
+.TP
+-s
+Set system time-of-day clock.  Will only happen if time offset is
+less than compiled-in constant WAYTOBIG (currently 1000 seconds).
+Will not happen if remote host is unsynchronized.
+.TP
+-f
+Force setting system clock regardless of offset.  Must be used with
+.B -s
+option.  Still will not reset clock if remote system is unsynchronized.
+.SH NTP RESULTS
+The default output for each
+.I host
+looks like this:
+.in +4
+.nf
+128.8.10.1: delay:1.845207 offset:-0.358460  Mon Mar 20 08:05:44 1989
+.fi
+.in
+.PP
+The verbose output for each
+.I host
+looks like this:
+.in +4
+.nf
+Packet from: [128.8.10.1]
+Leap 0, version 1, mode Server, poll 6, precision -10 stratum 1 (WWVB)
+Synch Distance is 0000.1999  0.099991
+Synch Dispersion is 0000.0000  0.000000
+Reference Timestamp is a7bea6c3.88b40000 Tue Mar  7 14:06:43 1989
+Originate Timestamp is a7bea6d7.d7e6e652 Tue Mar  7 14:07:03 1989
+Receive Timestamp is   a7bea6d7.cf1a0000 Tue Mar  7 14:07:03 1989
+Transmit Timestamp is  a7bea6d8.0ccc0000 Tue Mar  7 14:07:04 1989
+Input Timestamp is     a7bea6d8.1a77e5ea Tue Mar  7 14:07:04 1989
+umd1: delay:0.019028 offset:-0.043890  Tue Mar  7 14:07:04 1989
+.fi
+.in
+	
+The various fields are interpreted as follows:
+.TP
+Packet from: [\fIaddress\fP]
+The address that this ntp packet was received from.
+.TP
+Leap indicator: \fIn\fP
+The leap second indicator.  Non-zero if there is to be a leap second added
+or subtracted at the new year.
+.TP
+Status: \fIn\fP
+.TP
+Stratum: \fIn\fP (\fIsource\fP)
+The stratum of the clock in the NTP hierarchy, along with the source
+of the clock, either
+the name of a reference standard (such as WWVB or GOES) or the Internet
+address of the clock that this clock is derived from.
+.TP
+Poll = \fIn\fP
+The desired poll rate of the peer.
+.TP
+Precision = \fIexponent\fP (dec)
+The claimed precision of the clock, in seconds.
+.TP
+Synchronizing Dist is \fI???\fP
+.TP
+Synchronizing Dispersion is \fI???\fP
+.PP
+The next five timestamps are given as NTP fixed-point values, in both
+hexadecimal and \fIctime(3)\fP.
+These are set either by this ntp process, or by the server we are quering.
+.TP
+Reference Timestamp is \fIhex-timestamp\fP  \fIctime string\fP
+The last time the server clock was adjusted. (remote time)
+.TP
+Originate Timestamp is \fIhex-timestamp\fP  \fIctime string\f
+When the ntp request was transmitted by us to the server.  (local time)
+.TP
+Receive Timestamp is   \fIhex-timestamp\fP  \fIctime string\fP
+When the ntp request was received at the server.  (remote time)
+.TP
+Transmit Timestamp is  \fIhex-timestamp\fP  \fIctime string\fP
+When the ntp response was transmitted by the server.  (remote time)
+.TP
+Input Timestamp is     \fIhex-timestamp\fP  \fIctime string\fP
+When the ntp response was received by us.  (local time)
+.TP
+\fIhostname\fP: delay:\fItime\fP offset:\fItime\fP
+The summary of the results of the query, giving the hostname of the
+responding clock (from the command line), the round-trip delay, and the
+offset between the two clocks (assuming symmetric round-trip times).
+
+.SH BUGS
+Using
+.I ntp
+with the current host will show inaccurate results.
+.PP
+Probably a few others.  Report bugs to Louis A. Mamokos (louie@trantor.umd.edu).
+
+.SH "SEE ALSO"
+RFC-???? \fINetwork Time Protocol\fP(1), Dave Mills and ...
+.br
+ntpd(8), ntpdc(8)

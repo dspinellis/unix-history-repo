@@ -1,0 +1,9 @@
+ Xd - List
+
+ The List function returns all entries
+ immediately subordinate to the entry 
+ specified as the current position. The 
+ maximum size  of the resulting list will 
+ normally be limited to fifty, thus the
+ value of a call to List is  limited  if 
+ searching for a specific directory entry.

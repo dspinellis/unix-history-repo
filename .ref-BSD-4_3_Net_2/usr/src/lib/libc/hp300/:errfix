@@ -1,0 +1,8 @@
+?sys_nerr?
+.-2,.+1m0
+.+1,$g/\.data/s//\.text/
+0a
+	.data
+.
+w
+q

@@ -1,0 +1,98 @@
+.\" Copyright (c) 1983, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. All advertising materials mentioning features or use of this software
+.\"    must display the following acknowledgement:
+.\"	This product includes software developed by the University of
+.\"	California, Berkeley and its contributors.
+.\" 4. Neither the name of the University nor the names of its contributors
+.\"    may be used to endorse or promote products derived from this software
+.\"    without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\"     @(#)implog.8	6.7 (Berkeley) 3/16/91
+.\"
+.Dd March 16, 1991
+.Dt IMPLOG 8
+.Os BSD 4.2
+.Sh NAME
+.Nm implog
+.Nd
+.Tn IMP
+log interpreter
+.Sh SYNOPSIS
+.Nm implog
+.Op Fl DFLcfr
+.Op Fl h Ar host#
+.Op Fl i Ar imp#
+.Op Fl l Ar link
+.Op Fl t Ar message-type
+.Sh DESCRIPTION
+.Nm Implog
+is program which interprets the message log produced by
+.Xr implogd 8 .
+.Pp
+If no arguments are specified, 
+.Nm implog
+interprets and prints every message present in the message file.
+Options may be specified to force printing only a subset of the logged
+messages.
+.Bl -tag -width Ds
+.It Fl D
+Do not show data messages. 
+.It Fl F
+Follow the logging process in action.
+This flag causes
+.Nm implog
+to check for, and display, new logged messages every 5 seconds.
+.It Fl L
+Show only those messages received on the link number of the
+IP protocol.
+.It Fl c
+In addition to printing any data messages logged, show the
+contents of the data in hexadecimal bytes.
+.It Fl f
+Follow the logging process in action as with
+.Fl F ,
+but print the current contents of the log file first.
+.It Fl h
+Show only those messages received from the specified host.
+(Usually specified in conjunction with an imp.)
+.It Fl i
+Show only those messages received from the specified imp.
+.It Fl l
+Show only those messages received on the specified ``link''.
+.It Fl r
+Print the raw imp leader, showing all fields,
+in addition to the formatted interpretation according to type.
+.It Fl t
+Show only those messages received of the specified message type.
+.Sh SEE ALSO
+.Xr imp 4 ,
+.Xr implogd 8
+.Sh BUGS
+Cannot specify multiple hosts, imps, etc.
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 4.2 .

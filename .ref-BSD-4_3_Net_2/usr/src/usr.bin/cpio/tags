@@ -1,0 +1,31 @@
+EQ	cpio.c	/^#define EQ(x,y)	(strcmp(x,y)==0)$/
+MKSHORT	cpio.c	/^#define MKSHORT(v,lv) {U.l=1L;if(U.c[0]) U.l=lv,v[/
+MK_USHORT	cpio.c	/^#define MK_USHORT(a)	(a & 00000177777)	\/* Make un/
+Mcpio	cpio.c	/^main(argc, argv)$/
+bintochar	cpio.c	/^bintochar(t)		\/* ASCII header write *\/$/
+bread	cpio.c	/^bread(b, c)$/
+breread	cpio.c	/^breread(b, c)$/
+bwrite	cpio.c	/^bwrite(rp, c)$/
+chartobin	cpio.c	/^chartobin()		\/* ASCII header read *\/$/
+chgreel	cpio.c	/^chgreel(x, fl, rv)$/
+chkhdr	cpio.c	/^chkhdr()$/
+chkswfile	cpio.c	/^chkswfile( sp, c, option )$/
+ckname	cpio.c	/^ckname(namep)	\/* check filenames with patterns gi/
+eomchgreel	cpio.c	/^eomchgreel()$/
+fperr	cpio.c	/^fperr( va_alist )$/
+fperrno	cpio.c	/^fperrno( va_alist )$/
+gethdr	cpio.c	/^gethdr()		\/* get file headers *\/$/
+getname	cpio.c	/^getname()		\/* get file name, get info for header /
+gmatch	cpio.c	/^gmatch(s, p)$/
+missdir	cpio.c	/^missdir(namep)$/
+mklong	cpio.c	/^long mklong(v)$/
+nmatch	cpio.c	/^nmatch(s, pat)$/
+openout	cpio.c	/^openout(namep, symlname)	\/* open files for writin/
+pentry	cpio.c	/^pentry(namep)		\/* print verbose table of contents/
+postml	cpio.c	/^postml(namep, np)		\/* linking funtion:  Postml() /
+pwd	cpio.c	/^pwd()		\/* get working directory *\/$/
+set_time	cpio.c	/^set_time(namep, atime, mtime)	\/* set access and m/
+smemcpy	cpio.c	/^smemcpy( to, from, count )$/
+swap	cpio.c	/^swap(buf, bytecount, bytes, halfwords)	\/* swap ha/
+umatch	cpio.c	/^umatch(s, p)$/
+usage	cpio.c	/^usage()$/

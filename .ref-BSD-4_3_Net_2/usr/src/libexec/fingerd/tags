@@ -1,0 +1,2 @@
+Mfingerd	fingerd.c	/^main()$/
+fatal	fingerd.c	/^fatal(msg)$/

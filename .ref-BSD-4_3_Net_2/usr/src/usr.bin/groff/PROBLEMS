@@ -1,0 +1,285 @@
+This file describes various problems that have been encountered in
+compiling, installing and running groff.  Suggestions for additions or
+other improvements to this file are welcome.
+
+* I am having problems compiling groff with g++ on a DECstation or
+other machine using a MIPS processor (such as SGI machines).
+
+Try getting g++ from foobar.colorado.edu:pub/Gnu-For-Pmax.
+
+* I am having problems compiling groff with g++ on a 386 PC
+running SVR3.2.
+
+I recommend using Michael Bloom's GNU COFF patches
+(tut.cis.ohio-state.edu:pub/gnu/coff/gnu-coff.tar.Z).
+
+* I get lots of `numeric overflow' error messages whenever I run
+groff; I compiled groff with AT&T C++ 2.0 with an ANSI C compiler.
+
+Include -DCFRONT_ANSI_BUG in CPPDEFINES in the top-level Makefile.  If
+that doesn't solve the problem, define INT_MIN as -INT_MAX in
+lib/lib.h.
+
+* Using SunOS 4.1, gtroff aborts in malloc.
+
+Include -DSUNOS_LOCALTIME_BUG in MALLOCFLAGS in the top-level Makefile.
+
+* g++ 1.37.2 alpha gives the following error while compiling groff:
+Failed assertion `TREE_CHAIN (list) == NULL_TREE' at line 777 of `cplus-tree.c'
+
+Apply the fix given in the groff INSTALL file.  I recommend using g++
+1.37.1 in preference to 1.37.2 alpha.
+
+* When I try to compile groff with g++, I get lots of parse errors
+from files in /usr/include.
+
+You must install C++ versions of the standard include files; these are
+included with libg++.
+
+* g++ complains about conflicting declarations of fmod() while
+compiling pic.tab.c; I'm using a 68k based machine.
+
+This is a bug in the libg++ header files.  Apply the fix given in the
+INSTALL file.
+
+* I get errors when I try to compile groff with Sun C++.
+
+Groff requires ANSI C style header files.  The Sun C++ header files
+need some changes to meet this requirement: <string.h> must declare
+the mem* functions, (just add `#include <memory.h>' to <string.h>);
+the first argument to fopen and freopen should be declared as `const
+char *'; the first argument to fread should be declared as `void *';
+malloc should be declared to return `void *'.  You can either change
+them in place, or copy them to some other directory and include that
+directory with a -I option.
+
+* I get the error `make[2]: execve: /bin/sh: Arg list too long.'.
+
+If you're using GNU make, try using /bin/make instead.  Otherwise if
+you have the `env' command, try changing occurrences of $(MAKE) in the
+top-level Makefile to
+   env - PATH=/bin:/usr/bin $(MAKE)
+
+* The pic Makefile refers to a program called gperf; I can't find
+gperf anywhere.
+
+You don't need gperf unless you want to add new keywords to gpic:
+gperf is only used to generate key.c and a suitable key.c is supplied
+in the distribution.  Gperf is distributed with libg++; it's a perfect
+hash function generator
+
+* pic output is not centered horizontally; pictures sometimes run off
+the bottom of the page.
+
+The macro package you are using is not supplying appropriate definitions
+of PS and PE.  Give groff a -mpic option.
+
+* I'm having problems including PostScript illustrations using the PSPIC
+macro.
+
+A PostScript document must meet three requirements in order to be
+included with the PSPIC macro: it must comply with the Adobe Document
+Structuring Conventions; it must contain a BoundingBox line; it must
+be ``well-behaved''.  The BoundingBox line should be of the form:
+
+  %%BoundingBox: llx lly urx ury
+
+where llx, lly, urx, ury are the coordinates of the lower left x,
+lower left y, upper right x, upper right y of the bounding box of
+marks on the page expressed as integers in the default PostScript
+coordinate system (72 units per inch, origin at bottom left corner).
+A useful tactic is to print out the illustration by itself (you may
+need to add a `showpage' at the end), and physically measure the
+bounding box.  For more detail on these requirements, read the
+specification of Encapsulated PostScript format.  (This is available
+from the Adobe file server; send a message with a body of `help' to
+ps-file-server@adobe.com.)
+
+* I am trying to include a PostScript illustration by using:
+  \!%
+  \!PB
+  <lines of PostScript, each preceded by \!>
+  \!PE
+  \!.
+
+This mechanism for including PostScript illustrations is a feature
+peculiar to Adobe's TranScript software.  It is not supported by
+groff.  You should switch to using the PSPIC macro.
+
+* I've configured groff for A4 paper, but gtroff still seems to think
+that the length of a page (as returned by \n(.p) is 11 inches.
+
+This is intentional.  The PAGE option is used only by grops.  For
+compatibility with ditroff, the default page length in gtroff is
+always 11 inches.  The page length can be changed with the `pl'
+request.
+
+* Groff doesn't use the font names I'm used to.
+
+Use the `ftr' request.  See gtroff(1).
+
+* I get errors using the Unix -ms macros with groff -e -C.
+
+Apply this change:
+
+*** /usr/lib/ms/ms.eqn	Tue Apr 25 02:14:28 1989
+--- ms.eqn	Sun Nov 11 10:33:59 1990
+***************
+*** 22,29 ****
+  ..
+  .	\" EN - end of a displayed equation
+  .de EN
+! .if !\\*(10 .br
+  .di
+  .rm EZ
+  .nr ZN \\n(dn
+  .if \\n(ZN>0 .if \\n(YE=0 .LP
+--- 22,30 ----
+  ..
+  .	\" EN - end of a displayed equation
+  .de EN
+! .if \\n(.k>0 .br
+  .di
++ .ds 10 \\*(EZ\\
+  .rm EZ
+  .nr ZN \\n(dn
+  .if \\n(ZN>0 .if \\n(YE=0 .LP
+
+
+* gpic doesn't accept the syntax `chop N M' for chopping both ends of a
+line.
+
+The correct syntax is `chop N chop M'.
+
+* With gpic -t, when I print `line ->; box' using a dvi to ps
+program, the arrow head sticks through into the inside of the box.
+
+The dvi to ps program should be modified to set the line cap and
+line join parameters to 1 while printing tpic specials.
+
+* When I print the output groff -Tps, the output is always shifted up
+by about 0.7 inches; I'm using 8.5x11 inch paper.
+
+Make sure that PAGE is defined to be `letter' in the top-level
+Makefile.  If you failed to do this, you can fix the problem by doing:
+  cp ps/devps/DESC-letter /usr/local/lib/groff/font/devps/DESC
+
+* When I try to print the output of groff -Tps, I get no output at all
+from the printer, and the log file shows the error
+%%[ error: undefined; offendingcommand: BP ]%%
+I using TranScript spooling software.
+
+This is a bug in the page reversal filter in early versions of
+TranScript.  Include -DBROKEN_SPOOLER in CPPDEFINES in the top-level
+Makefile, and rebuild grops.
+
+* When I preview groff -Tps output using the Sun OpenWindows 2.0 pageview
+program, all the pages are displayed on top of each other.
+
+This is a defect in pageview.  Include -DBROKEN_SPOOLER in CPPDEFINES
+in the top-level Makefile, and rebuild grops.
+
+* When I try to preview the output of groff -Tps using ralpage, I get
+errors from ralpage.
+
+This is a bug in ralpage.  You may be able to work around the bug by
+defining MF and SF in ps/devps/prologue using `def' instead of `bind
+def'.
+
+* With groff -TX75 or -TX100, I can only view the first page.
+
+The left mouse button brings up a menu that allows you to view other
+pages.
+
+* Documents that use mainly 12-point text exhibit poor letter spacing
+when previewed with groff -TX75 or -TX100.
+
+Use groff -TX75-12 or groff -TX100-12.
+
+* When I print the output of groff -Tdvi, I just get a black dot in
+upper left corner.
+
+Some dvi drivers (notably early versions of xtex) do not correct
+handle dvi files that use a resolution different from that used by dvi
+files produced by TeX.  Try getting a more up to date driver.
+
+* I get lots of errors when I use groff with -mm.
+
+-mm needs a few changes to work with groff; `make install.mm' will
+copy your -mm macros to groff's macro directory and make the necessary
+changes.  You may need to edit the commands for the install.mm target
+in the Makefile.
+
+* gtroff doesn't understand lines like `.ce99' with no space between
+the name of the request or macro and the arguments.
+
+Gtroff requires a space between macro or request and its arguments
+because it allows the use of long names for macros and requests.  You
+can use the -C option or the `cp' request to put gtroff into a
+compatibility mode in which it is not possible to use long names for
+macros but in which no space is required between macros and their
+arguments.  The use of compatibility mode is strongly discouraged.
+
+* gtroff gives warnings about lines like
+  .ev	\" a comment
+(with a tab after the .ev).
+
+A tab character cannot be used as a substitute for a space character
+(except in one case: between a control character at the beginning of a
+line and the name of a macro or request).  For example, in Unix troff
+  .ps	\" restore the previous point size
+(with a tab after the .ps) will NOT restore the previous point-size;
+instead it will be silently ignored.  Since this is very likely to be
+an error, gtroff can give a warning about it.  If you want to align
+comments, you can do it like this:
+  .ev\"				\" a comment
+
+* I don't like the page headers and footers produced by groff -man.
+
+There seem to be many different styles of page header and footer
+produced by different versions of the -man macros.  You will need to
+modify macros/tmac.an to suit your personal taste.  For example, if
+you want the center of the page header to say
+  UNIX Programmer's Manual
+you will need to change the line
+  .el .ds an-extra3 \"UNIX Programmer's Manual
+to
+  .el .ds an-extra3 UNIX Programmer's Manual
+
+* Where is the document ``Groff Character Names'' that is mentioned in various
+man pages?
+
+It is in doc/chars.tr.  You can print it out with each device to see
+what characters are available for that device.
+
+* While formatting a manual page, groff complains about not being able to
+break lines.  The problem seems to be caused by a line like:
+  .TP \w'label'+2
+
+The -man documentation says that the default scale indicator for TP
+macro is `n'.  The groff -man macros implement this correctly, so that
+the argument will be evaluated as if it were
+  \w'label'n+2n
+The Unix -man macros don't implement this correctly (probably because
+it's hard to do in Unix troff); they just append `n' to the entire
+argument, so that it will be evaluated as if it were
+  \w'label'u+2n
+The solution is to fix the manual page:
+  .TP \w'label'u+2
+
+* When I preview documents using -TX75 or -TX100, the layout is not the same
+as when I print the document with -Tps or -Tdvi: the line and page
+breaks come in different places.
+
+This is the way xditview works: the widths of characters in the X
+fonts don't match the widths of characters in the PostScript fonts, so
+the layout usually comes out differently.  The idea of xditview is
+just to give you a readable representation of your document on screen,
+rather than to give you a simulation of how it will look when printed.
+If you want that, then you could use a PostScript previewer or a dvi
+previewer according as you're using -Tps or -Tdvi.  Alternatively you
+could port xtroff.
+
+* In gpic expressions don't work at all. I'm using g++ 1.39 on a sparc.
+
+This is a bug in gcc/g++ 1.39.  Apply the fix given in the INSTALL file.

@@ -1,0 +1,14 @@
+#	@(#)Makefile.xdit	6.1 (Berkeley) 3/3/91
+
+XTOTROFF=	$(.CURDIR)/../../xtotroff/obj/xtotroff
+
+FONTFILES=	$(FONTS) DESC eqnchar
+
+FONTS!=cut -f 1 $(FONTMAP) | tr -d '	'
+
+$(FONTS):	FontMap
+	$(XTOTROFF) -g FontMap
+
+CLEANFILES+=	FontMap
+
+.include "../Makefile.dev"

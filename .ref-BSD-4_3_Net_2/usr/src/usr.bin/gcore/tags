@@ -1,0 +1,16 @@
+Get	gcore.c	/^#define	Get(f, pos, addr, n) {\\$/
+Mgcore	gcore.c	/^main(argc, argv)$/
+Read	gcore.c	/^#define	Read(f, addr, n) {\\$/
+Seek	gcore.c	/^#define	Seek(f, pos) {\\$/
+core	gcore.c	/^core(p)$/
+getkvars	gcore.c	/^getkvars()$/
+getpt	gcore.c	/^getpt(p, seg)$/
+getseg	gcore.c	/^getseg(p, segsize, pages, map, rev)$/
+getsyspt	gcore.c	/^getsyspt(p)$/
+getu	gcore.c	/^getu(p, pages)$/
+getword	gcore.c	/^getword(loc)$/
+min	gcore.c	/^#define	min(a, b)	(a < b ? a : b)$/
+openfiles	gcore.c	/^openfiles()$/
+panic	gcore.c	/^panic(fmt)$/
+showpt	gcore.c	/^showpt(pt, n, s)$/
+vstodb	gcore.c	/^vstodb(vsbase, vssize, dmp, dbp, rev)$/

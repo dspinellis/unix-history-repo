@@ -1,0 +1,109 @@
+%{
+/* Copyright (C) 1989, 1990 Free Software Foundation, Inc.
+     Written by James Clark (jjc@jclark.uucp)
+
+This file is part of groff.
+
+groff is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any later
+version.
+
+groff is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+for more details.
+
+You should have received a copy of the GNU General Public License along
+with groff; see the file LICENSE.  If not, write to the Free Software
+Foundation, 675 Mass Ave, Cambridge, MA 02139, USA. */
+#include "key.h"
+#include "pic.h"
+#include "ptable.h"
+#include "object.h"
+#include "pic.tab.h"
+%}
+struct keyword { const char *name; int token; };
+%%
+above, ABOVE
+aligned, ALIGNED
+and, AND
+arc, ARC
+arrow, ARROW
+at, AT
+atan2, ATAN2
+below, BELOW
+between, BETWEEN
+bottom, BOTTOM
+box, BOX
+by, BY
+ccw, CCW
+center, CENTER
+chop, CHOP
+circle, CIRCLE
+copy, COPY
+cos, COS
+cw, CW
+dashed, DASHED
+define, DEFINE
+diam, DIAMETER
+diameter, DIAMETER
+do, DO
+dotted, DOTTED
+down, DOWN
+ellipse, ELLIPSE
+else, ELSE
+end, END
+exp, EXP
+fill, FILL
+filled, FILL
+for, FOR
+from, FROM
+height, HEIGHT
+Here, HERE
+ht, HEIGHT
+if, IF
+int, INT
+invis, INVISIBLE
+invisible, INVISIBLE
+last, LAST
+left, LEFT
+line, LINE
+ljust, LJUST
+log, LOG
+lower, LOWER
+max, MAX
+min, MIN
+move, MOVE
+of, OF
+plot, PLOT
+print, PRINT
+rad, RADIUS
+radius, RADIUS
+rand, RAND
+reset, RESET
+right, RIGHT
+rjust, RJUST
+same, SAME
+sh, SH
+sin, SIN
+spline, SPLINE
+sprintf, SPRINTF
+sqrt, SQRT
+start, START
+the, THE
+then, THEN
+thick, THICKNESS
+thickness, THICKNESS
+thru, THRU
+to, TO
+top, TOP
+undef, UNDEF
+until, UNTIL
+up, UP
+upper, UPPER
+way, WAY
+wid, WIDTH
+width, WIDTH
+with, WITH
+%%

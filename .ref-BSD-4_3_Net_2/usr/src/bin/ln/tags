@@ -1,0 +1,3 @@
+Mln	ln.c	/^main(argc, argv)$/
+linkit	ln.c	/^linkit(target, source, isdir)$/
+usage	ln.c	/^usage()$/

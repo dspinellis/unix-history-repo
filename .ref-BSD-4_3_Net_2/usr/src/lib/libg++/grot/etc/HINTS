@@ -1,0 +1,668 @@
+BABYL OPTIONS:
+Version: 5
+Labels:
+Note:   This is the header of an rmail file.
+Note:   If you are seeing it in rmail,
+Note:    it means the file has no messages in it.
+
+1,,
+Return-Path: <riedl@cs.purdue.edu>
+Received: from oswego.Oswego.EDU by g.oswego.edu (4.0/SMI-4.0)
+	id AA08377; Sun, 11 Feb 90 21:33:40 EST
+Received: by oswego.Oswego.EDU (5.57/Osw4.1.21)
+	id AA00896; Sun, 11 Feb 90 21:33:18 EST
+Received: from raid8.cs.purdue.edu by arthur.cs.purdue.edu (5.61/PURDUE_CS-1.2)
+	id <AA01233@arthur.cs.purdue.edu>; Sun, 11 Feb 90 21:30:14 -0500
+Received: from localhost by raid8.cs.purdue.edu (5.61/PURDUE_CS-1.2)
+	id <AA19140@raid8.cs.purdue.edu>; Sun, 11 Feb 90 21:30:08 -0500
+Message-Id: <9002120230.AA19140@raid8.cs.purdue.edu>
+To: dl@oswego.oswego.edu
+Subject: kudos for profiling and libg++
+In-Reply-To: Your message of Tue, 09 Jan 90 06:27:17 -0500.
+             <9001091127.AA09544@g.oswego.edu> 
+Date: Sun, 11 Feb 90 21:30:04 EST
+From: riedl@cs.purdue.edu
+
+*** EOOH ***
+Return-Path: <riedl@cs.purdue.edu>
+To: dl@oswego.oswego.edu
+Subject: kudos for profiling and libg++
+In-Reply-To: Your message of Tue, 09 Jan 90 06:27:17 -0500.
+             <9001091127.AA09544@g.oswego.edu> 
+Date: Sun, 11 Feb 90 21:30:04 EST
+From: riedl@cs.purdue.edu
+
+I was having some trouble with the performance of a concurrency
+controller I had written, and am very pleased to report that g++
+support for profiling, and the excellent libg++ data structure support
+saved the day!  I include a detailed description of the problem and
+solution below, which you are welcome to send to any of the involved
+parties for encouragement, or to publish for bragging rights (:-).
+
+Nice job!
+John
+------
+The basic problem was that two concurrency controllers that I had
+written, called T/O and Lock for short, should have had similar
+performance characteristics, but didn't.  After some days of work it
+became clear that T/O was significantly slower than Lock, for reasons
+that I couldn't understand.  I profiled the two routines and found the
+profiles to be very similar, as expected, with the exception of a
+large number of calls to compare_item in T/O:
+
+	calls to compare_item   	total time
+T/O	118,112	   0.43		       10.76 seconds
+LOCK	6601*[2-3] 0.09 seconds		9.02 seconds
+
+(The numbers involved are small because I did the run for 100
+transactions.  Real runs will be for several orders of magnitude more
+transactions.) 
+
+(I don't have an exact number for the number of calls to compare item
+for Lock for obscure reasons, but my understanding of the program
+makes me confident that it was called 2-3 times for each call to its
+parent, which was called 6601 times.)
+
+The additional 1.74 seconds spent in T/O could almost all be accounted
+for by calls to compare_item and its parent, SLSet::seek.  Since the
+data structures involved were relatively small I expected that using a
+fancier data structure wouldn't help, but I thought I should test the
+potential.  I determined that the data structures involved would grow
+to about 300 items, and that items would be accessed much more often
+than they would be inserted.  So I timed versions using the linked
+list and using AVL trees:
+
+program		items	accesses	seconds (user time)
+sl-set		 300     10,000        	  7.70
+sl-set		 300     10,000        	  7.61
+sl-set		3000     10,000        	 91.35
+
+avl-set		 300      1,000 	  0.18
+avl-set		 300     10,000 	  0.68
+avl-set		 300	100,000		  6.15
+avl-set		3000     10,000		  1.48
+
+Clearly the AVL tree implementation was far superior, even for small
+problem sizes.  I installed the AVL sets in T/O and they solved the
+performance problem I was having.  Profiling shows that before the
+change:
+
+	calls to compare_item   	total time
+T/O	118,112	   0.43		       10.76 seconds
+LOCK	6601*[2-3] 0.09 seconds		9.02 seconds
+
+After the change locking is the same, but:
+
+T/O	16,048     0.10 seconds		9.08 seconds
+
+The lessons I take from this study are:
+
+1) Linked lists may cause performance problems even if the lists are
+relatively short (< 100 items) if they are heavily used.
+
+2) The C++ library can be extremely advantageous.  In this case, I
+made a two line change to my program to change to AVL trees.
+
+3) Profiling is essential to understanding program performance.
+
+John Riedl
+
+
+1,,
+Return-Path: <dl@g.oswego.edu>
+Received: from rocky.Oswego.EDU by g.oswego.edu (4.0/SMI-4.0)
+	id AA03598; Thu, 8 Feb 90 05:50:05 EST
+Received: by oswego.Oswego.EDU (5.57/Osw4.1.21)
+	id AA08592; Thu, 8 Feb 90 05:47:12 EST
+Received: from life.ai.mit.edu by nisc.nyser.net (5.61/2.1-NYSERNet NISC)
+	id AA07649; Thu, 8 Feb 90 05:44:40 -0500
+Received: from oswego.Oswego.EDU by life.ai.mit.edu (4.0/AI-4.10) id AA29896; Thu, 8 Feb 90 05:46:04 EST
+Received: by oswego.Oswego.EDU (5.57/Osw4.1.21)
+	id AA27161; Thu, 8 Feb 90 05:48:41 EST
+Received: by g.oswego.edu (4.0/SMI-4.0)
+	id AA03595; Thu, 8 Feb 90 05:48:50 EST
+Date: Thu, 8 Feb 90 05:48:50 EST
+From: dl@g.oswego.edu (Doug Lea)
+Message-Id: <9002081048.AA03595@g.oswego.edu>
+To: jose@csserver.cs.msstate.edu
+Cc: bug-lib-g++@prep.ai.mit.edu
+In-Reply-To: Jose Cordova's message of Wed, 7 Feb 90 17:28:57 CST <9002072328.AA07167@CSServer.CS.MsState.Edu>
+Subject: Run-time error when using 'get' with an istream object
+Reply-To: dl@oswego.oswego.edu
+
+*** EOOH ***
+Return-Path: <dl@g.oswego.edu>
+Date: Thu, 8 Feb 90 05:48:50 EST
+From: dl@g.oswego.edu (Doug Lea)
+To: jose@csserver.cs.msstate.edu
+Cc: bug-lib-g++@prep.ai.mit.edu
+In-Reply-To: Jose Cordova's message of Wed, 7 Feb 90 17:28:57 CST <9002072328.AA07167@CSServer.CS.MsState.Edu>
+Subject: Run-time error when using 'get' with an istream object
+Reply-To: dl@oswego.oswego.edu
+
+
+> I am having trouble using the 'get' method for the 'istream' class.
+> It generates a 'Segmentation fault' error at run-time.  I know the
+> 'istream' is being opened correctly because reading into a 'String'
+> object with >> works fine.  Am I doing something wrong ?
+> The sample program and "data" illustrate the point:
+> 
+> main()
+> {
+>     istream from("data",io_readonly,a_useonly);
+>     char *line;
+> 
+>     from.get(line,15);
+>     cout << line;
+> }
+> 
+> Sample "data" file contents:
+> word1 word2
+> word3
+> 
+
+There are 3 istream functions for reading char*'s 
+
+  istream&      get    (char* s, int n, char terminator = '\n');
+  istream&      getline(char* s, int n, char terminator = '\n');
+  istream&      gets   (char **s, char terminator = '\n');
+ 
+The first two *require* an allocated char* (they differ only
+in how the trailing terminator is handled.) To use them, you
+must supply either a char[N] or an allocated char*.
+The third automatically allocates space for you, that you should
+later delete.
+
+For example,
+
+main()
+{
+    istream from("data",io_readonly,a_useonly);
+    char *line = new char[16]; // enough for string + null
+    char line2[16];
+    char* line3 = 0; // `= 0' so delete'able even if never allocated --
+                     // Not necessary in this example.
+
+    from.get(line,15);
+    from.get(line2,15);
+    from.gets(&line3,15);  // pass in the addr of line3
+
+    cout << line;
+    cout << line2;
+    cout << line3;
+
+    delete line;
+    delete line3;
+}
+
+Using the String class is a very good way to avoid dealing with these
+kinds of char* allocation and semantics issues.
+
+-Doug
+
+
+1, answered,,
+Return-Path: <chowkwan@aerospace.aero.org>
+Received: from aerospace.aero.org ([130.221.192.10]) by g.oswego.edu (4.0/SMI-4.0)
+	id AA03846; Mon, 5 Feb 90 16:10:27 EST
+Received: from antares.aero.org by aerospace.aero.org with SMTP (5.61++/6.0.GT)
+	id AA24377 for dl@g.oswego.edu; Mon, 5 Feb 90 13:06:58 -0800
+Posted-Date: Mon, 5 Feb 90 13:06:50 PST
+Received: from merlin.aero.org by antares.aero.org (4.1/SMI-3.2-A4ant)
+	id AA20056 for dl@g.oswego.edu; Mon, 5 Feb 90 13:06:55 PST
+Message-Id: <9002052106.AA20056@antares.aero.org>
+Received: by merlin.aero.org (4.1/SMI-3.2-A4)
+	id AA03654 for dl@g.oswego.edu; Mon, 5 Feb 90 13:06:50 PST
+Date: Mon, 5 Feb 90 13:06:50 PST
+From: chowkwan@aerospace.aero.org
+To: dl@g.oswego.edu
+Subject: Checklist for using Map class
+
+*** EOOH ***
+Return-Path: <chowkwan@aerospace.aero.org>
+Posted-Date: Mon, 5 Feb 90 13:06:50 PST
+Date: Mon, 5 Feb 90 13:06:50 PST
+From: chowkwan@aerospace.aero.org
+To: dl@g.oswego.edu
+Subject: Checklist for using Map class
+
+
+I found your last message of Jan 20 was enough to get me
+started using the Map class.  I'm attaching some notes
+I made in LaTeX format which are intended to get new
+users off and running quickly.  It's pretty much in the
+form of a checklist that they can just go down and follow.
+I was thinking it might be useful to you as a standard
+response to inquiries for help from neophytes like myself.
+
+               0  		cut here	    0
+----------------><--------------------------------><------------------
+               0                                    0
+
+\documentstyle{article}
+\title{Implementing Table Lookup Using the GNU Library}
+\begin{document}
+\section{Introduction}
+
+This note describes how to use the GNU class library Version 1.35.0
+to create lookup tables.  
+The advantage of using the GNU library is that 
+the code to implement tables can be quickly generated.
+Hopefully, the code is also more reliable than
+what we could write ourselves.
+In addition, the library provides four different lookup
+mechanisms. It is relatively easy to ``switch engines''
+and use the fastest one for our application.
+
+This note augments the ``User's Guide to GNU C++ Library''
+by filling in some gaps in the manual.
+Therefore, it is intended to complement, rather than
+replace the original manual.
+Section \ref{sec:general} describes the general procedure
+for creating a lookup table.  
+Section \ref{sec:specific} gives a working example, in this
+case the creation of a lookup table for database objects.
+
+
+\section{Using the GNU Library to Create a Lookup Table}
+\label{sec:general}
+
+The GNU library provides four implementations of lookup tables:
+threaded AVL trees, splay trees, resizable hash tables, and
+chained hash tables.
+The hash table implementations provide double hashing.
+The class names for these implementations are shown below
+in Table \ref{tab:imp}.
+All four classes are subclasses of the {\tt Map} class. \\
+Therefore, to create a lookup table, you must define a table class based 
+on the abstract class {\tt Map} as well as one of the subclasses.
+The script {\tt genclass}, provided
+with the GNU library, automates this process.
+
+\begin{table}[htb]
+\centering
+\caption{\label{tab:imp} GNU Implementations of Lookup Tables}
+\begin{tabular}{||l|l||} \hline
+{\bf Class Name} & {\bf Implementation Method} \\ \hline
+{\tt AVLMap} & Threaded AVL trees. \\
+{\tt SplayMap} & Splay trees. \\
+{\tt VHMap} & Resizable hash tables. \\
+{\tt CHMap} & Chained hash tables. \\ \hline
+\end{tabular} \\
+\end{table} 
+
+
+
+A {\sl key} refers to the index for the table
+and {\sl base value} refers to the basic data
+stored in the table that is returned upon
+a keyed lookup.
+You need to define a hashing function 
+and an equality function for the key.
+Finally, if you use pointers as your base
+value you need to typedef a name for the pointer.
+The steps you need to take are shown below.
+In these examples, {\tt $<$K$>$} is the name
+of the key class, 
+{\tt $<$B$>$} the name of the class for the base value,
+{\tt $<$BP$>$} the name of the type pointer to base value,
+and {\tt $<$M$>$} the name of one of the four {\tt Map} subclasses. \\
+
+\begin{tabular}{||r|l|l||} \hline
+&&  {\bf Name of } \\
+{\bf Step} & {\bf Action} & {\bf Affected File} \\  \hline
+1 & Create functions {\tt $<$K$>$HASH} & {\tt $<$K$>$.defs.h} \\
+  & and {\tt $<$K$>$EQ}. &{\tt $<$K$>$.defs.cc }  \\ \hline
+2 & Define {\tt DEFAULT\_INITIAL\_CAPACITY} & {\tt $<$K$>$.defs.h} \\ \hline
+3 & Create typedef {\tt $<$BP$>$}. & {\tt  $<$B$>$.h}  \\
+  & for  pointer to base class. & \\ \hline
+4 & Create abstract class with  & {\tt $<$K$>$.$<$BP$>$.Map.h}  \\
+  & {\tt genclass -2 $<$K$>$ ref $<$BP$>$ val Map}& 
+  {\tt $<$K$>$.$<$BP$>$.Map.cc} \\ \hline
+5 & Edit {\tt $<$K$>$.$<$BP$>$.Map.h} to include &{\tt $<$K$>$.$<$BP$>$.Map.h} \\
+  & {\tt $<$K$>$.defs.h} and {\tt  $<$B$>$.h}. &   \\ \hline
+6 & Create table class for specific & {\tt $<$K$>$.$<$BP$>$.$<$M$>$.h} \\
+  & lookup implementation method with & {\tt $<$K$>$.$<$BP$>$.$<$M$>$.cc} \\ 
+  & {\tt genclass -2 $<$K$>$ ref $<$BP$>$ val $<$M$>$ } & \\ \hline
+\end{tabular} \\
+
+The {\tt $<$K$>$} and {\tt $<$BP$>$} arguments to {\tt genclass}
+can be qualified by either {\tt val} or {\tt ref} depending on
+whether the reference is by value or by reference.
+
+\section{Example: Table Lookup Class for Database Objects}
+\label{sec:specific}
+
+In this example, we want to refer to objects from the 
+user-defined class {\tt Database} by their names so
+the name of the database object is the key to the table.
+To accommodate the {\tt Map} class need for   hashing on the key,
+the name is represented by a {\tt String} and the
+hash function is the library {\tt hashpjw} function
+declared in {\tt builtin.h}
+Thus {\tt $<$K$>$} is {\tt String},
+{\tt $<$B$>$} is {\tt Database}, and
+{\tt $<$BP$>$} is {\tt Databasep}.
+For this example, the lookup mechanism used is resizable
+hash tables which have type {\tt VHMap} so
+{\tt $<$M$>$} is {\tt VHMap}.
+
+\begin{enumerate}
+\item The {\tt Map} classes expect to get
+a function called {\tt HStringHASH} 
+that takes an argument of type {\tt String} 
+so {\tt hashpjw} was wrapped inside
+{\tt HStringHASH}.  
+Similarly, {\tt HStringEQ} is a wrapper
+for the {\tt HString} class operator $=$.
+(The $=$ operator is inherited from the {\tt String}
+class).
+The function headers 
+for {\tt HStringHASH} and {\tt HStringEQ} 
+go into {\tt HString.defs.h}
+and the function bodies into {\tt HString.defs.cc}.
+
+
+\item {\tt DEFAULT\_INITIAL\_CAPACITY} was set to {\tt 1021}
+in {\tt HString.defs.h}.  You must use the identifier
+{\tt DEFAULT\_INITIAL\_CAPACITY} to be consistent with
+the {\tt Map} classes.
+
+\item Define {\tt Databasep} as a pointer to class
+{\tt Database} in {\tt Database.h}.
+An identifier other than {\tt Databasep} would
+also be acceptable.  You just can't use {\tt Database*}.
+
+\item {\tt genclass -2 HString ref Databasep val Map} \\
+produces {\tt HString.Databasep.Map.h} and \\
+{\tt HString.Databasep.Map.cc}.
+
+\item Edit {\tt HString.Databasep.Map.h} to
+include {\tt HString.defs.h} and  \\ {\tt Database.h}.
+
+\item {\tt genclass -2 HString ref Databasep val VHMap} \\
+produces {\tt HString.Databasep.VHMap.h} and \\
+{\tt HString.Databasep.VHMap.cc}.
+\end{enumerate}
+
+
+\end{document}
+
+
+
+
+
+
+1,,
+Return-Path: <dl@g.oswego.edu>
+Received: from rocky.Oswego.EDU by g.oswego.edu (4.0/SMI-4.0)
+	id AA26086; Sat, 3 Feb 90 07:05:17 EST
+Received: by oswego.Oswego.EDU (5.57/Osw4.1.19)
+	id AA09020; Sat, 3 Feb 90 07:04:44 EST
+Received: from life.ai.mit.edu by nisc.nyser.net (5.61/2.1-NYSERNet NISC)
+	id AA24615; Sat, 3 Feb 90 07:00:07 -0500
+Received: from oswego.Oswego.EDU by life.ai.mit.edu (4.0/AI-4.10) id AA04153; Sat, 3 Feb 90 07:00:15 EST
+Received: by oswego.Oswego.EDU (5.57/Osw4.1.19)
+	id AA16111; Sat, 3 Feb 90 07:02:52 EST
+Received: by g.oswego.edu (4.0/SMI-4.0)
+	id AA26081; Sat, 3 Feb 90 07:03:03 EST
+Date: Sat, 3 Feb 90 07:03:03 EST
+From: dl@g.oswego.edu (Doug Lea)
+Message-Id: <9002031203.AA26081@g.oswego.edu>
+To: ngo%tammy@harvard.harvard.edu
+Cc: bug-lib-g++@prep.ai.mit.edu
+In-Reply-To: Tom Ngo's message of Fri, 2 Feb 90 23:42:54 EST <9002030548.AA00886@life.ai.mit.edu>
+Subject: Should "operator =" be made to return *this, by convention?
+Reply-To: dl@oswego.oswego.edu
+
+*** EOOH ***
+Return-Path: <dl@g.oswego.edu>
+Date: Sat, 3 Feb 90 07:03:03 EST
+From: dl@g.oswego.edu (Doug Lea)
+To: ngo%tammy@harvard.harvard.edu
+Cc: bug-lib-g++@prep.ai.mit.edu
+In-Reply-To: Tom Ngo's message of Fri, 2 Feb 90 23:42:54 EST <9002030548.AA00886@life.ai.mit.edu>
+Subject: Should "operator =" be made to return *this, by convention?
+Reply-To: dl@oswego.oswego.edu
+
+
+> 
+>     C programmers are accustomed to expecting = to return the value
+>     assigned.  However, in a few classes--for example, String, Integer
+>     and Rational-- operator == returns void.  Is there a good reason
+>     for this?  Could they be made to return String&, Integer& and
+>     Rational& *this without causing problems?
+> 
+
+The reason that X= (+=, -=, etc.) and = operators return void is to
+facilitate simple subclassing. While `utility' classes like String,
+Integer, etc., are not designed for extensive subclassing (since no
+members are virtual (which, in turn is motivated by efficiency
+considerations)), it is often convenient to create simple subclasses
+like class Line : public String. If you do this, then it is most
+desirable that inherited operators return void.  Otherwise, unexpected
+type matches often occur. For example, if operator << (ostream&,
+Line&) were redefined for Line, but op += were inherited from String,
+and had return value String&, then
+    { Line l; ...;  cout << (l += "\n"); } 
+would invoke op << (ostream&, String&), which is probably not
+what anyone would have in mind.  This is avoided by having String::+=
+return void, making this usage illegal.
+
+Problems like this outweigh the syntactic convenience of supporting
+multiple right-associative uses of X= and =. A good rule of thumb
+about all this is that no non-virtual member functions should
+ever return *this by reference. (This rule is broken in a few places
+in libg++ for various reasons though.)
+
+-Doug
+
+
+1,,
+Return-Path: <dl@g.oswego.edu>
+Received: from rocky.Oswego.EDU by g.oswego.edu (4.0/SMI-4.0)
+	id AA00741; Thu, 18 Jan 90 06:01:53 EST
+Received: by oswego.Oswego.EDU (5.57/Osw4.1.18)
+	id AA22159; Thu, 18 Jan 90 06:02:51 EST
+Received: from life.ai.mit.edu by nisc.nyser.net (5.61/2.1-NYSERNet NISC)
+	id AA22988; Thu, 18 Jan 90 05:56:52 -0500
+Received: from oswego.Oswego.EDU by life.ai.mit.edu (4.0/AI-4.10) id AA00267; Thu, 18 Jan 90 05:58:24 EST
+Received: by oswego.Oswego.EDU (5.57/Osw4.1.18)
+	id AA16327; Thu, 18 Jan 90 06:01:51 EST
+Received: by g.oswego.edu (4.0/SMI-4.0)
+	id AA00738; Thu, 18 Jan 90 06:00:57 EST
+Date: Thu, 18 Jan 90 06:00:57 EST
+From: dl@g.oswego.edu (Doug Lea)
+Message-Id: <9001181100.AA00738@g.oswego.edu>
+To: allen@sscvx1.ssc.gov
+Cc: bug-lib-g++@prep.ai.mit.edu
+In-Reply-To: Michael Allen's message of Wed, 17 Jan 90 14:56:32 CST <9001172056.AA01056@mdtf05.gov>
+Subject: compiling libg++-1.36.3 with g++-1.36.3 on sun4
+Reply-To: dl@oswego.oswego.edu
+
+*** EOOH ***
+Return-Path: <dl@g.oswego.edu>
+Date: Thu, 18 Jan 90 06:00:57 EST
+From: dl@g.oswego.edu (Doug Lea)
+To: allen@sscvx1.ssc.gov
+Cc: bug-lib-g++@prep.ai.mit.edu
+In-Reply-To: Michael Allen's message of Wed, 17 Jan 90 14:56:32 CST <9001172056.AA01056@mdtf05.gov>
+Subject: compiling libg++-1.36.3 with g++-1.36.3 on sun4
+Reply-To: dl@oswego.oswego.edu
+
+
+
+> 2) several files get flagged as a warning that a volatile funtion does
+> return, which appears to be false.
+
+Not quite false, but deserving of explanation:
+
+libg++ does not (yet) use the experimental g++ exception handling
+facilities (they are still too new: Too many things would have to be
+redone if the EH features change). So the only exception strategy is
+for error traps like Integer::error() to call the function pointed to
+by lib_error_handler (see builtin.h). By default, this points to
+default_two_arg_error_handler, which prints a message on stderr and
+aborts. But it *can* be reset to do anything at all, and need not
+abort execution. On the other hand, *some* (not all) error() member
+functions are used in a way that preclude any kind of sensible
+continuation even if error() returns. I mark these as `volatile',
+since the compiler might as well act as if they cannot return: This is
+defensible in that even if (*lib_error_handler) returns, things are
+going so wrong that you are no worse off if the compiler generates
+(usually faster) code assuming execution aborts.  The compiler
+correctly warns about these.
+
+Again, saner strategies will be employed when the C++ exception
+handling situation stabilizes.
+
+-Doug
+
+
+
+
+1,,
+Summary-line:  8-Jul   rocket!dove@uunet.UU.NET  #install suggestions
+Received: from uunet.uu.net by g.Oswego.EDU (4.0/Osw4.1.21)
+	id AA03815; Sun, 8 Jul 90 13:35:21 EDT
+Received: from rocket.UUCP by uunet.uu.net (5.61/1.14) with UUCP 
+	id AA04848; Sun, 8 Jul 90 13:30:17 -0400
+Received: from peach.sanders.com by rocket.sanders.com (4.0/SMI-4.0)
+	id AA08275; Sun, 8 Jul 90 13:26:44 EDT
+Date: Sun, 8 Jul 90 13:26:44 EDT
+From: rocket!dove@uunet.UU.NET (Webster Dove)
+Message-Id: <9007081726.AA08275@rocket.sanders.com>
+Received: by peach.sanders.com (4.0/SMI-4.0)
+	id AA02268; Sun, 8 Jul 90 13:26:43 EDT
+To: uunet!g.oswego.edu!dl@uunet.UU.NET
+In-Reply-To: Doug Lea's message of Sun, 8 Jul 90 09:16:05 EDT <9007081316.AA03717@g>
+Subject: install suggestions
+
+*** EOOH ***
+Date: Sun, 8 Jul 90 13:26:44 EDT
+From: rocket!dove@uunet.UU.NET (Webster Dove)
+To: uunet!g.oswego.edu!dl@uunet.UU.NET
+In-Reply-To: Doug Lea's message of Sun, 8 Jul 90 09:16:05 EDT <9007081316.AA03717@g>
+Subject: install suggestions
+
+The following are two scripts for making relative shadow trees.  The
+first is adapted from X11R3 to use relative rather than absolute paths
+(so the stuff can be moved without breaking).  The second is written
+in csh because I know that better.
+
+In general, I take a GNU release and expand it in a directory.  Then I
+create subdirectory "src" and move everything into it.  I backup
+src/Makefile (mv Makefile{,-dist}) and make site/arch/os specific one
+src/Makefile-sun3-os4.  Then I make subdirectory build-sun3-os4 (e.g.
+build-sun3-os4) parallel to src, and setup the shadow tree from inside
+build-sun3-os4 using "lndir ../src".
+
+You can just setup your distributions to  start at top level with ./src/,
+README, ./lndir and ./lndir_make_links.
+
+The one thing I would like added is that site (e.g. pathnames) and
+arch/os (compiler switches) specific things be included into the
+Makefile with include rather than with direct modification.  With that
+approach, and docs on how to write the "make.site-include" and
+make.archos-include" I could much more easily upgrade to a new release
+and maintain the archos distinction.
+
+--- /local/bin/lndir (a shell script) ---
+#!/bin/sh
+
+#
+# lndir - create shadow link tree
+#
+
+# If your master sources are located in /usr/src/X and you would like
+# your link tree to be in /usr/local/src/new-X, do the following:
+#
+# 	%  mkdir /usr/local/src/new-X
+#	%  cd /usr/local/src/new-X
+# 	%  lndir ../X
+#
+# NOTES
+#
+# 7/19/89 dove
+#  use for relative links.  Uses aux script lndir_make_links
+#
+
+DIRFROM=$1
+
+USAGE="Usage: cd todir; $0 fromdir"
+
+if [ ! $# = 1 ] ; then
+	echo "$USAGE"
+	exit 1
+fi
+
+if [ ! -d $DIRFROM ]
+then
+	echo "$USAGE"
+	exit 1
+fi
+
+#
+# Get the relative directory names
+#
+DIRLIST=`(cd $DIRFROM;find . \( -type d ! -name 'RCS' \) -print)`
+
+start_dir=`pwd`
+#
+# Make sure the src and dest are not the same.
+#
+pwd=`pwd`
+if [ `(cd $DIRFROM; pwd)` = $pwd ]
+then
+	echo "FROM and TO are identical!"
+	exit 1
+fi
+
+#
+# build the tree of directories in the destination.
+#
+for dir in $DIRLIST
+do
+  if [ ! $dir = . ]
+  then
+     mkdir $dir
+  fi
+done
+
+echo lndir_make_links $DIRFROM
+exec lndir_make_links $DIRFROM
+---- /local/bin/lndir_make_links (csh script) ---
+#!/bin/csh -f -b
+#
+# A secondary script called from lndir that actually links the
+# files from the remote directory and recurses if necessary.
+#
+if ( $#argv != 1 ) then
+  echo "$0 error: args $*"
+  exit 1
+endif
+
+set fromdir = $argv[1]
+
+set pwd=`pwd`
+if ( x`(cd $fromdir; pwd)` == x$pwd ) then
+	echo "FROM and TO are identical!"
+	exit 1
+endif
+
+foreach i ( `ls $fromdir` )
+  if ( -f $fromdir/$i ) ln -s $fromdir/$i .
+end
+
+set nonomatch
+set next_dirs=`glob */.`
+unset nonomatch
+
+if ( "$next_dirs" != "*/." ) then
+#  echo $next_dirs
+  foreach i ($next_dirs)
+    (cd $i;lndir_make_links ../$fromdir/$i)
+  end
+endif
+
+

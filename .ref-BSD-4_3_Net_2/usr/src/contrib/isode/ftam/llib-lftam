@@ -1,0 +1,438 @@
+/* llib-lftam - lint library for -lftam */
+
+/* 
+ * $Header: /f/osi/ftam/RCS/llib-lftam,v 7.1 91/02/22 09:23:21 mrose Interim $
+ *
+ *
+ * $Log:	llib-lftam,v $
+ * Revision 7.1  91/02/22  09:23:21  mrose
+ * Interim 6.8
+ * 
+ * Revision 7.0  89/11/23  21:53:58  mrose
+ * Release 6.0
+ * 
+ */
+
+/*
+ *				  NOTICE
+ *
+ *    Acquisition, use, and distribution of this module and related
+ *    materials are subject to the restrictions of a license agreement.
+ *    Consult the Preface in the User's Manual for the full terms of
+ *    this agreement.
+ *
+ */
+
+
+/* LINTLIBRARY */
+
+#include "ftam.h"
+
+/*  */
+
+/* F-INITIALIZE.INDICATION */
+
+int	FInit (vecp, vec, fts, tracing, fti)
+int	vecp;
+char  **vec;
+struct FTAMstart *fts;
+IFP	tracing;
+struct FTAMindication *fti;
+{
+    return FInit (vecp, vec, fts, tracing, fti);
+}
+
+
+/* F-INITIALIZE.RESPONSE */
+
+int	FInitializeResponse (sd, state, action, context, respondtitle,
+	respondaddr, manage, class, units, attrs, sharedASE, fqos, contents,
+	diag, ndiag, fti)
+int	sd;
+int	state,
+	action,
+	manage,
+	class,
+	units,
+	attrs,
+	fqos;
+OID	context;
+AEI	respondtitle;
+struct PSAPaddr *respondaddr;
+PE	sharedASE;
+struct FTAMcontentlist *contents;
+struct FTAMdiagnostic diag[];
+int	ndiag;
+struct FTAMindication *fti;
+{
+    return FInitializeResponse (sd, state, action, context, respondtitle,
+	    respondaddr, manage, class, units, attrs, sharedASE, fqos, contents,
+	    diag, ndiag, fti);
+}
+
+
+/* F-INITIALIZE.REQUEST */
+
+int	FInitializeRequest (context, callingtitle, calledtitle, callingaddr,
+	calledaddr, manage, class, units, attrs, sharedASE, fqos, contents,
+	initiator, account, password, passlen, qos, tracing, ftc, fti)
+OID	context;
+AEI	callingtitle,
+	calledtitle;
+struct PSAPaddr *callingaddr,
+		*calledaddr;
+int	manage,
+	class,
+	units,
+	attrs,
+	fqos,
+	passlen;
+PE	sharedASE;
+struct FTAMcontentlist *contents;
+char   *initiator,
+       *account,
+       *password;
+struct QOStype *qos;
+IFP	tracing;
+struct FTAMconnect *ftc;
+struct FTAMindication *fti;
+{
+    return FInitializeRequest (context, callingtitle, calledtitle, callingaddr,
+	    calledaddr, manage, class, units, attrs, sharedASE, fqos,
+	    contents, initiator, account, password, passlen, qos, tracing,
+	    ftc, fti);
+}
+
+
+/* F-TERMINATE.REQUEST */
+
+int	FTerminateRequest (sd, sharedASE, ftr, fti)
+int	sd;
+PE	sharedASE;
+struct FTAMrelease *ftr;
+struct FTAMindication *fti;
+{
+    return FTerminateRequest (sd, sharedASE, ftr, fti);
+}
+
+
+/* F-TERMINATE.RESPONSE */
+
+int	FTerminateResponse (sd, sharedASE, charging, fti)
+int	sd;
+PE	sharedASE;
+struct FTAMcharging *charging;
+struct FTAMindication *fti;
+{
+    return FTerminateResponse (sd, sharedASE, charging, fti);
+}
+
+
+/* F-U-ABORT.REQUEST */
+
+int	FUAbortRequest (sd, action, diag, ndiag, fti)
+int	sd;
+int	action;
+struct FTAMdiagnostic diag[];
+int	ndiag;
+struct FTAMindication *fti;
+{
+    return FUAbortRequest (sd, action, diag, ndiag, fti);
+}
+
+
+/* F-WAIT.REQUEST (pseudo) */
+
+int	FWaitRequest (sd, secs, fti)
+int	sd;
+int	secs;
+struct FTAMindication *fti;
+{
+    return FWaitRequest (sd, secs, fti);
+}
+
+
+/* F-MANAGE.REQUEST (group) */
+
+int     FManageRequest (sd, ftg, fti)
+int     sd;
+struct FTAMgroup   *ftg;
+struct FTAMindication  *fti;
+{
+    return FManageRequest (sd, ftg, fti);
+}
+
+
+/* F-MANAGE.RESPONSE (group) */
+
+int     FManageResponse (sd, ftg, fti)
+int     sd;
+struct FTAMgroup   *ftg;
+struct FTAMindication  *fti;
+{
+    return FManageResponse (sd, ftg, fti);
+}
+
+
+/* F-BULK-BEGIN.REQUEST (group) */
+
+int     FBulkBeginRequest (sd, ftg, fti)
+int     sd;
+struct FTAMgroup   *ftg;
+struct FTAMindication  *fti;
+{
+    return FBulkBeginRequest (sd, ftg, fti);
+}
+
+
+/* F-BULK-BEGIN.RESPONSE (group) */
+
+int     FBulkBeginResponse (sd, ftg, fti)
+int     sd;
+struct FTAMgroup   *ftg;
+struct FTAMindication  *fti;
+{
+    return FBulkBeginResponse (sd, ftg, fti);
+}
+
+
+/* F-BULK-END.REQUEST (group) */
+
+int     FBulkEndRequest (sd, ftg, fti)
+int     sd;
+struct FTAMgroup   *ftg;
+struct FTAMindication  *fti;
+{
+    return FBulkEndRequest (sd, ftg, fti);
+}
+
+
+/* F-BULK-END.RESPONSE (group) */
+
+int     FBulkEndResponse (sd, ftg, fti)
+int     sd;
+struct FTAMgroup   *ftg;
+struct FTAMindication  *fti;
+{
+    return FBulkEndResponse (sd, ftg, fti);
+}
+
+
+/* F-{LOCATE,ERASE}.REQUEST */
+
+int	FAccessRequest (sd, operation, identity, fti)
+int	sd;
+int	operation;
+struct FADUidentity *identity;
+struct FTAMindication *fti;
+{
+    return FAccessRequest (sd, operation, identity, fti);
+}
+
+
+/* F-{LOCATE,ERASE}.RESPONSE */
+
+int	FAccessResponse (sd, action, identity, diag, ndiag, fti)
+int	sd;
+int	action;
+struct FADUidentity *identity;	/* F-LOCATE.RESPONSE only */
+struct FTAMdiagnostic diag[];
+int	ndiag;
+struct FTAMindication *fti;
+{
+    return FAccessResponse (sd, action, identity, diag, ndiag, fti);
+}
+
+
+/* F-{READ,WRITE}.REQUEST */
+
+int	FReadWriteRequest (sd, operation, identity, context, level, lock, fti)
+int	sd;
+int	operation;
+struct FADUidentity *identity;
+int	context,		/* F-READ.REQUEST only */
+	level,			/*   .. */
+    	lock;
+struct FTAMindication *fti;
+{
+    return FReadWriteRequest (sd, operation, identity, context, level, lock,
+			      fti);
+}
+
+
+/* F-DATA.REQUEST */
+
+int	FDataRequest (sd, fadus, nfadu, fti)
+int	sd;
+PE	fadus[];
+int	nfadu;
+struct FTAMindication *fti;
+{
+    return FDataRequest (sd, fadus, nfadu, fti);
+}
+
+
+/* F-DATA-END.REQUEST */
+
+int	FDataEndRequest (sd, action, diag, ndiag, fti)
+int	sd;
+int	action;
+struct FTAMdiagnostic diag[];
+int	ndiag;
+struct FTAMindication *fti;
+{
+    return FDataEndRequest (sd, action, diag, ndiag, fti);
+}
+
+
+/* F-CANCEL.REQUEST */
+
+int	FCancelRequest (sd, action, sharedASE, diag, ndiag, fti)
+int	sd;
+int	action;
+PE	sharedASE;
+struct FTAMdiagnostic diag[];
+int	ndiag;
+struct FTAMindication *fti;
+{
+    return FCancelRequest (sd, action, sharedASE, diag, ndiag, fti);
+}
+
+
+/* F-CANCEL.RESPONSE */
+
+int	FCancelResponse (sd, action, sharedASE, diag, ndiag, fti)
+int	sd;
+int	action;
+PE	sharedASE;
+struct FTAMdiagnostic diag[];
+int	ndiag;
+struct FTAMindication *fti;
+{
+    return FCancelResponse (sd, action, sharedASE, diag, ndiag, fti);
+}
+
+
+/* F-TRANSFER-END.REQUEST */
+
+int	FTransEndRequest (sd, sharedASE, fti)
+int	sd;
+PE	sharedASE;
+struct FTAMindication *fti;
+{
+    return FTransEndRequest (sd, sharedASE, fti);
+}
+
+
+/* F-TRANSFER-END.RESPONSE */
+
+int	FTransEndResponse (sd, action, sharedASE, diag, ndiag, fti)
+int	sd;
+int	action;
+PE	sharedASE;
+struct FTAMdiagnostic diag[];
+int	ndiag;
+struct FTAMindication *fti;
+{
+    return FTransEndResponse (sd, action, sharedASE, diag, ndiag, fti);
+}
+
+
+/* define vector for INDICATION events */
+
+int	FSetIndications (sd, indication, fti)
+int	sd;
+IFP	indication;
+struct FTAMindication *fti;
+{
+    return FSetIndications (sd, indication, fti);
+}
+
+
+/* map ftam descriptors for select() */
+
+int	FSelectMask (sd, mask, nfds, fti)
+int	sd;
+fd_set *mask;
+int    *nfds;
+struct FTAMindication *fti;
+{
+    return FSelectMask (sd, mask, nfds, fti);
+}
+
+
+/* set tracing */
+
+int	FHookRequest (sd, tracing, fti)
+int	sd;
+IFP	tracing;
+struct FTAMindication *fti;
+{
+    return FHookRequest (sd, tracing, fti);
+}
+
+
+/* user-defined tracing */
+
+int	FTraceHook (sd, event, fpdu, pe, rw)
+int	sd;
+char   *event,
+       *fpdu;
+PE	pe;
+int	rw;
+{
+    return FTraceHook (sd, event, fpdu, pe, rw);
+}
+
+
+/* return FTAM error code in string form */
+
+char   *FErrString (code)
+int	code;
+{
+    return FErrString (code);
+}
+
+
+/* free list of attributes */
+
+void	FAFREE (fa)
+struct FTAMattributes *fa;
+{
+    FAFREE (fa);
+}
+
+/*  isodocuments routines */
+
+
+int	setisodocument (f)
+int	f;
+{
+    return setisodocument (f);
+}
+
+
+int	endisodocument ()
+{
+    return endisodocument ();
+}
+
+
+struct isodocument *getisodocument ()
+{
+    return getisodocument ();
+}
+
+
+struct isodocument *getisodocumentbyentry (entry)
+char   *entry;
+{
+    return getisodocumentbyentry (entry);
+}
+
+
+struct isodocument *getisodocumentbytype (type)
+OID	type;
+{
+    return getisodocumentbytype (type);
+}

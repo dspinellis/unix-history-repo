@@ -1,0 +1,149 @@
+#!/bin/sh -
+#
+# Copyright (c) 1990 The Regents of the University of California.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+# 3. All advertising materials mentioning features or use of this software
+#    must display the following acknowledgement:
+#	This product includes software developed by the University of
+#	California, Berkeley and its contributors.
+# 4. Neither the name of the University nor the names of its contributors
+#    may be used to endorse or promote products derived from this software
+#    without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+#
+#	@(#)get	4.27 (Berkeley) 7/5/90
+#
+
+# Shell script to build a mini-root file system in preparation for building
+# a distribution tape.  The file system created here is image copied onto
+# tape, then image copied onto disk as the "first" step in a cold boot o
+# 4.3 systems.
+
+DISTROOT=/mnt
+DISTUSR=/mnt/usr/DISTUSR
+
+if [ `pwd` = '/' ]
+then
+	echo You just '(almost)' destroyed the root
+	exit
+fi
+cp /tmp/stripped_vmunix vmunix
+
+# create necessary directories
+DIRLIST="bin dev etc a tmp stand sbin usr usr/mdec sys sys/floppy \
+	sys/cassette sys/consolerl"
+rm -rf $DIRLIST
+mkdir $DIRLIST
+
+ETC="disktab"
+for i in $ETC; do
+	cp $DISTROOT/etc/$i etc/$i
+done
+
+# disklabel
+SBIN="fsck ifconfig init mknod mount newfs restore \
+	rrestore umount"
+USBIN="arff flcopy"
+for i in $SBIN; do
+	cp $DISTROOT/sbin/$i sbin/$i
+done
+for i in $USBIN; do
+	cp $DISTUSR/sbin/$i sbin/$i
+done
+
+# ed
+BIN="[ cat cp dd echo expr ls mkdir mv rcp rm sh stty sync"
+UBIN="awk make mt"
+for i in $BIN; do
+	cp $DISTROOT/bin/$i bin/$i
+done
+for i in $UBIN; do
+	cp $DISTUSR/bin/$i bin/$i
+done
+ln bin/stty bin/STTY
+
+cp /nbsd/sys/floppy/[Ma-z0-9]* sys/floppy
+cp /nbsd/sys/consolerl/[Ma-z0-9]* sys/consolerl
+#cp -r /nbsd/sys/cassette/[Ma-z0-9]* sys/cassette
+cp /nbsd/sys/cassette/[Ma-z0-9]* sys/cassette
+cp $DISTROOT/boot boot
+cp $DISTROOT/pcs750.bin pcs750.bin
+cp $DISTROOT/.profile .profile
+
+cat >etc/passwd <<EOF
+root::0:10::/:/bin/sh
+EOF
+
+cat >etc/group <<EOF
+wheel:*:0:
+staff:*:10:
+EOF
+
+cat >etc/fstab <<EOF
+/dev/hp0a:/a:xx:1:1
+/dev/up0a:/a:xx:1:1
+/dev/hk0a:/a:xx:1:1
+/dev/ra0a:/a:xx:1:1
+/dev/rb0a:/a:xx:1:1
+EOF
+
+cat >xtr <<'EOF'
+: ${disk?'Usage: disk=xx0 type=tt tape=yy xtr'}
+: ${type?'Usage: disk=xx0 type=tt tape=yy xtr'}
+: ${tape?'Usage: disk=xx0 type=tt tape=yy xtr'}
+echo 'Build root file system'
+newfs ${disk}a ${type}
+sync
+echo 'Check the file system'
+fsck /dev/r${disk}a
+mount /dev/${disk}a /a
+cd /a
+echo 'Rewind tape'
+mt -f /dev/${tape}0 rew
+echo 'Restore the dump image of the root'
+restore rsf 3 /dev/${tape}0
+cd /
+sync
+umount /dev/${disk}a
+sync
+fsck /dev/r${disk}a
+echo 'Root filesystem extracted'
+echo
+echo 'If this is an 8650 or 8600, update the console rl02'
+echo 'If this is a 780 or 785, update the floppy'
+echo 'If this is a 730, update the cassette'
+EOF
+chmod +x xtr
+rm -rf dev; mkdir dev
+cp $DISTROOT/dev/MAKEDEV dev
+chmod +x dev/MAKEDEV
+cp /dev/null dev/MAKEDEV.local
+cd dev
+./MAKEDEV std hp0 hk0 up0 ra0 rb0
+./MAKEDEV ts0; mv rmt12 ts0; rm *mt*;
+./MAKEDEV tm0; mv rmt12 tm0; rm *mt*;
+./MAKEDEV ht0; mv rmt12 ht0; rm *mt*;
+./MAKEDEV ut0; mv rmt12 ut0; rm *mt*;
+./MAKEDEV mt0; mv rmt12 xt0; rm *mt*; mv xt0 mt0
+cd ..
+sync

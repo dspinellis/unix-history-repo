@@ -1,0 +1,12 @@
+#!/bin/sh
+#
+#	ecoff-cmp file1.o file2.o
+#
+cp $1 /tmp/foo1.$$
+cp $2 /tmp/foo2.$$
+strip /tmp/foo1.$$
+strip /tmp/foo2.$$
+tail +10c /tmp/foo1.$$ > /tmp/foo3.$$
+tail +10c /tmp/foo2.$$ > /tmp/foo4.$$
+cmp /tmp/foo3.$$ /tmp/foo4.$$
+rm -f /tmp/foo[1234].$$

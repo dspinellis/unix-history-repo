@@ -1,0 +1,9 @@
+Internet=128.16.
+X121+2342192
+Int-X25=000005111600
+UCL-X121=80
+Internet=128.40.
+BELLS-TCP
+UCL-ETHER
+UCL-JANET
+# file must end with this line

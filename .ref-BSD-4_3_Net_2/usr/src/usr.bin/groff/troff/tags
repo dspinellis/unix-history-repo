@@ -1,0 +1,442 @@
+abort_request	input.cc	/^void abort_request()$/
+add_arg	input.cc	/^void macro_iterator::add_arg(const macro &m)$/
+add_boundary	input.cc	/^void input_stack::add_boundary()$/
+add_char	node.cc	/^node *node::add_char(charinfo *ci, environment *en/
+add_discretionary_hyphen	node.cc	/^node *kern_pair_node::add_discretionary_hyphen()$/
+add_hyphen_indicator	env.cc	/^void environment::add_hyphen_indicator()$/
+add_italic_correction	env.cc	/^void environment::add_italic_correction()$/
+add_node	env.cc	/^void environment::add_node(node *n)$/
+add_output_line	column.cc	/^void column::add_output_line(output_line *ln)$/
+add_reference	dictionary.cc	/^void object::add_reference()$/
+add_self	node.cc	/^node *glyph_node::add_self(node *n, hyphen_list **/
+add_string	input.cc	/^static void add_string(const char *s, string_list /
+add_to_node_list	input.cc	/^int token::add_to_node_list(node **pp)$/
+after	column.cc	/^: position_output_line(d), nd(n), page_offset(po),/
+alias	dictionary.cc	/^int object_dictionary::alias(symbol newnm, symbol /
+alias_reg	reg.cc	/^void alias_reg()$/
+alter_format	reg.cc	/^void reg::alter_format(char \/*f*\/, int \/*w*\/)$/
+amount	node.cc	/^     : node(x), n1(first), n2(second), amount(n)$/
+append	column.cc	/^void justification_spec::append(symbol t, vunits v/
+append_char	column.cc	/^void transparent_output_line::append_char(unsigned/
+as_transparent_output_line	column.cc	/^transparent_output_line *output_line::as_transpare/
+as_vjustify_output_line	column.cc	/^vjustify_output_line *output_line::as_vjustify_out/
+ascii_output_file	node.cc	/^ascii_output_file::ascii_output_file()$/
+ascii_print	node.cc	/^void glyph_node::ascii_print(ascii_output_file *as/
+ascii_print_reverse_node_list	node.cc	/^static void ascii_print_reverse_node_list(ascii_ou/
+asciify	input.cc	/^const char *asciify(int c)$/
+asciify_reverse_node_list	node.cc	/^static void asciify_reverse_node_list(macro *m, no/
+backtrace	input.cc	/^void file_iterator::backtrace()$/
+backtrace_all	input.cc	/^void input_stack::backtrace_all()$/
+backtrace_request	input.cc	/^void backtrace_request()$/
+begin_page	column.cc	/^void column::begin_page(int pageno, vunits page_le/
+bracket	node.cc	/^void bracket_node::bracket(node *n)$/
+bracket_node	node.cc	/^bracket_node::~bracket_node()$/
+break_char_node	node.cc	/^break_char_node::~break_char_node()$/
+break_code	node.cc	/^: node(x), ch(n), break_code(c)$/
+c	input.cc	/^non_interpreted_char_node::non_interpreted_char_no/
+char_flags	input.cc	/^void char_flags()$/
+character_exists	node.cc	/^int character_exists(charinfo *ci, environment *en/
+character_type	node.cc	/^int glyph_node::character_type()$/
+charinfo_to_node	input.cc	/^node *charinfo_to_node(charinfo *ci, const environ/
+check_bottom	column.cc	/^void column::check_bottom()$/
+choose_breakpoint	env.cc	/^breakpoint *environment::choose_breakpoint()$/
+clear	input.cc	/^void input_stack::clear()$/
+close_request	input.cc	/^void close_request()$/
+column	column.cc	/^column::~column()$/
+column_justify	column.cc	/^void column_justify()$/
+column_output	column.cc	/^void column_output()$/
+column_reset	column.cc	/^void column_reset()$/
+column_start	column.cc	/^void column_start()$/
+column_trim	column.cc	/^void column_trim()$/
+compare_ranges	env.cc	/^static int compare_ranges(void *p1, void *p2)$/
+compatible	input.cc	/^void compatible()$/
+composite_node	node.cc	/^composite_node::~composite_node()$/
+concat	symbol.cc	/^symbol concat(symbol s1, symbol s2)$/
+conditional_unbold	node.cc	/^void font_info::conditional_unbold(int fontno)$/
+contains	input.cc	/^int page_range::contains(int n)$/
+copy	column.cc	/^node *vjustify_node::copy()$/
+copy_file	column.cc	/^void column::copy_file(hunits page_offset, vunits /
+copy_node_list	node.cc	/^node *copy_node_list(node *n)$/
+d	dictionary.cc	/^object_dictionary::object_dictionary(int n) : d(n)/
+dbreak_node	node.cc	/^dbreak_node::~dbreak_node()$/
+decrement	reg.cc	/^void reg::decrement()$/
+define	dictionary.cc	/^void object_dictionary::define(symbol nm, object */
+define_number_reg	reg.cc	/^void define_number_reg()$/
+delete	input.cc	/^void small_temp_iterator::operator delete(void *p)/
+delete_node_list	node.cc	/^void delete_node_list(node *n)$/
+delimiter	input.cc	/^int token::delimiter(int err)$/
+description	input.cc	/^const char *token::description()$/
+di	dictionary.cc	/^     : di(od.d)$/
+disable_warning	input.cc	/^static void disable_warning(const char *name)$/
+discardable	node.cc	/^int node::discardable()$/
+dist	column.cc	/^: dist(d)$/
+distance	column.cc	/^vunits output_line::distance()$/
+distance_to_next_trap	div.cc	/^vunits macro_diversion::distance_to_next_trap()$/
+divert	div.cc	/^void divert()$/
+divert_append	div.cc	/^void divert_append()$/
+do_bracket	input.cc	/^static node *do_bracket()$/
+do_divert	div.cc	/^void do_divert(int append)$/
+do_error	input.cc	/^static void do_error(error_type type, $/
+do_if_request	input.cc	/^int do_if_request()$/
+do_motion	node.cc	/^void troff_output_file::do_motion()$/
+do_name_test	input.cc	/^static int do_name_test()$/
+do_open	input.cc	/^void do_open(int append)$/
+do_overstrike	input.cc	/^static node *do_overstrike()$/
+do_register_assignment	input.cc	/^static void do_register_assignment(const char *s)$/
+do_string_assignment	input.cc	/^static void do_string_assignment(const char *s)$/
+do_zero_width	input.cc	/^static node *do_zero_width()$/
+down	node.cc	/^inline void troff_output_file::down(vunits n)$/
+draw	node.cc	/^void troff_output_file::draw(char code, hvpair *po/
+draw_node	node.cc	/^draw_node::~draw_node()$/
+dump_request	input.cc	/^void dump_request()$/
+dumped_main	input.cc	/^int dumped_main(int argc, char **argv)$/
+else_request	input.cc	/^void else_request()$/
+empty_name_warning	input.cc	/^static void empty_name_warning(int required)$/
+enable_warning	input.cc	/^static void enable_warning(const char *name)$/
+end_special	node.cc	/^void troff_output_file::end_special()$/
+ends_sentence	node.cc	/^int glyph_node::ends_sentence()$/
+env_definite_font	node.cc	/^inline int env_definite_font(environment *env)$/
+eptr	input.cc	/^: ptr(0), eptr(0)$/
+error	input.cc	/^void error(const char *format, $/
+error_with_file_and_line	input.cc	/^void error_with_file_and_line(const char *filename/
+escape_off	input.cc	/^void escape_off()$/
+evaluate_expression	input.cc	/^static int evaluate_expression(const char *expr, u/
+extra_space	column.cc	/^vunits output_line::extra_space()$/
+fatal	input.cc	/^void fatal(const char *format, $/
+fatal_with_file_and_line	input.cc	/^void fatal_with_file_and_line(const char *filename/
+file_iterator	input.cc	/^file_iterator::~file_iterator()$/
+filename	column.cc	/^: position_output_line(d), hpos(h), filename(f)$/
+fill	input.cc	/^int input_iterator::fill(node **)$/
+find_next_trap	div.cc	/^trap *top_level_diversion::find_next_trap(vunits */
+finish_get	input.cc	/^int input_stack::finish_get(node **np)$/
+finish_peek	input.cc	/^int input_stack::finish_peek()$/
+flush	column.cc	/^void column::flush()$/
+flush_tbuf	node.cc	/^void troff_output_file::flush_tbuf()$/
+font_size	env.cc	/^font_size::font_size(int sp)$/
+freeze_space	node.cc	/^void node::freeze_space()$/
+get	dictionary.cc	/^int dictionary_iterator::get(symbol *sp, void **vp/
+get_arg	input.cc	/^input_iterator *input_stack::get_arg(int i)$/
+get_bold	node.cc	/^int font_info::get_bold(hunits *res)$/
+get_bottom	column.cc	/^vunits column::get_bottom()$/
+get_breakpoints	node.cc	/^breakpoint *node::get_breakpoints(hunits \/*width*/
+get_center_lines	env.cc	/^int environment::get_center_lines()$/
+get_char	input.cc	/^charinfo *token::get_char(int required)$/
+get_char_depth	node.cc	/^vunits tfont::get_char_depth(charinfo *c)$/
+get_char_for_escape_name	input.cc	/^static int get_char_for_escape_name()$/
+get_char_height	node.cc	/^vunits tfont::get_char_height(charinfo *c)$/
+get_char_skew	node.cc	/^hunits tfont::get_char_skew(charinfo *c)$/
+get_character_type	node.cc	/^inline int tfont::get_character_type(charinfo *ci)/
+get_charinfo	input.cc	/^charinfo *get_charinfo(symbol nm)$/
+get_charinfo_by_number	input.cc	/^charinfo *get_charinfo_by_number(unsigned char n)$/
+get_constant_space	node.cc	/^inline int tfont::get_constant_space(hunits *res)$/
+get_copy	input.cc	/^static int get_copy(node **nd, int defining)$/
+get_font_translation	node.cc	/^static symbol get_font_translation(symbol nm)$/
+get_format	reg.cc	/^const char *reg::get_format()$/
+get_half_narrow_space_width	env.cc	/^hunits environment::get_half_narrow_space_width()$/
+get_height	node.cc	/^inline int tfont::get_height()$/
+get_hunits	number.cc	/^int get_hunits(hunits *res, unsigned char si)$/
+get_hyphen_line_count	env.cc	/^int environment::get_hyphen_line_count()$/
+get_hyphen_line_max	env.cc	/^int environment::get_hyphen_line_max()$/
+get_hyphen_list	node.cc	/^hyphen_list *glyph_node::get_hyphen_list(hyphen_li/
+get_hyphenation_flags	env.cc	/^int environment::get_hyphenation_flags()$/
+get_hyphenation_margin	env.cc	/^hunits environment::get_hyphenation_margin()$/
+get_hyphenation_space	env.cc	/^hunits environment::get_hyphenation_space()$/
+get_hyphenation_type	node.cc	/^hyphenation_type glyph_node::get_hyphenation_type(/
+get_incr_number	number.cc	/^static incr_number_result get_incr_number(units *r/
+get_input_position	node.cc	/^inline int tfont::get_input_position()$/
+get_integer	number.cc	/^int get_integer(int *res)$/
+get_italic_correction	node.cc	/^hunits tfont::get_italic_correction(charinfo *c)$/
+get_kern	node.cc	/^inline int tfont::get_kern(charinfo *c1, charinfo /
+get_last_extra_space	column.cc	/^vunits column::get_last_extra_space()$/
+get_left_italic_correction	node.cc	/^hunits tfont::get_left_italic_correction(charinfo /
+get_level	input.cc	/^inline int input_stack::get_level()$/
+get_lig	node.cc	/^charinfo *tfont::get_lig(charinfo *c1, charinfo *c/
+get_location	input.cc	/^int file_iterator::get_location(int \/*allow_macro/
+get_name	node.cc	/^symbol font_info::get_name()$/
+get_narrow_space_width	env.cc	/^hunits environment::get_narrow_space_width()$/
+get_number	input.cc	/^int charinfo::get_number()$/
+get_optional_char	input.cc	/^charinfo *get_optional_char()$/
+get_plain	node.cc	/^inline tfont *tfont::get_plain()$/
+get_right_justify_lines	env.cc	/^int environment::get_right_justify_lines()$/
+get_sentence_space_size	env.cc	/^int environment::get_sentence_space_size()$/
+get_size	node.cc	/^inline font_size tfont::get_size()$/
+get_slant	node.cc	/^inline int tfont::get_slant()$/
+get_space_size	env.cc	/^int environment::get_space_size()$/
+get_space_width	env.cc	/^hunits environment::get_space_width()$/
+get_string	column.cc	/^const char *column_bottom_reg::get_string()$/
+get_subscript_correction	node.cc	/^hunits tfont::get_subscript_correction(charinfo *c/
+get_tfont	node.cc	/^tfont *font_info::get_tfont(font_size fs, int heig/
+get_token_node	input.cc	/^token_node *node::get_token_node()$/
+get_track_kern	node.cc	/^inline hunits tfont::get_track_kern()$/
+get_value	input.cc	/^int writable_lineno_reg::get_value(units *res)$/
+get_vunits	number.cc	/^int get_vunits(vunits *res, unsigned char si)$/
+get_width	node.cc	/^hunits tfont::get_width(charinfo *c)$/
+grow_font_table	node.cc	/^static void grow_font_table(int n)$/
+handle_first_page_transition	input.cc	/^void handle_first_page_transition()$/
+handle_initial_request	input.cc	/^void handle_initial_request(unsigned char code)$/
+handle_initial_title	input.cc	/^void handle_initial_title()$/
+has_arg	input.cc	/^int has_arg()$/
+hash_string	symbol.cc	/^static unsigned int hash_string(const char *p)$/
+height	column.cc	/^vunits output_line::height()$/
+high_water_mark	div.cc	/^: nm(s), prev(0), vertical_position(V0), marked_pl/
+hline_node	node.cc	/^hline_node::~hline_node()$/
+hmotion_node	node.cc	/^: hmotion_node(i, next)$/
+hvpair	node.cc	/^hvpair::hvpair()$/
+hyphen_char	env.cc	/^void hyphen_char()$/
+hyphen_line_max_request	env.cc	/^void hyphen_line_max_request()$/
+hyphenate_request	env.cc	/^void hyphenate_request()$/
+hyphenation_code	input.cc	/^void hyphenation_code()$/
+hyphenation_margin	env.cc	/^  hyphenation_margin(H0)$/
+hyphenation_margin_request	env.cc	/^void hyphenation_margin_request()$/
+hyphenation_space_request	env.cc	/^void hyphenation_space_request()$/
+i	dictionary.cc	/^dictionary_iterator::dictionary_iterator(dictionar/
+if	env.cc	/^  else if (ci == field_delimiter_char && !dummy) {/
+if_else_request	input.cc	/^void if_else_request()$/
+if_request	input.cc	/^void if_request()$/
+in_output_page_list	input.cc	/^int in_output_page_list(int n)$/
+inc	reg.cc	/^general_reg::general_reg() : format('1'), width(0)/
+increment	reg.cc	/^void reg::increment()$/
+init_charset_table	input.cc	/^static void init_charset_table()$/
+init_dirs	input.cc	/^static void init_dirs(const char *e, const char *s/
+init_hunits_env_reg	env.cc	/^#define init_hunits_env_reg(name, func) \\$/
+init_input_requests	input.cc	/^void init_input_requests()$/
+init_int_env_reg	env.cc	/^#define init_int_env_reg(name, func) \\$/
+init_reg_requests	reg.cc	/^void init_reg_requests()$/
+init_registers	input.cc	/^static void init_registers()$/
+init_request	input.cc	/^void init_request(const char *s, REQUEST_FUNCP f)$/
+init_size_table	env.cc	/^void font_size::init_size_table(int *sizes)$/
+init_string_env_reg	env.cc	/^#define init_string_env_reg(name, func) \\$/
+init_vunits_env_reg	env.cc	/^#define init_vunits_env_reg(name, func) \\$/
+inline_define_reg	reg.cc	/^void inline_define_reg()$/
+input_char_description	input.cc	/^const char *input_char_description(int c)$/
+input_iterator	input.cc	/^input_iterator::~input_iterator()$/
+interpret	input.cc	/^int non_interpreted_char_node::interpret(macro *ma/
+interrupt	env.cc	/^void environment::interrupt()$/
+is_boundary	input.cc	/^int input_iterator::is_boundary()$/
+is_named	node.cc	/^int font_info::is_named(symbol s)$/
+is_printing	column.cc	/^int column::is_printing()$/
+is_special	node.cc	/^inline int font_info::is_special()$/
+is_style	node.cc	/^inline int font_info::is_style()$/
+italic_corrected_node	node.cc	/^italic_corrected_node::~italic_corrected_node()$/
+italic_correction	node.cc	/^hunits glyph_node::italic_correction()$/
+justification_spec	column.cc	/^justification_spec::~justification_spec()$/
+justify	column.cc	/^void justification_spec::justify(output_line *col,/
+kern_pair_node	node.cc	/^kern_pair_node::~kern_pair_node()$/
+last_char_node	node.cc	/^node *glyph_node::last_char_node()$/
+last_size	node.cc	/^  last_tfont(0), last_size(0)$/
+left_italic_corrected_node	node.cc	/^left_italic_corrected_node::~left_italic_corrected/
+left_italic_correction	node.cc	/^hunits glyph_node::left_italic_correction()$/
+ligature_node	node.cc	/^ligature_node::~ligature_node()$/
+list	node.cc	/^overstrike_node::overstrike_node() : max_width(H0)/
+lookup	dictionary.cc	/^void *dictionary::lookup(symbol s, void *v)$/
+lookup_number_reg	reg.cc	/^reg *lookup_number_reg(symbol nm)$/
+lookup_request	input.cc	/^static request_or_macro *lookup_request(symbol nm)/
+lookup_warning	input.cc	/^static int lookup_warning(const char *name)$/
+mac	node.cc	/^: mac(m)$/
+macro_diversion	div.cc	/^macro_diversion::~macro_diversion()$/
+make_char_node	env.cc	/^node *environment::make_char_node(charinfo *ci)$/
+make_glyph_node	node.cc	/^node *make_glyph_node(charinfo *s, environment *en/
+make_newline	input.cc	/^void token::make_newline()$/
+make_node	node.cc	/^node *make_node(charinfo *ci, environment *env)$/
+make_space	input.cc	/^void token::make_space()$/
+make_temp_iterator	input.cc	/^input_iterator *make_temp_iterator(const char *s)$/
+make_tfont	node.cc	/^tfont *make_tfont(tfont_spec &spec)$/
+margin_character	env.cc	/^void margin_character()$/
+mark_last_line	env.cc	/^void environment::mark_last_line()$/
+max_width	div.cc	/^: diversion(s), max_width(H0)$/
+maxn	column.cc	/^: height(h), n(0), maxn(10)$/
+merge_glyph_node	node.cc	/^node *node::merge_glyph_node(glyph_node * \/*gn*\//
+merge_self	node.cc	/^node *glyph_node::merge_self(node *nd)$/
+merge_space	node.cc	/^int node::merge_space(hunits)$/
+mount_font_no_translate	node.cc	/^static int mount_font_no_translate(int n, symbol n/
+moveto	node.cc	/^inline void troff_output_file::moveto(hunits h, vu/
+n	node.cc	/^zero_width_node::zero_width_node(node *nd) : n(nd)/
+n2	node.cc	/^     : glyph_node(c, t, x), n1(gn1), n2(gn2)$/
+name_to_index	input.cc	/^int font::name_to_index(const char *nm)$/
+nargs	input.cc	/^int input_stack::nargs()$/
+nbreaks	node.cc	/^int node::nbreaks()$/
+need	div.cc	/^void diversion::need(vunits n)$/
+new	input.cc	/^void *small_temp_iterator::operator new(size_t n)$/
+newline	env.cc	/^void environment::newline()$/
+newline_flag	input.cc	/^: fp(f), filename(fn), lineno(1), newline_flag(0)$/
+next	column.cc	/^output_line::output_line() : next(0)$/
+next_file	input.cc	/^int file_iterator::next_file(FILE *f, const char */
+nfont_positions	node.cc	/^: current_height(0), current_slant(0), tbuf_len(0)/
+nm	input.cc	/^: lineno(1), mac(m), newline_flag(0), how_invoked(/
+no_hyphenate	env.cc	/^void no_hyphenate()$/
+no_number	env.cc	/^void no_number()$/
+node	node.cc	/^     : ci(c), tf(t), node(x)$/
+node_list_character_type	node.cc	/^int node_list_character_type(node *p)$/
+node_list_ends_sentence	node.cc	/^int node_list_ends_sentence(node *n)$/
+node_list_get_breakpoints	node.cc	/^static breakpoint *node_list_get_breakpoints(node /
+node_list_split	node.cc	/^static void node_list_split(node *p, int *wherep, /
+node_list_vertical_extent	node.cc	/^void node_list_vertical_extent(node *p, vunits *mi/
+node_output_line	column.cc	/^node_output_line::~node_output_line()$/
+non_empty_name_warning	input.cc	/^static void non_empty_name_warning()$/
+not_found	input.cc	/^  special_translation(TRANSLATE_NONE), mac(0), not/
+nspaces	node.cc	/^int node::nspaces()$/
+number_format_to_ascii	reg.cc	/^static const char *number_format_to_ascii(char for/
+number_lines	env.cc	/^void number_lines()$/
+number_to_index	input.cc	/^int font::number_to_index(unsigned char c)$/
+number_value_to_ascii	reg.cc	/^static const char *number_value_to_ascii(int value/
+object	dictionary.cc	/^object::~object()$/
+open_file	input.cc	/^static FILE *open_file(const char *filename, strin/
+open_mac_file	input.cc	/^FILE *open_mac_file(const char *mac, char **path)$/
+open_request	input.cc	/^void open_request()$/
+opena_request	input.cc	/^void opena_request()$/
+operator	input.cc	/^void token::operator=(const token &t)$/
+out	column.cc	/^: bottom(V0), col(0), tail(&col), out(0)$/
+outc	node.cc	/^void ascii_output_file::outc(unsigned char c)$/
+output	column.cc	/^void output_line::output(output_file *, vunits)$/
+output_file	node.cc	/^output_file::output_file()$/
+output_line	column.cc	/^output_line::~output_line()$/
+output_pending_lines	env.cc	/^void environment::output_pending_lines()$/
+output_title	env.cc	/^void environment::output_title(node *nd, int no_fi/
+outs	node.cc	/^void ascii_output_file::outs(const char *s)$/
+overlaps_horizontally	node.cc	/^int glyph_node::overlaps_horizontally()$/
+overlaps_vertically	node.cc	/^int glyph_node::overlaps_vertically()$/
+overstrike	node.cc	/^void overstrike_node::overstrike(node *n)$/
+overstrike_node	node.cc	/^overstrike_node::~overstrike_node()$/
+p	input.cc	/^constant_int_reg::constant_int_reg(int *q) : p(q)$/
+page_number	div.cc	/^  page_number(0)$/
+parse_expr	number.cc	/^static int parse_expr(units *v, int scale_indicato/
+parse_output_page_list	input.cc	/^static void parse_output_page_list(char *p)$/
+parse_term	number.cc	/^static int parse_term(units *v, int scale_indicato/
+peek	input.cc	/^int input_iterator::peek()$/
+pending_output_line	env.cc	/^pending_output_line::~pending_output_line()$/
+pipe_output	input.cc	/^void pipe_output()$/
+plain	node.cc	/^tfont_spec tfont_spec::plain()$/
+post	node.cc	/^     : node(x), none(n), pre(p), post(0)$/
+postpone_traps	input.cc	/^void postpone_traps()$/
+pre	div.cc	/^: pre_extra(V0), post_extra(V0), pre(vs)$/
+print_line	column.cc	/^void column::print_line(hunits page_offset, vunits/
+print_macros	input.cc	/^void print_macros()$/
+print_number_regs	reg.cc	/^void print_number_regs()$/
+print_size	input.cc	/^void macro::print_size()$/
+printing	node.cc	/^: printing(0)$/
+process	input.cc	/^void token::process()$/
+process_input_file	input.cc	/^static void process_input_file(const char *name)$/
+process_macro_file	input.cc	/^static void process_macro_file(const char *mac)$/
+ptr	reg.cc	/^variable_reg::variable_reg(units *p) : ptr(p)$/
+push	input.cc	/^void input_stack::push(input_iterator *in)$/
+push_page_ejector	input.cc	/^void push_page_ejector()$/
+put	node.cc	/^inline void troff_output_file::put(char c)$/
+put_char	node.cc	/^void troff_output_file::put_char(charinfo *ci, tfo/
+put_char_width	node.cc	/^void troff_output_file::put_char_width(charinfo *c/
+put_string	node.cc	/^static void put_string(const char *s, FILE *fp)$/
+rcount	dictionary.cc	/^object::object() : rcount(0)$/
+read_draw_node	input.cc	/^static node *read_draw_node()$/
+read_escape_name	input.cc	/^static symbol read_escape_name()$/
+read_long_escape_name	input.cc	/^static symbol read_long_escape_name()$/
+read_string	input.cc	/^char *read_string()$/
+read_two_char_escape_name	input.cc	/^static symbol read_two_char_escape_name()$/
+real_output_file	node.cc	/^real_output_file::~real_output_file()$/
+really_begin_page	node.cc	/^void troff_output_file::really_begin_page(int page/
+really_copy_file	node.cc	/^void troff_output_file::really_copy_file(hunits x,/
+really_print_line	node.cc	/^void troff_output_file::really_print_line(hunits x/
+really_transparent_char	node.cc	/^void troff_output_file::really_transparent_char(un/
+remove	dictionary.cc	/^void *dictionary::remove(symbol s)$/
+remove_boundary	input.cc	/^void input_stack::remove_boundary()$/
+remove_reference	dictionary.cc	/^void object::remove_reference()$/
+remove_reg	reg.cc	/^void remove_reg()$/
+rename	dictionary.cc	/^void object_dictionary::rename(symbol oldnm, symbo/
+rename_reg	reg.cc	/^void rename_reg()$/
+reread	column.cc	/^int vjustify_node::reread(int *bolp)$/
+reset	column.cc	/^void output_line::reset()$/
+reverse_node_list	node.cc	/^node *reverse_node_list(node *n)$/
+right	node.cc	/^inline void troff_output_file::right(hunits n)$/
+s	input.cc	/^constant_reg::constant_reg(const char *p) : s(p)$/
+same	column.cc	/^int vjustify_node::same(node *nd)$/
+same_node	node.cc	/^int same_node(node *n1, node *n2)$/
+same_node_list	node.cc	/^int same_node_list(node *n1, node *n2)$/
+scale	number.cc	/^units scale(units n, units x, units y)$/
+set	node.cc	/^space_node::space_node(hunits nn, node *p) : node(/
+set_ascii_code	input.cc	/^void charinfo::set_ascii_code(unsigned char c)$/
+set_bold	node.cc	/^void font_info::set_bold(hunits offset)$/
+set_char_height	env.cc	/^void environment::set_char_height(int n)$/
+set_char_slant	env.cc	/^void environment::set_char_slant(int n)$/
+set_conditional_bold	node.cc	/^void font_info::set_conditional_bold(int fontno, h/
+set_constant_space	node.cc	/^void font_info::set_constant_space(constant_space_/
+set_escape_char	input.cc	/^void set_escape_char()$/
+set_family	env.cc	/^void environment::set_family(symbol fam)$/
+set_font	env.cc	/^void environment::set_font(symbol nm)$/
+set_hyphenation_code	input.cc	/^void charinfo::set_hyphenation_code(unsigned char /
+set_increment	reg.cc	/^void reg::set_increment(units \/*n*\/)$/
+set_location	input.cc	/^int file_iterator::set_location(const char *f, int/
+set_macro	input.cc	/^macro *charinfo::set_macro(macro *m)$/
+set_number	input.cc	/^void charinfo::set_number(unsigned char c)$/
+set_number_reg	reg.cc	/^void set_number_reg(symbol nm, units n)$/
+set_size	env.cc	/^void environment::set_size(int n)$/
+set_special_translation	input.cc	/^void charinfo::set_special_translation(int c)$/
+set_string	input.cc	/^static void set_string(const char *name, const cha/
+set_track_kern	node.cc	/^void font_info::set_track_kern(track_kerning_funct/
+set_translation	input.cc	/^void charinfo::set_translation(charinfo *ci)$/
+set_value	input.cc	/^void writable_lineno_reg::set_value(units n)$/
+set_vertical_size	div.cc	/^void node::set_vertical_size(vertical_size *v)$/
+shift	input.cc	/^void input_stack::shift(int n)$/
+size	node.cc	/^units glyph_node::size()$/
+skew	node.cc	/^hunits glyph_node::skew()$/
+skip	input.cc	/^void token::skip()$/
+skip_line	input.cc	/^void skip_line()$/
+slant	node.cc	/^     height(h), slant(sl)$/
+small_temp_iterator	input.cc	/^small_temp_iterator::~small_temp_iterator()$/
+source	input.cc	/^void source()$/
+space	div.cc	/^void macro_diversion::space(vunits n, int)$/
+space_newline	env.cc	/^void environment::space_newline()$/
+space_node	node.cc	/^space_node::~space_node()$/
+special_char	node.cc	/^void troff_output_file::special_char(unsigned char/
+split	node.cc	/^void node::split(int \/*where*\/, node ** \/*prep*/
+spread_space	node.cc	/^void node::spread_space(int*, hunits*)$/
+spring_trap	input.cc	/^void spring_trap(symbol nm)$/
+start	column.cc	/^void column::start()$/
+start_line	env.cc	/^void environment::start_line()$/
+start_number	number.cc	/^static int start_number()$/
+start_special	node.cc	/^void troff_output_file::start_special()$/
+string_iterator	input.cc	/^string_iterator::string_iterator()$/
+subscript_correction	node.cc	/^hunits glyph_node::subscript_correction()$/
+suppress_output_file	node.cc	/^suppress_output_file::suppress_output_file()$/
+symbol	symbol.cc	/^symbol::symbol(const char *p, int how)$/
+system_request	input.cc	/^void system_request()$/
+sz	node.cc	/^     : node(x), n(p), ci(c), sz(s)$/
+temp_iterator	input.cc	/^temp_iterator::temp_iterator(const char *s, int le/
+terminal	input.cc	/^void terminal()$/
+tfont_spec	node.cc	/^tfont::tfont(tfont_spec &spec) : tfont_spec(spec)$/
+tk	input.cc	/^token_node::token_node(const token &t) : tk(t)$/
+to_units	env.cc	/^int font_size::to_units()$/
+token	input.cc	/^token::~token()$/
+tprint	node.cc	/^void italic_corrected_node::tprint(troff_output_fi/
+tprint_char	node.cc	/^void special_node::tprint_char(troff_output_file */
+tprint_end	node.cc	/^void special_node::tprint_end(troff_output_file *o/
+tprint_reverse_node_list	node.cc	/^static void tprint_reverse_node_list(troff_output_/
+tprint_start	node.cc	/^void special_node::tprint_start(troff_output_file /
+translate	input.cc	/^void translate()$/
+transparent_char	column.cc	/^void column::transparent_char(unsigned char c)$/
+transparent_file	input.cc	/^void transparent_file()$/
+transparent_output	div.cc	/^void macro_diversion::transparent_output(unsigned /
+transparent_output_line	column.cc	/^transparent_output_line::transparent_output_line()/
+trim	column.cc	/^void column::trim()$/
+troff_output_file	node.cc	/^troff_output_file::~troff_output_file()$/
+typ	column.cc	/^: position_output_line(d), typ(t)$/
+type	column.cc	/^inline symbol vjustify_output_line::type()$/
+unbold	node.cc	/^void font_info::unbold()$/
+unpostpone_traps	input.cc	/^int unpostpone_traps()$/
+usage	input.cc	/^void usage(const char *prog)$/
+value	reg.cc	/^number_reg::number_reg() : value(0)$/
+vary	column.cc	/^inline void vjustify_output_line::vary(vunits amou/
+vertical_extent	node.cc	/^void glyph_node::vertical_extent(vunits *min, vuni/
+vertical_width	node.cc	/^vunits break_char_node::vertical_width()$/
+vjustify	column.cc	/^void output_file::vjustify(vunits, symbol)$/
+vline_node	node.cc	/^vline_node::~vline_node()$/
+vunits	number.cc	/^vunits::vunits(units x)$/
+warn_request	input.cc	/^void warn_request()$/
+warning	input.cc	/^int warning(warning_type t,$/
+while_break_request	input.cc	/^void while_break_request()$/
+while_continue_request	input.cc	/^void while_continue_request()$/
+while_request	input.cc	/^void while_request()$/
+widow_control_request	env.cc	/^void widow_control_request()$/
+width	node.cc	/^hunits glyph_node::width()$/
+word_marker	node.cc	/^inline void troff_output_file::word_marker()$/
+writable_lineno_reg	input.cc	/^writable_lineno_reg::writable_lineno_reg()$/
+write_request	input.cc	/^void write_request()$/
+zero_width_node	node.cc	/^zero_width_node::~zero_width_node()$/
+zero_width_tprint	node.cc	/^void glyph_node::zero_width_tprint(troff_output_fi/

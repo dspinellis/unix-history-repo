@@ -1,0 +1,24 @@
+
+  KEY   FUNCTION     ACTIONS
+
+   [    Scrollbar    Scroll text window up.
+   ]    Scrollbar    Scroll text window down. 
+
+   s    Search for   Initiate search for value typed in.
+	             If any matching entries are found these will be listed.
+
+   l 	List	     List entries held below the "Search Area".
+
+   CR   Search       A search will be initiated for the current value.
+	      	     If there is no current value a call to list is
+ 		     made instead.
+
+  <n>   Go to..      Move to and read information on 
+		     listed object number <n>.
+
+   w    Widen..      Widen scope of "Search Area" by moving back one level.
+
+   b    History      List entries that have been previously visited.
+
+   t    Type	     Toggle the type of the attribute displayed in the 
+	             "Search for" field.

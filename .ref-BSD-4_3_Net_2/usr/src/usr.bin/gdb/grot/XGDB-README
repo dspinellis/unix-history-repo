@@ -1,0 +1,57 @@
+XGDB is an attempt at a graphical interface from GDB to X windows.
+Its source code is in xgdb.c.  The decision of whether to include this
+file is made at *link time*; compile-time conditionals for xgdb are not
+allowed.  See the Makefile.
+
+The current version does run with X11R2 but does not completely work.
+For one thing it encounters an apparent bug in the predefined widget
+used to display source files.  This bug (which I have reported) causes
+parts of the source-code display to appear blank.
+
+But XGDB has bugs also.  I suspect that xgdb_display_source passes the
+wrong line-number arguments to that widget and it may work in an
+overcomplicated manner.  Also, at a deeper level, it does not handle
+X-events while either the inferior or a command is running.  This
+certainly means that the window won't refresh at such times.  It's
+possible that events also fail to be handled at other times, such as
+after a button has been clicked, and if so this would account for some
+of the failure to display the source text fully.
+
+I think that someone who really understands the X toolkit ought to write
+something which will handle events asynchronously.
+
+The user interface currently implemented is not very convenient to
+use.  For example, it is necessary to move the mouse back and forth
+often between the XGDB window and the window where XGDB's text I/O is
+done.  XGDB should arrange to receive keyboard input via the XGDB
+window so the mouse can be left there all the time.  These chars may
+need to be echoed explicitly and stuffed into the keyboard buffer so
+they intermix properly with those typed in the text I/O window.
+
+Is it worth while to have several buttons that simply use the
+selection as keyboard input with a few extra characters before and
+after?  Perhaps it would be better to have just one button (or a mouse
+click) to use the selection as text input, since this would work in
+any GDB command.  You would first type the command yourself, then use
+the selection as input, then type RET yourself.  If this is done with
+a mouse click, and if keyboard input is allowed through the XGDB
+window, then all this can be done with no extra mouse motion.
+
+There needs to be a command to find out the line number of the
+selected line (or it should be displayed all the time); otherwise how
+do you use the "jump" command, or go to the editor and find that line
+easily?  Alternatively there should be buttons for these two things.
+
+Some of the buttons' meanings aren't evident.  For example, how does
+"Brk in" differ from "Brk at"?  What is "print *"?  I intuitively
+expected to click on a button and then select what it should apply to,
+and I was surprised to find that one must do it in the other order.
+There should be a "Help" button which displays a screen which explains
+all the features of the graphical interface, and perhaps an "Info"
+button which runs the info program to display the on-line GDB manual.
+
+I would suggest that someone look at other graphical debuggers
+(including Sun's dbxtool) and consider how to change the interface to
+be easier to use in practice.
+
+ -- RMS

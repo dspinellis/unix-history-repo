@@ -1,0 +1,2 @@
+Mchroot	chroot.c	/^main(argc, argv)$/
+fatal	chroot.c	/^fatal(msg)$/

@@ -1,0 +1,7 @@
+Mrailmag	railmag.c	/^main(argc, argv)$/
+checkfont	railmag.c	/^checkfont(file)$/
+concat	railmag.c	/^concat(outbuf, in1, in2)$/
+error	railmag.c	/^error(str)$/
+printrm	railmag.c	/^printrm()$/
+readrm	railmag.c	/^readrm()$/
+writerm	railmag.c	/^writerm()$/

@@ -1,0 +1,14 @@
+= succeeds
+<> succeeds
+> succeeds
+< succeeds
+>= succeeds
+<= succeeds
+= succeeds
+<> succeeds
+> succeeds
+< succeeds
+>= succeeds
+<= succeeds
+
+30029 statements executed in 6.42 seconds cpu time.

@@ -1,0 +1,7 @@
+[ READ-ME - Sun Feb 14 08:11:32 1988 - ISODE listen demo notes - jrp ]
+
+
+     This is just a simple demonstration of network listening.  You
+     probably don't want to install it unless you're interested in
+     trying the code out, for example when adding support for a new
+     type of network or machine.

@@ -1,0 +1,1 @@
+Mlibmain	libmain.c	/^int main( argc, argv )$/

@@ -1,0 +1,109 @@
+.\"$Header: /f/osi/others/quipu/uips/pod/RCS/pod.1c,v 7.2 91/02/22 09:31:39 mrose Interim $"
+.TH Pod 1C "16 Jan 1909"
+.SH NAME
+Pod \- X-windows based directory user agent.
+.SH SYNOPSIS
+.B pod
+[ OPTIONS ]
+.SH DESCRIPTION
+.PP
+\fIPod\fR is an x-windows interface to
+the Quipu implementation of the X500 directory intended for 
+novice users.
+.PP
+X500 is a worldwide directory service providing
+information on people, places and organizations.
+As yet it is still in it's infancy and thus the amount
+of information contained in the directory is limited.
+The directory can be thought of as an `electronic phonebook'.
+Like a phonebook,
+a geographic structure is imposed on the data;
+no phonebook lists all people in the world in a single alphabetic sequence.
+It is necessary to have some idea of where a person might be before starting
+to search for them.
+The directory is similar;
+information is held in a hierarchical structure,
+with data on countries held at the top level of the hierarchy
+and information on organizations,
+and the entities contained therein
+(people,
+departments etc.),
+held below this.
+.PP
+\fIPod\fR relies heavily on the concept of the user 'navigating'
+around the directory database,
+'visiting' entries.
+At any one time the user occupies a single position in the
+directory,
+where this position corresponds to some directory entry,
+e.g. the country Great Britain.
+The name of the currently visited entry
+is shown in the upper right window of
+\fIpod\fR's main screen.
+This name has a form similar to that of a postal address,
+as shown in the example below.
+.sp
+.in +.5i
+.nf
+The World
+.br
+GB
+.br
+Brunel University
+.fi
+.in -.5i
+.sp
+The user can browse below the current position using
+the search and list functions,
+details of which can be found using the on-line help
+system.
+Information on entries visited is displayed automatically
+in the lower right window of the main screen.
+.br
+.SH "OPTIONS"
+Pod supports the command line options listed below.
+.TP 12
+.BI \-c 
+Bind to named directory system agent.
+Pod binds to your local dsa,
+if not otherwise requested.
+.TP
+.BI \-u
+Bind as the specified user.
+This name must be a quoted distinguished name.
+.TP
+.BI \-p
+The password to bind against.
+.TP
+.BI \-fn
+Use named font.
+The default font is helvetica,
+with point size 11.
+.TP
+.BI \-display
+Run pod on named display.
+As with all other X applications,
+pod looks for the environment variable 'DISPLAY'
+or else runs on 'unix:0.0'.
+.TP
+.BI \-fg
+Set foreground colour.
+.TP
+.BI \-bg
+Set background colour.
+.SH "SEE ALSO"
+dish(1c) sd(1c) xd(1c) sd(5)
+.br
+\fIThe ISO Development Environment: User's Manual, Volume 5: QUIPU\fR
+.br
+ISO 9594:
+\fIInformation Processing \-\- Open Systems Interconnection \-\-
+The Directory\fR
+.SH AUTHORS
+Damanjit.Mahl@brunel.ac.uk
+.br
+Andrew.Findlay@brunel.ac.uk
+.br
+Stefan.Nahajski@brunel.ac.uk
+.br
+

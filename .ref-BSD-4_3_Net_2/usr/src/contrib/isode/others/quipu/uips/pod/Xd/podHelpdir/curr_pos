@@ -1,0 +1,22 @@
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ Pod - Current Directory Position
+
+ The <Current Directory Position> serves as a
+ reference point for the <Search> and <List> 
+ operations. For example if the <List> button
+ is clicked on when the <Current Directory
+ Position> points to "Brunel University", a 
+ list showing all departments in Brunel
+ will be returned.
+
+ The current position is built up as a sequence
+ of increasingly specific object names. To 
+ 'widen' the search area, or move to a less 
+ specific object, click on the name of the 
+ object that you wish to move to, in the same
+ way as moving to an object contained in a list.
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+

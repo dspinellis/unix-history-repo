@@ -1,0 +1,237 @@
+#!/bin/sh
+# these shell variables are configured by "make dsc"
+CDN="@c=GB"
+ORGRDN="DISTORGRDN"
+INTLOGDIR=DISTLOGPLACE
+LOCALPATH=DISTLOCPATH
+SHORTSITE="DISTSITESHORT"
+LONGSITE="DISTSITELONG"
+BINDARG="DISTBINDARG"
+EMAILUKORDER="DISTUKORDER"
+
+SHELL=/bin/echo
+export SHELL
+if [ "$HOME" = "" ]; then
+	HOME=/
+	export HOME
+fi
+pid="$$"
+trap "rm -f /tmp/dscresults$pid /tmp/dscresults${pid}2" 1 2 3 15
+trap "rm -f /tmp/dscresults$pid /tmp/dscresults${pid}2; exit" 2
+PATH=/bin:/usr/bin:/usr/ucb:/usr/5bin:$LOCALPATH
+export PATH
+OldIFS=$IFS
+NewIFS='
+'
+Mode="COMMAND-LINE"
+cat <<ENDMESS
+
+You are connected to the $SHORTSITE directory service. You will be prompted for
+the type of interface - 'easy' or 'advanced'. The 'easy' interface will
+prompt you with the following three questions in turn:
+
+Enter the person's name (or "?" for help, "q" to quit):
+Enter department ("Return" to search all depts, * to list depts):
+Enter site ("Return" for $SHORTSITE, * to list all sites):
+
+This interface currently only allows you to query within the UK.
+
+    An alternative style of querying the directory is provided by the 
+'advanced' interface.  This is screen based and so needs to know the type 
+of terminal you are using. This interface allows you to look for entries
+outside of the UK.
+
+ENDMESS
+
+until test "$iface" = "e" -o "$iface" = "E" -o "$iface" = "a" -o "$iface" = "A"
+do
+    echo -n "easy or advanced interface? (e/a): "
+    # sttys are meant to throw away type ahead characters
+    stty raw
+    stty cooked
+    read iface
+	if [ "$iface" = "a" -o "$iface" = "A" ]; then
+        echo ""
+        while echo -n "Enter your terminal type (RETURN if you don't know): "; read TERM
+		do
+	        if [ "$TERM" = "" ]; then
+	        	iface="e"
+	            echo "No terminal type entered ... use the \"easy\" interface"
+				break
+	        else
+				awk ' BEGIN {
+					foundterm = "FALSE"
+				}
+				/^([^	])/ {
+					if (substr($0, 1, 1) == "#")
+						next
+					n = index($0, ":")
+					# this initialisation gets round a bug in awk
+					for (i = 1;i < 11; i++)
+						ttypes[i] = ""
+					no_ttypes = split(substr($0, 1, n -1), ttypes, "|")
+					for (i = 1; i < no_ttypes; i++)
+					{
+						if ("'$TERM'" == ttypes[i])
+						{
+							foundterm = "TRUE"
+							exit 0
+						}
+					}
+				}
+				END {
+					if (foundterm == "TRUE")
+						exit 0
+					else
+						exit 1
+				} ' /etc/termcap
+				if [ $? = "0" ]; then
+		            export TERM
+					break
+				else
+					echo "Don't know about terminal type <$TERM>"
+				fi
+	        fi
+		done
+	else if test "$iface" = ""
+		 then
+			iface="e"
+		 fi
+    fi
+done
+if test "$iface" = "e" -o "$iface" = "E"
+then
+	ppid=$$
+	if [ "$DISHPROC" = "" ]; then
+		if ( test $ppid-lt10000 )
+		then
+			ppid=`expr $ppid + 10000`
+		fi
+		DISHPROC="127.0.0.1 $ppid"
+		export DISHPROC
+	fi
+	bind $BINDARG -noa > /dev/null 2>&1 &
+
+showhelp () {
+cat <<ENDHELP
+
+You will be prompted for the surname of the person, the department they
+work in, and the organisation they work for. If no department is specified, 
+all departments within the desired organisation are searched.  If no
+organisation is specified, the search is performed on the local organisation.
+You do not have to enter complete names: for example, entering the string
+"bone" as the name could find entries for people called "bone", "rathbone" and
+"carbonell", as well as "BONE DENSITOMETRY". The string can form part of the
+middle of a name and upper/lower case is not significant. Rooms can be
+searched for (for example "seminar") or functions (for example "secretary").
+
+However, the less information you provide, the more names will be matched
+by your query. If the person whose telephone number you are seeking has a
+relatively common name, the directory may well return more names than you can
+easily sift through and the message "there are too many results to print" will
+appear. In such cases, it might be best to enter the name of the department.
+Again this does not have to be fully specified. For example, "computer" will
+find people in both the "computer science" department and the "computer centre"
+
+The first query will probably take a few seconds while the interface 
+"connects" to the directory.  (Immediately subsequent queries should be
+performed much more quickly.)
+
+ENDHELP
+}
+
+showentries () {
+	awk ' BEGIN {
+		entry = 0
+		noOfOrgs = 0
+		gotentry = "FALSE"
+		notepartial = "FALSE"
+	}
+
+	/^organization -/ {
+		if (gotentry == "TRUE")
+		{
+			longform[entry ",name"] = sprintf ("\n%-15s %s", "name:", name)
+			if (deptname != "")
+				longform[entry ",dept"] = sprintf ("%-15s %s", "department:", deptname)
+			if (phone != "")
+				longform[entry ",phone"] = sprintf ("%-15s %s", "phone: ", phone)
+			if (email != "")
+				longform[entry ",email"] = sprintf ("%-15s %s", "email: ", email)
+			longform[entry ",org"] = sprintf ("%-15s %s", "organisation: ", org)
+			shortform[entry] = sprintf ("%-20s %-20s %-s", name, phone, deptname)
+			if (deptname == "")
+			{
+				shortform[entry] = shortform[entry] org
+				shortform[entry ",org"] = ""
+			}
+			else
+				shortform[entry ",org"] = org
+			gotentry = "FALSE"
+		}
+		org = substr($0, 16)
+		noOfOrgs++
+		orgents = 0
+		next
+	}
+
+	/^[0-9]+ / {
+		notepartial = "FALSE"
+		if (gotentry == "TRUE")
+		{
+			longform[entry ",name"] = sprintf ("\n%-15s %s", "name:", name)
+			if (deptname != "")
+				longform[entry ",dept"] = sprintf ("%-15s %s", "department:", deptname)
+			if (phone != "")
+				longform[entry ",phone"] = sprintf ("%-15s %s", "phone: ", phone)
+			if (email != "")
+				longform[entry ",email"] = sprintf ("%-15s %s", "email: ", email)
+			longform[entry ",org"] = sprintf ("%-15s %s", "organisation: ", org)
+			shortform[entry] = sprintf ("%-20s %-20s %-s", name, phone, deptname)
+			if (deptname == "")
+			{
+				shortform[entry] = shortform[entry] org
+				shortform[entry ",org"] = ""
+			}
+			else
+				shortform[entry ",org"] = org
+			gotentry = "FALSE"
+		}
+		gotentry = "TRUE"
+		entry++
+# parses the DN returned by search
+		n = index($0, "c=")
+		DNparts = substr($0, n)
+		n = split(DNparts, RDNparts, "@")
+		name = substr(RDNparts[n], 4)
+		if ((n > 1) && substr(RDNparts[n-1], 1, 3) == "ou=")
+			deptname = substr(RDNparts[n-1], 4)
+		else
+			deptname = ""
+		phone = email = ""
+		next
+	}
+
+	# these next two actions to throw away lines we do not want
+	/^NOTE partial/ {
+		notepartial = "TRUE"
+		next
+	}
+
+	{
+		if (notepartial == "TRUE")
+			next
+	}
+
+	/\(Partial/ {
+		partialRes = "TRUE"
+	}
+	
+	/\(Admin limit exceeded/ {
+		partialRes = "TRUE"
+	}
+	
+# all attributes need the type trimming off
+	{
+		n = index($0, "-") + 2
+	}

@@ -1,0 +1,26 @@
+Fri Feb 23 19:44:10 1990  Doug Schmidt  (schmidt at zola.ics.uci.edu)
+
+        * Added the `-h' option to print out a verbose help message.
+
+        * Added a check in Trie::output that ensures the program doesn't
+          crash if no keywords are given!
+          
+        * Implemented the -f (generate full trie) option.  This is useful
+          to generate another example program for my USENIX C++ paper!
+
+        * Removed the member field `compact_output' from class Trie.  
+          Changed all uses of this variable to option[COMPACT].  Why
+          was it ever done the other way anyhow?!
+
+        * Added the `-C' CONST option so that user's can declare strings in 
+          the generated lookup table to be readonly.
+
+Fri Feb 16 10:47:02 1990  Doug Schmidt  (schmidt at zola.ics.uci.edu)
+
+        * Killed some debugging code in compact.cc (operator new).
+
+Thu Feb 15 23:20:44 1990  Doug Schmidt  (schmidt at zola.ics.uci.edu)
+
+        * Fixed a bunch of incredibly stupid errors.  (I can't believe
+          this thing even worked before...).  That's what happens when you
+          don't hack for 2 months ;-(

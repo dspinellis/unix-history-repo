@@ -1,0 +1,23 @@
+"start:movl	sp@,d2
+lea	sp@(4),a3
+movl	d2,d1
+asll	#2,d1
+lea	a3@(4,d1:l),a4
+movl	#flag+0x8000,a3@-
+movl	#lisp+0x8000,a3@-
+movl	a3,sp
+pea	a4@
+pea	a3@
+movl	#lisp+0x8000,sp@-
+jsr	execve
+execve: pea	0x3b:w
+trap	#0
+addw	#12,a7
+pea	0:w
+jsr	_exit
+_exit: pea	1:w
+trap	#0
+flag:	.asciz	\"-f\"
+lisp:	.asciz  \"/usr/ucb/lisp\"
+.even
+"

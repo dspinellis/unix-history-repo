@@ -1,0 +1,48 @@
+.TH ISOMACROS 5 "12 Feb 1989"
+.\" $Header: /f/osi/support/RCS/isomacros.5,v 7.1 91/02/22 09:46:44 mrose Interim $
+.\"
+.\"
+.\" $Log:	isomacros.5,v $
+.\" Revision 7.1  91/02/22  09:46:44  mrose
+.\" Interim 6.8
+.\" 
+.\" Revision 7.0  89/11/23  22:27:33  mrose
+.\" Release 6.0
+.\" 
+.SH NAME
+.B isomacros
+\- ISODE macros database
+.SH DESCRIPTION
+The \fIisomacros\fR
+file contains information regarding local macros for network addresses.
+.PP
+Items are separated by any number of blanks and/or tab characters.
+However, double\-quotes may be used to prevent separation between arguments.
+The character `#' at the beginning of a line indicates a comment line.
+.PP
+The first item is the macro, a simple string.
+The second item is the prefix for the corresponding network address.
+.SH "USER-SPECIFIC MACROS"
+By default
+a user-specific macros database is consulted before the system\-wide
+macros file.
+The user-specific file is called \fB\&.isode_macros\fR in the user's
+home directory.
+.SH FILES
+.nf
+.ta \w'$HOME/.isode_macros  'u
+\*(EDisomacros	ISODE macros database
+$HOME/.isode_macros	user-specific macros database
+.re
+.fi
+.SH "SEE ALSO"
+isoentities(5),
+.br
+\fIThe ISO Development Environment: User's Manual, Volume 1:
+Application Services\fR, \*(lqThe ISODE Macros Database\*(rq,
+.br
+\fIA string encoding of Presentation Address\fR, S.E. Kille
+.br
+\fIAn Interim approach to use of Network Addresses\fR, S.E. Kille
+.SH AUTHOR
+Marshall T. Rose

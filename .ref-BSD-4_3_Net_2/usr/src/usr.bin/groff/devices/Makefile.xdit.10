@@ -1,0 +1,16 @@
+#	@(#)Makefile.xdit.10	6.1 (Berkeley) 3/3/91
+
+FONTMAP=	$(.CURDIR)/FontMap
+DESC=		$(.CURDIR)/DESC
+EQNCHAR=	$(.CURDIR)/eqnchar
+
+DESC:		$(DESC)
+	cp $(DESC) $@
+
+FontMap:	$(FONTMAP)
+	cp $(FONTMAP) $@
+
+eqnchar:	$(EQNCHAR)
+	cp $(EQNCHAR) $@
+
+.include "../Makefile.xdit"

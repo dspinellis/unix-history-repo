@@ -1,0 +1,153 @@
+-- NTP definitions for ROS specification
+--
+-- Julian Onions, Nottingham University, UK.
+--
+-- Mon Jun  5 10:07:07 1989
+--
+
+NTP DEFINITIONS ::=
+
+BEGIN
+
+update OPERATION
+	ARGUMENT Packet
+	::= 0
+
+query OPERATION
+	ARGUMENT NULL
+	RESULT ClockInfoList
+	::= 1
+
+-- Data Structures
+
+BindArgument ::=
+	SEQUENCE {
+		psap[0] IA5String OPTIONAL,
+		version[1] BITSTRING {
+			version-0(0),
+			version-1(1),
+			version-2(2)
+		} DEFAULT version-2,
+		authentication[2] Authentication OPTIONAL,
+		mode[3] BindMode
+	}
+
+Authentication ::= ANY
+
+BindMode ::= ENUMERATED {
+		normal(0),	-- standard NTP
+		query(1)	-- queries only
+	}
+
+BindResult ::= 
+	SEQUENCE {
+		version[1] INTEGER DEFAULT 2,
+		authentication[2] Authentication OPTIONAL,
+		mode[3] BindMode
+	}
+			
+BindError ::=
+	SEQUENCE {
+		reason[0] INTEGER {
+			refused(0),
+			validation(1),
+			version(2),	-- version not supported
+			badarg(3),	-- bad bind argument
+			congested(4)	-- catch all!
+		},
+		supplementary[1] IA5String OPTIONAL
+	}
+
+Packet ::= SEQUENCE {
+	leap			Leap,
+	mode			Mode,
+	stratum[1]		INTEGER,
+	pollInterval[2]		INTEGER,
+	precision[3]		INTEGER,
+	synchDistance		SmallFixed,
+	synchDispersion		SmallFixed,
+	referenceClockIdentifier ClockIdentifier,
+	referenceTimestamp	TimeStamp,
+	originateTimestamp	TimeStamp,
+	receiveTimestamp	TimeStamp,
+	transmitTimestamp	TimeStamp
+}
+
+
+ClockInfoList ::= SET OF ClockInfo
+
+ClockInfo ::= SEQUENCE {
+	remoteAddress		Address,
+	localAddress		Address,
+	flags[0] 		BIT STRING {
+			configured(0),
+			authentable(1),
+			sane(2),
+			candidate(3),
+			sync(4),
+			broadcast(5),
+			referenceClock(6),
+			selected(7),
+			inactive(8)
+	},
+	packetsSent[1]		INTEGER,
+	packetsReceived[2]	INTEGER,
+	packetsDropped[3]	INTEGER,
+	timer[4]		INTEGER,
+	leap 			Leap,
+	stratum[5]		INTEGER,
+	ppoll[6]		INTEGER,
+	hpoll[7]		INTEGER,
+	precision[8]		INTEGER,
+	reachability[9]		INTEGER,
+	estdisp[10]		INTEGER,
+	estdelay[11]		INTEGER,
+	estoffset[12]		INTEGER,
+	reference[13]		ClockIdentifier OPTIONAL,
+	reftime			TimeStamp,
+	filters			SEQUENCE OF Filter
+}
+
+Leap ::= [APPLICATION 0] ENUMERATED {
+		nowarning(0),
+		plussecond(1),
+		minussecond(2),
+		alarm(3)
+	}
+
+SmallFixed ::= [APPLICATION 1] IMPLICIT SEQUENCE {
+		integer INTEGER,
+		fraction INTEGER
+	}
+
+ClockIdentifier ::= CHOICE {
+			referenceClock[0] PrintableString,
+			inetaddr[1] OCTET STRING,
+			psapaddr[2] OCTET STRING
+	}
+
+TimeStamp ::= [APPLICATION 2] IMPLICIT SEQUENCE {
+		integer INTEGER,
+		fraction INTEGER
+	}
+
+KeyId ::= [APPLICATION 4] INTEGER
+
+Mode ::= [APPLICATION 4] ENUMERATED {
+		unspecified (0),
+		symmetricActive (1),
+		symmetricPassive (2),
+		client (3),
+		server (4),
+		broadcast (5),
+		reservered (6),
+		private (7)
+	}
+
+Filter ::= SEQUENCE {
+		offset INTEGER,
+		delay INTEGER
+	}
+
+Address ::= OCTET STRING -- for now
+END

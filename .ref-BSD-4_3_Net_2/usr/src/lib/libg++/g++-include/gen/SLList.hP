@@ -1,0 +1,152 @@
+// This may look like C code, but it is really -*- C++ -*-
+/* 
+Copyright (C) 1988 Free Software Foundation
+    written by Doug Lea (dl@rocky.oswego.edu)
+
+This file is part of GNU CC.
+
+GNU CC is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY.  No author or distributor
+accepts responsibility to anyone for the consequences of using it
+or for whether it serves any particular purpose or works at all,
+unless he says so in writing.  Refer to the GNU CC General Public
+License for full details.
+
+Everyone is granted permission to copy, modify and redistribute
+GNU CC, but only under the conditions described in the
+GNU CC General Public License.   A copy of this license is
+supposed to have been given to you along with GNU CC so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies.  
+*/
+
+
+#ifndef _<T>SLList_h
+#ifdef __GNUG__
+#pragma once
+#pragma interface
+#endif
+#define _<T>SLList_h 1
+
+#include <Pix.h>
+#include "<T>.defs.h"
+
+#ifndef _<T>SLListNode_h
+#define _<T>SLListNode_h 1
+
+struct <T>SLListNode
+{
+  <T>SLListNode*         tl;
+  <T>                    hd;
+                         <T>SLListNode();
+                         <T>SLListNode(<T&> h, <T>SLListNode* t = 0);
+                         ~<T>SLListNode();
+};
+
+#if defined(__OPTIMIZE__) || defined(USE_LIBGXX_INLINES)
+
+inline <T>SLListNode::<T>SLListNode() {}
+
+inline <T>SLListNode::<T>SLListNode(<T&> h, <T>SLListNode* t) :hd(h), tl(t) {}
+
+inline <T>SLListNode::~<T>SLListNode() {}
+
+#endif
+
+typedef <T>SLListNode* <T>SLListNodePtr;
+
+#endif
+
+
+class <T>SLList
+{
+protected:
+  <T>SLListNode*        last;
+
+public:
+                        <T>SLList();
+                        <T>SLList(<T>SLList& a);
+                        ~<T>SLList();
+
+  <T>SLList&            operator = (<T>SLList& a);
+
+  int                   empty();
+  int                   length();
+
+  void                  clear();
+
+  Pix                   prepend(<T&> item);
+  Pix                   append(<T&> item);
+
+  void                  join(<T>SLList&);
+
+  Pix                   prepend(<T>SLListNode*);
+  Pix                   append(<T>SLListNode*);
+
+  <T>&                  operator () (Pix p);
+  Pix                   first();
+  void                  next(Pix& p);
+  int                   owns(Pix p);
+  Pix                   ins_after(Pix p, <T&> item);
+  void                  del_after(Pix p);
+
+  <T>&                  front();
+  <T>&                  rear();
+  <T>                   remove_front();
+  int                   remove_front(<T>& x);
+  void                  del_front();
+
+  void                  error(const char* msg);
+  int                   OK();
+};
+
+#if defined(__OPTIMIZE__) || defined(USE_LIBGXX_INLINES)
+
+inline <T>SLList::~<T>SLList()
+{
+  clear();
+}
+
+inline <T>SLList::<T>SLList()
+{
+  last = 0;
+}
+
+inline int <T>SLList::empty()
+{
+  return last == 0;
+}
+
+
+inline Pix <T>SLList::first()
+{
+  return (last == 0)? 0 : Pix(last->tl);
+}
+
+inline void <T>SLList::next(Pix& p)
+{
+  p = (p == 0 || p == last)? 0 : Pix(((<T>SLListNode*)(p))->tl);
+}
+
+inline <T>& <T>SLList::operator () (Pix p)
+{
+  if (p == 0) error("null Pix");
+  return ((<T>SLListNode*)(p))->hd;
+}
+
+inline <T>& <T>SLList::front()
+{
+  if (last == 0) error("front: empty list");
+  return last->tl->hd;
+}
+
+inline <T>& <T>SLList::rear()
+{
+  if (last == 0) error("rear: empty list");
+  return last->hd;
+}
+
+
+#endif
+#endif

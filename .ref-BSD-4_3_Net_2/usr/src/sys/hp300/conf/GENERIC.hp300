@@ -1,0 +1,76 @@
+#
+# GENERIC HP9000/300
+#
+machine		"hp300"
+
+cpu		"HP320"
+cpu		"HP330"
+cpu		"HP340"
+cpu		"HP350"
+cpu		"HP360"
+cpu		"HP370"
+ident		GENERIC
+
+timezone	8 dst
+
+# Standard 4.3-Reno options
+maxusers	48
+options		INET
+options		NS
+options		KADB
+options		QUOTA
+options		FIFO
+options		NFS
+options		MFS
+options		DIAGNOSTIC
+options		"TCP_COMPAT_42"
+options		"COMPAT_43"
+options		"COMPAT_42"
+options		KTRACE
+#options	GATEWAY		# slip needs this for packet forwarding
+
+# OSI stuff:
+#options	ISO
+#options	TPIP
+#options	EON
+
+# More standard options for the HPs
+options		MAPMEM,SYSVSHM
+#options		HPUXCOMPAT
+
+
+config		vmunix swap generic
+
+master		hpib0	at scode7
+master		hpib1	at scode?
+master		hpib2	at scode?
+disk		rd0	at hpib? slave 0
+disk		rd1	at hpib? slave ?
+disk		rd2	at hpib? slave ?
+disk		rd3	at hpib? slave ?
+tape		ct0	at hpib? slave ?
+tape		ct1	at hpib? slave ? flags 1
+device		ppi0	at hpib0 slave 5
+
+master		scsi0	at scode?
+master		scsi1	at scode?
+disk		sd0	at scsi? slave ?
+disk		sd1	at scsi? slave ?
+disk		sd2	at scsi? slave ?
+disk		sd3	at scsi? slave ?
+
+device		dca0	at scode9 flags 1
+device		dcm0	at scode? flags 0xe
+device		dcm1	at scode? flags 0xe
+device		dcm2	at scode? flags 0xe
+device		dcm3	at scode? flags 0xe
+device		le0	at scode?
+
+device		grf0	at scode?
+device		grf1	at scode?
+device		grf2	at scode?
+
+pseudo-device	ite
+pseudo-device	pty
+pseudo-device	loop
+pseudo-device	ether

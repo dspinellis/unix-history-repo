@@ -1,0 +1,72 @@
+.TH RCSDIFF 1L "" "Purdue University"
+.SH NAME
+rcsdiff \- compare RCS revisions
+.SH SYNOPSIS
+\fBrcsdiff\fR [ \fB\-biwt\fR ] [ \fB\-cefhn\fR ] [ \fB\-q\fR ] [ \fB\-r\fIrev1\fR ] [ \fB\-r\fIrev2\fR ] file ...
+.SH DESCRIPTION
+.I Rcsdiff
+runs
+.IR diff (1)
+to compare two revisions of each RCS file given.
+A file name ending in ',v' is an RCS file name, otherwise a
+working file name. \fIRcsdiff\fR derives the working file name from the RCS
+file name and vice versa, as explained in
+.IR co (1L).
+Pairs consisting
+of both an RCS and a working file name may also be specified.
+.PP
+The options \fB\-b\fR, \fB\-i\fR, \fB\-w\fR, \fB\-t\fR,
+\fB\-c\fR, \fB\-e\fR, \fB\-f\fR, and \fB\-h\fR,
+have the same effect as described in
+.IR diff (1);
+option
+\fB\-n\fR generates an edit script of the format used by RCS.
+The option \fB\-q\fR suppresses diagnostic output.
+.PP
+If both \fIrev1\fR and \fIrev2\fR
+are omitted, \fIrcsdiff\fR compares the latest revision on the
+default branch (normally the highest branch on the trunk)
+with the contents of the corresponding working file. This is useful
+for determining what you changed since the last checkin.
+.PP
+If \fIrev1\fR is given, but \fIrev2\fR is omitted,
+\fIrcsdiff\fR compares revision \fIrev1\fR of the RCS file with
+the contents of the corresponding working file.
+.PP
+If both \fIrev1\fR and \fIrev2\fR are given,
+\fIrcsdiff\fR compares revisions \fIrev1\fR and \fIrev2\fR of the RCS file.
+.PP
+Both \fIrev1\fR and \fIrev2\fR may be given numerically or symbolically,
+and may actually be attached to any of the options.
+.SH EXAMPLES
+.nf
+The command
+
+.B "        rcsdiff  f.c
+
+.fi
+runs \fIdiff\fR on the latest revision on the default branch of RCS file f.c,v
+and the contents of working file f.c.
+.SH DIAGNOSTICS
+The exit status is 0 if there were no differences during the last comparison,
+1 if there were differences, and 2 if there were errors.
+.SH IDENTIFICATION
+.de VL
+\\$2
+..
+Author: Walter F. Tichy,
+Purdue University, West Lafayette, IN, 47907.
+.sp 0
+Revision Number:
+.VL $Revision: 1.4 $
+; Release Date:
+.VL $Date: 89/08/15 21:16:07 $
+\&.
+.sp 0
+Copyright \(co 1982, 1988, 1989 by Walter F. Tichy.
+.SH SEE ALSO
+ci(1L), co(1L), diff(1), ident(1L), rcs(1L), rcsintro(1L), rcsmerge(1L), rlog(1L)
+.br
+Walter F. Tichy, "Design, Implementation, and Evaluation of a Revision Control
+System," in \fIProceedings of the 6th International Conference on Software
+Engineering\fR, IEEE, Tokyo, Sept. 1982.

@@ -1,0 +1,10 @@
+Mtsort	tsort.c	/^main(argc, argv)$/
+add_arc	tsort.c	/^add_arc(s1, s2)$/
+add_node	tsort.c	/^add_node(name)$/
+find_cycle	tsort.c	/^find_cycle(from, to, longest_len, depth)$/
+find_node	tsort.c	/^find_node(name)$/
+grow_buf	tsort.c	/^grow_buf(bp, size)$/
+hash_string	tsort.c	/^hash_string(s)$/
+no_memory	tsort.c	/^no_memory()$/
+remove_node	tsort.c	/^remove_node(n)$/
+tsort	tsort.c	/^tsort()$/

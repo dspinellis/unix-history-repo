@@ -1,0 +1,5 @@
+#!/bin/sh
+echo Listing below:
+showname $1
+echo ""
+exec search -filter !objectclass=dsa -nosize $*

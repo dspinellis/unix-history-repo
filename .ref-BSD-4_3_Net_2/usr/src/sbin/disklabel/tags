@@ -1,0 +1,19 @@
+Mdisklabel	disklabel.c	/^main(argc, argv)$/
+NXTNUM	disklabel.c	/^#define NXTNUM(n) { \\$/
+Perror	disklabel.c	/^Perror(str)$/
+Warning	disklabel.c	/^Warning(fmt, a1, a2, a3, a4, a5)$/
+checklabel	disklabel.c	/^checklabel(lp)$/
+display	disklabel.c	/^display(f, lp)$/
+dkcksum	dkcksum.c	/^dkcksum(lp)$/
+edit	disklabel.c	/^edit(lp, f)$/
+editit	disklabel.c	/^editit()$/
+getasciilabel	disklabel.c	/^getasciilabel(f, lp)$/
+l_perror	disklabel.c	/^l_perror(s)$/
+makebootarea	disklabel.c	/^makebootarea(boot, dp)$/
+makelabel	disklabel.c	/^makelabel(type, name, lp)$/
+readlabel	disklabel.c	/^readlabel(f)$/
+skip	disklabel.c	/^skip(cp)$/
+streq	disklabel.c	/^#define	streq(a,b)	(strcmp(a,b) == 0)$/
+usage	disklabel.c	/^usage()$/
+word	disklabel.c	/^word(cp)$/
+writelabel	disklabel.c	/^writelabel(f, boot, lp)$/

@@ -1,0 +1,89 @@
+#
+# GENERIC POWER 6/32
+#
+machine		tahoe
+cpu		"TAHOE"
+ident		GENERIC
+timezone	8 dst
+maxusers	32
+options		INET
+options		NS
+options		KADB
+options		QUOTA
+options		FIFO
+options		NFS
+options		MFS
+options		DIAGNOSTIC
+options		"TCP_COMPAT_42"
+options		"COMPAT_43"
+options		KTRACE
+#options	GATEWAY		# slip needs this for packet forwarding
+
+# OSI stuff:
+#options	ISO
+#options	TPIP
+#options	EON
+
+
+config		vmunix		swap generic
+
+controller	vba0
+
+controller	vd0	at vba? csr 0xffff2000		vector vdintr
+disk		dk0	at vd0 drive 0
+disk		dk1	at vd0 drive 1
+disk		dk2	at vd0 drive 2
+disk		dk3	at vd0 drive 3
+controller	vd1	at vba? csr 0xffff2100		vector vdintr
+disk		dk4	at vd1 drive 0
+disk		dk5	at vd1 drive 1
+disk		dk6	at vd1 drive 2
+disk		dk7	at vd1 drive 3
+controller	vd2	at vba? csr 0xffff2200		vector vdintr
+disk		dk8	at vd2 drive 0
+disk		dk9	at vd2 drive 1
+disk		dk10	at vd2 drive 2
+disk		dk11	at vd2 drive 3
+
+controller	cy0	at vba? csr 0xffff4000		vector cyintr
+device		yc0	at cy0 drive 0
+device		yc1	at cy0 drive 1
+device		yc2	at cy0 drive 2
+device		yc3	at cy0 drive 3
+controller	cy1	at vba? csr 0xffff6000		vector cyintr
+device		yc4	at cy1 drive 0
+device		yc5	at cy1 drive 1
+device		yc6	at cy1 drive 2
+device		yc7	at cy1 drive 3
+
+device		vx0	at vba? csr 0xfffe0000	vector vackint vcmdrsp vunsol
+device		vx1	at vba? csr 0xfffe4000	vector vackint vcmdrsp vunsol
+device		vx2	at vba? csr 0xfffe8000	vector vackint vcmdrsp vunsol
+device		vx3	at vba? csr 0xfffec000	vector vackint vcmdrsp vunsol
+device		vx4	at vba? csr 0xfffd0000	vector vackint vcmdrsp vunsol
+device		vx5	at vba? csr 0xfffd4000	vector vackint vcmdrsp vunsol
+device		vx6	at vba? csr 0xfffd8000	vector vackint vcmdrsp vunsol
+device		vx7	at vba? csr 0xfffdc000	vector vackint vcmdrsp vunsol
+device		vx8	at vba? csr 0xfffc0000	vector vackint vcmdrsp vunsol
+device		vx9	at vba? csr 0xfffc4000	vector vackint vcmdrsp vunsol
+device		vx10	at vba? csr 0xfffc8000	vector vackint vcmdrsp vunsol
+device		vx11	at vba? csr 0xfffcc000	vector vackint vcmdrsp vunsol
+device		vx12	at vba? csr 0xfffb0000	vector vackint vcmdrsp vunsol
+device		vx13	at vba? csr 0xfffb4000	vector vackint vcmdrsp vunsol
+device		vx14	at vba? csr 0xfffb8000	vector vackint vcmdrsp vunsol
+device		vx15	at vba? csr 0xfffbc000	vector vackint vcmdrsp vunsol
+
+device		mp0	at vba? csr 0xffff5000	vector mpintr mpdlintr
+device		mp1	at vba? csr 0xffff5100	vector mpintr mpdlintr
+
+pseudo-device	loop
+pseudo-device	pty
+pseudo-device	ether
+
+device	ace0	at vba? csr 0xffff0000 flags 0xfff80000 vector acecint acerint
+device	ace1	at vba? csr 0xffff0100 flags 0xfff90000 vector acecint acerint
+device	enp0	at vba? csr 0xfff41000 vector enpintr
+device	enp1	at vba? csr 0xfff61000 vector enpintr
+
+device	dr0	at vba? csr 0xffff7000 vector drintr
+device	ik0	at vba? csr 0xffff8000 vector ikintr

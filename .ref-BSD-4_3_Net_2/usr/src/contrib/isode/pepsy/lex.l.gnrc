@@ -1,0 +1,635 @@
+/* lex.l - lex ASN.1 analyzer */
+/* %WARNING% */
+
+%{
+#ifndef	lint
+static char *RCSid = "$Header: /f/osi/pepsy/RCS/lex.l.gnrc,v 7.5 91/02/22 09:49:01 mrose Interim $";
+#endif
+
+/* 
+ * $Header: /f/osi/pepsy/RCS/lex.l.gnrc,v 7.5 91/02/22 09:49:01 mrose Interim $
+ *
+ *
+ * $Log:	lex.l.gnrc,v $
+ * Revision 7.5  91/02/22  09:49:01  mrose
+ * Interim 6.8
+ * 
+ * Revision 7.4  91/01/08  12:49:40  mrose
+ * update
+ * 
+ * Revision 7.3  90/12/11  10:33:40  mrose
+ * sync
+ * 
+ * Revision 7.2  90/11/11  10:53:55  mrose
+ * update
+ * 
+ * Revision 7.1  90/11/04  19:17:10  mrose
+ * update
+ * 
+ * Revision 7.0  90/11/03  21:18:11  mrose
+ * *** empty log message ***
+ * 
+ */
+
+/*
+ *				  NOTICE
+ *
+ *    Acquisition, use, and distribution of this module and related
+ *    materials are subject to the restrictions of a license agreement.
+ *    Consult the Preface in the User's Manual for the full terms of
+ *    this agreement.
+ *
+ *
+ */
+
+
+struct table {
+    char   *t_keyword;
+    int	    t_value;
+    int	    t_porting;
+};
+
+static struct table reserved[] = {
+    "ABSENT", ABSENT, 0,
+    "ANY", ANY, 0,
+    "APPLICATION", APPLICATION, 0,
+    "BEGIN", BGIN, 0,
+    "BIT", BIT, 0,
+    "BITSTRING", BITSTRING, 0,
+    "BOOLEAN", BOOLEAN, 0,
+    "BY", BY, 0,
+    "CHOICE", CHOICE, 0,
+    "COMPONENT", COMPONENT, 0,
+    "COMPONENTS", COMPONENTS, 0,
+    "COMPONENTSOF", COMPONENTSOF, 0,
+    "DECODER", DECODER, 0,
+    "DEFAULT", DEFAULT, 0,
+    "DEFINED", DEFINED, 0,
+    "DEFINITIONS", DEFINITIONS, 0,
+    "ENCODER", ENCODER, 0,
+    "ENCRYPTED", ENCRYPTED, 0,
+    "END", END, 0,
+    "ENUMERATED", ENUMERATED, 0,
+    "EXPLICIT", EXPLICIT, 0,
+    "EXPORTS", EXPORTS, 0,
+    "FALSE", FALSE, 0,
+    "FROM", FROM, 0,
+    "IDENTIFIER", IDENTIFIER, 0,
+    "IMPLICIT", IMPLICIT, 0,
+    "IMPORTS", IMPORTS, 0,
+    "INCLUDE", INCLUDES, 0,
+    "INTEGER", INTEGER, 0,
+    "MIN", MIN, 0,
+    "MAX", MAX, 0,
+    "NULL", NIL, 0,
+    "OBJECT", OBJECT, 0,
+    "OCTET", OCTET, 0,
+    "OCTETSTRING", OCTETSTRING, 0,
+    "OF", OF, 0,
+    "OPTIONAL", OPTIONAL, 0,
+    "PREFIXES", PREFIXES, 0,
+    "PRESENT", PRESENT, 0,
+    "PRINTER", PRINTER, 0,
+    "PRIVATE", PRIVATE, 0,
+    "REAL", REAL, 0,
+    "SECTIONS", SECTIONS, 0,
+    "SEQUENCE", SEQUENCE, 0,
+    "SEQUENCEOF", SEQUENCEOF, 0,
+    "SET", SET, 0,
+    "SETOF", SETOF, 0,
+    "SIZE", SIZE, 0,
+    "STRING", STRING, 0,
+    "TAGS", TAGS, 0,
+    "TRUE", TRUE, 0,
+    "UNIVERSAL", UNIVERSAL, 0,
+    "WITH", WITH, 0,
+    "PLUS-INFINITY", PLUSINFINITY, 0,
+    "MINUS-INFINITY", MINUSINFINITY, 0,
+%BEGIN(ROSY)%
+    "OPERATION", OPERATION, 1,
+    "ARGUMENT", ARGUMENT, 0,
+    "RESULT", RESULT, 0,
+    "ERRORS", ERRORS, 0,
+    "LINKED", LINKED, 0,
+    "ERROR", ERROR, 1,
+    "PARAMETER", PARAMETER, 0,
+/* start new stuff */
+    "ABSTRACT-OPERATION", OPERATION, 0,
+    "ABSTRACT-ERROR", ERROR, 0,
+    "ABSTRACT", ABSTRACT, 0,
+    "OPERATIONS", OPERATIONS, 0,
+    "CONSUMER", CONSUMER, 0,
+    "SUPPLIER", SUPPLIER, 0,
+    "INVOKES", INVOKES, 0,
+    "PORT", PORT, 0,
+    "PORTS", PORTS, 0,
+/* refine is beyond me! (JPO)
+    "REFINE", REFINE, 0,
+    "AS", AS, 0,
+    "RECURRING", RECURRING, 0,
+    "VISIBLE", VISIBLE, 0,
+    "PAIRED", PAIRED, 0,
+*/
+/* end new stuff */
+%END(ROSY)%
+%BEGIN(MOSY)%
+    "OBJECT-TYPE", OBJECTYPE, 1,
+    "SYNTAX", SYNTAX, 0,
+    "ACCESS", ACCESS, 0,
+    "STATUS", STATUS, 0,
+%END(MOSY)%
+    NULL, 0
+};
+
+%}
+
+%%
+
+"--"			{   register int c, d;
+
+			    for (d = 0; c = input (); d = c == '-')
+				if (c == '\n' || (d && c == '-'))
+				    break;
+			}
+[ \t]*			{
+			    if (yydebug)
+				fprintf (stderr, "WT\n");
+			}
+\n			{
+			    if (yydebug)
+				fprintf (stderr, "NL\n");
+			}
+"::="			{
+			    if (yydebug)
+				fprintf (stderr, "SY: CCE\n");
+			    return CCE;
+			}
+"..."			{
+			    if (yydebug)
+			    	fprintf (stderr, "SY: DOTDOTDOT\n");
+			    return DOTDOTDOT;
+			}
+".."			{
+    			    if (yydebug)
+				fprintf (stderr, "SY: DOTDOT\n");
+			    return DOTDOT;
+			}
+"."			{
+			    if (yydebug)
+				fprintf (stderr, "SY: DOT\n");
+			    return DOT;
+			}
+";"			{
+			    if (yydebug)
+				fprintf (stderr, "SY: SEMICOLON");
+			    return SEMICOLON;
+			}
+","			{
+			    if (yydebug)
+				fprintf (stderr, "SY: COMMA\n");
+			    return COMMA;
+			}
+"{"			{
+			    if (yydebug)
+				fprintf (stderr, "SY: LBRACE\n");
+			    return LBRACE;
+			}
+"}"			{
+			    if (yydebug)
+				fprintf (stderr, "SY: RBRACE\n");
+			    return RBRACE;
+			}
+"|"			{
+			    if (yydebug)
+				fprintf (stderr, "SY: BAR\n");
+			    return BAR;
+			}
+"-"			{
+			    if (yydebug)
+				fprintf (stderr, "SY: MINUS\n");
+			    return MINUS;
+			}
+"+"			{
+			    if (yydebug)
+				fprintf (stderr, "SY: PLUS\n");
+			    return PLUS;
+			}
+%BEGIN(ROSY)%
+"[S]"			{
+			    if (yydebug)
+				fprintf (stderr, "SY: OBJECTSUPPLIER\n");
+			    return OBJECTSUPPLIER;
+			}
+"[C]"			{
+			    if (yydebug)
+				fprintf (stderr, "SY: OBJECTCONSUMER\n");
+			    return OBJECTCONSUMER;
+			}
+%END(ROSY)%
+"[["|"$"|"<<"		{   register int tok, c, d, len;
+			    register char *cp, *ep, *pp;
+
+			    if (*yytext == '$')
+				tok = VLENGTH;
+			    else
+				if (*yytext == '<')
+				    tok = CONTROL;
+				else {
+				    while((c = input()) == ' ' || c =='\t')
+				        continue;
+				    switch (c) {
+					case 'a': tok = VALA;
+						  break;
+					case 'b': tok = VALB;
+						  break;
+					case 'i': tok = VALI;
+						  break;
+					case 's': tok = VALS;
+						  break;
+					case 'o': tok = VALO;
+						  break;
+					case 'x': tok = VALX;
+						  break;
+					case 'p': tok = VALP;
+						  break;
+					case 'q': tok = VALQ;
+					    	  break;
+					case 'r': tok = VALR;
+						  break;
+					case 't': tok = VALT;
+						  break;
+					case 'O': tok = VALOID;
+						  break;
+					case 'P': tok = PARAMETERTYPE;
+					    	  break;
+					case 'T': tok = VALTYPE;
+						  break;
+					case 'E': tok = ENC_FN;
+						  break;
+					case 'D': tok = DEC_FN;
+						  break;
+					case 'F': tok = FRE_FN;
+						  break;
+					default : myyerror ("unknown token: \"%s\"", yytext);
+						  break;
+				    }
+				    if ((c = input()) != ' ' && c != '\t'
+					&& c != '\n')
+					yyerror ("syntax error in [[ ... ]]");
+				}
+ 
+			    if ((pp = malloc ((unsigned) (len = BUFSIZ)))
+				    == NULL)
+				yyerror ("out of memory");
+
+			    for (ep = (cp = pp) + len - 1, d = NULL;; d = c) {
+				if ((c = input ()) == NULL)
+				    yyerror ("end-of-file while reading value");
+				if ((d == ']' && c == ']' && tok !=CONTROL) ||
+				    (c == '$' && (tok ==VALX || tok ==VALO)) ||
+				    (d == '>' && c == '>' && tok ==CONTROL)) {
+				    if ((tok == VALX || tok == VALO) &&
+				       (c != '$'))
+				       yyerror("Missing '$' in [[ - ]]");
+				    if (c == '$') {unput(c); *cp = NULL;}
+				    else *--cp = NULL;
+				    yylval.yy_string = pp;
+				    if (yydebug)
+					fprintf (stderr, "VAL: \"%s\"\n",
+						yylval.yy_string);
+				    return tok;
+				}
+				if (cp >= ep) {
+				    register int curlen = cp - pp;
+				    register char *dp;
+
+				    if ((dp = realloc (pp,
+						(unsigned) (len += BUFSIZ)))
+					    == NULL)
+					yyerror ("out of memory");
+				    cp = dp + curlen;
+				    ep = (pp = dp) + len - 1;
+				}
+				*cp++ = c;
+			    }
+			}
+"["			{
+			    if (yydebug)
+				fprintf (stderr, "SY: LBRACKET\n");
+			    return LBRACKET;
+			}
+"]"			{
+			    if (yydebug)
+				fprintf (stderr, "SY: RBRACKET\n");
+			    return RBRACKET;
+			}
+"<"			{
+			    if (yydebug)
+				fprintf (stderr, "SY: LANGLE\n");
+			    return LANGLE;
+			}
+"("			{
+			    if (yydebug)
+				fprintf (stderr, "SY: LPAREN\n");
+			    return LPAREN;
+			}
+")"			{
+			    if (yydebug)
+				fprintf (stderr, "SY: RPAREN\n");
+			    return RPAREN;
+			}
+"\*"			{
+			    if (yydebug)
+				fprintf (stderr, "SY: STAR\n");
+			    return STAR;
+			}
+[0-9]+			{
+			    (void) sscanf (yytext, "%d", &yylval.yy_number);
+			    if (yydebug)
+				fprintf (stderr, "LIT: 0x%x\n", yylval.yy_number);
+			    return LITNUMBER;
+			}
+-[0-9]+			{
+			    (void) sscanf (yytext, "%d", &yylval.yy_number);
+			    if (yydebug)
+				fprintf (stderr, "LIT: 0x%x\n", yylval.yy_number);
+			    return LITNUMBER;
+			}
+'[^'$]*'[BbHh]		{   register char *cp; register int i;
+
+			    switch (*(cp = yytext + strlen (yytext) - 1)) {
+				case 'H':
+				case 'h':
+				    *--cp = NULL;
+				    for (cp = yytext + 1; *cp; cp++)
+					if (!isxdigit(*cp))
+					    yyerror ("bad hex string");
+				    yylval.yy_string = new_string(yytext + 1);
+				    if (yydebug)
+					fprintf (stderr,
+					    "HSTRING: %s\n", yylval.yy_string);
+				    return HSTRING;
+
+				case 'B':
+				case 'b':
+				    *--cp = NULL;
+				    for (cp = yytext + 1; *cp; cp++)
+					if (*cp != '0' && *cp != '1')
+					    yyerror ("bad bit string");
+				    yylval.yy_string = new_string(yytext + 1);
+				    if (yydebug)
+					fprintf (stderr,
+					    "BSTRING: %s\n", yylval.yy_string);
+				    return BSTRING;
+			    }
+			    yyerror ("illegal string");
+			}
+\"[^\"$]*\"		{
+			    yytext[strlen (yytext) - 1] = NULL;
+			    yylval.yy_string = new_string (yytext + 1);
+			    if (yydebug)
+				fprintf (stderr, "LIT: \"%s\"\n", yylval.yy_string);
+			    return LITSTRING;
+			}
+[A-Z][A-Za-z0-9-]*	{   register struct table *t;
+
+			    for (t = reserved; t -> t_keyword; t++)
+				if (strcmp (t -> t_keyword, yytext) == 0) {
+				    if (yyporting && t -> t_porting)
+					break;
+				    if (yydebug)
+					fprintf (stderr,
+						  "KE: \"%s\"\n", yytext);
+				    yylval.yy_number = yylineno;
+				    return t -> t_value;
+				}
+			    yylval.yy_string = new_string (yytext);
+			    if (yydebug)
+				fprintf (stderr, "ID: \"%s\"\n", yylval.yy_string);
+			    return ID;
+			}
+[a-z][A-Za-z0-9-]*	{   yylval.yy_string = new_string (yytext);
+			    if (yydebug)
+				fprintf (stderr, "NAME: \"%s\"\n", yylval.yy_string);
+			    return NAME;
+			}
+"%["			{   register int c, d, len;
+			    register char *cp, *ep, *pp;
+
+			    if ((pp = malloc ((unsigned) (len = BUFSIZ)))
+				    == NULL)
+				yyerror ("out of memory");
+
+			    for (ep = (cp = pp) + len - 1, d = NULL;; d = c) {
+				if ((c = input ()) == NULL)
+				    yyerror ("end-of-file while reading value");
+				if (d == '%' && c == ']' ) {
+				    *--cp = NULL;
+				    yylval.yy_string = pp;
+				    if (yydebug)
+					fprintf (stderr, "VAL: \"%s\"\n",
+						 yylval.yy_string);
+				    return SCTRL;
+				}
+				if (d == '\n')
+				    yyerror ("newline in %[ %] construct");
+				if (cp >= ep) {
+				    register int curlen = cp - pp;
+				    register char *dp;
+
+				    if ((dp = realloc (pp,
+						(unsigned) (len += BUFSIZ)))
+					    == NULL)
+					yyerror ("out of memory");
+				    cp = dp + curlen;
+				    ep = (pp = dp) + len - 1;
+				}
+				*cp++ = c;
+			    }
+			}
+"%{"			{   register int c, d, len;
+			    int	    mylineno;
+			    register char *cp, *ep, *pp;
+
+			    mylineno = yylineno;
+			    if ((pp = malloc ((unsigned) (len = BUFSIZ)))
+				    == NULL)
+				yyerror ("out of memory");
+
+			    for (ep = (cp = pp) + len - 1, d = NULL;; d = c) {
+				if ((c = input ()) == NULL)
+				    yyerror ("end-of-file while reading action");
+				if (d == '%' && c == '}') {
+				    *--cp = NULL;
+				    yylval.yy_action = new_action (pp, mylineno);;
+				    if (yydebug)
+					fprintf (stderr, "ACTION: \"%s\", %d\n",
+						yylval.yy_action -> ya_text,
+						yylval.yy_action -> ya_lineno);
+				    return ACTION;
+				}
+				if (cp >= ep) {
+				    register int curlen = cp - pp;
+				    register char *dp;
+
+				    if ((dp = realloc (pp,
+						(unsigned) (len += BUFSIZ)))
+					    == NULL)
+					yyerror ("out of memory");
+				    cp = dp + curlen;
+				    ep = (pp = dp) + len - 1;
+				}
+				*cp++ = c;
+			    }
+			}
+%BEGIN(PEPSY)%
+\<[DEP]<			{   register int c, d, len;
+			    int	    mylineno;
+			    register char *cp, *ep, *pp;
+			    int c_typ = (yytext[1] == 'D' ? DCHOICE :
+				(yytext[1] == 'E' ? ECHOICE : PCHOICE));
+
+			    mylineno = yylineno;
+			    if ((pp = malloc ((unsigned) (len = BUFSIZ)))
+				    == NULL)
+				yyerror ("out of memory");
+
+			    for (ep = (cp = pp) + len - 1, d = NULL;; d = c) {
+				if ((c = input ()) == NULL)
+				    yyerror ("end-of-file while reading action");
+				if (d == '>' && c == '>') {
+				    *--cp = NULL;
+				    yylval.yy_action = new_action (pp, mylineno);;
+				    if (yydebug)
+					fprintf (stderr,"%cCHOICE: \"%s\", %d\n",
+						 yytext[1],
+						yylval.yy_action -> ya_text,
+						yylval.yy_action -> ya_lineno);
+				    return c_typ;
+				}
+				if (cp >= ep) {
+				    register int curlen = cp - pp;
+				    register char *dp;
+
+				    if ((dp = realloc (pp,
+						(unsigned) (len += BUFSIZ)))
+					    == NULL)
+					yyerror ("out of memory");
+				    cp = dp + curlen;
+				    ep = (pp = dp) + len - 1;
+				}
+				*cp++ = c;
+			    }
+			}
+
+"%E{"			{   register int c, d, len;
+			    int	    mylineno;
+			    register char *cp, *ep, *pp;
+
+			    mylineno = yylineno;
+			    if ((pp = malloc ((unsigned) (len = BUFSIZ)))
+				    == NULL)
+				yyerror ("out of memory");
+
+			    for (ep = (cp = pp) + len - 1, d = NULL;; d = c) {
+				if ((c = input ()) == NULL)
+				    yyerror ("end-of-file while reading action");
+				if (d == '%' && c == '}') {
+				    *--cp = NULL;
+				    yylval.yy_action = new_action (pp, mylineno);;
+				    if (yydebug)
+					fprintf (stderr,"EACTION: \"%s\", %d\n",
+						yylval.yy_action -> ya_text,
+						yylval.yy_action -> ya_lineno);
+				    return EACTION;
+				}
+				if (cp >= ep) {
+				    register int curlen = cp - pp;
+				    register char *dp;
+
+				    if ((dp = realloc (pp,
+						(unsigned) (len += BUFSIZ)))
+					    == NULL)
+					yyerror ("out of memory");
+				    cp = dp + curlen;
+				    ep = (pp = dp) + len - 1;
+				}
+				*cp++ = c;
+			    }
+			}
+"%D{"			{   register int c, d, len;
+			    int	    mylineno;
+			    register char *cp, *ep, *pp;
+
+			    mylineno = yylineno;
+			    if ((pp = malloc ((unsigned) (len = BUFSIZ)))
+				    == NULL)
+				yyerror ("out of memory");
+
+			    for (ep = (cp = pp) + len - 1, d = NULL;; d = c) {
+				if ((c = input ()) == NULL)
+				    yyerror ("end-of-file while reading action");
+				if (d == '%' && c == '}') {
+				    *--cp = NULL;
+				    yylval.yy_action = new_action (pp, mylineno);;
+				    if (yydebug)
+					fprintf (stderr,"DACTION: \"%s\", %d\n",
+						yylval.yy_action -> ya_text,
+						yylval.yy_action -> ya_lineno);
+				    return DACTION;
+				}
+				if (cp >= ep) {
+				    register int curlen = cp - pp;
+				    register char *dp;
+
+				    if ((dp = realloc (pp,
+						(unsigned) (len += BUFSIZ)))
+					    == NULL)
+					yyerror ("out of memory");
+				    cp = dp + curlen;
+				    ep = (pp = dp) + len - 1;
+				}
+				*cp++ = c;
+			    }
+			}
+"%P{"			{   register int c, d, len;
+			    int	    mylineno;
+			    register char *cp, *ep, *pp;
+
+			    mylineno = yylineno;
+			    if ((pp = malloc ((unsigned) (len = BUFSIZ)))
+				    == NULL)
+				yyerror ("out of memory");
+
+			    for (ep = (cp = pp) + len - 1, d = NULL;; d = c) {
+				if ((c = input ()) == NULL)
+				    yyerror ("end-of-file while reading action");
+				if (d == '%' && c == '}') {
+				    *--cp = NULL;
+				    yylval.yy_action = new_action (pp, mylineno);;
+				    if (yydebug)
+					fprintf (stderr,"PACTION: \"%s\", %d\n",
+						yylval.yy_action -> ya_text,
+						yylval.yy_action -> ya_lineno);
+				    return PACTION;
+				}
+				if (cp >= ep) {
+				    register int curlen = cp - pp;
+				    register char *dp;
+
+				    if ((dp = realloc (pp,
+						(unsigned) (len += BUFSIZ)))
+					    == NULL)
+					yyerror ("out of memory");
+				    cp = dp + curlen;
+				    ep = (pp = dp) + len - 1;
+				}
+				*cp++ = c;
+			    }
+			}
+%END(PEPSY)%
+.			{   
+			    myyerror ("unknown token: \"%s\"", yytext);
+			}
+
+%%

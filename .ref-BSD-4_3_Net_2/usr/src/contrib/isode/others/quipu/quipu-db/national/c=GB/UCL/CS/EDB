@@ -1,0 +1,57 @@
+MASTER
+900806151223Z
+cn=Colin Robbins
+acl= others # read # attributes # telephoneNumber$surname$objectClass$userClass$roomNumber$rfc822Mailbox$textEncodedORaddress$userid$accessControlList
+acl= others # compare # attributes # userPassword
+acl= self # write # attributes # userPassword
+otherMailbox= nrs $ C.Robbins@uk.ac.ucl.cs
+secretary= c=GB@o=University College London@ou=Computer Science@cn=Steve Kille
+roomNumber= NW132
+drink= Coffee
+description= OSI X.500 hacker (quipu)
+mail= C.Robbins\40cs.ucl.ac.uk
+textEncodedORaddress= /I=C/S=Robbins/Ou=cs/O=ucl/Prmd=uk.ac/admd=gold 400/c=gb/
+uid= crobbins
+userPassword= {CRYPT}\40IRN
+preferredDeliveryMethod= MHS $ PHYSICAL $ TELEPHONE
+telephoneNumber= +44 71-387-7050 x 3688
+postalAddress= UCL $ Gower Street $ London
+businessCategory= Research Assistant
+info= USERCLASS is inherited
+seealso= c=GB@o=X-Tel Services Ltd@cn=Colin Robbins
+sn= Robbins
+cn= Colin Robbins
+cn= Colin John Robbins
+objectClass= organizationalPerson & person & top & pilotPerson & thornPerson & thornObject & quipuObject
+
+cn=Colin Robbins%userid=quipu
+userClass=csresstaff
+roomNumber=G10
+surname=Robbins
+telephoneNumber=+44-1-387-7050 ext 3683
+description=An example of a multi-valued RDN
+info= NO USERCLASS
+objectClass=thornPerson & quipuObject
+
+cn=Steve Kille
+acl= others # read # attributes # telephoneNumber$surname$objectClass$userClass$roomNumber$rfc822Mailbox$textEncodedORaddress$userid$accessControlList
+acl= others # compare # attributes # userPassword
+acl= self # write # attributes # userPassword
+roomNumber= G24
+drink= Pinta - Brakspears
+mail= S.Kille\40cs.ucl.ac.uk
+textEncodedORaddress= /I=S/S=Kille/Ou=cs/O=ucl/Prmd=uk.ac/admd=gold 400/c=gb/
+uid= steve
+userPassword= {CRYPT}PHWVS
+telephoneNumber= +44 71-380-7294
+description= Researcher into Distributed Applications and OSI
+description= PP and QUIPU project leader
+description= Now beardless
+info= inherited USERCLASS overidden
+userClass= This class
+sn= Kille
+cn= Steve Kille
+cn= Steve E. Kille
+cn= Stephen Kille
+photo= {FILE}
+objectClass= organizationalPerson & person & top & pilotPerson & thornPerson & thornObject & quipuObject

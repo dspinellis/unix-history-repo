@@ -1,0 +1,291 @@
+/* llib-lisnmp - lint library for -lisnmp */
+
+/* 
+ * $Header: /f/osi/snmp/RCS/llib-lisnmp,v 7.4 91/03/09 11:57:25 mrose Exp $
+ *
+ *
+ * $Log:	llib-lisnmp,v $
+ * Revision 7.4  91/03/09  11:57:25  mrose
+ * update
+ * 
+ * Revision 7.3  91/02/22  09:43:32  mrose
+ * Interim 6.8
+ * 
+ * Revision 7.2  90/03/08  08:05:41  mrose
+ * isnmp
+ * 
+ * Revision 7.1  90/02/19  16:25:54  mrose
+ * typo
+ * 
+ * Revision 7.0  90/02/19  15:53:14  mrose
+ * *** empty log message ***
+ * 
+ */
+
+/*
+ *				  NOTICE
+ *
+ *    Acquisition, use, and distribution of this module and related
+ *    materials are subject to the restrictions of a license agreement.
+ *    Consult the Preface in the User's Manual for the full terms of
+ *    this agreement.
+ *
+ */
+
+
+/* LINTLIBRARY */
+
+#include <stdio.h>
+#include "smux.h"
+#include "objects.h"
+
+/*  */
+
+int	smux_init (debug)
+int	debug;			/* if non-zero says to print PDUs on tty */
+{
+    return smux_init (debug);
+}
+
+
+int	smux_simple_open (identity, description, commname, commlen)
+OID	identity;		/* identity of SMUX initiator */
+char   *description;		/* implementation-specific string */
+char   *commname;			/* password, may be zero-length */
+int	commlen;		/*   .. */
+{
+    return smux_simple_open (identity, description, commname, commlen);
+}
+
+
+smux_close (reason)
+int	reason;			/* a symbolic value defined in smux.h */
+{
+    return smux_close (reason);
+}
+
+int	smux_register (subtree, priority, operation)
+OID	subtree;		/* subtree to register */
+int	priority,		/* desired priority (use -1 for default) */
+   	operation;		/* a symbolic value defined in smux.h */
+{
+    return smux_register (subtree, priority, operation);
+}
+
+int	smux_wait (event, secs)
+struct type_SNMP_SMUX__PDUs **event;	
+				/* initialized to next event */
+int	secs;			/* maximum time to wait: -1=forever, 0=poll */
+{
+    return smux_wait (event, secs);
+}
+					
+
+int	smux_response (event)
+struct type_SNMP_GetResponse__PDU *event;
+				/* event to send back */
+{
+    return smux_response (event);
+}
+
+int	smux_trap (generic, specific, bindings)
+int	generic,
+	specific;
+struct type_SNMP_VarBindList *bindings;
+{
+    return smux_trap (generic, specific, bindings);
+}
+
+
+char   *smux_error (i)		/* a SMUX error code */
+int	i;
+{
+    return smux_error (i);
+}
+
+/*  */
+
+int	setsmuxEntry (f)
+int	f;
+{
+    return setsmuxEntry (f);
+}
+
+
+int	endsmuxEntry ()
+{
+    return endsmuxEntry ();
+}
+
+struct smuxEntry *getsmuxEntry ()
+{
+    return getsmuxEntry ();
+}
+
+struct smuxEntry *getsmuxEntrybyname (name)
+char   *name;
+{
+    return getsmuxEntrybyname (name);
+}
+
+
+struct smuxEntry *getsmuxEntrybyidentity (identity)
+OID	identity;
+{
+    return getsmuxEntrybyidentity (identity);
+}
+
+/*  */
+
+int	readsyntax ()
+{
+    return readsyntax ();
+}
+
+
+int	add_syntax (name, f_encode, f_decode, f_free, f_parse, f_print)
+char   *name;
+IFP	f_encode,
+    	f_decode,
+    	f_free,
+    	f_parse,
+	f_print;
+{
+    return add_syntax (name, f_encode, f_decode, f_free, f_parse, f_print);
+}
+
+
+OS	text2syn (name)
+char   *name;
+{
+    return text2syn (name);
+}
+
+/*  */
+
+int	readobjects (file)
+char   *file;
+{
+    return readobjects (file);
+}
+
+
+int	add_objects (ot)
+OT	ot;
+{
+    return add_objects (ot);
+}
+
+
+OT	name2obj (oid)
+OID	oid;
+{
+    return name2obj (oid);
+}
+
+
+OT	text2obj (text)
+char   *text;
+{
+    return text2obj (text);
+}
+
+
+OID	text2oid (name)
+char   *name;
+{
+    return text2oid (name);
+}
+
+
+char   *oid2ode_aux (oid, quoted)
+OID	oid;
+int	quoted;
+{
+    return oid2ode_aux (oid, quoted);
+}
+
+
+OI	name2inst (oid)
+OID	oid;
+{
+    return name2inst (oid);
+}
+
+
+OI	next2inst (oid)
+OID	oid;
+{
+    return next2inst (oid);
+}
+
+
+OI	text2inst (text)
+char   *text;
+{
+    return text2inst (text);
+}
+
+
+char   *strdup (s)
+char   *s;
+{
+    return strdup (s);
+}
+
+/*  */
+
+int	o_generic (oi, v, offset)
+OI	oi;
+struct type_SNMP_VarBind *v;
+int	offset;
+{
+    return o_generic (oi, v, offset);
+}
+
+
+int	o_number (oi, v, number)
+OI	oi;
+struct type_SNMP_VarBind *v;
+integer	number;
+{
+    return o_number (oi, v, number);
+}
+
+
+int	o_string (oi, v, base, len)
+OI	oi;
+struct type_SNMP_VarBind *v;
+char   *base;
+int	len;
+{
+    return o_string (oi, v, base, len);
+}
+
+
+int	o_specific (oi, v, offset)
+OI	oi;
+struct type_SNMP_VarBind *v;
+int	offset;
+{
+    return o_specific (oi, v, offset);
+}
+
+
+int	mediaddr2oid (ip, addr, len, islen)
+unsigned int *ip;
+u_char *addr;
+int	len,
+	islen;
+{
+    return mediaddr2oid (ip, addr, len, islen);
+}
+
+
+OID	oid_extend (q, howmuch)
+OID	q;
+int	howmuch;
+{
+    return oid_extend (q, howmuch);
+}
+

@@ -1,0 +1,12 @@
+InitFont	vplotf.c	/^InitFont()$/
+Mvplotf	vplotf.c	/^main(argc, argv)$/
+account	vplotf.c	/^account(who, from, acctfile)$/
+circle	vplotf.c	/^circle(x,y,c)$/
+getinteger	vplotf.c	/^getinteger(f)$/
+getpict	vplotf.c	/^getpict()$/
+labs	vplotf.c	/^#define labs(a) ((a) >= 0 ? (a) : -(a))$/
+line	vplotf.c	/^line(x0, y0, x1, y1)$/
+mapx	vplotf.c	/^#define	mapx(x)	((DevRange*((x)-botx)\/del)+centx)/
+mapy	vplotf.c	/^#define	mapy(y)	((DevRange*(del-(y)+boty)\/del)-ce/
+plotch	vplotf.c	/^plotch(ch)$/
+point	vplotf.c	/^point(x, y)$/

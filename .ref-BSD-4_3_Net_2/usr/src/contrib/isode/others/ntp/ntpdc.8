@@ -1,0 +1,145 @@
+.TH NTPDC 8 "10 March 1989"
+.SH NAME
+ntpdc \- monitor operation of ntp daemon
+.SH SYNOPSIS
+\fBntpdc\fP [\fB-n\fP] [\fB-v\fP] \fIhosts...\fP
+.SH DESCRIPTION
+\fIntpdc\fP sends an INFO_QUERY packet to an ntp daemon running on the given
+hosts.  Each daemon responds with information about each of its
+peers, which \fIntpdc\fP formats on the standard output.
+.PP
+Normally, the name of the responding host and its peers are printed.
+The \fB-n\fP switch disables this, printing only internet addresses.
+.PP
+Default is a terse, table-style report.
+The \fB-v\fP switch generates a verbose report.
+
+.SH TERSE REPORT
+.PP
+A typical terse report looks like:
+
+.nf
+   (rem)  Address   (lcl)      Strat Poll Reach    Delay   Offset    Disp
+==========================================================================
+-umd1		 128.8.10.14       1   64  266       3.0    -65.0      0.0
+*DCN1.ARPA	 128.8.10.14       1  256  332     155.0     -4.0      0.0
+ 128.8.251.92	 128.8.10.14       2   64  367     -16.0    -61.0      0.0
+ idunno.Princeto 128.8.10.14       3   64  252      60.0    -53.0      0.0
+ leo		 128.8.10.14       2   64  275       4.0   -273.0   1536.2
+
+.fi
+.PP
+Fields are interpreted as follows:
+.TP
+- or *:
+The \fB-\fP mark indicates a pre-configured peer (mentioned in ntp.conf).
+the \fB*\fP mark shows which pre-configured peer (if any) is currently
+being used for synchronization.
+.TP
+(rem) address:
+The remote host name or internet address of a peer.
+.TP
+(lcl) address:
+The "local" host as specified as an argument to
+\fIntpdc\fP.
+.TP
+Strat:
+The stratum level of the peer (as perceived by the local host).
+.TP
+Poll:
+Current polling interval in seconds for this peer.
+.TP
+Reach:
+Octal value of a shift register indicating which responses were
+received from the previous 8 polls to this peer (see RFC-????).
+.TP
+Delay:
+Round-trip delay in milliseconds for this peer as of the latest poll.
+.TP
+Disp:
+Current value of dispersion (see RFC-????) in milliseconds for this peer.
+
+.SH VERBOSE REPORTS
+.PP
+When the \fB-v\fP flag is given a series of verbose reports are presented.
+A typical one looks like this:
+
+.nf
+Neighbor address 128.4.0.6 port:123  local address 192.35.201.47
+Reach: 0376 stratum: 1 poll int(HPI): 10 precision: -10
+Sync distance: 0 disp: 0.014000 flags: 0 leap: 0
+Reference clock ID: WWV  timestamp: a7c2832e.6f9d0000
+Poll int(MPI): 10 threshold: 1024 timer: 1024 send: 266 received: 192 samples: 9
+Delay(ms)  1144.00 1296.00 1118.00 1115.00 1225.00 1129.00 1086.00 1087.00 
+Offset(ms)   19.00   92.00  -17.00   12.00   41.00    4.00   -1.00  -14.00 
+
+	delay: 1086.000000 offset: -1.000000 dsp 0.014000
+
+.fi
+.PP
+Fields are interpreted as follows:
+.TP
+Neighbor address...:
+The address and port number of this neighbor, followed by the
+local address.
+.TP
+Reach: \fInn\fP
+Reachability in response to last 8 polls (octal value of shift register)
+.TP
+stratum: \fIn\fP
+Stratum level.
+.TP
+poll interval: \fItime\fP
+.TP
+precision: \fInn\fP
+The precision of this clock, given in seconds as a power of 2.  \fIe.g\fP A
+clock derived from the power line frequency (60 Hz) has a precision of 1/60
+second (about 2^-6) and would be indicated by a precision of -6.
+.TP
+Syn distance: 0
+Synchronizing distance.  Always zero in the current implementation.
+.TP
+disp: \fInn\fP
+Dispersion.
+.TP
+flags: \fInn\fP
+.TP
+leap: \fIflag\fP
+The leap second indicator.  Non-zero if there is to be a leap second added
+or subtracted at the new year.
+.TP
+Reference clock ID: [\fIaddress\fP]
+.TP
+timestamp: \fInn\fP
+.TP
+Poll interval: \fItime\fP
+.TP
+threshold: \fInn\fP
+.TP
+timer: \fInn\fP
+.TP
+send: \fInn\fP
+The number of ntp packets sent to this neighbor.
+.TP
+received: \fInn\fP
+The number of ntp packets received from this neighbor.
+.TP
+samples: \fInn\fP
+.TP
+Delay and Offset
+The round-trip delay and clock offset for the last eight ntp packet
+exchanges.  If there are fewer than eight valid samples, the delay field
+will be zero.
+.TP
+delay: \fIavg-delay\fP offset: \fIavg-offset\fP dsp \fI???\fP
+Average delay, offset, and dispersion calculated from the above samples.
+Meanings...???
+
+.SH BUGS
+.PP
+Probably a few.  Report bugs to Louis A. Mamakos (louie@trantor.umd.edu).
+
+.SH "SEE ALSO"
+RFC-???? \fINetwork Time Protocol\fP(1), Dave Mills and ...
+.br
+ntpd(8), ntp(8)

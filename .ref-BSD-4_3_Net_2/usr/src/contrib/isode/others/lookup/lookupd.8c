@@ -1,0 +1,58 @@
+.TH LOOKUPD 8C "03 Jul 1988"
+.\" $Header: /f/osi/others/lookup/RCS/lookupd.8c,v 7.1 91/02/22 09:27:34 mrose Interim $
+.\"
+.\"
+.\" $Log:	lookupd.8c,v $
+.\" Revision 7.1  91/02/22  09:27:34  mrose
+.\" Interim 6.8
+.\" 
+.\" Revision 7.0  89/11/23  22:56:38  mrose
+.\" Release 6.0
+.\" 
+.SH NAME
+lookupd \- password lookup service -- responder
+.SH SYNOPSIS
+.in +.5i
+.ti -.5i
+.B \*(SDros.lookup
+\fImagic\0arguments\fR
+.in -.5i
+(under \fI\*(SDtsapd\fR\0)
+.SH DESCRIPTION
+The \fIlookupd\fR server implements a password lookup service using
+remote operations.
+The currently supported operations are:
+.sp
+.in +.5i
+.nf
+.ta \w'\fBlookupUser\fR  'u
+\fIoperation\fR	\fIdescription\fR
+\fBlookupUser\fR	lookup based on user-name
+\fBlookupUID\fR	lookup based on user-ID
+.re
+.fi
+.in -.5i
+.sp
+This program is provided primarily as an example of how one can use
+\fIThe Applications Cookbook\fR to write programs which use remote operations.
+Formally,
+it is known as the \*(lqpasswdstore\*(rq,
+responding with the \*(lqisode password lookup demo\*(rq application
+context utilizing the \*(lqisode password lookup demo pci\*(rq
+presentation context.
+.PP
+This program is not invoked directly by the user,
+rather the \fItsapd\fR\0(8c) daemon starts this in response to a request to
+associated with the isode image service.
+.SH FILES
+.nf
+.ta \w'\*(EDisoservices  'u
+\*(EDisoentities	ISODE entities database
+\*(EDisobjects	ISODE objects database
+\*(EDisoservices	ISODE services database
+.re
+.fi
+.SH DIAGNOSTICS
+Obvious.
+.SH AUTHOR
+Marshall T. Rose

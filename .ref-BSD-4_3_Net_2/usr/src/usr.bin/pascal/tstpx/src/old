@@ -1,0 +1,2031 @@
+Berkeley Pascal PI -- Version 3.1 (9/7/85)
+
+Sun Jul 21 14:56 1985  insan.p
+
+    0	TRA4	0 
+     1  program insane(input, output);
+     2  label
+    6	GOTO:1	6 
+     3  	1;
+     4  type
+     5  	alfa = packed array[1..10] of char;
+     6  	metaface = (notaface, front, back, top, bottom, left, right);
+     7  	face = front .. right;
+     8  	metapair = (notapair, one2, three4, five6);
+     9  	pair = one2 .. five6;
+    10  	metacolor = (notacolor, red, blue, green, white);
+    11  	color = red .. white;
+    12  	blockno = 1..4;
+    13  var
+    14  	nosolutions: Boolean;
+    15  	index, halfindex: integer;
+    16  	pointr: integer;
+    17  	datas: array[blockno, face] of alfa;
+    18  	sum: array[blockno, pair, color] of integer;
+    19  	halfsolution: array[blockno, 1..30] of pair;
+   12	TRA4	12 
+
+    21  function word(alf: alfa): color;
+    22  begin
+    23  	if alf = 'red' then
+    24  		word := red else
+    25  	if alf = 'blue' then
+    26  		word := blue else
+    27  	if alf = 'green' then
+    28  		word := green else
+    29  		word := white;
+	patch 12 18
+   18	BEG:20	0 
+   24	CASE4	12 
+   28	CASE4	1 
+   32	CASE2	22
+   34		"word"
+   40	LINO:23
+   42	RV:5	32 10 
+   48	CONG:10
+   50		"red"
+   62	RELG	EQ	10 
+   66	IF	-2 
+   70	LINO:24
+   72	LV:5	44 
+   76	CON1:1
+   78	RANG2:1	4 
+   82	AS2
+   84	TRA	-2 
+	patch 66 20
+   88	LINO:25
+   90	RV:5	32 10 
+   96	CONG:10
+   98		"blue"
+  110	RELG	EQ	10 
+  114	IF	-2 
+  118	LINO:26
+  120	LV:5	44 
+  124	CON1:2
+  126	RANG2:1	4 
+  130	AS2
+  132	TRA	-2 
+	patch 114 20
+  136	LINO:27
+  138	RV:5	32 10 
+  144	CONG:10
+  146		"green"
+  158	RELG	EQ	10 
+  162	IF	-2 
+  166	LINO:28
+  168	LV:5	44 
+  172	CON1:3
+  174	RANG2:1	4 
+  178	AS2
+  180	TRA	-2 
+	patch 162 20
+  184	LINO:29
+  186	LV:5	44 
+  190	CON1:4
+  192	RANG2:1	4 
+  196	AS2
+	patch 180 16
+	patch 132 64
+	patch 84 112
+  198	END
+	patch 18 0
+    30  end;
+  200	TRA4	200 
+
+    32  procedure readin;
+    33  var
+    34  	hue: alfa;
+    35  	ch: char;
+    36  	cube: blockno;
+    37  	position: face;
+  206	TRA4	206 
+
+    39  procedure tone;
+    40  begin
+    41  	case ch of
+    42  	'r': hue := 'red';
+    43  	'w': hue := 'white';
+    44  	'g': hue := 'green';
+    45  	'b': hue := 'blue';
+    46  	end;
+	patch 206 214
+  214	BEG:20	0 
+  220	CASE4	0 
+  224	CASE4	1 
+  228	CASE2	40
+  230		"tone"
+  236	LINO:41
+  238	RV1:4	-13 
+  242	CASE1OP:4
+  244	.=.+8
+  252	CASE1	114
+  253	CASE1	119
+  254	CASE1	103
+  255	CASE1	98
+  256	TRA	-2 
+	patch 242 16
+  260	LINO:42
+  262	LV:4	-12 
+  266	CONG:10
+  268		"red"
+  280	AS:10
+  282	TRA	-28 
+	patch 244 42
+  286	LINO:43
+  288	LV:4	-12 
+  292	CONG:10
+  294		"white"
+  306	AS:10
+  308	TRA	-54 
+	patch 246 68
+  312	LINO:44
+  314	LV:4	-12 
+  318	CONG:10
+  320		"green"
+  332	AS:10
+  334	TRA	-80 
+	patch 248 94
+  338	LINO:45
+  340	LV:4	-12 
+  344	CONG:10
+  346		"blue"
+  358	AS:10
+  360	TRA	-106 
+	patch 256 106
+  364	END
+	patch 214 0
+    47  end;
+
+    49  begin
+    50  	for cube := 1 to 4 do
+    51  	begin
+    52  		for position := front to right do
+    53  		begin
+    54  			read(ch);
+    55  			tone;
+    56  			datas[cube, position] := hue;
+    57  		end;
+    58  		readln;
+    59  	end;
+	patch 200 366
+  366	BEG:22	0 
+  372	CASE4	0 
+  376	CASE4	1 
+  380	CASE2	49
+  382		"readin"
+  390	LINO:50
+  392	LV:4	-20 
+  396	CON1:1
+  398	AS24
+  400	LV:4	-24 
+  404	CON1:4
+  406	AS24
+  408	RV4:4	-20 
+  412	RV4:4	-24 
+  416	REL4	LE
+  418	IF	-2 
+  422	LV:4	-25 
+  426	RV4:4	-24 
+  430	RANG42:1	4 
+  434	AS41
+  436	LV:4	-25 
+  440	RV4:4	-20 
+  444	RANG42:1	4 
+  448	AS41
+  450	LV:4	-14 
+  454	RV14:4	-25 
+  458	AS41
+  460	LINO:52
+  462	LV:4	-32 
+  466	CON1:1
+  468	AS24
+  470	LV:4	-36 
+  474	CON1:6
+  476	AS24
+  478	RV4:4	-32 
+  482	RV4:4	-36 
+  486	REL4	LE
+  488	IF	-2 
+  492	LV:4	-37 
+  496	RV4:4	-36 
+  500	RANG42:1	6 
+  504	AS41
+  506	LV:4	-37 
+  510	RV4:4	-32 
+  514	RANG42:1	6 
+  518	AS41
+  520	LV:4	-15 
+  524	RV14:4	-37 
+  528	AS41
+  530	LINO:54
+  532	UNITINP
+  534	LV:4	-13 
+  538	READC
+  540	RSNG2:127
+  542	AS21
+  544	LINO:55
+  546	CALL:2	206 
+  552	LINO:56
+  554	LV:2	-256 
+  558	RV1:4	-25 
+  562	INX2:60	1 4 
+  568	RV1:4	-37 
+  572	INX2:10	1 6 
+  578	RV:4	-12 10 
+  584	AS:10
+  586	LINO:52
+  588	RV4:4	-36 
+  592	LV:4	-37 
+  596	FOR1U:-78
+	patch 488 108
+  598	LINO:58
+  600	UNITINP
+  602	READLN
+  604	LINO:50
+  606	RV4:4	-24 
+  610	LV:4	-25 
+  614	FOR1U	-168 
+	patch 418 198
+  618	END
+	patch 366 40
+    60  end;
+  620	TRA4	620 
+
+    62  procedure sumcolors;
+    63  var
+    64  	cube: blockno;
+    65  	side: face;
+  626	TRA4	626 
+    66  function facepair(aface: face): pair;
+    67  begin
+    68  	case aface of
+    69  	front, back: facepair := one2;
+    70  	top, bottom: facepair := three4;
+    71  	left, right: facepair := five6
+    72  	end;
+	patch 626 634
+  634	BEG:24	0 
+  640	CASE4	4 
+  644	CASE4	1 
+  648	CASE2	67
+  650		"facepair"
+  660	LINO:68
+  662	RV1:7	33 
+  666	CASE1OP:6
+  668	.=.+12
+  680	CASE1	1
+  681	CASE1	2
+  682	CASE1	3
+  683	CASE1	4
+  684	CASE1	5
+  685	CASE1	6
+  686	TRA	-2 
+	patch 666 22
+	patch 668 22
+  690	LINO:69
+  692	LV:7	36 
+  696	CON1:1
+  698	RANG2:1	3 
+  702	AS2
+  704	TRA	-20 
+	patch 670 40
+	patch 672 40
+  708	LINO:70
+  710	LV:7	36 
+  714	CON1:2
+  716	RANG2:1	3 
+  720	AS2
+  722	TRA	-38 
+	patch 674 58
+	patch 676 58
+  726	LINO:71
+  728	LV:7	36 
+  732	CON1:3
+  734	RANG2:1	3 
+  738	AS2
+  740	TRA	-56 
+	patch 686 56
+  744	END
+	patch 634 0
+    73  end;
+  746	TRA4	746 
+
+    75  procedure initializesum;
+    76  var
+    77  	cube: blockno;
+    78  	side: face;
+    79  	technicolor: color;
+    80  begin
+    81  	for cube := 1 to 4 do
+    82  		for side :=  front to right do
+    83  			for technicolor := red to white do
+    84  				sum[cube, facepair(side), technicolor] := 0;
+	patch 746 754
+  754	BEG:28	0 
+  760	CASE4	0 
+  764	CASE4	1 
+  768	CASE2	80
+  770		"initializesum"
+  784	LINO:81
+  786	LV:6	-8 
+  790	CON1:1
+  792	AS24
+  794	LV:6	-12 
+  798	CON1:4
+  800	AS24
+  802	RV4:6	-8 
+  806	RV4:6	-12 
+  810	REL4	LE
+  812	IF	-2 
+  816	LV:6	-13 
+  820	RV4:6	-12 
+  824	RANG42:1	4 
+  828	AS41
+  830	LV:6	-13 
+  834	RV4:6	-8 
+  838	RANG42:1	4 
+  842	AS41
+  844	LV:6	-1 
+  848	RV14:6	-13 
+  852	AS41
+  854	LINO:82
+  856	LV:6	-20 
+  860	CON1:1
+  862	AS24
+  864	LV:6	-24 
+  868	CON1:6
+  870	AS24
+  872	RV4:6	-20 
+  876	RV4:6	-24 
+  880	REL4	LE
+  882	IF	-2 
+  886	LV:6	-25 
+  890	RV4:6	-24 
+  894	RANG42:1	6 
+  898	AS41
+  900	LV:6	-25 
+  904	RV4:6	-20 
+  908	RANG42:1	6 
+  912	AS41
+  914	LV:6	-2 
+  918	RV14:6	-25 
+  922	AS41
+  924	LINO:83
+  926	LV:6	-32 
+  930	CON1:1
+  932	AS24
+  934	LV:6	-36 
+  938	CON1:4
+  940	AS24
+  942	RV4:6	-32 
+  946	RV4:6	-36 
+  950	REL4	LE
+  952	IF	-2 
+  956	LV:6	-37 
+  960	RV4:6	-36 
+  964	RANG42:1	4 
+  968	AS41
+  970	LV:6	-37 
+  974	RV4:6	-32 
+  978	RANG42:1	4 
+  982	AS41
+  984	LV:6	-3 
+  988	RV14:6	-37 
+  992	AS41
+  994	LINO:84
+  996	LV:2	-448 
+ 1000	RV1:6	-13 
+ 1004	INX2:48	1 4 
+ 1010	PUSH:-4
+ 1012	RV1:6	-25 
+ 1016	RANG2:1	6 
+ 1020	CALL:2	626 
+ 1026	INX2:16	1 3 
+ 1032	RV1:6	-37 
+ 1036	INX2:4	1 4 
+ 1042	CON1
+ 1044	AS24
+ 1046	LINO:83
+ 1048	RV4:6	-36 
+ 1052	LV:6	-37 
+ 1056	FOR1U:-74
+	patch 952 104
+ 1058	LINO:82
+ 1060	RV4:6	-24 
+ 1064	LV:6	-25 
+ 1068	FOR1U	-158 
+	patch 882 188
+ 1072	LINO:81
+ 1074	RV4:6	-12 
+ 1078	LV:6	-13 
+ 1082	FOR1U	-242 
+	patch 812 272
+ 1086	END
+	patch 754 40
+    85  end;
+
+    87  begin
+    88  	initializesum;
+    89  	for cube := 1 to 4 do
+    90  		for side := front to right do
+    91  			sum[cube, facepair(side), word(datas[cube,side])] :=
+    92  			sum[cube, facepair(side), word(datas[cube,side])] + 1;
+	patch 620 1090
+ 1090	BEG:24	0 
+ 1096	CASE4	0 
+ 1100	CASE4	1 
+ 1104	CASE2	87
+ 1106		"sumcolors"
+ 1116	LINO:88
+ 1118	CALL:2	746 
+ 1124	LINO:89
+ 1126	LV:4	-8 
+ 1130	CON1:1
+ 1132	AS24
+ 1134	LV:4	-12 
+ 1138	CON1:4
+ 1140	AS24
+ 1142	RV4:4	-8 
+ 1146	RV4:4	-12 
+ 1150	REL4	LE
+ 1152	IF	-2 
+ 1156	LV:4	-13 
+ 1160	RV4:4	-12 
+ 1164	RANG42:1	4 
+ 1168	AS41
+ 1170	LV:4	-13 
+ 1174	RV4:4	-8 
+ 1178	RANG42:1	4 
+ 1182	AS41
+ 1184	LV:4	-1 
+ 1188	RV14:4	-13 
+ 1192	AS41
+ 1194	LINO:90
+ 1196	LV:4	-20 
+ 1200	CON1:1
+ 1202	AS24
+ 1204	LV:4	-24 
+ 1208	CON1:6
+ 1210	AS24
+ 1212	RV4:4	-20 
+ 1216	RV4:4	-24 
+ 1220	REL4	LE
+ 1222	IF	-2 
+ 1226	LV:4	-25 
+ 1230	RV4:4	-24 
+ 1234	RANG42:1	6 
+ 1238	AS41
+ 1240	LV:4	-25 
+ 1244	RV4:4	-20 
+ 1248	RANG42:1	6 
+ 1252	AS41
+ 1254	LV:4	-2 
+ 1258	RV14:4	-25 
+ 1262	AS41
+ 1264	LINO:91
+ 1266	LV:2	-448 
+ 1270	RV1:4	-13 
+ 1274	INX2:48	1 4 
+ 1280	PUSH:-4
+ 1282	RV1:4	-25 
+ 1286	RANG2:1	6 
+ 1290	CALL:2	626 
+ 1296	INX2:16	1 3 
+ 1302	PUSH:-4
+ 1304	LV:2	-256 
+ 1308	RV1:4	-13 
+ 1312	INX2:60	1 4 
+ 1318	RV1:4	-25 
+ 1322	INX2:10	1 6 
+ 1328	IND:10
+ 1330	CALL:1	12 
+ 1336	INX2:4	1 4 
+ 1342	LV:2	-448 
+ 1346	RV1:4	-13 
+ 1350	INX2:48	1 4 
+ 1356	PUSH:-4
+ 1358	RV1:4	-25 
+ 1362	RANG2:1	6 
+ 1366	CALL:2	626 
+ 1372	INX2:16	1 3 
+ 1378	PUSH:-4
+ 1380	LV:2	-256 
+ 1384	RV1:4	-13 
+ 1388	INX2:60	1 4 
+ 1394	RV1:4	-25 
+ 1398	INX2:10	1 6 
+ 1404	IND:10
+ 1406	CALL:1	12 
+ 1412	INX2:4	1 4 
+ 1418	IND4
+ 1420	CON1:1
+ 1422	ADD24
+ 1424	AS4
+ 1426	LINO:90
+ 1428	RV4:4	-24 
+ 1432	LV:4	-25 
+ 1436	FOR1U	-186 
+	patch 1222 216
+ 1440	LINO:89
+ 1442	RV4:4	-12 
+ 1446	LV:4	-13 
+ 1450	FOR1U	-270 
+	patch 1152 300
+ 1454	END
+	patch 1090 28
+    93  end;
+ 1456	TRA4	1456 
+
+    95  procedure find2222;
+    96  var
+    97  	subtotals: array[red..white] of integer;
+    98  	pair1, pair2, pair3, pair4: pair;
+ 1462	TRA4	1462 
+
+   100  function two222(pair1, pair2, pair3, pair4: pair): Boolean;
+   101  var
+   102  	hue: color;
+   103  begin
+   104  	for hue := red to white do
+   105  		subtotals[hue] :=
+   106  			sum[1, pair1, hue]+
+   107  			sum[2, pair2, hue]+
+   108  			sum[3, pair3, hue]+
+   109  			sum[4, pair4, hue];
+   110  	if (subtotals[red]=2) and
+   111  	   (subtotals[blue]=2) and
+   112  	   (subtotals[green]=2) and
+   113  	   (subtotals[white]=2) then
+   114  		two222 := true else
+   115  		two222 := false;
+	patch 1462 1470
+ 1470	BEG:22	0 
+ 1476	CASE4	16 
+ 1480	CASE4	1 
+ 1484	CASE2	103
+ 1486		"two222"
+ 1494	LINO:104
+ 1496	LV:6	-8 
+ 1500	CON1:1
+ 1502	AS24
+ 1504	LV:6	-12 
+ 1508	CON1:4
+ 1510	AS24
+ 1512	RV4:6	-8 
+ 1516	RV4:6	-12 
+ 1520	REL4	LE
+ 1522	IF	-2 
+ 1526	LV:6	-13 
+ 1530	RV4:6	-12 
+ 1534	RANG42:1	4 
+ 1538	AS41
+ 1540	LV:6	-13 
+ 1544	RV4:6	-8 
+ 1548	RANG42:1	4 
+ 1552	AS41
+ 1554	LV:6	-1 
+ 1558	RV14:6	-13 
+ 1562	AS41
+ 1564	LINO:105
+ 1566	LV:4	-16 
+ 1570	RV1:6	-13 
+ 1574	INX2:4	1 4 
+ 1580	LV:2	-448 
+ 1584	RV1:7	45 
+ 1588	INX2:16	1 3 
+ 1594	RV1:6	-13 
+ 1598	INX2:4	1 4 
+ 1604	IND4
+ 1606	LV:2	-448 
+ 1610	CON1:48
+ 1612	ADD24
+ 1614	RV1:7	41 
+ 1618	INX2:16	1 3 
+ 1624	RV1:6	-13 
+ 1628	INX2:4	1 4 
+ 1634	IND4
+ 1636	ADD4
+ 1638	LV:2	-448 
+ 1642	CON1:96
+ 1644	ADD24
+ 1646	RV1:7	37 
+ 1650	INX2:16	1 3 
+ 1656	RV1:6	-13 
+ 1660	INX2:4	1 4 
+ 1666	IND4
+ 1668	ADD4
+ 1670	LV:2	-448 
+ 1674	CON2	144 
+ 1678	ADD24
+ 1680	RV1:7	33 
+ 1684	INX2:16	1 3 
+ 1690	RV1:6	-13 
+ 1694	INX2:4	1 4 
+ 1700	IND4
+ 1702	ADD4
+ 1704	AS4
+ 1706	LINO:104
+ 1708	RV4:6	-12 
+ 1712	LV:6	-13 
+ 1716	FOR1U	-166 
+	patch 1522 196
+ 1720	LINO:110
+ 1722	LV:4	-16 
+ 1726	IND4
+ 1728	CON1:2
+ 1730	REL24	EQ
+ 1732	LV:4	-16 
+ 1736	CON1:4
+ 1738	ADD24
+ 1740	IND4
+ 1742	CON1:2
+ 1744	REL24	EQ
+ 1746	AND
+ 1748	LV:4	-16 
+ 1752	CON1:8
+ 1754	ADD24
+ 1756	IND4
+ 1758	CON1:2
+ 1760	REL24	EQ
+ 1762	AND
+ 1764	LV:4	-16 
+ 1768	CON1:12
+ 1770	ADD24
+ 1772	IND4
+ 1774	CON1:2
+ 1776	REL24	EQ
+ 1778	AND
+ 1780	IF	-2 
+ 1784	LINO:114
+ 1786	LV:7	48 
+ 1790	CON1:1
+ 1792	RSNG2:1
+ 1794	AS2
+ 1796	TRA	-2 
+	patch 1780 18
+ 1800	LINO:115
+ 1802	LV:7	48 
+ 1806	CON1
+ 1808	RSNG2:1
+ 1810	AS2
+	patch 1796 14
+ 1812	END
+	patch 1470 16
+   116  end;
+ 1814	TRA4	1814 
+
+   118  procedure listsolution;
+   119  begin
+   120  	halfsolution[1, halfindex] := pair1;
+   121  	halfsolution[2, halfindex] := pair2;
+   122  	halfsolution[3, halfindex] := pair3;
+   123  	halfsolution[4, halfindex] := pair4;
+   124  	halfindex := halfindex + 1;
+	patch 1814 1822
+ 1822	BEG:28	0 
+ 1828	CASE4	0 
+ 1832	CASE4	1 
+ 1836	CASE2	119
+ 1838		"listsolution"
+ 1852	LINO:120
+ 1854	LV:2	-568 
+ 1858	RV4:2	-12 
+ 1862	INX4:1	1 30 
+ 1868	RV1:4	-17 
+ 1872	RANG2:1	3 
+ 1876	AS21
+ 1878	LINO:121
+ 1880	LV:2	-568 
+ 1884	CON1:30
+ 1886	ADD24
+ 1888	RV4:2	-12 
+ 1892	INX4:1	1 30 
+ 1898	RV1:4	-18 
+ 1902	RANG2:1	3 
+ 1906	AS21
+ 1908	LINO:122
+ 1910	LV:2	-568 
+ 1914	CON1:60
+ 1916	ADD24
+ 1918	RV4:2	-12 
+ 1922	INX4:1	1 30 
+ 1928	RV1:4	-19 
+ 1932	RANG2:1	3 
+ 1936	AS21
+ 1938	LINO:123
+ 1940	LV:2	-568 
+ 1944	CON1:90
+ 1946	ADD24
+ 1948	RV4:2	-12 
+ 1952	INX4:1	1 30 
+ 1958	RV1:4	-20 
+ 1962	RANG2:1	3 
+ 1966	AS21
+ 1968	LINO:124
+ 1970	LV:2	-12 
+ 1974	RV4:2	-12 
+ 1978	CON1:1
+ 1980	ADD24
+ 1982	AS4
+ 1984	END
+	patch 1822 0
+   125  end;
+
+   127  begin
+   128  	halfindex := 1;
+   129  	for pair1 := one2 to five6 do
+   130  	for pair2 := one2 to five6 do
+   131  	for pair3 := one2 to five6 do
+   132  	for pair4 := one2 to five6 do
+   133  		if two222(pair1, pair2, pair3, pair4) then
+   134  			listsolution;
+   135  	if halfindex <= 2 then
+   136  	begin
+   137  		nosolutions := true;
+   138  		goto 1;
+   139  	end;
+	patch 1456 1986
+ 1986	BEG:24	0 
+ 1992	CASE4	0 
+ 1996	CASE4	1 
+ 2000	CASE2	127
+ 2002		"find2222"
+ 2012	LINO	128 
+ 2016	LV:2	-12 
+ 2020	CON1:1
+ 2022	AS24
+ 2024	LINO	129 
+ 2028	LV:4	-24 
+ 2032	CON1:1
+ 2034	AS24
+ 2036	LV:4	-28 
+ 2040	CON1:3
+ 2042	AS24
+ 2044	RV4:4	-24 
+ 2048	RV4:4	-28 
+ 2052	REL4	LE
+ 2054	IF	-2 
+ 2058	LV:4	-29 
+ 2062	RV4:4	-28 
+ 2066	RANG42:1	3 
+ 2070	AS41
+ 2072	LV:4	-29 
+ 2076	RV4:4	-24 
+ 2080	RANG42:1	3 
+ 2084	AS41
+ 2086	LV:4	-17 
+ 2090	RV14:4	-29 
+ 2094	AS41
+ 2096	LINO	130 
+ 2100	LV:4	-36 
+ 2104	CON1:1
+ 2106	AS24
+ 2108	LV:4	-40 
+ 2112	CON1:3
+ 2114	AS24
+ 2116	RV4:4	-36 
+ 2120	RV4:4	-40 
+ 2124	REL4	LE
+ 2126	IF	-2 
+ 2130	LV:4	-41 
+ 2134	RV4:4	-40 
+ 2138	RANG42:1	3 
+ 2142	AS41
+ 2144	LV:4	-41 
+ 2148	RV4:4	-36 
+ 2152	RANG42:1	3 
+ 2156	AS41
+ 2158	LV:4	-18 
+ 2162	RV14:4	-41 
+ 2166	AS41
+ 2168	LINO	131 
+ 2172	LV:4	-48 
+ 2176	CON1:1
+ 2178	AS24
+ 2180	LV:4	-52 
+ 2184	CON1:3
+ 2186	AS24
+ 2188	RV4:4	-48 
+ 2192	RV4:4	-52 
+ 2196	REL4	LE
+ 2198	IF	-2 
+ 2202	LV:4	-53 
+ 2206	RV4:4	-52 
+ 2210	RANG42:1	3 
+ 2214	AS41
+ 2216	LV:4	-53 
+ 2220	RV4:4	-48 
+ 2224	RANG42:1	3 
+ 2228	AS41
+ 2230	LV:4	-19 
+ 2234	RV14:4	-53 
+ 2238	AS41
+ 2240	LINO	132 
+ 2244	LV:4	-60 
+ 2248	CON1:1
+ 2250	AS24
+ 2252	LV:4	-64 
+ 2256	CON1:3
+ 2258	AS24
+ 2260	RV4:4	-60 
+ 2264	RV4:4	-64 
+ 2268	REL4	LE
+ 2270	IF	-2 
+ 2274	LV:4	-65 
+ 2278	RV4:4	-64 
+ 2282	RANG42:1	3 
+ 2286	AS41
+ 2288	LV:4	-65 
+ 2292	RV4:4	-60 
+ 2296	RANG42:1	3 
+ 2300	AS41
+ 2302	LV:4	-20 
+ 2306	RV14:4	-65 
+ 2310	AS41
+ 2312	LINO	133 
+ 2316	PUSH:-4
+ 2318	RV1:4	-29 
+ 2322	RANG2:1	3 
+ 2326	RV1:4	-41 
+ 2330	RANG2:1	3 
+ 2334	RV1:4	-53 
+ 2338	RANG2:1	3 
+ 2342	RV1:4	-65 
+ 2346	RANG2:1	3 
+ 2350	CALL:2	1462 
+ 2356	IF	-2 
+ 2360	LINO	134 
+ 2364	CALL:2	1814 
+	patch 2356 12
+ 2370	LINO	132 
+ 2374	RV4:4	-64 
+ 2378	LV:4	-65 
+ 2382	FOR1U:-82
+	patch 2270 112
+ 2384	LINO	131 
+ 2388	RV4:4	-52 
+ 2392	LV:4	-53 
+ 2396	FOR1U	-170 
+	patch 2198 200
+ 2400	LINO	130 
+ 2404	RV4:4	-40 
+ 2408	LV:4	-41 
+ 2412	FOR1U	-258 
+	patch 2126 288
+ 2416	LINO	129 
+ 2420	RV4:4	-28 
+ 2424	LV:4	-29 
+ 2428	FOR1U	-346 
+	patch 2054 376
+ 2432	LINO	135 
+ 2436	RV4:2	-12 
+ 2440	CON1:2
+ 2442	REL24	LE
+ 2444	IF	-2 
+ 2448	LINO	137 
+ 2452	LV:2	-1 
+ 2456	CON1:1
+ 2458	RSNG2:1
+ 2460	AS21
+ 2462	LINO	138 
+ 2466	TRA4	6 
+	patch 2444 26
+ 2472	END
+	patch 1986 68
+   140  end;
+ 2474	TRA4	2474 
+
+   142  procedure simultaneous;
+   143  var
+   144  	done: Boolean;
+   145  begin
+   146  	nosolutions := false;
+   147  	pointr := 0;
+   148  	done := false;
+   149  	repeat
+   150  		pointr := pointr + 1;
+   151  		repeat
+   152  			index := succ(pointr);
+   153  			if (halfsolution[1, pointr]<>halfsolution[1,index]) and
+   154  			   (halfsolution[2, pointr]<>halfsolution[2,index]) and
+   155  			   (halfsolution[3, pointr]<>halfsolution[3,index]) and
+   156  			   (halfsolution[4, pointr]<>halfsolution[4,index]) then
+   157  				done := true else
+   158  				index := index + 1;
+   159  		until done or (index = pred(halfindex));
+   160  	until done or (pointr = halfindex);
+   161  	if pointr = halfindex then
+   162  	begin
+   163  		nosolutions := true;
+   164  		goto 1;
+   165  	end;
+	patch 2474 2482
+ 2482	BEG:28	0 
+ 2488	CASE4	0 
+ 2492	CASE4	1 
+ 2496	CASE2	145
+ 2498		"simultaneous"
+ 2512	LINO	146 
+ 2516	LV:2	-1 
+ 2520	CON1
+ 2522	RSNG2:1
+ 2524	AS21
+ 2526	LINO	147 
+ 2530	LV:2	-16 
+ 2534	CON1
+ 2536	AS24
+ 2538	LINO	148 
+ 2542	LV:4	-1 
+ 2546	CON1
+ 2548	RSNG2:1
+ 2550	AS21
+ 2552	LINO	150 
+ 2556	LV:2	-16 
+ 2560	RV4:2	-16 
+ 2564	CON1:1
+ 2566	ADD24
+ 2568	AS4
+ 2570	LINO	152 
+ 2574	LV:2	-8 
+ 2578	RV4:2	-16 
+ 2582	SUCC4	-2147483648 	2147483647 
+ 2592	AS4
+ 2594	LINO	153 
+ 2598	LV:2	-568 
+ 2602	RV4:2	-16 
+ 2606	INX4:1	1 30 
+ 2612	IND1
+ 2614	LV:2	-568 
+ 2618	RV4:2	-8 
+ 2622	INX4:1	1 30 
+ 2628	IND1
+ 2630	REL2	NE
+ 2632	LV:2	-568 
+ 2636	CON1:30
+ 2638	ADD24
+ 2640	RV4:2	-16 
+ 2644	INX4:1	1 30 
+ 2650	IND1
+ 2652	LV:2	-568 
+ 2656	CON1:30
+ 2658	ADD24
+ 2660	RV4:2	-8 
+ 2664	INX4:1	1 30 
+ 2670	IND1
+ 2672	REL2	NE
+ 2674	AND
+ 2676	LV:2	-568 
+ 2680	CON1:60
+ 2682	ADD24
+ 2684	RV4:2	-16 
+ 2688	INX4:1	1 30 
+ 2694	IND1
+ 2696	LV:2	-568 
+ 2700	CON1:60
+ 2702	ADD24
+ 2704	RV4:2	-8 
+ 2708	INX4:1	1 30 
+ 2714	IND1
+ 2716	REL2	NE
+ 2718	AND
+ 2720	LV:2	-568 
+ 2724	CON1:90
+ 2726	ADD24
+ 2728	RV4:2	-16 
+ 2732	INX4:1	1 30 
+ 2738	IND1
+ 2740	LV:2	-568 
+ 2744	CON1:90
+ 2746	ADD24
+ 2748	RV4:2	-8 
+ 2752	INX4:1	1 30 
+ 2758	IND1
+ 2760	REL2	NE
+ 2762	AND
+ 2764	IF	-2 
+ 2768	LINO	157 
+ 2772	LV:4	-1 
+ 2776	CON1:1
+ 2778	RSNG2:1
+ 2780	AS21
+ 2782	TRA	-2 
+	patch 2764 20
+ 2786	LINO	158 
+ 2790	LV:2	-8 
+ 2794	RV4:2	-8 
+ 2798	CON1:1
+ 2800	ADD24
+ 2802	AS4
+	patch 2782 20
+ 2804	RV1:4	-1 
+ 2808	RV4:2	-8 
+ 2812	RV4:2	-12 
+ 2816	PRED4	-2147483648 	2147483647 
+ 2826	REL4	EQ
+ 2828	OR
+ 2830	IF	-262 
+ 2834	RV1:4	-1 
+ 2838	RV4:2	-16 
+ 2842	RV4:2	-12 
+ 2846	REL4	EQ
+ 2848	OR
+ 2850	IF	-300 
+ 2854	LINO	161 
+ 2858	RV4:2	-16 
+ 2862	RV4:2	-12 
+ 2866	REL4	EQ
+ 2868	IF	-2 
+ 2872	LINO	163 
+ 2876	LV:2	-1 
+ 2880	CON1:1
+ 2882	RSNG2:1
+ 2884	AS21
+ 2886	LINO	164 
+ 2890	TRA4	6 
+	patch 2868 26
+ 2896	END
+	patch 2482 4
+   166  end;
+ 2898	TRA4	2898 
+
+   168  procedure rearrange;
+   169  var
+   170  	box: blockno;
+   171  	a, b: pair;
+ 2904	TRA4	2904 
+
+   173  procedure put(a, b: pair);
+   174  var
+   175  	old1, new1, old2, new2: face;
+   176  	save1, save2: alfa;
+ 2910	TRA4	2910 
+
+   178  procedure oldpair(c: pair);
+   179  begin
+   180  	case c of
+   181  	one2:
+   182  		begin
+   183  			old1 := front;
+   184  			old2 := back;
+   185  		end;
+   186  	three4:
+   187  		begin
+   188  			old1 := top;
+   189  			old2 := bottom;
+   190  		end;
+   191  	five6:
+   192  		begin
+   193  			old1 := left;
+   194  			old2 := right;
+   195  		end
+   196  	end;
+	patch 2910 2918
+ 2918	BEG:22	0 
+ 2924	CASE4	4 
+ 2928	CASE4	1 
+ 2932	CASE2	179
+ 2934		"oldpair"
+ 2942	LINO	180 
+ 2946	RV1:9	33 
+ 2950	CASE1OP:3
+ 2952	.=.+6
+ 2958	CASE1	1
+ 2959	CASE1	2
+ 2960	CASE1	3
+ 2962	TRA	-2 
+	patch 2950 14
+ 2966	LINO	183 
+ 2970	LV:6	-1 
+ 2974	CON1:1
+ 2976	RANG2:1	6 
+ 2980	AS21
+ 2982	LINO	184 
+ 2986	LV:6	-3 
+ 2990	CON1:2
+ 2992	RANG2:1	6 
+ 2996	AS21
+ 2998	TRA	-38 
+	patch 2952 50
+ 3002	LINO	188 
+ 3006	LV:6	-1 
+ 3010	CON1:3
+ 3012	RANG2:1	6 
+ 3016	AS21
+ 3018	LINO	189 
+ 3022	LV:6	-3 
+ 3026	CON1:4
+ 3028	RANG2:1	6 
+ 3032	AS21
+ 3034	TRA	-74 
+	patch 2954 86
+ 3038	LINO	193 
+ 3042	LV:6	-1 
+ 3046	CON1:5
+ 3048	RANG2:1	6 
+ 3052	AS21
+ 3054	LINO	194 
+ 3058	LV:6	-3 
+ 3062	CON1:6
+ 3064	RANG2:1	6 
+ 3068	AS21
+ 3070	TRA	-110 
+	patch 2962 110
+ 3074	END
+	patch 2918 0
+   197  end;
+ 3076	TRA4	3076 
+   198  procedure newpair(d: pair);
+   199  begin
+   200  	oldpair(b);
+   201  	new1 := old1;
+   202  	new2 := old2;
+	patch 3076 3082
+ 3082	BEG:22	0 
+ 3088	CASE4	4 
+ 3092	CASE4	1 
+ 3096	CASE2	199
+ 3098		"newpair"
+ 3106	LINO	200 
+ 3110	RV1:7	33 
+ 3114	RANG2:1	3 
+ 3118	CALL:3	2910 
+ 3124	LINO	201 
+ 3128	LV:6	-2 
+ 3132	RV1:6	-1 
+ 3136	RANG2:1	6 
+ 3140	AS21
+ 3142	LINO	202 
+ 3146	LV:6	-4 
+ 3150	RV1:6	-3 
+ 3154	RANG2:1	6 
+ 3158	AS21
+   203  end;
+In procedure newpair:
+  w - variable d is never used
+ 3160	END
+	patch 3082 0
+
+   205  begin
+   206  	newpair(b);
+   207  	oldpair(a);
+   208  	save1 := datas[box, new1];
+   209  	datas[box, new1] := datas[box, old1];
+   210  	datas[box, old1] := save1;
+   211  	save2 := datas[box, new2];
+   212  	datas[box, new2] := datas[box, old2];
+   213  	datas[box, old2] := save2;
+	patch 2904 3162
+ 3162	BEG:18	0 
+ 3168	CASE4	8 
+ 3172	CASE4	1 
+ 3176	CASE2	205
+ 3178		"put"
+ 3182	LINO	206 
+ 3186	RV1:7	33 
+ 3190	RANG2:1	3 
+ 3194	CALL:3	3076 
+ 3200	LINO	207 
+ 3204	RV1:7	37 
+ 3208	RANG2:1	3 
+ 3212	CALL:3	2910 
+ 3218	LINO	208 
+ 3222	LV:6	-16 
+ 3226	LV:2	-256 
+ 3230	RV1:4	-1 
+ 3234	INX2:60	1 4 
+ 3240	RV1:6	-2 
+ 3244	INX2:10	1 6 
+ 3250	IND:10
+ 3252	AS:10
+ 3254	LINO	209 
+ 3258	LV:2	-256 
+ 3262	RV1:4	-1 
+ 3266	INX2:60	1 4 
+ 3272	RV1:6	-2 
+ 3276	INX2:10	1 6 
+ 3282	LV:2	-256 
+ 3286	RV1:4	-1 
+ 3290	INX2:60	1 4 
+ 3296	RV1:6	-1 
+ 3300	INX2:10	1 6 
+ 3306	IND:10
+ 3308	AS:10
+ 3310	LINO	210 
+ 3314	LV:2	-256 
+ 3318	RV1:4	-1 
+ 3322	INX2:60	1 4 
+ 3328	RV1:6	-1 
+ 3332	INX2:10	1 6 
+ 3338	RV:6	-16 10 
+ 3344	AS:10
+ 3346	LINO	211 
+ 3350	LV:6	-28 
+ 3354	LV:2	-256 
+ 3358	RV1:4	-1 
+ 3362	INX2:60	1 4 
+ 3368	RV1:6	-4 
+ 3372	INX2:10	1 6 
+ 3378	IND:10
+ 3380	AS:10
+ 3382	LINO	212 
+ 3386	LV:2	-256 
+ 3390	RV1:4	-1 
+ 3394	INX2:60	1 4 
+ 3400	RV1:6	-4 
+ 3404	INX2:10	1 6 
+ 3410	LV:2	-256 
+ 3414	RV1:4	-1 
+ 3418	INX2:60	1 4 
+ 3424	RV1:6	-3 
+ 3428	INX2:10	1 6 
+ 3434	IND:10
+ 3436	AS:10
+ 3438	LINO	213 
+ 3442	LV:2	-256 
+ 3446	RV1:4	-1 
+ 3450	INX2:60	1 4 
+ 3456	RV1:6	-3 
+ 3460	INX2:10	1 6 
+ 3466	RV:6	-28 10 
+ 3472	AS:10
+ 3474	END
+	patch 3162 28
+   214  end;
+
+   216  begin
+   217  	for box := 1 to 4 do
+   218  	begin
+   219  		a := halfsolution[box, pointr];
+   220  		b := halfsolution[box, index];
+   221  		if (a=one2) and (b=five6) then
+   222  			put(five6, three4) else
+   223  		begin
+   224  			if a = three4 then
+   225  			begin
+   226  				if b = one2 then
+   227  				begin
+   228  					put(one2, five6);
+   229  					put(three4, one2);
+   230  					put(five6, three4);
+   231  				end else
+   232  				begin
+   233  					put(three4, one2);
+   234  					put(five6, three4);
+   235  				end
+   236  			end else
+   237  			if b = one2 then
+   238  			begin
+   239  				put(one2, three4);
+   240  				put(five6, one2);
+   241  			end else
+   242  				put(five6, one2);
+   243  		end;
+   244  	end;
+	patch 2898 3478
+ 3478	BEG:24	0 
+ 3484	CASE4	0 
+ 3488	CASE4	1 
+ 3492	CASE2	216
+ 3494		"rearrange"
+ 3504	LINO	217 
+ 3508	LV:4	-8 
+ 3512	CON1:1
+ 3514	AS24
+ 3516	LV:4	-12 
+ 3520	CON1:4
+ 3522	AS24
+ 3524	RV4:4	-8 
+ 3528	RV4:4	-12 
+ 3532	REL4	LE
+ 3534	IF	-2 
+ 3538	LV:4	-13 
+ 3542	RV4:4	-12 
+ 3546	RANG42:1	4 
+ 3550	AS41
+ 3552	LV:4	-13 
+ 3556	RV4:4	-8 
+ 3560	RANG42:1	4 
+ 3564	AS41
+ 3566	LV:4	-1 
+ 3570	RV14:4	-13 
+ 3574	AS41
+ 3576	LINO	219 
+ 3580	LV:4	-2 
+ 3584	LV:2	-568 
+ 3588	RV1:4	-13 
+ 3592	INX2:30	1 4 
+ 3598	RV4:2	-16 
+ 3602	INX4:1	1 30 
+ 3608	IND1
+ 3610	RANG2:1	3 
+ 3614	AS21
+ 3616	LINO	220 
+ 3620	LV:4	-3 
+ 3624	LV:2	-568 
+ 3628	RV1:4	-13 
+ 3632	INX2:30	1 4 
+ 3638	RV4:2	-8 
+ 3642	INX4:1	1 30 
+ 3648	IND1
+ 3650	RANG2:1	3 
+ 3654	AS21
+ 3656	LINO	221 
+ 3660	RV1:4	-2 
+ 3664	CON1:1
+ 3666	REL2	EQ
+ 3668	RV1:4	-3 
+ 3672	CON1:3
+ 3674	REL2	EQ
+ 3676	AND
+ 3678	IF	-2 
+ 3682	LINO	222 
+ 3686	CON1:3
+ 3688	RANG2:1	3 
+ 3692	CON1:2
+ 3694	RANG2:1	3 
+ 3698	CALL:2	2904 
+ 3704	TRA	-2 
+	patch 3678 28
+ 3708	LINO	224 
+ 3712	RV1:4	-2 
+ 3716	CON1:2
+ 3718	REL2	EQ
+ 3720	IF	-2 
+ 3724	LINO	226 
+ 3728	RV1:4	-3 
+ 3732	CON1:1
+ 3734	REL2	EQ
+ 3736	IF	-2 
+ 3740	LINO	228 
+ 3744	CON1:1
+ 3746	RANG2:1	3 
+ 3750	CON1:3
+ 3752	RANG2:1	3 
+ 3756	CALL:2	2904 
+ 3762	LINO	229 
+ 3766	CON1:2
+ 3768	RANG2:1	3 
+ 3772	CON1:1
+ 3774	RANG2:1	3 
+ 3778	CALL:2	2904 
+ 3784	LINO	230 
+ 3788	CON1:3
+ 3790	RANG2:1	3 
+ 3794	CON1:2
+ 3796	RANG2:1	3 
+ 3800	CALL:2	2904 
+ 3806	TRA	-2 
+	patch 3736 72
+ 3810	LINO	233 
+ 3814	CON1:2
+ 3816	RANG2:1	3 
+ 3820	CON1:1
+ 3822	RANG2:1	3 
+ 3826	CALL:2	2904 
+ 3832	LINO	234 
+ 3836	CON1:3
+ 3838	RANG2:1	3 
+ 3842	CON1:2
+ 3844	RANG2:1	3 
+ 3848	CALL:2	2904 
+	patch 3806 46
+ 3854	TRA	-2 
+	patch 3720 136
+ 3858	LINO	237 
+ 3862	RV1:4	-3 
+ 3866	CON1:1
+ 3868	REL2	EQ
+ 3870	IF	-2 
+ 3874	LINO	239 
+ 3878	CON1:1
+ 3880	RANG2:1	3 
+ 3884	CON1:2
+ 3886	RANG2:1	3 
+ 3890	CALL:2	2904 
+ 3896	LINO	240 
+ 3900	CON1:3
+ 3902	RANG2:1	3 
+ 3906	CON1:1
+ 3908	RANG2:1	3 
+ 3912	CALL:2	2904 
+ 3918	TRA	-2 
+	patch 3870 50
+ 3922	LINO	242 
+ 3926	CON1:3
+ 3928	RANG2:1	3 
+ 3932	CON1:1
+ 3934	RANG2:1	3 
+ 3938	CALL:2	2904 
+	patch 3918 24
+	patch 3854 88
+	patch 3704 238
+ 3944	LINO	217 
+ 3948	RV4:4	-12 
+ 3952	LV:4	-13 
+ 3956	FOR1U	-394 
+	patch 3534 424
+ 3960	END
+	patch 3478 16
+   245  end;
+ 3962	TRA4	3962 
+
+   247  procedure correct;
+   248  var
+   249  	list: array[1..8] of integer;
+   250  	done: Boolean;
+   251  	side: face;
+   252  	counter: integer;
+ 3968	TRA4	3968 
+
+   254  procedure check;
+   255  var
+   256  	delux: array[red..white] of integer;
+   257  	kolor: color;
+   258  	counter: integer;
+   259  begin
+   260  	done := true;
+   261  	for kolor := red to white do
+   262  		for counter := 1 to 4 do
+   263  			delux[kolor] := 0;
+   264  	for counter := 1 to 4 do
+   265  	begin
+   266  		delux[word(datas[counter,side])] :=
+   267  		delux[word(datas[counter,side])] + 1;
+   268  		if delux[word(datas[counter,side])] >= 2 then
+   269  			done := false;
+   270  	end;
+	patch 3968 3974
+ 3974	BEG:20	0 
+ 3980	CASE4	0 
+ 3984	CASE4	1 
+ 3988	CASE2	259
+ 3990		"check"
+ 3996	LINO	260 
+ 4000	LV:4	-33 
+ 4004	CON1:1
+ 4006	RSNG2:1
+ 4008	AS21
+ 4010	LINO	261 
+ 4014	LV:6	-28 
+ 4018	CON1:1
+ 4020	AS24
+ 4022	LV:6	-32 
+ 4026	CON1:4
+ 4028	AS24
+ 4030	RV4:6	-28 
+ 4034	RV4:6	-32 
+ 4038	REL4	LE
+ 4040	IF	-2 
+ 4044	LV:6	-33 
+ 4048	RV4:6	-32 
+ 4052	RANG42:1	4 
+ 4056	AS41
+ 4058	LV:6	-33 
+ 4062	RV4:6	-28 
+ 4066	RANG42:1	4 
+ 4070	AS41
+ 4072	LV:6	-17 
+ 4076	RV14:6	-33 
+ 4080	AS41
+ 4082	LINO	262 
+ 4086	LV:6	-40 
+ 4090	CON1:1
+ 4092	AS24
+ 4094	LV:6	-44 
+ 4098	CON1:4
+ 4100	AS24
+ 4102	RV4:6	-40 
+ 4106	RV4:6	-44 
+ 4110	REL4	LE
+ 4112	IF	-2 
+ 4116	LV:6	-48 
+ 4120	RV4:6	-44 
+ 4124	AS4
+ 4126	LV:6	-48 
+ 4130	RV4:6	-40 
+ 4134	AS4
+ 4136	LV:6	-24 
+ 4140	RV4:6	-48 
+ 4144	AS4
+ 4146	LINO	263 
+ 4150	LV:6	-16 
+ 4154	RV1:6	-33 
+ 4158	INX2:4	1 4 
+ 4164	CON1
+ 4166	AS24
+ 4168	LINO	262 
+ 4172	RV4:6	-44 
+ 4176	LV:6	-48 
+ 4180	FOR4U:-46
+	patch 4112 68
+ 4182	LINO	261 
+ 4186	RV4:6	-32 
+ 4190	LV:6	-33 
+ 4194	FOR1U:-124
+	patch 4040 154
+ 4196	LINO	264 
+ 4200	LV:6	-52 
+ 4204	CON1:1
+ 4206	AS24
+ 4208	LV:6	-56 
+ 4212	CON1:4
+ 4214	AS24
+ 4216	RV4:6	-52 
+ 4220	RV4:6	-56 
+ 4224	REL4	LE
+ 4226	IF	-2 
+ 4230	LV:6	-60 
+ 4234	RV4:6	-56 
+ 4238	AS4
+ 4240	LV:6	-60 
+ 4244	RV4:6	-52 
+ 4248	AS4
+ 4250	LV:6	-24 
+ 4254	RV4:6	-60 
+ 4258	AS4
+ 4260	LINO	266 
+ 4264	LV:6	-16 
+ 4268	PUSH:-4
+ 4270	LV:2	-256 
+ 4274	RV4:6	-60 
+ 4278	INX4:60	1 4 
+ 4284	RV1:4	-34 
+ 4288	INX2:10	1 6 
+ 4294	IND:10
+ 4296	CALL:1	12 
+ 4302	INX2:4	1 4 
+ 4308	LV:6	-16 
+ 4312	PUSH:-4
+ 4314	LV:2	-256 
+ 4318	RV4:6	-60 
+ 4322	INX4:60	1 4 
+ 4328	RV1:4	-34 
+ 4332	INX2:10	1 6 
+ 4338	IND:10
+ 4340	CALL:1	12 
+ 4346	INX2:4	1 4 
+ 4352	IND4
+ 4354	CON1:1
+ 4356	ADD24
+ 4358	AS4
+ 4360	LINO	268 
+ 4364	LV:6	-16 
+ 4368	PUSH:-4
+ 4370	LV:2	-256 
+ 4374	RV4:6	-60 
+ 4378	INX4:60	1 4 
+ 4384	RV1:4	-34 
+ 4388	INX2:10	1 6 
+ 4394	IND:10
+ 4396	CALL:1	12 
+ 4402	INX2:4	1 4 
+ 4408	IND4
+ 4410	CON1:2
+ 4412	REL24	GE
+ 4414	IF	-2 
+ 4418	LINO	269 
+ 4422	LV:4	-33 
+ 4426	CON1
+ 4428	RSNG2:1
+ 4430	AS21
+	patch 4414 16
+ 4432	LINO	264 
+ 4436	RV4:6	-56 
+ 4440	LV:6	-60 
+ 4444	FOR4U	-198 
+	patch 4226 220
+ 4448	END
+	patch 3974 60
+   271  end;
+ 4450	TRA4	4450 
+
+   273  procedure rotate;
+   274  var
+   275  	save: alfa;
+   276  	opposite: face;
+   277  begin
+   278  	if side = back then
+   279  		opposite := front else
+   280  	if side = front then
+   281  		opposite := back else
+   282  	if side = top then
+   283  		opposite := bottom else
+   284  	if side = bottom then
+   285  		opposite := top;
+   286  	save := datas[list[counter], side];
+   287  	datas[list[counter], side] := datas[list[counter], opposite];
+   288  	datas[list[counter], opposite] := save;
+	patch 4450 4458
+ 4458	BEG:22	0 
+ 4464	CASE4	0 
+ 4468	CASE4	1 
+ 4472	CASE2	277
+ 4474		"rotate"
+ 4482	LINO	278 
+ 4486	RV1:4	-34 
+ 4490	CON1:2
+ 4492	REL2	EQ
+ 4494	IF	-2 
+ 4498	LINO	279 
+ 4502	LV:6	-13 
+ 4506	CON1:1
+ 4508	RANG2:1	6 
+ 4512	AS21
+ 4514	TRA	-2 
+	patch 4494 22
+ 4518	LINO	280 
+ 4522	RV1:4	-34 
+ 4526	CON1:1
+ 4528	REL2	EQ
+ 4530	IF	-2 
+ 4534	LINO	281 
+ 4538	LV:6	-13 
+ 4542	CON1:2
+ 4544	RANG2:1	6 
+ 4548	AS21
+ 4550	TRA	-2 
+	patch 4530 22
+ 4554	LINO	282 
+ 4558	RV1:4	-34 
+ 4562	CON1:3
+ 4564	REL2	EQ
+ 4566	IF	-2 
+ 4570	LINO	283 
+ 4574	LV:6	-13 
+ 4578	CON1:4
+ 4580	RANG2:1	6 
+ 4584	AS21
+ 4586	TRA	-2 
+	patch 4566 22
+ 4590	LINO	284 
+ 4594	RV1:4	-34 
+ 4598	CON1:4
+ 4600	REL2	EQ
+ 4602	IF	-2 
+ 4606	LINO	285 
+ 4610	LV:6	-13 
+ 4614	CON1:3
+ 4616	RANG2:1	6 
+ 4620	AS21
+	patch 4602 18
+	patch 4586 34
+	patch 4550 70
+	patch 4514 106
+ 4622	LINO	286 
+ 4626	LV:6	-12 
+ 4630	LV:2	-256 
+ 4634	LV:4	-32 
+ 4638	RV4:4	-40 
+ 4642	INX4:4	1 8 
+ 4648	IND4
+ 4650	INX4:60	1 4 
+ 4656	RV1:4	-34 
+ 4660	INX2:10	1 6 
+ 4666	IND:10
+ 4668	AS:10
+ 4670	LINO	287 
+ 4674	LV:2	-256 
+ 4678	LV:4	-32 
+ 4682	RV4:4	-40 
+ 4686	INX4:4	1 8 
+ 4692	IND4
+ 4694	INX4:60	1 4 
+ 4700	RV1:4	-34 
+ 4704	INX2:10	1 6 
+ 4710	LV:2	-256 
+ 4714	LV:4	-32 
+ 4718	RV4:4	-40 
+ 4722	INX4:4	1 8 
+ 4728	IND4
+ 4730	INX4:60	1 4 
+ 4736	RV1:6	-13 
+ 4740	INX2:10	1 6 
+ 4746	IND:10
+ 4748	AS:10
+ 4750	LINO	288 
+ 4754	LV:2	-256 
+ 4758	LV:4	-32 
+ 4762	RV4:4	-40 
+ 4766	INX4:4	1 8 
+ 4772	IND4
+ 4774	INX4:60	1 4 
+ 4780	RV1:6	-13 
+ 4784	INX2:10	1 6 
+ 4790	RV:6	-12 10 
+ 4796	AS:10
+ 4798	END
+	patch 4458 16
+   289  end;
+
+   291  begin
+   292  	list[1] := 4;
+   293  	list[2] := 3;
+   294  	list[3] := 4;
+   295  	list[4] := 2;
+   296  	list[5] := 4;
+   297  	list[6] := 3;
+   298  	list[7] := 4;
+   299  	list[8] := 3;
+   300  	for side := back to top do
+   301  	begin
+   302  		counter := 0;
+   303  		check;
+   304  		while not done do
+   305  		begin
+   306  			counter := counter + 1;
+   307  			rotate;
+   308  			check;
+   309  		end;
+   310  	end
+	patch 3962 4802
+ 4802	BEG:22	0 
+ 4808	CASE4	0 
+ 4812	CASE4	1 
+ 4816	CASE2	291
+ 4818		"correct"
+ 4826	LINO	292 
+ 4830	LV:4	-32 
+ 4834	CON1:4
+ 4836	AS24
+ 4838	LINO	293 
+ 4842	LV:4	-32 
+ 4846	CON1:4
+ 4848	ADD24
+ 4850	CON1:3
+ 4852	AS24
+ 4854	LINO	294 
+ 4858	LV:4	-32 
+ 4862	CON1:8
+ 4864	ADD24
+ 4866	CON1:4
+ 4868	AS24
+ 4870	LINO	295 
+ 4874	LV:4	-32 
+ 4878	CON1:12
+ 4880	ADD24
+ 4882	CON1:2
+ 4884	AS24
+ 4886	LINO	296 
+ 4890	LV:4	-32 
+ 4894	CON1:16
+ 4896	ADD24
+ 4898	CON1:4
+ 4900	AS24
+ 4902	LINO	297 
+ 4906	LV:4	-32 
+ 4910	CON1:20
+ 4912	ADD24
+ 4914	CON1:3
+ 4916	AS24
+ 4918	LINO	298 
+ 4922	LV:4	-32 
+ 4926	CON1:24
+ 4928	ADD24
+ 4930	CON1:4
+ 4932	AS24
+ 4934	LINO	299 
+ 4938	LV:4	-32 
+ 4942	CON1:28
+ 4944	ADD24
+ 4946	CON1:3
+ 4948	AS24
+ 4950	LINO	300 
+ 4954	LV:4	-44 
+ 4958	CON1:2
+ 4960	AS24
+ 4962	LV:4	-48 
+ 4966	CON1:3
+ 4968	AS24
+ 4970	RV4:4	-44 
+ 4974	RV4:4	-48 
+ 4978	REL4	LE
+ 4980	IF	-2 
+ 4984	LV:4	-49 
+ 4988	RV4:4	-48 
+ 4992	RANG42:1	6 
+ 4996	AS41
+ 4998	LV:4	-49 
+ 5002	RV4:4	-44 
+ 5006	RANG42:1	6 
+ 5010	AS41
+ 5012	LV:4	-34 
+ 5016	RV14:4	-49 
+ 5020	AS41
+ 5022	LINO	302 
+ 5026	LV:4	-40 
+ 5030	CON1
+ 5032	AS24
+ 5034	LINO	303 
+ 5038	CALL:2	3968 
+ 5044	LINO	304 
+ 5048	RV1:4	-33 
+ 5052	NOT
+ 5054	IF	-2 
+ 5058	LINO	306 
+ 5062	LV:4	-40 
+ 5066	RV4:4	-40 
+ 5070	CON1:1
+ 5072	ADD24
+ 5074	AS4
+ 5076	LINO	307 
+ 5080	CALL:2	4450 
+ 5086	LINO	308 
+ 5090	CALL:2	3968 
+ 5096	TRA	-54 
+	patch 5054 44
+ 5100	LINO	300 
+ 5104	RV4:4	-48 
+ 5108	LV:4	-49 
+ 5112	FOR1U:-102
+	patch 4980 132
+ 5114	END
+	patch 4802 52
+   311  end;
+ 5116	TRA4	5116 
+
+   313  procedure printout;
+   314  var
+   315  	space: integer;
+   316  	cube: integer;
+   317  	side: face;
+   318  begin
+   319  	if nosolutions then
+   320  		writeln('no solutions') else
+   321  	begin
+   322  		writeln('solution to instant insanity');
+   323  		for cube := 1 to 4 do
+   324  		begin
+   325  			write(cube, '   ');
+   326  			for side := front to bottom do
+   327  				write(datas[cube, side]);
+   328  			writeln;
+   329  		end;
+   330  	end;
+	patch 5116 5122
+ 5122	BEG:24	0 
+ 5128	CASE4	0 
+ 5132	CASE4	1 
+ 5136	CASE2	318
+ 5138		"printout"
+ 5148	LINO	319 
+ 5152	RV1:2	-1 
+ 5156	IF	-2 
+ 5160	LINO	320 
+ 5164	UNITOUT
+ 5166	FILE
+ 5168	CON14:1
+ 5170	CON14:12
+ 5172	LVCON:14
+ 5174		"no solutions"
+ 5188	WRITES:16
+ 5190	WRITLN
+ 5192	TRA	-2 
+	patch 5156 38
+ 5196	LINO	322 
+ 5200	UNITOUT
+ 5202	FILE
+ 5204	CON14:1
+ 5206	CON14:28
+ 5208	LVCON:30
+ 5210		"solution to instant insanity"
+ 5240	WRITES:16
+ 5242	WRITLN
+ 5244	LINO	323 
+ 5248	LV:4	-16 
+ 5252	CON1:1
+ 5254	AS24
+ 5256	LV:4	-20 
+ 5260	CON1:4
+ 5262	AS24
+ 5264	RV4:4	-16 
+ 5268	RV4:4	-20 
+ 5272	REL4	LE
+ 5274	IF	-2 
+ 5278	LV:4	-24 
+ 5282	RV4:4	-20 
+ 5286	AS4
+ 5288	LV:4	-24 
+ 5292	RV4:4	-16 
+ 5296	AS4
+ 5298	LV:4	-8 
+ 5302	RV4:4	-24 
+ 5306	AS4
+ 5308	LINO	325 
+ 5312	UNITOUT
+ 5314	RV4:4	-24 
+ 5318	LVCON:6
+ 5320		"%10D"
+ 5326	FILE
+ 5328	WRITEF:12
+ 5330	FILE
+ 5332	CON14:1
+ 5334	CON14:3
+ 5336	LVCON:4
+ 5338		"   "
+ 5342	WRITES:16
+ 5344	LINO	326 
+ 5348	LV:4	-28 
+ 5352	CON1:1
+ 5354	AS24
+ 5356	LV:4	-32 
+ 5360	CON1:4
+ 5362	AS24
+ 5364	RV4:4	-28 
+ 5368	RV4:4	-32 
+ 5372	REL4	LE
+ 5374	IF	-2 
+ 5378	LV:4	-33 
+ 5382	RV4:4	-32 
+ 5386	RANG42:1	6 
+ 5390	AS41
+ 5392	LV:4	-33 
+ 5396	RV4:4	-28 
+ 5400	RANG42:1	6 
+ 5404	AS41
+ 5406	LV:4	-9 
+ 5410	RV14:4	-33 
+ 5414	AS41
+ 5416	LINO	327 
+ 5420	UNITOUT
+ 5422	FILE
+ 5424	CON14:1
+ 5426	CON14:10
+ 5428	LV:2	-256 
+ 5432	RV4:4	-24 
+ 5436	INX4:60	1 4 
+ 5442	RV1:4	-33 
+ 5446	INX2:10	1 6 
+ 5452	WRITES:16
+ 5454	LINO	326 
+ 5458	RV4:4	-32 
+ 5462	LV:4	-33 
+ 5466	FOR1U:-62
+	patch 5374 92
+ 5468	LINO	328 
+ 5472	UNITOUT
+ 5474	WRITLN
+ 5476	LINO	323 
+ 5480	RV4:4	-20 
+ 5484	LV:4	-24 
+ 5488	FOR4U	-194 
+	patch 5274 216
+	patch 5192 298
+   331  end;
+In procedure printout:
+  w - variable space is neither used nor set
+ 5492	END
+	patch 5122 36
+
+   333  begin
+   334  	reset(input);
+   335  	readin;
+   336  	sumcolors;
+   337  	find2222;
+   338  	simultaneous;
+   339  	rearrange;
+   340  	correct;
+   341  1:
+   342  	printout;
+	patch 0 5494
+ 5494	BEG:22	0 
+ 5500	CASE4	0 
+ 5504	CASE4	1 
+ 5508	CASE2	333
+ 5510		"insane"
+ 5518	LINO	334 
+ 5522	CON14
+ 5524	CON14
+ 5526	CON4	0 
+ 5532	RV4	-8 
+ 5536	RESET
+ 5538	LINO	335 
+ 5542	CALL:1	200 
+ 5548	LINO	336 
+ 5552	CALL:1	620 
+ 5558	LINO	337 
+ 5562	CALL:1	1456 
+ 5568	LINO	338 
+ 5572	CALL:1	2474 
+ 5578	LINO	339 
+ 5582	CALL:1	2898 
+ 5588	LINO	340 
+ 5592	CALL:1	3962 
+	patch 6 5598
+ 5598	LINO	342 
+ 5602	CALL:1	5116 
+   343  end.
+In program insane:
+  w - type metacolor is never used
+  w - constant notacolor is never used
+  w - type metapair is never used
+  w - type metaface is never used
+  w - constant notapair is never used
+  w - constant notaface is never used
+ 5608	END
+	patch 5494 568
+   344  {
+   345  wbggrb
+   346  wbrgrr
+   347  wbgwrg
+   348  wrgwbr
+   349  }

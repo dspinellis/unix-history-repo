@@ -1,0 +1,233 @@
+.TH FTAMD 8C "01 Mar 1987"
+.\" $Header: /f/osi/ftam2/RCS/ftamd.8c,v 7.3 91/02/22 09:24:03 mrose Interim $
+.\"
+.\"
+.\" $Log:	ftamd.8c,v $
+.\" Revision 7.3  91/02/22  09:24:03  mrose
+.\" Interim 6.8
+.\" 
+.\" Revision 7.2  90/11/04  19:15:20  mrose
+.\" update
+.\" 
+.\" Revision 7.1  90/02/20  17:12:11  mrose
+.\" update
+.\" 
+.\" Revision 7.0  89/11/23  21:54:35  mrose
+.\" Release 6.0
+.\" 
+.SH NAME
+ftamd \- FTAM responder
+.SH SYNOPSIS
+.in +.5i
+.ti -.5i
+.B \*(SDiso.ftam
+\%[\-c]
+\%[\-d]
+\fImagic\0arguments\fR
+.in -.5i
+(under \fI\*(SDtsapd\fR\0)
+.SH DESCRIPTION
+The \fIftamd\fR server implements the responder side of 
+the File Transfer, Access, and Management (FTAM) service.
+.PP
+Currently, implementations for Berkeley and AT&T UNIX exist.
+Supported are:
+the no-recovery FTAM-QoS;
+any of
+the transfer, management, and transfer and management service classes;
+the kernel, read, write, limited file management, enhanced file management, and
+grouping functional units;
+and, the kernel and storage attribute groups.
+Only three document types are supported as of this writing:
+unstructured text files (FTAM\-1),
+unstructured binary files (FTAM\-3),
+and filedirectory files (NIST\-9).
+.SH "DEBUG OPERATION"
+If \fIiso.ftamd\fR is started interactively,
+or if the `\-d' switch is given,
+then debug mode is entered.
+In this case,
+all logging activity is displayed on the user's terminal.
+In addition,
+the logging information is more verbose.
+.SH AUTHENTICATION
+An FTAM initiator must be listed in the \fIpasswd\fR file and have a
+non\-empty password.
+Further, as with the \fIftpd\fR daemon,
+the username must not appear in the \fI\*(EDftamusers\fR file
+or the \fI/etc/ftpusers\fR file.
+.PP
+If the username \*(lqANON\*(rq or \*(lqftp\*(rq is given,
+then \fIftamd\fR treats this as a guest access,
+similar to the \*(lqanonymous\*(rq facility supported by the \fIftpd\fR daemon.
+An entry in the \fIpasswd\fR file for user \*(lqftp\*(rq must be present with
+a non\-zero UID.
+For guest access,
+a \fIchroot\fR to the guest home directory
+is executed to restrict access to the system.
+The guest home directory should be structured thusly:
+.PP
+Note that the `\-c' flag (given in the \fIisoservices\fR\0(5) file)
+forces a \fIchroot\fR to the initiator's home directory.
+This is used to restrict network access.
+.TP
+.B ~ftp/
+Owned by \*(lqftp\*(rq with mode 555.
+.TP
+.B ~ftp/etc/
+Owned by the super\-user with mode 555.
+The \fIpasswd\fR and \fIgroup\fR files should be present,
+each with mode 444.
+.TP
+.B ~ftp/pub/
+Owned by \*(lqftp\*(rq with mode 777.
+This is the directory where guests can place files from remote systems.
+.TP
+.B ~ftp/portal/
+Owned by the super\-user with mode 555.
+The super\-user can put world\-readable files here
+(with mode 444) without fear of these files being removed or altered by
+guests.
+.PP
+Note that since \fIftamd\fR doesn't use \fIls\fR in order to produce
+directory listings,
+the directory \fIbin/\fR under the guest home directory need not be present,
+as it must be to support the anonymous guest with \fIftpd\fR.
+.SH "VIRTUAL FILESTORE"
+Here are the file attribute mappings:
+.TP
+.B filename
+A single component, relative to the user's $HOME.
+Changing this attribute is equivalent to a \fIrename\fR.
+.TP
+.B contents\-type
+Based on st_mode:
+\fBNIST\-9\fR for directories,
+\fBFTAM\-1\fR for regular files appearing to be textual,
+\fBFTAM\-3\fR for all other regular files.
+Files that are neither regular nor directories are inaccessible via this
+implementation of the VFS (i.e., special files).
+.TP
+.B account
+The st_gid according to /etc/group.
+Changing this attribute is equivalent to a \fIchgrp\fR.
+.TP
+.B date\-and\-time\-of\-creation
+The st_mtime.
+.TP
+.B date\-and\-time\-of\-last\-modification
+The st_mtime.
+.TP
+.B date\-and\-time\-of\-last\-read\-access
+The st_atime.
+.TP
+.B date\-and\-time\-of\-last\-attribute\-modification
+The st_ctime.
+.TP
+.B identity\-of\-creator
+The st_uid according to /etc/passwd.
+.TP
+.B identity\-of\-last\-modifier
+The st_uid according to /etc/passwd
+(if the value of the st_mode field guarantees uniqueness).
+.TP
+.B identity\-of\-last\-reader
+The st_uid according to /etc/passwd
+(if the value of the st_mode field guarantees uniqueness).
+.TP
+.B identity\-of\-last\-attribute\-modifier
+The st_uid according to /etc/passwd
+(if the value of the st_mode field guarantees uniqueness).
+.TP
+.B file\-availability
+Immediate.
+.TP
+.B permitted\-actions
+Depends on st_mode as interpreted by \fIaccess\fR\0(2):
+R_OK for permission to read;
+W_OK for permission to write;
+permission is always granted to read attributes;
+permission is granted to change attributes if the initiator has uid equal to
+st_uid;
+permission to delete is based on writability of parent directory.
+.TP
+.B filesize
+The st_size.
+.TP
+.B future\-filesize
+Not available.
+.TP
+.B access\-control
+Not available.
+.TP
+.B encryption\-name
+Not available.
+.TP
+.B legal\-qualifications
+Not available.
+.TP
+.B private\-use
+Not available.
+.PP
+The activity attribute mappings are straight\-forward.
+The read action corresponds to reading UNIX files.
+The insert, replace, extend, and erase actions correspond to writing
+UNIX files.
+Concurrency control is supported for reading and writing,
+but not for reading or changing attributes, or for deleting files.
+.SH FILES
+.nf
+.ta \w'\*(EDisodocuments    'u
+\*(EDisodocuments	ISODE FTAM document types database
+\*(EDisoentities	ISODE entities database
+\*(EDftamusers	list of users prohibited by ftam
+\*(LDftam.log	logfile
+/usr/adm/wtmp	login records
+.re
+.fi
+.SH "SEE ALSO"
+ftam(1c), libftam(3n), isodocuments(5)
+.br
+\fIThe ISO Development Environment: User's Manual\fR,
+.br
+ISO 8571:
+\fIInformation Processing Systems \-\-
+File Transfer, Access, and Management\fR
+.SH DIAGNOSTICS
+All obvious.
+.SH AUTHOR
+Marshall T. Rose
+.PP
+This program is based somewhat on the \fIftpd\fR(8c) program supplied with
+Berkeley UNIX.
+.SH BUGS
+The anonymous account is inherently dangerous and should be avoided when
+possible.
+It is also inherently useful.
+.PP
+The Berkeley UNIX version of this program runs with the effective UID of the
+FTAM initiator,
+but also with the real UID of the super\-user.
+This is necessary to change the account attribute on files
+(using \fIchown\fR\0).
+The possible security holes have been extensively considered,
+but may be incomplete.
+.PP
+The AT&T UNIX version, which lacks kernel support for this technique, acts
+differently.
+Immediately upon association establishment,
+it changes both the real and effective UID to that of the FTAM initiator.
+To change the account attribute on files,
+it invokes the \fIchgrp\fR program.
+Similarly, to create or delete directories,
+it invokes either the \fImkdir\fR program or the \fIrmdir\fR program.
+.PP
+The AT&T UNIX version of this program has been tested both under
+the System V Compatibility Package in SUN UNIX release 3.2
+and a true SVR3 implementation.
+However,
+the \fIfcntl\fR syscall,
+which is used to implement concurrency control,
+currently seems to be a no\-op.
+The Berkeley UNIX version of this program uses \fIflock\fR,
+which seems to work just fine.

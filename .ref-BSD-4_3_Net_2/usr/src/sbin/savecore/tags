@@ -1,0 +1,22 @@
+Create	savecore.c	/^Create(file, mode)$/
+Lseek	savecore.c	/^Lseek(fd, off, flag)$/
+Msavecore	savecore.c	/^main(argc, argv)$/
+Open	savecore.c	/^Open(name, rw)$/
+Perror	savecore.c	/^Perror(level, msg, s)$/
+Read	savecore.c	/^Read(fd, buff, size)$/
+Write	savecore.c	/^Write(fd, buf, size)$/
+check_kmem	savecore.c	/^check_kmem()$/
+check_space	savecore.c	/^check_space()$/
+clear_dump	savecore.c	/^clear_dump()$/
+dump_exists	savecore.c	/^dump_exists()$/
+eq	savecore.c	/^#define eq(a,b) (!strcmp(a,b))$/
+find_dev	savecore.c	/^find_dev(dev, type)$/
+get_crashtime	savecore.c	/^get_crashtime()$/
+log	savecore.c	/^log(level, msg, a1, a2)$/
+ok	savecore.c	/^#define ok(number) ((number)&0x7fffffff)$/
+path	savecore.c	/^path(file)$/
+rawname	savecore.c	/^rawname(s)$/
+read_kmem	savecore.c	/^read_kmem()$/
+read_number	savecore.c	/^read_number(fn)$/
+save_core	savecore.c	/^save_core()$/
+usage	savecore.c	/^usage()$/

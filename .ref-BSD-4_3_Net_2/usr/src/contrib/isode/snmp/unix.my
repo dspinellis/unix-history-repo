@@ -1,0 +1,159 @@
+-- unix.my - UNIX-specific management objects
+
+-- $Header: /f/osi/snmp/RCS/unix.my,v 7.10 91/02/28 17:17:23 mrose Exp $
+--
+-- Contributed by NYSERNet Inc.  This work was partially supported by the
+-- U.S. Defense Advanced Research Projects Agency and the Rome Air Development
+-- Center of the U.S. Air Force Systems Command under contract number
+-- F30602-88-C-0016.
+--
+--
+-- $Log:	unix.my,v $
+-- Revision 7.10  91/02/28  17:17:23  mrose
+-- touch-up
+-- 
+-- Revision 7.9  91/02/22  09:44:52  mrose
+-- Interim 6.8
+-- 
+-- Revision 7.8  90/05/31  10:38:38  mrose
+-- update
+-- 
+-- Revision 7.7  90/05/28  21:50:09  mrose
+-- not-accessible
+-- 
+-- Revision 7.6  90/05/21  17:07:30  mrose
+-- OBJECT-TYPE
+-- 
+-- Revision 7.5  90/05/13  15:54:37  mrose
+-- update
+-- 
+-- Revision 7.4  90/04/17  01:02:56  mrose
+-- update
+-- 
+-- Revision 7.3  90/02/27  18:50:12  mrose
+-- unix stuff
+-- 
+-- Revision 7.2  90/02/19  10:44:55  mrose
+-- update
+-- 
+-- Revision 7.1  90/02/17  17:18:58  mrose
+-- touch-up
+-- 
+-- Revision 7.0  89/11/23  22:23:40  mrose
+-- Release 6.0
+-- 
+
+--
+--				  NOTICE
+--
+--    Acquisition, use, and distribution of this module and related
+--    materials are subject to the restrictions of a license agreement.
+--    Consult the Preface in the User's Manual for the full terms of
+--    this agreement.
+--
+--
+
+
+UNIX-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+	unix, OBJECT-TYPE, Counter
+		FROM RFC1155-SMI;
+
+
+-- the agents group (defined in smi.my)
+-- agents OBJECT IDENTIFIER ::=	{ unix 1 }
+
+
+-- the mbuf group
+
+mbuf	OBJECT IDENTIFIER ::=	{ unix 2 }
+
+mbufS		OBJECT-TYPE
+	SYNTAX	Counter
+	ACCESS	read-only
+	STATUS	mandatory
+	::= { mbuf 1 }
+
+mbufClusters 	OBJECT-TYPE
+	SYNTAX	Counter
+	ACCESS	read-only
+	STATUS	mandatory
+	::= { mbuf 2 }
+
+mbufFreeClusters OBJECT-TYPE
+	SYNTAX	Counter
+	ACCESS	read-only
+	STATUS	mandatory
+	::= { mbuf 3 }
+
+mbufDrops 	OBJECT-TYPE
+	SYNTAX	Counter
+	ACCESS	read-only
+	STATUS	mandatory
+	::= { mbuf 4 }
+
+mbufWaits	 OBJECT-TYPE
+	SYNTAX	Counter
+	ACCESS	read-only
+	STATUS	mandatory
+	::= { mbuf 5 }
+
+mbufDrains 	OBJECT-TYPE
+	SYNTAX	Counter
+	ACCESS	read-only
+	STATUS	mandatory
+	::= { mbuf 6 }
+
+mbufFrees 	OBJECT-TYPE
+	SYNTAX	Counter
+	ACCESS	read-only
+	STATUS	mandatory
+	::= { mbuf 7 }
+
+mbufTable 	OBJECT-TYPE
+	SYNTAX	SEQUENCE OF MbufEntry
+	ACCESS	not-accessible
+	STATUS	mandatory
+	::= { mbuf 8 }
+
+mbufEntry	OBJECT-TYPE
+	SYNTAX	MbufEntry
+	ACCESS	not-accessible
+	STATUS	mandatory
+  	INDEX	{ mbufType }
+	::= { mbufTable 1 }
+
+MbufEntry ::= SEQUENCE {
+    mbufType
+	INTEGER,
+    mbufAllocates
+	INTEGER
+    }
+
+mbufType	OBJECT-TYPE
+	SYNTAX	INTEGER
+	ACCESS	read-only
+	STATUS	mandatory
+	::= { mbufEntry 1 }
+
+mbufAllocates	OBJECT-TYPE
+	SYNTAX	Counter
+	ACCESS	read-only
+	STATUS	mandatory
+	::= { mbufEntry 2 }
+
+
+-- the SMUX peer group (defined in smi.my)
+-- peers OBJECT IDENTIFIER ::=	{ unix 3 }
+
+
+-- the SMUX protocol group (defined in smux.my)
+-- smux OBJECT IDENTIFIER ::=	{ unix 4 }
+
+
+-- the NETSTAT group (defined in smux.my)
+-- netstat OBJECT IDENTIFIER ::= { unix 5 }
+
+
+END

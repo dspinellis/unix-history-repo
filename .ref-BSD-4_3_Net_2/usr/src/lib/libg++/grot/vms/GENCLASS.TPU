@@ -1,0 +1,49 @@
+
+   PROCEDURE pat_replace (
+      oldstring, !
+      newstring)  !
+      LOCAL range2, count ;
+      position (beginning_of (current_buffer)) ;
+      count := 0 ;
+      LOOP
+         range2 := search_quietly (oldstring, FORWARD, EXACT) ;
+         EXITIF range2 = 0 ;
+         position (beginning_of (range2)) ;
+         erase (range2) ;
+         copy_text (newstring) ;
+         count := count + 1 ;
+         ENDLOOP ;
+      IF (count > 0) THEN
+         message (fao('Replaced pattern !UL time!%S', count)) ;
+      ENDIF ;
+   ENDPROCEDURE ;
+    
+   new_string1 := read_line ("type1: ") ;
+   new_file1 := substr(new_string1,1,1) ;
+   mode_string1 := read_line ("type&1: ") ;
+   new_string2 := read_line ("type2: ") ;
+   new_file2 := substr(new_string2,1,0) ;
+   mode_string2 := read_line ("type&2: ") ;
+   filename := GET_INFO (COMMAND_LINE, 'file_name') ;
+   LOOP
+      exp_filename := FILE_SEARCH (filename) ;
+      EXITIF exp_filename = "" ;
+      mainbuffer := CREATE_BUFFER (exp_filename, exp_filename) ;
+      position (mainbuffer) ;
+      execute ("pat_replace (""<T>."",new_file1)") ;
+      execute ("pat_replace (""<T>"", new_string1)") ;
+      execute ("pat_replace (""<T&>"",mode_string1)") ;
+      IF LENGTH (new_string2) > 0
+        THEN
+        execute ("pat_replace (""<C>."", new_file2)") ;
+        execute ("pat_replace (""<C>"", new_string2)") ;
+        execute ("pat_replace (""<C&>"",mode_string2)") ;
+        ENDIF;
+      IF get_info (mainbuffer, "modified") THEN
+         write_file (mainbuffer)
+      ELSE
+         message ('No changes made.') ENDIF ;
+      delete (mainbuffer) ;
+      ENDLOOP ;
+   quit ;
+

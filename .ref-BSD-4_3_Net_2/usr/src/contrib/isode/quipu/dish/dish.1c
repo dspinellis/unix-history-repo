@@ -1,0 +1,31 @@
+.TH DISH 1C "07 Nov 1988"
+.\" $Header: /f/osi/quipu/dish/RCS/dish.1c,v 7.1 91/02/22 09:40:25 mrose Interim $
+.\"
+.\"
+.\" $Log:	dish.1c,v $
+.\" Revision 7.1  91/02/22  09:40:25  mrose
+.\" Interim 6.8
+.\" 
+.\" Revision 7.0  89/11/23  22:20:00  mrose
+.\" Release 6.0
+.\" 
+.SH NAME
+dish \- DIrectory SHell
+.SH SYNOPSIS
+.in +.5i
+.ti -.5i
+.B dish
+\%[\-call\0name-or-address]
+.in -.5i
+.SH DESCRIPTION
+.PP
+The \fIdish\fR program provides a textual interface to the X.500 OSI Directory.
+It gives full access to all elements of the DAP protocol.
+.SH "SEE ALSO"
+\fIThe ISO Development Environment: User's Manual, Volume 5: QUIPU\fR
+.br
+ISO 9594:
+\fIInformation Processing \-\- Open Systems Interconnection \-\-
+The Directory
+.SH AUTHOR
+Colin Robbins, UCL

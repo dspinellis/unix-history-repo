@@ -1,0 +1,19 @@
+# This is an example of a Database NOT holding a copy of the root EDB.
+
+# which oid tables to use
+oidtable    oidtable
+
+# Name of the DSA to start
+mydsaname   "c=GB@o=University College London@cn=toucan"
+
+# DSA to contact if we need a referral to a parent.
+parent "cn=Giant Tortoise" Internet=128.86.8.55+17003|IXI=20433450400255|X121+23421920014855|Janet=000040010550
+
+# log info
+logdir      /tmp/
+
+# default tree directory (This directory = `.')
+treedir     ./
+
+# i/o info
+dsaplog      level=exceptions level=notice sflags=tty

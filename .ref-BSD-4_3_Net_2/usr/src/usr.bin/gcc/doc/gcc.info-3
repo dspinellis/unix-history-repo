@@ -1,0 +1,1353 @@
+Info file gcc.info, produced by Makeinfo, -*- Text -*- from input
+file gcc.texinfo.
+
+This file documents the use and the internals of the GNU compiler.
+
+Copyright (C) 1988, 1989, 1990 Free Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of
+this manual under the conditions for verbatim copying, provided also
+that the sections entitled "GNU General Public License" and "Protect
+Your Freedom--Fight `Look And Feel'" are included exactly as in the
+original, and provided that the entire resulting derived work is
+distributed under the terms of a permission notice identical to this
+one.
+
+Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that the sections entitled "GNU General Public
+License" and "Protect Your Freedom--Fight `Look And Feel'" and this
+permission notice may be included in translations approved by the
+Free Software Foundation instead of in the original English.
+
+
+
+File: gcc.info,  Node: Installation,  Next: Trouble,  Prev: Options,  Up: Top
+
+Installing GNU CC
+*****************
+
+Here is the procedure for installing GNU CC on a Unix system.
+
+* Menu:
+
+* Other Dir::     Compiling in a separate directory (not where the source is).
+* Sun Install::   See below for installation on the Sun.
+* 3B1 Install::   See below for installation on the 3B1.
+* SCO Install::   See below for installation on SCO System V 3.2.  (Or ESIX.)
+* VMS Install::   See below for installation on VMS.
+* HPUX Install::  See below for installation on HPUX.
+* MIPS Install::  See below for installation on MIPS.
+* Tower Install:: See below for installation on an NCR Tower.
+
+  1. Edit `Makefile'.  If you are using HPUX, or any form of system
+     V, you must make a few changes described in comments at the
+     beginning of the file.  Genix requires changes also, and so does
+     the Pyramid.
+
+  2. On a Sequent system, go to the Berkeley universe.
+
+  3. Choose configuration files.  The easy way to do this is to run
+     the command file `config.gcc' with a single argument, which
+     specifies the type of machine (and in some cases which operating
+     system).
+
+     Here is a list of the possible arguments:
+
+    `vax'
+          Vaxes running BSD.
+
+    `vms'
+          Vaxes running VMS.
+
+    `vax-sysv'
+          Vaxes running system V.
+
+    `i386-sysv'
+          Intel 386 PCs running system V.
+
+    `i386-sysv-gas'
+          Intel 386 PCs running system V, using the GNU assembler and
+          GNU linker.
+
+    `sequent-i386'
+          Sequent with Intel 386 processors.
+
+    `i386-aix'
+          Intel 386 PCs or PS/2s running AIX.
+
+    `sun2'
+          Sun 2 running system version 2 or 3.
+
+    `sun3'
+          Sun 3 running system version 2 or 3, with 68881.  Note
+          there we do not provide a configuration file to use an FPA
+          by default, because programs that establish signal handlers
+          for floating point traps inherently cannot work with the FPA.
+
+    `sun3-nfp'
+          Sun 3 running system version 2 or 3, without 68881.
+
+    `sun4'
+          Sun 4 running system version 2 or 3.  *Note
+          Incompatibilities::, for calling convention
+          incompatibilities on the Sun 4 (sparc).
+
+    `sun2-os4'
+          Sun 2 running system version 4.
+
+    `sun3-os4'
+          Sun 3 running system version 4, with 68881.
+
+    `sun3-nfp-os4'
+          Sun 3 running system version 4, without 68881.
+
+    `sun4-os4'
+          Sun 4 running system version 4.  *Note Incompatibilities::,
+          for calling convention incompatibilities on the Sun 4
+          (sparc).
+
+    `sun386'
+          Sun 386 ("roadrunner").
+
+    `alliant'
+          Alliant FX/8 computer.  Note that the standard installed C
+          compiler in Concentrix 5.0 has a bug which prevent it from
+          compiling GNU CC correctly.  You can patch the compiler bug
+          as follows:
+
+               cp /bin/pcc ./pcc
+               adb -w ./pcc - << EOF
+               15f6?w 6610
+               EOF
+
+          Then you must use the `-ip12' option when compiling GNU CC
+          with the patched compiler, as shown here:
+
+               make CC="./pcc -ip12" CFLAGS=-w
+
+          Note also that Alliant's version of DBX does not manage to
+          work with the output from GNU CC.
+
+    `tahoe'
+          The tahoe computer (running BSD, and using DBX).
+
+    `decstation'
+          The DEC 3100 Mips machine ("pmax").  Note that GNU CC
+          cannot generate debugging information in the unusual format
+          used on the Mips.
+
+    `mips-sysv'
+          The Mips computer, RS series, with the System V environment
+          as default.  Note that GNU CC cannot generate debugging
+          information in the unusual format used on the Mips.
+
+    `mips-bsd43'
+          The Mips computer, RS series, with the BSD 4.3 environment
+          as default.  Note that GNU CC cannot generate debugging
+          information in the unusual format used on the Mips.
+
+    `mips'
+          The Mips computer, M series.  Note that GNU CC cannot
+          generate debugging information in the unusual format used
+          on the Mips.
+
+    `iris'
+          Another variant of the Mips computer, the Silicon Graphics
+          Iris 4D.  Note that GNU CC cannot generate debugging
+          information in the unusual format used on the Mips.
+
+    `convex-c1'
+          Convex C1 computer.
+
+    `convex-c2'
+          Convex C2 computer.
+
+    `pyramid'
+          Pyramid computer.
+
+    `hp9k320'
+          HP 9000 series 300 using HPUX assembler.  Note there is no
+          support in GNU CC for HP's debugger; thus, `-g' is not
+          available in this configuration.
+
+    `hp9k320-gas'
+          HP 9000 series 300 using GNU assembler, linker and debugger.
+          This requires the HP-adapt package, which is available
+          along with the GNU linker as part of the "binutils"
+          distribution.  This is on the GNU CC distribution tape.
+
+    `hp9k320-old'
+          HP 9000 series 300 using HPUX assembler, in operating
+          system versions older than 6.5.  Note there is no support
+          in GNU CC for HP's debugger; thus, `-g' is not available in
+          this configuration.
+
+    `hp9k320-bsd'
+          HP 9000 series 300 running BSD.
+
+    `isi68'
+          ISI 68000 or 68020 system with a 68881.
+
+    `isi68-nfp'
+          ISI 68000 or 68020 system without a 68881.
+
+    `news800'
+          Sony NEWS 68020 system.
+
+    `next'
+          NeXT system.
+
+    `tower'
+          NCR Tower 32 system.
+
+    `altos'
+          Altos 3068.  Note that you must use the GNU assembler,
+          linker and debugger, with COFF-encapsulation.  Also, you
+          must fix a kernel bug.  Details in the file `ALTOS-README'.
+
+    `3b1'
+          AT&T 3b1, a.k.a. 7300 PC.  Note that special procedures are
+          needed to compile GNU CC with this machine's standard C
+          compiler, due to bugs in that compiler.  *Note 3b1
+          Install::.  You can bootstrap it more easily with previous
+          versions of GNU CC if you have them.
+
+    `3b1-gas'
+          AT&T 3b1 using the GNU assembler.
+
+    `sequent-ns32k'
+          Sequent containing ns32000 processors.
+
+    `encore'
+          Encore ns32000 system.
+
+    `genix'
+          National Semiconductor ns32000 system.
+
+    `88000'
+          Motorola 88000 processor.  This port is not finished.
+
+     Here we spell out what files need to be set up:
+
+        * Make a symbolic link named `config.h' to the top-level
+          config file for the machine you are using (*note
+          Config::.).  This file is responsible for defining
+          information about the host machine.  It includes `tm.h'.
+
+          The file is located in the subdirectory `config'.  Its name
+          should be `xm-MACHINE.h', with these exceptions:
+
+         `xm-vms.h'
+               for vaxen running VMS.
+
+         `xm-vaxv.h'
+               for vaxen running system V.
+
+         `xm-i386v.h'
+               for Intel 80386's running system V.
+
+         `xm-sun386i.h'
+               for Sun roadrunner running any version of the
+               operating system.
+
+         `xm-hp9k320.h'
+               for the HP 9000 series 300.
+
+         `xm-genix.h'
+               for the ns32000 running Genix
+
+          If your system does not support symbolic links, you might
+          want to set up `config.h' to contain a `#include' command
+          which refers to the appropriate file.
+
+        * Make a symbolic link named `tm.h' to the
+          machine-description macro file for your machine.  It should
+          be in the subdirectory `config' and its name should be
+          `tm-MACHINE.h'.
+
+          If your system is a 68000, don't use the file `tm-m68k.h'
+          directly.  Instead, use one of these files:
+
+         `tm-sun3.h'
+               for Sun 3 machines with 68881.
+
+         `tm-sun3-nfp.h'
+               for Sun 3 machines with no hardware floating point.
+
+         `tm-sun3os3.h'
+               for Sun 3 machines with 68881, running Sunos version 3.
+
+         `tm-sun3os3nf.h'
+               for Sun 3 machines with no hardware floating point,
+               running Sunos version 3.
+
+         `tm-sun2.h'
+               for Sun 2 machines.
+
+         `tm-3b1.h'
+               for AT&T 3b1 (aka 7300 Unix PC).
+
+         `tm-isi68.h'
+               for Integrated Solutions systems.  This file assumes
+               you use the GNU assembler.
+
+         `tm-isi68-nfp.h'
+               for Integrated Solutions systems without a 68881. 
+               This file assumes you use the GNU assembler.
+
+         `tm-news800.h'
+               for Sony NEWS systems.
+
+         `tm-hp9k320.h'
+               for HPUX systems, if you are using GNU CC with the
+               system's assembler and linker.
+
+         `tm-hp9k320g.h'
+               for HPUX systems, if you are using the GNU assembler,
+               linker and other utilities.  Not all of the pieces of
+               GNU software needed for this mode of operation are as
+               yet in distribution; full instructions will appear
+               here in the future.
+
+         `tm-tower-as.h'
+               for NCR Tower 32 systems, using the standard system
+               assembler.
+
+          For the vax, use `tm-vax.h' on BSD Unix, `tm-vaxv.h' on
+          system V, or `tm-vms.h' on VMS.
+
+          For the Motorola 88000, use `tm-m88k.h'.  The support for
+          the 88000 does not currently work; it requires extensive
+          changes which we hope to reconcile in version 2.
+
+          For the 80386, don't use `tm-i386.h' directly.  Use
+          `tm-i386v.h' if the target machine is running system V,
+          `tm-i386gas.h' if it is running system V but you are using
+          the GNU assembler and linker, `tm-seq386.h' for a Sequent
+          386 system, or `tm-compaq.h' for a Compaq, or
+          `tm-sun386i.h' for a Sun 386 system.
+
+          For the Mips computer, there are five choices: `tm-mips.h'
+          for the M series, `tm-mips-bsd.h' for the RS series with
+          BSD, `tm-mips-sysv.h' for the RS series with System V,
+          `tm-iris.h' for the Iris version of the machine, and
+          `tm-decstatn.h' for the Decstation.
+
+          For the 32000, use `tm-sequent.h' if you are using a
+          Sequent machine, or `tm-encore.h' for an Encore machine, or
+          `tm-genix.h' if you are using Genix version 3; otherwise,
+          perhaps `tm-ns32k.h' will work for you.
+
+          Note that Genix has bugs in `alloca' and `malloc'; you must
+          get the compiled versions of these from GNU Emacs and edit
+          GNU CC's `Makefile' to use them.
+
+          Note that Encore systems are supported only under BSD.
+
+          For Sparc (Sun 4) machines, use `tm-sparc.h' with operating
+          system version 4, and `tm-sun4os3.h' with system version 3.
+
+          For Convex systems before version 8.1, use `tm-conv1os7.h'
+          or `tm-conv2os7.h'.  For versions 8.1 and greater, use
+          `tm-convex1.h' or `tm-convex2.h'.  You should also
+          bootstrap GCC with `pcc' rather than `cc'; one way to do
+          this is with the following commands.
+
+               ln -s /bin/pcc ./cc
+               set path = (. $path)
+
+        * Make a symbolic link named `md' to the machine description
+          pattern file.  It should be in the `config' subdirectory
+          and its name should be `MACHINE.md'; but MACHINE is often
+          not the same as the name used in the `tm.h' file because
+          the `md' files are more general.
+
+        * Make a symbolic link named `aux-output.c' to the output
+          subroutine file for your machine.  It should be in the
+          `config' subdirectory and its name should be `out-MACHINE.c'.
+
+  4. Make sure the Bison parser generator is installed.  (This is
+     unnecessary if the Bison output files `c-parse.tab.c' and
+     `cexp.c' are more recent than `c-parse.y' and `cexp.y' and you
+     do not plan to change the `.y' files.)
+
+     Bison versions older than Sept 8, 1988 will produce incorrect
+     output for `c-parse.tab.c'.
+
+  5. If you have a previous version of GCC installed, then chances
+     are you can compile the new version with that.  Do the following:
+
+          make CC="gcc -O"
+
+     Since this produces an optimized executable right away, there is
+     no need to bootstrap the result with itself except to test it. 
+     Therefore, you can skip directly to the `make install' step below.
+
+  6. Build the compiler.  Just type `make' in the compiler directory.
+
+     Ignore any warnings you may see about "statement not reached" in
+     the `insn-emit.c'; they are normal.  Any other compilation
+     errors may represent bugs in the port to your machine or
+     operating system, and should be investigated and reported (*note
+     Bugs::.).
+
+     Some commercial compilers fail to compile GNU CC because they
+     have bugs or limitations.  For example, the Microsoft compiler
+     is said to run out of macro space.  Some Ultrix compilers run
+     out of expression space; then you need to break up the statement
+     where the problem happens.
+
+  7. If you are using COFF-encapsulation, you must convert `gnulib'
+     to a GNU-format library at this point.  See the file
+     `README-ENCAP' in the directory containing the GNU binary file
+     utilities, for directions.
+
+  8. Move the first-stage object files and executables into a
+     subdirectory with this command:
+
+          make stage1
+
+     The files are moved into a subdirectory named `stage1'.  Once
+     installation is complete, you may wish to delete these files
+     with `rm -r stage1'.
+
+  9. Recompile the compiler with itself, with this command:
+
+          make CC=stage1/gcc CFLAGS="-g -O -Bstage1/"
+
+     This is called making the stage 2 compiler.
+
+     On a 68000 or 68020 system lacking floating point hardware,
+     unless you have selected a `tm.h' file that expects by default
+     that there is no such hardware, do this instead:
+
+          make CC=stage1/gcc CFLAGS="-g -O -Bstage1/ -msoft-float"
+
+ 10. If you wish to test the compiler by compiling it with itself one
+     more time, do this (in C shell):
+
+          make stage2
+          make CC=stage2/gcc CFLAGS="-g -O -Bstage2/"
+          foreach file (*.o)
+          cmp $file stage2/$file
+          end
+
+     This is called making the stage 3 compiler.  Aside from the `-B'
+     option, the options should be the same as when you made the
+     stage 2 compiler.
+
+     The `foreach' command (written in C shell) will notify you if
+     any of these stage 3 object files differs from those of stage 2.
+     On BSD systems, any difference, no matter how innocuous,
+     indicates that the stage 2 compiler has compiled GNU CC
+     incorrectly, and is therefore a potentially serious bug which
+     you should investigate and report (*note Bugs::.).
+
+     On systems that use COFF object files, bytes 5 to 8 will always
+     be different, since it is a timestamp.  On these systems, you
+     can do the comparison as follows (in Bourne shell):
+
+          for file in *.o; do
+          echo $file
+          tail +10c $file > foo1
+          tail +10c stage2/$file > foo2
+          cmp foo1 foo2
+          done
+
+     On MIPS machines, you should use the shell script `ecoff-cmp' to
+     compare two object files.
+
+ 11. Install the compiler driver, the compiler's passes and run-time
+     support.  You can use the following command:
+
+          make install
+
+     This copies the files `cc1', `cpp' and `gnulib' to files
+     `gcc-cc1', `gcc-cpp' and `gcc-gnulib' in directory
+     `/usr/local/lib', which is where the compiler driver program
+     looks for them.  It also copies the driver program `gcc' into
+     the directory `/usr/local/bin', so that it appears in typical
+     execution search paths.
+
+     *Warning: there is a bug in `alloca' in the Sun library.  To
+     avoid this bug, install the binaries of GNU CC that were
+     compiled by GNU CC.  They use `alloca' as a built-in function
+     and never the one in the library.*
+
+     *Warning: the GNU CPP may not work for `ioctl.h', `ttychars.h'
+     and other system header files unless the `-traditional' option
+     is used.*  The bug is in the header files: at least on some
+     machines, they rely on behavior that is incompatible with ANSI
+     C.  This behavior consists of substituting for macro argument
+     names when they appear inside of character constants.  The
+     `-traditional' option tells GNU CC to behave the way these
+     headers expect.
+
+     Because of this problem, you might prefer to configure GNU CC to
+     use the system's own C preprocessor.  To do so, make the file
+     `/usr/local/lib/gcc-cpp' a link to `/lib/cpp'.
+
+     Alternatively, on Sun systems and 4.3BSD at least, you can
+     correct the include files by running the shell script
+     `fixincludes'.  This installs modified, corrected copies of the
+     files `ioctl.h', `ttychars.h' and many others, in a special
+     directory where only GNU CC will normally look for them.  This
+     script will work on various systems because it chooses the files
+     by searching all the system headers for the problem cases that
+     we know about.
+
+     Use the following command to do this:
+
+          make includes
+
+     If you selected a different directory for GNU CC installation
+     when you installed it, by specifying the Make variable `prefix'
+     or `libdir', specify it the same way in this command.
+
+     Note that some systems are starting to come with ANSI C system
+     header files.  On these systems, don't run `fixincludes'; it may
+     not work, and is certainly not necessary.
+
+If you cannot install the compiler's passes and run-time support in
+`/usr/local/lib', you can alternatively use the `-B' option to
+specify a prefix by which they may be found.  The compiler
+concatenates the prefix with the names  `cpp', `cc1' and `gnulib'. 
+Thus, you can put the files in a directory `/usr/foo/gcc' and specify
+`-B/usr/foo/gcc/' when you run GNU CC.
+
+Also, you can specify an alternative default directory for these
+files by setting the Make variable `libdir' when you make GNU CC.
+
+
+
+File: gcc.info,  Node: Other Dir,  Next: Sun Install,  Prev: Installation,  Up: Installation
+
+Compilation in a Separate Directory
+===================================
+
+If you wish to build the object files and executables in a directory
+other than the one containing the source files, here is what you must
+do differently:
+
+  1. Go to that directory before running `config.gcc':
+
+          mkdir gcc-sun3
+          cd gcc-sun3
+
+     On systems that do not support symbolic links, this directory
+     must be on the same file system as the source code directory.
+
+  2. Specify where to find `config.gcc' when you run it:
+
+          ../gcc-1.36/config.gcc ...
+
+  3. Specify where to find the sources, as an argument to `config.gcc':
+
+          ../gcc-1.36/config.gcc -srcdir=../gcc-1.36 sun3
+
+     The `-srcdir=DIR' option is not needed when the source directory
+     is the parent of the current directory, because `config.gcc'
+     detects that case automatically.
+
+Now, you can run `make' in that directory.  You need not repeat the
+configuration steps shown above, when ordinary source files change. 
+You must, however, run `config.gcc' again when the configuration
+files change, if your system does not support symbolic links.
+
+
+
+File: gcc.info,  Node: Sun Install,  Next: 3b1 Install,  Prev: Other Dir,  Up: Installation
+
+Installing GNU CC on the Sun
+============================
+
+Make sure the environment variable `FLOAT_OPTION' is not set when you
+compile `gnulib'.  If this option were set to `f68881' when `gnulib'
+is compiled, the resulting code would demand to be linked with a
+special startup file and would not link properly without special
+pains.
+
+There is a bug in `alloca' in certain versions of the Sun library. 
+To avoid this bug, install the binaries of GNU CC that were compiled
+by GNU CC.  They use `alloca' as a built-in function and never the
+one in the library.
+
+Some versions of the Sun compiler crash when compiling GNU CC, with a
+segmentation fault in cpp.  This can sometimes be due to the bulk of
+data in the environment variables.  You may be able to avoid it by
+using the following command to compile GNU CC with Sun CC:
+
+     make CC="TERMCAP=x OBJS=x LIBFUNCS=x STAGESTUFF=x cc"
+
+Another problem that often happens on Suns is that you get a crash
+when building stage 2, when `genflags' is run.
+
+One reason for such as crash is if you configured GNU CC for the
+wrong version of SunOS.  Starting with version 1.38, configurations
+`sun3' and `sun4' are for SunOS 4, so this problem should no longer
+happen.
+
+Another cause of the same symptom is having installed the GNU linker
+with an earlier version of SunOS.  The version that worked before
+stopped working due to a change in the format of executables in SunOS
+4.1.  Many sites have installed the GNU linker as
+`/usr/local/lib/gcc-ld', often as part of installing GNU C++.  So if
+you get such crashes and you have used the proper configuration, try
+deleting `/usr/local/lib/gcc-ld'.
+
+The current version of the GNU linker, found in the current binutils
+release, does work with SunOS 4.1.
+
+
+
+File: gcc.info,  Node: 3b1 Install,  Next: SCO Install,  Prev: Sun Install,  Up: Installation
+
+Installing GNU CC on the 3b1
+============================
+
+Installing GNU CC on the 3b1 is difficult if you do not already have
+GNU CC running, due to bugs in the installed C compiler.  However,
+the following procedure might work.  We are unable to test it.
+
+  1. Comment out the `#include "config.h"' line on line 37 of
+     `cccp.c' and do `make cpp'.  This makes a preliminary version of
+     GNU cpp.
+
+  2. Save the old `/lib/cpp' and copy the preliminary GNU cpp to that
+     file name.
+
+  3. Undo your change in `cccp.c', or reinstall the original version,
+     and do `make cpp' again.
+
+  4. Copy this final version of GNU cpp into `/lib/cpp'.
+
+  5. Replace every occurrence of `obstack_free' in `tree.c' with
+     `_obstack_free'.
+
+  6. Run `make' to get the first-stage GNU CC.
+
+  7. Reinstall the original version of `/lib/cpp'.
+
+  8. Now you can compile GNU CC with itself and install it in the
+     normal fashion.
+
+If you have installed an earlier version of GCC, you can compile the
+newer version with that.  However, you will run into trouble
+compiling `gnulib', since that is normally compiled with CC.  To
+solve the problem, uncomment this line in `Makefile':
+
+     CCLIBFLAGS = -B/usr/local/lib/gcc- -tp -Wp,-traditional
+
+
+
+File: gcc.info,  Node: SCO Install,  Next: VMS Install,  Prev: 3B1 Install,  Up: Installation
+
+Installing GNU CC on SCO System V 3.2
+=====================================
+
+The compiler that comes with this system does not work properly with
+`-O'.  Therefore, you should redefine the Make variable `CCLIBFLAGS'
+not to use `-O'.
+
+You should also edit `Makefile' to enable the lines that set `CLIB'
+to `-lPW', and the ones specifically labeled as being for SCO, that
+set `RANLIB', and that set `CC' and `OLDCC' to `rcc'.
+
+Also, edit the definition of `USER_H' to remove the file `limits.h'.
+
+Then you can run `config.gcc i386-sco' and finish building GNU CC
+normally.
+
+The same recipe should work on ESIX, but use `config.gcc i386-esix'
+instead.
+
+
+
+File: gcc.info,  Node: VMS Install,  Next: HPUX Install,  Prev: SCO Install,  Up: Installation
+
+Installing GNU CC on VMS
+========================
+
+The VMS version of GNU CC is distributed in a backup saveset
+containing both source code and precompiled binaries.
+
+To install the `gcc' command so you can use the compiler easily, in
+the same manner as you use the VMS C compiler, you must install the
+VMS CLD file for GNU CC as follows:
+
+  1. Define the VMS logical names `GNU_CC' and `GNU_CC_INCLUDE' to
+     point to the directories where the GNU CC executables
+     (`gcc-cpp', `gcc-cc1', etc.) and the C include files are kept. 
+     This should be done with the commands:
+
+          $ assign /super /system disk:[gcc.] gnu_cc
+          $ assign /super /system disk:[gcc.include.] gnu_cc_include
+
+     with the appropriate disk and directory names.  These commands
+     can be placed in your system startup file so they will be
+     executed whenever the machine is rebooted.  You may, if you
+     choose, do this via the `GCC_INSTALL.COM' script in the `[GCC]'
+     directory.
+
+  2. Install the `GCC' command with the command line:
+
+          $ set command /table=sys$library:dcltables gnu_cc:[000000]gcc
+
+  3. To install the help file, do the following:
+
+          $ lib/help sys$library:helplib.hlb gcc.hlp
+
+     Now you can invoke the compiler with a command like `gcc
+     /verbose file.c', which is equivalent to the command `gcc -v -c
+     file.c' in Unix.
+
+We try to put corresponding binaries and sources on the VMS
+distribution tape.  But sometimes the binaries will be from an older
+version that the sources, because we don't always have time to update
+them.  (Use the `/verbose' option to determine the version number of
+the binaries and compare it with the source file `version.c' to tell
+whether this is so.)  In this case, you should use the binaries you
+get to recompile the sources.  If you must recompile, here is how:
+
+  1. Copy the file `tm-vms.h' to `tm.h', `xm-vms.h' to `config.h',
+     `vax.md' to `md.' and `out-vax.c' to `aux-output.c'.  The files
+     to be copied are found in the subdirectory named `config'; they
+     should be copied to the main directory of GNU CC.
+
+  2. Setup the logical names and command tables as defined above.  In
+     addition, define the vms logical name `GNU_BISON' to point at
+     the to the directories where the Bison executable is kept.  This
+     should be done with the command:
+
+          $ assign /super /system disk:[bison.] gnu_bison
+
+     You may, if you choose, use the `INSTALL_BISON.COM' script in
+     the `[BISON]' directory.
+
+  3. Install the `BISON' command with the command line:
+
+          $ set command /table=sys$library:dcltables gnu_bison:[000000]bison
+
+  4. Type `@make' to do recompile everything.
+
+     If you are compiling with a version of GNU CC older than 1.33,
+     specify `/DEFINE=("inline=")' as an option in all the
+     compilations.  This requires editing all the `gcc' commands in
+     `make-cc1.com'.  (The older versions had problems supporting
+     `inline'.)  Once you have a working 1.33 or newer GNU CC, you
+     can change this file back.
+
+With this version of GNU CC, `const' global variables now work
+properly.  Unless, however, the `const' modifier is also specified in
+every external declaration of the variable in all of the source files
+that use that variable, the linker will issue warnings about
+conflicting attributes for the variable, since the linker does not
+know if the variable should be read-only.  The program will still
+work, but the variable will be placed in writable storage.
+
+Under previous versions of GNU CC, the generated code would
+occasionally give strange results when linked to the sharable
+`VAXCRTL' library.  Now this should work.
+
+Even with this version, however, GNU CC itself should not be linked
+to the sharable `VAXCRTL', unless you force the linker to use the
+`qsort' routine from `gcclib.olb'.  The `qsort' routine supplied with
+`VAXCRTL' has a bug which causes a compiler crash.  The executable
+that is generated by `make-cc1.com' uses the non-shared version of
+`VAXCRTL' (and thus the `qsort' routine from `gcclib.olb').
+
+Note that GNU CC on VMS now generates debugging information to
+describe the programs symbols to the VMS debugger.  However, you need
+version 1.37 or later of GAS in order to output them properly in the
+object file.
+
+
+
+File: gcc.info,  Node: HPUX Install,  Next: MIPS Install,  Prev: VMS Install,  Up: Installation
+
+Installing GNU CC on HPUX
+=========================
+
+To install GNU CC on HPUX, you must start by editing the file
+`Makefile'.  Search for the string `HPUX' to find comments saying
+what to change.  You need to change some variable definitions and (if
+you are using GAS) some lines in the rule for the target `gnulib'.
+
+To avoid errors when linking programs with `-g', create an empty
+library named `libg.a'.  An easy way to do this is:
+
+     ar rc /usr/local/lib/libg.a
+
+To compile with the HPUX C compiler, you must specify get the file
+`alloca.c' from GNU Emacs.  Then, when you run `make', use this
+argument:
+
+     make ALLOCA=alloca.o
+
+When recompiling GNU CC with itself, do not define `ALLOCA'. 
+Instead, an `-I' option needs to be added to `CFLAGS' as follows:
+
+     make CC=stage1/gcc CFLAGS="-g -O -Bstage1/ -I../binutils/hp-include"
+
+
+
+File: gcc.info,  Node: MIPS Install,  Next: Tower Install,  Prev: HPUX Install,  Up: Installation
+
+Installing GNU CC on MIPS
+=========================
+
+To avoid errors when linking programs with `-g', create an empty
+library named `libg.a'.  An easy way to do this is:
+
+     ar rc /usr/local/lib/libg.a
+
+
+
+File: gcc.info,  Node: Tower Install,  Prev: MIPS Install,  Up: Installation
+
+Installing GNU CC on an NCR Tower
+=================================
+
+On an NCR Tower model 4x0 or 6x0, you may have trouble because the
+default maximum virtual address size of a process is just 1 Mb.  Most
+often you will find this problem while compiling GNU CC with itself.
+
+The only way to solve the problem is to reconfigure the kernel.  Add
+a line such as this to the configuration file:
+
+     MAXUMEM = 4096
+
+and then relink the kernel and reboot the machine.
+
+
+
+File: gcc.info,  Node: Trouble,  Next: Service,  Prev: Installation,  Up: Top
+
+Known Causes of Trouble with GNU CC
+***********************************
+
+Here are some of the things that have caused trouble for people
+installing or using GNU CC.
+
+   * On certain systems, defining certain environment variables such
+     as `CC' can interfere with the functioning of `make'.
+
+   * Cross compilation can run into trouble for certain machines
+     because some target machines' assemblers require floating point
+     numbers to be written as *integer* constants in certain contexts.
+
+     The compiler writes these integer constants by examining the
+     floating point value as an integer and printing that integer,
+     because this is simple to write and independent of the details
+     of the floating point representation.  But this does not work if
+     the compiler is running on a different machine with an
+     incompatible floating point format, or even a different
+     byte-ordering.
+
+     In addition, correct constant folding of floating point values
+     requires representing them in the target machine's format.  (The
+     C standard does not quite require this, but in practice it is
+     the only way to win.)
+
+     It is now possible to overcome these problems by defining macros
+     such as `REAL_VALUE_TYPE'.  But doing so is a substantial amount
+     of work for each target machine.  *Note Cross-compilation::.
+
+   * DBX rejects some files produced by GNU CC, though it accepts
+     similar constructs in output from PCC.  Until someone can supply
+     a coherent description of what is valid DBX input and what is
+     not, there is nothing I can do about these problems.  You are on
+     your own.
+
+   * Users often think it is a bug when GNU CC reports an error for
+     code like this:
+
+          int foo (short);
+          
+          int foo (x)
+               short x;
+          {...}
+
+     The error message is correct: this code really is erroneous,
+     because the old-style non-prototype definition passes subword
+     integers in their promoted types.  In other words, the argument
+     is really an `int', not a `short'.  The correct prototype is this:
+
+          int foo (int);
+
+   * Users often think it is a bug when GNU CC reports an error for
+     code like this:
+
+          int foo (struct mumble *);
+          
+          struct mumble { ... };
+          
+          int foo (struct mumble *x)
+          { ... }
+
+     This code really is erroneous, because the scope of `struct
+     mumble' the prototype is limited to the argument list containing
+     it.  It does not refer to the `struct mumble' defined with file
+     scope immediately below--they are two unrelated types with
+     similar names in different scopes.
+
+     But in the definition of `foo', the file-scope type is used
+     because that is available to be inherited.  Thus, the definition
+     and the prototype do not match, and you get an error.
+
+     This behavior may seem silly, but it's what the ANSI standard
+     specifies.  It is easy enough for you to make your code work by
+     moving the definition of `struct mumble' above the prototype.  I
+     don't think it's worth being incompatible for.
+
+
+
+File: gcc.info,  Node: Service,  Next: Incompatibilities,  Prev: Trouble,  Up: Top
+
+How To Get Help with GNU CC
+***************************
+
+If you need help installing, using or changing GNU CC, there are two
+ways to find it:
+
+   * Send a message to a suitable network mailing list.  First try
+     `bug-gcc@prep.ai.mit.edu', and if that brings no response, try
+     `info-gcc@prep.ai.mit.edu'.
+
+   * Look in the service directory for someone who might help you for
+     a fee.  The service directory is found in the file named
+     `SERVICE' in the GNU CC distribution.
+
+
+
+File: gcc.info,  Node: Incompatibilities,  Next: Extensions,  Prev: Service,  Up: Top
+
+Incompatibilities of GNU CC
+***************************
+
+There are several noteworthy incompatibilities between GNU C and most
+existing (non-ANSI) versions of C.  The `-traditional' option
+eliminates most of these incompatibilities, *but not all*, by telling
+GNU C to behave like older C compilers.
+
+   * GNU CC normally makes string constants read-only.  If several
+     identical-looking string constants are used, GNU CC stores only
+     one copy of the string.
+
+     One consequence is that you cannot call `mktemp' with a string
+     constant argument.  The function `mktemp' always alters the
+     string its argument points to.
+
+     Another consequence is that `sscanf' does not work on some
+     systems when passed a string constant as its format control
+     string.  This is because `sscanf' incorrectly tries to write
+     into the string constant.  Likewise `fscanf' and `scanf'.
+
+     The best solution to these problems is to change the program to
+     use `char'-array variables with initialization strings for these
+     purposes instead of string constants.  But if this is not
+     possible, you can use the `-fwritable-strings' flag, which
+     directs GNU CC to handle string constants the same way most C
+     compilers do.  `-traditional' also has this effect, among others.
+
+   * GNU CC does not substitute macro arguments when they appear
+     inside of string constants.  For example, the following macro in
+     GNU CC
+
+          #define foo(a) "a"
+
+     will produce output `"a"' regardless of what the argument A is.
+
+     The `-traditional' option directs GNU CC to handle such cases
+     (among others) in the old-fashioned (non-ANSI) fashion.
+
+   * When you use `setjmp' and `longjmp', the only automatic
+     variables guaranteed to remain valid are those declared
+     `volatile'.  This is a consequence of automatic register
+     allocation.  Consider this function:
+
+          jmp_buf j;
+          
+          foo ()
+          {
+            int a, b;
+          
+            a = fun1 ();
+            if (setjmp (j))
+              return a;
+          
+            a = fun2 ();
+            /* `longjmp (j)' may be occur in `fun3'. */
+            return a + fun3 ();
+          }
+
+     Here `a' may or may not be restored to its first value when the
+     `longjmp' occurs.  If `a' is allocated in a register, then its
+     first value is restored; otherwise, it keeps the last value
+     stored in it.
+
+     If you use the `-W' option with the `-O' option, you will get a
+     warning when GNU CC thinks such a problem might be possible.
+
+     The `-traditional' option directs GNU C to put variables in the
+     stack by default, rather than in registers, in functions that
+     call `setjmp'.  This results in the behavior found in
+     traditional C compilers.
+
+   * Declarations of external variables and functions within a block
+     apply only to the block containing the declaration.  In other
+     words, they have the same scope as any other declaration in the
+     same place.
+
+     In some other C compilers, a `extern' declaration affects all
+     the rest of the file even if it happens within a block.
+
+     The `-traditional' option directs GNU C to treat all `extern'
+     declarations as global, like traditional compilers.
+
+   * In traditional C, you can combine `long', etc., with a typedef
+     name, as shown here:
+
+          typedef int foo;
+          typedef long foo bar;
+
+     In ANSI C, this is not allowed: `long' and other type modifiers
+     require an explicit `int'.  Because this criterion is expressed
+     by Bison grammar rules rather than C code, the `-traditional'
+     flag cannot alter it.
+
+   * PCC allows typedef names to be used as function parameters.  The
+     difficulty described immediately above applies here too.
+
+   * PCC allows whitespace in the middle of compound assignment
+     operators such as `+='.  GNU CC, following the ANSI standard,
+     does not allow this.  The difficulty described immediately above
+     applies here too.
+
+   * GNU CC will flag unterminated character constants inside of
+     preprocessor conditionals that fail.  Some programs have English
+     comments enclosed in conditionals that are guaranteed to fail;
+     if these comments contain apostrophes, GNU CC will probably
+     report an error.  For example, this code would produce an error:
+
+          #if 0
+          You can't expect this to work.
+          #endif
+
+     The best solution to such a problem is to put the text into an
+     actual C comment delimited by `/*...*/'.  However,
+     `-traditional' suppresses these error messages.
+
+   * When compiling functions that return `float', PCC converts it to
+     a double.  GNU CC actually returns a `float'.  If you are
+     concerned with PCC compatibility, you should declare your
+     functions to return `double'; you might as well say what you mean.
+
+   * When compiling functions that return structures or unions, GNU
+     CC output code normally uses a method different from that used
+     on most versions of Unix.  As a result, code compiled with GNU
+     CC cannot call a structure-returning function compiled with PCC,
+     and vice versa.
+
+     The method used by GNU CC is as follows: a structure or union
+     which is 1, 2, 4 or 8 bytes long is returned like a scalar.  A
+     structure or union with any other size is stored into an address
+     supplied by the caller in a special, fixed register.
+
+     PCC usually handles all sizes of structures and unions by
+     returning the address of a block of static storage containing
+     the value.  This method is not used in GNU CC because it is
+     slower and nonreentrant.
+
+     You can tell GNU CC to use the PCC convention with the option
+     `-fpcc-struct-return'.
+
+   * On the Sparc, GNU CC uses an incompatible calling convention for
+     structures.  It passes them by including their contents in the
+     argument list, whereas the standard compiler passes them
+     effectively by reference.
+
+     This really ought to be fixed, but such calling conventions are
+     not yet supported in GNU CC, so it isn't straightforward to fix
+     it.
+
+     The convention for structure returning is also incompatible, and
+     `-fpcc-struct-return' does not help.
+
+   * On Ultrix, the Fortran compiler expects registers 2 through 5 to
+     be saved by function calls.  We have not been able to tell
+     whether the C compiler agrees with the Fortran compiler. 
+     Currently, GNU CC treats these registers as temporaries on the
+     Vax, which is compatible with BSD Unix.
+
+     If we learn for certain that Ultrix has departed from the
+     traditional BSD calling convention, we will change GNU CC for
+     Ultrix to fit.  In the mean time, you can use these options to
+     produce code compatible with the Fortran compiler:
+
+          -fcall-saved-r2 -fcall-saved-r3 -fcall-saved-r4 -fcall-saved-r5
+
+
+
+File: gcc.info,  Node: Extensions,  Next: Bugs,  Prev: Incompatibilities,  Up: Top
+
+GNU Extensions to the C Language
+********************************
+
+GNU C provides several language features not found in ANSI standard C.
+(The `-pedantic' option directs GNU CC to print a warning message if
+any of these features is used.)  To test for the availability of
+these features in conditional compilation, check for a predefined
+macro `__GNUC__', which is always defined under GNU CC.
+
+* Menu:
+
+* Statement Exprs::     Putting statements and declarations inside expressions.
+* Naming Types::        Giving a name to the type of some expression.
+* Typeof::              `typeof': referring to the type of an expression.
+* Lvalues::             Using `?:', `,' and casts in lvalues.
+* Conditionals::        Omitting the middle operand of a `?:' expression.
+* Zero-Length::         Zero-length arrays.
+* Variable-Length::     Arrays whose length is computed at run time.
+* Subscripting::        Any array can be subscripted, even if not an lvalue.
+* Pointer Arith::       Arithmetic on `void'-pointers and function pointers.
+* Initializers::        Non-constant initializers.
+* Constructors::        Constructor expressions give structures, unions
+                         or arrays as values.
+* Function Attributes:: Declaring that functions have no side effects,
+                         or that they can never return.
+* Dollar Signs::        Dollar sign is allowed in identifiers.
+* Alignment::           Inquiring about the alignment of a type or variable.
+* Inline::              Defining inline functions (as fast as macros).
+* Extended Asm::        Assembler instructions with C expressions as operands.
+                         (With them you can define "built-in" functions.)
+* Asm Labels::          Specifying the assembler name to use for a C symbol.
+* Explicit Reg Vars::   Defining variables residing in specified registers.
+* Alternate Keywords::  `__const__', `__asm__', etc., for header files.
+
+ 
+
+File: gcc.info,  Node: Statement Exprs,  Next: Naming Types,  Prev: Extensions,  Up: Extensions
+
+Statements and Declarations inside of Expressions
+=================================================
+
+A compound statement in parentheses may appear inside an expression
+in GNU C.  This allows you to declare variables within an expression.
+For example:
+
+     ({ int y = foo (); int z;
+        if (y > 0) z = y;
+        else z = - y;
+        z; })
+
+is a valid (though slightly more complex than necessary) expression
+for the absolute value of `foo ()'.
+
+This feature is especially useful in making macro definitions "safe"
+(so that they evaluate each operand exactly once).  For example, the
+"maximum" function is commonly defined as a macro in standard C as
+follows:
+
+     #define max(a,b) ((a) > (b) ? (a) : (b))
+
+But this definition computes either A or B twice, with bad results if
+the operand has side effects.  In GNU C, if you know the type of the
+operands (here let's assume `int'), you can define the macro safely
+as follows:
+
+     #define maxint(a,b) \
+       ({int _a = (a), _b = (b); _a > _b ? _a : _b; })
+
+Embedded statements are not allowed in constant expressions, such as
+the value of an enumeration constant, the width of a bit field, or
+the initial value of a static variable.
+
+If you don't know the type of the operand, you can still do this, but
+you must use `typeof' (*note Typeof::.) or type naming (*note Naming
+Types::.).
+
+
+
+File: gcc.info,  Node: Naming Types,  Next: Typeof,  Prev: Statement Exprs,  Up: Extensions
+
+Naming an Expression's Type
+===========================
+
+You can give a name to the type of an expression using a `typedef'
+declaration with an initializer.  Here is how to define NAME as a
+type name for the type of EXP:
+
+     typedef NAME = EXP;
+
+This is useful in conjunction with the statements-within-expressions
+feature.  Here is how the two together can be used to define a safe
+"maximum" macro that operates on any arithmetic type:
+
+     #define max(a,b) \
+       ({typedef _ta = (a), _tb = (b);  \
+         _ta _a = (a); _tb _b = (b);     \
+         _a > _b ? _a : _b; })
+
+The reason for using names that start with underscores for the local
+variables is to avoid conflicts with variable names that occur within
+the expressions that are substituted for `a' and `b'.  Eventually we
+hope to design a new form of declaration syntax that allows you to
+declare variables whose scopes start only after their initializers;
+this will be a more reliable way to prevent such conflicts.
+
+
+
+File: gcc.info,  Node: Typeof,  Next: Lvalues,  Prev: Naming Types,  Up: Extensions
+
+Referring to a Type with `typeof'
+=================================
+
+Another way to refer to the type of an expression is with `typeof'. 
+The syntax of using of this keyword looks like `sizeof', but the
+construct acts semantically like a type name defined with `typedef'.
+
+There are two ways of writing the argument to `typeof': with an
+expression or with a type.  Here is an example with an expression:
+
+     typeof (x[0](1))
+
+This assumes that `x' is an array of functions; the type described is
+that of the values of the functions.
+
+Here is an example with a typename as the argument:
+
+     typeof (int *)
+
+Here the type described is that of pointers to `int'.
+
+If you are writing a header file that must work when included in ANSI
+C programs, write `__typeof__' instead of `typeof'.  *Note Alternate
+Keywords::.
+
+A `typeof'-construct can be used anywhere a typedef name could be
+used.  For example, you can use it in a declaration, in a cast, or
+inside of `sizeof' or `typeof'.
+
+   * This declares `y' with the type of what `x' points to.
+
+          typeof (*x) y;
+
+   * This declares `y' as an array of such values.
+
+          typeof (*x) y[4];
+
+   * This declares `y' as an array of pointers to characters:
+
+          typeof (typeof (char *)[4]) y;
+
+     It is equivalent to the following traditional C declaration:
+
+          char *y[4];
+
+     To see the meaning of the declaration using `typeof', and why it
+     might be a useful way to write, let's rewrite it with these
+     macros:
+
+          #define pointer(T)  typeof(T *)
+          #define array(T, N) typeof(T [N])
+
+     Now the declaration can be rewritten this way:
+
+          array (pointer (char), 4) y;
+
+     Thus, `array (pointer (char), 4)' is the type of arrays of 4
+     pointers to `char'.
+
+
+
+File: gcc.info,  Node: Lvalues,  Next: Conditionals,  Prev: Typeof,  Up: Extensions
+
+Generalized Lvalues
+===================
+
+Compound expressions, conditional expressions and casts are allowed
+as lvalues provided their operands are lvalues.  This means that you
+can take their addresses or store values into them.
+
+For example, a compound expression can be assigned, provided the last
+expression in the sequence is an lvalue.  These two expressions are
+equivalent:
+
+     (a, b) += 5
+     a, (b += 5)
+
+Similarly, the address of the compound expression can be taken. 
+These two expressions are equivalent:
+
+     &(a, b)
+     a, &b
+
+A conditional expression is a valid lvalue if its type is not void
+and the true and false branches are both valid lvalues.  For example,
+these two expressions are equivalent:
+
+     (a ? b : c) = 5
+     (a ? b = 5 : (c = 5))
+
+A cast is a valid lvalue if its operand is valid.  Taking the address
+of the cast is the same as taking the address without a cast, except
+for the type of the result.  For example, these two expressions are
+equivalent (but the second may be valid when the type of `a' does not
+permit a cast to `int *').
+
+     &(int *)a
+     (int **)&a
+
+A simple assignment whose left-hand side is a cast works by
+converting the right-hand side first to the specified type, then to
+the type of the inner left-hand side expression.  After this is
+stored, the value is converter back to the specified type to become
+the value of the assignment.  Thus, if `a' has type `char *', the
+following two expressions are equivalent:
+
+     (int)a = 5
+     (int)(a = (char *)5)
+
+An assignment-with-arithmetic operation such as `+=' applied to a
+cast performs the arithmetic using the type resulting from the cast,
+and then continues as in the previous case.  Therefore, these two
+expressions are equivalent:
+
+     (int)a += 5
+     (int)(a = (char *) ((int)a + 5))
+
+
+
+File: gcc.info,  Node: Conditionals,  Next: Zero-Length,  Prev: Lvalues,  Up: Extensions
+
+Conditional Expressions with Omitted Middle-Operands
+====================================================
+
+The middle operand in a conditional expression may be omitted.  Then
+if the first operand is nonzero, its value is the value of the
+conditional expression.
+
+Therefore, the expression
+
+     x ? : y
+
+has the value of `x' if that is nonzero; otherwise, the value of `y'.
+
+This example is perfectly equivalent to
+
+     x ? x : y
+
+In this simple case, the ability to omit the middle operand is not
+especially useful.  When it becomes useful is when the first operand
+does, or may (if it is a macro argument), contain a side effect. 
+Then repeating the operand in the middle would perform the side
+effect twice.  Omitting the middle operand uses the value already
+computed without the undesirable effects of recomputing it.
+
+

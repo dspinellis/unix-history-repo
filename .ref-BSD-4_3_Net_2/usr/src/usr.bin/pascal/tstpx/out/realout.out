@@ -1,0 +1,10 @@
+i =         10   j25
+r =  3.14159000000000e+01   2 * r =  6.28318000000000e+01
+also r = 3.1e+01   and r =  3.142e+01   finally r =  31.416
+and r =             31.4159000000
+This program works? true
+This progr      true
+     This program works? true
+This true
+
+15 statements executed in 0.03 seconds cpu time.

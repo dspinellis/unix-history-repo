@@ -1,0 +1,60 @@
+begin_comment	ps.cc	/^ps_output &ps_output::begin_comment(const char *s)/
+begin_page	ps.cc	/^void ps_printer::begin_page(int n)$/
+check_line_lengths	ps.cc	/^static int check_line_lengths(const char *p)$/
+comment_arg	ps.cc	/^ps_output &ps_output::comment_arg(const char *s)$/
+copy_file	ps.cc	/^ps_output &ps_output::copy_file(FILE *infp)$/
+define_encoding	ps.cc	/^void ps_printer::define_encoding(const char *encod/
+do_def	ps.cc	/^void ps_printer::do_def(char *arg, const environme/
+do_exec	ps.cc	/^void ps_printer::do_exec(char *arg, const environm/
+do_file	ps.cc	/^void ps_printer::do_file(char *arg, const environm/
+do_import	ps.cc	/^void ps_printer::do_import(char *arg, const enviro/
+do_mdef	ps.cc	/^void ps_printer::do_mdef(char *arg, const environm/
+doc_fonts	ps.cc	/^  doc_fonts(0)$/
+document_font	ps.cc	/^document_font::~document_font()$/
+download	ps.cc	/^void document_font::download(ps_output &out)$/
+download_fonts	ps.cc	/^void ps_printer::download_fonts()$/
+draw	ps.cc	/^void ps_printer::draw(int code, int *p, int np, co/
+encode_fonts	ps.cc	/^void ps_printer::encode_fonts()$/
+encoding_index	ps.cc	/^: font(nm), encoding(0), reencoded_name(0), encodi/
+end_comment	ps.cc	/^ps_output &ps_output::end_comment()$/
+end_line	ps.cc	/^ps_output &ps_output::end_line()$/
+end_of_line	ps.cc	/^void ps_printer::end_of_line()$/
+end_page	ps.cc	/^void ps_printer::end_page()$/
+f	ps.cc	/^style::style() : f(0)$/
+fill_path	ps.cc	/^void ps_printer::fill_path()$/
+flush_sbuf	ps.cc	/^void ps_printer::flush_sbuf()$/
+handle_unknown_font_command	ps.cc	/^void ps_font::handle_unknown_font_command(int argc/
+is_small_h	ps.cc	/^int is_small_h(int n)$/
+is_small_v	ps.cc	/^int is_small_v(int n)$/
+load_ps_font	ps.cc	/^ps_font *ps_font::load_ps_font(const char *s)$/
+lookup_doc_font	ps.cc	/^document_font *ps_printer::lookup_doc_font(const c/
+make_encoding_name	ps.cc	/^static char *make_encoding_name(int encoding_index/
+make_font	ps.cc	/^font *ps_printer::make_font(const char *nm)$/
+mark	ps.cc	/^: name(strsave(s)), filename(0), flags(0), next(0)/
+merge_download_fonts	ps.cc	/^void ps_printer::merge_download_fonts()$/
+merge_import_fonts	ps.cc	/^void ps_printer::merge_import_fonts(FILE *fp)$/
+merge_ps_fonts	ps.cc	/^void ps_printer::merge_ps_fonts()$/
+print_font_comment	ps.cc	/^void ps_printer::print_font_comment()$/
+print_include_font_comments	ps.cc	/^void ps_printer::print_include_font_comments()$/
+print_needed_font_comment	ps.cc	/^void ps_printer::print_needed_font_comment()$/
+print_supplied_font_comment	ps.cc	/^void ps_printer::print_supplied_font_comment()$/
+ps_font	ps.cc	/^ps_font::~ps_font()$/
+ps_printer	ps.cc	/^ps_printer::~ps_printer()$/
+put_delimiter	ps.cc	/^ps_output &ps_output::put_delimiter(char c)$/
+put_fix_number	ps.cc	/^ps_output &ps_output::put_fix_number(int i)$/
+put_float	ps.cc	/^ps_output &ps_output::put_float(double d)$/
+put_literal_symbol	ps.cc	/^ps_output &ps_output::put_literal_symbol(const cha/
+put_number	ps.cc	/^ps_output &ps_output::put_number(int n)$/
+put_string	ps.cc	/^ps_output &ps_output::put_string(const char *s, in/
+put_symbol	ps.cc	/^ps_output &ps_output::put_symbol(const char *s)$/
+read_download_file	ps.cc	/^void ps_printer::read_download_file()$/
+reencode_font	ps.cc	/^void ps_printer::reencode_font(ps_font *f)$/
+set_char	ps.cc	/^void ps_printer::set_char(int i, font *f, const en/
+set_encoding_index	ps.cc	/^int ps_printer::set_encoding_index(ps_font *f)$/
+set_fixed_point	ps.cc	/^ps_output &ps_output::set_fixed_point(int n)$/
+set_line_thickness	ps.cc	/^void ps_printer::set_line_thickness(const environm/
+set_space_code	ps.cc	/^void ps_printer::set_space_code(unsigned char c)$/
+set_style	ps.cc	/^void ps_printer::set_style(const style &sty)$/
+simple_comment	ps.cc	/^ps_output &ps_output::simple_comment(const char *s/
+slant	ps.cc	/^: f(p), point_size(sz), height(h), slant(sl)$/
+special	ps.cc	/^ps_output &ps_output::special(const char *s)$/

@@ -1,0 +1,79 @@
+#	@(#)Testitems	1.1 88/10/12 NFS Rev 2 Testsuite
+NFS items for testing
+=====================
+
+Network connectivity
+
+	- ping
+	- tcp ping
+	- udp ping
+	- netstat
+	- rlogin/telnet
+
+User RPC/XDR services
+	- authentication
+		- none
+		- unix
+	- portmap
+		0 null
+		1 set
+		2 unset
+		3 getport
+		4 dump
+		5 callit
+	- batching (tcp)
+	- broadcast (udp)
+	- rpcinfo
+
+Mount protocol
+	- mountd
+		0 null
+		1 mnt
+		2 dump
+		3 unmnt
+		4 umntall
+		5 export
+	- showmount
+	- mount
+
+NFS protocol
+	- nfsd/server
+		0 null
+		1 getattr
+		2 setattr
+		3 error
+		4 lookup
+		5 readlink
+		6 read
+		7 error
+		8 write
+		9 create
+		10 remove
+		11 rename
+		12 link
+		13 symlink
+		14 mkdir
+		15 rmdir
+		16 readdir
+		17 statfs
+	- biod/client
+	- nfsstat
+	- special situations
+		- open/unlink/read
+		- open/chmod/write
+		- readdir with empty block
+		- non-idempotent (create, unlink)
+
+Yellow pages
+	- domainname
+	- ypbind
+	- ypserv
+	- ypwhich
+	- ypcat
+	- ypinit
+	- makedbm
+	- ypmake: yppush/yppull/yppoll
+	- yppasswd
+	- files
+		passwd, group, hosts, networks, services,
+		protocols, netgroup

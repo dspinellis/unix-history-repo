@@ -1,0 +1,55 @@
+/* Copyright (C) 1982, 1988, 1989 Walter Tichy
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by Walter Tichy.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ * Report all problems and direct all questions to:
+ *   rcs-bugs@cs.purdue.edu
+ * 
+
+
+
+
+
+
+
+*/
+
+This directory contains complete sources for version 4 of RCS.
+Version 3 was included in the 4.3 BSD distribution. Features include:
+
+1) Version 4 supports the "branch" keyword.
+
+2) Numerous bug fixes. In addition, RCS now runs on many more machine
+architectures, including Suns (3.x and 4.0), VAXen (4.2 and 4.3 BSD),
+and IBM PC-ATs (Xenix).
+
+3) Version 4 is backward compatible with version 3. Version 4 RCS will
+handle files checked in under version 3 (but not vice versa).
+
+4) This distribution is not supported in anyway. However, bugs and
+(especially) bug fixes may be reported to rcs-bugs@cs.purdue.edu.
+
+5) Older versions of diff do not support options used by RCS. It is
+known that 4.3 BSD, and SunOS 3.2 (and later releases) support the
+needed options. If your version of diff does not support these
+options, obtain the GNU diff from the FSF.
+
+under teh terms of the GNU General Public License.
+
+7) All sources for RCS are contained in the "src" subdirectory. Read the
+directions in its Makefile to set up the correct compile options for
+building RCS on your system.
+
+8) man pages reside in man.
+
+9) Troff source for the paper "RCS A System for Version Control", which
+appeared in Software Practice and Experience, can be found in "rcs.ms".

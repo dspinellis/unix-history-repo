@@ -1,0 +1,5 @@
+handle_x_command	grotty.cc	/^void tty_font::handle_x_command(int argc, const ch/
+load_tty_font	grotty.cc	/^tty_font *tty_font::load_tty_font(const char *s)$/
+mode	grotty.cc	/^: font(nm), mode(0)$/
+tty_font	grotty.cc	/^tty_font::~tty_font()$/
+vec	grotty.cc	/^: vec_used(0), vec_size(0), vec(0)$/

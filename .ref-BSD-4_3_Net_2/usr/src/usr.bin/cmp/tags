@@ -1,0 +1,7 @@
+Mcmp	cmp.c	/^main(argc, argv)$/
+cmp	cmp.c	/^cmp()$/
+endoffile	cmp.c	/^endoffile(filename)$/
+error	cmp.c	/^error(filename)$/
+otoi	cmp.c	/^otoi(s)$/
+skip	cmp.c	/^skip(dist, fd, fname)$/
+usage	cmp.c	/^usage()$/

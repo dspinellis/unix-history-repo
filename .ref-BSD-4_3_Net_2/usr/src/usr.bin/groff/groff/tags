@@ -1,0 +1,7 @@
+devices	groff.cc	/^void devices()$/
+help	groff.cc	/^void help()$/
+if	groff.cc	/^    if (contains_single_quote || argv[i][0] == '\\/
+strsignal	groff.cc	/^const char *strsignal(int n)$/
+synopsis	groff.cc	/^void synopsis()$/
+sys_fatal	groff.cc	/^void sys_fatal(const char *s)$/
+usage	groff.cc	/^void usage()$/

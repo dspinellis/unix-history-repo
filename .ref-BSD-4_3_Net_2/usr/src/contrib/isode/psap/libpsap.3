@@ -1,0 +1,251 @@
+.TH LIBPSAP 3 "15 APR 1986"
+.\" $header: /f/iso/psap/rcs/libpsap.3,v 4.4 88/05/31 15:19:26 mrose exp $
+.\"
+.\"
+.\" $log:	libpsap.3,v $
+.\" revision 4.4  88/05/31  15:19:26  mrose
+.\" 3n -> 3
+.\" 
+.\" revision 4.3  88/05/30  18:30:52  mrose
+.\" update
+.\" 
+.\" revision 4.2  88/01/29  14:55:14  mrose
+.\" touch-up
+.\" 
+.\" revision 4.1  87/12/28  13:35:24  mrose
+.\" twg
+.\" 
+.\" revision 4.0  87/10/12  16:19:59  mrose
+.\" release 3.0
+.\" 
+.SH NAME
+libpsap \- asn.1 presentation services library
+.SH SYNOPSIS
+.B "#include <isode/psap.h>"
+.sp
+\fIcc\fR\0...\0\fB\-lpsap\fR
+.SH DESCRIPTION
+the \fIlibpsap\fR library contains a set of routines which implement
+presentation syntax abstractions.
+two primary objects are manipulated:
+presentation \fIelements\fR and presentation \fIstreams\fR.
+.SH "PRESENTATION STREAMS"
+a stream is an object, similar to a \fBfile*\fR object in \fIstdio\fR\0(3),
+which is used to read and write elements.
+a stream is created by calling \fBps_alloc\fR with the address of an
+integer\-valued routine that will initialize certain stream\-dependent
+variables (presently, the read and write routines).
+two standard initialization routines are available:
+\fBstd_open\fR,
+which is used for presentation streams connected to \fIstdio\fR objects;
+and,
+\fBstr_open\fR,
+which is used for presentation streams connected to \fIstring\fR objects.
+after \fBps_alloc\fR successfully returns,
+final initialization is performed,
+usually by calling either
+\fBstd_setup\fR with the \fIstdio\fR object to be bound;
+or,
+\fBstr_setup\fR with the string object to be bound.
+after the setup routine successfully returns,
+the presentation stream is ready for reading or writing.
+.PP
+currently streams which have been initialized by these routines are
+uni-directional.
+This might change in a future distribution.
+Streams which have been initialized by \fBstd_open\fR and \fBstr_open\fR
+will automatically allocate additional resources when necessary,
+to the limits allowed by the operating system
+(e.g., repeated calls to a stream connected to a \fIstring\fR object will
+result in additional memory being allocated from UNIX).
+.PP
+Low\-level I/O is done from/to the stream by the macros \fBps_read\fR and
+\fBps_write\fR.
+These both call an internal routine which switches to the object\-specific
+read or write routine as appropriate.
+This internal routine, \fBps_io\fR, implements the consistent presentation
+stream abstraction.
+.PP
+Finally,
+when a stream has been exhausted, 
+it can be closed and de\-allocated with \fBps_free\fR.
+.PP
+The user may implement additional stream objects.
+Examine the source to the \fBstd_\fR and \fBstr_\fR routines
+to understand the internal protocol and uniform interface.
+.SH TRANSLATION
+The routine \fBps2pe\fR can be used to read the next presentation element
+from a stream.
+This routine returns a pointer to the element or \fBNULLPE\fR on error.
+Similarly, \fBpe2ps\fR can be used to write a presentation element at the end
+of the stream.
+This returns returns \fBOK\fR if all went well, \fBNOTOK\fR otherwise.
+On errors with either routine,
+the \fBps_errno\fR field of the stream can be consulted to see what happened.
+.PP
+When writing to a presentation stream,
+the variable \fBps_len_strategy\fR controls how long CONStructor types are
+represented.
+If this variable is equal to \fBPS_LEN_SPAG\fR (the default),
+then the indefinite form is used whenever the length field of the element can
+not be represented in one octet.
+If \fBPS_LEN_INDF\fR,
+then the indefinite form is used regardless of the length of the element.
+Otherwise,
+if \fBPS_LEN_LONG\fR,
+then the indefinite form is never used.
+.PP
+For debugging purposes,
+instead of treating a presentation stream as a binary object,
+the routines \fBpl2pe\fR and \fBpe2pl\fR can be used.
+These translate between presentation \fIlists\fR and presentation elements.
+A list is an ASCII text representation,
+with a simple LISP\-like syntax which contains semantic information
+identical to its presentation stream counterpart.
+.SH "PRESENTATION ELEMENTS"
+Once a presentation stream has been initialized and elements are being read,
+there are several routines that can be used to translate between the
+machine\-independent representation of the element and machine\-specific
+objects such as integers, strings, and the like.
+It is extremely important that programs use these routines to perform the
+translation between objects.
+They have been carefully coded to present a simple, uniform interface between
+machine\-specifics and the machine\-independent presentation protocol.
+.PP
+A new element can be created with \fBpe_alloc\fR,
+and de\-allocated with \fBpe_free\fR
+(see the warning in the \fBBUGS\fR section below).
+Two elements can be compared with \fBpe_cmp\fR,
+and an element can be copied with \fBpe_cpy\fR.
+.PP
+A \fIboolean\fR is an integer taking on the values \fB0\fR or \fB1\fR.
+The routine \fBprim2bool\fR takes an element and returns the boolean value
+encoded therein.
+Similarly, \fBbool2prim\fR takes a boolean and returns an element which
+encodes that value.
+.PP
+An \fIinteger\fR is a signed\-quantity, whose precision is specific to a
+particular host.
+The routine \fBprim2int\fR takes an element and returns the integer value
+encoded therein (if the value is \fBNOTOK\fR, check the \fBpe_errno\fR field
+of the element to see if there was an error).
+The routine \fBint2prim\fR performs the inverse operation.
+.PP
+An \fIoctetstring\fR is a pair of values,
+a character pointer and an integer length.
+The pointer addresses the first octet in the string
+(which need not be null\-terminated),
+the length indicates how many octets are in the string.
+The routine \fBprim2oct\fR takes an element and allocates a new string
+containing the value encoded therein.
+The routine \fBoct2prim\fR performs the inverse operation,
+copying the original string (and not de\-allocating it).
+.PP
+A \fIbitvector\fR is an arbitrarily long string of bits with three operations:
+\fBbit_on\fR which turns the indicated bit on,
+\fBbit_off\fR which turns the indicated bit off,
+and,
+\fBbit_test\fR which returns a boolean value telling if the indicated bit was
+on.
+The routine \fBprim2bit\fR takes an element and builds such an abstraction
+containing the value encoded therein.
+The routine \fBbit2prim\fR performs the inverse operation.
+.PP
+A \fItimestring\fR represents a date/time in many forms.
+Consult \fB<isode/psap.h>\fR for the elements in this structure.
+The routines \fBprim2utc\fR and \fButc2prim\fR are used to translate between
+a machine\-specific internal form and the machine\-independent form.
+.PP
+Two list disciplines are implemented:
+\fIsets\fR, in which each member is distinguished by a unique identifier;
+and,
+\fIsequences\fR, in which each element is distinguished by its offset from
+the head of the list.
+On both types of lists,
+the macro \fBfirst_member\fR returns the first member in the list,
+while \fBnext_member\fR returns the next member.
+.PP
+The routines \fBprim2set\fR and \fBset2prim\fR are used to translate between
+presentation elements and the set list;
+\fBset_add\fR may be called to add a new member to the set;
+\fBset_del\fR may be called to remove the identified member from the set;
+and,
+\fBset_find\fR may be called to locate the identified member.
+.PP
+The routines \fBprim2seq\fR and \fBseq2prim\fR are used to translate between
+presentation elements and the sequence list;
+\fBseq_add\fR may be called to add a new element to the sequence;
+\fBseq_del\fR may be called to remove the identified element from the sequence;
+and,
+\fBseq_find\fR may be called to locate the identified element.
+.PP
+With both lists,
+a convenient way of stepping through all the members is:
+.sp
+.in +.5i
+.nf
+.B "for (p = first_member (pe); p; p = next_member (pe, p))"
+.B "\0\0\0\0switch (\fIdiscriminator\fR) {"
+.B "\0\0\0\0\0\0\0\0...."
+.B "\0\0\0\0}"
+.fi
+.in -.5i
+.sp
+where \fIdiscriminator\fR is:
+.sp
+.in +.5i
+.B "PE_ID (p \-> pe_class, p \-> pe_id)"
+.in -.5i
+.sp
+for sets,
+and:
+.sp
+.in +.5i
+.B "p \-> pe_offset"
+.in -.5i
+.sp
+for sequences.
+.SH FILES
+None
+.SH "SEE ALSO"
+pepy(1),
+.br
+\fIThe ISO Development Environment: User's Manual\fR,
+.br
+ISO 8825:
+\fIInformation Processing \-\- Open Systems
+Interconnection \-\- Specification of basic encoding rules for Abstract Syntax
+Notation One (ASN.1)\fR,
+.br
+CCITT Recommendation X.409:
+\fIMessage Handling Systems:
+Presentation Transfer Syntax and Notation\fR
+.SH DIAGNOSTICS
+Most routines either return the manifest constant \fBNULL\fR (0) or
+\fBNOTOK\fR (\-1) on error.
+In addition,
+routines called with a pointer to a presentation stream also update the
+\fBps_errno\fR field of the stream on error.
+The routine \fBps_error\fR returns a null\-termianted diagnostic string when
+given the value of this field.
+Similarly,
+routines called with a pointer to a presentation element also update the
+\fBpe_errno\fR field of the stream on error.
+The routine \fBpe_error\fR returns a null\-termianted diagnostic string when
+given the value of this field.
+.SH AUTHOR
+Marshall T. Rose
+.SH BUGS
+A \*(lqvirtual\*(rq presentation element option should be available to avoid
+reading everything in\-core during parsing.
+.PP
+When using \fBpe_free\fR on an element,
+care must be taken to remove any references to that element in other
+structures.
+For example,
+if you have a sequence containing a sequence,
+and you free the child sequence,
+be sure to zero\-out the parent's pointer to the child,
+otherwise subsequent calls using the parent will go romping through
+hyperspace.
+

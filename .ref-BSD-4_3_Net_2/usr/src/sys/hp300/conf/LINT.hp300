@@ -1,0 +1,67 @@
+#
+# GENERIC HP9000/300
+#
+machine		"hp300"
+
+cpu		"HP320"
+cpu		"HP330"
+cpu		"HP340"
+cpu		"HP350"
+cpu		"HP360"
+cpu		"HP370"
+ident		GENERIC
+
+timezone	7 dst
+maxusers	8
+
+# Standard 4.4bsd options
+options		QUOTA
+options		INET
+options		MFS,NFS
+options		"COMPAT_43"
+options		"COMPAT_42","TCP_COMPAT_42"
+
+# More standard options for the HPs
+options		MAPMEM,SYSVSHM
+options		HPUXCOMPAT
+
+# KTRACE: various kernel event traces
+options		KTRACE
+
+# DIAGNOSTIC: compile in lots of debugging and consistancy checking code.
+options		DIAGNOSTIC
+
+config		vmunix swap generic
+
+master		hpib0	at scode7
+master		hpib1	at scode?
+disk		rd0	at hpib? slave 0
+disk		rd1	at hpib? slave ?
+disk		rd2	at hpib? slave ?
+disk		rd3	at hpib? slave ?
+tape		ct0	at hpib? slave ?
+tape		ct1	at hpib? slave ? flags 1
+device		ppi0	at hpib0 slave 5
+
+master		scsi0	at scode?
+master		scsi1	at scode?
+disk		sd0	at scsi? slave ?
+disk		sd1	at scsi? slave ?
+disk		sd2	at scsi? slave ?
+disk		sd3	at scsi? slave ?
+
+device		dca0	at scode9 flags 1
+device		dcm0	at scode? flags 0xe
+device		dcm1	at scode? flags 0xe
+device		dcl0	at scode? flags 0
+device		dcl1	at scode? flags 0
+device		le0	at scode?
+
+device		grf0	at scode?
+device		grf1	at scode?
+
+pseudo-device	ite
+pseudo-device	pty
+pseudo-device	loop
+pseudo-device	ether
+pseudo-device	clock

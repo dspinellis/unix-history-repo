@@ -1,0 +1,423 @@
+# Makefile for g++ library test files
+
+# Copyright (C) 1988 Free Software Foundation
+#   written by Doug Lea (dl@rocky.oswego.edu)
+
+# This file is part of GNU CC.
+
+# GNU CC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY.  No author or distributor
+# accepts responsibility to anyone for the consequences of using it
+# or for whether it serves any particular purpose or works at all,
+# unless he says so in writing.  Refer to the GNU CC General Public
+# License for full details.
+
+# Everyone is granted permission to copy, modify and redistribute
+# GNU CC, but only under the conditions described in the
+# GNU CC General Public License.   A copy of this license is
+# supposed to have been given to you along with GNU CC so you
+# can know your rights and responsibilities.  It should be in a
+# file named COPYING.  Among other things, the copyright notice
+# and this notice must be preserved on all copies.
+
+# make parameters -- these should normally be inherited from parent make
+
+# ------ source locations
+
+# source directory for libg++.a
+SRCDIR = ../src/obj
+
+# source include directory 
+SRCIDIR= ../g++-include
+
+# ------ installation destinations
+# ------ You will require write-permission on the destination directories
+# ------ in order to `make install'
+
+
+prefix =/usr/gnu
+
+# libg++.a destination
+LIBDIR = $(prefix)/lib
+
+# executables directory: location to install the genclass class generator
+BINDIR = $(prefix)/bin
+
+# location to install include file directory
+IDIR = $(prefix)/lib/g++-include
+
+
+# ------- System-dependent defines
+# ------- use the second form of each for SystemV (USG)
+
+# g++ flags
+OSFLAG=
+#OSFLAG = -DUSG
+
+# ld or ld++ flags
+OSLDFLAG =
+#OSLDFLAG= -lPW
+
+# how to install
+INSTALL=install -c
+#INSTALL=cp
+
+# ranlib if necessary
+RANLIB=ranlib
+#RANLIB=echo
+
+# which make?
+MAKE=make
+
+#which ar?
+AR=ar
+
+# not used, but convenient for those who preprocess things while compiling
+SHELL=/bin/sh
+
+
+# ------ compiler names
+
+# GNU C++ compiler name
+GXX = g++ -DHAVE_VPRINTF -DHAVE_VSCANF -DHAVE_SETVBUF -DHAVE_SETLINEBUF -DHAVE_GETPAGESIZE
+#GXX=gcc
+
+# GNU CC compiler name (needed for some .c files in libg++.a)
+CC = gcc
+
+# GNU loader
+LDXX = $(LIBDIR)/gcc-ld -L$(SRCDIR)
+
+# crt0+.o location (for dynamic loading tests)
+GXXCRT1=$(LIBDIR)/crt1+.o
+
+# ------ Other compilation flags
+# ------ modify as you like -- the ones here are sheer overkill
+
+GXX_OPTIMIZATION_FLAGS= -O -fstrength-reduce  -felide-constructors -fschedule-insns -fdelayed-branch  -fsave-memoized 
+#GXX_OPTIMIZATION_FLAGS=
+
+GCC_OPTIMIZATION_FLAGS= -O -fstrength-reduce -fdelayed-branch 
+
+DEBUG_FLAGS= -g
+
+#use this only if you like to look at lots of useless messages
+VERBOSITY_FLAGS= -Wall -v
+
+GXX_INCLUDE_DIRS= -I$(SRCIDIR)
+
+GCC_INCLUDE_DIRS= -I$(prefix)/lib/gcc-include -I/usr/include -I$(SRCIDIR)
+
+PIPE_AS= -pipe
+
+# Flags for all C++ compiles
+GXXFLAGS = $(OSFLAG) $(GXX_INCLUDE_DIRS) $(DEBUG_FLAGS) $(GXX_OPTIMIZATION_FLAGS) $(VERBOSITY_FLAGS) $(PIPE_AS)
+
+# Flags for all C compiles
+CFLAGS= $(OSFLAG) $(GCC_INCLUDE_DIRS) $(DEBUG_FLAGS) $(GCC_OPTIMIZATION_FLAGS) $(VERBOSITY_FLAGS) $(PIPE_AS)
+
+# g++ load time flags 
+GXXLDFLAGS = $(VERBOSITY_FLAGS) -L$(SRCDIR) -lg++ -lm $(OSLDFLAG)
+
+# these flags tell test0 where ld++ and crt1+.o are
+TFLAGS = -DLDXX='"$(LDXX)"' -DCRT1X='"$(GXXCRT1)"'
+
+# Comment out the next line to disable incremental linking test
+#TEST0=test0
+TEST0=
+
+# g++ files should have extension .cc
+.SUFFIXES: .cc
+.cc.o:
+	$(GXX) $(GXXFLAGS) -c  $<
+
+PROTODIR=../g++-include/gen
+GENCLASS=../genclass
+
+all: checktests
+
+
+# compilation notes:
+# The following g++ warnings are expected to appear:
+#
+# 2. Several warnings from genclass about classes with only .h, no .cc files
+#
+# 3. A few harmless reminder warnings that some classes have no data members.
+#
+# 4. Many harmless warnings that arguments to vector-delete are unnecessary
+#    when deleting arrays of builtin types.
+
+# test files
+TSRCS =  tFile.cc tObstack.cc tString.cc \
+ tInteger.cc tRational.cc \
+ tComplex.cc tBitSet.cc tBitString.cc tRandom.cc tList.cc tPlex.cc tLList.cc \
+ tVec.cc tStack.cc tQueue.cc tDeque.cc tPQ.cc tSet.cc  tBag.cc \
+ tMap.cc tFix.cc tFix16.cc tFix24.cc \
+ test.hello.cc test.bye.cc test.bye2.cc test.shell.cc \
+ tCurses.cc tGetOpt.cc
+
+# executables
+TOUTS =  $(TEST0) tFile tObstack tString \
+  tInteger  tRational tComplex tBitSet tBitString \
+  tRandom tFix tFix16 tFix24 tCurses tGetOpt \
+  tList tPlex tLList tVec tStack tQueue tDeque tPQ tSet \
+  tBag  tMap 
+
+# files for archived prototype classes
+LOBJS = \
+ iList.o iSLList.o iDLList.o iVec.o iAVec.o \
+ iPlex.o  iFPlex.o  iXPlex.o iRPlex.o iMPlex.o \
+ iSet.o iBag.o iMap.o iPQ.o \
+ iXPSet.o  iOXPSet.o  iSLSet.o  iOSLSet.o  iBSTSet.o \
+ iAVLSet.o  iSplaySet.o  iVHSet.o  iVOHSet.o  iCHSet.o \
+ iXPBag.o  iOXPBag.o  iSLBag.o  iOSLBag.o  iSplayBag.o \
+ iVHBag.o  iCHBag.o \
+ iVHMap.o  iCHMap.o  iSplayMap.o  iAVLMap.o \
+ iRAVLMap.o \
+ iSplayPQ.o  iPHPQ.o  iXPPQ.o \
+ iVStack.o \
+ iVQueue.o iStack.o iQueue.o iDeque.o \
+ iXPStack.o iSLStack.o \
+ iXPQueue.o  iSLQueue.o \
+ iXPDeque.o iDLDeque.o
+
+
+LHDRS =  idefs.h 
+
+tests: $(SRCDIR)/libg++.a $(GENCLASS) $(TOUTS)
+
+runtests: tests
+	for i in $(TOUTS); do \
+		case $$i in \
+			test0) echo "Must run test0 from tty";; \
+			tCurses) echo "Must run tCurses from tty" ;; \
+			tGetOpt) echo $$i;  ./$$i -abc -de10 -2000 -h3i ;; \
+			*) echo $$i;  ./$$i < $$i.inp;; \
+		esac \
+	done
+
+checktests: tests
+	-$(MAKE) -s runtests > my.out 2>&1
+	-diff -b expected.out my.out > checktests.diffs
+	cat checktests.diffs
+
+	
+libtest.a: $(LHDRS) $(LOBJS)
+	rm -f libtest.a
+	$(AR) r libtest.a $(LOBJS)
+	$(RANLIB) libtest.a
+
+test0: test0.h  test.hello.o test.bye test.bye2 test.shell
+	$(GXX)  test.hello.o $(GXXLDFLAGS) -o test0
+
+test.hello.o: test0.h test.hello.cc
+	$(GXX) -c $(GXXFLAGS) $(TFLAGS) test.hello.cc -o test.hello.o
+
+test.bye: test0.h test.bye.cc
+	$(GXX) -c $(GXXFLAGS) $(TFLAGS) test.bye.cc -o test.bye
+
+test.bye2: test0.h test.bye2.cc
+	$(GXX) -c $(GXXFLAGS) $(TFLAGS) test.bye2.cc -o test.bye2
+
+test.shell: test0.h test.shell.cc
+	$(GXX) -c $(GXXFLAGS) $(TFLAGS) test.shell.cc -o test.shell
+
+
+tFile:  tFile.o
+	$(GXX)  tFile.o  -o tFile $(GXXLDFLAGS)
+
+tObstack:  tObstack.o
+	$(GXX)  tObstack.o  -o tObstack  $(GXXLDFLAGS)
+
+tString:  tString.o
+	$(GXX)  tString.o  -o tString  $(GXXLDFLAGS)
+
+tInteger:  tInteger.o
+	$(GXX)  tInteger.o  -o tInteger  $(GXXLDFLAGS)
+
+twrapper:  twrapper.o
+	$(GXX)  twrapper.o  -o twrapper  $(GXXLDFLAGS)
+
+tgwrapper:   tgwrapper.o
+	$(GXX)  tgwrapper.o  -o tgwrapper  $(GXXLDFLAGS)
+
+tRational:  tRational.o
+	$(GXX)  tRational.o  -o tRational  $(GXXLDFLAGS)
+
+tComplex:  tComplex.o
+	$(GXX)  tComplex.o  -o tComplex  $(GXXLDFLAGS)
+
+tBitSet:  tBitSet.o
+	$(GXX)  tBitSet.o  -o tBitSet  $(GXXLDFLAGS)
+
+tBitString:  tBitString.o
+	$(GXX)  tBitString.o  -o tBitString  $(GXXLDFLAGS)
+
+tRandom:  tRandom.o
+	$(GXX)  tRandom.o  -o tRandom  $(GXXLDFLAGS)
+
+tFix:  tFix.o
+	$(GXX)  tFix.o  -o tFix  $(GXXLDFLAGS)
+
+tFix16:  tFix16.o
+	$(GXX)  tFix16.o  -o tFix16  $(GXXLDFLAGS)
+
+tFix24:  tFix24.o
+	$(GXX)  tFix24.o  -o tFix24  $(GXXLDFLAGS)
+
+tCurses:  tCurses.o
+	$(GXX)  tCurses.o  -o tCurses -lg++ -lcurses -ltermcap $(GXXLDFLAGS)
+
+tGetOpt:  tGetOpt.o
+	$(GXX)  tGetOpt.o  -o tGetOpt  $(GXXLDFLAGS)
+
+tList:  libtest.a  tList.o
+	$(GXX)  tList.o -o tList -L. -ltest  $(GXXLDFLAGS)
+
+tPlex:  libtest.a  tPlex.o
+	$(GXX)  tPlex.o -o tPlex -L. -ltest  $(GXXLDFLAGS)
+
+tLList:  libtest.a tLList.o
+	$(GXX)  tLList.o -o tLList -L. -ltest  $(GXXLDFLAGS)
+
+tVec: libtest.a tVec.o
+	$(GXX)  tVec.o -o tVec -L. -ltest  $(GXXLDFLAGS)
+
+tStack: libtest.a tStack.o
+	$(GXX)  tStack.o -o tStack -L. -ltest  $(GXXLDFLAGS)
+
+tQueue: libtest.a tQueue.o
+	$(GXX)  tQueue.o -o tQueue -L. -ltest  $(GXXLDFLAGS)
+
+tDeque: libtest.a tDeque.o
+	$(GXX)  tDeque.o -o tDeque -L. -ltest  $(GXXLDFLAGS)
+
+tPQ: libtest.a tPQ.o
+	$(GXX)  tPQ.o -o tPQ -L. -ltest  $(GXXLDFLAGS)
+
+tSet: libtest.a tSet.o
+	$(GXX)  tSet.o -o tSet -L. -ltest  $(GXXLDFLAGS)
+
+tBag:  libtest.a tBag.o
+	$(GXX)  tBag.o -o tBag -L. -ltest  $(GXXLDFLAGS)
+
+tMap:  libtest.a tMap.o
+	$(GXX)  tMap.o -o tMap -L. -ltest  $(GXXLDFLAGS)
+
+idefs.h:
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val defs i
+iSet.h iSet.cc :
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val Set i
+iXPSet.h iXPSet.cc :
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val XPSet i
+iOXPSet.h iOXPSet.cc :
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val OXPSet i
+iSLSet.h iSLSet.cc :
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val SLSet i
+iOSLSet.h iOSLSet.cc :
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val OSLSet i
+iBSTSet.h iBSTSet.cc :
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val BSTSet i
+iAVLSet.h iAVLSet.cc :
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val AVLSet i
+iSplaySet.h iSplaySet.cc :
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val SplaySet i
+iVHSet.h iVHSet.cc :
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val VHSet i
+iVOHSet.h iVOHSet.cc :
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val VOHSet i
+iCHSet.h iCHSet.cc : 
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val CHSet i
+iBag.h iBag.cc : 
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val Bag i
+iXPBag.h iXPBag.cc :
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val XPBag i
+iOXPBag.h iOXPBag.cc :
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val OXPBag i
+iSLBag.h iSLBag.cc :
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val SLBag i
+iOSLBag.h iOSLBag.cc :
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val OSLBag i
+iSplayBag.h iSplayBag.cc :
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val SplayBag i
+iVHBag.h iVHBag.cc :
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val VHBag i
+iCHBag.h iCHBag.cc :
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val CHBag i
+iMap.h iMap.cc :
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) -2 int val int val Map i
+iVHMap.h iVHMap.cc :
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) -2 int val int val VHMap i
+iCHMap.h iCHMap.cc :
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) -2 int val int val CHMap i
+iSplayMap.h iSplayMap.cc :
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) -2 int val int val SplayMap i
+iAVLMap.h iAVLMap.cc :
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) -2 int val int val AVLMap i
+iRAVLMap.h iRAVLMap.cc :
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) -2 int val int val RAVLMap i
+iPQ.h iPQ.cc:
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val PQ i
+iPHPQ.h iPHPQ.cc:
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val PHPQ i
+iSplayPQ.h iSplayPQ.cc:
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val SplayPQ i
+iXPPQ.h iXPPQ.cc:
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val XPPQ i
+iStack.h iStack.cc:
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val Stack i
+iQueue.h iQueue.cc:
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val Queue i
+iDeque.h iDeque.cc:
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val Deque i
+iSLStack.h iSLStack.cc:
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val SLStack i
+iSLQueue.h iSLQueue.cc:
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val SLQueue i
+iDLDeque.h iDLDeque.cc:
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val DLDeque i
+iList.h iList.cc: 
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val List i
+iPlex.h iPlex.cc: 
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val Plex i
+iFPlex.h iFPlex.cc: 
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val FPlex i
+iXPlex.h iXPlex.cc: 
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val XPlex i
+iMPlex.h iMPlex.cc: 
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val MPlex i
+iRPlex.h iRPlex.cc: 
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val RPlex i
+iFPStack.h iFPStack.cc:
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val FPStack i
+iXPStack.h iXPStack.cc:
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val XPStack i
+iFPQueue.h iFPQueue.cc:
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val FPQueue i
+iXPQueue.h iXPQueue.cc:
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val XPQueue i
+iXPDeque.h iXPDeque.cc:
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val XPDeque i
+iSLList.h iSLList.cc: 
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val SLList i
+iDLList.h iDLList.cc: 
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val DLList i
+iVec.h iVec.cc:
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val Vec i
+iAVec.h iAVec.cc:
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val AVec i
+iVStack.h iVStack.cc:
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val VStack i
+iVQueue.h iVQueue.cc:
+	PROTODIR=$(PROTODIR); export PROTODIR; $(GENCLASS) int val VQueue i
+
+relink:
+	(rm -f $(TOUTS); make tests)
+
+clean:
+	rm -f *.o core
+	rm -f plot.out ffile streamfile i*.cc i*.h C++.hack* my.out checktests.diffs
+
+realclean: clean
+	rm -f test.bye test.bye2 test.shell libtest.a $(TOUTS) 
+

@@ -1,0 +1,123 @@
+// This may look like C code, but it is really -*- C++ -*-
+/* 
+Copyright (C) 1988 Free Software Foundation
+    written by Doug Lea (dl@rocky.oswego.edu)
+    based on code by Marc Shapiro (shapiro@sor.inria.fr)
+
+This file is part of GNU CC.
+
+GNU CC is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY.  No author or distributor
+accepts responsibility to anyone for the consequences of using it
+or for whether it serves any particular purpose or works at all,
+unless he says so in writing.  Refer to the GNU CC General Public
+License for full details.
+
+Everyone is granted permission to copy, modify and redistribute
+GNU CC, but only under the conditions described in the
+GNU CC General Public License.   A copy of this license is
+supposed to have been given to you along with GNU CC so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies.  
+*/
+
+
+#ifndef _<T>XPQueue_h
+#ifdef __GNUG__
+#pragma once
+#pragma interface
+#endif
+#define _<T>XPQueue_h
+
+#include "<T>.XPlex.h"
+#include "<T>.Queue.h"
+
+class <T>XPQueue : public <T>Queue
+{
+protected:
+  <T>XPlex     p;
+
+public:
+               <T>XPQueue(int chunksize = DEFAULT_INITIAL_CAPACITY);
+               <T>XPQueue(const <T>XPQueue& q);
+               ~<T>XPQueue();
+
+  void          operator = (const <T>XPQueue&);
+
+  void          enq(<T&> item);
+  <T>           deq();
+  <T>&          front();
+  void          del_front();
+
+  void          clear();
+  int           empty();
+  int           full();
+  int           length();
+               
+  int           OK();
+};
+
+#if defined(__OPTIMIZE__) || defined(USE_LIBGXX_INLINES)
+
+inline <T>XPQueue::<T>XPQueue(int chunksize) 
+     : p(chunksize) {}
+inline <T>XPQueue::<T>XPQueue(const <T>XPQueue& q) : p(q.p) {}
+
+inline <T>XPQueue::~<T>XPQueue() {}
+
+inline void <T>XPQueue::enq(<T&>item)
+{
+  p.add_high(item);
+}
+
+inline <T> <T>XPQueue::deq()
+{
+  <T> res = p.low_element();
+  p.del_low();
+  return res;
+}
+
+inline <T>& <T>XPQueue::front()
+{
+  return p.low_element();
+}
+
+
+inline void <T>XPQueue::del_front()
+{
+  p.del_low();
+}
+
+inline void <T>XPQueue::operator =(const <T>XPQueue& s)
+{
+  p.operator = (s.p);
+}
+
+inline int <T>XPQueue::empty()
+{
+  return p.empty();
+}
+
+inline int <T>XPQueue::full()
+{
+  return p.full();
+}
+
+inline int <T>XPQueue::length()
+{
+  return p.length();
+}
+
+inline int <T>XPQueue::OK()
+{
+  return p.OK();
+}
+
+inline void <T>XPQueue::clear()
+{
+  p.clear();
+}
+
+#endif
+#endif

@@ -1,0 +1,90 @@
+function neigh_state(f) {
+    if (f in states)
+	return states[f];
+
+    return (f ? f : "unknown");
+}
+
+function neigh_mode(f) {
+    if (f in modes)
+	return modes[f];
+
+    return (f ? f : "unknown");
+}
+
+function neigh_trigger(f) {
+   if (f in triggers)
+	return triggers[f];
+
+   return (f ? f : "unknown");
+}
+
+function do_stats() {
+    didone = 0;
+    for (i in egpInMsgs) {
+	didone = 1;
+
+	printf "%9s packets received\n", egpInMsgs;
+	    printf "%9s packets received in error\n", egpInErrors;
+	printf "\n";
+	printf "%9s packets generated\n", egpOutMsgs;
+	    printf "%9s packets discarded due to error\n", egpOutErrors;
+    }
+    if (!didone && DIAGNOSTIC)
+	printf "egp statistics: %s\n", DIAGNOSTIC;
+}
+
+BEGIN {
+	if (sflag) {
+	    do_stats();
+	    exit(0);
+	}
+
+	states[1] = "Idle";
+	states[2] = "Acquisition";
+	states[3] = "Down";
+	states[4] = "Up";
+	states[5] = "Cease";
+
+	modes[1] = "Active";
+	modes[2] = "Passive";
+
+	triggers[1] = "Start";
+	triggers[2] = "Stop";
+
+	mibii = egpAs ? 1 : 0;
+	if (mibii)
+	    printf "autonomous system: %d\n", egpAs;
+	printf "%-15s %-11s",
+		"Neighbor",
+		     "State";
+	if (mibii)
+	    printf       " %-5s %-7s %-6s %-6s %-6s\n",
+			   "AS",
+			       "Mode",
+			           "Trigger",
+			               "Hello",
+			                   "Poll";
+	else
+	    printf "\n";
+
+	didone = 0;
+	for (i in egpNeighAddr) {
+	    didone = 1;
+
+	    printf "%-15s %-11s",
+		    egpNeighAddr,
+			 neigh_state(egpNeighState);
+	    if (mibii)
+		printf       " %-5d %-7s %-6s %-6d %-6d\n",
+			       egpNeighAs,
+				   neigh_mode(egpNeighMode),
+				       neigh_trigger(egpNeighEventTrigger),
+				           egpNeighIntervalHello,
+				               egpNeighIntervalPoll;
+	    else
+		printf "\n";
+	}
+	if (!didone && DIAGNOSTIC)
+	    printf "egpNeigh group: %s\n", DIAGNOSTIC;
+}

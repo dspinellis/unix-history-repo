@@ -1,0 +1,359 @@
+###############################################################################
+#
+# $Header: /f/osi/support/RCS/entities.db,v 7.11 91/03/09 11:58:01 mrose Exp $
+#
+#
+# $Log:	entities.db,v $
+# Revision 7.11  91/03/09  11:58:01  mrose
+# update
+# 
+# Revision 7.10  91/02/22  09:46:22  mrose
+# Interim 6.8
+# 
+# Revision 7.9  90/12/17  22:13:17  mrose
+# stl
+# 
+# Revision 7.8  90/12/11  10:52:15  mrose
+# lock-and-load
+# 
+# Revision 7.7  90/11/20  15:33:10  mrose
+# update
+# 
+# Revision 7.6  90/10/18  11:34:12  mrose
+# psi
+# 
+# Revision 7.5  90/06/15  16:55:05  mrose
+# ucl
+# 
+# Revision 7.4  90/05/12  17:03:04  mrose
+# sync
+# 
+# Revision 7.3  90/05/04  17:38:40  mrose
+# update
+# 
+# Revision 7.2  90/01/11  18:37:58  mrose
+# real-sync
+# 
+# Revision 7.1  89/12/06  17:29:38  mrose
+# update
+# 
+# Revision 7.0  89/11/23  22:27:10  mrose
+# Release 6.0
+# 
+###############################################################################
+
+
+###############################################################################
+#
+# specific services under different administrations: 1.17.4.3
+#
+#	1.17.4.3.0	local administration
+#	1.17.4.3.1	Northrop Research and Technology Center
+#	1.17.4.3.2	University College London
+#	1.17.4.3.3	Nottingham University
+#	1.17.4.3.4	National Physical Laboratory
+#	1.17.4.3.5	National Computing Centre
+#	1.17.4.3.6	INRIA
+#	1.17.4.3.7	Swedish Institute of Computer Science
+#	1.17.4.3.8	Televerket (Swedish Telecom)
+#	1.17.4.3.9	COS
+#	1.17.4.3.10	University of Sussex
+#	1.17.4.3.11	CNET
+#	1.17.4.3.12	University of Cambridge Computer Laboratory
+#	1.17.4.3.13	The Wollongong Group
+#	1.17.4.3.14	CHORUS
+#	1.17.4.3.15	RARE
+#	1.17.4.3.16	Swiss Federal Institute of Technology Zurich
+#	1.17.4.3.17	Tampere University of Technology
+#	1.17.4.3.18	Diab Data AB
+#	1.17.4.3.19	AU-system
+#	1.17.4.3.20	Swedish Defense Material Administration
+#	1.17.4.3.21	NCR Sweden
+#	1.17.4.3.22	Swedish Agency for Administration Development
+#	1.17.4.3.23	TeleDelta
+#	1.17.4.3.24	TeleLOGIC
+#	1.17.4.3.25	Upsala University Computing Center
+#	1.17.4.3.26	Royal Institute of Technology
+#	1.17.4.3.27	Swedish State Power Board
+#	1.17.4.3.28	CSIRO
+#	1.17.4.3.29	Brunel University
+#	1.17.4.3.30	Heriot-Watt University
+#	1.17.4.3.31	Oce Research and Development
+#	1.17.4.3.32	Performance Systems International
+#	1.17.4.3.33	Finnish University and Research Network Project
+#	1.17.4.3.34	German National Research Center for Computer Science
+#	1.17.4.3.35	Erlangen-Nuernberg University
+#	1.17.4.3.36	University of Surrey
+#	1.17.4.3.37	Rutgers University
+#	1.17.4.3.38	Telecom Finland
+#	1.17.4.3.39	GMD
+#	1.17.4.3.40	Z39.50
+#	1.17.4.3.41	STL
+#
+#
+# most sites contain a single entry:
+#
+#	site	default		1.17.4.3.nn.1.0	""	""	""
+#				network addresses
+#
+###############################################################################
+
+
+# Northrop Research and Technology Center: 1.17.4.3.1
+#	1.17.4.3.1.1	gremlin
+
+gremlin		default		1.17.4.3.1.1.0 \
+		Internet=gremlin.nrtc.northrop.com
+
+
+# University College London: 1.17.4.3.2
+
+ucl		default		1.17.4.3.2.1.0 \
+		Int-X25(80)=23421920030013|Janet=00000511160013|Internet=128.16.5.31
+
+hubris		default		1.17.4.3.2.5.0	 \
+		Int-X25(80)=23421920030047|Janet=00000511160047|Internet=128.16.8.3
+
+dir		default		1.17.4.3.2.7.0	 \
+		Janet=00000511320041
+
+
+# Nottingham University: 1.17.4.3.3
+
+nott		default		1.17.4.3.3.1.0 \
+		Int-X25(80)=23426020017299|Janet=000021000018+PID+03010100
+
+xtel		default		1.17.4.3.3.2.0 \
+		Janet=00002100102999|IXI=20433450210399
+
+
+# National Physical Laboratory:	1.17.4.3.4
+
+snow		default		1.17.4.3.4.1.0 \
+		Int-X25(80)=23421390110298
+
+
+# National Computing Centre: 1.17.4.3.5
+
+sol		default		1.17.4.3.4.1.0 \
+		Int-X25(80)=23426160013967
+
+zeb		default		1.17.4.3.4.2.0 \
+		Int-X25(80)=23426160013957
+
+
+# INRIA: 1.17.4.3.6
+
+inria		default		1.17.4.3.6.1.0 \
+		Int-X25(80)=20807802017036
+
+
+# Swedish Institute of Computer Science: 1.17.4.3.7
+
+tvtf		default		1.17.4.3.7.1.0 \
+		Int-X25(80)=2402001328
+
+
+# Televerket (Swedish Telecom): 1.17.4.3.8
+
+sics		default		1.17.4.3.8.1.0 \
+		Int-X25(80)=2402001203+PID+03010100
+
+
+# COS: 1.17.4.3.9
+
+echo		default		1.17.4.3.9.1.0 \
+		Int-X25(80)=31342023004600|Internet=echo
+
+
+# reserved for University of Sussex: 1.17.4.3.10
+
+
+# CNET: 1.17.4.3.11
+
+cnet		default		1.17.4.3.11.1.0 \
+		Int-X25(80)=20809202045601+PID+03010100
+
+
+# University of Cambridge Computer Laboratory: 1.17.4.3.12
+
+bescot		default		1.17.4.3.12.1.0 \
+		Int-X25(80)=23422233939909|Janet=00000801317701
+
+# Acting as an NRS distribution center
+
+nrs		filestore	1.17.4.3.12.1.1 \
+		#256/Int-X25(80)=23422233939909|Janet=00000801317701
+
+
+# The Wollongong Group: 1.17.4.3.13
+#	1.17.4.3.13.1	gonzo
+#	1.17.4.3.13.2	boomer
+#	1.17.4.3.13.3	dart
+#	1.17.4.3.13.4	philj
+
+gonzo		default		1.17.4.3.13.1.0 \
+		Internet=gonzo.twg.com|Int-X25(80)=31344152401010+PID+03010100|NS+4700040008000141524010100000|NS+490059080020004053fe00
+
+gonzo		tsbridge	1.17.4.3.13.1.1 \
+		Internet=gonzo.twg.com+17004|Int-X25(80)=31344152401010+PID+03018000
+
+gonzo		"isode listen demo" 1.17.4.3.13.1.2 \
+		#521/Internet=gonzo.twg.com+17001
+
+boomer		default		1.17.4.3.13.2.0 \
+		Internet=boomer
+
+dart		default		1.17.4.3.13.3.0 \
+		#1/NS+49005902608c425403fe04|Internet=dart
+
+philj	default			1.17.4.3.13.4.0 \
+		#1/NS+49005902608c884255fe04|Internet=philj
+
+
+# Chorus Systems: 1.17.4.3.14
+
+chorus		default		1.17.4.3.14.1.0 \
+		Int-X25(80)=208078091969
+
+
+# reserved for RARE: 1.17.4.3.15
+
+
+# Swiss Federal Institute of Technology Zurich: 1.17.4.3.16
+
+multimeth	 default	1.17.4.3.16.1.0 \
+		Int-X25(80)=22849911084131
+
+
+# reserved for Tampere University of Technology: 1.17.4.3.17
+
+
+# Diab Data AB: 1.17.4.3.18
+
+diab		default		1.17.4.3.18.1.0 \
+		Int-X25(80)=2402000166+PID+03010100
+
+
+# reserved for AU-system: 1.17.4.3.19
+
+
+# reserved for Swedish Defense Material Administration: 1.17.4.3.20
+
+
+# reserved for NCR Sweden: 1.17.4.3.21
+
+
+# reserved for Swedish Agency for Administration Development: 1.17.4.3.22
+
+
+# reserved for TeleDelta: 1.17.4.3.23
+
+
+# reserved for TeleLOGIC: 1.17.4.3.24
+
+
+# reserved for Upsala University Computing Center: 1.17.4.3.25
+
+
+# reserved for Royal Institute of Technology: 1.17.4.3.26
+
+
+# reserved for Swedish State Power Board: 1.17.4.3.27
+
+
+# CSIRO: 1.17.4.3.28
+
+ditmela		default		1.17.4.3.28.1.0 \
+		Int-X25(80)=5052334300013+PID+03010100
+
+guppy		default		1.17.4.3.28.2.0 \
+		Int-X25(80)=5052334300017+PID+03010100
+
+
+# Brunel University: 1.17.4.3.29
+
+brunel		default		1.17.4.3.29.1.0 \
+		Janet=00004114000001+PID+03010100
+
+bru-me		default		1.17.4.3.29.1.0 \
+		Janet=00004113150001+PID+03010100
+
+bru-cc		default		1.17.4.3.29.1.0 \
+		Janet=00004113150002+PID+03010100
+
+
+# Heriot-Watt University: 1.17.4.3.30
+
+ra		default		1.17.4.3.30.1.0 \
+		Janet=00007024661010
+
+helios		default		1.17.4.3.30.2.0 \
+		Janet=00007024661011
+
+solaris		default		1.17.4.3.30.3.0 \
+		Janet=00007024661013
+
+
+# reserved for Oce Research and Development: 1.17.4.3.31
+
+# Performance Systems International: 1.17.4.3.32
+#	1.17.4.3.32.1		osi.nyser.net
+#	1.17.4.3.32.2		uu.psi.com
+#	1.17.4.3.32.4		oclc
+
+osi.nyser.net	default		1.17.4.3.32.1.0 \
+		Internet=osi.nyser.net|Int-X25(80)=31106070013600+PID+03010100
+
+osi.nyser.net	Z39.50		1.17.4.3.32.1.1 \
+		#1025/Internet=osi.nyser.net
+
+uu.psi.com	default	1.17.4.3.32.2.0 \
+		Internet=uu.psi.com
+
+oclc		Z39.50	1.17.4.3.32.4.1 \
+		#1025/Int-X25(80)=31106140003659+PID+03010100
+
+# reserved for Finnish University and Research Network Project: 1.17.4.3.33
+
+# reserved for German National Research Center for Computer Science: 1.17.4.3.34
+
+# Erlangen-Nuernberg University: 1.17.4.3.35	
+
+faui45		default		1.17.4.3.35.1.0 \
+		Internet=faui45.informatik.uni-erlangen.de|Int-X25(80)=26245050385345+PID+03010100|Int-X25(80)=26245913144345
+
+faui43		default		1.17.4.3.35.1.1 \
+		Internet=faui43.informatik.uni-erlangen.de
+
+
+# University of Surrey: 1.17.4.3.36
+
+sur-ee		default		1.17.4.3.36.1.0 \
+		Janet=00004800200101+PID+03010100
+
+
+# reserved for Rutgers University: 1.17.4.3.37
+
+# reserved for Telecom Finland: 1.17.4.3.38
+
+
+# GMD: 1.17.4.3.39
+
+sadir         default         1.17.4.3.39.1.1 \
+	      Int-X25(80)=26245050230303+PID+03010100|Internet=192.35.149.27
+
+
+# reserved for Z39.50 stuff: 1.17.4.3.40
+
+
+# STL: 1.17.4.3.41
+
+stl		default		1.17.4.3.41.1.1 \
+		X121+23423710012217
+
+#
+# do not, under any circumstances, remove anything beneath this line
+#
+
+# end of isoentities database

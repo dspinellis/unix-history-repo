@@ -1,0 +1,28 @@
+Mlpq	lpq.c	/^main(argc, argv)$/
+blankfill	../common_source/displayq.c	/^blankfill(n)$/
+checkremote	../common_source/common.c	/^checkremote()$/
+compar	../common_source/common.c	/^compar(p1, p2)$/
+displayq	../common_source/displayq.c	/^displayq(format)$/
+dump	../common_source/displayq.c	/^dump(nfile, file, copies)$/
+endprent	../common_source/printcap.c	/^endprent()$/
+fatal	../common_source/common.c	/^fatal(msg, a1, a2, a3)$/
+getline	../common_source/common.c	/^getline(cfp)$/
+getport	../common_source/common.c	/^getport(rhost)$/
+getprent	../common_source/printcap.c	/^getprent(bp)$/
+getq	../common_source/common.c	/^getq(namelist)$/
+header	../common_source/displayq.c	/^header()$/
+inform	../common_source/displayq.c	/^inform(cf)$/
+inlist	../common_source/displayq.c	/^inlist(name, file)$/
+ldump	../common_source/displayq.c	/^ldump(nfile, file, copies)$/
+prank	../common_source/displayq.c	/^prank(n)$/
+show	../common_source/displayq.c	/^show(nfile, file, copies)$/
+tdecode	../common_source/printcap.c	/^tdecode(str, area)$/
+tgetent	../common_source/printcap.c	/^tgetent(bp, name)$/
+tgetflag	../common_source/printcap.c	/^tgetflag(id)$/
+tgetnum	../common_source/printcap.c	/^tgetnum(id)$/
+tgetstr	../common_source/printcap.c	/^tgetstr(id, area)$/
+tnamatch	../common_source/printcap.c	/^tnamatch(np)$/
+tnchktc	../common_source/printcap.c	/^tnchktc()$/
+tskip	../common_source/printcap.c	/^tskip(bp)$/
+usage	lpq.c	/^usage()$/
+warn	../common_source/displayq.c	/^warn()$/

@@ -1,0 +1,2 @@
+#!/bin/csh
+xterm -C -display perky:X0 >& /tmp/goo

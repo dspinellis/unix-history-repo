@@ -1,0 +1,12 @@
+Mwhatis	whatis.c	/^main(argc, argv)$/
+cadd	../man/config.c	/^cadd(add1, len1, add2)$/
+dashtrunc	whatis.c	/^dashtrunc(from, to)$/
+enomem	../man/config.c	/^enomem()$/
+getdb	../man/config.c	/^getdb()$/
+getorder	../man/config.c	/^getorder()$/
+getpath	../man/config.c	/^getpath(sects)$/
+getsection	../man/config.c	/^getsection(sect)$/
+match	whatis.c	/^match(bp, str)$/
+openconfig	../man/config.c	/^openconfig()$/
+usage	whatis.c	/^usage()$/
+whatis	whatis.c	/^whatis(argv, path, buildpath)$/

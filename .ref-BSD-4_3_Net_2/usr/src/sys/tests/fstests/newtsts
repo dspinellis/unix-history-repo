@@ -1,0 +1,69 @@
+#!/bin/csh -f
+set echo
+set time=2
+if ($#argv < 2) then
+	echo "Usage: newtsts special disk-type"
+	exit 1
+endif
+echo "8K/1K file system on $1 type $2"
+/etc/newfs $1 $2
+/etc/mount $1 /mnt
+mkdir /mnt/fststs
+if (! -e bin) then
+	mkdir bin
+	cc -o bin/write_4096 write_4096.c
+	cc -o bin/write_8192 write_8192.c
+	cc -o bin/rewrite_8192 rewrite_8192.c
+	cc -o bin/read_8192 read_8192.c
+endif
+echo "write_4096"
+rm -f /mnt/fststs/tst2
+bin/write_4096 /mnt/fststs/tst2
+rm -f /mnt/fststs/tst2
+bin/write_4096 /mnt/fststs/tst2
+rm -f /mnt/fststs/tst2
+bin/write_4096 /mnt/fststs/tst2
+echo "write_8192"
+rm -f /mnt/fststs/tst2
+bin/write_8192 /mnt/fststs/tst2
+rm -f /mnt/fststs/tst2
+bin/write_8192 /mnt/fststs/tst2
+rm -f /mnt/fststs/tst2
+bin/write_8192 /mnt/fststs/tst2
+echo "rewrite_8192"
+bin/rewrite_8192 /mnt/fststs/tst2
+bin/rewrite_8192 /mnt/fststs/tst2
+bin/rewrite_8192 /mnt/fststs/tst2
+echo "read_8192"
+bin/read_8192 /mnt/fststs/tst2
+bin/read_8192 /mnt/fststs/tst2
+bin/read_8192 /mnt/fststs/tst2
+umount $1
+sync
+echo
+echo "4K/1K file system on $1 type $2"
+newfs $1 $2
+mount $1 /mnt
+mkdir /mnt/fststs
+rm -f /mnt/fststs/tst2
+bin/write_4096 /mnt/fststs/tst2
+rm -f /mnt/fststs/tst2
+bin/write_4096 /mnt/fststs/tst2
+rm -f /mnt/fststs/tst2
+bin/write_4096 /mnt/fststs/tst2
+echo "write_8192"
+rm -f /mnt/fststs/tst2
+bin/write_8192 /mnt/fststs/tst2
+rm -f /mnt/fststs/tst2
+bin/write_8192 /mnt/fststs/tst2
+rm -f /mnt/fststs/tst2
+bin/write_8192 /mnt/fststs/tst2
+echo "rewrite_8192"
+bin/rewrite_8192 /mnt/fststs/tst2
+bin/rewrite_8192 /mnt/fststs/tst2
+bin/rewrite_8192 /mnt/fststs/tst2
+echo "read_8192"
+bin/read_8192 /mnt/fststs/tst2
+bin/read_8192 /mnt/fststs/tst2
+bin/read_8192 /mnt/fststs/tst2
+echo "done"

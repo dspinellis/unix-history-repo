@@ -1,0 +1,61 @@
+.TH FTPD-FTAM 8C "16 Jun 1988"
+.\" $Header: /f/osi/ftp-ftam/RCS/ftpd-ftam.8c,v 7.1 91/02/22 09:24:22 mrose Interim $
+.\"
+.\"
+.\" $Log:	ftpd-ftam.8c,v $
+.\" Revision 7.1  91/02/22  09:24:22  mrose
+.\" Interim 6.8
+.\" 
+.\" Revision 7.0  89/11/23  21:55:20  mrose
+.\" Release 6.0
+.\" 
+.SH NAME
+ftpd-ftam \- MITRE FTP/FTAM gateway
+.SH SYNOPSIS
+.in +.5i
+.ti -.5i
+.B \*(SDin.ftpd-ftam
+\%[host.socket]
+.in -.5i
+(under \fI\*(SDinetd\fR\0)
+.SH DESCRIPTION
+The \fIftpd-ftam\fR server appears to be the DARPA Internet File
+Transfer Protocol server process, but is really an FTP/FTAM gateway.
+See
+.IR ftpd (8C)
+for details on the FTP service.
+.PP
+When using \fIftp\fP with the MITRE FTP/FTAM gateway,
+the true destination is encoded in the user name (i.e., user@osi-host)
+or using the \fBftp\fP \fISITE\fP command.
+If further accounting information is required by the true destination,
+the \fIACCT\fP command is used separately and the \fISITE\fP command
+must be used to specify the destination.
+.PP
+Note that the FTP/FTAM gateway is currently available on a different port than
+the FTP service on the gateway.
+To select the FTP/FTAM gateway,
+tell your \fIftp\fR client program to connect to port \fB531\fR on the
+gateway host.
+For example, using \fIftp\fR\0(1c):
+.sp
+.nf
+.in +.5i
+% ftp
+ftp> open gateway 531
+Name (gateway:user): user@osihost
+Password:
+.in -.5i
+.fi
+.SH "SEE ALSO"
+ftp(1C), ftpusers(5), ftpd(8C)
+.SH AUTHORS
+Original version written by John A. Scott of the MITRE Corporation.
+Upgraded to \*(lqIS-level\*(rq by Philip B. Jelfs of the Wollongong Group.
+.SH BUGS
+\fBFtp\fP current directory commands (\fIcd\fP and \fIpwd\fP\|) are
+not supported by the gateway (there is no \fBFTAM\fP equivalent).
+.PP
+The daemon should implement a crude form of access control for
+accouting purposes
+(FTAM service might not be free in all environments).

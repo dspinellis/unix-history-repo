@@ -1,0 +1,375 @@
+.TH ISOTAILOR 5 "5 July 1988"
+.\" $Header: /f/osi/support/RCS/isotailor.5,v 7.8 91/02/22 09:46:48 mrose Interim $
+.\"
+.\"
+.\" $Log:	isotailor.5,v $
+.\" Revision 7.8  91/02/22  09:46:48  mrose
+.\" Interim 6.8
+.\" 
+.\" Revision 7.7  90/11/21  11:37:51  mrose
+.\" update
+.\" 
+.\" Revision 7.6  90/10/29  18:37:21  mrose
+.\" updates
+.\" 
+.\" Revision 7.5  90/07/09  14:50:51  mrose
+.\" sync
+.\" 
+.\" Revision 7.4  90/01/11  18:38:00  mrose
+.\" real-sync
+.\" 
+.\" Revision 7.3  89/12/12  16:14:33  mrose
+.\" localHost
+.\" 
+.\" Revision 7.2  89/11/30  23:51:52  mrose
+.\" typo
+.\" 
+.\" Revision 7.1  89/11/27  10:30:48  mrose
+.\" sync
+.\" 
+.\" Revision 7.0  89/11/23  22:27:37  mrose
+.\" Release 6.0
+.\" 
+.SH NAME
+.B isotailor
+\- ISODE tailoring file
+.SH DESCRIPTION
+The \fIisotailor\fR file contains information used to run-time
+configure the ISODE distribution.
+Entries are separated by end\-of\-line (or the end\-of\-file).
+The character `#' at the beginning of a line indicates a comment line.
+The syntax is:
+.sp
+.in +.5i
+.nf
+variable: value
+.fi
+.in -.5i
+.sp
+as in
+.sp
+.in +.5i
+.nf
+sbindir: /usr/etc/
+.fi
+.in -.5i
+.PP
+The entries come in several types. There are general ISODE
+configuration parameters, operating system specific tailoring and
+interface specific tailoring parameters.
+.SH "LOCAL ENVIRONMENT TAILORING"
+There are some variables that are used to make up for deficiencies in
+operating systems, or to override the operating system. These are
+described as follows.
+.IP localname
+This takes a string as a parameter and is used as
+the name of the local host if the \fIgethostname\fR call
+(or equivalent, e.g., \fIuname\fR)
+is not used. This will also override any other run-time determination
+of the local hostname.
+.IP binpath
+This takes a string as a parameter and indicates the directory where
+the ISODE user programs are kept (be sure to use a trailing slash).
+.IP sbinpath
+This takes a string as a parameter and indicates the directory where
+the ISODE system programs are kept (be sure to use a trailing slash).
+.IP etcpath
+This takes a string as a parameter and indicates the directory where
+the ISODE configuration files are kept (be sure to use a trailing slash).
+.SH "LOGGING TAILORING"
+There are a number of options that can be set for each layer of ISODE.
+The first variable indicates the default logging directory,
+the other variables give information about each log file.
+.IP logpath
+This variable takes a string as a parameter and indicates the
+directory where the ISODE log files are kept (be sure to use a
+trailing slash). 
+.PP
+The remaining variables are all configured in the same way and are in
+the general format:
+.sp
+.in +.5i
+.nf
+xyzlevel: [none] [exceptions] [notice] [pdus] [trace] [debug] [all]
+xyzfile: filename
+.fi
+.in -.5i
+.sp
+The filename can be either the name of a file of a `\-' in which case
+the standard error is used. If the filename contains the string `%d'
+then this is replaced by the current process id.
+.PP
+The normal level for this style of tailoring is to set exceptions. The
+other two values can be added in when debugging, if so desired.
+The current variables in this format are as follows.
+.sp
+.in +.5i
+.nf
+.ta \w'compatlevel  'u
+compatlevel	native services subsystem
+compatfile
+addrlevel	addressing subsystem
+addrfile
+tsaplevel	transport level
+tsapfile
+ssaplevel	session level
+ssapfile
+psaplevel	presentation elements
+psapfile
+psap2level	presentation level
+psap2file
+acsaplevel	association control level
+acsapfile
+rtsaplevel	reliable transfer level
+rtsapfile
+rosaplevel	remote operations level
+rosapfile
+.sp
+.in -.5i
+.fi
+.SH "TRANSPORT STACK TAILORING"
+There are several variables which can be used to en/disable configured
+TS-stacks and to define OSI communities and their relationship
+to this system.
+.SS "TS-STACKS"
+.IP ts_stacks
+which takes one or more of the following values:
+.sp
+.in +.5i
+.nf
+[tcp] [x25] [bridge] [tp4] [all]
+.fi
+.in -.5i
+.sp
+indicates which TS-stacks should be enabled.
+This is useful when multiple machines (with different interfaces)
+share the same executables.
+For example,
+the \fB\*(EDisotailor\fR file is a normally symbolic link to
+\fB/private\*(EDisotailor\fR.
+.SS "OSI COMMUNITIES"
+.IP ts_interim
+which takes one or more OSI community names as a value.
+Each community name must be defined as a macro in the
+\fIisomacros\fR\0(5) file.
+.IP ts_communities
+which takes one or more of the following values:
+.sp
+.in +.5i
+.nf
+[int-x25] [janet] [internet] [realns] [localTCP] [all]
+.fi
+.in -.5i
+.sp
+This variable is used to distinguish membership in various OSI communities.
+For example,
+a site with an X.25 connection might be attached to the International X.25
+network, but not the JANET.
+Thus \fIts_stacks\fR would include \*(lqx25\*(rq,
+and \fIts_communities\fR would include \*(lqint-x25\*(rq but not
+\*(lqjanet\*(rq.
+Note that the ordering of communities is important:
+network addresses will be tried in the order that their respective
+communities are listed with this variable.
+.IP default_nsap_community
+which takes an integer value,
+declaring the default community to be used for NSAP addresses.
+.IP default_x25_community
+declaring the default community to be used for X.25 (DTE) addresses.
+.IP default_tcp_community
+declaring the default community to be used for TCP (RFC1006) addresses.
+.SS "TS-BRIDGE"
+These are the parameters that are used in the Transport-Service Bridge
+implementation.
+.IP tsb_communities
+A list of pairs of values.
+The first of each value should be a community as defined in the
+\fIts_communities\fP variable
+(obviously the values \*(lqnone\*(rq and \*(lqall\*(rq are not permissible).
+The second value of the pair should be a presentation address using
+the ISODE \*(lqstring\*(rq format.
+When a call is to be placed and the network corresponds to one
+of the communities given here, then a call through the bridge given in
+the second variable will be made automatically.
+.IP tsb_default_address
+This variable contains a string encoded presentation address which the
+bridge will listen on by default.
+This should normally consist of a set of network addresses with no selectors
+present.
+.PP
+Consider the case of a host with access to both the Internet and the
+International X.25 network.
+This host might have this entry in its \fIisotailor\fR file:
+.sp
+.in +.5i
+.nf
+tsb_default_address: Internet=sheriff+17004\\|Int-X25(80)=23426020017299+PID+03018000
+.fi
+.in -.5i
+.sp
+This tells the bridge to listen on two network endpoints.
+Hosts in the Internet community wishing to reach the International
+X.25 community would have this entry in their \fIisotailor\fR file:
+.sp
+.in +.5i
+.nf
+tsb_communities: int-x25 Internet=sheriff+17004
+.fi
+.in -.5i
+.sp
+Similarly,
+hosts in the International X.25 community wishing to reach the
+Internet community, would have the entry:
+.sp
+.in +.5i
+.nf
+tsb_communities: internet Int-X25(80)=23426020017299+PID+03018000
+.fi
+.in -.5i
+.SH "INTERFACE SPECIFIC TAILORING"
+Most interfaces that ISODE runs over have some form of tailoring.
+These are usually very dependent on the interface. Each interface
+which supports tailoring will now be described.
+.SS "General X.25 Tailoring"
+There are two specific variables that can be used with any X.25
+interface.
+.IP x25_local_dte
+This is the X.121 address that ISODE processes will listen on
+by default.
+It may be a full X.121 address or a sub-address.
+.IP x25_local_pid
+This is the X.25 protocol ID that ISODE processes will listen on by default.
+Traditionally, this is the first four octets of the CUDF in hex-notation,
+e.g., 03010100.
+.PP
+There are also three variables for performing address
+manipulation as required by some network vendors.
+.IP x25_intl_zero
+If this has the value `on' then any international DTEs (i.e.
+having non\-local DNICs) will have a leading zero introduced
+before being passed to the network.
+.IP x25_strip_dnic
+If this has the value `on' then any local DTEs (i.e. having the
+local DNIC) will have this DNIC removed before being passed to
+the network.
+.IP x25_dnic_prefix
+This should be set to the local DNIC (the first four digits of the
+DTE) of the host machine.
+It should only be set if one or both of the previous two
+variables has the value `on'.
+.PP
+There are also two variables for logging X.25 statistics.
+.IP x25level
+Defines the level of logging to be used for X.25 statistics logging.
+(At present, only \*(lqnotice\*(rq level messages are generated.)
+.IP x25file
+Defines the filename to be used for X.25 statistics logging.
+.SS "SUNLINK X.25"
+These setting are only useful when SUN_X25 is defined along with X25.
+The effect of these parameters is more fully documented in the Sun manuals.
+.IP reverse_charge
+Set to 1 or 0 to enable/disable reverse charging.
+.IP recvpktsize
+.IP sendpktsize
+This should be set to one of 0 (default), 16, 32, 64, 128, 256, 512 or
+1024 to set the send/receive packet size.
+.IP recvwndsize
+.IP sendwndsize
+This sets the send/receive window sizes. Legal values are 0 (default),
+7 and 127.
+.IP recvthruput
+.IP sendthruput
+This sets the sending/receiving throughput values. Legal values are 0
+(default) 75, 150, 300, 600, 1200, 2400, 4800, 9600, 19200, 48000.
+.IP cug_req
+Closed user group request. Set to either 0 or 1.
+.IP cug_index
+Sets the closed user group index number.
+.IP fast_select_type
+Sets the fast select parameters. Either 0, 1 or 2.
+.IP rpoa_req
+.IP rpoa
+Recognised private operating agency parameters.
+.SS "CAMTEC CCL"
+These are used
+when the Camtec X.25 is accessed via the
+CCL (sockets) mechanism.
+.IP x25_outgoing_port
+This selects which port on the Camtec card will be used
+for outgoing calls, and takes the value A, B or #.
+A and B are the two X.21 WAN interfaces and # is the
+Ethernet.
+Listening is automatically done on all three ports.
+.SS "BRIDGE X.25"
+These are parameters that are used in the tp0bridge implementation.
+.IP x25_bridge_host
+The host machine that is running the tp0bridge.
+.IP x25_bridge_port
+This is the TCP port that is to be used
+for bridging.
+The default is 146, which should be in defined in /etc/services.
+.IP x25_bridge_addr
+The X.121 address of the remote host.
+.IP x25_bridge_listen
+The X.121 address to listen on for incoming calls, on the remote host.
+.IP x25_bridge_pid
+The protocol ID used for listening along with the previous address.
+This is encoded as a string of eight hex digits.
+.IP x25_bridge_discrim
+A string used to discriminate the network. When attempting to place an
+X.25 call with BRIDGE_X25 and real X25 configured in, this string is
+used to decide which interface to use. If the string is empty, the
+bridge will be used. If it is set to `\-' the bridge will not be used.
+If the string is anything else, it is compared against the called
+X.121 address. If there is a match, then the bridge is used, otherwise
+the real interface is used.
+.SH "SESSION SERVICES TAILORING"
+Ther are three variables that can be tailored:
+.IP ses_abort_timer
+The number of seconds to drain on session aborts.
+.IP ses_disconnect_timer
+The number of seconds to drain on session disconnects.
+.IP ses_refuse_timer
+The number of seconds to drain on session refuses.
+.SH "DIRECTORY SERVICES TAILORING"
+There are two variables that can be tailored:
+.IP ns_enable
+This takes either the string \*(lqon\*(rq or \*(lqoff\*(rq as a parameter.
+If \*(lqon\*(rq,
+then the \*(lquser-friendly namservice" will be used to perform
+name/address resolution.
+If the nameservice lookup fails,
+the stub-directory will be used as a fallback.
+.IP ns_address
+This is the transport address of the nameservice.
+It is specified using the ISODE \*(lqstring\*(rq format,
+e.g.,
+.in +.5i
+Internet=wp.psi.net+17006
+.in -.5i
+which indicates that the nameservice lives in the TCP/IP communications domain
+on TCP port \*(lq17006\*(rq at host \*(lqwp.psi.net\*(rq.
+The nameservice is accessed via the OSI CO-mode transport service,
+so other kinds of addresses (e.g., X.25 addresses can be used as well).
+.SH "PROGRAM-SPECIFIC TAILORING"
+By default
+a program-specific tailoring file is consulted before the system\-wide
+tailoring file.
+The program-specific file is called \fB\&.myname_tailor\fR in the user's
+home directory,
+where \*(lqmyname\*(rq is the name that the program was invoked with.
+.SH FILES
+.nf
+.ta \w'$HOME/.myname_tailor  'u
+\*(EDisotailor   ISODE tailoring file
+$HOME/.myname_tailor	program-specific tailoring file
+.re
+.fi
+.SH "SEE ALSO"
+\fIThe ISO Development Environment: User's Manual, Volume 2:
+Underlying Services\fR, \*(lqThe ISODE Tailoring File\*(rq.
+.SH AUTHORS
+Marshall T. Rose
+.br
+Simon Walton,
+University College London

@@ -1,0 +1,223 @@
+-- eval.my - Evaluation MIB
+
+-- $Header: /f/osi/snmp/RCS/eval.my,v 7.2 91/02/22 09:43:15 mrose Interim $
+--
+-- Contributed by NYSERNet Inc.  This work was partially supported by the
+-- U.S. Defense Advanced Research Projects Agency and the Rome Air Development
+-- Center of the U.S. Air Force Systems Command under contract number
+-- F30602-88-C-0016.
+--
+--
+-- $Log:	eval.my,v $
+-- Revision 7.2  91/02/22  09:43:15  mrose
+-- Interim 6.8
+-- 
+-- Revision 7.1  90/11/20  15:32:07  mrose
+-- update
+-- 
+-- Revision 7.0  90/11/17  20:13:20  mrose
+-- *** empty log message ***
+-- 
+
+--
+--				  NOTICE
+--
+--    Acquisition, use, and distribution of this module and related
+--    materials are subject to the restrictions of a license agreement.
+--    Consult the Preface in the User's Manual for the full terms of
+--    this agreement.
+--
+--
+
+
+EVAL-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+	enterprises, OBJECT-TYPE
+		FROM RFC1155-SMI
+	DisplayString
+		FROM RFC1158-MIB;
+
+
+snmpResearch OBJECT IDENTIFIER ::= { enterprises 99 }
+
+
+-- the functions group
+
+functions OBJECT IDENTIFIER ::= { snmpResearch 3 }
+
+functAdd OBJECT-TYPE
+	SYNTAX	INTEGER
+	ACCESS	read-only
+	STATUS	mandatory
+	::= { functions 1 }
+
+functSub OBJECT-TYPE
+	SYNTAX	INTEGER
+	ACCESS	read-only
+	STATUS	mandatory
+	::= { functions 2 }
+
+functMul OBJECT-TYPE
+	SYNTAX	INTEGER
+	ACCESS	read-only
+	STATUS	mandatory
+	::= { functions 3 }
+
+functDiv OBJECT-TYPE
+	SYNTAX	INTEGER
+	ACCESS	read-only
+	STATUS	mandatory
+	::= { functions 4 }
+
+functMod OBJECT-TYPE
+	SYNTAX	INTEGER
+	ACCESS	read-only
+	STATUS	mandatory
+	::= { functions 5 }
+
+functNeg OBJECT-TYPE
+	SYNTAX	INTEGER
+	ACCESS	read-only
+	STATUS	mandatory
+	::= { functions 6 }
+
+functXch OBJECT-TYPE
+	SYNTAX	INTEGER
+	ACCESS	read-only
+	STATUS	mandatory
+	::= { functions 7 }
+
+functClr OBJECT-TYPE
+	SYNTAX	INTEGER
+	ACCESS	read-only
+	STATUS	mandatory
+	::= { functions 8 }
+
+functDup OBJECT-TYPE
+	SYNTAX	INTEGER
+	ACCESS	read-only
+	STATUS	mandatory
+	::= { functions 9 }
+
+functPop OBJECT-TYPE
+	SYNTAX	 INTEGER
+	ACCESS	read-only
+	STATUS	mandatory
+	::= { functions 10 }
+
+functAbs OBJECT-TYPE
+	SYNTAX	 INTEGER
+	ACCESS	read-only
+	STATUS	mandatory
+	::= { functions 11 }
+
+functSgn OBJECT-TYPE
+	SYNTAX	 INTEGER
+	ACCESS	read-only
+	STATUS	mandatory
+	::= { functions 12 }
+
+functMin OBJECT-TYPE
+	SYNTAX	 INTEGER
+	ACCESS	read-only
+	STATUS	mandatory
+	::= { functions 13 }
+
+functAnd OBJECT-TYPE
+	SYNTAX	 INTEGER
+	ACCESS	read-only
+	STATUS	mandatory
+	::= { functions 14 }
+
+functOr OBJECT-TYPE
+	SYNTAX	 INTEGER
+	ACCESS	read-only
+	STATUS	mandatory
+	::= { functions 15 }
+
+functNot OBJECT-TYPE
+	SYNTAX	 INTEGER
+	ACCESS	read-only
+	STATUS	mandatory
+	::= { functions 16 }
+
+
+-- the expressions group
+
+expressions OBJECT IDENTIFIER ::= { snmpResearch 4 }
+
+exprNumber OBJECT-TYPE
+	SYNTAX	INTEGER
+	ACCESS	read-only
+	STATUS	mandatory
+	::= { expressions 1 }
+
+
+-- the expressions table
+
+exprTable OBJECT-TYPE
+	SYNTAX	SEQUENCE OF ExprEntry
+	ACCESS	not-accessible
+	STATUS	mandatory
+	::= { expressions 2 }
+
+exprEntry OBJECT-TYPE
+	SYNTAX	ExprEntry
+	ACCESS	not-accessible
+	STATUS	mandatory
+	::= { exprTable 1 }
+
+ExprEntry ::=
+    SEQUENCE {
+	exprIndex
+	    INTEGER,
+	exprEval
+	    INTEGER,
+	exprExpr
+	    OCTET STRING,
+	exprStatus
+	    INTEGER,
+	exprHints
+	    DisplayString
+    }
+
+exprIndex OBJECT-TYPE
+	SYNTAX	INTEGER
+	ACCESS	read-only
+	STATUS	mandatory
+	::= { exprEntry 1 }
+
+exprEval OBJECT-TYPE
+	SYNTAX	INTEGER
+	ACCESS	read-only
+	STATUS	mandatory
+	::= { exprEntry 2 }
+
+exprExpr OBJECT-TYPE
+	SYNTAX	OCTET STRING
+	ACCESS	read-write
+	STATUS	mandatory
+	::= { exprEntry 3 }
+
+exprStatus OBJECT-TYPE
+	SYNTAX	INTEGER {
+		    noError (0),
+		    divide (1),
+		    overflow (2),
+		    underflow (3),
+		    noSuchName (4),
+		    notAnInteger (5),
+		    other (6)
+		}
+	ACCESS	read-only
+	STATUS	mandatory
+	::= { exprEntry 4 }
+
+exprHints OBJECT-TYPE
+	SYNTAX	DisplayString (SIZE (0..255))
+	ACCESS	read-only
+	STATUS	mandatory
+	::= { exprEntry 5 }
+
+END

@@ -1,0 +1,16 @@
+Want a list of error names?
+           ECHR          EHALT        ENILPTR          ECASE      EOUTOFMEM
+         ECTSNG         ESTLIM          EARGV          EPACK        EUNPACK
+          EASRT        ELLIMIT     ETRASHHEAP       EPASTEOF       EREFINAF
+        ENOFILE      ENAMESIZE       EBADINUM       EBADFNUM       ENUMNTFD
+        ENAMRNG       EFMTSIZE          ESEEK        ECREATE        EREMOVE
+          EOPEN        EREADIT       EWRITEIT          ESQRT            ELN
+         ERANGE         ESUBSC          EGOTO         ECLOSE         EWRITE
+         ECTLWR         ECTUPR
+enter an error name
+
+Pointer value out of legal range
+
+	Error in "errs"+20 near line 50.
+
+128 statements executed in 0.08 seconds cpu time.

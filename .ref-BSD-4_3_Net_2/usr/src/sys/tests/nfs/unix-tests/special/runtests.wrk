@@ -1,0 +1,52 @@
+:
+#!/bin/sh
+#
+#       @(#)runtests.wrk	1.3 90/01/03 NFS Rev 2 testsuite
+#
+
+#  This script is intended to be invoked from 'runtests'
+#  Don't run it manually
+
+case x$1 in
+    xFROM_RUNTESTS)
+	;;
+    *)
+	echo "$0 must be run from 'runtests' - Don't run manually"
+	exit 1
+	;;
+esac
+
+umask 0
+
+echo ""
+echo "check for proper open/unlink operation"
+open-unlk
+
+echo ""
+echo "check for proper open/chmod 0 operation"
+open-chmod
+
+echo ""
+echo "check for lost reply on non-idempotent requests"
+dupreq 100 testfile
+
+echo ""
+echo "test exclusive create, should get: exctest.file2: File exists"
+excltest
+
+# This is a protocol bug which is not fixed yet
+#echo ""
+#echo "test statfs for file count, should get positive, different numbers"
+#fstat
+
+echo ""
+echo "test negative seek, you should get: read: Invalid argument"
+echo "or lseek: Invalid argument"
+negseek testfile
+
+echo ""
+echo "test rename"
+rename 100
+
+echo ""
+echo "Special tests complete"

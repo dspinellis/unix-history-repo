@@ -1,0 +1,167 @@
+###############################################################################
+# Level-1 DSA configuration file
+###############################################################################
+
+
+###############################################################################
+# 1. Information about your DSA
+###############################################################################
+
+#
+# define the name of your DSA under c=US, e.g.
+#
+#	dsa	"Spectacled Bear"
+#
+#
+# if you have a specific IP address you want others to use when contacting your
+# DSA, set this accordingly, e.g.,
+#
+#	ipaddr	130.117.128.3
+#
+# otherwise the first value in /etc/hosts will be used
+#
+# if you have a specific TCP port you want your DSA to reside at, set this
+# accordingly, e.g.,
+#
+#	port	17003
+#
+# otherwise the port 17003 will be used
+#
+
+dsa		
+
+ipaddr		
+port		
+
+
+###############################################################################
+# 2. Information about your country
+###############################################################################
+
+#
+# if your organization is not in the US, use the appropriate two-letter
+# ISO 3166 code when defining the country, e.g.,
+#
+#	country		GB
+#
+# dsaconfig may not know about your country; if this is the case, then you can
+# not run dsaconfig to configure your Level-1 DSA
+#
+
+country		
+
+
+###############################################################################
+# 3. Information about your organization
+###############################################################################
+
+#
+# define the name of your organization, and its address and phone number, e.g.,
+#
+#	organization	"Performance Systems International"
+#	domain		psi.com
+#	street		"11800 Sunrise Valley Drive"
+#	town		"Reston"
+#	state		"Virginia"
+#	zipcode		"22091"
+#	telephone	"+1 703-620-6651"
+#
+# if you don't have a street address, define the post office box, e.g.,
+#
+#	pob		"1210"
+#
+# (it's okay to define both, but you must define at least one of them)
+#
+# if you have a fax machine, define its number, e.g.,
+#
+#	fax		"+1 703-620-4586"
+#
+# define the name of your organizational unit, e.g.,
+#
+#	unit		"Research Development"
+#
+#
+# finally, describe your organization, e.g.,
+#
+#	description    "value-added provider of networking services"
+#
+
+organization	
+domain		
+street		
+town		
+state		
+zipcode		
+telephone	
+
+pob		
+
+fax		
+
+unit		
+
+description	
+
+
+###############################################################################
+# 4. Information about you
+###############################################################################
+
+#
+# define your first and last name, e.g.,
+#
+#	firstname	"Wengyik"
+#	lastname	"Yeong"
+#
+# if you have a middle name, define that, e.g.
+#
+#	middlename	"Terrible"
+#
+# your middle initial will be derived from this, but you might want to define
+# it explicitly, e.g.,
+#
+#	middleinitial	"T"
+#
+# define your mailbox, job title, and password for your entry in the Directory,
+# e.g.,
+#
+#	mailbox		"yeongw@psi.com"
+#	title		"Staff Scientist"
+#	password	"secret"
+#
+# if your phone number is different than your organizations, define your
+# extension, this is either
+#
+#	extension	"x1234"
+#
+# or a full phone number, e.g.,
+#
+#	extension	"+1 415-961-3380"
+#
+# define your uid (from /etc/passwd), this will be used both for your entry
+# and for the DSA's uid, e.g.,
+#
+#	userid		yeongw
+#
+# similarly, you can define a gid to be used for the DSA, e.g.,
+#
+#	groupid		whitepages
+#
+# if userid and groupid aren't supplied, they will be determined when
+# dsaconfig runs
+#
+
+firstname	
+lastname	
+
+middlename	
+middleinitial	
+
+mailbox		
+title		
+password	
+
+extension	
+
+userid		
+groupid		

@@ -1,0 +1,4646 @@
+\input texinfo  @c -*-texinfo-*-
+
+@settitle User's Guide to GNU C++
+@setfilename g-whiz
+
+@ifinfo
+This file documents the features and implementation of GNU C++.
+
+Copyright (C) 1988 Free Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+@ignore
+Permission is granted to process this file through @TeX{} and print the
+results, provided the printed document carries copying permission
+notice identical to this one except for the removal of this paragraph
+(this paragraph not being relevant to the printed manual).
+
+@end ignore
+This code represents a derivative work of authorship of the GNU CC
+compiler, written by Richard Stallman.  All copyright conditions applying
+to GNU CC also apply to GNU C++.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided also that the
+section entitled ``GNU CC General Public License'' is included exactly as
+in the original, and provided that the entire resulting derived work is
+distributed under the terms of a permission notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that the section entitled ``GNU CC General Public License'' and
+this permission notice may be included in translations approved by the
+Free Software Foundation instead of in the original English.
+@end ifinfo
+
+@setchapternewpage odd
+
+@titlepage
+@center @titlefont{User's Guide}
+@sp 2
+@center @titlefont{to}
+@sp 2
+@center @titlefont{GNU C++}
+@sp 4
+@center Michael D. Tiemann
+@sp 3
+@center last updated 1 March 1990
+@sp 1
+@center for version 1.37.1
+@page
+@vskip 0pt plus 1filll
+Copyright @copyright{} 1988 Free Software Foundation, Inc.
+
+The @i{User's Guide to GNU C++} is a derivative work of authorship based
+on the @i{Using and Porting GNU CC} by Richard Stallman, and documentary
+comments in the source code of Doug Lea's library functions.  Both of
+these documents are copyright @copyright The Free Software Foundation.
+
+The code described in this document represents a derivative work of
+authorship of the GNU CC compiler.  The earlier GNU CC compiler was
+written by Richard Stallman.  All copyright conditions applying to GNU
+CC also apply to GNU C++.
+
+Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided also that the
+section entitled ``GNU CC General Public License'' is included exactly
+as in the original, and provided that the entire resulting derived work
+is distributed under the terms of a permission notice identical to this
+one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that the section entitled ``GNU CC General Public License'' may
+be included in a translation approved by the author instead of in the
+original English.
+
+@strong{Note: GNU C++ is still in test release.  Known bugs are
+documented in the ``BugList'' section.  The ``Projects'' section lists
+things that could still be done.}
+
+@end titlepage
+@page
+
+@ifinfo
+@node Top, Copying, , (DIR)
+
+Introduction
+************
+
+This manual documents how to install and use the GNU C++ compiler.  The
+GNU C++ compiler is based on the GNU CC compiler, written by Richard M.
+Stallman.  It provides and alternate front end to that compiler which is
+compatible with C++, and extends the ability of the compiler to take
+advantage of special code-generation features which are impossible to
+use in standard C.  Details on the internals of the compiler are
+identical with those of GCC, and are not contained in this file.  A
+texinfo link exists for the purposes of convenience and completeness.
+For hardcopy, please print out a copy of the GNU CC Internals document,
+which should be available if you have GNU C++.
+
+@end ifinfo
+@menu
+* Copying::         GNU CC General Public License says
+                     how you can copy and share GNU C++.
+* Contributors::    People who have contributed to GNU C++.
+* Options::         Command options supported by @samp{g++}.
+* Installation::    How to configure, compile and install GNU C++.
+* Trouble::         If you have trouble installing GNU C++.
+* Extensions::      GNU extensions to the C++ language.
+* Features::        Special features of GNU C++
+* Bugs::            How to report bugs (if you want to get them fixed).
+* Portability::     Goals of GNU C++'s portability features.
+* Interface::       Function-call interface of GNU C++ output.
+* Passes::          Order of passes, what they do, and what each file is for.
+* Configuration::   Special configuration information
+* Projects::	    Things Still Left to do
+* BugList::         List of currently known GNU C++ bugs (and how to avoid them)
+
+* GCC related menu:
+
+* RTL: (internals)RTL
+		    The intermediate representation that most passes work on.
+* Machine Desc: (internals)Machine Desc
+		    How to write machine description instruction patterns.
+* Machine Macros: (internals)Machine Macros
+		    How to write the machine description C macros.
+@end menu
+
+@node Copying, Contributors, Top, Top
+@unnumbered GNU CC GENERAL PUBLIC LICENSE
+@center (Clarified 11 Feb 1988)
+
+  The license agreements of most software companies keep you at the
+mercy of those companies.  By contrast, our general public license is
+intended to give everyone the right to share GNU CC.  To make sure that
+you get the rights we want you to have, we need to make restrictions
+that forbid anyone to deny you these rights or to ask you to surrender
+the rights.  Hence this license agreement.
+
+  Specifically, we want to make sure that you have the right to give
+away copies of GNU CC, that you receive source code or else can get it
+if you want it, that you can change GNU CC or use pieces of it in new
+free programs, and that you know you can do these things.
+
+  To make sure that everyone has such rights, we have to forbid you to
+deprive anyone else of these rights.  For example, if you distribute
+copies of GNU CC, you must give the recipients all the rights that you
+have.  You must make sure that they, too, receive or can get the
+source code.  And you must tell them their rights.
+
+  Also, for our own protection, we must make certain that everyone
+finds out that there is no warranty for GNU CC.  If GNU CC is modified by
+someone else and passed on, we want its recipients to know that what
+they have is not what we distributed, so that any problems introduced
+by others will not reflect on our reputation.
+
+  Therefore we (Richard Stallman and the Free Software Foundation,
+Inc.) make the following terms which say what you must do to be
+allowed to distribute or change GNU CC.
+
+@unnumberedsec COPYING POLICIES
+
+@enumerate
+@item
+You may copy and distribute verbatim copies of GNU CC source code as
+you receive it, in any medium, provided that you conspicuously and
+appropriately publish on each copy a valid copyright notice
+``Copyright @copyright{} 1988 Free Software Foundation, Inc.'' (or
+with whatever year is appropriate); keep intact the notices on all
+files that refer to this License Agreement and to the absence of any
+warranty; and give any other recipients of the GNU CC program a copy
+of this License Agreement along with the program.  You may charge a
+distribution fee for the physical act of transferring a copy.
+
+@item
+You may modify your copy or copies of GNU CC or any portion of it,
+and copy and distribute such modifications under the terms of
+Paragraph 1 above, provided that you also do the following:
+
+@itemize @bullet
+@item
+cause the modified files to carry prominent notices stating
+that you changed the files and the date of any change; and
+
+@item
+cause the whole of any work that you distribute or publish, that
+in whole or in part contains or is a derivative of GNU CC or any
+part thereof, to be licensed at no charge to all third parties on
+terms identical to those contained in this License Agreement
+(except that you may choose to grant more extensive warranty
+protection to some or all third parties, at your option).
+
+@item
+You may charge a distribution fee for the physical act of
+transferring a copy, and you may at your option offer warranty
+protection in exchange for a fee.
+@end itemize
+
+Mere aggregation of another unrelated program with this program (or its
+derivative) on a volume of a storage or distribution medium does not bring
+the other program under the scope of these terms.
+
+@item
+You may copy and distribute GNU CC (or any portion of it in
+under Paragraph 2) in object code or executable form under the terms
+of Paragraphs 1 and 2 above provided that you also do one of the
+following:
+
+@itemize @bullet
+@item
+accompany it with the complete corresponding machine-readable
+source code, which must be distributed under the terms of
+Paragraphs 1 and 2 above; or,
+
+@item
+accompany it with a written offer, valid for at least three
+years, to give any third party free (except for a nominal
+shipping charge) a complete machine-readable copy of the
+corresponding source code, to be distributed under the terms of
+Paragraphs 1 and 2 above; or,
+
+@item
+accompany it with the information you received as to where the
+corresponding source code may be obtained.  (This alternative is
+allowed only for noncommercial distribution and only if you
+received the program in object code or executable form alone.)
+@end itemize
+
+For an executable file, complete source code means all the source code
+for all modules it contains; but, as a special exception, it need not
+include source code for modules which are standard libraries that
+accompany the operating system on which the executable file runs.
+
+@item
+You may not copy, sublicense, distribute or transfer GNU CC except as
+expressly provided under this License Agreement.  Any attempt
+otherwise to copy, sublicense, distribute or transfer GNU CC is void
+and your rights to use the program under this License agreement shall
+be automatically terminated.  However, parties who have received
+computer software programs from you with this License Agreement will
+not have their licenses terminated so long as such parties remain in
+full compliance.
+
+@item
+If you wish to incorporate parts of GNU CC into other free programs
+whose distribution conditions are different, write to the Free Software
+Foundation at 675 Mass Ave, Cambridge, MA 02139.  We have not yet worked
+out a simple rule that can be stated here, but we will often permit this.
+We will be guided by the two goals of preserving the free status of all
+derivatives of our free software and of promoting the sharing and reuse of
+software.
+@end enumerate
+
+Your comments and suggestions about our licensing policies and our
+software are welcome!  Please contact the Free Software Foundation, Inc.,
+675 Mass Ave, Cambridge, MA 02139, or call (617) 876-3296.
+
+@unnumberedsec NO WARRANTY
+
+  BECAUSE GNU CC IS LICENSED FREE OF CHARGE, WE PROVIDE ABSOLUTELY NO
+WARRANTY, TO THE EXTENT PERMITTED BY APPLICABLE STATE LAW.  EXCEPT
+WHEN OTHERWISE STATED IN WRITING, FREE SOFTWARE FOUNDATION, INC,
+RICHARD M. STALLMAN AND/OR OTHER PARTIES PROVIDE GNU CC "AS IS" WITHOUT
+WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE.  THE ENTIRE RISK AS TO THE QUALITY AND
+PERFORMANCE OF GNU CC IS WITH YOU.  SHOULD GNU CC PROVE DEFECTIVE, YOU
+ASSUME THE COST OF ALL NECESSARY SERVICING, REPAIR OR CORRECTION.
+
+ IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW WILL RICHARD M.
+STALLMAN, THE FREE SOFTWARE FOUNDATION, INC., AND/OR ANY OTHER PARTY
+WHO MAY MODIFY AND REDISTRIBUTE GNU CC AS PERMITTED ABOVE, BE LIABLE TO
+YOU FOR DAMAGES, INCLUDING ANY LOST PROFITS, LOST MONIES, OR OTHER
+SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR
+INABILITY TO USE (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR DATA
+BEING RENDERED INACCURATE OR LOSSES SUSTAINED BY THIRD PARTIES OR A
+FAILURE OF THE PROGRAM TO OPERATE WITH ANY OTHER PROGRAMS) GNU CC, EVEN
+IF YOU HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES, OR FOR
+ANY CLAIM BY ANY OTHER PARTY.
+
+@node Contributors, Options, Copying, Top
+@unnumbered Contributors to GNU C++
+
+Before GNU C++ was even conceived, Richard Stallman had begun his work
+on GNU CC, a program which would finally bring state-of-the-art compiler
+technology to the general public under his Free Software philosophy.
+GNU C++ serves to provide the same high-quality compiler technology with
+a front end to support the growing user base of object oriented
+programmers, especially those who are currently using C++.
+
+Aside from Michael Tiemann, who worked out the front end for GNU C++,
+and Richard Stallman, who worked out the back end, the following people
+(not including those who have made their contributions to GNU CC) should
+not go unmentioned.
+
+@itemize @bullet
+@item
+Doug Lea contributed the GNU C++ library.  This includes support for
+streams, obstacks, structured files, and other public service objects.
+
+@item
+Doug Schmidt has spent countless hours pursuing bugs in this compiler
+for sport.  He also wrote a perfect hash function generator in GNU C++
+which was used to generate a replacement for the keyword recognizer in
+the lexical analyzer for both GNU CC and GNU C++.
+
+@item
+Marc Shapiro and Phillipe Gautron helped me implement features needed
+for the SOR distributed object management environment.
+
+@item
+Dirk Grunwald made the collect program usable under COFF.
+
+@item
+Angel Li adapted GNU C++ to VMS.
+
+@item
+Ron Cole provided additional help getting GNU C++ working on COFF-based
+systems.
+
+@item
+James Clark wrote a name demangler for the GNU C++ naming scheme, and
+integrated it with the linker.
+
+@item
+Michael Powell and Jim Mitchell helped design the GNU C++
+exception handling mechanism.
+@end itemize
+
+And of course, GNU C++ owes a great debt of success to Bjarne
+Stroustrup, who not only designed the C++ programming language, but also
+helped get it into the hands of so many thousands of people.  Without
+having designed C++ to be implementable as such an efficient
+object-oriented language, GNU C++ would not be enjoying the popularity
+it is today.
+
+@node Options, Installation, Contributors, Top
+@chapter GNU C++ Command Options
+
+The GNU C++ compiler uses a command syntax much like the AT&T C++ compiler.
+The @code{g++} program accepts options and file names as operands.
+Multiple single-letter options may @emph{not} be grouped: @samp{-dr} is
+very different from @samp{-d -r}.
+
+When you invoke GNU C++, it normally does preprocessing, compilation,
+assembly and linking.  File names which end in @samp{.c}, @samp{.cc}, or
+@samp{.C} are taken as GNU C++ source to be preprocessed and compiled;
+compiler output files plus any input files with names ending in
+@samp{.s} are assembled; then the resulting object files, plus any other
+input files, are linked together to produce an executable.  Note that
+starting with GNU C++ version 1.36 you must explicitly add @samp{-lg++}
+to your compilation line in order to link in the GNU C++ library,
+libg++, with your object code (previous releases linked libg++
+automatically).
+
+Unlike C++, there is no @samp{-F} option.  This is because GNU C++ is a
+native-code C++ compiler, not a front-end pre-processor.  The advantages
+of this organization are faster compilation speed, better
+error-reporting capabilities, better opportunity for compiler
+optimization, and true source-level debuggability with the GDB debugger
+(version 3.4 or higher).
+
+Command options allow you to stop this process at an intermediate stage.
+For example, the @samp{-c} option says not to run the linker.  Then the
+output consists of object files output by the assembler.
+
+Other command options are passed on to one stage.  Some options control
+the preprocessor and others the compiler itself.  Yet other options
+control the assembler and linker; these are not documented here because
+the GNU assembler and linker are not yet released.
+
+Here are the options to control the overall compilation process, including
+those that say whether to link, whether to assemble, and so on.
+
+@table @samp
+@item -o @var{file}
+Place output in file @var{file}.  This applies regardless to whatever
+sort of output is being produced, whether it be an executable file,
+an object file, an assembler file or preprocessed C code.
+
+If @samp{-o} is not specified, the default is to put an executable file
+in @file{a.out}, the object file @file{@var{source}.cc} in
+@file{@var{source}.o}, an assembler file in @file{@var{source}.s}, and
+preprocessed C on standard output.@refill
+
+@item -c
+Compile or assemble the source files, but do not link.  Produce object
+files with names made by replacing @samp{.cc} or @samp{.s} with
+@samp{.o} at the end of the input file names.  Do nothing at all for
+object files specified as input.
+
+It is intended that the compiler driver of GNU C++ will invoke the
+appropriate translator (or series of translators) for a given source file.
+Currently, the translators are selected on the basis of their file
+extension.  So that one driver can be used for many different translators,
+it is important that these extensions be distinct.  It is strongly
+suggested that users become accustomed to using a @samp{.cc} file extension
+for GNU C++ code, to distinguish it from the @samp{.c} file extension
+already used for GNU CC code.
+
+@item -S
+Compile into assembler code but do not assemble.  The assembler output
+file name is made by replacing @samp{.cc} with @samp{.s} at the end of
+the input file name.  Do nothing at all for assembler source files or
+object files specified as input.
+
+@item -E
+Run only the GNU C preprocessor.  Preprocess all the GNU C++ source
+files specified and output the results to standard output.  C++-style
+comments are handled correctly.
+
+@item -v
+Compiler driver program prints the commands it executes as it runs
+the preprocessor, compiler proper, assembler and linker.  Some of
+these are directed to print their own version numbers.
+
+@item -pipe
+Use pipes rather than temporary files for communication between the
+various stages of compilation.  This fails to work on some systems
+where the assembler is unable to read from a pipe; but the GNU
+assembler has no trouble.
+
+@item -B@var{prefix}
+Compiler driver program tries @var{prefix} as a prefix for each
+program it tries to run.  These programs are @file{cpp}, @file{cc1plus},
+@file{as} and @file{ld++}.
+
+For each subprogram to be run, the compiler driver first tries the
+@samp{-B} prefix, if any.  If that name is not found, or if @samp{-B}
+was not specified, the driver tries two standard prefixes, which are
+@file{/usr/lib/gcc-} and @file{/usr/local/lib/gcc-}.  If neither of
+those results in a file name that is found, the unmodified program
+name is searched for using the directories specified in your
+@samp{PATH} environment variable.
+
+The run-time support file @file{gnulib} is also searched for using
+the @samp{-B} prefix, if needed.  If it is not found there, the two
+standard prefixes above are tried, and that is all.  The file is left
+out of the link if it is not found by those means.  This library is
+necessary if any of the modules linked call constructors.
+
+You can get a similar result from the environment variable;
+@code{GCC_EXEC_PREFIX} if it is defined, its value is used as a prefix
+in the same way.  If both the @samp{-B} option and the
+@code{GCC_EXEC_PREFIX} variable are present, the @samp{-B} option is
+used first and the environment variable value second.
+@end table
+
+These options control the details of GNU C++ compilation itself.
+
+@table @samp
+@item -ansi
+Support all ANSI standard C programs, as best we can.
+
+This turns off certain features of GNU C++ that are incompatible with
+ANSI C, such as the @code{asm} and @code{typeof} keywords, and
+predefined macros such as @code{unix} and @code{vax} to identify the
+type of system you are using.  It also enables the 
+undesirable and rarely used ANSI trigraph feature.
+
+The @samp{-ansi} option does not cause non-ANSI programs to be
+rejected gratuitously.  For that, @samp{-pedantic} is required in
+addition to @samp{-ansi}.
+
+The macro @code{__STRICT_ANSI__} is predefined when the @samp{-ansi}
+option is used.  Some header files may notice this macro and refrain
+from declaring certain functions or defining certain macros that the
+ANSI standard doesn't call for; this is to avoid interfering with
+any programs that might use these names for other things.
+
+With this option enabled, differences between GNU C++ and AT&T C++ are
+also flagged.  Because the C++ language definition and the ANSI draft
+differ on the interpretation of syntactically identical constructs, it is
+unlikely that this flag could possibly be of any real use.  (For this
+reason, this flag is currently not fully implemented).
+
+@item -traditional
+Attempt to support some aspects of traditional C compilers.
+Specifically:
+
+@itemize @bullet
+@item
+All @code{extern} declarations take effect globally even if they
+are written inside of a function definition.  This includes implicit
+declarations of functions.
+
+@item
+The keywords @code{typeof}, @code{inline}, @code{signed}, @code{const}
+and @code{volatile} are not recognized.@refill
+
+@item
+Comparisons between pointers and integers are always allowed.
+
+@item
+Integer types @code{unsigned short} and @code{unsigned char} promote
+to @code{unsigned int}.
+
+@item
+Out-of-range floating point literals are not an error.
+
+@item
+All automatic variables not declared @code{register} are preserved by
+@code{longjmp}.  Ordinarily, GNU C follows ANSI C: automatic variables
+not declared @code{volatile} may be clobbered.
+
+@item
+In the preprocessor, comments convert to nothing at all, rather than
+to a space.  This allows traditional token concatenation.
+
+@item
+In the preprocessor, macro arguments are recognized within string
+constants in a macro definition (and their values are stringified,
+though without additional quote marks, when they appear in such a
+context).  The preprocessor always considers a string constant to end
+at a newline.
+
+@item
+The predefined macro @code{__STDC__} is not defined when you use
+@samp{-traditional}, but @code{__GNUC__} is (since the GNU extensions
+which @code{__GNUC__} indicates are not affected by
+@samp{-traditional}).  If you need to write header files that work
+differently depending on whether @samp{-traditional} is in use, by
+testing both of these predefined macros you can distinguish four
+situations: GNU C, traditional GNU C, other ANSI C compilers, and
+other old C compilers.
+
+@item
+The predefined macro @code{__cplusplus} is defined to identify
+compilation for C++ 2.0.  C++ version 1.2 uses @code{c_plusplus} as its
+identifying macro.  Since GNU C++ implements version 2.0 semantics, the
+former is defined, while the latter is not.  The macro @code{__GNUG__}
+is also defined, so that features specific to GNU C++ can be used
+conditionally.
+@end itemize
+
+@item -O
+Optimize.  Optimizing compilation takes somewhat more time, and a lot
+more memory for a large function.
+
+Without @samp{-O}, the compiler's goal is to reduce the cost of
+compilation and to make debugging produce the expected results.
+Statements are independent: if you stop the program with a breakpoint
+between statements, you can then assign a new value to any variable or
+change the program counter to any other statement in the function and
+get exactly the results you would expect from the source code.
+
+Without @samp{-O}, only variables declared @code{register} are
+allocated in registers.  The resulting compiled code is a little worse
+than produced by C++/PCC without @samp{-O}.
+
+With @samp{-O}, the compiler tries to reduce code size and execution
+time.
+
+Some of the @samp{-f} options described below turn specific kinds of
+optimization on or off.
+
+@item -g
+Produce debugging information in DBX+ format.  Programs compiled with
+this option can be debugged with GDB @emph{at the C++ source language
+level}.  Scope resolution, member functions, virtual functions, static
+class members, inline functions, pointers to members, etc., can be, for
+the first time, manipulated in as natural a fashion C debuggers handle C
+code.  See the GDB documentation for more information about using this
+unique facility.
+
+Some work has been done for people who have been forced to work under
+SystemV.  Because this requires much change to GNU CC source code (which
+GNU C++ would ordinarily borrow), there is no support in this release
+for those changes.
+
+More bad news:
+
+In this release of the compiler, many new features have been added,
+including multiple inheritance, static member functions, and optionally
+the automatic overloading of all functions declared with C++ linkage.
+The debugger does not really know how to search for members in a
+multiple inheritance lattice, it does not understand static member
+functions, and overloaded global functions are very hard to implement
+due to an oversight in the @code{a.out} symbol table format.  If you use
+these new features, beware that you may write code which the debugger
+will not treat properly.
+
+On the positive side, GNU C++ retains this win:
+
+Unlike most other C++ compiler systems, GNU C++ allows you to use @samp{-g}
+with @samp{-O}.  The shortcuts taken by optimized code may occasionally
+produce surprising results: some variables you declared may not exist at
+all; flow of control may briefly move where you did not expect it; some
+statements may not be executed because they compute constant results or
+their values were already at hand; some statements may execute in different
+places because they were moved out of loops.  Nevertheless it proves
+possible to debug optimized output.  This makes it reasonable to use the
+optimizer for programs that might have bugs.
+
+@item -g0
+Produce debugging information in DBX format.  This format is fully
+compatible with vanilla DBX.  However, the extensions to the C language
+which are the essence of C++ will be inaccessible.
+
+If you are running on a COFF system, you will be forced to use this flag
+until somebody makes @samp{-g} work with COFF, and gets those changes
+merged into the GNU CC compiler.
+
+@item -gg
+Produce debugging information in GDB's own format.  This requires the
+GNU assembler and linker in order to work.
+
+This feature will probably be eliminated.  It was intended to enable
+GDB to read the symbol table faster, but it doesn't result in enough
+of a speedup to be worth the larger object files and executables.  We
+are working on other ways of making GDB start even faster, which work
+with DBX format debugging information and could be made to work with
+SDB format.
+
+@item -w
+Inhibit all warning messages.
+
+@item -W
+Print extra warning messages for these events:
+
+@itemize @bullet
+@item
+An automatic variable is used without first being initialized.
+
+These warnings are possible only in optimizing compilation,
+because they require data flow information that is computed only
+when optimizing.  If you don't specify @samp{-O}, you simply won't
+get these warnings.
+
+These warnings occur only for variables that are candidates for
+register allocation.  Therefore, they do not occur for a variable that
+is declared @code{volatile}, or whose address is taken, or whose size
+is other than 1, 2, 4 or 8 bytes.  Also, they do not occur for
+structures, unions or arrays, even when they are in registers.
+
+Note that there may be no warning about a variable that is used
+only to compute a value that itself is never used, because such
+computations may be deleted by the flow analysis pass before the
+warnings are printed.
+
+These warnings are made optional because GNU C++ is not smart
+enough to see all the reasons why the code might be correct
+despite appearing to have an error.  Here is one example of how
+this can happen:
+
+@example
+@{
+  int x;
+  switch (y)
+    @{
+    case 1: x = 1;
+      break;
+    case 2: x = 4;
+      break;
+    case 3: x = 5;
+      break;
+    @}
+  foo (x);
+@}
+@end example
+
+@noindent
+If the value of @code{y} is always 1, 2 or 3, then @code{x} is
+always initialized, but GNU C++ doesn't know this.  Here is
+another common case:
+
+@example
+@{
+  int save_y;
+  if (change_y) save_y = y, y = new_y;
+  @dots{}
+  if (change_y) y = save_y;
+@}
+@end example
+
+@noindent
+This has no bug because @code{save_y} is used only if it is set.
+
+Some spurious warnings can be avoided if you declare as
+@code{volatile} all the functions you use that never return.
+@xref{Function Attributes}.
+
+@item
+A nonvolatile automatic variable might be changed by a call to
+@code{longjmp}.  These warnings as well are possible only in
+optimizing compilation.
+
+The compiler sees only the calls to @code{setjmp}.  It cannot know
+where @code{longjmp} will be called; in fact, a signal handler could
+call it at any point in the code.  As a result, you may get a warning
+even when there is in fact no problem because @code{longjmp} cannot
+in fact be called at the place which would cause a problem.
+
+@item
+A function can return either with or without a value.  (Falling
+off the end of the function body is considered returning without
+a value.)  For example, this function would evoke such a
+warning:
+
+@example
+foo (a)
+@{
+  if (a > 0)
+    return a;
+@}
+@end example
+
+Spurious warnings can occur because GNU CC (and hence GNU C++) does not
+realize that certain functions (including @code{abort} and @code{longjmp})
+will never return.
+
+@item
+An expression-statement contains no side effects.
+@end itemize
+
+In the future, other useful warnings may also be enabled by this
+option.
+
+@item -Wimplicit
+Warn whenever a function is implicitly declared.  It can be turned off
+with the option @code{-fno-warn-implicit}.
+
+@item -Wreturn-type
+Warn whenever a function is defined with a return-type that defaults
+to @code{int}.  Also warn about any @code{return} statement with no
+return-value in a function whose return-type is not @code{void}.  The
+option @code{-Wno-return-type} will disable it.
+
+@item -Wunused
+Warn whenever a local variable is unused aside from its declaration,
+and whenever a function is declared static but never defined.
+
+@item -Wswitch
+Warn whenever a @code{switch} statement has an index of enumeral type
+and lacks a @code{case} for one or more of the named codes of that
+enumeration.  (The presence of a @code{default} label prevents this
+warning.)  @code{case} labels outside the enumeration range also
+provoke warnings when this option is used.
+
+@item -Wcomment
+Warn whenever a comment-start sequence @samp{/*} appears in a comment.
+
+@item -Wtrigraphs
+Warn if any trigraphs are encountered (assuming they are enabled).
+
+@item -Wall
+All of the above @samp{-W} options combined.  These are all the
+options which pertain to usage that we recommend avoiding and that we
+believe is easy to avoid, even in conjunction with macros.
+
+The other @samp{-W@dots{}} options below are not implied by @samp{-Wall}
+because certain kinds of useful macros are almost impossible to write
+without causing those warnings.
+
+@item -Wshadow
+Warn whenever a local variable shadows another local variable.
+  
+@item -Wid-clash-@var{len}
+Warn whenever two distinct identifiers match in the first @var{len}
+characters.  This may help you prepare a program that will compile
+with certain obsolete, brain-damaged compilers.
+
+@item -Wpointer-arith
+Warn about anything that depends on the ``size of'' a function type or
+of @code{void}.  GNU C assigns these types a size of 1, for
+convenience in calculations with @code{void *} pointers and pointers
+to functions.
+
+@item -Wcast-qual
+Warn whenever a pointer is cast so as to remove a type qualifier from
+the target type.  For example, warn if a @code{const char *} is cast
+to an ordinary @code{char *}.
+
+@item -Wwrite-strings
+Give string constants the type @code{const char[@var{length}]} so that
+copying the address of one into a non-@code{const} @code{char *}
+pointer will get a warning.  These warnings will help you find at
+compile time code that can try to write into a string constant, but
+only if you have been very careful about using @code{const} in
+declarations and prototypes.  Otherwise, it will just be a nuisance;
+this is why we did not make @samp{-Wall} request these warnings.
+
+@item -p
+@strong{This option is not supported, yet}.
+Generate extra code to write profile information suitable for the
+analysis program @code{prof}.
+
+@item -pg
+@strong{This option is not supported, yet}.
+Generate extra code to write profile information suitable for the
+analysis program @code{gprof}.
+
+@item -a
+@strong{This option is not supported, yet}.
+Generate extra code to write profile information for basic blocks,
+suitable for the analysis program @code{tcov}.  Eventually GNU
+@code{gprof} should be extended to process this data.
+
+@item -l@var{library}
+Search a standard list of directories for a library named
+@var{library}, which is actually a file named
+@file{lib@var{library}.a}.  The linker uses this file as if it
+had been specified precisely by name.
+
+The directories searched include several standard system directories
+plus any that you specify with @samp{-L}.
+
+Normally the files found this way are library files---archive files
+whose members are object files.  The linker handles an archive file by
+scanning through it for members which define symbols that have so far
+been referenced but not defined.  But if the file that is found is an
+ordinary object file, it is linked in the usual fashion.  The only
+difference between using an @samp{-l} option and specifying a file name
+is that @samp{-l} searches several directories.
+
+@item -L@var{dir}
+Add directory @var{dir} to the list of directories to be searched
+for @samp{-l}.
+
+@item -nostdlib
+Don't use the standard system libraries and startup files when
+linking.  Only the files you specify (plus @file{gnulib}) will be
+passed to the linker.
+
+@item -m@var{machinespec}
+Machine-dependent option specifying something about the type
+of target machine.  These options are defined by the macro
+@code{TARGET_SWITCHES} in the machine description.  The default
+for the options is also defined by that macro, which enables you
+to change the defaults.@refill
+
+These are the @samp{-m} options defined in the 68000 machine
+description:
+
+@table @samp
+@item -m68020
+@itemx -mc68020
+Generate output for a 68020 (rather than a 68000).  This is the
+default if you use the unmodified sources.
+
+@item -m68000
+@item -mc68000
+Generate output for a 68000 (rather than a 68020).
+
+@item -m68881
+Generate output containing 68881 instructions for floating point.
+This is the default if you use the unmodified sources.
+
+@item -mfpa
+Generate output containing Sun FPA instructions for floating point.
+
+@item -msoft-float
+Generate output containing library calls for floating point.
+
+@item -mshort
+Consider type @code{int} to be 16 bits wide, like @code{short int}.
+
+@item -mnobitfield
+Do not use the bit-field instructions.  @samp{-m68000} implies
+@samp{-mnobitfield}.
+
+@item -mbitfield
+Do use the bit-field instructions.  @samp{-m68020} implies
+@samp{-mbitfield}.  This is the default if you use the unmodified
+sources.
+
+@item -mrtd
+Use a different function-calling convention, in which functions
+that take a fixed number of arguments return with the @code{rtd}
+instruction, which pops their arguments while returning.  This
+saves one instruction in the caller since there is no need to pop
+the arguments there.
+
+This calling convention is incompatible with the one normally
+used on Unix, so you cannot use it if you need to call libraries
+compiled with the Unix compiler.
+
+Also, you must provide function prototypes for all functions that
+take variable numbers of arguments (including @code{printf});
+otherwise incorrect code will be generated for calls to those
+functions.
+
+In addition, seriously incorrect code will result if you call a
+function with too many arguments.  (Normally, extra arguments are
+harmlessly ignored.)
+
+The @code{rtd} instruction is supported by the 68010 and 68020
+processors, but not by the 68000.
+@end table
+
+These @samp{-m} options are defined in the Vax machine description:
+
+@table @samp
+@item -munix
+Do not output certain jump instructions (@code{aobleq} and so on)
+that the Unix assembler for the Vax cannot handle across long
+ranges.
+
+@item -mgnu
+Do output those jump instructions, on the assumption that you
+will assemble with the GNU assembler.
+
+@item -mg
+Output code for g-format floating point numbers instead of d-format.
+@end table
+
+These @samp{-m} switches are supported on the Sparc:
+
+@table @samp
+@item -mfpu
+Generate output containing floating point instructions.  This is the
+default if you use the unmodified sources.
+
+@item -msoft-float
+Generate output containing library calls for floating point.
+
+@item -mno-epilogue
+Generate separate return instructions for @code{return} statements.
+This has both advantages and disadvantages; I don't recall what they
+are.
+
+@item -meager
+Do eager conditional branch scheduling to fill no-op slots.  This
+optimization is new, so we suspect it has bugs; some day it will be
+done by default, but it is optional now so you can test it when you
+are ready.
+
+@emph{Test it now}, and report the bugs; otherwise we won't find them,
+and this option may become the default with bugs still in it!
+@end table
+
+These @samp{-m} options are defined in the Convex machine description:
+
+@table @samp
+@item -mc1
+Generate output for a C1.  This is the default when the compiler is
+configured for a C1.
+
+@item -mc2
+Generate output for a C2.  This is the default when the compiler is
+configured for a C2.
+
+@item -margcount
+Generate code which puts an argument count in the word preceding each
+argument list.  Some nonportable Convex and Vax programs need this
+word.  (Debuggers don't; this info is in the symbol table.)
+
+@item -mnoargcount
+Omit the argument count word.  This is the default if you use the
+unmodified sources.
+@end table
+
+@item -f@var{flag}
+Specify machine-independent flags.  Most flags have both positive and
+negative forms; the negative form of @samp{-ffoo} would be
+@samp{-fno-foo}.  In the table below, only one of the forms is
+listed---the one which is not the default.  You can figure out the
+other form by either removing @samp{no-} or adding it.
+
+@table @samp
+@item -fpcc-struct-return
+Use the same convention for returning @code{struct} and @code{union}
+values that is used by the usual C compiler on your system.  This
+convention is less efficient for small structures, and on many
+machines it fails to be reentrant; but it has the advantage of
+allowing intercallability between GCC-compiled code and PCC-compiled
+code.  @strong{You don't want to use this flag with GNU C++}.
+
+@item -ffloat-store
+Do not store floating-point variables in registers.  This
+prevents undesirable excess precision on machines such as the
+68000 where the floating registers (of the 68881) keep more
+precision than a @code{double} is supposed to have.
+
+For most programs, the excess precision does only good, but a few
+programs rely on the precise definition of IEEE floating point.
+Use @samp{-ffloat-store} for such programs.
+
+@item -fno-asm
+Do not recognize @code{asm} or @code{typeof} as a keyword.  These
+words may then be used as identifiers.
+
+@item -fno-defer-pop
+Always pop the arguments to each function call as soon as that
+function returns.  Normally the compiler (when optimizing) lets
+arguments accumulate on the stack for several function calls and
+pops them all at once.
+
+@item -fstrength-reduce
+Perform the optimizations of loop strength reduction and
+elimination of iteration variables.
+
+@item -fcombine-regs
+Allow the combine pass to combine an instruction that copies one
+register into another.  This might or might not produce better
+code when used in addition to @samp{-O}.  I am interested in
+hearing about the difference this makes.
+
+@item -fforce-mem
+Force memory operands to be copied into registers before doing
+arithmetic on them.  This may produce better code by making all
+memory references potential common subexpressions.  When they are
+not common subexpressions, instruction combination should
+eliminate the separate register-load.  I am interested in hearing
+about the difference this makes.
+
+@item -fforce-addr
+Force memory address constants to be copied into registers before
+doing arithmetic on them.  This may produce better code just as
+@samp{-fforce-mem} may.  I am interested in hearing about the
+difference this makes.
+
+@item -fomit-frame-pointer
+Don't keep the frame pointer in a register for functions that
+don't need one.  This avoids the instructions to save, set up and
+restore frame pointers; it also makes an extra register available
+in many functions.  @strong{It also makes debugging impossible.}
+
+On some machines, such as the Vax, this flag has no effect,
+because the standard calling sequence automatically handles the
+frame pointer and nothing is saved by pretending it doesn't
+exist.  The machine-description macro
+@code{FRAME_POINTER_REQUIRED} controls whether a target machine
+supports this flag.  @xref{Registers}.@refill
+
+@item -finline-functions
+Integrate all simple functions into their callers.  The compiler
+heuristically decides which functions are simple enough to be
+worth integrating in this way.  @code{-fno-inline} suppresses all
+inlining of functions, even those that are declared inline.
+
+If all calls to a given function are integrated, then the function is
+normally not output as assembler code in its own right.  Note that in C++,
+declaring a function to be @code{inline} implicitly declares it to be
+@code{static} as well.
+
+@item -fdefault-inline
+If this option is enabled then member functions defined inside class
+scope are compiled inline by default, @emph{i.e.,} you don't need to
+add @var{inline} in front of the member function name.  By popular
+demand, this option is now the default.  To keep GNU C++ from inlining
+these member functions, specify @code{-fno-default-inline}.
+
+@item -fcaller-saves
+Enable values to be allocated in registers that will be clobbered by
+function calls, by emitting extra instructions to save and restore the
+registers around such calls.  Such allocation is done only when it
+seems to result in better code than would otherwise be produced.
+
+This option is enabled by default on certain machines, usually those
+which have no call-preserved registers to use instead.
+
+@item -fkeep-inline-functions
+Even if all calls to a given function are integrated, nevertheless output a
+separate run-time callable version of the function.
+
+@item -fwritable-strings
+Store string constants in the writable data segment and don't
+uniquize them.  This is for compatibility with old programs which
+assume they can write into string constants.  Writing into string
+constants is a very bad idea; ``constants'' should be constant.
+
+@item -fcond-mismatch
+Allow conditional expressions with mismatched types in the second and
+third arguments.  The value of such an expression is void.
+
+@item -fno-function-cse
+Do not put function addresses in registers; make each instruction
+that calls a constant function contain the function's address
+explicitly.
+
+This option results in less efficient code, but some strange
+hacks that alter the assembler output may be confused by the
+optimizations performed when this option is not used.
+
+@item -fvolatile
+Consider all memory references through pointers to be volatile.
+
+@item -fshared-data
+Requests that the data and non-@code{const} variables of this
+compilation be shared data rather than private data.  The distinction
+makes sense only on certain operating systems, where shared data is
+shared between processes running the same program, while private data
+exists in one copy per process.
+
+@item -funsigned-char
+Let the type @code{char} be the unsigned, like @code{unsigned char}.
+
+Each kind of machine has a default for what @code{char} should
+be.  It is either like @code{unsigned char} by default or like
+@code{signed char} by default.  (Actually, at present, the
+default is always signed.)
+
+The type @code{char} is always a distinct type from either
+@code{signed char} or @code{unsigned char}, even though its
+behavior is always just like one of those two.
+
+Note that this is equivalent to @samp{-fno-signed-char}, which is the
+negative form of @samp{-fsigned-char}.
+
+@item -fsigned-char
+Let the type @code{char} be signed, like @code{signed char}.
+
+Note that this is equivalent to @samp{-fno-unsigned-char}, which is
+the negative form of @samp{-funsigned-char}.
+
+@item -ffixed-@var{reg}
+Treat the register named @var{reg} as a fixed register; generated
+code should never refer to it (except perhaps as a stack pointer,
+frame pointer or in some other fixed role).
+
+@var{reg} must be the name of a register.  The register names
+accepted are machine-specific and are defined in the
+@code{REGISTER_NAMES} macro in the machine description macro
+file.
+
+This flag does not have a negative form, because it specifies a
+three-way choice.
+
+@item -fcall-used-@var{reg}
+Treat the register named @var{reg} as an allocatable register
+that is clobbered by function calls.  It may be allocated for
+temporaries or variables that do not live across a call.
+Functions compiled this way will not save and restore the
+register @var{reg}.
+
+Use of this flag for a register that has a fixed pervasive role
+in the machine's execution model, such as the stack pointer or
+frame pointer, will produce disastrous results.
+
+This flag does not have a negative form, because it specifies a
+three-way choice.
+
+@item -fcall-saved-@var{reg}
+Treat the register named @var{reg} as an allocatable register
+saved by functions.  It may be allocated even for temporaries or
+variables that live across a call.  Functions compiled this way
+will save and restore the register @var{reg} if they use it.
+
+Use of this flag for a register that has a fixed pervasive role
+in the machine's execution model, such as the stack pointer or
+frame pointer, will produce disastrous results.
+
+A different sort of disaster will result from the use of this
+flag for a register in which function values may be returned.
+
+This flag does not have a negative form, because it specifies a
+three-way choice.
+@end table
+
+@item -fstrict-prototype
+Consider the declaration @code{int foo ();}.  In C++, this means that the
+function @code{foo} takes no arguments.  In ANSI C, this is declared
+@code{int foo(void);}.  With the flag @samp{-fno-strict-prototype},
+declaring functions with no arguments is equivalent to declaring its
+argument list to be untyped, i.e., @code{int foo ();} is equivalent to
+saying @code{int foo (...);}.
+
+@item -felide-constructors
+Using this option instructs the compiler to be smarter about when it can
+elide constructors.  With out this flag, GNU C++ and cfront both
+generate effectively the same code for:
+
+@group
+@example
+A foo ();
+A x (foo ());   // x is initialized by `foo ()', no ctor called here
+A y = foo ();   // call to `foo ()' heads to temporary,
+                // y is initialized from the temporary.
+@end example
+@end group
+
+Note the difference!  With this flag, GNU C++ initializes `y' directly
+from the call to `foo ()' without going through a temporary.
+ 
+@item -fall-virtual
+When the @samp{-fall-virtual} option is used, all member functions
+(except for constructor functions and new/delete member operators)
+declared in the same class with a ``method-call'' operator method have
+entries made for them in the vtable for the given class.  In effect, all
+of these methods become ``implicitly virtual.''
+
+This does @emph{not} mean that all calls to these methods will be made
+through the vtable.  There are some circumstances under which it is
+obvious that a call to a given virtual function can be made directly,
+and in these cases the calls still go direct.
+
+The effect of making all methods of a class with a declared
+`operator->()()' implicitly virtual using @samp{-fall-virtual} extends
+also to all non-constructor methods of any class derived from such a
+class.
+
+@item -fthis-is-variable
+The incorporation of user-defined free store management into C++ has
+made assignment to @var{this} an anachronism.  Therefore, by default GNU
+C++ treats the type of @var{this} in a member function of @var{class X}
+to be @var{X *const}.  In other words, it is illegal to assign to
+@var{this} within a class member function.  However, for backwards
+compatibility, you can invoke the old behavior by using
+@samp{-fthis-is-variable}.
+
+@item -fsave-memoized
+@item -fmemoize-lookups
+These flags are of use to get the compiler to compile programs faster
+using heuristics.  They are not on by default since they only do so
+about half the time.  They other half of the time programs compile more
+slowly (and take more memory).
+
+The first time the compiler must build a call to a member function (or
+reference to a data member), it must (1) determine whether the class
+implements member functions of that name (2) resolve which member
+function to call (which involves figuring out what sorts of type
+conversions need to be made), and (3) check the visibility of the member
+function to the caller.  All of this adds up to slower compilation.
+Normally, the second time a call is made to that member function (or
+reference to that data member), it must go through the same lengthy
+process again.  This means that code like this
+
+@example
+  cout << "This " << p << " has " << n << " legs.\n";
+@end example
+
+@noindent
+makes six passes through all three steps.  By using a software cache,
+a ``hit'' significantly reduces this cost.  Unfortunately, using the
+cache introduces another layer of mechanisms which must be implemented,
+and so incurrs its own overhead.  The @samp{-fmemoize-lookups} enables
+the software cache.
+
+Because access privileges (visibility) to members and member functions
+may differ from one function context to the next, may need to be
+flushed.  With the @samp{-fmemoize-lookups} flag, the cache is flushed
+after every function that is compiled.  With the @samp{-fsave-memoized} 
+flag, when the compiler determines that the context of the last function
+compiled would yield the same access privileges of the next function to
+compile, it preserves the cache.  This really helps when defining many
+member functions for the same class: with the exception of member
+functions which are friends of other classes, each member function has
+exactly the same access privileges as every other, and the cache need
+not be flushed.
+
+@item -fundump-@var{image}
+@item #pragma undump @var{"image"}
+To save more time compiling files which include large amounts of code,
+the compiler can be directed to "dump" its entire memory image to a
+file.  When restarted, it can read that entire image back into memory,
+creating the effect that of "knowing" everything it knew when it dumped
+that image.
+
+The @code{#pragma dump} directive takes an argument which is the name of
+the file in which to hold the memory image representing a compiler
+state.  Currently, the file is just the entire allocated data segment.
+This is the most information needed to encode the compiler's state at
+the time a @code{#pragma dump} directive is encountered.  Some
+cleverness could be used to cut this by a factor of two to four at
+least.
+
+The @samp{-fundump-} compiler flag is used to restore the compiler to a
+previous state by prepending it to the name of the file which holds the
+dumped state.  Note that the compiler options (such as @samp{-g}) which
+are used in creating the compiler image must be used identically in
+invoking the compiler with @samp{-fundump-} option.  Failure to do so
+will likely result in an immediate core-dump.
+
+The use of this dump/undump facility is best shown by example.  We
+assume that two large header files, @file{types.h} and @file{decls.h}
+need to be included by several GNU C++ files, say @file{a.cc},
+@file{b.cc}, and @file{c.cc}.
+
+We start by creating a new file (arbitrarily) named @file{dump.cc}:
+
+@example
+// Dummy file to generate compiler state
+
+#include "types.h"
+#include "decls.h"
+
+// Dump state to file "dumped-cc1plus"
+#pragma dump "dumped-cc1plus"
+
+// [EOF]
+@end example
+
+We compile this file to generate the file @file{dumped-cc1plus}:
+
+@example
+cygnus% g++ -S -g dump.cc
+@end example
+
+The @samp{-S} option is needed because there is a certain amount of
+boiler-plate assembly language which must be copied because it cannot be
+easily generated.  We then compile our source files specially:
+
+@example
+cygnus% g++ -c -g -fundump-dumped-cc1plus -i types.h -i decls.h a.cc
+cygnus% g++ -c -g -fundump-dumped-cc1plus -i types.h -i decls.h b.cc
+cygnus% g++ -c -g -fundump-dumped-cc1plus -i types.h -i decls.h c.cc
+@end example
+
+Here's how to help @code{make} cope with these new compiler rules:
+
+@example
+# Thanks to Jon Gibbons for discovering these rules
+
+$(SPECOBJS):	dumped-cc1plus dump.s $$(@:.o=.cc)
+  $(CC) -fundump-dumped-cc1plus -i types.h -i decls.h $(@:.o=.cc)
+@end example
+
+This rule says that each of $(SPECOBJS) depends on the compiler, the
+magic .s file, and the corresponding source for the object.  Note the use
+of delayed macros with the $$.  Do @emph{not} use $$*.cc to get at the
+source file @dots{} it doesn't work.
+
+Then for the undumped compiler itself:
+
+@example
+dumped-cc1plus + dump.s: dump.cc
+	$(CC) -S dump.cc
+@end example
+
+This rule is the one to build the compiler and the .s file.  Note the
+@code{+} to make the targets a target group @dots{} so that the rule is
+only executed once.
+
+Since data images are usually pretty large (over one megabyte), speedups
+are most favorable when you can avoid going through NFS.
+
+@item -fSOS
+TBA
+
+@item -d@var{letters}
+Says to make debugging dumps at times specified by @var{letters}.
+Here are the possible letters:
+
+@table @samp
+@item r
+Dump after RTL generation.
+@item j
+Dump after first jump optimization.
+@item J
+Dump after last jump optimization.
+@item s
+Dump after CSE (including the jump optimization that sometimes
+follows CSE).
+@item L
+Dump after loop optimization.
+@item f
+Dump after flow analysis.
+@item c
+Dump after instruction combination.
+@item l
+Dump after local register allocation.
+@item g
+Dump after global register allocation.
+@item d
+Dump after delayed branch scheduling.
+@item m
+Print statistics on memory usage, at the end of the run.
+@end table
+
+@item -pedantic
+Attempt to support strict ANSI standard C.  Since C++ invalidates a number
+of ANSI constructions, this switch is of dubious value.  Some attempt has
+been made to warn about non-standard C++ features, however, even this is of
+uncertain value, as there are two C++ standards currently in
+existence: the standard as documented by AT&T, and the standard as
+implemented by the AT&T C++ compiler.  Valid C++ programs should compile
+properly with or without this switch.  However, without this switch,
+certain useful or traditional constructs banned by the standard are
+supported.  With this switch, they are rejected.  There is no reason to use
+this switch; it exists only to satisfy curious pedants.
+
+@item -static
+On Suns running version 4, this prevents linking with the shared
+libraries.  (@samp{-g} has the same effect.)
+@end table
+
+These options control the C preprocessor, which is run on each C source
+file before actual compilation.  If you use the @samp{-E} option, nothing
+is done except C preprocessing.  Some of these options make sense only
+together with @samp{-E} because they request preprocessor output that is
+not suitable for actual compilation.
+
+@table @samp
+@item -C
+Tell the preprocessor not to discard comments.  Used with the
+@samp{-E} option.
+
+@item -I@var{dir}
+Search directory @var{dir} for include files.
+
+@item -I-
+Any directories specified with @samp{-I} options before the @samp{-I-}
+option are searched only for the case of @samp{#include "@var{file}"};
+they are not searched for @samp{#include <@var{file}>}.
+
+If additional directories are specified with @samp{-I} options after
+the @samp{-I-}, these directories are searched for all @samp{#include}
+directives.  (Ordinarily @emph{all} @samp{-I} directories are used
+this way.)
+
+In addition, the @samp{-I-} option inhibits the use of the current
+directory as the first search directory for @samp{#include
+"@var{file}"}.  Therefore, the current directory is searched only if
+it is requested explicitly with @samp{-I.}.  Specifying both
+@samp{-I-} and @samp{-I.} allows you to control precisely which
+directories are searched before the current one and which are searched
+after.
+
+@item -nostdinc
+Do not search the standard system directories for header files.  Only
+the directories you have specified with @samp{-I} options (and the
+current directory, if appropriate) are searched.
+
+Between @samp{-nostdinc} and @samp{-I-}, you can eliminate all
+directories from the search path except those you specify.
+
+@item -M
+Tell the preprocessor to output a rule suitable for @code{make}
+describing the dependencies of each source file.  For each source
+file, the preprocessor outputs one @code{make}-rule whose target is
+the object file name for that source file and whose dependencies are
+all the files @samp{#include}d in it.  This rule may be a single line
+or may be continued with @samp{\}-newline if it is long.
+
+@samp{-M} implies @samp{-E}.
+
+@item -MM
+Like @samp{-M} but the output mentions only the user-header files
+included with @samp{#include "@var{file}"}.  System header files
+included with @samp{#include <@var{file}>} are omitted.
+
+@samp{-MM} implies @samp{-E}.
+
+@item -D@var{macro}
+Define macro @var{macro} with the empty string as its definition.
+
+@item -D@var{macro}=@var{defn}
+Define macro @var{macro} as @var{defn}.
+
+@item -U@var{macro}
+Undefine macro @var{macro}.
+
+@item -T
+Support ANSI C trigraphs.  You don't want to know about this
+brain-damage.  The @samp{-ansi} option also has this effect.
+@end table
+
+@node Installation, Trouble, Options, Top
+@chapter Installing GNU C++
+
+Here is the procedure for installing GNU CC on a Unix system.
+
+@enumerate
+@item
+GNU C++ borrows a considerable amount of code from GNU CC.  Therefore,
+you should be familiar (at least a little bit) with the installation
+procedure of GNU CC.  In particular, it is possible to share some object
+files between the GNU CC and GNU C++.  By running ``make maketest'' and
+setting the Makefile parameters @code{DIR} and @code{TDIR} to point to
+GNU CC source and GNU CC test directories, such sharing will be
+performed.
+
+@item
+Edit @file{Makefile}.  If you are using HPUX, or any form of system V,
+you must make a few changes described in comments at the beginning of
+the file.  Genix requires changes also.
+
+@item
+On a Sequent system, go to the Berkeley universe.
+
+@item
+Choose configuration files.  The easy way to do this is to run the
+command file @file{config.g++} with a single argument, which is the
+name of the machine (and operating system, in some cases).
+
+Here is a list of the possible arguments:
+
+@table @samp
+@item vax
+Vaxes running BSD.
+@item vms
+Vaxes running VMS.
+@item vax-sysv
+Vaxes running system V.
+@item i386-sysv
+Intel 386 PCs running system V.
+@item i386-sysv-gas
+Intel 386 PCs running system V, using the GNU assembler and GNU
+linker.
+@item sequent-i386
+Sequent with Intel 386 processors.
+@item sun2
+Sun 2 running system version 2 or 3.
+@item sun3
+Sun 3 running system version 2 or 3, with 68881.
+@item sun3-nfp
+Sun 3 running system version 2 or 3, without 68881.
+@item sun3-fpa
+Sun 3 running system version 2 or 3, with 68881 and fpa.
+@item sun4
+Sun 4 running system version 2 or 3.
+@item sun2-os4
+Sun 2 running system version 4.
+@item sun3-os4
+Sun 3 running system version 4, with 68881.
+@item sun3-nfp-os4
+Sun 3 running system version 4, without 68881.
+@item sun3-fpa-os4
+Sun 3 running system version 4, with 68881 and fpa.
+@item sun4-os4
+Sun 4 running system version 4.
+@item sun386
+Sun 386 (``roadrunner'').
+@item alliant
+Alliant FX/8 computer.  Currently, there are bugs in the support for
+floating point.  Also note that Alliant's version of dbx does not
+manage to work with the output from GNU CC.
+@item convex-c1
+Convex C1 computer.
+@item convex-c2
+Convex C2 computer.
+@item hp9k320
+HP 9000 series 300 using HPUX assembler.
+@item hp9k320g
+HP 9000 series 300 using GNU assembler, linker and debugger.
+This requires the HP-adapt package which is or will soon be
+available along with the linker.
+@item isi68
+ISI 68000 or 68020 system.
+@item news800
+Sony NEWS 68020 system.
+@item next
+NeXT system.
+@item 3b1
+AT&T 3b1, a.k.a. 7300 PC.
+@item sequent-ns32k
+Sequent containing ns32000 processors.
+@item encore
+Encore ns32000 system.
+@item genix
+National Semiconductor ns32000 system.
+@item 88000
+Motorola 88000 processor.  This port is not finished.
+@end table
+
+Here we spell out what files need to be set up:
+
+@itemize @bullet
+@item
+Make a symbolic link named @file{config.h} to the top-level
+config file for the machine you are using (@pxref{Config}).  This
+file is responsible for defining information about the host
+machine.  It includes @file{tm.h}.
+
+The file's name should be @file{xm-@var{machine}.h}, with these
+exceptions:
+
+@table @file
+@item xm-vms.h
+for vaxen running VMS.
+@item xm-vaxv.h
+for vaxen running system V.
+@item xm-i386v.h
+for Intel 80386's running system V.
+@item xm-sunos4.h
+for Suns (model 2, 3 or 4) running @emph{operating system} version 4.
+(Use @file{xm-m68k.h} or @file{xm-sparc.h} for version 3.)
+@item xm-sun386i.h
+for Sun roadrunner running any version of the operating system.
+@item xm-hp9k320.h
+for the HP 9000 series 300.
+@item xm-genix.h
+for the ns32000 running Genix
+@end table
+
+If your system does not support symbolic links, you might want to
+set up @file{config.h} to contain a @samp{#include} command which
+refers to the appropriate file.
+
+@item
+Make a symbolic link named @file{tm.h} to the machine-description
+macro file for your machine (its name should be
+@file{tm-@var{machine}.h}).
+
+@strong{This part of the installation procedure is different then for
+GNU CC}
+
+GNU C++ may need to perform special initialization before `main' is
+logically called.  It may also need to perform special cleanups after
+`exit' is logically called.  There are many ways this can be
+accomplished, and because not all GNU tools have been ported to all
+platforms, there is not a uniform way of doing this.
+
+The simplest (and best) way to accomplish these special tasks is to use
+GNU C++ in concert with the GNU assembler and the GNU linker.  If these
+programs have been ported to your machine, use them.  GAS version 1.34
+or later is sufficient, and the GNU linker distributed with GNU C++ is
+also guaranteed to be current enough to work.  Make sure that these
+programs are installed where GNU C++ will find them (i.e., logically
+adjacent to @file{cc1plus}).  If these programs have not been ported to
+your machine, you have to worry about the rest of this section, which is
+very complicated.
+
+The GNU C++ compiler, without the help of GAS and GLD, must use its own
+@file{crt0.c}, which, for purposes of disambiguation, will be referred
+to as @file{crt0+.o}.  To use the @file{crt0+.o}, it may be necessary to
+modify the file @file{tm.h} to link with @file{crt0+.o} rather than
+@file{crt0.o}.  If the file @file{tm.h} for your machine does not define
+a @code{STARTFILE_SPEC} then you must make this modification in the file
+@file{gcc.c}, which is used to make the compiler driver @file{g++}.
+
+If your system is a Sun3 or Sun4, you should not be reading this.  If
+your system is a Sun386i, you will notice that @file{tm-sun386i.h}
+defines a @code{STARTFILE_SPEC}.  Therefore, you should copy
+@file{tm-sun386i.h} to @file{tm-sun386i+.h}, and then edit
+@file{tm-sun386i+.h} to link in @file{crt0+.o} instead of @file{crt0.o}.
+
+The shell script @file{config.g++} tries to perform this editing for
+you.  However, it is not very smart, and loses if one `tm' file includes
+another, and does not specify a STARTFILE_SPEC when the included one
+does.  In this case, you should copy the link spec from the included
+file to the `tm' file you are interested in, taking care to put
+@samp{#undef STARTFILE_SPEC} before you @samp{#define STARTFILE_SPEC} if
+you want to avoid warnings from the preprocessor.
+
+@strong{end of differences}
+
+If your system is a 68000, don't use the file @file{tm-m68k.h}
+directly.  Instead, use one of these files as a starting point:
+
+@table @file
+@item tm-sun3.h
+for Sun 3 machines with 68881.
+@item tm-sun3-fpa.h
+for Sun 3 machines with floating point accelerator.
+@item tm-sun3-nfp.h
+for Sun 3 machines with no hardware floating point.
+@item tm-sun2.h
+for Sun 2 machines.
+@item tm-3b1.h
+for AT&T 3b1 (aka 7300 Unix PC).
+@item tm-isi68.h
+for Integrated Solutions systems.  This file assumes you
+use the GNU assembler.
+@item tm-news800.h
+for SONY News systems.
+@item tm-hp9k320.h
+for HPUX systems, if you are using GNU CC with the system's
+assembler and linker.
+@item tm-hp9k320g.h
+for HPUX systems, if you are using the GNU assembler, linker and
+other utilities.  Not all of the pieces of GNU software needed
+for this mode of operation are as yet in distribution; full
+instructions will appear here in the future.@refill
+@end table
+
+For the vax, use @file{tm-vax.h} on BSD Unix, @file{tm-vaxv.h} on
+system V, or @file{tm-vms.h} on VMS.@refill
+
+For the Motorola 88000, use @file{tm-m88k.h}.  The support for the
+88000 has a few unfinished spots because there was no way to run the
+output.  Bugs are suspected in handling of branch-tables and in the
+function prologue and epilogue.
+
+For the 80386, don't use @file{tm-i386.h} directly.  Use
+@file{tm-i386v.h} if the target machine is running system V,
+@file{tm-i386gas.h} if it is running system V but you are using the
+GNU assembler and linker, @file{tm-seq386.h} for a Sequent 386 system,
+or @file{tm-compaq.h} for a Compaq, or @file{tm-sun386i.h} for a Sun
+386 system.
+
+For the 32000, use @file{tm-sequent.h} if you are using a Sequent
+machine, or @file{tm-encore.h} for an Encore machine, or
+@file{tm-genix.h} if you are using Genix version 3; otherwise, perhaps
+@file{tm-ns32k.h} will work for you.
+
+Note that Genix has bugs in @code{alloca} and @code{malloc}; you must
+get the compiled versions of these from GNU Emacs and edit GNU CC's
+@file{Makefile} to use them.
+
+Note that Encore systems are supported only under BSD.
+
+For Sparc (Sun 4) machines, use @file{tm-sparc.h} with operating system
+version 4, and @file{tm-sun4os3.h} with system version 3.
+
+@item
+Make a symbolic link named @file{md} to the machine description
+pattern file.  Its name should be @file{@var{machine}.md}, but
+@var{machine} is often not the same as the name used in the
+@file{tm.h} file because the @file{md} files are more general.
+
+@item
+Make a symbolic link named @file{aux-output.c} to the output
+subroutine file for your machine (its name should be
+@file{output-@var{machine}.c}).
+@end itemize
+
+@item
+Make sure the Bison parser generator is installed.  (This is
+unnecessary if the Bison output files @file{c-parse.tab.c} and
+@file{cexp.c} are more recent than @file{c-parse.y} and @file{cexp.y}
+and you do not plan to change the @samp{.y} files.)
+
+Bison versions older that May 8, 1989 (version 1.01) will produce
+incorrect output for @file{c-parse.tab.c}.  If your bison does not
+understand the @samp{-version} flag, it is too old.
+
+@item
+If you are using a Sun, make sure the environment variable
+@code{FLOAT_OPTION} is not set.  If this option were set to
+@code{f68881} when @file{gnulib} is compiled, the resulting code would
+demand to be linked with a special startup file and will not link
+properly without special pains.
+
+@item
+Build the compiler.  Just type @samp{make} in the compiler directory.
+
+Ignore any warnings you may see about ``statement not reached'' in the
+@file{insn-emit.c}; they are normal.  Any other compilation errors may
+represent bugs in the port to your machine or operating system, and
+should be investigated and reported (@pxref{Bugs}).
+
+@item
+If you are using COFF-encapsulation, you must convert @file{gnulib} to
+a GNU-format library at this point.  See the file @file{README-ENCAP}
+in the directory containing the GNU binary file utilities, for
+directions.
+
+@item
+Move the first-stage object files and executables into a subdirectory
+with this command:
+
+@example
+make stage1
+@end example
+
+The files are moved into a subdirectory named @file{stage1}.
+Once installation is complete, you may wish to delete these files
+with @code{rm -r stage1}.
+
+@item
+Recompile the compiler with itself, with this command:
+
+@example
+make CC=stage1/gcc CFLAGS="-g -O -Bstage1/"
+@end example
+
+On a 68000 or 68020 system lacking floating point hardware,
+unless you have selected a @file{tm.h} file that expects by default
+that there is no such hardware, do this instead:
+
+@example
+make CC=stage1/gcc CFLAGS="-g -O -Bstage1/ -msoft-float"
+@end example
+
+@item
+If you wish to test the compiler by compiling it with itself one more
+time, do this:
+
+@example
+make stage2
+make CC=stage2/gcc CFLAGS="-g -O -Bstage2/"
+foreach file (*.o)
+cmp $file stage2/$file
+end
+@end example
+
+This will notify you if any of these stage 3 object files differs from
+those of stage 2.  Any difference, no matter how innocuous, indicates
+that the stage 2 compiler has compiled GNU CC incorrectly, and is
+therefore a potentially serious bug which you should investigate and
+report (@pxref{Bugs}).
+
+Aside from the @samp{-B} option, the options should be the same as
+when you made stage 2.
+
+@item
+Install the compiler driver, the compiler's passes and run-time support.
+You can use the following command:
+
+@example
+make install
+@end example
+
+@noindent
+This copies the files @file{cc1}, @file{cpp} and @file{gnulib} to
+files @file{gcc-cc1}, @file{gcc-cpp} and @file{gcc-gnulib} in
+directory @file{/usr/local/lib}, which is where the compiler driver
+program looks for them.  It also copies the driver program @file{gcc}
+into the directory @file{/usr/local/bin}, so that it appears in typical
+execution search paths.@refill
+
+@strong{Warning: there is a bug in @code{alloca} in the Sun library.
+To avoid this bug, install the binaries of GNU CC that were compiled
+by GNU CC.  They use @code{alloca} as a built-in function and never
+the one in the library.}
+
+@strong{Warning: the GNU CPP may not work for @file{ioctl.h},
+@file{ttychars.h} and other system header files unless the
+@samp{-traditional} option is used.}  The bug is in the header files:
+at least on some machines, they rely on behavior that is incompatible
+with ANSI C.  This behavior consists of substituting for macro
+argument names when they appear inside of character constants.  The
+@samp{-traditional} option tells GNU CC to behave the way these
+headers expect.
+
+Because of this problem, you might prefer to configure GNU CC to use
+the system's own C preprocessor.  To do so, make the file
+@file{/usr/local/lib/gcc-cpp} a link to @file{/lib/cpp}.
+
+Alternatively, on Sun systems and 4.3BSD at least, you can correct the
+include files by running the shell script @file{fixincludes}.  This
+installs modified, corrected copies of the files @file{ioctl.h},
+@file{ttychars.h} and many others, in a special directory where only
+GNU CC will normally look for them.  This script will work on various
+systems because it chooses the files by searching all the system
+headers for the problem cases that we know about.
+
+If you cannot install the compiler's passes and run-time support in
+@file{/usr/local/lib}, you can alternatively use the @samp{-B} option to
+specify a prefix by which they may be found.  The compiler concatenates
+the prefix with the names  @file{cpp}, @file{cc1} and @file{gnulib}.
+Thus, you can put the files in a directory @file{/usr/foo/gcc} and
+specify @samp{-B/usr/foo/gcc/} when you run GNU CC.
+
+Also, you can specify an alternative default directory for these files
+by setting the Make variable @code{libdir} when you make GNU CC.
+
+Note: the modified GNU linker which is distributed with GNU C++ does not
+yet work on the Sequent.  This is because it uses non-standard
+@samp{a.out.h} format (in order to handle shared vs. private text and
+data).  When building the compiler driver @samp{g++}, be sure to define
+@code{NO_GNU_LD}.
+
+For the vax, use @file{tm-vax.h} on BSD Unix.  VMS is not yet supported.
+
+@item
+Make sure the Bison parser generator is installed.  (This is
+unnecessary if the Bison output file @file{parse.tab.c} is more recent
+than @file{parse.y} and you do not plan to change @file{parse.y}.)
+
+Note that if you have an old version of Bison you may get an error
+from the line with the @samp{%expect} directive.  If so, simply remove
+that line from @file{parse.y} and proceed.
+
+The C++ grammar is inherently ambiguous.  Given enough left and right
+context, a recursive-descent parser will often be able to guess the user's
+intentions when analyzing a piece of code.  GNU C++ is implemented using a
+simple LALR parser which does not have backup and restart capabilities.  As
+a result, it cannot handle some of the harder cases of C++ syntax.
+Fortunately, the real problems only occur when trying to maintain backwards
+compatibility.  When making the GNU C++ parser you will notice a message
+from BISON (or YACC) that the grammar contains reduce/reduce conflicts.
+For now, that is the way it is.  For more details, see the Projects
+(@xref{Projects}) section.
+
+The compiler you have just built is now ready to run.  This compiler does
+not bootstrap itself.  It is written in C, which is not compatible with its
+implementation of C++.  Therefore, there is no need to try to bootstrap it.
+The main incompatibility is that C-style function definitions, such as
+@w{@code{int f (a, b) int a, b;}} are beyond the grasp of GNU C++.
+Currently, functions @strong{must} be declared, e.g., @* @code{int f (int
+a, int b)}.  Otherwise, the compiler may abort.
+
+@item
+Install the compiler's passes and run-time support.
+
+Copy or link the file @file{cc1plus} made by the compiler to the name
+@file{/usr/local/lib/gcc-cc1plus}.
+
+Copy or link the file @file{gnulib} made by the original compilation of
+GNU GCC to the name @file{/usr/local/lib/gcc-gnulib}.  This file is
+included automatically when GNU C++ runs the linker.
+
+Make the file @file{/usr/local/lib/gcc-cpp} either a link to @file{/lib/cpp}
+or a link to or copy of the file @file{cpp} generated by @samp{make}.
+
+@strong{Warning: the GNU CPP may not work for @file{ioctl.h},
+@file{ttychars.h} and other files.}  This cannot be fixed in the GNU
+CPP because the bug is in the include files: at least on some
+machines, they rely on behavior that is incompatible with ANSI C.
+This behavior consists of substituting for macro argument names when
+they appear inside of character constants.
+
+Because of this problem, you might prefer to configure GNU CC to use
+the system's own C preprocessor.  To do so, make the file
+@file{/usr/local/lib/gcc-cpp} a link to @file{/lib/cpp}.  This will
+leave C++-style comments (which begin with @code{//}) in the output,
+but the compiler will scan past them.
+
+Alternatively, on Sun systems and 4.3BSD at least, you can correct the
+include files by running the shell script @file{fixincludes}.  This
+installs modified, corrected copies of the files @file{ioctl.h} and
+@file{ttychars.h} in a special directory where only GNU C++ will
+normally look for them.
+
+The file @file{/usr/include/vaxuba/qvioctl.h} used in the X window
+system needs a similar correction.
+
+@item
+Install the compiler driver.  This is the file @file{g++} generated
+by @samp{make}.
+@end enumerate
+
+If you cannot install the compiler's passes and run-time support in
+@file{/usr/local/lib}, you can alternatively use the @samp{-B} option to
+specify a prefix by which they may be found.  The compiler concatenates
+the prefix with the names  @file{cpp}, @file{cc1plus} and @file{gnulib}.
+Thus, you can put the files in a directory @file{/usr/foo/g++} and
+specify @samp{-B/usr/foo/g++/} when you run GNU C++.
+
+If you wish to make use of the GNU C++ libraries, install the header
+files found in the directory @file{dist-libg++-1.36.2/g++-include} in a
+directory which @code{cpp} knows to search.  By default, this is the
+directory @file{/usr/local/lib/g++-include}.  Once these header files
+are installed, go to the directory @file{dist-libg++/src} and just type
+"make".  This will make the library @file{libg++.a} which can then be
+copied to the directory @code{/usr/lib}.  After copying the library,
+remember to run @code{ranlib} on @file{libg++.a} to avoid getting a
+``library contents out of date'' warning from the linker.
+
+@node Trouble, Incompatibilities, Installation, Top
+@chapter Trouble in Installation
+
+Here are some of the things that have caused trouble for people installing
+or using GNU C++.
+
+@itemize @bullet
+@item
+Using header files straight from @file{/usr/include} with GNU C++ will
+cause problems unless those header files contain fully-prototyped function
+declarations.  A set of common header files are distributed with the GNU
+C++ library.  These should be installed in a directory which the GNU C++
+preprocessor can find them (such as @file{/usr/local/lib/g++-include}).
+
+@item
+Using AT&T 1.2 header files (from @file{/usr/include/CC} with GNU C++
+may cause more trouble than they are worth.  They assume that external
+linkage is performed in an obsolete way (first function definition gets
+C linkage, subsequent ones get mangled).  GNU C++ now implements 2.0
+``name mangling'' semantics, which means that all functions defined in
+C++ scope are overloaded, and no functions defined in C scope are
+overloaded.  If you get system functions as being undefined, and you
+used the AT&T 1.2 header files, you should remove the AT&T header files
+from your search path.
+
+@item
+On certain systems, defining certain environment variables such as
+@samp{CC} can interfere with the functioning of @code{make}.
+
+@item
+Cross compilation can run into trouble for certain machines because
+some target machines' assemblers require floating point numbers to be
+written as @emph{integer} constants in certain contexts.
+
+The compiler writes these integer constants by examining the floating
+point value as an integer and printing that integer, because this is
+simple to write and independent of the details of the floating point
+representation.  But this does not work if the compiler is running on
+a different machine with an incompatible floating point format, or
+even a different byte-ordering.
+
+In addition, correct constant folding of floating point values
+requires representing them in the target machine's format.
+(The C standard does not quite require this, but in practice
+it is the only way to win.)
+
+It is now possible to overcome these problems by defining macros such
+as @code{REAL_VALUE_TYPE}.  But doing so is a substantial amount of
+work for each target machine.  @xref{Cross-compilation}.
+
+@item
+DBX rejects some files produced by GNU CC, though it accepts similar
+constructs in output from PCC.  Until someone can supply a coherent
+description of what is valid DBX input and what is not, there is
+nothing I can do about these problems.  You are on your own.
+@end itemize
+
+@node Library, Incompatibilities, Trouble, Top
+@chapter GNU C++ Header Files and Libraries
+
+The GNU C++ compiler is a program which translates C++ code into the
+assembly language of a given machine.  As such, it may be said that GNU C++
+@strong{implements} the C++ programming language for that machine.  However,
+most users are accustomed to a certain amount of support beyond the bare
+language itself.  A set of header files are provided which simplify
+interfacing GNU C++ code with C and UNIX routines.  These header files are
+needed to solve the following two problems.
+
+First, while it is optional in C to declare a function like
+@samp{printf} before using it, in GNU C++, failure to do so results in a
+warning, whether or not the @samp{-Wall} option is envoked.  Second, in
+C the declaration @code{int atoi()} declares that @samp{atoi} is a
+function returning an int, while in GNU C++ that declaration would mean
+that function @samp{atoi} @emph{takes no arguments} and returns an int.
+Consequently, the following call
+
+@example
+int i = atoi ("20");
+@end example
+
+@noindent
+would be tagged as an error in GNU C++ (unless the user specified the flag
+@samp{-fno-strict-prototype} @xref{Options}).  The header files provided
+in the GNU C++ distribution provide appropriate declarations for many of
+the most frequently used functions.  In the cases where a GNU C++ header
+file has the same name as a standard C header file (such as
+@file{stdio.h}), that header file should take precedence over the C
+version.  This can be ensured by placing the GNU C++ header files in a
+directory which is always searched @emph{before} the standard directories,
+such as @file{/usr/include}.
+
+As of release 1.35.0, the @code{extern "C"} and @code{extern "C++"}
+constructs are supported.  This means that if you want to include a C
+header file, and you want it to Do The Right Thing, all you have to do
+is this:
+
+@example
+extern "C"
+@{
+#include <dusty.h>
+@}
+@end example
+
+However, life is not always so simple.  For example, the file
+@file{dusty.h} may include @file{shiny.h}, which has been recently
+polished, and rewritten in C++.  In this case, unless @file{shiny.h} is
+wrapped with @code{extern "C++"}, then all its scoping rules will be
+wrong: structure tags won't automatically go into the identifier name
+space, functions are not overloadable, let alone automatically
+overloadable, and the compiler will gripe at constructs unique to C++.
+
+Descriptions of the libg++ classes support files are provided in
+a separate document which comes with the GNU C++ library.
+
+@node Incompatibilities, Extensions, Library, Top
+@chapter Incompatibilities of GNU C++
+
+There are several noteworthy incompatibilities between GNU C++
+and most versions of C++ and/or C.
+
+Ultimately our intention is that the @samp{-traditional} option
+will eliminate all the incompatibilities that can be eliminated
+by telling GNU C++ to behave like the other C++/C compiler combinations.
+
+@itemize @bullet
+@item
+GNU C++ normally makes string constants read-only.  If several
+identical-looking string constants are used, GNU C++ stores only one
+copy of the string.
+
+One consequence is that you cannot call @code{mktemp} with a string
+constant argument.  The function @code{mktemp} always alters the
+string its argument points to.
+
+Another consequence is that @code{sscanf} does not work on some
+systems when passed a string constant as its format control
+string.  This is because @code{sscanf} incorrectly tries to write
+into the string constant.
+
+The best solution to these problems is to change the program to use
+@code{char}-array variables with initialization strings for these
+purposes instead of string constants.  But if this is not possible,
+you can use the @samp{-fwritable-strings} flag, which directs GNU CC
+to handle string constants the same way most C compilers do.
+
+@item
+GNU C++ does not substitute macro arguments when they appear inside of
+string constants.  For example, the following macro in GNU C++
+
+@example
+#define foo(a) "a"
+@end example
+
+@noindent
+will produce output @samp{"a"} regardless of what the argument @var{a} is.
+
+The @samp{-traditional} option directs GNU C++ to handle such cases
+(among others) in the old-fashioned (non-ANSI) fashion.
+
+@item
+When you use @code{setjmp} and @code{longjmp}, the only automatic
+variables guaranteed to remain valid are those declared
+@code{volatile}.  This is a consequence of automatic register
+allocation.  Consider this function:
+
+@example
+jmp_buf j;
+
+foo ()
+@{
+  int a, b;
+
+  a = fun1 ();
+  if (setjmp (j))
+    return a;
+
+  a = fun2 ();
+  /* @r{@code{longjmp (j)} may be occur in @code{fun3}.} */
+  return a + fun3 ();
+@}
+@end example
+
+Here @code{a} may or may not be restored to its first value when the
+@code{longjmp} occurs.  If @code{a} is allocated in a register, then
+its first value is restored; otherwise, it keeps the last value stored
+in it.
+
+If you use the @samp{-W} option with the @samp{-O} option, you will
+get a warning when GNU C++ thinks such a problem might be possible.
+
+The @samp{-traditional} option directs GNU C++ to put variables in
+the stack by default, rather than in registers, in functions that
+call @code{setjmp}.  This results in the behavior found in
+traditional C compilers.
+
+@item
+Declarations of external variables and functions within a block apply
+only to the block containing the declaration.  In other words, they
+have the same scope as any other declaration in the same place.
+
+In some other C++/C compiler systems, a @code{extern} declaration affects
+all the rest of the file even if it happens within a block.
+
+The @samp{-traditional} option directs GNU C++ to treat all @code{extern}
+declarations as global, like traditional compilers.
+
+@item
+In traditional C, you can combine @code{long}, etc., with a typedef name,
+as shown here:
+
+@example
+typedef int foo;
+typedef long foo bar;
+@end example
+
+In ANSI C, this is not allowed: @code{long} and other type modifiers
+require an explicit @code{int}.  Because this criterion is expressed
+by Bison grammar rules rather than C code, the @samp{-traditional}
+flag cannot alter it.
+
+@item
+PCC allows typedef names to be used as function parameters.  The
+difficulty described immediately above applies here too.
+
+@item
+PCC allows whitespace in the middle of compound assignment operators
+such as @samp{+=}.  GNU C++, following the ANSI standard, does not
+allow this.  The difficulty described immediately above applies here
+too.
+
+@item
+GNU C++ will flag unterminated character constants inside of preprocessor
+conditionals that fail.  Some programs have English comments enclosed in
+conditionals that are guaranteed to fail; if these comments contain
+apostrophes, GNU C++ will probably report an error.  For example,
+this code would produce an error:
+
+@example
+#if 0
+You can't expect this to work.
+#endif
+@end example
+
+The best solution to such a problem is to put the text into an actual
+C comment delimited by @samp{/*@dots{}*/}.  However,
+@samp{-traditional} suppresses these error messages.
+
+@item
+When compiling functions that return @code{float}, PCC converts it to
+a double.  GNU CC actually returns a @code{float}.  If you are concerned
+with PCC compatibility, you should declare your functions to return
+@code{double}; you might as well say what you mean.
+
+@item
+When compiling functions that return structures or unions, GNU C++
+output code uses a method different from that used on most versions of
+Unix.  As a result, code compiled with GNU C++ cannot call a
+structure-returning function compiled with PCC, and vice versa.
+
+The method used by GNU C++ is as follows: a structure or union which is
+1, 2, 4 or 8 bytes long is returned like a scalar.  A structure or union
+with any other size is stored into an address supplied by the caller
+in a special, fixed register.  (Structures which have constructors are
+passed by value via the special register, regardless of their size.)
+
+PCC usually handles all sizes of structures and unions by returning
+the address of a block of static storage containing the value.  This
+method is not used in GNU C++ because it is slower and nonreentrant.
+
+On systems where PCC works this way, you may be able to make GNU C++-compiled
+code call such functions that were compiled with PCC by declaring them
+to return a pointer to the structure or union instead of the structure
+or union itself.  For example, instead of this:
+
+@example
+struct foo nextfoo ();
+@end example
+
+@noindent
+write this:
+
+@example
+struct foo *nextfoo ();
+#define nextfoo *nextfoo
+@end example
+
+@noindent
+(Note that this assumes you are using the GNU preprocessor, so that
+the ANSI antirecursion rules for macro expansions are effective.)
+
+@item
+Member functions which are declared in the scope of a class declaration are
+implicitly declared inline in C++.  In GNU C++, the inline declaration must
+be explicitly specified in order to take effect.  This makes it possible to
+keep functions from being integrated without changing a great deal of code
+(there is no @code{noinline} specifier).  If you want functions to be
+inlined as much as possible, use the @code{-finline-functions} flag.
+
+I am considering reversing the polarity of this option, and providing a
+-fno-default-inline-functions flag.  I am interested in hearing what people
+think about this.
+
+@item
+The naming convention of GNU C++ and AT&T C++ for overloaded functions
+(and member functions) are incompatible.  You cannot use AT&T C++
+libraries with GNU C++.  Even if the same naming convention were used,
+you still would not want to use libraries compiled by the AT&T compiler.
+Because the AT&T compiler is constrained to generate C code, there are
+some things it cannot implement, such as the way GNU C++ passes objects
+constructed on the stack.  GNU C++ can also make most virtual function
+calls take one or two memory references, while the AT&T compiler must
+make 5 or 6 memory references to do the same thing.  This efficiency has
+its cost: if you want to link with AT&T code, compile it with GNU C++.
+
+For those of you without access to AT&T's library source code, you may
+not miss it at all.  The GNU C++ library is bigger and better than ever.
+It implements all the standard classes (such as @code{istream} and
+@code{ostream}), and a multitude of other ones: many more than is
+available from the AT&T library.  See the documentation in the libg++
+distribution for details.
+
+@item
+The ANSI draft stipulates an interpretation for items declared @code{const}
+which is incompatible with C++.  GNU C++ makes an attempt to support both
+interpretations, using a flag to select between them.  Currently, GNU C++
+does not fully support the C++ interpretation of @code{const}.  To have the
+effect of declaring a variable value constant, you must specify
+@code{static} for that variable.  Otherwise, it is unclear whether storage
+should be reserved for that variable, as well as how that variable should
+be initialized.  It is hoped that these issues will be resolved in a
+satisfactory way in the future.
+
+@item
+The syntactic form @w{@code{xyzzy lose(frob);}} where @code{xyzzy} is an
+aggregate type and @code{frob} is an object of that type, is a declaration
+of a new aggregate object @code{lose}.  Under AT&T C++, this interpretation
+could lead to the calling of a constructor if one exists for that argument
+list, or it could have the equivalent meaning of the form @w{@code{xyzzy
+lose = frob}}.  This duality is non-intuitive, and although implemented, is
+discouraged.
+
+The dual of this case is even more bizarre: the syntactic form
+@w{@code{xyzzy lose = frob;}} is a declaration, and hence @code{lose}
+receives the value of @code{frob} via initialization semantics.  If
+there is no constructor defined for @code{xyzzy}, then initialization
+semantics and assignment semantics are equivalent.  But, if there is a
+constructor for @code{xyzzy}, but one which does not take something of
+@code{lose}'s type, then cfront 1.2 initializes with assignment
+semantics.  GNU C++ emits an error message in this case.
+
+@item
+The design of the C++ programming language did not take into account the
+usefulness of being able to specify that language using an LALR(1)
+grammar.  As a result, in order to correctly parse C++, one needs a
+look-ahead lexical analyzer (with infinite lookahead), and a recursive
+descent parser, guided by some good heuristics.  This approach was not
+taken in GNU C++, because it is considered archaic, notoriously
+difficult to extend syntactically, and generally offensive.  GNU C++
+uses an LALR(1) grammar so that users can easily understand, and readily
+modify the compiler to suit their needs.  Free software is useless if it
+becomes captive to an inaccessible or undesirable technology.
+
+Some syntactic forms were lost by utilizing an LALR(1) grammar, however.
+Most notably old-style C function declarations and function parameters
+and local variables that are declared longhand to be pointers to
+functions are not recognized properly (note that GNU C++ @emph{can} grok
+pointer-to-function casts, for example, (void (*)())0 is parsed
+correctly).  The first problem is solved by converting old-style C code
+to the ANSI-standard function prototype form.  The second problem can
+always be solved by using a @code{typedef} for the pointer to function,
+and working from there.  Another hack which can be used, if the
+parameter can legitimately be declared with a storage class (such as
+`register', or `auto') is to make that storage class explicit:
+@w{@code{int f (register int (*pf)(int,int)) @{...@}}}.
+
+@end itemize
+
+In addition to the syntactic problems mentioned above, the C++ language
+suffers from another deficiency due to its layering on top of C.  When a
+function is declared overloaded, some or all variants of that function must
+be renamed in order that they not conflict.  The way that the AT&T C++
+compiler accomplishes this is by not renaming the first function, but
+overloading all subsequent functions.  As a result, when the first function
+declared in one compilation module is not the first such one declared in
+all other compilation modules, the AT&T C++ compiler may generate incorrect
+calls, or function definitions may conflict at link time.  The GNU C++
+compiler avoids this problem by renaming all overloaded functions.
+This happens to be the way that cfront 2.0 will handle things.
+
+As distributed, functions are now by default automatically overloaded,
+in conformance with the C++ 2.0 language specification.  The main reason
+you might @emph{not} want this behavior is debugging: GDB does not yet
+understand overloaded functions.  We are working on this deficiency.
+
+In the case where functions are not automatically overloaded (e.g., a
+compiler compiled with -DNO_AUTO_OVERLOAD), note that declaring a
+function as friend has the hidden feature of declaring the function
+overloaded as well.  However, this has the negative feature that when a
+function is declared, and then subsequently declared as a `friend' (or
+is otherwise overloaded), the function will end up being inconsistently
+declared.  There is really no way around this problem except to be very
+careful when using overloaded functions.  In GNU C++, all functions
+which are intended to be friend functions should be declared overloaded
+before they are declared friends.  Or bite the bullet, fix GDB, and
+overload everything by default.
+
+@node Extensions, Features, Bugs, Incompatibilities, Top
+@chapter GNU Extensions to the C++ Language
+
+GNU C++ provides several language features not found in either ANSI
+standard C or in AT&T's C++.  Many of these features are also available
+with the GNU C compiler.  (The @samp{-pedantic} switch directs GNU C++
+to print a warning message if any of these features is used.)  To check
+for the availability of these features, check for predefined macros
+@code{__GNUC__} or @code{__GNUG__}, which is always defined under GNU
+C++.
+
+@menu
+* Statement Exprs::     Putting statements and declarations inside expressions.
+* Naming Types::        Giving a name to the type of some expression.
+* Typeof::		@code{typeof}: referring to the type of an expression.
+* Lvalues::		Using @samp{?:}, @samp{,} and casts in lvalues.
+* Conditionals::	Omitting the middle operand of a @samp{?:} expression.
+* Zero-Length::		Zero-length arrays.
+* Variable-Length::	Arrays whose length is computed at run time.
+* Subscripting::	Any array can be subscripted, even if not an lvalue.
+* Pointer Arith::	Arithmetic on @code{void}-pointers and function pointers.
+* Initializers::	Non-constant initializers.
+* Constructors::	Constructor expressions give structures, unions
+               		or arrays as values.
+* Function Attributes:: Declaring that functions have no side effects,
+            		or that they can never return.
+* Dollar Signs::        Dollar sign is allowed in identifiers.
+* Alignment::           Inquiring about the alignment of a type or variable.
+* Inline::              Defining inline functions (as fast as macros).
+* Extended Asm::	Assembler instructions with C expressions as operands.
+			(With them you can define ``built-in'' functions.)
+* Asm Labels::		Specifying the assembler name to use for a C symbol.
+* Global Reg Vars::     Defining global variables which reside in registers.
+* Operators::		Additional operators provided by GNU C++.
+* Wrappers::            Function calls as first-class objects.
+* Switch Ranges::       Specifying a range of values for a switch case.
+* Static Member Functions::	Hiding Functions in Classes.
+* Exception Handling::	Handling exceptional circumstances.
+@end menu
+
+@node Statement Exprs, Naming Types, Extensions, Extensions
+@section Statements and Declarations inside of Expressions
+
+A compound statement in parentheses may appear inside an expression in GNU
+C++.  This allows you to declare variables within an expression.  For
+example:
+
+@example
+(@{ int y = foo (); int z;
+   if (y > 0) z = y;
+   else z = - y;
+   z; @})
+@end example
+
+@noindent
+is a valid (though slightly more complex than necessary) expression
+for the absolute value of @code{foo ()}.
+
+This feature is especially useful in making macro definitions ``safe'' (so
+that they evaluate each operand exactly once).  For example, the
+``maximum'' function is commonly defined as a macro in standard C as
+follows:
+
+@example
+#define max(a,b) ((a) > (b) ? (a) : (b))
+@end example
+
+@noindent
+But this definition computes either @var{a} or @var{b} twice, with bad
+results if the operand has side effects.  In GNU C++, if you know the
+type of the operands (here let's assume @code{int}), you can define
+the macro safely as follows:
+
+@example
+#define maxint(a,b) \
+  (@{int _a = (a), _b = (b); _a > _b ? _a : _b; @})
+@end example
+
+Embedded statements are not allowed in constant expressions, such as
+the value of an enumeration constant, the width of a bit field, or
+the initial value of a static variable.
+
+If you don't know the type of the operand, you can still do this, but you
+must use @code{typeof} (@pxref{Typeof}) or type naming (@pxref{Naming
+Types}).
+
+@node Naming Types, Typeof, Statement Exprs, Extensions
+@section Naming an Expression's Type
+
+You can give a name to the type of an expression using a @code{typedef}
+declaration with an initializer.  Here is how to define @var{name} as a
+type name for the type of @var{exp}:
+
+@example
+typedef @var{name} = @var{exp};
+@end example
+
+This is useful in conjunction with the statements-within-expressions
+feature.  Here is how the two together can be used to define a safe
+``maximum'' macro that operates on any arithmetic type:
+
+@example
+#define max(a,b) \
+  (@{typedef _ta = (a), _tb = (b);  \
+    _ta _a = (a); _tb _b = (b);     \
+    _a > _b ? _a : _b; @})
+@end example
+
+The reason for using names that start with underscores for the local
+variables is to avoid conflicts with variable names that occur within the
+expressions that are substituted for @code{a} and @code{b}.  Eventually we
+hope to design a new form of declaration syntax that allows you to declare
+variables whose scopes start only after their initializers; this will be a
+more reliable way to prevent such conflicts.
+
+@node Typeof, Lvalues, Naming Types, Extensions
+@section Referring to a Type with @code{typeof}
+
+Another way to refer to the type of an expression is with @code{typeof}.
+The syntax of using of this keyword looks like @code{sizeof}, but the
+construct acts semantically like a type name defined with @code{typedef}.
+
+There are two ways of writing the argument to @code{typeof}: with an
+expression or with a type.  Here is an example with an expression:
+
+@example
+typeof (x[0](1))
+@end example
+
+@noindent
+This assumes that @code{x} is an array of functions; the type described
+is that of the values of the functions.
+
+Here is an example with a typename as the argument:
+
+@example
+typeof (int *)
+@end example
+
+@noindent
+Here the type described is that of pointers to @code{int}.
+
+A @code{typeof}-construct can be used anywhere a typedef name could be
+used.  For example, you can use it in a declaration, in a cast, or inside
+of @code{sizeof} or @code{typeof}.
+
+@itemize @bullet
+@item
+This declares @code{y} with the type of what @code{x} points to.
+
+@example
+typeof (*x) y;
+@end example
+
+@item
+This declares @code{y} as an array of such values.
+
+@example
+typeof (*x) y[4];
+@end example
+
+@item
+This declares @code{y} as an array of pointers to characters:
+
+@example
+typeof (typeof (char *)[4]) y;
+@end example
+
+@noindent
+It is equivalent to the following traditional C declaration:
+
+@example
+char *y[4];
+@end example
+
+To see the meaning of the declaration using @code{typeof}, and why it
+might be a useful way to write, let's rewrite it with these macros:
+
+@example
+#define pointer(T)  typeof(T *)
+#define array(T, N) typeof(T [N])
+@end example
+
+@noindent
+Now the declaration can be rewritten this way:
+
+@example
+array (pointer (char), 4) y;
+@end example
+
+@noindent
+Thus, @samp{array (pointer (char), 4)} is the type of arrays of 4
+pointers to @code{char}.
+@end itemize
+
+@node Lvalues, Conditionals, Typeof, Extensions
+@section Generalized Lvalues
+
+Compound expressions, conditional expressions and casts are allowed as
+lvalues provided their operands are lvalues.  This means that you can take
+their addresses or store values into them.
+
+For example, a compound expression can be assigned, provided the last
+expression in the sequence is an lvalue.  These two expressions are
+equivalent:
+
+@example
+(a, b) += 5
+a, (b += 5)
+@end example
+
+Similarly, the address of the compound expression can be taken.  These two
+expressions are equivalent:
+
+@example
+&(a, b)
+a, &b
+@end example
+
+A conditional expression is a valid lvalue if its type is not void and the
+true and false branches are both valid lvalues.  For example, these two
+expressions are equivalent:
+
+@example
+(a ? b : c) = 5
+(a ? b = 5 : (c = 5))
+@end example
+
+A cast is a valid lvalue if its operand is valid.  Taking the address of
+the cast is the same as taking the address without a cast, except for the
+type of the result.  For example, these two expressions are equivalent (but
+the second may be valid when the type of @samp{a} does not permit a cast to
+@samp{int *}).
+
+@example
+&(int *)a
+(int **)&a
+@end example
+
+A simple assignment whose left-hand side is a cast works by converting the
+right-hand side first to the specified type, then to the type of the inner
+left-hand side expression.  After this is stored, the value is converter
+back to the specified type to become the value of the assignment.  Thus, if
+@samp{a} has type @samp{char *}, the following two expressions are
+equivalent:
+
+@example
+(int)a = 5
+(int)(a = (char *)5)
+@end example
+
+An assignment-with-arithmetic operation such as @samp{+=} applied to a cast
+performs the arithmetic using the type resulting from the cast, and then
+continues as in the previous case.  Therefore, these two expressions are
+equivalent:
+
+@example
+(int)a += 5
+(int)(a = (char *) ((int)a + 5))
+@end example
+
+@node Conditionals, Zero-Length, Lvalues, Extensions
+@section Conditional Expressions with Omitted Middle-Operands
+
+The middle operand in a conditional expression may be omitted.  Then
+if the first operand is nonzero, its value is the value of the conditional
+expression.
+
+Therefore, the expression
+
+@example
+x ? : y
+@end example
+
+@noindent
+has the value of @code{x} if that is nonzero; otherwise, the value of
+@code{y}.
+
+This example is perfectly equivalent to
+
+@example
+x ? x : y
+@end example
+
+@noindent
+In this simple case, the ability to omit the middle operand is not
+especially useful.  When it becomes useful is when the first operand does,
+or may (if it is a macro argument), contain a side effect.  Then repeating
+the operand in the middle would perform the side effect twice.  Omitting
+the middle operand uses the value already computed without the undesirable
+effects of recomputing it.
+
+@node Zero-Length, Variable-Length, Conditionals, Extensions
+@section Arrays of Length Zero
+
+Zero-length arrays are allowed in GNU C++.  They are very useful
+as the last element of a structure which is really a header for a
+variable-length object:
+
+@example
+struct line @{
+  int length;
+  char contents[0];
+@};
+
+@{
+  struct line *thisline 
+    = (struct line *) malloc (sizeof (struct line) + this_length);
+  thisline->length = this_length;
+@}
+@end example
+
+In standard C, you would have to give @code{contents} a length of 1, which
+means either you waste space or complicate the argument to @code{malloc}.
+
+@node Variable-Length, Subscripting, Zero-Length, Extensions
+@section Arrays of Variable Length
+
+Variable-length automatic arrays are allowed in GNU C++.  These arrays are
+declared like any other automatic arrays, but with a length that is not a
+constant expression.  The storage is allocated at that time and
+deallocated when the brace-level is exited.  For example:
+
+@example
+FILE *concat_fopen (char *s1, char *s2, char *mode)
+@{
+  char str[strlen (s1) + strlen (s2) + 1];
+  strcpy (str, s1);
+  strcat (str, s2);
+  return fopen (str, mode);
+@}
+@end example
+
+Currently, you cannot use variable-length arrays as arguments to
+functions, due to the implementation of the parser.
+
+The length of an array is computed on entry to the brace-level where the
+array is declared and is remembered for the scope of the array in case you
+access it with @code{sizeof}.
+
+Jumping or breaking out of the scope of the array name will also deallocate
+the storage.  Jumping into the scope is not allowed; you will get an error
+message for it.
+
+You can use the function @code{alloca} to get an effect much like
+variable-length arrays.  The function @code{alloca} is available in
+many other C implementations (but not in all).  On the other hand,
+variable-length arrays are more elegant.
+
+There are other differences between these two methods.  Space allocated
+with @code{alloca} exists until the containing @emph{function} returns.
+The space for a variable-length array is deallocated as soon as the array
+name's scope ends.  (If you use both variable-length arrays and
+@code{alloca} in the same function, deallocation of a variable-length array
+will also deallocate anything more recently allocated with @code{alloca}.)
+
+GNU C++ does not currently support variable length arrays which are
+class members, in the case where the length of the array is a member of
+the class.  Thus, the following is not yet implemented:
+
+@example
+class foo
+@{
+  static const int i = 10;
+  int array[i];
+@};
+@end example
+
+It is not implemented because the member variable @var{i} is not in scope to
+be used for the declaration of @var{array}.
+
+@node Subscripting, Pointer Arith, Variable-Length, Extensions
+@section Non-Lvalue Arrays May Have Subscripts
+
+Subscripting is allowed on arrays that are not lvalues, even though the
+unary @samp{&} operator is not.  For example, this is valid in GNU C++ though
+not valid in other C and C++ dialects:
+
+@example
+struct foo @{int a[4];@};
+
+struct foo f();
+
+bar (int index)
+@{
+  return f().a[index];
+@}
+@end example
+
+@node Pointer Arith, Initializers, Subscripting, Extensions
+@section Arithmetic on @code{void}-Pointers and Function Pointers
+
+In GNU C++, addition and subtraction operations are supported on pointers to
+@code{void} and on pointers to functions.  This is done by treating the
+size of a @code{void} or of a function as 1.
+
+A consequence of this is that @code{sizeof} is also allowed on @code{void}
+and on function types, and returns 1.
+
+@node Initializers, Constructors, Pointer Arith, Extensions
+@section Non-Constant Initializers
+
+The elements of an aggregate initializer are not required to be constant
+expressions in GNU C++.  Here is an example of an initializer with run-time
+varying elements:
+
+@example
+foo (float f, float g)
+@{
+  float beat_freqs[2] = @{ f-g, f+g @};
+  @dots{}
+@}
+@end example
+
+@node Constructors, Function Attributes, Initializers, Extensions
+@section Constructor Expressions
+
+GNU C++ supports constructor expressions.  Note that a constructor
+expression is @emph{not} the same as a constructor for a C++ struct or
+class.  A constructor looks like a cast containing an initializer.  Its
+value is an object of the type specified in the cast, containing the
+elements specified in the initializer.  The type must be a structure,
+union or array type.
+
+Assume that @code{struct foo} and @code{structure} are declared as shown:
+
+@example
+struct foo @{int a; char b[2];@} structure;
+@end example
+
+@noindent
+Here is an example of constructing a @samp{struct foo} with a constructor:
+
+@example
+structure = ((struct foo) @{x + y, 'a', 0@});
+@end example
+
+@noindent
+This is equivalent to writing the following:
+
+@example
+@{
+  struct foo temp = @{x + y, 'a', 0@};
+  structure = temp;
+@}
+@end example
+
+You can also construct an array.  If all the elements of the constructor
+are (made up of) simple constant expressions, suitable for use in
+initializers, then the constructor is an lvalue and can be coerced to a
+pointer to its first element, as shown here:
+
+@example
+char **foo = (char *[]) @{ "x", "y", "z" @};
+@end example
+
+Array constructors whose elements are not simple constants are not very
+useful, because the constructor is not an lvalue.  There are only two valid
+ways to use it: to subscript it, or initialize an array variable with it.
+The former is probably slower than a @code{switch} statement, while the
+latter does the same thing an ordinary C initializer would do.
+
+@example
+output = ((int[]) @{ 2, x, 28 @}) [input];
+@end example
+
+@node Function Attributes, Dollar Signs, Constructors, Extensions
+@section Declaring Attributes of Functions
+
+In GNU C++, you declare certain things about functions called in your program
+which help the compiler optimize function calls.
+
+A few functions, such as @code{abort} and @code{exit}, cannot return.
+These functions should be declared @code{volatile}.  For example,
+
+@example
+extern volatile void abort ();
+@end example
+
+@noindent
+tells the compiler that it can assume that @code{abort} will not return.
+This makes slightly better code, but more importantly it helps avoid
+spurious warnings of uninitialized variables.
+
+Many functions do not examine any values except their arguments, and
+have no effects except the return value.  Such a function can be subject
+to common subexpression elimination and loop optimization just as an
+arithmetic operator would be.  These functions should be declared
+@code{const}.  For example,
+
+@example
+extern const void square ();
+@end example
+
+@noindent
+says that the hypothetical function @code{square} is safe to call
+fewer times than the program says.
+
+Note that a function that has pointer arguments and examines the data
+pointed to must @emph{not} be declared @code{const}.  Likewise, a
+function that calls a non-@code{const} function must not be
+@code{const}.
+
+Some people object to this feature, claiming that ANSI C's @code{#pragma}
+should be used instead.  There are two reasons I did not do this.
+
+@enumerate
+@item
+It is impossible to generate @code{#pragma} commands from a macro.
+
+@item
+The @code{#pragma} command is just as likely as these keywords to mean
+something else in another compiler.
+@end enumerate
+
+These two reasons apply to @emph{any} application whatever: as far as
+I can see, @code{#pragma} is never useful.
+
+@node Dollar Signs, Alignment, Function Attributes, Extensions
+@section Dollar Signs in Identifier Names
+
+In GNU C++, you may use dollar signs in identifier names.  This is because
+many traditional C implementations allow such identifiers.
+
+@node Alignment, Inline, Dollar Signs, Extensions
+@section Inquiring about the Alignment of a Type or Variable
+
+The keyword @code{__alignof} allows you to inquire about how an object
+is aligned, or the minimum alignment usually required by a type.  Its
+syntax is just like @code{sizeof}.
+
+For example, if the target machine requires a @code{double} value to be
+aligned on an 8-byte boundary, then @code{__alignof (double)} is 8.  This
+is true on many RISC machines.  On more traditional machine designs,
+@code{__alignof (double)} is 4 or even 2.
+
+Some machines never actually require alignment; they allow reference to any
+data type even at an odd addresses.  For these machines, @code{__alignof}
+reports the @emph{recommended} alignment of a type.
+
+When the operand of @code{__alignof} is an lvalue rather than a type, the
+value is the largest alignment that the lvalue is known to have.  It may
+have this alignment as a result of its data type, or because it is part of
+a structure and inherits alignment from that structure. For example, after
+this declaration:
+
+@example
+struct foo @{ int x; char y; @} foo1;
+@end example
+
+@noindent
+the value of @code{__alignof (foo1.y)} is probably 2 or 4, the same as
+@code{__alignof (int)}, even though the data type of @code{foo1.y} does not
+itself demand any alignment.@refill
+
+@node Extended Asm, Asm Labels, Constructors, Extensions
+@section Assembler Instructions with C Expression Operands
+
+In an assembler instruction using @code{asm}, you can now specify the
+operands of the instruction using C expressions.  This means no more
+guessing which registers or memory locations will contain the data you want
+to use.
+
+You must specify an assembler instruction template much like what appears
+in a machine description, plus an operand constraint string for each
+operand.
+
+For example, here is how to use the 68881's @code{fsinx} instruction:
+
+@example
+asm ("fsinx %1,%0" : "=f" (result) : "f" (angle));
+@end example
+
+@noindent
+Here @code{angle} is the C expression for the input operand while
+@code{result} is that of the output operand.  Each has @samp{"f"} as
+its operand constraint, saying that a floating-point register is
+required.  The constraints use the same language used in the machine
+description (See the @code{Constraints} section in the ``Using and Porting
+GNU CC'' document).
+
+Each operand is described by an operand-constraint string followed by the C++
+expression in parentheses.  A colon separates the assembler template from
+the first output operand, and another separates the last output operand
+from the first input, if any.  Commas separate output operands and separate
+inputs.  The total number of operands is limited to the maximum number of
+operands in any instruction pattern in the machine description.
+
+If there are no output operands, and there are input operands, then there
+must be two consecutive colons surrounding the place where the output
+operands would go.
+
+Output operand expressions must be lvalues; the compiler can check this.
+The input operands need not be lvalues.  The compiler cannot check whether
+the operands have data types that are reasonable for the instruction being
+executed.  It does not parse the assembler instruction template and does
+not know what it means, or whether it is valid assembler input.  The
+extended @code{asm} feature is most often used for machine instructions
+that the compiler itself does not know exist.
+
+The output operands must be write-only; GNU C++ will assume that the values
+in these operands before the instruction are dead and need not be
+generated.  For an operand that is read-write, or in which not all bits are
+written and the other bits contain useful information, you must logically
+split its function into two separate operands, one input operand and one
+write-only output operand.  The connection between them is expressed by
+constraints which say they need to be in the same location when the
+instruction executes.  You can use the same C++ expression for both operands,
+or different expressions.  For example, here we write the (fictitious)
+@samp{combine} instruction with @code{bar} as its read-only source operand
+and @code{foo} as its read-write destination:
+
+@example
+asm ("combine %2,%0" : "=r" (foo) : "0" (foo), "g" (bar));
+@end example
+
+@noindent
+The constraint @samp{"0"} for operand 1 says that it must occupy the same
+location as operand 0.  A digit in constraint is allowed only in an input
+operand, and it must refer to an output operand.
+
+Only a digit in the constraint can guarantee that one operand will be in
+the same place as another.  The mere fact that @code{foo} is the value of
+both operands is not enough to guarantee that they will be in the same
+place in the generated assembler code.  The following would not work:
+
+@example
+asm ("combine %2,%0" : "=r" (foo) : "r" (foo), "g" (bar));
+@end example
+
+Various optimizations or reloading could cause operands 0 and 1 to be in
+different registers; GNU C++ knows no reason not to do so.  For example, the
+compiler might find a copy of the value of @code{foo} in one register and
+use it for operand 1, but generate the output operand 0 in a different
+register (copying it afterward to @code{foo}'s own address).  Of course,
+since the register for operand 1 is not even mentioned in the assembler
+code, the result will not work, but GNU C++ can't tell that.
+
+Unless an output operand has the @samp{&} constraint modifier, GNU C++ may
+allocate it in the same register as an unrelated input operand, on the
+assumption that the inputs are consumed before the outputs are produced.
+This assumption may be false if the assembler code actually consists of
+more than one instruction.  In such a case, use @samp{&} for each output
+operand that may not overlap an input.  @xref{Modifiers}.
+
+Some instructions clobber specific hard registers.  To describe this, write
+a third colon after the input operands, followed by the names of the
+clobbered hard registers (given as strings).  Here is a realistic example
+for the vax:
+
+@example
+asm volatile ("movc3 %0,%1,%2"
+              : /* no outputs */
+              : "g" (from), "g" (to), "g" (count)
+              : "r0", "r1", "r2", "r3", "r4", "r5");
+@end example
+
+You can put multiple assembler instructions together in a single @code{asm}
+template, separated with semicolons.  The input operands are guaranteed not
+to use any of the clobbered registers, and neither will the output
+operands' addresses, so you can read and write the clobbered registers as
+many times as you like.  Here is an example of multiple instructions in a
+template; it assumes that the subroutine @code{_foo} accepts arguments in
+registers 9 and 10:
+
+@example
+asm ("movl %0,r9;movl %1,r10;call _foo"
+     : /* no outputs */
+     : "g" (from), "g" (to)
+     : "r9", "r10");
+@end example
+
+Usually the most convenient way to use these @code{asm} instructions is to
+encapsulate them in macros that look like functions.  For example,
+
+@example
+#define sin(x)       \
+(@{ double __value, __arg = (x);   \
+   asm ("fsinx %1,%0": "=f" (__value): "f" (__arg));  \
+   __value; @})
+@end example
+
+@noindent
+Here the variable @code{__arg} is used to make sure that the instruction
+operates on a proper @code{double} value, and to accept only those
+arguments @code{x} which can convert automatically to a @code{double}.
+
+Another way to make sure the instruction operates on the correct data type
+is to use a cast in the @code{asm}.  This is different from using a
+variable @code{__arg} in that it converts more different types.  For
+example, if the desired type were @code{int}, casting the argument to
+@code{int} would accept a pointer with no complaint, while assigning the
+argument to an @code{int} variable named @code{__arg} would warn about
+using a pointer unless the caller explicitly casts it.
+
+GNU C++ assumes for optimization purposes that these instructions have no
+side effects except to change the output operands.  This does not mean that
+instructions with a side effect cannot be used, but you must be careful,
+because the compiler may eliminate them if the output operands aren't used,
+or move them out of loops, or replace two with one if they constitute a
+common subexpression.  Also, if your instruction does have a side effect on
+a variable that otherwise appears not to change, the old value of the
+variable may be reused later if it happens to be found in a register.
+
+You can prevent an @code{asm} instruction from being deleted, moved or
+combined by writing the keyword @code{volatile} after the @code{asm}.  For
+example:
+
+@example
+#define set_priority(x)  \
+asm volatile ("set_priority %0": /* no outputs */ : "g" (x))
+@end example
+
+If there are no output operands, the instruction will not be deleted or
+moved.
+
+It is a natural idea to look for a way to give access to the condition
+code left by the assembler instruction.  However, when we attempted to
+implement this, we found no way to make it work reliably.  The problem
+is that output operands might need reloading, which would result in
+additional following ``store'' instructions.  On most machines, these
+instructions would alter the condition code before there was time to
+test it.  This problem doesn't arise for ordinary ``test'' and
+``compare'' instructions because they don't have any output operands.
+
+@node Asm Labels, Global Reg Vars, Extended Asm, Extensions
+@section Controlling Names Used in Assembler Code
+
+You can specify the name to be used in the assembler code for a C++
+function or variable (including static class variables and global anonymous
+union members) by writing the @code{asm} keyword after the declarator as
+follows:
+
+@example
+int foo asm ("myfoo") = 2;
+@end example
+
+@noindent
+This specifies that the name to be used for the variable @code{foo} in
+the assembler code should be @samp{myfoo} rather than the usual
+@samp{_foo}.
+
+On systems where an underscore is normally prepended to the name of a C++
+function or variable, this feature allows you to define names for the
+linker that do not start with an underscore.
+
+You cannot use @code{asm} in this way in a function @emph{definition};
+but you can get the same effect by writing a declaration for the
+function before its definition and putting @code{asm} there, like
+this:
+
+@example
+extern func () asm ("FUNC");
+
+func (int x, int y)
+@dots{}
+@end example
+
+It is up to you to make sure that the assembler names you choose do
+not conflict with any other assembler symbols.  Also, you must not use
+a register name; that would produce completely invalid assembler code.
+GNU C++ does not as yet have the ability to store static variables in
+registers.  Perhaps that will be added.
+
+@node Global Reg Vars, Operators, Asm Labels, Extensions
+@section Global Variables in Registers
+
+A few programs, such as programming language interpreters, may have a
+couple of global variables that are accessed so often that it is worth
+while to reserve registers throughout the program just for them.
+
+You can define a global register variable in GNU C++ like this:
+
+@example
+register int *foo asm ("a5");
+@end example
+
+@noindent
+Here @code{a5} is the name of the register which should be used.  Choose a
+register which is normally saved and restored by function calls on your
+machine, so that library routines will not clobber it.
+
+Naturally the register name is cpu-dependent, so you would need to
+conditionalize your program according to cpu type.  The register
+@code{a5} would be a good choice on a 68000 for a variable of pointer
+type.  On machines with register windows, be sure to choose a ``global''
+register that is not affected by the function call mechanism.
+
+In addition, operating systems on one type of cpu may differ in how they
+name the registers; then you would need additional conditionals.  For
+example, some 68000 operating systems call this register @code{%a5}.
+
+Eventually there may be a way of asking the compiler to choose a register
+automatically, but first we need to figure out how it should choose and
+how to enable you to guide the choice.  No solution is evident.
+
+Defining a global register variable in a certain register reserves that
+register entirely for this use, at least within the current compilation.
+The register will not be allocated for any other purpose in the functions
+in the current compilation.  The register will not be saved and restored by
+these functions.  Stores into this register are never deleted even if they
+would appear to be dead, but references may be deleted or moved or
+simplified.
+
+It is not safe to access the global register variables from signal
+handlers, or from more than one thread of control, because the system
+library routines may temporarily use the register for other things (unless
+you recompile them specially for the task at hand).
+
+It is not safe for one function that uses a global register variable to
+call another such function @code{foo} by way of a third function
+@code{lose} that was compiled without knowledge of this variable (i.e. in a
+different source file in which the variable wasn't declared).  This is
+because @code{lose} might save the register and put some other value there.
+For example, you can't expect a global register variable to be available in
+the comparison-function that you pass to @code{qsort}, since @code{qsort}
+might have put something else in that register.  (If you are prepared to
+recompile @code{qsort} with the same global register variable, you can
+solve this problem.)
+
+If you want to recompile @code{qsort} or other source files which do not
+actually use your global register variable, so that they will not use that
+register for any other purpose, then it suffices to specify the compiler
+option @samp{-ffixed-@var{reg}}.  You need not actually add a global
+register declaration to their source code.
+
+A function which can alter the value of a global register variable cannot
+safely be called from a function compiled without this variable, because it
+could clobber the value the caller expects to find there on return.
+Therefore, the function which is the entry point into the part of the
+program that uses the global register variable must explicitly save and
+restore the value which belongs to its caller.
+
+On most machines, @code{longjmp} will restore to each global register
+variable the value it had at the time of the @code{setjmp}.  On some
+machines, however, @code{longjmp} will not change the value of global
+register variables.  To be portable, the function that called @code{setjmp}
+should make other arrangements to save the values of the global register
+variables, and to restore them if a @code{longjmp}.  This way, the the same
+thing will happen regardless of what @code{longjmp} does.
+
+All global register variable declarations must precede all function
+definitions.  If such a declaration could appear after function
+definitions, the declaration would be too late to prevent the register from
+being used for other purposes in the preceding functions.
+
+Global register variables may not have initial values, because an
+executable file has no means to supply initial contents for a register.
+
+@node Operators, Wrappers, Global Reg Vars, Extensions
+The GNU C++ language makes some extensions to the C++ @code{new} operator,
+and adds a few non-C operators as well.
+
+@section Non-C operators: @code{operator <?} and @code{operator >?}
+
+It is very convenient to have operators which return the "minimum" or the
+"maximum" of two arguments.  It is possible to specify a macro to
+return the minimum of two things in C++, as the following example shows.
+
+@example
+#define MIN(X,Y) ((X) < (Y) ? : (X) : (Y))
+@end example
+
+You might then use this as follows:
+
+@example
+int min = MIN (i, j);
+@end example
+
+to set @var{min} to the minimum value of variables @var{i} and @var{j}.
+
+However, this is not clean, because side-effects in @code{X} or @code{Y}
+may cause unintended behavior (@emph{e.g.}, @code{MIN (i++, j++)} will
+fail.  It also requires that users employ a functional notation for a
+fundamental operation.  Using GNU C++ extensions this example could be
+rewritten as:
+
+@example
+int min = i <? j;
+@end example
+
+Since @code{<?} and @code{>?} are built-in the compiler they properly handle
+expressions with side-effects, so that:
+
+@example
+int min = i++ <? j++;
+@end example
+
+works correctly.
+
+@section Controlling @code{operator new}.
+
+The user now has much more control over the operator new.  Normally,
+operator new calls the function @code{__builtin_new} with a @code{size}
+argument, and @code{__builtin_new} returns a pointer to a block of storage
+at least @code{size} bytes long.  It is now possible to pass arguments to
+operator new, which will pass those arguments, along with a size parameter,
+to a function called @code{__user_new}, which can return anything the users
+wants it to.  It is the user's responsibility to define @code{__user_new}.
+The function @code{__user_new} may be declared overloaded, just like any
+other function.  It is not implicitly overloaded.  The following
+is an example of its use:
+
+@group
+@example
+// Create a C++ equivalent of ``realloc''.
+inline void *__user_new (int new_size, void *old_ptr)
+@{
+  return (void *) realloc (old_ptr, new_size);
+@}
+  
+char *manipulate_string (char *string)
+@{
+  int   len = strlen (string) + 1;
+  char *s   = strcpy (new char [len], string);
+  // ...
+  char *t   = new @{s@} char [len * 2];
+         
+  return strcat (t, string);
+@}
+@end example
+@end group
+
+In this example, @code{__user_new} is defined to provide @code{realloc}-style
+behavior for the built-in operator @code{new}.  All other semantics
+of `new' are preserved: initializations are performed in exactly the same
+manner.  One must be careful when using such a function, however: it is up
+to the constructors to know what actions to take if the memory returned
+from @code{__user_new} is not in their address space.
+
+@node Wrappers, Switch Ranges, Operators, Extensions
+@section Function calls as first-class objects
+
+In some cases it is desirable not to execute a function call
+immediately, but to perform some actions before the function is to be
+called, call the function, or otherwise obtain a value as a function
+of the called function's code and its arguments, perform some more
+actions afterwards, and return a result.  An example of such a use
+would be the execution of remote procedure calls on a distributed
+system.  One may get a request on one node to apply a function to some
+arguments, but that function may actually be on another node (as might
+some of the arguments).  A ``wrapper'' allows a function call to be
+turned into an argument list which includes as arguments an encoding
+of the function being ``wrapped'' and its arguments.  From this, it is
+possible, for example, to send a message to the node where the
+function actually lives, along with an encoding of the arguments as a
+list, have that function execute, return its result via another
+message, and ultimately return a result to the caller.  A ``wrapper''
+allows the user great flexibility in the implementation of such
+behaviors, flexibility which allows one to specify many different ways
+of implementing the semantics of a function call, without requiring
+that the actual code for the function being wrapped be modified in any
+way.
+
+An example will demonstrate one use of wrappers.  This is a highly
+experimental feature, and one which should be expected to evolve suddenly.
+Users are therefore encouraged to participate in this evolutionary process.
+
+@group
+@example
+// Memoizing example.  Normal C++ code.
+
+class NumTheory
+@{
+    // Use a hash table for memoizing
+    HashTable h;
+
+    int lookup (int (NumTheory::*)(int), int);
+    int install (int (NumTheory::*)(int), int, int);
+
+  public:
+    // Some functions to memoize
+    int fib (int);                     // Fibonacci numbers
+    int prime (int);                   // Prime Numbers
+@}
+
+int NumTheory::fib (int n)
+@{
+    if (n == 0)
+      return 0;
+    if (n == 1)
+      return 1;
+    return fib (n - 1) + fib (n - 2);
+@}
+
+main (int, char *[])
+@{
+    NumTheory n;
+
+    // find the 100th prime.
+    int p100 = n.prime (100);
+    // find the 101st prime--might be fast, since we know the 100th
+    int p101 = n.prime (101);
+
+    // find the 10th Fibonacci number
+    int f10 = n.fib (10);
+    // find the 11th Fibonacci number--might also be fast
+    int f11 = n.fib (11);
+
+    printf ("The 100th prime number is %d\n", p100);
+    printf ("The 101st prime number is %d\n", p101);
+    // etc @dots{}
+@}
+@end example
+@end group
+
+A ``wrapper'' can be added to the class declaration of `NumTheory'
+with the following declaration:
+
+@example
+    ()NumTheory (int (NumTheory::*)(int), int);
+@end example
+
+A wrapper declaration is syntactically valid anywhere a member
+function declaration is.  By adding this declaration, the compiler
+catches out calls to member functions of the class @samp{NumTheory}
+and replaces them with calls to the wrapper.  A wrapper may therefore
+be used to implement memoizing as follows:
+
+@group
+@example
+// This wrapper uses previously computed results, if available.
+// Newly generated results are entered into the hash table.
+int NumTheory::()NumTheory (int (NumTheory::*pf)(int), int arg)
+@{
+    // try to use a previously computed value.
+    int val = hash (pf, arg);
+    if (val < 0)
+      @{
+        // Must compute value.
+        val = (this->*pf)(arg);
+        // Save it into hash table.
+        install (pf, arg, val);
+      @}
+    // else, we can use previously computed value.
+    return val;
+@}
+@end example
+@end group
+
+A paper explaining the possible uses and implementations of wrappers is
+available from the proceedings from the 1988 USENIX workshop on C++,
+held in Denver, Colorado.
+
+@node Switch Ranges, Static Member Functions, Wrappers, Extensions
+@section Switch Ranges
+
+A GNU C++ extension to the switch statement permits range specification
+for case values.  For example, below is a concise way to print out
+a function parameter's ``character class:''
+
+@group
+@example
+print_char_class (char c) 
+@{
+  switch (c)
+    @{
+    case 'a'..'z': printf ("lower case\n"); break;
+    case 'A'..'Z': printf ("upper case\n"); break;
+    case '0'..'9': printf ("digit\n"); break;
+    default:       printf ("other\n");
+    @}
+@}
+@end example
+@end group
+
+Duplicate, overlapping case values and empty ranges are detected and
+rejected by the compiler.
+
+@node Static Member Functions, Exception Handling, Switch Ranges, Extensions
+@section Static Member Functions
+
+Programmers familiar with Ada packages, Pascal units, or Modula-2
+modules recognize the benefits of hiding functions within an
+encapsulation unit.  GNU G++ further augments C++'s data abstraction
+capability with @dfn{static member functions}.  Static member functions
+are subject to the same inlining and visibility features available with
+regular member functions.  The major differences between static and
+non-static member functions are that:
+
+@itemize @bullet 
+@item 
+It is possible to call any visible static class member function
+regardless of whether a class instance exists.
+
+@item 
+Static member functions may only access global variables and static
+class data elements.
+
+@item
+Static member functions may not be declared virtual.
+
+@end itemize
+
+Since static member functions exist independently of any class
+instances they lack an implicit `this' pointer.  Therefore, they have
+no access to any @emph{non}-static class member functions or data.
+
+Here's an familiar Abstract Data Type application demonstrating static
+member functions:
+
+@group
+@example
+#include <stream.h>
+
+static const int MAX_STACK = 100;
+
+class Stack
+@{
+private:
+  static int  stack[MAX_STACK];
+  static int  top;
+     
+public:
+  static void push (int item) @{ stack[top++] = item; @}
+  static int pop () @{ return stack[--top]; @}
+  static int is_empty () @{ return top == 0; @}
+  static int is_full () @{ return top >= MAX_STACK; @}
+@};
+
+main ()
+@{
+  for (srandom (time (0L)); !Stack::is_full (); Stack::push (random ()))
+    ;
+
+  while (!Stack::is_empty ())
+    cout << Stack::pop () << "\n";
+@}
+@end example
+@end group
+
+This example is similar in spirit to how an Ada or Modula-2 programmer
+might design a bounded-stack abstraction.  Note how there is only
+@strong{one} @var{stack} array for all instances of class Stack.
+Naturally, in this particular case it isn't very useful to declare
+multiple instances of class Stack, since the data would be shared
+between all class instances.
+
+Several benefits accrue from the use of static member functions:
+
+@itemize @bullet 
+@item 
+Static member functions have no access to the class instance pointer
+`this'.  Thus, there is no need to pass an extra hidden parameter for
+each static member function call, thereby decreasing parameter passing
+overhead.
+
+@item
+Static member functions provide an encapsulation mechanism for
+manipulating static data objects.
+
+@end itemize
+
+Another important use of static member functions is writing type-safe
+handler routines.  Doug Lea can explain how this works with the Fix@{xx@} 
+classes in libg++.
+
+Note that it is possible to mix static and non-static member functions
+in the same class.
+
+@node Exception Handling,, Static Member Functions, Extensions
+@section Exception Handing
+
+The GNU C++ compiler implements a simple form of exception handling.
+This extension is subject to change, but is presented here because so
+many people have asked about it.
+
+Exceptions are declared as follows:
+
+@group
+@example
+class String @{ ... @}; // some random class
+
+exception @{@} EX;    // an exception that is just a name
+exception
+@{
+    int i;            // an integer value contained in this exception
+    String s;         // a String object contained in this exception
+@} EY;
+@end example
+@end group
+
+@noindent
+With these declarations, @code{EX} and @code{EY} name exception types.
+Variables of exception type cannot be declared, but from a conceptual
+point of view, objects whose types mirror the exception declarations can
+be created.
+
+Exceptions are raised and handled as shown in the following example:
+
+@group
+@example
+int f ()
+@{
+    int i = foo ();
+
+    try
+      @{
+        int j = bar ();
+        i += j;
+        int k = bazzle ();
+        if (i < k)
+          return 7;
+        i *= k;
+      @}
+    except ex
+      @{
+        EX
+          @{
+            // if the EX exception was raised...
+            if (i < 0)
+              // raise `EY' exception
+              raise EY (i, "foo");
+            return 4;
+          @}
+        EY
+          @{
+            // if the EY exception was raised...
+            // use the exception's parameters
+            printString (ex.s);
+            return ex.i;
+          @}
+        default
+          @{
+             // handle other exceptions
+          @}
+      @}
+@}
+@end example
+@end group
+
+Functions which propagate exceptions (either by passing them through, or
+by raising them) can be declared to do so as follows:
+
+@example
+int f () raises EY;
+@end example
+
+A shorthand notation exists for reraising exceptions:
+
+@group
+@example
+    try
+      @{
+        bar (); // may raise an exception...
+      @}
+    reraise EX, EY; // reraise only EX and EY
+@end example
+@end group
+
+When there is a notion of unhandled exceptions, for example a reraise
+which does not list the exception type being handled, a call is made to
+@code{__unhandled_exception} with arguments of source filename and line
+number where exception was not handled.
+
+For those interested in reading more about this extension, a paper
+explaining the exception handling design is available in the proceedings
+from the 1990 USENIX workshop on C++, held in San Francisco, California.
+
+@node Features, Bugs, Extensions, Top
+@chapter Features of GNU C++
+
+Because the GNU C++ compiler is a native code compiler, there are
+opportunities for optimization which do not exist for C++ to C translators.
+Additional features which have been ignored by other systems, but
+implemented by the GNU C++ system, are also listed here.
+
+@menu
+* Structures::  GNU C++ passes structures as arguments.
+* Goto:: You can leave a binding level with a goto.
+* Instantiation:: Type instantiation facilities of GNU C++
+* Linking:: Considerations for writing code with incremental linking in mind.
+* Named Return Values:: Avoid an extra constructor call when 
+                        returning classes from functions.
+@end menu
+
+@node Structures, Goto, Features, Features
+@section Structures as Arguments
+The GNU C++ compiler can pass structures as arguments to functions.  This
+can be difficult in C++, since the structure may take a constructor (the
+constructor of the form X(X&) in particular), in which case the structure
+passed must be initialized by that constructor as it lies on the stack.
+The GNU C++ compiler takes care of initializing the stack space before the
+function is called.  If a destructor for the structure is defined, then GNU
+C++ also takes care of protecting that space until it is in fact destroyed.
+
+When it comes to code generation, the advantage of this feature is that all
+structure parameters can be accessed via the same register: the frame
+pointer (or the stack pointer if the frame pointer can be eliminated).
+Other strategies which require passing pointers to structures either must
+use multiple indirections to access elements of the structures, or they
+must use extra registers to point to the structures.
+
+@node Goto, Instantiation, Structures, Features
+@section The goto statement in GNU C++
+
+The @code{goto} statement can be used to exit blocks which contain
+aggregates requiring destructors.  The destructors are called, and then the
+goto is performed.
+
+@node Instantiation, Linking, Goto, Features
+@section Type instantiation in GNU C++
+
+Overloaded operators and user-defined type conversions provide the user
+with the freedom to implement abstract data types, often with very a
+natural syntax.  This freedom places a certain burden on the compiler,
+however.  Whenever an object which is of some user-defined type appears in
+a context where a built-in type must appear, the compiler must make the
+proper choices in translating the code from its C++ representation to
+something which executes in a predictable way.  For example, in the
+following code:
+
+@example
+struct A
+@{
+  A ();
+  int operator+ (A&);
+  operator int ();
+@};
+
+struct B
+@{
+  B ();
+  operator int ();
+@};
+
+main ()
+@{
+  A a;
+  B b;
+
+  int i = a + b;
+  // some more stuff...
+@}
+@end example
+
+the compiler may try to overload @code{operator+}, but when that fails, it
+must be prepared to convert vaiables @code{a} and @code{b} to integer type,
+and perform normal addition.  Sometimes it is not possible to determine,
+strictly from a bottom-up translation, what conversions should take place.
+Sometimes a technique known as type instantiation can help.  Here is an
+example:
+
+@example
+struct A
+@{
+  A ();
+  A& operator *();		// The indirection operator
+  A& operator *(A&);		// The multiply operator
+@};
+
+main ()
+@{
+  A a;
+  A& (*pf)(A*, A&);
+
+  pf = a.operator*;		// Which operator??
+@}
+@end example
+
+Type instantiation allows the compiler to choose from among many
+candidates, the most appropriate one given contextual information such as
+type.  If an ambiguity still remains, then a warning or an error message is
+given.
+
+This facility has been extended for releases 1.35.0 and later.  Consider
+the following code:
+
+@example
+struct X
+@{
+  double d;
+  int i;
+  int *mf1 ();
+  int X::* mf2 ();
+  int mf3 ();
+@};
+
+int * X::mf1 ()
+@{
+  return &X::i;        // return pointer to this->X::i
+@}
+
+int X::* X::mf2 ()
+@{
+  return &X::i;        // return pointer to member X::i
+@}
+
+int X::mf3 ()
+@{
+  return X::i;        // return this->X::i
+@}
+@end example
+
+@node Linking, Named Return Values, Goto, Features
+@section Incremental Linking and GNU C++
+
+Incremental linking adds a new dimension to programming with GNU C++.
+Standard C++ requires that constructors and destructors be called on
+all objects which declare them, including global data.  For example,
+when using the @samp{stream} library facilities, the global variables
+@code{cin}, @code{cout}, and @code{cerr} are global variables which
+are initialized before control ever reaches @code{main}.  GNU C++
+extends this model to incorporate code which is linked with a program
+at run-time.  Code which illustrates this behavior is distributed in
+the GNU C++ library, libg++, in the files @file{test.hello.cc},
+@file{test.bye}, and others which comprise @samp{test0}, one of the
+tests in the @samp{Makefile} in the GNU C++ library tests directory.
+
+Care should be taken when writing code which uses incremental linking.
+Because GNU C++ can put more than just program code in text space
+(read-only variables and character strings typically into text space as
+well), the starting address of text space may not always be the first
+function defined.  It is therefore suggested that users include the file
+@file{Incremental.h} as the @emph{first} file included in any program which
+will be linked incrementally, and immediately use the macro
+@code{DECLARE_INIT_FUNCTION} to tell GNU C++ what function should be called
+to initialize the module.
+
+@node Named Return Values, Bugs, Linking, Features
+@section Avoid extra constructor call when returning classes from functions.
+
+Consider a function @code{m ()} with a return value of class @code{X}.
+
+@example
+X m () @{ X b; b.a = 23; return b; @}
+@end example
+
+and the declaration
+
+@example
+X v = m ();
+@end example
+
+What happens here is that @code{m ()} secretly has an argument, the
+address of the return value.  At invocation, the address of enough space
+to hold @code{v} is sent in as the hidden argument.  Then @code{b} is constructed
+and its @code{b} field is set to the value 23. Then an X(X&) constructor is
+applied to @code{b}, with the hidden return value location as the target, so
+that @code{v} is now bound to the return value.
+
+But this is pretty wasteful. The local @code{b} is declared just to hold
+something that will be copied right out.  While a compiler that
+combined an ``elision'' algorithm with interprocedural data flow
+analysis could conceivably eliminate all of this, it seems much more
+practical to allow programmers to assist the compiler in generating
+efficient code by somehow manipulating the return value explicitly,
+thus avoiding the local variable and X(X&) constructor all together.
+
+A simple-looking and appealing solution to this is to allow programmers
+to name, and thus explicitly manipulate the return value.  The new
+syntax (optionally, of course) enables a programmer to declare the
+return value in almost just the way you declare a local, but as part of
+the declaration header instead of the code part. For example,
+
+@example
+X m () return r; @{ r.a = 23; @}
+@end example
+
+says that @code{m} returns an @code{X}, that we are calling @code{r}.
+The declaration of @code{r} is a standard proper declaration, whose effects
+are executed @strong{before} any of the @{ @dots{} @} part of @code{m}.
+
+Executing @code{return} statements or falling-off-the-edge of the
+function are legal ways to return out of a function declared in this
+fashion.  Thus, things like
+
+@example
+X m () return r(23); @{ return; @}
+@end example
+
+or even
+
+@example
+X m () return r(23); @{ @}
+@end example
+are perfectly legal, since the return value @code{r} has been
+initialized in either case.  The following code presents a problem:
+
+@example
+X m () return r; @{ X b; return b; @}
+@end example
+
+The return value slot denoted by @code{r} has already been initialized,
+but the statement @code{return b;} passes its value through @code{r} via
+initialization semantics.  There are two possible approaches the
+compiler could take to deal with this:
+
+@enumerate
+@item
+It could disallow it.
+
+@item
+It could destroy @code{r} (calling the destructor if there is one, or
+doing nothing if there is not), and then it could reinitialize @code{r}
+with @code{b}.
+@end enumerate
+
+I will give users a chance to provide feedback before settling on one or
+the other.  This extension was provided primarily to help people who
+were using overloaded operators, where there is a great need to control
+not just the arguments, but the return values of functions.  For classes
+in which the X(X&) constructor incurs a heavy copying penalty, (and
+especially in the usual case where there is a quick ``X()''
+constructor), this is a major savings: at least one X(X&) constructor is
+avoided.  The only disadvantage of this extension is that programmers do
+not have any control over when the constructor for the return value is
+called: it must be at the beginning.
+
+@node Bugs, Portability, Features, Top
+@chapter Reporting Bugs
+
+Your bug reports play an essential role in making GNU C++ reliable.
+
+Reporting a bug may help you by bringing a solution to your problem, or it
+may not.  But in any case the important function of a bug report is to help
+the entire community by making the next version of GNU C++ work better.  Bug
+reports are your contribution to the maintenance of GNU C++.
+
+In order for a bug report to serve its purpose, you must include the
+information that makes for fixing the bug.
+
+@menu
+* Criteria:  Bug Criteria.   Have you really found a bug?
+* Reporting: Bug Reporting.  How to report a bug effectively.
+@end menu
+
+@node Bug Criteria, Bug Reporting, Bugs, Bugs
+@section Have You Found a Bug?
+
+If you are not sure whether you have found a bug, here are some guidelines:
+
+@itemize @bullet
+@item
+If the compiler gets a fatal signal, for any input whatever, that is a
+compiler bug.  Reliable compilers never crash.
+
+@item
+If the compiler produces invalid assembly code, for any input whatever
+(except an @code{asm} statement), that is a compiler bug, unless the
+compiler reports errors (not just warnings) which would ordinarily
+prevent the assembler from being run.
+
+@item
+If the compiler produces valid assembly code that does not correctly
+execute the input source code, that is a compiler bug.
+
+However, you must double-check to make sure, because you may have run
+into an incompatibility between GNU C++ and traditional C++/PCC
+(@pxref{Incompatibilities}).  These incompatibilities might be considered
+bugs, but they are inescapable consequences of adding valuable
+features.
+
+Or you may have a program whose behavior is undefined, which happened
+by chance to give the desired results with another C++ compiler, or C++
+front-end/C compiler combination.
+
+For example, in many nonoptimizing compilers, you can write @samp{x;}
+at the end of a function instead of @samp{return x;}, with the same
+results.  But the value of the function is undefined if @samp{return}
+is omitted; it is not a bug when GNU C++ produces different results.
+
+Problems often result from expressions with two increment operators,
+as in @samp{f (*p++, *p++)}.  Your previous compiler might have
+interpreted that expression the way you intended; GNU C++ might
+interpret it another way; neither compiler is wrong.
+
+After you have localized the error to a single source line, it should
+be easy to check for these things.  If your program is correct and
+well defined, you have found a compiler bug.
+
+@item
+If the compiler produces an error message for valid input, that is a
+compiler bug.
+
+@item
+If the compiler does not produce an error message for invalid input,
+that is a compiler bug.  However, you should note that your idea of
+``invalid input'' might be my idea of ``an extension'' or ``support
+for traditional practice''.
+
+@item
+If you are an experienced user of C++ compilers, your suggestions
+for improvement of GNU C++ are welcome in any case.
+@end itemize
+
+@node Bug Reporting,, Bug Criteria, Bugs
+@section How to Report Bugs
+
+Send bug reports for GNU C++ to one of these addresses:
+
+@example
+bug-g++@@prep.ai.mit.edu
+@{ucbvax|mit-eddie|uunet@}!prep.ai.mit.edu!bug-g++
+@end example
+
+As a last resort, snail them to:
+
+@example
+GNU C++ Compiler Bugs
+Box #629 Crothers Memorial Hall
+ATTN: Michael Tiemann
+Stanford, CA 94305
+@end example
+
+The fundamental principle of reporting bugs usefully is this:
+@strong{report all the facts}.  If you are not sure whether to mention a
+fact or leave it out, mention it!
+
+Often people omit facts because they think they know what causes the
+problem and they conclude that some details don't matter.  Thus, you might
+assume that the name of the variable you use in an example does not matter.
+Well, probably it doesn't, but one cannot be sure.  Perhaps the bug is a
+stray memory reference which happens to fetch from the location where that
+name is stored in memory; perhaps, if the name were different, the contents
+of that location would fool the compiler into doing the right thing despite
+the bug.  Play it safe and give an exact example.
+
+If you want to enable me to fix the bug, you should include all these
+things:
+
+@itemize @bullet
+@item
+The version of GNU C++.  You can get this by running it with the
+@samp{-v} option.
+
+Without this, I won't know whether there is any point in looking for
+the bug in the current version of GNU C++.
+
+@item
+A complete input file that will reproduce the bug.  If the bug is in
+the C preprocessor, send me a source file and any header files that it
+requires.  If the bug is in the compiler proper (@file{cc1plus}), run your
+source file through the C preprocessor by doing @samp{g++ -E
+@var{sourcefile} > @var{outfile}}, then include the contents of
+@var{outfile} in the bug report.  (Any @samp{-I}, @samp{-D} or
+@samp{-U} options that you used in actual compilation should also be
+used when doing this.)
+
+A single statement is not enough of an example.  In order to compile
+it, it must be embedded in a function definition; and the bug might
+depend on the details of how this is done.
+
+Without a real example I can compile, all I can do about your bug
+report is wish you luck.  It would be futile to try to guess how to
+provoke the bug.  For example, bugs in register allocation and
+reloading frequently depend on every little detail of the function
+in which they happen.
+
+@item
+The command arguments you gave GNU C++ to compile that example and
+observe the bug.  For example, did you use @samp{-O}?  To guarantee
+you won't omit something important, list them all.
+
+If I were to try to guess the arguments, I would probably guess wrong
+and then I would not encounter the bug.
+
+@item
+The names of the files that you used for @file{tm.h} and @file{md}
+when you installed the compiler.
+
+@item
+The type of machine you are using, and the operating system name and
+version number.
+
+@item
+A description of what behavior you observe that you believe is
+incorrect.  For example, ``It gets a fatal signal,'' or, ``There is an
+incorrect assembler instruction in the output.''
+
+Of course, if the bug is that the compiler gets a fatal signal, then I
+will certainly notice it.  But if the bug is incorrect output, I might
+not notice unless it is glaringly wrong.  I won't study all the
+assembler code from a 50-line C program just on the off chance that it
+might be wrong.
+
+Even if the problem you experience is a fatal signal, you should still
+say so explicitly.  Suppose something strange is going on, such as,
+your copy of the compiler is out of synch, or you have encountered a
+bug in the C library on your system.  (This has happened!)  Your copy
+might crash and mine would not.  If you @i{told} me to expect a crash,
+then when mine fails to crash, I would know that the bug was not
+happening for me.  If you had not told me to expect a crash, then I
+would not be able to draw any conclusion from my observations.
+
+In cases where GNU C++ generates incorrect code, if you send me a small
+complete sample program I will find the error myself by running the
+program under a debugger.  If you send me a large example or a part of
+a larger program, I cannot do this; you must debug the compiled
+program and narrow the problem down to one source line.  Tell me which
+source line it is, and what you believe is incorrect about the code
+generated for that line.
+
+@item
+If you send me examples of output from GNU C++, please use @samp{-g}
+when you make them.  The debugging information includes source line
+numbers which are essential for correlating the output with the input.
+@end itemize
+
+Here are some things that are not necessary:
+
+@itemize @bullet
+@item
+A description of the envelope of the bug.
+
+Often people who encounter a bug spend a lot of time investigating
+which changes to the input file will make the bug go away and which
+changes will not affect it.
+
+This is often time consuming and not very useful, because the way I
+will find the bug is by running a single example under the debugger
+with breakpoints, not by pure deduction from a series of examples.
+
+Of course, it can't hurt if you can find a simpler example that
+triggers the same bug.  Errors in the output will be easier to spot,
+running under the debugger will take less time, etc.  An easy way
+to simplify an example is to delete all the function definitions
+except the one where the bug occurs.  Those earlier in the file
+may be replaced by external declarations.
+
+However, simplification is not necessary; if you don't want to do
+this, report the bug anyway.
+
+@item
+A patch for the bug.
+
+A patch for the bug does help me if it is a good one.  But don't omit
+the necessary information, such as the test case, because I might see
+problems with your patch and decide to fix the problem another way.
+
+Sometimes with a program as complicated as GNU C++ it is very hard to
+construct an example that will make the program go through a certain
+point in the code.  If you don't send me the example, I won't be able
+to verify that the bug is fixed.
+
+@item
+A guess about what the bug is or what it depends on.
+
+Such guesses are usually wrong.  Even I can't guess right about such
+things without using the debugger to find the facts.  They also don't
+serve a useful purpose.
+@end itemize
+
+@node Portability, Interface, Bugs, Top
+@chapter GNU C++ and Portability
+
+The main goal of GNU C++ was to make a good, fast compiler for machines in
+the class that the GNU system aims to run on: 32-bit machines that address
+8-bit bytes and have several general registers.  Elegance, theoretical
+power and simplicity are only secondary.
+
+GNU C++ gets most of the information about the target machine from a machine
+description which gives an algebraic formula for each of the machine's
+instructions.  This is a very clean way to describe the target.  But when
+the compiler needs information that is difficult to express in this
+fashion, I have not hesitated to define an ad-hoc parameter to the machine
+description.  The purpose of portability is to reduce the total work needed
+on the compiler; it was not of interest for its own sake.
+
+GNU C++ does not contain machine dependent code, but it does contain code
+that depends on machine parameters such as endianness (whether the most
+significant byte has the highest or lowest address of the bytes in a word)
+and the availability of auto-increment addressing.  In the RTL-generation
+pass, it is often necessary to have multiple strategies for generating code
+for a particular kind of syntax tree, strategies that are usable for different
+combinations of parameters.  Often I have not tried to address all possible
+cases, but only the common ones or only the ones that I have encountered.
+As a result, a new target may require additional strategies.  You will know
+if this happens because the compiler will call @code{abort}.  Fortunately,
+the new strategies can be added in a machine-independent fashion, and will
+affect only the target machines that need them.
+
+The implementation of pointers to virtual member functions is not entirely
+portable.  This is because to be truly portable, these pointers would have
+to be twice the size of normal pointers.  The assumption that is made is
+that offsets into a virtual function table can be distinguished from
+addresses of functions.  In GNU C++, there are two ways of doing this: if
+the assumption is made that the largest offset into a virtual function
+table will always be smaller than the first text address available to the
+user, then define the symbol @code{VTABLE_USES_MASK}, and set
+@code{VINDEX_MAX} to the largest power of two less than or equal to that
+size.  When GNU C++ programs are linked with the GNU linker and
+@code{crt0+.o}, the GNU C++ startup code, a check is performed that virtual
+tables did not exceed this size when the program is run.
+
+If @code{VTABLE_USES_MASK} is not defined, then the compiler assumes that
+pointers with their high bit set are offsets into the virtual function
+table, otherwise they are pointers to addresses in text space.  Neither one
+of these strategies is particularly attractive for machines with segmented
+architectures with small segments, but then again, for these machines,
+nothing is.
+
+Pointers to static class members are not implemented.  It was
+felt that use of this feature would be extremely rare, and the run-time
+overhead associated with the implementation of this feature would, in
+general, not be worth it.
+
+@node Interface, Passes, Portability, Top
+@chapter Interfacing to GNU C++ Output
+
+GNU C++ is normally configured to use the same function calling convention
+normally in use on the target system.  This is done with the
+machine-description macros described (See the @code{Machine Macros} section
+of the ``Using and Porting GNU CC'' document).
+
+However, returning of structure and union values is done differently on
+some target machines.  As a result, functions compiled with PCC
+returning such types cannot be called from code compiled with GNU C++,
+and vice versa.  This does not cause trouble often because few Unix
+library routines return structures or unions.
+
+GNU C++ code returns structures and unions that are 1, 2, 4 or 8 bytes
+long in the same registers used for @code{int} or @code{double} return
+values.  (GNU C++ typically allocates variables of such types in
+registers also.)  Structures and unions of other sizes are returned by
+storing them into an address passed by the caller (usually in a
+register).  The machine-description macros @code{STRUCT_VALUE} and
+@code{STRUCT_INCOMING_VALUE} tell GNU C++ where to pass this address.
+
+By contrast, PCC on most target machines returns structures and unions
+of any size by copying the data into an area of static storage, and then
+returning the address of that storage as if it were a pointer value.
+The caller must copy the data from that memory area to the place where
+the value is wanted.  This is slower than the method used by GNU C++, and
+fails to be reentrant.
+
+On some target machines, such as RISC machines and the 80386, the
+standard system convention is to pass to the subroutine the address of
+where to return the value.  On these machines, GNU C++ has been
+configured to be compatible with the standard compiler, when this method
+is used.  It may not be compatible for structures of 1, 2, 4 or 8 bytes.
+
+GNU C++ uses the system's standard convention for passing arguments.  On
+some machines, the first few arguments are passed in registers; in
+others, all are passed on the stack.  It would be possible to use
+registers for argument passing on any machine, and this would probably
+result in a significant speedup.  But the result would be complete
+incompatibility with code that follows the standard convention.  So this
+change is practical only if you are switching to GNU C++ and use GNU CC
+as the sole C compiler for the system.  We may implement register
+argument passing on certain machines once we have a complete GNU system
+so that we can compile the libraries with GNU C++.
+
+If you use @code{longjmp}, beware of automatic variables.  ANSI C says that
+automatic variables that are not declared @code{volatile} have undefined
+values after a @code{longjmp}.  And this is all GNU C++ promises to do,
+because it is very difficult to restore register variables correctly, and
+one of GNU C++'s features is that it can put variables in registers without
+your asking it to.
+
+If you want a variable to be unaltered by @code{longjmp}, and you don't
+want to write @code{volatile} because old C compilers don't accept it,
+just take the address of the variable.  If a variable's address is ever
+taken, even if just to compute it and ignore it, then the variable cannot
+go in a register:
+
+@example
+@{
+  int careful;
+  &careful;
+  @dots{}
+@}
+@end example
+
+Code compiled with GNU C++ may call certain library routines.  The routines
+needed on the Vax and 68000 are in the file @file{gnulib.c}.  You must
+compile this file with the standard C compiler, not with GNU C++, and then
+link it with each program you compile with GNU C++.  The usual function
+call interface is used for calling the library routines.  Some standard
+parts of the C library, such as @code{bcopy}, are also called
+automatically.
+
+The file @file{gnulib.c} also provides the implementation for the
+functions @code{__builtin_new} and @code{__builtin_delete}, the functions
+responsible for actually allocating and deallocating storage for GNU C++
+programs.
+
+@node Passes, Config, Interface, Top
+@chapter Passes and Files of the Compiler
+
+The overall control structure of the compiler is in @file{toplev.c}.  This
+file is responsible for initialization, decoding arguments, opening and
+closing files, and sequencing the passes.  For information about the
+internals of the GNU C++ compiler, at this level and below it is
+functionally identical to the GNU CC compiler.  Please consult that
+document for further details.
+
+The parsing pass is invoked only once, to parse the entire input.  The RTL
+intermediate code for a function is generated as the function is parsed, a
+statement at a time.  Each statement is read in as a syntax tree and then
+converted to RTL; then the storage for the tree for the statement is
+reclaimed.  Storage for types (and the expressions for their sizes),
+declarations, and a representation of the binding contours and how they nest,
+remains until the function is finished being compiled; these are all needed
+to output the debugging information.
+
+Each time the parsing pass reads a complete function definition or
+top-level declaration, it calls the function
+@code{rest_of_compilation} or @code{rest_of_decl_compilation} in
+@file{toplev.c}, which are responsible for all further processing
+necessary, ending with output of the assembler language.  All other
+compiler passes run, in sequence, within @code{rest_of_compilation}.
+When that function returns from compiling a function definition, the
+storage used for that function definition's compilation is entirely
+freed, unless it is an inline function.
+
+Here is a list of all the passes of the compiler and their source files.
+Also included is a description of where debugging dumps can be requested
+with @samp{-d} options.
+
+@itemize @bullet
+@item
+Parsing.  This pass reads the entire text of a function definition,
+constructing partial syntax trees.  This and RTL generation are no longer
+truly separate passes (formerly they were), but it is easier to think
+of them as separate.
+
+The tree representation does not entirely follow C++ syntax, because it is
+intended to support other languages as well.
+
+C++ data type analysis is also done in this pass, and every tree node
+that represents an expression has a data type attached.  Variables are
+represented as declaration nodes.
+
+Constant folding and associative-law simplifications are also done
+during this pass.
+
+The source files for parsing are @file{cplus-parse.y},
+@file{cplus-decl.c}, @file{cplus-typeck.c}, @file{stor-layout.c},
+@file{fold-const.c}, and @file{tree.c}.  The last three are intended to
+be language-independent.  There are also header files
+@file{cplus-parse.h}, @file{cplus-tree.h}, @file{c-tree.h},
+@file{tree.h} and @file{tree.def}.  The last two define the format of
+the tree representation.@refill
+
+@item
+RTL generation.  This is the conversion of syntax tree into RTL code.
+It is actually done statement-by-statement during parsing, but for
+most purposes it can be thought of as a separate pass.  Constructors and
+destructors are processed specially by @code{finish_function}.
+
+This is where the bulk of target-parameter-dependent code is found,
+since often it is necessary for strategies to apply only when certain
+standard kinds of instructions are available.  The purpose of named
+instruction patterns is to provide this information to the RTL
+generation pass.
+
+Optimization is done in this pass for @code{if}-conditions that are
+comparisons, boolean operations or conditional expressions.  Tail
+recursion is detected at this time also.  Decisions are made about how
+best to arrange loops and how to output @code{switch} statements.
+
+The source files for RTL generation are @file{stmt.c}, @file{expr.c},
+@file{explow.c}, @file{expmed.c}, @file{optabs.c} and @file{emit-rtl.c}.
+Also, the file @file{insn-emit.c}, generated from the machine description
+by the program @code{genemit}, is used in this pass.  The header files
+@file{expr.h} is used for communication within this pass.@refill
+
+The header files @file{insn-flags.h} and @file{insn-codes.h},
+generated from the machine description by the programs @code{genflags}
+and @code{gencodes}, tell this pass which standard names are available
+for use and which patterns correspond to them.@refill
+
+Aside from debugging information output, none of the following passes
+refers to the tree structure representation of the function (only
+part of which is saved).
+
+The decision of whether the function can and should be expanded inline
+in its subsequent callers is made at the end of rtl generation.  The
+function must meet certain criteria, currently related to the size of
+the function and the types and number of parameters it has.  Note that
+this function may contain loops, recursive calls to itself
+(tail-recursive functions can be inlined!), gotos, in short, all
+constructs supported by GNU CC.
+
+The option @samp{-dr} causes a debugging dump of the RTL code after
+this pass.  This dump file's name is made by appending @samp{.rtl} to
+the input file name.
+
+@item
+Jump optimization.  This pass simplifies jumps to the following
+instruction, jumps across jumps, and jumps to jumps.  It deletes
+unreferenced labels and unreachable code, except that unreachable code
+that contains a loop is not recognized as unreachable in this pass.
+(Such loops are deleted later in the basic block analysis.)
+
+Jump optimization is performed two or three times.  The first time is
+immediately following RTL generation.  The second time is after CSE,
+but only if CSE says repeated jump optimization is needed.  The
+last time is right before the final pass.  That time, cross-jumping
+and deletion of no-op move instructions are done together with the
+optimizations described above.
+
+The source file of this pass is @file{jump.c}.
+
+The option @samp{-dj} causes a debugging dump of the RTL code after
+this pass is run for the first time.  This dump file's name is made by
+appending @samp{.jump} to the input file name.
+
+@item
+Register scan.  This pass finds the first and last use of each
+register, as a guide for common subexpression elimination.  Its source
+is in @file{regclass.c}.
+
+@item
+Common subexpression elimination.  This pass also does constant
+propagation.  Its source file is @file{cse.c}.  If constant
+propagation causes conditional jumps to become unconditional or to
+become no-ops, jump optimization is run again when CSE is finished.
+
+The option @samp{-ds} causes a debugging dump of the RTL code after
+this pass.  This dump file's name is made by appending @samp{.cse} to
+the input file name.
+
+@item
+Loop optimization.  This pass moves constant expressions out of loops.
+Its source file is @file{loop.c}.
+
+The option @samp{-dL} causes a debugging dump of the RTL code after
+this pass.  This dump file's name is made by appending @samp{.loop} to
+the input file name.
+
+@item
+Stupid register allocation is performed at this point in a
+nonoptimizing compilation.  It does a little data flow analysis as
+well.  When stupid register allocation is in use, the next pass
+executed is the reloading pass; the others in between are skipped.
+The source file is @file{stupid.c}.
+
+@item
+Data flow analysis (@file{flow.c}).  This pass divides the program
+into basic blocks (and in the process deletes unreachable loops); then
+it computes which pseudo-registers are live at each point in the
+program, and makes the first instruction that uses a value point at
+the instruction that computed the value.
+
+This pass also deletes computations whose results are never used, and
+combines memory references with add or subtract instructions to make
+autoincrement or autodecrement addressing.
+
+The option @samp{-df} causes a debugging dump of the RTL code after
+this pass.  This dump file's name is made by appending @samp{.flow} to
+the input file name.  If stupid register allocation is in use, this
+dump file reflects the full results of such allocation.
+
+@item
+Instruction combination (@file{combine.c}).  This pass attempts to
+combine groups of two or three instructions that are related by data
+flow into single instructions.  It combines the RTL expressions for
+the instructions by substitution, simplifies the result using algebra,
+and then attempts to match the result against the machine description.
+
+The option @samp{-dc} causes a debugging dump of the RTL code after
+this pass.  This dump file's name is made by appending @samp{.combine}
+to the input file name.
+
+@item
+Register class preferencing.  The RTL code is scanned to find out
+which register class is best for each pseudo register.  The source
+file is @file{regclass.c}.
+
+@item
+Local register allocation (@file{local-alloc.c}).  This pass allocates
+hard registers to pseudo registers that are used only within one basic
+block.  Because the basic block is linear, it can use fast and
+powerful techniques to do a very good job.
+
+The option @samp{-dl} causes a debugging dump of the RTL code after
+this pass.  This dump file's name is made by appending @samp{.lreg} to
+the input file name.
+
+@item
+Global register allocation (@file{global-alloc.c}).  This pass
+allocates hard registers for the remaining pseudo registers (those
+whose life spans are not contained in one basic block).
+
+@item
+Reloading.  This pass renumbers pseudo registers with the hardware
+registers numbers they were allocated.  Pseudo registers that did not
+get hard registers are replaced with stack slots.  Then it finds
+instructions that are invalid because a value has failed to end up in
+a register, or has ended up in a register of the wrong kind.  It fixes
+up these instructions by reloading the problematical values
+temporarily into registers.  Additional instructions are generated to
+do the copying.
+
+Source files are @file{reload.c} and @file{reload1.c}, plus the header
+@file{reload.h} used for communication between them.
+
+The option @samp{-dg} causes a debugging dump of the RTL code after
+this pass.  This dump file's name is made by appending @samp{.greg} to
+the input file name.
+
+@item
+Jump optimization is repeated, this time including cross-jumping
+and deletion of no-op move instructions.
+
+The option @samp{-dJ} causes a debugging dump of the RTL code after
+this pass.  This dump file's name is made by appending @samp{.jump2}
+to the input file name.
+
+@item
+Final.  This pass outputs the assembler code for the function.  It is
+also responsible for identifying spurious test and compare
+instructions.  Machine-specific peephole optimizations are performed
+at the same time.  The function entry and exit sequences are generated
+directly as assembler code in this pass; they never exist as RTL.
+
+The source files are @file{final.c} plus @file{insn-output.c}; the
+latter is generated automatically from the machine description by the
+tool @file{genoutput}.  The header file @file{conditions.h} is used
+for communication between these files.
+
+@item
+Debugging information output.  This is run after final because it must
+output the stack slot offsets for pseudo registers that did not get
+hard registers.  Source files are @file{dbxout.c} for DBX symbol table
+format and @file{symout.c} for GDB's own symbol table format.
+@end itemize
+
+Some additional files are used by all or many passes:
+
+@itemize @bullet
+@item
+Every pass uses @file{machmode.def}, which defines the machine modes.
+
+@item
+All the passes that work with RTL use the header files @file{rtl.h}
+and @file{rtl.def}, and subroutines in file @file{rtl.c}.  The tools
+@code{gen*} also use these files to read and work with the machine
+description RTL.
+
+@item
+Several passes refer to the header file @file{insn-config.h} which
+contains a few parameters (C macro definitions) generated
+automatically from the machine description RTL by the tool
+@code{genconfig}.
+
+@item
+Several passes use the instruction recognizer, which consists of
+@file{recog.c} and @file{recog.h}, plus the files @file{insn-recog.c}
+and @file{insn-extract.c} that are generated automatically from the
+machine description by the tools @file{genrecog} and
+@file{genextract}.@refill
+
+@item
+Several passes use the header files @file{regs.h} which defines the
+information recorded about pseudo register usage, and @file{basic-block.h}
+which defines the information recorded about basic blocks.
+
+@item
+@file{hard-reg-set.h} defines the type @code{HARD_REG_SET}, a bit-vector
+with a bit for each hard register, and some macros to manipulate it.
+This type is just @code{int} if the machine has few enough hard registers;
+otherwise it is an array of @code{int} and some of the macros expand
+into loops.
+@end itemize
+
+@node Config, Passes, Projects, Top
+@chapter The Configuration File
+
+The configuration file @file{xm-@var{machine}.h} contains macro definitions
+that describe the machine and system on which the compiler is running.
+Most of the values in it are actually the same on all machines that GNU C++
+runs on, so large parts of all configuration files are identical.  But
+there are some macros that vary:
+
+@table @code
+@item FAILURE_EXIT_CODE
+A C expression for the status code to be returned when the compiler
+exits after serious errors.
+
+@item SORRY_EXIT_CODE
+A C expression for the status code to be returned when the compiler
+exits after compiling a file which used a feature not yet implemented.
+
+@item SUCCESS_EXIT_CODE
+A C expression for the status code to be returned when the compiler
+exits without serious errors.
+@end table
+
+In addition, configuration files for system V define @code{bcopy},
+@code{bzero} and @code{bcmp} as aliases.  Some files define @code{alloca}
+as a macro when compiled with GNU CC, in order to take advantage of the
+benefit of GNU CC's built-in @code{alloca}.
+
+@node Projects, BugList, Config, Top
+@chapter Things still left to do for GNU C++
+
+The GNU C++ grammar is an LALR grammar in Bison format.  It currently uses
+the simple LALR parser driver (@code{bison.simple}).  It would be hard, but
+not impossible, to adapt GNU C++ to take full advantage of the Bison
+parsing machinery (@code{bison.hairy}), so that syntactic ambiguities which
+led to semantic errors could be unparsed, and reparsed with different
+syn-tactics.  This would give the GNU C++ parser the same heuristic power
+as a recursive descent parser, while maintaining an LALR grammar basis.
+
+Applications which make heavy use of virtual functions can pay a high price
+for function call overhead to its virtual functions.  Small virtual
+functions are particularly troublesome because call overhead is high, and
+they cannot usually be inlined to take care of that.  A more
+efficient calling sequence, which preserves both the class variable
+(@code{this}) and its virtual function table pointer, could eliminate
+memory traffic in many cases for these two often used parameters.
+
+@node BugList, Articles, Projects, Top
+@chapter List of currently known bugs in GNU C++
+
+The single greatest mis-feature of GNU C++ is that it cannot handle C-style
+function definitions.  It also does not handle pointer to function
+declarations or casts gracefully in a number of contexts, especially in parameter
+declarations.
+
+GNU C++ does not yet handle local class declarations.  A local class
+declaration permanently shadows a previous declaration.  GNU C++ does
+however support local enum declarations.  Access to class-level enum
+values are checked the same way that access is checked for class
+members and member functions, so it is possible to have private and
+protected enum values.
+
+The @samp{-p} and @samp{-pg} options are not yet supported.  The reason for
+this is that to work with these options, a special crt0.o file must be
+used.  Such files have not yet been modified to work with GNU C++.
+
+GNU C++ does not currently implement the arcane C trick that permits
+the commutativity of arrays and integer indexes.  For example, the
+legal C fragment:
+
+@example
+int i = 10;
+int a[20];
+
+i[a] = 100;
+@end example
+
+does not compile with GNU C++.  Do not expect this ``feature'' to
+work until a compelling argument for its inclusion is presented.
+
+GNU C++ does not correctly parse uses of the extended @code{new}
+placement operator.  For example, given the declaration:
+
+@example
+#include <new.h>
+
+class X 
+@{
+public:
+  X () @{ val = 0; @}
+  X (int v) @{ val = v; @}
+private:
+  int val;
+@};
+@end example
+
+the following function does not compile:
+
+@example
+void foo ()
+@{
+  int *pval = new int [50];
+  X *pX = new (pval) X [50];
+  // ...
+@} 
+@end example                            
+
+however, using the following syntax compiles correctly:
+
+@example
+void foo ()
+@{
+  int *pval = new int [50];
+  X *pX = new @{pval@} X [50];
+  // ...
+@} 
+@end example
+
+GNU C++ does not yet detect and warn about all possible misuses of
+goto statements that incorrectly jump into and out of nested blocks
+containing class objects with constructors and destructors.
+
+Work on supporting multiple inheritance is basically finished.  Some
+rough spots still exist, but now any problems with multiple inheritance
+should be considered ``bugs,'' and not ``unimplemented features''.
+
+@node Articles, Bibliography, BugList, Top
+@chapter Related documentation and bibliography
+
+[1] Stroustrup, Bjarne: @i{The C++ Programming Language.} Addison-Wesley, 1986.
+
+[2] Stroustrup, Bjarne: @i{The Evolution of C++: 1985 to 1987} First USENIX C++
+Workshop Proceedings, Santa Fe NM, 1987.
+
+[3] Stallman, Richard: @i{Using and Porting GNU CC} Free Software Foundation,
+1988.
+
+[4] Stallman, Richard: @i{GDB, The GNU Debugger} Free Software
+Foundation, 1988.
+
+[5] Stallman, Richard: @i{GNU Emacs Manual} Fifth Edition, Emacs Version 18
+for Unix Users, Free Software Foundation, October 1986.
+
+[6] Tiemann, Michael: @i{Wrappers: Solving the RPC Problem in GNU C++}
+First USENIX Technical Conference, Denver CO, 1988.
+
+[7] Tiemann, Michael: @i{An Exception Handling Implementation for C++}
+(to appear) USENIX Technical Conference, San Francisco CA, 1990.
+
+[8] Stroustrup, Bjarne: @i{The Evolution of C++: 1985 to 1989} 
+AT&T Bell Labs Tech Report.
+@contents
+@bye

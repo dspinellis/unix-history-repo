@@ -1,0 +1,3 @@
+cn=Public Access DUA
+presentationAddress= TELEX+00728722+X.25(80)+02+000005113200
+objectClass= quipuObject & applicationEntity & top

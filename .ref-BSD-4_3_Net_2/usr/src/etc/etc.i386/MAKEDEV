@@ -1,0 +1,202 @@
+#!/bin/sh -
+#
+# Copyright (c) 1991 The Regents of the University of California.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+# 3. All advertising materials mentioning features or use of this software
+#    must display the following acknowledgement:
+#	This product includes software developed by the University of
+#	California, Berkeley and its contributors.
+# 4. Neither the name of the University nor the names of its contributors
+#    may be used to endorse or promote products derived from this software
+#    without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+#
+#	@(#)MAKEDEV	5.1 (Berkeley) 3/22/91
+#
+
+# Device "make" file.  Valid arguments:
+#	std	standard devices
+#	local	configuration specific devices
+#
+# Tapes:
+#	wt*	QIC-interfaced (e.g. not SCSI) 3M cartridge tape
+#
+# Disks:
+#	wd*	"winchester" disk drives (ST506,IDE,ESDI,RLL,...)
+#	fd*	"floppy" disk drives (3 1/2", 5 1/4")
+#
+# Terminal ports:
+#	com*	standard PC COM ports
+#
+# Pseudo terminals:
+#	pty*	set of 16 master and slave pseudo terminals
+#
+# Printers:
+#
+# Call units:
+#
+# Special purpose devices:
+#	flog*	kernel logging device
+#
+
+PATH=/sbin:/bin/:/usr/bin
+umask 77
+for i
+do
+case $i in
+
+std)
+	mknod console		c 0 0
+	mknod drum		c 4 0	; chmod 640 drum ; chgrp kmem drum
+	mknod kmem		c 2 1	; chmod 640 kmem ; chgrp kmem kmem
+	mknod mem		c 2 0	; chmod 640 mem ; chgrp kmem mem
+	mknod null		c 2 2	; chmod 666 null
+	mknod tty		c 1 0	; chmod 666 tty
+	mknod klog		c 7 0	; chmod 600 klog
+	mknod stdin		c 53 0	; chmod 666 stdin
+	mknod stdout		c 53 1	; chmod 666 stdout
+	mknod stderr		c 53 2	; chmod 666 stderr
+	mkdir fd > /dev/null 2>&1
+	(cd fd && eval `echo "" | awk ' BEGIN { \
+		for (i = 0; i < 64; i++) \
+			printf("mknod %d c 53 %d;", i, i)}'`)
+	chown -R bin.bin fd
+	chmod 555 fd
+	chmod 666 fd/*
+	;;
+
+wt*)
+	umask 0 ; unit=`expr $i : '..\(.*\)'`
+	case $i in
+	wt*) blk=3; chr=10;;
+	esac
+	case $unit in
+	0)
+		four=`expr $unit + 4` ; eight=`expr $unit + 8`
+		twelve=`expr $unit + 12`; twenty=`expr $unit + 20`
+		#
+		# block devices don't work so don't make them
+		#mknod wt$unit	b $blk $unit
+		#mknod wt$four	b $blk $four
+		#mknod wt$eight	b $blk $eight
+		#mknod wt$twelve	b $blk $twelve
+		#mknod nwt$unit	b $blk $four ;: sanity w/pdp11 v7
+		#mknod nwt$eight	b $blk $twelve ;: ditto
+		#
+		mknod rwt$unit	c $chr $unit
+		mknod rwt$four	c $chr $four
+		mknod rwt$eight	c $chr $eight
+		mknod rwt$twelve	c $chr $twelve
+		ln rwt$four nrwt$unit ;: sanity w/pdp11 v7
+		ln rwt$twelve nrwt$eight ;: ditto
+		;;
+	*)
+		echo bad unit for tape in: $1
+		;;
+	esac
+	umask 77
+	;;
+
+fd*|wd*)
+	umask 2 ; unit=`expr $i : '..\(.*\)'`
+	case $i in
+	fd*) name=fd; blk=2; chr=9;;
+	wd*) name=wd; blk=0; chr=3;;
+	esac
+	case $unit in
+	0|1)
+		mknod ${name}${unit}a	b $blk `expr $unit '*' 8 + 0`
+		mknod ${name}${unit}b	b $blk `expr $unit '*' 8 + 1`
+		mknod ${name}${unit}c	b $blk `expr $unit '*' 8 + 2`
+		mknod ${name}${unit}d	b $blk `expr $unit '*' 8 + 3`
+		mknod ${name}${unit}e	b $blk `expr $unit '*' 8 + 4`
+		mknod ${name}${unit}f	b $blk `expr $unit '*' 8 + 5`
+		mknod ${name}${unit}g	b $blk `expr $unit '*' 8 + 6`
+		mknod ${name}${unit}h	b $blk `expr $unit '*' 8 + 7`
+		mknod r${name}${unit}a	c $chr `expr $unit '*' 8 + 0`
+		mknod r${name}${unit}b	c $chr `expr $unit '*' 8 + 1`
+		mknod r${name}${unit}c	c $chr `expr $unit '*' 8 + 2`
+		mknod r${name}${unit}d	c $chr `expr $unit '*' 8 + 3`
+		mknod r${name}${unit}e	c $chr `expr $unit '*' 8 + 4`
+		mknod r${name}${unit}f	c $chr `expr $unit '*' 8 + 5`
+		mknod r${name}${unit}g	c $chr `expr $unit '*' 8 + 6`
+		mknod r${name}${unit}h	c $chr `expr $unit '*' 8 + 7`
+		chgrp operator ${name}${unit}[a-h] r${name}${unit}[a-h]
+		chmod 640 ${name}${unit}[a-h] r${name}${unit}[a-h]
+		;;
+	*)
+		echo bad unit for disk in: $i
+		;;
+	esac
+	umask 77
+	;;
+
+com*)
+	unit=`expr $i : 'dca\(.*\)'`
+	case $unit in
+	1)
+		mknod com1 c 8 0
+		;;
+	2)
+		mknod com1 c 8 1
+		;;
+	*)
+		echo bad unit for com in: $i
+		;;
+	esac
+	;;
+
+pty*)
+	class=`expr $i : 'pty\(.*\)'`
+	case $class in
+	0) offset=0 name=p;;
+	1) offset=16 name=q;;
+	2) offset=32 name=r;;
+	3) offset=48 name=s;;
+# Note that telnetd, rlogind, and xterm (at least) only look at p-s.
+	4) offset=64 name=t;;
+	*) echo bad unit for pty in: $i;;
+	esac
+	case $class in
+	0|1|2|3|4)
+		umask 0
+		eval `echo $offset $name | awk ' { b=$1; n=$2 } END {
+			for (i = 0; i < 16; i++)
+				printf("mknod tty%s%x c 4 %d; \
+					mknod pty%s%x c 5 %d; ", \
+					n, i, b+i, n, i, b+i); }'`
+		umask 77
+		if [ $class = 1 ]; then
+			mv ttyqf ttyv0; mv ptyqf ptyv0
+		fi
+		;;
+	esac
+	;;
+
+local)
+	umask 0
+	sh MAKEDEV.local
+	;;
+
+esac
+done

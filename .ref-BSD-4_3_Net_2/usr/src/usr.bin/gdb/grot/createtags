@@ -1,0 +1,35 @@
+#!/bin/sh
+#
+# Here we check to see if we are compiling in a directory that contains
+# symlinks to the source files instead of the actual files.  If this is so, 
+# we setup the TAGS entries to point to the actual source directory.
+#
+filelist=""
+if test "`find main.c -type l -print `" != "" ; then
+	prefix=`ls -l main.c | awk '{print $11}' | sed 's;main.c$;;'`
+else
+	prefix=""
+fi
+for i in $@ ; do
+	filelist="$filelist $prefix$i"
+done
+#
+# Here we simply make sure that the actual machine dependent files being used
+# (if any) are ahead of all of the other machine dependent files in the list.
+# This means that M-. will (almost) always give you exactly the routine 
+# you want. 
+#
+if test -f param.h ; then
+	if `grep '^#define[ 	]*COFF_FORMAT' param.h > /dev/null 2>&1`; then
+		frmatfile=${prefix}coffread.c
+	else
+		frmatfile=${prefix}dbxread.c
+	fi
+	hfile=$prefix`ls -l param.h | awk '{print $11}'`
+	dfile=$prefix`ls -l dep.c | awk '{print $11}'`
+	ofile=$prefix`ls -l opcode.h | awk '{print $11}'`
+	pfile=$prefix`ls -l pinsn.c | awk '{print $11}'`
+	etags $hfile $dfile $ofile $pfile $frmatfile $filelist
+else
+	etags $filelist
+fi

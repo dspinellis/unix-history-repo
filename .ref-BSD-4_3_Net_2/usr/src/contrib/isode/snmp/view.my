@@ -1,0 +1,331 @@
+-- view.my - SNMP view MIB
+
+-- $Header: /f/osi/snmp/RCS/view.my,v 7.4 91/02/28 17:17:24 mrose Exp $
+--
+-- 
+-- $Log:	view.my,v $
+-- Revision 7.4  91/02/28  17:17:24  mrose
+-- touch-up
+-- 
+-- Revision 7.3  91/02/22  09:45:03  mrose
+-- Interim 6.8
+-- 
+-- Revision 7.2  90/09/26  19:20:49  mrose
+-- touch-up
+-- 
+-- Revision 7.1  90/07/09  14:49:53  mrose
+-- sync
+-- 
+-- Revision 7.0  90/07/08  13:02:15  mrose
+-- *** empty log message ***
+-- 
+
+--
+--				  NOTICE
+--
+--    Acquisition, use, and distribution of this module and related
+--    materials are subject to the restrictions of a license agreement.
+--    Consult the Preface in the User's Manual for the full terms of
+--    this agreement.
+--
+--
+
+
+               RFCxxxx-MIB DEFINITIONS ::= BEGIN
+
+               IMPORTS
+                       experimental, OBJECT-TYPE
+                           FROM RFC1155-SMI;
+
+               view    OBJECT IDENTIFIER ::= { experimental 11 }
+
+               -- primitive MIB view group
+
+               viewPrimTable OBJECT-TYPE
+                       SYNTAX  SEQUENCE OF ViewDefinition
+                       ACCESS  not-accessible
+                       STATUS  mandatory
+                       ::= { view 1 }
+
+               viewPrimEntry OBJECT-TYPE
+                       SYNTAX  ViewDefinition
+                       ACCESS  not-accessible
+                       STATUS  mandatory
+                       INDEX   { viewPrimName }
+                       ::= { viewPrimTable 1 }
+
+               ViewDefinition ::= SEQUENCE {
+                   viewPrimName
+                       OBJECT IDENTIFIER,
+                   viewPrimTDomain
+                       OBJECT IDENTIFIER,
+                   viewPrimTAddr
+                       OCTET STRING,
+                   viewPrimUser
+                       OCTET STRING,
+                   viewPrimCommunity
+                       OCTET STRING,
+                   viewPrimType
+                       INTEGER
+               }
+
+               viewPrimName OBJECT-TYPE
+                       SYNTAX  OBJECT IDENTIFIER
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { viewPrimEntry 1 }
+
+               viewPrimTDomain OBJECT-TYPE
+                       SYNTAX  OBJECT IDENTIFIER
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { viewPrimEntry 2 }
+
+               viewPrimTAddr OBJECT-TYPE
+                       SYNTAX  OCTET STRING
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { viewPrimEntry 3 }
+
+               viewPrimUser OBJECT-TYPE
+                       SYNTAX  OCTET STRING
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { viewPrimEntry 4 }
+
+               viewPrimCommunity OBJECT-TYPE
+                       SYNTAX  OCTET STRING
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { viewPrimEntry 5 }
+
+               viewPrimType OBJECT-TYPE
+                       SYNTAX  INTEGER { valid(1), invalid(2) }
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { viewPrimEntry 6 }
+
+
+               -- well-known MIB view
+               defaultView     OBJECT IDENTIFIER ::= { view 2 }
+
+               -- read-write access to whole MIB in addressed agent
+               defViewWholeRW  OBJECT IDENTIFIER ::= { defaultView 1 }
+
+               -- read-only access to whole MIB in addressed agent
+               defViewWholeRO  OBJECT IDENTIFIER ::= { defaultView 2 }
+
+               -- read-write access to Internet-standard MIB in addressed agent
+               defViewStandardRW OBJECT IDENTIFIER ::= { defaultView 3 }
+
+               -- read-only access to Internet-standard MIB in addressed agent
+               defViewStandardRO OBJECT IDENTIFIER ::= { defaultView 4 }
+
+               -- default trap-destination view
+               defViewTrapDest OBJECT IDENTIFIER ::= { defaultView 5 }
+
+
+               -- well-known transport addressing domains
+               viewDomains     OBJECT IDENTIFIER ::= { view 3 }
+
+               -- via local mechanism
+               localAgent      OBJECT IDENTIFIER ::= { 0 0 }
+               -- viewPrimTAddr:       zero-length string
+               -- viewPrimUser:        zero-length string
+               -- viewPrimCommunity:   zero-length string
+
+               -- via SNMP
+               snmpDomain      OBJECT IDENTIFIER ::= { viewDomains 1 }
+               -- viewPrimUser:        assigned by management enterprise
+               -- viewPrimCommunity:   assigned by management enterprise
+
+               --   via SNMP over UDP
+                    rfc1157Domain      OBJECT IDENTIFIER ::= { snmpDomain 1 }
+               --   viewPrimTAddr:     IP-address followed by UDP port
+
+               --   via SNMP over Ethernet (do not use!)
+               --   rfc1089Domain      OBJECT IDENTIFIER ::= { snmpDomain 2 }
+               --   viewPrimTAddr:     MAC address
+
+               --   via SNMP over OSI CLTS
+                    cltsDomain         OBJECT IDENTIFIER ::= { snmpDomain 3 }
+               --   viewPrimTAddr:     NSAP followed by TSEL
+
+               --   via SNMP over OSI COTS using CLNP
+                    cotsNDomain        OBJECT IDENTIFIER ::= { snmpDomain 4 }
+               --   viewPrimTAddr:     NSAP followed by TSEL
+
+               --   via SNMP over OSI COTS using X.25
+                    cotsXDomain        OBJECT IDENTIFIER ::= { snmpDomain 5 }
+               --   viewPrimTAddr:     NSAP followed by TSEL
+               --                      (use Interim scheme to get NSAP)
+
+               -- access policy group
+
+               viewAclTable OBJECT-TYPE
+                       SYNTAX  SEQUENCE OF ViewAccess
+                       ACCESS  not-accessible
+                       STATUS  mandatory
+                       ::= { view 4 }
+
+               viewAclEntry OBJECT-TYPE
+                       SYNTAX  ViewAccess
+                       ACCESS  not-accessible
+                       STATUS  mandatory
+                       INDEX   { viewAclCommunity, viewAclUser }
+                       ::= { viewAclTable 1 }
+
+               ViewAccess ::= SEQUENCE {
+                   viewAclView
+                       OBJECT IDENTIFIER,
+                   viewAclCommunity
+                       OCTET STRING,
+                   viewAclUser
+                       OCTET STRING,
+                   viewAclPrivileges
+                       INTEGER,
+                   viewAclType
+                       INTEGER
+               }
+
+               viewAclView OBJECT-TYPE
+                       SYNTAX  OBJECT IDENTIFIER
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { viewAclEntry 1 }
+
+               viewAclCommunity OBJECT-TYPE
+                       SYNTAX  OCTET STRING
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { viewAclEntry 2 }
+
+               viewAclUser OBJECT-TYPE
+                       SYNTAX  OCTET STRING
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { viewAclEntry 3 }
+
+               viewAclPrivileges OBJECT-TYPE
+                       SYNTAX  Privileges --* INTEGER (0..31) *--
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { viewAclEntry 4 }
+
+               viewAclType OBJECT-TYPE
+                       SYNTAX  INTEGER { valid(1), invalid(2) }
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { viewAclEntry 5 }
+
+
+               -- trap configuration group
+
+               viewTrapTable OBJECT-TYPE
+                       SYNTAX  SEQUENCE OF ViewTrapEntry
+                       ACCESS  not-accessible
+                       STATUS  mandatory
+                       ::= { view 5 }
+
+               viewTrapEntry OBJECT-TYPE
+                       SYNTAX  ViewTrapEntry
+                       ACCESS  not-accessible
+                       STATUS  mandatory
+                       INDEX   { viewTrapView }
+                       ::= { viewTrapTable 1 }
+
+               ViewTrapEntry ::= SEQUENCE {
+                   viewTrapView
+                       OBJECT IDENTIFIER,
+                   viewTrapGenerics
+                       OCTET STRING,
+                   viewTrapSpecifics
+                       OCTET STRING,
+                   viewTrapType
+                       INTEGER
+               }
+
+               viewTrapView OBJECT-TYPE
+                       SYNTAX  OBJECT IDENTIFIER
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { viewTrapEntry 1 }
+
+               viewTrapGenerics OBJECT-TYPE
+                       SYNTAX  OCTET STRING (SIZE (0..1))
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { viewTrapEntry 2 }
+
+               viewTrapSpecifics OBJECT-TYPE
+                       SYNTAX  OCTET STRING
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { viewTrapEntry 3 }
+
+               viewTrapType OBJECT-TYPE
+                       SYNTAX  INTEGER { valid(1), invalid(2) }
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { viewTrapEntry 4 }
+
+
+               -- constructed MIB view group
+
+               viewTranTable OBJECT-TYPE
+                       SYNTAX  SEQUENCE OF ViewTranslation
+                       ACCESS  not-accessible
+                       STATUS  mandatory
+                       ::= { view 6 }
+
+               viewTranEntry OBJECT-TYPE
+                       SYNTAX  ViewTranslation
+                       ACCESS  not-accessible
+                       STATUS  mandatory
+                       INDEX   { viewSourceName, viewSourceSubtree }
+                       ::= { viewTranTable 1 }
+
+               ViewTranslation ::= SEQUENCE {
+                   viewSourceName
+                       OBJECT IDENTIFIER,
+                   viewSourceSubtree
+                       OBJECT IDENTIFIER,
+                   viewTargetName
+                       OBJECT IDENTIFIER,
+                   viewTargetSubtree
+                       OBJECT IDENTIFIER,
+                   viewTranType
+                       INTEGER
+               }
+
+               viewSourceName OBJECT-TYPE
+                       SYNTAX  OBJECT IDENTIFIER
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { viewTranEntry 1 }
+
+               viewSourceSubtree OBJECT-TYPE
+                       SYNTAX  OBJECT IDENTIFIER
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { viewTranEntry 2 }
+
+               viewTargetName OBJECT-TYPE
+                       SYNTAX  OBJECT IDENTIFIER
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { viewTranEntry 3 }
+
+               viewTargetSubtree OBJECT-TYPE
+                       SYNTAX  OBJECT IDENTIFIER
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { viewTranEntry 4 }
+
+               viewTranType OBJECT-TYPE
+                       SYNTAX  INTEGER { valid(1), invalid(2) }
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { viewTranEntry 5 }
+
+               END

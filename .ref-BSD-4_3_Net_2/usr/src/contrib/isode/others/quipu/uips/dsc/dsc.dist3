@@ -1,0 +1,37 @@
+LOCALMESS
+echo "
+We would like to monitor usage of the directory service.  First, we 
+need to gather statistics. Second, we would like to improve the service 
+offered. Could you answer the following questions?
+"
+echo -n "Please type your name (forename or initial, plus surname): "
+read USERNAME
+echo -n "Please type the name of your department: "
+read USERDEPT
+
+echo "$USERNAME#$USERDEPT#`date`" |
+awk -F# ' {
+printf("%-20s%-20s%s\n", $1, $2, $3) >> "'$INTLOGDIR'/users"
+} '
+
+echo
+echo -n "Would you like to comment on the interface, the usefulness 
+of the "help" information or the accuracy of the information in the 
+Directory? (y/n): "
+read YN
+if test "$YN" = "y" -o "$YN" = "yes" -o "$YN" = "Y" -o "$YN" = "YES"
+then
+        echo "Please type your message now. Terminate your message"
+        echo "by typing \".\" at the start of the line following your message."
+        echo
+        echo $USERNAME of $USERDEPT > $INTLOGDIR/dsc$$
+        echo "____________" >> $INTLOGDIR/dsc$$
+        while read gunge
+        do
+                if test "$gunge" = "."
+                then
+                        break
+                fi
+                echo $gunge >> $INTLOGDIR/dsc$$
+        done
+fi

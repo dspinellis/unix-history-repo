@@ -1,0 +1,6 @@
+Add character types to R.proto.
+
+Option to set number of lines and columns on the command line.
+
+Option not to limit the number of lines on a page and mark the end
+with a formfeed.

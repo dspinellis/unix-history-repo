@@ -1,0 +1,22 @@
+Mmtree	mtree.c	/^main(argc, argv)$/
+compare	compare.c	/^compare(name, s, p)$/
+cwalk	create.c	/^cwalk()$/
+dsort	create.c	/^dsort(p1, p2)$/
+emalloc	spec.c	/^emalloc(size)$/
+ftype	compare.c	/^ftype(type)$/
+getgroup	spec.c	/^getgroup(p)$/
+getowner	spec.c	/^getowner(p)$/
+inotype	compare.c	/^inotype(type)$/
+key	spec.c	/^key(p)$/
+miss	verify.c	/^miss(p, tail)$/
+nomem	spec.c	/^nomem()$/
+noparent	spec.c	/^noparent()$/
+rlink	compare.c	/^rlink(name)$/
+set	spec.c	/^set(ip)$/
+spec	spec.c	/^spec()$/
+specerr	spec.c	/^specerr()$/
+statdir	create.c	/^statdir(t, parent, puid, pgid, pmode, tabs)$/
+unset	spec.c	/^unset(ip)$/
+usage	mtree.c	/^usage()$/
+verify	verify.c	/^verify()$/
+vwalk	verify.c	/^vwalk()$/

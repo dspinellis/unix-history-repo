@@ -1,0 +1,47 @@
+.TH UFN 1C "13 Jun 1990"
+.\" $Header: /f/osi/others/quipu/uips/ufn/RCS/ufn.1c,v 7.1 91/02/22 09:33:14 mrose Interim $
+.\"
+.\"
+.\" $Log:	ufn.1c,v $
+.\" Revision 7.1  91/02/22  09:33:14  mrose
+.\" Interim 6.8
+.\" 
+.\" Revision 7.0  90/06/13  18:52:44  mrose
+.\" *** empty log message ***
+.\" 
+.SH NAME
+ufn \- UFN user-interface
+.SH SYNOPSIS
+.in +.5i
+.ti -.5i
+.B ufn
+\%[\-d]
+\%[\-f]
+\%[name\0...]
+.SH DESCRIPTION
+The \fIufn\fR program is a simple interface which implements a
+\*(lquser-friendly\*(rq naming scheme using the OSI Directory.
+.PP
+The `\-d' flag tells \fIufn\fR to ask \fIdish\fR to display the entry
+corresponding with the name(s) found.
+(The user must have already started \fIdish\fR in the background,
+i.e., by typing \*(lqbind\*(rq to the shell.)
+.PP
+The `\-f' flag tells \fIufn\fR to print the full distinguished name of
+the name(s) found.
+.SH FILES
+.nf
+.ta \w'\*(EDdsaptailor  'u
+\*(EDdsaptailor	system QUIPU tailoring file
+$HOME/\&.quipurc	user's QUIPU tailoring file
+\*(EDufnrc	system runcom file
+$HOME/\&.ufnrc	user's runcom file
+.re
+.fi
+.SH "SEE ALSO"
+\fIUsing the OSI Directory to achieve User Friendly Naming\fR
+.SH DIAGNOSTICS
+All obvious.
+.SH AUTHOR
+Colin J. Robbins,
+University College London

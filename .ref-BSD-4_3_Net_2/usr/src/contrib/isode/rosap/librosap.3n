@@ -1,0 +1,218 @@
+.TH LIBROSAP 3N "21 Aug 1986"
+.\" $Header: /f/osi/rosap/RCS/librosap.3n,v 7.1 91/02/22 09:41:07 mrose Interim $
+.\"
+.\" Based on an TCP-based implementation by George Michaelson of University
+.\" College London.
+.\"
+.\"
+.\" $Log:	librosap.3n,v $
+.\" Revision 7.1  91/02/22  09:41:07  mrose
+.\" Interim 6.8
+.\" 
+.\" Revision 7.0  89/11/23  22:21:11  mrose
+.\" Release 6.0
+.\" 
+.SH NAME
+librosap \- Remote Operations Services library
+.SH SYNOPSIS
+.B "#include <isode/rosap.h>"
+.sp
+\fIcc\fR\0...\0\fB\-lisode\fR
+.SH DESCRIPTION
+The \fIlibrosap\fR library contains a set of routines which implement
+remote operations facilities.
+In essence,
+they implement a Remote Operations Service Point
+(RoSAP) interface for connection-oriented user applications.
+.PP
+The information contained herein is skeletal:
+consult the \fIUser's Manual\fR for actual examples of how ISO servers and
+clients are coded and interact with the \fIlibrosap\fR library.
+.SH "SERVICE DISCIPLINES"
+Three remote operation service disciplines are implemented by the library:
+\*(lqbasic\*(rq, \*(lqadvanced\*(rq, and \*(lqcomplete\*(rq.
+The basic service is based on the ECMA technical report and an underlying
+session service.
+This remote operation service is selected when the \fBRoBeginRequest\fR and
+\fBRoBeginResponse\fR routines are used.
+In addition to making minimal requirements on the provider at the remote site,
+the \*(lqbasic\*(rq discipline also limits the users by permitting only the
+initiator to make invocations.
+Certain applications, e.g., message handling systems, require more freedom
+(such as two\-way invocations) along with more reliability.
+The advanced service uses a different underlying service for ROS,
+namely the reliable transfer service.
+If the \fBRtBeginRequest\fR and \fBRtBeginResponse\fR routines
+(from the \fIlibrtsap\fR\0(3n) library)
+are used 
+to establish an association for remote operations services,
+then the \*(lqadvanced\*(rq remote operation service is selected.
+Finally,
+the complete service supports linked operations,
+and can be selected by using the \fBAcAssocRequest\fR and
+\fBAcAssocResponse\fR routines (from the \fIlibacsap\fR\0(3n) library) are
+used to establish an association.
+.PP
+In the addressing and initialization descriptions that follow,
+keep in mind the distinctions described above.
+Finally,
+note that the corresponding \*(lqend\*(rq routines should be used based on
+the \*(lqbegin\*(rq routines selected.
+.SH ADDRESSES
+RoSAP addresses are represented by the \fBRoSAPaddr\fR structure.
+This contains a session address,
+and the port number of the RoSAP as found in the \fIisoservices\fR\0(5)
+database.
+.SH "SERVER INITIALIZATION"
+A program providing an ISO service is usually invoked under \fItsapd\fR\0(8c),
+with the argument vector listed in the ISODE services database.
+The server's very first action is to re\-capture the RoSAP state as
+recorded by \fItsapd\fR.
+This is accomplished by calling \fBRoInit\fR.
+Information returned by this call is equivalent to the parameters passed by a
+RO\-BEGIN.INDICATION event.
+If the call is successful,
+the program can then examine the argument vector that was passed via
+\fIexecvp\fR
+(it's important to call \fBRoInit\fR prior to reading \fBargc\fR and
+\fBargv\fR).
+If the call to \fBRoInit\fR is not successful,
+information returned by the call indicates the reason for failure.
+.PP
+After examining the information provided by \fBRoInit\fR
+(and possibly the argument vector),
+the server should either accept or reject the association.
+If accepting, the \fBRoBeginResponse\fR routine is called with the parameter
+\fBstatus\fR set to
+.sp
+.in +.5i
+.nf
+.ta \w'ROS_VALIDATE  'u
+ROS_ACCEPT	association accepted
+.re
+.fi
+.in -.5i
+.sp
+(which corresponds to the accepting RO\-BEGIN.RESPONSE action).
+If the call is successful,
+the association has been bound.
+If un\-successful,
+information returned by the call indicates the reason for failure.
+If rejecting, the \fBRoBeginResponse\fR routine is also called,
+but with the parameter \fBstatus\fR set to one of:
+.sp
+.in +.5i
+.nf
+.ta \w'ROS_VALIDATE  'u
+ROS_VALIDATE	authentication failure
+ROS_BUSY	busy
+.re
+.fi
+.in -.5i
+.sp
+(which corresponds to the refusing RO\-BEGIN.RESPONSE action),
+and the program may exit.
+.SH "CLIENT INITIALIZATION"
+A program requesting an ISO service calls \fBRoBeginRequest\fR
+(which corresponds to the RO\-BEGIN.REQUEST action).
+If successful (depending on the responder's choice of \fBstatus\fR),
+the association is bound.
+If un\-successful,
+information returned by the call indicates the reason for failure.
+.SH ASSOCIATION\-DESCRIPTORS
+Once an association has been bound via a successful return from
+\fBRoBeginResponse\fR (for servers) or \fBRoBeginRequest\fR (for clients),
+an association is referenced by a small integer
+(returned in a structure passed to these calls) called an
+\fIassociation\-descriptor\fR.
+The association\-descriptor appears as an argument to the peer routines
+described below.
+.PP
+By default,
+events associated with a association\-descriptor are synchronous in nature:
+activity in the network won't generate an INDICATION event without program
+first asking to be told of any activity.
+To mark an association\-descriptor as asynchronous,
+a call to \fBRoSetIndications\fR is made with the address of an integer
+function to handle incoming events.
+Upon a successful return from \fBRoSetIndications\fR,
+the event handler will be called in this fashion:
+.sp
+.in +.5i
+.B "(*handler) (sd, roi);"
+.in -.5i
+.sp
+where \fBsd\fR is the association\-descriptor,
+and \fBroi\fR is a pointer to a \fBRoSAPindication\fR structure.
+Any value returned by the event\-handler is ignored.
+.PP
+Note well: the \fB\-lisode\fR library uses the \fB\-ltsap\fR library to
+provide this interface.
+The latter library  uses the SIGEMT signal to provide this service.
+Programs loaded with \fB\-ltsap\fR that use asynchronous
+association\-descriptors should NOT use SIGEMT for other purposes.
+.PP
+For synchronous multiplexing of several associations,
+the routine \fBRoSelectMask\fR
+updates a file\-descriptor mask and counter for use with \fIselect\fR\0(2).
+.SH PEER
+A fatal failure (consult the \fIUser's Manual\fR)
+on return from any of these routines results in the association being unbound.
+.sp
+.in +.5i
+.nf
+.ta \w'\fBRoRejectURequest\fR  'u
+\fIroutine\fR	\fIaction\fR
+\fBRoInvokeRequest\fR	RO\-INVOKE.REQUEST
+\fBRoResultRequest\fR	RO\-RESULT.REQUEST
+\fBRoErrorRequest\fR	RO\-ERROR.REQUEST
+\fBRoRejectURequest\fR	RO\-REJECT\-U.REQUEST
+\fBRoWaitRequest\fR	RO\-WAIT.REQUEST (synchronous wait)
+\fBRoEndRequest\fR	RO\-END.REQUEST
+\fBRoEndResponse\fR	RO\-END.RESPONSE
+.re
+.fi
+.in -.5i
+.sp
+Note that the \fBRoWaitRequest\fR routine returns data from the peer by
+allocating memory.
+It should be freed before the structure is re\-used.
+.PP
+Finally,
+the routine \fBRoErrString\fR takes a failure code from a \fBRoSAPpreject\fR
+structure and returns a null\-terminated diagnostic string.
+.SH FILES
+.nf
+.ta \w'\*(EDisoservices  'u
+\*(EDisoentities	ISODE entities database
+\*(EDisobjects	ISODE objects database
+\*(EDisoservices	ISODE services database
+.re
+.fi
+.SH "SEE ALSO"
+libacsap (3n), librtsap (3n), isoentities(5), isobjects (5), isoservices(5)
+.br
+\fIThe ISO Development Environment: User's Manual\fR,
+.br
+ISO 9072/1:
+\fIInformation Processing Systems \-\- Text Communication \-\- MOTIS \-\-
+Remote Operations Part 1: Model, Notation and Service Definition\fR,
+.br 
+CCITT Recommendation X.410:
+\fIMessage Handling Systems: Remote Operations and Reliable Transfer Server\fR,
+.br 
+ECMA Technical Report:
+\fIRemote Operations: Concepts, Notation and Connection\-Oriented Mappings\fR,
+Final Draft, July, 1985
+.SH DIAGNOSTICS
+All routines return the manifest constant \fBNOTOK\fR (\-1) on error.
+.SH AUTHOR
+Marshall T. Rose
+.PP
+This library is based on an initial implementation by George
+Michaelson,
+University College London.
+.SH BUGS
+Do not confuse association\-descriptors with file\-descriptors.
+Unlike file\-descriptors which are implemented by the kernel,
+association\-descriptors to not work across \fIfork\fRs and \fIexec\fRs.

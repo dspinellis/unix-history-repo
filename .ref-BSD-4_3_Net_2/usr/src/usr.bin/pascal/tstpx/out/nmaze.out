@@ -1,0 +1,52 @@
+width=height=randomizing seed= XXXXXXXXXXXXXXXXXXXXXXX
+ X           X   X     X
+ XXX X XXXXX X X X XXX X
+ X   X X   X   X   X X X
+ X XXXXX X XXXXXXXXX X X
+ X       X     X     X X
+ XXXXXXXXXXXXX X XXX X X
+ X       X X   X X X   X
+ XXX XXX X X XXX X XXXXX
+ X   X     X   X X     X
+ X XXXXXXXXXXX X X XXX X
+     X       X X X   X X
+ X X X XXX XXX X X X X X
+ X X   X X X   X X X X X
+ X XXXXX X XXXXX XXX X X
+ X X     X     X   X X X
+ X XXX X X XXX XXX X XXX
+ X   X X X X     X X   X
+ XXX X XXX XXXXXXX X X X
+ X X X X   X     X X X X
+ X X X X XXX XXX X XXX X
+ X     X       X        
+ XXXXXXXXXXXXXXXXXXXXXXX
+want another? (y or n)width=height=randomizing seed= XXXXXXXXXXXXXXXXXXXXXXXXXXX
+ X X             X         X
+ X X XXXXXXXXX X X XXX XXX X
+ X X X X       X X X   X   X
+ X X X X XXXXXXX X X XXXXXXX
+ X X X X   X     X X       X
+ X X X XXX XXXXXXX XXXXXXX X
+ X X     X       X X X   X X
+ X XXXXX XXXXXXX X X X X X X
+ X     X X     X X   X X   X
+ X X XXX XXXXX X XXX X XXX X
+ X X           X     X   X X
+ X XXXXXXXXXXX XXXXX XXX X X
+ X X       X   X   X X   X X
+ XXX XXXXX XXXXX X XXX XXXXX
+ X   X   X   X   X     X   X
+ X XXXXX XXX X XXXXXXX X X X
+ X X   X   X   X X   X X X X
+ X X X X XXXXX X X X XXX X X
+ X X X X       X X X     X  
+ X X X X XXXXXXX X XXXXXXX X
+ X   X X     X   X X   X   X
+ X XXX XXXXX X XXX X XXX XXX
+ X   X     X X     X     X X
+ XXX XXXXX XXXXXXXXX XXXXX X
+         X                 X
+ XXXXXXXXXXXXXXXXXXXXXXXXXXX
+want another? (y or n)
+16991 statements executed in 4.02 seconds cpu time.

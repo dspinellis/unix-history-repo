@@ -1,0 +1,157 @@
+// This may look like C code, but it is really -*- C++ -*-
+/* 
+Copyright (C) 1988 Free Software Foundation
+    written by Doug Lea (dl@rocky.oswego.edu)
+
+This file is part of GNU CC.
+
+GNU CC is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY.  No author or distributor
+accepts responsibility to anyone for the consequences of using it
+or for whether it serves any particular purpose or works at all,
+unless he says so in writing.  Refer to the GNU CC General Public
+License for full details.
+
+Everyone is granted permission to copy, modify and redistribute
+GNU CC, but only under the conditions described in the
+GNU CC General Public License.   A copy of this license is
+supposed to have been given to you along with GNU CC so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies.  
+*/
+
+
+#ifndef _<T><C>AVLMap_h
+#ifdef __GNUG__
+#pragma once
+#pragma interface
+#endif
+#define _<T><C>AVLMap_h 1
+
+#include "<T>.<C>.Map.h"
+
+struct <T><C>AVLNode
+{
+  <T><C>AVLNode*      lt;
+  <T><C>AVLNode*      rt;
+  <T>                 item;
+  <C>                 cont;
+  char                stat;
+                      <T><C>AVLNode(<T&> h, <C&> c, 
+                                    <T><C>AVLNode* l=0, <T><C>AVLNode* r=0);
+                      ~<T><C>AVLNode();
+};
+
+#if defined(__OPTIMIZE__) || defined(USE_LIBGXX_INLINES)
+
+inline <T><C>AVLNode::<T><C>AVLNode(<T&> h, <C&> c, 
+                                    <T><C>AVLNode* l, <T><C>AVLNode* r)
+     :item(h), cont(c), lt(l), rt(r), stat(0) {}
+
+inline <T><C>AVLNode::~<T><C>AVLNode() {}
+
+#endif
+
+typedef <T><C>AVLNode* <T><C>AVLNodePtr;
+
+
+class <T><C>AVLMap : public <T><C>Map
+{
+protected:
+  <T><C>AVLNode*   root;
+
+  <T><C>AVLNode*   leftmost();
+  <T><C>AVLNode*   rightmost();
+  <T><C>AVLNode*   pred(<T><C>AVLNode* t);
+  <T><C>AVLNode*   succ(<T><C>AVLNode* t);
+  void            _kill(<T><C>AVLNode* t);
+  void            _add(<T><C>AVLNode*& t);
+  void            _del(<T><C>AVLNode* p, <T><C>AVLNode*& t);
+
+public:
+                <T><C>AVLMap(<C&> dflt);
+                <T><C>AVLMap(<T><C>AVLMap& a);
+                ~<T><C>AVLMap();
+
+  <C>&          operator [] (<T&> key);
+
+  void          del(<T&> key);
+
+  Pix           first();
+  void          next(Pix& i);
+  <T>&          key(Pix i);
+  <C>&          contents(Pix i);
+
+  Pix           seek(<T&> key);
+  int           contains(<T&> key);
+
+  void          clear(); 
+
+  Pix           last();
+  void          prev(Pix& i);
+
+  int           OK();
+};
+
+#if defined(__OPTIMIZE__) || defined(USE_LIBGXX_INLINES)
+
+inline <T><C>AVLMap::~<T><C>AVLMap()
+{
+  _kill(root);
+}
+
+inline <T><C>AVLMap::<T><C>AVLMap(<C&> dflt) :(dflt)
+{
+  root = 0;
+}
+
+
+inline Pix <T><C>AVLMap::first()
+{
+  return Pix(leftmost());
+}
+
+inline Pix <T><C>AVLMap::last()
+{
+  return Pix(rightmost());
+}
+
+inline void <T><C>AVLMap::next(Pix& i)
+{
+  if (i != 0) i = Pix(succ((<T><C>AVLNode*)i));
+}
+
+inline void <T><C>AVLMap::prev(Pix& i)
+{
+  if (i != 0) i = Pix(pred((<T><C>AVLNode*)i));
+}
+
+inline <T>& <T><C>AVLMap::key(Pix i)
+{
+  if (i == 0) error("null Pix");
+  return ((<T><C>AVLNode*)i)->item;
+}
+
+inline <C>& <T><C>AVLMap::contents(Pix i)
+{
+  if (i == 0) error("null Pix");
+  return ((<T><C>AVLNode*)i)->cont;
+}
+
+inline void <T><C>AVLMap::clear()
+{
+  _kill(root);
+  count = 0;
+  root = 0;
+}
+
+inline int <T><C>AVLMap::contains(<T&> key)
+{
+  return seek(key) != 0;
+}
+
+
+
+#endif
+#endif

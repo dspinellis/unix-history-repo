@@ -1,0 +1,2539 @@
+BABYL OPTIONS:
+Version: 5
+Labels:
+Note:   This is the header of an rmail file.
+Note:   If you are seeing it in rmail,
+Note:    it means the file has no messages in it.
+
+1,,
+Return-Path: <csmith@convex.com>
+Received: by teacake.sun.com (4.0/SMI-4.0)
+	id AA01354; Thu, 18 Jan 90 19:09:01 PST
+Date: Thu, 18 Jan 90 19:09:01 -0600
+From: csmith@convex.com (Chris Smith)
+To: ngo%tammy@harvard (Tom Ngo)
+In-Reply-To: ngo%tammy@HARVARD.HARVARD.EDU's message of 17 Jan 90 22:12:19 GMT
+Subject: How to use collect2... my conjecture
+Status: R
+
+*** EOOH ***
+Return-Path: <csmith@convex.com>
+Date: Thu, 18 Jan 90 19:09:01 -0600
+From: csmith@convex.com (Chris Smith)
+To: ngo%tammy@harvard (Tom Ngo)
+In-Reply-To: ngo%tammy@HARVARD.HARVARD.EDU's message of 17 Jan 90 22:12:19 GMT
+Subject: How to use collect2... my conjecture
+
+Sorry, I've been neglecting my netnews reading and didn't see your
+earlier messages. 
+
+The secret of collect2.c is to install it as "/usr/local/lib/gcc-ld"
+--- it then does its thing with the constructors & destructors and
+runs the real ld.
+
+1,,
+Return-Path: <@nsfnet-relay.ac.uk,@computer-lab.cambridge.ac.uk:balen@camscan.uucp>
+Received: by teacake.sun.com (4.0/SMI-4.0)
+	id AA01354; Wed, 17 Jan 90 09:35:21  PST
+Date: Wed, 17 Jan 90 09:35:21 GMT
+From: henry Balen <balen%camscan.uucp@nsfnet-relay.ac.uk>
+To: bug-g++@prep.ai.mit.edu
+Subject: HINTS
+Reply-To: balen%camscan.uucp@nsfnet-relay.ac.uk
+Status: R
+
+*** EOOH ***
+Return-Path: <@nsfnet-relay.ac.uk,@computer-lab.cambridge.ac.uk:balen@camscan.uucp>
+Date: Wed, 17 Jan 90 09:35:21 GMT
+From: henry Balen <balen%camscan.uucp@nsfnet-relay.ac.uk>
+To: bug-g++@prep.ai.mit.edu
+Subject: HINTS
+Reply-To: balen%camscan.uucp@nsfnet-relay.ac.uk
+
+I have managed to get g++ 1.36.2 up and running on the sun386. I had a lot of problems with 1.36.1 in that when I did get the compiler to work it produced code that crashed!
+I have listed the changes that I found necessary for 1.36.2 below. I hope that these are of some help.
+
+Henry Balen <balen%camscan.uucp@uk.ac.ukc>
+Camscan, Saxon Way, Bar Hill, Cambridge CB3 0JE, United Kingdom.
+
+--------------------------------------------------------------------------
+In xm-sun386i.h at line 47
+
+	#define LINK_SPEC "%{!e*:-e _start} -dc -dp %{g:-Bstatic}"
+
+to
+
+	#define LINK_SPEC "%{!e*:}  -Bstatic "
+
+--------------------------------------------------------------------------
+In crt0.c
+
+the
+	__do_global_init()
+and
+	__do_global_cleanup()
+
+needed to be removed (I put ifndef COFF round them).
+
+--------------------------------------------------------------------------
+In tm-sun386i.h at line 34
+
+	#define STARTFILE_SPEC  \
+	  "%{pg:gcrt0.o%s}%{!pg:%{p:mcrt0.o%s}%{!p:crt0.o%s}}"
+
+to
+
+	#define STARTFILE_SPEC  \
+	  "%{pg:gcrt0.o%s}%{!pg:%{p:mcrt0.o%s}%{!p:crt0+.o%s}}"
+
+--------------------------------------------------------------------------
+In gcc.c at line 306
+
+	ld %{o*} %g.R %g.O
+
+to
+
+	ld -Bstatic -e _start %{o*} %g.R %g.O -L/vol/local/lib.sun386\n\
+
+and at line 310
+
+	char *link_spec = "%{!c:%{!M*:%{!E:%{!S:ld -r -o %g.R %l\
+
+to
+
+	char *link_spec = "%{!c:%{!M*:%{!E:%{!S:ld -r -L/vol/local/lib.sun386 -o %g.R %l\
+
+1,,
+Return-Path: <csusac!cvms!ronald@ucdavis.edu>
+Date: Tue, 12 Sep 89 15:40:39 edt
+From: csusac!cvms!ronald@ucdavis.edu
+To: csusac!ucdavis!prep.ai.mit.edu!info-g++@ucdavis.edu
+Subject: UNIX PC
+
+*** EOOH ***
+Return-Path: <csusac!cvms!ronald@ucdavis.edu>
+Date: Tue, 12 Sep 89 15:40:39 edt
+From: csusac!cvms!ronald@ucdavis.edu
+To: csusac!ucdavis!prep.ai.mit.edu!info-g++@ucdavis.edu
+Subject: UNIX PC
+
+If you have an AT&T UNIX PC, here are some patches which may be of
+some consolation.  They are from:
+
+Ronald Cole               | uucp:     cvms!ronald       voice: +1 916 895 8321
+Senior Software Engineer  | internet: cvms!ronald@csuchico.edu
+CVM Systems               +----------------------------------------------------
+
+diff -rc2 g++-1.36.0-/config/tm-att386.h g++/config/tm-att386.h
+*** g++-1.36.0-/config/tm-att386.h	Wed Feb 22 09:28:08 1989
+--- g++/config/tm-att386.h	Wed Oct 18 22:46:58 1989
+***************
+*** 23,26 ****
+--- 23,29 ----
+  /* Define the syntax of instructions and addresses.  */
+  
++ /* G++: ATT assemblers *do not* allow '$' in symbol names. (u3b, i386, etc.) */
++ #define NO_DOLLAR_IN_LABEL 1
++ 
+  /* Define some concatenation macros to concatenate an opcode
+     and one, two or three operands.  In other assembler syntaxes
+
+
+1,,
+Return-Path: <@ORION.CF.UCI.EDU,@paris.ics.UCI.EDU:schmidt@glacier.ICS.UCI.EDU>
+To: tiemann@sun.com
+Subject: HINTS
+From: "Douglas C. Schmidt" <schmidt%glacier.ics.uci.edu@ORION.CF.UCI.EDU>
+
+*** EOOH ***
+Return-Path: <@ORION.CF.UCI.EDU,@paris.ics.UCI.EDU:schmidt@glacier.ICS.UCI.EDU>
+To: tiemann@sun.com
+Subject: HINTS
+From: "Douglas C. Schmidt" <schmidt%glacier.ics.uci.edu@ORION.CF.UCI.EDU>
+
+Beginning with g++ version 1.36 the GNU G++ library, libg++, is no
+longer automatically linked with your object code when running the
+linker.  In order to link libg++ you need to explicity add -lg++ to
+your compilation command line or Makefile, e.g.,
+
+% g++ -g -O foobar.c -lg++
+
+The easiest way to make this change transparent to you is simply to
+make an alias for g++ that automagically appends -lg++ to the end.
+
+Douglas C. Schmidt
+schmidt@ics.uci.edu
+
+
+1,,
+Return-Path: <mlm@cs.brown.edu>
+From: mlm@cs.brown.edu (Moises Lejter)
+To: bug-g++@prep.ai.mit.edu
+Subject: HINTS
+Reply-To: mlm@cs.brown.edu
+
+*** EOOH ***
+Return-Path: <mlm@cs.brown.edu>
+From: mlm@cs.brown.edu (Moises Lejter)
+To: bug-g++@prep.ai.mit.edu
+Subject: HINTS
+Reply-To: mlm@cs.brown.edu
+
+	Sun3 SunOS 4.0: ld++ cannot find Mcrt0.o:
+
+	Turns out that gcc.c as distributed allows you to redefine
+	STANDARD_STARTFILE_PREFIX to be any directory you want.  It
+	will check there and in /usr/local/lib 	for startup files, not
+	in /usr/lib.  Unfortunately, most system startup files live in
+	/usr/lib, so unless you define STANDARD_STARTFILE_PREFIX to be
+	/usr/lib, you'll lose.  I changed the line in gcc.c
+
+	char *standard_startfile_prefix_1 = "/usr/local/lib/";
+
+	to read 
+
+	char *standard_startfile_prefix_1 = "/usr/lib/";
+
+	This way I can specify my own startfile directory, without
+	losing access to the system startup files.
+
+						Moises
+
+Internet/CSnet:   mlm@cs.brown.edu		BITNET:  mlm@browncs.BITNET
+UUCP:    ...!uunet!brunix!mlm			Phone:	 (401)863-7664
+USmail:  Moises Lejter, Box 1910 Brown University, Providence RI 02912
+
+1,,
+Return-Path: <tiemann>
+Received: by teacake.sun.com (4.0/SMI-4.0)
+	id AA01354; Sat, 3 Feb 90 09:02:12 PST
+Date: Sat, 3 Feb 90 09:02:12 PST
+From: tiemann (Michael Tiemann)
+Message-Id: <9002031702.AA01354@teacake.sun.com>
+To: bug-g++@prep.ai.mit.edu
+Subject: HINTS
+Reply-To: tiemann@sun.com
+Status: R
+
+*** EOOH ***
+Return-Path: <tiemann>
+Date: Sat, 3 Feb 90 09:02:12 PST
+From: tiemann (Michael Tiemann)
+To: bug-g++@prep.ai.mit.edu
+Subject: HINTS
+Reply-To: tiemann@sun.com
+
+	If you are using a non-Sun machine, and use the native
+	assembler instead of GAS, you will need to #define FASCIST_ASSEMBLER
+	when compiling cplus-decl.c.  This is because Sun's as and GAS
+	appear to be the only assemblers out there which assemble stabs
+	instead of checking them.  If you don't remember to do
+	this, the assembler will remind you by telling you that it did
+	not understand a stab which the compiler is trying to pass to
+	the linker.
+
+Michael Tiemann
+tiemann@lurch.stanford.edu
+
+1,,
+Return-Path: <tiemann>
+Received: by teacake.sun.com (4.0/SMI-4.0)
+	id AA01354; Sat, 3 Feb 90 09:02:12 PST
+Date: Sat, 3 Feb 90 09:02:12 PST
+From: tiemann (Michael Tiemann)
+Message-Id: <9002031702.AA01354@teacake.sun.com>
+To: bug-g++@prep.ai.mit.edu
+Subject: HINTS
+Reply-To: tiemann@sun.com
+Status: R
+
+*** EOOH ***
+Return-Path: <tiemann>
+Date: Sat, 3 Feb 90 09:02:12 PST
+From: tiemann (Michael Tiemann)
+To: bug-g++@prep.ai.mit.edu
+Subject: HINTS
+Reply-To: tiemann@sun.com
+
+The 2.0 C++ language specification provides many new features which
+can trip up the novice user.  All of these features are being
+implemented in GNU C++, and most of them work right now.  However,
+this does not mean that they are all that easily used.  Perhaps on of
+the toughest new features to take advantage of right now is extern "C".
+What makes this hard is that up until now, C and C++ really looked
+like they had about the same langauge linkage.  Member functions had
+their names mangled, but non-overloaded global functions did not.
+In 2.0, all functions declared in C++ scope are automatically
+overloaded, and all such functions all get mangled names.  So if you
+declare, e.g., `int printf (const char *, ...)' in C++ language scope,
+and you get printf from libc.a, you will lose, since the compiler will
+assume that you are looking for e.g., "_printf_PQI", when you are
+really looking for "_printf".  To get around this problem, you can use
+extern "C" to tell the compiler which names should be mangled and how.
+There is a macro called NO_AUTO_OVERLOAD, which if defined, will provide
+the standard cfront 1.2 and old GNU C++ behavior.  If not defined, it
+provides the cfront 2.0 behavior.  One should move from the old to the
+new carefully, and if you get lots of new undefined symbols from the
+linker where such did not exist before, the first question you should
+ask yourself is `how is extern "C" or extern "C++" doing me in?'
+
+Michael Tiemann
+tiemann@lurch.stanford.edu
+
+1,,
+Return-Path: <tiemann>
+Received: by teacake.sun.com (4.0/SMI-4.0)
+	id AA01354; Sat, 3 Feb 90 09:02:12 PST
+Date: Sat, 3 Feb 90 09:02:12 PST
+From: tiemann (Michael Tiemann)
+Message-Id: <9002031702.AA01354@teacake.sun.com>
+To: bug-g++@prep.ai.mit.edu
+Subject: HINTS
+Reply-To: tiemann@sun.com
+Status: R
+
+*** EOOH ***
+Return-Path: <tiemann>
+Date: Sat, 3 Feb 90 09:02:12 PST
+From: tiemann (Michael Tiemann)
+To: bug-g++@prep.ai.mit.edu
+Subject: HINTS
+Reply-To: tiemann@sun.com
+
+The default LINK_SPEC in gcc.c tells the linker to link
+with crt0+.o.  Many machine-specific files define their own
+LINK_SPECs.  A strategy which worked until tm-sun?-nfp-os? came along
+was to edit the tm-*.h file into tm-*+.h, and replace the string
+"crt0.o" with "crt0+.o".  This strategy is defeated with one tm-*.h
+file includes a file defining LINK_SPEC.  I will fix this in release
+1.35.1.  In the mean time, copy LINK_SPEC from the file that is being
+included, #undef it and redef it in the top level tm-*.h file.
+
+
+Michael Tieman
+tieman@lurch.stanford.edu
+
+1,,
+Return-Path: <dwf@lanl.gov>
+Received: by teacake.sun.com (4.0/SMI-4.0)
+	id AA01354; Sat, 3 Feb 90 09:02:12 PST
+Date: Sat, 3 Feb 90 09:02:12 PST
+From: dwf@lanl.gov (Dave Forslund)
+To: bug-g++@prep.ai.mit.edu
+Subject: HINTS
+Reply-To: tiemann@sun.com
+Status: R
+
+*** EOOH ***
+Return-Path: <dwf@lanl.gov>
+Date: Sat, 3 Feb 90 09:02:12 PST
+From: dwf@lanl.gov (Dave Forslund)
+To: bug-g++@prep.ai.mit.edu
+Subject: HINTS
+Reply-To: tiemann@sun.com
+
+I have successfully built G++ 1.35.0 on Sun3's and Sun4's running
+OS4.0.3. I have to make one change to the newld complation: -Dsun3 and
+-Dsun4 respectively in order to get the a.out.h info included
+correctly.  This is apparently a change in the header files from Sun.
+It shouldn't hurt earlier releases of the OS.  Also a similar problem
+occurs in libg++ compilation with the exec struct not being defined
+from the a.out.h file.  I had to add -D_CROSS_TARGET_ARCH=SUN4 to the
+compile line for test.hello.cc to get the dynamic linking to work.
+
+David Forslund
+MS E531
+Los Alamos National Laboratory
+Los Alamos, NM 87545
+dwf@lanl.gov
+
+
+1,,
+Return-Path: <hoptoad!gnu>
+Received: from sun.Sun.COM by teacake.sun.com (4.0/SMI-4.0)
+	id AA06643; Thu, 15 Feb 90 04:13:28 PST
+Received: from hoptoad.UUCP by sun.Sun.COM (4.1/SMI-4.1)
+	id AA01279; Thu, 15 Feb 90 04:10:55 PST
+Received: by hop.toad.com id AA05988; Thu, 15 Feb 90 01:44:58 PST
+Date: Thu, 15 Feb 90 01:44:58 PST
+From: hoptoad!gnu (John Gilmore)
+Message-Id: <9002150944.AA05988@hop.toad.com>
+To: tiemann@sun.com
+Subject: Re: [comp.sys.atari.st] Re: C++ on the ST
+In-Reply-To: your article <10908@stag.math.lsa.umich.edu>
+Status: O
+
+*** EOOH ***
+Return-Path: <hoptoad!gnu>
+Date: Thu, 15 Feb 90 01:44:58 PST
+From: hoptoad!gnu (John Gilmore)
+To: tiemann@sun.com
+Subject: Re: [comp.sys.atari.st] Re: C++ on the ST
+In-Reply-To: your article <10908@stag.math.lsa.umich.edu>
+
+Archive-name: atari-st-g++/08-Feb-90
+Original-posting-by: mwjester@wsucsa.uucp
+Original-subject: Re: C++ on the ST
+Archive-site: terminator.cc.umich.edu [35.1.33.8]
+Reposted-by: emv@math.lsa.umich.edu (Edward Vielmetti)
+
+In article <451@pico.oz>, akenning@pico.oz (Alan Kennington) writes:
+> I'm amazed that I haven't seen any mention of C++ for the Atari ST.
+> Does anyone if there is such a thing? After all, the IBM PC has had it for
+> years now.
+> 
+> ak.
+FSF's GNU project C++ is available (in not fully-debugged form) from a couple
+of FTP'able sites -- terminator.cc.umich.edu is one -- but from all reports
+it requires at least 2Mbytes to run, 4M to do anything serious, so an unex-
+panded 1040ST is not enough.  If you have a Mega or have expanded your ST's
+memory, you might want to check it out.
+
+--
+Max J
+mwjester@wsucsa
+
+
+1,,
+Return-Path: <tiemann>
+Received: by teacake.sun.com (4.0/SMI-4.0)
+	id AA01354; Sat, 3 Feb 90 09:02:12 PST
+Date: Sat, 3 Feb 90 09:02:12 PST
+From: tiemann (Michael Tiemann)
+Message-Id: <9002031702.AA01354@teacake.sun.com>
+To: bug-g++@prep.ai.mit.edu
+Subject: HINTS
+Reply-To: tiemann@sun.com
+Status: R
+
+*** EOOH ***
+Return-Path: <tiemann>
+Date: Sat, 3 Feb 90 09:02:12 PST
+From: tiemann (Michael Tiemann)
+To: bug-g++@prep.ai.mit.edu
+Subject: HINTS
+Reply-To: tiemann@sun.com
+
+I saw this at Stanford:
+
+    >From December's Reason magazine
+
+    Rep. Bill Schuette (R-MI) recently advised constituents not to expect
+    all their problems to be solved by the federal government.  He warned
+    voters, "Congress is not the sole suppository of wisdom."
+
+Michael
+
+
+1,,
+Return-Path: <bug-g++-request@prep.ai.mit.edu>
+Received: from Sun.COM (sun-barr) by teacake.sun.com (4.0/SMI-4.0)
+	id AA04317; Mon, 26 Feb 90 10:14:16 PST
+Received: from life.ai.mit.edu by Sun.COM (4.1/SMI-4.1)
+	id AA16343; Mon, 26 Feb 90 10:11:35 PST
+Received: from tut.cis.ohio-state.edu by life.ai.mit.edu (4.0/AI-4.10) id AA17718; Mon, 26 Feb 90 13:10:59 EST
+Received: by tut.cis.ohio-state.edu (5.61-kk/5.900222)
+	id AA10639; Mon, 26 Feb 90 12:57:58 -0500
+Received: from USENET by tut.cis.ohio-state.edu with netnews
+	for bug-g++@prep.ai.mit.edu (bug-g++@prep.ai.mit.edu)
+	(contact usenet@tut.cis.ohio-state.edu if you have questions)
+Date: 26 Feb 90 11:21:06 GMT
+From: eutws1!wsinpdb@tuegate.tue.nl  (Paul de Bra)
+Organization: Eindhoven University of Technology, The Netherlands
+Subject: g++ for sVr3.2 on a 386
+Message-Id: <1551@tuegate.tue.nl>
+Sender: bug-g++-request@prep.ai.mit.edu
+To: bug-g++@prep.ai.mit.edu
+Status: RO
+
+*** EOOH ***
+Return-Path: <bug-g++-request@prep.ai.mit.edu>
+Date: 26 Feb 90 11:21:06 GMT
+From: eutws1!wsinpdb@tuegate.tue.nl  (Paul de Bra)
+Organization: Eindhoven University of Technology, The Netherlands
+Subject: g++ for sVr3.2 on a 386
+Sender: bug-g++-request@prep.ai.mit.edu
+To: bug-g++@prep.ai.mit.edu
+
+
+Here is my list of changes to g++1.36.4 to get it working with
+AT&T System V release 3.2u.
+
+First of all, let me state that this applies to g++1.36.4 only.
+An earlier attempt to get g++1.36.0 running failed miserably.
+
+This list only indecates how to get g++ up and running if you already
+have gcc with the gnu assembler and gnu-ld running, and converted the
+libraries to gnu format. g++ will not work with the AT&T loader.
+
+First do the make maketest but you have to create a directory config
+and links to the config files from gcc yourself as system v does not
+have symbolic links (yet).
+
+Do config.g++ i386-sysv-gas
+
+Makefile
+- do NOT define COFFFLAGS, as we do not use coff.
+- define INSTALL=cp and LINK=ln as indicated in the Makefile.
+- do not define CLIB=-lPW as gcc does not use it.
+- use MALLOC=malloc.o, just to be sure.
+- define all to be crt1+.o g++ cc1plus ld++ g++filt
+
+cplus-dem.c
+- This file needs USG defined. I just put a define on line 1.
+  It obviously needs a better fix.
+
+ld.c
+- you don't need sys/time.h and sys/resource.h (I just commented them
+  out, but you should use an ifdef).
+
+malloc.c
+- needs defines from config.h, so include it. (This include is ifdef-ed
+  emacs, but shouldn't)
+
+That's it.
+Type make and you're going...
+
+Now, libg++ still has a few problems, for instance in String.h.
+Don't know yet what's needed to fix that.
+
+Paul.
+(debra@research.att.com)
+
+
+
+1,,
+Return-Path: <bug-g++-request@prep.ai.mit.edu>
+Received: from Sun.COM (sun-barr) by teacake.sun.com (4.0/SMI-4.0)
+	id AA15877; Thu, 1 Mar 90 21:51:05 PST
+Received: from life.ai.mit.edu by Sun.COM (4.1/SMI-4.1)
+	id AA07594; Thu, 1 Mar 90 21:48:10 PST
+Received: from tut.cis.ohio-state.edu by life.ai.mit.edu (4.0/AI-4.10) id AA07136; Fri, 2 Mar 90 00:47:59 EST
+Received: by tut.cis.ohio-state.edu (5.61-kk/5.900222)
+	id AA14734; Fri, 2 Mar 90 00:33:08 -0500
+Received: from USENET by tut.cis.ohio-state.edu with netnews
+	for bug-g++@prep.ai.mit.edu (bug-g++@prep.ai.mit.edu)
+	(contact usenet@tut.cis.ohio-state.edu if you have questions)
+Date: 1 Mar 90 14:33:49 GMT
+From: @decwrl.dec.com@cis.ohio-state.edu  (Burkhard Neidecker-Lutz)
+Organization: Digital Equipment Corporation
+Subject: Configuration nit (unounderscore/NO_UNDER_SCORES)
+Message-Id: <9003011433.AA26235@decwrl.dec.com>
+Sender: bug-g++-request@prep.ai.mit.edu
+To: bug-g++@prep.ai.mit.edu
+Status: RO
+
+*** EOOH ***
+Return-Path: <bug-g++-request@prep.ai.mit.edu>
+Date: 1 Mar 90 14:33:49 GMT
+From: @decwrl.dec.com@cis.ohio-state.edu  (Burkhard Neidecker-Lutz)
+Organization: Digital Equipment Corporation
+Subject: Configuration nit (unounderscore/NO_UNDER_SCORES)
+Sender: bug-g++-request@prep.ai.mit.edu
+To: bug-g++@prep.ai.mit.edu
+
+Another configuration nit on a DECStation (g++ 1.37.0). cplus-dem.c and
+ld.c use "nounderscore", collect.c uses "NO_UNDER_SCORES" to express whether
+a particular assembler prepends underscores to symbols. most likely because
+of different authors. I tried to standardize this to NO_UNDER_SCORES, as 
+all uppercase names seem to be the norm for these kinds of configuration
+options. Now if somebody would please add NO_UNDER_SCORES to the appropriate
+config files...
+ 
+*** cplus-dem.c	Thu Mar  1 12:50:02 1990
+--- cplus-dem.c.new	Thu Mar  1 12:50:13 1990
+***************
+*** 43,50 ****
+     realloc except that they generate a fatal error if there is no
+     available memory. */
+  
+- /* #define nounderscore 1 /* define this is names don't start with _ */
+- 
+  #include <stdio.h>
+  #include <string.h>
+  #include <ctype.h>
+--- 43,48 ----
+***************
+*** 182,188 ****
+  
+    if (type == NULL || *type == '\0')
+      return NULL;
+! #ifndef nounderscore
+    if (*type++ != '_')
+      return NULL;
+  #endif
+--- 180,186 ----
+  
+    if (type == NULL || *type == '\0')
+      return NULL;
+! #ifndef NO_UNDERSCORES
+    if (*type++ != '_')
+      return NULL;
+  #endif
+*** ld.c	Thu Mar  1 13:02:00 1990
+--- ld.c.new	Thu Mar  1 13:02:10 1990
+***************
+*** 98,106 ****
+  
+  /* System dependencies */
+  
+- /* Define this if names etext, edata and end should not start with `_'.  */
+- /* #define nounderscore 1 */
+- 
+  /* Define NON_NATIVE if using BSD or pseudo-BSD file format on a system
+     whose native format is different.  */
+  /* #define NON_NATIVE */
+--- 98,103 ----
+***************
+*** 335,341 ****
+  #define	MAX_ALIGNMENT	(sizeof (int))
+  #endif
+  
+! #ifdef nounderscore
+  #define LPREFIX '.'
+  #else
+  #define LPREFIX 'L'
+--- 332,338 ----
+  #define	MAX_ALIGNMENT	(sizeof (int))
+  #endif
+  
+! #ifdef NO_UNDER_SCORES
+  #define LPREFIX '.'
+  #else
+  #define LPREFIX 'L'
+***************
+*** 4426,4432 ****
+  void
+  symtab_init ()
+  {
+! #ifndef nounderscore
+    edata_symbol = getsym ("_edata");
+    etext_symbol = getsym ("_etext");
+    end_symbol = getsym ("_end");
+--- 4423,4429 ----
+  void
+  symtab_init ()
+  {
+! #ifndef NO_UNDER_SCORES
+    edata_symbol = getsym ("_edata");
+    etext_symbol = getsym ("_etext");
+    end_symbol = getsym ("_end");
+
+
+1,,
+Return-Path: <@eddie.mit.edu:mcgill-vision!icule!pinard@EDDIE.MIT.EDU>
+Received: from Sun.COM (sun-barr) by teacake.sun.com (4.0/SMI-4.0)
+	id AA16314; Fri, 2 Mar 90 21:09:38 PST
+Received: from life.ai.mit.edu by Sun.COM (4.1/SMI-4.1)
+	id AA14100; Fri, 2 Mar 90 21:06:53 PST
+Received: from EDDIE.MIT.EDU by life.ai.mit.edu (4.0/AI-4.10) id AA25012; Sat, 3 Mar 90 00:06:31 EST
+Received:  by EDDIE.MIT.EDU with UUCP (5.61/25-eef)
+	id AA20462; Sat, 3 Mar 90 00:06:14 EST
+Received: from icule by Larry.McRCIM.McGill.EDU (5.61) with UUCP
+	id <9003030503.AA14621@Larry.McRCIM.McGill.EDU>; Sat, 3 Mar 90 00:03:30 -0500
+Received: by icule.UUCP (5.51/smail2.5/02-04-90)
+	id AA05967; Sat, 3 Mar 90 00:04:05 EST
+Date: Sat, 3 Mar 90 00:04:05 EST
+From: mcgill-vision!icule!pinard@eddie.mit.edu (Francois Pinard)
+Message-Id: <9003030504.AA05967@icule.UUCP>
+To: mit-eddie!prep.ai.mit.edu!bug-gcc@eddie.mit.edu,
+        mit-eddie!prep.ai.mit.edu!bug-gnu-utils@eddie.mit.edu
+Subject: GCC 1.37.1 installation report for 386/ix
+Reply-To: mcgill-vision!iro.umontreal.ca!pinard@eddie.mit.edu
+Status: RO
+
+*** EOOH ***
+Return-Path: <@eddie.mit.edu:mcgill-vision!icule!pinard@EDDIE.MIT.EDU>
+Date: Sat, 3 Mar 90 00:04:05 EST
+From: mcgill-vision!icule!pinard@eddie.mit.edu (Francois Pinard)
+To: mit-eddie!prep.ai.mit.edu!bug-gcc@eddie.mit.edu,
+        mit-eddie!prep.ai.mit.edu!bug-gnu-utils@eddie.mit.edu
+Subject: GCC 1.37.1 installation report for 386/ix
+Reply-To: mcgill-vision!iro.umontreal.ca!pinard@eddie.mit.edu
+
+[This message is sent to both bug-gcc and bug-gnu-utils.]
+
+I got gcc 1.37.1 running on 386/ix, using gas and COFF encapsulation.
+The following details might be worth mentioning in the documentation,
+or the installation Makefile could even be made to handle them.
+
+* The first `make' prepares gnulib and adds gnulib2 to gnulib in the
+same blow.  In fact, the `libconvert gnulib' should ideally be done
+after the first gnulib is made and before gnulib2 is added to gnulib,
+`inside' point 5. of INSTALL document, not in point 6.
+
+* The stock ar, given by the AR macro in the Makefile, is ok for
+gnulib preparation.  For gnulib2 preparation however, the binutils' AR
+is preferable.
+
+* Stage1 with cc requires something like CLIB=-lPW.  But subsequent
+stages with gcc require that CLIB=.
+
+* Option `-g' on `make CC=stage1/...' and `make CC=stage2/...'  is not
+good, at least because libg.a has not been converted.  Should it be?
+
+* After stage3, the comparison procedure suggested in point 9. of
+INSTALL uses `tail +10 $file'.  Was rather `tail +10c $file' meant?  A
+few files did not pass this test: gcc.o, obstack.o and version.o.
+
+* The binutils' README-ENCAP should be revised, at least on the
+following points:
+
+   * `(There is no debugger support yet...)'.  This note could be
+   removed: gdb 3.5 interfaces very nicely with gcc 1.37.1.
+
+   * i386gnu should be replaced by i386-sysv-gas.
+
+   * The outlined installation is wholly correct, but slightly fuzzy
+   on details.  Maybe this could be straighten up.  (I have the
+   feeling that the README-ENCAP could be taken over by gcc's INSTALL
+   file).
+
+----------
+I feel like saying that gcc 1.37.1 works very satisfactorily for the
+many usages I made of it today.  The whole package is a wonder.
+
+-- 
+Franc,ois Pinard          ``Vivement GNU!''         pinard@iro.umontreal.ca
+(514) 588-4656    cp 886 L'Epiphanie (Qc) J0K 1J0    ...!uunet!iros1!pinard
+
+
+1,,
+Return-Path: <jclark!jjc@relay.eu.net>
+Received: from Sun.COM (sun-barr) by teacake.sun.com (4.0/SMI-4.0)
+	id AA08166; Sun, 4 Mar 90 15:45:47 PST
+Received: from life.ai.mit.edu by Sun.COM (4.1/SMI-4.1)
+	id AA19976; Sun, 4 Mar 90 15:43:05 PST
+Received: from mcsun.EU.net by life.ai.mit.edu (4.0/AI-4.10) id AA12107; Sun, 4 Mar 90 18:42:41 EST
+Received: by mcsun.EU.net via EUnet; Mon, 5 Mar 90 00:42:33 +0100 (MET)
+Received: from slxsys by kestrel.Ukc.AC.UK   with UUCP  id aa16691;
+          4 Mar 90 23:36 GMT
+Received: from jclark by specialix.co.uk id aa14374; Sun, 4 Mar 90 23:27:31 GMT
+Received: from yquem.jclark.uucp by jclark.uucp (4.0/SMI-4.0)
+	id AA05677; Sun, 4 Mar 90 23:07:09 GMT
+Date: Sun, 4 Mar 90 23:07:08 GMT
+From: James Clark <jclark!jjc@relay.eu.net>
+Message-Id: <9003042307.AA05677@jclark.uucp>
+Received: by yquem.jclark.uucp (4.0/SMI-4.0)
+	id AA10645; Sun, 4 Mar 90 23:06:57 GMT
+To: bug-g++@prep.ai.mit.edu
+Subject: g++ 1.37.1 on 386/ix
+Status: RO
+
+*** EOOH ***
+Return-Path: <jclark!jjc@relay.eu.net>
+Date: Sun, 4 Mar 90 23:07:08 GMT
+From: James Clark <jclark!jjc@relay.eu.net>
+To: bug-g++@prep.ai.mit.edu
+Subject: g++ 1.37.1 on 386/ix
+
+I encountered a couple of glitches installing g++ 1.37.1 on 386/ix
+(essentially System V/3.2). I used the coff encapsulation
+configuration i386g.
+
+1. make-links.g++ attempts to link ../gcc/config to ./config like this:
+
+$symbolic_link ${CDIR} ./config 2>/dev/null || $hard_link ${CDIR} ./config
+if [ ! -r ${CDIR} ]
+then
+	echo "$progname: unable to link \`${CDIR}'."
+	exit 1
+fi
+
+System V doesn't have soft links and won't hard link directories;
+so this doesn't work. Also, the test
+
+if [ ! -r ${CDIR} ]
+
+should presumably be
+
+if [ ! -r ./config ]
+
+I just did
+
+mkdir config
+ln ../gcc/config/* config
+
+2. cplus-dem.c needs USG defined somehow.
+
+3. ld.c needs a.out.{encap,gnu}.h from the binutils distribution.
+Perhaps these should be included with g++, just as they are with gdb.
+
+4. I had to make a couple of small changes to ld.c.
+
+*** /usr/local/g++/ld.c Sun Mar  4 15:06:45 1990
+--- ld.c        Sun Mar  4 22:41:21 1990
+***************
+*** 45,51 ****
+--- 45,53 ----
+  #include <sys/stat.h>
+  #include <sys/file.h>
+  #include <sys/time.h>
++ #ifndef USG
+  #include <sys/resource.h>
++ #endif
+  #ifndef sony_news
+  #include <fcntl.h>
+  #endif
+***************
+*** 4746,4752 ****
+
+  #endif
+
+! #if TARGET == SUN4
+
+  /* Don't use local pagesize to build for Sparc.  */
+
+--- 4748,4754 ----
+
+  #endif
+
+! #if defined(sun) && (TARGET == SUN4)
+
+  /* Don't use local pagesize to build for Sparc.  */
+
+5. This has nothing to do with the 386. Might it not be a good idea to
+include xyzzy.cc from libg++/src in the g++ distribution? gnulib3.c is
+included and it depends upon xyzzy.cc.
+
+James Clark
+jjc@jclark.uucp
+
+
+1,,
+Return-Path: <dl@g.oswego.edu>
+Received: from Sun.COM (sun-barr) by teacake.sun.com (4.0/SMI-4.0)
+	id AA17185; Sat, 10 Mar 90 04:11:22 PST
+Received: from life.ai.mit.edu by Sun.COM (4.1/SMI-4.1)
+	id AA09729; Sat, 10 Mar 90 04:08:40 PST
+Received: from oswego.Oswego.EDU by life.ai.mit.edu (4.0/AI-4.10) id AA27241; Sat, 10 Mar 90 07:08:10 EST
+Received: by oswego.Oswego.EDU (5.57/Osw4.1.21)
+	id AA01343; Sat, 10 Mar 90 07:02:10 EST
+Received: by g.oswego.edu (4.0/SMI-4.0)
+	id AA18216; Sat, 10 Mar 90 07:11:22 EST
+Date: Sat, 10 Mar 90 07:11:22 EST
+From: dl@g.oswego.edu (Doug Lea)
+Message-Id: <9003101211.AA18216@g.oswego.edu>
+To: newton%CAD.MCC.COM@nisc.nyser.net
+Cc: bug-lib-g++@prep.ai.mit.edu
+In-Reply-To: Dave Newton's message of Fri, 9 Mar 90 10:35:52 CST <9003091635.AA14109@suntrek.cad.mcc.com>
+Subject: lib g++ problem
+Reply-To: dl@oswego.oswego.edu
+Status: O
+
+*** EOOH ***
+Return-Path: <dl@g.oswego.edu>
+Date: Sat, 10 Mar 90 07:11:22 EST
+From: dl@g.oswego.edu (Doug Lea)
+To: newton%CAD.MCC.COM@nisc.nyser.net
+Cc: bug-lib-g++@prep.ai.mit.edu
+In-Reply-To: Dave Newton's message of Fri, 9 Mar 90 10:35:52 CST <9003091635.AA14109@suntrek.cad.mcc.com>
+Subject: lib g++ problem
+Reply-To: dl@oswego.oswego.edu
+
+
+The libg++/src/gnulib3.c support for on_exit was commented out by me
+(see libg++/ChangeLog) after discovering that it did not always
+correctly work with g++/libg++, at least on SunOS4. The most obvious
+symptom is that it manages to internally invoke libc versions of some
+functions, ignoring libg++ overrides. This appears to be a linker
+issue: If nothing in your program calls one of the few libg++
+functions, say f, that have the same name as a libc function f, then
+during the `-lc' part of the link, some C function that calls f will
+use the libc f. According to ANSI C, libg++ probably should not be
+redefining libc functions in this way, but pragmatics seem to force it
+(for example, with libg++ malloc, free, realloc).  I did not get a
+chance to follow up on this to find a better solution before release.
+
+In general, the on_exit approach to cleanup is slightly incongruous with
+the notion of global destructors. For example, if you have both, which
+should be done first?
+
+-Doug
+
+
+1,,
+Return-Path: <bug-g++-request@prep.ai.mit.edu>
+Received: from Sun.COM (sun-barr) by teacake.sun.com (4.0/SMI-4.0)
+	id AA14510; Tue, 6 Mar 90 10:31:03 PST
+Received: from life.ai.mit.edu by Sun.COM (4.1/SMI-4.1)
+	id AA27979; Tue, 6 Mar 90 10:28:23 PST
+Received: from tut.cis.ohio-state.edu by life.ai.mit.edu (4.0/AI-4.10) id AA12942; Tue, 6 Mar 90 13:28:00 EST
+Received: by tut.cis.ohio-state.edu (5.61-kk/5.900222)
+	id AA04421; Tue, 6 Mar 90 13:19:31 -0500
+Received: from USENET by tut.cis.ohio-state.edu with netnews
+	for bug-g++@prep.ai.mit.edu (bug-g++@prep.ai.mit.edu)
+	(contact usenet@tut.cis.ohio-state.edu if you have questions)
+Date: 6 Mar 90 18:04:36 GMT
+From: hartzell@boulder.colorado.edu  (George Hartzell)
+Organization: MCD Biology, University of Colorado, Boulder
+Subject: Re: g++ doesn't know about __DTOR_TABLE__, __CTOR_TABLE__
+Message-Id: <17841@boulder.Colorado.EDU>
+References: <9003061024.AA18097@spica.ucsc.edu>, <53398@bu.edu.bu.edu>
+Sender: bug-g++-request@prep.ai.mit.edu
+To: bug-g++@prep.ai.mit.edu
+Status: RO
+
+*** EOOH ***
+Return-Path: <bug-g++-request@prep.ai.mit.edu>
+Date: 6 Mar 90 18:04:36 GMT
+From: hartzell@boulder.colorado.edu  (George Hartzell)
+Organization: MCD Biology, University of Colorado, Boulder
+Subject: Re: g++ doesn't know about __DTOR_TABLE__, __CTOR_TABLE__
+References: <9003061024.AA18097@spica.ucsc.edu>, <53398@bu.edu.bu.edu>
+Sender: bug-g++-request@prep.ai.mit.edu
+To: bug-g++@prep.ai.mit.edu
+
+In article <53398@bu.edu.bu.edu>, oneill@bass (Brian V O'Neill) writes:
+>
+>Something has changed which probably shouldn't have...
+>
+
+Do you have NO_UNDERSCORES properly (un)defined?  Are you using
+collect?  If so, compile something with g++ -v, and stop it after
+collect runs, but before as finishes assembling collect's output.
+Look at collect's output and make sure that it is generating the
+correct symbol names.
+g.
+George Hartzell			                  (303) 492-4535
+ MCD Biology, University of Colorado-Boulder, Boulder, CO 80309
+hartzell@Boulder.Colorado.EDU           ..!ncar!boulder!hartzell
+
+
+1,,
+Return-Path: <ngo%tammy@harvard.harvard.edu>
+Received: from Sun.COM (sun-barr) by teacake.sun.com (4.0/SMI-4.0)
+	id AA23436; Mon, 12 Mar 90 05:44:17 PST
+Received: from life.ai.mit.edu by Sun.COM (4.1/SMI-4.1)
+	id AA19130; Mon, 12 Mar 90 05:41:36 PST
+Received: from harvard.harvard.edu by life.ai.mit.edu (4.0/AI-4.10) id AA17910; Mon, 12 Mar 90 08:41:23 EST
+Message-Id: <9003121341.AA17910@life.ai.mit.edu>
+Received: by harvard.harvard.edu (5.54/a0.25)
+	(for bug-g++@ai.mit.edu) id AA22022; Mon, 12 Mar 90 08:42:39 EST
+Received: by tammy.HARVARD.EDU; Mon, 12 Mar 90 08:40:55 EST
+To: bug-g++@ai.mit.edu
+Cc: ngo@harvard.harvard.edu, adc@frith.egr.msu.edu, gillis@aero.aerospace.org
+Subject: Re: Installing g++ on a Convex 
+In-Reply-To: Your message of Mon, 12 Mar 90 07:10:39 -0500.
+Date: Mon, 12 Mar 90 08:40:54 -0500
+From: ngo%tammy@harvard.harvard.edu
+Status: RO
+
+*** EOOH ***
+Return-Path: <ngo%tammy@harvard.harvard.edu>
+To: bug-g++@ai.mit.edu
+Cc: ngo@harvard.harvard.edu, adc@frith.egr.msu.edu, gillis@aero.aerospace.org
+Subject: Re: Installing g++ on a Convex 
+In-Reply-To: Your message of Mon, 12 Mar 90 07:10:39 -0500.
+Date: Mon, 12 Mar 90 08:40:54 -0500
+From: ngo%tammy@harvard.harvard.edu
+
+
+In an earlier message, Alan Cabrera wrote:
+
+adc> I'm attempting to install g++ 1.37.0 on a Convex C2.
+
+Take heart--we've got it running on a Convex C2, as well.  Thanks to
+Michael Tiemann and Jim Gillis.
+
+adc> I setup my Makefile to use COFF and COFF_COLLECT.
+
+You should not use any of the COFFLAGS with collect2.  They are only
+used with collect.
+
+adc> I change the line
+adc> 	all: g++ cc1plus collect # crt0+.o crt1+.o
+adc> to
+adc> 	all: g++ cc1plus collect2 # crt0+.o crt1+.o
+
+Yes, that's correct.
+
+adc> 	ld: ERROR - Library 'libg++.a' not found
+adc> 	ld: No executable produced.
+
+In the Makefiles for g++ and libg++, you'll find the variable "prefix"
+set to /usr/local and /usr/gnu in the respective distributions.  These
+should be the same for g++ to be able to find libg++.a.
+
+adc> I add a -L/mnt/adc/lib, this is where libg++.a is, recompile and get:
+
+That's equivalent to setting prefix equal to /mnt/adc/lib in the g++
+Makefile, I believe.
+
+adc> 	g++: installation problem, cannot exec collect: No such file
+adc> or directory
+adc> 
+adc> Have I done something wrong in installing g++?
+
+Yes... this is from using COFFLAGS.  The correct usage is *not* to use
+COFFLAGS.  "collect2" is a misnomer; it should really have been called
+"ld-hack" or something like that.  It is a replacement for ld.  The
+Makefile automatically installs it as /mnt/adc/gcc-ld; you shouldn't
+need not do anything more except for comment out COFFLAGS.
+
+Keep in touch--
+
+--Tom Ngo
+  ngo@harvard.harvard.edu
+
+
+
+1,,
+Return-Path: <info-g++-request@prep.ai.mit.edu>
+Received: from Sun.COM (sun-barr) by teacake.sun.com (4.0/SMI-4.0)
+	id AA25193; Fri, 16 Mar 90 22:35:58 PST
+Received: from life.ai.mit.edu by Sun.COM (4.1/SMI-4.1)
+	id AA13343; Fri, 16 Mar 90 22:33:15 PST
+Received: from tut.cis.ohio-state.edu by life.ai.mit.edu (4.0/AI-4.10) id AA16812; Fri, 16 Mar 90 12:17:45 EST
+Received: by tut.cis.ohio-state.edu (5.61-kk/5.900314)
+	id AA00613; Thu, 15 Mar 90 21:50:05 -0500
+Received: from USENET by tut.cis.ohio-state.edu with netnews
+	for info-g++@prep.ai.mit.edu (info-g++@prep.ai.mit.edu)
+	(contact usenet@tut.cis.ohio-state.edu if you have questions)
+Date: 16 Mar 90 02:11:41 GMT
+From: chin@operations.dccs.upenn.edu  (Chin Wu)
+Organization: University of Pennsylvania, Philadelphia, PA
+Subject: RE: g++ on SGI iris
+Message-Id: <CHIN.90Mar15211141@sg1.chem.upenn.edu>
+Sender: info-g++-request@prep.ai.mit.edu
+To: info-g++@prep.ai.mit.edu
+Status: RO
+
+*** EOOH ***
+Return-Path: <info-g++-request@prep.ai.mit.edu>
+Date: 16 Mar 90 02:11:41 GMT
+From: chin@operations.dccs.upenn.edu  (Chin Wu)
+Organization: University of Pennsylvania, Philadelphia, PA
+Subject: RE: g++ on SGI iris
+Sender: info-g++-request@prep.ai.mit.edu
+To: info-g++@prep.ai.mit.edu
+
+Hi,
+    You should use collect.c instead of ld.c.
+
+>>  COFFLAGS = -DUSE_COLLECT -DEXTENDED_COFF
+
+>> # On COFF systems, use the target below.
+>> all: g++ cc1plus collect # crt0+.o crt1+.o
+
+
+chin@sg1.chem.upenn.edu
+
+
+1,,
+Return-Path: <info-g++-request@prep.ai.mit.edu>
+Received: from Sun.COM (sun-barr) by teacake.sun.com (4.0/SMI-4.0)
+	id AA26267; Tue, 20 Mar 90 06:40:22 PST
+Received: from life.ai.mit.edu by Sun.COM (4.1/SMI-4.1)
+	id AA02785; Tue, 20 Mar 90 06:37:40 PST
+Received: from aeneas.MIT.EDU by life.ai.mit.edu (4.0/AI-4.10) id AA07522; Tue, 20 Mar 90 09:36:54 EST
+Received: from tut.cis.ohio-state.edu by aeneas.MIT.EDU (5.61/4.7) id AA22389; Tue, 20 Mar 90 07:18:50 -0500
+Received: by tut.cis.ohio-state.edu (5.61-kk/5.900319)
+	id AA14406; Tue, 20 Mar 90 07:05:39 -0500
+Received: from USENET by tut.cis.ohio-state.edu with netnews
+	for info-g++@prep.ai.mit.edu (info-g++@prep.ai.mit.edu)
+	(contact usenet@tut.cis.ohio-state.edu if you have questions)
+Date: 20 Mar 90 10:37:15 GMT
+From: tuewsd!wsinpdb@tuegate.tue.nl  (Paul de Bra)
+Organization: Eindhoven University of Technology, The Netherlands
+Subject: g++ for 386
+Message-Id: <1007@tuewsd.lso.win.tue.nl>
+Sender: info-g++-request@prep.ai.mit.edu
+To: info-g++@prep.ai.mit.edu
+Status: R
+
+*** EOOH ***
+Return-Path: <info-g++-request@prep.ai.mit.edu>
+Date: 20 Mar 90 10:37:15 GMT
+From: tuewsd!wsinpdb@tuegate.tue.nl  (Paul de Bra)
+Organization: Eindhoven University of Technology, The Netherlands
+Subject: g++ for 386
+Sender: info-g++-request@prep.ai.mit.edu
+To: info-g++@prep.ai.mit.edu
+
+As promised, here is all the info you need to get the latest g++
+up and running on a 386 with System V (I only tried AT&T, but that
+should not matter as everything is compiled with the GNU compiler anyway)
+
+How to get g++ (1.37.1) running on a 386 with system V.
+-------------------------------------------------------
+
+First get gcc 1.37.1 running, using the i386-sysv-gas config.
+(this requires that you also have gas and the binutils running)
+
+- edit the makefile to specify the correct names for directories,
+  to set LINK=ln, INSTALL=cp, do not include malloc.o, and do
+  not specify anything that relates to COFF as we don't use COFF,
+  but rather the coff encapsulation.
+
+- make sure you say MALLOC=malloc.o in the Makefile, as g++ will
+  sometimes dump when used with the standard malloc. this may be
+  a bug in g++ instead of malloc, don't know.
+
+- make a config directory. then type make maketest.
+  you should not get any fatal errors.
+
+- config.g++ i386-sysv-gas
+
+- in cplus-dem.c, #include "config.h" before the #ifdef USG.
+
+- copy a.out.encap.h and a.out.gnu.h from the binutils.
+
+- in ld.c, remove include sys/time.h and sys/resource.h with an ifdef
+- at the end of ld.c, add an ifdef sun around the definition of
+  getpagesize for SUN4.
+
+- type "make" and wait. finish with make install and you're all set.
+
+How to get libg++ (1.37.0) running with g++ 1.37.1 on the 386.
+--------------------------------------------------------------
+
+First make sure you have gcc and g++ 1.37.1 running, both configured
+with i386-sysv-gas.
+
+- edit the makefile to specify the correct names for directories,
+  in particular set PWD to the current dir, check the prefix, which is
+  different between the Makefile for g++ and for libg++ (for reasons
+  that escape me), set OSFLAGS=-DUSG, XTRAFLAGS=-DCOFF_ENCAPSULATE,
+  INSTALL=cp.
+
+- don't forget to also edit the Makefile in the src directory.
+
+- remove (uncomment) line 222 of src/malloc.c. it redeclares fprintf.
+
+- rename libgxx_io_ob.cc to libgxx_io_ob.C, and change the Makefile
+  accordingly. the name libgxx_io_ob.cc is truncated to libgxx_io_ob.c
+  so the g++ compiler thinks it's just an ordinary c file.
+  This also involves adding .C to the .SUFFIXES list (in the Makefile)
+  and adding the rule
+  .C.o:
+          $(GXX) $(GXXFLAGS) -c  $<
+
+- type "make src" to build libg++, "make install" to install it.
+
+- if you want to run the tests, define PAGSIZ=4096 in test.hello.cc
+  to avoid calling the non-existent getpagesize() function.
+
+- several test programs don't work. something is still wrong, but some
+  programs do work.
+
+Enjoy!
+
+Paul.
+(debra@research.att.com)
+
+
+1,,
+Return-Path: <bug-gdb-request@prep.ai.mit.edu>
+Received: from Sun.COM (sun-barr) by teacake.sun.com (4.0/SMI-4.0)
+	id AA02786; Sat, 3 Mar 90 18:30:38 PST
+Received: from life.ai.mit.edu by Sun.COM (4.1/SMI-4.1)
+	id AA16824; Sat, 3 Mar 90 18:27:58 PST
+Received: from tut.cis.ohio-state.edu by life.ai.mit.edu (4.0/AI-4.10) id AA04213; Sat, 3 Mar 90 21:27:41 EST
+Received: by tut.cis.ohio-state.edu (5.61-kk/5.900222)
+	id AA00799; Sat, 3 Mar 90 21:14:41 -0500
+Received: from USENET by tut.cis.ohio-state.edu with netnews
+	for bug-gdb@prep.ai.mit.edu (bug-gdb@prep.ai.mit.edu)
+	(contact usenet@tut.cis.ohio-state.edu if you have questions)
+Date: 4 Mar 90 01:15:56 GMT
+From: hartzell@boulder.colorado.edu  (George Hartzell)
+Organization: University of Colorado, Boulder
+Subject: gdb on MIPS (non-DECstation)
+Message-Id: <17717@boulder.Colorado.EDU>
+Sender: bug-gdb-request@prep.ai.mit.edu
+To: bug-gdb@prep.ai.mit.edu
+Status: RO
+
+*** EOOH ***
+Return-Path: <bug-gdb-request@prep.ai.mit.edu>
+Date: 4 Mar 90 01:15:56 GMT
+From: hartzell@boulder.colorado.edu  (George Hartzell)
+Organization: University of Colorado, Boulder
+Subject: gdb on MIPS (non-DECstation)
+Sender: bug-gdb-request@prep.ai.mit.edu
+To: bug-gdb@prep.ai.mit.edu
+
+After applying Per Bothner's mips patches to the gdb3.5 sources, the
+following "trivial" fix to munch will produce a working (so far,
+anyway.  I haven't tried much) version of gdb on my MIPS M-2000 in the
+BSD environment.  The problem is that the default behavior for nm is
+system V, so we need to add the -B arguement to force BSD behavior.
+
+Maybe MIPS could make a /bsd43/bin/nm that defaulted to the BSD
+behaviour!!! 
+
+Change:
+    nm -p $* | egrep 'T *_?_initialize_' | \
+to:
+    nm -B -p $* | egrep 'T *_?_initialize_' | \
+
+Here is the complete script:
+#! /bin/sh
+
+# create an initialization procedure from a list of .o files
+
+echo '/* Do not modify this file.  It is created automatically by "munch". */'
+echo 'void initialize_all_files () {'
+
+if test "$1" = "-DSYSV" ; then
+    shift;
+    nm $* | egrep '^(.*[^a-zA-Z_]_|_)initialize_' | \
+	sed -e 's/^.*\(_initialize_[a-zA-Z0-9_]*\)[^a-zA-Z0-9_].*$/   \1 ();/'
+else
+    nm -B -p $* | egrep 'T *_?_initialize_' | \
+	sed -e 's/^.*T *_*\(.*\)/    _\1 ();/'
+fi
+
+echo '}'
+
+
+
+George Hartzell			                  (303) 492-4535
+ MCD Biology, University of Colorado-Boulder, Boulder, CO 80309
+hartzell@Boulder.Colorado.EDU           ..!ncar!boulder!hartzell
+
+
+1,,
+Return-Path: <info-g++-request@prep.ai.mit.edu>
+Received: from Sun.COM (sun-barr.EBay.Sun.COM) by teacake.Eng.Sun.COM (4.1/SMI-4.1)
+	id AA00591; Thu, 19 Apr 90 14:26:14 PDT
+Received: from life.ai.mit.edu by Sun.COM (4.1/SMI-4.1)
+	id AA13462; Thu, 19 Apr 90 14:23:15 PDT
+Received: from tut.cis.ohio-state.edu by life.ai.mit.edu (4.1/AI-4.10) id AA15940; Thu, 19 Apr 90 17:21:17 EDT
+Received: by tut.cis.ohio-state.edu (5.61-kk/5.900417)
+	id AA20139; Thu, 19 Apr 90 15:20:14 -0400
+Received: from USENET by tut.cis.ohio-state.edu with netnews
+	for info-g++@prep.ai.mit.edu (info-g++@prep.ai.mit.edu)
+	(contact usenet@tut.cis.ohio-state.edu if you have questions)
+Date: 19 Apr 90 19:06:32 GMT
+From: pjg@osf.org  (Paulo Guedes)
+Organization: Open Software Foundation
+Subject: g++ on Mach 2.5 (i386)
+Message-Id: <6843@paperboy.OSF.ORG>
+Sender: info-g++-request@prep.ai.mit.edu
+To: info-g++@prep.ai.mit.edu
+Status: R
+
+*** EOOH ***
+Return-Path: <info-g++-request@prep.ai.mit.edu>
+Date: 19 Apr 90 19:06:32 GMT
+From: pjg@osf.org  (Paulo Guedes)
+Organization: Open Software Foundation
+Subject: g++ on Mach 2.5 (i386)
+Sender: info-g++-request@prep.ai.mit.edu
+To: info-g++@prep.ai.mit.edu
+
+I recently installed g++ 1.37.1 on Mach 2.5 (i386). This instalation
+assumes you have the gcc sources (which make part of the Mach 2.5
+(i386) distribution) on the directory "../gcc", as g++ uses most
+of the gcc back-end files.
+
+The instalation of the compiler should run without problems. To
+install the g++ library, file g++-include/math.h must be changed
+because it triggers an error in the C library (atof causes core dump
+for values greater then MAXFLOAT). See the diff file. After these
+changes all the library should install without problems. Notice,
+however, that the execution of some of the test files will fail if
+executed from a non-privileged account (some of them try to write
+on "/dev/tty" which is normaly protected on the standard Mach 2.5
+(i386) distribution).
+
+Paulo
+
+---
+Paulo Guedes     Open Software Foundation   11 Cambridge Center, Cambridge, MA
+Email: pjg@osf.osf.org    Phone: (617) 621-8878
+
+-------------------------------------------------------------------------
+Next follow TWO diff files for g++ and libg++.
+
+Diff file for g++-1.37.1
+-------------------------------------------------------------------------
+Only in g++: .gdbinit
+Only in g++-1.37.1: DIFF
+Only in g++-1.37.1: DIFFS
+Only in g++-1.37.1: DIFFS.bak
+diff -rc2 g++-1.37.1/Makefile g++/Makefile
+*** g++-1.37.1/Makefile	Mon Feb 26 09:37:46 1990
+--- g++/Makefile	Tue Apr 17 18:42:00 1990
+***************
+*** 44,51 ****
+  # /usr/include/unistd.h.  If this is the case for your system
+  # uncomment the following line.
+! # HAVE_UNISTD_H = -DNO_UNISTD_H
+  
+  # CFLAGS = -g -DSOS -DESKIT -O
+! CFLAGS = -g -DGATHER_STATISTICS -O $(COFFLAGS) -B../gcc-test/
+  CC = gcc
+  BISON = bison
+--- 44,51 ----
+  # /usr/include/unistd.h.  If this is the case for your system
+  # uncomment the following line.
+! HAVE_UNISTD_H = -DNO_UNISTD_H
+  
+  # CFLAGS = -g -DSOS -DESKIT -O
+! CFLAGS = -g -DGATHER_STATISTICS -O $(COFFLAGS) -B../gcc/
+  CC = gcc
+  BISON = bison
+***************
+*** 75,79 ****
+  
+  prefix=/usr/local
+- 
+  # Directory where sources are, from where we are.
+  srcdir = .
+--- 75,78 ----
+***************
+*** 90,94 ****
+  
+  # Additional system libraries to link with.
+! CLIB=
+  
+  # Change this to a null string if obstacks are installed in the
+--- 89,93 ----
+  
+  # Additional system libraries to link with.
+! CLIB=/lib/libc.a $(libdir)/gcc-gnulib
+  
+  # Change this to a null string if obstacks are installed in the
+***************
+*** 99,103 ****
+  DIR = ../gcc
+  # this is the GNU CC build directory
+! TDIR = ../gcc-test
+  
+  # End of variables for you to override.
+--- 98,102 ----
+  DIR = ../gcc
+  # this is the GNU CC build directory
+! TDIR = ../gcc
+  
+  # End of variables for you to override.
+***************
+*** 130,134 ****
+  # certain versions of Genix), try getting the files
+  # malloc.c and getpagesize.h from GNU Emacs and un-comment the following line:
+! MALLOC = malloc.o
+  
+  # If you are running GCC on an Apollo (SR10.x),
+--- 129,133 ----
+  # certain versions of Genix), try getting the files
+  # malloc.c and getpagesize.h from GNU Emacs and un-comment the following line:
+! # MALLOC = malloc.o
+  
+  # If you are running GCC on an Apollo (SR10.x),
+***************
+*** 144,147 ****
+--- 143,147 ----
+  # How to link with both our special library facilities
+  # and the system's installed libraries.
++ # LIBS = $(OBSTACK) $(ALLOCA) $(MALLOC) $(CLIB)
+  LIBS = $(OBSTACK) $(ALLOCA) $(MALLOC) $(CLIB)
+  
+***************
+*** 205,211 ****
+  # gnulib is not a target because a proper installation of GNU CC
+  # will place it where g++ can find it.  Same with cpp
+! all: crt1+.o g++ cc1plus ld++ g++filt # collect crt0+.o
+  # On COFF systems, use the target below.
+! # all: g++ cc1plus collect # crt0+.o crt1+.o
+  
+  doc: $(srcdir)/cpp.info $(srcdir)/g++.info
+--- 205,212 ----
+  # gnulib is not a target because a proper installation of GNU CC
+  # will place it where g++ can find it.  Same with cpp
+! # all: crt1+.o g++ cc1plus ld++ g++filt # collect crt0+.o
+! all: crt1+.o g++ cc1plus ld++ g++filt crt0+.o # collect
+  # On COFF systems, use the target below.
+! # all: g++ cc1plus collect crt0+.o crt1+.o
+  
+  doc: $(srcdir)/cpp.info $(srcdir)/g++.info
+***************
+*** 263,268 ****
+  	elif cmp -s tm.h config/tm-newsgas.h; then \
+  		CRT0_OPTIONS='-DCRT0_DUMMIES=bogus_fp, -DDOT_GLOBAL_START'; \
+  	elif cmp -s tm.h config/tm-i386gas.h; then \
+! 		OPTS='-DUSG -DCOFF_ENCAPSULATE -DNON_NATIVE -DPORTAR'; \
+  	else \
+  		OPTS='-DTARGET=-1'; \
+--- 264,272 ----
+  	elif cmp -s tm.h config/tm-newsgas.h; then \
+  		CRT0_OPTIONS='-DCRT0_DUMMIES=bogus_fp, -DDOT_GLOBAL_START'; \
++ ###### elif cmp -s tm.h config/tm-i386gas.h; then
++ ###### OPTS='-DUSG -DCOFF_ENCAPSULATE -DNON_NATIVE -DPORTAR';
+  	elif cmp -s tm.h config/tm-i386gas.h; then \
+! 		OPTS='-I$(libdir)'; \
+! 		DFLTS='"$(libdir)", "/lib", "/usr/lib", "/usr/local/lib"'; \
+  	else \
+  		OPTS='-DTARGET=-1'; \
+***************
+*** 281,291 ****
+  
+  collect: collect.c config.h $(LIBDEPS)
+! 	COLLECT_LIBS="-lld"; \
+  	if cmp -s tm.h config/tm-encore.h; then \
+  		COLLECT_OPTIONS='-DUMAX'; \
+  	else \
+  		COLLECT_OPTIONS=''; \
+  	fi; \
+! 	$(CC) -o collect $(PROFILE) $$COLLECT_OPTIONS $(CFLAGS) $(INCLUDES) $< -lg -lc $$COLLECT_LIBS
+  
+  collect2: collect2.c config.h
+--- 285,299 ----
+  
+  collect: collect.c config.h $(LIBDEPS)
+! 	-set -x; COLLECT_LIBS="-lld -lg"; \
+  	if cmp -s tm.h config/tm-encore.h; then \
+  		COLLECT_OPTIONS='-DUMAX'; \
++  	elif cmp -s tm.h config/tm-i386gas.h; then \
++  		COLLECT_LIBS=""; COLLECT_OPTIONS=""; \
++  	elif cmp -s tm.h config/tm-decstatn.h; then \
++  		COLLECT_LIBS=""; COLLECT_OPTIONS=""; \
+  	else \
+  		COLLECT_OPTIONS=''; \
+  	fi; \
+!  	$(CC) -o collect $(PROFILE) $$COLLECT_OPTIONS $(CFLAGS) $(INCLUDES) collect.c -lc $$COLLECT_LIBS
+  
+  collect2: collect2.c config.h
+***************
+*** 321,325 ****
+  	mv crt0.o crt0+.o
+  
+! CRT1_COMMAND=$(CC) -Um68k -g -c $(INCLUDES) crt1.c
+  
+  crt1+.o: crt1.c config.h
+--- 329,333 ----
+  	mv crt0.o crt0+.o
+  
+! CRT1_COMMAND=$(CC) -Um68k -c $(INCLUDES) crt1.c
+  
+  crt1+.o: crt1.c config.h
+***************
+*** 601,605 ****
+  	$(INSTALL) g++ $(bindir)
+  	-if [ -f ld++ ] ; then $(INSTALL) ld++ $(libdir)/gcc-ld ;fi
+! #	-if [ -f crt0+.o ] ; then $(INSTALL) crt0+.o $(startdir)/crt0+.o ;fi
+  	-if [ -f crt1+.o ] ; then $(INSTALL) crt1+.o $(startdir)/crt1+.o ;fi
+  	-mkdir $(libdir)/g++-include
+--- 609,613 ----
+  	$(INSTALL) g++ $(bindir)
+  	-if [ -f ld++ ] ; then $(INSTALL) ld++ $(libdir)/gcc-ld ;fi
+! 	-if [ -f crt0+.o ] ; then $(INSTALL) crt0+.o $(startdir)/crt0+.o ;fi
+  	-if [ -f crt1+.o ] ; then $(INSTALL) crt1+.o $(startdir)/crt1+.o ;fi
+  	-mkdir $(libdir)/g++-include
+Only in g++: Makefile.bak
+Only in g++: Makefile~
+Only in g++: assert.h
+Only in g++: aux-output.c
+Only in g++: basic-block.h
+Only in g++: bison.simple
+Only in g++: c-tree.h
+Only in g++: caller-save.c
+Only in g++: caller-save.o
+Only in g++: case.o
+Only in g++: cc1plus
+diff -rc2 g++-1.37.1/collect.c g++/collect.c
+*** g++-1.37.1/collect.c	Wed Nov 22 23:29:14 1989
+--- g++/collect.c	Thu Apr 12 15:42:38 1990
+***************
+*** 69,73 ****
+--- 69,75 ----
+  #ifdef i386
+  #define ASM_INT_OP	ASM_LONG
++ #ifdef NOT_MACH
+  #define NO_UNDERSCORES 1
++ #endif
+  #endif
+  
+Only in g++: collect.c~
+Only in g++: combine.c
+Only in g++: combine.o
+Only in g++: conditions.h
+Only in g++: config
+diff -rc2 g++-1.37.1/config.g++ g++/config.g++
+*** g++-1.37.1/config.g++	Sun Nov  5 00:26:35 1989
+--- g++/config.g++	Thu Apr  5 11:02:12 1990
+***************
+*** 109,112 ****
+--- 109,119 ----
+  		machine_type=i386gas
+  		;;		
++ #ifndef NOT_MACH
++ 	i386)
++ 		cpu_type=i386
++ 		configuration_file=xm-i386.h
++ 		target_machine=tm-i386gas.h
++ 		;;
++ #endif NOT_MACH 
+  	i860)
+  		;;
+Only in g++: config.g++~
+Only in g++: config.gcc
+Only in g++: config.h
+Only in g++: config.status
+Only in g++: cplus-class.o
+Only in g++: cplus-cvt.o
+Only in g++: cplus-decl.o
+Only in g++: cplus-decl2.o
+Only in g++: cplus-dem.o
+Only in g++: cplus-except.o
+Only in g++: cplus-expr.o
+Only in g++: cplus-init.o
+diff -rc2 g++-1.37.1/cplus-lex.c g++/cplus-lex.c
+*** g++-1.37.1/cplus-lex.c	Thu Feb 22 08:51:38 1990
+--- g++/cplus-lex.c	Thu Apr 19 10:26:15 1990
+***************
+*** 32,35 ****
+--- 32,38 ----
+  #define _IOFBF 2		/* Missing from GNU's stdio.h */
+  #endif
++ #if defined(i386) && !defined(NOT_MACH)
++ #define _IOFBF 0
++ #endif
+  #include "cplus-tab.h"
+  #include "cplus-parse.h"
+***************
+*** 1126,1130 ****
+        pending_inlines = pending_inlines->next;
+        finput = finput2;
+! #if defined(i386) && !defined(sequent) && !defined(sun386)
+        finput2->_ptr = finput2->_base = t->buf;
+        _bufend(finput2) = t->buf + t->len;
+--- 1129,1133 ----
+        pending_inlines = pending_inlines->next;
+        finput = finput2;
+! #if defined(i386) && defined(NOT_MACH) && !defined(sequent) && !defined(sun386)
+        finput2->_ptr = finput2->_base = t->buf;
+        _bufend(finput2) = t->buf + t->len;
+***************
+*** 2284,2288 ****
+  		 end of this function.  */
+  	      pending_inlines = pending_inlines->next;
+! #if defined(i386) && !defined(sequent) && !defined(sun386)
+  	      finput2->_ptr = finput2->_base = t->buf;
+  	      _bufend(finput2) = t->buf + t->len;
+--- 2287,2291 ----
+  		 end of this function.  */
+  	      pending_inlines = pending_inlines->next;
+! #if defined(i386) && defined(NOT_MACH) && !defined(sequent) && !defined(sun386)
+  	      finput2->_ptr = finput2->_base = t->buf;
+  	      _bufend(finput2) = t->buf + t->len;
+Only in g++: cplus-lex.c.orig
+Only in g++: cplus-lex.c~
+Only in g++: cplus-lex.o
+Only in g++: cplus-method.o
+Only in g++: cplus-ptree.o
+Only in g++: cplus-search.o
+Only in g++: cplus-tab.c
+Only in g++: cplus-tab.h
+Only in g++: cplus-tab.o
+Only in g++: cplus-tab.output
+Only in g++: cplus-tree.o
+Only in g++: cplus-type2.o
+Only in g++: cplus-typeck.o
+Only in g++: crt0+.o
+Only in g++: crt1+.o
+Only in g++: cse.c
+Only in g++: cse.o
+Only in g++: dbxout.o
+Only in g++: emit-rtl.c
+Only in g++: emit-rtl.o
+Only in g++: explow.c
+Only in g++: explow.o
+Only in g++: expmed.c
+Only in g++: expmed.o
+Only in g++: expr.o
+Only in g++: final.c
+Only in g++: final.o
+Only in g++: flow.c
+Only in g++: flow.o
+Only in g++: fold-const.c
+Only in g++: fold-const.o
+Only in g++: g++
+Only in g++-1.37.1: g++.diff-1.37.0-1.37.1
+Only in g++: g++filt
+Only in g++: g++filt.o
+diff -rc2 g++-1.37.1/gcc.c g++/gcc.c
+*** g++-1.37.1/gcc.c	Sat Jan 20 07:21:10 1990
+--- g++/gcc.c	Thu Apr 19 12:24:20 1990
+***************
+*** 312,317 ****
+   %{y*} %{!nostdlib:%S} \
+   %{L*} %o %{!nostdlib:-lg++ gnulib%s %{g:-lg} %L}\n }}}}";
+! #else
+  /* Here is the spec for running the linker, after compiling all files.  */
+  char *link_spec = "%{!c:%{!M*:%{!E:%{!S:ld %{o*} %l\
+   %{A} %{d} %{e*} %{N} %{n} %{r} %{s} %{S} %{T*} %{t} %{u*} %{X} %{x} %{z}\
+--- 312,318 ----
+   %{y*} %{!nostdlib:%S} \
+   %{L*} %o %{!nostdlib:-lg++ gnulib%s %{g:-lg} %L}\n }}}}";
+! #else USE_COLLECT
+  /* Here is the spec for running the linker, after compiling all files.  */
++ #ifdef NOT_MACH
+  char *link_spec = "%{!c:%{!M*:%{!E:%{!S:ld %{o*} %l\
+   %{A} %{d} %{e*} %{N} %{n} %{r} %{s} %{S} %{T*} %{t} %{u*} %{X} %{x} %{z}\
+***************
+*** 318,322 ****
+   %{y*} %{!nostdlib:%S} \
+   %{L*} %o %{!nostdlib:-lg++ gnulib%s %{g:-lg} %L}\n }}}}";
+! #endif
+  
+  /* Accumulate a command (program name and args), and run it.  */
+--- 319,329 ----
+   %{y*} %{!nostdlib:%S} \
+   %{L*} %o %{!nostdlib:-lg++ gnulib%s %{g:-lg} %L}\n }}}}";
+! #else NOT_MACH
+! char *link_spec = "%{!c:%{!M*:%{!E:%{!S:ld %{o*} %l\
+!  %{A} %{d} %{e*} %{N} %{n} %{r} %{s} %{S} %{T*} %{t} %{u*} %{X} %{x} %{z}\
+!  %{y*} %{!nostdlib:%S} \
+!  %{L*} %o %{!nostdlib:-lg++ %{g:-lg} %L gnulib%s -lc}\n }}}}";
+! #endif NOT_MACH
+! #endif USE_COLLECT
+  
+  /* Accumulate a command (program name and args), and run it.  */
+Only in g++: gcc.c.bak
+Only in g++: gcc.c.orig
+Only in g++: gcc.c~
+Only in g++: gcc.o
+Only in g++: gdbfiles.h
+Only in g++: gencodes
+Only in g++: gencodes.c
+Only in g++: gencodes.o
+Only in g++: genconfig
+Only in g++: genconfig.c
+Only in g++: genconfig.o
+Only in g++: genemit
+Only in g++: genemit.c
+Only in g++: genemit.o
+Only in g++: genextract
+Only in g++: genextract.c
+Only in g++: genextract.o
+Only in g++: genflags
+Only in g++: genflags.c
+Only in g++: genflags.o
+Only in g++: genoutput
+Only in g++: genoutput.c
+Only in g++: genoutput.o
+Only in g++: genpeep
+Only in g++: genpeep.c
+Only in g++: genpeep.o
+Only in g++: genrecog
+Only in g++: genrecog.c
+Only in g++: genrecog.o
+Only in g++: global-alloc.c
+Only in g++: global-alloc.o
+Only in g++: gvarargs.h
+Only in g++: hard-reg-set.h
+Only in g++: insn-codes.h
+Only in g++: insn-config.h
+Only in g++: insn-emit.c
+Only in g++: insn-emit.o
+Only in g++: insn-extract.c
+Only in g++: insn-extract.o
+Only in g++: insn-flags.h
+Only in g++: insn-output.c
+Only in g++: insn-output.o
+Only in g++: insn-peep.c
+Only in g++: insn-peep.o
+Only in g++: insn-recog.c
+Only in g++: insn-recog.o
+Only in g++: integrate.o
+Only in g++: jump.c
+Only in g++: jump.o
+Only in g++: lastfile.o
+Only in g++: ld++
+diff -rc2 g++-1.37.1/ld.c g++/ld.c
+*** g++-1.37.1/ld.c	Fri Apr 13 15:34:25 1990
+--- g++/ld.c	Fri Apr  6 16:22:49 1990
+***************
+*** 1,2 ****
+--- 1,36 ----
++ /* 
++  * Mach Operating System
++  * Copyright (c) 1990 Carnegie-Mellon University
++  * Copyright (c) 1989 Carnegie-Mellon University
++  * All rights reserved.  The CMU software License Agreement specifies
++  * the terms and conditions for use and redistribution.
++  */
++ /*
++  * HISTORY
++  * $Log$
++  */
++ /*
++  *  Note: the copyright above only applies to the MACH changes in the file.
++  *
++  *	The files below were changed from the orginals provided in binutils.
++  *  All changes are in #ifdef NOT_MACH ... #else ... #endif conditionals.
++  *  The changes are intended for use with the i386 MACH 2.5 operating 
++  *  environment.
++  *
++  *	NOTE:  MACH ld has a few major changes from the base ld:
++  *		 The struct exec is part of the file.  It is loaded
++  *		with the text.
++  *		 The text start address is 0x10000.  The low 64k is
++  *		never mapped.  The pagesize is always 4k.
++  */
++ /*
++ 	Makefile
++ 	ar.c
++ 	a.out.h
++ 	ld.c
++ 	nm.c
++ */
++ 
++ 
+  /* Linker `ld' for GNU
+     Copyright (C) 1988 Free Software Foundation, Inc.
+***************
+*** 177,181 ****
+  #endif
+  #if defined(i386) && !defined(sequent)
+!   #define INITIALIZE_HEADER N_SET_MACHTYPE (outheader, M_386)
+  #endif
+  
+--- 211,219 ----
+  #endif
+  #if defined(i386) && !defined(sequent)
+!   #ifdef	NOT_MACH
+!     #define INITIALIZE_HEADER N_SET_MACHTYPE (outheader, M_386)
+!   #else	NOT_MACH
+!     #define INITIALIZE_HEADER
+!   #endif	NOT_MACH
+  #endif
+  
+***************
+*** 1024,1027 ****
+--- 1062,1070 ----
+    if (!T_flag_specified && !relocatable_output)
+      text_start = N_TXTADDR (outheader);
++ #ifdef	NOT_MACH
++ #else	NOT_MACH
++   else if (T_flag_specified == 1 && magic == OMAGIC)
++     text_start -= N_TXTOFF (outheader);	/* cancel previous "error" */
++ #endif	NOT_MACH
+  
+    /* The text-start address is normally this far past a page boundary.  */
+***************
+*** 1191,1205 ****
+  
+    /* Now check some option settings for consistency.  */
+! 
+! #ifdef NMAGIC
+    if ((magic == ZMAGIC || magic == NMAGIC)
+- #else
+-   if ((magic == ZMAGIC)
+- #endif
+        && (text_start - text_start_alignment) & (page_size - 1))
+      fatal ("-T argument not multiple of page size, with sharable output", 0);
+  
+    /* Append the standard search directories to the user-specified ones.  */
+    {
+      int n = sizeof standard_search_dirs / sizeof standard_search_dirs[0];
+      n_search_dirs += n;
+--- 1234,1278 ----
+  
+    /* Now check some option settings for consistency.  */
+! #ifdef	NOT_MACH
+    if ((magic == ZMAGIC || magic == NMAGIC)
+        && (text_start - text_start_alignment) & (page_size - 1))
+      fatal ("-T argument not multiple of page size, with sharable output", 0);
++ #else	NOT_MACH
++   /*
++    * The check above is stupid, since text_start_alignment is not computed
++    * until after we are return.  So it's zero.
++    */
++ #endif	NOT_MACH
+  
+    /* Append the standard search directories to the user-specified ones.  */
++ #ifndef	NOT_MACH
++   if ((int) getenv("LPATH"))
+    {
++     char *lpath = (char *)getenv("LPATH");
++     char *bp = lpath;
++     char *cp = lpath;
++     char *sp = (char *) 0;
++     int  len;
++     int  c = 1;
++ 
++     for(; c; bp = ++cp) {
++ 	while ((c = *cp) && c != ':') cp++;
++ 	if (len = (cp - bp)) {
++ 	    sp = (char *) xmalloc(len+1);
++ 	    bcopy(bp, sp, len);
++ 	    sp[len] = 0;
++ 	} else {
++ 	    sp = (char *) xmalloc(1+1);
++ 	    bcopy(".", sp, 1+1);
++ 	}
++ 	n_search_dirs++;
++ 	search_dirs
++ 	  = (char **) xrealloc (search_dirs, n_search_dirs * sizeof (char *));
++ 	search_dirs[n_search_dirs - 1] = sp;
++     }
++   }
++   else 
++ #endif	NOT_MACH
++   {
+      int n = sizeof standard_search_dirs / sizeof standard_search_dirs[0];
+      n_search_dirs += n;
+***************
+*** 1275,1278 ****
+--- 1348,1355 ----
+      {
+        text_start = parse (arg, "%x", "invalid argument to -Ttext");
++ #ifdef	NOT_MACH
++ #else	NOT_MACH
++       text_start += N_TXTOFF (outheader);
++ #endif	NOT_MACH
+        T_flag_specified = 1;
+        return;
+***************
+*** 1361,1364 ****
+--- 1438,1445 ----
+      case 'T':
+        text_start = parse (arg, "%x", "invalid argument to -T");
++ #ifdef	NOT_MACH
++ #else	NOT_MACH
++       text_start += N_TXTOFF (outheader);
++ #endif	NOT_MACH
+        T_flag_specified = 1;
+        return;
+***************
+*** 2471,2475 ****
+--- 2552,2560 ----
+      {
+        int text_end = text_size + N_TXTOFF (outheader);
++ #ifdef	NOT_MACH
+        text_pad = ((text_end + page_size - 1) & (- page_size)) - text_end;
++ #else	NOT_MACH
++       text_pad = ((text_end + SEGMENT_SIZE - 1) & (- SEGMENT_SIZE)) - text_end;
++ #endif	NOT_MACH
+        text_size += text_pad;
+      }
+***************
+*** 2483,2487 ****
+--- 2568,2576 ----
+  
+    if (! Tdata_flag_specified)
++ #ifdef	NOT_MACH
+      data_start = N_DATADDR (outheader) + text_start - N_TXTADDR (outheader);
++ #else	NOT_MACH
++     data_start = text_start + text_size;
++ #endif	NOT_MACH
+  
+    /* Set up the set element vector */
+***************
+*** 2642,2648 ****
+--- 2731,2745 ----
+      data_pad = specified_data_size - data_size;
+  
++ #ifdef	NOT_MACH
+    if (magic == ZMAGIC)
+      data_pad = ((data_pad + data_size + page_size - 1) & (- page_size))
+                 - data_size;
++ #else	NOT_MACH
++ #if	0
++   if (magic == ZMAGIC)
++     data_pad = ((data_pad + data_size + SEGMENT_SIZE - 1) & (- SEGMENT_SIZE))
++                - data_size;
++ #endif	0
++ #endif	NOT_MACH
+  
+    bss_size -= data_pad;
+***************
+*** 3351,3354 ****
+--- 3448,3458 ----
+  {
+    N_SET_MAGIC (outheader, magic);
++ #ifdef	NOT_MACH
++ #else	NOT_MACH
++   if ((T_flag_specified || Tdata_flag_specified) && ((text_start&0xf0000000) != 0xc0000000)) /* this last conjunct is a tmp hack */
++     {
++ 	N_SET_FLAGS(outheader, 0x01);
++     }
++ #endif	NOT_MACH
+    outheader.a_text = text_size;
+  #ifdef sequent
+***************
+*** 3448,3451 ****
+--- 3552,3566 ----
+    outheader.a_syms = nsyms * sizeof (struct nlist);
+  
++ #ifdef	NOT_MACH
++ #else	NOT_MACH
++   if ((T_flag_specified || Tdata_flag_specified) && ((text_start&0xf0000000) != 0xc0000000)) /* this last conjunct is a tmp hack */
++     {
++      if (T_flag_specified)
++ 	outheader.a_trsize = text_start - ((magic == OMAGIC) ? 0 :
++ 							  N_TXTOFF(outheader));
++      if (Tdata_flag_specified)
++ 	outheader.a_drsize = data_start;
++     } else
++ #endif	NOT_MACH
+    if (relocatable_output)
+      {
+Only in g++: ld.c.bak
+Only in g++: ld.c.new
+Only in g++: ld.c~
+Only in g++: ld.o
+Only in g++: limits.h
+Only in g++: local-alloc.c
+Only in g++: local-alloc.o
+Only in g++: loop.c
+Only in g++: loop.o
+Only in g++: machmode.def
+Only in g++: md
+Only in g++: move-if-change
+Only in g++: obstack.c
+Only in g++: obstack.h
+Only in g++: obstack.o
+Only in g++: optabs.c
+Only in g++: optabs.o
+Only in g++: output.h
+Only in g++: print-tree.o
+Only in g++: real.h
+Only in g++: recog.c
+Only in g++: recog.h
+Only in g++: recog.o
+Only in g++: regclass.c
+Only in g++: regclass.o
+Only in g++: regs.h
+Only in g++: reload.c
+Only in g++: reload.h
+Only in g++: reload.o
+Only in g++: reload1.c
+Only in g++: reload1.o
+Only in g++: rtl.c
+Only in g++: rtl.def
+Only in g++: rtl.h
+Only in g++: rtl.o
+Only in g++: rtlanal.c
+Only in g++: rtlanal.o
+Only in g++: sdbout.c
+Only in g++: sdbout.o
+Only in g++: stab.def
+Only in g++: stamp-codes.h
+Only in g++: stamp-config.h
+Only in g++: stamp-emit.c
+Only in g++: stamp-extract.c
+Only in g++: stamp-flags.h
+Only in g++: stamp-output.c
+Only in g++: stamp-peep.c
+Only in g++: stamp-recog.c
+Only in g++: stdarg.h
+Only in g++: stddef.h
+Only in g++: stmt.o
+Only in g++: stor-layout.o
+Only in g++: stupid.c
+Only in g++: stupid.o
+Only in g++: symout.o
+Only in g++: symseg.h
+Only in g++: tm.h
+Only in g++: toplev.o
+Only in g++: tree.o
+Only in g++: typeclass.h
+Only in g++: varasm.o
+Only in g++: version.o
+
+Diff file for libg++-1.37.0
+--------------------------------------------------------------------
+*** g++-include/sys/stat.h~	Tue Nov 28 07:11:50 1989
+--- g++-include/sys/stat.h	Fri Apr 13 12:12:15 1990
+***************
+*** 9,16 ****
+  #ifndef stat_h
+  #define stat_h 1
+  int stat (char *path, struct stat *buf);
+  int lstat (char *path, struct stat *buf);
+  int fstat (int fd, struct stat *buf);
+! 
+  #endif
+  
+--- 9,17 ----
+  #ifndef stat_h
+  #define stat_h 1
++ #ifdef NOT_MACH
+  int stat (char *path, struct stat *buf);
+  int lstat (char *path, struct stat *buf);
+  int fstat (int fd, struct stat *buf);
+! #endif
+  #endif
+  
+*** g++-include/math.h~	Thu Apr 19 10:50:06 1990
+--- g++-include/math.h	Thu Apr 19 10:50:30 1990
+***************
+*** 151,155 ****
+--- 151,159 ----
+  
+  #ifndef HUGE
++ #ifdef i386
++ #define HUGE    MAXFLOAT
++ #else
+  #define HUGE    MAXDOUBLE
++ #endif
+  #endif
+  
+
+---
+Paulo Guedes     Open Software Foundation   11 Cambridge Center, Cambridge, MA
+Email: pjg@osf.osf.org    Phone: (617) 621-8878
+
+
+1,,
+Return-Path: <jim@kaos.Stanford.EDU>
+Received: from Sun.COM (sun-barr) by teacake.sun.com (4.1/SMI-4.1)
+	id AA00350; Thu, 12 Apr 90 12:29:07 PDT
+Received: from kaos.Stanford.EDU by Sun.COM (4.1/SMI-4.1)
+	id AA03158; Thu, 12 Apr 90 12:26:21 PDT
+Received: by kaos.Stanford.EDU (4.1/inc-1.0)
+	id AA22821; Thu, 12 Apr 90 12:24:10 PDT
+Message-Id: <9004121924.AA22821@kaos.Stanford.EDU>
+To: tiemann@sun.com
+Cc: jim@kaos.Stanford.EDU
+Subject: g++ 1.37.2x  on SGI boxes
+Date: Thu, 12 Apr 90 12:24:09 PDT
+From: Jim Helman <jim@kaos.Stanford.EDU>
+Status: R
+
+*** EOOH ***
+Return-Path: <jim@kaos.Stanford.EDU>
+To: tiemann@sun.com
+Cc: jim@kaos.Stanford.EDU
+Subject: g++ 1.37.2x  on SGI boxes
+Date: Thu, 12 Apr 90 12:24:09 PDT
+From: Jim Helman <jim@kaos.Stanford.EDU>
+
+I ran into a few problems getting g++ + libg++ up on our machines.  A
+few changes needed to be made in addition to the COFF/SYSV changes
+listed in HINTS & README.  They're mostly trivial, but the
+NO_UNDERSCORES one had me stumped for a while.
+
+	COLLECT_LIBS='-lmld'
+
+rather than 
+
+	COLLECT_LIBS='-lld'
+
+IRIX's make only defines $< for inference rules, so:
+
+	$(CC) -o collect $(PROFILE) $$COLLECT_OPTIONS $(CFLAGS) $(INCLUDES)
+	 collect.o -lc $$COLLECT_LIBS
+
+rather than
+
+	$(CC) -o collect $(PROFILE) $$COLLECT_OPTIONS $(CFLAGS) $(INCLUDES)
+	$< -lg -lc $$COLLECT_LIBS
+
+>From: chin@operations.dccs.upenn.edu (Chin Wu), for collect add to
+xm-iris.h:
+
+	#define NO_UNDERSCORES 
+
+And one question.  When "-lm" is specified on the command line, why
+does g++ insert it before -lg++ rather than after?  This happens to me
+with both the Sun3/OS4 and Iris versions.  I just added a "-lm" to the
+LIB_SPEC.  What's the correct way to fix this?
+
+Is there any debugger support (either dbx or gdb) in the works for
+the MIPS and Iris machines?
+
+-jim
+
+
+
+1,,
+Return-Path: <info-g++-request@prep.ai.mit.edu>
+Received: from Sun.COM (sun-barr.EBay.Sun.COM) by teacake.Eng.Sun.COM (4.1/SMI-4.1)
+	id AA09983; Thu, 26 Apr 90 17:32:52 PDT
+Received: from life.ai.mit.edu by Sun.COM (4.1/SMI-4.1)
+	id AA00698; Thu, 26 Apr 90 17:29:29 PDT
+Received: from tut.cis.ohio-state.edu by life.ai.mit.edu (4.1/AI-4.10) id AA08561; Thu, 26 Apr 90 20:26:56 EDT
+Received: by tut.cis.ohio-state.edu (5.61-kk/5.900417)
+	id AA14126; Thu, 26 Apr 90 20:18:19 -0400
+Received: from USENET by tut.cis.ohio-state.edu with netnews
+	for info-g++@prep.ai.mit.edu (info-g++@prep.ai.mit.edu)
+	(contact usenet@tut.cis.ohio-state.edu if you have questions)
+Date: 25 Apr 90 17:12:34 GMT
+From: pacbell!osc!rp@lll-winken.llnl.gov  (Rich Patterson)
+Organization: Object Sciences Corp., Menlo Park, CA
+Subject: Re: Help -- Installing g++ 1.37 on Sun386i
+Message-Id: <2756@osc.COM>
+References: <5309@maslow.ptolemy.arc.nasa.gov>
+Sender: info-g++-request@prep.ai.mit.edu
+To: info-g++@prep.ai.mit.edu
+Status: RO
+
+*** EOOH ***
+Return-Path: <info-g++-request@prep.ai.mit.edu>
+Date: 25 Apr 90 17:12:34 GMT
+From: pacbell!osc!rp@lll-winken.llnl.gov  (Rich Patterson)
+Organization: Object Sciences Corp., Menlo Park, CA
+Subject: Re: Help -- Installing g++ 1.37 on Sun386i
+References: <5309@maslow.ptolemy.arc.nasa.gov>
+Sender: info-g++-request@prep.ai.mit.edu
+To: info-g++@prep.ai.mit.edu
+
+Hi,`
+	Here is a copy of a previous article I sent awhile ago when I installed
+gcc/g++/libg++ on my 386 Unix Box.  I have Unix System V release 3.0, not
+3.2.  I can't remember, which utility had different makes for 386 and 386 3.2
+(it might have been gdb).  Well anyways here is a copy of those notes:
+
+---- previous article follows ----
+[My purpose for this article is that others will validate these issues also
+ and the updates will be rolled into the next release]
+
+Hi,
+        Here are some installation problems that I had with g++ and libg++.
+After making the following changes, I was able to  successfully install and
+run g++ 1.36.4 and libg++ 1.36.3 under 386 Unix System V release 3.0.
+        I was able to build all of libg++.  The only tests that I was unable to
+run successfully were test0 (incremental loading) and the Fix48() portion of
+tFix24 (got a floating point exception - could be a bug on my 386).  The rest
+of the tests ran successfully and checktests showed only a few differences
+(such as the statistics on tRandom).  Here are the things I found that
+needed to be changed:
+
+G++:
+        1. When running maketests, the link for the "config"
+           directory will fail.  System V will not allow you to link
+           the directory.  In order to get the config directory you
+           need to do a mkdir and then copy the config files from your
+           gcc/config directory.
+
+        2. malloc.c requires the definition of bcopy.
+           If you end up using malloc.c that is with g++
+           then you will need to define bcopy inside malloc.c.
+           When malloc.c is compiled it doesn't read the config.h
+           file that has all those nice definitions.
+
+        3. insn-codes.h is needed by expr.c.  The makefile will
+           stop at this point because insn-codes.h hasn't been
+           created by 'gencodes' yet.  What I did was copy it
+           from my gcc directory. Later it gets recreated, but
+           no harm is done.  I assume if you added the dependency
+           of insn-codes.h to expr.c, the header file would be created
+           automatically.
+
+        4. cplus-dem.c needed a change for the include of memory.h or
+           the defines of strchr, etc.  What happened is that when built,
+           the define USG is not defined in the makefile so it trys to get
+           index. For System that was a problem, and ld++ dumped core
+           nicely.  Make sure you define USG, or better yet, since SYSV is
+           defined for g++, cplus-dem.c should be changed.
+
+LIBG++:
+        1. gnulib3.c - Make sure COFF_ENCAPSULATE is defined.  If not
+           gnulib checks for i386 and defines COFF which doesn't define
+           the magic __do_global_init (&__1xyzzy__).  [Yes, xyzzy is
+           magic not only in adventure but in libg++ as well!]
+
+        2. stdio.h - For System V release 3.0, _flag is a char.
+           I made that change. (I didn't change the other fields from
+           char to unsigned char, currently I haven't had a problem)
+
+        3. malloc.c - Yes malloc.c seems to crop up a lot!  In this one
+           fprintf is defined inside of malloc.c along with stdio.h.  I
+           ended up putting #ifdefs around it.
+
+        4. g++-include/time.h - For System V, at least the version I have
+           time.h lives only in /usr/include, not in /usr/include/sys. So
+           I made the following mod:
+
+          + #ifndef     USG
+            #include "//usr/include/sys/time.h"
+          + #endif
+            #include "//usr/include/sys/times.h"
+            #include "//usr/include/time.h"
+
+        5. math.h - For the 386, HUGE is defined at MAXFLOAT.
+
+        6. values.h - I didn't have time to examine this file yet.
+
+Commentary:
+        One thing that is very important to do is USE THE COFF ENCAPSULATION
+FEATURE!! I tried for 2 weeks, first with version 1.35.x and then another week
+with version 1.36.x to do it without COFF encapsulation.  It didn't work !!!
+The assembler output (even with FACIST_ASSEMBLER) was invalid for the AT&T
+assembler.  Use COFF encapsulation!!  Obtain the binutils, GAS and go for it!
+
+        If anyone has questions or comments feel free to contact me.  I'm
+posting from my home machine now, so please respond to the following signature.
+I hope we can continue to increase the stability and usability of the GNU
+software. Thanks FSF.
+
+Rich Patterson
+rp@rpx
+{pyramid,zycad}!rpx!rp
+
+
+1,,
+Return-Path: <info-gcc-request@prep.ai.mit.edu>
+Received: from Sun.COM (sun-barr.EBay.Sun.COM) by teacake.Eng.Sun.COM (4.1/SMI-4.1)
+	id AA23868; Thu, 10 May 90 00:53:00 PDT
+Received: from life.ai.mit.edu by Sun.COM (4.1/SMI-4.1)
+	id AA07774; Thu, 10 May 90 00:49:35 PDT
+Received: from tut.cis.ohio-state.edu by life.ai.mit.edu (4.1/AI-4.10) id AA26476; Thu, 10 May 90 03:47:55 EDT
+Received: by tut.cis.ohio-state.edu (5.61-kk/5.900430)
+	id AA19116; Thu, 10 May 90 03:40:06 -0400
+Received: from USENET by tut.cis.ohio-state.edu with netnews
+	for info-gcc@prep.ai.mit.edu (info-gcc@prep.ai.mit.edu)
+	(contact usenet@tut.cis.ohio-state.edu if you have questions)
+Date: 10 May 90 06:56:33 GMT
+From: akk@tut.fi  (Kautonen Ari)
+Organization: Tampere University of Technology, Finland
+Subject: Re: GCC Compilation Errors under SCO Unix
+Message-Id: <13003@etana.tut.fi>
+Sender: info-gcc-request@prep.ai.mit.edu
+To: info-gcc@prep.ai.mit.edu
+
+*** EOOH ***
+Return-Path: <info-gcc-request@prep.ai.mit.edu>
+Date: 10 May 90 06:56:33 GMT
+From: akk@tut.fi  (Kautonen Ari)
+Organization: Tampere University of Technology, Finland
+Subject: Re: GCC Compilation Errors under SCO Unix
+Sender: info-gcc-request@prep.ai.mit.edu
+To: info-gcc@prep.ai.mit.edu
+
+This is how I solved that same problem:
+
+1. ranlib - substitute 'ranlib' with 'ar -st' in Makefile.
+2. cvtomf - remove the debugging flag (-g) from the Makefile.
+
+You should also make the 'cpp' before the actual 'gcc', because it
+is needed for preprosessing the files explow.c, recog.c and reload.c.
+The default C-compiler runs out of macro space for those files.
+There might be some other things to do, but I can't just now remember
+what they were. Contact me, if there is something strange in making
+the gcc, I think I can find out the answers to the questions.
+
+Ari Kautonen  (akk@korppi.tut.fi)
+Ari Kautonen  (akk@tut.fi)
+
+
+1,,
+Return-Path: <@mitvma.mit.edu:I1100905@DBSTU1.BITNET>
+Received: from Sun.COM (sun-barr.EBay.Sun.COM) by teacake.Eng.Sun.COM (4.1/SMI-4.1)
+	id AA06426; Mon, 4 Jun 90 12:14:18 PDT
+Received: from life.ai.mit.edu by Sun.COM (4.1/SMI-4.1)
+	id AA28892; Mon, 4 Jun 90 12:11:16 PDT
+Received: from mitvma.mit.edu by life.ai.mit.edu (4.1/AI-4.10) id AA26702; Mon, 4 Jun 90 15:10:16 EDT
+Message-Id: <9006041910.AA26702@life.ai.mit.edu>
+Received: from MITVMA.MIT.EDU by mitvma.mit.edu (IBM VM SMTP R1.2.1MX) with BSMTP id 1291; Mon, 04 Jun 90 15:09:22 EDT
+Received: from DEARN by MITVMA.MIT.EDU (Mailer R2.05) with BSMTP id 1102; Mon,
+ 04 Jun 90 15:09:21 EDT
+Received: from DBSTU1 (I1100905) by DEARN (Mailer R2.03B) with BSMTP id 6484;
+ Mon, 04 Jun 90 21:08:32 CET
+Date:         Mon, 04 Jun 90 21:06:05 MEZ
+From: Stefan Petri <I1100905%DBSTU1.BITNET@mitvma.mit.edu>
+Subject:      g++ on pyramid (?)
+To: bug-g++@prep.ai.mit.edu
+Status: O
+
+*** EOOH ***
+Return-Path: <@mitvma.mit.edu:I1100905@DBSTU1.BITNET>
+Date:         Mon, 04 Jun 90 21:06:05 MEZ
+From: Stefan Petri <I1100905%DBSTU1.BITNET@mitvma.mit.edu>
+Subject:      g++ on pyramid (?)
+To: bug-g++@prep.ai.mit.edu
+
+
+Has anyone successfully built g++ on a pyramid (Targon/35) ?
+I got everything to compile, and the resulting binaries seem to run fine,
+but all the test - programs dumped core.
+The problem seems to be in the GNU-Linker: very small gcc-compiled
+programs run fine, but bigger ones don't, when linked by GNU-ld.
+I also tried collect2 without success.
+I guess I did not fully understand the instructions on what combination
+of crt*.o vs Linker to use for what type of system. (?)
+
+Here are some things I came across when trying to install g++1.37.
+(I did it in the ucb-universe (of course :-; )
+After installing gcc-1.37 I had to run fixincludes (never did it before)
+because gcc -traditional didnt grok
+> #ifdef __GNU__
+> __inline
+> #endif
+in cplus-tab.c
+
+The if-clause in Makefile for building ld++ does not work with either of
+pyramid's makes - but gnu-make groks it.
+
+Makefile: (quoted from gcc-1.37/Makefile) (for alloca.o)
++ # On a pyramid, you need to uncomment the following line:
++ CLIB = -lc /usr/.attlib/libPW.a
+------------
+  # HAVE_UNISTD_H = -DNO_UNISTD_H
+
++ # on pyramids we need -DNO_DOLLAR_IN_LABEL
++
+  # CFLAGS = -g -DSOS -DESKIT -O
+  #CFLAGS = -g -DGATHER_STATISTICS -O $(COFFLAGS) -B../gcc-test/
++ CFLAGS = -DGATHER_STATISTICS -O $(COFFLAGS)  -DNO_DOLLAR_IN_LABEL -B../gcc-tes
+  CC = gcc
+  BISON = bison
+
+===========
+cplus-lex.c:
+  /* If you don't have strrchr, but instead have rindex,
+     add your machine to this list, and send mail to
+     tiemann@wheaties.ai.mit.edu.  */
+! #if defined(sequent) || defined(convex) || defined(pyr)
+-----> in the ucb-Universe, this true for pyr
+===========
+collect2.c:
+#include <stdio.h>
++
++ #ifdef pyr
++ FILE *popen();
++ #endif
+-----------
+
+  #endif
++
++ #ifdef pyr
++ /* guessed after the gcc-machine-description */
++ #define TEXT_SECTION_ASM_OP ".text"
++ #define DATA_SECTION_ASM_OP ".data"
++
++ #define ASM_GLOBALIZE_LABEL(FILE, LABEL) \
++   fprintf (FILE, ".globl _%s\n", LABEL)
++
++ #define ASM_OUTPUT_LABEL(FILE, LABEL) \
++   fprintf (FILE, "_%s:", LABEL)
++
++ #endif
+
+  #if defined (__GNUC__) || defined (sparc)
+  #define alloca __builtin_alloca
+===========
+ld.c:
+  #define INITIALIZE_HEADER N_SET_MACHTYPE (outheader, M_386)
+  #endif
+
++ #ifdef pyr
++ #define INITIALIZE_HEADER \
++         outheader.a_machid = PYR90X
++ #endif
++
+  #ifdef is68k
+  /* This enables code to take care of an ugly hack in the ISI OS.
+===========
+cplus-dem.c:
+  /* #define nounderscore 1 /* define this is names don't start with _ */
+
+  #include <stdio.h>
+- #include <string.h>
+  #include <ctype.h>
+
+  #ifdef USG
+------------
+
+  #ifdef USG
+  #include <memory.h>
++ #include <string.h>
+  #else
+  #define memcpy(s1, s2, n) bcopy ((s2), (s1), (n))
+  #define memcmp(s1, s2, n) bcmp ((s2), (s1), (n))
++ #include <strings.h>
+  #define strchr index
+  #define strrchr rindex
+  #endif
+============
+g++filt.c:
+     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.  */
+
+  #include <stdio.h>
+- #include <string.h>
+  #include <ctype.h>
+
+  char *malloc ();
+----------
+
+  #include <stdio.h>
+  #include <ctype.h>
++ #ifdef USG
++ #include <string.h>           /* sun has both of these, but... */
++ #else
++ #include <strings.h>
++ #define strchr index
++ #define strrchr rindex
++ #endif
+
+  char *malloc ();
+  char *realloc ();
+
+===================
+And in the libg++ - directory:
+
+g++-include/stdio.h:
++ #elif defined(pyr)
++ #define HAVE_SETLINEBUF
++ // in ucb-universe we have _NFILE, but no _bufendtab[] :-(
++ //#define _NFILE      62
++
+------------
+  /* check and possibly redefine the following */
++ #ifdef pyr
++ #define BUFSIZ  2048
++ #else
+  #define BUFSIZ  1024
++ #endif
+------------
+g++-include/math.h:
+  /* sequents don't supply these. The following should suffice */
+! #if defined(sequent) || defined(DGUX) || defined(pyr)
+  static inline int isnan(double x) { return x != x; }
+  static inline int isinf(double x) { return x > MAXDOUBLE || x < -MAXDOUBLE; }
+  #endif
+------------
+  #define FMAXEXP     ((1 << _FEXPLEN - 1) - 1 + _IEEE)
+
++ #elif defined (pyr)
++ /* from /usr/.attinclude/limits.h
++   #define MAXDOUBLE       0d7fefffffffffffff
++   #define MAXFLOAT        ((float)0d47efffffe0000000)
++   #define MINDOUBLE       0d0010000000000000
++   #define MINFLOAT        ((float)0d3810000000000000)
++ */
++ /* the same from gcc-include/float.h */
++ #define MAXDOUBLE 1.7976931348623141e+308
++ #define MINDOUBLE 2.2250738585072022e-308
++ #define MAXFLOAT  ((float)3.40282347e+38)
++ #define MINFLOAT  ((float)1.17549435e-38)
++
++ #define _IEEE           1
++ #define _DEXPLEN        11
++ #define _HIDDENBIT      1
++ #define DMINEXP (1-DMAXEXP)
++ #define FMINEXP (1-FMAXEXP)
++ #define DMAXEXP ((1 << _DEXPLEN - 1) - 1)
++ #define FMAXEXP ((1 << _FEXPLEN - 1) - 1)
++
+  // #elif defined(vax)
+  // use vax versions by default -- they seem to be the most conservative
+=============
+g++-include/fcntl.h includes ``//usr/include/fcntl.h'' that defines
+
+struct  flock {
+        short   l_type;
+        short   l_whence;
+        long    l_start;
+        long    l_len;
+        short   l_sysid;
+        short   l_pid;
+};
+
+and also includes <std.h> defining
+int     flock(int, int);
+
+causing the Warning
+flock' was declared `extern' and later `static'
+
+------------
+there are some warnings about enumerated value `foo' not handled in switch
+in regex.cc
+
+-----------
+tests/test.hello.cc:119: `round_size' undeclared (first use this function)
+tests/test.hello.cc:118: warning: unused variable `rounded_size'
+A typo,I think
+
+--
+Stefan Petri, Institut fuer Betriebssysteme und Rechnerverbund,
+TU Braunschweig, Germany
+i1100905@dbstu1.bitnet , petri@tubsibr.uucp
+
+
+1,,
+Received: from Eng.Sun.COM (exodus) by teacake.Eng.Sun.COM (4.1/SMI-4.1)
+	id AA06287; Sun, 2 Sep 90 22:58:30 PDT
+Received: from Sun.COM (sun-barr.EBay.Sun.COM) by Eng.Sun.COM (4.1/SMI-4.1)
+	id AA23528; Sun, 2 Sep 90 22:55:22 PDT
+Received: from life.ai.mit.edu by Sun.COM (4.1/SMI-4.1)
+	id AA11227; Sun, 2 Sep 90 22:55:18 PDT
+Received: by life.ai.mit.edu (4.1/AI-4.10) id AA29978; Mon, 3 Sep 90 01:23:50 EDT
+Return-Path: <news@eddie.mit.edu>
+Received: from EDDIE.MIT.EDU by life.ai.mit.edu (4.1/AI-4.10) id AA29974; Mon, 3 Sep 90 01:23:46 EDT
+Received:  by EDDIE.MIT.EDU (5.61/25-eef)
+	id AA07893; Sat, 1 Sep 90 05:30:10 EST
+Path: mit-eddie!rutgers!news-server.csri.toronto.edu!utgpu!watserv1!watmath!att!dptg!ulysses!andante!alice!ark
+From: alice!ark@eddie.mit.edu (Andrew Koenig)
+Newsgroups: comp.lang.c++
+Subject: Re: vtbl for abstract class : WHY ?
+Keywords: abstract class, vtbl
+Message-Id: <11253@alice.UUCP>
+Date: 30 Aug 90 12:57:55 GMT
+References: <2206@runxtsa.runx.oz.au>
+Organization: AT&T Bell Laboratories, Liberty Corner NJ
+Lines: 51
+Apparently-To: lang-c++-netnews-dist@prep.ai.mit.edu
+Status: R
+
+*** EOOH ***
+Return-Path: <news@eddie.mit.edu>
+Path: mit-eddie!rutgers!news-server.csri.toronto.edu!utgpu!watserv1!watmath!att!dptg!ulysses!andante!alice!ark
+From: alice!ark@eddie.mit.edu (Andrew Koenig)
+Newsgroups: comp.lang.c++
+Subject: Re: vtbl for abstract class : WHY ?
+Keywords: abstract class, vtbl
+Date: 30 Aug 90 12:57:55 GMT
+References: <2206@runxtsa.runx.oz.au>
+Organization: AT&T Bell Laboratories, Liberty Corner NJ
+Lines: 51
+Apparently-To: lang-c++-netnews-dist@prep.ai.mit.edu
+
+In article <2206@runxtsa.runx.oz.au>, tom@runxtsa.runx.oz.au (Thomas Antalffy) writes:
+> When I make a class abstract by assigning 0 to one of its virtual methods, 
+> my C++ compiler generates a virtual function table and puts the address of 
+
+> 		char __pure_virtual_called() 
+
+> in the appropriate slot. This later creates a link error, because there is 
+> no default implementation of this function.
+
+> I assume that this mechanism is there to give you the chance of putting 
+> error handling in __pure_virtual_called().
+
+No, there should be a __pure_virtual_called() in the library.
+It, in turn, should print an appropriate error message and abort.
+
+It's there because by chicanery it is possible to call a pure virtual
+in circumstances a compiler cannot detect.  For example:
+
+	class A {
+	public:
+		A();
+		virtual void f() = 0;
+	};
+
+No problem so far, right?  You can't create an A object, of course.
+
+	void callf(A* ap)
+	{
+		ap->f();
+	}
+
+Still no problem.  Since you can't create an A object, ap must in
+fact point to an object of a class derived from A, which in turn must
+have defined an f() member.
+
+Now look at this:
+
+	A::A() { callf(this); }
+
+Again there is no way for the compiler to see what's wrong.
+The callf function might just plug data members of A, in
+which case it would be harmless.  What it actually does, of
+course, is to try to call the nonexistent f() member of the
+A object!
+
+So you see the point.  In principle you should not be allowed to
+call a pure virtual but you can by trickery.  It is better to obtain
+a clear diagnostic in that case than a random crash.
+-- 
+				--Andrew Koenig
+				  ark@europa.att.com
+
+

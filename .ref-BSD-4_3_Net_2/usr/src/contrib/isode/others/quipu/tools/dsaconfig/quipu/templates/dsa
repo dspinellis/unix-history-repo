@@ -1,0 +1,55 @@
+###############################################################################
+#
+# How to fill this template in:
+#
+# 1. Note well: all Level-2 DSAs must live under c=country@o=O_i
+#	e.g., c=country@o=O_i@cn=wildlife name
+#
+#    Since there are probably more Level-2 DSAs than endangered species
+#    of South American Wildlife (hard to believe if you read the IUCN
+#    Red Book), you don't have to use a wildlife name for a Level-2 DSA.
+#
+# 2. Substitute the name of your organization for each occurrence of
+#	o=O_i -> o=Performance Systems International
+#
+# 3. Substitute the name of your Level-2 DSA for each occurrence of
+#	wildlife name -> toucan
+#
+# 4. Substitute the IP address and TCP port of the DSA for
+#	aaa.bbb.ccc.ddd+port -> 192.33.4.73+17010
+#
+#    By convention, the first Level-2 DSA running on a host should listen on
+#    TCP port 17010.  Additional Level-2 DSAs should listen on ports
+#    immediately above this, e.g., 17011, 17012, etc.  Of course, it's probably
+#    a bad idea to run more than one Level-2 DSA on a single host.
+#
+# 5. Fill-in the description attribute to explain what the name of your
+#    Level-2 DSA means.
+#
+# 6. Don't forget to add these lines to the entry for your Level-1 DSA:
+#
+#	eDBinfo= # # c=country@o=O_i@cn=wildlife name
+#	eDBinfo= c=country # # c=country@o=O_i@cn=wildlife name
+#	eDBinfo= c=country@o=O_i # # c=country@o=O_i@cn=wildlife name
+#
+# 7. Delete this message (the first 41 lines of this file)
+#
+###############################################################################
+cn=wildlife name
+acl= others # read # entry
+acl= others # read # default
+acl= others # compare # attributes # userPassword
+cn= wildlife name
+eDBinfo= # c=country@cn=level-1 DSA #
+eDBinfo= c=country # c=country@cn=level-1 DSA #
+eDBinfo= c=country@o=O_i # c=country@cn=level-1 DSA #
+presentationAddress= '0101'H/Internet=aaa.bbb.ccc.ddd+port
+manager= c=country@o=O_i@cn=Manager#
+manager= c=country@cn=Manager#
+userPassword= wildlifename
+quipuVersion= 6.0 Distribution
+description= wildlife description
+objectClass= top & quipuObject
+objectClass= applicationEntity & dSA & quipuDSA
+supportedApplicationContext= x500DSP & x500DAP & quipuDSP
+

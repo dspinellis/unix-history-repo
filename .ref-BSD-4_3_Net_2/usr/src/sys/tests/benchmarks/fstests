@@ -1,0 +1,262 @@
+#! /bin/sh
+# run this file as a shell script
+mkdir fstests
+chdir fstests
+echo x - existfs
+sed 's/^X//' >existfs <<'!Funky!Stuff!'
+#!/bin/csh -f
+set time=2
+if ($#argv < 1) then
+	echo "Usage: existfs name"
+	exit 1
+endif
+echo "tests on $1"
+/etc/dumpfs $1 | head -14 | tail -11
+mkdir $1/fststs
+if (! -e bin) then
+	mkdir bin
+	cc -o bin/write_4096 write_4096.c
+	cc -o bin/write_8192 write_8192.c
+	cc -o bin/rewrite_8192 rewrite_8192.c
+	cc -o bin/read_8192 read_8192.c
+endif
+cp bin/write_4096 bin/write_8192 bin/rewrite_8192 bin/read_8192 $1/fststs
+cd $1/fststs
+echo "write_4096"
+rm -f tst2
+X./write_4096 tst2
+rm -f tst2
+X./write_4096 tst2
+rm -f tst2
+X./write_4096 tst2
+echo "write_8192"
+rm -f tst2
+X./write_8192 tst2
+rm -f tst2
+X./write_8192 tst2
+rm -f tst2
+X./write_8192 tst2
+echo "rewrite_8192"
+X./rewrite_8192 tst2
+X./rewrite_8192 tst2
+X./rewrite_8192 tst2
+echo "read_8192"
+X./read_8192 tst2
+X./read_8192 tst2
+X./read_8192 tst2
+echo "done"
+!Funky!Stuff!
+echo x - newtsts
+sed 's/^X//' >newtsts <<'!Funky!Stuff!'
+#!/bin/csh -f
+set echo
+set time=2
+if ($#argv < 2) then
+	echo "Usage: newtsts special disk-type"
+	exit 1
+endif
+echo "8K/1K file system on $1 type $2"
+/etc/newfs $1 $2
+/etc/mount $1 /mnt
+mkdir /mnt/fststs
+if (! -e bin) then
+	mkdir bin
+	cc -o bin/write_4096 write_4096.c
+	cc -o bin/write_8192 write_8192.c
+	cc -o bin/rewrite_8192 rewrite_8192.c
+	cc -o bin/read_8192 read_8192.c
+endif
+echo "write_4096"
+rm -f /mnt/fststs/tst2
+bin/write_4096 /mnt/fststs/tst2
+rm -f /mnt/fststs/tst2
+bin/write_4096 /mnt/fststs/tst2
+rm -f /mnt/fststs/tst2
+bin/write_4096 /mnt/fststs/tst2
+echo "write_8192"
+rm -f /mnt/fststs/tst2
+bin/write_8192 /mnt/fststs/tst2
+rm -f /mnt/fststs/tst2
+bin/write_8192 /mnt/fststs/tst2
+rm -f /mnt/fststs/tst2
+bin/write_8192 /mnt/fststs/tst2
+echo "rewrite_8192"
+bin/rewrite_8192 /mnt/fststs/tst2
+bin/rewrite_8192 /mnt/fststs/tst2
+bin/rewrite_8192 /mnt/fststs/tst2
+echo "read_8192"
+bin/read_8192 /mnt/fststs/tst2
+bin/read_8192 /mnt/fststs/tst2
+bin/read_8192 /mnt/fststs/tst2
+umount $1
+sync
+echo
+echo "4K/1K file system on $1 type $2"
+newfs $1 $2
+mount $1 /mnt
+mkdir /mnt/fststs
+rm -f /mnt/fststs/tst2
+bin/write_4096 /mnt/fststs/tst2
+rm -f /mnt/fststs/tst2
+bin/write_4096 /mnt/fststs/tst2
+rm -f /mnt/fststs/tst2
+bin/write_4096 /mnt/fststs/tst2
+echo "write_8192"
+rm -f /mnt/fststs/tst2
+bin/write_8192 /mnt/fststs/tst2
+rm -f /mnt/fststs/tst2
+bin/write_8192 /mnt/fststs/tst2
+rm -f /mnt/fststs/tst2
+bin/write_8192 /mnt/fststs/tst2
+echo "rewrite_8192"
+bin/rewrite_8192 /mnt/fststs/tst2
+bin/rewrite_8192 /mnt/fststs/tst2
+bin/rewrite_8192 /mnt/fststs/tst2
+echo "read_8192"
+bin/read_8192 /mnt/fststs/tst2
+bin/read_8192 /mnt/fststs/tst2
+bin/read_8192 /mnt/fststs/tst2
+echo "done"
+!Funky!Stuff!
+echo x - read_8192.c
+sed 's/^X//' >read_8192.c <<'!Funky!Stuff!'
+#define	BUFSIZ 8192
+
+main(argc, argv)
+	int argc;
+	char *argv[];
+{
+	char buf[BUFSIZ];
+	int i, j;
+
+	if (argc < 2) {
+		printf("Usage: read_8192 file\n");
+		exit(1);
+	}
+	j = open(argv[1], 0);
+	if (j < 0) {
+		perror(argv[1]);
+		exit(2);
+	}
+	for (i = 0; i < 1024; i++)
+		read(j, buf, BUFSIZ);
+}
+!Funky!Stuff!
+echo x - readchk.c
+sed 's/^X//' >readchk.c <<'!Funky!Stuff!'
+#define BUFSIZ 4096
+
+main(argc, argv)
+	int argc;
+	char *argv[];
+{
+	int buf[BUFSIZ / sizeof(int)];
+	int i, j, k;
+
+	if (argc != 2) {
+		printf("Usage: readchk file\n");
+		exit(1);
+	}
+	j = creat(argv[1], 0666);
+	if (j < 0) {
+		perror(argv[1]);
+		exit(2);
+	}
+	for (i = 0; i < 2048; i++) {
+		for (k = 0; k < BUFSIZ / sizeof(int); k++)
+			buf[k] = i + k;
+		if (write(j, buf, BUFSIZ) != BUFSIZ) {
+			perror("write");
+			exit(3);
+		}
+	}
+	close(j);
+	j = open(argv[1], 0);
+	if (j < 0) {
+		perror(argv[1]);
+		exit(4);
+	}
+	for (i = 0; i < 2048; i++) {
+		if (read(j, buf, BUFSIZ) != BUFSIZ) {
+			perror("read");
+			exit(5);
+		}
+		for (k = 0; k < BUFSIZ / sizeof(int); k++)
+			if (buf[k] != i + k)
+				printf("bad data at %d\n",
+					tell(j) - BUFSIZ + 4 * k);
+	}
+}
+!Funky!Stuff!
+echo x - rewrite_8192.c
+sed 's/^X//' >rewrite_8192.c <<'!Funky!Stuff!'
+#define	BUFSIZ 8192
+
+main(argc, argv)
+	int argc;
+	char *argv[];
+{
+	char buf[BUFSIZ];
+	int i, j;
+
+	if (argc < 2) {
+		printf("Usage: rewrite_8192 file\n");
+		exit(1);
+	}
+	j = open(argv[1], 2);
+	if (j < 0) {
+		perror(argv[1]);
+		exit(2);
+	}
+	for (i = 0; i < 1024; i++)
+		write(j, buf, BUFSIZ);
+}
+!Funky!Stuff!
+echo x - write_4096.c
+sed 's/^X//' >write_4096.c <<'!Funky!Stuff!'
+#define	BUFSIZ 4096
+
+main(argc, argv)
+	int argc;
+	char *argv[];
+{
+	char buf[BUFSIZ];
+	int i, j;
+
+	if (argc < 2) {
+		printf("Usage: write_4096 file\n");
+		exit(1);
+	}
+	j = creat(argv[1], 0666);
+	if (j < 0) {
+		perror(argv[1]);
+		exit(2);
+	}
+	for (i = 0; i < 2048; i++)
+		write(j, buf, BUFSIZ);
+}
+!Funky!Stuff!
+echo x - write_8192.c
+sed 's/^X//' >write_8192.c <<'!Funky!Stuff!'
+#define	BUFSIZ 8192
+
+main(argc, argv)
+	int argc;
+	char *argv[];
+{
+	char buf[BUFSIZ];
+	int i, j;
+
+	if (argc < 2) {
+		printf("Usage: write_8192 file\n");
+		exit(1);
+	}
+	j = creat(argv[1], 0666);
+	if (j < 0) {
+		perror(argv[1]);
+		exit(2);
+	}
+	for (i = 0; i < 1024; i++)
+		write(j, buf, BUFSIZ);
+}
+!Funky!Stuff!
