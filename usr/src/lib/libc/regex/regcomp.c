@@ -8,11 +8,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)regcomp.c	5.4 (Berkeley) %G%
+ *	@(#)regcomp.c	5.5 (Berkeley) %G%
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)regcomp.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)regcomp.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -581,6 +581,8 @@ register struct parse *p;
 		invert++;	/* make note to invert set at end */
 	if (EAT(']'))
 		CHadd(cs, ']');
+	else if (EAT('-'))
+		CHadd(cs, '-');
 	while ((c = PEEK()) != '\0' && c != ']' && !SEETWO('-', ']'))
 		p_b_term(p, cs);
 	if (EAT('-'))
