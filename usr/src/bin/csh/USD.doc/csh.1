@@ -2,13 +2,16 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)csh.1	5.1 (Berkeley) %G%
+.\"	@(#)csh.1	6.1 (Berkeley) %G%
 .\"
-.RP
+.EH 'USD:4-%''An Introduction to the C shell'
+.OH 'An Introduction to the C shell''USD:4-%'
+.\".RP
 .TL
-An introduction to the C shell
+An Introduction to the C shell
 .AU
 William Joy
+(revised for 4.3BSD by Mark Seiden)
 .AI
 Computer Science Division
 .br
@@ -39,12 +42,12 @@ will find a valuable basic explanation of the shell here.
 Simple terminal interaction with
 .I csh
 is possible after reading just the first section of this document.
-The second section describes the shells capabilities which you can
+The second section describes the shell's capabilities which you can
 explore after you have begun to become acquainted with the shell.
 Later sections introduce features which are useful, but not necessary
 for all users of the shell.
 .PP
-Back matter includes an appendix listing special characters of the shell
+Additional information includes an appendix listing special characters of the shell
 and a glossary of terms and commands introduced in this manual.
 .AE
 .SH
@@ -69,11 +72,11 @@ will be a very useful program for you
 in interacting with the \s-2UNIX\s0 system.
 .PP
 In addition to this document, you will want to refer to a copy
-of the \s-2UNIX\s0 programmer's manual.
+of the \s-2UNIX\s0 User Reference Manual.
 The
 .I csh
-documentation in the manual provides a full description of all
-features of the shell and is a final reference for questions
+documentation in section 1 of the manual provides a full description of all
+features of the shell and is the definitive reference for questions
 about the shell.
 .PP
 Many words in this document are shown in
@@ -171,9 +174,9 @@ EOT
 .PP
 Here we typed a message to send to
 .I bill
-and ended this message with a \(uaD which sent an end-of-file to
+and ended this message with a ^D which sent an end-of-file to
 the mail program.
-(Here and throughout this document, the notation ``\(ua\fIx\fR''
+(Here and throughout this document, the notation ``^\fIx\fR''
 is to be read ``control-\fIx\fR'' and represents the striking of the \fIx\fR
 key while the control key is held down.)
 The mail program
@@ -190,7 +193,7 @@ program with argument
 .I bill
 and went dormant waiting for it to complete.
 The mail program then read input from our terminal until we signalled
-an end-of-file via typing a \(uaD after which the shell noticed
+an end-of-file via typing a ^D after which the shell noticed
 that mail had completed
 and signaled us that it was ready to read from the terminal again by
 printing another `% ' prompt.
@@ -212,25 +215,24 @@ and
 characters on your terminal \- the erase character erases the last
 character you typed and the kill character erases the entire line you
 have entered so far.
-By default, the erase character is `#' and the kill character is `@'.
-Most people who use \s-2CRT\s0 displays prefer to use the backspace
-(\(uaH) character as their erase character since it is then easier
-to see what you have typed so far.
+By default, the erase character is the delete key (equivalent to `^?')
+and the kill character is `^U'.  Some people prefer to make the erase character
+the backspace key (equivalent to `^H').
 You can make this be true by typing
 .DS
 tset \-e
 .DE
 which tells the program
 .I tset
-to set the erase character, and its default setting for this character
-is a backspace.
+to set the erase character to tset's default setting for this character
+(a backspace).
 .NH 2
 Flag arguments
 .PP
 A useful notion in \s-2UNIX\s0 is that of a
 .I flag
 argument.
-While many arguments to commands specify file names or user names
+While many arguments to commands specify file names or user names,
 some arguments rather specify an optional capability of the command
 which you wish to invoke.
 By convention, such arguments begin with the character `\-' (hyphen).
@@ -323,7 +325,7 @@ be a scratch file.*
 `#' with a `\e'.  The fact that the `#' character is the old (pre-\s-2CRT\s0)
 standard erase character means that it seldom appears in a file name, and
 allows this convention to be used for scratch files.  If you are using a
-\s-2CRT\s0, your erase character should be a \(uaH, as we demonstrated
+\s-2CRT\s0, your erase character should be a ^H, as we demonstrated
 in section 1.1 how this could be set up.
 .FE
 The system will remove such files after a couple of days,
@@ -361,7 +363,7 @@ we are sending via
 .I mail,
 or when we are typing in text or data to some other program.
 Note that the shell is only reading input when it has prompted with
-`% '.
+`% ' (although we can type our input even before it prompts).
 .NH 2
 Input from files; pipelines
 .PP
@@ -404,7 +406,7 @@ then the sort program would sort lines from its
 Since we did not
 .I redirect
 the standard input, it would sort lines as we typed them on the terminal
-until we typed a \(uaD to indicate an end-of-file.
+until we typed a ^D to indicate an end-of-file.
 .PP
 A most useful capability is the ability to combine the standard output
 of one command with the standard input of another, i.e. to run the
@@ -567,7 +569,7 @@ use the notation
 .DS
 prog.*
 .DE
-This word is expanded by the shell, before the command to which it is
+This expression is expanded by the shell, before the command to which it is
 an argument is executed, into a list of names which begin with `prog.'.
 The character `*' here matches any sequence (including the empty sequence)
 of characters in a file name.
@@ -661,13 +663,13 @@ Another filename expansion mechanism gives access to the pathname of
 the
 .I home
 directory of other users.
-This notation consists of the character `~' (tilde) followed by another users'
+This notation consists of the character `~' (tilde) followed by another user's
 login name.
 For instance the word `~bill' would map to the pathname `/usr/bill'
 if the home directory for `bill' was `/usr/bill'.
 Since, on large systems, users may have login directories scattered over
 many different disk volumes with different prefix directory names,
-this notation provides a reliable way of accessing the files
+this notation provides a convenient way of accessing the files
 of other users.
 .PP
 A special case of this notation consists of a `~' alone, e.g. `~/mbox'.
@@ -765,12 +767,10 @@ You can send an
 .I signal
 to the
 .I cat
-command by typing
-the \s-2DEL\s0 or \s-2RUBOUT\s0 key
-on your terminal.*
+command by typing ^C on your terminal.*
 .FS
-*Many users use
-\fIstty\|\fR(1) to change the interrupt character to \(uaC.
+*On some older Unix systems the \s-2DEL\s0 or \s-2RUBOUT\s0 key
+has the same effect. "stty all" will tell you the INTR key value.
 .FE
 Since
 .I cat
@@ -792,11 +792,11 @@ Another way in which many programs terminate is when they get an end-of-file
 from their standard input.
 Thus the
 .I mail
-program in the first example above was terminated when we typed a \(uaD
+program in the first example above was terminated when we typed a ^D
 which generates an end-of-file from the standard input.
 The shell also terminates when it gets an end-of-file printing `logout';
 \s-2UNIX\s0 then logs you off the system.
-Since this means that typing too many \(uaD's can accidentally log us off,
+Since this means that typing too many ^D's can accidentally log us off,
 the shell has a mechanism for preventing this.
 This 
 .I ignoreeof
@@ -808,7 +808,7 @@ Thus if we execute
 .DS
 mail bill < prepared.text
 .DE
-the mail command will terminate without our typing a \(uaD.
+the mail command will terminate without our typing a ^D.
 This is because it read to the end-of-file of our file
 `prepared.text' in which we placed a message for `bill' with an editor program.
 We could also have done
@@ -832,7 +832,7 @@ These commands could also have been stopped by sending an \s-2INTERRUPT\s0.
 .PP
 Another possibility for stopping a command is to suspend its execution
 temporarily, with the possibility of continuing execution later.  This is
-done by sending a \s-2STOP\s0 signal via typing a \(uaZ.
+done by sending a \s-2STOP\s0 signal via typing a ^Z.
 This signal causes all commands running on the terminal
 (usually one but more if a pipeline is executing) to become suspended.
 The shell notices that the command(s) have been suspended, types
@@ -852,7 +852,7 @@ example of command suspension follows.
 .DS
 % mail harold
 Someone just copied a big file into my directory and its name is
-\(uaZ
+^Z
 Stopped
 % ls
 funnyfile
@@ -870,7 +870,7 @@ EOT
 .DE
 In this example someone was sending a message to Harold and forgot the
 name of the file he wanted to mention.  The mail command was suspended
-by typing \(uaZ.  When the shell noticed that the mail program was
+by typing ^Z.  When the shell noticed that the mail program was
 suspended, it typed `Stopped' and prompted for a new command.  Then the
 .I ls
 command was typed to find out the name of the file.  The
@@ -878,12 +878,12 @@ command was typed to find out the name of the file.  The
 command was run to find out which command was suspended. At this time the
 .I fg
 command was typed to continue execution of the mail program.  Input
-to the mail program was then continued and ended with a \(uaD
+to the mail program was then continued and ended with a ^D
 which indicated the end of the message at which time the mail
 program typed EOT.  The
 .I jobs
 command will show which commands are suspended.
-The \(uaZ should only be typed at the beginning of a line since
+The ^Z should only be typed at the beginning of a line since
 everything typed on the current line is discarded when a signal is sent
 from the keyboard.  This also happens on \s-2INTERRUPT\s0, and \s-2QUIT\s0
 signals.  More information on
@@ -893,13 +893,13 @@ section 2.6.
 If you write or run programs which are not fully debugged then it may
 be necessary to stop them somewhat ungracefully.
 This can be done by sending them a \s-2QUIT\s0
-signal, sent by typing a \(ua\e.
+signal, sent by typing a ^\e.
 This will usually provoke the shell to produce a message like:
 .DS
 Quit (Core dumped)
 .DE
 indicating that a file
-`core' has been created containing information about the program `a.out's
+`core' has been created containing information about the running program's
 state when it terminated due to the \s-2QUIT\s0 signal.
 You can examine this file yourself, or forward information to the
 maintainer of the program telling him/her where the
@@ -925,7 +925,7 @@ The
 .I more
 program pauses after each complete screenful and types `\-\-More\-\-'
 at which point you can hit a space to get another screenful, a return
-to get another line, or a `q' to end the
+to get another line, a `?' to get some help on other commands, or a `q' to end the
 .I more
 program.  You can also use more as a filter, i.e.
 .DS
@@ -936,22 +936,22 @@ works just like the more simple more command above.
 For stopping output of commands not involving
 .I more
 you can use the
-\(uaS key to stop the typeout.  The typeout will resume when you
-hit \(uaQ or any other key, but \(uaQ is normally used because
+^S key to stop the typeout.  The typeout will resume when you
+hit ^Q or any other key, but ^Q is normally used because
 it only restarts the output and does not become input to the program
 which is running.  This works well on low-speed terminals, but at 9600
-baud it is hard to type \(uaS and \(uaQ fast enough to paginate
+baud it is hard to type ^S and ^Q fast enough to paginate
 the output nicely, and a program like
 .I more
 is usually used.
 .PP
-An additional possibility is to use the \(uaO flush output
+An additional possibility is to use the ^O flush output
 character; when this character is typed, all output from the current
 command is thrown away (quickly) until the next input read occurs
 or until the next shell prompt.  This can be used to allow a command
 to complete without having to suffer through the output on a slow
-terminal; \(uaO is a toggle, so flushing can be turned off by
-typing \(uaO again while output is being flushed.
+terminal; ^O is a toggle, so flushing can be turned off by
+typing ^O again while output is being flushed.
 .NH 2
 What now?
 .PP
