@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	7.3 (Berkeley) %G%
+ *	@(#)machdep.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -414,27 +414,6 @@ sigreturn()
 	regs[PC] = scp->sc_pc;
 	regs[PS] = scp->sc_ps;
 }
-
-/* XXX - BEGIN 4.2 COMPATIBILITY */
-/*
- * Compatibility with 4.2 kcall $139 used by longjmp()
- */
-osigcleanup()
-{
-	register struct sigcontext *scp;
-	register int *regs = u.u_ar0;
-
-	scp = (struct sigcontext *)fuword((caddr_t)regs[SP]);
-	if ((int)scp == -1)
-		return;
-	if (useracc((caddr_t)scp, 3 * sizeof (int), 0) == 0)
-		return;
-	u.u_onstack = scp->sc_onstack & 01;
-	u.u_procp->p_sigmask = scp->sc_mask &~
-	    (sigmask(SIGKILL)|sigmask(SIGCONT)|sigmask(SIGSTOP));
-	regs[SP] = scp->sc_sp;
-}
-/* XXX - END 4.2 COMPATIBILITY */
 
 int	waittime = -1;
 
