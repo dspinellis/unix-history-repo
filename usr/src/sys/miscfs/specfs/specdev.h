@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)specdev.h	7.4 (Berkeley) %G%
+ *	@(#)specdev.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -192,3 +192,32 @@ int	spec_advlock __P((
 		int op,
 		struct flock *fl,
 		int flags));
+#define spec_blkatoff ((int (*) __P(( \
+		struct vnode *vp, \
+		off_t offset, \
+		char **res, \
+		struct buf **bpp))) spec_badop)
+#define spec_vget ((int (*) __P(( \
+		struct mount *mp, \
+		ino_t ino, \
+		struct vnode **vpp))) spec_badop)
+#define spec_valloc ((int (*) __P(( \
+		struct vnode *pvp, \
+		int mode, \
+		struct ucred *cred, \
+		struct vnode **vpp))) spec_badop)
+#define spec_vfree ((void (*) __P(( \
+		struct vnode *pvp, \
+		ino_t ino, \
+		int mode))) spec_badop)
+#define spec_truncate ((int (*) __P(( \
+		struct vnode *vp, \
+		u_long length, \
+		int flags))) nullop)
+#define spec_update ((int (*) __P(( \
+		struct vnode *vp, \
+		struct timeval *ta, \
+		struct timeval *tm, \
+		int waitfor))) nullop)
+#define spec_bwrite ((int (*) __P(( \
+		struct buf *bp))) nullop)
