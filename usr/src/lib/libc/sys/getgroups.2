@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getgroups.2	5.1 (Berkeley) %G%
+.\"	@(#)getgroups.2	6.1 (Berkeley) %G%
 .\"
-.TH GETGROUPS 2 "7 July 1983"
+.TH GETGROUPS 2 ""
 .UC 5
 .SH NAME
 getgroups \- get group access list
@@ -14,8 +14,8 @@ getgroups \- get group access list
 #include <sys/param.h>
 .PP
 .ft B
-getgroups(ngroups, gidset)
-int *ngroups, *gidset;
+ngroups = getgroups(gidsetlen, gidset)
+int ngroups, gidsetlen, *gidset;
 .fi
 .SH DESCRIPTION
 .I Getgroups
@@ -23,25 +23,30 @@ gets the current group access list of the user process
 and stores it in the array 
 .IR gidset .
 The parameter
-.I ngroups
+.I gidsetlen
 indicates the number of entries which may be placed in 
-.I gidset
-and is modified on return to indicate the actual number of
-groups returned.
-No more than NGRPS, as defined in
+.IR gidset.
+.I Getgroups
+returns the actual number of groups returned in
+.IR gidset .
+No more than NGROUPS, as defined in
 .RI < sys/param.h >,
 will ever
 be returned.
 .SH "RETURN VALUE
-A value of 0 indicates that the call succeeded, and that the
-number of elements of \fIgidset\fP and the set itself were returned.
+A successful call returns the number of groups in the group set.
 A value of \-1 indicates that an error occurred, and the error
 code is stored in the global variable \fIerrno\fP\|.
 .SH "ERRORS
 The possible errors for \fIgetgroup\fP are:
 .TP 15
+[EINVAL]
+The argument
+.I gidsetlen
+is smaller than the number of groups in the group set.
+.TP
 [EFAULT]
-The arguments \fIngroups\fP or \fIgidset\fP specify
-invalid addresses.
+The argument \fIgidset\fP specifies
+an invalid address.
 .SH "SEE ALSO
-setgroups(2), initgroups(3)
+setgroups(2), initgroups(3X)
