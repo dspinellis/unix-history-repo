@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.157 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.158 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -2609,6 +2609,7 @@ getcfname()
 	}
 #endif
 
+#ifdef TRY_VERSIONED_CF_NAME
 	/*
 	**  Try sendmail.8.6.12.cf, then sendmail.8.6.cf, then
 	**  sendmail.8.cf, and finally sendmail.cf.
@@ -2643,6 +2644,7 @@ getcfname()
 			*p = '\0';
 		} while ((p = strrchr(&cbuf[i - 2], '.')) != NULL);
 	}
+#endif
 	return _PATH_SENDMAILCF;
 }
 /*
