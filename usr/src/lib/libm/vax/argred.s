@@ -75,6 +75,10 @@ libm$sincos:
 	blss	cosine
 sine:
 	muld2	r1,r1		# Xsq = X * X
+	cmpw	$0x2480,r1	# [zl] Xsq > 2^-56?
+	blss	1f		# [zl] yes, go ahead and do polyd
+	clrq	r1		# [zl] work around 11/780 FPA polyd bug
+1:
 	polyd	r1,$7,sin_coef	# Q = P(Xsq) , of deg 7
 	mulf3	$0f3.0,r8,r4	# beta = 3 * alpha
 	mulf2	r0,r4		# beta = Q * beta
