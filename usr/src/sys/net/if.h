@@ -1,33 +1,53 @@
-/*	if.h	4.2	81/11/20	*/
+/*	if.h	4.3	81/11/26	*/
 
 /*
- * Structure defining a network interface.
+ * Definitions for network interfaces.
+ */
+struct ifqueue {
+	struct	mbuf *ifq_head;
+	struct	mbuf *ifq_tail;
+};
+
+/*
+ * Structure defining a queue for a network interface.
  *
  * (Would like to call this struct ``if'', but C isn't PL/1.)
  */
 struct ifnet {
 	short	if_unit;		/* sub-unit for lower level driver */
-	short	if_flags;		/* state flags */
 	short	if_mtu;			/* maximum transmission unit */
 	short	if_net;			/* network number of interface */
+	int	if_host[2];		/* local net host number */
 	struct	in_addr if_addr;	/* internet address of interface */
-	struct ifbuf {
-		short	ib_mbcnt;	/* mbufs on chain */
-		short	ib_mbhiwat;	/* mbufs permitted on chain */
-		struct	mbuf *ib_hd;	/* head of chain */
-		struct	mbuf *ib_tl;	/* tail of chain */
-	} if_snd, if_rcv;
-	struct ifsw {
-		int	(*if_output)();		/* output routine */
-		int	(*if_ubareset)();	/* uba reset routine */
-	} *if_sw;
+	struct	ifqueue if_snd;		/* output queue */
+	int	(*if_output)();		/* output routine */
+	int	(*if_ubareset)();	/* uba reset routine */
+	int	if_collisions;
+	int	if_ierrors;
+	int	if_oerrors;
 	struct	ifnet *if_next;
 };
 
-/* bits in if_flags */
-#define	IF_OACTIVE	1		/* output in progress */
+#define	IF_ENQUEUE(ifq, m) { \
+	(m)->m_act = 0; \
+	if ((ifq)->ifq_tail == 0) \
+		(ifq)->ifq_head = (ifq)->ifq_tail =  m; \
+	else \
+		(ifq)->ifq_tail->m_act = m; \
+}
+#define	IF_DEQUEUE(ifq, m) { \
+	(m) = (ifq)->ifq_head; \
+	if (m) { \
+		if (((ifq)->ifq_head = (m)->m_act) == 0) \
+			(ifq)->ifq_tail = 0; \
+		(m)->m_act = 0; \
+	} \
+}
 
 #ifdef KERNEL
+#ifdef INET
+struct	ifqueue	ipintrq;		/* ip packet input queue */
+#endif
 struct	ifnet *ifnet;
-struct	ifnet *if_ifwithaddr(), *if_ifonnetof();
+struct	ifnet *if_ifwithaddr(), *if_ifonnetof(), *if_gatewayfor();
 #endif

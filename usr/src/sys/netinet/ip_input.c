@@ -1,4 +1,4 @@
-/* ip_input.c 1.18 81/11/23 */
+/* ip_input.c 1.19 81/11/26 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -6,11 +6,10 @@
 #include "../h/mbuf.h"
 #include "../h/protosw.h"
 #include "../h/socket.h"
-#include "../net/inet.h"
-#include "../net/inet_systm.h"
+#include "../net/in.h"
+#include "../net/in_systm.h"
 #include "../net/if.h"
-#include "../net/imp.h"
-#include "../net/ip.h"			/* belongs before inet.h */
+#include "../net/ip.h"			/* belongs before in.h */
 #include "../net/ip_var.h"
 #include "../net/ip_icmp.h"
 #include "../net/tcp.h"
@@ -51,19 +50,26 @@ struct	ip *ip_reass();
  * try to reassamble.  If complete and fragment queue exists, discard.
  * Process options.  Pass to next level.
  */
-ip_input(m0)
-	struct mbuf *m0;
+ipintr()
 {
 	register struct ip *ip;
-	register struct mbuf *m = m0;
+	register struct mbuf *m;
+	struct mbuf *m0;
 	register int i;
 	register struct ipq *fp;
-	int hlen;
+	int hlen, s;
 
-COUNT(IP_INPUT);
+COUNT(IPINTR);
+next:
 	/*
-	 * Check header and byteswap.
+	 * Get next datagram off input queue and get IP header
+	 * in first mbuf.
 	 */
+	s = splimp();
+	IF_DEQUEUE(&ipintrq, m);
+	splx(s);
+	if (m == 0)
+		return;
 	if (m->m_len < sizeof (struct ip) &&
 	    m_pullup(m, sizeof (struct ip)) == 0)
 		goto bad;
@@ -72,7 +78,7 @@ COUNT(IP_INPUT);
 	    m_pullup(m, hlen) == 0)
 		goto bad;
 	if (ipcksum)
-		if ((ip->ip_sum = inet_cksum(m, hlen)) != 0xffff) {
+		if ((ip->ip_sum = in_cksum(m, hlen)) != 0xffff) {
 			printf("ip_sum %x\n", ip->ip_sum);
 			ipstat.ips_badsum++;
 			goto bad;
@@ -92,7 +98,7 @@ COUNT(IP_INPUT);
 	 * Drop packet if shorter than we expect.
 	 */
 	i = 0;
-	for (; m != NULL; m = m->m_next)
+	for (m0 = m; m != NULL; m = m->m_next)
 		i += m->m_len;
 	m = m0;
 	if (i != ip->ip_len) {
@@ -107,14 +113,14 @@ COUNT(IP_INPUT);
 	 */
 	if (hlen > sizeof (struct ip))
 		ip_dooptions(ip);
-	if (ip->ip_dst.s_addr != n_lhost.s_addr &&
+	if (ifnet && ip->ip_dst.s_addr != ifnet->if_addr.s_addr &&
 	    if_ifwithaddr(ip->ip_dst) == 0) {
 		if (--ip->ip_ttl == 0) {
 			icmp_error(ip, ICMP_TIMXCEED, 0);
-			return;
+			goto next;
 		}
-		ip_output(dtom(ip));
-		return;
+		ip_output(dtom(ip), (struct mbuf *)0);
+		goto next;
 	}
 
 	/*
@@ -149,7 +155,7 @@ found:
 	if (((struct ipasfrag *)ip)->ipf_mff || ip->ip_off) {
 		ip = ip_reass((struct ipasfrag *)ip, fp);
 		if (ip == 0)
-			return;
+			goto next;
 		hlen = ip->ip_hl << 2;
 		m = dtom(ip);
 	} else
@@ -160,9 +166,10 @@ found:
 	 * Switch out to protocol's input routine.
 	 */
 	(*protosw[ip_protox[ip->ip_p]].pr_input)(m);
-	return;
+	goto next;
 bad:
 	m_freem(m);
+	goto next;
 }
 
 /*

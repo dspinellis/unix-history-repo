@@ -1,5 +1,6 @@
-/* tcp.h 1.18 81/11/24 */
+/* tcp.h 1.19 81/11/26 */
 
+typedef	u_long	tcp_seq;
 /*
  * TCP header.
  * Per RFC 793, September, 1981.
@@ -7,8 +8,8 @@
 struct tcphdr {
 	u_short	th_sport;		/* source port */
 	u_short	th_dport;		/* destination port */
-	seq_t	th_seq;			/* sequence number */
-	seq_t	th_ackno;		/* acknowledgement number */
+	tcp_seq	th_seq;			/* sequence number */
+	tcp_seq	th_ack;			/* acknowledgement number */
 	u_char
 		th_x2:4,		/* (unused) */
 		th_off:4;		/* data offset */

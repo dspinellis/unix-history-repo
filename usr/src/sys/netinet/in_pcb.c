@@ -1,4 +1,4 @@
-/* in_pcb.c 4.8 81/11/21 */
+/* in_pcb.c 4.9 81/11/26 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -7,10 +7,10 @@
 #include "../h/mbuf.h"
 #include "../h/socket.h"
 #include "../h/socketvar.h"
-#include "../net/inet.h"
-#include "../net/inet_systm.h"
+#include "../net/in.h"
+#include "../net/in_systm.h"
 #include "../net/if.h"
-#include "../net/inet_pcb.h"
+#include "../net/in_pcb.h"
 
 /*
  * Allocate a protocol control block, space

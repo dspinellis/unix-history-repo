@@ -1,4 +1,4 @@
-/* if_en.c 4.13 81/11/24 */
+/*	if_en.c	4.14	81/11/26	*/
 
 #include "en.h"
 /*
@@ -8,50 +8,43 @@
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/mbuf.h"
-#include "../net/inet.h"
-#include "../net/inet_pcb.h"
-#include "../net/if.h"
-#include "../net/inet_systm.h"
-#include "../net/imp.h"
-#include "../net/ip.h"
-#include "../net/ip_var.h"
-#include "../net/tcp.h"			/* XXX */
-#include "../net/tcp_var.h"
-#include "../h/map.h"
 #include "../h/pte.h"
 #include "../h/buf.h"
+#include "../h/protosw.h"
+#include "../h/socket.h"
 #include "../h/ubareg.h"
 #include "../h/ubavar.h"
-#include "../h/conf.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/proc.h"
 #include "../h/enreg.h"
-#include "../h/mtpr.h"
 #include "../h/cpu.h"
-#include "../h/cmap.h"
+#include "../h/mtpr.h"
+#include "../h/vmmac.h"
+#include "../net/in.h"
+#include "../net/in_systm.h"
+#include "../net/if.h"
+#include "../net/if_en.h"
+#include "../net/if_uba.h"
+#include "../net/ip.h"
+#include "../net/ip_var.h"
 
-int	enrswaps;
-/* int	enwswaps; */
+#define	ENMTU	1024
+
 int	enprobe(), enattach(), enrint(), enxint(), encollide();
 struct	uba_device *eninfo[NEN];
 u_short enstd[] = { 0 };
 struct	uba_driver endriver =
-	{ enprobe, 0, enattach, 0, enstd, "en", eninfo };
-
+	{ enprobe, 0, enattach, 0, enstd, "es", eninfo };
 #define	ENUNIT(x)	minor(x)
 
-struct	en_packet *xpkt, *rpkt;
-struct	en_prefix {
-	struct en_header enp_h;
-	struct tcpiphdr enp_th;
-};
-struct	uba_regs *enuba;
-struct	pte *enrmr, *enxmr;
-int	enrbdp, enwbdp;
-int	enrproto, enwproto;
-struct	pte enxmap[2];
-int	enxswapd;
+struct	en_softc {
+	struct	ifnet *es_if;
+	struct	ifuba *es_ifuba;
+	short	es_delay;
+	short	es_mask;
+	u_char	es_addr;
+	u_char	es_lastx;
+	short	es_oactive;
+	short	es_olen;
+} en_softc[NEN];
 
 enprobe(reg)
 	caddr_t reg;
@@ -59,19 +52,17 @@ enprobe(reg)
 	register int br, cvec;
 	register struct endevice *addr = (struct endevice *)reg;
 
+COUNT(ENPROBE);
 #ifdef lint
 	br = 0; cvec = br; br = cvec;
 	enrint(0); enxint(0); encollide(0);
 #endif
-
 	addr->en_istat = 0;
-	addr->en_ostat = 0;
 	addr->en_owc = -1;
 	addr->en_oba = 0;
 	addr->en_ostat = EN_IEN|EN_GO;
 	DELAY(100000);
 	addr->en_ostat = 0;
-	printf("ethernet address %d\n", ~addr->en_addr&0xff);
 	return (1);
 }
 
@@ -79,393 +70,253 @@ enprobe(reg)
 enattach(ui)
 	struct uba_device *ui;
 {
-	extern struct ifnet ifen;
 
-	ifen.if_mtu = 1024;
-	ifen.if_net = 10;
-	ifen.if_addr.s_host = LOCALHST;
-	ifen.if_addr.s_net = LOCALNET;
-	ifen.if_addr.s_imp = LOCALIMP;
-	n_lhost = ifen.if_addr;
+COUNT(ENATTACH);
+	eninit(ui->ui_unit);
+	/* net initialization, based on ui->ui_flags?!? */
 }
 
 eninit(unit)
 	int unit;
-{	
-	register struct endevice *addr;
+{
 	register struct uba_device *ui;
-	int uban, x;
-	static reenter;
+	register struct endevice *addr;
+	register struct en_softc *es;
 
+COUNT(ENINIT);
 	if (unit >= NEN || (ui = eninfo[unit]) == 0 || ui->ui_alive == 0) {
-		printf("en%d: not alive\n", unit);
+		printf("es%d: not alive\n", unit);
 		return;
 	}
-	x = splimp();
-	if (reenter == 0) {
-		int n, j, i, k; char *cp;
-		reenter = 1;
-		n = 10;
-		k = n<<1;
-		i = rmalloc(mbmap, n*2);
-		if (i == 0)
-			panic("eninit");
-		j = i << 1;
-		cp = (char *)pftom(i);
-		if (memall(&Mbmap[j], k, proc, CSYS) == 0)
-			panic("eninit");
-		vmaccess(&Mbmap[j], (caddr_t)cp, k);
-		rpkt = (struct en_packet *)
-		    (cp + 1024 - sizeof (struct en_prefix));
-		xpkt = (struct en_packet *)
-		    (cp + 5 * 1024 + 1024 - sizeof (struct en_prefix));
-		for (j = 0; j < n; j++)
-			mprefcnt[i+j] = 1;
+	es = &en_softc[unit];
+	if (if_ubainit(es->es_ifuba, ui->ui_ubanum,
+	    sizeof (struct en_header), btop(ENMTU)) == 0) { 
+		printf("es%d: can't initialize\n", unit);
+		return;
 	}
-	uban = ui->ui_ubanum;
 	addr = (struct endevice *)ui->ui_addr;
-	addr->en_istat = 0;
-	addr->en_ostat = 0;
-	imp_stat.iaddr =
-	    uballoc(uban, (caddr_t)rpkt, 1024+512, UBA_NEED16|UBA_NEEDBDP);
-	imp_stat.oaddr =
-	    uballoc(uban, (caddr_t)xpkt, 1024+512, UBA_NEED16|UBA_NEEDBDP);
-	enuba = ui->ui_hd->uh_uba;
-	enrbdp = (imp_stat.iaddr >> 28) & 0xf;
-	enwbdp = (imp_stat.oaddr >> 28) & 0xf;
-	enrproto = UBAMR_MRV | (enrbdp << 21);
-	enwproto = UBAMR_MRV | (enwbdp << 21);
-	enrmr = &enuba->uba_map[((imp_stat.iaddr>>9)&0x1ff) + 1];
-	enxmr = &enuba->uba_map[((imp_stat.oaddr>>9)&0x1ff) + 1];
-	enxmap[0] = enxmr[0];
-	enxmap[1] = enxmr[1];
-	enxswapd = 0;
-	printf("enrbdp %x enrproto %x enrmr %x imp_stat.iaddr %x\n",
-	    enrbdp, enrproto, enrmr, imp_stat.iaddr);
-	imp_stat.impopen = 1;
-	imp_stat.flush = 0;
-	splx(x);
-#ifdef IMPDEBUG
-	printf("eninit(%d): iaddr = %x, oaddr = %x\n",
-		unit, imp_stat.iaddr, imp_stat.oaddr);
-#endif
+	addr->en_istat = addr->en_ostat = 0;
 }
 
-#if 0
 enreset(uban)
 	int uban;
 {
 	register int unit;
 	struct uba_device *ui;
 
+COUNT(ENRESET);
 	for (unit = 0; unit < NEN; unit++) {
 		ui = eninfo[unit];
 		if (ui == 0 || ui->ui_ubanum != uban || ui->ui_alive == 0)
 			continue;
-		if (imp_stat.iaddr)
-			ubarelse(uban, &imp_stat.iaddr);
-		if (imp_stat.oaddr)
-			ubarelse(uban, &imp_stat.oaddr);
 		eninit(unit);
-		printf("en%d ", unit);
+		printf("es%d ", unit);
 	}
 }
-#endif
 
 int	enlastdel = 25;
-int	enlastx = 0;
+
 enstart(dev)
 	dev_t dev;
 {
-	register struct mbuf *m, *mp;
-	register struct endevice *addr;
-	register caddr_t cp, top;
         int unit;
-        register int len;
 	struct uba_device *ui;
-	int enxswapnow = 0;
+	register struct endevice *addr;
+	register struct en_softc *es;
+	register struct ifuba *ifu;
+	struct mbuf *m;
+	int dest;
 COUNT(ENSTART);
 
 	unit = ENUNIT(dev);
 	ui = eninfo[unit];
-	if (ui == 0 || ui->ui_alive == 0) {
-		printf("en%d (imp_output): not alive\n", unit);
+	es = &en_softc[unit];
+	if (es->es_oactive)
+		goto restart;
+	IF_DEQUEUE(&es->es_if->if_snd, m);
+	if (m == 0) {
+		es->es_oactive = 0;
 		return;
 	}
+	dest = mtod(m, struct en_header *)->en_dhost;
+	es->es_olen = if_wubaput(&es->es_ifuba, m);
+	if (es->es_lastx && es->es_lastx == dest)
+		es->es_delay = enlastdel;
+	else
+		es->es_lastx = dest;
+restart:
+	ifu = es->es_ifuba;
+	UBAPURGE(ifu->ifu_uba, ifu->ifu_w.ifrw_bdp);
 	addr = (struct endevice *)ui->ui_addr;
-	if (!imp_stat.outactive) {
-		if ((m = imp_stat.outq_head) == NULL)
-			return;
-		imp_stat.outactive = 1;      /* set myself active */
-		imp_stat.outq_head = m->m_act;  /* -> next packet chain */
-		/*
-		 * Pack mbufs into ethernet packet.
-		 */
-		cp = (caddr_t)xpkt;
-		top = (caddr_t)xpkt + sizeof(struct en_packet);
-		while (m != NULL) {
-			char *dp;
-			if (cp + m->m_len > top) {
-				printf("imp_snd: my packet runneth over\n");
-				m_freem(m);
-				return;
-			}
-			dp = mtod(m, char *);
-			if (((int)cp&0x3ff)==0 && ((int)dp&0x3ff)==0) {
-				struct pte *pte = &Mbmap[mtopf(dp)*2];
-				*(int *)enxmr = enwproto | pte++->pg_pfnum;
-				*(int *)(enxmr+1) = enwproto | pte->pg_pfnum;
-				enxswapd = enxswapnow = 1;
-			} else
-				bcopy(mtod(m, caddr_t), cp,
-				    (unsigned)m->m_len);
-			cp += m->m_len;
-			/* too soon! */
-			MFREE(m, mp);
-			m = mp;
-		}
-		if (enxswapnow == 0 && enxswapd) {
-			enxmr[0] = enxmap[0];
-			enxmr[1] = enxmap[1];
-		}
-		if (enlastx && enlastx == xpkt->Header.en_dhost)
-			imp_stat.endelay = enlastdel;
-		else
-			enlastx = xpkt->Header.en_dhost;
-	}
-	len = ntohs((u_short)(((struct ip *)((int)xpkt + L1822))->ip_len)) +
-	    L1822;
-	if (len > sizeof(struct en_packet)) {
-		printf("imp_output: ridiculous IP length %d\n", len);
-		return;
-	}
-#if defined(VAX780) || defined(VAX750)
-	switch (cpu) {
-#if defined(VAX780)
-	case VAX_780:
-		UBA_PURGE780(enuba, enwbdp);
-		break;
-#endif
-#if defined(VAX750)
-	case VAX_750:
-		UBA_PURGE750(enuba, enwbdp);
-		break;
-#endif
-	}
-#endif
-	addr->en_oba = imp_stat.oaddr;
-	addr->en_odelay = imp_stat.endelay;
-	addr->en_owc = -((len + 1) >> 1);
-#ifdef IMPDEBUG
-	printf("en%d: sending packet (%d bytes)\n", unit, len);
-	prt_byte(xpkt, len);
-#endif
+	addr->en_oba = (int)ifu->ifu_w.ifrw_addr;
+	addr->en_odelay = es->es_delay;
+	addr->en_owc = -((es->es_olen + 1) >> 1);
 	addr->en_ostat = EN_IEN|EN_GO;
+	es->es_oactive = 1;
 }
 
-/*
- * Output interrupt handler.
- */
 enxint(unit)
 	int unit;
 {
 	register struct endevice *addr;
 	register struct uba_device *ui;
+	register struct en_softc *es;
 COUNT(ENXINT);
 
 	ui = eninfo[unit];
+	es = &en_softc[unit];
+	if (es->es_oactive == 0)
+		return;
 	addr = (struct endevice *)ui->ui_addr;
-
-#ifdef IMPDEBUG
-	printf("en%d: enxint ostat=%b\n", unit, addr->en_ostat, EN_BITS);
-#endif
-	if (!imp_stat.outactive) {
-		printf("en%d: phantom output intr ostat=%b\n",
-			unit, addr->en_ostat, EN_BITS);
+	es = &en_softc[unit];
+	es->es_oactive = 0;
+	es->es_delay = 0;
+	es->es_mask = ~0;
+	if (addr->en_ostat&EN_OERROR)
+		printf("es%d: output error\n", unit);
+	if (es->es_if->if_snd.ifq_head == 0) {
+		es->es_lastx = 0;
 		return;
 	}
-	imp_stat.endelay = 0;
-	imp_stat.enmask = ~0;
-	if (addr->en_ostat&EN_OERROR)
-		printf("en%d: output error ostat=%b\n", unit,
-			addr->en_ostat, EN_BITS);
-	imp_stat.outactive = 0;
-	if (imp_stat.outq_head)
-		enstart(unit);
-	else
-		enlastx = 0;
+	enstart(unit);
 }
 
-int collisions;
 encollide(unit)
 	int unit;
 {
-	register struct endevice *addr;
-	register struct uba_device *ui;
+	register struct en_softc *es;
 COUNT(ENCOLLIDE);
 
-	collisions++;
-	ui = eninfo[unit];
-	addr = (struct endevice *)ui->ui_addr;
-
-#ifdef IMPDEBUG
-	printf("en%d: collision ostat=%b\n", unit, addr->en_ostat, EN_BITS);
-#endif
-	if (!imp_stat.outactive) {
-		printf("en%d: phantom collision intr ostat=%b\n",
-			unit, addr->en_ostat, EN_BITS);
+	es = &en_softc[unit];
+	es->es_if->if_collisions++;
+	if (es->es_oactive == 0)
 		return;
-	}
-	if (imp_stat.enmask == 0) {
-		printf("en%d: output error ostat=%b\n", unit,
-			addr->en_ostat, EN_BITS);
+	if (es->es_mask == 0) {
+		printf("es%d: send error\n", unit);
+		enxint(unit);
 	} else {
-		imp_stat.enmask <<= 1;
-		imp_stat.endelay = mfpr(ICR) & ~imp_stat.enmask;
+		es->es_mask <<= 1;
+		es->es_delay = mfpr(ICR) &~ es->es_mask;
+		enstart(unit);
 	}
-	enstart(unit);
 }
 
 enrint(unit)
 	int unit;
 {
-    	register struct mbuf *m;
-	struct mbuf *mp;
-	register struct endevice *addr;
-	register struct uba_device *ui;
+	struct endevice *addr;
+	register struct en_softc *es;
+	register struct ifuba *ifu;
+	struct en_header *en;
+    	struct mbuf *m;
+	struct ifqueue *inq;
 	register int len;
-	register caddr_t cp;
-	struct mbuf *p, *top = 0;
-	struct ip *ip;
-	u_int hlen;
+	int off;
 COUNT(ENRINT);
 
-	ui = eninfo[unit];
-	addr = (struct endevice *)ui->ui_addr;
-#ifdef IMPDEBUG
-	printf("en%d: enrint istat=%b\n", unit, addr->en_istat, EN_BITS);
-#endif
-	if (imp_stat.flush)
-		goto flush;
+	addr = (struct endevice *)eninfo[unit]->ui_addr;
 	if (addr->en_istat&EN_IERROR) {
-#ifdef notdef
-		printf("en%d: input error istat=%b\n", unit,
-			addr->en_istat, EN_BITS);
-#endif
-		goto flush;
+		es->es_if->if_ierrors++;
+		printf("es%d: input error\n", unit);
+		goto setup;
 	}
-#if defined(VAX780) || defined(VAX750)
-	switch (cpu) {
-#if defined(VAX780)
-	case VAX_780:
-		UBA_PURGE780(enuba, enrbdp);
-		break;
-#endif
-#if defined(VAX750)
-	case VAX_750:
-		UBA_PURGE750(enuba, enrbdp);
-		break;
-#endif
-	}
-#endif
-	ip = (struct ip *)((int)rpkt + L1822);
-	len = ntohs((u_short *)ip->ip_len) + L1822;
-	if (len > sizeof(struct en_packet) || len < sizeof (struct ip)) {
-		printf("enrint: bad ip length %d\n", len);
-		goto flush;
-	}
-	hlen = L1822 + sizeof (struct ip);
-	switch (ip->ip_p) {
+	ifu = en_softc[unit].es_ifuba;
+	UBAPURGE(ifu->ifu_uba, ifu->ifu_r.ifrw_bdp);
+	en = (struct en_header *)(ifu->ifu_r.ifrw_addr);
+#define	endataaddr(en, off, type)	((type)(((caddr_t)((en)+1)+(off))))
+	if (en->en_type >= ENPUP_TRAIL &&
+	    en->en_type < ENPUP_TRAIL+ENPUP_NTRAILER) {
+		off = (en->en_type - ENPUP_TRAIL) * 512;
+		en->en_type = *endataaddr(en, off, u_short *);
+		off += 2;
+	} else
+		off = 0;
+	switch (en->en_type) {
 
-	case IPPROTO_TCP:
-		hlen += ((struct tcpiphdr *)ip)->ti_off << 2;
+#ifdef INET
+	case ENPUP_IPTYPE:
+		len = endataaddr(en, off, struct ip *)->ip_len;
+		setipintr();
+		inq = &ipintrq;
 		break;
-	}
-	MGET(m, 0);
-	if (m == 0)
-		goto flush;
-	top = m;
-	m->m_off = MMINOFF;
-	m->m_len = hlen;
-	bcopy((caddr_t)rpkt, mtod(m, caddr_t), hlen);
-	len -= hlen;
-	cp = (caddr_t)rpkt + hlen;
-	mp = m;
-	while (len > 0) {
-		MGET(m, 0);
-		if (m == NULL)
-			goto flush;
-		if (len >= PGSIZE) {
-			MPGET(p, 1);
-			if (p == 0)
-				goto nopage;
-			m->m_len = PGSIZE;
-			m->m_off = (int)p - (int)m;
-			if (((int)cp & 0x3ff) == 0) {
-				struct pte *cpte = &Mbmap[mtopf(cp)*2];
-				struct pte *ppte = &Mbmap[mtopf(p)*2];
-				struct pte t;
-				enrswaps++;
-				t = *ppte; *ppte++ = *cpte; *cpte++ = t;
-				t = *ppte; *ppte = *cpte; *cpte = t;
-				mtpr(TBIS, (caddr_t)cp);
-				mtpr(TBIS, (caddr_t)cp+512);
-				mtpr(TBIS, (caddr_t)p);
-				mtpr(TBIS, (caddr_t)p+512);
-				*(int *)(enrmr+1) =
-				    cpte[0].pg_pfnum | enrproto;
-				*(int *)(enrmr) =
-				    cpte[-1].pg_pfnum | enrproto;
-				goto nocopy;
-			}
-		} else {
-nopage:
-			m->m_len = MIN(MLEN, len);
-			m->m_off = MMINOFF;
-		}
-		bcopy(cp, mtod(m, caddr_t), (unsigned)m->m_len);
-nocopy:
-		cp += m->m_len;
-		len -= m->m_len;
-		mp->m_next = m;
-		mp = m;
-	}
-	m = top;
-	if (imp_stat.inq_head != NULL)
-		imp_stat.inq_tail->m_act = m;
-	else
-		imp_stat.inq_head = m;
-	imp_stat.inq_tail = m;
-#ifdef IMPDEBUG
-	printf("en%d: received packet (%d bytes)\n", unit, len);
-	prt_byte(rpkt, len);
 #endif
-	setsoftnet();
-	goto setup;
-flush:
-	m_freem(top);
-#ifdef IMPDEBUG
-	printf("en%d: flushing packet %x\n", unit, top);
-#endif
+
+	default:
+		printf("en%d: unknow pkt type 0x%x\n", en->en_type);
+		goto setup;
+	}
+	if (len == 0)
+		goto setup;
+	m = if_rubaget(&ifu->ifu_r, len, off);
+	IF_ENQUEUE(inq, m);
 setup:
-	addr->en_iba = imp_stat.iaddr;
-	addr->en_iwc = -600;
+	addr->en_iba = es->es_ifuba->ifu_r.ifrw_info;
+	addr->en_iwc = -(sizeof (struct en_header) + ENMTU) >> 1;
 	addr->en_istat = EN_IEN|EN_GO;
 }
 
-#ifdef IMPDEBUG
-prt_byte(s, ct)
-	register char *s;
-	int ct;
+/*
+ * Ethernet output routine.
+ * Encapsulate a packet of type family for the local net.
+ */
+enoutput(ifp, m0, pf)
+	struct ifnet *ifp;
+	struct mbuf *m0;
+	int pf;
 {
-	register i, j, c;
+	int type, dest;
+	register struct mbuf *m;
+	register struct en_header *en;
+	int s;
 
-	for (i=0; i<ct; i++) {
-		c = *s++;
-		for (j=0; j<2 ; j++)
-			putchar("0123456789abcdef"[(c>>((1-j)*4))&0xf]);
-		putchar(' ');
+	switch (pf) {
+
+#ifdef INET
+	case PF_INET: {
+		register struct ip *ip = mtod(m0, struct ip *);
+		int off;
+
+		off = ip->ip_len - (ip->ip_hl << 2);
+		if (off && off % 512 == 0 && m0->m_off >= MMINOFF + 2) {
+			type = ENPUP_TRAIL + (off>>9);
+			m0->m_off -= 2;
+			m0->m_len += 2;
+			*mtod(m0, u_short *) = ENPUP_IPTYPE;
+		} else {
+			type = ENPUP_IPTYPE;
+			off = 0;
+		}
+		dest = ip->ip_dst.s_addr >> 24;
+		}
+		break;
+#endif
+
+	default:
+		printf("en%d: can't encapsulate pf%d\n", ifp->if_unit, pf);
+		m_freem(m0);
+		return (0);
 	}
-	putchar('\n');
+	if (MMINOFF + sizeof (struct en_header) > m0->m_off) {
+		m = m_get(0);
+		if (m == 0) {
+			m_freem(m0);
+			return (0);
+		}
+		m->m_next = m0;
+		m->m_off = MMINOFF;
+		m->m_len = sizeof (struct en_header);
+	} else {
+		m = m0;
+		m->m_off -= sizeof (struct en_header);
+		m->m_len += sizeof (struct en_header);
+	}
+	en = mtod(m, struct en_header *);
+	en->en_shost = ifp->if_host[0];
+	en->en_dhost = dest;
+	en->en_type = type;
+	s = splimp();
+	IF_ENQUEUE(&ifp->if_snd, m);
+	splx(s);
+	if (en_softc[ifp->if_unit].es_oactive == 0)
+		enstart(ifp->if_unit);
 }
-#endif IMPDEBUG

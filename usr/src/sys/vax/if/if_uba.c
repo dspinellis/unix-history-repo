@@ -1,14 +1,19 @@
-/*	if_uba.c	4.1	81/11/25	*/
+/*	if_uba.c	4.2	81/11/26	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/mbuf.h"
 #include "../h/map.h"
 #include "../h/pte.h"
+#include "../h/buf.h"
 #include "../h/ubareg.h"
 #include "../h/ubavar.h"
 #include "../h/cmap.h"
 #include "../h/mtpr.h"
+#include "../h/vmmac.h"
+#include "../net/in.h"
+#include "../net/in_systm.h"
+#include "../net/if.h"
 #include "../net/if_uba.h"
 
 /*
@@ -29,24 +34,26 @@ if_ubainit(ifu, uban, hlen, nmr)
 	register struct ifuba *ifu;
 	int uban, hlen, nmr;
 {
-	register caddr_t cp = m_pgalloc(2 * (nmr + 1));
+	register caddr_t cp = (caddr_t)m_pgalloc(2 * (nmr + 1));
+	int i;
 
+COUNT(IF_UBAINIT);
 	if (cp == 0)
 		return (0);
-	ifu->if_uban = uban;
-	ifu->if_uba = &uba_hd[uban]->uh_uba;
-	ifu->if_r.if_addr = cp + NMBPG - hlen;
-	ifu->if_w.if_addr = ifu->if_r.if_addr + (nmr + 1) * NMBPG;
-	if (if_ubaalloc(ifu, &ifu->if_r) == 0)
+	ifu->ifu_uban = uban;
+	ifu->ifu_uba = uba_hd[uban].uh_uba;
+	ifu->ifu_r.ifrw_addr = cp + NBPG - hlen;
+	ifu->ifu_w.ifrw_addr = ifu->ifu_r.ifrw_addr + (nmr + 1) * NBPG;
+	if (if_ubaalloc(ifu, &ifu->ifu_r) == 0)
 		goto bad;
-	if (if_ubaalloc(ifu, &ifu->if_w) == 0)
+	if (if_ubaalloc(ifu, &ifu->ifu_w) == 0)
 		goto bad2;
 	for (i = 0; i < IF_NUBAMR; i++)
-		ifu->if_xmap[i] = ifu->if_w.if_map[i+1];
-	ifu->if_xswapd = 0;
+		ifu->ifu_wmap[i] = ifu->ifu_w.ifrw_mr[i+1];
+	ifu->ifu_xswapd = 0;
 	return (1);
 bad2:
-	ubafree(ifu->ifu_uban, ifu->if_r.ifrw_info);
+	ubarelse(ifu->ifu_uban, &ifu->ifu_r.ifrw_info);
 bad:
 	m_pgfree(cp, 2 * (nmr + 1));
 	return (0);
@@ -64,15 +71,17 @@ if_ubaalloc(ifu, ifrw)
 {
 	register int info;
 
+COUNT(IF_UBAALLOC);
 	info =
-	    uballoc(ifu->ifu_uban, ifrw->ifrw_addr, IF_NUBAMR*NMBPG + hlen,
+	    uballoc(ifu->ifu_uban, ifrw->ifrw_addr, IF_NUBAMR*NBPG + ifu->ifu_hlen,
 	        UBA_NEED16|UBA_NEEDBDP);
 	if (info == 0)
-		goto bad;
+		return (0);
 	ifrw->ifrw_info = info;
 	ifrw->ifrw_bdp = UBAI_BDP(info);
-	ifrw->ifrw_proto = UBAMR_MRV | UBAI_DPDF(info);
-	ifrw->ifrw_mr = &ifu->if_uba[UBAI_MR(info) + 1];
+	ifrw->ifrw_proto = UBAMR_MRV | (UBAI_MR(info) << UBAMR_DPSHIFT);
+	ifrw->ifrw_mr = &ifu->ifu_uba->uba_map[UBAI_MR(info) + 1];
+	return (1);
 }
 
 /*
@@ -91,6 +100,7 @@ if_rubaget(ifu, len)
 	register caddr_t cp;
 	struct mbuf *mp, *p, *top;
 
+COUNT(IF_RUBAGET);
 	/*
 	 * First pull local net header off into a mbuf.
 	 */
@@ -98,12 +108,12 @@ if_rubaget(ifu, len)
 	if (m == 0)
 		return (0);
 	m->m_off = MMINOFF;
-	m->m_len = ifu->if_hlen;
+	m->m_len = ifu->ifu_hlen;
 	top = m;
 	cp = ifu->ifu_r.ifrw_addr;
-	bcopy(cp, mtod(m, caddr_t), ifu->if_hlen);
-	len -= hlen;
-	cp += hlen;
+	bcopy(cp, mtod(m, caddr_t), ifu->ifu_hlen);
+	len -= ifu->ifu_hlen;
+	cp += ifu->ifu_hlen;
 
 	/*
 	 * Now pull data off.  If whole pages
@@ -114,7 +124,7 @@ if_rubaget(ifu, len)
 	while (len > 0) {
 		MGET(m, 0);
 		if (m == 0)
-			goto flush;
+			goto bad;
 		if (len >= CLSIZE) {
 			struct pte *cpte, *ppte;
 			int i, x, *ip;
@@ -150,17 +160,17 @@ if_rubaget(ifu, len)
 			 */
 			cpte = &Mbmap[mtocl(cp)];
 			ppte = &Mbmap[mtocl(p)];
-			x = btop(cp - ifu->if_r.ifrw_addr);
+			x = btop(cp - ifu->ifu_r.ifrw_addr);
 			ip = (int *)&ifu->ifu_r.ifrw_mr[x+1];
 			for (i = 0; i < CLSIZE; i++) {
 				struct pte t;
 				t = *ppte; *ppte = *cpte; *cpte = t;
 				*ip++ =
-				    *cpte++->pg_pfnum|ifu->if_r.ifrw_proto;
+				    cpte++->pg_pfnum|ifu->ifu_r.ifrw_proto;
 				mtpr(TBIS, cp);
-				cp += NMBPG;
+				cp += NBPG;
 				mtpr(TBIS, (caddr_t)p);
-				p += NMBPG / sizeof (*p);
+				p += NBPG / sizeof (*p);
 			}
 			goto nocopy;
 		}
@@ -198,6 +208,7 @@ if_wubaput(ifu, m)
 	int xswapd = ifu->ifu_xswapd;
 	int x;
 
+COUNT(IF_WUBAPUT);
 	ifu->ifu_xswapd = 0;
 	cp = ifu->ifu_w.ifrw_addr;
 	while (m) {
@@ -206,7 +217,7 @@ if_wubaput(ifu, m)
 			struct pte *pte; int *ip;
 			pte = &Mbmap[mtocl(dp)];
 			x = btop(cp - ifu->ifu_w.ifrw_addr);
-			ip = &ifu->ifu_w.ifrw_mr[x + 1];
+			ip = (int *)&ifu->ifu_w.ifrw_mr[x + 1];
 			for (i = 0; i < CLSIZE; i++)
 				*ip++ =
 				    ifu->ifu_w.ifrw_proto | pte++->pg_pfnum;
@@ -224,7 +235,7 @@ if_wubaput(ifu, m)
 			xswapd &= ~(1<<i);
 			i <<= CLSHIFT;
 			for (x = 0; x < CLSIZE; x++) {
-				ifu->ifu_rw.ifrw_mr[i] = ifu->ifu_xmap[i];
+				ifu->ifu_w.ifrw_mr[i] = ifu->ifu_wmap[i];
 				i++;
 			}
 		}
