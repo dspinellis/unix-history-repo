@@ -1,9 +1,10 @@
 #ifndef lint
-static char sccsid[] = "@(#)lpass2.c	1.4	(Berkeley)	%G%";
+static char sccsid[] = "@(#)lpass2.c	1.5	(Berkeley)	%G%";
 #endif lint
 
-# include "manifest"
-# include "lmanifest"
+# include "macdefs.h"
+# include "manifest.h"
+# include "lmanifest.h"
 
 # define USED 01
 # define VUSED 02

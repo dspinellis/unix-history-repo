@@ -1,4 +1,4 @@
-/*	@(#)macdefs.h	1.2	(Berkeley)	%G%	*/
+/*	@(#)macdefs.h	1.3	(Berkeley)	%G%	*/
 
 #if defined(pdp11) || defined(vax)
 #define makecc(val,i)  lastcon |= val<<(8*i);  /* pdp-11 womp next char  */
@@ -35,6 +35,7 @@ extern int ALSTRUCT;
 # define CONSZ long
 # define CONFMT "%Ld"
 # define CONOFMT "%Lo"
+# define LABFMT	"L%d"
 
 /*	size in which offsets are kept
 /*	should be large enough to cover address space in bits
