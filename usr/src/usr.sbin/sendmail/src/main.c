@@ -5,7 +5,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.23	%G%";
+static char	SccsId[] = "@(#)main.c	3.24	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -160,6 +160,7 @@ main(argc, argv)
 	char *cfname;
 	char *aliasname;
 	register int i;
+	bool verifyonly = FALSE;	/* only verify names */
 	char pbuf[10];			/* holds pid */
 	char tbuf[10];			/* holds "current" time */
 	char cbuf[5];			/* holds hop count */
@@ -313,6 +314,10 @@ main(argc, argv)
 
 		  case 'i':	/* don't let dot stop me */
 			IgnrDot++;
+			break;
+
+		  case 'V':	/* verify only */
+			verifyonly = TRUE;
 			break;
 
 		  case 'a':	/* arpanet format */
@@ -530,7 +535,7 @@ main(argc, argv)
 	/* if we have had errors sofar, drop out now */
 	if (Errors > 0 && ExitStat == EX_OK)
 		ExitStat = EX_USAGE;
-	if (ArpaMode > ARPA_OLD && ExitStat != EX_OK)
+	if ((ArpaMode > ARPA_OLD && ExitStat != EX_OK) || verifyonly)
 		finis();
 
 	/* no errors, tell arpanet to go ahead */
