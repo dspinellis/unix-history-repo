@@ -1,5 +1,5 @@
 /* STARTUP PROCEDURE FOR UNIX FORTRAN PROGRAMS */
-char id_libF77[] = "@(#)main.c	2.9	%G%";
+char id_libF77[] = "@(#)main.c	2.10	%G%";
 
 #include <stdio.h>
 #include <signal.h>
@@ -90,8 +90,8 @@ int s; int t; long pc;
 {
 extern unit units[];
 register struct action *act = &sig_act[s-1];
-/* clear buffers, then print error message */
-f_exit();
+/* print error message, then flush buffers */
+
 if (act->mesg)
 	{
 #ifdef UCBVAX
@@ -116,6 +116,7 @@ if (act->mesg)
 	fprintf(units[STDERR].ufd, "*** %s\n", act->mesg);
 #endif
 	}
+f_exit();
 _cleanup();
 
 if(act->core)
