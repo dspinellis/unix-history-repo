@@ -4,7 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-/*	@(#)timed.h	1.4	(Berkeley)	%G%	*/
+/*	@(#)timed.h	1.5	(Berkeley)	%G%	*/
 
 /*
  * Time Synchronization Protocol
@@ -17,9 +17,15 @@ struct tsp {
 	u_char	tsp_type;
 	u_char	tsp_vers;
 	short	tsp_seq;
-	struct timeval tsp_time;
+	union {
+		struct timeval tspu_time;
+		char tspu_hopcnt;
+	} tsp_u;
 	char tsp_name[MAXHOSTNAMELEN];
 };
+
+#define	tsp_time	tsp_u.tspu_time
+#define	tsp_hopcnt	tsp_u.tspu_hopcnt
  
 /*
  * Command types.
@@ -46,15 +52,16 @@ struct tsp {
 #define	TSP_MSITE		19	/* find out master's site */
 #define	TSP_MSITEREQ		20	/* remote master's site request */
 #define	TSP_TEST		21	/* for testing election algo */
-#define TSP_SETDATE		22	/* New from date command */
-#define TSP_SETDATEREQ		23	/* New remote for above */
+#define	TSP_SETDATE		22	/* New from date command */
+#define	TSP_SETDATEREQ		23	/* New remote for above */
+#define	TSP_LOOP		24	/* loop detection packet */
 
-#define	TSPTYPENUMBER		24
+#define	TSPTYPENUMBER		25
 
 #ifdef TSPTYPES
 char *tsptype[TSPTYPENUMBER] =
   { "ANY", "ADJTIME", "ACK", "MASTERREQ", "MASTERACK", "SETTIME", "MASTERUP", 
   "SLAVEUP", "ELECTION", "ACCEPT", "REFUSE", "CONFLICT", "RESOLVE", "QUIT", 
   "DATE", "DATEREQ", "DATEACK", "TRACEON", "TRACEOFF", "MSITE", "MSITEREQ",
-  "TEST", "SETDATE", "SETDATEREQ" };
+  "TEST", "SETDATE", "SETDATEREQ", "LOOP" };
 #endif
