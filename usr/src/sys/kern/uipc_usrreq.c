@@ -2,7 +2,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_usrreq.c	8.6 (Berkeley) %G%
+ *	@(#)uipc_usrreq.c	8.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -33,6 +33,7 @@ struct	sockaddr sun_noname = { sizeof(sun_noname), AF_UNIX };
 ino_t	unp_ino;			/* prototype for fake inode numbers */
 
 /*ARGSUSED*/
+int
 uipc_usrreq(so, req, m, nam, control)
 	struct socket *so;
 	int req;
@@ -285,6 +286,7 @@ u_long	unpdg_recvspace = 4*1024;
 
 int	unp_rights;			/* file descriptors in flight */
 
+int
 unp_attach(so)
 	struct socket *so;
 {
@@ -318,6 +320,7 @@ unp_attach(so)
 	return (0);
 }
 
+void
 unp_detach(unp)
 	register struct unpcb *unp;
 {
@@ -348,6 +351,7 @@ unp_detach(unp)
 	}
 }
 
+int
 unp_bind(unp, nam, p)
 	struct unpcb *unp;
 	struct mbuf *nam;
@@ -360,7 +364,7 @@ unp_bind(unp, nam, p)
 	struct nameidata nd;
 
 	NDINIT(&nd, CREATE, FOLLOW | LOCKPARENT, UIO_SYSSPACE,
-		soun->sun_path, p);
+	    soun->sun_path, p);
 	if (unp->unp_vnode != NULL)
 		return (EINVAL);
 	if (nam->m_len == MLEN) {
@@ -395,6 +399,7 @@ unp_bind(unp, nam, p)
 	return (0);
 }
 
+int
 unp_connect(so, nam, p)
 	struct socket *so;
 	struct mbuf *nam;
@@ -450,6 +455,7 @@ bad:
 	return (error);
 }
 
+int
 unp_connect2(so, so2)
 	register struct socket *so;
 	register struct socket *so2;
@@ -519,6 +525,7 @@ unp_disconnect(unp)
 }
 
 #ifdef notdef
+void
 unp_abort(unp)
 	struct unpcb *unp;
 {
@@ -562,6 +569,7 @@ unp_drain()
 }
 #endif
 
+int
 unp_externalize(rights)
 	struct mbuf *rights;
 {
@@ -593,6 +601,7 @@ unp_externalize(rights)
 	return (0);
 }
 
+int
 unp_internalize(control, p)
 	struct mbuf *control;
 	struct proc *p;
@@ -753,7 +762,7 @@ unp_dispose(m)
 void
 unp_scan(m0, op)
 	register struct mbuf *m0;
-	void (*op)();
+	void (*op) __P((struct file *));
 {
 	register struct mbuf *m;
 	register struct file **rp;
