@@ -1,4 +1,4 @@
-.\"	@(#)tar.1	6.1 (Berkeley) %G%
+.\"	@(#)tar.1	6.2 (Berkeley) %G%
 .\"
 .TH TAR 1 ""
 .AT 3
@@ -52,7 +52,10 @@ already there or have been modified since last put on the tape.
 Create a new tape; writing begins on the beginning of the tape
 instead of after the last file.  This command implies
 .BR r .
-.TP 8
+.PP
+The following characters may be used in addition to the letter
+which selects the function desired.
+.TP 10
 .B o
 On output, tar normally places information specifying owner and modes
 of directories in the archive.  Former versions of tar, when encountering
@@ -60,17 +63,14 @@ this information will give error message of the form
 .br
 	"<name>/: cannot create".
 .br
-This option will suppress the directory information.
-.TP 8
+This modifier will suppress the directory information.
+.TP 10
 .B p
-This option says to restore files to their original modes,
+This modifier says to restore files to their original modes,
 ignoring the present
 .IR umask (2).
 Setuid and sticky information
 will also be restored to the super-user.
-.PP
-The following characters may be used in addition to the letter
-which selects the function desired.
 .TP 10
 .B 0, ..., 9
 This modifier selects an alternate drive on which the tape is mounted.
