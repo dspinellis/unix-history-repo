@@ -3,9 +3,9 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)tty.4	6.10 (Berkeley) %G%
+.\"     @(#)tty.4	6.11 (Berkeley) %G%
 .\"
-.Dd 
+.Dd August 14, 1992
 .Dt TTY 4
 .Os BSD 4
 .Sh NAME
@@ -53,7 +53,7 @@ at the command level, and in
 .Xr termios 4
 at the programming level.  A user may be concerned with changing
 settings associated with his particular login terminal and should refer
-to the preceding man pages for the common cases.  The remainder of 
+to the preceding man pages for the common cases.  The remainder of
 this man page is concerned
 with describing details of using and controlling terminal devices
 at a low level, such as that possibly required by a program wishing
@@ -89,7 +89,7 @@ semantics.
 The operations described here
 generally represent features common
 across all
-.Em "line disciplines" 
+.Em "line disciplines"
 however, some of these calls may not
 make sense in conjunction with a line discipline other than
 .Dv termios ,
@@ -104,14 +104,14 @@ the
 and
 .Em argp
 parameter.
-In addition to the ioctl 
-.Em requests 
+In addition to the ioctl
+.Em requests
 defined here, the specific line discipline
-in effect will define other 
+in effect will define other
 .Em requests
 specific to it (actually
 .Xr termios 4
-defines them as function calls, not ioctl 
+defines them as function calls, not ioctl
 .Em requests .)
 The following section lists the available ioctl requests.  The
 name of the request and the typed
@@ -119,9 +119,9 @@ name of the request and the typed
 parameter (if any)
 is listed along with a description of its
 purpose.  For example, the first entry says
-.sp
-.D1 Em "TIOCSETD	int *ldisc"
-.sp
+.Pp
+.D1 Em "TIOCSETD int *ldisc"
+.Pp
 and would be called on the terminal associated with
 file discriptor zero by the following code fragment:
 .Bd -literal
@@ -131,15 +131,15 @@ file discriptor zero by the following code fragment:
 	ioctl(0, TIOCSETD, &ldisc);
 .Ed
 .Ss Terminal File Request Descriptions
-.Bl -tag -width XXX
-.It Va Dv TIOCSETD Fa \t\tint *ldisc
-.sp
+.Bl -tag -width TIOCGWINSZ
+.It Dv TIOCSETD Fa int *ldisc
 Change to the new line discipline pointed to by
 .Fa ldisc .
-The available line disciplines are listed in 
-.Pa <sys/termios.h>
+The available line disciplines are listed in
+.Pa Aq sys/termios.h
 and currently are:
-.Bl -hang -width XXXXXXXXXXX
+.Pp
+.Bl -tag -width TIOCGWINSZ -compact
 .It TTYDISC
 Termios interactive line discipline.
 .It TABLDISC
@@ -147,24 +147,19 @@ Tablet line discipline.
 .It SLIPDISC
 Serial IP line discipline.
 .El
-.It Va Dv TIOCGETD Fa \t\tint *ldisc
-.sp
+.Pp
+.It Dv TIOCGETD Fa int *ldisc
 Return the current line discipline in the integer pointed to by
 .Fa ldisc .
-.It Va Dv TIOCSBRK Fa \t\tvoid
-.sp
+.It Dv TIOCSBRK Fa void
 Set the terminal hardware into BREAK condition.
-.It Va Dv TIOCCBRK Fa \t\tvoid
-.sp
+.It Dv TIOCCBRK Fa void
 Clear the terminal hardware BREAK condition.
-.It Va Dv TIOCSDTR Fa \t\tvoid
-.sp
+.It Dv TIOCSDTR Fa void
 Assert data terminal ready (DTR).
-.It Va Dv TIOCCDTR Fa \t\tvoid
-.sp
+.It Dv TIOCCDTR Fa void
 Clear data terminal ready (DTR).
-.It Va Dv TIOCGPGRP Fa \t\tint *tpgrp
-.sp
+.It Dv TIOCGPGRP Fa int *tpgrp
 Return the current process group the terminal is associated
 with in the integer pointed to by
 .Fa tpgrp .
@@ -172,16 +167,14 @@ This is the underlying call that implements the
 .Xr termios 4
 .Fn tcgetattr
 call.
-.It Va Dv TIOCSPGRP Fa \t\tint *tpgrp
+.It Dv TIOCSPGRP Fa int *tpgrp
 Associate the terminal with the process group (as an integer) pointed to by
 .Fa tpgrp .
 This is the underlying call that implements the
 .Xr termios 4
 .Fn tcsetattr
 call.
-.sp
-.It Va Dv TIOCGETA Fa \t\tstruct termios *term
-.sp
+.It Dv TIOCGETA Fa struct termios *term
 Place the current value of the termios state associated with the
 device in the termios structure pointed to by
 .Fa term .
@@ -189,46 +182,41 @@ This is the underlying call that implements the
 .Xr termios 4
 .Fn tcgetattr
 call.
-.It Va Dv TIOCSETA Fa \t\tstruct termios *term
-.sp
+.It Dv TIOCSETA Fa struct termios *term
 Set the termios state associated with the device immediatly.
 This is the underlying call that implements the
 .Xr termios 4
 .Fn tcsetattr
-call with the 
+call with the
 .Dv TCSANOW
 option.
-.It Va Dv TIOCSETAW Fa \t\tstruct termios *term
-.sp
+.It Dv TIOCSETAW Fa struct termios *term
 First wait for any output to complete, then set the termios state
 associated with the device.
 This is the underlying call that implements the
 .Xr termios 4
 .Fn tcsetattr
-call with the 
+call with the
 .Dv TCSADRAIN
 option.
-.It Va Dv TIOCSETAF Fa \t\tstruct termios *term
-.sp
+.It Dv TIOCSETAF Fa struct termios *term
 First wait for any output to complete, clear any pending input,
 then set the termios state associated with the device.
 This is the underlying call that implements the
 .Xr termios 4
 .Fn tcsetattr
-call with the 
+call with the
 .Dv TCSAFLUSH
 option.
-.It Va Dv TIOCOUTQ Fa \t\tint *num
-.sp
+.It Dv TIOCOUTQ Fa int *num
 Place the current number of characters in the output queue in the
 integer pointed to by
 .Fa num .
-.It Va Dv TIOCSTI Fa \t\tchar *cp
-.sp
+.It Dv TIOCSTI Fa char *cp
 Simulate typed input.  Pretend as if the terminal recieved the
 character pointed to by
 .Fa cp .
-.It Va Dv TIOCNOTTY Fa \t\tvoid
+.It Dv TIOCNOTTY Fa void
 This call is obsolete but left for compatability.  In the past, when
 a process that didn't have a controlling terminal (see
 .Em The Controlling Terminal
@@ -261,45 +249,39 @@ system call which will place the process into its own session - which
 has the effect of disassociating it from the controlling terminal.  This
 is the new and prefered method for programs to lose their controlling
 terminal.
-.sp
-.It Va Dv TIOCSTOP Fa \t\tvoid
-.sp
+.It Dv TIOCSTOP Fa void
 Stop output on the terminal (like typing ^S at the keyboard).
-.It Va Dv TIOCSTART Fa \t\tvoid
-.sp
-Start output on the terminal (like typing ^Q at the kayboard).  
-.It Va Dv TIOCSCTTY Fa \t\tvoid
+.It Dv TIOCSTART Fa void
+Start output on the terminal (like typing ^Q at the kayboard).
+.It Dv TIOCSCTTY Fa void
 Make the terminal the controlling terminal for the process (the process
 must not currently have a controlling terminal).
-.sp
-.It Va Dv TIOCDRAIN Fa \t\tvoid
-.sp
+.It Dv TIOCDRAIN Fa void
 Wait until all output is drained.
-.It Va Dv TIOCEXCL Fa \t\tvoid
-.sp
+.It Dv TIOCEXCL Fa void
 Set exclusive use on the terminal.  No further opens are permitted
 except by root.  Of course, this means that programs that are run by
-root (or setuid) will not obey the exclusive setting - which limits 
+root (or setuid) will not obey the exclusive setting - which limits
 the usefullness of this feature.
-.It Va Dv TIOCNXCL Fa \t\tvoid
-.sp
+.It Dv TIOCNXCL Fa void
 Clear exclusive use of the terminal.  Further opens are permitted.
-.It Va Dv TIOCFLUSH Fa \t\tint *what
-.sp
+.It Dv TIOCFLUSH Fa int *what
 If the value of the int pointed to by
 .Fa what
 contains the
 .Dv FREAD
 bit as defined in
-.Pa <sys/file.h> ,
+.Pa Aq sys/file.h ,
 then all characters in the input queue are cleared.  If it contains
 the
 .Dv FWRITE
 bit, then all characters in the output queue are cleared.  If the
-value of the integer is zero, then it behaves as if both the FREAD
-and FWRITE bits were set (i.e. clears both queues).
-.It Va Dv TIOCGWINSZ Fa \t\tstruct winsize *ws
-.sp
+value of the integer is zero, then it behaves as if both the
+.Dv FREAD
+and
+.Dv FWRITE
+bits were set (i.e. clears both queues).
+.It Dv TIOCGWINSZ Fa struct winsize *ws
 Put the window size information associated with the terminal in the
 .Va winsize
 structure pointed to by
@@ -310,17 +292,15 @@ and is the means by which most full\&-screen oriented programs determine the
 screen size.  The
 .Va winsize
 structure is defined in
-.Pa <sys/ioctl.h> .
-.It Va Dv TIOCSWINSZ Fa \t\tstruct winsize *ws
-.sp
+.Pa Aq sys/ioctl.h .
+.It Dv TIOCSWINSZ Fa struct winsize *ws
 Set the window size associated with the terminal to be the value in
 the
 .Va winsize
 structure pointed to by
 .Fa ws
 (see above).
-.It Va Dv TIOCCONS Fa \t\tint *on
-.sp
+.It Dv TIOCCONS Fa int *on
 If
 .Fa on
 points to a non-zero integer, redirect kernel console output (kernel printf's)
@@ -330,13 +310,13 @@ If
 points to a zero integer, redirect kernel console output back to the normal
 console.  This is usually used on workstations to redirect kernel messages
 to a particular window.
-.It Va Dv TIOCMSET Fa \t\tint *state
-.sp
+.It Dv TIOCMSET Fa int *state
 The integer pointed to by
 .Fa state
 contains bits that correspond to modem state.  Following is a list
 of defined variables and the modem state they represent:
-.Bl -hang -width XXXXXXXXXXX
+.Pp
+.Bl -tag -width TIOCMXCTS -compact
 .It TIOCM_LE
 Line Enable.
 .It TIOCM_DTR
@@ -360,20 +340,20 @@ Ring Indication (synonym).
 .It TIOCM_DSR
 Data Set Ready.
 .El
-.sp
+.Pp
 This call sets the terminal modem state to that represented by
 .Fa state .
 Not all terminals may support this.
-.It Va Dv TIOCMGET Fa \t\tint *state
+.It Dv TIOCMGET Fa int *state
 Return the current state of the terminal modem lines as represented
 above in the integer pointed to by
 .Fa state .
-.It Va Dv TIOCMBIS Fa \t\tint *state
+.It Dv TIOCMBIS Fa int *state
 The bits in the integer pointed to by
 .Fa state
 represent modem state as described above, however the state is OR-ed
 in with the current state.
-.It Va Dv TIOCMBIC Fa \t\tint *state
+.It Dv TIOCMBIC Fa int *state
 The bits in the integer pointed to by
 .Fa state
 represent modem state as described above, however each bit which is on
