@@ -1,5 +1,5 @@
 #! /bin/sh
-#	@(#)maketape	4.7	%G%
+#	@(#)maketape	4.8	%G%
 #
 miniroot=hp1a
 #
@@ -15,7 +15,7 @@ cd /nbsd/tp
 tp cmf /tmp/tape.$$ boot copy format
 cd /nbsd/sys/mdec
 echo "Build 1st level boot block file"
-cat tsboot htboot tmboot mtboot noboot noboot noboot /tmp/tape.$$ | \
+cat tsboot htboot tmboot mtboot utboot noboot noboot /tmp/tape.$$ | \
 	dd of=/dev/rmt12 bs=512 conv=sync
 cd /nbsd
 sync
@@ -29,4 +29,5 @@ echo "Add tar image of /usr"
 cd /nbsd/usr; tar c adm bill bin dict doc games \
 	hosts include ingres lib local man mdec msgs net new \
 	preserve pub spool tmp ucb
+mt rew
 echo "Done, rewind"
