@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)user.h	7.3 (Berkeley) %G%
+ *	@(#)user.h	7.4 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -26,6 +26,7 @@
  */
  
 #define	MAXCOMLEN	16		/* <= MAXNAMLEN, >= sizeof(ac_comm) */
+#define	MAXLOGNAME	12		/* >= UT_NAMESIZE */
  
 struct	user {
 	struct	pcb u_pcb;
@@ -97,7 +98,7 @@ struct	user {
 	struct	rusage u_ru;		/* stats for this proc */
 	struct	rusage u_cru;		/* sum of stats for reaped children */
 	struct	itimerval u_timer[3];
-	int	u_XXX[3];
+	char	u_logname[MAXLOGNAME];	/* login name, if available */
 	struct	timeval u_start;
 	short	u_acflag;
 
