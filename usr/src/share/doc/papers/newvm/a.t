@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)a.t	1.3 (Berkeley) %G%
+.\"	@(#)a.t	1.4 (Berkeley) %G%
 .\"
 .sp 2
 .ne 2i
@@ -67,7 +67,7 @@ in which case the exact address will be used or the call will fail.
 The actual amount mapped is returned in \fIlen\fP.
 The \fIaddr\fP, \fIlen\fP, and \fIpos\fP parameters
 must all be multiples of the pagesize.
-A successful \fImmap\fP will \fImunmap\fP any previous mapping
+A successful \fImmap\fP will delete any previous mapping
 in the allocated address range.
 The parameter \fIprot\fP specifies the accessibility
 of the mapped pages.

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)1.t	1.3 (Berkeley) %G%
+.\"	@(#)1.t	1.4 (Berkeley) %G%
 .\"
 .NH
 Motivations for a New Virtual Memory System
@@ -16,7 +16,7 @@ points out the current technological trends,
 and attempts to define the new design considerations that should
 be taken into account in a new virtual memory design.
 .SH
-Implementation of 4.3BSD Virtual Memory
+Implementation of 4.3BSD virtual memory
 .PP
 All Berkeley Software Distributions through 4.3BSD
 have used the same virtual memory design.
@@ -44,7 +44,7 @@ If a previously accessed page that has been pushed to swap is once
 again used, a free page is reallocated and filled from the swap area
 [Babaoglu79], [Someren84].
 .SH
-Design Assumptions for 4.3BSD Virtual Memory
+Design assumptions for 4.3BSD virtual memory
 .PP
 The design criteria for the current virtual memory implementation
 were made in 1979.
@@ -83,7 +83,7 @@ the kernel keep track of the contents of the swap area once a process
 exited since it could almost as easily and quickly be reread from the
 file system.
 .SH
-New Influences
+New influences
 .PP
 In the ten years since the current virtual memory system was designed,
 many technological advances have occurred.
@@ -232,10 +232,10 @@ Such a descriptor may be bound into the UNIX file system
 name space so that other processes can find it just as
 they would with a mapped file.
 .SH
-Shared memory as high speed IPC
+Shared memory as high speed interprocess communication
 .PP
 The primary use envisioned for shared memory is to
-provide a high speed interprocess communication mechanism 
+provide a high speed interprocess communication (IPC) mechanism
 between cooperating processes.
 Existing IPC mechanisms (\fIi.e.\fP pipes, sockets, or streams)
 require a system call to hand off a set
