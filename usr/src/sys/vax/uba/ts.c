@@ -1,4 +1,4 @@
-/*	ts.c	6.3	84/11/27	*/
+/*	ts.c	6.4	85/03/13	*/
 
 #include "ts.h"
 #if NTS > 0
@@ -23,6 +23,7 @@
 #include "mtio.h"
 #include "cmap.h"
 #include "uio.h"
+#include "tty.h"
 
 #include "../vax/cpu.h"
 #include "ubareg.h"
@@ -90,6 +91,7 @@ struct	ts_softc {
 	struct	ts_softc *sc_ubaddr; /* Unibus address of ts_softc structure */
 	u_short	sc_uba;		/* Unibus addr of cmd pkt for tsdb */
 	short	sc_mapped;	/* is ts_sfotc mapped in Unibus space? */
+	struct	tty *sc_ttyp;	/* record user's tty for errors */
 } ts_softc[NTS];
 
 /*
@@ -189,6 +191,7 @@ tsopen(dev, flag)
 	sc->sc_blkno = (daddr_t)0;
 	sc->sc_nxrec = INF;
 	sc->sc_lastiow = 0;
+	sc->sc_ttyp = u.u_ttyp;
 	return (0);
 }
 
@@ -591,23 +594,28 @@ tsintr(ts11)
 
 		case TS_REJECT:		/* function reject */
 			if (state == SIO && sc->sc_sts.s_xs0 & TS_WLE)
-				printf("ts%d: write locked\n", TSUNIT(bp->b_dev));
+				tprintf(sc->sc_ttyp, "ts%d: write locked\n",
+				    TSUNIT(bp->b_dev));
 			if ((sc->sc_sts.s_xs0 & TS_ONL) == 0)
-				printf("ts%d: offline\n", TSUNIT(bp->b_dev));
+				tprintf(sc->sc_ttyp, "ts%d: offline\n",
+				    TSUNIT(bp->b_dev));
 			break;
 		}
 		/*
 		 * Couldn't recover error
 		 */
-		printf("ts%d: hard error bn%d xs0=%b", TSUNIT(bp->b_dev),
-		    bp->b_blkno, sc->sc_sts.s_xs0, TSXS0_BITS);
+		tprintf(sc->sc_ttyp, "ts%d: hard error bn%d xs0=%b",
+		    TSUNIT(bp->b_dev), bp->b_blkno, sc->sc_sts.s_xs0, TSXS0_BITS);
 		if (sc->sc_sts.s_xs1)
-			printf(" xs1=%b", sc->sc_sts.s_xs1, TSXS1_BITS);
+			tprintf(sc->sc_ttyp, " xs1=%b", sc->sc_sts.s_xs1,
+			    TSXS1_BITS);
 		if (sc->sc_sts.s_xs2)
-			printf(" xs2=%b", sc->sc_sts.s_xs2, TSXS2_BITS);
+			tprintf(sc->sc_ttyp, " xs2=%b", sc->sc_sts.s_xs2,
+			    TSXS2_BITS);
 		if (sc->sc_sts.s_xs3)
-			printf(" xs3=%b", sc->sc_sts.s_xs3, TSXS3_BITS);
-		printf("\n");
+			tprintf(sc->sc_ttyp, " xs3=%b", sc->sc_sts.s_xs3,
+			    TSXS3_BITS);
+		tprintf(sc->sc_ttyp, "\n");
 		bp->b_flags |= B_ERROR;
 		goto opdone;
 	}
