@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)arch.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)arch.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -662,7 +662,7 @@ Arch_Touch (gn)
     arch = ArchFindMember(Var_Value (ARCHIVE, gn),
 			  Var_Value (TARGET, gn),
 			  &arh, "r+");
-    sprintf(arh.ar_date, "%-12d", now);
+    sprintf(arh.ar_date, "%-12ld", (long) now);
 
     if (arch != (FILE *) NULL) {
 	(void)fwrite ((char *)&arh, sizeof (struct ar_hdr), 1, arch);
@@ -694,7 +694,7 @@ Arch_TouchLib (gn)
     struct timeval  times[2];	/* Times for utimes() call */
 
     arch = ArchFindMember (gn->path, RANLIBMAG, &arh, "r+");
-    sprintf(arh.ar_date, "%-12d", now);
+    sprintf(arh.ar_date, "%-12ld", (long) now);
 
     if (arch != (FILE *) NULL) {
 	(void)fwrite ((char *)&arh, sizeof (struct ar_hdr), 1, arch);
