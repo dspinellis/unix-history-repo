@@ -3,21 +3,17 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)types.h	7.9 (Berkeley) %G%
+ *	@(#)types.h	7.10 (Berkeley) %G%
  */
 
 #ifndef _TYPES_
 #define	_TYPES_
-/*
- * Basic system types and major/minor device constructing/busting macros.
- */
 
+typedef	short	dev_t;
 /* major part of a device */
 #define	major(x)	((int)(((unsigned)(x)>>8)&0377))
-
 /* minor part of a device */
 #define	minor(x)	((int)((x)&0377))
-
 /* make a device number */
 #define	makedev(x,y)	((dev_t)(((x)<<8) | (y)))
 
@@ -25,31 +21,29 @@ typedef	unsigned char	u_char;
 typedef	unsigned short	u_short;
 typedef	unsigned int	u_int;
 typedef	unsigned long	u_long;
-typedef	unsigned short	ushort;		/* sys III compat */
+typedef	unsigned short	ushort;		/* sys V compatibility */
 
-#if defined(vax) || defined(tahoe)
-typedef	struct	_physadr { int r[1]; } *physadr;
-typedef	struct	label_t	{
-	int	val[14];
-} label_t;
+#ifdef KERNEL
+#include "machine/machtypes.h"
+#else
+#include <machine/machtypes.h>
 #endif
-#if defined(hp300)
-typedef	struct	_physadr { short r[1]; } *physadr;
-typedef	struct	label_t	{
-	int	val[15];	/* consistent with HP-UX */
-} label_t;
+#ifdef	_SIZE_T_
+typedef	_SIZE_T_	size_t;
+#undef	_SIZE_T_
 #endif
+
 typedef	struct	_uquad { unsigned long val[2]; } u_quad;
 typedef	struct	_quad { long val[2]; } quad;
+typedef	long *	qaddr_t;	/* should be typedef quad * qaddr_t; */
+
 typedef	long	daddr_t;
 typedef	char *	caddr_t;
-typedef	long *	qaddr_t;	/* should be typedef quad * qaddr_t; */
 typedef	u_long	ino_t;
 typedef	long	swblk_t;
 typedef	long	segsz_t;
 typedef	long	time_t;
 typedef	u_long	clock_t;
-typedef	short	dev_t;
 typedef	long	off_t;
 typedef	u_short	uid_t;
 typedef	u_short	gid_t;
@@ -59,11 +53,12 @@ typedef	u_short	mode_t;
 typedef u_long	fixpt_t;
 
 #define	NBBY	8		/* number of bits in a byte */
+
 /*
- * Select uses bit masks of file descriptors in longs.
- * These macros manipulate such bit fields (the filesystem macros use chars).
- * FD_SETSIZE may be defined by the user, but the default here
- * should be >= NOFILE (param.h).
+ * Select uses bit masks of file descriptors in longs.  These macros
+ * manipulate such bit fields (the filesystem macros use chars).
+ * FD_SETSIZE may be defined by the user, but the default here should
+ * be >= NOFILE (param.h).
  */
 #ifndef	FD_SETSIZE
 #define	FD_SETSIZE	256
@@ -71,6 +66,7 @@ typedef u_long	fixpt_t;
 
 typedef long	fd_mask;
 #define NFDBITS	(sizeof(fd_mask) * NBBY)	/* bits per mask */
+
 #ifndef howmany
 #define	howmany(x, y)	(((x)+((y)-1))/(y))
 #endif
