@@ -1,4 +1,4 @@
-/*	mkmakefile.c	1.26	83/02/21	*/
+/*	mkmakefile.c	1.26	83/04/24	*/
 
 /*
  * Build the makefile for the system, from
@@ -20,6 +20,7 @@
 	}
 
 static	struct file_list *fcur;
+char *tail();
 
 /*
  * Lookup a file, by make.
@@ -32,6 +33,22 @@ fl_lookup(file)
 
 	for (fp = ftab ; fp != 0; fp = fp->f_next) {
 		if (eq(fp->f_fn, file))
+			return (fp);
+	}
+	return (0);
+}
+
+/*
+ * Lookup a file, by final component name.
+ */
+struct file_list *
+fltail_lookup(file)
+	register char *file;
+{
+	register struct file_list *fp;
+
+	for (fp = ftab ; fp != 0; fp = fp->f_next) {
+		if (eq(tail(fp->f_fn), tail(file)))
 			return (fp);
 	}
 	return (0);
@@ -194,10 +211,17 @@ next:
 	wd = get_word(fp);
 	if (wd == (char *)EOF) {
 		(void) fclose(fp);
-		if (first) {
+		if (first == 1) {
 			(void) sprintf(fname, "files.%s", machinename);
-			first = 0;
+			first++;
 			goto openit;
+		}
+		if (first == 2) {
+			(void) sprintf(fname, "files.%s", raise(ident));
+			first++;
+			fp = fopen(fname, "r");
+			if (fp != 0)
+				goto next;
 		}
 		return;
 	}
@@ -215,6 +239,10 @@ next:
 		    fname, this);
 		exit(1);
 	}
+	tp = 0;
+	if (first == 3 && (tp = fltail_lookup(this)) != 0)
+		printf("%s: Local file %s overrides %s.\n",
+		    fname, this, tp->f_fn);
 	nreqs = 0;
 	devorprof = "";
 	needs = 0;
@@ -242,7 +270,8 @@ nextopt:
 			goto nextopt;
 	while ((wd = get_word(fp)) != 0)
 		;
-	tp = new_fent();
+	if (tp == 0)
+		tp = new_fent();
 	tp->f_fn = this;
 	tp->f_type = INVISIBLE;
 	tp->f_needs = needs;
@@ -269,7 +298,8 @@ save:
 	}
 	if (eq(devorprof, "profiling-routine") && profiling == 0)
 		goto next;
-	tp = new_fent();
+	if (tp == 0)
+		tp = new_fent();
 	tp->f_fn = this;
 	if (eq(devorprof, "device-driver"))
 		tp->f_type = DEVICE;
@@ -284,10 +314,10 @@ save:
 do_objs(fp)
 	FILE *fp;
 {
-	register struct file_list *tp;
+	register struct file_list *tp, *fl;
 	register int lpos, len;
 	register char *cp, och, *sp;
-	char *tail();
+	char swapname[32];
 
 	fprintf(fp, "OBJS=");
 	lpos = 6;
@@ -295,6 +325,11 @@ do_objs(fp)
 		if (tp->f_type == INVISIBLE)
 			continue;
 		sp = tail(tp->f_fn);
+		for (fl = conf_list; fl != 0; fl = fl->f_next) {
+			(void) sprintf(swapname, "swap%s.c", fl->f_fn);
+			if (eq(sp, swapname))
+				goto cont;
+		}
 		cp = sp + (len = strlen(sp)) - 1;
 		och = *cp;
 		*cp = 'o';
@@ -305,6 +340,7 @@ do_objs(fp)
 		fprintf(fp, "%s ", sp);
 		lpos += len + 1;
 		*cp = och;
+cont:;
 	}
 	if (lpos != 8)
 		putc('\n', fp);
@@ -341,6 +377,8 @@ tail(fn)
 	register char *cp;
 
 	cp = rindex(fn, '/');
+	if (cp == 0)
+		return (fn);
 	return (cp+1);
 }
 
@@ -446,6 +484,7 @@ do_load(f)
 {
 	register struct file_list *fl;
 	int first = 1;
+	char swapname[32];
 
 	for (fl = conf_list; fl != 0; fl = fl->f_next) {
 		fprintf(f, "%s: makefile locore.o ${OBJS} param.o",
@@ -481,6 +520,9 @@ do_load(f)
 		fprintf(f, "\t@chmod 755 %s\n\n", fl->f_needs);
 	}
 	for (fl = conf_list; fl != 0; fl = fl->f_next) {
+		(void) sprintf(swapname, "swap%s.c", fl->f_fn);
+		if (fltail_lookup(swapname) != 0)
+			continue;
 		fprintf(f, "swap%s.o: ../%s/swap%s.c\n",
 		    fl->f_fn, machinename, fl->f_fn);
 		switch (machine) {
