@@ -1,4 +1,4 @@
-/* tcp_timer.c 4.9 81/12/20 */
+/* tcp_timer.c 4.10 81/12/21 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -20,13 +20,25 @@
 #include "../net/tcpip.h"
 #include "../errno.h"
 
+int	tcpdelack = 0;
 /*
  * Fast timeout routine for processing delayed acks
  */
 tcp_fasttimo()
 {
-
+	register struct inpcb *inp;
+	register struct tcpcb *tp;
+	int s = splnet();
 COUNT(TCP_FASTTIMO);
+
+	for (inp = tcb.inp_next; inp != &tcb; inp = inp->inp_next)
+		if ((tp = (struct tcpcb *)inp->inp_ppcb) &&
+		    (tp->t_flags & TF_DELACK)) {
+			tp->t_flags &= ~TF_DELACK;
+			tp->t_flags |= TF_ACKNOW;
+			(void) tcp_output(tp);
+		}
+	splx(s);
 }
 
 /*
@@ -109,8 +121,15 @@ COUNT(TCP_TIMERS);
 	case TCPT_REXMT:
 		tp->t_rxtshift++;
 		TCPT_RANGESET(tp->t_timer[TCPT_REXMT],
-		    ((int)(2 * tp->t_srtt)) << tp->t_rxtshift,
+		    ((int)(2 * tp->t_srtt)),
 		    TCPTV_MIN, TCPTV_MAX);
+		TCPT_RANGESET(tp->t_timer[TCPT_REXMT],
+		    tp->t_timer[TCPT_REXMT] << tp->t_rxtshift,
+		    TCPTV_MIN, TCPTV_MAX);
+		if (tp->t_timer[TCPT_REXMT] > TCPTV_MAXIDLE / 2) {
+			tcp_drop(tp, ETIMEDOUT);
+			return;
+		}
 printf("rexmt set to %d\n", tp->t_timer[TCPT_REXMT]);
 		tp->snd_nxt = tp->snd_una;
 		/* this only transmits one segment! */
