@@ -3,13 +3,14 @@
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
- * Jim R. Oldroyd at The Instruction Set.
+ * Jim R. Oldroyd at The Instruction Set and Keith Gabryelski at
+ * Commodore Business Machines.
  *
  * %sccs.include.redist.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)rxp.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rxp.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
