@@ -1,5 +1,5 @@
 /*
- * mkheaders.c	1.1	81/02/24
+ * mkheaders.c	1.2	81/02/24
  * Make header files for EVERYTHING
  */
 
