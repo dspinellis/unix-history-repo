@@ -1,4 +1,4 @@
-/* csh.h 4.6 83/02/03 */
+/* csh.h 4.7 83/02/09 */
 
 #include "sh.local.h"
 #include <time.h>
@@ -66,10 +66,10 @@ struct	rusage ru0;
 char	*doldol;		/* Character pid for $$ */
 int	uid;			/* Invokers uid */
 time_t	chktim;			/* Time mail last checked */
-short	shpgrp;			/* Pgrp of shell */
-short	tpgrp;			/* Terminal process group */
+int	shpgrp;			/* Pgrp of shell */
+int	tpgrp;			/* Terminal process group */
 /* If tpgrp is -1, leave tty alone! */
-short	opgrp;			/* Initial pgrp and tty pgrp */
+int	opgrp;			/* Initial pgrp and tty pgrp */
 int	oldisc;			/* Initial line discipline or -1 */
 struct	tms shtimes;		/* shell and child times for process timing */
 

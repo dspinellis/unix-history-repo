@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)alloc.c 4.1 %G%";
+static	char *sccsid = "@(#)alloc.c 4.2 %G%";
 
 #include "sh.local.h"
 #ifdef debug
@@ -211,6 +211,6 @@ showall(v)
 		i = ((unsigned) q - (unsigned) p);
 		if (testbusy(p->ptr)) used += i; else free += i;
 	}
-	printf("%d used, %d free, %l end\n", used, free, clearbusy(alloct));
+	printf("%d used, %d free, %ld end\n", used, free, clearbusy(alloct));
 }
 #endif

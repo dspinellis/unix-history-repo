@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)func.c 4.7 82/12/30";
+static	char *sccsid = "@(#)func.c 4.8 83/02/09";
 
 #include "sh.h"
 #include <sys/ioctl.h>
@@ -1001,7 +1001,7 @@ setlim(lp, limit)
 dosuspend()
 {
 	int old, ldisc;
-	short ctpgrp;
+	int ctpgrp;
 
 	if (loginsh)
 		error("Can't suspend a login shell (yet)");
