@@ -1,0 +1,38 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)strcpy.3	5.1 (Berkeley) %G%
+.\"
+.TH STRCPY 3 ""
+.UC 4
+.SH NAME
+strcpy \- copy strings
+.SH SYNOPSIS
+.nf
+.ft B
+#include <string.h>
+
+char *
+strcpy(char *dst, const char *src);
+.ft R
+.fi
+.SH DESCRIPTION
+.B Strcpy
+copies string
+.I src
+to
+.IR dst ,
+stopping after the terminating '\e0' has been moved.
+.B Strcpy
+returns
+.IR dst .
+.SH SEE ALSO
+bcopy(3), memccpy(3), memcpy(3), memmove(3), strncpy(3)
+.SH STANDARDS
+.B Strcpy
+conforms to ANSI X3.159-1989 (``ANSI C'').
