@@ -4,17 +4,19 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)scanc.c	7.2 (Berkeley) %G%
+ *	@(#)scanc.c	7.3 (Berkeley) %G%
  */
+
+#include "libkern.h"
 
 int
 scanc(size, cp, table, mask0)
-	unsigned int size;
-	register unsigned char *cp, table[];
+	u_int size;
+	register u_char *cp, table[];
 	int mask0;
 {
-	register unsigned char *end;
-	register unsigned char mask;
+	register u_char *end;
+	register u_char mask;
 
 	mask = mask0;
 	for (end = &cp[size]; cp < end && (table[*cp] & mask) == 0; ++cp);
