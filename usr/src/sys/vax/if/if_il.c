@@ -1,4 +1,4 @@
-/*	if_il.c	4.21	83/06/12	*/
+/*	if_il.c	4.22	83/06/12	*/
 
 #include "il.h"
 
@@ -235,7 +235,7 @@ ilinit(unit)
 	while ((addr->il_csr & IL_CDONE) == 0)
 		;
 	is->is_flags = ILF_OACTIVE;
-	is->is_if.if_flags |= IFF_UP;
+	is->is_if.if_flags |= IFF_UP|IFF_RUNNING;
 	is->is_lastcmd = 0;
 	ilcint(unit);
 	splx(s);
