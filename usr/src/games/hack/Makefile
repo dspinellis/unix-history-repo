@@ -56,7 +56,7 @@ HOBJ = hack.Decl.o hack.apply.o hack.bones.o hack.o hack.cmd.o hack.do.o\
 all: hack
 hack: ${HOBJ} ${LIBC}
 	@echo "Loading ..."
-	@ld -X -o $@ /lib/crt0.o $(HOBJ) $(TERMLIB) -lc
+	@cc -X -o $@ $(HOBJ) $(TERMLIB)
 
 makedefs:	makedefs.c
 	${CC} ${CFLAGS} -o $@ makedefs.c
