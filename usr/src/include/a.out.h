@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)a.out.h	5.3 (Berkeley) %G%
+ *	@(#)a.out.h	5.4 (Berkeley) %G%
  */
 
 /*
@@ -25,9 +25,9 @@
 	((x).a_magic == ZMAGIC ? 1024 : sizeof (struct exec))
 #endif
 
-#if defined(hp300)
+#if defined(hp300) || defined(i386)
 #define	N_TXTOFF(x) \
-	((x).a_magic == ZMAGIC ? 4096 : sizeof (struct exec))
+	((x).a_magic == ZMAGIC ? 4096 : sizeof (struct exec)) 
 #endif
 
 #define N_SYMOFF(x) \
