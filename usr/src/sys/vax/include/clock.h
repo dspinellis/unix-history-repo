@@ -1,14 +1,14 @@
-/*	clock.h	4.4	81/02/19	*/
+/*	clock.h	4.5	81/02/23	*/
 
 /*
  * VAX clock registers
  */
 
-#define	ICCS_RUN	0x1
-#define	ICCS_TRANS	0x10
-#define	ICCS_SS		0x20
-#define	ICCS_IE		0x40
-#define	ICCS_INT	0x80
+#define	ICCS_RUN	0x00000001
+#define	ICCS_TRANS	0x00000010
+#define	ICCS_SS		0x00000020
+#define	ICCS_IE		0x00000040
+#define	ICCS_INT	0x00000080
 #define	ICCS_ERR	0x80000000
 	
 #define	SECDAY		((unsigned)(24*60*60))		/* seconds per day */
