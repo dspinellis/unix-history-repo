@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_tty.c	7.4	%G%";
+static char *sccsid = "@(#)ex_tty.c	7.5	%G%";
 #include "ex.h"
 #include "ex_tty.h"
 
@@ -98,6 +98,7 @@ setterm(type)
 	if (DL_PARM && DL==NULL) DL="";
 	if (IC && IM==NULL) IM="";
 	if (IC && EI==NULL) EI="";
+	if (!GT) BT=NULL;	/* If we can't tab, we can't backtab either */
 
 #ifdef TIOCLGET
 	/*
