@@ -1,3 +1,10 @@
+#
+# Copyright (c) 1980 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)Makefile	4.16 (Berkeley) %G%
+#
 #	Makefile	4.15	84/12/03
 #
 DESTDIR=
@@ -10,7 +17,7 @@ WORK=	aard ddl mpu
 # Programs that live in subdirectories, and have makefiles of their own.
 #
 SUBDIR=	adventure backgammon battlestar boggle compat cribbage doctor fortune \
-	hangman hunt mille monop quiz rogue sail snake trek zork
+	hangman hunt mille monop quiz robots rogue sail snake trek zork
 
 # Shell scripts that need only be installed and are never removed.
 #
@@ -35,19 +42,18 @@ ${STD}:
 	cc ${CFLAGS} -o $@ $@.c
 
 install:
-	for i in ${SUBDIR}; do \
+	-for i in ${SUBDIR}; do \
 		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install); done
-#	for i in ${SCRIPT}; do (install -c $$i ${DESTDIR}/usr/games/$$i); done
-	for i in ${STD} ${NSTD}; do \
-		(install -s $$i ${DESTDIR}/usr/games/$$i); \
-	done
+#	-for i in ${SCRIPT}; do (install -c $$i ${DESTDIR}/usr/games/$$i); done
+	-for i in ${STD} ${NSTD}; do \
+		(install -s $$i ${DESTDIR}/usr/games/$$i); done
 	install -c chess.bin ${DESTDIR}/usr/games/lib/chess
 	cat >${DESTDIR}/usr/games/lib/cfscores </dev/null
 	chmod 777 ${DESTDIR}/usr/games/lib/cfscores
 
 clean:
 	rm -f a.out core *.s *.o
-	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean); done
+	-for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean); done
 	rm -f ${STD} ${NSTD}
 
 depend:
