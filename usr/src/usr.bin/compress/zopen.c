@@ -1,6 +1,6 @@
 /*-
- * Copyright (c) 1985, 1986, 1992 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1985, 1986, 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Diomidis Spinellis and James A. Woods, derived from original
@@ -10,7 +10,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)zopen.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)zopen.c	8.1 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*-
