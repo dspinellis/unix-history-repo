@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)start.s	7.5 (Berkeley) %G%
+ *	@(#)start.s	7.6 (Berkeley) %G%
  *
  * start.s -
  *
@@ -38,21 +38,22 @@
 	.globl	start
 start:
 	.set	noreorder
-	li	v0, MACH_SR_BOOT_EXC_VEC
-	mtc0	v0, MACH_COP_0_STATUS_REG	# Disable interrupts
 	la	sp, start - START_FRAME
 	sw	zero, START_FRAME - 4(sp)	# Zero out old ra for debugger
 	sw	zero, START_FRAME - 8(sp)	# Zero out old fp for debugger
-#ifdef DS3100
-	la	a3, callvec			# init call vector
-#endif
-	sw	a3, callv			# save call vector
 	move	s0, a0				# save argc
 	move	s1, a1				# save argv
+#ifdef DS5000
+	move	s3, a3				# save call vector
+#endif
 	la	a0, edata			# clear BSS
 	la	a1, end
 	jal	bzero				# bzero(edata, end - edata)
 	subu	a1, a1, a0
+#ifdef DS3100
+	la	s3, callvec			# init call vector
+#endif
+	sw	s3, callv			# save call vector
 	move	a0, s0				# restore argc
 	jal	main				# main(argc, argv)
 	move	a1, s1				# restore argv
