@@ -1,6 +1,6 @@
 Hello, Emacs, this is an -*- Indented-Text -*- file!
 
-$Id: Changes,v 1.11 1994/02/05 19:50:11 wollman Exp $
+$Id: Changes,v 1.12 1994/02/05 21:41:57 wollman Exp $
 
 This file is intended to keep track of important kernel and user
 changes in FreeBSD between releases.  Entries are in reverse
@@ -18,9 +18,9 @@ Since 1.0.2:
   WD8003EB.  (davidg)
 
 - Change to generic console code to eliminate console hangs with all 
-  "pc" consoles.  (davidg)
+  `pc' consoles.  (davidg)
 
-- Upgrade to new version of sycons which handles the `hanging console'
+- Upgrade to new version of syscons which handles the `hanging console'
   problem and adds some new features and code cleanup.  (nate)
 
 - Various TCP bugs fixed - don't forward loopback packets; Nagel
@@ -28,6 +28,9 @@ Since 1.0.2:
 
 - TCP debugging code is now truly optional, thus reducing kernel size
   when it is disabled (the default).  (davidg)
+
+- Because the `sio' FIFOs are now configurable, the `com' driver is no
+  longer supported.  (team sighs with relief)
 
 - Performance and stylistic improvements to the `sio' serial driver.
   Probe code now works somewhat better for oddball devices.  The 16550
@@ -114,9 +117,13 @@ Since 1.0.2:
 - Added support in the if_ed driver for the SMC Ultra via patches from
   Glen Lowe. (davidg)
 
+- Updated Mitsumi CD driver to work with FX models.  (jkh/Gary
+  Clark II)
+
 - Add extended formats set to floppy driver, improve autoconfiguration,
   add "fdformat" utility for floppy formatting.
-  (ache/joerg/Serge Vakulenko)
+  The format of floppy disk minor numbers has changed, thus
+  necessitating a new `MAKEDEV fd'.  (ache/joerg/Serge Vakulenko)
 
 - Add XNTPD to contrib section, and (un-compilable) kernel support for
   same to /sys/kern.  (wollman)
@@ -129,6 +136,11 @@ Since 1.0.2:
 - Added YP code from Theo Deraadt.  (paul)
 
 - Make all mandatory options ``standard''.  (wollman)
+
+- Update `wt' driver to support more devices and controllers.  The
+  driver will also auto-detect tape density on models which support
+  it.  The structure of `wt' device minor numbers has changed;
+  `MAKEDEV wt' must be run to create the new device nodes.
 
 - Re-design execve() system call to allow for multiple ``image activators''
   which recognize and load various file formats.  Currently only
@@ -145,8 +157,14 @@ Since 1.0.2:
 - On panic, don't reboot right away but give the user some time to
   abort the reboot or at least write down the panic message.  (davidg)
 
+- Kernel timezone handling is now delegated to an external program,
+  `adjkerntz'.  No more bogus summer time jumps.  (ache)
+
 - Separate all IP-related variables that users might want to modify into
   netinet/in_var.c.  (wollman)
+
+- New, redesigned SCSI system; should run faster and have fewer bugs.
+  (julian)
 
 - Make it possible to mmap(2) /dev/mem.  (julian)
 
