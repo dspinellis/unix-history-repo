@@ -1,4 +1,4 @@
-/*	subr_xxx.c	4.19	82/10/17	*/
+/*	subr_xxx.c	4.20	82/10/31	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -110,25 +110,12 @@ ffs(mask)
 	return (0);
 }
 
-ffs(mask)
-	register long mask;
-{
-	register int i;
-
-	for(i=1; i<NSIG; i++) {
-		if (mask & 1)
-			return (i);
-		mask >>= 1;
-	}
-	return (0);
-}
-
 bcmp(s1, s2, len)
 	register char *s1, *s2;
 	register int len;
 {
 
-	while (--len)
+	while (len--)
 		if (*s1++ != *s2++)
 			return (1);
 	return (0);
