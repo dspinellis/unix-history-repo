@@ -1,13 +1,16 @@
-/*
- * Copyright (c) 1989 The Regents of the University of California.
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
  * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Donn Seeley at UUNET Technologies, Inc.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pathnames.h	5.3 (Berkeley) %G%
+ *	@(#)pathnames.h	6.1 (Berkeley) %G%
  */
 
 #include <paths.h>
 
-#define	_PATH_RC	"/etc/rc"
-#define	_PATH_RCDOWN	"/etc/rc.shutdown"
+#define	_PATH_SLOGGER	"/sbin/session_logger"
+#define	_PATH_RUNCOM	"/etc/rc"
