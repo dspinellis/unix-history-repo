@@ -3,16 +3,11 @@
  * All rights reserved.
  *
  * %sccs.include.redist.c%
- *
- * All recipients should regard themselves as participants in an ongoing
- * research project and hence should feel obligated to report their
- * experiences (good or bad) with these elementary function codes, using
- * the sendbug(8) program, to the authors.
  */
 	.data
 	.align	2
 _sccsid:
-.asciz	"@(#)sqrt.s	5.5	(ucb.elefunt)	%G%"
+.asciz	"@(#)sqrt.s	5.6	(ucb.elefunt)	%G%"
 
 /*
  * double sqrt(arg)   revised August 15,1982
