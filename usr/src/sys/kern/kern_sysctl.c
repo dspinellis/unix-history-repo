@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sysctl.c	8.7 (Berkeley) %G%
+ *	@(#)kern_sysctl.c	8.8 (Berkeley) %G%
  */
 
 /*
@@ -37,7 +37,7 @@ sysctlfn hw_sysctl;
 sysctlfn debug_sysctl;
 #endif
 extern sysctlfn vm_sysctl;
-extern sysctlfn fs_sysctl;
+extern sysctlfn vfs_sysctl;
 extern sysctlfn net_sysctl;
 extern sysctlfn cpu_sysctl;
 
@@ -95,11 +95,9 @@ __sysctl(p, uap, retval)
 	case CTL_NET:
 		fn = net_sysctl;
 		break;
-#ifdef notyet
-	case CTL_FS:
-		fn = fs_sysctl;
+	case CTL_VFS:
+		fn = vfs_sysctl;
 		break;
-#endif
 	case CTL_MACHDEP:
 		fn = cpu_sysctl;
 		break;
@@ -315,7 +313,7 @@ debug_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 	if (namelen != 2)
 		return (ENOTDIR);		/* overloaded */
 	cdp = debugvars[name[0]];
-	if (cdp->debugname == 0)
+	if (name[0] >= CTL_DEBUG_MAXID || cdp->debugname == 0)
 		return (EOPNOTSUPP);
 	switch (name[1]) {
 	case CTL_DEBUG_NAME:
