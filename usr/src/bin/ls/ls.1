@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ls.1	6.8 (Berkeley) %G%
+.\"	@(#)ls.1	6.9 (Berkeley) %G%
 .\"
 .TH LS 1 ""
 .UC
@@ -11,7 +11,7 @@ ls \- list contents of directory
 .SH SYNOPSIS
 .B ls
 [
-.B \-acdfgilqrstu1ACLFR
+.B \-acdgilqrstu1ACLFR
 ] name ...
 .br
 .SH DESCRIPTION
@@ -85,19 +85,6 @@ Use time when file status was last changed for sorting or printing.
 .TP
 .B \-i
 For each file, print the i-number in the first column of the report.
-.TP
-.B \-f
-Force each argument to be interpreted as a directory
-and list the name found in each slot.
-This option turns off
-.B "\-F, \-R, \-l, \-r, \-s,"
-and
-.B \-t,
-and
-turns on
-.B \-a;
-the order is the order in which entries
-appear in the directory.
 .TP
 .B \-F
 cause directories to be marked with a trailing `/',

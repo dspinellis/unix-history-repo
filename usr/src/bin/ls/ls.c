@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.32 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -37,10 +37,9 @@ static char sccsid[] = "@(#)ls.c	5.31 (Berkeley) %G%";
 #include <stdio.h>
 #include "ls.h"
 
+int (*sortfcn)(), (*printfcn)();
 int lstat(), strlen();
 char *emalloc();
-
-int	qflg, Aflg, Cflg, Fflg, Lflg, Rflg, Sflg;
 
 int termwidth = 80;		/* default terminal width */
 
@@ -61,7 +60,6 @@ int f_recursive;		/* ls subdirectories also */
 int f_reversesort;		/* reverse whatever sort is used */
 int f_singlecol;		/* use single column output */
 int f_size;			/* list size in short listing */
-int f_specialdir;		/* force params to be directories */
 int f_statustime;		/* use time of last mode change */
 int f_dirname;			/* if precede with directory name */
 int f_timesort;			/* sort by time vice name */
@@ -97,7 +95,7 @@ main(argc, argv)
 	if (!getuid())
 		f_listdot = 1;
 
-	while ((ch = getopt(argc, argv, "1ACFLRacdfgilqrstu")) != EOF) {
+	while ((ch = getopt(argc, argv, "1ACFLRacdgilqrstu")) != EOF) {
 		switch (ch) {
 		/*
 		 * -1, -C and -l all override each other
@@ -144,9 +142,6 @@ main(argc, argv)
 		case 'd':
 			f_listdir = 1;
 			break;
-		case 'f':
-			f_specialdir = 1;
-			break;
 		case 'g':
 			f_group = 1;
 			break;
@@ -172,13 +167,6 @@ main(argc, argv)
 	}
 	argc -= optind;
 	argv += optind;
-
-	/* -f turns off -F, -R, -l, -t, -s, -r, turns on -a */
-	if (f_specialdir) {
-		f_longform = f_recursive = f_reversesort = f_size =
-		f_timesort = f_type = 0;
-		f_listdot = f_listalldot = 1;
-	}
 
 	/* -d turns off -R */
 	if (f_listdir)
@@ -214,50 +202,16 @@ main(argc, argv)
 		printfcn = printscol;
 	else if (f_longform)
 		printfcn = printlong;
-	else {
-		/*
-		 * set f_column, in case f_longform selected, then turned
-		 * off by f_special.
-		 */
-		f_column = 1;
-		printfcn = printcol;
-	}
-
-	if (f_specialdir) {
-		if (!argc) {
-			(void)fprintf(stderr, "ls: -f requires operands.\n");
-			exit(1);
-		}
-		for (;;) {
-			if (argc > 1)
-				(void)printf("%s:\n", *argv);
-			dodir(*argv);
-			if (!*++argv)
-				break;
-			putchar('\n');
-		}
-	} else if (argc)
-		doargs(argc, argv);
 	else
-		dodir(".");
-	exit(0);
-}
+		printfcn = printcol;
 
-dodir(name)
-	char *name;
-{
-	LS local, *stats;
-	int num;
-	char *names;
-
-	if (lstat(local.name = name, &local.lstat)) {
-		(void)fprintf(stderr, "ls: %s: %s\n", name, strerror(errno));
-		return;
+	if (!argc) {
+		argc = 1;
+		argv[0] = ".";
+		argv[1] = NULL;
 	}
-	if (num = tabdir(&local, &stats, &names))
-		displaydir(stats, num);
-	(void)free((char *)stats);
-	(void)free((char *)names);
+	doargs(argc, argv);
+	exit(0);
 }
 
 static char path[MAXPATHLEN + 1];
@@ -366,7 +320,7 @@ displaydir(stats, num)
 	register char *p, *savedpath;
 	LS *lp;
 
-	if (num > 1 && !f_specialdir) {
+	if (num > 1) {
 		u_long save1, save2;
 
 		save1 = stats[0].lstat.st_btotal;
@@ -444,7 +398,7 @@ tabdir(lp, s_stats, s_names)
 	stats = (LS *)emalloc((u_int)DEFNUM * sizeof(LS));
 	names = emalloc((u_int)lp->lstat.st_size);
 
-	if (!(dirp = opendir(f_specialdir ? lp->name : "."))) {
+	if (!(dirp = opendir("."))) {
 		(void)fprintf(stderr, "ls: %s: %s\n", lp->name,
 		    strerror(errno));
 		return(0);
