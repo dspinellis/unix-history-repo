@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stdio.h	5.17 (Berkeley) %G%
+ *	@(#)stdio.h	5.18 (Berkeley) %G%
  */
 
 #ifndef	_STDIO_H_
@@ -284,7 +284,7 @@ __END_DECLS
  */
 #define	__sgetc(p) (--(p)->_r < 0 ? __srget(p) : (int)(*(p)->_p++))
 #if defined(__GNUC__) && defined(__STDC__)
-static inline int __sputc(int _c, FILE *_p) {
+static __inline int __sputc(int _c, FILE *_p) {
 	if (--_p->_w >= 0 || (_p->_w >= _p->_lbfsize && (char)_c != '\n'))
 		return (*_p->_p++ = _c);
 	else
