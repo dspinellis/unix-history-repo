@@ -1,6 +1,6 @@
 /* Copyright (c) 1980 Regents of the University of California */
 
-static char sccsid[] = "@(#)flvalue.c 1.6 %G%";
+static char sccsid[] = "@(#)flvalue.c 1.7 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -63,7 +63,7 @@ flvalue( r , formalp )
 			putRV( p -> symbol , bn , p -> value[ NL_OFFS ] , 
 				p2type( p ) );
 #		    endif PC
-		    return p -> type;
+		    return p;
 	    case FUNC:
 	    case PROC:
 		    if ( r[3] != NIL ) {
@@ -118,7 +118,7 @@ flvalue( r , formalp )
 			putop( P2LISTOP , P2INT );
 			putop( P2CALL , P2PTR | P2STRTY );
 #		    endif PC
-		    return p -> type;
+		    return p;
 	    default:
 		    error("Variable given, %s required for %s parameter %s" ,
 			    typename , typename , formalp -> symbol );

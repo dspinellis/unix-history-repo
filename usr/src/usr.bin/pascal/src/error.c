@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)error.c 1.2 %G%";
+static char sccsid[] = "@(#)error.c 1.3 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -49,7 +49,7 @@ extern	char *errfile;
 
 /*VARARGS*/
 
-error(a1, a2, a3, a4)
+error(a1, a2, a3, a4, a5)
 	register char *a1;
 {
 	char errbuf[256]; 		/* was extern. why? ...pbk */
@@ -78,7 +78,7 @@ error(a1, a2, a3, a4)
 		printf("  %c - ", errpfx);
 	else
 		printf("%c %d - ", errpfx, line);
-	printf(a1, a2, a3, a4);
+	printf(a1, a2, a3, a4, a5);
 	if (errpfx == 'E')
 #ifndef PI0
 		eflg = TRUE, codeoff();
@@ -94,24 +94,24 @@ error(a1, a2, a3, a4)
 
 /*VARAGRS*/
 
-cerror(a1, a2, a3, a4)
+cerror(a1, a2, a3, a4, a5)
 {
 
 	if (Enocascade)
 		return;
 	setpfx(' ');
-	error(a1, a2, a3, a4);
+	error(a1, a2, a3, a4, a5);
 }
 
 #ifdef PI1
 
 /*VARARGS*/
 
-derror(a1, a2, a3, a4)
+derror(a1, a2, a3, a4, a5)
 {
 
 	if (!holdderr)
-		error(a1, a2, a3, a4);
+		error(a1, a2, a3, a4, a5);
 	errpfx = 'E';
 }
 

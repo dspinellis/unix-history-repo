@@ -89,7 +89,7 @@
 
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static	char sccsid[] = "@(#)pas.y 1.3 %G%"; */
+/* static	char sccsid[] = "@(#)pas.y 1.4 %G%"; */
 
 /*
  * The following line marks the end of the yacc
@@ -99,7 +99,7 @@
 ##
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pas.y 1.3 %G%";
+static	char sccsid[] = "@(#)pas.y 1.4 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -315,11 +315,11 @@ param:
 	YVAR id_list ':' type
 		= $$ = tree3(T_PVAR, fixlist($2), $4);
 		|
-	YFUNCTION id_list ':' type
-		= $$ = tree3(T_PFUNC, fixlist($2), $4);
+	YFUNCTION id_list params ftype
+		= $$ = tree5(T_PFUNC, fixlist($2), $4, $3, lineof($1));
 		|
-	YPROCEDURE id_list
-		= $$ = tree2(T_PPROC, fixlist($2));
+	YPROCEDURE id_list params ftype
+		= $$ = tree5(T_PPROC, fixlist($2), $4, $3, lineof($1));
 		;
 ftype:
 	':' type
