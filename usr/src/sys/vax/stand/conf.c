@@ -1,4 +1,4 @@
-/*	conf.c	4.10	82/05/27	*/
+/*	conf.c	4.11	82/06/25	*/
 
 #include "../h/param.h"
 #include "../h/inode.h"
@@ -43,33 +43,37 @@ nullsys()
 int	nullsys();
 #if defined(VAX780) || defined(VAX750)
 int	hpstrategy(), hpopen();
-int	htstrategy(), htopen(), htclose();
 #endif
 int	upstrategy(), upopen();
+int	rkstrategy(), rkopen();
+int	udstrategy(), udopen();
+int	idcstrategy(), idcopen();
+#ifndef BOOT
 int	tmstrategy(), tmopen(), tmclose();
 int	tsstrategy(), tsopen(), tsclose();
 #if defined(VAX780) || defined(VAX750)
+int	htstrategy(), htopen(), htclose();
 int	mtstrategy(), mtopen(), mtclose();
 #endif
-int	rkstrategy(), rkopen();
-int	udstrategy(), udopen();
 int	utstrategy(), utopen(), utclose();
-int	idcstrategy(), idcopen();
+#endif
 
 struct devsw devsw[] = {
 #if defined(VAX780) || defined(VAX750)
 	"hp",	hpstrategy,	hpopen,		nullsys,
-	"ht",	htstrategy,	htopen,		htclose,
 #endif
 	"up",	upstrategy,	upopen,		nullsys,
-	"tm",	tmstrategy,	tmopen,		tmclose,
 	"hk",	rkstrategy,	rkopen,		nullsys,
+	"ra",	udstrategy,	udopen,		nullsys,
+	"rb",	idcstrategy,	idcopen,	nullsys,
+#ifndef BOOT
 	"ts",	tsstrategy,	tsopen,		tsclose,
 #if defined(VAX780) || defined(VAX750)
+	"ht",	htstrategy,	htopen,		htclose,
 	"mt",	mtstrategy,	mtopen,		mtclose,
 #endif
-	"ra",	udstrategy,	udopen,		nullsys,
-	"ut",	utstrategy,	utopen		utclose,
-	"rb",	idcstrategy,	idcopen,	nullsys,
+	"tm",	tmstrategy,	tmopen,		tmclose,
+	"ut",	utstrategy,	utopen,		utclose,
+#endif
 	0,0,0,0
 };
