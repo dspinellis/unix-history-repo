@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.33 (Berkeley) %G%
+#	@(#)Makefile.inc	5.34 (Berkeley) %G%
 
 # machine-independent gen sources
 .PATH: ${.CURDIR}/${MACHINE}/gen ${.CURDIR}/gen
@@ -19,7 +19,7 @@ SRCS+=	alarm.c assert.c clock.c closedir.c crypt.c ctermid.c ctime.c \
 # machine-dependent gen sources
 .include "${.CURDIR}/${MACHINE}/gen/Makefile.inc"
 
-.if (${MACHINE} == "mips" || ${MACHINE} == "tahoe" || ${MACHINE} == "vax")
+.if (${MACHINE} == "tahoe" || ${MACHINE} == "vax")
 errlst.o errlst.po:
 	${CC} -S ${CFLAGS} ${.IMPSRC}
 	ed - < ${.CURDIR}/${MACHINE}/:errfix errlst.s
