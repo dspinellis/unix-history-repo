@@ -1,4 +1,4 @@
-#	@(#)Makefile	1.5 (Berkeley) %G%
+#	@(#)Makefile	5.1 (Berkeley) %G%
 
 PROG=	ktrace
 SRCS=	ktrace.c subr.c
