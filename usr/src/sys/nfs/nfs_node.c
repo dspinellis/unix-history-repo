@@ -7,13 +7,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_node.c	7.30 (Berkeley) %G%
+ *	@(#)nfs_node.c	7.31 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
 #include "proc.h"
 #include "mount.h"
+#include "namei.h"
 #include "vnode.h"
 #include "kernel.h"
 #include "malloc.h"
@@ -136,8 +137,9 @@ loop:
 	return (0);
 }
 
-nfs_inactive(vp)
+nfs_inactive(vp, p)
 	struct vnode *vp;
+	struct proc *p;
 {
 	register struct nfsnode *np;
 	register struct nameidata *ndp;
@@ -158,7 +160,7 @@ nfs_inactive(vp)
 		ndp = &sp->s_namei;
 		if (!nfs_nget(vp->v_mount, &sp->s_fh, &dnp)) {
 			ndp->ni_dvp = NFSTOV(dnp);
-			nfs_removeit(ndp);
+			nfs_removeit(ndp, p);
 			nfs_nput(ndp->ni_dvp);
 		}
 		crfree(ndp->ni_cred);
