@@ -1,34 +1,31 @@
-.\" Copyright (c) 1991 The Regents of the University of California.
+.\" Copyright (c) 1991, 1993 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" The game adventure was original written by Will Crowther and Don
-.\" Woods, in Fortran.  It was later translated to C and enhanced by
-.\" Jim Gillogly.
+.\" The game adventure was originally written in Fortran by Will Crowther
+.\" and Don Woods.  It was later translated to C and enhanced by Jim
+.\" Gillogly.  This code is derived from software contributed to Berkeley
+.\" by Jim Gillogly at The Rand Corporation.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)adventure.6	6.4 (Berkeley) %G%
+.\"	@(#)adventure.6	6.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt ADVENTURE 6
-.Os BSD 3
+.Os
 .Sh NAME
 .Nm adventure
-.Nd "an exploration game"
+.Nd an exploration game
 .Sh SYNOPSIS
 .Nm adventure
+.Op saved-file
 .Sh DESCRIPTION
 The object of the game is to locate and explore Colossal Cave, find the
 treasures hidden there, and bring them back to the building with you.
-The program is self-descriptive
-to a point, but part of the game is to
+The program is self-descriptive to a point, but part of the game is to
 discover its rules.
 .Pp
 To terminate a game, enter
-.Ql quit ;
-to save a game for later resumption,
-enter
-.Ql suspend .
-.Sh BUGS
-Saving a game creates a large executable file instead of just
-the information needed to resume the game.
+.Dq quit ;
+to save a game for later resumption, enter
+.Dq suspend .

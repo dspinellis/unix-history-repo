@@ -1,22 +1,23 @@
 /*-
- * Copyright (c) 1991 The Regents of the University of California.
+ * Copyright (c) 1991, 1993 The Regents of the University of California.
  * All rights reserved.
  *
- * The game adventure was original written Fortran by Will Crowther
- * and Don Woods.  It was later translated to C and enhanced by
- * Jim Gillogly.
+ * The game adventure was originally written in Fortran by Will Crowther
+ * and Don Woods.  It was later translated to C and enhanced by Jim
+ * Gillogly.  This code is derived from software contributed to Berkeley
+ * by Jim Gillogly at The Rand Corporation.
  *
  * %sccs.include.redist.c%
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1991 The Regents of the University of California.\n\
+"@(#) Copyright (c) 1991, 1993 The Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*      Re-coding of advent in C: main program                          */
@@ -24,9 +25,8 @@ static char sccsid[] = "@(#)main.c	5.1 (Berkeley) %G%";
 #include <sys/file.h>
 #include <stdio.h>
 #include "hdr.h"
-#include "pathnames.h"
 
-int	datfd = -1;
+
 main(argc,argv)
 int argc;
 char **argv;
@@ -36,37 +36,29 @@ char **argv;
 	int rval,ll;
 	struct text *kk;
 	extern trapdel();
-	char *strerror();
-	static reenter;
 
-	reenter++;
-	switch (setup) {
-	case 0:
-		if ((datfd = open(*argv, O_RDONLY, 0)) < 0) {
-			fprintf(stderr, "adventure: can't init\n");
-			exit(1);
-		}
-		init(*argv);
-		/* NOTREACHED */
-	case 1:
-		if ((datfd = open(_PATH_ADVENTURE, O_RDONLY, 0)) < 0) {
-			fprintf(stderr, "adventure: %s: %s\n", _PATH_ADVENTURE,
-			    strerror(errno));
-			exit(1);
-		}
-		startup();		/* prepare for a user           */
-		signal(2,trapdel);
-		break;
-	case -1:	                /* restarting game : 8305       */
-		yea=start(0);
-		setup=3;
-		k=null;
-		goto l8;
-	default:
-		printf("Your forged file dissappears in a puff of greasy black smoke! (poof)\n");
-		unlink(argv[0]);
-		exit(1);
+	init();         /* Initialize everything */
+	signal(2,trapdel);
+
+	if (argc > 1)   /* Restore file specified */
+	{               /* Restart is label 8305 (Fortran) */
+		i = restore(argv[1]);       /* See what we've got */
+		switch(i)
+		{
+		    case 0:     /* The restore worked fine */
+			yea=start(0);
+			k=null;
+			unlink(argv[1]);/* Don't re-use the save */
+			goto l8;        /* Get where we're going */
+		    case 1:             /* Couldn't open it */
+			exit(0);        /* So give up */
+		    case 2:             /* Oops -- file was altered */
+			rspeak(202);    /* You dissolve */
+			exit(0);        /* File could be non-adventure */
+		}                       /* So don't unlink it. */
 	}
+
+	startup();              /* prepare for a user           */
 
 	for (;;)                        /* main command loop (label 2)  */
 	{       if (newloc<9 && newloc!=0 && closng)
@@ -111,9 +103,10 @@ char **argv;
 					if (tally==tally2 && tally != 0)
 						if (limit>35) limit=35;
 				}
-				kk=(struct text *) prop[obj];	/* 2006		*/
-				if (obj==steps && loc==fixed[steps])kk=(struct text *)1;
-				pspeak(obj,kk);
+				ll =  prop[obj];   /* 2006         */
+				if (obj==steps && loc==fixed[steps])
+					ll = 1;
+				pspeak(obj, ll);
 			}                                       /* 2008 */
 			goto l2012;
 	l2009:          k=54;                   /* 2009                 */
@@ -195,6 +188,7 @@ char **argv;
 		    || (!weq(wd2,"plant")&&!weq(wd2,"door")))
 			goto l2610;
 		if (at(vocab(wd2,1))) copystr("pour",wd2);
+
 	l2610:  if (weq(wd1,"west"))
 			if (++iwest==10) rspeak(17);
 	l2630:  i=vocab(wd1,-1);
@@ -342,9 +336,8 @@ char **argv;
 			printf(" %d minutes before continuing.",latncy);
 			if (!yes(200,54,54)) goto l2012;
 			datime(&saved,&savet);
-			setup = -1;
-			ciao(argv[0]);
-			continue;
+			ciao(argv[0]);          /* Do we quit? */
+			continue;               /* Maybe not */
 		    case 31:                    /* hours=8310           */
 			printf("Colossal cave is closed 9am-5pm Mon ");
 			printf("through Fri except holidays.\n");
@@ -559,4 +552,3 @@ char **argv;
 		goto l2012;
 	}
 }
-

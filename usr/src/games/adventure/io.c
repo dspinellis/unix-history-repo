@@ -1,16 +1,17 @@
 /*-
- * Copyright (c) 1991 The Regents of the University of California.
+ * Copyright (c) 1991, 1993 The Regents of the University of California.
  * All rights reserved.
  *
- * The game adventure was original written Fortran by Will Crowther
- * and Don Woods.  It was later translated to C and enhanced by
- * Jim Gillogly.
+ * The game adventure was originally written in Fortran by Will Crowther
+ * and Don Woods.  It was later translated to C and enhanced by Jim
+ * Gillogly.  This code is derived from software contributed to Berkeley
+ * by Jim Gillogly at The Rand Corporation.
  *
  * %sccs.include.redist.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)io.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)io.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*      Re-coding of advent in C: file i/o and user i/o                 */
@@ -109,54 +110,56 @@ int x,y,z;
 	return(result);
 }
 
-FILE *inbuf,*outbuf;
+/* FILE *inbuf,*outbuf; */
 
-int adrptr;                             /* current seek adr ptr         */
+char *inptr;                            /* Pointer into virtual disk    */
+
 int outsw = 0;				/* putting stuff to data file?  */
 
-char iotape[] = "Ax3F'tt$8hqer*hnGKrX:!l";
+char iotape[] = "Ax3F'\003tt$8h\315qer*h\017nGKrX\207:!l";
 char *tape = iotape;			/* pointer to encryption tape   */
 
-next()                                  /* next char frm file, bump adr */
-{       register char ch,t;
-	adrptr++;                       /* seek address in file         */
-	ch=getc(inbuf);
+next()                                  /* next virtual char, bump adr  */
+{
+	int ch;
+
+	ch=(*inptr ^ random()) & 0xFF;  /* Decrypt input data           */
 	if (outsw)                      /* putting data in tmp file     */
-	{       if (*tape==0) tape=iotape; /* rewind encryption tape    */
-		putc(ch ^ *tape++,outbuf); /* encrypt & output char     */
+	{   if (*tape==0) tape=iotape;  /* rewind encryption tape       */
+	    *inptr = ch ^ *tape++;      /* re-encrypt and replace value */
 	}
+	inptr++;
 	return(ch);
 }
 
-
 char breakch;                           /* tell which char ended rnum   */
 
-
-rdata()                                 /* read all data from orig file */
+rdata()                                 /* "read" data from virtual file*/
 {       register int sect;
 	register char ch;
-	if ((inbuf=fopen(DATFILE,"r"))==NULL)     /* all the data lives in here   */
-	{       printf("Cannot open data file %s\n",DATFILE);
-		exit(0);
-	}
-	if ((outbuf=fopen(TMPFILE,"w"))==NULL)   /* the text lines will go here  */
-	{       printf("Cannot create output file %s\n",TMPFILE);
-		exit(0);
-	}
-	setup=clsses=1;
+
+	inptr = data_file;              /* Pointer to virtual data file */
+	srandom(SEED);                  /* which is lightly encrypted.  */
+
+	clsses=1;
 	for (;;)                        /* read data sections           */
 	{       sect=next()-'0';        /* 1st digit of section number  */
+#ifdef VERBOSE
 		printf("Section %c",sect+'0');
+#endif
 		if ((ch=next())!=LF)    /* is there a second digit?     */
-		{       FLUSHLF;
+		{
+			FLUSHLF;
+#ifdef VERBOSE
 			putchar(ch);
+#endif
 			sect=10*sect+ch-'0';
 		}
+#ifdef VERBOSE
 		putchar('\n');
+#endif
 		switch(sect)
 		{   case 0:             /* finished reading database    */
-			fclose(inbuf);
-			fclose(outbuf);
 			return;
 		    case 1:             /* long form descriptions       */
 			rdesc(1);
@@ -213,19 +216,19 @@ rnum()                                  /* read initial location num    */
 	return(atoi(nbf));              /* convert it to integer        */
 }
 
-int seekhere = 1;			/* initial seek for output file */
+char *seekhere;
 
 rdesc(sect)                             /* read description-format msgs */
 int sect;
 {       register char *s,*t;
 	register int locc;
-	int  seekstart, maystart, adrstart;
+	char *seekstart, *maystart, *adrstart;
 	char *entry;
+
+	seekhere = inptr;               /* Where are we in virtual file?*/
 	outsw=1;                        /* these msgs go into tmp file  */
-	if (sect==1) putc('X',outbuf);  /* so seekadr > 0               */
-	adrptr=0;
 	for (oldloc= -1, seekstart=seekhere;;)
-	{       maystart=adrptr;        /* maybe starting new entry     */
+	{       maystart=inptr;         /* maybe starting new entry     */
 		if ((locc=rnum())!=oldloc && oldloc>=0  /* finished msg */
 		    && ! (sect==5 && (locc==0 || locc>=100)))/* unless sect 5*/
 		{       switch(sect)    /* now put it into right table  */
@@ -327,6 +330,7 @@ rtrav()                                 /* read travel table            */
 	}
 }
 
+#ifdef DEBUG
 
 twrite(loq)                             /* travel options from this loc */
 int loq;
@@ -346,7 +350,7 @@ int loq;
 	}
 }
 
-
+#endif DEBUG
 
 rvoc()
 {       register char *s;               /* read the vocabulary          */
@@ -420,77 +424,53 @@ int msg;
 }
 
 
-doseek(offset)  /* do 2 seeks to get to right place in the file         */
-unsigned offset;
-{
-	extern unsigned filesize;
-	lseek(datfd,(long)offset+(long)filesize, 0);
-#ifdef notdef
-	blockadr=chadr=0;
-	if (offset<0)                   /* right place is offset+filesize*/
-	{       blockadr += 64;         /* take off 32768 bytes         */
-		chadr += offset+32768;  /* & make them into 64 blocks   */
-	}
-	else chadr += offset;
-	if (filesize<0)                 /* data starts after file       */
-	{       blockadr += 64;         /* which may also be large      */
-		chadr += filesize+32768;
-	}
-	else chadr += filesize;
-	if (chadr<0)                    /* and the leftovers may be lge */
-	{       blockadr += 64;
-		chadr += 32768;
-	}
-	seek(datfd,blockadr,3);         /* get within 32767             */
-	seek(datfd,chadr,1);            /* then the rest of the way     */
-#endif
-}
-
-
 speak(msg)       /* read, decrypt, and print a message (not ptext)      */
 struct text *msg;/* msg is a pointer to seek address and length of mess */
-{       register char *s,nonfirst;
-	register char *tbuf;
-	doseek(msg->seekadr);
-	if ((tbuf=(char *) malloc(msg->txtlen+1)) == 0) bug(109);
-	read(datfd,tbuf,msg->txtlen);
-	s=tbuf;
+{
+	register char *s, nonfirst;
+
+	s = msg->seekadr;
 	nonfirst=0;
-	while (s-tbuf<msg->txtlen)      /* read a line at a time        */
+	while (s - msg->seekadr < msg->txtlen)  /* read a line at a time */
 	{       tape=iotape;            /* restart decryption tape      */
-		while ((*s++^*tape++)!=TAB); /* read past loc num       */
+		while ((*s++ ^ *tape++) != TAB); /* read past loc num       */
 		/* assume tape is longer than location number           */
 		/*   plus the lookahead put together                    */
-		if ((*s^*tape)=='>' &&
-			(*(s+1)^*(tape+1))=='$' &&
-			(*(s+2)^*(tape+2))=='<') break;
-		if (blklin&&!nonfirst++) putchar('\n');
+		if ((*s ^ *tape) == '>' &&
+			(*(s+1) ^ *(tape+1)) == '$' &&
+			(*(s+2) ^ *(tape+2)) == '<') break;
+		if (blklin && !nonfirst++) putchar('\n');
 		do
-		{       if (*tape==0) tape=iotape;/* rewind decryp tape */
-			putchar(*s^*tape);
-		} while ((*s++^*tape++)!=LF);   /* better end with LF   */
+		{       if (*tape == 0) tape = iotape;/* rewind decryp tape */
+			putchar(*s ^ *tape);
+		} while ((*s++ ^ *tape++) != LF);   /* better end with LF   */
 	}
-	free(tbuf);
 }
 
 
-pspeak(msg,skip) /* read, decrypt an print a ptext message              */
-int msg;         /* msg is the number of all the p msgs for this place  */
+pspeak(m,skip) /* read, decrypt an print a ptext message              */
+int m;         /* msg is the number of all the p msgs for this place  */
 int skip;       /* assumes object 1 doesn't have prop 1, obj 2 no prop 2 &c*/
-{       register char *s,nonfirst;
-	register char *tbuf;
-	char *numst;
-	int lstr;
-	doseek(ptext[msg].seekadr);
-	if ((tbuf=(char *) malloc((lstr=ptext[msg].txtlen)+1)) == 0) bug(108);
-	read(datfd,tbuf,lstr);
-	s=tbuf;
+{
+	register char *s,nonfirst;
+	char *numst, save;
+	struct text *msg;
+	char *tbuf;
+
+	msg = &ptext[m];
+	if ((tbuf=(char *) malloc(msg->txtlen + 1)) == 0) bug(108);
+	memcpy(tbuf, msg->seekadr, msg->txtlen + 1);   /* Room to null */
+	s = tbuf;
+
 	nonfirst=0;
-	while (s-tbuf<lstr)             /* read a line at a time        */
+	while (s - tbuf < msg->txtlen) /* read line at a time */
 	{       tape=iotape;            /* restart decryption tape      */
 		for (numst=s; (*s^= *tape++)!=TAB; s++); /* get number  */
-		*s++=0; /* decrypting number within the string          */
-		if (atoi(numst)!=100*skip && skip>=0)
+
+		save = *s; /* Temporarily trash the string (cringe) */
+		*s++ = 0; /* decrypting number within the string          */
+
+		if (atoi(numst) != 100 * skip && skip >= 0)
 		{       while ((*s++^*tape++)!=LF) /* flush the line    */
 				if (*tape==0) tape=iotape;
 			continue;
@@ -506,4 +486,3 @@ int skip;       /* assumes object 1 doesn't have prop 1, obj 2 no prop 2 &c*/
 	}
 	free(tbuf);
 }
-
