@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ecvt.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)ecvt.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #if defined(hp300) && !defined(IEEE)
@@ -20,7 +20,7 @@ static char sccsid[] = "@(#)ecvt.c	5.3 (Berkeley) %G%";
  *	sign is set to 0 for positive, 1 for negative
  */
 
-char	*cvt();
+static char *cvt();
 
 #ifdef IEEE
 #include <signal.h>
