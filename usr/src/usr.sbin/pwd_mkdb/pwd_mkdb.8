@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)pwd_mkdb.8	5.1 (Berkeley) %G%
+.\"	@(#)pwd_mkdb.8	5.2 (Berkeley) %G%
 .\"
 .TH PWD_MKDB 8 "
 .UC 7
@@ -30,17 +30,6 @@ The options are as follows:
 .TP
 \-p
 Create a Version 7 style password file and install it into ``/etc/password''.
-.PP
-The databases actually contain three copies of the original data.
-Each password file entry is converted into a rough approximation of a
-``struct passwd'', with the strings placed inline.
-This object is then stored as the data for three separate keys.
-The first key is the pw_name field prepended by the _PW_KEYBYNAME character.
-The second key is the pw_uid field prepended by the _PW_KEYBYUID character.
-The third key is the line number in the original file prepended by the
-_PW_KEYBYNUM character.
-(The special characters are prepended to ensure that the keys do not
-collide.)
 .PP
 The two databases differ in that the secure version contains the user's 
 encrypted password and the insecure version has an asterisk (``*'')
