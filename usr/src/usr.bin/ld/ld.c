@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ld.c	6.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)ld.c	6.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /* Linker `ld' for GNU
@@ -982,6 +982,7 @@ decode_command (argc, argv)
 {
   register int i;
   register struct file_entry *p;
+  char *cp;
 
   number_of_files = 0;
   output_filename = "a.out";
@@ -1045,7 +1046,15 @@ decode_command (argc, argv)
 	    }
 	  if (argv[i][1] == 'l')
 	    {
-	      p->filename = concat ("lib", string, ".a");
+	      if (cp = rindex(string, '/'))
+		{
+		  *cp++ = '\0';
+		  cp = concat (string, "/lib", cp);
+		  p->filename = concat (cp, ".a", "");
+	        }
+	      else
+	        p->filename = concat ("lib", string, ".a");
+
 	      p->local_sym_name = concat ("-l", string, "");
 	      p->search_dirs_flag = 1;
 	      p++;
