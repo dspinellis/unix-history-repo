@@ -1,4 +1,4 @@
-/*	vfs_bio.c	4.9	%G%	*/
+/*	vfs_bio.c	4.10	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -222,12 +222,12 @@ register struct buf *bp;
 bdwrite(bp)
 register struct buf *bp;
 {
-	register struct buf *dp;
+	register int flags;
 
 	if ((bp->b_flags&B_DELWRI) == 0)
 		u.u_vm.vm_oublk++;		/* noone paid yet */
-	dp = bdevsw[major(bp->b_dev)].d_tab;
-	if(dp->b_flags & B_TAPE)
+	flags = bdevsw[major(bp->b_dev)].d_flags;
+	if(flags & B_TAPE)
 		bawrite(bp);
 	else {
 		bp->b_flags |= B_DELWRI | B_DONE;
