@@ -36,7 +36,7 @@
 
 
 
-SCCSID(@(#)conf.c	3.56		%G%);
+SCCSID(@(#)conf.c	3.57		%G%);
 /*
 **  Header info table
 **	Final (null) entry contains the flags used for any other field.
@@ -59,10 +59,10 @@ struct hdrinfo	HdrInfo[] =
 	"resent-from",		H_FROM,			0,
 	"sender",		H_FROM,			0,
 	"from",			H_FROM|H_CHECK,		M_NEEDFROM,
-	"original-from",	0,			0,
 	"full-name",		H_ACHECK,		M_FULLNAME,
 	"received-from",	H_CHECK,		M_LOCAL,
 	"return-receipt-to",	H_FROM,			0,
+	"errors-to",		H_FROM,			0,
 		/* destination fields */
 	"to",			H_RCPT,			0,
 	"resent-to",		H_RCPT,			0,

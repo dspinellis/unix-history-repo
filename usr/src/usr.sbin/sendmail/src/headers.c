@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)headers.c	3.34		%G%);
+SCCSID(@(#)headers.c	3.35		%G%);
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -373,8 +373,6 @@ eatheader()
 		p = hvalue("precedence");
 		if (p != NULL)
 			CurEnv->e_class = priencode(p);
-		else
-			CurEnv->e_class = PRI_NORMAL;
 		CurEnv->e_msgpriority -= CurEnv->e_class * WKPRIFACT;
 	}
 
@@ -382,6 +380,11 @@ eatheader()
 	p = hvalue("return-receipt-to");
 	if (p != NULL)
 		CurEnv->e_receiptto = p;
+
+	/* errors to */
+	p = hvalue("errors-to");
+	if (p != NULL)
+		sendto(p, (ADDRESS *) NULL, &CurEnv->e_errorqueue);
 
 	/* from person */
 	if (ArpaMode)
@@ -427,36 +430,20 @@ eatheader()
 **		none.
 */
 
-struct prio
-{
-	char	*pri_name;	/* external name of priority */
-	int	pri_val;	/* internal value for same */
-};
-
-static struct prio	Prio[] =
-{
-	"alert",		PRI_ALERT,
-	"quick",		PRI_QUICK,
-	"first-class",		PRI_FIRSTCL,
-	"normal",		PRI_NORMAL,
-	"second-class",		PRI_SECONDCL,
-	"third-class",		PRI_THIRDCL,
-	"junk",			PRI_JUNK,
-	NULL,			PRI_NORMAL,
-};
-
 priencode(p)
 	char *p;
 {
-	register struct prio *pl;
+	register int i;
 	extern bool sameword();
 
-	for (pl = Prio; pl->pri_name != NULL; pl++)
+	for (i = 0; i < NumPriorities; i++)
 	{
-		if (sameword(p, pl->pri_name))
-			break;
+		if (sameword(p, Priorities[i].pri_name))
+			return (Priorities[i].pri_val);
 	}
-	return (pl->pri_val);
+
+	/* unknown priority */
+	return (0);
 }
 /*
 **  CRACKADDR -- parse an address and turn it into a macro

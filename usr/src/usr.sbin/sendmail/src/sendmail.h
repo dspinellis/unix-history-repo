@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.87		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.88		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -35,6 +35,7 @@ static char SmailSccsId[] =	"@(#)sendmail.h	3.87		%G%";
 # define MAXATOM	100		/* max atoms per address */
 # define MAXMAILERS	25		/* maximum mailers known to system */
 # define MAXRWSETS	30		/* max # of sets of rewriting rules */
+# define MAXPRIORITIES	25		/* max values for Precedence: field */
 # define SPACESUB	('.'|0200)	/* substitution for <lwsp> */
 /*
 **  Address structure.
@@ -242,13 +243,14 @@ EXTERN WORK	*WorkQ;			/* queue of things to be done */
 **	error messages thrown away if they are not local.
 */
 
-# define PRI_ALERT	50
-# define PRI_QUICK	30
-# define PRI_FIRSTCL	10
-# define PRI_NORMAL	0
-# define PRI_SECONDCL	-10
-# define PRI_THIRDCL	-40
-# define PRI_JUNK	-100
+struct priority
+{
+	char	*pri_name;	/* external name of priority */
+	int	pri_val;	/* internal value for same */
+};
+
+EXTERN struct priority	Priorities[MAXPRIORITIES];
+EXTERN int		NumPriorities;	/* pointer into Priorities */
 
 # define WKPRIFACT	1800		/* bytes each pri point is worth */
 # define WKTIMEFACT	400		/* bytes each time unit is worth */
@@ -379,6 +381,17 @@ EXTERN char	Mode;		/* operation mode, see below */
 #define MD_VERIFY	'v'		/* verify: don't collect or deliver */
 
 #define MD_DEFAULT	MD_DELIVER	/* default operation mode */
+/*
+**  Options
+**
+**	These are assorted options that can be set from the configuration
+**	file.
+*/
+
+EXTERN char	*Option[128];	/* miscellaneous option values */
+
+/* option values */
+# define	OPT_QUEUEALL	'q'	/* force all messages to queue */
 /*
 **  Global variables.
 */

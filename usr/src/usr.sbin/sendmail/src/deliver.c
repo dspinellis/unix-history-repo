@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.115		%G%);
+SCCSID(@(#)deliver.c	3.116		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -1399,9 +1399,9 @@ sendall(e, verifyonly)
 	bool oldverbose;
 
 # ifdef DEBUG
-	if (tTd(13, 2))
+	if (tTd(13, 1))
 	{
-		printf("\nSend Queue:\n");
+		printf("\nSENDALL: verify %d, sendqueue:\n");
 		printaddr(e->e_sendqueue, TRUE);
 	}
 # endif DEBUG
@@ -1437,10 +1437,16 @@ sendall(e, verifyonly)
 	{
 		register ADDRESS *qq;
 
+# ifdef DEBUG
+		if (tTd(13, 3))
+		{
+			printf("Checking ");
+			printaddr(q, FALSE);
+		}
+# endif DEBUG
+
 		if (bitset(QQUEUEUP, q->q_flags))
 			e->e_queueup = TRUE;
-		if (!bitset(QBADADDR, q->q_flags))
-			continue;
 
 		/* we have an address that failed -- find the parent */
 		for (qq = q; qq != NULL; qq = qq->q_alias)
@@ -1460,6 +1466,20 @@ sendall(e, verifyonly)
 				(void) strcat(obuf, qq->q_user);
 			if (aliaslookup(obuf) == NULL)
 				continue;
+
+# ifdef DEBUG
+			if (tTd(13, 4))
+				printf("Errors to %s\n", obuf);
+# endif DEBUG
+
+			/* add in an errors-to field */
+				/*   ugh... must happen before delivery.....
+			addheader("errors-to", newstr(obuf), e);
+				.... i guess this should go in sendto */
+
+			/* only send errors if the message failed */
+			if (!bitset(QBADADDR, q->q_flags))
+				break;
 
 			/* owner list exists -- add it to the error queue */
 			qq->q_flags &= ~QPRIMARY;

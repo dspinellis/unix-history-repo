@@ -6,7 +6,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)main.c	3.114		%G%);
+SCCSID(@(#)main.c	3.115		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -611,12 +611,7 @@ main(argc, argv)
 	**	If the fork fails, we will just continue in the
 	**		parent; this is perfectly safe, albeit
 	**		slower than it must be.
-	**	If we have errors sofar, this seems like a good time
-	**		to dispose of them.
 	*/
-
-	if (ExitStat != EX_OK && Mode != MD_VERIFY)
-		finis();
 
 	if (Mode == MD_FORK)
 	{

@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)readcf.c	3.31		%G%);
+SCCSID(@(#)readcf.c	3.32		%G%);
 
 /*
 **  READCF -- read control file.
@@ -24,9 +24,12 @@ SCCSID(@(#)readcf.c	3.31		%G%);
 **		Sn		Use rewriting set n.
 **		Rlhs rhs	Rewrite addresses that match lhs to
 **				be rhs.
-**		Mn p f r a	Define mailer.  n - internal name,
-**				p - pathname, f - flags, r - rewriting
-**				rule for sender, a - argument vector.
+**		Mn p f s r a	Define mailer.  n - internal name,
+**				p - pathname, f - flags, s - rewriting
+**				ruleset for sender, s - rewriting ruleset
+**				for recipients, a - argument vector.
+**		Oxvalue		Set option x to value.
+**		Pname=value	Set precedence name to value.
 **
 **	Parameters:
 **		cfname -- control file name.
@@ -189,6 +192,30 @@ readcf(cfname, safe)
 
 		  case 'M':		/* define mailer */
 			makemailer(&buf[1], safe);
+			break;
+
+		  case 'O':		/* set option */
+			if (buf[2] == '\0')
+				Option[buf[1]] = "";
+			else
+				Option[buf[1]] = newstr(&buf[2]);
+			break;
+
+		  case 'P':		/* set precedence */
+			if (NumPriorities >= MAXPRIORITIES)
+			{
+				syserr("readcf: line %d: too many P lines, %d max",
+					LineNumber, MAXPRIORITIES);
+				break;
+			}
+			for (p = &buf[1]; *p != '\0' && *p != '='; p++)
+				continue;
+			if (*p == '\0')
+				goto badline;
+			*p = '\0';
+			Priorities[NumPriorities].pri_name = newstr(&buf[1]);
+			Priorities[NumPriorities].pri_val = atoi(++p);
+			NumPriorities++;
 			break;
 
 		  default:
