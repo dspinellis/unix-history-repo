@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cr_put.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)cr_put.c	5.11 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -351,9 +351,10 @@ dontcr:	while (outline < destline) {
 				plodcnt--;
 			else {
 				i = curscr->lines[outline]->line[outcol];
-				if ((i & __STANDOUT) ==
+				if ((curscr->lines[outline]->standout[outcol]
+				     & __STANDOUT) ==
 				    (curscr->flags & __WSTANDOUT))
-					putchar(i & 0177);
+					putchar(i);
 				else
 					goto nondes;
 			}
