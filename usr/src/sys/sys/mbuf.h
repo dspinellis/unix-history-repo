@@ -1,4 +1,4 @@
-/* mbuf.h 4.1 81/10/29 */
+/* mbuf.h 4.2 81/10/29 */
 
 /*
  * Constants related to memory allocator.
@@ -40,34 +40,38 @@ char	mprefcnt[NMPAGES];
 struct	mbuf *m_get(), *m_free(), *m_more();
 
 #define	MGET(m, i) \
-	{ int ms = spl_imp(); \
+	{ int ms = splimp(); \
 	  if ((m)=mfree) \
-		{ netcb.n_bufs--; mfree = (m)->m_next; (m)->m_next = 0; } \
+		{ mbstat.m_bufs--; mfree = (m)->m_next; (m)->m_next = 0; } \
 	  else \
 		(m) = m_more(i); \
 	  splx(ms); }
 #define	MPGET(m, i) \
-	{ int ms = spl_imp(); \
+	{ int ms = splimp(); \
 	  if ((m)=mpfree) \
 	      { ++mprefcnt[mtopf(m)]; nmpfree--; mpfree = (m)->m_next; } \
 	  splx(ms); }
 #define	MFREE(m, n) \
-	{ int ms = spl_imp(); \
+	{ int ms = splimp(); \
 	  if ((m)->m_off > MSIZE) { \
 		(n) = (struct mbuf *)(mtod(m, int)&~0x3ff); \
 		if (--mprefcnt[mtopf(n)] == 0) \
 		    { (n)->m_next = mpfree; mpfree = (n); nmpfree++; } \
 	  } \
 	  (n) = (m)->m_next; (m)->m_next = mfree; \
-	  (m)->m_off = 0; (m)->m_act = 0; mfree = (m); netcb.n_bufs++; \
+	  (m)->m_off = 0; (m)->m_act = 0; mfree = (m); mbstat.m_bufs++; \
 	  splx(ms); }
 #define	NMBPG (PGSIZE/MSIZE)		/* mbufs/page */
+
+struct mbstat {
+	short	m_bufs;				/* # free msg buffers */
+	short	m_hiwat;			/* # free mbufs allocated */
+	short	m_lowat;			/* min. # free mbufs */
+	short	m_pages;			/* # pages owned by network */
+};
 
 #ifdef	KERNEL
 extern	struct mbuf netutl[];		/* virtual address of net free mem */
 extern	struct pte Netmap[];		/* page tables to map Netutl */
+struct	mbstat mbstat;
 #endif
-	short	n_bufs;				/* # free msg buffers */
-	short	n_hiwat;			/* # free mbufs allocated */
-	short	n_lowat;			/* min. # free mbufs */
-	short	n_pages;			/* # pages owned by network */
