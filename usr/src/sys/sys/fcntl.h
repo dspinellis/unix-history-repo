@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fcntl.h	5.14 (Berkeley) %G%
+ *	@(#)fcntl.h	5.15 (Berkeley) %G%
  */
 
 #ifndef _FCNTL_H_
@@ -33,11 +33,15 @@
 #define	O_RDWR		0x0002		/* open for reading and writing */
 #define	O_ACCMODE	0x0003		/* mask for above modes */
 
-#ifdef KERNEL
 /*
- * Kernel encoding of open mode; separate read and write bits
- * that are independently testable: 1 greater than the above.
+ * Kernel encoding of open mode; separate read and write bits that are
+ * independently testable: 1 greater than the above.
+ *
+ * XXX
+ * FREAD and FWRITE are excluded from the #ifdef KERNEL so that TIOCFLUSH,
+ * which was documented to use FREAD/FWRITE, continues to work.
  */
+#ifndef _POSIX_SOURCE
 #define	FREAD		0x0001
 #define	FWRITE		0x0002
 #endif
