@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ns.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)ns.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -132,7 +132,7 @@ nsprotopr(off, name)
 		prev = next;
 	}
 }
-#define ANY(x,y,z)  ((x) ? printf("\t%u %s%s%s\n",x,y,plural(x),z) : 0)
+#define ANY(x,y,z)  ((x) ? printf("\t%d %s%s%s -- %s\n",x,y,plural(x),z,"x") : 0)
 
 /*
  * Dump SPP statistics structure.
@@ -142,6 +142,7 @@ spp_stats(off, name)
 	char *name;
 {
 	struct spp_istat spp_istat;
+#define sppstat spp_istat.newstats
 
 	if (off == 0)
 		return;
@@ -157,7 +158,56 @@ spp_stats(off, name)
 	ANY(spp_istat.bdreas, "packet", " dropped out of sequence");
 	ANY(spp_istat.lstdup, "packet", " duplicating the highest packet");
 	ANY(spp_istat.notyet, "packet", " refused as exceeding allocation");
+	ANY(sppstat.spps_connattempt, "connection", " initiated");
+	ANY(sppstat.spps_accepts, "connection", " accepted");
+	ANY(sppstat.spps_connects, "connection", " established");
+	ANY(sppstat.spps_drops, "connection", " dropped");
+	ANY(sppstat.spps_conndrops, "embryonic connection", " dropped");
+	ANY(sppstat.spps_closed, "connection", " closed (includes drops)");
+	ANY(sppstat.spps_segstimed, "packet", " where we tried to get rtt");
+	ANY(sppstat.spps_rttupdated, "time", " we got rtt");
+	ANY(sppstat.spps_delack, "delayed ack", " sent");
+	ANY(sppstat.spps_timeoutdrop, "connection", " dropped in rxmt timeout");
+	ANY(sppstat.spps_rexmttimeo, "retransmit timeout", "");
+	ANY(sppstat.spps_persisttimeo, "persist timeout", "");
+	ANY(sppstat.spps_keeptimeo, "keepalive timeout", "");
+	ANY(sppstat.spps_keepprobe, "keepalive probe", " sent");
+	ANY(sppstat.spps_keepdrops, "connection", " dropped in keepalive");
+	ANY(sppstat.spps_sndtotal, "total packet", " sent");
+	ANY(sppstat.spps_sndpack, "data packet", " sent");
+	ANY(sppstat.spps_sndbyte, "data byte", " sent");
+	ANY(sppstat.spps_sndrexmitpack, "data packet", " retransmitted");
+	ANY(sppstat.spps_sndrexmitbyte, "data byte", " retransmitted");
+	ANY(sppstat.spps_sndacks, "ack-only packet", " sent");
+	ANY(sppstat.spps_sndprobe, "window probe", " sent");
+	ANY(sppstat.spps_sndurg, "packet", " sent with URG only");
+	ANY(sppstat.spps_sndwinup, "window update-only packet", " sent");
+	ANY(sppstat.spps_sndctrl, "control (SYN|FIN|RST) packet", " sent");
+	ANY(sppstat.spps_sndvoid, "request", " to send a non-existant packet");
+	ANY(sppstat.spps_rcvtotal, "total packet", " received");
+	ANY(sppstat.spps_rcvpack, "packet", " received in sequence");
+	ANY(sppstat.spps_rcvbyte, "byte", " received in sequence");
+	ANY(sppstat.spps_rcvbadsum, "packet", " received with ccksum errs");
+	ANY(sppstat.spps_rcvbadoff, "packet", " received with bad offset");
+	ANY(sppstat.spps_rcvshort, "packet", " received too short");
+	ANY(sppstat.spps_rcvduppack, "duplicate-only packet", " received");
+	ANY(sppstat.spps_rcvdupbyte, "duplicate-only byte", " received");
+	ANY(sppstat.spps_rcvpartduppack, "packet", " with some duplicate data");
+	ANY(sppstat.spps_rcvpartdupbyte, "dup. byte", " in part-dup. packet");
+	ANY(sppstat.spps_rcvoopack, "out-of-order packet", " received");
+	ANY(sppstat.spps_rcvoobyte, "out-of-order byte", " received");
+	ANY(sppstat.spps_rcvpackafterwin, "packet", " with data after window");
+	ANY(sppstat.spps_rcvbyteafterwin, "byte", " rcvd after window");
+	ANY(sppstat.spps_rcvafterclose, "packet", " rcvd after 'close'");
+	ANY(sppstat.spps_rcvwinprobe, "rcvd window probe packet", "");
+	ANY(sppstat.spps_rcvdupack, "rcvd duplicate ack", "");
+	ANY(sppstat.spps_rcvacktoomuch, "rcvd ack", " for unsent data");
+	ANY(sppstat.spps_rcvackpack, "rcvd ack packet", "");
+	ANY(sppstat.spps_rcvackbyte, "byte", " acked by rcvd acks");
+	ANY(sppstat.spps_rcvwinupd, "rcvd window update packet", "");
 }
+#undef ANY
+#define ANY(x,y,z)  ((x) ? printf("\t%d %s%s%s\n",x,y,plural(x),z) : 0)
 
 /*
  * Dump IDP statistics structure.
@@ -178,15 +228,20 @@ idp_stats(off, name)
 	ANY(idpstat.idps_badsum, "packet", " with bad checksums");
 }
 
-static	char *((ns_errnames[])[2]) = {
-	{"Unspecified Error", " at Destination"},
-	{"Bad Checksum", " at Destination"},
-	{"No Listener", " at Socket"},
-	{"Packet", " Refused due to lack of space at Destination"},
-	{"Unspecified Error", " while gatewayed"},
-	{"Bad Checksum", " while gatewayed"},
-	{"Packet", " forwarded too many times"},
-	{"Packet", " too large to be forwarded"},
+static	struct {
+	u_short code;
+	char *name;
+	char *where;
+} ns_errnames[] = {
+	{0, "Unspecified Error", " at Destination"},
+	{1, "Bad Checksum", " at Destination"},
+	{2, "No Listener", " at Socket"},
+	{3, "Packet", " Refused due to lack of space at Destination"},
+	{01000, "Unspecified Error", " while gatewayed"},
+	{01001, "Bad Checksum", " while gatewayed"},
+	{01002, "Packet", " forwarded too many times"},
+	{01003, "Packet", " too large to be forwarded"},
+	{-1, 0, 0},
 };
 
 /*
@@ -222,7 +277,8 @@ nserr_stats(off, name)
 			printf("Output Error Histogram:\n");
 			histoprint = 0;
 		}
-		ANY(z, ns_errnames[j][0], ns_errnames[j][1]);
+		ns_erputil(z, ns_errstat.ns_es_codes[j]);
+
 	}
 	histoprint = 1;
 	for(j = 0; j < NS_ERR_MAX; j ++) {
@@ -231,8 +287,31 @@ nserr_stats(off, name)
 			printf("Input Error Histogram:\n");
 			histoprint = 0;
 		}
-		ANY(z, ns_errnames[j][0], ns_errnames[j][1]);
+		ns_erputil(z, ns_errstat.ns_es_codes[j]);
 	}
+}
+static
+ns_erputil(z, c)
+{
+	int j;
+	char codebuf[30];
+	char *name, *where;
+	for(j = 0;; j ++) {
+		if ((name = ns_errnames[j].name) == 0)
+			break;
+		if (ns_errnames[j].code == c)
+			break;
+	}
+	if (name == 0)  {
+		if (c > 01000)
+			where = "in transit";
+		else
+			where = "at destination";
+		sprintf(codebuf, "Unknown XNS error code 0%o", c);
+		name = codebuf;
+	} else 
+		where =  ns_errnames[j].where;
+	ANY(z, name, where);
 }
 static struct sockaddr_ns ssns = {AF_NS};
 
