@@ -5,10 +5,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)asm.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)asm.c	5.2 (Berkeley) %G%";
 #endif not lint
 
-static char rcsid[] = "$Header: asm.c,v 1.5 84/12/26 10:38:19 linton Exp $";
+static char rcsid[] = "$Header: asm.c,v 1.2 87/03/25 19:24:09 donn Exp $";
 
 /*
  * Assembly language dependent symbol routines.
@@ -44,6 +44,7 @@ public asm_init()
     language_setop(lang, L_TYPEMATCH, asm_typematch);
     language_setop(lang, L_BUILDAREF, asm_buildaref);
     language_setop(lang, L_EVALAREF, asm_evalaref);
+    language_setop(lang, L_MODINIT, asm_modinit);
     language_setop(lang, L_HASMODULES, asm_hasmodules);
     language_setop(lang, L_PASSADDR, asm_passaddr);
 }
@@ -155,6 +156,12 @@ long i;
 
     t = rtype(s);
     push(long, base + i * size(t->type));
+}
+
+public asm_modinit (typetable)
+Symbol typetable[];
+{
+    /* nothing for right now */
 }
 
 public boolean asm_hasmodules ()

@@ -5,10 +5,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)c.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)c.c	5.7 (Berkeley) %G%";
 #endif not lint
 
-static char rcsid[] = "$Header: c.c,v 1.5 84/12/26 10:38:23 linton Exp $";
+static char rcsid[] = "$Header: c.c,v 1.4 88/01/12 00:46:21 donn Exp $";
 
 /*
  * C-dependent symbol routines.
@@ -28,7 +28,7 @@ static char rcsid[] = "$Header: c.c,v 1.5 84/12/26 10:38:23 linton Exp $";
 #include "machine.h"
 
 #ifndef public
-# include "tree.h"
+#   include "tree.h"
 #endif
 
 #define isdouble(range) ( \
@@ -38,6 +38,7 @@ static char rcsid[] = "$Header: c.c,v 1.5 84/12/26 10:38:23 linton Exp $";
 #define isrange(t, name) (t->class == RANGE and istypename(t->type, name))
 
 private Language langC;
+private Language langCplpl;
 
 /*
  * Initialize C language information.
@@ -54,6 +55,16 @@ public c_init()
     language_setop(langC, L_MODINIT, c_modinit);
     language_setop(langC, L_HASMODULES, c_hasmodules);
     language_setop(langC, L_PASSADDR, c_passaddr);
+
+    langCplpl = language_define("c++", "..c");
+    language_setop(langCplpl, L_PRINTDECL, c_printdecl);
+    language_setop(langCplpl, L_PRINTVAL, c_printval);
+    language_setop(langCplpl, L_TYPEMATCH, c_typematch);
+    language_setop(langCplpl, L_BUILDAREF, c_buildaref);
+    language_setop(langCplpl, L_EVALAREF, c_evalaref);
+    language_setop(langCplpl, L_MODINIT, c_modinit);
+    language_setop(langCplpl, L_HASMODULES, c_hasmodules);
+    language_setop(langCplpl, L_PASSADDR, c_passaddr);
 }
 
 /*
@@ -146,7 +157,7 @@ Integer indent;
 
 	case TYPE:
 	case VAR:
-	    if (s->class != TYPE and s->level < 0) {
+	    if (s->class != TYPE and s->storage == INREG) {
 		printf("register ");
 	    }
 	    if (s->type->class == ARRAY) {
@@ -448,9 +459,7 @@ Symbol s;
 
 	case FIELD:
 	    if (isbitfield(s)) {
-		i = 0;
-		popn(size(s), &i);
-		i = extractfield(i, s);
+		i = extractField(s);
 		t = rtype(s->type);
 		if (t->class == SCAL) {
 		    printEnum(i, t);
@@ -498,7 +507,7 @@ Symbol s;
 	    } else if (s == t_real->type or isdouble(s)) {
 		switch (s->symvalue.rangev.lower) {
 		    case sizeof(float):
-			prtreal(pop(float));
+			prtreal((double) (pop(float)));
 			break;
 
 		    case sizeof(double):
