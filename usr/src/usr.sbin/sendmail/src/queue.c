@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	6.27 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	6.28 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	6.27 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	6.28 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -111,8 +111,7 @@ queueup(df)
 			{
 				if (errno == EEXIST)
 					continue;
-				syserr("queueup: cannot create temp file %s", tf);
-				return;
+				syserr("!queueup: cannot create temp file %s", tf);
 			}
 
 			if (lockfile(fd, tf, LOCK_EX|LOCK_NB))
