@@ -1,4 +1,4 @@
-/*	ioctl.h	6.6	85/01/03	*/
+/*	ioctl.h	6.7	85/01/24	*/
 /*
  * Ioctl definitions
  */
@@ -48,8 +48,8 @@ struct sgttyb {
  * Window size structure
  */
 struct winsize {
-	unsigned short	row, col;		/* character size of window */
-	unsigned short	xpixel, ypixel;		/* pixel size of window */
+	unsigned short	ws_row, ws_col;		/* character size of window */
+	unsigned short	ws_xpixel, ws_ypixel;	/* pixel size of window */
 };
 
 #ifndef _IO
