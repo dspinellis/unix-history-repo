@@ -8,21 +8,21 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)swapgeneric.c	7.1 (Berkeley) %G%
+ *	@(#)swapgeneric.c	7.2 (Berkeley) %G%
  */
 
-#include "../include/fix_machine_type.h"
+#include <machine/fix_machine_type.h>
 
-#include "param.h"
-#include "conf.h"
-#include "buf.h"
-#include "systm.h"
-#include "reboot.h"
+#include <sysparam.h>
+#include <sysconf.h>
+#include <sysbuf.h>
+#include <syssystm.h>
+#include <sysreboot.h>
 
 #ifdef CPU_DOUBLE
-#include "../iop/iopvar.h"
+#include <news3400/iop/iopvar.h>
 #else /* CPU_DOUBLE */
-#include "../hbdev/hbvar.h"
+#include <news3400/hbdev/hbvar.h>
 # define	iop	hb
 
 # define	idinit	hdinit

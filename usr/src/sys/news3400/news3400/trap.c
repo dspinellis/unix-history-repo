@@ -12,41 +12,41 @@
  *
  * from: Utah $Hdr: trap.c 1.32 91/04/06$
  *
- *	@(#)trap.c	7.4 (Berkeley) %G%
+ *	@(#)trap.c	7.5 (Berkeley) %G%
  */
 
-#include "../include/fix_machine_type.h"
-#include "param.h"
-#include "systm.h"
-#include "proc.h"
-#include "kernel.h"
-#include "signalvar.h"
-#include "syscall.h"
-#include "user.h"
-#include "buf.h"
+#include <machine/fix_machine_type.h>
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/proc.h>
+#include <sys/kernel.h>
+#include <sys/signalvar.h>
+#include <sys/syscall.h>
+#include <sys/user.h>
+#include <sys/buf.h>
 #ifdef KTRACE
-#include "ktrace.h"
+#include <sys/ktrace.h>
 #endif
-#include "net/netisr.h"
+#include <net/netisr.h>
 
-#include "../include/trap.h"
-#include "../include/psl.h"
-#include "../include/reg.h"
-#include "../include/cpu.h"
-#include "../include/pte.h"
-#include "../include/mips_opcode.h"
-#include "../include/adrsmap.h"
+#include <machine/trap.h>
+#include <machine/psl.h>
+#include <machine/reg.h>
+#include <machine/cpu.h>
+#include <machine/pte.h>
+#include <machine/mips_opcode.h>
+#include <machine/adrsmap.h>
 
-#include "vm/vm.h"
-#include "vm/vm_kern.h"
-#include "vm/vm_page.h"
+#include <vm/vm.h>
+#include <vm/vm_kern.h>
+#include <vm/vm_page.h>
 
 #include "lp.h"
 #include "bm.h"
 #include "ms.h"
 #include "en.h"
-#include "../hbdev/dmac_0448.h"
-#include "../sio/scc.h"
+#include <news3400/hbdev/dmac_0448.h>
+#include <news3400/sio/scc.h>
 
 /*
  * This is a kludge to allow X windows to work.
