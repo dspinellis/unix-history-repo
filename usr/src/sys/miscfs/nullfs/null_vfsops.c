@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)null_vfsops.c	1.4 (Berkeley) %G%
+ *	@(#)null_vfsops.c	1.5 (Berkeley) %G%
  *
  * @(#)lofs_vfsops.c	1.2 (Berkeley) 6/18/92
  * $Id: lofs_vfsops.c,v 1.9 1992/05/30 10:26:24 jsp Exp jsp $
@@ -66,7 +66,7 @@ nullfs_mount(mp, path, data, ndp, p)
 		return (error);
 
 	/*
-	 * Find target node
+	 * Find lower node
 	 */
 	NDINIT(ndp, LOOKUP, FOLLOW|WANTPARENT|LOCKLEAF,
 		UIO_USERSPACE, args.target, p);
@@ -74,7 +74,7 @@ nullfs_mount(mp, path, data, ndp, p)
 		return (error);
 
 	/*
-	 * Sanity check on target vnode
+	 * Sanity check on lower vnode
 	 */
 	lowerrootvp = ndp->ni_vp;
 #ifdef NULLFS_DIAGNOSTIC
@@ -84,7 +84,7 @@ nullfs_mount(mp, path, data, ndp, p)
 	ndp->ni_dvp = 0;
 
 	/*
-	 * NEEDSWORK: Is this really bad, or just not
+	 * NEEDSWORK: Is this check really necessary, or just not
 	 * the way it's been?
 	 */
 	if (lowerrootvp->v_type != VDIR) {
@@ -100,7 +100,7 @@ nullfs_mount(mp, path, data, ndp, p)
 				M_UFSMNT, M_WAITOK);	/* XXX */
 
 	/*
-	 * Save reference to underlying target FS
+	 * Save reference to underlying lower FS
 	 */
 	amp->nullm_vfs = lowerrootvp->v_mount;
 
@@ -110,7 +110,7 @@ nullfs_mount(mp, path, data, ndp, p)
 	 */
 	error = null_node_create(mp, lowerrootvp, &vp);
 	/*
-	 * Unlock the node (either the target or the alias)
+	 * Unlock the node (either the lower or the alias)
 	 */
 	VOP_UNLOCK(vp);
 	/*
@@ -140,7 +140,7 @@ nullfs_mount(mp, path, data, ndp, p)
 	    &size);
 	bzero(mp->mnt_stat.f_mntfromname + size, MNAMELEN - size);
 #ifdef NULLFS_DIAGNOSTIC
-	printf("nullfs_mount: target %s, alias at %s\n",
+	printf("nullfs_mount: lower %s, alias at %s\n",
 		mp->mnt_stat.f_mntfromname, mp->mnt_stat.f_mntonname);
 #endif
 	return (0);
@@ -209,7 +209,7 @@ nullfs_unmount(mp, mntflags, p)
 #endif
 
 #ifdef NULLFS_DIAGNOSTIC
-	vprint("alias root of target", nullm_rootvp);
+	vprint("alias root of lower", nullm_rootvp);
 #endif	 
 	/*
 	 * Release reference on underlying root vnode
