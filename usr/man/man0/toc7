@@ -1,0 +1,7 @@
+.xx "ascii" "map of ASCII character set"
+.xx "eqnchar" "special character definitions for eqn"
+.xx "greek" "graphics for extended TTY-37 type-box"
+.xx "hier" "file system hierarchy"
+.xx "man" "macros to typeset manual"
+.xx "ms" "macros for formatting manuscripts"
+.xx "term" "conventional names"
