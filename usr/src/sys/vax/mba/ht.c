@@ -1,11 +1,8 @@
-/*	ht.c	4.4	%G%	*/
-
 #include "ht.h"
 #if NHT > 0
 /*
- * TJU16 tape driver
+ * TM03/TU?? tape driver
  */
-
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/buf.h"
@@ -16,402 +13,546 @@
 #include "../h/map.h"
 #include "../h/pte.h"
 #include "../h/mba.h"
-#include "../h/vm.h"
+#include "../h/mtio.h"
+#include "../h/ioctl.h"
 #include "../h/cmap.h"
 
-struct	device
-{
-	int	htcs1;
-	int	htds;
-	int	hter;
-	int	htmr;
-	int	htas;
-	int	htfc;
-	int	htdt;
-	int	htck;
-	int	htsn;
-	int	httc;
-};
+#include "../h/htreg.h"
 
-struct	buf	httab;
-struct	buf	rhtbuf;
-struct	buf	chtbuf;
+struct	buf	rhtbuf[NHT];
+struct	buf	chtbuf[NHT];
 
-#define	INF	1000000
+short	httypes[] =
+	{ MBDT_TE16, MBDT_TU45, MBDT_TU77, 0 };
+struct	mba_info *htinfo[NHT];
+int	htdkinit(), htustart(), htndtint(), htdtint();
+struct	mba_driver htdriver =
+	{ htdkinit, htustart, 0, htdtint, htndtint, httypes, htinfo };
 
-char	h_openf[NHT];
-daddr_t	h_blkno[NHT];
-char	h_flags[NHT];
-daddr_t	h_nxrec[NHT];
+#define MASKREG(r)	((r) & 0xffff)
 
-#define	GO	01
-#define	WCOM	060
-#define	RCOM	070
-#define	NOP	0
-#define	WEOF	026
-#define	SFORW	030
-#define	SREV	032
-#define	ERASE	024
-#define	REW	06
-#define	DCLR	010
-#define	P800	01700		/* 800 + pdp11 mode */
-#define	P1600	02300		/* 1600 + pdp11 mode */
-#define	IENABLE	0100
-#define	RDY	0200
-#define	TM	04
-#define	DRY	0200
-#define	EOT	02000
-#define	CS	02000
-#define	COR	0100000
-#define	PES	040
-#define	WRL	04000
-#define	MOL	010000
-#define	ERR	040000
-#define	FCE	01000
-#define	TRE	040000
-#define	HARD	064023	/* UNS|OPI|NEF|FMT|RMR|ILR|ILF */
+/* bits in minor device */
+#define HTUNIT(dev)	(minor(dev)&03)
+#define	H_NOREWIND	04
+#define	H_1600BPI	08
 
+#define	INF	(daddr_t)1000000L	/* a block number that wont exist */
+
+struct	ht_softc {
+	char	sc_openf;
+	char	sc_flags;
+	daddr_t	sc_blkno;
+	daddr_t	sc_nxrec;
+	u_short	sc_erreg;
+	u_short	sc_dsreg;
+	short	sc_resid;
+	short	sc_dens;
+} ht_softc[NHT];
+
+/*
+ * States for b_active for device.
+ */
 #define	SIO	1
 #define	SSFOR	2
 #define	SSREV	3
 #define	SRETRY	4
 #define	SCOM	5
 #define	SOK	6
+#define	SEOF	7
 
-#define	H_WRITTEN 1
+/*
+ * Bits for sc_flags.
+ */
+#define	H_WRITTEN 1	/* last operation was a write */
+#define H_ERASED  2	/* last write retry was an erase gap */
+#define H_REWIND  4	/* last unit start was a rewind */
+
+/*ARGSUSED*/
+htdkinit(mi)
+	struct mba_info *mi;
+{
+
+}
 
 htopen(dev, flag)
+	dev_t dev;
+	int flag;
 {
-	register unit, ds;
+	register int unit;
+	register struct mba_info *mi;
+	register struct ht_softc *sc;
 
-	if ((mbaact&(1<<HTMBANUM)) == 0)
-		mbainit(HTMBANUM);
-	httab.b_flags |= B_TAPE;
-	unit = minor(dev) & 03;
-	if (unit >= NHT || h_openf[unit]) {
+	unit = HTUNIT(dev);
+	if (unit >= NHT || (sc = &ht_softc[unit])->sc_openf ||
+	    (mi = htinfo[unit]) == 0 || mi->mi_alive == 0) {
 		u.u_error = ENXIO;
 		return;
 	}
-	h_blkno[unit] = 0;
-	h_nxrec[unit] = INF;
-	h_flags[unit] = 0;
-	ds = hcommand(dev, NOP);
-	if ((ds&MOL)==0 || (flag && (ds&WRL)))
-		u.u_error = ENXIO;
-	if (u.u_error==0)
-		h_openf[unit]++;
+	/*
+	 * The NOP below serves two purposes:
+	 * 1. To get a recent copy of the status registers.
+	 * 2. To ensure that any outstanding rewinds are truly finished
+	 *	so that the test for BOT is valid.
+	 */
+	htcommand(dev, HT_SENSE, 1);
+	if ((sc->sc_dsreg & HTDS_MOL) == 0 || 
+	   (flag & (FREAD|FWRITE)) == FWRITE && sc->sc_dsreg&HTDS_WRL) {
+		u.u_error = EIO;
+		return;
+	}
+	sc->sc_dens =
+	    ((minor(dev)&H_1600BPI)?HTTC_1600BPI:HTTC_800BPI)|HTTC_PDP11|unit;
+	sc->sc_openf = 1;
+	sc->sc_blkno = (daddr_t)0;
+	sc->sc_nxrec = INF;
+	sc->sc_flags = 0;
 }
 
 htclose(dev, flag)
+	register dev_t dev;
+	register flag;
 {
-	register int unit;
+	register struct ht_softc *sc = &ht_softc[HTUNIT(dev)];
 
-	unit = minor(dev) & 03;
-	if (flag == FWRITE || ((flag&FWRITE) && (h_flags[unit]&H_WRITTEN))) {
-		(void) hcommand(dev, WEOF);
-		(void) hcommand(dev, WEOF);
-		(void) hcommand(dev, SREV);
+	if (flag == FWRITE || ((flag&FWRITE) && (sc->sc_flags&H_WRITTEN))) {
+		htcommand(dev, HT_WEOF, 1);
+		htcommand(dev, HT_WEOF, 1);
+		htcommand(dev, HT_SREV, 1);
 	}
-	if((minor(dev)&4) == 0) /* no 4 -> rewind */
-		(void) hcommand(dev, REW);
-	h_openf[unit] = 0;
+	if ((minor(dev)&H_NOREWIND) == 0)
+		/* 0 as third arg means don't wait */
+		htcommand(dev, HT_REW, 0);
+	sc->sc_openf = 0;
 }
 
-hcommand(dev, com)
+/*
+ * Do a non-data-transfer command.
+ *
+ * N.B.: Count should be zero ONLY for rewind during close.
+ */
+htcommand(dev, com, count)
+	dev_t dev;
+	int com, count;
 {
 	register struct buf *bp;
 
-	bp = &chtbuf;
+	bp = &chtbuf[HTUNIT(dev)];
 	(void) spl5();
-	while(bp->b_flags&B_BUSY) {
+	/*
+	 * The B_DONE test is to allow the rewind on close not to wait at
+	 * all.  We just must make sure that it was an asynchronous rewind,
+	 * otherwise if it isn't we might wake up before the process
+	 * waiting for the command (we are waiting for the buffer here).
+	 */
+	while (bp->b_flags&B_BUSY) {
+		if (bp->b_flags&B_DONE && bp->b_repcnt == 0)
+			break;
 		bp->b_flags |= B_WANTED;
 		sleep((caddr_t)bp, PRIBIO);
 	}
+	bp->b_flags = B_BUSY;
 	(void) spl0();
 	bp->b_dev = dev;
-	bp->b_resid = com;
+	bp->b_command = com;
+	bp->b_repcnt = count;
 	bp->b_blkno = 0;
-	bp->b_flags = B_BUSY|B_READ;
 	htstrategy(bp);
+	if (count == 0)
+		return;
 	iowait(bp);
-	if(bp->b_flags&B_WANTED)
+	if (bp->b_flags&B_WANTED)
 		wakeup((caddr_t)bp);
-	bp->b_flags = 0;
-	return(bp->b_resid);
+	bp->b_flags &= B_ERROR;
 }
 
 htstrategy(bp)
-register struct buf *bp;
+	register struct buf *bp;
 {
-	register daddr_t *p;
+	register int unit = HTUNIT(bp->b_dev);
+	register struct mba_info *mi;
+	register struct buf *dp;
+	register struct ht_softc *sc = &ht_softc[unit];
 
-	if(bp != &chtbuf) {
-		p = &h_nxrec[minor(bp->b_dev)&03];
-		if(dbtofsb(bp->b_blkno) > *p) {
-			bp->b_flags |= B_ERROR;
-			bp->b_error = ENXIO;
-			iodone(bp);
-			return;
-		}
-		if(dbtofsb(bp->b_blkno) == *p && bp->b_flags&B_READ) {
-			bp->b_resid = bp->b_bcount;
-			clrbuf(bp);
-			iodone(bp);
-			return;
-		}
-		if ((bp->b_flags&B_READ)==0) {
-			*p = dbtofsb(bp->b_blkno) + 1;
-			h_flags[minor(bp->b_dev)&03] |=  H_WRITTEN;
-		}
-	}
 	bp->av_forw = NULL;
+	dp = &mi->mi_tab;
 	(void) spl5();
-	if (httab.b_actf == NULL)
-		httab.b_actf = bp;
+	if (dp->b_actf == NULL)
+		dp->b_actf = bp;
 	else
-		httab.b_actl->av_forw = bp;
-	httab.b_actl = bp;
-	if (httab.b_active==0)
-		htstart();
+		dp->b_actl->av_forw = bp;
+	dp->b_actl = bp;
+	if (dp->b_active == 0)
+		mbustart(mi);
 	(void) spl0();
 }
 
-htstart()
+htustart(mi)
+	register struct mba_info *mi;
 {
-	register struct buf *bp;
-	register unit, den;
+	register struct htdevice *htaddr =
+	    (struct htdevice *)mi->mi_drv;
+	register struct buf *bp = mi->mi_tab.b_actf;
+	int unit = HTUNIT(bp->b_dev);
+	register struct ht_softc *sc = &ht_softc[unit];
 	daddr_t blkno;
-	register struct device *htp = mbadev(HTMBA,0);
 
-    loop:
-	if ((bp = httab.b_actf) == NULL)
-		return;
-	unit = minor(bp->b_dev);
-	den = P800 | (unit&03);
-	if(unit >= 8)
-		den = P1600 | (unit&03);
-	if((htp->httc&03777) != den)
-		htp->httc = den;
-	unit &= 03;
-	blkno = h_blkno[unit];
-	if (bp == &chtbuf) {
-		if (bp->b_resid==NOP) {
-			bp->b_resid = htp->htds & 0xffff;
+	htaddr->httc = sc->sc_dens;
+	sc->sc_dsreg = htaddr->htds;
+	sc->sc_erreg = htaddr->hter;
+	sc->sc_resid = htaddr->htfc;
+	sc->sc_flags &= ~(H_WRITTEN|H_REWIND);
+	if ((htaddr->htdt & HTDT_SPR) == 0 || (htaddr->htds & HTDS_MOL) == 0)
+		if (sc->sc_openf > 0)
+			sc->sc_openf = -1;
+	if (sc->sc_openf < 0) {
+		bp->b_flags |= B_ERROR;
+		return (MBU_NEXT);
+	}
+	if (bp != &chtbuf[unit]) {
+		if (dbtofsb(bp->b_blkno) > sc->sc_nxrec) {
+			bp->b_flags |= B_ERROR;
+			bp->b_error = ENXIO;
 			goto next;
-		}
-		httab.b_active = SCOM;
-		htp->htfc = 0;
-		htp->htcs1 = bp->b_resid|GO;
-		return;
-	}
-	if (h_openf[unit] < 0 || dbtofsb(bp->b_blkno) > h_nxrec[unit])
-		goto abort;
-	if (blkno == dbtofsb(bp->b_blkno)) {
-		httab.b_active = SIO;
-		htp->htfc = -bp->b_bcount;
-		mbastart(bp, (int *)htp);
+		} else if (dbtofsb(bp->b_blkno) == sc->sc_nxrec &&
+		    bp->b_flags&B_READ) {
+			bp->b_resid = bp->b_bcount;
+			clrbuf(bp);
+			goto next;
+		} else if ((bp->b_flags&B_READ)==0)
+			sc->sc_nxrec = dbtofsb(bp->b_blkno) + 1;
 	} else {
-		if (blkno < dbtofsb(bp->b_blkno)) {
-			httab.b_active = SSFOR;
-			htp->htfc = blkno - dbtofsb(bp->b_blkno);
-			htp->htcs1 = SFORW|GO;
-		} else {
-			httab.b_active = SSREV;
-			htp->htfc = dbtofsb(bp->b_blkno) - blkno;
-			htp->htcs1 = SREV|GO;
-		}
+		if (bp->b_command == HT_SENSE)
+			return (MBU_NEXT);
+		if (bp->b_command == HT_REW)
+			sc->sc_flags |= H_REWIND;
+		else
+			htaddr->htfc = -bp->b_bcount;
+		htaddr->htcs1 = bp->b_command|HT_GO;
+		return (MBU_STARTED);
 	}
-	return;
-
-    abort:
-	bp->b_flags |= B_ERROR;
-
-    next:
-	httab.b_actf = bp->av_forw;
+	if ((blkno = sc->sc_blkno) == dbtofsb(bp->b_blkno)) {
+		htaddr->htfc = -bp->b_bcount;
+		if ((bp->b_flags&B_READ) == 0) {
+			if (mi->mi_tab.b_errcnt)
+				if (sc->sc_flags & H_ERASED)
+					sc->sc_flags &= ~H_ERASED;
+				else {
+					sc->sc_flags |= H_ERASED;
+					htaddr->htcs1 = HT_ERASE | HT_GO;
+					return (MBU_STARTED);
+				}
+			if (htaddr->htds & HTDS_EOT) {
+				bp->b_resid = bp->b_bcount;
+				return (MBU_NEXT);
+			}
+		}
+		return (MBU_DODATA);
+	}
+	if (blkno < dbtofsb(bp->b_blkno)) {
+		htaddr->htfc = blkno - dbtofsb(bp->b_blkno);
+		htaddr->htcs1 = HT_SFORW|HT_GO;
+	} else {
+		htaddr->htfc = dbtofsb(bp->b_blkno) - blkno;
+		htaddr->htcs1 = HT_SREV|HT_GO;
+	}
+	return (MBU_STARTED);
+next:
 	iodone(bp);
-	goto loop;
+	return (MBU_NEXT);
 }
 
+/*
+ * data transfer interrupt - must be read or write
+ */
 /*ARGSUSED*/
-htintr(mbastat, as)
+htdtint(mi, mbasr)
+	register struct mba_info *mi;
+	int mbasr;
 {
-	register struct buf *bp;
-	register int unit, state;
-	int err;
-	register struct device *htp = mbadev(HTMBA,0);
+	register struct htdevice *htaddr = (struct htdevice *)mi->mi_drv;
+	register struct buf *bp = mi->mi_tab.b_actf;
+	register struct ht_softc *sc;
+	int ds, er;
 
-	if ((bp = httab.b_actf)==NULL)
+	if (bp == NULL)
 		return;
-	unit = minor(bp->b_dev) & 03;
-	state = httab.b_active;
-	httab.b_active = 0;
-	if (htp->htds&(ERR|EOT|TM) || mbastat & MBAEBITS) {
-		err = htp->hter & 0xffff;
-		if ((mbastat & MBAEBITS) || (err&HARD))
-			state = 0;
-		if (bp == &rhtbuf)
-			err &= ~FCE;
-		if ((bp->b_flags&B_READ) && (htp->htds&PES))
-			err &= ~(CS|COR);
-		if(htp->htds&EOT || (htp->htds&MOL)==0) {
-			if(h_openf[unit])
-				h_openf[unit] = -1;
-		}
-		else if(htp->htds&TM) {
-			htp->htfc = 0;
-			h_nxrec[unit] = dbtofsb(bp->b_blkno);
-			state = SOK;
-		}
-		else if(state && err == 0)
-			state = SOK;
-		if(httab.b_errcnt > 4)
-			deverror(bp, htp->hter, mbastat);
-		HTMBA->mba_cr &= ~MBAIE;
-		htp->htcs1 = DCLR|GO;
-		HTMBA->mba_cr |= MBAIE;
-		if (state==SIO && ++httab.b_errcnt < 10) {
-			httab.b_active = SRETRY;
-			h_blkno[unit]++;
-			htp->htfc = -1;
-			htp->htcs1 = SREV|GO;
-			return;
-		}
-		if (state!=SOK) {
+	sc = &ht_softc[HTUNIT(bp->b_dev)];
+	ds = sc->sc_dsreg = MASKREG(htaddr->htds);
+	er = sc->sc_erreg = MASKREG(htaddr->hter);
+	sc->sc_resid = MASKREG(htaddr->htfc);
+	sc->sc_blkno++;
+	if((bp->b_flags & B_READ) == 0)
+		sc->sc_flags |= H_WRITTEN;
+	if ((ds&(HTDS_ERR|HTDS_MOL)) != HTDS_MOL ||
+	    mbasr & MBAEBITS) {
+		htaddr->htcs1 = HT_DCLR|HT_GO;
+		if (bp == &rhtbuf[HTUNIT(bp->b_dev)])
+			er &= ~HTER_FCE;
+		if (bp->b_flags & B_READ && ds & HTDS_PES)
+			er &= ~(HTER_CSITM|HTER_CORCRC);
+		if (er&HTER_HARD ||
+		    mbasr&MBAEBITS || (ds&HTDS_MOL) == 0 ||
+		    sc->sc_erreg && ++mi->mi_tab.b_errcnt >= 7) {
+			if ((ds & HTDS_MOL) == 0 && sc->sc_openf > 0)
+				sc->sc_openf = -1;
+			printf("ht%d: hard error bn%d mbasr=%b er=%b\n",
+			    HTUNIT(bp->b_dev), bp->b_blkno,
+			    mbasr, mbasr_bits,
+			    MASKREG(htaddr->hter), HTER_BITS);
 			bp->b_flags |= B_ERROR;
-			state = SIO;
+			return (MBD_DONE);
 		}
-	} else if (htp->htcs1 < 0) {	/* SC */
-		if(htp->htds & ERR) {
-			HTMBA->mba_cr &= ~MBAIE;
-			htp->htcs1 = DCLR|GO;
-			HTMBA->mba_cr |= MBAIE;
-		}
+		if (er)
+			return (MBD_RETRY);
 	}
-	switch(state) {
-	case SIO:
-	case SOK:
-		h_blkno[unit]++;
+	bp->b_resid = 0;
+	if (bp->b_flags & B_READ)
+		if (ds&HTDS_TM) {		/* must be a read, right? */
+			bp->b_resid = bp->b_bcount;
+			sc->sc_nxrec = dbtofsb(bp->b_blkno);
+		} else if(bp->b_bcount > MASKREG(htaddr->htfc))
+			bp->b_resid = bp->b_bcount - MASKREG(htaddr->htfc);
+	return (MBD_DONE);
+}
 
-	case SCOM:
-		httab.b_errcnt = 0;
-		httab.b_actf = bp->av_forw;
-		bp->b_resid = - (htp->htfc & 0xffff);
-		if (bp->b_flags & B_READ)
-			bp->b_resid += bp->b_bcount;
-		iodone(bp);
-		break;
+/*
+ * non-data-transfer interrupt
+ */
+htndtint(mi)
+	register struct mba_info *mi;
+{
+	register struct htdevice *htaddr = (struct htdevice *)mi->mi_drv;
+	register struct buf *bp = mi->mi_tab.b_actf;
+	register struct ht_softc *sc;
+	int er, ds, fc;
 
-	case SRETRY:
-		if((bp->b_flags&B_READ)==0) {
-			httab.b_active = SSFOR;
-			htp->htcs1 = ERASE|GO;
-			return;
-		}
-
-	case SSFOR:
-	case SSREV:
-#define blk dbtofsb(bp->b_blkno)
-		if(htp->htds & TM) {
-			if(state == SSREV) {
-				h_nxrec[unit] = blk - (htp->htfc&0xffff);
-				h_blkno[unit] = h_nxrec[unit];
-			} else {
-				h_nxrec[unit] = blk + (htp->htfc&0xffff) - 1;
-				h_blkno[unit] = blk + (htp->htfc & 0xffff);
-			}
-		} else
-			h_blkno[unit] = blk;
-		break;
-#undef blk
-
-	default:
+	if (bp == NULL)
 		return;
+	sc = &ht_softc[HTUNIT(bp->b_dev)];
+	ds = sc->sc_dsreg = MASKREG(htaddr->htds);
+	er = sc->sc_erreg = MASKREG(htaddr->hter);
+	sc->sc_resid = MASKREG(htaddr->htfc);
+	if (sc->sc_erreg)
+		htaddr->htcs1 = HT_DCLR|HT_GO;
+	if (bp == &chtbuf[HTUNIT(bp->b_dev)]) {
+		if (bp->b_command == HT_REWOFFL)
+			/* offline is on purpose; don't do anything special */
+			ds |= HTDS_MOL;	
+		else if (bp->b_resid == HT_SREV &&
+		    er == (HTER_NEF|HTER_FCE) &&
+		    ds&HTDS_BOT && bp->b_bcount == INF)
+			er &= ~HTER_NEF;
+		er &= ~HTER_FCE;
+		if (er == 0)
+			ds &= ~HTDS_ERR;
 	}
-	htstart();
+	if ((ds & (HTDS_ERR|HTDS_MOL)) != HTDS_MOL) {
+		if ((ds & HTDS_MOL) == 0 && sc->sc_openf > 0)
+			sc->sc_openf = -1;
+		printf("ht%d: hard error bn%d er=%b ds=%b\n",
+		    HTUNIT(bp->b_dev), bp->b_blkno,
+		    sc->sc_erreg, HTER_BITS, sc->sc_dsreg, HTDS_BITS);
+		bp->b_flags |= B_ERROR;
+		return (MBN_DONE);
+	}
+	if (bp == &chtbuf[HTUNIT(bp->b_dev)]) {
+		if (sc->sc_flags & H_REWIND)
+			return (ds & HTDS_BOT ? MBN_DONE : MBN_RETRY);
+		bp->b_resid = -sc->sc_resid;
+		return (MBN_DONE);
+	}
+	if (ds & HTDS_TM)
+		if (sc->sc_blkno > dbtofsb(bp->b_blkno)) {/* reversing */
+			sc->sc_nxrec = dbtofsb(bp->b_blkno) - fc;
+			sc->sc_blkno = sc->sc_nxrec;
+		} else {			/* spacing forward */
+			sc->sc_blkno = dbtofsb(bp->b_blkno) + fc;
+			sc->sc_nxrec = sc->sc_blkno - 1;
+		}
+	else
+		sc->sc_blkno = dbtofsb(bp->b_blkno);
+	return (MBN_RETRY);
 }
 
 htread(dev)
+	dev_t dev;
 {
+
 	htphys(dev);
-	physio(htstrategy, &rhtbuf, dev, B_READ, minphys);
+	if (u.u_error)
+		return;
+	physio(htstrategy, &rhtbuf[HTUNIT(dev)], dev, B_READ, minphys);
 }
 
 htwrite(dev)
 {
+
 	htphys(dev);
-	physio(htstrategy, &rhtbuf, dev, B_WRITE, minphys);
+	if (u.u_error)
+		return;
+	physio(htstrategy, &rhtbuf[HTUNIT(dev)], dev, B_WRITE, minphys);
 }
 
 htphys(dev)
+	dev_t dev;
 {
-	register unit;
+	register int unit;
+	register struct ht_softc *sc;
 	daddr_t a;
 
-	unit = minor(dev) & 03;
-	if(unit < NHT) {
-		a = u.u_offset >> 9;
-		h_blkno[unit] = dbtofsb(a);
-		h_nxrec[unit] = dbtofsb(a)+1;
+	unit = HTUNIT(dev);
+	if (unit >= NHT) {
+		u.u_error = ENXIO;
+		return;
 	}
+	a = u.u_offset >> 9;
+	sc = &ht_softc[unit];
+	sc->sc_blkno = dbtofsb(a);
+	sc->sc_nxrec = dbtofsb(a)+1;
 }
 
-#define	HTADDR	((struct device *)(HTPHYSMBA + 0x400))
-#define	HTMAP ((struct pte *) (HTPHYSMBA + 0x800))
+/*ARGSUSED*/
+htioctl(dev, cmd, addr, flag)
+	dev_t dev;
+	int cmd;
+	caddr_t addr;
+	int flag;
+{
+	register unit = HTUNIT(dev);
+	register struct ht_softc *sc = &ht_softc[unit];
+	register struct buf *bp = &chtbuf[unit];
+	register callcount;
+	int fcount;
+	struct mtop mtop;
+	struct mtget mtget;
+	/* we depend of the values and order of the MT codes here */
+	static htops[] =
+   {HT_WEOF,HT_SFORW,HT_SREV,HT_SFORW,HT_SREV,HT_REW,HT_REWOFFL,HT_SENSE};
+
+	switch (cmd) {
+		case MTIOCTOP:	/* tape operation */
+		if (copyin((caddr_t)addr, (caddr_t)&mtop, sizeof(mtop))) {
+			u.u_error = EFAULT;
+			return;
+		}
+		switch(mtop.mt_op) {
+		case MTWEOF:
+			callcount = mtop.mt_count;
+			fcount = 1;
+			break;
+		case MTFSF: case MTBSF:
+			callcount = mtop.mt_count;
+			fcount = INF;
+			break;
+		case MTFSR: case MTBSR:
+			callcount = 1;
+			fcount = mtop.mt_count;
+			break;
+		case MTREW: case MTOFFL:
+			callcount = 1;
+			fcount = 1;
+			break;
+		default:
+			u.u_error = ENXIO;
+			return;
+		}
+		if (callcount <= 0 || fcount <= 0) {
+			u.u_error = ENXIO;
+			return;
+		}
+		while (--callcount >= 0) {
+			htcommand(dev, htops[mtop.mt_op], fcount);
+			if ((mtop.mt_op == MTFSR || mtop.mt_op == MTBSR) &&
+			    bp->b_resid) {
+				u.u_error = EIO;
+				break;
+			}
+			if ((chtbuf[HTUNIT(bp->b_dev)].b_flags&B_ERROR) ||
+			    sc->sc_dsreg&HTDS_BOT)
+				break;
+		}
+		geterror(bp);
+		return;
+	case MTIOCGET:
+		mtget.mt_dsreg = sc->sc_dsreg;
+		mtget.mt_erreg = sc->sc_erreg;
+		mtget.mt_resid = sc->sc_resid;
+		if (copyout((caddr_t)&mtget, addr, sizeof(mtget)))
+			u.u_error = EFAULT;
+		return;
+	default:
+		u.u_error = ENXIO;
+	}
+}
 
 #define	DBSIZE	20
 
-twall(start, num)
-	char *start;
-	int num;
+htdump()
 {
-	int blk;
+	register struct mba_info *mi;
+	register struct mba_regs *mp;
+	register struct htdevice *htaddr;
+	int blk, num;
+	int start;
 
-	HTADDR->httc = P800;	/* set 800 bpi mode */
-	HTADDR->htcs1 = DCLR | GO;
+	start = 0;
+	num = maxfree;
+#define	phys(a,b)		((b)((int)(a)&0x7fffffff))
+	if (htinfo[0] == 0)
+		return (ENXIO);
+	mi = phys(htinfo[0], struct mba_info *);
+	mp = phys(mi->mi_hd, struct mba_hd *)->mh_physmba;
+#if VAX780
+	mbainit(mp);
+	htaddr = (struct htdevice *)&mp->mba_drv[mi->mi_drive];
+	htaddr->httc = HTTC_PDP11|HTTC_1600BPI;
+	htaddr->htcs1 = HT_DCLR|HT_GO;
 	while (num > 0) {
 		blk = num > DBSIZE ? DBSIZE : num;
-		twrite(start, blk);
-		start += blk*NBPG;
+		htdwrite(start, blk, htaddr, mp);
+		start += blk;
 		num -= blk;
 	}
+	htwait(htaddr);
+	htaddr->htcs1 = HT_REW|HT_GO;
+	hteof(htaddr);
+	hteof(htaddr);
 }
 
-twrite(buf, num)
-char *buf;
+htdwrite(dbuf, num, htaddr, mp)
+	register dbuf, num;
+	register struct htdevice *htaddr;
+	struct mba_regs *mp;
 {
-	register struct pte *hpte = HTMAP;
+	register struct pte *io;
 	register int i;
 
-	twait();
-	HTADDR->htfc = -(num*NBPG);
+	htwait(htaddr);
+	io = mp->mba_map;
 	for (i = 0; i < num; i++)
-		*(int *)hpte++ = (btop(buf)+i) | PG_V;
-	((struct mba_regs *)PHYSMBA1)->mba_sr = -1;
-	((struct mba_regs *)PHYSMBA1)->mba_bcr = -(num*NBPG);
-	((struct mba_regs *)PHYSMBA1)->mba_var = 0;
-	HTADDR->htcs1 = WCOM | GO;
+		*(int *)io++ = dbuf++ | PG_V;
+	htaddr->htfc = -(num*NBPG);
+	mp->mba_sr = -1;
+	mp->mba_bcr = -(num*NBPG);
+	mp->mba_var = 0;
+	htaddr->htcs1 = HT_WCOM|HT_GO;
 }
 
-twait()
+htwait(htaddr)
+	struct htdevice *htaddr;
 {
 	register s;
 
 	do
-		s = HTADDR->htds;
-	while ((s & RDY) == 0);
+		s = htaddr->htds;
+	while ((s & HTDS_DRY) == 0);
 }
 
-rewind()
+hteof(htaddr)
+	struct htdevice *htaddr;
 {
 
-	twait();
-	HTADDR->htcs1 = REW | GO;
-}
-
-teof()
-{
-
-	twait();
-	HTADDR->htcs1 = WEOF | GO;
+	htwait(htaddr);
+	htaddr->htcs1 = HT_WEOF|HT_GO;
 }
 #endif
