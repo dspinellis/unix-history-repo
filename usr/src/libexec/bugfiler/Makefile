@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.3.1.1 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
 # Bug report processor and associated programs
 #
