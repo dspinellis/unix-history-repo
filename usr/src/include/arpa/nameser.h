@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)nameser.h	5.1 (Berkeley) %G%
+ *	@(#)nameser.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -17,12 +17,6 @@
 #define QFIXEDSZ	4
 	/* number of bytes of fixed size data in resource record */
 #define RRFIXEDSZ	10
-
-#ifdef vax
-#define HTONS(s)	(((s >> 8) & 0xff) | ((s & 0xff) << 8))
-#else
-#define HTONS(s)
-#endif
 
 /*
  * Internet nameserver port number
