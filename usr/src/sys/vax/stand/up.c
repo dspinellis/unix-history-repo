@@ -1,4 +1,5 @@
-/*	up.c	4.8	83/02/18	*/
+/*	up.c	4.9	83/02/27	*/
+#define	UPECCDEBUG
 
 /*
  * UNIBUS peripheral standalone driver
@@ -95,13 +96,14 @@ upopen(io)
 upstrategy(io, func)
 	register struct iob *io;
 {
-	int cn, tn, sn;
+	int cn, tn, sn, o;
 	register unit = io->i_unit;
 	daddr_t bn;
 	int recal, info, waitdry;
 	register struct updevice *upaddr =
 	    (struct updevice *)ubamem(unit, ubastd[0]);
 	register struct st *st = &upst[up_type[unit]];
+	int doprintf = 0;
 
 	sectsiz = SECTSIZ;
 	if (io->i_flgs & (F_HDR|F_HCHECK))
@@ -116,12 +118,18 @@ upstrategy(io, func)
 		_stop("up not ready");
 	info = ubasetup(io, 1);
 	upaddr->upwc = -io->i_cc / sizeof (short);
-	upaddr->upba = info;
 	recal = 0;
 	io->i_errcnt = 0;
 
 restart: 
-	bn = io->i_bn + (io->i_cc + upaddr->upwc * sizeof(short)) / sectsiz;
+#define	rounddown(x, y)	(((x) / (y)) * (y))
+	upaddr->upwc = rounddown(upaddr->upwc, sectsiz / sizeof (short));
+	o = io->i_cc + (upaddr->upwc * sizeof (short));
+	upaddr->upba = info + o;
+	bn = io->i_bn + o / sectsiz;
+	if (doprintf)
+		printf("upwc %d o %d i_bn %d bn %d\n", upaddr->upwc,
+			o, io->i_bn, bn);
 	while((upaddr->upds & UPDS_DRY) == 0)
 		;
 	if (upstart(io, bn) != 0) {
@@ -159,7 +167,13 @@ restart:
 		/*
 		 * After 28 retries (16 without offset, and
 		 * 12 with offset positioning) give up.
+		 * But first, if the error is a header CRC,
+		 * check if a replacement sector exists in
+		 * the bad sector table.
 		 */
+		if ((upaddr->uper1&UPER1_HCRC) && (io->i_flgs&F_NBSF) == 0 &&
+		     upecc(io, BSE) == 0)
+			goto success;
 		io->i_error = EHER;
 		if (upaddr->upcs2 & UPCS2_WCE)
 			io->i_error = EWCK;
@@ -256,8 +270,10 @@ hard:
 	goto restart;
 
 success:
-	if (upaddr->upwc != 0)
+	if (upaddr->upwc != 0) {
+		doprintf++;
 		goto restart;
+	}
 	/*
 	 * Release unibus 
 	 */
@@ -293,9 +309,9 @@ upecc(io, flag)
 	npf = ((twc * sizeof(short)) + io->i_cc) / sectsiz;
 #ifdef UPECCDEBUG
 	printf("npf %d mask 0x%x pos %d wc 0x%x\n",
-		npf, up->ec2, up->upec1, -twc);
+		npf, up->upec2, up->upec1, -twc);
 #endif
-	bn = io->i_bn + npf ;
+	bn = io->i_bn + npf;
 	st = &upst[up_type[io->i_unit]];
 	cn = bn/st->nspc;
 	sn = bn%st->nspc;
@@ -306,21 +322,21 @@ upecc(io, flag)
 	 * ECC correction.
 	 */
 	if (flag == ECC) {
-		int bit, byte, ecccnt;
+		int bit, o, ecccnt;
 
 		ecccnt = 0;
 		mask = up->upec2;
 		printf("up%d: soft ecc sn%d\n", io->i_unit, bn);
 		/*
-		 * Compute the byte and bit position
-		 * of the error.  i is the byte offset
-		 * in the transfer at which the correction
-		 * is first applied.
+		 * Compute the byte and bit position of
+		 * the error.  o is the byte offset in
+		 * the transfer at which the correction
+		 * applied.
 		 */
+		npf--;
 		i = up->upec1 - 1;		/* -1 makes 0 origin */
 		bit = i&07;
-		i = (i&~07)>>3;
-		byte = i;
+		o = (i&~07) >> 3;
 		up->upcs1 = UP_TRE|UP_DCLR|UP_GO;
 		/*
 		 * Correct while possible bits remain of mask.
@@ -328,25 +344,28 @@ upecc(io, flag)
 		 * the bit offset is > -11.  Also watch out for
 		 * end of this block and the end of the transfer.
 		 */
-		while (i < sectsiz && (npf*sectsiz)+i < io->i_cc && bit > -11) {
+		while (o < sectsiz && (npf*sectsiz)+o < io->i_cc && bit > -11) {
 			/*
 			 * addr =
-			 *  vax base addr +
+			 *  (base address of transfer) +
 			 *  (# sectors transferred before the error) *
 			 *    (sector size) +
-			 *  byte number
+			 *  (byte offset to incorrect data)
 			 */
-			addr = io->i_ma + (npf * sectsiz) + byte;
+			addr = io->i_ma + (npf * sectsiz) + o;
 #ifdef UPECCDEBUG
-			printf("addr %x old: %x ",addr, (*addr&0xff));
+			printf("addr %x old: %x ", addr, (*addr&0xff));
 #endif
+			/*
+			 * No data transfer occurs with a write check,
+			 * so don't correct the resident copy of data.
+			 */
 			if ((io->i_flgs & (F_CHECK|F_HCHECK)) == 0)
 				*addr ^= (mask << bit);
 #ifdef UPECCDEBUG
 			printf("new: %x\n", (*addr&0xff));
 #endif
-			byte++, i++;
-			bit -= 8;
+			o++, bit -= 8;
 			if ((io->i_flgs&F_ECCLM) && ++ecccnt > MAXECC)
 				return (1);
 		}
