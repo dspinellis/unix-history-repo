@@ -3,10 +3,11 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.11 (Berkeley) %G%
+#	@(#)Makefile	5.12 (Berkeley) %G%
 #
 DESTDIR=
 CFLAGS=	-O
+LIBC=	/lib/libc.a
 TAGSFILE=tags
 
 # Subdirectories whose routines are included in the making of the
@@ -19,10 +20,6 @@ TAGSDIR=libcurses libdbm libln libm libmp libpc libtermlib
 #
 SUBDIR=	learn lib2648 libF77 libI77 libU77 libcurses libdbm libg libln \
 	libom libm libmp libpc libplot libtermlib liby lpr me sendmail
-
-# Shell scripts that need only be installed and are never removed.
-#
-SCRIPT=	makewhatis
 
 # C source that lives in the current directory
 #
@@ -37,40 +34,39 @@ STD=	getNAME makekey
 #
 NSTD=
 
-all:	${SUBDIR} ${STD} ${NSTD}
+all: ${SUBDIR} ${STD} ${NSTD}
 
 ${SUBDIR}: FRC
 	cd $@; make ${MFLAGS}
 
-FRC:
-
-${STD}:
+${STD}: ${LIBC}
 	${CC} ${CFLAGS} -o $@ $@.c
 
-install:
+install: FRC
 	-for i in ${SUBDIR}; do \
 		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install); \
-	done
-	-for i in ${SCRIPT}; do \
-		(install -c -o bin -g bin -m 755 $$i.sh ${DESTDIR}/usr/lib/$$i); \
 	done
 	-for i in ${STD} ${NSTD}; do \
 		(install -s -o bin -g bin -m 755 $$i ${DESTDIR}/usr/lib/$$i); \
 	done
 	install -c -o bin -g bin -m 755 lib.b ${DESTDIR}/usr/lib/lib.b
 
-tags:
+tags: FRC
 	-for i in ${TAGSDIR}; do \
 		(cd $$i; make ${MFLAGS} TAGSFILE=../${TAGSFILE} tags); \
 	done
 
-clean:
+clean: FRC
 	rm -f a.out core *.s *.o tags ${STD} ${NSTD}
-	-for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean); done
+	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean); done
 
-depend:
+depend: ldepend
+	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} depend); done
+
+ldepend: FRC
 	mkdep -p ${CFLAGS} ${SRCS}
-	-for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} depend); done
+
+FRC:
 
 # Files listed in ${NSTD} have explicit make lines given below.
 
