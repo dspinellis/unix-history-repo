@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)table.c	1.31 (Berkeley) %G%";
+static char *sccsid ="@(#)table.c	1.32 (Berkeley) %G%";
 #endif lint
 
 # include "pass2.h"
@@ -333,7 +333,7 @@ DECR,	INAREG|INTAREG,
 ASSIGN,	INAREG|FOREFF|FORCC,
 	SAREG|AWD,	TFLOAT|TDOUBLE,
 	SAREG|AWD,	TUCHAR|TUSHORT,
-		NAREG|NASL,	RLEFT|RESCC,
+		NAREG|NASR,	RLEFT|RESCC,
 		"	ZA\n",
 
 ASSIGN,	INAREG|FOREFF|FORCC,
