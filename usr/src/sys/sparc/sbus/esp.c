@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)esp.c	8.3 (Berkeley) %G%
+ *	@(#)esp.c	8.4 (Berkeley) %G%
  *
  * from: $Header: esp.c,v 1.28 93/04/27 14:40:44 torek Exp $ (LBL)
  *
@@ -83,21 +83,6 @@
  * when this shorter transfer is done, if the target is still up
  * for data transfer, we simply keep going (updating the DMA address)
  * as needed.
- *
- * Another state bit is used to recover from bus resets:
- *
- *	A single TEST UNIT READY is attempted on each target before any
- *	real communication begins; this TEST UNIT READY is allowed to
- *	fail in any way.  This is required for the Quantum ProDrive 100
- *	MB disks, for instance, which respond to their first selection
- *	with status phase, and for anything that insists on implementing
- *	the broken SCSI-2 synch transfer initial message.
- *
- * This is done in espclear() (which calls espselect(); functions that
- * call espselect() must check for clearing first).
- *
- * The state machines actually intermingle, as some SCSI sequences are
- * only allowed during clearing.
  */
 
 /* per-DMA variables */
@@ -143,7 +128,6 @@ struct esp_softc {
 	int	sc_clockfreq;		/* clock frequency */
 	u_char	sc_sel_timeout;		/* select timeout */
 	u_char	sc_id;			/* initiator ID (default = 7) */
-	u_char	sc_needclear;		/* uncleared targets (1 bit each) */
 	u_char	sc_esptype;		/* 100, 100A, 2xx (see below) */
 	u_char	sc_ccf;			/* clock conversion factor */
 	u_char	sc_conf1;		/* value for config reg 1 */
@@ -159,7 +143,6 @@ struct esp_softc {
 	 * since we do message-in simply by allowing the fifo to fill.
 	 */
 	char	sc_probing;		/* used during autoconf; see below */
-	char	sc_clearing;		/* true => cmd is just to clear targ */
 	char	sc_iwant;		/* true => icmd needs wakeup on idle */
 	char	sc_state;		/* SCSI protocol state; see below */
 	char	sc_sentcmd;		/* set once we get cmd out */
@@ -242,8 +225,7 @@ char *espstates[] = {
 /* autoconfiguration driver */
 void	espattach(struct device *, struct device *, void *);
 struct cfdriver espcd =
-    { NULL, "esp", matchbyname, espattach, DV_DULL, sizeof(struct esp_softc),
-      "intr" };
+    { NULL, "esp", matchbyname, espattach, DV_DULL, sizeof(struct esp_softc) };
 
 /* Sbus driver */
 void	espsbreset(struct device *);
@@ -459,16 +441,13 @@ espdoattach(unit)
 		if (targ == sc->sc_id)
 			continue;
 		sc->sc_probing = PROBE_TESTING;
-		sc->sc_clearing = 1;
 		(void)scsi_test_unit_ready(&sc->sc_hba, targ, 0);
 		if (sc->sc_probing != PROBE_NO_TARGET) {
 			sc->sc_probing = 0;
-			sc->sc_clearing = 0;
 			SCSI_FOUNDTARGET(&sc->sc_hba, targ);
 		}
 	}
 	sc->sc_probing = 0;
-	sc->sc_clearing = 0;
 
 	/*
 	 * See if we booted from a unit on this target.  We could
@@ -554,11 +533,6 @@ espreset(sc, how)
 		esp->esp_conf1 = sc->sc_conf1;
 	}
 	sc->sc_state = S_IDLE;
-	if (sc->sc_iwant) {
-		wakeup((caddr_t)&sc->sc_iwant);
-		sc->sc_iwant = 0;
-	}
-	sc->sc_needclear = 0xff;
 }
 
 /*
@@ -785,12 +759,9 @@ esperror(sc, "DIAG: esp step 2");
 			/*
 			 * Device entered command phase and then exited it
 			 * before we finished handing out the command.
-			 * Let this happen iff we are trying to clear the
-			 * target state.
+			 * Do not know how to handle this.
 			 */
 esperror(sc, "DIAG: esp step 3");
-			if (!sc->sc_clearing)
-				return (ACT_RESET);
 		} else {
 			printf("%s: mysterious esp step %d\n",
 			    sc->sc_dev.dv_xname, sc->sc_espstep);
@@ -1015,23 +986,6 @@ printf("%s: accepting (& ignoring) msg from target %d\n",
 }
 
 /*
- * Clear out target state by doing a special TEST UNIT READY.
- * Note that this calls espicmd (possibly recursively).
- */
-void
-espclear(sc, targ)
-	register struct esp_softc *sc;
-	register int targ;
-{
-
-	/* turn off needclear immediately since this calls espicmd() again */
-	sc->sc_needclear &= ~(1 << targ);
-	sc->sc_clearing = 1;
-	(void) scsi_test_unit_ready(&sc->sc_hba, targ, 0);
-	sc->sc_clearing = 0;
-}
-
-/*
  * THIS SHOULD BE ADJUSTABLE
  */
 	/* name		howlong		purpose */
@@ -1068,12 +1022,6 @@ espicmd(hba, targ, cdb, buf, len, rw)
 	}
 	sc->sc_hba.hba_busy = 1;
 	splx(s);
-
-	/*
-	 * Clear the target if necessary.
-	 */
-	if (sc->sc_needclear & (1 << targ) && !sc->sc_probing)
-		espclear(sc, targ);
 
 	/*
 	 * Set up DMA transfer control (leaving interrupts disabled).
@@ -1225,9 +1173,6 @@ espgo(self, targ, intr, dev, bp, pad)
 {
 	register struct esp_softc *sc = (struct esp_softc *)self;
 
-	if (sc->sc_needclear & (1 << targ))
-		espclear(sc, targ);
-
 	/* Set up dma control for espact(). */
 	sc->sc_dmactl = bp->b_flags & B_READ ?
 	    DMA_ENA | DMA_READ | DMA_IE : DMA_ENA | DMA_IE;
@@ -1342,8 +1287,12 @@ esprel(self)
 	register struct sq *sq;
 
 	/* if there is someone else waiting, give them a crack at it */
-	if ((sq = sc->sc_hba.hba_head) != NULL)
+	if (sc->sc_iwant) {
+		wakeup((caddr_t)&sc->sc_iwant);
+		sc->sc_iwant = 0;
+	} else if ((sq = sc->sc_hba.hba_head) != NULL) {
+		sc->sc_hba.hba_head = sq->sq_forw;
 		(*sq->sq_dgo)(sq->sq_dev, &sc->sc_cdbspace);
-	else
+	} else
 		sc->sc_hba.hba_busy = 0;
 }
