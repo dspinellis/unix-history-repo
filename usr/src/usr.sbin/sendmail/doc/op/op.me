@@ -1,6 +1,6 @@
 .ls 2
 .he 'Sendmail Installation and Operation Guide''%'
-.fo 'Version 3.9'DRAFT'Last Mod %G%'
+.fo 'Version 3.10'DRAFT'Last Mod %G%'
 .nr si 3n
 .de $0
 .(x
@@ -26,7 +26,7 @@ INSTALLATION AND OPERATION GUIDE
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 3.9
+Version 3.10
 .)l
 .sp 3
 .pp
@@ -2057,6 +2057,21 @@ to translate internal to external form.
 .pp
 There are a number of flags that may be associated with each mailer.
 These are detailed in Appendix C.
+.sh 3 "The \*(lqerror\*(rq mailer"
+.pp
+The mailer with the special name
+.q error
+can be used to generate a user error.
+The (optional) host field is a numeric exit status to be returned,
+and the user field is a message to be printed.
+For example, the entry:
+.(b
+$#error$:Host unknown in this domain
+.)b
+on the RHS of a rule
+will cause the specified error to be generated
+if the LHS matches.
+This mailer is only functional in ruleset zero.
 .sh 2 "Building a Configuration File From Scratch"
 .pp
 Building a configuration table from scratch is an extremely difficult job.
@@ -3508,7 +3523,7 @@ INSTALLATION AND OPERATION GUIDE
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 3.9
+Version 3.10
 .ce 0
 .bp 1
 .ce
