@@ -1,4 +1,4 @@
-/*	@(#)ww.h	3.21 83/12/02		*/
+/*	@(#)ww.h	3.22 83/12/17		*/
 
 #include <stdio.h>
 #include <sgtty.h>
@@ -11,6 +11,7 @@ struct ww_dim {
 	short nrow;
 };
 
+	/* a coordinate */
 struct ww {
 	char ww_state;		/* state of window creation */
 	char ww_mode;		/* mode used to open this window */
@@ -27,13 +28,13 @@ struct ww {
 	char ww_ttyname[11];
 };
 
+	/* state of a tty */
 struct ww_tty {
 	struct sgttyb ww_sgttyb;
 	struct tchars ww_tchars;
 	struct ltchars ww_ltchars;
 	int ww_lmode;
 	int ww_ldisc;
-	int ww_pgrp;
 };
 
 union ww_char {
@@ -64,8 +65,7 @@ union ww_char {
 
 	/* ww_state values */
 #define WWS_INITIAL	0	/* just opened */
-#define WWS_HASPROC	1	/* forked, in parent */
-#define WWS_INCHILD	2	/* forked, in child */
+#define WWS_HASPROC	1	/* has process on pty */
 #define WWS_DEAD	3	/* child died */
 
 	/* ww_state values */
