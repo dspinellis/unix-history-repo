@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_close.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_close.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -67,7 +67,7 @@ __rec_sync(dbp)
 	BTREE *t;
 	DBT data, key;
 	off_t off;
-	recno_t scursor;
+	recno_t scursor, trec;
 	int status;
 
 	t = dbp->internal;
@@ -85,12 +85,15 @@ __rec_sync(dbp)
 		return (RET_ERROR);
 
 	/* Rewind the file descriptor. */
-	if (lseek(t->bt_rfd, 0L, SEEK_SET) != 0L)
+	if (lseek(t->bt_rfd, (off_t)0, SEEK_SET) != 0L)
 		return (RET_ERROR);
 
 	iov[1].iov_base = "\n";
 	iov[1].iov_len = 1;
 	scursor = t->bt_rcursor;
+
+	key.size = sizeof(recno_t);
+	key.data = &trec;
 
 	status = (dbp->seq)(dbp, &key, &data, R_FIRST);
         while (status == RET_SUCCESS) {
@@ -103,7 +106,7 @@ __rec_sync(dbp)
 	t->bt_rcursor = scursor;
 	if (status == RET_ERROR)
 		return (RET_ERROR);
-	if ((off = lseek(t->bt_rfd, 0L, SEEK_CUR)) == -1)
+	if ((off = lseek(t->bt_rfd, (off_t)0, SEEK_CUR)) == -1)
 		return (RET_ERROR);
 	if (ftruncate(t->bt_rfd, off))
 		return (RET_ERROR);
