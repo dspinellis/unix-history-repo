@@ -2,7 +2,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_usrreq.c	7.35 (Berkeley) %G%
+ *	@(#)uipc_usrreq.c	7.36 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -561,7 +561,7 @@ unp_externalize(rights)
 	int newfds = (cm->cmsg_len - sizeof(*cm)) / sizeof (int);
 	int f;
 
-	if (fdavail(p, newfds)) {
+	if (!fdavail(p, newfds)) {
 		for (i = 0; i < newfds; i++) {
 			fp = *rp;
 			unp_discard(fp);
