@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)READE.c 1.1 %G%";
+static char sccsid[] = "@(#)READE.c 1.2 %G%";
 
 #include "h00vars.h"
 #include "h01errs.h"
@@ -18,15 +18,21 @@ READE(curfile, name)
 	register int	cnt;
 	char		*cp;
 	char		namebuf[NAMSIZ];
+	int		retval;
 
 	if (curfile->funit & FWRITE) {
 		ERROR(EREADIT, curfile->pfname);
 		return;
 	}
 	UNSYNC(curfile);
-	if (fscanf(curfile->fbuf,
+	retval = fscanf(curfile->fbuf,
 	    "%*[ \t\n]%74[abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789]",
-	    namebuf) == 0) {
+	    namebuf);
+	if (retval == EOF) {
+		ERROR(EPASTEOF, curfile->pfname);
+		return;
+	}
+	if (retval == 0) {
 		ERROR(ENUMNTFD, namebuf);
 		return;
 	}
