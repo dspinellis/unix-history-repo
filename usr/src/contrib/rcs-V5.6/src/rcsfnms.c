@@ -347,7 +347,7 @@ InitAdmin()
 }
 
 
-#if defined(_POSIX_NO_TRUNC) && _POSIX_NO_TRUNC!=-1
+#if defined(_POSIX_NO_TRUNC)
 #	define LONG_NAMES_MAY_BE_SILENTLY_TRUNCATED 0
 #else
 #	define LONG_NAMES_MAY_BE_SILENTLY_TRUNCATED 1
