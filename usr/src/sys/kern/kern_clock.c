@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_clock.c	7.18 (Berkeley) %G%
+ *	@(#)kern_clock.c	7.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -59,6 +59,11 @@ int	adjtimedelta;
 	} \
 }
 
+int	ticks;
+int	phz;
+int	profhz;
+struct	timeval time;
+struct	timeval mono_time;
 /*
  * The hz hardware interval timer.
  * We update the events relating to real time.
@@ -196,9 +201,11 @@ hardclock(frame)
 		}
 	}
 #else
-	if (timedelta == 0)
+	ticks++;
+	if (timedelta == 0) {
 		BUMPTIME(&time, tick)
-	else {
+		BUMPTIME(&mono_time, tick)
+	} else {
 		register delta;
 
 		if (timedelta < 0) {
@@ -209,6 +216,7 @@ hardclock(frame)
 			timedelta -= tickdelta;
 		}
 		BUMPTIME(&time, delta);
+		BUMPTIME(&mono_time, delta)
 	}
 #endif
 	setsoftclock();
