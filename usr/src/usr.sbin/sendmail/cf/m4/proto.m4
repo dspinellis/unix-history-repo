@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	2.30 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	2.31 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -49,7 +49,6 @@ CONCAT(DR, ifdef(`LOCAL_RELAY', LOCAL_RELAY))
 # names that should be delivered locally, even if we have a relay
 CLroot
 undivert(5)dnl
-undivert(6)dnl
 
 ifdef(`UUCP_NAME',
 `# uucp hostnames
@@ -78,6 +77,7 @@ ifdef(`INTERNET_RELAY',
 `include(../sitedep/nicregistered.m4)',
 `dnl')
 include(`../m4/boilerplate.m4')
+undivert(6)dnl
 #
 ######################################################################
 ######################################################################
