@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys_generic.c	7.4 (Berkeley) %G%
+ *	@(#)sys_generic.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -163,8 +163,8 @@ ioctl()
 	register u_int size;
 	caddr_t memp = 0;
 #define STK_PARAMS	128
-	char buf[STK_PARAMS];
-	caddr_t data = buf;
+	char stkbuf[STK_PARAMS];
+	caddr_t data = stkbuf;
 
 	uap = (struct a *)u.u_ap;
 	GETF(fp, uap->fdes);
@@ -206,7 +206,7 @@ ioctl()
 		u.u_error = EFAULT;
 		return;
 	}
-	if (size > sizeof (buf)) {
+	if (size > sizeof (stkbuf)) {
 		memp = (caddr_t)malloc(IOCPARM_MAX, M_IOCTLOPS, M_WAITOK);
 		data = memp;
 	}
