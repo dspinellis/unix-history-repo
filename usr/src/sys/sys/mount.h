@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount.h	7.35 (Berkeley) %G%
+ *	@(#)mount.h	7.36 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -128,6 +128,7 @@ struct mount {
 #ifdef KERNEL
 #ifdef __STDC__
 struct nameidata;
+struct mbuf;
 #endif
 
 struct vfsops {
@@ -147,7 +148,8 @@ struct vfsops {
 	int	(*vfs_vget)	__P((struct mount *mp, ino_t ino,
 				    struct vnode **vpp));
 	int	(*vfs_fhtovp)	__P((struct mount *mp, struct fid *fhp,
-				    struct vnode **vpp));
+				    struct mbuf *nam, struct vnode **vpp,
+				    int *exflagsp, struct ucred **credanonp));
 	int	(*vfs_vptofh)	__P((struct vnode *vp, struct fid *fhp));
 	int	(*vfs_init)	__P((void));
 };
@@ -161,7 +163,8 @@ struct vfsops {
 #define VFS_STATFS(MP, SBP, P)	  (*(MP)->mnt_op->vfs_statfs)(MP, SBP, P)
 #define VFS_SYNC(MP, WAIT, C, P)  (*(MP)->mnt_op->vfs_sync)(MP, WAIT, C, P)
 #define VFS_VGET(MP, INO, VPP)	  (*(MP)->mnt_op->vfs_vget)(MP, INO, VPP)
-#define VFS_FHTOVP(MP, FIDP, VPP) (*(MP)->mnt_op->vfs_fhtovp)(MP, FIDP, VPP)
+#define VFS_FHTOVP(MP, FIDP, NAM, VPP, EXFLG, CRED) \
+	(*(MP)->mnt_op->vfs_fhtovp)(MP, FIDP, NAM, VPP, EXFLG, CRED)
 #define	VFS_VPTOFH(VP, FIDP)	  (*(VP)->v_mount->mnt_op->vfs_vptofh)(VP, FIDP)
 #endif /* KERNEL */
 
