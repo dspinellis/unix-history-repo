@@ -1,10 +1,10 @@
 /*-
- * Copyright (c) 1980 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1979, 1980, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pas.y	5.5 (Berkeley) %G%
+ *	@(#)pas.y	8.1 (Berkeley) %G%
  */
 
 /*
@@ -95,7 +95,7 @@
 
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static	char sccsid[] = "@(#)pas.y 5.5 %G%"; */
+/* static	char sccsid[] = "@(#)pas.y 8.1 %G%"; */
 
 /*
  * The following line marks the end of the yacc
@@ -105,7 +105,7 @@
 ##
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pas.y 5.5 %G%";
+static	char sccsid[] = "@(#)pas.y 8.1 %G%";
 
 #include "whoami.h"
 #include "0.h"
