@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_descrip.c	7.27 (Berkeley) %G%
+ *	@(#)kern_descrip.c	7.28 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -457,11 +457,11 @@ falloc(p, resultfp, resultfd)
 	 */
 	nfiles++;
 	MALLOC(fp, struct file *, sizeof(struct file), M_FILE, M_WAITOK);
-	p->p_fd->fd_ofiles[i] = fp;
 	if (fq = p->p_fd->fd_ofiles[0])
 		fpp = &fq->f_filef;
 	else
 		fpp = &filehead;
+	p->p_fd->fd_ofiles[i] = fp;
 	if (fq = *fpp)
 		fq->f_fileb = &fp->f_filef;
 	fp->f_filef = fq;
