@@ -27,7 +27,7 @@ SOFTWARE.
 /*
  * $Header: if_eon.c,v 1.4 88/07/19 15:53:59 hagens Exp $ 
  * $Source: /usr/argo/sys/netiso/RCS/if_eon.c,v $ 
- *	@(#)if_eon.c	7.10 (Berkeley) %G% *
+ *	@(#)if_eon.c	7.11 (Berkeley) %G% *
  *
  *	EON rfc 
  *  Layer between IP and CLNL
@@ -306,8 +306,8 @@ eonoutput(ifp, m, dst, rt)
 	struct route *ro;
 	int	datalen;
 	struct mbuf *mh;
-	int	error = 0;
-	caddr_t ippaddrloc;
+	int	error = 0, class = 0, alen = 0;
+	caddr_t ipaddrloc;
 	static struct eon_iphdr eon_iphdr;
 	static struct route route;
 
@@ -320,15 +320,21 @@ eonoutput(ifp, m, dst, rt)
 	if (rt == 0 || (el = (struct eon_llinfo *)rt->rt_llinfo) == 0) {
 		if (dst->siso_family == AF_LINK) {
 			register struct sockaddr_dl *sdl = (struct sockaddr_dl *)dst;
-			caddr_t ipaddrloc = LLADDR(sdl);
-			int class = (sdl->sdl_alen == 5) ? 4[(u_char *)ipaddrloc] : 0;
 
-			if (sdl->sdl_alen == 4 || sdl->sdl_alen == 5) {
-				ro = &route;
-				ei = &eon_iphdr;
-				eoniphdr(ei, ipaddrloc, ro, class, 1);
-				goto send;
-			}
+			ipaddrloc = LLADDR(sdl);
+			alen = sdl->sdl_alen;
+		} else if (dst->siso_family == AF_ISO && dst->siso_data[0] == AFI_SNA) {
+			alen = dst->siso_nlen - 1;
+			ipaddrloc = (caddr_t) dst->siso_data + 1;
+		}
+		switch (alen) {
+		case 5:
+			class =  4[(u_char *)ipaddrloc];
+		case 4:
+			ro = &route;
+			ei = &eon_iphdr;
+			eoniphdr(ei, ipaddrloc, ro, class, 1);
+			goto send;
 		}
 einval:
 		error =  EINVAL;
@@ -543,7 +549,7 @@ eonctlinput(cmd, sin)
 		case	PRC_REDIRECT_TOSHOST:
 		case	PRC_MSGSIZE:
 		case	PRC_PARAMPROB:
-			printf("eonctlinput: ICMP cmd 0x%x\n", cmd );
+			/* printf("eonctlinput: ICMP cmd 0x%x\n", cmd );*/
 		break;
 	}
 	return 0;
