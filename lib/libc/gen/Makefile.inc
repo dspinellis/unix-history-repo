@@ -9,7 +9,9 @@ SRCS+=	alarm.c assert.c clock.c crypt.c ctermid.c ctime.c ctype_.c \
 	getlogin.c getmntinfo.c getpass.c getpwent.c getsubopt.c getttyent.c \
 	getusershell.c glob.c infinity.c initgroups.c insque.c isatty.c \
 	isctype.c isinf.c mktemp.c nice.c nlist.c pause.c popen.c psignal.c \
-	raise.c setjmperr.c setmode.c setrgid.c setruid.c siginterrupt.c \
+	raise.c setjmperr.c setmode.c setrgid.c setruid.c \
+	shmat.c shmctl.c shmdt.c shmget.c \
+	siginterrupt.c \
 	scandir.c siglist.c signal.c sigsetops.c sleep.c syslog.c termios.c \
 	time.c times.c timezone.c ttyname.c ttyslot.c ualarm.c unvis.c \
 	usleep.c utime.c valloc.c vis.c wait.c wait3.c waitpid.c

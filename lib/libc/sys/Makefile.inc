@@ -24,7 +24,7 @@ ASM=	accept.o access.o acct.o adjtime.o async_daemon.o bind.o chdir.o \
 	rename.o revoke.o rmdir.o select.o sendmsg.o sendto.o setegid.o \
 	seteuid.o setgid.o setgroups.o sethostid.o sethostname.o \
 	setitimer.o setpgid.o setpriority.o setregid.o setreuid.o \
-	setrlimit.o setsid.o setsockopt.o settimeofday.o setuid.o \
+	setrlimit.o setsid.o setsockopt.o settimeofday.o setuid.o shmsys.o \
 	shutdown.o sigaction.o sigstack.o socket.o socketpair.o stat.o \
 	statfs.o swapon.o symlink.o sync.o truncate.o umask.o unlink.o \
 	unmount.o utimes.o vadvise.o wait4.o write.o writev.o
