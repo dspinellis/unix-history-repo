@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_xxx.c	8.1 (Berkeley) %G%
+ *	@(#)kern_xxx.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -60,7 +60,10 @@ osethostname(p, uap, retval)
 	int *retval;
 {
 	int name;
+	int error;
 
+	if (error = suser(p->p_ucred, &p->p_acflag))
+		return (error);
 	name = KERN_HOSTNAME;
 	return (kern_sysctl(&name, 1, 0, 0, uap->hostname, uap->len));
 }
