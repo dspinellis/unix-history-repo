@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)input.c	1.5 (Berkeley) 82/05/04";
+static	char *sccsid = "@(#)input.c	1.6 (Berkeley) 82/05/04";
 #include <stdio.h>
 #include <ctype.h>
 #include "error.h"
@@ -44,9 +44,6 @@ eaterrors(r_errorc, r_errorv)
 	 */
 	wordv -= 1;
 	if ( 0
-#ifndef ERNIE
-	   || (piflag && ( (errorclass = pi() ) != C_UNKNOWN))
-#endif
 	   || (( errorclass = onelong() ) != C_UNKNOWN)
 	   || (( errorclass = cpp() ) != C_UNKNOWN)
 	   || (( errorclass = pccccom() ) != C_UNKNOWN)
@@ -57,10 +54,8 @@ eaterrors(r_errorc, r_errorv)
 	   || (( errorclass = lint3() ) != C_UNKNOWN)
 	   || (( errorclass = make() ) != C_UNKNOWN)
 	   || (( errorclass = f77() ) != C_UNKNOWN)
-#ifdef ERNIE
 	   || ((errorclass = pi() ) != C_UNKNOWN)
 	   || (( errorclass = ri() )!= C_UNKNOWN)
-#endif
 	) ;
 	else
 		errorclass = catchall();

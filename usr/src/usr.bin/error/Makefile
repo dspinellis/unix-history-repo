@@ -1,5 +1,5 @@
 #
-#	@(#)Makefile	1.3 (Berkeley) %G%
+#	@(#)Makefile	1.4 (Berkeley) %G%
 #
 #	error.h			error header file
 #	errorinput.c		does all of the input, and canonicalizes errors
@@ -16,7 +16,7 @@ SRCS = errormain.c errorinput.c errorpi.c errorsubr.c errorfilter.c errortouch.c
 PSRCS = $(SRCS)
 OBJS = errormain.o errorinput.o errorpi.o errorsubr.o errorfilter.o errortouch.o
 
-DFLAGS = -DDEBUG -DERNIE
+DFLAGS = -DDEBUG
 CFLAGS =  -O $(DFLAGS)
 
 LINTFLAGS = $(DFLAGS)

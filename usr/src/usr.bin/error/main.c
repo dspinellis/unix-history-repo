@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	1.3 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.4 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
@@ -97,15 +97,6 @@ main(argc, argv)
 		case 's':	pr_summary = TRUE;	break;
 		case 'v':	edit_files = TRUE;	break;
 		case 'T':	terse = TRUE;	break;
-#ifndef ERNIE
-		case 'p':
-			*cp-- = 0; argv++; argc--;
-			if (argc > 1){
-				currentfilename = argv[1];
-				piflag = TRUE;
-			}
-			break;
-#endif
 		case 't':
 			*cp-- = 0; argv++; argc--;
 			if (argc > 1){
