@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_inode.c	7.34 (Berkeley) %G%
+ *	@(#)ffs_inode.c	7.35 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -422,7 +422,7 @@ itrunc(oip, length, flags)
 		count = howmany(size, CLBYTES);
 			munhash(oip->i_devvp, bn + i * CLBYTES / DEV_BSIZE);
 		bzero(bp->b_un.b_addr + offset, (unsigned)(size - offset));
-		brealloc(bp, size);
+		allocbuf(bp, size);
 		if (flags & IO_SYNC)
 			bwrite(bp);
 		else
