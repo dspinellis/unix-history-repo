@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)interp.c 1.10 %G%";
+static char sccsid[] = "@(#)interp.c 1.11 %G%";
 
 #include <math.h>
 #include "whoami.h"
@@ -217,9 +217,7 @@ interpreter(base)
 			pc.cp = tcp;
 			continue;
 		case O_FCALL:
-			tl = *pc.cp++;		/* tl = number of args */
-			if (tl == 0)
-				tl = *pc.lp++;
+			pc.cp++;
 			tfp = (struct formalrtn *)popaddr();
 			stp = (struct stack *)
 				pushsp((long)(sizeof(struct stack)));
@@ -227,17 +225,6 @@ interpreter(base)
 			stp->pc.cp = pc.cp;
 			stp->dp = _dp;
 			pc.cp = tfp->entryaddr;	/* calc new entry point */
-			if (_runtst) {
-				tpc.sp = pc.sp + 1;
-				tl -= tpc.hdrp->nargs;
-				if (tl != 0) {
-					if (tl > 0)
-						tl += sizeof(int) - 1;
-					else
-						tl -= sizeof(int) - 1;
-					ERROR(ENARGS, tl / sizeof(int));
-				}
-			}
 			_dp = &_display.frame[tfp->cbn];/* new display ptr */
 			blkcpy(tfp->cbn * sizeof(struct disp),
 				&_display.frame[1], &tfp->disp[tfp->cbn]);
