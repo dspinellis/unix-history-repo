@@ -1,5 +1,4 @@
-/*	boot.c	1.1	86/01/12	*/
-/*	boot.c	6.1	83/07/29	*/
+/*	boot.c	1.2	86/07/16	*/
 
 #include "../machine/mtpr.h"
 
@@ -18,33 +17,21 @@
  * boot comes from.
  */
 
-/*	r11 = 0 -> automatic boot, load file '/vmunix' */
-/*	r11 = 1 -> ask user for file to load */
-
 /* Types in r10 specifying major device */
-char	devname[][3] = {
-	'f','s','d',	/* 0 = fsd */
-	's','m','d',	/* 1 = smd or cmd */
-	'x','f','d',	/* 2 = xfd */
-	'x','s','d',	/* 2 = xsd */
-	'c','y','p',	/* 3 = cypher tape */
+char	devname[][2] = {
+#ifdef notyet
+	0, 0,		/* 0 = ud */
+	'd','k',	/* 1 = vd */
+	0, 0,		/* 2 = xp */
+	'c','y',	/* 3 = cy */
+#else
+	'd','k',	/* default = vd */
+#endif
 };
+#define	MAXTYPE	(sizeof(devname) / sizeof(devname[0]))
 
-#ifdef FSD
-char line[100] = "fsd(0,0)vmunix";
-#endif
-#ifdef SMD
-char line[100] = "smd(0,0)vmunix";
-#endif
-#ifdef XFD
-char line[100] = "xfd(0,0)vmunix";
-#endif
-#ifdef XSD
-char line[100] = "xsd(0,0)vmunix";
-#endif
-#ifdef JUSTASK
+#define	UNIX	"vmunix"
 char line[100];
-#endif
 
 int	retry = 0;
 
@@ -52,36 +39,87 @@ main()
 {
 	register dummy;		/* skip r12 */
 	register howto, devtype;	/* howto=r11, devtype=r10 */
-	int io;
+	int io, i;
+	register type, part, unit;
+	register char *cp;
+	long atol();
+
 
 #ifdef lint
 	howto = 0; devtype = 0;
 #endif
-	printf("\nBoot\n");
 #ifdef JUSTASK
 	howto = RB_ASKNAME|RB_SINGLE;
+#else
+	type = (devtype >> B_TYPESHIFT) & B_TYPEMASK;
+	unit = (devtype >> B_UNITSHIFT) & B_UNITMASK;
+	unit += 8 * ((devtype >> B_ADAPTORSHIFT) & B_ADAPTORMASK);
+	part = (devtype >> B_PARTITIONSHIFT) & B_PARTITIONMASK;
+	if ((howto & RB_ASKNAME) == 0) {
+		if (type >= 0 && type <= MAXTYPE && devname[type][0]) {
+			cp = line;
+			*cp++ = devname[type][0];
+			*cp++ = devname[type][1];
+			*cp++ = '(';
+			if (unit >= 10)
+				*cp++ = unit / 10 + '0';
+			*cp++ = unit % 10 + '0';
+			*cp++ = ',';
+			*cp++ = part + '0';
+			*cp++ = ')';
+			strcpy(cp, UNIX);
+		} else
+			howto = RB_SINGLE|RB_ASKNAME;
+	}
 #endif
 	for (;;) {
+		printf("\nBoot\n");
 		if (howto & RB_ASKNAME) {
 			printf(": ");
 			gets(line);
 		} else
 			printf(": %s\n", line);
 		io = open(line, 0);
-		if (io >= 0)
-			copyunix(howto, io);
+		if (io >= 0) {
+			if (howto & RB_ASKNAME) {
+				/*
+				 * Build up devtype register to pass on to
+				 * booted program.
+				 */ 
+				cp = line;
+				for (i = 0; i <= MAXTYPE; i++)
+					if ((devname[i][0] == cp[0]) && 
+					    (devname[i][1] == cp[1]))
+					    	break;
+				if (i <= MAXTYPE) {
+					devtype = i << B_TYPESHIFT;
+					cp += 3;
+					i = *cp++ - '0';
+					if (*cp >= '0' && *cp <= '9')
+						i = i * 10 + *cp++ - '0';
+					cp++;
+					devtype |= ((i % 8) << B_UNITSHIFT);
+					devtype |= ((i / 8) << B_ADAPTORSHIFT);
+					devtype |= atol(cp) << B_PARTITIONSHIFT;
+				}
+			}
+			devtype |= B_DEVMAGIC;
+			copyunix(howto, devtype, io);
+			close(io);
+			howto = RB_SINGLE|RB_ASKNAME;
+		}
 		if (++retry > 2)
 			howto |= RB_SINGLE|RB_ASKNAME;
 	}
 }
 
 /*ARGSUSED*/
-copyunix(howto, io)
-	register io, howto;
+copyunix(howto, devtype, io)
+	register io, howto, devtype;	/* NOTE ORDER */
 {
 	struct exec x;
 	register int i;
-	char *addr;
+	register char *addr;
 
 	i = read(io, (char *)&x, sizeof x);
 	if (i != sizeof x ||
@@ -108,9 +146,9 @@ copyunix(howto, io)
 	printf(" start 0x%x\n", x.a_entry);
 	mtpr(PADC, 0);		/* Purge data cache */
 	mtpr(PACC, 0);		/* Purge code cache */
-	if ((howto & RB_DCOFF) == 0) 
-		mtpr(DCR, 1);	/* Enable data cache */
+	mtpr(DCR, 1);		/* Enable data cache */
 	(*((int (*)()) x.a_entry))();
+	return;
 shread:
 	_stop("Short read\n");
 }
