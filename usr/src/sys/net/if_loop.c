@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_loop.c	6.10 (Berkeley) %G%
+ *	@(#)if_loop.c	7.1 (Berkeley) %G%
  */
 
 /*
