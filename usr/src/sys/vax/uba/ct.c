@@ -1,4 +1,4 @@
-/*	ct.c	4.4	81/03/11	*/
+/*	ct.c	4.5	81/03/11	*/
 
 #include "ct.h"
 #if NCT > 0
@@ -38,6 +38,8 @@ u_short	ctstd[] = { 0 };
 struct	uba_driver ctdriver = 
     { ctprobe, 0, ctattach, 0, ctstd, "ct", ctdinfo };
 
+#define	CTUNIT(dev)	(minor(dev))
+
 ctprobe(reg)
 	caddr_t reg;
 {
@@ -46,6 +48,13 @@ ctprobe(reg)
 	ctaddr->ctcsr = IENABLE;
 	DELAY(10000);
 	ctaddr->ctcsr = 0;
+}
+
+/*ARGSUSED*/
+ctattach(ui)
+	register struct uba_device *ui;
+{
+
 }
 
 ctopen(dev)
