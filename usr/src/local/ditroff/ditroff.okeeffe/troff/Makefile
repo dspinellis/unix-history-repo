@@ -1,6 +1,6 @@
 #######################################################################
 #
-#	@(#)Makefile	1.6	(CWI)	88/03/04
+#	@(#)Makefile	1.7	(CWI)	90/11/03
 #
 # Makefile for ditroff and nroff
 #
@@ -15,9 +15,10 @@ UDIRS = utilities devhar eqn pic ideal grap tbl term devnver chem
 
 # location to install final output
 
-BINDIR = /usr/local/.code
-LIBDIR = /usr/local/lib/ditroff
-MANDIR = /usr/man/manl
+BINDIR = /usr/local/bin
+LIBDIR = /usr/local/libdata/ditroff_font
+LIBXDIR = /usr/local/libexec
+MANDIR = /usr/local/man/manl
 
 # the directories where the .o files are stored
 
@@ -34,14 +35,14 @@ TOBS = $T/n1.o $T/n2.o $T/n3.o $T/n4.o $T/n5.o $T/t6.o $T/n7.o $T/n8.o \
 
 #######################################################################
 
-all:	nroff ditroff $(UDIRS)
+all:	troff_p $(UDIRS)
 
-ditroff: $(T) $(TOBS)
-	$(CC) $(CFLAGS) $(TOBS) -o ditroff
+troff_p: $(T) $(TOBS)
+	$(CC) $(CFLAGS) $(TOBS) -o troff_p -lcompat
 
 
 nroff:	$(N) $(NOBS)
-	$(CC) $(CFLAGS) $(NFLAGS) $(NOBS) -o nroff
+	$(CC) $(CFLAGS) $(NFLAGS) $(NOBS) -o nroff -lcompat
 
 
 $(T):
@@ -52,16 +53,15 @@ $(N):
 
 $(LIBDIR):
 	mkdir $(LIBDIR)
-	mkdir $(LIBDIR)/font
 
 install: all $(LIBDIR)
-	install -c -s ditroff $(DESTDIR)$(BINDIR)/ditroff
-	install -c -s nroff $(DESTDIR)$(BINDIR)/nroff
-	install -c -m 664 ditroff.1 $(DESTDIR)$(MANDIR)/ditroff.1
+	install -c -s ditroff $(DESTDIR)$(LIBXDIR)/troff_p
 	for i in $(UDIRS); do (cd $$i; make $(MFLAGS) DESTDIR=${DESTDIR} install); done
+#	install -c -s nroff $(DESTDIR)$(BINDIR)/nroff
+#	install -c -m 664 ditroff.1 $(DESTDIR)$(MANDIR)/ditroff.1
 
 clean:  force
-	rm -rf make.out ditroff nroff $N $T
+	rm -rf make.out troff_p nroff $N $T
 	for i in ${UDIRS}; do (cd $$i; make ${MFLAGS} clean); done
 
 $(UDIRS): force
