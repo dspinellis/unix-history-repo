@@ -6,7 +6,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)sed.test	5.4 (Berkeley) %G%
+#	@(#)sed.test	5.5 (Berkeley) %G%
 #
 
 # sed Regression Tests
@@ -17,7 +17,7 @@
 
 main()
 {
-	BASE=/usr/bin/sed
+	BASE=/usr/old/bin/sed
 	BASELOG=sed.out
 	TEST=../obj/sed
 	TESTLOG=nsed.out
