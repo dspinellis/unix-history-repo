@@ -1,3 +1,10 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ */
+
 /* Yacc productions for "expr" command: */
 %{
 typedef char *yystype;
@@ -51,6 +58,17 @@ expr:	'(' expr ')' = { $$ = $2; }
 	;
 %%
 /*	expression command */
+
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1991 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)expr.y	5.1 (Berkeley) %G%";
+#endif /* not lint */
+
 #include <stdio.h>
 #define ESIZE	256
 #define error(c)	errxx(c)
@@ -666,7 +684,6 @@ register	count;
 	return(1);
 }
 
-static char *sccsid = "@(#)expr.y	4.8 (Berkeley) %G%";
 yyerror(s)
 
 {
