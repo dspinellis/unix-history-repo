@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)query.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)query.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -26,7 +26,6 @@ static char sccsid[] = "@(#)query.c	5.2 (Berkeley) %G%";
 #include <netdb.h>
 #include "../protocol.h"
 #define IDPPORT_RIF 1
-#define xnnet(p)	(*(long *)&(p))
 
 #define	WTIME	5		/* Time to wait for responses */
 
@@ -35,6 +34,8 @@ int	timedout, timeout();
 char	packet[MAXPACKETSIZE];
 extern int errno;
 struct sockaddr_ns	myaddr = {AF_NS};
+char ns_ntoa();
+struct ns_addr ns_addr();
 main(argc, argv)
 int argc;
 char *argv[];
@@ -87,30 +88,32 @@ char *argv[];
 		count--;
 	}
 }
+static struct sockaddr_ns router = {AF_NS};
+static struct ns_addr zero_addr;
+static short allones[] = {-1, -1, -1};
 
 query(argv,argc)
 char **argv;
 {
-	struct sockaddr_ns router;
 	register struct rip *msg = (struct rip *)packet;
-	long mynet;
-	short work[3];
 	char *host = *argv;
+	struct ns_addr specific;
 
 	argv++; argc--;
-	bzero((char *)&router, sizeof (router));
-	router.sns_family = AF_NS;
+	router.sns_addr = ns_addr(host);
 	router.sns_addr.x_port = htons(IDPPORT_RIF);
-	sscanf(host, "%ld:%hx,%hx,%hx",
-			&mynet,work+0, work+1, work+2);
-	router.sns_addr.x_host  = *(union ns_host *)work;
-	xnnet(router.sns_addr.x_net) =  htonl(mynet);
+	if (ns_hosteq(zero_addr, router.sns_addr)) {
+		router.sns_addr.x_host = *(union ns_host *) allones;
+	}
 	msg->rip_cmd = htons(RIPCMD_REQUEST);
-	xnnet(msg->rip_nets[0]) = -1;
+	msg->rip_nets[0].rip_dst = *(union ns_net *) allones;
 	msg->rip_nets[0].rip_metric = htons(HOPCNT_INFINITY);
 	if (argc > 0) {
-		u_long wanted = xnnet(msg->rip_nets[0]) = htonl(atoi(*argv));
-		printf("Net asked for was %d\n", ntohl(wanted));
+		specific = ns_addr(*argv);
+		msg->rip_nets[0].rip_dst = specific.x_net;
+		specific.x_host = zero_addr.x_host;
+		specific.x_port = zero_addr.x_port;
+		printf("Net asked for was %s\n", ns_ntoa(specific));
 	}
 	if (sendto(s, packet, sizeof (struct rip), 0,
 	  &router, sizeof(router)) < 0)
@@ -130,21 +133,20 @@ rip_input(from, msg,  size)
 	int lna, net, subnet;
 	struct hostent *hp;
 	struct netent *np;
+	static struct ns_addr work;
 
 	if (htons(msg->rip_cmd) != RIPCMD_RESPONSE)
 		return;
-	printf("from %d:%x,%x,%x\n", 
-		ntohl(xnnet(from->sns_addr.x_net)),
-		from->sns_addr.x_host.s_host[0],
-		from->sns_addr.x_host.s_host[1],
-		from->sns_addr.x_host.s_host[2]);
+	printf("from %s\n", ns_ntoa(from->sns_addr));
 	size -= sizeof (struct idp);
 	size -= sizeof (short);
 	n = msg->rip_nets;
 	while (size > 0) {
+		union ns_net_u net;
 		if (size < sizeof (struct netinfo))
 			break;
-		printf("\t%d, metric %d\n", ntohl(xnnet(n->rip_dst[0])),
+		net.net_e = n->rip_dst;
+		printf("\t%d, metric %d\n", ntohl(net.long_e),
 			ntohs(n->rip_metric));
 		size -= sizeof (struct netinfo), n++;
 	}
