@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_clock.c	7.16 (Berkeley) 5/9/91
- *	$Id$
+ *	$Id: kern_clock.c,v 1.2 1993/10/16 15:24:09 rgrimes Exp $
  */
 
 #include "param.h"
@@ -43,6 +43,9 @@
 #include "resourcevar.h"
 
 #include "machine/cpu.h"
+
+#include "resource.h"
+#include "vm/vm.h"
 
 #ifdef GPROF
 #include "gprof.h"
@@ -94,6 +97,8 @@ hardclock(frame)
 	register struct callout *p1;
 	register struct proc *p = curproc;
 	register struct pstats *pstats;
+	register struct rusage *ru;
+	register struct vmspace *vm;
 	register int s;
 	int needsoft = 0;
 	extern int tickdelta;
@@ -149,6 +154,15 @@ hardclock(frame)
 		 */
 		if (p)
 			BUMPTIME(&p->p_stime, tick);
+	}
+
+	/* bump the resource usage of integral space use */
+	if (p && pstats && (ru = &pstats->p_ru) && (vm = p->p_vmspace)) {
+		ru->ru_ixrss += vm->vm_tsize;
+		ru->ru_idrss += vm->vm_dsize;
+		ru->ru_isrss += vm->vm_ssize;
+		if (vm->vm_pmap.pm_stats.resident_count > ru->ru_maxrss)
+			ru->ru_maxrss = vm->vm_pmap.pm_stats.resident_count;
 	}
 
 	/*
