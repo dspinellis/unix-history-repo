@@ -1,21 +1,20 @@
-#	@(#)Makefile.inc	5.48 (Berkeley) %G%
+#	@(#)Makefile.inc	5.49 (Berkeley) %G%
 
 # machine-independent gen sources
 .PATH: ${.CURDIR}/${MACHINE}/gen ${.CURDIR}/gen
 
 SRCS+=	alarm.c assert.c clock.c closedir.c confstr.c crypt.c ctermid.c \
-	ctime.c ctype.c ctype_case.c daemon.c difftime.c disklabel.c err.c \
-	errlst.c exec.c fnmatch.c frexp.c fstab.c fts.c getcap.c getcwd.c \
-	getgrent.c getgrouplist.c gethostname.c getloadavg.c getlogin.c \
-	getmntinfo.c getnetgrent.c getpagesize.c getpass.c getpwent.c \
-	getttyent.c getusershell.c glob.c initgroups.c isatty.c isctype.c \
-	isinf.c nice.c nlist.c opendir.c pause.c \
-	popen.c psignal.c pwcache.c raise.c readdir.c rewinddir.c \
-	scandir.c seekdir.c sethostname.c setjmperr.c setmode.c \
-	siginterrupt.c siglist.c signal.c sigsetops.c sleep.c sysconf.c \
-	sysctl.c syslog.c telldir.c termios.c time.c times.c timezone.c \
-	ttyname.c ttyslot.c ualarm.c unvis.c usleep.c utime.c valloc.c \
-	vis.c wait.c wait3.c waitpid.c
+	ctime.c daemon.c difftime.c disklabel.c err.c errlst.c exec.c \
+	fnmatch.c frexp.c fstab.c fts.c getcap.c getcwd.c getgrent.c \
+	getgrouplist.c gethostname.c getloadavg.c getlogin.c getmntinfo.c \
+	getnetgrent.c getpagesize.c getpass.c getpwent.c getttyent.c \
+	getusershell.c glob.c initgroups.c isatty.c isctype.c isinf.c \
+	nice.c nlist.c opendir.c pause.c popen.c psignal.c pwcache.c \
+	raise.c readdir.c rewinddir.c scandir.c seekdir.c sethostname.c \
+	setjmperr.c setmode.c siginterrupt.c siglist.c signal.c sigsetops.c \
+	sleep.c sysconf.c sysctl.c syslog.c telldir.c termios.c time.c \
+	times.c timezone.c ttyname.c ttyslot.c ualarm.c unvis.c usleep.c \
+	utime.c valloc.c vis.c wait.c wait3.c waitpid.c
 
 # machine-dependent gen sources
 .include "${.CURDIR}/${MACHINE}/gen/Makefile.inc"
