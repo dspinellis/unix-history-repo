@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)catman.c	4.3 (Berkeley) %G%";
+static char *sccsid = "@(#)catman.c	4.4 (Berkeley) %G%";
 #endif
 
 /*
@@ -75,8 +75,19 @@ usage:
 			continue;
 		}
 		if (stat(cat, &sbuf) < 0) {
-			sprintf(buf, "mkdir %s", cat);
-			SYSTEM(buf);
+			char buf[MAXNAMLEN + 6], *cp, *rindex();
+
+			strcpy(buf, cat);
+			cp = rindex(buf, '/');
+			if (cp && cp[1] == '\0')
+				*cp = '\0';
+			if (pflag)
+				printf("mkdir %s\n", buf);
+			else if (mkdir(buf, 0777) < 0) {
+				sprintf(buf, "catman: mkdir: %s", cat);
+				perror(buf);
+				continue;
+			}
 			stat(cat, &sbuf);
 		}
 		if ((sbuf.st_mode & 0777) != 0777)
