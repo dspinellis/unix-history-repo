@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)mount_nfs.8	5.1 (Berkeley) %G%
+.\"	@(#)mount_nfs.8	5.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MOUNT_NFS 8
@@ -13,7 +13,7 @@
 .Nd mount nfs file systems
 .Sh SYNOPSIS
 .Nm mount_nfs
-.Op Fl bsiTMlqdckK
+.Op Fl bsiTMlqdckPK
 .Op Fl R Ar retrycnt
 .Op Fl r Ar readsize
 .Op Fl w Ar writesize
@@ -77,6 +77,9 @@ For UDP mount points, do not do a
 .Xr connect 2.
 This must be used for servers that do not reply to requests from the standard
 port number.
+.It Fl P
+Use a reserved socket port number. This is useful for mounting servers that
+require clients to use a reserved port number.
 .It Fl K
 Pass Kerberos authenticators to the server for
 client-to-server user-credential mapping.
