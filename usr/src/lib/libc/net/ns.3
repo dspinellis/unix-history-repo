@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ns.3	6.1 (Berkeley) %G%
+.\"	@(#)ns.3	6.2 (Berkeley) %G%
 .\"
 .TH NS 3N ""
 .UC 6
@@ -21,11 +21,11 @@ ns_addr, ns_ntoa \- Xerox NS(tm)  address conversion routines
 .fi
 .SH DESCRIPTION
 The routine
-.I ns_addr()
+.I ns_addr
 interprets character strings representing
 XNS addresses, returning binary information suitable
 for use in system calls.
-.I ns_ntoa()
+.I ns_ntoa
 takes XNS addresses and returns ASCII
 strings representing the address in a
 notation in common use in the Xerox Development Environment:
@@ -33,24 +33,20 @@ notation in common use in the Xerox Development Environment:
 	<network number>.<host number>.<port number>
 .fi
 Trailing zero fields are suppressed, and each number is printed in hexadecimal,
-in suitable format as input to 
-.I ns_addr(),
-above.
+in a format suitable for input to 
+.IR ns_addr .
 Any fields lacking super-decimal digits will have a
-trailing ``H'' appended, so that the number is represented such that
-applying
-.I ns_addr()
-will return you what you started with.
+trailing ``H'' appended.
 .PP
 Unfortunately, no universal standard exists for representing XNS addresses.
 An effort has been made to insure that
-.I ns_addr()
+.I ns_addr
 be compatible with most formats in common use.
 It will first separate an address into 1 to 3 fields using a single delimiter
 chosen from
 period (``.''),
 colon (``:'') or pound-sign (``#'').
-Each field is then examined for byte-separators (colon or period).
+Each field is then examined for byte separators (colon or period).
 If there are byte separators, each subfield separated is taken to be
 a small hexadecimal number, and the entirety is taken as a network-byte-ordered
 quantity to be zero extended in the high-network-order bytes.
@@ -60,9 +56,9 @@ with hyphens separating the millenia.
 Next, the field is assumed to be a number:
 It is interpreted
 as hexadecimal if there is a leading ``0x'' (as in C),
-a trailing ``H'' (as in Mesa), or any super-decimal digits present.
-It is interpreted as octal is there is a leading ``0'' and no super-octal
-digits.
+a trailing ``H'' (as in Mesa), or there are any super-decimal digits present.
+It is interpreted as octal is there is a leading ``0''
+and there are no super-octal digits.
 Otherwise, it is converted as a decimal number.
 .SH "SEE ALSO"
 hosts(5), networks(5),
