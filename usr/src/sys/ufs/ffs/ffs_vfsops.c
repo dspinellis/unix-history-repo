@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	7.79 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	7.80 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -226,7 +226,7 @@ ffs_mountfs(devvp, mp, p)
 		return (error);
 	if (vcount(devvp) > 1 && devvp != rootvp)
 		return (EBUSY);
-	if (error = vinvalbuf(devvp, 1, p->p_ucred, p))
+	if (error = vinvalbuf(devvp, V_SAVE, p->p_ucred, p))
 		return (error);
 
 	ronly = (mp->mnt_flag & MNT_RDONLY) != 0;
@@ -296,6 +296,9 @@ ffs_mountfs(devvp, mp, p)
 	ump->um_mountp = mp;
 	ump->um_dev = dev;
 	ump->um_devvp = devvp;
+	ump->um_nindir = fs->fs_nindir;
+	ump->um_bptrtodb = fs->fs_fsbtodb;
+	ump->um_seqinc = fs->fs_frag;
 	for (i = 0; i < MAXQUOTAS; i++)
 		ump->um_quotas[i] = NULLVP;
 	devvp->v_specflags |= SI_MOUNTEDON;
