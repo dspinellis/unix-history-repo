@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_ether.h	7.9 (Berkeley) %G%
+ *	@(#)if_ether.h	7.10 (Berkeley) %G%
  */
 
 /*
@@ -85,17 +85,6 @@ struct	arpcom {
 	int	ac_multicnt;		/* length of ac_multiaddrs list */	
 };
 
-/*
- * Internet to ethernet address resolution table.
- */
-struct	arptab {
-	struct	in_addr at_iaddr;	/* internet address */
-	u_char	at_enaddr[6];		/* ethernet address */
-	u_char	at_timer;		/* minutes since last reference */
-	u_char	at_flags;		/* flags */
-	struct	mbuf *at_hold;		/* last packet until resolved/timeout */
-}; /* XXX: only used to define SIOCGARP, which is no longer supported */
-
 struct llinfo_arp {				
 	struct	llinfo_arp *la_next;
 	struct	llinfo_arp *la_prev;
@@ -125,19 +114,20 @@ struct sockaddr_inarp {
 u_char	etherbroadcastaddr[6];
 u_char	ether_ipmulticast_min[6];
 u_char	ether_ipmulticast_max[6];
+struct	ifqueue arpintrq;
 
 struct	llinfo_arp *arptnew __P((struct in_addr *));
 struct	llinfo_arp llinfo_arp;		/* head of the llinfo queue */
-int	ether_output __P((struct ifnet *, struct mbuf *, struct sockaddr *,
-			  struct rtentry *));
-int	ether_input __P((struct ifnet *, struct ether_header *, struct mbuf *));
-char	*ether_sprintf __P((u_char *));
-void	arp_rtrequest __P((int, struct rtentry *, struct sockaddr *));
-struct	ifqueue arpintrq;
 
-/* XXX These probably belong elsewhere */
-void	in_arpinput __P((struct mbuf *));
 void	arpwhohas __P((struct arpcom *, struct in_addr *));
+void	arpintr __P((void));
+int	arpresolve __P((struct arpcom *,
+	   struct rtentry *, struct mbuf *, struct sockaddr *, u_char *));
+void	arp_rtrequest __P((int, struct rtentry *, struct sockaddr *));
+void	arpwhohas __P((struct arpcom *, struct in_addr *));
+
+int	ether_addmulti __P((struct ifreq *, struct arpcom *));
+int	ether_delmulti __P((struct ifreq *, struct arpcom *));
 
 /*
  * Ethernet multicast address structure.  There is one of these for each
@@ -155,7 +145,6 @@ struct ether_multi {
 	struct	ether_multi *enm_next;	/* ptr to next ether_multi */
 };
 
-#ifdef KERNEL
 /*
  * Structure used by macros below to remember position when stepping through
  * all of the ether_multi records.
@@ -205,5 +194,5 @@ struct ether_multistep {
 	(step).e_enm = (ac)->ac_multiaddrs; \
 	ETHER_NEXT_MULTI((step), (enm)); \
 }
-#endif
+
 #endif
