@@ -253,7 +253,7 @@ getnamefield(nf, bp)
 static void
 usage()
 {
-        (void)fprintf(stderr, "usage: mkcapdb [-f outfile] file1 [file2 ...]\n");
+        (void)fprintf(stderr, "usage: cap_mkdb [-f outfile] file1 [file2 ...]\n");
         exit(1);
 }
 
