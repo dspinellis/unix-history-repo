@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)vlimit.3	6.1 (Berkeley) %G%
+.\"	@(#)vlimit.3	6.2 (Berkeley) %G%
 .\"
 .TH VLIMIT 3C ""
 .UC 4
@@ -79,19 +79,4 @@ given 5 seconds grace by raising the cpu time limit.
 .SH SEE ALSO
 csh(1)
 .SH BUGS
-If LIM_NORAISE is set, then no grace should be given when the cpu
-time limit is exceeded.
-.PP
-There should be 
-.I limit
-and
-.I unlimit
-commands in
-.IR sh (1)
-as well as in
-.IR csh.
-.PP
-This call is peculiar to this version of UNIX.
-The options and specifications of this system call and even the call itself
-are subject to change.  It may be extended or replaced by other
-facilities in future versions of the system.
+LIM_NORAISE no longer exists.
