@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)appen.A	6.4 (Berkeley) %G%
+.\"	@(#)appen.A	6.5 (Berkeley) %G%
 .\"
 .ie t .oh '\*(Ln Appendix A''PS1:18-%'
 .eh 'PS1:18-%''\*(Ln Appendix A'
@@ -39,7 +39,7 @@ Also, it demonstrates how one might control the output to the window.  If
 you run this program, you will get a demonstration of the character output
 chracteristics discussed in the above Character Output section.
 .(l I
-.so t2.gr
+.so ex1.gr
 .)l
 .sh 3 "A Small Screen Manipulator"
 .pp
@@ -48,7 +48,7 @@ demonstrate the various othe uses of the package.  Make sure you understand
 how this program works as it encompasses most of anything you will
 need to do with the package.
 .(l I
-.so t3.gr
+.so ex2.gr
 .)l
 .sh 3 "Twinkle"
 .pp
