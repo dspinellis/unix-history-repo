@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_malloc.c	7.25 (Berkeley) 5/8/91
- *	$Id: kern_malloc.c,v 1.5 1993/11/25 01:33:02 wollman Exp $
+ *	$Id: kern_malloc.c,v 1.6 1994/01/14 16:24:48 davidg Exp $
  */
 
 #include "param.h"
@@ -252,5 +252,8 @@ kmeminit()
 	}
 	for (indx = 0; indx < M_LAST; indx++)
 		kmemstats[indx].ks_limit = npg * NBPG * 6 / 10;
+
+	/* limit the amount of mbuf space to 1/16 of system memory */
+	kmemstats[M_MBUF].ks_limit = (vm_page_count * NBPG) / 16;
 #endif
 }
