@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_serv.c	7.40 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.40.1.1 (Berkeley) %G%
  */
 
 /*
@@ -573,6 +573,7 @@ nfsrv_create(mrep, md, dpos, cred, xid, mrq, repstat, p)
 		vap->va_mode = nfstov_mode(*tl);
 		rdev = fxdr_unsigned(long, *(tl+3));
 		if (vap->va_type == VREG || vap->va_type == VSOCK) {
+			p->p_spare[1]--;
 			vrele(nd.ni_startdir);
 			if (error = VOP_CREATE(&nd, vap, p))
 				nfsm_reply(0);
@@ -595,11 +596,13 @@ nfsrv_create(mrep, md, dpos, cred, xid, mrq, repstat, p)
 			} else
 				vap->va_rdev = (dev_t)rdev;
 			if (error = VOP_MKNOD(&nd, vap, cred, p)) {
+				p->p_spare[1]--;
 				vrele(nd.ni_startdir);
 				nfsm_reply(0);
 			}
 			nd.ni_nameiop &= ~(OPMASK | LOCKPARENT | SAVESTART);
 			nd.ni_nameiop |= LOOKUP;
+			p->p_spare[1]--;
 			if (error = lookup(&nd, p)) {
 				free(nd.ni_pnbuf, M_NAMEI);
 				nfsm_reply(0);
@@ -620,6 +623,7 @@ nfsrv_create(mrep, md, dpos, cred, xid, mrq, repstat, p)
 		}
 		vp = nd.ni_vp;
 	} else {
+		p->p_spare[1]--;
 		vrele(nd.ni_startdir);
 		free(nd.ni_pnbuf, M_NAMEI);
 		vp = nd.ni_vp;
@@ -649,7 +653,7 @@ nfsrv_create(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	return (error);
 nfsmout:
 	if (nd.ni_nameiop)
-		vrele(nd.ni_startdir);
+		p->p_spare[1]--, vrele(nd.ni_startdir);
 	VOP_ABORTOP(&nd);
 	if (nd.ni_dvp == nd.ni_vp)
 		vrele(nd.ni_dvp);
@@ -660,6 +664,7 @@ nfsmout:
 	return (error);
 
 out:
+	p->p_spare[1]--;
 	vrele(nd.ni_startdir);
 	free(nd.ni_pnbuf, M_NAMEI);
 	nfsm_reply(0);
@@ -818,9 +823,11 @@ out:
 		vrele(fromnd.ni_dvp);
 		vrele(fvp);
 	}
+	p->p_spare[1]--;
 	vrele(tond.ni_startdir);
 	FREE(tond.ni_pnbuf, M_NAMEI);
 out1:
+	p->p_spare[1]--;
 	vrele(fromnd.ni_startdir);
 	FREE(fromnd.ni_pnbuf, M_NAMEI);
 	nfsm_reply(0);
@@ -828,10 +835,12 @@ out1:
 
 nfsmout:
 	if (tond.ni_nameiop) {
+		p->p_spare[1]--;
 		vrele(tond.ni_startdir);
 		FREE(tond.ni_pnbuf, M_NAMEI);
 	}
 	if (fromnd.ni_nameiop) {
+		p->p_spare[1]--;
 		vrele(fromnd.ni_startdir);
 		FREE(fromnd.ni_pnbuf, M_NAMEI);
 		VOP_ABORTOP(&fromnd);

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vnops.c	7.64 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	7.64.1.1 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -838,6 +838,7 @@ ufs_rename(fndp, tndp, p)
 			goto out;
 		if ((tndp->ni_nameiop & SAVESTART) == 0)
 			panic("ufs_rename: lost to startdir");
+		p->p_spare[1]--;
 		if (error = lookup(tndp, p))
 			goto out;
 		dp = VTOI(tndp->ni_dvp);
@@ -961,6 +962,7 @@ unlinkit:
 	fndp->ni_nameiop |= LOCKPARENT | LOCKLEAF;
 	if ((fndp->ni_nameiop & SAVESTART) == 0)
 		panic("ufs_rename: lost from startdir");
+	p->p_spare[1]--;
 	(void) lookup(fndp, p);
 	if (fndp->ni_vp != NULL) {
 		xp = VTOI(fndp->ni_vp);
