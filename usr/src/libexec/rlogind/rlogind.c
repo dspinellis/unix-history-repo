@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	4.12 83/02/28";
+static char sccsid[] = "@(#)rlogind.c	4.13 83/05/03";
 #endif
 
 #include <stdio.h>
@@ -33,7 +33,7 @@ main(argc, argv)
 	int argc;
 	char **argv;
 {
-	int f, options = SO_KEEPALIVE;
+	int f, options = 0;
 	struct sockaddr_in from;
 	struct servent *sp;
 
@@ -81,10 +81,8 @@ main(argc, argv)
 	if (options & SO_DEBUG)
 		if (setsockopt(f, SOL_SOCKET, SO_DEBUG, 0, 0) < 0)
 			perror("rlogind: setsockopt (SO_DEBUG)");
-#ifdef notdef
 	if (setsockopt(f, SOL_SOCKET, SO_KEEPALIVE, 0, 0) < 0)
-		perror("rlogind: setsocktopt (SO_KEEPALIVE)");
-#endif
+		perror("rlogind: setsockopt (SO_KEEPALIVE)");
 	if (bind(f, &sin, sizeof (sin), 0) < 0) {
 		perror("rlogind: bind");
 		exit(1);

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	4.18 83/02/21";
+static char sccsid[] = "@(#)telnetd.c	4.19 83/05/03";
 #endif
 
 /*
@@ -10,14 +10,14 @@ static char sccsid[] = "@(#)telnetd.c	4.18 83/02/21";
 
 #include <netinet/in.h>
 
+#include <arpa/telnet.h>
+
 #include <stdio.h>
 #include <signal.h>
 #include <errno.h>
 #include <sgtty.h>
 #include <wait.h>
 #include <netdb.h>
-
-#include "telnet.h"
 
 #define	BELL		'\07'
 
@@ -96,10 +96,8 @@ again:
 	if (options & SO_DEBUG)
 		if (setsockopt(s, SOL_SOCKET, SO_DEBUG, 0, 0) < 0)
 			perror("telnetd: setsockopt (SO_DEBUG)");
-#ifdef notdef
 	if (setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, 0, 0) < 0)
 		perror("telnetd: setsockopt (SO_KEEPALIVE)");
-#endif
 	while (bind(s, (caddr_t)&sin, sizeof (sin), 0) < 0) {
 		perror("telnetd: bind");
 		sleep(5);

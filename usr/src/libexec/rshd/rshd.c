@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	4.14 83/02/23";
+static char sccsid[] = "@(#)rshd.c	4.15 83/05/03";
 #endif
 
 #include <sys/ioctl.h>
@@ -81,10 +81,8 @@ main(argc, argv)
 	}
 	if (options & SO_DEBUG && setsockopt(f, SOL_SOCKET, SO_DEBUG, 0, 0) < 0)
 		perror("rshd: setsockopt (SO_DEBUG)");
-#ifdef notdef
 	if (setsockopt(f, SOL_SOCKET, SO_KEEPALIVE, 0, 0) < 0)
 		perror("rshd: setsockopt (SO_KEEPALIVE)");
-#endif
 	if (bind(f, (caddr_t)&sin, sizeof (sin), 0) < 0) {
 		perror("rshd: bind");
 		exit(1);
