@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)mkfs.c	2.8 (Berkeley) %G%";
+static	char *sccsid = "@(#)mkfs.c	2.9 (Berkeley) %G%";
 
 /*
  * make file system for cylinder-group style file systems
@@ -478,9 +478,7 @@ next:
 			printf("\n");
 		printf(" %d,", fsbtodb(&sblock, cgsblock(&sblock, cylno)));
 	}
-	printf("\n%s\n%s\n",
-	    "WRITE THESE NUMBERS DOWN!!!",
-	    "fsck depends on them to recover this file system.");
+	printf("\n");
 	/*
 	 * Now construct the initial file system,
 	 * then write out the super-block.
