@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1988, 1990 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)tcp_output.c	7.19 (Berkeley) %G%
+ *	@(#)tcp_output.c	7.20 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -42,6 +42,10 @@
 #include "tcpip.h"
 #include "tcp_debug.h"
 
+#ifdef notyet
+extern struct mbuf *m_copypack();
+#endif
+
 /*
  * Initial options.
  */
@@ -55,12 +59,11 @@ tcp_output(tp)
 {
 	register struct socket *so = tp->t_inpcb->inp_socket;
 	register long len, win;
-	struct mbuf *m0;
 	int off, flags, error;
 	register struct mbuf *m;
 	register struct tcpiphdr *ti;
 	u_char *opt;
-	unsigned optlen = 0;
+	unsigned optlen, hdrlen;
 	int idle, sendalot;
 
 	/*
@@ -70,6 +73,13 @@ tcp_output(tp)
 	 * to send, then transmit; otherwise, investigate further.
 	 */
 	idle = (tp->snd_max == tp->snd_una);
+	if (idle && tp->t_idle >= tp->t_rxtcur)
+		/*
+		 * We have been idle for "a while" and no acks are
+		 * expected to clock out any data we send --
+		 * slow start to get ack "clock" running again.
+		 */
+		tp->snd_cwnd = tp->t_maxseg;
 again:
 	sendalot = 0;
 	off = tp->snd_nxt - tp->snd_una;
@@ -90,8 +100,8 @@ again:
 		}
 	}
 
-	len = min(so->so_snd.sb_cc, win) - off;
 	flags = tcp_outflags[tp->t_state];
+	len = min(so->so_snd.sb_cc, win) - off;
 
 	if (len < 0) {
 		/*
@@ -116,26 +126,8 @@ again:
 	}
 	if (SEQ_LT(tp->snd_nxt + len, tp->snd_una + so->so_snd.sb_cc))
 		flags &= ~TH_FIN;
+
 	win = sbspace(&so->so_rcv);
-
-
-	/*
-	 * If our state indicates that FIN should be sent
-	 * and we have not yet done so, or we're retransmitting the FIN,
-	 * then we need to send.
-	 */
-	if (flags & TH_FIN &&
-	    ((tp->t_flags & TF_SENTFIN) == 0 || tp->snd_nxt == tp->snd_una))
-		goto send;
-	/*
-	 * Send if we owe peer an ACK.
-	 */
-	if (tp->t_flags & TF_ACKNOW)
-		goto send;
-	if (flags & (TH_SYN|TH_RST))
-		goto send;
-	if (SEQ_GT(tp->snd_up, tp->snd_una))
-		goto send;
 
 	/*
 	 * Sender silly window avoidance.  If connection is idle
@@ -171,11 +163,32 @@ again:
 	if (win > 0) {
 		int adv = win - (tp->rcv_adv - tp->rcv_nxt);
 
+		/* this was:					XXX
+		 * if (so->so_rcv.sb_cc == 0 && adv >= 2 * tp->t_maxseg)
+		 */
 		if (adv >= 2 * tp->t_maxseg)
 			goto send;
 		if (2 * adv >= so->so_rcv.sb_hiwat)
 			goto send;
 	}
+
+	/*
+	 * Send if we owe peer an ACK.
+	 */
+	if (tp->t_flags & TF_ACKNOW)
+		goto send;
+	if (flags & (TH_SYN|TH_RST))
+		goto send;
+	if (SEQ_GT(tp->snd_up, tp->snd_una))
+		goto send;
+	/*
+	 * If our state indicates that FIN should be sent
+	 * and we have not yet done so, or we're retransmitting the FIN,
+	 * then we need to send.
+	 */
+	if (flags & TH_FIN &&
+	    ((tp->t_flags & TF_SENTFIN) == 0 || tp->snd_nxt == tp->snd_una))
+		goto send;
 
 	/*
 	 * TCP window updates are not reliable, rather a polling protocol
@@ -212,17 +225,31 @@ again:
 
 send:
 	/*
+	 * Before ESTABLISHED, force sending of initial options
+	 * unless TCP set not to do any options.
+	 * NOTE: we assume that the IP/TCP header plus TCP options
+	 * always fit in a single mbuf, leaving room for a maximum
+	 * link header, i.e.
+	 *	max_linkhdr + sizeof (struct tcpiphdr) + optlen <= MHLEN
+	 */
+	optlen = 0;
+	hdrlen = sizeof (struct tcpiphdr);
+	if (flags & TH_SYN && (tp->t_flags & TF_NOOPT) == 0) {
+		opt = tcp_initopt;
+		optlen = sizeof (tcp_initopt);
+		hdrlen += sizeof (tcp_initopt);
+		*(u_short *)(opt + 2) = htons((u_short) tcp_mss(tp, 0));
+#ifdef DIAGNOSTIC
+	 	if (max_linkhdr + hdrlen > MHLEN)
+			panic("tcphdr too big");
+#endif
+	}
+
+	/*
 	 * Grab a header mbuf, attaching a copy of data to
 	 * be transmitted, and initialize the header from
 	 * the template for sends on this connection.
 	 */
-	MGETHDR(m, M_DONTWAIT, MT_HEADER);
-	if (m == NULL)
-		return (ENOBUFS);
-	m->m_data += max_linkhdr;
-	m->m_len = sizeof (struct tcpiphdr);
-	m->m_pkthdr.rcvif = (struct ifnet *)0;
-	ti = mtod(m, struct tcpiphdr *);
 	if (len) {
 		if (tp->t_force && len == 1)
 			tcpstat.tcps_sndprobe++;
@@ -233,19 +260,58 @@ send:
 			tcpstat.tcps_sndpack++;
 			tcpstat.tcps_sndbyte += len;
 		}
-		if (len <= MHLEN - sizeof (struct tcpiphdr) - max_linkhdr) {
+#ifdef notyet
+		if ((m = m_copypack(so->so_snd.sb_mb, off,
+		    (int)len, max_linkhdr + hdrlen)) == 0) {
+			error = ENOBUFS;
+			goto out;
+		}
+		/*
+		 * m_copypack left space for our hdr; use it.
+		 */
+		m->m_len += hdrlen;
+		m->m_data -= hdrlen;
+#else
+		MGETHDR(m, M_DONTWAIT, MT_HEADER);
+		if (m == NULL) {
+			error = ENOBUFS;
+			goto out;
+		}
+		m->m_data += max_linkhdr;
+		m->m_len = hdrlen;
+		if (len <= MHLEN - hdrlen - max_linkhdr) {
 			if (m->m_next == 0)
 				len = 0;
 		}
-	} else if (tp->t_flags & TF_ACKNOW)
-		tcpstat.tcps_sndacks++;
-	else if (flags & (TH_SYN|TH_FIN|TH_RST))
-		tcpstat.tcps_sndctrl++;
-	else if (SEQ_GT(tp->snd_up, tp->snd_una))
-		tcpstat.tcps_sndurg++;
-	else
-		tcpstat.tcps_sndwinup++;
+#endif
+		/*
+		 * If we're sending everything we've got, set PUSH.
+		 * (This will keep happy those implementations which only
+		 * give data to the user when a buffer fills or
+		 * a PUSH comes in.)
+		 */
+		if (off + len == so->so_snd.sb_cc)
+			flags |= TH_PUSH;
+	} else {
+		if (tp->t_flags & TF_ACKNOW)
+			tcpstat.tcps_sndacks++;
+		else if (flags & (TH_SYN|TH_FIN|TH_RST))
+			tcpstat.tcps_sndctrl++;
+		else if (SEQ_GT(tp->snd_up, tp->snd_una))
+			tcpstat.tcps_sndurg++;
+		else
+			tcpstat.tcps_sndwinup++;
 
+		MGETHDR(m, M_DONTWAIT, MT_HEADER);
+		if (m == NULL) {
+			error = ENOBUFS;
+			goto out;
+		}
+		m->m_data += max_linkhdr;
+		m->m_len = hdrlen;
+	}
+	m->m_pkthdr.rcvif = (struct ifnet *)0;
+	ti = mtod(m, struct tcpiphdr *);
 	if (tp->t_template == 0)
 		panic("tcp_output");
 	bcopy((caddr_t)tp->t_template, (caddr_t)ti, sizeof (struct tcpiphdr));
@@ -260,39 +326,8 @@ send:
 		tp->snd_nxt--;
 	ti->ti_seq = htonl(tp->snd_nxt);
 	ti->ti_ack = htonl(tp->rcv_nxt);
-	/*
-	 * Before ESTABLISHED, force sending of initial options
-	 * unless TCP set to not do any options.
-	 */
-	opt = NULL;
-	if (flags & TH_SYN && (tp->t_flags & TF_NOOPT) == 0) {
-		u_short mss;
-
-		mss = min(so->so_rcv.sb_hiwat / 2, tcp_mss(tp));
-		if (mss > IP_MSS - sizeof(struct tcpiphdr)) {
-			opt = tcp_initopt;
-			optlen = sizeof (tcp_initopt);
-			*(u_short *)(opt + 2) = htons(mss);
-		}
-	}
-	if (opt) {
-		m0 = m->m_next;
-		m->m_next = m_get(M_DONTWAIT, MT_DATA);
-		if (m->m_next == 0) {
-			(void) m_free(m);
-			m_freem(m0);
-			return (ENOBUFS);
-		}
-		m->m_next->m_next = m0;
-		m0 = m->m_next;
-		m0->m_len = optlen;
-		bcopy((caddr_t)opt, mtod(m0, caddr_t), optlen);
-		opt = (u_char *)(mtod(m0, caddr_t) + optlen);
-		while (m0->m_len & 0x3) {
-			*opt++ = TCPOPT_EOL;
-			m0->m_len++;
-		}
-		optlen = m0->m_len;
+	if (optlen) {
+		bcopy((caddr_t)opt, (caddr_t)(ti + 1), optlen);
 		ti->ti_off = (sizeof (struct tcphdr) + optlen) >> 2;
 	}
 	ti->ti_flags = flags;
@@ -302,8 +337,8 @@ send:
 	 */
 	if (win < (long)(so->so_rcv.sb_hiwat / 4) && win < (long)tp->t_maxseg)
 		win = 0;
-	if (win > IP_MAXPACKET)
-		win = IP_MAXPACKET;
+	if (win > TCP_MAXWIN)
+		win = TCP_MAXWIN;
 	if (win < (long)(tp->rcv_adv - tp->rcv_nxt))
 		win = (long)(tp->rcv_adv - tp->rcv_nxt);
 	if (win > IP_MAXPACKET)
@@ -320,23 +355,15 @@ send:
 		 * number wraparound.
 		 */
 		tp->snd_up = tp->snd_una;		/* drag it along */
-	/*
-	 * If anything to send and we can send it all, set PUSH.
-	 * (This will keep happy those implementations which only
-	 * give data to the user when a buffer fills or a PUSH comes in.)
-	 */
-	if (len && off+len == so->so_snd.sb_cc)
-		ti->ti_flags |= TH_PUSH;
 
 	/*
 	 * Put TCP length in extended header, and then
 	 * checksum extended header and data.
 	 */
 	if (len + optlen)
-		ti->ti_len = htons((u_short)(sizeof(struct tcphdr) +
+		ti->ti_len = htons((u_short)(sizeof (struct tcphdr) +
 		    optlen + len));
-	ti->ti_sum = in_cksum(m,
-	    (int)(sizeof (struct tcpiphdr) + (int)optlen + len));
+	ti->ti_sum = in_cksum(m, (int)(hdrlen + len));
 
 	/*
 	 * In transmit state, time the transmission and arrange for
@@ -348,11 +375,13 @@ send:
 		/*
 		 * Advance snd_nxt over sequence space of this segment.
 		 */
-		if (flags & TH_SYN)
-			tp->snd_nxt++;
-		if (flags & TH_FIN) {
-			tp->snd_nxt++;
-			tp->t_flags |= TF_SENTFIN;
+		if (flags & (TH_SYN|TH_FIN)) {
+			if (flags & TH_SYN)
+				tp->snd_nxt++;
+			if (flags & TH_FIN) {
+				tp->snd_nxt++;
+				tp->t_flags |= TF_SENTFIN;
+			}
 		}
 		tp->snd_nxt += len;
 		if (SEQ_GT(tp->snd_nxt, tp->snd_max)) {
@@ -396,22 +425,35 @@ send:
 
 	/*
 	 * Fill in IP length and desired time to live and
-	 * send to IP level.
+	 * send to IP level.  There should be a better way
+	 * to handle ttl and tos; we could keep them in
+	 * the template, but need a way to checksum without them.
 	 */
-	((struct ip *)ti)->ip_len = sizeof (struct tcpiphdr) + optlen + len;
-	if (m->m_flags & M_PKTHDR)
-		m->m_pkthdr.len = ((struct ip *)ti)->ip_len;
-	((struct ip *)ti)->ip_ttl = tcp_ttl;
+	m->m_pkthdr.len = hdrlen + len;
+	((struct ip *)ti)->ip_len = m->m_pkthdr.len;
+	((struct ip *)ti)->ip_ttl = tp->t_inpcb->inp_ip.ip_ttl;	/* XXX */
+	((struct ip *)ti)->ip_tos = tp->t_inpcb->inp_ip.ip_tos;	/* XXX */
+#if BSD >= 43
 #if BSD>=43
 	error = ip_output(m, tp->t_inpcb->inp_options, &tp->t_inpcb->inp_route,
 	    so->so_options & SO_DONTROUTE);
 #else
 	error = ip_output(m, (struct mbuf *)0, &tp->t_inpcb->inp_route, 
+	    so->so_options & SO_DONTROUTE);
+#endif
+#else
+	error = ip_output(m, (struct mbuf *)0, &tp->t_inpcb->inp_route, 
 			  so->so_options & SO_DONTROUTE);
 #endif
 	if (error) {
+out:
 		if (error == ENOBUFS) {
 			tcp_quench(tp->t_inpcb);
+			return (0);
+		}
+		if ((error == EHOSTUNREACH || error == ENETDOWN)
+		    && TCPS_HAVERCVDSYN(tp->t_state)) {
+			tp->t_softerror = error;
 			return (0);
 		}
 		return (error);
