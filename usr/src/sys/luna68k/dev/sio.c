@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sio.c	7.5 (Berkeley) %G%
+ *	@(#)sio.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -37,6 +37,7 @@
 #include <luna68k/dev/siovar.h>
 
 struct sio_portc *sio_port_assign();
+struct sio_portc *sio_port_get();
 
 int	sioprobe();
 int	sioopen();
@@ -65,7 +66,7 @@ int	siosoftCAR;
 int	sio_active;
 int	sioconsole = -1;
 int	siodefaultrate = TTYDEF_SPEED;
-int	siomajor = 0;
+int	siomajor = 12;
 
 struct	tty sio_tty[NLINE];
 
@@ -133,16 +134,39 @@ sio_port_assign(port, major, unit, intr)
 	int	port, major, unit;
 	int	(*intr)();
 {
-	register struct sio_portc *pc = &sio_portc[port];
+	register struct sio_portc *pc;
 
-	if (pc->pc_major != -1)
+	pc = &sio_portc[port];
+
+/*
+	if ((pc->pc_major != -1) && (major != 2))
 		return((struct sio_portc *) 0);
-
+ */
 	pc->pc_major = major;
 	pc->pc_intr  = intr;
 	pc->pc_unit  = unit;
 
 	return(pc);
+}
+
+struct sio_portc *
+sio_port_get(port)
+	int port;
+{
+	register struct sio_portc *pc;
+
+	pc = &sio_portc[port];
+
+	return(pc);
+}
+
+int 
+sio_port_info()
+{
+	printf("sio_port_info[sio.c]:\t{%d}       major = %d, unit = %d, intr = 0x%x\n",
+		0, sio_portc[0].pc_major, sio_portc[0].pc_unit, sio_portc[0].pc_intr);
+	printf("sio_port_info[sio.c]:\t{%d}       major = %d, unit = %d, intr = 0x%x\n",
+		1, sio_portc[1].pc_major, sio_portc[1].pc_unit, sio_portc[1].pc_intr);
 }
 
 
