@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_output.c	7.1 (Berkeley) %G%
+ *	@(#)tcp_output.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -80,8 +80,6 @@ again:
 
 	len = MIN(so->so_snd.sb_cc, win) - off;
 	flags = tcp_outflags[tp->t_state];
-	if (SEQ_LT(tp->snd_nxt + len, tp->snd_una + so->so_snd.sb_cc))
-		flags &= ~TH_FIN;
 
 	if (len < 0) {
 		/*
@@ -116,6 +114,8 @@ again:
 		if (tp->t_rxtshift == 0)
 			sendalot = 1;
 	}
+	if (SEQ_LT(tp->snd_nxt + len, tp->snd_una + so->so_snd.sb_cc))
+		flags &= ~TH_FIN;
 	win = sbspace(&so->so_rcv);
 
 
