@@ -4,11 +4,11 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.3 (Berkeley) %G%
+		@(#)README	8.4 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
-at Berkeley.  These use features in the new (R6) sendmail, and although
+at Berkeley.  These use features in the new (R8) sendmail, and although
 there is an ``OLDSENDMAIL'' mode, they haven't really been tested on
 old versions of sendmail and cannot be expected to work well.
 
@@ -105,7 +105,7 @@ This example exposes the host inside of the CS subdomain -- that is,
 it doesn't try to hide the name of the workstation to the outside
 world.  Changing this to DOMAIN(cs.hidden) would have made outgoing
 messages refer to "<username>@CS.Berkeley.EDU" instead of using the
-local hostname.  Internaly this is effected by using
+local hostname.  Internally this is effected by using
 "MASQUERADE_AS(CS.Berkeley.EDU)".
 
 	MAILER(smtp)
@@ -154,8 +154,11 @@ USENET_MAILER_PATH	[/usr/lib/news/inews] The name of the program
 USENET_MAILER_FLAGS	[rlsDFMmn] The mailer flags for the usenet mailer.
 USENET_MAILER_ARGS	[-m -h -n] The command line arguments for the
 			usenet mailer.
-SMTP_MAILER_FLAGS	[undefined] Flags added to SMTP mailer.
-UUCP_MAILER_FLAGS	[undefined] Flags added to UUCP mailer.
+SMTP_MAILER_FLAGS	[undefined] Flags added to SMTP mailer.  Default
+			flags are `mDFMUX' (and `a' for esmtp mailer).
+UUCP_MAILER_FLAGS	[undefined] Flags added to UUCP mailer.  Default
+			flags are `DFMhuU' (and `m' for suucp mailer, minus
+			`U' for uucp-dom mailer).
 UUCP_MAILER_ARGS	[uux - -r -z -a$f -gC $h!rmail ($u)] The arguments
 			passed to the UUCP mailer.
 UUCP_MAX_SIZE		[100000] The maximum size message accepted for
@@ -194,18 +197,21 @@ hosts:
 
 UUCP_RELAY	The host that will forward UUCP-addressed email.
 		If not defined, all UUCP sites must be directly
-		connected.
+		connected.  This can be an SMTP hostname or a
+		mailer:hostname.
 BITNET_RELAY	The host that will forward BITNET-addressed email.
 		If not defined, the .BITNET pseudo-domain won't work.
+		Can be an SMTP hostname or a mailer:hostname.
 CSNET_RELAY	The host that will forward CSNET-addressed email.
 		If not defined, the .CSNET pseudo-domain won't work.
+		Can be an SMTP hostname or a mailer:hostname.
 LOCAL_RELAY	The site that will handle unqualified names -- that
 		is, names with out an @domain extension.  If not set,
 		they are assumed to belong on this machine.  This
 		allows you to have a central site to store a
 		company- or department-wide alias database.  This
 		only works at small sites, and there are better
-		methods.
+		methods.  Can be an SMTP hostname or a mailer:hostname.
 
 The domain file can also be used to define a domain name, if needed
 (using "DD<domain>") and set certain site-wide features.  If all hosts
@@ -247,6 +253,8 @@ uucp		The Unix-to-Unix Copy Program mailer.  Actually, this
 		names in the $=Y class are sent to suucp.  Note that
 		this is a function of what version of rmail runs on
 		the receiving end, and hence may be out of your control.
+		If smtp is defined, it also defines a "uucp-dom" mailer
+		that uses domain-style rewriting.
 
 usenet		Usenet (network news) delivery.  If this is specified,
 		an extra rule is added to ruleset 0 that forwards all
@@ -742,6 +750,11 @@ confTIME_ZONE		USE_SYSTEM	Ot	Time zone info -- can be
 confDEF_USER_ID		1		Ou	Default user id.
 confUSERDB_SPEC		(undefined)	OU	User database specification.
 confFALLBACK_MX		(undefined)	OV	Fallback MX host.
+confTRY_NULL_MX_LIST	False		Ow	If we are the best MX for a
+						host and haven't made other
+						arrangements, try connecting
+						to the host directly; normally
+						this would be a config error.
 confQUEUE_LA		8		Ox	Load average at which queue-only
 						function kicks in.
 confREFUSE_LA		12		OX	Load average at which incoming
@@ -828,6 +841,7 @@ RULESETS (* means built in to sendmail)
   90	Mailertable host stripping
   96	Bottom half of Ruleset 3 (ruleset 6 in old sendmail)
   97	Hook for recursive ruleset 0 call (ruleset 7 in old sendmail)
+  98	Local part of ruleset 0 (ruleset 8 in old sendmail)
 
 
 MAILERS
