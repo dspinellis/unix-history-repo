@@ -3,8 +3,27 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)proc.h	7.2 (Berkeley) %G%
+ *	@(#)proc.h	7.3 (Berkeley) %G%
  */
+
+/*
+ * One structure allocated per session.
+ */
+struct	session {
+	struct	proc *s_leader;	/* pointer to session leader */
+	short	s_count;	/* number of pgrps in session */
+};
+
+/*
+ * One structure allocated per process group.
+ */
+struct	pgrp {
+	struct	pgrp *pg_hforw;	/* forward link in hash bucket */
+	struct	proc *pg_mem;	/* pointer to pgrp members */
+	struct	session *pg_session;	/* pointer to session */
+	pid_t	pg_id;		/* pgrp id */
+	short	pg_jobc;	/* # procs qualifying pgrp for job control */
+};
 
 /*
  * One structure allocated per active
@@ -34,9 +53,8 @@ struct	proc {
 	int	p_sigcatch;	/* signals being caught by user */
 	int	p_flag;
 	uid_t	p_uid;		/* user id, used to direct tty signals */
-	short	p_pgrp;		/* name of process group leader */
-	short	p_pid;		/* unique process id */
-	short	p_ppid;		/* process id of parent */
+	pid_t	p_pid;		/* unique process id */
+	pid_t	p_ppid;		/* process id of parent */
 	u_short	p_xstat;	/* Exit status for wait */
 	struct	rusage *p_ru;	/* mbuf holding exit information */
 	short	p_poip;		/* page outs in progress */
@@ -60,6 +78,10 @@ struct	proc {
 	struct	proc *p_cptr;	/* pointer to youngest living child */
 	struct	proc *p_osptr;	/* pointer to older sibling processes */
 	struct	proc *p_ysptr;	/* pointer to younger siblings */
+	struct 	pgrp *p_pgrp;	/* pointer to process group */
+#define p_session p_pgrp->pg_session
+#define p_pgid	p_pgrp->pg_id
+	struct	proc *p_pgrpnxt; /* pointer to next process in process group */
 	struct	itimerval p_realtimer;
 	struct	quota *p_quota;	/* quotas for this process */
 #if defined(tahoe)
@@ -72,8 +94,10 @@ struct	proc {
 #define	PIDHASH(pid)	((pid) & (PIDHSZ - 1))
 
 #ifdef KERNEL
-short	pidhash[PIDHSZ];
+pid_t	pidhash[PIDHSZ];
 struct	proc *pfind();
+struct	pgrp *pgrphash[PIDHSZ];
+struct 	pgrp *pgfind();		/* find process group by id */
 struct	proc *proc, *procNPROC;	/* the proc table itself */
 struct	proc *freeproc, *zombproc, *allproc;
 			/* lists of procs in various states */
@@ -85,6 +109,10 @@ struct	prochd {
 	struct	proc *ph_rlink;
 } qs[NQS];
 int	whichqs;		/* bit mask summarizing non-empty qs's */
+
+#define SESS_LEADER(p)	((p)->p_session->s_leader == (p))
+#define PGRP_JOBC(p)	(((p)->p_pgrp != (p)->p_pptr->p_pgrp) && \
+			((p)->p_session == (p)->p_pptr->p_session))
 #endif
 
 /* stat codes */
@@ -121,3 +149,6 @@ int	whichqs;		/* bit mask summarizing non-empty qs's */
 #define	SSEL	0x0400000	/* selecting; wakeup/waiting danger */
 #define	SLOGIN	0x0800000	/* a login process (legit child of init) */
 #define	SPTECHG	0x1000000	/* pte's for process have changed */
+#define STRCSYS	0x2000000	/* tracing system calls */
+#define STRCSYSI 0x4000000	/* tracing system calls - inherited */
+#define SEXEC	0x8000000	/* process called exec */
