@@ -1,0 +1,127 @@
+/*
+ * This is the style guide for BSD's KNF or Kernel Normal Form.
+ *
+ * Multi-line comments look like this.  Make them real sentences.  Fill them
+ * so they look like real paragraphs.
+ *
+ * 	@(#)style	1.1	(Berkeley)	%G%
+ */
+
+/* Single-line comments look like this. */
+
+/* Include files go at top of source module. */
+#include <stdio.h>			/* Non-local includes in brackets. */
+
+/* All pathnames go in paths.h in local directory. */
+#include "paths.h"			/* Local includes in quotes. */		
+
+/*
+ * All ANSI function decls go at the top of the source module.  Use the
+ * __P macro from include file <sys/cdefs.h>.  Only the kernel has a name
+ * associated with the types.
+ */
+void f1 __P((int, const char *));
+
+/*
+ * Macros are capitalized, parenthesized, and should avoid side-effects.
+ * If more than a single line, use braces.
+ */
+#define	MACRO(x, y) { \
+	variable = (x) + (y); \
+	line two;
+}
+
+/* Enum types are capitalized. */
+enum enumtype { ONE, TWO } et;
+
+/*
+ * When declaring variables in structures, declare them sorted by use, then
+ * by size, and then by alphabetical order.  The first category normally
+ * doesn't apply, but there are exceptions.  Each one gets its own line.
+ * Put a tab after the type, i.e. use "int^Ix;" and "char *^Ix;".
+ */
+struct foo {
+	struct one	two;			/* Comment for two. */
+	struct one	three;			/* Comment for three. */
+	int	bar;
+} actual_space;
+	
+main(argc, argv)
+	int argc;
+	char **argv;
+{
+	extern char *optarg;
+	extern int optind;
+	int ch;
+
+	while ((ch = getopt(argc, argv, "")) != EOF)
+		switch (ch) {		/* Indent the switch. */
+		case '':		/* Don't indent the case. */
+			break;
+		case '?':
+		default:
+			usage();
+		}
+	argc -= optind;
+	argv += optind;
+
+	/* Space after keywords (while, for, return, switch) */
+	for (;;)			/* Forever loop. */
+		block;			/* No parens for single line block. */
+	
+	for (; cnt < 15; ++cnt) {	/* Okay to leave for parts empty. */
+		block1;			/* Avoid variable decls in blocks. */
+		block2;
+	}
+
+	while (cnt < 20) {
+		block1;
+		block2;
+	}
+
+	if (test) {
+		block;
+	} else if (bar) {		/* If on same line as else. */
+		block;
+	} else				/* Close paren on same line as else. */
+		block;			/* No parens for single line block. */
+		
+	if (result = f1(a1, a2))	/* No space on function call. */
+		exit(1);		/* Exit 1 on error. */
+	exit(0);			/* Exit 0 on success. */
+	
+}
+
+f2(a1, a2, f1)
+	int a1, a2;			/* Declare ints too. */
+	float f1;			/* List in order declared. */
+{
+	/*
+	 * When declaring variables in functions declare them sorted by size,
+	 * then in alphabetical order; multiple ones per line are okay.  Old
+	 * style function declarations can go on the same line.  ANSI style
+	 * function declarations should be in the include file "externs.h".
+	 * If a line overflows, just reuse the type keyword.
+	 */
+	extern u_char one;
+	extern char two;
+	struct foo three, four;
+	double five;
+	int six, seven;
+	char eight, nine();
+	char overflow();
+
+	return (bad ? 1 : 0);
+}
+
+f3()
+{
+					/* Empty line if no variables. */
+	return (1);
+}
+
+usage()
+{					/* use printf(3), not puts/putchar */
+	(void)fprintf(stderr, "usage: X:\n");
+	exit(1);
+}
