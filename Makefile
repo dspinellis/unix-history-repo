@@ -1,6 +1,6 @@
 #	@(#)Makefile	5.1.1.2 (Berkeley) 5/9/91
 #
-#	$Id: Makefile,v 1.46 1994/05/02 23:51:19 jkh Exp $
+#	$Id: Makefile,v 1.47 1994/05/05 20:05:10 ache Exp $
 #
 
 SUBDIR=
@@ -206,6 +206,7 @@ libraries:
 	cd ${.CURDIR}/gnu/lib/libg++;		make depend all install ${CLEANDIR} obj
 	cd ${.CURDIR}/gnu/lib/libregex;		make depend all install ${CLEANDIR} obj
 	cd ${.CURDIR}/gnu/lib/libmalloc;	make depend all install ${CLEANDIR} obj
+	cd ${.CURDIR}/gnu/lib/libreadline;	make depend all install ${CLEANDIR} obj
 	cd ${.CURDIR}/usr.bin/lex;	make depend all install ${CLEANDIR} obj
 .if exists(${.CURDIR}/kerberosIV) && !defined(NOCRYPT)
 	cd ${.CURDIR}/kerberosIV/des;	make depend all install ${CLEANDIR} obj
