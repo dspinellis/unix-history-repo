@@ -44,9 +44,18 @@
  */
 #define	COPY_SIGCODE		/* copy sigcode above user stack in exec */
 
-#define	cpu_exec(p)	/* nothing */
-#define	cpu_wait(p)	/* nothing */
+#define	cpu_exec(p)		/* nothing */
+#define	cpu_wait(p)		/* nothing */
 #define	cpu_setstack(p, ap)	((p)->p_md.md_tf->tf_out[6] = (ap) - 64)
+
+/*
+ * See syscall() for an explanation of the following.  Note that the
+ * locore bootstrap code follows the syscall stack protocol.  The
+ * framep argument is unused.
+ */
+#define cpu_set_init_frame(p, fp) \
+	(p)->p_md.md_tf = (struct trapframe *) \
+	    ((caddr_t)(p)->p_addr + UPAGES * NBPG - sizeof(struct trapframe))
 
 /*
  * Arguments to hardclock, softclock and gatherstats encapsulate the
