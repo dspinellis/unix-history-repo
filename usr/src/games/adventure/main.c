@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.1 (Berkeley) %G%";
 #endif /* not lint */
 
 /*      Re-coding of advent in C: main program                          */

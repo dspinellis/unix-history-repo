@@ -1,6 +1,6 @@
 /*-
- * Copyright (c) 1991, 1993 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1991, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * The game adventure was originally written in Fortran by Will Crowther
  * and Don Woods.  It was later translated to C and enhanced by Jim
@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)hdr.h	5.3 (Berkeley) %G%
+ *	@(#)hdr.h	8.1 (Berkeley) %G%
  */
 
 /*   ADVENTURE -- Jim Gillogly, Jul 1977
