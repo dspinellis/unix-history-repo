@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dirs.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)dirs.c	5.25 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -93,7 +93,7 @@ static void		 putdir __P((char *, long));
 static void		 putent __P((struct direct *));
 static void		 rst_seekdir __P((RST_DIR *, long, long));
 static long		 rst_telldir __P((RST_DIR *));
-static ino_t		 searchdir __P((ino_t, char *));
+static struct direct	*searchdir __P((ino_t, char *));
 
 /*
  *	Extract directory contents, building up a directory structure
@@ -245,11 +245,12 @@ treescan(pname, ino, todo)
 /*
  * Lookup a pathname which is always assumed to start from the ROOTINO.
  */
-ino_t
+struct direct *
 pathsearch(pathname)
 	char *pathname;
 {
 	ino_t ino;
+	struct direct *dp;
 	char *name, buffer[MAXPATHLEN];
 
 	strcpy(buffer, pathname);
@@ -257,17 +258,19 @@ pathsearch(pathname)
 	ino = ROOTINO;
 	while (*pathname == '/')
 		pathname++;
-	while ((name = strsep(&pathname, "/")) != NULL)
-		if ((ino = searchdir(ino, name)) == 0)
-			return ((ino_t)0);
-	return (ino);
+	while ((name = strsep(&pathname, "/")) != NULL && *name != NULL) {
+		if ((dp = searchdir(ino, name)) == 0)
+			return (NULL);
+		ino = dp->d_ino;
+	}
+	return (dp);
 }
 
 /*
  * Lookup the requested name in directory inum.
  * Return its inode number if found, zero if it does not exist.
  */
-static ino_t
+static struct direct *
 searchdir(inum, name)
 	ino_t	inum;
 	char	*name;
@@ -284,9 +287,9 @@ searchdir(inum, name)
 	do {
 		dp = rst_readdir(dirp);
 		if (dp == NULL || dp->d_ino == 0)
-			return (0);
+			return (NULL);
 	} while (dp->d_namlen != len || strncmp(dp->d_name, name, len) != 0);
-	return(dp->d_ino);
+	return (dp);
 }
 
 /*
@@ -476,14 +479,29 @@ rst_opendir(name)
 	char *name;
 {
 	struct inotab *itp;
+	RST_DIR *dirp;
 	ino_t ino;
 
 	if ((ino = dirlookup(name)) > 0 &&
 	    (itp = inotablookup(ino)) != NULL) {
+		dirp = opendirfile(dirfile);
 		rst_seekdir(dirp, itp->t_seekpt, itp->t_seekpt);
 		return (dirp);
 	}
 	return (0);
+}
+
+/*
+ * In our case, there is nothing to do when closing a directory.
+ */
+void
+rst_closedir(dirp)
+	RST_DIR *dirp;
+{
+
+	close(dirp->dd_fd);
+	free(dirp);
+	return;
 }
 
 /*
