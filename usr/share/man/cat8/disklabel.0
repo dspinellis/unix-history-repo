@@ -1,0 +1,168 @@
+DISKLABEL(8)              BSD System Manager's Manual             DISKLABEL(8)
+
+NNAAMMEE
+     ddiisskkllaabbeell - read and write disk pack label
+
+SSYYNNOOPPSSIISS
+     ddiisskkllaabbeell [--rr] _d_i_s_k
+     ddiisskkllaabbeell --ww [--rr] _d_i_s_k _d_i_s_k_t_y_p_e [_p_a_c_k_i_d]
+     ddiisskkllaabbeell --ee [--rr] _d_i_s_k
+     ddiisskkllaabbeell --RR [--rr] _d_i_s_k _p_r_o_t_o_f_i_l_e
+     ddiisskkllaabbeell [--NNWW] _d_i_s_k
+
+     ddiisskkllaabbeell --BB [--bb _b_o_o_t_1 [--ss _b_o_o_t_2]] _d_i_s_k [_d_i_s_k_t_y_p_e]
+     ddiisskkllaabbeell --ww --BB [--bb _b_o_o_t_1 [--ss _b_o_o_t_2]] _d_i_s_k _d_i_s_k_t_y_p_e [_p_a_c_k_i_d]
+     ddiisskkllaabbeell --RR --BB [--bb _b_o_o_t_1 [--ss _b_o_o_t_2]] _d_i_s_k _p_r_o_t_o_f_i_l_e [_d_i_s_k_t_y_p_e]
+
+DDEESSCCRRIIPPTTIIOONN
+     DDiisskkllaabbeell can be used to install, examine or modify the label on a disk
+     drive or pack.  When writing the label, it can be used to change the
+     drive identification, the disk partitions on the drive, or to replace a
+     damaged label.  On some systems, ddiisskkllaabbeell can be used to install boot-
+     strap code as well.  There are several forms of the command that read
+     (display), install or edit the label on a disk.  Each form has an addi-
+     tional option, --rr, which causes the label to be read from or written to
+     the disk directly, rather than going through the system's in-core copy of
+     the label.  This option may allow a label to be installed on a disk with-
+     out kernel support for a label, such as when labels are first installed
+     on a system; it must be used when first installing a label on a disk.
+     The specific effect of --rr is described under each command.  The read and
+     install forms also support the --BB option to install bootstrap code.
+     These varients are described later.
+
+     The first form of the command (read) is used to examine the label on the
+     named disk drive (e.g. sd0 or /dev/rsd0c).  It will display all of the
+     parameters associated with the drive and its partition layout.  Unless
+     the --rr flag is given, the kernel's in-core copy of the label is dis-
+     played; if the disk has no label, or the partition types on the disk are
+     incorrect, the kernel may have constructed or modified the label.  If the
+     --rr flag is given, the label from the raw disk will be displayed rather
+     than the in-core label.
+
+     The second form of the command, with the --ww flag, is used to write a
+     standard label on the designated drive.  The required arguments to
+     ddiisskkllaabbeell are the drive to be labelled (e.g. sd0), and the drive type as
+     described in the disktab(5) file.  The drive parameters and partitions
+     are taken from that file.  If different disks of the same physical type
+     are to have different partitions, it will be necessary to have separate
+     disktab entries describing each, or to edit the label after installation
+     as described below.  The optional argument is a pack identification
+     string, up to 16 characters long.  The pack id must be quoted if it con-
+     tains blanks.  If the --rr flag is given, the disk sectors containing the
+     label and bootstrap will be written directly.  A side-effect of this is
+     that any existing bootstrap code will be overwritten and the disk ren-
+     dered unbootable.  If --rr is not specified, the existing label will be up-
+     dated via the in-core copy and any bootstrap code will be unaffected.  If
+     the disk does not already have a label, the --rr flag must be used.  In ei-
+     ther case, the kernel's in-core label is replaced.
+
+     An existing disk label may be edited by using the --ee flag.  The label is
+     read from the in-core kernel copy, or directly from the disk if the --rr
+     flag is also given.  The label is formatted and then supplied to an edi-
+     tor for changes.  If no editor is specified in an EDITOR environment
+     variable, vi(1) is used.  When the editor terminates, the formatted label
+     is reread and used to rewrite the disk label.  Existing bootstrap code is
+     unchanged regardless of whether --rr was specified.
+
+     With the --RR flag, ddiisskkllaabbeell is capable of restoring a disk label that was
+     formatted in a prior operation and saved in an ascii file.  The prototype
+     file used to create the label should be in the same format as that pro-
+     duced when reading or editing a label.  Comments are delimited by _# and
+     newline.  As with --ww, any existing bootstrap code will be clobbered if --rr
+     is specified and will be unaffected otherwise.
+
+     The --NNWW flags for ddiisskkllaabbeell explicitly disallow and allow, respectively,
+     writing of the pack label area on the selected disk.
+
+     The final three forms of ddiisskkllaabbeell are used to install boostrap code on
+     machines where the bootstrap is part of the label.  The bootstrap code is
+     comprised of one or two boot programs depending on the machine.  The --BB
+     option is used to denote that bootstrap code is to be installed.  The --rr
+     flag is implied by --BB and never needs to be specified.  The name of the
+     boot program(s) to be installed can be selected in a variety of ways.
+     First, the names can be specified explicitly via the --bb and --ss flags.  On
+     machines with only a single level of boot program, --bb is the name of that
+     program.  For machines with a two-level bootstrap, --bb indicates the pri-
+     mary boot program and --ss the secondary boot program.  If the names are
+     not explicitly given, standard boot programs will be used.  The boot pro-
+     grams are located in _/_u_s_r_/_m_d_e_c. The names of the programs are taken from
+     the ``b0'' and ``b1'' parameters of the disktab(5) entry for the disk if
+     _d_i_s_k_t_y_p_e was given and its disktab entry exists and includes those param-
+     eters.  Otherwise, boot program names are derived from the name of the
+     disk.  These names are of the form _b_a_s_e_n_a_m_eboot for the primary (or only)
+     bootstrap, and boot_b_a_s_e_n_a_m_e for the secondary bootstrap; for example,
+     _/_u_s_r_/_m_d_e_c_/_s_d_b_o_o_t and _/_u_s_r_/_m_d_e_c_/_b_o_o_t_s_d if the disk device is _s_d_0.
+
+     The first of the three boot-installation forms is used to install boot-
+     strap code without changing the existing label.  It is essentially a read
+     command with respect to the disk label itself and all options are related
+     to the specification of the boot program as described previously.  The
+     final two forms are analogous to the basic write and restore versions ex-
+     cept that they will install bootstrap code in addition to a new label.
+
+FFIILLEESS
+     /etc/disktab
+     /usr/mdec/_x_xboot
+     /usr/mdec/boot_x_x
+
+EEXXAAMMPPLLEESS
+           disklabel sd0
+
+     Display the in-core label for sd0 as obtained via _/_d_e_v_/_r_s_d_0_c.
+
+           disklabel -w -r /dev/rsd0c sd2212 foo
+
+     Create a label for sd0 based on information for ``sd2212'' found in
+     _/_e_t_c_/_d_i_s_k_t_a_b. Any existing bootstrap code will be clobbered.
+
+           disklabel -e -r sd0
+
+     Read the on-disk label for sd0, edit it and reinstall in-core as well as
+     on-disk.  Existing bootstrap code is unaffected.
+
+           disklabel -R sd0 mylabel
+
+     Restore the on-disk and in-core label for sd0 from information in
+     _m_y_l_a_b_e_l. Existing bootstrap code is unaffected.
+
+           disklabel -B sd0
+
+     Install a new bootstrap on sd0.  The boot code comes from
+     _/_u_s_r_/_m_d_e_c_/_s_d_b_o_o_t and possibly _/_u_s_r_/_m_d_e_c_/_b_o_o_t_s_d. On-disk and in-core la-
+     bels are unchanged.
+
+           disklabel -w -B /dev/rsd0c -b newboot sd2212
+
+     Install a new label and bootstrap.  The label is derived from disktab in-
+     formation for ``sd2212'' and installed both in-core and on-disk.  The
+     bootstrap code comes from the file _/_u_s_r_/_m_d_e_c_/_n_e_w_b_o_o_t.
+
+SSEEEE AALLSSOO
+     disktab(5),  disklabel(5)
+
+DDIIAAGGNNOOSSTTIICCSS
+     The kernel device drivers will not allow the size of a disk partition to
+     be decreased or the offset of a partition to be changed while it is open.
+     Some device drivers create a label containing only a single large parti-
+     tion if a disk is unlabeled; thus, the label must be written to the ``a''
+     partition of the disk while it is open.  This sometimes requires the de-
+     sired label to be set in two steps, the first one creating at least one
+     other partition, and the second setting the label on the new partition
+     while shrinking the ``a'' partition.
+
+     On some machines the bootstrap code may not fit entirely in the area al-
+     located for it by some filesystems.  As a result, it may not be possible
+     to have filesystems on some partitions of a ``bootable'' disk.  When in-
+     stalling bootstrap code, ddiisskkllaabbeell checks for these cases.  If the in-
+     stalled boot code would overlap a partition of type FS_UNUSED it is
+     marked as type FS_BOOT.  The newfs(8) utility will disallow creation of
+     filesystems on FS_BOOT partitions.  Conversely, if a partition has a type
+     other than FS_UNUSED or FS_BOOT, ddiisskkllaabbeell will not install bootstrap
+     code that overlaps it.
+
+BBUUGGSS
+     When a disk name is given without a full pathname, the constructed device
+     name uses the ``a'' partition on the tahoe, the ``c'' partition on all
+     others.
+
+4.2 Berkeley Distribution        June 5, 1993                                3

@@ -1,0 +1,43 @@
+NETGROUP(5)                 BSD Programmer's Manual                NETGROUP(5)
+
+NNAAMMEE
+     nneettggrroouupp - defines network groups
+
+SSYYNNOOPPSSIISS
+     nneettggrroouupp
+
+DDEESSCCRRIIPPTTIIOONN
+     The nneettggrroouupp file specifies ``netgroups'', which are sets of ((hhoosstt,, uusseerr,,
+     ddoommaaiinn)) tuples that are to be given similar network access.
+
+     Each line in the file consists of a netgroup name followed by a list of
+     the members of the netgroup.  Each member can be either the name of an-
+     other netgroup or a specification of a tuple as follows:
+
+           (host, user, domain)
+     where the hhoosstt, uusseerr, and ddoommaaiinn are character string names for the cor-
+     responding component.  Any of the comma separated fields may be empty to
+     specify a ``wildcard'' value or may consist of the string ``-'' to speci-
+     fy ``no valid value''.  The members of the list may be separated by
+     whitespace and/or commas; the ``\'' character may be used at the end of a
+     line to specify line continuation.  The functions specified in getnet-
+     grent(3) should normally be used to access the nneettggrroouupp database.
+
+     Lines that begin with a # are treated as comments.
+
+FFIILLEESS
+     /etc/netgroup  the netgroup database.
+
+SSEEEE AALLSSOO
+     getnetgrent(3),  exports(5)
+
+CCOOMMPPAATTIIBBIILLIITTYY
+     The file format is compatible with that of various vendors, however it
+     appears that not all vendors use an identical format.
+
+BBUUGGSS
+     The interpretation of access restrictions based of the member tuples of a
+     netgroup is left up to the various network applications.  Also, it is not
+     obvious how the domain specification applies to the BSD environment.
+
+4.4BSD                           June 5, 1993                                1

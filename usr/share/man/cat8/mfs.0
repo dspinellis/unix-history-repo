@@ -1,0 +1,170 @@
+NEWFS(8)                  BSD System Manager's Manual                 NEWFS(8)
+
+NNAAMMEE
+     nneewwffss, mmffss - construct a new file system
+
+SSYYNNOOPPSSIISS
+     nneewwffss [--NN] [_n_e_w_f_s_-_o_p_t_i_o_n_s] _s_p_e_c_i_a_l
+     mmoouunntt__mmffss [--FF _m_o_u_n_t___f_l_a_g_s] [_n_e_w_f_s_-_o_p_t_i_o_n_s] _s_p_e_c_i_a_l _n_o_d_e
+
+DDEESSCCRRIIPPTTIIOONN
+     NNeewwffss replaces the more obtuse mkfs(8) program.  Before running nneewwffss or
+     mmoouunntt__mmffss, the disk must be labeled using disklabel(8).  NNeewwffss builds a
+     file system on the specified special device basing its defaults on the
+     information in the disk label.  Typically the defaults are reasonable,
+     however nneewwffss has numerous options to allow the defaults to be selective-
+     ly overridden.
+
+     MMoouunntt__mmffss is used to build a file system in virtual memory and then mount
+     it on a specified node.  MMoouunntt__mmffss exits and the contents of the file
+     system are lost when the file system is unmounted.  If mmoouunntt__mmffss is sent
+     a signal while running, for example during system shutdown, it will at-
+     tempt to unmount its corresponding file system.  The parameters to
+     mmoouunntt__mmffss are the same as those to nneewwffss. The special file is only used
+     to read the disk label which provides a set of configuration parameters
+     for the memory based file system.  The special file is typically that of
+     the primary swap area, since that is where the file system will be backed
+     up when free memory gets low and the memory supporting the file system
+     has to be paged.
+
+     The following options define the general layout policies.
+
+     --NN          Causes the file system parameters to be printed out without
+                 really creating the file system.
+
+     --OO          Creates an 4.3BSD format filesystem.  This options is primar-
+                 ily used to build root filesystems that can be understood by
+                 older boot ROMs.
+
+     --bb _b_l_o_c_k_-_s_i_z_e
+                 The block size of the file system in bytes.
+
+     --ff _f_r_a_g_-_s_i_z_e
+                 The fragment size of the file system in bytes.
+
+     --mm _f_r_e_e _s_p_a_c_e _%
+                 The percentage of space reserved from normal users; the mini-
+                 mum free space threshold.  The default value used is 10%.
+                 See tunefs(8) for more details on how to set this option.
+
+     --oo _o_p_t_i_m_i_z_a_t_i_o_n _p_r_e_f_e_r_e_n_c_e
+                 (``space'' or ``time'') The file system can either be in-
+                 structed to try to minimize the time spent allocating blocks,
+                 or to try to minimize the space fragmentation on the disk.
+                 If the value of minfree (see above) is less than 10%, the de-
+                 fault is to optimize for space; if the value of minfree
+                 greater than or equal to 10%, the default is to optimize for
+                 time.  See tunefs(8) for more details on how to set this op-
+                 tion.
+
+     --aa _m_a_x_c_o_n_t_i_g
+                 This specifies the maximum number of contiguous blocks that
+                 will be laid out before forcing a rotational delay (see --dd
+                 below).  The default value is one.  See tunefs(8) for more
+
+
+                 details on how to set this option.
+
+     --dd _r_o_t_d_e_l_a_y
+                 This specifies the expected time (in milliseconds) to service
+                 a transfer completion interrupt and initiate a new transfer
+                 on the same disk.  The default is 4 milliseconds.  See
+                 tunefs(8) for more details on how to set this option.
+
+     --ee _m_a_x_b_p_g   This indicates the maximum number of blocks any single file
+                 can allocate out of a cylinder group before it is forced to
+                 begin allocating blocks from another cylinder group.  The de-
+                 fault is about one quarter of the total blocks in a cylinder
+                 group.  See tunefs(8) for more details on how to set this op-
+                 tion.
+
+     --ii _n_u_m_b_e_r _o_f _b_y_t_e_s _p_e_r _i_n_o_d_e
+                 This specifies the density of inodes in the file system.  The
+                 default is to create an inode for each 2048 bytes of data
+                 space.  If fewer inodes are desired, a larger number should
+                 be used; to create more inodes a smaller number should be
+                 given.
+
+     --cc _#_c_y_l_i_n_d_e_r_s_/_g_r_o_u_p
+                 The number of cylinders per cylinder group in a file system.
+                 The default value used is 16.
+
+     --ss _s_i_z_e     The size of the file system in sectors.
+
+                 The following options override the standard sizes for the
+                 disk geometry.  Their default values are taken from the disk
+                 label.  Changing these defaults is useful only when using
+                 nneewwffss to build a file system whose raw image will eventually
+                 be used on a different type of disk than the one on which it
+                 is initially created (for example on a write-once disk).
+                 Note that changing any of these values from their defaults
+                 will make it impossible for fsck to find the alternate su-
+                 perblocks if the standard super block is lost.
+
+     --rr _r_e_v_o_l_u_t_i_o_n_s_/_m_i_n_u_t_e
+                 The speed of the disk in revolutions per minute.
+
+     --SS _s_e_c_t_o_r_-_s_i_z_e
+                 The size of a sector in bytes (almost never anything but
+                 512).
+
+     --uu _s_e_c_t_o_r_s_/_t_r_a_c_k
+                 The number of sectors per track available for data allocation
+                 by the file system.  This does not include sectors reserved
+                 at the end of each track for bad block replacement (see --pp
+                 below).
+
+     --tt _#_t_r_a_c_k_s_/_c_y_l_i_n_d_e_r
+                 The number of tracks/cylinder available for data allocation
+                 by the file system.
+
+     --pp _s_p_a_r_e _s_e_c_t_o_r_s _p_e_r _t_r_a_c_k
+                 Spare sectors (bad sector replacements) are physical sectors
+                 that occupy space at the end of each track.  They are not
+                 counted as part of the sectors/track (--uu) since they are not
+                 available to the file system for data allocation.
+
+     --xx _s_p_a_r_e _s_e_c_t_o_r_s _p_e_r _c_y_l_i_n_d_e_r
+                 Spare sectors (bad sector replacements) are physical sectors
+                 that occupy space at the end of the last track in the cylin-
+                 der.  They are deducted from the sectors/track (--uu) of the
+                 last track of each cylinder since they are not available to
+
+                 the file system for data allocation.
+
+     --ll _h_a_r_d_w_a_r_e _s_e_c_t_o_r _i_n_t_e_r_l_e_a_v_e
+                 Used to describe perturbations in the media format to compen-
+                 sate for a slow controller.  Interleave is physical sector
+                 interleave on each track, specified as the denominator of the
+                 ratio:
+                       sectors read/sectors passed over
+                 Thus an interleave of 1/1 implies contiguous layout, while
+                 1/2 implies logical sector 0 is separated by one sector from
+                 logical sector 1.
+
+     --kk _s_e_c_t_o_r _0 _s_k_e_w, _p_e_r _t_r_a_c_k
+                 Used to describe perturbations in the media format to compen-
+                 sate for a slow controller.  Track skew is the offset of sec-
+                 tor 0 on track N relative to sector 0 on track N-1 on the
+                 same cylinder.
+
+     The following option applies only to mmoouunntt__mmffss.
+
+     --FF _m_o_u_n_t _f_l_a_g_s
+                 Used to pass in a decimal numeric value to be passed as mount
+                 flags when running as a memory based file system.  This op-
+                 tion is primarily intended for use when mmoouunntt__mmffss is started
+                 by the mount(8) command.
+
+SSEEEE AALLSSOO
+     disktab(5),  fs(5),  dumpfs(8),  disklabel(8),  diskpart(8),  fsck(8),
+     format(8),  tunefs(8)
+
+     M. McKusick, W. Joy, S. Leffler, and R. Fabry, "A Fast File System for
+     UNIX,", _A_C_M _T_r_a_n_s_a_c_t_i_o_n_s _o_n _C_o_m_p_u_t_e_r _S_y_s_t_e_m_s _2, 3, pp 181-197, August
+     1984, (reprinted in the BSD System Manager's Manual).
+
+HHIISSTTOORRYY
+     The nneewwffss command appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 5, 1993                                3

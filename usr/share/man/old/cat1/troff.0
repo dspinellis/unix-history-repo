@@ -1,0 +1,87 @@
+TROFF(1)                     BSD Reference Manual                     TROFF(1)
+
+NNAAMMEE
+     ttrrooffff, nnrrooffff - text formatting and typesetting
+
+SSYYNNOOPPSSIISS
+     ttrrooffff [_o_p_t_i_o_n] _._._. [_f_i_l_e] _._._.
+
+DDEESSCCRRIIPPTTIIOONN
+     TTrrooffff formats text in the named _f_i_l_e_s for printing on a Graphic Systems
+     C/A/T phototypesetter; Its capabilities are described in the _N_r_o_f_f_/_T_r_o_f_f
+     _u_s_e_r_'_s _m_a_n_u_a_l.
+
+     If no _f_i_l_e argument is present, the standard input is read.  An argument
+     consisting of a single minus (--) is taken to be a file name corresponding
+     to the standard input.  The options, which may appear in any order so
+     long as they appear before the files, are:
+
+     --oo _l_i_s_t
+             Print only pages whose page numbers appear in the comma-separated
+             _l_i_s_t of numbers and ranges.  A range _N_-_M means pages _N through _M;
+             an initial _-_N means from the beginning to page _N; and a final _N_-
+             means from _N to the end.
+
+     --nn _N    Number first generated page _N.
+
+     --ss _N    Stop every _N pages.  TTrrooffff will stop the phototypesetter every _N
+             pages, produce a trailer to allow changing cassettes, and resume
+             when the typesetter's start button is pressed.
+
+     --mm _n_a_m_e
+             Prepend the macro file _/_u_s_r_/_l_i_b_/_t_m_a_c_/_t_m_a_c_._n_a_m_e to the input
+             _f_i_l_e_s.
+
+     --rr_a_N    Set register _a (one-character) to _N.
+
+     --ii      Read standard input after the input files are exhausted.
+
+     --qq      Invoke the simultaneous input-output mode of the rrdd request.
+
+     --tt      Direct output to the standard output instead of the phototypeset-
+             ter.
+
+     --ff      Refrain from feeding out paper and stopping phototypesetter at
+             the end of the run.
+
+     --ww      Wait until phototypesetter is available, if currently busy.
+
+     --bb      Report whether the phototypesetter is busy or available.  No text
+             processing is done.
+
+     --aa      Send a printable ASCII approximation of the results to the stan-
+             dard output.
+
+     --pp _N    Print all characters in point size _N while retaining all pre-
+             scribed spacings and motions, to reduce phototypesetter elapsed
+             time.
+
+     --FF _f_o_n_t_d_i_r
+             The directory _f_o_n_t_d_i_r contains the font width tables instead of
+             the default directory _/_u_s_r_/_l_i_b_d_a_t_a_/_t_r_o_f_f___f_o_n_t. This option can be
+             used to produce output for devices besides the phototypesetter.
+
+     If the file _/_v_a_r_/_a_c_c_o_u_n_t_/_t_r_a_c_c_t is writable, ttrrooffff keeps phototypesetter
+     accounting records there.  The integrity of that file may be secured by
+     making ttrrooffff a  'set user-id' program.
+
+FFIILLEESS
+     /tmp/ta*                        Temporary file.
+     /usr/share/tmac/tmac.*          Standard macro files.
+     /usr/libdata/term/tab*          Terminal driving tables for nnrrooffff.
+     /usr/libdata/troff_font/ftXX*   Font width tables for ttrrooffff _/_d_e_v_/_c_a_t pho-
+                                     totypesetter.
+     /var/account/tracct             Accounting statistics for _/_d_e_v_/_c_a_t.
+
+SSEEEE AALLSSOO
+     eqn(1),  tbl(1),  ms(7),  me(7),  man(7),  col(1)
+
+     J. F. Ossanna, _N_r_o_f_f_/_T_r_o_f_f _u_s_e_r_'_s _m_a_n_u_a_l.
+
+     B. W. Kernighan, _A _T_R_O_F_F _T_u_t_o_r_i_a_l.
+
+HHIISSTTOORRYY
+     The ttrrooffff command appeared in Version 6 AT&T UNIX.  The version this man
+     page decribes appeared in Version 7 AT&T UNIX.
+
+AT&T 7th Edition                August 9, 1991                               2

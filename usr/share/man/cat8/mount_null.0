@@ -1,0 +1,111 @@
+MOUNT_NULL(8)             BSD System Manager's Manual            MOUNT_NULL(8)
+
+NNAAMMEE
+     mmoouunntt__nnuullll - demonstrate the use of a null file system layer
+
+SSYYNNOOPPSSIISS
+     mmoouunntt__nnuullll [--FF _f_s_o_p_t_i_o_n_s] _t_a_r_g_e_t _m_o_u_n_t_-_p_o_i_n_t
+
+DDEESSCCRRIIPPTTIIOONN
+     The mmoouunntt__nnuullll command creates a null layer, duplicating a sub-tree of
+     the file system name space under another part of the global file system
+     namespace.  In this respect, it is similar to the loopback file system
+     (see mount_lofs(8)).  It differs from the loopback file system in two re-
+     spects:  it is implemented using a stackable layers techniques, and it's
+     ``null-node'' s stack above all lower-layer vnodes, not just over direc-
+     tory vnodes.
+
+     The null layer has two purposes.  First, it serves as a demonstration of
+     layering by proving a layer which does nothing.  (It actually does every-
+     thing the loopback file system does, which is slightly more than noth-
+     ing.)  Second, the null layer can serve as a prototype layer.  Since it
+     provides all necessary layer framework, new file system layers can be
+     created very easily be starting with a null layer.
+
+     The remainder of this man page examines the null layer as a basis for
+     constructing new layers.
+
+IINNSSTTAANNTTIIAATTIINNGG NNEEWW NNUULLLL LLAAYYEERRSS
+     New null layers are created with mount_null(8).  Mount_null(8) takes two
+     arguments, the pathname of the lower vfs (target-pn) and the pathname
+     where the null layer will appear in the namespace (mount-point-pn).  Af-
+     ter the null layer is put into place, the contents of target-pn subtree
+     will be aliased under mount-point-pn.
+
+OOPPEERRAATTIIOONN OOFF AA NNUULLLL LLAAYYEERR
+     The null layer is the minimum file system layer, simply bypassing all
+     possible operations to the lower layer for processing there.  The majori-
+     ty of its activity centers on the bypass routine, though which nearly all
+     vnode operations pass.
+
+     The bypass routine accepts arbitrary vnode operations for handling by the
+     lower layer.  It begins by examing vnode operation arguments and replac-
+     ing any null-nodes by their lower-layer equivlants.  It then invokes the
+     operation on the lower layer.  Finally, it replaces the null-nodes in the
+     arguments and, if a vnode is return by the operation, stacks a null-node
+     on top of the returned vnode.
+
+     Although bypass handles most operations, _v_o_p___g_e_t_a_t_t_r, _v_o_p___i_n_a_c_t_i_v_e,
+     _v_o_p___r_e_c_l_a_i_m, and _v_o_p___p_r_i_n_t are not bypassed.  _V_o_p___g_e_t_a_t_t_r must change the
+     fsid being returned.  _V_o_p___i_n_a_c_t_i_v_e and vop_reclaim are not bypassed so
+     that they can handle freeing null-layer specific data.  _V_o_p___p_r_i_n_t is not
+     bypassed to avoid excessive debugging information.
+
+IINNSSTTAANNTTIIAATTIINNGG VVNNOODDEE SSTTAACCKKSS
+     Mounting associates the null layer with a lower layer, in effect stacking
+     two VFSes.  Vnode stacks are instead created on demand as files are ac-
+     cessed.
+
+     The initial mount creates a single vnode stack for the root of the new
+     null layer.  All other vnode stacks are created as a result of vnode op-
+     erations on this or other null vnode stacks.
+
+     New vnode stacks come into existance as a result of an operation which
+     returns a vnode.  The bypass routine stacks a null-node above the new vn-
+     ode before returning it to the caller.
+
+     For example, imagine mounting a null layer with
+
+           mount_null /usr/include /dev/layer/null
+     Chainging directory to _/_d_e_v_/_l_a_y_e_r_/_n_u_l_l will assign the root null-node
+     (which was created when the null layer was mounted).  Now consider open-
+     ing _s_y_s. A vop_lookup would be done on the root null-node.  This opera-
+     tion would bypass through to the lower layer which would return a vnode
+     representing the UFS _s_y_s. Null_bypass then builds a null-node aliasing
+     the UFS _s_y_s and returns this to the caller.  Later operations on the
+     null-node _s_y_s will repeat this process when constructing other vnode
+     stacks.
+
+CCRREEAATTIINNGG OOTTHHEERR FFIILLEE SSYYSSTTEEMM LLAAYYEERRSS
+     One of the easiest ways to construct new file system layers is to make a
+     copy of the null layer, rename all files and variables, and then begin
+     modifing the copy.  Sed can be used to easily rename all variables.
+
+     The umap layer is an example of a layer descended from the null layer.
+
+IINNVVOOKKIINNGG OOPPEERRAATTIIOONNSS OONN LLOOWWEERR LLAAYYEERRSS
+     There are two techniques to invoke operations on a lower layer when the
+     operation cannot be completely bypassed.  Each method is appropriate in
+     different situations.  In both cases, it is the responsibility of the
+     aliasing layer to make the operation arguments "correct" for the lower
+     layer by mapping an vnode arguments to the lower layer.
+
+     The first approach is to call the aliasing layer's bypass routine.  This
+     method is most suitable when you wish to invoke the operation currently
+     being hanldled on the lower layer.  It has the advantage the the bypass
+     routine already must do argument mapping.  An example of this is
+     _n_u_l_l___g_e_t_a_t_t_r_s in the null layer.
+
+     A second approach is to directly invoked vnode operations on the lower
+     layer with the _V_O_P___O_P_E_R_A_T_I_O_N_N_A_M_E interface.  The advantage of this method
+     is that it is easy to invoke arbitrary operations on the lower layer.
+     The disadvantage is that vnodes arguments must be manualy mapped.
+
+SSEEEE AALLSSOO
+     UCLA Technical Report CSD-910056, _S_t_a_c_k_a_b_l_e _L_a_y_e_r_s_: _a_n _A_r_c_h_i_t_e_c_t_u_r_e _f_o_r
+     _F_i_l_e _S_y_s_t_e_m _D_e_v_e_l_o_p_m_e_n_t.
+
+HHIISSTTOORRYY
+     The mmoouunntt__nnuullll utility first appeared in 4.4BSD.
+
+4.4BSD                           June 9, 1993                                2

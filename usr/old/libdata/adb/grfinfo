@@ -1,0 +1,4 @@
+./"id"nD
++/"regaddr"16t"regsize"16t"fbaddr"16t"fbsize"n4X
++/"colors"8t"planes"n2d
++/"fbwidth"16t"fbheight"16t"dwidth"16t"dheight"16tn4X24+

@@ -1,0 +1,31 @@
+MOUNT_LFS(8)              BSD System Manager's Manual             MOUNT_LFS(8)
+
+NNAAMMEE
+     mmoouunntt__llffss - mount a log-structured file system
+
+SSYYNNOOPPSSIISS
+     mmoouunntt__llffss [--ddnnss] [--FF --ffssooppttiioonnss] _d_e_v_i_c_e _m_o_u_n_t___p_o_i_n_t
+
+DDEESSCCRRIIPPTTIIOONN
+     The mmoouunntt__llffss command attaches the log-structed file system residing on
+     the device named by _d_e_v_i_c_e to the global file system namespace.  The file
+     system is attached at the point specified by _m_o_u_n_t___p_o_i_n_t. This command is
+     normally executed by mount(8) at boot time.
+
+     After the file system is mounted, if the --nn flag is not specified then
+     the lfs_cleanerd(8) program is invoked to clean the file system periodi-
+     cally.  If the --dd or --ss flags are given to mmoouunntt__llffss, they are passed to
+     the cleaner.
+
+SSEEEE AALLSSOO
+     mount(2),  unmount(2),  fstab(5),  lfs_cleanerd(8)
+
+CCAAVVEEAATTSS
+     MMoouunntt__llffss can be run by hand if you wish to use the flags, and since the
+     flags are useful mainly for debugging this doesn't make much of a differ-
+     ence in normal operation.
+
+HHIISSTTOORRYY
+     The ssyyssccoonnff function first appeared in 4.4BSD.
+
+4.4BSD                           June 8, 1993                                1

@@ -1,0 +1,32 @@
+SYMORDER(1)                  BSD Reference Manual                  SYMORDER(1)
+
+NNAAMMEE
+     ssyymmoorrddeerr - rearrange name list
+
+SSYYNNOOPPSSIISS
+     ssyymmoorrddeerr --tt _s_y_m_l_i_s_t _f_i_l_e
+
+DDEESSCCRRIIPPTTIIOONN
+     The file _s_y_m_l_i_s_t contains a list of symbols to be found in _f_i_l_e_, one sym-
+     bol per line.
+
+     The symbol table of _f_i_l_e is updated in place; symbols read from _s_y_m_l_i_s_t
+     are relocated to the beginning of the table and in the order given.
+
+     --tt    Restrict the symbol table to the symbols listed in _s_y_m_l_i_s_t.
+
+     This program was specifically designed to cut down on the overhead of
+     getting symbols from _/_v_m_u_n_i_x_.
+
+DDIIAAGGNNOOSSTTIICCSS
+     The ssyymmoorrddeerr utility exits 0 on success, 1 if a symbol listed in the
+     _s_y_m_l_i_s_t file was not found in the symbol table, and >1 if an error oc-
+     curs.
+
+SSEEEE AALLSSOO
+     nm(3),  nlist(3),  strip(3)
+
+HHIISSTTOORRYY
+     The ssyymmoorrddeerr command appeared in 3.0BSD.
+
+3rd Berkeley Distribution       April 22, 1991                               1

@@ -1,0 +1,42 @@
+MOUNTD(8)                 BSD System Manager's Manual                MOUNTD(8)
+
+NNAAMMEE
+     mmoouunnttdd - service remote NFS mount requests
+
+SSYYNNOOPPSSIISS
+     //ssbbiinn//mmoouunnttdd [--nn] [_e_x_p_o_r_t_s_f_i_l_e]
+
+DDEESSCCRRIIPPTTIIOONN
+     Mountd is the server for NFS mount requests from other client machines.
+     Mountd listens for service requests at the port indicated in the NFS
+     server specification; see _N_e_t_w_o_r_k _F_i_l_e _S_y_s_t_e_m _P_r_o_t_o_c_o_l _S_p_e_c_i_f_i_c_a_t_i_o_n,
+     RFC1094.
+
+     Options and operands available for mmoouunnttdd:
+
+     --nn      The --nn option allows non-root mount requests to be served.  This
+             should only be specified if there are clients such as PC's, that
+             require it.
+
+     _e_x_p_o_r_t_s_f_i_l_e
+             The _e_x_p_o_r_t_s_f_i_l_e argument specifies an alternate location for the
+             exports file.
+
+     When mountd is started, it loads the export host addresses and options
+     into the kernel using the mount(2) system call.  After changing the ex-
+     ports file, a hangup signal should be sent to the mountd daemon to get it
+     to reload the export information.  After sending the SIGHUP (kill -HUP
+     `cat /var/run/mountd.pid`), check the syslog output to see if mountd
+     logged any parsing errors in the exports file.
+
+FFIILLEESS
+     /etc/exports         the list of exported filesystems
+     /var/run/mountd.pid  the pid of the currently running mountd
+
+SSEEEE AALLSSOO
+     nfsstat(1),  exports(5),  nfsd(8),  portmap(8),  showmount(8)
+
+HHIISSTTOORRYY
+     The mmoouunnttdd utility first appeared in 4.4BSD.
+
+4.4BSD                           June 9, 1993                                1

@@ -1,0 +1,75 @@
+SHUTDOWN(8)               BSD System Manager's Manual              SHUTDOWN(8)
+
+NNAAMMEE
+     sshhuuttddoowwnn - close down the system at a given time
+
+SSYYNNOOPPSSIISS
+     sshhuuttddoowwnn [--] [--ffhhkkrrnn] _t_i_m_e [_w_a_r_n_i_n_g_-_m_e_s_s_a_g_e _._._.]
+
+DDEESSCCRRIIPPTTIIOONN
+     SShhuuttddoowwnn provides an automated shutdown procedure for super-users to
+     nicely notify users when the system is shutting down, saving them from
+     system administrators, hackers, and gurus, who would otherwise not bother
+     with such niceties.
+
+     Available friendlinesses:
+
+     --ff    SShhuuttddoowwnn arranges, in the manner of fastboot(8),  for the file sys-
+           tems _n_o_t _t_o _b_e checked on reboot.
+
+     --hh    The system is halted at the specified _t_i_m_e when sshhuuttddoowwnn execs
+           halt(8).
+
+     --kk    Kick every body off.  The --kk option does not actually halt the sys-
+           tem, but leaves the system multi-user with logins disabled (for all
+           but super-user).
+
+     --nn    Prevent the normal sync(2) before stopping.
+
+     --rr    SShhuuttddoowwnn execs reboot(8) at the specified _t_i_m_e.
+
+     _t_i_m_e  _T_i_m_e is the time at which sshhuuttddoowwnn will bring the system down and
+           may be the word _n_o_w (indicating an immediate shutdown) or specify a
+           future time in one of two formats: _+_n_u_m_b_e_r, or _y_y_m_m_d_d_h_h_m_m, where
+           the year, month, and day may be defaulted to the current system
+           values.  The first form brings the system down in _n_u_m_b_e_r minutes
+           and the second at the absolute time specified.
+
+     _w_a_r_n_i_n_g_-_m_e_s_s_a_g_e
+           Any other arguments comprise the warning message that is broadcast
+           to users currently logged into the system.
+
+     --     If `--' is supplied as an option, the warning message is read from
+           the standard input.
+
+     At intervals, becoming more frequent as apocalypse approaches and start-
+     ing at ten hours before shutdown, warning messages are displayed on the
+     terminals of all users logged in.  Five minutes before shutdown, or imme-
+     diately if shutdown is in less than 5 minutes, logins are disabled by
+     creating _/_e_t_c_/_n_o_l_o_g_i_n and copying the warning message there.  If this
+     file exists when a user attempts to log in, login(1) prints its contents
+     and exits.  The file is removed just before sshhuuttddoowwnn exits.
+
+     At shutdown time a message is written in the system log, containing the
+     time of shutdown, who initiated the shutdown and the reason.  A terminate
+     signal is then sent to init to bring the system down to single-user state
+     (depending on above options).  The time of the shutdown and the warning
+     message are placed in _/_e_t_c_/_n_o_l_o_g_i_n and should be used to inform the users
+     about when the system will be back up and why it is going down (or any-
+     thing else).
+
+FFIILLEESS
+     /etc/nologin  tells login not to let anyone log in
+     /fastboot     tells rc(8) not to run fsck when rebooting
+
+SSEEEE AALLSSOO
+     login(1),  wall(1),  fastboot(8),  halt(8),  reboot(8)
+
+BBAACCKKWWAARRDD CCOOMMPPAATTIIBBIILLIITTYY
+     The hours and minutes in the second time format may be separated by a
+     colon (``:'') for backward compatibility.
+
+HHIISSTTOORRYY
+     The sshhuuttddoowwnn command appeared in 4.0BSD.
+
+4th Berkeley Distribution        June 5, 1993                                2

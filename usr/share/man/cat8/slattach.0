@@ -1,0 +1,41 @@
+SLATTACH(8)               BSD System Manager's Manual              SLATTACH(8)
+
+NNAAMMEE
+     ssllaattttaacchh - attach serial lines as network interfaces
+
+SSYYOOPPNNSSIISS
+     SSllaattttaacchh _t_t_y_n_a_m_e [_b_a_u_d_r_a_t_e]
+
+DDEESSCCRRIIPPTTIIOONN
+     SSllaattttaacchh is used to assign a tty line to a network interface, and to de-
+     fine the network source and destination addresses.  The following
+     operands are supported by ssllaattttaacchh:
+
+     _t_t_y_n_a_m_e       Specifies the name of the tty device.  _T_t_y_n_a_m_e should be a
+                   string of the form `ttyXX', or `/dev/ttyXX'.
+
+     _b_a_u_d_r_a_t_e      Specifies the speed of the connection. If not specified,
+                   the default of 9600 is used.
+
+     Only the super-user may attach a network interface.
+
+     To detach the interface, use ``ifconfig interface-name down'' after
+     killing off the ssllaattttaacchh process.  _I_n_t_e_r_f_a_c_e_-_n_a_m_e is the name that is
+     shown by netstat(1)
+
+EEXXAAMMPPLLEESS
+           slattach ttyh8
+           slattach /dev/tty01 4800
+
+DDIIAAGGNNOOSSTTIICCSS
+     Messages indicating the specified interface does not exit, the requested
+     address is unknown, the user is not privileged and tried to alter an in-
+     terface's configuration.
+
+SSEEEE AALLSSOO
+     netstat(1),  netintro(4),  ifconfig(8),  rc(8)
+
+HHIISSTTOORRYY
+     The ssllaattttaacchh command appeared in 4.3BSD.
+
+4.3 Berkeley Distribution        June 5, 1993                                1

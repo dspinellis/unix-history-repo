@@ -1,0 +1,146 @@
+TAR(1)                       BSD Reference Manual                       TAR(1)
+
+NNAAMMEE
+     ttaarr - tape archiver
+
+SSYYNNOOPPSSIISS
+     ttaarr [_k_e_y] [_n_a_m_e _._._.]
+
+DDEESSCCRRIIPPTTIIOONN
+     TTaarr saves and restores multiple files on a single file (usually a magnet-
+     ic tape, but it can be any file).  TTaarr's actions are controlled by the
+     _k_e_y argument.  The _k_e_y is a string of characters containing at most one
+     function letter and possibly one or more function modifiers.  Other argu-
+     ments to ttaarr are file or directory names specifying which files to dump
+     or restore.  In all cases, appearance of a directory name refers to the
+     files and (recursively) subdirectories of that directory.
+
+     The function portion of the key is specified by one of the following let-
+     ters:
+
+     rr     The named files are written on the end of the tape.  The cc function
+           implies this.
+
+     xx     The named files are extracted from the tape.  If the named file
+           matches a directory whose contents had been written onto the tape,
+           this directory is (recursively) extracted.  The owner, modification
+           time, and mode are restored (if possible).  If no file argument is
+           given, the entire content of the tape is extracted.  Note that if
+           multiple entries specifying the same file are on the tape, the last
+           one overwrites all earlier.
+
+     tt     The names of the specified files are listed each time they occur on
+           the tape.  If no file argument is given, all of the names on the
+           tape are listed.
+
+     uu     The named files are added to the tape if either they are not al-
+           ready there or have been modified since last put on the tape.
+
+     cc     Create a new tape; writing begins on the beginning of the tape in-
+           stead of after the last file.  This command implies rr.
+
+     The following characters may be used in addition to the letter which se-
+     lects the function desired.
+
+     oo     On output, tar normally places information specifying owner and
+           modes of directories in the archive.  Former versions of tar, when
+           encountering this information will give error message of the form
+
+                 <name>/: cannot create.
+
+           This modifier will suppress the directory information.
+
+     pp     This modifier says to restore files to their original modes, ignor-
+           ing the present umask(2).  Setuid and sticky information will also
+           be restored to the super-user.
+
+     00, ......, 99
+           This modifier selects an alternate drive on which the tape is
+           mounted.  The default is drive 0 at 1600 bpi, which is normally
+           _/_d_e_v_/_r_m_t_8.
+
+     vv     Normally ttaarr does its work silently.  The vv (verbose) option makes
+           ttaarr print the name of each file it treats preceded by the function
+           letter.  With the tt function, the verbose option gives more infor-
+
+           mation about the tape entries than just their names.
+
+     ww     TTaarr prints the action to be taken followed by file name, then wait
+           for user confirmation. If a word beginning with `y' is given, the
+           action is done. Any other input means don't do it.
+
+     ff     TTaarr uses the next argument as the name of the archive instead of
+           /dev/rmt?. If the name of the file is `--', tar writes to standard
+           output or reads from standard input, whichever is appropriate.
+           Thus, ttaarr can be used as the head or tail of a filter chain.  TTaarr
+           can also be used to move hierarchies with the command
+
+                 cd fromdir; tar cf - . | (cd todir; tar xf -)
+
+     bb     TTaarr uses the next argument as the blocking factor for tape records.
+           The default is 20 (the maximum). This option should only be used
+           with raw magnetic tape archives (See ff above).  The block size is
+           determined automatically when reading tapes (key letters xx and tt).
+
+     ss     tells ttaarr to strip off any leading slashes from pathnames.
+
+     ll     tells ttaarr to complain if it cannot resolve all of the links to the
+           files dumped.  If this is not specified, no error messages are
+           printed.
+
+     mm     tells ttaarr not to restore the modification times.  The modification
+           time will be the time of extraction.
+
+     hh     Force ttaarr to follow symbolic links as if they were normal files or
+           directories.  Normally, ttaarr does not follow symbolic links.
+
+     HH     Force ttaarr to follow symbolic links on the command line only as if
+           they were normal files or directories.  Normally, ttaarr does not fol-
+           low symbolic links.  Note that --hh supercedes --HH.
+
+     BB     Forces input and output blocking to 20 blocks per record.  This op-
+           tion was added so that ttaarr can work across a communications channel
+           where the blocking may not be maintained.
+
+     CC     If a file name is preceded by --CC, then ttaarr will perform a chdir(2)
+           to that file name.  This allows multiple directories not related by
+           a close common parent to be archived using short relative path
+           names.  For example, to archive files from /usr/include and from
+           /etc, one might use
+
+                 tar c -C /usr include -C / etc
+
+     Previous restrictions dealing with ttaarr's inability to properly handle
+     blocked archives have been lifted.
+
+FFIILLEESS
+     /dev/rmt?
+     /tmp/tar*
+
+SSEEEE AALLSSOO
+     tar(5),  format(5),  symlink(7)
+
+DDIIAAGGNNOOSSTTIICCSS
+     Complaints about bad key characters and tape read/write errors.
+
+     Complaints if enough memory is not available to hold the link tables.
+
+BBUUGGSS
+     There is no way to ask for the _n-th occurrence of a file.
+
+
+     Tape errors are handled ungracefully.
+
+     The uu option can be slow.
+
+     The current limit on file name length is 100 characters.
+
+     There is no way selectively to follow symbolic links.
+
+     When extracting tapes created with the rr or uu options, directory modifi-
+     cation times may not be set correctly.
+
+HHIISSTTOORRYY
+     The ttaarr command appeared in Version 7 AT&T UNIX.
+
+AT&T 7th Edition                 July 27, 1992                               3

@@ -1,0 +1,18 @@
+,0$<# Format a tty structure.
+,0$<# As a convenience, this script takes an optional count which can be 
+,0$<# used to offset count number of tty structs from dot; thus, specifying
+,0$<# the base of an array of ttys, and a unit number +1 as the
+,0$<# count (one-origin, due to how the $< command works), will
+,0$<# format the appropiate tty.
+.>5
+<9-1="Unit: "D
+<5+((<9-1)*0t160)/"rawq: cc"16t"cf"16t"cl"nD2X
++/"canq: cc"16t"cf"16t"cl"nD2X
++/"outq: cc"16t"cf"16t"cl"nD2X
++/"oproc"16t"param"16t"rsel"16t"wsel"n2p2X
++/"LINEP"16t"addr"16t"dev"8t"flags"nXpx2+X
++/"state"16t"session"16t"pgrp"16t"line"nXXX\1+
++/"col"8t"rocount"8t"rocol"8t"hiwat"8t"lowat"8tn5d
++/"ws_row"8t"ws_col"8t"ws_xpix"8t"ws_ypix"n4u
++$<<termios
++/"cancc"16t"rawcc"16t"outcc"16t"gen"n3Ud

@@ -1,0 +1,30 @@
+SUM(1)                       BSD Reference Manual                       SUM(1)
+
+NNAAMMEE
+     ssuumm - calculate file checksums and block counts
+
+SSYYNNOOPPSSIISS
+     ssuumm _f_i_l_e
+
+DDEESSCCRRIIPPTTIIOONN
+     The ssuumm utility calculates and writes to standard output a checksum (16
+     bit CRC) for each input file, and also writes to the standard output the
+     number of blocks in each file.
+
+     The following operand is available:
+
+     _f_i_l_e  The pathname of the _f_i_l_e to checksum.  If no file operands are
+           specified, the standard input is used.
+
+SSEEEE AALLSSOO
+     wc(1)
+
+DDIIAAGGNNOOSSTTIICCSS
+     The ssuumm utility exits zero on success, and >0 if an error occurs.
+
+     End-of-file may return a read-error.
+
+HHIISSTTOORRYY
+     A ssuumm command appeared in Version 7 AT&T UNIX.
+
+4.4BSD                           July 15, 1992                               1

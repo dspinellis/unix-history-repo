@@ -1,0 +1,37 @@
+SCSIFORMAT(8)             BSD System Manager's Manual            SCSIFORMAT(8)
+
+NNAAMMEE
+     ssccssiiffoorrmmaatt - format SCSI disks and show SCSI parameters
+
+SSYYNNOOPPSSIISS
+     ssccssiiffoorrmmaatt [--rr] [--pp _p_a_g_e_-_c_o_n_t_r_o_l] _r_a_w_-_d_e_v_i_c_e_-_n_a_m_e
+
+DDEESSCCRRIIPPTTIIOONN
+     The ssccssiiffoorrmmaatt utility can be used to format SCSI disks on systems that
+     support on-line SCSI formatting (currently this is limited to the HP300
+     and SPARC ports).  It will also show the various parameters set in the
+     SCSI controller.
+
+     The options are as follows:
+
+     --pp      Modify how the SCSI mode sense page query is constructed.  By de-
+             fault, ssccssiiffoorrmmaatt asks for the current settings.  The page-
+             control flag is one of:
+
+             c    gets current settings.
+             d    gets default settings (those provided by the disk's manufac-
+                  turer).
+             s    gets saved settings (those that persist across power cy-
+                  cles).
+             v    shows which parameters are variable.
+
+     --rr      Don't format, instead display the disk parameters.
+
+DDIIAAGGNNOOSSTTIICCSS
+     These should mostly be self-explanatory.  A copy of the SCSI standard (or
+     a more readable derivative) may be useful, however.
+
+HHIISSTTOORRYY
+     The ssccssiiffoorrmmaatt utility first appeared in 4.4BSD.
+
+4th Berkeley Distribution        June 5, 1993                                1
