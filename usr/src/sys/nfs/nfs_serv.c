@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_serv.c	7.62 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.63 (Berkeley) %G%
  */
 
 /*
@@ -184,17 +184,15 @@ nfsrv_setattr(nfsd, mrep, md, dpos, cred, nam, mrq)
 	if (nfsd->nd_nqlflag == NQL_NOVAL) {
 		if (sp->sa_nfssize != nfs_xdrneg1)
 			vap->va_size = fxdr_unsigned(u_quad_t, sp->sa_nfssize);
-		/*
-		 * The usec field of sa_atime is overloaded with the va_flags field
-		 * for 4.4BSD clients. Hopefully other clients always set both the
-		 * sec and usec fields to -1 when not setting the atime.
-		 */
 		if (sp->sa_nfsatime.nfs_sec != nfs_xdrneg1) {
-			vap->va_atime.ts_sec = fxdr_unsigned(long, sp->sa_nfsatime.nfs_sec);
+#ifdef notyet
+			fxdr_nfstime(&sp->sa_nfsatime, &vap->va_atime);
+#else
+			vap->va_atime.ts_sec =
+				fxdr_unsigned(long, sp->sa_nfsatime.nfs_sec);
 			vap->va_atime.ts_nsec = 0;
+#endif
 		}
-		if (sp->sa_nfsatime.nfs_usec != nfs_xdrneg1)
-			vap->va_flags = fxdr_unsigned(u_long, sp->sa_nfsatime.nfs_usec);
 		if (sp->sa_nfsmtime.nfs_sec != nfs_xdrneg1)
 			fxdr_nfstime(&sp->sa_nfsmtime, &vap->va_mtime);
 	} else {
