@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)sym.h 1.2 %G%"; */
+/* static char sccsid[] = "@(#)sym.h 1.3 %G%"; */
 
 /*
  * This header file declares the variables and routines that
@@ -31,6 +31,7 @@ BOOLEAN isblock();		/* test if a symbol is a block name */
 BOOLEAN isbuiltin();		/* test if a symbol is a builtin type */
 BOOLEAN isparam();		/* test if a symbol is a parameter */
 BOOLEAN isvarparam();		/* test if a symbol is a var parameter */
+BOOLEAN isvariable();		/* test if a symbol is a variable */
 BOOLEAN isambiguous();		/* test if a symbol name is not unique */
 BOOLEAN compatible();		/* test to see if two types are compatible */
 BOOLEAN should_print();		/* test if a symbol should be printed */
