@@ -1,0 +1,39 @@
+The Apollo has a bizarre operating system which does not permit
+Emacs to be dumped with preloaded pure Lisp code.  Therefore, each
+time you start Emacs on this system, the standard Lisp code is loaded
+into it.  Expect it to take a long time.  You can prevent loading of
+the standard Lisp code by specifying the -nl switch.  It must
+come at the beginning of the command line; only the -t and -batch
+switches may come before it.
+
+You must use m-apollo.h in the config.h file, together with
+s-bsd4.2.h.
+
+There is one remaining problem on the Apollo.  You must replace
+the CPP line in src/Makefile with "CPP = /usr/lib/cpp".
+The C preprocessor lives there rather than in /lib/cpp because the
+Aegis OS uses the /lib directory as the repository for shared libraries.
+
+
+Here is a design for a method of dumping and reloading the relevant
+necessary impure areas of Emacs.
+
+On dumping, you need to dump only the array `pure' plus the
+locations that contain values of forwarded Lisp variables or that are
+protected for garbage collection.  The former can be found by a
+garbage- collection-like technique, and the latter are in the
+staticprolist vector (see alloc.c for both things).
+
+Reloading would work in an Emacs that has just been started; except
+when a switch is specified to inhibit this, it would read the dump
+file and set all the appropriate locations.  The data loaded must be
+relocated, but that's not hard.  Those locations that are of type
+Lisp_Object can be found by a technique like garbage-collection, and
+those of them that point to storage can be relocated.  The other data
+read from the file will not need to be relocated.
+
+The switch to inhibit loading the data base would be used when it
+is time to dump a new data base.
+
+This would take a few seconds, which is much faster than loading
+the Lisp code of Emacs from scratch.
