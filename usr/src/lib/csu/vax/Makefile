@@ -1,7 +1,8 @@
-#	@(#)Makefile	5.12 (Berkeley) %G%
+#	@(#)Makefile	5.13 (Berkeley) %G%
 
 CFLAGS=	-O -DLIBC_SCCS
 OBJS=	crt0.o mcrt0.o gcrt0.o
+CLEANFILES+=	gmon.o mon.o moncrt0.o core a.out
 
 all: ${OBJS}
 
@@ -43,9 +44,6 @@ install:
 	install -o ${BINOWN} -g ${BINGRP} -m 444 ${OBJS} \
 	    ${DESTDIR}/usr/lib
 
-cleandir clean:
-	rm -f ${OBJS} gmon.o mon.o moncrt0.o core a.out
-
 depend lint tags:
 
-.include <bsd.own.mk>
+.include <bsd.prog.mk>
