@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	7.3 (Berkeley) %G%
+ *	@(#)machdep.c	7.4 (Berkeley) %G%
  */
 
 #include "reg.h"
@@ -759,8 +759,8 @@ tbiscl(v)
   
 int	waittime = -1;
 
-boot(paniced, arghowto)
-	int paniced, arghowto;
+boot(arghowto)
+	int arghowto;
 {
 	register int howto;		/* r11 == how to boot */
 	register int devtype;		/* r10 == major of root dev */
@@ -808,7 +808,7 @@ boot(paniced, arghowto)
 		for (;;)
 			;
 	} else {
-		if (paniced == RB_PANIC) {
+		if (howto & RB_DUMP) {
 			doadump();		/* TXDB_BOOT's itself */
 			/*NOTREACHED*/
 		}
