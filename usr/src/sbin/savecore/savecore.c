@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)savecore.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)savecore.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -77,7 +77,7 @@ int	dumpsize;			/* amount of memory dumped */
 int	dumpmag;			/* magic number in dump */
 time_t	now;				/* current date */
 char	*path();
-unsigned malloc();
+char	*malloc();
 char	*ctime();
 char	vers[80];
 char	core_vers[80];
@@ -167,7 +167,7 @@ find_dev(dev, type)
 		if ((statb.st_mode&S_IFMT) != type)
 			continue;
 		if (dev == statb.st_rdev) {
-			dp = (char *)malloc(strlen(devname)+1);
+			dp = malloc(strlen(devname)+1);
 			strcpy(dp, devname);
 			return dp;
 		}
@@ -316,7 +316,7 @@ char *
 path(file)
 	char *file;
 {
-	register char *cp = (char *)malloc(strlen(file) + strlen(dirname) + 2);
+	register char *cp = malloc(strlen(file) + strlen(dirname) + 2);
 
 	(void) strcpy(cp, dirname);
 	(void) strcat(cp, "/");
@@ -368,14 +368,20 @@ read_number(fn)
 	return (atoi(lin));
 }
 
+#define	BUFPAGES	(256*1024/NBPG)		/* 1/4 Mb */
+
 save_core()
 {
 	register int n;
-	char buffer[32*NBPG];
-	register char *cp = buffer;
+	register char *cp;
 	register int ifd, ofd, bounds;
 	register FILE *fp;
 
+	cp = malloc(BUFPAGES*NBPG);
+	if (cp == NULL) {
+		fprintf(stderr, "can't malloc buffer\n");
+		return;
+	}
 	bounds = read_number("bounds");
 	ifd = Open(system?system:"/vmunix", 0);
 	while((n = Read(ifd, cp, BUFSIZ)) > 0)
@@ -391,7 +397,8 @@ save_core()
 	printf("Saving %d bytes of image in vmcore.%d\n", NBPG*dumpsize,
 		bounds);
 	while (dumpsize > 0) {
-		n = Read(ifd, cp, (dumpsize > 32 ? 32 : dumpsize) * NBPG);
+		n = Read(ifd, cp,
+			(dumpsize > BUFPAGES ? BUFPAGES : dumpsize) * NBPG);
 		if (n == 0) {
 			printf("WARNING: core may be incomplete\n");
 			break;
@@ -404,6 +411,7 @@ save_core()
 	fp = fopen(path("bounds"), "w");
 	fprintf(fp, "%d\n", bounds+1);
 	fclose(fp);
+	free(cp);
 }
 
 char *days[] = {
