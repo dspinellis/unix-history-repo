@@ -1,3 +1,18 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
 .\"	@(#)uuencode.format.5	6.2 (Berkeley) %G%
 .\"
 .TH UUENCODE 5 ""
@@ -6,11 +21,11 @@
 uuencode \- format of an encoded uuencode file
 .SH DESCRIPTION
 Files output by
-.I uuencode(1C)
+.I uuencode(1)
 consist of a header line,
 followed by a number of body lines,
 and a trailer line.
-.I Uudecode(1C)
+.I Uudecode(1)
 will ignore any lines preceding the header or
 following the trailer.
 Lines preceding a header must not, of course,
@@ -48,4 +63,4 @@ This line consists of one ASCII space.
 .PP
 The trailer line consists of \*(lqend\*(rq on a line by itself.
 .SH "SEE ALSO"
-uuencode(1C), uudecode(1C), uusend(1C), uucp(1C), mail(1)
+uuencode(1), uudecode(1), uusend(1), uucp(1), mail(1)
