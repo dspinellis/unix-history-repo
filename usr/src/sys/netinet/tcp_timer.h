@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)tcp_timer.h	7.4 (Berkeley) %G%
+ *	@(#)tcp_timer.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -47,22 +47,23 @@
  * a window update from the peer.
  *
  * The TCPT_KEEP timer is used to keep connections alive.  If an
- * connection is idle (no segments received) for TCPTV_KEEP amount of time,
- * but not yet established, then we drop the connection.  If the connection
- * is established, then we force the peer to send us a segment by sending:
+ * connection is idle (no segments received) for TCPTV_KEEP_INIT amount of time,
+ * but not yet established, then we drop the connection.  Once the connection
+ * is established, if the connection is idle for TCPTV_KEEP_IDLE time
+ * (and keepalives have been enabled on the socket), we begin to probe
+ * the connection.  We force the peer to send us a segment by sending:
  *	<SEQ=SND.UNA-1><ACK=RCV.NXT><CTL=ACK>
  * This segment is (deliberately) outside the window, and should elicit
  * an ack segment in response from the peer.  If, despite the TCPT_KEEP
  * initiated segments we cannot elicit a response from a peer in TCPT_MAXIDLE
- * amount of time, then we drop the connection.
+ * amount of time probing, then we drop the connection.
  */
 
 #define	TCP_TTL		30		/* default time to live for TCP segs */
-int	tcp_ttl;			/* time to live for TCP segs */
 /*
  * Time constants.
  */
-#define	TCPTV_MSL	( 15*PR_SLOWHZ)		/* max seg lifetime */
+#define	TCPTV_MSL	( 30*PR_SLOWHZ)		/* max seg lifetime (hah!) */
 #define	TCPTV_SRTTBASE	0			/* base roundtrip time;
 						   if 0, no idea yet */
 #define	TCPTV_SRTTDFLT	(  3*PR_SLOWHZ)		/* assumed RTT if no info */
@@ -70,9 +71,10 @@ int	tcp_ttl;			/* time to live for TCP segs */
 #define	TCPTV_PERSMIN	(  5*PR_SLOWHZ)		/* retransmit persistance */
 #define	TCPTV_PERSMAX	( 60*PR_SLOWHZ)		/* maximum persist interval */
 
-#define	TCPTV_KEEP	( 75*PR_SLOWHZ)		/* keep alive - 75 secs */
-#define	TCPTV_MAXIDLE	(  8*TCPTV_KEEP)	/* maximum allowable idle
-						   time before drop conn */
+#define	TCPTV_KEEP_INIT	( 75*PR_SLOWHZ)		/* initial connect keep alive */
+#define	TCPTV_KEEP_IDLE	(120*60*PR_SLOWHZ)	/* dflt time before probing */
+#define	TCPTV_KEEPINTVL	( 75*PR_SLOWHZ)		/* default probe interval */
+#define	TCPTV_KEEPCNT	8			/* max probes before drop */
 
 #define	TCPTV_MIN	(  1*PR_SLOWHZ)		/* minimum allowable value */
 #define	TCPTV_REXMTMAX	( 64*PR_SLOWHZ)		/* max allowable REXMT value */
@@ -98,5 +100,9 @@ char *tcptimers[] =
 }
 
 #ifdef KERNEL
+extern int tcp_keepidle;		/* time before keepalive probes begin */
+extern int tcp_keepintvl;		/* time between keepalive probes */
+extern int tcp_maxidle;			/* time to drop after starting probes */
+extern int tcp_ttl;			/* time to live for TCP segs */
 extern int tcp_backoff[];
 #endif
