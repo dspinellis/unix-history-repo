@@ -1,5 +1,5 @@
 /*
-char id_idate[] = "@(#)idate_.c	1.1";
+char id_idate[] = "@(#)idate_.c	1.2";
  *
  * return date in numerical form
  *
@@ -11,7 +11,7 @@ char id_idate[] = "@(#)idate_.c	1.1";
  */
 
 #include <sys/types.h>
-#include <time.h>
+#include <sys/time.h>
 
 idate_(iar)
 struct { long iday; long imon; long iyer; } *iar;
