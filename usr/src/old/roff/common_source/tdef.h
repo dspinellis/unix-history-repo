@@ -1,9 +1,8 @@
 /*
- *	@(#)tdef.h	4.1 %G%
+ *	@(#)tdef.h	4.2 %G%
  */
-#include <pagsiz.h>
-#define	BUFSIZ	BSIZE
-#undef BMASK
+#include <sys/param.h>
+#define	BUFSIZ	MAXBSIZE
 #define MAXPTR 0x7fffffff	/* max value of any pointer variable */
 #ifdef NROFF	/*NROFF*/
 #define EM t.Em
@@ -73,6 +72,7 @@
 #define VMOT 0040000	/*vert motion bit*/
 #define NMOT 0020000	/* negative motion indicator*/
 #define MMASK 0100000	/*macro mask indicator*/
+#undef	CMASK
 #define CMASK 0100377
 #define ZBIT 0400	/*zero width char*/
 #define BMASK 0377
