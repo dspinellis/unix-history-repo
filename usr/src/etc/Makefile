@@ -1,12 +1,14 @@
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 
 NOOBJ=	oobj
 
+# disktab may be wrong -- hcx9 is a tahoe, but gets its own.
 # -rw-r--r--
 BIN1=	aliases csh.cshrc csh.login csh.logout crontab daily dm.conf \
 	ftpusers gettytab group hosts hosts.equiv hosts.lpd inetd.conf \
 	man.conf monthly motd netstart phones printcap protocols rc \
-	rc.local remote security services shells syslog.conf ttys weekly
+	rc.local remote security services shells syslog.conf ttys weekly \
+	etc.${MACHINE}/disktab
 
 # -rw-rw-rw-
 BIN2=	motd
