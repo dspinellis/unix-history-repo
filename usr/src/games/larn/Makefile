@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.10 (Berkeley) %G%
+#	@(#)Makefile	5.11 (Berkeley) %G%
 
 # EXTRA
 #	Incorporates code to gather additional performance statistics
@@ -63,7 +63,7 @@ HIDEGAME=hidegame
 
 beforeinstall:
 	(cd ${.CURDIR}/datfiles; install -c -o ${BINOWN} -g ${BINGRP} -m 444 \
-	    larnmaze larnopts lfortune larn.help \
+	    larnmaze larnopts larn.help \
 	    ${DESTDIR}/usr/share/games/larn)
 
 .include <bsd.prog.mk>
