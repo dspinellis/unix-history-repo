@@ -12,14 +12,14 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pwd_mkdb.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)pwd_mkdb.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <signal.h>
 #include <fcntl.h>
-#include <ndbm.h>
+#include <db.h>
 #include <pwd.h>
 #include <errno.h>
 #include <limits.h>
@@ -45,9 +45,9 @@ main(argc, argv)
 	register int len, makeold;
 	register char *p, *t;
 	FILE *fp, *oldfp;
-	DBM *dp, *edp;
+	DB *dp, *edp;
 	sigset_t set;
-	datum key, data;
+	DBT data, key;
 	int ch, cnt, tfd;
 	char buf[MAX(MAXPATHLEN, LINE_MAX * 2)], tbuf[1024];
 
@@ -86,15 +86,17 @@ main(argc, argv)
 	if (!(fp = fopen(pname, "r")))
 		error(pname);
 
-	/* Open the password database. */
+	/* Open the temporary insecure password database. */
 	(void)sprintf(buf, "%s.tmp", _PATH_MP_DB);
-	if (!(dp = dbm_open(buf, O_WRONLY|O_CREAT|O_EXCL, PERM_INSECURE)))
+	dp = hash_open(buf, O_WRONLY|O_CREAT|O_EXCL, PERM_INSECURE, NULL);
+	if (!dp)
 		error(buf);
 	clean = FILE_INSECURE;
 
-	/* Open the encrypted password database. */
+	/* Open the temporary encrypted password database. */
 	(void)sprintf(buf, "%s.tmp", _PATH_SMP_DB);
-	if (!(edp = dbm_open(buf, O_WRONLY|O_CREAT|O_EXCL, PERM_SECURE)))
+	edp = hash_open(buf, O_WRONLY|O_CREAT|O_EXCL, PERM_SECURE, NULL);
+	if (!edp)
 		error(buf);
 	clean = FILE_SECURE;
 
@@ -114,8 +116,8 @@ main(argc, argv)
 		clean = FILE_ORIG;
 	}
 
-	data.dptr = buf;
-	key.dptr = tbuf;
+	data.data = (u_char *)buf;
+	key.data = (u_char *)tbuf;
 	for (cnt = 1; scan(fp, &pwd); ++cnt) {
 #define	COMPACT(e)	t = e; while (*p++ = *t++);
 		/* Create insecure data. */
@@ -134,29 +136,29 @@ main(argc, argv)
 		COMPACT(pwd.pw_shell);
 		bcopy((char *)&pwd.pw_expire, p, sizeof(time_t));
 		p += sizeof(time_t);
-		data.dsize = p - buf;
+		data.size = p - buf;
 
 		/* Store insecure by name. */
 		tbuf[0] = _PW_KEYBYNAME;
 		len = strlen(pwd.pw_name);
 		bcopy(pwd.pw_name, tbuf + 1, len);
-		key.dsize = len + 1;
-		if (dbm_store(dp, key, data, DBM_INSERT) < 0)
-			error("dbm file");
+		key.size = len + 1;
+		if ((dp->put)(dp, &key, &data, R_NOOVERWRITE) == -1)
+			error("put");
 
 		/* Store insecure by number. */
 		tbuf[0] = _PW_KEYBYNUM;
 		bcopy((char *)&cnt, tbuf + 1, sizeof(cnt));
-		key.dsize = sizeof(cnt) + 1;
-		if (dbm_store(dp, key, data, DBM_INSERT) < 0)
-			error("dbm file");
+		key.size = sizeof(cnt) + 1;
+		if ((dp->put)(dp, &key, &data, R_NOOVERWRITE) == -1)
+			error("put");
 
 		/* Store insecure by uid. */
 		tbuf[0] = _PW_KEYBYUID;
 		bcopy((char *)&pwd.pw_uid, tbuf + 1, sizeof(pwd.pw_uid));
-		key.dsize = sizeof(pwd.pw_uid) + 1;
-		if (dbm_store(dp, key, data, DBM_INSERT) < 0)
-			error("dbm file");
+		key.size = sizeof(pwd.pw_uid) + 1;
+		if ((dp->put)(dp, &key, &data, R_NOOVERWRITE) == -1)
+			error("put");
 
 		/* Create secure data. */
 		p = buf;
@@ -174,29 +176,29 @@ main(argc, argv)
 		COMPACT(pwd.pw_shell);
 		bcopy((char *)&pwd.pw_expire, p, sizeof(time_t));
 		p += sizeof(time_t);
-		data.dsize = p - buf;
+		data.size = p - buf;
 
 		/* Store secure by name. */
 		tbuf[0] = _PW_KEYBYNAME;
 		len = strlen(pwd.pw_name);
 		bcopy(pwd.pw_name, tbuf + 1, len);
-		key.dsize = len + 1;
-		if (dbm_store(edp, key, data, DBM_INSERT) < 0)
-			error("dbm file");
+		key.size = len + 1;
+		if ((dp->put)(edp, &key, &data, R_NOOVERWRITE) == -1)
+			error("put");
 
 		/* Store secure by number. */
 		tbuf[0] = _PW_KEYBYNUM;
 		bcopy((char *)&cnt, tbuf + 1, sizeof(cnt));
-		key.dsize = sizeof(cnt) + 1;
-		if (dbm_store(edp, key, data, DBM_INSERT) < 0)
-			error("dbm file");
+		key.size = sizeof(cnt) + 1;
+		if ((dp->put)(edp, &key, &data, R_NOOVERWRITE) == -1)
+			error("put");
 
 		/* Store secure by uid. */
 		tbuf[0] = _PW_KEYBYUID;
 		bcopy((char *)&pwd.pw_uid, tbuf + 1, sizeof(pwd.pw_uid));
-		key.dsize = sizeof(pwd.pw_uid) + 1;
-		if (dbm_store(edp, key, data, DBM_INSERT) < 0)
-			error("dbm file");
+		key.size = sizeof(pwd.pw_uid) + 1;
+		if ((dp->put)(edp, &key, &data, R_NOOVERWRITE) == -1)
+			error("put");
 
 		/* Create original format password file entry */
 		if (makeold)
@@ -204,19 +206,21 @@ main(argc, argv)
 			    pwd.pw_name, pwd.pw_uid, pwd.pw_gid, pwd.pw_gecos,
 			    pwd.pw_dir, pwd.pw_shell);
 	}
-	(void)dbm_close(edp);
-	(void)dbm_close(dp);
-	if (makeold)
+	(void)(dp->close)(dp);
+	(void)(edp->close)(edp);
+	if (makeold) {
+		(void)fsync(oldfp);
 		(void)fclose(oldfp);
+	}
 
 	/* Set master.passwd permissions, in case caller forgot. */
 	(void)fchmod(fp, S_IRUSR|S_IWUSR);
 	(void)fclose(fp);
 
 	/* Install as the real password files. */
-	(void)sprintf(buf, "%s.tmp.%s", _PATH_MP_DB, DBM_SUFFIX);
+	(void)sprintf(buf, "%s.tmp", _PATH_MP_DB);
 	mv(buf, _PATH_MP_DB);
-	(void)sprintf(buf, "%s.tmp.%s", _PATH_SMP_DB, DBM_SUFFIX);
+	(void)sprintf(buf, "%s.tmp", _PATH_SMP_DB);
 	mv(buf, _PATH_SMP_DB);
 	if (makeold) {
 		(void)sprintf(buf, "%s.orig", pname);
@@ -276,6 +280,14 @@ mv(from, to)
 	}
 }
 
+error(name)
+	char *name;
+{
+	(void)fprintf(stderr, "pwd_mkdb: %s: %s\n", name, strerror(errno));
+	cleanup();
+	exit(1);
+}
+
 cleanup()
 {
 	char buf[MAXPATHLEN];
@@ -293,14 +305,6 @@ cleanup()
 		(void)sprintf(buf, "%s.tmp", _PATH_MP_DB);
 		(void)unlink(buf);
 	}
-}
-
-error(name)
-	char *name;
-{
-	(void)fprintf(stderr, "pwd_mkdb: %s: %s\n", name, strerror(errno));
-	cleanup();
-	exit(1);
 }
 
 usage()
