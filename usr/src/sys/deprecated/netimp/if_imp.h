@@ -1,29 +1,45 @@
-/*	if_imp.h	4.2	82/02/03	*/
+/*	if_imp.h	4.3	82/02/12	*/
 
 /*
  * Structure of IMP 1822 long leader.
  */
-struct imp_leader {
-	u_char	il_format;	/* leader format */
-	u_char	il_network;	/* src/dest network */
-	u_char	il_flags;	/* leader flags */
-	u_char	il_mtype;	/* message type */
-	u_char	il_htype;	/* handling type */
-	u_char	il_host;	/* host number */
+struct control_leader {
+	u_char	dl_format;	/* leader format */
+	u_char	dl_network;	/* src/dest network */
+	u_char	dl_flags;	/* leader flags */
+	u_char	dl_mtype;	/* message type */
+	u_char	dl_htype;	/* handling type */
+	u_char	dl_host;	/* host number */
 	union {
-		u_short	il_short;
-		u_char	il_char[2];
-	} ilun;
-#define il_imp		ilun.il_short	/* imp field */
-#define il_impno	ilun.il_char[1]	/* imp number */
-#define il_lh		ilun.il_char[0]	/* logical host */
-	u_char	il_link;	/* link number */
-	u_char	il_subtype;	/* message subtype */
+		u_short	dl_short;
+		u_char	dl_char[2];
+	} dlun;
+#define dl_imp		dlun.dl_short	/* imp field */
+#define dl_impno	dlun.dl_char[1]	/* imp number */
+#define dl_lh		dlun.dl_char[0]	/* logical host */
+	u_char	dl_link;	/* link number */
+	u_char	dl_subtype;	/* message subtype */
+};
+
+struct imp_leader {
+	struct	control_leader il_dl;
+#define	il_format	il_dl.dl_format
+#define	il_network	il_dl.dl_network
+#define	il_flags	il_dl.dl_flags
+#define	il_mtype	il_dl.dl_mtype
+#define	il_htype	il_dl.dl_htype
+#define	il_host		il_dl.dl_host
+#define	il_imp		il_dl.dl_imp
+#define	il_impno	il_dl.dl_impno
+#define	il_lh		il_dl.dl_lh
+#define	il_link		il_dl.dl_link
+#define	il_subtype	il_dl.dl_subtype
 	u_short	il_length;	/* message length */
 };
 
 #define	IMP_DROPCNT	2	/* # of noops from imp to ignore */
-#define	IMP_MTU		1019	/* max message size (bytes) */
+/* don't use 1019 here, 'cuz odd numbers and word counts are confusing */
+#define	IMP_MTU		(sizeof (struct imp_leader) + 1018) 
 
 /*
  * IMP-host flags
@@ -136,3 +152,11 @@ struct	impcb {
 #define	IMPS_RESET	4		/* reset in progress */
 
 #define	IMPTV_DOWN	(30*60)		/* going down timer 30 secs */
+
+#ifdef IMPLEADERS
+char * impleaders[IMPTYPE_READY+1] = {
+	"DATA", "BADLEADER", "DOWN", "bad", "NOOP", "RFNM", "HOSTDEAD",
+	"HOSTUNREACH", "BADDATA", "INCOMPLETE", "RESET", "RETRY",
+	"NOTIFY", "TRYING", "READY"
+};
+#endif
