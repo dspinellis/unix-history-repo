@@ -1,4 +1,4 @@
-#	@(#)Makefile	7.3 (Berkeley) %G%
+#	@(#)Makefile	7.4 (Berkeley) %G%
 
 DESTDIR=/
 STAND=	../../stand
@@ -10,11 +10,10 @@ CPP=	cpp -traditional ${INCPATH} -DSTANDALONE -DAT386
 CFLAGS=	-DSTANDALONE -DAT386 -O ${INCPATH}
 RELOC=	70000
 RELOC2=	70200
-SRCS=	atoi.c boot.c bootxx.c cga.c conf.c confxx.c copy.c ctype_.c dev.c \
-	fd.c fdbootblk.c getfile.c gets.c index.c kbd.c prf.c printf.c \
-	srt0.c strcmp.c strcpy.c strlen.c strtol.c sys.c wd.c wdbootblk.c
+SRCS=	boot.c bootxx.c cga.c conf.c confxx.c copy.c dev.c fd.c fdbootblk.c \
+	getfile.c gets.c kbd.c prf.c printf.c srt0.c sys.c wd.c wdbootblk.c
 DRIVERS=kbd.o cga.o wd.o fd.o
-LIBSA=	libsa.a
+LIBS=	libsa.a ${DESTDIR}/usr/lib/libc.a
 
 BOOTBLOCKS= wdboot bootwd fdboot bootfd
 DISKUTILS= boot copy cat ls
@@ -24,11 +23,10 @@ STANDDIR= ${DESTDIR}/stand
 
 all: ${ALL}
 
-${LIBSA}: atoi.o conf.o ctype_.o dev.o getfile.o gets.o index.o prf.o \
-	printf.o _setjmp.o strcmp.o strcpy.o strlen.o strtol.o sys.o \
+libsa.a: conf.o dev.o getfile.o gets.o prf.o printf.o sys.o \
 	${DRIVERS}
-	ar crv ${LIBSA} $?
-	ranlib ${LIBSA}
+	ar crv $@ $?
+	ranlib $@
 
 ${DRIVERS}:
 	${CC} -c ${CFLAGS} $*.c
@@ -55,8 +53,8 @@ fdbootblk.o: fdbootblk.c
 
 # bootable from floppy or real disks
 
-boot:	boot.o bootconf.o cga.o relsrt0.o ${LIBSA}
-	ld -N -T ${RELOC} -o $@ boot.o bootconf.o cga.o relsrt0.o ${LIBSA}
+boot:	boot.o bootconf.o cga.o relsrt0.o ${LIBS}
+	ld -N -T ${RELOC} -o $@ boot.o bootconf.o cga.o relsrt0.o ${LIBS}
 
 bootconf.o: conf.o
 	ln -s conf.c bootconf.c
@@ -65,14 +63,14 @@ bootconf.o: conf.o
 
 # utilities
 
-cat:	cat.o srt0.o conf.o ${LIBSA}
-	ld -N -o $@ srt0.o cat.o conf.o ${LIBSA} -lc
+cat:	cat.o srt0.o conf.o ${LIBS}
+	ld -N -o $@ srt0.o cat.o conf.o ${LIBS}
 
-ls:	ls.o srt0.o conf.o ${LIBSA}
-	ld -N -o $@ srt0.o ls.o conf.o ${LIBSA} -lc
+ls:	ls.o srt0.o conf.o ${LIBS}
+	ld -N -o $@ srt0.o ls.o conf.o ${LIBS}
 
-copy:	copy.o srt0.o conf.o ${LIBSA}
-	ld -N -o $@ srt0.o copy.o conf.o ${LIBSA} -lc
+copy:	copy.o srt0.o conf.o ${LIBS}
+	ld -N -o $@ srt0.o copy.o conf.o ${LIBS}
 
 # getting booted from disc
 
@@ -83,9 +81,9 @@ wdboot: wdbootblk.o
 	strip a.out;dd if=a.out of=wdboot ibs=32 skip=1;rm -f a.out
 	ls -l wdboot
 
-bootwd: wdbootblk.o wsrt0.o bootxx.o confwd.o sm_wd.o sys.o sm_cga.o ${LIBSA}
+bootwd: wdbootblk.o wsrt0.o bootxx.o confwd.o sm_wd.o sys.o sm_cga.o ${LIBS}
 	ld -N -T ${RELOC2} wsrt0.o bootxx.o confwd.o sys.o sm_wd.o \
-	    sm_cga.o ${LIBSA} -lc
+	    sm_cga.o ${LIBS}
 	size a.out
 	cp a.out bwd
 	rm -f bootwd
@@ -99,9 +97,9 @@ fdboot: fdbootblk.o
 	strip a.out;dd if=a.out of=fdboot ibs=32 skip=1;rm -f a.out
 	ls -l fdboot
 
-bootfd: fdbootblk.o wsrt0.o bootxx.o conffd.o fd.o sys.o sm_cga.o ${LIBSA}
+bootfd: fdbootblk.o wsrt0.o bootxx.o conffd.o fd.o sys.o sm_cga.o ${LIBS}
 	ld -N -T ${RELOC2} wsrt0.o bootxx.o conffd.o sys.o \
-		fd.o sm_cga.o ${LIBSA} -lc
+		fd.o sm_cga.o ${LIBS}
 	size a.out
 	cp a.out bfd
 	rm -f bootfd
@@ -139,9 +137,6 @@ sm_swd.o: swd.o
 sys.o: sys.c
 	${CC} -c -DSMALL ${CFLAGS} ${.ALLSRC}
 
-_setjmp.o: _setjmp.s
-	${CPP} -E -I../../../lib/libc/i386 _setjmp.s | ${AS} -o $@
-
 confwd.o: confwd.c confxx.o
 conffd.o: conffd.c confxx.o
 
@@ -159,7 +154,7 @@ conffd.c: confxx.c
 	sed -e 's/XX/fd/' -e 's/xx/fd/g'	< confxx.c >> conffd.c
 
 clean:
-	rm -f *.o *.exe *.i sm_*.c ${LIBSA}
+	rm -f *.o *.exe *.i sm_*.c libsa.a
 	rm -f a.out bfd bwd fdb wdb ${ALL}
 	rm -f boot[a-wyz]? boot[a-wyz]?? boot[a-wyz]?.c boot[a-wyz]??.c \
 		conf[a-wyz]?.c conf[a-wyz]??.c
