@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	4.19	82/06/14	*/
+/*	uipc_syscalls.c	4.20	82/06/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -34,7 +34,6 @@ spipe()
 	register struct file *rf, *wf;
 	struct socket *rso, *wso;
 	int r;
-COUNT(SPIPE);
 	
 	u.u_error = socreate(&rso, SOCK_STREAM,
 	    &localproto, (struct sockaddr *)0, 0);
@@ -91,7 +90,6 @@ ssocket()
 	struct sockaddr sa;
 	struct socket *so;
 	register struct file *fp;
-COUNT(SSOCKET);
 
 	if ((fp = falloc()) == NULL)
 		return;
@@ -125,7 +123,6 @@ saccept()
 	register struct file *fp;
 	struct socket *so;
 	int s;
-COUNT(SACCEPT);
 
 	if (uap->asa && useracc((caddr_t)uap->asa, sizeof (sa), B_WRITE)==0) {
 		u.u_error = EFAULT;
@@ -184,7 +181,6 @@ sconnect()
 	register struct file *fp;
 	register struct socket *so;
 	int s;
-COUNT(SCONNECT);
 
 	if (copyin((caddr_t)uap->a, (caddr_t)&sa, sizeof (sa))) {
 		u.u_error = EFAULT;
@@ -228,7 +224,6 @@ ssend()
 	} *uap = (struct a *)u.u_ap;
 	register struct file *fp;
 	struct sockaddr sa;
-COUNT(SSEND);
 
 	fp = getf(uap->fdes);
 	if (fp == 0)
@@ -262,7 +257,6 @@ sreceive()
 	} *uap = (struct a *)u.u_ap;
 	register struct file *fp;
 	struct sockaddr sa;
-COUNT(SRECEIVE);
 
 	fp = getf(uap->fdes);
 	if (fp == 0)
@@ -299,7 +293,6 @@ ssocketaddr()
 	register struct file *fp;
 	register struct socket *so;
 	struct sockaddr addr;
-COUNT(SSOCKETADDR);
 
 	fp = getf(uap->fdes);
 	if (fp == 0)

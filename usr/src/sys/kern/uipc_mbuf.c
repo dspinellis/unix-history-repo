@@ -1,4 +1,4 @@
-/*	uipc_mbuf.c	1.35	82/06/14	*/
+/*	uipc_mbuf.c	1.36	82/06/20	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -14,7 +14,6 @@
 mbinit()
 {
 
-COUNT(MBINIT);
 	if (m_clalloc(4, MPG_MBUFS) == 0)
 		goto bad;
 	if (m_clalloc(32, MPG_CLUSTERS) == 0)
@@ -34,7 +33,6 @@ m_clalloc(ncl, how)
 	register int i;
 	int s;
 
-COUNT(M_CLALLOC);
 	npg = ncl * CLSIZE;
 	s = splimp();		/* careful: rmalloc isn't reentrant */
 	mbx = rmalloc(mbmap, npg);
@@ -78,7 +76,6 @@ m_pgfree(addr, n)
 	int n;
 {
 
-COUNT(M_PGFREE);
 #ifdef lint
 	addr = addr; n = n;
 #endif
@@ -87,7 +84,6 @@ COUNT(M_PGFREE);
 m_expand()
 {
 
-COUNT(M_EXPAND);
 	if (m_clalloc(1, MPG_MBUFS) == 0)
 		goto steal;
 	return (1);
@@ -109,7 +105,6 @@ m_get(canwait)
 {
 	register struct mbuf *m;
 
-COUNT(M_GET);
 	MGET(m, canwait);
 	return (m);
 }
@@ -120,7 +115,6 @@ m_getclr(canwait)
 {
 	register struct mbuf *m;
 
-COUNT(M_GETCLR);
 	m = m_get(canwait);
 	if (m == 0)
 		return (0);
@@ -135,7 +129,6 @@ m_free(m)
 {
 	register struct mbuf *n;
 
-COUNT(M_FREE);
 	MFREE(m, n);
 	return (n);
 }
@@ -147,7 +140,6 @@ m_more(type)
 {
 	register struct mbuf *m;
 
-COUNT(M_MORE);
 	if (!m_expand()) {
 		mbstat.m_drops++;
 		return (NULL);
@@ -164,7 +156,6 @@ m_freem(m)
 	register struct mbuf *n;
 	register int s;
 
-COUNT(M_FREEM);
 	if (m == NULL)
 		return;
 	s = splimp();
@@ -185,7 +176,6 @@ m_copy(m, off, len)
 {
 	register struct mbuf *n, **np;
 	struct mbuf *top, *p;
-COUNT(M_COPY);
 
 	if (len == 0)
 		return (0);
@@ -259,7 +249,6 @@ m_adj(mp, len)
 {
 	register struct mbuf *m, *n;
 
-COUNT(M_ADJ);
 	if ((m = mp) == NULL)
 		return;
 	if (len >= 0) {
