@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	8.1 (Berkeley) %G%
+ *	@(#)extern.h	8.2 (Berkeley) %G%
  */
 
 #include <sys/cdefs.h>
@@ -12,7 +12,7 @@
 void	 brace_subst __P((char *, char **, char *, int));
 void	*emalloc __P((unsigned int));
 PLAN	*find_create __P((char ***));
-void	 find_execute __P((PLAN *, char **));
+int	 find_execute __P((PLAN *, char **));
 PLAN	*find_formplan __P((char **));
 PLAN	*not_squish __P((PLAN *));
 OPTION	*option __P((char *));
