@@ -1,4 +1,4 @@
-/*	conf.c	4.51	82/05/26	*/
+/*	conf.c	4.52	82/05/27	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -135,6 +135,17 @@ int	utreset(),utdump();
 #define	utdump		nodev
 #endif
 
+#include "rb.h"
+#if NIDC > 0
+int	idcstrategy(),idcread(),idcwrite(),idcreset(),idcdump();
+#else
+#define	idcstrategy	nodev
+#define	idcread		nodev
+#define	idcwrite	nodev
+#define	idcreset	nulldev
+#define	idcdump		nodev
+#endif
+
 #if defined(VAX750) || defined(VAX730)
 int	tuopen(),tuclose(),tustrategy();
 #else
@@ -158,6 +169,7 @@ struct bdevsw	bdevsw[] =
 	tuopen,		tuclose,	tustrategy,	nodev,	B_TAPE,	/*8*/
 	udopen,		nulldev,	udstrategy,	uddump,	0,	/*9*/
 	utopen,		utclose,	utstrategy,	utdump,	B_TAPE,	/*10*/
+	nodev,		nodev,		idcstrategy,	idcdump,0,	/*11*/
 	0,
 };
 
@@ -374,9 +386,9 @@ struct cdevsw	cdevsw[] =
 	nodev,		nodev,		nodev,		nodev,		/*22*/
 	nodev,		nodev,		nodev,		0,
 	nodev,
-	nodev,		nodev,		nodev,		nodev,		/*23*/
-	nodev,		nodev,		nodev,		0,
-	nodev,
+	nulldev,	nulldev,	idcread,	idcwrite,	/*23*/
+	nodev,		nodev,		idcreset,	0,
+	seltrue,
 	dnopen,		dnclose,	nodev,		dnwrite,	/*24*/
 	nodev,		nodev,		nodev,		0,
 	seltrue,
