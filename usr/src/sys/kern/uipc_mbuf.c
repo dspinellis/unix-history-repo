@@ -1,4 +1,4 @@
-/*	uipc_mbuf.c	1.26	82/01/19	*/
+/*	uipc_mbuf.c	1.27	82/01/24	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -225,12 +225,15 @@ COUNT(M_COPY);
 	np = &top;
 	top = 0;
 	while (len > 0) {
+		if (m == 0) {
+			if (len != M_COPYALL)
+				panic("m_copy");
+			break;
+		}
 		MGET(n, 1);
 		*np = n;
 		if (n == 0)
 			goto nospace;
-		if (m == 0)
-			panic("m_copy");
 		n->m_len = MIN(len, m->m_len - off);
 		if (m->m_off > MMAXOFF) {
 			p = mtod(m, struct mbuf *);
@@ -241,7 +244,8 @@ COUNT(M_COPY);
 			bcopy(mtod(m, caddr_t)+off, mtod(n, caddr_t),
 			    (unsigned)n->m_len);
 		}
-		len -= n->m_len;
+		if (len != M_COPYALL)
+			len -= n->m_len;
 		off = 0;
 		m = m->m_next;
 		np = &n->m_next;
