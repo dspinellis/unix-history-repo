@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machdep.c 1.6 88/05/24$
  *
- *	@(#)machdep.c	7.2 (Berkeley) %G%
+ *	@(#)machdep.c	7.3 (Berkeley) %G%
  */
 
 #include "sys/param.h"
@@ -60,12 +60,12 @@ trap(fp)
 	if (intrap)
 		return;
 	intrap = 1;
-	romprintf("Got unexpected trap, vector = %x, ps = %x, pc = %x\n",
+	printf("Got unexpected trap, vector = %x, ps = %x, pc = %x\n",
 	       fp->frame&0xFFF, fp->sr, fp->pc);
-	romprintf("dregs: %x %x %x %x %x %x %x %x\n",
+	printf("dregs: %x %x %x %x %x %x %x %x\n",
 	       fp->dregs[0], fp->dregs[1], fp->dregs[2], fp->dregs[3], 
 	       fp->dregs[4], fp->dregs[5], fp->dregs[6], fp->dregs[7]);
-	romprintf("aregs: %x %x %x %x %x %x %x %x\n",
+	printf("aregs: %x %x %x %x %x %x %x %x\n",
 	       fp->aregs[0], fp->aregs[1], fp->aregs[2], fp->aregs[3], 
 	       fp->aregs[4], fp->aregs[5], fp->aregs[6], fp->aregs[7]);
 	intrap = 0;
