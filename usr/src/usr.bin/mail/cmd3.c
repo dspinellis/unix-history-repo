@@ -9,7 +9,7 @@
  * Still more user commands.
  */
 
-static char *SccsId = "@(#)cmd3.c	2.3 %G%";
+static char *SccsId = "@(#)cmd3.c	2.4 %G%";
 
 /*
  * Process a shell escape by saving signals, ignoring signals,
@@ -333,6 +333,8 @@ rexit(e)
 {
 	if (sourcing)
 		return(1);
+	if (Tflag != NOSTR)
+		close(creat(Tflag, 0600));
 	exit(e);
 }
 
