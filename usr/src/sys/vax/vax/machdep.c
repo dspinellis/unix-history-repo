@@ -1,4 +1,4 @@
-/*	machdep.c	4.9	%G%	*/
+/*	machdep.c	4.10	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -21,7 +21,7 @@
 int	coresw = 0;
 int	printsw = 0;
 
-char	version[] = "VM/UNIX (Berkeley Version 4.9) 81/02/08 00:50:15 \n";
+char	version[] = "VM/UNIX (Berkeley Version 4.10) 81/02/08 01:02:22 \n";
 int	icode[] =
 {
 	0x9f19af9f,	/* pushab [&"init",0]; pushab */
@@ -317,7 +317,7 @@ int	memintvl = MEMINTVL;
 #define	M780_ERLOG	0x10000000
 #define	M750_UNCORR	0xc0000000
 #define	M750_CORERR	0x40000000
-#define	M750_ERLOG	(MUNCORR|MCORERR)
+#define	M750_ERLOG	(M750_UNCORR|M750_CORERR)
 
 memchk()
 {
@@ -332,7 +332,7 @@ memchk()
 	if (error) {
 		printf("MEMERR: %x %x %x\n", mcr[0], mcr[1], mcr[2]);
 #if VAX==780
-		mcr[2] = M780_ERLOG|M780_MHIERR;
+		mcr[2] = M780_ERLOG|M780_HIERR;
 #else
 		mcr[0] = MERLOG;
 #endif
