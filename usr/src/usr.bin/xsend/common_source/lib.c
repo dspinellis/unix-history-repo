@@ -1,6 +1,10 @@
+/*-
+ * %sccs.include.proprietary.c%
+ */
+
 #ifndef lint
-static char sccsid[] = "@(#)lib.c	4.2 %G%";
-#endif
+static char sccsid[] = "@(#)lib.c	4.3 (Berkeley) %G%";
+#endif /* not lint */
 
 #include "xmail.h"
 #include "pathnames.h"

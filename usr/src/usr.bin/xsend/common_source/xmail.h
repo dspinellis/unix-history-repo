@@ -1,4 +1,8 @@
-/*	xmail.h	4.1	83/03/30	*/
+/*-
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)xmail.h	4.2 (Berkeley) %G%
+ */
 
 #include <stdio.h>
 #include <mp.h>
