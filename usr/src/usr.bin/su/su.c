@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)su.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)su.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -120,8 +120,8 @@ main(argc, argv)
 		}
 	}
 
-	/* if not asme or target has no password, use their shell */
-	if (!asme || !*pwd->pw_passwd)
+	/* if not asme or target's shell isn't standard, use it */
+	if (!asme || !chshell(pwd->pw_shell))
 		if (pwd->pw_shell && *pwd->pw_shell) {
 			shell = pwd->pw_shell;
 			iscsh = UNSET;
@@ -190,4 +190,15 @@ main(argc, argv)
 	execv(shell, np);
 	fprintf(stderr, "su: no shell.\n");
 	exit(1);
+}
+
+chshell(sh)
+	char *sh;
+{
+	char *cp, *getusershell();
+
+	while ((cp = getusershell()) != NULL)
+		if (!strcmp(cp, sh))
+			return(1);
+	return(0);
 }
