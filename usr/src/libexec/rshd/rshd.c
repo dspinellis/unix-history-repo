@@ -1,7 +1,14 @@
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	4.18 (Berkeley) 84/04/11";
+static	char sccsid[] = "@(#)rshd.c	4.18 (Berkeley) %G%";
 #endif
 
+/*
+ * remote shell server:
+ *	remuser\0
+ *	locuser\0
+ *	command\0
+ *	data
+ */
 #include <sys/ioctl.h>
 #include <sys/param.h>
 #include <sys/socket.h>
@@ -16,107 +23,34 @@ static char sccsid[] = "@(#)rshd.c	4.18 (Berkeley) 84/04/11";
 #include <netdb.h>
 
 int	errno;
-int	reapchild();
-struct	sockaddr_in sin = { AF_INET };
 struct	passwd *getpwnam();
 char	*index(), *rindex(), *sprintf();
-int	options;
 /* VARARGS 1 */
 int	error();
-/*
- * remote shell server:
- *	remuser\0
- *	locuser\0
- *	command\0
- *	data
- */
+
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	int f, linger;
+	int linger, fromlen;
 	struct sockaddr_in from;
-	struct servent *sp;
 
-	sp = getservbyname("shell", "tcp");
-	if (sp == 0) {
-		fprintf(stderr, "rshd: tcp/shell: unknown service\n");
-		exit(1);
+	fromlen = sizeof (from);
+	if (getpeername(0, &from, &fromlen) < 0) {
+		fprintf(stderr, "%s: ", argv[0]);
+		perror("getpeername");
+		_exit(1);
 	}
-#ifndef DEBUG
-	if (fork())
-		exit(0);
-	for (f = 0; f < 10; f++)
-		(void) close(f);
-	(void) open("/", 0);
-	(void) dup2(0, 1);
-	(void) dup2(0, 2);
-	{ int t = open("/dev/tty", 2);
-	  if (t >= 0) {
-		ioctl(t, TIOCNOTTY, (char *)0);
-		(void) close(t);
-	  }
+	if (setsockopt(0, SOL_SOCKET, SO_KEEPALIVE, 0, 0) < 0) {
+		fprintf(stderr, "%s: ", argv[0]);
+		perror("setsockopt (SO_KEEPALIVE)");
 	}
-#endif
-	sin.sin_port = sp->s_port;
-	argc--, argv++;
-	if (argc > 0 && !strcmp(argv[0], "-d")) {
-		options |= SO_DEBUG;
-		argc--, argv++;
-	}
-	if (argc > 0) {
-		int port = atoi(argv[0]);
-
-		if (port < 0) {
-			fprintf(stderr, "%s: bad port #\n", argv[0]);
-			exit(1);
-		}
-		sin.sin_port = htons((u_short)port);
-		argc--, argv++;
-	}
-	f = socket(AF_INET, SOCK_STREAM, 0, 0);
-	if (f < 0) {
-		perror("rshd: socket");
-		exit(1);
-	}
-	if (options & SO_DEBUG && setsockopt(f, SOL_SOCKET, SO_DEBUG, 0, 0) < 0)
-		perror("rshd: setsockopt (SO_DEBUG)");
-	if (setsockopt(f, SOL_SOCKET, SO_KEEPALIVE, 0, 0) < 0)
-		perror("rshd: setsockopt (SO_KEEPALIVE)");
 	linger = 60;			/* XXX */
-	if (setsockopt(f, SOL_SOCKET, SO_LINGER, &linger, 0) < 0)
-		perror("rshd: setsockopt (SO_LINGER)");
-	if (bind(f, (caddr_t)&sin, sizeof (sin), 0) < 0) {
-		perror("rshd: bind");
-		exit(1);
+	if (setsockopt(0, SOL_SOCKET, SO_LINGER, &linger, sizeof (linger)) < 0) {
+		fprintf(stderr, "%s: ", argv[0]);
+		perror("setsockopt (SO_LINGER)");
 	}
-	signal(SIGCHLD, reapchild);
-	listen(f, 10);
-	for (;;) {
-		int g, len = sizeof (from);
-
-		g = accept(f, &from, &len, 0);
-		if (g < 0) {
-			if (errno == EINTR)
-				continue;
-			perror("rshd: accept");
-			continue;
-		}
-		if (fork() == 0) {
-			signal(SIGCHLD, SIG_IGN);
-			close(f);
-			doit(g, &from);
-		}
-		close(g);
-	}
-}
-
-reapchild()
-{
-	union wait status;
-
-	while (wait3(&status, WNOHANG, 0) > 0)
-		;
+	doit(dup(0), &from);
 }
 
 char	username[20] = "USER=";
@@ -208,8 +142,11 @@ doit(f, fromp)
 	}
 	endpwent();
 	if (chdir(pwd->pw_dir) < 0) {
+		chdir("/");
+#ifdef notdef
 		error("No remote directory.\n");
 		exit(1);
+#endif
 	}
 	if (ruserok(hp->h_name, pwd->pw_uid == 0, remuser, locuser) < 0) {
 		error("Permission denied.\n");

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rexecd.c	4.11 (Berkeley) 84/04/11";
+static	char sccsid[] = "@(#)rexecd.c	4.11 (Berkeley) %G%";
 #endif
 
 #include <sys/ioctl.h>
@@ -16,7 +16,6 @@ static char sccsid[] = "@(#)rexecd.c	4.11 (Berkeley) 84/04/11";
 #include <netdb.h>
 
 extern	errno;
-struct	sockaddr_in sin = { AF_INET };
 struct	passwd *getpwnam();
 char	*crypt(), *rindex(), *sprintf();
 /* VARARGS 1 */
@@ -33,60 +32,16 @@ main(argc, argv)
 	int argc;
 	char **argv;
 {
-	int f;
 	struct sockaddr_in from;
-	struct servent *sp;
+	int fromlen;
 
-	sp = getservbyname("exec", "tcp");
-	if (sp == 0) {
-		fprintf(stderr, "tcp/exec: unknown service\n");
+	fromlen = sizeof (from);
+	if (getpeername(0, &from, &fromlen) < 0) {
+		fprintf(stderr, "%s: ", argv[0]);
+		perror("getpeername");
 		exit(1);
 	}
-	sin.sin_port = sp->s_port;
-#ifndef DEBUG
-	if (fork())
-		exit(0);
-	for (f = 0; f < 10; f++)
-		(void) close(f);
-	(void) open("/", 0);
-	(void) dup2(0, 1);
-	(void) dup2(0, 2);
-	{ int t = open("/dev/tty", 2);
-	  if (t >= 0) {
-		ioctl(t, TIOCNOTTY, (char *)0);
-		(void) close(t);
-	  }
-	}
-#endif
-	argc--, argv++;
-	f = socket(AF_INET, SOCK_STREAM, 0, 0);
-	if (f < 0) {
-		perror("rexecd: socket");
-		exit(1);
-	}
-	if (bind(f, &sin, sizeof (sin), 0) < 0) {
-		perror("rexecd: bind:");
-		exit(1);
-	}
-	signal(SIGCHLD, reapchild);
-	listen(f, 10);
-	for (;;) {
-		int s, len = sizeof (from);
-
-		s = accept(f, &from, &len, 0);
-		if (s < 0) {
-			if (errno == EINTR)
-				continue;
-			perror("rexecd: accept");
-			sleep(1);
-			continue;
-		}
-		if (fork() == 0) {
-			signal(SIGCHLD, SIG_IGN);
-			doit(s, &from);
-		}
-		(void) close(s);
-	}
+	doit(0, &from);
 }
 
 reapchild()

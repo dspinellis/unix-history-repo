@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)comsat.c	4.10 84/04/11";
+static	char sccsid[] = "@(#)comsat.c	4.10 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -32,55 +32,51 @@ int	nutmp;
 int	uf;
 unsigned utmpmtime;			/* last modification time for utmp */
 int	onalrm();
-struct	servent *sp;
+long	lastmsgtime;
 
+#define	MAXIDLE	120
 #define NAMLEN (sizeof (uts[0].ut_name) + 1)
 
 main(argc, argv)
-char **argv;
+	int argc;
+	char *argv[];
 {
-	register cc;
+	register int cc;
 	char buf[BUFSIZ];
-	int s;
+	char msgbuf[100];
+	struct sockaddr_in from;
+	int fromlen;
 
-	sp = getservbyname("biff", "udp");
-	if (sp == 0) {
-		fprintf(stderr, "comsat: biff/udp: unknown service\n");
+	/* verify proper invocation */
+	fromlen = sizeof (from);
+	if (getsockname(0, &from, &fromlen) < 0) {
+		fprintf(stderr, "%s: ", argv[0]);
+		perror("getsockname");
+		_exit(1);
+	}
+	chdir("/usr/spool/mail");
+	if ((uf = open("/etc/utmp",0)) < 0) {
+		perror("/etc/utmp");
+		(void) recv(0, msgbuf, sizeof (msgbuf) - 1, 0);
 		exit(1);
 	}
-	if (!debug)
-	if (fork())
-		exit();
-	chdir("/usr/spool/mail");
-	if((uf = open("/etc/utmp",0)) < 0)
-		perror("/etc/utmp"), exit(1);
-	sleep(10);
+	lastmsgtime = time(0);
 	onalrm();
 	signal(SIGALRM, onalrm);
 	signal(SIGTTOU, SIG_IGN);
-	s = socket(AF_INET, SOCK_DGRAM, 0, 0);
-	if (s < 0) {
-		perror("socket");
-		exit(1);
-	}
-	sin.sin_port = sp->s_port;
-	if (bind(s, &sin, sizeof (sin), 0) < 0) {
-		perror("bind");
-		exit(1);
-	}
 	for (;;) {
-		char msgbuf[100];
-		int cc;
-
-		cc = recv(s, msgbuf, sizeof (msgbuf) - 1, 0);
+		cc = recv(0, msgbuf, sizeof (msgbuf) - 1, 0);
 		if (cc <= 0) {
 			if (errno != EINTR)
 				sleep(1);
 			errno = 0;
 			continue;
 		}
+		sigblock(1<<SIGALRM);
 		msgbuf[cc] = 0;
+		lastmsgtime = time(0);
 		mailfor(msgbuf);
+		sigsetmask(0);
 	}
 }
 
@@ -89,6 +85,8 @@ onalrm()
 	struct stat statbf;
 	struct utmp *utp;
 
+	if (time(0) - lastmsgtime >= MAXIDLE)
+		exit(1);
 	dprintf("alarm\n");
 	alarm(15);
 	fstat(uf,&statbf);

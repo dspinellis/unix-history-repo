@@ -1,6 +1,14 @@
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	4.20 84/04/11";
+static	char sccsid[] = "@(#)rlogind.c	4.20 (Berkeley) %G%";
 #endif
+
+/*
+ * remote login server:
+ *	remuser\0
+ *	locuser\0
+ *	terminal type\0
+ *	data
+ */
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -21,99 +29,25 @@ extern	errno;
 int	reapchild();
 struct	passwd *getpwnam();
 char	*crypt(), *rindex(), *index(), *malloc(), *ntoa();
-struct	sockaddr_in sin = { AF_INET };
-/*
- * remote login server:
- *	remuser\0
- *	locuser\0
- *	terminal type\0
- *	data
- */
+
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	int f, options = 0;
+	int options = 0, fromlen;
 	struct sockaddr_in from;
-	struct servent *sp;
 
-	sp = getservbyname("login", "tcp");
-	if (sp == 0) {
-		fprintf(stderr, "rlogind: tcp/rlogin: unknown service\n");
-		exit(1);
+	fromlen = sizeof (from);
+	if (getpeername(0, &from, &fromlen) < 0) {
+		fprintf(stderr, "%s: ", argv[0]);
+		perror("getpeername");
+		_exit(1);
 	}
-#ifndef DEBUG
-	if (fork())
-		exit(0);
-	for (f = 0; f < 10; f++)
-		(void) close(f);
-	(void) open("/", 0);
-	(void) dup2(0, 1);
-	(void) dup2(0, 2);
-	{ int tt = open("/dev/tty", 2);
-	  if (tt > 0) {
-		ioctl(tt, TIOCNOTTY, 0);
-		close(tt);
-	  }
+	if (setsockopt(0, SOL_SOCKET, SO_KEEPALIVE, 0, 0) < 0) {
+		fprintf(stderr, "%s: ", argv[0]);
+		perror("setsockopt (SO_KEEPALIVE)");
 	}
-#endif
-	sin.sin_port = sp->s_port;
-	argc--, argv++;
-	if (argc > 0 && !strcmp(argv[0], "-d")) {
-		options |= SO_DEBUG;
-		argc--, argv++;
-	}
-	if (argc > 0) {
-		int port = atoi(argv[0]);
-
-		if (port < 0) {
-			fprintf(stderr, "%s: bad port #\n", argv[0]);
-			exit(1);
-		}
-		sin.sin_port = htons((u_short)port);
-		argv++, argc--;
-	}
-	f = socket(AF_INET, SOCK_STREAM, 0, 0);
-	if (f < 0) {
-		perror("rlogind: socket");
-		exit(1);
-	}
-	if (options & SO_DEBUG)
-		if (setsockopt(f, SOL_SOCKET, SO_DEBUG, 0, 0) < 0)
-			perror("rlogind: setsockopt (SO_DEBUG)");
-	if (setsockopt(f, SOL_SOCKET, SO_KEEPALIVE, 0, 0) < 0)
-		perror("rlogind: setsockopt (SO_KEEPALIVE)");
-	if (bind(f, &sin, sizeof (sin), 0) < 0) {
-		perror("rlogind: bind");
-		exit(1);
-	}
-	signal(SIGCHLD, reapchild);
-	listen(f, 10);
-	for (;;) {
-		int s, len = sizeof (from);
-
-		s = accept(f, &from, &len, 0);
-		if (s < 0) {
-			if (errno == EINTR)
-				continue;
-			perror("rlogind: accept");
-			continue;
-		}
-		if (fork() == 0) {
-			signal(SIGCHLD, SIG_IGN);
-			close(f);
-			doit(s, &from);
-		}
-		close(s);
-	}
-}
-
-reapchild()
-{
-	union wait status;
-
-	while (wait3(&status, WNOHANG, 0) > 0)
-		;
+	doit(0, &from);
 }
 
 char	locuser[32], remuser[32];
