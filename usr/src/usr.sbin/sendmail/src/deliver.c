@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1355,7 +1355,7 @@ sendall(e, mode)
 	{
 		extern bool shouldqueue();
 
-		if (shouldqueue(e->e_msgpriority))
+		if (shouldqueue(e->e_msgpriority, e->e_ctime))
 			mode = SM_QUEUE;
 		else
 			mode = SendMode;
