@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getrlimit.2	6.2 (Berkeley) %G%
+.\"	@(#)getrlimit.2	6.3 (Berkeley) %G%
 .\"
 .TH GETRLIMIT 2 ""
 .UC 4
@@ -52,11 +52,8 @@ system call.
 .TP 17
 RLIMIT_STACK
 the maximum size, in bytes, of the stack segment for a process;
-this defines how far a program's stack segment may be extended,
-either automatically by the system, or explicitly by a user with
-the 
-.IR sbrk (2)
-system call.
+this defines how far a program's stack segment may be extended.
+Stack extension is performed automatically by the system.
 .TP 17
 RLIMIT_CORE
 the largest size, in bytes, of a 
@@ -64,8 +61,8 @@ the largest size, in bytes, of a
 file that may be created.
 .TP 17
 RLIMIT_RSS
-the maximum size, in bytes, a process's resident set size may
-grow to.  This imposes a limit on the amount of physical memory
+the maximum size, in bytes, to which a process's resident set size may
+grow.  This imposes a limit on the amount of physical memory
 to be given to a process; if memory is tight, the system will
 prefer to take memory from processes that are exceeding their
 declared resident set size.
@@ -109,12 +106,14 @@ is thus a built-in command to
 The system refuses to extend the data or stack space when the limits
 would be exceeded in the normal way: a
 .I break
-call fails if the data space limit is reached, or the process is
-killed when the stack limit is reached (since the stack cannot be
-extended, there is no way to send a signal!).
+call fails if the data space limit is reached.
+When the stack limit is reached, the process receives
+a segmentation fault (SIGSEGV); if this signal is not
+caught by a handler using the signal stack, this signal
+will kill the process.
 .PP
-A file i/o operation that would create a file that is too large
-will cause a signal SIGXFSZ to be generated, this normally terminates
+A file I/O operation that would create a file that is too large
+will cause a signal SIGXFSZ to be generated; this normally terminates
 the process, but may be caught.
 When the soft cpu time limit is exceeded, a signal SIGXCPU is sent to the
 offending process.
@@ -132,7 +131,7 @@ The address specified for \fIrlp\fP is invalid.
 [EPERM]	The limit specified to \fIsetrlimit\fP would have
 raised the maximum limit value, and the caller is not the super-user.
 .SH SEE ALSO
-csh(1), quota(2)
+csh(1), quota(2), sigvec(2), sigstack(2)
 .SH BUGS
 There should be 
 .I limit
