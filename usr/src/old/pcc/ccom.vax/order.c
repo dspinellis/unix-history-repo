@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)order.c	1.15 (Berkeley) %G%";
+static char *sccsid ="@(#)order.c	1.16 (Berkeley) %G%";
 #endif lint
 
 # include "pass2.h"
@@ -11,10 +11,6 @@ stoasg( p, o ) NODE *p; {
 	/* should the assignment op p be stored,
 	   given that it lies as the right operand of o
 	   (or the left, if o==UNARY MUL) */
-/*
-	if( p->in.op == INCR || p->in.op == DECR ) return;
-	if( o==UNARY MUL && p->in.left->in.op == REG && !isbreg(p->in.left->tn.rval) ) SETSTO(p,INAREG);
- */
 	}
 
 deltest( p ) register NODE *p; {
@@ -45,7 +41,7 @@ autoincr( p ) NODE *p; {
 	}
 
 mkadrs(p) register NODE *p; {
-	register o;
+	register int o;
 
 	o = p->in.op;
 
@@ -79,7 +75,6 @@ notoff( t, r, off, cp) TWORD t; CONSZ off; char *cp; {
 	/* offset of off, (from a register of r), if the
 	/* resulting thing had type t */
 
-/*	if( r == R0 ) return( 1 );  /* NO */
 	return(0);  /* YES */
 	}
 
@@ -96,7 +91,7 @@ sucomp( p ) register NODE *p; {
 
 	o = p->in.op;
 	ty = optype( o );
-	p->in.su = szty( p->in.type );   /* 2 for float or double, else 1 */;
+	p->in.su = szty( p->in.type );   /* 2 for double, else 1 */;
 
 	if( ty == LTYPE ){
 		if( o == OREG ){
@@ -186,9 +181,6 @@ sucomp( p ) register NODE *p; {
 	if( asgop(o) ){
 		/* computed by doing right, doing left address, doing left, op, and store */
 		p->in.su = max(sur,sul+2);
-/*
-		if( o==ASG MUL || o==ASG DIV || o==ASG MOD) p->in.su = max(p->in.su,fregs);
- */
 		return;
 		}
 
@@ -201,8 +193,8 @@ sucomp( p ) register NODE *p; {
 		p->in.su = max( max(sul,sur), 1);
 		return;
 
-	case MUL:
 	case PLUS:
+	case MUL:
 	case OR:
 	case ER:
 		/* commutative ops; put harder on left */
@@ -221,12 +213,8 @@ sucomp( p ) register NODE *p; {
 			}
 		break;
 		}
-
 	/* binary op, computed by left, then right, then do op */
 	p->in.su = max(sul,szr+sur);
-/*
-	if( o==MUL||o==DIV||o==MOD) p->in.su = max(p->in.su,fregs);
- */
 
 	}
 
@@ -234,7 +222,7 @@ int radebug = 0;
 
 rallo( p, down ) NODE *p; {
 	/* do register allocation */
-	register o, type, down1, down2, ty;
+	register int o, down1, down2, ty;
 
 	if( radebug ) printf( "rallo( %o, %d )\n", p, down );
 
@@ -243,13 +231,7 @@ rallo( p, down ) NODE *p; {
 	down1 = ( down &= ~MUSTDO );
 
 	ty = optype( o = p->in.op );
-	type = p->in.type;
-
-
-	if( type == DOUBLE || type == FLOAT ){
-		if( o == FORCE ) down1 = R0|MUSTDO;
-		}
-	else switch( o ) {
+	switch( o ) {
 	case ASSIGN:	
 		down1 = NOPREF;
 		down2 = down;
@@ -336,7 +318,7 @@ setincr( p ) register NODE *p; {
 	}
 
 setbin( p ) register NODE *p; {
-	register ro, rt;
+	register int ro, rt;
 
 	rt = p->in.right->in.type;
 	ro = p->in.right->in.op;
@@ -351,7 +333,6 @@ setbin( p ) register NODE *p; {
 		}
 	}
 	if( !istnode( p->in.left) ) { /* try putting LHS into a reg */
-/*		order( p->in.left, logop(p->in.op)?(INAREG|INBREG|INTAREG|INTBREG|SOREG):(INTAREG|INTBREG|SOREG) );*/
 		order( p->in.left, INAREG|INTAREG|INBREG|INTBREG|SOREG );
 		return(1);
 		}
@@ -360,17 +341,13 @@ setbin( p ) register NODE *p; {
 		return(1);
 		}
 	else if( rt == CHAR || rt == UCHAR || rt == SHORT || rt == USHORT ||
-	    rt == FLOAT || (ro != REG && ro != NAME && ro != OREG && ro != ICON ) ){
+#ifndef SPRECC
+	    rt == FLOAT ||
+#endif
+	    (ro != REG && ro != NAME && ro != OREG && ro != ICON ) ){
 		order( p->in.right, INAREG|INBREG );
 		return(1);
 		}
-/*
-	else if( logop(p->in.op) && rt==USHORT ){  /* must get rhs into register */
-/*
-		order( p->in.right, INAREG );
-		return( 1 );
-		}
- */
 	return(0);
 	}
 
@@ -417,7 +394,7 @@ setasg( p ) register NODE *p; {
 
 setasop( p ) register NODE *p; {
 	/* setup for =ops */
-	register rt, ro;
+	register int rt, ro;
 
 	rt = p->in.right->in.type;
 	ro = p->in.right->in.op;
@@ -434,12 +411,6 @@ setasop( p ) register NODE *p; {
 		order( p->in.right, INAREG|INBREG );
 		return(1);
 		}
-/*
-	if( (p->in.op == ASG LS || p->in.op == ASG RS) && ro != ICON && ro != REG ){
-		order( p->in.right, INAREG );
-		return(1);
-		}
- */
 
 
 	p = p->in.left;
@@ -479,8 +450,8 @@ deflab( l ){
 
 genargs( p ) register NODE *p; {
 	register NODE *pasg;
-	register align;
-	register size;
+	register int align;
+	register int size;
 	int count;
 
 	/* generate code for the arguments */
@@ -528,7 +499,7 @@ genargs( p ) register NODE *p; {
 	}
 
 argsize( p ) register NODE *p; {
-	register t;
+	register int t;
 	t = 0;
 	if( p->in.op == CM ){
 		t = argsize( p->in.left );
