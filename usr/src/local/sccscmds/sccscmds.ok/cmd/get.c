@@ -1,7 +1,7 @@
 # include	"../hdr/defines.h"
 # include	"../hdr/had.h"
 
-SCCSID(@(#)get.c	4.2);
+SCCSID(@(#)get.c	4.3);
 USXALLOC();
 
 int	Debug	0;
@@ -196,7 +196,7 @@ get(file)
 			if (HADP)
 				gpkt.p_gout = stdout;
 			else
-				gpkt.p_gout = xfcreat(Gfile,HADK ? 0644 : 0444);
+				gpkt.p_gout = xfcreat(Gfile,HADK ? 0666 : 0444);
 		}
 		prfx(&gpkt);
 		p = idsubst(&gpkt,gpkt.p_line);
@@ -627,7 +627,7 @@ char *inc, *exc;
 		fclose(in);
 	}
 	else
-		out = xfcreat(p,0644);
+		out = xfcreat(p,0666);
 	fseek(out,0L,2);
 	sid_ba(&pkt->p_gotsid,str1);
 	sid_ba(&pkt->p_reqsid,str2);
