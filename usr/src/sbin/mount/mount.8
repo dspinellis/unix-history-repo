@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)mount.8	6.9 (Berkeley) %G%
+.\"	@(#)mount.8	6.10 (Berkeley) %G%
 .\"
 .TH MOUNT 8 ""
 .UC 4
@@ -79,8 +79,8 @@ to indicate the file system type.
 The type \fBufs\fP is the default.
 If the type is not one of the internally known types,
 mount will attempt to execute a program in
-.B /sbin
-corresponding to the type name.
+.B /sbin/mount_XXX
+where \fBXXX\fP is replaced by the type name.
 The standard mount options (see below) are parsed and
 passed to external program via the \fI-F\fP option
 as a decimal number.
@@ -95,7 +95,7 @@ For example, the mount command:
 .br
 causes mount to attempt to execute:
 .br
-	/sbin/mfs -F 8 -N -s 4000 /dev/dk0b /tmp
+	/sbin/mount_mfs -F 8 -N -s 4000 /dev/dk0b /tmp
 .PP
 Options are specified by a \fI-o\fP argument
 followed by a comma separated string of options.
