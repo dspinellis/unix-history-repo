@@ -1,0 +1,22 @@
+/******* Start bogus movtuc workaround  *****/
+	clrl r2
+	tstl    r0
+	bleq    movdon
+movlp:
+	tstl    r4
+	bleq    movdon
+	movzbl  (r1)+,r3
+	tstb    strtab[r3]
+	bneq    1f
+	mnegl   $1,r2
+	decl    r1
+	brb     movdon
+1:
+	movb    r3,(r5)+
+	decl    r4
+	sobgtr  r0,movlp
+  /******* End bogus movtuc workaround ***
+	movtuc r0,(r1),$0,(r3),r4,(r5)
+	movpsl r2                       /*  squirrel away condition codes */
+  /******* End equally bogus movtuc ****/
+movdon: movq r4,*fdesc                  /*  update output descriptor */
