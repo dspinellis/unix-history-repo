@@ -1,5 +1,14 @@
+/*
+ * Copyright (c) 1985 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ * Includes material written at Cornell University by Bill Nesheim,
+ * by permission of the author.
+ */
+
 #ifndef lint
-static char sccsid[] = "@(#)output.c	4.5 (Berkeley) 4/9/84";
+static char sccsid[] = "@(#)output.c	5.4 (Berkeley) %G%";
 #endif
 
 /*
@@ -77,6 +86,8 @@ again:
 			n = msg->rip_nets;
 		}
 		sns = (struct sockaddr_ns *)&rt->rt_dst;
+	        if ((rt->rt_flags & (RTF_HOST|RTF_GATEWAY)) == RTF_HOST)
+			sns = (struct sockaddr_ns *)&rt->rt_router;
 		metric = min(rt->rt_metric + 1, HOPCNT_INFINITY);
 		net = ns_netof(sns->sns_addr);
 		/*
