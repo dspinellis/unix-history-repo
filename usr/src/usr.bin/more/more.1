@@ -16,7 +16,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)more.1	5.5 (Berkeley) %G%
+.\"	@(#)more.1	5.6 (Berkeley) %G%
 .\"
 .TH MORE 1
 .SH NAME
@@ -211,9 +211,13 @@ or defaults to
 .PP
 .IP "= or ^G"
 These options print out the number of the file currently being displayed
-relative to the total number of files there are to display, the line
-number, the byte number, and what percentage of the file has been displayed
-if possible.  All of these are for the bottom line on the screen.
+relative to the total number of files there are to display, the current
+line number, the current byte number and the total bytes to display, and
+what percentage of the file has been displayed.  If
+.I more
+is reading from stdin, or the file is shorter than a single screen, some
+of these items may not be available.  Note, all of these items reference
+the first byte of the last line displayed on the screen.
 .PP
 .IP "q or :q or ZZ"
 Exits
