@@ -100,3 +100,28 @@ STACKCHECK
 	   exception frame has been popped.
 	This option can degrade performance considerably, use it only if
 	you suspect a problem with kernel stacks.
+
+SCSI_REVPRI
+	Changes autoconf to start matching logical SCSI devices starting
+	at slave 6 and working backwards instead of starting at slave 0
+	and working up.  Later releases of the HP boot ROM search for
+	boot devices in this manner.  This is apparently the order in
+	which priority is given to slaves on the host adaptor.  Define
+	this if you use wildcarding and want to stay in sync with the
+	boot ROM's strategy.
+
+MAPPEDCOPY
+	Use page remapping to do large copyin/copyouts.  When defined
+	the default is to use mapped copy for operations on one page
+	or more except on machines with virtually-indexed caches.
+	See initcpu() in machdep.c
+
+BUFFERS_UNMANAGED
+	Set up the buffer cache "below" the machine independent VM.
+	Normally, in startup() we use vm_map operations to initially
+	assign physical memory to the buffers.  This creates a map with
+	a huge number of map entries (twice the number of buffers)
+	which serve no purpose since remaining buffer operations
+	(i.e. pagemove) work below the MI layer anyway.  Defining this
+	symbol will cause startup() to use pmap operations to map the
+	initial pages leaving the buffer_map one big entry.
