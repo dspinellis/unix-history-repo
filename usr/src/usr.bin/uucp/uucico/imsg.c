@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)imsg.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)imsg.c	5.4 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -32,6 +32,7 @@ char *amsg;
 register int fn;
 {
 	register char *msg = amsg;
+	register int nchars = 0;
 	int foundsync = FAIL;
 	char c;
 
@@ -39,15 +40,18 @@ register int fn;
 	for (;;) {
 		if (read(fn, &c, 1) != 1)
 			return FAIL;
+		DEBUG(9,"\t%o", c&0377);
 		c &= 0177;
 		if (c == '\n' || c == '\r')
 			DEBUG(5, "%c", c);
 		else 
 			DEBUG(5, (isprint(c) || isspace(c)) ? "%c" : "\\%o",
 				c & 0377);
+		c &= 0177;
 		if (c == Msync[0]) {
 			DEBUG(5, ">\nimsg input<", CNULL);
 			msg = amsg;
+			nchars = 0;
 			foundsync = SUCCESS;
 			continue;
 		} else if (foundsync != SUCCESS)
@@ -61,6 +65,11 @@ register int fn;
 			break;
 		}
 		*msg++ = c;
+		/* MAXFULLNAME should really be passed in as a parameter */
+		if (nchars++ > MAXFULLNAME) {
+			DEBUG(1, "buffer overrun in imsg", CNULL);
+			return FAIL;
+		}
 		fflush(stderr);
 	}
 	*msg = '\0';
