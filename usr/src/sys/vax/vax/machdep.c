@@ -1,4 +1,4 @@
-/*	machdep.c	4.57	82/07/15	*/
+/*	machdep.c	4.58	82/07/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -30,6 +30,7 @@
 #include "../h/mbuf.h"
 #include "../h/rpb.h"
 #include "../h/msgbuf.h"
+#include "../h/quota.h"
 
 int	icode[] =
 {
@@ -44,6 +45,22 @@ int	icode[] =
 	0x00000000,	/* 0] */
 };
 int	szicode = sizeof(icode);
+
+#if	MUSH
+int	mcode[] =
+{
+	0x9f19af9f,	/* pushab [&"mush",0]; pushab */
+	0x02dd09af,	/* "/etc/mush"; pushl $2 */
+	0xbc5c5ed0,	/* movl sp,ap; chmk */
+	0x2f01bc0b,	/* $exec; chmk $exit; "/ */
+	0x2f637465,	/* etc/ */
+	0x6873756d,	/* mush" */
+	0x00000000,	/* \0\0\0";  0 */
+	0x00000014,	/* [&"mush", */
+	0x00000000,	/* 0] */
+};
+int	szmcode = sizeof(mcode);
+#endif
  
 /*
  * Declare these as initialized data so we can patch them.
@@ -116,6 +133,10 @@ startup(firstaddr)
 	valloc(argmap, struct map, ARGMAPSIZE);
 	valloc(kernelmap, struct map, nproc);
 	valloc(mbmap, struct map, nmbclusters/4);
+#if	QUOTA
+	valloclim(quota, struct quota, nquota, quotaNQUOTA);
+	valloclim(dquot, struct dquot, ndquot, dquotNDQUOT);
+#endif
 	/*
 	 * Now allocate space for core map
 	 */
