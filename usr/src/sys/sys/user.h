@@ -1,6 +1,4 @@
-/* @(#)user.h 2.1 3/25/82 */
-
-/*	user.h	4.14	82/07/16	*/
+/*	user.h	4.15	82/08/08	*/
 
 #ifdef KERNEL
 #include "../h/pcb.h"
@@ -55,14 +53,16 @@ struct	user
 	caddr_t	u_base;			/* base address for IO */
 	unsigned int u_count;		/* bytes remaining for IO */
 	off_t	u_offset;		/* offset in file for IO */
-	struct	inode *u_cdir;		/* pointer to inode of current directory */
+	struct	inode *u_cdir;		/* current directory */
 	struct	inode *u_rdir;		/* root directory of current process */
 	caddr_t	u_dirp;			/* pathname pointer */
 	struct	direct u_dent;		/* current directory entry */
 	struct	inode *u_pdir;		/* inode of parent directory of dirp */
-	struct	file *u_ofile[NOFILE];	/* pointers to file structures of open files */
+	struct	file *u_ofile[NOFILE];	/* file structures for open files */
 	char	u_pofile[NOFILE];	/* per-process flags of open files */
 #define	EXCLOSE 01		/* auto-close on exec */
+#define	RDLOCK	02		/* read lock present */
+#define	WRLOCK	04		/* write lock present */
 	label_t u_ssav;			/* label variable for swapping */
 	int	(*u_signal[NSIG])();	/* disposition of signals */
 	int	u_code;			/* ``code'' to trap */
@@ -117,15 +117,12 @@ struct	user
 					   use of parent during fork */
 	time_t	u_outime;		/* user time at last sample */
 	size_t	u_odsize, u_ossize;	/* for (clumsy) expansion swaps */
-	size_t	u_vrpages[NOFILE];	/* number vread pages hanging on fd */
 	int	u_limit[8];		/* see <sys/limit.h> */
 #ifdef notdef
 	unsigned u_vsave;		/* saved previous fault page number */
 #endif
 	struct	quota	*u_quota;	/* user's quota structure */
 	int	u_qflags;		/* per process quota flags */
-	int	u_pflags;		/* per process other sorts of flags */
-
 	int	u_stack[1];
 					/*
 					 * kernel stack per user
