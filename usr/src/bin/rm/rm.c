@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)rm.c	4.17 (Berkeley) %G%";
+static char *sccsid = "@(#)rm.c	4.18 (Berkeley) %G%";
 
 /*
  * rm - for ReMoving files, directories & trees.
@@ -57,7 +57,7 @@ main(argc, argv)
 			}
 	}
 
-	if (argc < 2) {
+	if (argc < 2 && !fflg) {
 		fprintf(stderr, "usage: rm [-rif] file ...\n");
 		exit(1);
 	}
