@@ -1,7 +1,7 @@
 #
 # cursor package maker
 #
-# @(#)Makefile	1.14 (Berkeley) %G%
+# @(#)Makefile	1.15 (Berkeley) %G%
 #
 HEADERS=curses.h unctrl.h curses.ext
 CFILES=	box.c clear.c initscr.c endwin.c mvprintw.c mvscanw.c mvwin.c \
@@ -30,7 +30,7 @@ CC=	cc
 LINT=	lint
 LPASS1=	/usr/lib/lint/lint1
 AR=	ar
-RM=	rm
+RM=	rm -f
 LN=	ln
 CFL=	
 CFLAGS=	-O ${CFL}
@@ -41,7 +41,7 @@ INSTALL=${DESTDIR}/usr/lib/libcurses.a ${DESTDIR}/usr/include/curses.h \
 .SUFFIXES: .p
 
 .c.p:
-	rm -f x.c
+	${RM} x.c
 	ln $*.c x.c
 	${CC} ${CFLAGS} -p -c x.c
 	mv x.o $*.p
@@ -56,7 +56,7 @@ crlib: ${OBJS}
 	ranlib crlib
 
 pcrlib: ${POBJS}
-	rm -f x.c
+	${RM} x.c
 	${AR} rv pcrlib $?
 	ranlib pcrlib
 
@@ -73,7 +73,7 @@ new:	cleanup ctags
 	      /ya/staff/arnold/=eye/curses.h /ya/staff/arnold/=hacks/curses.h
 
 clean:
-	rm ${OBJS} crlib
+	${RM} ${OBJS} crlib
 
 ctags:
 	${CTAGS} ${CFILES} curses.h
