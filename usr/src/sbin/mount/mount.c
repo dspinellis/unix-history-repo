@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "pathnames.h"
@@ -56,7 +56,7 @@ static char sccsid[] = "@(#)mount.c	5.16 (Berkeley) %G%";
 #define	SETTYPE(type) \
 	(!strcmp(type, FSTAB_RW) || !strcmp(type, FSTAB_RQ))
 
-int fake, verbose, mnttype;
+int fake, verbose, updateflg, mnttype;
 char *mntname, **envp;
 
 #ifdef NFS
@@ -92,7 +92,7 @@ main(argc, argv, arge)
 	extern int optind;
 	register struct fstab *fs;
 	register int cnt;
-	int all, ch, rval, sfake, i;
+	int all, ch, rval, flags, i;
 	long mntsize;
 	struct statfs *mntbuf;
 	char *type, *options = NULL;
@@ -102,7 +102,7 @@ main(argc, argv, arge)
 	type = NULL;
 	mnttype = MOUNT_UFS;
 	mntname = "ufs";
-	while ((ch = getopt(argc, argv, "afrwvt:o:")) != EOF)
+	while ((ch = getopt(argc, argv, "afrwuvt:o:")) != EOF)
 		switch((char)ch) {
 		case 'a':
 			all = 1;
@@ -112,6 +112,9 @@ main(argc, argv, arge)
 			break;
 		case 'r':
 			type = FSTAB_RO;
+			break;
+		case 'u':
+			updateflg = M_UPDATE;
 			break;
 		case 'v':
 			verbose = 1;
@@ -137,20 +140,17 @@ main(argc, argv, arge)
 
 	if (all) {
 		rval = 0;
-		for (sfake = fake; fs = getfsent(); fake = sfake) {
+		while (fs = getfsent()) {
 			if (BADTYPE(fs->fs_type))
 				continue;
 			/* `/' is special, it's always mounted */
 			if (!strcmp(fs->fs_file, "/"))
-				fake = 1;
-			if ((mnttype = getmnttype(fs->fs_vfstype)) == 0) {
-				fprintf(stderr,
-				    "%s %s type of file system is unknown.\n",
-				    "mount:", fs->fs_vfstype);
-				continue;
-			}
-			rval |= mountfs(fs->fs_spec, fs->fs_file,
-			    type ? type : fs->fs_type, options, fs->fs_mntops);
+				flags = M_UPDATE;
+			else
+				flags = updateflg;
+			mnttype = getmnttype(fs->fs_vfstype);
+			rval |= mountfs(fs->fs_spec, fs->fs_file, flags,
+			    type, options, fs->fs_mntops);
 		}
 		exit(rval);
 	}
@@ -181,57 +181,50 @@ main(argc, argv, arge)
 			    "mount: %s has unknown file system type.\n", *argv);
 			exit(1);
 		}
-		if ((mnttype = getmnttype(fs->fs_vfstype)) == 0) {
-			fprintf(stderr,
-			    "mount: %s type of file system is unknown.\n",
-			    fs->fs_vfstype);
-			exit(1);
-		}
-		exit(mountfs(fs->fs_spec, fs->fs_file,
-		    type ? type : fs->fs_type, options, fs->fs_mntops));
+		mnttype = getmnttype(fs->fs_vfstype);
+		exit(mountfs(fs->fs_spec, fs->fs_file, updateflg,
+		    type, options, fs->fs_mntops));
 	}
 
 	if (argc != 2)
 		usage();
 
-	exit(mountfs(argv[0], argv[1], type ? type : "rw", options, NULL));
+	exit(mountfs(argv[0], argv[1], updateflg, type, options, NULL));
 }
 
-mountfs(spec, name, type, options, mntopts)
+mountfs(spec, name, flags, type, options, mntopts)
 	char *spec, *name, *type, *options, *mntopts;
+	int flags;
 {
 	extern int errno;
 	register int cnt;
-	int flags, argc, status, i;
+	int argc, status, i;
 	struct ufs_args args;
 	char *argp, *argv[50];
 	char execname[MAXPATHLEN + 1], flagval[12];
 
-	flags = 0;
-	if (!strcmp(type, FSTAB_RO))
-		flags |= M_RDONLY;
-	if (options)
-		getstdopts(options, &flags);
 	if (mntopts)
 		getstdopts(mntopts, &flags);
+	if (options)
+		getstdopts(options, &flags);
+	if (type)
+		getstdopts(type, &flags);
 	switch (mnttype) {
 	case MOUNT_UFS:
-		if (options)
-			getufsopts(options, &flags);
 		if (mntopts)
 			getufsopts(mntopts, &flags);
+		if (options)
+			getufsopts(options, &flags);
 		args.fspec = spec;
 		argp = (caddr_t)&args;
 		break;
 
 #ifdef NFS
 	case MOUNT_NFS:
-		if (options)
-			getnfsopts(options, &nfsargs, &opflags,
-				&retrycnt);
 		if (mntopts)
-			getnfsopts(mntopts, &nfsargs, &opflags,
-				&retrycnt);
+			getnfsopts(mntopts, &nfsargs, &opflags, &retrycnt);
+		if (options)
+			getnfsopts(options, &nfsargs, &opflags, &retrycnt);
 		if (argp = getnfsargs(spec, name, type))
 			break;
 		return (1);
@@ -246,10 +239,10 @@ mountfs(spec, name, type, options, mntopts)
 			sprintf(flagval, "%d", flags);
 			argv[argc++] = flagval;
 		}
-		if (options)
-			argc += getexecopts(options, &argv[argc]);
 		if (mntopts)
 			argc += getexecopts(mntopts, &argv[argc]);
+		if (options)
+			argc += getexecopts(options, &argv[argc]);
 		argv[argc++] = spec;
 		argv[argc++] = name;
 		sprintf(execname, "%s/%s", _PATH_EXECDIR, mntname);
@@ -288,7 +281,14 @@ mountfs(spec, name, type, options, mntopts)
 			fprintf(stderr, "Mount table full\n");
 			break;
 		case EINVAL:
-			fprintf(stderr, "Bogus super block\n");
+			if (flags & M_UPDATE)
+				fprintf(stderr, "Specified device does %s\n",
+					"not match mounted device");
+			else
+				fprintf(stderr, "Bogus super block\n");
+			break;
+		case EOPNOTSUPP:
+			fprintf(stderr, "Operation not supported\n");
 			break;
 		default:
 			perror((char *)NULL);
@@ -335,6 +335,8 @@ prmount(spec, name, flags)
 		printf(" (nodev)");
 	if (flags & M_SYNCHRONOUS)
 		printf(" (synchronous)");
+	if (flags & M_UPDATE)
+		printf(" (update only)");
 	printf("\n");
 }
 
@@ -354,7 +356,7 @@ getmnttype(fstype)
 
 usage()
 {
-	fprintf(stderr, "usage: mount [-afrw]\nor mount [-frw] special | node\nor mount [-frw] special node\n");
+	fprintf(stderr, "usage: mount [-afurw]\nor mount [-furw] special | node\nor mount [-furw] special node\n");
 	exit(1);
 }
 
@@ -374,24 +376,40 @@ getstdopts(options, flagp)
 		} else {
 			negative = 0;
 		}
+		if (!negative && !strcasecmp(opt, FSTAB_RO)) {
+			*flagp |= M_RDONLY;
+			continue;
+		}
+		if (!negative && !strcasecmp(opt, FSTAB_RW)) {
+			*flagp &= ~M_RDONLY;
+			continue;
+		}
 		if (!strcasecmp(opt, "exec")) {
 			if (negative)
 				*flagp |= M_NOEXEC;
+			else
+				*flagp &= ~M_NOEXEC;
 			continue;
 		}
 		if (!strcasecmp(opt, "suid")) {
 			if (negative)
 				*flagp |= M_NOSUID;
+			else
+				*flagp &= ~M_NOSUID;
 			continue;
 		}
 		if (!strcasecmp(opt, "dev")) {
 			if (negative)
 				*flagp |= M_NODEV;
+			else
+				*flagp &= ~M_NODEV;
 			continue;
 		}
 		if (!strcasecmp(opt, "synchronous")) {
 			if (!negative)
 				*flagp |= M_SYNCHRONOUS;
+			else
+				*flagp &= ~M_SYNCHRONOUS;
 			continue;
 		}
 	}
