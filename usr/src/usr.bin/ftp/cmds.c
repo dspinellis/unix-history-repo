@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -287,7 +287,7 @@ put(argc, argv)
 {
 	char *cmd;
 	int loc = 0;
-	char *oldargv1;
+	char *oldargv1, *oldargv2;
 
 	if (argc == 2) {
 		argc++;
@@ -319,6 +319,7 @@ usage:
 	if (argc < 3) 
 		goto usage;
 	oldargv1 = argv[1];
+	oldargv2 = argv[2];
 	if (!globulize(&argv[1])) {
 		code = -1;
 		return;
@@ -337,7 +338,8 @@ usage:
 	if (loc && mapflag) {
 		argv[2] = domap(argv[2]);
 	}
-	sendrequest(cmd, argv[1], argv[2]);
+	sendrequest(cmd, argv[1], argv[2],
+	    argv[1] != oldargv1 || argv[2] != oldargv2);
 }
 
 /*
@@ -401,7 +403,8 @@ mput(argc, argv)
 				if (mapflag) {
 					tp = domap(tp);
 				}
-				sendrequest((sunique) ? "STOU" : "STOR", cp,tp);
+				sendrequest((sunique) ? "STOU" : "STOR",
+				    cp, tp, cp != tp || !interactive);
 				if (!mflag && fromatty) {
 					ointer = interactive;
 					interactive = 1;
@@ -424,7 +427,7 @@ mput(argc, argv)
 				tp = (ntflag) ? dotrans(argv[i]) : argv[i];
 				tp = (mapflag) ? domap(tp) : tp;
 				sendrequest((sunique) ? "STOU" : "STOR",
-				            argv[i], tp);
+				    argv[i], tp, tp != argv[i] || !interactive);
 				if (!mflag && fromatty) {
 					ointer = interactive;
 					interactive = 1;
@@ -450,7 +453,7 @@ mput(argc, argv)
 				tp = (ntflag) ? dotrans(*cpp) : *cpp;
 				tp = (mapflag) ? domap(tp) : tp;
 				sendrequest((sunique) ? "STOU" : "STOR",
-					   *cpp, tp);
+				    *cpp, tp, *cpp != tp || !interactive);
 				if (!mflag && fromatty) {
 					ointer = interactive;
 					interactive = 1;
@@ -490,6 +493,7 @@ getit(argc, argv, restartit, mode)
 	char *mode;
 {
 	int loc = 0;
+	char *oldargv1, *oldargv2;
 
 	if (argc == 2) {
 		argc++;
@@ -520,6 +524,8 @@ usage:
 	}
 	if (argc < 3) 
 		goto usage;
+	oldargv1 = argv[1];
+	oldargv2 = argv[2];
 	if (!globulize(&argv[2])) {
 		code = -1;
 		return (0);
@@ -601,7 +607,8 @@ usage:
 		}
 	}
 
-	recvrequest("RETR", argv[2], argv[1], mode);
+	recvrequest("RETR", argv[2], argv[1], mode,
+	    argv[1] != oldargv1 || argv[2] != oldargv2);
 	restart_point = 0;
 	return (0);
 }
@@ -683,7 +690,8 @@ mget(argc, argv)
 			if (mapflag) {
 				tp = domap(tp);
 			}
-			recvrequest("RETR", tp, cp, "w");
+			recvrequest("RETR", tp, cp, "w",
+			    tp != cp || !interactive);
 			if (!mflag && fromatty) {
 				ointer = interactive;
 				interactive = 1;
@@ -738,7 +746,7 @@ remglob(argv,doswitch)
 			pswitch(!proxy);
 		}
 		for (mode = "w"; *++argv != NULL; mode = "a")
-			recvrequest ("NLST", temp, *argv, mode);
+			recvrequest ("NLST", temp, *argv, mode, 0);
 		if (doswitch) {
 			pswitch(!proxy);
 		}
@@ -1129,7 +1137,7 @@ ls(argc, argv)
 			code = -1;
 			return;
 	}
-	recvrequest(cmd, argv[2], argv[1], "w");
+	recvrequest(cmd, argv[2], argv[1], "w", 0);
 }
 
 /*
@@ -1178,7 +1186,7 @@ mls(argc, argv)
 	(void) setjmp(jabort);
 	for (i = 1; mflag && i < argc-1; ++i) {
 		*mode = (i == 1) ? 'w' : 'a';
-		recvrequest(cmd, dest, argv[i], mode);
+		recvrequest(cmd, dest, argv[i], mode, 0);
 		if (!mflag && fromatty) {
 			ointer = interactive;
 			interactive = 1;
