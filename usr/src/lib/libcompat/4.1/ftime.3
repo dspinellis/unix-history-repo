@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ftime.3	4.1 (Berkeley) %G%
+.\"	@(#)ftime.3	5.1 (Berkeley) %G%
 .\"
-.TH TIME 2 
+.TH TIME 3C "1 April 1983" 
 .UC 4
 .SH NAME
 time, ftime \- get date and time
@@ -21,6 +21,10 @@ time, ftime \- get date and time
 .B struct timeb *tp;
 .fi
 .SH DESCRIPTION
+.ft B
+These interfaces are obsoleted by gettimeofday(2).
+.ft R
+.PP
 .I Time
 returns the time since 00:00:00 GMT, Jan. 1, 1970, measured
 in seconds.
@@ -37,7 +41,7 @@ The
 .I ftime
 entry fills in a structure pointed to by its argument,
 as defined by
-.IR <sys/timeb.h> :
+.RI < sys/timeb.h >:
 .PP
 .ta .5i +\w'unsigned 'u
 .nf
@@ -50,14 +54,4 @@ the local time zone (measured in minutes of time westward from Greenwich),
 and a flag that, if nonzero, indicates that
 Daylight Saving time applies locally during the appropriate part of the year.
 .SH "SEE ALSO"
-date(1), stime(2), ctime(3)
-.SH "ASSEMBLER (PDP-11)"
-(ftime = 35.)
-.br
-.B sys ftime; bufptr
-.PP
-(time = 13.; obsolete call)
-.br
-.B sys time
-.br
-(time since 1970 in r0-r1)
+date(1), gettimeofday(2), settimeofday(2), ctime(3)
