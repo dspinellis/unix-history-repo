@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass2.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass2.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -318,8 +318,8 @@ chk2:
 		fileerror(idesc->id_number, dirp->d_ino, "I OUT OF RANGE");
 		n = reply("REMOVE");
 	} else if (newinofmt &&
-		   ((dirp->d_ino == WINO && !DT_ISWHT(dirp->d_type)) ||
-		    (dirp->d_ino != WINO && DT_ISWHT(dirp->d_type)))) {
+		   ((dirp->d_ino == WINO && dirp->d_type != DT_WHT) ||
+		    (dirp->d_ino != WINO && dirp->d_type == DT_WHT))) {
 		fileerror(idesc->id_number, dirp->d_ino, "BAD WHITEOUT ENTRY");
 		dirp->d_ino = WINO;
 		dirp->d_type = DT_WHT;
