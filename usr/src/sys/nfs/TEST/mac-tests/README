@@ -1,0 +1,53 @@
+README
+12/89
+brad@cayman.com
+
+This is a simple attempt at a port of the "simple" nfs test suite to the
+macintosh.  It is intended to be compiled with the LightSpeed v3.0 C
+compiler on the Macintosh.
+
+-rw-------  1 brad       247677 Dec 28 14:13 Mac-Cthon.sit.hqx
+-rw-------  1 brad         1878 Dec 28 14:10 README
+-rw-------  1 brad       159507 Dec 28 15:12 StuffIt 1.5.1.hqx
+-rw-------  1 brad        27565 Dec 28 15:12 tar.hqx
+
+The tar file contains the source files. Any files with resource forks
+are invalid. The tar program I used only deals with data forks.
+
+The "Mac-Cthon.sit" is a binary data file created by "stuffit" which
+contains the files with resource forks.
+
+To unpack this:
+
+1. find a copy of binhex, stuffit or what ever will unpack a ".hqx" file
+
+2. copy the the three ".hqx" files, the ".sit" file and the ".tar" file
+to your macintosh. You can use NCSA telnet's ftp, aufs, or whatever
+
+3. "binhex" the tar.hqx and stuffit.hqx files. This will create two
+new applications, "tar" and "stuffit"
+
+4. Run tar and "extract" the ".tar" file. This will unpack the source files
+
+5. Move the ".sit" file into the folder ("Mac-Connectathon") created by
+tar when you extracted the files. (step 4 above)
+
+6. Run stuffit on the ".sit" file (double click on the ".sit" file or
+run stuffit and select "open" and select the ".sit" file)
+
+7. extract all of the files in the ".sit" file
+
+8. At this point you should be able to run the executable ("basic-test-0.24")
+or run the LightSpeed project and change the source/
+
+---
+
+The test will pop up an "SFPutFile" dialog when you first run it.
+Press the "drive" button to select the volume you wish to exercise
+(most likely, your nfs volume)
+
+After that, the test is on auto pilot.  Selecting individual tests
+is done by changing the source code. Take a look at main.c; there is a
+simple macro to turn tests on and off.
+
+-brad
