@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.132 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.133 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -49,8 +49,8 @@ sendall(e, mode)
 	int otherowners;
 	register ENVELOPE *ee;
 	ENVELOPE *splitenv = NULL;
-	bool announcequeueup;
 	bool oldverbose = Verbose;
+	bool somedeliveries = FALSE;
 	int pid;
 	extern void sendenvelope();
 
@@ -76,16 +76,17 @@ sendall(e, mode)
 		if (mode != SM_VERIFY &&
 		    shouldqueue(e->e_msgpriority, e->e_ctime))
 			mode = SM_QUEUE;
-		announcequeueup = mode == SM_QUEUE;
 	}
-	else
-		announcequeueup = FALSE;
 
 	if (tTd(13, 1))
 	{
+		extern void printenvflags();
+
 		printf("\n===== SENDALL: mode %c, id %s, e_from ",
 			mode, e->e_id);
 		printaddr(&e->e_from, FALSE);
+		printf("\te_flags = ");
+		printenvflags(e);
 		printf("sendqueue:\n");
 		printaddr(e->e_sendqueue, TRUE);
 	}
@@ -101,7 +102,7 @@ sendall(e, mode)
 	if (e->e_hopcount > MaxHopCount)
 	{
 		errno = 0;
-		queueup(e, TRUE, announcequeueup);
+		queueup(e, TRUE, mode == SM_QUEUE);
 		e->e_flags |= EF_FATALERRS|EF_PM_NOTIFY|EF_CLRQUEUE;
 		syserr("554 too many hops %d (%d max): from %s via %s, to %s",
 			e->e_hopcount, MaxHopCount, e->e_from.q_paddr,
@@ -186,6 +187,34 @@ sendall(e, mode)
 			else
 			{
 				otherowners++;
+			}
+
+			/*
+			**  If this mailer is expensive, and if we don't
+			**  want to make connections now, just mark these
+			**  addresses and return.  This is useful if we
+			**  want to batch connections to reduce load.  This
+			**  will cause the messages to be queued up, and a
+			**  daemon will come along to send the messages later.
+			*/
+
+			if (bitset(QBADADDR|QQUEUEUP, q->q_flags))
+				continue;
+			if (NoConnect && !Verbose &&
+			    bitnset(M_EXPENSIVE, q->q_mailer->m_flags))
+			{
+				q->q_flags |= QQUEUEUP;
+				e->e_to = q->q_paddr;
+				message("queued");
+				if (LogLevel > 8)
+					logdelivery(q->q_mailer, NULL,
+						    "queued", NULL,
+						    (time_t) 0, e);
+				e->e_to = NULL;
+			}
+			else
+			{
+				somedeliveries = TRUE;
 			}
 		}
 
@@ -272,15 +301,19 @@ sendall(e, mode)
 		e->e_flags |= EF_NORECEIPT;
 	}
 
+	/* if nothing to be delivered, just queue up everything */
+	if (!somedeliveries && mode != SM_QUEUE && mode != SM_VERIFY)
+		mode = SM_QUEUE;
+
 # ifdef QUEUE
 	if ((mode == SM_QUEUE || mode == SM_FORK ||
 	     (mode != SM_VERIFY && SuperSafe)) &&
 	    !bitset(EF_INQUEUE, e->e_flags))
 	{
 		/* be sure everything is instantiated in the queue */
-		queueup(e, TRUE, announcequeueup);
+		queueup(e, TRUE, mode == SM_QUEUE);
 		for (ee = splitenv; ee != NULL; ee = ee->e_sibling)
-			queueup(ee, TRUE, announcequeueup);
+			queueup(ee, TRUE, mode == SM_QUEUE);
 	}
 #endif /* QUEUE */
 
@@ -296,7 +329,8 @@ sendall(e, mode)
 
 	  case SM_QUEUE:
   queueonly:
-		e->e_flags |= EF_INQUEUE|EF_KEEPQUEUE;
+		if (e->e_nrcpts > 0)
+			e->e_flags |= EF_INQUEUE|EF_KEEPQUEUE;
 		return;
 
 	  case SM_FORK:
@@ -625,36 +659,6 @@ deliver(firstto, editfcn)
 #endif 
 
 	if (tTd(10, 1))
-
-	m = to->q_mailer;
-	host = to->q_host;
-
-	/*
-	**  If this mailer is expensive, and if we don't want to make
-	**  connections now, just mark these addresses and return.
-	**	This is useful if we want to batch connections to
-	**	reduce load.  This will cause the messages to be
-	**	queued up, and a daemon will come along to send the
-	**	messages later.
-	**		This should be on a per-mailer basis.
-	*/
-
-	if (NoConnect && bitnset(M_EXPENSIVE, m->m_flags) && !Verbose)
-	{
-		for (; to != NULL; to = to->q_next)
-		{
-			if (bitset(QDONTSEND|QBADADDR|QQUEUEUP, to->q_flags) ||
-			    to->q_mailer != m)
-				continue;
-			to->q_flags |= QQUEUEUP;
-			e->e_to = to->q_paddr;
-			message("queued");
-			if (LogLevel > 8)
-				logdelivery(m, NULL, "queued", NULL, xstart, e);
-		}
-		e->e_to = NULL;
-		return (0);
-	}
 
 	/*
 	**  Do initial argv setup.
