@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mscp.c	1.3 (Berkeley) %G%
+ *	@(#)mscp.c	7.1 (Berkeley) %G%
  */
 
 /*
