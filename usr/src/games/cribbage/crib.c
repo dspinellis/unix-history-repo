@@ -122,7 +122,8 @@ makeboard()
 
 /*
  * game:
- *	Play one game up to glimit points
+ *	Play one game up to glimit points.  Actually, we only ASK the
+ *	player what card to turn.  We do a random one, anyway.
  */
 game()
 {
@@ -135,13 +136,12 @@ game()
 	if (gamecount == 0) {
 	    flag = TRUE;
 	    do {
-		if (rflag)				/* player cuts deck */
-		    i = (rand() >> 4) % CARDS;		/* random cut */
-		else {
+		if (!rflag) {				/* player cuts deck */
 		    msg(quiet ? "Cut for crib? " :
 			"Cut to see whose crib it is -- low card wins? ");
-		    i = number(0, CARDS - 1);
+		    getline();
 		}
+		i = (rand() >> 4) % CARDS;		/* random cut */
 		do {					/* comp cuts deck */
 		    j = (rand() >> 4) % CARDS;
 		} while (j == i);
@@ -299,7 +299,8 @@ BOOLEAN		mycrib;
 
 /*
  * cut:
- *	Cut the deck and set turnover
+ *	Cut the deck and set turnover.  Actually, we only ASK the
+ *	player what card to turn.  We do a random one, anyway.
  */
 cut(mycrib, pos)
 BOOLEAN		mycrib;
@@ -309,13 +310,12 @@ int		pos;
 	BOOLEAN			win = FALSE;
 
 	if (mycrib) {
-	    if (rflag)				/* random cut */
-		i = (rand() >> 4) % (CARDS - pos);
-	    else {
+	    if (!rflag) {			/* random cut */
 		msg(quiet ? "Cut the deck? " :
 			"How many cards down do you wish to cut the deck? ");
-		i = number(0, CARDS - pos - 1);
+		getline();
 	    }
+	    i = (rand() >> 4) % (CARDS - pos);
 	    turnover = deck[i + pos];
 	    addmsg(quiet ? "You cut " : "You cut the ");
 	    msgcard(turnover, FALSE);
