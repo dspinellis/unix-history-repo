@@ -1,8 +1,10 @@
-(Version 6.7 of %G%)
+(Version 6.8 of %G%)
 
 *****	Database (keyed lookup) locking and rebuild.
 
 *****	Extend UDB support for mailing lists: owner- equivalent and the like.
+
+****	8 -> 7 bit MIME conversion.
 
 **	Find a good test suite and include in the distribution.
 
