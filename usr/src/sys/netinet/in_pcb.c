@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)in_pcb.c	7.4 (Berkeley) %G%
+ *	@(#)in_pcb.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -233,7 +233,7 @@ in_setsockaddr(inp, nam)
 	register struct inpcb *inp;
 	struct mbuf *nam;
 {
-	register struct sockaddr_in *sin = mtod(nam, struct sockaddr_in *);
+	register struct sockaddr_in *sin;
 	
 	nam->m_len = sizeof (*sin);
 	sin = mtod(nam, struct sockaddr_in *);
@@ -247,7 +247,7 @@ in_setpeeraddr(inp, nam)
 	struct inpcb *inp;
 	struct mbuf *nam;
 {
-	register struct sockaddr_in *sin = mtod(nam, struct sockaddr_in *);
+	register struct sockaddr_in *sin;
 	
 	nam->m_len = sizeof (*sin);
 	sin = mtod(nam, struct sockaddr_in *);
