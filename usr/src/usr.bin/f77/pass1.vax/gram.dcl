@@ -1,9 +1,10 @@
-/*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1980 The Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)gram.dcl	5.1.1.1 (Berkeley) %G%
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)gram.dcl	5.6 (Berkeley) %G%
  */
 
 /*
@@ -12,6 +13,29 @@
  * University of Utah CS Dept modification history:
  *
  * $Log:	gram.dcl,v $
+ * Revision 5.7  86/01/30  15:20:27  donn
+ * Improve error message reporting.
+ * 
+ * Revision 5.6  85/12/18  20:10:26  donn
+ * Enforce more strict ordering of specification statements. per the
+ * standard.  Some duplicated code is now concentrated in the nonterminal
+ * 'inside', which is used to indicate the start of a program.
+ * 
+ * Revision 5.5  85/11/25  00:23:59  donn
+ * 4.3 beta
+ * 
+ * Revision 5.4  85/08/20  23:37:33  donn
+ * Fix from Jerry Berkman to prevent length problems with -r8.
+ * 
+ * Revision 5.3  85/08/15  20:16:29  donn
+ * SAVE statements are not executable...
+ * 
+ * Revision 5.2  85/08/10  04:24:56  donn
+ * Jerry Berkman's changes to handle the -r8/double precision flag.
+ * 
+ * Revision 5.1  85/08/10  03:47:18  donn
+ * 4.3 alpha
+ * 
  * Revision 3.2  84/11/12  18:36:26  donn
  * A side effect of removing the ability of labels to define the start of
  * a program is that format statements have to do the job now...
@@ -29,25 +53,17 @@ spec:	  dcl
 	| implicit
 	| data
 	| namelist
-	| SSAVE
+	| SSAVE in_dcl
 		{ NO66("SAVE statement");
 		  saveall = YES; }
-	| SSAVE savelist
+	| SSAVE in_dcl savelist
 		{ NO66("SAVE statement"); }
-	| SFORMAT
+	| SFORMAT inside
 		{
-		if (parstate == OUTSIDE)
-			{
-			newproc();
-			startproc(PNULL, CLMAIN);
-			parstate = INSIDE;
-			}
-		if (parstate < INDCL)
-			parstate = INDCL;
 		fmtstmt(thislabel);
 		setfmt(thislabel);
 		}
-	| SPARAM in_dcl SLPAR paramlist SRPAR
+	| SPARAM in_param SLPAR paramlist SRPAR
 		{ NO66("PARAMETER statement"); }
 	;
 
@@ -66,12 +82,14 @@ type:	  typespec lengspec
 	;
 
 typespec:  typename
-		{ varleng = ($1<0 || $1==TYLONG ? 0 : typesize[$1]); }
+		{ varleng = ($1<0 || $1==TYLONG ? 0 : typesize[$1]);
+		  vartype = $1;
+		}
 	;
 
 typename:    SINTEGER	{ $$ = TYLONG; }
-	| SREAL		{ $$ = TYREAL; }
-	| SCOMPLEX	{ $$ = TYCOMPLEX; }
+	| SREAL		{ $$ = dblflag ? TYDREAL : TYREAL; }
+	| SCOMPLEX	{ $$ = dblflag ? TYDCOMPLEX : TYCOMPLEX; }
 	| SDOUBLE	{ $$ = TYDREAL; }
 	| SDCOMPLEX	{ NOEXT("DOUBLE COMPLEX statement"); $$ = TYDCOMPLEX; }
 	| SLOGICAL	{ $$ = TYLOGICAL; }
@@ -87,15 +105,29 @@ lengspec:
 	| SSTAR intonlyon expr intonlyoff
 		{
 		expptr p;
+		int typlen;
+		
 		p = $3;
 		NO66("length specification *n");
-		if( ! ISICON(p) || p->constblock.constant.ci<0 )
+		if( ! ISICON(p) )
 			{
 			$$ = 0;
-			dclerr("- length must be a positive integer value",
-				PNULL);
+			dclerr("length expression is not type integer", PNULL);
 			}
-		else $$ = p->constblock.constant.ci;
+		else if ( p->constblock.constant.ci < 0 )
+			{
+			$$ = 0;
+			dclerr("illegal negative length", PNULL);
+			}
+		else if( dblflag )
+			{
+			typlen = p->constblock.constant.ci;
+			if( vartype == TYDREAL && typlen == 4 ) $$ = 8;
+			else if( vartype == TYDCOMPLEX && typlen == 8 ) $$ = 16;
+			else $$ = typlen;
+			}
+		else
+			$$ = p->constblock.constant.ci;
 		}
 	| SSTAR intonlyon SLPAR SSTAR SRPAR intonlyoff
 		{ NO66("length specification *(*)"); $$ = -1; }
@@ -195,6 +227,12 @@ paramitem:  name SEQUALS expr
 		{ paramset( $1, $3 ); }
 	;
 
+in_param:	inside
+		{ if(parstate > INDCL)
+			dclerr("parameter statement out of order", PNULL);
+		}
+	;
+
 var:	  name dims
 		{ if(ndim>0) setbound($1, ndim, dims); }
 	;
@@ -244,7 +282,7 @@ label:	  SICON
 		{ $$ = execlab( convci(toklen, token) ); }
 	;
 
-implicit:  SIMPLICIT in_dcl implist
+implicit:  SIMPLICIT in_implicit implist
 		{ NO66("IMPLICIT statement"); }
 	| implicit SCOMMA implist
 	;
@@ -254,6 +292,12 @@ implist:  imptype SLPAR letgroups SRPAR
 
 imptype:   { needkwd = 1; } type
 		{ vartype = $2; }
+	;
+
+in_implicit:	inside
+		{ if(parstate >= INDCL)
+			dclerr("implicit statement out of order", PNULL);
+		}
 	;
 
 letgroups: letgroup
@@ -300,17 +344,21 @@ namelistlist:  name
 		{ $$ = hookup($1, mkchain($3, CHNULL)); }
 	;
 
-in_dcl:
-		{ switch(parstate)	
+inside:
+		{ if(parstate < INSIDE)
 			{
-			case OUTSIDE:	newproc();
-					startproc(PNULL, CLMAIN);
-			case INSIDE:	parstate = INDCL;
-			case INDCL:	break;
-
-			default:
-				dclerr("declaration among executables", PNULL);
+			newproc();
+			startproc(PNULL, CLMAIN);
+			parstate = INSIDE;
 			}
+		}
+	;
+
+in_dcl:	inside
+		{ if(parstate < INDCL)
+			parstate = INDCL;
+		  if(parstate > INDCL)
+			dclerr("declaration among executables", PNULL);
 		}
 	;
 
@@ -324,13 +372,8 @@ data1:	SDATA in_data datapair
     |	data1 opt_comma datapair
     ;
 
-in_data:
-		{ if(parstate == OUTSIDE)
-			{
-			newproc();
-			startproc(PNULL, CLMAIN);
-			}
-		  if(parstate < INDATA)
+in_data:	inside
+		{ if(parstate < INDATA)
 			{
 			enddcl();
 			parstate = INDATA;
