@@ -1,4 +1,4 @@
-/*	dumpmat.c	4.1	83/03/09	*/
+/*	dumpmat.c	4.2	83/06/10	*/
 
 #include "bit.h"
 
@@ -28,3 +28,4 @@ int rows, cols;
 	}
 	fprintf(trace, "\n");
 }
+#endif
