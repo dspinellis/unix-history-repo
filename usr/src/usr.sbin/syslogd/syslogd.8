@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)syslogd.8	6.2 (Berkeley) %G%
+.\"	@(#)syslogd.8	6.3 (Berkeley) %G%
 .TH SYSLOGD 8 ""
 .UC 5
 .SH NAME
@@ -11,6 +11,8 @@ syslogd \- log systems messages
 .B /etc/syslogd
 [
 .BI \-f configfile
+] [
+.BI \-m markinterval
 ] [
 .B \-d
 ]
@@ -70,8 +72,28 @@ and
 facilities at the
 .I crit
 level.
-Known facilities and levels are described in
-.IR syslog (3).
+.PP
+Known facilities and levels
+recognized by
+.I syslogd
+are those listed in
+.IR syslog (3)
+without the leading ``LOG_''.
+The additional facility
+``mark'' has a message sent to it every
+20 minutes
+(this may be changed with the
+.B \-m
+flag).
+The level ``none'' may be used to disable a particular facility.
+For example,
+.PP
+.ti +5
+*.debug;mark.none
+.PP
+Sends all messages
+.I except
+mark messages to the selected file.
 .PP
 The second part of each line describes where the message is to be logged
 if this line is selected.
@@ -92,20 +114,23 @@ if they are logged in.
 An asterisk.
 Selected messages are written to all logged-in users.
 .PP
+Blank lines and lines beginning with `#' are ignored.
+.PP
 For example, the configuration file:
+.PP
 .nf
-
 .ta 4m +\w'*.alert,auth.warning'u+3
-	kern.debug	/dev/console
-	*.notice,mail.info	/usr/spool/adm/syslog
+	kern,mark.debug	/dev/console
+	*.notice;mail.info	/usr/spool/adm/syslog
 	*.crit	/usr/adm/critical
 	kern.err	@ucbarpa
 	*.emerg	*
 	*.alert	eric,kridle
-	*.alert,auth.warning	ralph
-
+	*.alert;auth.warning	ralph
 .fi
-logs all kernel messages onto the system console,
+.PP
+logs all kernel messages
+and 20 minute marks onto the system console,
 all notice (or higher) level messages and all mail system messages
 except debug messages
 into the file /usr/spool/adm/syslog,
