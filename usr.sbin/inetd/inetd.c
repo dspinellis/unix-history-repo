@@ -39,7 +39,7 @@ char copyright[] =
 
 #ifndef lint
 /*static char sccsid[] = "from: @(#)inetd.c	5.30 (Berkeley) 6/3/91";*/
-static char rcsid[] = "$Id: inetd.c,v 1.4 1993/10/18 23:03:20 rgrimes Exp $";
+static char rcsid[] = "$Id: inetd.c,v 1.5 1993/12/30 18:06:21 jkh Exp $";
 #endif /* not lint */
 
 /*
@@ -155,6 +155,10 @@ int pmap_set(u_long prognum,u_long versnum,int protocol,u_short port);
 
 /* comes from -lutil ?? */
 void daemon();
+char * config_open(const char *filename,int contlines);
+void config_close();
+char * config_next();
+char * config_skip(char **p);
 
 /* Prototypes */
 void reapchild();
@@ -163,12 +167,8 @@ void unregisterrpc(struct servtab *sep);
 void retry();
 void setup(struct servtab *sep);
 struct servtab * enter(struct servtab *cp);
-int setconfig();
-void endconfig();
 struct servtab * getconfigent();
 void freeconfig(struct servtab *cp);
-char * skip(char **cpp);
-char * nextline(FILE *fd);
 char * newstr(char *cp);
 void setproctitle(char *a, int s);
 void echo_stream(int s,struct servtab *sep);
@@ -249,7 +249,7 @@ main(int argc, char **argv, char **envp)
 			break;
 		case '?':
 		default:
-			fprintf(stderr, "usage: inetd [-d]");
+			fprintf(stderr, "usage: inetd [-dl]");
 			exit(1);
 		}
 	argc -= optind;
@@ -456,9 +456,11 @@ config()
 {
 	struct servtab *sep, *cp, **sepp;
 	long omask;
+	char *p;
 
-	if (!setconfig()) {
-		syslog(LOG_ERR, "%s: %m", CONFIG);
+	p = config_open(CONFIG,1); /* 1 means allow continuation lines */
+	if(p) {
+		syslog(LOG_ERR, "%s on %s: %m", p, CONFIG);
 		return;
 	}
 	for (sep = servtab; sep; sep = sep->se_next)
@@ -538,7 +540,7 @@ config()
 		if (sep->se_fd == -1)
 			setup(sep);
 	}
-	endconfig();
+	config_close();
 	/*
 	 * Purge anything not looked at above.
 	 */
@@ -683,30 +685,7 @@ enter(struct servtab *cp)
 	return (sep);
 }
 
-FILE	*fconfig = NULL;
 struct	servtab serv;
-char	line[256];
-
-int
-setconfig()
-{
-
-	if (fconfig != NULL) {
-		fseek(fconfig, 0L, L_SET);
-		return (1);
-	}
-	fconfig = fopen(CONFIG, "r");
-	return (fconfig != NULL);
-}
-
-void
-endconfig()
-{
-	if (fconfig) {
-		(void) fclose(fconfig);
-		fconfig = NULL;
-	}
-}
 
 struct servtab *
 getconfigent()
@@ -716,16 +695,13 @@ getconfigent()
 	char *cp, *arg;
         char *versp;
         
-more:
-	while ((cp = nextline(fconfig)) && *cp == '#')
-		;
-	if (cp == NULL)
-		return ((struct servtab *)0);
-	arg = skip(&cp);
-	if (arg == NULL)
-		goto more;
-	sep->se_service = newstr(arg);
-	arg = skip(&cp);
+    more:
+	cp = config_next();
+	if(!cp) 
+		return 0;
+	fprintf(stderr,"<%s>\n",cp);
+	sep->se_service = newstr(config_skip(&cp));
+	arg = config_skip(&cp);
 	if (strcmp(arg, "stream") == 0)
 		sep->se_socktype = SOCK_STREAM;
 	else if (strcmp(arg, "dgram") == 0)
@@ -738,7 +714,7 @@ more:
 		sep->se_socktype = SOCK_RAW;
 	else
 		sep->se_socktype = -1;
-	sep->se_proto = newstr(skip(&cp));
+	sep->se_proto = newstr(config_skip(&cp));
         sep->se_rpc = 0;
         if (strncmp(sep->se_proto, "rpc/", 4) == 0) {
                 sep->se_proto += 4;
@@ -769,10 +745,18 @@ more:
                                 sep->se_rpc_highvers = 1;
                 }
         }
-	arg = skip(&cp);
-	sep->se_wait = strcmp(arg, "wait") == 0;
-	sep->se_user = newstr(skip(&cp));
-	sep->se_server = newstr(skip(&cp));
+	arg = config_skip(&cp);
+	if(!strcmp(arg,"wait"))
+		sep->se_wait = 1;
+	else if(!strcmp(arg,"nowait"))
+		sep->se_wait = 0;
+	else {
+		syslog(LOG_ERR, "should be wait or nowait: %s unknown\n", arg);
+		goto more;
+	}
+		
+	sep->se_user = newstr(config_skip(&cp));
+	sep->se_server = newstr(config_skip(&cp));
 	if (strcmp(sep->se_server, "internal") == 0) {
 		struct biltin *bi;
 
@@ -790,7 +774,7 @@ more:
 	} else
 		sep->se_bi = NULL;
 	argc = 0;
-	for (arg = skip(&cp); cp; arg = skip(&cp))
+	for (arg = config_skip(&cp); arg; arg = config_skip(&cp))
 		if (argc < MAXARGV)
 			sep->se_argv[argc++] = newstr(arg);
 	while (argc <= MAXARGV)
@@ -814,48 +798,6 @@ freeconfig(struct servtab *cp)
 	for (i = 0; i < MAXARGV; i++)
 		if (cp->se_argv[i])
 			free(cp->se_argv[i]);
-}
-
-char *
-skip(char **cpp)
-{
-	char *cp = *cpp;
-	char *start;
-
-again:
-	while (*cp == ' ' || *cp == '\t')
-		cp++;
-	if (*cp == '\0') {
-		int c;
-
-		c = getc(fconfig);
-		(void) ungetc(c, fconfig);
-		if (c == ' ' || c == '\t')
-			if ((cp = nextline(fconfig)))
-				goto again;
-		*cpp = (char *)0;
-		return ((char *)0);
-	}
-	start = cp;
-	while (*cp && *cp != ' ' && *cp != '\t')
-		cp++;
-	if (*cp != '\0')
-		*cp++ = '\0';
-	*cpp = cp;
-	return (start);
-}
-
-char *
-nextline(FILE *fd)
-{
-	char *cp;
-
-	if (fgets(line, sizeof (line), fd) == NULL)
-		return ((char *)0);
-	cp = index(line, '\n');
-	if (cp)
-		*cp = '\0';
-	return (line);
 }
 
 char *
