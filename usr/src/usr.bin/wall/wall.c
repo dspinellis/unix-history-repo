@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)wall.c	4.6 (Berkeley) 82/03/15";
+static char *sccsid = "@(#)wall.c	4.7 (Berkeley) 83/07/01";
 /*
  * wall.c - Broadcast a message to all users.
  *
@@ -8,7 +8,7 @@ static char *sccsid = "@(#)wall.c	4.6 (Berkeley) 82/03/15";
 
 #include <stdio.h>
 #include <utmp.h>
-#include <time.h>
+#include <sys/time.h>
 #include <signal.h>
 #define	USERS	128
 #define IGNOREUSER	"sleeper"

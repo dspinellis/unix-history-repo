@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)time.c	4.4 (Berkeley) %G%";
+static	char *sccsid = "@(#)time.c	4.5 (Berkeley) %G%";
 #endif
 
 /*
@@ -8,8 +8,8 @@ static	char *sccsid = "@(#)time.c	4.4 (Berkeley) %G%";
 #include <stdio.h>
 #include <signal.h>
 #include <sys/types.h>
-#include <time.h>
-#include <resource.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 
 main(argc, argv)
 	int argc;
