@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ec.4	6.1 (Berkeley) %G%
+.\"	@(#)ec.4	6.2 (Berkeley) %G%
 .\"
 .TH EC 4 ""
 .UC 5
@@ -43,12 +43,15 @@ up.
 .TP 5
 3.
 Shift the mask left one bit and formulate a backoff by
-masking the interval timer with the mask (this is actually
-the two's complement of the value).
+masking the interval timer with the smaller of the complement of this mask
+and a 5-bit mask, resulting in a pseudo-random number between 0 and 31.
+This produces the number of slot times to delay,
+where a slot is 51 microseconds.
 .TP 5
 4.
 Use the value calculated in step 3 to delay before retransmitting
-the packet.  The delay is done in a software busy loop.
+the packet.
+The delay is done in a software busy loop.
 .PP
 The interface normally tries to use a ``trailer'' encapsulation
 to minimize copying data on input and output.  This may be
