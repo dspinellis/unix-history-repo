@@ -193,7 +193,7 @@ procfs_bmap(ap)
  *
  * for procfs, check if the process is still
  * alive and if it isn't then just throw away
- * the vnode by calling vgone().  this may
+ * the vnode by calling VOP_REVOKE().  this may
  * be overkill and a waste of time since the
  * chances are that the process will still be
  * there and PFIND is not free.
@@ -208,7 +208,7 @@ procfs_inactive(ap)
 	struct pfsnode *pfs = VTOPFS(ap->a_vp);
 
 	if (PFIND(pfs->pfs_pid) == 0)
-		vgone(ap->a_vp);
+		VOP_REVOKE(ap->a_vp, 0);
 
 	return (0);
 }

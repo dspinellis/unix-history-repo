@@ -195,7 +195,7 @@ nullfs_unmount(mp, mntflags, p)
 	/*
 	 * And blow it away for future re-use
 	 */
-	vgone(nullm_rootvp);
+	VOP_REVOKE(nullm_rootvp, 0);
 	/*
 	 * Finally, throw away the null_mount structure
 	 */

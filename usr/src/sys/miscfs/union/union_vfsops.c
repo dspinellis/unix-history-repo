@@ -309,7 +309,7 @@ union_unmount(mp, mntflags, p)
 	/*
 	 * And blow it away for future re-use
 	 */
-	vgone(um_rootvp);
+	VOP_REVOKE(um_rootvp, 0);
 	/*
 	 * Finally, throw away the union_mount structure
 	 */
