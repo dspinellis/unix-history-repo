@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)process.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)process.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <bug.h>
@@ -70,24 +70,19 @@ process()
 static
 getnext()
 {
-	register struct direct	*d;		/* directory structure */
-	register DIR	*dirp;			/* directory pointer */
-	register int	highval,
-			newval;
-	register char	*C;
+	register struct direct *d;		/* directory structure */
+	register DIR *dirp;			/* directory pointer */
+	register int highval, newval;
+	register char *p;
 
-	sprintf(bfr, "%s/%s", dir, folder);
+	(void)sprintf(bfr, "%s/%s", dir, folder);
 	if (!(dirp = opendir(bfr)))
 		error("can't read folder directory %s.", bfr);
-	for (highval = 0;d = readdir(dirp);)
-		for (C = d->d_name;;++C)
-			if (!*C) {
-				if ((newval = atoi(d->d_name)) > highval)
-					highval = newval;
-				break;
-			}
-			else if (!isdigit(*C))
-				break;
+	for (highval = -1; d = readdir(dirp);) {
+		for (p = d->d_name; *p && isdigit(*p); ++p);
+		if (!*p && (newval = atoi(d->d_name)) > highval)
+			highval = newval;
+	}
 	closedir(dirp);
 	return(++highval);
 }
