@@ -1,4 +1,4 @@
-/*	dmf.c	4.2	82/05/27	*/
+/*	dmf.c	4.3	82/05/27	*/
 
 #include "dmf.h"
 #if NDMF > 0
@@ -224,15 +224,14 @@ dmfopen(dev, flag)
 		return;
 	}
 	tp = &dmf_tty[unit];
-	if (tp->t_state&XCLUDE && u.u_uid!=0) {
+	if (tp->t_state&TS_XCLUDE && u.u_uid!=0) {
 		u.u_error = EBUSY;
 		return;
 	}
 	addr = (struct dmfdevice *)ui->ui_addr;
 	tp->t_addr = (caddr_t)addr;
 	tp->t_oproc = dmfstart;
-	tp->t_iproc = NULL;
-	tp->t_state |= WOPEN;
+	tp->t_state |= TS_WOPEN;
 	/*
 	 * While setting up state for this uba and this dmf,
 	 * block uba resets which can clear the state.
@@ -255,7 +254,7 @@ dmfopen(dev, flag)
 	/*
 	 * If this is first open, initialze tty state to default.
 	 */
-	if ((tp->t_state&ISOPEN) == 0) {
+	if ((tp->t_state&TS_ISOPEN) == 0) {
 		ttychars(tp);
 		if (tp->t_ispeed == 0) {
 			tp->t_ispeed = B300;
@@ -269,10 +268,10 @@ dmfopen(dev, flag)
 	 */
 	if ((dmfmctl(dev, DMF_ON, DMSET) & (DMF_CAR<<8)) ||
 	    (dmfsoftCAR[dmf] & (1<<(unit&07))))
-		tp->t_state |= CARR_ON;
+		tp->t_state |= TS_CARR_ON;
 	s = spl5();
-	while ((tp->t_state & CARR_ON) == 0) {
-		tp->t_state |= WOPEN;
+	while ((tp->t_state & TS_CARR_ON) == 0) {
+		tp->t_state |= TS_WOPEN;
 		sleep((caddr_t)&tp->t_rawq, TTIPRI);
 	}
 	splx(s);
@@ -294,7 +293,7 @@ dmfclose(dev, flag)
 	tp = &dmf_tty[unit];
 	(*linesw[tp->t_line].l_close)(tp);
 	dmfmctl(unit, DMF_BRK, DMBIC);
-	if (tp->t_state&HUPCLS || (tp->t_state&ISOPEN)==0)
+	if (tp->t_state&TS_HUPCLS || (tp->t_state&TS_ISOPEN)==0)
 		dmfmctl(unit, DMF_OFF, DMSET);
 	ttyclose(tp);
 }
@@ -344,12 +343,12 @@ dmfrint(dmf)
 		if (c & DMF_DSC) {
 			addr->dmfcsr = DMF_IE | DMFIR_TBUF | ((c>>8)&07);
 			if (addr->dmfrms & DMF_CAR) {
-				if ((tp->t_state & CARR_ON) == 0) {
+				if ((tp->t_state & TS_CARR_ON) == 0) {
 					wakeup((caddr_t)&tp->t_rawq);
-					tp->t_state |= CARR_ON;
+					tp->t_state |= TS_CARR_ON;
 				}
 			} else {
-				if (tp->t_state & CARR_ON) {
+				if (tp->t_state & TS_CARR_ON) {
 					gsignal(tp->t_pgrp, SIGHUP);
 					gsignal(tp->t_pgrp, SIGCONT);
 					addr->dmfcsr = DMF_IE | DMFIR_LCR |
@@ -357,11 +356,11 @@ dmfrint(dmf)
 					addr->dmftms = 0;
 					flushtty(tp, FREAD|FWRITE);
 				}
-				tp->t_state &= ~CARR_ON;
+				tp->t_state &= ~TS_CARR_ON;
 			}
 			continue;
 		}
-		if ((tp->t_state&ISOPEN)==0) {
+		if ((tp->t_state&TS_ISOPEN)==0) {
 			wakeup((caddr_t)tp);
 			continue;
 		}
@@ -501,7 +500,7 @@ dmfparam(unit)
 	s = spl5();
 	addr->dmfcsr = (unit&07) | DMFIR_LCR | DMF_IE;
 	if ((tp->t_ispeed)==0) {
-		tp->t_state |= HUPCLS;
+		tp->t_state |= TS_HUPCLS;
 		dmfmctl(unit, DMF_OFF, DMSET);
 		return;
 	}
@@ -545,13 +544,13 @@ dmfxint(dmf)
 	while ((t = addr->dmfcsr) & DMF_TI) {
 		unit = dmf*8 + ((t>>8)&07);
 		tp = &dmf_tty[unit];
-		tp->t_state &= ~BUSY;
+		tp->t_state &= ~TS_BUSY;
 		if (t & DMF_NXM) {
 			printf("dmf%d: NXM line %d\n", dmf, unit&7);
 			/* SHOULD RESTART OR SOMETHING... */
 		}
-		if (tp->t_state&FLUSH)
-			tp->t_state &= ~FLUSH;
+		if (tp->t_state&TS_FLUSH)
+			tp->t_state &= ~TS_FLUSH;
 #ifdef DMFDMA
 		else {
 			addr->dmfcsr = DMFIR_TBUF | DMF_IE | (unit&07);
@@ -597,7 +596,7 @@ dmfstart(tp)
 	/*
 	 * If it's currently active, or delaying, no need to do anything.
 	 */
-	if (tp->t_state&(TIMEOUT|BUSY|TTSTOP))
+	if (tp->t_state&(TS_TIMEOUT|TS_BUSY|TS_TTSTOP))
 		goto out;
 	/*
 	 * If there are still characters in the silo,
@@ -607,15 +606,15 @@ dmfstart(tp)
 	if (addr->dmftsc) {
 		addr->dmfcsr = DMF_IE | DMFIR_LCR | unit;
 		addr->dmflcr |= DMF_TE;
-		tp->t_state |= BUSY;
+		tp->t_state |= TS_BUSY;
 		goto out;
 	}
 	/*
 	 * If there are sleepers, and output has drained below low
 	 * water mark, wake up the sleepers.
 	 */
-	if ((tp->t_state&ASLEEP) && tp->t_outq.c_cc<=TTLOWAT(tp)) {
-		tp->t_state &= ~ASLEEP;
+	if ((tp->t_state&TS_ASLEEP) && tp->t_outq.c_cc<=TTLOWAT(tp)) {
+		tp->t_state &= ~TS_ASLEEP;
 		wakeup((caddr_t)&tp->t_outq);
 	}
 	/*
@@ -634,7 +633,7 @@ dmfstart(tp)
 		if (nch == 0) {
 			nch = getc(&tp->t_outq);
 			timeout(ttrstrt, (caddr_t)tp, (nch&0x7f)+6);
-			tp->t_state |= TIMEOUT;
+			tp->t_state |= TS_TIMEOUT;
 			goto out;
 		}
 	}
@@ -661,7 +660,7 @@ dmfstart(tp)
 			addr->dmftbuf = *cp++;
 		ndflush(&tp->t_outq, nch);
 #endif
-		tp->t_state |= BUSY;
+		tp->t_state |= TS_BUSY;
 	}
 out:
 	splx(s);
@@ -682,7 +681,7 @@ dmfstop(tp, flag)
 	 * Block input/output interrupts while messing with state.
 	 */
 	s = spl5();
-	if (tp->t_state & BUSY) {
+	if (tp->t_state & TS_BUSY) {
 		/*
 		 * Device is transmitting; stop output
 		 * by selecting the line and disabling
@@ -694,11 +693,11 @@ dmfstop(tp, flag)
 		unit = minor(tp->t_dev);
 		addr->dmfcsr = DMFIR_LCR | (unit&07) | DMF_IE;
 		addr->dmflcr &= ~DMF_TE;
-		if ((tp->t_state&TTSTOP)==0) {
-			tp->t_state |= FLUSH;
+		if ((tp->t_state&TS_TTSTOP)==0) {
+			tp->t_state |= TS_FLUSH;
 			addr->dmflcr |= DMF_FLUSH;
 		} else
-			tp->t_state &= ~BUSY;
+			tp->t_state &= ~TS_BUSY;
 	}
 	splx(s);
 }
@@ -783,10 +782,10 @@ dmfreset(uban)
 		unit = dmf * 8;
 		for (i = 0; i < 8; i++) {
 			tp = &dmf_tty[unit];
-			if (tp->t_state & (ISOPEN|WOPEN)) {
+			if (tp->t_state & (TS_ISOPEN|TS_WOPEN)) {
 				dmfparam(unit);
 				dmfmctl(unit, DMF_ON, DMSET);
-				tp->t_state &= ~BUSY;
+				tp->t_state &= ~TS_BUSY;
 				dmfstart(tp);
 			}
 			unit++;
