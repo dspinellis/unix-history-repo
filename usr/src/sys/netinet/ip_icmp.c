@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ip_icmp.c	6.13 (Berkeley) %G%
+ *	@(#)ip_icmp.c	6.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -444,10 +444,10 @@ icmp_send(ip)
 n_time
 iptime()
 {
-	int s = spl6();
+	struct timeval atv;
 	u_long t;
 
-	t = (time.tv_sec % (24*60*60)) * 1000 + time.tv_usec / 1000;
-	splx(s);
+	microtime(&atv);
+	t = (atv.tv_sec % (24*60*60)) * 1000 + atv.tv_usec / 1000;
 	return (htonl(t));
 }
