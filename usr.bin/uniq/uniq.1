@@ -32,14 +32,14 @@
 .\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 .\" SUCH DAMAGE.
 .\"
-.\"     @(#)uniq.1	6.4 (Berkeley) 6/27/91
+.\"     @(#)uniq.1	6.5 (Berkeley) 1/9/92
 .\"
-.Dd June 27, 1991
+.Dd January 9, 1992
 .Dt UNIQ
 .Os
 .Sh NAME
 .Nm uniq
-.Nd Report or filter out repeated lines in a file.
+.Nd report or filter out repeated lines in a file
 .Sh SYNOPSIS
 .Nm uniq
 .Op Fl c | Fl d | Fl u
@@ -49,118 +49,82 @@
 .Ar input_file
 .Op Ar output_file
 .Oc
-.Pp
-Deprecated Version:
-.Pp
-.Nm uniq
-.Op Fl cdu
-.Op Fl Ns Ar n
-.Op Cm \(pl Ns Ar n
-.Oo
-.Ar input_file
-.Op Ar output_file
-.Oc
 .Sh DESCRIPTION
 The
 .Nm uniq
-utility reads an input file or the standard input
-comparing adjacent
-lines, and writes one copy of each input line on the output.
-The second and succeeding copies of repeated adjacent input
-lines are not written.
-Repeated lines in the input are not detected if they are
-not adjacent, so it is important to
-.Xr sort 1
-the files first.
+utility reads the standard input comparing adjacent lines, and writes
+a copy of each unique input line to the standard output.
+The second and succeeding copies of identical adjacent input lines are
+not written.
+Repeated lines in the input will not be detected if they are not adjacent,
+so it may be necessary to sort the files first.
 .Pp
 The following options are available:
 .Bl -tag -width Ds
 .It Fl c
-Precede each output line with a count of the number
-of times the line occurred in the input. For example:
-.Bd -literal -offset indent
-duplicate_count line_number
-.Ed
-.Pp
-where the duplicate count is a blank padded field of
-up to four digits followed by a space.
+Precede each output line with the count of the number of times the line
+occurred in the input, followed by a single space.
 .It Fl d
-Suppress the writing of lines that are not repeated
-in the input.
+Don't output lines that are not repeated in the input.
 .It Fl f Ar fields
-Ignore the first fields on each input line when
-doing comparisons, where fields is a positive
-decimal integer.
-A field is a string of non-blank
-characters separated from adjacent fields
+Ignore the first
+.Ar fields
+in each input line when doing comparisons.
+A field is a string of non-blank characters separated from adjacent fields
 by blanks.
+Field numbers are one based, i.e. the first field is field one.
 .It Fl s Ar chars
-Ignore the first chars characters when doing
-comparisons, where chars is a positive decimal
-integer.
+Ignore the first
+.Ar chars
+characters in each input line when doing comparisons.
 If specified in conjunction with the
 .Fl f
-option, the first chars characters after the first
-fields fields will be ignored.
+option, the first
+.Ar chars
+characters after the first
+.Ar fields
+fields will be ignored.
+Character numbers are one based, i.e. the first character is character one.
 .It Fl u
-Suppress the writing of lines that are repeated in
-the input.
-.It Fl Ns Ar n
-(Deprecated; replaced by
-.Fl f ) .
-Ignore the first n
-fields on each input line when doing comparisons,
-where n is a number.
-A field is a string of non-blank
-characters separated from adjacent fields
-by blanks.
-.It Cm \&\(pl Ns Ar n
-(Deprecated; replaced by
-.Fl s ) .
-Ignore the first
-.Ar m
-characters when doing comparisons, where
-.Ar m
-is a
-number.
+Don't output lines that are repeated in the input.
+.\".It Fl Ns Ar n
+.\"(Deprecated; replaced by
+.\".Fl f ) .
+.\"Ignore the first n
+.\"fields on each input line when doing comparisons,
+.\"where n is a number.
+.\"A field is a string of non-blank
+.\"characters separated from adjacent fields
+.\"by blanks.
+.\".It Cm \&\(pl Ns Ar n
+.\"(Deprecated; replaced by
+.\".Fl s ) .
+.\"Ignore the first
+.\".Ar m
+.\"characters when doing comparisons, where
+.\".Ar m
+.\"is a
+.\"number.
 .El
 .Pp
-The following operands are available:
-.Bl -tag -width output_filex
-.It Ar input_file
-A pathname of the input file.
-If the
-.Ar input_file
-operand is not specified, the standard input is
-used.
-.It Ar output_file
-A pathname of the output file.
-This name shall
-always be different from
-.Ar input_file.
-If the
-.Ar output_file
-operand is not specified, the standard
-output is used.  If
-.Ar output_file
-is created and an error occurs or a sugnal is caught the
-.Ar output_file
-is not removed.
-.El
-.\" .Pp
-.\" The following environment variables affect the execution of
-.\" uniq:
-.\" .Tl Em LC_CTYPE
-.\" The locale for character classification, used to
-.\" determine the characters constituting a blank in
-.\" the current locale.
+If additional arguments are specified on the command line, the first
+such argument is used as the name of an input file, the second is used
+as the name of an output file.
 .Pp
 The
-.Xr uniq
+.Nm uniq
 utility exits 0 on success, and >0 if an error occurs.
+.Sh COMPATIBILITY
+The historic
+.Cm \&\(pl Ns Ar number
+and
+.Fl Ns Ar number
+options have been deprecated but are still supported in this implementation.
+.Sh SEE ALSO
+.Xr sort 1
 .Sh STANDARDS
 The
-.Xr uniq
+.Nm uniq
 utility is expected to be
 .St -p1003.2
 compatible.

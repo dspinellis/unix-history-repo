@@ -41,28 +41,39 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)uniq.c	5.2 (Berkeley) 6/1/90";
+static char sccsid[] = "@(#)uniq.c	5.4 (Berkeley) 1/9/92";
 #endif /* not lint */
 
+#include <errno.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define	MAXLINELEN	(8 * 1024)
 
 int cflag, dflag, uflag;
 int numchars, numfields, repeats;
 
-#define	MAXLINELEN	(2048 + 1)
+void	 err __P((const char *, ...));
+FILE	*file __P((char *, char *));
+void	 show __P((FILE *, char *));
+char	*skip __P((char *));
+void	 obsolete __P((char *[]));
+void	 usage __P((void));
 
-main (argc,argv)
+int
+main (argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
-	extern int optind;
-	FILE *ifp, *ofp, *file();
-	int ch;
 	register char *t1, *t2;
-	char *prevline, *thisline, *malloc(), *skip();
+	FILE *ifp, *ofp;
+	int ch;
+	char *prevline, *thisline, *p;
 
-	while ((ch = getopt(argc, argv, "-cdu123456789")) != EOF)
+	obsolete(argv);
+	while ((ch = getopt(argc, argv, "-cdf:s:u")) != EOF)
 		switch (ch) {
 		case '-':
 			--optind;
@@ -73,18 +84,19 @@ main (argc,argv)
 		case 'd':
 			dflag = 1;
 			break;
+		case 'f':
+			numfields = strtol(optarg, &p, 10);
+			if (numfields < 0 || *p)
+				err("illegal field skip value: %s", optarg);
+			break;
+		case 's':
+			numchars = strtol(optarg, &p, 10);
+			if (numchars < 0 || *p)
+				err("illegal character skip value: %s", optarg);
+			break;
 		case 'u':
 			uflag = 1;
 			break;
-		/*
-		 * since -n is a valid option that could be picked up by
-		 * getopt, but is better handled by the +n and -n code, we
-		 * break out.
-		 */
-		case '1': case '2': case '3': case '4':
-		case '5': case '6': case '7': case '8': case '9':
-			--optind;
-			goto done;
 		case '?':
 		default:
 			usage();
@@ -93,29 +105,13 @@ main (argc,argv)
 done:	argc -= optind;
 	argv +=optind;
 
-	/* if no flags are set, default is -d -u */
+	/* If no flags are set, default is -d -u. */
 	if (cflag) {
 		if (dflag || uflag)
 			usage();
 	} else if (!dflag && !uflag)
 		dflag = uflag = 1;
 
-	/* because of the +, getopt is messed up */
-	for (; **argv == '+' || **argv == '-'; ++argv, --argc)
-		switch (**argv) {
-		case '+':
-			if ((numchars = atoi(*argv + 1)) < 0)
-				goto negerr;
-			break;
-		case '-':
-			if ((numfields = atoi(*argv + 1)) < 0) {
-negerr:				(void)fprintf(stderr,
-				    "uniq: negative field/char skip value.\n");
-				usage();
-			}
-			break;
-		}
-    
 	switch(argc) {
 	case 0:
 		ifp = stdin;
@@ -138,7 +134,7 @@ negerr:				(void)fprintf(stderr,
 	(void)fgets(prevline, MAXLINELEN, ifp);
 
 	while (fgets(thisline, MAXLINELEN, ifp)) {
-		/* if requested get the chosen fields + character offsets */
+		/* If requested get the chosen fields + character offsets. */
 		if (numfields || numchars) {
 			t1 = skip(thisline);
 			t2 = skip(prevline);
@@ -147,15 +143,14 @@ negerr:				(void)fprintf(stderr,
 			t2 = prevline;
 		}
 
-		/* if different, print; set previous to new value */
+		/* If different, print; set previous to new value. */
 		if (strcmp(t1, t2)) {
 			show(ofp, prevline);
 			t1 = prevline;
 			prevline = thisline;
 			thisline = t1;
 			repeats = 0;
-		}
-		else
+		} else
 			++repeats;
 	}
 	show(ofp, prevline);
@@ -164,9 +159,10 @@ negerr:				(void)fprintf(stderr,
 
 /*
  * show --
- *	output a line depending on the flags and number of repetitions
+ *	Output a line depending on the flags and number of repetitions
  *	of the line.
  */
+void
 show(ofp, str)
 	FILE *ofp;
 	char *str;
@@ -201,16 +197,74 @@ file(name, mode)
 {
 	FILE *fp;
 
-	if (!(fp = fopen(name, mode))) {
-		(void)fprintf(stderr, "uniq: can't open %s.\n", name);
-		exit(1);
-	}
+	if ((fp = fopen(name, mode)) == NULL)
+		err("%s: %s", name, strerror(errno));
 	return(fp);
 }
 
+void
+obsolete(argv)
+	char *argv[];
+{
+	int len;
+	char *ap, *p, *start;
+
+	while (ap = *++argv) {
+		/* Return if "--" or not an option of any form. */
+		if (ap[0] != '-') {
+			if (ap[0] != '+')
+				return;
+		} else if (ap[1] == '-')
+			return;
+		if (!isdigit(ap[1]))
+			continue;
+		/*
+		 * Digit signifies an old-style option.  Malloc space for dash,
+		 * new option and argument.
+		 */
+		len = strlen(ap);
+		if ((start = p = malloc(len + 3)) == NULL)
+			err("%s", strerror(errno));
+		*p++ = '-';
+		*p++ = ap[0] == '+' ? 's' : 'f';
+		(void)strcpy(p, ap + 1);
+		*argv = start;
+	}
+}
+
+void
 usage()
 {
 	(void)fprintf(stderr,
-	    "usage: uniq [-c | -du] [- #fields] [+ #chars] [input [output]]\n");
+	    "usage: uniq [-c | -du] [-f fields] [-s chars] [input [output]]\n");
 	exit(1);
+}
+
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+
+void
+#if __STDC__
+err(const char *fmt, ...)
+#else
+err(fmt, va_alist)
+	char *fmt;
+        va_dcl
+#endif
+{
+	va_list ap;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	(void)fprintf(stderr, "uniq: ");
+	(void)vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	(void)fprintf(stderr, "\n");
+	exit(1);
+	/* NOTREACHED */
 }
