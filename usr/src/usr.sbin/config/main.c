@@ -1,5 +1,5 @@
 /*
- * main.c	1.3	81/02/26
+ * main.c	1.4	81/03/09
  * Config
  *	Do system configuration for VAX/UNIX
  *		1) Build system data structures
@@ -37,6 +37,7 @@ char **argv;
 	ubglue();			/* Create ubglue.s */
 	makefile();			/* build Makefile */
 	headers();			/* make a lot of .h files */
+	printf("Don't forget to run \"make depend\"\n");
     }
 }
 
