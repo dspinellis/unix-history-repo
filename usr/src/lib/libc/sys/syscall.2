@@ -3,24 +3,24 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)syscall.2	6.5 (Berkeley) %G%
+.\"     @(#)syscall.2	6.6 (Berkeley) %G%
 .\"
 .Dd 
-.Dt SYSCALL 2
+.Dt INDIR 2
 .Os BSD 4
 .Sh NAME
-.Nm syscall ,
-.Nm _syscall
+.Nm indir ,
+.Nm __indir
 .Nd indirect system call
 .Sh SYNOPSIS
 .Fd #include <sys/syscall.h>
 .Fd #include <unistd.h>
 .Ft int
-.Fn syscall "int number" "..."
+.Fn indir "int number" "..."
 .Ft int
-.Fn _syscall "quad_t number" "..."
+.Fn __indir "quad_t number" "..."
 .Sh DESCRIPTION
-.Fn Syscall
+.Fn Indir
 performs the system call whose assembly language
 interface has the specified
 .Fa number
@@ -28,7 +28,7 @@ with the specified arguments.
 Symbolic constants for system calls can be found in the header file
 .Ao Pa sys/syscall.h Ac .
 The
-.Nm _syscall
+.Nm __indir
 form should be used when one or more of the parameters is a
 64-bit argument to ensure that argument alignment is correct.
 This system call is useful for testing new system calls that
@@ -45,6 +45,12 @@ such as
 .Xr pipe 2 .
 .Sh HISTORY
 The
-.Nm
+.Nm indir
 function call appeared in
-.Bx 4.0 .
+.Bx 4.0 
+under the name
+.Nm syscall .
+Due to an oversight its name changed to
+.Nm indir
+in
+.Bx 4.4 .
