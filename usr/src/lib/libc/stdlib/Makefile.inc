@@ -1,12 +1,12 @@
-#	@(#)Makefile.inc	5.5 (Berkeley) %G%
+#	@(#)Makefile.inc	5.6 (Berkeley) %G%
 
 # stdlib sources
 .PATH: ${.CURDIR}/${MACHINE}/stdlib ${.CURDIR}/stdlib
 
 SRCS+=	abort.c atexit.c atoi.c atol.c bsearch.c calloc.c div.c exit.c \
-	getenv.c getopt.c labs.c ldiv.c malloc.c multibyte.c putenv.c \
-	qsort.c radixsort.c rand.c random.c setenv.c strtol.c strtoul.c \
-	system.c
+	getenv.c getopt.c heapsort.c labs.c ldiv.c malloc.c multibyte.c \
+	putenv.c qsort.c radixsort.c rand.c random.c setenv.c strtol.c \
+	strtoul.c system.c
 
 .if   (${MACHINE} == "hp300")
 SRCS+=	abs.s atof.c
@@ -24,5 +24,6 @@ MAN+3=	abort.0 abs.0 alloca.0 atexit.0 atof.0 atoi.0 atol.0 bsearch.0 \
 	strtod.0 strtol.0 strtoul.0 system.0
 
 MLINKS+=getenv.3 setenv.3 getenv.3 unsetenv.3 getenv.3 putenv.3
+MLINKS+=qsort.3 heapsort.3
 MLINKS+=rand.3 srand.3
 MLINKS+=random.3 initstate.3 random.3 setstate.3 random.3 srandom.3
