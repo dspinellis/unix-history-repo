@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)startup.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)startup.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -17,7 +17,7 @@ static char sccsid[] = "@(#)startup.c	5.12 (Berkeley) %G%";
  */
 #include "defs.h"
 #include <sys/ioctl.h>
-#include <sys/kinfo.h>
+#include <sys/sysctl.h>
 #include <net/if.h>
 #include <net/if_dl.h>
 #include <nlist.h>
@@ -82,21 +82,27 @@ rt_xaddrs(cp, cplim, rtinfo)
 ifinit()
 {
 	struct interface ifs, *ifp;
-	int needed, rlen, no_nsaddr = 0, flags = 0;
+	size_t needed;
+	int mib[6], no_nsaddr = 0, flags = 0;
 	char *buf, *cplim, *cp;
 	register struct if_msghdr *ifm;
 	register struct ifa_msghdr *ifam;
 	struct sockaddr_dl *sdl;
 	u_long i;
 
-	if ((needed = getkerninfo(KINFO_RT_IFLIST, 0, 0, 0)) < 0)
-		quit("route-getkerninfo-estimate");
+        mib[0] = CTL_NET;
+        mib[1] = PF_ROUTE;
+        mib[2] = 0;
+        mib[3] = AF_NS;
+        mib[4] = NET_RT_IFLIST;
+        mib[5] = 0;
+        if (sysctl(mib, 6, NULL, &needed, NULL, 0) < 0)
+                quit("route-sysctl-estimate");
 	if ((buf = malloc(needed)) == NULL)
 		quit("malloc");
-	if ((rlen = getkerninfo(KINFO_RT_IFLIST, buf, &needed, 0)) < 0)
-		quit("actual retrieval of interface table");
+        if (sysctl(mib, 6, buf, &needed, NULL, 0) < 0)
 	lookforinterfaces = 0;
-	cplim = buf + rlen;
+	cplim = buf + needed;
 	for (cp = buf; cp < cplim; cp += ifm->ifm_msglen) {
 		ifm = (struct if_msghdr *)cp;
 		if (ifm->ifm_type == RTM_IFINFO) {
