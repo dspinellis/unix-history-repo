@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -26,6 +26,7 @@ static char sccsid[] = "@(#)init.c	5.3 (Berkeley) %G%";
  */
 #include <sgtty.h>
 #include "gettytab.h"
+#include "pathnames.h"
 
 extern	struct sgttyb tmode;
 extern	struct tchars tc;
@@ -43,7 +44,7 @@ struct	gettystrs gettystrs[] = {
 	{ "pc", "" },			/* pad character */
 	{ "tt" },			/* terminal type */
 	{ "ev" },			/* enviroment */
-	{ "lo", "/bin/login" },		/* login program */
+	{ "lo", _PATH_LOGIN },		/* login program */
 	{ "hn", hostname },		/* host name */
 	{ "he" },			/* host name edit */
 	{ "in", &tc.t_intrc },		/* interrupt char */
