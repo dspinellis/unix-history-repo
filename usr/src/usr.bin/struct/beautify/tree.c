@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tree.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)tree.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 # include "y.tab.h"
@@ -40,9 +40,9 @@ struct node *treenode;
 	free(treenode);
 	}
 
-int compop[]	{	'&',	'|',	'<',	'>',	xxeq,	xxle,	xxne,	xxge};
-int notop[]	{	'|',	'&',	xxge,	xxle,	xxne,	'>',	xxeq,	'<'};
-char *opstring[]	{ "||",  "&&",	">=",	"<=", "!=",	">",	"==",	"<"};
+int compop[] =	{	'&',	'|',	'<',	'>',	xxeq,	xxle,	xxne,	xxge};
+int notop[] =	{	'|',	'&',	xxge,	xxle,	xxne,	'>',	xxeq,	'<'};
+char *opstring[] =	{ "||",  "&&",	">=",	"<=", "!=",	">",	"==",	"<"};
 
 checkneg(tree,neg)		/* eliminate nots if possible */
 struct node *tree;
