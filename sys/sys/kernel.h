@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kernel.h	7.4 (Berkeley) 2/15/91
- *	$Id$
+ *	$Id: kernel.h,v 1.2 1993/10/16 17:16:56 rgrimes Exp $
  */
 
 /* Global variables for the kernel. */
@@ -41,6 +41,8 @@ long rmalloc();
 long hostid;
 char hostname[MAXHOSTNAMELEN];
 int hostnamelen;
+char domainname[MAXHOSTNAMELEN];
+int domainnamelen;
 
 /* 1.2 */
 struct timeval boottime;

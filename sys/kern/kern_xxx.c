@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_xxx.c	7.17 (Berkeley) 4/20/91
- *	$Id$
+ *	$Id: kern_xxx.c,v 1.4 1993/10/16 15:24:35 rgrimes Exp $
  */
 
 #include "param.h"
@@ -108,6 +108,47 @@ sethostname(p, uap, retval)
 	error = copyin((caddr_t)uap->hostname, hostname, uap->len);
 	hostname[hostnamelen] = 0;
 	return (error);
+}
+
+struct getdomainname_args {
+        char    *domainname;
+        u_int   len;
+};
+
+/* ARGSUSED */
+int
+getdomainname(p, uap, retval)
+        struct proc *p;
+        struct getdomainname_args *uap;
+        int *retval;
+{
+	if (uap->len > domainnamelen + 1)
+		uap->len = domainnamelen + 1;
+	return (copyout((caddr_t)domainname, (caddr_t)uap->domainname, uap->len));
+}
+
+struct setdomainname_args {
+        char    *domainname;
+        u_int   len;
+};
+
+/* ARGSUSED */
+int
+setdomainname(p, uap, retval)
+        struct proc *p;
+        struct setdomainname_args *uap;
+        int *retval;
+{
+        int error;
+
+        if (error = suser(p->p_ucred, &p->p_acflag))
+                return (error);
+        if (uap->len > sizeof (domainname) - 1)
+                return EINVAL;
+        domainnamelen = uap->len;
+        error = copyin((caddr_t)uap->domainname, domainname, uap->len);
+        domainname[domainnamelen] = 0;
+        return (error);
 }
 
 struct uname_args {
