@@ -3,34 +3,29 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)getgrent.3	6.5 (Berkeley) %G%
+.\"	@(#)getgrent.3	6.6 (Berkeley) %G%
 .\"
 .TH GETGRENT 3  ""
 .AT 3
 .SH NAME
-getgrent, getgrnam, getgrgid, setgroupent, setgrfile, setgrent,
+getgrent, getgrnam, getgrgid, setgroupent, setgrent,
 endgrent \- get group file entry
 .SH SYNOPSIS
 .nf
-.B #include <grp.h>
-.PP
-.B struct group *getgrent()
-.PP
-.B struct group *getgrnam(name)
-.B char *name;
-.PP
-.B struct group *getgrgid(gid)
-.B gid_t gid;
-.PP
-.B setgroupent(stayopen)
-.B int stayopen;
-.PP
-.B void setgrfile(name)
-.B char *name;
-.PP
-.B setgrent()
-.PP
-.B void endgrent()
+.ft B
+#include <grp.h>
+
+struct group *getgrent(void);
+
+struct group *getgrnam(char *name);
+
+struct group *getgrgid(gid_t gid);
+
+setgrent(void);
+setgroupent(int stayopen);
+
+void endgrent(void);
+.ft R
 .fi
 .SH DESCRIPTION
 .I Getgrent,
@@ -72,11 +67,6 @@ that wish to step through the complete list of groups.
 .PP
 All three routines will open the group file for reading, if necesssary.
 .PP
-.I Setgrfile
-changes the default group file to
-.IR file ,
-thus allowing the use of alternate group files.
-.PP
 .I Setgroupent
 opens the file, or rewinds it if it is already open.  If
 .I stayopen
@@ -112,9 +102,7 @@ and
 .I setgrent
 return 0 on failure, 1 on success.
 .I Endgrent
-and
-.I setgrfile
-have no return value.
+has no return value.
 .SH BUGS
 All information is contained in a static buffer which is overwritten
 by each new call.  It must be copied elsewhere to be retained.
@@ -127,3 +115,8 @@ and
 .IR setgrent
 are fairly useless in a networked environment and should be
 avoided, if possible.
+.SH COMPATIBILITY
+The historic function
+.IR setgrfile ,
+which allowed the specification of alternate password databases, has
+been deprecated and is no longer available.
