@@ -16,66 +16,104 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)more.1	5.4 (Berkeley) %G%
+.\"	@(#)more.1	5.5 (Berkeley) %G%
 .\"
-.TH LESS 1
+.TH MORE 1
 .SH NAME
-less \- opposite of more
+more \- file perusal filter for crt viewing
 .SH SYNOPSIS
-.B "less [-[+]aABcCdeEimMnqQuUsw] [-b\fIN\fB] [-h\fIN\fB] [-x\fIN\fB] [-[z]\fIN\fB]"
-.br
-.B "     [-P[mM=]\fIstring\fB] [+\fIcmd\fB]"
-.br
-.B "     [-t\fItag\fB] [\fIfilename\fB]..."
+.B "more [-ceinpus] [-t tag] [-x tabs] [-/ pattern] [-#] [file ...]"
 .SH DESCRIPTION
-.I Less
-is a program similar to 
+.I More
+is a filter for paging through text one screenful at a time.  It
+uses
+.IR termcap (3)
+so it can run on a variety of terminals.  There is even limited support
+for hardcopy terminals.  (On a hardcopy terminal, lines which should be
+printed at the top of the screen are prefixed with an up-arrow.)
+.I File
+may be a single dash (``-''), implying stdin.
+.SH OPTIONS
+Command line options are described below.
+Options are also taken from the environment variable "MORE"
+(make sure to precede them with a dash (``-'')) but command
+line options will override them.
+.IP -c
+Normally, 
 .I more
-(1), but which allows backwards movement
-in the file as well as forward movement.
-Also,
-.I less
-does not have to read the entire input file before starting,
-so with large input files it starts up faster than text editors like
-.I vi
-(1).
-.I Less
-uses termcap (or terminfo on some systems),
-so it can run on a variety of terminals.
-There is even limited support for hardcopy terminals.
-(On a hardcopy terminal, lines which should be printed at the top
-of the screen are prefixed with an up-arrow.)
-.PP
-Commands are based on both
+will repaint the screen by scrolling from the bottom of the screen.
+If the -c option is set, when
+.I more 
+needs to change the entire display, it will paint from the top line down.
+.IP -e
+Normally
 .I more
-and
-.I vi.
-Commands may be preceeded by a decimal number, 
-called N in the descriptions below.
-The number is used by some commands, as indicated.
-
+exits as soon as it reaches end-of-file.  The -e option tells more to
+exit the second time it reaches end-of-file.
+.IP -i
+The -i option causes searches to ignore case; that is,
+uppercase and lowercase are considered identical.
+.IP -n
+The -n flag suppresses line numbers.
+The default (to use line numbers) may cause
+.I more
+to run more slowly in some cases, especially with a very large input file.
+Suppressing line numbers with the -n flag will avoid this problem.
+Using line numbers means: the line number will be displayed in the 
+= command, and the v command will pass the current line number to the editor.
+.IP -p
+The -p option gives you a colon (``:'') for a prompt, rather than
+the more verbose traditional prompt.
+.IP -s
+The -s option causes
+consecutive blank lines to be squeezed into a single blank line.
+.IP -t
+The -t option, followed immediately by a tag, will edit the file
+containing that tag.  For more information, see the
+.IR ctags (1)
+command.
+.IP -u
+If the -u option is given, backspaces are always printed as the two
+character sequence ``^H''; otherwise, backspaces which appear adjacent
+to an underscore character are treated specially: the underlined text
+is displayed using the terminal's hardware underlining capability.
+Also, backspaces which appear between two identical characters are
+treated specially: the overstruck text is printed using the terminal's
+hardware boldface capability.
+.IP -x
+The -x option sets tab stops every
+.I N
+positions. The default for
+.I N
+is 8.
+.IP -/
+The -/ option specifies a string that will be searched for before
+each file is displayed.
 .SH COMMANDS
+Interactive commands for
+.I more
+are based on
+.IR vi (1).
+Some commands may be preceeded by a decimal number, called N in the
+descriptions below.
 In the following descriptions, ^X means control-X.
-ESC stands for the ESCAPE key; for example ESC-v means the
-two character sequence "ESCAPE", then "v".
-.IP H
-Help: display a summary of these commands.
+.IP h
+help: display a summary of these commands.
 If you forget all the other commands, remember this one.
 .PP
-.IP "SPACE or f or ^F or ^V"
-Scroll forward N lines, default one window (see option -z below).
+.IP "SPACE or f or ^F"
+Scroll forward N lines, default one window.
 If N is more than the screen size, only the final screenful is displayed.
-Warning: some systems use ^V as a special literalization character.
 .PP
-.IP "b or ^B or ESC-v"
+.IP "b or ^B"
 Scroll backward N lines, default one window (see option -z below).
 If N is more than the screen size, only the final screenful is displayed.
 .PP
-.IP "RETURN or ^N or e or ^E or j or ^J"
+.IP "j or RETURN"
 Scroll forward N lines, default 1.
 The entire N lines are displayed, even if N is more than the screen size.
 .PP
-.IP "y or ^Y or ^P or k or ^K"
+.IP "k"
 Scroll backward N lines, default 1.
 The entire N lines are displayed, even if N is more than the screen size.
 Warning: some systems use ^Y as a special job control character.
@@ -90,30 +128,25 @@ Scroll backward N lines, default one half of the screen size.
 If N is specified, it becomes the new default for 
 subsequent d and u commands.
 .PP
-.IP "r or ^R or ^L"
-Repaint the screen.
-.PP
-.IP R
-Repaint the screen, discarding any buffered input.
-Useful if the file is changing while it is being viewed.
-.PP
-.IP "g or < or ESC-<"
+.IP "g"
 Go to line N in the file, default 1 (beginning of file).
-(Warning: this may be slow if N is large.)
 .PP
-.IP "G or > or ESC->"
+.IP "G"
 Go to line N in the file, default the end of the file.
-(Warning: this may be slow if N is large,
-or if N is not specified and
-standard input, rather than a file, is being read.)
 .PP
 .IP "p or %"
-Go to a position N percent into the file.
-N should be between 0 and 100.
-(This works if standard input is being read, but only if
-.I less
-has already read to the end of the file.
-It is always fast, but not always useful.)
+Go to a position N percent into the file.  N should be between 0
+and 100.  (This works if standard input is being read, but only if
+.I more
+has already read to the end of the file.  It is always fast, but
+not always useful.)
+.PP
+.IP "r or ^L"
+Repaint the screen.
+.PP
+.IP "R"
+Repaint the screen, discarding any buffered input.
+Useful if the file is changing while it is being viewed.
 .PP
 .IP m
 Followed by any lowercase letter, 
@@ -127,16 +160,12 @@ Followed by another single quote, returns to the postion at
 which the last "large" movement command was executed.
 All marks are lost when a new file is examined.
 .PP
-.IP "^X^X"
-Same as single quote.
-.PP
 .IP /pattern
 Search forward in the file for the N-th line containing the pattern.
 N defaults to 1.
 The pattern is a regular expression, as recognized by
 .I ed.
-The search starts at the second line displayed
-(but see the -a option, which changes this).
+The search starts at the second line displayed.
 .PP
 .IP ?pattern
 Search backward in the file for the N-th line containing the pattern.
@@ -162,10 +191,6 @@ below) from the list of files in the command line is re-examined.
 If the filename is a pound sign (#), the previously examined file is
 re-examined.
 .PP
-.IP "^X^V or :e"
-Same as E.
-Warning: some systems use ^V as a special literalization character.
-.PP
 .IP "N or :n"
 Examine the next file (from the list of files given in the command line).
 If a number N is specified (not to be confused with the command N),
@@ -175,397 +200,26 @@ the N-th next file is examined.
 Examine the previous file.
 If a number N is specified, the N-th previous file is examined.
 .PP
-.IP "= or ^G"
-Prints some information about the file being viewed,
-including its name
-and the line number and byte offset of the bottom line being displayed.
-If possible, it also prints the length of the file
-and the percent of the file above the last displayed line.
-.PP
-.IP \-
-Followed by one of the command line option letters (see below),
-this will change the setting of that option
-and print a message describing the new setting.
-If the option letter has a numeric value (such as -b or -h),
-or a string value (such as -P or -t),
-a new value may be entered after the option letter.
-.PP
-.IP \_
-(Underscore.)
-Followed by one of the command line option letters (see below),
-this will print a message describing the current setting of that option.
-The setting of the option is not changed.
-.PP
-.IP +cmd
-Causes the specified cmd to be executed each time a new file is examined.
-For example, +G causes 
-.I less
-to initially display each file starting at the end 
-rather than the beginning.
-.PP
-.IP V
-Prints the version number of 
-.I less 
-being run.
-.PP
-.IP "q or :q or ZZ"
-Exits
-.I less.
+.IP ":t"
+Go to supplied tag.
 .PP
 .IP v
 Invokes an editor to edit the current file being viewed.
 The editor is taken from the environment variable EDITOR,
-or defaults to "vi".
+or defaults to
+.IR vi (1).
 .PP
-.SH OPTIONS
-Command line options are described below.
-Most options may be changed while
-.I less 
-is running, via the "\-" command.
+.IP "= or ^G"
+These options print out the number of the file currently being displayed
+relative to the total number of files there are to display, the line
+number, the byte number, and what percentage of the file has been displayed
+if possible.  All of these are for the bottom line on the screen.
 .PP
-Options are also taken from the environment variable "LESS".
-For example, 
-to avoid typing "less -options ..." each time 
-.I less 
-is invoked, you might tell 
-.I csh:
-.sp
-setenv LESS "-options"
-.sp
-or if you use 
-.I sh:
-.sp
-LESS="-options"; export LESS
-.sp
-The environment variable is parsed before the command line,
-so command line options override the LESS environment variable.
-If an option appears in the LESS variable, it can be reset
-to its default on the command line by beginning the command
-line option with "-+".
-.sp
-A dollar sign ($) may be used to signal the end of an option string.
-This is important only for options like -P which take a
-following string.
-.IP -a
-Normally, forward searches start just after
-the top displayed line (that is, at the second displayed line).
-Thus, forward searches include the currently displayed screen.
-The -a option causes forward searches to start 
-just after the bottom line displayed,
-thus skipping the currently displayed screen.
-.IP -A
-The -A option causes searches to start at the second SCREEN line
-displayed, as opposed to the default which is to start at the second
-REAL line displayed.
-For example, suppose a long real line occupies the first three screen lines.
-The default search will start at the second real line (the fourth
-screen line), while the -A option
-will cause the search to start at the second screen line (in the
-midst of the first real line).
-(This option is rarely useful.)
-.IP -b
-The -b\fIn\fR option tells
-.I less
-to use a non-standard number of buffers.
-Buffers are 1K, and normally 10 buffers are used
-(except if data in coming from standard input; see the -B option).
-The number \fIn\fR specifies a different number of buffers to use.
-.IP -B
-Normally, when data is coming from standard input,
-buffers are allocated automatically as needed, to avoid loss of data.
-The -B option disables this feature, so that only the default number
-of buffers are used.
-If more data is read than will fit in the buffers, the oldest
-data is discarded.
-.IP -c
-Normally, 
-.I less 
-will repaint the screen by scrolling from the bottom of the screen.
-If the -c option is set, when
-.I less 
-needs to change the entire display, it will paint from the top line down.
-.IP -C
-The -C option is like -c, but the screen is cleared before it is repainted.
-.IP -d
-Normally,
-.I less
-will complain if the terminal is dumb; that is, lacks some important capability,
-such as the ability to clear the screen or scroll backwards.
-The -d option suppresses this complaint 
-(but does not otherwise change the behavior of the program on a dumb terminal).
-.IP -e
-Normally the only way to exit less is via the "q" command.
-The -e option tells less to automatically exit
-the second time it reaches end-of-file.
-.IP -E
-The -E flag causes less to exit the first time it reaches end-of-file.
-.IP -h
-Normally,
-.I less
-will scroll backwards when backwards movement is necessary.
-The -h option specifies a maximum number of lines to scroll backwards.
-If it is necessary to move backwards more than this many lines,
-the screen is repainted in a forward direction.
-(If the terminal does not have the ability to scroll
-backwards, -h0 is implied.)
-.IP -i
-The -i option causes searches to ignore case; that is,
-uppercase and lowercase are considered identical.
-Also, text which is overstruck or underlined can be searched for.
-.IP -m
-Normally,
-.I less
-prompts with a colon.
-The -m option causes 
-.I less
-to prompt verbosely (like 
-.I more),
-with the percent into the file.
-.IP -M
-The -M option causes 
-.I less
-to prompt even more verbosely than 
+.IP "q or :q or ZZ"
+Exits
 .I more.
-.IP -n
-The -n flag suppresses line numbers.
-The default (to use line numbers) may cause
-.I less
-to run more slowly in some cases, especially with a very large input file.
-Suppressing line numbers with the -n flag will avoid this problem.
-Using line numbers means: the line number will be displayed in the verbose
-prompt and in the = command,
-and the v command will pass the current line number to the editor.
-.IP -P
-The -P option provides a way to tailor the three prompt
-styles to your own preference.
-You would normally put this option in your LESS environment
-variable, rather than type it in with each less command.
-Such an option must either be the last option in the LESS variable,
-or be terminated by a dollar sign.
--P followed by a string changes the default (short) prompt to that string.
--Pm changes the medium (-m) prompt to the string, and
--PM changes the long (-M) prompt.
-Also, -P= changes the message printed by the = command to the given string.
-All prompt strings consist of a sequence of 
-letters and special escape sequences.
-See the section on PROMPTS for more details.
-.IP -q
-Normally, if an attempt is made to scroll past the end of the file
-or before the beginning of the file, the terminal bell is rung to
-indicate this fact.
-The -q option tells
-.I less
-not to ring the bell at such times.
-If the terminal has a "visual bell", it is used instead.
-.IP -Q
-Even if -q is given, 
-.I less 
-will ring the bell on certain other errors,
-such as typing an invalid character.
-The -Q option tells
-.I less
-to be quiet all the time; that is, never ring the terminal bell.
-If the terminal has a "visual bell", it is used instead.
-.IP -s
-The -s option causes
-consecutive blank lines to be squeezed into a single blank line.
-This is useful when viewing
-.I nroff
-output.
-.IP -t
-The -t option, followed immediately by a TAG,
-will edit the file containing that tag.
-For this to work, there must be a file called "tags" in the
-current directory, which was previously built by the 
-.I ctags
-(1) command.
-This option may also be specified from within less 
-(using the \- command) as a way of examining a new file.
-.IP -u
-If the -u option is given, 
-backspaces are treated as printable characters;
-that is, they are sent to the terminal when they appear in the input.
-.IP -U
-If the -U option is given,
-backspaces are printed as the two character sequence "^H".
-.sp
-If neither -u nor -U is given,
-backspaces which appear adjacent to an underscore character
-are treated specially:
-the underlined text is displayed 
-using the terminal's hardware underlining capability.
-Also, backspaces which appear between two identical characters
-are treated specially: 
-the overstruck text is printed 
-using the terminal's hardware boldface capability.
-Other backspaces are deleted, along with the preceeding character.
-.IP -w
-Normally,
-.I less
-uses a tilde character to represent lines past the end of the file.
-The -w option causes blank lines to be used instead.
-.IP -x
-The -x\fIn\fR option sets tab stops every \fIn\fR positions.
-The default for \fIn\fR is 8.
-.IP -[z]
-When given a backwards or forwards window command,
-.I less
-will by
-default scroll backwards or forwards one screenful of lines. 
-The -z\fIn\fR option changes the default scrolling window size 
-to \fIn\fR lines.
-Note that the "z" is optional for compatibility with
-.I more.
-.IP +
-If a command line option begins with \fB+\fR,
-the remainder of that option is taken to be an initial command to
-.I less.
-For example, +G tells
-.I less
-to start at the end of the file rather than the beginning,
-and +/xyz tells it to start at the first occurence of "xyz" in the file.
-As a special case, +<number> acts like +<number>g; 
-that is, it starts the display at the specified line number
-(however, see the caveat under the "g" command above).
-If the option starts with \fB++\fR, the initial command applies to
-every file being viewed, not just the first one.
-The + command described previously
-may also be used to set (or change) an initial command for every file.
-
-.SH "PROMPTS"
-The -P option allows you to tailor the prompt to your preference.
-The string given to the -P option replaces the specified prompt string.
-Certain characters in the string are interpreted specially.
-The prompt mechanism is rather complicated to provide flexibility,
-but the ordinary user need not understand the details of constructing
-personalized prompt strings.
-.sp
-A percent sign followed by a single character is expanded
-according to what the following character is:
-.IP "%bX"
-Replaced by the byte offset into the current input file.
-The b is followed by a single character (shown as X above)
-which specifies the line whose byte offset is to be used.
-If the character is a "t", the byte offset of the top line in the
-display is used,
-an "m" means use the middle line,
-a "b" means use the bottom line,
-and a "B" means use the line just after the bottom line.
-.IP "%f"
-Replaced by the name of the current input file.
-.IP "%i"
-Replaced by the index of the current file in the list of
-input files.
-.IP "%lX"
-Replaced by the line number of a line in the input file.
-The line to be used is determined by the X, as with the %b option.
-.IP "%m"
-Replaced by the total number of input files.
-.IP "%pX"
-Replaced by the percent into the current input file.
-The line used is determined by the X as with the %b option.
-.IP "%s"
-Replaced by the size of the current input file.
-.IP "%t"
-Causes any trailing spaces to be removed.
-Usually used at the end of the string, but may appear anywhere.
-.IP "%x"
-Replaced by the name of the next input file in the list.
-.PP
-If any item is unknown (for example, the file size if input
-is a pipe), a question mark is printed instead.
-.PP
-The format of the prompt string can be changed
-depending on certain conditions.
-A question mark followed by a single character acts like an "IF":
-depending on the following character, a condition is evaluated.
-If the condition is true, any characters following the question mark
-and condition character, up to a period, are included in the prompt.
-If the condition is false, such characters are not included.
-A colon appearing between the question mark and the
-period can be used to establish an "ELSE": any characters between
-the colon and the period are included in the string if and only if
-the IF condition is false.
-Condition characters (which follow a question mark) may be:
-.IP "?a"
-True if any characters have been included in the prompt so far.
-.IP "?bX"
-True if the byte offset of the specified line is known.
-.IP "?e"
-True if at end-of-file.
-.IP "?f"
-True if there is an input filename
-(that is, if input is not a pipe).
-.IP "?lX"
-True if the line number of the specified line is known.
-.IP "?m"
-True if there is more than one input file.
-.IP "?n"
-True if this is the first prompt in a new input file.
-.IP "?pX"
-True if the percent into the current input file
-of the specified line is known.
-.IP "?s"
-True if the size of current input file is known.
-.IP "?x"
-True if there is a next input file
-(that is, if the current input file is not the last one).
-.PP
-Any characters other than the special ones
-(question mark, colon, period, percent, and backslash)
-become literally part of the prompt.
-Any of the special characters may be included in the prompt literally
-by preceeding it with a backslash.
-.PP
-Some examples:
-.sp
-?f%f:Standard input.
-.sp
-This prompt prints the filename, if known;
-otherwise the string "Standard input".
-.sp
-?f%f .?ltLine %lt:?pt%pt\%:?btByte %bt:-...
-.sp
-This prompt would print the filename, if known.
-The filename is followed by the line number, if known,
-otherwise the percent if known, otherwise the byte offset if known.
-Otherwise, a dash is printed.
-Notice how each question mark has a matching period,
-and how the % after the %pt
-is included literally by escaping it with a backslash.
-.sp
-?n?f%f\ .?m(file\ %i\ of\ %m)\ ..?e(END)\ ?x-\ Next\\:\ %x..%t
-.sp
-This prints the filename if this is the first prompt in a file,
-followed by the "file N of N" message if there is more
-than one input file.
-Then, if we are at end-of-file, the string "(END)" is printed
-followed by the name of the next file, if there is one.
-Finally, any trailing spaces are truncated.
-This is the default prompt.
-For reference, here are the defaults for
-the other two prompts (-m and -M respectively).
-Each is broken into two lines here for readability only.
-.nf
-.sp
-?n?f%f\ .?m(file\ %i\ of\ %m)\ ..?e(END)\ ?x-\ Next\\:\ %x.:
-	?pB%pB\\%:byte\ %bB?s/%s...%t
-.sp
-?f%f\ .?n?m(file\ %i\ of\ %m)\ ..?ltline\ %lt\ :byte\ %bB?s/%s\ ..
-	?e(END)\ ?x-\ Next\\:\ %x.:?pB%pB\\%..%t
-.sp
-.fi
-And here is the default message produced by the = command:
-.nf
-.sp
-?f%f\ .?m(file\ %i\ of\ %m)\ .?ltline\ %lt\ .
-	byte\ %bB?s/%s.\ ?e(END)\ :?pB%pB\\%..%t
-.fi
-
+.SH "SEE ALSO
+ctags(1), vi(1)
 .SH AUTHOR
-This software is derived from software contributed by Mark Nudleman.
-
-.SH WARNINGS
-The = command and prompts (unless changed by -P)
-report the line number of the line at the top of the screen,
-but the byte and percent of the line at the bottom of the screen.
+This software is derived from software contributed to Berkeley
+by Mark Nudleman.
