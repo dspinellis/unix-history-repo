@@ -32,7 +32,7 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         4       00029
+ * CURRENT PATCH LEVEL:         5       00076
  * --------------------         -----   ----------------------
  *
  * 15 Aug 92	David Dawes		SIGTERM + 10 seconds before SIGKILL
@@ -40,6 +40,7 @@
  * 31 Jul 92	Christoph Robitschko	Fixed run level change code
  * 04 Sep 92	Paul Kranenburg		Fixed kill -1 and kill -15 for
  *					daemons started from /etc/rc.
+ * 26 Jan 93	Nate Williams		Fixed patchkit error
  */
 
 
@@ -231,7 +232,7 @@ top:
 			execl("/bin/sh", "-", (char *)0);
 			_exit(127);
 		}
-		while(wait(&status) != pid)
+		while(wait(&status) != pid);
 		while(drain)				/* 31 Jul 92*/
 			pause();
 		goto top;
