@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)su.c	4.6 (Berkeley) %G%";
+static char *sccsid = "@(#)su.c	4.7 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -29,6 +29,8 @@ main(argc,argv)
 	char *argv[];
 {
 	char *password;
+	char buf[1000];
+	FILE *fp;
 
 again:
 	if (argc > 1 && strcmp(argv[1], "-f") == 0) {
@@ -45,8 +47,31 @@ again:
 		user = argv[1];
 		argc--, argv++;
 	}
-	if (strcmp(user, "root") == 0)
+	if (strcmp(user, "root") == 0) {
+		/*
+		 * Read the "/.suok" file for list of people who can su.
+		 */
+		if ((pwd = getpwuid(getuid())) == NULL) {
+			fprintf(stderr, "Who are you?\n");
+			exit(1);
+		}
+		if ((fp = fopen("/.suok", "r")) != NULL) {
+			while ((fgets(buf, sizeof(buf), fp)) != NULL) {
+				/* blast newline */
+				buf[strlen(buf) - 1] = '\0';
+				if (strcmp(pwd->pw_name, buf) == 0) {
+					fclose(fp);
+					goto userok;
+				}
+			}
+			fclose(fp);
+			fprintf(stderr, "You do not have permission to su root\n");
+			exit(1);
+		}
+	userok:
 		setpriority(PRIO_PROCESS, 0, -2);
+	}
+
 	if ((pwd = getpwnam(user)) == NULL) {
 		fprintf(stderr, "Unknown login: %s\n", user);
 		exit(1);
