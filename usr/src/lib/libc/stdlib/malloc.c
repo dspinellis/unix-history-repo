@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)malloc.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)malloc.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -82,14 +82,15 @@ static	u_int nmalloc[NBUCKETS];
 #include <stdio.h>
 #endif
 
-#ifdef DEBUG
+#if defined(DEBUG) || defined(RCHECK)
 #define	ASSERT(p)   if (!(p)) botch("p")
+#include <stdio.h>
 static
 botch(s)
 	char *s;
 {
-
-	printf("assertion botched: %s\n", s);
+	fprintf(stderr, "\r\nassertion botched: %s\r\n", s);
+ 	(void) fflush(stderr);		/* just in case user buffered it */
 	abort();
 }
 #else
@@ -285,15 +286,14 @@ realloc(cp, nbytes)
 		 * the last ``realloc_srchlen'' items free'd.
 		 * If all lookups fail, then assume the size of
 		 * the memory block being realloc'd is the
-		 * smallest possible.
+		 * largest possible (so that all "nbytes" of new
+		 * memory are copied into).  Note that this could cause
+		 * a memory fault if the old area was tiny, and the moon
+		 * is gibbous.  However, that is very unlikely.
 		 */
 		if ((i = findbucket(op, 1)) < 0 &&
 		    (i = findbucket(op, realloc_srchlen)) < 0)
-#ifndef RCHECK
-			i = 0;
-#else
-			i = 1;	/* smallest possible w/ RCHECK */
-#endif
+			i = NBUCKETS;
 	}
 	onb = 1 << (i + 3);
 	if (onb < pagesz)
@@ -320,7 +320,7 @@ realloc(cp, nbytes)
 	}
   	if ((res = malloc(nbytes)) == NULL)
   		return (NULL);
-  	if (cp != res)			/* common optimization */
+  	if (cp != res)		/* common optimization if "compacting" */
 		bcopy(cp, res, (nbytes < onb) ? nbytes : onb);
   	return (res);
 }
