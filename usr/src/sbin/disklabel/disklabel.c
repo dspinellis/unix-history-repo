@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)disklabel.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)disklabel.c	5.2 (Berkeley) %G%";
 /* from static char sccsid[] = "@(#)disklabel.c	1.2 (Symmetric) 11/28/85"; */
 #endif
 
@@ -186,29 +186,43 @@ writelabel(f, boot, lp)
 	register struct disklabel *lp;
 {
 	register i;
+	daddr_t bbsize;
+#if vax
 	daddr_t alt;
+	int nsectors, secsize;
+#endif
 
 	lp->d_magic = DISKMAGIC;
 	lp->d_magic2 = DISKMAGIC;
-#if ENDIAN != BIG
-	swablabel(lp);
+	bbsize = lp->d_bbsize;
+#if vax
+	/* copy before swabbing */
+	if (lp->d_type == DTYPE_SMD && lp->d_flags & D_BADSECT)
+		alt = lp->d_ncylinders * lp->d_secpercyl - lp->d_nsectors;
+	else
+		alt = 0;
+	nsectors = lp->d_nsectors;
+	secsize = lp->d_secsize;
 #endif
+	swablabel(lp);
 	lp->d_checksum = 0;
 	lp->d_checksum = dkcksum(lp);
 	lseek(f, (off_t)0, L_SET);
-	if (write(f, boot, lp->d_bbsize) < lp->d_bbsize)
+	if (write(f, boot, bbsize) < bbsize)
 		Perror("write");
-#ifdef notyet
-	alt = lp->d_ncylinders * lp->d_secpercyl - lp->d_nsectors;
-	for (i = 1; i < 11 && i < lp->d_nsectors; i += 2) {
-		lseek(f, (off_t)(alt + i) * lp->d_secsize, L_SET);
-		if (write(f, boot, lp->d_secsize) < lp->d_secsize) {
+#if vax
+	if (alt)
+	for (i = 1; i < 11 && i < nsectors; i += 2) {
+		lseek(f, (off_t)(alt + i) * secsize, L_SET);
+		if (write(f, boot, secsize) < secsize) {
 			int oerrno = errno;
 			fprintf(stderr, "alternate label %d ", i/2);
 			errno = oerrno;
 			perror("write");
 		}
 	}
+#endif
+#ifdef notyet
 	if (ioctl(f, DIOCSDINFO, lp) < 0)
 		Perror("ioctl DIOCSDINFO");
 #endif
@@ -245,9 +259,7 @@ readlabel(f, boot)
 	"Bad pack magic number (label is damaged, or pack is unlabeled)\n");
 		exit(1);
 	}
-#if ENDIAN != BIG
 	swablabel(lp);
-#endif
 	return (lp);
 }
 
