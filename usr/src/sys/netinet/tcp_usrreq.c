@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)tcp_usrreq.c	7.7.1.1 (Berkeley) %G%
+ *	@(#)tcp_usrreq.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -168,7 +168,7 @@ tcp_usrreq(so, req, m, nam, rights)
 		soisconnecting(so);
 		tcpstat.tcps_connattempt++;
 		tp->t_state = TCPS_SYN_SENT;
-		tp->t_timer[TCPT_KEEP] = TCPTV_KEEP;
+		tp->t_timer[TCPT_KEEP] = TCPTV_KEEP_INIT;
 		tp->iss = tcp_iss; tcp_iss += TCP_ISSINCR/2;
 		tcp_sendseqinit(tp);
 		error = tcp_output(tp);

@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)tcp_timer.c	7.11.1.1 (Berkeley) %G%
+ *	@(#)tcp_timer.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -36,6 +36,9 @@
 #include "tcpip.h"
 
 int	tcpnodelack = 0;
+int	tcp_keepidle = TCPTV_KEEP_IDLE;
+int	tcp_keepintvl = TCPTV_KEEPINTVL;
+int	tcp_maxidle;
 /*
  * Fast timeout routine for processing delayed acks
  */
@@ -70,6 +73,7 @@ tcp_slowtimo()
 	int s = splnet();
 	register int i;
 
+	tcp_maxidle = TCPTV_KEEPCNT * tcp_keepintvl;
 	/*
 	 * Search through tcb's and update active timers.
 	 */
@@ -141,8 +145,8 @@ tcp_timers(tp, timer)
 	 */
 	case TCPT_2MSL:
 		if (tp->t_state != TCPS_TIME_WAIT &&
-		    tp->t_idle <= TCPTV_MAXIDLE)
-			tp->t_timer[TCPT_2MSL] = TCPTV_KEEP;
+		    tp->t_idle <= tcp_maxidle)
+			tp->t_timer[TCPT_2MSL] = tcp_keepintvl;
 		else
 			tp = tcp_close(tp);
 		break;
@@ -240,7 +244,7 @@ tcp_timers(tp, timer)
 			goto dropit;
 		if (tp->t_inpcb->inp_socket->so_options & SO_KEEPALIVE &&
 		    tp->t_state <= TCPS_CLOSE_WAIT) {
-		    	if (tp->t_idle >= TCPTV_MAXIDLE)
+		    	if (tp->t_idle >= tcp_keepidle + tcp_maxidle)
 				goto dropit;
 			/*
 			 * Send a packet designed to force a response
@@ -266,8 +270,9 @@ tcp_timers(tp, timer)
 			tcp_respond(tp, tp->t_template,
 			    tp->rcv_nxt, tp->snd_una - 1, 0);
 #endif
-		}
-		tp->t_timer[TCPT_KEEP] = TCPTV_KEEP;
+			tp->t_timer[TCPT_KEEP] = tcp_keepintvl;
+		} else
+			tp->t_timer[TCPT_KEEP] = tcp_keepidle;
 		break;
 	dropit:
 		tcpstat.tcps_keepdrops++;
