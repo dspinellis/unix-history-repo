@@ -14,7 +14,7 @@
 #define	SERVICE	"krbupdate"
 #define	PROTO	"tcp"
 #define	KFILE	"/.update.key%s"
-#define	KPASSWD	"/usr/local/kpasswd"
+#define	KPASSWD	"/usr/athena/kpasswd"
 
 char	realm[REALM_SZ];
 char	krbhst[MAX_HSTNM];
@@ -38,11 +38,6 @@ char	**argv;
 	u_char		code;
 	static struct rlimit rl = { 0, 0 };
 
-	if(geteuid()) {
-		fprintf(stderr, "must run set-uid root to access keyfile\n");
-		exit(1);
-	}
-
 	signal(SIGPIPE, die);
 
 	if(setrlimit(RLIMIT_CORE, &rl) < 0) {
@@ -55,13 +50,13 @@ char	**argv;
 			SERVICE);
 		exit(1);
 	}
-	if((rval = get_krbrlm(realm,1)) != KSUCCESS) {
+	if((rval = krb_get_lrealm(realm,1)) != KSUCCESS) {
 		fprintf(stderr, "couldn't get local Kerberos realm: %s\n",
 			krb_err_txt[rval]);
 		exit(1);
 	}
 
-	if((rval = get_krbhst(krbhst, realm, 1)) != KSUCCESS) {
+	if((rval = krb_get_krbhst(krbhst, realm, 1)) != KSUCCESS) {
 		fprintf(stderr, "couldn't get Kerberos host: %s\n",
 			krb_err_txt[rval]);
 		exit(1);
@@ -131,6 +126,18 @@ char	**argv;
 		int	cc;
 		char	msgbuf[BUFSIZ];
 
+		cc = read(sock, msgbuf, BUFSIZ);
+		if (cc <= 0) {
+			fprintf(stderr, "protocol error during key verification\n");
+			cleanup();
+			exit(1);
+		}
+		if (strncmp(msgbuf, "GOTKEY", 6) != 0) {
+			fprintf(stderr, "%s: %s", krbhst, msgbuf);
+			cleanup();
+			exit(1);
+		}
+
 		cc = des_read(sock, msgbuf, BUFSIZ);
 		if(cc <= 0) {
 			fprintf(stderr, "protocol error during read\n");
@@ -165,6 +172,7 @@ get_user_info()
 		fprintf(stderr, "Who are you?\n");
 		exit(1);
 	}
+	seteuid(uid);
 	strcpy(pname, pw->pw_name);	/* principal name */
 	for(i = 1; i < 3; i++) {
 		pas = getpass("login password:");
@@ -180,6 +188,10 @@ get_user_info()
 	if(!valid)
 		exit(1);
 	pas = getpass("Kerberos password (may be the same):");
+	while(*pas == NULL) {
+		printf("<NULL> password not allowed\n");
+		pas = getpass("Kerberos password (may be the same):");
+	}
 	strcpy(password, pas);		/* password */
 	pas = getpass("Retype Kerberos password:");
 	if(strcmp(password, pas)) {
@@ -223,7 +235,7 @@ type_info()
 	printf("Kerberos user registration (realm %s)\n\n", realm);
 	printf("Please enter your login password followed by your new Kerberos password.\n");
 	printf("The Kerberos password you enter now will be used in the future\n");
-	printf("as your login password for all machines in the %s realm.\n", realm);
+	printf("as your Kerberos password for all machines in the %s realm.\n", realm);
 	printf("You will only be allowed to perform this operation once, although you may run\n");
 	printf("the %s program from now on to change your Kerberos password.\n\n", KPASSWD);
 }
