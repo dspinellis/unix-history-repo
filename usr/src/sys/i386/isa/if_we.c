@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_we.c	7.3 (Berkeley) %G%
+ *	@(#)if_we.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -379,6 +379,7 @@ weintr(unit)
 	register struct we_softc *sc = &we_softc[unit];
 	union we_command wecmd;
 	union we_interrupt weisr;
+	int nloops = 10;
 
 	unit =0;
  
@@ -424,7 +425,19 @@ loop:
 	outb(sc->we_io_nic_addr + WD_P0_COMMAND, wecmd.cs_byte);
 	outb(sc->we_io_nic_addr + WD_P0_IMR, 0xff/*WD_I_CONFIG*/);
 	weisr.is_byte = inb(sc->we_io_nic_addr + WD_P0_ISR);
-	if (weisr.is_byte) goto loop;
+	if (weisr.is_byte) {
+		/*
+		 * I caught it looping forever here a couple of times,
+		 * but I haven't had time to figure out why.  Just
+		 * returning seems to be safe, and it does not appear
+		 * to interfere with future packets.    - Pace 5/19/92
+		 */
+		if (--nloops <= 0) {
+			printf ("we0: weintr is looping\n");
+			return;
+		}
+		goto loop;
+	}
 }
  
 /*
