@@ -1,0 +1,447 @@
+Return-Path: <info-gcc-request@prep.ai.mit.edu>
+Date: 11 Sep 90 14:07:21 GMT
+From: news@operations.dccs.upenn.edu  (USENET News System)
+Organization: University of Pennsylvania
+Subject: Building gcc 1.37.1 with Vax C
+References: <9009102236.AA15872@wubios.wustl.edu>
+Sender: info-gcc-request@prep.ai.mit.edu
+To: info-gcc@prep.ai.mit.edu
+
+during it; hopefully they'll come in handy.
+ 
+ To build the new gcc-cpp and gcc-cc1 that come with Gnu C
+version 1.37.1 with Vax C and NOT a previous version of gcc,
+do the following:
+ 
+I - Building gcc-cpp
+ 
+   A - Modify cccp.c
+ 
+     1 - Replace
+ 
+	#include <sys/types.h>
+	#include <sys/stat.h>
+ 
+       with
+ 
+	#ifndef VMS
+	#include <sys/types.h>
+	#include <sys/stat.h>
+	#else
+	#include <types.h>
+	#include <stat.h>
+	#endif
+
+[It is claimed that
+    $ define sys sys$library
+ will solve the same problem without source changes.]
+ 
+     2 - In the VMS-specific section (has perror.h etc in it),
+add the following:
+ 
+	#include <descrip.h>	/* for dsc$descriptor_s */
+	#include <string.h>	/* for strchr & strrchr */
+	#define index	strchr
+	#define rindex	strrchr
+ 
+     3 - You have to replace all occurences of:
+ 
+	extern char *index(), *rindex();
+ 
+ as well as any where they're separated (e.g. extern char *index()
+ by itself or extern char *rindex() by itself), with the following:
+ 
+	#ifndef VMS
+	extern char *index();	/* or whatever was here */
+	#endif
+ 
+ There's a total of three: one in main(), one in do_include(), and
+ one in hack_vms_include_specification().
+ 
+   B - You have to have alloca.mar for cccp.c; it was distributed
+ with vmsgcc1.34; it's also in the bison distribution. (both 1.03
+ and 1.06)
+ 
+   C - After you've compiled alloca.mar (MACRO ALLOCA.MAR), follow
+ the instructions at the top of MAKE-CC1.COM (namely, change the
+ CC := line to say cc/noopt instead of gcc, take the
+ cc1_options="-mpcc-alignment" part out of the CFLAGS line, and change
+ the LIBS line to say:
+ 
+	$ LIBS :=       alloca,sys$share:vaxcrtl/libr
+ 
+   D - Since it doesn't come with the distribution, you have
+ to generate cexp_tab.c yourself, either with bison on either
+ a Vax or a Unix box, or yacc in Unix. (@make below will die if you
+ don't have bison on your Vax or don't have this file)
+ 
+   E - Type:
+ 
+	@make
+ 
+ and watch it hum. It should go through okay; it'll die on the LINK
+line, but don't worry about it.
+ 
+   F - Now link the whole thing with:
+ 
+	link /nomap/exe=gcc-cpp cccp,cexp,version,alloca,-
+	 sys$share:vaxcrtl/libr
+ 
+   G - You should be screaming for joy right now; if you're not, then
+give up on life. <snicker>
+ 
+ 
+II - Building gcc-cc1
+ 
+   A - Change MAKE-CC1.COM to contain the line:
+ 
+	$ libs :== sys$share:vaxcrtl/libr,alloca
+ 
+Yep, you have to have alloca.obj here too.
+ 
+   B - Modify toplev.c:
+ 
+     1 - Replace
+ 
+	#include <sys/types.h>
+	#include <sys/stat.h>
+ 
+	with
+ 
+	#ifndef VMS
+	#include <sys/types.h>
+	#include <sys/stat.h>
+	#else
+	#include <types.h>
+	#include <stat.h>
+	#endif
+ 
+(You'll see this again.)
+ 
+     2 - Do:
+ 
+Repl:	rtx_equal_function_value_matters
+With:	rtx_equ_func_value_matters
+Num:	once
+ 
+ This is cuz you can't have a name over 31 chars with the
+Vax C compiler; and yep you guessed it this is over that
+limit. You're gonna be doing this a few more times.
+ 
+   C - Modify gcc.c:
+ 
+     1 - This is optional, since you never compile it (I'm
+working on that):
+ 
+	Replace
+ 
+	#include <stdio.h>
+	#include <sys/types.h>
+	#include <signal.h>
+	#include <sys/file.h>
+ 
+	with
+ 
+	#include <stdio.h>
+	#include <signal.h>
+	#ifdef VMS
+	#include <types.h>
+	#include <file.h>
+	#else
+	#include <sys/types.h>
+	#include <sys/file.h>
+	#endif
+ 
+   D - Modify c-parse_tab.c (if this isn't there, you'll have
+to create it with bison or yacc):
+ 
+Repl:	expand_start_loop_continue_elsewhere
+With:	expand_startloop_cont_elsewhere
+Num:	twice
+ 
+   E - Modify tree.h:
+ 
+Repl:	expand_start_loop_continue_elsewhere
+With:	expand_startloop_cont_elsewhere
+Num:	once
+ 
+   F - Modify stmt.c:
+ 
+Repl:	expand_start_loop_continue_elsewhere
+With:	expand_startloop_cont_elsewhere
+Num:	twice
+ 
+Repl:	current_function_returns_pcc_struct
+With:	cur_func_ret_pcc_struct
+Num:	nine
+ 
+Repl:	current_function_returns_pointer
+With:	cur_func_ret_ptr
+Num:	2
+ 
+Repl:	current_function_pretend_args_size
+With:	cur_func_pretend_args_size
+Num:	3
+ 
+   G - Modify rtanal.c:
+ 
+Repl:	rtx_equal_function_value_matters
+With:	rtx_equ_func_values_matters
+Num:	twice
+ 
+   H - Modify output.h:
+ 
+Repl:	current_function_returns_pcc_struct
+With:	cur_func_ret_pcc_struct
+Num:	once
+ 
+Repl: 	current_function_returns_pointer
+With:	cur_func_ret_ptr
+Num:	once
+ 
+Repl:	current_function_pretend_args_size
+With:	cur_func_pretend_args_size
+Num:	once
+ 
+   I - Modify tree.def:
+ 
+ Change the line that reads:
+ 
+	DEFTREECODE (FILE_TYPE, "file_type", "t", 0)
+ 
+ to:
+ 
+	#ifdef VMS
+	DEFTREECODE (FILE_TYPE_GNU, "file_type", "t", 0)
+	#else
+	DEFTREECODE (FILE_TYPE, "file_type", "t", 0)
+	#endif
+ 
+ This is cuz FILE_TYPE is defined in stdio.h as being
+struct _iobuf *, which totally screws everything up.
+ 
+   J - Modify expr.c:
+ 
+ Change the line that reads:
+ 
+	if (code == FILE_TYPE)
+ 
+ to:
+ 
+	#ifdef VMS
+	if (code == FILE_TYPE_GNU)
+	#else
+	if (code == FILE_TYPE)
+	#endif
+ 
+   K - Modify expmed.c:
+ 
+ Change the line that reads:
+ 
+ trymode && GET_MODE_SIZE (trymode) <= maxsize;
+ 
+ to:
+ 
+ (trymode != 0) && (GET_MODE_SIZE (trymode) <= maxsize);
+ 
+ Enclosing the second half of the and in parenthesis may be
+overkill. By the time I thought of it it was too late to
+change it (read: I didn't feel like going back), but you
+may want to give it a try.
+ 
+   L - Modify symout.c:
+ 
+ Change the line that has #include <stddef.h> on it to:
+ 
+	#ifndef VMS
+	#include <stddef.h>
+	#else
+	#define NULL	(void *) 0
+	#endif
+ 
+   M - Modify insn-emit.c:
+ 
+ Line #1011 (in mine) is a 376-character long line that's
+one HUGE return (it calls a function a few zillion times
+embedded upon each other). This is a tad too big for Vax C
+to chew; try cutting it down to a few lines. I made it look
+like this:
+ 
+rtx
+gen_casesi (operand0, operand1, operand2, operand3)
+     rtx operand0;
+     rtx operand1;
+     rtx operand2;
+     rtx operand3;
+{
+  return gen_rtx (SET, VOIDmode, pc_rtx,
+   gen_rtx (IF_THEN_ELSE, VOIDmode,
+    gen_rtx (LE, VOIDmode,
+     gen_rtx (MINUS, SImode, operand0, operand1),
+    operand2),
+    gen_rtx (PLUS, SImode,
+     gen_rtx (SIGN_EXTEND, SImode,
+      gen_rtx (MEM, HImode,
+       gen_rtx (PLUS, SImode, pc_rtx,
+        gen_rtx (MINUS, SImode, operand0, operand1)))),
+     gen_rtx (LABEL_REF, SImode, operand3)),
+   pc_rtx));
+}
+ 
+ Kinda smacks of lisp, no?
+ 
+   N - Modify final.c:
+ 
+ Change the line that reads:
+ 
+	rtx final_sequence;
+ 
+ to:
+ 
+	#ifndef VMS
+	rtx final_sequence;
+	#endif
+ 
+ This is cuz rtx final_sequence already appears in
+output.h, and Vax C screams when it sees this.
+ 
+   O - You have to have alloca(), bcopy(), bcmp(), and
+bzero(); all are in the VMS Gcc 1.34 distribution; only
+bcopy() is in the bison distribution. Since they're pretty
+short, I'm gonna include 'em here. These were sent under the
+Gnu public license.
+ 
+ alloca.mar:
+ 
+        .PSECT  $CODE,LONG,PIC,REL,SHR,EXE,RD,NOWRT
+        .ENTRY  ALLOCA,^M<>
+        SUBL2   4(AP),SP
+        MOVL    16(FP),R1
+        MOVQ    8(FP),AP
+        BICL2   #3,SP
+        ADDL2   #28,SP
+        MOVL    SP,R0
+        JMP     (R1)
+ 
+        .END
+ 
+ bcopy.mar:
+ 
+        .PSECT  $CODE,LONG,PIC,REL,SHR,EXE,RD,NOWRT
+	; bcopy(from, to, size)
+        .ENTRY  BCOPY,^M<R2,R3,R4,R5,R6>
+        MOVL    4(AP),R1
+        MOVL    8(AP),R3
+        MOVL    12(AP),R6
+        CMPL    R1,R3
+        BGTR    2$              ; NORMAL FORWARD CASE
+        BLSS    3$              ; OVERLAPPING, MUST DO BACKWARDS
+        RET                     ; EQUAL, NOTHING TO DO
+1$:	SUBL2   R0,R6
+        MOVC3   R0,(R1),(R3)
+2$:	MOVZWL  #65535,R0
+        CMPL    R6,R0
+        BGTR    1$
+        MOVC3   R6,(R1),(R3)
+        RET
+3$:	ADDL2   R6,R1
+        ADDL2   R6,R3
+        MOVZWL  #65535,R0
+        BRW     5$
+4$:	SUBL2   R0,R6
+        SUBL2   R0,R1
+        SUBL2   R0,R3
+        MOVC3   R0,(R1),(R3)
+        MOVZWL  #65535,R0
+        SUBL2   R0,R1
+        SUBL2   R0,R3
+5$:	CMPL    R6,R0
+        BGTR    4$
+        SUBL2   R6,R1
+        SUBL2   R6,R3
+        MOVC3   R6,(R1),(R3)
+ 
+       RET
+ 
+        .END
+ 
+ bcmp.mar:
+ 
+        .PSECT  $CODE,LONG,PIC,REL,SHR,EXE,RD,NOWRT
+	; bcmp(s1, s2, n)
+        .ENTRY  BCMP,^M<R2,R3,R4,R5>
+        MOVL    4(AP),R1
+        MOVL    8(AP),R3
+        MOVL    12(AP),R4
+1$:	MOVZWL  #65535,R0
+        CMPL    R4,R0
+        BLEQ    2$
+        SUBL2   R0,R4
+        CMPC3   R0,(R1),(R3)
+        BEQL    1$
+        ADDL2   R4,R0
+        RET
+2$:	CMPC3   R4,(R1),(R3)
+        RET
+ 
+        .END
+ 
+ 
+ bzero.mar:
+ 
+        .PSECT  $CODE,LONG,PIC,REL,SHR,EXE,RD,NOWRT
+	; bzero(ptr, size)
+        .ENTRY  BZERO,^M<R2,R3,R4,R5>
+        MOVL    4(AP),R3
+        BRB     2$
+1$:	SUBL2   R0,8(AP)
+        MOVC5   #0,(R3),#0,R0,(R3)
+2$:	MOVZWL  #65535,R0
+        CMPL    8(AP),R0
+        BGTR    1$
+        MOVC5   #0,(R3),#0,8(AP),(R3)
+        RET
+ 
+        .END
+ 
+   P - On the last lines (where it's got all of the link shit),
+change it so it reads:
+ 
+	...blahblahblah...
+	...blahblah,insn-extract,insn-output,obstack,-
+	integrate,caller-save,-
+	bcopy,bcmp,bzero
+	$!
+ 
+ So now it'll link the bcopy, bcmp, and bzero routines in.
+ 
+   Q - You should be screaming for joy right now; if you're
+not, then give up on life again. Hey, I don't get paid for my humor.
+ 
+   R - Finally, you have to use old versions of:
+ 
+		GCC.EXE		GCC-AS.EXE
+		GCC.COM		GCC.CLD
+		GCCLIB.OLB
+ 
+ to make the package work properly. I've only been able to make the
+ new preprocessors make properly; since it wasn't even in the make
+ files that came with it, I don't think gcc.exe 1.37.1 was intended
+ to be built for the Vax .. we'll see.
+ 
+ In case you're wondering, I could never get vmsgcc134 to work properly;
+that's why I did this with Vax C.
+ 
+ Good luck! This only worked under 5.3-1 (and the latest version of
+Vax C...3.0? 3.1?), and isn't guaranteed in any way shape or form. If
+you have stumbling blocks and think I may have come upon it during all
+of this, feel free to mail me at kehoe@scotty.dccs.upenn.edu.
+ 
+--
+Brendan Kehoe | Soon: brendan@cs.widener.edu
+For now: kehoe@scotty.dccs.upenn.edu | Or: bkehoe@widener.bitnet
+     Last resort: brendan.kehoe@cyber.widener.edu
+Brendan Kehoe | Soon: brendan@cs.widener.edu
+For now: kehoe@scotty.dccs.upenn.edu | Or: bkehoe@widener.bitnet
+Last resort: brendan.kehoe@cyber.widener.edu
+
