@@ -9,7 +9,7 @@
  * Still more user commands.
  */
 
-static char *SccsId = "@(#)cmd3.c	2.9 %G%";
+static char *SccsId = "@(#)cmd3.c	2.10 %G%";
 
 /*
  * Process a shell escape by saving signals, ignoring signals,
@@ -149,7 +149,7 @@ help()
 	register FILE *f;
 
 	if ((f = fopen(HELPFILE, "r")) == NULL) {
-		printf("No help just now.\n");
+		perror(HELPFILE);
 		return(1);
 	}
 	while ((c = getc(f)) != EOF)
@@ -190,10 +190,10 @@ respond(msgvec)
 	int *msgvec;
 {
 	struct message *mp;
-	char *cp, buf[2 * LINESIZE], *rcv, *replyto, **ap;
+	char *cp, *cp2, *cp3, *rcv, *replyto;
+	char buf[2 * LINESIZE], **ap;
 	struct name *np;
 	struct header head;
-	char *netmap();
 
 	if (msgvec[1] != 0) {
 		printf("Sorry, can't reply to multiple messages at once\n");
@@ -218,10 +218,10 @@ respond(msgvec)
 	 * Delete my name from the reply list,
 	 * and with it, all my alternate names.
 	 */
-	np = delname(np, myname);
-	if (altnames != 0)
+	np = delname(np, myname, icequal);
+	if (altnames)
 		for (ap = altnames; *ap; ap++)
-			np = delname(np, *ap);
+			np = delname(np, *ap, icequal);
 	head.h_seq = 1;
 	cp = detract(np, 0);
 	if (cp != NOSTR && replyto == NOSTR) {
@@ -248,10 +248,10 @@ respond(msgvec)
 		if (cp != NOSTR) {
 			np = elide(extract(cp, GCC));
 			mapf(np, rcv);
-			np = delname(np, myname);
+			np = delname(np, myname, icequal);
 			if (altnames != 0)
 				for (ap = altnames; *ap; ap++)
-					np = delname(np, *ap);
+					np = delname(np, *ap, icequal);
 			head.h_cc = detract(np, 0);
 		}
 	}
