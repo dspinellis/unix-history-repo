@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)whatis.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)whatis.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -29,24 +29,26 @@ static char sccsid[] = "@(#)whatis.c	8.2 (Berkeley) %G%";
 
 #define	MAXLINELEN	256			/* max line handled */
 
-char *progname;
-
 static int *found, foundman;
 
+int
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
 	extern char *optarg;
 	extern int optind;
 	ENTRY *ep;
 	int ch;
-	char *beg, **p, *p_augment, *p_path, **getdb();
+	char *beg, *conffile, **p, *p_augment, *p_path;
 
-	progname = "whatis";
+	conffile = NULL;
 	p_augment = p_path = NULL;
-	while ((ch = getopt(argc, argv, "M:m:P:")) != EOF)
-		switch((char)ch) {
+	while ((ch = getopt(argc, argv, "C:M:m:P:")) != EOF)
+		switch (ch) {
+		case 'C':
+			conffile = optarg;
+			break;
 		case 'M':
 		case 'P':		/* backward compatible */
 			p_path = optarg;
@@ -77,7 +79,7 @@ main(argc, argv)
 	if (p_path || (p_path = getenv("MANPATH")))
 		whatis(argv, p_path, 1);
 	else {
-		config();
+		config(conffile);
 		ep = getlist("_whatdb");
 		if (ep != NULL)
 			ep = ep->list.qe_next;
@@ -181,6 +183,6 @@ dashtrunc(from, to)
 usage()
 {
 	(void)fprintf(stderr,
-	    "usage: whatis [-M path] [-m path] command ...\n");
+	    "usage: whatis [-C file] [-M path] [-m path] command ...\n");
 	exit(1);
 }
