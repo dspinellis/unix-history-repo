@@ -4,9 +4,30 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufsmount.h	8.5 (Berkeley) %G%
+ *	@(#)ufsmount.h	8.6 (Berkeley) %G%
  */
 
+/*
+ * Arguments to mount UFS-based filesystems
+ */
+struct ufs_args {
+	char	*fspec;			/* block special device to mount */
+	struct	export_args export;	/* network export information */
+};
+
+#ifdef MFS
+/*
+ * Arguments to mount MFS
+ */
+struct mfs_args {
+	char	*fspec;			/* name to export for statfs */
+	struct	export_args export;	/* if exported MFSes are supported */
+	caddr_t	base;			/* base of file system in memory */
+	u_long	size;			/* size of file system */
+};
+#endif /* MFS */
+
+#ifdef KERNEL
 struct buf;
 struct inode;
 struct nameidata;
@@ -57,3 +78,4 @@ struct ufsmount {
 #define MNINDIR(ump)			((ump)->um_nindir)
 #define	blkptrtodb(ump, b)		((b) << (ump)->um_bptrtodb)
 #define	is_sequential(ump, a, b)	((b) == (a) + ump->um_seqinc)
+#endif /* KERNEL */
