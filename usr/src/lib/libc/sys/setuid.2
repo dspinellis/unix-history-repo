@@ -3,18 +3,16 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)setuid.2	6.5 (Berkeley) %G%
+.\"     @(#)setuid.2	6.6 (Berkeley) %G%
 .\"
 .Dd 
-.Dt SETUID 3
+.Dt SETUID 2
 .Os BSD 4.2
 .Sh NAME
 .Nm setuid ,
 .Nm seteuid ,
-.Nm setruid ,
 .Nm setgid ,
 .Nm setegid ,
-.Nm setrgid
 .Nd set user and group ID
 .Sh SYNOPSIS
 .Fd #include <sys/types.h>
@@ -24,13 +22,9 @@
 .Ft int
 .Fn seteuid "uid_t euid"
 .Ft int
-.Fn setruid "uid_t ruid"
-.Ft int
 .Fn setgid "gid_t gid"
 .Ft int
 .Fn setegid "gid_t egid"
-.Ft int
-.Fn setrgid "gid_t rgid"
 .Sh DESCRIPTION
 The
 .Fn setuid
@@ -47,22 +41,14 @@ function
 sets the effective user ID (group ID) of the
 current process.
 .Pp
-The
-.Fn setruid
-function
-.Pq Fn setrgid
-sets the real user ID (group ID) of the
-current process.
 .Sh RETURN VALUES
 Upon success, these functions return 0;
 otherwise \-1 is returned.
 .Pp
 If the user is not the super user, or the uid
-specified is not the real or effective ID, these
-functions return \-1.
+specified is not the real, effective ID, or saved ID,
+these functions return \-1.
 .Sh SEE ALSO
-.Xr setreuid 2 ,
-.Xr setregid 2 ,
 .Xr getuid 2 ,
 .Xr getgid 2
 .Sh HISTORY
