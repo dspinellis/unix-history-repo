@@ -11,11 +11,11 @@
 .\" from this software without specific prior written permission.
 .\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-.\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)ftp.1	6.10 (Berkeley) %G%
+.\"	@(#)ftp.1	6.11 (Berkeley) %G%
 .\"
-.TH FTP 1 ""
+.TH FTP 1 "February 23, 1989"
 .UC 5
 .SH NAME
 ftp \- ARPANET file transfer program
@@ -243,7 +243,7 @@ no
 is specified, the user's home directory is used.
 .TP
 \fBls\fP [ \fIremote-directory\fP ] [ \fIlocal-file\fP ]
-Print an abbreviated listing of the contents of a
+Print a listing of the contents of a
 directory on the remote machine.  If
 .I remote-directory
 is left unspecified, the current working directory is used.
@@ -322,6 +322,9 @@ to
 .IR mode-name .
 The default mode is \*(lqstream\*(rq mode.
 .TP
+\fBmodtime\fP \fIfile-name\fP
+Show the last modification time of the file on the remote machine.
+.TP
 \fBmput\fP \fIlocal-files\fP
 Expand wild cards in the list of local files given as arguments
 and do a \fBput\fR for each file in the resulting list.
@@ -331,6 +334,26 @@ Resulting file names will then be processed according to
 and
 .I nmap
 settings.
+.TP
+\fBnewer\fP \fIfile-name\fP
+Get the file only if the modification time of the remote file is more
+recent that the file on the current system. If the file does not
+exist on the current syste, the remote file is considered \fInewer\fP.
+Otherwise, this command is identical to \fBget\fP.
+.TP
+\fBnlist\fP [ \fIremote-directory\fP ] [ \fIlocal-file\fP ]
+Print an abbreviated listing of the contents of a
+directory on the remote machine.  If
+.I remote-directory
+is left unspecified, the current working directory is used.
+If interactive prompting is on,
+.I ftp
+will prompt the user to verify that the last argument is indeed the
+target local file for receiving
+.B nlist
+output.
+If no local file is specified, or if \fIlocal-file\fR is \fB-\fR,
+the output is sent to the terminal.
 .TP
 \fBnmap\fP [ \fIinpattern\fP \fIoutpattern\fP ]
 Set or unset the filename mapping mechanism.
@@ -365,7 +388,7 @@ All other characters are treated literally, and are used to determine the
 .B nmap
 .I inpattern
 variable values.
-For exmaple, given
+For example, given
 .I inpattern
 $1.$2 and the remote file name "mydata.data", $1 would have the value
 "mydata", and $2 would have the value "data".
@@ -505,10 +528,22 @@ server.
 \fBrecv\fP \fIremote-file\fP [ \fIlocal-file\fP ]
 A synonym for get.
 .TP
+\fBreget\fP \fIremote-file\fP [ \fIlocal-file\fP ]
+Reget acts like get, except that if \fIlocal-file\fP exists and is
+smaller than \fIremote-file\fP, \fIlocal-file\fP is presumed to be
+a partially transferred copy of \fIremote-file\fP and the transfer
+is continued from the apparent point of failure. This command
+is useful when transferring very large files over networks that
+are prone to dropping connections.
+.TP
 \fBremotehelp\fP [ \fIcommand-name\fP ]
 Request help from the remote FTP server.  If a 
 .I command-name
 is specified it is supplied to the server as well.
+.TP
+\fBremotestatus\fP [ \fIfile-name\fP ]
+With no arguments, show status of remote machine. If \fIfile-name\fP
+is specified, show status of \fIfile-name\fP on remote machine.
 .TP
 \fBrename\fP [ \fIfrom\fP ] [ \fIto\fP ]
 Rename the file
@@ -520,8 +555,13 @@ on the remote machine, to the file
 Clear reply queue.
 This command re-synchronizes command/reply sequencing with the remote
 ftp server.
-Resynchronization may be neccesary following a violation of the ftp protocol
+Resynchronization may be necessary following a violation of the ftp protocol
 by the remote server.
+.TP
+.BI restart " marker"
+Restart the immediately following \fBget\fP or \fBput\fP at the
+indicated \fImarker\fP. On UNIX systems, marker is usually a byte
+offset into the file.
 .TP
 .BI rmdir " directory-name"
 Delete a directory on the remote machine.
@@ -563,6 +603,9 @@ PORT commands for each data transfer.  This is useful
 for certain FTP implementations which do ignore PORT
 commands but, incorrectly, indicate they've been accepted.
 .TP
+.BI size " file-name"
+Return size of \fIfile-name\fP on remote machine.
+.TP
 .B status
 Show the current status of
 .IR ftp .
@@ -580,6 +623,9 @@ Remote ftp server must support ftp protocol STOU command for
 successful completion.
 The remote server will report unique name.
 Default value is off.
+.TP
+.B system
+Show the type of operating system running on the remote machine.
 .TP
 .B tenex
 Set the file transfer type to that needed to
@@ -791,6 +837,15 @@ Once a match is made, the subsequent .netrc tokens are processed,
 stopping when the end of file is reached or another
 .B machine
 token is encountered.
+.TP
+\fBdefault\fP \fIname\fP
+This is the same as \fBmachine\fP except that \fBdefault\fP always
+matches the machine \fIname\fP. This is normally used as:
+.ce
+default login anonymous password user@site
+thereby giving the user \fIautomatic\fP anonymous ftp login to
+machines not specified in \fB.netrc\fP. This can be overridden
+by using the \fB\-n\fP flag to disable auto-login.
 .TP
 \fBlogin\fP \fIname\fP
 Identify a user on the remote machine.

@@ -12,11 +12,11 @@
  * from this software without specific prior written permission.
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)domacro.c	1.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)domacro.c	1.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ftp_var.h"
@@ -127,7 +127,7 @@ TOP:
 			}
 			(*c->c_handler)(margc, margv);
 			if (bell && c->c_bell) {
-				(void) putchar(CTRL('g'));
+				(void) putchar('\007');
 			}
 			(void) strcpy(line, line2);
 			makeargv();

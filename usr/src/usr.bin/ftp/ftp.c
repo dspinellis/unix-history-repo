@@ -12,11 +12,11 @@
  * from this software without specific prior written permission.
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ftp_var.h"
@@ -26,6 +26,7 @@ static char sccsid[] = "@(#)ftp.c	5.22 (Berkeley) %G%";
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <sys/param.h>
+#include <sys/file.h>
 
 #include <netinet/in.h>
 #include <arpa/ftp.h>
@@ -46,6 +47,7 @@ int	ptflag = 0;
 int	connected;
 struct	sockaddr_in myctladdr;
 uid_t	getuid();
+off_t	restart_point = 0;
 
 FILE	*cin, *cout;
 FILE	*dataconn();
@@ -257,6 +259,8 @@ command(fmt, args)
 	return(r);
 }
 
+char reply_string[BUFSIZ];
+
 #include <ctype.h>
 
 getreply(expecteof)
@@ -264,10 +268,12 @@ getreply(expecteof)
 {
 	register int c, n;
 	register int dig;
+	register char *cp;
 	int originalcode = 0, continuation = 0, (*oldintr)(), cmdabort();
 	int pflag = 0;
 	char *pt = pasv;
 
+	cp = reply_string;
 	oldintr = signal(SIGINT,cmdabort);
 	for (;;) {
 		dig = n = code = 0;
@@ -334,6 +340,7 @@ getreply(expecteof)
 			}
 			if (n == 0)
 				n = c;
+			*cp++ = c;
 		}
 		if (verbose > 0 || verbose > -1 && n == '5') {
 			(void) putchar(c);
@@ -344,6 +351,7 @@ getreply(expecteof)
 				originalcode = code;
 			continue;
 		}
+		*cp = '\0';
 		if (n != '1')
 			cpend = 0;
 		(void) signal(SIGINT,oldintr);
@@ -389,6 +397,7 @@ sendrequest(cmd, local, remote)
 	register int c, d;
 	struct stat st;
 	struct timeval start, stop;
+	char *mode;
 
 	if (proxy) {
 		proxtrans(cmd, local, remote);
@@ -397,6 +406,7 @@ sendrequest(cmd, local, remote)
 	closefunc = NULL;
 	oldintr = NULL;
 	oldintp = NULL;
+	mode = "w";
 	if (setjmp(sendabort)) {
 		while (cpend) {
 			(void) getreply(0);
@@ -439,6 +449,7 @@ sendrequest(cmd, local, remote)
 		    (st.st_mode&S_IFMT) != S_IFREG) {
 			fprintf(stdout, "%s: not a plain file.\n", local);
 			(void) signal(SIGINT, oldintr);
+			fclose(fin);
 			code = -1;
 			return;
 		}
@@ -448,15 +459,40 @@ sendrequest(cmd, local, remote)
 		if (oldintp)
 			(void) signal(SIGPIPE, oldintp);
 		code = -1;
+		if (closefunc != NULL)
+			(*closefunc)(fin);
 		return;
 	}
 	if (setjmp(sendabort))
 		goto abort;
+
+	if (strcmp(cmd, "STOR") == 0 || strcmp(cmd, "APPE") == 0) {
+		if (restart_point) {
+			if (fseek(fin, (long) restart_point, 0) < 0) {
+				perror(local);
+				restart_point = 0;
+				if (closefunc != NULL)
+					(*closefunc)(fin);
+				return;
+			}
+			if (command("REST %ld", (long) restart_point)
+				!= CONTINUE) {
+				restart_point = 0;
+				if (closefunc != NULL)
+					(*closefunc)(fin);
+				return;
+			}
+			restart_point = 0;
+			mode = "r+w";
+		}
+	}
 	if (remote) {
 		if (command("%s %s", cmd, remote) != PRELIM) {
 			(void) signal(SIGINT, oldintr);
 			if (oldintp)
 				(void) signal(SIGPIPE, oldintp);
+			if (closefunc != NULL)
+				(*closefunc)(fin);
 			return;
 		}
 	} else
@@ -464,19 +500,22 @@ sendrequest(cmd, local, remote)
 			(void) signal(SIGINT, oldintr);
 			if (oldintp)
 				(void) signal(SIGPIPE, oldintp);
+			if (closefunc != NULL)
+				(*closefunc)(fin);
 			return;
 		}
-	dout = dataconn("w");
+	dout = dataconn(mode);
 	if (dout == NULL)
 		goto abort;
 	(void) gettimeofday(&start, (struct timezone *)0);
+	oldintp = signal(SIGPIPE, SIG_IGN);
 	switch (type) {
 
 	case TYPE_I:
 	case TYPE_L:
 		errno = d = 0;
 		while ((c = read(fileno (fin), buf, sizeof (buf))) > 0) {
-			if ((d = write(fileno (dout), buf, c)) < 0)
+			if ((d = write(fileno (dout), buf, c)) != c)
 				break;
 			bytes += c;
 			if (hash) {
@@ -490,8 +529,11 @@ sendrequest(cmd, local, remote)
 		}
 		if (c < 0)
 			perror(local);
-		if (d < 0)
-			perror("netout");
+		if (d < 0) {
+			if (errno != EPIPE) 
+				perror("netout");
+			bytes = -1;
+		}
 		break;
 
 	case TYPE_A:
@@ -522,8 +564,11 @@ sendrequest(cmd, local, remote)
 		}
 		if (ferror(fin))
 			perror(local);
-		if (ferror(dout))
-			perror("netout");
+		if (ferror(dout)) {
+			if (errno != EPIPE)
+				perror("netout");
+			bytes = -1;
+		}
 		break;
 	}
 	(void) gettimeofday(&stop, (struct timezone *)0);
@@ -532,6 +577,8 @@ sendrequest(cmd, local, remote)
 	(void) fclose(dout);
 	(void) getreply(0);
 	(void) signal(SIGINT, oldintr);
+	if (oldintp)
+		(void) signal(SIGPIPE, oldintp);
 	if (bytes > 0)
 		ptransfer("sent", bytes, &start, &stop, local, remote);
 	return;
@@ -575,21 +622,22 @@ recvrequest(cmd, local, remote, mode)
 {
 	FILE *fout, *din = 0, *popen();
 	int (*closefunc)(), pclose(), fclose(), (*oldintr)(), (*oldintp)(); 
-	int abortrecv(), oldverbose, oldtype = 0, tcrflag, nfnd;
+	int abortrecv(), oldverbose, oldtype = 0, is_retr, tcrflag, nfnd;
 	char buf[BUFSIZ], *gunique(), msg;
 	long bytes = 0, hashbytes = sizeof (buf);
 	struct fd_set mask;
 	register int c, d;
 	struct timeval start, stop;
 
-	if (proxy && strcmp(cmd,"RETR") == 0) {
+	is_retr = strcmp(cmd, "RETR") == 0;
+	if (proxy && is_retr) {
 		proxtrans(cmd, local, remote);
 		return;
 	}
 	closefunc = NULL;
 	oldintr = NULL;
 	oldintp = NULL;
-	tcrflag = !crflag && !strcmp(cmd, "RETR");
+	tcrflag = !crflag && is_retr;
 	if (setjmp(recvabort)) {
 		while (cpend) {
 			(void) getreply(0);
@@ -626,7 +674,7 @@ recvrequest(cmd, local, remote, mode)
 				return;
 			}
 			if (!runique && errno == EACCES &&
-			    chmod(local,0600) < 0) {
+			    chmod(local, 0600) < 0) {
 				perror(local);
 				(void) signal(SIGINT, oldintr);
 				code = -1;
@@ -652,13 +700,18 @@ recvrequest(cmd, local, remote, mode)
 	}
 	if (setjmp(recvabort))
 		goto abort;
-	if (strcmp(cmd, "RETR") && type != TYPE_A) {
-		oldtype = type;
-		oldverbose = verbose;
-		if (!debug)
-			verbose = 0;
-		setascii();
-		verbose = oldverbose;
+	if (!is_retr) {
+		if (type != TYPE_A) {
+			oldtype = type;
+			oldverbose = verbose;
+			if (!debug)
+				verbose = 0;
+			setascii();
+			verbose = oldverbose;
+		}
+	} else if (restart_point) {
+		if (command("REST %ld", (long) restart_point) != CONTINUE)
+			return;
 	}
 	if (remote) {
 		if (command("%s %s", cmd, remote) != PRELIM) {
@@ -676,7 +729,7 @@ recvrequest(cmd, local, remote, mode)
 					case TYPE_L:
 						settenex();
 						break;
-				}
+					}
 				verbose = oldverbose;
 			}
 			return;
@@ -697,7 +750,7 @@ recvrequest(cmd, local, remote, mode)
 					case TYPE_L:
 						settenex();
 						break;
-				}
+					}
 				verbose = oldverbose;
 			}
 			return;
@@ -730,9 +783,16 @@ recvrequest(cmd, local, remote, mode)
 
 	case TYPE_I:
 	case TYPE_L:
+		if (restart_point &&
+		    lseek(fileno(fout), (long) restart_point, L_SET) < 0) {
+			perror(local);
+			if (closefunc != NULL)
+				(*closefunc)(fout);
+			return;
+		}
 		errno = d = 0;
 		while ((c = read(fileno(din), buf, sizeof (buf))) > 0) {
-			if ((d = write(fileno(fout), buf, c)) < 0)
+			if ((d = write(fileno(fout), buf, c)) != c)
 				break;
 			bytes += c;
 			if (hash) {
@@ -744,13 +804,36 @@ recvrequest(cmd, local, remote, mode)
 			(void) putchar('\n');
 			(void) fflush(stdout);
 		}
-		if (c < 0)
-			perror("netin");
+		if (c < 0) {
+			if (errno != EPIPE)
+				perror("netin");
+			bytes = -1;
+		}
 		if (d < 0)
 			perror(local);
 		break;
 
 	case TYPE_A:
+		if (restart_point) {
+			register int i, n, c;
+			if (fseek(fout, 0L, L_SET) < 0)
+				goto done;
+			n = restart_point;
+			i = 0;
+			while(i++ < n) {
+				if ((c=getc(fout)) == EOF)
+					goto done;
+				if (c == '\n')
+					i++;
+			}	
+			if (fseek(fout, 0L, L_INCR) < 0) {
+done:
+				perror(local);
+				if (closefunc != NULL)
+					(*closefunc)(fout);
+				return;
+			}
+		}
 		while ((c = getc(din)) != EOF) {
 			while (c == '\r') {
 				while (hash && (bytes >= hashbytes)) {
@@ -764,10 +847,6 @@ recvrequest(cmd, local, remote, mode)
 						break;
 					(void) putc ('\r', fout);
 				}
-				/*if (c == '\0') {
-					bytes++;
-					continue;
-				}*/
 			}
 			(void) putc (c, fout);
 			bytes++;
@@ -778,8 +857,11 @@ recvrequest(cmd, local, remote, mode)
 			(void) putchar('\n');
 			(void) fflush(stdout);
 		}
-		if (ferror (din))
-			perror ("netin");
+		if (ferror (din)){
+			if (errno != EPIPE)
+				perror ("netin");
+			bytes = -1;
+		}
 		if (ferror (fout))
 			perror (local);
 		break;
@@ -792,7 +874,7 @@ recvrequest(cmd, local, remote, mode)
 	(void) gettimeofday(&stop, (struct timezone *)0);
 	(void) fclose(din);
 	(void) getreply(0);
-	if (bytes > 0)
+	if (bytes > 0 && is_retr)
 		ptransfer("received", bytes, &start, &stop, local, remote);
 	if (oldtype) {
 		if (!debug)
