@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)param.c	7.16 (Berkeley) %G%
+ *	@(#)param.c	7.17 (Berkeley) %G%
  */
 
 #ifndef lint
@@ -16,7 +16,6 @@ char copyright[] =
 #include "sys/param.h"
 #include "sys/systm.h"
 #include "sys/socket.h"
-#include "sys/user.h"
 #include "sys/proc.h"
 #include "sys/vnode.h"
 #include "sys/file.h"
@@ -48,7 +47,7 @@ int	tick = 1000000 / HZ;
 int	tickadj = 240000 / (60 * HZ);		/* can adjust 240ms in 60s */
 struct	timezone tz = { TIMEZONE, DST };
 #define	NPROC (20 + 8 * MAXUSERS)
-int	nproc = NPROC;
+int	maxproc = NPROC;
 #define NTEXT 100			/* actually the object cache */
 #define NVNODE (NPROC + NTEXT + 300)
 long	desiredvnodes = NVNODE;
@@ -88,7 +87,6 @@ int	nbuf, nswbuf;
  * them here forces loader errors if this file is omitted
  * (if they've been externed everywhere else; hah!).
  */
-struct	proc *proc, *procNPROC;
 struct	file *file, *fileNFILE;
 struct 	callout *callout;
 struct	cblock *cfree;
