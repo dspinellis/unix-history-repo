@@ -4,14 +4,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_subr.c	7.24 (Berkeley) %G%
+ *	@(#)ffs_subr.c	7.25 (Berkeley) %G%
  */
 
 #include <sys/param.h>
-#include <sys/systm.h>
 #include <ufs/ffs/fs.h>
 
 #ifdef KERNEL
+#include <sys/systm.h>
 #include <sys/vnode.h>
 #include <ufs/ffs/ffs_extern.h>
 #include <sys/buf.h>
