@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)string.h	5.8 (Berkeley) %G%
+ *	@(#)string.h	5.9 (Berkeley) %G%
  */
 
 #ifndef _STRING_H_
@@ -60,7 +60,7 @@ char	*strdup __P((const char *));
 void	 strmode __P((int, char *));
 int	 strncasecmp __P((const char *, const char *, size_t));
 char	*strsep __P((char **, const char *));
-void	 swab __P((const char *, char *, size_t));
+void	 swab __P((const void *, void *, size_t));
 #endif 
 __END_DECLS
 
