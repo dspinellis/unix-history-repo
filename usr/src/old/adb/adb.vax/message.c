@@ -6,10 +6,10 @@
  */
 
 #include	"mac.h"
-static	char sccsid[] = "@(#)message.c 4.1 %G%";
+static	char sccsid[] = "@(#)message.c 4.2 %G%";
 #include	"mode.h"
 
-MSG		VERSION =  "\nVERSION VM/VAX4.1	DATE %G%\n";
+MSG		VERSION =  "\nVERSION VM/VAX4.2	DATE %G%\n";
 
 MSG		BADMOD	=  "bad modifier";
 MSG		BADCOM	=  "bad command";
@@ -22,9 +22,6 @@ MSG		BADKET	=  "unexpected ')'";
 MSG		NOADR	=  "address expected";
 MSG		NOPCS	=  "no process";
 MSG		BADVAR	=  "bad variable";
-MSG		BADTXT	=  "text address not found";
-MSG		BADDAT	=  "data address not found";
-MSG		ODDADR	=  "odd address";
 MSG		EXBKPT	=  "too many breakpoints";
 MSG		A68BAD	=  "bad a68 frame";
 MSG		A68LNK	=  "bad a68 link";

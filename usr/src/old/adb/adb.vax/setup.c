@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)setup.c 4.2 %G%";
+static	char sccsid[] = "@(#)setup.c 4.3 %G%";
 /*
  * adb - routines to read a.out+core at startup
  */
@@ -96,14 +96,13 @@ setcor()
 	if (fcor != -1 && INKERNEL(filhdr.a_entry)) {
 		struct stat stb;
 
-		kernel = 1;
 		fstat(fcor, &stb);
 		if (stb.st_mode & S_IFREG)
 			kcore = 1;
-		/* this is phoney baloney... it is boogered in access.c */
 		datmap.b1 = 0;
 		datmap.e1 = -1;
-		/* end phoney baloney */
+		if (kernel == 0 && (stb.st_mode & S_IFREG))
+			datmap.b1 = 0x80000000;
 		lookup("_Sysmap");
 		sbr = cursym->n_value;
 		lookup("_Syssize");
