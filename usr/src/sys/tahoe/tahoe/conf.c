@@ -1,4 +1,4 @@
-/*	conf.c	1.4	86/01/26	*/
+/*	conf.c	1.5	86/07/16	*/
 
 #include "param.h"
 #include "systm.h"
@@ -10,20 +10,7 @@
 int	nulldev();
 int	nodev();
 
-/*   #include "ud.h" */
-#if NUD > 0
-int	udopen(),udstrategy(),udread(),udwrite(),uddump(),udioctl(),udsize();
-#else
-#define	udopen		nodev
-#define	udstrategy	nodev
-#define	udread		nodev
-#define	udwrite		nodev
-#define	uddump		nodev
-#define	udioctl		nodev
-#define	udsize		0
-#endif
-
-#include "fsd.h"
+#include "dk.h"
 #if NVD > 0
 int	vdopen(),vdstrategy(),vdread(),vdwrite(),vddump(),vdsize();
 #else
@@ -33,19 +20,6 @@ int	vdopen(),vdstrategy(),vdread(),vdwrite(),vddump(),vdsize();
 #define	vdwrite		nodev
 #define	vddump		nodev
 #define	vdsize		0
-#endif
-
-#define	NXP	0
-#if NXP > 0
-int	xpopen(),xpstrategy(),xpread(),xpwrite(),xpdump(),xpioctl(),xpsize();
-#else
-#define	xpopen		nodev
-#define	xpstrategy	nodev
-#define	xpread		nodev
-#define	xpwrite		nodev
-#define	xpdump		nodev
-#define	xpioctl		nodev
-#define	xpsize		0
 #endif
 
 #include "yc.h"
@@ -66,12 +40,12 @@ int	swstrategy(),swread(),swwrite();
 
 struct bdevsw	bdevsw[] =
 {
-	{ udopen,	nulldev,	udstrategy,	uddump,		/*0*/
-	  udsize,	0 },
+	{ nodev,	nulldev,	nodev,		nodev,		/*0*/
+	  0,		0 },
 	{ vdopen,	nulldev,	vdstrategy,	vddump,		/*1*/
 	  vdsize,	0 },
-	{ xpopen,	nulldev,	xpstrategy,	xpdump,		/*2*/
-	  xpsize,	0 },
+	{ nodev,	nulldev,	nodev,		nodev,		/*2*/
+	  0,		0 },
 	{ cyopen,	cyclose,	cystrategy,	cydump,		/*3*/
 	  0,		B_TAPE },
 	{ nodev,	nodev,		swstrategy,	nodev,		/*4*/
@@ -172,14 +146,14 @@ struct cdevsw	cdevsw[] =
 	nulldev,	nulldev,	mmread,		mmwrite,	/*3*/
 	nodev,		nulldev,	nulldev,	0,
 	mmselect,	nodev,
-	udopen,		nulldev,	udread,		udwrite,	/*4*/
-	udioctl,	nodev,		nulldev,	0,
+	nodev,		nulldev,	nodev,		nodev,		/*4*/
+	nodev,		nodev,		nulldev,	0,
 	seltrue,	nodev,
 	vdopen,		nulldev,	vdread,		vdwrite,	/*5*/
 	nodev,		nodev,		nulldev,	0,
 	seltrue,	nodev,
-	xpopen,		nulldev,	xpread,		xpwrite,	/*6*/
-	xpioctl,	nodev,		nulldev,	0,
+	nodev,		nulldev,	nodev,		nodev,		/*6*/
+	nodev,		nodev,		nulldev,	0,
 	seltrue,	nodev,
 	cyopen,		cyclose,	cyread,		cywrite,	/*7*/
 	cyioctl,	nodev,		cyreset,	0,
