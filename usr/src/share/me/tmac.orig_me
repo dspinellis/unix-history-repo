@@ -24,7 +24,7 @@
 .\"			to provide variant functions.
 .\"		---	an internal macro.
 .\"
-.\"	@(#)tmac.orig_me	1.3	%G%
+.\"	@(#)tmac.orig_me	1.4	%G%
 .\"
 .if !\n(.V .tm You are using the wrong version of NROFF/TROFF!!
 .if !\n(.V .tm This macro package works only on the version seven
@@ -231,11 +231,13 @@
 .	mk #T			\" for tbl commands
 .	ns
 .\}
-.if \\n(?a&(\\n($c<2:\\n(?w=0) \
+.if (\\n(?a)&((\\n($c<2):(\\n(?w=0)) \
 \{\
 .	nr ?a 0			\" output floating keep
-.	nr ?w 0
 .	@k |t
+.	if \\n(?w \
+.		mk _k		\" don't overstrike wide keeps
+.	nr ?w 0
 .\}
 .os
 .$H				\" special column header macro
