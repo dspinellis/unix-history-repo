@@ -33,7 +33,7 @@ error_message(code)
 	  goto oops;
      if (!table_num) {
 	  if (offset < sys_nerr)
-	       return(sys_errlist[offset]);
+	       return((char *)sys_errlist[offset]);
 	  else
 	       goto oops;
      }
