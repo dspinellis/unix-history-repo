@@ -1,0 +1,725 @@
+ADDCMD	/nbsd/usr/src/lib/libc/gen/setmode.c	/^#define	ADDCMD(a, b, c, d) \\$/
+ASSERT	/nbsd/usr/src/lib/libc/stdlib/malloc.c	/^#define	ASSERT(p)   if (!(p)) botch("p")$/
+BUF_INSERT	/nbsd/usr/src/lib/libc/db/hash/buf.c	/^#define BUF_INSERT(B,P)			\\$/
+BUF_REMOVE	/nbsd/usr/src/lib/libc/db/hash/buf.c	/^#define BUF_REMOVE(B)			\\$/
+CHAR	/nbsd/usr/src/lib/libc/gen/glob.c	/^#define	CHAR(c)		((c)&M_ASCII)$/
+CHDIR	/nbsd/usr/src/lib/libc/gen/fts.c	/^#define	CHDIR(sp, path)	(!ISSET(FTS_NOCHDIR) && ch/
+CONVTCK	/nbsd/usr/src/lib/libc/gen/clock.c	/^#define	CONVTCK(r)	(r.tv_sec * CLK_TCK + r.tv_usec/
+COPY	/nbsd/usr/src/lib/libc/stdio/fvwrite.c	/^#define	COPY(n)	  (void) bcopy((void *)p, (void *)/
+CRUNCH	/nbsd/usr/src/lib/libc/gen/crypt.c	/^#define	CRUNCH(p0, p1, q0, q1)	\\$/
+DCL_BLOCK	/nbsd/usr/src/lib/libc/gen/crypt.c	/^#define	DCL_BLOCK(d,d0,d1)		long d0, d1$/
+DIRSIZ	/nbsd/usr/src/lib/libc/gen/scandir.c	/^#define DIRSIZ(dp) \\$/
+DOXOR	/nbsd/usr/src/lib/libc/gen/crypt.c	/^#define	DOXOR(x,y,i)	x^=SPTAB(SPE[0][i],B.b[i]); y/
+EXPAND	/nbsd/usr/src/lib/libc/gen/getpwent.c	/^#define	EXPAND(e)	e = t; while (*t++ = *p++);$/
+FAIL	/nbsd/usr/src/lib/libc/gen/regexp/regexp.c	/^#define	FAIL(m)	{ regerror(m); return(NULL); }$/
+FCHDIR	/nbsd/usr/src/lib/libc/gen/fts.c	/^#define	FCHDIR(sp, fd)	(!ISSET(FTS_NOCHDIR) && fch/
+FD_CLR	/nbsd/usr/src/lib/libc/net/res_send.c	/^#define	FD_CLR(n, p)	((p)->fds_bits[(n)\/NFDBITS] /
+FD_ISSET	/nbsd/usr/src/lib/libc/net/res_send.c	/^#define	FD_ISSET(n, p)	((p)->fds_bits[(n)\/NFDBITS/
+FD_SET	/nbsd/usr/src/lib/libc/net/res_send.c	/^#define	FD_SET(n, p)	((p)->fds_bits[(n)\/NFDBITS] /
+FD_ZERO	/nbsd/usr/src/lib/libc/net/res_send.c	/^#define FD_ZERO(p)	bzero((char *)(p), sizeof(*(p))/
+FLUSH	/nbsd/usr/src/lib/libc/stdio/vfprintf.c	/^#define	FLUSH() { \\$/
+Field	/nbsd/usr/src/lib/libc/net/ns_addr.c	/^Field(buf, out, len)$/
+GETIOV	/nbsd/usr/src/lib/libc/stdio/fvwrite.c	/^#define GETIOV(extra_work) \\$/
+HASH	/nbsd/usr/src/lib/libc/db/btree/lruhash.c	/^#define HASH(l, pgno)	(pgno % l->lru_csize)$/
+HEAP	/nbsd/usr/src/lib/libc/stdlib/heapsort.c	/^#define	HEAP(initval) { \\$/
+ISDOT	/nbsd/usr/src/lib/libc/gen/fts.c	/^#define	ISDOT(a)	(a[0] == '.' && (!a[1] || a[1] ==/
+ISMULT	/nbsd/usr/src/lib/libc/gen/regexp/regexp.c	/^#define	ISMULT(c)	((c) == '*' || (c) == '+' || (c)/
+ISSET	/nbsd/usr/src/lib/libc/gen/fts.c	/^#define	ISSET(opt)	(sp->fts_options & opt)$/
+ISVALID	/nbsd/usr/src/lib/libc/gen/nlist.c	/^#define	ISVALID(p)	(p->_name && p->_name[0])$/
+LOAD	/nbsd/usr/src/lib/libc/gen/crypt.c	/^#define	LOAD(d,d0,d1,bl)		d0 = (bl).b32.i0, d1 = (/
+LOADREG	/nbsd/usr/src/lib/libc/gen/crypt.c	/^#define	LOADREG(d,d0,d1,s,s0,s1)	d0 = s0, d1 = s1$/
+LOCHASH	/nbsd/usr/src/lib/libc/gen/telldir.c	/^#define	LOCHASH(i)	((i)&(NDIRHASH-1))$/
+LRU_INSERT	/nbsd/usr/src/lib/libc/db/hash/buf.c	/^#define LRU_INSERT(B)	BUF_INSERT(B,LRU)$/
+META	/nbsd/usr/src/lib/libc/gen/glob.c	/^#define	META(c)		((c)|M_QUOTE)$/
+MIN	/nbsd/usr/src/lib/libc/stdio/fvwrite.c	/^#define	MIN(a, b) ((a) < (b) ? (a) : (b))$/
+MOD	/nbsd/usr/src/lib/libc/db/hash/dynahash.c	/^#define MOD(x,y)		((x) & ((y)-1))$/
+MRU_INSERT	/nbsd/usr/src/lib/libc/db/hash/buf.c	/^#define MRU_INSERT(B)	BUF_INSERT(B,(&hashp->bufhea/
+NAPPEND	/nbsd/usr/src/lib/libc/gen/fts.c	/^#define	NAPPEND(p) \\$/
+NEXT	/nbsd/usr/src/lib/libc/gen/regexp/regexp.c	/^#define	NEXT(p)	(((*((p)+1)&0377)<<8) + (*((p)+2)&/
+OP	/nbsd/usr/src/lib/libc/gen/regexp/regexp.c	/^#define	OP(p)	(*(p))$/
+OPERAND	/nbsd/usr/src/lib/libc/gen/regexp/regexp.c	/^#define	OPERAND(p)	((p) + 3)$/
+OR	/nbsd/usr/src/lib/libc/gen/crypt.c	/^#define	OR(d,d0,d1,bl)			d0 |= (bl).b32.i0, d1 |= /
+P	/nbsd/usr/src/lib/libc/gen/ctime.c	/^#define P(s)		s$/
+PAD	/nbsd/usr/src/lib/libc/stdio/vfprintf.c	/^#define	PAD(howmany, with) { \\$/
+PAGE_INIT	/nbsd/usr/src/lib/libc/db/hash/page.c	/^#define	PAGE_INIT(P)					\\$/
+PERM3264	/nbsd/usr/src/lib/libc/gen/crypt.c	/^#define	PERM3264(d,d0,d1,cpp,p)				\\$/
+PERM6464	/nbsd/usr/src/lib/libc/gen/crypt.c	/^#define	PERM6464(d,d0,d1,cpp,p)				\\$/
+PLURALIZE	/nbsd/usr/src/lib/libc/net/res_debug.c	/^#define	PLURALIZE(x)	x, (x == 1) ? "" : "s"$/
+PRINT	/nbsd/usr/src/lib/libc/stdio/vfprintf.c	/^#define	PRINT(ptr, len) { \\$/
+R	/nbsd/usr/src/lib/libc/gen/fts.c	/^#define	R(type, nelem, ptr) \\$/
+RETURN_ERROR	/nbsd/usr/src/lib/libc/db/hash/dynahash.c	/^#define RETURN_ERROR(ERR,LOC)	{ save_errno = ERR; /
+SARG	/nbsd/usr/src/lib/libc/stdio/vfprintf.c	/^#define	SARG() \\$/
+SET	/nbsd/usr/src/lib/libc/gen/fts.c	/^#define	SET(opt)	(sp->fts_options |= opt)$/
+SORT	/nbsd/usr/src/lib/libc/stdlib/qsort.c	/^#define	SORT(bot, n) { \\$/
+SPTAB	/nbsd/usr/src/lib/libc/gen/crypt.c	/^#define	SPTAB(t, i)	(*(long *)((unsigned char *)t /
+STORE	/nbsd/usr/src/lib/libc/gen/crypt.c	/^#define	STORE(s,s0,s1,bl)		(bl).b32.i0 = s0, (bl)./
+SWAP	/nbsd/usr/src/lib/libc/stdlib/heapsort.c	/^#define	SWAP(a, b) { \\$/
+TO_SIX_BIT	/nbsd/usr/src/lib/libc/gen/crypt.c	/^#define	TO_SIX_BIT(rslt, src) {				\\$/
+UARG	/nbsd/usr/src/lib/libc/stdio/vfprintf.c	/^#define	UARG() \\$/
+UC	/nbsd/usr/src/lib/libc/net/inet_ntoa.c	/^#define	UC(b)	(((int)b)&0xff)$/
+UCHARAT	/nbsd/usr/src/lib/libc/gen/regexp/regexp.c	/^#define	UCHARAT(p)	((int)*(unsigned char *)(p))$/
+ZERO	/nbsd/usr/src/lib/libc/gen/crypt.c	/^#define	ZERO(d,d0,d1)			d0 = 0, d1 = 0$/
+__add_ovflpage	/nbsd/usr/src/lib/libc/db/hash/page.c	/^__add_ovflpage ( bufp )$/
+__adddf3 /nbsd/usr/src/lib/libc/hp300/gen/adddf3.s /^ENTRY(__adddf3)$/
+__addel	/nbsd/usr/src/lib/libc/db/hash/page.c	/^__addel(bufp, key, val)$/
+__addsf3 /nbsd/usr/src/lib/libc/hp300/gen/addsf3.s /^ENTRY(__addsf3)$/
+__ashlsi3 /nbsd/usr/src/lib/libc/hp300/gen/ashlsi3.s /^ENTRY(__ashlsi3)$/
+__ashrsi3 /nbsd/usr/src/lib/libc/hp300/gen/ashrsi3.s /^ENTRY(__ashrsi3)$/
+__big_delete	/nbsd/usr/src/lib/libc/db/hash/bigkey.c	/^__big_delete (bufp, ndx)$/
+__big_insert	/nbsd/usr/src/lib/libc/db/hash/bigkey.c	/^__big_insert ( bufp, key, val )$/
+__big_keydata	/nbsd/usr/src/lib/libc/db/hash/bigkey.c	/^__big_keydata ( bufp, ndx, key, val, set )$/
+__big_return	/nbsd/usr/src/lib/libc/db/hash/bigkey.c	/^__big_return ( bufp, ndx, val, set_current )$/
+__big_split	/nbsd/usr/src/lib/libc/db/hash/bigkey.c	/^__big_split ( op, np, big_keyp, addr, obucket, ret/
+__buf_free	/nbsd/usr/src/lib/libc/db/hash/buf.c	/^__buf_free ( do_free, to_disk )$/
+__buf_init	/nbsd/usr/src/lib/libc/db/hash/buf.c	/^__buf_init ( nbytes )$/
+__builtin_saveregs	/nbsd/usr/src/lib/libc/hp300/gen/saveregs.c	/^__builtin_saveregs()$/
+__call_hash	/nbsd/usr/src/lib/libc/db/hash/dynahash.c	/^__call_hash ( k, len )$/
+__cmpdf2 /nbsd/usr/src/lib/libc/hp300/gen/cmpdf2.s /^ENTRY(__cmpdf2)$/
+__cmpsf2 /nbsd/usr/src/lib/libc/hp300/gen/cmpsf2.s /^ENTRY(__cmpsf2)$/
+__delpair	/nbsd/usr/src/lib/libc/db/hash/page.c	/^__delpair(bufp, ndx)$/
+__divdf3 /nbsd/usr/src/lib/libc/hp300/gen/divdf3.s /^ENTRY(__divdf3)$/
+__divsf3 /nbsd/usr/src/lib/libc/hp300/gen/divsf3.s /^ENTRY(__divsf3)$/
+__divsi3 /nbsd/usr/src/lib/libc/hp300/gen/divsi3.s /^ENTRY(__divsi3)$/
+__dn_skipname	/nbsd/usr/src/lib/libc/net/res_comp.c	/^__dn_skipname(comp_dn, eom)$/
+__expand_table	/nbsd/usr/src/lib/libc/db/hash/dynahash.c	/^__expand_table()$/
+__extendsfdf2 /nbsd/usr/src/lib/libc/hp300/gen/extendsfdf2.s /^ENTRY(__extendsfdf2)$/
+__find_bigpair	/nbsd/usr/src/lib/libc/db/hash/bigkey.c	/^__find_bigpair(bufp, ndx, key, size )$/
+__find_last_page	/nbsd/usr/src/lib/libc/db/hash/bigkey.c	/^__find_last_page ( bpp )$/
+__fixdfsi /nbsd/usr/src/lib/libc/hp300/gen/fixdfsi.s /^ENTRY(__fixdfsi)$/
+__fixunsdfsi /nbsd/usr/src/lib/libc/hp300/gen/fixunsdfsi.s /^ENTRY(__fixunsdfsi)$/
+__floatsidf /nbsd/usr/src/lib/libc/hp300/gen/floatsidf.s /^ENTRY(__floatsidf)$/
+__fp_query	/nbsd/usr/src/lib/libc/net/res_debug.c	/^__fp_query(msg,file)$/
+__free_ovflpage	/nbsd/usr/src/lib/libc/db/hash/page.c	/^__free_ovflpage ( obufp )$/
+__get_buf	/nbsd/usr/src/lib/libc/db/hash/buf.c	/^__get_buf ( addr, prev_bp, newpage )$/
+__get_page	/nbsd/usr/src/lib/libc/db/hash/page.c	/^__get_page ( p, bucket, is_bucket, is_disk, is_bit/
+__hashpw	/nbsd/usr/src/lib/libc/gen/getpwent.c	/^__hashpw(key)$/
+__hostalias	/nbsd/usr/src/lib/libc/net/res_query.c	/^__hostalias(name)$/
+__init_bitmap	/nbsd/usr/src/lib/libc/db/hash/page.c	/^__init_bitmap(pnum, nbits, ndx)$/
+__initdb	/nbsd/usr/src/lib/libc/gen/getpwent.c	/^__initdb()$/
+__log2	/nbsd/usr/src/lib/libc/db/hash/log2.c	/^__log2( num )$/
+__lshlsi3 /nbsd/usr/src/lib/libc/hp300/gen/lshlsi3.s /^ENTRY(__lshlsi3)$/
+__lshrsi3 /nbsd/usr/src/lib/libc/hp300/gen/lshrsi3.s /^ENTRY(__lshrsi3)$/
+__modsi3 /nbsd/usr/src/lib/libc/hp300/gen/modsi3.s /^ENTRY(__modsi3)$/
+__muldf3 /nbsd/usr/src/lib/libc/hp300/gen/muldf3.s /^ENTRY(__muldf3)$/
+__mulsf3 /nbsd/usr/src/lib/libc/hp300/gen/mulsf3.s /^ENTRY(__mulsf3)$/
+__mulsi3 /nbsd/usr/src/lib/libc/hp300/gen/mulsi3.s /^ENTRY(__mulsi3)$/
+__negdf2 /nbsd/usr/src/lib/libc/hp300/gen/negdf2.s /^ENTRY(__negdf2)$/
+__negsf2 /nbsd/usr/src/lib/libc/hp300/gen/negsf2.s /^ENTRY(__negsf2)$/
+__oldttyname	/nbsd/usr/src/lib/libc/gen/ttyname.c	/^__oldttyname(fd, sb)$/
+__p_class	/nbsd/usr/src/lib/libc/net/res_debug.c	/^__p_class(class)$/
+__p_query	/nbsd/usr/src/lib/libc/net/res_debug.c	/^__p_query(msg)$/
+__p_time	/nbsd/usr/src/lib/libc/net/res_debug.c	/^__p_time(value)$/
+__p_type	/nbsd/usr/src/lib/libc/net/res_debug.c	/^__p_type(type)$/
+__put_page	/nbsd/usr/src/lib/libc/db/hash/page.c	/^__put_page ( p, bucket, is_bucket, is_bitmap )$/
+__putlong	/nbsd/usr/src/lib/libc/net/res_comp.c	/^__putlong(l, msgp)$/
+__putshort	/nbsd/usr/src/lib/libc/net/res_comp.c	/^__putshort(s, msgp)$/
+__reclaim_buf	/nbsd/usr/src/lib/libc/db/hash/buf.c	/^__reclaim_buf ( bp )$/
+__sbprintf	/nbsd/usr/src/lib/libc/stdio/vfprintf.c	/^__sbprintf(fp, fmt, ap)$/
+__sccl	/nbsd/usr/src/lib/libc/stdio/vfscanf.c	/^__sccl(tab, fmt)$/
+__sclose	/nbsd/usr/src/lib/libc/stdio/stdio.c	/^__sclose(cookie)$/
+__sflags	/nbsd/usr/src/lib/libc/stdio/flags.c	/^__sflags(mode, optr)$/
+__sflush	/nbsd/usr/src/lib/libc/stdio/fflush.c	/^__sflush(fp)$/
+__sfp	/nbsd/usr/src/lib/libc/stdio/findfp.c	/^__sfp()$/
+__sfvwrite	/nbsd/usr/src/lib/libc/stdio/fvwrite.c	/^__sfvwrite(fp, uio)$/
+__sinit	/nbsd/usr/src/lib/libc/stdio/findfp.c	/^__sinit()$/
+__slbexpand	/nbsd/usr/src/lib/libc/stdio/fgetline.c	/^__slbexpand(fp, newsize)$/
+__smakebuf	/nbsd/usr/src/lib/libc/stdio/makebuf.c	/^__smakebuf(fp)$/
+__split_page	/nbsd/usr/src/lib/libc/db/hash/page.c	/^__split_page(obucket, nbucket)$/
+__sprint	/nbsd/usr/src/lib/libc/stdio/vfprintf.c	/^__sprint(fp, uio)$/
+__sread	/nbsd/usr/src/lib/libc/stdio/stdio.c	/^__sread(cookie, buf, n)$/
+__srefill	/nbsd/usr/src/lib/libc/stdio/refill.c	/^__srefill(fp)$/
+__srget	/nbsd/usr/src/lib/libc/stdio/rget.c	/^__srget(fp)$/
+__sseek	/nbsd/usr/src/lib/libc/stdio/stdio.c	/^__sseek(cookie, offset, whence)$/
+__subdf3 /nbsd/usr/src/lib/libc/hp300/gen/subdf3.s /^ENTRY(__subdf3)$/
+__submore	/nbsd/usr/src/lib/libc/stdio/ungetc.c	/^__submore(fp)$/
+__subsf3 /nbsd/usr/src/lib/libc/hp300/gen/subsf3.s /^ENTRY(__subsf3)$/
+__svfscanf	/nbsd/usr/src/lib/libc/stdio/vfscanf.c	/^__svfscanf(fp, fmt0, ap)$/
+__swbuf	/nbsd/usr/src/lib/libc/stdio/wbuf.c	/^__swbuf(c, fp)$/
+__swrite	/nbsd/usr/src/lib/libc/stdio/stdio.c	/^__swrite(cookie, buf, n)$/
+__swsetup	/nbsd/usr/src/lib/libc/stdio/wsetup.c	/^__swsetup(fp)$/
+__truncdfsf2 /nbsd/usr/src/lib/libc/hp300/gen/truncdfsf2.s /^ENTRY(__truncdfsf2)$/
+__udivsi3 /nbsd/usr/src/lib/libc/hp300/gen/udivsi3.s /^ENTRY(__udivsi3)$/
+__umodsi3 /nbsd/usr/src/lib/libc/hp300/gen/umodsi3.s /^ENTRY(__umodsi3)$/
+__umulsi3 /nbsd/usr/src/lib/libc/hp300/gen/umulsi3.s /^ENTRY(__umulsi3)$/
+_add	/nbsd/usr/src/lib/libc/string/strftime.c	/^_add(str)$/
+_bt_allocpg	/nbsd/usr/src/lib/libc/db/btree/storage.c	/^_bt_allocpg(t)$/
+_bt_binsrch	/nbsd/usr/src/lib/libc/db/btree/search.c	/^_bt_binsrch(t, key)$/
+_bt_buildret	/nbsd/usr/src/lib/libc/db/btree/utils.c	/^_bt_buildret(t, d, data, key)$/
+_bt_cmp	/nbsd/usr/src/lib/libc/db/btree/utils.c	/^_bt_cmp(t, p, n)$/
+_bt_crsrdel	/nbsd/usr/src/lib/libc/db/btree/delete.c	/^_bt_crsrdel(t)$/
+_bt_crsrkey	/nbsd/usr/src/lib/libc/db/btree/updutils.c	/^_bt_crsrkey(t)$/
+_bt_delindir	/nbsd/usr/src/lib/libc/db/btree/big.c	/^_bt_delindir(t, chain)$/
+_bt_delone	/nbsd/usr/src/lib/libc/db/btree/delete.c	/^_bt_delone(t, index)$/
+_bt_dopsplit	/nbsd/usr/src/lib/libc/db/btree/split.c	/^_bt_dopsplit(t, left, right)$/
+_bt_first	/nbsd/usr/src/lib/libc/db/btree/search.c	/^_bt_first(t, key)$/
+_bt_fixscan	/nbsd/usr/src/lib/libc/db/btree/updutils.c	/^_bt_fixscan(t, index, newd, op)$/
+_bt_getbig	/nbsd/usr/src/lib/libc/db/btree/big.c	/^_bt_getbig(t, pgno, p, sz)$/
+_bt_getdpage	/nbsd/usr/src/lib/libc/db/btree/storage.c	/^_bt_getdpage(t, pgno)$/
+_bt_getmpage	/nbsd/usr/src/lib/libc/db/btree/storage.c	/^_bt_getmpage(t, pgno)$/
+_bt_getpage	/nbsd/usr/src/lib/libc/db/btree/storage.c	/^_bt_getpage(t, pgno)$/
+_bt_indirect	/nbsd/usr/src/lib/libc/db/btree/big.c	/^_bt_indirect(t, data, pgno)$/
+_bt_insert	/nbsd/usr/src/lib/libc/db/btree/insert.c	/^_bt_insert(t, item, key, data, flag)$/
+_bt_insertat	/nbsd/usr/src/lib/libc/db/btree/insert.c	/^_bt_insertat(t, p, index)$/
+_bt_inserti	/nbsd/usr/src/lib/libc/db/btree/insert.c	/^_bt_inserti(t, id, pgno)$/
+_bt_isonpage	/nbsd/usr/src/lib/libc/db/btree/split.c	/^_bt_isonpage(t, new, prev)$/
+_bt_markchain	/nbsd/usr/src/lib/libc/db/btree/big.c	/^_bt_markchain(t, chain)$/
+_bt_pgin	/nbsd/usr/src/lib/libc/db/btree/storage.c	/^_bt_pgin(h, _lorder)$/
+_bt_pgout	/nbsd/usr/src/lib/libc/db/btree/storage.c	/^_bt_pgout(h, _lorder)$/
+_bt_pop	/nbsd/usr/src/lib/libc/db/btree/utils.c	/^_bt_pop(t)$/
+_bt_push	/nbsd/usr/src/lib/libc/db/btree/utils.c	/^_bt_push(t, pgno)$/
+_bt_release	/nbsd/usr/src/lib/libc/db/btree/storage.c	/^_bt_release(t, h)$/
+_bt_reposition	/nbsd/usr/src/lib/libc/db/btree/split.c	/^_bt_reposition(t, new, parent, prev)$/
+_bt_search	/nbsd/usr/src/lib/libc/db/btree/search.c	/^_bt_search(t, key)$/
+_bt_searchr	/nbsd/usr/src/lib/libc/db/btree/search.c	/^_bt_searchr(t, key)$/
+_bt_seqadvance	/nbsd/usr/src/lib/libc/db/btree/seq.c	/^_bt_seqadvance(t, flags)$/
+_bt_seqinit	/nbsd/usr/src/lib/libc/db/btree/seq.c	/^_bt_seqinit(t, key, flags)$/
+_bt_split	/nbsd/usr/src/lib/libc/db/btree/split.c	/^_bt_split(t)$/
+_bt_splitroot	/nbsd/usr/src/lib/libc/db/btree/split.c	/^_bt_splitroot(t)$/
+_bt_write	/nbsd/usr/src/lib/libc/db/btree/storage.c	/^_bt_write(t, h, relflag)$/
+_bt_wrtmeta	/nbsd/usr/src/lib/libc/db/btree/storage.c	/^_bt_wrtmeta(t)$/
+_btdump	/nbsd/usr/src/lib/libc/db/btree/utils.c	/^_btdump(tree)$/
+_checkhost	/nbsd/usr/src/lib/libc/net/rcmd.c	/^_checkhost(rhost, lhost, len)$/
+_cleanup	/nbsd/usr/src/lib/libc/stdio/findfp.c	/^_cleanup()$/
+_conv	/nbsd/usr/src/lib/libc/string/strftime.c	/^_conv(n, digits, pad)$/
+_endhtent	/nbsd/usr/src/lib/libc/net/gethostnamadr.c	/^_endhtent()$/
+_findenv	/nbsd/usr/src/lib/libc/stdlib/getenv.c	/^_findenv(name, offset)$/
+_fmt	/nbsd/usr/src/lib/libc/string/strftime.c	/^_fmt(format, t)$/
+_fwalk	/nbsd/usr/src/lib/libc/stdio/fwalk.c	/^_fwalk(function)$/
+_gethtbyaddr	/nbsd/usr/src/lib/libc/net/gethostnamadr.c	/^_gethtbyaddr(addr, len, type)$/
+_gethtbyname	/nbsd/usr/src/lib/libc/net/gethostnamadr.c	/^_gethtbyname(name)$/
+_gethtent	/nbsd/usr/src/lib/libc/net/gethostnamadr.c	/^_gethtent()$/
+_getlong	/nbsd/usr/src/lib/libc/net/res_comp.c	/^_getlong(msgp)$/
+_getshort	/nbsd/usr/src/lib/libc/net/res_comp.c	/^_getshort(msgp)$/
+_gettemp	/nbsd/usr/src/lib/libc/stdio/mktemp.c	/^_gettemp(path, doopen)$/
+_longjmp /nbsd/usr/src/lib/libc/hp300/gen/_setjmp.s /^ENTRY(_longjmp)$/
+_punt	/nbsd/usr/src/lib/libc/db/btree/utils.c	/^_punt()$/
+_res_close	/nbsd/usr/src/lib/libc/net/res_send.c	/^_res_close()$/
+_secs	/nbsd/usr/src/lib/libc/string/strftime.c	/^_secs(t)$/
+_seekdir	/nbsd/usr/src/lib/libc/gen/telldir.c	/^_seekdir(dirp, loc)$/
+_sethtent	/nbsd/usr/src/lib/libc/net/gethostnamadr.c	/^_sethtent(f)$/
+_setjmp /nbsd/usr/src/lib/libc/hp300/gen/_setjmp.s /^ENTRY(_setjmp)$/
+_tztab	/nbsd/usr/src/lib/libc/gen/timezone.c	/^_tztab(zone,dst)$/
+_validuser	/nbsd/usr/src/lib/libc/net/rcmd.c	/^_validuser(hostf, rhost, luser, ruser, baselen)$/
+abort	/nbsd/usr/src/lib/libc/stdlib/abort.c	/^abort()$/
+abs /nbsd/usr/src/lib/libc/hp300/stdlib/abs.s /^ENTRY(abs)$/
+addcmd	/nbsd/usr/src/lib/libc/gen/setmode.c	/^addcmd(set, op, who, oparg, mask)$/
+alarm	/nbsd/usr/src/lib/libc/gen/alarm.c	/^alarm(secs)$/
+alloc_segs	/nbsd/usr/src/lib/libc/db/hash/dynahash.c	/^alloc_segs ( nsegs )$/
+alloca /nbsd/usr/src/lib/libc/hp300/gen/alloca.s /^ENTRY(alloca)$/
+alphasort	/nbsd/usr/src/lib/libc/gen/scandir.c	/^alphasort(d1, d2)$/
+asctime	/nbsd/usr/src/lib/libc/gen/ctime.c	/^asctime(timeptr)$/
+atexit	/nbsd/usr/src/lib/libc/stdlib/atexit.c	/^atexit(fn)$/
+atof	/nbsd/usr/src/lib/libc/hp300/stdlib/atof.c	/^atof(p)$/
+atoi	/nbsd/usr/src/lib/libc/stdlib/atoi.c	/^atoi(str)$/
+atol	/nbsd/usr/src/lib/libc/stdlib/atol.c	/^atol(str)$/
+bcmp /nbsd/usr/src/lib/libc/hp300/string/bcmp.s /^ENTRY(bcmp)$/
+bcopy /nbsd/usr/src/lib/libc/hp300/string/bcopy.s /^ENTRY(bcopy)$/
+botch	/nbsd/usr/src/lib/libc/stdlib/malloc.c	/^botch(s)$/
+brk /nbsd/usr/src/lib/libc/hp300/sys/brk.s /^ENTRY(brk)$/
+bsearch	/nbsd/usr/src/lib/libc/stdlib/bsearch.c	/^bsearch(key, base0, nmemb, size, compar)$/
+bt_close	/nbsd/usr/src/lib/libc/db/btree/btree.c	/^bt_close(dbp)$/
+bt_delete	/nbsd/usr/src/lib/libc/db/btree/btree.c	/^bt_delete(dbp, key, flags)$/
+bt_get	/nbsd/usr/src/lib/libc/db/btree/btree.c	/^bt_get(dbp, key, data, flag)$/
+bt_open	/nbsd/usr/src/lib/libc/db/btree/btree.c	/^bt_open(f, flags, mode, b)$/
+bt_put	/nbsd/usr/src/lib/libc/db/btree/btree.c	/^bt_put(dbp, key, data, flag)$/
+bt_seq	/nbsd/usr/src/lib/libc/db/btree/btree.c	/^bt_seq(dbp, key, data, flags)$/
+bt_sync	/nbsd/usr/src/lib/libc/db/btree/btree.c	/^bt_sync(dbp)$/
+btree_open	/nbsd/usr/src/lib/libc/db/btree/btree.c	/^btree_open(f, flags, mode, b)$/
+buildargv	/nbsd/usr/src/lib/libc/gen/exec.c	/^buildargv(ap, arg, envpp)$/
+bzero /nbsd/usr/src/lib/libc/hp300/string/bzero.s /^ENTRY(bzero)$/
+calloc	/nbsd/usr/src/lib/libc/stdlib/calloc.c	/^calloc(num, size)$/
+cfgetispeed	/nbsd/usr/src/lib/libc/gen/termios.c	/^cfgetispeed(t)$/
+cfgetospeed	/nbsd/usr/src/lib/libc/gen/termios.c	/^cfgetospeed(t)$/
+cfmakeraw	/nbsd/usr/src/lib/libc/gen/termios.c	/^cfmakeraw(t)$/
+cfree	/nbsd/usr/src/lib/libc/stdlib/calloc.c	/^cfree(p)$/
+cfsetispeed	/nbsd/usr/src/lib/libc/gen/termios.c	/^cfsetispeed(t, speed)$/
+cfsetospeed	/nbsd/usr/src/lib/libc/gen/termios.c	/^cfsetospeed(t, speed)$/
+cfsetspeed	/nbsd/usr/src/lib/libc/gen/termios.c	/^cfsetspeed(t, speed)$/
+clearerr	/nbsd/usr/src/lib/libc/stdio/clrerr.c	/^clearerr(fp)$/
+clock	/nbsd/usr/src/lib/libc/gen/clock.c	/^clock()$/
+closedir	/nbsd/usr/src/lib/libc/gen/closedir.c	/^closedir(dirp)$/
+closelog	/nbsd/usr/src/lib/libc/gen/syslog.c	/^closelog()$/
+collect_data	/nbsd/usr/src/lib/libc/db/hash/bigkey.c	/^collect_data ( bufp, len, set )$/
+collect_key	/nbsd/usr/src/lib/libc/db/hash/bigkey.c	/^collect_key ( bufp, len, val, set )$/
+compare	/nbsd/usr/src/lib/libc/gen/glob.c	/^compare(p, q)$/
+compress_mode	/nbsd/usr/src/lib/libc/gen/setmode.c	/^compress_mode(set)$/
+creat	/nbsd/usr/src/lib/libc/compat-43/creat.c	/^creat(path, mode)$/
+crypt	/nbsd/usr/src/lib/libc/gen/crypt.c	/^crypt(key, setting)$/
+ctermid	/nbsd/usr/src/lib/libc/gen/ctermid.c	/^ctermid(s)$/
+ctime	/nbsd/usr/src/lib/libc/gen/ctime.c	/^ctime(timep)$/
+cuserid	/nbsd/usr/src/lib/libc/gen/getlogin.c	/^cuserid(s)$/
+cvt	/nbsd/usr/src/lib/libc/stdio/vfprintf.c	/^cvt(number, prec, flags, signp, fmtch, startp, end/
+cvtbase	/nbsd/usr/src/lib/libc/net/ns_addr.c	/^cvtbase(oldbase,newbase,input,inlen,result,reslen)/
+dbm_clearerr	/nbsd/usr/src/lib/libc/db/hash/ndbm.c	/^dbm_clearerr(db)$/
+dbm_close	/nbsd/usr/src/lib/libc/db/hash/ndbm.c	/^dbm_close(db)$/
+dbm_delete	/nbsd/usr/src/lib/libc/db/hash/ndbm.c	/^dbm_delete(db, key)$/
+dbm_error	/nbsd/usr/src/lib/libc/db/hash/ndbm.c	/^dbm_error(db)$/
+dbm_fetch	/nbsd/usr/src/lib/libc/db/hash/ndbm.c	/^dbm_fetch( db, key )$/
+dbm_firstkey	/nbsd/usr/src/lib/libc/db/hash/ndbm.c	/^dbm_firstkey(db)$/
+dbm_nextkey	/nbsd/usr/src/lib/libc/db/hash/ndbm.c	/^dbm_nextkey(db)$/
+dbm_open	/nbsd/usr/src/lib/libc/db/hash/ndbm.c	/^dbm_open( file, flags, mode )$/
+dbm_store	/nbsd/usr/src/lib/libc/db/hash/ndbm.c	/^dbm_store(db, key, content, flags)$/
+dcharhash	/nbsd/usr/src/lib/libc/db/hash/hfunc.c	/^#define dcharhash(h, c)	((h) = 0x63c63cd9*(h) + 0x/
+ddecode	/nbsd/usr/src/lib/libc/gen/disklabel.c	/^ddecode(str, area)$/
+des_cipher	/nbsd/usr/src/lib/libc/gen/crypt.c	/^des_cipher(in, out, salt, num_iter)$/
+des_setkey	/nbsd/usr/src/lib/libc/gen/crypt.c	/^des_setkey(key)$/
+detzcode	/nbsd/usr/src/lib/libc/gen/ctime.c	/^detzcode(codep)$/
+dgetent	/nbsd/usr/src/lib/libc/gen/disklabel.c	/^dgetent(bp, name)$/
+dgetflag	/nbsd/usr/src/lib/libc/gen/disklabel.c	/^dgetflag(id)$/
+dgetnum	/nbsd/usr/src/lib/libc/gen/disklabel.c	/^dgetnum(id)$/
+dgetstr	/nbsd/usr/src/lib/libc/gen/disklabel.c	/^dgetstr(id, area)$/
+difftime	/nbsd/usr/src/lib/libc/gen/difftime.c	/^difftime(time1, time0)$/
+div	/nbsd/usr/src/lib/libc/stdlib/div.c	/^div(num, denom)$/
+dn_comp	/nbsd/usr/src/lib/libc/net/res_comp.c	/^dn_comp(exp_dn, comp_dn, length, dnptrs, lastdnptr/
+dn_expand	/nbsd/usr/src/lib/libc/net/res_comp.c	/^dn_expand(msg, eomorig, comp_dn, exp_dn, length)$/
+dn_find	/nbsd/usr/src/lib/libc/net/res_comp.c	/^dn_find(exp_dn, msg, dnptrs, lastdnptr)$/
+dnamatch	/nbsd/usr/src/lib/libc/gen/disklabel.c	/^dnamatch(np)$/
+dskip	/nbsd/usr/src/lib/libc/gen/disklabel.c	/^dskip(bp)$/
+dumpmode	/nbsd/usr/src/lib/libc/gen/setmode.c	/^dumpmode(set)$/
+encrypt	/nbsd/usr/src/lib/libc/gen/crypt.c	/^encrypt(block, flag)$/
+endfsent	/nbsd/usr/src/lib/libc/gen/fstab.c	/^endfsent()$/
+endgrent	/nbsd/usr/src/lib/libc/gen/getgrent.c	/^endgrent()$/
+endhostent	/nbsd/usr/src/lib/libc/net/sethostent.c	/^endhostent()$/
+endnetent	/nbsd/usr/src/lib/libc/net/getnetent.c	/^endnetent()$/
+endprotoent	/nbsd/usr/src/lib/libc/net/getprotoent.c	/^endprotoent()$/
+endpwent	/nbsd/usr/src/lib/libc/gen/getpwent.c	/^endpwent()$/
+endservent	/nbsd/usr/src/lib/libc/net/getservent.c	/^endservent()$/
+endttyent	/nbsd/usr/src/lib/libc/gen/getttyent.c	/^endttyent()$/
+endusershell	/nbsd/usr/src/lib/libc/gen/getusershell.c	/^endusershell()$/
+eofread	/nbsd/usr/src/lib/libc/stdio/sscanf.c	/^eofread(cookie, buf, len)$/
+error	/nbsd/usr/src/lib/libc/gen/disklabel.c	/^error(err)$/
+execl	/nbsd/usr/src/lib/libc/gen/exec.c	/^execl(name, arg, va_alist)$/
+execle	/nbsd/usr/src/lib/libc/gen/exec.c	/^execle(name, arg, va_alist)$/
+execlp	/nbsd/usr/src/lib/libc/gen/exec.c	/^execlp(name, arg, va_alist)$/
+exect /nbsd/usr/src/lib/libc/hp300/sys/exect.s /^ENTRY(exect)$/
+execv	/nbsd/usr/src/lib/libc/gen/exec.c	/^execv(name, argv)$/
+execvp	/nbsd/usr/src/lib/libc/gen/exec.c	/^execvp(name, argv)$/
+exit	/nbsd/usr/src/lib/libc/stdlib/exit.c	/^exit(status)$/
+exponent	/nbsd/usr/src/lib/libc/stdio/vfprintf.c	/^exponent(p, exp, fmtch)$/
+f_prealloc	/nbsd/usr/src/lib/libc/stdio/findfp.c	/^f_prealloc()$/
+fabs /nbsd/usr/src/lib/libc/hp300/gen/fabs.s /^ENTRY(fabs)$/
+fclose	/nbsd/usr/src/lib/libc/stdio/fclose.c	/^fclose(fp)$/
+fdopen	/nbsd/usr/src/lib/libc/stdio/fdopen.c	/^fdopen(fd, mode)$/
+feof	/nbsd/usr/src/lib/libc/stdio/feof.c	/^feof(fp)$/
+ferror	/nbsd/usr/src/lib/libc/stdio/ferror.c	/^ferror(fp)$/
+fetch_bitmap	/nbsd/usr/src/lib/libc/db/hash/page.c	/^fetch_bitmap ( ndx ) $/
+fflush	/nbsd/usr/src/lib/libc/stdio/fflush.c	/^fflush(fp)$/
+ffs /nbsd/usr/src/lib/libc/hp300/string/ffs.s /^ENTRY(ffs)$/
+fgetc	/nbsd/usr/src/lib/libc/stdio/fgetc.c	/^fgetc(fp)$/
+fgetline	/nbsd/usr/src/lib/libc/stdio/fgetline.c	/^fgetline(fp, lenp)$/
+fgetpos	/nbsd/usr/src/lib/libc/stdio/fgetpos.c	/^fgetpos(fp, pos)$/
+fgets	/nbsd/usr/src/lib/libc/stdio/fgets.c	/^fgets(buf, n, fp)$/
+fileno	/nbsd/usr/src/lib/libc/stdio/fileno.c	/^fileno(fp)$/
+findbucket	/nbsd/usr/src/lib/libc/stdlib/malloc.c	/^findbucket(freep, srchlen)$/
+first_free	/nbsd/usr/src/lib/libc/db/hash/page.c	/^first_free ( map )$/
+flush_meta	/nbsd/usr/src/lib/libc/db/hash/dynahash.c	/^flush_meta()$/
+fnmatch	/nbsd/usr/src/lib/libc/gen/fnmatch.c	/^fnmatch(pattern, string, flags)$/
+fopen	/nbsd/usr/src/lib/libc/stdio/fopen.c	/^fopen(file, mode)$/
+fork /nbsd/usr/src/lib/libc/hp300/sys/fork.s /^SYSCALL(fork)$/
+fprintf	/nbsd/usr/src/lib/libc/stdio/fprintf.c	/^fprintf(fp, fmt, va_alist)$/
+fpurge	/nbsd/usr/src/lib/libc/stdio/fpurge.c	/^fpurge(fp)$/
+fputc	/nbsd/usr/src/lib/libc/stdio/fputc.c	/^fputc(c, fp)$/
+fputs	/nbsd/usr/src/lib/libc/stdio/fputs.c	/^fputs(s, fp)$/
+fread	/nbsd/usr/src/lib/libc/stdio/fread.c	/^fread(buf, size, count, fp)$/
+free	/nbsd/usr/src/lib/libc/stdlib/malloc.c	/^free(cp)$/
+freopen	/nbsd/usr/src/lib/libc/stdio/freopen.c	/^freopen(file, mode, fp)$/
+frexp	/nbsd/usr/src/lib/libc/hp300/gen/frexp.c	/^frexp(value, eptr)$/
+fscanf	/nbsd/usr/src/lib/libc/stdio/fscanf.c	/^fscanf(FILE *fp, char const *fmt, ...) {$/
+fseek	/nbsd/usr/src/lib/libc/stdio/fseek.c	/^fseek(fp, offset, whence)$/
+fsetpos	/nbsd/usr/src/lib/libc/stdio/fsetpos.c	/^fsetpos(iop, pos)$/
+fstabscan	/nbsd/usr/src/lib/libc/gen/fstab.c	/^fstabscan()$/
+ftell	/nbsd/usr/src/lib/libc/stdio/ftell.c	/^ftell(fp)$/
+fts_alloc	/nbsd/usr/src/lib/libc/gen/fts.c	/^fts_alloc(sp, name, len)$/
+fts_build	/nbsd/usr/src/lib/libc/gen/fts.c	/^fts_build(sp, type)$/
+fts_children	/nbsd/usr/src/lib/libc/gen/fts.c	/^fts_children(sp)$/
+fts_close	/nbsd/usr/src/lib/libc/gen/fts.c	/^fts_close(sp)$/
+fts_lfree	/nbsd/usr/src/lib/libc/gen/fts.c	/^fts_lfree(head)$/
+fts_load	/nbsd/usr/src/lib/libc/gen/fts.c	/^fts_load(sp, p)$/
+fts_open	/nbsd/usr/src/lib/libc/gen/fts.c	/^fts_open(argv, options, compar)$/
+fts_path	/nbsd/usr/src/lib/libc/gen/fts.c	/^fts_path(sp, size)$/
+fts_read	/nbsd/usr/src/lib/libc/gen/fts.c	/^fts_read(sp)$/
+fts_set	/nbsd/usr/src/lib/libc/gen/fts.c	/^fts_set(sp, p, instr)$/
+fts_sort	/nbsd/usr/src/lib/libc/gen/fts.c	/^fts_sort(sp, head, nitems)$/
+fts_stat	/nbsd/usr/src/lib/libc/gen/fts.c	/^fts_stat(sp, p, follow)$/
+funopen	/nbsd/usr/src/lib/libc/stdio/funopen.c	/^funopen(cookie, readfn, writefn, seekfn, closefn)$/
+fwrite	/nbsd/usr/src/lib/libc/stdio/fwrite.c	/^fwrite(buf, size, count, fp)$/
+g_Ctoc	/nbsd/usr/src/lib/libc/gen/glob.c	/^g_Ctoc(str, buf)$/
+g_lstat	/nbsd/usr/src/lib/libc/gen/glob.c	/^g_lstat(fn, sb)$/
+g_opendir	/nbsd/usr/src/lib/libc/gen/glob.c	/^g_opendir(str)$/
+g_stat	/nbsd/usr/src/lib/libc/gen/glob.c	/^g_stat(fn, sb)$/
+g_strchr	/nbsd/usr/src/lib/libc/gen/glob.c	/^g_strchr(str, ch)$/
+getanswer	/nbsd/usr/src/lib/libc/net/gethostnamadr.c	/^getanswer(answer, anslen, iquery)$/
+getc	/nbsd/usr/src/lib/libc/stdio/getc.c	/^getc(fp)$/
+getchar	/nbsd/usr/src/lib/libc/stdio/getchar.c	/^getchar()$/
+getcwd	/nbsd/usr/src/lib/libc/gen/getcwd.c	/^getcwd(pt, size)$/
+getdiskbyname	/nbsd/usr/src/lib/libc/gen/disklabel.c	/^getdiskbyname(name)$/
+getenv	/nbsd/usr/src/lib/libc/stdlib/getenv.c	/^getenv(name)$/
+getfsent	/nbsd/usr/src/lib/libc/gen/fstab.c	/^getfsent()$/
+getfsfile	/nbsd/usr/src/lib/libc/gen/fstab.c	/^getfsfile(name)$/
+getfsspec	/nbsd/usr/src/lib/libc/gen/fstab.c	/^getfsspec(name)$/
+getgrent	/nbsd/usr/src/lib/libc/gen/getgrent.c	/^getgrent()$/
+getgrgid	/nbsd/usr/src/lib/libc/gen/getgrent.c	/^getgrgid(gid)$/
+getgrnam	/nbsd/usr/src/lib/libc/gen/getgrent.c	/^getgrnam(name)$/
+gethostbyaddr	/nbsd/usr/src/lib/libc/net/gethostnamadr.c	/^gethostbyaddr(addr, len, type)$/
+gethostbyname	/nbsd/usr/src/lib/libc/net/gethostnamadr.c	/^gethostbyname(name)$/
+getlogin	/nbsd/usr/src/lib/libc/gen/getlogin.c	/^getlogin()$/
+getmntinfo	/nbsd/usr/src/lib/libc/gen/getmntinfo.c	/^getmntinfo(mntbufp, flags)$/
+getmode	/nbsd/usr/src/lib/libc/gen/setmode.c	/^getmode(bbox, omode)$/
+getnetbyaddr	/nbsd/usr/src/lib/libc/net/getnetbyaddr.c	/^getnetbyaddr(net, type)$/
+getnetbyname	/nbsd/usr/src/lib/libc/net/getnetbyname.c	/^getnetbyname(name)$/
+getnetent	/nbsd/usr/src/lib/libc/net/getnetent.c	/^getnetent()$/
+getnum	/nbsd/usr/src/lib/libc/gen/ctime.c	/^getnum(strp, nump, min, max)$/
+getnumdflt	/nbsd/usr/src/lib/libc/gen/disklabel.c	/^#define getnumdflt(field, dname, dflt) \\$/
+getoffset	/nbsd/usr/src/lib/libc/gen/ctime.c	/^getoffset(strp, offsetp)$/
+getopt	/nbsd/usr/src/lib/libc/stdlib/getopt.c	/^getopt(nargc, nargv, ostr)$/
+getpass	/nbsd/usr/src/lib/libc/gen/getpass.c	/^getpass(prompt)$/
+getprotobyname	/nbsd/usr/src/lib/libc/net/getprotoname.c	/^getprotobyname(name)$/
+getprotobynumber	/nbsd/usr/src/lib/libc/net/getproto.c	/^getprotobynumber(proto)$/
+getprotoent	/nbsd/usr/src/lib/libc/net/getprotoent.c	/^getprotoent()$/
+getpwent	/nbsd/usr/src/lib/libc/gen/getpwent.c	/^getpwent()$/
+getpwnam	/nbsd/usr/src/lib/libc/gen/getpwent.c	/^getpwnam(name)$/
+getpwuid	/nbsd/usr/src/lib/libc/gen/getpwent.c	/^getpwuid(uid)$/
+getrule	/nbsd/usr/src/lib/libc/gen/ctime.c	/^getrule(strp, rulep)$/
+gets	/nbsd/usr/src/lib/libc/stdio/gets.c	/^gets(buf)$/
+getsecs	/nbsd/usr/src/lib/libc/gen/ctime.c	/^getsecs(strp, secsp)$/
+getservbyname	/nbsd/usr/src/lib/libc/net/getservbyname.c	/^getservbyname(name, proto)$/
+getservbyport	/nbsd/usr/src/lib/libc/net/getservbyport.c	/^getservbyport(port, proto)$/
+getservent	/nbsd/usr/src/lib/libc/net/getservent.c	/^getservent()$/
+getsubopt	/nbsd/usr/src/lib/libc/gen/getsubopt.c	/^getsubopt(optionp, tokens, valuep)$/
+getttyent	/nbsd/usr/src/lib/libc/gen/getttyent.c	/^getttyent()$/
+getttynam	/nbsd/usr/src/lib/libc/gen/getttyent.c	/^getttynam(tty)$/
+gettype	/nbsd/usr/src/lib/libc/gen/disklabel.c	/^gettype(t, names)$/
+getusershell	/nbsd/usr/src/lib/libc/gen/getusershell.c	/^getusershell()$/
+getw	/nbsd/usr/src/lib/libc/stdio/getw.c	/^getw(fp)$/
+getwd	/nbsd/usr/src/lib/libc/compat-43/getwd.c	/^getwd(buf)$/
+getzname	/nbsd/usr/src/lib/libc/gen/ctime.c	/^getzname(strp)$/
+glob	/nbsd/usr/src/lib/libc/gen/glob.c	/^glob(pattern, flags, errfunc, pglob)$/
+glob1	/nbsd/usr/src/lib/libc/gen/glob.c	/^glob1(pattern, pglob)$/
+glob2	/nbsd/usr/src/lib/libc/gen/glob.c	/^glob2(pathbuf, pathend, pattern, pglob)$/
+glob3	/nbsd/usr/src/lib/libc/gen/glob.c	/^glob3(pathbuf, pathend, pattern, restpattern, pglo/
+globextend	/nbsd/usr/src/lib/libc/gen/glob.c	/^globextend(path, pglob)$/
+globfree	/nbsd/usr/src/lib/libc/gen/glob.c	/^globfree(pglob)$/
+gmtime	/nbsd/usr/src/lib/libc/gen/ctime.c	/^gmtime(timep)$/
+gmtload	/nbsd/usr/src/lib/libc/gen/ctime.c	/^gmtload(sp)$/
+gmtsub	/nbsd/usr/src/lib/libc/gen/ctime.c	/^gmtsub(timep, offset, tmp)$/
+grscan	/nbsd/usr/src/lib/libc/gen/getgrent.c	/^grscan(search, gid, name)$/
+hash1	/nbsd/usr/src/lib/libc/db/hash/hfunc.c	/^hash1(key,len)$/
+hash2	/nbsd/usr/src/lib/libc/db/hash/hfunc.c	/^hash2(str, n)$/
+hash3	/nbsd/usr/src/lib/libc/db/hash/hfunc.c	/^hash3(key,nbytes)$/
+hash4	/nbsd/usr/src/lib/libc/db/hash/hfunc.c	/^hash4(key,nbytes)$/
+hash_access	/nbsd/usr/src/lib/libc/db/hash/dynahash.c	/^hash_access(action, key, val)$/
+hash_close	/nbsd/usr/src/lib/libc/db/hash/dynahash.c	/^hash_close (dbp)$/
+hash_delete	/nbsd/usr/src/lib/libc/db/hash/dynahash.c	/^hash_delete ( dbp, key, flag )$/
+hash_get	/nbsd/usr/src/lib/libc/db/hash/dynahash.c	/^hash_get ( dbp, key, data, flag )$/
+hash_open	/nbsd/usr/src/lib/libc/db/hash/dynahash.c	/^hash_open ( file, flags, mode, info )$/
+hash_put	/nbsd/usr/src/lib/libc/db/hash/dynahash.c	/^hash_put ( dbp, key, data, flag )$/
+hash_realloc	/nbsd/usr/src/lib/libc/db/hash/dynahash.c	/^hash_realloc ( p_ptr, oldsize, newsize )$/
+hash_seq	/nbsd/usr/src/lib/libc/db/hash/dynahash.c	/^hash_seq(dbp, key, data, flag)$/
+hash_sync	/nbsd/usr/src/lib/libc/db/hash/dynahash.c	/^hash_sync(dbp)$/
+hcreate	/nbsd/usr/src/lib/libc/db/hash/hsearch.c	/^hcreate ( nel )$/
+hdestroy	/nbsd/usr/src/lib/libc/db/hash/dynahash.c	/^hdestroy()$/
+heapsort	/nbsd/usr/src/lib/libc/stdlib/heapsort.c	/^heapsort(bot, nmemb, size, compar)$/
+herror	/nbsd/usr/src/lib/libc/net/herror.c	/^herror(s)$/
+hsearch	/nbsd/usr/src/lib/libc/db/hash/hsearch.c	/^hsearch ( item, action )$/
+htonl /nbsd/usr/src/lib/libc/hp300/net/htonl.s /^ENTRY(htonl)$/
+htons /nbsd/usr/src/lib/libc/hp300/net/htons.s /^ENTRY(htons)$/
+index /nbsd/usr/src/lib/libc/hp300/string/index.s /^ENTRY(index)$/
+inet_addr	/nbsd/usr/src/lib/libc/net/inet_addr.c	/^inet_addr(cp)$/
+inet_aton	/nbsd/usr/src/lib/libc/net/inet_addr.c	/^inet_aton(cp, addr)$/
+inet_lnaof	/nbsd/usr/src/lib/libc/net/inet_lnaof.c	/^inet_lnaof(in)$/
+inet_makeaddr	/nbsd/usr/src/lib/libc/net/inet_makeaddr.c	/^inet_makeaddr(net, host)$/
+inet_netof	/nbsd/usr/src/lib/libc/net/inet_netof.c	/^inet_netof(in)$/
+inet_network	/nbsd/usr/src/lib/libc/net/inet_network.c	/^inet_network(cp)$/
+inet_ntoa	/nbsd/usr/src/lib/libc/net/inet_ntoa.c	/^inet_ntoa(in)$/
+init_des	/nbsd/usr/src/lib/libc/gen/crypt.c	/^init_des()$/
+init_hash	/nbsd/usr/src/lib/libc/db/hash/dynahash.c	/^init_hash( info )$/
+init_htab	/nbsd/usr/src/lib/libc/db/hash/dynahash.c	/^init_htab ( nelem )$/
+init_perm	/nbsd/usr/src/lib/libc/gen/crypt.c	/^init_perm(perm, p, chars_in, chars_out)$/
+initgroups	/nbsd/usr/src/lib/libc/gen/initgroups.c	/^initgroups(uname, agroup)$/
+initshells	/nbsd/usr/src/lib/libc/gen/getusershell.c	/^initshells()$/
+initstate	/nbsd/usr/src/lib/libc/stdlib/random.c	/^initstate(seed, arg_state, n)$/
+insertion_sort	/nbsd/usr/src/lib/libc/stdlib/qsort.c	/^insertion_sort(bot, nmemb, size, compar)$/
+is_digit	/nbsd/usr/src/lib/libc/stdio/vfprintf.c	/^#define is_digit(c)	((unsigned)to_digit(c) <= 9)$/
+isalnum	/nbsd/usr/src/lib/libc/gen/isctype.c	/^isalnum(c)$/
+isalpha	/nbsd/usr/src/lib/libc/gen/isctype.c	/^isalpha(c)$/
+isatty	/nbsd/usr/src/lib/libc/gen/isatty.c	/^isatty(fd)$/
+iscntrl	/nbsd/usr/src/lib/libc/gen/isctype.c	/^iscntrl(c)$/
+isdigit	/nbsd/usr/src/lib/libc/gen/isctype.c	/^isdigit(c)$/
+isgraph	/nbsd/usr/src/lib/libc/gen/isctype.c	/^isgraph(c)$/
+isinf	/nbsd/usr/src/lib/libc/hp300/gen/isinf.c	/^isinf(d)$/
+islower	/nbsd/usr/src/lib/libc/gen/isctype.c	/^islower(c)$/
+ismeta	/nbsd/usr/src/lib/libc/gen/glob.c	/^#define	ismeta(c)	(((c)&M_QUOTE) != 0)$/
+isnan	/nbsd/usr/src/lib/libc/hp300/gen/isinf.c	/^isnan(d)$/
+iso_addr	/nbsd/usr/src/lib/libc/net/iso_addr.c	/^iso_addr(addr)$/
+iso_ntoa	/nbsd/usr/src/lib/libc/net/iso_addr.c	/^iso_ntoa(isoa)$/
+isoctal	/nbsd/usr/src/lib/libc/gen/unvis.c	/^#define	isoctal(c)	(((u_char)(c)) >= '0' && ((u_ch/
+isprint	/nbsd/usr/src/lib/libc/gen/isctype.c	/^isprint(c)$/
+ispunct	/nbsd/usr/src/lib/libc/gen/isctype.c	/^ispunct(c)$/
+isspace	/nbsd/usr/src/lib/libc/gen/isctype.c	/^isspace(c)$/
+isupper	/nbsd/usr/src/lib/libc/gen/isctype.c	/^isupper(c)$/
+isxdigit	/nbsd/usr/src/lib/libc/gen/isctype.c	/^isxdigit(c)$/
+killpg	/nbsd/usr/src/lib/libc/compat-43/killpg.c	/^killpg(pgid, sig)$/
+labs	/nbsd/usr/src/lib/libc/stdlib/labs.c	/^labs(j)$/
+ldexp /nbsd/usr/src/lib/libc/hp300/gen/ldexp.s /^ENTRY(ldexp)$/
+ldiv	/nbsd/usr/src/lib/libc/stdlib/ldiv.c	/^ldiv(num, denom)$/
+lflush	/nbsd/usr/src/lib/libc/stdio/refill.c	/^lflush(fp)$/
+link_addr	/nbsd/usr/src/lib/libc/net/linkaddr.c	/^link_addr(addr, sdl)$/
+link_ntoa	/nbsd/usr/src/lib/libc/net/linkaddr.c	/^link_ntoa(sdl)$/
+localeconv	/nbsd/usr/src/lib/libc/locale/localeconv.c	/^localeconv()$/
+localsub	/nbsd/usr/src/lib/libc/gen/ctime.c	/^localsub(timep, offset, tmp)$/
+localtime	/nbsd/usr/src/lib/libc/gen/ctime.c	/^localtime(timep)$/
+longjmp /nbsd/usr/src/lib/libc/hp300/gen/setjmp.s /^ENTRY(longjmp)$/
+longjmperror	/nbsd/usr/src/lib/libc/gen/setjmperr.c	/^longjmperror()$/
+lruflush	/nbsd/usr/src/lib/libc/db/btree/lrucache.c	/^lruflush(l, lruent)$/
+lrufree	/nbsd/usr/src/lib/libc/db/btree/lrucache.c	/^lrufree(lru)$/
+lruget	/nbsd/usr/src/lib/libc/db/btree/lrucache.c	/^lruget(lru, pgno, nread)$/
+lrugetnew	/nbsd/usr/src/lib/libc/db/btree/lrucache.c	/^lrugetnew(lru, pgno, nread)$/
+lrugetpg	/nbsd/usr/src/lib/libc/db/btree/lrutils.c	/^lrugetpg(l, pgno, nread, f)$/
+lrugrow	/nbsd/usr/src/lib/libc/db/btree/lrutils.c	/^lrugrow(l)$/
+lruhashdel	/nbsd/usr/src/lib/libc/db/btree/lruhash.c	/^lruhashdel(l, pgno)$/
+lruhashget	/nbsd/usr/src/lib/libc/db/btree/lruhash.c	/^lruhashget(l, pgno)$/
+lruhashput	/nbsd/usr/src/lib/libc/db/btree/lruhash.c	/^lruhashput(l, pgno, lruent)$/
+lruhead	/nbsd/usr/src/lib/libc/db/btree/lrutils.c	/^lruhead(l, lruent)$/
+lruinit	/nbsd/usr/src/lib/libc/db/btree/lrucache.c	/^lruinit(fd, cachesz, pagesz, opaque, inproc, outpr/
+lrurelease	/nbsd/usr/src/lib/libc/db/btree/lrucache.c	/^lrurelease(lru, pgno)$/
+lrusync	/nbsd/usr/src/lib/libc/db/btree/lrucache.c	/^lrusync(lru)$/
+lruwrite	/nbsd/usr/src/lib/libc/db/btree/lrucache.c	/^lruwrite(lru, pgno)$/
+malloc	/nbsd/usr/src/lib/libc/stdlib/malloc.c	/^malloc(nbytes)$/
+match	/nbsd/usr/src/lib/libc/gen/glob.c	/^match(name, pat, patend)$/
+mblen	/nbsd/usr/src/lib/libc/stdlib/multibyte.c	/^mblen(s, n)$/
+mbstowcs	/nbsd/usr/src/lib/libc/stdlib/multibyte.c	/^mbstowcs(pwcs, s, n)$/
+mbtowc	/nbsd/usr/src/lib/libc/stdlib/multibyte.c	/^mbtowc(pwc, s, n)$/
+memccpy	/nbsd/usr/src/lib/libc/string/memccpy.c	/^memccpy(t, f, c, n)$/
+memchr	/nbsd/usr/src/lib/libc/string/memchr.c	/^memchr(s, c, n)$/
+memcmp	/nbsd/usr/src/lib/libc/string/memcmp.c	/^memcmp(s1, s2, n)$/
+memset	/nbsd/usr/src/lib/libc/string/memset.c	/^memset(dst, c, n)$/
+mkstemp	/nbsd/usr/src/lib/libc/stdio/mktemp.c	/^mkstemp(path)$/
+mktemp	/nbsd/usr/src/lib/libc/stdio/mktemp.c	/^mktemp(path)$/
+mktime	/nbsd/usr/src/lib/libc/gen/ctime.c	/^mktime(tmp)$/
+modf /nbsd/usr/src/lib/libc/hp300/gen/modf.s /^ENTRY(modf)$/
+morecore	/nbsd/usr/src/lib/libc/stdlib/malloc.c	/^morecore(bucket)$/
+moreglue	/nbsd/usr/src/lib/libc/stdio/findfp.c	/^moreglue(n)$/
+mstats	/nbsd/usr/src/lib/libc/stdlib/malloc.c	/^mstats(s)$/
+newbuf	/nbsd/usr/src/lib/libc/db/hash/buf.c	/^newbuf ( addr, prev_bp )$/
+nice	/nbsd/usr/src/lib/libc/gen/nice.c	/^nice(incr)$/
+nlist	/nbsd/usr/src/lib/libc/gen/nlist.c	/^nlist(name, list)$/
+normalize	/nbsd/usr/src/lib/libc/gen/ctime.c	/^normalize(tensptr, unitsptr, base)$/
+ns_addr	/nbsd/usr/src/lib/libc/net/ns_addr.c	/^ns_addr(name)$/
+ns_ntoa	/nbsd/usr/src/lib/libc/net/ns_ntoa.c	/^ns_ntoa(addr)$/
+ntohl /nbsd/usr/src/lib/libc/hp300/net/ntohl.s /^ENTRY(ntohl)$/
+ntohs /nbsd/usr/src/lib/libc/hp300/net/ntohs.s /^ENTRY(ntohs)$/
+open_temp	/nbsd/usr/src/lib/libc/db/hash/page.c	/^open_temp()$/
+opendir	/nbsd/usr/src/lib/libc/gen/opendir.c	/^opendir(name)$/
+openlog	/nbsd/usr/src/lib/libc/gen/syslog.c	/^openlog(ident, logstat, logfac)$/
+overflow_page	/nbsd/usr/src/lib/libc/db/hash/page.c	/^overflow_page ( )$/
+p_cdname	/nbsd/usr/src/lib/libc/net/res_debug.c	/^p_cdname(cp, msg, file)$/
+p_rr	/nbsd/usr/src/lib/libc/net/res_debug.c	/^p_rr(cp, msg, file)$/
+pause	/nbsd/usr/src/lib/libc/gen/pause.c	/^pause()$/
+pclose	/nbsd/usr/src/lib/libc/gen/popen.c	/^pclose(iop)$/
+permute	/nbsd/usr/src/lib/libc/gen/crypt.c	/^permute(cp, out, p, chars_in)$/
+perror	/nbsd/usr/src/lib/libc/stdio/perror.c	/^perror(s)$/
+pipe /nbsd/usr/src/lib/libc/hp300/sys/pipe.s /^SYSCALL(pipe)$/
+popen	/nbsd/usr/src/lib/libc/gen/popen.c	/^popen(program, type)$/
+print_chain	/nbsd/usr/src/lib/libc/db/hash/page.c	/^print_chain ( addr )$/
+printf	/nbsd/usr/src/lib/libc/stdio/printf.c	/^printf(fmt, va_alist)$/
+prtab	/nbsd/usr/src/lib/libc/gen/crypt.c	/^prtab(s, t, num_rows)$/
+psignal	/nbsd/usr/src/lib/libc/gen/psignal.c	/^psignal(sig, s)$/
+ptrace /nbsd/usr/src/lib/libc/hp300/sys/ptrace.s /^ENTRY(ptrace)$/
+putc	/nbsd/usr/src/lib/libc/stdio/putc.c	/^putc(c, fp)$/
+putchar	/nbsd/usr/src/lib/libc/stdio/putchar.c	/^putchar(c)$/
+putenv	/nbsd/usr/src/lib/libc/stdlib/putenv.c	/^putenv(str)$/
+putpair	/nbsd/usr/src/lib/libc/db/hash/page.c	/^putpair(p, key, val)$/
+puts	/nbsd/usr/src/lib/libc/stdio/puts.c	/^puts(s)$/
+putw	/nbsd/usr/src/lib/libc/stdio/putw.c	/^putw(w, fp)$/
+qprintf	/nbsd/usr/src/lib/libc/gen/glob.c	/^qprintf(s)$/
+qsort	/nbsd/usr/src/lib/libc/stdlib/qsort.c	/^qsort(bot, nmemb, size, compar)$/
+quick_sort	/nbsd/usr/src/lib/libc/stdlib/qsort.c	/^quick_sort(bot, nmemb, size, compar)$/
+radixsort	/nbsd/usr/src/lib/libc/stdlib/radixsort.c	/^radixsort(l1, nmemb, tab, endbyte)$/
+raise	/nbsd/usr/src/lib/libc/gen/raise.c	/^raise(s)$/
+rand	/nbsd/usr/src/lib/libc/stdlib/rand.c	/^rand()$/
+random	/nbsd/usr/src/lib/libc/stdlib/random.c	/^random()$/
+rangematch	/nbsd/usr/src/lib/libc/gen/fnmatch.c	/^rangematch(pattern, test)$/
+rcmd	/nbsd/usr/src/lib/libc/net/rcmd.c	/^rcmd(ahost, rport, locuser, remuser, cmd, fd2p)$/
+readdir	/nbsd/usr/src/lib/libc/gen/readdir.c	/^readdir(dirp)$/
+realloc	/nbsd/usr/src/lib/libc/stdlib/malloc.c	/^realloc(cp, nbytes)$/
+reboot /nbsd/usr/src/lib/libc/hp300/sys/reboot.s /^SYSCALL(reboot)$/
+recv	/nbsd/usr/src/lib/libc/net/recv.c	/^recv(s, buf, len, flags)$/
+reg	/nbsd/usr/src/lib/libc/gen/regexp/regexp.c	/^reg(paren, flagp)$/
+regatom	/nbsd/usr/src/lib/libc/gen/regexp/regexp.c	/^regatom(flagp)$/
+regbranch	/nbsd/usr/src/lib/libc/gen/regexp/regexp.c	/^regbranch(flagp)$/
+regc	/nbsd/usr/src/lib/libc/gen/regexp/regexp.c	/^regc(b)$/
+regcomp	/nbsd/usr/src/lib/libc/gen/regexp/regexp.c	/^regcomp(exp)$/
+regdump	/nbsd/usr/src/lib/libc/gen/regexp/regexp.c	/^regdump(r)$/
+regerror	/nbsd/usr/src/lib/libc/gen/regexp/regerror.c	/^regerror(s)$/
+regexec	/nbsd/usr/src/lib/libc/gen/regexp/regexp.c	/^regexec(prog, string)$/
+reginsert	/nbsd/usr/src/lib/libc/gen/regexp/regexp.c	/^reginsert(op, opnd)$/
+regmatch	/nbsd/usr/src/lib/libc/gen/regexp/regexp.c	/^regmatch(prog)$/
+regnext	/nbsd/usr/src/lib/libc/gen/regexp/regexp.c	/^regnext(p)$/
+regnode	/nbsd/usr/src/lib/libc/gen/regexp/regexp.c	/^regnode(op)$/
+regoptail	/nbsd/usr/src/lib/libc/gen/regexp/regexp.c	/^regoptail(p, val)$/
+regpiece	/nbsd/usr/src/lib/libc/gen/regexp/regexp.c	/^regpiece(flagp)$/
+regprop	/nbsd/usr/src/lib/libc/gen/regexp/regexp.c	/^regprop(op)$/
+regrepeat	/nbsd/usr/src/lib/libc/gen/regexp/regexp.c	/^regrepeat(p)$/
+regsub	/nbsd/usr/src/lib/libc/gen/regexp/regsub.c	/^regsub(prog, source, dest)$/
+regtail	/nbsd/usr/src/lib/libc/gen/regexp/regexp.c	/^regtail(p, val)$/
+regtry	/nbsd/usr/src/lib/libc/gen/regexp/regexp.c	/^regtry(prog, string)$/
+remove	/nbsd/usr/src/lib/libc/stdio/remove.c	/^remove(file)$/
+res_init	/nbsd/usr/src/lib/libc/net/res_init.c	/^res_init()$/
+res_mkquery	/nbsd/usr/src/lib/libc/net/res_mkquery.c	/^res_mkquery(op, dname, class, type, data, datalen,/
+res_query	/nbsd/usr/src/lib/libc/net/res_query.c	/^res_query(name, class, type, answer, anslen)$/
+res_querydomain	/nbsd/usr/src/lib/libc/net/res_query.c	/^res_querydomain(name, domain, class, type, answer,/
+res_search	/nbsd/usr/src/lib/libc/net/res_query.c	/^res_search(name, class, type, answer, anslen)$/
+res_send	/nbsd/usr/src/lib/libc/net/res_send.c	/^res_send(buf, buflen, answer, anslen)$/
+rewind	/nbsd/usr/src/lib/libc/stdio/rewind.c	/^rewind(fp)$/
+rewinddir	/nbsd/usr/src/lib/libc/gen/rewinddir.c	/^rewinddir(dirp)$/
+rindex /nbsd/usr/src/lib/libc/hp300/string/rindex.s /^ENTRY(rindex)$/
+round	/nbsd/usr/src/lib/libc/stdio/vfprintf.c	/^round(fract, exp, start, end, ch, signp)$/
+rresvport	/nbsd/usr/src/lib/libc/net/rcmd.c	/^rresvport(alport)$/
+ruserok	/nbsd/usr/src/lib/libc/net/rcmd.c	/^ruserok(rhost, superuser, ruser, luser)$/
+sbrk /nbsd/usr/src/lib/libc/hp300/sys/sbrk.s /^ENTRY(sbrk)$/
+scandir	/nbsd/usr/src/lib/libc/gen/scandir.c	/^scandir(dirname, namelist, select, dcomp)$/
+scanf	/nbsd/usr/src/lib/libc/stdio/scanf.c	/^scanf(fmt, va_alist)$/
+scmp	/nbsd/usr/src/lib/libc/gen/getttyent.c	/^#define	scmp(e)	!strncmp(p, e, sizeof(e) - 1) && i/
+seekdir	/nbsd/usr/src/lib/libc/gen/seekdir.c	/^seekdir(dirp, loc)$/
+send	/nbsd/usr/src/lib/libc/net/send.c	/^send(s, msg, len, flags)$/
+setbuf	/nbsd/usr/src/lib/libc/stdio/setbuf.c	/^setbuf(fp, buf)$/
+setbuffer	/nbsd/usr/src/lib/libc/stdio/setbuffer.c	/^setbuffer(fp, buf, size)$/
+setenv	/nbsd/usr/src/lib/libc/stdlib/setenv.c	/^setenv(name, value, rewrite)$/
+setfsent	/nbsd/usr/src/lib/libc/gen/fstab.c	/^setfsent()$/
+setgrent	/nbsd/usr/src/lib/libc/gen/getgrent.c	/^setgrent()$/
+setgroupent	/nbsd/usr/src/lib/libc/gen/getgrent.c	/^setgroupent(stayopen)$/
+sethostent	/nbsd/usr/src/lib/libc/net/sethostent.c	/^sethostent(stayopen)$/
+setjmp /nbsd/usr/src/lib/libc/hp300/gen/setjmp.s /^ENTRY(setjmp)$/
+setkey	/nbsd/usr/src/lib/libc/gen/crypt.c	/^setkey(key)$/
+setlinebuf	/nbsd/usr/src/lib/libc/stdio/setbuffer.c	/^setlinebuf(fp)$/
+setlocale	/nbsd/usr/src/lib/libc/locale/setlocale.c	/^setlocale(category, locale)$/
+setlogin /nbsd/usr/src/lib/libc/hp300/sys/setlogin.s /^SYSCALL(setlogin)$/
+setlogmask	/nbsd/usr/src/lib/libc/gen/syslog.c	/^setlogmask(pmask)$/
+setmode	/nbsd/usr/src/lib/libc/gen/setmode.c	/^setmode(p)$/
+setnetent	/nbsd/usr/src/lib/libc/net/getnetent.c	/^setnetent(f)$/
+setpassent	/nbsd/usr/src/lib/libc/gen/getpwent.c	/^setpassent(stayopen)$/
+setpgrp	/nbsd/usr/src/lib/libc/compat-43/setpgrp.c	/^setpgrp(pid, pgid)$/
+setprotoent	/nbsd/usr/src/lib/libc/net/getprotoent.c	/^setprotoent(f)$/
+setpwent	/nbsd/usr/src/lib/libc/gen/getpwent.c	/^setpwent()$/
+setrgid	/nbsd/usr/src/lib/libc/gen/setrgid.c	/^setrgid(rgid)$/
+setruid	/nbsd/usr/src/lib/libc/gen/setruid.c	/^setruid(ruid)$/
+setservent	/nbsd/usr/src/lib/libc/net/getservent.c	/^setservent(f)$/
+setstate	/nbsd/usr/src/lib/libc/stdlib/random.c	/^setstate(arg_state)$/
+setttyent	/nbsd/usr/src/lib/libc/gen/getttyent.c	/^setttyent()$/
+settzname	/nbsd/usr/src/lib/libc/gen/ctime.c	/^settzname()$/
+setusershell	/nbsd/usr/src/lib/libc/gen/getusershell.c	/^setusershell()$/
+setvbuf	/nbsd/usr/src/lib/libc/stdio/setvbuf.c	/^setvbuf(fp, buf, mode, size)$/
+setvec	/nbsd/usr/src/lib/libc/gen/sleep.c	/^#define	setvec(vec, a) \\$/
+shellsort	/nbsd/usr/src/lib/libc/stdlib/radixsort.c	/^shellsort(p, indx, nmemb, tr)$/
+sigaddset	/nbsd/usr/src/lib/libc/gen/sigsetops.c	/^sigaddset(set, signo)$/
+sigblock	/nbsd/usr/src/lib/libc/compat-43/sigcompat.c	/^sigblock(mask)$/
+sigdelset	/nbsd/usr/src/lib/libc/gen/sigsetops.c	/^sigdelset(set, signo)$/
+sigemptyset	/nbsd/usr/src/lib/libc/gen/sigsetops.c	/^sigemptyset(set)$/
+sigfillset	/nbsd/usr/src/lib/libc/gen/sigsetops.c	/^sigfillset(set)$/
+siginterrupt	/nbsd/usr/src/lib/libc/gen/siginterrupt.c	/^siginterrupt(sig, flag)$/
+sigismember	/nbsd/usr/src/lib/libc/gen/sigsetops.c	/^sigismember(set, signo)$/
+signal	/nbsd/usr/src/lib/libc/gen/signal.c	/^signal(s, a)$/
+sigpause	/nbsd/usr/src/lib/libc/compat-43/sigcompat.c	/^sigpause(mask)$/
+sigpending /nbsd/usr/src/lib/libc/hp300/sys/sigpending.s /^SYSCALL(sigpending)$/
+sigprocmask /nbsd/usr/src/lib/libc/hp300/sys/sigprocmask.s /^ENTRY(sigprocmask)$/
+sigreturn /nbsd/usr/src/lib/libc/hp300/sys/sigreturn.s /^ENTRY(sigreturn)$/
+sigsetmask	/nbsd/usr/src/lib/libc/compat-43/sigcompat.c	/^sigsetmask(mask)$/
+sigsuspend /nbsd/usr/src/lib/libc/hp300/sys/sigsuspend.s /^ENTRY(sigsuspend)$/
+sigvec	/nbsd/usr/src/lib/libc/compat-43/sigcompat.c	/^sigvec(signo, sv, osv)$/
+skip	/nbsd/usr/src/lib/libc/gen/getttyent.c	/^skip(p)$/
+sleep	/nbsd/usr/src/lib/libc/gen/sleep.c	/^sleep(seconds)$/
+sleephandler	/nbsd/usr/src/lib/libc/gen/sleep.c	/^sleephandler()$/
+snprintf	/nbsd/usr/src/lib/libc/stdio/snprintf.c	/^snprintf(str, n, fmt, va_alist)$/
+spectHex	/nbsd/usr/src/lib/libc/net/ns_ntoa.c	/^spectHex(p0)$/
+sprintf	/nbsd/usr/src/lib/libc/stdio/sprintf.c	/^sprintf(str, fmt, va_alist)$/
+squeeze_key	/nbsd/usr/src/lib/libc/db/hash/page.c	/^squeeze_key ( sp, key, val )$/
+srand	/nbsd/usr/src/lib/libc/stdlib/rand.c	/^srand(seed)$/
+srandom	/nbsd/usr/src/lib/libc/stdlib/random.c	/^srandom(x)$/
+sscanf	/nbsd/usr/src/lib/libc/stdio/sscanf.c	/^sscanf(str, fmt, va_alist)$/
+start_gr	/nbsd/usr/src/lib/libc/gen/getgrent.c	/^start_gr()$/
+std	/nbsd/usr/src/lib/libc/stdio/findfp.c	/^#define	std(flags, file) \\$/
+strcasecmp	/nbsd/usr/src/lib/libc/string/strcasecmp.c	/^strcasecmp(s1, s2)$/
+strcat	/nbsd/usr/src/lib/libc/string/strcat.c	/^strcat(s, append)$/
+strcmp /nbsd/usr/src/lib/libc/hp300/string/strcmp.s /^ENTRY(strcmp)$/
+strcoll	/nbsd/usr/src/lib/libc/string/strcoll.c	/^strcoll(s1, s2)$/
+strcpy /nbsd/usr/src/lib/libc/hp300/string/strcpy.s /^ENTRY(strcpy)$/
+strcspn	/nbsd/usr/src/lib/libc/gen/regexp/regexp.c	/^strcspn(s1, s2)$/
+strdup	/nbsd/usr/src/lib/libc/string/strdup.c	/^strdup(str)$/
+strerror	/nbsd/usr/src/lib/libc/stdio/strerror.c	/^strerror(num)$/
+strftime	/nbsd/usr/src/lib/libc/string/strftime.c	/^strftime(s, maxsize, format, t)$/
+strlen /nbsd/usr/src/lib/libc/hp300/string/strlen.s /^ENTRY(strlen)$/
+strmode	/nbsd/usr/src/lib/libc/string/strmode.c	/^strmode(mode, p)$/
+strncasecmp	/nbsd/usr/src/lib/libc/string/strcasecmp.c	/^strncasecmp(s1, s2, n)$/
+strncat	/nbsd/usr/src/lib/libc/string/strncat.c	/^strncat(dst, src, n)$/
+strncmp /nbsd/usr/src/lib/libc/hp300/string/strncmp.s /^ENTRY(strncmp)$/
+strncpy /nbsd/usr/src/lib/libc/hp300/string/strncpy.s /^ENTRY(strncpy)$/
+strpbrk	/nbsd/usr/src/lib/libc/string/strpbrk.c	/^strpbrk(s1, s2)$/
+strsep	/nbsd/usr/src/lib/libc/string/strsep.c	/^strsep(stringp, delim)$/
+strspn	/nbsd/usr/src/lib/libc/string/strspn.c	/^strspn(s1, s2)$/
+strstr	/nbsd/usr/src/lib/libc/string/strstr.c	/^strstr(s, find)$/
+strtok	/nbsd/usr/src/lib/libc/string/strtok.c	/^strtok(s, delim)$/
+strtol	/nbsd/usr/src/lib/libc/stdlib/strtol.c	/^strtol(nptr, endptr, base)$/
+strtoul	/nbsd/usr/src/lib/libc/stdlib/strtoul.c	/^strtoul(nptr, endptr, base)$/
+strunvis	/nbsd/usr/src/lib/libc/gen/unvis.c	/^strunvis(dst, src)$/
+strvis	/nbsd/usr/src/lib/libc/gen/vis.c	/^strvis(dst, src, flag)$/
+strvisx	/nbsd/usr/src/lib/libc/gen/vis.c	/^strvisx(dst, src, len, flag)$/
+strxfrm	/nbsd/usr/src/lib/libc/string/strxfrm.c	/^strxfrm(dst, src, n)$/
+swab	/nbsd/usr/src/lib/libc/string/swab.c	/^swab(from, to, len)$/
+swap_header	/nbsd/usr/src/lib/libc/db/hash/dynahash.c	/^swap_header ( )$/
+swap_header_copy	/nbsd/usr/src/lib/libc/db/hash/dynahash.c	/^swap_header_copy ( srcp, destp )$/
+syscall /nbsd/usr/src/lib/libc/hp300/sys/syscall.s /^ENTRY(syscall)$/
+syslog	/nbsd/usr/src/lib/libc/gen/syslog.c	/^syslog(pri, fmt, va_alist)$/
+system	/nbsd/usr/src/lib/libc/stdlib/system.c	/^system(command)$/
+tcdrain	/nbsd/usr/src/lib/libc/gen/termios.c	/^tcdrain(fd)$/
+tcflow	/nbsd/usr/src/lib/libc/gen/termios.c	/^tcflow(fd, action)$/
+tcflush	/nbsd/usr/src/lib/libc/gen/termios.c	/^tcflush(fd, which)$/
+tcgetattr	/nbsd/usr/src/lib/libc/gen/termios.c	/^tcgetattr(fd, t)$/
+tcgetpgrp	/nbsd/usr/src/lib/libc/gen/termios.c	/^tcgetpgrp(fd)$/
+tcsendbreak	/nbsd/usr/src/lib/libc/gen/termios.c	/^tcsendbreak(fd, len)$/
+tcsetattr	/nbsd/usr/src/lib/libc/gen/termios.c	/^tcsetattr(fd, opt, t)$/
+tcsetpgrp	/nbsd/usr/src/lib/libc/gen/termios.c	/^tcsetpgrp(fd, pgrp)$/
+telldir	/nbsd/usr/src/lib/libc/gen/telldir.c	/^telldir(dirp)$/
+tempnam	/nbsd/usr/src/lib/libc/stdio/tempnam.c	/^tempnam(dir, pfx)$/
+time	/nbsd/usr/src/lib/libc/gen/time.c	/^time(t)$/
+time1	/nbsd/usr/src/lib/libc/gen/ctime.c	/^time1(tmp, funcp, offset)$/
+time2	/nbsd/usr/src/lib/libc/gen/ctime.c	/^time2(tmp, funcp, offset, okayp)$/
+times	/nbsd/usr/src/lib/libc/gen/times.c	/^times(tp)$/
+timesub	/nbsd/usr/src/lib/libc/gen/ctime.c	/^timesub(timep, offset, sp, tmp)$/
+timezone	/nbsd/usr/src/lib/libc/gen/timezone.c	/^timezone(zone, dst)$/
+tmcomp	/nbsd/usr/src/lib/libc/gen/ctime.c	/^tmcomp(atmp, btmp)$/
+tmpfile	/nbsd/usr/src/lib/libc/stdio/tmpfile.c	/^tmpfile()$/
+tmpnam	/nbsd/usr/src/lib/libc/stdio/tmpnam.c	/^tmpnam(s)$/
+to_char	/nbsd/usr/src/lib/libc/stdio/vfprintf.c	/^#define	to_char(n)	((n) + '0')$/
+to_digit	/nbsd/usr/src/lib/libc/stdio/vfprintf.c	/^#define	to_digit(c)	((c) - '0')$/
+tolower	/nbsd/usr/src/lib/libc/gen/isctype.c	/^tolower(c)$/
+toupper	/nbsd/usr/src/lib/libc/gen/isctype.c	/^toupper(c)$/
+transtime	/nbsd/usr/src/lib/libc/gen/ctime.c	/^transtime(janfirst, year, rulep, offset)$/
+ttyname	/nbsd/usr/src/lib/libc/gen/ttyname.c	/^ttyname(fd)$/
+ttyslot	/nbsd/usr/src/lib/libc/gen/ttyslot.c	/^ttyslot()$/
+tzload	/nbsd/usr/src/lib/libc/gen/ctime.c	/^tzload(name, sp)$/
+tzparse	/nbsd/usr/src/lib/libc/gen/ctime.c	/^tzparse(name, sp, lastditch)$/
+tzset	/nbsd/usr/src/lib/libc/gen/ctime.c	/^tzset()$/
+tzsetwall	/nbsd/usr/src/lib/libc/gen/ctime.c	/^tzsetwall()$/
+ualarm	/nbsd/usr/src/lib/libc/gen/ualarm.c	/^ualarm(usecs, reload)$/
+ugly_split	/nbsd/usr/src/lib/libc/db/hash/page.c	/^ugly_split( obucket, old_bufp, new_bufp, copyto, m/
+ungetc	/nbsd/usr/src/lib/libc/stdio/ungetc.c	/^ungetc(c, fp)$/
+unsetenv	/nbsd/usr/src/lib/libc/stdlib/setenv.c	/^unsetenv(name)$/
+unvis	/nbsd/usr/src/lib/libc/gen/unvis.c	/^unvis(cp, c, astate, flag)$/
+usleep	/nbsd/usr/src/lib/libc/gen/usleep.c	/^usleep(useconds)$/
+utime	/nbsd/usr/src/lib/libc/gen/utime.c	/^utime(path, times)$/
+valloc	/nbsd/usr/src/lib/libc/gen/valloc.c	/^valloc(i)$/
+value	/nbsd/usr/src/lib/libc/gen/getttyent.c	/^value(p)$/
+vcmp	/nbsd/usr/src/lib/libc/gen/getttyent.c	/^#define	vcmp(e)	!strncmp(p, e, sizeof(e) - 1) && p/
+vfprintf	/nbsd/usr/src/lib/libc/stdio/vfprintf.c	/^vfprintf(fp, fmt0, ap)$/
+vis	/nbsd/usr/src/lib/libc/gen/vis.c	/^vis(dst, c, flag, nextc)$/
+vprintf	/nbsd/usr/src/lib/libc/stdio/vprintf.c	/^vprintf(fmt, ap)$/
+vscanf	/nbsd/usr/src/lib/libc/stdio/vscanf.c	/^vscanf(fmt, ap)$/
+vsnprintf	/nbsd/usr/src/lib/libc/stdio/vsnprintf.c	/^vsnprintf(str, n, fmt, ap)$/
+vsprintf	/nbsd/usr/src/lib/libc/stdio/vsprintf.c	/^vsprintf(str, fmt, ap)$/
+vsscanf	/nbsd/usr/src/lib/libc/stdio/vsscanf.c	/^vsscanf(str, fmt, ap)$/
+vsyslog	/nbsd/usr/src/lib/libc/gen/syslog.c	/^vsyslog(pri, fmt, ap)$/
+wait	/nbsd/usr/src/lib/libc/gen/wait.c	/^wait(istat)$/
+wait3	/nbsd/usr/src/lib/libc/gen/wait3.c	/^wait3(istat, options, rup)$/
+waitpid	/nbsd/usr/src/lib/libc/gen/waitpid.c	/^waitpid(pid, istat, options)$/
+wcstombs	/nbsd/usr/src/lib/libc/stdlib/multibyte.c	/^wcstombs(s, pwcs, n)$/
+wctomb	/nbsd/usr/src/lib/libc/stdlib/multibyte.c	/^wctomb(s, wchar)$/
