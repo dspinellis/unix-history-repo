@@ -126,10 +126,9 @@ load_default_scrnmap()
 	scrmap_t scrnmap;
 
 	for (i=0; i<256; i++)
-		scrnmap[i] = i;
+		*((char*)&scrnmap + i) = i;
 	if (ioctl(0, PIO_SCRNMAP, &scrnmap) < 0)
 		perror("can't load default screenmap");
-	close(fd);
 }
 
 
