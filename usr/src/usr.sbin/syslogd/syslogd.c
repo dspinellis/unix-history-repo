@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)syslogd.c	4.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslogd.c	4.9 (Berkeley) %G%";
 #endif
 
 /*
@@ -44,6 +44,7 @@ static char sccsid[] = "@(#)syslogd.c	4.8 (Berkeley) %G%";
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <sys/socket.h>
 #include <sys/file.h>
 #include <sys/msgbuf.h>
@@ -127,12 +128,12 @@ main(argc, argv)
 {
 	register int i;
 	register char *p;
-	int klog, funix, finet, defreadfds, klogm, len;
+	int funix, finet, inetm, fklog, klogm, len;
 	struct sockaddr_un sun, fromunix;
 	struct sockaddr_in sin, frominet;
 	FILE *fp;
 	char line[MSG_BSIZE + 1];
-	extern int die(), domark();
+	extern int die(), domark(), reapchild();
 
 	sun.sun_family = AF_UNIX;
 	strncpy(sun.sun_path, logname, sizeof sun.sun_path);
@@ -178,22 +179,21 @@ main(argc, argv)
 		(void) dup2(0, 1);
 		(void) dup2(0, 2);
 		untty();
-	}
+	} else
+		setlinebuf(stdout);
+
 	signal(SIGTERM, die);
 	signal(SIGINT, die);
+	signal(SIGCHLD, reapchild);
 	funix = socket(AF_UNIX, SOCK_DGRAM, 0);
-	if (funix >= 0 && bind(funix, &sun,
-	    sizeof(sun.sun_family)+strlen(sun.sun_path)) < 0) {
-		close(funix);
-		funix = -1;
-	}
-	if (funix < 0) {
+	if (funix < 0 || bind(funix, &sun,
+	    sizeof(sun.sun_family)+strlen(sun.sun_path)) < 0 ||
+	    chmod(sun.sun_path, 0666) < 0) {
 		fp = fopen(ctty, "w");
 		fprintf(fp, "\r\nsyslogd: cannot create %s (%d)\r\n", logname, errno);
 		dprintf("cannot create %s (%d)\n", logname, errno);
 		exit(1);
 	}
-	defreadfds = mask(funix);
 	finet = socket(AF_INET, SOCK_DGRAM, 0);
 	if (finet >= 0) {
 		struct servent *sp;
@@ -210,13 +210,12 @@ main(argc, argv)
 			logerror("bind");
 			die();
 		}
-		defreadfds |= mask(finet);
+		inetm = mask(finet);
 		inet = 1;
 	}
-	if ((klog = open("/dev/klog", O_RDONLY)) >= 0) {
-		klogm = mask(klog);
-		defreadfds |= klogm;
-	} else {
+	if ((fklog = open("/dev/klog", O_RDONLY)) >= 0)
+		klogm = mask(fklog);
+	else {
 		dprintf("can't open /dev/klog (%d)\n", errno);
 		klogm = 0;
 	}
@@ -233,12 +232,14 @@ main(argc, argv)
 	for (i = 0; i < NLOGS; i++)
 		Files[i].f_file = -1;
 	init();
+	signal(SIGHUP, init);
 	signal(SIGALRM, domark);
 	alarm(MarkIntvl * 60);
 
 	for (;;) {
-		int nfds, readfds = defreadfds;
+		int nfds, readfds = mask(funix) | inetm | klogm;
 
+		dprintf("readfds = %#x\n", readfds, funix, finet, fklog);
 		nfds = select(20, &readfds, 0, 0, 0);
 		dprintf("got a message (%d, %#x)\n", nfds, readfds);
 		if (nfds == 0)
@@ -250,14 +251,13 @@ main(argc, argv)
 			continue;
 		}
 		if (readfds & klogm) {
-			i = read(klog, line, sizeof(line) - 1);
+			i = read(fklog, line, sizeof(line) - 1);
 			if (i > 0) {
 				line[i] = '\0';
 				printsys(line);
 			} else if (i < 0 && errno != EINTR) {
-				logerror("read");
-				defreadfds &= ~klogm;
-				klog = -1;
+				logerror("klog");
+				fklog = -1;
 				klogm = 0;
 			}
 		}
@@ -270,7 +270,7 @@ main(argc, argv)
 			} else if (i < 0 && errno != EINTR)
 				logerror("recvfrom");
 		}
-		if (readfds & mask(finet)) {
+		if (readfds & inetm) {
 			len = sizeof frominet;
 			i = recvfrom(finet, line, MAXLINE, 0, &frominet, &len);
 			if (i > 0 && chkhost(&frominet)) {
@@ -398,6 +398,9 @@ logmsg(pri, msg, from, flags)
 	register int l;
 	struct iovec iov[4];
 	register struct iovec *v = iov;
+	int omask;
+
+	omask = sigblock(sigmask(SIGALRM)|sigmask(SIGHUP));
 
 	if ((flags & NOCOPY) == 0) {
 		register char *cp;
@@ -443,17 +446,18 @@ logmsg(pri, msg, from, flags)
 		if (f->f_file < 0)
 			continue;
 		if (flags & ISMARK) {	/* mark message */
-			struct stat stb;
-			long now;
-
 			if (!(f->f_flags & F_MARK))
 				continue;
-			if (fstat(f->f_file, &stb) < 0)
-				continue;
-			time(&now);
-			if (!(f->f_flags & F_CONS) &&
-			    stb.st_mtime > now - MarkIntvl * 60)
-				continue;
+			if (!(f->f_flags & F_CONS)) {
+				struct stat stb;
+				long now;
+
+				if (fstat(f->f_file, &stb) < 0)
+					continue;
+				time(&now);
+				if (stb.st_mtime > now - MarkIntvl * 60)
+					continue;
+			}
 		} else if ((f->f_pmask & mask(pri)) == 0 ||
 		    (flags & IGN_CONS) && (f->f_flags & F_CONS))
 			continue;
@@ -482,9 +486,18 @@ logmsg(pri, msg, from, flags)
 		if (writev(f->f_file, iov, 4) < 0) {
 			int e = errno;
 			(void) close(f->f_file);
-			f->f_file = -1;
-			errno = e;
-			logerror(f->f_name);
+			/*
+			 * Check for EBADF on the console due to vhangup() XXX
+			 */
+			if (e == EBADF && (f->f_flags & F_TTY)) {
+				f->f_file = open(f->f_name, O_WRONLY|O_APPEND);
+				if (f->f_file < 0)
+					logerror(f->f_name);
+			} else {
+				f->f_file = -1;
+				errno = e;
+				logerror(f->f_name);
+			}
 		} else if (flags & SYNC_FILE)
 			(void) fsync(f->f_file);
 	}
@@ -492,8 +505,10 @@ logmsg(pri, msg, from, flags)
 	/*
 	 * Output high priority messages to terminals.
 	 */
-	if (mask(pri) & Sumask)
+	if (!(flags & ISMARK) && (mask(pri) & Sumask))
 		wallmsg(pri, msg, from);
+
+	(void) sigsetmask(omask);
 }
 
 /*
@@ -532,9 +547,6 @@ init()
 	char *getpmask();
 
 	dprintf("init\n");
-
-	/* ignore interrupts during this routine */
-	signal(SIGHUP, SIG_IGN);
 
 	/* flush any pending output */
 	flushmsg();
@@ -619,7 +631,7 @@ init()
 			continue;
 		}
 		strncpy(f->f_name, p, sizeof(f->f_name)-1);
-		if ((f->f_file = open(p, O_WRONLY|O_APPEND|O_NDELAY)) < 0) {
+		if ((f->f_file = open(p, O_WRONLY|O_APPEND)) < 0) {
 			logerror(p);
 			continue;
 		}
@@ -641,7 +653,7 @@ init()
 	 *	Anyone in this list is informed directly if s/he
 	 *	is logged in when a high priority message comes through.
 	 */
-	Sumask = mask(LOG_SALERT);
+	Sumask = mask(LOG_ALERT);
 	for (i = 0; i < NSUSERS && fgets(cline, sizeof cline, cf) != NULL; i++) {
 		/* strip off newline */
 		p = index(cline, '\n');
@@ -649,12 +661,12 @@ init()
 			*p = '\0';
 		dprintf("U: got line '%s'\n", cline);
 		p = cline;
-		if (isdigit(*p)) {
+		if (isdigit(*p))
 			p = getpmask(p, &pmask);
-			Sumask |= pmask;
-			Susers[i].s_pmask = pmask;
-		} else
-			Susers[i].s_pmask = pmask = mask(LOG_SALERT);
+		else
+			pmask = mask(LOG_SALERT);
+		Susers[i].s_pmask = pmask;
+		Sumask |= pmask;
 		strncpy(Susers[i].s_name, p, UNAMESZ);
 		dprintf("Suser %s pmask %#x\n", p, pmask);
 	}
@@ -667,9 +679,6 @@ init()
 	(void) fclose(cf);
 
 	dprintf("syslogd: restarted\n");
-
-	/* arrange for signal 1 to reconfigure */
-	signal(SIGHUP, init);
 }
 
 /*
@@ -693,7 +702,10 @@ wallmsg(pri, msg, from)
 
 	/* open the user login file */
 	if ((uf = fopen("/etc/utmp", "r")) == NULL) {
+		i = Sumask;
+		Sumask = 0;
 		logerror("/etc/utmp");
+		Sumask = i;
 		return;
 	}
 
@@ -715,7 +727,7 @@ wallmsg(pri, msg, from)
 				if ((mask(pri) & Susers[i].s_pmask) == 0)
 					continue;
 				if (strncmp(Susers[i].s_name, ut.ut_name,
-				    sizeof ut.ut_name) == 0)
+				    UNAMESZ) == 0)
 					goto prmsg;
 			}
 			continue;
@@ -726,33 +738,30 @@ wallmsg(pri, msg, from)
 		p = "/dev/12345678";
 		strcpyn(&p[5], ut.ut_line, UNAMESZ);
 
-		/* open the terminal */
-		f = open(p, O_WRONLY|O_NDELAY);
-		if (f < 0)
-			continue;
-		if ((flags = fcntl(f, F_GETFL, 0)) == -1) {
-			(void) close(f);
-			continue;
-		}
-		if (fcntl(f, F_SETFL, flags | FNDELAY) == -1)
-			goto oldway;
-		i = write(f, line, len);
-		e = errno;
-		(void) fcntl(f, F_SETFL, flags);
-		if (i == len || e != EWOULDBLOCK) {
-			(void) close(f);
-			continue;
-		}
-	oldway:
+		/*
+		 * Might as well fork instead of using nonblocking I/O
+		 * and doing notty().
+		 */
 		if (fork() == 0) {
-			(void) write(f, line, len);
+			signal(SIGALRM, SIG_DFL);
+			alarm(30);
+			/* open the terminal */
+			f = open(p, O_WRONLY);
+			if (f >= 0)
+				(void) write(f, line, len);
 			exit(0);
 		}
-		(void) close(f);
 	}
-
 	/* close the user login file */
-	(void) close(uf);
+	(void) fclose(uf);
+}
+
+reapchild()
+{
+	union wait status;
+
+	while (wait3(&status, WNOHANG, 0) > 0)
+		;
 }
 
 /*
@@ -761,7 +770,7 @@ wallmsg(pri, msg, from)
  */
 domark()
 {
-	char buf[40];
+	char buf[50];
 	long now;
 
 	dprintf("domark\n");
@@ -798,26 +807,15 @@ chkhost(f)
 	return (1);
 }
 
-/*
- * Compare current message with previous and return true if match.
- * Side effect is to update the time in the previous message.
- */
-match(msg)
-	char *msg;
-{
-	register char *cp;
-
-}
-
 flushmsg()
 {
 	if (count == 0)
 		return;
 	if (count > 1)
 		sprintf(prevdate+18, "last message repeated %d times", count);
+	count = 0;
 	logmsg(prevpri, prevline, prevhost, prevflags|NOCOPY);
 	prevline[0] = '\0';
-	count = 0;
 }
 
 /*
