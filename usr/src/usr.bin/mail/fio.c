@@ -10,7 +10,7 @@
  * File I/O.
  */
 
-static char *SccsId = "@(#)fio.c	2.12 %G%";
+static char *SccsId = "@(#)fio.c	2.13 %G%";
 
 /*
  * Set up the input pointers while copying the mail file into
@@ -393,6 +393,7 @@ done:
 	relsesigs();
 }
 
+static int sigdepth = 0;		/* depth of holdsigs() */
 /*
  * Hold signals SIGHUP - SIGQUIT.
  */
@@ -400,14 +401,9 @@ holdsigs()
 {
 	register int i;
 
-	for (i = SIGHUP; i <= SIGQUIT; i++)
-		/*
-		 * This cannot be changed to ``sighold(i)'' because
-		 * of a bug in the jobs library.  Sighold does not
-		 * record that one is using the new signal mechanisms
-		 * so an eventual sigrelse() will fail.
-		 */
-		sigset(i, SIG_HOLD);
+	if (sigdepth++ == 0)
+		for (i = SIGHUP; i <= SIGQUIT; i++)
+			sighold(i);
 }
 
 /*
@@ -417,8 +413,9 @@ relsesigs()
 {
 	register int i;
 
-	for (i = SIGHUP; i <= SIGQUIT; i++)
-		sigrelse(i);
+	if (--sigdepth == 0)
+	    for (i = SIGHUP; i <= SIGQUIT; i++)
+		    sigrelse(i);
 }
 
 /*
