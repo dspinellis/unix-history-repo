@@ -1,4 +1,4 @@
-/* @(#)ftell.c	4.1 (Berkeley) %G% */
+/* @(#)ftell.c	4.2 (Berkeley) %G% */
 /*
  * Return file offset.
  * Coordinates with buffering.
@@ -18,9 +18,9 @@ FILE *iop;
 		iop->_cnt = 0;
 	if (iop->_flag&_IOREAD)
 		adjust = - iop->_cnt;
-	else if (iop->_flag&_IOWRT) {
+	else if (iop->_flag&(_IOWRT|_IORW)) {
 		adjust = 0;
-		if (iop->_base && (iop->_flag&_IONBF)==0)
+		if (iop->_flag&_IOWRT && iop->_base && (iop->_flag&_IONBF)==0)
 			adjust = iop->_ptr - iop->_base;
 	} else
 		return(-1);

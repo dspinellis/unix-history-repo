@@ -1,4 +1,4 @@
-/* @(#)filbuf.c	4.1 (Berkeley) %G% */
+/* @(#)filbuf.c	4.2 (Berkeley) %G% */
 #include	<stdio.h>
 char	*malloc();
 
@@ -6,6 +6,9 @@ _filbuf(iop)
 register FILE *iop;
 {
 	static char smallbuf[_NFILE];
+
+	if (iop->_flag & _IORW)
+		iop->_flag |= _IOREAD;
 
 	if ((iop->_flag&_IOREAD) == 0)
 		return(EOF);
@@ -28,9 +31,11 @@ tryagain:
 		fflush(stdout);
 	iop->_cnt = read(fileno(iop), iop->_ptr, iop->_flag&_IONBF?1:BUFSIZ);
 	if (--iop->_cnt < 0) {
-		if (iop->_cnt == -1)
+		if (iop->_cnt == -1) {
 			iop->_flag |= _IOEOF;
-		else
+			if (iop->_flag & _IORW)
+				iop->_flag &= ~_IOREAD;
+		} else
 			iop->_flag |= _IOERR;
 		iop->_cnt = 0;
 		return(-1);

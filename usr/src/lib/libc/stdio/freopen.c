@@ -1,5 +1,6 @@
-/* @(#)freopen.c	4.1 (Berkeley) %G% */
-#include <stdio.h>
+/* @(#)freopen.c	4.2 (Berkeley) %G% */
+#include	<stdio.h>
+#include	<errno.h>
 
 FILE *
 freopen(file, mode, iop)
@@ -7,21 +8,39 @@ char *file;
 register char *mode;
 register FILE *iop;
 {
-	register f;
+	extern int errno;
+	register f, rw;
+
+	rw = mode[1] == '+';
 
 	fclose(iop);
-	if (*mode=='w')
+	if (*mode=='w') {
 		f = creat(file, 0666);
-	else if (*mode=='a') {
-		if ((f = open(file, 1)) < 0)
-			f = creat(file, 0666);
-		lseek(f, 0L, 2);
+		if (rw && f>=0) {
+			close(f);
+			f = open(file, 2);
+		}
+	} else if (*mode=='a') {
+		if ((f = open(file, rw? 2: 1)) < 0) {
+			if (errno == ENOENT) {
+				f = creat(file, 0666);
+				if (rw && f>=0) {
+					close(f);
+					f = open(file, 2);
+				}
+			}
+		}
+		if (f >= 0)
+			lseek(f, 0L, 2);
 	} else
-		f = open(file, 0);
+		f = open(file, rw? 2: 0);
 	if (f < 0)
 		return(NULL);
+	iop->_cnt = 0;
 	iop->_file = f;
-	if (*mode != 'r')
+	if (rw)
+		iop->_flag |= _IORW;
+	else if (*mode != 'r')
 		iop->_flag |= _IOWRT;
 	else
 		iop->_flag |= _IOREAD;

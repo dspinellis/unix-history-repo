@@ -1,4 +1,4 @@
-/* @(#)wbuf.c	4.1 (Berkeley) %G% */
+/* @(#)wbuf.c	4.2 (Berkeley) %G% */
 #include	<stdio.h>
 
 char	*malloc();
@@ -10,6 +10,11 @@ register FILE *iop;
 	register n, rn;
 	char c1;
 	extern char _sobuf[];
+
+	if (iop->_flag & _IORW) {
+		iop->_flag |= _IOWRT;
+		iop->_flag &= ~_IOEOF;
+	}
 
 	if ((iop->_flag&_IOWRT)==0)
 		return(EOF);
@@ -95,7 +100,7 @@ register struct _iobuf *iop;
 	register r;
 
 	r = EOF;
-	if (iop->_flag&(_IOREAD|_IOWRT) && (iop->_flag&_IOSTRG)==0) {
+	if (iop->_flag&(_IOREAD|_IOWRT|_IORW) && (iop->_flag&_IOSTRG)==0) {
 		r = fflush(iop);
 		if (close(fileno(iop)) < 0)
 			r = EOF;
@@ -104,7 +109,7 @@ register struct _iobuf *iop;
 		if (iop->_flag&(_IOMYBUF|_IONBF|_IOLBF))
 			iop->_base = NULL;
 	}
-	iop->_flag &= ~(_IOREAD|_IOWRT|_IOLBF|_IONBF|_IOMYBUF|_IOERR|_IOEOF|_IOSTRG);
+	iop->_flag &= ~(_IOREAD|_IOWRT|_IOLBF|_IONBF|_IOMYBUF|_IOERR|_IOEOF|_IOSTRG|_IORW);
 	iop->_cnt = 0;
 	return(r);
 }
