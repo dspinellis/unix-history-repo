@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	6.14 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	6.15 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	6.14 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	6.15 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -118,7 +118,7 @@ getmxrr(host, mxhosts, localhost, rcode)
 	buflen = sizeof(hostbuf) - 1;
 	bp = hostbuf;
 	ancount = ntohs(hp->ancount);
-	while (--ancount >= 0 && cp < eom && nmx < MAXMXHOSTS)
+	while (--ancount >= 0 && cp < eom && nmx < MAXMXHOSTS - 1)
 	{
 		if ((n = dn_expand((u_char *)&answer,
 		    eom, cp, (u_char *)bp, buflen)) < 0)
@@ -170,7 +170,7 @@ punt:
 			*bp++ = '.';
 			*bp = '\0';
 		}
-		return (1);
+		nmx = 1;
 	}
 
 	/* sort the records */
@@ -211,6 +211,11 @@ punt:
 			break;
 		}
 	}
+
+	/* if we have a default lowest preference, include that */
+	if (FallBackMX != NULL)
+		mxhosts[nmx++] = FallBackMX;
+
 	return (nmx);
 }
 /*
