@@ -1,5 +1,5 @@
 /*-
- *	@(#)READ_ME	8.3 (Berkeley) %G%
+ *	@(#)READ_ME	8.4 (Berkeley) %G%
  */
 
 			SENDMAIL RELEASE 8
@@ -36,6 +36,9 @@ to be tmac.an.
 tmac.an will choose between tmac.an.old, your old macros, or tmac.doc,
 which are the new macros, so that both the new man pages and the
 existing man pages will be translated properly.
+
+I'm also told that the groff distribution from MIT has a tmac.doc
+macro set that is compatible with these macros.
 
 
 +--------------+
