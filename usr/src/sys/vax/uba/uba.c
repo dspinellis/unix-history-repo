@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uba.c	6.8 (Berkeley) %G%
+ *	@(#)uba.c	6.9 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -346,9 +346,7 @@ ubareset(uban)
 	ubameminit(uban);
 	for (cdp = cdevsw; cdp < cdevsw + nchrdev; cdp++)
 		(*cdp->d_reset)(uban);
-#ifdef INET
 	ifubareset(uban);
-#endif
 	printf("\n");
 	splx(s);
 }
@@ -396,8 +394,6 @@ ubainit(uba)
 int	ubawedgecnt = 10;
 int	ubacrazy = 500;
 int	zvcnt_max = 5000;	/* in 8 sec */
-int	zvcnt_total;
-long	zvcnt_time;
 /*
  * This routine is called by the locore code to process a UBA
  * error on an 11/780 or 8600.  The arguments are passed
@@ -416,10 +412,15 @@ ubaerror(uban, uh, ipl, uvec, uba)
 	register sr, s;
 
 	if (uvec == 0) {
-		long	dt = time.tv_sec - zvcnt_time;
-		zvcnt_total++;
+		/*
+		 * Declare dt as unsigned so that negative values
+		 * are handled as >8 below, in case time was set back.
+		 */
+		u_long	dt = time.tv_sec - uh->uh_zvtime;
+
+		uh->uh_zvtotal++;
 		if (dt > 8) {
-			zvcnt_time = time.tv_sec;
+			uh->uh_zvtime = time.tv_sec;
 			uh->uh_zvcnt = 0;
 		}
 		if (++uh->uh_zvcnt > zvcnt_max) {

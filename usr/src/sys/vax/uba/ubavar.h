@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ubavar.h	6.4 (Berkeley) %G%
+ *	@(#)ubavar.h	6.5 (Berkeley) %G%
  */
 
 /*
@@ -47,7 +47,9 @@ struct	uba_hd {
 	short	uh_bdpwant;		/* someone awaits bdp's */
 	int	uh_bdpfree;		/* free bdp's */
 	int	uh_hangcnt;		/* number of ticks hung */
-	int	uh_zvcnt;		/* number of 0 vectors */
+	int	uh_zvcnt;		/* number of recent 0 vectors */
+	long	uh_zvtime;		/* time over which zvcnt accumulated */
+	int	uh_zvtotal;		/* total number of 0 vectors */
 	int	uh_errcnt;		/* number of errors */
 	int	uh_lastiv;		/* last free interrupt vector */
 	short	uh_users;		/* transient bdp use count */
