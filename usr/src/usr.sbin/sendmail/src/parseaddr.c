@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	6.38 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	6.39 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -67,6 +67,7 @@ parseaddr(addr, a, copyf, delim, delimptr, e)
 {
 	register char **pvp;
 	auto char *delimptrbuf;
+	bool queueup;
 	char pvpbuf[PSBUFSIZE];
 	extern char **prescan();
 	extern ADDRESS *buildaddr();
@@ -103,8 +104,11 @@ parseaddr(addr, a, copyf, delim, delimptr, e)
 	**	Ruleset 0 does basic parsing.  It must resolve.
 	*/
 
-	rewrite(pvp, 3, e);
-	rewrite(pvp, 0, e);
+	queueup = FALSE;
+	if (rewrite(pvp, 3, e) == EX_TEMPFAIL)
+		queueup = TRUE;
+	if (rewrite(pvp, 0, e) == EX_TEMPFAIL)
+		queueup = TRUE;
 
 	/*
 	**  See if we resolved to a real mailer.
@@ -131,6 +135,13 @@ parseaddr(addr, a, copyf, delim, delimptr, e)
 	*/
 
 	allocaddr(a, copyf, addr, *delimptr);
+
+	/*
+	**  If there was a parsing failure, mark it for queueing.
+	*/
+
+	if (queueup)
+		a->q_flags |= QQUEUEUP;
 
 	/*
 	**  Compute return value.
@@ -556,7 +567,8 @@ toktype(c)
 **		e -- the current envelope.
 **
 **	Returns:
-**		none.
+**		A status code.  If EX_TEMPFAIL, higher level code should
+**			attempt recovery.
 **
 **	Side Effects:
 **		pvp is modified.
@@ -572,6 +584,7 @@ struct match
 # define MAXMATCH	9	/* max params per rewrite */
 
 
+int
 rewrite(pvp, ruleset, e)
 	char **pvp;
 	int ruleset;
@@ -584,6 +597,7 @@ rewrite(pvp, ruleset, e)
 	register struct match *mlp;	/* cur ptr into mlist */
 	register struct rewrite *rwr;	/* pointer to current rewrite rule */
 	int ruleno;			/* current rule number */
+	int rstat = EX_OK;		/* return status */
 	struct match mlist[MAXMATCH];	/* stores match on LHS */
 	char *npvp[MAXATOM+1];		/* temporary space for rebuild */
 	extern char *macvalue();
@@ -596,10 +610,10 @@ rewrite(pvp, ruleset, e)
 	if (ruleset < 0 || ruleset >= MAXRWSETS)
 	{
 		syserr("554 rewrite: illegal ruleset number %d", ruleset);
-		return;
+		return EX_CONFIG;
 	}
 	if (pvp == NULL)
-		return;
+		return EX_USAGE;
 
 	/*
 	**  Run through the list of rewrite rules, applying
@@ -860,7 +874,7 @@ rewrite(pvp, ruleset, e)
 				{
 					syserr("554 rewrite: ruleset %d: replacement $%c out of bounds",
 						ruleset, rp[1]);
-					return;
+					return EX_CONFIG;
 				}
 				if (tTd(21, 15))
 				{
@@ -880,7 +894,7 @@ rewrite(pvp, ruleset, e)
 					if (avp >= &npvp[MAXATOM])
 					{
 						syserr("554 rewrite: expansion too long");
-						return;
+						return EX_DATAERR;
 					}
 					*avp++ = *pp++;
 				}
@@ -892,7 +906,7 @@ rewrite(pvp, ruleset, e)
 				{
 	toolong:
 					syserr("554 rewrite: expansion too long");
-					return;
+					return EX_DATAERR;
 				}
 				if ((*rp & 0377) != MACRODEXPAND)
 					*avp++ = rp;
@@ -1016,6 +1030,7 @@ rewrite(pvp, ruleset, e)
 			if (map != NULL && bitset(MF_VALID, map->s_map.map_flags))
 			{
 				int bsize = sizeof buf - 1;
+				auto int stat = EX_OK;
 
 				if (map->s_map.map_app != NULL)
 					bsize -= strlen(map->s_map.map_app);
@@ -1023,11 +1038,18 @@ rewrite(pvp, ruleset, e)
 					printf("map_lookup(%s, %s) => ",
 						mapname, buf);
 				replac = (*map->s_map.map_class->map_lookup)(&map->s_map,
-						buf, sizeof buf - 1, argvect);
+						buf, sizeof buf - 1, argvect,
+						&stat);
 				if (replac != NULL && map->s_map.map_app != NULL)
 					strcat(replac, map->s_map.map_app);
 				if (tTd(60, 1))
-					printf("%s\n", replac ? replac : "NOT FOUND");
+					printf("%s (%d)\n",
+						replac ? replac : "NOT FOUND",
+						stat);
+
+				/* should recover if stat == EX_TEMPFAIL */
+				if (stat == EX_TEMPFAIL)
+					rstat = stat;
 			}
 			else
 				replac = NULL;
@@ -1055,7 +1077,7 @@ rewrite(pvp, ruleset, e)
 				if (xpvp == NULL)
 				{
 					/* prescan already printed error */
-					return;
+					return EX_DATAERR;
 				}
 			}
 
@@ -1081,11 +1103,15 @@ rewrite(pvp, ruleset, e)
 
 		if (**npvp == CALLSUBR)
 		{
+			int stat;
+
 			bcopy((char *) &npvp[2], (char *) pvp,
 				(int) (avp - npvp - 2) * sizeof *avp);
 			if (tTd(21, 3))
 				printf("-----callsubr %s\n", npvp[1]);
-			rewrite(pvp, atoi(npvp[1]), e);
+			stat = rewrite(pvp, atoi(npvp[1]), e);
+			if (rstat == EX_OK || stat == EX_TEMPFAIL)
+				rstat = stat;
 		}
 		else
 		{
@@ -1104,6 +1130,8 @@ rewrite(pvp, ruleset, e)
 		printf("rewrite: ruleset %2d returns:", ruleset);
 		printav(pvp);
 	}
+
+	return rstat;
 }
 /*
 **  BUILDADDR -- build address from token vector.
@@ -1284,7 +1312,7 @@ buildaddr(tv, a, e)
 	}
 
 	/* do cleanup of final address */
-	rewrite(tv, 4, e);
+	(void) rewrite(tv, 4, e);
 
 	/* save the result for the command line/RCPT argument */
 	cataddr(tv, NULL, buf, sizeof buf, '\0');
@@ -1540,7 +1568,7 @@ remotename(name, m, senderaddress, header, canonical, adddomain, e)
 	pvp = prescan(name, '\0', pvpbuf, NULL);
 	if (pvp == NULL)
 		return (name);
-	rewrite(pvp, 3, e);
+	(void) rewrite(pvp, 3, e);
 	if (adddomain && e->e_fromdomain != NULL)
 	{
 		/* append from domain to this address */
@@ -1556,7 +1584,7 @@ remotename(name, m, senderaddress, header, canonical, adddomain, e)
 
 			while ((*pxp++ = *qxq++) != NULL)
 				continue;
-			rewrite(pvp, 3, e);
+			(void) rewrite(pvp, 3, e);
 		}
 	}
 
@@ -1568,11 +1596,11 @@ remotename(name, m, senderaddress, header, canonical, adddomain, e)
 	*/
 
 	if (senderaddress)
-		rewrite(pvp, 1, e);
+		(void) rewrite(pvp, 1, e);
 	else
-		rewrite(pvp, 2, e);
+		(void) rewrite(pvp, 2, e);
 	if (rwset > 0)
-		rewrite(pvp, rwset, e);
+		(void) rewrite(pvp, rwset, e);
 
 	/*
 	**  Do any final sanitation the address may require.
@@ -1581,7 +1609,7 @@ remotename(name, m, senderaddress, header, canonical, adddomain, e)
 	**	may be used as a default to the above rules.
 	*/
 
-	rewrite(pvp, 4, e);
+	(void) rewrite(pvp, 4, e);
 
 	/*
 	**  Now restore the comment information we had at the beginning.
@@ -1627,7 +1655,7 @@ maplocaluser(a, sendq, e)
 	if (pvp == NULL)
 		return;
 
-	rewrite(pvp, 5, e);
+	(void) rewrite(pvp, 5, e);
 	if (pvp[0] == NULL || (pvp[0][0] & 0377) != CANONNET)
 		return;
 
@@ -1699,6 +1727,7 @@ dequote_init(map, mapname, args)
 **		buf -- the buffer to dequote.
 **		bufsiz -- the size of that buffer.
 **		av -- arguments (ignored).
+**		statp -- pointer to status out-parameter.
 **
 **	Returns:
 **		NULL -- if there were no quotes, or if the resulting
@@ -1707,11 +1736,12 @@ dequote_init(map, mapname, args)
 */
 
 char *
-dequote_map(map, buf, bufsiz, av)
+dequote_map(map, buf, bufsiz, av, statp)
 	MAP *map;
 	char buf[];
 	int bufsiz;
 	char **av;
+	int *statp;
 {
 	register char *p;
 	register char *q;
