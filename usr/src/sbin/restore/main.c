@@ -1,7 +1,7 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
 #ifndef lint
-char version[] = "@(#)main.c 2.10 %G%";
+char version[] = "@(#)main.c 2.11 %G%";
 #endif
 
 /*	Modified to include h option (recursively extract all files within
@@ -73,7 +73,8 @@ daddr_t	seekpt;
 FILE	*df;
 DIR	*dirp;
 int	ofile;
-char	dirfile[] = "/tmp/rstXXXXXX";
+char	dirfile[] = "/tmp/rstaXXXXXX";
+char	entryfile[] = "/tmp/rstbXXXXXX";
 char	lnkbuf[MAXPATHLEN + 1];
 int	pathlen;
 
@@ -83,6 +84,7 @@ struct inotab {
 	ino_t	t_ino;
 	daddr_t	t_seekpt;
 } *inotab[MAXINO];
+int maxino = 0;
 
 #define XISDIR	1
 #define XTRACTD	2
@@ -91,6 +93,7 @@ struct inotab {
 struct xtrlist {
 	struct xtrlist	*x_next;
 	struct xtrlist	*x_linkedto;
+	struct xtrlist	*x_self;
 	time_t		x_timep[2];
 	ino_t		x_ino;
 	char		x_flags;
@@ -98,6 +101,11 @@ struct xtrlist {
 	/* actually longer */
 } *xtrlist[MAXINO];
 int xtrcnt = 0;
+int maxentry = 0;
+union {
+	struct xtrlist u_xtrlist;
+	char dummy[BUFSIZ];
+} entry;
 
 char	*dumpmap;
 char	*clrimap;
@@ -270,19 +278,19 @@ extractfiles(argc, argv)
 	int	xtrfile(), xtrskip(), xtrcvtdir(), xtrcvtskip(),
 		xtrlnkfile(), xtrlnkskip(), null();
 	int	mode, uid, gid, i;
-	char	name[BUFSIZ + 1];
+	FILE	*fe;
 	struct	stat stbuf;
+	char	name[BUFSIZ + 1];
 
 	if (stat(".", &stbuf) < 0) {
 		fprintf(stderr, "cannot stat .\n");
 		done(1);
 	}
-	/*
-	 * should be!!!
-	 *
 	fssize = stbuf.st_blksize;
-	 */
-	fssize = MAXBSIZE;
+	if (fssize <= 0 || ((fssize - 1) & fssize) != 0) {
+		fprintf(stderr, "bad block size %d\n", fssize);
+		done(1);
+	}
 	if (checkvol(&spcl, 1) == 0) {
 		fprintf(stderr, "Tape is not volume 1 of the dump\n");
 	}
@@ -301,6 +309,25 @@ extractfiles(argc, argv)
 		else
 			allocxtr(d, *argv++, XINUSE);
 	}
+	mktemp(entryfile);
+	fe = fopen(entryfile, "w");
+	if (fe == 0) {
+		fprintf(stderr, "restor: %s - cannot create directory temporary\n", entryfile);
+		done(1);
+	}
+	for (d = 0; d <= maxino; d++) {
+		for (xp = xtrlist[INOHASH(d)]; xp; xp = xp->x_next) {
+			if (d != xp->x_ino || (xp->x_flags & XLINKED))
+				continue;
+			blkcpy(xp, &entry, maxentry);
+			fwrite(&entry, maxentry, 1, fe);
+			break;
+		}
+	}
+	fclose(fe);
+	fe = fopen(entryfile, "r");
+	xp = &entry.u_xtrlist;
+	xp->x_ino = 0;
 	if (dumpnum > 1) {
 		/*
 		 * if this is a multi-dump tape we always start with 
@@ -362,7 +389,7 @@ again:
 			i = 0;
 			while (gethead(&spcl) == 0)
 				i++;
-			fprintf(stderr, "resync restor, skipped %i blocks\n",
+			fprintf(stderr, "resync restor, skipped %d blocks\n",
 			    i);
 		}
 		if (checktype(&spcl, TS_END) == 1) {
@@ -374,11 +401,13 @@ again:
 			goto again;
 		}
 		d = spcl.c_inumber;
-		for (xp = xtrlist[INOHASH(d)]; xp; xp = xp->x_next) {
-			if (d != xp->x_ino)
-				continue;
-			if (xp->x_flags & XLINKED)
-				continue;
+		if (d < xp->x_ino) {
+			fseek(fe, 0, 0);
+			xp->x_ino = 0;
+		}
+		while (d > xp->x_ino)
+			fread(xp, maxentry, 1, fe);
+		if (d == xp->x_ino) {
 			xp->x_timep[0] = spcl.c_dinode.di_atime;
 			xp->x_timep[1] = spcl.c_dinode.di_mtime;
 			mode = spcl.c_dinode.di_mode;
@@ -390,7 +419,7 @@ again:
 			default:
 				fprintf(stderr, "%s: unknown file mode 0%o\n",
 				    name, mode);
-				xp->x_flags |= XTRACTD;
+				xp->x_self->x_flags |= XTRACTD;
 				xtrcnt--;
 				goto skipfile;
 			case IFCHR:
@@ -399,7 +428,7 @@ again:
 					fprintf(stdout, "extract special file %s\n", name);
 				if (mknod(name, mode, spcl.c_dinode.di_rdev)) {
 					fprintf(stderr, "%s: cannot create special file\n", name);
-					xp->x_flags |= XTRACTD;
+					xp->x_self->x_flags |= XTRACTD;
 					xtrcnt--;
 					goto skipfile;
 				}
@@ -419,7 +448,7 @@ again:
 					fprintf(stdout, "extract file %s\n", name);
 				if ((ofile = creat(name, 0666)) < 0) {
 					fprintf(stderr, "%s: cannot create file\n", name);
-					xp->x_flags |= XTRACTD;
+					xp->x_self->x_flags |= XTRACTD;
 					xtrcnt--;
 					goto skipfile;
 				}
@@ -443,7 +472,7 @@ again:
 				getfile(xtrlnkfile, xtrlnkskip, spcl.c_dinode.di_size);
 				if (symlink(lnkbuf, name) < 0) {
 					fprintf(stderr, "%s: cannot create symbolic link\n", name);
-					xp->x_flags |= XTRACTD;
+					xp->x_self->x_flags |= XTRACTD;
 					xtrcnt--;
 					goto finished;
 				}
@@ -454,7 +483,7 @@ again:
 					fprintf(stdout, "extract file %s\n", name);
 				if ((ofile = creat(name, 0666)) < 0) {
 					fprintf(stderr, "%s: cannot create file\n", name);
-					xp->x_flags |= XTRACTD;
+					xp->x_self->x_flags |= XTRACTD;
 					xtrcnt--;
 					goto skipfile;
 				}
@@ -465,7 +494,7 @@ again:
 			}
 			chmod(name, mode);
 			utime(name, xp->x_timep);
-			xp->x_flags |= XTRACTD;
+			xp->x_self->x_flags |= XTRACTD;
 			xtrcnt--;
 			goto finished;
 		}
@@ -765,17 +794,15 @@ getfile(f1, f2, size)
 					(long) TP_BSIZE : size);
 			}
 			if ((size -= TP_BSIZE) <= 0) {
-eloop:
-				while (gethead(&spcl) == 0)
-					;
-				if (checktype(&spcl, TS_ADDR) == 1)
-					goto eloop;
+				gethead(&spcl);
 				goto out;
 			}
 		}
 		if (gethead(&addrblock) == 0) {
-			fprintf(stderr, "Missing address (header) block, ino%u\n", ino);
-			goto eloop;
+			fprintf(stderr, "Missing address (header) block for %s\n",
+				entry.u_xtrlist.x_name);
+			spcl.c_magic = 0;
+			goto out;
 		}
 		if (checktype(&addrblock, TS_ADDR) == 0) {
 			spcl = addrblock;
@@ -837,7 +864,8 @@ xtrcvtskip(buf, size)
 	long size;
 {
 
-	fprintf(stderr, "unallocated block in directory\n");
+	fprintf(stderr, "unallocated block in directory %s\n",
+		entry.u_xtrlist.x_name);
 	xtrskip(buf, size);
 }
 
@@ -863,7 +891,8 @@ xtrlnkskip(buf, size)
 #ifdef lint
 	buf = buf, size = size;
 #endif
-	fprintf(stderr, "unallocated block in symbolic link\n");
+	fprintf(stderr, "unallocated block in symbolic link %s\n",
+		entry.u_xtrlist.x_name);
 	done(1);
 }
 
@@ -889,11 +918,12 @@ readtape(b)
 #else
 		if ((i = read(mt, tbf, NTREC*TP_BSIZE)) < 0) {
 #endif
-			fprintf(stderr, "Tape read error");
+			fprintf(stderr, "Tape read error while restoring %s\n",
+				entry.u_xtrlist.x_name);
 			if (!yflag) {
-				fprintf(stderr, "continue?");
+				fprintf(stderr, "continue? ");
 				do	{
-					fprintf(stderr, "[yn]\n");
+					fprintf(stderr, "[yn] ");
 					c = getchar();
 					while (getchar() != '\n')
 						/* void */;
@@ -1072,9 +1102,6 @@ gethead(buf)
 		return(1);
 	}
 	readtape((char *)(&u_ospcl.s_ospcl));
-	if (u_ospcl.s_ospcl.c_magic != OFS_MAGIC ||
-	    checksum((int *)(&u_ospcl.s_ospcl)) == 0)
-		return(0);
 	blkclr((char *)buf, TP_BSIZE);
 	buf->c_type = u_ospcl.s_ospcl.c_type;
 	buf->c_date = u_ospcl.s_ospcl.c_date;
@@ -1082,8 +1109,8 @@ gethead(buf)
 	buf->c_volume = u_ospcl.s_ospcl.c_volume;
 	buf->c_tapea = u_ospcl.s_ospcl.c_tapea;
 	buf->c_inumber = u_ospcl.s_ospcl.c_inumber;
-	buf->c_magic = NFS_MAGIC;
 	buf->c_checksum = u_ospcl.s_ospcl.c_checksum;
+	buf->c_magic = u_ospcl.s_ospcl.c_magic;
 	buf->c_dinode.di_mode = u_ospcl.s_ospcl.c_dinode.odi_mode;
 	buf->c_dinode.di_nlink = u_ospcl.s_ospcl.c_dinode.odi_nlink;
 	buf->c_dinode.di_uid = u_ospcl.s_ospcl.c_dinode.odi_uid;
@@ -1095,6 +1122,10 @@ gethead(buf)
 	buf->c_dinode.di_ctime = u_ospcl.s_ospcl.c_dinode.odi_ctime;
 	buf->c_count = u_ospcl.s_ospcl.c_count;
 	blkcpy(u_ospcl.s_ospcl.c_addr, buf->c_addr, TP_NINDIR);
+	if (u_ospcl.s_ospcl.c_magic != OFS_MAGIC ||
+	    checksum((int *)(&u_ospcl.s_ospcl)) == 0)
+		return(0);
+	buf->c_magic = NFS_MAGIC;
 	return(1);
 }
 
@@ -1151,7 +1182,8 @@ checksum(b)
 		i += *b++;
 	while (--j);
 	if (i != CHECKSUM) {
-		fprintf(stderr, "Checksum error %o, ino %u\n", i, ino);
+		fprintf(stderr, "Checksum error %o, file %s\n", i,
+			entry.u_xtrlist.x_name);
 		return(0);
 	}
 	return(1);
@@ -1375,8 +1407,15 @@ allocxtr(ino, name, flags)
 	char flags;
 {
 	register struct xtrlist	*xp, *pxp;
+	int size;
 
-	xp = (struct xtrlist *)calloc(1, sizeof(struct xtrlist) + strlen(name));
+	size = sizeof(struct xtrlist) + strlen(name);
+	if (maxentry < size)
+		maxentry = size;
+	if (maxino < ino)
+		maxino = ino;
+	xp = (struct xtrlist *)calloc(1, size);
+	xp->x_self = xp;
 	xp->x_next = xtrlist[INOHASH(ino)];
 	xtrlist[INOHASH(ino)] = xp;
 	xp->x_ino = ino;
@@ -1405,5 +1444,9 @@ done(exitcode)
 {
 
 	unlink(dirfile);
+#ifdef notdef
+	/* should decide what to do with this file */
+	unlink(entryfile);
+#endif notdef
 	exit(exitcode);
 }
