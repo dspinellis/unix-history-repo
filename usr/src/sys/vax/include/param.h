@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)param.h	7.5 (Berkeley) %G%
+ *	@(#)param.h	7.6 (Berkeley) %G%
  */
 
 /*
@@ -29,8 +29,8 @@
 #define	htonl(x)	(x)
 #define	htons(x)	(x)
 #else
-u_short	ntohs(), htons();
-u_long	ntohl(), htonl();
+unsigned short	ntohs(), htons();
+unsigned long	ntohl(), htonl();
 #endif
 
 #define	KERNBASE	0x80000000	/* start of kernel virtual */
