@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -75,6 +75,13 @@ int	flushing = 0;		/* are we in TELNET SYNCH mode? */
 
 char	*prompt;
 char	escape = CTRL(]);
+char	echoc = CTRL(E);
+int	flushout = 0;
+int	localsigs = 0;
+int	donelclsigs = 0;
+int	linemode;
+int	doechocharrecognition = 0;
+int	dontlecho = 0;		/* do we do local echoing right now? */
 
 char	line[200];
 int	margc;
@@ -88,14 +95,34 @@ extern	int errno;
 
 struct sockaddr_in sin;
 
-int	intr(), deadpeer();
+int	intr(), deadpeer(), doescape();
 char	*control();
 struct	cmd *getcmd();
 struct	servent *sp;
 
-struct	tchars otc;
+struct	tchars otc, ntc;
 struct	ltchars oltc;
-struct	sgttyb ottyb;
+struct	sgttyb ottyb, nttyb;
+int	globalmode = 0;
+int	flushline = 1;
+
+char	*hostname;
+char	hnamebuf[32];
+
+/*
+ * The following are some clocks used to decide how to interpret
+ * the relationship between various varibles.
+ */
+
+struct {
+    int
+	system,			/* what the current time is */
+	echotoggle,		/* last time user entered echo character */
+	modenegotiated;		/* last time operating mode negotiated */
+} times;
+
+#define	settimer(x)	times.x = times.system++
+
 
 main(argc, argv)
 	int argc;
@@ -110,6 +137,9 @@ main(argc, argv)
 	ioctl(0, TIOCGETP, (char *)&ottyb);
 	ioctl(0, TIOCGETC, (char *)&otc);
 	ioctl(0, TIOCGLTC, (char *)&oltc);
+	ntc = otc;
+	ntc.t_eofc = -1;		/* we don't want to use EOF */
+	nttyb = ottyb;
 	setbuf(stdin, 0);
 	setbuf(stdout, 0);
 	prompt = argv[0];
@@ -139,10 +169,10 @@ main(argc, argv)
 	for (;;)
 		command(1);
 }
-
-char	*hostname;
-char	hnamebuf[32];
-
+
+/*
+ * Various utility routines.
+ */
 
 char **
 genget(name, table, next)
@@ -175,9 +205,75 @@ char	**(*next)();	/* routine to return next entry in table */
 	return (found);
 }
 
+/*
+ * Make a character string into a number.
+ *
+ * Todo:  1.  Could take random integers (123, 0x123, 0123, 0b123).
+ */
+
+special(s)
+register char *s;
+{
+	register char c;
+	char b;
+
+	switch (*s) {
+	case '^':
+		b = *++s;
+		if (b == '?') {
+		    c = b | 0x80;		/* DEL */
+		} else {
+		    c = b & 0x1f;
+		}
+		break;
+	default:
+		c = *s;
+		break;
+	}
+	return c;
+}
+
+/*
+ * Various signal handling routines.
+ */
+
+deadpeer()
+{
+	setcommandmode();
+	longjmp(peerdied, -1);
+}
+
+intr()
+{
+    if (localsigs) {
+	intp();
+	return;
+    }
+    setcommandmode();
+    longjmp(toplevel, -1);
+}
+
+intr2()
+{
+    if (localsigs) {
+	sendbrk();
+	return;
+    }
+}
+
+doescape()
+{
+    command(0);
+}
+
+/*
+ * Mode - set up terminal to a specific mode.
+ */
 
 struct	tchars notc =	{ -1, -1, -1, -1, -1, -1 };
+struct	tchars notc2;
 struct	ltchars noltc =	{ -1, -1, -1, -1, -1, -1 };
+struct	ltchars noltc2;
 
 mode(f)
 	register int f;
@@ -188,11 +284,12 @@ mode(f)
 	struct sgttyb sb;
 	int onoff, old;
 
+	globalmode = f;
 	if (prevmode == f)
 		return (f);
 	old = prevmode;
 	prevmode = f;
-	sb = ottyb;
+	sb = nttyb;
 	switch (f) {
 
 	case 0:
@@ -201,8 +298,8 @@ mode(f)
 		ltc = &oltc;
 		break;
 
-	case 1:
-	case 2:
+	case 1:		/* remote character processing, remote echo */
+	case 2:		/* remote character processing, local echo */
 		sb.sg_flags |= CBREAK;
 		if (f == 1)
 			sb.sg_flags &= ~(ECHO|CRMOD);
@@ -210,8 +307,52 @@ mode(f)
 			sb.sg_flags |= ECHO|CRMOD;
 		sb.sg_erase = sb.sg_kill = -1;
 		tc = &notc;
+		/*
+		 * If user hasn't specified one way or the other,
+		 * then default to not trapping signals.
+		 */
+		if (!donelclsigs)
+			localsigs = 0;
+		if (localsigs) {
+			notc2 = notc;
+			notc2.t_intrc = ntc.t_intrc;
+			notc2.t_quitc = ntc.t_quitc;
+			notc2.t_eofc = ntc.t_eofc;
+			tc = &notc2;
+		} else
+			tc = &notc;
 		ltc = &noltc;
 		onoff = 1;
+		linemode = 0;
+		break;
+	case 3:		/* local character processing, remote echo */
+	case 4:		/* local character processing, local echo */
+	case 5:		/* local character processing, no echo */
+		sb.sg_flags &= ~CBREAK;
+		sb.sg_flags |= CRMOD;
+		if (f == 4)
+			sb.sg_flags |= ECHO;
+		else
+			sb.sg_flags &= ~ECHO;
+		/*
+		 * If user hasn't specified one way or the other,
+		 * then default to trapping signals.
+		 */
+		if (!donelclsigs)
+			localsigs = 1;
+		if (localsigs)
+			tc = &ntc;
+		else {
+			notc2 = ntc;
+			notc2.t_intrc = notc2.t_quitc = -1;
+			tc = &notc2;
+		}
+		noltc2 = oltc;
+		noltc2.t_suspc = escape;
+		noltc2.t_dsuspc = -1;
+		ltc = &noltc2;
+		onoff = 1;
+		linemode = 1;
 		break;
 
 	default:
@@ -222,9 +363,43 @@ mode(f)
 	ioctl(fileno(stdin), TIOCSETP, (char *)&sb);
 	ioctl(fileno(stdin), FIONBIO, &onoff);
 	ioctl(fileno(stdout), FIONBIO, &onoff);
+	if (f >= 3)
+		signal(SIGTSTP, doescape);
+	else if (old >= 3) {
+		signal(SIGTSTP, SIG_DFL);
+		sigsetmask(sigblock(0) & ~(1<<(SIGTSTP-1)));
+	}
 	return (old);
 }
 
+/*
+ * These routines decides on what the mode should be (based on the values
+ * of various global variables).
+ */
+
+setconnmode()
+{
+    static char newmode[8] = { 4, 5, 3, 3, 2, 2, 1, 1 };
+    int index = 0;
+
+    if (hisopts[TELOPT_ECHO]) {
+	index += 2;
+    }
+    if (hisopts[TELOPT_SGA]) {
+	index += 4;
+    }
+    if (dontlecho && (times.echotoggle > times.modenegotiated)) {
+	index += 1;
+    }
+    mode(newmode[index]);
+}
+
+
+setcommandmode()
+{
+    mode(0);
+}
+
 char	sibuf[BUFSIZ], *sbp;
 char	tibuf[BUFSIZ], *tbp;
 int	scc, tcc;
@@ -239,31 +414,46 @@ telnet()
 	int on = 1;
 
 	tout = fileno(stdout);
-	(void) mode(2);
+	setconnmode();
 	ioctl(net, FIONBIO, &on);
 	if (telnetport && !hisopts[TELOPT_SGA]) {
 		willoption(TELOPT_SGA);
 	}
 	for (;;) {
-		long ibits = 0, obits = 0, xbits = 0;
+		fd_set ibits, obits, xbits;
 
-		if (nfrontp - nbackp)
-			obits |= (1 << net);
-		else
-			ibits |= (1 << tin);
-		if (tfrontp - tbackp)
-			obits |= (1 << tout);
-		else
-			ibits |= (1 << net);
-		if (scc < 0 && tcc < 0)
+		if (scc < 0 && tcc < 0) {
 			break;
-		if (flushing) {
-			xbits = 0;
-		} else {
-			xbits = (1 << net);
 		}
-		select(16, &ibits, &obits, &xbits, 0);
-		if (ibits == 0 && obits == 0 && xbits == 0) {
+
+		FD_ZERO(&ibits);
+		FD_ZERO(&obits);
+		FD_ZERO(&xbits);
+
+		if (((globalmode < 4) || flushline) && (nfrontp - nbackp)) {
+			FD_SET(net, &obits);
+		} else {
+			FD_SET(tin, &ibits);
+		}
+		if (tfrontp - tbackp) {
+			FD_SET(tout, &obits);
+		} else {
+			FD_SET(net, &ibits);
+		}
+		if (!flushing) {
+			FD_SET(net, &xbits);
+		}
+		if ((c = select(16, &ibits, &obits, &xbits, 0)) < 1) {
+			if (c == -1) {
+				/*
+				 * we can get EINTR if we are in line mode,
+				 * and the user does an escape (TSTP), or
+				 * some other signal generator.
+				 */
+				if (errno == EINTR) {
+					continue;
+				}
+			}
 			sleep(5);
 			continue;
 		}
@@ -271,7 +461,7 @@ telnet()
 		/*
 		 * Any urgent data?
 		 */
-		if (xbits) {
+		if (FD_ISSET(net, &xbits)) {
 		    flushing = 1;
 		    ttyflush();	/* flush already enqueued data */
 		}
@@ -279,7 +469,7 @@ telnet()
 		/*
 		 * Something to read from the network...
 		 */
-		if (ibits & (1 << net)) {
+		if (FD_ISSET(net, &ibits)) {
 			scc = read(net, sibuf, sizeof (sibuf));
 			if (scc < 0 && errno == EWOULDBLOCK)
 				scc = 0;
@@ -296,7 +486,7 @@ telnet()
 		/*
 		 * Something to read from the tty...
 		 */
-		if (ibits & (1 << tin)) {
+		if (FD_ISSET(tin, &ibits)) {
 			tcc = read(tin, tibuf, sizeof (tibuf));
 			if (tcc < 0 && errno == EWOULDBLOCK)
 				tcc = 0;
@@ -310,16 +500,48 @@ telnet()
 		while (tcc > 0) {
 			register int c;
 
-			if ((&netobuf[BUFSIZ] - nfrontp) < 2)
+			if ((&netobuf[BUFSIZ] - nfrontp) < 2) {
+				flushline = 1;
 				break;
+			}
 			c = *tbp++ & 0377, tcc--;
 			if (strip(c) == escape) {
 				command(0);
 				tcc = 0;
+				flushline = 1;
 				break;
+			} else if ((globalmode >= 4) && doechocharrecognition &&
+							(strip(c) == echoc)) {
+				if (tcc > 0 && strip(*tbp) == echoc) {
+					tbp++;
+					tcc--;
+				} else {
+					dontlecho = !dontlecho;
+					settimer(echotoggle);
+					setconnmode();
+					tcc = 0;
+					flushline = 1;
+					break;
+				}
+			}
+			if (localsigs) {
+				if (c == ntc.t_intrc) {
+					intp();
+					break;
+				} else if (c == ntc.t_quitc) {
+					sendbrk();
+					break;
+				} else if (globalmode > 2) {
+					;
+				} else if (c == nttyb.sg_kill) {
+					NET2ADD(IAC, EL);
+					break;
+				} else if (c == nttyb.sg_erase) {
+					NET2ADD(IAC, EC);
+					break;
+				}
 			}
 			switch (c) {
-			case '\n'|0x80:
 			case '\n':
 				/*
 				 * If echoing is happening locally,
@@ -329,10 +551,11 @@ telnet()
 					NETADD('\r');
 				}
 				NETADD('\n');
+				flushline = 1;
 				break;
-			case '\r'|0x80:
 			case '\r':
 				NET2ADD('\r', '\0');
+				flushline = 1;
 				break;
 			case IAC:
 				NET2ADD(IAC, IAC);
@@ -342,16 +565,18 @@ telnet()
 				break;
 			}
 		}
-		if ((obits & (1 << net)) && (nfrontp - nbackp) > 0)
+		if (((globalmode < 4) || flushline) &&
+		    (FD_ISSET(net, &obits) && (nfrontp - nbackp) > 0)) {
 			netflush(net);
+		}
 		if (scc > 0)
 			telrcv();
-		if ((obits & (1 << tout)) && (tfrontp - tbackp) > 0)
+		if (FD_ISSET(tout, &obits) && (tfrontp - tbackp) > 0)
 			ttyflush();
 	}
-	(void) mode(0);
+	setcommandmode();
 }
-
+
 /*
  * Telnet receiver states for fsm
  */
@@ -457,15 +682,25 @@ telrcv()
 
 		case TS_WILL:
 			printoption("RCVD", will, c, !hisopts[c]);
-			if (!hisopts[c])
+			if (c == TELOPT_TM) {
+				if (flushout) {
+					flushout = 1;
+				}
+			} else if (!hisopts[c]) {
 				willoption(c);
+			}
 			state = TS_DATA;
 			continue;
 
 		case TS_WONT:
 			printoption("RCVD", wont, c, hisopts[c]);
-			if (hisopts[c])
+			if (c == TELOPT_TM) {
+				if (flushout) {
+					flushout = 1;
+				}
+			} else if (hisopts[c]) {
 				wontoption(c);
+			}
 			state = TS_DATA;
 			continue;
 
@@ -482,6 +717,8 @@ telrcv()
 				myopts[c] = 0;
 				sprintf(nfrontp, wont, c);
 				nfrontp += sizeof (wont) - 2;
+				flushline = 1;
+				setconnmode();	/* set new tty mode (maybe) */
 				printoption("SENT", wont, c);
 			}
 			state = TS_DATA;
@@ -489,7 +726,7 @@ telrcv()
 		}
 	}
 }
-
+
 willoption(option)
 	int option;
 {
@@ -498,16 +735,15 @@ willoption(option)
 	switch (option) {
 
 	case TELOPT_ECHO:
-		(void) mode(1);
-
 	case TELOPT_SGA:
+		settimer(modenegotiated);
 		hisopts[option] = 1;
 		fmt = doopt;
+		setconnmode();		/* possibly set new tty mode */
 		break;
 
 	case TELOPT_TM:
-		fmt = dont;
-		break;
+		return;			/* Never reply to TM will's/wont's */
 
 	default:
 		fmt = dont;
@@ -526,12 +762,15 @@ wontoption(option)
 	switch (option) {
 
 	case TELOPT_ECHO:
-		(void) mode(2);
-
 	case TELOPT_SGA:
+		settimer(modenegotiated);
 		hisopts[option] = 0;
 		fmt = dont;
+		setconnmode();			/* Set new tty mode */
 		break;
+
+	case TELOPT_TM:
+		return;		/* Never reply to TM will's/wont's */
 
 	default:
 		fmt = dont;
@@ -549,19 +788,15 @@ dooption(option)
 	switch (option) {
 
 	case TELOPT_TM:
-		fmt = wont;
-		break;
-
-	case TELOPT_ECHO:
-		(void) mode(2);
-		fmt = will;
-		hisopts[option] = 0;
-		break;
-
-	case TELOPT_SGA:
 		fmt = will;
 		break;
 
+	case TELOPT_SGA:		/* no big deal */
+		fmt = will;
+		myopts[option] = 1;
+		break;
+
+	case TELOPT_ECHO:		/* We're never going to echo... */
 	default:
 		fmt = wont;
 		break;
@@ -570,7 +805,7 @@ dooption(option)
 	nfrontp += sizeof (doopt) - 2;
 	printoption("SENT", fmt, option);
 }
-
+
 /*
  * Check to see if any out-of-band data exists on a socket (for
  * Telnet "synch" processing).
@@ -617,18 +852,6 @@ control(c)
 	return (buf);
 }
 
-deadpeer()
-{
-	(void) mode(0);
-	longjmp(peerdied, -1);
-}
-
-intr()
-{
-	(void) mode(0);
-	longjmp(toplevel, -1);
-}
-
 ttyflush()
 {
     int n;
@@ -663,7 +886,7 @@ netflush(fd)
     }
     if (n < 0) {
 	if (errno != ENOBUFS && errno != EWOULDBLOCK) {
-	    (void) mode(0);
+	    setcommandmode();
 	    perror(hostname);
 	    close(fd);
 	    neturg = 0;
@@ -769,17 +992,29 @@ struct sendlist *s;
 
 sendesc()
 {
-	NETADD(escape);
+    NETADD(escape);
 }
 
 ayt()
 {
-	NET2ADD(IAC, AYT);
+    NET2ADD(IAC, AYT);
 }
 
 intp()
 {
-	NET2ADD(IAC, IP);
+    NET2ADD(IAC, IP);
+}
+
+sendbrk()
+{
+    *nfrontp++ = IAC;
+    *nfrontp++ = DO;
+    *nfrontp++ = TELOPT_TM;
+    flushout = 1;
+    *nfrontp++ = IAC;
+    *nfrontp++ = BREAK;
+    flushline = 1;
+    printoption("SENT", doopt, TELOPT_TM);
 }
 
 
@@ -925,42 +1160,76 @@ char	**argv;
  * to by the arguments to the "toggle" command.
  */
 
+lclsigs()
+{
+    localsigs = !localsigs;
+    printf("%s recognize interrupt/quit characters.\n",
+					localsigs ? "Will" : "Won't");
+    donelclsigs = 1;
+    fflush(stdout);
+}
+
+localecho()
+{
+    doechocharrecognition = !doechocharrecognition;
+    printf("%s recognize echo toggle character.\n",
+				doechocharrecognition ? "Will" : "Won't");
+    fflush(stdout);
+}
+
+/*VARARGS*/
+setcrmod()
+{
+
+    crmod = !crmod;
+    printf("%s map carriage return on output.\n", crmod ? "Will" : "Won't");
+    fflush(stdout);
+}
+
 setdebug()
 {
 
-	debug = debug ? 0 : 1;
-	printf("%s turn on socket level debugging.\n",
-		debug ? "Will" : "Won't");
-	fflush(stdout);
-	if (net > 0 &&
-	    setsockopt(net, SOL_SOCKET, SO_DEBUG, &debug, sizeof(debug)) < 0)
-		perror("setsockopt (SO_DEBUG)");
+    debug = debug ? 0 : 1;
+    printf("%s turn on socket level debugging.\n",
+	    debug ? "Will" : "Won't");
+    fflush(stdout);
+    if (net > 0 &&
+	setsockopt(net, SOL_SOCKET, SO_DEBUG, &debug, sizeof(debug)) < 0)
+	    perror("setsockopt (SO_DEBUG)");
 }
 
 static
 setnetdata()
 {
 
-	netdata = !netdata;
-	printf("%s turn on printing of raw network traffic.\n",
-		netdata ? "Will" : "Wont");
+    netdata = !netdata;
+    printf("%s turn on printing of raw network traffic.\n",
+	    netdata ? "Will" : "Wont");
 }
 
 setoptions()
 {
 
-	showoptions = !showoptions;
-	printf("%s show option processing.\n", showoptions ? "Will" : "Won't");
-	fflush(stdout);
+    showoptions = !showoptions;
+    printf("%s show option processing.\n", showoptions ? "Will" : "Won't");
+    fflush(stdout);
 }
 
 int togglehelp();
 
+char	crmodhelp[] =	"toggle mapping of received carriage returns";
+
 struct cmd togglelist[] = {
-    { "debug", "toggle debugging", setdebug, 1 },
-    { "options", "toggle viewing of options processing", setoptions, 1 },
-    { "netdata", "toggle printing of hexadecimal network data",
-							setnetdata, 1 },
+    { "localchars", "toggle local recognition of control characters",
+								lclsigs, 1 },
+    { "echochar", "toggle recognition of echo toggle character", localecho, 1 },
+    { "crmod",	crmodhelp,	setcrmod, 1, 0 },
+    { " ", "", 0, 1 },		/* empty line */
+    { "debug", "(debugging) toggle debugging", setdebug, 1 },
+    { "options", "(debugging) toggle viewing of options processing",
+								setoptions, 1 },
+    { "netdata", "(debugging) toggle printing of hexadecimal network data",
+								setnetdata, 1 },
     { "?", "display help information", togglehelp, 1 },
     { "help", "display help information", togglehelp, 0 },
     { 0 }
@@ -1023,6 +1292,146 @@ char	*argv[];
 }
 
 /*
+ * The following perform the "set" command.
+ */
+
+struct chartab {
+    char *label;			/* name */
+    char *help;				/* help information */
+    char *charp;			/* where it is located at */
+};
+
+struct chartab Chartab[] = {
+    { "echo", 	"character to toggle local echoing on/off", &echoc },
+    { "escape",	"character to escape back to telnet command mode", &escape },
+    { "interrupt", "character to cause an Interrupt Process", &ntc.t_intrc },
+    { "quit",	"character to cause a Break", &ntc.t_quitc },
+    { "erase",	"character to cause an Erase Character", &nttyb.sg_erase },
+    { "kill",	"character to cause an Erase Line", &nttyb.sg_kill },
+    { 0 }
+};
+
+char **
+getnextchar(name)
+char *name;
+{
+    struct chartab *c = (struct chartab *)name;
+
+    return (char **) (c+1);
+}
+
+struct chartab *
+getchartab(name)
+char *name;
+{
+    return (struct chartab *) genget(name, (char **) Chartab, getnextchar);
+}
+
+setcmd(argc, argv)
+int	argc;
+char	*argv[];
+{
+    int value;
+    struct chartab *ct;
+
+    /* XXX back we go... sigh */
+    if (argc != 3) {
+	printf("Format is 'set Name Value', where 'Name' is one of:\n\n");
+	for (ct = Chartab; ct->label; ct++) {
+	    printf("%s\t%s\n", ct->label, ct->help);
+	}
+	return;
+    }
+
+    ct = getchartab(argv[1]);
+    if (ct == 0) {
+	fprintf(stderr, "'%s': unknown argument ('set ?' for help).\n",
+			argv[1]);
+    } else if (ct == (struct chartab *) -1) {
+	fprintf(stderr, "'%s': ambiguous argument ('set ?' for help).\n",
+			argv[1]);
+    } else {
+	if (strcmp("off", argv[2])) {
+	    value = special(argv[2]);
+	} else {
+	    value = -1;
+	}
+	*(ct->charp) = value;
+	printf("%s character is '%s'.\n", ct->label, control(*(ct->charp)));
+    }
+}
+
+/*
+ * The following are the data structures and routines for the
+ * 'mode' command.
+ */
+
+dolinemode()
+{
+    if (hisopts[TELOPT_SGA]) {
+	wontoption(TELOPT_SGA, 0);
+    }
+    if (hisopts[TELOPT_ECHO]) {
+	wontoption(TELOPT_ECHO, 0);
+    }
+}
+
+docharmode()
+{
+    if (!hisopts[TELOPT_SGA]) {
+	willoption(TELOPT_SGA, 0);
+    }
+    if (!hisopts[TELOPT_ECHO]) {
+	willoption(TELOPT_ECHO, 0);
+    }
+}
+
+struct cmd Modelist[] = {
+    { "line",		"line-by-line mode",		dolinemode, 1, 1 },
+    { "character",	"character-at-a-time mode",	docharmode, 1, 1 },
+    { 0 },
+};
+
+char **
+getnextmode(name)
+char *name;
+{
+    struct cmd *c = (struct cmd *) name;
+
+    return (char **) (c+1);
+}
+
+struct cmd *
+getmodecmd(name)
+char *name;
+{
+    return (struct cmd *) genget(name, (char **) Modelist, getnextmode);
+}
+
+modecmd(argc, argv)
+int	argc;
+char	*argv[];
+{
+    struct cmd *mt;
+
+    if ((argc != 2) || !strcmp(argv[1], "?") || !strcmp(argv[1], "help")) {
+	printf("format is:  'mode Mode', where 'Mode' is one of:\n\n");
+	for (mt = Modelist; mt->name; mt++) {
+	    printf("%s\t%s\n", mt->name, mt->help);
+	}
+	return;
+    }
+    mt = getmodecmd(argv[1]);
+    if (mt == 0) {
+	fprintf(stderr, "Unknown mode '%s' ('mode ?' for help).\n", argv[1]);
+    } else if (mt == (struct cmd *) -1) {
+	fprintf(stderr, "Ambiguous mode '%s' ('mode ?' for help).\n", argv[1]);
+    } else {
+	(*mt->handler)();
+    }
+}
+
+/*
  * The following are the data structures, and many of the routines,
  * relating to command processing.
  */
@@ -1051,26 +1460,14 @@ setescape(argc, argv)
 }
 
 /*VARARGS*/
-setcrmod()
-{
-
-	crmod = !crmod;
-	printf("%s map carriage return on output.\n", crmod ? "Will" : "Won't");
-	fflush(stdout);
-}
-
-/*VARARGS*/
 suspend()
 {
-	register int save;
-
-	save = mode(0);
+	setcommandmode();
 	kill(0, SIGTSTP);
 	/* reget parameters in case they were changed */
 	ioctl(0, TIOCGETP, (char *)&ottyb);
 	ioctl(0, TIOCGETC, (char *)&otc);
 	ioctl(0, TIOCGLTC, (char *)&oltc);
-	(void) mode(save);
 }
 
 /*VARARGS*/
@@ -1078,7 +1475,6 @@ bye()
 {
 	register char *op;
 
-	(void) mode(0);
 	if (connected) {
 		shutdown(net, 2);
 		printf("Connection closed.\n");
@@ -1103,10 +1499,12 @@ quit()
 /*VARARGS*/
 status()
 {
-	if (connected)
+	if (connected) {
 		printf("Connected to %s.\n", hostname);
-	else
+		/* XXX should print out line modes, etc. */
+	} else {
 		printf("No connection.\n");
+	}
 	printf("Escape character is '%s'.\n", control(escape));
 	fflush(stdout);
 }
@@ -1167,8 +1565,11 @@ tn(argc, argv)
 			sin.sin_port = htons(sin.sin_port);
 		}
 		telnetport = 0;
+	} else {
+		telnetport = 1;
 	}
 	signal(SIGINT, intr);
+	signal(SIGQUIT, intr2);
 	signal(SIGPIPE, deadpeer);
 	printf("Trying...\n");
 	do {
@@ -1220,26 +1621,29 @@ char	zhelp[] =	"suspend telnet";
 char	escapehelp[] =	"set escape character";
 char	statushelp[] =	"print status information";
 char	helphelp[] =	"print help information";
-char	crmodhelp[] =	"toggle mapping of received carriage returns";
-char	togglestring[] = "toggle various (debugging) options";
-char	sendhelp[] =	"transmit special characters";
+char	togglestring[] = "toggle various options ('toggle ?' for more)";
+char	sendhelp[] =	"transmit special characters ('send ?' for more)";
+char	sethelp[] = 	"set various special characters ('set ?' for more)";
+char	modehelp[] =	"change operating mode ('mode ?' for more)";
 
 int	help();
 
 struct cmd cmdtab[] = {
-	{ "open",	openhelp,	tn, 1, 0 },
-	{ "close",	closehelp,	bye, 1, 1 },
-	{ "quit",	quithelp,	quit, 1, 0 },
-	{ "z",		zhelp,		suspend, 1, 0 },
-	{ "escape",	escapehelp,	setescape, 1, 0 },
-	{ "status",	statushelp,	status, 1, 0 },
-	{ "crmod",	crmodhelp,	setcrmod, 1, 0 },
-	{ "send",	sendhelp,	sendcmd, 1, 1 },
-	    { "transmit",	sendhelp,	sendcmd, 0, 1 },
-	    { "xmit",		sendhelp,	sendcmd, 0, 1 },
-	{ "toggle",	togglestring,	toggle, 1, 0 },
-	{ "?",		helphelp,	help, 1, 0 },
-	{ "help",	helphelp,	help, 0, 0 },
+	{ "open",	openhelp,	tn,		1, 0 },
+	{ "close",	closehelp,	bye,		1, 1 },
+	{ "quit",	quithelp,	quit,		1, 0 },
+	{ "z",		zhelp,		suspend,	1, 0 },
+	{ "escape",	escapehelp,	setescape,	1, 0 },
+	{ "status",	statushelp,	status,		1, 0 },
+	{ "crmod",	crmodhelp,	setcrmod,	1, 0 },
+	{ "send",	sendhelp,	sendcmd,	1, 1 },
+	{ "set",	sethelp,	setcmd,		1, 0 },
+	{ "mode",	modehelp,	modecmd,	1, 1 },
+	{ "transmit",	sendhelp,	sendcmd,	0, 1 },
+	{ "xmit",	sendhelp,	sendcmd,	0, 1 },
+	{ "toggle",	togglestring,	toggle,		1, 0 },
+	{ "?",		helphelp,	help,		1, 0 },
+	{ "help",	helphelp,	help,		0, 0 },
 	0
 };
 
@@ -1332,9 +1736,9 @@ command(top)
 	int top;
 {
 	register struct cmd *c;
-	int oldmode, wasopen;
+	int wasopen;
 
-	oldmode = mode(0);
+	setcommandmode();
 	if (!top)
 		putchar('\n');
 	else
@@ -1367,8 +1771,10 @@ command(top)
 			break;
 	}
 	if (!top) {
-		if (!connected)
+		if (!connected) {
 			longjmp(toplevel, 1);
-		(void) mode(oldmode);
+			/*NOTREACHED*/
+		}
+		setconnmode();
 	}
 }
