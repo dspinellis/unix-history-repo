@@ -3,10 +3,8 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)ruptime.1	6.8 (Berkeley) %G%
+.\"     @(#)ruptime.1	6.9 (Berkeley) %G%
 .\"
-.Vx
-.Vx
 .Dd 
 .Dt RUPTIME 1
 .Os BSD 4.2
@@ -27,31 +25,31 @@ Machines for which no status report has been received for 11
 minutes are shown as being down.
 .Pp
 Options:
-.Tw Ds
-.Tp Fl a
+.Bl -tag -width Ds
+.It Fl a
 Users idle an hour or more are not counted unless the
 .Fl a
 flag is given.
-.Tp Fl l
+.It Fl l
 Sort by load average.
-.Tp Fl r
+.It Fl r
 Reverses the sort order.
-.Tp Fl t
+.It Fl t
 Sort by uptime.
-.Tp Fl u
+.It Fl u
 Sort by number of users.
-.Tp
+.El
 .Pp
 The default listing is sorted by host name.
 .Sh FILES
-.Dw /usr/var/rwho/whod.*
-.Di L
-.Dp Pa /usr/var/rwho/whod.*
+.Bl -tag -width /usr/var/rwho/whod.* -compact
+.It Pa /usr/var/rwho/whod.*
 data files
-.Dp
+.El
 .Sh SEE ALSO
 .Xr rwho 1
 .Xr uptime 1
 .Sh HISTORY
 .Nm Ruptime
-appeared in 4.2 BSD.
+appeared in
+.Bx 4.2 .
