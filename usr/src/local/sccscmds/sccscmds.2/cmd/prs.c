@@ -23,7 +23,7 @@
 # include "../hdr/defines.h"
 # include "../hdr/had.h"
 
-SCCSID(@(#)prs.c	1.2);
+SCCSID(@(#)prs.c	4.1);
 
 char	had[26];
 char	Getpgm[]	"/usr/local/get";
