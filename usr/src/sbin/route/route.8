@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)route.8	6.4 (Berkeley) %G%
+.\"	@(#)route.8	6.5 (Berkeley) %G%
 .\"
 .TH ROUTE 8 ""
 .UC 5
@@ -22,22 +22,20 @@ route \- manually manipulate the routing tables (Interim)
 .SH SYNOPSIS
 .B /etc/route
 [
-.B \-i
-] [
-.B \-f
-] [
 .B \-n
 ] [
 .B \-q
 ] [
+.B \-v
+] [
 .B \-k
 .I vmunix
-] [
-.B \-x
-] [
-.B \-o
-] [
-.I command args
+]
+.I command
+[ [
+.I modifiers
+]
+.I args
 ]
 .SH DESCRIPTION
 .I Route
@@ -48,18 +46,23 @@ system routing table management daemon,
 should tend to this task.
 .PP
 .I Route
-accepts three commands:
+accepts five commands:
 .IR add ,
 to add a route,
+.IR flush ,
+to remove all routes,
 .IR delete ,
-to delete a route, and
+to delete a specific route,
+.IR change ,
+to changes aspects of a route (such as its gateway),
+and
 .IR monitor ,
 to report any changes to the routing information base,
 routing lookup misses, or suspected network partionings.
 .PP
 The monitor command has the syntax
 .ti +0.25i
-.B /etc/route 
+.B route 
 [
 .I -n 
 ]
@@ -68,15 +71,15 @@ The monitor command has the syntax
 The other commands have the following syntax:
 .PP
 .ti +0.25i
-.B /etc/route 
+.B route 
 [
-.I -n -i -f -x -o
+.I -n 
 ]
 .I command
 [
-.B net
+.B -net
 |
-.B host
+.B -host
 ]
 .I destination gateway
 [
@@ -92,9 +95,9 @@ Routes to a particular host are distinguished from those to
 a network by interpreting the Internet address associated with
 .IR destination .
 The optional keywords
-.B net
+.B -net
 and
-.B host
+.B -host
 force the destination to be interpreted as a network or a host, respectively.
 Otherwise, if the 
 .I destination
@@ -105,20 +108,21 @@ is the symbolic name of a network, then the route is
 assumed to be to a network; otherwise, it is presumed to be a
 route to a host.  If the route is via an interface rather than
 via a gateway, the 
-.I -i
-flag should be specified;
+.I -interface
+modifier should be specified;
 the gateway given is the address of this host on the common network,
 indicating the interface to be used for transmission.
 .PP
-The optional flags
-.I -x
+The optional modifiers
+.I -xns,
 and
-.I -o
-specify that the addresses are in the XNS or OSI address families,
+.I -osi
+specify that all subsequent addresses are in the XNS or OSI address families,
 and the names must be numeric specifications rather than
 symbolic names.
-For OSI addresses a third paramter is the address mask,
+For OSI addresses a third parameter is the address mask,
 as given in an ESIS redirect.
+(preceded by the -netmask modifier)
 .PP
 All symbolic names specified for a
 .I destination 
@@ -137,8 +141,8 @@ As such, only the super-user may modify
 the routing tables.
 .PP
 If the 
-.B \-f
-option is specified, 
+.B flush
+command is specified, 
 .I route
 will ``flush'' the routing tables of all gateway entries.
 If this is used in conjunction with one of the commands
