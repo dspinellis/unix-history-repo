@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -148,6 +148,7 @@ status()
           curcmd->c_name, naptime);
 }
 
+void
 suspend()
 {
         int oldmask;

@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 #include "systat.h"
@@ -35,11 +35,9 @@ int     mem = -1;
 int     swap = -1;
 int	naptime = 5;
 
-int     die();
-int     display();
-int     suspend();
-sig_t	sigtstpdfl;
+void	die(), display(), suspend();
 
+sig_t	sigtstpdfl;
 int     dellave;
 
 static	WINDOW *wload;			/* one line window for load average */
@@ -156,6 +154,7 @@ labels()
 	refresh();
 }
 
+void
 display()
 {
 	register int i, j;
@@ -200,6 +199,7 @@ load()
 	clrtoeol();
 }
 
+void
 die()
 {
 	move(CMDLINE, 0);
