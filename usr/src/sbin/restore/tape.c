@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "restore.h"
@@ -38,6 +38,7 @@ static int	pathlen;
 
 int		Bcvt;		/* Swap Bytes (for CCI or sun) */
 static int	Qcvt;		/* Swap quads (for sun) */
+u_long		swabl();
 /*
  * Set up an input source
  */
@@ -827,7 +828,6 @@ gethead(buf)
 	struct s_spcl *buf;
 {
 	long i;
-	u_long *j;
 	union u_ospcl {
 		char dummy[TP_BSIZE];
 		struct	s_ospcl {
@@ -899,17 +899,18 @@ gethead(buf)
 	buf->c_magic = NFS_MAGIC;
 
 good:
-	j = buf->c_dinode.di_qsize.val;
-	i = j[1];
 	if (buf->c_dinode.di_size == 0 &&
-	    (buf->c_dinode.di_mode & IFMT) == IFDIR && Qcvt==0) {
-		if (*j || i) {
+	    (buf->c_dinode.di_mode & IFMT) == IFDIR && Qcvt == 0) {
+		if (buf->c_dinode.di_qsize.val[0] ||
+		    buf->c_dinode.di_qsize.val[1]) {
 			printf("Note: Doing Quad swapping\n");
 			Qcvt = 1;
 		}
 	}
 	if (Qcvt) {
-		j[1] = *j; *j = i;
+		i = buf->c_dinode.di_qsize.val[1];
+		buf->c_dinode.di_qsize.val[1] = buf->c_dinode.di_qsize.val[0];
+		buf->c_dinode.di_qsize.val[0] = i;
 	}
 	switch (buf->c_type) {
 
@@ -1108,12 +1109,42 @@ msg(cp, a1, a2, a3)
 }
 #endif RRESTORE
 
+u_char *
+swabshort(sp, n)
+	register u_char *sp;
+	register int n;
+{
+	char c;
+
+	while (--n >= 0) {
+		c = sp[0]; sp[0] = sp[1]; sp[1] = c;
+		sp += 2;
+	}
+	return (sp);
+}
+
+u_char *
+swablong(sp, n)
+	register u_char *sp;
+	register int n;
+{
+	char c;
+
+	while (--n >= 0) {
+		c = sp[0]; sp[0] = sp[3]; sp[3] = c;
+		c = sp[2]; sp[2] = sp[1]; sp[1] = c;
+		sp += 4;
+	}
+	return (sp);
+}
+
 swabst(cp, sp)
-register char *cp, *sp;
+	register u_char *cp, *sp;
 {
 	int n = 0;
-	char c;
-	while(*cp) {
+	u_char c;
+
+	while (*cp) {
 		switch (*cp) {
 		case '0': case '1': case '2': case '3': case '4':
 		case '5': case '6': case '7': case '8': case '9':
@@ -1121,20 +1152,32 @@ register char *cp, *sp;
 			continue;
 		
 		case 's': case 'w': case 'h':
-			c = sp[0]; sp[0] = sp[1]; sp[1] = c;
-			sp++;
+			if (n == 0)
+				n = 1;
+			sp = swabshort(sp, n);
 			break;
 
 		case 'l':
-			c = sp[0]; sp[0] = sp[3]; sp[3] = c;
-			c = sp[2]; sp[2] = sp[1]; sp[1] = c;
-			sp += 3;
+			if (n == 0)
+				n = 1;
+			sp = swablong(sp, n);
+			break;
+
+		default: /* Any other character, like 'b' counts as byte. */
+			if (n == 0)
+				n = 1;
+			sp += n;
+			break;
 		}
-		sp++; /* Any other character, like 'b' counts as byte. */
-		if (n <= 1) {
-			n = 0; cp++;
-		} else
-			n--;
+		cp++;
+		n = 0;
 	}
 }
-swabl(x) { unsigned long l = x; swabst("l", (char *)&l); return l; }
+
+u_long
+swabl(x)
+	u_long x;
+{
+	swabst("l", (char *)&x);
+	return (x);
+}
