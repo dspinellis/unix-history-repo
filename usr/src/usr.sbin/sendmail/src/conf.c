@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.24 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -1041,18 +1041,45 @@ initgroups(name, basegid)
 #endif
 
 #ifdef HASSTATFS
-#include <sys/mount.h>
+# if defined(sgi) || defined(apollo)
+#  include <sys/statfs.h>
+# else
+#  if defined(sun) || defined(hpux)
+#   include <sys/vfs.h>
+#  else
+#   include <sys/mount.h>
+#  endif
+# endif
 #endif
 
 bool
 enoughspace()
 {
 #ifdef HASSTATFS
+# if defined(ultrix)
+	struct fs_data fs;
+#  define f_bavail	fd_bfreen
+# else
 	struct statfs fs;
+# endif
 	extern int errno;
 	extern char *errstring();
 
-	if (MinBlocksFree > 0 && statfs(QueueDir, &fs) >= 0)
+	if (MinBlocksFree <= 0)
+	{
+		if (tTd(4, 80))
+			printf("enoughspace: no threshold\n");
+		return TRUE;
+	}
+# if defined(sgi) || defined(apollo)
+	if (statfs(QueueDir, &fs, sizeof fs, 0) == 0)
+# else
+#  if defined(ultrix)
+	if (statfs(QueueDir, &fs) > 0)
+#  else
+	if (statfs(QueueDir, &fs) == 0)
+#  endif
+# endif
 	{
 		if (tTd(4, 80))
 			printf("enoughspace: bavail=%ld, min=%ld\n",
