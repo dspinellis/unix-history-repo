@@ -108,7 +108,7 @@
 
 
 
-static char SccsId[] = "@(#)conf.c	2.2	%G%";
+static char SccsId[] = "@(#)conf.c	2.3	%G%";
 
 
 bool	UseMsgId = FALSE;	/* don't put message id's in anywhere */
@@ -128,6 +128,7 @@ char	*UucpLocal[] = { sysname, NULL };
 static char	*BerkLocal[] = { "i", "ingres", "ing70", NULL };
 # define ArpaLocal	NULL
 char		*MyLocName = "Ing70";
+char		*DaemonName = "Ing70:~MAILER~DAEMON~";
 # define HASARPA
 # define V6
 # endif ING70
@@ -135,39 +136,43 @@ char		*MyLocName = "Ing70";
 # ifdef INGVAX
 static char	*BerkLocal[] = { "j", "ingvax", NULL };
 char		*MyLocName = "IngVax";
+char		*DaemonName = "IngVax:~MAILER~DAEMON~";
 # endif INGVAX
 
 # ifdef CSVAX
 static char	*BerkLocal[] = { "v", "csvax", "vax", NULL };
 static char	*UucpLocal[] = { "ucbvax", "ernie", NULL };
 char		*MyLocName = "CSVAX";
+char		*DaemonName = "CSVAX:~MAILER~DAEMON~";
 # define HASUUCP
 # define NETV6MAIL
 # endif CSVAX
 
 # ifdef CORY
-/* untested */
 static char	*BerkLocal[] = { "y", "cory", NULL };
 char		*MyLocName = "Cory";
+char		*DaemonName = "Cory:~MAILER~DAEMON~";
 # endif CORY
 
 # ifdef IMAGE
 /* untested */
 static char	*BerkLocal[] = { "m", "image", NULL };
 char		*MyLocName = "Image";
+char		*DaemonName = "Image:~MAILER~DAEMON~";
 # define V6
 # endif IMAGE
 
 # ifdef ESVAX
-/* untested */
 static char	*BerkLocal[] = { "o", "esvax", NULL };
 char		*MyLocName = "ESVAX";
+char		*DaemonName = "ESVAX:~MAILER~DAEMON~";
 # endif ESVAX
 
 # ifdef EECS40
 /* untested */
 static char	*BerkLocal[] = { "z", "eecs40", NULL };
 char		*MyLocName = "EECS40";
+char		*DaemonName = "EECS40:~MAILER~DAEMON~";
 # define V6
 # endif EECS40
 
