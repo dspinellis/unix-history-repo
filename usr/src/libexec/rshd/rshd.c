@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	5.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)rshd.c	5.32 (Berkeley) %G%";
 #endif /* not lint */
 
 /* From:
@@ -60,7 +60,7 @@ int	sent_null;
 #include <kerberosIV/krb.h>
 #define	VERSION_SIZE	9
 #define SECURE_MESSAGE  "This rsh session is using DES encryption for all transmissions.\r\n"
-#define	OPTIONS		"alnkvx"
+#define	OPTIONS		"alknvx"
 char	authbuf[sizeof(AUTH_DAT)];
 char	tickbuf[sizeof(KTEXT_ST)];
 int	use_kerberos = 0, vacuous = 0;
@@ -683,9 +683,5 @@ topdomain(h)
 
 usage()
 {
-#ifdef	KERBEROS
-	syslog(LOG_ERR, "usage: rshd [-aln]");
-#else
-	syslog(LOG_ERR, "usage: rshd [-alknvx]");
-#endif
+	syslog(LOG_ERR, "usage: rshd [-%s]", OPTIONS);
 }
