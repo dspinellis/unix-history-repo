@@ -1,4 +1,4 @@
-#	Makefile	6.2	83/09/25
+#	Makefile	6.3	85/04/12
 #
 # Make a 780 rx01 floppy
 # 
@@ -9,10 +9,10 @@ DEVBOO=	hkmboo.cmd hksboo.cmd hpmboo.cmd hpsboo.cmd \
 	ramboo.cmd rasboo.cmd upmboo.cmd upsboo.cmd
 UTILS=	format copy drtest
 # order is NOT random...
-OBJS=	${BOOTS} ${STDBOO} ${DEFBOO} ${DEVBOO} ${UTILS}
+OBJS=	${BOOTS} ${STDBOO} ${DEVBOO} ${UTILS}
 FROMDEC=du* dm* db* s[mbr]* *boo.* vmb.exe *.hlp cs* ci*
-#FLOPPY=	/dev/floppy
-FLOPPY=	/dev/rrx0b
+FLOPPY=	/dev/floppy
+#FLOPPY= /dev/rrx0b		# for using RX device
 
 all:	floppy
 
@@ -26,7 +26,7 @@ install: floppy
 # build a boot floppy from a DEC console floppy
 update:	${OBJS}
 	-mkdir fromdec
-	cd fromdec; arff xf ${FLOPPY}; rm -f ${FROMDEC} ${OBJS}; \
+	cd fromdec; arff xf ${FLOPPY}; rm -f ${FROMDEC} ${OBJS} ${DEFBOO}; \
 		flcopy -t3 -f ${FLOPPY}; rm -f floppy; arff crf ${FLOPPY} *
 	rm -rf fromdec
 	arff rf ${FLOPPY} ${OBJS}
