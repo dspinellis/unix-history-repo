@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.41 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.42 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -26,7 +26,7 @@ static char sccsid[] = "@(#)vmstat.c	5.41 (Berkeley) %G%";
 #include <sys/signal.h>
 #include <sys/fcntl.h>
 #include <sys/ioctl.h>
-#include <sys/kinfo.h>
+#include <sys/sysctl.h>
 #include <vm/vm.h>
 #include <time.h>
 #include <nlist.h>
@@ -366,7 +366,7 @@ dovmstat(interval, reps)
 	struct vmtotal total;
 	time_t uptime, halfuptime;
 	void needhdr();
-	int size;
+	int mib[2], size;
 
 	uptime = getuptime();
 	halfuptime = uptime / 2;
@@ -384,7 +384,9 @@ dovmstat(interval, reps)
 		kread(X_DKXFER, cur.xfer, sizeof(*cur.xfer) * dk_ndrive);
 		kread(X_SUM, &sum, sizeof(sum));
 		size = sizeof(total);
-		if (getkerninfo(KINFO_METER, &total, &size, 0) < 0) {
+		mib[0] = CTL_VM;
+		mib[1] = VM_METER;
+		if (sysctl(mib, 2, &total, &size, NULL, 0) < 0) {
 			printf("Can't get kerninfo: %s\n", strerror(errno));
 			bzero(&total, sizeof(total));
 		}
