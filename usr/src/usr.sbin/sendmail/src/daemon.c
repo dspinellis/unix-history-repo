@@ -3,14 +3,14 @@
 # include <sys/mx.h>
 
 #ifndef DAEMON
-SCCSID(@(#)daemon.c	3.32		%G%	(w/o daemon mode));
+SCCSID(@(#)daemon.c	3.33		%G%	(w/o daemon mode));
 #else
 
 # include <sys/socket.h>
 # include <net/in.h>
 # include <wait.h>
 
-SCCSID(@(#)daemon.c	3.32		%G%	(with daemon mode));
+SCCSID(@(#)daemon.c	3.33		%G%	(with daemon mode));
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
@@ -181,9 +181,32 @@ makeconnection(host, port, outfile, infile)
 
 	/*
 	**  Set up the address for the mailer.
+	**	Accept "[a.b.c.d]" syntax for host name.
 	*/
 
-	if ((SendmailAddress.sin_addr.s_addr = rhost(&host)) == -1)
+	if (host[0] == '[')
+	{
+		long hid = 0;
+		int i, j;
+		register char *p = host;
+
+		for (i = 3; i >= 0 && *p != ']' && *p != '\0'; i--)
+		{
+			j = 0;
+			while (isdigit(*++p))
+				j = j * 10 + (*p - '0');
+			if (*p != (i == 0 ? ']' : '.') || j > 255 || j < 0)
+				break;
+			hid |= j << ((3 - i) * 8);
+		}
+		if (i >= 0 || *p != ']' || *++p != '\0')
+		{
+			usrerr("Invalid numeric domain spec \"%s\"", host);
+			return (EX_NOHOST);
+		}
+		SendmailAddress.sin_addr.s_addr = hid;
+	}
+	else if ((SendmailAddress.sin_addr.s_addr = rhost(&host)) == -1)
 		return (EX_NOHOST);
 	if (port == 0)
 		port = IPPORT_SMTP;
