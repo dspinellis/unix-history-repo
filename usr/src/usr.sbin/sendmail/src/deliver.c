@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.126		%G%);
+SCCSID(@(#)deliver.c	3.127		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -428,11 +428,11 @@ deliver(firstto)
 */
 
 # define NFORKTRIES	5
-# ifdef VFORK
+# ifdef VMUNIX
 # define XFORK	vfork
-# else VFORK
+# else VMUNIX
 # define XFORK	fork
-# endif VFORK
+# endif VMUNIX
 
 # define DOFORK(fORKfN) \
 {\
@@ -742,7 +742,7 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 				(void) setuid(ctladdr->q_uid);
 			}
 		}
-# ifndef VFORK
+# ifndef VMUNIX
 		/*
 		**  We have to be careful with vfork - we can't mung up the
 		**  memory but we don't want the mailer to inherit any extra
@@ -753,7 +753,7 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 		**  is what endpwent does, it closes it in the parent too and
 		**  the next getpwnam will be slower.  If you have a weird
 		**  mailer that chokes on the extra file you should do the
-		**  endpwent().
+		**  endpwent().			-MRH
 		**
 		**  Similar comments apply to log.  However, openlog is
 		**  clever enough to set the FIOCLEX mode on the file,
@@ -764,7 +764,7 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 # ifdef LOG
 		closelog();
 # endif LOG
-# endif VFORK
+# endif VMUNIX
 
 		/* try to execute the mailer */
 		execv(m->m_mailer, pvp);
