@@ -1,15 +1,16 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ufs_disksubr.c	7.7 (Berkeley) %G%
+ *	@(#)ufs_disksubr.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
 #include "buf.h"
 #include "disklabel.h"
+#include "syslog.h"
 
 #include "dir.h"
 #include "user.h"
@@ -286,4 +287,52 @@ dkcksum(lp)
 	while (start < end)
 		sum ^= *start++;
 	return (sum);
+}
+
+/*
+ * Disk error is the preface to plaintive error messages
+ * about failing disk transfers.  It prints messages of the form
+ *	"hp0g: hard error reading fsbn 12345 of 12344-12347 (hp0 bn 812345)"
+ * if the offset of the error in the transfer and a disk label
+ * are both available.  blkdone should be -1 if the position of the error
+ * is unknown; the disklabel pointer may be null from drivers that have not
+ * been converted to use them.  The message is printed with printf
+ * if pri is LOG_PRINTF, otherwise it uses log at the specified priority.
+ * The message should be completed (with at least a newline) with printf
+ * or addlog, respectively.  There is no trailing space.
+ */
+diskerr(bp, dname, what, pri, blkdone, lp)
+	register struct buf *bp;
+	char *dname, *what;
+	int pri, blkdone;
+	register struct disklabel *lp;
+{
+	int unit = dkunit(bp->b_dev), part = dkpart(bp->b_dev);
+	register int (*pr)(), sn;
+	char partname = 'a' + part;
+	extern printf(), addlog();
+
+	if (pri != LOG_PRINTF) {
+		log(pri, "");
+		pr = addlog;
+	} else
+		pr = printf;
+	(*pr)("%s%d%c: %s %sing fsbn ", dname, unit, partname, what,
+	    bp->b_flags & B_READ ? "read" : "writ");
+	sn = bp->b_blkno;
+	if (bp->b_bcount <= DEV_BSIZE)
+		(*pr)("%d", sn);
+	else {
+		if (blkdone >= 0) {
+			sn += blkdone;
+			(*pr)("%d of ", sn);
+		}
+		(*pr)("%d-%d", bp->b_blkno,
+		    bp->b_blkno + (bp->b_bcount - 1) / DEV_BSIZE);
+	}
+	if (lp && (blkdone >= 0 || bp->b_bcount <= DEV_BSIZE)) {
+		sn += lp->d_partitions[part].p_offset;
+		(*pr)(" (%s%d bn %d) ", dname, unit, sn);
+		/* could log cyl/trk/sect */
+	}
 }
