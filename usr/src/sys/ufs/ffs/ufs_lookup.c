@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_lookup.c	7.9 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -546,6 +546,7 @@ direnter(ip, ndp)
 		ndp->ni_dent.d_reclen = DIRBLKSIZ;
 		ndp->ni_count = newentrysize;
 		ndp->ni_resid = newentrysize;
+		ndp->ni_base = (caddr_t)&ndp->ni_dent;
 		error = writeip(dp, &ndp->ni_uio, ndp->ni_cred);
 		if (DIRBLKSIZ > dp->i_fs->fs_fsize)
 			panic("wdir: blksize"); /* XXX - should grow w/balloc */
@@ -654,6 +655,7 @@ dirremove(ndp)
 		 */
 		ndp->ni_dent.d_ino = 0;
 		ndp->ni_count = ndp->ni_resid = DIRSIZ(&ndp->ni_dent);
+		ndp->ni_base = (caddr_t)&ndp->ni_dent;
 		error = writeip(dp, &ndp->ni_uio, ndp->ni_cred);
 	} else {
 		/*
@@ -682,6 +684,7 @@ dirrewrite(dp, ip, ndp)
 
 	ndp->ni_dent.d_ino = ip->i_number;
 	ndp->ni_count = ndp->ni_resid = DIRSIZ(&ndp->ni_dent);
+	ndp->ni_base = (caddr_t)&ndp->ni_dent;
 	return (writeip(dp, &ndp->ni_uio, ndp->ni_cred));
 }
 
