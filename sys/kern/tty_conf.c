@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tty_conf.c	7.6 (Berkeley) 5/9/91
- *	$Id: tty_conf.c,v 1.5 1993/11/25 01:33:28 wollman Exp $
+ *	$Id: tty_conf.c,v 1.6 1993/11/27 16:04:36 davidg Exp $
  */
 
 #include "param.h"
@@ -85,7 +85,7 @@ struct	linesw linesw[] =
 #endif
 #if NSL > 0
 	slopen, VE(slclose), IE(enodev), IE(enodev), sltioctl,
-	VE(slinput), enodev, nullop, VE(slstart), nullmodem, /* 4- SLIPDISC */
+	VE(slinput), enodev, nullop, VE(slstart), ttymodem, /* 4- SLIPDISC */
 #else
 	IE(enodev), VE(enodev), IE(enodev), IE(enodev), IE(enodev),
 	VE(enodev), IE(enodev), IE(enodev), VE(enodev), IE(enodev),
