@@ -92,7 +92,7 @@
 **		Copyright 1980 Regents of the University of California
 */
 
-static char SccsId[] = "@(#)sccs.c	1.66 %G%";
+static char SccsId[] = "@(#)sccs.c	1.67 %G%";
 
 /*******************  Configuration Information  ********************/
 
@@ -133,7 +133,7 @@ struct sccsprog
 # define SHELL		5	/* call a shell file (like PROG) */
 # define DIFFS		6	/* diff between sccs & file out */
 # define DODIFF		7	/* internal call to diff program */
-# define CREATE		8	/* create new files */
+# define ENTER		8	/* enter new files */
 
 /* bits for sccsflags */
 # define NO_SDOT	0001	/* no s. on front of args */
@@ -182,7 +182,8 @@ struct sccsprog SccsProg[] =
 	"print",	CMACRO,	0,			"prt -e/get -p -m -s",
 	"branch",	CMACRO,	NO_SDOT,
 		"get:ixrc -e -b/delta: -s -n -ybranch-place-holder/get:pl -e -t -g",
-	"create",	CREATE,	NO_SDOT,		NULL,
+	"enter",	ENTER,	NO_SDOT,		NULL,
+	"create",	CMACRO,	NO_SDOT,		"enter/get:ixbeskcl -t",
 	NULL,		-1,	0,			NULL
 };
 
@@ -537,7 +538,7 @@ command(argv, forkflag, arg0)
 		syserr("cannot exec %s", cmd->sccspath);
 		exit(EX_OSERR);
 
-	  case CREATE:		/* create new sccs files */
+	  case ENTER:		/* enter new sccs files */
 		/* skip over flag arguments */
 		for (np = &ap[1]; *np != NULL && **np == '-'; np++)
 			continue;
