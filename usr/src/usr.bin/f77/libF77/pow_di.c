@@ -3,43 +3,31 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)pow_di.c	5.2	%G%
+ *	@(#)pow_di.c	5.3	%G%
  */
 
-double pow_di(ap, bp)
-double *ap;
-long int *bp;
+double
+pow_di(ap, bp)
+	double *ap;
+	long *bp;
 {
-double pow, x;
-long int n;
+	register long n = *bp;
+	double y, x = *ap;
 
-pow = 1;
-x = *ap;
-n = *bp;
-
-if(n != 0)
-	{
-	if(n < 0)
-		{
-		if(x == 0)
-			{
-			return(pow);
-			}
+	if (!n)
+		return((double)1);
+	if (n < 0) {
+		x = (double)1 / x;
 		n = -n;
-		x = 1/x;
-		}
-	if (x == 0)
-		return(0);
-
-	for( ; ; )
-		{
-		if(n & 01)
-			pow *= x;
-		if(n >>= 1)
-			x *= x;
-		else
-			break;
-		}
 	}
-return(pow);
+	while (!(n&1)) {
+		x *= x;
+		n >>= 1;
+	}
+	for (y = x; --n > 0; y *= x)
+		while (!(n&1)) {
+			x *= x;
+			n >>= 1;
+		}
+	return(y);
 }
