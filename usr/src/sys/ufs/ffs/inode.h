@@ -1,4 +1,4 @@
-/*	inode.h	6.3	84/06/27	*/
+/*	inode.h	6.4	84/07/20	*/
 
 /*
  * The I node is the focus of all file activity in UNIX.
@@ -97,6 +97,20 @@ struct dinode {
 #define	di_blocks	di_ic.ic_blocks
 
 #ifdef KERNEL
+/*
+ * Invalidate an inode. Used by the namei cache to detect stale
+ * information. At an absurd rate of 100 calls/second, the inode
+ * table invalidation should only occur once every 16 months.
+ */
+#define cacheinval(ip)	\
+{ \
+	struct inode *xp; \
+	(ip)->i_id = ++nextinodeid; \
+	if (nextinodeid == 0) \
+		for (nextinodeid = 0, xp = inode; xp < inodeNINODE; xp++) \
+			xp->i_id = 0; \
+}
+
 struct inode *inode;		/* the inode table itself */
 struct inode *inodeNINODE;	/* the end of the inode table */
 int	ninode;			/* number of slots in the table */
