@@ -1,4 +1,4 @@
-/*	hp.c	4.80	83/07/26	*/
+/*	hp.c	4.81	83/07/26	*/
 
 #ifdef HPDEBUG
 int	hpdebug;
@@ -186,7 +186,7 @@ short	hptypes[] = {
 	0
 };
 struct	mba_device *hpinfo[NHP];
-int	hpattach(), hpustart(), hpstart(), hpdtint();
+int	hpattach(),hpustart(),hpstart(),hpdtint();
 struct	mba_driver hpdriver =
 	{ hpattach, 0, hpustart, hpstart, hpdtint, 0,
 	  hptypes, "hp", 0, hpinfo };
@@ -552,6 +552,8 @@ hpdtint(mi, mbsr)
 	if (bp->b_flags&B_BAD && hpecc(mi, CONT))
 		return (MBD_RESTARTED);
 	if (hpaddr->hpds&HPDS_ERR || mbsr&MBSR_EBITS) {
+		er1 = hpaddr->hper1;
+		er2 = hpaddr->hper2;
 #ifdef HPDEBUG
 		if (hpdebug) {
 			int dc = hpaddr->hpdc, da = hpaddr->hpda;
@@ -562,14 +564,11 @@ hpdtint(mi, mbsr)
 			printf("dc %x da %x\n",MASKREG(dc), MASKREG(da));
 			printf("errcnt %d ", mi->mi_tab.b_errcnt);
 			printf("mbsr=%b ", mbsr, mbsr_bits);
-			printf("er1=%b er2=%b\n",
-			    hpaddr->hper1, HPER1_BITS,
-			    hpaddr->hper2, HPER2_BITS);
+			printf("er1=%b er2=%b\n", MASKREG(er1), HPER1_BITS,
+			    MASKREG(er2), HPER2_BITS);
 			DELAY(1000000);
 		}
 #endif
-		er1 = hpaddr->hper1;
-		er2 = hpaddr->hper2;
 		if (er1 & HPER1_HCRC) {
 			er1 &= ~(HPER1_HCE|HPER1_FER);
 			er2 &= ~HPER2_BSE;
@@ -600,21 +599,21 @@ hard:
 			else
 				bp->b_blkno = MASKREG(hpaddr->hpdc) * st->nspc +
 				   (MASKREG(hpaddr->hpda) >> 8) * st->nsect +
-				   (hpaddr->hpda&0x1f);
+				   (hpaddr->hpda&0xff);
 			/*
 			 * If we have a data check error or a hard
 			 * ecc error the bad sector has been read/written,
 			 * and the controller registers are pointing to
 			 * the next sector...
 			 */
-			 if (er1 && (HPER1_DCK|HPER1_ECH))
+			 if (er1&(HPER1_DCK|HPER1_ECH) || sc->sc_hdr)
 				bp->b_blkno--;
 			harderr(bp, "hp");
 			if (mbsr & (MBSR_EBITS &~ (MBSR_DTABT|MBSR_MBEXC)))
 				printf("mbsr=%b ", mbsr, mbsr_bits);
 			printf("er1=%b er2=%b",
-			    hpaddr->hper1, HPER1_BITS,
-			    hpaddr->hper2, HPER2_BITS);
+			    MASKREG(hpaddr->hper1), HPER1_BITS,
+			    MASKREG(hpaddr->hper2), HPER2_BITS);
 			if (hpaddr->hpmr)
 				printf(" mr=%o", MASKREG(hpaddr->hpmr));
 			if (hpaddr->hpmr2)
