@@ -1,22 +1,22 @@
-SCCSID = "@(#)Makefile 1.18 %G%"
+SCCSID = "@(#)Makefile 1.19 %G%"
 
 CFLAGS = -O
 
 LIB = ${DESTDIR}/usr/lib
 SRCDIR = ${DESTDIR}/usr/ucb
-PASDIR = ${DESTDIR}/usr/src/cmd/pascal
+PASDIR = ${DESTDIR}/usr/src/ucb/pascal
 
-INSTALL= /bin/cp
+INSTALL= install
 LD= /bin/ld
 RM = /bin/rm -f
 RANLIB= ranlib
 AR= /bin/ar
 
-CMDS =	ACTFILE.c ADDT.c ARGV.c ASRT.c ATAN.c BUFF.c CARD.c \
+CMDS =	ACTFILE.c ADDT.c ARGV.c ASRT.c ASRTS.c ATAN.c BUFF.c CARD.c \
 	CASERNG.c CHR.c CLCK.c COS.c CTTOT.c DATE.c DEFNAME.c \
 	DFDISPOSE.c DISPOSE.c EXCEPT.c EXP.c EXPO.c FCALL.c FLUSH.c \
-	FNIL.c FRTN.c FSAV.c GET.c GOTO.s HALT.c IN.c INCT.c LINO.c \
-	LLIMIT.c LN.c MAX.c MULT.c NAM.c NEW.c NEWZ.c NIL.c PACK.c \
+	FNIL.c FRTN.c FSAV.c GET.c HALT.c IN.c INCT.c LINO.c \
+	LLIMIT.c LN.c MAX.c MULT.c NAM.c NEW.c NIL.c PACK.c \
 	PAGE.c PRED.c PUT.c RANDOM.c RANG4.c READ4.c READ8.c READC.c \
 	READE.c READLN.c RELEQ.c RELNE.c RELSGE.c RELSGT.c RELSLE.c \
 	RELSLT.c RELTGE.c RELTGT.c RELTLE.c RELTLT.c REMOVE.c RESET.c \
@@ -26,17 +26,17 @@ CMDS =	ACTFILE.c ADDT.c ARGV.c ASRT.c ATAN.c BUFF.c CARD.c \
 
 SYS =	ERROR.c GETNAME.c IOSYNC.c PCEXIT.c PCLOSE.c PCSTART.c \
 	PFCLOSE.c PERROR.c PFLUSH.c PMFLUSH.c RAND.s SETRACE.s \
-	UNSYNC.c UNWIND.c blkclr.c blkcpy.c
+	UNSYNC.c blkclr.c blkcpy.c
 
 EXTN =	APPEND.c SEEK.c TELL.c
 
 HDRS =	whoami.h h00vars.h
 
-OBJS =	ACTFILE.o ADDT.o ARGV.o ASRT.o ATAN.o BUFF.o CARD.o \
+OBJS =	ACTFILE.o ADDT.o ARGV.o ASRT.o ASRTS.o ATAN.o BUFF.o CARD.o \
 	CASERNG.o CHR.o CLCK.o COS.o CTTOT.o DATE.o DEFNAME.o \
 	DFDISPOSE.o DISPOSE.o EXCEPT.o EXP.o EXPO.o FCALL.o FLUSH.o \
-	FNIL.o FRTN.o FSAV.o GET.o GOTO.o HALT.o IN.o INCT.o LINO.o \
-	LLIMIT.o LN.o MAX.o MULT.o NAM.o NEW.o NEWZ.o NIL.o PACK.o\
+	FNIL.o FRTN.o FSAV.o GET.o HALT.o IN.o INCT.o LINO.o \
+	LLIMIT.o LN.o MAX.o MULT.o NAM.o NEW.o NIL.o PACK.o\
 	PAGE.o PRED.o PUT.o RANDOM.o RANG4.o READ4.o READ8.o READC.o\
 	READE.o READLN.o RELEQ.o RELNE.o RELSGE.o RELSGT.o RELSLE.o\
 	RELSLT.o RELTGE.o RELTGT.o RELTLE.o RELTLT.o REMOVE.o RESET.o\
@@ -46,7 +46,7 @@ OBJS =	ACTFILE.o ADDT.o ARGV.o ASRT.o ATAN.o BUFF.o CARD.o \
 
 SYOBJ =	ERROR.o GETNAME.o IOSYNC.o PCEXIT.o PCLOSE.o PCSTART.o \
 	PFCLOSE.o PERROR.o PFLUSH.o PMFLUSH.o RAND.o SETRACE.o \
-	UNSYNC.o UNWIND.o blkclr.o blkcpy.o
+	UNSYNC.o blkclr.o blkcpy.o
 
 EXOBJ =	APPEND.o SEEK.o TELL.o
 
@@ -95,7 +95,7 @@ grind: sources
 	${SRCDIR}/vgrind -t -n makefile >>lpr
 	${RM} index
 	${SRCDIR}/vgrind -t *.h *.c >>lpr
-	${SRCDIR}/vgrind -t -n GOTO.s RAND.s SETRACE.s >>lpr
+	${SRCDIR}/vgrind -t -n RAND.s SETRACE.s >>lpr
 	${SRCDIR}/vpr -t lpr
 
 depend:	sources
@@ -139,7 +139,6 @@ LLIMIT.o: h00vars.h
 MAX.o: h00vars.h
 NAM.o: h00vars.h
 NEW.o: h00vars.h
-NEWZ.o: h00vars.h
 NIL.o: h00vars.h
 PAGE.o: h00vars.h
 PUT.o: h00vars.h
