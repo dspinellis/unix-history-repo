@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_sig.c 1.1 90/07/09$
  *
- *	@(#)hpux_sig.c	7.7 (Berkeley) %G%
+ *	@(#)hpux_sig.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -20,11 +20,11 @@
 
 #ifdef HPUXCOMPAT
 
-#include "sys/param.h"
-#include "sys/systm.h"
-#include "sys/user.h"
-#include "sys/kernel.h"
-#include "sys/proc.h"
+#include "param.h"
+#include "systm.h"
+#include "kernel.h"
+#include "proc.h"
+#include "signalvar.h"
 #include "hpux.h"
 
 /* indexed by HPUX signal number - 1 */
@@ -62,6 +62,7 @@ hpuxsigvec(p, uap, retval)
 	int *retval;
 {
 	struct sigvec vec;
+	register struct sigacts *ps = p->p_sigacts;
 	register struct sigvec *sv;
 	register int sig;
 	int bit, error;
@@ -71,13 +72,13 @@ hpuxsigvec(p, uap, retval)
 		return (EINVAL);
 	sv = &vec;
 	if (uap->osv) {
-		sv->sv_handler = u.u_signal[sig];
-		sv->sv_mask = u.u_sigmask[sig];
+		sv->sv_handler = ps->ps_sigact[sig];
+		sv->sv_mask = ps->ps_catchmask[sig];
 		bit = sigmask(sig);
 		sv->sv_flags = 0;
-		if ((u.u_sigonstack & bit) != 0)
+		if ((ps->ps_sigonstack & bit) != 0)
 			sv->sv_flags |= SV_ONSTACK;
-		if ((u.u_sigintr & bit) != 0)
+		if ((ps->ps_sigintr & bit) != 0)
 			sv->sv_flags |= SV_INTERRUPT;
 #if 0
 /* XXX -- SOUSIG no longer exists, do something here */
@@ -94,6 +95,7 @@ hpuxsigvec(p, uap, retval)
 			return (error);
 		if (sig == SIGCONT && sv->sv_handler == SIG_IGN)
 			return (EINVAL);
+		sv->sv_flags ^= SA_RESTART;
 		setsigvec(p, sig, (struct sigaction *)sv);
 #if 0
 /* XXX -- SOUSIG no longer exists, do something here */
@@ -242,16 +244,17 @@ hpuxsigsuspend(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	register struct sigacts *ps = p->p_sigacts;
 	hpuxsigset_t sigset;
 	int mask;
 
 	if (copyin((caddr_t)uap->set, (caddr_t)&sigset, sizeof(sigset)))
 		return (EFAULT);
 	mask = hpuxtobsdmask(sigset.sigset[0]);
-	u.u_oldmask = p->p_sigmask;
-	p->p_flag |= SOMASK;
+	ps->ps_oldmask = p->p_sigmask;
+	ps->ps_flags |= SA_OLDMASK;
 	p->p_sigmask = mask &~ sigcantmask;
-	(void) tsleep((caddr_t)&u, PPAUSE | PCATCH, "pause", 0);
+	(void) tsleep((caddr_t)ps, PPAUSE | PCATCH, "pause", 0);
 	/* always return EINTR rather than ERESTART... */
 	return (EINTR);
 }
@@ -266,6 +269,7 @@ hpuxsigaction(p, uap, retval)
 	int *retval;
 {
 	struct hpuxsigaction action;
+	register struct sigacts *ps = p->p_sigacts;
 	register struct hpuxsigaction *sa;
 	register int sig;
 	int bit;
@@ -276,12 +280,12 @@ hpuxsigaction(p, uap, retval)
 
 	sa = &action;
 	if (uap->osa) {
-		sa->sa_handler = u.u_signal[sig];
+		sa->sa_handler = ps->ps_sigact[sig];
 		bzero((caddr_t)&sa->sa_mask, sizeof(sa->sa_mask));
-		sa->sa_mask.sigset[0] = bsdtohpuxmask(u.u_sigmask[sig]);
+		sa->sa_mask.sigset[0] = bsdtohpuxmask(ps->ps_catchmask[sig]);
 		bit = sigmask(sig);
 		sa->sa_flags = 0;
-		if ((u.u_sigonstack & bit) != 0)
+		if ((ps->ps_sigonstack & bit) != 0)
 			sa->sa_flags |= HPUXSA_ONSTACK;
 #if 0
 /* XXX -- SOUSIG no longer exists, do something here */
@@ -305,7 +309,7 @@ hpuxsigaction(p, uap, retval)
 		 */
 		act.sa_handler = sa->sa_handler;
 		act.sa_mask = hpuxtobsdmask(sa->sa_mask.sigset[0]);
-		act.sa_flags = 0;
+		act.sa_flags == SA_RESTART;
 		if (sa->sa_flags & HPUXSA_ONSTACK)
 			act.sa_flags |= SA_ONSTACK;
 		if (sa->sa_flags & HPUXSA_NOCLDSTOP)
@@ -329,28 +333,28 @@ ohpuxssig(p, uap, retval)
 	int *retval;
 {
 	register int a;
-	struct sigvec vec;
-	register struct sigvec *sv = &vec;
+	struct sigaction vec;
+	register struct sigaction *sa = &vec;
 
 	a = hpuxtobsdsig(uap->signo);
-	sv->sv_handler = uap->fun;
+	sa->sa_handler = uap->fun;
 	/*
 	 * Kill processes trying to use job control facilities
 	 * (this'll help us find any vestiges of the old stuff).
 	 */
 	if ((a &~ 0377) ||
-	    (sv->sv_handler != SIG_DFL && sv->sv_handler != SIG_IGN &&
-	     ((int)sv->sv_handler) & 1)) {
+	    (sa->sa_handler != SIG_DFL && sa->sa_handler != SIG_IGN &&
+	     ((int)sa->sa_handler) & 1)) {
 		psignal(p, SIGSYS);
 		return (0);
 	}
 	if (a <= 0 || a >= NSIG || a == SIGKILL || a == SIGSTOP ||
-	    a == SIGCONT && sv->sv_handler == SIG_IGN)
+	    a == SIGCONT && sa->sa_handler == SIG_IGN)
 		return (EINVAL);
-	sv->sv_mask = 0;
-	sv->sv_flags = SV_INTERRUPT;
-	*retval = (int)u.u_signal[a];
-	setsigvec(p, a, (struct sigaction *)sv);
+	sa->sa_mask = 0;
+	sa->sa_flags = 0;
+	*retval = (int)p->p_sigacts->ps_sigact[a];
+	setsigvec(p, a, sa);
 #if 0
 	p->p_flag |= SOUSIG;		/* mark as simulating old stuff */
 #endif
