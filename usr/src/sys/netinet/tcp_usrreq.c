@@ -1,4 +1,4 @@
-/* tcp_usrreq.c 1.46 82/01/13 */
+/* tcp_usrreq.c 1.47 82/01/17 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -183,8 +183,6 @@ COUNT(TCP_USRREQ);
 		if (tp->t_flags & TF_PUSH)
 			tp->snd_end = tp->snd_una + so->so_snd.sb_cc;
  */
-		if (tp->t_flags & TF_URG)
-			tp->snd_up = tp->snd_una + so->so_snd.sb_cc + 1;
 		(void) tcp_output(tp);
 		break;
 
@@ -203,15 +201,26 @@ COUNT(TCP_USRREQ);
 	case PRU_SENSE:
 		error = EOPNOTSUPP;
 		break;
+/* END UNIMPLEMENTED HOOKS */
 
 	case PRU_RCVOOB:
-		error = EOPNOTSUPP;
+		if (tp->t_haveoob == 0) {
+			error = EINVAL;
+			break;
+		}
+		*mtod(m, caddr_t) = tp->t_oobc;
+		tp->t_haveoob = 0;
 		break;
 
 	case PRU_SENDOOB:
-		error = EOPNOTSUPP;
+		tp->snd_up = tp->snd_una + so->so_snd.sb_cc + 1;
+		sbappend(&so->so_snd, m);
+/*
+		if (tp->t_flags & TF_PUSH)
+			tp->snd_end = tp->snd_una + so->so_snd.sb_cc;
+ */
+		(void) tcp_output(tp);
 		break;
-/* END UNIMPLEMENTED HOOKS */
 
 	/*
 	 * TCP slow timer went off; going through this
