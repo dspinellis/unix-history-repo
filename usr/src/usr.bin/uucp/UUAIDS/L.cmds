@@ -1,0 +1,25 @@
+# This is the list of commands that uuxqt will execute.
+#
+# A line beginning with a # is a comment
+# If the last character of a line is \
+# the next line is considered to be a continuation of the first.
+#
+# A line of from PATH=... changes the path used to locate the commands.
+#
+#	Example L.cmds
+#
+PATH=/bin:/usr/bin:/usr/ucb
+# If there is a suffix of ,Error, a message will only be returned if
+# the exit status is non-zero. If there is a suffix on ,No, there
+# will never be a return message from uuxqt.
+rmail
+# Only return the status of a rnews if it is non-zero
+rnews,Error
+ruusend
+# Never return the status of an nfrcv
+nfrcv,No
+# These next programs are security holes, but noone seems to care
+lpr
+who
+uusend
+finger
