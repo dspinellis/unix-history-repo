@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	6.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	6.24 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <pwd.h>
@@ -74,10 +74,10 @@ savemail(e)
 
 	if (e->e_from.q_paddr == NULL)
 	{
-		e->e_sender = "root";
+		e->e_sender = "Postmaster";
 		if (parseaddr(e->e_sender, &e->e_from, 0, '\0', NULL, e) == NULL)
 		{
-			syserr("553 Cannot parse root!");
+			syserr("553 Cannot parse Postmaster!");
 			ExitStat = EX_SOFTWARE;
 			finis();
 		}
