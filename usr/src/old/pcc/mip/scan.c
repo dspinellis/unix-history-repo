@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)scan.c	2.6 (Berkeley) %G%";
+static char *sccsid ="@(#)scan.c	2.7 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -810,7 +810,9 @@ yylex(){
 
 				}
 
+#ifdef old_assignment_ops	/* defeat 'unreachable code' warning */
 			return( ASOP );
+#endif old_assignment_ops
 
 		default:
 			cerror( "yylex error, character %03o (octal)", lxchar );
