@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cd9660_vnops.c	8.4 (Berkeley) %G%
+ *	@(#)cd9660_vnops.c	8.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -342,9 +342,9 @@ struct isoreaddir {
 	off_t curroff;
 	struct uio *uio;
 	off_t uio_off;
-	u_int *cookiep;
+	int eofflag;
+	u_long *cookies;
 	int ncookies;
-	int eof;
 };
 
 static int
@@ -359,24 +359,24 @@ iso_uiodir(idp,dp,off)
 	dp->d_reclen = DIRSIZ(dp);
 	
 	if (idp->uio->uio_resid < dp->d_reclen) {
-		idp->eof = 0;
-		return -1;
+		idp->eofflag = 0;
+		return (-1);
 	}
 	
-	if (idp->cookiep) {
+	if (idp->cookies) {
 		if (idp->ncookies <= 0) {
-			idp->eof = 0;
-			return -1;
+			idp->eofflag = 0;
+			return (-1);
 		}
 		
-		*idp->cookiep++ = off;
+		*idp->cookies++ = off;
 		--idp->ncookies;
 	}
 	
 	if (error = uiomove(dp,dp->d_reclen,idp->uio))
-		return error;
+		return (error);
 	idp->uio_off = off;
-	return 0;
+	return (0);
 }
 
 static int
@@ -439,6 +439,9 @@ cd9660_readdir(ap)
 		struct vnode *a_vp;
 		struct uio *a_uio;
 		struct ucred *a_cred;
+		int *a_eofflag;
+		u_long *a_cookies;
+		int a_ncookies;
 	} */ *ap;
 {
 	register struct uio *uio = ap->a_uio;
@@ -460,13 +463,9 @@ cd9660_readdir(ap)
 	idp->saveent.d_namlen = 0;
 	idp->assocent.d_namlen = 0;
 	idp->uio = uio;
-#if 0
-	idp->cookiep = cookies;
-	idp->ncookies = ncookies;
-	idp->eof = 1;
-#else
-	idp->cookiep = 0;
-#endif
+	idp->eofflag = 1;
+	idp->cookies = ap->a_cookies;
+	idp->ncookies = ap->a_ncookies;
 	idp->curroff = uio->uio_offset;
 	
 	entryoffsetinblock = iso_blkoff(imp, idp->curroff);
@@ -586,9 +585,7 @@ cd9660_readdir(ap)
 		brelse (bp);
 
 	uio->uio_offset = idp->uio_off;
-#if 0
-	*eofflagp = idp->eof;
-#endif
+	*ap->a_eofflag = idp->eofflag;
 	
 	FREE(idp,M_TEMP);
 	
