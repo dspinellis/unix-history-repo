@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_syscalls.c	7.29 (Berkeley) %G%
+ *	@(#)nfs_syscalls.c	7.30 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -57,7 +57,7 @@ int nfsd_waiting = 0;
 static int notstarted = 1;
 static int modify_flag = 0;
 void nfsrv_cleancache(), nfsrv_rcv(), nfsrv_wakenfsd(), nfs_sndunlock();
-void nfsrv_slpderef();
+void nfsrv_slpderef(), nfsrv_init();
 
 #define	TRUE	1
 #define	FALSE	0
@@ -137,25 +137,9 @@ nfssvc(p, uap, retval)
 	 */
 	if (error = suser(p->p_ucred, &p->p_acflag))
 		return (error);
-	if (nfssvc_sockhead.ns_next == NULL) {
-		nfs_udpsock = (struct nfssvc_sock *)
-		    malloc(sizeof (struct nfssvc_sock), M_NFSSVC, M_WAITOK);
-		bzero((caddr_t)nfs_udpsock, sizeof (struct nfssvc_sock));
-		nfs_cltpsock = (struct nfssvc_sock *)
-		    malloc(sizeof (struct nfssvc_sock), M_NFSSVC, M_WAITOK);
-		bzero((caddr_t)nfs_cltpsock, sizeof (struct nfssvc_sock));
-		nfssvc_sockhead.ns_next = nfs_udpsock;
-		nfs_udpsock->ns_next = nfs_cltpsock;
-		nfs_cltpsock->ns_next = &nfssvc_sockhead;
-		nfssvc_sockhead.ns_prev = nfs_cltpsock;
-		nfs_cltpsock->ns_prev = nfs_udpsock;
-		nfs_udpsock->ns_prev = &nfssvc_sockhead;
-		nfs_udpsock->ns_lrunext = nfs_udpsock->ns_lruprev =
-			(struct nfsuid *)nfs_udpsock;
-		nfs_cltpsock->ns_lrunext = nfs_cltpsock->ns_lruprev =
-			(struct nfsuid *)nfs_cltpsock;
-		nfsd_head.nd_next = nfsd_head.nd_prev = &nfsd_head;
-		nfsd_head.nd_flag = 0;
+	while (nfssvc_sockhead.ns_flag & SLP_INIT) {
+		nfssvc_sockhead.ns_flag |= SLP_WANTINIT;
+		(void) tsleep((caddr_t)&nfssvc_sockhead, PSOCK, "nfsd init", 0);
 	}
 	if (uap->flag & NFSSVC_BIOD)
 		error = nfssvc_iod(p);
@@ -377,6 +361,7 @@ nfssvc_nfsd(nsd, argp, p)
 				    if ((slp->ns_flag & (SLP_VALID | SLP_DOREC))
 					== (SLP_VALID | SLP_DOREC)) {
 					    slp->ns_flag &= ~SLP_DOREC;
+					    slp->ns_sref++;
 					    nd->nd_slp = slp;
 					    break;
 				    }
@@ -385,23 +370,22 @@ nfssvc_nfsd(nsd, argp, p)
 				if (slp == &nfssvc_sockhead)
 					nfsd_head.nd_flag &= ~NFSD_CHECKSLP;
 			}
-			if ((slp = nd->nd_slp) == (struct nfssvc_sock *)0 ||
-			    (slp->ns_flag & SLP_VALID) == 0) {
-				nd->nd_slp = (struct nfssvc_sock *)0;
+			if ((slp = nd->nd_slp) == (struct nfssvc_sock *)0)
 				continue;
+			if (slp->ns_flag & SLP_VALID) {
+				if (slp->ns_flag & SLP_DISCONN)
+					nfsrv_zapsock(slp);
+				else if (slp->ns_flag & SLP_NEEDQ) {
+					slp->ns_flag &= ~SLP_NEEDQ;
+					(void) nfs_sndlock(&slp->ns_solock,
+						(struct nfsreq *)0);
+					nfsrv_rcv(slp->ns_so, (caddr_t)slp,
+						M_WAIT);
+					nfs_sndunlock(&slp->ns_solock);
+				}
+				error = nfsrv_dorec(slp, nd);
+				nd->nd_flag |= NFSD_REQINPROG;
 			}
-			slp->ns_sref++;
-			if (slp->ns_flag & SLP_DISCONN)
-				nfsrv_zapsock(slp);
-			else if (slp->ns_flag & SLP_NEEDQ) {
-				slp->ns_flag &= ~SLP_NEEDQ;
-				(void) nfs_sndlock(&slp->ns_solock,
-					(struct nfsreq *)0);
-				nfsrv_rcv(slp->ns_so, (caddr_t)slp, M_WAIT);
-				nfs_sndunlock(&slp->ns_solock);
-			}
-			error = nfsrv_dorec(slp, nd);
-			nd->nd_flag |= NFSD_REQINPROG;
 		} else {
 			error = 0;
 			slp = nd->nd_slp;
@@ -566,18 +550,8 @@ done:
 	splx(s);
 	free((caddr_t)nd, M_NFSD);
 	nsd->nsd_nfsd = (struct nfsd *)0;
-	if (--nfs_numnfsd == 0) {
-		slp = nfssvc_sockhead.ns_next;
-		while (slp != &nfssvc_sockhead) {
-			if (slp->ns_flag & SLP_VALID)
-				nfsrv_zapsock(slp);
-			oslp = slp;
-			slp = slp->ns_next;
-			free((caddr_t)oslp, M_NFSSVC);
-		}
-		nfssvc_sockhead.ns_next = (struct nfssvc_sock *)0;
-		nfsrv_cleancache();	/* And clear out server cache */
-	}
+	if (--nfs_numnfsd == 0)
+		nfsrv_init(TRUE);	/* Reinitialize everything */
 	return (error);
 }
 
@@ -653,7 +627,7 @@ nfsrv_zapsock(slp)
 	struct file *fp;
 	struct mbuf *m;
 
-	slp->ns_flag = 0;
+	slp->ns_flag &= ~SLP_ALLFLAGS;
 	if (fp = slp->ns_fp) {
 		slp->ns_fp = (struct file *)0;
 		so = slp->ns_so;
@@ -743,5 +717,58 @@ nfsrv_slpderef(slp)
 		slp->ns_prev->ns_next = slp->ns_next;
 		slp->ns_next->ns_prev = slp->ns_prev;
 		free((caddr_t)slp, M_NFSSVC);
+	}
+}
+
+/*
+ * Initialize the data structures for the server.
+ * Handshake with any new nfsds starting up to avoid any chance of
+ * corruption.
+ */
+void
+nfsrv_init(terminating)
+	int terminating;
+{
+	register struct nfssvc_sock *slp;
+	struct nfssvc_sock *oslp;
+
+	if (nfssvc_sockhead.ns_flag & SLP_INIT)
+		panic("nfsd init");
+	nfssvc_sockhead.ns_flag |= SLP_INIT;
+	if (terminating) {
+		slp = nfssvc_sockhead.ns_next;
+		while (slp != &nfssvc_sockhead) {
+			if (slp->ns_flag & SLP_VALID)
+				nfsrv_zapsock(slp);
+			slp->ns_next->ns_prev = slp->ns_prev;
+			slp->ns_prev->ns_next = slp->ns_next;
+			oslp = slp;
+			slp = slp->ns_next;
+			free((caddr_t)oslp, M_NFSSVC);
+		}
+		nfsrv_cleancache();	/* And clear out server cache */
+	}
+	nfs_udpsock = (struct nfssvc_sock *)
+	    malloc(sizeof (struct nfssvc_sock), M_NFSSVC, M_WAITOK);
+	bzero((caddr_t)nfs_udpsock, sizeof (struct nfssvc_sock));
+	nfs_cltpsock = (struct nfssvc_sock *)
+	    malloc(sizeof (struct nfssvc_sock), M_NFSSVC, M_WAITOK);
+	bzero((caddr_t)nfs_cltpsock, sizeof (struct nfssvc_sock));
+	nfssvc_sockhead.ns_next = nfs_udpsock;
+	nfs_udpsock->ns_next = nfs_cltpsock;
+	nfs_cltpsock->ns_next = &nfssvc_sockhead;
+	nfssvc_sockhead.ns_prev = nfs_cltpsock;
+	nfs_cltpsock->ns_prev = nfs_udpsock;
+	nfs_udpsock->ns_prev = &nfssvc_sockhead;
+	nfs_udpsock->ns_lrunext = nfs_udpsock->ns_lruprev =
+		(struct nfsuid *)nfs_udpsock;
+	nfs_cltpsock->ns_lrunext = nfs_cltpsock->ns_lruprev =
+		(struct nfsuid *)nfs_cltpsock;
+	nfsd_head.nd_next = nfsd_head.nd_prev = &nfsd_head;
+	nfsd_head.nd_flag = 0;
+	nfssvc_sockhead.ns_flag &= ~SLP_INIT;
+	if (nfssvc_sockhead.ns_flag & SLP_WANTINIT) {
+		nfssvc_sockhead.ns_flag &= ~SLP_WANTINIT;
+		wakeup((caddr_t)&nfssvc_sockhead);
 	}
 }
