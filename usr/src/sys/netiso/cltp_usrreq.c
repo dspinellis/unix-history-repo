@@ -4,12 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cltp_usrreq.c	7.5 (Berkeley) %G%
+ *	@(#)cltp_usrreq.c	7.6 (Berkeley) %G%
  */
 
 #ifndef CLTPOVAL_SRC /* XXX -- till files gets changed */
 #include "param.h"
-#include "user.h"
 #include "malloc.h"
 #include "mbuf.h"
 #include "protosw.h"
