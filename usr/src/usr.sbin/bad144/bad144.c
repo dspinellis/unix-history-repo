@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)bad144.c	4.5 (Berkeley) 83/06/12";
+static	char *sccsid = "@(#)bad144.c	4.6 (Berkeley) 83/07/26";
 #endif
 
 /*
@@ -70,8 +70,8 @@ main(argc, argv)
 			Perror(name);
 		if (lseek(f, dp->d_secsize*(size-dp->d_nsectors), L_SET) < 0)
 			Perror("lseek");
-		printf("bad block information at 0x%x in %s:\n",
-		    tell(f), name);
+		printf("bad block information at sector %d in %s:\n",
+		    tell(f)/512, name);
 		if (read(f, &dkbad, sizeof (struct dkbad)) !=
 		    sizeof (struct dkbad)) {
 			fprintf("bad144: %s: can't read bad block info\n");
@@ -111,13 +111,9 @@ main(argc, argv)
 	dkbad.bt_csn = atoi(*argv++);
 	argc--;
 	dkbad.bt_mbz = 0;
-	if (argc > 2 * dp->d_nsectors || argc > 126) {
+	if (argc > 126) {
 		printf("bad144: too many bad sectors specified\n");
-		if (2 * dp->d_nsectors > 126)
-			printf("limited to 126 by information format\n");
-		else
-			printf("limited to %d (only 2 tracks of sectors)\n",
-			    2 * dp->d_nsectors);
+		printf("limited to 126 by information format\n");
 		exit(1);
 	}
 	errs = 0;
@@ -149,7 +145,7 @@ main(argc, argv)
 	if (write(f, (caddr_t)&dkbad, sizeof (dkbad)) != sizeof (dkbad))
 		Perror(name);
 	if (fflag)
-		for (i = 0, bt = dkbad.bt_bad; i < 128; i++, bt++) {
+		for (i = 0, bt = dkbad.bt_bad; i < 126; i++, bt++) {
 			daddr_t bn;
 
 			bad = (bt->bt_cyl<<16) + bt->bt_trksec;
@@ -227,8 +223,7 @@ format(fd, dp, blk)
 		Perror("lseek");
 	if (ioctl(fd, DKIOCHDR, 0) < 0)
 		Perror("ioctl");
-	if (read(fd, buf, fp->f_bufsize) != fp->f_bufsize)
-		Perror("read");
+	read(fd, buf, fp->f_bufsize);
 	if (fp->f_bic) {
 		struct hpuphdr *xp = (struct hpuphdr *)buf;
 
@@ -236,12 +231,14 @@ format(fd, dp, blk)
 	}
 	if (fp->f_routine)
 		(*fp->f_routine)(fp, dp, blk, buf);
+	printf("formatting blk %d...", blk);
 	if (lseek(fd, (long)blk * 512, L_SET) < 0)
 		Perror("lseek");
 	if (ioctl(fd, DKIOCHDR, 0) < 0)
 		Perror("ioctl");
 	if (write(fd, buf, fp->f_bufsize) != fp->f_bufsize)
 		Perror("write");
+	printf("Done..\n");
 }
 
 Perror(op)
