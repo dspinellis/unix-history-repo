@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)sigvec.2	5.1 (Berkeley) %G%
+.\"	@(#)sigvec.2	6.1 (Berkeley) %G%
 .\"
-.TH SIGVEC 2 "7 July 1983"
+.TH SIGVEC 2 ""
 .UC 4
 .ie t .ds d \(dg
 .el .ds d \z'|+'
@@ -19,7 +19,7 @@ sigvec \- software signal facilities
 .B struct sigvec {
 .B	int	(*sv_handler)();
 .B	int	sv_mask;
-.B	int	sv_onstack;
+.B	int	sv_flags;
 .B };
 .PP
 .B sigvec(sig, vec, ovec)
@@ -52,7 +52,7 @@ but other signals may yet occur.
 A global 
 .I "signal mask"
 defines the set of signals currently blocked from delivery
-to a process.  The signal mask for a process is initilized
+to a process.  The signal mask for a process is initialized
 from that of its parent (normally 0).  It
 may be changed with a
 .IR sigblock (2)
@@ -91,9 +91,10 @@ assigns a handler for a specific signal.  If
 .I vec
 is non-zero, it
 specifies a handler routine and mask
-to be used when delivering the specified signal.  Further, if
-.I sv_onstack
-is 1, the system will deliver the signal to the process on a
+to be used when delivering the specified signal.
+Further, if the SV_ONSTACK bit is set in
+.I sv_flags,
+the system will deliver the signal to the process on a
 .IR "signal stack" ,
 specified with
 .IR sigstack (2).
@@ -135,6 +136,7 @@ SIGXCPU	24	cpu time limit exceeded (see \fIsetrlimit\fP(2))
 SIGXFSZ	25	file size limit exceeded (see \fIsetrlimit\fP(2))
 SIGVTALRM	26	virtual time alarm (see \fIsetitimer\fP(2))
 SIGPROF	27	profiling timer alarm (see \fIsetitimer\fP(2))
+SIGWINCH	28\*b	window size change
 .fi
 .PP
 The starred signals in the list above cause a core image
@@ -159,12 +161,13 @@ If
 is SIG_IGN the signal is subsequently ignored,
 and pending instances of the signal are discarded.
 .PP
-If a caught signal occurs
-during certain system calls, causing
-the call to terminate prematurely, the call
-is automatically restarted.  In particular this can occur
-during a
-.I read
+If a caught signal occurs during certain system calls,
+the call is normally restarted.
+The call can be forced to terminate prematurely with an
+EINTR error return by setting the SV_INTERRUPT bit in
+.I sv_flags.
+The affected system calls are
+.IR read (2)
 or
 .IR write (2)
 on a slow device (such as a terminal; but not a file)
@@ -176,20 +179,27 @@ After a
 or
 .IR vfork (2)
 the child inherits
-all signals, the signal mask, and the signal stack.
+all signals, the signal mask, the signal stack,
+and the restart/interrupt flags.
 .PP
 .IR  Execve (2)
 resets all
-caught signals to default action; ignored signals remain ignored;
-the signal mask remains the same; the signal stack state is reset.
+caught signals to default action and
+resets all signals to be caught on the user stack.
+Ignored signals remain ignored;
+the signal mask remains the same;
+signals that interrupt system calls continue to do so.
 .SH NOTES
 The mask specified in 
 .I vec
 is not allowed to block SIGKILL, SIGSTOP, or SIGCONT.  This
 is done silently by the system.
+.PP
+The SV_INTERRUPT flag is not available in 4.2BSD,
+hence it should not be used if backward compatibility is needed.
 .SH "RETURN VALUE
 A 0 value indicated that the call succeeded.  A \-1 return value
-indicates an error occured and
+indicates an error occurred and
 .I errno
 is set to indicated the reason.
 .SH ERRORS
@@ -219,8 +229,8 @@ is ignored).
 .SH "SEE ALSO"
 kill(1),
 ptrace(2), kill(2),
-sigblock(2), sigsetmask(2), sigpause(2)
-sigstack(2), sigvec(2), setjmp(3), tty(4)
+sigblock(2), sigsetmask(2), sigpause(2),
+sigstack(2), sigvec(2), setjmp(3), siginterrupt(3), tty(4)
 .SH "NOTES  (VAX-11)"
 The handler routine can be declared:
 .PP
@@ -277,4 +287,4 @@ Chms	SIGSEGV
 Chmu	SIGSEGV
 .fi
 .SH BUGS
-This manual page is confusing.
+This manual page is still confusing.
