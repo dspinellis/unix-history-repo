@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.10 (Berkeley) %G%
+#	@(#)Makefile	5.11 (Berkeley) %G%
 
 # BROKEN pstat
 SUBDIR=	ac accton amd arp chown chroot config cron dev_mkdb diskpart \
@@ -8,7 +8,7 @@ SUBDIR=	ac accton amd arp chown chroot config cron dev_mkdb diskpart \
 	update vipw
 
 .if   make(clean) || make(cleandir)
-SUBDIR+=bad144 config dlmpcc iostat timed
+SUBDIR+=bad144 config iostat timed
 .elif ${MACHINE} == "hp300"
 SUBDIR+=config iostat timed
 .elif ${MACHINE} == "i386"
@@ -18,7 +18,7 @@ SUBDIR+=config iostat timed
 .elif ${MACHINE} == "sparc"
 SUBDIR+=config.new timed
 .elif ${MACHINE} == "tahoe"
-SUBDIR+=config dlmpcc iostat timed
+SUBDIR+=config iostat timed
 .elif ${MACHINE} == "vax"
 SUBDIR+=bad144 config iostat timed
 .endif
