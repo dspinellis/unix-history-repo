@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)login.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -33,7 +33,7 @@ login(ut)
 	off_t lseek();
 
 	tty = ttyslot();
-	if (tty > 0 && (fd = open(_PATH_UTMP, O_WRONLY, 0)) >= 0) {
+	if (tty > 0 && (fd = open(_PATH_UTMP, O_WRONLY|O_CREAT, 0644)) >= 0) {
 		(void)lseek(fd, (long)(tty * sizeof(struct utmp)), L_SET);
 		(void)write(fd, (char *)ut, sizeof(struct utmp));
 		(void)close(fd);
