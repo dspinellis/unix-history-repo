@@ -1,4 +1,4 @@
-%	@(#)psdit.pro	1.4 %G%
+%	@(#)psdit.pro	1.5 %G%
 % lib/psdit.pro -- prolog for psdit (ditroff) files
 % Copyright (c) 1984, 1985 Adobe Systems Incorporated. All Rights Reserved.
 % last edit: shore Sat Nov 23 20:28:03 1985
@@ -217,6 +217,7 @@
 [8<0810204080412214>]
 [8<00>]]]def
 /Dfill{
+ save 6 1 roll
  transform /maxy exch def /maxx exch def
  transform /miny exch def /minx exch def
  minx maxx gt{/minx maxx /maxx minx def def}if
@@ -227,7 +228,7 @@
  /tmatrix[stipw 0 0 stiph 0 0]def
  /minx minx cvi stiph idiv stiph mul def
  /miny miny cvi stipw idiv stipw mul def
- gsave eoclip 0 setgray
+ eoclip 0 setgray
  miny stiph maxy{
   tmatrix exch 5 exch put
   minx stipw maxx{
@@ -235,7 +236,7 @@
    stipw stiph true imatrix {stip} imagemask
   }for
  }for
- grestore
+ restore
 }def
 /Dp{Dfill Dstroke}def
 /DP{Dfill currentpoint newpath moveto}def
