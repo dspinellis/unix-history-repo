@@ -1,5 +1,5 @@
 #	from: @(#)bsd.prog.mk	5.26 (Berkeley) 6/25/91
-#	$Id: bsd.prog.mk,v 1.20 1994/02/27 20:24:27 wollman Exp $
+#	$Id: bsd.prog.mk,v 1.21 1994/04/19 17:16:00 jkh Exp $
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -82,15 +82,16 @@ CLEANFILES+=strings
 
 .endif
 
+.if defined(DESTDIR)
+LDDESTDIR?=	-L${DESTDIR}/usr/lib
+.endif
+
 .if defined(PROG)
 .if defined(SRCS)
 
 DPSRCS+= ${SRCS:M*.h}
 OBJS+=  ${SRCS:N*.h:R:S/$/.o/g}
 
-.if defined(DESTDIR)
-LDDESTDIR?=	-L${DESTDIR}/usr/lib
-.endif
 .if defined(LDONLY)
 
 ${PROG}: ${LIBCRT0} ${LIBC} ${DPSRCS} ${OBJS} ${DPADD} 
