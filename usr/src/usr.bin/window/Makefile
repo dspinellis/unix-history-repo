@@ -9,7 +9,7 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	3.7 (Berkeley) %G%
+#	@(#)Makefile	3.8 (Berkeley) %G%
 #
 CFLAGS=	-O -R
 LIBC=	/lib/libc.a
