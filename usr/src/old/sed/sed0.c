@@ -1,5 +1,6 @@
-/*	sed0.c	4.3	87/09/16	*/
+/*	sed0.c	4.4	87/09/16	*/
 
+#include <sys/param.h>
 #include <stdio.h>
 #include "sed.h"
 
@@ -122,6 +123,7 @@ fcomp()
 	union reptr	*pt, *pt1;
 	int	i;
 	struct label	*lpt;
+	char fbuf[MAXPATHLEN + 1], *newstr();
 
 	compfl = 1;
 	op = lastre;
@@ -488,7 +490,8 @@ jtcommon:
 						exit(2);
 					}
 
-					text(fname[nfiles]);
+					text(fbuf);
+					fname[nfiles] = newstr(fbuf);
 					for(i = nfiles - 1; i >= 0; i--)
 						if(cmp(fname[nfiles],fname[i]) == 0) {
 							rep->fcode = fcode[i];
@@ -513,7 +516,8 @@ jtcommon:
 					exit(2);
 				}
 
-				text(fname[nfiles]);
+				text(fbuf);
+				fname[nfiles] = newstr(fbuf);
 				for(i = nfiles - 1; i >= 0; i--)
 					if(cmp(fname[nfiles], fname[i]) == 0) {
 						rep->fcode = fcode[i];
@@ -973,4 +977,17 @@ char	*expbuf;
 			ep[c] = c;
 
 	return(ep + 0200);
+}
+
+static char *
+newstr(buf)
+	char	*buf;
+{
+	char	*new, *malloc(), *strcpy();
+
+	if (!(new = malloc((u_int)(strlen(buf) + 1)))) {
+		fputs("sed: out of memory.\n", stderr);
+		exit(2);
+	}
+	return(strcpy(new, buf));
 }
