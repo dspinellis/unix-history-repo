@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	8.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	8.9 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -268,8 +268,13 @@ putoutmsg(msg, holdmsg)
 	if (!ferror(OutChannel))
 		return;
 
-	/* error on output -- if reporting lost channel, just ignore it */
-	if (feof(InChannel) || ferror(InChannel))
+	/*
+	**  Error on output -- if reporting lost channel, just ignore it.
+	**  Also, ignore errors from QUIT response (221 message) -- some
+	**	rude servers don't read result.
+	*/
+
+	if (feof(InChannel) || ferror(InChannel) || strncmp(msg, "221", 3) == 0)
 		return;
 
 	/* can't call syserr, 'cause we are using MsgBuf */
@@ -277,7 +282,7 @@ putoutmsg(msg, holdmsg)
 #ifdef LOG
 	if (LogLevel > 0)
 		syslog(LOG_CRIT,
-			"%s: SYSERR: putoutmsg (%s): error on output channel sending \"%s\"",
+			"%s: SYSERR: putoutmsg (%s): error on output channel sending \"%s\": %m",
 			CurEnv->e_id == NULL ? "NOQUEUE" : CurEnv->e_id,
 			CurHostName == NULL ? "NO-HOST" : CurHostName,
 			msg);
