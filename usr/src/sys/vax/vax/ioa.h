@@ -1,5 +1,5 @@
 /*
- * @(#)ioa.h	1.1 (Berkeley) %G%
+ * @(#)ioa.h	1.2 (Berkeley) %G%
  */
 /************************************************************************
  *									*
@@ -27,7 +27,7 @@
 #define	NIOA8600 2
 #define IOASIZE 0x2000000
 #define IOAMAPSIZ 512			/* Map one page to get at SBIA regs */
-#define	IOA8600(i)	((short *)(0x20080000+IOASIZE*i))
+#define	IOA8600(i)	((caddr_t)(0x20080000+IOASIZE*i))
 
 #ifndef LOCORE
 struct	sbia_regs
@@ -82,4 +82,7 @@ struct ioa ioa[MAXNIOA];
 #endif	LOCORE
 
 #define IOA_TYPMSK 0xf0
-#define IOA_SBIA 0x10
+#define IOA_SBIA	0x10
+#define IOA_SBI780	0x01
+#define IOA_CMI750	0x02
+#define IOA_XXX730	0x04
