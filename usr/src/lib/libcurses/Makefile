@@ -1,9 +1,8 @@
+#	Makefile	1.16	83/07/02
 #
 # cursor package maker
 #
-# @(#)Makefile	1.15 (Berkeley) %G%
-#
-HEADERS=curses.h unctrl.h curses.ext
+HEADERS=curses.h curses.ext
 CFILES=	box.c clear.c initscr.c endwin.c mvprintw.c mvscanw.c mvwin.c \
 	newwin.c overlay.c overwrite.c printw.c scanw.c refresh.c \
 	touchwin.c erase.c clrtobot.c clrtoeol.c cr_put.c cr_tty.c \
@@ -36,7 +35,7 @@ CFL=
 CFLAGS=	-O ${CFL}
 LDFLAGS=-n
 INSTALL=${DESTDIR}/usr/lib/libcurses.a ${DESTDIR}/usr/include/curses.h \
-	${DESTDIR}/usr/include/unctrl.h ${DESTDIR}/usr/lib/lint/llib-lcurses.ln
+	${DESTDIR}/usr/lib/lint/llib-lcurses.ln
 
 .SUFFIXES: .p
 
@@ -100,14 +99,11 @@ llib-lcurses.ln: llib-lcurses
 install: ${INSTALL}
 
 ${DESTDIR}/usr/lib/libcurses.a: crlib
-	install -c crlib ${DESTDIR}/usr/lib/libcurses.a
+	install -m 644 crlib ${DESTDIR}/usr/lib/libcurses.a
 	ranlib ${DESTDIR}/usr/lib/libcurses.a
 
 ${DESTDIR}/usr/include/curses.h: curses.h
 	install -c curses.h ${DESTDIR}/usr/include/
-
-${DESTDIR}/usr/include/unctrl.h: unctrl.h
-	install -c unctrl.h ${DESTDIR}/usr/include/
 
 ${DESTDIR}/usr/lib/lint/llib-lcurses.ln: llib-lcurses.ln
 	install -c llib-lcurses ${DESTDIR}/usr/lib/lint
