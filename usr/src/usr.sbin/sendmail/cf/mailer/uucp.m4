@@ -16,7 +16,7 @@ POPDIVERT
 ###   UUCP Mailer specification   ###
 #####################################
 
-VERSIONID(`@(#)uucp.m4	8.6 (Berkeley) %G%')
+VERSIONID(`@(#)uucp.m4	8.7 (Berkeley) %G%')
 
 # old UUCP mailer
 Muucp,		P=UUCP_MAILER_PATH, F=CONCAT(DFMhuU, UUCP_MAILER_FLAGS), S=12, R=22, M=UUCP_MAX_SIZE,
@@ -55,7 +55,7 @@ R$+				$: $U ! $1		prepend our name
 S22
 
 # don't touch list:; syntax
-R$* :; <@>			$@ $1 ;:
+R$* :; <@>			$@ $1 :;
 
 R$* < @ $* . >			$1 < @ $2 >		strip trailing dots
 R$* < @ $j >			$1			strip local name
