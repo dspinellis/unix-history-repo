@@ -14,13 +14,14 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_inode.c	7.24 (Berkeley) %G%
+ *	@(#)ffs_inode.c	7.25 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
 #include "mount.h"
 #include "user.h"
+#include "proc.h"
 #include "file.h"
 #include "buf.h"
 #include "cmap.h"
@@ -639,8 +640,14 @@ ilock(ip)
 
 	while (ip->i_flag & ILOCKED) {
 		ip->i_flag |= IWANT;
+		if (ip->i_spare0 == u.u_procp->p_pid)
+			panic("locking against myself");
+		ip->i_spare1 = u.u_procp->p_pid;
 		(void) sleep((caddr_t)ip, PINOD);
 	}
+	ip->i_spare1 = 0;
+	ip->i_spare0 = u.u_procp->p_pid;
+	u.u_spare[0]++;
 	ip->i_flag |= ILOCKED;
 }
 
@@ -653,6 +660,8 @@ iunlock(ip)
 
 	if ((ip->i_flag & ILOCKED) == 0)
 		vprint("iunlock: unlocked inode", ITOV(ip));
+	ip->i_spare0 = 0;
+	u.u_spare[0]--;
 	ip->i_flag &= ~ILOCKED;
 	if (ip->i_flag&IWANT) {
 		ip->i_flag &= ~IWANT;
