@@ -1,5 +1,5 @@
 .nr _0 \n(c.
-.\"	@(#)footnote.me	2.2	%G%
+.\"	@(#)footnote.me	2.3	%G%
 .\"	%beginstrip%
 .de (f			\" *** begin footnote
 .ec
@@ -49,7 +49,7 @@
 .el \!.(f \\$1
 ..
 .de )f			\" *** end footnote
-.ie !"\\n(.z"|f" \
+.ie "\\n(.z"|f" \
 \{\
 .	if \\n* \
 .		nr $f +1
