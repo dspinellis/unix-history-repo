@@ -1,5 +1,5 @@
 /*
- *	@(#)kdbparam.h	7.2 (Berkeley) %G%
+ *	@(#)kdbparam.h	7.3 (Berkeley) %G%
  */
 
 #define DBNAME "kdb\n"
