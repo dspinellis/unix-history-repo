@@ -1,4 +1,4 @@
-/*	@(#)mach.h	4.5	(Berkeley)	%G%	*/
+/*	@(#)mach.h	4.6	(Berkeley)	%G%	*/
 
 /* sccs id variable */
 static char *mach_h_sid = "@(#)mach.h	1.11";
@@ -25,7 +25,7 @@ V6		Assume the v6 features instead of the v7 ones.
 
 FUID		use the funny uid's present on CC V6
 
-DELIVERM	Uses the delivermail program
+SENDMAIL	Uses the sendmail program
 
 HPASSWD		The local machine has the hashed password stuff
 
@@ -127,6 +127,10 @@ definition for "VANILLA7" which indicates the v7 UNIX options.
 # endif NOSC
 
 # ifdef BERKELEY
+
+/* all berkeley sites use sendmail.....         (someday?) */
+# define SENDMAIL
+
 /* CFO - A */
 # ifdef A
 # define CCV7
@@ -186,14 +190,12 @@ definition for "VANILLA7" which indicates the v7 UNIX options.
 # define LOCAL 'j'
 # define NUID (37)
 # define FREELPR
-# define DELIVERM
 # endif INGVAX
 
 /* CS network hub - ucbvax */
 # ifdef UCBVAX
 # define LOCAL 'k'
 # define NUID (35)
-# define DELIVERM
 # define MAXSENDQ 35
 # endif UCBVAX
 
@@ -212,7 +214,6 @@ definition for "VANILLA7" which indicates the v7 UNIX options.
 /* Fateman - ucbkim */
 # ifdef KIM
 # define LOCAL 'n'
-# define DELIVERM
 # define NUID (501)
 # endif KIM
 
@@ -237,7 +238,6 @@ definition for "VANILLA7" which indicates the v7 UNIX options.
 # ifdef ARPAVAX
 # define LOCAL 'r'
 # define NUID (501)
-# define DELIVERM
 # define MAXSENDQ 35
 # endif ARPAVAX
 
@@ -257,7 +257,6 @@ definition for "VANILLA7" which indicates the v7 UNIX options.
 # ifdef C70
 # define LOCAL 'u'
 # define NUID (501)
-# define DELIVERM
 # define MAXSENDQ 35
 # endif C70
 
@@ -265,7 +264,6 @@ definition for "VANILLA7" which indicates the v7 UNIX options.
 # ifdef CSVAX
 # define LOCAL 'v'
 # define NUID (501)
-# define DELIVERM
 # define MAXSENDQ 35
 # endif CSVAX
 
@@ -283,7 +281,6 @@ definition for "VANILLA7" which indicates the v7 UNIX options.
 # define SWAB
 # undef PARMLIST
 # define PARMLIST 20
-# define DELIVERM
 # endif ONYX
 
 /* EECS Dept - Cory */
@@ -293,14 +290,12 @@ definition for "VANILLA7" which indicates the v7 UNIX options.
 # define MAXSENDQ 35
 # include <signal.h>
 # undef NETLDISC
-# define DELIVERM
 # endif CORY
 
 /* EECS Dept Administrative - ucbear */
 # ifdef EARVAX
 # define LOCAL 'z'
 # define NUID ((1 << 8) | 104)
-# define DELIVERM
 # endif EARVAX
 
 /* end of Berkeley definitions */

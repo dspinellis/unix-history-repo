@@ -174,11 +174,11 @@ int cautious, hopcnt;
 			/* by convention, MAILFWD1 may forward this mail
 			   and response messages shouldn't be forwarded */
 			if(!cautious && !FMemberSCh(toaddress,'/')){
-# ifdef DELIVERM
-				mexecl("/etc/delivermail",
-					"delivermail", "-ee", "-r", fromaddress,
+# ifdef SENDMAIL
+				mexecl("/usr/lib/sendmail",
+					"sendmail", "-oee", "-r", fromaddress,
 					"-h",shopcnt, toaddress, 0);
-# endif
+# endif SENDMAIL
 				mexecl(MAILFWD1, "mail","-r",fromaddress,
 					"-h",shopcnt,toaddress,0);
 			}
@@ -186,9 +186,9 @@ int cautious, hopcnt;
 				"-h", shopcnt,toaddress,0);
 		} else {
 			if(!cautious && !FMemberSCh(toaddress,'/')){
-# ifdef DELIVERM
-				mexecl("/etc/delivermail",
-					"delivermail", "-ee", "-h", shopcnt,
+# ifdef SENDMAIL
+				mexecl("/usr/lib/sendmail",
+					"sendmail", "-ee", "-h", shopcnt,
 					toaddress, 0);
 # endif
 				mexecl(MAILFWD1, "mail","-h", shopcnt,
