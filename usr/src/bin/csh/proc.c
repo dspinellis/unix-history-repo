@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)sh.proc.c 4.4 3/31/81";
+static	char *sccsid = "@(#)proc.c	4.5 (Berkeley) 81/04/05";
 
 #include "sh.h"
 #include "sh.dir.h"
