@@ -1,7 +1,7 @@
 #
 # Machine Language Assist for UC Berkeley Virtual Vax/Unix
 #
-#	locore.s		3.8	%G%
+#	locore.s		3.9	%G%
 #
 
 	.set	HIGH,31		# mask for total disable
@@ -11,7 +11,7 @@
 
 	.set	CLSIZE,2
 	.set	BSIZE,NBPG*CLSIZE
-	.set	NBUF,48
+	.set	NBUF,62
 	.set	UPAGES,6	# size of user area, in pages
 
 # ====================================
