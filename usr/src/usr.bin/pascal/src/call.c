@@ -145,7 +145,7 @@ call(p, argv, porf, psbn)
 		    	putleaf( P2ICON , 0 , 0
 			    , ADDTYPE( ADDTYPE( p_p2type , P2FTN ) , P2PTR )
 			    , "_FCALL" );
-			putRV( 0 , cbn , p -> value[NL_OFFS] , P2PTR|P2STRTY );
+			putRV( 0 , psbn , p -> value[NL_OFFS] , P2PTR|P2STRTY );
 			putop( P2CALL , p_p2type );
 			break;
 		default:
@@ -333,7 +333,7 @@ call(p, argv, porf, psbn)
 	    if ( p -> class == FFUNC || p -> class == FPROC ) {
 		putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR ) ,
 			"_FRTN" );
-		putRV( 0 , cbn , p -> value[ NL_OFFS ] , P2PTR | P2STRTY );
+		putRV( 0 , psbn , p -> value[ NL_OFFS ] , P2PTR | P2STRTY );
 		putop( P2CALL , P2INT );
 		putop( P2COMOP , P2INT );
 	    }
