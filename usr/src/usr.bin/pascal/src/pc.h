@@ -1,11 +1,11 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static	char sccsid[] = "@(#)pc.h 1.6 %G%"; */
+/* static	char sccsid[] = "@(#)pc.h 1.7 %G%"; */
 
 #include <setjmp.h>
 
     /*
-     *		random constants for pc
+     *	random constants for pc
      */
     
     /*
@@ -36,14 +36,31 @@ struct rtlocals {
 #define	DSAVEOFFSET	( CURFILEOFFSET + sizeof rtlocs.curfile )
 
     /*
-     *	the register save mask for saving no registers
+     *	this is a cookie used to communicate between the
+     *	routine entry code and the routine exit code.
+     *	mostly it's for labels shared between the two.
      */
-#define	RSAVEMASK	( 0 )
+#ifdef vax
+struct entry_exit_cookie {
+    struct nl	*nlp;
+    char	extname[BUFSIZ];
+    int		toplabel;
+    int		savlabel;
+};
+#define	FRAME_SIZE_LABEL	"LF"
+#define	SAVE_MASK_LABEL		"L"
+#endif vax
 
-    /*
-     *	runtime check mask for divide check and integer overflow
-     */
-#define	RUNCHECK	( ( 1 << 15 ) | ( 1 << 14 ) )
+#ifdef mc68000
+struct entry_exit_cookie {
+    struct nl	*nlp;
+    char	extname[BUFSIZ];
+    int		toplabel;
+};
+#define	FRAME_SIZE_LABEL	"LF"
+#define	PAGE_BREAK_LABEL	"LP"
+#define	SAVE_MASK_LABEL		"LS"
+#endif mc68000
 
     /*
      *	formats for various names
@@ -80,7 +97,42 @@ struct rtlocals {
      */
 char	*enclosing[ DSPLYSZ ];
 
+#ifdef vax
+    /*
+     *	the runtime framepointer and argumentpointer registers
+     */
+#   define	P2FP		13
+#   define	P2FPNAME	"fp"
+#   define	P2AP		12
+#   define	P2APNAME	"ap"
+
+    /*
+     *	the register save mask for saving no registers
+     */
+#   define	RSAVEMASK	( 0 )
+
+    /*
+     *	runtime check mask for divide check and integer overflow
+     */
+#   define	RUNCHECK	( ( 1 << 15 ) | ( 1 << 14 ) )
     /*
      *	and of course ...
      */
-#define	BITSPERBYTE	8
+#   define	BITSPERBYTE	8
+
+#endif vax
+
+#ifdef mc68000
+    /*
+     *	this magic numbers lifted from pcc/mac2defs
+     */
+#   define	P2FP		14
+#   define	P2FPNAME	"a6"
+#   define	P2AP		14
+#   define	P2APNAME	"a6"
+
+    /*
+     *	and still ...
+     */
+#   define	BITSPERBYTE	8
+#endif mc68000
