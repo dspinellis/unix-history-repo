@@ -1,4 +1,4 @@
-/*	proc.h	4.6	81/03/09	*/
+/*	proc.h	4.7	81/04/13	*/
 
 /*
  * One structure allocated per active
@@ -36,6 +36,7 @@ struct	proc
 	size_t	p_dsize;	/* size of data space (clicks) */
 	size_t	p_ssize;	/* copy of stack size (clicks) */
 	size_t 	p_rssize; 	/* current resident set size in clicks */
+	size_t	p_maxrss;	/* copy of u.u_limit[MAXRSS] */
 	size_t	p_swrss;	/* resident set size before last swap */
 	swblk_t	p_swaddr;	/* disk address of u area when swapped */
 	caddr_t p_wchan;	/* event process is awaiting */
