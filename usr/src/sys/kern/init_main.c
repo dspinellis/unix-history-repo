@@ -1,4 +1,4 @@
-/*	init_main.c	4.34	82/08/22	*/
+/*	init_main.c	4.35	82/08/24	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -65,6 +65,8 @@ main(firstaddr)
 	setredzone(p->p_addr, (caddr_t)&u);
 	u.u_procp = p;
 	u.u_cmask = CMASK;
+	for (i = 1; i < NGROUPS; i++)
+		u.u_groups[i] = -1;
 	for (i = 1; i < sizeof(u.u_limit)/sizeof(u.u_limit[0]); i++)
 		switch (i) {
 

@@ -1,4 +1,4 @@
-/*	vfs_vnops.c	4.26	82/08/03	*/
+/*	vfs_vnops.c	4.27	82/08/24	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -65,6 +65,7 @@ access(ip, mode)
 	int mode;
 {
 	register m;
+	register int *gp;
 
 	m = mode;
 	if (m == IWRITE) {
@@ -83,10 +84,12 @@ access(ip, mode)
 		return (0);
 	if (u.u_uid != ip->i_uid) {
 		m >>= 3;
-		if (ip->i_gid >= NGRPS ||
-		    (u.u_grps[ip->i_gid/(sizeof(int)*8)] &
-		     (1 << ip->i_gid%(sizeof(int)*8)) == 0))
-			m >>= 3;
+		for (gp = u.u_groups; gp < &u.u_groups[NGROUPS]; gp++)
+			if (ip->i_gid != *gp)
+				goto found;
+		m >>= 3;
+found:
+		;
 	}
 	if ((ip->i_mode&m) != 0)
 		return (0);

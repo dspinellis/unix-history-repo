@@ -1,10 +1,8 @@
-/*	kern_prot.c	5.3	82/07/24	*/
+/*	kern_prot.c	5.4	82/08/24	*/
 
 /*
  * System calls related to processes and protection
  */
-
-/* NEED ALLOCATION AND PROTECTION MECHANISM FOR PROCESS GROUPS */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -62,17 +60,28 @@ getgid()
 	u.u_r.r_val2 = u.u_gid;
 }
 
-getgrp()
+getgroups()
 {
 	register struct	a {
+		int	gidsetsize;
 		int	*gidset;
 	} *uap = (struct a *)u.u_ap;
+	register int *gp;
 
-	if (copyout((caddr_t)u.u_grps, (caddr_t)uap->gidset,
-	    sizeof (u.u_grps))) {
+	for (gp = &u.u_groups[NGROUPS]; gp > u.u_groups; gp--)
+		if (gp[-1] >= 0)
+			break;
+	if (uap->gidsetsize < gp - u.u_groups) {
+		u.u_error = EINVAL;
+		return;
+	}
+	uap->gidsetsize = gp - u.u_groups;
+	if (copyout((caddr_t)u.u_groups, (caddr_t)uap->gidset,
+	    uap->gidsetsize * sizeof (u.u_groups[0]))) {
 		u.u_error = EFAULT;
 		return;
 	}
+	u.u_r.r_val1 = uap->gidsetsize;
 }
 
 setpgrp()
@@ -90,6 +99,7 @@ setpgrp()
 		u.u_error = ESRCH;
 		return;
 	}
+/* need better control mechanisms for process groups */
 	if (p->p_uid != u.u_uid && u.u_uid && !inferior(p)) {
 		u.u_error = EPERM;
 		return;
@@ -129,49 +139,34 @@ setgid()
 	uap = (struct a *)u.u_ap;
 	gid = uap->gid;
 	if (u.u_rgid == gid || u.u_gid == gid || suser()) {
+		leavegroup(u.u_gid); leavegroup(u.u_rgid);
+		(void) entergroup(gid);
 		u.u_gid = gid;
 		u.u_rgid = gid;
 	}
 }
 
-setgrp()
+setgroups()
 {
 	register struct	a {
+		int	gidsetsize;
 		int	*gidset;
 	} *uap = (struct a *)u.u_ap;
+	register int *gp;
 
 	if (suser())
 		return;
-	if (copyin((caddr_t)uap->gidset, (caddr_t)u.u_grps,
-	    sizeof (u.u_grps))) {
+	if (uap->gidsetsize > sizeof (u.u_groups) / sizeof (u.u_groups[0])) {
+		u.u_error = EINVAL;
+		return;
+	}
+	if (copyin((caddr_t)uap->gidset, (caddr_t)u.u_groups,
+	    uap->gidsetsize * sizeof (u.u_groups[0]))) {
 		u.u_error = EFAULT;
 		return;
 	}
-}
-
-/* BEGIN DEFUNCT */
-osetgrp()
-{
-	register struct	a {
-		int *ngrps;
-		int *ogrps;
-	} *uap = (struct a *)u.u_ap;
-	int thegroups[NGRPS/(sizeof(int)*8)];
-
-	if (uap->ogrps && copyout((caddr_t)u.u_grps, (caddr_t)uap->ogrps,
-	    sizeof (thegroups))) {
-		u.u_error = EFAULT;
-		return;
-	}
-	if (uap->ngrps == 0)
-		return;
-	if (copyin((caddr_t)uap->ngrps, (caddr_t)thegroups,
-	    sizeof (thegroups))) {
-		u.u_error = EFAULT;
-		return;
-	}
-	if (suser())
-		bcopy((caddr_t)thegroups, (caddr_t)u.u_grps, sizeof (u.u_grps));
+	for (gp = &u.u_groups[uap->gidsetsize]; gp < &u.u_groups[NGROUPS]; gp++)
+		*gp = -1;
 }
 
 /*
@@ -208,3 +203,34 @@ osetpgrp()
 	p->p_pgrp = uap->pgrp;
 }
 /* END DEFUNCT */
+
+leavegroup(gid)
+	int gid;
+{
+	register int *gp;
+
+	for (gp = u.u_groups; gp < &u.u_groups[NGROUPS]; gp++)
+		if (*gp == gid)
+			goto found;
+	return;
+found:
+	for (; gp < &u.u_groups[NGROUPS-1]; gp++)
+		*gp = *(gp+1);
+	*gp = 0;
+}
+
+entergroup(gid)
+	int gid;
+{
+	register int *gp;
+
+	for (gp = u.u_groups; gp < &u.u_groups[NGROUPS]; gp++)
+		if (*gp == gid)
+			return (0);
+	for (gp = u.u_groups; gp < &u.u_groups[NGROUPS]; gp++)
+		if (*gp < 0) {
+			*gp = gid;
+			return (0);
+		}
+	return (-1);
+}
