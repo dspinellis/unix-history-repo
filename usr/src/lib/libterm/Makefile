@@ -12,14 +12,15 @@
 # from this software without specific prior written permission.
 # THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 #
 CFLAGS=	-O -DCM_N -DCM_GT -DCM_B -DCM_D
 LIBC=	/lib/libc.a
 SRCS=	termcap.c tgoto.c tputs.c
 OBJS=	termcap.o tgoto.o tputs.o
+MAN=	termcap.0
 
 .c.o:
 	${CC} ${CFLAGS} -c -p $*.c
@@ -49,7 +50,7 @@ cleandir: clean
 depend:
 	mkdep ${CFLAGS} ${SRCS}
 
-install:
+install: ${MAN}
 	install -o bin -g bin -m 644 termcap.a ${DESTDIR}/usr/lib/libtermcap.a
 	rm -f ${DESTDIR}/usr/lib/libtermlib.a
 	ln ${DESTDIR}/usr/lib/libtermcap.a ${DESTDIR}/usr/lib/libtermlib.a
@@ -58,6 +59,7 @@ install:
 	rm -f ${DESTDIR}/usr/lib/libtermlib_p.a
 	ln ${DESTDIR}/usr/lib/libtermcap_p.a ${DESTDIR}/usr/lib/libtermlib_p.a
 	ranlib ${DESTDIR}/usr/lib/libtermcap_p.a
+	install -c -o bin -g bin -m 444 termcap.0 ${DESTDIR}/usr/man/cat3
 
 lint:
 	lint ${CFLAGS} ${SRCS}
