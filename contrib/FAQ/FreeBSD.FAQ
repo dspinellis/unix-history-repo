@@ -5,7 +5,7 @@
    Please mail all suggestions and additions to FreeBSD-FAQ@freefall.cdrom.com
 
 
-Revision: $Id: FreeBSD.FAQ,v 1.3 1994/04/17 03:57:18 jkh Exp $
+Revision: $Id: FreeBSD.FAQ,v 1.4 1994/04/18 10:21:11 jkh Exp $
 
 
 Table of Contents
@@ -320,7 +320,8 @@ XFree86 for your particular graphics card/mouse/etc.
         keep getting errors.  Whats up?
 
 The problem here is due to the current FreeBSD math-emulator.  You need to
-pick up the package in /usr/src/contrib/FAQ/programs/math-emulator.tar.gz
+pick up the sources and install.  They can be found in
+                /usr/src/contrib/FAQ/programs/fpu-emu 
 
 Run the install program, recompile your kernel and install the new kernel.
 This is a port of an older Linux math-emulator.  At some point, FreeBSD's
@@ -474,6 +475,9 @@ ftp.germany.eu.net:~ftp/pub/comp/i386/Linux/Local.EUnet/People/akl/apsfilter-1.1
 
 This is a complete package for printing text, PS and DVI files.  It
 requires ghostscript and dvips.
+If you looking for a simple printcap just for PS and text files, try picking
+up the printcap01 sources in:
+      /usr/src/contrib/FAQ/programs/printcap01 
 
 NOTE: We're looking for printcap entrys for all printers.  If you have
 one, or a filter for one, please send it or mail us a pointer to
