@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)in.c	7.31 (Berkeley) %G%
+ *	@(#)in.c	7.32 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -23,32 +23,6 @@
 #include <netinet/in_var.h>
 
 #ifdef INET
-/*
- * Formulate an Internet address from network + host.
- */
-struct in_addr
-in_makeaddr(net, host)
-	u_long net, host;
-{
-	register struct in_ifaddr *ia;
-	register u_long mask;
-	u_long addr;
-
-	if (IN_CLASSA(net))
-		mask = IN_CLASSA_HOST;
-	else if (IN_CLASSB(net))
-		mask = IN_CLASSB_HOST;
-	else
-		mask = IN_CLASSC_HOST;
-	for (ia = in_ifaddr; ia; ia = ia->ia_next)
-		if ((ia->ia_netmask & net) == ia->ia_net) {
-			mask = ~ia->ia_subnetmask;
-			break;
-		}
-	addr = htonl(net | (host & mask));
-	return (*(struct in_addr *)&addr);
-}
-
 /*
  * Return the network number from an internet address.
  */
@@ -79,53 +53,6 @@ in_netof(in)
 		if (net == ia->ia_net)
 			return (i & ia->ia_subnetmask);
 	return (net);
-}
-
-/*
- * Compute and save network mask as sockaddr from an internet address.
- */
-in_sockmaskof(in, sockmask)
-	struct in_addr in;
-	register struct sockaddr_in *sockmask;
-{
-	register u_long net;
-	register u_long mask;
-    {
-	register u_long i = ntohl(in.s_addr);
-
-	if (i == 0)
-		net = 0, mask = 0;
-	else if (IN_CLASSA(i))
-		net = i & IN_CLASSA_NET, mask = IN_CLASSA_NET;
-	else if (IN_CLASSB(i))
-		net = i & IN_CLASSB_NET, mask = IN_CLASSB_NET;
-	else if (IN_CLASSC(i))
-		net = i & IN_CLASSC_NET, mask = IN_CLASSC_NET;
-	else
-		net = i, mask = -1;
-    }
-    {
-	register struct in_ifaddr *ia;
-	/*
-	 * Check whether network is a subnet;
-	 * if so, return subnet number.
-	 */
-	for (ia = in_ifaddr; ia; ia = ia->ia_next)
-		if (net == ia->ia_net)
-			mask =  ia->ia_subnetmask;
-    }
-    {
-	register char *cpbase = (char *)&(sockmask->sin_addr);
-	register char *cp = (char *)(1 + &(sockmask->sin_addr));
-
-	sockmask->sin_addr.s_addr = htonl(mask);
-	sockmask->sin_len = 0;
-	while (--cp >= cpbase)
-		if (*cp) {
-			sockmask->sin_len = 1 + cp - (caddr_t)sockmask;
-			break;
-		}
-    }
 }
 
 #ifndef SUBNETSARELOCAL
