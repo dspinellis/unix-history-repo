@@ -1,4 +1,4 @@
-/*	ioctl.h	4.19	82/03/11	*/
+/*	ioctl.h	4.20	82/06/26	*/
 /*
  * ioctl definitions, and special character and local tty definitions
  */
@@ -116,6 +116,8 @@ struct ltchars {
 #define	OTTYDISC	0		/* old, v7 std tty driver */
 #define	NETLDISC	1		/* line discip for berk net */
 #define	NTTYDISC	2		/* new tty discipline */
+#define	TABLDISC	3		/* hitachi tablet discipline */
+#define	NTABLDISC	4		/* gtco tablet discipline */
 
 #define	FIOCLEX		(('f'<<8)|1)
 #define	FIONCLEX	(('f'<<8)|2)
