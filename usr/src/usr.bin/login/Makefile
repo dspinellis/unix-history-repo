@@ -1,4 +1,4 @@
-#	@(#)Makefile	8.1 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 
 CFLAGS+=-DKERBEROS
 PROG=	login
@@ -10,5 +10,6 @@ DPADD=	${LIBUTIL}
 LDADD=	-lutil
 BINOWN=	root
 BINMODE=4555
+INSTALLFLAGS=-fschg
 
 .include <bsd.prog.mk>
