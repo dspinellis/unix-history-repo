@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)mount_union.8	8.2 (Berkeley) %G%
+.\"	@(#)mount_union.8	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MOUNT_UNION 8
@@ -81,7 +81,7 @@ The union filesystem manipulates the namespace, rather than
 individual filesystems.
 The union operation applies recursively down the directory tree
 now rooted at
-.Em uniondir .
+.Ar uniondir .
 This differs from the
 .Em union
 option to
