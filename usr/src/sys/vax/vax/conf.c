@@ -1,4 +1,4 @@
-/*	conf.c	4.63	83/03/16	*/
+/*	conf.c	4.64	83/03/19	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -115,19 +115,6 @@ int	upopen(),upstrategy(),upread(),upwrite(),upreset(),updump();
 #define	updump		nodev
 #endif
 
-#include "rx.h"
-#if NFX > 0
-int	rxopen(),rxclose(),rxstrategy(),rxread(),rxwrite(),rxreset(),rxioctl();
-#else
-#define	rxopen		nodev
-#define	rxclose		nodev
-#define	rxstrategy	nodev
-#define	rxread		nodev
-#define	rxwrite		nodev
-#define	rxreset		nulldev
-#define	rxioctl		nodev
-#endif
-
 #include "tj.h"
 #if NUT > 0
 int	utopen(),utclose(),utstrategy(),utread(),utwrite(),utioctl();
@@ -179,7 +166,6 @@ struct bdevsw	bdevsw[] =
 	udopen,		nulldev,	udstrategy,	uddump,	0,	/*9*/
 	utopen,		utclose,	utstrategy,	utdump,	B_TAPE,	/*10*/
 	idcopen,	nodev,		idcstrategy,	idcdump,0,	/*11*/
-	rxopen,		rxclose,	rxstrategy,	nodev,	0,	/*12*/
 };
 int	nblkdev = sizeof (bdevsw) / sizeof (bdevsw[0]);
 
@@ -389,16 +375,16 @@ int	adopen(),adclose(),adioctl(),adreset();
 #define adreset nodev
 #endif
 
-/* #include "efs.h" */
-#if NEFS > 0
-int	efsopen(),efsclose(),efsread(),efswrite(),efsioctl(),efsreset();
+#include "rx.h"
+#if NFX > 0
+int	rxopen(),rxclose(),rxread(),rxwrite(),rxreset(),rxioctl();
 #else
-#define efsopen nodev
-#define efsclose nodev
-#define efsread nodev
-#define efswrite nodev
-#define efsioctl nodev
-#define efsreset nodev
+#define	rxopen		nodev
+#define	rxclose		nodev
+#define	rxread		nodev
+#define	rxwrite		nodev
+#define	rxreset		nulldev
+#define	rxioctl		nodev
 #endif
 
 int	ttselect(), seltrue();
@@ -502,8 +488,8 @@ struct cdevsw	cdevsw[] =
 	adopen,		adclose,	nodev,		nodev,		/*29*/
 	adioctl,	nodev,		adreset,	0,
 	seltrue,	nodev,
-	efsopen,	efsclose,	efsread,	efswrite,	/*30*/
-	efsioctl,	nodev,		efsreset,	0,
+	rxopen,		rxclose,	rxread,		rxwrite,	/*30*/
+	rxioctl,	nodev,		rxreset,	0,
 	seltrue,	nodev,
 	ikopen,		ikclose,	ikread,		ikwrite,	/*31*/
 	ikioctl,	nodev,		ikreset,	0,
