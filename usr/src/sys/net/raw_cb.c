@@ -1,4 +1,4 @@
-/*	raw_cb.c	4.3	82/02/12	*/
+/*	raw_cb.c	4.4	82/03/05	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -10,7 +10,7 @@
 #include "../net/in_systm.h"
 #include "../net/if.h"
 #include "../net/raw_cb.h"
-#include "/usr/include/errno.h"
+#include "../errno.h"
 
 /*
  * Routines to manage the raw protocol control blocks. 
@@ -18,6 +18,7 @@
  * TODO:
  *	hash lookups by protocol family/protocol + address family
  *	take care of unique address problems per AF
+ *	redo address binding to allow wildcards
  */
 
 /*
@@ -48,6 +49,10 @@ COUNT(RAW_ATTACH);
 		ifp = if_ifwithaddr(sin->sin_addr);
 		break;
 		}
+
+	case AF_PUP:
+		ifp = ifnet;
+		break;
 
 	default:
 		return (EAFNOSUPPORT);
