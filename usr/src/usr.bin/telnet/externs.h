@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)externs.h	1.13 (Berkeley) %G%
+ *	@(#)externs.h	1.14 (Berkeley) %G%
  */
 
 #include <stdio.h>
@@ -34,6 +34,7 @@ extern int
     globalmode,		/* Mode tty should be in */
     In3270,			/* Are we in 3270 mode? */
     telnetport,		/* Are we connected to the telnet port? */
+    localflow,		/* Flow control handled locally */
     localchars,		/* we recognize interrupt/quit */
     donelclchars,		/* the user has set "localchars" */
     showoptions,
@@ -78,6 +79,7 @@ extern void
     init_3270(),
     printoption(),
     printsub(),
+    sendnaws(),
     setconnmode(),
     setcommandmode(),
     setneturg(),

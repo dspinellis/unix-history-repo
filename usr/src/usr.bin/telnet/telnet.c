@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	5.38 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	5.39 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -84,6 +84,7 @@ int
 	flushout,	/* flush output */
 	autoflush = 0,	/* flush output when interrupting? */
 	autosynch,	/* send interrupt characters with SYNCH? */
+	localflow,	/* we handle flow control locally */
 	localchars,	/* we recognize interrupt/quit */
 	donelclchars,	/* the user has set "localchars" */
 	donebinarytoggle,	/* the user has put us in binary */
@@ -145,7 +146,7 @@ init_telnet()
     ClearArray(hisopts);
     ClearArray(myopts);
 
-    connected = In3270 = ISend = donebinarytoggle = 0;
+    connected = In3270 = ISend = localflow = donebinarytoggle = 0;
 
     SYNCHing = 0;
 
@@ -307,9 +308,12 @@ dooption(option)
 		break;
 
 #	if defined(TN3270)
-	case TELOPT_EOR:
-	case TELOPT_BINARY:
+	case TELOPT_EOR:		/* end of record */
+	case TELOPT_BINARY:		/* binary mode */
 #	endif	/* defined(TN3270) */
+	case TELOPT_NAWS:		/* window size */
+	case TELOPT_TSPEED:		/* terminal speed */
+	case TELOPT_LFLOW:		/* local flow control */
 	case TELOPT_TTYPE:		/* terminal type option */
 	case TELOPT_SGA:		/* no big deal */
 		fmt = will;
@@ -334,6 +338,8 @@ dooption(option)
  *	Currently we recognize:
  *
  *		Terminal type, send request.
+ *		Terminal speed (send request).
+ *		Local flow control (is request).
  */
 
 static void
@@ -373,7 +379,34 @@ suboption()
 		/*NOTREACHED*/
 	    }
 	}
+	break;
+    case TELOPT_TSPEED:
+	if ((subbuffer[1]&0xff) == TELQUAL_SEND) {
+	    long *ospeed,*ispeed;
+	    char speedbuf[41];
+	    char *getenv();
+	    int len;
 
+	    TerminalSpeeds(&ispeed, &ospeed);
+
+	    sprintf(speedbuf, "%d,%d", ospeed, ispeed);
+	    len = strlen(speedbuf);
+
+	    if ((len + 4+2) < NETROOM()) {
+		printring(&netoring, "%c%c%c%c%s%c%c", IAC, SB, TELOPT_TSPEED,
+		    TELQUAL_IS, speedbuf, IAC, SE);
+	    }
+	}
+	break;
+    case TELOPT_LFLOW:
+	if ((subbuffer[1]&0xff) == 1) {
+	    localflow = 1;
+	} else if ((subbuffer[1]&0xff) == 0) {
+	    localflow = 0;
+	}
+	setcommandmode();
+	setconnmode();
+	break;
     default:
 	break;
     }
@@ -577,6 +610,13 @@ telrcv()
 	    if (!myopts[c])
 		dooption(c);
 	    SetIn3270();
+	    if (c == TELOPT_NAWS) {
+		sendnaws();
+	    } else if (c == TELOPT_LFLOW) {
+		localflow = 1;
+		setcommandmode();
+		setconnmode();
+	    }
 	    telrcv_state = TS_DATA;
 	    continue;
 
@@ -809,6 +849,15 @@ telnet()
 	}
 	if (!myopts[TELOPT_TTYPE]) {
 	    dooption(TELOPT_TTYPE);
+	}
+	if (!myopts[TELOPT_NAWS]) {
+	    dooption(TELOPT_NAWS);
+	}
+	if (!myopts[TELOPT_TSPEED]) {
+	    dooption(TELOPT_TSPEED);
+	}
+	if (!myopts[TELOPT_LFLOW]) {
+	    dooption(TELOPT_LFLOW);
 	}
     }
 #   endif /* !defined(TN3270) */
@@ -1048,5 +1097,36 @@ sendbrk()
     }
     if (autosynch) {
 	dosynch();
+    }
+}
+/*
+ * Send a window size update to the remote system.
+ */
+
+void
+sendnaws()
+{
+    long rows, cols;
+
+#define        NETADDCHAR(x) \
+    { \
+	if (((x) & 0xff) == 0xff) { \
+	    NET2ADD(IAC, IAC) \
+	} else { \
+	    NETADD(x) \
+	} \
+    }
+#define        NETADDSHORT(x)  { NETADDCHAR(x >> 8); NETADDCHAR(x & 0xff) }
+
+    if (TerminalWindowSize(&rows, &cols) == 0) {	/* Failed */
+	return;
+    }
+
+    if (NETROOM() >= 3 + 8 + 2) {
+	NET2ADD(IAC, SB);
+	NETADD(TELOPT_NAWS);
+	NETADDSHORT(cols);
+	NETADDSHORT(rows);
+	NET2ADD(IAC, SE);
     }
 }

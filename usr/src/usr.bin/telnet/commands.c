@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)commands.c	1.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)commands.c	1.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -879,14 +879,25 @@ togcrmod()
 /*VARARGS*/
 suspend()
 {
-	setcommandmode();
+    setcommandmode();
 #if	defined(unix)
+    {
+	long oldrows, oldcols, newrows, newcols;
+
+	TerminalWindowSize(&oldrows, &oldcols);
 	(void) kill(0, SIGTSTP);
+	TerminalWindowSize(&newrows, &newcols);
+	if ((oldrows != newrows) || (oldcols != newcols)) {
+	    if (connected) {
+		sendnaws();
+	    }
+	}
+    }
 #endif	/* defined(unix) */
-	/* reget parameters in case they were changed */
-	TerminalSaveState();
-	setconnmode();
-	return 1;
+    /* reget parameters in case they were changed */
+    TerminalSaveState();
+    setconnmode();
+    return 1;
 }
 
 /*VARARGS*/
@@ -1079,6 +1090,7 @@ tn(argc, argv)
     struct servent *sp = 0;
     static char	hnamebuf[32];
     unsigned long inet_addr();
+    extern char *inet_ntoa();
 
 
 #if defined(MSDOS)
@@ -1143,8 +1155,6 @@ tn(argc, argv)
 #if	!defined(htons)
 	    u_short htons();
 #endif	/* !defined(htons) */
-
-	    sin.sin_port = atoi(argv[2]);
 	    sin.sin_port = htons(sin.sin_port);
 	}
 	telnetport = 0;
@@ -1159,7 +1169,7 @@ tn(argc, argv)
 	}
 	telnetport = 1;
     }
-    printf("Trying...\n");
+    printf("Trying %s...\n", inet_ntoa(sin.sin_addr));
     do {
 	net = socket(AF_INET, SOCK_STREAM, 0);
 	if (net < 0) {
@@ -1174,7 +1184,6 @@ tn(argc, argv)
 #if	defined(h_addr)		/* In 4.3, this is a #define */
 	    if (host && host->h_addr_list[1]) {
 		int oerrno = errno;
-		extern char *inet_ntoa();
 
 		fprintf(stderr, "telnet: connect to address %s: ",
 						inet_ntoa(sin.sin_addr));
@@ -1183,15 +1192,13 @@ tn(argc, argv)
 		host->h_addr_list++;
 		memcpy((caddr_t)&sin.sin_addr, 
 			host->h_addr_list[0], host->h_length);
-		fprintf(stderr, "Trying %s...\n",
-			inet_ntoa(sin.sin_addr));
 		(void) NetClose(net);
 		continue;
 	    }
 #endif	/* defined(h_addr) */
 	    perror("telnet: Unable to connect to remote host");
 	    return 0;
-	    }
+	}
 	connected++;
     } while (connected == 0);
     (void) call(status, "status", "notmuch", 0);
@@ -1318,8 +1325,8 @@ command(top)
     setcommandmode();
     if (!top) {
 	putchar('\n');
-    } else {
 #if	defined(unix)
+    } else {
 	signal(SIGINT, SIG_DFL);
 	signal(SIGQUIT, SIG_DFL);
 #endif	/* defined(unix) */
@@ -1334,6 +1341,9 @@ command(top)
 	if (line[0] == 0)
 	    break;
 	makeargv();
+	if (margv[0] == 0) {
+	    break;
+	}
 	c = getcmd(margv[0]);
 	if (Ambiguous(c)) {
 	    printf("?Ambiguous command\n");
