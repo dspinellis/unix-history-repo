@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)in.c	8.2 (Berkeley) %G%
+ *	@(#)in.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -115,7 +115,7 @@ struct sockaddr_in *ap;
     register char *cp = (char *) (&ap->sin_addr + 1);
 
     ap->sin_len = 0;
-    while (--cp > cplim)
+    while (--cp >= cplim)
         if (*cp) {
 	    (ap)->sin_len = cp - (char *) (ap) + 1;
 	    break;
