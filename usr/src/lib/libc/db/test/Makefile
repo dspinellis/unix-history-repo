@@ -1,12 +1,18 @@
-#	@(#)Makefile	8.3 (Berkeley) %G%
+#	@(#)Makefile	8.4 (Berkeley) %G%
 
 PROG=	dbtest
-OBJS=	dbtest.o #strerror.o
-CFLAGS=	-O -DDEBUG -DSTATISTICS
-LIB=	../PORT/bsd.44/libdb.a
+OBJS1=	dbtest.o #strerror.o
+#OBJS2=	rec_close.o rec_delete.o rec_get.o rec_open.o rec_put.o \
+#	rec_search.o rec_seq.o rec_utils.o
+#VPATH=	../recno
+OBJS=	${OBJS1} ${OBJS2} ${OBJS3}
+
+PDIR=	../PORT/bsd.44
+CFLAGS=	-O -DDEBUG -DSTATISTICS -I${PDIR}/include #-I../recno
+LIB=	${PDIR}/libdb.a
 
 dbtest: ${OBJS} ${LIB}
-	${CC} -o $@ ${OBJS} ${LIB}
+	${CC} -o $@ ${OBJS} ${LIB} ${LIB}
 
 clean:
-	rm -f ${OBJS} ${PROG} t1 t2 t3
+	rm -f gmon.out ${OBJS} ${PROG} t1 t2 t3
