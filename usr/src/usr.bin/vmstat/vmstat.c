@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)vmstat.c	4.6 (Berkeley) %G%";
+static	char *sccsid = "@(#)vmstat.c	4.7 (Berkeley) %G%";
 #include <stdio.h>
 #include <sys/param.h>
 #include <sys/vm.h>
@@ -133,8 +133,7 @@ char **argv;
 	read(mf, &bootime, sizeof bootime);
 	lseek(mf, (long)nl[X_HZ].n_value, 0);
 	read(mf, &hz, sizeof hz);
-	for (i = 0; i < DK_NDRIVE; i++)
-	{
+	for (i = 0; i < DK_NDRIVE; i++) {
 		strcpy(dr_name[i], "xx");
 		dr_unit[i] = i;
 	}
@@ -149,8 +148,8 @@ reprint:
 	lines = 20;
 	/* s1 = z; */
 printf("\
- procs     memory            page        swap         disk  faults          cpu\n\
- r b w   avm  fre  re at pi po fr  de  sr i o  %c%d %c%d %c%d %c%d  in  sy  cs us sy id\n\
+ procs     memory                       page      disk  faults          cpu\n\
+ r b w   avm  fre  re at  pi  po  fr  de  sr %c%d %c%d %c%d %c%d  in  sy  cs us sy id\n\
 ", dr_name[0][0], dr_unit[0], dr_name[1][0], dr_unit[1], dr_name[2][0], dr_unit[2], dr_name[3][0], dr_unit[3]);
 loop:
 	lseek(mf, (long)nl[X_CPTIME].n_value, 0);
@@ -184,15 +183,12 @@ loop:
 		etime = 1.;
 	printf("%2d%2d%2d", total.t_rq, total.t_dw+total.t_pw, total.t_sw);
 	printf("%6d%5d", total.t_avm/2, total.t_free/2);
-	printf("%4d%3d%3d",
+	printf("%4d%3d%4d",
 	    (rate.v_pgrec - (rate.v_xsfrec+rate.v_xifrec))/nintv,
-	    (rate.v_xsfrec+rate.v_xifrec)/nintv, rate.v_pgin/nintv);
-	printf("%3d%3d%4d%4.1f%2d%2d", rate.v_pgout/nintv,
-	    rate.v_dfree/nintv, deficit/2,
-	    (60.0 * rate.v_scan) / (LOOPSIZ*nintv),
-	    rate.v_swpin/nintv, rate.v_swpout/nintv);
+	    (rate.v_xsfrec+rate.v_xifrec)/nintv, rate.v_pgpgin/2/nintv);
+	printf("%4d%4d%4d%4d", rate.v_pgpgout/2/nintv,
+	    rate.v_dfree/2/nintv, deficit/2, rate.v_scan/nintv);
 	etime /= 60.;
-	printf(" ");
 	for(i=0; i<4; i++)
 		stats(i);
 	printf("%4d%4d", (rate.v_intr/nintv) - hz, rate.v_syscall/nintv);
@@ -247,6 +243,9 @@ dosum()
 	printf("%9d total address trans. faults taken\n", sum.v_faults);
 	printf("%9d page ins\n", sum.v_pgin);
 	printf("%9d page outs\n", sum.v_pgout);
+	printf("%9d pages paged in\n", sum.v_pgpgin);
+	printf("%9d pages paged out\n", sum.v_pgpgout);
+	printf("%9d sequential process pages freed\n", sum.v_seqfree);
 	printf("%9d total reclaims\n", sum.v_pgrec);
 	printf("%9d reclaims from free list\n", sum.v_pgfrec);
 	printf("%9d intransit blocking page faults\n", sum.v_intrans);
