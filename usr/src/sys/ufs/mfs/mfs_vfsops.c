@@ -14,11 +14,12 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mfs_vfsops.c	7.14 (Berkeley) %G%
+ *	@(#)mfs_vfsops.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "time.h"
+#include "kernel.h"
 #include "user.h"
 #include "proc.h"
 #include "buf.h"
@@ -148,6 +149,10 @@ mfs_start(mp, flags)
 			wakeup((caddr_t)bp);
 		}
 		if (error = tsleep((caddr_t)vp, mfs_pri, "mfsidl", 0)) {
+			/*
+			 * Give other processes a chance to run.
+			 */
+			sleep(&lbolt, PVFS);
 			/*
 			 * We have received a signal, so try to unmount.
 			 */
