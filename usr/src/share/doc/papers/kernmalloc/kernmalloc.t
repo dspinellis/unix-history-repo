@@ -1,4 +1,4 @@
-.\"	@(#)kernmalloc.t	1.7	(Copyright 1988 M. K. McKusick)	88/04/22
+.\"	@(#)kernmalloc.t	1.8	(Copyright 1988 M. K. McKusick)	88/07/27
 .\" reference a system routine name
 .de RN
 \fI\\$1\fP\^(\h'1m/24u')\\$2
@@ -35,12 +35,27 @@
 .EQ
 delim $$
 .EN
-.rm CM
 .ds CH "
-.ds CF "- % -
+.pn 295
+.sp
+.rs
+.ps -1
+.sp -1
+.fi
+Reprinted from:
+\fIProceedings of the San Francisco USENIX Conference\fP,
+pp. 295-303, June 1988.
+.ps
+.\".sp |\n(HMu
+.rm CM
 .nr PO 1.25i
 .TL
 Design of a General Purpose Memory Allocator for the 4.3BSD UNIX\(dg Kernel
+.ds LF Summer USENIX '88
+.ds CF "%
+.ds RF San Francisco, June 20-24
+.EH 'Design of a General Purpose Memory ...''McKusick, Karels'
+.OH 'McKusick, Karels''Design of a General Purpose Memory ...'
 .FS
 \(dgUNIX is a registered trademark of AT&T in the US and other countries.
 .FE

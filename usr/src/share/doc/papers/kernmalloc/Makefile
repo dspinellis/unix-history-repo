@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	1.2 (Berkeley) %G%
+#	@(#)Makefile	1.3 (Berkeley) %G%
 #
 SRCS=	kernmalloc.t appendix.t
 FIGS=	alloc.fig usage.tbl
@@ -14,14 +14,14 @@ TBL=	dtbl -P${PRINTER}
 EQN=	deqn -P${PRINTER}
 PIC=	pic -P${PRINTER}
 GRIND=	vgrind -f
-TROFF=	rsh vangogh ditroff -P${PRINTER} ${MACROS}
+TROFF=	ditroff -P${PRINTER} ${MACROS}
 
 print: paper.${PRINTER}
 	lpr -P${PRINTER} -n paper.${PRINTER}
 
 paper.${PRINTER}: ${SRCS} ${FIGS}
 	${SOELIM} ${SRCS} | ${TBL} | ${PIC} | ${EQN} | ${GRIND} | \
-		${TROFF} -t - >paper.${PRINTER}
+		${TROFF} -t ${PAGES} - >paper.${PRINTER}
 
 clean:
 	rm -f paper.${PRINTER} paper.[PT]* *.spell errs Errs make.out
