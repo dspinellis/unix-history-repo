@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pcb.h	5.9 (Berkeley) %G%
+ *	@(#)pcb.h	5.10 (Berkeley) %G%
  */
 
 /*
@@ -45,4 +45,6 @@ struct pcb {
 	int	pcb_cmap2;	/* XXX temporary PTE - will prefault instead */
 };
 
+#ifdef KERNEL
 struct pcb *curpcb;		/* our current running pcb */
+#endif
