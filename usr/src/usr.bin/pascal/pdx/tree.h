@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)tree.h 1.3 %G%"; */
+/* static char sccsid[] = "@(#)tree.h 1.4 %G%"; */
 
 /*
  * This file contains the declarations of the variables and routines
@@ -33,6 +33,7 @@ STACK *sp;
 NODE *build();		/* create a node in the parse tree */
 prtree();		/* print a tree in source form */
 eval();			/* evaluate a tree, leaving value on stack */
+long popsmall();	/* pop a small item from the stack given its type */
 tfree();		/* release storage for a tree */
 BOOLEAN tr_equal();	/* test if two trees are structurally equivalent */
 BOOLEAN cond();		/* evaluate a node for a conditional */
