@@ -1,4 +1,4 @@
-#	Makefile	4.4	81/03/15
+#	Makefile	4.5	81/03/16
 
 DESTDIR=
 CFLAGS=	-O -DSTANDALONE ${COPTS}
@@ -73,13 +73,13 @@ tpicheck: icheck.o tpsrt0.o ${DESTDIR}/usr/lib/libsa.a
 	cp a.out b.out; strip b.out; dd if=b.out of=tpicheck ibs=32 skip=1; rm b.out
 
 srt0.o: srt0.c
-	cc -E -DRELOC=${RELOC} srt0.c | as -o srt0.o
+	cc -E -DRELOC=0x${RELOC} srt0.c | as -o srt0.o
 
 tpsrt0.o: tpsrt0.c
-	cc -E -DRELOC=${RELOC} tpsrt0.c | as -o tpsrt0.o 
+	cc -E -DRELOC=0x${RELOC} tpsrt0.c | as -o tpsrt0.o 
 
 relsrt0.o: relsrt0.c
-	cc -E -DRELOC=${RELOC} relsrt0.c | as -o relsrt0.o
+	cc -E -DRELOC=0x${RELOC} relsrt0.c | as -o relsrt0.o
 
 print:
 	@pr -f makefile
@@ -94,7 +94,7 @@ clean:
 lint:
 	lint ${COPTS} -hxbn boot.c ${SRCS} | \
 	    grep -v 'possible pointer alignment' | \
-	    grep -v 'struct/unit .* never defined'
+	    grep -v 'struct/union .* never defined'
 
 install:
 	cp tprestor ${DESTDIR}/sys/restor

@@ -1,4 +1,4 @@
-/*	conf.c	4.6	81/03/15	*/
+/*	conf.c	4.7	81/03/16	*/
 
 #include "../h/param.h"
 #include "../h/inode.h"
@@ -54,6 +54,6 @@ struct devsw devsw[] = {
 	"up",	upstrategy,	upopen,		nullsys,
 	"tm",	tmstrategy,	tmopen,		tmclose,
 	"hk",	rkstrategy,	rkopen,		nullsys,
-	"ts",	tsstragety,	tsopen,		tsclose,
+	"ts",	tsstrategy,	tsopen,		tsclose,
 	0,0,0,0
 };

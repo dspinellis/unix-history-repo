@@ -1,4 +1,4 @@
-/*	sys.c	4.2	%G%	*/
+/*	sys.c	4.3	%G%	*/
 
 #include <sys/param.h>
 #include <sys/ino.h>
@@ -399,7 +399,9 @@ gotdev:
 	*(cp-1) = '(';
 	file->i_ino.i_dev = dp-devsw;
 	file->i_unit = *cp++ - '0';
-	if (file->i_unit < 0 || file->i_unit > 7) {
+	if (*cp >= '0' && *cp <= '9')
+		file->i_unit = file->i_unit * 10 + *cp++ - '0';
+	if (file->i_unit < 0 || file->i_unit > 31) {
 		printf("Bad unit specifier\n");
 		file->i_flgs = 0;
 		return(-1);
