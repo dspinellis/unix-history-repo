@@ -1,5 +1,5 @@
 #ifndef lint
-    static	char *sccsid = "@(#)printgprof.c	1.11 (Berkeley) %G%";
+    static	char *sccsid = "@(#)printgprof.c	1.12 (Berkeley) %G%";
 #endif lint
 
 #include "gprof.h"
@@ -14,7 +14,7 @@ printprof()
 	    (long) scale * sizeof(UNIT) );
     if ( totime > 0.0 ) {
 	printf( " for %.2f%% of %.2f seconds\n\n" ,
-		100.0/totime , totime / HZ );
+		100.0/totime , totime / hz );
     } else {
 	printf( " no time accumulated\n\n" );
 	    /*
@@ -83,7 +83,7 @@ flatprofline( np )
     }
     actime += np -> time;
     printf( "%5.1f %7.2f %7.2f" ,
-	100 * np -> time / totime , actime / HZ , np -> time / HZ );
+	100 * np -> time / totime , actime / hz , np -> time / hz );
     if ( np -> ncall != 0 ) {
 	printf( " %7d" , np -> ncall );
     } else {
@@ -102,7 +102,7 @@ gprofheader()
 	    (long) scale * sizeof(UNIT) );
     if ( printtime > 0.0 ) {
 	printf( " for %.2f%% of %.2f seconds\n\n" ,
-		100.0/printtime , printtime / HZ );
+		100.0/printtime , printtime / hz );
     } else {
 	printf( " no time propagated\n\n" );
 	    /*
@@ -129,8 +129,8 @@ gprofline( np )
     printf( "%-6.6s %5.1f %7.2f %11.2f" ,
 	    kirkbuffer ,
 	    100 * ( np -> propself + np -> propchild ) / printtime ,
-	    np -> propself / HZ ,
-	    np -> propchild / HZ );
+	    np -> propself / hz ,
+	    np -> propchild / hz );
     if ( ( np -> ncall + np -> selfcalls ) != 0 ) {
 	printf( " %7d" , np -> ncall );
 	if ( np -> selfcalls != 0 ) {
@@ -282,7 +282,7 @@ printparents( childp )
 		 */
 	    printf( "%6.6s %5.5s %7.2f %11.2f %7d/%-7d     " ,
 		    "" , "" ,
-		    arcp -> arc_time / HZ , arcp -> arc_childtime / HZ ,
+		    arcp -> arc_time / hz , arcp -> arc_childtime / hz ,
 		    arcp -> arc_count , cycleheadp -> ncall );
 	    printname( parentp );
 	    printf( "\n" );
@@ -315,7 +315,7 @@ printchildren( parentp )
 		 */
 	    printf( "%6.6s %5.5s %7.2f %11.2f %7d/%-7d     " ,
 		    "" , "" ,
-		    arcp -> arc_time / HZ , arcp -> arc_childtime / HZ ,
+		    arcp -> arc_time / hz , arcp -> arc_childtime / hz ,
 		    arcp -> arc_count , childp -> cyclehead -> ncall );
 	    printname( childp );
 	    printf( "\n" );
@@ -442,8 +442,8 @@ printcycle( cyclep )
     printf( "%-6.6s %5.1f %7.2f %11.2f %7d" ,
 	    kirkbuffer ,
 	    100 * ( cyclep -> propself + cyclep -> propchild ) / printtime ,
-	    cyclep -> propself / HZ ,
-	    cyclep -> propchild / HZ ,
+	    cyclep -> propself / hz ,
+	    cyclep -> propchild / hz ,
 	    cyclep -> ncall );
     if ( cyclep -> selfcalls != 0 ) {
 	printf( "+%-7d" , cyclep -> selfcalls );
@@ -465,7 +465,7 @@ printmembers( cyclep )
     sortmembers( cyclep );
     for ( memberp = cyclep -> cnext ; memberp ; memberp = memberp -> cnext ) {
 	printf( "%6.6s %5.5s %7.2f %11.2f %7d" , 
-		"" , "" , memberp -> propself / HZ , memberp -> propchild / HZ ,
+		"" , "" , memberp -> propself / hz , memberp -> propchild / hz ,
 		memberp -> ncall );
 	if ( memberp -> selfcalls != 0 ) {
 	    printf( "+%-7d" , memberp -> selfcalls );
