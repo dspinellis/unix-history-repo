@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)conn.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)conn.c	5.8 (Berkeley) %G%";
 #endif
 
 #include <signal.h>
@@ -469,6 +469,39 @@ int tty, spwant;
 #endif
 	linebaudrate = spwant;
 	return SUCCESS;
+}
+
+/***
+ *	getbaud(tty)	set linebaudrate variable
+ *
+ *	return codes:  none
+ */
+
+getbaud(tty)
+int tty;
+{
+#ifdef	USG
+	struct termio ttbuf;
+#else
+	struct sgttyb ttbuf;
+#endif
+	register struct sg_spds *ps;
+	register int name;
+
+	if (IsTcpIp)
+		return;
+#ifdef	USG
+	ioctl(tty, TCGETA, &ttbuf);
+	name = ttbuf.c_cflag & CBAUD;
+#else
+	ioctl(tty, TIOCGETP, &ttbuf);
+	name = ttbuf.sg_ispeed;
+#endif
+	for (ps = spds; ps->sp_val; ps++)
+		if (ps->sp_name == name) {
+			linebaudrate = ps->sp_val;
+			break;
+		}
 }
 
 #define MR 100
