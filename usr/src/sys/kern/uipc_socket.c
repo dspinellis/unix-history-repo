@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_socket.c	7.22 (Berkeley) %G%
+ *	@(#)uipc_socket.c	7.23 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -14,9 +14,11 @@
 #include "malloc.h"
 #include "mbuf.h"
 #include "domain.h"
+#include "kernel.h"
 #include "protosw.h"
 #include "socket.h"
 #include "socketvar.h"
+#include "time.h"
 
 /*
  * Socket operation routines.
@@ -782,8 +784,6 @@ sosetopt(so, level, optname, m0)
 		case SO_RCVBUF:
 		case SO_SNDLOWAT:
 		case SO_RCVLOWAT:
-		case SO_SNDTIMEO:
-		case SO_RCVTIMEO:
 			if (m == NULL || m->m_len < sizeof (int)) {
 				error = EINVAL;
 				goto bad;
@@ -806,14 +806,37 @@ sosetopt(so, level, optname, m0)
 			case SO_RCVLOWAT:
 				so->so_rcv.sb_lowat = *mtod(m, int *);
 				break;
+			}
+			break;
+
+		case SO_SNDTIMEO:
+		case SO_RCVTIMEO:
+		    {
+			struct timeval *tv;
+			short val;
+
+			if (m == NULL || m->m_len < sizeof (*tv)) {
+				error = EINVAL;
+				goto bad;
+			}
+			tv = mtod(m, struct timeval *);
+			if (tv->tv_sec > SHRT_MAX / hz - hz) {
+				error = EDOM;
+				goto bad;
+			}
+			val = tv->tv_sec * hz + tv->tv_usec / tick;
+
+			switch (optname) {
+
 			case SO_SNDTIMEO:
-				so->so_snd.sb_timeo = *mtod(m, int *);
+				so->so_snd.sb_timeo = val;
 				break;
 			case SO_RCVTIMEO:
-				so->so_rcv.sb_timeo = *mtod(m, int *);
+				so->so_rcv.sb_timeo = val;
 				break;
 			}
 			break;
+		    }
 
 		default:
 			error = ENOPROTOOPT;
@@ -888,12 +911,17 @@ sogetopt(so, level, optname, mp)
 			break;
 
 		case SO_SNDTIMEO:
-			*mtod(m, int *) = so->so_snd.sb_timeo;
-			break;
-
 		case SO_RCVTIMEO:
-			*mtod(m, int *) = so->so_rcv.sb_timeo;
+		    {
+			int val = (optname == SO_SNDTIMEO ?
+			     so->so_snd.sb_timeo : so->so_rcv.sb_timeo);
+
+			m->m_len = sizeof(struct timeval);
+			mtod(m, struct timeval *)->tv_sec = val / hz;
+			mtod(m, struct timeval *)->tv_usec =
+			    (val % hz) / tick;
 			break;
+		    }
 
 		default:
 			(void)m_free(m);
