@@ -1,5 +1,5 @@
 #
-#	@(#)rc	5.11 (Berkeley) %G%
+#	@(#)rc	5.12 (Berkeley) %G%
 #
 
 HOME=/; export HOME
@@ -97,6 +97,7 @@ fi
 
 echo preserving editor files  >/dev/console
 (cd /var/tmp; /usr/libexec/ex3.7preserve -a)
+(cd /var/tmp; rm Ex[0-9][0-9][0-9][0-9][0-9] Rx[0-9][0-9][0-9][0-9][0-9])
 
 echo clearing /tmp 	>/dev/console
 # prune quickly with one rm, then use find to clean up /tmp/[lq]*
