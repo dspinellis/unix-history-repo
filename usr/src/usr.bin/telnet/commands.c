@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)commands.c	1.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)commands.c	1.26 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -47,7 +47,7 @@ static char sccsid[] = "@(#)commands.c	1.25 (Berkeley) %G%";
 #ifdef	SRCRT
 # ifndef CRAY
 # include <netinet/in_systm.h>
-#  if defined(vax) || defined(tahoe)
+#  if defined(vax) || defined(tahoe) || defined(hp300)
 #  include <machine/endian.h>
 #  endif /* vax */
 # endif /* CRAY */
