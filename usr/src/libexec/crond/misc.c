@@ -5,6 +5,14 @@ static char rcsid[] = "$Header: misc.c,v 2.1 90/07/18 00:24:33 vixie Exp $";
 /* vix 26jan87 [RCS has the rest of the log]
  * vix 15jan87 [added TIOCNOTTY, thanks csg@pyramid]
  * vix 30dec86 [written]
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00131
+ * --------------------         -----   ----------------------
+ *
+ * 06 Apr 93	Adam Glass	Fixes so it compiles quitely
+ *
  */
 
 /* Copyright 1988,1990 by Paul Vixie
@@ -286,7 +294,6 @@ be_different()
 	 *  do an IOCTL to void tty association
 	 */
 
-	extern int	getpid(), setpgrp(), open(), ioctl(), close();
 	auto int	fd;
 
 	(void) setpgrp(0, getpid());

@@ -18,6 +18,14 @@ static char rcsid[] = "$Header: env.c,v 2.2 90/07/18 00:23:48 vixie Exp $";
  * I'll try to keep a version up to date.  I can be reached as follows:
  * Paul Vixie, 329 Noe Street, San Francisco, CA, 94114, (415) 864-7013,
  * paul@vixie.sf.ca.us || {hoptoad,pacbell,decwrl,crash}!vixie!paul
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00131
+ * --------------------         -----   ----------------------
+ *
+ * 06 Apr 93	Adam Glass	Fixes so it compiles quitely
+ *
  */
 
 
@@ -92,7 +100,6 @@ load_env(envstr, f)
 	 *		FALSE = not an env setting (file was repositioned)
 	 *		TRUE = was an env setting
 	 */
-	char	*strcpy(), *sprintf();
 	long	filepos;
 	int	fileline;
 	char	name[MAX_TEMPSTR], val[MAX_ENVSTR];

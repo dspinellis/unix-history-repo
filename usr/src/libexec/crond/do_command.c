@@ -29,6 +29,14 @@ static char rcsid[] = "$Header: do_command.c,v 2.1 90/07/18 00:23:38 vixie Exp $
  * 
  * Revision 1.1  87/01/26  23:47:00  paul
  * Initial revision
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00131
+ * --------------------         -----   ----------------------
+ *
+ * 06 Apr 93	Adam Glass	Fixes so it compiles quitely
+ *
  */
 
 /* Copyright 1988,1990 by Paul Vixie
@@ -97,7 +105,7 @@ do_command(cmd, u)
 }
 
 
-static void
+void
 child_process(cmd, u)
 	char	*cmd;
 	user	*u;
@@ -424,7 +432,7 @@ child_process(cmd, u)
 			if (mailto)
 			{
 				extern FILE	*popen();
-				extern char	*sprintf(), *print_cmd();
+				extern char	*print_cmd();
 				register char	**env;
 				auto char	mailcmd[MAX_COMMAND];
 				auto char	hostname[MAXHOSTNAMELEN];
@@ -513,7 +521,7 @@ child_process(cmd, u)
 
 		Debug(DPROC, ("[%d] waiting for grandchild #%d to finish\n",
 			getpid(), children))
-		pid = wait(&waiter);
+		pid = wait((int *) &waiter);
 		if (pid < OK) {
 			Debug(DPROC, ("[%d] no more grandchildren--mail written?\n",
 				getpid()))

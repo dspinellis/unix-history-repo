@@ -3,6 +3,14 @@ static char rcsid[] = "$Header: user.c,v 2.1 90/07/18 00:23:45 vixie Exp $";
 #endif
 
 /* vix 26jan87 [log is in RCS file]
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00131
+ * --------------------         -----   ----------------------
+ *
+ * 06 Apr 93	Adam Glass	Fixes so it compiles quitely
+ *
  */
 
 /* Copyright 1988,1990 by Paul Vixie
@@ -54,7 +62,7 @@ load_user(crontab_fd, name, uid, gid, dir, shell)
 	char	*dir;
 	char	*shell;
 {
-	char	*malloc(), *sprintf(), **env_init(), **env_set();
+	char	**env_init(), **env_set();
 	int	load_env();
 	entry	*load_entry();
 
