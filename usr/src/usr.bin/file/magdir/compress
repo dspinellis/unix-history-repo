@@ -1,0 +1,18 @@
+0	short		017037		packed data
+# CPL 	- added pack to /etc/magic
+0	short		017436		packed data
+0	short		0145405		huf output
+
+0	string		\037\235	compressed data
+# non block compressed
+>2	byte		12		- with 12 bits
+>2	byte		13		- with 13 bits
+>2	byte		14		- with 14 bits
+>2	byte		15		- with 15 bits
+>2	byte		16		- with 16 bits
+# block compressed
+>2	byte		140		- with 12 bits
+>2	byte		141		- with 13 bits
+>2	byte		142		- with 14 bits
+>2	byte		143		- with 15 bits
+>2	byte		144		- with 16 bits

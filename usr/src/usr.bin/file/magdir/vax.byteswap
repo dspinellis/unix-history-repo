@@ -1,0 +1,17 @@
+# Byte-swapped VAXen
+# From: dupuy@amsterdam.columbia.edu (Alexander Dupuy)
+# 
+# Here are a few lines you can add to /etc/magic on your sun workstations in
+# order to recognize VAX executables and objects.... you could do something
+# similar (in reverse) for your vaxen, but since 4.3+NFS' file(1) doesn't look
+# for /etc/magic, I've never bothered.  It really should be built in to file(1)
+# so you would see the state of setuid/setgid/sticky bits.  Or actually, there
+# should be support for checking that sort of thing in /etc/magic.
+#
+0	long		00700200000	VAX executable
+>16	long		&0x7fffffff	not stripped
+0	long		01000200000	VAX pure executable
+>16	long		&0x7fffffff	not stripped
+0	long		01300200000	VAX demand-paged pure executable
+>16	long		&0x7fffffff	not stripped
+0	long		01100200000	PDP-11 executable

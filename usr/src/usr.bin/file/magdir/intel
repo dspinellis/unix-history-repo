@@ -1,0 +1,20 @@
+# various intel-CPU magic numbers
+0	short		01006		80286 executable (STL)
+>31	byte		<0x040		small model
+>31	byte		=0x048		large model	
+>31	byte		=0x049		huge model 
+>16	long		>0		not stripped
+0	string		MZ		DOS executable (EXE)
+0	string		LZ		DOS executable (built-in)
+0	byte		0xe9		DOS executable (COM)
+0	byte		0xeb		DOS executable (COM)
+0	short		=0512		80286 executable small model (COFF)
+>12	long		>0		not stripped
+>22	short		>0		- version %ld
+0	short		=0522		80286 executable large model (COFF)
+>12	long		>0		not stripped
+>22	short		>0		- version %ld
+0	short		=0514		80386 executable
+>12	long		>0		not stripped
+>22	short		>0		- version %ld
+

@@ -1,0 +1,4 @@
+# Magic number for FrameMaker files
+# Thanks to Berry Kercheval
+#
+0	string		\<MakerFile	FrameMaker document

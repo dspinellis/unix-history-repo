@@ -1,0 +1,4 @@
+# SoftQuad troff magic numbers
+# SoftQuad @(#)magic	1.2 86/09/15
+0	short		0125252		SoftQuad DESC or font file binary
+>2	short		>0		- version %d

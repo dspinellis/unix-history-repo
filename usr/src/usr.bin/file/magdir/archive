@@ -1,0 +1,11 @@
+0	short		070707		cpio archive
+0	string		070707		ASCII cpio archive
+0	long		0177555		very old archive
+0	short		0177555		very old PDP-11 archive
+0	long		0177545		old archive
+0	short		0177545		old PDP-11 archive
+0	long		0100554		apl workspace
+0	string		=<ar>		archive
+0	string		!<arch>		archive
+>8	string		__.SYMDEF	random library
+0	string		-h-		archive (Software Tools format) text
