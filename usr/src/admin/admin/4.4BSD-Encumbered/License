@@ -1,4 +1,4 @@
-.\" @(#)License	1.10 (CSRG - distribution) %G%
+.\" @(#)License	1.11 (CSRG - distribution) %G%
 .ND
 .po +0.34375i
 .nr PO +0.34375i
@@ -82,8 +82,8 @@ effective date hereof, and, unless sooner terminated as hereinafter set forth,
 shall terminate when LICENSEE's
 UNIX/32V, SYSTEM-III, or SYSTEM-V
 license terminates.
-Either THE REGENTS or LICENSEE may terminate this Agreement upon thirty 
-(30) days' written notice to the other party.
+LICENSEE may terminate this Agreement upon thirty (30) days written notice
+to The Regents of the University of California.
 This license shall terminate thirty (30) days after notice from THE
 REGENTS to LICENSEE that LICENSEE
 is in breach of this Agreement unless within that time LICENSEE gives
