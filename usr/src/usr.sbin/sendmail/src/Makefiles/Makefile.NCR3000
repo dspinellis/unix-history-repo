@@ -5,9 +5,10 @@
 #  old make program (I recommend that you get and port the new make if you
 #  are going to be doing any signficant work on sendmail).
 #
-#	NCR 3000 support from Kevin Darcy <kevin@tech.mis.cfc.com>.
+#	NCR 3000 support from Kevin Darcy <kevin@tech.mis.cfc.com>
+#		and Tom Moore <tmoore@fievel.DaytonOH.NCR.COM>.
 #
-#	@(#)Makefile.NCR3000	8.8 (Berkeley) %G%
+#	@(#)Makefile.NCR3000	8.9 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
