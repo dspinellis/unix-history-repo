@@ -1,4 +1,4 @@
-#	#W# (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 
 CFLAGS=	-O -DLIBC_SCCS
 OBJS=	crt0.o mcrt0.o gcrt0.o
