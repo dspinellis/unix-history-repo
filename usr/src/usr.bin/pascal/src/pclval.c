@@ -1,7 +1,7 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
 #ifndef lint
-static	char sccsid[] = "@(#)pclval.c 1.6 %G%";
+static	char sccsid[] = "@(#)pclval.c 1.7 %G%";
 #endif
 
 #include "whoami.h"
@@ -40,7 +40,7 @@ pclvalue( var , modflag , required )
 	struct tnode		l_node, tr;
 	VAR_NODE		*v_node;
 	LIST_NODE		*tr_ptr;
-	struct nl		*firstp, *lastp;
+	struct nl		*firstp;
 	char			*firstsymbol;
 	char			firstextra_flags;
 	int			firstbn;
@@ -132,7 +132,6 @@ pclvalue( var , modflag , required )
 		if ( co == TR_NIL ) {
 			return NLNIL;
 		}
-		lastp = p;
 		p = p -> type;
 		if ( p == NLNIL ) {
 			return NLNIL;
