@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_5.c	1.1 83/10/28";
+static	char *sccsid = "@(#)pl_5.c	1.2 83/10/28";
 #endif
 
 #include "player.h"
@@ -19,10 +19,6 @@ acceptmove()
 
 	if (!mc->crew3 || snagged(ms) || !windspeed) {
 		Signal("Unable to move", (struct ship *)0);
-		return;
-	}
-	if (*movebuf) {
-		Signal("Already moved.", (struct ship *)0);
 		return;
 	}
 
@@ -161,6 +157,7 @@ acceptboard()
 			(struct ship *)0, 1);
 		parties(crew, ms, 1, c);
 	}
+	draw_slot();
 }
 
 parties(crew, to, isdefense, buf)
