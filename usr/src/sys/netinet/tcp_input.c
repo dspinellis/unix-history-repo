@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_input.c	6.13 (Berkeley) %G%
+ *	@(#)tcp_input.c	6.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -326,9 +326,10 @@ tcp_input(m0)
 	 * Receive window is amount of space in rcv queue,
 	 * but not less than advertised window.
 	 */
-	tp->rcv_wnd = MAX(sbspace(&so->so_rcv), tp->rcv_adv - tp->rcv_nxt);
+	tp->rcv_wnd = sbspace(&so->so_rcv);
 	if (tp->rcv_wnd < 0)
 		tp->rcv_wnd = 0;
+	tp->rcv_wnd = MAX(tp->rcv_wnd, (short)(tp->rcv_adv - tp->rcv_nxt));
 
 	switch (tp->t_state) {
 
