@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_cache.c	7.9 (Berkeley) %G%
+ *	@(#)vfs_cache.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -66,8 +66,7 @@ int doingcache = 1;			/* 1 => enable the cache */
  * is returned. If the lookup fails, a status of zero is returned.
  */
 int
-cache_lookup(dvp, vpp, cnp)      /* converted to CN.  NEEDSWORK: do callers */
-/* old: cache_lookup(ndp) */
+cache_lookup(dvp, vpp, cnp)
 	struct vnode *dvp;
 	struct vnode **vpp;
 	struct componentname *cnp;
@@ -98,7 +97,7 @@ cache_lookup(dvp, vpp, cnp)      /* converted to CN.  NEEDSWORK: do callers */
 	if (!(cnp->cn_flags & MAKEENTRY)) {
 		nchstats.ncs_badhits++;
 	} else if (ncp->nc_vp == NULL) {
-		if ((cnp->cn_nameiop & OPMASK) != CREATE) {
+		if (cnp->cn_nameiop != CREATE) {
 			nchstats.ncs_neghits++;
 			/*
 			 * Move this slot to end of LRU chain,
@@ -164,8 +163,7 @@ cache_lookup(dvp, vpp, cnp)      /* converted to CN.  NEEDSWORK: do callers */
 /*
  * Add an entry to the cache
  */
-cache_enter(dvp, vp, cnp)      /* converted to CN.  NEEDSWORK: do callers */
-/* old: cache_lookup(ndp) */
+cache_enter(dvp, vp, cnp)
 	struct vnode *dvp;
 	struct vnode *vp;
 	struct componentname *cnp;
