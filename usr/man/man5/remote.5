@@ -1,0 +1,118 @@
+.TH REMOTE 5 "1 March 1983"
+.ad
+.SH NAME
+remote - remote host description file for tip
+.ad
+.SH DESCRIPTION
+The systems known by
+.IR tip (1)
+and their attributes are stored in an ASCII file which
+is structured somewhat like the
+.IR termcap (5)
+file.  Each line in the file provides a description for a single
+.IR system .
+Fields are separated by a colon (``:'').
+Lines ending in a \e character with an immediately following newline are
+continued on the next line.
+.LP
+The first entry is the name(s) of the host system.  If there is more
+than one name for a system, the names are separated by vertical bars.
+After the name of the system comes the fields of the description.  A
+field name followed by an `=' sign indicates a string value follows.  A field
+name followed by a `#' sign indicates a following numeric value.
+.SH CAPABILITIES
+Capabilities are either strings (str), numbers (num), or boolean
+flags (bool).  A string capability is specified by 
+.IR capability = value ;
+e.g. ``dv=/dev/harris''.  A numeric capability is specified by
+.IR capability # value ;
+e.g. ``xa#99''.  A boolean capability is specified by simply listing
+the capability.
+.TP 0.5i
+.B dv
+(str)
+UNIX device(s) to open to establish a connection. 
+If this file refers to a terminal line,
+.I tip(1)
+attempts to perform an exclusive open on the device to insure only
+one user at a time has access to the port.
+.TP 0.5i
+.B el
+(str)
+Characters marking an end-of-line. 
+The default is NULL.  `~' escapes are only
+recognized by
+.I tip
+after one of the characters in `el',
+or after a carriage-return.
+.TP 0.5i
+.B du
+(bool)
+This host is on a dial-up line. 
+.TP 0.5i
+.B ie
+(str)
+Input end-of-file marks.
+The default is NULL.
+.TP 0.5i
+.B oe
+(str)
+Output end-of-file string.
+The default is NULL.  When 
+.I tip
+is transferring a file, this
+string is sent at end-of-file.
+.TP 0.5i
+.B cu
+(str)
+Call unit if making a phone call.
+Default is the same as the `dv' field.
+.TP 0.5i
+.B at
+(str)
+Auto call unit type.
+.TP 0.5i
+.B pn
+(str)
+Telephone number(s) for this host.
+If the telephone number field contains
+an @ sign, 
+.I tip
+searches the file
+.I /etc/phones
+file for a list of telephone numbers;
+c.f.
+.IR phones (5).
+.TP 0.5i
+.B br
+(num)
+The baud rate used in establishling
+a connection to the remote host.
+This is a decimal number. 
+The default baud rate is 300 baud.
+.TP 0.5i
+.B fs
+(str)
+Frame size for transfers. 
+The default frame size is equal to BUFSIZ.
+.TP 0.5i
+.B tc
+(str)
+Indicates that the list of capabilities is continued
+in the named description.  This is used
+primarily to share common capability information.
+.LP
+Here is a short example showing the use of the capability continuation
+feature:
+.nf
+.ta 0.5i
+UNIX-1200:\e
+	:dv=/dev/cau0:el=^D^U^C^S^Q^O@:du:at=ventel:ie=#$%:oe=^D:br#1200:
+arpavax|ax:\e
+	:pn=7654321%:tc=UNIX-1200
+.fi
+.SH FILES
+/etc/remote
+.SH "SEE ALSO"
+tip(1),
+phones(5)
