@@ -1,4 +1,4 @@
-/*	lp.c	4.14	81/03/11	*/
+/*	lp.c	4.15	81/03/14	*/
 
 #include "lp.h"
 #if NLP > 0
@@ -80,11 +80,11 @@ lpattach(ui)
 lpprobe(reg)
 	caddr_t reg;
 {
+	register int br, cvec;			/* value-result */
 	register struct lpdevice *lpaddr = (struct lpdevice *)reg;
 
 	lpaddr->lpsr = IENABLE;
-	lpaddr->lpbuf = ' ';
-	DELAY(10000);
+	DELAY(5);
 	lpaddr->lpsr = 0;
 }
 
