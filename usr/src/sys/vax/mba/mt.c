@@ -1,4 +1,4 @@
-/*	mt.c	4.3	82/03/14	*/
+/*	mt.c	4.4	82/07/13	*/
 
 #include "mu.h"
 #if NMT > 0
@@ -226,25 +226,25 @@ mtustart(mi)
 		return (MBU_NEXT);
 	}
 	if (bp != &cmtbuf[MTUNIT(bp->b_dev)]) {
-		if (dbtofsb(bp->b_blkno) > sc->sc_nxrec) {
+		if (bdbtofsb(bp->b_blkno) > sc->sc_nxrec) {
 			bp->b_flags |= B_ERROR;
 			bp->b_error = ENXIO;
 			return (MBU_NEXT);
 		}
-		if (dbtofsb(bp->b_blkno) == sc->sc_nxrec &&
+		if (bdbtofsb(bp->b_blkno) == sc->sc_nxrec &&
 		    bp->b_flags&B_READ) {
 			bp->b_resid = bp->b_bcount;
 			clrbuf(bp);
 			return (MBU_NEXT);
 		}
 		if ((bp->b_flags&B_READ)==0)
-			sc->sc_nxrec = dbtofsb(bp->b_blkno) + 1;
+			sc->sc_nxrec = bdbtofsb(bp->b_blkno) + 1;
 	} else {
 		mtaddr->mtncs[MUUNIT(bp->b_dev)] =
 			(bp->b_repcnt<<8)|bp->b_command|MT_GO;
 		return (MBU_STARTED);
 	}
-	if ((blkno = sc->sc_blkno) == dbtofsb(bp->b_blkno)) {
+	if ((blkno = sc->sc_blkno) == bdbtofsb(bp->b_blkno)) {
 		if (mi->mi_tab.b_errcnt == 2) {
 			mtaddr->mtca = MUUNIT(bp->b_dev);
 		} else {
@@ -253,13 +253,13 @@ mtustart(mi)
 		}
 		return (MBU_DODATA);
 	}
-	if (blkno < dbtofsb(bp->b_blkno))
+	if (blkno < bdbtofsb(bp->b_blkno))
 		mtaddr->mtncs[MUUNIT(bp->b_dev)] =
-		  (min((unsigned)(dbtofsb(bp->b_blkno) - blkno), 0377) << 8) |
+		  (min((unsigned)(bdbtofsb(bp->b_blkno) - blkno), 0377) << 8) |
 			MT_SFORW|MT_GO;
 	else
 		mtaddr->mtncs[MUUNIT(bp->b_dev)] =
-		  (min((unsigned)(blkno - dbtofsb(bp->b_blkno)), 0377) << 8) |
+		  (min((unsigned)(blkno - bdbtofsb(bp->b_blkno)), 0377) << 8) |
 			MT_SREV|MT_GO;
 	return (MBU_STARTED);
 }
@@ -313,7 +313,7 @@ mtdtint(mi, mbsr)
 		sc->sc_blkno++;
 	err:
 		bp->b_resid = bp->b_bcount;
-		sc->sc_nxrec = dbtofsb(bp->b_blkno);
+		sc->sc_nxrec = bdbtofsb(bp->b_blkno);
 		break;
 
 	case MTER_SHRTREC:
@@ -396,7 +396,7 @@ mtndtint(mi)
 			return (MBN_DONE);
 		}
 		/* this is UGLY!  (but is it correct?) */
-		if ((fc = dbtofsb(bp->b_blkno) - sc->sc_blkno) < 0)
+		if ((fc = bdbtofsb(bp->b_blkno) - sc->sc_blkno) < 0)
 			sc->sc_blkno -= MIN(0377, -fc);
 		else
 			sc->sc_blkno += MIN(0377, fc);
@@ -411,11 +411,11 @@ mtndtint(mi)
 	case MTER_TM:
 	case MTER_EOT:
 	case MTER_LEOT:
-		if (sc->sc_blkno > dbtofsb(bp->b_blkno)) {
-			sc->sc_nxrec = dbtofsb(bp->b_blkno) + fc;
+		if (sc->sc_blkno > bdbtofsb(bp->b_blkno)) {
+			sc->sc_nxrec = bdbtofsb(bp->b_blkno) + fc;
 			sc->sc_blkno = sc->sc_nxrec;
 		} else {
-			sc->sc_blkno = dbtofsb(bp->b_blkno) - fc;
+			sc->sc_blkno = bdbtofsb(bp->b_blkno) - fc;
 			sc->sc_nxrec = sc->sc_blkno - 1;
 		}
 		return (MBN_RETRY);
@@ -486,8 +486,8 @@ mtphys(dev)
 	}
 	a = u.u_offset >> 9;
 	sc = &mu_softc[MUUNIT(dev)];
-	sc->sc_blkno = dbtofsb(a);
-	sc->sc_nxrec = dbtofsb(a)+1;
+	sc->sc_blkno = bdbtofsb(a);
+	sc->sc_nxrec = bdbtofsb(a)+1;
 }
 
 /*ARGSUSED*/

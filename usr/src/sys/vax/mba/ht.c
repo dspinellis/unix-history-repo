@@ -1,4 +1,4 @@
-/*	ht.c	4.22	82/05/12	*/
+/*	ht.c	4.23	82/07/13	*/
 
 #include "tu.h"
 #if NHT > 0
@@ -235,19 +235,19 @@ htustart(mi)
 		return (MBU_NEXT);
 	}
 	if (bp != &chtbuf[HTUNIT(bp->b_dev)]) {
-		if (dbtofsb(bp->b_blkno) > sc->sc_nxrec) {
+		if (bdbtofsb(bp->b_blkno) > sc->sc_nxrec) {
 			bp->b_flags |= B_ERROR;
 			bp->b_error = ENXIO;
 			return (MBU_NEXT);
 		}
-		if (dbtofsb(bp->b_blkno) == sc->sc_nxrec &&
+		if (bdbtofsb(bp->b_blkno) == sc->sc_nxrec &&
 		    bp->b_flags&B_READ) {
 			bp->b_resid = bp->b_bcount;
 			clrbuf(bp);
 			return (MBU_NEXT);
 		}
 		if ((bp->b_flags&B_READ)==0)
-			sc->sc_nxrec = dbtofsb(bp->b_blkno) + 1;
+			sc->sc_nxrec = bdbtofsb(bp->b_blkno) + 1;
 	} else {
 		if (bp->b_command == HT_SENSE)
 			return (MBU_NEXT);
@@ -258,7 +258,7 @@ htustart(mi)
 		htaddr->htcs1 = bp->b_command|HT_GO;
 		return (MBU_STARTED);
 	}
-	if ((blkno = sc->sc_blkno) == dbtofsb(bp->b_blkno)) {
+	if ((blkno = sc->sc_blkno) == bdbtofsb(bp->b_blkno)) {
 		htaddr->htfc = -bp->b_bcount;
 		if ((bp->b_flags&B_READ) == 0) {
 			if (mi->mi_tab.b_errcnt) {
@@ -277,11 +277,11 @@ htustart(mi)
 		}
 		return (MBU_DODATA);
 	}
-	if (blkno < dbtofsb(bp->b_blkno)) {
-		htaddr->htfc = blkno - dbtofsb(bp->b_blkno);
+	if (blkno < bdbtofsb(bp->b_blkno)) {
+		htaddr->htfc = blkno - bdbtofsb(bp->b_blkno);
 		htaddr->htcs1 = HT_SFORW|HT_GO;
 	} else {
-		htaddr->htfc = dbtofsb(bp->b_blkno) - blkno;
+		htaddr->htfc = bdbtofsb(bp->b_blkno) - blkno;
 		htaddr->htcs1 = HT_SREV|HT_GO;
 	}
 	return (MBU_STARTED);
@@ -337,7 +337,7 @@ noprint:
 	if (bp->b_flags & B_READ)
 		if (ds&HTDS_TM) {		/* must be a read, right? */
 			bp->b_resid = bp->b_bcount;
-			sc->sc_nxrec = dbtofsb(bp->b_blkno);
+			sc->sc_nxrec = bdbtofsb(bp->b_blkno);
 		} else if(bp->b_bcount > MASKREG(htaddr->htfc))
 			bp->b_resid = bp->b_bcount - MASKREG(htaddr->htfc);
 	return (MBD_DONE);
@@ -397,15 +397,15 @@ htndtint(mi)
 		return (MBN_DONE);
 	}
 	if (ds & HTDS_TM)
-		if (sc->sc_blkno > dbtofsb(bp->b_blkno)) {
-			sc->sc_nxrec = dbtofsb(bp->b_blkno) - fc;
+		if (sc->sc_blkno > bdbtofsb(bp->b_blkno)) {
+			sc->sc_nxrec = bdbtofsb(bp->b_blkno) - fc;
 			sc->sc_blkno = sc->sc_nxrec;
 		} else {
-			sc->sc_blkno = dbtofsb(bp->b_blkno) + fc;
+			sc->sc_blkno = bdbtofsb(bp->b_blkno) + fc;
 			sc->sc_nxrec = sc->sc_blkno - 1;
 		}
 	else
-		sc->sc_blkno = dbtofsb(bp->b_blkno);
+		sc->sc_blkno = bdbtofsb(bp->b_blkno);
 	return (MBN_RETRY);
 }
 
@@ -443,8 +443,8 @@ htphys(dev)
 	}
 	a = u.u_offset >> 9;
 	sc = &tu_softc[TUUNIT(dev)];
-	sc->sc_blkno = dbtofsb(a);
-	sc->sc_nxrec = dbtofsb(a)+1;
+	sc->sc_blkno = bdbtofsb(a);
+	sc->sc_nxrec = bdbtofsb(a)+1;
 }
 
 /*ARGSUSED*/
