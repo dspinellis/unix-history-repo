@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)title.urm	8.4 (Berkeley) %G%
+.\"	@(#)title.urm	8.5 (Berkeley) %G%
 .\"
 .af % i
 .EH ''''
@@ -199,7 +199,7 @@ List of Documents	inside back cover
 .\" The contributor list below is derived from the file that resides in
 .\" vangogh:~admin/contrib/contrib:
 .\"
-.\"	@(#)contrib	5.52 (Berkeley) 11/16/93
+.\"	@(#)contrib	5.54 (Berkeley) 4/17/94
 .\"
 .\" This file should not be editted, rather the original contrib file
 .\" should be used to recrete this one following the directions at its top.
@@ -327,11 +327,11 @@ X25 	University of British Columbia
 \fBThe following are people and organizations that provided a specific
 item, program, library routine or program maintenance for the BSD system.
 (Their contribution may not be part of the final 4.4BSD release.)\fP
+.sp 0.4
 .nr PS 9
 .nr VS 10
 .ps 9
 .vs 10
-.sp
 .TS
 l l.
 386 device drivers	Carnegie-Mellon University Mach project
@@ -339,6 +339,7 @@ l l.
 HCX device drivers	Harris Corporation
 Kernel enhancements	Robert Elz, Peter Ivanov, Ian Johnstone, Piers Lauder,
 	John Lions, Tim Long, Chris Maltby, Greg Rose and John Wainwright 
+ISO-9660 filesystem	Pace Willisson, Atsushi Murai
 .TE
 .TS
 l l l l.
@@ -520,6 +521,11 @@ These structures include mount entries, file entries,
 user open file descriptors, the process entries, the vnode table,
 the name cache, and the quota structures.
 .PP
+The 4.4BSD distribution adds support for several new architectures including
+SPARC-based Sparcstations 1 and 2,
+MIPS-based Decstation 3100 and 5000 and Sony NEWS,
+68000-based Hewlett-Packard 9000/300 and Omron Luna, and
+386-based Personal Computers.
 Both the HP300 and SPARC ports feature the ability to run binaries
 built for the native operating system (HP-UX or SunOS) by emulating
 their system calls.
@@ -773,25 +779,9 @@ routines have been replaced, and are usually much faster.
 In addition, the \fIfunopen\fP
 interface permits applications to provide their own I/O stream
 function support.
-.sp 3
-.nr PS 9
-.nr VS 10
-.LP
-.ce
-\fIPreface to the 4.4 Berkeley distribution\fP
-.sp 1
-.LP
-This update to the 4.3 distribution of April 1986 provides
-substantially improved functionality, security, and standardization,
-a Sun-compatible Network Filesystem (NFS),
-a new virtual memory implementation based on Carnegie-Mellon's MACH, and
-the addition of ISO networking protocols to the set of networking domains.
-It adds support for several new architectures including
-SPARC-based Sparcstations 1 and 2,
-MIPS-based Decstation 3100 and 5000 and Sony NEWS,
-68000-based Hewlett-Packard 9000/300 and Omron Luna, and
-386-based Personal Computers.
-.LP
+.NH 1
+Acknowledgements
+.PP
 We were greatly assisted by the recent employees of the
 Computer Systems Research Group: Mike Karels, Marc Tietelbaum,
 and Keith Sklower.
@@ -811,7 +801,10 @@ M. K. McKusick
 K. Bostic
 .fi
 .in 0
-.sp 2
+.sp 3
+.nr PS 9
+.nr VS 10
+.LP
 .ne 1i
 .ce
 \fIPreface to the 4.3 Berkeley distribution\fP
