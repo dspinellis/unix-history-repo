@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	7.87 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.88 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -87,11 +87,12 @@ mount(p, uap, retval)
 		VOP_UNLOCK(vp);
 		goto update;
 	}
-	vinvalbuf(vp, 1);
 	if (vp->v_usecount != 1) {
 		vput(vp);
 		return (EBUSY);
 	}
+	if (error = vinvalbuf(vp, 1, p->p_ucred, p))
+		return (error);
 	if (vp->v_type != VDIR) {
 		vput(vp);
 		return (ENOTDIR);
@@ -239,7 +240,8 @@ dounmount(mp, flags, p)
 
 	vnode_pager_umount(mp);	/* release cached vnodes */
 	cache_purgevfs(mp);	/* remove cache entries for this file sys */
-	if ((error = VFS_SYNC(mp, MNT_WAIT)) == 0 || (flags & MNT_FORCE))
+	if ((error = VFS_SYNC(mp, MNT_WAIT, p->p_ucred, p)) == 0 ||
+	    (flags & MNT_FORCE))
 		error = VFS_UNMOUNT(mp, flags, p);
 	mp->mnt_flag &= ~MNT_UNMOUNT;
 	vfs_unbusy(mp);
@@ -276,7 +278,7 @@ sync(p, uap, retval)
 		 */
 		if ((mp->mnt_flag & (MNT_MLOCK|MNT_RDONLY|MNT_MPBUSY)) == 0 &&
 		    !vfs_busy(mp)) {
-			VFS_SYNC(mp, MNT_NOWAIT);
+			VFS_SYNC(mp, MNT_NOWAIT, p->p_ucred, p);
 			omp = mp;
 			mp = mp->mnt_next;
 			vfs_unbusy(omp);
@@ -1619,7 +1621,7 @@ fsync(p, uap, retval)
 		return (error);
 	vp = (struct vnode *)fp->f_data;
 	VOP_LOCK(vp);
-	error = VOP_FSYNC(vp, fp->f_flag, fp->f_cred, MNT_WAIT, p);
+	error = VOP_FSYNC(vp, fp->f_cred, MNT_WAIT, p);
 	VOP_UNLOCK(vp);
 	return (error);
 }
@@ -1837,7 +1839,7 @@ getdirentries(p, uap, retval)
 	struct uio auio;
 	struct iovec aiov;
 	off_t off;
-	int error, eofflag;
+	int error;
 
 	if (error = getvnode(p->p_fd, uap->fd, &fp))
 		return (error);
@@ -1856,7 +1858,7 @@ getdirentries(p, uap, retval)
 	auio.uio_resid = uap->count;
 	VOP_LOCK(vp);
 	auio.uio_offset = off = fp->f_offset;
-	error = VOP_READDIR(vp, &auio, fp->f_cred, &eofflag);
+	error = VOP_READDIR(vp, &auio, fp->f_cred);
 	fp->f_offset = auio.uio_offset;
 	VOP_UNLOCK(vp);
 	if (error)
