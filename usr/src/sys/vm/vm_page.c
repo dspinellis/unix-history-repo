@@ -10,21 +10,19 @@
  * The CMU software License Agreement specifies the terms and conditions
  * for use and redistribution.
  *
- *	@(#)vm_page.c	7.1 (Berkeley) %G%
+ *	@(#)vm_page.c	7.2 (Berkeley) %G%
  */
 
 /*
  *	Resident memory management module.
  */
 
-#include "types.h"
-#include "../vm/vm_param.h"
-#include "../vm/vm_map.h"
-#include "../vm/vm_page.h"
-#include "../vm/vm_prot.h"
-#include "../vm/vm_statistics.h"
-#include "../vm/vm_pageout.h"
-#include "../vm/pmap.h"
+#include "param.h"
+
+#include "vm.h"
+#include "vm_map.h"
+#include "vm_page.h"
+#include "vm_pageout.h"
 
 /*
  *	Associated with page of user-allocatable memory is a
@@ -245,7 +243,7 @@ vm_offset_t vm_page_startup(start, end, vaddr)
 		m->inactive = FALSE;
 		m->active = FALSE;
 		m->busy = FALSE;
-		m->object = VM_OBJECT_NULL;
+		m->object = NULL;
 		m->phys_addr = pa;
 		queue_enter(&vm_page_queue_free, m, vm_page_t, pageq);
 		m++;
@@ -377,7 +375,7 @@ void vm_page_remove(mem)
  *	vm_page_lookup:
  *
  *	Returns the page associated with the object/offset
- *	pair specified; if none is found, VM_PAGE_NULL is returned.
+ *	pair specified; if none is found, NULL is returned.
  *
  *	The object must be locked.  No side effects.
  */
@@ -411,7 +409,7 @@ vm_page_t vm_page_lookup(object, offset)
 
 	simple_unlock(&bucket_lock);
 	splx(spl);
-	return(VM_PAGE_NULL);
+	return(NULL);
 }
 
 /*
@@ -482,7 +480,7 @@ vm_page_t vm_page_alloc(object, offset)
 	if (queue_empty(&vm_page_queue_free)) {
 		simple_unlock(&vm_page_queue_free_lock);
 		splx(spl);
-		return(VM_PAGE_NULL);
+		return(NULL);
 	}
 
 	queue_remove_first(&vm_page_queue_free, mem, vm_page_t, pageq);

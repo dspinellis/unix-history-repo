@@ -10,7 +10,7 @@
  * The CMU software License Agreement specifies the terms and conditions
  * for use and redistribution.
  *
- *	@(#)pmap.h	7.1 (Berkeley) %G%
+ *	@(#)pmap.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -21,17 +21,13 @@
 #ifndef	_PMAP_VM_
 #define	_PMAP_VM_
 
-#ifdef KERNEL
-#include "types.h"
-#include "machine/pmap.h"
-#else
-#include <sys/types.h>
 #include <machine/pmap.h>
-#endif
 
 #ifdef KERNEL
 void		pmap_bootstrap();
 void		pmap_init();
+void		pmap_pinit __P((struct pmap *pmap));
+void		pmap_release __P((struct pmap *pmap));
 vm_offset_t	pmap_map();
 pmap_t		pmap_create();
 pmap_t		pmap_kernel();

@@ -10,7 +10,7 @@
  * The CMU software License Agreement specifies the terms and conditions
  * for use and redistribution.
  *
- *	@(#)vm_user.c	7.1 (Berkeley) %G%
+ *	@(#)vm_user.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -19,16 +19,11 @@
 
 #include "param.h"
 #include "systm.h"
-#include "user.h"
 #include "proc.h"
 
-#include "../vm/vm_param.h"
-#include "../vm/vm_object.h"
-#include "../vm/vm_map.h"
-#include "../vm/vm_page.h"
-#include "../vm/vm_statistics.h"
+#include "vm.h"
+#include "vm_page.h"
 
-#include "lock.h"			/* XXX */
 simple_lock_data_t	vm_alloc_lock;	/* XXX */
 
 #ifdef MACHVMCOMPAT
@@ -130,7 +125,7 @@ vm_allocate(map, addr, size, anywhere)
 {
 	int	result;
 
-	if (map == VM_MAP_NULL)
+	if (map == NULL)
 		return(KERN_INVALID_ARGUMENT);
 	if (size == 0) {
 		*addr = 0;
@@ -143,7 +138,7 @@ vm_allocate(map, addr, size, anywhere)
 		*addr = trunc_page(*addr);
 	size = round_page(size);
 
-	result = vm_map_find(map, VM_OBJECT_NULL, (vm_offset_t) 0, addr,
+	result = vm_map_find(map, NULL, (vm_offset_t) 0, addr,
 			size, anywhere);
 
 	return(result);
@@ -158,7 +153,7 @@ vm_deallocate(map, start, size)
 	vm_offset_t		start;
 	vm_size_t		size;
 {
-	if (map == VM_MAP_NULL)
+	if (map == NULL)
 		return(KERN_INVALID_ARGUMENT);
 
 	if (size == (vm_offset_t) 0)
@@ -177,7 +172,7 @@ vm_inherit(map, start, size, new_inheritance)
 	vm_size_t		size;
 	vm_inherit_t		new_inheritance;
 {
-	if (map == VM_MAP_NULL)
+	if (map == NULL)
 		return(KERN_INVALID_ARGUMENT);
 
 	return(vm_map_inherit(map, trunc_page(start), round_page(start+size), new_inheritance));
@@ -195,7 +190,7 @@ vm_protect(map, start, size, set_maximum, new_protection)
 	boolean_t		set_maximum;
 	vm_prot_t		new_protection;
 {
-	if (map == VM_MAP_NULL)
+	if (map == NULL)
 		return(KERN_INVALID_ARGUMENT);
 
 	return(vm_map_protect(map, trunc_page(start), round_page(start+size), new_protection, set_maximum));

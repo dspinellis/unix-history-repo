@@ -10,20 +10,19 @@
  * The CMU software License Agreement specifies the terms and conditions
  * for use and redistribution.
  *
- *	@(#)vm_kern.c	7.1 (Berkeley) %G%
+ *	@(#)vm_kern.c	7.2 (Berkeley) %G%
  */
 
 /*
  *	Kernel memory management.
  */
 
-#include "types.h"
+#include "param.h"
 
-#include "../vm/vm_param.h"
-#include "../vm/vm_map.h"
-#include "../vm/vm_page.h"
-#include "../vm/vm_pageout.h"
-#include "../vm/vm_kern.h"
+#include "vm.h"
+#include "vm_page.h"
+#include "vm_pageout.h"
+#include "vm_kern.h"
 
 /*
  *	kmem_alloc_pageable:
@@ -47,7 +46,7 @@ vm_offset_t kmem_alloc_pageable(map, size)
 	size = round_page(size);
 
 	addr = vm_map_min(map);
-	result = vm_map_find(map, VM_OBJECT_NULL, (vm_offset_t) 0,
+	result = vm_map_find(map, NULL, (vm_offset_t) 0,
 				&addr, size, TRUE);
 	if (result != KERN_SUCCESS) {
 		return(0);
@@ -79,7 +78,7 @@ vm_offset_t kmem_alloc(map, size)
 	 */
 
 	addr = vm_map_min(map);
-	result = vm_map_find(map, VM_OBJECT_NULL, (vm_offset_t) 0,
+	result = vm_map_find(map, NULL, (vm_offset_t) 0,
 				 &addr, size, TRUE);
 	if (result != KERN_SUCCESS) {
 		return(0);
@@ -128,8 +127,7 @@ vm_offset_t kmem_alloc(map, size)
 	for (i = 0 ; i < size; i+= PAGE_SIZE) {
 		vm_page_t	mem;
 
-		while ((mem = vm_page_alloc(kernel_object, offset+i))
-			    == VM_PAGE_NULL) {
+		while ((mem = vm_page_alloc(kernel_object, offset+i)) == NULL) {
 			vm_object_unlock(kernel_object);
 			VM_WAIT;
 			vm_object_lock(kernel_object);
@@ -194,7 +192,7 @@ vm_map_t kmem_suballoc(parent, min, max, size, pageable)
 	size = round_page(size);
 
 	*min = (vm_offset_t) vm_map_min(parent);
-	ret = vm_map_find(parent, VM_OBJECT_NULL, (vm_offset_t) 0,
+	ret = vm_map_find(parent, NULL, (vm_offset_t) 0,
 				min, size, TRUE);
 	if (ret != KERN_SUCCESS) {
 		printf("kmem_suballoc: bad status return of %d.\n", ret);
@@ -203,7 +201,7 @@ vm_map_t kmem_suballoc(parent, min, max, size, pageable)
 	*max = *min + size;
 	pmap_reference(vm_map_pmap(parent));
 	result = vm_map_create(vm_map_pmap(parent), *min, *max, pageable);
-	if (result == VM_MAP_NULL)
+	if (result == NULL)
 		panic("kmem_suballoc: cannot create submap");
 	if ((ret = vm_map_submap(parent, *min, *max, result)) != KERN_SUCCESS)
 		panic("kmem_suballoc: unable to change range to submap");
@@ -251,7 +249,7 @@ vm_offset_t vm_move(src_map,src_addr,dst_map,num_bytes,src_dealloc)
 	 *	If there's no destination, we can be at most deallocating
 	 *	the source range.
 	 */
-	if (dst_map == VM_MAP_NULL) {
+	if (dst_map == NULL) {
 		if (src_dealloc)
 			if (vm_deallocate(src_map, src_start, src_size)
 					!= KERN_SUCCESS) {
@@ -320,7 +318,7 @@ kmem_malloc(map, size, canwait)
 	size = round_page(size);
 	addr = vm_map_min(map);
 
-	if (vm_map_find(map, VM_OBJECT_NULL, (vm_offset_t)0,
+	if (vm_map_find(map, NULL, (vm_offset_t)0,
 			&addr, size, TRUE) != KERN_SUCCESS)
 		return(0);
 
@@ -361,7 +359,7 @@ kmem_malloc(map, size, canwait)
 		 * Don't need to lock page queues here as we know
 		 * that the pages we got aren't on any queues.
 		 */
-		if (m == VM_PAGE_NULL) {
+		if (m == NULL) {
 			while (i != 0) {
 				i -= PAGE_SIZE;
 				m = vm_page_lookup(kmem_object, offset + i);
@@ -435,7 +433,7 @@ vm_offset_t kmem_alloc_wait(map, size)
 		lock_set_recursive(&map->lock);
 
 		addr = vm_map_min(map);
-		result = vm_map_find(map, VM_OBJECT_NULL, (vm_offset_t) 0,
+		result = vm_map_find(map, NULL, (vm_offset_t) 0,
 				&addr, size, TRUE);
 
 		lock_clear_recursive(&map->lock);
@@ -491,7 +489,7 @@ void kmem_init(start, end)
 
 	addr = VM_MIN_KERNEL_ADDRESS;
 	kernel_map = vm_map_create(pmap_kernel(), addr, end, FALSE);
-	(void) vm_map_find(kernel_map, VM_OBJECT_NULL, (vm_offset_t) 0,
+	(void) vm_map_find(kernel_map, NULL, (vm_offset_t) 0,
 				&addr, (start - VM_MIN_KERNEL_ADDRESS),
 				FALSE);
 }

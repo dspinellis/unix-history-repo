@@ -4,15 +4,15 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_meter.c	7.10 (Berkeley) %G%
+ *	@(#)vm_meter.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
-#include "systm.h"
-#include "user.h"
 #include "proc.h"
+#include "systm.h"
 #include "kernel.h"
-#include "machine/vmparam.h"
+
+#include "vm_param.h"
 #include "vmmeter.h"
 
 fixpt_t	averunnable[3];		/* load average, of runnable procs */
@@ -27,10 +27,8 @@ vmmeter()
 
 	if (time.tv_sec % 5 == 0)
 		vmtotal();
-	if (proc[0].p_slptime > maxslp/2) {
-		runout = 0;
-		wakeup((caddr_t)&runout);
-	}
+	if (proc0.p_slptime > maxslp/2)
+		wakeup((caddr_t)&proc0);
 }
 
 vmtotal()
@@ -58,9 +56,12 @@ vmtotal()
 					nrun++;
 				/* fall through */
 			case SSTOP:
+#ifdef notdef
 				if (p->p_flag & SPAGE)
 					total.t_pw++;
-				else if (p->p_flag & SLOAD) {
+				else
+#endif
+				if (p->p_flag & SLOAD) {
 					if (p->p_pri <= PZERO)
 						total.t_dw++;
 					else if (p->p_slptime < maxslp)
