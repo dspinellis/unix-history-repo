@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)res_comp.c	6.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_comp.c	6.5 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -124,7 +124,7 @@ dn_comp(exp_dn, comp_dn, length, dnptrs, lastdnptr)
 				if (cp+1 >= eob)
 					return (-1);
 				*cp++ = (l >> 8) | INDIR_MASK;
-				*cp++ = l;
+				*cp++ = l % 256;
 				return (cp - comp_dn);
 			}
 			/* not found, save it */
@@ -202,7 +202,7 @@ dn_find(exp_dn, msg, dnptrs, lastdnptr)
 	register int n;
 	char *sp;
 
-	for (cpp = dnptrs; cpp < lastdnptr; cpp++) {
+	for (cpp = dnptrs + 1; cpp < lastdnptr; cpp++) {
 		dn = exp_dn;
 		sp = cp = *cpp;
 		while (n = *cp++) {
