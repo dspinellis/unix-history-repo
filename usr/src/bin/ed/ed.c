@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ed.c	4.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)ed.c	4.11 (Berkeley) %G%";
 #endif
 
 /*
@@ -7,7 +7,7 @@ static char sccsid[] = "@(#)ed.c	4.10 (Berkeley) %G%";
  */
 #define CRYPT
 
-#include <signal.h>
+#include <sys/signal.h>
 #include <sgtty.h>
 #undef CEOF
 #include <setjmp.h>
@@ -59,8 +59,8 @@ int	ninbuf;
 int	io;
 int	pflag;
 long	lseek();
-int	(*oldhup)();
-int	(*oldquit)();
+sig_t	oldhup;
+sig_t	oldquit;
 int	vflag	= 1;
 
 #ifdef CRYPT
@@ -117,8 +117,8 @@ main(argc, argv)
 char **argv;
 {
 	register char *p1, *p2;
-	extern int onintr(), quit(), onhup();
-	int (*oldintr)();
+	extern void onintr(), quit(), onhup();
+	sig_t oldintr;
 
 	oldquit = signal(SIGQUIT, SIG_IGN);
 	oldhup = signal(SIGHUP, SIG_IGN);
@@ -585,18 +585,20 @@ exfile()
 	}
 }
 
+void
 onintr()
 {
-	signal(SIGINT, onintr);
+	/* not necessary: (void)signal(SIGINT, onintr); */
 	putchr('\n');
 	lastc = '\n';
 	error(Q);
 }
 
+void
 onhup()
 {
-	signal(SIGINT, SIG_IGN);
-	signal(SIGHUP, SIG_IGN);
+	/* not necessary: (void)signal(SIGINT, SIG_IGN); */
+	/* not necessary: (void)signal(SIGHUP, SIG_IGN); */
 	if (dol > zero) {
 		addr1 = zero+1;
 		addr2 = dol;
@@ -795,7 +797,8 @@ int (*f)();
 
 callunix()
 {
-	register (*savint)(), pid, rpid;
+	register sig_t savint;
+	register int pid, rpid;
 	int retcode;
 
 	setnoaddr();
@@ -812,6 +815,7 @@ callunix()
 	puts("!");
 }
 
+void
 quit()
 {
 	if (vflag && fchange && dol!=zero) {
@@ -1696,7 +1700,7 @@ getkey()
 {
 	struct sgttyb b;
 	int save;
-	int (*sig)();
+	sig_t sig;
 	register char *p;
 	register c;
 

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.4 (Berkeley) %G%";
 #endif
 
 /*
@@ -27,7 +27,7 @@ static int xargc;		/* remembers argc for getfile() */
 static int reading;		/* set whenever reading input */
 static jmp_buf mainloop;	/* label for error jumps */
 
-int	fault();
+void	fault();
 off_t	lseek();
 
 main(argc, argv)
@@ -268,10 +268,10 @@ error(which)
  * If we were reading commands, jump back to the main loop.
  */
 /* ARGSUSED */
+void
 fault(sig)
 	int sig;
 {
-
 	/* (void) signal(sig, fault); */	/* unnecessary */
 	(void) lseek(infile, 0L, 2);
 	mkfault++;
