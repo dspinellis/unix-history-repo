@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)pftn.c	1.16 (Berkeley) %G%";
+static char *sccsid ="@(#)pftn.c	1.17 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -1107,7 +1107,8 @@ doinit( p ) register NODE *p; {
 	p->in.op = INIT;
 
 	if( sz < SZINT ){ /* special case: bit fields, etc. */
-		if( o != ICON ) uerror( "illegal initialization" );
+		if( o != ICON || p->in.left->tn.rval != NONAME )
+			uerror( "illegal initialization" );
 		else incode( p->in.left, sz );
 		}
 	else if( o == FCON ){
