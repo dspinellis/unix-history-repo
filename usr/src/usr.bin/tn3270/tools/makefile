@@ -1,32 +1,39 @@
 # msdos versus unix defines
 O	= .o
-PC_O	= .obj
+#PC_O	= .obj
 
 X	=
-PC_X	= .exe
+#PC_X	= .exe
+
+L	=
+#PC_L	= -link
 
 CC	= cc
-PC_CC	= cl
+#PC_CC	= cl
 
 MV	= mv
-PC_MV	= rename
+#PC_MV	= rename
 
 RM	= rm -f
-PC_RM= erase
+#PC_RM= erase
 
 LINT_ARGS =
-PC_LINT_ARGS = -DLINT_ARGS
+#PC_LINT_ARGS = -DLINT_ARGS
 
 DEBUG_FLAGS = -g
-PC_DEBUG_FLAGS = -Zi -Od
+#PC_DEBUG_FLAGS = -Zi -Od
 
 AR	= ar
-C	=
-PC_AR	= lib
-PC_C	= +
+AR1	= cr
+AR2	=
+AR3	=
+#PC_AR	= lib
+#PC_AR1	=
+#PC_AR2	= +
+#PC_AR3	= ";"
 
 RANLIB	= ranlib
-PC_RANLIB = echo "Done with "
+#PC_RANLIB = echo "Done with "
 
 PRINT	= print
 
@@ -44,17 +51,20 @@ LINTFLAGS	= -hbxaz
 
 ALLH = dohits.h ectype.h
 
+ALLY = mkmake.y
+
 ALLC = dohits.c ectype.c mkastods.c mkastosc.c mkdctype.c \
 		mkdstoas.c mkhits.c prt3270.c
 
 ALLO =	prt3270$O mkdctype$O ectype$O \
-		mkastods$O mkdstoas$O mkhits$O dohits$O mkastosc$O
+		mkastods$O mkdstoas$O mkhits$O mkmake$O dohits$O mkastosc$O
 
-ALLPRINT =	${ALLH} ${ALLC}
+ALLPRINT =	${ALLH} ${ALLC} ${ALLY}
 
 ALLSOURCE =	${ALLPRINT} makefile makefile.mak
 
-ALLEXE	=	mkastods mkastosc mkdctype mkdstoas mkhits prt3270
+ALLEXE	=	mkastods$X mkastosc$X mkdctype$X mkdstoas$X \
+			mkhits$X mkmake$X prt3270$X
 
 .c.obj:
 	${CC} ${CFLAGS} -c $<
@@ -65,28 +75,31 @@ tools:
 all:	${ALLEXE}
 	@echo done.
 
-prt3270:	prt3270$O ../general/globals$O ../apilib/asc_ebc$O \
+prt3270$X:	prt3270$O ../general/globals$O ../apilib/asc_ebc$O \
 				../apilib/astosc$O ../ctlr/kbd.out
 	${CC} ${CFLAGS} -o prt3270 prt3270$O ../general/globals$O \
 					../apilib/asc_ebc$O ../apilib/astosc$O
 
-mkastosc:	mkastosc$O dohits$O ../apilib/asc_ebc$O ../apilib/ebc_disp$O
+mkastosc$X:	mkastosc$O dohits$O ../apilib/asc_ebc$O ../apilib/ebc_disp$O
 	$(CC) $(CFLAGS) -o mkastosc mkastosc$O dohits$O \
 			../apilib/asc_ebc$O ../apilib/ebc_disp$O
 
-mkastods:	mkastods$O ../apilib/asc_ebc$O ../apilib/ebc_disp$O
+mkastods$X:	mkastods$O ../apilib/asc_ebc$O ../apilib/ebc_disp$O
 	$(CC) $(CFLAGS) -o mkastods mkastods$O ../apilib/asc_ebc$O \
 						../apilib/ebc_disp$O
 
-mkdstoas:	mkdstoas$O ../apilib/asc_ebc$O ../apilib/ebc_disp$O
+mkdstoas$X:	mkdstoas$O ../apilib/asc_ebc$O ../apilib/ebc_disp$O
 	$(CC) $(CFLAGS) -o mkdstoas mkdstoas$O ../apilib/asc_ebc$O \
 						../apilib/ebc_disp$O
 
-mkhits:	mkhits$O dohits$O ../apilib/asc_ebc$O ../apilib/ebc_disp$O
+mkhits$X:	mkhits$O dohits$O ../apilib/asc_ebc$O ../apilib/ebc_disp$O
 	$(CC) $(CFLAGS) -o mkhits mkhits$O dohits$O ../apilib/asc_ebc$O \
 						../apilib/ebc_disp$O
 
-mkdctype:	mkdctype$O ../apilib/ebc_disp$O ectype$O
+mkmake:	mkmake$O
+	${CC} ${CFLAGS} -o mkmake mkmake$O
+
+mkdctype$X:	mkdctype$O ../apilib/ebc_disp$O ectype$O
 	$(CC) $(CFLAGS) -o mkdctype mkdctype$O ../apilib/ebc_disp$O ectype$O
 
 ../apilib/astosc$O:
@@ -118,7 +131,7 @@ action:
 	${ACTION}
 
 clean:
-	for i in errs makefile.bak ${ALLO} ${ALLEXE}; \
+	for i in errs makefile.bak y.tab.c y.output ${ALLO} ${ALLEXE}; \
 		do (${RM} $$i); done
 
 sccsclean:
