@@ -273,9 +273,8 @@ Active special devices continue to work,
 but all other files return errors if further accesses are attempted.
 The root file system cannot be forcibly unmounted.
 .It Fl a
-All of the file systems described in
-.Xr fstab
-are unmounted.
+All of the file systems currently mounted (except the root file
+system) are unmouted.
 .It Fl t
 Is used to indicate the actions should only be taken on
 filesystems of the specified type.
