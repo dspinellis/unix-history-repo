@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_io.c	7.11.1.1 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_io.c	7.12 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -350,6 +350,10 @@ rop(c)
 		error(" Directory");
 
 	case S_IFREG:
+#ifdef CRYPT
+		if (xflag)
+			break;
+#endif
 		i = read(io, (char *) &magic, sizeof(magic));
 		lseek(io, 0l, 0);
 		if (i != sizeof(magic))
@@ -602,6 +606,7 @@ cre:
 		break;
 	}
 	putfile(0);
+	(void) fsync(io);
 	ignore(iostats());
 	if (c != 2 && addr1 == one && addr2 == dol) {
 		if (eq(file, savedfile))
@@ -652,6 +657,18 @@ getfile()
 				}
 				return (EOF);
 			}
+#ifdef CRYPT
+			if (kflag) {
+				fp = genbuf;
+				while(fp < &genbuf[ninbuf]) {
+					if (*fp++ & 0200) {
+						crblock(perm, genbuf, ninbuf+1,
+	cntch);
+						break;
+					}
+				}
+			}
+#endif
 			fp = genbuf;
 			cntch += ninbuf+1;
 		}
@@ -708,6 +725,10 @@ int isfilter;
 		for (;;) {
 			if (--nib < 0) {
 				nib = fp - genbuf;
+#ifdef CRYPT
+                		if(kflag && !isfilter)
+                                        crblock(perm, genbuf, nib, cntch);
+#endif
 				if (write(io, genbuf, nib) != nib) {
 					wrerror();
 				}
@@ -722,6 +743,10 @@ int isfilter;
 		}
 	} while (a1 <= addr2);
 	nib = fp - genbuf;
+#ifdef CRYPT
+	if(kflag && !isfilter)
+		crblock(perm, genbuf, nib, cntch);
+#endif
 	if (write(io, genbuf, nib) != nib) {
 		wrerror();
 	}
@@ -824,7 +849,6 @@ clrstats()
 iostats()
 {
 
-	(void) fsync(io);
 	close(io);
 	io = -1;
 	if (hush == 0) {
