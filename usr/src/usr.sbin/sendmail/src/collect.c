@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	8.41 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	8.42 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -509,6 +509,11 @@ readerr:
 		e->e_status = "5.2.3";
 		usrerr("552 Message exceeds maximum fixed size (%ld)",
 			MaxMessageSize);
+# ifdef LOG
+		if (LogLevel > 6)
+			syslog(LOG_NOTICE, "%s: message size (%ld) exceeds maximum (%ld)",
+				e->e_id, e->e_msgsize, MaxMessageSize);
+# endif
 	}
 
 	/* check for illegal 8-bit data */
