@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -42,44 +42,49 @@ static char sccsid[] = "@(#)collect.c	5.16 (Berkeley) %G%";
 
 static	int	(*saveint)();		/* Previous SIGINT value */
 static	int	(*savehup)();		/* Previous SIGHUP value */
-static	int	(*savecont)();		/* Previous SIGCONT value */
+static	int	(*savetstp)();		/* Previous SIGTSTP value */
+static	int	(*savettou)();		/* Previous SIGTTOU value */
+static	int	(*savettin)();		/* Previous SIGTTIN value */
 static	FILE	*collf;			/* File for saving away */
 static	int	hadintr;		/* Have seen one SIGINT so far */
 
-static	jmp_buf	coljmp;			/* To get back to work */
+static	jmp_buf	colljmp;		/* To get back to work */
+static	int	colljmp_p;		/* whether to long jump */
+static	jmp_buf	collabort;		/* To end collection with error */
 
 FILE *
 collect(hp, printheaders)
 	struct header *hp;
 {
 	FILE *fbuf;
-	int lc, cc, escape, eof;
-	int collrub(), intack(), collcont();
+	int lc, cc, escape, eofcount;
+	int collint(), collhup(), collstop();
 	register int c, t;
 	char linebuf[LINESIZE], *cp;
 	extern char tempMail[];
 	char getsub;
 	int omask;
 
-	noreset++;
 	collf = NULL;
-
 	/*
 	 * Start catching signals from here, but we're still die on interrupts
 	 * until we're in the main loop.
 	 */
 	omask = sigblock(sigmask(SIGINT) | sigmask(SIGHUP));
 	if ((saveint = signal(SIGINT, SIG_IGN)) != SIG_IGN)
-		signal(SIGINT, value("ignore") != NOSTR ? intack : collrub);
+		signal(SIGINT, collint);
 	if ((savehup = signal(SIGHUP, SIG_IGN)) != SIG_IGN)
-		signal(SIGHUP, collrub);
-	savecont = signal(SIGCONT, SIG_DFL);
-	if (setjmp(coljmp)) {
+		signal(SIGHUP, collhup);
+	savetstp = signal(SIGTSTP, collstop);
+	savettou = signal(SIGTTOU, collstop);
+	savettin = signal(SIGTTIN, collstop);
+	if (setjmp(collabort) || setjmp(colljmp)) {
 		remove(tempMail);
 		goto err;
 	}
 	sigsetmask(omask & ~(sigmask(SIGINT) | sigmask(SIGHUP)));
 
+	noreset++;
 	if ((collf = fopen(tempMail, "w+")) == NULL) {
 		perror(tempMail);
 		goto err;
@@ -104,11 +109,10 @@ collect(hp, printheaders)
 		escape = *cp;
 	else
 		escape = ESCAPE;
-	eof = 0;
+	eofcount = 0;
 	hadintr = 0;
 
-	if (!setjmp(coljmp)) {
-		signal(SIGCONT, collcont);
+	if (!setjmp(colljmp)) {
 		if (getsub)
 			grabh(hp, GSUBJECT);
 	} else {
@@ -128,17 +132,18 @@ cont:
 		}
 	}
 	for (;;) {
-		if (readline(stdin, linebuf) < 0) {
+		colljmp_p = 1;
+		c = readline(stdin, linebuf, LINESIZE);
+		colljmp_p = 0;
+		if (c < 0) {
 			if (value("interactive") != NOSTR &&
-			    value("ignoreeof") != NOSTR) {
-				if (++eof > 35)
-					break;
+			    value("ignoreeof") != NOSTR && ++eofcount < 25) {
 				printf("Use \".\" to terminate letter\n");
 				continue;
 			}
 			break;
 		}
-		eof = 0;
+		eofcount = 0;
 		hadintr = 0;
 		if (linebuf[0] == '.' && linebuf[1] == '\0' &&
 		    value("interactive") != NOSTR &&
@@ -194,7 +199,7 @@ cont:
 			 * Act like an interrupt happened.
 			 */
 			hadintr++;
-			collrub(SIGINT);
+			collint(SIGINT);
 			exit(1);
 		case 'h':
 			/*
@@ -260,7 +265,7 @@ cont:
 			fflush(stdout);
 			lc = 0;
 			cc = 0;
-			while (readline(fbuf, linebuf) >= 0) {
+			while (readline(fbuf, linebuf, LINESIZE) >= 0) {
 				lc++;
 				if ((t = putline(collf, linebuf)) < 0) {
 					fclose(fbuf);
@@ -297,10 +302,6 @@ cont:
 			 * standard list processing garbage.
 			 * If ~f is given, we don't shift over.
 			 */
-			if (!rcvmode) {
-				printf("No messages to send from!?!\n");
-				break;
-			}
 			if (forward(linebuf + 2, collf, c) < 0)
 				goto err;
 			goto cont;
@@ -310,7 +311,7 @@ cont:
 				break;
 			}
 			while ((t = getc(fbuf)) != EOF)
-				putchar(t);
+				(void) putchar(t);
 			fclose(fbuf);
 			break;
 		case 'p':
@@ -322,7 +323,7 @@ cont:
 			printf("-------\nMessage contains:\n");
 			puthead(hp, stdout, GTO|GSUBJECT|GCC|GBCC|GNL);
 			while ((t = getc(collf)) != EOF)
-				putchar(t);
+				(void) putchar(t);
 			goto cont;
 		case '|':
 			/*
@@ -353,11 +354,14 @@ err:
 out:
 	if (collf != NULL)
 		rewind(collf);
+	noreset--;
+	sigblock(sigmask(SIGINT) | sigmask(SIGHUP));
 	signal(SIGINT, saveint);
 	signal(SIGHUP, savehup);
-	signal(SIGCONT, savecont);
+	signal(SIGTSTP, savetstp);
+	signal(SIGTTOU, savettou);
+	signal(SIGTTIN, savettin);
 	sigsetmask(omask);
-	noreset--;
 	return collf;
 }
 
@@ -395,7 +399,7 @@ exwrite(name, fp, f)
 		cc++;
 		if (c == '\n')
 			lc++;
-		putc(c, of);
+		(void) putc(c, of);
 		if (ferror(of)) {
 			perror(name);
 			fclose(of);
@@ -416,7 +420,6 @@ mesedit(fp, c)
 	FILE *fp;
 {
 	int (*sigint)() = signal(SIGINT, SIG_IGN);
-	int (*sigcont)() = signal(SIGCONT, SIG_DFL);
 	FILE *nf = run_editor(fp, (off_t)-1, c, 0);
 
 	if (nf != NULL) {
@@ -425,7 +428,6 @@ mesedit(fp, c)
 		fclose(fp);
 	}
 	(void) signal(SIGINT, sigint);
-	(void) signal(SIGCONT, sigcont);
 }
 
 /*
@@ -440,7 +442,6 @@ mespipe(fp, cmd)
 {
 	FILE *nf;
 	int (*sigint)() = signal(SIGINT, SIG_IGN);
-	int (*sigcont)() = signal(SIGCONT, SIG_DFL);
 	extern char tempEdit[];
 
 	if ((nf = fopen(tempEdit, "w+")) == NULL) {
@@ -469,7 +470,6 @@ mespipe(fp, cmd)
 	(void) fclose(fp);
 out:
 	(void) signal(SIGINT, sigint);
-	(void) signal(SIGCONT, sigcont);
 }
 
 /*
@@ -526,41 +526,57 @@ forward(ms, fp, f)
  * Print (continue) when continued after ^Z.
  */
 /*ARGSUSED*/
-collcont(s)
+collstop(s)
 {
+	int (*old_action)() = signal(s, SIG_DFL);
 
-	hadintr = 0;
-	longjmp(coljmp, 1);
+	sigsetmask(sigblock(0) & ~sigmask(s));
+	kill(0, s);
+	sigblock(sigmask(s));
+	signal(s, old_action);
+	if (colljmp_p) {
+		colljmp_p = 0;
+		hadintr = 0;
+		longjmp(colljmp, 1);
+	}
 }
 
 /*
- * On interrupt, go here to save the partial
- * message on ~/dead.letter.
- * Then restore signals and execute the normal
- * signal routine.  We only come here if signals
- * were previously set anyway.
+ * On interrupt, come here to save the partial message in ~/dead.letter.
+ * Then jump out of the collection loop.
  */
-collrub(s)
+/*ARGSUSED*/
+collint(s)
 {
-
-	if (s == SIGINT && hadintr == 0) {
+	/*
+	 * the control flow is subtle, because we can be called from ~q.
+	 */
+	if (!hadintr) {
+		if (value("ignore") != NOSTR) {
+			puts("@");
+			fflush(stdout);
+			clearerr(stdin);
+			return;
+		}
 		hadintr = 1;
-		longjmp(coljmp, 1);
+		longjmp(colljmp, 1);
 	}
 	rewind(collf);
-	if (s != SIGINT || value("nosave") == NOSTR)
+	if (value("nosave") == NOSTR)
 		savedeadletter(collf);
-	fclose(collf);
-	signal(SIGINT, saveint);
-	signal(SIGHUP, savehup);
-	signal(SIGCONT, savecont);
-	if (rcvmode) {
-		if (s == SIGHUP)
-			hangup(SIGHUP);
-		else
-			stop(s);
-	} else
-		exit(1);
+	longjmp(collabort, 1);
+}
+
+/*ARGSUSED*/
+collhup(s)
+{
+	rewind(collf);
+	savedeadletter(collf);
+	/*
+	 * Let's pretend nobody else wants to clean up,
+	 * a true statement at this time.
+	 */
+	exit(1);
 }
 
 savedeadletter(fp)
@@ -575,23 +591,11 @@ savedeadletter(fp)
 	cp = getdeadletter();
 	c = umask(077);
 	dbuf = fopen(cp, "a");
-	umask(c);
+	(void) umask(c);
 	if (dbuf == NULL)
 		return;
 	while ((c = getc(fp)) != EOF)
-		putc(c, dbuf);
+		(void) putc(c, dbuf);
 	fclose(dbuf);
 	rewind(fp);
-}
-
-/*
- * Acknowledge an interrupt signal from the tty by typing an @
- */
-/*ARGSUSED*/
-intack(s)
-{
-
-	puts("@");
-	fflush(stdout);
-	clearerr(stdin);
 }

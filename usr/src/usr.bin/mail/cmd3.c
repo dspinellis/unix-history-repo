@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmd3.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmd3.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -41,7 +41,7 @@ shell(str)
 
 	(void) strcpy(cmd, str);
 	if (bangexp(cmd) < 0)
-		return(-1);
+		return 1;
 	if ((shell = value("SHELL")) == NOSTR)
 		shell = SHELL;
 	(void) run_command(shell, 0, -1, -1, "-c", cmd, NOSTR);
@@ -512,27 +512,23 @@ null(e)
 }
 
 /*
- * Print out the current edit file, if we are editing.
- * Otherwise, print the name of the person who's mail
- * we are reading.
+ * Change to another file.  With no argument, print information about
+ * the current file.
  */
-
 file(argv)
 	register char **argv;
 {
-	register char *cp;
+	char *cp;
 
 	if (argv[0] == NOSTR) {
 		newfileinfo();
 		return 0;
 	}
 	if ((cp = expand(*argv)) == NOSTR)
-		return -1;
+		return 1;
 	strcpy(prevfile, mailname);
-	if (setfile(cp, **argv != '%')) {
-		perror(cp);
-		return -1;
-	}
+	if (setfile(cp, **argv != '%') < 0)
+		return 1;
 	announce();
 	return 0;
 }

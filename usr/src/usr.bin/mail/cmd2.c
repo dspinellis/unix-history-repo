@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmd2.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmd2.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -251,7 +251,8 @@ snarf(linebuf, flag)
 delete(msgvec)
 	int msgvec[];
 {
-	return(delm(msgvec));
+	delm(msgvec);
+	return 0;
 }
 
 /*
@@ -273,12 +274,9 @@ deltype(msgvec)
 			return(type(list));
 		}
 		printf("At EOF\n");
-		return(0);
-	}
-	else {
+	} else
 		printf("No more messages\n");
-		return(0);
-	}
+	return(0);
 }
 
 /*

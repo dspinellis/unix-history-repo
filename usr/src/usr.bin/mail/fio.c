@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)fio.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)fio.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -72,7 +72,7 @@ setptr(ibuf)
 			return;
 		}
 		count = strlen(linebuf);
-		fwrite(linebuf, sizeof *linebuf, count, otf);
+		(void) fwrite(linebuf, sizeof *linebuf, count, otf);
 		if (ferror(otf)) {
 			perror("/tmp");
 			exit(1);
@@ -130,8 +130,8 @@ putline(obuf, linebuf)
 	register int c;
 
 	c = strlen(linebuf);
-	fwrite(linebuf, sizeof *linebuf, c, obuf);
-	putc('\n', obuf);
+	(void) fwrite(linebuf, sizeof *linebuf, c, obuf);
+	(void) putc('\n', obuf);
 	if (ferror(obuf))
 		return (-1);
 	return (c + 1);
@@ -191,7 +191,7 @@ makemessage(f)
 	dot = message;
 	size -= sizeof (struct message);
 	fflush(f);
-	lseek(fileno(f), (long) sizeof *message, 0);
+	(void) lseek(fileno(f), (long) sizeof *message, 0);
 	if (read(fileno(f), (char *) message, size) != size)
 		panic("Message temporary file corrupted");
 	message[msgCount].m_size = 0;
@@ -226,116 +226,6 @@ remove(name)
 		return(-1);
 	}
 	return unlink(name);
-}
-
-/*
- * Terminate an editing session by attempting to write out the user's
- * file from the temporary.  Save any new stuff appended to the file.
- */
-edstop()
-{
-	register int gotcha, c;
-	register struct message *mp;
-	FILE *obuf, *ibuf, *readstat;
-	struct stat statb;
-	char tempname[30];
-	char *mktemp();
-
-	if (readonly)
-		return;
-	holdsigs();
-	if (Tflag != NOSTR) {
-		if ((readstat = fopen(Tflag, "w")) == NULL)
-			Tflag = NOSTR;
-	}
-	for (mp = &message[0], gotcha = 0; mp < &message[msgCount]; mp++) {
-		if (mp->m_flag & MNEW) {
-			mp->m_flag &= ~MNEW;
-			mp->m_flag |= MSTATUS;
-		}
-		if (mp->m_flag & (MODIFY|MDELETED|MSTATUS))
-			gotcha++;
-		if (Tflag != NOSTR && (mp->m_flag & (MREAD|MDELETED)) != 0) {
-			char *id;
-
-			if ((id = hfield("article-id", mp)) != NOSTR)
-				fprintf(readstat, "%s\n", id);
-		}
-	}
-	if (Tflag != NOSTR)
-		fclose(readstat);
-	if (!gotcha || Tflag != NOSTR)
-		goto done;
-	ibuf = NULL;
-	if (stat(mailname, &statb) >= 0 && statb.st_size > mailsize) {
-		strcpy(tempname, "/tmp/mboxXXXXXX");
-		mktemp(tempname);
-		if ((obuf = fopen(tempname, "w")) == NULL) {
-			perror(tempname);
-			relsesigs();
-			reset(0);
-		}
-		if ((ibuf = fopen(mailname, "r")) == NULL) {
-			perror(mailname);
-			fclose(obuf);
-			remove(tempname);
-			relsesigs();
-			reset(0);
-		}
-		fseek(ibuf, mailsize, 0);
-		while ((c = getc(ibuf)) != EOF)
-			putc(c, obuf);
-		fclose(ibuf);
-		fclose(obuf);
-		if ((ibuf = fopen(tempname, "r")) == NULL) {
-			perror(tempname);
-			remove(tempname);
-			relsesigs();
-			reset(0);
-		}
-		remove(tempname);
-	}
-	printf("\"%s\" ", mailname);
-	fflush(stdout);
-	if ((obuf = fopen(mailname, "r+")) == NULL) {
-		perror(mailname);
-		relsesigs();
-		reset(0);
-	}
-	trunc(obuf);
-	c = 0;
-	for (mp = &message[0]; mp < &message[msgCount]; mp++) {
-		if ((mp->m_flag & MDELETED) != 0)
-			continue;
-		c++;
-		if (send(mp, obuf, (struct ignoretab *) NULL, NOSTR) < 0) {
-			perror(mailname);
-			relsesigs();
-			reset(0);
-		}
-	}
-	gotcha = (c == 0 && ibuf == NULL);
-	if (ibuf != NULL) {
-		while ((c = getc(ibuf)) != EOF)
-			putc(c, obuf);
-		fclose(ibuf);
-	}
-	fflush(obuf);
-	if (ferror(obuf)) {
-		perror(mailname);
-		relsesigs();
-		reset(0);
-	}
-	fclose(obuf);
-	if (gotcha) {
-		remove(mailname);
-		printf("removed\n");
-	} else
-		printf("complete\n");
-	fflush(stdout);
-
-done:
-	relsesigs();
 }
 
 static int sigdepth;		/* depth of holdsigs() */

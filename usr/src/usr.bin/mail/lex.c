@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lex.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)lex.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -48,10 +48,13 @@ setfile(name, isedit)
 	extern char tempMesg[];
 	extern int errno;
 
-	if ((ibuf = fopen(name, "r")) == NULL)
+	if ((ibuf = fopen(name, "r")) == NULL) {
+		perror(name);
 		return(-1);
+	}
 
 	if (fstat(fileno(ibuf), &stb) < 0) {
+		perror("fstat");
 		fclose(ibuf);
 		return (-1);
 	}
@@ -60,6 +63,7 @@ setfile(name, isedit)
 	case S_IFDIR:
 		fclose(ibuf);
 		errno = EISDIR;
+		perror(name);
 		return (-1);
 
 	case S_IFREG:
@@ -68,12 +72,8 @@ setfile(name, isedit)
 	default:
 		fclose(ibuf);
 		errno = EINVAL;
+		perror(name);
 		return (-1);
-	}
-
-	if (!edit && stb.st_size == 0) {
-		fclose(ibuf);
-		return(-1);
 	}
 
 	/*
@@ -84,12 +84,8 @@ setfile(name, isedit)
 	 */
 
 	holdsigs();
-	if (shudclob) {
-		if (edit)
-			edstop();
-		else
-			quit();
-	}
+	if (shudclob)
+		quit();
 
 	/*
 	 * Copy the messages into /tmp
@@ -127,74 +123,51 @@ setfile(name, isedit)
 	return(0);
 }
 
+int	*msgvec;
+int	reset_on_stop;			/* do a reset() if stopped */
+
 /*
  * Interpret user commands one by one.  If standard input is not a tty,
  * print no prompt.
  */
-
-int	*msgvec;
-jmp_buf	commjmp;
-
 commands()
 {
-	int eofloop, stop();
+	int eofloop = 0;
 	register int n;
 	char linebuf[LINESIZE];
-	int hangup(), contin();
+	int intr(), stop(), hangup(), contin();
 
-	signal(SIGCONT, SIG_DFL);
-	if (rcvmode && !sourcing) {
+	if (!sourcing) {
 		if (signal(SIGINT, SIG_IGN) != SIG_IGN)
-			signal(SIGINT, stop);
+			signal(SIGINT, intr);
 		if (signal(SIGHUP, SIG_IGN) != SIG_IGN)
 			signal(SIGHUP, hangup);
+		signal(SIGTSTP, stop);
+		signal(SIGTTOU, stop);
+		signal(SIGTTIN, stop);
 	}
+	setexit();
 	for (;;) {
-		setexit();
-
 		/*
 		 * Print the prompt, if needed.  Clear out
 		 * string space, and flush the output.
 		 */
-
-		if (!rcvmode && !sourcing)
-			return;
-		eofloop = 0;
-top:
 		if (!sourcing && value("interactive") != NOSTR) {
-			setjmp(commjmp);
-			signal(SIGCONT, contin);
+			reset_on_stop = 1;
 			printf(prompt);
 		}
 		fflush(stdout);
 		sreset();
-
 		/*
 		 * Read a line of commands from the current input
 		 * and handle end of file specially.
 		 */
-
 		n = 0;
 		for (;;) {
-			if (readline(input, &linebuf[n]) < 0) {
-				if (n != 0)
-					break;
-				if (loading)
-					return;
-				if (sourcing) {
-					unstack();
-					goto more;
-				}
-				if (value("interactive") != NOSTR &&
-				    value("ignoreeof") != NOSTR) {
-					if (++eofloop < 25) {
-						printf("Use \"quit\" to quit.\n");
-						goto top;
-					}
-				}
-				if (edit)
-					edstop();
-				return;
+			if (readline(input, &linebuf[n], LINESIZE - n) < 0) {
+				if (n == 0)
+					n = -1;
+				break;
 			}
 			if ((n = strlen(linebuf)) == 0)
 				break;
@@ -203,20 +176,36 @@ top:
 				break;
 			linebuf[n++] = ' ';
 		}
-		signal(SIGCONT, SIG_DFL);
+		reset_on_stop = 0;
+		if (n < 0) {
+				/* eof */
+			if (loading)
+				break;
+			if (sourcing) {
+				unstack();
+				continue;
+			}
+			if (value("interactive") != NOSTR &&
+			    value("ignoreeof") != NOSTR &&
+			    ++eofloop < 25) {
+				printf("Use \"quit\" to quit.\n");
+				continue;
+			}
+			break;
+		}
+		eofloop = 0;
 		if (execute(linebuf, 0))
-			return;
-more:		;
+			break;
 	}
 }
 
 /*
- * Execute a single command.  If the command executed
- * is "quit," then return non-zero so that the caller
- * will know to return back to main, if he cares.
+ * Execute a single command.
+ * Command functions return 0 for success, 1 for error, and -1
+ * for abort.  A 1 or -1 aborts a load or source.  A -1 aborts
+ * the interactive command loop.
  * Contxt is non-zero if called while composing mail.
  */
-
 execute(linebuf, contxt)
 	char linebuf[];
 {
@@ -226,7 +215,7 @@ execute(linebuf, contxt)
 	register char *cp, *cp2;
 	register int c;
 	int muvec[2];
-	int edstop(), e;
+	int e = 1;
 
 	/*
 	 * Strip the white space away from the beginning
@@ -242,8 +231,7 @@ execute(linebuf, contxt)
 	if (*cp == '!') {
 		if (sourcing) {
 			printf("Can't \"!\" while sourcing\n");
-			unstack();
-			return(0);
+			goto out;
 		}
 		shell(cp+1);
 		return(0);
@@ -266,11 +254,7 @@ execute(linebuf, contxt)
 	com = lex(word);
 	if (com == NONE) {
 		printf("Unknown command: \"%s\"\n", word);
-		if (loading)
-			return(1);
-		if (sourcing)
-			unstack();
-		return(0);
+		goto out;
 	}
 
 	/*
@@ -283,23 +267,6 @@ execute(linebuf, contxt)
 			return(0);
 
 	/*
-	 * Special case so that quit causes a return to
-	 * main, who will call the quit code directly.
-	 * If we are in a source file, just unstack.
-	 */
-
-	if (com->c_func == edstop && sourcing) {
-		if (loading)
-			return(1);
-		unstack();
-		return(0);
-	}
-	if (!edit && com->c_func == edstop) {
-		signal(SIGINT, SIG_IGN);
-		return(1);
-	}
-
-	/*
 	 * Process the arguments to the command, depending
 	 * on the type he expects.  Default to an error.
 	 * If we are sourcing an interactive command, it's
@@ -309,34 +276,22 @@ execute(linebuf, contxt)
 	if (!rcvmode && (com->c_argtype & M) == 0) {
 		printf("May not execute \"%s\" while sending\n",
 		    com->c_name);
-		if (loading)
-			return(1);
-		if (sourcing)
-			unstack();
-		return(0);
+		goto out;
 	}
 	if (sourcing && com->c_argtype & I) {
 		printf("May not execute \"%s\" while sourcing\n",
 		    com->c_name);
-		if (loading)
-			return(1);
-		unstack();
-		return(0);
+		goto out;
 	}
 	if (readonly && com->c_argtype & W) {
 		printf("May not execute \"%s\" -- message file is read only\n",
 		   com->c_name);
-		if (loading)
-			return(1);
-		if (sourcing)
-			unstack();
-		return(0);
+		goto out;
 	}
 	if (contxt && com->c_argtype & R) {
 		printf("Cannot recursively invoke \"%s\"\n", com->c_name);
-		return(0);
+		goto out;
 	}
-	e = 1;
 	switch (com->c_argtype & ~(F|P|I|M|T|W|R)) {
 	case MSGLIST:
 		/*
@@ -345,7 +300,7 @@ execute(linebuf, contxt)
 		 */
 		if (msgvec == 0) {
 			printf("Illegal use of \"message list\"\n");
-			return(-1);
+			break;
 		}
 		if ((c = getmsglist(cp, msgvec, com->c_msgflag)) < 0)
 			break;
@@ -368,7 +323,7 @@ execute(linebuf, contxt)
 		 */
 		if (msgvec == 0) {
 			printf("Illegal use of \"message list\"\n");
-			return(-1);
+			break;
 		}
 		if (getmsglist(cp, msgvec, com->c_msgflag) < 0)
 			break;
@@ -417,17 +372,20 @@ execute(linebuf, contxt)
 		panic("Unknown argtype");
 	}
 
+out:
 	/*
 	 * Exit the current source file on
 	 * error.
 	 */
-
-	if (e && loading)
-		return(1);
-	if (e && sourcing)
-		unstack();
-	if (com->c_func == edstop)
-		return(1);
+	if (e) {
+		if (e < 0)
+			return 1;
+		if (loading)
+			return 1;
+		if (sourcing)
+			unstack();
+		return 0;
+	}
 	if (value("autoprint") != NOSTR && com->c_argtype & P)
 		if ((dot->m_flag & MDELETED) == 0) {
 			muvec[0] = dot - &message[0] + 1;
@@ -437,27 +395,6 @@ execute(linebuf, contxt)
 	if (!sourcing && (com->c_argtype & T) == 0)
 		sawcom = 1;
 	return(0);
-}
-
-/*
- * When we wake up after ^Z, reprint the prompt.
- */
-/*ARGSUSED*/
-contin(s)
-{
-
-	longjmp(commjmp, 1);
-}
-
-/*
- * Branch here on hangup signal and simulate "exit".
- */
-/*ARGSUSED*/
-hangup(s)
-{
-
-	/* nothing to do? */
-	exit(0);
 }
 
 /*
@@ -542,13 +479,13 @@ xclose(iop)
 	if (iop != pipef)
 		fclose(iop);
 	else {
-		pclose(pipef);
+		Pclose(pipef);
 		pipef = NULL;
 	}
 }
 
 /*ARGSUSED*/
-stop(s)
+intr(s)
 {
 
 	noreset = 0;
@@ -569,6 +506,34 @@ stop(s)
 	}
 	fprintf(stderr, "Interrupt\n");
 	reset(0);
+}
+
+/*
+ * When we wake up after ^Z, reprint the prompt.
+ */
+stop(s)
+{
+	int (*old_action)() = signal(s, SIG_DFL);
+
+	sigsetmask(sigblock(0) & ~sigmask(s));
+	kill(0, s);
+	sigblock(sigmask(s));
+	signal(s, old_action);
+	if (reset_on_stop) {
+		reset_on_stop = 0;
+		reset(0);
+	}
+}
+
+/*
+ * Branch here on hangup signal and simulate "exit".
+ */
+/*ARGSUSED*/
+hangup(s)
+{
+
+	/* nothing to do? */
+	exit(1);
 }
 
 /*
