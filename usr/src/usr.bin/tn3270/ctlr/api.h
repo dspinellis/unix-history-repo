@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)api.h	4.1 (Berkeley) %G%
+ *	@(#)api.h	4.2 (Berkeley) %G%
  */
 
 /*
@@ -319,9 +319,27 @@ typedef struct {
  * into which of the "words".
  */
 
+#include <sys/param.h>		/* Get ENDIAN from machine/endian.h */
+
+/* Determine endian'ess (if necessary) */
+
+#if	!(defined(BYTE_ORDER) && defined(BIG_ENDIAN))
+#define	LITTLE_ENDIAN	1234	/* least-significant byte first (vax) */
+#define	BIG_ENDIAN	4321	/* most-significant byte first (IBM, net) */
+
+#if	defined(vax) || defined(ns32000)
+#define	BYTE_ORDER	LITTLE_ENDIAN
+#endif	/* defined(vax) || defined(ns32000) */ 
+
+#if	defined(sun) || defined(tahoe) || defined(ibm032) || defined(pyr) || defined(gould)
+#define	BYTE_ORDER	BIG_ENDIAN
+#endif	/* defined(sun) || defined(tahoe) || defined(ibm032) || defined(pyr) || defined(gould) */
+
+#endif	/* !(defined(BYTE_ORDER) && defined(BIG_ENDIAN)) */
+
 struct highlow {
     unsigned char
-#if	defined(vax) || defined(ns32000)
+#if	BYTE_ORDER == LITTLE_ENDIAN
 	al,
 	ah,
 	bl,
@@ -330,8 +348,8 @@ struct highlow {
 	ch,
 	dl,
 	dh;
-#endif	/* defined(vax) || defined(ns32000) */ 
-#if	defined(sun) || defined(tahoe) || defined(ibm032) || defined(pyr)
+#endif	/* BYTE_ORDER == LITTLE_ENDIAN */
+#if	BYTE_ORDER == BIG_ENDIAN
 	ah,
 	al,
 	bh,
@@ -340,7 +358,7 @@ struct highlow {
 	cl,
 	dh,
 	dl;
-#endif	/* defined(sun) || defined(tahoe) || defined(ibm032) || defined(pyr) */
+#endif	/* BYTE_ORDER == BIG_ENDIAN */
 };
 
 struct words {
