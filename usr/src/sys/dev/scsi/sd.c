@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sd.c	5.5 (Berkeley) %G%
+ *	@(#)sd.c	5.6 (Berkeley) %G%
  *
- * from: $Header: sd.c,v 1.25 93/02/01 19:26:27 torek Exp $
+ * from: $Header: sd.c,v 1.26 93/04/20 02:52:59 leres Exp $
  */
 
 /*
@@ -786,6 +786,16 @@ sdioctl(dev_t dev, int cmd, register caddr_t data, int flag, struct proc *p)
 		 * operation that completed with "check condition" status.
 		 */
 		sc->sc_sense = *(struct scsi_fmt_sense *)data;
+		break;
+
+	case DIOCGDINFO:
+		*(struct disklabel *)data = sc->sc_dk.dk_label;
+		break;
+
+	case DIOCGPART:
+		((struct partinfo *)data)->disklab = &sc->sc_dk.dk_label;
+		((struct partinfo *)data)->part =
+		    &sc->sc_dk.dk_label.d_partitions[sdpart(dev)];
 		break;
 
 	default:
