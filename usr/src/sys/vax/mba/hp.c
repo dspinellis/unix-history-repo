@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hp.c	7.1 (Berkeley) %G%
+ *	@(#)hp.c	7.2 (Berkeley) %G%
  */
 
 #ifdef HPDEBUG
@@ -25,16 +25,18 @@ int	hpbdebug;
 
 #include "param.h"
 #include "systm.h"
-#include "dk.h"
+#include "dkstat.h"
 #include "buf.h"
 #include "conf.h"
 #include "dir.h"
+#include "file.h"
 #include "user.h"
 #include "map.h"
 #include "../vax/mtpr.h"
 #include "vm.h"
 #include "cmap.h"
 #include "dkbad.h"
+#include "disklabel.h"
 #include "ioctl.h"
 #include "uio.h"
 #include "syslog.h"
@@ -44,7 +46,1045 @@ int	hpbdebug;
 #include "mbavar.h"
 #include "hpreg.h"
 
-/* THIS SHOULD BE READ OFF THE PACK, PER DRIVE */
+#define	COMPAT_42
+#define	B_FORMAT	B_XXX
+
+/*
+ * Table of supported Massbus drive types.
+ * When using unlabeled packs, slot numbers here
+ * are used as indices into the partition tables.
+ * Slots are left for those drives divined from other means
+ * (e.g. SI, AMPEX, etc.).
+ */
+short	hptypes[] = {
+#define	HPDT_RM03	0
+	MBDT_RM03,
+#define	HPDT_RM05	1
+	MBDT_RM05,
+#define	HPDT_RP06	2
+	MBDT_RP06,
+#define	HPDT_RM80	3
+	MBDT_RM80,
+#define	HPDT_RP04	4
+	MBDT_RP04,
+#define	HPDT_RP05	5
+	MBDT_RP05,
+#define	HPDT_RP07	6
+	MBDT_RP07,
+#define	HPDT_ML11A	7
+	MBDT_ML11A,
+#define	HPDT_ML11B	8
+	MBDT_ML11B,
+#define	HPDT_9775	9
+	-1,
+#define	HPDT_9730	10
+	-1,
+#define	HPDT_CAPRICORN	11
+	-1,
+#define HPDT_EAGLE	12
+	-1,
+#define	HPDT_9300	13
+	-1,
+#define HPDT_RM02	14
+	MBDT_RM02,		/* beware, actually mapped */
+#define HPDT_2361	15
+	-1,
+	0
+};
+
+struct	mba_device *hpinfo[NHP];
+int	hpattach(),hpustart(),hpstart(),hpdtint();
+struct	mba_driver hpdriver =
+	{ hpattach, 0, hpustart, hpstart, hpdtint, 0,
+	  hptypes, "hp", 0, hpinfo };
+
+u_char	hp_offset[16] = {
+    HPOF_P400, HPOF_M400, HPOF_P400, HPOF_M400,
+    HPOF_P800, HPOF_M800, HPOF_P800, HPOF_M800,
+    HPOF_P1200, HPOF_M1200, HPOF_P1200, HPOF_M1200,
+    0, 0, 0, 0,
+};
+
+struct	buf	rhpbuf[NHP];
+struct	disklabel hplabel[NHP];
+struct	dkbad	hpbad[NHP];
+
+struct	hpsoftc {
+	u_char	sc_recal;	/* recalibrate state */
+	u_char	sc_doseeks;	/* perform explicit seeks */
+	int	sc_state;	/* open fsm */
+	long	sc_openpart;	/* bit mask of open subunits */
+	daddr_t	sc_mlsize;	/* ML11 size */
+	int	sc_blkdone;	/* amount sucessfully transfered */
+	daddr_t	sc_badbn;	/* replacement block number */
+} hpsoftc[NHP];
+
+/*
+ * Drive states.  Used during steps of open/initialization.
+ * States < OPEN (> 0) are transient, during an open operation.
+ * OPENRAW is used for unlabeled disks,
+ * to inhibit bad-sector forwarding or allow format operations.
+ */
+#define	CLOSED		0		/* disk is closed. */
+#define	WANTOPEN	1		/* open requested, not started */
+#define	WANTOPENRAW	2		/* open requested, no label */
+#define	RDLABEL		3		/* reading pack label */
+#define	RDBADTBL	4		/* reading bad-sector table */
+#define	OPEN		5		/* initialized and ready */
+#define	OPENRAW		6		/* open, no label or badsect */
+
+#define	b_cylin b_resid
+ 
+/* #define ML11 0  to remove ML11 support */
+#define	ML11(type)	((type) == HPDT_ML11A)
+#define	RP06(type)	(hptypes[type] <= MBDT_RP06)
+#define	RM80(type)	((type) == HPDT_RM80)
+
+#define hpunit(dev)	(minor(dev) >> 3)
+#define hppart(dev)	(minor(dev) & 07)
+#define hpminor(unit, part)	(((unit) << 3) | (part))
+
+#define	MASKREG(reg)	((reg)&0xffff)
+#ifdef lint
+#define HPWAIT(mi, addr) (hpwait(mi))
+#else
+#define HPWAIT(mi, addr) (((addr)->hpds & HPDS_DRY) || hpwait(mi))
+#endif
+
+/*ARGSUSED*/
+hpattach(mi, slave)
+	struct mba_device *mi;
+{
+	register int unit = mi->mi_unit;
+
+	/*
+	 * Try to initialize device and read pack label.
+	 */
+	if (hpinit(hpminor(unit, 0), 0) == 0) {
+		printf("hp%d: %s\n", unit, hplabel[unit].d_typename);
+#ifdef notyet
+		addswap(makedev(HPMAJOR, hpminor(unit, 0)), &hplabel[unit]);
+#endif
+	} else
+		printf("hp%d: offline\n", unit);
+}
+
+hpopen(dev, flags)
+	dev_t dev;
+	int flags;
+{
+	register int unit = hpunit(dev);
+	register struct hpsoftc *sc;
+	register struct disklabel *lp;
+	register struct partition *pp;
+	struct mba_device *mi;
+	int s, error, part = hppart(dev);
+	daddr_t start, end;
+
+	if (unit >= NHP || (mi = hpinfo[unit]) == 0 || mi->mi_alive == 0)
+		return (ENXIO);
+	sc = &hpsoftc[unit];
+	lp = &hplabel[unit];
+
+	s = spl5();
+	while (sc->sc_state != OPEN && sc->sc_state != OPENRAW &&
+	    sc->sc_state != CLOSED)
+		sleep ((caddr_t)sc, PZERO+1);
+	splx(s);
+	if (sc->sc_state != OPEN && sc->sc_state != OPENRAW)
+		if (error = hpinit(dev, flags))
+			return (error);
+	if (part >= lp->d_npartitions)
+		return (ENXIO);
+	/*
+	 * Warn if a partion is opened
+	 * that overlaps another partition which is open
+	 * unless one is the "raw" partition (whole disk).
+	 */
+#define	RAWPART		2		/* 'c' partition */	/* XXX */
+	if ((sc->sc_openpart & (1 << part)) == 0 &&
+	    part != RAWPART) {
+		pp = &lp->d_partitions[part];
+		start = pp->p_offset;
+		end = pp->p_offset + pp->p_size;
+		for (pp = lp->d_partitions;
+		     pp < &lp->d_partitions[lp->d_npartitions]; pp++) {
+			if (pp->p_offset + pp->p_size <= start ||
+			    pp->p_offset >= end)
+				continue;
+			if (pp - lp->d_partitions == RAWPART)
+				continue;
+			if (sc->sc_openpart & (1 << (pp - lp->d_partitions)))
+				log(LOG_WARNING,
+				    "hp%d%c: overlaps open partition (%c)\n",
+				    unit, part + 'a',
+				    pp - lp->d_partitions + 'a');
+		}
+	}
+	sc->sc_openpart |= 1 << part;
+	return (0);
+}
+
+hpclose(dev, flags)
+	dev_t dev;
+	int flags;
+{
+	register int unit = hpunit(dev);
+	register struct hpsoftc *sc;
+	struct mba_device *mi;
+	int s;
+
+	sc = &hpsoftc[unit];
+	mi = hpinfo[unit];
+	sc->sc_openpart &= ~(1 << hppart(dev));
+#ifdef notdef
+	/*
+	 * Should wait for I/O to complete on this partition
+	 * even if others are open, but wait for work on blkflush().
+	 */
+	if (sc->sc_openpart == 0) {
+		s = spl5();
+		/* Can't sleep on b_actf, it might be async. */
+		while (mi->mi_tab.b_actf)
+			sleep((caddr_t)&mi->mi_tab.b_actf, PZERO - 1);
+		splx(s);
+		sc->sc_state = CLOSED;
+	}
+#endif
+}
+
+hpinit(dev, flags)
+	dev_t dev;
+	int flags;
+{
+	register struct hpsoftc *sc;
+	register struct buf *bp;
+	register struct disklabel *lp;
+	struct disklabel *dlp;
+	struct mba_device *mi;
+	struct hpdevice *hpaddr;
+	struct dkbad *db;
+	int unit, i, error = 0;
+
+	unit = hpunit(dev);
+	sc = &hpsoftc[unit];
+	lp = &hplabel[unit];
+	mi = hpinfo[unit];
+	hpaddr = (struct hpdevice *)mi->mi_drv;
+
+	if (flags & O_NDELAY)
+		sc->sc_state = WANTOPENRAW;
+	else
+		sc->sc_state = WANTOPEN;
+	/*
+	 * Use the default sizes until we've read the label,
+	 * or longer if there isn't one there.
+	 */
+	lp->d_secsize = DEV_BSIZE;
+	lp->d_nsectors = 32;
+	lp->d_ntracks = 20;
+	lp->d_secpercyl = 32*20;
+	lp->d_secperunit = 0x1fffffff;
+	lp->d_npartitions = 1;
+	lp->d_partitions[0].p_size = 0x1fffffff;
+	lp->d_partitions[0].p_offset = 0;
+
+	/*
+	 * Map all ML11's to the same type.  Also calculate
+	 * transfer rates based on device characteristics.
+	 * Set up dummy label with all that's needed.
+	 */
+	if (mi->mi_type == MBDT_ML11A || mi->mi_type == MBDT_ML11B) {
+		register struct hpsoftc *sc = &hpsoftc[mi->mi_unit];
+		register int trt;
+
+		sc->sc_mlsize = hpaddr->hpmr & HPMR_SZ;
+		if ((hpaddr->hpmr & HPMR_ARRTYP) == 0)
+			sc->sc_mlsize >>= 2;
+		if (mi->mi_dk >= 0) {
+			trt = (hpaddr->hpmr & HPMR_TRT) >> 8;
+			dk_mspw[mi->mi_dk] = 1.0 / (1<<(20-trt));
+		}
+		mi->mi_type = MBDT_ML11A;
+		lp->d_partitions[0].p_size = sc->sc_mlsize;
+		lp->d_secpercyl = sc->sc_mlsize;
+		sc->sc_state = WANTOPENRAW;
+	}
+
+	/*
+	 * Preset, pack acknowledge will be done in hpstart
+	 * during first read operation.
+	 */
+	bp = geteblk(DEV_BSIZE);		/* max sector size */
+	bp->b_dev = dev;
+	bp->b_blkno = LABELSECTOR;
+	bp->b_bcount = DEV_BSIZE;
+	bp->b_flags = B_BUSY | B_READ;
+	hpstrategy(bp);
+	biowait(bp);
+	if (bp->b_flags & B_ERROR) {
+		error = u.u_error;		/* XXX */
+		u.u_error = 0;
+		sc->sc_state = CLOSED;
+		goto done;
+	}
+	if (sc->sc_state == OPENRAW)
+		goto done;
+
+	dlp = (struct disklabel *)(bp->b_un.b_addr + LABELOFFSET);
+	if (dlp->d_magic == DISKMAGIC &&
+	    dlp->d_magic2 == DISKMAGIC && dkcksum(dlp) == 0) {
+		*lp = *dlp;
+	} else {
+		log(LOG_ERR, "hp%d: no disk label\n", unit);
+#ifdef COMPAT_42
+		mi->mi_type = hpmaptype(mi, lp);
+#else
+		sc->sc_state = OPENRAW;
+		goto done;
+#endif
+	}
+
+	/*
+	 * Seconds per word = (60 / rpm) / (nsectors * secsize/2)
+	 */
+	if (mi->mi_dk >= 0 && lp->d_rpm)
+		dk_mspw[mi->mi_dk] = 120.0 /
+		    (lp->d_rpm * lp->d_nsectors * lp->d_secsize);
+	/*
+	 * Read bad sector table into memory.
+	 */
+	sc->sc_state = RDBADTBL;
+	i = 0;
+	do {
+		u.u_error = 0;				/* XXX */
+		bp->b_flags = B_BUSY | B_READ;
+		bp->b_blkno = lp->d_secperunit - lp->d_nsectors + i;
+		bp->b_bcount = lp->d_secsize;
+		bp->b_cylin = lp->d_ncylinders - 1;
+		hpstrategy(bp);
+		biowait(bp);
+	} while ((bp->b_flags & B_ERROR) && (i += 2) < 10 &&
+	    i < lp->d_nsectors);
+	db = (struct dkbad *)(bp->b_un.b_addr);
+	if ((bp->b_flags & B_ERROR) == 0 && db->bt_mbz == 0 &&
+	    db->bt_flag == 0) {
+		hpbad[unit] = *db;
+		sc->sc_state = OPEN;
+	} else {
+		log(LOG_ERR, "hp%d: %s bad-sector file\n", unit,
+		    (bp->b_flags & B_ERROR) ? "can't read" : "format error in");
+		u.u_error = 0;				/* XXX */
+		sc->sc_state = OPENRAW;
+	}
+done:
+	bp->b_flags = B_INVAL | B_AGE;
+	brelse(bp);
+	wakeup((caddr_t)sc);
+	return (error);
+}
+
+hpstrategy(bp)
+	register struct buf *bp;
+{
+	register struct mba_device *mi;
+	register struct disklabel *lp;
+	register struct hpsoftc *sc;
+	register int unit;
+	daddr_t sz, maxsz;
+	int xunit = hppart(bp->b_dev);
+	int s;
+
+	sz = (bp->b_bcount + DEV_BSIZE - 1) >> DEV_BSHIFT;
+	unit = hpunit(bp->b_dev);
+	if (unit >= NHP) {
+		bp->b_error = ENXIO;
+		goto bad;
+	}
+	mi = hpinfo[unit];
+	sc = &hpsoftc[unit];
+	lp = &hplabel[unit];
+	if (mi == 0 || mi->mi_alive == 0) {
+		bp->b_error = ENXIO;
+		goto bad;
+	}
+	if (sc->sc_state < OPEN)
+		goto q;
+	if ((sc->sc_openpart & (1 << xunit)) == 0) {
+		bp->b_error = ENODEV;
+		goto bad;
+	}
+	maxsz = lp->d_partitions[xunit].p_size;
+	if (bp->b_blkno < 0 || bp->b_blkno + sz > maxsz) {
+		if (bp->b_blkno == maxsz) {
+			bp->b_resid = bp->b_bcount;
+			goto done;
+		}
+		sz = maxsz - bp->b_blkno;
+		if (sz <= 0) {
+			bp->b_error = EINVAL;
+			goto bad;
+		}
+		bp->b_bcount = sz << DEV_BSHIFT;
+	}
+	bp->b_cylin = (bp->b_blkno + lp->d_partitions[xunit].p_offset) /
+	    lp->d_secpercyl;
+q:
+	s = spl5();
+	disksort(&mi->mi_tab, bp);
+	if (mi->mi_tab.b_active == 0)
+		mbustart(mi);
+	splx(s);
+	return;
+
+bad:
+	bp->b_flags |= B_ERROR;
+done:
+	biodone(bp);
+	return;
+}
+
+hpustart(mi)
+	register struct mba_device *mi;
+{
+	register struct hpdevice *hpaddr = (struct hpdevice *)mi->mi_drv;
+	register struct buf *bp = mi->mi_tab.b_actf;
+	register struct disklabel *lp;
+	struct hpsoftc *sc = &hpsoftc[mi->mi_unit];
+	daddr_t bn;
+	int sn, tn, dist;
+
+	lp = &hplabel[mi->mi_unit];
+	hpaddr->hpcs1 = 0;
+	if ((hpaddr->hpcs1&HP_DVA) == 0)
+		return (MBU_BUSY);
+
+	switch (sc->sc_recal) {
+
+	case 1:
+		(void)HPWAIT(mi, hpaddr);
+		hpaddr->hpdc = bp->b_cylin;
+		hpaddr->hpcs1 = HP_SEEK|HP_GO;
+		sc->sc_recal++;
+		return (MBU_STARTED);
+	case 2:
+		break;
+	}
+	sc->sc_recal = 0;
+	if ((hpaddr->hpds & HPDS_VV) == 0) {
+		if (sc->sc_state == OPEN && lp->d_flags & D_REMOVABLE) {
+			if (sc->sc_openpart)
+				log(LOG_ERR, "hp%d: volume changed\n",
+				    mi->mi_unit);
+			sc->sc_openpart = 0;
+			bp->b_flags |= B_ERROR;
+			return (MBU_NEXT);
+		}
+		hpaddr->hpcs1 = HP_DCLR|HP_GO;
+		if (mi->mi_mba->mba_drv[0].mbd_as & (1<<mi->mi_drive))
+			printf("DCLR attn\n");
+		hpaddr->hpcs1 = HP_PRESET|HP_GO;
+		if (!ML11(mi->mi_type))
+			hpaddr->hpof = HPOF_FMT22;
+		mbclrattn(mi);
+		if (sc->sc_state == WANTOPENRAW) {
+			sc->sc_state = OPENRAW;
+			return (MBU_NEXT);
+		}
+		if (sc->sc_state == WANTOPEN)
+			sc->sc_state = RDLABEL;
+	}
+	if (mi->mi_tab.b_active || mi->mi_hd->mh_ndrive == 1) {
+		if (mi->mi_tab.b_errcnt >= 16 && (bp->b_flags & B_READ)) {
+			hpaddr->hpof =
+			    hp_offset[mi->mi_tab.b_errcnt & 017]|HPOF_FMT22;
+			hpaddr->hpcs1 = HP_OFFSET|HP_GO;
+			(void)HPWAIT(mi, hpaddr);
+			mbclrattn(mi);
+		}
+		return (MBU_DODATA);
+	}
+	if (ML11(mi->mi_type))
+		return (MBU_DODATA);
+	if ((hpaddr->hpds & HPDS_DREADY) != HPDS_DREADY)
+		return (MBU_DODATA);
+	bn = bp->b_blkno;
+	sn = bn % lp->d_secpercyl;
+	tn = sn / lp->d_nsectors;
+	sn = sn % lp->d_nsectors;
+	if (bp->b_cylin == MASKREG(hpaddr->hpdc)) {
+		if (sc->sc_doseeks)
+			return (MBU_DODATA);
+		dist = sn - (MASKREG(hpaddr->hpla) >> 6) - 1;
+		if (dist < 0)
+			dist += lp->d_nsectors;
+		if (dist > lp->d_maxdist || dist < lp->d_mindist)
+			return (MBU_DODATA);
+	} else
+		hpaddr->hpdc = bp->b_cylin;
+	if (sc->sc_doseeks)
+		hpaddr->hpcs1 = HP_SEEK|HP_GO;
+	else {
+		sn = (sn + lp->d_nsectors - lp->d_sdist) % lp->d_nsectors;
+		hpaddr->hpda = (tn << 8) + sn;
+		hpaddr->hpcs1 = HP_SEARCH|HP_GO;
+	}
+	return (MBU_STARTED);
+}
+
+hpstart(mi)
+	register struct mba_device *mi;
+{
+	register struct hpdevice *hpaddr = (struct hpdevice *)mi->mi_drv;
+	register struct buf *bp = mi->mi_tab.b_actf;
+	register struct disklabel *lp = &hplabel[mi->mi_unit];
+	struct hpsoftc *sc = &hpsoftc[mi->mi_unit];
+	daddr_t bn;
+	int sn, tn, cn;
+
+	if (ML11(mi->mi_type))
+		hpaddr->hpda = bp->b_blkno + sc->sc_blkdone;
+	else {
+		if (bp->b_flags & B_BAD) {
+			bn = sc->sc_badbn;
+			cn = bn / lp->d_secpercyl;
+		} else {
+			bn = bp->b_blkno;
+			cn = bp->b_cylin;
+		}
+		sn = bn % lp->d_secpercyl;
+		if ((bp->b_flags & B_BAD) == 0)
+			sn += sc->sc_blkdone;
+		tn = sn / lp->d_nsectors;
+		sn %= lp->d_nsectors;
+		cn += tn / lp->d_ntracks;
+		tn %= lp->d_ntracks;
+		hpaddr->hpda = (tn << 8) + sn;
+		hpaddr->hpdc = cn;
+	}
+	mi->mi_tab.b_bdone = dbtob(sc->sc_blkdone);
+	if (bp->b_flags & B_FORMAT) {
+		if (bp->b_flags & B_READ)
+			return (HP_RHDR|HP_GO);
+		else
+			return (HP_WHDR|HP_GO);
+	}
+	return (0);
+}
+
+hpdtint(mi, mbsr)
+	register struct mba_device *mi;
+	int mbsr;
+{
+	register struct hpdevice *hpaddr = (struct hpdevice *)mi->mi_drv;
+	register struct buf *bp = mi->mi_tab.b_actf;
+	register int er1, er2;
+	struct hpsoftc *sc = &hpsoftc[mi->mi_unit];
+	int retry = 0;
+	int npf;
+	daddr_t bn;
+	int bcr;
+
+	bcr = MASKREG(-mi->mi_mba->mba_bcr);
+	if (hpaddr->hpds&HPDS_ERR || mbsr&MBSR_EBITS) {
+		er1 = hpaddr->hper1;
+		er2 = hpaddr->hper2;
+		if (bp->b_flags & B_BAD) {
+			npf = bp->b_error;
+			bn = sc->sc_badbn;
+		} else {
+			npf = btop(bp->b_bcount - bcr);
+			if (er1 & (HPER1_DCK | HPER1_ECH))
+				npf--;
+			bn = bp->b_blkno + npf;
+		}
+		if (HPWAIT(mi, hpaddr) == 0)
+			goto hard;
+#ifdef HPDEBUG
+		if (hpdebug) {
+			int dc = hpaddr->hpdc, da = hpaddr->hpda;
+
+			log(LOG_DEBUG,
+		    "hperr: bp %x cyl %d blk %d blkdone %d as %o dc %x da %x\n",
+				bp, bp->b_cylin, bn, sc->sc_blkdone,
+				hpaddr->hpas&0xff, MASKREG(dc), MASKREG(da));
+			log(LOG_DEBUG,
+				"errcnt %d mbsr=%b er1=%b er2=%b bcr -%d\n",
+				mi->mi_tab.b_errcnt, mbsr, mbsr_bits,
+				MASKREG(er1), HPER1_BITS,
+				MASKREG(er2), HPER2_BITS, bcr);
+		}
+#endif
+		if (er1 & HPER1_HCRC) {
+			er1 &= ~(HPER1_HCE|HPER1_FER);
+			er2 &= ~HPER2_BSE;
+		}
+		if (er1 & HPER1_WLE) {
+			log(LOG_WARNING, "hp%d: write locked\n",
+			    hpunit(bp->b_dev));
+			bp->b_flags |= B_ERROR;
+		} else if (bp->b_flags & B_FORMAT) {
+			goto hard;
+		} else if (RM80(mi->mi_type) && er2&HPER2_SSE) {
+			(void) hpecc(mi, SSE);
+			return (MBD_RESTARTED);
+		} else if ((er2 & HPER2_BSE) && !ML11(mi->mi_type)) {
+			if (hpecc(mi, BSE))
+				return (MBD_RESTARTED);
+			goto hard;
+		} else if (MASKREG(er1) == HPER1_FER && RP06(mi->mi_type)) {
+			if (hpecc(mi, BSE))
+				return (MBD_RESTARTED);
+			goto hard;
+		} else if ((er1 & (HPER1_DCK | HPER1_ECH)) == HPER1_DCK &&
+		    mi->mi_tab.b_errcnt >= 3) {
+			if (hpecc(mi, ECC))
+				return (MBD_RESTARTED);
+			/*
+			 * ECC corrected.  Only log retries below
+			 * if we got errors other than soft ECC
+			 * (as indicated by additional retries).
+			 */
+			if (mi->mi_tab.b_errcnt == 3)
+				mi->mi_tab.b_errcnt = 0;
+		} else if ((er1 & HPER1_HCRC) && !ML11(mi->mi_type) &&
+		    hpecc(mi, BSE)) {
+ 			/*
+ 			 * HCRC means the header is screwed up and the sector
+ 			 * might well exist in the bad sector table, 
+			 * better check....
+ 			 */
+			return (MBD_RESTARTED);
+		} else if (++mi->mi_tab.b_errcnt > 27 ||
+		    (ML11(mi->mi_type) && mi->mi_tab.b_errcnt > 15) ||
+		    mbsr & MBSR_HARD ||
+		    er1 & HPER1_HARD ||
+		    (!ML11(mi->mi_type) && (er2 & HPER2_HARD))) {
+hard:
+			bp->b_blkno = bn;		/* XXX */
+			harderr(bp, "hp");
+			if (mbsr & (MBSR_EBITS &~ (MBSR_DTABT|MBSR_MBEXC)))
+				printf("mbsr=%b ", mbsr, mbsr_bits);
+			printf("er1=%b er2=%b",
+			    MASKREG(hpaddr->hper1), HPER1_BITS,
+			    MASKREG(hpaddr->hper2), HPER2_BITS);
+			if (bp->b_flags & B_FORMAT)
+				printf(" (hdr i/o)");
+			printf("\n");
+			bp->b_flags |= B_ERROR;
+			bp->b_flags &= ~B_BAD;
+		} else
+			retry = 1;
+		hpaddr->hpcs1 = HP_DCLR|HP_GO;
+		if (retry && (mi->mi_tab.b_errcnt & 07) == 4) {
+			hpaddr->hpcs1 = HP_RECAL|HP_GO;
+			sc->sc_recal = 1;
+			return (MBD_REPOSITION);
+		}
+	}
+#ifdef HPDEBUG
+	else
+		if (hpdebug && sc->sc_recal) {
+			log(LOG_DEBUG,
+			    "recal %d errcnt %d mbsr=%b er1=%b er2=%b\n",
+			    sc->sc_recal, mi->mi_tab.b_errcnt, mbsr, mbsr_bits,
+			    hpaddr->hper1, HPER1_BITS,
+			    hpaddr->hper2, HPER2_BITS);
+		}
+#endif
+	(void)HPWAIT(mi, hpaddr);
+	if (retry)
+		return (MBD_RETRY);
+	if (mi->mi_tab.b_errcnt >= 16) {
+		/*
+		 * This is fast and occurs rarely; we don't
+		 * bother with interrupts.
+		 */
+		hpaddr->hpcs1 = HP_RTC|HP_GO;
+		(void)HPWAIT(mi, hpaddr);
+		mbclrattn(mi);
+	}
+	if (mi->mi_tab.b_errcnt && (bp->b_flags & B_ERROR) == 0)
+		log(LOG_INFO, "hp%d%c: %d retries %sing sn%d\n",
+		    hpunit(bp->b_dev), 'a'+(minor(bp->b_dev)&07),
+		    mi->mi_tab.b_errcnt,
+		    (bp->b_flags & B_READ) ? "read" : "writ",
+		    (bp->b_flags & B_BAD) ?
+		    sc->sc_badbn : bp->b_blkno + sc->sc_blkdone);
+	if ((bp->b_flags & B_BAD) && hpecc(mi, CONT))
+		return (MBD_RESTARTED);
+	sc->sc_blkdone = 0;
+	bp->b_resid = bcr;
+	if (!ML11(mi->mi_type)) {
+		hpaddr->hpof = HPOF_FMT22;
+		hpaddr->hpcs1 = HP_RELEASE|HP_GO;
+	}
+	return (MBD_DONE);
+}
+
+/*
+ * Wait (for a bit) for a drive to come ready;
+ * returns nonzero on success.
+ */
+hpwait(mi)
+	register struct mba_device *mi;
+{
+	register struct hpdevice *hpaddr = (struct hpdevice *)mi->mi_drv;
+	register i = 100000;
+
+	while ((hpaddr->hpds & HPDS_DRY) == 0 && --i)
+		DELAY(10);
+	if (i == 0)
+		printf("hp%d: intr, not ready\n", mi->mi_unit);
+	return (i);
+}
+
+hpread(dev, uio)
+	dev_t dev;
+	struct uio *uio;
+{
+	register int unit = hpunit(dev);
+
+	if (unit >= NHP)
+		return (ENXIO);
+	return (physio(hpstrategy, &rhpbuf[unit], dev, B_READ, minphys, uio));
+}
+
+hpwrite(dev, uio)
+	dev_t dev;
+	struct uio *uio;
+{
+	register int unit = hpunit(dev);
+
+	if (unit >= NHP)
+		return (ENXIO);
+	return (physio(hpstrategy, &rhpbuf[unit], dev, B_WRITE, minphys, uio));
+}
+
+hpioctl(dev, cmd, data, flag)
+	dev_t dev;
+	int cmd;
+	caddr_t data;
+	int flag;
+{
+	int unit = hpunit(dev);
+	register struct disklabel *lp;
+	register struct format_op *fop;
+	int error = 0;
+	int hpformat();
+
+	lp = &hplabel[unit];
+
+	switch (cmd) {
+
+	case DIOCGDINFO:
+		*(struct disklabel *)data = *lp;
+		break;
+
+	case DIOCGDINFOP:
+		*(struct disklabel **)data = lp;
+		break;
+
+	case DIOCSDINFO:
+		if ((flag & FWRITE) == 0)
+			error = EBADF;
+		else
+			*lp = *(struct disklabel *)data;
+		break;
+
+	case DIOCWDINFO:
+		if ((flag & FWRITE) == 0) {
+			error = EBADF;
+			break;
+		}
+		{
+		struct buf *bp;
+		struct disklabel *dlp;
+
+		*lp = *(struct disklabel *)data;
+		bp = geteblk(lp->d_secsize);
+		bp->b_dev = dev;
+		bp->b_blkno = LABELSECTOR;
+		bp->b_bcount = lp->d_secsize;
+		bp->b_flags = B_READ;
+		dlp = (struct disklabel *)(bp->b_un.b_addr + LABELOFFSET);
+		hpstrategy(bp);
+		biowait(bp);
+		if (bp->b_flags & B_ERROR) {
+			error = u.u_error;		/* XXX */
+			u.u_error = 0;
+			goto bad;
+		}
+		*dlp = *lp;
+		bp->b_flags = B_WRITE;
+		hpstrategy(bp);
+		biowait(bp);
+		if (bp->b_flags & B_ERROR) {
+			error = u.u_error;		/* XXX */
+			u.u_error = 0;
+		}
+bad:
+		brelse(bp);
+		}
+		break;
+
+#ifdef notyet
+	case DIOCWFORMAT:
+		if ((flag & FWRITE) == 0) {
+			error = EBADF;
+			break;
+		}
+		{
+		struct uio auio;
+		struct iovec aiov;
+
+		fop = (struct format_op *)data;
+		aiov.iov_base = fop->df_buf;
+		aiov.iov_len = fop->df_count;
+		auio.uio_iov = &aiov;
+		auio.uio_iovcnt = 1;
+		auio.uio_resid = fop->df_count;
+		auio.uio_segflg = 0;
+		auio.uio_offset = fop->df_startblk * lp->d_secsize;
+		error = physio(hpformat, &rhpbuf[unit], dev, B_WRITE,
+			minphys, &auio);
+		fop->df_count -= auio.uio_resid;
+		fop->df_reg[0] = sc->sc_status;
+		fop->df_reg[1] = sc->sc_error;
+		}
+		break;
+#endif
+
+	default:
+		error = ENOTTY;
+		break;
+	}
+	return (0);
+}
+
+hpformat(bp)
+	struct buf *bp;
+{
+
+	bp->b_flags |= B_FORMAT;
+	return (hpstrategy(bp));
+}
+
+hpecc(mi, flag)
+	register struct mba_device *mi;
+	int flag;
+{
+	register struct mba_regs *mbp = mi->mi_mba;
+	register struct hpdevice *rp = (struct hpdevice *)mi->mi_drv;
+	register struct buf *bp = mi->mi_tab.b_actf;
+	register struct disklabel *lp = &hplabel[mi->mi_unit];
+	struct hpsoftc *sc = &hpsoftc[mi->mi_unit];
+	int npf, o;
+	int bn, cn, tn, sn;
+	int bcr;
+
+	bcr = MASKREG(-mbp->mba_bcr);
+	if (bp->b_flags & B_BAD)
+		npf = bp->b_error;
+	else {
+		npf = bp->b_bcount - bcr;
+		/*
+		 * Watch out for fractional sector at end of transfer;
+		 * want to round up if finished, otherwise round down.
+		 */
+		if (bcr == 0)
+			npf += 511;
+		npf = btodb(npf);
+	}
+	o = (int)bp->b_un.b_addr & PGOFSET;
+	bn = bp->b_blkno;
+	cn = bp->b_cylin;
+	sn = bn % lp->d_secpercyl + npf;
+	tn = sn / lp->d_nsectors;
+	sn %= lp->d_nsectors;
+	cn += tn / lp->d_ntracks;
+	tn %= lp->d_ntracks;
+	bn += npf;
+	switch (flag) {
+	case ECC: {
+		register int i;
+		caddr_t addr;
+		struct pte mpte;
+		int bit, byte, mask;
+
+		npf--;		/* because block in error is previous block */
+		bn--;
+		if (bp->b_flags & B_BAD)
+			bn = sc->sc_badbn;
+		log(LOG_WARNING, "hp%d%c: soft ecc sn%d\n", hpunit(bp->b_dev),
+		    'a'+(minor(bp->b_dev)&07), bn);
+		mask = MASKREG(rp->hpec2);
+		i = MASKREG(rp->hpec1) - 1;		/* -1 makes 0 origin */
+		bit = i&07;
+		i = (i&~07)>>3;
+		byte = i + o;
+		while (i < 512 && (int)dbtob(npf)+i < bp->b_bcount && bit > -11) {
+			mpte = mbp->mba_map[npf+btop(byte)];
+			addr = ptob(mpte.pg_pfnum) + (byte & PGOFSET);
+			putmemc(addr, getmemc(addr)^(mask<<bit));
+			byte++;
+			i++;
+			bit -= 8;
+		}
+		if (bcr == 0)
+			return (0);
+		npf++;
+		break;
+		}
+
+	case SSE:
+		rp->hpof |= HPOF_SSEI;
+		if (bp->b_flags & B_BAD) {
+			bn = sc->sc_badbn;
+			goto fixregs;
+		}
+		mbp->mba_bcr = -(bp->b_bcount - (int)ptob(npf));
+		break;
+
+	case BSE:
+		if (sc->sc_state == OPENRAW)
+			return (0);
+ 		if (rp->hpof & HPOF_SSEI)
+ 			sn++;
+#ifdef HPBDEBUG
+		if (hpbdebug)
+		log(LOG_DEBUG, "hpecc, BSE: bn %d cn %d tn %d sn %d\n", bn, cn, tn, sn);
+#endif
+		if (bp->b_flags & B_BAD)
+			return (0);
+		if ((bn = isbad(&hpbad[mi->mi_unit], cn, tn, sn)) < 0)
+			return (0);
+		bp->b_flags |= B_BAD;
+		bp->b_error = npf + 1;
+ 		rp->hpof &= ~HPOF_SSEI;
+		bn = lp->d_ncylinders * lp->d_secpercyl -
+		    lp->d_nsectors - 1 - bn;
+		sc->sc_badbn = bn;
+	fixregs:
+		cn = bn / lp->d_secpercyl;
+		sn = bn % lp->d_secpercyl;
+		tn = sn / lp->d_nsectors;
+		sn %= lp->d_nsectors;
+		bcr = bp->b_bcount - (int)ptob(npf);
+		bcr = MIN(bcr, 512);
+		mbp->mba_bcr = -bcr;
+#ifdef HPBDEBUG
+		if (hpbdebug)
+		log(LOG_DEBUG, "revector to cn %d tn %d sn %d\n", cn, tn, sn);
+#endif
+		break;
+
+	case CONT:
+#ifdef HPBDEBUG
+		if (hpbdebug)
+		log(LOG_DEBUG, "hpecc, CONT: bn %d cn %d tn %d sn %d\n", bn,cn,tn,sn);
+#endif
+		bp->b_flags &= ~B_BAD;
+		if ((int)ptob(npf) >= bp->b_bcount)
+			return (0);
+		mbp->mba_bcr = -(bp->b_bcount - (int)ptob(npf));
+		break;
+	}
+	rp->hpcs1 = HP_DCLR|HP_GO;
+	if (rp->hpof & HPOF_SSEI)
+		sn++;
+	rp->hpdc = cn;
+	rp->hpda = (tn<<8) + sn;
+	mbp->mba_sr = -1;
+	mbp->mba_var = (int)ptob(npf) + o;
+	rp->hpcs1 = bp->b_flags&B_READ ? HP_RCOM|HP_GO : HP_WCOM|HP_GO;
+	mi->mi_tab.b_errcnt = 0;	/* error has been corrected */
+	sc->sc_blkdone = npf;
+	return (1);
+}
+
+#define	DBSIZE	20
+
+hpdump(dev)
+	dev_t dev;
+{
+	register struct mba_device *mi;
+	register struct mba_regs *mba;
+	struct hpdevice *hpaddr;
+	char *start;
+	int num, unit;
+	register struct disklabel *lp;
+
+	num = maxfree;
+	start = 0;
+	unit = hpunit(dev);
+	if (unit >= NHP)
+		return (ENXIO);
+#define	phys(a,b)	((b)((int)(a)&0x7fffffff))
+	mi = phys(hpinfo[unit],struct mba_device *);
+	if (mi == 0 || mi->mi_alive == 0)
+		return (ENXIO);
+	lp = &hplabel[unit];
+	mba = phys(mi->mi_hd, struct mba_hd *)->mh_physmba;
+	mba->mba_cr = MBCR_INIT;
+	hpaddr = (struct hpdevice *)&mba->mba_drv[mi->mi_drive];
+	if ((hpaddr->hpds & HPDS_VV) == 0) {
+		hpaddr->hpcs1 = HP_DCLR|HP_GO;
+		hpaddr->hpcs1 = HP_PRESET|HP_GO;
+		hpaddr->hpof = HPOF_FMT22;
+	}
+	if (dumplo < 0)
+		return (EINVAL);
+	if (dumplo + num >= lp->d_partitions[hppart(dev)].p_size)
+		num = lp->d_partitions[hppart(dev)].p_size - dumplo;
+	while (num > 0) {
+		register struct pte *hpte = mba->mba_map;
+		register int i;
+		int blk, cn, sn, tn;
+		daddr_t bn;
+
+		blk = num > DBSIZE ? DBSIZE : num;
+		bn = dumplo + btop(start);
+		cn = (bn + lp->d_partitions[hppart(dev)].p_offset) /
+		    lp->d_secpercyl;
+		sn = bn % lp->d_secpercyl;
+		tn = sn / lp->d_nsectors;
+		sn = sn % lp->d_nsectors;
+		hpaddr->hpdc = cn;
+		hpaddr->hpda = (tn << 8) + sn;
+		for (i = 0; i < blk; i++)
+			*(int *)hpte++ = (btop(start)+i) | PG_V;
+		mba->mba_sr = -1;
+		mba->mba_bcr = -(blk*NBPG);
+		mba->mba_var = 0;
+		hpaddr->hpcs1 = HP_WCOM | HP_GO;
+		while ((hpaddr->hpds & HPDS_DRY) == 0)
+			DELAY(10);
+		if (hpaddr->hpds&HPDS_ERR)
+			return (EIO);
+		start += blk*NBPG;
+		num -= blk;
+	}
+	return (0);
+}
+
+hpsize(dev)
+	dev_t dev;
+{
+	register int unit = hpunit(dev);
+	struct mba_device *mi;
+
+	if (unit >= NHP || (mi = hpinfo[unit]) == 0 || mi->mi_alive == 0 ||
+	    hpsoftc[unit].sc_state != OPEN)
+		return (-1);
+	return ((int)hplabel[unit].d_partitions[hppart(dev)].p_size);
+}
+
+#ifdef COMPAT_42
+/*
+ * Compatibility code to fake up pack label
+ * for unlabeled disks.
+ */
 struct	size {
 	daddr_t	nblocks;
 	int	cyloff;
@@ -157,54 +1197,6 @@ struct	size {
 	701248,	294,		/* G=cyl 294 thru 841 */
 	291346,	66,		/* H=cyl 66 thru 293 */
 };
-/* END OF STUFF WHICH SHOULD BE READ IN PER DISK */
-
-/*
- * Table for converting Massbus drive types into
- * indices into the partition tables.  Slots are
- * left for those drives divined from other means
- * (e.g. SI, AMPEX, etc.).
- */
-short	hptypes[] = {
-#define	HPDT_RM03	0
-	MBDT_RM03,
-#define	HPDT_RM05	1
-	MBDT_RM05,
-#define	HPDT_RP06	2
-	MBDT_RP06,
-#define	HPDT_RM80	3
-	MBDT_RM80,
-#define	HPDT_RP04	4
-	MBDT_RP04,
-#define	HPDT_RP05	5
-	MBDT_RP05,
-#define	HPDT_RP07	6
-	MBDT_RP07,
-#define	HPDT_ML11A	7
-	MBDT_ML11A,
-#define	HPDT_ML11B	8
-	MBDT_ML11B,
-#define	HPDT_9775	9
-	-1,
-#define	HPDT_9730	10
-	-1,
-#define	HPDT_CAPRICORN	11
-	-1,
-#define HPDT_EAGLE	12
-	-1,
-#define	HPDT_9300	13
-	-1,
-#define HPDT_RM02	14
-	MBDT_RM02,		/* beware, actually mapped */
-#define HPDT_2361	15
-	-1,
-	0
-};
-struct	mba_device *hpinfo[NHP];
-int	hpattach(),hpustart(),hpstart(),hpdtint();
-struct	mba_driver hpdriver =
-	{ hpattach, 0, hpustart, hpstart, hpdtint, 0,
-	  hptypes, "hp", 0, hpinfo };
 
 /*
  * These variable are all measured in sectors.  
@@ -248,55 +1240,6 @@ struct hpst {
     { 64, 20,	64*20,	842,	fj2361_sizes,  15, 8, 3, "2361" },
 };
 
-u_char	hp_offset[16] = {
-    HPOF_P400, HPOF_M400, HPOF_P400, HPOF_M400,
-    HPOF_P800, HPOF_M800, HPOF_P800, HPOF_M800,
-    HPOF_P1200, HPOF_M1200, HPOF_P1200, HPOF_M1200,
-    0, 0, 0, 0,
-};
-
-struct	buf	rhpbuf[NHP];
-struct	buf	bhpbuf[NHP];
-struct	dkbad	hpbad[NHP];
-
-struct	hpsoftc {
-	u_char	sc_hpinit;	/* drive initialized */
-	u_char	sc_recal;	/* recalibrate state */
-	u_char	sc_hdr;		/* next i/o includes header */
-	u_char	sc_doseeks;	/* perform explicit seeks */
-	daddr_t	sc_mlsize;	/* ML11 size */
-	int	sc_blkdone;	/* amount sucessfully transfered */
-	daddr_t	sc_badbn;	/* replacement block number */
-} hpsoftc[NHP];
-
-#define	b_cylin b_resid
- 
-/* #define ML11 0  to remove ML11 support */
-#define	ML11	(hptypes[mi->mi_type] == MBDT_ML11A)
-#define	RP06	(hptypes[mi->mi_type] <= MBDT_RP06)
-#define	RM80	(hptypes[mi->mi_type] == MBDT_RM80)
-
-#define hpunit(dev)	(minor(dev) >> 3)
-#define	MASKREG(reg)	((reg)&0xffff)
-#ifdef lint
-#define HPWAIT(mi, addr) (hpwait(mi))
-#else
-#define HPWAIT(mi, addr) (((addr)->hpds & HPDS_DRY) || hpwait(mi))
-#endif
-
-/*ARGSUSED*/
-hpattach(mi, slave)
-	register struct mba_device *mi;
-{
-
-	mi->mi_type = hpmaptype(mi);
-	if (!ML11 && mi->mi_dk >= 0) {
-		struct hpst *st = &hpst[mi->mi_type];
-
-		dk_mspw[mi->mi_dk] = 1.0 / 60 / (st->nsect * 256);
-	}
-}
-
 /*
  * Map apparent MASSBUS drive type into manufacturer
  * specific configuration.  For SI controllers this is done
@@ -304,11 +1247,14 @@ hpattach(mi, slave)
  * EMULEX controllers, the track and sector attributes are
  * used when the drive type is an RM02 (not supported by DEC).
  */
-hpmaptype(mi)
+hpmaptype(mi, lp)
 	register struct mba_device *mi;
+	register struct disklabel *lp;
 {
 	register struct hpdevice *hpaddr = (struct hpdevice *)mi->mi_drv;
 	register int type = mi->mi_type;
+	register struct hpst *st;
+	register i;
 
 	/*
 	 * Model-byte processing for SI controllers.
@@ -317,41 +1263,33 @@ hpmaptype(mi)
 	if (type == HPDT_RM03 || type == HPDT_RM05) {
 		int hpsn = hpaddr->hpsn;
 
-		if ((hpsn & SIMB_LU) != mi->mi_drive)
-			return (type);
+		if ((hpsn & SIMB_LU) == mi->mi_drive)
 		switch ((hpsn & SIMB_MB) & ~(SIMB_S6|SIRM03|SIRM05)) {
 
 		case SI9775D:
-			printf("hp%d: 9775 (direct)\n", mi->mi_unit);
 			type = HPDT_9775;
 			break;
 
 		case SI9730D:
-			printf("hp%d: 9730 (direct)\n", mi->mi_unit);
 			type = HPDT_9730;
 			break;
 
 		case SI9766:
-			printf("hp%d: 9766\n", mi->mi_unit);
 			type = HPDT_RM05;
 			break;
 
 		case SI9762:
-			printf("hp%d: 9762\n", mi->mi_unit);
 			type = HPDT_RM03;
 			break;
 
 		case SICAPD:
-			printf("hp%d: capricorn\n", mi->mi_unit);
 			type = HPDT_CAPRICORN;
 			break;
 
 		case SI9751D:
-			printf("hp%d: eagle\n", mi->mi_unit);
 			type = HPDT_EAGLE;
 			break;
 		}
-		return (type);
 	}
 
 	/*
@@ -384,645 +1322,30 @@ hpmaptype(mi)
 				mi->mi_unit, nsectors, ntracks, ncyl);
 			type = HPDT_RM02;
 		}
-		printf("hp%d: %s\n", mi->mi_unit, hpst[type].name);
 		hpaddr->hpcs1 = HP_DCLR|HP_GO;
 		mbclrattn(mi);		/* conservative */
-		return (type);
 	}
 
 	/*
-	 * Map all ML11's to the same type.  Also calculate
-	 * transfer rates based on device characteristics.
+	 * set up minimal disk label.
 	 */
-	if (type == HPDT_ML11A || type == HPDT_ML11B) {
-		register struct hpsoftc *sc = &hpsoftc[mi->mi_unit];
-		register int trt;
-
-		sc->sc_mlsize = hpaddr->hpmr & HPMR_SZ;
-		if ((hpaddr->hpmr & HPMR_ARRTYP) == 0)
-			sc->sc_mlsize >>= 2;
-		if (mi->mi_dk >= 0) {
-			trt = (hpaddr->hpmr & HPMR_TRT) >> 8;
-			dk_mspw[mi->mi_dk] = 1.0 / (1<<(20-trt));
-		}
-		type = HPDT_ML11A;
+	st = &hpst[type];
+	lp->d_nsectors = st->nsect;
+	lp->d_ntracks = st->ntrak;
+	lp->d_secpercyl = st->nspc;
+	lp->d_ncylinders = st->ncyl;
+	lp->d_secperunit = st->nspc * st->ncyl;
+	lp->d_sdist = st->sdist;
+	lp->d_mindist = st->mindist;
+	lp->d_maxdist = st->maxdist;
+	bcopy(hpst[type].name, lp->d_typename, sizeof(lp->d_typename));
+	lp->d_npartitions = 8;
+	for (i = 0; i < 8; i++) {
+		lp->d_partitions[i].p_offset = st->sizes[i].cyloff *
+		    lp->d_secpercyl;
+		lp->d_partitions[i].p_size = st->sizes[i].nblocks;
 	}
 	return (type);
 }
-
-hpopen(dev)
-	dev_t dev;
-{
-	register int unit = hpunit(dev);
-	register struct mba_device *mi;
-
-	if (unit >= NHP || (mi = hpinfo[unit]) == 0 || mi->mi_alive == 0)
-		return (ENXIO);
-	return (0);
-}
-
-hpstrategy(bp)
-	register struct buf *bp;
-{
-	register struct mba_device *mi;
-	register struct hpst *st;
-	register int unit;
-	long sz;
-	int xunit = minor(bp->b_dev) & 07;
-	int s;
-
-	sz = bp->b_bcount;
-	sz = (sz+511) >> 9;
-	unit = hpunit(bp->b_dev);
-	if (unit >= NHP) {
-		bp->b_error = ENXIO;
-		goto bad;
-	}
-	mi = hpinfo[unit];
-	if (mi == 0 || mi->mi_alive == 0) {
-		bp->b_error = ENXIO;
-		goto bad;
-	}
-	st = &hpst[mi->mi_type];
-	if (ML11) {
-		struct hpsoftc *sc = &hpsoftc[unit];
-
-		if (bp->b_blkno < 0 ||
-		    bp->b_blkno+sz > sc->sc_mlsize) {
-			if (bp->b_blkno == sc->sc_mlsize) {
-			    bp->b_resid = bp->b_bcount;
-			    goto done;
-			}
-			bp->b_error = EINVAL;
-			goto bad;
-		}
-		bp->b_cylin = 0;
-	} else {
-		if (bp->b_blkno < 0 ||
-		    bp->b_blkno+sz > st->sizes[xunit].nblocks) {
-			if (bp->b_blkno == st->sizes[xunit].nblocks) {
-			    bp->b_resid = bp->b_bcount;
-			    goto done;
-			}
-			bp->b_error = EINVAL;
-			goto bad;
-		}
-		bp->b_cylin = bp->b_blkno/st->nspc + st->sizes[xunit].cyloff;
-	}
-	s = spl5();
-	disksort(&mi->mi_tab, bp);
-	if (mi->mi_tab.b_active == 0)
-		mbustart(mi);
-	splx(s);
-	return;
-
-bad:
-	bp->b_flags |= B_ERROR;
-done:
-	iodone(bp);
-	return;
-}
-
-hpustart(mi)
-	register struct mba_device *mi;
-{
-	register struct hpdevice *hpaddr = (struct hpdevice *)mi->mi_drv;
-	register struct buf *bp = mi->mi_tab.b_actf;
-	register struct hpst *st;
-	struct hpsoftc *sc = &hpsoftc[mi->mi_unit];
-	daddr_t bn;
-	int sn, tn, dist;
-
-	st = &hpst[mi->mi_type];
-	hpaddr->hpcs1 = 0;
-	if ((hpaddr->hpcs1&HP_DVA) == 0)
-		return (MBU_BUSY);
-
-	switch (sc->sc_recal) {
-
-	case 1:
-		(void)HPWAIT(mi, hpaddr);
-		hpaddr->hpdc = bp->b_cylin;
-		hpaddr->hpcs1 = HP_SEEK|HP_GO;
-		sc->sc_recal++;
-		return (MBU_STARTED);
-	case 2:
-		break;
-	}
-	sc->sc_recal = 0;
-	if ((hpaddr->hpds & HPDS_VV) == 0 || !sc->sc_hpinit) {
-		struct buf *bbp = &bhpbuf[mi->mi_unit];
-
-		sc->sc_hpinit = 1;
-		hpaddr->hpcs1 = HP_DCLR|HP_GO;
-		if (mi->mi_mba->mba_drv[0].mbd_as & (1<<mi->mi_drive))
-			printf("DCLR attn\n");
-		hpaddr->hpcs1 = HP_PRESET|HP_GO;
-		if (!ML11)
-			hpaddr->hpof = HPOF_FMT22;
-		mbclrattn(mi);
-		if (!ML11) {
-			bbp->b_flags = B_READ|B_BUSY;
-			bbp->b_dev = bp->b_dev;
-			bbp->b_bcount = 512;
-			bbp->b_un.b_addr = (caddr_t)&hpbad[mi->mi_unit];
-			bbp->b_blkno = st->ncyl*st->nspc - st->nsect;
-			bbp->b_cylin = st->ncyl - 1;
-			mi->mi_tab.b_actf = bbp;
-			bbp->av_forw = bp;
-			bp = bbp;
-		}
-	}
-	if (mi->mi_tab.b_active || mi->mi_hd->mh_ndrive == 1) {
-		if (mi->mi_tab.b_errcnt >= 16 && (bp->b_flags & B_READ)) {
-			hpaddr->hpof =
-			    hp_offset[mi->mi_tab.b_errcnt & 017]|HPOF_FMT22;
-			hpaddr->hpcs1 = HP_OFFSET|HP_GO;
-			(void)HPWAIT(mi, hpaddr);
-			mbclrattn(mi);
-		}
-		return (MBU_DODATA);
-	}
-	if (ML11)
-		return (MBU_DODATA);
-	if ((hpaddr->hpds & HPDS_DREADY) != HPDS_DREADY)
-		return (MBU_DODATA);
-	bn = bp->b_blkno;
-	sn = bn % st->nspc;
-	tn = sn / st->nsect;
-	sn = sn % st->nsect;
-	if (bp->b_cylin == MASKREG(hpaddr->hpdc)) {
-		if (sc->sc_doseeks)
-			return (MBU_DODATA);
-		dist = sn - (MASKREG(hpaddr->hpla) >> 6) - 1;
-		if (dist < 0)
-			dist += st->nsect;
-		if (dist > st->maxdist || dist < st->mindist)
-			return (MBU_DODATA);
-	} else
-		hpaddr->hpdc = bp->b_cylin;
-	if (sc->sc_doseeks)
-		hpaddr->hpcs1 = HP_SEEK|HP_GO;
-	else {
-		sn = (sn + st->nsect - st->sdist) % st->nsect;
-		hpaddr->hpda = (tn << 8) + sn;
-		hpaddr->hpcs1 = HP_SEARCH|HP_GO;
-	}
-	return (MBU_STARTED);
-}
-
-hpstart(mi)
-	register struct mba_device *mi;
-{
-	register struct hpdevice *hpaddr = (struct hpdevice *)mi->mi_drv;
-	register struct buf *bp = mi->mi_tab.b_actf;
-	register struct hpst *st = &hpst[mi->mi_type];
-	struct hpsoftc *sc = &hpsoftc[mi->mi_unit];
-	daddr_t bn;
-	int sn, tn, cn;
-
-	if (ML11)
-		hpaddr->hpda = bp->b_blkno + sc->sc_blkdone;
-	else {
-		if (bp->b_flags & B_BAD) {
-			bn = sc->sc_badbn;
-			cn = bn / st->nspc;
-		} else {
-			bn = bp->b_blkno;
-			cn = bp->b_cylin;
-		}
-		sn = bn % st->nspc;
-		if ((bp->b_flags & B_BAD) == 0)
-			sn += sc->sc_blkdone;
-		tn = sn / st->nsect;
-		sn %= st->nsect;
-		cn += tn / st->ntrak;
-		tn %= st->ntrak;
-		hpaddr->hpda = (tn << 8) + sn;
-		hpaddr->hpdc = cn;
-	}
-	mi->mi_tab.b_bdone = dbtob(sc->sc_blkdone);
-	if (sc->sc_hdr) {
-		if (bp->b_flags & B_READ)
-			return (HP_RHDR|HP_GO);
-		else
-			return (HP_WHDR|HP_GO);
-	}
-	return (0);
-}
-
-hpdtint(mi, mbsr)
-	register struct mba_device *mi;
-	int mbsr;
-{
-	register struct hpdevice *hpaddr = (struct hpdevice *)mi->mi_drv;
-	register struct buf *bp = mi->mi_tab.b_actf;
-	register int er1, er2;
-	struct hpsoftc *sc = &hpsoftc[mi->mi_unit];
-	int retry = 0;
-	int npf;
-	daddr_t bn;
-	int bcr;
-
-	bcr = MASKREG(-mi->mi_mba->mba_bcr);
-	if (hpaddr->hpds&HPDS_ERR || mbsr&MBSR_EBITS) {
-		er1 = hpaddr->hper1;
-		er2 = hpaddr->hper2;
-		if (bp->b_flags & B_BAD) {
-			npf = bp->b_error;
-			bn = sc->sc_badbn;
-		} else {
-			npf = btop(bp->b_bcount - bcr);
-			if (er1 & (HPER1_DCK | HPER1_ECH))
-				npf--;
-			bn = bp->b_blkno + npf;
-		}
-		if (HPWAIT(mi, hpaddr) == 0)
-			goto hard;
-#ifdef HPDEBUG
-		if (hpdebug) {
-			int dc = hpaddr->hpdc, da = hpaddr->hpda;
-
-			log(LOG_DEBUG,
-		    "hperr: bp %x cyl %d blk %d blkdone %d as %o dc %x da %x\n",
-				bp, bp->b_cylin, bn, sc->sc_blkdone,
-				hpaddr->hpas&0xff, MASKREG(dc), MASKREG(da));
-			log(LOG_DEBUG,
-				"errcnt %d mbsr=%b er1=%b er2=%b bcr -%d\n",
-				mi->mi_tab.b_errcnt, mbsr, mbsr_bits,
-				MASKREG(er1), HPER1_BITS,
-				MASKREG(er2), HPER2_BITS, bcr);
-		}
-#endif
-		if (er1 & HPER1_HCRC) {
-			er1 &= ~(HPER1_HCE|HPER1_FER);
-			er2 &= ~HPER2_BSE;
-		}
-		if (er1 & HPER1_WLE) {
-			log(LOG_WARNING, "hp%d: write locked\n",
-			    hpunit(bp->b_dev));
-			bp->b_flags |= B_ERROR;
-		} else if (sc->sc_hdr) {
-			goto hard;
-		} else if (RM80 && er2&HPER2_SSE) {
-			(void) hpecc(mi, SSE);
-			return (MBD_RESTARTED);
-		} else if ((er2 & HPER2_BSE) && !ML11) {
-			if (hpecc(mi, BSE))
-				return (MBD_RESTARTED);
-			goto hard;
-		} else if (MASKREG(er1) == HPER1_FER && RP06) {
-			if (hpecc(mi, BSE))
-				return (MBD_RESTARTED);
-			goto hard;
-		} else if ((er1 & (HPER1_DCK | HPER1_ECH)) == HPER1_DCK &&
-		    mi->mi_tab.b_errcnt >= 3) {
-			if (hpecc(mi, ECC))
-				return (MBD_RESTARTED);
-			/*
-			 * ECC corrected.  Only log retries below
-			 * if we got errors other than soft ECC
-			 * (as indicated by additional retries).
-			 */
-			if (mi->mi_tab.b_errcnt == 3)
-				mi->mi_tab.b_errcnt = 0;
-		} else if ((er1 & HPER1_HCRC) && !ML11 && hpecc(mi, BSE)) {
- 			/*
- 			 * HCRC means the header is screwed up and the sector
- 			 * might well exist in the bad sector table, 
-			 * better check....
- 			 */
-			return (MBD_RESTARTED);
-		} else if (++mi->mi_tab.b_errcnt > 27 ||
-		    (ML11 && mi->mi_tab.b_errcnt > 15) ||
-		    mbsr & MBSR_HARD ||
-		    er1 & HPER1_HARD ||
-		    (!ML11 && (er2 & HPER2_HARD))) {
-hard:
-			bp->b_blkno = bn;		/* XXX */
-			harderr(bp, "hp");
-			if (mbsr & (MBSR_EBITS &~ (MBSR_DTABT|MBSR_MBEXC)))
-				printf("mbsr=%b ", mbsr, mbsr_bits);
-			printf("er1=%b er2=%b",
-			    MASKREG(hpaddr->hper1), HPER1_BITS,
-			    MASKREG(hpaddr->hper2), HPER2_BITS);
-			if (sc->sc_hdr)
-				printf(" (hdr i/o)");
-			printf("\n");
-			bp->b_flags |= B_ERROR;
-			bp->b_flags &= ~B_BAD;
-		} else
-			retry = 1;
-		hpaddr->hpcs1 = HP_DCLR|HP_GO;
-		if (retry && (mi->mi_tab.b_errcnt & 07) == 4) {
-			hpaddr->hpcs1 = HP_RECAL|HP_GO;
-			sc->sc_recal = 1;
-			return (MBD_REPOSITION);
-		}
-	}
-#ifdef HPDEBUG
-	else
-		if (hpdebug && sc->sc_recal) {
-			log(LOG_DEBUG,
-			    "recal %d errcnt %d mbsr=%b er1=%b er2=%b\n",
-			    sc->sc_recal, mi->mi_tab.b_errcnt, mbsr, mbsr_bits,
-			    hpaddr->hper1, HPER1_BITS,
-			    hpaddr->hper2, HPER2_BITS);
-		}
-#endif
-	(void)HPWAIT(mi, hpaddr);
-	if (retry)
-		return (MBD_RETRY);
-	if (mi->mi_tab.b_errcnt >= 16) {
-		/*
-		 * This is fast and occurs rarely; we don't
-		 * bother with interrupts.
-		 */
-		hpaddr->hpcs1 = HP_RTC|HP_GO;
-		(void)HPWAIT(mi, hpaddr);
-		mbclrattn(mi);
-	}
-	if (mi->mi_tab.b_errcnt && (bp->b_flags & B_ERROR) == 0)
-		log(LOG_INFO, "hp%d%c: %d retries %sing sn%d\n",
-		    hpunit(bp->b_dev), 'a'+(minor(bp->b_dev)&07),
-		    mi->mi_tab.b_errcnt,
-		    (bp->b_flags & B_READ) ? "read" : "writ",
-		    (bp->b_flags & B_BAD) ?
-		    sc->sc_badbn : bp->b_blkno + sc->sc_blkdone);
-	if ((bp->b_flags & B_BAD) && hpecc(mi, CONT))
-		return (MBD_RESTARTED);
-	sc->sc_hdr = 0;
-	sc->sc_blkdone = 0;
-	bp->b_resid = bcr;
-	if (!ML11) {
-		hpaddr->hpof = HPOF_FMT22;
-		hpaddr->hpcs1 = HP_RELEASE|HP_GO;
-	}
-	return (MBD_DONE);
-}
-
-/*
- * Wait (for a bit) for a drive to come ready;
- * returns nonzero on success.
- */
-hpwait(mi)
-	register struct mba_device *mi;
-{
-	register struct hpdevice *hpaddr = (struct hpdevice *)mi->mi_drv;
-	register i = 100000;
-
-	while ((hpaddr->hpds & HPDS_DRY) == 0 && --i)
-		DELAY(10);
-	if (i == 0)
-		printf("hp%d: intr, not ready\n", mi->mi_unit);
-	return (i);
-}
-
-hpread(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-	register int unit = hpunit(dev);
-
-	if (unit >= NHP)
-		return (ENXIO);
-	return (physio(hpstrategy, &rhpbuf[unit], dev, B_READ, minphys, uio));
-}
-
-hpwrite(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-	register int unit = hpunit(dev);
-
-	if (unit >= NHP)
-		return (ENXIO);
-	return (physio(hpstrategy, &rhpbuf[unit], dev, B_WRITE, minphys, uio));
-}
-
-/*ARGSUSED*/
-hpioctl(dev, cmd, data, flag)
-	dev_t dev;
-	int cmd;
-	caddr_t data;
-	int flag;
-{
-
-	switch (cmd) {
-
-	case DKIOCHDR:	/* do header read/write */
-		hpsoftc[hpunit(dev)].sc_hdr = 1;
-		return (0);
-
-	default:
-		return (ENXIO);
-	}
-}
-
-hpecc(mi, flag)
-	register struct mba_device *mi;
-	int flag;
-{
-	register struct mba_regs *mbp = mi->mi_mba;
-	register struct hpdevice *rp = (struct hpdevice *)mi->mi_drv;
-	register struct buf *bp = mi->mi_tab.b_actf;
-	register struct hpst *st = &hpst[mi->mi_type];
-	struct hpsoftc *sc = &hpsoftc[mi->mi_unit];
-	int npf, o;
-	int bn, cn, tn, sn;
-	int bcr;
-
-	bcr = MASKREG(-mbp->mba_bcr);
-	if (bp->b_flags & B_BAD)
-		npf = bp->b_error;
-	else {
-		npf = bp->b_bcount - bcr;
-		/*
-		 * Watch out for fractional sector at end of transfer;
-		 * want to round up if finished, otherwise round down.
-		 */
-		if (bcr == 0)
-			npf += 511;
-		npf = btodb(npf);
-	}
-	o = (int)bp->b_un.b_addr & PGOFSET;
-	bn = bp->b_blkno;
-	cn = bp->b_cylin;
-	sn = bn%(st->nspc) + npf;
-	tn = sn/st->nsect;
-	sn %= st->nsect;
-	cn += tn/st->ntrak;
-	tn %= st->ntrak;
-	bn += npf;
-	switch (flag) {
-	case ECC: {
-		register int i;
-		caddr_t addr;
-		struct pte mpte;
-		int bit, byte, mask;
-
-		npf--;		/* because block in error is previous block */
-		bn--;
-		if (bp->b_flags & B_BAD)
-			bn = sc->sc_badbn;
-		log(LOG_WARNING, "hp%d%c: soft ecc sn%d\n", hpunit(bp->b_dev),
-		    'a'+(minor(bp->b_dev)&07), bn);
-		mask = MASKREG(rp->hpec2);
-		i = MASKREG(rp->hpec1) - 1;		/* -1 makes 0 origin */
-		bit = i&07;
-		i = (i&~07)>>3;
-		byte = i + o;
-		while (i < 512 && (int)dbtob(npf)+i < bp->b_bcount && bit > -11) {
-			mpte = mbp->mba_map[npf+btop(byte)];
-			addr = ptob(mpte.pg_pfnum) + (byte & PGOFSET);
-			putmemc(addr, getmemc(addr)^(mask<<bit));
-			byte++;
-			i++;
-			bit -= 8;
-		}
-		if (bcr == 0)
-			return (0);
-		npf++;
-		break;
-		}
-
-	case SSE:
-		rp->hpof |= HPOF_SSEI;
-		if (bp->b_flags & B_BAD) {
-			bn = sc->sc_badbn;
-			goto fixregs;
-		}
-		mbp->mba_bcr = -(bp->b_bcount - (int)ptob(npf));
-		break;
-
-	case BSE:
- 		if (rp->hpof & HPOF_SSEI)
- 			sn++;
-#ifdef HPBDEBUG
-		if (hpbdebug)
-		log(LOG_DEBUG, "hpecc, BSE: bn %d cn %d tn %d sn %d\n", bn, cn, tn, sn);
-#endif
-		if (bp->b_flags & B_BAD)
-			return (0);
-		if ((bn = isbad(&hpbad[mi->mi_unit], cn, tn, sn)) < 0)
-			return (0);
-		bp->b_flags |= B_BAD;
-		bp->b_error = npf + 1;
- 		rp->hpof &= ~HPOF_SSEI;
-		bn = st->ncyl*st->nspc - st->nsect - 1 - bn;
-		sc->sc_badbn = bn;
-	fixregs:
-		cn = bn/st->nspc;
-		sn = bn%st->nspc;
-		tn = sn/st->nsect;
-		sn %= st->nsect;
-		bcr = bp->b_bcount - (int)ptob(npf);
-		bcr = MIN(bcr, 512);
-		mbp->mba_bcr = -bcr;
-#ifdef HPBDEBUG
-		if (hpbdebug)
-		log(LOG_DEBUG, "revector to cn %d tn %d sn %d\n", cn, tn, sn);
-#endif
-		break;
-
-	case CONT:
-#ifdef HPBDEBUG
-		if (hpbdebug)
-		log(LOG_DEBUG, "hpecc, CONT: bn %d cn %d tn %d sn %d\n", bn,cn,tn,sn);
-#endif
-		bp->b_flags &= ~B_BAD;
-		if ((int)ptob(npf) >= bp->b_bcount)
-			return (0);
-		mbp->mba_bcr = -(bp->b_bcount - (int)ptob(npf));
-		break;
-	}
-	rp->hpcs1 = HP_DCLR|HP_GO;
-	if (rp->hpof & HPOF_SSEI)
-		sn++;
-	rp->hpdc = cn;
-	rp->hpda = (tn<<8) + sn;
-	mbp->mba_sr = -1;
-	mbp->mba_var = (int)ptob(npf) + o;
-	rp->hpcs1 = bp->b_flags&B_READ ? HP_RCOM|HP_GO : HP_WCOM|HP_GO;
-	mi->mi_tab.b_errcnt = 0;	/* error has been corrected */
-	sc->sc_blkdone = npf;
-	return (1);
-}
-
-#define	DBSIZE	20
-
-hpdump(dev)
-	dev_t dev;
-{
-	register struct mba_device *mi;
-	register struct mba_regs *mba;
-	struct hpdevice *hpaddr;
-	char *start;
-	int num, unit;
-	register struct hpst *st;
-
-	num = maxfree;
-	start = 0;
-	unit = hpunit(dev);
-	if (unit >= NHP)
-		return (ENXIO);
-#define	phys(a,b)	((b)((int)(a)&0x7fffffff))
-	mi = phys(hpinfo[unit],struct mba_device *);
-	if (mi == 0 || mi->mi_alive == 0)
-		return (ENXIO);
-	mba = phys(mi->mi_hd, struct mba_hd *)->mh_physmba;
-	mba->mba_cr = MBCR_INIT;
-	hpaddr = (struct hpdevice *)&mba->mba_drv[mi->mi_drive];
-	if ((hpaddr->hpds & HPDS_VV) == 0) {
-		hpaddr->hpcs1 = HP_DCLR|HP_GO;
-		hpaddr->hpcs1 = HP_PRESET|HP_GO;
-		hpaddr->hpof = HPOF_FMT22;
-	}
-	st = &hpst[mi->mi_type];
-	if (dumplo < 0)
-		return (EINVAL);
-	if (dumplo + num >= st->sizes[minor(dev)&07].nblocks)
-		num = st->sizes[minor(dev)&07].nblocks - dumplo;
-	while (num > 0) {
-		register struct pte *hpte = mba->mba_map;
-		register int i;
-		int blk, cn, sn, tn;
-		daddr_t bn;
-
-		blk = num > DBSIZE ? DBSIZE : num;
-		bn = dumplo + btop(start);
-		cn = bn/st->nspc + st->sizes[minor(dev)&07].cyloff;
-		sn = bn%st->nspc;
-		tn = sn/st->nsect;
-		sn = sn%st->nsect;
-		hpaddr->hpdc = cn;
-		hpaddr->hpda = (tn << 8) + sn;
-		for (i = 0; i < blk; i++)
-			*(int *)hpte++ = (btop(start)+i) | PG_V;
-		mba->mba_sr = -1;
-		mba->mba_bcr = -(blk*NBPG);
-		mba->mba_var = 0;
-		hpaddr->hpcs1 = HP_WCOM | HP_GO;
-		while ((hpaddr->hpds & HPDS_DRY) == 0)
-			DELAY(10);
-		if (hpaddr->hpds&HPDS_ERR)
-			return (EIO);
-		start += blk*NBPG;
-		num -= blk;
-	}
-	return (0);
-}
-
-hpsize(dev)
-	dev_t dev;
-{
-	int unit = hpunit(dev);
-	struct mba_device *mi;
-	struct hpst *st;
-
-	if (unit >= NHP || (mi = hpinfo[unit]) == 0 || mi->mi_alive == 0)
-		return (-1);
-	st = &hpst[mi->mi_type];
-	return ((int)st->sizes[minor(dev) & 07].nblocks);
-}
+#endif COMPAT_42
 #endif
