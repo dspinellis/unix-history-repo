@@ -1,12 +1,12 @@
-/*	vbavar.h	1.2	86/01/12	*/
+/*	vbavar.h	1.3	86/01/20	*/
 
 /*
  * This file contains definitions related to the kernel structures
- * for dealing with the Versabus adapters.
+ * for dealing with the VERSAbus adapters.
  *
- * Each Versabus has a vba_hd structure.
- * Each Versabus controller which is not a device has a vba_ctlr structure.
- * Each Versabus device has a vba_device structure.
+ * Each VERSAbus has a vba_hd structure.
+ * Each VERSAbus controller which is not a device has a vba_ctlr structure.
+ * Each VERSAbus device has a vba_device structure.
  */
 
 #ifndef LOCORE
@@ -24,8 +24,8 @@ struct	vba_hd {
  *
  * If a controller has devices attached, then there are
  * cross-referenced vba_drive structures.
- * This structure is the one which is queued in Versabus resource wait,
- * and saves the information about Versabus resources which are used.
+ * This structure is the one which is queued in VERSAbus resource wait,
+ * and saves the information about VERSAbus resources which are used.
  * The queue of devices waiting to transfer is also attached here.
  */
 struct vba_ctlr {
@@ -38,7 +38,7 @@ struct vba_ctlr {
 	struct	vba_hd *um_hd;
 /* the driver saves the prototype command here for use in its go routine */
 	int	um_cmd;		/* communication to dgo() */
-	int	um_vbinfo;	/* save Versabus registers, etc */
+	int	um_vbinfo;	/* save VERSAbus registers, etc */
 	struct	buf um_tab;	/* queue of devices for this controller */
 };
 
@@ -52,10 +52,10 @@ struct vba_ctlr {
  * structure.
  *
  * This structure contains all the information necessary to run
- * a Versabus device.  It also contains information
- * for slaves of Versabus controllers as to which device on the slave
+ * a VERSAbus device.  It also contains information
+ * for slaves of VERSAbus controllers as to which device on the slave
  * this is.  A flags field here can also be given in the system specification
- * and is used to tell which vcx lines are hard wired or other device
+ * and is used to tell which tty lines are hard wired or other device
  * specific parameters.
  */
 struct vba_device {
@@ -67,7 +67,7 @@ struct vba_device {
 	int	(**ui_intr)();	/* interrupt handler(s) */
 	caddr_t	ui_addr;	/* address of device in i/o space */
 	short	ui_dk;		/* if init 1 set to number for iostat */
-	short	ui_flags;	/* parameter from system specification */
+	long	ui_flags;	/* parameter from system specification */
 	short	ui_alive;	/* device exists */
 	short	ui_type;	/* driver specific type information */
 	caddr_t	ui_physaddr;	/* phys addr, for standalone (dump) code */
@@ -82,7 +82,7 @@ struct vba_device {
 /*
  * Per-driver structure.
  *
- * Each Versabus driver defines entries for a set of routines
+ * Each VERSAbus driver defines entries for a set of routines
  * as well as an array of types which are acceptable to it.
  * These are used at boot time by the configuration program.
  */
@@ -114,8 +114,8 @@ extern	struct	vba_ctlr vbminit[];
 extern	struct	vba_device vbdinit[];
 
 /*
- * Versabus device address space is mapped by VMEMmap
- * into virtual address umem[][].
+ * VERSAbus device address space is mapped by VMEMmap
+ * into virtual address vmem[][].
  */
 extern	struct pte VMEMmap[];	/* vba device addr pte's */
 extern	char vmem[];		/* vba device addr space */
