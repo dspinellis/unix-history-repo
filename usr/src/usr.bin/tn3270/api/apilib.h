@@ -1,5 +1,7 @@
 /*
  * What one needs to specify
+ *
+ * @(#)apilib.h	1.2 (Berkeley) %G%
  */
 
 extern int
