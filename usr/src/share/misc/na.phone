@@ -1,5 +1,5 @@
 # Area Code : City : State/Province : State/Province Abbrev.
-#	@(#)na.phone	5.2 (Berkeley) %G%
+#	@(#)na.phone	5.3 (Berkeley) %G%
 201:Ashbury Park:New Jersey:NJ
 201:Newark:New Jersey:NJ
 202::District of Columbia:DC
@@ -165,6 +165,7 @@
 705:North Bay:Ontario:ON
 707:Eureka:California:CA
 707:Napa:California:CA
+708:Chicago:Illinois:IL
 709:St. John's:Newfoundland:NF
 712:Council Bluffs:Iowa:IA
 713:Houston:Texas:TX
