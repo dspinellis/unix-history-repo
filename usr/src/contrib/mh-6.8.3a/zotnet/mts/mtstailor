@@ -1,0 +1,4 @@
+mmdfldir:	/var/mail
+mmdflfil:	
+hostable:	/usr/contrib/mh-6.8/lib/hosts
+servers:	localhost \01localnet
