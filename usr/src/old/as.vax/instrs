@@ -1,6 +1,6 @@
 ##
 ##	Copyright (c) 1982 Regents of the University of California
-##	@(#)instrs 4.6 %G%
+##	@(#)instrs 4.7 %G%
 ##
 ##	Robert R. Henry
 ##	University of California, Berkeley
@@ -53,7 +53,7 @@
 ##	$6	as, adb		primary opcode byte
 ##	
 ##	$7	as, adb		number of arguments
-##	$8	as, adb		1st operand: access A,R,W,M,I,B
+##	$8	as, adb		1st operand: access A,V,R,W,M,I,B
 ##	$9	as, adb		1st operand: type, BWLQOFDGH
 ##
 ##	$10	as, adb		2nd operand: access
@@ -82,7 +82,8 @@
 ##	code byte
 ##	number of arguments
 ##	Access type
-##		A		for address
+##		A		for address, only in memory
+##		V		for address [sic], either in memory or register
 ##		W		for writing
 ##		R		for reading
 ##		M		for modifying
@@ -347,11 +348,11 @@ BEGIN{
 # cmpp3		HARD HARD	CORE 0x35	3  R W  A B  A B 
 # cmpp4		HARD HARD	CORE 0x37	4  R W  A B  R W  A B 
 	 	 	
-# insv		INSV -1		CORE 0xf0	4  R L  R L  R B  W B 
-# extv		EXTV TN1	CORE 0xee	4  R L  R B  R B  W L 
-# extzv		EXTZV TN1	CORE 0xef	4  R L  R B  R B  W L 
-# cmpv		HARD HARD	CORE 0xec	4  R L  R B  R B  R L 
-# cmpzv		HARD HARD	CORE 0xed	4  R L  R B  R B  R L 
+# insv		INSV -1		CORE 0xf0	4  R L  R L  R B  V B 
+# extv		EXTV TN1	CORE 0xee	4  R L  R B  V B  W L 
+# extzv		EXTZV TN1	CORE 0xef	4  R L  R B  V B  W L 
+# cmpv		HARD HARD	CORE 0xec	4  R L  R B  V B  R L 
+# cmpzv		HARD HARD	CORE 0xed	4  R L  R B  V B  R L 
 	 	 	
 # editpc	HARD HARD	CORE 0x38	4  R W  A B  A B  A B 
 # locc		HARD HARD	CORE 0x3a	3  R B  R W  A B 
@@ -382,14 +383,14 @@ BEGIN{
 # bitw		BIT TN1		CORE 0xb3	2  R W  R W 
 # bitl		BIT TN1		CORE 0xd3	2  R L  R L 
 	 	 	
-# bbc		CBR JBC		CORE 0xe1	3  R L  R B  B B 
-# bbcc		CBR JBCC	CORE 0xe5	3  R L  R B  B B 
-# bbcci		CBR JBCC	CORE 0xe7	3  R L  R B  B B 
-# bbcs		CBR JBCS	CORE 0xe3	3  R L  R B  B B 
-# bbs		CBR JBS		CORE 0xe0	3  R L  R B  B B 
-# bbsc		CBR JBSC	CORE 0xe4	3  R L  R B  B B 
-# bbss		CBR JBSS	CORE 0xe2	3  R L  R B  B B 
-# bbssi		CBR JBSS	CORE 0xe6	3  R L  R B  B B 
+# bbc		CBR JBC		CORE 0xe1	3  R L  V B  B B 
+# bbcc		CBR JBCC	CORE 0xe5	3  R L  V B  B B 
+# bbcci		CBR JBCC	CORE 0xe7	3  R L  V B  B B 
+# bbcs		CBR JBCS	CORE 0xe3	3  R L  V B  B B 
+# bbs		CBR JBS		CORE 0xe0	3  R L  V B  B B 
+# bbsc		CBR JBSC	CORE 0xe4	3  R L  V B  B B 
+# bbss		CBR JBSS	CORE 0xe2	3  R L  V B  B B 
+# bbssi		CBR JBSS	CORE 0xe6	3  R L  V B  B B 
 # bcc		CBR JHIS	CORE 0x1e	1  B B 
 # bcs		CBR JLO		CORE 0x1f	1  B B 
 # blbs		CBR JLBS	CORE 0xe8	2  R L  B B 
@@ -421,7 +422,7 @@ BEGIN{
 # clro		CLR TN1		ESCD 0x7c	1  W O 
 # clrf		CLR TN1		CORE 0xd4	1  W F 
 # clrd		CLR TN1		CORE 0x7c	1  W D 
-# clrg		CLR TN1		CORE 0x7c	1  W D 
+# clrg		CLR TN1		CORE 0x7c	1  W G 
 # clrh		CLR TN1		ESCD 0x7c	1  W H 
 	 	 	
 # cvtbw		CVT TNX2	CORE 0x99	2  R B  W W 
@@ -475,8 +476,8 @@ BEGIN{
 # cvthd		CVT TNX2	ESCD 0xf7	2  R H  W D 
 # cvthg		CVT TNX2	ESCD 0x76	2  R H  W G 
 	 	 	
-# ffc		HARD HARD	CORE 0xeb	4  R L  R B  R B  W L 
-# ffs		HARD HARD	CORE 0xea	4  R L  R B  R B  W L 
+# ffc		HARD HARD	CORE 0xeb	4  R L  R B  V B  W L 
+# ffs		HARD HARD	CORE 0xea	4  R L  R B  V B  W L 
 	 	 	
 # index		HARD HARD	CORE 0x0a	6  R L  R L  R L  R L  R L  W L 
 	 	 	
@@ -495,7 +496,7 @@ BEGIN{
 # popr		HARD HARD	CORE 0xba	1  R W 
 	 	 	
 # mnegb		NEG TN1		CORE 0x8e	2  R B  W B 
-# mnegw		NEG TN1		CORE 0xae	2  R W  W L 
+# mnegw		NEG TN1		CORE 0xae	2  R W  W W 
 # mnegl		NEG TN1		CORE 0xce	2  R L  W L 
 # mnegf		NEG TN1		CORE 0x52	2  R F  W F 
 # mnegg		NEG TN1		ESCD 0x52	2  R G  W G 
