@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.37	81/12/09	*/
+/*	tcp_input.c	1.38	81/12/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -67,7 +67,7 @@ COUNT(TCP_INPUT);
 #if vax
 		ti->ti_len = htons(ti->ti_len);
 #endif
-		if ((ti->ti_sum = in_cksum(m, len)) != 0xffff) {
+		if (ti->ti_sum = in_cksum(m, len)) {
 			tcpstat.tcps_badsum++;
 			printf("tcp cksum %x\n", ti->ti_sum);
 			goto drop;
@@ -79,17 +79,18 @@ COUNT(TCP_INPUT);
 	 * process tcp options and adjust length.
 	 */
 	off = ti->ti_off << 2;
-	if (off < sizeof (struct tcphdr) || off > ti->ti_len) {
+	if (off < sizeof (struct tcphdr) || off > tlen) {
 		tcpstat.tcps_badoff++;
 		goto drop;
 	}
 	ti->ti_len = tlen - off;
 #if 0
-	if (off > sizeof (struct tcphdr) >> 2)
+	if (off > sizeof (struct tcphdr))
 		tcp_options(ti);
 #endif
 	tiflags = ti->ti_flags;
 
+#if vax
 	/*
 	 * Convert tcp protocol specific fields to host format.
 	 */
@@ -97,6 +98,7 @@ COUNT(TCP_INPUT);
 	ti->ti_ack = ntohl(ti->ti_ack);
 	ti->ti_win = ntohs(ti->ti_win);
 	ti->ti_urp = ntohs(ti->ti_urp);
+#endif
 
 	/*
 	 * Locate pcb for segment.
@@ -127,6 +129,8 @@ COUNT(TCP_INPUT);
 	 * and then do TCP input processing.
 	 */
 	tp->rcv_wnd = sbspace(&so->so_rcv);
+	if (tp->rcv_wnd < 0)
+		tp->rcv_wnd = 0;
 
 	switch (tp->t_state) {
 
@@ -154,10 +158,7 @@ COUNT(TCP_INPUT);
 		tcp_sendseqinit(tp);
 		tcp_rcvseqinit(tp);
 		tp->t_state = TCPS_SYN_RECEIVED;
-		if (inp->inp_faddr.s_addr == 0) {
-			inp->inp_faddr = ti->ti_src;
-			inp->inp_fport = ti->ti_sport;
-		}
+		in_pcbconnect(inp, ti->ti_src, ti->ti_sport);
 		goto trimthenstep6;
 
 	/*
@@ -175,7 +176,7 @@ COUNT(TCP_INPUT);
 	case TCPS_SYN_SENT:
 		if ((tiflags & TH_ACK) &&
 		    (SEQ_LEQ(ti->ti_ack, tp->iss) ||
-		     SEQ_GT(ti->ti_ack, tp->snd_nxt)))
+		     SEQ_GT(ti->ti_ack, tp->snd_max)))
 			goto dropwithreset;
 		if (tiflags & TH_RST) {
 			if (tiflags & TH_ACK)
@@ -184,30 +185,25 @@ COUNT(TCP_INPUT);
 		}
 		if ((tiflags & TH_SYN) == 0)
 			goto drop;
-		tp->iss = ti->ti_ack;
-		tcp_sendseqinit(tp);
+		tp->snd_una = ti->ti_ack;
 		tp->irs = ti->ti_seq;
 		tcp_rcvseqinit(tp);
 		tp->t_flags |= TF_ACKNOW;
 		if (SEQ_GT(tp->snd_una, tp->iss)) {
 			tp->t_state = TCPS_ESTABLISHED;
 			(void) tcp_reass(tp, (struct tcpiphdr *)0);
+			tp->snd_wl1 = ti->ti_seq;
 		} else
 			tp->t_state = TCPS_SYN_RECEIVED;
 		goto trimthenstep6;
 
 trimthenstep6:
 		/*
-		 * If had syn, advance ti->ti_seq to correspond
-		 * to first data byte.
-		 */
-		if (tiflags & TH_SYN)
-			ti->ti_seq++;
-
-		/*
+		 * Advance ti->ti_seq to correspond to first data byte.
 		 * If data, trim to stay within window,
 		 * dropping FIN if necessary.
 		 */
+		ti->ti_seq++;
 		if (ti->ti_len > tp->rcv_wnd) {
 			todrop = ti->ti_len - tp->rcv_wnd;
 			m_adj(m, -todrop);
@@ -225,7 +221,7 @@ trimthenstep6:
 	if (tp->rcv_wnd == 0) {
 		/*
 		 * If window is closed can only take segments at
-		 * window edge, and have to drop data and EOL from
+		 * window edge, and have to drop data and PUSH from
 		 * incoming segments.
 		 */
 		if (tp->rcv_nxt != ti->ti_seq)
@@ -236,7 +232,7 @@ trimthenstep6:
 		}
 	} else {
 		/*
-		 * If segment begins before rcv_next, drop leading
+		 * If segment begins before rcv_nxt, drop leading
 		 * data (and SYN); if nothing left, just ack.
 		 */
 		if (SEQ_GT(tp->rcv_nxt, ti->ti_seq)) {
@@ -294,7 +290,7 @@ trimthenstep6:
 	case TCPS_SYN_RECEIVED:
 		if (inp->inp_socket->so_options & SO_ACCEPTCONN) {
 			tp->t_state = TCPS_LISTEN;
-			inp->inp_faddr.s_addr = 0;
+			in_pcbdisconnect(inp);
 			goto drop;
 		}
 		tcp_drop(tp, ECONNREFUSED);
@@ -319,7 +315,7 @@ trimthenstep6:
 	 * error and we send an RST and drop the connection.
 	 */
 	if (tiflags & TH_SYN) {
-		tcp_drop(tp, ECONNABORTED);
+		tcp_drop(tp, ECONNRESET);
 		goto dropwithreset;
 	}
 
@@ -341,17 +337,18 @@ trimthenstep6:
 	 */
 	case TCPS_SYN_RECEIVED:
 		if (SEQ_GT(tp->snd_una, ti->ti_ack) ||
-		    SEQ_GT(ti->ti_ack, tp->snd_nxt))
+		    SEQ_GT(ti->ti_ack, tp->snd_max))
 			goto dropwithreset;
 		soisconnected(so);
 		tp->t_state = TCPS_ESTABLISHED;
 		(void) tcp_reass(tp, (struct tcpiphdr *)0);
+		tp->snd_wl1 = tp->ti_seq - 1;
 		/* fall into ... */
 
 	/*
 	 * In ESTABLISHED state: drop duplicate ACKs; ACK out of range
 	 * ACKs.  If the ack is in the range
-	 *	tp->snd_una < ti->ti_ack <= tp->snd_nxt
+	 *	tp->snd_una < ti->ti_ack <= tp->snd_max
 	 * then advance tp->snd_una to ti->ti_ack and drop
 	 * data from the retransmission queue.  If this ACK reflects
 	 * more up to date window information we update our window information.
@@ -365,7 +362,7 @@ trimthenstep6:
 
 		if (SEQ_LT(ti->ti_ack, tp->snd_una))
 			break;
-		if (SEQ_GT(ti->ti_ack, tp->snd_nxt))
+		if (SEQ_GT(ti->ti_ack, tp->snd_max))
 			goto dropafterack;
 		acked = ti->ti_ack - tp->snd_una;
 		if (acked > so->so_snd.sb_cc) {
@@ -376,6 +373,7 @@ trimthenstep6:
 			sbdrop(&so->so_snd, acked);
 			acked = 0;
 		}
+		tp->snd_una = ti->ti_ack;
 
 		/*
 		 * If transmit timer is running and timed sequence
@@ -387,8 +385,6 @@ trimthenstep6:
 			    (1 - tcp_beta) * tp->t_rtt;
 			tp->t_rtt = 0;
 		}
-
-		tp->snd_una = ti->ti_ack;
 
 		/*
 		 * Update window information.
@@ -546,7 +542,7 @@ dropafterack:
 	if (tiflags & TH_RST)
 		goto drop;
 	tcp_respond(ti, tp->rcv_nxt, tp->snd_nxt, TH_ACK);
-	goto drop;
+	return;
 
 dropwithreset:
 	/*
@@ -562,7 +558,7 @@ dropwithreset:
 			ti->ti_len++;
 		tcp_respond(ti, ti->ti_seq+ti->ti_len, (tcp_seq)0, TH_RST|TH_ACK);
 	}
-	goto drop;
+	return;
 
 drop:
 	/*
