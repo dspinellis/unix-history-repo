@@ -5,7 +5,7 @@
  * %sccs.include.redist.c%
  */
 #ifndef lint
-static char sccsid[] = "@(#)tisrc.c	7.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)tisrc.c	7.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -32,6 +32,7 @@ static char sccsid[] = "@(#)tisrc.c	7.3 (Berkeley) %G%";
 		    if (x < 0) {perror("a"); exit(1);}}
 
 struct	iso_addr eon = {20, 0x47, 0, 6, 3, 0, 0, 0, 25 /*EGP for Berkeley*/};
+struct	iso_addr *iso_addr();
 struct  sockaddr_iso to_s = { sizeof(to_s), AF_ISO }, *to = &to_s;
 struct  sockaddr_iso old_s = { sizeof(to_s), AF_ISO }, *old = &old_s;
 struct	tp_conn_param tp_params;
@@ -110,20 +111,18 @@ maketoaddr()
 		int len =  tlen + TSEL(to) - (caddr_t) to;
 		if (len < sizeof(*to)) len = sizeof(*to);
 		if (len > to->siso_len) {
-			if (old != &old_s) free(old);
-			old = (struct sockaddr_iso *)malloc(len);
-			*old = *to; /* We dont care if all old tsel is copied*/
-			old->siso_len = len;
-			if (to != &to_s) free(to);
+			old = to;
 			to = (struct sockaddr_iso *)malloc(len);
+			*to = *old; /* We dont care if all old tsel is copied*/
+			if (old != &to_s) free(old);
 		}
-		bcopy(Servername, TSEL(old), tlen);
+		bcopy(Servername, TSEL(to), tlen);
+		to->siso_tlen = tlen;
 	} else {
-		old->siso_tlen = sizeof(portnumber);
+		to->siso_tlen = sizeof(portnumber);
 		portnumber = htons(portnumber);
-		bcopy((char *)&portnumber, TSEL(old), sizeof(portnumber));
+		bcopy((char *)&portnumber, TSEL(to), sizeof(portnumber));
 	}
-	bcopy(old, to, old->siso_len);
 }
 
 tisrc() {
