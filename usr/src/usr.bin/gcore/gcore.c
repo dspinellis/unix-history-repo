@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)gcore.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)gcore.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -152,10 +152,8 @@ main(argc, argv)
 			printf("Zombie.\n");
 			continue;
 		}
-		if (p->p_flag & SWEXIT) {
-			printf("Process exiting.\n");
-			continue;
-		}
+		if (p->p_flag & SWEXIT)
+			printf("Warning: process exiting.\n");
 		if (p->p_flag & SSYS) {
 			printf("System process.\n");
 			/* i.e. swapper or pagedaemon */
