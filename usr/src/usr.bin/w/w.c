@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)w.c	4.6 (Berkeley) %G%";
+static char *sccsid = "@(#)w.c	4.7 (Berkeley) %G%";
 /*
  * w - print system status (who and what)
  *
@@ -10,7 +10,6 @@ static char *sccsid = "@(#)w.c	4.6 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <utmp.h>
-#include <time.h>
 #include <sys/stat.h>
 #include <sys/dir.h>
 #include <sys/user.h>
@@ -51,8 +50,8 @@ struct	nlist nl[] = {
 #define	X_NSWAP		4
 	{ "_avenrun" },
 #define	X_AVENRUN	5
-	{ "_bootime" },
-#define	X_BOOTIME	6
+	{ "_boottime" },
+#define	X_BOOTTIME	6
 	{ "_nproc" },
 #define	X_NPROC		7
 	{ 0 },
@@ -93,7 +92,8 @@ char firstchar;			/* first char of name of prog invoked as */
 time_t	jobtime;		/* total cpu time visible */
 time_t	now;			/* the current time of day */
 struct	tm *nowt;		/* current time as time struct */
-time_t	bootime, uptime;	/* time of last reboot & elapsed time since */
+struct	timeval boottime;
+time_t	uptime;			/* time of last reboot & elapsed time since */
 int	np;			/* number of processes currently active */
 struct	utmp utmp;
 struct	proc mproc;
@@ -178,12 +178,12 @@ main(argc, argv)
 
 		/*
 		 * Print how long system has been up.
-		 * (Found by looking for "bootime" in kernel)
+		 * (Found by looking for "boottime" in kernel)
 		 */
-		lseek(kmem, (long)nl[X_BOOTIME].n_value, 0);
-		read(kmem, &bootime, sizeof (bootime));
+		lseek(kmem, (long)nl[X_BOOTTIME].n_value, 0);
+		read(kmem, &boottime, sizeof (boottime));
 
-		uptime = now - bootime;
+		uptime = now - boottime.tv_sec;
 		uptime += 30;
 		days = uptime / (60*60*24);
 		uptime %= (60*60*24);
@@ -488,8 +488,10 @@ cont:
 		pr[np].w_flag = mproc.p_flag;
 		pr[np].w_size = mproc.p_dsize + mproc.p_ssize;
 		pr[np].w_igintr = (((int)up.u_signal[2]==1) + 2*((int)up.u_signal[2]>1) + 3*((int)up.u_signal[3]==1)) + 6*((int)up.u_signal[3]>1);
-		pr[np].w_time = up.u_vm.vm_utime + up.u_vm.vm_stime;
-		pr[np].w_ctime = up.u_cvm.vm_utime + up.u_cvm.vm_stime;
+		pr[np].w_time =
+		    up.u_ru.ru_utime.tv_sec + up.u_ru.ru_stime.tv_sec;
+		pr[np].w_ctime =
+		    up.u_cru.ru_utime.tv_sec + up.u_cru.ru_stime.tv_sec;
 		pr[np].w_tty = up.u_ttyd;
 		up.u_comm[14] = 0;	/* Bug: This bombs next field. */
 		strcpy(pr[np].w_comm, up.u_comm);

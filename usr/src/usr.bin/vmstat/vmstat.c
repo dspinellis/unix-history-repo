@@ -1,12 +1,12 @@
-static	char *sccsid = "@(#)vmstat.c	4.7 (Berkeley) %G%";
+static	char *sccsid = "@(#)vmstat.c	4.8 (Berkeley) %G%";
 #include <stdio.h>
 #include <sys/param.h>
 #include <sys/vm.h>
 #include <sys/dk.h>
 #include <nlist.h>
 #include <sys/buf.h>
-#include <sys/ubavar.h>
-#include <sys/mbavar.h>
+#include <vaxuba/ubavar.h>
+#include <vaxmba/mbavar.h>
 
 struct nlist nl[] = {
 #define	X_CPTIME	0
@@ -25,8 +25,8 @@ struct nlist nl[] = {
 	{ "_firstfree" },
 #define	X_MAXFREE	7
 	{ "_maxfree" },
-#define	X_BOOTIME	8
-	{ "_bootime" },
+#define	X_BOOTTIME	8
+	{ "_boottime" },
 #define	X_DKXFER	9
 	{ "_dk_xfer" },
 #define X_MBDINIT	10
@@ -77,7 +77,7 @@ char **argv;
 	extern char *ctime();
 	register i,j;
 	int iter, nintv;
-	time_t bootime;
+	time_t boottime;
 	double f1, f2;
 	long t;
 	extern char _sobuf[];
@@ -129,8 +129,8 @@ char **argv;
 	read(mf, &firstfree, sizeof firstfree);
 	lseek(mf, (long)nl[X_MAXFREE].n_value, 0);
 	read(mf, &maxfree, sizeof maxfree);
-	lseek(mf, (long)nl[X_BOOTIME].n_value, 0);
-	read(mf, &bootime, sizeof bootime);
+	lseek(mf, (long)nl[X_BOOTTIME].n_value, 0);
+	read(mf, &boottime, sizeof boottime);
 	lseek(mf, (long)nl[X_HZ].n_value, 0);
 	read(mf, &hz, sizeof hz);
 	for (i = 0; i < DK_NDRIVE; i++) {
@@ -139,7 +139,7 @@ char **argv;
 	}
 	read_names();
 	time(&now);
-	nintv = now - bootime;
+	nintv = now - boottime;
 	if (nintv <= 0 || nintv > 60*60*24*365*10) {
 		printf("Time makes no sense... namelist must be wrong.\n");
 		exit(1);
