@@ -1,4 +1,4 @@
-/*	autoconf.c	4.5	81/02/16	*/
+/*	autoconf.c	4.6	81/02/17	*/
 
 /*
  * Configure the system for the current machine.
@@ -347,7 +347,6 @@ fixctlrmask()
 		*phys(ud->ud_cntrlr, short *) &= ~0xc00;
 	for (ui = ubdinit; ud = phys(ui->ui_driver, struct uba_driver *); ui++)
 		*phys(ud->ud_cntrlr, short *) &= ~0xc00;
-	asm("halt");
 }
 
 /*

@@ -1,11 +1,14 @@
-/*	tm.c	4.11	%G%	*/
+/*	tm.c	4.12	%G%	*/
 
 #include "tm.h"
-#if NTM > 0
+#if NTM03 > 0
 /*
  * TM tape driver
+ *
+ * THIS HANDLES ONLY ONE DRIVE ON ONE CONTROLER, AS WE HAVE NO
+ * WAY TO TEST MULTIPLE TRANSPORTS.
  */
-#define	DELAY(N)		{ register int d; d = N; while (--d > 0); }
+#define	DELAY(N)		{ register int d = N; while (--d > 0); }
 #include "../h/param.h"
 #include "../h/buf.h"
 #include "../h/dir.h"
@@ -27,12 +30,11 @@ struct	buf	ctmbuf;
 struct	buf	rtmbuf;
 
 int	tmcntrlr(), tmslave(), tmdgo(), tmintr();
-struct	uba_dinfo *tmdinfo[NTM];
-struct	uba_minfo *tmminfo[NTM];
+struct	uba_minfo *tmminfo[NTM03];
+struct	uba_dinfo *tmdinfo[NTM11];
 u_short	tmstd[] = { 0772520, 0 };
 struct	uba_driver tmdriver =
 	{ tmcntrlr, tmslave, tmdgo, 0, tmstd, "tm", tmdinfo, tmminfo };
-int	tm_ubinfo;
 
 /* bits in minor device */
 #define	T_NOREWIND	04
@@ -40,21 +42,16 @@ int	tm_ubinfo;
 
 #define	INF	(daddr_t)1000000L
 
-/*
- * Really only handle one tape drive... if you have more than one,
- * you can put all these (and some of the above) in a structure,
- * change the obvious things, and make tmslave smarter, but
- * it is not clear what happens when some drives are transferring while
- * others rewind, so we don't pretend that this driver handles multiple
- * tape drives.
- */
-char	t_openf;
-daddr_t	t_blkno;
-char	t_flags;
-daddr_t	t_nxrec;
-u_short	t_erreg;
-u_short	t_dsreg;
-short	t_resid;
+struct	tm_softc {
+	char	sc_openf;
+	char	sc_flags;
+	daddr_t	sc_blkno;
+	daddr_t	sc_nxrec;
+	u_short	sc_erreg;
+	u_short	sc_dsreg;
+	short	sc_resid;
+	int	sc_ubinfo;
+} tm_softc[NTM03];
 
 #define	SSEEK	1		/* seeking */
 #define	SIO	2		/* doing seq i/o */
@@ -82,6 +79,10 @@ tmcntrlr(um, reg)
 	 * Just in case, we will reference one
 	 * of the more distant registers, and hope for a machine
 	 * check, or similar disaster if this is a ts.
+	 *
+	 * Note: on an 11/780, badaddr will just generate
+	 * a uba error for a ts; but our caller will notice that
+	 * so we won't check for it.
 	 */
 	if (badaddr(&((struct device *)reg)->tmrd, 2))
 		return (0);
@@ -113,43 +114,48 @@ tmopen(dev, flag)
 {
 	register ds, unit;
 	register struct uba_dinfo *ui;
+	register struct tm_softc *sc = &tm_softc[0];
 
 	tmminfo[0]->um_tab.b_flags |= B_TAPE;
 	unit = minor(dev)&03;
-	if (unit>=NTM || t_openf || !(ui = tmdinfo[minor(dev)&03])->ui_alive) {
+	if (unit>=NTM11 || sc->sc_openf || (ui = tmdinfo[0]) == 0 || ui->ui_alive==0) {
 		u.u_error = ENXIO;		/* out of range or open */
 		return;
 	}
 	tcommand(dev, NOP, 1);
-	if ((t_erreg&SELR) == 0) {
-		u.u_error = EIO;		/* offline */
-		return;
+	if ((sc->sc_erreg&SELR) == 0) {
+		u.u_error = EIO;
+		goto eio;
 	}
-	t_openf = 1;
-	if (t_erreg&RWS)
+	sc->sc_openf = 1;
+	if (sc->sc_erreg&RWS)
 		tmwaitrws(dev);			/* wait for rewind complete */
-	while (t_erreg&SDWN)
+	while (sc->sc_erreg&SDWN)
 		tcommand(dev, NOP, 1);		/* await settle down */
-	if ((t_erreg&TUR)==0 ||
-	    ((flag&(FREAD|FWRITE)) == FWRITE && (t_erreg&WRL))) {
+	if ((sc->sc_erreg&TUR)==0 ||
+	    ((flag&(FREAD|FWRITE)) == FWRITE && (sc->sc_erreg&WRL))) {
 		((struct device *)ui->ui_addr)->tmcs = DCLR|GO;
 		u.u_error = EIO;		/* offline or write protect */
 	}
 	if (u.u_error != 0) {
-		t_openf = 0;
+		sc->sc_openf = 0;
+		if (u.u_error == EIO)
+eio:
+			uprintf("tape offline or protected\n");
 		return;
 	}
-	t_blkno = (daddr_t)0;
-	t_nxrec = INF;
-	t_flags = 0;
-	t_openf = 1;
+	sc->sc_blkno = (daddr_t)0;
+	sc->sc_nxrec = INF;
+	sc->sc_flags = 0;
+	sc->sc_openf = 1;
 }
 
 tmwaitrws(dev)
 	register dev;
 {
 	register struct device *addr =
-	    (struct device *)tmdinfo[minor(dev)&03]->ui_addr;
+	    (struct device *)tmdinfo[0]->ui_addr;
+	register struct tm_softc *sc = &tm_softc[0];
 
 	spl5();
 	for (;;) {
@@ -157,8 +163,8 @@ tmwaitrws(dev)
 			spl0();		/* rewind complete */
 			return;
 		}
-		t_flags |= WAITREW;
-		sleep((caddr_t)&t_flags, PRIBIO);
+		sc->sc_flags |= WAITREW;
+		sleep((caddr_t)&sc->sc_flags, PRIBIO);
 	}
 }
 
@@ -166,15 +172,16 @@ tmclose(dev, flag)
 	register dev_t dev;
 	register flag;
 {
+	register struct tm_softc *sc = &tm_softc[0];
 
-	if (flag == FWRITE || ((flag&FWRITE) && (t_flags&LASTIOW))) {
+	if (flag == FWRITE || ((flag&FWRITE) && (sc->sc_flags&LASTIOW))) {
 		tcommand(dev, WEOF, 1);
 		tcommand(dev, WEOF, 1);
 		tcommand(dev, SREV, 1);
 	}
 	if ((minor(dev)&T_NOREWIND) == 0)
 		tcommand(dev, REW, 1);
-	t_openf = 0;
+	sc->sc_openf = 0;
 }
 
 tcommand(dev, com, count)
@@ -210,7 +217,7 @@ tmstrategy(bp)
 
 	tmwaitrws(bp->b_dev);
 	if (bp != &ctmbuf) {
-		p = &t_nxrec;
+		p = &tm_softc[0].sc_nxrec;
 		if (dbtofsb(bp->b_blkno) > *p) {
 			bp->b_flags |= B_ERROR;
 			bp->b_error = ENXIO;		/* past EOF */
@@ -240,23 +247,24 @@ tmstrategy(bp)
 tmstart()
 {
 	register struct buf *bp;
+	register struct uba_minfo *um = tmminfo[0];
 	register struct uba_dinfo *ui;
 	register struct device *addr;
-	register cmd;
-	register daddr_t blkno;
-	int s;
+	register struct tm_softc *sc = &tm_softc[0];
+	int cmd, s;
+	daddr_t blkno;
 
 loop:
-	if ((bp = tmminfo[0]->um_tab.b_actf) == 0)
+	if ((bp = um->um_tab.b_actf) == 0)
 		return;
-	ui = tmdinfo[minor(bp->b_dev)&03];
+	ui = tmdinfo[0];
 	addr = (struct device *)ui->ui_addr;
-	t_dsreg = addr->tmcs;
-	t_erreg = addr->tmer;
-	t_resid = addr->tmbc;
-	t_flags &= ~LASTIOW;
-	if (t_openf < 0 || (addr->tmcs&CUR) == 0) {
-		/* t_openf = -1; ??? */
+	sc->sc_dsreg = addr->tmcs;
+	sc->sc_erreg = addr->tmer;
+	sc->sc_resid = addr->tmbc;
+	sc->sc_flags &= ~LASTIOW;
+	if (sc->sc_openf < 0 || (addr->tmcs&CUR) == 0) {
+		/* sc->sc_openf = -1; ??? */
 		bp->b_flags |= B_ERROR;		/* hard error'ed or !SELR */
 		goto next;
 	}
@@ -268,33 +276,33 @@ loop:
 			goto next;		/* just get status */
 		else {
 			cmd |= bp->b_command;
-			tmminfo[0]->um_tab.b_active = SCOM;
+			um->um_tab.b_active = SCOM;
 			if (bp->b_command == SFORW || bp->b_command == SREV)
 				addr->tmbc = bp->b_repcnt;
 			addr->tmcs = cmd;
 			return;
 		}
 	}
-	if ((blkno = t_blkno) == dbtofsb(bp->b_blkno)) {
+	if ((blkno = sc->sc_blkno) == dbtofsb(bp->b_blkno)) {
 		addr->tmbc = -bp->b_bcount;
 		s = spl6();
-		if (tm_ubinfo == 0)
-			tm_ubinfo = ubasetup(ui->ui_ubanum, bp, 1);
+		if (sc->sc_ubinfo == 0)
+			sc->sc_ubinfo = ubasetup(ui->ui_ubanum, bp, 1);
 		splx(s);
 		if ((bp->b_flags&B_READ) == 0) {
-			if (tmminfo[0]->um_tab.b_errcnt)
+			if (um->um_tab.b_errcnt)
 				cmd |= WIRG;
 			else
 				cmd |= WCOM;
 		} else
 			cmd |= RCOM;
-		cmd |= (tm_ubinfo >> 12) & 0x30;
-		tmminfo[0]->um_tab.b_active = SIO;
-		addr->tmba = tm_ubinfo;
+		cmd |= (sc->sc_ubinfo >> 12) & 0x30;
+		um->um_tab.b_active = SIO;
+		addr->tmba = sc->sc_ubinfo;
 		addr->tmcs = cmd; 
 		return;
 	}
-	tmminfo[0]->um_tab.b_active = SSEEK;
+	um->um_tab.b_active = SSEEK;
 	if (blkno < dbtofsb(bp->b_blkno)) {
 		cmd |= SFORW;
 		addr->tmbc = blkno - dbtofsb(bp->b_blkno);
@@ -306,35 +314,40 @@ loop:
 	return;
 
 next:
-	ubarelse(ui->ui_ubanum, &tm_ubinfo);
-	tmminfo[0]->um_tab.b_actf = bp->av_forw;
+	ubarelse(ui->ui_ubanum, &sc->sc_ubinfo);
+	um->um_tab.b_actf = bp->av_forw;
 	iodone(bp);
 	goto loop;
 }
 
 tmdgo()
 {
+
 }
 
+/*ARGSUSED*/
 tmintr(d)
+	int d;
 {
 	register struct buf *bp;
-	register struct device *addr = (struct device *)tmdinfo[d]->ui_addr;
+	register struct uba_minfo *um = tmminfo[0];
+	register struct device *addr = (struct device *)tmdinfo[0]->ui_addr;
+	register struct tm_softc *sc = &tm_softc[0];
 	register state;
 
-	if (t_flags&WAITREW && (addr->tmer&RWS) == 0) {
-		t_flags &= ~WAITREW;
-		wakeup((caddr_t)&t_flags);
+	if (sc->sc_flags&WAITREW && (addr->tmer&RWS) == 0) {
+		sc->sc_flags &= ~WAITREW;
+		wakeup((caddr_t)&sc->sc_flags);
 	}
-	if ((bp = tmminfo[0]->um_tab.b_actf) == NULL)
+	if ((bp = um->um_tab.b_actf) == NULL)
 		return;
-	t_dsreg = addr->tmcs;
-	t_erreg = addr->tmer;
-	t_resid = addr->tmbc;
+	sc->sc_dsreg = addr->tmcs;
+	sc->sc_erreg = addr->tmer;
+	sc->sc_resid = addr->tmbc;
 	if ((bp->b_flags & B_READ) == 0)
-		t_flags |= LASTIOW;
-	state = tmminfo[0]->um_tab.b_active;
-	tmminfo[0]->um_tab.b_active = 0;
+		sc->sc_flags |= LASTIOW;
+	state = um->um_tab.b_active;
+	um->um_tab.b_active = 0;
 	if (addr->tmcs&ERROR) {
 		while(addr->tmer & SDWN)
 			;			/* await settle down */
@@ -347,17 +360,17 @@ tmintr(d)
 		if ((bp->b_flags&B_READ) && (addr->tmer&(HARD|SOFT)) == RLE)
 			goto out;
 		if ((addr->tmer&HARD)==0 && state==SIO) {
-			if (++tmminfo[0]->um_tab.b_errcnt < 7) {
+			if (++um->um_tab.b_errcnt < 7) {
 				if((addr->tmer&SOFT) == NXM)
 					printf("TM UBA late error\n");
-				t_blkno++;
-				ubarelse(tmdinfo[d]->ui_ubanum, &tm_ubinfo);
+				sc->sc_blkno++;
+				ubarelse(um->um_ubanum, &sc->sc_ubinfo);
 				tmstart();
 				return;
 			}
-		} else if (t_openf>0 && bp != &rtmbuf)
-			t_openf = -1;
-		deverror(bp, t_erreg, t_dsreg);
+		} else if (sc->sc_openf>0 && bp != &rtmbuf)
+			sc->sc_openf = -1;
+		deverror(bp, sc->sc_erreg, sc->sc_dsreg);
 		bp->b_flags |= B_ERROR;
 		state = SIO;
 	}
@@ -365,18 +378,18 @@ out:
 	switch (state) {
 
 	case SIO:
-		t_blkno++;
+		sc->sc_blkno++;
 		/* fall into ... */
 
 	case SCOM:
 		if (bp == &ctmbuf) {
 			switch (bp->b_command) {
 			case SFORW:
-				t_blkno -= bp->b_repcnt;
+				sc->sc_blkno -= bp->b_repcnt;
 				break;
 
 			case SREV:
-				t_blkno += bp->b_repcnt;
+				sc->sc_blkno += bp->b_repcnt;
 				break;
 
 			default:
@@ -387,15 +400,15 @@ out:
 			}
 		}
 errout:
-		tmminfo[0]->um_tab.b_errcnt = 0;
-		tmminfo[0]->um_tab.b_actf = bp->av_forw;
+		um->um_tab.b_errcnt = 0;
+		um->um_tab.b_actf = bp->av_forw;
 		bp->b_resid = -addr->tmbc;
-		ubarelse(tmdinfo[d]->ui_ubanum, &tm_ubinfo);
+		ubarelse(um->um_ubanum, &sc->sc_ubinfo);
 		iodone(bp);
 		break;
 
 	case SSEEK:
-		t_blkno = dbtofsb(bp->b_blkno);
+		sc->sc_blkno = dbtofsb(bp->b_blkno);
 		break;
 
 	default:
@@ -408,22 +421,23 @@ tmseteof(bp)
 	register struct buf *bp;
 {
 	register struct device *addr = 
-	    (struct device *)tmdinfo[minor(bp->b_dev)&03]->ui_addr;
+	    (struct device *)tmdinfo[0]->ui_addr;
+	register struct tm_softc *sc = &tm_softc[0];
 
 	if (bp == &ctmbuf) {
-		if (t_blkno > dbtofsb(bp->b_blkno)) {
+		if (sc->sc_blkno > dbtofsb(bp->b_blkno)) {
 			/* reversing */
-			t_nxrec = dbtofsb(bp->b_blkno) - addr->tmbc;
-			t_blkno = t_nxrec;
+			sc->sc_nxrec = dbtofsb(bp->b_blkno) - addr->tmbc;
+			sc->sc_blkno = sc->sc_nxrec;
 		} else {
 			/* spacing forward */
-			t_blkno = dbtofsb(bp->b_blkno) + addr->tmbc;
-			t_nxrec = t_blkno - 1;
+			sc->sc_blkno = dbtofsb(bp->b_blkno) + addr->tmbc;
+			sc->sc_nxrec = sc->sc_blkno - 1;
 		}
 		return;
 	} 
 	/* eof on read */
-	t_nxrec = dbtofsb(bp->b_blkno);
+	sc->sc_nxrec = dbtofsb(bp->b_blkno);
 }
 
 tmread(dev)
@@ -443,10 +457,11 @@ tmwrite(dev)
 tmphys(dev)
 {
 	register daddr_t a;
+	register struct tm_softc *sc = &tm_softc[0];
 
 	a = dbtofsb(u.u_offset >> 9);
-	t_blkno = a;
-	t_nxrec = a + 1;
+	sc->sc_blkno = a;
+	sc->sc_nxrec = a + 1;
 }
 
 /*ARGSUSED*/
@@ -455,6 +470,7 @@ tmioctl(dev, cmd, addr, flag)
 	dev_t dev;
 {
 	register callcount;
+	register struct tm_softc *sc = &tm_softc[0];
 	int fcount;
 	struct mtop mtop;
 	struct mtget mtget;
@@ -493,15 +509,16 @@ tmioctl(dev, cmd, addr, flag)
 				u.u_error = EIO;
 				break;
 			}
-			if ((ctmbuf.b_flags&B_ERROR) || t_erreg&BOT)
+			if ((ctmbuf.b_flags&B_ERROR) ||
+			    sc->sc_erreg&BOT)
 				break;
 		}
 		geterror(&ctmbuf);
 		return;
 	case MTIOCGET:
-		mtget.mt_dsreg = t_dsreg;
-		mtget.mt_erreg = t_erreg;
-		mtget.mt_resid = t_resid;
+		mtget.mt_dsreg = sc->sc_dsreg;
+		mtget.mt_erreg = sc->sc_erreg;
+		mtget.mt_resid = sc->sc_resid;
 		if (copyout((caddr_t)&mtget, addr, sizeof(mtget)))
 			u.u_error = EFAULT;
 		return;
@@ -543,10 +560,10 @@ tmdump()
 		start += blk;
 		num -= blk;
 	}
+	tmeof(addr);
+	tmeof(addr);
 	tmwait(addr);
-	tmeof(addr);
-	tmeof(addr);
-	tmrewind(addr);
+	addr->tmcs = REW | GO;
 	tmwait(addr);
 	return (0);
 }
@@ -578,14 +595,6 @@ tmwait(addr)
 	do
 		s = addr->tmcs;
 	while ((s & CUR) == 0);
-}
-
-tmrewind(addr)
-	struct device *addr;
-{
-
-	tmwait(addr);
-	addr->tmcs = REW | GO;
 }
 
 tmeof(addr)

@@ -1,4 +1,4 @@
-/*	up.c	4.15	81/02/16	*/
+/*	up.c	4.16	81/02/17	*/
 
 #include "up.h"
 #if NSC21 > 0
@@ -104,6 +104,7 @@ daddr_t dkblock();
 #endif
 
 int	upwstart, upwatch();		/* Have started guardian */
+int	upseek;
 
 /*ARGSUSED*/
 upcntrlr(um, reg)
@@ -143,14 +144,13 @@ upstrategy(bp)
 	register struct buf *bp;
 {
 	register struct uba_dinfo *ui;
-	register struct uba_minfo *um;
 	register struct upst *st;
 	register int unit;
+	register struct buf *dp;
 	int xunit = minor(bp->b_dev) & 07;
-	long sz, bn;
+	long bn, sz;
 
-	sz = bp->b_bcount;
-	sz = (sz+511) >> 9;		/* transfer size in 512 byte sectors */
+	sz = (bp->b_bcount+511) >> 9;
 	unit = dkunit(bp);
 	if (unit >= NUP)
 		goto bad;
@@ -163,8 +163,9 @@ upstrategy(bp)
 		goto bad;
 	bp->b_cylin = bn/st->nspc + st->sizes[xunit].cyloff;
 	(void) spl5();
-	disksort(&uputab[ui->ui_unit], bp);
-	if (uputab[ui->ui_unit].b_active == 0) {
+	dp = &uputab[ui->ui_unit];
+	disksort(dp, bp);
+	if (dp->b_active == 0) {
 		(void) upustart(ui);
 		bp = &ui->ui_mi->um_tab;
 		if (bp->b_actf && bp->b_active == 0)
@@ -222,7 +223,6 @@ upustart(ui)
 	sn = (sn + st->nsect - upSDIST) % st->nsect;
 	if (cn - upaddr->updc)
 		goto search;		/* Not on-cylinder */
-/****				WHAT SHOULD THIS BE NOW ???
 	else if (upseek)
 		goto done;		/* Ok just to be on-cylinder */
 	csn = (upaddr->upla>>6) - sn - 1;
@@ -232,10 +232,9 @@ upustart(ui)
 		goto done;
 search:
 	upaddr->updc = cn;
-/***				ANOTHER OCCURRENCE
 	if (upseek)
 		upaddr->upcs1 = IE|SEEK|GO;
-	else  ****/   {
+	else {
 		upaddr->upda = sn;
 		upaddr->upcs1 = IE|SEARCH|GO;
 	}
@@ -263,7 +262,8 @@ upstart(um)
 	register struct uba_dinfo *ui;
 	register unit;
 	register struct device *upaddr;
-	register struct upst *st;
+	struct upst *st;
+	struct up_softc *sc = &up_softc[um->um_ctlr];
 	daddr_t bn;
 	int dn, sn, tn, cmd;
 
@@ -289,7 +289,7 @@ loop:
 	upaddr = (struct device *)ui->ui_addr;
 	if ((upaddr->upcs2 & 07) != dn)
 		upaddr->upcs2 = dn;
-	up_softc[um->um_ctlr].sc_info =
+	sc->sc_info =
 	    ubasetup(ui->ui_ubanum, bp, UBA_NEEDBDP|UBA_CANTWAIT);
 	/*
 	 * If drive is not present and on-line, then
@@ -308,7 +308,7 @@ loop:
 			bp->b_flags |= B_ERROR;
 			iodone(bp);
 			/* A funny place to do this ... */
-			ubarelse(ui->ui_ubanum, &up_softc[um->um_ctlr].sc_info);
+			ubarelse(ui->ui_ubanum, &sc->sc_info);
 			goto loop;
 		}
 		printf("-- came back\n");
@@ -330,30 +330,29 @@ loop:
 	 */
 	upaddr->updc = bp->b_cylin;
 	upaddr->upda = (tn << 8) + sn;
-	upaddr->upba = up_softc[um->um_ctlr].sc_info;
+	upaddr->upba = sc->sc_info;
 	upaddr->upwc = -bp->b_bcount / sizeof (short);
-	cmd = (up_softc[um->um_ctlr].sc_info >> 8) & 0x300;
+	cmd = (sc->sc_info >> 8) & 0x300;
 	if (bp->b_flags & B_READ)
 		cmd |= IE|RCOM|GO;
 	else
 		cmd |= IE|WCOM|GO;
 	upaddr->upcs1 = cmd;
 	/*
-	 * This is a controller busy situation.
-	 * Record in dk slot NUP+UPDK_N (after last drive)
-	 * unless there aren't that many slots reserved for
-	 * us in which case we record this as a drive busy
-	 * (if there is room for that).
+	 * Mark i/o in progress
 	 */
-	unit = ui->ui_dk;
-	dk_busy |= 1<<unit;
-	dk_xfer[unit]++;
-	dk_wds[unit] += bp->b_bcount>>6;
+	if (ui->ui_dk >= 0) {
+		unit = ui->ui_dk;
+		dk_busy |= 1<<unit;
+		dk_xfer[unit]++;
+		dk_wds[unit] += bp->b_bcount>>6;
+	}
 	return (1);
 }
 
 updgo()
 {
+
 }
 
 /*
@@ -373,18 +372,15 @@ upintr(sc21)
 	register struct uba_dinfo *ui;
 	register struct device *upaddr = (struct device *)um->um_addr;
 	register unit;
+	struct up_softc *sc = &up_softc[um->um_ctlr];
 	int as = upaddr->upas & 0377;
 	int needie = 1;
 
 	(void) spl6();
-	up_softc[um->um_ctlr].sc_wticks = 0;
+	sc->sc_wticks = 0;
 	if (um->um_tab.b_active) {
-		if ((upaddr->upcs1 & RDY) == 0) {
-			printf("!RDY: cs1 %o, ds %o, wc %d\n", upaddr->upcs1,
-			    upaddr->upds, upaddr->upwc);
-			printf("as=%d act %d %d %d\n", as, um->um_tab.b_active,
-			    uputab[0].b_active, uputab[1].b_active);
-		}
+		if ((upaddr->upcs1 & RDY) == 0)
+			printf("upintr !RDY\n");
 		dp = um->um_tab.b_actf;
 		bp = dp->b_actf;
 		ui = updinfo[dkunit(bp)];
@@ -431,6 +427,7 @@ upintr(sc21)
 			dp->b_errcnt = 0;
 			dp->b_actf = bp->av_forw;
 			bp->b_resid = (-upaddr->upwc * sizeof(short));
+			/* CHECK FOR WRITE LOCK HERE... */
 			if (bp->b_resid)
 				printf("resid %d ds %o er? %o %o %o\n",
 				    bp->b_resid, upaddr->upds,
@@ -440,19 +437,19 @@ upintr(sc21)
 				if (upustart(ui))
 					needie = 0;
 		}
-		up_softc[um->um_ctlr].sc_softas &= ~(1<<ui->ui_slave);
-		ubarelse(ui->ui_ubanum, &up_softc[um->um_ctlr].sc_info);
+		sc->sc_softas &= ~(1<<ui->ui_slave);
+		ubarelse(ui->ui_ubanum, &sc->sc_info);
 	} else {
 		if (upaddr->upcs1 & TRE)
 			upaddr->upcs1 = TRE;
 	}
-	as |= up_softc[um->um_ctlr].sc_softas;
+	as |= sc->sc_softas;
+	sc->sc_softas = 0;
 	for (unit = 0; unit < NUP; unit++) {
 		if ((ui = updinfo[unit]) == 0 || ui->ui_mi != um)
 			continue;
 		if (as & (1<<unit)) {
-			if (as & (1<<unit))
-				upaddr->upas = 1<<unit;
+			upaddr->upas = 1<<unit;
 			if (upustart(ui))
 				needie = 0;
 		}
@@ -466,11 +463,13 @@ upintr(sc21)
 
 upread(dev)
 {
+
 	physio(upstrategy, &rupbuf, dev, B_READ, minphys);
 }
 
 upwrite(dev)
 {
+
 	physio(upstrategy, &rupbuf, dev, B_WRITE, minphys);
 }
 
@@ -487,6 +486,7 @@ upecc(ui)
 	register struct buf *bp = uputab[ui->ui_unit].b_actf;
 	register struct uba_minfo *um = ui->ui_mi;
 	register struct upst *st;
+	struct up_softc *sc = &up_softc[um->um_ctlr];
 	struct uba_regs *ubp = ui->ui_hd->uh_uba;
 	register int i;
 	caddr_t addr;
@@ -500,7 +500,7 @@ upecc(ui)
 	 * O is offset within a memory page of the first byte transferred.
 	 */
 	npf = btop((up->upwc * sizeof(short)) + bp->b_bcount) - 1;
-	reg = btop(up_softc[um->um_ctlr].sc_info&0x3ffff) + npf;
+	reg = btop(sc->sc_info&0x3ffff) + npf;
 	o = (int)bp->b_un.b_addr & PGOFSET;
 	printf("%D ", bp->b_blkno+npf);
 	prdev("ECC", bp->b_dev);
@@ -515,7 +515,7 @@ upecc(ui)
 	 * is the byte offset in the transfer, the variable byte
 	 * is the offset from a page boundary in main memory.
 	 */
-	ubp->uba_dpr[(up_softc[um->um_ctlr].sc_info>>28)&0x0f] |= UBA_BNE;
+	ubp->uba_dpr[(sc->sc_info>>28)&0x0f] |= UBA_BNE;
 	i = up->upec1 - 1;		/* -1 makes 0 origin */
 	bit = i&07;
 	i = (i&~07)>>3;
@@ -572,25 +572,24 @@ upreset(uban)
 	register struct uba_minfo *um;
 	register struct uba_dinfo *ui;
 	register sc21, unit;
+	struct up_softc *sc;
 	int any = 0;
 
 	for (sc21 = 0; sc21 < NSC21; sc21++) {
-		if ((um = upminfo[sc21]) == 0)
+		if ((um = upminfo[sc21]) == 0 || um->um_ubanum != uban ||
+		    um->um_alive == 0)
 			continue;
-		if (um->um_ubanum != uban)
-			continue;
-		if (!um->um_alive)
-			continue;
+		sc = &up_softc[um->um_ctlr];
 		if (any == 0) {
 			printf(" up");
-			DELAY(15000000);	/* give it time to self-test */
+			DELAY(10000000);	/* give it time to self-test */
 			any++;
 		}
 		um->um_tab.b_active = 0;
 		um->um_tab.b_actf = um->um_tab.b_actl = 0;
-		if (up_softc[um->um_ctlr].sc_info) {
-			printf("<%d>", (up_softc[um->um_ctlr].sc_info>>28)&0xf);
-			ubarelse(um->um_ubanum, &up_softc[um->um_ctlr].sc_info);
+		if (sc->sc_info) {
+			printf("<%d>", (sc->sc_info>>28)&0xf);
+			ubarelse(um->um_ubanum, &sc->sc_info);
 		}
 		((struct device *)(um->um_addr))->upcs2 = CLR;
 		for (unit = 0; unit < NUP; unit++) {
@@ -615,23 +614,28 @@ upwatch()
 {
 	register struct uba_minfo *um;
 	register sc21, unit;
+	register struct up_softc *sc;
 
 	timeout(upwatch, (caddr_t)0, HZ);
 	for (sc21 = 0; sc21 < NSC21; sc21++) {
 		um = upminfo[sc21];
+		if (um == 0 || um->um_alive == 0)
+			continue;
+		sc = &up_softc[sc21];
 		if (um->um_tab.b_active == 0) {
 			for (unit = 0; unit < NUP; unit++)
 				if (updinfo[unit]->ui_mi == um &&
 				    uputab[unit].b_active)
 					goto active;
-			up_softc[sc21].sc_wticks = 0;
+			sc->sc_wticks = 0;
 			continue;
 		}
     active:
-		up_softc[sc21].sc_wticks++;
-		if (up_softc[sc21].sc_wticks >= 20) {
-			up_softc[sc21].sc_wticks = 0;
+		sc->sc_wticks++;
+		if (sc->sc_wticks >= 20) {
+			sc->sc_wticks = 0;
 			printf("LOST INTERRUPT RESET");
+			/* SHOULD JUST RESET ONE CTLR, NOT ALL ON UBA */
 			upreset(um->um_ubanum);
 			printf("\n");
 		}
@@ -657,8 +661,7 @@ updump(dev)
 		printf("bad unit\n");
 		return (-1);
 	}
-#define	phys1(cast, addr) ((cast)((int)addr & 0x7fffffff))
-#define	phys(cast, addr) phys1(cast, phys1(cast *, &addr))
+#define	phys(cast, addr) ((cast)((int)addr & 0x7fffffff))
 	ui = phys(struct uba_dinfo *, updinfo[unit]);
 	if (ui->ui_alive == 0) {
 		printf("dna\n");
@@ -666,12 +669,8 @@ updump(dev)
 	}
 	uba = phys(struct uba_hd *, ui->ui_hd)->uh_physuba;
 #if VAX780
-	if (cpu == VAX_780) {
-		uba->uba_cr = UBA_ADINIT;
-		uba->uba_cr = UBA_IFS|UBA_BRIE|UBA_USEFIE|UBA_SUEFIE;
-		while ((uba->uba_cnfgr & UBA_UBIC) == 0)
-			;
-	}
+	if (cpu == VAX_780)
+		ubainit(uba);
 #endif
 	DELAY(1000000);
 	upaddr = (struct device *)ui->ui_physaddr;
@@ -689,7 +688,7 @@ updump(dev)
 		printf("up !DPR || !MOL\n");
 		return (-1);
 	}
-	st = phys1(struct upst *, &upst[ui->ui_type]);
+	st = &upst[ui->ui_type];
 	nsect = st->nsect;
 	ntrak = st->ntrak;
 	sizes = phys(struct size *, st->sizes);

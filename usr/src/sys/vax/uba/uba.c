@@ -1,4 +1,4 @@
-/*	uba.c	4.9	%G%	*/
+/*	uba.c	4.10	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -259,7 +259,7 @@ ubaerror(uban, uh, xx, uvec, uba)
 	sr = uba->uba_sr;
 	s = spl7();
 	printf("UBA%d ERROR SR %x FMER %x FUBAR %o\n",
-	    uban, uba->uba_sr, uba->uba_fmer, uba->uba_fubar);
+	    uban, uba->uba_sr, uba->uba_fmer, 4*uba->uba_fubar);
 	splx(s);
 	uba->uba_sr = sr;
 	uvec &= UBA_DIV;
