@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)umount.c	8.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)umount.c	8.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -37,16 +37,16 @@ static char sccsid[] = "@(#)umount.c	8.6 (Berkeley) %G%";
 
 typedef enum { MNTON, MNTFROM } mntwhat;
 
-int	fake, fflag, vflag, *typelist;
+int	fake, fflag, vflag;
 char	*nfshost;
 
-int	 fsnametotype __P((char *));
-char	*getmntname __P((char *, mntwhat, int *));
-void	 maketypelist __P((char *));
+int	 checkvfsname __P((const char *, char **));
+char	*getmntname __P((char *, mntwhat, char **));
+char	**makevfslist __P((char *));
 int	 selected __P((int));
 int	 namematch __P((struct hostent *));
-int	 umountall __P((void));
-int	 umountfs __P((char *));
+int	 umountall __P((char **));
+int	 umountfs __P((char *, char **));
 void	 usage __P((void));
 int	 xdr_dir __P((XDR *, char *));
 
@@ -56,6 +56,7 @@ main(argc, argv)
 	char *argv[];
 {
 	int all, ch, errs;
+	char **typelist = NULL;
 
 	/* Start disks transferring immediately. */
 	sync();
@@ -77,7 +78,9 @@ main(argc, argv)
 			nfshost = optarg;
 			break;
 		case 't':
-			maketypelist(optarg);
+			if (typelist != NULL)
+				errx(1, "only one -t option may be specified.");
+			typelist = makevfslist(optarg);
 			break;
 		case 'v':
 			vflag = 1;
@@ -94,25 +97,27 @@ main(argc, argv)
 
 	/* -h implies "-t nfs" if no -t flag. */
 	if ((nfshost != NULL) && (typelist == NULL))
-		maketypelist("nfs");
+		typelist = makevfslist("nfs");
 		
 	if (all) {
 		if (setfsent() == 0)
 			err(1, "%s", _PATH_FSTAB);
-		errs = umountall();
+		errs = umountall(typelist);
 	} else
 		for (errs = 0; *argv != NULL; ++argv)
-			if (umountfs(*argv) != 0)
+			if (umountfs(*argv, typelist) != 0)
 				errs = 1;
 	exit(errs);
 }
 
 int
-umountall()
+umountall(typelist)
+	char **typelist;
 {
 	struct fstab *fs;
 	int rval, type;
 	char *cp;
+	struct vfsconf vfc;
 
 	while ((fs = getfsent()) != NULL) {
 		/* Ignore the root. */
@@ -127,11 +132,11 @@ umountall()
 		    strcmp(fs->fs_type, FSTAB_RQ))
 			continue;
 		/* If an unknown file system type, complain. */
-		if ((type = fsnametotype(fs->fs_vfstype)) == MOUNT_NONE) {
+		if (getvfsbyname(fs->fs_vfstype, &vfc) < 0) {
 			warnx("%s: unknown mount type", fs->fs_vfstype);
 			continue;
 		}
-		if (!selected(type))
+		if (checkvfsname(fs->fs_vfstype, typelist))
 			continue;
 
 		/* 
@@ -142,15 +147,16 @@ umountall()
 		if ((cp = malloc((size_t)strlen(fs->fs_file) + 1)) == NULL)
 			err(1, NULL);
 		(void)strcpy(cp, fs->fs_file);
-		rval = umountall();
-		return (umountfs(cp) || rval);
+		rval = umountall(typelist);
+		return (umountfs(cp, typelist) || rval);
 	}
 	return (0);
 }
 
 int
-umountfs(name)
+umountfs(name, typelist)
 	char *name;
+	char **typelist;
 {
 	enum clnt_stat clnt_stat;
 	struct hostent *hp;
@@ -158,8 +164,8 @@ umountfs(name)
 	struct stat sb;
 	struct timeval pertry, try;
 	CLIENT *clp;
-	int so, type;
-	char *delimp, *hostp, *mntpt, rname[MAXPATHLEN];
+	int so;
+	char *type, *delimp, *hostp, *mntpt, rname[MAXPATHLEN];
 
 	if (realpath(name, rname) == NULL) {
 		warn("%s", rname);
@@ -190,11 +196,11 @@ umountfs(name)
 		return (1);
 	}
 
-	if (!selected(type))
+	if (checkvfsname(type, typelist))
 		return (1);
 
 	hp = NULL;
-	if (type == MOUNT_NFS) {
+	if (!strcmp(type, "nfs")) {
 		if ((delimp = strchr(name, '@')) != NULL) {
 			hostp = delimp + 1;
 			*delimp = '\0';
@@ -255,7 +261,7 @@ char *
 getmntname(name, what, type)
 	char *name;
 	mntwhat what;
-	int *type;
+	char **type;
 {
 	struct statfs *mntbuf;
 	int i, mntsize;
@@ -267,86 +273,16 @@ getmntname(name, what, type)
 	for (i = 0; i < mntsize; i++) {
 		if ((what == MNTON) && !strcmp(mntbuf[i].f_mntfromname, name)) {
 			if (type)
-				*type = mntbuf[i].f_type;
+				*type = mntbuf[i].f_fstypename;
 			return (mntbuf[i].f_mntonname);
 		}
 		if ((what == MNTFROM) && !strcmp(mntbuf[i].f_mntonname, name)) {
 			if (type)
-				*type = mntbuf[i].f_type;
+				*type = mntbuf[i].f_fstypename;
 			return (mntbuf[i].f_mntfromname);
 		}
 	}
 	return (NULL);
-}
-
-static enum { IN_LIST, NOT_IN_LIST } which;
-
-int
-selected(type)
-	int type;
-{
-	int *av;
-
-	/* If no type specified, it's always selected. */
-	if (typelist == NULL)
-		return (1);
-	for (av = typelist; *av != NULL; ++av)
-		if (type == *typelist)
-			return (which == IN_LIST ? 1 : 0);
-	return (which == IN_LIST ? 0 : 1);
-}
-
-void
-maketypelist(fslist)
-	char *fslist;
-{
-	int *av, i;
-	char *nextcp;
-
-	if ((fslist == NULL) || (fslist[0] == '\0'))
-		errx(1, "empty type list");
-
-	/*
-	 * XXX
-	 * Note: the syntax is "noxxx,yyy" for no xxx's and
-	 * no yyy's, not the more intuitive "noyyy,noyyy".
-	 */
-	if (fslist[0] == 'n' && fslist[1] == 'o') {
-		fslist += 2;
-		which = NOT_IN_LIST;
-	} else
-		which = IN_LIST;
-
-	/* Count the number of types. */
-	for (i = 0, nextcp = fslist; *nextcp != NULL; ++nextcp)
-		if (*nextcp == ',')
-			i++;
-
-	/* Build an array of that many types. */
-	if ((av = typelist = malloc((i + 2) * sizeof(int))) == NULL)
-		err(1, NULL);
-	for (i = 0; fslist != NULL; fslist = nextcp, ++i) {
-		if ((nextcp = strchr(fslist, ',')) != NULL)
-			*nextcp++ = '\0';
-		av[i] = fsnametotype(fslist);
-		if (av[i] == MOUNT_NONE)
-			errx(1, "%s: unknown mount type", fslist);
-	}
-	/* Terminate the array. */
-	av[i++] = MOUNT_NONE;
-}
-
-int
-fsnametotype(name)
-	char *name;
-{
-	static char const *namelist[] = INITMOUNTNAMES;
-	char const **cp;
-
-	for (cp = namelist; *cp; ++cp)
-		if (strcmp(name, *cp) == 0)
-			return (cp - namelist);
-	return (MOUNT_NONE);
 }
 
 int
