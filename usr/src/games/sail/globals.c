@@ -1,237 +1,249 @@
 #ifndef lint
-static	char *sccsid = "@(#)globals.c	1.3 83/05/20";
+static	char *sccsid = "@(#)globals.c	1.4 83/07/20";
 #endif
-#include <stdio.h>
 #include "externs.h"
 
-struct scenario scene[NUMOFSCENES] = {
+struct scenario scene[] = {
+	/*
+	 * int winddir;
+	 * int windspeed;
+	 * int windchange;
+	 * int turn;
+	 * int people;
+	 * int time;
+	 * int vessels;
+	 * char *name;
+	 * struct ship ship[NSHIP];
+	 */
 	5, 3, 5, 0, 1, 0, 2, "Ranger vs. Drake",
 	{
-		{ "Ranger",          0,  0, 7,  20, 4, 0 },
-		{ "Drake",           1,  1, 7,  31, 5, 0 }
+		{ "Ranger",		specs+0,  0, 7,  20, 4, 0 },
+		{ "Drake",		specs+1,  1, 7,  31, 5, 0 }
 	},
-	1, 3, 6, 0, 1,0, 2, "The Battle of Flamborough Head",
+	1, 3, 6, 0, 1, 0, 2, "The Battle of Flamborough Head",
 	{
-		{ "Bonhomme Rich",   2,  0, 13, 40, 2, 0 },
-		{ "Serapis",         3,  1,  2, 42, 2, 0 }
+		{ "Bonhomme Rich",	specs+2,  0, 13, 40, 2, 0 },
+		{ "Serapis",		specs+3,  1,  2, 42, 2, 0 }
 	},
 	5, 5, 5, 0, 1, 0, 10, "Arbuthnot and Des Touches",
 	{
-		{ "America",         4,  1,  7, 37, 4, 0 },
-		{ "Befford",         5,  1,  5, 35, 4, 0 },
-		{ "Adamant",         6,  1,  3, 33, 4, 0 },
-		{ "London",          7,  1,  1, 31, 4, 0 },
-		{ "Royal Oak",       8,  1, -1, 29, 4, 0 },
-		{ "Neptune",         9,  3,  6, 44, 4, 0 },
-		{ "Duc Bougogne",    10, 3,  8, 46, 4, 0 },
-		{ "Conquerant",      48, 3, 10, 48, 4, 0 },
-		{ "Provence",        11, 3, 12, 50, 4, 0 },
-		{ "Romulus",         12, 3, 20, 58, 4, 0 }
+		{ "America",		specs+4,  1,  7, 37, 4, 0 },
+		{ "Befford",		specs+5,  1,  5, 35, 4, 0 },
+		{ "Adamant",		specs+6,  1,  3, 33, 4, 0 },
+		{ "London",		specs+7,  1,  1, 31, 4, 0 },
+		{ "Royal Oak",		specs+8,  1, -1, 29, 4, 0 },
+		{ "Neptune",		specs+9,  3,  6, 44, 4, 0 },
+		{ "Duc Bougogne",	specs+10, 3,  8, 46, 4, 0 },
+		{ "Conquerant",		specs+48, 3, 10, 48, 4, 0 },
+		{ "Provence",		specs+11, 3, 12, 50, 4, 0 },
+		{ "Romulus",		specs+12, 3, 20, 58, 4, 0 }
 	},
 	1, 3, 5, 0, 1, 0, 10, "Suffren and Hughes",
 	{
-		{ "Monmouth",        52, 1, 9,  45, 2, 0 },
-		{ "Hero",            5,  1, 13, 49, 2, 0 },
-		{ "Isis",            6,  1, 12, 48, 2, 0 },
-		{ "Superb",          50, 1, 10, 46, 2, 0 },
-		{ "Burford",	   48, 1, 11, 47, 2, 0 },
-		{ "Flamband",        13, 3, 7,  59, 4, 0 },
-		{ "Annibal",	    9, 3, 4,  56, 4, 0 },
-		{ "Severe",          11, 3, 2,  54, 4, 0 },
-		{ "Brilliant",       49, 3, -1, 51, 4, 0 },
-		{ "Sphinx",          51, 3, -5, 47, 4, 0 }
+		{ "Monmouth",		specs+52, 1, 9,  45, 2, 0 },
+		{ "Hero",		specs+5,  1, 13, 49, 2, 0 },
+		{ "Isis",		specs+6,  1, 12, 48, 2, 0 },
+		{ "Superb",		specs+50, 1, 10, 46, 2, 0 },
+		{ "Burford",		specs+48, 1, 11, 47, 2, 0 },
+		{ "Flamband",		specs+13, 3, 7,  59, 4, 0 },
+		{ "Annibal",		specs+9, 3, 4,  56, 4, 0 },
+		{ "Severe",		specs+11, 3, 2,  54, 4, 0 },
+		{ "Brilliant",		specs+49, 3, -1, 51, 4, 0 },
+		{ "Sphinx",		specs+51, 3, -5, 47, 4, 0 }
 	},
 	1, 3, 4, 0, 1, 0, 2, "Nymphe vs. Cleopatre",
 	{
-		{ "Nymphe",          14, 1, 13, 30, 2, 0 },
-		{ "Cleopatre",       15, 3, 3,  41, 2, 0 }
+		{ "Nymphe",		specs+14, 1, 13, 30, 2, 0 },
+		{ "Cleopatre",		specs+15, 3, 3,  41, 2, 0 }
 	},
 	1, 3, 5, 0, 1, 0, 2, "Mars vs. Hercule",
 	{
-		{ "Mars",            16, 1, 13, 30, 2, 0 },
-		{ "Hercule",         17, 3, 3,  41, 2, 0 }
+		{ "Mars",		specs+16, 1, 13, 30, 2, 0 },
+		{ "Hercule",		specs+17, 3, 3,  41, 2, 0 }
 	},
 	5, 3, 5, 0, 1, 0, 2, "Ambuscade vs. Baionnaise",
 	{
-		{ "Ambuscade",       18, 1, 13, 30, 2, 0 },
-		{ "Baionnaise",      19, 3, 3,  41, 2, 0 }
+		{ "Ambuscade",		specs+18, 1, 13, 30, 2, 0 },
+		{ "Baionnaise",		specs+19, 3, 3,  41, 2, 0 }
 	},
 	1, 5, 6, 0, 1, 0, 2, "Constellation vs. Insurgent",
 	{
-		{ "Constellation",   20, 0, 9,  50, 8, 0 },
-		{ "Insurgent",       22, 3, 4,  24, 2, 0 }
+		{ "Constellation",	specs+20, 0, 9,  50, 8, 0 },
+		{ "Insurgent",		specs+22, 3, 4,  24, 2, 0 }
 	},
 	1, 3, 5, 0, 1, 0, 2, "Constellation vs. Vengeance",
 	{
-		{ "Constellation",   20, 0, 12, 40, 2, 0 },
-		{ "Vengeance",       21, 3, 1,  43, 2, 0 }
+		{ "Constellation",	specs+20, 0, 12, 40, 2, 0 },
+		{ "Vengeance",		specs+21, 3, 1,  43, 2, 0 }
 	},
 	1, 3, 6, 0, 1, 0, 10, "The Battle of Lissa",
 	{
-		{ "Amphion",         23, 1, 8,  50, 4, 0 },
-		{ "Active",          24, 1, 6,  48, 4, 0 },
-		{ "Volage",          25, 1, 4,  46, 4, 0 },
-		{ "Cerberus",        26, 1, 2,  44, 4, 0 },
-		{ "Favorite",        27, 3, 9,  34, 2, 0 },
-		{ "Flore",           21, 3, 13, 39, 2, 0 },
-		{ "Danae",           64, 3, 15, 37, 2, 0 },
-		{ "Bellona",         28, 3, 17, 35, 2, 0 },
-		{ "Corona",          29, 3, 12, 31, 2, 0 },
-		{ "Carolina",        30, 3, 15, 28, 2, 0 }
+		{ "Amphion",		specs+23, 1, 8,  50, 4, 0 },
+		{ "Active",		specs+24, 1, 6,  48, 4, 0 },
+		{ "Volage",		specs+25, 1, 4,  46, 4, 0 },
+		{ "Cerberus",		specs+26, 1, 2,  44, 4, 0 },
+		{ "Favorite",		specs+27, 3, 9,  34, 2, 0 },
+		{ "Flore",		specs+21, 3, 13, 39, 2, 0 },
+		{ "Danae",		specs+64, 3, 15, 37, 2, 0 },
+		{ "Bellona",		specs+28, 3, 17, 35, 2, 0 },
+		{ "Corona",		specs+29, 3, 12, 31, 2, 0 },
+		{ "Carolina",		specs+30, 3, 15, 28, 2, 0 }
 	},
 	2, 5, 6, 0, 1, 0, 2, "Constitution vs. Guerriere",
 	{
-		{ "Constitution",    31, 0, 7,  35, 1, 0 },
-		{ "Guerriere",       32, 1, 7,  47, 4, 0 }
+		{ "Constitution",	specs+31, 0, 7,  35, 1, 0 },
+		{ "Guerriere",		specs+32, 1, 7,  47, 4, 0 }
 	},
 	1, 3, 5, 0, 1, 0, 2, "United States vs. Macedonian",
 	{
-		{ "United States",   33, 0, 1,  52, 6, 0 },
-		{ "Macedonian",      34, 1, 14, 40, 1, 0 }
+		{ "United States",	specs+33, 0, 1,  52, 6, 0 },
+		{ "Macedonian",		specs+34, 1, 14, 40, 1, 0 }
 	},
 	1, 3, 6, 0, 1, 0, 2, "Constitution vs. Java",
 	{
-		{ "Constitution",    31, 0, 1,  40, 2, 0 },
-		{ "Java",            35, 1, 11, 40, 2, 0 }
+		{ "Constitution",	specs+31, 0, 1,  40, 2, 0 },
+		{ "Java",		specs+35, 1, 11, 40, 2, 0 }
 	},
 	1, 3, 5, 0, 1, 0, 2, "Chesapeake vs. Shannon",
 	{
-		{ "Chesapeake",      36, 0, 13, 40, 2, 0 },
-		{ "Shannon",         37, 1, 1,  42, 2, 0 }
+		{ "Chesapeake",		specs+36, 0, 13, 40, 2, 0 },
+		{ "Shannon",		specs+37, 1, 1,  42, 2, 0 }
 	},
 	1, 1, 6, 0, 1, 0, 5, "The Battle of Lake Erie",
 	{
-		{ "Lawrence",        38, 0, 4,  55, 8, 0 },
-		{ "Niagara",         42, 0, 7,  61, 8, 0 },
-		{ "Lady Prevost",    39, 1, 4,  25, 2, 0,  },
-		{ "Detroit",         40, 1, 7,  22, 2, 0 },
-		{ "Q. Charlotte",    41, 1, 10, 19, 2, 0  }
+		{ "Lawrence",		specs+38, 0, 4,  55, 8, 0 },
+		{ "Niagara",		specs+42, 0, 7,  61, 8, 0 },
+		{ "Lady Prevost",	specs+39, 1, 4,  25, 2, 0 },
+		{ "Detroit",		specs+40, 1, 7,  22, 2, 0 },
+		{ "Q. Charlotte",	specs+41, 1, 10, 19, 2, 0 }
 	},
 	1, 1, 5, 0, 1, 0, 2, "Wasp vs. Reindeer",
 	{
-		{ "Wasp",            42, 0, 3,  41, 2, 0 },
-		{ "Reindeer",        43, 1, 10, 48, 2, 0 }
+		{ "Wasp",		specs+42, 0, 3,  41, 2, 0 },
+		{ "Reindeer",		specs+43, 1, 10, 48, 2, 0 }
 	},
 	1, 2, 5, 0, 1, 0, 3, "Constitution vs. Cyane and Levant",
 	{
-		{ "Constitution",    31, 0, 10, 45, 2, 0 },
-		{ "Cyane",           44, 1, 3,  37, 2, 0 },
-		{ "Levant",          45, 1, 5,  35, 2, 0 }
+		{ "Constitution",	specs+31, 0, 10, 45, 2, 0 },
+		{ "Cyane",		specs+44, 1, 3,  37, 2, 0 },
+		{ "Levant",		specs+45, 1, 5,  35, 2, 0 }
 	},
 	5, 5, 5, 0, 1, 0, 3, "Pellew vs. Droits de L'Homme",
 	{
-		{ "Indefatigable",   46, 1, 12, 45, 6, 0 },
-		{ "Amazon",          47, 1, 9,  48, 6, 0 },
-		{ "Droits L'Hom",    48, 3, 3,  28, 5, 0 }
+		{ "Indefatigable",	specs+46, 1, 12, 45, 6, 0 },
+		{ "Amazon",		specs+47, 1, 9,  48, 6, 0 },
+		{ "Droits L'Hom",	specs+48, 3, 3,  28, 5, 0 }
 	},
 	2, 2, 3, 0, 1, 0, 10, "Algeciras",
 	{
-		{ "Caesar",          49, 1, 7,  70, 6, 0 },
-		{ "Pompee",          50, 1, 5,  72, 6, 0 },
-		{ "Spencer",         5,  1, 3,  74, 6, 0 },
-		{ "Hannibal",        7,  1, 1,  76, 6, 0 },
-		{ "Real-Carlos",     53, 2, 9,  20, 3, 0 },
-		{ "San Fernando",    54, 2, 11, 16, 3, 0 },
-		{ "Argonauta",       55, 2, 10, 14, 4, 0 },
-		{ "San Augustine",   56, 2, 6,  22, 4, 0 },
-		{ "Indomptable",     51, 3, 7,  23, 5, 0 },
-		{ "Desaix",          52, 3, 7,  27, 7, 0 }
+		{ "Caesar",		specs+49, 1, 7,  70, 6, 0 },
+		{ "Pompee",		specs+50, 1, 5,  72, 6, 0 },
+		{ "Spencer",		specs+5,  1, 3,  74, 6, 0 },
+		{ "Hannibal",		specs+7,  1, 1,  76, 6, 0 },
+		{ "Real-Carlos",	specs+53, 2, 9,  20, 3, 0 },
+		{ "San Fernando",	specs+54, 2, 11, 16, 3, 0 },
+		{ "Argonauta",		specs+55, 2, 10, 14, 4, 0 },
+		{ "San Augustine",	specs+56, 2, 6,  22, 4, 0 },
+		{ "Indomptable",	specs+51, 3, 7,  23, 5, 0 },
+		{ "Desaix",		specs+52, 3, 7,  27, 7, 0 }
 	},
 	5, 3, 6, 0, 1, 0, 7, "Lake Champlain",
 	{
-		{ "Saratoga",        60, 0, 8,  10, 1, 0 },
-		{ "Eagle",           61, 0, 9,  13, 2, 0 },
-		{ "Ticonderoga",     62, 0, 12, 17, 3, 0 },
-		{ "Preble",          63, 0, 14, 20, 2, 0 },
-		{ "Confiance",       57, 1, 4,  70, 6, 0 },
-		{ "Linnet",          58, 1, 7,  68, 6, 0 },
-		{ "Chubb",           59, 1, 10, 65, 6, 0 }
+		{ "Saratoga",		specs+60, 0, 8,  10, 1, 0 },
+		{ "Eagle",		specs+61, 0, 9,  13, 2, 0 },
+		{ "Ticonderoga",	specs+62, 0, 12, 17, 3, 0 },
+		{ "Preble",		specs+63, 0, 14, 20, 2, 0 },
+		{ "Confiance",		specs+57, 1, 4,  70, 6, 0 },
+		{ "Linnet",		specs+58, 1, 7,  68, 6, 0 },
+		{ "Chubb",		specs+59, 1, 10, 65, 6, 0 }
 	},
 	5, 3, 6, 0, 1, 0, 4, "Last Voyage of the USS President",
 	{
-		{ "President",       67, 0, 12, 42, 5, 0 },
-		{ "Endymion",        64, 1, 5,  42, 5, 0 },
-		{ "Pomone",          65, 1, 7,  82, 6, 0 },
-		{ "Tenedos",         66, 1, 7,  -1, 4, 0 }
+		{ "President",		specs+67, 0, 12, 42, 5, 0 },
+		{ "Endymion",		specs+64, 1, 5,  42, 5, 0 },
+		{ "Pomone",		specs+65, 1, 7,  82, 6, 0 },
+		{ "Tenedos",		specs+66, 1, 7,  -1, 4, 0 }
 	},
 	7, 5, 5, 0, 1, 0, 2, "Hornblower and the Natividad",
 	{
-		{ "Lydia",           68, 1, 12, 40, 2, 0 },
-		{ "Natividad",       69, 2, 2,  40, 4, 0 }
+		{ "Lydia",		specs+68, 1, 12, 40, 2, 0 },
+		{ "Natividad",		specs+69, 2, 2,  40, 4, 0 }
 	},
 	1, 3, 6, 0, 1, 0, 2, "Curse of the Flying Dutchman",
 	{
-		{ "Piece of Cake",   19, 2, 7,  40, 2, 0 },
-		{ "Flying Dutchy",   71, 3, 7,  41, 1, 0 }
+		{ "Piece of Cake",	specs+19, 2, 7,  40, 2, 0 },
+		{ "Flying Dutchy",	specs+71, 3, 7,  41, 1, 0 }
 	},
 	1, 4, 1, 0, 1, 0, 4, "The South Pacific",
 	{
-		{ "USS Scurvy",      70, 0, 7,  40, 1, 0 },
-		{ "HMS Tahiti",      71, 1, 12, 60, 1, 0 },
-		{ "Australian",      18, 2, 5,  20, 8, 0 },
-		{ "Bikini Atoll",    63, 3, 2,  60, 4, 0 }
+		{ "USS Scurvy",		specs+70, 0, 7,  40, 1, 0 },
+		{ "HMS Tahiti",		specs+71, 1, 12, 60, 1, 0 },
+		{ "Australian",		specs+18, 2, 5,  20, 8, 0 },
+		{ "Bikini Atoll",	specs+63, 3, 2,  60, 4, 0 }
 	},
 	7, 3, 6, 0, 1, 0, 5, "Hornblower and the battle of Rosas bay",
 	{
-		{ "Sutherland",      5,  1, 13, 30, 2, 0 },
-		{ "Turenne",         10, 3, 9,  35, 6, 0 },
-		{ "Nightmare",       9,  3, 7,  37, 6, 0 },
-		{ "Paris",           53, 3, 3,  45, 4, 0 },
-		{ "Napolean",        56, 3, 1,  40, 6, 0 }
+		{ "Sutherland",		specs+5,  1, 13, 30, 2, 0 },
+		{ "Turenne",		specs+10, 3, 9,  35, 6, 0 },
+		{ "Nightmare",		specs+9,  3, 7,  37, 6, 0 },
+		{ "Paris",		specs+53, 3, 3,  45, 4, 0 },
+		{ "Napolean",		specs+56, 3, 1,  40, 6, 0 }
 	},
 	6, 4, 7, 0, 1, 0, 5, "Cape Horn",
 	{
-		{ "Concord",         51, 0, 3,  20, 4, 0 },
-		{ "Berkeley",        7,  0, 5,  50, 5, 0 },
-		{ "Thames",          71, 1, 10, 40, 1, 0 },
-		{ "Madrid",          53, 2, 13, 60, 8, 0 },
-		{ "Musket",          10, 3, 10, 60, 7, 0 }
+		{ "Concord",		specs+51, 0, 3,  20, 4, 0 },
+		{ "Berkeley",		specs+7,  0, 5,  50, 5, 0 },
+		{ "Thames",		specs+71, 1, 10, 40, 1, 0 },
+		{ "Madrid",		specs+53, 2, 13, 60, 8, 0 },
+		{ "Musket",		specs+10, 3, 10, 60, 7, 0 }
 	},
 	8, 3, 7, 0, 1, 0, 3, "New Orleans",
 	{
-		{ "Alligator",       71, 0, 13,  5, 1, 0 },
-		{ "Firefly",         50, 1, 10, 20, 8, 0 },
-		{ "Cypress",         46, 1, 5,  10, 6, 0 }
+		{ "Alligator",		specs+71, 0, 13,  5, 1, 0 },
+		{ "Firefly",		specs+50, 1, 10, 20, 8, 0 },
+		{ "Cypress",		specs+46, 1, 5,  10, 6, 0 }
 	},
 	5, 3, 7, 0, 1, 0, 3, "Botany Bay",
 	{
-		{ "Shark",           11, 1, 6,  15, 4, 0 },
-		{ "Coral Snake",     31, 3, 3,  30, 6, 0 },
-		{ "Sea Lion",        33, 3, 13, 50, 8, 0 }
+		{ "Shark",		specs+11, 1, 6,  15, 4, 0 },
+		{ "Coral Snake",	specs+31, 3, 3,  30, 6, 0 },
+		{ "Sea Lion",		specs+33, 3, 13, 50, 8, 0 }
 	},
 	4, 3, 6, 0, 1, 0, 4, "Voyage to the Bottom of the Sea",
 	{
-		{ "Seaview",         71, 0, 6,  3,  3, 0 },
-		{ "Flying Sub",      64, 0, 8,  3,  3, 0 },
-		{ "Mermaid",         70, 1, 2,  5,  5, 0 },
-		{ "Giant Squid",     53, 2, 10, 30, 8, 0 }
+		{ "Seaview",		specs+71, 0, 6,  3,  3, 0 },
+		{ "Flying Sub",		specs+64, 0, 8,  3,  3, 0 },
+		{ "Mermaid",		specs+70, 1, 2,  5,  5, 0 },
+		{ "Giant Squid",	specs+53, 2, 10, 30, 8, 0 }
 	},
 	7, 3, 6, 0, 1, 0, 3, "Frigate Action",
 	{
-		{ "Killdeer",        21, 0, 7,  20, 8, 0 },
-		{ "Sandpiper",       27, 1, 5,  40, 8, 0 },
-		{ "Curlew",          34, 2, 10, 60, 8, 0 }
+		{ "Killdeer",		specs+21, 0, 7,  20, 8, 0 },
+		{ "Sandpiper",		specs+27, 1, 5,  40, 8, 0 },
+		{ "Curlew",		specs+34, 2, 10, 60, 8, 0 }
 	},
 	7, 2, 5, 0, 1, 0, 6, "The Battle of Midway",
 	{
-		{ "Enterprise",      49, 0, 10, 70, 8, 0 },
-		{ "Yorktown",        51, 0, 3,  70, 7, 0 },
-		{ "Hornet",          52, 0, 6,  70, 7, 0 },
-		{ "Akagi",           53, 3, 6,  10, 4, 0 },
-		{ "Kaga",            54, 3, 4,  12, 4, 0 },
-		{ "Soryu",           55, 3, 2,  14, 4, 0 }
+		{ "Enterprise",		specs+49, N_A, 10, 70, 8, 0 },
+		{ "Yorktown",		specs+51, N_A, 3,  70, 7, 0 },
+		{ "Hornet",		specs+52, N_A, 6,  70, 7, 0 },
+		{ "Akagi",		specs+53, N_J, 6,  10, 4, 0 },
+		{ "Kaga",		specs+54, N_J, 4,  12, 4, 0 },
+		{ "Soryu",		specs+55, N_J, 2,  14, 4, 0 }
 	},
+	/*
 	4, 3, 4, 0, 1, 0, 8, "Star Trek",
 	{
-		{ "Enterprise",      72, 0, 20,  4, 2, 0 },
-		{ "Yorktown",        72, 0, 19,  2, 2, 0 },
-		{ "Reliant",         73, 0, 18,  3, 2, 0 },
-		{ "Galileo",         74, 0, 20,  6, 2, 0 },
-		{ "Kobayashi Maru",  75, 3, 31, 11, 5, 0 },
-		{ "Klingon two",     75, 3, 31, 11, 5, 0 },
-		{ "Klingon three",   75, 3, 31, 11, 5, 0 },
-		{ "Blue Orion",      63, 2, 31, 11, 5, 0 }
+		{ "Enterprise",		specs+72, 0, 20,  4, 2, 0 },
+		{ "Yorktown",		specs+72, 0, 19,  2, 2, 0 },
+		{ "Reliant",		specs+73, 0, 18,  3, 2, 0 },
+		{ "Galileo",		specs+74, 0, 20,  6, 2, 0 },
+		{ "Kobayashi Maru",	specs+75, 3, 31, 11, 5, 0 },
+		{ "Klingon two",	specs+75, 3, 31, 11, 5, 0 },
+		{ "Klingon three",	specs+75, 3, 31, 11, 5, 0 },
+		{ "Blue Orion",		specs+63, 2, 31, 11, 5, 0 }
 	}
+	*/
 };
 
 /* happy */
@@ -412,10 +424,60 @@ int MT[9][3] = {
 	{4,4,2}
 };
 
-int loaded, fired, changed, repaired, buffercount, xlast, ylast;
-long lastsync;
-int winddir, windspeed, turn, viewrow, viewcol;
-int player = -1, nation[5], scroll = 18, game;
-int MIGHTYCAPTAIN;
-char Outbuf[BUFSIZE], movebuf[10], loadwith[20];
-FILE *syncfile;
+int rangeofshot[] = {
+	0,
+	1,		/* grape */
+	3,		/* chain */
+	10,		/* round */
+	1		/* double */
+};
+
+char *countryname[] = {
+	"American",
+	"British",
+	"Spanish",
+	"French",
+	"Japanese"
+};
+
+char *classname[] = {
+	"Drift wood",
+	"Ship of the Line",
+	"Ship of the Line",
+	"Frigate",
+	"Corvette",
+	"Sloop",
+	"Brig"
+};
+
+char *directionname[] = {
+	"dead ahead",
+	"off the starboard bow",
+	"off the starboard beam",
+	"off the starboard quarter",
+	"dead astern",
+	"off the port quarter",
+	"off the port beam",
+	"off the port bow",
+	"dead ahead"
+};
+
+char *qualname[] = {
+	"dead",
+	"mutinous",
+	"green",
+	"mundane",
+	"crack",
+	"elite"
+};
+
+char loadname[] = {
+	'-', 'G', 'C', 'R', 'D', 'E'
+};
+
+char dr[] = {
+	0, 1, 1, 0, -1, -1, -1, 0, 1
+};
+char dc[] = {
+	0, 0, -1, -1, -1, 0, 1, 1, 1
+};

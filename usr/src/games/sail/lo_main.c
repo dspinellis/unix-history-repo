@@ -1,6 +1,7 @@
 #ifndef lint
-static	char *sccsid = "@(#)lo_main.c	1.2 83/05/20";
+static	char *sccsid = "@(#)lo_main.c	1.3 83/07/20";
 #endif
+
 /*
  * Print out the top ten SAILors
  *
@@ -13,51 +14,57 @@ static	char *sccsid = "@(#)lo_main.c	1.2 83/05/20";
 #include "externs.h"
 
 char *title[] = {
-    "Admiral", "Commodore", "Captain", "Captain",
-    "Captain", "Captain", "Captain", "Commander",
-    "Commander", "Lieutenant"
+	"Admiral", "Commodore", "Captain", "Captain",
+	"Captain", "Captain", "Captain", "Commander",
+	"Commander", "Lieutenant"
 };
 
 main(argc, argv)
 int argc;
 char **argv;
 {
-    FILE *fp;
-    char sbuf[32];
-    int n = 0, people;
-    int usrnam = SAILLOGDEF;
-    struct passwd *getpwuid(), *pass;
-    struct logs flog;
+	FILE *fp;
+	char sbuf[32];
+	int n = 0, people;
+	int usrnam = 0;
+	struct passwd *getpwuid(), *pass;
+	struct logs log;
+	struct ship *ship;
 
-    if (argc > 1)
-	if (argc == 2)
-	    if (!strcmp(argv[1], "-s"))
-		usrnam = 0;
-	    else if (!strcmp(argv[1], "-l"))
-		usrnam = 1;
-	else {
-	    fprintf(stderr, "usage: %s: [-s/l]\n", argv[0]);
-	    exit(1);
+	if (argc > 1 && argc == 2)
+		if (strcmp(argv[1], "-s") == 0)
+			usrnam = 0;
+		else if (strcmp(argv[1], "-l") == 0)
+			usrnam = 1;
+		else {
+			fprintf(stderr, "usage: %s: [-s/l]\n", argv[0]);
+			exit(1);
+		}
+	if ((fp = fopen(LOGFILE, "r")) == 0) {
+		perror(LOGFILE);
+		exit(1);
 	}
-    if((fp = fopen(LOGFILE, "r")) == 0) {
-	printf("%s: Error opening logfile - %s\n", argv[0], LOGFILE);
-	exit(1);
-    }
-    if (fread(&people, sizeof(people), 1, fp) == 0) {
-	printf("%s: Error reading logfile.\n", argv[0]);
-	exit(1);
-    }
-    while ((fread(&flog, sizeof(flog), 1, fp) != 0) && (flog.fname[0] != '\0')) {
-	if (usrnam && ((pass = getpwuid(flog.uid)) != NULL))
-	    sprintf(sbuf, "%10.10s (%s)", flog.fname, pass->pw_name);
-	else
-	    sprintf(sbuf, "%10.10s", flog.fname);
-	printf("%-10s %21s of the %15s %3d points, %5.2f equiv\n",
-	  title[n++], sbuf,
-	  scene[flog.fgamenum].ship[flog.fshipnum].shipname,
-	  flog.netpoints,
-	  (float) flog.netpoints /
-	  specs[scene[flog.fgamenum].ship[flog.fshipnum].shipnum].pts);
-    }
-    printf("\n%d people have played.\n", people);
+	switch (fread((char *)&people, sizeof people, 1, fp)) {
+	case 0:
+		printf("Nobody has sailed yet.\n");
+		exit(0);
+	case 1:
+		break;
+	default:
+		perror(LOGFILE);
+		exit(1);
+	}
+	while (fread((char *)&log, sizeof log, 1, fp) == 1
+	       && log.l_name[0] != '\0') {
+		if (usrnam && (pass = getpwuid(log.l_uid)) != NULL)
+			(void) sprintf(sbuf, "%10.10s (%s)",
+				log.l_name, pass->pw_name);
+		else
+			(void) sprintf(sbuf, "%20.20s", log.l_name);
+		ship = &scene[log.l_gamenum].ship[log.l_shipnum];
+		printf("%-10s %21s of the %15s %3d points, %5.2f equiv\n",
+			title[n++], sbuf, ship->shipname, log.l_netpoints,
+			(float) log.l_netpoints / ship->specs->pts);
+	}
+	printf("\n%d people have played.\n", people);
 }
