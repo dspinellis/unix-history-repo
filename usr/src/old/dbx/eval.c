@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)eval.c 1.3 %G%";
+static char sccsid[] = "@(#)eval.c 1.4 %G%";
 
 /*
  * Tree evaluation.
@@ -158,6 +158,16 @@ register Node p;
 		len = size(p->nodetype);
 	    }
 	    rpush(addr, len);
+	    break;
+
+	/*
+	 * Effectively, we want to pop n bytes off for the evaluated subtree
+	 * and push len bytes on for the new type of the same tree.
+	 */
+	case O_TYPERENAME:
+	    n = size(p->value.arg[0]->nodetype);
+	    len = size(p->nodetype);
+	    sp = sp - n + len;
 	    break;
 
 	case O_COMMA:
@@ -335,7 +345,9 @@ register Node p;
 	    r0 = pop(long);
 	    if (p->value.examine.endaddr == nil) {
 		n = p->value.examine.count;
-		if (streq(p->value.examine.mode, "i")) {
+		if (n == 0) {
+		    printvalue(r0, p->value.examine.mode);
+		} else if (streq(p->value.examine.mode, "i")) {
 		    printninst(n, (Address) r0);
 		} else {
 		    printndata(n, (Address) r0, p->value.examine.mode);
