@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_vnops.c	8.11 (Berkeley) %G%
+ *	@(#)vfs_vnops.c	8.12 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -415,10 +415,6 @@ vn_lock(vp, flags, p)
 			error = VOP_LOCK(vp, flags | LK_INTERLOCK, p);
 			if (error == 0)
 				return (error);
-#ifdef DEBUG
-			if (error == EWOULDBLOCK)
-				panic("vn_lock: hung lock");
-#endif
 		}
 		flags &= ~LK_INTERLOCK;
 	} while (flags & LK_RETRY);
