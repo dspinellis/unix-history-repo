@@ -1,4 +1,4 @@
-(Version 8.27 of %G%)
+(Version 8.28 of %G%)
 
 Key:
   X -- extension (user visible change)
@@ -6,6 +6,8 @@ Key:
   S -- security fix
   E -- enhancement to existing algorithm
 
+
+X ****	Multiple queues.
 
 X ****	Merge Sun changes.  [8.7]
 
@@ -34,6 +36,8 @@ X ****	"quote" map (inverse of dequote).  Lets you turn node::user
 X ****	Named rulesets.
 
 ? ****	Should $( [1.2.3.4] $) convert the address to a name?
+
+E ***	Have recipient lines rewritten by the user database.
 
 E ***	Arrange to run queue jobs as the owner of that queue file.  This
 	probably requires forcing a fork in order to be able to completely
