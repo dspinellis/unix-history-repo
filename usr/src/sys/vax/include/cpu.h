@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)cpu.h	7.4 (Berkeley) %G%
+ *	@(#)cpu.h	7.5 (Berkeley) %G%
  */
 
 #ifndef LOCORE
@@ -50,7 +50,9 @@ union cpusid {
 			cp_type:8;		/* VAX_730 */
 	} cpu730;
  	struct cpu630 {
- 		u_int	:24,			/* reserved */
+		u_int	cp_hrev:8,		/* hardware rev level */
+			cp_urev:8,		/* ucode rev level */
+			:8,
  			cp_type:8;		/* VAX_630 */
  	} cpu630;
 };
@@ -64,7 +66,7 @@ union cpusid {
 #define	VAX_730		3
 #define	VAX_8600	4
 #define	VAX_8200	5
-#define	VAX_8800	6	/* not positive */
+#define	VAX_8800	6
 #define	VAX_8500	6	/* same as 8800, 8700 */
 #define	VAX_610		7	/* uVAX I */
 #define	VAX_630		8	/* uVAX II */
@@ -81,6 +83,7 @@ union cpusid {
 #define IO_ABUS		4
 #define IO_QBUS		5
 #define	IO_BI		6
+#define	IO_NMI		7
 
 #ifndef LOCORE
 /*
