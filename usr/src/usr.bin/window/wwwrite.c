@@ -1,11 +1,8 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwwrite.c	3.1 83/08/11";
+static	char *sccsid = "@(#)wwwrite.c	3.2 83/08/16";
 #endif
 
 #include "ww.h"
-
-int wwnwrite;
-int wwnwritec;
 
 wwwrite(w, p, n)
 register struct ww *w;

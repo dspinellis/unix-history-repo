@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwscroll.c	3.2 83/08/15";
+static	char *sccsid = "@(#)wwscroll.c	3.3 83/08/16";
 #endif
 
 #include "ww.h"
@@ -99,26 +99,51 @@ char leaveit;
 		/*
 		 * Can shift whole lines.
 		 */
-		register union ww_char *tmp;
-		register union ww_char **cpp, **cqq;
-
 		if (dir > 0) {
-			cpp = &wwns[startrow + w->ww_w.t];
-			cqq = cpp + 1;
-			tmp = *cpp;
-			for (i = endrow - startrow; --i >= 0;)
-				*cpp++ = *cqq++;
-			*cpp = tmp;
+			{
+				register union ww_char *tmp;
+				register union ww_char **cpp, **cqq;
+
+				cpp = &wwns[startrow + w->ww_w.t];
+				cqq = cpp + 1;
+				tmp = *cpp;
+				for (i = endrow - startrow; --i >= 0;)
+					*cpp++ = *cqq++;
+				*cpp = tmp;
+			}
+			{
+				register char *p, *q;
+
+				p = &wwtouched[startrow + w->ww_w.t];
+				q = p + 1;
+				for (i = endrow - startrow; --i >= 0;)
+					*p++ = *q++;
+				*p = 1;
+			}
 			wwredrawwin1(w, srow, startrow - 1, w->ww_scroll + dir);
 			wwredrawwin1(w, endrow + 1, erow - leaveit,
 				w->ww_scroll + dir);
 		} else {
-			cqq = &wwns[endrow + w->ww_w.t];
-			cpp = cqq + 1;
-			tmp = *cqq;
-			for (i = endrow - startrow; --i >= 0;)
-				*--cpp = *--cqq;
-			*cqq = tmp;
+			{
+				register union ww_char *tmp;
+				register union ww_char **cpp, **cqq;
+
+				cqq = &wwns[endrow + w->ww_w.t];
+				cpp = cqq + 1;
+				tmp = *cqq;
+				for (i = endrow - startrow; --i >= 0;)
+					*--cpp = *--cqq;
+				*cqq = tmp;
+			}
+			{
+				register char *p, *q;
+
+				q = &wwtouched[endrow + w->ww_w.t];
+				p = q + 1;
+				for (i = endrow - startrow; --i >= 0;)
+					*--p = *--q;
+				*q = 1;
+			}
 			wwredrawwin1(w, srow + leaveit, startrow - 1,
 				w->ww_scroll + dir);
 			wwredrawwin1(w, endrow + 1, erow, w->ww_scroll + dir);
