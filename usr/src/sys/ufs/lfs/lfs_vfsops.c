@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vfsops.c	7.52 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	7.53 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -329,10 +329,11 @@ ufs_unmount(mp, mntflags, p)
 	register struct fs *fs;
 	int i, error, ronly, flags = 0;
 
-	if (mntflags & MNT_FORCE)
-		return (EINVAL);
-	if (mntflags & MNT_FORCE)
+	if (mntflags & MNT_FORCE) {
+		if (mp == rootfs)
+			return (EINVAL);
 		flags |= FORCECLOSE;
+	}
 	mntflushbuf(mp, 0);
 	if (mntinvalbuf(mp))
 		return (EBUSY);
