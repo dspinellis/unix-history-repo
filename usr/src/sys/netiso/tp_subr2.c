@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_subr2.c	7.14 (Berkeley) %G%
+ *	@(#)tp_subr2.c	7.15 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -235,7 +235,8 @@ tp_indicate(ind, tpcb, error)
 	so->so_error = error;
 
 	if (ind == T_DISCONNECT)  {
-		so->so_error = ENOTCONN;
+		if (error == 0)
+			so->so_error = ENOTCONN;
 		if ( tpcb->tp_no_disc_indications )
 			return;
 	}

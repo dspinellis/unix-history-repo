@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp.trans	7.14 (Berkeley) %G%
+ *	@(#)tp.trans	7.15 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -59,7 +59,7 @@ SOFTWARE.
 
 *INCLUDE
 {
-/* @(#)tp.trans	7.14 (Berkeley) %G% */
+/* @(#)tp.trans	7.15 (Berkeley) %G% */
 #include "param.h"
 #include "socket.h"
 #include "socketvar.h"
@@ -418,7 +418,16 @@ TP_REFWAIT 		<==		[ TP_CRSENT, TP_AKWAIT, TP_OPEN ] 			DR_TPDU
 			sbappendrecord(&$P.tp_Xrcv, $$.e_data);
 			$$.e_data = MNULL;
 		} 
-		tp_indicate(T_DISCONNECT, $P, 0);
+		if ($P.tp_state == TP_OPEN)
+			tp_indicate(T_DISCONNECT, $P, 0);
+		else {
+			int so_error = ECONNREFUSED;
+			if ($$.e_reason != (E_TP_NO_SESSION ^ TP_ERROR_MASK) &&
+			    $$.e_reason != (E_TP_NO_CR_ON_NC ^ TP_ERROR_MASK) &&
+			    $$.e_reason != (E_TP_REF_OVERFLOW ^ TP_ERROR_MASK))
+				so_error = ECONNABORTED;
+			tp_indicate(T_DISCONNECT, $P, so_error);
+		}
 		tp_soisdisconnected($P);
 		if ($P.tp_class != TP_CLASS_0) {
 			if ($P.tp_state == TP_OPEN ) {
