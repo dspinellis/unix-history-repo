@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)proc.h	7.3 (Berkeley) %G%
+ *	@(#)proc.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -11,7 +11,7 @@
  */
 struct	session {
 	struct	proc *s_leader;	/* pointer to session leader */
-	short	s_count;	/* number of pgrps in session */
+	int	s_count;	/* number of pgrps in session */
 };
 
 /*
@@ -84,6 +84,8 @@ struct	proc {
 	struct	proc *p_pgrpnxt; /* pointer to next process in process group */
 	struct	itimerval p_realtimer;
 	struct	quota *p_quota;	/* quotas for this process */
+	int	p_traceflag;	/* kernel tracing flags (facilities) */
+	struct	inode *p_tracep;/* trace to inode */
 #if defined(tahoe)
 	int	p_ckey;		/* code cache key */
 	int	p_dkey;		/* data cache key */
@@ -149,6 +151,5 @@ int	whichqs;		/* bit mask summarizing non-empty qs's */
 #define	SSEL	0x0400000	/* selecting; wakeup/waiting danger */
 #define	SLOGIN	0x0800000	/* a login process (legit child of init) */
 #define	SPTECHG	0x1000000	/* pte's for process have changed */
-#define STRCSYS	0x2000000	/* tracing system calls */
-#define STRCSYSI 0x4000000	/* tracing system calls - inherited */
+#define SKTR	0x2000000	/* pass kernel tracing flags to children */
 #define SEXEC	0x8000000	/* process called exec */
