@@ -1,4 +1,4 @@
-/*	trace.h	4.4	81/03/09	*/
+/*	trace.h	4.5	81/03/09	*/
 
 /*
  * File system buffer tracing points; all trace <dev, bn>
@@ -8,8 +8,9 @@
 #define	TR_MISS		2	/* cache miss */
 #define	TR_HIT		3	/* cache hit */
 #define	TR_RA		4	/* read ahead */
-#define	TR_XFOD		5	/* exe fod read */
-#define	TR_BRELSE	6	/* brelse */
+#define	TR_XFODMISS	5	/* exe fod read */
+#define	TR_XFODHIT	6	/* exe fod read */
+#define	TR_BRELSE	7	/* brelse */
 
 /*
  * Memory allocator trace points; all trace the amount of memory involved
