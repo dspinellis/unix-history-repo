@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.90	83/03/25	*/
+/*	tcp_input.c	1.90	83/03/27	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -78,8 +78,6 @@ tcp_input(m0)
 		ti->ti_len = htons((u_short)ti->ti_len);
 		if (ti->ti_sum = in_cksum(m, len)) {
 			tcpstat.tcps_badsum++;
-			if (tcpprintfs)
-				printf("tcp cksum %x\n", ti->ti_sum);
 			goto drop;
 		}
 	}
@@ -98,7 +96,7 @@ tcp_input(m0)
 	if (off > sizeof (struct tcphdr)) {
 		if ((m = m_pullup(m, sizeof (struct ip) + off)) == 0) {
 			tcpstat.tcps_hdrops++;
-			goto drop;
+			return;
 		}
 		ti = mtod(m, struct tcpiphdr *);
 		om = m_get(M_DONTWAIT, MT_DATA);
@@ -728,6 +726,8 @@ dropwithreset:
 	return;
 
 drop:
+	if (om)
+		(void) m_free(om);
 	/*
 	 * Drop space held by incoming segment and return.
 	 */
