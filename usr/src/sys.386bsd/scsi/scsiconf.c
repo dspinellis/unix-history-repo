@@ -15,10 +15,11 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00098
+ * CURRENT PATCH LEVEL:         2       00149
  * --------------------         -----   ----------------------
  *
  * 16 Feb 93	Julian Elischer		ADDED for SCSI system
+ * 23 May 93	Rodney W. Grimes	ADDED Pioneer DRM-600 cd changer
  */
 
 /*
@@ -136,6 +137,8 @@ knowndevs[] = {
 #if NCD > 0
 	{ T_READONLY,T_REMOV,"SONY    ","CD-ROM CDU-8012 "
 			,"3.1a",cdattach,"cd",SC_ONE_LU },
+	{ T_READONLY,T_REMOV,"PIONEER ","CD-ROM DRM-600  "
+			,"any",cdattach,"cd",SC_MORE_LUS },
 #endif NCD
 #if NBLL > 0
 	{ T_PROCESSOR,T_FIXED,"AEG     ","READER          "

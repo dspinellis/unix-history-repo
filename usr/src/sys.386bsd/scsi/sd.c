@@ -14,12 +14,15 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00098
+ * CURRENT PATCH LEVEL:         2       00149
  * --------------------         -----   ----------------------
  *
  * 16 Feb 93	Julian Elischer		ADDED for SCSI system
+ * 20 Apr 93	Julian Elischer		Fixed error reporting
  *
  */
+
+static	char rev[] = "$Revision: 1.3 $";
 
 /*
  * Ported to run under 386BSD by Julian Elischer (julian@tfs.com) Sept 1992
@@ -1272,9 +1275,9 @@ struct	scsi_xfer *xs;
 				if(sense->valid)
 				{
 			  		printf("block no. %d (decimal)",
-			  		(sense->ext.extended.info[0] <<24),
-			  		(sense->ext.extended.info[1] <<16),
-			  		(sense->ext.extended.info[2] <<8),
+			  		(sense->ext.extended.info[0] <<24)|
+			  		(sense->ext.extended.info[1] <<16)|
+			  		(sense->ext.extended.info[2] <<8)|
 			  		(sense->ext.extended.info[3] ));
 				}
 				printf("\n");
@@ -1291,9 +1294,9 @@ struct	scsi_xfer *xs;
 				if(sense->valid)
 				{
 			  		printf("block no. %d (decimal)",
-			  		(sense->ext.extended.info[0] <<24),
-			  		(sense->ext.extended.info[1] <<16),
-			  		(sense->ext.extended.info[2] <<8),
+			  		(sense->ext.extended.info[0] <<24)|
+			  		(sense->ext.extended.info[1] <<16)|
+			  		(sense->ext.extended.info[2] <<8)|
 			  		(sense->ext.extended.info[3] ));
 				}
 				printf("\n");
@@ -1328,9 +1331,9 @@ struct	scsi_xfer *xs;
 				if(sense->valid)
 			  	{
 					printf("block no. %d (decimal)\n",
-			  		(sense->ext.extended.info[0] <<24),
-			  		(sense->ext.extended.info[1] <<16),
-			  		(sense->ext.extended.info[2] <<8),
+			  		(sense->ext.extended.info[0] <<24)|
+			  		(sense->ext.extended.info[1] <<16)|
+			  		(sense->ext.extended.info[2] <<8)|
 			  		(sense->ext.extended.info[3] ));
 				}
 				printf("\n");
@@ -1344,9 +1347,9 @@ struct	scsi_xfer *xs;
 				if(sense->valid)
 				{
 			  		printf("block no. %d (decimal)\n",
-			  		(sense->ext.extended.info[0] <<24),
-			  		(sense->ext.extended.info[1] <<16),
-			  		(sense->ext.extended.info[2] <<8),
+			  		(sense->ext.extended.info[0] <<24)|
+			  		(sense->ext.extended.info[1] <<16)|
+			  		(sense->ext.extended.info[2] <<8)|
 			  		(sense->ext.extended.info[3] ));
 				}
 				printf("\n");
@@ -1372,9 +1375,9 @@ struct	scsi_xfer *xs;
 				if(sense->valid)
 				{
 			  		printf("block no. %d (decimal)\n",
-			  		(sense->ext.extended.info[0] <<24),
-			  		(sense->ext.extended.info[1] <<16),
-			  		(sense->ext.extended.info[2] <<8),
+			  		(sense->ext.extended.info[0] <<24)|
+			  		(sense->ext.extended.info[1] <<16)|
+			  		(sense->ext.extended.info[2] <<8)|
 			  		(sense->ext.extended.info[3] ));
 				}
 				printf("\n");
@@ -1392,9 +1395,9 @@ struct	scsi_xfer *xs;
 				if(sense->valid)
 				{
 			  		printf("block no. %d (decimal)\n",
-			  		(sense->ext.extended.info[0] <<24),
-			  		(sense->ext.extended.info[1] <<16),
-			  		(sense->ext.extended.info[2] <<8),
+			  		(sense->ext.extended.info[0] <<24)|
+			  		(sense->ext.extended.info[1] <<16)|
+			  		(sense->ext.extended.info[2] <<8)|
 			  		(sense->ext.extended.info[3] ));
 				}
 				printf("\n");
@@ -1421,8 +1424,8 @@ struct	scsi_xfer *xs;
 				sense->error_code);
 		if(sense->valid)
 			if(!silent)printf("block no. %d (decimal)\n",
-			(sense->ext.unextended.blockhi <<16),
-			+ (sense->ext.unextended.blockmed <<8),
+			(sense->ext.unextended.blockhi <<16)
+			+ (sense->ext.unextended.blockmed <<8)
 			+ (sense->ext.unextended.blocklow ));
 		}
 		return(EIO);
