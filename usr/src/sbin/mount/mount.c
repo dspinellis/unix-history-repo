@@ -12,20 +12,20 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	8.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	8.8 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <sys/param.h>
-#include <sys/time.h>
-#include <sys/wait.h>
-#include <sys/errno.h>
-#include <signal.h>
-#include <sys/mount.h>
-#include <fstab.h>
-#include <string.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
+#include <errno.h>
+#include <signal.h>
+#include <fstab.h>
+#include <sys/param.h>
+#include <sys/wait.h>
+#include <sys/mount.h>
 #include "pathnames.h"
 
 #define DEFAULT_ROOTUID	-2
@@ -115,12 +115,8 @@ main(argc, argv)
 			if (badvfsname(fs->fs_vfstype, vfslist))
 				continue;
 			/* `/' is special, it's always mounted */
-			if (!strcmp(fs->fs_file, "/"))
-				flags = MNT_UPDATE;
-			else
-				flags = updateflg;
 			mnttype = getmnttype(fs->fs_vfstype);
-			rval |= mountfs(fs->fs_spec, fs->fs_file, flags,
+			rval |= mountfs(fs->fs_spec, fs->fs_file, updateflg,
 			    type, options, fs->fs_mntops);
 		}
 		exit(rval);
@@ -130,9 +126,7 @@ main(argc, argv)
 		if (verbose || debug || type)
 			usage();
 		if ((mntsize = getmntinfo(&mntbuf, MNT_NOWAIT)) == 0) {
-			(void) fprintf(stderr,
-				"mount: cannot get mount information\n");
-			exit(1);
+			errx(1, "cannot get mount information");
 		}
 		for (i = 0; i < mntsize; i++) {
 			if (badvfstype(mntbuf[i].f_type, vfslist))
@@ -143,18 +137,18 @@ main(argc, argv)
 		exit(0);
 	}
 
+	if (argc == 1 && vfslist) {
+		usage();
+	}
+
 	if (argc == 1 && updateflg) {
 		if ((mntbuf = getmntpt(*argv)) == NULL) {
-			(void) fprintf(stderr,
-			    "mount: unknown special file or file system %s.\n",
+			errx(1, "unknown special file or file system %s.",
 			    *argv);
-			exit(1);
 		}
 		mnttype = mntbuf->f_type;
 		if ((fs = getfsfile(mntbuf->f_mntonname)) == NULL) {
-			(void) fprintf(stderr,
-			    "mount: can't find fstab entry for %s.\n", *argv);
-			exit(1);
+			errx(1, "can't find fstab entry for %s.", *argv);
 		}
 		mntname = fs->fs_vfstype;
 
@@ -181,9 +175,7 @@ main(argc, argv)
 			 */
 			i = strlen(fs->fs_mntops) + strlen(options) + 2;
 			if ((cp = malloc((size_t)i)) == NULL) {
-				(void) fprintf(stderr,
-				    "mount: -u malloc failed\n");
-				exit(1);
+				errx(1, "-u malloc failed");
 			}
 			sprintf(cp, "%s,%s", fs->fs_mntops, options);
 			options = cp;
@@ -192,15 +184,11 @@ main(argc, argv)
 		    updateflg, type, options, (char *)NULL);
 	} else if (argc == 1) {
 		if (!(fs = getfsfile(*argv)) && !(fs = getfsspec(*argv))) {
-			(void) fprintf(stderr,
-			    "mount: unknown special file or file system %s.\n",
+			errx(1, "unknown special file or file system %s.\n",
 			    *argv);
-			exit(1);
 		}
 		if (BADTYPE(fs->fs_type)) {
-			(void) fprintf(stderr,
-			    "mount: %s has unknown file system type.\n", *argv);
-			exit(1);
+			errx(1, "%s has unknown file system type.\n", *argv);
 		}
 		mnttype = getmnttype(fs->fs_vfstype);
 		ret = mountfs(fs->fs_spec, fs->fs_file, updateflg,
@@ -215,7 +203,7 @@ main(argc, argv)
 		 * an NFS filesystem is being specified ala Sun.
 		 */
 		if (vfslist == (char **)0 &&
-		    (index(argv[0], ':') || index(argv[0], '@'))) {
+		    (strchr(argv[0], ':') || strchr(argv[0], '@'))) {
 			mnttype = MOUNT_NFS;
 			mntname = "nfs";
 		}
@@ -229,7 +217,7 @@ main(argc, argv)
 		if (pid > 0)
 			kill(pid, SIGHUP);
 	}
-	exit (ret);
+	exit(ret);
 }
 
 static int
@@ -252,6 +240,9 @@ mountfs(spec, name, flags, type, options, mntopts)
 		getstdopts(type, &flags);
 	if (force)
 		flags |= MNT_FORCE;
+	if (strcmp(name, "/") == 0)
+		flags |= MNT_UPDATE;
+
 	switch (mnttype) {
 	case MOUNT_UFS:
 		if (mntopts)
@@ -295,7 +286,7 @@ mountfs(spec, name, flags, type, options, mntopts)
 			break;
 		if (pid = vfork()) {
 			if (pid == -1) {
-				perror("mount: vfork starting file system");
+				warn("vfork starting file system");
 				return (1);
 			}
 			if (waitpid(pid, &status, 0) != -1 &&
@@ -306,10 +297,7 @@ mountfs(spec, name, flags, type, options, mntopts)
 			goto out;
 		}
 		execv(execname, argv);
-		(void) fprintf(stderr, "mount: cannot exec %s for %s: ",
-			execname, name);
-		perror((char *)NULL);
-		exit(1);
+		err(1, "cannot exec %s for %s", execname, name);
 		/* NOTREACHED */
 
 	}
