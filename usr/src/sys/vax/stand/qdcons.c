@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- * 		@(#)qdcons.c	1.2  Berkeley  %G%
+ * 		@(#)qdcons.c	1.3  Berkeley  %G%
  *
  *	derived from: @(#)qdcons.c  4.1 (ULTRIX    11/23/87
  */
@@ -49,10 +49,10 @@
 #include "../h/types.h"
 #include "../vax/cpu.h"
 #define KERNEL
-#include "../ultrix/qdioctl.h"
-#include "../ultrix/qevent.h"
-#include "../ultrix/qduser.h"
-#include "../ultrix/qdreg.h"
+#include "../vaxuba/qdioctl.h"
+#include "../vaxuba/qevent.h"
+#include "../vaxuba/qduser.h"
+#include "../vaxuba/qdreg.h"
 #undef KERNEL
 
 /*-----------------------------------------------------------------------

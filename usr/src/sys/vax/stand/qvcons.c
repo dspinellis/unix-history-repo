@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- * 		@(#)qvcons.c	7.2  Berkeley  %G%
+ * 		@(#)qvcons.c	7.3  Berkeley  %G%
  *
  *	derived from: @(#)qvcons.c	4.1 11/23/87
  */
@@ -48,7 +48,7 @@
 
 #include "../h/types.h"
 #define KERNEL
-#include "../ultrix/qvioctl.h"
+#include "../vaxuba/qvioctl.h"
 #undef KERNEL
 #include "../vax/cpu.h"
 
