@@ -1,4 +1,7 @@
-static char *sccsid = "@(#)date.c	4.1 (Berkeley) %G%";
+#ifndef lint
+static char *sccsid = "@(#)date.c	4.2 (Berkeley) %G%";
+#endif
+
 #include <stdio.h>
 /*
  * date : print date
@@ -6,29 +9,16 @@ static char *sccsid = "@(#)date.c	4.1 (Berkeley) %G%";
  * date -u ... : date in GMT
  */
 #include <time.h>
-#include <sys/types.h>
-#include <sys/timeb.h>
 #include <utmp.h>
-long	timbuf;
+
+struct	timeval tv;
+struct	timezone tz;
 char	*ap, *ep, *sp;
 int	uflag;
 
 char	*timezone();
 static	int	dmsize[12] =
-{
-	31,
-	28,
-	31,
-	30,
-	31,
-	30,
-	31,
-	31,
-	30,
-	31,
-	30,
-	31
-};
+    { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 
 struct utmp wtmp[2] = { {"|", "", 0}, {"{", "", 0}};
 
@@ -38,22 +28,20 @@ struct	tm *localtime();
 struct	tm *gmtime();
 
 main(argc, argv)
-char *argv[];
+	int argc;
+	char *argv[];
 {
 	register char *tzn;
-	struct timeb info;
 	int wf, rc;
-	extern char _sobuf[];
 
-	setbuf(stdout, _sobuf);
 	rc = 0;
-	ftime(&info);
+	gettimeofday(&tv, &tz);
 	if (argc>1 && argv[1][0]=='-' && argv[1][1]=='u') {
 		argc--;
 		argv++;
 		uflag++;
 	}
-	if(argc > 1) {
+	if (argc > 1) {
 		ap = argv[1];
 		if (gtime()) {
 			printf("date: bad conversion\n");
@@ -61,13 +49,14 @@ char *argv[];
 		}
 		/* convert to GMT assuming local time */
 		if (uflag==0) {
-			timbuf += (long)info.timezone*60;
+			tv.tv_sec += (long)tz.tz_minuteswest*60;
 			/* now fix up local daylight time */
-			if(localtime(&timbuf)->tm_isdst)
-				timbuf -= 60*60;
+			if (localtime(&tv.tv_sec)->tm_isdst)
+				tv.tv_sec -= 60*60;
 		}
-		time(&wtmp[0].ut_time);
-		if(stime(&timbuf) < 0) {
+		tv.tv_sec = tv.tv_sec;
+		wtmp[0].ut_time = tv.tv_sec;
+		if (settimeofday(&tv, (struct timezone *)0) < 0) {
 			rc++;
 			printf("date: no permission\n");
 		} else if ((wf = open("/usr/adm/wtmp", 1)) >= 0) {
@@ -78,15 +67,15 @@ char *argv[];
 		}
 	}
 	if (rc==0)
-		time(&timbuf);
-	if(uflag) {
-		ap = asctime(gmtime(&timbuf));
+		time(&tv.tv_sec);
+	if (uflag) {
+		ap = asctime(gmtime(&tv.tv_sec));
 		tzn = "GMT";
 	} else {
 		struct tm *tp;
-		tp = localtime(&timbuf);
+		tp = localtime(&tv.tv_sec);
 		ap = asctime(tp);
-		tzn = timezone(info.timezone, tp->tm_isdst);
+		tzn = timezone(tz.tz_minuteswest, tp->tm_isdst);
 	}
 	printf("%.20s", ap);
 	if (tzn)
@@ -111,10 +100,10 @@ gtime()
 		*ep = x;
 	}
 	sp=ap;
-	time(&timbuf);
-	L=localtime(&timbuf);
+	gettimeofday(&tv, 0);
+	L=localtime(&tv.tv_sec);
 	secs = gp(-1);
-	if(*sp!='.') {
+	if (*sp!='.') {
 		mins=secs;
 		secs=0;
 	} else {sp++;
@@ -124,44 +113,43 @@ gtime()
 	day = gp(L->tm_mday);
 	month = gp(L->tm_mon+1);
 	year = gp(L->tm_year);
-	if(*sp)
-		return(1);
-	if( month<1 || month>12 ||
+	if (*sp)
+		return (1);
+	if (month<1 || month>12 ||
 	    day<1 || day>31 ||
 	    mins<0 || mins>59 ||
 	    secs<0 || secs>59)
-		return(1);
+		return (1);
 	if (hour==24) {
 		hour=0; day++;
 	}
 	if (hour<0 || hour>23)
-		return(1);
-	timbuf = 0;
+		return (1);
+	tv.tv_sec = 0;
 	year += 1900;
-	for(i=1970; i<year; i++)
-		timbuf += dysize(i);
+	for (i=1970; i<year; i++)
+		tv.tv_sec += dysize(i);
 	/* Leap year */
 	if (dysize(year)==366 && month >= 3)
-		timbuf++;
-	while(--month)
-		timbuf += dmsize[month-1];
-	timbuf += day-1;
-	timbuf = 24*timbuf + hour;
-	timbuf = 60*timbuf + mins;
-	timbuf = 60*timbuf + secs;
-	return(0);
-
+		tv.tv_sec++;
+	while (--month)
+		tv.tv_sec += dmsize[month-1];
+	tv.tv_sec += day-1;
+	tv.tv_sec = 24*tv.tv_sec + hour;
+	tv.tv_sec = 60*tv.tv_sec + mins;
+	tv.tv_sec = 60*tv.tv_sec + secs;
+	return (0);
 }
 
 gp(dfault)
 {
 	register int c, d;
 
-	if(*sp==0)
-		return(dfault);
+	if (*sp==0)
+		return (dfault);
 	c = (*sp++)-'0';
 	d = (*sp ? (*sp++)-'0' : 0);
-	if(c<0 || c>9 || d<0 || d>9)
-		return(-1);
-	return(c+10*d);
+	if (c<0 || c>9 || d<0 || d>9)
+		return (-1);
+	return (c+10*d);
 }
