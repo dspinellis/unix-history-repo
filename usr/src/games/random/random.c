@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)random.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)random.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -95,7 +95,7 @@ main(argc, argv)
 	 * 0 (which has a 1 / denom chance of being true), we select the
 	 * line.
 	 */
-	selected = !((denom * random()) / LONG_MAX);
+	selected = !(int)((denom * random()) / LONG_MAX);
 	while ((ch = getchar()) != EOF) {
 		if (selected)
 			(void)putchar(ch);
@@ -105,7 +105,7 @@ main(argc, argv)
 				err(2, "stdout");
 
 			/* Now see if the next line is to be printed. */
-			selected = !((denom * random()) / LONG_MAX);
+			selected = !(int)((denom * random()) / LONG_MAX);
 		}
 	}
 	if (ferror(stdin))
@@ -116,6 +116,7 @@ main(argc, argv)
 void
 usage()
 {
+
 	(void)fprintf(stderr, "usage: random [-er] [denominator]\n");
 	exit(1);
 }
