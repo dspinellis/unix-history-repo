@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)io.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)io.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	<curses.h>
@@ -502,8 +502,10 @@ readchar()
 over:
     cnt = 0;
     while (read(0, &c, 1) <= 0)
-	if (cnt++ > 100)	/* if we are getting infinite EOFs */
-	    bye();		/* quit the game */
+	if (cnt++ > 100) {	/* if we are getting infinite EOFs */
+		bye();		/* quit the game */
+		exit(1);
+	}
     if (c == CTRL(L)) {
 	wrefresh(curscr);
 	goto over;
@@ -568,6 +570,12 @@ getline()
     return linebuf;
 }
 
+rint()
+{
+	bye();
+	exit(1);
+}
+
 /*
  * bye:
  *	Leave the program, cleaning things up as we go.
@@ -579,5 +587,4 @@ bye()
 	fflush(stdout);
 	endwin();
 	putchar('\n');
-	exit(1);
 }
