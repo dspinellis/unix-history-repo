@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_send.c	6.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_send.c	6.23 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -57,6 +57,7 @@ res_send(buf, buflen, answer, anslen)
 	register int n;
 	int try, v_circuit, resplen, ns;
 	int gotsomewhere = 0, connected = 0;
+	int connreset = 0;
 	u_short id, len;
 	char *cp;
 	fd_set dsmask;
@@ -156,6 +157,19 @@ res_send(buf, buflen, answer, anslen)
 #endif DEBUG
 				(void) close(s);
 				s = -1;
+				/*
+				 * A long running process might get its TCP
+				 * connection reset if the remote server was
+				 * restarted.  Requery the server instead of
+				 * trying a new one.  When there is only one
+				 * server, this means that a query might work
+				 * instead of failing.  We only allow one reset
+				 * per query to prevent looping.
+				 */
+				if (terrno == ECONNRESET && !connreset) {
+					connreset = 1;
+					ns--;
+				}
 				continue;
 			}
 			cp = answer;
