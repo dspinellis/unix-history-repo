@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)specdev.h	7.9 (Berkeley) %G%
+ *	@(#)specdev.h	7.10 (Berkeley) %G%
  */
 
 /*
@@ -69,7 +69,7 @@ int	spec_write __P((struct vop_write_args *));
 int	spec_ioctl __P((struct vop_ioctl_args *));
 int	spec_select __P((struct vop_select_args *));
 #define spec_mmap ((int (*) __P((struct  vop_mmap_args *)))spec_badop)
-#define spec_fsync ((int (*) __P((struct  vop_fsync_args *)))nullop)
+int	spec_fsync __P((struct  vop_fsync_args *));
 #define spec_seek ((int (*) __P((struct  vop_seek_args *)))spec_badop)
 #define spec_remove ((int (*) __P((struct  vop_remove_args *)))spec_badop)
 #define spec_link ((int (*) __P((struct  vop_link_args *)))spec_badop)
