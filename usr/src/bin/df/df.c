@@ -1,12 +1,11 @@
 #ifndef lint
-static	char *sccsid = "@(#)df.c	4.11 %G%";
+static	char *sccsid = "@(#)df.c	4.12 %G%";
 #endif
 
 #include <stdio.h>
 #include <fstab.h>
 #include <sys/param.h>
-#include <sys/filsys.h>
-#include <sys/fblk.h>
+#include <sys/fs.h>
 #include <sys/stat.h>
 
 /*
@@ -20,14 +19,18 @@ struct {
 } mtab[NFS];
 char	root[32];
 char	*mpath();
-daddr_t	blkno	= 1;
 
 int	iflag;
 
-struct	filsys sblock;
+union {
+	struct fs iu_fs;
+	char dummy[SBSIZE];
+} sb;
+#define sblock sb.iu_fs
 
 int	fi;
 daddr_t	alloc();
+char	*strcpy();
 
 main(argc, argv)
 	int argc;
@@ -50,25 +53,24 @@ main(argc, argv)
 	}
 	i = open("/etc/mtab", 0);
 	if (i >= 0) {
-		read(i, mtab, sizeof mtab);	/* Probably returns short */
-		close(i);
+		(void) read(i, (char *)mtab, sizeof mtab);
+		(void) close(i);
 	}
-	printf("Filesystem  Mounted on      kbytes    used    free");
-	printf("   %% used");
+	printf("Filesystem    kbytes    used   avail capacity");
 	if (iflag)
-		printf("   iused   ifree  %%iused");
-	putchar('\n');
+		printf(" iused   ifree  %%iused");
+	printf("  Mounted on\n");
 	if (argc <= 1) {
 		struct fstab *fsp;
 
 		if (setfsent() == 0)
 			perror(FSTAB), exit(1);
 		while (fsp = getfsent()) {
-			if (strcmp(fsp->fs_type, FSTAB_RW) &&
-			    strcmp(fsp->fs_type, FSTAB_RO))
+			if (!strcmp(fsp->fs_type, FSTAB_RW) &&
+			    !(strcmp(fsp->fs_type, FSTAB_RO)))
 				continue;
 			if (root[0] == 0)
-				strcpy(root, fsp->fs_spec);
+				(void) strcpy(root, fsp->fs_spec);
 			dfree(fsp->fs_spec, 1);
 		}
 		endfsent();
@@ -82,9 +84,7 @@ dfree(file, infsent)
 	char *file;
 	int infsent;
 {
-	daddr_t i;
-	long blocks, free, used, hardway;
-	char *mp;
+	long totalblks, availblks, avail, free, used;
 	struct stat stbuf;
 	struct fstab *fsp;
 
@@ -116,23 +116,30 @@ found:
 		perror(file);
 		return;
 	}
-	bread((long) 1, (char *)&sblock, sizeof (sblock));
-	printf("%-12.12s%-14.14s", file, mp = mpath(file));
-	blocks = (long) sblock.s_fsize - (long)sblock.s_isize;
-	free = sblock.s_tfree;
-	used = blocks - free;
-	printf("%8d%8d%8d", blocks, used, free);
-	printf("%8.0f%%", 
-	    blocks == 0 ? 0.0 : (double) used / (double)blocks * 100.0);
+	bread(SBLOCK, (char *)&sblock, SBSIZE);
+	printf("%-12.12s", file);
+	totalblks = sblock.fs_dsize;
+	free = sblock.fs_cstotal.cs_nbfree * sblock.fs_frag +
+	    sblock.fs_cstotal.cs_nffree;
+	used = totalblks - free;
+	availblks = totalblks * (100 - sblock.fs_minfree) / 100;
+	avail = availblks > used ? availblks - used : 0;
+	printf("%8d%8d%8d", totalblks * sblock.fs_fsize / 1024,
+	    used * sblock.fs_fsize / 1024, avail * sblock.fs_fsize / 1024);
+	printf("%6.0f%%",
+	    availblks == 0 ? 0.0 : (double) used / (double) availblks * 100.0);
 	if (iflag) {
-		int inodes = (sblock.s_isize - 2) * INOPB;
-		used = inodes - sblock.s_tinode;
-		printf("%8ld%8ld%8.0f%%", used, sblock.s_tinode, 
-		    inodes == 0 ? 0.0 : (double)used/(double)inodes*100.0);
-	}
-	printf("\n");
-	close(fi);
+		int inodes = sblock.fs_ncg * sblock.fs_ipg;
+		used = inodes - sblock.fs_cstotal.cs_nifree;
+		printf("%8ld%8ld%6.0f%% ", used, sblock.fs_cstotal.cs_nifree,
+		    inodes == 0 ? 0.0 : (double)used / (double)inodes * 100.0);
+	} else 
+		printf("  ");
+	printf("  %s\n", mpath(file));
+	(void) close(fi);
 }
+
+long lseek();
 
 bread(bno, buf, cnt)
 	daddr_t bno;
@@ -141,7 +148,7 @@ bread(bno, buf, cnt)
 	int n;
 	extern errno;
 
-	lseek(fi, bno<<BSHIFT, 0);
+	(void) lseek(fi, (long)(bno * DEV_BSIZE), 0);
 	if ((n=read(fi, buf, cnt)) != cnt) {
 		printf("\nread error bno = %ld\n", bno);
 		printf("count = %d; errno = %d\n", n, errno);
