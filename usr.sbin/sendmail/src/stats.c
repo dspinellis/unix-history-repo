@@ -33,13 +33,15 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)stats.c	8.1 (Berkeley) 6/7/93";
+static char sccsid[] = "@(#)stats.c	8.2 (Berkeley) 7/11/93";
 #endif /* not lint */
 
 # include "sendmail.h"
 # include "mailstats.h"
 
 struct statistics	Stat;
+
+bool	GotStats = FALSE;	/* set when we have stats to merge */
 
 #define ONE_K		1000		/* one thousand (twenty-four?) */
 #define KBYTES(x)	(((x) + (ONE_K - 1)) / ONE_K)
@@ -65,6 +67,7 @@ markstats(e, to)
 		Stat.stat_nt[to->q_mailer->m_mno]++;
 		Stat.stat_bt[to->q_mailer->m_mno] += KBYTES(e->e_msgsize);
 	}
+	GotStats = TRUE;
 }
 /*
 **  POSTSTATS -- post statistics in the statistics file
@@ -86,7 +89,7 @@ poststats(sfile)
 	struct statistics stat;
 	extern off_t lseek();
 
-	if (sfile == NULL)
+	if (sfile == NULL || !GotStats)
 		return;
 
 	(void) time(&Stat.stat_itime);
@@ -119,4 +122,8 @@ poststats(sfile)
 	(void) lseek(fd, (off_t) 0, 0);
 	(void) write(fd, (char *) &stat, sizeof stat);
 	(void) close(fd);
+
+	/* clear the structure to avoid future disappointment */
+	bzero(&Stat, sizeof stat);
+	GotStats = FALSE;
 }

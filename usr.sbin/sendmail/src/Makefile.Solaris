@@ -11,7 +11,9 @@
 #
 
 # use O=-O (usual) or O=-g (debugging)
-O=	-g
+O=	-O
+
+CC=	gcc -V2.3.3
 
 # define the database mechanism used for alias lookups:
 #	-DNDBM -- use new DBM
@@ -22,26 +24,27 @@ O=	-g
 # If YPCOMPAT is defined and /var/yp/Makefile exists, sendmail will build
 #   both the NEWDB and DBM libraries (the DBM just for YP).
 #
-DBMDEF=	-DNDBM -DNEWDB
+DBMDEF=	-DNDBM
 
 # define the load average calculation on your system: -DLA_TYPE=LA_INT,
 #   -DLA_TYPE=LA_FLOAT, -DLA_TYPE=LA_SUBR, or -DLA_TYPE=LA_ZERO
 # leave undefined to use internal guess
 #LADEF=	-DLA_TYPE=LA_SUBR
 
-# define UNSETENV if you need to compile in a local version of setenv
-ENVDEF=	-D_AIX3
+ENVDEF=	-D_PATH_SENDMAILCF=\"/etc/mail/sendmail.cf\" \
+	-D_PATH_SENDMAILPID=\"/etc/sendmail/sendmail.pid\"
 
 # see also conf.h for additional compilation flags
 
 # include directories
-#INCDIRS=-I/usr/sww/include/db
+INCDIRS=-I/usr/sww/include/db
 
 # library directories
-#LIBDIRS=-L/usr/sww/lib
+LIBDIRS=-L/usr/sww/lib -L/usr/ucblib
 
 # libraries required on your system
-LIBS=	-ldbm -ldb
+#LIBS=	-lresolv -lsocket -lnsl -lucb -lelf
+LIBS=	-lresolv -lsocket -lnsl -lelf
 
 # location of sendmail binary (usually /usr/sbin or /usr/lib)
 BINDIR=	${DESTDIR}/usr/sbin
@@ -54,7 +57,7 @@ HFDIR=	${DESTDIR}/usr/share/misc
 
 ###################  end of user configuration flags  ######################
 
-CFLAGS=	-I. $O ${INCDIRS} ${DBMDEF} ${LADEF} ${ENVDEF}
+CFLAGS=	-I. $O ${INCDIRS} ${DBMDEF} ${LADEF} ${ENVDEF} -DSOLARIS
 
 OBJS=	alias.o arpadate.o clock.o collect.o conf.o convtime.o daemon.o \
 	deliver.o domain.o envelope.o err.o headers.o macro.o main.o \
@@ -64,8 +67,9 @@ OBJS=	alias.o arpadate.o clock.o collect.o conf.o convtime.o daemon.o \
 
 LINKS=	${DESTDIR}/usr/ucb/newaliases ${DESTDIR}/usr/ucb/mailq
 BINOWN=	root
-BINGRP=	kmem
+BINGRP=	sys
 BINMODE=6555
+INSTALL=/usr/ucb/install
 
 sendmail: ${OBJS}
 	${CC} -o sendmail ${OBJS} ${LIBDIRS} ${LIBS}
@@ -82,11 +86,11 @@ sendmail.0: sendmail.8
 install: install-sendmail install-docs
 
 install-sendmail: sendmail
-	install -o ${BINOWN} -g ${BINGRP} -m ${BINMODE} sendmail ${BINDIR}
+	${INSTALL} -o ${BINOWN} -g ${BINGRP} -m ${BINMODE} sendmail ${BINDIR}
 	for i in ${LINKS}; do ; rm -f $$i; ln -s ${BINDIR}/sendmail $$i; done
-	install -c -o ${BINOWN} -g ${BINGRP} -m 666 /dev/null \
+	${INSTALL} -c -o ${BINOWN} -g ${BINGRP} -m 666 /dev/null \
 	    ${STDIR}/sendmail.st
-	install -c -o ${BINOWN} -g ${BINGRP} -m 444 sendmail.hf ${HFDIR}
+	${INSTALL} -c -o ${BINOWN} -g ${BINGRP} -m 444 sendmail.hf ${HFDIR}
 
 # doesn't actually install them -- you may want to install pre-nroff versions
 install-docs: aliases.0 newaliases.0 sendmail.0

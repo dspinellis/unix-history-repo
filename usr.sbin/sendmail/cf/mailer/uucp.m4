@@ -34,19 +34,29 @@ PUSHDIVERT(-1)
 #
 
 ifdef(`UUCP_MAILER_PATH',, `define(`UUCP_MAILER_PATH', /usr/bin/uux)')
+ifdef(`UUCP_MAILER_ARGS',, `define(`UUCP_MAILER_ARGS', `uux - -r -z -a$f -gC $h!rmail ($u)')')
 ifdef(`UUCP_MAILER_FLAGS',, `define(`UUCP_MAILER_FLAGS', `')')
+ifdef(`UUCP_MAX_SIZE',, `define(`UUCP_MAX_SIZE', 100000)')
 POPDIVERT
 #####################################
 ###   UUCP Mailer specification   ###
 #####################################
 
-VERSIONID(`@(#)uucp.m4	8.1 (Berkeley) 6/7/93')
+VERSIONID(`@(#)uucp.m4	8.4 (Berkeley) 7/13/93')
 
-Msuucp,		P=UUCP_MAILER_PATH, F=CONCAT(mDFMhuU, UUCP_MAILER_FLAGS), S=12, R=22, M=100000,
-		A=uux - -r -z -a$f -gC $h!rmail ($u)
+# old UUCP mailer
+Muucp,		P=UUCP_MAILER_PATH, F=CONCAT(DFMhuU, UUCP_MAILER_FLAGS), S=12, R=22, M=UUCP_MAX_SIZE,
+		A=UUCP_MAILER_ARGS
 
-Muucp,		P=UUCP_MAILER_PATH, F=CONCAT(DFMhuU, UUCP_MAILER_FLAGS), S=12, R=22, M=100000,
-		A=uux - -r -z -a$f -gC $h!rmail ($u)
+# smart UUCP mailer (handles multiple addresses)
+Msuucp,		P=UUCP_MAILER_PATH, F=CONCAT(mDFMhuU, UUCP_MAILER_FLAGS), S=12, R=22, M=UUCP_MAX_SIZE,
+		A=UUCP_MAILER_ARGS
+
+ifdef(`_MAILER_smtp_',
+`# domain-ized UUCP mailer
+Muucp-dom,	P=UUCP_MAILER_PATH, F=CONCAT(mDFMhu, UUCP_MAILER_FLAGS), S=11, R=21, M=UUCP_MAX_SIZE,
+		A=UUCP_MAILER_ARGS')
+
 
 # sender rewriting
 S12
@@ -54,14 +64,14 @@ S12
 # handle error address as a special case
 R<@>				$n			errors to mailer-daemon
 
-# don't qualify list:; syntax
+# do not qualify list:; syntax
 R$* :; <@>			$@ $1 :;
 
 R$* < @ $* . >			$1 < @ $2 >		strip trailing dots
 R$* < @ $j >			$1			strip local name
 R$* < @ $- . UUCP >		$2 ! $1			convert to UUCP format
 R$* < @ $+ >			$2 ! $1			convert to UUCP format
-R$+				$: $k ! $1		prepend our name
+R$+				$: $U ! $1		prepend our name
 
 # recipient rewriting
 S22

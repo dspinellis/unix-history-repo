@@ -33,7 +33,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.1 (Berkeley) 6/7/93";
+static char sccsid[] = "@(#)conf.c	8.3 (Berkeley) 7/13/93";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -117,7 +117,7 @@ struct hdrinfo	HdrInfo[] =
 
 		/* miscellaneous fields */
 	"comments",		H_FORCE,
-	"return-path",		H_ACHECK,
+	"return-path",		H_FORCE|H_ACHECK,
 
 	NULL,			0,
 };
@@ -188,7 +188,7 @@ setdefaults(e)
 	WkClassFact = 1800L;			/* option z */
 	WkTimeFact = 90000L;			/* option Z */
 	QueueFactor = WkRecipFact * 20;		/* option q */
-	FileMode = (getuid() != geteuid()) ? 0644 : 0600;
+	FileMode = (RealUid != geteuid()) ? 0644 : 0600;
 						/* option F */
 	DefUid = 1;				/* option u */
 	DefGid = 1;				/* option g */
@@ -351,30 +351,6 @@ setupmaps()
 
 #undef MAPDEF
 /*
-**  GETRUID -- get real user id (V7)
-*/
-
-getruid()
-{
-	if (OpMode == MD_DAEMON)
-		return (RealUid);
-	else
-		return (getuid());
-}
-
-
-/*
-**  GETRGID -- get real group id (V7).
-*/
-
-getrgid()
-{
-	if (OpMode == MD_DAEMON)
-		return (RealGid);
-	else
-		return (getgid());
-}
-/*
 **  USERNAME -- return the user id of the logged in user.
 **
 **	Parameters:
@@ -403,13 +379,13 @@ username()
 		myname = getlogin();
 		if (myname == NULL || myname[0] == '\0')
 		{
-			pw = getpwuid(getruid());
+			pw = getpwuid(RealUid);
 			if (pw != NULL)
 				myname = newstr(pw->pw_name);
 		}
 		else
 		{
-			uid_t uid = getuid();
+			uid_t uid = RealUid;
 
 			myname = newstr(myname);
 			if ((pw = getpwnam(myname)) == NULL ||
@@ -599,6 +575,9 @@ rlsesigs()
 #    define LA_TYPE		LA_FLOAT
 #    define LA_AVENRUN		"avenrun"
 #  endif
+#  if defined(__NeXT__)
+#    define LA_TYPE		LA_ZERO
+#  endif
 
 /* now do the guesses based on general OS type */
 #  ifndef LA_TYPE
@@ -631,6 +610,10 @@ rlsesigs()
 #  if defined(mips) && !defined(ultrix)
      /* powerful RISC/os */
 #    define _PATH_UNIX		"/unix"
+#  endif
+#  if defined(Solaris2)
+     /* Solaris 2 */
+#    define _PATH_UNIX		"/kernel/unix"
 #  endif
 #  if defined(SYSTEM5)
 #    ifndef _PATH_UNIX
@@ -926,7 +909,7 @@ setproctitle(fmt, va_alist)
 void
 reapchild()
 {
-# ifdef WIFEXITED
+# if defined(WIFEXITED) && !defined(__NeXT__)
 	auto int status;
 	int count;
 	int pid;
@@ -945,7 +928,7 @@ reapchild()
 # ifdef WNOHANG
 	union wait status;
 
-	while (wait3((int *)&status, WNOHANG, (struct rusage *) NULL) > 0)
+	while (wait3(&status, WNOHANG, (struct rusage *) NULL) > 0)
 		continue;
 # else /* WNOHANG */
 	auto int status;
@@ -1014,19 +997,30 @@ unsetenv(name)
 **		none
 */
 
-#ifdef SYSTEM5
+#ifdef SOLARIS
+# include <sys/resource.h>
+#endif
 
 int
-getdtablesize()
+getdtsize()
 {
-# ifdef _SC_OPEN_MAX
+#ifdef RLIMIT_NOFILE
+	struct rlimit rl;
+
+	if (getrlimit(RLIMIT_NOFILE, &rl) >= 0)
+		return rl.rlim_cur;
+#endif
+
+# if defined(_SC_OPEN_MAX) && !defined(NO_SYSCONF)
 	return sysconf(_SC_OPEN_MAX);
 # else
+#  ifdef HASGETDTABLESIZE
+	return getdtablesize();
+#  else
 	return NOFILE;
+#  endif
 # endif
 }
-
-#endif
 /*
 **  UNAME -- get the UUCP name of this system.
 */
@@ -1117,10 +1111,13 @@ initgroups(name, basegid)
 
 #ifndef HASSETSID
 
-setsid()
+pid_t
+setsid __P ((void))
 {
 # ifdef SYSTEM5
-	setpgrp();
+	return setpgrp();
+# else
+	return 0;
 # endif
 }
 

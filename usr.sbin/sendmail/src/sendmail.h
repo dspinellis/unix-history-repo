@@ -31,7 +31,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)sendmail.h	8.1 (Berkeley) 6/7/93
+ *	@(#)sendmail.h	8.3 (Berkeley) 7/13/93
  */
 
 /*
@@ -41,7 +41,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.1		6/7/93";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.3		7/13/93";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -146,6 +146,7 @@ typedef struct address ADDRESS;
 # define QNOTREMOTE	000100	/* not an address for remote forwarding */
 # define QSELFREF	000200	/* this address references itself */
 # define QVERIFIED	000400	/* verified, but not expanded */
+# define QREPORT	001000	/* report this address in return message */
 /*
 **  Mailer definition structure.
 **	Every mailer known to the system is declared in this
@@ -427,6 +428,7 @@ MCI
 {
 	short		mci_flags;	/* flag bits, see below */
 	short		mci_errno;	/* error number on last connection */
+	short		mci_herrno;	/* h_errno from last DNS lookup */
 	short		mci_exitstat;	/* exit status from last connection */
 	short		mci_state;	/* SMTP state */
 	long		mci_maxsize;	/* max size this server will accept */
@@ -517,6 +519,8 @@ MAP
 # define MF_OPEN	0x0020		/* this entry is open */
 # define MF_WRITABLE	0x0040		/* open for writing */
 # define MF_ALIAS	0x0080		/* this is an alias file */
+# define MF_TRY0NULL	0x0100		/* try with no null byte */
+# define MF_TRY1NULL	0x0200		/* try with the null byte */
 # define MF_IMPL_HASH	0x1000		/* implicit: underlying hash database */
 # define MF_IMPL_NDBM	0x2000		/* implicit: underlying NDBM database */
 
@@ -814,6 +818,7 @@ EXTERN time_t	MciCacheTimeout;	/* maximum idle time on connections */
 EXTERN char	*QueueLimitRecipient;	/* limit queue runs to this recipient */
 EXTERN char	*QueueLimitSender;	/* limit queue runs to this sender */
 EXTERN char	*QueueLimitId;		/* limit queue runs to this id */
+EXTERN FILE	*TrafficLogFile;	/* file in which to log all traffic */
 
 
 /*

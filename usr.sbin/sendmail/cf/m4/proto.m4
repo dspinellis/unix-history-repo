@@ -34,7 +34,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.1 (Berkeley) 6/27/93')
+VERSIONID(`@(#)proto.m4	8.2 (Berkeley) 7/11/93')
 
 MAILER(local)dnl
 
@@ -89,6 +89,11 @@ CONCAT(DS, SMART_HOST)
 ifdef(`MAILER_TABLE',
 `# Mailer table (overriding domains)
 Kmailertable MAILER_TABLE
+
+')dnl
+ifdef(`DOMAIN_TABLE',
+`# Domain table (adding domains)
+Kdomaintable DOMAIN_TABLE
 
 ')dnl
 # who I send unqualified names to (null means deliver locally)
@@ -417,6 +422,10 @@ R$* < @ localhost > $*		$: $1 < @ $j . > $2		no domain at all
 R$* < @ localhost . $m > $*	$: $1 < @ $j . > $2		local domain
 ifdef(`_NO_UUCP_', `dnl',
 `R$* < @ localhost . UUCP > $*	$: $1 < @ $j . > $2		.UUCP domain')
+ifdef(`DOMAIN_TABLE', `
+# look up unqualified domains in the domain table
+R$* < @ $- > $*			$: $1 < @ $(domaintable $2 $) > $3',
+`dnl')
 undivert(2)dnl
 
 ifdef(`_NO_UUCP_', `dnl',
@@ -567,25 +576,28 @@ R< @ $+ .UUCP > : $+	$#uucp $@ $1 $: $2			@host.UUCP:...
 R$+ < @ $+ .UUCP >	$#uucp $@ $2 $: $1			user@host.UUCP',
 	`dnl')')
 
+ifdef(`_MAILER_USENET_', `
+# addresses sent to net.group.USENET will get forwarded to a newsgroup
+R$+ . USENET		$# usenet $: $1',
+`dnl')
+
 ifdef(`_LOCAL_RULES_',
 `# figure out what should stay in our local mail system
-undivert(1)',
-`ifdef(`_MAILER_smtp_',
-`# deal with other remote names
-R$* < @ $* > $*		$#smtp $@ $2 $: $1 < @ $2 > $3		user@host.domain')')
+undivert(1)', `dnl')
+
 ifdef(`SMART_HOST', `
 # pass names that still have a host to a smarthost
 R$* < @ $* > $*		$: < $S > $1 < @ $2 > $3	glue on smarthost name
 R<$-:$+> $* < @$* > $*	$# $1 $@ $2 $: $3 < @ $4 > $5	if non-null, use it
 R<$+> $* < @$* > $*	$#suucp $@ $1 $: $2 < @ $3 > $4	if non-null, use it
 R<> $* < @ $* > $*	$1 < @ $2 > $3			else strip off gunk',
+
 `ifdef(`_LOCAL_RULES_', `
 # reject messages that have host names we do not understand
 R$* < @ $* > $*		$#error $@ NOHOST $: Unrecognized host name $2',
-`dnl')')
-ifdef(`_MAILER_USENET_', `
-# addresses sent to net.group.USENET will get forwarded to a newsgroup
-R$+ . USENET		$# usenet $: $1')
+`ifdef(`_MAILER_smtp_',
+`# deal with other remote names
+R$* < @ $* > $*		$#smtp $@ $2 $: $1 < @ $2 > $3		user@host.domain')')')
 
 ifdef(`_OLD_SENDMAIL_',
 `# forward remaining names to local relay, if any

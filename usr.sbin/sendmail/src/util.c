@@ -33,7 +33,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.1 (Berkeley) 6/27/93";
+static char sccsid[] = "@(#)util.c	8.3 (Berkeley) 7/13/93";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -404,6 +404,7 @@ buildfname(gecos, login, buf)
 **	Parameters:
 **		fn -- filename to check.
 **		uid -- uid to compare against.
+**		mustown -- to be safe, this uid must own the file.
 **		mode -- mode bits that must match.
 **
 **	Returns:
@@ -418,23 +419,30 @@ buildfname(gecos, login, buf)
 # define S_IXOTH	(S_IEXEC >> 6)
 #endif
 
+#ifndef S_IXUSR
+# define S_IXUSR	(S_IEXEC)
+#endif
+
 int
-safefile(fn, uid, mode)
+safefile(fn, uid, mustown, mode)
 	char *fn;
 	uid_t uid;
+	bool mustown;
 	int mode;
 {
 	register char *p;
 	struct stat stbuf;
 
 	if (tTd(54, 4))
-		printf("safefile(%s, %d, %o): ", fn, uid, mode);
+		printf("safefile(%s, %d, %d, %o): ", fn, uid, mustown, mode);
 	errno = 0;
 
 	for (p = fn; (p = strchr(++p, '/')) != NULL; *p = '/')
 	{
 		*p = '\0';
-		if (stat(fn, &stbuf) < 0 || !bitset(S_IXOTH, stbuf.st_mode))
+		if (stat(fn, &stbuf) < 0 ||
+		    !bitset(stbuf.st_uid == uid ? S_IXUSR : S_IXOTH,
+			    stbuf.st_mode))
 		{
 			int ret = errno;
 
@@ -457,11 +465,11 @@ safefile(fn, uid, mode)
 		errno = 0;
 		return ret;
 	}
-	if (stbuf.st_uid != uid && uid == 0)
+	if (stbuf.st_uid != uid || uid == 0 || !mustown)
 		mode >>= 6;
 	if (tTd(54, 4))
 		printf("[uid %d, stat %o] ", stbuf.st_uid, stbuf.st_mode);
-	if ((stbuf.st_uid == uid || uid == 0) &&
+	if ((stbuf.st_uid == uid || uid == 0 || !mustown) &&
 	    (stbuf.st_mode & mode) == mode)
 	{
 		if (tTd(54, 4))
@@ -515,6 +523,10 @@ fixcrlf(line, stripnl)
 **	whatever), so this tries to get around it.
 */
 
+#ifndef O_ACCMODE
+# define O_ACCMODE	(O_RDONLY|O_WRONLY|O_RDWR)
+#endif
+
 struct omodes
 {
 	int	mask;
@@ -567,7 +579,10 @@ dfopen(filename, omode, cmode)
 		(void) lockfile(fd, filename, locktype);
 		errno = 0;
 	}
-	return fdopen(fd, om->farg);
+	if (fd < 0)
+		return NULL;
+	else
+		return fdopen(fd, om->farg);
 }
 /*
 **  PUTLINE -- put a line like fputs obeying SMTP conventions
@@ -610,6 +625,9 @@ putline(l, fp, m)
 		if (p == NULL)
 			p = &l[strlen(l)];
 
+		if (TrafficLogFile != NULL)
+			fprintf(TrafficLogFile, "%05d >>> ", getpid());
+
 		/* check for line overflow */
 		while (m->m_linelimit > 0 && (p - l) > m->m_linelimit)
 		{
@@ -618,17 +636,30 @@ putline(l, fp, m)
 			svchar = *q;
 			*q = '\0';
 			if (l[0] == '.' && bitnset(M_XDOT, m->m_flags))
+			{
 				(void) putc('.', fp);
+				if (TrafficLogFile != NULL)
+					(void) putc('.', TrafficLogFile);
+			}
 			fputs(l, fp);
 			(void) putc('!', fp);
 			fputs(m->m_eol, fp);
+			if (TrafficLogFile != NULL)
+				fprintf(TrafficLogFile, "%s!\n%05d >>> ",
+					l, getpid());
 			*q = svchar;
 			l = q;
 		}
 
 		/* output last part */
 		if (l[0] == '.' && bitnset(M_XDOT, m->m_flags))
+		{
 			(void) putc('.', fp);
+			if (TrafficLogFile != NULL)
+				(void) putc('.', TrafficLogFile);
+		}
+		if (TrafficLogFile != NULL)
+			fprintf(TrafficLogFile, "%.*s\n", p - l, l);
 		for ( ; l < p; ++l)
 			(void) putc(*l, fp);
 		fputs(m->m_eol, fp);
@@ -735,6 +766,9 @@ sfgets(buf, siz, fp, timeout, during)
 			usrerr("451 timeout waiting for input during %s",
 				during);
 			buf[0] = '\0';
+#ifdef XDEBUG
+			checkfd012(during);
+#endif
 			return (NULL);
 		}
 		ev = setevent(timeout, readtimeout, 0);
@@ -758,8 +792,12 @@ sfgets(buf, siz, fp, timeout, during)
 	if (p == NULL)
 	{
 		buf[0] = '\0';
+		if (TrafficLogFile != NULL)
+			fprintf(TrafficLogFile, "%05d <<< [EOF]\n", getpid());
 		return (NULL);
 	}
+	if (TrafficLogFile != NULL)
+		fprintf(TrafficLogFile, "%05d <<< %s", getpid(), buf);
 	if (SevenBit)
 		for (p = buf; *p != '\0'; p++)
 			*p &= ~0200;
@@ -1025,4 +1063,42 @@ strcontainedin(a, b)
 			return TRUE;
 		b++;
 	}
+}
+/*
+**  CHECKFD012 -- check low numbered file descriptors
+**
+**	File descriptors 0, 1, and 2 should be open at all times.
+**	This routine verifies that, and fixes it if not true.
+**
+**	Parameters:
+**		where -- a tag printed if the assertion failed
+**
+**	Returns:
+**		none
+*/
+
+checkfd012(where)
+	char *where;
+{
+#ifdef XDEBUG
+	register int i;
+	struct stat stbuf;
+
+	for (i = 0; i < 3; i++)
+	{
+		if (fstat(i, &stbuf) < 0)
+		{
+			/* oops.... */
+			int fd;
+
+			syserr("%s: fd %d not open", where, i);
+			fd = open("/dev/null", i == 0 ? O_RDONLY : O_WRONLY, 0666);
+			if (fd != i)
+			{
+				(void) dup2(fd, i);
+				(void) close(fd);
+			}
+		}
+	}
+#endif XDEBUG
 }

@@ -21,8 +21,7 @@
 16	daemon.c	makeconnection
 17	deliver.c	hostsignature
 17	domain.c	mxrand
-17	usersmtp.c	smtpinit, smtpmailfrom
-18	usersmtp.c	reply, smtpmessage
+18	usersmtp.c	reply, smtpmessage, smtpinit, smtpmailfrom
 19	srvrsmtp.c	smtp
 20	parseaddr.c	parseaddr
 21	parseaddr.c	rewrite

@@ -32,8 +32,9 @@ divert(-1)
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 #
-VERSIONID(`@(#)version.m4	8.3 (Berkeley) 7/13/93')
-#
+
 divert(0)
-# Configuration version number
-DZ8.3
+VERSIONID(`@(#)aix3.m4	8.2 (Berkeley) 7/13/93')
+define(`LOCAL_MAILER_PATH', /bin/bellmail)dnl
+define(`LOCAL_MAILER_ARGS', mail $u)dnl
+define(`LOCAL_MAILER_FLAGS', `n')dnl

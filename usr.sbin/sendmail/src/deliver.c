@@ -33,7 +33,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.1 (Berkeley) 6/7/93";
+static char sccsid[] = "@(#)deliver.c	8.3 (Berkeley) 7/13/93";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -43,6 +43,8 @@ static char sccsid[] = "@(#)deliver.c	8.1 (Berkeley) 6/7/93";
 #ifdef NAMED_BIND
 #include <arpa/nameser.h>
 #include <resolv.h>
+
+extern int	h_errno;
 #endif
 
 /*
@@ -485,6 +487,9 @@ sendenvelope(e, mode)
 		    bitset(QDONTSEND, q->q_flags))
 			continue;
 
+		if (tTd(13, 3))
+			printf("FATAL ERRORS\n");
+
 		e->e_flags |= EF_FATALERRS;
 
 		if (q->q_owner == NULL && strcmp(e->e_from.q_paddr, "<>") != 0)
@@ -801,6 +806,7 @@ deliver(e, firstto)
 		rcode = checkcompat(to, e);
 		if (rcode != EX_OK)
 		{
+			markfailure(e, to, rcode);
 			giveresponse(rcode, m, NULL, e);
 			continue;
 		}
@@ -1022,10 +1028,16 @@ tryhost:
 				bitnset(M_SECURE_PORT, m->m_flags));
 			mci->mci_exitstat = i;
 			mci->mci_errno = errno;
+#ifdef NAMED_BIND
+			mci->mci_herrno = h_errno;
+#endif
 			if (i == EX_OK)
 			{
 				mci->mci_state = MCIS_OPENING;
 				mci_cache(mci);
+				if (TrafficLogFile != NULL)
+					fprintf(TrafficLogFile, "%05d == CONNECT %s\n",
+						getpid(), hostbuf);
 				break;
 			}
 			else if (tTd(11, 1))
@@ -1046,26 +1058,22 @@ tryhost:
 	}
 	else
 	{
-		int i;
-		struct stat stbuf;
+#ifdef XDEBUG
+		char wbuf[MAXLINE];
 
 		/* make absolutely certain 0, 1, and 2 are in use */
-		for (i = 0; i < 3; i++)
-		{
-			if (fstat(i, &stbuf) < 0)
-			{
-				/* oops.... */
-				int fd;
+		sprintf(wbuf, "%s... openmailer(%s)", e->e_to, m->m_name);
+		checkfd012(wbuf);
+#endif
 
-				syserr("%s... openmailer(%s): fd %d not open",
-					e->e_to, m->m_name, i);
-				fd = open("/dev/null", O_RDONLY, 0666);
-				if (fd != i)
-				{
-					(void) dup2(fd, i);
-					(void) close(fd);
-				}
-			}
+		if (TrafficLogFile != NULL)
+		{
+			char **av;
+
+			fprintf(TrafficLogFile, "%05d === EXEC", getpid());
+			for (av = pv; *av != NULL; av++)
+				fprintf(TrafficLogFile, " %s", *av);
+			fprintf(TrafficLogFile, "\n");
 		}
 
 		/* create a pipe to shove the mail through */
@@ -1291,6 +1299,9 @@ tryhost:
 		/* couldn't open the mailer */
 		rcode = mci->mci_exitstat;
 		errno = mci->mci_errno;
+#ifdef NAMED_BIND
+		h_errno = mci->mci_herrno;
+#endif
 		if (rcode == EX_OK)
 		{
 			/* shouldn't happen */
@@ -1447,49 +1458,10 @@ markfailure(e, q, rcode)
 
 	if (rcode == EX_OK)
 		return;
-	else if (rcode != EX_TEMPFAIL && rcode != EX_IOERR && rcode != EX_OSERR)
-		q->q_flags |= QBADADDR;
-	else if (curtime() > e->e_ctime + TimeOuts.to_q_return)
-	{
-		if (!bitset(EF_TIMEOUT, e->e_flags))
-		{
-			(void) sprintf(buf, "Cannot send message for %s",
-				pintvl(TimeOuts.to_q_return, FALSE));
-			if (e->e_message != NULL)
-				free(e->e_message);
-			e->e_message = newstr(buf);
-			message(buf);
-		}
-		q->q_flags |= QBADADDR;
-		e->e_flags |= EF_TIMEOUT;
-		fprintf(e->e_xfp, "421 %s... Message timed out\n", q->q_paddr);
-	}
-	else
-	{
+	else if (rcode == EX_TEMPFAIL)
 		q->q_flags |= QQUEUEUP;
-		if (TimeOuts.to_q_warning > 0 &&
-		    curtime() > e->e_ctime + TimeOuts.to_q_warning)
-		{
-			if (!bitset(EF_WARNING, e->e_flags) &&
-			    e->e_class >= 0 &&
-			    strcmp(e->e_from.q_paddr, "<>") != 0)
-			{
-				(void) sprintf(buf,
-					"warning: cannot send message for %s",
-					pintvl(TimeOuts.to_q_warning, FALSE));
-				if (e->e_message != NULL)
-					free(e->e_message);
-				e->e_message = newstr(buf);
-				message(buf);
-				e->e_flags |= EF_WARNING|EF_TIMEOUT;
-			}
-			fprintf(e->e_xfp,
-				"%s... Warning: message still undelivered after %s\n",
-				q->q_paddr, pintvl(TimeOuts.to_q_warning, FALSE));
-			fprintf(e->e_xfp, "Will keep trying until message is %s old\n",
-				pintvl(TimeOuts.to_q_return, FALSE));
-		}
-	}
+	else if (rcode != EX_IOERR && rcode != EX_OSERR)
+		q->q_flags |= QBADADDR;
 }
 /*
 **  ENDMAILER -- Wait for mailer to terminate.
@@ -1593,9 +1565,6 @@ giveresponse(stat, m, mci, e)
 	extern char *SysExMsg[];
 	register int i;
 	extern int N_SysEx;
-#ifdef NAMED_BIND
-	extern int h_errno;
-#endif
 	char buf[MAXLINE];
 
 	/*
@@ -1647,6 +1616,14 @@ giveresponse(stat, m, mci, e)
 		}
 		statmsg = buf;
 	}
+#ifdef NAMED_BIND
+	else if (stat == EX_NOHOST && h_errno != 0)
+	{
+		statmsg = errstring(h_errno + MAX_ERRNO);
+		(void) sprintf(buf, "%s (%s)", SysExMsg[i], statmsg);
+		statmsg = buf;
+	}
+#endif
 	else
 	{
 		statmsg = SysExMsg[i];
@@ -1929,6 +1906,9 @@ mailfile(filename, ctladdr, e)
 		printaddr(ctladdr, FALSE);
 	}
 
+	if (e->e_xfp != NULL)
+		fflush(e->e_xfp);
+
 	/*
 	**  Fork so we can change permissions here.
 	**	Note that we MUST use fork, not vfork, because of
@@ -2132,6 +2112,9 @@ hostsignature(m, host, e)
 			mci = mci_get(hp, m);
 			mci->mci_exitstat = rcode;
 			mci->mci_errno = errno;
+#ifdef NAMED_BIND
+			mci->mci_herrno = h_errno;
+#endif
 
 			/* and return the original host name as the signature */
 			nmx = 1;

@@ -34,19 +34,22 @@ PUSHDIVERT(-1)
 #
 ifdef(`LOCAL_MAILER_FLAGS',, `define(`LOCAL_MAILER_FLAGS', `rn')')
 ifdef(`LOCAL_MAILER_PATH',, `define(`LOCAL_MAILER_PATH', /bin/mail)')
+ifdef(`LOCAL_MAILER_ARGS',, `define(`LOCAL_MAILER_ARGS', `mail -d $u')')
+ifdef(`LOCAL_SHELL_FLAGS',, `define(`LOCAL_SHELL_FLAGS', `eu')')
 ifdef(`LOCAL_SHELL_PATH',, `define(`LOCAL_SHELL_PATH', /bin/sh)')
+ifdef(`LOCAL_SHELL_ARGS',, `define(`LOCAL_SHELL_ARGS', `sh -c $u')')
 POPDIVERT
 
 ##################################################
 ###   Local and Program Mailer specification   ###
 ##################################################
 
-VERSIONID(`@(#)local.m4	8.1 (Berkeley) 6/7/93')
+VERSIONID(`@(#)local.m4	8.3 (Berkeley) 7/13/93')
 
 Mlocal,		P=LOCAL_MAILER_PATH, F=CONCAT(`lsDFMm', LOCAL_MAILER_FLAGS), S=10, R=20,
-		A=mail -d $u
-Mprog,		P=LOCAL_SHELL_PATH, F=lsDFMeu, S=10, R=20, D=$z:/,
-		A=sh -c $u
+		A=LOCAL_MAILER_ARGS
+Mprog,		P=LOCAL_SHELL_PATH, F=CONCAT(`lsDFM', LOCAL_SHELL_FLAGS), S=10, R=20, D=$z:/,
+		A=LOCAL_SHELL_ARGS
 
 S10
 R<@>			$n			errors to mailer-daemon

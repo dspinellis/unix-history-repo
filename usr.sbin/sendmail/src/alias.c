@@ -37,7 +37,7 @@
 # include <pwd.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)alias.c	8.1 (Berkeley) 6/7/93";
+static char sccsid[] = "@(#)alias.c	8.3 (Berkeley) 7/13/93";
 #endif /* not lint */
 
 
@@ -653,6 +653,10 @@ forward(user, sendq, e)
 {
 	char *pp;
 	char *ep;
+#ifdef HASSETEUID
+	register ADDRESS *ca;
+	uid_t saveduid, uid;
+#endif
 
 	if (tTd(27, 1))
 		printf("forward(%s)\n", user->q_paddr);
@@ -672,6 +676,14 @@ forward(user, sendq, e)
 	if (ForwardPath == NULL)
 		ForwardPath = newstr("\201z/.forward");
 
+#ifdef HASSETEUID
+	ca = getctladdr(user);
+	if (ca != NULL)
+		uid = ca->q_uid;
+	else
+		uid = DefUid;
+#endif
+
 	for (pp = ForwardPath; pp != NULL; pp = ep)
 	{
 		int err;
@@ -685,7 +697,31 @@ forward(user, sendq, e)
 			*ep++ = ':';
 		if (tTd(27, 3))
 			printf("forward: trying %s\n", buf);
+
+		if (tTd(27, 9))
+			printf("forward: old uid = %d/%d\n", getuid(), geteuid());
+
+#ifdef HASSETEUID
+		saveduid = geteuid();
+		if (saveduid == 0 && uid != 0)
+			(void) seteuid(uid);
+#endif                   
+
+		if (tTd(27, 9))
+			printf("forward: new uid = %d/%d\n", getuid(), geteuid());
+
 		err = include(buf, TRUE, user, sendq, e);
+
+#ifdef HASSETEUID
+		if (saveduid == 0 && uid != 0)
+			if (seteuid(saveduid) < 0)
+				syserr("seteuid(%d) failure (real=%d, eff=%d)",
+					saveduid, getuid(), geteuid());
+#endif
+
+		if (tTd(27, 9))
+			printf("forward: reset uid = %d/%d\n", getuid(), geteuid());
+
 		if (err == 0)
 			break;
 		if (transienterror(err))

@@ -33,7 +33,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.1 (Berkeley) 6/27/93";
+static char sccsid[] = "@(#)recipient.c	8.3 (Berkeley) 7/13/93";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -302,7 +302,7 @@ recipient(a, sendq, e)
 			usrerr("550 Cannot mail directly to files");
 		}
 		else if ((stat(buf, &stb) >= 0) ? (!writable(&stb)) :
-		    (*p = '\0', safefile(buf, getruid(), S_IWRITE|S_IEXEC) != 0))
+		    (*p = '\0', safefile(buf, RealUid, TRUE, S_IWRITE|S_IEXEC) != 0))
 		{
 			a->q_flags |= QBADADDR;
 			giveresponse(EX_CANTCREAT, m, NULL, e);
@@ -537,8 +537,8 @@ writable(s)
 
 	if (bitset(0111, s->st_mode))
 		return (FALSE);
-	euid = getruid();
-	egid = getrgid();
+	euid = RealUid;
+	egid = RealGid;
 	if (geteuid() == 0)
 	{
 		if (bitset(S_ISUID, s->st_mode))
@@ -630,7 +630,7 @@ include(fname, forwarding, ctladdr, sendq, e)
 	ev = setevent((time_t) 60, includetimeout, 0);
 
 	/* the input file must be marked safe */
-	if ((ret = safefile(fname, uid, S_IREAD)) != 0)
+	if ((ret = safefile(fname, uid, forwarding, S_IREAD)) != 0)
 	{
 		/* don't use this .forward file */
 		clrevent(ev);

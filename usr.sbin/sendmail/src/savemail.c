@@ -33,7 +33,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.1 (Berkeley) 6/7/93";
+static char sccsid[] = "@(#)savemail.c	8.3 (Berkeley) 7/13/93";
 #endif /* not lint */
 
 # include <pwd.h>
@@ -514,6 +514,9 @@ returntosender(msg, returnq, sendbody, e)
 	define('x', "Mail Delivery Subsystem", ee);
 	eatheader(ee, TRUE);
 
+	/* mark statistics */
+	markstats(ee, (ADDRESS *) NULL);
+
 	/* actually deliver the error message */
 	sendall(ee, SM_DEFAULT);
 
@@ -609,18 +612,23 @@ errbody(fp, m, e)
 	printheader = TRUE;
 	for (q = e->e_parent->e_sendqueue; q != NULL; q = q->q_next)
 	{
-		if (bitset(QBADADDR, q->q_flags))
+		if (bitset(QBADADDR|QREPORT, q->q_flags))
 		{
 			if (printheader)
 			{
-				putline("   ----- The following addresses failed -----",
+				putline("   ----- The following addresses had delivery problems -----",
 					fp, m);
 				printheader = FALSE;
 			}
 			if (q->q_alias != NULL)
-				putline(q->q_alias->q_paddr, fp, m);
+				strcpy(buf, q->q_alias->q_paddr);
 			else
-				putline(q->q_paddr, fp, m);
+				strcpy(buf, q->q_paddr);
+			if (bitset(QBADADDR, q->q_flags))
+				strcat(buf, "  (hard error -- address deleted)");
+			else
+				strcat(buf, "  (temporary failure -- will retry)");
+			putline(buf, fp, m);
 		}
 	}
 	if (!printheader)

@@ -30,7 +30,7 @@
 .\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 .\" SUCH DAMAGE.
 .\"
-.\"	@(#)op.me	8.1 (Berkeley) 6/8/93
+.\"	@(#)op.me	8.2 (Berkeley) 7/11/93
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:08-%''Sendmail Installation and Operation Guide'
@@ -66,9 +66,9 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 8.1
+Version 8.2
 .sp
-For Sendmail Version 8.1
+For Sendmail Version 8.2
 .)l
 .sp 2
 .pp
@@ -151,13 +151,6 @@ not described in the rest of the paper.
 .bp 5
 .sh 1 "BASIC INSTALLATION"
 .pp
-.i
-This section is a very rough rewrite;
-please don't assume that it is already completely correct.
-However,
-please send me suggestions so that later versions of this document
-can be more accurate.
-.pp
 There are two basic steps to installing sendmail.
 The hard part is to build the configuration table.
 This is a file that sendmail reads when it starts up
@@ -180,7 +173,7 @@ are given from the root of the
 subtree,
 normally
 .i /usr/src/usr.\*(SD/sendmail
-on 4.3BSD.
+on 4.4BSD.
 .pp
 If you are loading this off the tape,
 continue with the next session.
@@ -306,7 +299,7 @@ and
 /usr/bin/mailq
 to
 /usr/\*(SD/sendmail.
-On BSD4.4 systems it will also format and install man pages.
+On 4.4BSD systems it will also format and install man pages.
 .sh 2 "Configuration Files"
 .pp
 .i Sendmail
@@ -1039,6 +1032,15 @@ and then the map named
 .q mail.aliases
 in
 .q my.nis.domain .
+.pp
+Additional flags can be added after the colon
+exactly like a
+.b K
+line \(em for example:
+.(b
+OAnis:-N mail.aliases@my.nis.domain
+.)b
+will search the appropriate NIS map and always include null bytes in the key.
 .sh 3 "Rebuilding the alias database"
 .pp
 The DB or DBM version of the database
@@ -1151,7 +1153,7 @@ For this reason, and to obey Internet conventions,
 a typical scheme would be:
 .(b
 list:	some, set, of, addresses
-list-request:	list, administrators
+list-request:	list-admin-1, list-admin-2, ...
 owner-list:	list-request
 .)b
 .sh 2 "User Information Database"
@@ -1435,6 +1437,30 @@ for this run only.
 Some options have security implications.
 Sendmail allows you to set these,
 but refuses to run as root thereafter.
+.sh 2 "Logging Traffic"
+.pp
+Many SMTP implementations do not fully implement the protocol.
+For example, some personal computer based SMTPs
+do not understand continuation lines in reply codes.
+These can be very hard to trace.
+If you suspect such a problem, you can set traffic logging using the
+.b \-X
+flag.
+For example,
+.(b
+/usr/\*(SD/sendmail \-X /tmp/traffic -bd
+.)b
+will log all traffic in the file
+.i /tmp/traffic .
+.pp
+This logs a lot of data very quickly and should never be used
+during normal operations.
+After starting up such a daemon,
+force the errant implementation to send a message to your host.
+All message traffic in and out of
+.i sendmail ,
+including the incoming SMTP traffic,
+will be logged in this file.
 .sh 1 "TUNING"
 .pp
 There are a number of configuration parameters
@@ -2015,7 +2041,7 @@ but is not otherwise necessary.
 Version level 1 configurations
 turn DNSRCH and DEFNAMES off when doing delivery lookups,
 but leave them on everywhere else.
-Version 6 of
+Version 8 of
 .i sendmail
 ignores them when doing canonification lookups
 (that is, when using $[ ... $]),
@@ -3729,6 +3755,27 @@ apply to client SMTP.
 For back compatibility,
 a timeout with no ``keyword='' part
 will set all of the longer values.
+.ip R
+Normally,
+.i sendmail
+tries to eliminate any unnecessary explicit routes
+when sending an error message
+(as discussed in RFC 1123 \(sc 5.2.6).
+For example,
+when sending an error message to
+.(b
+<@known1,@known2,@unknown:user@known3>
+.)b
+.i sendmail
+will strip off the
+.q @known1
+in order to make the route as direct as possible.
+However, if the
+.b R
+option is set, this will be disabled,
+and the mail will be sent to the first address in the route,
+even if later addresses are known.
+This may be useful if you are caught behind a firewall.
 .ip s
 Be super-safe when running things,
 i.e.,
@@ -4064,11 +4111,35 @@ if it cannot be opened,
 no error is produced,
 and sendmail will behave as if the map existed but was empty.
 .ip "\-N"
-Normally sendmail does not include the trailing null byte
-on a string as part of the key.
-If this flag is indicated,
-it will be included.
-This is for compatibility with some methods of building the maps.
+Normally when maps are written,
+the trailing null byte is not included as part of the key.
+If this flag is indicated it will be included.
+During lookups, only the null-byte-included form will be searched.
+See also
+.b \-O.
+.ip "\-O"
+If neither
+.b \-N
+or
+.b \-O
+are specified,
+.i sendmail
+uses an adaptive algorithm to decide whether or not to look for null bytes
+on the end of keys.
+It starts by trying both;
+if it finds any key with a null byte it never tries again without a null byte
+and vice versa.
+If this flag is specified,
+it never tries with a null byte;
+this can speed matches but is never necessary.
+If both
+.b \-N
+and
+.b \-O
+are specified,
+.i sendmail
+will never try any matches at all \(em
+that is, everything will appear to fail.
 .ip "\-a\fIx\fP"
 Append the character
 .i x
@@ -4981,7 +5052,7 @@ system call.
 This will allow you to give a temporary failure
 message to incoming SMTP email
 when you are low on disk space.
-It is set by default on 4.4 BSD and OSF/1 systems.
+It is set by default on 4.4BSD and OSF/1 systems.
 .ip HASUSTAT
 Set if you have the
 .i ustat (2)
@@ -5595,7 +5666,7 @@ The file
 .i src/daemon.c
 contains a number of routines that are dependent
 on the local networking environment.
-The version supplied is specific to 4.3 BSD.
+The version supplied assumes you have BSD style sockets.
 .pp
 In previous releases,
 we recommended that you modify the routine
@@ -5606,7 +5677,7 @@ if you wanted to generalize
 .b $]
 lookups.
 We now recommend that you create a new keyed map instead.
-.sh 1 "CHANGES IN VERSION 6"
+.sh 1 "CHANGES IN VERSION 8"
 .pp
 The following summarizes changes
 since the last commonly available version of
@@ -5624,7 +5695,62 @@ substantial performance improvements can be expected for queue processing.
 If two hosts with different names in a single message
 happen to have the same set of MX hosts,
 they can be sent in the same transaction.
-Version 6 notices this and tries to batch the messages.
+Version 8 notices this and tries to batch the messages.
+.sh 2 "RFC 1123 Compliance"
+.pp
+A number of changes have been made to make
+.i sendmail
+.q "conditionally compliant"
+(that is,
+.i sendmail
+satisfies all of the
+.q MUST
+clauses and most but not all of the
+.q SHOULD
+clauses in RFC 1123).
+.pp
+The major areas of change are (numbers are RFC 1123 section numbers):
+.nr ii \w'5.3.1.1\0\0'u
+.ip 5.2.7
+Response to RCPT command is fast.
+.ip 5.2.8
+Numeric IP addresses are logged in Received: lines.
+.ip 5.2.17
+Self domain literal is properly handled.
+.ip 5.3.2
+Better control over individual timeouts.
+.ip 5.3.3
+Error messages are sent as
+.q From:<> .
+.ip 5.3.3
+Error messages are never sent to
+.q <> .
+.ip 5.3.3
+Route-addrs are pruned.
+.lp
+The areas in which
+.i sendmail
+is not
+.q "unconditionally compliant"
+are:
+.ip 5.2.6
+.i Sendmail
+does do header munging.
+.ip 5.2.10
+.i Sendmail
+doesn't always use the exact SMTP message text
+as listed in RFC 821.
+.ip 5.3.1.1
+.i Sendmail
+doesn't guarantee only one connect for each host in queue runs.
+.ip 5.3.1.1
+.i Sendmail
+doesn't always provide adequate concurrency limits.
+.sh 2 "Extended SMTP Support"
+.pp
+Version 8 includes both sending and receiving support for Extended
+SMTP support as defined by RFC 1425 (basic) and RFC 1427 (SIZE);
+and limited support for RFC 1426 (BODY).
 .sh 2 "Eight-Bit Clean"
 .pp
 Previous versions of
@@ -5661,7 +5787,7 @@ Generalized keyed files is an idea taken directly from
 (albeit with a completely different implementation).
 They can be useful on large sites.
 .pp
-R6 also understands YP.
+Version 8 also understands YP.
 .sh 2 "Multi-Word Classes"
 .pp
 Classes can now be multiple words.
@@ -5716,10 +5842,37 @@ This will cause downstream errors to be returned to that owner.
 .sh 2 "Dynamic Header Allocation"
 .pp
 The fixed size limit on header lines has been eliminated.
-.sh 2 "New Command Line Flag"
+.sh 2 "New Command Line Flags"
 .pp
-The \-p flag has been added
+The
+.b \-B
+flag has been added to pass in body type information.
+.pp
+The
+.b \-p
+flag has been added
 to pass in protocol information.
+.pp
+The
+.b \-X
+flag has been added
+to allow logging of all protocol in and out of
+.i sendmail
+for debugging.
+.sh 2 "Enhanced Command Line Flags"
+.pp
+The
+.b \-q
+flag can limit limit a queue run to specific recipients, senders, or queue ids
+using
+.b \-qR\c
+.i substring ,
+.b \-qS\c
+.i substring ,
+or
+.b \-qI\c
+.i substring
+respectively.
 .sh 2 "New and Old Configuration Line Types"
 .pp
 The
@@ -5734,6 +5887,13 @@ line has been added to declare database maps.
 The
 .b V
 line has been added to declare the configuration version level.
+.pp
+The
+.b M
+line has a
+.q D=
+field that lets you change into a temporary directory while that mailer
+is running.
 .sh 2 "New Options"
 .pp
 Several new options have been added,
@@ -5742,6 +5902,7 @@ others to allow tuning that was previously available
 only by recompiling.
 They are described in detail in Section 5.1.5.
 Briefly,
+.nr ii 0.5i
 .ip b
 Insist on a minimum number of disk blocks.
 .ip C
@@ -5765,10 +5926,18 @@ Enable Errors-To: header.
 These headers violate RFC 1123;
 this option is included to provide back compatibility
 with old versions of sendmail.
+.ip O
+Set incoming SMTP daemon options, such as an alternate SMTP port.
 .ip p
 Privacy options.
+.ip R
+Don't prune route-addrs.
 .ip U
 User database spec.
+.ip V
+Fallback
+.q MX
+host.
 .ip 7
 Do not run eight bit clean.
 .sh 2 "Extended Options"
@@ -5782,17 +5951,48 @@ and
 .b T
 (queue timeout)
 options have been extended to pass in more information.
-.sh 2 "New Mailer Flag"
+.sh 2 "New Mailer Flags"
 .pp
-The
-.b c
-mailer flag will strip all comments
-from addresses;
+Several new mailer flags have been added.
+.ip a
+Try to use ESMTP when creating a connection.
+If this is not set,
+.i sendmail
+will still try if the other end hints that it knows about ESMTP
+in its greeting message;
+this flag says to try even if it doesn't hint.
+If the EHLO (extended hello)
+command fails,
+.i sendmail
+falls back to old SMTP.
+.ip b
+Ensure that there is a blank line at the end of all messages.
+.ip c
+Strip all comments from addresses;
 this should only be used as a last resort
 when dealing with cranky mailers.
+.ip g
+Never use the null sender as the envelope sender,
+even when running SMTP.
+Although this violates RFC 1123,
+it may be necessary when you must deal with some obnoxious old hosts.
+.ip 7
+Strip all output to 7 bits.
+.sh 2 "New Pre-Defined Macros"
+.pp
+The following macros are pre-defined:
+.ip $k
+The UUCP node name,
+nominally from
+.i uname (2)
+call.
+.ip $m
+The domain part of our full hostname.
+.ip $_
+The RFC 1413-provided sender address.
 .sh 2 "New LHS Token"
 .pp
-Version 6 allows
+Version 8 allows
 .b $@
 on the Left Hand Side of an
 .q R
@@ -5800,7 +6000,7 @@ line to match zero tokens.
 This is intended to be used to match the null input.
 .sh 2 "Bigger Defaults"
 .pp
-Version 6 allows up to 100 rulesets instead of 30.
+Version 8 allows up to 100 rulesets instead of 30.
 It is recommended that rulesets 0\-9 be reserved for
 .i sendmail 's
 dedicated use in future releases.
@@ -5811,7 +6011,7 @@ The number of queued messages that can be handled at one time
 has been raised from 600 to 1000.
 .sh 2 "Different Default Tuning Parameters"
 .pp
-Version 6 has changed the default parameters
+Version 8 has changed the default parameters
 for tuning queue costs
 to make the number of recipients more important
 than the size of the message (for small messages).
@@ -5864,6 +6064,30 @@ this supports NIS-based aliases.
 A number of internal changes have been made to enhance portability.
 .pp
 Several fixes have been made to increase the paranoia factor.
+.sh 2 "Miscellaneous Changes"
+.pp
+.i Sendmail
+writes a
+.i /etc/sendmail.pid
+file with the current process id of the SMTP daemon.
+.pp
+Two people using the same program in their .forward file
+are considered different
+so that duplicate elimination doesn't delete one of them.
+.pp
+The
+.i mailstats
+program prints mailer names
+and gets the location of the
+.i sendmail.st
+file from
+.i /etc/sendmail.cf .
+.pp
+Many minor bugs have been fixed, such as handling of backslashes
+inside of quotes.
+.pp
+A hook (ruleset 5) has been added
+to allow rewriting of local addresses after aliasing.
 .sh 1 "ACKNOWLEDGEMENTS"
 .pp
 I've worked on
@@ -5886,7 +6110,7 @@ Bryan was also available to bounce ideas off of.
 Many, many people contributed chunks of code and ideas to
 .i sendmail .
 It has proven to be a group network effort.
-Version 6 in particular was a group project.
+Version 8 in particular was a group project.
 The following people made notable contributions:
 .(l
 Keith Bostic, CSRG, University of California, Berkeley
@@ -5931,6 +6155,8 @@ i	Initialize the alias database
 p	Print the mail queue
 z	Freeze the configuration file
 .)b
+.ip \-B\fItype\fP
+Indicate body type.
 .ip \-C\fIfile\fP
 Use a different configuration file.
 .i Sendmail
@@ -6020,6 +6246,11 @@ The
 line will be deleted before sending.
 Any addresses in the argument vector will be deleted
 from the send list.
+.ip "\-X \fIlogfile\fP"
+Log all traffic in and out of sendmail in the indicated
+.i logfile
+for debugging mailer problems.
+This produces a lot of data very quickly and should be used sparingly.
 .pp
 There are a number of options that may be specified as
 primitive flags
@@ -6311,7 +6542,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 8.1
+.\"Version 8.2
 .\".ce 0
 .pn 2
 .bp

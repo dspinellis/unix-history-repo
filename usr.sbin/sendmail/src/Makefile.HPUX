@@ -11,7 +11,8 @@
 #
 
 # use O=-O (usual) or O=-g (debugging)
-O=	
+# +O is OK on 7xx, and 300xx at 9.0
+O=	+O1
 
 # define the database mechanism used for alias lookups:
 #	-DNDBM -- use new DBM
@@ -52,9 +53,16 @@ STDIR=	${DESTDIR}/var/log
 # location of sendmail.hf file (usually /usr/share/misc or /usr/lib)
 HFDIR=	${DESTDIR}/usr/lib
 
+# Stirling - watch out for pollution of name space by sys/sysmacros.h
+#          - this hits definitions of m_flags in db.h
+#	     currently only on 300 series.
+#          - sys/sysmacros.h is being included by machine/param.h
+#          -                 which is included by sys/param.h
+XCFLAGS=-D_SYS_SYSMACROS_INCLUDED
+
 ###################  end of user configuration flags  ######################
 
-CFLAGS=	-I. $O ${INCDIRS} ${DBMDEF} ${LADEF} ${ENVDEF}
+CFLAGS=	-I. $O ${INCDIRS} ${DBMDEF} ${LADEF} ${ENVDEF} ${XCFLAGS}
 
 OBJS=	alias.o arpadate.o clock.o collect.o conf.o convtime.o daemon.o \
 	deliver.o domain.o envelope.o err.o headers.o macro.o main.o \

@@ -62,7 +62,7 @@ sed 's/^X//' << 'SHAR_EOF' > 'README' &&
 Document Revision Control Information:
 X   $Author: glass $
 X   $Source: /b/source/CVS/src/usr.sbin/sendmail/contrib/mmuegel,v $
-X   $Revision: 1.2 $ of $Date: 1993/06/28 22:33:06 $
+X   $Revision: 1.3 $ of $Date: 1993/07/20 18:11:05 $
 -------------------------------------------------------------------------------
 X
 1. Introduction
@@ -500,7 +500,7 @@ sed 's/^X//' << 'SHAR_EOF' > 'libs/elapsed.pl' &&
 ;# RCS INFORMATION
 ;#    $Author: glass $
 ;#    $Source: /b/source/CVS/src/usr.sbin/sendmail/contrib/mmuegel,v $
-;#    $Revision: 1.2 $ of $Date: 1993/06/28 22:33:06 $
+;#    $Revision: 1.3 $ of $Date: 1993/07/20 18:11:05 $
 X
 package elapsed;
 X
@@ -635,7 +635,7 @@ sed 's/^X//' << 'SHAR_EOF' > 'libs/mail.pl' &&
 ;#
 ;# RCS INFORMATION
 ;#    $Author: glass $
-;#    $Header: /b/source/CVS/src/usr.sbin/sendmail/contrib/mmuegel,v 1.2 1993/06/28 22:33:06 glass Exp $
+;#    $Header: /b/source/CVS/src/usr.sbin/sendmail/contrib/mmuegel,v 1.3 1993/07/20 18:11:05 glass Exp $
 X
 package mail;
 X
@@ -794,7 +794,7 @@ sed 's/^X//' << 'SHAR_EOF' > 'libs/mqueue.pl' &&
 ;# RCS INFORMATION
 ;#    $Author: glass $
 ;#    $Source: /b/source/CVS/src/usr.sbin/sendmail/contrib/mmuegel,v $
-;#    $Revision: 1.2 $ of $Date: 1993/06/28 22:33:06 $
+;#    $Revision: 1.3 $ of $Date: 1993/07/20 18:11:05 $
 X
 package mqueue;
 X
@@ -1016,7 +1016,7 @@ sed 's/^X//' << 'SHAR_EOF' > 'libs/newgetopts.pl' &&
 ;#    Mike Muegel (mmuegel@mot.com)
 ;#
 ;# $Author: glass $
-;# $Header: /b/source/CVS/src/usr.sbin/sendmail/contrib/mmuegel,v 1.2 1993/06/28 22:33:06 glass Exp $
+;# $Header: /b/source/CVS/src/usr.sbin/sendmail/contrib/mmuegel,v 1.3 1993/07/20 18:11:05 glass Exp $
 X
 ;###############################################################################
 ;# New_Getopts
@@ -1246,7 +1246,7 @@ sed 's/^X//' << 'SHAR_EOF' > 'libs/strings1.pl' &&
 ;#
 ;# RCS INFORMATION
 ;#    $Author: glass $
-;#    $Header: /b/source/CVS/src/usr.sbin/sendmail/contrib/mmuegel,v 1.2 1993/06/28 22:33:06 glass Exp $
+;#    $Header: /b/source/CVS/src/usr.sbin/sendmail/contrib/mmuegel,v 1.3 1993/07/20 18:11:05 glass Exp $
 X
 package strings1;
 X
@@ -1402,7 +1402,7 @@ sed 's/^X//' << 'SHAR_EOF' > 'libs/timespec.pl' &&
 ;#
 ;# RCS INFORMATION
 ;#    $Author: glass $
-;#    $Header: /b/source/CVS/src/usr.sbin/sendmail/contrib/mmuegel,v 1.2 1993/06/28 22:33:06 glass Exp $
+;#    $Header: /b/source/CVS/src/usr.sbin/sendmail/contrib/mmuegel,v 1.3 1993/07/20 18:11:05 glass Exp $
 X
 package timespec;
 X
@@ -1474,7 +1474,7 @@ sed 's/^X//' << 'SHAR_EOF' > 'man/cqueue.1' &&
 .TH CQUEUE 1L
 \"
 \" $Author: glass $
-\" $Header: /b/source/CVS/src/usr.sbin/sendmail/contrib/mmuegel,v 1.2 1993/06/28 22:33:06 glass Exp $
+\" $Header: /b/source/CVS/src/usr.sbin/sendmail/contrib/mmuegel,v 1.3 1993/07/20 18:11:05 glass Exp $
 \"
 .ds mp \fBcqueue\fR
 .de IB
@@ -1653,7 +1653,7 @@ sed 's/^X//' << 'SHAR_EOF' > 'man/postclip.1' &&
 .TH POSTCLIP 1L
 \"
 \" $Author: glass $
-\" $Header: /b/source/CVS/src/usr.sbin/sendmail/contrib/mmuegel,v 1.2 1993/06/28 22:33:06 glass Exp $
+\" $Header: /b/source/CVS/src/usr.sbin/sendmail/contrib/mmuegel,v 1.3 1993/07/20 18:11:05 glass Exp $
 \"
 .ds mp \fBpostclip\fR
 .SH NAME
@@ -1739,7 +1739,7 @@ X
 #
 # RCS INFORMATION
 #    $Author: glass $
-#    $Header: /b/source/CVS/src/usr.sbin/sendmail/contrib/mmuegel,v 1.2 1993/06/28 22:33:06 glass Exp $
+#    $Header: /b/source/CVS/src/usr.sbin/sendmail/contrib/mmuegel,v 1.3 1993/07/20 18:11:05 glass Exp $
 X
 # So that date.pl does not yell (Domain/OS version does a ``)
 $ENV{'PATH'}    = "";
@@ -1763,7 +1763,7 @@ $DATE_FORMAT    = "%r %D";
 X
 # Constants that probably should not be changed
 $USAGE          = "Usage: $Script_Name [ -abdms ] [ -q queue-dir ] [ -t time ] [ -u user ] [ -w width ]\n";
-$VERSION        = "${Script_Name} by \$Author: glass $; \$Revision: 1.2 $ of \$Date: 1993/06/28 22:33:06 $";
+$VERSION        = "${Script_Name} by \$Author: glass $; \$Revision: 1.3 $ of \$Date: 1993/07/20 18:11:05 $";
 $SWITCHES       = "abdmst:u:q:w:";
 $SPLIT_EXPR	= '\s,\.@!%:';
 $ADDR_PART_EXPR	= '[^!@%]+';
@@ -1994,7 +1994,7 @@ X
 #
 # RCS INFORMATION
 #    $Source: /b/source/CVS/src/usr.sbin/sendmail/contrib/mmuegel,v $
-#    $Revision: 1.2 $ of $Date: 1993/06/28 22:33:06 $
+#    $Revision: 1.3 $ of $Date: 1993/07/20 18:11:05 $
 X
 # We use this to send off the mail
 require "newgetopts.pl";
@@ -2005,7 +2005,7 @@ X
 X
 # Some famous constants
 $USAGE          = "Usage: $Script_Name [ -v ] [ to ... ]\n";
-$VERSION        = "${Script_Name} by \$Author: glass $; \$Revision: 1.2 $ of \$Date: 1993/06/28 22:33:06 $";
+$VERSION        = "${Script_Name} by \$Author: glass $; \$Revision: 1.3 $ of \$Date: 1993/07/20 18:11:05 $";
 $SWITCHES       = "v";
 X
 # Let getopts parse for switches

@@ -30,7 +30,7 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 #
-#	@(#)READ_ME	8.1 (Berkeley) 6/7/93
+#	@(#)READ_ME	8.3 (Berkeley) 7/13/93
 #
 
 This directory contains the source files for sendmail.
@@ -60,7 +60,8 @@ symbols availble, requiring the following compilation flags in the
 Makefile:
 
 SOLARIS		Define this if you are running Solaris 2.0 or higher.
-NeXT		Define this if you are on a NeXT box.
+__NeXT__	Define this if you are on a NeXT box.  (This one may
+		be pre-defined for you.)
 _AIX3		Define this if you are IBM AIX 3.x.
 
 If you are a system that sendmail has already been ported to, you
@@ -88,6 +89,19 @@ HASUSTAT	Define this if you have the ustat(2) system call.  It's
 HASSETSID	Define this if you have the setsid(2) system call.  This
 		is implied if your system appears to be POSIX compliant.
 HASINITGROUPS	Define this if you have the initgroups(3) routine.
+HASSETVBUF	Define this if you have the setvbuf(3) library call.
+		If you don't, setlinebuf will be used instead.  This
+		defaults on if your compiler defines __STDC__.
+HASSETEUID	Define this if you have seteuid(2) ***AND*** root can use
+		it to change to an arbitrary user.  This second condition
+		is not satisfied on AIX 3.x.  You may find that
+		your system has setreuid(2) or setresuid(2), in which
+		case you will also have to #define seteuid(uid) to be
+		the appropriate call.  The important thing is that you
+		have a call that will set the effective uid and NOT
+		set the real or saved uid.  Setting this improves the
+		security somewhat, since sendmail doesn't have to read
+		.forward and :include: files as root.
 LA_TYPE		The type of load average your kernel supports.  These
 		can be LA_SUBR (4) if you have the getloadavg(3) routine,
 		LA_FLOAT (3) if you read kmem and interpret the value
@@ -154,6 +168,9 @@ files, you must use -Bstatic -- if you do not, frozen configuration
 files fail in bizarre ways and you will open up several security holes.
 
 If you are compiling on OSF/1 (DEC Alpha), you must use -lmld.
+
+If you are compiling on NeXT, you will have to create an empty file
+"unistd.h".
 
 If you use both -DNDBM and -DNEWDB, you must delete the module ndbm.o
 from libdb.a and delete the file "ndbm.h" from the files that get
@@ -223,4 +240,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.1, last update 6/7/93 10:26:59)
+(Version 8.3, last update 7/13/93 12:57:56)

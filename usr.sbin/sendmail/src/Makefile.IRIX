@@ -5,24 +5,25 @@
 #  old make program (I recommend that you get and port the new make if you
 #  are going to be doing any signficant work on sendmail).
 #
-#  This has been tested on Ultrix.
+#  This has been tested on IRIX
 #
-#	@(#)Makefile.dist	6.5 (Berkeley) 2/26/93
+#	@(#)Makefile.dist	8.1 (Berkeley) 6/7/93
 #
 
 # use O=-O (usual) or O=-g (debugging)
-O=	-g
+O=	-O
+CC=gcc
 
-# define the database mechanism used for alias lookups:
+# define the database mechanisms available for map & alias lookups:
 #	-DNDBM -- use new DBM
 #	-DNEWDB -- use new Berkeley DB
-#	-DNDBM -DNEWDB -- use both new DBM and new Berkeley DB
 #	-DNDBM -DNEWDB -DYPCOMPAT -- use both plus YP compatility
+#	-DNIS -- include client NIS support
 # The really old (V7) DBM library is no longer supported.
 # If YPCOMPAT is defined and /var/yp/Makefile exists, sendmail will build
 #   both the NEWDB and DBM libraries (the DBM just for YP).
 #
-DBMDEF=	-DNDBM -DNEWDB
+DBMDEF=	-DNDBM
 
 # define the load average calculation on your system: -DLA_TYPE=LA_INT,
 #   -DLA_TYPE=LA_FLOAT, -DLA_TYPE=LA_SUBR, or -DLA_TYPE=LA_ZERO
@@ -30,27 +31,28 @@ DBMDEF=	-DNDBM -DNEWDB
 #LADEF=	-DLA_TYPE=LA_SUBR
 
 # define UNSETENV if you need to compile in a local version of setenv
-ENVDEF=	-D_AIX3
+#ENVDEF=	-DUNSETENV
+ENVDEF= -DIRIX
 
 # see also conf.h for additional compilation flags
 
 # include directories
-#INCDIRS=-I/usr/sww/include/db
+INCDIRS=
 
 # library directories
-#LIBDIRS=-L/usr/sww/lib
+LIBDIRS=
 
 # libraries required on your system
-LIBS=	-ldbm -ldb
+LIBS= -lmld
 
 # location of sendmail binary (usually /usr/sbin or /usr/lib)
-BINDIR=	${DESTDIR}/usr/sbin
+BINDIR=	${DESTDIR}/usr/lib
 
 # location of sendmail.st file (usually /var/log or /usr/lib)
-STDIR=	${DESTDIR}/var/log
+STDIR=	${DESTDIR}/usr/lib
 
 # location of sendmail.hf file (usually /usr/share/misc or /usr/lib)
-HFDIR=	${DESTDIR}/usr/share/misc
+HFDIR=	${DESTDIR}/usr/lib
 
 ###################  end of user configuration flags  ######################
 
@@ -62,9 +64,9 @@ OBJS=	alias.o arpadate.o clock.o collect.o conf.o convtime.o daemon.o \
 	savemail.o srvrsmtp.o stab.o stats.o sysexits.o \
 	trace.o udb.o usersmtp.o util.o version.o
 
-LINKS=	${DESTDIR}/usr/ucb/newaliases ${DESTDIR}/usr/ucb/mailq
+LINKS=	${DESTDIR}/usr/bsd/newaliases ${DESTDIR}/usr/bsd/mailq
 BINOWN=	root
-BINGRP=	kmem
+BINGRP=	sys
 BINMODE=6555
 
 sendmail: ${OBJS}

@@ -29,9 +29,9 @@
 .\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 .\" SUCH DAMAGE.
 .\"
-.\"     @(#)sendmail.8	8.1 (Berkeley) 6/16/93
+.\"     @(#)sendmail.8	8.2 (Berkeley) 7/11/93
 .\"
-.Dd June 16, 1993
+.Dd July 11, 1993
 .Dt SENDMAIL 8
 .Os BSD 4
 .Sh NAME
@@ -227,6 +227,11 @@ receive copies even if listed in the message header.
 .It Fl v
 Go into verbose mode.
 Alias expansions will be announced, etc.
+.It Fl X Ar logfile
+Log all traffic in and out of mailers in the indicated log file.
+This should only be used as a last resort
+for debugging mailer bugs.
+It will log a lot of data very quickly.
 .El
 .Ss Options
 There are also a number of processing options that may be set.

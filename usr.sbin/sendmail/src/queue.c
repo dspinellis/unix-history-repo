@@ -36,9 +36,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.1 (Berkeley) 6/7/93 (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.3 (Berkeley) 7/13/93 (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.1 (Berkeley) 6/7/93 (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.3 (Berkeley) 7/13/93 (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -287,12 +287,17 @@ notemp:
 		else if (bitset(H_FROM|H_RCPT, h->h_flags))
 		{
 			bool oldstyle = bitset(EF_OLDSTYLE, e->e_flags);
+			FILE *savetrace = TrafficLogFile;
+
+			TrafficLogFile = NULL;
 
 			if (bitset(H_FROM, h->h_flags))
 				oldstyle = FALSE;
 
 			commaize(h, h->h_value, tfp, oldstyle,
 				 &nullmailer, e);
+
+			TrafficLogFile = savetrace;
 		}
 		else
 			fprintf(tfp, "%s: %s\n", h->h_field, h->h_value);
@@ -936,6 +941,7 @@ readqf(e)
 		if (tTd(40, 8))
 			printf("readqf(%s): bogus file\n", qf);
 		fclose(qfp);
+		rename(qf, queuename(e, 'Q'));
 		return FALSE;
 	}
 
@@ -1056,7 +1062,9 @@ readqf(e)
 		  default:
 			syserr("readqf: bad line \"%s\"", e->e_id,
 				LineNumber, bp);
-			break;
+			fclose(qfp);
+			rename(qf, queuename(e, 'Q'));
+			return FALSE;
 		}
 
 		if (bp != buf)
@@ -1101,7 +1109,7 @@ printqueue()
 	**  Check for permission to print the queue
 	*/
 
-	if (bitset(PRIV_RESTRMAILQ, PrivacyFlags) && getuid() != 0)
+	if (bitset(PRIV_RESTRMAILQ, PrivacyFlags) && RealUid != 0)
 	{
 		struct stat st;
 # ifdef NGROUPS
@@ -1123,7 +1131,7 @@ printqueue()
 		}
 		if (n < 0)
 # else
-		if (getgid() != st.st_gid)
+		if (RealGid != st.st_gid)
 # endif
 		{
 			usrerr("510 You are not permitted to see the queue");

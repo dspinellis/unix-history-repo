@@ -31,7 +31,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)conf.h	8.1 (Berkeley) 6/7/93
+ *	@(#)conf.h	8.3 (Berkeley) 7/13/93
  */
 
 /*
@@ -79,6 +79,7 @@
 # define SETPROCTITLE	1	/* munge argv to display current status */
 # define NAMED_BIND	1	/* use Berkeley Internet Domain Server */
 # define MATCHGECOS	1	/* match user names from gecos field */
+# define XDEBUG		1	/* enable extended debugging */
 
 # ifdef NEWDB
 # define USERDB		1	/* look in user database (requires NEWDB) */
@@ -91,10 +92,29 @@
 **	change these.
 */
 
+/* general "standard C" defines */
+#ifdef __STDC__
+# define HASSETVBUF	1	/* yes, we have setvbuf in libc */
+#endif
+
+/* general POSIX defines */
+#ifdef _POSIX_VERSION
+# define HASSETSID	1	/* has setsid(2) call */
+#endif
+
+/*
+**  Per-Operating System defines
+*/
+
 /* HP-UX -- tested for 8.07 */
 # ifdef __hpux
-# define SYSTEM5	1
+# define SYSTEM5	1	/* include all the System V defines */
 # define UNSETENV	1	/* need unsetenv(3) support */
+# define HASSETEUID	1	/* we have seteuid call */
+# define seteuid(uid)	setresuid(-1, uid, -1)	
+# ifndef __STDC__
+#  define HASSETVBUF	1	/* we have setvbuf in libc (but not __STDC__) */
+# endif
 # endif
 
 /* IBM AIX 3.x -- actually tested for 3.2.3 */
@@ -102,44 +122,83 @@
 # define LOCKF		1	/* use System V lockf instead of flock */
 # define FORK		fork	/* no vfork primitive available */
 # define UNSETENV	1	/* need unsetenv(3) support */
+# define SYS5TZ		1	/* use System V style timezones */
 # endif
+
+/* Silicon Graphics IRIX */
+# ifdef IRIX
+# define FORK		fork	/* no vfork primitive available */
+# define UNSETENV	1	/* need unsetenv(3) support */
+# define setpgrp	BSDsetpgrp
+# endif
+
+/* various systems from Sun Microsystems */
+#if defined(sun) && !defined(BSD)
+
+# define UNSETENV	1	/* need unsetenv(3) support */
+
+# ifdef SOLARIS
+			/* Solaris 2.x */
+#  define LOCKF		1	/* use System V lockf instead of flock */
+#  define HASUSTAT	1	/* has the ustat(2) syscall */
+#  define bcopy(s, d, l)	(memmove((d), (s), (l)))
+#  define bzero(d, l)		(memset((d), '\0', (l)))
+#  define bcmp(s, d, l)		(memcmp((s), (d), (l)))
+#  include <sys/time.h>
+
+# else
+			/* SunOS 4.1.x */
+#  define HASSTATFS	1	/* has the statfs(2) syscall */
+#  define HASSETEUID	1	/* we have seteuid call */
+#  include <vfork.h>
+
+# endif
+#endif
+
+/* Digital Ultrix 4.2A or 4.3 */
+#ifdef ultrix
+# define HASSTATFS	1	/* has the statfs(2) syscall */
+# define HASSETEUID	1	/* we have seteuid call */
+#endif
+
+/* OSF/1 (tested on Alpha) */
+#ifdef __osf__
+# define HASSETEUID	1	/* we have seteuid call */
+# define seteuid(uid)	setreuid(-1, uid)
+#endif
+
+/* NeXTstep */
+#ifdef __NeXT__
+# define sleep		sleepX
+# define UNSETENV	1	/* need unsetenv(3) support */
+#endif
+
+/* various flavors of BSD */
+#ifdef BSD
+# define HASGETDTABLESIZE 1	/* we have getdtablesize(2) call */
+#endif
+
+#if defined(NetBSD)
+#define NO_SYSCONF
+#endif
+
+/* 4.4BSD */
+#ifdef BSD4_4
+# include <sys/cdefs.h>
+# define HASSETEUID	1	/* we have seteuid(2) call */
+#endif
+
+/*
+**  End of Per-Operating System defines
+*/
 
 /* general System V defines */
 # ifdef SYSTEM5
 # define LOCKF		1	/* use System V lockf instead of flock */
 # define SYS5TZ		1	/* use System V style timezones */
 # define HASUNAME	1	/* use System V uname system call */
+# define NEEDGETDTABLESIZE 1	/* needs a replacement getdtablesize */
 # endif
-
-#if defined(sun) && !defined(BSD)
-# define UNSETENV	1	/* need unsetenv(3) support */
-
-# ifdef SOLARIS
-#  define LOCKF		1	/* use System V lockf instead of flock */
-#  define UNSETENV	1	/* need unsetenv(3) support */
-#  define HASUSTAT	1	/* has the ustat(2) syscall */
-# else
-#  define HASSTATFS	1	/* has the statfs(2) syscall */
-#  include <vfork.h>
-# endif
-
-#endif
-
-#ifdef ultrix
-# define HASSTATFS	1	/* has the statfs(2) syscall */
-#endif
-
-#ifdef _POSIX_VERSION
-# define HASSETSID	1	/* has setsid(2) call */
-#endif
-
-#ifdef NeXT
-# define	sleep	sleepX
-#endif
-
-#ifdef BSD4_4
-# include <sys/cdefs.h>
-#endif
 
 /*
 **  Due to a "feature" in some operating systems such as Ultrix 4.3 and

@@ -1,3 +1,159 @@
+8.3/8.3		93/07/13
+	Fix (I hope) setuid problems introduced in 8.2 that caused
+		messages like "Cannot create qfXXXXXX: Invalid argument"
+		or "Cannot reopen dfXXXXXX: Permission denied".  This
+		involved a new compile flag "HASSETEUID" that takes
+		the place of the old _POSIX_SAVED_IDS -- it turns out
+		that the POSIX interface is broken enough to break
+		some systems badly.  This includes some fixes for
+		HP-UX.  Also fixes problems where the real uid is
+		not reset properly on startup (from Neil Rickert).
+	Fix a problem that caused timed out messages to not report the
+		addresses that timed out.  Error messages are also more
+		"user friendly".
+	Drop required bandwidth on connections from 64 bytes/sec to
+		16 bytes/sec.
+	Further Solaris portability changes -- doesn't require the BSD
+		compatibility library.  This also adds a new
+		"HASGETDTABLESIZE" compile flag which can be used if
+		you want to use getdtablesize(2) instead of sysconf(2).
+		These are loosely based on changes from David Meyer at
+		University of Oregon.  This now seems to work, at least
+		for quick test cases.
+	Fix a problem that can cause duplicate error messages to be
+		sent if you are in SMTP, you send to multiple addresses,
+		and at least one of those addresses is good and points
+		to an account that has a .forward file (whew!).
+	Fix a problem causing messages to be discarded if checkcompat()
+		returned EX_TEMPFAIL (because it didn't properly mark
+		the "to" address).  Problem noted by John Myers.
+	Fix dfopen to return NULL if the open failed; I was depending
+		on fdopen(-1) returning NULL, which isn't the case.  This
+		isn't serious, but does result in wierd error diagnoses.
+		From Michael Corrigan.
+	CONFIG: add UUCP_MAX_SIZE M4 macro to set the maximum size of
+		messages sent through UUCP-family mailers.  Suggested
+		by Bill Wisner of The Well.
+	CONFIG: if both MAILER(uucp) and MAILER(smtp) are specified,
+		include a "uucp-dom" mailer that uses domain-style
+		addressing.  Suggested by Bill Wisner.
+	CONFIG: Add LOCAL_SHELL_FLAGS and LOCAL_SHELL_ARGS to match
+		LOCAL_MAILER_FLAGS and LOCAL_MAILER_ARGS.  Suggested by
+		Christophe Wolfhugel.
+	CONFIG: Add OSTYPE(aix3).  From Christophe Wolfhugel.
+
+8.2/8.2		93/07/11
+	Don't drop out on config file parse errors in -bt mode.
+	On older configuration files, assume option "l" (use Errors-To
+		header) for back compatibility.  NOTE:  this DOES NOT
+		imply an endorsement of the Errors-To: header in any way.
+	Accept -x flag on AIX-3 as well as OSF/1.  Why, why, why???
+	Don't log errors on EHLO -- it isn't a "real" error for an old
+		SMTP server to give an error on this command, and
+		logging it in the transcript can be confusing.  Fix
+		from Bill Wisner.
+	IRIX compatibility changes provided by Dan Rich
+		<drich@sandman.lerc.nasa.gov>.
+	Solaris 2 compatibility changes.  Provided by Bob Cunningham
+		<bob@kahala.soest.hawaii.edu>, John Oleynick
+		<juo@klinzhai.rutgers.edu>
+	Debugging: -d17 was overloaded (hostsignature and usersmtp.c);
+		move usersmtp (smtpinit and smtpmailfrom) to -d18 to
+		match the other flags in that file.
+	Flush transcript before fork in mailfile().  From Eric Wassenaar.
+	Save h_errno in mci struct and improve error message display.
+		Changes from Eric Wassenaar.
+	Open /dev/null for the transcript if the create of the xf file
+		failed; this avoids at least one possible null pointer
+		reference in very wierd cases.  From Eric Wassenaar.
+	Clean up statistics gathering; it was over-reporting because of
+		forks.  From Eric Wassenaar.
+	Fix problem that causes old Return-Path: line to override new
+		Return-Path: line (conf.c needs H_FORCE to avoid
+		re-using old value).  From Motonori Nakamura.
+	Fix broken -m flag in K definition -- even if -m (match only)
+		was specified, it would still replace the key with the
+		value.  Noted by Rick McCarty of Texas Instruments.
+	If the name server timed out over several days, no "timed out"
+		message would ever be sent back.  The timeout code
+		has been moved from markfailure() to dropenvelope()
+		so that all such failures should be diagnosted.  Pointed
+		out by Christophe Wolfhugel and others.
+	Relax safefile() constraints: directories in an include or
+		forward path must be readable by self if the controlling
+		user owns the entry, readable by all otherwise (e.g.,
+		when reading your .forward file, you have to own and
+		have X permssion in it; everyone needs X permission in
+		the root and directories leading up to your home);
+		include files must be readable by anyone, but need not
+		be owned by you.
+	If _POSIX_SAVED_IDS is defined, setuid to the owner before
+		reading a .forward file; this gets around some problems
+		on NFS mounts if root permission is not exported and
+		the user's home directory isn't x'able.
+	Additional NeXT portability enhancements from Axel Zinser.
+	Additional HP-UX portability enhancements from Brian Bullen.
+	Add a timeout around SMTP message writes; this assumes you can
+		get throughput of at least 64 bytes/second.  Note that
+		this does not impact the "datafinal" default, which
+		is separate; this is just intended to work around
+		network clogs that will occur before the final dot
+		is sent.  From Eric Wassenaar.
+	Change map code to set the "include null" flag adaptively --
+		it initially tries both, but if it finds anything
+		matching without a null it never tries again with a
+		null and vice versa.  If -N is specified, it never
+		tries without the null and creates new maps with a
+		null byte.  If -O is specified, it never tries with
+		the null (for efficiency).  If -N and -O are specified,
+		you get -NO (get it?) lookup at all, so this would
+		be a bad idea.  If you don't specify either -N or -O,
+		it adapts.
+	Fix recognition of "same from address" so that MH submissions
+		will insert the appropriate full name information;
+		this used to work and got broken somewhere along the
+		way.
+	Some changes to eliminate some unnecessary SYSERRs in the
+		log.  For example, if you lost a connection, don't
+		bother reporting that fact on the connection you lost.
+	Add some "extended debugging" flags to try to track down
+		why we get occassional problems with file descriptor
+		one being closed when execing a mailer; it seems to
+		only happen when there has been another error in the
+		same transaction.  This requires XDEBUG, defined
+		by default in conf.h.
+	Add "-X filename" command line flag, which logs both sides of
+		all SMTP transactions.  This is intended ONLY for
+		debugging bad implementations of other mailers; start
+		it up, send a message from a mailer that is failing,
+		and then kill it off and examine the indicated log.
+		This output is not intended to be particularly human
+		readable.  This also adds the HASSETVBUF compile
+		flag, defaulted on if your compiler defines __STDC__.
+	CONFIG: change SMART_HOST to override an SMTP mailer.  If you
+		have a local net that should get direct connects, you
+		will need to use LOCAL_NET_CONFIG to catch these hosts.
+		See cf/README for an example.
+	CONFIG: add LOCAL_MAILER_ARGS (default: `mail -d $u') to handle
+		sites that don't use the -d flag.
+	CONFIG: hide recipient addresses as well as sender addresses
+		behind $M if FEATURE(allmasquerade) is specified; this
+		has been requested by several people, but can break
+		local aliases.  For example, if you mail to "localalias"
+		this will be rewritten as "localalias@masqueradehost";
+		although initial delivery will work, replies will be
+		broken.  Use it sparingly.
+	CONFIG: add FEATURE(domaintable).  This maps unqualified domains
+		to qualified domains in headers.  I believe this is
+		largely equivalent to the IDA feature of the same name.
+	CONFIG: use $U as UUCP name instead of $k.  This permits you
+		to override the "system name" as your UUCP name --
+		in particular, to use domain-ized UUCP names.  From
+		Bill Wisner of The Well.
+	CONFIG: create new mailer "esmtp" that always tries EHLO
+		first.  This is currently unused in the config files,
+		but could be used in a mailertable entry.
+
 8.1C/8.1B	93/06/27
 	Serious security bug fix: it was possible to read any file on
 		the system, regardless of ownership and permissions.

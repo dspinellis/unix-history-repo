@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.1 (Berkeley) 6/27/93
+		@(#)README	8.3 (Berkeley) 7/13/93
 
 
 This document describes the sendmail configuration files being used
@@ -142,7 +142,13 @@ STATUS_FILE		[/etc/sendmail.st] The file containing status
 LOCAL_MAILER_PATH	[/bin/mail] The program used to deliver local mail.
 LOCAL_MAILER_FLAGS	[rn] The flags used by the local mailer.  The
 			flags lsDFMm are always included.
+LOCAL_MAILER_ARGS	[mail -d $u] The arguments passed to deliver local
+			mail.
 LOCAL_SHELL_PATH	[/bin/sh] The shell used to deliver piped email.
+LOCAL_SHELL_FLAGS	[eu] The flags used by the shell mailer.  The
+			flags lsDFM are always included.
+LOCAL_SHELL_ARGS	[sh -c $u] The arguments passed to deliver "prog"
+			mail.
 USENET_MAILER_PATH	[/usr/lib/news/inews] The name of the program
 			used to submit news.
 USENET_MAILER_FLAGS	[rlsDFMmn] The mailer flags for the usenet mailer.
@@ -150,6 +156,10 @@ USENET_MAILER_ARGS	[-m -h -n] The command line arguments for the
 			usenet mailer.
 SMTP_MAILER_FLAGS	[undefined] Flags added to SMTP mailer.
 UUCP_MAILER_FLAGS	[undefined] Flags added to UUCP mailer.
+UUCP_MAILER_ARGS	[uux - -r -z -a$f -gC $h!rmail ($u)] The arguments
+			passed to the UUCP mailer.
+UUCP_MAX_SIZE		[100000] The maximum size message accepted for
+			transmission by the UUCP mailers.
 HOSTMAP_SPEC		[dbm -o /etc/hostmap] The value for the builtin
 			hostmap key definition.  You can redefine this
 			to change the class, flags, and filename of
@@ -222,7 +232,11 @@ local		The local and prog mailers.  You will almost always
 smtp		The Simple Mail Transport Protocol mailer.  This does
 		not hide hosts behind a gateway or another other
 		such hack; it assumes a world where everyone is
-		running the name server.
+		running the name server.  This file actually defines
+		three mailers: "smtp" for regular (old-style) SMTP to
+		other servers, "esmtp" for extended SMTP to other
+		servers, and "relay" for transmission to our
+		RELAY_HOST or MAILER_HUB.
 
 uucp		The Unix-to-Unix Copy Program mailer.  Actually, this
 		defines two mailers, "uucp" and "suucp".  The latter
@@ -287,9 +301,24 @@ mailertable	Include a "mailer table" which can be used to override
 		routing for particular domains.  The argument of the
 		FEATURE may be the key definition.  If none is specified,
 		the definition used is:
-			hash /etc/mailertable.db -o
-		Keys in this database must be of the form:
+			hash /etc/mailertable -o
+		Keys in this database are fully qualified domain names
+		or partial domains preceded by a dot -- for example,
+		"vangogh.CS.Berkeley.EDU" or ".CS.Berkeley.EDU".
+		Values must be of the form:
 			mailer:domain
+		where "mailer" is the internal mailer name, and "domain"
+		is where to send the message.  These maps are not
+		reflected into the message header.
+domaintable	Include a "domain table" which can be used to provide
+		full domains on unqualified (single word) hosts.  The
+		argument of the FEATURE may be the key definition.  If
+		none is specified, the definition used is:
+			hash /etc/domaintable -o
+		The key in this table is the unqualified host name; the
+		value is the fully qualified domain.  Anything in the
+		domaintable is reflected into headers; that is, this
+		is done in ruleset 3.
 bitdomain	Look up bitnet hosts in a table to try to turn them into
 		internet addresses.  The table can be built using the
 		bitdomain program contributed by John Gardiner Meyers.
@@ -307,6 +336,18 @@ always_add_domain
 		Include the local host domain even on locally delivered
 		mail.  Normally it is not added unless it is already
 		present.
+allmasquerade	If masquerading is enabled (using MASQUERADE_AS), this
+		feature will cause recipient addresses to also masquerade
+		as being from the masquerade host.  Normally they get
+		the local hostname.  Although this may be right for
+		ordinary users, it can break local aliases.  For example,
+		if you send to "localalias", the originating sendmail will
+		find that alias and send to all members, but send the
+		message with "To: localalias@masqueradehost".  Since that
+		alias likely does not exist, replies will fail.  Use this
+		feature ONLY if you can guarantee that the ENTIRE
+		namespace on your masquerade host supersets all the
+		local entries.
 
 Other FEATUREs should be defined, but I was trying to keep these
 config files fairly lean and mean.
@@ -502,10 +543,21 @@ For example:
 
 	define(`SMART_HOST', suucp:uunet)
 	LOCAL_NET_CONFIG
-	R$* < @ $* .$m > $*	$#smtp $@ $2.$m $: $1 < @ $2.$m > $3
+	R$* < @ $* .$m. > $*	$#smtp $@ $2.$m. $: $1 < @ $2.$m. > $3
 
 This will cause all names that end in your domain name ($m) via
 SMTP; anything else will be sent via suucp (smart UUCP) to uunet.
+If you have FEATURE(nocanonify), you may need to omit the dots after
+the $m.  If you are running a local DNS inside your domain which is
+not otherwise connected to the outside world, you probably want to
+use:
+
+	define(`SMART_HOST', smtp:fire.wall.com)
+	LOCAL_NET_CONFIG
+	R$* < @ $* . > $*	$#smtp $@ $2. $: $1 < @ $2. > $3
+
+That is, send directly only to things you found in your DNS lookup;
+anything else goes through SMART_HOST.
 
 
 +------------------+
@@ -516,7 +568,7 @@ Sam Leffler's FlexFAX software is still in beta test -- but he expects a
 public version out "later this week" [as of 3/1/93].  The following
 blurb is direct from Sam:
 
-	$Header: /b/source/CVS/src/usr.sbin/sendmail/cf/README,v 1.3 1993/06/28 22:32:56 glass Exp $
+	$Header: /b/source/CVS/src/usr.sbin/sendmail/cf/README,v 1.4 1993/07/20 18:10:37 glass Exp $
 
 	How To Obtain This Software (in case all you get is this file)
 

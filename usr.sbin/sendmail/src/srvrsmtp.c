@@ -36,9 +36,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.1 (Berkeley) 6/7/93 (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.3 (Berkeley) 7/13/93 (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.1 (Berkeley) 6/7/93 (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.3 (Berkeley) 7/13/93 (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -134,6 +134,7 @@ smtp(e)
 	auto char *delimptr;
 	char *id;
 	int nrcpts;			/* number of RCPT commands */
+	bool doublequeue;
 	char inp[MAXLINE];
 	char cmdbuf[MAXLINE];
 	extern char Version[];
@@ -292,12 +293,6 @@ smtp(e)
 					message("503 Polite people say HELO first");
 					break;
 				}
-				else
-				{
-					auth_warning(e,
-						"Host %s didn't use HELO protocol",
-						RealHostName);
-				}
 			}
 			if (gotmail)
 			{
@@ -314,6 +309,12 @@ smtp(e)
 			/* fork a subprocess to process this command */
 			if (runinchild("SMTP-MAIL", e) > 0)
 				break;
+			if (!gothello)
+			{
+				auth_warning(e,
+					"Host %s didn't use HELO protocol",
+					RealHostName);
+			}
 			if (protocol == NULL)
 				protocol = "SMTP";
 			define('r', protocol, e);
@@ -333,6 +334,7 @@ smtp(e)
 				{
 					QuickAbort = FALSE;
 					SuprErrs = TRUE;
+					e->e_flags &= ~EF_FATALERRS;
 					finis();
 				}
 				break;
@@ -497,15 +499,26 @@ smtp(e)
 			}
 
 			/* check to see if we need to re-expand aliases */
+			/* also reset QBADADDR on already-diagnosted addrs */
+			doublequeue = FALSE;
 			for (a = e->e_sendqueue; a != NULL; a = a->q_next)
 			{
 				if (bitset(QVERIFIED, a->q_flags))
-					break;
+				{
+					/* need to re-expand aliases */
+					doublequeue = TRUE;
+				}
+				if (bitset(QBADADDR, a->q_flags))
+				{
+					/* make this "go away" */
+					a->q_flags |= QDONTSEND;
+					a->q_flags &= ~QBADADDR;
+				}
 			}
 
 			/* collect the text of the message */
 			SmtpPhase = "collect";
-			collect(TRUE, a != NULL, e);
+			collect(TRUE, doublequeue, e);
 			e->e_flags &= ~EF_FATALERRS;
 			if (Errors != 0)
 				goto abortmessage;
@@ -529,7 +542,7 @@ smtp(e)
 			*/
 
 			SmtpPhase = "delivery";
-			if (nrcpts != 1 && a == NULL)
+			if (nrcpts != 1 && !doublequeue)
 			{
 				HoldErrs = TRUE;
 				e->e_errormode = EM_MAIL;
@@ -538,7 +551,7 @@ smtp(e)
 			id = e->e_id;
 
 			/* send to all recipients */
-			sendall(e, a == NULL ? SM_DEFAULT : SM_QUEUE);
+			sendall(e, doublequeue ? SM_QUEUE : SM_DEFAULT);
 			e->e_to = NULL;
 
 			/* save statistics */
@@ -561,7 +574,7 @@ smtp(e)
 				e->e_errormode = EM_MAIL;
 
 				/* if we just queued, poke it */
-				if (a != NULL && e->e_sendmode != SM_QUEUE)
+				if (doublequeue && e->e_sendmode != SM_QUEUE)
 				{
 					unlockqueue(e);
 					dowork(id, TRUE, TRUE, e);

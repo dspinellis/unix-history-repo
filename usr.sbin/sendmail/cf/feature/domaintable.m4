@@ -32,8 +32,9 @@ divert(-1)
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 #
-VERSIONID(`@(#)version.m4	8.3 (Berkeley) 7/13/93')
-#
+
 divert(0)
-# Configuration version number
-DZ8.3
+VERSIONID(`@(#)domaintable.m4	8.1 (Berkeley) 7/8/93')
+divert(-1)
+
+define(`DOMAIN_TABLE', ifelse(_ARG_, `', `hash /etc/domaintable -o', `_ARG_'))dnl
