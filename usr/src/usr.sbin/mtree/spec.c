@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)spec.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)spec.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -127,14 +127,14 @@ set(ip)
 			/* just set flag bit */
 			break;
 		case F_MODE: {
-			mode_t *set, *setmode();
+			mode_t *m, *setmode();
 
-			if (!(set = setmode(val))) {
+			if (!(m = setmode(val))) {
 				(void)fprintf(stderr,
 				    "mtree: invalid file mode %s.\n", val);
 				specerr();
 			}
-			ip->st_mode = getmode(set, 0);
+			ip->st_mode = getmode(m, 0);
 			break;
 		}
 		case F_NLINK:
