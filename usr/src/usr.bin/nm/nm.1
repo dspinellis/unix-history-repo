@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)nm.1	6.1 (Berkeley) %G%
+.\"	@(#)nm.1	6.2 (Berkeley) %G%
 .\"
 .TH NM 1 ""
 .UC 4
@@ -11,50 +11,21 @@ nm \- print name list
 .SH SYNOPSIS
 .B nm
 [
-.B \-agnopru
+.B \-agnopruw
 ]
 [ file ... ]
 .SH DESCRIPTION
 .I Nm
 prints the name list (symbol table) of each object
 .I file
-in the argument list.  If an argument is an archive, a listing for each object
-file in the archive will be produced.  If no
+in the argument list.
+If an argument is an archive, a listing for each object file in the
+archive will be produced.
+If no
 .I file
-is given, the symbols in "a.out" are listed.
+is given, the symbols in ``a.out'' are listed.
 .PP
-Each symbol name is preceded by its value (blanks if undefined)
-and one of the letters
-.SM
-.B U
-(undefined),
-.SM
-.B A
-(absolute),
-.SM
-.B  T
-(text segment symbol),
-.SM
-.B D
-(data segment symbol),
-.SM
-.B B
-(bss segment symbol),
-.SM
-.B C
-(common symbol),
-.SM
-.B f
-file name,
-or
-.B \-
-for debugger symbol table entries (see
-.B \-a
-below).
-If the symbol is local (non-external) the type letter is in lower case.
-The output is sorted alphabetically.
-.PP
-Options are:
+The options are as follows:
 .TP
 .B  \-a
 Print symbol table entries inserted for use by debuggers.
@@ -76,5 +47,42 @@ Sort in reverse order.
 .TP
 .B  \-u
 Print only undefined symbols.
+.TP
+.B  \-w
+Warn about non-object archive members.
+Normally, nm will silently ignore all archive members which are not
+object files.
+.PP
+Each symbol name is preceded by its value (a blank field if the symbol
+is undefined) and one of the following letters:
+.TP
+.B \-
+debugger symbol table entries (see the
+.B \-a
+option).
+.TP
+.B A
+absolute
+.TP
+.B B
+bss segment symbol
+.TP
+.B C
+common symbol
+.TP
+.B D
+data segment symbol
+.TP
+.B f
+file name
+.TP
+.B T
+text segment symbol
+.TP
+.B U
+undefined
+.PP
+If the symbol is local (non-external) the type letter is in lower case.
+The output is sorted alphabetically.
 .SH SEE ALSO
 ar(1), ar(5), a.out(5), stab(5)
