@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)exec.h	7.5.1.1 (Berkeley) %G%
+ *	@(#)exec.h	7.7 (Berkeley) %G%
  */
 
 #ifndef	_EXEC_H_
