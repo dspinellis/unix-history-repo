@@ -1,4 +1,4 @@
-/*	locore.s	4.77	82/12/30	*/
+/*	locore.s	4.78	83/04/20	*/
 
 #include "../machine/psl.h"
 #include "../machine/pte.h"
@@ -574,7 +574,6 @@ _addupc:	.globl	_addupc
 	ashq	$-14,r0,r0
 	tstl	r1
 	bneq	9f
-	incl	r0
 	bicl2	$1,r0
 	cmpl	r0,4(r2)		# length
 	bgequ	9f
