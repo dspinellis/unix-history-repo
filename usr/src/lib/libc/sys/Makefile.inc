@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.19 (Berkeley) %G%
+#	@(#)Makefile.inc	5.20 (Berkeley) %G%
 
 # Missing: profil.0, ptrace.0
 
@@ -11,7 +11,7 @@ SRCS+=	Ovfork.s brk.s cerror.s exect.s fork.s pipe.s ptrace.s reboot.s \
 	sigsuspend.s syscall.s
 
 # glue to provide compatibility between GCC 1.X and 2.X
-SRCS+=	mmap.c
+SRCS+=	__ftruncate.c __lseek.c mmap.c __truncate.c
 
 # modules with default implementations on all architectures:
 ASM=	accept.o access.o acct.o adjtime.o bind.o chdir.o \
@@ -36,7 +36,7 @@ ASM=	accept.o access.o acct.o adjtime.o bind.o chdir.o \
 	statfs.o swapon.o symlink.o sync.o truncate.o umask.o unlink.o \
 	unmount.o utimes.o vadvise.o wait4.o write.o writev.o \
 	sem_lock.o sem_wakeup.o \
-	__ftruncate.o __getrlimit.o __lseek.o __setrlimit.o __truncate.o
+	__getrlimit.o __setrlimit.o
 
 PSEUDO=	_exit.o _getlogin.o
 
