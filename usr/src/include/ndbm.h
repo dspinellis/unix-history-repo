@@ -1,4 +1,4 @@
-/*      ndbm.h     4.1     83/12/02     */
+/*      ndbm.h     4.2     83/12/20     */
 
 /*
  * (New) Hashed key data base library (-lndbm).
@@ -27,6 +27,10 @@ typedef struct {
 	char    *dptr;
 	int     dsize;
 } datum;
+
+	/* flags to dbmstore() */
+#define DB_INSERT	0
+#define DB_REPLACE	1
 
 datum   dbmfetch();
 datum   dbmfirstkey();
