@@ -96,6 +96,19 @@ or more modestly:
    that are changed via read/write (or visa-versa).  Reasonable explicit
    coherency can be maintained with msync but that is pretty feeble.
 
+13. Properly handle sharing in the presence of wired pages.
+   Right now it is possible to remove wired pages via pmap_page_protect.
+   This has become an issue with the addition of the mlock() call which allows
+   the situation where there are multiple mappings for a phys page and one or
+   more of them are wired.  It is then possible that pmap_page_protect() with
+   VM_PROT_NONE will be invoked.  Most implementations will go ahead and
+   remove the wired mapping along with all other mappings, violating the
+   assumption of wired-ness and potentially causing a panic later on when
+   an attempt is made to unwire the page and the mapping doesn't exist.
+   A work around of not removing wired mappings in pmap_page_protect is
+   implemented in the hp300 pmap but leads to a condition that may be just
+   as bad, "detached mappings" that exist at the pmap level but are unknown
+   to the higher level VM.
 ----
 Mike Hibler
 University of Utah CSS group
