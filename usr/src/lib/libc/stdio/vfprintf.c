@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vfprintf.c	5.50 (Berkeley) %G%";
+static char sccsid[] = "@(#)vfprintf.c	5.51 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -20,6 +20,7 @@ static char sccsid[] = "@(#)vfprintf.c	5.50 (Berkeley) %G%";
 
 #include <sys/types.h>
 
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -92,6 +93,131 @@ __sbprintf(fp, fmt, ap)
 	return (ret);
 }
 
+/*
+ * Macros for converting digits to letters and vice versa
+ */
+#define	to_digit(c)	((c) - '0')
+#define is_digit(c)	((unsigned)to_digit(c) <= 9)
+#define	to_char(n)	((n) + '0')
+
+/*
+ * Convert an unsigned long to ASCII for printf purposes, returning
+ * a pointer to the first character of the string representation.
+ * Octal numbers can be forced to have a leading zero; hex numbers
+ * use the given digits.
+ */
+static char *
+__ultoa(val, endp, base, octzero, xdigs)
+	register u_long val;
+	char *endp;
+	int base, octzero;
+	char *xdigs;
+{
+	register char *cp = endp;
+	register long sval;
+
+	/*
+	 * Handle the three cases separately, in the hope of getting
+	 * better/faster code.
+	 */
+	switch (base) {
+	case 10:
+		if (val < 10) {	/* many numbers are 1 digit */
+			*--cp = to_char(val);
+			return (cp);
+		}
+		/*
+		 * On many machines, unsigned arithmetic is harder than
+		 * signed arithmetic, so we do at most one unsigned mod and
+		 * divide; this is sufficient to reduce the range of
+		 * the incoming value to where signed arithmetic works.
+		 */
+		if (val > LONG_MAX) {
+			*--cp = to_char(val % 10);
+			sval = val / 10;
+		} else
+			sval = val;
+		do {
+			*--cp = to_char(sval % 10);
+			sval /= 10;
+		} while (sval != 0);
+		break;
+
+	case 8:
+		do {
+			*--cp = to_char(val & 7);
+			val >>= 3;
+		} while (val);
+		if (octzero && *cp != '0')
+			*--cp = '0';
+		break;
+
+	case 16:
+		do {
+			*--cp = xdigs[val & 15];
+			val >>= 4;
+		} while (val);
+		break;
+
+	default:			/* oops */
+		abort();
+	}
+	return (cp);
+}
+
+/* Identical to __ultoa, but for quads. */
+static char *
+__uqtoa(val, endp, base, octzero, xdigs)
+	register u_quad_t val;
+	char *endp;
+	int base, octzero;
+	char *xdigs;
+{
+	register char *cp = endp;
+	register quad_t sval;
+
+	/* quick test for small values; __ultoa is typically much faster */
+	/* (perhaps instead we should run until small, then call __ultoa?) */
+	if (val <= ULONG_MAX)
+		return (__ultoa((u_long)val, endp, base, octzero, xdigs));
+	switch (base) {
+	case 10:
+		if (val < 10) {
+			*--cp = to_char(val % 10);
+			return (cp);
+		}
+		if (val > QUAD_MAX) {
+			*--cp = to_char(val % 10);
+			sval = val / 10;
+		} else
+			sval = val;
+		do {
+			*--cp = to_char(sval % 10);
+			sval /= 10;
+		} while (sval != 0);
+		break;
+
+	case 8:
+		do {
+			*--cp = to_char(val & 7);
+			val >>= 3;
+		} while (val);
+		if (octzero && *cp != '0')
+			*--cp = '0';
+		break;
+
+	case 16:
+		do {
+			*--cp = xdigs[val & 15];
+			val >>= 4;
+		} while (val);
+		break;
+
+	default:
+		abort();
+	}
+	return (cp);
+}
 
 #ifdef FLOATING_POINT
 #include <math.h>
@@ -105,17 +231,10 @@ static int exponent __P((char *, int, int));
 
 #else /* no FLOATING_POINT */
 
-#define	BUF		40
+#define	BUF		68
 
 #endif /* FLOATING_POINT */
 
-
-/*
- * Macros for converting digits to letters and vice versa
- */
-#define	to_digit(c)	((c) - '0')
-#define is_digit(c)	((unsigned)to_digit(c) <= 9)
-#define	to_char(n)	((n) + '0')
 
 /*
  * Flags used during conversion.
@@ -153,8 +272,9 @@ vfprintf(fp, fmt0, ap)
 	int ndig;		/* actual number of digits returned by cvt */
 	char expstr[7];		/* buffer for exponent string */
 #endif
-	u_quad_t _uquad;	/* integer arguments %[diouxX] */
-	enum { OCT, DEC, HEX } base;/* base for [diouxX] conversion */
+	u_long	ulval;		/* integer arguments %[diouxX] */
+	u_quad_t uqval;		/* %q integers */
+	int base;		/* base for [diouxX] conversion */
 	int dprec;		/* a copy of prec if [diouxX], 0 otherwise */
 	int fieldsz;		/* field size expanded by sign, etc */
 	int realsz;		/* field size expanded by dprec */
@@ -212,13 +332,11 @@ vfprintf(fp, fmt0, ap)
 	 * argument extraction methods.
 	 */
 #define	SARG() \
-	(flags&QUADINT ? va_arg(ap, quad_t) : \
-	    flags&LONGINT ? va_arg(ap, long) : \
+	(flags&LONGINT ? va_arg(ap, long) : \
 	    flags&SHORTINT ? (long)(short)va_arg(ap, int) : \
 	    (long)va_arg(ap, int))
 #define	UARG() \
-	(flags&QUADINT ? va_arg(ap, u_quad_t) : \
-	    flags&LONGINT ? va_arg(ap, u_long) : \
+	(flags&LONGINT ? va_arg(ap, u_long) : \
 	    flags&SHORTINT ? (u_long)(u_short)va_arg(ap, int) : \
 	    (u_long)va_arg(ap, u_int))
 
@@ -342,12 +460,20 @@ reswitch:	switch (ch) {
 			/*FALLTHROUGH*/
 		case 'd':
 		case 'i':
-			_uquad = SARG();
-			if ((quad_t)_uquad < 0) {
-				_uquad = -_uquad;
-				sign = '-';
+			if (flags & QUADINT) {
+				uqval = va_arg(ap, quad_t);
+				if ((quad_t)uqval < 0) {
+					uqval = -uqval;
+					sign = '-';
+				}
+			} else {
+				ulval = SARG();
+				if ((long)ulval < 0) {
+					ulval = -ulval;
+					sign = '-';
+				}
 			}
-			base = DEC;
+			base = 10;
 			goto number;
 #ifdef FLOATING_POINT
 		case 'e':		/* anomalous precision */
@@ -425,8 +551,11 @@ fp_begin:		_double = va_arg(ap, double);
 			flags |= LONGINT;
 			/*FALLTHROUGH*/
 		case 'o':
-			_uquad = UARG();
-			base = OCT;
+			if (flags & QUADINT)
+				uqval = va_arg(ap, u_quad_t);
+			else
+				ulval = UARG();
+			base = 8;
 			goto nosign;
 		case 'p':
 			/*
@@ -436,11 +565,10 @@ fp_begin:		_double = va_arg(ap, double);
 			 * defined manner.''
 			 *	-- ANSI X3J11
 			 */
-			/* NOSTRICT */
-			_uquad = (u_quad_t)va_arg(ap, void *);
-			base = HEX;
+			ulval = (u_long)va_arg(ap, void *);
+			base = 16;
 			xdigs = "0123456789abcdef";
-			flags |= HEXPREFIX;
+			flags = (flags & ~QUADINT) | HEXPREFIX;
 			ch = 'x';
 			goto nosign;
 		case 's':
@@ -468,18 +596,25 @@ fp_begin:		_double = va_arg(ap, double);
 			flags |= LONGINT;
 			/*FALLTHROUGH*/
 		case 'u':
-			_uquad = UARG();
-			base = DEC;
+			if (flags & QUADINT)
+				uqval = va_arg(ap, u_quad_t);
+			else
+				ulval = UARG();
+			base = 10;
 			goto nosign;
 		case 'X':
 			xdigs = "0123456789ABCDEF";
 			goto hex;
 		case 'x':
 			xdigs = "0123456789abcdef";
-hex:			_uquad = UARG();
-			base = HEX;
+hex:			if (flags & QUADINT)
+				uqval = va_arg(ap, u_quad_t);
+			else
+				ulval = UARG();
+			base = 16;
 			/* leading 0x/X only if non-zero */
-			if (flags & ALT && _uquad != 0)
+			if (flags & ALT &&
+			    (flags & QUADINT ? uqval != 0 : ulval != 0))
 				flags |= HEXPREFIX;
 
 			/* unsigned conversions */
@@ -498,47 +633,16 @@ number:			if ((dprec = prec) >= 0)
 			 *	-- ANSI X3J11
 			 */
 			cp = buf + BUF;
-			if (_uquad != 0 || prec != 0) {
-				/*
-				 * Unsigned mod is hard, and unsigned mod
-				 * by a constant is easier than that by
-				 * a variable; hence this switch.
-				 */
-				switch (base) {
-				case OCT:
-					do {
-						*--cp = to_char(_uquad & 7);
-						_uquad >>= 3;
-					} while (_uquad);
-					/* handle octal leading 0 */
-					if (flags & ALT && *cp != '0')
-						*--cp = '0';
-					break;
-
-				case DEC:
-					/* many numbers are 1 digit */
-					while (_uquad >= 10) {
-						*--cp = to_char(_uquad % 10);
-						_uquad /= 10;
-					}
-					*--cp = to_char(_uquad);
-					break;
-
-				case HEX:
-					do {
-						*--cp = xdigs[_uquad & 15];
-						_uquad >>= 4;
-					} while (_uquad);
-					break;
-
-				default:
-					cp = "bug in vfprintf: bad base";
-					size = strlen(cp);
-					goto skipsize;
-				}
+			if (flags & QUADINT) {
+				if (uqval != 0 || prec != 0)
+					cp = __uqtoa(uqval, cp, base,
+					    flags & ALT, xdigs);
+			} else {
+				if (ulval != 0 || prec != 0)
+					cp = __ultoa(ulval, cp, base,
+					    flags & ALT, xdigs);
 			}
 			size = buf + BUF - cp;
-		skipsize:
 			break;
 		default:	/* "%?" prints ?, unless ? is NUL */
 			if (ch == '\0')
