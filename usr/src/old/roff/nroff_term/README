@@ -1,4 +1,4 @@
-	README	4.1	83/08/05
+	README	4.2	85/05/21
 
 Here are the currently supported types of printers:
 
@@ -14,6 +14,7 @@ lpr		printer with no halfline/upline (link to crt and tn300)
 450-12		DASI 450 or IPSI 1622, 12 pitch (link to ipsi12)
 833		AJ 833 or AJ 832
 833-12		AJ 833 or AJ 832, 12 pitch
+epson		Epson FX80
 itoh		C:ITOH Prowriter
 itoh12		C:ITOH Prowriter, 12 pitch
 nec		NEC 55?0 or NEC 77?0 Spinwriter
