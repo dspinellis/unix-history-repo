@@ -69,16 +69,15 @@ hfree(hp)
 dohist(vp)
 	char **vp;
 {
-	int n, rflg = 0, cflg = 0;
-
+	int n, rflg = 0, hflg = 0;
 	if (getn(value("history")) == 0)
 		return;
 	if (setintr)
 		sigrelse(SIGINT);
 	vp++;
 	while (*vp[0] == '-') {
-		if (*vp && eq(*vp, "-c")) {
-			cflg++;
+		if (*vp && eq(*vp, "-h")) {
+			hflg++;
 			vp++;
 		}
 		if (*vp && eq(*vp, "-r")) {
@@ -88,14 +87,15 @@ dohist(vp)
 	}
 	if (*vp)
 		n = getn(*vp);
-	else
-		n = 1000;
-	dohist1(Histlist.Hnext, &n, rflg, cflg);
+	else {
+		n = getn(value("history"));
+	}
+	dohist1(Histlist.Hnext, &n, rflg, hflg);
 }
 
-dohist1(hp, np, rflg, cflg)
+dohist1(hp, np, rflg, hflg)
 	struct Hist *hp;
-	int *np;
+	int *np, rflg, hflg;
 {
 	bool print = (*np) > 0;
 top:
@@ -104,23 +104,23 @@ top:
 	(*np)--;
 	hp->Href++;
 	if (rflg == 0) {
-		dohist1(hp->Hnext, np, rflg, cflg);
+		dohist1(hp->Hnext, np, rflg, hflg);
 		if (print)
-			phist(hp, cflg);
+			phist(hp, hflg);
 		return;
 	}
 	if (*np >= 0)
-		phist(hp, cflg);
+		phist(hp, hflg);
 	hp = hp->Hnext;
 	goto top;
 }
 
-phist(hp, cflg)
+phist(hp, hflg)
 	register struct Hist *hp;
-	int cflg;
+	int hflg;
 {
 
-	if (cflg == 0)
+	if (hflg == 0)
 		printf("%6d\t", hp->Hnum);
 	prlex(&hp->Hlex);
 }

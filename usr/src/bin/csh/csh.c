@@ -13,7 +13,8 @@ static	char *sccsid = "@(#)csh.c 4.4 %G%";
  */
 
 char	*pathlist[] =	{ ".", "/usr/ucb", "/bin", "/usr/bin", 0 };
-char	*dumphist[] =	{ "history", "-c", "+1000" };
+char	*dumphist[] =	{ "history", "-h", 0 };
+char	*loadhist[] =	{ "source", "-h", "~/.history", 0 };
 char	HIST = '!';
 char	HISTSUB = '^';
 bool	nofile;
@@ -113,6 +114,8 @@ main(c, av)
 	sigset(SIGINT, parintr);			/* ... restore */
 	parterm = signal(SIGTERM, SIG_IGN);	/* parents terminability */
 	signal(SIGTERM, parterm);			/* ... restore */
+	if (loginsh)
+		signal(SIGHUP, phup);		/* exit processing on HUP */
 
 	/*
 	 * Process the arguments.
@@ -285,7 +288,9 @@ retry:
 				if (ioctl(f, TIOCGETD, &oldisc) != 0) 
 					goto notty;
 				if (oldisc != NTTYDISC) {
-			printf("Switching to new tty driver...\n");
+#ifdef DEBUG
+					printf("Switching to new tty driver...\n");
+#endif DEBUG
 					ldisc = NTTYDISC;
 					ioctl(f, TIOCSETD, &ldisc);
 				} else
@@ -318,11 +323,9 @@ notty:
 		srccat(value("home"), "/.cshrc");
 		if (!fast && !arginp && !onelflg)
 			dohash();
+		dosource(loadhist);
 		if (loginsh) {
 			srccat(value("home"), "/.login");
-			enterhist = 1;
-			srccat(value("home"), "/.history");
-			enterhist = 0;
 		}
 	}
 
@@ -351,6 +354,7 @@ notty:
 		child++;
 		goodbye();
 	}
+	rechist();
 	exitstat();
 }
 
@@ -361,7 +365,9 @@ untty()
 		setpgrp(0, opgrp);
 		ioctl(FSHTTY, TIOCSPGRP, &opgrp);
 		if (oldisc != -1 && oldisc != NTTYDISC) {
+#ifdef DEBUG
 			printf("\nReverting to old tty driver...\n");
+#endif DEBUG
 			ioctl(FSHTTY, TIOCSETD, &oldisc);
 		}
 	}
@@ -416,9 +422,9 @@ srccat(cp, dp)
 	/* ioctl(unit, FIOCLEX, NULL); */
 	xfree(ep);
 #ifdef INGRES
-	srcunit(unit, 0);
+	srcunit(unit, 0, 0);
 #else
-	srcunit(unit, 1);
+	srcunit(unit, 1, 0);
 #endif
 }
 
@@ -426,9 +432,10 @@ srccat(cp, dp)
  * Source to a unit.  If onlyown it must be our file or our group or
  * we don't chance it.	This occurs on ".cshrc"s and the like.
  */
-srcunit(unit, onlyown)
+srcunit(unit, onlyown, hflg)
 	register int unit;
 	bool onlyown;
+	bool hflg;
 {
 	/* We have to push down a lot of state here */
 	/* All this could go into a structure */
@@ -437,6 +444,8 @@ srcunit(unit, onlyown)
 	char *ogointr = gointr, *oarginp = arginp;
 	char *oevalp = evalp, **oevalvec = evalvec;
 	int oonelflg = onelflg;
+	bool oenterhist = enterhist;
+	char OHIST = HIST;
 #ifdef TELL
 	bool otell = cantell;
 #endif
@@ -484,6 +493,9 @@ srcunit(unit, onlyown)
 		oSHIN = SHIN, SHIN = unit, arginp = 0, onelflg = 0;
 		intty = isatty(SHIN), whyles = 0, gointr = 0;
 		evalvec = 0; evalp = 0;
+		enterhist = hflg;
+		if (enterhist)
+			HIST = '\0';
 		/*
 		 * Now if we are allowing commands to be interrupted,
 		 * we let ourselves be interrupted.
@@ -513,6 +525,8 @@ srcunit(unit, onlyown)
 		arginp = oarginp, onelflg = oonelflg;
 		evalp = oevalp, evalvec = oevalvec;
 		intty = oldintty, whyles = oldwhyl, gointr = ogointr;
+		enterhist = oenterhist;
+		HIST = OHIST;
 #ifdef TELL
 		cantell = otell;
 #endif
@@ -527,12 +541,12 @@ srcunit(unit, onlyown)
 		error(NOSTR);
 }
 
-goodbye()
+rechist()
 {
 	char buf[BUFSIZ];
 	int fp, ftmp, oldidfds;
 
-	if (loginsh) {
+	if (!fast) {
 		strcpy(buf, value("home"));
 		strcat(buf, "/.history");
 		fp = creat(buf, 0777);
@@ -546,6 +560,12 @@ goodbye()
 			SHOUT = ftmp;
 			didfds = oldidfds;
 		}
+	}
+}
+
+goodbye()
+{
+	if (loginsh) {
 		signal(SIGQUIT, SIG_IGN);
 		sigset(SIGINT, SIG_IGN);
 		signal(SIGTERM, SIG_IGN);
@@ -553,6 +573,7 @@ goodbye()
 		if (adrof("home"))
 			srccat(value("home"), "/.logout");
 	}
+	rechist();
 	exitstat();
 }
 
@@ -566,6 +587,15 @@ exitstat()
 	 */
 	child++;
 	exit(getn(value("status")));
+}
+
+/*
+ * in the event of a HUP we want to save the history
+ */
+phup()
+{
+	rechist();
+	exit(1);
 }
 
 char	*jobargv[2] = { "jobs", 0 };
@@ -719,7 +749,8 @@ process(catch)
 		 * Echo not only on VERBOSE, but also with history expansion.
 		 * If there is a lexical error then we forego history echo.
 		 */
-		if (lex(&paraml) && !err && intty || adrof("verbose")) {
+		if (lex(&paraml) && !err && intty ||
+		    adrof("verbose")) {
 			haderr = 1;
 			prlex(&paraml);
 			haderr = 0;
@@ -741,9 +772,10 @@ process(catch)
 			savehist(&paraml);
 
 		/*
-		 * Print lexical error messages.
+		 * Print lexical error messages, except when sourcing
+		 * history lists.
 		 */
-		if (err)
+		if (!enterhist && err)
 			error(err);
 
 		/*
@@ -780,14 +812,21 @@ dosource(t)
 {
 	register char *f;
 	register int u;
+	bool hflg = 0;
+	char buf[BUFSIZ];
 
 	t++;
-	f = globone(*t);
+	if (*t && eq(*t, "-h")) {
+		t++;
+		hflg++;
+	}
+	strcpy(buf, *t);
+	f = globone(buf);
 	u = dmove(open(f, 0), -1);
 	xfree(f);
-	if (u < 0)
+	if (u < 0 && !hflg)
 		Perror(f);
-	srcunit(u, 0);
+	srcunit(u, 0, hflg);
 }
 
 /*
