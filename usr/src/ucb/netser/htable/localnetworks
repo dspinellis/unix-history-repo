@@ -1,0 +1,12 @@
+#
+# Internet networks (reordered for local efficiency)
+#
+ucb-ether	46		ucb ucb-localnet
+ub-net		99		ungermann-bass-network
+3com-net	98		3com-network
+interlan-net	97		interlan-network
+cad-net		96		cad-network
+ucb-ether2	192.0.46	ucbether2 ether2
+cc-net		89		cc-network comp-center-net
+sons-net	125		three-suns-network
+loopback-net	127		software-loopback-net
