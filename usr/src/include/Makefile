@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.57 (Berkeley) %G%
+#	@(#)Makefile	5.58 (Berkeley) %G%
 #
 # Doing a make install builds /usr/include
 #
@@ -72,16 +72,16 @@ copies:
 	@-for i in ${LDIRS}; do \
 		rm -rf ${DESTDIR}/usr/include/$$i; \
 		cd /sys; \
-		tar cf - $$i/*.h | (cd ${DESTDIR}/usr/include; tar xpfB -); \
+		tar Hcf - $$i/*.h | (cd ${DESTDIR}/usr/include; tar xpfB -); \
 	done
 	rm -f ${DESTDIR}/usr/include/machine
 	mkdir ${DESTDIR}/usr/include/machine
 	cd /sys/${MACHINE}/include && \
-	    tar cf - *.h | (cd ${DESTDIR}/usr/include/machine; tar xpfB -);
+	    tar Hcf - *.h | (cd ${DESTDIR}/usr/include/machine; tar xpfB -);
 	rm -f ${DESTDIR}/usr/include/X11
 	mkdir ${DESTDIR}/usr/include/X11
 	cd /usr/X11R4/include/X11 && \
-	    tar cf - *.h | (cd ${DESTDIR}/usr/include/X11; tar xpfB -);
+	    tar Hcf - *.h | (cd ${DESTDIR}/usr/include/X11; tar xpfB -);
 
 		rm -rf ${DESTDIR}/usr/include/$$i; \
 		ln -s /sys/$$i ${DESTDIR}/usr/include/$$i; \
