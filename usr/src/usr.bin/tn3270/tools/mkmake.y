@@ -935,7 +935,12 @@ yylex()
 	    Return(c,c);
 	case '\'':
 	case '"':
-	    {
+	    if (bufptr != buffer) {
+		if (bufptr[-1] == '\\') {
+		    bufptr[-1] = c;
+		}
+		break;
+	    } else {
 		int newc;
 
 		ret_token(c);
