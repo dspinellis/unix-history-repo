@@ -1,7 +1,7 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
 #ifndef lint
-static	char sccsid[] = "@(#)const.c 2.1 %G%";
+static	char sccsid[] = "@(#)const.c 1.5.1.1 %G%";
 #endif
 
 #include "whoami.h"
@@ -102,6 +102,11 @@ const(cline, cid, cdecl)
 		np->range[0] = con.crval;
 	else if (isa(con.ctype, "d"))
 		np->real = con.crval;
+#       ifdef PC
+	    if (cbn == 1 && con.ctype != NIL) {
+		    stabconst(np);
+	    }
+#       endif
 }
 
 #ifndef PI0
