@@ -664,10 +664,10 @@ expandmeta(str)
 		savelastp = exparg.lastp;
 		INTOFF;
 		if (expdir == NULL)
-			expdir = ckmalloc(4096); /* I hope this is big enough */
+			expdir = ckmalloc(8192); /* I hope this is big enough */
 		expmeta(expdir, str->text);
-		if(strlen(expdir) >= 4096)
-			error("malloc overflow in sh:expand.c in ckmalloc(4096)\n");
+		if(strlen(expdir) >= 8192)
+			error("malloc overflow in sh:expand.c in ckmalloc(8192)\n");
 		ckfree(expdir);
 		expdir = NULL;
 		INTON;
