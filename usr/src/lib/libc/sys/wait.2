@@ -2,53 +2,101 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)wait.2	4.1 (Berkeley) %G%
+.\"	@(#)wait.2	5.1 (Berkeley) %G%
 .\"
-.TH WAIT 2 
+.TH WAIT 2 "27 July 1983"
 .UC 4
 .SH NAME
-wait \- wait for process to terminate
+wait, wait3 \- wait for process to terminate
 .SH SYNOPSIS
+.ft B
 .nf
-.B wait(status)
-.B int *status;
-.fi
+#include <sys/wait.h>
 .PP
-.B wait(0)
+.ft B
+pid = wait(status)
+int pid;
+union wait *status;
+.PP
+.ft B
+pid = wait(0)
+int pid;
+.PP
+.ft B
+#include <sys/time.h>
+#include <sys/resource.h>
+.PP
+.ft B
+pid = wait3(status, options, rusage)
+int pid;
+union wait *status;
+int options;
+struct rusage *rusage;
+.fi
 .SH DESCRIPTION
 .I Wait
 causes its caller to delay until a signal is received or
 one of its child
 processes terminates.
 If any child has died since the last
-.I wait,
-return is immediate;
-if there are no children, return is immediate with
-the error bit set
-(resp. with a value of \-1 returned).
-The normal return yields the process ID of the terminated child.
-In the case of several children several
-.I wait
-calls are needed
-to learn of all the deaths.
+.IR wait ,
+return is immediate, returning the process id and
+exit status of one of the terminated
+children.
+If there are no children, return is immediate with
+the value \-1 returned.
 .PP
-If
-.RI (int) status
-is nonzero, the high byte of the word pointed to
-receives the low byte of the
-argument of
+On return from a successful 
+.I wait
+call, 
+.I status
+is nonzero, and the high byte of 
+.I status
+contains the low byte of the argument to
 .I exit
-when the child terminated.
-The low byte
-receives the termination status
-of the process.
+supplied by the child process;
+the low byte of 
+.I status
+contains the termination status of the process.
+A more precise definition of the
+.I status
+word is given in
+.RI < sys/wait.h >.
+.PP
+.I Wait3
+provides an alternate interface for programs
+which must not block when collecting the status
+of child processes.  The
+.I status
+parameter is defined as above.  The
+.I options
+parameter is used to indicate the call should not block if
+there are no processes which wish to report status (WNOHANG),
+and/or that only children of the current process which are stopped
+due to a SIGTTIN, SIGTTOU, SIGTSTP, or SIGSTOP signal should have
+their status reported (WUNTRACED).  If
+.I rusage
+is non-zero, a summary of the resources used by the terminated
+process and all its
+children is returned (this information is currently not available
+for stopped processes).
+.PP
+When the WNOHANG option is specified and no processes
+wish to report status, 
+.I wait3
+returns a 
+.I pid
+of 0.  The WNOHANG and WUNTRACED options may be combined by 
+.IR or 'ing
+the two values.
+.SH NOTES
 See
-.IR signal (2)
+.IR sigvec (2)
 for a list of termination statuses (signals);
 0 status indicates normal termination.
 A special status (0177) is returned for a stopped process
-which has not terminated and can be restarted.
-See
+which has not terminated and can be restarted;
+see
 .IR ptrace (2).
 If the 0200 bit of the termination status
 is set,
@@ -61,24 +109,31 @@ the initialization process
 (process ID = 1)
 inherits the children.
 .PP
-There is another entry
-.IR wait3 (2)
-which is provides additional options needed by the shell
-.IR csh (1)
-to do job control.
-.SH "SEE ALSO"
-wait3(2), exit(2), fork(2), signal(2)
-.SH DIAGNOSTICS
-Returns
-\-1 if there are no children not previously waited for.
-.SH "ASSEMBLER (PDP-11)"
-(wait = 7.)
-.br
-.B sys  wait
-.br
-(process ID in r0)
-.br
-(status in r1)
+.I Wait
+and
+.I wait3
+are automatically restarted when a process receives a
+signal while awaiting termination of a child process.
+.SH "RETURN VALUE
+If \fIwait\fP returns due to a stopped
+or terminated child process, the process ID of the child
+is returned to the calling process.  Otherwise, a value of \-1
+is returned and \fIerrno\fP is set to indicate the error.
 .PP
-The high byte of the status is
-the low byte of r0 in the child at termination.
+.I Wait3
+returns \-1 if there are no children not previously waited
+for;  0 is returned if WNOHANG is specified and there are
+no stopped or exited children.
+.SH ERRORS
+.I Wait
+will fail and return immediately if one or more of the following
+are true:
+.TP 15
+[ECHILD]
+The calling process has no existing unwaited-for
+child processes.
+.TP 15
+[EFAULT]
+The \fIstatus\fP or \fIrusage\fP arguments point to an illegal address.
+.SH "SEE ALSO"
+exit(2)
