@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)lab.c 1.16 %G%";
+static char sccsid[] = "@(#)lab.c 1.17 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -94,7 +94,7 @@ label(r, l)
 		     *	which defines them.
 		     */
 		    extlabname( extname , p -> symbol , cbn );
-		    putprintf( "	.globl	%s" , 0 , extname );
+		    putprintf("	.globl	%s", 0, extname);
 		    if ( cbn == 1 ) {
 			stabglabel( extname , line );
 		    }
@@ -139,16 +139,23 @@ gotoop(s)
 		     */
 		extlabname( extname , p -> symbol , bn );
 		    /*
-		     *	this is a jmp because it's a jump to a label that
-		     *	has been declared global. Although this branch is
-		     *	within this module the assembler will complain that
-		     *	the destination is a global symbol. The complaint
-		     *	arises because the assembler doesn't change jbr's
-		     *	into jmp's and consequently may cause a branch 
-		     *	displacement overflow when the module is subsequently
-		     *	linked into the rest of the program.
+		     * this is a funny jump because it's to a label that
+		     * has been declared global.
+		     * Although this branch is within this module
+		     * the assembler will complain that the destination
+		     * is a global symbol.
+		     * The complaint arises because the assembler
+		     * doesn't change relative jumps into absolute jumps.
+		     * and this  may cause a branch displacement overflow
+		     * when the module is subsequently linked with
+		     * the rest of the program.
 		     */
-		putprintf( "	jmp	%s" , 0 , extname );
+#		ifdef vax
+		    putprintf("	jmp	%s", 0, extname);
+#		endif vax
+#		ifdef mc68000
+		    putprintf("	jra	%s", 0, extname);
+#		endif mc68000
 	    } else {
 		    /*
 		     *	Non-local goto.
@@ -157,8 +164,10 @@ gotoop(s)
 		     *  frame at the destination level.	Then call longjmp
 		     *	to unwind the stack to the destination level.
 		     *
-		     *	For nested routines the end is calculated as:
-		     *	__disply[ bn ] . ap + sizeof( local frame )
+		     *	For nested routines the end of the frame
+		     *	is calculated as:
+		     *	    __disply[bn].fp + sizeof(local frame)
+		     *	(adjusted by (sizeof int) to get just past the end).
 		     *	The size of the local frame is dumped out by
 		     *	the second pass as an assembler constant.
 		     *	The main routine may not be compiled in this
@@ -172,8 +181,8 @@ gotoop(s)
 			, "_PCLOSE" );
 		if ( bn > 1 ) {
 		    p = lookup( enclosing[ bn - 1 ] );
-		    sprintf( extname, "LF%d+%d", p -> value[ NL_ENTLOC ]
-			, sizeof( int ) );
+		    sprintf( extname, "%s%d+%d",
+			FRAME_SIZE_LABEL, p -> value[NL_ENTLOC], sizeof(int));
 		    p = lookup(s);
 		    putLV( extname , bn , 0 , NNLOCAL , P2PTR | P2CHAR );
 		} else {
