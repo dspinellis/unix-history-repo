@@ -5,15 +5,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)networkdelta.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)networkdelta.c	2.1 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
 #include <protocols/timed.h>
 
 extern int machup;
-extern int slvcount;
-extern struct host hp[];
 
 /*
  * `networkdelta' selects the largest set of deltas that fall within the

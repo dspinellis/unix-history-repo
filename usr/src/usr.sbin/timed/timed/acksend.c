@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)acksend.c	1.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)acksend.c	2.1 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -18,23 +18,21 @@ static char sccsid[] = "@(#)acksend.c	1.3 (Berkeley) %G%";
 #define MAXCOUNT	5
 
 struct tsp *answer;
-extern int sock;
-extern struct sockaddr_in server;
-extern int trace;
-extern FILE *fd;
 
 /*
  * Acksend implements reliable datagram transmission by using sequence 
  * numbers and retransmission when necessary.
- * `name' is set to name of destination whose address is in global 
- * variable `server'.
+ * `name' is the name of the destination
+ * `addr' is the address to send to
  * If `name' is ANYADDR, this routine implements reliable broadcast.
  */
 
-struct tsp *acksend(message, name, ack)
+struct tsp *acksend(message, addr, name, ack, net)
 struct tsp *message;
+struct sockaddr_in *addr;
 char *name;
 int ack;
+struct netinfo *net;
 {
 	int count;
 	int flag;
@@ -56,19 +54,14 @@ int ack;
 	}
 	bytenetorder(message);
 	do {
-		if (name == ANYADDR) {
-			broadcast(message);
-		} else {
-			if (sendto(sock, (char *)message, sizeof(struct tsp),
-					0, &server, 
-					sizeof(struct sockaddr_in)) < 0) {
-				syslog(LOG_ERR, "acksend: sendto: %m");
-				exit(1);
-			}
+		if (sendto(sock, (char *)message, sizeof(struct tsp), 0, addr,
+		    sizeof(struct sockaddr_in)) < 0) {
+			syslog(LOG_ERR, "acksend: sendto: %m");
+			exit(1);
 		}
 		tout.tv_sec = SECFORACK;
 		tout.tv_usec = USECFORACK;
-		answer  = readmsg(ack, name, &tout);
+		answer  = readmsg(ack, name, &tout, net);
 		if (answer != NULL) {
 			flag = RECEIVED;
 		} else {

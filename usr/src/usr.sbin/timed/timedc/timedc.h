@@ -4,7 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-/*	@(#)timedc.h	1.3	(Berkeley)	%G%	*/
+/*	@(#)timedc.h	2.1	(Berkeley)	%G%	*/
 
 #include <sys/param.h>
 #include <stdio.h>

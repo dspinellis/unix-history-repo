@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)measure.c	1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)measure.c	2.1 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -25,7 +25,6 @@ static char sccsid[] = "@(#)measure.c	1.2 (Berkeley) %G%";
 extern int id;
 int measure_delta;
 extern int sock_raw;
-extern struct sockaddr_in server;
 
 /*
  * Measures the differences between machines' clocks using
@@ -33,19 +32,20 @@ extern struct sockaddr_in server;
  * Called by master with ckrange = 1, by clockdiff with ckrange = 0.
  */
 
-measure(wait, ckrange)
+measure(wait, addr, ckrange)
 struct timeval *wait;
+struct sockaddr_in *addr;
 int ckrange;
 {
 	int length;
 	int status;
 	int msgcount, trials, ntransmitted;
-	int cc, count, ready, found;
+	int cc, count;
+	fd_set ready;
 	long sendtime, recvtime, histime;
 	long min1, min2, diff;
-	long delta1, delta2;
-	struct timeval tv1, tv2, tout;
-	struct sockaddr_in where;
+	register long delta1, delta2;
+	struct timeval tv1, tout;
 	u_char packet[PACKET_IN];
 	register struct icmp *icp = (struct icmp *) packet;
 	
@@ -56,14 +56,14 @@ int ckrange;
 	measure_delta = HOSTDOWN;
 
 /* empties the icmp input queue */
+	FD_ZERO(&ready);
 empty:
 	tout.tv_sec = tout.tv_usec = 0;
-	ready = 1<<sock_raw;
-	found = select(20, &ready, (int *)0, (int *)0, &tout);
-	if (found) {
+	FD_SET(sock_raw, &ready);
+	if (select(FD_SETSIZE, &ready, (fd_set *)0, (fd_set *)0, &tout)) {
 		length = sizeof(struct sockaddr_in);
 		cc = recvfrom(sock_raw, (char *)packet, PACKET_IN, 0, 
-							&where, &length);
+		    (struct sockaddr_in *)NULL, &length);
 		if (cc < 0)
 			return(-1);
 		goto empty;
@@ -79,6 +79,8 @@ empty:
 	 */
 
 	msgcount = 1;
+	length = sizeof(struct sockaddr_in);
+	FD_ZERO(&ready);
 	while(msgcount <= MSGS) {
 		icp->icmp_type = ICMP_TSTAMP;
 		icp->icmp_code = 0;
@@ -90,9 +92,6 @@ empty:
 
 		tout.tv_sec = wait->tv_sec;
 		tout.tv_usec = wait->tv_usec;
-		ready = 1<<sock_raw;
-
-		where = server;
 
     		(void)gettimeofday (&tv1, (struct timezone *)0);
 		sendtime = icp->icmp_otime = (tv1.tv_sec % (24*60*60)) * 1000 
@@ -100,23 +99,24 @@ empty:
 		icp->icmp_cksum = in_cksum((u_short *)icp, PACKET_OUT);
 	
 		count = sendto(sock_raw, (char *)packet, PACKET_OUT, 0, 
-				&where, sizeof(where));
+				addr, sizeof(struct sockaddr_in));
 		if (count < 0) {
 			status = UNREACHABLE;
 			return(-1);
 		}
-		found = select(20, &ready, (int *)0, (int *)0, &tout);
-		if (found) {
-			length = sizeof(struct sockaddr_in);
+		FD_SET(sock_raw, &ready);
+		if (select(FD_SETSIZE, &ready, (fd_set *)0, (fd_set *)0,
+		    &tout)) {
 			cc = recvfrom(sock_raw, (char *)packet, PACKET_IN, 0, 
-							&where, &length);
-			(void)gettimeofday(&tv2, (struct timezone *)0);
+			    (struct sockaddr_in *)NULL, &length);
+			(void)gettimeofday(&tv1, (struct timezone *)0);
 			if (cc < 0)
 				return(-1);
 			if((icp->icmp_type == ICMP_TSTAMPREPLY) && 
 					(icp->icmp_id == id)) {
 				trials = 0;
-				recvtime = (tv2.tv_sec % (24*60*60)) * 1000 + tv2.tv_usec / 1000;
+				recvtime = (tv1.tv_sec % (24*60*60)) * 1000 +
+				    tv1.tv_usec / 1000;
 				diff = recvtime - sendtime;
 				/*
 				 * diff can be less than 0 aroud midnight
@@ -160,13 +160,13 @@ empty:
 			} else {
 				/* empties the icmp input queue */
 				tout.tv_sec = tout.tv_usec = 0;
-				ready = 1<<sock_raw;
-				found = select(20, &ready, (int *)0, 
-							(int *)0, &tout);
-				if (found) {
-					length = sizeof(struct sockaddr_in);
+				FD_SET(sock_raw, &ready);
+				if (select(FD_SETSIZE, &ready, (fd_set *)0,
+				    (fd_set *)0, &tout)) {
 					cc = recvfrom(sock_raw, (char *)packet,
-						 PACKET_IN, 0, &where, &length);
+						 PACKET_IN, 0,
+						 (struct sockaddr_in *)NULL,
+						 &length);
 					if (cc < 0)
 						return(-1);
 				}

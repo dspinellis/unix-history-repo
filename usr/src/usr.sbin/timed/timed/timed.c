@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)timed.c	1.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)timed.c	2.1 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -25,7 +25,7 @@ static char sccsid[] = "@(#)timed.c	1.4 (Berkeley) %G%";
 int id;
 int trace;
 int sock, sock_raw;
-int status;     			/* either MASTER or SLAVE */
+int status = 0;
 int backoff;
 int slvcount;				/* no. of slaves controlled by master */
 int machup;
@@ -33,15 +33,11 @@ u_short sequence;			/* sequence number */
 long delay1;
 long delay2;
 char hostname[MAXHOSTNAMELEN];
-struct in_addr broadcastaddr;		/* local net broadcast address */
-u_long netmask, mynet = 0;		/* my network number & netmask */
-struct sockaddr_in server;
 struct host hp[NHOSTS];
-char *fj;
+char tracefile[] = "/usr/adm/timed.log";
 FILE *fd;
 jmp_buf jmpenv;
-
-extern struct sockaddr_in from;
+struct netinfo *nettab = NULL;
 
 /*
  * The timedaemons synchronize the clocks of hosts in a local area network.
@@ -55,8 +51,6 @@ extern struct sockaddr_in from;
  * network partition is fixed.
  *
  * Authors: Riccardo Gusella & Stefano Zatti
- *
- * For problems and suggestions, please send mail to gusella@BERKELEY
  */
 
 main(argc, argv)
@@ -77,21 +71,25 @@ char **argv;
 	struct sockaddr_in masteraddr;
 	struct tsp resp, conflict, *answer, *readmsg(), *acksend();
 	long casual();
-	char *malloc(), *strcpy();
 	char *date();
 	int n;
-	int n_addrlen;
-	char *n_addr;
+	int flag;
 	char buf[BUFSIZ];
 	struct ifconf ifc;
 	struct ifreq ifreq, *ifr;
-	struct sockaddr_in *sin;
+	register struct netinfo *ntp;
+	struct netinfo *ntip;
+	struct sockaddr_in server;
+	u_short port;
+	int havemaster = 0;
 	
+#ifdef lint
+	ntip = NULL;
+#endif
 
 	Mflag = 0;
 	on = 1;
 	backoff = 1;
-	fj = "/usr/adm/timed.log";
 	trace = OFF;
 	nflag = OFF;
 	openlog("timed", LOG_ODELAY, LOG_DAEMON);
@@ -130,9 +128,9 @@ char **argv;
 	if (fork())
 		exit(0);
 	{ int s;
-	  for (s = 0; s < 10; s++)
+	  for (s = getdtablesize(); s >= 0; --s)
 		(void) close(s);
-	  (void) open("/", 0);
+	  (void) open("/dev/null", 0);
 	  (void) dup2(0, 1);
 	  (void) dup2(0, 2);
 	  s = open("/dev/tty", 2);
@@ -144,10 +142,10 @@ char **argv;
 #endif
 
 	if (trace == ON) {
-		fd = fopen(fj, "w");
+		fd = fopen(tracefile, "w");
+		setlinebuf(fd);
 		fprintf(fd, "Tracing started on: %s\n\n", 
 					date());
-		(void)fflush(fd);
 	}
 	openlog("timed", LOG_ODELAY|LOG_CONS, LOG_DAEMON);
 
@@ -156,6 +154,7 @@ char **argv;
 		syslog(LOG_CRIT, "unknown service 'timed/udp'");
 		exit(1);
 	}
+	port = srvp->s_port;
 	server.sin_port = srvp->s_port;
 	server.sin_family = AF_INET;
 	sock = socket(AF_INET, SOCK_DGRAM, 0);
@@ -210,40 +209,58 @@ char **argv;
 		syslog(LOG_ERR, "get interface configuration: %m");
 		exit(1);
 	}
-	ifr = ifc.ifc_req;
-	for (n = ifc.ifc_len/sizeof(struct ifreq); n > 0; n--, ifr++) {
+	n = ifc.ifc_len/sizeof(struct ifreq);
+	ntp = NULL;
+	for (ifr = ifc.ifc_req; n > 0; n--, ifr++) {
+		if (ifr->ifr_addr.sa_family != AF_INET)
+			continue;
 		ifreq = *ifr;
+		if (ntp == NULL)
+			ntp = (struct netinfo *)malloc(sizeof(struct netinfo));
+		ntp->my_addr = 
+			((struct sockaddr_in *)&ifreq.ifr_addr)->sin_addr;
 		if (ioctl(sock, (int)SIOCGIFFLAGS, 
 					(char *)&ifreq) < 0) {
 			syslog(LOG_ERR, "get interface flags: %m");
 			continue;
 		}
 		if ((ifreq.ifr_flags & IFF_UP) == 0 ||
-			(ifreq.ifr_flags & IFF_BROADCAST) == 0) {
+			((ifreq.ifr_flags & IFF_BROADCAST) == 0 &&
+			(ifreq.ifr_flags & IFF_POINTOPOINT) == 0)) {
 			continue;
 		}
+		if (ifreq.ifr_flags & IFF_BROADCAST)
+			flag = 1;
+		else
+			flag = 0;
 		if (ioctl(sock, (int)SIOCGIFNETMASK, 
 					(char *)&ifreq) < 0) {
-			syslog(LOG_ERR, "get broadaddr: %m");
+			syslog(LOG_ERR, "get netmask: %m");
 			continue;
 		}
-		netmask = ((struct sockaddr_in *)
+		ntp->mask = ((struct sockaddr_in *)
 			&ifreq.ifr_addr)->sin_addr.s_addr;
-		if (ioctl(sock, (int)SIOCGIFBRDADDR, 
-					(char *)&ifreq) < 0) {
-			syslog(LOG_ERR, "get broadaddr: %m");
-			continue;
+		if (flag) {
+			if (ioctl(sock, (int)SIOCGIFBRDADDR, 
+						(char *)&ifreq) < 0) {
+				syslog(LOG_ERR, "get broadaddr: %m");
+				continue;
+			}
+			ntp->dest_addr = *(struct sockaddr_in *)&ifreq.ifr_broadaddr;
+		} else {
+			if (ioctl(sock, (int)SIOCGIFDSTADDR, 
+						(char *)&ifreq) < 0) {
+				syslog(LOG_ERR, "get destaddr: %m");
+				continue;
+			}
+			ntp->dest_addr = *(struct sockaddr_in *)&ifreq.ifr_dstaddr;
 		}
-		n_addrlen = sizeof(ifr->ifr_addr);
-		n_addr = (char *)malloc((unsigned)n_addrlen);
-		bcopy((char *)&ifreq.ifr_broadaddr, n_addr, n_addrlen);
-		sin = (struct sockaddr_in *)n_addr;
-		broadcastaddr = sin->sin_addr;
+		ntp->dest_addr.sin_port = port;
 		if (nflag) {
 			u_long addr, mask;
 
-			addr = ntohl(broadcastaddr.s_addr);
-			mask = ntohl(netmask);
+			addr = ntohl(ntp->dest_addr.sin_addr.s_addr);
+			mask = ntohl(ntp->mask);
 			while ((mask & 1) == 0) {
 				addr >>= 1;
 				mask >>= 1;
@@ -251,55 +268,120 @@ char **argv;
 			if (addr != localnet->n_net)
 				continue;
 		}
-		mynet = netmask & broadcastaddr.s_addr;
-		break;
+		ntp->net = ntp->mask & ntp->dest_addr.sin_addr.s_addr;
+		ntp->next = NULL;
+		if (nettab == NULL) {
+			nettab = ntp;
+		} else {
+			ntip->next = ntp;
+		}
+		ntip = ntp;
+		ntp = NULL;
 	}
-	if (!mynet) {
+	if (ntp)
+		(void) free((char *)ntp);
+	if (nettab == NULL) {
 		syslog(LOG_ERR, "No network usable");
 		exit(1);
 	}
 
+	for(ntp = nettab; ntp != NULL; ntp = ntp->next) {
+		/* look for master */
+		resp.tsp_type = TSP_MASTERREQ;
+		(void)strcpy(resp.tsp_name, hostname);
+		answer = acksend(&resp, &ntp->dest_addr, (char *)ANYADDR, 
+		    TSP_MASTERACK, ntp);
+		if (answer == NULL) {
+			/*
+			 * Various conditions can cause conflict: race between
+			 * two just started timedaemons when no master is
+			 * present, or timedaemon started during an election.
+			 * Conservative approach is taken: give up and became a
+			 * slave postponing election of a master until first
+			 * timer expires.
+			 */
+			time.tv_sec = time.tv_usec = 0;
+			answer = readmsg(TSP_MASTERREQ, (char *)ANYADDR,
+			    &time, ntp);
+			if (answer != NULL) {
+				if (!havemaster) {
+					ntp->status = SLAVE;
+					status |= SLAVE;
+					havemaster++;
+				} else
+					ntp->status = IGNORE;
+				continue;
+			}
+	
+			time.tv_sec = time.tv_usec = 0;
+			answer = readmsg(TSP_MASTERUP, (char *)ANYADDR,
+			    &time, ntp);
+			if (answer != NULL) {
+				if (!havemaster) {
+					ntp->status = SLAVE;
+					status |= SLAVE;
+					havemaster++;
+				} else
+					ntp->status = IGNORE;
+				continue;
+			}
+	
+			time.tv_sec = time.tv_usec = 0;
+			answer = readmsg(TSP_ELECTION, (char *)ANYADDR,
+			    &time, ntp);
+			if (answer != NULL) {
+				if (!havemaster) {
+					ntp->status = SLAVE;
+					status |= SLAVE;
+					havemaster++;
+				} else
+					ntp->status = IGNORE;
+				continue;
+			}
+			ntp->status = MASTER;
+			status |= MASTER;
+		} else {
+			if (!havemaster) {
+				ntp->status = SLAVE;
+				status |= SLAVE;
+				havemaster++;
+			} else
+				ntp->status = IGNORE;
+			(void)strcpy(mastername, answer->tsp_name);
+			masteraddr = from;
+
+			/*
+			 * If network has been partitioned, there might be other
+			 * masters; tell the one we have just acknowledged that 
+			 * it has to gain control over the others. 
+			 */
+			time.tv_sec = 0;
+			time.tv_usec = 300000;
+			answer = readmsg(TSP_MASTERACK, (char *)ANYADDR, &time,
+			    ntp);
+			/*
+			 * checking also not to send CONFLICT to ack'ed master
+			 * due to duplicated MASTERACKs
+			 */
+			if (answer != NULL && 
+			    strcmp(answer->tsp_name, mastername) != 0) {
+				conflict.tsp_type = TSP_CONFLICT;
+				(void)strcpy(conflict.tsp_name, hostname);
+				if (acksend(&conflict, &masteraddr, mastername,
+				    TSP_ACK, (struct netinfo *)NULL) == NULL) {
+					syslog(LOG_ERR, 
+					    "error on sending TSP_CONFLICT");
+					exit(1);
+				}
+			}
+		}
+	}
 	/* us. delay to be used in response to broadcast */
 	delay1 = casual((long)10000, 200000);	
 
 	/* election timer delay in secs. */
 	delay2 = casual((long)MINTOUT, (long)MAXTOUT);
 
-	/* look for master */
-	resp.tsp_type = TSP_MASTERREQ;
-	(void)strcpy(resp.tsp_name, hostname);
-	answer = acksend(&resp, (char *)ANYADDR, TSP_MASTERACK);
-	if (answer == NULL) {
-		status = MASTER;
-	} else {
-		status = SLAVE;
-		(void)strcpy(mastername, answer->tsp_name);
-		masteraddr = from;
-
-		/*
-		 * If network has been partitioned, there might be other
-		 * masters; tell the one we have just acknowledged that 
-		 * it has to gain control over the others. 
-		 */
-		time.tv_sec = 0;
-		time.tv_usec = 300000;
-		answer = readmsg(TSP_MASTERACK, (char *)ANYADDR, &time);
-		/*
-		 * checking also not to send CONFLICT to ack'ed master
-		 * due to duplicated MASTERACKs
-		 */
-		if (answer != NULL && 
-				strcmp(answer->tsp_name, mastername) != 0) {
-			conflict.tsp_type = TSP_CONFLICT;
-			(void)strcpy(conflict.tsp_name, hostname);
-			server = masteraddr;
-			if (acksend(&conflict, (char *)mastername, 
-							TSP_ACK) == NULL) {
-				syslog(LOG_ERR, "error on sending TSP_CONFLICT");
-				exit(1);
-			}
-		}
-	}
 	if (Mflag) {
 		/* open raw socket used to measure time differences */
 		sock_raw = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP); 
@@ -315,35 +397,6 @@ char **argv;
 		 */
 		slvcount = 1;
 
-		/*
-		 * Various conditions can cause conflict: race between
-		 * two just started timedaemons when no master is present,
-		 * or timedaemon started during an election.
-		 * Conservative approach is taken: give up and became a
-		 * slave postponing election of a master until first
-		 * timer expires.
-		 */
-		if (status == MASTER) {
-			time.tv_sec = time.tv_usec = 0;
-			answer = readmsg(TSP_MASTERREQ, (char *)ANYADDR, &time);
-			if (answer != NULL) {
-				status = SLAVE;
-				goto startd;
-			}
-	
-			time.tv_sec = time.tv_usec = 0;
-			answer = readmsg(TSP_MASTERUP, (char *)ANYADDR, &time);
-			if (answer != NULL) {
-				status = SLAVE;
-				goto startd;
-			}
-	
-			time.tv_sec = time.tv_usec = 0;
-			answer = readmsg(TSP_ELECTION, (char *)ANYADDR, &time);
-			if (answer != NULL) 
-				status = SLAVE;
-		}
-startd:
 		ret = setjmp(jmpenv);
 		switch (ret) {
 
@@ -351,11 +404,32 @@ startd:
 			break;
 		case 1: 
 			/* from slave */
-			status = election();
+			for (ntp = nettab; ntp != NULL; ntp = ntp->next) {
+				if (ntp->status = SLAVE)
+					break;
+			}
+			ntp->status = election(ntp);
+			status = 0;
+			for (ntp = nettab; ntp != NULL; ntp = ntp->next) {
+				status |= ntp->status;
+			}
+			status &= ~IGNORE;
 			break;
 		case 2:
 			/* from master */
-			status = SLAVE;
+			havemaster = 0;
+			for (ntp = nettab; ntp != NULL; ntp = ntp->next) {
+				if ((from.sin_addr.s_addr & ntp->mask) ==
+				    ntp->net) {
+					ntp->status = SLAVE;
+					break;
+				}
+			}
+			status = 0;
+			for (ntp = nettab; ntp != NULL; ntp = ntp->next) {
+				status |= ntp->status;
+			}
+			status &= ~IGNORE;
 			break;
 		default:
 			/* this should not happen */
@@ -368,12 +442,29 @@ startd:
 		else 
 			slave();
 	} else {
-		status = SLAVE;
 		/* if Mflag is not set timedaemon is forced to act as a slave */
+		status = SLAVE;
+		ntip = NULL;
+		for(ntp = nettab; ntp != NULL; ntp = ntp->next) {
+			if (ntp->status & (SLAVE|MASTER)) {
+				if (ntip == NULL) {
+					ntip = ntp;
+					ntp->status = SLAVE;
+				} else {
+					ntp->status = IGNORE;
+				}
+			}
+		}
 		if (setjmp(jmpenv)) {
 			resp.tsp_type = TSP_SLAVEUP;
+			resp.tsp_vers = TSPVERSION;
 			(void)strcpy(resp.tsp_name, hostname);
-			broadcast(&resp);
+			bytenetorder(&resp);
+			if (sendto(sock, (char *)&resp, sizeof(struct tsp), 0,
+			    &ntip->dest_addr, sizeof(struct sockaddr_in)) < 0) {
+				syslog(LOG_ERR, "sendto: %m");
+				exit(1);
+			}
 		}
 		slave();
 	}
@@ -383,7 +474,8 @@ startd:
  * `casual' returns a random number in the range [inf, sup]
  */
 
-long casual(inf, sup)
+long
+casual(inf, sup)
 long inf;
 long sup;
 {

@@ -4,7 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-/*	@(#)globals.h	1.2	(Berkeley)	%G%	*/
+/*	@(#)globals.h	2.1	(Berkeley)	%G%	*/
 
 #include <sys/param.h>
 #include <stdio.h>
@@ -17,6 +17,7 @@
 #include <arpa/inet.h>
 
 extern int errno;
+extern int sock;
 
 #define RANGE		20
 #define MSGS 		5
@@ -38,15 +39,37 @@ extern int errno;
 #define MASTER	2
 #define IGNORE	4
 #define ALL	(SLAVE|MASTER|IGNORE)
+#define SUBMASTER	(SLAVE|MASTER)
 
 #define NHOSTS		30	/* max number of hosts controlled by timed */
 
 struct host {
 	char *name;
-	char *addr;
-	int length;
+	struct sockaddr_in addr;
 	long delta;
 	u_short seq;
 };
 
-u_long	mynet, netmask;
+struct netinfo {
+	struct netinfo *next;
+	u_long net;
+	u_long mask;
+	struct in_addr my_addr;
+	struct sockaddr_in dest_addr;	/* broadcast addr or point-point */
+	long status;
+};
+
+extern struct netinfo *nettab;
+extern int status;
+extern int trace;
+extern int sock;
+extern struct sockaddr_in from;
+extern FILE *fd;
+extern char hostname[];
+extern char tracefile[];
+extern struct host hp[];
+extern int backoff;
+extern long delay1, delay2;
+extern int slvcount;
+
+char *strcpy(), *malloc();

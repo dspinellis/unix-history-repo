@@ -3,20 +3,20 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	1.3	(Berkeley)	%G%
+#	@(#)Makefile	2.1	(Berkeley)	%G%
 #
 # optional flags are: MEASURE TESTING DEBUG
 
-CFLAGS= -O -DMEASURE -DTESTING
+CFLAGS= -O
 DESTDIR=
 MACHINE= vax
 LIBS=
 PROGRS=	timed timedc
 
-SRCDS=	acksend.c broadcast.c candidate.c correct.c \
+SRCDS=	acksend.c candidate.c correct.c \
 	master.c networkdelta.c readmsg.c slave.c timed.c
 
-OBJDS=	acksend.o broadcast.o candidate.o correct.o \
+OBJDS=	acksend.o candidate.o correct.o \
 	master.o networkdelta.o readmsg.o slave.o timed.o
 
 SRCCS=	cmds.c cmdtab.c timedc.c
@@ -40,7 +40,7 @@ timedc: ${OBJCS} ${COMMO}
 
 install: ${PROGRS}
 	install -s timed ${DESTDIR}/etc
-	install -s -m 4511 timedc ${DESTDIR}/etc
+	install -s -o root -m 4511 timedc ${DESTDIR}/etc
 
 clean:
 	rm -f a.out core *.o Makefile.bak errs ${PROGRS}
@@ -96,13 +96,6 @@ acksend.o: /usr/include/sys/time.h /usr/include/time.h /usr/include/errno.h
 acksend.o: /usr/include/syslog.h /usr/include/sys/socket.h
 acksend.o: /usr/include/netinet/in.h /usr/include/netdb.h
 acksend.o: /usr/include/arpa/inet.h /usr/include/protocols/timed.h
-broadcast.o: broadcast.c ./globals.h /usr/include/sys/param.h
-broadcast.o: /usr/include/machine/machparam.h /usr/include/signal.h
-broadcast.o: /usr/include/sys/types.h /usr/include/stdio.h
-broadcast.o: /usr/include/sys/time.h /usr/include/time.h /usr/include/errno.h
-broadcast.o: /usr/include/syslog.h /usr/include/sys/socket.h
-broadcast.o: /usr/include/netinet/in.h /usr/include/netdb.h
-broadcast.o: /usr/include/arpa/inet.h /usr/include/protocols/timed.h
 candidate.o: candidate.c ./globals.h /usr/include/sys/param.h
 candidate.o: /usr/include/machine/machparam.h /usr/include/signal.h
 candidate.o: /usr/include/sys/types.h /usr/include/stdio.h
