@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)main.c 1.9 %G%";
+static char sccsid[] = "@(#)main.c 1.10 %G%";
 /*
  * Debugger main routine.
  */
@@ -22,8 +22,16 @@ static char sccsid[] = "@(#)main.c 1.9 %G%";
 #define isterm(file)	(interactive or isatty(fileno(file)))
 
 #include <sgtty.h>
+#include <fcntl.h>
 
-typedef struct sgttyb Ttyinfo;
+typedef struct {
+	struct sgttyb	sg;		/* standard sgttyb structure */
+	struct tchars	tc;		/* terminal characters */
+	struct ltchars	ltc;		/* local special characters */
+	int		ldisc;		/* line discipline */
+	int		local;		/* TIOCLGET */
+	int		fcflags;	/* fcntl(2) F_GETFL, F_SETFL */
+} Ttyinfo;
 
 #endif
 
@@ -353,14 +361,24 @@ public savetty(f, t)
 File f;
 Ttyinfo *t;
 {
-    ioctl(fileno(f), TIOCGETP, t);
+    ioctl(fileno(f), TIOCGETP, &(t->sg));
+    ioctl(fileno(f), TIOCGETC, &(t->tc));
+    ioctl(fileno(f), TIOCGLTC, &(t->ltc));
+    ioctl(fileno(f), TIOCGETD, &(t->ldisc));
+    ioctl(fileno(f), TIOCLGET, &(t->local));
+    t->fcflags = fcntl(fileno(f), F_GETFL, 0);
 }
 
 public restoretty(f, t)
 File f;
 Ttyinfo *t;
 {
-    ioctl(fileno(f), TIOCSETN, t);
+    ioctl(fileno(f), TIOCSETN, &(t->sg));
+    ioctl(fileno(f), TIOCSETC, &(t->tc));
+    ioctl(fileno(f), TIOCSLTC, &(t->ltc));
+    ioctl(fileno(f), TIOCSETD, &(t->ldisc));
+    ioctl(fileno(f), TIOCLSET, &(t->local));
+    (void) fcntl(fileno(f), F_SETFL, t->fcflags);
 }
 
 /*
