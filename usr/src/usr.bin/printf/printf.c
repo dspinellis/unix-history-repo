@@ -14,7 +14,7 @@ char copyright[] =
 #endif
 
 #ifndef lint
-static char sccsid[] = "@(#)printf.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)printf.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -36,9 +36,9 @@ static char sccsid[] = "@(#)printf.c	5.14 (Berkeley) %G%";
  */
 #ifdef SHELL
 #define main printfcmd
-#define warnx(a, b) {							\
+#define warnx(a, b, c) {						\
 	char buf[64];							\
-	(void)sprintf(buf, sizeof(buf), a, b);				\
+	(void)sprintf(buf, sizeof(buf), a, b, c);			\
 	error(buf);							\
 }
 #include "../../bin/sh/bltin/bltin.h"
@@ -117,7 +117,8 @@ next:		for (start = fmt;; ++fmt) {
 			if (!*fmt) {
 				/* avoid infinite loop */
 				if (end == 1) {
-					warnx("missing format character", NULL);
+					warnx("missing format character",
+					    NULL, NULL);
 					return (1);
 				}
 				end = 1;
@@ -159,7 +160,7 @@ next:		for (start = fmt;; ++fmt) {
 		/* skip to conversion char */
 		for (; strchr(skip2, *fmt); ++fmt);
 		if (!*fmt) {
-			warnx("missing format character", NULL);
+			warnx("missing format character", NULL, NULL);
 			return (1);
 		}
 
@@ -200,7 +201,7 @@ next:		for (start = fmt;; ++fmt) {
 			break;
 		}
 		default:
-			warnx("illegal format character", NULL);
+			warnx("illegal format character", NULL, NULL);
 			return (1);
 		}
 		*fmt = nextch;
@@ -311,8 +312,7 @@ getint(ip)
 	if (getlong(&val))
 		return (1);
 	if (val > INT_MAX) {
-		errno = ERANGE;
-		warn("%s", *gargv);
+		warnx("%s", *gargv, strerror(ERANGE));
 		return (1);
 	}
 	*ip = val;
@@ -334,16 +334,16 @@ getlong(lp)
 		errno = 0;
 		val = strtol(*gargv, &ep, 0);
 		if (*ep != '\0') {
-			warnx("%s: illegal number", *gargv);
+			warnx("%s: illegal number", *gargv, NULL);
 			return (1);
 		}
 		if (errno == ERANGE)
 			if (val == LONG_MAX) {
-				warn("%s", *gargv);
+				warnx("%s", *gargv, strerror(ERANGE));
 				return (1);
 			}
 			if (val == LONG_MIN) {
-				warn("%s", *gargv);
+				warnx("%s", *gargv, strerror(ERANGE));
 				return (1);
 			}
 			
