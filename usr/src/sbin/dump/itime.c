@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)itime.c	1.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)itime.c	1.2 (Berkeley) %G%";
 #include "dump.h"
 
 char *prdate(d)
@@ -209,6 +209,11 @@ int makeidate(ip, buf)
 	return(0);
 }
 
+/*
+ * This is an estimation of the size of the file.
+ * It assumes that there are no unallocated blocks; hence
+ * the estimate may be high
+ */
 est(ip)
 	struct dinode *ip;
 {
@@ -217,14 +222,11 @@ est(ip)
 	esize++;
 	s = (ip->di_size + BSIZE-1) / BSIZE;
 	esize += s;
-	if(s > NADDR-3) {
-		/*
-		 *	This code is only appproximate.
-		 *	it totally estimates low on doubly and triply indirect
-		 *	files.
-		 */
-		s -= NADDR-3;
-		s = (s + (BSIZE/sizeof(daddr_t))-1) / (BSIZE/sizeof(daddr_t));
+	if (s > NDADDR) {
+		s -= NDADDR;
+		if (s > BSIZE / sizeof(daddr_t))
+			esize++;
+		s = (s + (BSIZE/sizeof(daddr_t)) - 1) / (BSIZE/sizeof(daddr_t));
 		esize += s;
 	}
 }

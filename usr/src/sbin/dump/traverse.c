@@ -1,62 +1,52 @@
-static	char *sccsid = "@(#)traverse.c	1.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)traverse.c	1.2 (Berkeley) %G%";
 #include "dump.h"
 
-struct	filsys	sblock;
-struct	dinode	itab[INOPB * NI];
+struct	fs	sblock;
 
 pass(fn, map)
-int (*fn)();
-short *map;
+	int (*fn)();
+	short *map;
 {
-	register i, j;
+	struct dinode *dp;
 	int bits;
-	ino_t mino;
-	daddr_t d;
+	ino_t maxino;
 
 	sync();
-	bread((daddr_t)1, (char *)&sblock, sizeof(sblock));
-	mino = (sblock.s_isize-2) * INOPB;
-	ino = 0;
-	for(i=2;; i+=NI) {
-		if(ino >= mino)
-			break;
-		d = (unsigned)i;
-		for(j=0; j<INOPB*NI; j++) {
-			if(ino >= mino)
-				break;
-			if((ino % MLEN) == 0) {
-				bits = ~0;
-				if(map != NULL)
-					bits = *map++;
-			}
-			ino++;
-			if(bits & 1) {
-				if(d != 0) {
-					bread(d, (char *)itab, sizeof(itab));
-					d = 0;
-				}
-				(*fn)(&itab[j]);
-			}
-			bits >>= 1;
+	bread(SBLOCK, &sblock, sizeof sblock);
+	if (sblock.fs_magic != FS_MAGIC) {
+		msg("bad sblock magic number\n");
+		dumpabort();
+	}
+	maxino = sblock.fs_ipg * sblock.fs_ncg;
+	for (ino = 0; ino < maxino; ) {
+		if((ino % MLEN) == 0) {
+			bits = ~0;
+			if(map != NULL)
+				bits = *map++;
 		}
+		ino++;
+		if(bits & 1) {
+			dp = getino(ino);
+			(*fn)(dp);
+		}
+		bits >>= 1;
 	}
 }
 
-icat(ip, fn1, fn2)
-struct	dinode	*ip;
-int (*fn1)(), (*fn2)();
+icat(dp, fn1, fn2)
+	register struct	dinode	*dp;
+	int (*fn1)(), (*fn2)();
 {
-	register i;
-	daddr_t d[NADDR];
+	register int i;
 
-	l3tol(&d[0], &ip->di_addr[0], NADDR);
-	(*fn2)(d, NADDR-3);
-	for(i=0; i<NADDR; i++) {
-		if(d[i] != 0) {
-			if(i < NADDR-3)
-				(*fn1)(d[i]); else
-				indir(d[i], fn1, fn2, i-(NADDR-3));
-		}
+	(*fn2)(dp->di_db, NDADDR);
+	for (i = 0; i < NDADDR; i++) {
+		if (dp->di_db[i] != 0)
+			(*fn1)(dp->di_db[i]);
+	}
+	for (i = 0; i < NIADDR; i++) {
+		if (dp->di_ib[i] != 0)
+			indir(dp->di_ib[i], fn1, fn2, i);
 	}
 }
 
@@ -235,6 +225,22 @@ nullf()
 {
 }
 
+struct dinode *
+getino(ino)
+	daddr_t ino;
+{
+	static daddr_t minino, maxino;
+	static struct dinode itab[INOPB];
+
+	if (ino >= minino && ino < maxino) {
+		return (&itab[ino - minino]);
+	}
+	bread(itod(ino, &sblock), itab, BSIZE);
+	minino = ino - (ino % INOPB);
+	maxino = minino + INOPB;
+	return (&itab[ino - minino]);
+}
+
 int	breaderrors = 0;		
 #define	BREADEMAX 32
 
@@ -246,7 +252,7 @@ bread(da, ba, c)
 	register n;
 	register	regc;
 
-	if (lseek(fi, (long)(da*BSIZE), 0) < 0){
+	if (lseek(fi, (long)(da*FSIZE), 0) < 0){
 		msg("bread: lseek fails\n");
 	}
 	regc = c;	/* put c someplace safe; it gets clobbered */
