@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	6.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)newfs.c	6.11 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -78,6 +78,13 @@ static char sccsid[] = "@(#)newfs.c	6.10 (Berkeley) %G%";
 #define MAXCONTIG	1
 
 /*
+ * MAXBLKPG determines the maximum number of data blocks which are
+ * placed in a single cylinder group. The default is one indirect
+ * block worth of data blocks.
+ */
+#define MAXBLKPG(bsize)	((bsize) / sizeof(daddr_t))
+
+/*
  * Each file system has a number of inodes statically allocated.
  * We allocate one inode slot per NBPI bytes, expecting this
  * to be far more than we will ever need.
@@ -110,6 +117,7 @@ int	opt = DEFAULTOPT;	/* optimization preference (space or time) */
 int	density = NBPI;		/* number of bytes per inode */
 int	maxcontig = MAXCONTIG;	/* max contiguous blocks to allocate */
 int	rotdelay = ROTDELAY;	/* rotational delay between blocks */
+int	maxbpg;			/* maximum blocks per file in a cyl group */
 int	bbsize = BBSIZE;	/* boot block size */
 int	sbsize = SBSIZE;	/* superblock size */
 #ifdef COMPAT
@@ -157,11 +165,12 @@ main(argc, argv)
 
 			case 'a':
 				if (argc < 1)
-					fatal("-a: spare sectors per cylinder");
+					fatal("-a: missing max contiguous blocks\n");
 				argc--, argv++;
-				cylspares = atoi(*argv);
-				if (cylspares < 0)
-					fatal("%s: bad spare sectors per cylinder", *argv);
+				maxcontig = atoi(*argv);
+				if (maxcontig <= 0)
+					fatal("%s: bad max contiguous blocks\n",
+						*argv);
 				goto next;
 
 			case 'b':
@@ -185,11 +194,22 @@ main(argc, argv)
 
 			case 'd':
 				if (argc < 1)
-					fatal("-d: missing sectors/track");
+					fatal("-d: missing rotational delay\n");
 				argc--, argv++;
-				nsectors = atoi(*argv);
-				if (nsectors <= 0)
-					fatal("%s: bad sectors/track", *argv);
+				rotdelay = atoi(*argv);
+				if (rotdelay < 0)
+					fatal("%s: bad rotational delay\n",
+						*argv);
+				goto next;
+
+			case 'e':
+				if (argc < 1)
+					fatal("-e: missing blocks pre file in a cyl group\n");
+				argc--, argv++;
+				maxbpg = atoi(*argv);
+				if (maxbpg <= 0)
+					fatal("%s: bad blocks per file in a cyl group\n",
+						*argv);
 				goto next;
 
 			case 'f':
@@ -290,6 +310,24 @@ main(argc, argv)
 					fatal("%s: bad total tracks", *argv);
 				goto next;
 
+			case 'u':
+				if (argc < 1)
+					fatal("-u: missing sectors/track");
+				argc--, argv++;
+				nsectors = atoi(*argv);
+				if (nsectors <= 0)
+					fatal("%s: bad sectors/track", *argv);
+				goto next;
+
+			case 'x':
+				if (argc < 1)
+					fatal("-x: spare sectors per cylinder");
+				argc--, argv++;
+				cylspares = atoi(*argv);
+				if (cylspares < 0)
+					fatal("%s: bad spare sectors per cylinder", *argv);
+				goto next;
+
 			default:
 				fatal("-%c: unknown flag", cp);
 			}
@@ -311,19 +349,26 @@ next:
 		fprintf(stderr, "\t-m minimum free space %%\n");
 		fprintf(stderr, "\t-o optimization preference %s\n",
 			"(`space' or `time')");
+		fprintf(stderr, "\t-a maximum contiguous blocks\n");
+		fprintf(stderr, "\t-d rotational delay between %s\n",
+			"contiguous blocks");
+		fprintf(stderr, "\t-e maximum blocks per file in a %s\n",
+			"cylinder group");
 		fprintf(stderr, "\t-i number of bytes per inode\n");
 		fprintf(stderr, "\t-c cylinders/group\n");
 		fprintf(stderr, "\t-s file system size (sectors)\n");
 		fprintf(stderr, "\t-r revolutions/minute\n");
 		fprintf(stderr, "\t-S sector size\n");
-		fprintf(stderr, "\t-d sectors/track\n");
+		fprintf(stderr, "\t-u sectors/track\n");
 		fprintf(stderr, "\t-t tracks/cylinder\n");
 		fprintf(stderr, "\t-p spare sectors per track\n");
-		fprintf(stderr, "\t-a spare sectors per cylinder\n");
+		fprintf(stderr, "\t-x spare sectors per cylinder\n");
 		fprintf(stderr, "\t-l hardware sector interleave\n");
 		fprintf(stderr, "\t-k sector 0 skew, per track\n");
 		exit(1);
 	}
+	if (maxbpg == 0)
+		maxbpg = MAXBLKPG(bsize);
 	special = argv[0];
 	cp = rindex(special, '/');
 	if (cp != 0)

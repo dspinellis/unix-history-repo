@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkfs.c	6.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkfs.c	6.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -22,13 +22,6 @@ static char sccsid[] = "@(#)mkfs.c	6.4 (Berkeley) %G%";
 #include <sys/fs.h>
 #include <sys/dir.h>
 #include <sys/disklabel.h>
-
-/*
- * MAXBLKPG determines the maximum number of data blocks which are
- * placed in a single cylinder group. This is currently a function
- * of the block and fragment size of the file system.
- */
-#define MAXBLKPG(fs)	((fs)->fs_fsize / sizeof(daddr_t))
 
 #define UMASK		0755
 #define MAXINOPB	(MAXBSIZE / sizeof(struct dinode))
@@ -58,6 +51,7 @@ extern int	opt;		/* optimization preference (space or time) */
 extern int	density;	/* number of bytes per inode */
 extern int	maxcontig;	/* max contiguous blocks to allocate */
 extern int	rotdelay;	/* rotational delay between blocks */
+extern int	maxbpg;		/* maximum blocks per file in a cyl group */
 extern int	bbsize;		/* boot block size */
 extern int	sbsize;		/* superblock size */
 
@@ -449,7 +443,7 @@ next:
 	sblock.fs_maxcontig = maxcontig;
 	sblock.fs_headswitch = headswitch;
 	sblock.fs_trkseek = trackseek;
-	sblock.fs_maxbpg = MAXBLKPG(&sblock);
+	sblock.fs_maxbpg = maxbpg;
 	sblock.fs_rps = rpm / 60;
 	sblock.fs_optim = opt;
 	sblock.fs_cgrotor = 0;
