@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sel_subs.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)sel_subs.c	1.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -45,7 +45,7 @@ static GRPT **grptb = NULL;		/* group selection table */
 
 /*
  * sel_chk()
- *	check if this files matches a specfied uid, gid and time range
+ *	check if this file matches a specfied uid, gid or time range
  * Return:
  *	0 if this archive member should be processed, 1 if it should be skipped
  */
@@ -69,9 +69,9 @@ sel_chk(arcn)
 /*
  * User/group selection routines
  *
- * Routine that handle user selection of files based on the file uid/gid. To
- * add an entry the user supplies either then name or the uid/gid starting with
- * a #. A \# will eascape the #.
+ * Routines to handle user selection of files based on the file uid/gid. To
+ * add an entry, the user supplies either then name or the uid/gid starting with
+ * a # on the command line. A \# will eascape the #.
  */
 
 /*
@@ -141,7 +141,7 @@ usr_add(str)
 	}
 
 	/*
-	 * uid not already in the table, add it to the front of the chain
+	 * uid is not yet in the table, add it to the front of the chain
 	 */
 	if ((pt = (USRT *)malloc(sizeof(USRT))) != NULL) {
 		pt->uid = uid;
@@ -254,7 +254,7 @@ grp_add(str)
 	}
 
 	/*
-	 * gid not already in the table, add it to the front of the chain
+	 * gid not in the table, add it to the front of the chain
 	 */
 	if ((pt = (GRPT *)malloc(sizeof(GRPT))) != NULL) {
 		pt->gid = gid;
@@ -303,18 +303,19 @@ grp_match(arcn)
 /*
  * Time range selection routines
  *
- * Routines to handle user selection of files based on the modification time
- * being within a specified time range (the non-standard -T flag). The user
- * may specify any number of different file modification time ranges. The
- * ranges are checked one at a time until a match is found (if at all).
- * If the file has a mtime that lies within one of the time ranges, the file
- * is selected. Time ranges may have a lower and/or a upper value. Ranges are
- * inclusive. If no time ranges are supplied to pax, all members in the archive
- * will be selected. If only a lower range is supplied, all files with a mtime
- * equal to or younger are selected. If only an upper range is supplied, all
- * files with a mtime equal to or older will be selected. When the lower value
- * is equal to the upper value, only files with a mtime of exactly that time
- * will be selected.
+ * Routines to handle user selection of files based on the modification and/or
+ * inode change time falling within a specified time range (the non-standard
+ * -T flag). The user may specify any number of different file time ranges.
+ * Time ranges are checked one at a time until a match is found (if at all).
+ * If the file has a mtime (and/or ctime) which lies within one of the time
+ * ranges, the file is selected. Time ranges may have a lower and/or a upper
+ * value. These ranges are inclusive. When no time ranges are supplied to pax
+ * with the -T option, all members in the archive will be selected by the time
+ * range routines. When only a lower range is supplied, only files with a
+ * mtime (and/or ctime) equal to or younger are selected. When only a upper
+ * range is supplied, only files with a mtime (and/or ctime) equal to or older
+ * are selected. When the lower time range is equal to the upper time range,
+ * only files with a mtime (or ctime) of exactly that time are selected.
  */
 
 /*
@@ -340,6 +341,7 @@ trng_add(str)
 	register TIME_RNG *pt;
 	register char *up_pt = NULL;
 	register char *stpt;
+	register char *flgpt;
 	register int dot = 0;
 
 	/*
@@ -348,6 +350,20 @@ trng_add(str)
 	if ((str == NULL) || (*str == '\0')) {
 		warn(1, "Empty time range string");
 		return(-1);
+	}
+
+	/*
+	 * locate optional flags suffix /{cm}. We only allow a flag suffix(s)
+	 * in write and copy (as none of the formats stores inode change time;
+	 * currently inode change time cannot be set to a specific value by
+	 * any system call).
+	 */
+	if ((flgpt = rindex(str, '/')) != NULL) {
+		*flgpt++ = '\0';
+		if ((act == LIST) || (act == EXTRACT)) {
+			warn(1,"Time suffix only valid in write or copy modes");
+			return(-1);
+		}
 	}
 
 	for (stpt = str; *stpt != '\0'; ++stpt) {
@@ -378,7 +394,33 @@ trng_add(str)
 		warn(1, "Unable to allocate memory for time range");
 		return(-1);
 	}
-	pt->flags = 0;
+
+	/*
+	 * by default we only will check file mtime, but usee can specify
+	 * mtime, ctime (inode change time) or both.
+	 */
+	if ((flgpt == NULL) || (*flgpt == '\0'))
+		pt->flgs = CMPMTME;
+	else {
+		pt->flgs = 0;
+		while (*flgpt != '\0') {
+			switch(*flgpt) {
+			case 'M':
+			case 'm':
+				pt->flgs |= CMPMTME;
+				break;
+			case 'C':
+			case 'c':
+				pt->flgs |= CMPCTME;
+				break;
+			default:
+				warn(1, "Bad option %c with time range %s",
+				    *flgpt, str);
+				goto out;
+			}
+			++flgpt;
+		}
+	}
 
 	/*
 	 * start off with the current time
@@ -393,7 +435,7 @@ trng_add(str)
 			(void)free((char *)pt);
 			goto out;
 		}
-		pt->flags |= HASLOW;
+		pt->flgs |= HASLOW;
 	}
 
 	if ((up_pt != NULL) && (*up_pt != '\0')) {
@@ -405,12 +447,12 @@ trng_add(str)
 			(void)free((char *)pt);
 			goto out;
 		}
-		pt->flags |= HASHIGH;
+		pt->flgs |= HASHIGH;
 
 		/*
 		 * check that the upper and lower do not overlap
 		 */
-		if (pt->flags & HASLOW) {
+		if (pt->flgs & HASLOW) {
 			if (pt->low_time > pt->high_time) {
 				warn(1, "Upper %s and lower %s time overlap",
 					up_pt, str);
@@ -428,14 +470,15 @@ trng_add(str)
 	trtail->fow = pt;
 	trtail = pt;
 	return(0);
+
     out:
-	warn(0, "Time range format is: [yy[mm[dd[hh]]]]mm[.ss]");
+	warn(1, "Time range format is: [yy[mm[dd[hh]]]]mm[.ss][/[c][m]]");
 	return(-1);
 }
 
 /*
  * trng_match()
- *	check if this files mtime falls within any supplied time range.
+ *	check if this files mtime/ctime falls within any supplied time range.
  * Return:
  *	0 if this archive member should be processed, 1 if it should be skipped
  */
@@ -457,17 +500,47 @@ trng_match(arcn)
 	 */
 	pt = trhead;
 	while (pt != NULL) {
-		if (pt->flags & HASLOW) {
-			if (arcn->sb.st_mtime < pt->low_time) {
+		switch(pt->flgs & CMPBOTH) {
+		case CMPBOTH:
+			/*
+			 * user wants both mtime and ctime checked for this
+			 * time range
+			 */
+			if (((pt->flgs & HASLOW) &&
+			    (arcn->sb.st_mtime < pt->low_time) &&
+			    (arcn->sb.st_ctime < pt->low_time)) ||
+			    ((pt->flgs & HASHIGH) &&
+			    (arcn->sb.st_mtime > pt->high_time) &&
+			    (arcn->sb.st_ctime > pt->high_time))) {
 				pt = pt->fow;
 				continue;
 			}
-		}
-		if (pt->flags & HASHIGH) {
-			if (arcn->sb.st_mtime > pt->high_time) {
+			break;
+		case CMPCTME:
+			/*
+			 * user wants only ctime checked for this time range
+			 */
+			if (((pt->flgs & HASLOW) &&
+			    (arcn->sb.st_ctime < pt->low_time)) ||
+			    ((pt->flgs & HASHIGH) &&
+			    (arcn->sb.st_ctime > pt->high_time))) {
 				pt = pt->fow;
 				continue;
 			}
+			break;
+		case CMPMTME:
+		default:
+			/*
+			 * user wants only mtime checked for this time range
+			 */
+			if (((pt->flgs & HASLOW) &&
+			    (arcn->sb.st_mtime < pt->low_time)) ||
+			    ((pt->flgs & HASHIGH) &&
+			    (arcn->sb.st_mtime > pt->high_time))) {
+				pt = pt->fow;
+				continue;
+			}
+			break;
 		}
 		break;
 	}
