@@ -2,22 +2,15 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)arff.8	6.3 (Berkeley) %G%
+.\"	@(#)arff.8	6.4 (Berkeley) %G%
 .\"
-.TH ARFF 8V ""
+.TH ARFF 8 ""
 .UC 4
 .SH NAME
-arff, flcopy \- archiver and copier for floppy
+arff \- floppy archiver
 .SH SYNOPSIS
 .B arff
 [ key ] [ name ... ]
-.br
-.B flcopy
-[
-.B \-h
-] [
-\fB\-t\fIn\fR
-]
 .SH DESCRIPTION
 .I Arff
 saves and restores files
@@ -102,40 +95,9 @@ causes
 .I arff
 to create a new directory on the floppy, effectively deleting
 all previously existing files.
-.PP
-.I Flcopy
-copies
-the console floppy disk
-(opened as `/dev/floppy')
-to a file created in the
-current directory, named \*(lqfloppy\*(rq,
-then prints the message
-\*(lqChange Floppy, hit return when done\*(rq.
-Then
-.I flcopy
-copies the local file back out to the floppy disk.
-.PP
-The
-.B \-h
-option to 
-.I flcopy
-causes it to
-open a file named \*(lqfloppy\*(rq in the current directory
-and copy it to
-.I /dev/floppy;
-the
-.B \-t
-option
-causes only the first
-.I n
-tracks to participate in a copy.
 .SH FILES
-/dev/floppy or /dev/rrx??
-.br
-floppy (in current directory)
+/dev/floppy		default floppy device
 .SH SEE ALSO
-crl(4), fl(4), rx(4), tu(4), rxformat(8V)
-.SH AUTHORS
-Keith Sklower, Richard Tuck
+crl(4), fl(4), rx(4), tu(4), floppy(8), rxformat(8)
 .SH BUGS
 Device errors are handled ungracefully.
