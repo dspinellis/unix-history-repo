@@ -1,10 +1,9 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)opendir.c 4.3 %G%";
+static char sccsid[] = "@(#)opendir.c 4.4 %G%";
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <ndir.h>
+#include <sys/param.h>
+#include <dir.h>
 
 /*
  * open a directory.
@@ -15,13 +14,10 @@ opendir(name)
 {
 	register DIR *dirp;
 	register int fd;
-	struct stat sbuf;
 
 	if ((fd = open(name, 0)) == -1)
 		return NULL;
-	fstat(fd, &sbuf);
-	if (((sbuf.st_mode & S_IFDIR) == 0) ||
-	    ((dirp = (DIR *)malloc(sizeof(DIR))) == NULL)) {
+	if ((dirp = (DIR *)malloc(sizeof(DIR))) == NULL) {
 		close (fd);
 		return NULL;
 	}
