@@ -17,7 +17,7 @@ static char sccsid[] = "@(#)rlogin.c	5.10 (Berkeley) %G%";
 /*
  * rlogin - remote login
  */
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/errno.h>
 #include <sys/file.h>
 #include <sys/socket.h>
@@ -50,6 +50,7 @@ int	lostpeer();
 int	nosigwin;
 jmp_buf	winsizechanged;
 struct	winsize winsize;
+#endif sun
 int	sigwinch();
 
 main(argc, argv)
@@ -120,6 +121,9 @@ another:
 		strcat(term, "/");
 		strcat(term, speeds[ttyb.sg_ospeed]);
 	}
+#ifdef sun
+	(void) ioctl(0, TIOCGSIZE, &winsize);
+#else sun
 	if (!nosigwin && ioctl(0, TIOCGWINSZ, &winsize) == 0) {
 		cp = index(term, '\0');
 		sprintf(cp, "/%u,%u,%u,%u", winsize.ws_row, winsize.ws_col,
@@ -350,6 +354,19 @@ stop(cmdc)
 	sigwinch();			/* check for size changes */
 }
 
+#ifdef sun
+sigwinch()
+{
+	struct ttysize ws;
+
+	if (dosigwinch && ioctl(0, TIOCGSIZE, &ws) == 0 &&
+	    bcmp(&ws, &winsize, sizeof (ws))) {
+		winsize = ws;
+		sendwindow();
+	}
+}
+
+#else sun
 sigwinch()
 {
 	struct winsize ws;
@@ -360,6 +377,7 @@ sigwinch()
 		longjmp(winsizechanged, 1);
 	}
 }
+#endif
 
 oob()
 {
@@ -440,13 +458,18 @@ oob()
  */
 reader()
 {
+#if !defined(BSD) || BSD < 43
+	int pid = -getpid();
+#else
 	int pid = getpid();
+#endif
 	int n, remaining;
 	char *bufp = rcvbuf;
 
 	signal(SIGURG, oob);
 	signal(SIGTTOU, SIG_IGN);
 	fcntl(rem, F_SETOWN, pid);
+	ppid = getppid();
 	(void) setjmp(rcvtop);
 	for (;;) {
 		while ((remaining = rcvcnt - (bufp - rcvbuf)) > 0) {
@@ -468,6 +491,7 @@ reader()
 		if (rcvcnt < 0) {
 			if (errno == EINTR)
 				continue;
+			perror("read");
 			return (-1);
 		}
 	}
@@ -530,3 +554,4 @@ lostpeer()
 	prf("\007Connection closed.");
 	done(1);
 }
+
