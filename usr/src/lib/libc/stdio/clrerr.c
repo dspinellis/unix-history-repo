@@ -1,12 +1,23 @@
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Chris Torek.
+ *
+ * %sccs.include.redist.c%
+ */
+
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)clrerr.c	5.2 (Berkeley) %G%";
-#endif LIBC_SCCS and not lint
+static char sccsid[] = "@(#)clrerr.c	5.3 (Berkeley) %G%";
+#endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
 #undef	clearerr
 
-clearerr(iop)
-	register FILE *iop;
+void
+clearerr(fp)
+	FILE *fp;
 {
-	iop->_flag &= ~(_IOERR|_IOEOF);
+	__sclearerr(fp);
 }
