@@ -12,9 +12,10 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)passwd.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)passwd.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <errno.h>
 #include <stdio.h>
 #include <unistd.h>
 
@@ -49,7 +50,11 @@ main(argc, argv)
 	argc -= optind;
 	argv += optind;
 
-	uname = getlogin();
+	if ((uname = getlogin()) == NULL) {
+		(void)fprintf(stderr, "passwd: getlogin: %s\n",
+		    strerror(errno));
+		exit (1);
+	}
 
 	switch(argc) {
 	case 0:
