@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.2 (Berkeley) %G%
+#	@(#)Makefile	4.3 (Berkeley) %G%
 #
 # make file for debugger "dbx"
 #
@@ -89,19 +89,26 @@ HDR = \
 .c.h:
 	./makedefs -f $*.c $*.h
 
-${AOUT}: makedefs ${HDR} ${OBJ}
+${AOUT}: makedefs mkdate ${HDR} ${OBJ}
+	@rm -f date.c
+	@./mkdate > date.c
 	@echo "linking"
-	@${CC} ${LDFLAGS} ${OBJ} ${LIBRARIES} -o ${AOUT}
+	@${CC} ${LDFLAGS} date.c ${OBJ} ${LIBRARIES} -o ${AOUT}
 
 profile: ${HDR} ${OBJ}
+	@rm -f date.c
+	@./mkdate > date.c
 	@echo "linking with -p"
-	@${CC} ${LDFLAGS} -p ${OBJ} ${LIBRARIES} -o ${AOUT}
+	@${CC} ${LDFLAGS} -p date.c ${OBJ} ${LIBRARIES} -o ${AOUT}
 
 y.tab.c: commands.y
 	yacc -d commands.y
 
 makedefs: makedefs.c library.o cerror.o
 	${CC} makedefs.c library.o cerror.o -o makedefs
+
+mkdate: mkdate.c
+	${CC} mkdate.c -o mkdate
 
 print:
 	@echo "don't print it, it's too long"
