@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)snake.h	5.5 (Berkeley) %G%
+ *	@(#)snake.h	5.6 (Berkeley) %G%
  */
 
 # include <stdio.h>
@@ -48,6 +48,12 @@ struct sgttyb orig, new;
 struct ltchars olttyc, nlttyc;
 #endif
 struct point *point();
+#if __STDC__
+void	apr(struct point *, const char *, ...);
+void	pr(const char *, ...);
+#else
+void	apr();
+void	pr();
+#endif
 
 #define	same(s1, s2)	((s1)->line == (s2)->line && (s1)->col == (s2)->col)
-

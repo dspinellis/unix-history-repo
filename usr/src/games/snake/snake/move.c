@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)move.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)move.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*************************************************************************
@@ -364,8 +364,9 @@ pch(c)
 	}
 }
 
+void
 #if __STDC__
-apr(struct point *ps, char *fmt, ...)
+apr(struct point *ps, const char *fmt, ...)
 #else
 apr(ps, fmt, va_alist)
 	struct point *ps;
@@ -388,8 +389,9 @@ apr(ps, fmt, va_alist)
 	pstring(str);
 }
 
+void
 #if __STDC__
-pr(char *fmt, ...)
+pr(const char *fmt, ...)
 #else
 pr(fmt, va_alist)
 	char *fmt;
