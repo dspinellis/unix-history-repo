@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	7.106 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.107 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -843,10 +843,12 @@ unlink(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
-	NDINIT(&nd, DELETE, LOCKPARENT | LOCKLEAF, UIO_USERSPACE, uap->name, p);
+	NDINIT(&nd, DELETE, LOCKPARENT, UIO_USERSPACE, uap->name, p);
 	if (error = namei(&nd))
 		return (error);
 	vp = nd.ni_vp;
+	LEASE_CHECK(vp, p, p->p_ucred, LEASE_WRITE);
+	VOP_LOCK(vp);
 	if (vp->v_type == VDIR &&
 	    (error = suser(p->p_ucred, &p->p_acflag)))
 		goto out;
@@ -861,7 +863,6 @@ unlink(p, uap, retval)
 out:
 	if (!error) {
 		LEASE_CHECK(nd.ni_dvp, p, p->p_ucred, LEASE_WRITE);
-		LEASE_CHECK(vp, p, p->p_ucred, LEASE_WRITE);
 		error = VOP_REMOVE(nd.ni_dvp, nd.ni_vp, &nd.ni_cnd);
 	} else {
 		VOP_ABORTOP(nd.ni_dvp, &nd.ni_cnd);
@@ -1240,17 +1241,18 @@ chflags(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
-	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->fname, p);
+	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->fname, p);
 	if (error = namei(&nd))
 		return (error);
 	vp = nd.ni_vp;
+	LEASE_CHECK(vp, p, p->p_ucred, LEASE_WRITE);
+	VOP_LOCK(vp);
 	if (vp->v_mount->mnt_flag & MNT_RDONLY) {
 		error = EROFS;
 		goto out;
 	}
 	VATTR_NULL(&vattr);
 	vattr.va_flags = uap->flags;
-	LEASE_CHECK(vp, p, p->p_ucred, LEASE_WRITE);
 	error = VOP_SETATTR(vp, &vattr, p->p_ucred, p);
 out:
 	vput(vp);
@@ -1278,6 +1280,7 @@ fchflags(p, uap, retval)
 	if (error = getvnode(p->p_fd, uap->fd, &fp))
 		return (error);
 	vp = (struct vnode *)fp->f_data;
+	LEASE_CHECK(vp, p, p->p_ucred, LEASE_WRITE);
 	VOP_LOCK(vp);
 	if (vp->v_mount->mnt_flag & MNT_RDONLY) {
 		error = EROFS;
@@ -1285,7 +1288,6 @@ fchflags(p, uap, retval)
 	}
 	VATTR_NULL(&vattr);
 	vattr.va_flags = uap->flags;
-	LEASE_CHECK(vp, p, p->p_ucred, LEASE_WRITE);
 	error = VOP_SETATTR(vp, &vattr, p->p_ucred, p);
 out:
 	VOP_UNLOCK(vp);
@@ -1310,17 +1312,18 @@ chmod(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
-	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->fname, p);
+	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->fname, p);
 	if (error = namei(&nd))
 		return (error);
 	vp = nd.ni_vp;
+	LEASE_CHECK(vp, p, p->p_ucred, LEASE_WRITE);
+	VOP_LOCK(vp);
 	if (vp->v_mount->mnt_flag & MNT_RDONLY) {
 		error = EROFS;
 		goto out;
 	}
 	VATTR_NULL(&vattr);
 	vattr.va_mode = uap->fmode & 07777;
-	LEASE_CHECK(vp, p, p->p_ucred, LEASE_WRITE);
 	error = VOP_SETATTR(vp, &vattr, p->p_ucred, p);
 out:
 	vput(vp);
@@ -1348,6 +1351,7 @@ fchmod(p, uap, retval)
 	if (error = getvnode(p->p_fd, uap->fd, &fp))
 		return (error);
 	vp = (struct vnode *)fp->f_data;
+	LEASE_CHECK(vp, p, p->p_ucred, LEASE_WRITE);
 	VOP_LOCK(vp);
 	if (vp->v_mount->mnt_flag & MNT_RDONLY) {
 		error = EROFS;
@@ -1355,7 +1359,6 @@ fchmod(p, uap, retval)
 	}
 	VATTR_NULL(&vattr);
 	vattr.va_mode = uap->fmode & 07777;
-	LEASE_CHECK(vp, p, p->p_ucred, LEASE_WRITE);
 	error = VOP_SETATTR(vp, &vattr, p->p_ucred, p);
 out:
 	VOP_UNLOCK(vp);
@@ -1381,10 +1384,12 @@ chown(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
-	NDINIT(&nd, LOOKUP, NOFOLLOW | LOCKLEAF, UIO_USERSPACE, uap->fname, p);
+	NDINIT(&nd, LOOKUP, NOFOLLOW, UIO_USERSPACE, uap->fname, p);
 	if (error = namei(&nd))
 		return (error);
 	vp = nd.ni_vp;
+	LEASE_CHECK(vp, p, p->p_ucred, LEASE_WRITE);
+	VOP_LOCK(vp);
 	if (vp->v_mount->mnt_flag & MNT_RDONLY) {
 		error = EROFS;
 		goto out;
@@ -1392,7 +1397,6 @@ chown(p, uap, retval)
 	VATTR_NULL(&vattr);
 	vattr.va_uid = uap->uid;
 	vattr.va_gid = uap->gid;
-	LEASE_CHECK(vp, p, p->p_ucred, LEASE_WRITE);
 	error = VOP_SETATTR(vp, &vattr, p->p_ucred, p);
 out:
 	vput(vp);
@@ -1421,6 +1425,7 @@ fchown(p, uap, retval)
 	if (error = getvnode(p->p_fd, uap->fd, &fp))
 		return (error);
 	vp = (struct vnode *)fp->f_data;
+	LEASE_CHECK(vp, p, p->p_ucred, LEASE_WRITE);
 	VOP_LOCK(vp);
 	if (vp->v_mount->mnt_flag & MNT_RDONLY) {
 		error = EROFS;
@@ -1429,7 +1434,6 @@ fchown(p, uap, retval)
 	VATTR_NULL(&vattr);
 	vattr.va_uid = uap->uid;
 	vattr.va_gid = uap->gid;
-	LEASE_CHECK(vp, p, p->p_ucred, LEASE_WRITE);
 	error = VOP_SETATTR(vp, &vattr, p->p_ucred, p);
 out:
 	VOP_UNLOCK(vp);
@@ -1462,10 +1466,12 @@ utimes(p, uap, retval)
 		vattr.va_vaflags |= VA_UTIMES_NULL;
 	} else if (error = copyin((caddr_t)uap->tptr, (caddr_t)tv, sizeof (tv)))
   		return (error);
-	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->fname, p);
+	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->fname, p);
 	if (error = namei(&nd))
 		return (error);
 	vp = nd.ni_vp;
+	LEASE_CHECK(vp, p, p->p_ucred, LEASE_WRITE);
+	VOP_LOCK(vp);
 	if (vp->v_mount->mnt_flag & MNT_RDONLY) {
 		error = EROFS;
 		goto out;
@@ -1474,7 +1480,6 @@ utimes(p, uap, retval)
 	vattr.va_atime.ts_nsec = tv[0].tv_usec * 1000;
 	vattr.va_mtime.ts_sec = tv[1].tv_sec;
 	vattr.va_mtime.ts_nsec = tv[1].tv_usec * 1000;
-	LEASE_CHECK(vp, p, p->p_ucred, LEASE_WRITE);
 	error = VOP_SETATTR(vp, &vattr, p->p_ucred, p);
 out:
 	vput(vp);
@@ -1501,10 +1506,12 @@ __truncate(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
-	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->fname, p);
+	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->fname, p);
 	if (error = namei(&nd))
 		return (error);
 	vp = nd.ni_vp;
+	LEASE_CHECK(vp, p, p->p_ucred, LEASE_WRITE);
+	VOP_LOCK(vp);
 	if (vp->v_type == VDIR) {
 		error = EISDIR;
 		goto out;
@@ -1514,7 +1521,6 @@ __truncate(p, uap, retval)
 		goto out;
 	VATTR_NULL(&vattr);
 	vattr.va_size = uap->length;
-	LEASE_CHECK(vp, p, p->p_ucred, LEASE_WRITE);
 	error = VOP_SETATTR(vp, &vattr, p->p_ucred, p);
 out:
 	vput(vp);
@@ -1546,6 +1552,7 @@ __ftruncate(p, uap, retval)
 	if ((fp->f_flag & FWRITE) == 0)
 		return (EINVAL);
 	vp = (struct vnode *)fp->f_data;
+	LEASE_CHECK(vp, p, p->p_ucred, LEASE_WRITE);
 	VOP_LOCK(vp);
 	if (vp->v_type == VDIR) {
 		error = EISDIR;
@@ -1555,7 +1562,6 @@ __ftruncate(p, uap, retval)
 		goto out;
 	VATTR_NULL(&vattr);
 	vattr.va_size = uap->length;
-	LEASE_CHECK(vp, p, p->p_ucred, LEASE_WRITE);
 	error = VOP_SETATTR(vp, &vattr, fp->f_cred, p);
 out:
 	VOP_UNLOCK(vp);
