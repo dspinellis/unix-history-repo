@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)boot.c	7.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)boot.c	7.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "param.h"
@@ -118,7 +118,7 @@ copyunix(io, howto)
 		*addr++ = 0;
 
 	/* mask high order bits corresponding to relocated system base */
-	x.a_entry &= 0xfff00000;
+	x.a_entry &= 0x000fffff;
 	printf(" start 0x%x\n", x.a_entry);
 
 	if(c=scankbd())
