@@ -1,4 +1,4 @@
-/*	if.h	4.17	83/03/15	*/
+/*	if.h	4.18	83/06/12	*/
 
 /*
  * Structures defining a network interface, providing a packet
@@ -57,6 +57,7 @@ struct ifnet {
 /* procedure handles */
 	int	(*if_init)();		/* init routine */
 	int	(*if_output)();		/* output routine */
+	int	(*if_ioctl)();		/* ioctl routine */
 	int	(*if_reset)();		/* bus reset routine */
 	int	(*if_watchdog)();	/* timer routine */
 /* generic interface statistics */
@@ -74,6 +75,7 @@ struct ifnet {
 #define	IFF_DEBUG	0x4		/* turn on debugging */
 #define	IFF_ROUTE	0x8		/* routing entry installed */
 #define	IFF_POINTOPOINT	0x10		/* interface is point-to-point link */
+#define	IFF_NOTRAILERS	0x20		/* avoid use of trailers */
 
 /*
  * Output queues (ifp->if_snd) and internetwork datagram level (pup level 1)
@@ -113,20 +115,24 @@ struct ifnet {
 #define	IFNET_SLOWHZ	1		/* granularity is 1 second */
 
 /*
- * Interface request structure used by socket
- * ioctl's SIOCSIFxxxx (set interface parameter)
- * and SIOCGIFxxxx (get parameter).
+ * Interface request structure used for socket
+ * ioctl's.  All interface ioctl's must have parameter
+ * definitions which begin with ifr_name.  The
+ * remainder may be interface specific.
  */
 struct	ifreq {
-	char	ifr_name[16];		/* name of interface (e.g. "ec0") */
+#define	IFNAMSIZ	16
+	char	ifr_name[IFNAMSIZ];		/* if name, e.g. "en0" */
 	union {
 		struct	sockaddr ifru_addr;
 		struct	sockaddr ifru_dstaddr;
 		short	ifru_flags;
+		caddr_t	ifru_data;
 	} ifr_ifru;
 #define	ifr_addr	ifr_ifru.ifru_addr	/* address */
 #define	ifr_dstaddr	ifr_ifru.ifru_dstaddr	/* other end of p-to-p link */
 #define	ifr_flags	ifr_ifru.ifru_flags	/* flags */
+#define	ifr_data	ifr_ifru.ifru_data	/* for use by interface */
 };
 
 /*

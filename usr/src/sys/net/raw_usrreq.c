@@ -1,4 +1,4 @@
-/*	raw_usrreq.c	4.26	83/05/27	*/
+/*	raw_usrreq.c	4.27	83/06/12	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -261,12 +261,14 @@ raw_usrreq(so, req, m, nam, rights)
 		soisdisconnected(so);
 		break;
 
+	case PRU_CONTROL:
+		return (EOPNOTSUPP);
+
 	/*
 	 * Not supported.
 	 */
 	case PRU_ACCEPT:
 	case PRU_RCVD:
-	case PRU_CONTROL:
 	case PRU_SENSE:
 	case PRU_RCVOOB:
 	case PRU_SENDOOB:

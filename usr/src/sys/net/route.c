@@ -1,10 +1,12 @@
-/*	route.c	4.20	83/05/30	*/
+/*	route.c	4.21	83/06/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/mbuf.h"
 #include "../h/protosw.h"
 #include "../h/socket.h"
+#include "../h/dir.h"
+#include "../h/user.h"
 #include "../h/ioctl.h"
 #include "../h/errno.h"
 
@@ -150,6 +152,21 @@ rtredirect(dst, gateway)
 		rtstat.rts_newgateway++;
 		return;
 	}
+}
+
+/*
+ * Routing table ioctl interface.
+ */
+rtioctl(cmd, data)
+	int cmd;
+	caddr_t data;
+{
+
+	if (cmd != SIOCADDRT && cmd != SIOCDELRT)
+		return (EINVAL);
+	if (!suser())
+		return (u.u_error);
+	return (rtrequest(cmd, (struct rtentry *)data));
 }
 
 /*
