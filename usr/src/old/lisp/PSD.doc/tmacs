@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)tmacs	6.1 (Berkeley) %G%
+.\"	@(#)tmacs	6.2 (Berkeley) %G%
 .\"
 ." @(#)lmacs	34.4 3/23/82
 ." $Header: lmacs 1.2 83/07/01 11:21:33 sklower Exp $
@@ -75,11 +75,8 @@
 .""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 .de Lc
 ." .in 0
-.++ RC '\\$1''\\\\\\\\\\\\\\\\n(ch-%'
-.nr % 2
 .nr ch \\$2-1
 .+c \\$1
-.fo '''\fR\s-2Printed:\ \*(td\s0\fP'
 ..
 .de Lf
 .sp 1v
@@ -96,7 +93,7 @@
 ." online manual so put out a cryptic lisp expression. If you want to
 ." make an nroff version of the manual with index, then you will have
 ." to alter the lines below: replace .if t with .if 1   and .if n with .if 0
-.if t .tm .In \\n(ch \\n% \\$1 "\\$2"
+.if t .tm .In \\n% \\$1 "\\$2"
 .if n .tm (\\$1 ch\\n(ch.r)
 ..
 .de Re
@@ -128,14 +125,16 @@ this function will most likely disappear in future releases.
 F\s-2RANZ\s0 L\s-2ISP\s0\\$1
 ..
 .de Ib	\"	beginning of index
+.pn 158
+.He
 .Ap 1 Index\ to\ F\s-2RANZ\s0\ L\s-2ISP\s0\ Functions
 .ta 6i	\" set tab stop for location column
 .tc .		\" generate dots to line up page numbers
 .nf
 ..
 .de In
-.ie '\\$4'' (\\fB\\$3\\fR)\t\\$1-\\$2
-.el (\\fB\\$3\\fR\ \\$4)\t\\$1-\\$2
+.ie '\\$3'' (\\fB\\$2\\fR)\t\\$1
+.el (\\fB\\$2\\fR\ \\$3)\t\\$1
 ..
 .de Eb
 .in 0
@@ -163,8 +162,11 @@ F\s-2RANZ\s0 L\s-2ISP\s0\\$1
 .sp 1v
 ..
 .de Ap	\" appendix n title  (n is 1 2 3 4  for A B C D etc)
-.++ RA '''\\\\\\\\\\\\\\\\n(ch-%'
+.++ A
 .nr ch \\$1-1
 .+c \\$2
-.fo '''\fR\s-2Printed:\ \*(td\s0\fP'
+..
+.de He
+.oh 'The Franz Lisp Manual''PS2:9-%'
+.eh 'PS2:9-%''The Franz Lisp Manual'
 ..
