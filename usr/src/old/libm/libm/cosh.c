@@ -13,7 +13,7 @@ From Prof. Kahan at UC at Berkeley
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cosh.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)cosh.c	1.2 (Berkeley) %G%";
 #endif not lint
 
 /* COSH(X)
@@ -48,7 +48,7 @@ static char sccsid[] = "@(#)cosh.c	1.1 (Berkeley) %G%";
  *	Note: .3465 is a number near one half of ln2.
  *
  * Special cases:
- *	cosh(x) is x if x is +INF, -INF, or NAN.
+ *	cosh(x) is x if x is +INF, -INF, or NaN.
  *	only cosh(0)=1 is exact for finite x.
  *
  * Accuracy:
@@ -83,7 +83,7 @@ lnovfl =  7.0978271289338397310E2     ; /*Hex  2^  9   *  1.62E42FEFA39EF */
 
 #ifdef VAX
 static max = 126                      ;
-#else	/* IEEE */
+#else	/* IEEE double */
 static max = 1023                     ;
 #endif
 
@@ -93,7 +93,9 @@ double x;
 	static double half=1.0/2.0,one=1.0, small=1.0E-18; /* fl(1+small)==1 */
 	double scalb(),copysign(),exp(),exp__E(),t;
 
-	if(x!=x) return(x);
+#ifndef VAX
+	if(x!=x) return(x);	/* x is NaN */
+#endif
 	if((x=copysign(x,one)) <= 22)
 	    if(x<0.3465) 
 		if(x<small) return(one+x);
