@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	6.25 (Berkeley) %G%
+		@(#)README	6.26 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -822,7 +822,7 @@ CLASSES
    M
    N
    O	operators that indicate network operations (cannot be in local names)
-   P
+   P	top level pseudo-domains: BITNET, FAX, UUCP, etc.
    Q
    R
    S
