@@ -1,10 +1,7 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
 PROG=	mv
-SRCS=	mv.c
-CFLAGS+=-DLETS_GET_SMALL
+CFLAGS+=-s -N -I${.CURDIR}/../cat
 NOMAN=	noman
-LDFLAGS=-N
-.PATH:	${.CURDIR}/../../../../bin/mv
 
 .include <bsd.prog.mk>
