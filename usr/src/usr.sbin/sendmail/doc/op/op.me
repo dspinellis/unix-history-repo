@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.12 (Berkeley) %G%
+.\"	@(#)op.me	6.13 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,9 +40,9 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.12
+Version 6.13
 .sp
-For Sendmail Version 6.23
+For Sendmail Version 6.24
 .)l
 .sp 2
 .pp
@@ -4251,6 +4251,8 @@ exists and is readable.
 This is intended for compatibility with Sun Microsystems'
 .i mkalias
 program used on YP masters.
+.ip SYSTEM5
+Set all of the compilation parameters appropriate for System V.
 .ip LOCKF
 Use System V
 .b lockf
@@ -4260,11 +4262,26 @@ Due to the highly unusual semantics of locks
 across forks in
 .b lockf ,
 this should never be used unless absolutely necessary.
+Set by default if
+SYSTEM5 is set.
 .ip SYS5TZ
 Use System V
 time zone semantics.
-.ip SYSTEM5
-Set all of the compilation parameters appropriate for System V.
+.ip HASINITGROUPS
+Set this if your system has the
+.i initgroups()
+call
+(if you have multiple group support).
+This is the default if SYSTEM5 is
+.i not
+defined or if you are on HPUX.
+.ip HASUNAME
+Set this if you have the
+.i uname()
+system call (or corresponding library routine).
+Set by default if
+SYSTEM5
+is set.
 .ip LA_TYPE
 The load average type.
 Details are described below.
@@ -5415,7 +5432,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.12
+.\"Version 6.13
 .\".ce 0
 .pn 2
 .bp
