@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parse.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)parse.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -1548,7 +1548,7 @@ ParseDoInclude (file)
 	    char  	*newName;
 	    
 	    *prefEnd = '\0';
-	    newName = Str_Concat (fname, file, STR_ADDSLASH);
+	    newName = str_concat (fname, file, STR_ADDSLASH);
 	    fullname = Dir_FindFile (newName, parseIncPath);
 	    if (fullname == (char *)NULL) {
 		fullname = Dir_FindFile(newName, dirSearchPath);
@@ -1596,7 +1596,7 @@ ParseDoInclude (file)
      * is placed on a list with other IFile structures. The list makes
      * a very nice stack to track how we got here...
      */
-    oldFile = (IFile *) malloc (sizeof (IFile));
+    oldFile = (IFile *) emalloc (sizeof (IFile));
     oldFile->fname = fname;
 
     oldFile->F = curFILE;
