@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_prf.c	7.16 (Berkeley) %G%
+ *	@(#)subr_prf.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -97,7 +97,8 @@ printf(fmt, x1)
 	savintr = consintr, consintr = 0;	/* disable interrupts */
 #endif
 	prf(fmt, &x1, TOCONS | TOLOG, (caddr_t)0);
-	logwakeup();
+	if (!panicstr)
+		logwakeup();
 #if defined(tahoe)
 	consintr = savintr;			/* reenable interrupts */
 #endif
@@ -117,7 +118,7 @@ uprintf(fmt, x1)
 	register struct tty *tp = u.u_procp->p_session->s_ttyp;
 
 	if (tp != NULL && tp->t_session == u.u_procp->p_session)
-		prf(fmt, &x1, TOTTY, tp);
+		prf(fmt, &x1, TOTTY, (caddr_t)tp);
 }
 
 /*
@@ -132,9 +133,9 @@ tprintf(vp, fmt, x1)
 	char *fmt;
 	unsigned x1;
 {
+#ifdef notyet
 	int flags = TOTTY | TOLOG;
 
-#ifdef notyet
 	logpri(LOG_INFO);
 
 	if (vp == NULL || 
@@ -173,9 +174,9 @@ logpri(level)
 	int level;
 {
 
-	putchar('<', TOLOG, (struct tty *)0);
-	printn((u_long)level, 10, TOLOG, (struct tty *)0);
-	putchar('>', TOLOG, (struct tty *)0);
+	putchar('<', TOLOG, (caddr_t)0);
+	printn((u_long)level, 10, TOLOG, (caddr_t)0);
+	putchar('>', TOLOG, (caddr_t)0);
 }
 
 /*VARARGS1*/
