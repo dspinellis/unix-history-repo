@@ -11,12 +11,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwiomux.c	3.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwiomux.c	3.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
 #include <sys/time.h>
 #include <sys/types.h>
+#include <fcntl.h>
 
 /*
  * Multiple window output handler.
@@ -37,7 +38,7 @@ wwiomux()
 	register n;
 	register char *p;
 	char c;
-	static struct timeval tv = { 0, 0 };
+	struct timeval tv;
 	char noblock;
 
 	for (;;) {
@@ -69,10 +70,22 @@ wwiomux()
 				wwclrintr();
 				return;
 			}
-		}
+			/*
+			 * Defensive code.  If somebody else (for example,
+			 * wall) clears the ASYNC flag on us, we will block
+			 * forever.  So we need a finite timeout and set
+			 * the flag again.  Anything more clever will probably
+			 * need even more system calls.  (This is a bug
+			 * in the kernel.)
+			 * I don't like this one bit.
+			 */
+			fcntl(0, F_SETFL, wwnewtty.ww_fflags);
+			tv.tv_sec = 30;
+		} else
+			tv.tv_sec = 0;
+		tv.tv_usec = 0;
 		wwnselect++;
-		n = select(wwdtablesize, &imask, (fd_set *)0, (fd_set *)0,
-			noblock ? &tv : (struct timeval *)0);
+		n = select(wwdtablesize, &imask, (fd_set *)0, (fd_set *)0, &tv);
 		wwsetjmp = 0;
 
 		if (n < 0)
