@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	6.5 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	6.6 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -104,6 +104,9 @@ CONCAT(Oa, confALIAS_WAIT)
 # location of alias file
 CONCAT(OA, ifdef(`ALIAS_FILE', ALIAS_FILE, /etc/aliases))
 
+# minimum number of free blocks on filesystem
+CONCAT(Ob, confMIN_FREE_BLOCKS)
+
 # substitution for space (blank) characters
 CONCAT(OB, confBLANK_SUB)
 
@@ -177,6 +180,9 @@ CONCAT(On, confCHECK_ALIASES)
 
 # default messages to old style headers if no special punctuation?
 CONCAT(Oo, confOLD_STYLE_HEADERS)
+
+# privacy flags
+CONCAT(Op, confPRIVACY_FLAGS)
 
 # who (if anyone) should get extra copies of error messages
 ifdef(`confCOPY_ERRORS_TO',
@@ -480,6 +486,9 @@ R<> $* < @ $* > $*	$1 < @ $2 > $3			else strip off gunk',
 # reject messages that have host names we do not understand
 R$* < @ $* > $*		$#error $@ NOHOST $: Unrecognized host name $2',
 `dnl')')
+ifdef(`_MAILER_USENET_', `
+# addresses sent to net.group.USENET will get forwarded to a newsgroup
+R$+ . USENET		$# usenet $@ $1 $: $1
 
 ifdef(`_OLD_SENDMAIL_',
 `# forward remaining names to local relay, if any
