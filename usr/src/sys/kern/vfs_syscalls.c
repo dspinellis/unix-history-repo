@@ -1,4 +1,4 @@
-/*	vfs_syscalls.c	6.1	83/07/29	*/
+/*	vfs_syscalls.c	4.62	83/08/06	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -611,7 +611,7 @@ chown1(ip, uid, gid)
 	if (gid == -1)
 		gid = ip->i_gid;
 #ifdef QUOTA
-	if (ip->i_uid != uid)		/* this just speeds things a little */
+	if (ip->i_uid == uid)		/* this just speeds things a little */
 		change = 0;
 	else
 		change = ip->i_blocks;
