@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)inode.h	7.3 (Berkeley) %G%
+ *	@(#)inode.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -94,6 +94,7 @@ struct dinode {
 #define	i_ctime		i_ic.ic_ctime
 #define i_blocks	i_ic.ic_blocks
 #define	i_rdev		i_ic.ic_db[0]
+#define i_flags		i_ic.ic_flags
 #define i_gen		i_ic.ic_gen
 #define	i_lastr		i_un.if_lastr
 #define	i_socket	i_un.is_socket
@@ -117,12 +118,15 @@ struct dinode {
 #define	di_ctime	di_ic.ic_ctime
 #define	di_rdev		di_ic.ic_db[0]
 #define	di_blocks	di_ic.ic_blocks
+#define	di_flags	di_ic.ic_flags
 #define	di_gen		di_ic.ic_gen
 
 #ifdef KERNEL
 struct inode *inode;		/* the inode table itself */
 struct inode *inodeNINODE;	/* the end of the inode table */
 int	ninode;			/* number of slots in the table */
+
+u_long	nextgennumber;		/* next generation number to assign */
 
 extern struct vnodeops ufs_vnodeops;	/* vnode operations for ufs */
 extern struct vnodeops blk_vnodeops;	/* vnode operations for blk devices */
@@ -163,7 +167,7 @@ extern ino_t	dirpref();
  * Convert between inode pointers and vnode pointers
  */
 #define VTOI(vp)	((struct inode *)(vp)->v_data)
-#define ITOV(ip)	((struct vnode *)&(ip)->i_vnode)
+#define ITOV(ip)	(&(ip)->i_vnode)
 
 /*
  * Convert between vnode types and inode formats
