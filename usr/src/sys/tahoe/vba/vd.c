@@ -1,4 +1,4 @@
-/*	vd.c	1.2	86/01/05	*/
+/*	vd.c	1.3	86/01/12	*/
 
 #include "fsd.h"
 #if NVD > 0
@@ -119,20 +119,25 @@ unit_tab vdunit_info[NFSD];
 /*
  * See if the controller is really there; if so, initialize it.
  */
-vdprobe(addr)
-	cdr *addr;
+vdprobe(reg, vm)
+	caddr_t reg;
+	struct vba_ctlr *vm;
 {
-	if (badaddr((caddr_t)addr, 2))
+	register br, cvec;		/* must be r12, r11 */
+	register cdr *cp = (cdr *)reg;
+
+	if (badaddr((caddr_t)reg, 2))
 		return (0);
-	addr->cdr_reset = 0xffffffff;
+	cp->cdr_reset = 0xffffffff;
 	DELAY(1000000);
-	if (addr->cdr_reset != (unsigned)0xffffffff) {
+	if (cp->cdr_reset != (unsigned)0xffffffff) {
 		DELAY(1000000);
 	} else {
-		addr->cdr_reserved = 0x0;
+		cp->cdr_reserved = 0x0;
 		DELAY(3000000);
 	}
-	return (sizeof (cdr));
+	br = 0x17, cvec = 0xe0 + vm->um_ctlr;	/* XXX */
+	return (sizeof (*cp));
 }
 
 /*
@@ -713,7 +718,7 @@ vdsoft_error(ci, bp, dcb)
 	unit_tab *ui = &vdunit_info[VDUNIT(bp->b_dev)];
 
 	printf("%s%d%c: soft error sn%d status %x", ui->info.type_name,
-	    dkunit(bp), 'a'+(minor(bp->b_dev)&07), bp->b_blkno,
+	    minor(bp->b_dev) >> 3, 'a'+(minor(bp->b_dev)&07), bp->b_blkno,
 	    dcb->operrsta);
 	if (ci->ctlr_type == SMD_ECTLR)
 		printf(" ecode %x", dcb->err_code);

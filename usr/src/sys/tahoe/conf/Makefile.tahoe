@@ -1,4 +1,4 @@
-#	@(#)Makefile.tahoe	1.2 (Berkeley) %G%
+#	@(#)Makefile.tahoe	1.3 (Berkeley) %G%
 #
 # Makefile for 4.3 BSD
 #
@@ -74,7 +74,7 @@ assym.s machdep.o: Makefile
 
 assym.s: ../h/param.h ../tahoe/pte.h ../h/buf.h ../h/vmparam.h \
     ../h/vmmeter.h ../h/dir.h ../h/cmap.h ../h/map.h ../tahoevba/vbavar.h \
-    ../h/proc.h ../h/msgbuf.h
+    ../h/proc.h ../h/msgbuf.h ../tahoe/scb.h
 	${CC} ${INCLUDES} -DKERNEL ${IDENT} ${PARAM} ../tahoe/genassym.c; ./a.out >assym.s; rm -f a.out
 
 ../h/param.h: ../tahoe/machparam.h ../h/signal.h ../h/types.h

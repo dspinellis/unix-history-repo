@@ -1,4 +1,4 @@
-/*	vdreg.h	1.1	86/01/05	*/
+/*	vdreg.h	1.2	86/01/12	*/
 
 /*
  * VDDC (Versabus Direct Disk Controller) definitions.
@@ -407,7 +407,7 @@ typedef struct {
 
 /* physical information for known disk drives.  */
 #ifdef VDGENDATA
-long	vddcaddr[] = { 0xf2000, 0xf2100, 0xf2200, 0xf2300 };
+long	vddcaddr[] = { 0xf2000, 0xf2100, 0xf2200, 0xf2300, 0 };
 long	vdtimeout = 0;
 
 fs_tab	vdst[] = {

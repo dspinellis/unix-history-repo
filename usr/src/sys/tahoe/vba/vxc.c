@@ -1,4 +1,4 @@
-/*	vxc.c	1.2	86/01/05	*/
+/*	vxc.c	1.3	86/01/12	*/
 
 #include "vx.h"
 #if NVX > 0
@@ -228,13 +228,14 @@ register(n) ;
 	if(vp->v_uqual & V_UNBSY) {
 		vxrint(n) ;
 		vinthandl(n, ( (V_BSY | UNSquals) << 8 ) | V_INTR ) ;
-		splx(s);
-	}
-	else {
+#ifdef notdef
+	} else {
 		vpanic("vc: UNSOL INT ERR") ;
 		splx(s);
 		vxstreset(n);
+#endif
 	}
+	splx(s);
 }
 
 /*
