@@ -1,4 +1,4 @@
-/*	systm.h	4.22	81/11/26	*/
+/*	systm.h	4.23	82/06/07	*/
 
 /*
  * Random set of variables
@@ -45,6 +45,7 @@ int	physmem;		/* physical memory on this CPU */
 int	nswap;			/* size of swap space */
 int	updlock;		/* lock for sync */
 daddr_t	rablock;		/* block to be read ahead */
+int	rasize;			/* size of block in rablock */
 extern	int intstack[];		/* stack for interrupts */
 dev_t	rootdev;		/* device of the root */
 dev_t	dumpdev;		/* device to take dumps on */
