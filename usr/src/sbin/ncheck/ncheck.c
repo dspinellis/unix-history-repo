@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ncheck.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)ncheck.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -62,18 +62,20 @@ int	fi;
 ino_t	ino;
 int	nhent;
 int	nxfile;
-long	dev_bsize = 1;
+int	dev_bsize = 1;
 
 int	nerror;
 daddr_t	bmap();
 long	atol();
+off_t	lseek();
+char	*malloc(), *strcpy();
 struct htab *lookup();
+struct direct *nreaddir();
 
 main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	register i;
 	long n;
 
 	while (--argc) {
@@ -106,7 +108,8 @@ main(argc, argv)
 			continue;
 
 		default:
-			fprintf(stderr, "ncheck: bad flag %c\n", (*argv)[1]);
+			(void) fprintf(stderr, "ncheck: bad flag %c\n",
+			    (*argv)[1]);
 			nerror++;
 		}
 		check(*argv);
@@ -118,29 +121,28 @@ check(file)
 	char *file;
 {
 	register int i, j, c;
-	int nfiles;
 
 	fi = open(file, 0);
 	if(fi < 0) {
-		fprintf(stderr, "ncheck: cannot open %s\n", file);
+		(void) fprintf(stderr, "ncheck: cannot open %s\n", file);
 		nerror++;
 		return;
 	}
 	nhent = 0;
-	printf("%s:\n", file);
+	(void) printf("%s:\n", file);
 	sync();
-	bread(SBOFF, (char *)&sblock, SBSIZE);
+	bread(SBOFF, (char *)&sblock, (long)SBSIZE);
 	if (sblock.fs_magic != FS_MAGIC) {
-		printf("%s: not a file system\n", file);
+		(void) printf("%s: not a file system\n", file);
 		nerror++;
 		return;
 	}
 	dev_bsize = sblock.fs_fsize / fsbtodb(&sblock, 1);
 	hsize = sblock.fs_ipg * sblock.fs_ncg - sblock.fs_cstotal.cs_nifree + 1;
-	htab = (struct htab *)malloc(hsize * sizeof(struct htab));
-	strngtab = (char *)malloc(30 * hsize);
+	htab = (struct htab *)malloc((unsigned)hsize * sizeof(struct htab));
+	strngtab = malloc((unsigned)(30 * hsize));
 	if (htab == 0 || strngtab == 0) {
-		printf("not enough memory to allocate tables\n");
+		(void) printf("not enough memory to allocate tables\n");
 		nerror++;
 		return;
 	}
@@ -187,7 +189,7 @@ check(file)
 			}
 		}
 	}
-	close(fi);
+	(void) close(fi);
 	for (i = 0; i < hsize; i++)
 		htab[i].h_ino = 0;
 	for (i = iflg; i < NB; i++)
@@ -219,7 +221,7 @@ pass1(ip)
 			return;
 		}
 	}
-	lookup(ino, 1);
+	(void) lookup(ino, 1);
 }
 
 pass2(ip)
@@ -234,7 +236,7 @@ pass2(ip)
 	dirp.loc = 0;
 	dirp.ip = ip;
 	gip = ip;
-	for (dp = readdir(&dirp); dp != NULL; dp = readdir(&dirp)) {
+	for (dp = nreaddir(&dirp); dp != NULL; dp = nreaddir(&dirp)) {
 		if(dp->d_ino == 0)
 			continue;
 		hp = lookup(dp->d_ino, 0);
@@ -245,7 +247,7 @@ pass2(ip)
 		hp->h_pino = ino;
 		hp->h_name = &strngtab[strngloc];
 		strngloc += strlen(dp->d_name) + 1;
-		strcpy(hp->h_name, dp->d_name);
+		(void) strcpy(hp->h_name, dp->d_name);
 	}
 }
 
@@ -261,7 +263,7 @@ pass3(ip)
 	dirp.loc = 0;
 	dirp.ip = ip;
 	gip = ip;
-	for(dp = readdir(&dirp); dp != NULL; dp = readdir(&dirp)) {
+	for(dp = nreaddir(&dirp); dp != NULL; dp = nreaddir(&dirp)) {
 		if(aflg==0 && dotname(dp))
 			continue;
 		if(sflg == 0 && iflg == 0)
@@ -272,15 +274,15 @@ pass3(ip)
 		if (ilist[k].ino == 0)
 			continue;
 		if (mflg)
-			printf("mode %-6o uid %-5d gid %-5d ino ",
+			(void) printf("mode %-6o uid %-5d gid %-5d ino ",
 			    ilist[k].mode, ilist[k].uid, ilist[k].gid);
 	pr:
-		printf("%-5u\t", dp->d_ino);
+		(void) printf("%-5lu\t", dp->d_ino);
 		pname(ino, 0);
-		printf("/%s", dp->d_name);
+		(void) printf("/%s", dp->d_name);
 		if (lookup(dp->d_ino, 0))
-			printf("/.");
-		printf("\n");
+			(void) printf("/.");
+		(void) printf("\n");
 	}
 }
 
@@ -288,7 +290,7 @@ pass3(ip)
  * get next entry in a directory.
  */
 struct direct *
-readdir(dirp)
+nreaddir(dirp)
 	register struct dirstuff *dirp;
 {
 	register struct direct *dp;
@@ -334,15 +336,15 @@ pname(i, lev)
 	if (i==ROOTINO)
 		return;
 	if ((hp = lookup(i, 0)) == 0) {
-		printf("???");
+		(void) printf("???");
 		return;
 	}
 	if (lev > 10) {
-		printf("...");
+		(void) printf("...");
 		return;
 	}
 	pname(hp->h_pino, ++lev);
-	printf("/%s", hp->h_name);
+	(void) printf("/%s", hp->h_name);
 }
 
 struct htab *
@@ -361,25 +363,45 @@ lookup(i, ef)
 	if (ef==0)
 		return(0);
 	if (++nhent >= hsize) {
-		fprintf(stderr, "ncheck: hsize of %d is too small\n", hsize);
+		(void) fprintf(stderr, "ncheck: hsize of %ld is too small\n",
+		    hsize);
 		exit(1);
 	}
 	hp->h_ino = i;
 	return(hp);
 }
 
-bread(bno, buf, cnt)
+bread(bno, buf, lcount)
 	daddr_t bno;
-	char *buf;
-	int cnt;
+	register char *buf;
+	long lcount;
 {
-	register i;
+	register int i, cnt = lcount;
+	register off_t off = bno * dev_bsize;
 
-	lseek(fi, bno * dev_bsize, 0);
+	(void) lseek(fi, off, 0);
 	if (read(fi, buf, cnt) != cnt) {
-		fprintf(stderr, "ncheck: read error %d\n", bno);
-		for(i=0; i < cnt; i++)
-			buf[i] = 0;
+		(void) fprintf(stderr, "ncheck: read error %ld\n", bno);
+		if (cnt % dev_bsize) {
+			/* THIS INDICATES A SERIOUS BUG */
+			/* bzero is probably not correct, but will do */
+			(void) fprintf(stderr,
+			    "ncheck: bread: cnt %d not multiple of %d\n",
+			    cnt, dev_bsize);
+			bzero(buf, cnt);
+			return;
+		}
+		for (i = 0; i < cnt; i += dev_bsize) {
+			(void) lseek(fi, off, 0);
+			if (read(fi, buf, dev_bsize) != dev_bsize) {
+				(void) fprintf(stderr,
+				    "ncheck: re-read error %ld\n", bno);
+				bzero(buf, dev_bsize);
+			}
+			off += dev_bsize;
+			buf += dev_bsize;
+			bno++;
+		}
 	}
 }
 
@@ -399,7 +421,7 @@ bmap(bn)
 	daddr_t nb, *bap;
 
 	if (bn < 0) {
-		fprintf(stderr, "ncheck: bn %d negative\n", bn);
+		(void) fprintf(stderr, "ncheck: bn %ld negative\n", bn);
 		return ((daddr_t)0);
 	}
 
@@ -422,7 +444,7 @@ bmap(bn)
 		bn -= sh;
 	}
 	if (j == 0) {
-		printf("ncheck: bn %ld ovf, ino %u\n", bn, ino);
+		(void) printf("ncheck: bn %ld ovf, ino %lu\n", bn, ino);
 		return ((daddr_t)0);
 	}
 
@@ -431,7 +453,7 @@ bmap(bn)
 	 */
 	nb = gip->di_ib[NIADDR - j];
 	if (nb == 0) {
-		printf("ncheck: bn %ld void1, ino %u\n", bn, ino);
+		(void) printf("ncheck: bn %ld void1, ino %lu\n", bn, ino);
 		return ((daddr_t)0);
 	}
 
@@ -448,7 +470,8 @@ bmap(bn)
 		i = (bn / sh) % NINDIR(&sblock);
 		nb = bap[i];
 		if(nb == 0) {
-			printf("ncheck: bn %ld void2, ino %u\n", bn, ino);
+			(void) printf("ncheck: bn %ld void2, ino %lu\n", bn,
+			    ino);
 			return ((daddr_t)0);
 		}
 	}
