@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)dosys.c	4.9 (Berkeley) %G%;
+static	char *sccsid = "@(#)dosys.c	4.10 (Berkeley) %G%";
 #include "defs"
 #include <signal.h>
 
