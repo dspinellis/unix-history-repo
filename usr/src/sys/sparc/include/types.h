@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)types.h	7.6 (Berkeley) %G%
+ *	@(#)types.h	7.7 (Berkeley) %G%
  *
  * from: $Header: types.h,v 1.5 92/11/26 02:00:07 torek Exp $ (LBL)
  */
@@ -21,6 +21,7 @@
 #ifndef	_MACHTYPES_H_
 #define	_MACHTYPES_H_
 
+#if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE)
 typedef struct _physadr {
 	short r[1];
 } *physadr;
@@ -28,6 +29,7 @@ typedef struct _physadr {
 typedef struct label_t {
 	int val[2];
 } label_t;
+#endif
 
 typedef	u_long	vm_offset_t;
 typedef	u_long	vm_size_t;
@@ -36,13 +38,13 @@ typedef	u_long	vm_size_t;
  * Basic integral types.  Omit the typedef if
  * not possible for a machine/compiler combination.
  */
-typedef	signed char		   int8;
-typedef	unsigned char		 u_int8;
-typedef	short			  int16;
-typedef	unsigned short		u_int16;
-typedef	int			  int32;
-typedef	unsigned int		u_int32;
-typedef	long long		  int64;
-typedef	unsigned long long	u_int64;
+typedef	signed char		   int8_t;
+typedef	unsigned char		 u_int8_t;
+typedef	short			  int16_t;
+typedef	unsigned short		u_int16_t;
+typedef	int			  int32_t;
+typedef	unsigned int		u_int32_t;
+typedef	long long		  int64_t;
+typedef	unsigned long long	u_int64_t;
 
 #endif	/* _MACHTYPES_H_ */
