@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	6.14 (Berkeley) %G%
+ *	@(#)sendmail.h	6.15 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	6.14		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	6.15		%G%";
 # endif lint
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -284,6 +284,7 @@ typedef struct envelope	ENVELOPE;
 #define EF_KEEPQUEUE	000100		/* keep queue files always */
 #define EF_RESPONSE	000200		/* this is an error or return receipt */
 #define EF_RESENT	000400		/* this message is being forwarded */
+#define EF_VRFYONLY	001000		/* verify only (don't expand aliases) */
 
 EXTERN ENVELOPE	*CurEnv;	/* envelope currently being processed */
 /*
