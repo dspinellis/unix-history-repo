@@ -13,12 +13,12 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)nfsiod.8	5.1 (Berkeley) %G%
+.\"	@(#)nfsiod.8	5.2 (Berkeley) %G%
 .\"
 .TH NFSIOD 8 ""
 .UC 7
 .SH NAME
-nfsiod \- remote NFS server
+nfsiod \- local NFS asynchronous I/O server
 .SH SYNOPSIS
 .B /sbin/nfsiod
 [
@@ -26,7 +26,7 @@ nfsiod \- remote NFS server
 ]
 .SH DESCRIPTION
 .I Nfsiod
-service asynchronous I/O requests from
+services asynchronous I/O requests from
 .SM NFS
 clients to their server.
 A client should typically run enough servers to handle
