@@ -1,10 +1,9 @@
-/*	mba.c	4.16	81/03/07	*/
+/*	mba.c	4.17	81/03/08	*/
 
 #include "mba.h"
 #if NMBA > 0
 /*
- * Massbus driver; arbitrates massbus using device
- * driver routines.  This module provides common functions.
+ * Massbus driver, arbitrates a massbus among attached devices.
  */
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -21,7 +20,7 @@
 #include "../h/mtpr.h"
 #include "../h/vm.h"
 
-char	mbasr_bits[] = MBASR_BITS;
+char	mbsr_bits[] = MBSR_BITS;
 /*
  * Start activity on a massbus device.
  * We are given the device's mba_device structure and activate
@@ -133,7 +132,7 @@ loop:
 	 * If this device isn't present and on-line, then
 	 * we screwed up, and can't really do the operation.
 	 */
-	if ((mi->mi_drv->mbd_ds & (MBD_DPR|MBD_MOL)) != (MBD_DPR|MBD_MOL)) {
+	if ((mi->mi_drv->mbd_ds & MBDS_DREADY) != MBDS_DREADY) {
 		printf("%s%d: not ready\n", mi->mi_driver->md_dname,
 		    dkunit(bp));
 		mi->mi_tab.b_actf = bp->av_forw;
@@ -162,7 +161,7 @@ loop:
 	mbp->mba_var = mbasetup(mi);
 	mbp->mba_bcr = -bp->b_bcount;
 	mi->mi_drv->mbd_cs1 =
-	    (bp->b_flags & B_READ) ? MBD_RCOM|MBD_GO : MBD_WCOM|MBD_GO;
+	    (bp->b_flags & B_READ) ? MB_RCOM|MB_GO : MB_WCOM|MB_GO;
 	if (mi->mi_dk >= 0) {
 		dk_busy |= 1 << mi->mi_dk;
 		dk_xfer[mi->mi_dk]++;
@@ -192,7 +191,7 @@ mbintr(mbanum)
 	mbasr = mbp->mba_sr;
 	mbp->mba_sr = mbasr;
 #if VAX750
-	if (mbasr&MBS_CBHUNG) {
+	if (mbasr&MBSR_CBHUNG) {
 		printf("mba%d: control bus hung\n", mbanum);
 		panic("cbhung");
 	}
@@ -202,13 +201,6 @@ mbintr(mbanum)
 	mbp->mba_drv[0].mbd_as = as;
 
 	/*
-	 * Disable interrupts from the massbus adapter
-	 * for the duration of the operation of the massbus
-	 * driver, so that spurious interrupts won't be generated.
-	 */
-	mbp->mba_cr &= ~MBAIE;
-
-	/*
 	 * If the mba was active, process the data transfer
 	 * complete interrupt; otherwise just process units which
 	 * are now finished.
@@ -216,14 +208,15 @@ mbintr(mbanum)
 	if (mhp->mh_active) {
 		/*
 		 * Clear attention status for drive whose data
-		 * transfer completed, and give the dtint driver
+		 * transfer related operation completed,
+		 * and give the dtint driver
 		 * routine a chance to say what is next.
 		 */
 		mi = mhp->mh_actf;
 		as &= ~(1 << mi->mi_drive);
 		dk_busy &= ~(1 << mi->mi_dk);
 		bp = mi->mi_tab.b_actf;
-		switch((*mi->mi_driver->md_dtint)(mi, mbasr)) {
+		switch ((*mi->mi_driver->md_dtint)(mi, mbasr)) {
 
 		case MBD_DONE:		/* all done, for better or worse */
 			/*
@@ -269,47 +262,33 @@ mbintr(mbanum)
 			continue;
 		/*
 		 * If driver has a handler for non-data transfer
-		 * interrupts, give it a chance to tell us that
-		 * the operation needs to be redone
+		 * interrupts, give it a chance to tell us what to do.
 		 */
 		if (mi->mi_driver->md_ndint) {
 			mi->mi_tab.b_active = 0;
 			switch ((*mi->mi_driver->md_ndint)(mi)) {
 
-			case MBN_DONE:
-				/*
-				 * Non-data transfer interrupt
-				 * completed i/o request's processing.
-				 */
+			case MBN_DONE:		/* operation completed */
 				mi->mi_tab.b_errcnt = 0;
 				bp = mi->mi_tab.b_actf;
 				mi->mi_tab.b_actf = bp->av_forw;
 				iodone(bp);
-				/* fall into... */
-			case MBN_RETRY:
+				/* fall into common code */
+			case MBN_RETRY:		/* operation continues */
 				if (mi->mi_tab.b_actf)
 					mbustart(mi);
 				break;
-
-			case MBN_SKIP:
-				/*
-				 * Ignore (unsolicited interrupt, e.g.)
-				 */
+			case MBN_SKIP:		/* ignore unsol. interrupt */
 				break;
-
-			case MBN_CONT:
-				/*
-				 * Continue with unit active, e.g.
-				 * between first and second rewind
-				 * interrupts.
-				 */
-				mi->mi_tab.b_active = 1;
-				break;
-
 			default:
 				panic("mbintr");
 			}
 		} else
+			/*
+			 * If there is no non-data transfer interrupt
+			 * routine, then we should just
+			 * restart the unit, leading to a mbstart() soon.
+			 */
 			mbustart(mi);
 	}
 	/*
@@ -318,7 +297,7 @@ mbintr(mbanum)
 	 */
 	if (mhp->mh_actf && !mhp->mh_active)
 		mbstart(mhp);
-	mbp->mba_cr |= MBAIE;
+	/* THHHHATS all folks... */
 }
 
 /*
@@ -368,11 +347,14 @@ mbasetup(mi)
 	return (vaddr);
 }
 
+/*
+ * Init and interrupt enable a massbus adapter.
+ */
 mbainit(mp)
 	struct mba_regs *mp;
 {
 
-	mp->mba_cr = MBAINIT;
-	mp->mba_cr = MBAIE;
+	mp->mba_cr = MBCR_INIT;
+	mp->mba_cr = MBCR_IE;
 }
 #endif

@@ -1,4 +1,4 @@
-/*	hp.c	4.24	81/03/07	*/
+/*	hp.c	4.25	81/03/08	*/
 
 #include "hp.h"
 #if NHP > 0
@@ -6,11 +6,13 @@
  * HP disk driver for RP0x+RM0x
  *
  * TODO:
- *	Check RM80 skip sector handling, esp when ECC's occur later
- *	Add reading of bad sector information and disk layout from sector 1
- *	Add bad sector forwarding code
- *	Check interaction with tape driver on same mba
- *	Check multiple drive handling
+ *	check RM80 skip sector handling, esp when ECC's occur later
+ *	add reading of bad sector information and disk layout from sector 1
+ *	add bad sector forwarding code
+ *	check interaction with tape driver on same mba
+ *	check multiple drive handling
+ *	check offset recovery handling
+ *	see if DCLR and/or RELEASE set attention status
  */
 
 #include "../h/param.h"
@@ -101,8 +103,10 @@ struct hpst {
 };
 
 u_char	hp_offset[16] = {
-    HP_P400, HP_M400, HP_P400, HP_M400, HP_P800, HP_M800, HP_P800, HP_M800,
-    HP_P1200, HP_M1200, HP_P1200, HP_M1200, 0, 0, 0, 0,
+    HPOF_P400, HPOF_M400, HPOF_P400, HPOF_M400,
+    HPOF_P800, HPOF_M800, HPOF_P800, HPOF_M800,
+    HPOF_P1200, HPOF_M1200, HPOF_P1200, HPOF_M1200,
+    0, 0, 0, 0,
 };
 
 struct	buf	rhpbuf[NHP];
@@ -172,14 +176,14 @@ hpustart(mi)
 
 	if ((hpaddr->hpcs1&HP_DVA) == 0)
 		return (MBU_BUSY);
-	if ((hpaddr->hpds & HP_VV) == 0) {
+	if ((hpaddr->hpds & HPDS_VV) == 0) {
 		hpaddr->hpcs1 = HP_DCLR|HP_GO;
 		hpaddr->hpcs1 = HP_PRESET|HP_GO;
-		hpaddr->hpof = HP_FMT22;
+		hpaddr->hpof = HPOF_FMT22;
 	}
 	if (mi->mi_tab.b_active || mi->mi_hd->mh_ndrive == 1)
 		return (MBU_DODATA);
-	if ((hpaddr->hpds & (HP_DPR|HP_MOL)) != (HP_DPR|HP_MOL))
+	if ((hpaddr->hpds & HPDS_DREADY) != HPDS_DREADY)
 		return (MBU_DODATA);
 	st = &hpst[mi->mi_type];
 	bn = dkblock(bp);
@@ -217,13 +221,6 @@ hpstart(mi)
 	sn = bn%st->nspc;
 	tn = sn/st->nsect;
 	sn %= st->nsect;
-	if (mi->mi_tab.b_errcnt >= 16 && (bp->b_flags&B_READ) != 0) {
-		hpaddr->hpof = hp_offset[mi->mi_tab.b_errcnt & 017] | HP_FMT22;
-		hpaddr->hpcs1 = HP_OFFSET|HP_GO;
-		while (hpaddr->hpds & HP_PIP)
-			;
-		mbclrattn(mi);
-	}
 	hpaddr->hpdc = bp->b_cylin;
 	hpaddr->hpda = (tn << 8) + sn;
 }
@@ -236,8 +233,8 @@ hpdtint(mi, mbasr)
 	register struct buf *bp = mi->mi_tab.b_actf;
 	int retry = 0;
 
-	if (hpaddr->hpds&HP_ERR || mbasr&MBAEBITS) {
-		if (hpaddr->hper1&HP_WLE) {
+	if (hpaddr->hpds&HPDS_ERR || mbasr&MBAEBITS) {
+		if (hpaddr->hper1&HPER1_WLE) {
 			printf("hp%d: write locked\n", dkunit(bp));
 			bp->b_flags |= B_ERROR;
 		} else if (++mi->mi_tab.b_errcnt > 27 ||
@@ -251,11 +248,11 @@ hpdtint(mi, mbasr)
 			    hpaddr->hper2, HPER2_BITS);
 			bp->b_flags |= B_ERROR;
 #ifdef notdef
-		} else if (hpaddr->hper2&HP_SSE) {
+		} else if (hpaddr->hper2&HPER2_SSE) {
 			hpecc(mi, 1);
 			return (MBD_RESTARTED);
 #endif
-		} else if ((hpaddr->hper1&(HP_DCK|HP_ECH)) == HP_DCK) {
+		} else if ((hpaddr->hper1&(HPER1_DCK|HPER1_ECH))==HPER1_DCK) {
 			if (hpecc(mi, 0))
 				return (MBD_RESTARTED);
 			/* else done */
@@ -264,20 +261,40 @@ hpdtint(mi, mbasr)
 		hpaddr->hpcs1 = HP_DCLR|HP_GO;
 		if ((mi->mi_tab.b_errcnt&07) == 4) {
 			hpaddr->hpcs1 = HP_RECAL|HP_GO;
-			hprecal[mi->mi_unit] = 1;
-			return (MBD_RESTARTED);
+			hprecal[mi->mi_unit] = 0;
+			goto nextrecal;
 		}
 		if (retry)
 			return (MBD_RETRY);
 	}
-	if (hprecal[mi->mi_unit]) {
+	switch (hprecal[mi->mi_unit]) {
+
+	case 1:
+		hpaddr->hpdc = bp->b_cylin;
+		hpaddr->hpcs1 = HP_SEEK|HP_GO;
+		goto nextrecal;
+	case 2:
+		if (mi->mi_tab.b_errcnt < 16 ||
+		    (bp->b_flags & B_READ) != 0)
+			goto donerecal;
+		hpaddr->hpof = hp_offset[mi->mi_tab.b_errcnt & 017]|HPOF_FMT22;
+		hpaddr->hpcs1 = HP_OFFSET|HP_GO;
+		goto nextrecal;
+	nextrecal:
+		hprecal[mi->mi_unit]++;
+		return (MBD_RESTARTED);
+	donerecal:
 		hprecal[mi->mi_unit] = 0;
 		return (MBD_RETRY);
 	}
 	bp->b_resid = -(mi->mi_mba->mba_bcr) & 0xffff;
 	if (mi->mi_tab.b_errcnt > 16) {
+		/*
+		 * This is fast and occurs rarely; we don't
+		 * bother with interrupts.
+		 */
 		hpaddr->hpcs1 = HP_RTC|HP_GO;
-		while (hpaddr->hpds & HP_PIP)
+		while (hpaddr->hpds & HPDS_PIP)
 			;
 		mbclrattn(mi);
 	}
@@ -329,7 +346,7 @@ hpecc(mi, rm80sse)
 	reg = npf;
 #ifdef notdef
 	if (rm80sse) {
-		rp->hpof |= HP_SSEI;
+		rp->hpof |= HPOF_SSEI;
 		reg--;		/* compensate in advance for reg-- below */
 		goto sse;
 	}
@@ -354,7 +371,7 @@ hpecc(mi, rm80sse)
 		return (0);
 #ifdef notdef
 sse:
-	if (rpof&HP_SSEI)
+	if (rpof&HPOF_SSEI)
 		rp->hpda = rp->hpda + 1;
 	rp->hper1 = 0;
 	rp->hpcs1 = HP_RCOM|HP_GO;
@@ -406,10 +423,10 @@ hpdump(dev)
 	mba = phys(mi->mi_hd, struct mba_hd *)->mh_physmba;
 	mba->mba_cr = MBAINIT;
 	hpaddr = (struct hpdevice *)&mba->mba_drv[mi->mi_drive];
-	if ((hpaddr->hpds & HP_VV) == 0) {
+	if ((hpaddr->hpds & HPDS_VV) == 0) {
 		hpaddr->hpcs1 = HP_DCLR|HP_GO;
 		hpaddr->hpcs1 = HP_PRESET|HP_GO;
-		hpaddr->hpof = HP_FMT22;
+		hpaddr->hpof = HPOF_FMT22;
 	}
 	st = &hpst[mi->mi_type];
 	if (dumplo < 0 || dumplo + num >= st->sizes[minor(dev)&07].nblocks)
@@ -434,9 +451,9 @@ hpdump(dev)
 		mba->mba_bcr = -(blk*NBPG);
 		mba->mba_var = 0;
 		hpaddr->hpcs1 = HP_WCOM | HP_GO;
-		while ((hpaddr->hpds & HP_DRY) == 0)
+		while ((hpaddr->hpds & HPDS_DRY) == 0)
 			;
-		if (hpaddr->hpds&HP_ERR)
+		if (hpaddr->hpds&HPDS_ERR)
 			return (EIO);
 		start += blk*NBPG;
 		num -= blk;

@@ -1,7 +1,22 @@
-/*	autoconf.c	4.23	81/03/07	*/
+/*	autoconf.c	4.24	81/03/08	*/
 
 /*
- * Initialize the devices for the current machine.
+ * Setup the system to run on the current machine.
+ *
+ * Configure() is called at boot time and initializes the uba and mba
+ * device tables and the memory controller monitoring.  Available
+ * devices are determined (from possibilities mentioned in ioconf.c),
+ * and the drivers are initialized.
+ *
+ * N.B.: A lot of the conditionals based on processor type say
+ *	#if VAX780
+ * and
+ *	#if VAX750
+ * which may be incorrect after more processors are introduced if they
+ * are like either of these machines.  Thus the exact form of these
+ * lines may change.  Will future machines have configuration registers
+ * in the adapters and probable nexus space (like the 780), or wired
+ * addresses (like the 750)?  It remains to be seen.
  */
 
 #include "mba.h"
@@ -23,26 +38,59 @@
 #include "../h/scb.h"
 #include "../h/mem.h"
 
-int	cold;
+/*
+ * The following several variables are related to
+ * the configuration process, and are used in initializing
+ * the machine.
+ */
+int	cold;		/* if 1, still working on cold-start */
 int	nexnum;		/* current nexus number */
-int	dkn;		/* number of dk numbers assigned so far */
+int	dkn;		/* number of iostat dk numbers assigned so far */
 
+/*
+ * Addresses of the (locore) routines which bootstrap us from
+ * hardware traps to C code.  Filled into the system control block
+ * as necessary.
+ */
 #if NMBA > 0
 int	(*mbaintv[4])() =	{ Xmba0int, Xmba1int, Xmba2int, Xmba3int };
 #endif
 #if VAX780
 int	(*ubaintv[4])() =	{ Xua0int, Xua1int, Xua2int, Xua3int };
+/*
+ * These are the (fixed) addresses of the (last 8k bytes of) unibus memory for
+ * each of the 4 possible unibus adapters.  Note that the unibus memory
+ * addresses are actually indexed by the unibus adapter type code,
+ * and are unrelated to tr (nexus) number.
+ */
 caddr_t	umaddr780[4] = {
 	(caddr_t) 0x2013e000, (caddr_t) 0x2017e000,
 	(caddr_t) 0x201be000, (caddr_t) 0x201fe000
 };
 #endif
+
+/*
+ * This allocates the space for the per-uba information,
+ * such as buffered data path usage.
+ */
 struct	uba_hd uba_hd[MAXNUBA];
 
+/*
+ * The bits which decode the fault bits in the configuration register
+ * of nexus's are reusable per nexus-type, so we declare them once here
+ * to avoid replication.
+ */
 #if VAX780
 char	nexflt_bits[] = NEXFLT_BITS;
 #endif
 
+/*
+ * Per-processor type initialization routines and data.
+ * It would be nice to parameterize initialization more,
+ * but the 780 and 750 are really quite different at this
+ * level.  We await future machines before attempting 
+ * any significant parameterization.
+ */
 #if VAX780
 int	c780();
 #endif
@@ -76,16 +124,23 @@ configure()
 	for (ocp = percpu; ocp < &percpu[NCPU]; ocp++)
 		if (ocp->pc_cputype == cpusid.cpuany.cp_type) {
 			(*ocp->pc_config)(ocp);
-#if VAXANY
-			setconf();
-#endif
+			/*
+			 * Write protect the scb.  It is strange
+			 * that this code is here, but this is as soon
+			 * as we are done mucking with it, and the
+			 * write-enable was done in assembly language
+			 * to which we will never return.
+			 */
 			ip = (int *)Sysmap; *ip &= ~PG_PROT; *ip |= PG_KR;
 			mtpr(TBIS, Sysbase);
+#if GENERIC
+			setconf();
+#endif
 			cold = 0;
 			memenable();
 			return;
 		}
-	printf("cpu type %d unsupported\n", cpusid.cpuany.cp_type);
+	printf("cpu type %d not configured\n", cpusid.cpuany.cp_type);
 	asm("halt");
 }
 
@@ -114,29 +169,26 @@ c780(pcpu)
 		switch (nexcsr.nex_type) {
 
 		case NEX_MBA:
-#if NMBA > 0
 			printf("mba%d at tr%d\n", nummba, nexnum);
 			if (nummba >= NMBA) {
-				printf("%d mba's not configured\n", nummba+1);
-				continue;
+				printf("%d mba's", nummba);
+				goto notconfig;
 			}
+#if NMBA > 0
 			mbafind(nxv, nxp);
 			nummba++;
-			break;
-#else
-			printf("mba's");
-			goto unsupp;
 #endif
+			break;
 
 		case NEX_UBA0:
 		case NEX_UBA1:
 		case NEX_UBA2:
 		case NEX_UBA3:
+			printf("uba%d at tr%d\n", numuba, nexnum);
 			if (numuba >= 4) {
 				printf("5 uba's");
 				goto unsupp;
 			}
-			printf("uba%d at tr%d\n", numuba, nexnum);
 			setscbnex(nexnum, ubaintv[numuba]);
 			i = nexcsr.nex_type - NEX_UBA0;
 			unifind((struct uba_regs *)nxv, (struct uba_regs *)nxp,
@@ -155,11 +207,11 @@ c780(pcpu)
 		case NEX_MEM4I:
 		case NEX_MEM16:
 		case NEX_MEM16I:
+			printf("mcr%d at tr%d\n", nmcr, nexnum);
 			if (nmcr >= 4) {
-				printf("%d mcr's", 4);
+				printf("5 mcr's");
 				goto unsupp;
 			}
-			printf("mcr%d at tr%d\n", nmcr, nexnum);
 			mcraddr[nmcr++] = (struct mcr *)nxv;
 			break;
 
@@ -174,6 +226,9 @@ c780(pcpu)
 			printf("nexus type %x", nexcsr.nex_type);
 unsupp:
 			printf(" unsupported (at tr %d)\n", nexnum);
+			continue;
+unconfig:
+			printf(" not configured\n");
 			continue;
 		}
 	}
@@ -195,23 +250,23 @@ c750(pcpu)
 	printf("mcr at %x\n", MCR_750);
 	nxaccess((caddr_t)MCR_750, Nexmap[nexnum]);
 	mcraddr[nmcr++] = (struct mcr *)nxv;
-#if NMBA > 0
 	for (nexnum = 0; nexnum < NNEX750; nexnum++, nxp++, nxv++) {
 		nxaccess((caddr_t)nxp, Nexmap[nexnum]);
 		if (badaddr((caddr_t)nxv, 4))
 			continue;
 		printf("mba%d at %x\n", nummba, nxp);
-		if (nummba >= NMBA)
-			printf("%d mba's not configured\n", nummba+1);
-		else {
-			mbafind(nxv, nxp);
-			nummba++;
+		if (nummba >= NMBA) {
+			printf("%d mba(s) not configured\n", nummba+1);
+			continue;
 		}
-	}
+#if NMBA > 0
+		mbafind(nxv, nxp);
+		nummba++;
 #endif
+	}
 	printf("uba at %x\n", nxp);
 	nxaccess((caddr_t)nxp, Nexmap[nexnum++]);
-	unifind((struct uba_regs *)nxv++, (struct uba_regs *)nxp,
+	unifind((struct uba_regs *)nxv, (struct uba_regs *)nxp,
 	    umem[0], UMEM750);
 	numuba = 1;
 }
@@ -257,8 +312,6 @@ mbafind(nxv, nxp)
 			    (ms->ms_ctlr == mi->mi_unit || ms->ms_ctlr=='?')) {
 				mbd->mbd_tc = ms->ms_slave;
 				dt = mbd->mbd_dt;
-				ms->ms_alive = 1;
-				ms->ms_ctlr = mi->mi_unit;
 				if (dt & MBDT_SPR) {
 					printf("%s%d at %s%d slave %d\n",
 					    ms->ms_driver->md_sname,
@@ -266,6 +319,8 @@ mbafind(nxv, nxp)
 					    mi->mi_driver->md_dname,
 					    mi->mi_unit,
 					    ms->ms_slave);
+					ms->ms_alive = 1;
+					ms->ms_ctlr = mi->mi_unit;
 					(*ms->ms_driver->md_slave)
 					    (mi, ms);
 				}
