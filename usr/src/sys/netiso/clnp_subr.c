@@ -26,7 +26,7 @@ SOFTWARE.
  */
 /* $Header: /var/src/sys/netiso/RCS/clnp_subr.c,v 5.1 89/02/09 16:20:46 hagens Exp $ */
 /* $Source: /var/src/sys/netiso/RCS/clnp_subr.c,v $ */
-/*	@(#)clnp_subr.c	7.11 (Berkeley) %G% */
+/*	@(#)clnp_subr.c	7.12 (Berkeley) %G% */
 
 #ifndef lint
 static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_subr.c,v 5.1 89/02/09 16:20:46 hagens Exp $";
@@ -101,7 +101,7 @@ int						length;	/* length (in bytes) of packet */
 	return mhead;
 }
 
-#ifdef ndef
+#ifdef notdef
 /*
  * FUNCTION:		clnp_extract_addr
  *
@@ -155,7 +155,7 @@ register struct iso_addr	*destp;		/* ptr to destination address buffer */
 	else
 		return (caddr_t) 0;
 }
-#endif	ndef
+#endif	notdef
 
 /*
  * FUNCTION:		clnp_ours
@@ -339,7 +339,7 @@ struct snpa_hdr		*inbound_shp;	/* subnetwork header of inbound packet */
 	/*
 	 *	Dispatch the datagram if it is small enough, otherwise fragment
 	 */
-	if (len <= SN_MTU(ifp)) {
+	if (len <= SN_MTU(ifp, route.ro_rt)) {
 		iso_gen_csum(m, CLNP_CKSUM_OFF, (int)clnp->cnf_hdr_len);
 		(void) (*ifp->if_output)(ifp, m, next_hop, route.ro_rt);
 	} else {
@@ -355,7 +355,7 @@ done:
 	}
 }
 
-#ifdef	ndef
+#ifdef	notdef
 /*
  * FUNCTION:		clnp_insert_addr
  *
@@ -384,7 +384,7 @@ register struct iso_addr	*dstp;	/* ptr to dst addr */
 	return bufp;
 }
 
-#endif	ndef
+#endif	notdef
 
 /*
  * FUNCTION:		clnp_route
@@ -548,6 +548,30 @@ struct iso_addr		*final_dst;		/* final destination */
 }
 
 /*
+ * FUNCTION:		clnp_badmtu
+ *
+ * PURPOSE:			print notice of route with mtu not initialized.
+ *
+ * RETURNS:			mtu of ifp.
+ *
+ * SIDE EFFECTS:	prints notice, slows down system.
+ */
+clnp_badmtu(ifp, rt, line, file)
+struct ifnet *ifp;	/* outgoing interface */
+struct rtentry *rt; /* dst route */
+int line;			/* where the dirty deed occured */
+char *file;			/* where the dirty deed occured */
+{
+	printf("sending on route %x with no mtu, line %s of file %s\n",
+		rt, line, file);
+#ifdef ARGO_DEBUG
+	printf("route dst is");
+	dump_isoaddr(rt_key(rt));
+#endif
+	return ifp->if_mtu;
+}
+
+/*
  * FUNCTION:		clnp_ypocb - backwards bcopy
  *
  * PURPOSE:			bcopy starting at end of src rather than beginning.
@@ -565,30 +589,5 @@ u_int	len;		/* number of bytes */
 {
 	while (len--)
 		*(to + len) = *(from + len);
-}
-
-/*
- * FUNCTION:		clnp_hdrsize
- *
- * PURPOSE:			Return the size of a typical clnp hdr.
- *
- * RETURNS:			Size of hdr in bytes.
- *
- * SIDE EFFECTS:	
- *
- * NOTES:			Assumes segmenting subset. If addrlen is
- *					zero, default to largest nsap address size.
- */
-clnp_hdrsize(addrlen)
-u_char	addrlen;		/* length of nsap address */
-{
-	if (addrlen == 0)
-		addrlen = 20;
-	
-	addrlen++;			/* length of address byte */
-	addrlen *= 2;		/* src and dst addresses */
-	addrlen += sizeof(struct clnp_fixed) + sizeof(struct clnp_segment);
-
-	return(addrlen);
 }
 #endif	ISO
