@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 1990 The Regents of the University of California.
+ * Copyright (c) 1991 The Regents of the University of California.
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -9,75 +9,17 @@
  */
 
 #ifndef lint
-char copyright[] =
-"@(#) Copyright (c) 1990 The Regents of the University of California.\n\
- All rights reserved.\n";
+static char sccsid[] = "@(#)find.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
-#ifndef lint
-static char sccsid[] = "@(#)find.c	5.1 (Berkeley) %G%";
-#endif /* not lint */
-
-#include <sys/param.h>
+#include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/errno.h>
-#include <time.h>
 #include <fts.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include "find.h"
-
-FTS *tree;			/* pointer to top of FTS hierarchy */
-time_t now;			/* time find was run */
-				/* options for the ftsopen(3) call */
-int ftsoptions = FTS_NOSTAT|FTS_PHYSICAL;
-int isdeprecated;		/* using deprecated syntax */
-int isdepth;			/* do directories on post-order visit */
-int isoutput;			/* user specified output operator */
-int isrelative;			/* can do -exec/ok on relative path */
-int isxargs;			/* don't permit xargs delimiting chars */
-
-main(argc, argv)
-	int argc;
-	char **argv;
-{
-	PLAN *plan;
-	char **p, **paths;
-	PLAN *find_formplan();
-	time_t time();
-	void newsyntax(), oldsyntax();
-    
-	(void)time(&now);			/* initialize the time-of-day */
-
-	if (argc < 2)
-		usage();
-
-	paths = argv;
-
-	/*
-	 * if arguments start with an option, treat it like new syntax;
-	 * otherwise, if has a "-option" anywhere (which isn't an argument
-	 * to another command) treat it as old syntax.
-	 */
-	if (argv[1][0] != '-')
-		for (p = argv + 1; *p; ++p) {
-			if (!strcmp(*p, "exec") || !strcmp(*p, "ok")) {
-				while (p[1] && strcmp(*++p, ";"));
-				continue;
-			}
-			if (**p == '-') {
-				isdeprecated = 1;
-				oldsyntax(&argv);
-				break;
-			}
-		}
-	if (!isdeprecated)
-		newsyntax(argc, &argv);
-    
-	plan = find_formplan(argv);		/* execution plan */
-	find_execute(plan, paths);
-}
 
 /*
  * find_formplan --
@@ -164,11 +106,14 @@ find_formplan(argv)
 	return(plan);
 }
  
+FTS *tree;			/* pointer to top of FTS hierarchy */
+
 /*
  * find_execute --
  *	take a search plan and an array of search paths and executes the plan
  *	over all FTSENT's returned for the given search paths.
  */
+void
 find_execute(plan, paths)
 	PLAN *plan;		/* search plan */
 	char **paths;		/* array of pathnames to traverse */
@@ -176,10 +121,8 @@ find_execute(plan, paths)
 	register FTSENT *entry;
 	PLAN *p;
     
-	if (!(tree = fts_open(paths, ftsoptions, (int (*)())NULL))) {
-		error("ftsopen", errno);
-		exit(1);
-	}
+	if (!(tree = fts_open(paths, ftsoptions, (int (*)())NULL)))
+		err("ftsopen: %s", strerror(errno));
 
 	while (entry = fts_read(tree)) {
 		switch(entry->fts_info) {
@@ -194,7 +137,7 @@ find_execute(plan, paths)
 		case FTS_DNR:
 		case FTS_ERR:
 		case FTS_NS:
-			error(entry->fts_path, errno);
+			err("%s: %s", entry->fts_path, strerror(errno));
 			continue;
 		case FTS_SL:
 			if (entry->fts_level == FTS_ROOTLEVEL) {

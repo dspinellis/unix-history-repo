@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)misc.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)misc.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -36,11 +36,8 @@ brace_subst(orig, store, path, len)
 	for (p = *store; ch = *orig; ++orig)
 		if (ch == '{' && orig[1] == '}') {
 			while ((p - *store) + plen > len)
-				if (!(*store = realloc(*store, len *= 2))) {
-					(void)fprintf(stderr,
-					    "find: %s.\n", strerror(errno));
-					exit(1);
-				}
+				if (!(*store = realloc(*store, len *= 2)))
+					err("%s", strerror(errno));
 			bcopy(path, p, plen);
 			p += plen;
 			++orig;
@@ -84,18 +81,6 @@ queryuser(argv)
 }
  
 /*
- * bad_arg --
- *	print out a bad argument message.
- */
-void
-bad_arg(option, err)
-	char *option, *err;
-{
-	(void)fprintf(stderr, "find: %s: %s.\n", option, err);
-	exit(1);
-}
- 
-/*
  * emalloc --
  *	malloc with error checking.
  */
@@ -105,19 +90,37 @@ emalloc(len)
 {
 	void *p;
 
-	if (!(p = malloc(len))) {
-		(void)fprintf(stderr, "find: %s.\n", strerror(errno));
-		exit(1);
-	}
-	return(p);
+	if (p = malloc(len))
+		return(p);
+	err("%s", strerror(errno));
+	/* NOTREACHED */
 }
 
-usage()
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+
+void
+#if __STDC__
+err(const char *fmt, ...)
+#else
+err(fmt, va_alist)
+	char *fmt;
+        va_dcl
+#endif
 {
-	if (isdeprecated)
-		(void)fprintf(stderr, "usage: find path-list expression\n");
-	else
-		(void)fprintf(stderr,
-		    "usage: find [-drsx] -f path ... expression\n");
+	va_list ap;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	(void)fprintf(stderr, "find: ");
+	(void)vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	(void)fprintf(stderr, "\n");
 	exit(1);
+	/* NOTREACHED */
 }
