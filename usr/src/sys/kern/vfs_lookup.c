@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vfs_lookup.c	7.2 (Berkeley) %G%
+ *	@(#)vfs_lookup.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -17,9 +17,9 @@
 #include "conf.h"
 #include "uio.h"
 #include "kernel.h"
+#include "malloc.h"
 
 struct	buf *blkatoff();
-struct	buf *freenamebuf;
 int	dirchk = 0;
 
 /*
@@ -125,7 +125,7 @@ namei(ndp)
 	register struct buf *bp = 0;	/* a buffer of directory entries */
 	register struct direct *ep;	/* the current directory entry */
 	int entryoffsetinblock;		/* offset of ep in bp's buffer */
-	register struct buf *nbp;	/* buffer storing path name argument */
+	register caddr_t nbp;		/* buffer storing path name argument */
 /* these variables hold information about the search for a slot */
 	enum {NONE, COMPACT, FOUND} slotstatus;
 	int slotoffset = -1;		/* offset of area with free space */
@@ -157,17 +157,11 @@ namei(ndp)
 	 * Get a buffer for the name to be translated, and copy the
 	 * name into the buffer.
 	 */
-	nbp = freenamebuf;
-	if (nbp == NULL)
-		nbp = geteblk(MAXPATHLEN);
-	else
-		freenamebuf = nbp->av_forw;
+	MALLOC(nbp, caddr_t, MAXPATHLEN, M_NAMEI, M_WAITOK);
 	if (ndp->ni_segflg == UIO_SYSSPACE)
-		error = copystr(ndp->ni_dirp, nbp->b_un.b_addr, MAXPATHLEN,
-		    (u_int *)0);
+		error = copystr(ndp->ni_dirp, nbp, MAXPATHLEN, (u_int *)0);
 	else
-		error = copyinstr(ndp->ni_dirp, nbp->b_un.b_addr, MAXPATHLEN,
-		    (u_int *)0);
+		error = copyinstr(ndp->ni_dirp, nbp, MAXPATHLEN, (u_int *)0);
 	if (error) {
 		u.u_error = error;
 		goto bad;
@@ -176,7 +170,7 @@ namei(ndp)
 	/*
 	 * Get starting directory.
 	 */
-	cp = nbp->b_un.b_addr;
+	cp = nbp;
 	if (*cp == '/') {
 		while (*cp == '/')
 			cp++;
@@ -242,8 +236,7 @@ dirloop2:
 			u.u_error = EISDIR;
 			goto bad;
 		}
-		nbp->av_forw = freenamebuf;
-		freenamebuf = nbp;
+		FREE(nbp, M_NAMEI);
 		return (dp);
 	}
 
@@ -530,8 +523,7 @@ searchloop:
 		dp->i_flag |= IUPD|ICHG;
 		if (bp)
 			brelse(bp);
-		nbp->av_forw = freenamebuf;
-		freenamebuf = nbp;
+		FREE(nbp, M_NAMEI);
 		/*
 		 * We return with the directory locked, so that
 		 * the parameters we set up above will still be
@@ -626,8 +618,7 @@ found:
 				}
 			}
 		}
-		nbp->av_forw = freenamebuf;
-		freenamebuf = nbp;
+		FREE(nbp, M_NAMEI);
 		return (dp);
 	}
 
@@ -679,8 +670,7 @@ found:
 			iput(ndp->ni_pdir);
 			goto bad;
 		}
-		nbp->av_forw = freenamebuf;
-		freenamebuf = nbp;
+		FREE(nbp, M_NAMEI);
 		return (dp);
 	}
 
@@ -774,13 +764,13 @@ haveino:
 			u.u_error = ELOOP;
 			goto bad2;
 		}
-		ovbcopy(cp, nbp->b_un.b_addr + dp->i_size, pathlen);
+		ovbcopy(cp, nbp + dp->i_size, pathlen);
 		u.u_error =
-		    rdwri(UIO_READ, dp, nbp->b_un.b_addr, (int)dp->i_size,
+		    rdwri(UIO_READ, dp, nbp, (int)dp->i_size,
 			(off_t)0, 1, (int *)0);
 		if (u.u_error)
 			goto bad2;
-		cp = nbp->b_un.b_addr;
+		cp = nbp;
 		iput(dp);
 		if (*cp == '/') {
 			irele(pdp);
@@ -808,8 +798,7 @@ haveino:
 		irele(pdp);
 		goto dirloop;
 	}
-	nbp->av_forw = freenamebuf;
-	freenamebuf = nbp;
+	FREE(nbp, M_NAMEI);
 	if (lockparent)
 		ndp->ni_pdir = pdp;
 	else
@@ -822,8 +811,7 @@ bad:
 		brelse(bp);
 	if (dp)
 		iput(dp);
-	nbp->av_forw = freenamebuf;
-	freenamebuf = nbp;
+	FREE(nbp, M_NAMEI);
 	return (NULL);
 }
 
