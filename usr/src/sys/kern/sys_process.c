@@ -1,4 +1,4 @@
-/*	sys_process.c	5.4	82/10/10	*/
+/*	sys_process.c	5.5	82/10/31	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -77,7 +77,23 @@ ptrace()
 	wakeup((caddr_t)&ipc);
 }
 
-int ipcreg[] = {R0,R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,AP,FP,SP,PC};
+#if vax
+#define	NIPCREG 16
+#endif
+#if sun
+#define	NIPCREG 17
+#endif
+int ipcreg[NIPCREG] =
+#if vax
+	{R0,R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,AP,FP,SP,PC};
+#endif
+#if sun
+	{R0,R1,R2,R3,R4,R5,R6,R7,AR0,AR1,AR2,AR3,AR4,AR5,AR6,AR7,PC};
+#endif
+
+#define	PHYSOFF(p, o)
+	((physadr)(p)+((o)/sizeof(((physadr)0)->r[0])))
+
 /*
  * Code that the child process
  * executes to implement the command
@@ -115,7 +131,7 @@ procxmt()
 		i = (int)ipc.ip_addr;
 		if (i<0 || i >= ctob(UPAGES))
 			goto error;
-		ipc.ip_data = ((physadr)&u)->r[i>>2];
+		ipc.ip_data = *(int *)PHYSOFF(&u, i);
 		break;
 
 	/* write user I */
@@ -130,11 +146,13 @@ procxmt()
 			xp->x_iptr->i_flag &= ~ITEXT;
 		}
 		i = -1;
-		if (chgprot((caddr_t)ipc.ip_addr, RW) &&
-		    chgprot((caddr_t)ipc.ip_addr+(sizeof(int)-1), RW))
-			i = suiword((caddr_t)ipc.ip_addr, ipc.ip_data);
-		(void) chgprot((caddr_t)ipc.ip_addr, RO);
-		(void) chgprot((caddr_t)ipc.ip_addr+(sizeof(int)-1), RO);
+		if ((i = suiword((caddr_t)ipc.ip_addr, ipc.ip_data)) < 0) {
+			if (chgprot((caddr_t)ipc.ip_addr, RW) &&
+			    chgprot((caddr_t)ipc.ip_addr+(sizeof(int)-1), RW))
+				i = suiword((caddr_t)ipc.ip_addr, ipc.ip_data);
+			(void) chgprot((caddr_t)ipc.ip_addr, RO);
+			(void) chgprot((caddr_t)ipc.ip_addr+(sizeof(int)-1), RO);
+		}
 		if (i < 0)
 			goto error;
 		if (xp)
@@ -151,12 +169,12 @@ procxmt()
 	/* write u */
 	case 6:
 		i = (int)ipc.ip_addr;
-		p = (int *)&((physadr)&u)->r[i>>2];
-		for (i=0; i<16; i++)
+		p = (int *)PHYSOFF(&u, i);
+		for (i=0; i<NIPCREG; i++)
 			if (p == &u.u_ar0[ipcreg[i]])
 				goto ok;
 		if (p == &u.u_ar0[PS]) {
-			ipc.ip_data |= PSL_CURMOD|PSL_PRVMOD;
+			ipc.ip_data |= PSL_USERSET;
 			ipc.ip_data &=  ~PSL_USERCLR;
 			goto ok;
 		}
