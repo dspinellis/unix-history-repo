@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	6.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	6.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -96,6 +96,7 @@ main(argc, argv, envp)
 	bool nothaw;
 	bool safecf = TRUE;
 	static bool reenter = FALSE;
+	char *argv0 = argv[0];
 	char jbuf[60];			/* holds MyHostName */
 	extern int DtableSize;
 	extern bool safefile();
@@ -183,7 +184,7 @@ main(argc, argv, envp)
 	OutChannel = stdout;
 
 	if (!nothaw)
-		readconfig = !thaw(FreezeFile);
+		readconfig = !thaw(FreezeFile, argv0);
 
 	{
 		/* strip out "dangerous" envariables */
