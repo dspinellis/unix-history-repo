@@ -5,7 +5,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.26	%G%";
+static char	SccsId[] = "@(#)main.c	3.27	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -72,6 +72,8 @@ static char	SccsId[] = "@(#)main.c	3.26	%G%";
 **				front of messages.
 **		-v		Give blow-by-blow description of
 **				everything that happens.
+**		-t		Read "to" addresses from message.
+**				Looks at To:, Cc:, and Bcc: lines.
 **		-Cfilename	Use alternate configuration file.
 **		-Afilename	Use alternate alias file.
 **		-DXvalue	Define macro X to have value.
@@ -121,6 +123,7 @@ bool	SaveFrom;	/* save From lines on the front of messages */
 bool	IgnrDot;	/* if set, ignore dot when collecting mail */
 bool	SuprErrs;	/* supress errors if set */
 bool	Verbose;	/* set if blow-by-blow desired */
+bool	GrabTo;		/* if set, read recipient addresses from msg */
 int	Debug;		/* debug level */
 int	Errors;		/* count of errors */
 int	AliasLevel;	/* current depth of aliasing */
@@ -388,6 +391,10 @@ main(argc, argv)
 			Verbose++;
 			break;
 
+		  case 't':	/* read recipients from message */
+			GrabTo = TRUE;
+			break;
+
 		  default:
 			/* at Eric Schmidt's suggestion, this will not be an error....
 			syserr("Unknown flag %s", p);
@@ -497,7 +504,7 @@ main(argc, argv)
 
 	setfrom(from, realname);
 
-	if (argc <= 0)
+	if (argc <= 0 && !GrabTo)
 		usrerr("Usage: /etc/sendmail [flags] addr...");
 
 	/*
@@ -545,7 +552,8 @@ main(argc, argv)
 	/* if we have had errors sofar, drop out now */
 	if (Errors > 0 && ExitStat == EX_OK)
 		ExitStat = EX_USAGE;
-	if ((ArpaMode > ARPA_OLD && ExitStat != EX_OK) || verifyonly)
+	if ((ArpaMode > ARPA_OLD && ExitStat != EX_OK) ||
+	    (verifyonly && !GrabTo))
 		finis();
 
 	/* no errors, tell arpanet to go ahead */
@@ -568,6 +576,9 @@ main(argc, argv)
 	if (Debug)
 		printf("From person = \"%s\"\n", From.q_paddr);
 # endif DEBUG
+
+	if (verifyonly && GrabTo)
+		finis();
 
 	/*
 	**  Arrange that the person who is sending the mail

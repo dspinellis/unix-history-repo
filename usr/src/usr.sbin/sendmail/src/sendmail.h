@@ -1,7 +1,7 @@
 /*
 **  SENDMAIL.H -- Global definitions for sendmail.
 **
-**	@(#)sendmail.h	3.31	%G%
+**	@(#)sendmail.h	3.32	%G%
 */
 
 
@@ -164,6 +164,7 @@ extern struct hdrinfo	HdrInfo[];
 # define H_CHECK	00020	/* check h_mflags against m_flags */
 # define H_ACHECK	00040	/* ditto, but always (not just default) */
 # define H_FORCE	00100	/* force this field, even if default */
+# define H_ADDR		00200	/* this field contains addresses */
 
 
 /*
@@ -245,6 +246,7 @@ extern bool	MeToo;		/* send to the sender also */
 extern bool	IgnrDot;	/* don't let dot end messages */
 extern bool	SaveFrom;	/* save leading "From" lines */
 extern bool	Verbose;	/* set if blow-by-blow desired */
+extern bool	GrabTo;		/* if set, get recipients from msg */
 extern int	Debug;		/* debugging level */
 extern int	Errors;		/* set if errors */
 extern int	ExitStat;	/* exit status code */
