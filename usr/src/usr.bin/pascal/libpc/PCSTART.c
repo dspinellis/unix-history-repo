@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)PCSTART.c 1.2 %G%";
+static char sccsid[] = "@(#)PCSTART.c 1.3 %G%";
 
 #include "h00vars.h"
 
@@ -12,6 +12,7 @@ int		_argc;
 char		**_argv;
 long		_stlim = 500000;
 long		_stcnt = 0;
+long		_seed = 1;
 char		*_minptr = (char *)0x7fffffff;
 char		*_maxptr = (char *)0;
 struct errentry _entry[MAXERRS];
