@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tip.c	4.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)tip.c	4.18 (Berkeley) %G%";
 #endif
 
 /*
@@ -154,7 +154,7 @@ cucommon:
 
 	/*
 	 * Everything's set up now:
-	 *	connection established (hardwired or diaulup)
+	 *	connection established (hardwired or dialup)
 	 *	line conditioned (baud rate, mode, etc.)
 	 *	internal data structures (variables)
 	 * so, fork one process for local side and one for remote.
