@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)process.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)process.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -18,6 +18,7 @@ static char sccsid[] = "@(#)process.c	5.1 (Berkeley) %G%";
  */
 #include "ctl.h"
 #include <sys/stat.h>
+#include <stdio.h>
 
 char *strcpy();
 CTL_MSG *find_request();
@@ -119,18 +120,19 @@ find_user(name, tty)
 	char *tty;
 {
 	struct utmp ubuf;
-	int fd, status;
+	int status;
+	FILE *fd;
 	struct stat statb;
 	char ftty[20];
 
-	if ((fd = open("/etc/utmp", 0)) == -1) {
+	if ((fd = fopen("/etc/utmp", "r")) == NULL) {
 		perror("Can't open /etc/utmp");
 		return (FAILED);
 	}
 #define SCMPN(a, b)	strncmp(a, b, sizeof (a))
 	status = NOT_HERE;
 	(void) strcpy(ftty, "/dev/");
-	while (read(fd, (char *) &ubuf, sizeof ubuf) == sizeof(ubuf))
+	while (fread((char *) &ubuf, sizeof ubuf, 1, fd) == 1)
 		if (SCMPN(ubuf.ut_name, name) == 0) {
 			if (*tty == '\0') {
 				status = PERMISSION_DENIED;
@@ -149,6 +151,6 @@ find_user(name, tty)
 				break;
 			}
 		}
-	close(fd);
+	fclose(fd);
 	return (status);
 }
