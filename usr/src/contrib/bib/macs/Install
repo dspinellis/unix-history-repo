@@ -1,0 +1,6 @@
+#!/bin/csh
+# Install dir file1 file2 ...
+foreach f ( $argv[2-] )
+	rm -f $1/$f
+	cp $f $1/$f
+	end
