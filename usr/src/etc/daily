@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)daily	8.1 (Berkeley) %G%
+#	@(#)daily	5.20 (Berkeley) %G%
 #
 PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin
 host=`hostname`
@@ -43,6 +43,7 @@ fi
 cd /tmp
 TMP=daily.$$
 find / \( ! -fstype local -o -fstype rdonly \) -a -prune -o \
+	-name 'lost+found' -a -prune -o \
 	-name 'core.*' -a -print -o \
 	\( -name '[#,]*' -o -name '.#*' -o -name a.out \
 	   -o -name '*.CKP' -o -name '.emacs_[0-9]*' \) \
