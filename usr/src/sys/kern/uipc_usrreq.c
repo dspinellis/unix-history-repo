@@ -1,4 +1,4 @@
-/*	uipc_usrreq.c	6.11	84/12/20	*/
+/*	uipc_usrreq.c	6.12	85/05/27	*/
 
 #include "param.h"
 #include "dir.h"
@@ -23,6 +23,7 @@
  *	need a proper out-of-band
  */
 struct	sockaddr sun_noname = { AF_UNIX };
+ino_t	unp_ino;				/* fake inode numbers */
 
 /*ARGSUSED*/
 uipc_usrreq(so, req, m, nam, rights)
@@ -168,6 +169,8 @@ uipc_usrreq(so, req, m, nam, rights)
 				error = EOPNOTSUPP;
 				break;
 			}
+			if (so->so_state & SS_CANTSENDMORE)
+				return (EPIPE);
 			if (unp->unp_conn == 0)
 				panic("uipc 3");
 			so2 = unp->unp_conn->unp_socket;
@@ -207,6 +210,8 @@ uipc_usrreq(so, req, m, nam, rights)
 			so2 = unp->unp_conn->unp_socket;
 			((struct stat *) m)->st_blksize += so2->so_rcv.sb_cc;
 		}
+		((struct stat *) m)->st_dev = NODEV;
+		((struct stat *) m)->st_ino = unp_ino++;
 		return (0);
 
 	case PRU_RCVOOB:
