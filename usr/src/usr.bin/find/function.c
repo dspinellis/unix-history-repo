@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)function.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)function.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -307,15 +307,41 @@ f_fstype(plan, entry)
 	static int first = 1;
 	struct statfs sb;
 	static short val;
+	char *p, save[2];
 
 	/* only check when we cross mount point */
 	if (first || curdev != entry->fts_statb.st_dev) {
 		curdev = entry->fts_statb.st_dev;
+
+		/*
+		 * Statfs follows symlinks; find wants the link's file system,
+		 * not where it points.
+		 */
+		if (entry->fts_info == FTS_SL ||
+		    entry->fts_info == FTS_SLNONE) {
+			if (p = rindex(entry->fts_accpath, '/'))
+				++p;
+			else
+				p = entry->fts_accpath;
+			save[0] = p[0];
+			p[0] = '.';
+			save[1] = p[1];
+			p[1] = '\0';
+			
+		} else 
+			p = NULL;
+
 		if (statfs(entry->fts_accpath, &sb)) {
 			(void)fprintf(stderr, "find: %s: %s.\n",
 			    entry->fts_accpath, strerror(errno));
 			exit(1);
 		}
+
+		if (p) {
+			p[0] = save[0];
+			p[1] = save[1];
+		}
+
 		first = 0;
 		val = plan->flags == MOUNT_NONE ? sb.f_flags : sb.f_type;
 	}
