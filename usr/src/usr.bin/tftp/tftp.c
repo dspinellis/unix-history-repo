@@ -1,39 +1,42 @@
 /*
- * Copyright (c) 1983 Regents of the University of California.
+ * Copyright (c) 1985 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tftp.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)tftp.c	5.2 (Berkeley) %G%";
 #endif not lint
+
+/* Many bug fixes are from Jim Guyton <guyton@rand-unix> */
 
 /*
  * TFTP User Program -- Protocol Machines
  */
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 
 #include <netinet/in.h>
-#include <arpa/inet.h>
+
 #include <arpa/tftp.h>
 
 #include <signal.h>
 #include <stdio.h>
 #include <errno.h>
 #include <setjmp.h>
-#include <netdb.h>
 
 extern	int errno;
-extern	struct sockaddr_in sin;
-extern	char mode[];
-int	f;
-int	trace;
-int	connected;
-char	sbuf[BUFSIZ];			/* send buffer */
-char	rbuf[BUFSIZ];			/* receive buffer */
-int	rexmtval;
-int	maxtimeout;
+
+extern  struct sockaddr_in sin;         /* filled in by main */
+extern  int     f;                      /* the opened socket */
+extern  int     trace;
+extern  int     verbose;
+extern  int     rexmtval;
+extern  int     maxtimeout;
+
+#define PKTSIZE    SEGSIZE+4
+char    ackbuf[PKTSIZE];
 int	timeout;
 jmp_buf	toplevel;
 jmp_buf	timeoutbuf;
@@ -52,205 +55,196 @@ timer()
 /*
  * Send the requested file.
  */
-sendfile(fd, name)
+sendfile(fd, name, mode)
 	int fd;
 	char *name;
+	char *mode;
 {
-	register struct tftphdr *stp = (struct tftphdr *)sbuf;
-	register struct tftphdr *rtp = (struct tftphdr *)rbuf;
-	register int block = 0, size, n, amount = 0;
-	struct sockaddr_in from, to;
-	time_t start = time(0), delta;
-	int fromlen, aborted = 0;
+	register struct tftphdr *ap;       /* data and ack packets */
+	struct tftphdr *r_init(), *dp;
+	register int block = 0, size, n;
+	register unsigned long amount = 0;
+	struct sockaddr_in from;
+	int fromlen;
+	int convert;            /* true if doing nl->crlf conversion */
+	FILE *file;
 
-	to = sin;
+	startclock();           /* start stat's clock */
+	dp = r_init();          /* reset fillbuf/read-ahead code */
+	ap = (struct tftphdr *)ackbuf;
+	file = fdopen(fd, "r");
+	convert = !strcmp(mode, "netascii");
+
 	signal(SIGALRM, timer);
 	do {
 		if (block == 0)
-			size = makerequest(WRQ, name) - 4;
+			size = makerequest(WRQ, name, dp, mode) - 4;
 		else {
-			size = read(fd, stp->th_data, SEGSIZE);
+		/*      size = read(fd, dp->th_data, SEGSIZE);   */
+			size = readit(file, &dp, convert);
 			if (size < 0) {
-				nak(&to, errno + 100);
+				nak(errno + 100);
 				break;
 			}
-			stp->th_opcode = htons((u_short)DATA);
-			stp->th_block = htons((u_short)block);
+			dp->th_opcode = htons((u_short)DATA);
+			dp->th_block = htons((u_short)block);
 		}
 		timeout = 0;
 		(void) setjmp(timeoutbuf);
 		if (trace)
-			tpacket("sent", &to, stp, size + 4);
-		n = sendto(f, sbuf, size + 4, 0, (caddr_t)&to, sizeof (to));
+			tpacket("sent", dp, size + 4);
+		n = sendto(f, dp, size + 4, 0, (caddr_t)&sin, sizeof (sin));
 		if (n != size + 4) {
 			perror("tftp: sendto");
-			aborted = 1;
-			goto done;
+			goto abort;
 		}
+		read_ahead(file, convert);
 		do {
-again:
 			alarm(rexmtval);
 			do {
 				fromlen = sizeof (from);
-				n = recvfrom(f, rbuf, sizeof (rbuf), 0,
+				n = recvfrom(f, ackbuf, sizeof (ackbuf), 0,
 				    (caddr_t)&from, &fromlen);
 			} while (n <= 0);
 			alarm(0);
 			if (n < 0) {
 				perror("tftp: recvfrom");
-				aborted = 1;
-				goto done;
+				goto abort;
 			}
-			if (to.sin_addr.s_addr != from.sin_addr.s_addr) {
-				tpacket("discarded (wrong host)",
-				    &from, rtp, n);
-				goto again;
-			}
-			if (to.sin_port = sin.sin_port)
-				to.sin_port = from.sin_port;
-			if (to.sin_port != from.sin_port) {
-				tpacket("discarded (wrong port)",
-				    &from, rtp, n);
-				goto again;
-			}
+			sin.sin_port = from.sin_port;   /* added */
 			if (trace)
-				tpacket("received", &from, rtp, n);
+				tpacket("received", ap, n);
 			/* should verify packet came from server */
-			rtp->th_opcode = ntohs(rtp->th_opcode);
-			rtp->th_block = ntohs(rtp->th_block);
-			if (rtp->th_opcode == ERROR) {
-				printf("Error code %d: %s\n", rtp->th_code,
-					rtp->th_msg);
-				aborted = 1;
-				goto done;
+			ap->th_opcode = ntohs(ap->th_opcode);
+			ap->th_block = ntohs(ap->th_block);
+			if (ap->th_opcode == ERROR) {
+				printf("Error code %d: %s\n", ap->th_code,
+					ap->th_msg);
+				goto abort;
 			}
-		} while (rtp->th_opcode != ACK && block != rtp->th_block);
+		} while (ap->th_opcode != ACK || block != ap->th_block);
 		if (block > 0)
 			amount += size;
 		block++;
 	} while (size == SEGSIZE || block == 1);
-	if (!aborted && amount > 0) {
-		delta = time(0) - start;
-		printf("Sent %d bytes in %d seconds.\n", amount, delta);
-	}
-done:
-	(void) close(fd);
-	return (aborted);
+abort:
+	fclose(file);
+	stopclock();
+	if (amount > 0)
+		printstats("Sent", amount);
 }
 
 /*
  * Receive a file.
  */
-recvfile(fd, name)
+recvfile(fd, name, mode)
 	int fd;
 	char *name;
+	char *mode;
 {
-	register struct tftphdr *stp = (struct tftphdr *)sbuf;
-	register struct tftphdr *rtp = (struct tftphdr *)rbuf;
-	register int block = 1, n, size, amount = 0;
-	struct sockaddr_in from, to;
-	time_t start = time(0), delta;
-	int fromlen, firsttrip = 1, aborted = 0;
+	register struct tftphdr *ap;
+	struct tftphdr *dp, *w_init();
+	register int block = 1, n, size;
+	unsigned long amount = 0;
+	struct sockaddr_in from;
+	int fromlen, firsttrip = 1;
+	FILE *file;
+	int convert;                    /* true if converting crlf -> lf */
 
-	to = sin;
+	startclock();
+	dp = w_init();
+	ap = (struct tftphdr *)ackbuf;
+	file = fdopen(fd, "w");
+	convert = !strcmp(mode, "netascii");
+
 	signal(SIGALRM, timer);
 	do {
 		if (firsttrip) {
-			size = makerequest(RRQ, name);
+			size = makerequest(RRQ, name, ap, mode);
 			firsttrip = 0;
 		} else {
-			stp->th_opcode = htons((u_short)ACK);
-			stp->th_block = htons((u_short)(block));
+			ap->th_opcode = htons((u_short)ACK);
+			ap->th_block = htons((u_short)(block));
 			size = 4;
 			block++;
 		}
 		timeout = 0;
 		(void) setjmp(timeoutbuf);
+send_ack:
 		if (trace)
-			tpacket("sent", &to, stp, size);
-		if (sendto(f, sbuf, size, 0, (caddr_t)&to,
-		    sizeof (to)) != size) {
+			tpacket("sent", ap, size);
+		if (sendto(f, ackbuf, size, 0, (caddr_t)&sin,
+		    sizeof (sin)) != size) {
 			alarm(0);
 			perror("tftp: sendto");
-			aborted = 1;
-			goto done;
+			goto abort;
 		}
-		do {
-again:
+		write_behind(file, convert);
+		for ( ; ; ) {
 			alarm(rexmtval);
-			do {
+			do  {
 				fromlen = sizeof (from);
-				n = recvfrom(f, rbuf, sizeof (rbuf), 0,
+				n = recvfrom(f, dp, PKTSIZE, 0,
 				    (caddr_t)&from, &fromlen);
 			} while (n <= 0);
 			alarm(0);
 			if (n < 0) {
 				perror("tftp: recvfrom");
-				aborted = 1;
-				goto done;
+				goto abort;
 			}
-			if (to.sin_addr.s_addr != from.sin_addr.s_addr) {
-				tpacket("discarded (wrong host)",
-				    &from, rtp, n);
-				goto again;
-			}
-			if (to.sin_port = sin.sin_port)
-				to.sin_port = from.sin_port;
-			if (to.sin_port != from.sin_port) {
-				tpacket("discarded (wrong port)",
-				    &from, rtp, n);
-				goto again;
-			}
+			sin.sin_port = from.sin_port;   /* added */
 			if (trace)
-				tpacket("received", &from, rtp, n);
-			rtp->th_opcode = ntohs(rtp->th_opcode);
-			rtp->th_block = ntohs(rtp->th_block);
-			if (rtp->th_opcode == ERROR) {
-				printf("Error code %d: %s\n", rtp->th_code,
-					rtp->th_msg);
-				aborted = 1;
-				goto done;
+				tpacket("received", dp, n);
+			/* should verify client address */
+			dp->th_opcode = ntohs(dp->th_opcode);
+			dp->th_block = ntohs(dp->th_block);
+			if (dp->th_opcode == ERROR) {
+				printf("Error code %d: %s\n", dp->th_code,
+					dp->th_msg);
+				goto abort;
 			}
-		} while (rtp->th_opcode != DATA && rtp->th_block != block);
-		size = write(fd, rtp->th_data, n - 4);
+			if (dp->th_opcode == DATA) {
+				if (dp->th_block == block)
+					break;          /* have next packet */
+				if (dp->th_block == (block-1))
+					goto send_ack;  /* resend ack */
+			}
+		}
+	/*      size = write(fd, dp->th_data, n - 4); */
+		size = writeit(file, &dp, n - 4, convert);
 		if (size < 0) {
-			perror("tftp: write");
-			nak(&to, errno + 100);
-			aborted = 1;
-			goto done;
+			nak(errno + 100);
+			break;
 		}
 		amount += size;
 	} while (size == SEGSIZE);
-done:
-	stp->th_opcode = htons((u_short)ACK);
-	stp->th_block = htons((u_short)block);
-	(void) sendto(f, sbuf, 4, 0, &to, sizeof (to));
-	(void) close(fd);
-	if (!aborted && amount > 0) {
-		delta = time(0) - start;
-		printf("Received %d bytes in %d seconds.\n", amount, delta);
-	}
-	return (aborted);
+abort:                                          /* ok to ack, since user */
+	ap->th_opcode = htons((u_short)ACK);    /* has seen err msg */
+	ap->th_block = htons((u_short)block);
+	(void) sendto(f, ackbuf, 4, 0, &sin, sizeof (sin));
+	write_behind(file, convert);            /* flush last buffer */
+	fclose(file);
+	stopclock();
+	if (amount > 0)
+		printstats("Received", amount);
 }
 
-makerequest(request, name)
+makerequest(request, name, tp, mode)
 	int request;
-	char *name;
+	char *name, *mode;
+	struct tftphdr *tp;
 {
-	register struct tftphdr *stp;
-	int size;
 	register char *cp;
 
-	stp = (struct tftphdr *)sbuf;
-	stp->th_opcode = htons((u_short)request);
-	strcpy(stp->th_stuff, name);
-	size = strlen(name);
-	cp = stp->th_stuff + strlen(name);
+	tp->th_opcode = htons((u_short)request);
+	cp = tp->th_stuff;
+	strcpy(cp, name);
+	cp += strlen(name);
 	*cp++ = '\0';
 	strcpy(cp, mode);
-	cp += sizeof ("netascii") - 1;
+	cp += strlen(mode);
 	*cp++ = '\0';
-	return (cp - sbuf);
+	return (cp - (char *)tp);
 }
 
 struct errmsg {
@@ -274,33 +268,33 @@ struct errmsg {
  * standard TFTP codes, or a UNIX errno
  * offset by 100.
  */
-nak(to, error)
-	struct sockaddr_in *to;
+nak(error)
 	int error;
 {
-	register struct tftphdr *stp;
+	register struct tftphdr *tp;
 	int length;
 	register struct errmsg *pe;
 	extern char *sys_errlist[];
 
-	stp = (struct tftphdr *)sbuf;
-	stp->th_opcode = htons((u_short)ERROR);
-	stp->th_code = htons((u_short)error);
+	tp = (struct tftphdr *)ackbuf;
+	tp->th_opcode = htons((u_short)ERROR);
+	tp->th_code = htons((u_short)error);
 	for (pe = errmsgs; pe->e_code >= 0; pe++)
 		if (pe->e_code == error)
 			break;
-	if (pe->e_code < 0)
+	if (pe->e_code < 0) {
 		pe->e_msg = sys_errlist[error - 100];
-	strcpy(stp->th_msg, pe->e_msg);
+		tp->th_code = EUNDEF;
+	}
+	strcpy(tp->th_msg, pe->e_msg);
 	length = strlen(pe->e_msg) + 4;
 	if (trace)
-		tpacket("sent", to, stp, length);
-	if (sendto(f, sbuf, length, 0, to, sizeof (*to)) != length)
-		perror("tftp: nak");
+		tpacket("sent", tp, length);
+	if (sendto(f, ackbuf, length, 0, &sin, sizeof (sin)) != length)
+		perror("nak");
 }
 
-tpacket(s, sin, tp, n)
-	struct sockaddr_in *sin;
+tpacket(s, tp, n)
 	struct tftphdr *tp;
 	int n;
 {
@@ -310,19 +304,10 @@ tpacket(s, sin, tp, n)
 	u_short op = ntohs(tp->th_opcode);
 	char *index();
 
-	printf("%s ", s);
-	if (sin) {
-		struct hostent *hp = gethostbyaddr(&sin->sin_addr,
-		     sizeof (sin->sin_addr), AF_INET);
-
-		printf("%s.%d ",
-		    hp == 0 ? inet_ntoa(sin->sin_addr) : hp->h_name,
-		    ntohs(sin->sin_port));
-	}
 	if (op < RRQ || op > ERROR)
-		printf("opcode=%x ", op);
+		printf("%s opcode=%x ", s, op);
 	else
-		printf("%s ", opcodes[op]);
+		printf("%s %s ", s, opcodes[op]);
 	switch (op) {
 
 	case RRQ:
@@ -344,9 +329,33 @@ tpacket(s, sin, tp, n)
 	case ERROR:
 		printf("<code=%d, msg=%s>\n", ntohs(tp->th_code), tp->th_msg);
 		break;
-
-	default:
-		putchar('\n');
-		break;
 	}
 }
+
+struct timeval tstart;
+struct timeval tstop;
+struct timezone zone;
+
+startclock() {
+	gettimeofday(&tstart, &zone);
+}
+
+stopclock() {
+	gettimeofday(&tstop, &zone);
+}
+
+printstats(direction, amount)
+char *direction;
+unsigned long amount;
+{
+	double delta;
+			/* compute delta in 1/10's second units */
+	delta = ((tstop.tv_sec*10.)+(tstop.tv_usec/100000)) -
+		((tstart.tv_sec*10.)+(tstart.tv_usec/100000));
+	delta = delta/10.;      /* back to seconds */
+	printf("%s %d bytes in %.1f seconds", direction, amount, delta);
+	if (verbose)
+		printf(" [%.0f bits/sec]", (amount*8.)/delta);
+	putchar('\n');
+}
+
