@@ -1,5 +1,5 @@
 /*
-char id_backspace[] = "@(#)backspace.c	1.2";
+char id_backspace[] = "@(#)backspace.c	1.3";
  *
  * Backspace records
  */
@@ -13,6 +13,7 @@ f_back(a) alist *a;
 {	unit *b;
 	int n,i;
 	long x,y;
+
 	lfname = NULL;
 	elist = NO;
 	external = YES;
@@ -29,7 +30,7 @@ f_back(a) alist *a;
 	}
 	if((x=ftell(b->ufd))==0) return(OK);
 	if(!b->useek) err(errflag,F_ERNOBKSP,bksp)
-	if(b->uwrt) t_runc(b,errflag);
+	if(b->uwrt && (n=t_runc(b,errflag))) return(n);
 	if(b->url)		/* direct access, purely academic */
 	{	y = x%(long)b->url;
 		x -= y?y:b->url;
