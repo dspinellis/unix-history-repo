@@ -1,263 +1,267 @@
-/*	vd.c	7.5	86/12/19	*/
+/*	vd.c	7.6	87/02/18	*/
 
 /*
- * Stand alone driver for the VDDC controller 
- *	TAHOE Version, Oct 1983.
+ * Stand alone driver for the VDDC/SMDE controller 
  */
 #include "../machine/mtpr.h"
 
 #include "param.h"
 #include "inode.h"
 #include "fs.h"
-#define VDGENDATA 1
-#include "../tahoevba/vdreg.h"
-#undef	VDGENDATA
-#include "../tahoevba/vbaparam.h"
+#include "disklabel.h"
 #include "saio.h"
 
-#define NVD		4			/* Max number of controllers */
-#define VDUNIT(x)	(minor(x) & 0x3)
-#define VDCTLR(x)	(minor(x) >> 2)
+#include "../tahoevba/vdreg.h"
+#include "../tahoevba/vbaparam.h"
 
-fmt_mdcb	mdcb;
-fmt_dcb		dcb;
+#define	COMPAT_42	1
 
-/*
- * Drive specific information.
- */
-struct dkinfo {
-	char	configured;
-	fs_tab	info;
-} dkinfo[NVD][16];
+#define NVD		4
+#define	NDRIVE		8		/* drives per controller */
+#define VDSLAVE(x)	((x) % NDRIVE)
+#define VDCTLR(x)	((x) / NDRIVE)
 
-/*
- * Controller specific information.
- */
-struct vdinfo {
-	u_short	vd_flags;
-#define	VDF_INIT	0x1		/* controller initialized */
-#define	VDF_BUSY	0x2		/* controller running */
-	u_short	vd_type;		/* smd or smde */
-	char	*vd_name;
-} vdinfo[NVD];
+#define	VDADDR(ctlr)	((struct vddevice *)vdaddrs[ctlr])
+long	vdaddrs[NVD] = { 0xffff2000, 0xffff2100, 0xffff2200, 0xffff2300 };
 
-static char	junk[1024];
+u_char	vdinit[NVD];			/* controller initialized */
+u_char	vdtype[NVD];			/* controller type */
+u_char	dkconfigured[NVD*NDRIVE];	/* unit configured */
+struct	disklabel dklabel[NVD*NDRIVE];	/* pack label */
 
-#define	VDADDR(ctlr)	((cdr *)vddcaddr[(ctlr)])
+struct	mdcb mdcb;
+struct	dcb dcb;
+char	lbuf[DEV_BSIZE];
 
 vdopen(io)
 	register struct iob *io;
 {
-	register int ctlr = VDCTLR(io->i_unit), unit = VDUNIT(io->i_unit);
-	struct vdinfo *vd;
-	register int i, j;
+	register int ctlr = VDCTLR(io->i_unit);
+	register struct dkinfo *dk;
+	register struct disklabel *lp;
+	int error;
 
-	/* Make sure controller number is in range */
 	if (ctlr >= NVD) {
-		printf(
-		    "dk%d: invalid controller (only configured for %d vd's)\n",
-		    io->i_unit, NVD);
-		_stop("");
+		printf("invalid controller number\n");
+		return (ENXIO);
 	}
-	/* check file system for validity */
-	if ((unsigned)io->i_boff >= 8) {
-		printf("dk%d: invalid partition number (%d)\n",
-		    io->i_unit, io->i_boff);
-		_stop("");
+	if (!vdinit[ctlr] && (error = vdreset_ctlr(ctlr, io->i_unit)))
+		return (error);
+	lp = &dklabel[io->i_unit];
+	if (!dkconfigured[io->i_unit]) {
+		struct iob tio;
+
+		/*
+		 * Read in the pack label.
+		 */
+		lp->d_secsize = 512;
+		lp->d_nsectors = 32;
+		lp->d_ntracks = 24;
+		lp->d_ncylinders = 711;
+		lp->d_secpercyl = 32*24;
+		if (!vdreset_drive(io))
+			return (ENXIO);
+		tio = *io;
+		tio.i_bn = LABELSECTOR;
+		tio.i_ma = lbuf;
+		tio.i_cc = DEV_BSIZE;
+		tio.i_flgs |= F_RDDATA;
+		if (vdstrategy(&tio, READ) != DEV_BSIZE) {
+			printf("can't read disk label");
+			return (EIO);
+		}
+		*lp = *(struct disklabel *)(lbuf + LABELOFFSET);
+		if (lp->d_magic != DISKMAGIC || lp->d_magic2 != DISKMAGIC) {
+			printf("dk%d: unlabeled\n", io->i_unit);
+#ifdef COMPAT_42
+			if (error = vdmaptype(io))
+				return (error);
+#else
+			return (ENXIO);
+#endif
+		}
+		if (!vdreset_drive(io))
+			return (ENXIO);
+		dkconfigured[io->i_unit] = 1;
 	}
-	vd = &vdinfo[ctlr];
-	if ((vd->vd_flags&VDF_INIT) == 0) {
-		vdinit(io);	/* initialize controller/drive */
-		vd->vd_flags |= VDF_INIT;
-		for (j = 0; j < 16; j++)
-			dkinfo[ctlr][j].configured = 0;
+	if (io->i_boff < 0 || io->i_boff >= lp->d_npartitions ||
+	    lp->d_partitions[io->i_boff].p_size == 0) {
+		printf("dk bad minor");
+		return (EUNIT);
 	}
-	if (!dkinfo[ctlr][unit].configured) {
-		vdconfigure_drive(io);
-		dkinfo[ctlr][unit].configured = 1;
-	}
-	io->i_boff = dkinfo[ctlr][unit].info.partition[io->i_boff].par_start;
+	io->i_boff =
+	    (lp->d_partitions[io->i_boff].p_offset * lp->d_secsize) / DEV_BSIZE;
+	return (0);
 }
 
-vdinit(io)
-	register struct iob *io;
+/*
+ * Reset and initialize the controller.
+ */
+vdreset_ctlr(ctlr, unit)
+	register int ctlr, unit;
 {
-	register int ctlr = VDCTLR(io->i_unit), unit = VDUNIT(io->i_unit);
-	register cdr *ctlr_addr = VDADDR(ctlr);
-	register struct vdinfo *vd = &vdinfo[ctlr];
+	register int i;
+	register struct vddevice *vdaddr = VDADDR(ctlr);
 
-	/* Check to see if controller is really there */
-	if (badaddr(ctlr_addr, 2)) {
-		printf("dk%d: vd%d csr doesn't respond\n", io->i_unit, ctlr);
-		_stop("");
+	if (badaddr(vdaddr, 2)) {
+		printf("vd%d: %x: invalid csr\n", ctlr, vdaddr);
+		return (ENXIO);
 	}
-	/* Probe further to find what kind of controller it is */
-	ctlr_addr->cdr_reset = 0xffffffff;
+	/* probe further to find what kind of controller it is */
+	vdaddr->vdreset = 0xffffffff;
 	DELAY(1000000);
-	if (ctlr_addr->cdr_reset != 0xffffffff) {
-		vd->vd_type = SMDCTLR;
-		vd->vd_name = "smd";
+	if (vdaddr->vdreset != 0xffffffff) {
+		vdtype[ctlr] = VDTYPE_VDDC;
 		DELAY(1000000);
 	} else {
-		vd->vd_type = SMD_ECTLR;
-		vd->vd_name = "smde";
-		ctlr_addr->cdr_reserved = 0x0;
+		vdtype[ctlr] = VDTYPE_SMDE;
+		vdaddr->vdrstclr = 0;
 		DELAY(3000000);
+		vdaddr->vdcsr =  0;
+		vdaddr->vdtcf_mdcb = AM_ENPDA;
+		vdaddr->vdtcf_dcb = AM_ENPDA;
+		vdaddr->vdtcf_trail = AM_ENPDA;
+		vdaddr->vdtcf_data = AM_ENPDA;
+		vdaddr->vdccf = CCF_SEN | CCF_DER | CCF_STS |
+		    XMD_32BIT | BSZ_16WRD |
+		    CCF_ENP | CCF_EPE | CCF_EDE | CCF_ECE | CCF_ERR;
 	}
-	if (vd->vd_type == SMD_ECTLR) {
-		ctlr_addr->cdr_csr =  0;
-		ctlr_addr->mdcb_tcf = AM_ENPDA;
-		ctlr_addr->dcb_tcf = AM_ENPDA;
-		ctlr_addr->trail_tcf = AM_ENPDA;
-		ctlr_addr->data_tcf = AM_ENPDA;
-		ctlr_addr->cdr_ccf = CCF_STS | XMD_32BIT | BSZ_16WRD |
-		    CCF_ENP | CCF_EPE /* | CCF_EDE */ | CCF_ECE | CCF_ERR;
+	if (!vdcmd(ctlr, 0, VDOP_INIT, 10) ||
+	    !vdcmd(ctlr, 0, VDOP_DIAG, 10)) {
+		vderror(unit, dcb.opcode == VDOP_INIT ? "init" : "diag", &dcb);
+		return (EIO);
 	}
-	if (vdnotrailer(io, INIT, 8) & HRDERR) {
-		vdprint_error(io->i_unit, "init error",
-		    dcb.operrsta, dcb.err_code);
-		_stop("");
-	}
-	if (vdnotrailer(io, DIAG, 8) & HRDERR) {
-		vdprint_error(io->i_unit, "diagnostic error",
-		    dcb.operrsta, dcb.err_code);
-		_stop("");
-	}
-}
-
-vdconfigure_drive(io)
-	register struct iob *io;
-{
-	register int ctlr = VDCTLR(io->i_unit), unit = VDUNIT(io->i_unit);
-	register fs_tab	*file_sys;
-	register struct dkinfo *dk = &dkinfo[ctlr][unit];
-	dskadr daddr;
-	register int i;
-
-	for (i = 0; i < nvddrv; i++) {
-		dk->info = vdst[i];
-		if (vdinfo[ctlr].vd_type == SMDCTLR)
-			if (dk->info.nsec != 32)
-				continue;
-		vdconfigure(io, 0);
-		daddr.cylinder = dk->info.ncyl - 2;
-		daddr.track = dk->info.ntrak - 1;
-		daddr.sector = dk->info.nsec - 1;
-		io->i_ma = junk;
-		io->i_cc = dk->info.secsize;
-		if ((vdaccess(io, &daddr, RD) & HRDERR) == 0)
-			return;
-	}
-	printf("dk%d: unknown drive type\n", io->i_unit);
-	_stop("");
-}
-
-vdstart_drive(io)
-	register struct iob *io;
-{
-	register int ctlr = VDCTLR(io->i_unit), unit = VDUNIT(io->i_unit);
-	int ounit = io->i_unit;
-
-	io->i_unit &= ~3;
-	if (vdnotrailer(io, VDSTART, 62) & HRDERR) {
-		vdprint_error(io->i_unit, "start error",
-		    dcb.operrsta, dcb.err_code);
-		_stop("");
-	}
-	vdinfo[ctlr].vd_flags |= VDF_BUSY;
-	io->i_unit = ounit;
-	DELAY(62000000);
+	vdinit[ctlr] = 1;
+	for (i = unit = ctlr * NDRIVE; i < unit + NDRIVE; i++)
+		dkconfigured[i] = 0;
+	return (0);
 }
 
 /*
- * This routine actually configures a particular drive.
- *
- * If the controller is an SMD/E controller then the number of sectors per
- * track is loaded into the appropriate register, otherwise it is left 
- * alone because the old SMD controller requires a constant 32 sectors
- * per track for it's drives. (an error would be returned if the value is
- * loaded.)
+ * Reset and configure a drive's parameters.
  */
-vdconfigure(io, pass)
+vdreset_drive(io)
 	register struct iob *io;
-	int pass;
 {
-	register int ctlr = VDCTLR(io->i_unit), unit = VDUNIT(io->i_unit);
-	register cdr *ctlr_addr = VDADDR(ctlr);
+	register int ctlr = VDCTLR(io->i_unit), slave = VDSLAVE(io->i_unit);
+	register struct disklabel *lp;
+	register struct vddevice *vdaddr = VDADDR(ctlr);
+	int pass = 0, type = vdtype[ctlr], error;
 
-	dcb.opcode = RSTCFG;		/* command */
-	dcb.intflg = NOINT;
-	dcb.nxtdcb = (fmt_dcb *)0;	/* end of chain */
-	dcb.operrsta  = 0;
-	dcb.devselect = (char)unit;
-	dcb.trail.rstrail.ncyl = dkinfo[ctlr][unit].info.ncyl;
-	dcb.trail.rstrail.nsurfaces = dkinfo[ctlr][unit].info.ntrak;
-	if (vdinfo[ctlr].vd_type == SMD_ECTLR) {
-		dcb.trailcnt = (char)5;
-		dcb.trail.rstrail.nsectors = dkinfo[ctlr][unit].info.nsec;
-		dcb.trail.rstrail.slip_sec = dkinfo[ctlr][unit].info.nslip;
-		dcb.trail.rstrail.recovery = 0x18f;
+	lp = &dklabel[io->i_unit];
+again:
+	dcb.opcode = VDOP_CONFIG;		/* command */
+	dcb.intflg = DCBINT_NONE;
+	dcb.nxtdcb = (struct dcb *)0;	/* end of chain */
+	dcb.operrsta = 0;
+	dcb.devselect = slave;
+	dcb.trail.rstrail.ncyl = lp->d_ncylinders;
+	dcb.trail.rstrail.nsurfaces = lp->d_ntracks;
+	if (type == VDTYPE_SMDE) {
+		dcb.trailcnt = sizeof (treset) / sizeof (long);
+		dcb.trail.rstrail.nsectors = lp->d_nsectors;
+		dcb.trail.rstrail.slip_sec = 0;		/* XXX */
+		dcb.trail.rstrail.recovery = 0x18f;	/* ??? */
 	} else
-		dcb.trailcnt = (char)2;
-	mdcb.firstdcb = &dcb;
-	mdcb.vddcstat = 0;
-	VDDC_ATTENTION(ctlr_addr, &mdcb, vdinfo[ctlr].vd_type);
-	if (!vdpoll(ctlr_addr,&dcb,10,vdinfo[ctlr].vd_type)) {
-		if (pass == 0) {
-			VDDC_RESET(ctlr_addr, vdinfo[ctlr].vd_type);
-			vdconfigure(io, 1);
-		} else
-			_stop(" during drive configuration.\n");
+		dcb.trailcnt = 2;	/* XXX */
+	mdcb.mdcb_head = &dcb;
+	mdcb.mdcb_status = 0;
+	VDGO(vdaddr, (u_long)&mdcb, type);
+	if (!vdpoll(vdaddr, &dcb, 10, type)) {
+		if (pass++ != 0) {
+			printf(" during drive configuration.\n");
+			return (0);
+		}
+		VDRESET(vdaddr, type);
+		if (error = vdreset_ctlr(ctlr, io->i_unit))
+			return (error);
+		goto again;
 	}
-	if (dcb.operrsta & HRDERR) {
-		if (vdinfo[ctlr].vd_type == SMD_ECTLR &&
-		    (ctlr_addr->cdr_status[io->i_unit] & STA_US) == 0) {
-			printf("dk%d: ", io->i_unit);
-			_stop("nonexistent drive");
-		}
-		if ((dcb.operrsta & (NOTCYLERR|DRVNRDY)) == 0) {
-			vdprint_error(io->i_unit, "configuration error",
-			    dcb.operrsta, dcb.err_code);
-			_stop("");
-		}
-		if (pass == 0) {
-			vdstart_drive(io);
-			vdconfigure(io, 1);
-		}
+	if ((dcb.operrsta & VDERR_HARD) == 0)		/* success */
+		return (1);
+	if (type == VDTYPE_SMDE && (vdaddr->vdstatus[slave] & STA_US) == 0) {
+		printf("dk%d: nonexistent drive\n", io->i_unit);
+		return (0);
 	}
+	if ((dcb.operrsta & (DCBS_OCYL|DCBS_NRDY)) == 0) {
+		vderror(io->i_unit, "config", &dcb);
+		return (0);
+	}
+	if (pass++)			/* give up */
+		return (0);
+	/*
+	 * Try to spin up drive with remote command.
+	 */
+	if (!vdcmd(ctlr, 0, VDOP_START, 62)) {
+		vderror(io->i_unit, "start", &dcb);
+		return (0);
+	}
+	DELAY(62000000);
+	goto again;
 }
 
-/*
- * Strategy is called to do the actual I/O to the disk drives.
- *
- * Some simple checks are made to make sure we don't do anything rediculous,
- * If everything is sane then the request is issued.
- *
- * If no errors occured then the original byte count is returned,
- * otherwise -1 is returned to indicate an error occured.
- */
-vdstrategy(io, func)
-	register struct iob *io;
-	register int func;
+vdcmd(ctlr, unit, cmd, time)
+	register int ctlr;
+	int unit, cmd, time;
 {
-	dskadr daddr;
-	register int ctlr = VDCTLR(io->i_unit), unit = VDUNIT(io->i_unit);
-	register fs_tab	*u_info = &dkinfo[ctlr][unit].info;
-	register int op = (func == READ) ? RD : WD;
-	register int blk;
+	register struct vddevice *vdaddr = VDADDR(ctlr);
+
+	dcb.opcode = cmd;
+	dcb.intflg = DCBINT_NONE;
+	dcb.nxtdcb = (struct dcb *)0;	/* end of chain */
+	dcb.operrsta  = 0;
+	dcb.devselect = unit;
+	dcb.trailcnt = 0;
+	mdcb.mdcb_head = &dcb;
+	mdcb.mdcb_status = 0;
+	VDGO(vdaddr, (u_long)&mdcb, vdtype[ctlr]);
+	if (!vdpoll(vdaddr, &dcb, time, vdtype[ctlr]))
+		_stop(" during initialization operation.\n");
+	return ((dcb.operrsta & VDERR_HARD) == 0);
+}
+
+vdstrategy(io, cmd)
+	register struct iob *io;
+	int cmd;
+{
+	register struct disklabel *lp;
+	int ctlr, cn, tn, sn;
+	daddr_t bn;
+	struct vddevice *vdaddr;
 
 	if (io->i_cc == 0 || io->i_cc > 65535) {
 		printf("dk%d: invalid transfer size %d\n", io->i_unit,
 		    io->i_cc);
-		_stop("");
+		io->i_error = EIO;
+		return (-1);
 	}
-	blk = io->i_bn * DEV_BSIZE / u_info->secsize;
-	daddr.sector = blk % u_info->nsec;
-	daddr.track = (blk / u_info->nsec) % u_info->ntrak;
-	daddr.cylinder = (blk/u_info->nsec) / u_info->ntrak;
-	if (vdaccess(io, &daddr, op) & HRDERR) {
-		vdprint_error(io->i_unit, "i/o error", dcb.operrsta,
-		    dcb.err_code);
+	lp = &dklabel[io->i_unit];
+	bn = io->i_bn * (DEV_BSIZE / lp->d_secsize);
+	cn = bn / lp->d_secpercyl;
+	sn = bn % lp->d_secpercyl;
+	tn = sn / lp->d_nsectors;
+	sn = sn % lp->d_nsectors;
+
+	dcb.opcode = (cmd == READ ? VDOP_RD : VDOP_WD);
+	dcb.intflg = DCBINT_NONE;
+	dcb.nxtdcb = (struct dcb *)0;	/* end of chain */
+	dcb.operrsta  = 0;
+	dcb.devselect = VDSLAVE(io->i_unit);
+	dcb.trailcnt = sizeof (trrw) / sizeof (int);
+	dcb.trail.rwtrail.memadr = io->i_ma; 
+	dcb.trail.rwtrail.wcount = (io->i_cc + 1) / sizeof (short);
+	dcb.trail.rwtrail.disk.cylinder = cn;
+	dcb.trail.rwtrail.disk.track = tn;
+	dcb.trail.rwtrail.disk.sector = sn;
+	mdcb.mdcb_head = &dcb;
+	mdcb.mdcb_status = 0;
+	ctlr = VDCTLR(io->i_unit);
+	vdaddr = VDADDR(ctlr);
+	VDGO(vdaddr, (u_long)&mdcb, vdtype[ctlr]);
+	if (!vdpoll(vdaddr, &dcb, 60, vdtype[ctlr]))
+		_stop(" during i/o operation.\n");
+	if (dcb.operrsta & VDERR_HARD) {
+		vderror(io->i_unit, cmd == READ ? "read" : "write", &dcb);
 		io->i_error = EIO;
 		return (-1);
 	}
@@ -265,118 +269,47 @@ vdstrategy(io, func)
 	return (io->i_cc);
 }
 
-vdprint_error(unit, str, status, smde_status)
+vderror(unit, cmd, dcb)
 	int unit;
-	char *str;
-	u_long status;
-	u_long smde_status;
+	char *cmd;
+	struct dcb *dcb;
 {
-	register struct vdstatus *sp;
 
-	printf("dk%d: %s; status %b", unit, str, status, ERRBITS);
-	if (smde_status)
-		printf(", code %x", smde_status);
+	printf("dk%d: %s error; status %b", unit, cmd,
+	    dcb->operrsta, VDERRBITS);
+	if (dcb->err_code)
+		printf(", code %x", dcb->err_code);
 	printf("\n");
 }
 
-vdnotrailer(io, function, time)
-	register struct iob *io;
-	register int function, time;
-{
-	register int ctlr = VDCTLR(io->i_unit);
-	register cdr *ctlr_addr = VDADDR(ctlr);
-
-	dcb.opcode = function;		/* command */
-	dcb.intflg = NOINT;
-	dcb.nxtdcb = (fmt_dcb *)0;	/* end of chain */
-	dcb.operrsta  = 0;
-	dcb.devselect = (char)VDUNIT(io->i_unit);
-	dcb.trailcnt = (char)0;
-	mdcb.firstdcb = &dcb;
-	mdcb.vddcstat = 0;
-	VDDC_ATTENTION(ctlr_addr, &mdcb, vdinfo[ctlr].vd_type);
-	if (!vdpoll(ctlr_addr, &dcb, time, vdinfo[ctlr].vd_type))
-		_stop(" during initialization operation.\n");
-	return dcb.operrsta;
-}
-
-vdaccess(io, daddr, func)
-	register struct iob *io;
-	dskadr *daddr;
-	int func;
-{
-	register int ctlr = VDCTLR(io->i_unit);
-	register cdr *ctlr_addr = VDADDR(ctlr);
-
-	dcb.opcode = (short)func;	/* format sector command */
-	dcb.intflg = NOINT;
-	dcb.nxtdcb = (fmt_dcb *)0;	/* end of chain */
-	dcb.operrsta  = 0;
-	dcb.devselect = (char)VDUNIT(io->i_unit);
-	dcb.trailcnt = (char)(sizeof(trrw) / 4);
-	dcb.trail.rwtrail.memadr = io->i_ma; 
-	dcb.trail.rwtrail.wcount = ((io->i_cc + 1) / sizeof(short));
-	dcb.trail.rwtrail.disk.cylinder = daddr->cylinder;
-	dcb.trail.rwtrail.disk.track = daddr->track;
-	dcb.trail.rwtrail.disk.sector = daddr->sector;
-	mdcb.firstdcb = &dcb;
-	mdcb.vddcstat = 0;
-	VDDC_ATTENTION(ctlr_addr, &mdcb, vdinfo[ctlr].vd_type);
-	if (!vdpoll(ctlr_addr, &dcb, 60, vdinfo[ctlr].vd_type))
-		_stop(" during i/o operation.\n");
-	return (dcb.operrsta);
-}
-
 /*
- * Dump the MDCB and DCB for diagnostic purposes.  This
- * routine is called whenever a fatal error is encountered.
+ * Poll controller until operation
+ * completes or timeout expires.
  */
-vdprintdcb(ptr)
-	register long *ptr;
-{
-	register long i, trailer_count;
-
-	printf("mdcb: %lx %lx %lx %lx\n", ptr[0], ptr[1], ptr[2], ptr[3]);
-	if (ptr = (long *)*ptr) {
-		printf("dcb:");
-		trailer_count = ptr[3] & 0xff;
-		for (i=0; i<7+trailer_count; i++) {
-			uncache(&ptr[i]);
-			printf("  %lx", ptr[i]);
-		}
-	}
-	printf("\n");
-	DELAY(5000000);
-}
-
-/*
- * Poll controller until operation completes
- * or timeout expires.
- */
-vdpoll(addr, dcb, t, type)
-	register cdr *addr;
-	register fmt_dcb *dcb;
+vdpoll(vdaddr, dcb, t, type)
+	register struct vddevice *vdaddr;
+	register struct dcb *dcb;
 	register int t, type;
 {
 
 	t *= 1000;
 	for (;;) {
 		uncache(&dcb->operrsta);
-		if (dcb->operrsta & (DCBCMP|DCBABT))
+		if (dcb->operrsta & (DCBS_DONE|DCBS_ABORT))
 			break;
 		if (--t <= 0) {
 			printf("vd: controller timeout");
-			VDDC_ABORT(addr, type);
+			VDABORT(vdaddr, type);
 			DELAY(30000);
 			uncache(&dcb->operrsta);
 			return (0);
 		}
 		DELAY(1000);
 	}
-	if (type == SMD_ECTLR) {
+	if (type == VDTYPE_SMDE) {
 		for (;;) {
-			uncache(&addr->cdr_csr);
-			if ((addr->cdr_csr & CS_GO) == 0)
+			uncache(&vdaddr->vdcsr);
+			if ((vdaddr->vdcsr & CS_GO) == 0)
 				break;
 			DELAY(50);
 		}
@@ -387,3 +320,78 @@ vdpoll(addr, dcb, t, type)
 	uncache(&dcb->operrsta);
 	return (1);
 }
+
+#ifdef COMPAT_42
+struct	dkcompat {
+	int	nsectors;		/* sectors per track */
+	int	ntracks;		/* tracks per cylinder */
+	int	ncylinders;		/* cylinders per drive */
+#define	NPART	2
+	int	poff[NPART];		/* [a+b] for bootstrapping */
+} dkcompat[] = {
+	{ 48, 24, 711, 0, 61056 },	/* xsd */
+	{ 44, 20, 842, 0, 52800 },	/* eagle */
+	{ 64, 10, 823, 0, 38400 },	/* fuji 360 */
+	{ 32, 24, 711, 0, 40704 },	/* xfd */
+	{ 32, 19, 823, 0, 40128 },	/* smd */
+	{ 32, 10, 823, 0, 19200 },	/* fsd */
+};
+#define	NDKCOMPAT	(sizeof (dkcompat) / sizeof (dkcompat[0]))
+
+/*
+ * Identify and configure drive from above table
+ * by trying to read the last sector until a description
+ * is found for which we're successful.
+ */
+vdmaptype(io)
+	struct iob *io;
+{
+	register struct disklabel *lp = &dklabel[io->i_unit];
+	register struct dkcompat *dp;
+	int i, ctlr, type;
+	struct vddevice *vdaddr;
+
+	ctlr = VDCTLR(io->i_unit);
+	vdaddr = VDADDR(ctlr);
+	type = vdtype[ctlr];
+	for (dp = dkcompat; dp < &dkcompat[NDKCOMPAT]; dp++) {
+		if (type == VDTYPE_VDDC && dp->nsectors != 32)
+			continue;
+		lp->d_nsectors = dp->nsectors;
+		lp->d_ntracks = dp->ntracks;
+		lp->d_ncylinders = dp->ncylinders;
+		if (!vdreset_drive(io))		/* set drive parameters */
+			return (EIO);
+		dcb.opcode = VDOP_RD;
+		dcb.intflg = DCBINT_NONE;
+		dcb.nxtdcb = (struct dcb *)0;	/* end of chain */
+		dcb.devselect = VDSLAVE(io->i_unit);
+		dcb.operrsta = 0;
+		dcb.trailcnt = sizeof (trrw) / sizeof (long);
+		dcb.trail.rwtrail.memadr = lbuf; 
+		dcb.trail.rwtrail.wcount = sizeof (lbuf) / sizeof (short);
+		dcb.trail.rwtrail.disk.cylinder = dp->ncylinders - 2;
+		dcb.trail.rwtrail.disk.track = dp->ntracks - 1;
+		dcb.trail.rwtrail.disk.sector = dp->nsectors - 1;
+		mdcb.mdcb_head = &dcb;
+		mdcb.mdcb_status = 0;
+		VDGO(vdaddr, (u_long)&mdcb, type);
+		if (!vdpoll(vdaddr, &dcb, 60, type))
+			_stop(" during i/o operation.\n");
+		if (dcb.operrsta & VDERR_HARD)
+			continue;
+		/* simulate necessary parts of disk label */
+		lp->d_secpercyl = lp->d_nsectors * lp->d_ntracks;
+		lp->d_secperunit = lp->d_secpercyl * lp->d_ncylinders;
+		lp->d_npartitions = NPART;
+		for (i = 0; i < NPART; i++) {
+			lp->d_partitions[i].p_offset = dp->poff[i];
+			lp->d_partitions[i].p_size =
+			    lp->d_secperunit - dp->poff[i];
+		}
+		return (0);
+	}
+	printf("dk%d: unknown drive type\n", io->i_unit);
+	return (ENXIO);
+}
+#endif
