@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vfsops.c	8.9 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	8.10 (Berkeley) %G%
  */
 
 #include <sys/param.h>
