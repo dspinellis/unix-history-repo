@@ -2,7 +2,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)recipient.c	3.44		%G%);
+SCCSID(@(#)recipient.c	3.45		%G%);
 
 /*
 **  SENDTO -- Designate a send list.
@@ -76,7 +76,10 @@ sendto(list, copyf, ctladdr, qflags)
 		while (isspace(*p) || *p == ',')
 			p++;
 		if ((a = parse(p, (ADDRESS *) NULL, 1)) == NULL)
+		{
+			p = DelimChar;
 			continue;
+		}
 		p = DelimChar;
 		a->q_next = al;
 		a->q_alias = ctladdr;
