@@ -1,4 +1,4 @@
-/*	conf.c	4.45	82/01/14	*/
+/*	conf.c	4.46	82/01/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -256,7 +256,7 @@ int	vpopen(),vpclose(),vpwrite(),vpioctl(),vpreset(),vpselect();
 
 #include "pty.h"
 #if NPTY > 0
-int	ptsopen(),ptsclose(),ptsread(),ptswrite();
+int	ptsopen(),ptsclose(),ptsread(),ptswrite(),ptsstop();
 int	ptcopen(),ptcclose(),ptcread(),ptcwrite(),ptcselect();
 int	ptyioctl();
 struct	tty pt_tty[];
@@ -272,6 +272,7 @@ struct	tty pt_tty[];
 #define ptyioctl	nodev
 #define	pt_tty		0
 #define	ptcselect	nodev
+#define	ptsstop		nulldev
 #endif
 
 #include "dn.h"
@@ -367,7 +368,7 @@ struct cdevsw	cdevsw[] =
 	nodev,		nodev,		nulldev,	0,
 	nodev,
 	ptsopen,	ptsclose,	ptsread,	ptswrite,	/*20*/
-	ptyioctl,	nulldev,	nodev,		pt_tty,
+	ptyioctl,	ptsstop,	nodev,		pt_tty,
 	ttselect,
 	ptcopen,	ptcclose,	ptcread,	ptcwrite,	/*21*/
 	ptyioctl,	nulldev,	nodev,		pt_tty,
