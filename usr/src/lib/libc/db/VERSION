@@ -1,6 +1,6 @@
-#	@(#)VERSION	8.4 (Berkeley) %G%
+#	@(#)VERSION	8.5 (Berkeley) %G%
 
-This is version 1.7 of the Berkeley DB code.
+This is version 1.72 of the Berkeley DB code.
 
 If your version of the DB code doesn't have a copy of
 this version file, it's really old, please update it!
@@ -13,6 +13,9 @@ Email questions may be addressed to Keith Bostic at
 bostic@cs.berkeley.edu.
 
 ============================================
+1.7 -> 1.72	12 Oct 1993
+	hash:	Support NET/2 hash formats.
+		
 1.7 -> 1.71	16 Sep 1993
 	btree/recno:
 		Fix bug in internal search routines that caused
