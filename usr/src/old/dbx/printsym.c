@@ -4,7 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-static char sccsid[] = "@(#)printsym.c 5.2 %G%";
+static char sccsid[] = "@(#)printsym.c 5.3 %G%";
 /*
  * Printing of symbolic information.
  */
