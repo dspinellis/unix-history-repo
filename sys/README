@@ -1,0 +1,93 @@
+This is the description of a release of updated networking software
+for the 4.3BSD distribution from the University of California, Berkeley.
+These changes are part of the current Berkeley operating system and
+will be included in future tape releases.  This release is being
+made available by anonymous FTP from the ARPANET and on the Usenet
+newsgroup comp.bugs.4bsd.ucb-fixes.
+
+The major changes in this release are in the TCP send policy.
+Because the improvements in the send policy could significantly
+reduce congestion on the ARPANET and the NSFNET, all sites with
+direct or indirect connections to long-haul nets are urged to upgrade
+as quickly as possible.  Vendors supplying TCP products based on 4.2BSD
+or 4.3BSD are strongly urged to update as quickly as possible.  Vendors
+using other TCP implementations should consider the use of the new algorithms
+as well, and may find the current Berkeley source code useful as a guide
+to their implementation.
+
+The FTP release consists of five files: tcp.tar, inet.tar, netns.tar,
+socket.tar and imp.tar.  They are all present on host ucbarpa.Berkeley.EDU
+in the directory pub/4.3.  (Each is also available in compressed form,
+indicated by a trailing ".Z".)  Each archive file includes a copy of this
+file (called README).
+
+The first file, tcp.tar, contains sources for the current version of TCP,
+including the slow start algorithm and other work by Van Jacobson of LBL
+and a retransmission timer algorithm suggested by Phil Karn.  It is designed
+to replace the 4.3BSD TCP, although it also has #ifdef's for installation
+in a 4.2-based system (including SunOS versions up to 3.6).  The changes made
+since the release of 4.3 dramatically improve performance over slow and/or
+lossy networks such as the ARPANET/Milnet and Satnet, and also reduce the
+number of unnecessary retransmissions nearly to zero.  Performance on
+fast, local-area networks is also somewhat improved, especially on faster
+processors when larger buffers are used.  Several new bug fixes have
+also been made.  The file TCP_INSTALL contains some hints on configuring
+TCP for systems other than standard 4.3BSD and 4.2BSD.
+
+The second file, inet.tar, contains sources for IP, ICMP, UDP and common
+internet code (all of the netinet directory except the TCP sources).
+It also includes a few files from the sys and h directories that have
+been changed since the 4.3BSD release.  There are changes in the processing
+of IP record-route and timestamp options and in handling of certain broadcast
+UDP requests.  The mbuf allocation routines include a fix for a race and
+changes to call the protocol drain routines when appropriate, and will
+no longer panic when new allocation requests discover that the mbuf map
+has been exhausted.  A recent problem in the code for fragmenting IP packets
+with options is fixed.  The complete source for the netstat program is also
+included in inet.tar.  It will be usable only on 4.3BSD systems without
+modification.  (Note: there are two versions of main.c and host.c in
+the netstat directory.  Unless you are installing the new imp code,
+you must use main.c.oldimp and host.c.oldimp.)
+
+The combination of tcp.tar and inet.tar is sufficient to upgrade a 4.3BSD
+system to the current level of IP/TCP.  It is strongly recommended that
+4.3BSD sites that are connected to the Internet, directly or indirectly,
+as well as 4.3BSD gateway sites, should upgrade as quickly as possible.
+
+The third file, netns.tar, contains the current version of the Xerox NS
+protocols from the netns source directory.  The Sequenced Packet Protocol
+has modifications similar to those in TCP, as well as several bug fixes.
+Sites that use XNS must upgrade it at the same time as TCP, as the old
+XNS code used the old tcp_timer.h.
+
+The fourth file, socket.tar, includes the remainder of the socket and generic
+network source files.  These files are identical to those in the 4.3BSD
+release.  They are provided for completeness for those who do not have access
+to the original 4.3BSD sources.  They are not required for installation
+of the TCP and other internet fixes in a 4.3BSD system, nor for installation
+of the new internet code into most 4.2BSD-derived systems.  They may
+be useful for upgrading the socket or network code in a 4.2BSD-derived
+system.  We cannot provide any assistance in such upgrades, but we
+are interested in hearing about any successful upgrades.
+
+The fifth file, imp.tar, includes recent modifications to the code for
+handling an ARPANET/Milnet IMP using an AHIP (1822) interface.  It was not
+quite ready for distribution when the rest of the update was finished, and
+may not be present in the anonymous FTP area immediately.  If you want
+it, check back later or watch for an announcement on the tcp-ip mailing
+list.
+
+Note that the Berkeley network source code is *not* public-domain.
+However, as it contains no code licensed by AT&T or others, it is owned
+by the Regents of the University of California, Berkeley.  It is provided
+as-is, without any warranty, for any purpose.  It may be used, modified or
+redistributed in source or binary forms, as long as due credit is given
+to the University and the University copyright notices are retained.
+
+These sources may be updated from time to time as improvements or additions
+are made.  The next update will include support for IP multicast done
+by Steve Deering at Stanford.  Updates will be announced on the tcp-ip
+mailing list, which is redistributed on Usenet.
+
+	Mike Karels	karels@Berkeley.EDU
+	Van Jacobson	van@lbl-csam.arpa
