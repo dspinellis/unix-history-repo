@@ -1,5 +1,5 @@
 /*
- * mkmakefile.c	1.10	81/05/18
+ * mkmakefile.c	1.11	81/10/08
  *	Functions in this file build the makefile from the files list
  *	and the information in the config table
  */
@@ -140,7 +140,7 @@ read_files()
     register struct file_list *tp;
     register struct device *dp;
     register char *wd, *this;
-    int type;
+    int type, nreqs, dev;
 
     fp = fopen("../conf/files", "r");
     if (fp == NULL) {
@@ -154,7 +154,7 @@ read_files()
 	    continue;
 	this = ns(wd);
 	/*
-	 * Readad standard/optional
+	 * Read standard/optional
 	 */
 	next_word(fp, wd);
 	if (wd == NULL)
@@ -167,29 +167,46 @@ read_files()
 	else
 	    free(tp->f_fn);
 	tp->f_fn = this;
-	type = 0;
+	nreqs = dev = type = 0;
 	if (eq(wd, "optional"))
 	{
-	    next_word(fp, wd);
-	    if (wd == NULL)
+	    for (;;) 
 	    {
-		fprintf(stderr, "Needed a dev for optional(%s)\n", this);
-		exit(11);
-	    }
-	    tp->f_needs = ns(wd);
-	    for (dp = dtab ; dp != NULL; dp = dp->d_next)
-	    {
-		if (eq(dp->d_name, wd))
+		next_word(fp, wd);
+		if (wd == NULL || (dev = eq(wd, "device-driver")))
+		{
+		    if (nreqs == 0)
+		    {
+			fprintf(stderr, "Needed a dev for optional(%s)\n",
+				this);
+			exit(11);
+		    }
+		    else
+			break;
+		}
+		nreqs++;
+		/* tp->f_needs = ns(wd); */
+		for (dp = dtab ; dp != NULL; dp = dp->d_next)
+		{
+		    if (eq(dp->d_name, wd))
+			break;
+		}
+		if (dp == NULL)
+		{
+		    type = INVISIBLE;
+		    while ((wd = get_word(fp)) != NULL)
+			;
 		    break;
+		}
 	    }
-	    if (dp == NULL)
-		type = INVISIBLE;
 	}
-	next_word(fp, wd);
-	if (type == 0 && wd != NULL)
-	    type = DEVICE;
-	else if (type == 0)
-	    type = NORMAL;
+	if (dev == 0 && wd != NULL)
+	{
+	    next_word(fp, wd);
+	    dev = (wd != NULL && eq(wd, "device-driver"));
+	}
+	if (type == 0)
+	    type = dev ? DEVICE : NORMAL;
 	tp->f_type = type;
     }
     fclose(fp);
