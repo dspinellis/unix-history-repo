@@ -1,0 +1,1 @@
+#define NFIFO 0
