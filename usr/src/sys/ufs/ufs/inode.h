@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)inode.h	8.5 (Berkeley) %G%
+ *	@(#)inode.h	8.6 (Berkeley) %G%
  */
 
 #include <ufs/ufs/dinode.h>
