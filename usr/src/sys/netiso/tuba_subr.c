@@ -4,43 +4,49 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tuba_subr.c	7.3 (Berkeley) %G%
+ *	@(#)tuba_subr.c	7.4 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "proc.h"
-#include "systm.h"
-#include "malloc.h"
-#include "mbuf.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "protosw.h"
-#include "errno.h"
+#include <sys/param.h>
+#include <sys/proc.h>
+#include <sys/systm.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/protosw.h>
+#include <sys/errno.h>
 
-#include "../net/route.h"
-#include "../net/if.h"
+#include <net/route.h>
+#include <net/if.h>
 
-#include "in.h"
-#include "in_systm.h"
-#include "ip.h"
-#include "in_pcb.h"
-#include "ip_var.h"
-#include "ip_icmp.h"
-#include "tcp.h"
-#include "tcp_fsm.h"
-#include "tcp_seq.h"
-#include "tcp_timer.h"
-#include "tcp_var.h"
-#include "tcpip.h"
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
+#include <netinet/in_pcb.h>
+#include <netinet/ip_var.h>
+#include <netinet/ip_icmp.h>
+#include <netinet/tcp.h>
+#include <netinet/tcp_fsm.h>
+#include <netinet/tcp_seq.h>
+#include <netinet/tcp_timer.h>
+#include <netinet/tcp_var.h>
+#include <netinet/tcpip.h>
+#include <netinet/tcp_debug.h>
 
-#include "netiso/argo_debug.h"
-#include "netiso/iso.h"
-#include "netiso/clnp.h"
-#include "netiso/iso_pcb.h"
-#include "netiso/iso_var.h"
+#include <netiso/argo_debug.h>
+#include <netiso/iso.h>
+#include <netiso/clnp.h>
+#include <netiso/iso_pcb.h>
+#include <netiso/iso_var.h>
+#include <netiso/tuba_addr.h>
 
-#include "tuba_addr.h"
-static struct sockaddr_iso null_siso = { sizeof(null_siso), AF_ISO, };
+static struct	sockaddr_iso null_siso = { sizeof(null_siso), AF_ISO, };
+extern struct	isopcb tuba_isopcb;
+extern int	tuba_table_size;
+extern int	tcppcbcachemiss, tcppredack, tcppreddat, tcprexmtthresh;
+extern struct 	inpcb *tcp_last_inpcb;
+extern struct	tcpiphdr tcp_saveti;
 /*
  * Tuba initialization
  */
@@ -48,16 +54,15 @@ tuba_init()
 {
 #define TUBAHDRSIZE (3 /*LLC*/ + 9 /*CLNP Fixed*/ + 42 /*Addresses*/ \
 		     + 6 /*CLNP Segment*/ + 20 /*TCP*/)
-	extern struct isopcb tuba_isopcb;
 
 	tuba_isopcb.isop_next = tuba_isopcb.isop_prev = &tuba_isopcb;
-	tuba_isopcb.isop_faddr = &tuba_isop.isop_sfaddr;
-	tuba_isopcb.isop_laddr = &tuba_isop.isop_sladdr;
+	tuba_isopcb.isop_faddr = &tuba_isopcb.isop_sfaddr;
+	tuba_isopcb.isop_laddr = &tuba_isopcb.isop_sladdr;
 	if (max_protohdr < TUBAHDRSIZE)
 		max_protohdr = TUBAHDRSIZE;
 	if (max_linkhdr + TUBAHDRSIZE > MHLEN)
 		panic("tuba_init");
-	tuba_timer_init();
+	tuba_table_init();
 }
 
 static void
@@ -73,7 +78,7 @@ tuba_getaddr(error, sum, siso, index)
 			*siso = null_siso;
 			siso->siso_addr = tc->tc_addr;
 		}
-		sum += tc->tc_sum_out
+		sum += tc->tc_sum_out;
 	} else
 		*error = 1;
 }
@@ -86,16 +91,18 @@ tuba_output(m, tp)
 	register struct tcpiphdr *n;
 	u_long sum, i;
 
-	if (tp == 0 || (n = tp->tp_template) == 0) {
+	if (tp == 0 || (n = tp->t_template) == 0) {
 		isop = &tuba_isopcb;
 		i = sum = 0;
 		n = mtod(m, struct tcpiphdr *);
-		tuba_getaddr(&i, &sum, tuba_isop.isop_faddr, n->ti_dst.s_addr);
-		tuba_getaddr(&i, &sum, tuba_isop.isop_laddr, n->ti_src.s_addr);
+		tuba_getaddr(&i, &sum, tuba_isopcb.isop_faddr,
+				n->ti_dst.s_addr);
+		tuba_getaddr(&i, &sum, tuba_isopcb.isop_laddr,
+				n->ti_src.s_addr);
 		goto adjust;
 	}
 	isop = (struct isopcb *)tp->t_tuba_pcb;
-	if (n->ni_sum == 0) {
+	if (n->ti_sum == 0) {
 		i = sum = 0;
 		tuba_getaddr(&i, &sum, (struct sockaddr_iso *)0,
 				n->ti_dst.s_addr);
@@ -130,11 +137,11 @@ tuba_refcnt(isop, delta)
 	    (delta == 1 && isop->isop_tuba_cached != 0))
 		return;
 	isop->isop_tuba_cached = (delta == 1);
-	if ((index = tuba_lookup(&isop->isop_faddr.siso_addr)) != 0 &&
-	    (tc = tuba_cache[index]) != 0 && (delta == 1 || tc->tc_refcnt > 0))
+	if ((index = tuba_lookup(&isop->isop_sfaddr.siso_addr)) != 0 &&
+	    (tc = tuba_table[index]) != 0 && (delta == 1 || tc->tc_refcnt > 0))
 		tc->tc_refcnt += delta;
-	if ((index = tuba_lookup(&isop->isop_laddr.siso_addr)) != 0 &&
-	    (tc = tuba_cache[index]) != 0 && (delta == 1 || tc->tc_refcnt > 0))
+	if ((index = tuba_lookup(&isop->isop_sladdr.siso_addr)) != 0 &&
+	    (tc = tuba_table[index]) != 0 && (delta == 1 || tc->tc_refcnt > 0))
 		tc->tc_refcnt += delta;
 }
 
@@ -155,12 +162,12 @@ tuba_pcbconnect(inp, nam)
 	register struct inpcb *inp;
 	struct mbuf *nam;
 {
-	register struct sockaddr_iso *siso = mtod(m, struct sockaddr_iso *);
-	struct sockaddr_in *sin = mtod(m, struct sockaddr_in *);
+	register struct sockaddr_iso *siso = mtod(nam, struct sockaddr_iso *);
+	struct sockaddr_in *sin = mtod(nam, struct sockaddr_in *);
 	struct tcpcb *tp = intotcpcb(inp);
 	unsigned index = sin->sin_addr.s_addr;
 	struct tuba_cache *tc = tuba_table[index];
-	struct isopcb *isop = (struct isopcb *)tp->tp_tuba_pcb;
+	struct isopcb *isop = (struct isopcb *)tp->t_tuba_pcb;
 	int error;
 
 	inp->inp_faddr.s_addr = index;
@@ -179,18 +186,17 @@ tuba_pcbconnect(inp, nam)
  * CALLED FROM:
  * 	clnp's input routine, indirectly through the protosw.
  * FUNCTION and ARGUMENTS:
- * Take a packet (m) from clnp, strip off the clnp header and give it to tcp
- * or udp.
+ * Take a packet (m) from clnp, strip off the clnp header
+ * and do tcp input processing.
  * No return value.  
  */
-ProtoHook
-tpclnp_input(m, src, dst, clnp_len, ce_bit)
+tuba_tcpinput(m, src, dst, clnp_len, ce_bit)
 	register struct mbuf *m;
 	struct sockaddr_iso *src, *dst;
 	int clnp_len, ce_bit;
 {
 	int s = splnet();
-	unsigned long fix_csum, lindex, findex;
+	unsigned long fix_cksum, lindex, findex;
 	register struct tcpiphdr *ti;
 	register struct inpcb *inp;
 	struct mbuf *om = 0;
@@ -210,7 +216,7 @@ tpclnp_input(m, src, dst, clnp_len, ce_bit)
 	 * If we are out of space might as well drop the packet now.
 	 */
 	tcpstat.tcps_rcvtotal++;
-	if ((lindex = tuba_lookup(&dst->siso_addr) == 0 ||
+	if ((lindex = tuba_lookup(&dst->siso_addr) == 0) ||
 	    (findex = tuba_lookup(&dst->siso_addr) == 0))
 		goto drop;
 	/*
@@ -250,10 +256,10 @@ tpclnp_input(m, src, dst, clnp_len, ce_bit)
 	 * so that we can save copying the tcp header.
 	 * This code knows way too much about the structure of mbufs!
 	 */
-	off = ((sizeof (long) - 1) & ((m->m_flags & EXT) ?
-		(m->m_data - m->m_ext.ext_buf) :  (m->m_data - m_pktdat)));
+	off = ((sizeof (long) - 1) & ((m->m_flags & M_EXT) ?
+		(m->m_data - m->m_ext.ext_buf) :  (m->m_data - m->m_pktdat)));
 	if (off) {
-		struct mbuf *m0 = m_gethdr(M_DONTWAIT, MT_DATA)
+		struct mbuf *m0 = m_gethdr(M_DONTWAIT, MT_DATA);
 		if (m0 == 0) {
 			goto drop;
 		}
@@ -263,7 +269,7 @@ tpclnp_input(m, src, dst, clnp_len, ce_bit)
 		m->m_data += sizeof(struct tcpiphdr);
 		m0->m_next = m;
 		m0->m_pkthdr = m->m_pkthdr;
-		m0->m_flags = m->m_pkthdr & M_COPYFLAGS;
+		m0->m_flags = m->m_flags & M_COPYFLAGS;
 		m0->m_len = sizeof(struct tcpiphdr);
 		m = m0;
 	}
@@ -274,8 +280,8 @@ tpclnp_input(m, src, dst, clnp_len, ce_bit)
 	/*
 	 * Now include the rest of TCP input
 	 */
-#define TUBA_INPUT
+#define TUBA_INCLUDE
 #define in_pcbconnect	tuba_pcbconnect
 
-#include "../netinet/tcp_input.c"
+#include <netinet/tcp_input.c>
 }
