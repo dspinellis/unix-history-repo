@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.1 (Berkeley) %G%
+ *	@(#)conf.h	8.2 (Berkeley) %G%
  */
 
 /*
@@ -79,7 +79,7 @@ extern struct linesw linesw[];
 
 struct swdevt {
 	dev_t	sw_dev;
-	int	sw_freed;
+	int	sw_flags;
 	int	sw_nblks;
 	struct	vnode *sw_vp;
 #ifdef SECSIZE
@@ -87,6 +87,9 @@ struct swdevt {
 	int	sw_bshift;
 #endif SECSIZE
 };
+#define	SW_FREED	0x01
+#define	SW_SEQUENTIAL	0x02
+#define sw_freed	sw_flags	/* XXX compat */
 
 #ifdef KERNEL
 extern struct swdevt swdevt[];
