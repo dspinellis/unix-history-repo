@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.17 (Berkeley) %G%
+#	@(#)Makefile	5.18 (Berkeley) %G%
 
 NOOBJ=	oobj
 
@@ -34,7 +34,7 @@ distribution:
 	# install devices
 .if ${MACHINE} == "hp300"
 	(cd etc.hp300; install -c -o ${BINOWN} -g ${BINGRP} -m 444 \
-	    MAKEDEV.hpux ${DESTDIR}/)
+	    MAKEDEV.hpux ${DESTDIR}/dev)
 .endif
 	install -c -o ${BINOWN} -g ${BINGRP} -m 555 \
 	     MAKEDEV.local etc.${MACHINE}/MAKEDEV ${DESTDIR}/dev
