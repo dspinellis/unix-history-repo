@@ -5,10 +5,9 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)gethostnamadr.c	6.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethostnamadr.c	6.3 (Berkeley) %G%";
 #endif not lint
 
-#include <sys/types.h>
 #include <sys/param.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -38,6 +37,8 @@ static union {
 } align;
 
 
+int h_errno;
+
 static struct hostent *
 getanswer(msg, msglen, iquery)
 	char *msg;
@@ -58,6 +59,7 @@ getanswer(msg, msglen, iquery)
 		if (_res.options & RES_DEBUG)
 			printf("res_send failed\n");
 #endif
+		h_errno = TRY_AGAIN;
 		return (NULL);
 	}
 	eom = (char *)&answer + n;
@@ -72,6 +74,25 @@ getanswer(msg, msglen, iquery)
 		if (_res.options & RES_DEBUG)
 			printf("rcode = %d, ancount=%d\n", hp->rcode, ancount);
 #endif
+		switch (hp->rcode) {
+			case NXDOMAIN:
+				/* Check if it's an authoritive answer */
+				if (hp->aa)
+					h_errno = HOST_NOT_FOUND;
+				else
+					h_errno = TRY_AGAIN;
+				break;
+			case SERVFAIL:
+				h_errno = TRY_AGAIN;
+				break;
+			case NOERROR:
+				h_errno = NO_ADDRESS;
+				break;
+			case FORMERR:
+			case NOTIMP:
+			case REFUSED:
+				h_errno = NO_RECOVERY;
+		}
 		return (NULL);
 	}
 	bp = hostbuf;
@@ -79,8 +100,10 @@ getanswer(msg, msglen, iquery)
 	cp = (char *)&answer + sizeof(HEADER);
 	if (qdcount) {
 		if (iquery) {
-			if ((n = dn_expand((char *)&answer, cp, bp, buflen)) <0)
+			if ((n = dn_expand((char *)&answer, cp, bp, buflen)) < 0) {
+				h_errno = NO_RECOVERY;
 				return (NULL);
+			}
 			cp += n + QFIXEDSZ;
 			host.h_name = bp;
 			n = strlen(bp) + 1;
@@ -90,14 +113,17 @@ getanswer(msg, msglen, iquery)
 			cp += dn_skip(cp) + QFIXEDSZ;
 		while (--qdcount > 0)
 			cp += dn_skip(cp) + QFIXEDSZ;
-	} else if (iquery)
+	} else if (iquery) {
+		if (hp->aa)
+			h_errno = HOST_NOT_FOUND;
+		else
+			h_errno = TRY_AGAIN;
 		return (NULL);
+	}
 	ap = host_aliases;
 	host.h_aliases = host_aliases;
 	hap = h_addr_ptrs;
-#ifdef BSD4_3
 	host.h_addr_list = h_addr_ptrs;
-#endif
 	haveanswer = 0;
 	while (--ancount >= 0 && cp < eom) {
 		if ((n = dn_expand((char *)&answer, cp, bp, buflen)) < 0)
@@ -127,12 +153,7 @@ getanswer(msg, msglen, iquery)
 			}
 			cp += n;
 			host.h_name = bp;
-#ifdef BSD4_3
 			return(&host);
-#else
-			haveanswer++;
-			break;
-#endif
 		}
 		if (type != T_A)  {
 #ifdef DEBUG
@@ -179,12 +200,11 @@ getanswer(msg, msglen, iquery)
 	if (haveanswer) {
 		*ap = NULL;
 		*hap = NULL;
-#ifndef BSD4_3
-		host.h_addr = h_addr_ptrs[0]; 
-#endif
 		return (&host);
-	} else
+	} else {
+		h_errno = TRY_AGAIN;
 		return (NULL);
+	}
 }
 
 struct hostent *
@@ -219,10 +239,10 @@ gethostbyaddr(addr, len, type)
 	if (type != AF_INET)
 		return (NULL);
 	(void)sprintf(qbuf, "%d.%d.%d.%d.in-addr.arpa",
-		(*(unsigned *)addr >> 24 & 0xff),
-		(*(unsigned *)addr >> 16 & 0xff),
-		(*(unsigned *)addr >> 8 & 0xff),
-		(*(unsigned *)addr & 0xff));
+		((unsigned)addr[3] & 0xff),
+		((unsigned)addr[2] & 0xff),
+		((unsigned)addr[1] & 0xff),
+		((unsigned)addr[0] & 0xff));
 	n = res_mkquery(QUERY, qbuf, C_IN, T_PTR, NULL, 0, NULL,
 		(char *)&buf, sizeof(buf));
 	if (n < 0) {
