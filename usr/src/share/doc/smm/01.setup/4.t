@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)4.t	6.2 (Berkeley) %G%
+.\"	@(#)4.t	6.3 (Berkeley) %G%
 .\"
 .de IR
 \fI\\$1\fP\|\\$2
@@ -679,7 +679,7 @@ l l l.
 File system	Block size	Fragment size
 _
 /	8 kbytes	1 kbytes
-usr	4 kbytes	512 bytes
+usr	4 kbytes	1 kbytes
 users	4 kbytes	1 kbytes
 .TE
 .DE
@@ -696,10 +696,11 @@ with a file system.  With a 1 kbyte fragment size
 disk space utilization is about the same
 as with the earlier versions of the file system.
 .PP
-The usr file system uses a 4 kbyte block size
-with 512 byte fragment size in an effort to get
-high performance while conserving the amount of
-space wasted by a large fragment size.  Space compaction
+The usr file system would like to use a 4 kbyte block size
+with 512 byte fragment size in an effort to get high performance
+while conserving the amount of space wasted by a large fragment
+size.  However, the tahoe disk controllers require a minimum
+block size of 1 Kbyte.  Space compaction
 has been deemed important here because the source code
 for the system is normally placed on this file system.
 If the source code is placed on a separate filesystem,
@@ -762,10 +763,10 @@ of work required in conversion.
 .PP
 A second, more important, consideration when selecting the
 fragment size for a file system is the level of fragmentation 
-on the disk.  With a 512 byte fragment size, storage fragmentation
+on the disk.  With an 8:1 fragment to block ratio, storage fragmentation
 occurs much sooner, particularly with a busy file system running
 near full capacity.  By comparison, the level of fragmentation in a 
-1 kbyte fragment file system is one tenth as severe.  This
+4:1 fragment to block ratio file system is one tenth as severe.  This
 means that on file systems where many files are created and
 deleted, the 512 byte fragment size is more likely to result in apparent
 space exhaustion because of fragmentation.  That is, when the file 
