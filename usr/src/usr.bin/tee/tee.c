@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char *sccsid = "@(#)tee.c	5.2 (Berkeley) %G%";
+static char *sccsid = "@(#)tee.c	5.3 (Berkeley) %G%";
 #endif
 /*
  * tee-- pipe fitting
@@ -55,7 +55,7 @@ main(argc,argv)
 		else
 			lastf++;
 	}
-	while ((cc = fread(buf, 1, sizeof (buf), stdin)) > 0)
+	while ((cc = read(fileno(stdin), buf, sizeof (buf))) > 0)
 		for (fdp = openf; fdp < lastf; fdp++)
 			fwrite(buf, 1, cc, *fdp);
 	exit(0);
