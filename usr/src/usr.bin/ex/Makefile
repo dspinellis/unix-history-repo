@@ -1,34 +1,43 @@
-VERSION=3.1
+VERSION=3.2
 #
-# Ex skeletal makefile for Version 7
+# Ex skeletal makefile for version 7
 #
 # NB: This makefile doesn't indicate any dependencies on header files.
 #
-# Compiles in the LISPCODE code within the editor;
-# take this out of CFLAGS to make some
-# breathing room in the text space if necessary.  If you take out -DLISPCODE
-# you should move ex_vars.nolisp to ex_vars.h
+# Ex is very large - it may not fit on PDP-11's depending on the operating
+# system and the cflags you turn on. Things that can be turned off to save
+# space include LISPCODE (-l flag, showmatch and lisp options), UCVISUAL
+# (visual \ nonsense on upper case only terminals), CHDIR (the undocumented
+# chdir command.)
+#
+# Don't define VFORK unless your system has the VFORK system call,
+# which is like fork but the two processes have only one data space until the
+# child execs. This speeds up ex by saving the memory copy.
+# -DVMUNIX makes an ex which can edit very large files (eg the w2a dictionary)
+# this allows 200000 lines and about 16M byte temp files.
 #
 # If your system expands tabs to 4 spaces you should -DTABS=4 below
 #
-# Ex wants stdio only to get the doprnt.o routine; if other stdio stuff
-# gets dragged in that is a mistake.
+# Ex is likely to overflow the symbol table in your C compiler.
+# It can use -t0 which is (purportedly) a C compiler with a larger
+# symbol table.  The -t1 flag to the C compiler is for a C compiler
+# which puts switch code in I space, increasing the text space size
+# to the benefit of per-user data space.  If you don't have this it
+# doesn't matter much. Another method, which works on v7 pdp-11's,
+# is to use pcc for ex_io.c instead of cc.
 #
-.c.o:
-	${MKSTR} - ex${VERSION}strings x $*.c
-	${CC} -E ${CFLAGS} x$*.c | ${XSTR} -c -
-	rm -f x$*.c
-	${CC} ${CFLAGS} -O -c x.c 
-	mv x.o $*.o
-BINDIR=	/usr/bin
+BINDIR=	/usr/ucb
+NBINDIR=/usr/new
 LIBDIR=	/usr/lib
-FOLD=	/usr/bin/fold
-CTAGS=	/usr/ucb/ctags
-AS=	-as
-XSTR=	/usr/ucb/xstr
-CFLAGS=	-DTABS=8 -DLISPCODE
-MKSTR=	/usr/ucb/mkstr
-CXREF=	/usr/ucb/cxref
+FOLD=	${BINDIR}/fold
+CTAGS=	${BINDIR}/ctags
+XSTR=	${BINDIR}/xstr
+DEBUGFLAGS=	-DTRACE
+NONDEBUGFLAGS=	-O
+CFLAGS=	-DTABS=8 -DLISPCODE -DCHDIR -DUCVISUAL -DMACROS -DVFORK -DVMUNIX ${NONDEBUGFLAGS}
+TERMLIB=	-ltermlib
+MKSTR=	${BINDIR}/mkstr
+CXREF=	${BINDIR}/cxref
 INCLUDE=/usr/include
 PR=	pr
 OBJS=	ex.o ex_addr.o ex_cmds.o ex_cmds2.o ex_cmdsub.o ex_data.o ex_get.o \
@@ -37,48 +46,74 @@ OBJS=	ex.o ex_addr.o ex_cmds.o ex_cmds2.o ex_cmdsub.o ex_data.o ex_get.o \
 	ex_vops.o ex_vops2.o ex_vops3.o ex_vput.o ex_vwind.o \
 	printf.o strings.o
 
-all: a.out expreserve exrecover
+all:	a.out exrecover expreserve tags
 
-a.out: ${OBJS} tags
-	${CC} -i ${OBJS} -ltermlib
+.c.o:
+#	${MKSTR} - ex${VERSION}strings x $*.c
+	${CC} -E ${CFLAGS} $*.c | ${XSTR} -c -
+#	rm -f x$*.c
+	${CC} ${CFLAGS} -c x.c 
+	mv x.o $*.o
+
+a.out: ${OBJS}
+	cc -i ${OBJS} ${TERMLIB}
 
 tags:
-	../bin/csh ${CTAGS} ex.c ex_*.c
+	${CTAGS} -w *.h *.c
+
+${OBJS}: ex_vars.h
+
+ex_vars.h:
+	csh makeoptions ${CFLAGS}
 
 strings.o: strings
 	${XSTR}
-	${CC} -c xs.c
-	mv xs.o strings.o
+	${CC} -c -S xs.c
+	ed - <:rofix xs.s
+	as -o strings.o xs.s
+	rm xs.s
 	
 exrecover: exrecover.o
-	${CC} -o exrecover exrecover.o
+	${CC} ${CFLAGS} exrecover.o -o exrecover
 
-exrecover.o:
+exrecover.o: exrecover.c
 	${CC} ${CFLAGS} -c -O exrecover.c
 
-expreserve: expreserve.o popen.c
-	${CC} -o expreserve expreserve.o
+expreserve: expreserve.o
+	${CC} expreserve.o -o expreserve
 
 expreserve.o:
-	${CC} ${CFLAGS} -c expreserve.c
+	${CC} ${CFLAGS} -c -O expreserve.c
 
 clean:
-	-rm a.out exrecover expreserve ex${VERSION}strings strings errs core trace
-	-rm *.o x*.[cs]
+#	If we dont have ex we cant make it so dont rm ex_vars.h
+	-rm -f a.out exrecover expreserve ex${VERSION}strings strings core trace tags
+	-rm -f *.o x*.[cs]
 
-install: a.out installutil
-	-chmod 755 ${BINDIR}/ex
-	-${BINDIR}/ex </dev/null
-	-rm -f ${BINDIR}/ex ${BINDIR}/edit /${BINDIR}/vi
-	cp a.out ${BINDIR}/ex
-	ln ${BINDIR}/ex ${BINDIR}/edit
-	ln ${BINDIR}/ex ${BINDIR}/vi
-	cp ex${VERSION}strings ${LIBDIR}/ex${VERSION}strings
-	chmod 1755 ${BINDIR}/ex
+ninstall: a.out
+	-rm -f ${NBINDIR}/ex ${NBINDIR}/vi
+	cp a.out ${NBINDIR}/ex
+#	-cp ex${VERSION}strings ${LIBDIR}/ex${VERSION}strings
+	ln ${NBINDIR}/ex ${NBINDIR}/vi
+	chmod 1755 ${NBINDIR}/ex
 
-installutil: exrecover expreserve
-	cp exrecover ${LIBDIR}/ex${VERSION}recover
-	cp expreserve ${LIBDIR}/ex${VERSION}preserve
+install: a.out exrecover expreserve
+	-rm -f ${DESTDIR}${BINDIR}/ex
+	-rm -f ${DESTDIR}${BINDIR}/vi
+	-rm -f ${DESTDIR}${BINDIR}/edit
+	-rm -f ${DESTDIR}${BINDIR}/e
+	-rm -f ${DESTDIR}/usr/bin/ex
+	cp a.out ${DESTDIR}${BINDIR}/ex
+#	cp ex${VERSION}strings ${DESTDIR}/${LIBDIR}/ex${VERSION}strings
+	ln ${DESTDIR}${BINDIR}/ex ${DESTDIR}${BINDIR}/edit
+	ln ${DESTDIR}${BINDIR}/ex ${DESTDIR}${BINDIR}/e
+	ln ${DESTDIR}${BINDIR}/ex ${DESTDIR}${BINDIR}/vi
+	ln ${DESTDIR}${BINDIR}/ex ${DESTDIR}/usr/bin/ex
+	chmod 1755 ${DESTDIR}${BINDIR}/ex
+	cp exrecover ${DESTDIR}${LIBDIR}/ex${VERSION}recover
+	cp expreserve ${DESTDIR}/${LIBDIR}/ex${VERSION}preserve
+	chmod 4755 ${DESTDIR}${LIBDIR}/ex${VERSION}recover ${DESTDIR}${LIBDIR}/ex${VERSION}preserve
+	mkdir ${DESTDIR}/usr/preserve
 
 lint:
 	lint ex.c ex_?*.c
@@ -86,17 +121,14 @@ lint:
 	lint expreserve.c
 
 print:
-	@-rm x.c xs.c >/dev/null
 	@${PR} READ* BUGS
-	@${PR} make*
+	@${PR} makefile*
+	@${PR} /etc/termcap
 	@(size -l a.out ; size *.o) | ${PR} -h sizes
-	@${PR} termcap
 	@${PR} -h errno.h ${INCLUDE}/errno.h
-	@${PR} -h pwd.h ${INCLUDE}/pwd.h
 	@${PR} -h setjmp.h ${INCLUDE}/setjmp.h
 	@${PR} -h sgtty.h ${INCLUDE}/sgtty.h
 	@${PR} -h signal.h ${INCLUDE}/signal.h
-	@${PR} -h sys/dir.h ${INCLUDE}/sys/dir.h
 	@${PR} -h sys/stat.h ${INCLUDE}/sys/stat.h
 	@${PR} -h sys/types.h ${INCLUDE}/sys/types.h
 	@ls -ls | ${PR}

@@ -488,7 +488,7 @@ nope:
 	 * puts a word LOST in the header block, so that lost lines
 	 * can be made to point at it.
 	 */
-	ignorl(lseek(tfile, 504l, 0));
+	ignorl(lseek(tfile, (long)(BUFSIZ*HBLKS-8), 0));
 	ignore(write(tfile, "LOST", 5));
 	return (1);
 }
@@ -522,7 +522,7 @@ scrapbad()
 
 	ignore(fstat(tfile, &stbuf));
 	size = stbuf.st_size;
-	maxt = (size >> SHFT) | 7;
+	maxt = (size >> SHFT) | (BNDRY-1);
 	bno = (maxt >> OFFBTS) & BLKMSK;
 #ifdef DEBUG
 	fprintf(stderr, "size %ld, maxt %o, bno %d\n", size, maxt, bno);
@@ -564,7 +564,7 @@ null:
 #endif
 			if (was == 0)
 				was = ip - zero;
-			*ip = 504 >> SHFT;
+			*ip = ((HBLKS*BUFSIZ)-8) >> SHFT;
 		} else if (was) {
 			if (bad == 0)
 				fprintf(stderr, " [Lost line(s):");
@@ -738,7 +738,7 @@ blkio(b, buf, iofcn)
 {
 
 	lseek(tfile, (long) (unsigned) b * BUFSIZ, 0);
-	if ((*iofcn)(tfile, buf, BUFSIZ) != 512)
+	if ((*iofcn)(tfile, buf, BUFSIZ) != BUFSIZ)
 		syserror();
 }
 

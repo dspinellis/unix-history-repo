@@ -644,6 +644,7 @@ insrt:
 		case 'P':
 		case 'p':
 			vmoving = 0;
+			forbid (inopen < 0);
 			/*
 			 * If previous delete was partial line, use an
 			 * append or insert to put it back so as to
@@ -762,7 +763,10 @@ pfixup:
 			vsave();
 			ckaw();
 			oglobp = globp;
-			globp = "e! #";
+			if (value(AUTOWRITE))
+				globp = "e! #";
+			else
+				globp = "e #";
 			goto gogo;
 
 		/*
@@ -1000,6 +1004,7 @@ fixup:
 fonfon:
 			beep();
 			vmacp = 0;
+			inopen = 1;	/* might have been -1 */
 			continue;
 		}
 

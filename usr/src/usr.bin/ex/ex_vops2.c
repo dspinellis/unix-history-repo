@@ -752,7 +752,7 @@ vgetsplit()
 /*
  * Vmaxrep determines the maximum repetitition factor
  * allowed that will yield total line length less than
- * 512 characters and also does hacks for the R command.
+ * LBSIZE characters and also does hacks for the R command.
  */
 vmaxrep(ch, cnt)
 	char ch;

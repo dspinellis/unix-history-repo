@@ -14,7 +14,7 @@ short	argc;
 short	argc0;
 short	morargc;		/* Used with "More files to edit..." */
 
-short	firstln;		/* From +lineno */
+int	firstln;		/* From +lineno */
 char	*firstpat;		/* From +/pat	*/
 
 /* Yech... */

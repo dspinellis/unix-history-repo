@@ -260,7 +260,9 @@ doecmd:
 			setnoaddr();
 			filename(c);
 			noonl();
+/*
 			synctmp();
+*/
 			continue;
 
 /* global */
@@ -596,7 +598,7 @@ quit:
 				tail("version");
 				setNAEOL();
 				/* should use SCCS subst here */
-				printf("Version 3.1, November 11, 1979");
+				printf("Version 3.2, January 4, 1980");
 				noonl();
 				continue;
 

@@ -316,10 +316,14 @@ mesg(str)
 
 /*VARARGS2*/
 merror(seekpt, i)
-#ifdef lint
+#ifdef VMUNIX
 	char *seekpt;
 #else
+# ifdef lint
+	char *seekpt;
+# else
 	int seekpt;
+# endif
 #endif
 	int i;
 {
@@ -340,16 +344,24 @@ merror(seekpt, i)
 }
 
 merror1(seekpt)
-#ifdef lint
+#ifdef VMUNIX
 	char *seekpt;
 #else
+# ifdef lint
+	char *seekpt;
+# else
 	int seekpt;
+# endif
 #endif
 {
 
+#ifdef VMUNIX
+	strcpy(linebuf, seekpt);
+#else
 	lseek(erfile, (long) seekpt, 0);
 	if (read(erfile, linebuf, 128) < 2)
 		CP(linebuf, "ERROR");
+#endif
 }
 
 morelines()
@@ -584,7 +596,11 @@ smerror(seekpt, cp)
 #ifdef lint
 char	*std_errlist[] = {
 #else
+#ifdef VMUNIX
+char	*std_errlist[] = {
+#else
 short	std_errlist[] = {
+#endif
 #endif
 	error("Error 0"),
 	error("Not super-user"),

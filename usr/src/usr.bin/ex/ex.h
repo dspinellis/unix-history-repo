@@ -50,7 +50,11 @@
 
 extern	int errno;
 
+#ifndef VMUNIX
 typedef	short	line;
+#else
+typedef	int	line;
+#endif
 typedef	short	bool;
 
 #include "ex_tune.h"
@@ -104,7 +108,11 @@ struct	option options[NOPTS + 1];
 #	undef	putchar
 #	undef	getchar
 #else
+#ifdef	VMUNIX
+#	define	BUFSIZ	1024
+#else
 #	define	BUFSIZ	512
+#endif
 #	define	NULL	0
 #	define	EOF	-1
 #endif
@@ -130,14 +138,16 @@ struct	option options[NOPTS + 1];
  */
 bool	aiflag;			/* Append/change/insert with autoindent */
 bool	anymarks;		/* We have used '[a-z] */
-short	chng;			/* Warn "No write" */
+int	chng;			/* Warn "No write" */
 char	*Command;
 short	defwind;		/* -w# change default window size */
-short	dirtcnt;		/* When >= MAXDIRT, should sync temporary */
+int	dirtcnt;		/* When >= MAXDIRT, should sync temporary */
 bool	edited;			/* Current file is [Edited] */
 line	*endcore;		/* Last available core location */
 bool	endline;		/* Last cmd mode command ended with \n */
+#ifndef VMUNIX
 short	erfile;			/* Error message file unit */
+#endif
 line	*fendcore;		/* First address in line pointer space */
 char	file[FNSIZE];		/* Working file name */
 char	genbuf[LBSIZE];		/* Working buffer when manipulating linebuf */
@@ -160,11 +170,11 @@ bool	listf;			/* Command should run in list mode */
 char	*loc1;			/* Where re began to match (in linebuf) */
 char	*loc2;			/* First char after re match (") */
 line	names['z'-'a'+2];	/* Mark registers a-z,' */
-short	notecnt;		/* Count for notify (to visual from cmd) */
+int	notecnt;		/* Count for notify (to visual from cmd) */
 bool	numberf;		/* Command should run in number mode */
 char	obuf[BUFSIZ];		/* Buffer for tty output */
 short	ospeed;			/* Output speed (from gtty) */
-short	otchng;			/* Backup tchng to find changes in macros */
+int	otchng;			/* Backup tchng to find changes in macros */
 short	peekc;			/* Peek ahead character (cmd mode input) */
 char	*pkill[2];		/* Trim for put with ragged (LISP) delete */
 bool	pfast;			/* Have stty -nl'ed to go faster */
@@ -175,11 +185,11 @@ int	rpid;			/* Pid returned from wait() */
 bool	ruptible;		/* Interruptible is normal state */
 bool	shudclob;		/* Have a prompt to clobber (e.g. on ^D) */
 int	status;			/* Status returned from wait() */
-short	tchng;			/* If nonzero, then [Modified] */
+int	tchng;			/* If nonzero, then [Modified] */
 short	tfile;			/* Temporary file unit */
 bool	vcatch;			/* Want to catch an error (open/visual) */
 jmp_buf	vreslab;		/* For error throws to a visual catch */
-short	xchng;			/* Suppresses multiple "No writes" in !cmd */
+int	xchng;			/* Suppresses multiple "No writes" in !cmd */
 
 /*
  * Macros

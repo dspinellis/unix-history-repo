@@ -410,7 +410,7 @@ dosub()
 			*sp++ = c & TRIM;
 		if (sp >= &genbuf[LBSIZE])
 ovflo:
-			error("Line overflow@in substitute - limit 512 chars");
+			error("Line overflow@in substitute");
 	}
 	lp = loc2;
 	loc2 = sp + (linebuf - genbuf);
