@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)timedc.c	2.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)timedc.c	2.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "timedc.h"
@@ -27,7 +27,7 @@ int	fromatty;
 char	*margv[20];
 char	cmdline[200];
 jmp_buf	toplevel;
-int	intr();
+void	intr();
 int priv_resources();
 struct	cmd *getcmd();
 
@@ -75,6 +75,7 @@ main(argc, argv)
 	}
 }
 
+void
 intr()
 {
 	if (!fromatty)

@@ -24,7 +24,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "include.h"
@@ -41,8 +41,8 @@ main(ac, av)
 #ifdef BSD
 	struct itimerval	itv;
 #endif
-	extern int		update(), quit(), log_score();
 	extern char		*default_game(), *okay_game();
+	extern void		log_score(), quit(), update();
 
 	start_time = seed = time(0);
 
