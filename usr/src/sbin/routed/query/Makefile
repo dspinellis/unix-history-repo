@@ -30,7 +30,6 @@ trace:	trace.o
 
 install: ${ALL}
 	install -s routed /etc
-	install -s route /etc
 
 lint:
 	lint -hbxn routed.c af.c
