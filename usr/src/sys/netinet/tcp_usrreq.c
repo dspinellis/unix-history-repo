@@ -1,4 +1,4 @@
-/* tcp_usrreq.c 1.16 81/10/30 */
+/* tcp_usrreq.c 1.17 81/10/30 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -73,24 +73,24 @@ COUNT(TCP_USRREQ);
 		break;
 
 	case LIS_CLS:				/* 1 */
-		t_open(tp, PASSIVE);
+		tcp_open(tp, PASSIVE);
 		nstate = LISTEN;
 		break;
 
 	case SYS_CLS:				/* 2 */
-		t_open(tp, ACTIVE);
-		send_ctl(tp);
+		tcp_open(tp, ACTIVE);
+		tcp_sndctl(tp);
 		nstate = SYN_SENT;
 		break;
 
 	case CLS_OPN:				/* 10 */
-		t_close(tp, UCLOSED);
+		tcp_close(tp, UCLOSED);
 		nstate = CLOSED;
 		break;
 
 	case CL2_CLW:				/* 10 */
 		tp->tc_flags |= TC_SND_FIN;
-		send_ctl(tp);
+		tcp_sndctl(tp);
 		tp->tc_flags |= TC_USR_CLOSED;
 		nstate = CLOSING2;
 		break;
@@ -102,7 +102,7 @@ COUNT(TCP_USRREQ);
 	case CLS_RWT:				/* 20 */
 		present_data(tp);
 		if (rcv_empty(tp)) {
-			t_close(tp, UCLOSED);
+			tcp_close(tp, UCLOSED);
 			nstate = CLOSED;
 		} else
 			nstate = RCV_WAIT;
@@ -110,7 +110,7 @@ COUNT(TCP_USRREQ);
 
 	case FW1_SYR:				/* 24,25 */
 		tp->tc_flags |= TC_SND_FIN;
-		send_ctl(tp);
+		tcp_sndctl(tp);
 		tp->tc_flags |= TC_USR_CLOSED;
 		nstate = FIN_W1;
 		break;
@@ -120,24 +120,24 @@ COUNT(TCP_USRREQ);
 		break;
 
 	case SSS_RCV:				/* 42 */
-		send_win(tp);		/* send new window */
+		tcp_sndwin(tp);		/* send new window */
 		present_data(tp);
 		break;
 
 	case CLS_NSY:				/* 44 */
-		t_close(tp, UABORT);
+		tcp_close(tp, UABORT);
 		nstate = CLOSED;
 		break;
 
 	case CLS_SYN:				/* 45 */
 		tp->tc_flags |= TC_SND_RST;
-		send_null(tp);
-		t_close(tp, UABORT);
+		tcp_sndnull(tp);
+		tcp_close(tp, UABORT);
 		nstate = CLOSED;
 		break;
 
 	case CLS_ACT:				/* 47 */
-		t_close(tp, UNETDWN);
+		tcp_close(tp, UNETDWN);
 		nstate = CLOSED;
 		break;
 
@@ -171,7 +171,7 @@ COUNT(TCP_USRREQ);
 	splx(s);
 }
 
-t_open(tp, mode)                /* set up a tcb for a connection */
+tcp_open(tp, mode)                /* set up a tcb for a connection */
 	register struct tcb *tp;
 	int mode;
 {
@@ -207,7 +207,7 @@ COUNT(T_OPEN);
 	up->uc_timeo = 0;       /* overlays uc_ssize */
 }
 
-t_close(tp, state)
+tcp_close(tp, state)
 	register struct tcb *tp;
 	short state;
 {
@@ -335,7 +335,7 @@ COUNT(TCP_TIMERS);
 
 	case TINIT:		/* initialization timer */
 		if ((tp->tc_flags&TC_SYN_ACKED) == 0) {		/* 35 */
-			t_close(tp, UINTIMO);
+			tcp_close(tp, UINTIMO);
 			return (CLOSED);
 		}
 		return (SAME);
@@ -349,7 +349,7 @@ COUNT(TCP_TIMERS);
 			 * and can close if no data left for user.
 			 */
 			if (rcv_empty(tp)) {
-				t_close(tp, UCLOSED);		/* 14 */
+				tcp_close(tp, UCLOSED);		/* 14 */
 				return (CLOSED);
 			}
 			return (RCV_WAIT);			/* 17 */
@@ -384,7 +384,7 @@ COUNT(TCP_TIMERS);
 		 * If user has already closed, abort the connection.
 		 */
 		if (tp->tc_flags & TC_USR_CLOSED) {
-			t_close(tp, URXTIMO);
+			tcp_close(tp, URXTIMO);
 			return (CLOSED);
 		}
 		return (SAME);
