@@ -1,13 +1,13 @@
 #ifndef lint
-static char sccsid[] = "@(#)systat.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)systat.c	5.4 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
 
-extern	time_t	time();
-
-#define STATNAME(f, n) sprintf(f, "%s/%s/%.7s", Spool, "STST", n)
+#define STATNAME(f, n) sprintf(f, "%s/%s/%s", Spool, "STST", n)
 #define S_SIZE 100
+
+/*LINTLIBRARY*/
 
 /*
  *	make system status entry
@@ -81,9 +81,8 @@ char *name;
 	unlink(filename);
 }
 
-/***
- *	callok(name)	check system status for call
- *	char *name;
+/*
+ *	check system status for call
  *
  *	return codes  0 - ok | >0 system status
  */
