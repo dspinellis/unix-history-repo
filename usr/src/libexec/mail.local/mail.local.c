@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mail.local.c	4.38 (Berkeley) %G%";
+static char sccsid[] = "@(#)mail.local.c	5.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -74,8 +74,8 @@ main(argc, argv)
 	 * corresponding to the uid.
 	 */
 	uid = getuid();
-	if (!from || !(from = getlogin()) ||
-	    !(pw = getpwnam(from)) || pw->pw_uid != uid)
+	if (!from && (!(from = getlogin()) ||
+	    !(pw = getpwnam(from)) || pw->pw_uid != uid))
 		from = (pw = getpwuid(uid)) ? pw->pw_name : "???";
 
 	fd = store(from);
