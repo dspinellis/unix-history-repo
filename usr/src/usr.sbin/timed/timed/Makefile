@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 #
 # optional flags are: MEASURE TESTING DEBUG
 #
@@ -33,10 +33,10 @@ MAN=	timedc.0 timed.0
 all: timed timedc
 
 timed: ${OBJDS} ${COMMO} ${LIBC}
-	${CC} ${CFLAGS} ${OBJDS} ${COMMO} ${LIBS} -o $@
+	${CC} ${CFLAGS} ${OBJDS} ${COMMO} ${LIBS} -o $@ -lutil
 
 timedc: ${OBJCS} ${COMMO} ${LIBC}
-	${CC} ${CFLAGS} ${OBJCS} ${COMMO} ${LIBS} -o $@
+	${CC} ${CFLAGS} ${OBJCS} ${COMMO} ${LIBS} -o $@ -lutil
 
 cksum.${MACHINE}.o:
 	${CC} ${CFLAGS} -c $*.c
