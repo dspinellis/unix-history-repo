@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	6.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	6.12 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -449,27 +449,7 @@ readcf(cfname)
 			break;
 
 		  case 'T':		/* trusted user(s) */
-			p = &bp[1];
-			while (*p != '\0')
-			{
-				while (isascii(*p) && isspace(*p))
-					p++;
-				q = p;
-				while (*p != '\0' && !(isascii(*p) && isspace(*p)))
-					p++;
-				if (*p != '\0')
-					*p++ = '\0';
-				if (*q == '\0')
-					continue;
-				for (pv = TrustedUsers; *pv != NULL; pv++)
-					continue;
-				if (pv >= &TrustedUsers[MAXTRUST])
-				{
-					toomany('T', MAXTRUST);
-					break;
-				}
-				*pv = newstr(q);
-			}
+			/* this option is obsolete, but will be ignored */
 			break;
 
 		  case 'V':		/* configuration syntax version */

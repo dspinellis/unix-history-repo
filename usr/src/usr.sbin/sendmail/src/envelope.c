@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	6.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	6.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -448,23 +448,6 @@ setsender(from, e)
 		realname = username();
 	}
 
-	/*
-	**  Determine if this real person is allowed to alias themselves.
-	*/
-
-	if (from != NULL)
-	{
-		extern bool trusteduser();
-
-		if (!trusteduser(realname) && getuid() != geteuid() &&
-		    strchr(from, '!') == NULL && getuid() != 0)
-		{
-			/* network sends -r regardless (why why why?) */
-			/* syserr("501 %s, you cannot use the -f flag", realname); */
-			from = NULL;
-		}
-	}
-
 /*
 	SuprErrs = TRUE;
 */
@@ -601,30 +584,4 @@ setsender(from, e)
 		if (*pvp != NULL)
 			e->e_fromdomain = copyplist(pvp, TRUE);
 	}
-}
-/*
-**  TRUSTEDUSER -- tell us if this user is to be trusted.
-**
-**	Parameters:
-**		user -- the user to be checked.
-**
-**	Returns:
-**		TRUE if the user is in an approved list.
-**		FALSE otherwise.
-**
-**	Side Effects:
-**		none.
-*/
-
-bool
-trusteduser(user)
-	char *user;
-{
-	register char **ulist;
-	extern char *TrustedUsers[];
-
-	for (ulist = TrustedUsers; *ulist != NULL; ulist++)
-		if (strcmp(*ulist, user) == 0)
-			return (TRUE);
-	return (FALSE);
 }
