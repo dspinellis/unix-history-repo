@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: st.c 1.8 90/10/14$
  *
- *      @(#)st.c	7.1 (Berkeley) %G%
+ *      @(#)st.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -65,6 +65,8 @@
 #include "kernel.h"
 
 #include "stvar.h"
+
+#define ADD_DELAY
 
 extern int scsi_test_unit_rdy();
 extern int scsi_request_sense();
@@ -224,7 +226,7 @@ stident(sc, hd)
 	int ctlr, slave;
 	int i, stat, inqlen;
 	char idstr[32];
-#if 0
+#ifdef ADD_DELAY
 	static int havest = 0;
 #endif
 	struct st_inquiry {
@@ -335,7 +337,7 @@ stident(sc, hd)
 	stxsense(ctlr, slave, unit, sc);
 
 	scsi_delay(0);
-#if 0
+#ifdef ADD_DELAY
 	/* XXX if we have a tape, we must up the delays in the HA driver */
 	if (!havest) {
 		havest = 1;
