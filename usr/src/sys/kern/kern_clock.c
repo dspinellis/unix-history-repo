@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_clock.c	7.20 (Berkeley) %G%
+ *	@(#)kern_clock.c	7.21 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -62,6 +62,7 @@ int	adjtimedelta;
 int	ticks;
 int	stathz;
 int	profhz;
+int	profprocs;
 struct	timeval time;
 struct	timeval mono_time;
 /*
@@ -330,6 +331,43 @@ softclock(frame)
 }
 
 /*
+ * Notification of start of profiling clock
+ *
+ * Kernel profiling passes proc0 which never exits and hence
+ * keeps the profile clock running constantly.
+ */
+startprofclock(p)
+	struct proc *p;
+{
+
+	if (p->p_flag & SPROFIL)
+		return;
+	profprocs++;
+	p->p_flag |= SPROFIL;
+#ifdef PROFTIMER
+	initprofclock(profprocs);
+#else
+	profhz = hz;
+#endif
+}
+
+/*
+ * Notification of stopping of profile clock
+ */
+stopprofclock(p)
+	struct proc *p;
+{
+
+	if ((p->p_flag & SPROFIL) == 0)
+		return;
+	profprocs--;
+	p->p_flag &= ~SPROFIL;
+#ifdef PROFTIMER
+	initprofclock(profprocs);
+#endif
+}
+
+/*
  * Arrange that (*func)(arg) is called in t/hz seconds.
  */
 timeout(func, arg, t)
@@ -446,6 +484,11 @@ kinfo_clockrate(op, where, acopysize, arg, aneeded)
 	clockinfo.hz = hz;
 	clockinfo.stathz = stathz;
 	clockinfo.tick = tick;
+#ifdef PROFTIMER
+	initprofclock(2);
+#else
+	profhz = hz;
+#endif
 	clockinfo.profhz = profhz;
 	if (error = copyout((caddr_t)&clockinfo, where, sizeof(clockinfo)))
 		return (error);
