@@ -1,4 +1,4 @@
-/*	if_acc.c	4.17	82/06/14	*/
+/*	if_acc.c	4.18	82/06/15	*/
 
 #include "acc.h"
 #ifdef NACC > 0
@@ -60,10 +60,6 @@ struct	acc_softc {
 	short	acc_olen;		/* size of last message sent */
 	char	acc_flush;		/* flush remainder of message */
 } acc_softc[NACC];
-
-#define	NACCDEBUG	10000
-char	accdebug[NACCDEBUG];
-int	accdebugx;
 
 /*
  * Reset the IMP and cause a transmitter interrupt by
@@ -196,7 +192,6 @@ COUNT(ACCINIT);
 	 * the NOOPs it throws at us).
 	 * Note: IMPMTU includes the leader.
 	 */
-	acctrace("init", addr->icsr);
 	info = sc->acc_ifuba.ifu_r.ifrw_info;
 	addr->iba = (u_short)info;
 	addr->iwc = -(IMPMTU >> 1);
@@ -243,7 +238,6 @@ accstart(dev)
 	u_short cmd;
 
 COUNT(ACCSTART);
-	acctrace("start", sc->acc_ic->ic_oactive);
 	if (sc->acc_ic->ic_oactive)
 		goto restart;
 	
@@ -254,7 +248,6 @@ COUNT(ACCSTART);
 	 */
 	IF_DEQUEUE(&sc->acc_if->if_snd, m);
 	if (m == 0) {
-		acctrace("q empty", 0);
 		sc->acc_ic->ic_oactive = 0;
 		return;
 	}
@@ -288,14 +281,12 @@ accxint(unit)
 	register struct accdevice *addr;
 
 COUNT(ACCXINT);
-	acctrace("xint", sc->acc_ic->ic_oactive);
 	addr = (struct accdevice *)accinfo[unit]->ui_addr;
 	if (sc->acc_ic->ic_oactive == 0) {
 		printf("acc%d: stray xmit interrupt, csr=%b\n", unit,
 			addr->ocsr, ACC_OUTBITS);
 		return;
 	}
-	acctrace("ocsr", addr->ocsr);
 	sc->acc_if->if_opackets++;
 	sc->acc_ic->ic_oactive = 0;
 	if (addr->ocsr & ACC_ERR) {
@@ -307,11 +298,8 @@ COUNT(ACCXINT);
 		m_freem(sc->acc_ifuba.ifu_xtofree);
 		sc->acc_ifuba.ifu_xtofree = 0;
 	}
-	if (sc->acc_if->if_snd.ifq_head == 0) {
-		addr->ocsr &= ~ACC_IE;		/* hardware funky? */
-		return;
-	}
-	accstart(unit);
+	if (sc->acc_if->if_snd.ifq_head)
+		accstart(unit);
 }
 
 /*
@@ -333,22 +321,19 @@ COUNT(ACCRINT);
 	 */
 	if (sc->acc_ifuba.ifu_flags & UBA_NEEDBDP)
 		UBAPURGE(sc->acc_ifuba.ifu_uba, sc->acc_ifuba.ifu_r.ifrw_bdp);
-	acctrace("rint", addr->icsr);
 	if (addr->icsr & ACC_ERR) {
-		printf("acc%d: input error, icsr=%b, ocsr=%b\n", unit,
-		    addr->icsr, ACC_INBITS, addr->ocsr, ACC_OUTBITS);
+		printf("acc%d: input error, csr=%b\n", unit,
+		    addr->icsr, ACC_INBITS);
 		sc->acc_if->if_ierrors++;
 		sc->acc_flush = 1;
 	}
 
-	acctrace("flush", sc->acc_flush);
 	if (sc->acc_flush) {
 		if (addr->icsr & IN_EOM)
 			sc->acc_flush = 0;
 		goto setup;
 	}
 	len = IMPMTU + (addr->iwc << 1);
-	acctrace("length", len);
 	if (len < 0 || len > IMPMTU) {
 		printf("acc%d: bad length=%d\n", len);
 		sc->acc_if->if_ierrors++;
@@ -374,7 +359,6 @@ COUNT(ACCRINT);
 		m = sc->acc_iq;
 		sc->acc_iq = 0;
 	}
-	acctrace("impinput", 0);
 	impinput(unit, m);
 
 setup:
@@ -386,28 +370,5 @@ setup:
 	addr->iwc = -(IMPMTU >> 1);
 	addr->icsr =
 		IN_MRDY | ACC_IE | IN_WEN | ((info & 0x30000) >> 12) | ACC_GO;
-}
-
-int	accprintf = 0;
-
-acctrace(cmd, value)
-	char *cmd;
-	int value;
-{
-	register int i;
-	register char *p = (char *)&value;
-
-	if (accprintf)
-		printf("%s: %x", cmd, value);
-	do {
-		if (accdebugx >= NACCDEBUG)
-			accdebugx = 0;
-		accdebug[accdebugx++] = *cmd;
-	} while (*cmd++);
-	for (i = 0; i < sizeof (int); i++) {
-		if (accdebugx >= NACCDEBUG)
-			accdebugx = 0;
-		accdebug[accdebugx++] = *p++;
-	}
 }
 #endif
