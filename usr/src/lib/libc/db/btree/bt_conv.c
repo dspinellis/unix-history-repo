@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_conv.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_conv.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -17,21 +17,17 @@ static char sccsid[] = "@(#)bt_conv.c	5.1 (Berkeley) %G%";
 #include <stdio.h>
 #include "btree.h"
 
+static void kdswap __P((PAGE *));
+
 /*
  * __BT_BPGIN, __BT_BPGOUT --
  *	Convert host-specific number layout to/from the host-independent
  *	format stored on disk.
  *
  * Parameters:
- *	tree:	tree
+ *	t:	tree
+ *	pg:	page number
  *	h:	page to convert
- *
- * Side Effects:
- *	Layout of tree metadata on the page is changed in place.
- *
- * Warnings:
- *	Everywhere else in the code, the types pgno_t and index_t are
- *	opaque.  These two routines know what they really are.
  */
 void
 __bt_pgin(t, pg, p)
@@ -39,9 +35,6 @@ __bt_pgin(t, pg, p)
 	pgno_t pg;
 	void *p;
 {
-	register BINTERNAL *bi;
-	register BLEAF *bl;
-	register int i, top;
 	PAGE *h;
 
 	if (((BTREE *)t)->bt_lorder == BYTE_ORDER)
@@ -52,32 +45,9 @@ __bt_pgin(t, pg, p)
 	BLSWAP(h->prevpg);
 	BLSWAP(h->nextpg);
 	BLSWAP(h->flags);
-	BLSWAP(h->lower);
-	BLSWAP(h->upper);
-
-	top = NEXTINDEX(h);
-	if (!(h->flags & (P_BLEAF | P_RLEAF)))
-		for (i = 0; i < top; i++) {
-			BLSWAP(h->linp[i]);
-			bi = GETBINTERNAL(h, i);
-			BLSWAP(bi->ksize);
-			BLSWAP(bi->pgno);
-			BLSWAP(bi->flags);
-			if (bi->flags & P_BIGKEY)
-				BLSWAP(*(long *)bi->bytes);
-		}
-	else if (!(h->flags & P_OVERFLOW))
-		for (i = 0; i < top; i++) {
-			BLSWAP(h->linp[i]);
-			bl = GETBLEAF(h, i);
-			BLSWAP(bl->dsize);
-			BLSWAP(bl->ksize);
-			BLSWAP(bl->flags);
-			if (bl->flags & P_BIGKEY)
-				BLSWAP(*(long *)bl->bytes);
-			if (bl->flags & P_BIGDATA)
-				BLSWAP(*(long *)(bl->bytes + bl->ksize));
-		}
+	BSSWAP(h->lower);
+	BSSWAP(h->upper);
+	kdswap(h);
 }
 
 void
@@ -86,40 +56,81 @@ __bt_pgout(t, pg, p)
 	pgno_t pg;
 	void *p;
 {
-	register BINTERNAL *bi;
-	register BLEAF *bl;
-	register int i, top;
 	PAGE *h;
 
 	if (((BTREE *)t)->bt_lorder == BYTE_ORDER)
 		return;
 
 	h = p;
-	top = NEXTINDEX(h);
-	if (!(h->flags & (P_BLEAF | P_RLEAF)))
-		for (i = 0; i < top; i++) {
-			bi = GETBINTERNAL(h, i);
-			BLSWAP(bi->ksize);
-			BLSWAP(bi->pgno);
-			if (bi->flags & P_BIGKEY)
-				BLSWAP(*(long *)bi->bytes);
-			BLSWAP(h->linp[i]);
-		}
-	else if (!(h->flags & P_OVERFLOW))
-		for (i = 0; i < top; i++) {
-			bl = GETBLEAF(h, i);
-			BLSWAP(bl->ksize);
-			BLSWAP(bl->dsize);
-			if (bl->flags & P_BIGKEY)
-				BLSWAP(*(long *)bl->bytes);
-			if (bl->flags & P_BIGDATA)
-				BLSWAP(*(long *)(bl->bytes + bl->ksize));
-			BLSWAP(h->linp[i]);
-		}
+	kdswap(h);
 	BLSWAP(h->pgno);
 	BLSWAP(h->prevpg);
 	BLSWAP(h->nextpg);
 	BLSWAP(h->flags);
-	BLSWAP(h->lower);
-	BLSWAP(h->upper);
+	BSSWAP(h->lower);
+	BSSWAP(h->upper);
+}
+
+/*
+ * KDSWAP -- Actually swap the bytes on the page.
+ *
+ * Parameters:
+ *	h:	page to convert
+ *
+ * Warnings:
+ *	Everywhere else in the code, the pgno_t and index_t types are
+ *	opaque.  These routines know what they really are.
+ */
+static void
+kdswap(h)
+	PAGE *h;
+{
+	register int i, top;
+	register void *p;
+	u_char flags;
+
+	top = NEXTINDEX(h);
+	switch (h->flags & P_TYPE) {
+	case P_BINTERNAL:
+		for (i = 0; i < top; i++) {
+			BSSWAP(h->linp[i]);
+			p = GETBINTERNAL(h, i);
+			BLPSWAP(p);
+			p += sizeof(size_t);
+			BLPSWAP(p);
+			p += sizeof(pgno_t);
+			if (*(u_char *)p & P_BIGKEY) {
+				p += sizeof(u_char);
+				BLPSWAP(p);
+				p += sizeof(pgno_t);
+				BSPSWAP(p);
+			}
+		}
+		break;
+	case P_BLEAF:
+		for (i = 0; i < top; i++) {
+			BSSWAP(h->linp[i]);
+			p = GETBLEAF(h, i);
+			BSPSWAP(p);
+			p += sizeof(size_t);
+			BSPSWAP(p);
+			p += sizeof(size_t);
+			flags = *(u_char *)p;
+			if (flags & (P_BIGKEY | P_BIGDATA)) {
+				p += sizeof(u_char);
+				if (flags & P_BIGKEY) {
+					BLPSWAP(p);
+					p += sizeof(pgno_t);
+					BSPSWAP(p);
+				}
+				if (flags & P_BIGDATA) {
+					p += sizeof(size_t);
+					BLPSWAP(p);
+					p += sizeof(pgno_t);
+					BSPSWAP(p);
+				}
+			}
+		}
+		break;
+	}
 }
