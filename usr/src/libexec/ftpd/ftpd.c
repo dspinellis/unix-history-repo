@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	5.30	(Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	5.31	(Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -307,8 +307,8 @@ int askpasswd;			/* had user command, ask for passwd */
  * Sets global passwd pointer pw if named account exists
  * and is acceptable; sets askpasswd if a PASS command is
  * expected. If logged in previously, need to reset state.
- * If name is "ftp" or "anonymous" and ftp account exists,
- * set guest and pw, then just return.
+ * If name is "ftp" or "anonymous", the name is not in /etc/ftpusers,
+ * and ftp account exists, set guest and pw, then just return.
  * If account doesn't exist, ask for passwd anyway.
  * Otherwise, check user requesting login privileges.
  * Disallow anyone who does not have a standard
@@ -334,7 +334,9 @@ user(name)
 
 	guest = 0;
 	if (strcmp(name, "ftp") == 0 || strcmp(name, "anonymous") == 0) {
-		if ((pw = sgetpwnam("ftp")) != NULL) {
+		if (!checkuser("ftp") || !checkuser("anonymous"))
+			reply(530, "User %s access denied.", name);
+		else if ((pw = sgetpwnam("ftp")) != NULL) {
 			guest = 1;
 			askpasswd = 1;
 			reply(331, "Guest login ok, send ident as password.");
