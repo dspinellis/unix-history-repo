@@ -1,11 +1,9 @@
-/*	if.c	4.19	82/09/12	*/
+/*	if.c	4.20	82/10/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/socket.h"
 #include "../h/protosw.h"
-#include "../net/in.h"
-#include "../net/in_systm.h"
 #include "../net/if.h"
 #include "../net/af.h"
 
@@ -32,6 +30,7 @@ ifinit()
 	if_slowtimo();
 }
 
+#if vax
 /*
  * Call each interface on a Unibus reset.
  */
@@ -44,6 +43,7 @@ ifubareset(uban)
 		if (ifp->if_ubareset)
 			(*ifp->if_ubareset)(uban);
 }
+#endif
 
 /*
  * Attach an interface to the
@@ -92,7 +92,7 @@ if_ifwithnet(addr)
 	register struct sockaddr *addr;
 {
 	register struct ifnet *ifp;
-	register int af = addr->sa_family;
+	register u_int af = addr->sa_family;
 	register int (*netmatch)();
 
 	if (af >= AF_MAX)
