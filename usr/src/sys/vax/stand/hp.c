@@ -1,4 +1,4 @@
-/*	hp.c	6.2	83/09/23	*/
+/*	hp.c	6.3	83/09/23	*/
 
 /*
  * RP??/RM?? disk driver
@@ -173,14 +173,8 @@ restart:
 	/*
 	 * Successful data transfer, return.
 	 */
-	if ((hpaddr->hpds&HPDS_ERR) == 0 && (mba->mba_sr&MBSR_EBITS) == 0) {
-		if (io->i_errcnt >= 16) {
-			hpaddr->hpcs1 = HP_RTC|HP_GO;
-			while (hpaddr->hpds & HPDS_PIP)
-				;
-		}
-		return (bytecnt);
-	}
+	if ((hpaddr->hpds&HPDS_ERR) == 0 && (mba->mba_sr&MBSR_EBITS) == 0)
+		goto done;
 
 	/*
 	 * Error handling.  Calculate location of error.
@@ -261,7 +255,8 @@ hard:
 			  MASKREG(hpaddr->hpda));
 		hpaddr->hpcs1 = HP_DCLR|HP_GO;
 		printf("\n");
-		return (-1);
+		bytecnt = -1;
+		goto done;
 
 	}
 	/*
@@ -351,6 +346,7 @@ success:
 			  io->i_bn, io->i_cc, io->i_ma, hprecal);
 		goto restart;
 	}
+done:
 	if (io->i_errcnt >= 16) {
 		hpaddr->hpcs1 = HP_RTC|HP_GO;
 		while (hpaddr->hpds & HPDS_PIP)
