@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	8.63 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	8.64 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -105,7 +105,7 @@ parseaddr(addr, a, flags, delim, delimptr, e)
 	if (delimptr == NULL)
 		delimptr = &delimptrbuf;
 
-	pvp = prescan(addr, delim, pvpbuf, sizeof pvpbuf, delimptr);
+	pvp = prescan(addr, delim, pvpbuf, sizeof pvpbuf, delimptr, NULL);
 	if (pvp == NULL)
 	{
 		if (tTd(20, 1))
@@ -353,6 +353,8 @@ invalidaddr(addr)
 **		pvpbsize -- size of pvpbuf.
 **		delimptr -- if non-NULL, set to the location of the
 **			terminating delimiter.
+**		toktab -- if set, a token table to use for parsing.
+**			If NULL, use the default table.
 **
 **	Returns:
 **		A pointer to a vector of tokens.
@@ -365,8 +367,9 @@ invalidaddr(addr)
 # define QST		2	/* in quoted string */
 # define SPC		3	/* chewing up spaces */
 # define ONE		4	/* pick up one character */
+# define ILL		5	/* illegal character */
 
-# define NSTATES	5	/* number of states */
+# define NSTATES	6	/* number of states */
 # define TYPE		017	/* mask to select state type */
 
 /* meta bits for table */
@@ -376,46 +379,101 @@ invalidaddr(addr)
 
 static short StateTab[NSTATES][NSTATES] =
 {
-   /*	oldst	chtype>	OPR	ATM	QST	SPC	ONE	*/
-	/*OPR*/		OPR|B,	ATM|B,	QST|B,	SPC|MB,	ONE|B,
-	/*ATM*/		OPR|B,	ATM,	QST|B,	SPC|MB,	ONE|B,
-	/*QST*/		QST,	QST,	OPR,	QST,	QST,
-	/*SPC*/		OPR,	ATM,	QST,	SPC|M,	ONE,
-	/*ONE*/		OPR,	OPR,	OPR,	OPR,	OPR,
+   /*	oldst	chtype>	OPR	ATM	QST	SPC	ONE	ILL	*/
+	/*OPR*/		OPR|B,	ATM|B,	QST|B,	SPC|MB,	ONE|B,	ILL|MB,
+	/*ATM*/		OPR|B,	ATM,	QST|B,	SPC|MB,	ONE|B,	ILL|MB,
+	/*QST*/		QST,	QST,	OPR,	QST,	QST,	QST,
+	/*SPC*/		OPR,	ATM,	QST,	SPC|M,	ONE,	ILL|MB,
+	/*ONE*/		OPR,	OPR,	OPR,	OPR,	OPR,	ILL|MB,
+	/*ILL*/		OPR|B,	ATM|B,	QST|B,	SPC|MB,	ONE|B,	ILL|M,
 };
 
 /* token type table -- it gets modified with $o characters */
-static TokTypeTab[256] =
+static char TokTypeTab[256] =
 {
-	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,SPC,SPC,SPC,SPC,SPC,ATM,ATM,
-	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,
-	SPC,ATM,QST,ATM,ATM,ATM,ATM,ATM,ATM,SPC,ATM,ATM,ATM,ATM,ATM,ATM,
-	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,
-	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,
-	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,
-	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,
-	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,
-	OPR,OPR,ONE,OPR,OPR,OPR,OPR,OPR,OPR,OPR,OPR,OPR,OPR,OPR,OPR,OPR,
-	OPR,OPR,OPR,ONE,ONE,ONE,OPR,OPR,OPR,OPR,OPR,OPR,OPR,OPR,OPR,OPR,
-	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,
-	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,
-	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,
-	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,
-	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,
-	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,
+    /*	nul soh stx etx eot enq ack bel  bs  ht  nl  vt  np  cr  so  si   */
+	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM, ATM,SPC,SPC,SPC,SPC,SPC,ATM,ATM,
+    /*	dle dc1 dc2 dc3 dc4 nak syn etb  can em  sub esc fs  gs  rs  us   */
+	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM, ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,
+    /*  sp  !   "   #   $   %   &   '    (   )   *   +   ,   -   .   /    */
+	SPC,ATM,QST,ATM,ATM,ATM,ATM,ATM, ATM,SPC,ATM,ATM,ATM,ATM,ATM,ATM,
+    /*	0   1   2   3   4   5   6   7    8   9   :   ;   <   =   >   ?    */
+	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM, ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,
+    /*	@   A   B   C   D   E   F   G    H   I   J   K   L   M   N   O    */
+	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM, ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,
+    /*  P   Q   R   S   T   U   V   W    X   Y   Z   [   \   ]   ^   _    */
+	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM, ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,
+    /*	`   a   b   c   d   e   f   g    h   i   j   k   l   m   n   o    */
+	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM, ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,
+    /*  p   q   r   s   t   u   v   w    x   y   z   {   |   }   ~   del  */
+	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM, ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,
+
+    /*	nul soh stx etx eot enq ack bel  bs  ht  nl  vt  np  cr  so  si   */
+	OPR,OPR,ONE,OPR,OPR,OPR,OPR,OPR, OPR,OPR,OPR,OPR,OPR,OPR,OPR,OPR,
+    /*	dle dc1 dc2 dc3 dc4 nak syn etb  can em  sub esc fs  gs  rs  us   */
+	OPR,OPR,OPR,ONE,ONE,ONE,OPR,OPR, OPR,OPR,OPR,OPR,OPR,OPR,OPR,OPR,
+    /*  sp  !   "   #   $   %   &   '    (   )   *   +   ,   -   .   /    */
+	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM, ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,
+    /*	0   1   2   3   4   5   6   7    8   9   :   ;   <   =   >   ?    */
+	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM, ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,
+    /*	@   A   B   C   D   E   F   G    H   I   J   K   L   M   N   O    */
+	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM, ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,
+    /*  P   Q   R   S   T   U   V   W    X   Y   Z   [   \   ]   ^   _    */
+	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM, ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,
+    /*	`   a   b   c   d   e   f   g    h   i   j   k   l   m   n   o    */
+	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM, ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,
+    /*  p   q   r   s   t   u   v   w    x   y   z   {   |   }   ~   del  */
+	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM, ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,
 };
 
-#define toktype(c)	((int) TokTypeTab[(c) & 0xff])
+/* token type table for MIME parsing */
+char MimeTokenTab[256] =
+{
+    /*	nul soh stx etx eot enq ack bel  bs  ht  nl  vt  np  cr  so  si   */
+	ILL,ILL,ILL,ILL,ILL,ILL,ILL,ILL, ILL,SPC,SPC,SPC,SPC,SPC,ILL,ILL,
+    /*	dle dc1 dc2 dc3 dc4 nak syn etb  can em  sub esc fs  gs  rs  us   */
+	ILL,ILL,ILL,ILL,ILL,ILL,ILL,ILL, ILL,ILL,ILL,ILL,ILL,ILL,ILL,ILL,
+    /*  sp  !   "   #   $   %   &   '    (   )   *   +   ,   -   .   /    */
+	SPC,ATM,QST,ATM,ATM,ATM,ATM,ATM, ATM,SPC,ATM,ATM,OPR,ATM,ATM,OPR,
+    /*	0   1   2   3   4   5   6   7    8   9   :   ;   <   =   >   ?    */
+	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM, ATM,ATM,OPR,OPR,OPR,OPR,OPR,OPR,
+    /*	@   A   B   C   D   E   F   G    H   I   J   K   L   M   N   O    */
+	OPR,ATM,ATM,ATM,ATM,ATM,ATM,ATM, ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,
+    /*  P   Q   R   S   T   U   V   W    X   Y   Z   [   \   ]   ^   _    */
+	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM, ATM,ATM,ATM,OPR,OPR,OPR,ATM,ATM,
+    /*	`   a   b   c   d   e   f   g    h   i   j   k   l   m   n   o    */
+	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM, ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,
+    /*  p   q   r   s   t   u   v   w    x   y   z   {   |   }   ~   del  */
+	ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM, ATM,ATM,ATM,ATM,ATM,ATM,ATM,ATM,
+
+    /*	nul soh stx etx eot enq ack bel  bs  ht  nl  vt  np  cr  so  si   */
+	ILL,ILL,ILL,ILL,ILL,ILL,ILL,ILL, ILL,ILL,ILL,ILL,ILL,ILL,ILL,ILL,
+    /*	dle dc1 dc2 dc3 dc4 nak syn etb  can em  sub esc fs  gs  rs  us   */
+	ILL,ILL,ILL,ILL,ILL,ILL,ILL,ILL, ILL,ILL,ILL,ILL,ILL,ILL,ILL,ILL,
+    /*  sp  !   "   #   $   %   &   '    (   )   *   +   ,   -   .   /    */
+	ILL,ILL,ILL,ILL,ILL,ILL,ILL,ILL, ILL,ILL,ILL,ILL,ILL,ILL,ILL,ILL,
+    /*	0   1   2   3   4   5   6   7    8   9   :   ;   <   =   >   ?    */
+	ILL,ILL,ILL,ILL,ILL,ILL,ILL,ILL, ILL,ILL,ILL,ILL,ILL,ILL,ILL,ILL,
+    /*	@   A   B   C   D   E   F   G    H   I   J   K   L   M   N   O    */
+	ILL,ILL,ILL,ILL,ILL,ILL,ILL,ILL, ILL,ILL,ILL,ILL,ILL,ILL,ILL,ILL,
+    /*  P   Q   R   S   T   U   V   W    X   Y   Z   [   \   ]   ^   _    */
+	ILL,ILL,ILL,ILL,ILL,ILL,ILL,ILL, ILL,ILL,ILL,ILL,ILL,ILL,ILL,ILL,
+    /*	`   a   b   c   d   e   f   g    h   i   j   k   l   m   n   o    */
+	ILL,ILL,ILL,ILL,ILL,ILL,ILL,ILL, ILL,ILL,ILL,ILL,ILL,ILL,ILL,ILL,
+    /*  p   q   r   s   t   u   v   w    x   y   z   {   |   }   ~   del  */
+	ILL,ILL,ILL,ILL,ILL,ILL,ILL,ILL, ILL,ILL,ILL,ILL,ILL,ILL,ILL,ILL,
+};
 
 
 # define NOCHAR		-1	/* signal nothing in lookahead token */
 
 char **
-prescan(addr, delim, pvpbuf, pvpbsize, delimptr)
+prescan(addr, delim, pvpbuf, pvpbsize, delimptr, toktab)
 	char *addr;
 	int delim;
 	char pvpbuf[];
 	char **delimptr;
+	char *toktab;
 {
 	register char *p;
 	register char *q;
@@ -445,6 +503,8 @@ prescan(addr, delim, pvpbuf, pvpbsize, delimptr)
 				TokTypeTab[*p & 0xff] = OPR;
 		}
 	}
+	if (toktab == NULL)
+		toktab = TokTypeTab;
 
 	/* make sure error messages don't have garbage on them */
 	errno = 0;
@@ -603,10 +663,17 @@ prescan(addr, delim, pvpbuf, pvpbsize, delimptr)
 			if (c == delim && anglecnt <= 0 && state != QST)
 				break;
 
-			newstate = StateTab[state][toktype(c)];
+			newstate = StateTab[state][toktab[c & 0xff]];
 			if (tTd(22, 101))
 				printf("ns=%02o\n", newstate);
 			state = newstate & TYPE;
+			if (state == ILL)
+			{
+				if (isascii(c) && isprint(c))
+					usrerr("653 Illegal character %c", c);
+				else
+					usrerr("653 Illegal character 0x%02x", c);
+			}
 			if (bitset(M, newstate))
 				c = NOCHAR;
 			if (bitset(B, newstate))
@@ -1874,7 +1941,7 @@ cataddr(pvp, evp, buf, sz, spacesub)
 	sz -= 2;
 	while (*pvp != NULL && (i = strlen(*pvp)) < sz)
 	{
-		natomtok = (toktype(**pvp) == ATM);
+		natomtok = (TokTypeTab[**pvp & 0xff] == ATM);
 		if (oatomtok && natomtok)
 			*p++ = spacesub;
 		(void) strcpy(p, *pvp);
@@ -2123,7 +2190,7 @@ remotename(name, m, flags, pstat, e)
 	**	domain will be appended.
 	*/
 
-	pvp = prescan(name, '\0', pvpbuf, sizeof pvpbuf, NULL);
+	pvp = prescan(name, '\0', pvpbuf, sizeof pvpbuf, NULL, NULL);
 	if (pvp == NULL)
 		return (name);
 	if (rewrite(pvp, 3, 0, e) == EX_TEMPFAIL)
@@ -2293,7 +2360,7 @@ maplocaluser(a, sendq, aliaslevel, e)
 		printf("maplocaluser: ");
 		printaddr(a, FALSE);
 	}
-	pvp = prescan(a->q_user, '\0', pvpbuf, sizeof pvpbuf, &delimptr);
+	pvp = prescan(a->q_user, '\0', pvpbuf, sizeof pvpbuf, &delimptr, NULL);
 	if (pvp == NULL)
 		return;
 

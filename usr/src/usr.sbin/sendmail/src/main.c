@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.95 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.96 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -1043,7 +1043,7 @@ main(argc, argv, envp)
 				char pvpbuf[PSBUFSIZE];
 
 				pvp = prescan(++p, ',', pvpbuf, sizeof pvpbuf,
-					      &delimptr);
+					      &delimptr, NULL);
 				if (pvp == NULL)
 					continue;
 				p = q;
