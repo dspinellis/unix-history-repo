@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)vp.4	6.1 (Berkeley) %G%
+.\"	@(#)vp.4	6.2 (Berkeley) %G%
 .\"
 .TH VP 4 ""
 .UC 4
@@ -11,11 +11,8 @@ vp \- Versatec interface
 .SH SYNOPSIS
 .B "device vp0 at uba0 csr 0177510 vector vpintr vpintr"
 .SH DESCRIPTION
-The Versatec printer/plotter is normally used with the programs
-.IR vpr (1),
-.IR vprint (1)
-or
-.IR vtroff (1).
+The Versatec printer/plotter is normally used with the
+line printer system.
 This description is designed for those who wish to drive the Versatec directly.
 .PP
 To use the Versatec yourself, you must realize that you cannot open the
@@ -25,6 +22,8 @@ if there is a daemon active.
 You can see if there is a daemon active by doing a
 .IR lpq (1),
 and seeing if there are any files being sent.
+Printing should be turned off using
+.IR lpc (8).
 .PP
 To set the Versatec into plot mode you should include
 .RI < sys/vcmd.h >
@@ -55,27 +54,6 @@ by sending it a EOT after putting it back into print mode, i.e. by
 	ioctl(fileno(vp), VSETSTATE, prtmd);
 	write(fileno(vp), "\e04", 1);
 .fi
-.PP
-.BR N.B. :
-If you use the standard I/O library with the Versatec you
-.B must
-do
-.IP
-setbuf(vp, vpbuf);
-.PP
-where
-.I vpbuf
-is declared
-.IP
-\fBchar\fR vpbuf[BUFSIZ];
-.PP
-otherwise the standard I/O library, thinking that the Versatec
-is a terminal (since it is a character special file) will
-not adequately buffer
-the data you are sending to the Versatec.
-This will cause it to run
-.B extremely
-slowly and tends to grind the system to a halt.
 .SH FILES
 /dev/vp0
 .SH SEE ALSO
