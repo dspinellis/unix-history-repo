@@ -2,23 +2,27 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)compact.1	5.1 (Berkeley) %G%
+.\"	@(#)compact.1	6.1 (Berkeley) %G%
 .\"
-.TH COMPACT 1 "18 January 1983"
+.TH COMPACT 1 ""
 .UC 4
 .SH NAME
 compact, uncompact, ccat \- compress and uncompress files, and cat them
 .SH SYNOPSIS
 .B compact
-[ name ... ]
+[
+.B \-v
+] [ name ... ]
 .br
 .B uncompact
 [
-name ...
-]
+.B \-v
+] [ name ...  ]
 .br
 .B ccat
-[ file ... ]
+[
+.B \-v
+] [ file ... ]
 .SH DESCRIPTION
 .I Compact
 compresses the named files using an adaptive Huffman code.  If no file
@@ -62,9 +66,25 @@ the standard output.
 .I Ccat
 cats the original file from a file compressed by
 .I compact,
-without uncompressing the file.
+without uncompressing the file (it is just a shell script which
+directs the uncompacted output to the standard output).
+.PP
+.IR Compact ,
+.IR uncompact ,
+and
+.I ccat
+normally do their work silently.  If a
+.B \-v
+flag is supplied, 
+.I compact
+will report the compression percentage for each compacted
+file while 
+.I uncompact
+and
+.I ccat
+will print out the name of each file as they're uncompacted.
 .SH RESTRICTION
-The last segment of the filename must contain fewer than thirteen characters
+The last segment of the filename must be short enough
 to allow space for the appended '.C'.
 .SH FILES
 .ta 1i
