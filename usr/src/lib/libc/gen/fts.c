@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fts.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)fts.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -410,14 +410,6 @@ fts_build(sp, set_node)
 	nlinks = sp->options & FTS_NOSTAT && sp->options & FTS_PHYSICAL ?
 	    p->statb.st_nlink - (sp->options & FTS_SEEDOT ? 0 : 2) : -1;
 
-	/* get max file name length that can be stored in current path */
-	maxlen = sp->pathlen - p->pathlen - 1;
-
-	cp = sp->path + (len = NAPPEND(p));
-	*cp++ = '/';
-
-	level = p->level + 1;
-
 	if (nlinks || set_node) {
 		if (FCHDIR(sp, dirfd(dirp))) {
 			if (set_node) {
@@ -429,6 +421,14 @@ fts_build(sp, set_node)
 		descend = 1;
 	} else
 		descend = 0;
+
+	/* get max file name length that can be stored in current path */
+	maxlen = sp->pathlen - p->pathlen - 1;
+
+	cp = sp->path + (len = NAPPEND(p));
+	*cp++ = '/';
+
+	level = p->level + 1;
 
 	/* read the directory, attching each new entry to the `link' pointer */
 	for (head = NULL, nitems = 0; dp = readdir(dirp);) {
@@ -510,9 +510,6 @@ fts_stat(p, symflag)
 	register FTSENT *p;
 	int symflag;
 {
-	register int ngroups, *gp;
-	int gidset[NGROUPS];
-
 	/*
 	 * detection of symbolic links w/o targets.  If FTS_FOLLOW is set,
 	 * the symlink structure is overwritten with the stat structure of
@@ -527,37 +524,13 @@ fts_stat(p, symflag)
 
 	switch(p->statb.st_mode&S_IFMT) {
 	case S_IFDIR:
-		/* get new uid/groups each time, they may have changed */
-		if (getuid() == p->statb.st_uid) {
-			if (!(p->statb.st_mode&S_IRUSR))
-				return(FTS_DNR);
-			if (!(p->statb.st_mode&S_IXUSR))
-				return(FTS_DNX);
-			return(FTS_D);
-		}
-		if ((ngroups = getgroups(NGROUPS, gidset)) == -1)
-			return(FTS_ERR);
-		for (gp = gidset; ngroups--;)
-			if (*gp++ == p->statb.st_gid) {
-				if (!(p->statb.st_mode&S_IRGRP))
-					return(FTS_DNR);
-				if (!(p->statb.st_mode&S_IXGRP))
-					return(FTS_DNX);
-				return(FTS_D);
-			}
-		if (!(p->statb.st_mode&S_IROTH))
-			return(FTS_DNR);
-		if (!(p->statb.st_mode&S_IXOTH))
-			return(FTS_DNX);
 		return(FTS_D);
 	case S_IFLNK:
 		return(FTS_SL);
 	case S_IFREG:
 		return(FTS_F);
-	default:
-		return(FTS_DEFAULT);
 	}
-	/* NOTREACHED */
+	return(FTS_DEFAULT);
 }
 
 static FTSENT *
