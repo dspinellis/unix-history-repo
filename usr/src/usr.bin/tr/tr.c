@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)tr.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)tr.c	4.2 (Berkeley) %G%";
 #include <stdio.h>
 
 /* tr - transliterate data stream */
@@ -77,11 +77,15 @@ char **argv;
 		else if(dflag) code[i] = 0;
 	}
 
+	clearerr(stdout);
 	while((c=getc(stdin)) != EOF ) {
 		if(c == 0) continue;
 		if(c = code[c&0377]&0377)
-			if(!sflag || c!=save || !squeez[c&0377])
+			if(!sflag || c!=save || !squeez[c&0377]) {
 				putchar(save = c);
+				if(ferror(stdout))
+					exit(1);
+			}
 	}
 	exit(0);
 }
