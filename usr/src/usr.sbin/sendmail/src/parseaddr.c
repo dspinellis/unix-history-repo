@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	4.4		%G%);
+SCCSID(@(#)parseaddr.c	4.5		%G%);
 
 /*
 **  PARSEADDR -- Parse an address
@@ -124,15 +124,6 @@ parseaddr(addr, a, copyf, delim)
 	}
 
 	/*
-	**  Do UPPER->lower case mapping unless inhibited.
-	*/
-
-	if (!bitnset(M_HST_UPPER, m->m_flags))
-		makelower(a->q_host);
-	if (!bitnset(M_USR_UPPER, m->m_flags))
-		makelower(a->q_user);
-
-	/*
 	**  Compute return value.
 	*/
 
@@ -145,6 +136,29 @@ parseaddr(addr, a, copyf, delim)
 # endif DEBUG
 
 	return (a);
+}
+/*
+**  LOWERADDR -- map UPPER->lower case on addresses as requested.
+**
+**	Parameters:
+**		a -- address to be mapped.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		none.
+*/
+
+loweraddr(a)
+	register ADDRESS *a;
+{
+	register MAILER *m = a->q_mailer;
+
+	if (!bitnset(M_HST_UPPER, m->m_flags))
+		makelower(a->q_host);
+	if (!bitnset(M_USR_UPPER, m->m_flags))
+		makelower(a->q_user);
 }
 /*
 **  PRESCAN -- Prescan name and make it canonical

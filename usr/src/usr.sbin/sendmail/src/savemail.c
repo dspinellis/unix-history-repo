@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-SCCSID(@(#)savemail.c	4.3		%G%);
+SCCSID(@(#)savemail.c	4.4		%G%);
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -242,6 +242,7 @@ returntosender(msg, sendbody)
 		returndepth--;
 		return (-1);
 	}
+	loweraddr(&ee->e_from);
 
 	/* if CurEnv->e_from was queued up, put in on CurEnv->e_sendqueue */
 	if (bitset(QQUEUEUP, CurEnv->e_from.q_flags))
