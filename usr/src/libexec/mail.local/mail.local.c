@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mail.local.c	8.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)mail.local.c	8.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -101,6 +101,13 @@ main(argc, argv)
 	char *from;
 	extern char *optarg;
 	extern int optind;
+
+	/* make sure we have some open file descriptors */
+	for (fd = 10; fd < 30; fd++)
+		(void) close(fd);
+
+	/* use a reasonable umask */
+	(void) umask(0077)
 
 #ifdef LOG_MAIL
 	openlog("mail.local", 0, LOG_MAIL);
