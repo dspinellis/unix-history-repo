@@ -1,10 +1,10 @@
-/*	run.c	4.2	83/02/09	*/
+/*	run.c	4.3	83/06/17	*/
 
 #include "awk.def"
 #include	"math.h"
-#define RECSIZE 512
 #include "awk.h"
 #include "stdio.h"
+#define RECSIZE BUFSIZ
 
 #define FILENUM	10
 struct
@@ -743,6 +743,7 @@ obj instat(a, n) node **a;
 			tempfree(x);
 		}
 	}
+	return (true);
 }
 
 obj jump(a,n) node **a;
