@@ -95,6 +95,7 @@ smtp()
 	extern tick();
 	extern bool iswiz();
 	extern char *arpadate();
+	extern char *macvalue();
 
 	hasmail = FALSE;
 	rcps = 0;
@@ -168,6 +169,10 @@ smtp()
 			break;
 
 		  case CMDMAIL:		/* mail -- designate sender */
+			/* force a sending host even if no HELO given */
+			if (RealHostName != NULL && macvalue('s', CurEnv) == NULL)
+				define('s', RealHostName, CurEnv);
+
 			/* check for validity of this command */
 			if (hasmail)
 			{
