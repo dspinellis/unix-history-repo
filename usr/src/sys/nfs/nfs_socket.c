@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_socket.c	7.40 (Berkeley) %G%
+ *	@(#)nfs_socket.c	7.41 (Berkeley) %G%
  */
 
 /*
@@ -763,6 +763,8 @@ nfsmout:
 					if (nmp->nm_cwnd > NFS_MAXCWND)
 						nmp->nm_cwnd = NFS_MAXCWND;
 				}
+				rep->r_flags &= ~R_SENT;
+				nmp->nm_sent -= NFS_CWNDSCALE;
 				/*
 				 * Update rtt using a gain of 0.125 on the mean
 				 * and a gain of 0.25 on the deviation.
@@ -968,8 +970,10 @@ tryagain:
 	/*
 	 * Decrement the outstanding request count.
 	 */
-	if (rep->r_flags & R_SENT)
+	if (rep->r_flags & R_SENT) {
+		rep->r_flags &= ~R_SENT;	/* paranoia */
 		nmp->nm_sent -= NFS_CWNDSCALE;
+	}
 
 	/*
 	 * If there was a successful reply and a tprintf msg.
