@@ -5,7 +5,7 @@
  * This code is derived from software contributed to Berkeley by
  * Computer Consoles Inc.
  *
- * %sccs.include.redist.c%
+ * %sccs.include.proprietary.c%
  */
 
 #ifndef lint
@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fsdb.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)fsdb.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
