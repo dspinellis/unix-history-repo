@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kernfs_vnops.c	8.12 (Berkeley) %G%
+ *	@(#)kernfs_vnops.c	8.13 (Berkeley) %G%
  */
 
 /*
@@ -174,6 +174,7 @@ kernfs_lookup(ap)
 	struct vnode **vpp = ap->a_vpp;
 	struct vnode *dvp = ap->a_dvp;
 	char *pname = cnp->cn_nameptr;
+	struct proc *p = cnp->cn_proc;
 	struct kern_target *kt;
 	struct vnode *fvp;
 	int error, i;
@@ -200,7 +201,7 @@ kernfs_lookup(ap)
 	if (cnp->cn_namelen == 4 && bcmp(pname, "root", 4) == 0) {
 		*vpp = rootdir;
 		VREF(rootdir);
-		VOP_LOCK(rootdir);
+		vn_lock(rootdir, LK_EXCLUSIVE | LK_RETRY, p)
 		return (0);
 	}
 #endif
@@ -224,7 +225,7 @@ found:
 		if (*dp == NODEV || !vfinddev(*dp, kt->kt_vtype, &fvp))
 			return (ENOENT);
 		*vpp = fvp;
-		if (vget(fvp, 1))
+		if (vget(fvp, LK_EXCLUSIVE, p))
 			goto loop;
 		return (0);
 	}
@@ -656,12 +657,13 @@ kernfs_nullop()
 #define kernfs_symlink ((int (*) __P((struct vop_symlink_args *)))eopnotsupp)
 #define kernfs_readlink ((int (*) __P((struct  vop_readlink_args *)))eopnotsupp)
 #define kernfs_abortop ((int (*) __P((struct  vop_abortop_args *)))nullop)
-#define kernfs_lock ((int (*) __P((struct  vop_lock_args *)))nullop)
-#define kernfs_unlock ((int (*) __P((struct  vop_unlock_args *)))nullop)
+#define kernfs_lock ((int (*) __P((struct  vop_lock_args *)))vop_nolock)
+#define kernfs_unlock ((int (*) __P((struct  vop_unlock_args *)))vop_nounlock)
 #define kernfs_bmap ((int (*) __P((struct  vop_bmap_args *)))kernfs_badop)
 #define kernfs_strategy \
 	((int (*) __P((struct  vop_strategy_args *)))kernfs_badop)
-#define kernfs_islocked ((int (*) __P((struct  vop_islocked_args *)))nullop)
+#define kernfs_islocked \
+	((int (*) __P((struct vop_islocked_args *)))vop_noislocked)
 #define kernfs_advlock ((int (*) __P((struct vop_advlock_args *)))eopnotsupp)
 #define kernfs_blkatoff ((int (*) __P((struct  vop_blkatoff_args *)))eopnotsupp)
 #define kernfs_valloc ((int(*) __P(( \
