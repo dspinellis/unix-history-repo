@@ -2,7 +2,7 @@
 
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)commands.y 1.6 %G%";
+static char sccsid[] = "@(#)commands.y 1.7 %G%";
 
 /*
  * Yacc grammar for debugger commands.
@@ -22,7 +22,7 @@ private String curformat = "X";
 %}
 
 %term
-    ALIAS AND ASSIGN AT CALL CATCH CONT DELETE DIV DUMP
+    ALIAS AND ASSIGN AT CALL CATCH CONT DEBUG DELETE DIV DUMP
     EDIT FILE FUNC GRIPE HELP IF IGNORE IN LIST MOD NEXT NEXTI NIL NOT OR
     PRINT PSYM QUIT RUN SH SKIP SOURCE STATUS STEP STEPI
     STOP STOPI TRACE TRACEI
@@ -57,7 +57,7 @@ private String curformat = "X";
 %type <y_long>	    INT count
 %type <y_real>	    REAL
 %type <y_string>    STRING redirectout filename opt_filename mode
-%type <y_name>	    ALIAS AND ASSIGN AT CALL CATCH CONT DELETE DIV DUMP
+%type <y_name>	    ALIAS AND ASSIGN AT CALL CATCH CONT DEBUG DELETE DIV DUMP
 %type <y_name>	    EDIT FILE FUNC GRIPE HELP IF IGNORE IN LIST MOD
 %type <y_name>	    NEXT NEXTI NIL NOT OR
 %type <y_name>	    PRINT PSYM QUIT RUN SH SKIP SOURCE STATUS STEP STEPI
@@ -90,6 +90,7 @@ command_line:
     command
 {
 	if ($1 != nil) {
+            if(debug_flag[2]) {dumptree(stderr,$1); fflush (stderr);}
 	    eval($1);
 	}
 }
@@ -99,9 +100,11 @@ command_line:
 	if ($1 != nil) {
 	    if ($2 != nil) {
 		setout($2);
+                if(debug_flag[2]) {dumptree(stderr,$1); fflush (stderr);}
 		eval($1);
 		unsetout();
 	    } else {
+                if(debug_flag[2]) {dumptree(stderr,$1); fflush (stderr);}
 		eval($1);
 	    }
 	}
@@ -412,6 +415,11 @@ rcommand:
     CALL term
 {
 	$$ = $2;
+}
+|
+    DEBUG INT
+{
+ 	$$ = build(O_DEBUG, $2);
 }
 |
     DUMP
@@ -856,8 +864,8 @@ name:
 	$$ = $1;
 }
 keyword:
-    ALIAS | AND | ASSIGN | AT | CALL | CATCH | CONT | DELETE | DIV | DUMP |
-    EDIT | FILE | FUNC | GRIPE | HELP | IGNORE | IN | LIST | MOD |
+    ALIAS | AND | ASSIGN | AT | CALL | CATCH | CONT | DEBUG | DELETE | DIV | 
+    DUMP | EDIT | FILE | FUNC | GRIPE | HELP | IGNORE | IN | LIST | MOD |
     NEXT | NEXTI | NIL | NOT | OR | PRINT | PSYM | QUIT | RUN |
     SH | SKIP | SOURCE | STATUS | STEP | STEPI |
     STOP | STOPI | TRACE | TRACEI |
