@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file @(#)termcap.src	1.41	(Berkeley) %G%
+#	Termcap source file @(#)termcap.src	1.42	(Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -1532,14 +1532,15 @@ dx|dw2|decwriter II:\
 	:cr=^M:do=^J:nl=^J:bl=^G:\
 	:kb=^h:le=^H:bs:co#132:hc:os:
 # DEC PRO-350 console (VT220-style)
-dP|decpro|dec pro console:\
+dP|pro350|decpro|dec pro console:\
 	:bs:cd=\EJ:ce=\EK:cl=\EH\EJ:\
 	:cm=\EY%+ %+ :co#80:ho=\EH:\
 	:kl=\ED:kr=\EC:ku=\EA:kd=\EB:kh=\EH:\
-	:k0=\EE:k1=\EF:k2=\EG:k3=\EH:k4=\EI:k5=\EJ:\
-	:k6=\Ei:k7=\Ej:\
-	:li#24:nd=\EC:pt:sr=\EI:up=\EA:\
-	:se=\E^N:so=\E^H:
+	:k0=\EE:k1=\EF:k2=\EG:k3=\EH:k4=\EI:k5=\EJ:k6=\Ei:k7=\Ej:\
+	:li#24:nd=\EC:pt:sr=\EI:up=\EA:do=\EB:\
+	:se=\E^N:so=\E^H:us=\E^D:ue=\E^C:\
+	:ae=\EG:as=\EF:
+#
 # From: Bracy H. Elton  <elton@lll-crg>
 dl|vt200|vt220|vt200-js|vt220-js|dec vt200 series with jump scroll:\
 	:im=\E[4h:ei=\E[4l:mi:\
@@ -2149,7 +2150,7 @@ ye|w50|wyse50|Wyse 50:\
 	:so=\EG4:se=\EG0:
 #	:hs:ts=\Ef:fs=\Eg:	status line does not work with sysline
 yg|w50-132|wyse50-132|Wyse 50-132:\
-	:al=\EE:am:bs:bt=\EI:cd=\EY:ce=\ET:cl=^Z:cm=\E=%+ %+ :co#132:\
+	:al=\EE:am:bs:bt=\EI:cd=\EY:ce=\ET:cl=^Z:cm=\Ea%i%dR%dC:co#132:\
 	:dc=\EW:dl=\ER:do=^J:ei=\Er:im=\Eq:is=\E`;\200\EC\EDF\E0\E'\E(\EA21:\
 	:kd=^J:kl=^H:kr=^L:ku=^K:li#24:nd=^L:up=^K:us=\EG8:ue=\EG0:\
 	:so=\EG4:se=\EG0:
