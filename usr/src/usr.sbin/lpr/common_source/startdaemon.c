@@ -1,4 +1,4 @@
-/*	startdaemon.c	4.1	83/04/29	*/
+/*	startdaemon.c	4.2	83/05/13	*/
 /*
  * Tell the printer daemon that there are new files in the spool directory.
  */

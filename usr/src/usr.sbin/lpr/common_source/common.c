@@ -1,4 +1,4 @@
-/*	common.c	4.1	83/04/29	*/
+/*	common.c	4.2	83/05/13	*/
 /*
  * Routines and data common to all the line printer functions.
  */
@@ -17,6 +17,7 @@ char	*AF;		/* accounting file */
 char	*LF;		/* log file for error messages */
 char	*OF;		/* name of output filter (created once) */
 char	*IF;		/* name of input filter (created per job) */
+char	*RF;		/* name of fortran text filter (per job) */
 char	*TF;		/* name of troff filter (per job) */
 char	*DF;		/* name of tex filter (per job) */
 char	*GF;		/* name of graph(1G) filter (per job) */
@@ -31,11 +32,14 @@ short	SB;		/* short banner instead of normal header */
 short	RW;		/* open LP for reading and writing */
 short	PW;		/* page width */
 short	PL;		/* page length */
+short	PX;		/* page width in pixels */
+short	PY;		/* page length in pixels */
 short	BR;		/* baud rate if lp is a tty */
 short	FC;		/* flags to clear if lp is a tty */
 short	FS;		/* flags to set if lp is a tty */
 short	XC;		/* flags to clear for local mode */
 short	XS;		/* flags to set for local mode */
+short	RS;		/* restricted to those with local accounts */
 
 char	line[BUFSIZ];
 char	pbuf[BUFSIZ/2];	/* buffer for printcap strings */
@@ -221,22 +225,6 @@ compar(p1, p2)
 	if ((*p1)->q_time > (*p2)->q_time)
 		return(1);
 	return(0);
-}
-
-/*VARARGS1*/
-status(msg, a1, a2, a3)
-	char *msg;
-{
-	register int fd;
-	char buf[BUFSIZ];
-
-	umask(0);
-	if ((fd = open(ST, FWRONLY|FCREATE|FTRUNCATE|FEXLOCK, 0664)) < 0)
-		fatal("cannot create status file");
-	sprintf(buf, msg, a1, a2, a3);
-	strcat(buf, "\n");
-	(void) write(fd, buf, strlen(buf));
-	(void) close(fd);
 }
 
 /*VARARGS1*/

@@ -1,4 +1,4 @@
-/*	lpq.c	4.1	83/04/29	*/
+/*	lpq.c	4.2	83/05/13	*/
 /*
  * Spool Queue examination program
  *
@@ -46,6 +46,9 @@ main(argc, argv)
 	register char *arg;
 	register int n;
 
+	name = argv[0];
+	gethostname(host, sizeof(host));
+
 	while (--argc) {
 		if ((arg = *++argv)[0] == '+') {
 			if (arg[1] != '\0')
@@ -78,7 +81,6 @@ main(argc, argv)
 	}
 	if (printer == NULL && (printer = getenv("PRINTER")) == NULL)
 		printer = DEFLP;
-	gethostname(host, sizeof(host));
 #ifdef TERMCAP
 	dumb = termcap();
 #endif

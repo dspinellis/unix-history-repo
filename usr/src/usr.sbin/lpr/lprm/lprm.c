@@ -1,4 +1,4 @@
-/*	lprm.c	4.1	83/04/29	*/
+/*	lprm.c	4.2	83/05/13	*/
 /*
  * lprm - remove the current user's spool entry
  *

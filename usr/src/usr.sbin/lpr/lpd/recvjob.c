@@ -1,4 +1,4 @@
-/*	recvjob.c	4.1	83/04/29	*/
+/*	recvjob.c	4.2	83/05/13	*/
 /*
  * Receive printer jobs from the network, queue them and
  * start the printer daemon.

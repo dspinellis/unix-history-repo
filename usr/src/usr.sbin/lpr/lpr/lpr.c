@@ -55,7 +55,7 @@
 
 char lpr_id[] = "~|^`lpr.c:\t4.2\t1 May 1981\n";
 
-/*	lpr.c	4.15	83/04/29	*/
+/*	lpr.c	4.16	83/05/13	*/
 /*
  *      lpr -- off line print
  *
@@ -113,8 +113,8 @@ main(argc, argv)
 	if (signal(SIGTERM, SIG_IGN) != SIG_IGN)
 		signal(SIGTERM, cleanup);
 
-	gethostname(host, sizeof (host));
 	name = argv[0];
+	gethostname(host, sizeof (host));
 
 	while (argc > 1 && argv[1][0] == '-') {
 		argc--;
@@ -217,6 +217,12 @@ main(argc, argv)
 		printer = DEFLP;
 	chkprinter(printer);
 	/*
+	 * Check to make sure queuing is enabled.
+	 */
+	(void) sprintf(line, "%s/%s", SD, LO);
+	if (stat(line, &stb) == 0 && (stb.st_mode & 010))
+		fatal("Printer queue is disabled");
+	/*
 	 * Get the identity of the person doing the lpr using the same
 	 * algorithm as lprm. 
 	 */
@@ -262,27 +268,29 @@ main(argc, argv)
 		if ((f = test(arg = *++argv)) < 0)
 			continue;	/* file unreasonable */
 
-		if ((f & 1) && (cp = linked(arg)) != NULL) {
+		if (sflag && (cp = linked(arg)) != NULL) {
 			if (format == 'p')
 				card('T', title ? title : arg);
 			for (i = 0; i < ncopies; i++)
 				card(format, &dfname[inchar-2]);
 			card('U', &dfname[inchar-2]);
-			if (f & 2)
+			if (f)
 				card('U', cp);
 			card('N', arg);
 			dfname[inchar]++;
 			nact++;
-		} else {
-			if ((i = open(arg, 0)) < 0) {
-				printf("%s: cannot open %s\n", name, arg);
-				continue;
-			}
-			copy(i, arg);
-			(void) close(i);
-			if ((f & 2) && unlink(arg))
-				printf("%s: cannot remove %s\n", name, arg);
+			continue;
 		}
+		if (sflag)
+			printf("%s: %s: not linked, copying instead\n", name, arg);
+		if ((i = open(arg, 0)) < 0) {
+			printf("%s: cannot open %s\n", name, arg);
+			continue;
+		}
+		copy(i, arg);
+		(void) close(i);
+		if (f && unlink(arg) < 0)
+			printf("%s: %s: not removed\n", name, arg);
 	}
 
 	if (nact) {
@@ -364,7 +372,7 @@ linked(file)
 	register char *file;
 {
 	register char *cp;
-	char buf[BUFSIZ];
+	static char buf[BUFSIZ];
 
 	if (*file != '/') {
 		if (getwd(buf) == NULL)
@@ -425,11 +433,6 @@ nfile(n)
 		printf("%s: cannot create %s\n", name, n);
 		cleanup();
 	}
-	if (chown(n, userid, -1) < 0) {
-		unlink(n);
-		printf("%s: cannot chown %s\n", name, n);
-		cleanup();
-	}
 	if (++n[inchar] > 'z') {
 		if (++n[inchar-2] == 't') {
 			printf("too many files - break up the job\n");
@@ -473,7 +476,7 @@ cleanup()
 
 /*
  * Test to see if this is a printable file.
- * Return -1 if it is not, 1 if we should try to link and or in 2 if
+ * Return -1 if it is not, 0 if its printable, and 1 if
  * we should remove it after printing.
  */
 test(file)
@@ -516,21 +519,20 @@ test(file)
 			goto error1;
 		}
 	(void) close(fd);
-	fd = 0;
-	if (sflag && (statb.st_mode & 04))
-		fd |= 1;
 	if (rflag) {
 		if ((cp = rindex(file, '/')) == NULL) {
 			if (access(".", 2) == 0)
-				fd |= 2;
+				return(1);
 		} else {
 			*cp = '\0';
-			if (access(file, 2) == 0)
-				fd |= 2;
+			fd = access(file, 2);
 			*cp = '/';
+			if (fd == 0)
+				return(1);
 		}
+		printf("%s: %s: is not removable by you\n", name, file);
 	}
-	return(fd);
+	return(0);
 
 error1:
 	printf(" and is unprintable\n");
@@ -569,8 +571,12 @@ chkprinter(s)
 		fatal("unknown printer");
 	if ((SD = pgetstr("sd", &bp)) == NULL)
 		SD = DEFSPOOL;
+	if ((LO = pgetstr("lo", &bp)) == NULL)
+		LO = DEFLOCK;
 	if ((MX = pgetnum("mx")) < 0)
 		MX = DEFMX;
+	if ((DU = pgetnum("du")) < 0)
+		DU = DEFUID;
 	RM = host;		/* machine for getport to connect to */
 }
 
