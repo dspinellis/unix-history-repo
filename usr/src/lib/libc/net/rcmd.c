@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rcmd.c	4.4 %G%";
+static char sccsid[] = "@(#)rcmd.c	4.5 %G%";
 #endif
 
 #include <stdio.h>
@@ -13,7 +13,6 @@ static char sccsid[] = "@(#)rcmd.c	4.4 %G%";
 
 extern	errno;
 char	*index(), *sprintf();
-int	rcmdoptions;
 
 rcmd(ahost, rport, locuser, remuser, cmd, fd2p)
 	char **ahost;
@@ -24,7 +23,6 @@ rcmd(ahost, rport, locuser, remuser, cmd, fd2p)
 	int s, timo = 1;
 	struct sockaddr_in sin, sin2, from;
 	char c;
-	short port;
 	int lport = IPPORT_RESERVED - 1;
 	struct hostent *hp;
 
@@ -35,7 +33,7 @@ rcmd(ahost, rport, locuser, remuser, cmd, fd2p)
 	}
 	*ahost = hp->h_name;
 retry:
-	s = rresvport(rcmdoptions|SO_KEEPALIVE, &lport);
+	s = rresvport(&lport);
 	if (s < 0)
 		return (-1);
 	sin.sin_family = hp->h_addrtype;
@@ -59,26 +57,24 @@ retry:
 	lport--;
 	if (fd2p == 0) {
 		write(s, "", 1);
-		port = 0;
+		lport = 0;
 	} else {
 		char num[8];
-		int s2 = rresvport(rcmdoptions|SO_ACCEPTCONN, &lport), s3;
+		int s2 = rresvport(&lport), s3;
 
 		if (s2 < 0) {
 			(void) close(s);
 			return (-1);
 		}
 		listen(s2, 1);
-		socketaddr(s2, &sin2);
-		port = htons((u_short)sin2.sin_port);
-		(void) sprintf(num, "%d", port);
+		(void) sprintf(num, "%d", lport);
 		(void) write(s, num, strlen(num)+1);
 		{ int len = sizeof (from);
 		  s3 = accept(s2, &from, &len, 0);
 		  close(s2);
 		  if (s3 < 0) {
 			perror("accept");
-			port = 0;
+			lport = 0;
 			goto bad;
 		  }
 		}
@@ -108,15 +104,15 @@ retry:
 	}
 	return (s);
 bad2:
-	if (port)
+	if (lport)
 		(void) close(*fd2p);
 bad:
 	(void) close(s);
 	return (-1);
 }
 
-rresvport(options, alport)
-	int options, *alport;
+rresvport(alport)
+	int *alport;
 {
 	struct sockaddr_in sin;
 	int s;
