@@ -18,12 +18,12 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)updatedb.csh	4.11 (Berkeley) %G%
+#	@(#)updatedb.csh	4.12 (Berkeley) %G%
 #
 set SRCHPATHS = "/"			# directories to be put in the database
 set LIBDIR = /usr/libexec		# for subprograms
 if (! $?TMPDIR) set TMPDIR = /var/tmp	# for temp files
-set FCODES = /var/db/find.database	# the database
+set FCODES = /var/db/locate.database	# the database
 
 set path = ( /bin /usr/bin )
 set bigrams = $TMPDIR/f.bigrams$$
@@ -40,16 +40,16 @@ set errs = $TMPDIR/f.errs$$
 find ${SRCHPATHS} -print | tr '/' '\001' | \
    (sort -f; echo $status > $errs) | \
    tr '\001' '/' >$filelist
-$LIBDIR/find.bigram <$filelist | \
+$LIBDIR/locate.bigram <$filelist | \
    (sort; echo $status >> $errs) | uniq -c | sort -nr | \
    awk '{ if (NR <= 128) print $2 }' | tr -d '\012' > $bigrams
 
 # code the file list
 
 if { grep -s -v 0 $errs } then
-	printf 'find: updatedb failed\n\n'
+	printf 'locate: updatedb failed\n\n'
 else
-	$LIBDIR/find.code $bigrams < $filelist > $FCODES
+	$LIBDIR/locate.code $bigrams < $filelist > $FCODES
 	chmod 644 $FCODES
 	rm $bigrams $filelist $errs
 endif
