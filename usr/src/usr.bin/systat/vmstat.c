@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	1.3 (Berkeley) %G%";
 #endif
 
 /*
@@ -166,6 +166,8 @@ int hz;
 int phz;
 float hertz;
 int nintr;
+long *intrloc;
+char **intrname;
 
 char dr_name[DK_NDRIVE][10];
 enum state { BOOT, TIME, RUN, STOP } state = TIME;
@@ -185,8 +187,7 @@ main(argc,argv)
 	int hits;
 	float f1, f2;
 	int inttotal, nextintsrow;
-	long *intrloc;
-	char *intrnamebuf, **intrname, *cp, *calloc(), *malloc();
+	char *intrnamebuf, *cp, *calloc(), *malloc();
 
 	if (argc > 1)
 		switch (c = argv[1][0] == '-' ? argv[1][1] : argv[1][0]) {
@@ -300,7 +301,7 @@ main(argc,argv)
 		}
 		Y(tk_nin); Y(tk_nout);
 		etime = 0;
-		for(i=0; i<CPUSTATES; i++) {
+		for(i = 0; i < CPUSTATES; i++) {
 			X(time);
 			etime += s.time[i];
 		}
@@ -333,12 +334,16 @@ main(argc,argv)
 
 		psiz = 0;
 		f2 = 0.0;
-		for (c=0; c<CPUSTATES; c++) {
+		for (c = 0; c < CPUSTATES; c++) {
 			i = cpuorder[c];
 			f1 = cputime(i);
 			f2 += f1;
 			l = (int) ((f2 + 1.0) / 2.0) - psiz;
-			putfloat(f1, GRAPHROW, GRAPHCOL + 5 + 11*c, 4, 1, 0);
+			if (c == 0)
+				putfloat(f1, GRAPHROW, GRAPHCOL + 1, 5, 1, 0);
+			else
+				putfloat(f1, GRAPHROW, GRAPHCOL + 12 * c,
+					5, 1, 0);
 			move(GRAPHROW + 2, psiz);
 			psiz += l;
 			while (l-- > 0)
@@ -488,7 +493,7 @@ int indx;
 	register i;
 
 	t = 0;
-	for (i=0; i<CPUSTATES; i++)
+	for (i = 0; i < CPUSTATES; i++)
 		t += s.time[i];
 	if (t == 0.0)
 		t = 1.0;
@@ -611,7 +616,7 @@ layout()
 	mvprintw(PAGEROW + 10, PAGECOL + 23, "%%xf");
 
 	mvprintw(GRAPHROW, GRAPHCOL,
-		" Sys   . %% User   . %% Nice   . %% Idle   . %%");
+		"    . %% Sys    . %% User    . %% Nice    . %% Idle");
 	mvprintw(PROCSROW, PROCSCOL, "Procs  r  p  d  s  w");
 	mvprintw(GRAPHROW + 1, GRAPHCOL,
 		"|    |    |    |    |    |    |    |    |    |    |");
@@ -631,6 +636,11 @@ layout()
 				"  %3.3s", dr_name[j]);
 			j++;
 		}
+	for (i = 0; i < nintr; i++) {
+		if (intrloc[i] == 0)
+			continue;
+		mvprintw(intrloc[i], INTSCOL + 9, "%-8.8s", intrname[i]);
+	}
 }
 
 putrate(r, or, l, c, w)
