@@ -10,12 +10,13 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	.asciz "@(#)sigpending.s	5.1 (Berkeley) %G%"
+	.asciz "@(#)sigpending.s	5.2 (Berkeley) %G%"
 #endif /* LIBC_SCCS and not lint */
 
 #include "SYS.h"
 
 SYSCALL(sigpending)
-	movl	d0,sp@(4)
+	movl	sp@(4),a0
+	movl	d0,a0@
 	clrl	d0
 	rts
