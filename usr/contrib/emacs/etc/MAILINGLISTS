@@ -1,0 +1,47 @@
+Mailing lists for GNU Emacs:
+
+Bug reports, fixes for bugs, and suggestions for improvements in GNU
+Emacs should be sent to bug-gnu-emacs@prep.ai.mit.edu (Internet
+address) or ...!ucbvax!prep.ai.mit.edu!bug-gnu-emacs (Usenet address).
+If you think something is a bug in Emacs, it might be one; or, it
+might be a misunderstanding or even a feature.  Before beginning to
+report bugs, please read the section ``Reporting Emacs Bugs'' toward
+the end of the GNU Emacs reference manual (or the built-in Info system)
+for a discussion of how and when to send in bug reports.
+
+Do not expect an answer for a bug report, except sometimes in the form
+of a fix for the bug in the next release.  Reporting a bug is done to
+get the bug fixed for everyone.  Likewise, we maintainers fix bugs in
+order to help the entire community.  We see no such duty to aid
+individuals one at a time, such as by sending them individual
+messages, and have no time to do this since we are busy doing things
+for the entire community.  If you want help for yourself in particular,
+you may have to hire someone.  You might find one by looking in the
+the service list (file SERVICE in this directory).
+
+Anything addressed to the implementers and maintainers of GNU Emacs
+should be sent to those addresses also, NOT to info-gnu-emacs.
+
+Information and questions addressed to the general user community
+are sent to info-gnu-emacs@prep.ai.mit.edu (Internet address)
+or ...!ucbvax!prep.ai.mit.edu!info-gnu-emacs (Usenet address).
+This list forwards onto the newsgroup net.emacs.  Since it is
+a very large list, don't send it anything that is not seriously
+important to many people.
+
+Most of the time, when you reply to a message sent to info-gnu-emacs,
+the reply should not go to info-gnu-emacs.  But most mailer reading
+programs supply all the recipients of the original as recipients of
+the reply, by default.  Make a point of deleting info-gnu-emacs from the
+list when it does not belong.
+
+Another list, info-gnu, is used for reports of progress in the
+GNU project in general, and for requests for people to do work.
+
+Send messages ABOUT these lists, such as reports of mail problems, or
+requests to be added or removed, to info-gnu-emacs-request (or
+info-gnu-request, or bug-gnu-emacs-request), NOT to info-gnu-emacs or
+bug-gnu-emacs.  info-gnu-emacs-request goes only to the people who can
+do something about these things, and thus avoids disturbing everyone
+else.
+

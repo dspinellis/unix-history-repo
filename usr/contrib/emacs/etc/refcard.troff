@@ -1,0 +1,784 @@
+.\" Emacs reference card.  To print: tbl refcard.troff | troff  -*-nroff-*-
+.\" Original by Neal Ziring, Washington Univ. (St. Louis)
+.\" Version 17 revisions by Paul Rubin, UC Berkeley
+.\" Adjusted so it works with vtroff fonts by mit-erl!gildea 5 Feb 86
+.ds CH
+.ds CF
+.\" define help character
+.ds HC C-h
+.nr PS 9
+.ps 9
+.nr VS 11
+.vs 11
+.nr HM .50i
+.nr FM .25i
+.nr PO 0.6i
+.po 0.6i
+.nr LL 4i
+.ll 4i
+.de hD 
+'sp |0.5i
+..
+.de fO
+'bp
+..
+.wh 0 hD
+.wh -0.2i fO
+.de nc
+.bp
+..
+.de LG
+.ps +2
+..
+.de SM
+.ps -2
+..
+.de B
+.ft B
+..
+.de I
+.ft I
+..
+.de R
+.ft R
+..
+.de h
+.LG
+.B
+\\$1
+.R
+.SM
+..
+.fi
+.\" side 1
+.ne 0.2i
+.LG
+.LG
+.B
+.ce
+GNU Emacs Quick Reference
+.sp 0.5
+.I
+.SM
+.ce
+(version 17)
+.sp 1.25
+.R
+.SM
+Emacs (\fBE\fR-maks) \- full-screen real-time text editor
+.sp 1.25
+.h "Entering and Leaving GNU Emacs"
+.sp 0.5
+.in +2n
+\fRemacs\fI file ...\fR
+.sp 0.25
+^Z		Stop Emacs for later resumption
+.sp 0.25
+^X ^C		Quit Emacs and return to shell
+.R
+.in -2n
+.sp 1
+.TS
+lp+2fB s
+a l.
+GNU EMACS CONCEPTS
+.sp 0.5
+Insertion	T{
+.na
+.ll 2.8i
+You are always in 
+insert mode in Emacs.
+Ordinary text is inserted
+as it is typed.
+T}
+.sp 0.5
+Commands	T{
+.na
+.ll 2.8i
+Emacs commands are invoked by
+typing sequences of control 
+characters.  Control
+chars are written \fIC-x\fP,
+escape sequences \fIESC x\fP.
+T}
+.sp 0.5
+Buffer 	T{
+.na
+.ll 2.8i
+A block of 
+text that you may 
+examine and modify
+in the editor.
+T}
+.sp 0.5
+Window	T{
+.na
+.ll 2.8i
+An area on the screen.
+A buffer can be displayed
+in one or more windows.
+T}
+.sp 0.5
+File	T{
+.na
+.ll 2.8i
+A block of text that can be read into
+a buffer or written from a buffer.
+T}
+.sp 0.5
+Kills	T{
+.na
+.ll 2.8i
+Text that is \fIkilled\fP is placed
+in a special kill-buffer.  
+Killed text can be retrieved with a \fIyank\fP.
+The most recent sixteen kills are kept in the \fIkill-ring\fP.
+T}
+.sp 0.5
+Point	T{
+.na
+.ll 2.8i
+The current cursor location 
+in each buffer is called
+\fIpoint\fP (formerly \fIdot\fP).
+T}
+.sp 0.5
+Mark	T{
+.na
+.ll 2.8i
+The \fImark\fP is an invisible pointer in
+each buffer.
+It is set by many commands to the
+location where they were performed.
+T}
+.sp 0.5
+Region	T{
+.na
+.ll 2.8i
+Text between the \fIpoint\fR
+and the \fImark\fR is called the
+\fIregion\fP.
+T}
+.sp 0.5
+Registers	T{
+.na
+.ll 2.8i
+Emacs has 26
+general registers, named \fIa\fR
+through \fIz\fR.  Registers may hold
+commands, locations, numbers, or text.
+T}
+.sp 0.5
+Modes	T{
+.na
+.ll 2.8i
+Every buffer has a major mode,
+and maybe some minor modes.
+\fIMajor\fP modes determine
+language-sensitive behavior
+and define special mode commands.
+\fIMinor\fP modes add special features
+without adding new commands.
+T}
+.sp 0.25
+.TE
+.sp 1
+.TS
+expand;
+lp+2fB s
+a  l
+l  s
+afB l.
+GETTING HELP
+.sp 0.25
+\*(HC 	Invoke the self-documenter
+.sp 0.25
+T{
+.na
+.ll 3.9i
+.in +1n
+The self-documenter function will prompt
+for a help command.  Most help commands
+ask for a name or character, which they
+will then describe for you.
+.in -1n
+.ad
+T}
+.sp 0.25
+\*(HC a	document functions apropos a word
+\*(HC b	list all key bindings
+\*(HC c	describe a key sequence briefly
+\*(HC f	describe a function
+\*(HC k	describe a key sequence completely	
+\*(HC l	show last 100 characters typed
+\*(HC m	describe this major mode
+\*(HC v	describe a variable
+\*(HC ?	show list of help commands
+\*(HC t	visit a friendly Emacs tutorial
+\*(HC i	invoke Info documentation reader
+.TE
+.bp
+.ne 0.3i
+.\" side 1 column 2
+.TS 
+lp+2fB s
+a l
+a l
+l s.
+SPECIFYING YOUR TERMINAL TYPE
+.sp 0.25
+setenv TERM \fItype\fR	  in \fIcsh\fR
+TERM=\fItype\fR ; export TERM	  in \fIsh\fR
+.sp 0.25
+\ here \fItype\fR=hp2621, vt100, etc.
+\ see also \fItset(1)\fR and \fIenviron(7)\fR
+.TE
+.sp 1
+.TS
+lp+2fB s
+a l.
+VARIABLES AND OPTIONS
+.sp 0.25
+\*(HC\  v	T{
+.na
+.ll 2.5i
+Describe a variable.
+The variable's value 
+and description will
+be displayed.
+.ad
+T}
+.sp 0.25
+ESC x set-var	T{
+.na
+.ll 2.5i
+Set a variable to a value,
+you will be prompted for
+the variable name and new 
+value.
+.ad
+T}
+.sp 0.25
+ESC x edit-opt	T{
+.na
+.ll 2.5i
+Open a buffer to view and set
+options interactively.
+T}
+.TE
+.sp 0.75
+.ti 5n
+.fi
+GNU Emacs maintains a large number of
+variables that define many of its
+operating characteristics.  You
+can examine and modify these variables
+using the commands given above.
+.sp 1
+.TS
+expand;
+lp+2fB s s
+c c c
+c c c
+a l l.
+USEFUL VARIABLES
+.sp 0.25
+Variable	Initial	Description
+Name	Value
+.sp 0.25
+auto-save-default	t	auto-save files
+auto-save-interval	300	chars between saves
+blink-matching-paren	t	show paren matches
+c-indent-level	2	C statement indent
+c-label-offset	-2	relative label indent
+case-fold-search	t	searches ignore case
+case-replace	t	replace preserves case
+comment-column	32	column to start comments
+comment-start	None	string to start comments
+fill-column	70	fill text to column
+indent-tabs-mode	t	indent can use tabs
+scroll-step	0	scroll by when moving
+tab-width	8	width of tab char in display
+.TE
+.sp 1
+.TS
+expand;
+lp+2fB s
+l s
+l s
+l s
+ae le.
+REGULAR EXPRESSIONS
+.sp 0.25
+.in +2n
+Some Emacs commands use regular expressions
+for string pattern matching.  Common commands
+that use this are the following.
+.in -2n
+.sp 0.5
+isearch-backward-regexp	replace-regexp
+isearch-forward-regexp	query-replace-regexp
+command-apropos
+.sp 0.75
+.TE
+.TS
+expand;
+l s
+l s
+ap+2fI l
+afI l.
+.in +2n
+The following primitives are recognized by the Emacs
+pattern matcher.
+.in -2n
+.sp 0.25
+\ ^	beginning of line
+\ .	any character except newline
+\ $	end of line
+[str]	any char in \fIstr\fR
+[^str]	...not in \fIstr\fR
+[X-Y]	...in range \fIX\fR to \fIY\fR
+\e`	beginning of buffer
+\e'	end of buffer
+\eb	beginning or end of word
+\eB	\fBnot\fR beginning or end of word
+\ew	any word-constituent character
+\eW	any non-word-constituent character
+\ *	zero or more of preceding regexp
+\ +	one or more of preceding regexp
+\ ?	zero or one of preceding regexp
+\e|	alternation of two patterns
+\e(\  \e)	parentheses for expression grouping
+\e0...\e9	remember \fIn\fRth regexp in \e( \e)
+.TE
+.bp
+.\" side 1 column 3
+\" .ne 0.2i
+.TS
+expand;
+lp+2fB s
+a l.
+THE DISPLAY
+.sp 0.25
+Text Area	T{
+.na
+.ll 2.8i
+A view onto a text buffer.
+.br
+Each window has its own text area.
+Your display always has at least
+one text area on it.
+T}
+.sp 0.25
+Mode Line	T{
+.na
+.ll 2.8i
+Status line displayed at the bottom of a window.
+.br
+The mode line
+displays the current buffer name, major and minor
+editing modes, and current location in the file.
+The variable \fImode-line-format\fP defines the contents
+and layout of the mode line.
+T}
+.sp 0.25
+Echo Area	T{
+.na
+.ll 2.8i
+A one-line area at the bottom of the screen.
+.br
+Error messages and progress messages are displayed
+in the echo area.
+This area is also called the \fImini-buffer\fP,
+because Emacs command prompts and your responses are typed there.
+.ad
+T}
+.TE
+.sp 1
+.TS
+expand;
+lp+2fB s
+a l
+l s
+a l.
+QUERY REPLACE
+.sp 0.25
+ESC %	Invoke interactive replacement
+.sp 0.5
+T{
+.na
+.in +2n
+.ll 3.5i
+Query-replace will prompt you for a string
+and another string with which to replace it.
+Replacement proceeds from the current location (point)
+to the end of the buffer.
+The following query responses are recognized.
+.in -2n
+.ad
+T}
+.sp 0.5
+space	replace this match
+DEL	skip to next match
+ESC	exit query replace
+\ .	replace this match and exit
+C-r	enter recursive edit
+C-w	delete match and recursive edit
+\ !	replace all remaining matches
+\ ^	move back to previous match
+.TE
+.sp 1
+.TS
+expand;
+lp+2fB l
+l s.
+WRITING NEW COMMANDS
+.sp 0.25
+T{
+.na
+.in +2n
+.ll 3.5i
+New commands can be written by performing them
+as keyboard macros, then saving the keyboard macros
+in a file as Emacs Lisp code.  You may also write Emacs Lisp
+code directly (using \fIemacs-lisp\fR mode).
+The functions below are useful for writing and saving your own
+new commands.  They are invoked with\ \ ESC x \fIcommand\fP.
+See also ``Macros and Repetition''.
+.in -2n
+.ad
+T}
+.TE
+.sp 0.5
+.TS
+expand;
+a r.
+append-kbd-macro	macro to Emacs Lisp file
+end-kbd-macro	finish macro definition
+kbd-macro-query	wait for user response in a macro
+name-last-kbd-macro	give defined macro a name
+start-kbd-macro	begin macro definition
+write-kbd-macro	write named macro to Emacs Lisp file
+.TE
+.sp 1
+.TS
+expand;
+lp+2fB s
+l s
+a r.
+REDEFINING COMMAND KEYS
+.sp 0.25
+T{
+.in +2n
+.ll 3.5i
+Command keys may be redefined globally, or
+just for the current major mode.
+The following
+functions are useful for redefining command
+keys.
+These commands may be invoked with ESC x \fIcommand\fP.
+T}
+.sp 0.5
+describe-key	tell what a key does
+global-set-key	define \fIkey\fP to execute \fIfunction\fP
+global-unset-key	remove default binding of \fIkey\fP
+local-set-key	define \fIkey\fP as \fIfunction\fP in this major mode
+local-unset-key	undefine \fIkey\fP in this major mode
+.TE
+.bp
+.\" side 2 column 1
+.ne 0.2i
+.LG
+.LG
+.B
+.ce
+GNU Emacs Command Reference
+.sp 0.5
+.I
+.SM
+.ce
+(version 17)
+.R
+.SM
+.sp 1.25
+.TS
+expand;
+lp+2fB s
+a l.
+CONTROL SEQUENCES
+.sp 0.25
+C-\fIx\fR	control char
+ 	hold CTRL and type \fIx\fR
+.sp 0.25
+ESC \fIx\fR	meta char
+ 	type ESC then type \fIx\fR
+.sp 0.25
+ESC C-\fIx\fR	control-meta char
+ 	type ESC, then type C-\fIx\fR
+.sp 0.25
+C-x \fIx\fR	ctrl-x char
+ 	type C-x then type \fIx\fR.
+.T&
+lp+2fB s
+a l.
+.sp 1
+SIMPLE MOTION
+.sp 0.25
+C-a	beginning-of-line
+C-b	backward-char
+C-e	end-of-line
+C-f	forward-char
+TAB	indent-for-tab-command
+LINEFEED	newline-and-indent
+RETURN	newline
+C-n	next-line
+C-o	open-line
+C-p	previous-line
+DEL	delete-backward-char
+ESC <	beginning-of-buffer
+ESC >	end-of-buffer
+.T&
+lp+2fB s
+a l.
+.sp 1
+SCROLLING
+.sp 0.25
+C-v	scroll-up
+C-x <	scroll-left
+C-x >	scroll-right
+ESC C-v	scroll-other-window
+ESC v	scroll-down
+.T&
+lp+2fB s
+a l.
+.sp 1
+TEXT MOTION
+.sp 0.25
+C-x [	backward-page
+C-x ]	forward-page
+ESC [	backward-paragraph
+ESC ]	forward-paragraph
+ESC a	backward-sentence
+ESC b	backward-word
+ESC e	forward-sentence
+ESC f	forward-word
+.T&
+lp+2fB s
+a l.
+.sp 1
+TRANSPOSITION
+.sp 0.25
+C-t	transpose-chars
+C-x C-t	transpose-lines
+ESC C-t	transpose-sexps
+ESC t	transpose-words
+.T&
+lp+2fB s
+a l.
+.sp 1
+QUERIES AND FIXES 
+.sp 0.25
+C-g	quit immediately
+C-l	recenter (and fix screen)
+\*(HC	help-command
+C-q	quoted-insert
+C-x =	what-cursor-position
+C-x l	count-lines-page
+C-x u	advertised-undo
+C-]	abort-recursive-edit
+ESC =	count-lines-region
+.\" side 2 column 2
+.TE
+.bp
+.TS
+expand;
+lp+2fB s
+a l.
+.sp 1
+DELETES, KILLS, AND YANKS
+.sp 0.25
+C-d	delete-char
+C-k	kill-line
+C-w	kill-region
+C-y	yank
+DEL	delete-backward-char
+C-x C-o	delete-blank-lines
+C-x DEL	backward-kill-sentence
+ESC C-w	append-next-kill
+ESC \e	delete-horizontal-space
+ESC ^	delete-indentation
+ESC d	kill-word
+ESC k	kill-sentence
+ESC w	copy-region-as-kill
+ESC y	yank-pop
+ESC z	zap-to-char
+ESC DEL	backward-kill-word
+.T&
+lp+2fB s
+a l.
+.sp 1
+BUFFERS
+.sp 0.25
+C-x C-b	list-buffers
+C-x C-f	find-file
+C-x C-s	save-buffer
+C-x a	append-to-buffer
+C-x b	switch-to-buffer
+C-x h	mark-whole-buffer
+C-x k	kill-buffer
+C-x n	narrow-to-region
+C-x s	save-some-buffers
+C-x w	widen
+C-x 4 b	switch-to-buffer-other-window
+ESC ~	not-modified
+.T&
+lp+2fB s
+a l.
+.sp 1
+WINDOWS
+.sp 0.25
+C-x 0	delete-window
+C-x 1	delete-other-windows
+C-x 2	split-window-vertically
+C-x 5	split-window-horizontally
+C-x ^	enlarge-window
+C-x o	other-window
+ESC C-v	scroll-other-window
+C-x 4 C-f	find-file-other-window
+.T&
+lp+2fB s
+a l.
+.sp 1e
+FILES
+.sp 0.25
+C-x C-f	find-file
+C-x C-r	find-file-read-only
+C-x C-v	find-alternate-file
+C-x C-w	write-file
+C-x i	insert-file
+.T&
+lp+2fB s
+a l.
+.sp 1
+SEARCHING
+.sp 0.25
+C-s	isearch-forward
+C-r	isearch-backward
+ESC %	query-replace
+ESC C-s	isearch-forward-regexp
+.T&
+lp+2fB s
+a l.
+.sp 1
+LISP COMMANDS
+.sp 0.25
+ESC C-a	beginning-of-defun
+ESC C-b	backward-sexp
+ESC C-e	end-of-defun
+ESC C-f	forward-sexp
+ESC C-h	mark-defun
+ESC C-k	kill-sexp
+ESC (	insert-parentheses
+ESC )	move-past-close-and-reindent
+.TE
+.bp
+.TS
+expand;
+lp+2fB s
+a l.
+.sp 1
+CASE CHANGES
+.sp 0.25
+C-x C-l	downcase-region
+C-x C-u	upcase-region
+ESC c	capitalize-word
+ESC l	downcase-word
+ESC u	upcase-word
+.T&
+lp+2fB s
+a l.
+.sp 0.5
+FILLING AND CENTERING
+.sp 0.25
+C-x f	set-fill-column
+C-x .	set-fill-prefix
+ESC q	fill-paragraph
+.T&
+lp+2fB s
+a l.
+.sp 1
+MARKS AND REGISTERS
+.sp 0.25
+C-@	set-mark-command
+C-x C-p	mark-page
+C-x C-x	exchange-point-and-mark
+C-x /	point-to-register
+C-x g	insert-register
+C-x h	mark-whole-buffer
+C-x j	register-to-point
+C-x r	copy-rectangle-to-register
+C-x x	copy-to-register
+ESC C-@	mark-sexp
+ESC C-h	mark-defun
+ESC @	mark-word
+.T&
+lp+2fB s
+a l.
+.sp 1
+MACROS AND REPETITION
+.sp 0.25
+C-u	universal-argument
+C-x (	start-kbd-macro
+C-x )	end-kbd-macro
+C-x e	call-last-kbd-macro
+C-x q	kbd-macro-query
+ESC -	negative-argument
+ESC 0 .. ESC 9	digit-argument
+.T&
+lp+2fB s
+a l.
+.sp 1
+FUNCTION INVOCATION
+.sp 0.25
+C-x C-e	eval-last-sexp
+C-x ESC	repeat-complex-command
+ESC ESC	eval-expression
+ESC x	execute-extended-command
+.T&
+lp+2fB s
+a l.
+.sp 1
+SHELLS AND SUBSYSTEMS
+.sp 0.25
+C-x d	dired (edit directory)
+C-x m	mail
+ESC !	shell-command
+ESC |	shell-command-on-region
+ESC $	spell-word
+.T&
+lp+2fB s
+a l.
+.sp 1
+EXIT
+.sp 0.25
+C-x C-c	save-buffers-kill-emacs
+C-x C-z	suspend-emacs
+ESC C-c	exit-recursive-edit
+.TE
+.sp 1
+.TS
+expand;
+lp+2fB s
+l s
+a l.
+Some Editing Modes
+.sp 0.25
+\ (invoke with  ESC x \fImode-name\fR)
+.sp 0.25
+abbrev-mode	auto-fill-mode
+c-mode	text-mode
+fundamental-mode	lisp-interaction-mode	      
+lisp-mode	nroff-mode		      
+outline-mode	overwrite-mode		      
+picture-mode	scheme-mode
+.TE

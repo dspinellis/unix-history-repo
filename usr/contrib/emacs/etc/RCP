@@ -1,0 +1,34 @@
+
+From: shane@mit-ajax (K. Shane Hartman)
+I have created a mechanism for automatically updating your Gnu Emacs
+sources from the sources maintained on mit-prep. To take advantage of this
+mechanism you must have a connection to the internet and do the following:
+
+Obtain the modified version of rcp from mit-prep. This version is upward
+compatible with standard rcp. The relevant files are:
+mit-prep:/u2/emacs/rcp.binary (compiled for vax 4.2)
+mit-prep:/u2/emacs/rcp.1c
+mit-prep:/u2/emacs/RCP.README
+You can use ftp to obtain the files or rcp (the old version will work for
+this, just do 'rcp mit-prep.rcp:/u2/emacs/rcp.binary rcp.binary' ...
+
+If you have a source license, /u2/emacs/rcp.diff may be useful: it is
+a diff of ucb rcp and the modified rcp.
+
+Replace your current copy of rcp with rcp.binary (it must suid to root),
+but keep the old copy around just in case (e.g. rename to rcp.ucb) and
+install the man page.
+
+Now connect to your toplevel emacs directory (which contains src, etc, dbx,
+lisp, and info) and do:
+
+rcp -ruvp "mit-prep.rcp:/u2/emacs/dist/*" .
+
+The new options: v - verbose, u - update, and p - preserve write dates.
+The rcp 'account' supports only the rcp command.
+
+Once you have synchronized with the write dates for the files on prep, the
+above command is sufficient to update all and only those files that have
+changed on prep with respect to your sources. For this scheme to work, you
+must maintain the sources on your own machine and be aware that if you
+change a source on your machine, then rcp can be fooled.
