@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode.h	7.56 (Berkeley) %G%
+ *	@(#)vnode.h	7.57 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -199,8 +199,13 @@ void	lease_updatetime __P((int deltat));
  * Flags for vdesc_flags:
  */
 #define VDESC_MAX_VPS		16
-/* Low order 16 flag bits are reserved for map flags for vp arguments. */
+/* Low order 16 flag bits are reserved for willrele flags for vp arguments. */
+#define VDESC_VP0_WILLRELE	0x0001
+#define VDESC_VP1_WILLRELE	0x0002
+#define VDESC_VP2_WILLRELE	0x0004
+#define VDESC_VP3_WILLRELE	0x0008
 #define VDESC_NOMAP_VPP		0x0100
+#define VDESC_VPP_WILLRELE	0x0200
 
 /*
  * VDESC_NO_OFFSET is used to identify the end of the offset list
@@ -220,11 +225,13 @@ struct vnodeop_desc {
 	 * These ops are used by bypass routines to map and locate arguments.
 	 * Creds and procs are not needed in bypass routines, but sometimes
 	 * they are useful to (for example) transport layers.
+	 * Nameidata is useful because it has a cred in it.
 	 */
 	int	*vdesc_vp_offsets;	/* list ended by VDESC_NO_OFFSET */
 	int	vdesc_vpp_offset;	/* return vpp location */
 	int	vdesc_cred_offset;	/* cred location, if any */
 	int	vdesc_proc_offset;	/* proc location, if any */
+	int	vdesc_componentname_offset; /* if any */
 	/*
 	 * Finally, we've got a list of private data (about each operation)
 	 * for each transport layer.  (Support to manage this list is not
