@@ -13,18 +13,29 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)varargs.h	7.2 (Berkeley) %G%
+ *	@(#)varargs.h	7.3 (Berkeley) %G%
  *
- * from: $Header: varargs.h,v 1.4 92/06/17 06:10:31 torek Exp $
+ * from: $Header: varargs.h,v 1.5 92/10/16 04:16:09 torek Exp $
  */
 
 #ifndef _MACHINE_VARARGS_H_
 #define	_MACHINE_VARARGS_H_
 
+/* See <machine/stdarg.h> for comments. */
+#if __GNUC__ == 1
+#define __extension__
+#endif
 typedef char *va_list;
 #define	va_dcl	int va_alist;
 #define	va_start(ap) (__builtin_saveregs(), (ap) = (char *)&va_alist)
-#define va_arg(ap, t)	(((t *)(ap += sizeof(t)))[-1])
+#define va_arg(ap, ty) \
+    (sizeof(ty) == 8 ? __extension__ ({ \
+	union { ty __d; int __i[2]; } __u; \
+	__u.__i[0] = ((int *)(ap))[0]; \
+	__u.__i[1] = ((int *)(ap))[1]; \
+	(ap) += 8; \
+	__u.__d; }) : \
+    ((ty *)(ap += sizeof(ty)))[-1])
 #define va_end(ap) /* empty */
 
 #endif /* !_MACHINE_VARARGS_H_ */

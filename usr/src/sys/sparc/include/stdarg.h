@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stdarg.h	7.2 (Berkeley) %G%
+ *	@(#)stdarg.h	7.3 (Berkeley) %G%
  *
- * from: $Header: stdarg.h,v 1.5 92/06/17 06:10:29 torek Exp $
+ * from: $Header: stdarg.h,v 1.6 92/10/02 00:08:01 torek Exp $
  */
 
 /*
@@ -38,13 +38,31 @@ typedef char *va_list;
 			 ap = (char *)__builtin_next_arg())
 #define va_end(ap)	/* empty */
 
+#if __GNUC__ == 1
+#define __extension__	/* hack for bootstrapping via gcc 1.x */
+#endif
+
 /*
- * va_arg picks up the next argument of type `t'.  Appending an
- * asterisk to t must produce a pointer to t (i.e., t may not be,
- * e.g., `int (*)()').  In addition, t must not be any type which
+ * va_arg picks up the next argument of type `ty'.  Appending an
+ * asterisk to ty must produce a pointer to ty (i.e., ty may not be,
+ * e.g., `int (*)()').  In addition, ty must not be any type which
  * undergoes promotion to some other type (e.g., char): it must
  * be the promoted type instead.
+ *
+ * Gcc-2.x tries to use ldd/std for double and quad_t values, but Sun's
+ * brain-damaged calling convention does not quad-align these.  Thus,
+ * for 8-byte arguments, we have to pick up the actual value four bytes
+ * at a time, and use type punning (i.e., a union) to produce the result.
+ * (We could also do this with a libc function, actually, by returning
+ * 8 byte integers in %o0+%o1 and the same 8 bytes as a double in %f0+%f1.)
  */
-#define va_arg(ap, t)	(((t *)(ap += sizeof(t)))[-1])
+#define va_arg(ap, ty) \
+    (sizeof(ty) == 8 ? __extension__ ({ \
+	union { ty __d; int __i[2]; } __u; \
+	__u.__i[0] = ((int *)(ap))[0]; \
+	__u.__i[1] = ((int *)(ap))[1]; \
+	(ap) += 8; \
+	__u.__d; }) : \
+    ((ty *)(ap += sizeof(ty)))[-1])
 
 #endif /* _MACHINE_STDARG_H */
