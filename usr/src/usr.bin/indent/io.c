@@ -8,11 +8,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)io.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)io.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
-#include "indent_globs.h"
+#include <stdio.h>
 #include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
+#include "indent_globs.h"
 
 
 int         comment_open;
@@ -499,6 +502,7 @@ count_spaces(current, buffer)
 int	found_err;
 /* VARARGS2 */
 diag(level, msg, a, b)
+	char *msg;
 {
     if (level)
 	found_err = 1;
