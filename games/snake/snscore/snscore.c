@@ -61,7 +61,7 @@ main()
 	char	buf[80], cp;
 	short	uid, score;
 	FILE	*fd;
-	int	noplayers;
+	int	noplayers=0;
 	int	i, j, notsorted;
 	short	whoallbest, allbest;
 	char	*q;
