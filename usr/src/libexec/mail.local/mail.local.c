@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)mail.local.c	4.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)mail.local.c	4.35 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -76,7 +76,7 @@ char **argv;
 	for (i=SIGHUP; i<=SIGTERM; i++)
 		setsig(i, delex);
 	i = mkstemp(lettmp);
-	tmpf = fdopen(i, "r+w");
+	tmpf = fdopen(i, "r+");
 	if (i < 0 || tmpf == NULL)
 		panic("mail: %s: cannot open for writing", lettmp);
 	/*
@@ -311,7 +311,7 @@ copyback()
 	fd = open(mailfile, O_RDWR | O_CREAT, MAILMODE);
 	if (fd >= 0) {
 		flock(fd, LOCK_EX);
-		malf = fdopen(fd, "r+w");
+		malf = fdopen(fd, "r+");
 	}
 	if (fd < 0 || malf == NULL)
 		panic("can't rewrite %s", lfil);
