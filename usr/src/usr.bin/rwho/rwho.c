@@ -1,11 +1,10 @@
 #ifndef lint
-static char sccsid[] = "@(#)rwho.c	4.5 83/05/05";
+static char sccsid[] = "@(#)rwho.c	4.6 83/05/25";
 #endif
 
 #include <sys/param.h>
 #include <stdio.h>
 #include <dir.h>
-#include <utmp.h>
 #include <rwhod.h>
 
 DIR	*etc;
@@ -16,7 +15,7 @@ int	utmpcmp();
 struct	myutmp {
 	char	myhost[32];
 	int	myidle;
-	struct	utmp myutmp;
+	struct	outmp myutmp;
 } myutmp[NUSERS];
 int	nusers;
 
@@ -94,7 +93,7 @@ again:
 	mp = myutmp;
 	width = 0;
 	for (i = 0; i < nusers; i++) {
-		int j = strlen(mp->myhost) + 1 + strlen(mp->myutmp.ut_line);
+		int j = strlen(mp->myhost) + 1 + strlen(mp->myutmp.out_line);
 		if (j > width)
 			width = j;
 		mp++;
@@ -102,12 +101,12 @@ again:
 	mp = myutmp;
 	for (i = 0; i < nusers; i++) {
 		char buf[22];
-		sprintf(buf, "%s:%s", mp->myhost, mp->myutmp.ut_line);
+		sprintf(buf, "%s:%s", mp->myhost, mp->myutmp.out_line);
 		printf("%-8.8s %-*s %.12s",
-		   mp->myutmp.ut_name,
+		   mp->myutmp.out_name,
 		   width,
 		   buf,
-		   ctime((time_t *)&mp->myutmp.ut_time)+4);
+		   ctime((time_t *)&mp->myutmp.out_time)+4);
 		mp->myidle /= 60;
 		if (mp->myidle) {
 			if (aflg) {
@@ -132,11 +131,11 @@ utmpcmp(u1, u2)
 {
 	int rc;
 
-	rc = strncmp(u1->myutmp.ut_name, u2->myutmp.ut_name, 8);
+	rc = strncmp(u1->myutmp.out_name, u2->myutmp.out_name, 8);
 	if (rc)
 		return (rc);
 	rc = strncmp(u1->myhost, u2->myhost, 8);
 	if (rc)
 		return (rc);
-	return (strncmp(u1->myutmp.ut_line, u2->myutmp.ut_line, 8));
+	return (strncmp(u1->myutmp.out_line, u2->myutmp.out_line, 8));
 }
