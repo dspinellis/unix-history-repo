@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.9 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -445,7 +445,7 @@ returntosender(msg, returnq, sendbody, e)
 	define('_', "localhost", ee);
 	ee->e_puthdr = putheader;
 	ee->e_putbody = errbody;
-	ee->e_flags |= EF_RESPONSE;
+	ee->e_flags |= EF_RESPONSE|EF_METOO;
 	if (!bitset(EF_OLDSTYLE, e->e_flags))
 		ee->e_flags &= ~EF_OLDSTYLE;
 	ee->e_sendqueue = returnq;
