@@ -20,14 +20,13 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fsdb.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)fsdb.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
-/*	@(#)fsdb.c	1.4	*/
-
-/*  fsdb - file system debugger */
-
-/*  usage: fsdb [options] special
+/*
+ *  fsdb - file system debugger
+ *
+ *  usage: fsdb [options] special
  *  options:
  *	-?		display usage
  *	-o		override some error conditions
@@ -294,6 +293,8 @@ usage:
 		printf("%s: Bad magic number in file system\n", argv[1]);
 		exit(1);
 	}
+	if (fs->fs_postblformat == FS_42POSTBLFMT)
+		fs->fs_nrpos = 8;
 	printf("fsdb of %s %s -- last mounted on %s\n",
 		argv[1], wrtflag ? "(Opened for write)" : "(Read only)", 
 		&fs->fs_fsmnt[0]);
@@ -3239,7 +3240,7 @@ OTX:
 							end++;
 					}
 				}
-				if (!override && cg->cg_magic != CG_MAGIC) {
+				if (!override && !cg_chkmagic(cg)) {
 					printf("invalid cylinder group ");
 					printf("magic word\n");
 					if (cur_cgrp)
@@ -3247,36 +3248,7 @@ OTX:
 					error++;
 					return;
 				}
-				printf("\tcylinder group ");
-				print(cur_cgrp - 1, 0, 0, 0);
-				printf(":\n");
-				printf("cg_cgx    = ");
-				print(cg->cg_cgx, 12, -8, 0);
-				printf("cg_ncyl   = ");
-				print(cg->cg_ncyl, 12, -8, 0);
-				printf("\ncg_niblk  = ");
-				print(cg->cg_niblk, 12, -8, 0);
-				printf("cg_ndblk  = ");
-				print(cg->cg_ndblk, 12, -8, 0);
-				printf("\ncg_rotor  = ");
-				print(cg->cg_rotor, 12, -8, 0);
-				printf("cg_frotor = ");
-				print(cg->cg_frotor, 12, -8, 0);
-				printf("cg_irotor = ");
-				print(cg->cg_irotor, 12, -8, 0);
-				printf("\n\tcylinder group summary info:\n");
-				printf("cs_ndir   = ");
-				print(cg->cg_cs.cs_ndir, 12, -8, 0);
-				printf("cs_nbfree = ");
-				print(cg->cg_cs.cs_nbfree, 12, -8, 0);
-				printf("\ncs_nifree = ");
-				print(cg->cg_cs.cs_nifree, 12, -8, 0);
-				printf("cs_nffree = ");
-				print(cg->cg_cs.cs_nffree, 12, -8, 0);
-				printf("\n");
-				if (count == 1)
-					printf("\tmodified: %s",
-						ctime(&cg->cg_time));
+				printcg(cg);
 				if (tcount)
 					printf("\n");
 			}
@@ -3381,9 +3353,6 @@ OTX:
 				case IFREG:
 					c = '-';
 					break;
-/*				case IFIFO:
-					c = 'p';
-					break;	 	SYSTEM V only */
 				case IFLNK:
 					c = 'l';
 					break;
@@ -3540,113 +3509,7 @@ empty:
 					print(cur_cgrp - 1, 0, 0, 0);
 					printf(":\n");
 				}
-				printf("fs_sblkno    = ");
-				print(fs->fs_sblkno, 12, -8, 0);
-				printf("fs_cblkno    = ");
-				print(fs->fs_cblkno, 12, -8, 0);
-				printf("fs_iblkno = ");
-				print(fs->fs_iblkno, 12, -8, 0);
-				printf("\nfs_dblkno    = ");
-				print(fs->fs_dblkno, 12, -8, 0);
-				printf("fs_cgoffset  = ");
-				print(fs->fs_cgoffset, 12, -8, 0);
-				printf("fs_cgmask = ");
-				print(fs->fs_cgmask, 12, -8, 0);
-				printf("\nfs_size      = ");
-				print(fs->fs_size, 12, -8, 0);
-				printf("fs_dsize     = ");
-				print(fs->fs_dsize, 12, -8, 0);
-				printf("fs_ncg    = ");
-				print(fs->fs_ncg, 12, -8, 0);
-				printf("\nfs_bsize     = ");
-				print(fs->fs_bsize, 12, -8, 0);
-				printf("fs_fsize     = ");
-				print(fs->fs_fsize, 12, -8, 0);
-				printf("fs_frag   = ");
-				print(fs->fs_frag, 12, -8, 0);
-				printf("\nfs_minfree   = ");
-				print(fs->fs_minfree, 12, -8, 0);
-				printf("fs_rotdelay  = ");
-				print(fs->fs_rotdelay, 12, -8, 0);
-				printf("fs_rps    = ");
-				print(fs->fs_rps, 12, -8, 0);
-				printf("\nfs_bmask     = ");
-				print(fs->fs_bmask, 12, -8, 0);
-				printf("fs_fmask     = ");
-				print(fs->fs_fmask, 12, -8, 0);
-				printf("fs_bshift = ");
-				print(fs->fs_bshift, 12, -8, 0);
-				printf("\nfs_fshift    = ");
-				print(fs->fs_fshift, 12, -8, 0);
-				printf("fs_maxcontig = ");
-				print(fs->fs_maxcontig, 12, -8, 0);
-				printf("fs_maxbpg = ");
-				print(fs->fs_maxbpg, 12, -8, 0);
-				printf("\nfs_fragshift = ");
-				print(fs->fs_fragshift, 12, -8, 0);
-				printf("fs_fsbtodb   = ");
-				print(fs->fs_fsbtodb, 12, -8, 0);
-				printf("fs_sbsize = ");
-				print(fs->fs_sbsize, 12, -8, 0);
-				printf("\nfs_csmask    = ");
-				print(fs->fs_csmask, 12, -8, 0);
-				printf("fs_csshift   = ");
-				print(fs->fs_csshift, 12, -8, 0);
-				printf("fs_nindir = ");
-				print(fs->fs_nindir, 12, -8, 0);
-				printf("\nfs_inopb     = ");
-				print(fs->fs_inopb, 12, -8, 0);
-				printf("fs_nspf      = ");
-				print(fs->fs_nspf, 12, -8, 0);
-				printf("fs_csaddr = ");
-				print(fs->fs_csaddr, 12, -8, 0);
-				printf("\nfs_cssize    = ");
-				print(fs->fs_cssize, 12, -8, 0);
-				printf("fs_cgsize    = ");
-				print(fs->fs_cgsize, 12, -8, 0);
-				printf("fs_ntrak  = ");
-				print(fs->fs_ntrak, 12, -8, 0);
-				printf("\nfs_nsect     = ");
-				print(fs->fs_nsect, 12, -8, 0);
-				printf("fs_spc       = ");
-				print(fs->fs_spc, 12, -8, 0);
-				printf("fs_ncyl   = ");
-				print(fs->fs_ncyl, 12, -8, 0);
-				printf("\nfs_cpg       = ");
-				print(fs->fs_cpg, 12, -8, 0);
-				printf("fs_ipg       = ");
-				print(fs->fs_ipg, 12, -8, 0);
-				printf("fs_fpg    = ");
-				print(fs->fs_fpg, 12, -8, 0);
-				printf("\nfs_fmod      = ");
-				print(fs->fs_fmod, 12, -8, 0);
-				printf("fs_clean     = ");
-				print(fs->fs_clean, 12, -8, 0);
-				printf("fs_ronly  = ");
-				print(fs->fs_ronly, 12, -8, 0);
-				printf("\nfs_flags     = ");
-				print(fs->fs_flags, 12, -8, 0);
-				printf("fs_cgrotor   = ");
-				print(fs->fs_cgrotor, 12, -8, 0);
-				printf("fs_cpc    = ");
-				print(fs->fs_cpc, 12, -8, 0);
-				printf("\nfs_magic     = ");
-				print(fs->fs_magic, 12, -8, 0);
-				printf("\n");
-				printf("\ttotal cylinder group summary ");
-				printf("info:\n");
-				printf("cs_ndir      = ");
-				print(fs->fs_cstotal.cs_ndir, 12, -8, 0);
-				printf("cs_nbfree    = ");
-				print(fs->fs_cstotal.cs_nbfree, 12, -8, 0);
-				printf("\ncs_nifree    = ");
-				print(fs->fs_cstotal.cs_nifree, 12, -8, 0);
-				printf("cs_nffree    = ");
-				print(fs->fs_cstotal.cs_nffree, 12, -8, 0);
-				printf("\n");
-				if (count == 1)
-					printf("\tmodified: %s",
-						ctime(&fs->fs_time));
+				printsb(sb);
 				if (tcount)
 					printf("\n");
 			}
@@ -3908,6 +3771,172 @@ print(value, fieldsz, digits, lead)
 	printf(string, value);
 	for (i = 0; i < fieldsz - digits; i++)
 		printf(" ");
+}
+
+/*
+ * Print out the contents of a superblock.
+ */
+printsb(fs)
+	struct fs *fs;
+{
+	int c, i, j, k, size;
+
+	if (fs->fs_postblformat == FS_42POSTBLFMT)
+		fs->fs_nrpos = 8;
+	printf("magic\t%x\tformat\t%s\ttime\t%s", fs->fs_magic,
+	    fs->fs_postblformat == FS_42POSTBLFMT ? "static" : "dynamic",
+	    ctime(&fs->fs_time));
+	printf("nbfree\t%d\tndir\t%d\tnifree\t%d\tnffree\t%d\n",
+	    fs->fs_cstotal.cs_nbfree, fs->fs_cstotal.cs_ndir,
+	    fs->fs_cstotal.cs_nifree, fs->fs_cstotal.cs_nffree);
+	printf("ncg\t%d\tncyl\t%d\tsize\t%d\tblocks\t%d\n",
+	    fs->fs_ncg, fs->fs_ncyl, fs->fs_size, fs->fs_dsize);
+	printf("bsize\t%d\tshift\t%d\tmask\t0x%08x\n",
+	    fs->fs_bsize, fs->fs_bshift, fs->fs_bmask);
+	printf("fsize\t%d\tshift\t%d\tmask\t0x%08x\n",
+	    fs->fs_fsize, fs->fs_fshift, fs->fs_fmask);
+	printf("frag\t%d\tshift\t%d\tfsbtodb\t%d\n",
+	    fs->fs_frag, fs->fs_fragshift, fs->fs_fsbtodb);
+	printf("cpg\t%d\tbpg\t%d\tfpg\t%d\tipg\t%d\n",
+	    fs->fs_cpg, fs->fs_fpg / fs->fs_frag, fs->fs_fpg, fs->fs_ipg);
+	printf("minfree\t%d%%\toptim\t%s\tmaxcontig %d\tmaxbpg\t%d\n",
+	    fs->fs_minfree, fs->fs_optim == FS_OPTSPACE ? "space" : "time",
+	    fs->fs_maxcontig, fs->fs_maxbpg);
+	printf("rotdelay %dms\theadswitch %dus\ttrackseek %dus\trps\t%d\n",
+	    fs->fs_rotdelay, fs->fs_headswitch, fs->fs_trkseek, fs->fs_rps);
+	printf("ntrak\t%d\tnsect\t%d\tnpsect\t%d\tspc\t%d\n",
+	    fs->fs_ntrak, fs->fs_nsect, fs->fs_npsect, fs->fs_spc);
+	printf("trackskew %d\tinterleave %d\n",
+	    fs->fs_trackskew, fs->fs_interleave);
+	printf("nindir\t%d\tinopb\t%d\tnspf\t%d\n",
+	    fs->fs_nindir, fs->fs_inopb, fs->fs_nspf);
+	printf("sblkno\t%d\tcblkno\t%d\tiblkno\t%d\tdblkno\t%d\n",
+	    fs->fs_sblkno, fs->fs_cblkno, fs->fs_iblkno, fs->fs_dblkno);
+	printf("sbsize\t%d\tcgsize\t%d\tcgoffset %d\tcgmask\t0x%08x\n",
+	    fs->fs_sbsize, fs->fs_cgsize, fs->fs_cgoffset, fs->fs_cgmask);
+	printf("csaddr\t%d\tcssize\t%d\tshift\t%d\tmask\t0x%08x\n",
+	    fs->fs_csaddr, fs->fs_cssize, fs->fs_csshift, fs->fs_csmask);
+	printf("cgrotor\t%d\tfmod\t%d\tronly\t%d\n",
+	    fs->fs_cgrotor, fs->fs_fmod, fs->fs_ronly);
+	if (fs->fs_cpc != 0)
+		printf("blocks available in each of %d rotational positions",
+		     fs->fs_nrpos);
+	else
+		printf("insufficient space to maintain rotational tables\n");
+	for (c = 0; c < fs->fs_cpc; c++) {
+		printf("\ncylinder number %d:", c);
+		for (i = 0; i < fs->fs_nrpos; i++) {
+			if (fs_postbl(fs, c)[i] == -1)
+				continue;
+			printf("\n   position %d:\t", i);
+			for (j = fs_postbl(fs, c)[i], k = 1; ;
+			     j += fs_rotbl(fs)[j], k++) {
+				printf("%5d", j);
+				if (k % 12 == 0)
+					printf("\n\t\t");
+				if (fs_rotbl(fs)[j] == 0)
+					break;
+			}
+		}
+	}
+	printf("\ncs[].cs_(nbfree,ndir,nifree,nffree):\n\t");
+	for (i = 0, j = 0; i < fs->fs_cssize; i += fs->fs_bsize, j++) {
+		size = fs->fs_cssize - i < fs->fs_bsize ?
+		    fs->fs_cssize - i : fs->fs_bsize;
+		fs->fs_csp[j] = (struct csum *)calloc(1, size);
+		lseek(fd, fsbtodb(fs, (fs->fs_csaddr + j * fs->fs_frag)) *
+		    fs->fs_fsize / fsbtodb(fs, 1), 0);
+		if (read(fd, fs->fs_csp[j], size) != size) {
+			for (j--; j >= 0; j--)
+				free(fs->fs_csp[j]);
+			return;
+		}
+	}
+	for (i = 0; i < fs->fs_ncg; i++) {
+		struct csum *cs = &fs->fs_cs(fs, i);
+		if (i && i % 4 == 0)
+			printf("\n\t");
+		printf("(%d,%d,%d,%d) ",
+		    cs->cs_nbfree, cs->cs_ndir, cs->cs_nifree, cs->cs_nffree);
+	}
+	for (j--; j >= 0; j--)
+		free(fs->fs_csp[j]);
+	printf("\n");
+	if (fs->fs_ncyl % fs->fs_cpg) {
+		printf("cylinders in last group %d\n",
+		    i = fs->fs_ncyl % fs->fs_cpg);
+		printf("blocks in last group %d\n",
+		    i * fs->fs_spc / NSPB(fs));
+	}
+}
+
+/*
+ * Print out the contents of a cylinder group.
+ */
+printcg(cg)
+	struct cg *cg;
+{
+	int i,j;
+
+	printf("\ncg %d:\n", cg->cg_cgx);
+	printf("magic\t%x\ttell\t%x\ttime\t%s",
+	    fs->fs_postblformat == FS_42POSTBLFMT ?
+	    ((struct ocg *)cg)->cg_magic : cg->cg_magic,
+	    fsbtodb(fs, cgtod(fs, cg->cg_cgx)) * fs->fs_fsize / fsbtodb(fs, 1),
+	    ctime(&cg->cg_time));
+	printf("cgx\t%d\tncyl\t%d\tniblk\t%d\tndblk\t%d\n",
+	    cg->cg_cgx, cg->cg_ncyl, cg->cg_niblk, cg->cg_ndblk);
+	printf("nbfree\t%d\tndir\t%d\tnifree\t%d\tnffree\t%d\n",
+	    cg->cg_cs.cs_nbfree, cg->cg_cs.cs_ndir,
+	    cg->cg_cs.cs_nifree, cg->cg_cs.cs_nffree);
+	printf("rotor\t%d\tirotor\t%d\tfrotor\t%d\nfrsum",
+	    cg->cg_rotor, cg->cg_irotor, cg->cg_frotor);
+	for (i = 1, j = 0; i < fs->fs_frag; i++) {
+		printf("\t%d", cg->cg_frsum[i]);
+		j += i * cg->cg_frsum[i];
+	}
+	printf("\nsum of frsum: %d\niused:\t", j);
+	pbits(cg_inosused(cg), fs->fs_ipg);
+	printf("free:\t");
+	pbits(cg_blksfree(cg), fs->fs_fpg);
+	printf("b:\n");
+	for (i = 0; i < fs->fs_cpg; i++) {
+		if (cg_blktot(cg)[i] == 0)
+			continue;
+		printf("   c%d:\t(%d)\t", i, cg_blktot(cg)[i]);
+		for (j = 0; j < fs->fs_nrpos; j++) {
+			if (fs->fs_cpc == 0 ||
+			    fs_postbl(fs, i % fs->fs_cpc)[j] == -1)
+				continue;
+			printf(" %d", cg_blks(fs, cg, i)[j]);
+		}
+		printf("\n");
+	}
+}
+
+/*
+ * Print out the contents of a bit array.
+ */
+pbits(cp, max)
+	register char *cp;
+	int max;
+{
+	register int i;
+	int count = 0, j;
+
+	for (i = 0; i < max; i++)
+		if (isset(cp, i)) {
+			if (count)
+				printf(",%s", count % 6 ? " " : "\n\t");
+			count++;
+			printf("%d", i);
+			j = i;
+			while ((i+1)<max && isset(cp, i+1))
+				i++;
+			if (i != j)
+				printf("-%d", i);
+		}
+	printf("\n");
 }
 
 /*
