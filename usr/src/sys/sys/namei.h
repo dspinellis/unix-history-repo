@@ -1,65 +1,60 @@
 /*
- * Copyright (c) 1985, 1989 Regents of the University of California.
+ * Copyright (c) 1985, 1989, 1991 Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)namei.h	7.14 (Berkeley) %G%
+ *	@(#)namei.h	7.15 (Berkeley) %G%
  */
 
 #ifndef _NAMEI_H_
 #define	_NAMEI_H_
 
-#include <ufs/dir.h>		/* XXX */
-
 /*
  * Encapsulation of namei parameters.
- * One of these is located in the u. area to
- * minimize space allocated on the kernel stack.
  */
 struct nameidata {
-		/* arguments to namei and related context: */
+	/*
+	 * Arguments to namei.
+	 */
 	caddr_t	ni_dirp;		/* pathname pointer */
 	enum	uio_seg ni_segflg;	/* location of pathname */
 	u_long	ni_nameiop;		/* see below */
+	/*
+	 * Arguments to lookup.
+	 */
 	struct	ucred *ni_cred;		/* credentials */
-	struct	vnode *ni_startdir;	/* alternate starting directory */
-
-		/* shared between namei, lookup routines and commit routines: */
-	caddr_t	ni_pnbuf;		/* pathname buffer */
-	char	*ni_ptr;		/* current location in pathname */
-	char	*ni_next;		/* next location in pathname */
-	u_int	ni_pathlen;		/* remaining chars in path */
-	u_long	ni_hash;		/* hash value of current component */
-	short	ni_namelen;		/* length of current component */
-	short	ni_loopcnt;		/* count of symlinks encountered */
-	char	ni_makeentry;		/* 1 => add entry to name cache */
-	char	ni_isdotdot;		/* 1 => current component name is .. */
-
-		/* results: */
+	struct	vnode *ni_startdir;	/* starting directory */
+	struct	vnode *ni_rootdir;	/* logical root directory */
+	/*
+	 * Results
+	 */
 	struct	vnode *ni_vp;		/* vnode of result */
 	struct	vnode *ni_dvp;		/* vnode of intermediate directory */
-	struct	direct ni_dent;		/* final component name */
-
-		/* side effects: */
-	/* BEGIN UFS SPECIFIC */
-	off_t	ni_endoff;		/* end of useful directory contents */
-	struct ndirinfo {		/* saved info for new dir entry */
-		struct	iovec nd_iovec;		/* pointed to by ni_iov */
-		struct	uio nd_uio;		/* directory I/O parameters */
-	} ni_nd;
-	/* END UFS SPECIFIC */
+	/*
+	 * Shared between namei, lookup routines, and commit routines.
+	 */
+	char	*ni_pnbuf;		/* pathname buffer */
+	long	ni_pathlen;		/* remaining chars in path */
+	char	*ni_ptr;		/* current location in pathname */
+	long	ni_namelen;		/* length of current component */
+	char	*ni_next;		/* next location in pathname */
+	u_long	ni_hash;		/* hash value of current component */
+	u_char	ni_loopcnt;		/* count of symlinks encountered */
+	u_char	ni_makeentry;		/* 1 => add entry to name cache */
+	u_char	ni_isdotdot;		/* 1 => current component name is .. */
+	u_char	ni_more;		/* 1 => symlink needs interpretation */
+	/*
+	 * Side effects.
+	 */
+	struct ufs_specific {		/* saved info for new dir entry */
+		off_t	ufs_endoff;	/* end of useful directory contents */
+		long	ufs_offset;	/* offset of free space in directory */
+		long	ufs_count;	/* size of free slot in directory */
+		ino_t	ufs_ino;	/* inode number of found directory */
+		u_long	ufs_reclen;	/* size of found directory entry */
+	} ni_ufs;
 };
-
-#define	ni_base		ni_nd.nd_iovec.iov_base
-#define	ni_count	ni_nd.nd_iovec.iov_len
-#define	ni_uioseg	ni_nd.nd_uio.uio_segflg
-#define	ni_iov		ni_nd.nd_uio.uio_iov
-#define	ni_iovcnt	ni_nd.nd_uio.uio_iovcnt
-#define	ni_offset	ni_nd.nd_uio.uio_offset
-#define	ni_resid	ni_nd.nd_uio.uio_resid
-#define	ni_rw		ni_nd.nd_uio.uio_rw
-#define	ni_uio		ni_nd.nd_uio
 
 #ifdef KERNEL
 /*
@@ -81,13 +76,24 @@ struct nameidata {
 #define	NOFOLLOW	0x0000	/* do not follow symbolic links (pseudo) */
 #define	MODMASK		0x00fc	/* mask of operational modifiers */
 /*
- * namei parameter descriptors
+ * Namei parameter descriptors.
+ *
+ * SAVENAME may be set by either the callers of namei or by VOP_LOOKUP.
+ * If the caller of namei sets the flag (for example execve wants to
+ * know the name of the program that is being executed), then it must
+ * free the buffer. If VOP_LOOKUP sets the flag, then the buffer must
+ * be freed by either the commit routine or the VOP_ABORT routine.
+ * SAVESTART is set only by the callers of namei. It implies SAVENAME
+ * plus the addition of saving the parent directory that contains the
+ * name in ni_startdir. It allows repeated calls to lookup for the
+ * name being sought. The caller is responsible for releasing the
+ * buffer and for vrele'ing ni_startdir.
  */
 #define	NOCROSSMOUNT	0x0100	/* do not cross mount points */
 #define	REMOTE		0x0200	/* lookup for remote filesystem servers */
-#define	HASBUF		0x0400	/* has preallocated pathname buffer */
-#define	STARTDIR	0x0800	/* has alternate starting directory */
-#define	SAVESTARTDIR	0x1000	/* do not vrele alternate starting directory */
+#define	HASBUF		0x0400	/* has allocated pathname buffer */
+#define	SAVENAME	0x0800	/* save pathanme buffer */
+#define	SAVESTART	0x1000	/* save starting directory */
 #define PARAMASK	0xff00	/* mask of parameter descriptors */
 #endif
 
@@ -116,6 +122,7 @@ struct	namecache {
 #ifdef KERNEL
 u_long	nextvnodeid;
 int	namei __P((struct nameidata *ndp, struct proc *p));
+int	lookup __P((struct nameidata *ndp, struct proc *p));
 #endif
 
 /*
