@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)rtsock.c	7.6 (Berkeley) %G%
+ *	@(#)rtsock.c	7.7 (Berkeley) %G%
  */
 
 #ifndef RTF_UP
@@ -29,6 +29,7 @@
 #include "errno.h"
 
 #include "af.h"
+#include "if.h"
 #include "route.h"
 #include "raw_cb.h"
 
@@ -40,10 +41,10 @@ struct sockaddr route_src = { 0, PF_ROUTE, };
 struct sockproto route_proto = { PF_ROUTE, };
 
 /*ARGSUSED*/
-route_usrreq(so, req, m, nam, rights, control)
+route_usrreq(so, req, m, nam, control)
 	register struct socket *so;
 	int req;
-	struct mbuf *m, *nam, *rights, *control;
+	struct mbuf *m, *nam, *control;
 {
 	register int error = 0;
 	register struct rawcb *rp = sotorawcb(so);
@@ -63,7 +64,7 @@ route_usrreq(so, req, m, nam, rights, control)
 			route_cb.iso_count--;
 		route_cb.any_count--;
 	}
-	error = raw_usrreq(so, req, m, nam, rights, control);
+	error = raw_usrreq(so, req, m, nam, control);
 	rp = sotorawcb(so);
 	if (req == PRU_ATTACH && rp) {
 		int af = rp->rcb_proto.sp_protocol;
@@ -92,13 +93,13 @@ route_output(m, so)
 {
 	register struct rt_msghdr *rtm = 0;
 	register struct rtentry *rt = 0;
-	struct rtentry *saved_nrt;
+	struct rtentry *saved_nrt = 0;
 	struct sockaddr *dst = 0, *gate = 0, *netmask = 0, *author;
 	struct rt_metrics *rmm = 0;
 	caddr_t cp = 0;
 	int len, error = 0;
 
-#define FLUSH(e) { error = e; goto flush;}
+#define senderr(e) { error = e; goto flush;}
 	if (m == 0)
 		return (ENOBUFS);
 	if (m->m_len < sizeof(long))
@@ -109,13 +110,13 @@ route_output(m, so)
 	len = m->m_pkthdr.len;
 	rtm = mtod(m, struct rt_msghdr *);
 	if (len < rtm->rtm_msglen)
-		FLUSH(EINVAL);
+		senderr(EINVAL);
 	R_Malloc(rtm, struct rt_msghdr *, len);
 	if (rtm == 0)
-		FLUSH(ENOBUFS);
+		senderr(ENOBUFS);
 	m_copydata(m, 0, len, (caddr_t)rtm);
 	if (rtm->rtm_version != 1)
-		FLUSH(EPROTONOSUPPORT);
+		senderr(EPROTONOSUPPORT);
 	rtm->rtm_pid = u.u_procp->p_pid;
 	cp = (caddr_t) (rtm + 1);
 #ifdef notyet
@@ -150,6 +151,8 @@ route_output(m, so)
 		error = rtrequest(RTM_ADD, dst, gate, netmask,
 					rtm->rtm_flags, &saved_nrt);
 		/* XXX -- add metrics !!! */
+		if (error == 0 && saved_nrt)
+			saved_nrt->rt_refcnt--;
 		break;
 
 	case RTM_DELETE:
@@ -162,7 +165,7 @@ route_output(m, so)
 	case RTM_LOCK:
 		rt = rtalloc1(dst, 0);
 		if (rt == 0)
-			FLUSH(ESRCH);
+			senderr(ESRCH);
 		switch(rtm->rtm_type) {
 			 struct	sockaddr *outmask;
 
@@ -176,7 +179,7 @@ route_output(m, so)
 				struct rt_msghdr *new_rtm;
 				R_Malloc(new_rtm, struct rt_msghdr *, len);
 				if (new_rtm == 0)
-					FLUSH(ENOBUFS);
+					senderr(ENOBUFS);
 				Bcopy(rtm, new_rtm, rtm->rtm_msglen);
 				Free(rtm); rtm = new_rtm;
 				gate = (struct sockaddr *)
@@ -197,9 +200,9 @@ route_output(m, so)
 
 		case RTM_CHANGE:
 			if (gate->sa_len > (len = rt->rt_gateway->sa_len))
-				FLUSH(EDQUOT);
-			if (gate->sa_family != rt->rt_gateway->sa_family)
-				FLUSH(EADDRINUSE);
+				senderr(EDQUOT);
+			if (rt->rt_ifa && rt->rt_ifa->ifa_rtrequest)
+				rt->rt_ifa->ifa_rtrequest(RTM_CHANGE, rt, gate);
 			Bcopy(gate, rt->rt_gateway, len);
 			rt->rt_gateway->sa_len = len;
 		
@@ -224,7 +227,7 @@ route_output(m, so)
 		goto cleanup;
 
 	default:
-		FLUSH(EOPNOTSUPP);
+		senderr(EOPNOTSUPP);
 	}
 
 flush:
@@ -359,6 +362,156 @@ struct sockaddr *gate, *mask, *src;
 	rtm->rtm_msglen = len;
 	route_proto.sp_protocol = dst->sa_family;
 	raw_input(m, &route_proto, &route_src, &route_dst);
+}
+
+#include "kinfo.h"
+static long zero_l = 0;
+struct walkarg {
+	int	w_op, w_arg;
+	int	w_given, w_needed;
+	caddr_t	w_where;
+	struct	{
+		struct rt_msghdr m_rtm;
+		char	m_sabuf[128];
+	} w_m;
+#define w_rtm w_m.m_rtm
+};
+/*
+ * This is used in dumping the kernel table via getkinfo().
+ */
+rt_dumpentry(rn, w)
+	struct radix_node *rn;
+	register struct walkarg *w;
+{
+	register struct sockaddr *sa;
+	int n, error;
+
+    for (; rn && !(rn->rn_flags & RNF_ROOT); rn = rn->rn_dupedkey) {
+	int count = 0, size = sizeof(w->w_rtm);
+	register struct rtentry *rt = (struct rtentry *)rn;
+
+	if (w->w_op == KINFO_RT_FLAGS && !(rt->rt_flags & w->w_arg))
+		continue;
+	if (sa = rt_key(rt))
+		{size += ROUNDUP(sa->sa_len); count++;}
+	if (sa = rt->rt_gateway)
+		{size += ROUNDUP(sa->sa_len); count++;}
+	if (sa = rt_mask(rt)) {
+		size += sa->sa_len ? ROUNDUP(sa->sa_len) : sizeof(long);
+		count++;
+	}
+	if (sa = rt->rt_genmask)
+		{size += ROUNDUP(sa->sa_len); count++;}
+	w->w_needed += size;
+	if (w->w_where == NULL || w->w_needed > 0)
+		continue;
+	w->w_rtm.rtm_msglen = size;
+	w->w_rtm.rtm_count = count;
+	w->w_rtm.rtm_flags = rt->rt_flags;
+
+	if (size <= sizeof(w->w_m)) {
+		register caddr_t cp = (caddr_t)(w->w_m.m_sabuf);
+#define next(a, b) {n = (b); Bcopy((a), cp, n); cp += n;}
+		if (sa = rt_key(rt))
+			next(sa, ROUNDUP(sa->sa_len));
+		if (sa = rt->rt_gateway)
+			next(sa, ROUNDUP(sa->sa_len));
+		if (sa = rt_mask(rt)) {
+			w->w_rtm.rtm_flags |= RTF_MASK;
+			if (sa->sa_len)
+				{next(sa, ROUNDUP(sa->sa_len));}
+			else
+				next((&zero_l), sizeof(zero_l));
+		}
+		if (sa = rt->rt_genmask)
+			next(sa, ROUNDUP(sa->sa_len));
+#undef next
+#define next(a, b) {n = (b); \
+    if (error = copyout((caddr_t)(a), w->w_where, n)) return (error); \
+    w->w_where += n; }
+
+		next(&w->w_m, size); /* Copy rtmsg and sockaddrs back */
+		continue;
+	}
+	next(&w->w_rtm, sizeof(w->w_rtm));
+	if (sa = rt_key(rt))
+		next(sa, ROUNDUP(sa->sa_len));
+	if (sa = rt->rt_gateway)
+		next(sa, ROUNDUP(sa->sa_len));
+	if (sa = rt_mask(rt)) {
+		if (sa->sa_len)
+			{next(sa, ROUNDUP(sa->sa_len));}
+		else
+			next(&zero_l, sizeof(zero_l));
+	}
+	if (sa = rt->rt_genmask)
+		next(sa, ROUNDUP(sa->sa_len));
+    }
+	return (0);
+#undef next
+}
+
+kinfo_rtable(op, where, given, arg, needed)
+	int	op, arg;
+	caddr_t	where;
+	int	*given, *needed;
+{
+	register struct radix_node_head *rnh;
+	int	s, error = 0;
+	u_char  af = ki_af(op);
+	struct	walkarg w;
+
+	op &= 0xffff;
+	if (op != KINFO_RT_DUMP && op != KINFO_RT_FLAGS)
+		return (EINVAL);
+
+	Bzero(&w, sizeof(w));
+	if ((w.w_where = where) && given)
+		w.w_given = *given;
+	w.w_needed = 0 - w.w_given;
+	w.w_arg = arg;
+	w.w_op = op;
+	w.w_rtm.rtm_version = 1;
+	w.w_rtm.rtm_type = RTM_GET;
+
+	s = splnet();
+	for (rnh = radix_node_head; rnh; rnh = rnh->rnh_next) {
+		if (rnh->rnh_af == 0)
+			continue;
+		if (af && af != rnh->rnh_af)
+			continue;
+		error = rt_walk(rnh->rnh_treetop, rt_dumpentry, &w);
+		if (error)
+			break;
+	}
+	w.w_needed += w.w_given;
+	if (where && given)
+		*given = w.w_where - where;
+	else
+		w.w_needed = (11 * w.w_needed) / 10;
+	*needed = w.w_needed;
+	splx(s);
+	return (error);
+}
+
+rt_walk(rn, f, w)
+	register struct radix_node *rn;
+	register int (*f)();
+	struct walkarg *w;
+{
+	int error;
+	for (;;) {
+		while (rn->rn_b >= 0)
+			rn = rn->rn_l;	/* First time through node, go left */
+		if (error = (*f)(rn, w))
+			return (error);	/* Process Leaf */
+		while (rn->rn_p->rn_r == rn) {	/* if coming back from right */
+			rn = rn->rn_p;		/* go back up */
+			if (rn->rn_flags & RNF_ROOT)
+				return 0;
+		}
+		rn = rn->rn_p->rn_r;		/* otherwise, go right*/
+	}
 }
 
 /*
