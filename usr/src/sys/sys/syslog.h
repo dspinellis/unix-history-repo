@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)syslog.h	7.2 (Berkeley) %G%
+ *	@(#)syslog.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -47,12 +47,6 @@
 #define LOG_PRIMASK	0x0007	/* mask to extract priority part (internal) */
 
 /*
- * arguments to setlogmask.
- */
-#define	LOG_MASK(pri)	(1 << (pri))		/* mask for one priority */
-#define	LOG_UPTO(pri)	((1 << ((pri)+1)) - 1)	/* all priorities through pri */
-
-/*
  *  Option flags for openlog.
  *
  *	LOG_ODELAY no longer does anything; LOG_NDELAY is the
@@ -60,6 +54,6 @@
  */
 #define	LOG_PID		0x01	/* log the pid with each message */
 #define	LOG_CONS	0x02	/* log on the console if errors in sending */
-#define	LOG_ODELAY	0x04	/* delay open until syslog() is called */
+#define	LOG_ODELAY	0x04	/* delay open until first syslog() (default) */
 #define LOG_NDELAY	0x08	/* don't delay open */
 #define LOG_NOWAIT	0x10	/* if forking to log on console, don't wait() */
