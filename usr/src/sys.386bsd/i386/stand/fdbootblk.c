@@ -45,6 +45,14 @@
  *	execute.
  *
  *	No attempt is made to handle disk errors.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00073
+ * --------------------         -----   ----------------------
+ *
+ * 22 Jan 93	Frank Maclachlan        Fixed NOP's to read correct register
+ *
  */
 /*#include "/sys/i386/isa/isa.h"
 #include "/sys/i386/isa/fdreg.h"*/
@@ -176,7 +184,7 @@ dodisk:
 	outb	%al,$0x20
 
 	NOP
-	movb	$0x07,%al
+	movb	$0xbf,%al	# enable floppy interrupt, mask out rest
 	outb	%al,$0x21
 	NOP
  8:
@@ -185,12 +193,12 @@ dodisk:
 
 	/* Set read/write bytes */
 	xorl	%edx,%edx
-	movb	$0x0c,%dl	# outb(0xC,0x46); outb(0xB,0x46);
-	movb	$0x46,%al
-	outb	%al,%dx
+	movb	$0x0c,%dl	# outb(0xC,junk); outb(0xB,0x46);
+	outb	%al,%dx		# reset DMA controller first/last flip-flop
 	NOP
 	decb	%dx
-	outb	%al,%dx
+	movb	$0x46,%al	# single mode, write mem, chan 2
+	outb	%al,%dx		# output DMA controller mode byte
 
 	/* Send start address */
 	movb	$0x04,%dl	# outb(0x4, addr);
