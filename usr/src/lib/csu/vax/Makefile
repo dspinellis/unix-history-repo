@@ -62,9 +62,35 @@ tags:
 	done
 
 clean:
-	rm -f ${OBJS} *.o *.s core errs tags
+	rm -f ${OBJS} *.o *.s core errs tags Makefile.bak
 
 lint:	crt0.c
 	lint crt0.c -DMCRT0
 	lint crt0.c -DGCRT0
 	lint crt0.c -DCRT0
+
+depend:
+	for i in ${SRCS}; do \
+	    cc -M ${DEFS} ${DFLAGS} $$i | awk ' { if ($$1 != prev) \
+		{ if (rec != "") print rec; rec = $$0; prev = $$1; } \
+		else { if (length(rec $$2) > 78) { print rec; rec = $$0; } \
+		else rec = rec " " $$2 } } \
+		END { print rec } ' >> makedep; done
+	echo '/^# DO NOT DELETE THIS LINE/+2,$$d' >eddep
+	echo '$$r makedep' >>eddep
+	echo 'w' >>eddep
+	cp Makefile Makefile.bak
+	ed - Makefile < eddep
+	rm eddep makedep
+	echo '# DEPENDENCIES MUST END AT END OF FILE' >> Makefile
+	echo '# IF YOU PUT STUFF HERE IT WILL GO AWAY' >> Makefile
+	echo '# see make depend above' >> Makefile
+
+# DO NOT DELETE THIS LINE -- make depend uses it
+
+crt0.o: crt0.c
+mon.o: mon.c
+gmon.o: gmon.c ./gmon.h
+# DEPENDENCIES MUST END AT END OF FILE
+# IF YOU PUT STUFF HERE IT WILL GO AWAY
+# see make depend above
