@@ -4,13 +4,13 @@
 machine		"hp300"
 
 cpu		"HP320"
-cpu		"HP330"
+cpu		"HP330"		# includes 318, 319
 cpu		"HP340"
 cpu		"HP350"
 cpu		"HP360"
 cpu		"HP370"
-cpu		"HP375"
-cpu		"HP380"
+cpu		"HP375"		# includes 345, 400t, 400s
+cpu		"HP380"		# includes 425t, 425s, 433s
 ident		GENERIC
 
 # Need to set locally
@@ -55,11 +55,12 @@ options		GATEWAY		# IP packet forwarding
 
 # Options for HP hardware
 options		PANICBUTTON	# Two fast <reset>s on console dump kernel
-options		SYSVSHM		# System V shmem (ugly but HP-UX uses it)
+#options	SYSVSHM		# System V shmem (ugly but HP-UX uses it)
 options		HPUXCOMPAT	# HP-UX binary compatibility
 options		COMPAT_OHPUX	# Needed at least through HP-UX 7.05
 options		HPFPLIB		# floating point emulation for MC68040
 options		COMPAT_NOLABEL	# default partitioning for unlabeled disks
+options		MAPPEDCOPY	# use page mapping for large copyin/copyout
 
 
 config		vmunix swap generic
