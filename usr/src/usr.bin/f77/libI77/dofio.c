@@ -1,5 +1,5 @@
 /*
-char id_dofio[] = "@(#)dofio.c	1.7";
+char id_dofio[] = "@(#)dofio.c	1.8";
  *
  * fortran format executer
  */
@@ -8,6 +8,8 @@ char id_dofio[] = "@(#)dofio.c	1.7";
 #include "format.h"
 
 #define DO(x)	if(n=x) err(n>0?errflag:endflag,n,dfio)
+#define DO_F(x)	if(n=x) err_f(n>0?errflag:endflag,n,dfio)
+#define err_f(f,n,s)	{if(f) return(dof_err(n)); else fatal(n,s);}
 #define STKSZ 10
 int cnt[STKSZ],ret[STKSZ],cp,rp;
 char *dfio = "dofio";
@@ -32,7 +34,7 @@ do_fio(number,ptr,len) ftnint *number; ftnlen len; char *ptr;
 	more = *number;
 	for(;;) {
 	  if( (optype = ((p= &syl_ptr[pc])->op)) > LAST_TERM )
-		err(errflag,F_ERFMT,"impossible code");
+		err_f(errflag,F_ERFMT,"impossible code");
 #ifdef DEBUG
 	  fprintf(stderr," pc=%d, cnt[%d]=%d, ret[%d]=%d, op=%d\n",
 		pc,cp,cnt[cp],rp,ret[rp],optype); /*for debug*/
@@ -40,7 +42,7 @@ do_fio(number,ptr,len) ftnint *number; ftnlen len; char *ptr;
 	  switch(optypes[optype])
 	  {
 	  case NED:
-		DO((*doned)(p,ptr))
+		DO_F((*doned)(p,ptr))
 		pc++;
 		break;
 	  case ED:
@@ -53,7 +55,7 @@ do_fio(number,ptr,len) ftnint *number; ftnlen len; char *ptr;
 		    }
 		    if(!more) return(OK);
 		    used_data = YES;
-		    DO((*doed)(p,ptr,len))
+		    DO_F((*doed)(p,ptr,len))
 		    ptr += len;
 		    more--;
 		    rep_count--;
@@ -62,12 +64,12 @@ do_fio(number,ptr,len) ftnint *number; ftnlen len; char *ptr;
 		in_mid = NO;
 		break;
 	  case STACK:		/* repeat count */
-		if(++cp==STKSZ) err(errflag,F_ERFMT,"too many nested ()")
+		if(++cp==STKSZ) err_f(errflag,F_ERFMT,"too many nested ()")
 		cnt[cp]=p->p1;
 		pc++;
 		break;
 	  case RET:		/* open paren */
-		if(++rp==STKSZ) err(errflag,F_ERFMT,"too many nested ()")
+		if(++rp==STKSZ) err_f(errflag,F_ERFMT,"too many nested ()")
 		ret[rp]=p->p1;
 		pc++;
 		break;
@@ -85,7 +87,7 @@ do_fio(number,ptr,len) ftnint *number; ftnlen len; char *ptr;
 			return(OK);
 		}
 		if(!more) return(OK);
-		if( used_data == NO ) err(errflag,F_ERFMT,"\nNo more editing terms in format");
+		if( used_data == NO ) err_f(errflag,F_ERFMT,"\nNo more editing terms in format");
 		used_data = NO;
 		rp=cp=0;
 		pc = p->p1;
@@ -131,7 +133,7 @@ do_fio(number,ptr,len) ftnint *number; ftnlen len; char *ptr;
 		pc++;
 		break;
 	  default:
-		err(errflag,F_ERFMT,"impossible code")
+		err_f(errflag,F_ERFMT,"impossible code")
 	  }
 	}
 }
@@ -142,4 +144,11 @@ fmt_bg()
 	cp=rp=pc=cursor=0;
 	cnt[0]=ret[0]=0;
 	used_data = NO;
+}
+
+static
+dof_err(n)
+{
+	if( reading==YES && external==YES && sequential==YES) donewrec();
+	return(errno=n);
 }

@@ -1,5 +1,5 @@
 /*
-char id_douio[] = "@(#)douio.c	1.2";
+char id_douio[] = "@(#)douio.c	1.3";
  *
  * unformatted external i/o
  */
@@ -14,8 +14,11 @@ do_us(number,ptr,len) ftnint *number; ftnlen len; char *ptr;  /* sequential */
 	if(reading)
 	{
 		recpos += *number * len;
-		if (recpos > reclen)
+		if (recpos > reclen) {
+			recpos -= *number * len;
+			e_rsue(); /* in case tries another read */
 			err(errflag,F_EREREC,eor);
+		}
 
 		if (fread(ptr,(int)len,(int)(*number),cf) != *number)
 			return(due_err(uio));
