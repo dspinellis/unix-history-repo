@@ -2,12 +2,18 @@
  * Copyright (c) 1991 The Regents of the University of California.
  * All rights reserved.
  *
- * This code is derived from software contributed to Berkeley by
- * Steven McCanne of Lawrence Berkeley Laboratory.
+ * This software was developed by the Computer Systems Engineering group
+ * at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
+ * contributed to Berkeley.
+ *
+ * All advertising materials mentioning features or use of this software
+ * must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Lawrence Berkeley Laboratories.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kgdb_proto.h	7.1 (Berkeley) %G%
+ *	@(#)kgdb_proto.h	7.2 (Berkeley) %G%
  *
  * $Header: kgdb_proto.h,v 1.3 91/03/12 22:06:43 mccanne Exp $ (LBL)
  */
