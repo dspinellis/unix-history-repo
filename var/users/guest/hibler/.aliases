@@ -1,0 +1,9 @@
+alias ls	ls -FA
+alias v		ls -lags
+alias vf	ls -lagsL
+alias vt	ls -lagst
+alias rlocks	sccs info
+alias rlog	sccs prt
+alias rcsdiff	sccs diffs
+unalias e
+unalias s
