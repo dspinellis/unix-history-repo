@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)touch.c	1.3 (Berkeley) %G%";
+static	char *sccsid = "@(#)touch.c	1.4 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <sys/types.h>
@@ -253,8 +253,12 @@ hackfile(name, files, ix, nerrors)
 
 	diverterrors(name, errordest, files, ix, previewed, nerrors);
 
-	if (errordest == TOTHEFILE)
-		writetouched();
+	if (errordest == TOTHEFILE){
+		/*
+		 *	overwrite the original file
+		 */
+		writetouched(1);
+	}
 }
 
 boolean preview(name, nerrors, files, ix)
@@ -468,8 +472,8 @@ execvarg(n_pissed_on, r_argc, r_argv)
 FILE	*o_touchedfile;	/* the old file */
 FILE	*n_touchedfile;	/* the new file */
 char	*o_name;
-char	n_name[32];
-char	*canon_name = "ErrorXXXXXX";
+char	n_name[64];
+char	*canon_name = "/tmp/ErrorXXXXXX";
 int	o_lineno;
 int	n_lineno;
 boolean	tempfileopen = FALSE;
@@ -528,19 +532,59 @@ text(p, use_all)
 	n_lineno++;
 }
 
-writetouched()
+/*
+ *	write the touched file to its temporary copy,
+ *	then bring the temporary in over the local file
+ */
+writetouched(overwrite)
+	int	overwrite;
 {
-	int	nread;
+	reg	int	nread;
+	reg	FILE	*localfile;
+	reg	FILE	*tmpfile;
+		int	botch;
 
 	while((nread = fread(edbuf, 1, sizeof(edbuf), o_touchedfile)) != NULL){
 		fwrite(edbuf, 1, nread, n_touchedfile);
 	}
 	fclose(n_touchedfile);
 	fclose(o_touchedfile);
-	unlink(o_name);
-	link(n_name, o_name);
+	/*
+	 *	Now, copy the temp file back over the original
+	 *	file, thus preserving links, etc
+	 */
+	if (overwrite){
+		botch = 0;
+		localfile = NULL;
+		tmpfile = NULL;
+		if ((localfile = fopen(o_name, "w")) == NULL){
+			fprintf(stderr,
+				"%s: Can't open file \"%s\" to overwrite.\n",
+				processname, o_name);
+			botch++;
+		}
+		if ((tmpfile = fopen(n_name, "r")) == NULL){
+			fprintf(stderr, "%s: Can't open file \"%s\" to read.\n",
+				processname, n_name);
+			botch++;
+		}
+		if (!botch){
+			while((nread=fread(edbuf, 1, sizeof(edbuf), tmpfile))
+					!= NULL){
+				fwrite(edbuf, 1, nread, localfile);
+			}
+		}
+		if (localfile != NULL)
+			fclose(localfile);
+		if (tmpfile != NULL)
+			fclose(tmpfile);
+	}
+	/*
+	 *	Kiss the temp file good bye
+	 */
 	unlink(n_name);
 	tempfileopen = FALSE;
+	return(TRUE);
 }
 
 onintr()
@@ -553,8 +597,12 @@ onintr()
 		signal(SIGINT, onintr);
 		return;
 	default:
-		if (tempfileopen)
-			writetouched();
+		if (tempfileopen){
+			/*
+			 *	Don't overwrite the original file!
+			 */
+			writetouched(0);
+		}
 		exit(1);
 	}
 	/*NOTREACHED*/
