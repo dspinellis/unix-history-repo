@@ -1,19 +1,8 @@
-/*	autoconf.c	4.4	81/02/15	*/
-
-#define	dprintf	printf
+/*	autoconf.c	4.5	81/02/16	*/
 
 /*
  * Configure the system for the current machine.
- *
- *	kre/wnj		Berkeley, February 1981
  */
-
- /*** NOT DONE YET 
-	- stray interrupt setup in scb and uba vectors
-	- 750 main loop
-	- write protect scb
-	- set up dk fields in structs
-  ***/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -33,33 +22,54 @@
 int	nexnum;		/* current nexus number */
 
 struct	uba_regs *curuba;
+
+/*
+ * Definitions for uba's and mba's.
+ */
+
+/*
+ * Catcher is 1k bytes of memory where we write in stray
+ * UNIBUS interrupt decoding code.
+ */
 extern	int catcher[256];
+
+/*
+ * UMEMmap maps the UNIBUS memory for the portion accessible
+ * as device registers and umem is the corresponding virtual space.
+ */
 extern	struct pte UMEMmap[MAXNUBA][16];
 extern	char umem[MAXNUBA][16*NBPG];
 
-#define	C (caddr_t)
+/*
+ * The umaddr* arrays give the physical addresses of the UNIBUS
+ * register space.
+ */
 #if VAX780
 caddr_t	umaddr780[4] = {
-	C 0x2013e000, C 0x2017e000, C 0x201be000, C 0x201fe000
+	(caddr_t) 0x2013e000, (caddr_t) 0x2017e000,
+	(caddr_t) 0x201be000, (caddr_t) 0x201fe000
 };
 #endif
 #if VAX750
 caddr_t	umaddr750[1] = {
-	C 0xffe000
+	(caddr_t) 0xffe000
 };
 #endif
 
+/*
+ * The ?baintv arrays give the addresses of the UNIBUS and
+ * MASSBUS interrupt handling routines.
+ */
 extern	Xmba0int(),	Xmba1int(),	Xmba2int(),	Xmba3int();
 extern	Xua0int();
 #if VAX780
 extern			Xua1int(),	Xua2int(),	Xua3int();
 #endif
 
-int	(*mbaintv[])() = {
+int	(*mbaintv[4])() = {
 	Xmba0int,	Xmba1int,	Xmba2int,	Xmba3int
 };
-
-int	(*ubaintv[4])() = {
+int	(*ubaintv[])() = {
 #if VAX780
 	Xua0int,	Xua1int,	Xua2int,	Xua3int
 #endif
@@ -68,25 +78,24 @@ int	(*ubaintv[4])() = {
 #endif
 };
 
+/*
+ * UNIvec is permanently allocated in scb.s.  On an 750, it is
+ * where the hardware sends the interrupts; on a 780 we use the
+ * space for the first UNIBUS adaptor.
+ */
 extern	int	(*UNIvec[])();
 
-int	c780();
-int	c750();
-int	c7ZZ();
-int	c980();
+/*
+ * Structure per cpu type giving address of configuration routine
+ */
+int	c780(), c750();
 
 struct percpu percpu[] = {
 #if VAX780
-	c780,	VAX_780,	4,	4,	4,	umaddr780,
+	c780, VAX_780,
 #endif
 #if VAX750
-	c750,	VAX_750,	3,	0,	1,	umaddr750,
-#endif
-#if VAX7ZZ
-	c7ZZ,	VAX_7ZZ,	0,	0,	1,	umaddr7ZZ,
-#endif
-#if VAX980
-	c980,	VAX_980,	4,	4,	4,	umaddr980,
+	c750, VAX_750,
 #endif
 };
 #define	NCPU	(sizeof(percpu)/sizeof(struct percpu))
@@ -100,8 +109,6 @@ configure()
 {
 	union cpusid cpusid;
 	register struct percpu *ocp;
-	int catcher0 = catcher[0];
-	int catcher1 = catcher[1];
 	register int i;
 
 	cpusid.cpusid = mfpr(SID);
@@ -109,28 +116,19 @@ configure()
 		if (ocp->pc_cputype == cpusid.cpuany.cp_type) {
 			cpu = ocp->pc_cputype;
 			(*ocp->pc_config)(ocp);
-			for (i = 0; i < 256; i += 2) {
-				catcher[i] = catcher0;
-				catcher[i+1] = catcher1 - i*4;
+			for (i = 2; i < 256; i += 2) {
+				catcher[i] = catcher[0];
+				catcher[i+1] = catcher[1] - i*4;
 			}
-#if VAXANY
-			/*** SET CONFIGURATION ***/
+#if GENERIC
+			setconf();
 #endif
-			asm("halt");
+			/* WRITE PROTECT SCB */
 			return;
 		}
 	printf("cpu type %d unsupported\n", cpusid.cpuany.cp_type);
 	asm("halt");
 }
-
-#if VAX750
-c750(ocp)
-	register struct percpu *ocp;
-{
-	printf("not yet, sad to say\n");
-	asm("halt");
-}
-#endif
 
 #if VAX780
 /*
@@ -143,11 +141,11 @@ c780(pcpu)
 {
 	register struct nexus *nxv;
 	register struct uba_hd *uhp;
-	struct nexus *nxp = NEXBASE;
+	struct nexus *nxp = NEX780;
 	union nexcsr nexcsr;
 	int i, ubawatch();
 	
-	for (nexnum = 0, nxv = nexus; nexnum < NNEXUS; nexnum++, nxp++, nxv++) {
+	for (nexnum = 0,nxv = nexus; nexnum < NNEX780; nexnum++,nxp++,nxv++) {
 		nxaccess((caddr_t)nxp, Nexmap[nexnum]);
 		if (badaddr((caddr_t)nxv, 4))
 			continue;
@@ -157,8 +155,8 @@ c780(pcpu)
 		switch (nexcsr.nex_type) {
 
 		case NEX_MBA:
-			if (nummba >= pcpu->pc_maxmba) {
-				printf("%d mba's", pcpu->pc_maxmba+1);
+			if (nummba >= 4) {
+				printf("5 mba's");
 				goto unsupp;
 			}
 			mbafind(nxv, nxp);
@@ -169,30 +167,16 @@ c780(pcpu)
 		case NEX_UBA1:
 		case NEX_UBA2:
 		case NEX_UBA3:
-			if (numuba >= pcpu->pc_maxuba) {
-				printf("%d uba's", pcpu->pc_maxuba+1);
+			if (numuba >= 4) {
+				printf("5 uba's");
 				goto unsupp;
 			}
-			/* THIS BELONGS IN unifind() */
-			uhp = &uba_hd[numuba];
-			mfree(uhp->uh_map, NUBMREG, 1);
-			uhp->uh_bdpfree = 0x7fff;	/* 15 bdp's */
-			uhp->uh_uba = (struct uba_regs *)nxv;
-			uhp->uh_physuba = (struct uba_regs *)nxp;
-			if (numuba == 0)
-				uhp->uh_vec = UNIvec;
-			else
-				uhp->uh_vec = (int(**)())calloc(512);
-			for (i = 0; i < 128; i++)
-				uhp->uh_vec[i] =
-				    scbentry(&catcher[i*2], SCB_ISTACK);
 			i = nexcsr.nex_type - NEX_UBA0;
-			nxaccess(pcpu->pc_umaddr[i], UMEMmap[numuba]);
-			unifind((struct uba_regs *)nxv, pcpu->pc_umaddr[i],
-			    umem[i]);
-			ubainit((struct uba_regs *)nxv);
-			/* END OF CODE WHICH BELONGS IN unifind() */
+			unifind((struct uba_regs *)nxv, (struct uba_regs *)nxp,
+			    umem[i], umaddr780[i]);
 			setscbnex(nexnum, ubaintv[numuba]);
+			((struct uba_regs *)nxv)->uba_cr =
+			    UBA_IFS|UBA_BRIE|UBA_USEFIE|UBA_SUEFIE;
 			numuba++;
 			break;
 
@@ -205,8 +189,8 @@ c780(pcpu)
 		case NEX_MEM4I:
 		case NEX_MEM16:
 		case NEX_MEM16I:
-			if (nmcr >= pcpu->pc_maxmcr) {
-				printf("%d mcr's", pcpu->pc_maxmcr+1);
+			if (nmcr >= 4) {
+				printf("%d mcr's", 4);
 				goto unsupp;
 			}
 			mcraddr[nmcr++] = (struct mcr *)nxv;
@@ -221,12 +205,39 @@ c780(pcpu)
 
 		default:
 			printf("nexus type %x", nexcsr.nex_type);
-    unsupp:
+unsupp:
 			printf(" unsupported (at tr %d)\n", nexnum);
 			continue;
 		}
 	}
 	timeout(ubawatch, 0, HZ);
+}
+#endif
+
+#if VAX750
+/*
+ * Configure a 750.  There are four possible mba's,
+ * one standard UNIBUS, and a memory controller.
+ */
+c750(pcpu)
+	struct percpu *pcpu;
+{
+	register struct nexus *nxv = nexus;
+	struct nexus *nxp = NEX750;
+
+	for (nexnum = 0; nexnum < NNEX750; nexnum++, nxp++, nxv++) {
+		nxaccess((caddr_t)nxp, Nexmap[nexnum]);
+		if (badaddr((caddr_t)nxv, 4))
+			continue;
+		mbafind(nxv, nxp);
+		nummba++;
+	}
+	nxaccess((caddr_t)nxp, Nexmap[nexnum++]);
+	unifind((struct uba_regs *)nxv++, (struct uba_regs *)nxp,
+	    umem[0], umaddr750[0]);
+	numuba = 1;
+	nxaccess((caddr_t)MCR_750, Nexmap[nexnum]);
+	mcraddr[nmcr++] = nxv;
 }
 #endif
 
@@ -236,8 +247,7 @@ c780(pcpu)
  * initialization tables.
  */
 mbafind(nxv, nxp)
-	struct nexus *nxv;
-	struct nexus *nxp;
+	struct nexus *nxv, *nxp;
 {
 	register struct mba_regs *mdp;
 	register struct mba_drv *mbd;
@@ -304,6 +314,11 @@ found:
 #define	match(fld)	(ni->fld == mi->fld || mi->fld == '?')
 		if (!match(mi_slave) || !match(mi_drive) || !match(mi_mbanum))
 			continue;
+		printf("%c at mba%d drive %d ",
+		    mi->mi_name, ni->mi_mbanum, ni->mi_drive);
+		if (ni->mi_slave >= 0)
+			printf("slave %d ", ni->mi_slave);
+		printf("is unit %d\n", mi->mi_unit);
 		mi->mi_alive = 1;
 		mi->mi_hd = &mba_hd[ni->mi_mbanum];
 		mba_hd[ni->mi_mbanum].mh_mbip[ni->mi_drive] = mi;
@@ -317,109 +332,230 @@ found:
 }
 
 /*
- * Find mass storage devices on a UNIBUS.
+ * Fixctlrmask fixes the masks of the driver ctlr routines
+ * which otherwise save r10 and r11 where the interrupt and br
+ * level are passed through.
  */
-unifind(ubp, puba, vuba)
-	struct uba_regs *ubp;
-	caddr_t puba;
-	caddr_t vuba;
+fixctlrmask()
 {
-	register br, cvec;			/* MUST BE r11, r10 */
+	register struct uba_minfo *um;
 	register struct uba_dinfo *ui;
-	register u_short *uba = (u_short *)vuba, *sp;
-	struct uba_driver *udp;
-	u_short *reg;
-	register i;
-	u_short addr;
+	register struct uba_driver *ud;
+#define	phys(a,b) ((b)(((int)(a))&0x7fffffff))
 
+	for (um = ubminit; ud = phys(um->um_driver, struct uba_driver *); um++)
+		*phys(ud->ud_cntrlr, short *) &= ~0xc00;
+	for (ui = ubdinit; ud = phys(ui->ui_driver, struct uba_driver *); ui++)
+		*phys(ud->ud_cntrlr, short *) &= ~0xc00;
+	asm("halt");
+}
+
+/*
+ * Find devices on a UNIBUS.
+ * Uses per-driver routine to set <br,cvec> into <r11,r10>,
+ * and then fills in the tables, with help from a per-driver
+ * slave initialization routine.
+ */
+unifind(vubp, pubp, vumem, pumem)
+	struct uba_regs *vubp, *pubp;
+	caddr_t vumem, pumem;
+{
+	register int br, cvec;			/* MUST BE r11, r10 */
+	register struct uba_dinfo *ui;
+	register struct uba_minfo *um;
+	u_short *umem = (u_short *)vumem, *sp, *reg, addr;
+	struct uba_hd *uhp;
+	struct uba_driver *udp;
+	int i, (**ivec)();
+
+	/*
+	 * Initialize the UNIBUS, by freeing the map
+	 * registers and the buffered data path registers
+	 */
+	uhp = &uba_hd[numuba];
+	uhp->uh_map = (struct map *)calloc(UAMSIZ * sizeof (struct map));
+	mfree(uhp->uh_map, NUBMREG, 1);
+	switch (cpu) {
 #if VAX780
-	if (ubp) {
-		ubp->uba_sr = ubp->uba_sr;
-		curuba = ubp;
+	case VAX_780:
+		uhp->uh_bdpfree = (1<<15) - 1;		/* 15 bdp's */
+		break;
+#endif
+#if VAX750
+	case VAX_750:
+		uhp->uh_bdpfree = (1<<3) - 1;		/* 3 bdp's */
+		break;
+#endif
+	}
+
+	/*
+	 * Save virtual and physical addresses
+	 * of adaptor, and allocate and initialize
+	 * the UNIBUS interrupt vector.
+	 */
+	uhp->uh_uba = vubp;
+	uhp->uh_physuba = pubp;
+	if (numuba == 0)
+		uhp->uh_vec = UNIvec;
+	else
+		uhp->uh_vec = (int(**)())calloc(512);
+	for (i = 0; i < 128; i++)
+		uhp->uh_vec[i] =
+		    scbentry(&catcher[i*2], SCB_ISTACK);
+	nxaccess((struct nexus *)pumem, UMEMmap[numuba]);
+#if VAX780
+	if (cpu == VAX_780) {
+		vubp->uba_sr = vubp->uba_sr;
+		curuba = vubp;
 	}
 #endif
 #if VAX750
-	if (ubp == 0)
+	if (cpu != VAX_780)
 		setvecs();
 #endif
-	for (ui = ubdinit; udp = ui->ui_driver; ui++) {
-		if (ui->ui_ubanum != numuba && ui->ui_ubanum != '?')
-			continue;
-		addr = (u_short)ui->ui_addr;
-		sp = udp->ud_addr;
-		for (; addr || *sp; addr = 0) {
-#define	ubaddr(off)	(u_short *)((int)uba + ((off)&0x1fff))
-			if (addr == 0)
-				addr = *sp++;
-			reg = ubaddr(addr);
-			if (badaddr((caddr_t)reg, 2))
-				continue;
-#if VAX780
-			if (ubp) {
-				if (ubp->uba_sr) {
-					ubp->uba_sr = ubp->uba_sr;
-					continue;
-				}
-				ubatstvec(ubp);
-			}
-#endif
-			cvec = 0x200;
-			*(int *)(&ubp->uba_map[0]) = UBA_MRV;
-			i = (*udp->ud_cntrlr)(ui, reg);
-#if VAX780
-			if (ubp) {
-				ubp->uba_cr = 0;
-				if (ubp->uba_sr) {
-					dprintf("uba_sr %x\n", ubp->uba_sr);
-					ubp->uba_sr = ubp->uba_sr;
-					continue;
-				}
-			}
-#endif
-			if (i == 0)
-				continue;
-			dprintf("\tLocated %s at %o ",
-			    ui->ui_driver->ud_pname, addr);
-			if (cvec == 0) {
-				dprintf("zero uba vector\n");
-				continue;
-			}
-			if (cvec == 0x200) {
-				dprintf("didn't interrupt\n");
-				continue;
-			}
-			dprintf("vector %o, ipl %x\n", cvec, br);
-			if (ui->ui_slave != '?') {
-				if ((*udp->ud_slave)(ui, reg, ui->ui_slave))
-					goto ubdevfnd;
-				dprintf("slave %d refused\n", ui->ui_slave);
-				continue;
-			}
-			for (i = 0; i < udp->ud_maxslave; i++) {
-				if ((*udp->ud_slave)(ui, reg, i)) {
-					register int	(**ivec)();
+	/*
+	 * Map the first page of UNIBUS i/o
+	 * space to the first page of memory
+	 * for devices which will need to dma
+	 * output to produce an interrupt.
+	 */
+	*(int *)(&vubp->uba_map[0]) = UBA_MRV;
 
-					ui->ui_slave = i;
-    ubdevfnd:
-					ui->ui_alive = 1;
-					ui->ui_ubanum = numuba;
-					ui->ui_hd = &uba_hd[numuba];
-					ui->ui_addr = (caddr_t)reg;
-					ui->ui_physaddr = puba + (addr&0x1fff);
-					ui->ui_dk = 0;
-					/* ui_type comes from driver */
-					udp->ud_info[ui->ui_unit] = ui;
-					dprintf("\tslave %d\n", ui->ui_slave);
-					for (ivec=ui->ui_intr; *ivec; ivec++) {
-						ui->ui_hd->uh_vec[cvec/4] =
-						    scbentry(*ivec, SCB_ISTACK);
-						cvec += 4;
-					}
-					break;
-				}
-				dprintf("slave %d refused\n", i);
+#define	ubaddr(off)	(u_short *)((int)vumem + ((off)&0x1fff))
+	/*
+	 * Check each unibus mass storage controller.
+	 * For each one which is potentially on this uba,
+	 * see if it is really there, and if it is record it and
+	 * then go looking for slaves.
+	 */
+	for (um = ubminit; udp = um->um_driver; um++) {
+		if (um->um_ubanum != numuba && um->um_ubanum != '?')
+			continue;
+		addr = (u_short)um->um_addr;
+		reg = ubaddr(addr);
+		if (badaddr((caddr_t)reg, 2))
+			continue;
+#if VAX780
+		if (vax == VAX_780) {
+			if (vubp->uba_sr) {
+				vubp->uba_sr = vubp->uba_sr;
+				continue;
+			}
+			ubatstvec(vubp);
+		}
+#endif
+		cvec = 0x200;
+		i = (*udp->ud_cntrlr)(um, reg);
+#if VAX780
+		if (vax == VAX_780) {
+			if (vubp->uba_sr) {
+				vubp->uba_sr = vubp->uba_sr;
+				continue;
 			}
 		}
+#endif
+		if (i == 0)
+			continue;
+		printf("%s %d at uba%d %o ",
+		    udp->ud_pname, um->um_ctlr, numuba, addr);
+		if (cvec == 0) {
+			printf("zero vector\n");
+			continue;
+		}
+		if (cvec == 0x200) {
+			printf("didn't interrupt\n");
+			continue;
+		}
+		printf("vector %o, ipl %x\n", cvec, br);
+		um->um_alive = 1;
+		um->um_ubanum = numuba;
+		um->um_hd = &uba_hd[numuba];
+		um->um_addr = (caddr_t)reg;
+		udp->ud_minfo[um->um_ctlr] = um;
+		for (ivec = um->um_intr; *ivec; ivec++) {
+			um->um_hd->uh_vec[cvec/4] =
+			    scbentry(*ivec, SCB_ISTACK);
+			cvec += 4;
+		}
+		for (ui = ubdinit; ui->ui_driver; ui++) {
+			if (ui->ui_driver != udp || ui->ui_alive ||
+			    ui->ui_ctlr != um->um_ctlr && ui->ui_ctlr != '?' ||
+			    ui->ui_ubanum != numuba && ui->ui_ubanum != '?')
+				continue;
+			if ((*udp->ud_slave)(ui, reg, ui->ui_slave)) {
+				ui->ui_alive = 1;
+				ui->ui_ctlr = um->um_ctlr;
+				ui->ui_ubanum = numuba;
+				ui->ui_hd = &uba_hd[numuba];
+				ui->ui_addr = (caddr_t)reg;
+				ui->ui_physaddr = pumem + (addr&0x1fff);
+				ui->ui_dk = 0;
+				ui->ui_mi = um;
+				/* ui_type comes from driver */
+				udp->ud_dinfo[ui->ui_unit] = ui;
+				printf("%s%d slave %d is unit %d\n",
+				    udp->ud_pname, um->um_ctlr,
+				    ui->ui_slave, ui->ui_unit);
+			}
+		}
+	}
+	/*
+	 * Now look for non-mass storage peripherals.
+	 */
+	for (ui = ubdinit; udp = ui->ui_driver; ui++) {
+		if (ui->ui_ubanum != numuba && ui->ui_ubanum != '?' ||
+		    ui->ui_alive || ui->ui_slave != -1)
+			continue;
+		addr = (u_short)ui->ui_addr;
+		reg = ubaddr(addr);
+		if (badaddr((caddr_t)reg, 2))
+			continue;
+#if VAX780
+		if (vax == VAX_780) {
+			if (vubp->uba_sr) {
+				vubp->uba_sr = vubp->uba_sr;
+				continue;
+			}
+			ubatstvec(vubp);
+		}
+#endif
+		cvec = 0x200;
+		i = (*udp->ud_cntrlr)(ui, reg);
+#if VAX780
+		if (vax == VAX_780) {
+			if (vubp->uba_sr) {
+				vubp->uba_sr = vubp->uba_sr;
+				continue;
+			}
+		}
+#endif
+		if (i == 0)
+			continue;
+		printf("%s at uba%d %o ",
+		    ui->ui_driver->ud_pname, numuba, addr);
+		if (cvec == 0) {
+			printf("zero vector\n");
+			continue;
+		}
+		if (cvec == 0x200) {
+			printf("didn't interrupt\n");
+			continue;
+		}
+		printf("vector %o, ipl %x\n", cvec, br);
+		ui->ui_hd = &uba_hd[numuba];
+		for (ivec = ui->ui_intr; *ivec; ivec++) {
+			ui->ui_hd->uh_vec[cvec/4] =
+			    scbentry(*ivec, SCB_ISTACK);
+			cvec += 4;
+		}
+		ui->ui_alive = 1;
+		ui->ui_ubanum = numuba;
+		ui->ui_addr = (caddr_t)reg;
+		ui->ui_physaddr = pumem + (addr&0x1fff);
+		ui->ui_dk = 0;
+		/* ui_type comes from driver */
+		udp->ud_dinfo[ui->ui_unit] = ui;
+		(*udp->ud_slave)(ui, reg);
 	}
 }
 
@@ -481,12 +617,12 @@ setscbnex(nexnum, fn)
  * SINCE MISSING NEXI DONT RESPOND.  BUT THEN AGAIN
  * PRESENT NEXI DONT RESPOND TO ALL OF THEIR ADDRESS SPACE.
  */
-nxaccess(phys, pte)
-	caddr_t phys;
+nxaccess(physa, pte)
+	caddr_t physa;
 	register struct pte *pte;
 {
 	register int cnt = btop(sizeof (struct nexus));
-	register unsigned v = btop(phys);
+	register unsigned v = btop(physa);
 	
 	do
 		*(int *)pte++ = PG_V|PG_KW|v++;
