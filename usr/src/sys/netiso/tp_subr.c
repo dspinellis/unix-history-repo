@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_subr.c	7.10 (Berkeley) %G%
+ *	@(#)tp_subr.c	7.11 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -77,24 +77,6 @@ static void tp_sbdrop();
 
 #define ABS(type, val) \
 	(type) (((int)(val)<0)?-(val):(val))
-
-#define TP_MAKE_RTC( Xreg, Xseq, Xeot, Xdata, Xlen, Xretval, Xtype) \
-{ 	struct mbuf *xxn;\
-	MGET(xxn, M_DONTWAIT, Xtype);\
-	if( xxn == (struct mbuf *)0 ) {\
-		printf("MAKE RTC FAILED: ENOBUFS\n");\
-		return (int)Xretval;\
-	}\
-	xxn->m_act=MNULL;\
-	Xreg = mtod(xxn, struct tp_rtc *);\
-	if( Xreg == (struct tp_rtc *)0 ) {\
-		return (int)Xretval;\
-	}\
-	Xreg->tprt_eot = Xeot;\
-	Xreg->tprt_seq = Xseq;\
-	Xreg->tprt_data = Xdata;\
-	Xreg->tprt_octets = Xlen;\
-}
 
 
 /*
@@ -240,7 +222,9 @@ tp_goodack(tpcb, cdt, seq, subseq)
 			dump_mbuf(tpcb->tp_sock->so_snd.sb_mb, 
 				"tp_goodack snd before sbdrop");
 		ENDDEBUG
-		tp_sbdrop(tpcb, SEQ_SUB(tpcb, seq, 1) );
+		tpsbcheck(tpcb, 0);
+		tp_sbdrop(tpcb, seq);
+		tpsbcheck(tpcb, 1);
 
 		/* increase congestion window but don't let it get too big */
 		{
@@ -348,27 +332,25 @@ tp_goodack(tpcb, cdt, seq, subseq)
  * CALLED FROM:
  *  tp_goodack()
  * FUNCTION and ARGUMENTS:
- *  drops everything up TO and INCLUDING seq # (seq)
+ *  drops everything up TO but not INCLUDING seq # (seq)
  *  from the retransmission queue.
  */
 static void
 tp_sbdrop(tpcb, seq) 
-	struct 	tp_pcb 			*tpcb;
+	register struct 	tp_pcb 			*tpcb;
 	SeqNum					seq;
 {
-	register struct tp_rtc	*s = tpcb->tp_snduna_rtc;
+	struct sockbuf *sb = &tpcb->tp_sock->so_snd;
+	register int i = ((int)seq)-((int)tpcb->tp_snduna);
 
+	if (i < 0) i += tpcb->tp_seqhalf;
 	IFDEBUG(D_ACKRECV)
-		printf("tp_sbdrop up through seq 0x%x\n", seq);
+		printf("tp_sbdroping %d up through seq 0x%x\n", i, seq);
 	ENDDEBUG
-	while (s != (struct tp_rtc *)0 && (SEQ_LEQ(tpcb, s->tprt_seq, seq))) {
-		m_freem( s->tprt_data );
-		tpcb->tp_snduna_rtc = s->tprt_next;
-		(void) m_free( dtom( s ) );
-		s = tpcb->tp_snduna_rtc;
-	}
-	if(tpcb->tp_snduna_rtc == (struct tp_rtc *)0)
-		tpcb->tp_sndhiwat_rtc = (struct tp_rtc *) 0;
+	while (i-- > 0)
+		sbdroprecord(sb);
+	if (SEQ_LT(tpcb, tpcb->tp_sndhiwat, seq))
+		tpcb->tp_sndhiwat_m = 0;
 
 }
 
@@ -379,18 +361,11 @@ tp_sbdrop(tpcb, seq)
  * 	Emits tpdus starting at sequence number (lowseq).
  * 	Emits until a) runs out of data, or  b) runs into an XPD mark, or
  * 			c) it hits seq number (highseq)
- * 	Removes the octets from the front of the socket buffer 
- * 	and repackages them in one mbuf chain per tpdu.
- * 	Moves the mbuf chain to the doubly linked list that runs from
- * 	tpcb->tp_sndhiwat_rtc to tpcb->tp_snduna_rtc.
- *
- * 	Creates tpdus that are no larger than <tpcb->tp_l_tpdusize - headersize>,
  *
  * 	If you want XPD to buffer > 1 du per socket buffer, you can
  * 	modifiy this to issue XPD tpdus also, but then it'll have
  * 	to take some argument(s) to distinguish between the type of DU to
- * 	hand tp_emit, the socket buffer from which to get the data, and
- * 	the chain of tp_rtc structures on which to put the data sent.
+ * 	hand tp_emit.
  *
  * 	When something is sent for the first time, its time-of-send
  * 	is stashed (the last RTT_NUM of them are stashed).  When the
@@ -406,9 +381,6 @@ tp_send(tpcb)
 	struct mbuf				*mb;/* beginning of this tpdu */
 	struct mbuf 			*nextrecord; /* NOT next tpdu but next sb record */
 	struct 	sockbuf			*sb = &tpcb->tp_sock->so_snd;
-	int						maxsize = tpcb->tp_l_tpdusize 
-										- tp_headersize(DT_TPDU_type, tpcb)
-										- (tpcb->tp_use_checksum?4:0) ;
 	unsigned int			eotsdu_reached=0;
 	SeqNum					lowseq, highseq ;
 	SeqNum					lowsave; 
@@ -454,51 +426,29 @@ tp_send(tpcb)
 	ASSERT( SEQ_LEQ(tpcb, lowseq, highseq) );
 	SEQ_DEC(tpcb, lowseq);
 
+	if (tpcb->tp_Xsnd.sb_mb) {
+		IFTRACE(D_XPD)
+			tptraceTPCB( TPPTmisc,
+				"tp_send XPD mark low high tpcb.Xuna", 
+				lowseq, highseq, tpcb->tp_Xsnd.sb_mb, 0);
+		ENDTRACE
+		/* stop sending here because there are unacked XPD present
+		 */
+		IncStat(ts_xpd_intheway);
+		goto done;
+	}
 	IFTRACE(D_DATA)
 		tptraceTPCB( TPPTmisc, "tp_send 2 low high fcredit congwin", 
 			lowseq, highseq, tpcb->tp_fcredit,  tpcb->tp_cong_win);
 	ENDTRACE
 
-	while ((SEQ_LT(tpcb, lowseq, highseq)) && (mb = m = sb->sb_mb)) {
-		if (tpcb->tp_Xsnd.sb_mb) {
-			IFTRACE(D_XPD)
-				tptraceTPCB( TPPTmisc,
-					"tp_send XPD mark low high tpcb.Xuna", 
-					lowseq, highseq, tpcb->tp_Xsnd.sb_mb, 0);
-			ENDTRACE
-			/* stop sending here because there are unacked XPD which were 
-			 * given to us before the next data were.
-			 */
-			IncStat(ts_xpd_intheway);
-			break;
-		}
-		eotsdu_reached = 0;
-		nextrecord = m->m_act;
-		for (len = 0; m; m = m->m_next) {
-			len += m->m_len; 
-			if (m->m_flags & M_EOR)
-				eotsdu_reached = 1;
-			sbfree(sb, m); /* reduce counts in socket buffer */
-		}
-		sb->sb_mb = nextrecord;
-		IFTRACE(D_STASH)
-			tptraceTPCB(TPPTmisc, "tp_send whole mbuf: m_len len maxsize",
-				 0, mb->m_len, len, maxsize);
-		ENDTRACE
+	if (m = tpcb->tp_sndhiwat_m)
+		mb  = m->m_nextpkt;
+	else
+		mb = sb->sb_mb;
+	while ((SEQ_LT(tpcb, lowseq, highseq)) && mb ) {
 
-		if ( len == 0 && !eotsdu_reached) {
-			/* THIS SHOULD NEVER HAPPEN! */
-			ASSERT( 0 );
-			goto done;
-		}
-
-		/* If we arrive here one of the following holds:
-		 * 1. We have exactly <maxsize> octets of whole mbufs,
-		 * 2. We accumulated <maxsize> octets using partial mbufs,
-		 * 3. We found an TPMT_EOT or an XPD mark 
-		 * 4. We hit the end of a chain through m_next.
-		 *    In this case, we'd LIKE to continue with the next record,
-		 *    but for the time being, for simplicity, we'll stop here.
+		/* 
 		 * In all cases, m points to mbuf containing first octet to be
 		 * sent in the tpdu AFTER the one we're going to send now,
 		 * or else m is null.
@@ -506,6 +456,8 @@ tp_send(tpcb)
 		 * The chain we're working on now begins at mb and has length <len>.
 		 */
 
+		eotsdu_reached = (mb->m_flags & M_EOR) != 0;
+		len = mb->m_pkthdr.len;
 		IFTRACE(D_STASH)
 			tptraceTPCB( TPPTmisc, 
 				"tp_send mcopy low high eotsdu_reached len", 
@@ -515,47 +467,29 @@ tp_send(tpcb)
 		/* make a copy - mb goes into the retransmission list 
 		 * while m gets emitted.  m_copy won't copy a zero-length mbuf.
 		 */
-		if (len) {
-			if ((m = m_copy(mb, 0, len )) == MNULL)
+		m = m_copy(mb, 0, M_COPYALL);
+		if (m == MNULL)
 				goto done;
-		} else {
-			/* eotsdu reached */
-			MGET(m, M_WAIT, TPMT_DATA);
-			if (m == MNULL)
-				goto done;
-			m->m_len = 0;
-		}
-
 		SEQ_INC(tpcb,lowseq);	/* it was decremented at the beginning */
-		{
-			struct tp_rtc *t;
-			/* make an rtc and put it at the end of the chain */
-
-			TP_MAKE_RTC( t, lowseq, eotsdu_reached, mb, len, lowseq, 
-				TPMT_SNDRTC);
-			t->tprt_next = (struct tp_rtc *)0;
-
-			if ( tpcb->tp_sndhiwat_rtc != (struct tp_rtc *)0 )
-				tpcb->tp_sndhiwat_rtc->tprt_next = t;
-			else {
-				ASSERT( tpcb->tp_snduna_rtc == (struct tp_rtc *)0 );
-				tpcb->tp_snduna_rtc = t;
-			}
-
-			tpcb->tp_sndhiwat_rtc = t;
-		}
-
 		IFTRACE(D_DATA)
 			tptraceTPCB( TPPTmisc, 
 				"tp_send emitting DT lowseq eotsdu_reached len",
 				lowseq, eotsdu_reached, len, 0);
 		ENDTRACE
-		if( tpcb->tp_sock->so_error =
-			tp_emit(DT_TPDU_type, tpcb, lowseq, eotsdu_reached, m) )  {
+		if (mb->m_nextpkt == 0 && tpcb->tp_oktonagle) {
+			SEQ_INC(tpcb, tpcb->tp_sndnum);
+			tpcb->tp_oktonagle = 0;
+			/* when headers are precomputed, may need to fill
+			   in checksum here */
+		}
+		if (tpcb->tp_sock->so_error =
+			tp_emit(DT_TPDU_type, tpcb, lowseq, eotsdu_reached, m)) {
 			/* error */
 			SEQ_DEC(tpcb, lowseq); 
 			goto done;
 		}
+		tpcb->tp_sndhiwat_m = mb;
+		mb = mb->m_nextpkt;
 		/* set the transmit-time for computation of round-trip times */
 		bcopy( (caddr_t)&time, 
 				(caddr_t)&( tpcb->tp_rttemit[ lowseq & TP_RTT_NUM ] ), 
@@ -615,6 +549,82 @@ done:
 	ENDTRACE
 }
 
+int TPNagleok;
+int TPNagled;
+
+tp_packetize(tpcb, m, eotsdu)
+register struct tp_pcb *tpcb;
+register struct mbuf *m;
+int eotsdu;
+{
+	register struct mbuf *n;
+	register struct sockbuf *sb = &tpcb->tp_sock->so_snd;
+	int	maxsize = tpcb->tp_l_tpdusize 
+			- tp_headersize(DT_TPDU_type, tpcb)
+			- (tpcb->tp_use_checksum?4:0) ;
+	int totlen = m->m_pkthdr.len;
+	struct mbuf *m_split();
+	/*
+	 * Pre-packetize the data in the sockbuf
+	 * according to negotiated mtu.  Do it here
+	 * where we can safely wait for mbufs.
+	 *
+	 * This presumes knowledge of sockbuf conventions.
+	 * TODO: allocate space for header and fill it in (once!).
+	 */
+	IFTRACE(D_DATA)
+		tptraceTPCB(TPPTmisc,
+		"SEND BF: maxsize totlen eotsdu",
+			maxsize, totlen, eotsdu, 0);
+	ENDTRACE
+	if (tpcb->tp_oktonagle) {
+		if ((n = sb->sb_mb) == 0)
+			panic("tp_packetize");
+		while (n->m_act)
+			n = n->m_act;
+		if (n->m_flags & M_EOR)
+			panic("tp_packetize 2");
+		SEQ_INC(tpcb, tpcb->tp_sndnum);
+		if (totlen + n->m_pkthdr.len < maxsize) {
+			/* There is an unsent packet with space, combine data */
+			struct mbuf *old_n = n;
+			tpsbcheck(tpcb,3);
+			n->m_pkthdr.len += totlen;
+			while (n->m_next)
+				n = n->m_next;
+			sbcompress(sb, m, n);
+			tpsbcheck(tpcb,4);
+			n = old_n;
+			TPNagled++;
+			goto out;
+		}
+	}
+	while (m) {
+		n = m;
+		if (totlen > maxsize) {
+			if ((m = m_split(n, maxsize, M_WAIT)) == 0)
+				panic("tp_packetize");
+		} else
+			m = 0;
+		totlen -= maxsize;
+		tpsbcheck(tpcb, 5);
+		sbappendrecord(sb, n);
+		tpsbcheck(tpcb, 6);
+		SEQ_INC(tpcb, tpcb->tp_sndnum);
+	}
+out:
+	if (eotsdu) {
+		n->m_flags |= M_EOR;  /* XXX belongs at end */
+		tpcb->tp_oktonagle = 0;
+	} else {
+		SEQ_DEC(tpcb, tpcb->tp_sndnum);
+		tpcb->tp_oktonagle = 1;
+		TPNagleok++;
+	}
+	return 0;
+}
+
+
 /*
  * NAME: tp_stash()
  * CALLED FROM:
@@ -635,7 +645,6 @@ done:
  * being in a reneged portion of the window.
  */
 
-int
 tp_stash( tpcb, e )
 	register struct tp_pcb		*tpcb;
 	register struct tp_event	*e;
@@ -683,23 +692,23 @@ tp_stash( tpcb, e )
 
 		SEQ_INC( tpcb, tpcb->tp_rcvnxt );
 		/* 
-		 * move chains from the rtc list to the socket buffer
-		 * and free the rtc header
+		 * move chains from the reassembly queue to the socket buffer
 		 */
-		{
-			register struct tp_rtc	**r =  &tpcb->tp_rcvnxt_rtc;
-			register struct tp_rtc	*s = tpcb->tp_rcvnxt_rtc;
+		if (tpcb->tp_rsycnt) {
+			register struct mbuf **mp;
+			struct mbuf **mplim;
 
-			while (s != (struct tp_rtc *)0 && s->tprt_seq == tpcb->tp_rcvnxt) {
-				*r = s->tprt_next;
+			mp = tpcb->tp_rsyq + (tpcb->tp_rcvnxt % tpcb->tp_maxlcredit);
+			mplim = tpcb->tp_rsyq + tpcb->tp_maxlcredit;
 
-				sbappend(&tpcb->tp_sock->so_rcv, s->tprt_data);
-
-				SEQ_INC( tpcb, tpcb->tp_rcvnxt );
-
-				(void) m_free( dtom( s ) );
-				s = *r;
+			while (tpcb->tp_rsycnt && *mp) {
+				sbappend(&tpcb->tp_sock->so_rcv, *mp);
+				tpcb->tp_rsycnt--;
+				*mp = 0;
+				SEQ_INC(tpcb, tpcb->tp_rcvnxt);
 				ack_reason |= ACK_REORDER;
+				if (++mp == mplim)
+					mp = tpcb->tp_rsyq;
 			}
 		}
 		IFDEBUG(D_STASH)
@@ -708,40 +717,24 @@ tp_stash( tpcb, e )
 		ENDDEBUG
 
 	} else {
-		register struct tp_rtc **s = &tpcb->tp_rcvnxt_rtc;
-		register struct tp_rtc *r = tpcb->tp_rcvnxt_rtc;
-		register struct tp_rtc *t;
+		register struct mbuf **mp;
+		SeqNum uwe;
 
 		IFTRACE(D_STASH)
 			tptraceTPCB(TPPTmisc, "stash Reseq: seq rcvnxt lcdt", 
 			E.e_seq, tpcb->tp_rcvnxt, tpcb->tp_lcredit, 0);
 		ENDTRACE
 
-		r = tpcb->tp_rcvnxt_rtc;
-		while (r != (struct tp_rtc *)0  && SEQ_LT(tpcb, r->tprt_seq, E.e_seq)) {
-			s = &r->tprt_next;
-			r = r->tprt_next;
-		}
-
-		if (r == (struct tp_rtc *)0 || SEQ_GT(tpcb, r->tprt_seq, E.e_seq) ) {
-			IncStat(ts_dt_ooo);
-
-			IFTRACE(D_STASH)
-				tptrace(TPPTmisc,
-				"tp_stash OUT OF ORDER- MAKE RTC: seq, 1st seq in list\n",
-					E.e_seq, r->tprt_seq,0,0);
-			ENDTRACE
-			IFDEBUG(D_STASH)
-				printf("tp_stash OUT OF ORDER- MAKE RTC\n");
-			ENDDEBUG
-			TP_MAKE_RTC(t, E.e_seq, E.e_eot, E.e_data, E.e_datalen, 0,
-				TPMT_RCVRTC);
-
-			*s = t;
-			t->tprt_next = (struct tp_rtc *)r;
+		if (tpcb->tp_rsyq == 0 ||
+			(tpcb->tp_rsycnt == 0 &&
+			 (tpcb->tp_sbmax != tpcb->tp_sock->so_rcv.sb_hiwat)))
+				tp_rsyset(tpcb);
+		uwe = SEQ(tpcb, tpcb->tp_rcvnxt + tpcb->tp_maxlcredit);
+		if (tpcb->tp_rsyq == 0 ||
+						!IN_RWINDOW(tpcb, E.e_seq, tpcb->tp_rcvnxt, uwe)) {
 			ack_reason = ACK_DONT;
-			goto done;
-		} else {
+			m_freem(E.e_data);
+		} else if (*(mp = tpcb->tp_rsyq + (E.e_seq % tpcb->tp_maxlcredit))) {
 			IFDEBUG(D_STASH)
 				printf("tp_stash - drop & ack\n");
 			ENDDEBUG
@@ -752,20 +745,20 @@ tp_stash( tpcb, e )
 				IncPStat(tpcb, tps_n_ack_cuz_dup);
 			ENDPERF
 
-			m_freem( E.e_data );
+			m_freem(E.e_data);
 			ack_reason |= ACK_DUP;
-			goto done;
+		} else {
+			*mp = E.e_data;
+			tpcb->tp_rsycnt++;
+			ack_reason = ACK_DONT;
 		}
 	}
-
-
 	/*
 	 * an ack should be sent when at least one of the
 	 * following holds:
-	 * a) we've received a TPDU with EOTSDU set
-	 * b) the TPDU that just arrived represents the
+	 * a) the TPDU that just arrived represents the
 	 *    full window last advertised, or
-	 * c) when seq X arrives [ where
+	 * b) when seq X arrives [ where
 	 * 		X = last_sent_uwe - 1/2 last_lcredit_sent 
 	 * 		(the packet representing 1/2 the last advertised window) ]
 	 * 		and lcredit at the time of X arrival >  last_lcredit_sent/2
@@ -779,8 +772,6 @@ tp_stash( tpcb, e )
 	 * 		me until the SYSTEM CALL finishes), I'd like to tell
 	 * 		the other end.  
 	 */
-
-done:
 	{
 		LOCAL_CREDIT(tpcb);
 
@@ -798,9 +789,6 @@ done:
 			return 0;
 		} else {
 			IFPERF(tpcb)
-				if(ack_reason & ACK_EOT) {
-					IncPStat(tpcb, tps_n_ack_cuz_eot);
-				} 
 				if(ack_reason & ACK_STRAT_EACH) {
 					IncPStat(tpcb, tps_n_ack_cuz_strat);
 				} else if(ack_reason & ACK_STRAT_FULLWIN) {
@@ -822,5 +810,77 @@ done:
 			}
 			return 1;
 		}
+	}
+}
+
+/*
+ * tp_rsyflush - drop all the packets on the reassembly queue.
+ * Do this when closing the socket, or when somebody has changed
+ * the space avaible in the receive socket (XXX).
+ */
+tp_rsyflush(tpcb)
+register struct tp_pcb *tpcb;
+{
+	register struct mbuf *m, **mp;
+	if (tpcb->tp_rsycnt) {
+		for (mp == tpcb->tp_rsyq + tpcb->tp_maxlcredit;
+									 --mp >= tpcb->tp_rsyq; )
+			if (*mp) {
+				tpcb->tp_rsycnt--;
+				m_freem(*mp);
+			}
+		if (tpcb->tp_rsycnt)
+			panic("tp_rsyflush");
+	}
+	free((caddr_t)tpcb->tp_rsyq, M_PCB);
+	tpcb->tp_rsyq = 0;
+}
+
+tp_rsyset(tpcb)
+register struct tp_pcb *tpcb;
+{
+	register struct socket *so = tpcb->tp_sock;
+	int maxcredit  = tpcb->tp_xtd_format ? 0xffff : 0xf;
+	caddr_t rsyq;
+
+	tpcb->tp_sbmax = so->so_rcv.sb_hiwat;
+	tpcb->tp_maxlcredit = maxcredit = min(maxcredit,
+		  (so->so_rcv.sb_hiwat + tpcb->tp_l_tpdusize)/ tpcb->tp_l_tpdusize);
+
+	maxcredit *= sizeof(struct mbuf *);
+	if (tpcb->tp_rsyq)
+		tp_rsyflush(tpcb);
+	if (rsyq = (caddr_t)malloc(maxcredit, M_PCB, M_NOWAIT))
+		bzero(rsyq, maxcredit);
+	tpcb->tp_rsyq = (struct mbuf **)rsyq;
+}
+
+tpsbcheck(tpcb, i)
+struct tp_pcb *tpcb;
+{
+	register struct mbuf *n, *m;
+	register int len = 0, mbcnt = 0, pktlen;
+	struct sockbuf *sb = &tpcb->tp_sock->so_snd;
+
+	for (n = sb->sb_mb; n; n = n->m_nextpkt) {
+		if ((n->m_flags & M_PKTHDR) == 0)
+			panic("tpsbcheck nohdr");
+		pktlen = len + n->m_pkthdr.len;
+	    for (m = n; m; m = m->m_next) {
+			len += m->m_len;
+			mbcnt += MSIZE;
+			if (m->m_flags & M_EXT)
+				mbcnt += m->m_ext.ext_size;
+		}
+		if (len != pktlen) {
+			printf("test %d; len %d != pktlen %d on mbuf 0x%x\n",
+				i, len, pktlen, n);
+			panic("tpsbcheck short");
+		}
+	}
+	if (len != sb->sb_cc || mbcnt != sb->sb_mbcnt) {
+		printf("test %d: cc %d != %d || mbcnt %d != %d\n", i, len, sb->sb_cc,
+		    mbcnt, sb->sb_mbcnt);
+		panic("tpsbcheck");
 	}
 }
