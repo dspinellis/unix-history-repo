@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -39,6 +39,9 @@ depend: ${SRCS}
 install: ${MAN}
 	install -s -o bin -g bin -m 755 mtree ${DESTDIR}/usr/sbin
 	install -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
+
+mtree.0:
+	tbl mtree.1 | nroff -h -man > $@
 
 lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
