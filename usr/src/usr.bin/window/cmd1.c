@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd1.c	3.12 83/09/15";
+static	char *sccsid = "@(#)cmd1.c	3.13 83/11/22";
 #endif
 
 #include "defs.h"
@@ -65,7 +65,8 @@ c_window()
 	if (!terse)
 		(void) wwputs("\r\n", cmdwin);
 	wwcurtowin(cmdwin);
-	(void) openwin(id, row, col, xrow-row+1, xcol-col+1, nbufline);
+	(void) openwin(id, row, col, xrow-row+1, xcol-col+1, nbufline,
+		(char *) 0);
 }
 
 findid()
@@ -142,8 +143,9 @@ int maxrow, maxcol;
 }
 
 struct ww *
-openwin(id, row, col, nrow, ncol, nline)
+openwin(id, row, col, nrow, ncol, nline, label)
 int id, nrow, ncol, row, col;
+char *label;
 {
 	register struct ww *w;
 
@@ -163,6 +165,8 @@ int id, nrow, ncol, row, col;
 	w->ww_hasframe = 1;
 	w->ww_altpos.r = 1;
 	w->ww_altpos.c = 0;
+	if (label != 0 && setlabel(w, label) < 0)
+		error("No memory for label.");
 	wwcursor(w, 1);
 	wwadd(w, framewin);
 	selwin = w;
