@@ -1,14 +1,12 @@
-/*	boot.c	4.6	81/12/01	*/
+/*	boot.c	4.7	82/03/07	*/
 
 #include "../h/param.h"
-#include "../h/ino.h"
 #include "../h/inode.h"
-#include "../h/filsys.h"
-#include "../h/dir.h"
+#include "../h/fs.h"
 #include "../h/vm.h"
 #include <a.out.h>
 #include "saio.h"
-#include <sys/reboot.h>
+#include "../h/reboot.h"
 
 /*
  * Boot program... arguments passed in r10 and r11 determine
@@ -79,14 +77,19 @@ copyunix(howto, io)
 	char *addr;
 
 	i = read(io, (char *)&x, sizeof x);
-	if (i != sizeof x || x.a_magic != 0410)
+	if (i != sizeof x ||
+	    (x.a_magic != 0407 && x.a_magic != 0413 && x.a_magic != 0410))
 		_stop("Bad format\n");
 	printf("%d", x.a_text);
+	if ((x.a_magic == 0413 || x.a_magic == 0410) &&
+	    lseek(io, 0x400, 0) == -1)
+		goto shread;
 	if (read(io, (char *)0, x.a_text) != x.a_text)
 		goto shread;
 	addr = (char *)x.a_text;
-	while ((int)addr & CLOFSET)
-		*addr++ = 0;
+	if (x.a_magic == 0413 || x.a_magic == 0410)
+		while ((int)addr & CLOFSET)
+			*addr++ = 0;
 	printf("+%d", x.a_data);
 	if (read(io, addr, x.a_data) != x.a_data)
 		goto shread;
