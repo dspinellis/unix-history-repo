@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)route.h	6.6 (Berkeley) %G%
+ *	@(#)route.h	6.7 (Berkeley) %G%
  */
 
 /*
@@ -39,18 +39,6 @@ struct rtentry {
 	short	rt_refcnt;		/* # held references */
 	u_long	rt_use;			/* raw # packets forwarded */
 	struct	ifnet *rt_ifp;		/* the answer: interface to use */
-#ifdef BBNNET
-	union {				/* domain specific info */
-	    struct {
-		int in_rt_pc;		/* count of pings not answered */
-	    } rt_in_data;
-
-#define	irt_pings	rt_data.rt_in_data.in_rt_pc
-#define irt_gdown	rt_data.rt_in_data.in_rt_pc
-
-	    char rt_dummy[32];
-	} rt_data;
-#endif
 };
 
 #define	RTF_UP		0x1		/* route useable */
