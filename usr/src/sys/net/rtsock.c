@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rtsock.c	7.24 (Berkeley) %G%
+ *	@(#)rtsock.c	7.25 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -667,6 +667,8 @@ kinfo_iflist(af, w)
 
 	bzero((caddr_t)&info, sizeof(info));
 	for (ifp = ifnet; ifp; ifp = ifp->if_next) {
+		if (w->w_arg && w->w_arg != ifp->if_index)
+			continue;
 		ifa = ifp->if_addrlist;
 		ifpaddr = ifa->ifa_addr;
 		len = rt_msg2(RTM_IFINFO, &info, (caddr_t)0, w);
@@ -684,6 +686,8 @@ kinfo_iflist(af, w)
 			w->w_where += len;
 		}
 		while (ifa = ifa->ifa_next) {
+			if (af && af != ifa->ifa_addr->sa_family)
+				continue;
 			ifaaddr = ifa->ifa_addr;
 			netmask = ifa->ifa_netmask;
 			brdaddr = ifa->ifa_dstaddr;
@@ -700,12 +704,11 @@ kinfo_iflist(af, w)
 					return (error);
 				w->w_where += len;
 			}
-			ifaaddr = netmask = brdaddr = 0;
 		}
+		ifaaddr = netmask = brdaddr = 0;
 	}
 	return (0);
 }
-
 
 kinfo_rtable(op, where, given, arg, needed)
 	int	op, arg;
@@ -722,7 +725,7 @@ kinfo_rtable(op, where, given, arg, needed)
 		w.w_given = *given;
 	w.w_needed = 0 - w.w_given;
 	w.w_arg = arg;
-	w.w_op = op;
+	w.w_op = op = ki_op(op);
 
 	s = splnet();
 	switch (op) {
