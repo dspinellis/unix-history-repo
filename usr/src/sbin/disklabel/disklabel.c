@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)disklabel.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)disklabel.c	5.23 (Berkeley) %G%";
 /* from static char sccsid[] = "@(#)disklabel.c	1.2 (Symmetric) 11/28/85"; */
 #endif /* not lint */
 
@@ -27,6 +27,7 @@ static char sccsid[] = "@(#)disklabel.c	5.22 (Berkeley) %G%";
 #define DKTYPENAMES
 #include <sys/disklabel.h>
 #include <ufs/ffs/fs.h>
+#include <unistd.h>
 #include <string.h>
 #include <stdio.h>
 #include <ctype.h>
@@ -86,6 +87,9 @@ int	rflag;
 
 #ifdef DEBUG
 int	debug;
+#define GETOPT_FLAGS "NRWerwd"
+#else
+#define GETOPT_FLAGS "NRWerw"
 #endif
 
 main(argc, argv)
@@ -98,7 +102,7 @@ main(argc, argv)
 	int ch, f, error = 0;
 	char *name = 0, *type;
 
-	while ((ch = getopt(argc, argv, "NRWerw")) != EOF)
+	while ((ch = getopt(argc, argv, GETOPT_FLAGS)) != EOF)
 		switch (ch) {
 			case 'N':
 				if (op != UNSPEC)
@@ -221,7 +225,7 @@ main(argc, argv)
 			usage();
 #endif
 		if (argc > 2)
-			name = argv[--argc];
+			name = argv[2];
 		makelabel(type, name, &lab);
 		lp = makebootarea(bootarea, &lab);
 		*lp = lab;
@@ -293,7 +297,6 @@ writelabel(f, boot, lp)
 {
 	register int i;
 	int flag;
-	off_t lseek();
 
 	lp->d_magic = DISKMAGIC;
 	lp->d_magic2 = DISKMAGIC;
@@ -313,7 +316,7 @@ writelabel(f, boot, lp)
 			l_perror("ioctl DIOCSDINFO");
 			return (1);
 		}
-		(void)lseek(f, (off_t)0, L_SET);
+		(void)lseek(f, (off_t)0, SEEK_SET);
 		/*
 		 * write enable label sector before write (if necessary),
 		 * disable after writing.
@@ -337,7 +340,8 @@ writelabel(f, boot, lp)
 
 		alt = lp->d_ncylinders * lp->d_secpercyl - lp->d_nsectors;
 		for (i = 1; i < 11 && i < lp->d_nsectors; i += 2) {
-			(void)lseek(f, (off_t)((alt + i) * lp->d_secsize), L_SET);
+			(void)lseek(f, (off_t)((alt + i) * lp->d_secsize),
+				SEEK_SET);
 			if (write(f, boot, lp->d_secsize) < lp->d_secsize) {
 				int oerrno = errno;
 				fprintf(stderr, "alternate label %d ", i/2);
