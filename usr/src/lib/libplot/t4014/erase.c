@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)erase.c	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)erase.c	4.2 (Berkeley) %G%";
 #endif
 
 extern int ohiy;
@@ -14,6 +14,5 @@ erase(){
 		ohix = -1;
 		oextra = -1;
 		oloy = -1;
-		sleep(2);
 		return;
 }
