@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)kvm_hp300.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)kvm_hp300.c	5.19 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -102,36 +102,29 @@ static	struct ste *Sysseg;
 #endif
 
 static struct nlist nl[] = {
-	{ "_Usrptmap" },
-#define	X_USRPTMAP	0
-	{ "_usrpt" },
-#define	X_USRPT		1
 	{ "_nswap" },
-#define	X_NSWAP		2
+#define	X_NSWAP		0
 	{ "_dmmin" },
-#define	X_DMMIN		3
+#define	X_DMMIN		X_NSWAP+1
 	{ "_dmmax" },
-#define	X_DMMAX		4
+#define	X_DMMAX		X_DMMIN+1
 	/*
 	 * everything here and down, only if a dead kernel
 	 */
 	{ "_Sysmap" },
-#define	X_SYSMAP	5
+#define	X_SYSMAP	X_DMMAX+1
 #define	X_DEADKERNEL	X_SYSMAP
-	{ "_Syssize" },
-#define	X_SYSSIZE	6
 	{ "_allproc" },
-#define X_ALLPROC	7
+#define X_ALLPROC	X_SYSMAP+1
 	{ "_zombproc" },
-#define X_ZOMBPROC	8
-	{ "_nproc" },
-#define	X_NPROC		9
-#define	X_LAST		9
+#define X_ZOMBPROC	X_ALLPROC+1
+	{ "_nprocs" },
+#define	X_NPROCS	X_ZOMBPROC+1
 #if defined(hp300)
 	{ "_Sysseg" },
-#define	X_SYSSEG	(X_LAST+1)
+#define	X_SYSSEG	(X_NPROCS+1)
 	{ "_lowram" },
-#define	X_LOWRAM	(X_LAST+2)
+#define	X_LOWRAM	(X_SYSSEG+1)
 #endif
 	{ "" },
 };
@@ -375,17 +368,17 @@ kvm_getprocs(what, arg)
 		}
 		kvmnprocs = copysize / sizeof (struct kinfo_proc);
 	} else {
-		int nproc;
+		int nprocs;
 
-		if (kvm_read((void *) nl[X_NPROC].n_value, &nproc,
+		if (kvm_read((void *)nl[X_NPROCS].n_value, &nprocs,
 		    sizeof (int)) != sizeof (int)) {
 			seterr("can't read nproc");
 			return (-1);
 		}
 		if ((kvmprocbase = (struct kinfo_proc *)
-		     malloc(nproc * sizeof (struct kinfo_proc))) == NULL) {
-			seterr("out of memory (addr: %x nproc = %d)",
-				nl[X_NPROC].n_value, nproc);
+		     malloc(nprocs * sizeof (struct kinfo_proc))) == NULL) {
+			seterr("out of memory (addr: %x nprocs = %d)",
+				nl[X_NPROCS].n_value, nprocs);
 			return (-1);
 		}
 		kvmnprocs = kvm_doprocs(what, arg, kvmprocbase);
@@ -733,7 +726,7 @@ kvm_getargs(p, up)
 	const struct proc *p;
 	const struct user *up;
 {
-	char cmdbuf[CLBYTES*2];
+	static char cmdbuf[CLBYTES*2];
 	union {
 		char	argc[CLBYTES*2];
 		int	argi[CLBYTES*2/sizeof (int)];
@@ -835,8 +828,13 @@ retucomm:
 static
 getkvars()
 {
-	if (kvm_nlist(nl) == -1)
+	int ret;
+	static nlisterr();
+
+	if ((ret = kvm_nlist(nl)) == -1)
 		return (-1);
+	else if (ret > 0)
+		nlisterr(nl);
 	if (deadkernel) {
 		/* We must do the sys map first because klseek uses it */
 		long	addr;
@@ -903,6 +901,20 @@ getkvars()
 	}
 	return (0);
 }
+
+static
+nlisterr(nl)
+	struct nlist nl[];
+{
+	int i;
+
+	fprintf(stderr, "kvm_nlist: can't find following names:");
+	for (i = 0; nl[i].n_name[0] != '\0'; i++)
+		if (nl[i].n_value == 0)
+			fprintf(stderr, " %s", nl[i].n_name);
+	fprintf(stderr, ": continuing...\n");
+}
+
 
 kvm_read(loc, buf, len)
 	void *loc;
