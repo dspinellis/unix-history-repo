@@ -1,4 +1,4 @@
-/* @(#)wbuf.c	4.3 (Berkeley) %G% */
+/* @(#)wbuf.c	4.4 (Berkeley) %G% */
 #include	<stdio.h>
 #include	<sys/types.h>
 #include	<sys/stat.h>
@@ -105,24 +105,64 @@ _cleanup()
 		fclose(iop);
 }
 
+/*
+ * fclose(*iop) - Close an open stdio stream without side effects.
+ *
+ * As per Dennis Ricthie's mail, fclose is defined to leave in a "virgin" state,
+ * the structure pointed to by the parameter, *iop.  This means that
+ * all flags are cleared, counters set to 0 and Pointers set to NULL.
+ *
+ * Which implies:
+ *		foo = fopen...
+ *		setbuf (foo, some_buffer);
+ *		.....
+ *		fclose(foo);
+ *
+ *	Will leave the buffer stucture cleared.  If the user wishes to
+ * reuse the *iop (foo) when he opens another file he must AGAIN call setbuf(3)
+ * if he again wishes to supply his own buffer.
+ *
+ *	The old method allowed the above case but had a nasty side effect
+ * of leaving data around if the phase of the moon was right.  The correct
+ * solution is to sanitize everything with the fclose.
+ *	Clem Cole 12-15-82
+ */
+
 fclose(iop)
 register struct _iobuf *iop;
 {
-	register r;
+	register int r;
 
 	r = EOF;
+	/*
+	 * Is this an open file structure as opposed to being String.
+	 */
 	if (iop->_flag&(_IOREAD|_IOWRT|_IORW) && (iop->_flag&_IOSTRG)==0) {
+		/*
+		 * flush out any pending I/O
+		 */
 		r = fflush(iop);
+		/*
+		 * tell UNIX that it can free up the file descriptor
+		 */
 		if (close(fileno(iop)) < 0)
 			r = EOF;
+		/*
+		 * if we had done a malloc(3) in flsbuf or filbuf we need
+		 * to give the buffer back to the system
+		 */
 		if (iop->_flag&_IOMYBUF)
 			free(iop->_base);
-		if (iop->_flag&(_IOMYBUF|_IONBF|_IOLBF)) {
-			iop->_base = NULL;
-			iop->_bufsiz = 0;
-		}
 	}
-	iop->_flag &= ~(_IOREAD|_IOWRT|_IOLBF|_IONBF|_IOMYBUF|_IOERR|_IOEOF|_IOSTRG|_IORW);
+	/*
+	 * finially sanitize the buffer structure
+	 */
 	iop->_cnt = 0;
+	iop->_base = (char *)NULL;
+	iop->_ptr = (char *)NULL;
+	iop->_bufsiz = 0;
+	iop->_flag = 0;
+	iop->_file = 0;
+
 	return(r);
 }
