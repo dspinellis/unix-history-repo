@@ -10,7 +10,7 @@
 #undef isdigit
 
 /*
- * Sccs Id = "@(#)def.h	2.4 %G%";
+ * Sccs Id = "@(#)def.h	2.5 %G%";
  */
 
 /*
@@ -35,7 +35,7 @@
 
 #define	ESCAPE		'~'		/* Default escape for sending */
 #define	NMLSIZE		20		/* max names in a message list */
-#define	PATHSIZE	35		/* Size of pathnames throughout */
+#define	PATHSIZE	100		/* Size of pathnames throughout */
 #define	NAMESIZE	20		/* Max size of user name */
 #define	HSHSIZE		19		/* Hash size for aliases and vars */
 #define	HDRFIELDS	3		/* Number of header fields */
