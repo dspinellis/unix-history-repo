@@ -10,7 +10,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)kvm_hp300.c	5.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)kvm_hp300.c	5.29 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -34,7 +34,13 @@ static char sccsid[] = "@(#)kvm_hp300.c	5.28 (Berkeley) %G%";
 
 #include "kvm_private.h"
 
+#if defined(hp300)
 #include <hp300/hp300/pte.h>
+#endif
+
+#if defined(luna68k)
+#include <luna68k/luna68k/pte.h>
+#endif
 
 #ifndef btop
 #define	btop(x)		(((unsigned)(x)) >> PGSHIFT)	/* XXX */
