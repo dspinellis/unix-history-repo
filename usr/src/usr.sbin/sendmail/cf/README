@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	6.3 (Berkeley) %G%
+		@(#)README	6.4 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -176,9 +176,9 @@ LOCAL_RELAY	The site that will handle unqualified names -- that
 		methods.
 
 The domain file can also be used to define a domain name, if needed
-(using "DD<domain>") and set certain site-wide features, such as
-no_wildcard_MX.  If all hosts at your site masquerade behind one
-email name, you could also use MASQUERADE_AS here.
+(using "DD<domain>") and set certain site-wide features.  If all hosts
+at your site masquerade behind one email name, you could also use
+MASQUERADE_AS here.
 
 +---------+
 | MAILERS |
@@ -224,13 +224,6 @@ use_cw_file	Read the file /etc/sendmail.cw file to get alternate
 		on a host that MXed for a dynamic set of other
 		hosts.  If the set is static, just including the line
 		"Cw<name1> <name2> ..." is probably superior.
-
-no_wildcard_MX	This domain does not have a wildcard MX record that
-		matches it.  For example, I am in domain
-		CS.Berkeley.EDU, and there is no MX record that
-		matches *.CS.Berkeley.EDU or *.Berkeley.EDU, so I
-		can safely use this feature.  If you set this, you
-		get better name server performance.
 
 Other FEATUREs should be defined, but I was trying to keep these
 config files fairly lean and mean.
