@@ -1,4 +1,4 @@
-/*	draw.c	1.5	84/02/09
+/*	draw.c	1.6	84/03/15
  *
  *	This file contains the functions for producing the graphics
  *   images in the canon/imagen driver for ditroff.
@@ -11,6 +11,7 @@
 #include "canon.h"
 
 				/* imports from dip.c */
+#define  FATAL		1
 #define  hmot(n)	hpos += n;
 #define  hgoto(n)	hpos = n;
 #define  vmot(n)	vpos += n;
@@ -244,7 +245,8 @@ int pic;
 	    char *cop = buf;
 
 	    while (*cop++ = *ptr++);	/* copy what's left to the beginning */
-	    fgets ((cop - 1), len - (cop - buf), fp);
+	    if (fgets ((cop - 1), len - (cop - buf), fp) == NULL)
+		error (FATAL, "unexpected end of input");
 	    ptr = buf;
 	}
 	if (npts < MAXPOINTS - 1)	/* if too many points, forget some */
