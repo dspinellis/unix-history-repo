@@ -9,20 +9,19 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/ioctl.h>
 
-#include <limits.h>
 #include <regex.h>
 #include <setjmp.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
+#include <limits.h>
 
 #ifdef DBI
 #include <db.h>
@@ -71,8 +70,8 @@ int ss; /* for the getc() */
 int explain_flag=1, g_flag=0, GV_flag=0, printsfx=0;
 long change_flag=0L;
 int line_length;
-jmp_buf ctrl_position, ctrl_position2; /* For SIGnal handling. */
-int sigint_flag, sighup_flag, sigspecial=0, sigspecial2=0;
+jmp_buf ctrl_position, ctrl_position2, ctrl_position3; /* For SIGnal handling. */
+int sigint_flag, sighup_flag, sigspecial=0, sigspecial2=0, sigspecial3=0;
 
 static void sigint_handler __P((int));
 static void sighup_handler __P((int));
@@ -539,9 +538,13 @@ sigint_handler(signo)
 	int signo;
 {
 	sigint_flag = 1;
+	if (sigspecial3) {
+		sigspecial3 = 0;
+		SIGINT_ILACTION;
+	}
 	if (sigspecial2) {
 		sigspecial2 = 0;
-		SIGINT_ILACTION;
+		SIGINT_ALACTION;
 	}
 	else
 		if (sigspecial);

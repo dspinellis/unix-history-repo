@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ed.h	5.3 (Berkeley) %G%
+ *	@(#)ed.h	5.4 (Berkeley) %G%
  */
 
 #define	FILENAME_LEN	PATH_MAX
@@ -15,7 +15,8 @@
 #define	INTERUPT	(int)1
 #define	HANGUP		(int)2
 #define	SIGINT_ACTION	longjmp(ctrl_position, INTERUPT)
-#define SIGINT_ILACTION	longjmp(ctrl_position2, INTERUPT)
+#define SIGINT_ALACTION	longjmp(ctrl_position2, INTERUPT)
+#define SIGINT_ILACTION	longjmp(ctrl_position3, INTERUPT)
 #define	SIGHUP_ACTION	longjmp(ctrl_position, HANGUP)
 #define	NN_MAX_START	510
 #ifndef STDOUT_FILENO
@@ -83,8 +84,8 @@ extern LINE *u_current, *u_top, *u_bottom;
 extern int u_set, line_length;
 extern struct d_layer *d_stk;
 
-extern int sigint_flag, sighup_flag, sigspecial, sigspecial2;
-extern jmp_buf ctrl_position, ctrl_position2;
+extern int sigint_flag, sighup_flag, sigspecial, sigspecial2, sigspecial3;
+extern jmp_buf ctrl_position, ctrl_position2, ctrl_position3;
 
 #define RE_SEC 10
 extern regex_t RE_comp;
