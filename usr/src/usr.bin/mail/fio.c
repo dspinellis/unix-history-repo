@@ -10,7 +10,7 @@
  * File I/O.
  */
 
-static char *SccsId = "@(#)fio.c	2.5 %G%";
+static char *SccsId = "@(#)fio.c	2.6 %G%";
 
 /*
  * Set up the input pointers while copying the mail file into
@@ -497,7 +497,10 @@ expand(name)
 	struct stat sbuf;
 
 	if (name[0] == '+' && (cp = value("maildir")) != 0) {
-		sprintf(xname, "%s/%s", cp, name + 1);
+		if (*cp == '/')
+			sprintf(xname, "%s/%s", cp, name + 1);
+		else
+			sprintf(xname, "%s/%s/%s", homedir, cp, name + 1);
 		return(expand(savestr(xname)));
 	}
 	if (!anyof(name, "~{[*?$`'\"\\"))
