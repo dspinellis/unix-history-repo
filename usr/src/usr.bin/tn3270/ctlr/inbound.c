@@ -20,7 +20,7 @@
  */
 
 #ifndef	lint
-static char sccsid[] = "@(#)inbound.c	3.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)inbound.c	3.2 (Berkeley) %G%";
 #endif	/* ndef lint */
 
 
@@ -142,6 +142,35 @@ BackTab()
 	    break;
 	}
 	i = ScreenDec(i);
+    }
+}
+
+/*
+ * ModifyMdt() - Turn a modified data tag bit on or off (watch
+ * out for unformatted screens).
+ */
+
+ModifyMdt(x,on)
+int x;
+int on;
+{
+    int i = x;
+
+    if (IsStartField(i)) {	/* If we are at a start field position... */
+	if (on) {
+	    ModifyHost(i, |= ATTR_MDT);		/* Turn it on */
+	} else {
+	    ModifyHost(i, &= ~ATTR_MDT);	/* Turn it off */
+	}
+    } else {
+	i = WhereAttrByte(i);	/* Find beginning of field */
+	if (IsStartField(i)) {	/* Is there one? */
+	    if (on) {
+		ModifyHost(i, |= ATTR_MDT);	/* Turn it on */
+	    } else {
+		ModifyHost(i, &= ~ATTR_MDT);	/* Turn it off */
+	    }
+	} /* else, don't modify - this is an unformatted screen */
     }
 }
 
