@@ -7,6 +7,8 @@ _sccsid:
 
 	# C library -- conversions
 
+#include "DEFS.h"
+
 .globl	__doprnt
 .globl	__flsbuf
 
@@ -52,9 +54,7 @@ strtab:		# translate table for detecting null and percent
 	.byte	224,225,226,227,228,229,230,231,232,233,234,235,236,237,238,239
 	.byte	240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255
 
-	.align	1
-__doprnt:
-	.word	0xfc0			# uses r11-r6
+ENTRY(_doprnt, R6|R7|R8|R9|R10|R11)
 	jbr	doit
 
 strfoo:
