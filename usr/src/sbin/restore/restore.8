@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)restore.8	6.4 (Berkeley) %G%
+.\"	@(#)restore.8	6.5 (Berkeley) %G%
 .\"
 .TH RESTORE 8 ""
 .UC 4
@@ -224,15 +224,13 @@ even if the extraction list is not empty.
 The following characters may be used in addition to the letter
 that selects the function desired.
 .TP 5n
-.B  v
-Normally
+.B b
+The next argument to 
 .I restore
-does its work silently.
-The
-.B v
-(verbose)
-key causes it to type the name of each file it treats
-preceded by its file type.
+is used as the block size of the tape (in kilobytes).
+If the \fB-b\fP option is not specified,
+.I restore
+tries to determine the tape block size dynamically.
 .TP 5n
 .B f
 The next argument to 
@@ -250,6 +248,16 @@ can be used in a pipeline to dump and restore a file system
 with the command
 .IP "" 5n
 	dump 0f - /usr | (cd /mnt; restore xf -)
+.TP 5n
+.B  v
+Normally
+.I restore
+does its work silently.
+The
+.B v
+(verbose)
+key causes it to type the name of each file it treats
+preceded by its file type.
 .TP 5n
 .B y
 .I Restore
