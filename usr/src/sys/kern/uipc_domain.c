@@ -1,4 +1,4 @@
-/*	uipc_domain.c	5.6	82/11/13	*/
+/*	uipc_domain.c	5.7	82/12/30	*/
 
 #include "../h/param.h"
 #include "../h/socket.h"
@@ -26,7 +26,8 @@ domaininit()
 #ifdef PUP
 	ADDDOMAIN(pup);
 #endif
-#ifdef IMP
+#include "imp.h"
+#if NIMP > 0
 	ADDDOMAIN(imp);
 #endif
 #endif
