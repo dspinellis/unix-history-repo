@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwopen.c	3.6 83/08/22";
+static	char *sccsid = "@(#)wwopen.c	3.7 83/08/23";
 #endif
 
 #include "ww.h"
@@ -12,27 +12,18 @@ wwopen(flags, nrow, ncol, row, col, nline)
 	char m;
 	short nvis;
 
-	if (nrow <= 0 || ncol <= 0)
-		return 0;
-	if (row < 0 || row + nrow > wwnrow || col < 0 || col + ncol > wwncol)
-		return 0;
+	w = (struct ww *)calloc(sizeof (struct ww), 1);
+	if (w == 0)
+		goto bad;
+
 	for (i = 0; i < NWW && wwindex[i] != 0; i++)
 		;
 	if (i >= NWW)
-		return 0;
-	wwindex[i] = w = (struct ww *)calloc(sizeof (struct ww), 1);
-	if (w == 0)
 		goto bad;
 	w->ww_index = i;
-	w->ww_pty = w->ww_tty = -1;	/* closing by mistake is still safe */
-	if (flags & WWO_PTY) {
-		w->ww_haspty = 1;
-		if (wwgetpty(w) < 0)
-			goto bad;
-		if (wwsettty(w->ww_pty, &wwwintty) < 0)
-			goto bad;
-	}
 
+	if (nrow <= 0 || ncol <= 0)
+		goto bad;
 	if ((w->ww_w.l = col) < 0)
 		goto bad;
 	if ((w->ww_w.r = col + ncol) > wwncol)
@@ -44,6 +35,15 @@ wwopen(flags, nrow, ncol, row, col, nline)
 	w->ww_w.nc = ncol;
 	w->ww_w.nr = nrow;
 	w->ww_nline = MAX(nline, w->ww_w.nr);
+
+	w->ww_pty = w->ww_tty = -1;	/* closing by mistake is still safe */
+	if (flags & WWO_PTY) {
+		w->ww_haspty = 1;
+		if (wwgetpty(w) < 0)
+			goto bad;
+		if (wwsettty(w->ww_pty, &wwwintty) < 0)
+			goto bad;
+	}
 
 	w->ww_win = wwalloc(w->ww_w.nr, w->ww_w.nc, sizeof (char));
 	if (w->ww_win == 0)
@@ -89,7 +89,7 @@ wwopen(flags, nrow, ncol, row, col, nline)
 		w->ww_nvis[i] = nvis;
 
 	w->ww_state = WWS_INITIAL;
-	return w;
+	return wwindex[w->ww_index] = w;
 bad:
 	if (w != 0) {
 		if (w->ww_win != 0)
