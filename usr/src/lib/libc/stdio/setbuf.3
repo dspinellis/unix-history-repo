@@ -7,7 +7,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)setbuf.3	6.10 (Berkeley) %G%
+.\"     @(#)setbuf.3	6.11 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SETBUF 3
@@ -20,9 +20,9 @@
 .Nd stream buffering operations
 .Sh SYNOPSIS
 .Fd #include <stdio.h>
-.Ft int
+.Ft void
 .Fn setbuf "FILE *stream" "char *buf"
-.Ft int
+.Ft void
 .Fn setbuffer "FILE *stream" "char *buf" "size_t size"
 .Ft int
 .Fn setlinebuf "FILE *stream"
@@ -42,13 +42,14 @@ The function
 may be used to force the block out early.
 (See 
 .Xr fclose 3 . )
+.Pp
 Normally all files are block buffered.
 When the first
 .Tn I/O
 operation occurs on a file,
 .Xr malloc 3
 is called,
-and a buffer is obtained.
+and an optimally-sized buffer is obtained.
 If a stream refers to a terminal
 (as
 .Em stdout
@@ -60,8 +61,7 @@ is always unbuffered.
 The
 .Fn setvbuf
 function
-may be used at any time on any open stream
-to change its buffer.
+may be used to alter the buffering behavior of a stream.
 The
 .Fa mode
 parameter must be one of the following three macros:
@@ -74,37 +74,49 @@ line buffered
 fully buffered
 .El
 .Pp
-Except for unbuffered files, the 
+The
+.Fa size
+parameter may be given as zero
+to obtain deferred optimal-size buffer allocation as usual.
+If it is not zero,
+then except for unbuffered files, the 
 .Fa buf
 argument should point to a buffer at least
 .Fa size
 bytes long;
 this buffer will be used instead of the current buffer.
-If the argument
+(If the
+.Fa size
+argument
+is not zero but
 .Fa buf
-is NULL,
-only the mode is affected;
-a new buffer will be allocated on the next read or write operation.
+is
+.Dv NULL ,
+a buffer of the given size will be allocated immediately,
+and released on close.
+This is an extension to ANSI C;
+portable code should use a size of 0 with any
+.Dv NULL
+buffer.)
+.Pp
 The
 .Fn setvbuf
-function
-may be used at any time,
-but can only change the mode of a stream
-when it is not ``active'':
-that is, before any
-.Tn I/O ,
-or immediately after a call to
-.Xr fflush .
+function may be used at any time,
+but may have peculiar side effects
+(such as discarding input or flushing output)
+if the stream is ``active''.
+Portable applications should call it only once on any given stream,
+and before any 
+.Tn I/O
+is performed.
 .Pp
-The other three calls are, in effect, simply aliases
-for calls to
+The other three calls are, in effect, simply aliases for calls to
 .Fn setvbuf .
-The
+Except for the lack of a return value, the
 .Fn setbuf
-function
-is exactly equivalent to the call
+function is exactly equivalent to the call
 .Pp
-.Dl setvbuf(stream, buf, buf ? _IOFBF : _IONBF, BUFSIZ);
+.Dl "setvbuf(stream, buf, buf ? _IOFBF : _IONBF, BUFSIZ);"
 .Pp
 The
 .Fn setbuffer
@@ -117,7 +129,20 @@ The
 function
 is exactly equivalent to the call:
 .Pp
-.Dl setvbuf(stream, (char *)NULL, _IOLBF, 0);
+.Dl "setvbuf(stream, (char *)NULL, _IOLBF, 0);"
+.Sh RETURN VALUES
+The
+.Fn setvbuf
+function returns 0 on success, or
+.Dv EOF
+if the request cannot be honored
+(note that the stream is still functional in this case).
+.Pp
+The
+.Fn setlinebuf
+function returns what the equivalent
+.Fn setvbuf
+would have returned.
 .Sh SEE ALSO
 .Xr fopen 3 ,
 .Xr fclose 3 ,
