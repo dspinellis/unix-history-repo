@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ip_output.c	7.22 (Berkeley) %G%
+ *	@(#)ip_output.c	7.23 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -381,7 +381,7 @@ ip_ctloutput(op, so, level, optname, mp)
 					break;
 
 				case IP_TTL:
-					inp->inp_ip.ip_tos = optval;
+					inp->inp_ip.ip_ttl = optval;
 					break;
 #define	OPTSET(bit) \
 	if (optval) \
@@ -440,7 +440,7 @@ ip_ctloutput(op, so, level, optname, mp)
 				break;
 
 			case IP_TTL:
-				optval = inp->inp_ip.ip_tos;
+				optval = inp->inp_ip.ip_ttl;
 				break;
 
 #define	OPTBIT(bit)	(inp->inp_flags & bit ? 1 : 0)
