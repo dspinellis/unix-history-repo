@@ -1,4 +1,4 @@
-/*	machdep.c	3.3	%H%	*/
+/*	machdep.c	3.4	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -124,7 +124,7 @@ sendsig(p, n)
 #ifdef FASTVAX
 	usp -= 5;
 	if ((int)usp <= USRSTACK - ctob(u.u_ssize))
-		VOID grow((unsigned)usp);
+		(void) grow((unsigned)usp);
 	;			/* Avoid asm() label botch */
 	asm("probew $3,$20,(r11)");
 	asm("beql bad");
@@ -135,7 +135,7 @@ sendsig(p, n)
 	*usp++ = regs[PS];
 	regs[SP] = (int)(usp - 5);
 #else
-	VOID grow((unsigned)(usp-5));
+	(void) grow((unsigned)(usp-5));
 	if (suword((caddr_t)--usp, regs[PS]))
 		goto bad;
 	if (suword((caddr_t)--usp, regs[PC]))

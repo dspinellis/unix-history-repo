@@ -1,4 +1,4 @@
-/*	init_main.c	3.3	%H%	*/
+/*	init_main.c	3.4	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -105,7 +105,7 @@ main(firstaddr)
 	proc[0].p_szpt = CLSIZE;
 	if (newproc(0)) {
 		expand(clrnd((int)btoc(szicode)), P0BR);
-		VOID copyout((caddr_t)icode, (caddr_t)0, (unsigned)szicode);
+		(void) copyout((caddr_t)icode, (caddr_t)0, (unsigned)szicode);
 		/*
 		 * Return goes to loc. 0 of user init
 		 * code just copied out.

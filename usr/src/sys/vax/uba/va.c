@@ -1,4 +1,4 @@
-/*	va.c	3.1	%H%	*/
+/*	va.c	3.2	%H%	*/
 
 #ifdef ERNIE
 #include "../h/param.h"
@@ -96,16 +96,16 @@ vastrategy(bp)
 {
 	register int e;
 
-	VOID spl4();
+	(void) spl4();
 	while (vainfo.va_busy)		/* Wait till not busy. */
 		sleep((caddr_t)&vainfo, VAPRI);
 	vainfo.va_busy = 1;		/* Grab it. */
-	VOID spl0();
+	(void) spl0();
 
 	va_ubinfo = ubasetup(bp, vabdp);	/* Set up uba mapper. */
 	vainfo.va_bufp = va_ubinfo & 0x3ffff;
 
-	VOID spl4();
+	(void) spl4();
 	if (e = vaerror(DONE))
 		goto brkout;
 	vainfo.va_wcount = -(bp->b_bcount/2);
@@ -127,7 +127,7 @@ vastrategy(bp)
 		VAADDR->vacsrhi = VAAUTOSTEP;
 		e |= vaerror(DONE);
 	}
-	VOID spl0();
+	(void) spl0();
 brkout:
 	ubafree(va_ubinfo), va_ubinfo = 0;
 	vainfo.va_busy = 0;
@@ -185,7 +185,7 @@ vaioctl(dev, cmd, addr, flag)
 	switch (cmd) {
 
 	case VGETSTATE:
-		VOID suword(addr, vainfo.va_state);
+		(void) suword(addr, vainfo.va_state);
 		return;
 
 	case VSETSTATE:
@@ -210,8 +210,8 @@ vaioctl(dev, cmd, addr, flag)
 
 vacmd(vcmd)
 {
-	VOID spl4();
-	VOID vaerror(DONE);	/* Wait for va to be ready. */
+	(void) spl4();
+	(void) vaerror(DONE);	/* Wait for va to be ready. */
 	switch (vcmd) {
 
 	case VPLOT:
@@ -235,7 +235,7 @@ vacmd(vcmd)
 
 	if (vaerror(DONE))	/* Wait for command to complete. */
 		u.u_error = EIO;
-	VOID spl0();
+	(void) spl0();
 }
 
 vatimo()

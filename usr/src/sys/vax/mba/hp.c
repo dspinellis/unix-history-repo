@@ -1,4 +1,4 @@
-/*	hp.c	3.2	%H%	*/
+/*	hp.c	3.3	%H%	*/
 
 /*
  * RP04/RP06/RM03 disk driver
@@ -164,14 +164,14 @@ register struct buf *bp;
 	}
 	bp->b_cylin = bn/nspc + sizes[xunit&07].cyloff;
 	dp = &hputab[unit];
-	VOID spl5();
+	(void) spl5();
 	disksort(dp, bp);
 	if (dp->b_active == 0) {
 		hpustart(unit);
 		if(hptab.b_active == 0)
 			hpstart();
 	}
-	VOID spl0();
+	(void) spl0();
 }
 
 hpustart(unit)

@@ -1,4 +1,4 @@
-/*	kern_physio.c	3.3	%H%	*/
+/*	kern_physio.c	3.4	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -302,18 +302,18 @@ daddr_t blkno;
 	register int dblkno = fsbtodb(blkno);
 
     loop:
-	VOID spl0();
+	(void) spl0();
 	for (bp = &buf[bufhash[BUFHASH(blkno)]]; bp != &buf[-1];
 	    bp = &buf[bp->b_hlink]) {
 		if (bp->b_blkno != dblkno || bp->b_dev != dev)
 			continue;
-		VOID spl6();
+		(void) spl6();
 		if (bp->b_flags&B_BUSY) {
 			bp->b_flags |= B_WANTED;
 			sleep((caddr_t)bp, PRIBIO+1);
 			goto loop;
 		}
-		VOID spl0();
+		(void) spl0();
 #ifdef	DISKMON
 		i = 0;
 		dp = bp->av_forw;
@@ -333,7 +333,7 @@ daddr_t blkno;
 	dp = bdevsw[major(dev)].d_tab;
 	if (dp == NULL)
 		panic("devtab");
-	VOID spl6();
+	(void) spl6();
 	if (bfreelist.av_forw == &bfreelist) {
 		bfreelist.b_flags |= B_WANTED;
 		sleep((caddr_t)&bfreelist, PRIBIO+1);
@@ -391,12 +391,12 @@ geteblk()
 	register int i, x;
 
 loop:
-	VOID spl6();
+	(void) spl6();
 	while (bfreelist.av_forw == &bfreelist) {
 		bfreelist.b_flags |= B_WANTED;
 		sleep((caddr_t)&bfreelist, PRIBIO+1);
 	}
-	VOID spl0();
+	(void) spl0();
 	dp = &bfreelist;
 	bp = bfreelist.av_forw;
 	notavail(bp);
@@ -450,10 +450,10 @@ iowait(bp)
 register struct buf *bp;
 {
 
-	VOID spl6();
+	(void) spl6();
 	while ((bp->b_flags&B_DONE)==0)
 		sleep((caddr_t)bp, PRIBIO);
-	VOID spl0();
+	(void) spl0();
 	geterror(bp);
 }
 
@@ -552,14 +552,14 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, dev, pfcent)
 	int p2dp;
 	register struct pte *dpte, *vpte;
 
-	VOID spl6();
+	(void) spl6();
 	while (bswlist.av_forw == NULL) {
 		bswlist.b_flags |= B_WANTED;
 		sleep((caddr_t)&bswlist, PSWP+1);
 	}
 	bp = bswlist.av_forw;
 	bswlist.av_forw = bp->av_forw;
-	VOID spl0();
+	(void) spl0();
 
 	bp->b_flags = B_BUSY | B_PHYS | rdflg | flag;
 	if ((bp->b_flags & (B_DIRTY|B_PGIN)) == 0)
@@ -595,10 +595,10 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, dev, pfcent)
 			swpf[bp - swbuf] = pfcent;
 			return;
 		}
-		VOID spl6();
+		(void) spl6();
 		while((bp->b_flags&B_DONE)==0)
 			sleep((caddr_t)bp, PSWP);
-		VOID spl0();
+		(void) spl0();
 		bp->b_un.b_addr += c;
 		bp->b_flags &= ~B_DONE;
 		if (bp->b_flags & B_ERROR) {
@@ -609,7 +609,7 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, dev, pfcent)
 		nbytes -= c;
 		dblkno += btoc(c);
 	}
-	VOID spl6();
+	(void) spl6();
 	bp->b_flags &= ~(B_BUSY|B_WANTED|B_PHYS|B_PAGET|B_UAREA|B_DIRTY);
 	bp->av_forw = bswlist.av_forw;
 	bswlist.av_forw = bp;
@@ -618,7 +618,7 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, dev, pfcent)
 		wakeup((caddr_t)&bswlist);
 		wakeup((caddr_t)&proc[2]);
 	}
-	VOID spl0();
+	(void) spl0();
 }
 
 /*
@@ -658,7 +658,7 @@ dev_t dev;
 	register struct buf *bp;
 
 loop:
-	VOID spl6();
+	(void) spl6();
 	for (bp = bfreelist.av_forw; bp != &bfreelist; bp = bp->av_forw) {
 		if (bp->b_flags&B_DELWRI && (dev == NODEV||dev==bp->b_dev)) {
 			bp->b_flags |= B_ASYNC;
@@ -667,7 +667,7 @@ loop:
 			goto loop;
 		}
 	}
-	VOID spl0();
+	(void) spl0();
 }
 
 /*
@@ -696,7 +696,7 @@ unsigned (*mincnt)();
 		u.u_error = EFAULT;
 		return;
 	}
-	VOID spl6();
+	(void) spl6();
 	while (bp->b_flags&B_BUSY) {
 		bp->b_flags |= B_WANTED;
 		sleep((caddr_t)bp, PRIBIO+1);
@@ -714,14 +714,14 @@ unsigned (*mincnt)();
 		u.u_procp->p_flag |= SPHYSIO;
 		vslock(a = bp->b_un.b_addr, c);
 		(*strat)(bp);
-		VOID spl6();
+		(void) spl6();
 		while ((bp->b_flags&B_DONE) == 0)
 			sleep((caddr_t)bp, PRIBIO);
 		vsunlock(a, c, rw);
 		u.u_procp->p_flag &= ~SPHYSIO;
 		if (bp->b_flags&B_WANTED)
 			wakeup((caddr_t)bp);
-		VOID spl0();
+		(void) spl0();
 		bp->b_un.b_addr += c;
 		u.u_count -= c;
 		u.u_offset += c;

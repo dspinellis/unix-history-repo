@@ -1,4 +1,4 @@
-/*	flp.c	3.1	%H%	*/
+/*	flp.c	3.2	%H%	*/
 
 #include "../h/flp.h"
 #include "../h/param.h"
@@ -61,11 +61,11 @@ flstrategy(rw)
 	 */
 	if (u.u_count == 0) 
 		return;
-	VOID spl4();
+	(void) spl4();
 	while (fltab.fl_state & FL_BUSY)
 		sleep((caddr_t)&fltab, PRIBIO);
 	fltab.fl_state |= FL_BUSY;
-	VOID spl0();
+	(void) spl0();
 
 	bp = fltab.fl_buf;
 	while ((i = min(RXBYSEC, u.u_count)) != 0) {
@@ -82,11 +82,11 @@ flstrategy(rw)
 				break;
 		}
 		bp->b_flags = rw;
-		VOID spl4(); 
+		(void) spl4(); 
 		flstart();
 		while ((bp->b_flags & B_DONE) == 0)
 			sleep((caddr_t)bp, PRIBIO);	
-		VOID spl0();
+		(void) spl0();
 		if (bp->b_flags & B_ERROR) {
 			u.u_error = EIO;
 			break;
