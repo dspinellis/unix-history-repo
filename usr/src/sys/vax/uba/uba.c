@@ -6,8 +6,6 @@
  *	@(#)uba.c	7.6 (Berkeley) %G%
  */
 
-#include "../machine/pte.h"
-
 #include "param.h"
 #include "systm.h"
 #include "map.h"
@@ -20,6 +18,7 @@
 #include "dkstat.h"
 #include "kernel.h"
 
+#include "../vax/pte.h"
 #include "../vax/cpu.h"
 #include "../vax/mtpr.h"
 #include "../vax/nexus.h"
@@ -31,8 +30,6 @@ char	ubasr_bits[] = UBASR_BITS;
 #endif
 
 #define	spluba	spl7		/* IPL 17 */
-
-#define	BDPMASK	0xf0000000	/* see ubavar.h */
 
 /*
  * Do transfer on device argument.  The controller
@@ -131,12 +128,8 @@ ubadone(um)
  * Allocate and setup UBA map registers, and bdp's
  * Flags says whether bdp is needed, whether the caller can't
  * wait (e.g. if the caller is at interrupt level).
- *
- * Return value:
- *	Bits 0-8	Byte offset
- *	Bits 9-17	Start map reg. no.
- *	Bits 18-27	No. mapping reg's
- *	Bits 28-31	BDP no.
+ * Return value encodes map register plus page offset,
+ * bdp number and number of map registers.
  */
 ubasetup(uban, bp, flags)
 	int uban;
@@ -162,6 +155,8 @@ ubasetup(uban, bp, flags)
 #endif
 	o = (int)bp->b_un.b_addr & PGOFSET;
 	npf = btoc(bp->b_bcount + o) + 1;
+	if (npf > UBA_MAXNMR)
+		panic("uba xfer too big");
 	a = spluba();
 	while ((reg = rmalloc(uh->uh_map, (long)npf)) == 0) {
 		if (flags & UBA_CANTWAIT) {
@@ -196,7 +191,7 @@ ubasetup(uban, bp, flags)
 		bdp = (flags >> 28) & 0xf;
 	splx(a);
 	reg--;
-	ubinfo = (bdp << 28) | (npf << 18) | (reg << 9) | o;
+	ubinfo = UBAI_INFO(o, reg, npf, bdp);
 	temp = (bdp << 21) | UBAMR_MRV;
 	if (bdp && (o & 01))
 		temp |= UBAMR_BO;
@@ -268,7 +263,7 @@ ubarelse(uban, amr)
 		return;
 	}
 	*amr = 0;
-	bdp = (mr >> 28) & 0x0f;
+	bdp = UBAI_BDP(mr);
 	if (bdp) {
 		switch (uh->uh_type) {
 #ifdef DWBUA
@@ -302,8 +297,8 @@ ubarelse(uban, amr)
 	 * nor can the registers be freed twice.
 	 * Unblock interrupts once this is done.
 	 */
-	npf = (mr >> 18) & 0x3ff;
-	reg = ((mr >> 9) & 0x1ff) + 1;
+	npf = UBAI_NMR(mr);
+	reg = UBAI_MR(mr) + 1;
 	rmfree(uh->uh_map, (long)npf, (long)reg);
 	splx(s);
 
@@ -324,7 +319,7 @@ ubapurge(um)
 	register struct uba_ctlr *um;
 {
 	register struct uba_hd *uh = um->um_hd;
-	register int bdp = (um->um_ubinfo >> 28) & 0x0f;
+	register int bdp = UBAI_BDP(um->um_ubinfo);
 
 	switch (uh->uh_type) {
 #ifdef DWBUA
@@ -351,6 +346,8 @@ ubainitmaps(uhp)
 	register struct uba_hd *uhp;
 {
 
+	if (uhp->uh_memsize > UBA_MAXMR)
+		uhp->uh_memsize = UBA_MAXMR;
 	rminit(uhp->uh_map, (long)uhp->uh_memsize, (long)1, "uba", UAMSIZ);
 	switch (uhp->uh_type) {
 #ifdef DWBUA
@@ -484,6 +481,30 @@ ubainit(uba)
 #endif DW750 || DW730 || QBA
 	}
 }
+
+#ifdef QBA
+/*
+ * Determine the interrupt priority of a Q-bus
+ * peripheral.  The device probe routine must spl6(),
+ * attempt to make the device request an interrupt,
+ * delaying as necessary, then call this routine
+ * before resetting the device.
+ */
+qbgetpri()
+{
+	int pri;
+	extern int cvec;
+
+	for (pri = 0x17; pri > 0x14; ) {
+		if (cvec && cvec != 0x200)	/* interrupted at pri */
+			break;
+		pri--;
+		splx(pri - 1);
+	}
+	(void) spl0();
+	return (pri);
+}
+#endif
 
 #ifdef DW780
 int	ubawedgecnt = 10;
