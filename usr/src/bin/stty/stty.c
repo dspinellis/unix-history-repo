@@ -11,15 +11,16 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)stty.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)stty.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 /*
  * set teletype modes
  */
 
-#include <stdio.h>
 #include <sys/ioctl.h>
+#include <stdio.h>
+#include "pathnames.h"
 
 struct
 {
@@ -288,7 +289,7 @@ char	**iargv;
 			win.ws_col = atoi(*++argv);
 		}
 		if (eq("size")) {
-			ioctl(open("/dev/tty", 0), TIOCGWINSZ, &win);
+			ioctl(open(_PATH_DEVTTY, 0), TIOCGWINSZ, &win);
 			printf("%d %d\n", win.ws_row, win.ws_col);
 			exit(0);
 		}
@@ -298,7 +299,7 @@ char	**iargv;
 				goto cont;
 			}
 		if (eq("speed")) {
-			ioctl(open("/dev/tty", 0), TIOCGETP, &mode);
+			ioctl(open(_PATH_DEVTTY, 0), TIOCGETP, &mode);
 			for(i=0; speeds[i].string; i++)
 				if (mode.sg_ospeed == speeds[i].speed) {
 					printf("%s\n", speeds[i].string);
