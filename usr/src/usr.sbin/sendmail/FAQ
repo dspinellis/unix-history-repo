@@ -1,12 +1,18 @@
 			    Sendmail Version 8
 			Frequently Asked Questions
-		         Version 8.6 of %G%
+		         Version 8.7 of %G%
 
 
 This FAQ is specific to Version 8 of sendmail.  Other questions,
 particularly regarding compilation and configuration, are answered
-in src/READ_ME and cf/README.
+in src/READ_ME and cf/README (found in the V8 sendmail distribution).
 
+----------------------------------------------------------------------
+  * What do you wish everyone would do before sending you mail?
+
+	Read this FAQ completely.  Read src/READ_ME and cf/README
+	completely.  Ask themselves if their question hasn't already
+	been answered.
 ----------------------------------------------------------------------
   * Where can I get Version 8?
 
@@ -18,8 +24,8 @@ in src/READ_ME and cf/README.
 ----------------------------------------------------------------------
   * What happened to sendmail 6.x and 7.x?
 
-	When I released a new version of sendmail, I changed it to
-	Release 6.  Development continued in that tree until 4.4BSD
+	When I released a new (Alpha/Beta) version of sendmail, I changed
+	it to Release 6.  Development continued in that tree until 4.4BSD
 	was released, when everything on the 4.4 tape was set to be
 	version 8.1.  Version 7.x never existed.
 ----------------------------------------------------------------------
@@ -27,8 +33,9 @@ in src/READ_ME and cf/README.
 
 	Actually, Version 8 does not require a new version of "make".
 	It includes a collection of Makefiles for different architectures,
-	only one or two of which require the new "make".  If you are
-	porting to a new architecture, start with Makefile.dist.
+	only one or two of which require the new "make".  For a supported
+	architecture, use ``sh makesendmail''.  If you are porting to a
+	new architecture, start with Makefile.dist.
 
 	If you really do want the new make, it is available on any of
 	the BSD Net2 or 4.4-Lite distribution sites.  These include:
@@ -57,7 +64,8 @@ in src/READ_ME and cf/README.
 	under the old man macros.  Fortunately, old man pages will
 	format under the new mandoc macros.
 
-	Get the new macros with the BSD Net2 or 4.4-Lite release.
+	Get the new macros with the BSD Net2 or 4.4-Lite release
+	(see above).
 
 	This macro set is also available with newer versions of groff.
 ----------------------------------------------------------------------
@@ -139,15 +147,16 @@ in src/READ_ME and cf/README.
 	a few doors apart.  You can create alternative addresses
 	(e.g., Stephen_R_Bourne_2), but that's even worse -- which
 	one of them has to have their name desecrated in this way?
-	And you can bet that they will get most of the other person's
-	email.
+	And you can bet that one of them will get most of the other
+	person's e-mail.
 
-	So called "full names" are just longer versions of unique
-	names.  Rather that lulling people into a sense of security,
-	I'd rather that it be clear that these handles are arbitrary.
-	People should use good user agents that have alias mappings
-	so that they can attach arbitrary names for their personal
-	use to those with whom they correspond.
+	So called "full names" are just an attempt to create longer
+	versions of unique names.  Rather that lulling people into a
+	sense of security, I'd rather that it be clear that these
+	handles are arbitrary.  People should use good user agents
+	that have alias mappings so that they can attach arbitrary
+	names for their personal use to those with whom they correspond
+	(such as the MH alias file).
 
 	Even worse is fuzzy matching in e-mail -- this can make good
 	addresses turn bad.  For example, I'm currently (to the best
@@ -158,8 +167,22 @@ in src/READ_ME and cf/README.
 	over fifteen years -- to suddenly have this "good address"
 	bounce mail because it is ambiguous would be a heinous wrong.
 
-	Finger services should be as fuzzy as possible.  Mail services
-	should be unique.
+	Finger services should be as fuzzy as possible (within
+	reason, of course).  Mail services should be unique.
+----------------------------------------------------------------------
+  * I'm getting "Local configuration error" messages, such as:
+
+	553 relay.domain.net config error: mail loops back to myself
+	554 <user@domain.net>... Local configuration error
+
+    How can I solve this problem?
+
+	You have asked mail to the domain (e.g., domain.net) to be
+	forwarded to a specific host (in this case, relay.domain.net)
+	by using an MX record, but the relay machine doesn't recognize
+	itself as domain.net.  Add domain.net to /etc/sendmail.cw
+	(if you are using FEATURE(use_cw_file)) or add "Cw domain.net"
+	to your configuration file.
 ----------------------------------------------------------------------
   * When I use sendmail V8 with a Sun config file I get lines like:
 
@@ -208,6 +231,37 @@ in src/READ_ME and cf/README.
     	between 8.x and that host.  If you get a lot of them in general,
     	you may have network problems that are causing connections to
     	get reset.
+----------------------------------------------------------------------
+  * I just upgraded to 8.x and suddenly connections to the SMTP port
+    take a long time.  What is going wrong?
+
+	It's probably something wierd in your TCP implementation that
+	makes the IDENT code act oddly.  On most systems V8 tries to
+	do a ``callback'' to the connecting host to get a validated
+	user name (see RFC 1413 for details).  If the connecting
+	host does not support such a service it will normally fail
+	quickly with "Connection refused", but certain kinds of
+	packet filters and certain TCP implementations just time out.
+
+	To test this, set the IDENT timeout to zero using
+	``OrIdent=0'' in the configuration file.  This will
+	completely disable all use of the IDENT protocol.
+
+	Another possible problem is that you have your name server
+	and/or resolver configured improperly.  Make sure that
+	all "nameserver" entries in /etc/resolv.conf point to functional
+	servers.  If you are running your own server make certain that
+	all the servers listed in your root cache (usually called
+	something like "/var/namedb/root.cache"; see your
+	/etc/named.boot file to get your value) are up to date.
+	Either of these can cause long delays.
+----------------------------------------------------------------------
+  * I just upgraded to 8.x and suddenly I get errors such as ``mail:
+    options must follow recipients.''  What is going wrong?
+
+	You need OSTYPE(systype) in your .mc file -- otherwise the
+	configurations use a default that probably disagrees with
+	your local mail system.  See cf/README for details.
 ----------------------------------------------------------------------
   * How can I get sendmail to deliver local mail to $HOME/.mail
     instead of into /usr/spool/mail (or /usr/mail)?
@@ -327,20 +381,6 @@ in src/READ_ME and cf/README.
 	If you are trying to use the "don't deliver to expensive mailer"
 	flag (mailer flag "e"), be sure you also turn on global option
 	"c" -- otherwise it ignores the mailer flag.
-----------------------------------------------------------------------
-  * I'm getting "Local configuration error" messages, such as:
-
-	553 relay.domain.net config error: mail loops back to myself
-	554 <user@domain.net>... Local configuration error
-
-    How can I solve this problem?
-
-	You have asked mail to the domain (e.g., domain.net) to be
-	forwarded to a specific host (in this case, relay.domain.net)
-	by using an MX record, but the relay machine doesn't recognize
-	itself as domain.net.  Add domain.net to /etc/sendmail.cw
-	(if you are using FEATURE(use_cw_file)) or add "Cw domain.net"
-	to your configuration file.
 ----------------------------------------------------------------------
   * I want to run Sendmail version 8 on my DEC system, but you don't
     have MAIL11V3 support in sendmail.  How do I handle this?
