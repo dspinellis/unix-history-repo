@@ -1,0 +1,21 @@
+/* Copyright (c) 1982 Regents of the University of California */
+
+static char sccsid[] = "@(#)bp.rep 1.1 %G%";
+
+/*
+ * breakpoint representation
+ */
+
+typedef struct bpinfo {
+	unsigned int bpid;
+	ADDRESS bpaddr;	
+	BPTYPE bptype;
+	SYM *bpblock;
+	NODE *bpcond;
+	NODE *bpnode;
+	LINENO bpline;
+	struct bpinfo *bpnext;
+} BPINFO;
+
+BPINFO *bphead;
+BPINFO *newbp();
