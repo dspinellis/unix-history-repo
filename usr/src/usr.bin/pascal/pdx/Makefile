@@ -1,4 +1,4 @@
-#	@(#)Makefile	8.1 (Berkeley) %G%
+#	@(#)Makefile	8.2 (Berkeley) %G%
 #
 # make file for pdx
 #
@@ -16,6 +16,7 @@
 #	the standard cerror, the program could fault unexpectedly.
 
 PROG=	pdx
+LDADD=	-ll
 CFLAGS=	-DOBJ -DADDR32 -I. -I${.CURDIR} -I${.CURDIR}/../src
 .PATH:	${.CURDIR}/breakpoint ${.CURDIR}/object ${.CURDIR}/mappings \
 	${.CURDIR}/main ${.CURDIR}/symtab ${.CURDIR}/process \
