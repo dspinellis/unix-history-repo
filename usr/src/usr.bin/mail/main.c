@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* notdef */
 
 #ifdef notdef
-static char sccsid[] = "@(#)main.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.14 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -31,24 +31,13 @@ static char sccsid[] = "@(#)main.c	5.13 (Berkeley) %G%";
 
 jmp_buf	hdrjmp;
 
-/*
- * Find out who the user is, copy his mail file (if exists) into
- * /tmp/Rxxxxx and set up the message pointers.  Then, print out the
- * message headers and read user commands.
- *
- * Command line syntax:
- *	Mail [ -i ] [ -r address ] [ -h number ] [ -f [ name ] ]
- * or:
- *	Mail [ -i ] [ -r address ] [ -h number ] people ...
- */
-
 main(argc, argv)
 	char **argv;
 {
-	register char *ef, opt;
+	register char *ef;
 	register int i;
 	struct name *to, *cc, *bcc, *smopts;
-	int mustsend, hdrstop(), (*prevint)(), f;
+	int mustsend, hdrstop(), (*prevint)();
 	extern int getopt(), optind, opterr;
 	extern char *optarg;
 
@@ -63,8 +52,7 @@ main(argc, argv)
 	image = -1;
 	/*
 	 * Now, determine how we are being used.
-	 * We successively pick off instances of -r, -h, -f, and -i.
-	 * If called as "rmail" we note this fact for letter sending.
+	 * We successively pick off - flags.
 	 * If there is anything left, it is the base of the list
 	 * of users to mail to.  Argp will be set to point to the
 	 * first of these users.
@@ -75,29 +63,19 @@ main(argc, argv)
 	bcc = NULL;
 	smopts = NULL;
 	mustsend = 0;
-	if (argc > 0 && **argv == 'r')
-		rmail++;
-	while ((opt = getopt(argc, argv, "INT:b:c:dfh:inr:s:u:v")) != EOF) {
-		switch (opt) {
-		case 'r':
-			/*
-			 * Next argument is address to be sent along
-			 * to the mailer.
-			 */
-			mustsend++;
-			rflag = optarg;
-			break;
+	while ((i = getopt(argc, argv, "INT:b:c:dfins:u:v")) != EOF) {
+		switch (i) {
 		case 'T':
 			/*
 			 * Next argument is temp file to write which
 			 * articles have been read/deleted for netnews.
 			 */
 			Tflag = optarg;
-			if ((f = creat(Tflag, 0600)) < 0) {
+			if ((i = creat(Tflag, 0600)) < 0) {
 				perror(Tflag);
 				exit(1);
 			}
-			close(f);
+			close(i);
 			break;
 		case 'u':
 			/*
@@ -114,20 +92,6 @@ main(argc, argv)
 			break;
 		case 'd':
 			debug++;
-			break;
-		case 'h':
-			/*
-			 * Specified sequence number for network.
-			 * This is the number of "hops" made so
-			 * far (count of times message has been
-			 * forwarded) to help avoid infinite mail loops.
-			 */
-			mustsend++;
-			hflag = atoi(optarg);
-			if (hflag == 0) {
-				fprintf(stderr, "-h needs non-zero number\n");
-				exit(1);
-			}
 			break;
 		case 's':
 			/*
