@@ -55,7 +55,7 @@
 
 char lpr_id[] = "~|^`lpr.c:\t4.2\t1 May 1981\n";
 
-/*	lpr.c	4.2	81/05/12	*/
+/*	lpr.c	4.3	81/05/19	*/
 /*
  *      lpr -- off line print
  *              also known as print
@@ -217,7 +217,7 @@ char *argv[];
 			break;
 
 		case 'P':		/* specifiy printer name */
-			printer = arg[2];
+			printer = &arg[2];
 			break;
 
 		case 'H':		/* toggle want of header page */
