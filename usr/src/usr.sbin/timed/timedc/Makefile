@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
 PROG=	timedc
 SRCS=	cmds.c cmdtab.c timedc.c byteorder.c measure.c cksum.${MACHINE}.c
@@ -7,4 +7,5 @@ BINOWN=	root
 BINMODE=4555
 .PATH:	${.CURDIR}/../timed
 
+.include "../../Makefile.inc"
 .include <bsd.prog.mk>
