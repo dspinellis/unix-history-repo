@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)glob.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)glob.c	5.9 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -40,8 +40,6 @@ static char sccsid[] = "@(#)glob.c	5.8 (Berkeley) %G%";
 #include <stdio.h>
 #include <stdlib.h>
 
-static int glob1(), glob2(), glob3(), globextend(), match();
-
 #define	DOLLAR		'$'
 #define	DOT		'.'
 #define	EOS		'\0'
@@ -56,30 +54,38 @@ static int glob1(), glob2(), glob3(), globextend(), match();
 #define	TILDE		'~'
 #define	UNDERSCORE	'_'
 
-#define	SHORT_STRINGS
-#ifdef SHORT_STRINGS
-typedef u_short shortchar_t;
-#define	METABIT		0x8000
+#define	M_QUOTE		0x8000
+#define	M_PROTECT	0x4000
 #define	M_MASK		0xffff
-#else
-typedef char shortchar_t;
-#define	METABIT		0x80
-#define	M_MASK		0xff
-#endif
 
-#define	META(c)		((c)|METABIT)
+#define	META(c)		((c)|M_QUOTE)
 #define	M_ALL		META('*')
 #define	M_END		META(']')
 #define	M_NOT		META('!')
 #define	M_ONE		META('?')
 #define	M_RNG		META('-')
 #define	M_SET		META('[')
-#define	ismeta(c)	(((c)&METABIT) != 0)
+#define	ismeta(c)	(((c)&M_QUOTE) != 0)
 
-#ifdef SHORT_STRINGS
+typedef u_short shortchar_t;
+
+static int glob1 __P((shortchar_t *, glob_t *));
+static int glob2 __P((shortchar_t *, shortchar_t *, shortchar_t *, glob_t *));
+static int glob3 __P((shortchar_t *,
+	shortchar_t *, shortchar_t *, shortchar_t *, glob_t *));
+static int globextend __P((shortchar_t *, glob_t *));
+static int match __P((shortchar_t *, shortchar_t *, shortchar_t *));
+static DIR *Opendir __P((shortchar_t *));
+static int Lstat __P((shortchar_t *, struct stat *));
+static int Stat __P((shortchar_t *, struct stat *));
+static shortchar_t *Strchr __P((shortchar_t *, int));
+#ifdef DEBUG
+static void qprintf __P((shortchar_t *));
+#endif
+
 static DIR *
 Opendir(str)
-register shortchar_t *str;
+	register shortchar_t *str;
 {
 	register char *dc;
 	char buf[MAXPATHLEN];
@@ -92,8 +98,8 @@ register shortchar_t *str;
 
 static int
 Lstat(fn, sb)
-register shortchar_t *fn;
-struct stat *sb;
+	register shortchar_t *fn;
+	struct stat *sb;
 {
 	register char *dc;
 	char buf[MAXPATHLEN];
@@ -104,8 +110,8 @@ struct stat *sb;
 
 static int
 Stat(fn, sb)
-register shortchar_t *fn;
-struct stat *sb;
+	register shortchar_t *fn;
+	struct stat *sb;
 {
 	register char *dc;
 	char buf[MAXPATHLEN];
@@ -113,10 +119,36 @@ struct stat *sb;
 	for (dc = buf; *dc++ = *fn++;);
 	return(stat(buf, sb));
 }
-#else
-#define	Opendir	opendir
-#define	Stat	stat
-#define	Lstat	lstat
+
+static shortchar_t *
+Strchr(str, ch)
+	shortchar_t *str;
+	int ch;
+{
+	do {
+		if (*str == ch)
+			return (str);
+	} while (*str++);
+	return (NULL);
+}
+
+#ifdef DEBUG
+static void 
+qprintf(s)
+shortchar_t *s;
+{
+	shortchar_t *p;
+
+	for (p = s; *p; p++)
+		printf("%c", *p & 0xff);
+	printf("\n");
+	for (p = s; *p; p++)
+		printf("%c", *p & M_PROTECT ? '"' : ' ');
+	printf("\n");
+	for (p = s; *p; p++)
+		printf("%c", *p & M_META ? '_' : ' ');
+	printf("\n");
+}
 #endif
 
 static int
@@ -143,7 +175,7 @@ glob(pattern, flags, errfunc, pglob)
 	shortchar_t *bufnext, *bufend, *compilebuf;
 	const char *compilepat, *patnext;
 	char c;
-	shortchar_t patbuf[MAXPATHLEN+1];
+	shortchar_t patbuf[MAXPATHLEN+1], *qpatnext;
 
 	patnext = pattern;
 	if (!(flags & GLOB_APPEND)) {
@@ -158,54 +190,62 @@ glob(pattern, flags, errfunc, pglob)
 	pglob->gl_matchc = 0;
 
 	bufnext = patbuf;
-	bufend = bufnext+MAXPATHLEN;
+	bufend = bufnext + MAXPATHLEN;
+	if (flags & GLOB_QUOTE) {
+		/* Protect the quoted characters */
+		while (bufnext < bufend && (c = *patnext++) != EOS) 
+			if (c == QUOTE) {
+				if ((c = *patnext++) == EOS) {
+					c = QUOTE;
+					--patnext;
+				}
+				*bufnext++ = c | M_PROTECT;
+			}
+			else
+				*bufnext++ = c;
+	}
+	else 
+	    while (bufnext < bufend && (c = *patnext++) != EOS) 
+		    *bufnext++ = c;
+	*bufnext = EOS;
 
+	bufnext = patbuf;
+	qpatnext = patbuf;
 	compilebuf = bufnext;
 	compilepat = patnext;
-	while (bufnext < bufend && (c = *patnext++) != EOS) {
+	/* we don't need to check for buffer overflow any more */
+	while ((c = *qpatnext++) != EOS) {
 		switch (c) {
 		case LBRACKET:
 			pglob->gl_flags |= GLOB_MAGCHAR;
-			c = *patnext;
+			c = *qpatnext;
 			if (c == NOT)
-				++patnext;
-			if (*patnext == EOS ||
-			    strchr(patnext+1, RBRACKET) == NULL) {
+				++qpatnext;
+			if (*qpatnext == EOS ||
+			    Strchr(qpatnext+1, RBRACKET) == NULL) {
 				*bufnext++ = LBRACKET;
 				if (c == NOT)
-					--patnext;
+					--qpatnext;
 				break;
 			}
 			*bufnext++ = M_SET;
 			if (c == NOT)
 				*bufnext++ = M_NOT;
-			c = *patnext++;
+			c = *qpatnext++;
 			do {
-				/* todo: quoting */
 				*bufnext++ = c;
-				if (*patnext == RANGE &&
-				    (c = patnext[1]) != RBRACKET) {
+				if (*qpatnext == RANGE &&
+				    (c = qpatnext[1]) != RBRACKET) {
 					*bufnext++ = M_RNG;
 					*bufnext++ = c;
-					patnext += 2;
+					qpatnext += 2;
 				}
-			} while ((c = *patnext++) != RBRACKET);
+			} while ((c = *qpatnext++) != RBRACKET);
 			*bufnext++ = M_END;
 			break;
 		case QUESTION:
 			pglob->gl_flags |= GLOB_MAGCHAR;
 			*bufnext++ = M_ONE;
-			break;
-		case QUOTE:
-			if (!(flags & GLOB_QUOTE))
-				*bufnext++ = QUOTE;
-			else {
-				if ((c = *patnext++) == EOS) {
-					c = QUOTE;
-					--patnext;
-				}
-				*bufnext++ = c;
-			}
 			break;
 		case STAR:
 			pglob->gl_flags |= GLOB_MAGCHAR;
@@ -217,6 +257,9 @@ glob(pattern, flags, errfunc, pglob)
 		}
 	}
 	*bufnext = EOS;
+#ifdef DEBUG
+	qprintf(patbuf);
+#endif
 
 	if ((err = glob1(patbuf, pglob)) != 0)
 		return(err);
@@ -257,7 +300,7 @@ glob1(pattern, pglob)
 	shortchar_t pathbuf[MAXPATHLEN+1];
 
 	/*
-	 * a null pathname is invalid -- POSIX 1003.1 sect. 2.4. 
+	 * A null pathname is invalid -- POSIX 1003.1 sect. 2.4. 
 	 */
 	if (*pattern == EOS)
 		return(0);
@@ -319,7 +362,6 @@ glob2(pathbuf, pathend, pattern, pglob)
 	}
 	/* NOTREACHED */
 }
-
 
 static
 glob3(pathbuf, pathend, pattern, restpattern, pglob)
@@ -408,9 +450,10 @@ globextend(path, pglob)
 
 	for (p = path; *p++;);
 	if ((copy = malloc(p - path)) != NULL) {
-		register char *dc = copy;
-		register shortchar_t *sc = path;
-		while (*dc++ = *sc++);
+		register char *dc;
+		register shortchar_t *sc;
+
+		for (dc = copy, sc = path; *dc++ = *sc++;);
 		pathv[pglob->gl_offs + pglob->gl_pathc++] = copy;
 	}
 	pathv[pglob->gl_offs + pglob->gl_pathc] = NULL;
@@ -482,7 +525,7 @@ globfree(pglob)
 		pp = pglob->gl_pathv + pglob->gl_offs;
 		for (i = pglob->gl_pathc; i--; ++pp)
 			if (*pp)
-				free((void *)*pp);
-		free((void *)pglob->gl_pathv);
+				free(pp);
+		free(pglob->gl_pathv);
 	}
 }
