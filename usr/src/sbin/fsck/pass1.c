@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass1.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass1.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -74,6 +74,12 @@ pass1()
 					printf("bad size %d:", dp->di_size);
 				goto unknown;
 			}
+			if (!preen && (dp->di_mode & IFMT) == IFMT &&
+			    reply("HOLD BAD BLOCK") == 1) {
+				dp->di_size = sblock.fs_fsize;
+				dp->di_mode = IFREG|0600;
+				inodirty();
+			}
 			ndb = howmany(dp->di_size, sblock.fs_bsize);
 			if (SPECIAL(dp))
 				ndb++;
@@ -93,12 +99,7 @@ pass1()
 							dp->di_ib[j]);
 					goto unknown;
 				}
-			if (!preen && (dp->di_mode & IFMT) == IFMT &&
-			    reply("HOLD BAD BLOCK") == 1) {
-				dp->di_size = sblock.fs_fsize;
-				dp->di_mode = IFREG|0600;
-				inodirty();
-			} else if (ftypeok(dp) == 0)
+			if (ftypeok(dp) == 0)
 				goto unknown;
 			n_files++;
 			lncntp[inumber] = dp->di_nlink;
