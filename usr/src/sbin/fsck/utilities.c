@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)utilities.c	3.3 (Berkeley) %G%";
+static char version[] = "@(#)utilities.c	3.4 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -7,6 +7,7 @@ static char version[] = "@(#)utilities.c	3.3 (Berkeley) %G%";
 #include <sys/param.h>
 #include <sys/inode.h>
 #include <sys/fs.h>
+#include <sys/dir.h>
 #include "fsck.h"
 
 long	lseek();
@@ -220,6 +221,58 @@ freeblk(blkno, frags)
 	idesc.id_blkno = blkno;
 	idesc.id_numfrags = frags;
 	pass4check(&idesc);
+}
+
+/*
+ * Find a pathname
+ */
+getpathname(namebuf, curdir, ino)
+	char *namebuf;
+	ino_t curdir, ino;
+{
+	int len;
+	register char *cp;
+	struct inodesc idesc;
+	extern int findname();
+
+	if (statemap[ino] != DSTATE && statemap[ino] != DFOUND) {
+		strcpy(namebuf, "?");
+		return;
+	}
+	bzero(&idesc, sizeof(struct inodesc));
+	idesc.id_type = DATA;
+	cp = &namebuf[BUFSIZ - 1];
+	*cp-- = '\0';
+	if (curdir != ino) {
+		idesc.id_parent = curdir;
+		goto namelookup;
+	}
+	while (ino != ROOTINO) {
+		idesc.id_number = ino;
+		idesc.id_func = findino;
+		idesc.id_name = "..";
+		if ((ckinode(ginode(ino), &idesc) & STOP) == 0)
+			break;
+	namelookup:
+		idesc.id_number = idesc.id_parent;
+		idesc.id_parent = ino;
+		idesc.id_func = findname;
+		idesc.id_name = namebuf;
+		if ((ckinode(ginode(idesc.id_number), &idesc) & STOP) == 0)
+			break;
+		len = strlen(namebuf);
+		cp -= len;
+		if (cp < &namebuf[MAXNAMLEN])
+			break;
+		bcopy(namebuf, cp, len);
+		*--cp = '/';
+		ino = idesc.id_number;
+	}
+	if (ino != ROOTINO) {
+		strcpy(namebuf, "?");
+		return;
+	}
+	bcopy(cp, namebuf, &namebuf[BUFSIZ] - cp);
 }
 
 catch()
