@@ -6,7 +6,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)main.c	3.100		%G%);
+SCCSID(@(#)main.c	3.101		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -506,16 +506,6 @@ main(argc, argv)
 		initsys();
 	}
 #endif DAEMON
-	
-# ifdef SMTP
-	/*
-	**  If running SMTP protocol, start collecting and executing
-	**  commands.  This will never return.
-	*/
-
-	if (Smtp)
-		smtp();
-# endif SMTP
 
 # ifdef QUEUE
 	/*
@@ -528,6 +518,19 @@ main(argc, argv)
 		finis();
 	}
 # endif QUEUE
+
+	/* give this transaction an id */
+	(void) queuename(CurEnv, '\0');
+	
+# ifdef SMTP
+	/*
+	**  If running SMTP protocol, start collecting and executing
+	**  commands.  This will never return.
+	*/
+
+	if (Smtp)
+		smtp();
+# endif SMTP
 
 	/*
 	**  Set the sender
@@ -983,6 +986,7 @@ initsys()
 	extern char *arpadate();
 	register struct tm *tm;
 	extern struct tm *gmtime();
+	auto time_t now;
 
 	/* process id */
 	(void) sprintf(pbuf, "%d", getpid());
@@ -993,12 +997,12 @@ initsys()
 	define('c', cbuf);
 
 	/* time as integer, unix time, arpa time */
-	(void) time(&CurTime);
-	tm = gmtime(&CurTime);
+	now = curtime();
+	tm = gmtime(&now);
 	(void) sprintf(tbuf, "%02d%02d%02d%02d%02d", tm->tm_year, tm->tm_mon,
 			tm->tm_mday, tm->tm_hour, tm->tm_min);
 	define('t', tbuf);
-	(void) strcpy(dbuf, ctime(&CurTime));
+	(void) strcpy(dbuf, ctime(&now));
 	*index(dbuf, '\n') = '\0';
 	if (macvalue('d') == NULL)
 		define('d', dbuf);
