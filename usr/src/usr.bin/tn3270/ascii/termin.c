@@ -196,7 +196,7 @@ register int	count;			/* how many bytes in this buffer */
 		    regControlPointer = headOfControl;
 		    InControl = 0;
 		    count = 0;		/* Flush current input */
-		    continue;
+		    break;
 		}
 		if ((regControlPointer->match == c) /* hit this character */
 			|| (regControlPointer->match == MATCH_ANY)) {
