@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cchar.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)cchar.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -40,7 +40,7 @@ struct cchar cchars1[] = {
 	"stop",		VSTOP,		CSTOP,
 	"susp",		VSUSP,		CSUSP,
 	"werase",	VWERASE,	CWERASE,
-	"",						/* not NULL */
+	NULL,
 };
 
 struct cchar cchars2[] = {
@@ -49,7 +49,7 @@ struct cchar cchars2[] = {
 	"rprnt",	VREPRINT, 	CREPRINT,
 	"xoff",		VSTOP,		CSTOP,
 	"xon",		VSTART,		CSTART,
-	"",						/* not NULL */
+	NULL,
 };
 
 csearch(argvp, ip)
@@ -66,9 +66,9 @@ csearch(argvp, ip)
 
 	tmp.name = name;
 	if (!(cp = (struct cchar *)bsearch(&tmp, cchars1,
-	    sizeof(cchars1)/sizeof(struct cchar), sizeof(struct cchar),
+	    sizeof(cchars1)/sizeof(struct cchar) - 1, sizeof(struct cchar),
 	    c_cchar)) && !(cp = (struct cchar *)bsearch(&tmp, cchars1,
-	    sizeof(cchars1)/sizeof(struct cchar), sizeof(struct cchar),
+	    sizeof(cchars1)/sizeof(struct cchar) - 1, sizeof(struct cchar),
 	    c_cchar)))
 		return(0);
 

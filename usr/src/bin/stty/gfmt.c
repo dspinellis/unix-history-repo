@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)gfmt.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)gfmt.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -27,7 +27,7 @@ gprint(tp, wp, ldisc)
 
 	(void)printf("gfmt1:cflag=%x:iflag=%x:lflag=%x:oflag=%x:",
 	    tp->c_cflag, tp->c_iflag, tp->c_lflag, tp->c_oflag);
-	for (cp = cchars1; *cp->name; ++cp)
+	for (cp = cchars1; cp->name; ++cp)
 		(void)printf("%s=%x:", cp->name, tp->c_cc[cp->sub]);
 	(void)printf("ispeed=%d:ospeed=%d\n", cfgetispeed(tp), cfgetospeed(tp));
 }

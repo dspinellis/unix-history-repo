@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)key.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)key.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -35,7 +35,13 @@ void	f_speed __P((struct info *));
 void	f_tty __P((struct info *));
 __END_DECLS
 
-static struct key keys[] = {
+static struct key {
+	char *name;				/* name */
+	void (*f) __P((struct info *));		/* function */
+#define	F_NEEDARG	0x01			/* needs an argument */
+#define	F_OFFOK		0x02			/* can turn off */
+	int flags;
+} keys[] = {
 	"all",		f_all,		0,
 	"cbreak",	f_cbreak,	F_OFFOK,
 	"cols",		f_columns,	F_NEEDARG,
