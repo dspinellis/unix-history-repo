@@ -1,6 +1,6 @@
-#       @(#)Makefile	6.7 (Berkeley) %G%
+#       @(#)Makefile	6.8 (Berkeley) %G%
 
-SUBDIR= mailstats praliases
+SUBDIR= mailstats makemap praliases
 VER=	XX
 
 # don't trivially install sendmail
