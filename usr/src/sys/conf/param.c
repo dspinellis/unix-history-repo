@@ -1,4 +1,4 @@
-/*	param.c	4.5	81/05/15	*/
+/*	param.c	4.6	81/10/29	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -40,7 +40,6 @@ int	nclist = 100 + 16 * MAXUSERS;
 int	nport = NPROC / 2;
 #ifdef BBNNET
 int     nnetpages = NNETPAGES;
-int     nwork = NWORK;
 int     nnetcon = NCON;
 int     nhost = NHOST;
 #endif BBNNET
@@ -67,8 +66,6 @@ int	*swpf;
 char	*buffers;
 struct	cmap *cmap, *ecmap;
 #ifdef BBNNET
-struct  pfree *freetab;
-struct  work *workfree, *workNWORK;
 struct  ucb *contab, *conNCON;
 struct  host *host, *hostNHOST;
 struct  net netcb;
