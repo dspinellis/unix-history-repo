@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.55 (Berkeley) %G%
+		@(#)README	8.56 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -965,6 +965,19 @@ e-mail sent to Full.Name@local.host.name will be rejected.
 To build the internal form of the user database, use:
 
 	makemap btree /usr/data/base.db < /usr/data/base.txt
+
+As a general rule, I am adamantly opposed to using full names as
+e-mail addresses, since they are not in any sense unique.  For example,
+the Unix software-development community has two Andy Tannenbaums,
+at least two well-known Peter Deutsches, and at one time Bell Labs
+had two Stephen R. Bournes with offices along the same hallway.
+Which one will be forced to suffer the indignity of being
+Stephen_R_Bourne_2?  The less famous of the two, or the one that
+was hired later?
+
+Finger should handle full names (and be fuzzy).  Mail should use
+handles, and not be fuzzy.  [Not that I expect anyone to pay any
+attention to my opinions.]
 
 
 +--------------------------------+
