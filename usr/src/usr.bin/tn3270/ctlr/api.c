@@ -12,38 +12,36 @@
 
 #include "../general/globals.h"
 
-int ApiDisableInput = 0;
-
 /*
  * General utility routines.
  */
 
 #if	defined(MSDOS)
-static int ourds = 0;		/* Safe */
+
+#if	defined(LINT_ARGS)
+static void movetous(char *, int, int, int);
+static void movetothem(int, int, char *, int);
+#endif	/* defined(LINT_ARGS) */
 
 static void
 movetous(parms, es, di, length)
 char *parms;
+int es, di, length;
 {
-    if (ourds == 0) {
-	struct SREGS sregs;
+    char far *farparms = parms;
 
-	segread(&sregs);
-	ourds = sregs.ds;
-    }
-    movedata(es, di, ourds, (int)parms, length);
+    movedata(es, di, (int) FP_SEG(farparms), (int) FP_OFF(farparms), length);
 }
 
 static void
-movetothem(parms, es, di, length)
+movetothem(es, di, parms, length)
+int es, di;
+char *parms;
+int length;
 {
-    if (ourds == 0) {
-	struct SREGS sregs;
+    char far *farparms = parms;
 
-	segread(&sregs);
-	ourds = sregs.es;
-    }
-    movedata(ourds, (int)parms, es, di, length);
+    movedata((int) FP_SEG(farparms), (int) FP_OFF(farparms), es, di, length);
 }
 #endif	/* defined(MSDOS) */
 
@@ -93,14 +91,12 @@ struct SREGS *sregs;
 
     movetous((char *)&parms, sregs->es, regs->x.di, sizeof parms);
 
-    if (parms.rc != 0) {
-	regs->h.cl = 0x0c;
-	return;
-    }
-    if (parms.option_code != 0x01) {
-	regs->h.cl = 0x0d;	/* Invalid option code */
+    if ((parms.rc != 0) || (parms.function_id != 0)) {
+	parms.rc = 0x0c;
+    } else if (parms.option_code != 0x01) {
+	parms.rc = 0x0d;	/* Invalid option code */
     } else if (parms.data_code != 0x45) {
-	regs->h.cl = 0x0b;
+	parms.rc = 0x0b;
     } else {
 	NameArray list;
 	NameArrayElement element;
@@ -109,7 +105,6 @@ struct SREGS *sregs;
 			    FP_OFF(parms.name_array), sizeof list);
 	if ((list.length < 14) || (list.length > 170)) {
 	    parms.rc = 0x12;
-	    regs->h.cl = 0x12;
 	} else {
 	    list.number_matching_session = 1;
 	    list.name_array_element.short_name = parms.data_code;
@@ -120,10 +115,9 @@ struct SREGS *sregs;
 	    movetothem(FP_SEG(parms.name_array),
 		FP_OFF(parms.name_array), (char *)&list, sizeof list);
 	    parms.rc = 0;
-	    regs->h.cl = 0;
 	}
     }
-    parms.function_id = 0x6d;
+    parms.function_id = 0x6b;
     movetothem(sregs->es, regs->x.di, (char *)&parms, sizeof parms);
 }
 
@@ -137,20 +131,18 @@ struct SREGS *sregs;
     movetous((char *)&parms, sregs->es, regs->x.di, sizeof parms);
 
     if ((parms.rc !=0) || (parms.function_id != 0)) {
-	regs->h.cl = 0x0c;
-	return;
-    }
-    if (parms.session_id != 23) {
-	regs->h.cl = parms.rc = 0x02;
+	parms.rc = 0x0c;
+    } else if (parms.session_id != 23) {
+	parms.rc = 0x02;
     } else {
-	regs->h.cl = parms.rc = 0;
-	parms.function_id = 0x6b;
+	parms.rc = 0;
 	parms.session_type = TYPE_DFT;
 	parms.session_characteristics = 0;	/* Neither EAB nor PSS */
 	parms.rows = MaxNumberLines;
 	parms.columns = MaxNumberColumns;
 	parms.presentation_space = 0;
     }
+    parms.function_id = 0x6b;
     movetothem(sregs->es, regs->x.di, (char *)&parms, sizeof parms);
 }
 
@@ -169,13 +161,13 @@ struct SREGS *sregs;
 	parms.rc = 0x02;
     } else {
 	parms.rc = 0;
-	parms.function_id = 0x6b;
 	parms.cursor_type = CURSOR_BLINKING;	/* XXX what is inhibited? */
 	parms.row_address = ScreenLine(CursorAddress);
 	parms.column_address = ScreenLineOffset(CursorAddress);
     }
 
-    movetothem(sregs->es, regs->x.di, sizeof parms);
+    parms.function_id = 0x6b;
+    movetothem(sregs->es, regs->x.di, (char *) &parms, sizeof parms);
 }
 
 /*
@@ -320,7 +312,7 @@ struct SREGS *sregs;
     } else if (parms.connectors_task_id != 0) {
 	parms.rc = 0x04;
     } else {
-	ApiDisableInput = 1;
+	SetOiaApiInhibit(&OperatorInformationArea);
 	parms.rc = 0;
     }
     parms.function_id = 0x62;
@@ -344,7 +336,7 @@ struct SREGS *sregs;
     } else if (parms.connectors_task_id != 0) {
 	parms.rc = 0x04;
     } else {
-	ApiDisableInput = 0;
+	ResetOiaApiInhibit(&OperatorInformationArea);
 	parms.rc = 0;
     }
     parms.function_id = 0x62;
@@ -394,7 +386,8 @@ struct SREGS *sregs;
 	char *from;
 	int size;
 
-	if (group > API_OIA_LAST_LEGAL_GROUP) {
+	if ((group != API_OIA_ALL_GROUPS) &&
+		((group > API_OIA_LAST_LEGAL_GROUP) || (group < 0))) {
 	} else {
 	    if (group == API_OIA_ALL_GROUPS) {
 		size = API_OIA_BYTES_ALL_GROUPS;
@@ -437,27 +430,32 @@ struct SREGS *sregs;
 	regs->h.ch = 0x12;
 	regs->h.cl = 0x08;		/* XXX Invalid wait specified */
     } else if (regs->h.ch != 0) {
-	regs->h.ch = 0x12;
-	regs->h.cl = 0x07;		/* XXX Invalid reply specified */
+	regs->x.cx = 0x1206;		/* XXX Invalid priority */
     } else {
 	switch (regs->x.dx) {
 	case GATE_SESSMGR:
 	    switch (regs->h.al) {
 	    case QUERY_SESSION_ID:
 		if (regs->h.cl != 0) {
+		    regs->x.cx = 0x1206;
 		} else {
+		    regs->x.cx = 0x1200;
 		    query_session_id(regs, sregs);
 		}
 		break;
-	    case QUERY_SESSION_PARMS:
+	    case QUERY_SESSION_PARAMETERS:
 		if (regs->h.cl != 0) {
+		    regs->x.cx = 0x1206;
 		} else {
+		    regs->x.cx = 0x1200;
 		    query_session_parameters(regs, sregs);
 		}
 		break;
 	    case QUERY_SESSION_CURSOR:
 		if (regs->h.cl != 0xff) {
+		    regs->x.cx = 0x1206;
 		} else {
+		    regs->x.cx = 0x1200;
 		    query_session_cursor(regs, sregs);
 		}
 		break;
@@ -468,7 +466,9 @@ struct SREGS *sregs;
 	    break;
 	case GATE_KEYBOARD:
 	    if (regs->h.cl != 00) {
+		regs->x.cx = 0x1206;
 	    } else {
+		regs->x.cx = 0x1200;
 		switch (regs->h.al) {
 		case CONNECT_TO_KEYBOARD:
 		    connect_to_keyboard(regs, sregs);
@@ -493,7 +493,9 @@ struct SREGS *sregs;
 	    break;
 	case GATE_COPY:
 	    if (regs->h.cl != 0xff) {
+		regs->x.cx = 0x1206;
 	    } else {
+		regs->x.cx = 0x1200;
 		switch (regs->h.al) {
 		case COPY_STRING:
 		    copy_string(regs, sregs);
@@ -506,7 +508,9 @@ struct SREGS *sregs;
 	    break;
 	case GATE_OIAM:
 	    if (regs->h.cl != 0xff) {
+		regs->x.cx = 0x1206;
 	    } else {
+		regs->x.cx = 0x1200;
 		switch (regs->h.al) {
 		case READ_OIA_GROUP:
 		    read_oia_group(regs, sregs);

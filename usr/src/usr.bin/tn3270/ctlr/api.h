@@ -13,10 +13,10 @@
  * service.
  */
 
-#define	GATE_SESSMGR	1
-#define	GATE_KEYBOARD	2
-#define	GATE_COPY	3
-#define	GATE_OIAM	4
+#define	GATE_SESSMGR	1234
+#define	GATE_KEYBOARD	5678
+#define	GATE_COPY	9101
+#define	GATE_OIAM	1121
 
 /*
  * The names which correspond to the above gate numbers.
@@ -39,7 +39,7 @@
  */
 
 #define	QUERY_SESSION_ID		0x01
-#define	QUERY_SESSION_PARMS		0x02
+#define	QUERY_SESSION_PARAMETERS	0x02
 #define	QUERY_SESSION_CURSOR		0x0b
 
 #define	CONNECT_TO_KEYBOARD		0x01
@@ -97,6 +97,9 @@ typedef struct {
     char
 	long_name[8];
 } QuerySessionIdParms;
+
+#define	ID_OPTION_BY_NAME	0x01		/* By short (or long) name */
+#define	ID_OPTION_ALL		0x00		/* All (of specified type */
 
 typedef struct {
     char
@@ -249,7 +252,7 @@ typedef struct {
 } ReadOiaGroupParms;
 
 /* If the user wants all groups, we return API_OIA_BYTES_ALL_GROUPS bytes */
-#define	API_OIA_ALL_GROUPS		0xFF
+#define	API_OIA_ALL_GROUPS		'\377'
 #define	API_OIA_BYTES_ALL_GROUPS	22	/* 22 bytes of data */
 
 /* API_OIA_INPUT_INHIBITED is special.  It returns more than on byte of data */
