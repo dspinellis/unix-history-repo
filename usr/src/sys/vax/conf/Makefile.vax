@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile.vax	6.20 (Berkeley) %G%
+#	@(#)Makefile.vax	6.21 (Berkeley) %G%
 #
 # Makefile for 4.3 BSD
 #
@@ -26,7 +26,8 @@
 #
 C2=	/lib/c2
 LD=	/bin/ld
-INLINE=	../vax/inline/inline ${INLINEOPTS}
+INLINECMD= ../vax/inline/inline
+INLINE=	${INLINECMD} ${INLINEOPTS}
 TOUCH=	touch -f -c
 
 INCLUDES= -I. -I../h
