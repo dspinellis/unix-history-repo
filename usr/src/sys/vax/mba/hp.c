@@ -1,4 +1,4 @@
-/*	hp.c	4.12	81/02/23	*/
+/*	hp.c	4.13	81/02/25	*/
 
 #include "hp.h"
 #if NHP > 0
@@ -240,7 +240,10 @@ hpdtint(mi, mbastat)
 			} else if (hpecc(mi))
 				return (MBD_RESTARTED);
 		} else {
-			deverror(bp, mbastat, hpaddr->hper1);
+			if (hpaddr->hper1&HP_WLE)	
+				printf("hp%d is write locked\n", dkunit(bp));
+			else
+				deverror(bp, mbastat, hpaddr->hper1);
 			bp->b_flags |= B_ERROR;
 		}
 	bp->b_resid = -(mi->mi_mba->mba_bcr) & 0xffff;
