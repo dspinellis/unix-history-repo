@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)touch.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)touch.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -90,7 +90,7 @@ main(argc, argv)
 		len = p - argv[0];
 		if (*p == '\0' && (len == 8 || len == 10)) {
 			timeset = 1;
-			stime_arg2(argv[0], len == 10, tv);
+			stime_arg2(*argv++, len == 10, tv);
 		}
 	}
 
