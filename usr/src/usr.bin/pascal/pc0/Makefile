@@ -1,6 +1,6 @@
-SCCSID = "@(#)Makefile 1.11 %G%"
+SCCSID = "@(#)Makefile 1.12 %G%"
 WHOAMI = pc
-INSTALLNAME = pc0
+INSTALLNAME = /usr/lib/pc0
 VERSION = 2.0
 
 MKSTR = /usr/ucb/mkstr
