@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)vax.c 1.8 %G%";
+static char sccsid[] = "@(#)vax.c 1.9 %G%";
 
 /*
  * Target machine dependent stuff.
@@ -260,6 +260,7 @@ int mode;
     char byte;
     short hword;
     int argval;
+    Symbol f;
 
     switch (nbytes) {
 	case 1:
@@ -280,7 +281,12 @@ int mode;
 	argval += addr + nbytes;
     }
     if (reg == regname[PROGCTR]) {
-	printf("%x", argval);
+	f = whatblock((Address) argval + 2);
+	if (codeloc(f) == argval + 2) {
+	    printf("%s", symname(f));
+	} else {
+	    printf("%x", argval);
+	}
     } else {
 	printf("%d(%s)", argval, reg);
     }
@@ -308,7 +314,7 @@ private Format fmt[] = {
     { "b", " \\%o", sizeof(char) },
     { "c", " '%c'", sizeof(char) },
     { "s", "%c", sizeof(char) },
-    { "f", " %f", sizeof(double) },
+    { "f", " %f", sizeof(float) },
     { "g", " %g", sizeof(double) },
     { nil, nil, 0 }
 };
@@ -376,7 +382,14 @@ String format;
     register Address addr;
     register Format *f;
     register Boolean isstring;
-    int value;
+    char c;
+    union {
+	char charv;
+	short shortv;
+	int intv;
+	float floatv;
+	double doublev;
+    } value;
 
     if (count <= 0) {
 	error("non-positive repetition count");
@@ -385,18 +398,18 @@ String format;
     isstring = (Boolean) streq(f->name, "s");
     n = 0;
     addr = startaddr;
-    value = 0;
+    value.intv = 0;
     for (i = 0; i < count; i++) {
 	if (n == 0) {
 	    printf("%08x: ", addr);
 	}
 	if (isstring) {
 	    putchar('"');
-	    dread(&value, addr, sizeof(char));
-	    while (value != '\0') {
-		printchar((char) value);
+	    dread(&c, addr, sizeof(char));
+	    while (c != '\0') {
+		printchar(c);
 		++addr;
-		dread(&value, addr, sizeof(char));
+		dread(&c, addr, sizeof(char));
 	    }
 	    putchar('"');
 	    putchar('\n');
