@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dumprestore.h	5.7 (Berkeley) %G%
+ *	@(#)dumprestore.h	5.8 (Berkeley) %G%
  */
 
 #ifndef _DUMPRESTORE_H_
@@ -71,7 +71,8 @@ union u_spcl {
 /*
  * flag values
  */
-#define DR_NEWHEADER	1	/* new format tape header */
+#define DR_NEWHEADER	0x0001	/* new format tape header */
+#define DR_NEWINODEFMT	0x0002	/* new format inodes on tape */
 
 #define	DUMPOUTFMT	"%-16s %c %s"		/* for printf */
 						/* name, level, ctime(date) */
