@@ -1,4 +1,4 @@
-/*	if_acc.c	4.30	82/11/13	*/
+/*	if_acc.c	4.31	82/11/15	*/
 
 #include "acc.h"
 #ifdef NACC > 0
@@ -104,7 +104,7 @@ accattach(ui)
 		struct	impcb ifimp_impcb;
 	} *ifimp;
 
-	if ((ifimp = (struct ifimpcb *)impattacch(ui, accreset)) == 0)
+	if ((ifimp = (struct ifimpcb *)impattach(ui, accreset)) == 0)
 		panic("accattach");
 	sc->acc_if = &ifimp->ifimp_if;
 	ip = &ifimp->ifimp_impcb;
