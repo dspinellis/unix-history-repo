@@ -7,22 +7,19 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)machdep.c	5.6 (Berkeley) %G%
+ *	@(#)machdep.c	5.7 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "dir.h"
 #include "user.h"
 #include "kernel.h"
-#include "malloc.h"
 #include "map.h"
 #include "vm.h"
 #include "proc.h"
 #include "buf.h"
 #include "reboot.h"
 #include "conf.h"
-#include "inode.h"
 #include "file.h"
 #include "text.h"
 #include "clist.h"
@@ -30,15 +27,15 @@
 #include "cmap.h"
 #include "mbuf.h"
 #include "msgbuf.h"
-#include "quota.h"
-#include "../net/netisr.h"
+#include "net/netisr.h"
 
-#include "../i386/frame.h"
-#include "../i386/reg.h"
-#include "../i386/segments.h"
-#include "../i386/pte.h"
-#include "../i386/psl.h"
-#include "../i386/isa/rtc.h"
+#include "machine/frame.h"
+#include "machine/reg.h"
+#include "machine/segments.h"
+#include "machine/pte.h"
+#include "machine/psl.h"
+#include "machine/specialreg.h"
+#include "i386/isa/rtc.h"
 
 /*
  * Declare these as initialized data so we can patch them.
@@ -54,13 +51,11 @@ int	bufpages = BUFPAGES;
 #else
 int	bufpages = 0;
 #endif
-int kernmem;
+int	msgbufmapped;		/* set when safe to use msgbuf */
 
 /*
  * Machine-dependent startup code
  */
-/*extern char Sysbase;
-caddr_t sbase = { &Sysbase };*/
 extern	char	Sysbase[];
 /* extern struct pte	EMCmap[];
 extern char		EMCbase[]; */
@@ -108,6 +103,7 @@ rtcin(RTC_EXTLO) + (rtcin(RTC_EXTHI)<<8)
 );
 	maxmem = Maxmem-1;
 
+/*
 	if(biosmem != 640)
 		panic("does not have 640K of base memory");
 
@@ -115,6 +111,7 @@ rtcin(RTC_EXTLO) + (rtcin(RTC_EXTHI)<<8)
 	biosmem += rtcin(RTC_EXTLO) + (rtcin(RTC_EXTHI)<<8);
 	biosmem = biosmem/4 - 1 ;
 	if (biosmem < maxmem) maxmem=biosmem;
+*/
 
 #ifdef SMALL
 if(forcemaxmem && maxmem > forcemaxmem)
@@ -186,7 +183,6 @@ up to 640K.
 #define	valloclim(name, type, num, lim) \
 		v = bypasshole (v, v + (int) ((name)+(num))) ; \
 	    (name) = (type *)v; v = (caddr_t)((lim) = ((name)+(num)))
-	valloclim(inode, struct inode, ninode, inodeNINODE);
 	valloclim(file, struct file, nfile, fileNFILE);
 	valloclim(proc, struct proc, nproc, procNPROC);
 	valloclim(text, struct text, ntext, textNTEXT);
@@ -195,17 +191,13 @@ up to 640K.
 	valloc(swapmap, struct map, nswapmap = nproc * 2);
 	valloc(argmap, struct map, ARGMAPSIZE);
 	valloc(kernelmap, struct map, nproc);
-	valloc(useriomap, struct map, nproc);
 	valloc(mbmap, struct map, nmbclusters/4);
-	valloc(namecache, struct namecache, nchsize);
-
 	valloc(kmemmap, struct map, ekmempt - kmempt);
 	valloc(kmemusage, struct kmemusage, ekmempt - kmempt);
-#ifdef QUOTA
-	valloclim(quota, struct quota, nquota, quotaNQUOTA);
-	valloclim(dquot, struct dquot, ndquot, dquotNDQUOT);
+	valloc(useriomap, struct map, nproc);
+#ifdef SYSVSHM
+	valloc(shmsegs, struct shmid_ds, shminfo.shmmni);
 #endif
-	
 	/*
 	 * Determine how many buffers to allocate.
 	 * Use 10% of memory for the first 2 Meg, 5% of the remaining
@@ -386,11 +378,11 @@ struct sigframe {
 	int	sf_signum;
 	int	sf_code;
 	struct	sigcontext *sf_scp;
-	int	(*sf_handler)();
+	sig_t	sf_handler;
 	int	sf_eax;	
 	int	sf_edx;	
 	int	sf_ecx;	
-	struct	save87	sf_fsave;	/* fpu coproc */
+	struct	sigcontext sf_sc;
 } ;
 
 /*
@@ -403,19 +395,18 @@ struct sigframe {
  * frame pointer, it returns to the user
  * specified pc, psl.
  */
-sendsig(p, sig, mask, frmtrp)
-	int (*p)(), sig, mask;
+sendsig(catcher, sig, mask, code, frm)
+	sig_t catcher;
+	int sig, mask;
+	unsigned code;
 {
-	register struct sigcontext *scp;
+	register struct proc *p = u.u_procp;
 	register int *regs;
 	register struct sigframe *fp;
-	int oonstack;
 
-#include "dbg.h"
-dprintf(DSIGNAL,"sendsig %d code %d to pid %d frmtrp %d to locn %x\n",
-	sig, u.u_code, u.u_procp->p_pid, frmtrp, p);
 	regs = u.u_ar0;
-	oonstack = u.u_onstack;
+/*#include "dbg.h"
+dprintf(DALLTRAPS|DPAGIN,"s %d %d ", sig, frm);*/
 	/*
 	 * Allocate and validate space for the signal handler
 	 * context. Note that if the stack is in P0 space, the
@@ -424,29 +415,34 @@ dprintf(DSIGNAL,"sendsig %d code %d to pid %d frmtrp %d to locn %x\n",
 	 * the space with a `brk'.
 	 */
 	if (!u.u_onstack && (u.u_sigonstack & sigmask(sig))) {
-		scp = (struct sigcontext *)u.u_sigsp - 1;
+printf("onstack?");
+		fp = (struct sigframe *)(u.u_sigsp - sizeof(struct sigframe));
 		u.u_onstack = 1;
 	} else {
-		if (frmtrp)
-			scp = (struct sigcontext *)regs[tESP] - 1;
+		if (frm)
+			fp = (struct sigframe *)(regs[tESP]
+				- sizeof(struct sigframe));
 		else
-			scp = (struct sigcontext *)regs[sESP] - 1;
+			fp = (struct sigframe *)(regs[sESP]
+				- sizeof(struct sigframe));
 	}
-	fp = (struct sigframe *)scp - 1;
-	if ((int)fp <= USRSTACK - ctob(u.u_ssize)) 
-		(void) grow((unsigned)fp);
-	if (useracc((caddr_t)fp, sizeof (*fp) + sizeof (*scp), B_WRITE) == 0) {
+
+	if ((unsigned)fp <= USRSTACK - ctob(u.u_ssize)) 
+		(void)grow((unsigned)fp);
+
+	if (useracc((caddr_t)fp, sizeof (struct sigframe), B_WRITE) == 0) {
+printf("fail %x %x\n", fp, regs[frm?tESP:sESP]);
 		/*
 		 * Process has trashed its stack; give it an illegal
 		 * instruction to halt it in its tracks.
 		 */
-printf("sendsig: failed to grow stack down to %x\n", fp);
-		u.u_signal[SIGILL] = SIG_DFL;
+		SIGACTION(p, SIGILL) = SIG_DFL;
 		sig = sigmask(SIGILL);
-		u.u_procp->p_sigignore &= ~sig;
-		u.u_procp->p_sigcatch &= ~sig;
-		u.u_procp->p_sigmask &= ~sig;
-		psignal(u.u_procp, SIGILL);
+		p->p_sigignore &= ~sig;
+		p->p_sigcatch &= ~sig;
+		p->p_sigmask &= ~sig;
+		psignal(p, SIGILL);
+/*dprintf(DALLTRAPS|DPAGIN,"ill ");*/
 		return;
 	}
 
@@ -454,19 +450,20 @@ printf("sendsig: failed to grow stack down to %x\n", fp);
 	 * Build the argument list for the signal handler.
 	 */
 	fp->sf_signum = sig;
-	if (sig == SIGILL || sig == SIGFPE) {
+	fp->sf_code = code;
+	/*if (sig == SIGILL || sig == SIGFPE) {
 		fp->sf_code = u.u_code;
 		u.u_code = 0;
 	} else
-		fp->sf_code = 0;
+		fp->sf_code = 0; */
 	/* indicate trap occured from system call */
-	if(!frmtrp) fp->sf_code |= 0x80;
+	/*if(!(code&FRMTRAP)) fp->sf_code |= 0x80;*/
 
-	fp->sf_scp = scp;
-	fp->sf_handler = p;
+	fp->sf_scp = &fp->sf_sc;
+	fp->sf_handler = catcher;
 
 	/* save scratch registers */
-	if(frmtrp) {
+	if(frm) {
 		fp->sf_eax = regs[tEAX];
 		fp->sf_edx = regs[tEDX];
 		fp->sf_ecx = regs[tECX];
@@ -475,28 +472,27 @@ printf("sendsig: failed to grow stack down to %x\n", fp);
 		fp->sf_edx = regs[sEDX];
 		fp->sf_ecx = regs[sECX];
 	}
-#ifdef notyet
-	/* XXX FPU state? */
-#endif
 	/*
 	 * Build the signal context to be used by sigreturn.
 	 */
-	scp->sc_onstack = oonstack;
-	scp->sc_mask = mask;
-	if(frmtrp) {
-		scp->sc_sp = regs[tESP];
-		scp->sc_fp = regs[tEBP];
-		scp->sc_pc = regs[tEIP];
-		scp->sc_ps = regs[tEFLAGS];
+	fp->sf_sc.sc_onstack = u.u_onstack;
+	fp->sf_sc.sc_mask = mask;
+	if(frm) {
+		fp->sf_sc.sc_sp = regs[tESP];
+		fp->sf_sc.sc_fp = regs[tEBP];
+		fp->sf_sc.sc_pc = regs[tEIP];
+		fp->sf_sc.sc_ps = regs[tEFLAGS];
 		regs[tESP] = (int)fp;
 		regs[tEIP] = (int)u.u_pcb.pcb_sigc;
+/*dprintf(DALLTRAPS|DPAGIN,"E ");*/
 	} else {
-		scp->sc_sp = regs[sESP];
-		scp->sc_fp = regs[sEBP];
-		scp->sc_pc = regs[sEIP];
-		scp->sc_ps = regs[sEFLAGS];
+		fp->sf_sc.sc_sp = regs[sESP];
+		fp->sf_sc.sc_fp = regs[sEBP];
+		fp->sf_sc.sc_pc = regs[sEIP];
+		fp->sf_sc.sc_ps = regs[sEFLAGS];
 		regs[sESP] = (int)fp;
 		regs[sEIP] = (int)u.u_pcb.pcb_sigc;
+/*dprintf(DALLTRAPS|DPAGIN,"e "); */
 	}
 }
 
@@ -510,45 +506,43 @@ printf("sendsig: failed to grow stack down to %x\n", fp);
  * psl to gain improper priviledges or to cause
  * a machine fault.
  */
-sigreturn()
+sigreturn(p, uap, retval)
+	struct proc *p;
+	struct args {
+		struct sigcontext *sigcntxp;
+	} *uap;
+	int *retval;
 {
-	register struct sigframe *fp;
 	register struct sigcontext *scp;
+	register struct sigframe *fp;
 	register int *regs = u.u_ar0;
 
 	fp = (struct sigframe *) regs[sESP] ;
-	if (useracc((caddr_t)fp, sizeof (*fp), 0) == 0) {
-		u.u_error = EINVAL;
-		return;
-	}
+
+	if (useracc((caddr_t)fp, sizeof (*fp), 0) == 0)
+		return(EINVAL);
 
 	/* restore scratch registers */
 	regs[sEAX] = fp->sf_eax ;
 	regs[sEDX] = fp->sf_edx ;
 	regs[sECX] = fp->sf_ecx ;
-#ifdef notyet
-	/* XXX FPU state? */
-#endif
 
 	scp = fp->sf_scp;
-	if (useracc((caddr_t)scp, sizeof (*scp), 0) == 0) {
-		u.u_error = EINVAL;
-		return;
-	}
+	if (useracc((caddr_t)scp, sizeof (*scp), 0) == 0)
+		return(EINVAL);
 #ifdef notyet
 	if ((scp->sc_ps & PSL_MBZ) != 0 || (scp->sc_ps & PSL_MBO) != PSL_MBO) {
-		u.u_error = EINVAL;
-		return;
+		return(EINVAL);
 	}
 #endif
-	u.u_eosys = JUSTRETURN;
 	u.u_onstack = scp->sc_onstack & 01;
-	u.u_procp->p_sigmask = scp->sc_mask &~
+	p->p_sigmask = scp->sc_mask &~
 	    (sigmask(SIGKILL)|sigmask(SIGCONT)|sigmask(SIGSTOP));
 	regs[sEBP] = scp->sc_fp;
 	regs[sESP] = scp->sc_sp;
 	regs[sEIP] = scp->sc_pc;
 	regs[sEFLAGS] = scp->sc_ps;
+	return(EJUSTRETURN);
 }
 
 int	waittime = -1;
@@ -574,7 +568,7 @@ boot(arghowto)
 		 */
 		if (panicstr == 0)
 			xumount(NODEV);
-		update();
+		sync((struct sigcontext *)0);
 
 		for (iter = 0; iter < 20; iter++) {
 			nbusy = 0;
@@ -722,6 +716,12 @@ setregs(entry)
 #endif
 	u.u_ar0[sEBP] = 0;	/* bottom of the fp chain */
 	u.u_ar0[sEIP] = entry;
+
+	u.u_pcb.pcb_flags = 0;	/* no fp at all */
+	load_cr0(rcr0() | CR0_EM);	/* start emulating */
+#ifdef	NPX
+	npxinit(0x262);
+#endif
 }
 
 /*
@@ -988,7 +988,7 @@ clearseg(n) {
 	extern CMAP1, CADDR1;
 
 	CMAP1 = PG_V | PG_KW | ctob(n);
-	load_cr3(_cr3());
+	load_cr3(u.u_pcb.pcb_cr3);
 	bzero(&CADDR1,NBPG);
 }
 
@@ -1000,12 +1000,16 @@ copyseg(frm, n) {
 	extern CMAP2, CADDR2;
 
 	CMAP2 = PG_V | PG_KW | ctob(n);
-	load_cr3(_cr3());
+	load_cr3(u.u_pcb.pcb_cr3);
 	bcopy(frm, &CADDR2,NBPG);
 }
 
 aston() {
 	schednetisr(NETISR_AST);
+}
+
+setsoftclock() {
+	schednetisr(NETISR_SCLK);
 }
 
 /*
@@ -1057,7 +1061,7 @@ copyinstr(fromaddr, toaddr, maxlength, lencopied) int *lencopied;
 		}
 	}
 	if(lencopied) *lencopied = tally;
-	return(ENOENT);
+	return(ENAMETOOLONG);
 }
 
 copyoutstr(fromaddr, toaddr, maxlength, lencopied) int *lencopied;
@@ -1076,7 +1080,7 @@ copyoutstr(fromaddr, toaddr, maxlength, lencopied) int *lencopied;
 		}
 	}
 	if(lencopied) *lencopied = tally;
-	return(ENOENT);
+	return(ENAMETOOLONG);
 }
 
 copystr(fromaddr, toaddr, maxlength, lencopied) int *lencopied;
@@ -1093,7 +1097,7 @@ copystr(fromaddr, toaddr, maxlength, lencopied) int *lencopied;
 		}
 	}
 	if(lencopied) *lencopied = tally;
-	return(ENOENT);
+	return(ENAMETOOLONG);
 }
 
 /* 
