@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	4.3 %G%";
+static char sccsid[] = "@(#)main.c	4.4 %G%";
 #endif
 
 #
@@ -11,17 +11,18 @@ static char sccsid[] = "@(#)main.c	4.3 %G%";
  *
  */
 
-#include	"defs.h"
-#include	"sym.h"
-#include	"timeout.h"
 #include	<sys/types.h>
 #include	<sys/stat.h>
 #include	<sgtty.h>
 #include	<signal.h>
+#include	"defs.h"
+#include	"sym.h"
+#include	"timeout.h"
+#include	"pathnames.h"
 
 UFD		output = 2;
 LOCAL BOOL	beenhere = FALSE;
-CHAR		tmpout[20] = "/tmp/sh-";
+CHAR		tmpout[20] = _PATH_TMPOUT;
 FILEBLK		stdfile;
 FILE		standin = &stdfile;
 #ifdef stupid

@@ -14,14 +14,14 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.1 (Berkeley) %G%
+# @(#)Makefile	5.2 (Berkeley) %G%
 #
 
 CFLAGS=	-O
 LIBC=	/lib/libc.a
 SRCS=	ar.c
 OBJS=
-MAN=	ar.0
+MAN=	ar.0 ar5.0
 
 all: ar
 
@@ -38,8 +38,9 @@ depend: ${SRCS}
 	mkdep -p ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 ar ${DESTDIR}/bin
-	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
+	install -s -o bin -g bin -m 755 ar ${DESTDIR}/usr/pgrm
+	install -c -o bin -g bin -m 444 ar.0 ${DESTDIR}/usr/man/cat1
+	install -c -o bin -g bin -m 444 ar5.0 ${DESTDIR}/usr/man/cat5/ar.0
 
 lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
