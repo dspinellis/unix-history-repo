@@ -1,0 +1,33 @@
+.TH COMM 1L \" -*- nroff -*-
+.SH NAME
+comm \- compare two sorted files line by line
+.SH SYNOPSIS
+.B comm
+[\-123] file1 file2
+.SH DESCRIPTION
+This manual page
+documents the GNU version of
+.BR comm .
+.B comm
+prints lines that are common, and lines that are unique, to two input
+files.  The two files must be sorted before
+.B comm
+can be used.  The file name `\-' means the standard input.
+.PP
+With no options,
+.B comm
+produces three column output.  Column
+one contains lines unique to
+.IR file1 ,
+column two contains
+lines unique to
+.IR file2 ,
+and column three contains lines common to both files.
+.SS OPTIONS
+.PP
+The options
+.IR \-1 ,
+.IR \-2 ,
+and
+.I \-3
+suppress printing of the corresponding columns.
