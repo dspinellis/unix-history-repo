@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	4.16	82/03/19	*/
+/*	uipc_syscalls.c	4.17	82/04/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -292,6 +292,8 @@ ssocketaddr()
 		struct	sockaddr *asa;
 	} *uap = (struct a *)u.u_ap;
 	register struct file *fp;
+	register struct socket *so;
+	struct sockaddr addr;
 COUNT(SSOCKETADDR);
 
 	fp = getf(uap->fdes);
@@ -301,9 +303,11 @@ COUNT(SSOCKETADDR);
 		u.u_error = ENOTSOCK;
 		return;
 	}
-	if (copyout((caddr_t)&fp->f_socket->so_addr, (caddr_t)uap->asa, 
-	    sizeof (struct sockaddr))) {
-		u.u_error = EFAULT;
+	so = fp->f_socket;
+	u.u_error =
+		(*so->so_proto->pr_usrreq)(so, PRU_SOCKADDR, 0, (caddr_t)&addr);
+	if (u.u_error)
 		return;
-	}
+	if (copyout((caddr_t)&addr, (caddr_t)uap->asa, sizeof (addr)))
+		u.u_error = EFAULT;
 }
