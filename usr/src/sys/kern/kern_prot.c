@@ -1,4 +1,4 @@
-/*	kern_prot.c	6.3	85/03/18	*/
+/*	kern_prot.c	6.4	85/03/19	*/
 
 /*
  * System calls related to processes and protection
@@ -16,7 +16,6 @@
 #include "times.h"
 #include "reboot.h"
 #include "fs.h"
-#include "conf.h"
 #include "buf.h"
 #include "mount.h"
 #include "quota.h"

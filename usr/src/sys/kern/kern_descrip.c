@@ -1,4 +1,4 @@
-/*	kern_descrip.c	6.8	85/02/16	*/
+/*	kern_descrip.c	6.9	85/03/19	*/
 
 #include "param.h"
 #include "systm.h"
@@ -7,7 +7,6 @@
 #include "kernel.h"
 #include "inode.h"
 #include "proc.h"
-#include "conf.h"
 #include "file.h"
 #include "socket.h"
 #include "socketvar.h"

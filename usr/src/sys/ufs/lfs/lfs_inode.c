@@ -1,4 +1,4 @@
-/*	lfs_inode.c	6.13	85/03/13	*/
+/*	lfs_inode.c	6.14	85/03/19	*/
 
 #include "param.h"
 #include "systm.h"
@@ -7,7 +7,6 @@
 #include "user.h"
 #include "inode.h"
 #include "fs.h"
-#include "conf.h"
 #include "buf.h"
 #ifdef QUOTA
 #include "quota.h"

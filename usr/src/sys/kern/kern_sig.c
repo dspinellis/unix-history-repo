@@ -1,4 +1,4 @@
-/*	kern_sig.c	6.13	85/03/13	*/
+/*	kern_sig.c	6.14	85/03/19	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -12,7 +12,6 @@
 #include "proc.h"
 #include "timeb.h"
 #include "times.h"
-#include "conf.h"
 #include "buf.h"
 #include "mount.h"
 #include "text.h"
