@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	3.21 84/04/08";
+static	char *sccsid = "@(#)main.c	3.22 84/04/08";
 #endif
 
 #include "defs.h"
@@ -89,6 +89,7 @@ char **argv;
 		(void) fprintf(stderr, "%s.\r\n", wwerror());
 		goto bad;
 	}
+	cmdwin->ww_mapnl = 1;
 	cmdwin->ww_nointr = 1;
 	cmdwin->ww_noupdate = 1;
 	if ((framewin = wwopen(WWO_GLASS|WWO_FRAME, wwnrow, wwncol, 0, 0, 0))

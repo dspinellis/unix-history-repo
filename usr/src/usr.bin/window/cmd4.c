@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd4.c	3.10 84/04/05";
+static	char *sccsid = "@(#)cmd4.c	3.11 84/04/08";
 #endif
 
 #include "defs.h"
@@ -12,7 +12,7 @@ c_colon()
 	setterse(0);
 	wwputc(':', cmdwin);
 	wwgets(buf, wwncol - 3, cmdwin);
-	wwputs("\r\n", cmdwin);
+	wwputc('\n', cmdwin);
 	wwcurtowin(cmdwin);
 	setterse(oldterse);
 	if (dolongcmd(buf) < 0)

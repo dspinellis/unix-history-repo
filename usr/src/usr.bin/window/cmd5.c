@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd5.c	3.10 84/03/03";
+static	char *sccsid = "@(#)cmd5.c	3.11 84/04/08";
 #endif
 
 #include "defs.h"
@@ -45,7 +45,7 @@ register struct ww *w;
 	}
 	wwdelete(boxwin);
 	if (!terse)
-		wwputs("\r\n", cmdwin);
+		wwputc('\n', cmdwin);
 	wwcurtowin(cmdwin);
 	movewin(w, row, col);
 }
