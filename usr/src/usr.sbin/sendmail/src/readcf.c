@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)readcf.c	3.28		%G%);
+SCCSID(@(#)readcf.c	3.29		%G%);
 
 /*
 **  READCF -- read control file.
@@ -42,9 +42,6 @@ SCCSID(@(#)readcf.c	3.28		%G%);
 **		Builds several internal tables.
 */
 
-struct rewrite	*RewriteRules[10];
-
-
 readcf(cfname, safe)
 	char *cfname;
 	bool safe;
@@ -67,6 +64,7 @@ readcf(cfname, safe)
 		exit(EX_OSFILE);
 	}
 
+	LineNumber = 0;
 	while (fgetfolded(buf, sizeof buf, cf) != NULL)
 	{
 		switch (buf[0])
@@ -81,7 +79,8 @@ readcf(cfname, safe)
 
 			if (*p == '\0')
 			{
-				syserr("invalid rewrite line \"%s\"", buf);
+				syserr("line %d: invalid rewrite line \"%s\"",
+					LineNumber, buf);
 				break;
 			}
 
@@ -120,6 +119,12 @@ readcf(cfname, safe)
 
 		  case 'S':		/* select rewriting set */
 			ruleset = atoi(&buf[1]);
+			if (ruleset >= MAXRWSETS || ruleset < 0)
+			{
+				syserr("readcf: line %d: bad ruleset %d (%d max)",
+					LineNumber, ruleset, MAXRWSETS);
+				ruleset = 0;
+			}
 			rwp = NULL;
 			break;
 
@@ -188,7 +193,8 @@ readcf(cfname, safe)
 
 		  default:
 		  badline:
-			syserr("unknown control line \"%s\"", buf);
+			syserr("readcf: line %d: unknown control line \"%s\"",
+				LineNumber, buf);
 		}
 	}
 }
@@ -291,7 +297,8 @@ makemailer(line, safe)
 
 	if (NextMailer >= MAXMAILERS)
 	{
-		syserr("Too many mailers defined");
+		syserr("readcf: line %d: too many mailers defined (%d max)",
+			LineNumber, MAXMAILERS);
 		return;
 	}
 
@@ -310,7 +317,8 @@ makemailer(line, safe)
 
 	if (*p == '\0')
 	{
-		syserr("invalid M line in configuration file");
+		syserr("readcf: line %d: invalid M line in configuration file",
+			LineNumber);
 		return;
 	}
 
