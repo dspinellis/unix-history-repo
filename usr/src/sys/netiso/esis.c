@@ -24,7 +24,7 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-/*	@(#)esis.c	7.8 (Berkeley) %G% */
+/*	@(#)esis.c	7.9 (Berkeley) %G% */
 #ifndef lint
 static char *rcsid = "$Header: esis.c,v 4.10 88/09/15 18:57:03 hagens Exp $";
 #endif
@@ -45,6 +45,7 @@ static char *rcsid = "$Header: esis.c,v 4.10 88/09/15 18:57:03 hagens Exp $";
 #include "../net/if.h"
 #include "../net/if_dl.h"
 #include "../net/route.h"
+#include "../net/raw_cb.h"
 
 #include "iso.h"
 #include "iso_pcb.h"
@@ -61,14 +62,18 @@ static char *rcsid = "$Header: esis.c,v 4.10 88/09/15 18:57:03 hagens Exp $";
  *
  *	esis_holding_time - the holding time (sec) parameter for outgoing pdus
  *	esis_config_time  - the frequency (sec) that hellos are generated
+ *	esis_esconfig_time - suggested es configuration time placed in the
+ *						ish.
  *
  */
-struct isopcb	esis_pcb;
+struct rawcb	esis_pcb;
 int				esis_sendspace = 2048;
 int				esis_recvspace = 2048;
 short			esis_holding_time = ESIS_HT;
 short			esis_config_time = ESIS_CONFIG;
+short			esis_esconfig_time = ESIS_CONFIG;
 extern int		iso_systype;
+struct sockaddr_dl	esis_dl = { sizeof(esis_dl), AF_LINK };
 extern char		all_es_snpa[], all_is_snpa[];
 
 #define EXTEND_PACKET(m, mhdr, cp)\
@@ -95,16 +100,16 @@ esis_init()
 {
 	extern struct clnl_protosw clnl_protox[256];
 	int esis_input();
-	int snpac_age();
 	int	esis_config();
+	int snpac_age();
 #ifdef	ISO_X25ESIS
 	x25esis_input();
 #endif	ISO_X25ESIS
 
-	esis_pcb.isop_next = esis_pcb.isop_prev = &esis_pcb;
+	esis_pcb.rcb_next = esis_pcb.rcb_prev = &esis_pcb;
+	llinfo_llc.lc_next = llinfo_llc.lc_prev = &llinfo_llc;
 
 	clnl_protox[ISO9542_ESIS].clnl_input = esis_input;
-	llinfo_llc.lc_next = llinfo_llc.lc_prev = &llinfo_llc;
 	timeout(snpac_age, (caddr_t)0, hz);
 	timeout(esis_config, (caddr_t)0, hz);
 
@@ -122,7 +127,6 @@ esis_init()
  *
  * SIDE EFFECTS:	
  *
- * NOTES:			This is here only so esis gets initialized.
  */
 /*ARGSUSED*/
 esis_usrreq(so, req, m, nam, control)
@@ -132,10 +136,67 @@ struct mbuf		*m;			/* data for request */
 struct mbuf		*nam;		/* optional name */
 struct mbuf		*control;	/* optional control */
 {
+	struct rawcb *rp = sotorawcb(so);
+	int error = 0;
+
+	if (suser(u.u_cred, &u.u_acflag)) {
+		error = EACCES;
+		goto release;
+	}
+	if (rp == NULL && req != PRU_ATTACH) {
+		error = EINVAL;
+		goto release;
+	}
+
+	switch (req) {
+	case PRU_ATTACH:
+		if (rp != NULL) {
+			error = EINVAL;
+			break;
+		}
+		MALLOC(rp, struct rawcb *, sizeof(*rp), M_PCB, M_WAITOK);
+		if (so->so_pcb = (caddr_t)rp) {
+			bzero(so->so_pcb, sizeof(*rp));
+			insque(rp, &esis_pcb);
+			error = soreserve(so, esis_sendspace, esis_recvspace);
+		} else
+			error = ENOBUFS;
+		break;
+
+	case PRU_SEND:
+		if (nam == NULL) {
+			error = EINVAL;
+			break;
+		}
+		/* error checking here */
+		error = isis_output(mtod(nam,struct sockaddr_dl *), m);
+		m = NULL;
+		break;
+
+	case PRU_DETACH:
+		raw_detach(rp);
+		break;
+
+	case PRU_SHUTDOWN:
+		socantsendmore(so);
+		break;
+
+	case PRU_ABORT:
+		soisdisconnected(so);
+		raw_detach(rp);
+		break;
+
+	case PRU_SENSE:
+		return (0);
+
+	default:
+		return (EOPNOTSUPP);
+	}
+release:
 	if (m != NULL)
 		m_freem(m);
 
-	return(EOPNOTSUPP);
+	return (error);
 }
 
 /*
@@ -153,21 +214,8 @@ esis_input(m0, shp)
 struct mbuf		*m0;		/* ptr to first mbuf of pkt */
 struct snpa_hdr	*shp;	/* subnetwork header */
 {
-	struct esis_fixed	*pdu = mtod(m0, struct esis_fixed *);
+	register struct esis_fixed	*pdu = mtod(m0, struct esis_fixed *);
 	register int type;
-
-	IFDEBUG(D_ESISINPUT)
-		int i;
-
-		printf("esis_input: pdu on ifp x%x (%s%d): from:", shp->snh_ifp, 
-			shp->snh_ifp->if_name, shp->snh_ifp->if_unit);
-		for (i=0; i<6; i++)
-			printf("%x%c", shp->snh_shost[i]&0xff, (i<5) ? ':' : ' ');
-		printf(" to:");
-		for (i=0; i<6; i++)
-			printf("%x%c", shp->snh_dhost[i]&0xff, (i<5) ? ':' : ' ');
-		printf("\n");
-	ENDDEBUG
 
 	/*
 	 *	check checksum if necessary
@@ -182,29 +230,29 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 		esis_stat.es_badvers++;
 		goto bad;
 	}
-
 	type = pdu->esis_type & 0x1f;
 	switch (type) {
 		case ESIS_ESH:
 			esis_eshinput(m0, shp);
-			return;
+			break;
 
 		case ESIS_ISH:
 			esis_ishinput(m0, shp);
-			return;
+			break;
 
 		case ESIS_RD:
 			esis_rdinput(m0, shp);
-			return;
+			break;
 
-		default: {
+		default:
 			esis_stat.es_badtype++;
-			goto bad;
-		}
 	}
 
 bad:
-	m_freem(m0);
+	if (esis_pcb.rcb_next != &esis_pcb)
+		isis_input(m0, shp);
+	else
+		m_freem(m0);
 }
 
 /*
@@ -358,7 +406,6 @@ struct rtentry		*rt;			/* snpa cache info regarding next hop of
 	iso_gen_csum(m0, ESIS_CKSUM_OFF, (int)pdu->esis_hdr_len);
 
 	bzero((caddr_t)&siso, sizeof(siso));
-	siso.siso_len = 12;
 	siso.siso_family = AF_ISO;
 	siso.siso_data[0] = AFI_SNA;
 	siso.siso_nlen = 6 + 1;	/* should be taken from snpa_hdr */
@@ -488,7 +535,6 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 		esis_shoutput(shp->snh_ifp, ESIS_ISH, esis_holding_time,
 						shp->snh_shost, 6, (struct iso_addr *)0);
 bad:
-	m_freem(m);
 	return;
 }
 
@@ -549,7 +595,6 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 			iso_systype & SNPA_ES ? ESIS_ESH : ESIS_ISH,
 			esis_holding_time, shp->snh_shost, 6, (struct iso_addr *)0);
 bad:
-	m_freem(m);
 	return;
 }
 
@@ -579,13 +624,13 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 
 	/* intermediate systems ignore redirects */
 	if (iso_systype & SNPA_IS)
-		goto bad;
+		return;
 	if (ESHonly)
-		goto bad;
+		return;
 
 	CTOH(pdu->esis_ht_msb, pdu->esis_ht_lsb, ht);
 	if (buf >= buflim)
-		goto bad;
+		return;
 
 	/* Extract DA */
 	ESIS_EXTRACT_ADDR(da, buf);
@@ -606,13 +651,13 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 		switch (*buf) {
 		case ESISOVAL_SNPAMASK:
 			if (snpamask) /* duplicate */
-				goto bad;
+				return;
 			snpamask = (struct iso_addr *)(buf + 1);
 			break;
 
 		case ESISOVAL_NETMASK:
 			if (netmask) /* duplicate */
-				goto bad;
+				return;
 			netmask = (struct iso_addr *)(buf + 1);
 			break;
 
@@ -645,8 +690,7 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 				bsnpa->isoa_genaddr, SNPA_IS, ht, 0);
 		snpac_addrt(shp->snh_ifp, da, net, netmask);
 	}
-bad:
-	m_freem(m0);
+bad: ;    /* Needed by ESIS_NEXT_OPTION */
 }
 
 /*
@@ -670,13 +714,11 @@ esis_config()
 	 *	Report configuration for each interface that 
 	 *	- is UP
 	 *	- is not loopback
-	 *	- has broadcast capabilities
 	 *	- has an ISO address
 	 */
 	
 	for (ifp = ifnet; ifp; ifp = ifp->if_next) {
 		if ((ifp->if_flags & IFF_UP) &&
-			(ifp->if_flags & IFF_BROADCAST) &&
 			((ifp->if_flags & IFF_LOOPBACK) == 0)) {
 			/* search for an ISO address family */
 			struct ifaddr	*ia;
@@ -817,10 +859,122 @@ struct	iso_addr *isoa;
 	siso.siso_family = AF_ISO;
 	siso.siso_data[0] = AFI_SNA;
 	siso.siso_nlen = sn_len + 1;
-	siso.siso_len  = sn_len + 6;
 	bcopy(sn_addr, siso.siso_data + 1, (unsigned)sn_len);
 	(ifp->if_output)(ifp, m0, &siso, 0);
 }
+
+/*
+ * FUNCTION:		isis_input
+ *
+ * PURPOSE:			Process an incoming isis packet
+ *
+ * RETURNS:			nothing
+ *
+ * SIDE EFFECTS:	
+ *
+ * NOTES:			
+ */
+isis_input(m0, shp)
+struct mbuf		*m0;		/* ptr to first mbuf of pkt */
+struct snpa_hdr	*shp;	/* subnetwork header */
+{
+	register int type;
+	struct rawcb *rp;
+	struct ifnet *ifp = shp->snh_ifp;
+	struct sockbuf *sb = 0;
+	char workbuf[16];
+	struct mbuf *mm;
+
+	IFDEBUG(D_ISISINPUT)
+		int i;
+
+		printf("isis_input: pkt on ifp x%x (%s%d): from:", ifp, 
+			ifp->if_name, ifp->if_unit);
+		for (i=0; i<6; i++)
+			printf("%x%c", shp->snh_shost[i]&0xff, (i<5) ? ':' : ' ');
+		printf(" to:");
+		for (i=0; i<6; i++)
+			printf("%x%c", shp->snh_dhost[i]&0xff, (i<5) ? ':' : ' ');
+		printf("\n");
+	ENDDEBUG
+	esis_dl.sdl_alen = ifp->if_addrlen;
+	esis_dl.sdl_index = ifp->if_index;
+	bcopy(shp->snh_shost, (caddr_t)esis_dl.sdl_data, esis_dl.sdl_alen);
+	for (rp = esis_pcb.rcb_next; rp != &esis_pcb; rp = rp->rcb_next) {
+		if (sb == 0) {
+			sb = &rp->rcb_socket->so_rcv;
+			continue;
+		}
+		if (mm = m_copy(m0, 0, M_COPYALL)) { /*can't block at interrupt level */
+			if (sbappendaddr(&rp->rcb_socket->so_rcv,
+							  &esis_dl, mm, (struct mbuf *)0) != 0)
+				sorwakeup(rp->rcb_socket);
+			else {
+				IFDEBUG(D_ISISINPUT)
+					printf("Error in sbappenaddr, mm = 0x%x\n", mm);
+				ENDDEBUG
+				m_freem(mm);
+			}
+		}
+	}
+	if (sb) {
+		if (sbappendaddr(&rp->rcb_socket->so_rcv,
+							  &esis_dl, mm, (struct mbuf *)0) != 0)
+			sorwakeup(rp->rcb_socket);
+		else
+			m_freem(m0);
+	}
+}
+
+isis_output(sdl, m)
+register struct sockaddr_dl	*sdl;
+struct mbuf *m;
+{
+	register struct ifnet *ifp;
+	struct ifaddr *ifa, *ifa_ifwithnet();
+	struct sockaddr_iso siso;
+	int error = 0;
+	unsigned sn_len;
+
+	ifa = ifa_ifwithnet(sdl);	/* extract ifp from sockaddr_dl */
+	if (ifa == 0) {
+		IFDEBUG(D_ISISOUTPUT)
+			printf("isis_output: interface not found\n");
+		ENDDEBUG
+		error = EINVAL;
+		goto release;
+	}
+	ifp = ifa->ifa_ifp;
+	sn_len = ifp->if_addrlen;
+	IFDEBUG(D_ISISOUTPUT)
+		u_char *cp = (u_char *)LLADDR(sdl), *cplim = cp + sn_len;
+		printf("isis_output: ifp 0x%x (%s%d), to: ",
+			ifp, ifp->if_name, ifp->if_unit);
+		while (cp < cplim) {
+			printf("%x", *cp++);
+			printf("%c", (cp < cplim) ? ':' : ' ');
+		}
+		printf("\n");
+	ENDDEBUG
+	bzero((caddr_t)&siso, sizeof(siso));
+	siso.siso_family = AF_ISO; /* This convention may be useful for X.25 */
+	siso.siso_data[0] = AFI_SNA;
+	siso.siso_nlen = sn_len + 1;
+	bcopy(LLADDR(sdl), siso.siso_data + 1, sn_len);
+	error = (ifp->if_output)(ifp, m, (struct sockaddr *)&siso, 0);
+	if (error) {
+		IFDEBUG(D_ISISOUTPUT)
+			printf("isis_output: error from ether_output is %d\n", error);
+		ENDDEBUG
+	}
+	return (error);
+
+release:
+	if (m != NULL)
+		m_freem(m);
+	return(error);
+}
+
 
 /*
  * FUNCTION:		esis_ctlinput
