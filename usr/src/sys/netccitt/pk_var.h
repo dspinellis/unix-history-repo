@@ -9,23 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_var.h	7.4 (Berkeley) %G%
+ *	@(#)pk_var.h	7.5 (Berkeley) %G%
  */
 
-/*
- * Protocol-Protocol Packet Buffer.
- * (Eventually will be replace by system-wide structure).
- */
-
-struct	pq	{
-	int	(*pq_put)();	/* How to process data */
-	struct	mbuf *pq_data;	/* Queued data */
-	int	pq_space;	/* For accounting */
-	int	pq_flags;
-	int	(*pq_unblock)();/* called & cleared when unblocking */
-	caddr_t pq_proto;	/* for other service entries */
-	caddr_t pq_next;	/* next q, or route, or pcb */
-};
 
 /*
  *
@@ -34,7 +20,9 @@ struct	pq	{
  */
 
 struct pklcd {
-	struct	pq lcd_downq, lcd_upq;	/* protocol glue for datagram service */
+	int	(*lcd_send)();		/* if X.25 front end, direct connect */
+	int	(*lcd_upper)();		/* switch to socket vs datagram vs ...*/
+	caddr_t	lcd_upnext;		/* reference for lcd_upper() */
 	short   lcd_lcn;		/* Logical channel number */
 	short   lcd_state;		/* Logical Channel state */
         bool	lcd_intrconf_pending;	/* Interrupt confirmation pending */
@@ -66,6 +54,7 @@ struct pklcd {
 	struct	pkcb *lcd_pkp;		/* Network this lcd is attached to */
 	struct	sockaddr_x25 lcd_faddr	/* Remote Address (Calling) */
 	struct	sockaddr_x25 lcd_laddr	/* Local Address (Called) */
+	struct	sockbuf lcd_sb;		/* alternate for datagram service */
 };
 
 #define X25_DG_CIRCUIT	0x10		/* lcd_flag: used for datagrams */
@@ -80,6 +69,7 @@ struct	pkcb {
 	struct	pkcb *pk_next;
 	struct	x25_ifaddr *pk_ia;	/* backpointer to ifaddr */
 	int	(*pk_lloutput) ();	/* link level output procedure */
+	caddr_t pk_llnext;		/* handle for next level down */
 	int	(*pk_start) ();		/* connect, confirm method */
 	struct	x25config *pk_xcp;	/* network specific configuration */
 	short	pk_state;		/* packet level status */

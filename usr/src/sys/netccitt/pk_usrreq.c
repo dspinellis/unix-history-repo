@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_usrreq.c	7.5 (Berkeley) %G%
+ *	@(#)pk_usrreq.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -263,7 +263,7 @@ register struct pklcd *lcp;
 {
 	extern int pk_send();
 
-	lcp -> lcp_downq.pq_put = pk_send;
+	lcp -> lcp_send = pk_send;
 	return (pk_output(lcp));
 }
 
@@ -486,7 +486,7 @@ register struct mbuf *m;
 	if (lcp -> lcd_so)
 		sbappendrecord (&lcp -> lcd_so -> so_snd, m0);
 	else
-		pq_appendrecord (&lcp -> lcd_downq, m0);
+		sbappendrecord (&lcp -> lcd_sb, m0);
 	lcp -> lcd_template = 0;
 	lcp -> lcd_txcnt++;
 	pk_output (lcp);

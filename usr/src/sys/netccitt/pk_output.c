@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_output.c	7.3 (Berkeley) %G%
+ *	@(#)pk_output.c	7.4 (Berkeley) %G%
  */
 
 #include "../h/param.h"
@@ -144,7 +144,7 @@ register struct pklcd *lcp;
 		pk_trace (pkp -> pk_xcp, xp, "P-Out");
 
 		/* Pass the packet on down to the link layer */
-		(*pkp -> pk_lloutput) (m, pkp -> pk_xcp);
+		(*pkp -> pk_lloutput) (m, pkp -> llnext);
 	}
 }
 
@@ -157,8 +157,9 @@ struct mbuf *
 nextpk (lcp)
 struct pklcd *lcp;
 {
-	register struct socket *so = lcp -> lcd_so;
-	register struct mbuf *m = 0, *n;
+	register struct mbuf *m, *n;
+	struct socket *so = lcp -> lcd_so;
+	register struct sockbuf *sb = & (so ? so -> so_snd : lcp -> lcd_sb);
 
 	if (lcp -> lcd_template) {
 		m = dtom (lcp -> lcd_template);
@@ -168,27 +169,13 @@ struct pklcd *lcp;
 				lcp -> lcd_reset_condition)
 			return (NULL);
 
-		if (so == 0) {
-			if ((m = lcp->lcd_downq.pq_data) == 0)
-				return (NULL);
-			lcp->lcd_downq.pq_data = m->m_nextpkt;
-			lcp->lcd_downq.pq_space += m->m_pkthdr.len;
-			m->m_nextpkt = 0;
-				return (m);
-		}
-
-		if ((m = so -> so_snd.sb_mb) == 0)
+		if ((m = sb -> sb_mb) == 0)
 			return (NULL);
 
-		n = m;
-		while (n) {
-			sbfree (&so -> so_snd, n);
-			n = n -> m_next;
-		}
-
- 		so->so_snd.sb_mb = m->m_act;
+ 		sb -> sb_mb = m -> m_nextpkt;
  		m->m_act = 0;
+		for (n = m; n; n = n -> m_next)
+			sbfree (sb, n);
 	}
-
 	return (m);
 }

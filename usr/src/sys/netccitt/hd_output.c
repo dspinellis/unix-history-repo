@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)hd_output.c	7.2 (Berkeley) %G%
+ *	@(#)hd_output.c	7.3 (Berkeley) %G%
  */
 
 #include "../h/param.h"
@@ -35,32 +35,15 @@
  *      by the input and control routines of the HDLC layer.
  */
 
-hd_output (m, xcp)
-struct x25config *xcp;
+hd_output (m, info)
 register struct mbuf *m;
+caddr_t	info;
 {
-	register struct hdcb *hdp;
-	static struct x25config *lastxcp;
-	static struct hdcb *lasthdp;
+	register struct hdcb *hdp = (struct hdcb *)info;
+	struct x25config *xcp;
 
 	if (m == NULL)
 		panic ("hd_output");
-
-	if (xcp == lastxcp)
-		hdp = lasthdp;
-	else {
-		for (hdp = hdcbhead; ; hdp = hdp->hd_next) {
-			if (hdp == 0) {
-				printf("hd_output: can't find hdcb for %X\n", xcp);
-				m_freem (m);
-				return;
-			}
-			if (hdp->hd_xcp == xcp)
-				break;
-		}
-		lastxcp = xcp;
-		lasthdp = hdp;
-	}
 
 	if (hdp->hd_state != ABM) {
 		m_freem (m);
@@ -73,21 +56,9 @@ register struct mbuf *m;
 	 * of the first mbuf in the mbuf chain.
 	 */
 
-	if (m->m_off < MMINOFF + HDHEADERLN) {
-		register struct mbuf *m0;
-
-		m0 = m_get (M_DONTWAIT, MT_DATA);
-		if (m0 == NULL) {
-			m_freem (m);
-			return;
-		}
-		m0->m_next = m;
-		m0->m_len = HDHEADERLN;
-		m = m0;
-	} else {
-		m->m_off -= HDHEADERLN;
-		m->m_len += HDHEADERLN;
-	}
+	M_PREPEND(m, M_DONTWAIT, HDHEADERLN);
+	if (m == NULL)
+		return;
 
 	hd_append (&hdp->hd_txq, m);
 	hd_start (hdp);
@@ -140,8 +111,8 @@ register struct mbuf *buf;
 int poll_bit;
 {
 	register struct Hdlc_iframe *iframe;
-	register struct ifnet *ifp = hdp->hd_ifp;
 	struct mbuf *m;
+	int s
 
 	KILL_TIMER (hdp);
 
@@ -182,10 +153,33 @@ int poll_bit;
 		printf("hdlc: out of mbufs\n");
 		return;
 	}
-	(*ifp -> if_output) (ifp, m, (struct sockaddr *)hdp->hd_xcp);
-
+	(*hdp->hd_output)(hdp, m);
 	SET_TIMER (hdp);
 }
+
+hd_ifoutput(hdp, m)
+register struct hdcb *hdp;
+register struct mbuf *m;
+{
+	/*
+	 * Queue message on interface, and start output if interface
+	 * not yet active.
+	 */
+	register struct ifnet *ifp = hdp->hdp_ifp;
+	int s = splimp();
+	if (IF_QFULL(&ifp->if_snd)) {
+		IF_DROP(&ifp->if_snd);
+		printf("%s%d: HDLC says OK to send but queue full, may hang\n",
+			ifp->if_name, ifp->if_unit);
+		m_freem(m);
+	} else {
+		IF_ENQUEUE(&ifp->if_snd, m);
+		if ((ifp->if_flags & IFF_OACTIVE) == 0)
+			(*ifp->if_start)(ifp);
+	}
+	splx(s);
+}
+
 
 /* 
  *  This routine gets control when the timer expires because we have not
