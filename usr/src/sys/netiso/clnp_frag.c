@@ -26,7 +26,7 @@ SOFTWARE.
  */
 /* $Header: /var/src/sys/netiso/RCS/clnp_frag.c,v 5.1 89/02/09 16:20:26 hagens Exp $ */
 /* $Source: /var/src/sys/netiso/RCS/clnp_frag.c,v $ */
-/*	@(#)clnp_frag.c	7.10 (Berkeley) %G% */
+/*	@(#)clnp_frag.c	7.11 (Berkeley) %G% */
 
 #ifndef lint
 static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_frag.c,v 5.1 89/02/09 16:20:26 hagens Exp $";
@@ -85,7 +85,7 @@ struct rtentry *rt;			/* route if direct ether */
 {
 	struct clnp_fixed		*clnp = mtod(m, struct clnp_fixed *);
 	int						hdr_len = (int)clnp->cnf_hdr_len;
-	int						frag_size = (ifp->if_mtu - hdr_len) & ~7;
+	int						frag_size = (SN_MTU(ifp, rt) - hdr_len) & ~7;
 
 	total_len -= hdr_len;
 	if ((clnp->cnf_type & CNF_SEG_OK) &&
