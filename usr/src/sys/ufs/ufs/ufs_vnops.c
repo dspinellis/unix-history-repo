@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	7.115 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.116 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -337,7 +337,7 @@ ufs_setattr(ap)
 	if (vap->va_atime.ts_sec != VNOVAL || vap->va_mtime.ts_sec != VNOVAL) {
 		if (cred->cr_uid != ip->i_uid &&
 		    (error = suser(cred, &p->p_acflag)) &&
-		    ((vap->va_cflags & VA_UTIMES_NULL) != 0 || 
+		    ((vap->va_vaflags & VA_UTIMES_NULL) != 0 || 
 		    (error = VOP_ACCESS(vp, VWRITE, cred, p))))
 			return (error);
 		if (vap->va_atime.ts_sec != VNOVAL)

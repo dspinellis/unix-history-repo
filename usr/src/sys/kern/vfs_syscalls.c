@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	7.103 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.104 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1449,7 +1449,7 @@ utimes(p, uap, retval)
 	if (uap->tptr == NULL) {
 		microtime(&tv[0]);
 		tv[1] = tv[0];
-		vattr.va_cflags |= VA_UTIMES_NULL;
+		vattr.va_vaflags |= VA_UTIMES_NULL;
 	} else if (error = copyin((caddr_t)uap->tptr, (caddr_t)tv, sizeof (tv)))
   		return (error);
 	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->fname, p);
