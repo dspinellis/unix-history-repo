@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_xxx.c	8.1 (Berkeley) %G%
+ *	@(#)subr_xxx.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -19,6 +19,7 @@
 /*
  * Unsupported device function (e.g. writing to read-only device).
  */
+int
 enodev()
 {
 
@@ -28,6 +29,7 @@ enodev()
 /*
  * Unconfigured device function; driver not configured.
  */
+int
 enxio()
 {
 
@@ -37,6 +39,7 @@ enxio()
 /*
  * Unsupported ioctl function.
  */
+int
 enoioctl()
 {
 
@@ -48,6 +51,7 @@ enoioctl()
  * This is used for an otherwise-reasonable operation
  * that is not supported by the current system binary.
  */
+int
 enosys()
 {
 
@@ -58,6 +62,7 @@ enosys()
  * Return error for operation not supported
  * on a specific object or file type.
  */
+int
 eopnotsupp()
 {
 
@@ -67,6 +72,7 @@ eopnotsupp()
 /*
  * Generic null operation, always returns success.
  */
+int
 nullop()
 {
 

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_prof.c	8.3 (Berkeley) %G%
+ *	@(#)subr_prof.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -12,6 +12,10 @@
 #include <sys/kernel.h>
 #include <sys/proc.h>
 #include <sys/user.h>
+
+#include <sys/mount.h>
+#include <sys/syscallargs.h>
+
 #include <machine/cpu.h>
 
 #ifdef GPROF
@@ -25,6 +29,7 @@ struct gmonparam _gmonparam = { GMON_PROF_OFF };
 
 extern char etext[];
 
+void
 kmstartup()
 {
 	char *cp;
@@ -64,6 +69,7 @@ kmstartup()
 /*
  * Return kernel profiling information.
  */
+int
 sysctl_doprof(name, namelen, oldp, oldlenp, newp, newlen, p)
 	int *name;
 	u_int namelen;
@@ -113,24 +119,24 @@ sysctl_doprof(name, namelen, oldp, oldlenp, newp, newlen, p)
  * The scale factor is a fixed point number with 16 bits of fraction, so that
  * 1.0 is represented as 0x10000.  A scale factor of 0 turns off profiling.
  */
-struct profil_args {
-	caddr_t	samples;
-	u_int	size;
-	u_int	offset;
-	u_int	scale;
-};
 /* ARGSUSED */
+int
 profil(p, uap, retval)
 	struct proc *p;
-	register struct profil_args *uap;
-	int *retval;
+	register struct profil_args /* {
+		syscallarg(caddr_t) samples;
+		syscallarg(u_int) size;
+		syscallarg(u_int) offset;
+		syscallarg(u_int) scale;
+	} */ *uap;
+	register_t *retval;
 {
 	register struct uprof *upp;
 	int s;
 
-	if (uap->scale > (1 << 16))
+	if (SCARG(uap, scale) > (1 << 16))
 		return (EINVAL);
-	if (uap->scale == 0) {
+	if (SCARG(uap, scale) == 0) {
 		stopprofclock(p);
 		return (0);
 	}
@@ -138,10 +144,10 @@ profil(p, uap, retval)
 
 	/* Block profile interrupts while changing state. */
 	s = splstatclock();
-	upp->pr_off = uap->offset;
-	upp->pr_scale = uap->scale;
-	upp->pr_base = uap->samples;
-	upp->pr_size = uap->size;
+	upp->pr_off = SCARG(uap, offset);
+	upp->pr_scale = SCARG(uap, scale);
+	upp->pr_base = SCARG(uap, samples);
+	upp->pr_size = SCARG(uap, size);
 	startprofclock(p);
 	splx(s);
 
