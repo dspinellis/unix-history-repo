@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_subr.c	7.36 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.37 (Berkeley) %G%
  */
 
 /*
@@ -231,6 +231,8 @@ getnewvnode(tag, mp, vops, vpp)
 		panic("free vnode isn't");
 	if (vq = vp->v_freef)
 		vq->v_freeb = &vfreeh;
+	else
+		vfreet = &vfreeh;
 	vfreeh = vq;
 	vp->v_freef = NULL;
 	vp->v_freeb = NULL;
