@@ -1,6 +1,6 @@
 ##
 ##	Copyright (c) 1982 Regents of the University of California
-##	@(#)instrs 4.4 %G%
+##	@(#)instrs 4.5 %G%
 ##
 ##	Robert R. Henry
 ##	University of California, Berkeley
@@ -457,7 +457,6 @@ BEGIN{
 # cvtgl		CVT TNX2	ESCD 0x4a	2  R G  W L 
 # cvtrgl	CVT TNX2	ESCD 0x4b	2  R G  W L 
 # cvtgf		CVT TNX2	ESCD 0x33	2  R G  W F 
-# cvtgd		CVT TNX2	ESCD 0x56	2  R G  W D 
 # cvtgh		CVT TNX2	ESCD 0x56	2  R G  W H 
 	 	 	
 # cvtdb		CVT TNX2	CORE 0x68	2  R D  W B 
