@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_serv.c	7.30 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.31 (Berkeley) %G%
  */
 
 /*
@@ -387,15 +387,14 @@ nfsrv_read(mrep, md, dpos, cred, xid, mrq, repstat)
 	nfsm_reply(NFSX_FATTR+NFSX_UNSIGNED);
 	nfsm_build(fp, struct nfsv2_fattr *, NFSX_FATTR);
 	nfsm_srvfillattr;
-	if (uiop->uio_resid > 0) {
-		len -= uiop->uio_resid;
-		if (len > 0) {
-			tlen = nfsm_rndup(len);
+	len -= uiop->uio_resid;
+	if (len > 0) {
+		tlen = nfsm_rndup(len);
+		if (cnt != tlen || tlen != len)
 			nfsm_adj(m3, cnt-tlen, tlen-len);
-		} else {
-			m_freem(m3);
-			m3 = (struct mbuf *)0;
-		}
+	} else {
+		m_freem(m3);
+		m3 = (struct mbuf *)0;
 	}
 	nfsm_build(p, u_long *, NFSX_UNSIGNED);
 	*p = txdr_unsigned(len);
