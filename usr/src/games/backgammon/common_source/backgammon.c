@@ -1,5 +1,13 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ */
 
-static char sccsid[] = "	backgammon.c	4.1	82/10/24	";
+#ifndef lint
+static char sccsid[] = "@(#)backgammon.c	5.1 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
 **	The game of Backgammon
