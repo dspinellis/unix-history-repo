@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwchild.c	1.1 83/07/12";
+static	char *sccsid = "@(#)wwchild.c	1.2 83/07/17";
 #endif
 
 #include "ww.h"
@@ -10,26 +10,17 @@ wwchild()
 	register struct ww *wp;
 	union wait w;
 	int pid;
-	/*
-	char buf[100];
-	*/
 
 	while ((pid = wait3(&w, WNOHANG|WUNTRACED, 0)) > 0) {
-		for (wp = _wwhead; wp; wp = wp->ww_next) {
+		for (wp = wwhead; wp; wp = wp->ww_next) {
 			if (wp->ww_pid == pid) {
 				wp->ww_state = WW_DEAD;
-				/*
-				(void) sprintf(buf, "\r\n%d: Died\r\n", pid);
-				wwputstr(buf);
-				*/
+				(void) wwprintf(curwin,
+					"\r\n%d: Died\r\n", pid);
 				break;
 			}
 		}
-		/*
-		if (wp == 0) {
-			(void) sprintf(buf, "\r\n%d: No such child\r\n", pid);
-			wwputstr(buf);
-		}
-		*/
+		if (wp == 0)
+			wwprintf(curwin, "\r\n%d: No such child\r\n", pid);
 	}
 }

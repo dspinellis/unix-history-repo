@@ -1,29 +1,33 @@
-/*	@(#)ww.h	1.1 83/07/12		*/
+/*	@(#)ww.h	1.2 83/07/17		*/
 
+#include <stdio.h>
 #include <sgtty.h>
-#include <curses.h>
+#include "window.h"
 
 struct ww {
 	int ww_state :4;
 	int ww_wstate :4;
-	int ww_touched :1;
-	WINDOW *ww_win;
+	int ww_insert :1;		/* insert mode */
+	int ww_refresh:1;		/* force refresh after \n and others */
+	Win *ww_win;
 	int ww_row;
 	int ww_col;
 	int ww_nrow;
 	int ww_ncol;
-	int ww_x;
-	int ww_y;
+	int ww_pty;
+	int ww_tty;
+	int ww_pid;
+	int ww_newrow;			/* for cursor addressing */
+	struct ww *ww_next;
+};
+
+struct ww_tty {
 	struct sgttyb ww_sgttyb;
 	struct tchars ww_tchars;
 	struct ltchars ww_ltchars;
 	int ww_lmode;
 	int ww_ldisc;
 	int ww_pgrp;
-	int ww_pty;
-	int ww_tty;
-	int ww_pid;
-	struct ww *ww_next;
 };
 
 #define WW_INITIAL	0
@@ -37,7 +41,9 @@ struct ww {
 
 struct ww *wwopen();
 
-extern struct ww *_wwhead, *_wwcurrent;
+extern struct ww *wwhead, *curwin;
+extern struct ww_tty wwoldtty, wwnewtty;
+extern int wwnwrite;
 
-#define wwputchar(c)	wwputc((c), _wwcurrent)
-#define wwputstr(s)	wwputs((s), _wwcurrent)
+#define wwputchar(c)	wwputc((c), curwin)
+#define wwputstr(s)	wwputs((s), curwin)

@@ -1,59 +1,40 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwopen.c	1.1 83/07/12";
+static	char *sccsid = "@(#)wwopen.c	1.2 83/07/17";
 #endif
 
 #include "ww.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 
-extern int _wwiflag;
-struct ww *_wwhead = 0;
-
 struct ww *
-wwopen(nrow, ncol, row, col)
+wwopen(id, nrow, ncol, row, col)
 {
-	register struct ww *w;
+	register struct ww *w = 0;
 
 	w = (struct ww *)calloc(sizeof (struct ww), 1);
 	if (w == 0)
 		goto bad;
-	if (wwgettchars(w) < 0)
-		goto bad;
 	if (wwgetpty(w) < 0)
 		goto bad;
-	if (!_wwiflag)
-		wwinit();
-	if ((w->ww_win = newwin(nrow, ncol, row, col)) == 0)
+	if (wwsettty(w->ww_pty, &wwoldtty) < 0)
 		goto bad;
+	if ((w->ww_win = Wopen(id, col, row, ncol, nrow, ncol, nrow)) == 0)
+		goto bad;
+	Woncursor(w->ww_win, 0);		/* don't show cursor */
 	w->ww_col = col;
 	w->ww_row = row;
 	w->ww_ncol = ncol;
 	w->ww_nrow = nrow;
-	w->ww_next = _wwhead;
+	w->ww_next = wwhead;
 	w->ww_state = WW_INITIAL;
-	_wwhead = w;
+	wwhead = w;
 	return w;
 bad:
-	if (w != 0)
+	if (w != 0) {
+		close(w->ww_tty);
+		close(w->ww_pty);
 		cfree((char *)w);
-	return 0;
-}
-
-wwgettchars(w)
-	register struct ww *w;
-{
-	if (ioctl(0, TIOCGETP, &w->ww_sgttyb) < 0)
-		return -1;
-	if (ioctl(0, TIOCGETC, &w->ww_tchars) < 0)
-		return -1;
-	if (ioctl(0, TIOCGLTC, &w->ww_ltchars) < 0)
-		return -1;
-	if (ioctl(0, TIOCLGET, &w->ww_lmode) < 0)
-		return -1;
-	if (ioctl(0, TIOCGETD, &w->ww_ldisc) < 0)
-		return -1;
-	if (ioctl(0, TIOCGPGRP, &w->ww_pgrp) < 0)
-		return -1;
+	}
 	return 0;
 }
 
@@ -88,18 +69,6 @@ wwgetpty(w)
 	}
 	return -1;
 good:
-	if (ioctl(w->ww_pty, TIOCSETP, &w->ww_sgttyb) < 0)
-		goto bad;
-	if (ioctl(w->ww_pty, TIOCSETC, &w->ww_tchars) < 0)
-		goto bad;
-	if (ioctl(w->ww_pty, TIOCSLTC, &w->ww_ltchars) < 0)
-		goto bad;
-	if (ioctl(w->ww_pty, TIOCLSET, &w->ww_lmode) < 0)
-		goto bad;
-	if (ioctl(w->ww_pty, TIOCSETD, &w->ww_ldisc) < 0)
-		goto bad;
-	if (ioctl(w->ww_pty, TIOCSPGRP, &w->ww_pgrp) < 0)
-		goto bad;
 	return 0;
 bad:
 	close(w->ww_pty);

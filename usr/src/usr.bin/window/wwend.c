@@ -1,10 +1,11 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwend.c	1.1 83/07/12";
+static	char *sccsid = "@(#)wwend.c	1.2 83/07/17";
 #endif
 
 #include "ww.h"
 
 wwend()
 {
-	endwin();
+	Wcleanup();
+	wwsettty(0, &wwoldtty);
 }
