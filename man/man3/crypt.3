@@ -1,0 +1,30 @@
+.pa 1
+.he 'CRYPT (III)'1/15/73'CRYPT (III)'
+.ti 0
+NAME		crypt -- password encoding
+.sp
+.ti 0
+SYNOPSIS	mov $key,r0
+.br
+jsr pc,crypt
+.sp
+.ti 0
+DESCRIPTION	On entry, r0 should point to a string of
+characters terminated by an ASCII NULL.  The routine
+performs an operation on the key which is difficult to invert
+(i.e. encrypts it) and leaves the resulting eight bytes
+of ASCII alphanumerics in a global cell called "word".
+.sp
+Login uses this result as a password.
+.sp
+.ti 0
+FILES		kept in /lib/liba.a
+.sp
+.ti 0
+SEE ALSO	passwd(I),passwd(V), login(I)
+.sp
+.ti 0
+DIAGNOSTICS	there are none; garbage is accepted.
+.sp
+.ti 0
+BUGS		--
