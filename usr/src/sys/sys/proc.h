@@ -1,4 +1,4 @@
-/*	proc.h	4.5	81/02/27	*/
+/*	proc.h	4.6	81/03/09	*/
 
 /*
  * One structure allocated per active
@@ -60,8 +60,8 @@ struct	proc *pfind();
 #endif
 
 #ifdef	KERNEL
-extern	struct proc *proc, *procNPROC;	/* the proc table itself */
-extern	int nproc;
+struct	proc *proc, *procNPROC;	/* the proc table itself */
+int	nproc;
 
 #define	NQS	32		/* 32 run queues */
 struct	prochd {

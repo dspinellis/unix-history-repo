@@ -1,8 +1,7 @@
-/*	tm.c	4.24	%G%	*/
+/*	tm.c	4.25	%G%	*/
 
 #include "te.h"
 #if NTM > 0
-int	tmgapsdcnt;		/* DEBUG */
 /*
  * TM11/TE10 tape driver
  *
@@ -94,11 +93,14 @@ struct	te_softc {
 	u_short	sc_erreg;	/* copy of last erreg */
 	u_short	sc_dsreg;	/* copy of last dsreg */
 	short	sc_resid;	/* copy of last bc */
-#ifdef notdef
+#ifdef unneeded
 	short	sc_lastcmd;	/* last command to handle direction changes */
 #endif
 	u_short	sc_dens;	/* prototype command with density info */
 } te_softc[NTM];
+#ifdef unneeded
+int	tmgapsdcnt;		/* DEBUG */
+#endif
 
 /*
  * States for um->um_tab.b_active, the per controller state flag.
@@ -120,7 +122,7 @@ tmprobe(reg)
 	register int br, cvec;		/* must be r11,r10; value-result */
 
 #ifdef lint
-	br = 0; br = cvec; cvec = br;
+	br = 0; cvec = br; br = cvec;
 #endif
 	((struct device *)reg)->tmcs = TM_IE;
 	/*
@@ -135,7 +137,7 @@ tmprobe(reg)
 	 * a uba error for a ts; but our caller will notice that
 	 * so we won't check for it.
 	 */
-	if (badaddr(&((struct device *)reg)->tmrd, 2))
+	if (badaddr((caddr_t)&((struct device *)reg)->tmrd, 2))
 		return (0);
 	return (1);
 }
@@ -294,7 +296,6 @@ tmstrategy(bp)
 	int teunit = TEUNIT(bp->b_dev);
 	register struct uba_ctlr *um;
 	register struct buf *dp;
-	register struct te_softc *sc = &te_softc[teunit];
 
 	/*
 	 * Put transfer at end of unit queue
@@ -438,7 +439,7 @@ loop:
 				tmgapsdcnt++;
 		sc->sc_lastcmd = TM_RCOM;		/* will serve */
 #endif
-		ubago(ui);
+		(void) ubago(ui);
 		return;
 	}
 	/*

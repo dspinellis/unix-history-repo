@@ -1,4 +1,4 @@
-/*	file.h	4.4	81/02/27	*/
+/*	file.h	4.5	81/03/09	*/
 
 /*
  * One file structure is allocated
@@ -19,8 +19,8 @@ struct	file
 };
 
 #ifdef	KERNEL
-extern	struct file *file, *fileNFILE;	/* the file table itself */
-extern	int nfile;
+struct	file *file, *fileNFILE;	/* the file table itself */
+int	nfile;
 
 struct	file *getf();
 struct	file *falloc();

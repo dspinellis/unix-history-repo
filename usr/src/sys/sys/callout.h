@@ -1,4 +1,4 @@
-/*	callout.h	4.4	81/02/27	*/
+/*	callout.h	4.5	81/03/09	*/
 
 /*
  * The callout structure is for
@@ -17,6 +17,6 @@ struct	callout
 	int	(*c_func)();	/* routine */
 };
 #ifdef KERNEL
-extern	struct callout *callout;
-extern	int ncallout;
+struct	callout *callout;
+int	ncallout;
 #endif

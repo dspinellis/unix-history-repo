@@ -1,4 +1,4 @@
-/*	cons.c	4.5	%G%	*/
+/*	cons.c	4.6	%G%	*/
 
 /*
  * Vax console driver and floppy interface
@@ -16,18 +16,6 @@
 #include "../h/mtpr.h"
 #include "../h/mx.h"
 #include "../h/cpu.h"
-
-/*
- * When running dz's using only SAE (silo alarm) on input
- * it is necessary to call dzrint() at clock interrupt time.
- * This is unsafe unless spl5()s in tty code are changed to
- * spl6()s to block clock interrupts.  Note that the dh driver
- * currently in use works the same way as the dz, even though
- * we could try to more intelligently manage its silo.
- * Thus don't take this out if you have no dz's unless you
- * change clock.c and dhtimer().
- */
-#define	spl5	spl6
 
 #define	NL1	000400
 #define	NL2	001000
@@ -154,7 +142,7 @@ dev_t dev;
 	else
 		cnstart(tp);
 #if VAX780
-	if (vax==VAX_780 && (tp->t_state & BUSY) == 0)
+	if (cpu==VAX_780 && (tp->t_state & BUSY) == 0)
 		conxfl();
 #endif
 }

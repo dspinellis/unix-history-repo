@@ -1,4 +1,4 @@
-/*	autoconf.c	4.24	81/03/08	*/
+/*	autoconf.c	4.25	81/03/09	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -117,7 +117,7 @@ configure()
 {
 	union cpusid cpusid;
 	register struct percpu *ocp;
-	register int i, *ip;
+	register int *ip;
 	extern char Sysbase[];
 
 	cpusid.cpusid = mfpr(SID);
@@ -150,17 +150,17 @@ configure()
  * at the things (mbas and ubas) in the nexus slots
  * and initialzing each appropriately.
  */
+/*ARGSUSED*/
 c780(pcpu)
 	register struct percpu *pcpu;
 {
 	register struct nexus *nxv;
-	register struct uba_hd *uhp;
 	struct nexus *nxp = NEX780;
 	union nexcsr nexcsr;
 	int i, ubawatch();
 	
 	for (nexnum = 0,nxv = nexus; nexnum < NNEX780; nexnum++,nxp++,nxv++) {
-		nxaccess((caddr_t)nxp, Nexmap[nexnum]);
+		nxaccess(nxp, Nexmap[nexnum]);
 		if (badaddr((caddr_t)nxv, 4))
 			continue;
 		nexcsr = nxv->nexcsr;
@@ -172,7 +172,7 @@ c780(pcpu)
 			printf("mba%d at tr%d\n", nummba, nexnum);
 			if (nummba >= NMBA) {
 				printf("%d mba's", nummba);
-				goto notconfig;
+				goto unconfig;
 			}
 #if NMBA > 0
 			mbafind(nxv, nxp);
@@ -189,7 +189,7 @@ c780(pcpu)
 				printf("5 uba's");
 				goto unsupp;
 			}
-			setscbnex(nexnum, ubaintv[numuba]);
+			setscbnex(ubaintv[numuba]);
 			i = nexcsr.nex_type - NEX_UBA0;
 			unifind((struct uba_regs *)nxv, (struct uba_regs *)nxp,
 			    umem[i], umaddr780[i]);
@@ -232,7 +232,7 @@ unconfig:
 			continue;
 		}
 	}
-	timeout(ubawatch, 0, hz);
+	timeout(ubawatch, (caddr_t)0, hz);
 }
 #endif
 
@@ -248,10 +248,10 @@ c750(pcpu)
 	struct nexus *nxp = NEX750;
 
 	printf("mcr at %x\n", MCR_750);
-	nxaccess((caddr_t)MCR_750, Nexmap[nexnum]);
+	nxaccess((struct nexus *)MCR_750, Nexmap[nexnum]);
 	mcraddr[nmcr++] = (struct mcr *)nxv;
 	for (nexnum = 0; nexnum < NNEX750; nexnum++, nxp++, nxv++) {
-		nxaccess((caddr_t)nxp, Nexmap[nexnum]);
+		nxaccess(nxp, Nexmap[nexnum]);
 		if (badaddr((caddr_t)nxv, 4))
 			continue;
 		printf("mba%d at %x\n", nummba, nxp);
@@ -265,7 +265,7 @@ c750(pcpu)
 #endif
 	}
 	printf("uba at %x\n", nxp);
-	nxaccess((caddr_t)nxp, Nexmap[nexnum++]);
+	nxaccess(nxp, Nexmap[nexnum++]);
 	unifind((struct uba_regs *)nxv, (struct uba_regs *)nxp,
 	    umem[0], UMEM750);
 	numuba = 1;
@@ -286,13 +286,13 @@ mbafind(nxv, nxp)
 	register struct mba_drv *mbd;
 	register struct mba_device *mi;
 	register struct mba_slave *ms;
-	int dn, dt, sn, ds;
-	struct mba_device	fnd;
+	int dn, dt;
+	struct mba_device fnd;
 
 	mdp = (struct mba_regs *)nxv;
 	mba_hd[nummba].mh_mba = mdp;
 	mba_hd[nummba].mh_physmba = (struct mba_regs *)nxp;
-	setscbnex(nexnum, mbaintv[nummba]);
+	setscbnex(mbaintv[nummba]);
 	fnd.mi_mba = mdp;
 	fnd.mi_mbanum = nummba;
 	for (mbd = mdp->mba_drv, dn = 0; mbd < &mdp->mba_drv[8]; mbd++, dn++) {
@@ -327,8 +327,8 @@ mbafind(nxv, nxp)
 			}
 		}
 	}
-	mdp->mba_cr = MBAINIT;
-	mdp->mba_cr = MBAIE;
+	mdp->mba_cr = MBCR_INIT;
+	mdp->mba_cr = MBCR_IE;
 }
 
 /*
@@ -410,10 +410,19 @@ unifind(vubp, pubp, vumem, pumem)
 	struct uba_regs *vubp, *pubp;
 	caddr_t vumem, pumem;
 {
+#ifndef lint
 	register int br, cvec;			/* MUST BE r11, r10 */
+#else
+	/*
+	 * Lint doesn't realize that these
+	 * can be initialized asynchronously
+	 * when devices interrupt.
+	 */
+	register int br = 0, cvec = 0;
+#endif
 	register struct uba_device *ui;
 	register struct uba_ctlr *um;
-	u_short *umem = (u_short *)vumem, *sp, *reg, addr;
+	u_short *reg, addr;
 	struct uba_hd *uhp;
 	struct uba_driver *udp;
 	int i, (**ivec)(), haveubasr = 0;
@@ -453,6 +462,7 @@ unifind(vubp, pubp, vumem, pumem)
 	for (i = 0; i < 128; i++)
 		uhp->uh_vec[i] =
 		    scbentry(&catcher[i*2], SCB_ISTACK);
+	/* THIS IS A CHEAT: USING THE FACT THAT UMEM and NEXI ARE SAME SIZE */
 	nxaccess((struct nexus *)pumem, UMEMmap[numuba]);
 #if VAX780
 	if (haveubasr) {
@@ -600,8 +610,8 @@ unifind(vubp, pubp, vumem, pumem)
 	}
 }
 
-setscbnex(nexnum, fn)
-	int nexnum, (*fn)();
+setscbnex(fn)
+	int (*fn)();
 {
 	register struct scb *scbp = &scb;
 
@@ -619,14 +629,14 @@ setscbnex(nexnum, fn)
  * PRESENT NEXI DONT RESPOND TO ALL OF THEIR ADDRESS SPACE.
  */
 nxaccess(physa, pte)
-	caddr_t physa;
+	struct nexus *physa;
 	register struct pte *pte;
 {
-	register int cnt = btop(sizeof (struct nexus));
+	register int i = btop(sizeof (struct nexus));
 	register unsigned v = btop(physa);
 	
 	do
 		*(int *)pte++ = PG_V|PG_KW|v++;
-	while (--cnt > 0);
+	while (--i > 0);
 	mtpr(TBIA, 0);
 }

@@ -1,4 +1,4 @@
-/*	ht.c	4.9	81/03/08	*/
+/*	ht.c	4.10	81/03/09	*/
 
 #include "tu.h"
 #if NHT > 0
@@ -39,7 +39,7 @@ struct	buf	chtbuf[NHT];
 short	httypes[] =
 	{ MBDT_TE16, MBDT_TU45, MBDT_TU77, 0 };
 struct	mba_device *htinfo[NHT];
-int	htdkinit(), htattach(), htslave(), htustart(), htndtint(), htdtint();
+int	htattach(), htslave(), htustart(), htndtint(), htdtint();
 struct	mba_driver htdriver =
     { htattach, htslave, htustart, 0, htdtint, htndtint,
       httypes, "ht", "tu", htinfo };
@@ -522,6 +522,7 @@ htdump()
 	htaddr->htcs1 = HT_REW|HT_GO;
 	hteof(htaddr);
 	hteof(htaddr);
+	return (0);
 }
 
 htdwrite(dbuf, num, htaddr, mp)

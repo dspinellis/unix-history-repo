@@ -1,8 +1,7 @@
-/*	dz.c	4.21	%G%	*/
+/*	dz.c	4.22	%G%	*/
 
 #include "dz.h"
 #if NDZ > 0
-#define	DELAY(i)	{ register int j = i; while (--j > 0); }
 /*
  *  DZ-11 Driver
  *
@@ -107,7 +106,7 @@ dzprobe(reg)
 	register struct device *dzaddr = (struct device *)reg;
 
 #ifdef lint
-	br = 0; br = cvec; cvec = br;
+	br = 0; cvec = br; br = cvec;
 #endif
 	dzaddr->dzcsr = DZ_TIE|DZ_MSE;
 	dzaddr->dztcr = 1;		/* enable any line */

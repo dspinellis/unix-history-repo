@@ -1,4 +1,4 @@
-/*	pte.h	4.7	81/02/27	*/
+/*	pte.h	4.8	81/03/09	*/
 
 /*
  * VAX page table entry
@@ -77,8 +77,6 @@ extern	struct pte Xswap2map[];
 extern	struct pte Pushmap[];
 extern	struct pte Vfmap[];
 extern	struct pte mmap[];
-extern	struct pte mcrmap[];
-extern	struct pte bufmap[];
 extern	struct pte msgbufmap[];
 extern	struct pte camap[];
 extern	struct pte Nexmap[][16];

@@ -1,4 +1,4 @@
-/*	conf.h	4.5	81/02/19	*/
+/*	conf.h	4.6	81/03/09	*/
 
 /*
  * Declaration of block device
@@ -9,19 +9,22 @@
  * device switches is in the
  * file conf.c.
  */
-extern struct bdevsw
+struct bdevsw
 {
 	int	(*d_open)();
 	int	(*d_close)();
 	int	(*d_strategy)();
 	int	(*d_dump)();
 	int	d_flags;
-} bdevsw[];
+};
+#ifdef KERNEL
+struct	bdevsw bdevsw[];
+#endif
 
 /*
  * Character device switch.
  */
-extern struct cdevsw
+struct cdevsw
 {
 	int	(*d_open)();
 	int	(*d_close)();
@@ -31,12 +34,15 @@ extern struct cdevsw
 	int	(*d_stop)();
 	int	(*d_reset)();
 	struct tty *d_ttys;
-} cdevsw[];
+};
+#ifdef KERNEL
+struct	cdevsw cdevsw[];
+#endif
 
 /*
  * tty line control switch.
  */
-extern struct linesw
+struct linesw
 {
 	int	(*l_open)();
 	int	(*l_close)();
@@ -48,17 +54,19 @@ extern struct linesw
 	int	(*l_meta)();
 	int	(*l_start)();
 	int	(*l_modem)();
-} linesw[];
+};
+#ifdef KERNEL
+struct	linesw linesw[];
+#endif
 
 /*
  * Swap device information
  */
-extern struct swdevt
+struct swdevt
 {
 	dev_t	sw_dev;
 	int	sw_freed;
 } swdevt[];
-
-#ifdef	CHAOS
-extern int cdevpath;
+#ifdef KERNEL
+struct	swdevt swdevt[];
 #endif

@@ -1,4 +1,4 @@
-/*	buf.h	4.11	81/02/27	*/
+/*	buf.h	4.12	81/03/09	*/
 
 /*
  * The header for buffers in the buffer pool and otherwise used
@@ -62,16 +62,16 @@ struct buf
 #define	BQ_AGE		2		/* rubbish */
 
 #ifdef	KERNEL
-extern	struct buf *buf;		/* the buffer pool itself */
-extern	char *buffers;
-extern	int nbuf;
-extern	struct buf *swbuf;		/* swap I/O headers */
-extern	int nswbuf;
-extern	short *swsize;
-extern	int *swpf;
-extern	struct buf bfreelist[BQUEUES];	/* heads of available lists */
-extern	struct buf bswlist;		/* head of free swap header list */
-extern	struct buf *bclnlist;		/* head of cleaned page list */
+struct	buf *buf;		/* the buffer pool itself */
+char	*buffers;
+int	nbuf;
+struct	buf *swbuf;		/* swap I/O headers */
+int	nswbuf;
+short	*swsize;
+int	*swpf;
+struct	buf bfreelist[BQUEUES];	/* heads of available lists */
+struct	buf bswlist;		/* head of free swap header list */
+struct	buf *bclnlist;		/* head of cleaned page list */
 
 struct	buf *alloc();
 struct	buf *baddr();

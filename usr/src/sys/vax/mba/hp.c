@@ -1,4 +1,4 @@
-/*	hp.c	4.25	81/03/08	*/
+/*	hp.c	4.26	81/03/09	*/
 
 #include "hp.h"
 #if NHP > 0
@@ -172,7 +172,7 @@ hpustart(mi)
 	register struct buf *bp = mi->mi_tab.b_actf;
 	register struct hpst *st;
 	daddr_t bn;
-	int sn, dist, flags;
+	int sn, dist;
 
 	if ((hpaddr->hpcs1&HP_DVA) == 0)
 		return (MBU_BUSY);
@@ -225,33 +225,31 @@ hpstart(mi)
 	hpaddr->hpda = (tn << 8) + sn;
 }
 
-hpdtint(mi, mbasr)
+hpdtint(mi, mbsr)
 	register struct mba_device *mi;
-	int mbasr;
+	int mbsr;
 {
 	register struct hpdevice *hpaddr = (struct hpdevice *)mi->mi_drv;
 	register struct buf *bp = mi->mi_tab.b_actf;
 	int retry = 0;
 
-	if (hpaddr->hpds&HPDS_ERR || mbasr&MBAEBITS) {
+	if (hpaddr->hpds&HPDS_ERR || mbsr&MBSR_EBITS) {
 		if (hpaddr->hper1&HPER1_WLE) {
 			printf("hp%d: write locked\n", dkunit(bp));
 			bp->b_flags |= B_ERROR;
 		} else if (++mi->mi_tab.b_errcnt > 27 ||
-		    mbasr & MBASR_HARD ||
+		    mbsr & MBSR_HARD ||
 		    hpaddr->hper1 & HPER1_HARD ||
 		    hpaddr->hper2 & HPER2_HARD) {
 			harderr(bp, "hp");
-			printf("mbasr=%b er1=%b er2=%b\n",
-			    mbasr, mbasr_bits,
+			printf("mbsr=%b er1=%b er2=%b\n",
+			    mbsr, mbsr_bits,
 			    hpaddr->hper1, HPER1_BITS,
 			    hpaddr->hper2, HPER2_BITS);
 			bp->b_flags |= B_ERROR;
-#ifdef notdef
 		} else if (hpaddr->hper2&HPER2_SSE) {
 			hpecc(mi, 1);
 			return (MBD_RESTARTED);
-#endif
 		} else if ((hpaddr->hper1&(HPER1_DCK|HPER1_ECH))==HPER1_DCK) {
 			if (hpecc(mi, 0))
 				return (MBD_RESTARTED);
@@ -324,6 +322,7 @@ hpwrite(dev)
 		physio(hpstrategy, &rhpbuf[unit], dev, B_WRITE, minphys);
 }
 
+/*ARGSUSED*/
 hpecc(mi, rm80sse)
 	register struct mba_device *mi;
 	int rm80sse;
@@ -344,13 +343,11 @@ hpecc(mi, rm80sse)
 		bcr |= 0xffff0000;		/* sxt */
 	npf = btop(bcr + bp->b_bcount) - 1;
 	reg = npf;
-#ifdef notdef
 	if (rm80sse) {
 		rp->hpof |= HPOF_SSEI;
-		reg--;		/* compensate in advance for reg-- below */
+		reg--;		/* compensate in advance for reg+1 below */
 		goto sse;
 	}
-#endif
 	o = (int)bp->b_un.b_addr & PGOFSET;
 	printf("hp%d%c: soft ecc sn%d\n", dkunit(bp),
 	    'a'+(minor(bp->b_dev)&07), bp->b_blkno + npf);
@@ -421,7 +418,7 @@ hpdump(dev)
 	if (mi == 0 || mi->mi_alive == 0)
 		return (ENXIO);
 	mba = phys(mi->mi_hd, struct mba_hd *)->mh_physmba;
-	mba->mba_cr = MBAINIT;
+	mba->mba_cr = MBCR_INIT;
 	hpaddr = (struct hpdevice *)&mba->mba_drv[mi->mi_drive];
 	if ((hpaddr->hpds & HPDS_VV) == 0) {
 		hpaddr->hpcs1 = HP_DCLR|HP_GO;

@@ -1,4 +1,4 @@
-/*	tmreg.h	4.4	81/02/25	*/
+/*	tmreg.h	4.5	81/03/09	*/
 
 /*
  * TM11 controller registers
@@ -38,26 +38,26 @@ struct device {
 #define	TM_ERR		0100000		/* drive error summary */
 
 /* bits in tmer */
-#define	TM_TUR		0000001		/* tape unit ready */
-#define	TM_RWS		0000002		/* tape unit rewinding */
-#define	TM_WRL		0000004		/* tape unit write protected */
-#define	TM_SDWN		0000010		/* gap settling down */
-#define	TM_CH7		0000020		/* 7 channel tape */
-#define	TM_BOT		0000040		/* at beginning of tape */
-#define	TM_SELR		0000100		/* tape unit properly selected */
-#define	TM_NXM		0000200		/* non-existant memory */
-#define	TM_BTE		0000400		/* bad tape error */
-#define	TM_RLE		0001000		/* record length error */
-#define	TM_EOT		0002000		/* at end of tape */
-#define	TM_BGL		0004000		/* bus grant late */
-#define	TM_PAE		0010000		/* parity error */
-#define	TM_CRE		0020000		/* cyclic redundancy error */
-#define	TM_EOF		0040000		/* end of file */
-#define	TM_ILC		0100000		/* illegal command */
+#define	TMER_ILC	0100000		/* illegal command */
+#define	TMER_EOF	0040000		/* end of file */
+#define	TMER_CRE	0020000		/* cyclic redundancy error */
+#define	TMER_PAE	0010000		/* parity error */
+#define	TMER_BGL	0004000		/* bus grant late */
+#define	TMER_EOT	0002000		/* at end of tape */
+#define	TMER_RLE	0001000		/* record length error */
+#define	TMER_BTE	0000400		/* bad tape error */
+#define	TMER_NXM	0000200		/* non-existant memory */
+#define	TMER_SELR	0000100		/* tape unit properly selected */
+#define	TMER_BOT	0000040		/* at beginning of tape */
+#define	TMER_CH7	0000020		/* 7 channel tape */
+#define	TMER_SDWN	0000010		/* gap settling down */
+#define	TMER_WRL	0000004		/* tape unit write protected */
+#define	TMER_RWS	0000002		/* tape unit rewinding */
+#define	TMER_TUR	0000001		/* tape unit ready */
 
-#define	TMEREG_BITS	\
+#define	TMER_BITS	\
 "\10\20ILC\17EOF\16CRE\15PAE\14BGL\13EOT\12RLE\11BTE\10NXM\
 \7SELR\6BOT\5CH7\4SDWN\3WRL\2RWS\1TUR"
 
-#define	TM_HARD		(TM_ILC|TM_EOT)
-#define	TM_SOFT		(TM_CRE|TM_PAE|TM_BGL|TM_RLE|TM_BTE|TM_NXM)
+#define	TMER_HARD	(TMER_ILC|TMER_EOT)
+#define	TMER_SOFT	(TMER_CRE|TMER_PAE|TMER_BGL|TMER_RLE|TMER_BTE|TMER_NXM)

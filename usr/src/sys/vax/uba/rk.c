@@ -1,9 +1,9 @@
-/*	rk.c	4.24	%G%	*/
+/*	rk.c	4.25	%G%	*/
 
-int	rkpip;
-int	rknosval;
 #include "rk.h"
 #if NHK > 0
+int	rkpip;		/* DEBUG */
+int	rknosval;	/* DEBUG */
 /*
  * RK11/RK07 disk driver
  *
@@ -14,7 +14,6 @@ int	rknosval;
  *	Add bad sector forwarding code
  *	Why do we lose an interrupt sometime when spinning drives down?
  */
-#define	DELAY(i)		{ register int j; j = i; while (--j > 0); }
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/buf.h"
@@ -182,9 +181,6 @@ rkustart(ui)
 	register struct buf *bp, *dp;
 	register struct uba_ctlr *um;
 	register struct rkdevice *rkaddr;
-	register struct rkst *st;
-	daddr_t bn;
-	int sn, csn;
 	int didie = 0;
 
 	if (ui == 0)
@@ -309,7 +305,7 @@ nosval:
 	else
 		cmd = RK_CDT|RK_IE|RK_WRITE|RK_GO;
 	um->um_cmd = cmd;
-	ubago(ui);
+	(void) ubago(ui);
 	return (1);
 }
 

@@ -1,4 +1,4 @@
-/*	hpreg.h	4.4	81/02/25	*/
+/*	hpreg.h	4.5	81/03/09	*/
 
 struct hpdevice
 {
@@ -52,72 +52,74 @@ struct hpdevice
 #define	HP_RTRACKD	074		/* read track descriptor */
 	
 /* hpds */
-#define	HP_ATA		0100000		/* attention active */
-#define	HP_ERR		0040000		/* composite drive error */
-#define	HP_PIP		0020000		/* positioning in progress */
-#define	HP_MOL		0010000		/* medium on line */
-#define	HP_WRL		0004000		/* write locked */
-#define	HP_LST		0002000		/* last sector transferred */
-#define	HP_PGM		0001000		/* programmable */
-#define	HP_DPR		0000400		/* drive present */
-#define	HP_DRY		0000200		/* drive ready */
-#define	HP_VV		0000100		/* volume valid */
+#define	HPDS_ATA	0100000		/* attention active */
+#define	HPDS_ERR	0040000		/* composite drive error */
+#define	HPDS_PIP	0020000		/* positioning in progress */
+#define	HPDS_MOL	0010000		/* medium on line */
+#define	HPDS_WRL	0004000		/* write locked */
+#define	HPDS_LST	0002000		/* last sector transferred */
+#define	HPDS_PGM	0001000		/* programmable */
+#define	HPDS_DPR	0000400		/* drive present */
+#define	HPDS_DRY	0000200		/* drive ready */
+#define	HPDS_VV		0000100		/* volume valid */
 /* bits 1-5 are spare */
-#define	HP_OM		0000001		/* offset mode */
+#define	HPDS_OM		0000001		/* offset mode */
 
-#define	HP_DREADY	(HP_DPR|HP_DRY|HP_MOL|HP_VV)
+#define	HPDS_DREADY	(HPDS_DPR|HPDS_DRY|HPDS_MOL|HPDS_VV)
 #define	HPDS_BITS \
 "\10\20ATA\17ERR\16PIP\15MOL\14WRL\13LST\12PGM\11DPR\10DRY\7VV\1OM"
 
 /* hper1 */
-#define	HP_DCK		0100000		/* data check */
-#define	HP_UNS		0040000		/* drive unsafe */
-#define	HP_OPI		0020000		/* operation incomplete */
-#define	HP_DTE		0010000		/* drive timing error */
-#define	HP_WLE		0004000		/* write lock error */
-#define	HP_IAE		0002000		/* invalid address error */
-#define	HP_AOE		0001000		/* address overflow error */
-#define	HP_HCRC		0000400		/* header crc error */
-#define	HP_HCE		0000200		/* header compare error */
-#define	HP_ECH		0000100		/* ecc hard error */
-#define HP_WCF		0000040		/* write clock fail */
-#define	HP_FER		0000020		/* format error */
-#define	HP_PAR		0000010		/* parity error */
-#define	HP_RMR		0000004		/* register modification refused */
-#define	HP_ILR		0000002		/* illegal register */
-#define	HP_ILF		0000001		/* illegal function */
+#define	HPER1_DCK	0100000		/* data check */
+#define	HPER1_UNS	0040000		/* drive unsafe */
+#define	HPER1_OPI	0020000		/* operation incomplete */
+#define	HPER1_DTE	0010000		/* drive timing error */
+#define	HPER1_WLE	0004000		/* write lock error */
+#define	HPER1_IAE	0002000		/* invalid address error */
+#define	HPER1_AOE	0001000		/* address overflow error */
+#define	HPER1_HCRC	0000400		/* header crc error */
+#define	HPER1_HCE	0000200		/* header compare error */
+#define	HPER1_ECH	0000100		/* ecc hard error */
+#define HPER1_WCF	0000040		/* write clock fail */
+#define	HPER1_FER	0000020		/* format error */
+#define	HPER1_PAR	0000010		/* parity error */
+#define	HPER1_RMR	0000004		/* register modification refused */
+#define	HPER1_ILR	0000002		/* illegal register */
+#define	HPER1_ILF	0000001		/* illegal function */
 
 #define	HPER1_BITS \
 "\10\20DCK\17UNS\16OPI\15DTE\14WLE\13IAE\12AOE\11HCRC\10HCE\
 \7ECH\6WCF\5FER\4PAR\3RMR\2ILR\1ILF"
-/* THIS NEEDS TO BE DOUBLE CHECKED... */
-#define	HPER1_HARD    (HP_UNS|HP_WLE|HP_IAE|HP_AOE|HP_FER|HP_RMR|HP_ILR|HP_ILF)
+#define	HPER1_HARD    \
+	(HPER1_UNS|HPER1_WLE|HPER1_IAE|HPER1_AOE|\
+	 HPER1_FER|HPER1_RMR|HPER1_ILR|HPER1_ILF)
 
 /* hper2 */
-#define	HP_BSE		0100000		/* bad sector error */
-#define	HP_SKI		0040000		/* seek incomplete */
-#define	HP_OPE		0020000		/* operator plug error */
-#define	HP_IVC		0010000		/* invalid command */
-#define	HP_LSC		0004000		/* loss of system clock */
-#define	HP_LBC		0002000		/* loss of bit check */
-#define	HP_DVC		0000200		/* device check */
-#define	HP_DPE		0000010		/* data parity error */
+#define	HPER2_BSE	0100000		/* bad sector error */
+#define	HPER2_SKI	0040000		/* seek incomplete */
+#define	HPER2_OPE	0020000		/* operator plug error */
+#define	HPER2_IVC	0010000		/* invalid command */
+#define	HPER2_LSC	0004000		/* loss of system clock */
+#define	HPER2_LBC	0002000		/* loss of bit check */
+#define	HPER2_DVC	0000200		/* device check */
+#define	HPER2_SSE	0000020		/* skip sector error (rm80) */
+#define	HPER2_DPE	0000010		/* data parity error */
 
 #define	HPER2_BITS \
-"\10\20BSE\17SKI\16OPE\15IVC\14LSC\13LBC\10DVC\4DPE"
-#define	HPER2_HARD    (HP_BSE|HP_OPE)
+"\10\20BSE\17SKI\16OPE\15IVC\14LSC\13LBC\10DVC\5SSE\4DPE"
+#define	HPER2_HARD    (HPER2_BSE|HPER2_OPE)
 
 /* hpof */
-#define	HP_CMO		0100000		/* command modifier */
-#define	HP_MTD		0040000		/* move track descriptor */
-#define	HP_FMT22	0010000		/* 16 bit format */
-#define	HP_ECI		0004000		/* ecc inhibit */
-#define	HP_HCI		0002000		/* header compare inhibit */
-#define	HP_SSEI		0001000		/* skip sector inhibit */
+#define	HPOF_CMO	0100000		/* command modifier */
+#define	HPOF_MTD	0040000		/* move track descriptor */
+#define	HPOF_FMT22	0010000		/* 16 bit format */
+#define	HPOF_ECI	0004000		/* ecc inhibit */
+#define	HPOF_HCI	0002000		/* header compare inhibit */
+#define	HPOF_SSEI	0001000		/* skip sector inhibit */
 
-#define	HP_P400		020		/*  +400 uinches */
-#define	HP_M400		0220		/*  -400 uinches */
-#define	HP_P800		040		/*  +800 uinches */
-#define	HP_M800		0240		/*  -800 uinches */
-#define	HP_P1200	060		/* +1200 uinches */
-#define	HP_M1200	0260		/* -1200 uinches */
+#define	HPOF_P400	020		/*  +400 uinches */
+#define	HPOF_M400	0220		/*  -400 uinches */
+#define	HPOF_P800	040		/*  +800 uinches */
+#define	HPOF_M800	0240		/*  -800 uinches */
+#define	HPOF_P1200	060		/* +1200 uinches */
+#define	HPOF_M1200	0260		/* -1200 uinches */

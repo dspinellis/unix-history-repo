@@ -1,4 +1,4 @@
-/*	conf.c	4.24	%G%	*/
+/*	conf.c	4.25	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -30,14 +30,15 @@ int	hpstrategy(),hpread(),hpwrite(),hpintr(),hpdump();
  
 #include "tu.h"
 #if NHT > 0
-int	htopen(),htclose(),htstrategy(),htread(),htwrite(),htdump();
+int	htopen(),htclose(),htstrategy(),htread(),htwrite(),htdump(),htioctl();
 #else
 #define	htopen		nodev
 #define	htclose		nodev
 #define	htstrategy	nodev
 #define	htread		nodev
 #define	htwrite		nodev
-#define	htdump		0
+#define	htdump		nodev
+#define	htioctl		nodev
 #endif
 
 #include "rk.h"
@@ -54,7 +55,8 @@ int	rkstrategy(),rkread(),rkwrite(),rkintr(),rkdump(),rkreset();
 
 #include "te.h"
 #if NTM > 0
-int	tmopen(),tmclose(),tmstrategy(),tmread(),tmwrite(),tmioctl(),tmdump();
+int	tmopen(),tmclose(),tmstrategy(),tmread(),tmwrite();
+int	tmioctl(),tmdump(),tmreset();
 #else
 #define	tmopen		nodev
 #define	tmclose		nodev
@@ -63,6 +65,7 @@ int	tmopen(),tmclose(),tmstrategy(),tmread(),tmwrite(),tmioctl(),tmdump();
 #define	tmwrite		nodev
 #define	tmioctl		nodev
 #define	tmdump		nodev
+#define	tmreset		nodev
 #endif
 
 #define	tsopen		nodev
@@ -215,7 +218,7 @@ struct cdevsw	cdevsw[] =
 	nulldev,	nulldev,	hpread,		hpwrite,	/*4*/
 	nodev,		nodev,		nulldev,	0,
 	htopen,		htclose,	htread,		htwrite,	/*5*/
-	nodev,		nodev,		nulldev,	0,
+	htioctl,	nodev,		nulldev,	0,
 	vpopen,		vpclose,	nodev,		vpwrite,	/*6*/
 	vpioctl,	nulldev,	vpreset,	0,
 	nulldev,	nulldev,	swread,		swwrite,	/*7*/
@@ -238,7 +241,7 @@ struct cdevsw	cdevsw[] =
 	nulldev,	nulldev,	upread,		upwrite,	/*13*/
 	nodev,		nodev,		upreset,	0,
 	tmopen,		tmclose,	tmread,		tmwrite,	/*14*/
-	tmioctl,	nodev,		nulldev,	0,
+	tmioctl,	nodev,		tmreset,	0,
 	lpopen,		lpclose,	nodev,		lpwrite,	/*15*/
 	lpioctl,	nodev,		lpreset,	0,
 	tsopen,		tsclose,	tsread,		tswrite,	/*16*/
