@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	5.27	(Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	5.27.1.1	(Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -71,7 +71,6 @@ extern	FILE *ftpd_popen(), *fopen(), *freopen();
 extern	int  ftpd_pclose(), fclose();
 extern	char *getline();
 extern	char cbuf[];
-extern	off_t restart_point;
 
 struct	sockaddr_in ctrl_addr;
 struct	sockaddr_in data_source;
@@ -520,25 +519,6 @@ retrieve(cmd, name)
 		reply(550, "%s: not a plain file.", name);
 		goto done;
 	}
-	if (restart_point) {
-		if (type == TYPE_A) {
-			register int i, n, c;
-
-			n = restart_point;
-			i = 0;
-			while (i++ < n) {
-				if ((c=getc(fin)) == EOF) {
-					perror_reply(550, name);
-					goto done;
-				}
-				if (c == '\n')
-					i++;
-			}	
-		} else if (lseek(fileno(fin), restart_point, L_SET) < 0) {
-			perror_reply(550, name);
-			goto done;
-		}
-	}
 	dout = dataconn(name, st.st_size, "w");
 	if (dout == NULL)
 		goto done;
@@ -563,41 +543,11 @@ store(name, mode, unique)
 	    (name = gunique(name)) == NULL)
 		return;
 
-	if (restart_point)
-		mode = "r+w";
 	fout = fopen(name, mode);
 	closefunc = fclose;
 	if (fout == NULL) {
 		perror_reply(553, name);
 		return;
-	}
-	if (restart_point) {
-		if (type == TYPE_A) {
-			register int i, n, c;
-
-			n = restart_point;
-			i = 0;
-			while (i++ < n) {
-				if ((c=getc(fout)) == EOF) {
-					perror_reply(550, name);
-					goto done;
-				}
-				if (c == '\n')
-					i++;
-			}	
-			/*
-			 * We must do this seek to "current" position
-			 * because we are changing from reading to
-			 * writing.
-			 */
-			if (fseek(fout, 0L, L_INCR) < 0) {
-				perror_reply(550, name);
-				goto done;
-			}
-		} else if (lseek(fileno(fout), restart_point, L_SET) < 0) {
-			perror_reply(550, name);
-			goto done;
-		}
 	}
 	din = dataconn(name, (off_t)-1, "r");
 	if (din == NULL)
