@@ -1,0 +1,1263 @@
+/*
+ * Copyright IBM Corporation 1987,1990
+ *
+ * All Rights Reserved
+ *
+ * Permission to use, copy, modify, and distribute this software and its
+ * documentation for any purpose and without fee is hereby granted,
+ * provided that the above copyright notice appear in all copies and that
+ * both that copyright notice and this permission notice appear in
+ * supporting documentation, and that the name of IBM not be
+ * used in advertising or publicity pertaining to distribution of the
+ * software without specific, written prior permission.
+ *
+ * IBM DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
+ * ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR USE.
+ * IN NO EVENT SHALL IBM BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL
+ * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+ * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
+ * ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
+ * THIS SOFTWARE.
+ *
+ *	@(#)if_un.eg	7.1 (Berkeley) %G%
+ */
+
+/*
+ * Ungermann-Bass PC-NIC (Ethernet) Adapter  (4.3 driver)
+ */
+
+#include "un.h"
+#if NUN > 0
+
+#include "../machine/pte.h"
+
+#include "param.h"
+#include "systm.h"
+#include "mbuf.h"
+#include "buf.h"
+#include "protosw.h"
+#include "socket.h"
+#include "vmmac.h"
+#include "ioctl.h"
+#include "errno.h"
+
+#include "../net/if.h"
+#include "../net/netisr.h"
+#include "../net/route.h"
+
+#ifdef INET
+#include "../netinet/in.h"
+#include "../netinet/in_systm.h"
+#include "../netinet/in_var.h"
+#include "../netinet/ip.h"
+#include "../netinet/if_ether.h"
+#endif INET
+
+#ifdef NS
+#include "../netns/ns.h"
+#include "../netns/ns_if.h"
+#endif NS
+
+#ifdef	ISO
+#include "../netargo/if_clnp.h"
+#include "../netargo/iso.h"
+#include "../netargo/iso_var.h"
+#include "../netargo/argo_debug.h"
+#endif	ISO
+
+#include "../machine/io.h"
+#include "if_unreg.h"
+#ifdef	IEEELLC
+#include "if_llc.h"
+#endif	IEEELLC
+#include "../machineio/ioccvar.h"
+#include "../machine/debug.h"
+
+int	unprobe(), unattach();
+
+#ifdef AT
+caddr_t unstd[] = { (caddr_t) 0xa0000, (caddr_t) 0xa8000,
+	(caddr_t) 0xb0000, (caddr_t) 0xb8000, 0 };
+#else
+caddr_t unstd[] = { (caddr_t) 0xf4080000, (caddr_t) 0xf4088000,
+	(caddr_t) 0xf4090000, (caddr_t) 0xf4098000, 0 };
+#endif AT
+
+struct	iocc_device *uninfo[NUN];
+
+int	unint(),  uninit(), unioctl(), unoutput(), unreset();
+
+struct	iocc_driver undriver =
+	{ unprobe, 0, unattach, 0, unstd, "un", uninfo,
+		0, 0, unint, UN_EADDROFF };
+
+struct	mbuf *unget();
+
+/*
+ * Ethernet software status per adapter.
+ */
+struct	un_softc {
+	struct	arpcom us_ac;		/* generic network interface stuff */
+#define	us_if	us_ac.ac_if		/* ifnet struct */
+#define	us_addr	us_ac.ac_enaddr		/* hardware (i.e. ethernet) address */
+	short	us_oactive;		/* 1 => output active */
+	short	us_nextpage;		/* next receive buffer page */
+	short	us_xbuf;		/* in-use xmt buf (if output active) */
+	short	us_xfull[2];		/* 1 => a full xmt buf */
+	short	us_xstart[2];		/* start address used in unstart */
+} un_softc[NUN];
+
+#ifdef DEBUG
+char undebug = 0;
+#endif DEBUG
+
+#ifdef ATR
+#define move_window(window, addr)	{\
+	int real_addr;\
+	int new_window;\
+	\
+	window = get_128_window();\
+	real_addr = 0xfffff & (int) addr;\
+	new_window = real_addr & 0xe0000;\
+	set_128_window(new_window);\
+	addr = (struct undevice *) (real_addr - new_window);\
+}
+
+#define restore_window(window)	set_128_window(window)
+#define bcopyin(from,to,len) bcopy((from)+pcif_128_fw,to,len)
+#define bcopyout(from,to,len) bcopy(from,(to)+pcif_128_fw,len)
+#endif ATR
+
+#ifdef IBMRTPC
+#define bcopyin bcopy
+#define bcopyout bcopy
+#endif IBMRTPC
+/*
+ *  unprobe - try to generate an interrupt (to see if the board is there)
+ */
+unprobe(p)
+	register caddr_t p;
+{
+	register struct undevice *addr = (struct undevice *) p;
+#ifdef ATR
+	register int old_window;
+	move_window(old_window, addr);
+#endif ATR
+	(void) unzap(addr);
+	UN_GLOBIENB(0);			/* global interrrupt enable */
+	MM_OUT(&addr->un_csr, UN_GSFTINT);  /* generate software interrupt */
+	PROBE_DELAY(100000);
+	MM_OUT(&addr->un_csr, 0);
+#ifdef ATR
+	restore_window(old_window);
+#endif ATR
+	return(PROBE_OK);
+}
+
+/*
+ *  unattach - make the interface available to the network software
+ *  (if the auto-configuration software determines that the interface
+ *  exists).  The system will initialize the interface when it is
+ *  ready to accept packets.
+ */
+unattach(iod)
+	register struct iocc_device *iod;
+{
+	register struct un_softc *us = &un_softc[iod->iod_unit];
+	register struct ifnet *ifp = &us->us_if;
+	register struct undevice *addr = (struct undevice *) iod->iod_addr;
+	register int i;
+#ifdef ATR
+	register int old_window;
+
+	move_window(old_window, addr);
+#endif ATR
+	ifp->if_unit = iod->iod_unit;
+	ifp->if_name = "un";
+
+#ifdef	IEEELLC
+	ifp->if_mtu = ETHERMTU - 3;		/* 3 bytes for UI LLC frame */
+#else
+	ifp->if_mtu = ETHERMTU;
+#endif	IEEELCC
+
+	/*
+	 * Read the ethernet address off the board.
+	 * Save it and also write it to the edlc chip.
+	 */
+	for (i = 0; i < ETH_ADDR_SIZE; i++){
+		us->us_addr[i] = MM_IN(&addr->un_eprom[UN_EADDROFF+i]);
+		MM_OUT(&addr->un_edlc.nodeID[i], us->us_addr[i]);
+	}
+	printf("un%d: ethernet address ", ifp->if_unit);
+	unprintethaddr(us->us_addr);
+	printf("\n");
+	ifp->if_init = uninit;
+	ifp->if_ioctl = unioctl;
+	ifp->if_output = unoutput;
+	ifp->if_reset = unreset;
+	ifp->if_flags = IFF_BROADCAST;
+#ifdef	ISO
+	ifp->if_flags |= IFF_EAVESDROP;
+#endif	ISO
+	if_attach(ifp);
+	DEBUGF(undebug, printf("un%d: attached\n", iod->iod_unit);)
+#ifdef ATR
+	restore_window(old_window);
+#endif ATR
+}
+
+/*
+ *  unreset - reset interface
+ */
+unreset(unit)
+	register unsigned int unit;
+{
+	register struct iocc_device *iod;
+
+	if (unit < NUN && (iod = uninfo[unit]) != 0 && iod->iod_alive != 0){
+		un_softc[unit].us_if.if_flags &= ~IFF_RUNNING;
+		DEBUGF(undebug, printf("un%d: reset\n", unit);)
+		uninit(unit);
+	}
+}
+
+/*
+ *  uninit - initialize interface, enable packet reception, start any
+ *  pending writes
+ */
+uninit(unit)
+	register int unit;
+{
+	register struct un_softc *us = &un_softc[unit];
+	register struct ifnet *ifp = &us->us_if;
+	register int s;
+	register struct undevice *addr;
+	register int i;
+
+	if (ifp->if_addrlist == (struct ifaddr *) 0){
+		/* no address */
+		return;
+	}
+	if ((ifp->if_flags & IFF_RUNNING) == 0){
+		int old_window;
+
+		addr = (struct undevice *) (uninfo[unit]->iod_addr);
+#ifdef ATR
+		move_window(old_window, addr);
+#endif ATR
+		s = splimp();
+		us->us_nextpage = unzap(addr);	/* initialize hardware */
+			/* unzap returns next receive page to be used */
+		for (i = 0; i < ETH_ADDR_SIZE; i++){
+			MM_OUT(&addr->un_edlc.nodeID[i], us->us_addr[i]);
+		}
+		us->us_oactive = 0;	/* output not active */
+		/*  turn adapter on */
+		ifp->if_flags |= IFF_RUNNING;
+		MM_OUT(&addr->un_csr, UN_PAVIENB);
+			/* Allow packet available interrupts */
+		UN_GLOBIENB(us->us_nextpage);	/* global interrrupt enable */
+		if (ifp->if_snd.ifq_head){	/* anything on send queue */
+			struct mbuf *m;
+
+			IF_DEQUEUE(&ifp->if_snd, m);
+			unput(us, addr, m, 0);
+			unstart(us, addr, 0);
+			if (ifp->if_snd.ifq_head){
+				IF_DEQUEUE(&ifp->if_snd, m);
+				unput(us, addr, m, 1);
+			}
+		}
+		splx(s);
+#ifdef ATR
+		restore_window(old_window);
+#endif ATR
+	}
+	DEBUGF(undebug, printf("un%d: init'ed\n", unit);)
+}
+
+/*
+ *  unstart - start output from one of the adapter's 2 transmit buffers
+ */
+unstart(us, addr, xbuf)
+	register struct un_softc *us;
+	register struct undevice *addr;
+	register int xbuf;
+{
+	us->us_oactive = 1;
+	us->us_xbuf = xbuf;
+	UN_XMIT(addr, us->us_xstart[xbuf]);
+	MM_OUT(&addr->un_csr, UN_IENABLE); /* enable transmit done interrupt */
+}
+
+/*
+ *  unint - interrupt handler.  find the cause of the interrupt and
+ *  dispatch an appropriate handler routine.
+ */
+unint(unit)
+	register int unit;
+{
+	register struct un_softc *us = &un_softc[unit];
+	register struct undevice *addr =
+	  (struct undevice *) uninfo[unit]->iod_addr;
+	register char status;
+	register int rc = 1;
+#ifdef ATR
+	register int old_window;
+
+	move_window(old_window, addr);
+#endif ATR
+
+	UN_DISABLE(us->us_nextpage);
+	while ((status = ~MM_IN(&addr->un_csr)) & UN_PAVINT){
+		DEBUGF(undebug & 0x2, printf("unint: unit = %d, csr = %b",
+		  unit, status & 0xff, UN_CSRBITS);)
+		unrint(unit, us, addr);
+		rc = 0;
+	}
+	if (status & UN_TXRINT){
+		DEBUGF(undebug & 0x2, printf("unint: unit = %d, csr = %b",
+		  unit, status & 0xff, UN_CSRBITS);)
+		unxint(unit, us, addr);
+		rc = 0;
+	}
+	UN_ENABLE(us->us_nextpage);
+#ifdef ATR
+	restore_window(old_window);
+#endif ATR
+	return(rc);
+}
+
+/*
+ *  unrint - interrupt handler for packet reception.
+ *
+ *  log error if error bits are latched,  examine packet to determine
+ *  type, if can't determine packet length from type, drop packet.
+ *  otherwise decapsulate packet based on type and pass to an appropriate
+ *  higher-level input routine.
+ */
+unrint(unit, us, addr)
+	int unit;
+	register struct un_softc *us;
+	register struct undevice *addr;
+{
+	register struct ether_header *eh;
+    	register struct mbuf *m;
+	register int len;
+	register int off;
+	int resid;
+	struct ifqueue *inq;
+	char status = MM_IN(&addr->un_edlc.rstat);
+	u_short	type;
+	u_short ungetushortatoff();
+#ifdef	IEEELLC
+	struct ether_header	ehbuf;
+#endif	IEEELLC
+
+	MM_OUT(&addr->un_edlc.rstat, status);	/* clear status */
+	/* (the hardware xor's in the value of status setting rstat to 0) */
+	DEBUGF(undebug & 0x2, printf(" rstat = %b", status, RS_BITS);)
+	/*
+	 *  Latch errors.  (Errors found correspond to packets
+	 *  that were received prior to the current packet
+	 *  since packet available interrupts are generated
+	 *  for good packets only.)
+	 */
+	if (status & RS_ERR){
+		DEBUGF(undebug, printf("unrint: input error\n");)
+		us->us_if.if_ierrors++;
+	}
+	us->us_if.if_ipackets++;
+
+	/*
+	 *  determine the length of the received packet.
+	 */
+	len = 0;
+	off = us->us_nextpage;
+
+#define BUMP(page)	if (++(page) == UN_NUMRBUFS) page = 0
+	while ((MM_IN(&addr->un_pram[us->us_nextpage]) & UN_LAST_PAGE) == 0){
+		len += UN_RBUFSIZE;
+		BUMP(us->us_nextpage);
+	}
+	len += (MM_IN(&addr->un_pram[us->us_nextpage]) &
+		UN_PAGE_LENGTH_MASK) + 1;
+	BUMP(us->us_nextpage);
+#undef BUMP
+	DEBUGF(undebug & 0x2, printf(" len = %d ", len);)
+	if (len > UN_XBSIZE){
+		printf("un%d: huge packet!\n",unit);
+		goto chuckit;
+	}
+	/*
+	 * Process the packet
+	 */
+	eh = (struct ether_header *) &addr->un_rcvbuf[off][0];
+	DEBUGF(undebug & 0x2,
+		{  char cbuf[6];
+		printf(" from = ");
+		bcopyin(eh->ether_shost, cbuf, sizeof(cbuf));
+		unprintethaddr(cbuf);
+		printf("  to = ");
+		bcopyin(eh->ether_dhost, cbuf, sizeof(cbuf));
+		unprintethaddr(cbuf);
+		printf(" "); }
+	)
+	len -= sizeof(struct ether_header);
+	type = ntohs((u_short) MM_INW(&eh->ether_type));
+	/*
+	 *  The ETHERTYPE_NTRAILER packet types starting at ETHERTYPE_TRAIL
+	 *  have (type - ETHERTYPE_TRAIL) * 512 bytes of data followed by
+	 *  a type field and then a (variable length) header
+	 */
+	if (type >= ETHERTYPE_TRAIL &&
+	    type < ETHERTYPE_TRAIL+ETHERTYPE_NTRAILER){
+		off = (type - ETHERTYPE_TRAIL) * 512;
+		if (off >= ETHERMTU){
+			goto chuckit;
+		}
+		type = ungetushortatoff(addr, eh, off);
+		resid = ungetushortatoff(addr, eh, off + 2);
+		if (off + resid > len){
+			goto chuckit;
+		}
+		len = off + resid;
+	} else {
+		off = 0;
+	}
+	if (len == 0){
+		goto chuckit;
+	}
+
+#ifdef	IEEELLC
+	if (type <= ETHERMTU) {
+		/* may need ether_header for XID, TEST LLC functions */
+		ehbuf = *eh;
+	}
+#endif	IEEELLC
+
+	/*
+	 *  pull packet off interface.  if off is non-zero, the
+	 *  packet has a trailing "header".  unget will move this
+	 *  header to the front, but we still have to remove the
+	 *  type and length fields from the front of the data.
+	 */
+	m = unget(addr, (char *) eh, len, off, &us->us_if);
+	/*
+	 *  update the full page pointer and clear the packet available
+	 *  flag if necessary.  update the fpp here to free the on-board
+	 *  receive pages as soon as possible.
+	 */
+	unupdatefpp(addr, us->us_nextpage);
+	if (m != 0){
+		if (off){
+#ifdef	ISO
+			/* 
+			 *	Move snpa header over by 4 bytes to skip
+			 *	the trailer Type and Header length fields.
+			 */
+			struct snpa_hdr		sh;
+
+			bcopy(mtod(m, char *), (caddr_t)&sh, sizeof(struct snpa_hdr));
+			m->m_off += 2 * sizeof(u_short);
+			m->m_len -= 2 * sizeof(u_short);
+			bcopy((caddr_t)&sh, mtod(m, char *), sizeof(struct snpa_hdr));
+#else	ISO
+			struct ifnet *ifp;
+			/*
+			 * bcopy is used since word moves must be on 4 byte
+			 * boundaries on the RT PC
+			 */
+			bcopy(mtod(m, char *), (char *) &ifp, sizeof(ifp));
+			m->m_off += 2 * sizeof(u_short);
+			m->m_len -= 2 * sizeof(u_short);
+			bcopy((char *) &ifp, mtod(m, char *), sizeof(ifp));
+#endif	ISO
+		}
+		switch (type){
+#ifdef INET
+		case ETHERTYPE_IP:
+		    {
+			int s;
+
+			DEBUGF(undebug & 0x2, printf("ip packet\n");)
+			schednetisr(NETISR_IP);
+			s = splimp();
+			inq = &ipintrq;
+			if (IF_QFULL(inq)){
+				DEBUGF(undebug & 0x2, printf(" qfull\n");)
+				IF_DROP(inq);
+				m_freem(m);
+			} else {
+				IF_ENQUEUE(inq, m);
+				DEBUGF(undebug & 0x2, printf(" queued\n");)
+			}
+			splx(s);
+			break;
+		    }
+
+		case ETHERTYPE_ARP:
+			DEBUGF(undebug & 0x2, printf("arp packet\n");)
+			arpinput(&us->us_ac, m);  /* arpinput frees m */
+			break;
+#endif INET
+#ifdef NS
+		case ETHERTYPE_NS:
+			DEBUGF(undebug & 0x2, printf("ns packet\n");)
+			schednetisr(NETISR_NS);
+			inq = &nsintrq;
+			break;
+#endif NS
+#ifndef	IEEELLC
+#ifdef	ISO
+		case ETHERTYPE_CLNP:	/* should be CLNL */
+			DEBUGF(undebug & 0x2, printf("clnl packet\n");)
+
+			/* IFF_EAVESDROP can not be turned off for Ethernet */
+
+			schednetisr(NETISR_CLNP);
+			inq = &clnlintrq;
+			if (IF_QFULL(inq)){
+				DEBUGF(undebug & 0x2, printf(" qfull\n");)
+				IF_DROP(inq);
+				m_freem(m);
+			} else {
+				IF_ENQUEUE(inq, m);
+				DEBUGF(undebug & 0x2, printf(" queued\n");)
+			}
+			break;
+#endif	ISO
+		default:
+			DEBUGF(undebug & 0x2, printf("unknown packet\n");)
+			m_freem(m);
+			break;
+#else
+		default: {
+			struct llc *l;
+			caddr_t		pkt_start;
+#ifdef	ISO
+#define	PREPENDED_SIZE	sizeof(struct snpa_hdr)
+#else
+#define	PREPENDED_SIZE	sizeof(struct ifnet *)
+#endif	ISO
+			if (type > ETHERMTU)
+				goto not802;
+
+			/*
+			 *	This assumes that the snpa header is in the same mbuf
+			 *	as the llc header. Currently this is ok, but if
+			 *	unget allocates a cluster, this will not be the case
+			 */
+			pkt_start = mtod(m, caddr_t);
+			l = (struct llc *) (pkt_start + PREPENDED_SIZE);
+
+			IFDEBUG(D_ETHER)
+				printf("unrint: llc: length %d, control x%x:\n", type,
+					l->llc_control);	
+			ENDDEBUG
+
+			switch (l->llc_control) {
+			case LLC_UI:
+			/* LLC_UI_P forbidden in class 1 service */
+#ifdef	ISO
+				if (l->llc_dsap == LLC_ISO_LSAP) {
+					if ((IS_MULTICAST(ehbuf.ether_dhost)) &&
+						((us->us_if.if_flags & IFF_EAVESDROP) == 0) &&
+						(!snpac_ownmulti(ehbuf.ether_dhost, 6))) {
+						m_freem(m);
+						return;
+					}
+
+					/* move struct snpa_header over the llc header */
+					clnp_ypocb(pkt_start, pkt_start + 3, 
+						PREPENDED_SIZE);
+					m->m_off += 3;
+					m->m_len -= 3;
+
+					DEBUGF(undebug & 0x2, printf("clnp packet\n");)
+					schednetisr(NETISR_CLNP);
+					inq = &clnlintrq;
+					if (IF_QFULL(inq)){
+						DEBUGF(undebug & 0x2, printf(" qfull\n");)
+						IF_DROP(inq);
+						m_freem(m);
+					} else {
+						IF_ENQUEUE(inq, m);
+						DEBUGF(undebug & 0x2, printf(" queued\n");)
+					}
+					return;
+			    } else {
+					IFDEBUG(D_ETHER)
+						printf("unrint: unknown llc sap\n");
+					ENDDEBUG
+					m_freem(m);
+					return;
+				}
+#endif	ISO
+			    break;
+/* LLC_XID, LLC_XID_P, LLC_TEST, and LLC_TEST_P are untested */
+			case LLC_XID:
+			case LLC_XID_P:	/* control field is untouched for resp */
+			    if(m->m_len < 6)
+					goto not802;
+			    l->llc_fid = LLC_IEEE_basic_format;
+			    l->llc_class = LLC_CLASS1;
+			    l->llc_window = 0;
+			    l->llc_dsap = l->llc_ssap = 0;
+			    /* FALL THROUGH */
+			case LLC_TEST:
+			case LLC_TEST_P: {
+				struct ifnet *ifp = &us->us_if;
+			    struct sockaddr_iso siso;
+			    u_char c = l->llc_dsap;
+			    l->llc_dsap = l->llc_ssap;
+			    l->llc_ssap = c;
+
+			    /* Do not TEST or XID to multicasts */
+			    if (IS_MULTICAST(ehbuf.ether_dhost)) {
+					m_freem(m);
+					break;
+				}
+
+			    siso.siso_family = AF_ISO;
+				bcopy(ehbuf.ether_shost, siso.siso_addr.sna_idi, 6);
+				siso.siso_addr.isoa_afi = AFI_SNA;
+				siso.siso_addr.isoa_len = 7;
+
+				/* trim off prepended snpa_hdr or ifp */
+				m->m_off += PREPENDED_SIZE;
+				m->m_len -= PREPENDED_SIZE;
+
+			    unoutput(ifp, m, &siso);
+			    return;
+			}
+			not802:
+			default:
+				DEBUGF(undebug & 0x2, printf("unknown packet\n");)
+				m_freem(m);
+				break;
+			}
+		}
+#endif	IEEELLC
+		}
+	}
+	return;
+chuckit:
+	DEBUGF(undebug, printf("unrint: packet dropped\n");)
+	unupdatefpp(addr, us->us_nextpage);
+}
+
+/*
+ *  unxint -  interrupt handler for transmit ready
+ */
+unxint(unit, us, addr)
+	register int unit;
+	register struct un_softc *us;
+	register struct undevice *addr;
+{
+	register char status;
+	register int next_buf;
+
+	/*
+	 *  collect stats on last packet
+	 */
+	status = MM_IN(&addr->un_edlc.xstat);
+	MM_OUT(&addr->un_edlc.xstat, status);	/* clear status bits */
+	DEBUGF(undebug & 0x2, printf(" unxint: xstat = %b\n",
+	  status & 0xff, XS_BITS);)
+	if (status & XS_16CL){
+		us->us_if.if_collisions += 16;
+		us->us_if.if_oerrors++;
+		printf("un%d: ethernet jammed\n", unit);
+	}
+	else if (status & XS_SHRT){
+		us->us_if.if_oerrors++;
+		printf( "un%d: ethernet not responding (is it connected?)\n",
+			unit);
+	}
+	else {
+		us->us_if.if_opackets++;
+		us->us_if.if_collisions += UN_NCOLL(addr);
+	}
+	DEBUGF(undebug & 0x2,
+	  printf(" ipkt = %d ierr = %d okt = %d oerr = %d coll = %d\n",
+	    us->us_if.if_ipackets, us->us_if.if_ierrors,
+	    us->us_if.if_opackets, us->us_if.if_oerrors,
+	    us->us_if.if_collisions);)
+	/*  mark the current transmit buffer empty */
+	us->us_xfull[us->us_xbuf] = 0;
+	/*  switch to the other transmit buffer */
+	next_buf = 1 - us->us_xbuf;
+	if (us->us_xfull[next_buf]){	/*  if it's full */
+		unstart(us, addr, next_buf);	/* start output from it */
+		if (us->us_if.if_snd.ifq_head){	/*  if more on out queue */
+			struct mbuf *m;
+
+			IF_DEQUEUE(&us->us_if.if_snd, m); /* fill empty buf */
+			unput(us, addr, m, 1 - next_buf);
+		}
+	}
+	else {	/*  the other transmit buffer is empty */
+		us->us_oactive = 0;
+		MM_OUT(&addr->un_csr, UN_PAVIENB);	/* Turn off TxRIENB */
+	}
+}
+
+/*
+ *  unoutput - ethernet output routine.  encapsulate a packet of type
+ *  family for the local net.  use trailer local net encapsulation if
+ *  the number of bytes in the mbufs after the first is a multiple of
+ *  512.
+ */
+unoutput(ifp, m0, dst)
+	register struct ifnet *ifp;
+	register struct mbuf *m0;
+	register struct sockaddr *dst;
+{
+	u_short type;
+	int s;
+	int error;
+	char edst[ETH_ADDR_SIZE];
+	struct in_addr idst;
+	register struct un_softc *us = &un_softc[ifp->if_unit];
+	register struct mbuf *m = m0;
+	register struct ether_header *eh;
+	int off;
+	struct mbuf *m_get();
+	int usetrailers;
+
+	if ((ifp->if_flags & (IFF_UP|IFF_RUNNING)) != (IFF_UP|IFF_RUNNING)){
+		error = ENETDOWN;
+		goto bad;
+	}
+	switch (dst->sa_family){
+
+#ifdef INET
+	case AF_INET:
+		idst = ((struct sockaddr_in *)dst)->sin_addr;
+		if (!arpresolve(&us->us_ac, m, &idst, edst, &usetrailers)){
+			/* not resolved */
+			return(0);
+		}
+		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
+		if (usetrailers && off > 0 && (off & 0x1ff) == 0 &&
+		  m->m_off >= MMINOFF + 2 * sizeof(u_short)){
+			type = ETHERTYPE_TRAIL + (off>>9);
+			m->m_off -= 2 * sizeof(u_short);
+			m->m_len += 2 * sizeof(u_short);
+			*mtod(m, u_short *) = htons((u_short)ETHERTYPE_IP);
+			*(mtod(m, u_short *) + 1) = htons((u_short)m->m_len);
+			/*
+			 *  Packet to be sent with trailer, move first packet
+			 *  (control information) to end of chain.
+			 */
+			while (m->m_next)
+				m = m->m_next;
+			m->m_next = m0;
+			m = m0->m_next;
+			m0->m_next = 0;
+			m0 = m;
+		}
+		else {
+			type = ETHERTYPE_IP;
+		}
+		break;
+#endif INET
+#ifdef NS
+	case AF_NS:
+		bcopy((caddr_t)&(((struct sockaddr_ns *)dst)->sns_addr.x_host),
+		  (caddr_t)edst, sizeof(edst));
+		type = ETHERTYPE_NS;
+		off = 0;
+		break;
+#endif NS
+#ifdef	ISO
+	case AF_ISO: {
+		int	ret;
+		int len;
+		struct iso_addr *dst_nsap = &((struct sockaddr_iso *)dst)->siso_addr;
+ 
+ 		if ((ret = iso_tryloopback(m, dst)) >= 0)
+ 			return (ret);
+ 		else if (ret = iso_snparesolve(&us->us_ac.ac_if, dst_nsap, edst, &len)){
+  			/* not resolved */
+ 			IFDEBUG(D_ETHER)
+ 				printf("unoutput: clnp packet dropped\n");
+ 			ENDDEBUG
+			m_freem(m);
+ 			return(ret);
+ 		} else if (len != 6) {
+  			printf("unoutput: snpa len is not 6 (%d)\n", len);
+			m_freem(m);
+  			return(ENETUNREACH);
+  		}
+
+#ifndef	IEEELLC
+		type = ETHERTYPE_CLNP;
+#else
+		/* check for enough space for LLC header */
+		{
+			struct mbuf *llcm;
+			char		*cp;
+			if (m->m_off >= MMAXOFF || m->m_off < MMINOFF + 3) {
+				MGET(llcm, M_DONTWAIT, MT_DATA);
+				if (llcm == NULL) {
+					m_freem(m);
+					return(0);
+				}
+				llcm->m_off = MMAXOFF - 3;
+				llcm->m_len = 3;
+				llcm->m_next = m;
+				m = llcm;
+			} else {
+				m->m_off -= 3;
+				m->m_len += 3;
+			}
+			type = m_datalen(m);
+
+			cp = mtod(m, u_char *);
+			cp[0] = cp[1] = LLC_ISO_LSAP; cp[2] = LLC_UI;
+			off = 0;
+		}
+#endif	IEEELLC
+		off = 0;
+		IFDEBUG(D_ETHER)
+			int i;
+			printf("unoutput: sending pkt to: ");
+			for (i=0; i<6; i++)
+				printf("%x ", edst[i] & 0xff);
+#ifdef	IEEELLC
+			printf(" llc len %d", type);
+#endif	IEEELLC
+			printf("\n");
+		ENDDEBUG
+		} break;
+#endif	ISO
+	case AF_UNSPEC:
+		eh = (struct ether_header *)dst->sa_data;
+		bcopy((char *)eh->ether_dhost, (caddr_t)edst, sizeof(edst));
+		type = eh->ether_type;
+		break;
+	default:
+		printf("un%d: can't handle af%d\n", ifp->if_unit,
+		  dst->sa_family);
+		error = EAFNOSUPPORT;
+		goto bad;
+	}
+	/*
+	 * Add local net header.  If no space in first mbuf,
+	 * allocate another.
+	 */
+	if (m->m_off > MMAXOFF ||
+	    MMINOFF + sizeof(struct ether_header) > m->m_off){
+		m = m_get(M_DONTWAIT, MT_HEADER);
+		/*
+		 *  Note:  m_get, m_freem etc. guard against concurrent
+		 *  updates to the list of free mbufs.
+		 */
+		if (m == 0){
+			error = ENOBUFS;
+			goto bad;
+		}
+		m->m_next = m0;
+		m->m_off = MMINOFF;
+		m->m_len = sizeof(struct ether_header);
+	} else {
+		m->m_off -= sizeof(struct ether_header);
+		m->m_len += sizeof(struct ether_header);
+	}
+	eh = mtod(m, struct ether_header *);
+	bcopy((caddr_t)edst, (caddr_t)eh->ether_dhost, sizeof(edst));
+	bcopy((caddr_t)us->us_addr, (caddr_t)eh->ether_shost,
+	  sizeof(eh->ether_shost));
+	bcopy((caddr_t)&type, (caddr_t)&eh->ether_type, sizeof(u_short));
+
+	/*
+	 *  queue packet for transmission.  if there is an empty
+	 *  transmit buffer on the adapter, use it.
+	 */
+	s = splimp();
+	if (IF_QFULL(&ifp->if_snd)){
+		IF_DROP(&ifp->if_snd);
+		error = ENOBUFS;
+		goto qfull;
+	}
+	if (us->us_xfull[0] == 0 || us->us_xfull[1] == 0){ /* empty xmt buf */
+		struct undevice *addr = (struct undevice *)
+		  uninfo[ifp->if_unit]->iod_addr;
+		int next_buf;
+#ifdef ATR
+		int old_window;
+		move_window(old_window, addr);
+#endif ATR
+		if (us->us_xfull[0] == 0){
+			next_buf = 0;
+		}
+		else {
+			next_buf = 1;
+		}
+		unput(us, addr, m, next_buf);
+		if (us->us_oactive == 0){
+			unstart(us, addr, next_buf);
+		}
+#ifdef ATR
+		restore_window(old_window);
+#endif ATR
+	}
+	else {
+		IF_ENQUEUE(&ifp->if_snd, m);
+	}
+	splx(s);
+	return(0);
+qfull:
+	m0 = m;
+	splx(s);
+bad:
+	m_freem(m0);
+	return(error);
+}
+
+/*
+ *  unput -  copy packet from an  mbuf chain to one of the adapter's
+ *  transmit buffers.  the packet is extended to the minimum legal
+ *  size if necessary.  the extra bytes could be zeroed out to improve
+ *  security but are not to maximize performance.
+ */
+unput(us, addr, m, xbuf)
+	struct un_softc *us;
+	struct undevice *addr;
+	register struct mbuf *m;
+	register int xbuf;
+{
+	register unsigned off;
+	register struct mbuf *mp;
+	register char *bp;
+
+	/*
+	 *  compute starting address in transmit buffer.  packets must be
+	 *  "end_aligned".
+	 */
+	for (off = UN_XBSIZE, mp = m; mp; mp = mp->m_next){
+		off -= mp->m_len;
+	}
+	if (UN_XBSIZE - off < ETHERMIN + sizeof(struct ether_header)){
+		/*  packet too short => extend it */
+		off = UN_XBSIZE - ETHERMIN - sizeof(struct ether_header);
+	}
+	if (xbuf == 1){		/* use the second buffer */
+		off += UN_XBSIZE;	/* the 2 buffers are adjacent */
+	}
+	bp = ((char *)(addr->un_xmtbuf)) + off;
+	for (mp = m; mp; mp = mp->m_next){
+		register unsigned len = mp->m_len;
+
+		bcopyout(mtod(mp, char *), bp, len);
+		bp += len;
+	}
+	/* save starting address so interrupt handler can find it */
+	us->us_xstart[xbuf] = off;  /* start address to be passed to adapter */
+	us->us_xfull[xbuf] = 1;	/* mark buffer full */
+	m_freem(m);
+}
+
+/*
+ *  unget - copy packet from adapter's receive buffers into a chain of mbufs
+ *
+ */
+struct mbuf *
+unget(addr, unbuf, totlen, off0, ifp)
+	struct undevice *addr;
+	char *unbuf;
+	register int totlen;
+	int off0;
+	struct ifnet *ifp;
+{
+	register struct mbuf *m;
+	struct mbuf *top = 0;
+	register struct mbuf **mp = &top;
+	register int off = off0;
+	register int len;
+	register char *cp;
+#ifdef	ISO
+	int		copied_snpa = 0;
+#endif	ISO
+
+	cp = unbuf + sizeof(struct ether_header);
+	while (totlen > 0){
+		char *mcp;
+
+		MGET(m, M_DONTWAIT, MT_DATA);
+		if (m == 0)
+			goto bad;
+		if (off){	/* trailer exists */
+			len = totlen - off;
+			cp = unbuf + sizeof(struct ether_header) + off;
+		} else
+			len = totlen;
+#ifdef	ISO
+		if (!copied_snpa)
+			len += sizeof(struct snpa_hdr);
+#else	ISO
+		if (ifp)
+			len += sizeof(ifp);
+#endif	ISO
+		if (len >= NBPG){
+			MCLGET(m);
+			if (m->m_len == CLBYTES)
+				m->m_len = len = MIN(len, CLBYTES);
+			else
+				m->m_len = len = MIN(MLEN, len);
+		} else {
+			m->m_len = len = MIN(MLEN, len);
+			m->m_off = MMINOFF;
+		}
+		mcp = mtod(m, char *);
+#ifdef	ISO
+		if (!copied_snpa) {
+			/* 
+			 *	Prepend snpa_hdr to first mbuf 
+			 *	The hardcoded 12 below refers to the length of the dhost
+			 *	and shost fields. We recklessly assume 
+			 *	the order of dhost,shost in the snpa_hdr is the same
+			 *	as the order in the ether_header.
+			 */
+			struct snpa_hdr		*sh = (struct snpa_hdr *)mcp;
+			struct ether_header	*eh = (struct ether_header *)unbuf;
+
+			bcopy((char *) &ifp, (caddr_t)&sh->snh_ifp, sizeof(ifp));
+			bcopy((caddr_t)eh, (caddr_t)sh->snh_dhost, 12);
+			mcp += sizeof(struct snpa_hdr);
+			len -= sizeof(struct snpa_hdr);
+			copied_snpa = 1;
+		}
+#else	ISO
+		if (ifp){
+			/* prepend ifp to first mbuf */
+			/*
+			 * bcopy is used since since word moves must
+			 * be on 4 byte boundaries on the RT PC
+			 */
+			bcopy((char *) &ifp, mcp, sizeof(ifp));
+			mcp += sizeof(ifp);
+			len -= sizeof(ifp);
+			ifp = (struct ifnet *) 0;
+		}
+#endif	ISO
+		unbcopy(addr, cp, mcp, len);
+		cp += len;
+		*mp = m;
+		mp = &m->m_next;
+		if (off == 0){
+			totlen -= len;
+			continue;
+		}
+		off += len;
+		if (off == totlen){
+			cp = unbuf + sizeof(struct ether_header);
+			off = 0;
+			totlen = off0;
+		}
+	}
+	return(top);
+bad:
+	m_freem(top);
+	return(0);
+}
+
+
+/*
+ *  ioctl - process an ioctl request.
+ */
+unioctl(ifp, cmd, data)
+	register struct ifnet *ifp;
+	register int cmd;
+	register caddr_t data;
+{
+	register struct ifaddr *ifa = (struct ifaddr *)data;
+	register int s = splimp();
+	register int error = 0;
+
+	switch (cmd){
+	case SIOCSIFADDR:
+		ifp->if_flags |= IFF_UP;
+
+		switch (ifa->ifa_addr.sa_family){
+#ifdef INET
+		case AF_INET:
+			uninit(ifp->if_unit);	/* before arpwhohas */
+			((struct arpcom *) ifp)->ac_ipaddr =
+			  IA_SIN(ifa)->sin_addr;
+			arpwhohas((struct arpcom *)ifp, &IA_SIN(ifa)->sin_addr);
+			break;
+#endif INET
+#ifdef NS
+		case AF_NS:
+		    {
+			struct ns_addr *ina = &(IA_SNS(ifa)->sns_addr);
+			struct un_softc *us = &un_softc[ifp->if_unit];
+
+			if (ns_nullhost(*ina))
+				ina->x_host = *(union ns_host *)(us->us_addr);
+			else {
+				ifp->if_flags &= ~IFF_RUNNING;
+				bcopy((caddr_t) ina->x_host.c_host,
+				  (caddr_t) us->us_addr, sizeof(us->us_addr));
+				/*
+				 *  the uninit will set the hardware address
+				 *  since the IFF_RUNNING flag is off
+				 */
+			}
+			uninit(ifp->if_unit);
+			break;
+		    }
+#endif NS
+		default:
+			uninit(ifp->if_unit);
+			break;
+		}
+		break;
+	case SIOCSIFFLAGS:
+		if ((ifp->if_flags & IFF_UP) == 0 && ifp->if_flags &
+		  IFF_RUNNING){
+#ifdef ATR
+			int old_window;
+#endif ATR
+			struct undevice *addr;
+
+			addr = (struct undevice *) uninfo[ifp->if_unit]->
+				iod_addr;
+#ifdef ATR
+			move_window(old_window, addr);
+#endif ATR
+			(void) unzap((struct undevice *) addr);
+			ifp->if_flags &= ~IFF_RUNNING;
+#ifdef ATR
+			restore_window(old_window);
+#endif ATR
+		} else if (ifp->if_flags & IFF_UP && (ifp->if_flags &
+		  IFF_RUNNING) == 0)
+			uninit(ifp->if_unit);
+		break;
+	default:
+		error = EINVAL;
+	}
+	splx(s);
+	return(error);
+}
+
+/*
+ *  unzap - initialize adapter but don't enable it.
+ *  returns page number of next receive page to be used.
+ */
+unzap(addr)
+	register struct undevice *addr;
+{
+	register int next;
+
+	MM_OUT(&addr->un_csr, 0);		/* disable interrupts */
+	MM_OUT(&addr->un_edlc.reset, RESET_ON);
+		/* set reset bit while init'ing */
+	MM_OUT(&addr->un_edlc.rstat, RS_CLEAR);
+	MM_OUT(&addr->un_edlc.xstat, XS_CLEAR);
+	MM_OUT(&addr->un_edlc.rmask, 0);
+	MM_OUT(&addr->un_edlc.xmask, 0);
+	MM_OUT(&addr->un_edlc.rmode, RM_NORMAL);
+	/*
+	 *  the next line puts the transmitter in loopback mode so
+	 *  that a spurious packet is not sent when the reset bit is
+	 *  cleared.
+	 */
+	MM_OUT(&addr->un_edlc.tmode, TM_NORMAL - TM_LBC);
+	MM_OUT(&addr->un_edlc.reset, RESET_OFF); /* clear reset bit */
+	/*
+	 *  clear the receive buffers.  assign the value in the empty
+	 *  page pointer to the full page pointer and clear the packet
+	 *  available flag.
+	 */
+	next = MM_IN(&addr->un_fppepp) & UN_PAGE_MASK;
+		/* clears the IKSYDK flag */
+	MM_OUT(&addr->un_fppepp, next);		/* fpp = epp */
+	UN_CLRPAV(addr);		/* clear the PAV flag */
+	MM_OUT(&addr->un_edlc.tmode, TM_NORMAL);
+		/* put transmitter in normal mode */
+	DEBUGF(undebug & 0x2, printf("unzap: zzzzapped!\n");)
+	return(next);
+}
+
+/*
+ *  unupdatefpp - update adapter's full page pointer and clear packet available
+ *  flag if appropriate
+ */
+unupdatefpp(addr, nextpage)
+	register struct undevice *addr;
+	register int nextpage;
+{
+	if (nextpage == /* EPP */ (MM_IN(&addr->un_fppepp) & UN_PAGE_MASK))
+		UN_CLRPAV(addr);
+	MM_OUT(&addr->un_fppepp, nextpage);	/* set FPP */
+}
+
+/*
+ *  unbcopy - similar to bcopy but can deal with packets that wrap
+ *  around from the high end of the adapter's receive buffer to the
+ *  low end
+ */
+unbcopy(addr, from, to, len)
+	register struct undevice *addr;
+	register char *from;
+	register char *to;
+	register int len;
+{
+	register char *high_end = &addr->un_rcvbuf[UN_LASTRBUF][UN_RBUFSIZE];
+	register int n;
+
+	if (from + len <= high_end){
+		bcopyin(from, to, len);
+	}
+	else if (from >= high_end){
+		from -= sizeof(addr->un_rcvbuf);
+		bcopyin(from, to, len);
+	} else {
+		n = high_end - from;
+		bcopyin(from, to, n);
+		to += n;
+		bcopyin((char *)addr->un_rcvbuf, to, len - n);
+	}
+}
+
+/*
+ *  ungetushortatoff - return the u_short at offset in the received packet,
+ *  handling wrap-around in the receive buffer and conversion between network
+ *  and host formats as necessary.
+ */
+u_short ungetushortatoff(addr, eh, off)
+	register struct undevice *addr;
+	register struct ether_header *eh;
+	register int off;
+{
+	register char *high_end = &addr->un_rcvbuf[UN_LASTRBUF][UN_RBUFSIZE];
+	register char *p;
+
+	p = (caddr_t)(eh + 1) + off;
+	if (p >= high_end){
+		p -= sizeof(addr->un_rcvbuf);
+	}
+	return(ntohs((u_short) MM_INW(p)));
+}
+
+/*
+ *  unprintethaddr - print an ethernet address
+ */
+unprintethaddr(p)
+	register char *p;
+{
+	register int i;
+
+	for (i = 0; i < ETH_ADDR_SIZE; i++){
+		if (i != 0) printf(":");
+		printf("%x", *p++);
+	}
+}
+
+#endif NUN > 0
