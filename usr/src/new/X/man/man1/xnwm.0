@@ -1,0 +1,330 @@
+
+
+
+XNWM(1)             UNIX Programmer's Manual		  XNWM(1)
+
+
+
+NAME
+     xnwm - X window system manager process
+
+SYNOPSIS
+     xnwm [ -cmsnftv2 ] [ @_b_o_r_d_e_r ] [ %_i_c_o_n_D_e_l_t_a ]
+	  [ fm=_f_o_n_t ] [ fi=_f_o_n_t ] [ fs=_f_o_n_t ]
+	  [ l=_o_p ] [ m=_o_p ] [ r=_o_p ]
+	  [ _h_o_s_t:_d_i_s_p_l_a_y ] [ =_g_e_o_m_e_t_r_y ]
+
+DESCRIPTION
+     The window manager is a process that allows the user of a
+     display running the X window system to manipulate the win-
+     dows on the screen.  X implements the `desktop model' of
+     overlapping windows; _x_n_w_m allows windows to be moved, iconi-
+     fied, and resized, allows the order of the windows in the
+     `stack' of overlapping windows to be manipulated, and allows
+     the keyboard focus to be attached to a window.  X allows
+     windows to contain other windows, but _x_n_w_m only manipulates
+     the top-level windows and not any of the subwindows.
+
+     _X_n_w_m takes arguments _h_o_s_t and _d_i_s_p_l_a_y, which refer the the
+     host and display number.  For example `xnwm amadeus:1' would
+     start up the window manager on display one on the machine
+     amadeus.  By default, _x_n_w_m uses the host and display number
+     stored in the environment variable DISPLAY, and therefore
+     they are not normally specified.
+
+     _X_n_w_m has 2 modes of operation, `normal' and `popup',  In
+     normal mode _x_n_w_m creates a menu window across the top of the
+     screen.  To perform an action, you click any mouse button in
+     the appropriate menu box and then click the same button in
+     the window you wish to affect.  _X_n_w_m also reserves certain
+     button/key combinations and interprets them as operations on
+     existing windows.	The key combination is specified in the
+     command line with some subset of the options: -c (Control),
+     -m (Meta), and -s (Shift).  For example, if you specify the
+     options -cm then the Control and Meta keys must be down at
+     the time a mouse button is depressed.  The option -n (None)
+     means that no buttons need be held down.  This is
+     discouraged since it means that applications will never
+     receive unshifted mouse clicks.  If no combination is speci-
+     fied in the command line, Meta is assumed.  Note:	the key
+     combination is not necessary when using functions from the
+     menu; it is only needed with the assigned button functions
+     to distinguish window manager operations from operations
+     destined for the application running within the window.
+
+     The window manager normally takes control of the screen at
+     various times to assure that the screen image remains
+     correct while performing window manager operations.  When
+     this happens, requests from other applications are tem-
+     porarily suspended until the window manager finishes the
+
+
+
+Printed 9/15/87           19 July 1985				1
+
+
+
+
+
+
+XNWM(1)             UNIX Programmer's Manual		  XNWM(1)
+
+
+
+     operation.  The option -f (no freeze) disables this.  If
+     this option is specified, window outlines for _M_o_v_e and
+     _R_e_s_i_z_e will flicker rather than remaining solid, and the
+     background behind popup windows (see later) will take longer
+     to redraw.
+
+     The options -t (thin), -v (vertical), and -2 (2 rows) con-
+     trol the format of the menu bar.  In the absence of any of
+     these, the menu extends across the entire screen.	If the -t
+     option is given, the menu bar will not extend fully across
+     the screen; instead there will be room at the right (con-
+     venient for, for example, a clock window).  If the -v option
+     is used, the menu windows are stacked vertically instead of
+     spread horizontally.  The -2 option causes the menu windows
+     to be in two rows, allowing room for a terminal window the
+     height of the screen while still allowing menu access.
+     Either of the last two options automatically selects the -t
+     option.  The menu is located in the upper left corner of the
+     screen by default, but its location can be set with the
+     =_g_e_o_m_e_t_r_y option as usual with X applications.  (Notice that
+     there is no size component, position information is used
+     only.)
+
+     _X_n_w_m will use reverse video for the menu, the cursor, icon
+     text, and the frame around selected windows if the -r
+     (reverse) option is used.
+
+     The border width around selected windows can be changed with
+     the @ argument; the default is 5 pixels.
+
+     The default font for displaying text is ``8x13''.	You can
+     specify a different font with the fm= (Menu font), fi= (Icon
+     font), and the fs= (Size window font) options.
+
+     Initially, the left, middle, and right mouse buttons are
+     bound to the operations _S_e_l_e_c_t, _R_a_i_s_e, and _M_o_v_e. You can
+     change these bindings with the l= (left), m= (middle), and
+     r= (right) arguments.  Each should be followed by one of the
+     letters "srmilzc", representing, respectively, _S_e_l_e_c_t,
+     _R_a_i_s_e, _M_o_v_e, _I_c_o_n_i_f_y, _L_o_w_e_r, _r_e_s_i_Z_e, and _C_i_r_c_u_l_a_t_e. They may
+     also be followed by nothing, in which case no function is
+     bound to that key.
+
+     Clicking any button that is not bound to the _S_e_l_e_c_t function
+     in the background will cause the menu window to become visi-
+     ble if it has become covered by other windows.  Double
+     clicking the background will cause the menu to move back to
+     its original position.
+
+     In popup mode, the menu window is not normally displayed,
+     but instead `pops up' when a particular button is pressed.
+     To get popup mode, bind the letter ``p'' to any of the three
+
+
+
+Printed 9/15/87           19 July 1985				2
+
+
+
+
+
+
+XNWM(1)             UNIX Programmer's Manual		  XNWM(1)
+
+
+
+     buttons as described above.  (You may also bind the other
+     buttons as desired.)  Whenever the bound button is clicked
+     while the appropriate combination of control, meta, and
+     shift keys is depressed, or any time a button that is not
+     bound to the _S_e_l_e_c_t function is clicked in the background,
+     the menu will appear beneath the cursor.  You may then
+     select any menu function you wish; after the operation is
+     completed the menu will disappear.  To make the menu disap-
+     pear without performing any operation, just move the cursor
+     out of the menu area.  Note:  the mouse button bound to the
+     popup function may not be rebound using Assign. Using popup
+     mode with complicated screen images and with no freeze (the
+     -f option) may cause some difficulties if the menu obscures
+     the image, since the applications will have to redraw their
+     windows after the menu goes away.
+
+     The available commands are described below.  For any of
+     these commands, if you press a button to start a command,
+     and then want to abort the command, simply press one of the
+     other buttons before releasing the first button.
+
+     Select attaches the keyboard to a window, i.e., keyboard
+     input will go to that window (hierarchy) even when the mouse
+     is outside the window.  It also Raises the selected window.
+     Selecting the background will detach the keyboard from any
+     window (actually, it attaches it to the background window).
+     If no window is selected the keyboard input will go to the
+     window which currently contains the mouse cursor.	The
+     selected window is highlighted by drawing a partial frame
+     around the window.  Selecting an icon allows the icon name
+     to be edited: the delete key deletes the last character,
+     control-U deletes the entire name, and other characters are
+     appended to the current name.  Typing a return restores the
+     input focus to the most recent non-icon window selected.
+
+     Raise raises the window to the top of any stack of overlap-
+     ping windows.
+
+     Move is used to move a window.  If you apply it to a window,
+     an outline will be moved with the mouse; when you release
+     the button, the window will be moved.
+
+     (De)Iconify will make a window into an icon.  If the mouse
+     is moved more than a threshold amount, or this is the first
+     time the window has been iconified, the icon will appear at
+     the location on the screen where the button is released.
+     Otherwise, the icon will reappear at its previous location.
+     This threshold may be changed with the %_i_c_o_n_D_e_l_t_a option.
+     Giving a negative value will disable this effect.	The
+     default is 5 pixels.  (De)Iconify will make the original
+     window reappear at its former position on the screen if it
+     is applied to an icon.  The name displayed in the icon can
+
+
+
+Printed 9/15/87           19 July 1985				3
+
+
+
+
+
+
+XNWM(1)             UNIX Programmer's Manual		  XNWM(1)
+
+
+
+     be edited by Selecting the icon.
+
+     Lower will `push' the window you point at to the bottom of
+     any stack of overlapping windows.
+
+     Resize is used to resize a window by moving a corner or an
+     edge.  If you apply it to a window, a rubber banded outline
+     of the window will be displayed and moving the mouse will
+     change its size, leaving the opposite corner or other edges
+     fixed.  The corner or edge to be moved depends on the where
+     the mouse is when the button is pressed.  Imagine the window
+     divided with grid of nine rectangles.  If the mouse is in
+     one of the four corner rectangles or the center rectangle,
+     then the corner closest to the mouse will be moved; other-
+     wise, the closest edge will be moved.  When the button is
+     released, the window will be resized.
+
+     Circulate causes the lowest window in the stack of overlap-
+     ping windows to be Raised ; successive applications will
+     reveal every window in turn.
+
+     Assign allows you to change the button bindings; to use it
+     click any button in the Assign menu window and then click
+     the same button in any other function to assign that func-
+     tion to that button.  To remove the assignment from a but-
+     ton, double click the Assign window.
+
+X DEFAULTS AND OPTION SUMMARY
+     MenuFont (fm=_n_a_m_e)
+	     Set the default font for the menu.
+
+     SizeFont (fs=_n_a_m_e)
+	     Set the default font for the size window.
+
+     IconFont (fi=_n_a_m_e)
+	     Set the default font for icons.
+
+     FrameWidth (@_v_a_l_u_e)
+	     Set the width of the frame around selected windows.
+
+     IconifyDelta (%_v_a_l_u_e)
+	     Set the threshold for moving icons.
+
+     ReverseVideo (-r)
+	     Sets reverse video for the menu, icons, selection
+	     border, and cursor.
+
+     MenuFormat (-tv2)
+	     Sets the format of the menu; should be some subset
+	     of tv2 meaning thin, vertical, or 2 rows.
+
+     Freeze (-f)
+
+
+
+Printed 9/15/87           19 July 1985				4
+
+
+
+
+
+
+XNWM(1)             UNIX Programmer's Manual		  XNWM(1)
+
+
+
+	     If set to ``off'', disables _x_n_w_m taking control of
+	     the screen during operations.
+
+     KeyCombination (-csmln)
+	     Sets the keys required to specify _x_n_w_m operations;
+	     should be some subset of csmln meaning control,
+	     shift, meta, lock, and none.
+
+     LeftButton (l=value)
+	     Sets the default left button function; should be one
+	     of srmilzcp
+
+     MiddleButton (m=value)
+	     Sets the default middle button function; should be
+	     one of srmilzcp
+
+     RightButton (r=value)
+	     Sets the default right button function; should be
+	     one of srmilzcp
+
+     Geometry (={+-}xoff{+-}yoff)
+	     Sets the location of the menu.
+
+FILES
+     /usr/new/lib/X/font	    directory of fonts
+
+ENVIRONMENT
+     DISPLAY			    - to get default host and
+     display number
+
+SEE ALSO
+     X(8C)
+
+AUTHOR
+     Paul Asente, Stanford University, using some algorithms ori-
+     ginally by Bob Scheifler, MIT Laboratory for Computer Sci-
+     ence
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 9/15/87           19 July 1985				5
+
+
+

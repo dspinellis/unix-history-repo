@@ -1,0 +1,132 @@
+
+
+
+XFAX(1)             UNIX Programmer's Manual		  XFAX(1)
+
+
+
+NAME
+     xfax - display a FAX file in an X window
+
+SYNOPSIS
+     xfax [ options ] [ =_g_e_o_m_e_t_r_y ] [ _h_o_s_t:_n_u_m_b_e_r ] file
+
+DESCRIPTION
+     _X_f_a_x displays a Dacom 450/500 Facsimile file (see NIC RFC
+     803) in an X window.  By default, the host and display
+     number are extracted from the environment variable
+     ``DISPLAY'', but one can specify a different host in the
+     command line.  The window is created in the usual way using
+     a geometry specification or using a mouse button.	Clicking
+     left creates a full screen window.  With the center button,
+     depress the button to define one corner of the window, move
+     the cursor to where the opposite corner of the window should
+     be and release the button.
+
+     Decoding the file usually takes no more than a minute, and
+     then the file is displayed.  You can move around in the file
+     by pressing the center button in one spot, moving somewhere,
+     and releasing the button.	The spot you pointed at first
+     will move to the spot you pointed at last.
+
+OPTIONS
+     On color displays, colors can be specified in the command
+     line:
+
+	  -fg=_c_o_l_o_r	 foreground
+	  -bg=_c_o_l_o_r	 background
+	  -bd=_c_o_l_o_r	 border
+	  -ms=_c_o_l_o_r	 mouse
+
+X DEFAULTS
+     Background
+	     To determine the background color.
+
+     Border  To determine the border color.
+
+     BorderWidth
+	     To determine the border width.
+
+     Foreground
+	     To determine the foreground color.
+
+     Mouse   To determine the mouse cursor color.
+
+ENVIRONMENT
+     DISPLAY   This program gets the display to use by default
+     from this variable.
+
+
+
+
+
+Printed 9/15/87         12 December 1985			1
+
+
+
+
+
+
+XFAX(1)             UNIX Programmer's Manual		  XFAX(1)
+
+
+
+AUTHOR
+     Bob Scheifler, MIT Laboratory for Computer Science.
+     Copyright (c) 1985, Massachusetts Institute of Technology
+
+SEE ALSO
+     X(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 9/15/87         12 December 1985			2
+
+
+

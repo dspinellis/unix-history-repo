@@ -1,0 +1,66 @@
+
+
+
+RESIZE(1)	    UNIX Programmer's Manual		RESIZE(1)
+
+
+
+NAME
+     resize - reset TERMCAP with current size of a window
+
+SYNOPSIS
+     resize [-u] [-s [row col]]
+
+DESCRIPTION
+     _R_e_s_i_z_e prints on its standard output the TERM and TERMCAP
+     commands for the C-shell of the current size of a window.
+     It is never executed directly, but should be aliased simi-
+     larly to _t_s_e_t(1) to cause the C-shell to execute the com-
+     mands.
+
+     Normally, VT102 escape sequences are used.  With the -s
+     option, Sun tty escape sequences are used, which has the
+     advantage that a new row and column size may be specified
+     and the window will resize appropriately.
+
+     For example, the following alias when executed as a command
+     will reset the environment of the current shell:
+
+	  alias xs  'set noglob; eval `resize`'
+	  alias xrs 'set noglob; eval `resize -s \!\*`'
+
+     The -u option will cause the commands to be formed appropri-
+     ately for sh (the Bourne shell) rather than csh.
+
+FILES
+     /etc/termcap   for the base termcap entry to modify.
+     ~/.cshrc  user's alias for the command.
+
+SEE ALSO
+     csh(1), tset(1), xterm(1)
+
+AUTHORS
+     Mark Vandevoorde (MIT-Athena), Edward Moy (Berkeley)
+     Copyright (c) 1984, 1985 by Massachusetts Institute of Tech-
+     nology.
+     See _X(1) for a complete copyright notice.
+
+BUGS
+     ``-u'' must appear to the left of ``-s'' if both are speci-
+     fied.
+
+     There should be some global notion of display size; termcap
+     and terminfo need to be rethought in the context of window
+     systems.  (Fixed in 4.3BSD, and Ultrix-32 1.2)
+
+
+
+
+
+
+
+
+Printed 9/15/87            1 Nov 1986				1
+
+
+

@@ -1,0 +1,198 @@
+
+
+
+XLOAD(1)	    UNIX Programmer's Manual		 XLOAD(1)
+
+
+
+NAME
+     xload - X window system load average display
+
+SYNOPSIS
+     xload [ option ] ...
+
+DESCRIPTION
+     _x_l_o_a_d continuously displays the system load average under
+     the _X window system.  _x_l_o_a_d creates a window in which the
+     load average is represented as a bar graph with n divisions.
+     Each division represents one unit of load average.  The name
+     of the host is displayed in the upper left corner.
+
+     _x_l_o_a_d understands the following options:
+
+     -bd _c_o_l_o_r
+	     Specify the border color.	On monochrome displays
+	     this option is ignored.  The default color is
+	     ``black''.
+
+     -bg _c_o_l_o_r
+	     Specify the background color.  On monochrome
+	     displays this option is ignored.  The default color
+	     is ``white''.
+
+     -bw _p_i_x_e_l_s
+	     Specify the width in pixels of the border around the
+	     _x_l_o_a_d window. The default value is 3 pixels.
+
+     -fg _c_o_l_o_r
+	     Specify the graph color.  On monochrome displays
+	     this option is ignored.  The default color is
+	     ``black''.
+
+     -fn _f_o_n_t_n_a_m_e
+	     The hostname will be displayed in the specified font
+	     (if none is specified, this defaults to 6x10).
+
+     -hl _c_o_l_o_r
+	     Specify the hostname and scale line color; the
+	     default is to make it the same as the graph color.
+
+     -rv     Reverses the default color values (i.e., black
+	     becomes white and white becomes black).
+
+     -fw     Forces the default color values to remain at their
+	     predetermined settings (i.e., white is white and
+	     black is black).
+
+     -scale _i_n_t_e_g_e_r
+	     Specify the minimum number of divisions on the graph
+	     (default 1).  _X_l_o_a_d is free to use more divisions if
+
+
+
+Printed 9/15/87          18 August 1985                         1
+
+
+
+
+
+
+XLOAD(1)	    UNIX Programmer's Manual		 XLOAD(1)
+
+
+
+	     the load gets too high to display, but it will never
+	     use fewer divisions than this.
+
+     -update _s_e_c_o_n_d_s
+	     Specify the frequency in seconds with which _x_l_o_a_d
+	     updates its display (except if the _x_l_o_a_d window is
+	     obscured and then exposed, immediate redisplay
+	     occurs).  The default update frequency is 5 seconds.
+	     Specification of a frequency less than 5 seconds is
+	     ignored and the default frequency is used instead.
+
+     =_g_e_o_m_e_t_r_y
+	     The load graph window is created with the specified
+	     size and location determined by the supplied
+	     geometry specification.  See _X(_1) for a full expla-
+	     nation.
+
+     [_h_o_s_t]:[_d_i_s_p_l_a_y]
+	     Normally, _x_l_o_a_d gets the host and display number to
+	     use from the environment variable ``DISPLAY''.
+	     Either or both can be specified with this option.
+	     _h_o_s_t specifies which machine to create the _x_l_o_a_d
+	     window on, and _d_i_s_p_l_a_y specifies the display number.
+	     For example, ``mit-grape-nehi:0'' creates an _x_l_o_a_d
+	     on display 0 on machine mit-grape-nehi. Either value
+	     can be defaulted by omission but ``:'' is necessary
+	     to specify one or both.
+
+X DEFAULTS
+     Foreground
+	     Set the graph color.  Ignored on monochrome
+	     displays.
+
+     Background
+	     Set the background color.	Ignored on monochrome
+	     display.
+
+     BodyFont
+	     Set the hostname font.
+
+     Border  Set the internal border padding.
+
+     BorderColor
+	     Set the border color.  Ignored on monochrome
+	     displays.
+
+     BorderWidth
+	     Set the border width of the window.
+
+     Highlight
+	     Set the hostname and scale line color.  Ignored on
+	     monochrome displays.
+
+
+
+Printed 9/15/87          18 August 1985                         2
+
+
+
+
+
+
+XLOAD(1)	    UNIX Programmer's Manual		 XLOAD(1)
+
+
+
+     ReverseVideo
+	     If ``on'', reverse the effect of the defaults
+	     colors.  Ignored on color displays.
+
+     Scale   Set the minimum scale.
+
+     Update  Set the update interval.
+
+ENVIRONMENT
+     DISPLAY - to get the default host and display number.
+
+SEE ALSO
+     X(10, xwm(1), X(8C), mem(4), select(2)
+
+DIAGNOSTICS
+     Unable to open display or create window. Unable to open
+     /dev/kmem.  Unable to query window for dimensions. Various X
+     errors.
+
+BUGS
+     _x_l_o_a_d requires the ability to open and read /dev/kmem. On
+     most systems, this requires the suid bit set with root own-
+     ership or the sgid bit set and membership in the same group
+     as /dev/kmem.
+
+AUTHORS
+     K. Shane Hartman (MIT-LCS), Stuart A. Malone (MIT-LCS)
+     Host name feature added by Jim Gettys (MIT-Athena).  Scale
+     feature added by Bob Scheifler (MIT-LCS).	Automatic rescal-
+     ing feature added by Stuart A. Malone (MIT-LCS).  Color
+     enhancements added by Tony Della Fera (MIT-Athena)
+     Copyright (c) 1985, Massachusetts Institute of Technology.
+     See X(1) for a complete copyright notice.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 9/15/87          18 August 1985                         3
+
+
+

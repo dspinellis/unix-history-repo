@@ -1,0 +1,528 @@
+
+
+
+BITMAP(1)	    UNIX Programmer's Manual		BITMAP(1)
+
+
+
+NAME
+     bitmap - bitmap editor for X window system
+
+
+SYNOPSIS
+     bitmap filename [_d_i_m_e_n_s_i_o_n_s] [_h_o_s_t:_d_i_s_p_l_a_y] [=_g_e_o_m_e_t_r_y]
+
+
+DESCRIPTION
+     _b_i_t_m_a_p lets you interactively create small bitmaps, or edit
+     previously created bitmaps.  A bitmap is a small picture,
+     represented as a rectangular array of 0 and 1 bits.  The X
+     window system uses bitmaps to represent cursors and icons,
+     among other things.
+
+     When you run _b_i_t_m_a_p, you are given a magnified version of
+     the bitmap, with each pixel blown up into a large square,
+     like a piece of graph paper.  You can then use the mouse to
+     set, clear, or invert individual pixels, and can invoke com-
+     mands to set, clear or invert larger rectangular areas of
+     the bitmap.  Other commands allow you to move or copy rec-
+     tangular areas from one part of the bitmap to another, and
+     to define a `hot spot'--a special single point on the bit-
+     map, which is useful when the bitmap is used as an X cursor.
+
+     The output of the _b_i_t_m_a_p program is a small program frag-
+     ment.  By #include'ing such a program fragment in your C
+     program, you can easily declare the size and contents of
+     cursors, icons, and other bitmaps that your program creates
+     to deal with the X window system.
+
+     When _b_i_t_m_a_p starts, it first tries to read the specified
+     file (see FILE FORMAT). If the file already exists, it
+     creates a window containing a grid of the appropriate dimen-
+     sions.
+
+     If the file does not exist, _b_i_t_m_a_p will create a window for
+     a bitmap of the size specified by _d_i_m_e_n_s_i_o_n_s , which should
+     be two numbers separated by the letter `x' (e.g. 7x9,
+     13x21).  The first number is the bitmap's width; the second
+     is its height.  The bitmap will start out empty.  If no
+     dimensions are specified on the command line, a 16x16 bitmap
+     will be created.  The absolute limit is 99x99; the practical
+     limit is somewhat lower, and depends on the size and resolu-
+     tion of your display.
+
+     _b_i_t_m_a_p accepts two other optional command line arguments.
+     You may specify a display name in the form _h_o_s_t:_d_i_s_p_l_a_y (see
+     _X(_1)).  And you may provide a geometry specification.  If
+     you don't give a geometry specification, _b_i_t_m_a_p will ask you
+     where you want to put the window when it starts up.  See
+     _X(_1) for a full explanation.
+
+
+
+Printed 9/15/87          29 January 1986			1
+
+
+
+
+
+
+BITMAP(1)	    UNIX Programmer's Manual		BITMAP(1)
+
+
+
+     The window that _b_i_t_m_a_p creates has four parts.  The largest
+     section is the checkerboard grid, which is a magnified ver-
+     sion of the bitmap you are editing.  At the upper left is a
+     set of commands that you can invoke with any mouse button.
+     Below the commands is an "actual size" picture of the bitmap
+     you are editing;  below that is an inverted version of the
+     same bitmap.  Each time you change the grid, the same change
+     will occur in the actual-size bitmap and its inverse.
+
+     If you use a window manager to make the _b_i_t_m_a_p window larger
+     or smaller, the grid squares will automatically get larger
+     or smaller as well.
+
+
+COMMANDS
+     (Note for users of color displays:  In all of the following,
+     ``white'' means the background color, and ``black'' means
+     the foreground color.  You may specify a foreground and
+     background color in your ._X_d_e_f_a_u_l_t_s file;	see the X
+     DEFAULTS section below.)
+
+     When the cursor is in the checkerboard region, each mouse
+     button has a different effect upon the single square that
+     the cursor is over.
+
+     The _l_e_f_t _m_o_u_s_e _b_u_t_t_o_n turns a grid square black and sets the
+     corresponding bitmap bit to 1.
+
+     The _r_i_g_h_t _m_o_u_s_e _b_u_t_t_o_n turns a grid square white and sets
+     the corresponding bitmap bit to 0.
+
+     The _m_i_d_d_l_e _m_o_u_s_e _b_u_t_t_o_n inverts a grid square, turning it
+     white if it was black, or black if it was white.  It also
+     inverts the corresponding bitmap bit, setting it to 0 if it
+     was 1, and to 1 if it was 0.
+
+     You can also invoke more sophisticated commands by moving
+     the mouse over one of the command boxes at the upper right
+     corner, and pressing any mouse button.
+
+
+     _C_l_e_a_r _A_l_l
+	     turns all the grid squares white and sets all bitmap
+	     bits to 0.  This is irreversible, so invoke it with
+	     care.
+
+
+     _S_e_t _A_l_l turns all the grid squares black and sets all bitmap
+	     bits to 1.  This is also irreversible.
+
+
+
+
+
+
+Printed 9/15/87          29 January 1986			2
+
+
+
+
+
+
+BITMAP(1)	    UNIX Programmer's Manual		BITMAP(1)
+
+
+
+     _I_n_v_e_r_t _A_l_l
+	     inverts all the grid squares and bitmap bits, as if
+	     you had pressed the middle mouse button over each
+	     square.
+
+
+     _C_l_e_a_r _A_r_e_a
+	     clears a rectangular area of the grid, turning it
+	     white and setting the corresponding bitmap bits to
+	     0. After you click over this command, the cursor
+	     turns into an `upper-left corner'.  Press any mouse
+	     button over the upper-left corner of the area you
+	     want to invert, and _h_o_l_d _t_h_e _b_u_t_t_o_n _d_o_w_n while mov-
+	     ing the mouse to the lower-right corner of the area
+	     you want to invert, then let the button up.
+
+	     While you are holding down the button, the selected
+	     area will be covered with X's, and the cursor will
+	     change to a `lower-right corner'.	If you now wish
+	     to abort the command without clearing an area,
+	     either press another mouse button, move the cursor
+	     outside the grid, or move the cursor to the left of
+	     or above the upper-left corner.
+
+
+     _S_e_t _A_r_e_a
+	     turns a rectangular area of the grid black and sets
+	     the corresponding bitmap bits to 1.  It works the
+	     same way as the _C_l_e_a_r _A_r_e_a command.
+
+
+     _I_n_v_e_r_t _A_r_e_a
+	     inverts a rectangular area of the grid.  It works
+	     the same way as the _C_l_e_a_r _A_r_e_a command.
+
+
+     _C_o_p_y _A_r_e_a
+	     copies a rectangular area from one part of the grid
+	     to another.  First, you select the rectangle to be
+	     copied, in the manner described under _C_l_e_a_r _A_r_e_a
+	     above.  Then, the cursor will change to an "upper-
+	     left corner".  When you press a mouse button, a des-
+	     tination rectangle will overlay the grid;	moving
+	     the mouse while holding down the button will move
+	     this destination rectangle.  The copy will occur
+	     when you let up the button.  To cancel the copy,
+	     move the mouse outside the grid and then let up the
+	     button.
+
+     _M_o_v_e _A_r_e_a
+	     works identically to _C_o_p_y _A_r_e_a, _e_x_c_e_p_t that it
+	     clears the source rectangle after copying to the
+
+
+
+Printed 9/15/87          29 January 1986			3
+
+
+
+
+
+
+BITMAP(1)	    UNIX Programmer's Manual		BITMAP(1)
+
+
+
+	     destination.
+
+
+     _L_i_n_e    will draw a line between two points.
+
+
+     _C_i_r_c_l_e  will draw a circle specifying the center and a
+	     radius
+
+
+     _F_i_l_l_e_d _C_i_r_c_l_e
+	     will draw a filled circle given the center and
+	     radius of the circle.
+
+     _S_e_t _H_o_t_s_p_o_t
+	     designates a point on the bitmap as the "hot spot".
+	     If a program is using your bitmap as a cursor, the
+	     hot spot indicates which point on the bitmap is the
+	     "actual" location of the cursor.  For instance, if
+	     your cursor is an arrow, the hot spot should be the
+	     tip of the arrow;	if your cursor is a cross, the
+	     hot spot should be where the perpendicular lines
+	     intersect.
+
+
+     _C_l_e_a_r _H_o_t_s_p_o_t
+	     removes any hot spot that was defined on this bit-
+	     map.
+
+
+     _W_r_i_t_e _O_u_t_p_u_t
+	     writes the current bitmap value to the file speci-
+	     fied in the original command line.  If the file
+	     already exists, the original file is first renamed
+	     to filename~ (in the manner of _e_m_a_c_s(_1) and other
+	     text editors).
+
+	     If either the renaming or the writing cause an error
+	     (e.g.  ``Permission denied'), a Macintosh-style dia-
+	     log window will appear, asking if you want to write
+	     the file /_t_m_p/_f_i_l_e_n_a_m_e instead.  If you say yes, all
+	     future ``Write Output'' commands will write to
+	     /_t_m_p/_f_i_l_e_n_a_m_e as well.  See below for the format of
+	     the output file.
+
+
+     _Q_u_i_t    exits the _b_i_t_m_a_p program.	If you have edited the
+	     bitmap and have not invoked _W_r_i_t_e _O_u_t_p_u_t, or you
+	     have edited it since the last time you invoked _W_r_i_t_e
+	     _O_u_t_p_u_t, a Macintosh-style dialog window will appear,
+	     asking if you want to save changes before quitting.
+	     ``Yes'' does a ``Write Output'' before exiting;
+
+
+
+Printed 9/15/87          29 January 1986			4
+
+
+
+
+
+
+BITMAP(1)	    UNIX Programmer's Manual		BITMAP(1)
+
+
+
+	     ``No'' just exits, losing the edits;  ``Cancel''
+	     means you decided not to quit after all.
+
+
+
+FILE FORMAT
+     _B_i_t_m_a_p reads and writes files in the following format, which
+     is suitable for #include'ing in a C program:
+     #define foo_width 9
+     #define foo_height 13
+     #define foo_x_hot 4
+     #define foo_y_hot 6
+     static short foo_bits[] = {
+	0x0010, 0x0038, 0x007c, 0x0010,
+	0x0010, 0x0010, 0x01ff, 0x0010,
+	0x0010, 0x0010, 0x007c, 0x0038,
+	0x0010};
+
+     The variables ending with __x__h_o_t and __y__h_o_t are optional;
+     they will be present only if a hot spot has been defined for
+     this bitmap.  The other variables must be present.
+
+     In place of ``foo'', the five variables will be prefixed
+     with a string derived from the name of the file that you
+     specified on the original command line by
+       (1) deleting the directory path (all characters up to and
+     including the last `/', if one is present)
+       (2) deleting the extension (the first `.', if one is
+     present, and all characters beyond it)
+
+     For example, invoking _b_i_t_m_a_p with filename
+     /_u_s_r/_i_n_c_l_u_d_e/_b_i_t_m_a_p_s/_c_r_o_s_s._b_i_t_m_a_p will produce a file with
+     variable names _c_r_o_s_s__w_i_d_t_h, _c_r_o_s_s__h_e_i_g_h_t, and _c_r_o_s_s__b_i_t_s
+     (and _c_r_o_s_s__x__h_o_t and _c_r_o_s_s__y__h_o_t if a hot spot is defined).
+
+     It's easy to define a bitmap or cursor in an X program by
+     simply #include'ing a bitmap file and referring to its vari-
+     ables.  For instance, to use a cursor defined in the files
+     _t_h_i_s._c_u_r_s_o_r and _t_h_i_s__m_a_s_k._c_u_r_s_o_r, one simply writes
+
+     #include "this.cursor"
+     #include "this_mask.cursor"
+     XCreateCursor (this_width, this_height, this_bits, this_mask_bits,
+       this_x_hot, this_y_hot, foreground, background, func);
+
+     where _f_o_r_e_g_r_o_u_n_d and _b_a_c_k_g_r_o_u_n_d are color values, and _f_u_n_c
+     is a display function (normally GXcopy).
+
+     An X program can also read a bitmap file at runtime by using
+     the function _X_R_e_a_d_B_i_t_m_a_p_F_i_l_e.
+
+
+
+
+
+Printed 9/15/87          29 January 1986			5
+
+
+
+
+
+
+BITMAP(1)	    UNIX Programmer's Manual		BITMAP(1)
+
+
+
+X DEFAULTS
+     Background
+	     The window's background color.  Bits which are 0 in
+	     the bitmap are displayed in this color.  This option
+	     is useful only on color displays.	Default: white.
+
+     Border  The border color.	This option is useful only on
+	     color displays. Default: black.
+
+     BorderWidth
+	     The border width.	Default: 3.
+
+     BodyFont
+	     The text font.  Default: vtsingle.
+
+     Foreground
+	     The foreground color.  Bits which are 1 in the bit-
+	     map are displayed in this color.  This option is
+	     useful only on color displays. Default: black.
+
+     Highlight
+	     The highlight color.  _b_i_t_m_a_p uses this color to show
+	     the hot spot and to indicate rectangular areas that
+	     will be affected by the _M_o_v_e _A_r_e_a, _C_o_p_y _A_r_e_a, _S_e_t
+	     _A_r_e_a, and _I_n_v_e_r_t _A_r_e_a commands.   If a highlight
+	     color is not given, then _b_i_t_m_a_p will highlight by
+	     inverting.  This option is useful only on color
+	     displays.
+
+
+     Mouse   The mouse cursor's color.	This option is useful
+	     only on color displays.  Default: black.
+
+
+ENVIRONMENT
+	DISPLAY - the default host and display number.
+
+
+SEE ALSO
+	X(1), Xlib Documentation.
+
+
+
+DIAGNOSTICS
+     The following messages may be displayed in the C-shell that
+     you invoked _b_i_t_m_a_p with.  Any of these conditions aborts
+     _b_i_t_m_a_p before it can create its window.
+
+
+       ``bitmap: could not connect to X server on _h_o_s_t:_d_i_s_p_l_a_y''
+
+     Either the display given on the command line or the DISPLAY
+
+
+
+Printed 9/15/87          29 January 1986			6
+
+
+
+
+
+
+BITMAP(1)	    UNIX Programmer's Manual		BITMAP(1)
+
+
+
+     environment variable has an invalid host name or display
+     number, or the host is down, or the host is unreachable, or
+     the host is not running an X server, or the host is refusing
+     connections.
+
+       ``bitmap: no file name specified''
+
+     You invoked _b_i_t_m_a_p with no command line arguments.  You must
+     give a file name as the first argument.
+
+
+       ``bitmap: could not open file _f_i_l_e_n_a_m_e for reading -- _m_e_s_-
+     _s_a_g_e''
+
+     The specified file exists but cannot be read, for the reason
+     given in <message> (e.g., permission denied).
+
+
+       ``bitmap: invalid dimensions _s_t_r_i_n_g''
+       ``bitmap: dimensions must be positive''
+
+     The second command line argument was not a valid dimension
+     specification.
+
+
+       ``bitmap: file _f_i_l_e_n_a_m_e does not have a valid width dimen-
+     sion''
+       ``bitmap: file _f_i_l_e_n_a_m_e does not have a valid height
+     dimension''
+       ``bitmap: file _f_i_l_e_n_a_m_e has an invalid _nth array element''
+
+     The input file is not in the correct format;  the program
+     gave up when trying to read the specified data.
+
+
+     The following messages may be displayed in the C-shell after
+     _b_i_t_m_a_p creates its window:
+
+       ``bitmap: Unrecognized variable _n_a_m_e in file _f_i_l_e_n_a_m_e''
+
+     _b_i_t_m_a_p encountered a variable ending in something other than
+     __x__h_o_t, __y__h_o_t, __w_i_d_t_h, or __h_e_i_g_h_t while parsing the input
+     file.  It will ignore this variable and continue parsing the
+     file.
+
+
+       ``bitmap: XError: _m_e_s_s_a_g_e''
+       ``bitmap: XIOError''
+
+     A protocol error occurred.  Something is wrong with either
+     the X server or the X library which the program was compiled
+     with.  Possibly they are incompatible.  If the server is not
+
+
+
+Printed 9/15/87          29 January 1986			7
+
+
+
+
+
+
+BITMAP(1)	    UNIX Programmer's Manual		BITMAP(1)
+
+
+
+     on the local host, maybe the connection broke.
+
+
+
+BUGS
+	Doesn't take enough command line options yet.  Most
+     options can be specified only through ._X_d_e_f_a_u_l_t_s.
+
+	If you move the mouse too fast while holding a mouse but-
+     ton down, some squares may be `missed'.  This is caused by
+     limitations in how frequently the X server can sample the
+     mouse location.
+
+	There is no way to write to a file other than that speci-
+     fied on the command line.
+
+	There is no way to change the size of the bitmap once the
+     program is started.
+
+	Edits are unrecoverably lost if you terminate the program
+     with a ^C or ^ in the shell which invoked it, or if you kill
+     it with the shell's ``kill'' command.
+
+	Dimensions greater than 99 are not read properly from the
+     command line or input file.  Generally such dimensions would
+     not be useful anyway, since they would produce a window
+     larger than most displays.
+
+
+AUTHOR
+     Copyright (c) 1986 by Massachusetts Institute of Technology.
+	Ron Newman, MIT Project Athena
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 9/15/87          29 January 1986			8
+
+
+
