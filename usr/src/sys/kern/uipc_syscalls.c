@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	4.21	82/07/24	*/
+/*	uipc_syscalls.c	4.22	82/08/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -166,7 +166,7 @@ ssocket()
 	if (uap->asp && copyin((caddr_t)uap->asp, (caddr_t)&sp, sizeof (sp)) ||
 	    uap->asa && copyin((caddr_t)uap->asa, (caddr_t)&sa, sizeof (sa))) {
 		u.u_error = EFAULT;
-		return;
+		goto bad;
 	}
 	u.u_error = socreate(&so, uap->type,
 	    uap->asp ? &sp : 0, uap->asa ? &sa : 0, uap->options);
