@@ -1,8 +1,8 @@
-#	Makefile	4.7	85/11/11
+#	Makefile	4.8	86/08/29
 #
 CFLAGS=	-O
 ALL=	tek t4013 t300 t300s t450 aedplot bgplot crtplot dumbplot gigiplot \
-	hpplot hp7221plot implot atoplot plottoa
+	hpplot hp7221plot implot atoplot plottoa grnplot
 
 all:	${ALL} debug
 
@@ -50,6 +50,9 @@ atoplot: atoplot.o
 
 plottoa: plottoa.o
 	cc -o plottoa plottoa.o
+
+grnplot: driver.o
+	cc -o grnplot driver.o -lplotgrn -lm
 
 debug: debug.o
 	cc -o debug debug.o
