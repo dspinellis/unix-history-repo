@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	5.18 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -189,6 +189,10 @@ ttloop()
     ncc = read(net, netibuf, sizeof netibuf);
     if (ncc < 0) {
 	syslog(LOG_INFO, "ttloop:  read: %m\n");
+	exit(1);
+    } else if (ncc == 0) {
+	syslog(LOG_INFO, "ttloop:  peer died: %m\n");
+	exit(1);
     }
     netip = netibuf;
     telrcv();			/* state machine */
@@ -213,6 +217,7 @@ getterminaltype()
     settimer(getterminal);
     bcopy(sbuf, nfrontp, sizeof sbuf);
     nfrontp += sizeof sbuf;
+    hisopts[TELOPT_TTYPE] = OPT_YES_BUT_ALWAYS_LOOK;
     while (sequenceIs(ttypeopt, getterminal)) {
 	ttloop();
     }
@@ -863,7 +868,12 @@ wontoption(option)
 	case TELOPT_BINARY:
 		mode(0, RAW);
 		break;
+
+	case TELOPT_TTYPE:
+	    settimer(ttypeopt);
+	    break;
 	}
+
 	fmt = dont;
 	hisopts[option] = OPT_NO;
 	sprintf(nfrontp, fmt, option);
@@ -918,11 +928,6 @@ int option;
     case TELOPT_ECHO:		/* we should stop echoing */
 	mode(0, ECHO|CRMOD);
 	fmt = wont;
-	break;
-
-    case TELOPT_TTYPE:
-	fmt = wont;
-	settimer(ttypeopt);
 	break;
 
     default:
