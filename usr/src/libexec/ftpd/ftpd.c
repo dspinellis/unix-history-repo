@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	5.27.1.1	(Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	5.28	(Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -53,14 +53,13 @@ static char sccsid[] = "@(#)ftpd.c	5.27.1.1	(Berkeley) %G%";
 #include <strings.h>
 #include <syslog.h>
 #include <varargs.h>
+#include "pathnames.h"
 
 /*
  * File containing login names
  * NOT to be used on this machine.
  * Commonly used to disallow uucp.
  */
-#define	FTPUSERS	"/etc/ftpusers"
-
 extern	int errno;
 extern	char *sys_errlist[];
 extern	int sys_nerr;
@@ -71,6 +70,7 @@ extern	FILE *ftpd_popen(), *fopen(), *freopen();
 extern	int  ftpd_pclose(), fclose();
 extern	char *getline();
 extern	char cbuf[];
+extern	off_t restart_point;
 
 struct	sockaddr_in ctrl_addr;
 struct	sockaddr_in data_source;
@@ -206,7 +206,7 @@ main(argc, argv, envp)
 nextopt:
 		argc--, argv++;
 	}
-	(void) freopen("/dev/null", "w", stderr);
+	(void) freopen(_PATH_DEVNULL, "w", stderr);
 	(void) signal(SIGPIPE, lostconn);
 	(void) signal(SIGCHLD, SIG_IGN);
 	if ((int)signal(SIGURG, myoob) < 0)
@@ -313,8 +313,8 @@ int askpasswd;			/* had user command, ask for passwd */
  * If account doesn't exist, ask for passwd anyway.
  * Otherwise, check user requesting login privileges.
  * Disallow anyone who does not have a standard
- * shell returned by getusershell() (/etc/shells).
- * Disallow anyone mentioned in the file FTPUSERS
+ * shell as returned by getusershell().
+ * Disallow anyone mentioned in the file _PATH_FTPUSERS
  * to allow people such as root and uucp to be avoided.
  */
 user(name)
@@ -345,7 +345,7 @@ user(name)
 	}
 	if (pw = sgetpwnam(name)) {
 		if ((shell = pw->pw_shell) == NULL || *shell == 0)
-			shell = "/bin/sh";
+			shell = _PATH_BSHELL;
 		while ((cp = getusershell()) != NULL)
 			if (strcmp(cp, shell) == 0)
 				break;
@@ -359,7 +359,7 @@ user(name)
 			pw = (struct passwd *) NULL;
 			return;
 		}
-		if ((fd = fopen(FTPUSERS, "r")) != NULL) {
+		if ((fd = fopen(_PATH_FTPUSERS, "r")) != NULL) {
 		    while (fgets(line, sizeof (line), fd) != NULL) {
 			if ((cp = index(line, '\n')) != NULL)
 				*cp = '\0';
@@ -519,6 +519,25 @@ retrieve(cmd, name)
 		reply(550, "%s: not a plain file.", name);
 		goto done;
 	}
+	if (restart_point) {
+		if (type == TYPE_A) {
+			register int i, n, c;
+
+			n = restart_point;
+			i = 0;
+			while (i++ < n) {
+				if ((c=getc(fin)) == EOF) {
+					perror_reply(550, name);
+					goto done;
+				}
+				if (c == '\n')
+					i++;
+			}	
+		} else if (lseek(fileno(fin), restart_point, L_SET) < 0) {
+			perror_reply(550, name);
+			goto done;
+		}
+	}
 	dout = dataconn(name, st.st_size, "w");
 	if (dout == NULL)
 		goto done;
@@ -543,11 +562,41 @@ store(name, mode, unique)
 	    (name = gunique(name)) == NULL)
 		return;
 
+	if (restart_point)
+		mode = "r+w";
 	fout = fopen(name, mode);
 	closefunc = fclose;
 	if (fout == NULL) {
 		perror_reply(553, name);
 		return;
+	}
+	if (restart_point) {
+		if (type == TYPE_A) {
+			register int i, n, c;
+
+			n = restart_point;
+			i = 0;
+			while (i++ < n) {
+				if ((c=getc(fout)) == EOF) {
+					perror_reply(550, name);
+					goto done;
+				}
+				if (c == '\n')
+					i++;
+			}	
+			/*
+			 * We must do this seek to "current" position
+			 * because we are changing from reading to
+			 * writing.
+			 */
+			if (fseek(fout, 0L, L_INCR) < 0) {
+				perror_reply(550, name);
+				goto done;
+			}
+		} else if (lseek(fileno(fout), restart_point, L_SET) < 0) {
+			perror_reply(550, name);
+			goto done;
+		}
 	}
 	din = dataconn(name, (off_t)-1, "r");
 	if (din == NULL)
@@ -570,7 +619,7 @@ FILE *
 getdatasock(mode)
 	char *mode;
 {
-	int s, on = 1;
+	int s, on = 1, tries;
 
 	if (data >= 0)
 		return (fdopen(data, mode));
@@ -578,13 +627,20 @@ getdatasock(mode)
 	if (s < 0)
 		return (NULL);
 	(void) seteuid((uid_t)0);
-	if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof (on)) < 0)
+	if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR,
+	    (char *) &on, sizeof (on)) < 0)
 		goto bad;
 	/* anchor socket to avoid multi-homing problems */
 	data_source.sin_family = AF_INET;
 	data_source.sin_addr = ctrl_addr.sin_addr;
-	if (bind(s, (struct sockaddr *)&data_source, sizeof (data_source)) < 0)
-		goto bad;
+	for (tries = 1; ; tries++) {
+		if (bind(s, (struct sockaddr *)&data_source,
+		    sizeof (data_source)) >= 0)
+			break;
+		if (errno != EADDRINUSE || tries > 10)
+			goto bad;
+		sleep(tries);
+	}
 	(void) seteuid((uid_t)pw->pw_uid);
 	return (fdopen(s, mode));
 bad:
@@ -1221,6 +1277,7 @@ send_file_list(whichfiles)
 	struct direct *dir;
 	FILE *dout = NULL;
 	register char **dirlist, *dirname;
+	int simple = 0;
 	char *strpbrk();
 
 	if (strpbrk(whichfiles, "~{[*?") != NULL) {
@@ -1239,6 +1296,7 @@ send_file_list(whichfiles)
 	} else {
 		onefile[0] = whichfiles;
 		dirlist = onefile;
+		simple = 1;
 	}
 
 	if (setjmp(urgcatch)) {
@@ -1268,7 +1326,7 @@ send_file_list(whichfiles)
 
 		if ((st.st_mode&S_IFMT) == S_IFREG) {
 			if (dout == NULL) {
-				dout = dataconn(whichfiles, (off_t)-1, "w");
+				dout = dataconn("file list", (off_t)-1, "w");
 				if (dout == NULL)
 					return;
 				transflag++;
@@ -1297,10 +1355,10 @@ send_file_list(whichfiles)
 			 * We have to do a stat to insure it's
 			 * not a directory or special file.
 			 */
-			if (stat(nbuf, &st) == 0 &&
-			    (st.st_mode&S_IFMT) == S_IFREG) {
+			if (simple || (stat(nbuf, &st) == 0 &&
+			    (st.st_mode&S_IFMT) == S_IFREG)) {
 				if (dout == NULL) {
-					dout = dataconn(whichfiles, (off_t)-1,
+					dout = dataconn("file list", (off_t)-1,
 						"w");
 					if (dout == NULL)
 						return;
