@@ -11,9 +11,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	5.44 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	5.42.1.2 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	5.44 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	5.42.1.2 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -82,7 +82,6 @@ getrequests()
 	int t;
 	register struct servent *sp;
 	int on = 1;
-	bool refusingconnections = TRUE;
 	struct sockaddr_in srvraddr;
 	extern void reapchild();
 
@@ -133,6 +132,12 @@ getrequests()
 		(void) close(DaemonSocket);
 		goto severe;
 	}
+	if (listen(DaemonSocket, 10) < 0)
+	{
+		syserr("getrequests: cannot listen");
+		(void) close(DaemonSocket);
+		goto severe;
+	}
 
 	(void) signal(SIGCHLD, reapchild);
 
@@ -143,38 +148,16 @@ getrequests()
 	{
 		register int pid;
 		auto int lotherend;
-		extern bool refuseconnections();
 
 		/* see if we are rejecting connections */
-		CurrentLA = getla();
-		if (refuseconnections())
+		while ((CurrentLA = getla()) > RefuseLA)
 		{
-			if (!refusingconnections)
-			{
-				/* don't queue so peer will fail quickly */
-				(void) listen(DaemonSocket, 0);
-				refusingconnections = TRUE;
-			}
-			setproctitle("rejecting connections: load average: %.2f",
-				(double)CurrentLA);
+			setproctitle("rejecting connections: load average: %.2f", (double)CurrentLA);
 			sleep(5);
-			continue;
-		}
-
-		if (refusingconnections)
-		{
-			/* start listening again */
-			if (listen(DaemonSocket, 10) < 0)
-			{
-				syserr("getrequests: cannot listen");
-				(void) close(DaemonSocket);
-				goto severe;
-			}
-			setproctitle("accepting connections");
-			refusingconnections = FALSE;
 		}
 
 		/* wait for a connection */
+		setproctitle("accepting connections");
 		do
 		{
 			errno = 0;
@@ -279,9 +262,8 @@ clrdaemon()
 **	Parameters:
 **		host -- the name of the host.
 **		port -- the port number to connect to.
-**		outfile -- a pointer to a place to put the outfile
-**			descriptor.
-**		infile -- ditto for infile.
+**		mci -- a pointer to the mail connection information
+**			structure to be filled in.
 **		usesecureport -- if set, use a low numbered (reserved)
 **			port to provide some rudimentary authentication.
 **
@@ -293,11 +275,10 @@ clrdaemon()
 **		none.
 */
 
-makeconnection(host, port, outfile, infile, usesecureport)
+makeconnection(host, port, mci, usesecureport)
 	char *host;
 	u_short port;
-	FILE **outfile;
-	FILE **infile;
+	register MCONINFO *mci;
 	bool usesecureport;
 {
 	register int i, s;
@@ -479,8 +460,8 @@ again:
 	}
 
 	/* connection ok, put it into canonical form */
-	*outfile = fdopen(s, "w");
-	*infile = fdopen(dup(s), "r");
+	mci->mci_out = fdopen(s, "w");
+	mci->mci_in = fdopen(dup(s), "r");
 
 	return (EX_OK);
 }
@@ -520,36 +501,32 @@ myhostname(hostbuf, size)
 		return (NULL);
 }
 /*
-**  MAPHOSTNAME -- turn a hostname into canonical form
-**
-**	Parameters:
-**		hbuf -- a buffer containing a hostname.
-**		hbsize -- the size of hbuf.
-**
-**	Returns:
-**		The mapping, if found.
-**		NULL if no mapping found.
-**
-**	Side Effects:
-**		Looks up the host specified in hbuf.  If it is not
-**		the canonical name for that host, return the canonical
-**		name.
-*/
+ *  MAPHOSTNAME -- turn a hostname into canonical form
+ *
+ *	Parameters:
+ *		hbuf -- a buffer containing a hostname.
+ *		hbsize -- the size of hbuf.
+ *
+ *	Returns:
+ *		TRUE if the host name was mapped.
+ *		FALSE otherwise.
+ *
+ *	Side Effects:
+ *		Looks up the host specified in hbuf.  If it is not
+ *		the canonical name for that host, replace it with
+ *		the canonical name.  If the name is unknown, or it
+ *		is already the canonical name, leave it unchanged.
+ */
 
-char *
-maphostname(hbuf, hbsize, avp)
+bool
+maphostname(hbuf, hbsize)
 	char *hbuf;
 	int hbsize;
-	char **avp;
 {
 	register struct hostent *hp;
 	u_long in_addr;
 	char ptr[256], *cp;
 	struct hostent *gethostbyaddr();
-
-	/* allow room for trailing dot on correct match */
-	if (ConfigLevel >= 2)
-		hbsize--;
 
 	/*
 	 * If first character is a bracket, then it is an address
@@ -557,34 +534,19 @@ maphostname(hbuf, hbsize, avp)
 	 * strip the brackets and to preserve hbuf if address is
 	 * unknown.
 	 */
-
 	if (*hbuf != '[')
-	{
-		if (getcanonname(hbuf, hbsize))
-		{
-			/* found a match -- add the trailing dot */
-			if (ConfigLevel >= 2)
-				(void) strcat(hbuf, ".");
-			return hbuf;
-		}
-		else
-			return NULL;
-	}
+		return (getcanonname(hbuf, hbsize));
 	if ((cp = index(strcpy(ptr, hbuf), ']')) == NULL)
-		return (NULL);
+		return (FALSE);
 	*cp = '\0';
 	in_addr = inet_addr(&ptr[1]);
 	hp = gethostbyaddr((char *)&in_addr, sizeof(struct in_addr), AF_INET);
 	if (hp == NULL)
-		return (NULL);
-
-	/* found a match -- copy and dot terminate */
+		return (FALSE);
 	if (strlen(hp->h_name) >= hbsize)
 		hp->h_name[hbsize - 1] = '\0';
-	(void) strcpy(hbuf, hp->h_name);
-	if (ConfigLevel >= 2)
-		(void) strcat(hbuf, ".");
-	return hbuf;
+	(void)strcpy(hbuf, hp->h_name);
+	return (TRUE);
 }
 
 # else DAEMON
@@ -621,10 +583,9 @@ myhostname(hostbuf, size)
 **	Parameters:
 **		hbuf -- a buffer containing a hostname.
 **		hbsize -- the size of hbuf.
-**		avp -- a pointer to a (cf file defined) argument vector.
 **
 **	Returns:
-**		mapped host name
+**		TRUE if the hostname was mapped.
 **		FALSE otherwise.
 **
 **	Side Effects:
@@ -635,13 +596,12 @@ myhostname(hostbuf, size)
 */
 
 /*ARGSUSED*/
-char *
-maphostname(hbuf, hbsize, avp)
+bool
+maphostname(hbuf, hbsize)
 	char *hbuf;
 	int hbsize;
-	char **avp;
 {
-	return NULL;
+	return (FALSE);
 }
 
 #endif DAEMON
