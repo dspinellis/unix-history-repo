@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	5.3 (Berkeley) %G%
+ *	@(#)extern.h	5.4 (Berkeley) %G%
  */
 
 #include "../btree/extern.h"
@@ -21,7 +21,7 @@ int	 __rec_put __P((const DB *dbp, DBT *, const DBT *, u_int));
 int	 __rec_ret __P((BTREE *, EPG *, recno_t, DBT *, DBT *));
 EPG	*__rec_search __P((BTREE *, recno_t, enum SRCHOP));
 int	 __rec_seq __P((const DB *, DBT *, DBT *, u_int));
-int	 __rec_sync __P((const DB *));
+int	 __rec_sync __P((const DB *, u_int));
 int	 __rec_vmap __P((BTREE *, recno_t));
 int	 __rec_vout __P((BTREE *));
 int	 __rec_vpipe __P((BTREE *, recno_t));
