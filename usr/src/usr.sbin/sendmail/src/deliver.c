@@ -15,12 +15,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sendmail.h>
 #include <sys/signal.h>
 #include <sys/stat.h>
+#include <sys/ioctl.h>
 #include <netdb.h>
 #include <errno.h>
 #include <arpa/nameser.h>
@@ -882,21 +883,11 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 
 		/* arrange for all the files to be closed */
 		for (i = 3; i < DtableSize; i++)
-#ifdef FIOCLEX
 			(void) ioctl(i, FIOCLEX, 0);
-#else FIOCLEX
-			(void) close(i);
-#endif FIOCLEX
 
 		/* try to execute the mailer */
 		execve(m->m_mailer, pvp, UserEnviron);
-
-#ifdef FIOCLEX
 		syserr("Cannot exec %s", m->m_mailer);
-#else FIOCLEX
-		printf("Cannot exec '%s' errno=%d\n", m->m_mailer, errno);
-		(void) fflush(stdout);
-#endif FIOCLEX
 		if (m == LocalMailer || errno == EIO || errno == EAGAIN ||
 		    errno == ENOMEM || errno == EPROCLIM)
 			_exit(EX_TEMPFAIL);
