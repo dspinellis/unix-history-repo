@@ -31,7 +31,7 @@ directions below:
 #device snd3 at isa? port 0x388 irq 10 drq 6 vector pasintr
 #device snd2 at isa? port 0x220 irq 7 drq 1 vector sbintr
 #device snd6 at isa? port 0x220 irq 7 drq 5 vector sbintr
-#device snd7 at isa? port 0x300 irq 7 vector sbintr
+#device snd7 at isa? port 0x300
 #device snd1 at isa? port 0x388
 
        Unit numbers are:
