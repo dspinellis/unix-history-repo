@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hpmaptype.c	7.6 (Berkeley) %G%
+ *	@(#)hpmaptype.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -110,7 +110,8 @@ hpmaptype(hpaddr, type, unit, lp)
 	for (i = 0; hptypes[i]; i++)
 		if (hptypes[i] == type)
 			goto found;
-	_stop("unknown drive type");
+	printf("unknown drive type\n");
+	return (0);
 
 found:
 	type = i;
@@ -199,5 +200,6 @@ found:
 			lp->d_partitions[i].p_size = lp->d_secperunit;
 		}
 	}
+	return (1);
 }
 #endif COMPAT_42

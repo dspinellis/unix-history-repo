@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)upmaptype.c	7.3 (Berkeley) %G%
+ *	@(#)upmaptype.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -55,7 +55,7 @@ upmaptype(unit, upaddr, lp)
 	upaddr->uphr = UPHR_MAXTRAK;
 	for (st = upst;; ++st) {
 		if (!st->ntrak)
-			return(1);
+			return(0);
 		if (upaddr->uphr == st->ntrak - 1) {
 			type = st - upst;
 			break;
@@ -84,6 +84,6 @@ upmaptype(unit, upaddr, lp)
 			    lp->d_secpercyl;
 			lp->d_partitions[i].p_size = lp->d_secperunit;
 		}
-	return(0);
+	return(1);
 }
 #endif /* COMPAT_42 */
