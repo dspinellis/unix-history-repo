@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	7.26 (Berkeley) %G%
+ *	@(#)machdep.c	7.27 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -24,6 +24,9 @@
 #include "cmap.h"
 #include "mbuf.h"
 #include "msgbuf.h"
+#ifdef SYSVSHM
+#include "shm.h"
+#endif
 
 #include "reg.h"
 #include "pte.h"
@@ -136,6 +139,9 @@ startup(firstaddr)
 	valloc(mbmap, struct map, nmbclusters/4);
 	valloc(kmemmap, struct map, ekmempt - kmempt);
 	valloc(kmemusage, struct kmemusage, ekmempt - kmempt);
+#ifdef SYSVSHM
+	valloc(shmsegs, struct shmid_ds, shminfo.shmmni);
+#endif
 	
 	/*
 	 * Determine how many buffers to allocate.
@@ -500,7 +506,7 @@ boot(howto)
 		(void) splnet();
 		printf("syncing disks... ");
 		/*
-		 * Release inodes held by texts before sync.
+		 * Release vnodes held by texts before sync.
 		 */
 		if (panicstr == 0)
 			xumount(NULL);
