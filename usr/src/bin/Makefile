@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.14 (Berkeley) %G%
+#	@(#)Makefile	5.15 (Berkeley) %G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -78,7 +78,7 @@ clean:
 	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean); done
 	rm -f ${STD} ${NSTD} ${KMEM} ${OPERATOR} ${SETUID} expr.c cp mv strip
 
-depend:
+depend: expr.c
 	for i in ${STD} ${NSTD} ${KMEM} ${OPERATOR} ${SETUID} cp mv strip; do \
 	    cc -M ${INCPATH} $$i.c | sed 's/\.o//' | \
 	    awk ' { if ($$1 != prev) \
