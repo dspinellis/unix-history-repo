@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)skeleton.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)skeleton.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -34,7 +34,7 @@ static char sccsid[] = "@(#)skeleton.c	5.3 (Berkeley) %G%";
 char *banner[] =
 {
     "#ifndef lint",
-    "char yysccsid[] = \"@(#)yaccpar	1.1 (Berkeley) 12/10/89\";",
+    "char yysccsid[] = \"@(#)yaccpar	1.4 (Berkeley) 02/25/90\";",
     "#endif",
     0
 };
