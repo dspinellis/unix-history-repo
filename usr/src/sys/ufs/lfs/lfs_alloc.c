@@ -1,4 +1,4 @@
-/*	lfs_alloc.c	6.5	84/08/29	*/
+/*	lfs_alloc.c	6.6	84/09/28	*/
 
 #include "param.h"
 #include "systm.h"
@@ -415,11 +415,11 @@ fragextend(ip, cg, bprev, osize, nsize)
 	int i;
 
 	fs = ip->i_fs;
-	if (fs->fs_cs(fs, cg).cs_nffree < nsize - osize)
+	if (fs->fs_cs(fs, cg).cs_nffree < numfrags(fs, nsize - osize))
 		return (NULL);
 	frags = numfrags(fs, nsize);
-	bbase = fragoff(fs, bprev);
-	if (bbase > (bprev + frags - 1) % fs->fs_frag) {
+	bbase = fragnum(fs, bprev);
+	if (bbase > fragnum(fs, (bprev + frags - 1))) {
 		/* cannot extend across a block boundry */
 		return (NULL);
 	}
@@ -570,7 +570,7 @@ alloccgblk(fs, cgp, bpref)
 		bpref = cgp->cg_rotor;
 		goto norot;
 	}
-	bpref &= ~(fs->fs_frag - 1);
+	bpref = blknum(fs, bpref);
 	bpref = dtogd(fs, bpref);
 	/*
 	 * if the requested block is available, use it
@@ -777,7 +777,7 @@ free(ip, bno, size)
 		cgp->cg_b[i][cbtorpos(fs, bno)]++;
 		cgp->cg_btot[i]++;
 	} else {
-		bbase = bno - (bno % fs->fs_frag);
+		bbase = bno - fragnum(fs, bno);
 		/*
 		 * decrement the counts associated with the old frags
 		 */
