@@ -2,38 +2,27 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getdiskbyname.3	6.2 (Berkeley) %G%
+.\"	@(#)getdiskbyname.3	6.3 (Berkeley) %G%
 .\"
 .TH GETDISKBYNAME 3 ""
 .UC 5
 .SH NAME
-getdiskbyname \- get disk description by its name
+getdiskbyname \- get generic disk description by its name
 .SH SYNOPSIS
 .nf
-.B #include <disktab.h>
+.B #include <sys/disklabel.h>
 .PP
-.B struct disktab *
+.B struct disklabel *
 .B getdiskbyname(name)
 .B char *name;
 .fi
 .SH DESCRIPTION
 .I Getdiskbyname
-takes a disk name (e.g. rm03) and returns a structure
+takes a disk name (e.g. rm03) and returns a prototype disk label
 describing its geometry information and the standard
-disk partition tables.  All information obtained from
+disk partition tables.  All information is obtained from
 the 
 .IR disktab (5)
 file.
-.PP
-.RI < disktab.h >
-has the following form:
-.PP
-.nf
-.DT
-.so /usr/include/disktab.h
 .SH "SEE ALSO"
-disktab(5)
-.SH BUGS
-This information should be obtained from the system for
-locally available disks (in particular, the disk partition
-tables).
+disklabel(5), disktab(5), disklabel(8)
