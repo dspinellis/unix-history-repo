@@ -14,7 +14,7 @@
  *
  * Ported to run under 386BSD by Julian Elischer (julian@dialix.oz.au) Sept 1992
  *
- *      $Id: sd.c,v 1.23 1994/04/20 07:06:57 davidg Exp $
+ *      $Id: sd.c,v 1.24 1994/05/25 23:21:46 ats Exp $
  */
 
 #define SPLSD splbio
@@ -181,10 +181,6 @@ sdattach(sc_link)
 	 * request must specify this.
 	 */
 	sd_get_parms(unit, SCSI_NOSLEEP | SCSI_NOMASK);
-	/* check if secsiz is zero and set it to something reasonable
-	  to prevent a divide fault. */
-	if(dp->secsiz == 0)
-		dp->secsiz = 512;
 	printf("sd%d: %dMB (%d total sec), %d cyl, %d head, %d sec, bytes/sec %d\n",
 	    unit,
 	    dp->disksize / ((1024L * 1024L) / dp->secsiz),
@@ -902,6 +898,9 @@ sd_get_parms(unit, flags)
 			disk_parms->heads = 64;
 			disk_parms->cyls = sectors / (64 * 32);
 		}
+		/* keep secsiz sane too - we may divide by it later */
+		if(dp->secsiz == 0)
+			dp->secsiz = SECSIZE;
 		disk_parms->sectors = sectors;	/* dubious on SCSI *//*XXX */
 	}
 	sd->sc_link->flags |= SDEV_MEDIA_LOADED;
