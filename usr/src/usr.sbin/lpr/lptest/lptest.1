@@ -1,12 +1,10 @@
 .\" Copyright (c) 1985, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)lptest.1	6.6 (Berkeley) %G%
+.\"     @(#)lptest.1	6.7 (Berkeley) %G%
 .\"
-.Vx
-.Vx
 .Dd 
 .Dt LPTEST 1
 .Os BSD 4.3
@@ -21,7 +19,9 @@
 .Nm Lptest
 writes the traditional "ripple test" pattern on standard output.
 In 96 lines,
-this pattern will print all 96 printable ASCII characters
+this pattern will print all 96 printable
+.Tn ASCII
+characters
 in each position.
 While originally created to test printers, it is quite
 useful for testing terminals,
@@ -44,4 +44,5 @@ is to be specified,
 must be also be specified.
 .Sh HISTORY
 .Nm Lptest
-appeared in 4.3 BSD.
+appeared in
+.Bx 4.3 .
