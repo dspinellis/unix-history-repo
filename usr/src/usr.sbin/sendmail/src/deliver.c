@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.109 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.110 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -51,6 +51,7 @@ sendall(e, mode)
 	bool announcequeueup;
 	bool oldverbose = Verbose;
 	int pid;
+	char *qid;
 
 	/*
 	**  If we have had global, fatal errors, don't bother sending
@@ -308,14 +309,14 @@ sendall(e, mode)
 		*/
 
 		/* save id for future use */
-		id = e->e_id;
+		qid = e->e_id;
 
 		/* now drop the envelope in the parent */
 		e->e_flags |= EF_INQUEUE|EF_KEEPQUEUE;
 		dropenvelope(e);
 
 		/* and reacquire in the child */
-		(void) dowork(id, TRUE, FALSE, e);
+		(void) dowork(qid, TRUE, FALSE, e);
 
 		return;
 
@@ -407,7 +408,6 @@ sendenvelope(e, mode)
 {
 	register ADDRESS *q;
 	char *qf;
-	char *id;
 	bool didany;
 
 	/*
