@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)ls.1	6.19 (Berkeley) %G%
+.\"     @(#)ls.1	6.20 (Berkeley) %G%
 .\"
 .Dd 
 .Dt LS 1
@@ -73,7 +73,8 @@ dot (.).
 .It Fl c
 Use time when file status was last changed for sorting or printing.
 .It Fl d
-Directories are listed as plain files (not searched recursively).
+Directories are listed as plain files (not searched recursively) and
+symbolic links in the argument list are not indirected through.
 .It Fl f
 Output is not sorted.
 .It Fl g
