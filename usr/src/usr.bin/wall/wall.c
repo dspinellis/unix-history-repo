@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1988 Regents of the University of California.
+ * Copyright (c) 1988, 1990 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)wall.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)wall.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -41,6 +41,7 @@ static char sccsid[] = "@(#)wall.c	5.10 (Berkeley) %G%";
 
 #define	IGNOREUSER	"sleeper"
 
+int nobanner;
 int mbufsize;
 char *mbuf;
 
@@ -49,17 +50,32 @@ main(argc, argv)
 	int argc;
 	char **argv;
 {
+	extern int optind;
+	int ch;
 	struct iovec iov;
 	struct utmp utmp;
 	FILE *fp;
 	char *p, *ttymsg();
 
-	if (argc > 2) {
-		(void)fprintf(stderr, "usage: wall [file]\n");
-		exit(1);
-	}
+	while ((ch = getopt(argc, argv, "n")) != EOF)
+		switch (ch) {
+		case 'n':
+			/* undoc option for shutdown: suppress banner */
+			if (geteuid() == 0)
+				nobanner = 1;
+			break;
+		case '?':
+		default:
+usage:
+			(void)fprintf(stderr, "usage: wall [file]\n");
+			exit(1);
+		}
+	argc -= optind;
+	argv += optind;
+	if (argc > 1)
+		goto usage;
 
-	makemsg(*++argv);
+	makemsg(*argv);
 
 	if (!(fp = fopen(_PATH_UTMP, "r"))) {
 		(void)fprintf(stderr, "wall: cannot read %s.\n", _PATH_UTMP);
@@ -99,25 +115,28 @@ makemsg(fname)
 	}
 	(void)unlink(tmpname);
 
-	if (!(whom = getlogin()))
-		whom = (pw = getpwuid(getuid())) ? pw->pw_name : "???";
-	(void)gethostname(hostname, sizeof(hostname));
-	(void)time(&now);
-	lt = localtime(&now);
+	if (!nobanner) {
+		if (!(whom = getlogin()))
+			whom = (pw = getpwuid(getuid())) ? pw->pw_name : "???";
+		(void)gethostname(hostname, sizeof(hostname));
+		(void)time(&now);
+		lt = localtime(&now);
 
-	/*
-	 * all this stuff is to blank out a square for the message; we wrap
-	 * message lines at column 79, not 80, because some terminals wrap
-	 * after 79, some do not, and we can't tell.  Which means that we
-	 * may leave a non-blank character in column 80, but that can't be
-	 * helped.
-	 */
-	(void)fprintf(fp, "\r%79s\r\n", " ");
-	(void)sprintf(lbuf, "Broadcast Message from %s@%s", whom, hostname);
-	(void)fprintf(fp, "%-79.79s\007\007\r\n", lbuf);
-	(void)sprintf(lbuf, "        (%s) at %d:%02d ...", ttyname(2),
-	    lt->tm_hour, lt->tm_min);
-	(void)fprintf(fp, "%-79.79s\r\n", lbuf);
+		/*
+		 * all this stuff is to blank out a square for the message;
+		 * we wrap message lines at column 79, not 80, because some
+		 * terminals wrap after 79, some do not, and we can't tell.
+		 * Which means that we may leave a non-blank character
+		 * in column 80, but that can't be helped.
+		 */
+		(void)fprintf(fp, "\r%79s\r\n", " ");
+		(void)sprintf(lbuf, "Broadcast Message from %s@%s",
+		    whom, hostname);
+		(void)fprintf(fp, "%-79.79s\007\007\r\n", lbuf);
+		(void)sprintf(lbuf, "        (%s) at %d:%02d ...", ttyname(2),
+		    lt->tm_hour, lt->tm_min);
+		(void)fprintf(fp, "%-79.79s\r\n", lbuf);
+	}
 	(void)fprintf(fp, "%79s\r\n", " ");
 
 	if (*fname && !(freopen(fname, "r", stdin))) {
