@@ -3,10 +3,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)usersmtp.c	3.18		%G%	(no SMTP));
+SCCSID(@(#)usersmtp.c	3.19		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)usersmtp.c	3.18		%G%);
+SCCSID(@(#)usersmtp.c	3.19		%G%);
 
 /*
 **  SMTPINIT -- initialize SMTP.
@@ -104,7 +104,7 @@ smtpinit(m, pvp, ctladdr)
 		return (EX_OK);
 	else if (r == 552)
 		return (EX_UNAVAILABLE);
-	return (EX_SOFTWARE);
+	return (EX_PROTOCOL);
 }
 /*
 **  SMTPRCPT -- designate recipient.
@@ -133,11 +133,13 @@ smtprcpt(to)
 	r = reply();
 	if (REPLYTYPE(r) == 4)
 		return (EX_TEMPFAIL);
-	else if (REPLYCLASS(r) == 5)
-		return (EX_NOUSER);
 	else if (REPLYTYPE(r) == 2)
 		return (EX_OK);
-	return (EX_SOFTWARE);
+	else if (r == 550 || r == 551 || r == 553)
+		return (EX_NOUSER);
+	else if (r == 552 || r == 554)
+		return (EX_UNAVAILABLE);
+	return (EX_PROTOCOL);
 }
 /*
 **  SMTPFINISH -- finish up sending all the SMTP protocol.
@@ -174,7 +176,7 @@ smtpfinish(m, e)
 	else if (r == 554)
 		return (EX_UNAVAILABLE);
 	else if (r != 354)
-		return (EX_SOFTWARE);
+		return (EX_PROTOCOL);
 	(*e->e_puthdr)(SmtpOut, m, CurEnv);
 	fprintf(SmtpOut, "\n");
 	(*e->e_putbody)(SmtpOut, m, TRUE);
@@ -186,7 +188,7 @@ smtpfinish(m, e)
 		return (EX_OK);
 	else if (r == 552 || r == 554)
 		return (EX_UNAVAILABLE);
-	return (EX_SOFTWARE);
+	return (EX_PROTOCOL);
 }
 /*
 **  SMTPQUIT -- close the SMTP connection.
