@@ -1,6 +1,7 @@
-static	char *sccsid = "@(#)unctime.c	1.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)unctime.c	1.1 (Berkeley) 10/13/80";
 #include <sys/types.h>
 #include <time.h>
+#include <stdio.h>
 /*
  * Convert a ctime(3) format string into a system format date.
  * Return the date thus calculated.
@@ -30,8 +31,9 @@ time_t unctime(str)
 		str[25] = 0;
 	strcpy(dbuf, str);
 	dbuf[E_MONTH+3] = 0;
-	if ( (then.tm_mon = lookup(&dbuf[E_MONTH])) < 0)
+	if ( (then.tm_mon = lookup(&dbuf[E_MONTH])) < 0) {
 		return(-1);;
+	}
 	then.tm_mday = atoi(&dbuf[E_DAY]);
 	then.tm_hour = atoi(&dbuf[E_HOUR]);
 	then.tm_min = atoi(&dbuf[E_MINUTE]);
@@ -73,7 +75,7 @@ time_t emitl(dp)
 	dcopy = *dp;
 	dp = &dcopy;
 	conv = 0;
-	for (i = 31; i >= 0; i--) {
+	for (i = 30; i >= 0; i--) {
 		bit = 1 << i;
 		conv |= bit;
 		if (dcmp(localtime(&conv), dp) > 0)
