@@ -31,7 +31,7 @@ isofs/isofs_vfsops.c	optional isofs
 isofs/isofs_vnops.c	optional isofs
 isofs/isofs_rrip.c      optional isofs
 kern/dead_vnops.c	standard
-kern/fifo_vnops.c	optional fifo
+kern/fifo_vnops.c	standard
 kern/init_main.c	standard
 kern/init_sysent.c	standard
 kern/kern__physio.c	standard
