@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)login.1	6.3 (Berkeley) %G%
+.\"	@(#)login.1	6.4 (Berkeley) %G%
 .\"
 .TH LOGIN 1 ""
 .UC 4
@@ -124,8 +124,8 @@ or by the user specified on the command line.
 .br
 \&.hushlogin	makes login quieter
 .SH "SEE ALSO"
-init(8), getty(8), mail(1), passwd(1), passwd(5), utmp(5), environ(7),
-shutdown(8), rlogin(1c)
+mail(1), passwd(1), rlogin(1), getpass(3), passwd(5), utmp(5), environ(7),
+init(8), getty(8), shutdown(8),
 .SH DIAGNOSTICS
 \*(lqLogin incorrect,\*(rq
 if the name or the password is bad.
@@ -137,7 +137,7 @@ consult a programming counselor.
 An undocumented option,
 .B \-r
 is used by the remote login server,
-.IR rlogind (8C)
+.IR rlogind (8)
 to force
 .I login
 to enter into an initial connection protocol.
