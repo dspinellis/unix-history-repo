@@ -1,4 +1,4 @@
-/*	in_pcb.c	4.20	82/03/13	*/
+/*	in_pcb.c	4.21	82/03/23	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -149,8 +149,13 @@ COUNT(IN_PCBCONNECT);
 	    inp->inp_lport,
 	    0))
 		return (EADDRINUSE);
-	if (inp->inp_laddr.s_addr == 0)
+	if (inp->inp_laddr.s_addr == 0) {
+		struct sockaddr_in *sin2 =
+		    (struct sockaddr_in *)&inp->inp_socket->so_addr;
+
 		inp->inp_laddr = ifp->if_addr;
+		sin2->sin_addr = inp->inp_laddr;
+	}
 	inp->inp_faddr = sin->sin_addr;
 	inp->inp_fport = sin->sin_port;
 	return (0);
@@ -190,12 +195,6 @@ in_pcbdetach(inp)
 }
 
 /*
- * Look for a control block to accept a segment, or to make
- * sure 
- * First choice is an exact address match.
- * Second choice is a match with either the foreign or the local
- * address specified.
- *
  * SHOULD ALLOW MATCH ON MULTI-HOMING ONLY
  */
 struct inpcb *
