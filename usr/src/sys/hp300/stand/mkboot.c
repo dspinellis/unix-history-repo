@@ -4,13 +4,13 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mkboot.c	8.1 (Berkeley) %G%
+ *	@(#)mkboot.c	7.6 (Berkeley) %G%
  */
 
 #ifndef lint
-char copyright[] =
-"@(#) Copyright (c) 1990 The Regents of the University of California.\n\
- All rights reserved.\n";
+static char copyright[] =
+"@(#) Copyright (c) 1990, 1993\n\
+	The Regents of the University of California.  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
@@ -66,9 +66,9 @@ main(argc, argv)
 {
 	int ac;
 	char **av;
-	int from1, from2, to;
+	int from1, from2, from3, to;
 	register int n;
-	char *n1, *n2, *lifname();
+	char *n1, *n2, *n3, *lifname();
 
 	ac = --argc;
 	av = ++argv;
@@ -96,7 +96,7 @@ main(argc, argv)
 	ac--;
 	if (ac == 0)
 		usage();
-	if (ac == 2) {
+	if (ac > 1) {
 		from2 = open(av[0], O_RDONLY, 0);
 		if (from2 < 0) {
 			perror("open");
@@ -105,8 +105,19 @@ main(argc, argv)
 		n2 = av[0];
 		av++;
 		ac--;
+		if (ac > 1) {
+			from3 = open(av[0], O_RDONLY, 0);
+			if (from3 < 0) {
+				perror("open");
+				exit(1);
+			}
+			n3 = av[0];
+			av++;
+			ac--;
+		} else
+			from3 = -1;
 	} else
-		from2 = -1;
+		from2 = from3 = -1;
 	to = open(av[0], O_WRONLY | O_TRUNC | O_CREAT, 0644);
 	if (to < 0) {
 		perror("open");
@@ -152,6 +163,20 @@ main(argc, argv)
 		lifd[1].dir_flag = DIR_FLAG;
 		lifd[1].dir_exec = lpflag? loadpoint + ex.a_entry : ex.a_entry;
 		lifv.vol_length = lifd[1].dir_addr + lifd[1].dir_length;
+	}
+	/* ditto for three */
+	if (from3 >= 0) {
+		lseek(to, LIF_FILESTART+lifstob(lifd[0].dir_length+n), 0);
+		putfile(from3, to);
+		n = btolifs(ld.count + sizeof(ld));
+		strcpy(lifd[2].dir_name, lifname(n3));
+		lifd[2].dir_type = DIR_TYPE;
+		lifd[2].dir_addr = lifv.vol_length;
+		lifd[2].dir_length = n;
+		bcddate(from3, lifd[2].dir_toc);
+		lifd[2].dir_flag = DIR_FLAG;
+		lifd[2].dir_exec = lpflag? loadpoint + ex.a_entry : ex.a_entry;
+		lifv.vol_length = lifd[2].dir_addr + lifd[2].dir_length;
 	}
 	/* output volume/directory header info */
 	lseek(to, LIF_VOLSTART, 0);
