@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 
 PROG=	adb
 SRCS=	access.c command.c expr.c format.c kstack.c machdep.c main.c \
@@ -6,6 +6,7 @@ SRCS=	access.c command.c expr.c format.c kstack.c machdep.c main.c \
 	sym.c
 ASPATH=	../../../pgrm/as.vax
 .PATH:	${.CURDIR}/../common_source
+CLEANFILES=instrs.adb
 
 CFLAGS+= -I. -I${.CURDIR} -I${.CURDIR}/../common_source -I${.CURDIR}/${ASPATH}
 
