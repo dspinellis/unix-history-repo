@@ -1,0 +1,49 @@
+#!/bin/sh
+
+# create an initialization procedure from a list of .o files
+
+echo '/* Do not modify this file.  It is created automatically by "munch". */'
+echo 'void initialize_all_files () {'
+
+NMOPT=""
+case $1 in
+MUNCH_NM=*)
+	MUNCH_NM=`echo $1 | sed 's/MUNCH_NM=//'`; shift ;;
+-*)
+	NMOPT=$1; shift ;;
+esac
+
+# make it easy to use a different nm, e.g. for cross-developing
+
+MUNCH_NM="${MUNCH_NM-nm} $NMOPT"
+if test "`$MUNCH_NM main.o | egrep main | egrep FUNC | egrep GLOB`" != "" ; then
+    # System V Release 4 style nm
+    $MUNCH_NM $* | egrep '|__?initialize_' | egrep FUNC | \
+      sed -e \
+        's/^.*\(_initialize_[a-zA-Z0-9_]*\).*$/  {extern void \1 (); \1 ();}/'\
+      | sort -u
+elif test "`$MUNCH_NM main.o | egrep '[TD] *_?main$'`" = "" ; then
+     if test "`$MUNCH_NM main.o | head -6 | egrep 'Subspace$'`" != "" ; then
+	# HP PA RISC compilers don't prepend underscores
+	shift;
+	$MUNCH_NM $* | egrep '_initialize_.*' | \
+	  sed -e \
+	    's/^.*\(_initialize_[a-zA-Z0-9_]*\).*/   {extern void \1 (); \1 ();}/' \
+	    | sort -u
+     else
+	# System V style nm
+	shift;
+	$MUNCH_NM $* | egrep '_initialize_.*' | egrep '\.text'|\
+	  sed -e \
+	    's/^.*\(_initialize_[a-zA-Z0-9_]*\).*/  {extern void \1 (); \1 ();}/' \
+	    | sort -u
+     fi
+else
+    # BSD style nm
+    # We now accept either text or data symbols, since the RT/PC uses data.
+    $MUNCH_NM -p $* | egrep '[TD] *_?[_.]initialize_' | \
+	sed -e 's/^.*\(initialize_.*\)/  {extern void _\1 (); _\1 ();}/' \
+	| sort -u
+fi
+
+echo '}'
