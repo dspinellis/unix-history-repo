@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)time.h	5.6 (Berkeley) %G%
+ *	@(#)time.h	5.7 (Berkeley) %G%
  */
 
 #include <machine/machtypes.h>
@@ -47,6 +47,7 @@ extern struct tm *gmtime(const time_t *);
 extern struct tm *localtime(const time_t *);
 extern time_t mktime(const struct tm *);
 extern time_t time(time_t *);
+extern clock_t clock(void);
 extern double difftime(const time_t, const time_t);
 extern char *asctime(const struct tm *);
 extern char *ctime(const time_t *);
@@ -56,6 +57,7 @@ extern void tzsetwall(void);
 #else
 extern struct tm *gmtime();
 extern struct tm *localtime();
+extern clock_t clock();
 extern time_t mktime();
 extern time_t time();
 extern double difftime();
