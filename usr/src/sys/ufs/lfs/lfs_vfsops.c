@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vfsops.c	7.56 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	7.57 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -25,79 +25,38 @@
 #include "disklabel.h"
 #include "stat.h"
 
-#include "quota.h"
-#include "fs.h"
-#include "ufsmount.h"
-#include "inode.h"
+#include "../ufs/quota.h"
+#include "../ufs/inode.h"
+#include "../ufs/ufsmount.h"
+#include "lfs.h"
+#include "lfs_extern.h"
 
-struct vfsops ufs_vfsops = {
-	ufs_mount,
+static int	lfs_mountfs
+		    __P((struct vnode *, struct mount *, struct proc *));
+static int	sbupdate __P((struct ufsmount *, int));
+
+struct vfsops lfs_vfsops = {
+	lfs_mount,
 	ufs_start,
-	ufs_unmount,
-	ufs_root,
+	lfs_unmount,
+	lfs_root,
 	ufs_quotactl,
-	ufs_statfs,
-	ufs_sync,
-	ufs_fhtovp,
+	lfs_statfs,
+	lfs_sync,
+	lfs_fhtovp,
 	ufs_vptofh,
-	ufs_init
+	lfs_init
 };
 
 /*
  * Flag to allow forcible unmounting.
  */
-int doforce = 1;
+extern int doforce;						/* LFS */
 
-/*
- * Called by vfs_mountroot when ufs is going to be mounted as root.
- *
- * Name is updated by mount(8) after booting.
- */
-#define ROOTNAME	"root_device"
-
-ufs_mountroot()
+lfs_mountroot()
 {
-	register struct mount *mp;
-	extern struct vnode *rootvp;
-	struct proc *p = curproc;	/* XXX */
-	struct ufsmount *ump;
-	register struct fs *fs;
-	u_int size;
-	int error;
-
-	mp = (struct mount *)malloc((u_long)sizeof(struct mount),
-		M_MOUNT, M_WAITOK);
-	mp->mnt_op = &ufs_vfsops;
-	mp->mnt_flag = MNT_RDONLY;
-	mp->mnt_exroot = 0;
-	mp->mnt_mounth = NULLVP;
-	error = mountfs(rootvp, mp, p);
-	if (error) {
-		free((caddr_t)mp, M_MOUNT);
-		return (error);
-	}
-	if (error = vfs_lock(mp)) {
-		(void)ufs_unmount(mp, 0, p);
-		free((caddr_t)mp, M_MOUNT);
-		return (error);
-	}
-	rootfs = mp;
-	mp->mnt_next = mp;
-	mp->mnt_prev = mp;
-	mp->mnt_vnodecovered = NULLVP;
-	ump = VFSTOUFS(mp);
-	fs = ump->um_fs;
-	bzero(fs->fs_fsmnt, sizeof(fs->fs_fsmnt));
-	fs->fs_fsmnt[0] = '/';
-	bcopy((caddr_t)fs->fs_fsmnt, (caddr_t)mp->mnt_stat.f_mntonname,
-	    MNAMELEN);
-	(void) copystr(ROOTNAME, mp->mnt_stat.f_mntfromname, MNAMELEN - 1,
-	    &size);
-	bzero(mp->mnt_stat.f_mntfromname + size, MNAMELEN - size);
-	(void) ufs_statfs(mp, &mp->mnt_stat, p);
-	vfs_unlock(mp);
-	inittodr(fs->fs_time);
-	return (0);
+	/* LFS IMPLEMENT -- lfs_mountroot */
+	panic("lfs_mountroot");
 }
 
 /*
@@ -105,7 +64,7 @@ ufs_mountroot()
  *
  * mount system call
  */
-ufs_mount(mp, path, data, ndp, p)
+lfs_mount(mp, path, data, ndp, p)
 	register struct mount *mp;
 	char *path;
 	caddr_t data;
@@ -115,10 +74,11 @@ ufs_mount(mp, path, data, ndp, p)
 	struct vnode *devvp;
 	struct ufs_args args;
 	struct ufsmount *ump;
-	register struct fs *fs;
+	register LFS *fs;					/* LFS */
 	u_int size;
 	int error;
 
+printf("lfs_mount\n");
 	if (error = copyin(data, (caddr_t)&args, sizeof (struct ufs_args)))
 		return (error);
 	/*
@@ -141,9 +101,15 @@ ufs_mount(mp, path, data, ndp, p)
 	 */
 	if (mp->mnt_flag & MNT_UPDATE) {
 		ump = VFSTOUFS(mp);
+#ifdef NOTLFS							/* LFS */
 		fs = ump->um_fs;
 		if (fs->fs_ronly && (mp->mnt_flag & MNT_RDONLY) == 0)
 			fs->fs_ronly = 0;
+#else
+		fs = ump->um_lfs;
+		if (fs->lfs_ronly && (mp->mnt_flag & MNT_RDONLY) == 0)
+			fs->lfs_ronly = 0;
+#endif
 		if (args.fspec == 0)
 			return (0);
 	}
@@ -166,7 +132,7 @@ ufs_mount(mp, path, data, ndp, p)
 		return (ENXIO);
 	}
 	if ((mp->mnt_flag & MNT_UPDATE) == 0)
-		error = mountfs(devvp, mp, p);
+		error = lfs_mountfs(devvp, mp, p);		/* LFS */
 	else {
 		if (devvp != ump->um_devvp)
 			error = EINVAL;	/* needs translation */
@@ -178,7 +144,8 @@ ufs_mount(mp, path, data, ndp, p)
 		return (error);
 	}
 	ump = VFSTOUFS(mp);
-	fs = ump->um_fs;
+	fs = ump->um_lfs;					/* LFS */
+#ifdef NOTLFS							/* LFS */
 	(void) copyinstr(path, fs->fs_fsmnt, sizeof(fs->fs_fsmnt) - 1, &size);
 	bzero(fs->fs_fsmnt + size, sizeof(fs->fs_fsmnt) - size);
 	bcopy((caddr_t)fs->fs_fsmnt, (caddr_t)mp->mnt_stat.f_mntonname,
@@ -187,137 +154,141 @@ ufs_mount(mp, path, data, ndp, p)
 	    &size);
 	bzero(mp->mnt_stat.f_mntfromname + size, MNAMELEN - size);
 	(void) ufs_statfs(mp, &mp->mnt_stat, p);
+#else
+	(void)copyinstr(path, fs->lfs_fsmnt, sizeof(fs->lfs_fsmnt) - 1, &size);
+	bzero(fs->lfs_fsmnt + size, sizeof(fs->lfs_fsmnt) - size);
+	bcopy((caddr_t)fs->lfs_fsmnt, (caddr_t)mp->mnt_stat.f_mntonname,
+	    MNAMELEN);
+	(void) copyinstr(args.fspec, mp->mnt_stat.f_mntfromname, MNAMELEN - 1, 
+	    &size);
+	bzero(mp->mnt_stat.f_mntfromname + size, MNAMELEN - size);
+	(void) lfs_statfs(mp, &mp->mnt_stat, p);
+#endif
 	return (0);
 }
 
 /*
  * Common code for mount and mountroot
+ * LFS specific
  */
-mountfs(devvp, mp, p)
+static int
+lfs_mountfs(devvp, mp, p)
 	register struct vnode *devvp;
 	struct mount *mp;
 	struct proc *p;
 {
-	register struct ufsmount *ump = (struct ufsmount *)0;
-	struct buf *bp = NULL;
-	register struct fs *fs;
-	dev_t dev = devvp->v_rdev;
-	struct partinfo dpart;
-	int havepart = 0, blks;
-	caddr_t base, space;
-	int havepart = 0, blks;
-	int error, i, size;
-	int needclose = 0;
-	int ronly = (mp->mnt_flag & MNT_RDONLY) != 0;
 	extern struct vnode *rootvp;
+	register LFS *fs;
+	register struct ufsmount *ump;
+	struct inode *ip;
+	struct vnode *vp;
+	struct buf *bp;
+	struct partinfo dpart;
+	daddr_t seg_addr;
+	dev_t dev;
+	int error, i, ronly, size;
 
 	if (error = VOP_OPEN(devvp, ronly ? FREAD : FREAD|FWRITE, NOCRED, p))
 		return (error);
-	needclose = 1;
+
 	if (VOP_IOCTL(devvp, DIOCGPART, (caddr_t)&dpart, FREAD, NOCRED, p) != 0)
 		size = DEV_BSIZE;
 	else {
-		havepart = 1;
 		size = dpart.disklab->d_secsize;
+#ifdef NEVER_USED
+		dpart.part->p_fstype = FS_LFS;
+		dpart.part->p_fsize = fs->lfs_fsize;	/* frag size */
+		dpart.part->p_frag = fs->lfs_frag;	/* frags per block */
+		dpart.part->p_cpg = fs->lfs_segshift;	/* segment shift */
+#endif
 	}
-	if (error = bread(devvp, SBLOCK, SBSIZE, NOCRED, &bp))
+
+	/* Don't free random space on error. */
+	bp = NULL;
+	ump = NULL;
+
+	/* Read in the superblock. */
+	if (error = bread(devvp, LFS_LABELPAD / size, LFS_SBPAD, NOCRED, &bp))
 		goto out;
-	fs = bp->b_un.b_fs;
 		error = EINVAL;		/* XXX needs translation */
 		goto out;
 	}
+#ifdef DEBUG
+	dump_super(fs);
+#endif
+
+	/* Allocate the mount structure, copy the superblock into it. */
 	ump = (struct ufsmount *)malloc(sizeof *ump, M_UFSMNT, M_WAITOK);
-	ump->um_fs = (struct fs *)malloc((u_long)fs->fs_sbsize, M_SUPERBLK,
-	    M_WAITOK);
-	bcopy((caddr_t)bp->b_un.b_addr, (caddr_t)ump->um_fs,
-	   (u_int)fs->fs_sbsize);
-	if (fs->fs_sbsize < SBSIZE)
+	ump->um_lfs = malloc(sizeof(LFS), M_SUPERBLK, M_WAITOK);
+	bcopy(bp->b_un.b_addr, ump->um_lfs, sizeof(LFS));
+	if (sizeof(LFS) < LFS_SBPAD)			/* XXX why? */
 		bp->b_flags |= B_INVAL;
 	brelse(bp);
 	bp = NULL;
-	fs = ump->um_fs;
-	fs->fs_ronly = ronly;
+
+	/* Set the file system readonly/modify bits. */
+	fs = ump->um_lfs;
+	fs->lfs_ronly = ronly;
 	if (ronly == 0)
-		fs->fs_fmod = 1;
-	if (havepart) {
-		dpart.part->p_fstype = FS_BSDFFS;
-		dpart.part->p_fsize = fs->fs_fsize;
-		dpart.part->p_frag = fs->fs_frag;
-		dpart.part->p_cpg = fs->fs_cpg;
-	}
-#ifdef SECSIZE
-	/*
-	 * If we have a disk label, force per-partition
-	 * filesystem information to be correct
-	 * and set correct current fsbtodb shift.
-	 */
-#endif SECSIZE
-	if (havepart) {
-		dpart.part->p_fstype = FS_BSDFFS;
-		dpart.part->p_fsize = fs->fs_fsize;
-		dpart.part->p_frag = fs->fs_frag;
-#ifdef SECSIZE
-#ifdef tahoe
-		/*
-		 * Save the original fsbtodb shift to restore on updates.
-		 * (Console doesn't understand fsbtodb changes.)
-		 */
-		fs->fs_sparecon[0] = fs->fs_fsbtodb;
-#endif
-		i = fs->fs_fsize / size;
-		for (fs->fs_fsbtodb = 0; i > 1; i >>= 1)
-			fs->fs_fsbtodb++;
-#endif SECSIZE
-		fs->fs_dbsize = size;
-	}
-	blks = howmany(fs->fs_cssize, fs->fs_fsize);
-	base = space = (caddr_t)malloc((u_long)fs->fs_cssize, M_SUPERBLK,
-	    M_WAITOK);
-	for (i = 0; i < blks; i += fs->fs_frag) {
-		size = fs->fs_bsize;
-		if (i + fs->fs_frag > blks)
-			size = (blks - i) * fs->fs_fsize;
-#ifdef SECSIZE
-		tp = bread(dev, fsbtodb(fs, fs->fs_csaddr + i), size,
-		    fs->fs_dbsize);
-#else SECSIZE
-		error = bread(devvp, fsbtodb(fs, fs->fs_csaddr + i), size,
-			NOCRED, &bp);
-		if (error) {
-			free((caddr_t)base, M_SUPERBLK);
-			goto out;
-		}
-		bcopy((caddr_t)bp->b_un.b_addr, space, (u_int)size);
-		fs->fs_csp[fragstoblks(fs, i)] = (struct csum *)space;
-		space += size;
-		brelse(bp);
-		bp = NULL;
-	}
+		fs->lfs_fmod = 1;
+
+	/* Initialize the mount structure. */
+	dev = devvp->v_rdev;
 	mp->mnt_data = (qaddr_t)ump;
 	mp->mnt_stat.f_fsid.val[0] = (long)dev;
-	mp->mnt_stat.f_fsid.val[1] = MOUNT_UFS;
+	mp->mnt_stat.f_fsid.val[1] = MOUNT_LFS;	
 	mp->mnt_flag |= MNT_LOCAL;
 	ump->um_mountp = mp;
 	ump->um_dev = dev;
 	ump->um_devvp = devvp;
 	for (i = 0; i < MAXQUOTAS; i++)
 		ump->um_quotas[i] = NULLVP;
-	devvp->v_specflags |= SI_MOUNTEDON;
 
-	/* Sanity checks for old file systems.			   XXX */
-	fs->fs_npsect = MAX(fs->fs_npsect, fs->fs_nsect);	/* XXX */
-	fs->fs_interleave = MAX(fs->fs_interleave, 1);		/* XXX */
-	if (fs->fs_postblformat == FS_42POSTBLFMT)		/* XXX */
-		fs->fs_nrpos = 8;				/* XXX */
+	/* Read the ifile disk inode and store it in a vnode. */
+	error = bread(devvp, fs->lfs_idaddr, fs->lfs_bsize, NOCRED, &bp);
+	if (error)
+		goto out;
+	error = lfs_vcreate(mp, LFS_IFILE_INUM, &vp);
+	if (error)
+		goto out;
+	ip = VTOI(vp);
+
+	/* The ifile inode is stored in the superblock. */
+	fs->lfs_ivnode = vp;
+
+	/* Copy the on-disk inode into place. */
+	ip->i_din = *lfs_ifind(fs, LFS_IFILE_INUM, bp->b_un.b_dino);
+	brelse(bp);
+
+	/* Initialize the associated vnode */
+	vp->v_type = IFTOVT(ip->i_mode);
+
+	/*
+	 * Read in the segusage table.
+	 * 
+	 * Since we always explicitly write the segusage table at a checkpoint,
+	 * we're assuming that it is continguous on disk.
+	 */
+	seg_addr = ip->i_din.di_db[0];
+	size = fs->lfs_segtabsz << fs->lfs_bshift;
+	fs->lfs_segtab = malloc(size, M_SUPERBLK, M_WAITOK);
+	error = bread(devvp, seg_addr, size, NOCRED, &bp);
+	if (error) {
+		free(fs->lfs_segtab, M_SUPERBLK);
+		goto out;
+	}
+	bcopy((caddr_t)bp->b_un.b_addr, fs->lfs_segtab, size);
+	brelse(bp);
+	devvp->v_specflags |= SI_MOUNTEDON;
+	VREF(ip->i_devvp);
 
 	return (0);
 out:
 	if (bp)
 		brelse(bp);
-	if (needclose)
-		(void)VOP_CLOSE(devvp, ronly ? FREAD : FREAD|FWRITE, NOCRED, p);
+	(void)VOP_CLOSE(devvp, ronly ? FREAD : FREAD|FWRITE, NOCRED, p);
 	if (ump) {
-		free((caddr_t)ump->um_fs, M_SUPERBLK);
+		free((caddr_t)ump->um_lfs, M_SUPERBLK);
 		free((caddr_t)ump, M_UFSMNT);
 		mp->mnt_data = (qaddr_t)0;
 	}
@@ -325,31 +296,18 @@ out:
 }
 
 /*
- * Make a filesystem operational.
- * Nothing to do at the moment.
- */
-/* ARGSUSED */
-ufs_start(mp, flags, p)
-	struct mount *mp;
-	int flags;
-	struct proc *p;
-{
-
-	return (0);
-}
-
-/*
  * unmount system call
  */
-ufs_unmount(mp, mntflags, p)
+lfs_unmount(mp, mntflags, p)
 	struct mount *mp;
 	int mntflags;
 	struct proc *p;
 {
 	register struct ufsmount *ump;
-	register struct fs *fs;
+	register struct lfs *fs;				/* LFS */
 	int i, error, ronly, flags = 0;
 
+printf("lfs_unmount\n");
 	if (mntflags & MNT_FORCE) {
 		if (!doforce || mp == rootfs)
 			return (EINVAL);
@@ -377,17 +335,16 @@ ufs_unmount(mp, mntflags, p)
 #endif
 	if (error = vflush(mp, NULLVP, flags))
 		return (error);
+#ifdef NOTLFS							/* LFS */
 	fs = ump->um_fs;
 	ronly = !fs->fs_ronly;
-	error = closei(dev, IFBLK, fs->fs_ronly? FREAD : FREAD|FWRITE);
-	irele(ip);
-	return (error);
-}
-
-/*
+#else
+	fs = ump->um_lfs;
+	ronly = !fs->lfs_ronly;
+#endif
  * Return root of a filesystem
  */
-ufs_root(mp, vpp)
+lfs_root(mp, vpp)
 	struct mount *mp;
 	struct vnode **vpp;
 {
@@ -396,11 +353,12 @@ ufs_root(mp, vpp)
 	struct vnode tvp;
 	int error;
 
+printf("lfs_root\n");
 	tvp.v_mount = mp;
 	ip = VTOI(&tvp);
 	ip->i_vnode = &tvp;
 	ip->i_dev = VFSTOUFS(mp)->um_dev;
-	error = iget(ip, (ino_t)ROOTINO, &nip);
+	error = lfs_iget(ip, (ino_t)ROOTINO, &nip);		/* LFS */
 	if (error)
 		return (error);
 	*vpp = ITOV(nip);
@@ -408,87 +366,19 @@ ufs_root(mp, vpp)
 }
 
 /*
- * Do operations associated with quotas
- */
-ufs_quotactl(mp, cmds, uid, arg, p)
-	struct mount *mp;
-	int cmds;
-	uid_t uid;
-	caddr_t arg;
-	struct proc *p;
-{
-	struct ufsmount *ump = VFSTOUFS(mp);
-	int cmd, type, error;
-
-#ifndef QUOTA
-	return (EOPNOTSUPP);
-#else
-	if (uid == -1)
-		uid = p->p_cred->p_ruid;
-	cmd = cmds >> SUBCMDSHIFT;
-
-	switch (cmd) {
-	case Q_GETQUOTA:
-	case Q_SYNC:
-		if (uid == p->p_cred->p_ruid)
-			break;
-		/* fall through */
-	default:
-		if (error = suser(p->p_ucred, &p->p_acflag))
-			return (error);
-	}
-
-	type = cmd & SUBCMDMASK;
-	if ((u_int)type >= MAXQUOTAS)
-		return (EINVAL);
-
-	switch (cmd) {
-
-	case Q_QUOTAON:
-		return (quotaon(p, mp, type, arg));
-
-	case Q_QUOTAOFF:
-		if (vfs_busy(mp))
-			return (0);
-		error = quotaoff(p, mp, type);
-		vfs_unbusy(mp);
-		return (error);
-
-	case Q_SETQUOTA:
-		return (setquota(mp, uid, type, arg));
-
-	case Q_SETUSE:
-		return (setuse(mp, uid, type, arg));
-
-	case Q_GETQUOTA:
-		return (getquota(mp, uid, type, arg));
-
-	case Q_SYNC:
-		if (vfs_busy(mp))
-			return (0);
-		error = qsync(mp);
-		vfs_unbusy(mp);
-		return (error);
-
-	default:
-		return (EINVAL);
-	}
-	/* NOTREACHED */
-#endif
-}
-
-/*
  * Get file system statistics.
  */
-ufs_statfs(mp, sbp, p)
+lfs_statfs(mp, sbp, p)
 	struct mount *mp;
 	register struct statfs *sbp;
 	struct proc *p;
 {
+	register LFS *fs;
 	register struct ufsmount *ump;
-	register struct fs *fs;
 
+printf("lfs_statfs\n");
 	ump = VFSTOUFS(mp);
+#ifdef NOTLFS							/* LFS */
 	fs = ump->um_fs;
 	if (fs->fs_magic != FS_MAGIC)
 		panic("ufs_statfs");
@@ -502,6 +392,20 @@ ufs_statfs(mp, sbp, p)
 		(fs->fs_dsize - sbp->f_bfree);
 	sbp->f_files =  fs->fs_ncg * fs->fs_ipg - ROOTINO;
 	sbp->f_ffree = fs->fs_cstotal.cs_nifree;
+#else
+	fs = ump->um_lfs;
+	if (fs->lfs_magic != LFS_MAGIC)
+		panic("lfs_statfs: magic");
+	sbp->f_type = MOUNT_LFS;
+	sbp->f_fsize = fs->lfs_bsize;
+	sbp->f_bsize = fs->lfs_bsize;
+	sbp->f_blocks = fs->lfs_dsize;
+	sbp->f_bfree = fs->lfs_bfree;
+	sbp->f_bavail = (fs->lfs_dsize * (100 - fs->lfs_minfree) / 100) -
+		(fs->lfs_dsize - sbp->f_bfree);
+	sbp->f_files = fs->lfs_nfiles;
+	sbp->f_ffree = fs->lfs_bfree * INOPB(fs);
+#endif
 	if (sbp != &mp->mnt_stat) {
 		bcopy((caddr_t)mp->mnt_stat.f_mntonname,
 			(caddr_t)&sbp->f_mntonname[0], MNAMELEN);
@@ -511,7 +415,7 @@ ufs_statfs(mp, sbp, p)
 	return (0);
 }
 
-int	syncprt = 0;
+extern int	syncprt;					/* LFS */
 
 /*
  * Go through the disk queues to initiate sandbagged IO;
@@ -520,7 +424,7 @@ int	syncprt = 0;
  *
  * Note: we are always called with the filesystem marked `MPBUSY'.
  */
-ufs_sync(mp, waitfor)
+lfs_sync(mp, waitfor)
 	struct mount *mp;
 	int waitfor;
 {
@@ -530,8 +434,10 @@ ufs_sync(mp, waitfor)
 	register struct fs *fs;
 	int error, allerror = 0;
 
+printf("lfs_sync\n");
 	if (syncprt)
 		bufstats();
+#ifdef NOTLFS							/* LFS */
 	fs = ump->um_fs;
 	/*
 	 * Write back modified superblock.
@@ -547,6 +453,14 @@ ufs_sync(mp, waitfor)
 		fs->fs_time = time.tv_sec;
 		allerror = sbupdate(ump, waitfor);
 	}
+#else
+#ifdef DEBUG
+	return (0);
+#else
+	/* LFS IMPLEMENT -- read only access, super-block update */
+	panic("lfs_sync not implemented"); */
+#endif
+#endif
 	/*
 	 * Write back each (modified) inode.
 	 */
@@ -569,7 +483,7 @@ loop:
 		if (vp->v_dirtyblkhd)
 			vflushbuf(vp, 0);
 		if ((ip->i_flag & (IMOD|IACC|IUPD|ICHG)) &&
-		    (error = iupdat(ip, &time, &time, 0)))
+		    (error = lfs_iupdat(ip, &time, &time, 0)))	/* LFS */
 			allerror = error;
 		vput(vp);
 	}
@@ -583,90 +497,13 @@ loop:
 	return (allerror);
 }
 
-/*
- * Write a superblock and associated information back to disk.
- */
+static int
 sbupdate(mp, waitfor)
 	struct ufsmount *mp;
 	int waitfor;
 {
-	register struct fs *fs = mp->um_fs;
-	register struct buf *bp;
-	int blks;
-	caddr_t space;
-	int i, size, error = 0;
-
-#ifdef SECSIZE
-	bp = getblk(mp->m_dev, (daddr_t)fsbtodb(fs, SBOFF / fs->fs_fsize),
-	    (int)fs->fs_sbsize, fs->fs_dbsize);
-#else SECSIZE
-	bp = getblk(mp->um_devvp, SBLOCK, (int)fs->fs_sbsize);
-#endif SECSIZE
-	bcopy((caddr_t)fs, bp->b_un.b_addr, (u_int)fs->fs_sbsize);
-	/* Restore compatibility to old file systems.		   XXX */
-	if (fs->fs_postblformat == FS_42POSTBLFMT)		/* XXX */
-		bp->b_un.b_fs->fs_nrpos = -1;			/* XXX */
-#ifdef SECSIZE
-#ifdef tahoe
-	/* restore standard fsbtodb shift */
-	bp->b_un.b_fs->fs_fsbtodb = fs->fs_sparecon[0];
-	bp->b_un.b_fs->fs_sparecon[0] = 0;
-#endif
-#endif SECSIZE
-	if (waitfor == MNT_WAIT)
-		error = bwrite(bp);
-	else
-		bawrite(bp);
-	blks = howmany(fs->fs_cssize, fs->fs_fsize);
-	space = (caddr_t)fs->fs_csp[0];
-	for (i = 0; i < blks; i += fs->fs_frag) {
-		size = fs->fs_bsize;
-		if (i + fs->fs_frag > blks)
-			size = (blks - i) * fs->fs_fsize;
-#ifdef SECSIZE
-		bp = getblk(mp->m_dev, fsbtodb(fs, fs->fs_csaddr + i), size,
-		    fs->fs_dbsize);
-#else SECSIZE
-		bp = getblk(mp->um_devvp, fsbtodb(fs, fs->fs_csaddr + i), size);
-#endif SECSIZE
-		bcopy(space, bp->b_un.b_addr, (u_int)size);
-		space += size;
-		if (waitfor == MNT_WAIT)
-			error = bwrite(bp);
-		else
-			bawrite(bp);
-	}
-	return (error);
-}
-
-/*
- * Print out statistics on the current allocation of the buffer pool.
- * Can be enabled to print out on every ``sync'' by setting "syncprt"
- * above.
- */
-bufstats()
-{
-	int s, i, j, count;
-	register struct buf *bp, *dp;
-	int counts[MAXBSIZE/CLBYTES+1];
-	static char *bname[BQUEUES] = { "LOCKED", "LRU", "AGE", "EMPTY" };
-
-	for (bp = bfreelist, i = 0; bp < &bfreelist[BQUEUES]; bp++, i++) {
-		count = 0;
-		for (j = 0; j <= MAXBSIZE/CLBYTES; j++)
-			counts[j] = 0;
-		s = splbio();
-		for (dp = bp->av_forw; dp != bp; dp = dp->av_forw) {
-			counts[dp->b_bufsize/CLBYTES]++;
-			count++;
-		}
-		splx(s);
-		printf("%s: total-%d", bname[i], count);
-		for (j = 0; j <= MAXBSIZE/CLBYTES; j++)
-			if (counts[j] != 0)
-				printf(", %d-%d", j * CLBYTES, counts[j]);
-		printf("\n");
-	}
+	/* LFS IMPLEMENT -- sbupdate */
+	panic("sbupdate not implemented");
 }
 
 /*
@@ -678,30 +515,40 @@ bufstats()
  * - check for an unallocated inode (i_mode == 0)
  * - check that the generation number matches
  */
-ufs_fhtovp(mp, fhp, vpp)
+lfs_fhtovp(mp, fhp, vpp)
 	register struct mount *mp;
 	struct fid *fhp;
 	struct vnode **vpp;
 {
 	register struct ufid *ufhp;
-	register struct fs *fs;
+	register struct lfs *fs;				/* LFS */
 	register struct inode *ip;
+	IFILE *ifp;
+	struct buf *bp;
 	struct inode *nip;
 	struct vnode tvp;
 	int error;
 
 	ufhp = (struct ufid *)fhp;
+#ifdef NOTLFS							/* LFS */
 	fs = VFSTOUFS(mp)->um_fs;
 	if (ufhp->ufid_ino < ROOTINO ||
 	    ufhp->ufid_ino >= fs->fs_ncg * fs->fs_ipg) {
 		*vpp = NULLVP;
 		return (EINVAL);
 	}
+#else
+	fs = VFSTOUFS(mp)->um_lfs;
+	if (ufhp->ufid_ino < ROOTINO) {
+		*vpp = NULLVP;
+		return (EINVAL);
+	}
+#endif
 	tvp.v_mount = mp;
 	ip = VTOI(&tvp);
 	ip->i_vnode = &tvp;
 	ip->i_dev = VFSTOUFS(mp)->um_dev;
-	if (error = iget(ip, ufhp->ufid_ino, &nip)) {
+	if (error = lfs_iget(ip, ufhp->ufid_ino, &nip)) {	/* LFS */
 		*vpp = NULLVP;
 		return (error);
 	}
@@ -717,23 +564,5 @@ ufs_fhtovp(mp, fhp, vpp)
 		return (EINVAL);
 	}
 	*vpp = ITOV(ip);
-	return (0);
-}
-
-/*
- * Vnode pointer to File handle
- */
-/* ARGSUSED */
-ufs_vptofh(vp, fhp)
-	struct vnode *vp;
-	struct fid *fhp;
-{
-	register struct inode *ip = VTOI(vp);
-	register struct ufid *ufhp;
-
-	ufhp = (struct ufid *)fhp;
-	ufhp->ufid_len = sizeof(struct ufid);
-	ufhp->ufid_ino = ip->i_number;
-	ufhp->ufid_gen = ip->i_gen;
 	return (0);
 }
