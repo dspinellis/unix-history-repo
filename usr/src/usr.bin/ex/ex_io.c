@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_io.c	5.3 %G%";
+static char *sccsid = "@(#)ex_io.c	5.4 %G%";
 #include "ex.h"
 #include "ex_argv.h"
 #include "ex_temp.h"
@@ -355,7 +355,7 @@ rop(c)
 			break;
 		}
 	}
-	if ((stbuf.st_mode & 0222) == 0)
+	if ((stbuf.st_mode & 0222) == 0 || access(file, 2) < 0)
 		value(READONLY) = 1;
 	if (value(READONLY)) {
 		printf(" [Read only]");
