@@ -1,4 +1,4 @@
-/*	ip_icmp.c	6.5	84/03/13	*/
+/*	ip_icmp.c	6.6	84/08/28	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -115,6 +115,7 @@ icmp_input(m)
 	register int i;
 	int (*ctlfunc)(), code;
 	extern u_char ip_protox[];
+	extern struct in_addr if_makeaddr();
 
 	/*
 	 * Locate icmp structure in mbuf, and check
@@ -233,14 +234,19 @@ icmp_input(m)
 		 * immediate change in the kernel's routing
 		 * tables.  The message is also handed to anyone
 		 * listening on a raw socket (e.g. the routing
-		 * daemon for use in updating it's tables).
+		 * daemon for use in updating its tables).
 		 */
-		icmpsrc.sin_addr = icp->icmp_ip.ip_dst;
 		icmpdst.sin_addr = icp->icmp_gwaddr;
-		rtredirect((struct sockaddr *)&icmpsrc,
-		  (struct sockaddr *)&icmpdst,
-		  (code == ICMP_REDIRECT_NET || code == ICMP_REDIRECT_TOSNET) ?
-		   RTF_GATEWAY : (RTF_GATEWAY | RTF_HOST));
+		if (code == ICMP_REDIRECT_NET || code == ICMP_REDIRECT_TOSNET) {
+			icmpsrc.sin_addr =
+			 if_makeaddr(in_netof(icp->icmp_ip.ip_dst), INADDR_ANY);
+			rtredirect((struct sockaddr *)&icmpsrc,
+			  (struct sockaddr *)&icmpdst, RTF_GATEWAY);
+		} else {
+			icmpsrc.sin_addr = icp->icmp_ip.ip_dst;
+			rtredirect((struct sockaddr *)&icmpsrc,
+			  (struct sockaddr *)&icmpdst, RTF_GATEWAY | RTF_HOST);
+		}
 		/* FALL THROUGH */
 
 	case ICMP_ECHOREPLY:
