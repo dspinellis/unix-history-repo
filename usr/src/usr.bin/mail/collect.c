@@ -7,7 +7,7 @@
  * ~ escapes.
  */
 
-static char *SccsId = "@(#)collect.c	2.5 %G%";
+static char *SccsId = "@(#)collect.c	2.6 %G%";
 
 #include "rcv.h"
 #include <sys/stat.h>
@@ -428,7 +428,7 @@ exwrite(name, ibuf, f)
 		printf("\"%s\" ", name);
 		fflush(stdout);
 	}
-	if (stat(name, &junk) >= 0) {
+	if (stat(name, &junk) >= 0 && (junk.st_mode & S_IFMT) == S_IFREG) {
 		if (!f)
 			fprintf(stderr, "%s: ", name);
 		fprintf(stderr, "File exists\n", name);
