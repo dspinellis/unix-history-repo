@@ -5,7 +5,7 @@
  */
  
 /*
- * Sccs Id = "@(#)pathnames.h	1.1 %G%";
+ * Sccs Id = "@(#)pathnames.h	1.2 %G%";
  */
 
 #define	LOCAL		'v'		/* Local machine id */
@@ -15,6 +15,7 @@
 #define	EDITOR		"/usr/ucb/ex"	/* Name of text editor */
 #define	VISUAL		"/usr/ucb/vi"	/* Name of display editor */
 #define	SHELL		"/bin/csh"	/* Standard shell */
+#define	MORE		"/usr/ucb/more"	/* Standard output pager */
 #define	HELPFILE	"/usr/lib/Mail.help"
 					/* Name of casual help file */
 #define	THELPFILE	"/usr/lib/Mail.help.~"
