@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_output.c	6.15 (Berkeley) %G%
+ *	@(#)tcp_output.c	6.16 (Berkeley) %G%
  */
 
 #include "param.h"
