@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ncheck.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)ncheck.c	5.12 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -22,9 +22,7 @@ static char sccsid[] = "@(#)ncheck.c	5.11 (Berkeley) %G%";
 #define	MAXNINDIR	(MAXBSIZE / sizeof (daddr_t))
 
 #include <sys/param.h>
-#include <sys/time.h>
-#include <sys/vnode.h>
-#include <ufs/inode.h>
+#include <ufs/dinode.h>
 #include <ufs/fs.h>
 #include <sys/dir.h>
 #include <stdio.h>
