@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)authenc.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)authenc.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #if	defined(ENCRYPTION) || defined(AUTHENTICATION)

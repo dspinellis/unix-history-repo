@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ring.h	5.3 (Berkeley) %G%
+ *	@(#)ring.h	5.4 (Berkeley) %G%
  */
 
 #if defined(P)
