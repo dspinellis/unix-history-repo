@@ -54,20 +54,13 @@ setevent(intvl, func, arg)
 	ev->ev_link = *evp;
 	*evp = ev;
 
-	/* reschedule next clock tick if appropriate */
-	if (ev == EventQueue)
-	{
-		/* we have a new event */
-		(void) signal(SIGALRM, tick);
-		(void) alarm(intvl);
-	}
-
 # ifdef DEBUG
 	if (tTd(5, 2))
 		printf("setevent: intvl=%ld, for=%ld, func=%x, arg=%d, ev=%x\n",
 			intvl, now + intvl, func, arg, ev);
 # endif DEBUG
 
+	tick();
 	return (ev);
 }
 /*
@@ -104,8 +97,11 @@ clrevent(ev)
 	}
 
 	/* now remove it */
-	*evp = ev->ev_link;
-	free(ev);
+	if (*evp != NULL)
+	{
+		*evp = ev->ev_link;
+		free(ev);
+	}
 
 	/* restore clocks and pick up anything spare */
 	tick();
