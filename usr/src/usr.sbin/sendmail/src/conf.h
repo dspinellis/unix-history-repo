@@ -351,6 +351,10 @@ typedef int		pid_t;
 #  define _PATH_SENDMAILCF	"/usr/lib/sendmail.cf"
 # endif
 # undef IDENTPROTO		/* TCP/IP implementation is broken */
+# undef WEXITSTATUS
+# undef WIFEXITED
+typedef short		pid_t;
+extern int		errno;
 #endif
 
 
