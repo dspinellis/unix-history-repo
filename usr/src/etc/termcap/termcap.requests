@@ -1,0 +1,378 @@
+From faletti@UCBKIM  Sun Jan 23 03:13:52 1983
+Date: 23-Jan-83 03:19:41-PST (Sun)
+From: faletti@UCBKIM (Joe Faletti)
+Subject: A termcap addition.
+Message-Id: <8300231119.29664@UCBKIM.BERKELEY.ARPA>
+Received: by UCBKIM.BERKELEY.ARPA (3.256 [12/5/82])
+	id AA29664; 23-Jan-83 03:19:41-PST (Sun)
+Received: from UCBKIM.BERKELEY.ARPA by UCBCALDER.BERKELEY.ARPA (3.300 [1/17/83])
+	id AA00662; 23 Jan 83 03:13:52 PST (Sun)
+To: termcap@UCBCALDER
+Status: RO
+
+    I sent this to Mark Horton in December as per the warning in 
+/etc/termcap and still it gets lost!   There are now many people
+besides me using this terminal, although most use CF&O machines.
+Another terminal entry in Kim's old termcap that many peole have
+is the tvi925 at the end of the file.  You should probably add
+that too.
+    Joe
+# From ucbvax!faletti (Faletti@Berkeley)
+# FREEDOM 100 by Liberty Electronics USA, SF.
+# :kh=^^:  left out because it precludes using change-to-alternate-file in vi.
+# Basic Freedom 100 entry, works with VI at 1200 baud.
+Mf|f100|freedom100|freedom|freedom 100 no padding:\
+	:am:bs:bw:mi:ms:pt:co#80:kn#20:li#24:\
+	:ct=\E3:st=\E1:is=\Eg\Ef\r\Ed:\
+	:kr=^L:\
+	:bl=^G:cl=^Z:cr=^M:do=^J:ho=^^:kb=^H:kl=^H:\:kd=^V:\
+	:ko=dc,al,dl,cl,bt,ce,cd:ku=^K:le=^H:nd=^L:nl=^J:\
+	:ch=\E]%+ :cm=\E=%+ %+ :cv=\E[%+ :sr=\Ej:ta=^I:up=^K:\
+	:al=\EE:bt=\EI:cd=\EY:ce=\ET:dc=\EW:dl=\ER:ei=\Er:im=\Eq:\
+	:se=\EG0:so=\EG4:ue=\EG0:us=\EG8:as=\E$:ae=\E%:\
+	:vb=\Eb\200\200\Ed:\
+	:k1=^A@\r:k2=^AA\r:k3=^AB\r:k4=^AC\r:k5=^AD\r:\
+	:k6=^AE\r:k7=^AF\r:k8=^AG\r:k9=^AH\r:k0=^AI\r:\
+	:hs:ts=\Eg\Ef:fs=\r:ds=\Eg\Ef\r:
+Mf|f100-rv|freedom100-rv|freedom-rv|freedom100 with reverse video at 1200:\
+	:is=\Eg\Ef\r\Eb:vb=\Ed\200\200\Eb:\
+	:tc=freedom100:
+# VI at 9600 baud (or EMACS at 1200 -- but may be more than is needed for emacs)
+Mf|f100-v|freedom100-v|freedom-v|freedom100 for 9600 vi or 1200 emacs:\
+	:al=6.5*\EE:dl=11.5*\ER:\
+	:vb=\Eb\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\Ed:\
+	:tc=freedom100:
+Mf|f100-v-rv|freedom100-v-rv|freedom-v-rv|freedom100 rev. vid. for 9600 vi:\
+	:al=6.5*\EE:dl=11.5*\ER:\
+	:is=\Eg\Ef\r\Eb:\
+	:vb=\Ed\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\Eb:\
+	:tc=freedom100:
+# EMACS at 9600 baud -- this still needs some more work on the padding
+Mf|f100-e|freedom100-e|freedom-e|freedom100 for 9600 emacs:\
+	:al=8.5*\EE:dl=11.5*\ER:ip=6:\
+	:vb=\Eb\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\Ed:\
+	:tc=freedom100:
+Mf|f100-e-rv|freedom100-e-rv|freedom-e-rv|freedom100 rev. vid. for emacs 9600:\
+	:al=8.5*\EE:dl=11.5*\ER:ip=6:\
+	:is=\Eg\Ef\r\Eb:\
+	:vb=\Ed\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\Eb:\
+	:tc=freedom100:
+
+From arens@UCBKIM  Sun Jan 23 15:51:14 1983
+Date: 23-Jan-83 15:56:53-PST (Sun)
+From: arens@UCBKIM (Yigal Arens)
+Subject: termcap entries
+Message-Id: <8300232356.10756@UCBKIM.BERKELEY.ARPA>
+Received: by UCBKIM.BERKELEY.ARPA (3.256 [12/5/82])
+	id AA10756; 23-Jan-83 15:56:53-PST (Sun)
+Received: from UCBKIM.BERKELEY.ARPA by UCBCALDER.BERKELEY.ARPA (3.300 [1/17/83])
+	id AA01003; 23 Jan 83 15:51:14 PST (Sun)
+To: termcap@ucbcalder
+Status: RO
+
+
+For emacs users it is important to have the h19e entry, adding some padding
+on insert character so that emacs will work at 9600 baud.
+
+The entry is:
+
+ke|h19-e|h19e|h19 for emacs:ip=1.5:tc=h19-us:
+
+Yigal Arens  (arens@ucbkim)
+
+
+From dlw  Mon Jan 24 00:19:00 1983
+Date: 24 Jan 83 00:19:00 PST (Mon)
+From: dlw (David Wasley)
+Subject: tvi925
+Message-Id: <8300240819.5662@UCBCALDER.BERKELEY.ARPA>
+Received: by UCBCALDER.BERKELEY.ARPA (3.300 [1/17/83])
+	id AA05662; 24 Jan 83 00:19:00 PST (Mon)
+To: termcap
+Status: RO
+
+Please add the following. The if= string needs to be munged to conform
+to Mark's new format. The following is what I use on the CC machines.
+
+v9|tvi925|925|televideo model 925:\
+	:xn:am:bs:co#80:li#24:cm=\E=%+ %+ :cl=^Z:cd=\EY:ce=\ET:is=\El\E":\
+	:al=\EE:dl=\ER:im=:ei=:ic=\EQ:dc=\EW:if=tabset.stdcrt:\
+	:ho=^^:nd=^L:bt=\EI:pt:so=\EG4:se=\EG0:sg#1:us=\EG8:ue=\EG0:ug#1:\
+	:up=^K:do=^V:kb=^H:ku=^K:kd=^V:kl=^H:kr=^L:kh=^^:ma=^V^J^L :\
+	:k1=^A@\r:k2=^AA\r:k3=^AB\r:k4=^AC\r:k5=^AD\r:k6=^AE\r:k7=^AF\r:\
+	:k8=^AG\r:k9=^AH\r:k0=^AI\r:ko=ic,dc,al,dl,cl,ce,cd,bt:
+
+
+	David Wasley
+
+From fair@UCBARPA  Mon Jan 24 10:18:58 1983
+Date: 24 Jan 83 10:24:45 PST (Mon)
+From: fair@UCBARPA (Erik E. Fair)
+Subject: 4 Termcaps, new and fixed
+Message-Id: <8300241824.11381@UCBARPA.BERKELEY.ARPA>
+Received: by UCBARPA.BERKELEY.ARPA (3.300 [1/17/83])
+	id AA11381; 24 Jan 83 10:24:45 PST (Mon)
+Received: from UCBARPA.BERKELEY.ARPA by UCBCALDER.BERKELEY.ARPA (3.300 [1/17/83])
+	id AA06892; 24 Jan 83 10:18:58 PST (Mon)
+To: termcap@calder
+Status: RO
+
+# Best of all vp worlds - underline/rev-video - Erik Fair
+av|vp|viewpoint|ADDS viewpoint:am:bw:bs:co#80:li#24:kn#3:\
+	:cm=\EY%+ %+ :ll=^A:do=^J:nd=^F:up=^Z:cl=^L:cd=\Ek:ce=\EK:\
+	:is=^O\E0`:vs=^O\E0P:ve=^O\E0`:so=^N:se=^O:us=^N:ue=^O:\
+	:k1=^B1:k2=^B2:k3=^B3:
+#
+# Intertec InterTube termcap entry - Erik Fair, September 21, 1981
+# Beware the manual - it lies. It says up=^K. It's ^Z
+it|InterTube|IT|Intertec:bs:am:cl=^L:ho=^A:up=^Z:nd=^F:\
+		:cm=50\EY%+\040%+\040:so=\E0P:se=\E0@:co#80:li#25
+#
+# Hazeltine 1500 with bug fix - Don't change the \176 to ~!!
+# That causes funny printing if you printenv with TERMCAP set on the 1500
+# The old termcap did not address the cursor correctly, and screwed up in
+# vi quite a bit.
+H5|h1500:co#80:li#24:am:bs:hz:bw:\
+	:cd=10\176^X:ce=\176^O:cl=\176^\:cm=\176^Q%r%.%.:\
+	:al=40\176^Z:dl=40\176^S:ho=\176^R:do=\176^K:nd=^P:up=\176^L:\
+	:so=\176^_:se=\176^Y
+#
+# vt125 - got this from Chris Guthrie - seems to work, but you never know...
+d6|vt125|vt125-am|vt125:\
+	:cr=^M:do=^J:nl=^J:bl=^G:co#80:li#24:cl=50\E[;H\E[2J:le=^H:am:bs:\
+	:cm=5\E[%i%d;%dH:nd=2\E[C:up=2\E[A:ce=3\E[K:cd=50\E[J:so=2\E[7m:\
+	:se=2\E[m:us=2\E[4m:ue=2\E[m:md=2\E[1m:mr=2\E[7m:mb=2\E[5m:me=2\E[m:\
+	:is=\E[1;24r\E[24;1H:rs=\E>\E[?3l\E[?4l\E[?5l\E[?7h\E[?8h:ks=\E[?1h\E=:\
+	:ke=\E[?1l\E>:rf=/usr/lib/tabset/vt100:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:\
+	:kb=^H:ho=\E[H:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:ta=^I:pt:sr=5\EM:vt#3:\
+	:sc=\E7:rc=\E8:cs=\E[%i%d;%dr:
+
+From chin@Kim  Tue Jan 25 22:26:56 1983
+Date: 25 Jan 83 22:31:02 PST (Tue)
+From: chin@Kim
+Subject: termcap correction
+Message-Id: <8300260630.6178@UCBVAX.BERKELEY.ARPA>
+Received: by UCBVAX.BERKELEY.ARPA (3.300 [1/17/83])
+	id AA06178; 25 Jan 83 22:30:27 PST (Tue)
+Received: from UCBVAX.BERKELEY.ARPA by UCBCALDER.BERKELEY.ARPA (3.300 [1/17/83])
+	id AA01471; 25 Jan 83 22:26:56 PST (Tue)
+To: termcap@UCBCALDER
+Status: RO
+
+
+Please change the cm capability of Mw|it2|intertube2 from :cm=^K.^B%\102%.:
+to :cm=^N%+ %+ :. Thanks.
+
+					David Chin
+					chin@UCBKIM
+
+From mha@Kim  Wed Jan 26 11:47:46 1983
+Date: 26 Jan 83 11:52:32 PST (Wed)
+From: mha@Kim
+Message-Id: <8300261951.21244@UCBVAX.BERKELEY.ARPA>
+Received: by UCBVAX.BERKELEY.ARPA (3.300 [1/17/83])
+	id AA21244; 26 Jan 83 11:51:29 PST (Wed)
+Received: from UCBVAX.BERKELEY.ARPA by UCBCALDER.BERKELEY.ARPA (3.300 [1/17/83])
+	id AA04116; 26 Jan 83 11:47:46 PST (Wed)
+To: termcap@UCBCALDER
+Status: RO
+
+# CIT 80  - vt 100 emulator, the termcap has been modified to remove
+#           the delay times and do an auto tab set rather than the indirect 
+#           file used in vt100.
+ct|cit80|cit 80|Citoh 80:\
+	:co#80:li#24:am:cl=\E[;H\EJ:bs:cm=\E[%i%2;%2H:nd=\E[C:up=\E[A:\
+	:ce=\EK:cd=\EJ:\
+	:is=\E>:\
+	:ks=\E[?1h\E=:ke=\E[?1l\E>:\
+	:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:\
+# end of cit80
+# AlternateCIT 101 - vt 100 emulator, the termcap has been modified to remove
+#           the delay times and do an auto tab set rather than the indirect 
+#           file used in vt100.
+#	    Uses 23 lines so can run citsys (like h19sys).
+ct|citc|cit 101|Citoh fast vt100:\
+	:co#80:li#23:am:cl=\E[;H\E[2J:bs:cm=\E[%i%2;%2H:nd=\E[C:up=\E[A:\
+	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:us=\E[4m:ue=\E[m:\
+	:is=\E>\E[?3l\E[?4l\E[?5l\E[?7h\E[?8h\E[3g\E[>5g:\
+	:ks=\E[?1h\E=:ke=\E[?1l\E>:\
+	:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:\
+        :vb=\E[?5h\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\E[?5l:\
+	:dc=\E[P:\
+	:al=\E[L:\
+	:im=:\
+	:ei=:\
+	:dl=\E[M:\
+	:ic=\E[@:
+# end of citc
+# AlternateCIT 101 - vt 100 emulator, the termcap has been modified to remove
+#           the delay times and do an auto tab set rather than the indirect 
+#           file used in vt100.
+#	    Uses 23 lines so can run citsys (like h19sys).
+ct|cita|cit 101|Citoh fast vt100:\
+	:co#80:li#23:am:cl=\E[;H\E[2J:bs:cm=\E[%i%2;%2H:nd=\E[C:up=\E[A:\
+	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:us=\E[4m:ue=\E[m:\
+	:is=\E>\E[?3l\E[?4l\E[?5l\E[?7h\E[?8h\E[3g\E[>5g:\
+	:ks=\E[?1h\E=:ke=\E[?1l\E>:\
+	:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:\
+        :vb=\E[?5h\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\E[?5l:
+# end of cita
+# CIT 101 - vt 100 emulator, the termcap has been modified to remove
+#           the delay times and do an auto tab set rather than the indirect 
+#           file used in vt100.
+ct|cit101|cit 101|Citoh fast vt100:\
+	:co#80:li#24:am:cl=\E[;H\E[2J:bs:cm=\E[%i%2;%2H:nd=\E[C:up=\E[A:\
+	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:us=\E[4m:ue=\E[m:\
+	:is=\E>\E[?3l\E[?4l\E[?5l\E[?7h\E[?8h\E[3g\E[>5g:\
+	:ks=\E[?1h\E=:ke=\E[?1l\E>:\
+	:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:\
+# end of cit101
+# CIT 101 - vt 100 emulator, the termcap has been modified to remove
+#           the delay times and do an auto tab set rather than the indirect 
+#           file used in vt100. (modified to remove bell?not working)...rex
+citb|cit101b|cit 101b|Citoh fast vt100:\
+	:co#80:li#24:am:cl=\E[;H\E[2J:bs:cm=\E[%i%2;%2H:nd=\E[C:up=\E[A:\
+	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:us=\E[4m:ue=\E[m:\
+	:is=\E>\E[?3l\E[?4l\E[?5l\E[?7h\E[?8h\E[3g\E[>5g:\
+	:ks=\E[?1h\E=:ke=\E[?1l\E>:\
+	:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:\
+        :vb=\E[?5h\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\E[?5l:
+# end of cit101
+
+# termcap entry by Tim Curry 5/21/82 Univ. of Central Fla. duke!ucf-cs!tim
+# Terminal Configuration Assumptions:
+#       1) Edit keys transmit (DUPE on S2 bit 1 down)
+#       2) Actually a 925 (i.e. not in 912/920 emulation)
+#       3) Visual Bell assumes a default of white on black
+#       4) Page attributes for special display
+#       5) This uses a solid underscore cursor when not in vi. Solid Block
+#               cursor in vi.
+#       6) No function key definitions are given
+#       7) Only one page of memory is available
+v4|925a|tvi925a|TeleVideo Model 925:\
+        :al=\EE:am:bs:bt=\EI:bw:cd=\EY:ce=\ET:cl=^Z:cm=\E=%+ %+ :co#80:dc=\EW:\
+        :dl=\ER:do=^V:ei=:ic=\EQ:if=/usr/lib/tabset/stdcrt:im=:kb=^H:kd=^V:\
+        :kh=^^:kl=^H:kn#12:kr=^L:ku=^K:li#24:nd=^L:pt:se=\EG0:sg=#1:so=\EG4:\
+        :ue=\EG0:ug#1:ul:up=^K:us=\EG8:is=\El\
+        :vb=\Eb\200\200\200\200\200\200\200\200\200\200\200\200\200\200\Ed:\
+        :ve=\E.4:vs=\E.2:
+# end of 925a
+
+# televideo 925
+#
+v3|tvi925|925|televideo 925:if=/usr/lib/tabset/stdcrt:\
+	:al=\EE:bs:ce=\Et:cm=\E=%+ %+ :cl=\E*:co#80:dc=\EW:dl=\ER:ei=:\
+	:ku=^K:kd=^J:\
+	:im=:ic=\EQ:li#24:nd=^L:pt:se=\EG0:so=\EG4:up=^K:us=\EG8:ue=\EG0:\
+	:sg#1:ug#1:
+# end 925
+
+From lepreau@Utah-CS  Tue Feb  1 22:03:12 1983
+Date: 1 Feb 1983 23:02:18-MST
+From: Jay Lepreau <lepreau@Utah-CS>
+Subject: New entries for teleray t10 and esprit
+Message-Id: <8301020607.2127@UCBARPA.BERKELEY.ARPA>
+Received: from UTAH-CS by UCBARPA.BERKELEY.ARPA (3.300 [1/17/83])
+	id AA02127; 1 Feb 83 22:07:48 PST (Tue)
+Received: from UCBARPA.BERKELEY.ARPA by UCBCALDER.BERKELEY.ARPA (3.300 [1/17/83])
+	id AA29389; 1 Feb 83 22:03:12 PST (Tue)
+To: ucbcalder.termcap@ucb-arpa
+Status: RO
+
+Let me know if you have any problems with these.  The t10 one is very
+well tested, as that is what most of our terminals are, and hasn't changed in
+1/2 a year or more.  The esprit is newer and conceivably could be buggy as
+its only users are unsophisticated, and might not notice.  No known
+problems, however.
+Note the t10 is set up w/o "am"-- we are probably the biggest users of t10's
+in the Unix community and have put line-folding into the tty driver,
+so if you could keep "am" out of the official version we'd appreciate it--
+will make using guest accounts a whole lot easier!
+(am is a dip-switch option.)  Could add a t10-am I guess.
+It includes Mark Horton's new "km" designation for meta-key capabilty.
+
+Please let me know if you can't include these as is.
+-Jay
+
+# "Teleray Arpa Special", offically designated as
+# "Teleray Arpa network model 10" with "Special feature 720".
+# This is the new (1981) fast microcode updating the older "arpa" proms
+# (which gave meta-key and pgmmable-fxn keys).  720 is much much faster,
+# converts the keypad to programmable function keys, and has other goodies.
+# Standout mode is still broken (magic cookie, etc) so is suppressed as no
+# programs handle such lossage properly.
+# Note: this is NOT the old termcap's "t1061f with fast proms."
+# From Univ of Utah, J.Lepreau  Tue Feb  1 06:39:37 1983
+# lepreau@utah-cs, harpo!utah-cs!lepreau
+#
+y7|t10|teleray 10 special:\
+	:so@:se@:us@:ue@:\
+	:al=\EL:bs:cd=\EJ:ce=\EK:cl=30\Ej:cm=\EY%+ %+ :co#80:\
+	:dc=\EQ:dl=\EM:ei=:ho=\EH:ic=\EP:im=:km:li#24:nd=\EC:nl=\n:pc=\200:pt:\
+	:se=\ER@:so=\ERD:sf=\Eq:sg#2:sr=\Ep:up=\EA:ug#1:ue=\ER@:us=\ERH:\
+	:xs:xt:
+# Hazeltine esprit entries from Univ of Utah  Tue Feb  1 06:39:37 1983
+# J.Lepreau, lepreau@utah-cs, harpo!utah-cs!lepreau
+HE|esprit|hazeltine esprit:\
+	:al=40\E^Z:bs:cd=5\E^X:ce=\E^O:cl=\E^\:cm=\E^Q%r%>^^ %+`%+`:co#80:\
+	:dl=40\E^S:do=\E^K:ho=\E^R:li#24:nd=^P:se=\E^Y:so=\E^_:up=\E^L:
+HF|esprit-am|hazeltine esprit auto-margin:\
+	:am:tc=esprit:
+
+From tut@Topaz.CC  Wed Feb  2 17:33:58 1983
+Date: 2 Feb 83 17:20:47 PST (Wed)
+From: tut@Topaz.CC
+Subject: tvi925 entry
+Message-Id: <8301030135.7268@UCBVAX.BERKELEY.ARPA>
+Received: by UCBVAX.BERKELEY.ARPA (3.300 [1/17/83])
+	id AA07268; 2 Feb 83 17:35:57 PST (Wed)
+Received: from UCBVAX.BERKELEY.ARPA by UCBCALDER.BERKELEY.ARPA (3.300 [1/17/83])
+	id AA00270; 2 Feb 83 17:33:58 PST (Wed)
+To: termcap@UCBCALDER
+Status: RO
+
+Last time I looked it was missing from termcap on ARPAVAX.
+If you *do* have one now make sure it has the :ma: string--
+there are lots of PDPs left in the world.
+
+v9|tvi925|925|televideo model 925:\
+	:am:bs:xn:co#80:li#24:cm=\E=%+ %+ :cl=\E*:cd=\Ey:ce=\Et:is=\El:\
+	:al=\EE:dl=\ER:im=:ei=:ic=\EQ:dc=\EW:if=/usr/lib/tabset/stdcrt:\
+	:ho=^^:nd=^L:bt=\EI:pt:so=\EG4:se=\EG0:sg#1:us=\EG8:ue=\EG0:ug#1:\
+	:up=^K:do=^V:kb=^H:ku=^K:kd=^V:kl=^H:kr=^L:kh=^^:ma=^Vj^Kk^Ll^^H^R^L:\
+	:k1=^A@\r:k2=^AA\r:k3=^AB\r:k4=^AC\r:k5=^AD\r:k6=^AE\r:k7=^AF\r:\
+	:k8=^AG\r:k9=^AH\r:k0=^AI\r:ko=ic,dc,al,dl,cl,ce,cd,bt:sr=\Ej:
+vb|tvi925vb|925vb|televideo 925 w/ visual bell:\
+	:vb=\Eb\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\Ed:\
+	:tc=tvi925:
+
+Bill Tuthill
+
+From mckusick@UCBARPA  Thu Feb  3 11:35:30 1983
+Date: 3 Feb 83 11:39:57 PST (Thu)
+From: mckusick@UCBARPA (Kirk Mckusick)
+Subject: minor change request
+Message-Id: <8301031939.13060@UCBARPA.BERKELEY.ARPA>
+Received: by UCBARPA.BERKELEY.ARPA (3.300 [1/17/83])
+	id AA13060; 3 Feb 83 11:39:57 PST (Thu)
+Received: from UCBARPA.BERKELEY.ARPA by UCBCALDER.BERKELEY.ARPA (3.300 [1/17/83])
+	id AA04822; 3 Feb 83 11:35:30 PST (Thu)
+To: termcap@calder
+Status: RO
+
+Dear Mr Termcap,
+	I prefer to have the status line on my concept run in
+full brightness mode rather than half bright, which I find
+difficult to read. Consequently I would appreciate it if you
+would change the "ts" and "fs" entries of the concept entry
+as indicated below. (this is line 34 of the /etc/termcap entry
+on arpavax)
+
+old:
+	:es:hs:ts=\E z"\E?\E^C\EE\Ea %+ :fs=\Ee\E z :ds=\E ;\177:\
+new:
+	:es:hs:ts=\E z"\E?\E^C\Ea %+ :fs=\E z :ds=\E ;\177:\
+
+	Thanks,
+		-Kirk
+
