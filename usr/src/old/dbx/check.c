@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)@(#)check.c 1.1 %G%";
+static char sccsid[] = "@(#)check.c 1.2 %G%";
 
 /*
  * Check a tree for semantic correctness.
