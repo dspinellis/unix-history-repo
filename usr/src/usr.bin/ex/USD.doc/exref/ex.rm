@@ -2,22 +2,10 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ex.rm	5.1 (Berkeley) %G%
+.\"	@(#)ex.rm	6.1 (Berkeley) %G%
 .\"
-.de v2
-\(dd
-.FS
-\(dd
-Not available in all v2 editors due to memory constraints.
-.FE
-..
-.de v3
-\(dd\(dd
-.FS
-\(dd\(dd
-Version 3 only.
-.FE
-..
+.EH 'USD:16-%''Ex Reference Manual'
+.OH 'Ex Reference Manual''USD:16-%'
 .de ZP
 .nr pd \\n()P
 .nr )P 0
@@ -35,15 +23,14 @@ Version 3 only.
 .ta 4.0i
 ..
 .bd S B 3
-.RP
+.\".RP
 .TL
 Ex Reference Manual
 .br
-Version 3.5/2.13 \- September, 1980
+Version 3.7
 .AU
 William Joy
-.sp
-\fI\s-2Revised for versions 3.5/2.13 by\s0\fP
+.AU
 Mark Horton
 .AI
 Computer Science Division
@@ -95,10 +82,10 @@ of the terminal described there matches the \s-2TERM\s0 variable,
 then that description
 is used.  Also if the \s-2TERMCAP\s0 variable contains a pathname (beginning
 with a \fB/\fR) then the editor will seek the description of the terminal
-in that file (rather than the default /etc/termcap.)
+in that file (rather than the default /etc/termcap).
 If there is a variable \s-2EXINIT\s0 in the environment, then the editor
-will execute the commands in that variable, otherwise
-if there is a file
+will execute the commands in that variable,
+otherwise if there is a file
 .I \&.exrc
 in your \s-2HOME\s0 directory
 .I ex
@@ -174,7 +161,6 @@ The
 option sets the
 .I readonly
 option at the start.
-.v2
 .I Name
 arguments indicate files to be edited.
 An argument of the form
@@ -1011,7 +997,6 @@ See
 .I "An Introduction to Display Editing with Vi"
 for more details.
 .KE
-.v2
 .LC
 \fBpreserve\fR
 .ZP
@@ -1287,7 +1272,6 @@ to minor changes in the file.  Such scans are always performed as if
 was set.
 .PP
 The tag names in the tags file must be sorted alphabetically.
-.v2
 .LC
 \fBunabbreviate\fR \fIword\fP	abbr: \fBuna\fP
 .ZP
@@ -1875,7 +1859,6 @@ makes the substitution be as in the
 .I ~
 command, instead of like
 .I &.
-.v3
 .LC
 \fBerrorbells\fR, \fBeb\fR	default: noeb
 .ZP
@@ -1946,7 +1929,23 @@ Causes write permission to be turned off to the terminal
 while you are in visual mode, if
 .I nomesg
 is set.
-.v3
+.LC
+\fBmodeline\fR	default: nomodeline
+.ZP
+If
+.I modeline
+is set, then the first 5 lines and the last five lines of the file
+will be checked for ex command lines and the comands issued.
+To be recognized as a command line, the line must have the string
+.B ex:
+or
+.B vi:
+preceeded by a tab or a space.  This string may be anywhere in the
+line and anything after the 
+.I :
+is interpeted as editor commands.  This option defaults to off because
+of unexpected behavior when editting files such as
+.I /etc/passwd.
 .LC
 \fBnumber, nu\fR	default: nonumber
 .ZP
@@ -2000,7 +1999,6 @@ Useful only at very high speed.
 \fBremap\fP	default: remap
 .ZP
 If on, macros are repeatedly tried until they are unchanged.
-.v3
 For example, if
 .B o
 is mapped to
@@ -2113,12 +2111,11 @@ A value of zero (the default) means that all characters are significant.
 A path of files to be used as tag files for the
 .I tag
 command.
-.v3
 A requested tag is searched for in the specified files, sequentially.
-By default (even in version 2) files called
+By default, files called
 .B tags
-are searched for in the current directory and in /usr/lib (a master
-file for the entire system.)
+are searched for in the current directory and in /usr/lib
+(a master file for the entire system).
 .LC
 \fBterm\fR	from environment TERM
 .ZP
