@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ifconfig.8	5.1 (Berkeley) %G%
+.\"	@(#)ifconfig.8	6.1 (Berkeley) %G%
 .\"
-.TH IFCONFIG 8C "28 August 1983"
+.TH IFCONFIG 8C ""
 .UC 5
 .SH NAME
 ifconfig \- configure network interface parameters
@@ -13,7 +13,9 @@ ifconfig \- configure network interface parameters
 interface
 [
 .I address
-] [
+[
+.I dest_address
+] ] [
 .I parameters
 ]
 .SH DESCRIPTION
@@ -60,10 +62,17 @@ Disable the use of a ``trailer'' link level encapsulation.
 Enable the use of the Address Resolution Protocol in mapping
 between network level addresses and link level addresses (default). 
 This is currently implemented for mapping between DARPA Internet
-addreses and 10Mb/s Ethernet addresses.
+addresses and 10Mb/s Ethernet addresses.
 .TP 15
 .B \-arp
 Disable the use of the Address Resolution Protocol.
+.TP 15
+.B debug
+Enable driver dependent debugging code; usually, this turns on
+extra console error logging.
+.TP 15
+.B \-debug
+Disable driver dependent debugging code.
 .PP
 .I Ifconfig
 displays the current configuration for a network interface
