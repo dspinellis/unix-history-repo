@@ -1,3 +1,4 @@
+.\" @(#)acc.ms	1.3 (Berkeley) %G%
 .	\" AM - accent mark definitions
 .bd S B 3
 .	\" fudge factors for nroff and troff

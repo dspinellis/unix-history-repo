@@ -1,3 +1,4 @@
+.\" @(#)tbl.ms	1.3 (Berkeley) %G%
 .	\" TS - table start
 .de TS
 .br

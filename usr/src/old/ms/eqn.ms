@@ -1,3 +1,4 @@
+.\" @(#)eqn.ms	1.3 (Berkeley) %G%
 .bd S B 3
 .	\" EQ - equation, breakout and display
 .de EQ

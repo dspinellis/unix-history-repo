@@ -1,7 +1,7 @@
-.\"	@(#)tmac.s	1.5 (Berkeley) 5/11/88
+.\"	@(#)tmac.s	1.6 (Berkeley) %G%
 .\" ancillary files reside in \*(//,
 .\" except local which are in \*(L/,
-.ds // /usr/lib/ms/
+.ds // /usr/share/ms/
 .ds L/ /usr/local/lib/tmac/
 .	\" IZ - initialize (before text begins)
 .de IZ
@@ -199,7 +199,7 @@
 .ds HT \&\\$1
 .ti -\\n(I\\n(IRu
 \\*(HT\t\c
-.if \w'\\*(HT'u>(\\n(I\\n(IRu+1n) .br
+.if \w\\*(HTu>(\\n(I\\n(IRu+1n) .br
 .\}
 ..
 .	\" XP - exdented paragraph
@@ -1022,4 +1022,4 @@ in the USA and other countries.
 .nr * 0 1
 .IZ
 .em EM
-.rm IZ RA //
+.rm IZ RA // L/

@@ -1,3 +1,5 @@
+.\"	@(#)tmac.os	1.3 (Berkeley) %G%
+.ds // /usr/share/tmac/
 .nr TN 0
 .\"	RT -  reset everything to normal state
 .de RT
@@ -63,7 +65,7 @@
 ..
 .de TM
 .if \\n(IM=0 .if \\n(MN=0 .pn 0
-.so /usr/lib/tmac/tmac.scover
+.so \*(//tmac.scover
 .if \\n(IM=0 .if \\n(MN=0 .rm IM
 .if \\n(IM=0 .if \\n(MN=0 .rm MF
 .if \\n(IM=0 .if \\n(MN=0 .rm MR
@@ -1564,3 +1566,4 @@ Attached:
 .if t \(br\|\\$1\|\(br\l'|0\(rn'\l'|0\(ul'
 .if n \(br\\kA\|\\$1\|\\kB\(br\v'-1v'\h'|\\nBu'\l'|\\nAu'\v'1v'\l'|\\nAu'
 ..
+.rm //
