@@ -14,7 +14,7 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.2 (Berkeley) %G%
+# @(#)Makefile	5.3 (Berkeley) %G%
 #
 
 CFLAGS=	-O
@@ -27,9 +27,6 @@ all: rlogind
 
 rlogind: ${SRCS} ${LIBC}
 	${CC} -o $@ ${CFLAGS} ${SRCS} -lutil
-
-cleandir: clean
-	rm -f tags .depend
 
 clean:
 	rm -f ${OBJS} core rlogind
