@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)GETNAME.c 1.11 %G%";
+static char sccsid[] = "@(#)GETNAME.c 1.12 %G%";
 
 #include "h00vars.h"
 #include "libpc.h"
@@ -53,6 +53,7 @@ GETNAME(filep, name, namlim, datasize)
 		filep->lcount = 0;
 		filep->llimit = 0x7fffffff;
 		filep->fileptr = &filep->window[0];
+		*filep->fname = NULL;
 		/*
 		 * Check to see if file is global, or allocated in
 		 * the stack by checking its address against the
