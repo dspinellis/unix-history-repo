@@ -1,0 +1,16 @@
+chdir assubs; sh make.script; chdir ..
+chdir fpdata; sh make.script; chdir ..
+chdir fpnofetchi; sh make.script; chdir ..
+chdir fpterp; sh make.script; chdir ..
+chdir opcodes; sh make.script; chdir ..
+cc -O -n pix.c -o pix -s
+cc -O px_header.c -s
+dd if=a.out of=px_header bs=1b conv=sync
+rm -f a.out
+cp pix /usr/ucb/pix
+cp px_header /usr/lib/px_header
+rm -f /usr/lib/npx_header
+ln /usr/lib/px_header /usr/lib/npx_header
+cp how_pi /usr/lib/how_pi
+cp how_pix /usr/lib/how_pix
+cp how_pxp /usr/lib/how_pxp
