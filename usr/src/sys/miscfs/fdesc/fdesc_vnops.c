@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fdesc_vnops.c	8.16 (Berkeley) %G%
+ *	@(#)fdesc_vnops.c	8.17 (Berkeley) %G%
  *
  * $Id: fdesc_vnops.c,v 1.12 1993/04/06 16:17:17 jsp Exp $
  */
@@ -135,24 +135,22 @@ fdesc_lookup(ap)
 {
 	struct vnode **vpp = ap->a_vpp;
 	struct vnode *dvp = ap->a_dvp;
-	char *pname;
-	struct proc *p;
-	int nfiles;
+	struct componentname *cnp = ap->a_cnp;
+	char *pname = cnp->cn_nameptr;
+	struct proc *p = cnp->cn_proc;
+	int nfiles = p->p_fd->fd_nfiles;
 	unsigned fd;
 	int error;
 	struct vnode *fvp;
 	char *ln;
 
-	pname = ap->a_cnp->cn_nameptr;
-	if (ap->a_cnp->cn_namelen == 1 && *pname == '.') {
+	VOP_UNLOCK(dvp, 0, p);
+	if (cnp->cn_namelen == 1 && *pname == '.') {
 		*vpp = dvp;
 		VREF(dvp);	
-		vn_lock(dvp, LK_EXCLUSIVE | LK_RETRY, p);
+		vn_lock(dvp, LK_SHARED | LK_RETRY, p);
 		return (0);
 	}
-
-	p = ap->a_cnp->cn_proc;
-	nfiles = p->p_fd->fd_nfiles;
 
 	switch (VTOFDESC(dvp)->fd_type) {
 	default:
@@ -163,17 +161,17 @@ fdesc_lookup(ap)
 		goto bad;
 
 	case Froot:
-		if (ap->a_cnp->cn_namelen == 2 && bcmp(pname, "fd", 2) == 0) {
+		if (cnp->cn_namelen == 2 && bcmp(pname, "fd", 2) == 0) {
 			error = fdesc_allocvp(Fdevfd, FD_DEVFD, dvp->v_mount, &fvp);
 			if (error)
 				goto bad;
 			*vpp = fvp;
 			fvp->v_type = VDIR;
-			vn_lock(fvp, LK_EXCLUSIVE | LK_RETRY, p);
+			vn_lock(fvp, LK_SHARED | LK_RETRY, p);
 			return (0);
 		}
 
-		if (ap->a_cnp->cn_namelen == 3 && bcmp(pname, "tty", 3) == 0) {
+		if (cnp->cn_namelen == 3 && bcmp(pname, "tty", 3) == 0) {
 			struct vnode *ttyvp = cttyvp(p);
 			if (ttyvp == NULL) {
 				error = ENXIO;
@@ -184,12 +182,12 @@ fdesc_lookup(ap)
 				goto bad;
 			*vpp = fvp;
 			fvp->v_type = VFIFO;
-			vn_lock(fvp, LK_EXCLUSIVE | LK_RETRY, p);
+			vn_lock(fvp, LK_SHARED | LK_RETRY, p);
 			return (0);
 		}
 
 		ln = 0;
-		switch (ap->a_cnp->cn_namelen) {
+		switch (cnp->cn_namelen) {
 		case 5:
 			if (bcmp(pname, "stdin", 5) == 0) {
 				ln = "fd/0";
@@ -215,7 +213,7 @@ fdesc_lookup(ap)
 			VTOFDESC(fvp)->fd_link = ln;
 			*vpp = fvp;
 			fvp->v_type = VLNK;
-			vn_lock(fvp, LK_EXCLUSIVE | LK_RETRY, p);
+			vn_lock(fvp, LK_SHARED | LK_RETRY, p);
 			return (0);
 		} else {
 			error = ENOENT;
@@ -225,9 +223,10 @@ fdesc_lookup(ap)
 		/* FALL THROUGH */
 
 	case Fdevfd:
-		if (ap->a_cnp->cn_namelen == 2 && bcmp(pname, "..", 2) == 0) {
-			error = fdesc_root(dvp->v_mount, vpp);
-			return (error);
+		if (cnp->cn_namelen == 2 && bcmp(pname, "..", 2) == 0) {
+			if (error = fdesc_root(dvp->v_mount, vpp))
+				goto bad;
+			return (0);
 		}
 
 		fd = 0;
@@ -251,11 +250,13 @@ fdesc_lookup(ap)
 		if (error)
 			goto bad;
 		VTOFDESC(fvp)->fd_fd = fd;
+		vn_lock(fvp, LK_SHARED | LK_RETRY, p);
 		*vpp = fvp;
 		return (0);
 	}
 
 bad:;
+	vn_lock(dvp, LK_SHARED | LK_RETRY, p);
 	*vpp = NULL;
 	return (error);
 }
