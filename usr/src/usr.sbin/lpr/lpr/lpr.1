@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)lpr.1	6.2 (Berkeley) %G%
+.\"	@(#)lpr.1	6.3 (Berkeley) %G%
 .\"
 .TH LPR 1 ""
 .UC 4
@@ -34,6 +34,9 @@ lpr \- off line print
 ] [
 .B \-T
 .I title
+] [
+.B \-U
+.I user
 ] [
 .B \-i
 [
@@ -125,6 +128,14 @@ The
 .B \-J
 option takes the following argument as the job name to print on the burst page.
 Normally, the first file's name is used.
+.PP
+The
+.B \-U
+option takes the following argument as the user name to print on the burst page,
+and to use for accounting purposes.
+This option is only honored if the real user-id is daemon
+(or that specified in the printcap file instead of daemon),
+and is intended for those instances where print filters wish to requeue jobs.
 .PP
 The
 .B \-T
