@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)csh.c	5.15 (Berkeley) %G%";
+static char *sccsid = "@(#)csh.c	5.16 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -41,6 +41,8 @@ bool	enterhist = 0;
 
 extern	gid_t getegid(), getgid();
 extern	uid_t geteuid(), getuid();
+
+static void srcunit();
 
 main(argc, argv)
 	int argc;
@@ -436,7 +438,7 @@ srccat(cp, dp)
  * This occurs on ".cshrc"s and the like.
  */
 int	insource;
-static
+static void
 srcunit(unit, onlyown, hflg)
 	register int unit;
 	bool onlyown, hflg;
