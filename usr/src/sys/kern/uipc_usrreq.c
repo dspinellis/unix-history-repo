@@ -2,7 +2,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_usrreq.c	7.32 (Berkeley) %G%
+ *	@(#)uipc_usrreq.c	7.33 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -620,7 +620,7 @@ extern	struct domain unixdomain;
 
 unp_gc()
 {
-	register struct file *fp;
+	register struct file *fp, *nextfp;
 	register struct socket *so;
 
 	if (unp_gcing)
@@ -669,7 +669,8 @@ restart:
 			unp_scan(so->so_rcv.sb_mb, unp_mark);
 		}
 	} while (unp_defer);
-	for (fp = filehead; fp; fp = fp->f_filef) {
+	for (fp = filehead; fp; fp = nextfp) {
+		nextfp = fp->f_filef;
 		if (fp->f_count == 0)
 			continue;
 		if (fp->f_count == fp->f_msgcount && (fp->f_flag & FMARK) == 0)
