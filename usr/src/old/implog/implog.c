@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)implog.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)implog.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -61,6 +61,7 @@ main(argc, argv)
 	struct stat b;
 	int size;
 	char *cp;
+	int hostfrom, impfrom;
 
 	argc--, argv++;
 	while (argc > 0 && argv[0][0] == '-') {
@@ -136,16 +137,27 @@ again:
 			printf("restarted: %.24s\n", ctime(&from.sin_time));
 			continue;
 		}
-		if (host >= 0 && from.sin_addr.s_host != host) {
+		if (host >= 0) {
+			long addr = ntohs(from.sin_addr.s_addr);
+
+			if (IN_CLASSA(addr)) {
+				hostfrom = ((addr>>16) & 0xFF);
+				impfrom = addr & 0xFF;
+			} else if (IN_CLASSB(addr)) {
+				hostfrom = ((addr>>8) & 0xFF);
+				impfrom = addr & 0xFF;
+			} else {
+				hostfrom = ((addr>>4) & 0xF);
+				impfrom = addr & 0xF;
+			}
+		}
+		if (host >= 0 && hostfrom != host) {
 			lseek(log, from.sin_cc, 1);
 			continue;
 		}
-		if (imp >= 0) {
-			from.sin_addr.s_imp = ntohs(from.sin_addr.s_imp);
-			if (from.sin_addr.s_imp != imp) {
-				lseek(log, from.sin_cc, 1);
-				continue;
-			}
+		if (imp >= 0 && impfrom != imp) {
+			lseek(log, from.sin_cc, 1);
+			continue;
 		}
 		process(log, &from);
 	}
