@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)brk.2	6.5 (Berkeley) %G%
+.\"     @(#)brk.2	6.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt BRK 2
@@ -77,30 +77,32 @@ for the definition of
 .Em etext ) .
 .Sh RETURN VALUES
 .Nm Brk
-returns 0 if successful; -1 if the process requests more memory than
-than allowed by the system limit.
+returns a pointer to the new end of memory if successful;
+otherwise -1 with
+.Va errno
+set to indicate why the allocation failed.
 The
 .Nm sbrk
-function returns 0 if successful, otherwise the error
-.Er EOPNOTSUPP
-is returned.
-.\" .Sh ERRORS
-.\" .Xr Sbrk
-.\" returns -1 if the break could not be set.
-.\" will fail and no additional memory will be allocated if
-.\" one of the following are true:
-.\" .Bl -tag -width [ENOMEM]
-.\" .It Bq Er ENOMEM
-.\" The limit, as set by
-.\" .Xr setrlimit 2 ,
-.\" was exceeded.
-.\" .It Bq Er ENOMEM
-.\" The maximum possible size of a data segment (compiled into the
-.\" system) was exceeded.
-.\" .It Bq Er ENOMEM
-.\" Insufficient space existed in the swap area
-.\" to support the expansion.
-.\" .El
+returns a pointer to the base of the new storage if successful;
+otherwise -1 with
+.Va errno
+set to indicate why the allocation failed.
+.Sh ERRORS
+.Xr Sbrk
+will fail and no additional memory will be allocated if
+one of the following are true:
+.Bl -tag -width [ENOMEM]
+.It Bq Er ENOMEM
+The limit, as set by
+.Xr setrlimit 2 ,
+was exceeded.
+.It Bq Er ENOMEM
+The maximum possible size of a data segment (compiled into the
+system) was exceeded.
+.It Bq Er ENOMEM
+Insufficient space existed in the swap area
+to support the expansion.
+.El
 .Sh SEE ALSO
 .Xr execve 2 ,
 .Xr getrlimit 2 ,
