@@ -1046,9 +1046,9 @@ setoption(opt, val, sticky)
 
 	  case 'a':		/* look N minutes for "@:@" in alias file */
 		if (val[0] == '\0')
-			SafeAlias = 5;
+			SafeAlias = 5 * 60;		/* five minutes */
 		else
-			SafeAlias = atoi(val);
+			SafeAlias = convtime(val, 'm');
 		break;
 
 	  case 'B':		/* substitution for blank character */
