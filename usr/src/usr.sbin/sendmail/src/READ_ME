@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.14 (Berkeley) %G%
+#	@(#)READ_ME	8.15 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -28,6 +28,10 @@ they are all designed for the old make and can be used to help you get
 started.  They have names like "Makefile.HPUX".  Many of them include
 -I/usr/sww/include/db and -L/usr/sww/lib -- this is Berkeley's
 location for the new database libraries, described below.
+
+There is also a shell script (makesendmail) that tries to be clever
+about using object subdirectories.  It's pretty straightforward, and
+may help if you share a source tree among different architectures.
 
 
 +----------------------+
@@ -310,4 +314,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.14, last update %G% 09:26:12)
+(Version 8.15, last update %G% 13:18:30)
