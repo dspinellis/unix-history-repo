@@ -1,10 +1,13 @@
-/*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1980 The Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)tapeio.c	5.1	%G%
+ * %sccs.include.proprietary.c%
  */
+
+#ifndef lint
+static char sccsid[] = "@(#)tapeio.c	5.2 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  * tapeio - tape device specific I/O routines

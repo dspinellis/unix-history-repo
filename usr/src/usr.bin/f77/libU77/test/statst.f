@@ -1,3 +1,12 @@
+C
+C Copyright (c) 1980 The Regents of the University of California.
+C All rights reserved.
+C
+C %sccs.include.proprietary.f%
+C
+C	@(#)statst.f	5.2 (Berkeley) %G%
+C
+
 	character*24 ctime
 	integer stata(11), statb(11), i1, i2
 	open(1, file='statst.f')

@@ -1,3 +1,12 @@
+C
+C Copyright (c) 1980 The Regents of the University of California.
+C All rights reserved.
+C
+C %sccs.include.proprietary.f%
+C
+C	@(#)gpctst.f	5.2 (Berkeley) %G%
+C
+
 	integer getc, putc, fgetc, fputc, oer
 	character c
 	open(1,status='s')
