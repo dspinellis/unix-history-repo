@@ -6,11 +6,11 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)sigcompat.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)sigcompat.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
-#include <sys/signal.h>
+#include <signal.h>
 
 sigvec(signo, sv, osv)
 	int signo;
@@ -51,6 +51,5 @@ sigblock(mask)
 sigpause(mask)
 	int mask;
 {
-
 	return (sigsuspend((sigset_t *)&mask));
 }
