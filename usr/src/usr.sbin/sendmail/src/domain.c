@@ -10,9 +10,9 @@
 
 #ifndef lint
 #if NAMED_BIND
-static char sccsid[] = "@(#)domain.c	8.46 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	8.47 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	8.46 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	8.47 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -77,7 +77,6 @@ getmxrr(host, mxhosts, droplocalhost, rcode)
 	bool droplocalhost;
 	int *rcode;
 {
-	extern int h_errno;
 	register u_char *eom, *cp;
 	register int i, j, n;
 	int nmx = 0;
@@ -459,7 +458,6 @@ dns_getcanonname(host, hbsize, trymx, statp)
 	bool trymx;
 	int *statp;
 {
-	extern int h_errno;
 	register u_char *eom, *ap;
 	register char *cp;
 	register int n; 
