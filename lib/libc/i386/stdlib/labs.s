@@ -41,7 +41,7 @@
 
 #include "DEFS.h"
 
-ENTRY(abs)
+ENTRY(labs)
 	movl	4(%esp),%eax
 	cmpl	$0,%eax
 	jge	1f
