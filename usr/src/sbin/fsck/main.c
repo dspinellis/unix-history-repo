@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	1.17 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.18 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -574,12 +574,15 @@ out1b:
 	for (c = 0; c < sblock.fs_ncg; c++) {
 		daddr_t cbase = cgbase(c,&sblock);
 		short bo[MAXCPG][NRPOS];
+		long botot[MAXCPG];
 		long frsum[MAXFRAG];
 		int blk;
 
-		for (n = 0; n < sblock.fs_cpg; n++)
+		for (n = 0; n < sblock.fs_cpg; n++) {
+			botot[n] = 0;
 			for (i = 0; i < NRPOS; i++)
 				bo[n][i] = 0;
+		}
 		for (i = 0; i < sblock.fs_frag; i++) {
 			frsum[i] = 0;
 		}
@@ -597,6 +600,7 @@ out1b:
 				/* this is clumsy ... */
 				n_ffree -= sblock.fs_frag;
 				n_bfree++;
+				botot[cbtocylno(&sblock, b)]++;
 				bo[cbtocylno(&sblock, b)]
 				    [cbtorpos(&sblock, b)]++;
 			} else {
@@ -617,13 +621,19 @@ out1b:
 				frsumbad++;
 			}
 		}
-		for (n = 0; n < sblock.fs_cpg; n++)
+		for (n = 0; n < sblock.fs_cpg; n++) {
+			if (botot[n] != cgrp.cg_btot[n]) {
+				printf("cg[%d].cg_btot[%d] have %d calc %d\n",
+				    c, n, cgrp.cg_btot[n], botot[n]);
+				offsumbad++;
+			}
 			for (i = 0; i < NRPOS; i++)
 				if (bo[n][i] != cgrp.cg_b[n][i]) {
 					printf("cg[%d].cg_b[%d][%d] have %d calc %d\n",
 					    c, n, i, cgrp.cg_b[n][i], bo[n][i]);
 					offsumbad++;
 				}
+		}
 	}
 out5:
 	if (dupblk)
@@ -1505,9 +1515,11 @@ makecg()
 			clrbit(cgrp.cg_iused, i);
 			i++;
 		}
-		for (s = 0; s < MAXCPG; s++)
+		for (s = 0; s < MAXCPG; s++) {
+			cgrp.cg_btot[s] = 0;
 			for (i = 0; i < NRPOS; i++)
 				cgrp.cg_b[s][i] = 0;
+		}
 		if (c == 0) {
 			dmin += howmany(sblock.fs_cssize, sblock.fs_bsize) * sblock.fs_frag;
 		}
@@ -1524,6 +1536,7 @@ makecg()
 			}
 			if (j == sblock.fs_frag) {
 				cgrp.cg_cs.cs_nbfree++;
+				cgrp.cg_btot[cbtocylno(&sblock, d)]++;
 				cgrp.cg_b[cbtocylno(&sblock, d)]
 				    [cbtorpos(&sblock, d)]++;
 			} else if (j > 0) {

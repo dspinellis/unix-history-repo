@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)dumpfs.c	1.8 (Berkeley) %G%";
+static	char *sccsid = "@(#)dumpfs.c	1.9 (Berkeley) %G%";
 
 #include "../h/param.h"
 #include "../h/fs.h"
@@ -136,7 +136,7 @@ dumpcg(c)
 	pbits(acg.cg_free, afs.fs_fpg);
 	printf("b:\n");
 	for (i = 0; i < afs.fs_cpg; i++) {
-		printf("   c%d:\t", i);
+		printf("   c%d:\t(%d)\t", i, acg.cg_btot[i]);
 		for (j = 0; j < NRPOS; j++)
 			printf(" %d", acg.cg_b[i][j]);
 		printf("\n");
