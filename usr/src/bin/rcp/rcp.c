@@ -1,3 +1,9 @@
+
+/*
+ *	$Source:$
+ *	$Header:$
+ */
+
 /*
  * Copyright (c) 1983 The Regents of the University of California.
  * All rights reserved.
@@ -22,13 +28,14 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rcp.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)rcp.c	5.21 (Berkeley) 7/17/89";
 #endif /* not lint */
 
 /*
  * rcp
  */
 #include <sys/param.h>
+#include <sys/types.h>
 #include <sys/file.h>
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -45,20 +52,26 @@ static char sccsid[] = "@(#)rcp.c	5.21 (Berkeley) %G%";
 #include "pathnames.h"
 
 #ifdef KERBEROS
-#include <kerberos/krb.h>
-
-char krb_realm[REALM_SZ];
-int use_kerberos = 1, encrypt = 0;
-CREDENTIALS cred;
-Key_schedule schedule;
+#include <krb.h>
+char	dst_realm_buf[REALM_SZ];
+char	*dest_realm = NULL;
+int	use_kerberos = 1, encrypt = 0;
+CREDENTIALS 	cred;
+Key_schedule	schedule;
+extern	char	*krb_realmofhost();
+#define	OPTIONS	"dfkprtx"
+#else
+#define	OPTIONS "dfprt"
 #endif
 
 extern int errno;
 struct passwd *pwd;
-int errs, pflag, port, rem, userid;
-int iamremote, iamrecursive, targetshouldbedirectory;
+u_short	port;
+uid_t	userid;
+int errs, rem;
+int pflag, iamremote, iamrecursive, targetshouldbedirectory;
 
-#define	CMDNEEDS	20
+#define	CMDNEEDS	64
 char cmd[CMDNEEDS];		/* must hold "rcp -r -p -d\0" */
 
 typedef struct _buf {
@@ -77,17 +90,60 @@ main(argc, argv)
 	struct passwd *getpwuid();
 	int lostconn();
 
+	fflag = tflag = 0;
+	while ((ch = getopt(argc, argv, OPTIONS)) != EOF)
+		switch(ch) {
+		/* user-visible flags */
+		case 'p':			/* preserve access/mod times */
+			++pflag;
+			break;
+		case 'r':
+			++iamrecursive;
+			break;
+#ifdef	KERBEROS
+		case 'k':
+			strncpy(dst_realm_buf, ++argv, REALM_SZ);
+			dest_realm = dst_realm_buf;
+			break;
+		case 'x':
+			encrypt = 1;
+			/* des_set_key(cred.session, schedule); */
+			break;
+#endif
+		/* rshd-invoked options (server) */
+		case 'd':
+			targetshouldbedirectory = 1;
+			break;
+		case 'f':			/* "from" */
+			iamremote = 1;
+			fflag = 1;
+			break;
+		case 't':			/* "to" */
+			iamremote = 1;
+			tflag = 1;
+			break;
+
+		case '?':
+		default:
+			usage();
+		}
+	argc -= optind;
+	argv += optind;
+
 #ifdef KERBEROS
-	sp = getservbyname("kshell", "tcp");
+	sp = getservbyname((encrypt ? "ekshell" : "kshell"), "tcp");
 	if (sp == NULL) {
+		char	msgbuf[64];
 		use_kerberos = 0;
-		old_warning("kshell service unknown");
-		sp = getservbyname("kshell", "tcp");
+		(void) sprintf(msgbuf, "can't get entry for %s/tcp service",
+			(encrypt ? "ekshell" : "kshell"));
+		old_warning(msgbuf);
+		sp = getservbyname("shell", "tcp");
 	}
 #else
 	sp = getservbyname("shell", "tcp");
 #endif
-	if (!sp) {
+	if (sp == NULL) {
 		(void)fprintf(stderr, "rcp: shell/tcp: unknown service\n");
 		exit(1);
 	}
@@ -98,44 +154,8 @@ main(argc, argv)
 		exit(1);
 	}
 
-	fflag = tflag = 0;
-	while ((ch = getopt(argc, argv, "dfkprtx")) != EOF)
-		switch(ch) {
-		case 'd':
-			targetshouldbedirectory = 1;
-			break;
-		case 'f':			/* "from" */
-			fflag = 1;
-			break;
-#ifdef KERBEROS
-		case 'k':
-			strncpy(krb_realm, ++argv, REALM_SZ);
-			break;
-#endif
-		case 'p':			/* preserve access/mod times */
-			++pflag;
-			break;
-		case 'r':
-			++iamrecursive;
-			break;
-		case 't':			/* "to" */
-			tflag = 1;
-			break;
-#ifdef KERBEROS
-		case 'x':
-			encrypt = 1;
-			des_set_key(cred.session, schedule);
-			break;
-#endif
-		case '?':
-		default:
-			usage();
-		}
-	argc -= optind;
-	argv += optind;
-
 	if (fflag) {
-		iamremote = 1;
+		/* follow "protocol", send data */
 		(void)response();
 		(void)setuid(userid);
 		source(argc, argv);
@@ -143,7 +163,7 @@ main(argc, argv)
 	}
 
 	if (tflag) {
-		iamremote = 1;
+		/* receive data */
 		(void)setuid(userid);
 		sink(argc, argv);
 		exit(errs);
@@ -155,15 +175,22 @@ main(argc, argv)
 		targetshouldbedirectory = 1;
 
 	rem = -1;
+	/* command to be executed on remote system using "rsh" */
+#ifdef	KERBEROS
+	(void)sprintf(cmd, "rcp%s%s%s%s", iamrecursive ? " -r" : "",
+	    ((encrypt && use_kerberos) ? " -x" : ""),
+	    pflag ? " -p" : "", targetshouldbedirectory ? " -d" : "");
+#else
 	(void)sprintf(cmd, "rcp%s%s%s", iamrecursive ? " -r" : "",
 	    pflag ? " -p" : "", targetshouldbedirectory ? " -d" : "");
+#endif
 
 	(void)signal(SIGPIPE, lostconn);
 
 	if (targ = colon(argv[argc - 1]))
-		toremote(targ, argc, argv);
+		toremote(targ, argc, argv);	/* destination is remote host */
 	else {
-		tolocal(argc, argv);
+		tolocal(argc, argv);		/* destination is local host */
 		if (targetshouldbedirectory)
 			verifydir(argv[argc - 1]);
 	}
@@ -184,6 +211,7 @@ toremote(targ, argc, argv)
 		targ = ".";
 
 	if (thost = index(argv[argc - 1], '@')) {
+		/* user@host */
 		*thost++ = 0;
 		tuser = argv[argc - 1];
 		if (*tuser == '\0')
@@ -235,7 +263,8 @@ toremote(targ, argc, argv)
 				host = thost;
 #ifdef KERBEROS
 				if (use_kerberos)
-					kerberos(bp,
+					rem = kerberos(&host, bp,
+					    pwd->pw_name,
 					    tuser ? tuser : pwd->pw_name);
 				else
 #endif
@@ -294,7 +323,7 @@ tolocal(argc, argv)
 		(void)sprintf(bp, "%s -f %s", cmd, src);
 #ifdef KERBEROS
 		if (use_kerberos)
-			kerberos(bp, suser);
+			rem = kerberos(&host, bp, pwd->pw_name, suser);
 		else
 #endif
 			rem = rcmd(&host, port, pwd->pw_name, suser, bp, 0);
@@ -308,42 +337,6 @@ tolocal(argc, argv)
 		rem = -1;
 	}
 }
-
-#ifdef KERBEROS
-kerberos(bp, user)
-	char *bp, *user;
-{
-	struct servent *sp;
-	char *host;
-
-again:	rem = KSUCCESS;
-	if (krb_realm[0] == '\0')
-		rem = krb_get_lrealm(krb_realm, 1);
-	if (rem == KSUCCESS) {
-		if (encrypt)
-			rem = krcmd_mutual(&host, port, user, bp, 0,
-			    krb_realm, &cred, schedule);
-		else
-			rem = krcmd(&host, port, user, bp, 0, krb_realm);
-	} else {
-		(void)fprintf(stderr,
-		    "rcp: error getting local realm %s\n", krb_err_txt[rem]);
-		exit(1);
-	}
-	if (rem < 0 && errno == ECONNREFUSED) {
-		use_kerberos = 0;
-		old_warning("remote host doesn't support Kerberos");
-		sp = getservbyname("shell", "tcp");
-		if (sp == NULL) {
-			(void)fprintf(stderr,
-			    "rcp: unknown service shell/tcp\n");
-			exit(1);
-		}
-		port = sp->s_port;
-		goto again;
-	}
-}
-#endif /* KERBEROS */
 
 verifydir(cp)
 	char *cp;
@@ -395,7 +388,7 @@ susystem(s)
 	char *s;
 {
 	int status, pid, w;
-	register int (*istat)(), (*qstat)();
+	register sig_t istat, qstat;
 
 	if ((pid = vfork()) == 0) {
 		(void)setuid(userid);
@@ -858,13 +851,6 @@ nospace()
 	exit(1);
 }
 
-#ifdef KERBEROS
-old_warning(str)
-	char *str;
-{
-	(void)fprintf(stderr, "rcp: warning: %s, using standard rcp\n", str);
-}
-#endif
 
 usage()
 {
@@ -878,3 +864,65 @@ usage()
 #endif
 	exit(1);
 }
+
+#ifdef KERBEROS
+old_warning(str)
+	char *str;
+{
+	(void)fprintf(stderr, "rcp: warning: %s, using standard rcp\n", str);
+}
+
+int
+kerberos(host, bp, locuser, user)
+
+	char **host, *bp, *locuser, *user;
+{
+	struct servent *sp;
+
+again:
+	if (use_kerberos) {
+		rem = KSUCCESS;
+		errno = 0;
+		if (dest_realm == NULL)
+			dest_realm = krb_realmofhost(*host);
+
+		if (encrypt)
+			rem = krcmd_mutual(
+				host, port,
+				user, bp, 0,
+		    		dest_realm,
+				&cred, schedule);
+		else
+			rem = krcmd(
+				host, port,
+				user, bp, 0, dest_realm);
+
+		if (rem < 0) {
+			use_kerberos = 0;
+			sp = getservbyname("shell", "tcp");
+			if (sp == NULL) {
+				(void)fprintf(stderr,
+			    	    "rcp: unknown service shell/tcp\n");
+				exit(1);
+			}
+			if (errno == ECONNREFUSED)
+				old_warning(
+				    "remote host doesn't support Kerberos");
+
+			if (errno == ENOENT)
+				old_warning(
+				    "Can't provide Kerberos auth data");
+			port = sp->s_port;
+			goto again;
+		}
+	} else {
+		if (encrypt) {
+			fprintf(stderr,
+			    "The -x option requires Kerberos authentication\n");
+			exit(1);
+		}
+		rem = rcmd(host, sp->s_port, locuser, user, bp, 0);
+	}
+	return(rem);
+}
+#endif /* KERBEROS */
