@@ -194,7 +194,7 @@ SOFTWARE.
 #ifndef 	MNULL
 #define 	MNULL				(struct mbuf *)0
 #endif 	MNULL
-	/* if ../h/mbuf.h gets MT_types up to 0x40, these will 
+	/* if ../sys/mbuf.h gets MT_types up to 0x40, these will 
 	 * have to be changed:
 	 */
 #define 	MT_XPD 				0x44	

@@ -298,9 +298,9 @@ done:
  *
  * FUNCTION and ARGUMENTS:
  * 	Implements the socket options at transport level.
- * 	(cmd) is either PRCO_SETOPT or PRCO_GETOPT (see ../h/protosw.h).
+ * 	(cmd) is either PRCO_SETOPT or PRCO_GETOPT (see ../sys/protosw.h).
  * 	(so) is the socket.
- * 	(level) is SOL_TRANSPORT (see ../h/socket.h)
+ * 	(level) is SOL_TRANSPORT (see ../sys/socket.h)
  * 	(optname) is the particular command or option to be set.
  * 	(**mp) is an mbuf structure.  
  *

@@ -2353,7 +2353,7 @@ cons_ctloutput(cmd, so, level, optname, mp)
  *  for consistency - cons subnet service calls its higher layer
  *  through the protosw entry.
  * FUNCTION & ARGUMENTS:
- *  cmd is a PRC_* command, list found in ../h/protosw.h
+ *  cmd is a PRC_* command, list found in ../sys/protosw.h
  *  copcb is the obvious.
  *  This serves the higher-layer cons service.
  * NOTE: this takes 3rd arg. because cons uses it to inform itself

@@ -552,7 +552,7 @@ discard:
 }
 
 
-#include "../h/protosw.h"
+#include "protosw.h"
 #include "../netinet/ip_icmp.h"
 
 extern void tp_quench();

@@ -42,7 +42,7 @@ SOFTWARE.
 #include "../netiso/tp_timer.h"
 #include "../netiso/tp_user.h"
 #ifndef sblock
-#include "../h/socketvar.h"
+#include "socketvar.h"
 #endif sblock
 
 /* NOTE: the code depends on REF_CLOSED > REF_OPEN > the rest, and
