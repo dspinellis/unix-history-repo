@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_io.c	7.13 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_io.c	7.14 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -277,17 +277,14 @@ glob(gp)
  */
 gscan()
 {
-#ifndef	vms
+#ifndef	vms			/* Never have meta-characters in vms */
 	register char *cp;
 
 	for (cp = genbuf; *cp; cp++)
 		if (any(*cp, "~{[*?$`'\"\\"))
-		if (any(*cp, "~{[*?$`'\"\\"))
 			return (1);
-	return (0);
-#else
-	return 0;	/* Never have meta-characters in vms */
 #endif
+	return (0);
 }
 
 /*
