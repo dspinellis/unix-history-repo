@@ -1,28 +1,31 @@
 /*-
- * Copyright (c) 1990 The Regents of the University of California.
+ * Copyright (c) 1992 The Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)assert.h	4.4 (Berkeley) %G%
+ *	@(#)assert.h	5.1 (Berkeley) %G%
  */
 
-#ifndef _ASSERT_H_
-#define	_ASSERT_H_
+/*
+ * Unlike other ANSI header files, <assert.h> may usefully be included
+ * multiple times, with and without NDEBUG defined.
+ */
+
+#undef assert
 
 #ifdef NDEBUG
-#define	assert
-#define	_assert
+#define	assert(e)	((void)0)
 #else
-#define	assert(expression) { \
-	if (!(expression)) { \
-		(void)fprintf(stderr, \
-		    "assertion \"%s\" failed: file \"%s\", line %d\n", \
-		    "expression", __FILE__, __LINE__); \
-		exit(2); \
-	} \
-}
-#define	_assert(expression)	assert(expression)
+#ifdef __STDC__
+#define	assert(e)	((e) ? (void)0 : __assert(__FILE__, __LINE__, #e))
+#else	/* PCC */
+#define	assert(e)	((e) ? (void)0 : __assert(__FILE__, __LINE__, "e"))
+#endif
 #endif
 
-#endif /* !_ASSERT_H_ */
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+void __assert __P((const char *, int, const char *));
+__END_DECLS
