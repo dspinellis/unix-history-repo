@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)main.h 1.3 %G%"; */
+/* static char sccsid[] = "@(#)main.h 1.4 %G%"; */
 
 /*
  * Definitions for main program.
@@ -13,6 +13,7 @@
 BOOLEAN opt[26];	/* true if command line option given */
 
 #define option(c)	opt[(c)-'a']
+#define isterm(file)	(option('i') || isatty(fileno(file)))
 
 main();			/* debugger main routine */
 init();			/* read in source and object data */
