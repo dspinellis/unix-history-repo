@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chpass.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)chpass.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -20,12 +20,20 @@ static char sccsid[] = "@(#)chpass.c	8.1 (Berkeley) %G%";
 #include <sys/signal.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+
+#include <ctype.h>
+#include <err.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <pwd.h>
-#include <errno.h>
 #include <stdio.h>
-#include <ctype.h>
+#include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+
+#include <pw_scan.h>
+#include <pw_util.h>
+
 #include "chpass.h"
 #include "pathnames.h"
 
@@ -33,15 +41,16 @@ char *progname = "chpass";
 char *tempname;
 uid_t uid;
 
+void	baduser __P((void));
+void	usage __P((void));
+
+int
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	extern int optind;
-	extern char *optarg;
-	register enum { NEWSH, LOADENTRY, EDITENTRY } op;
-	register struct passwd *pw;
-	struct passwd lpw;
+	enum { NEWSH, LOADENTRY, EDITENTRY } op;
+	struct passwd *pw, lpw;
 	int ch, pfd, tfd;
 	char *arg;
 
@@ -68,18 +77,12 @@ main(argc, argv)
 	if (op == EDITENTRY || op == NEWSH)
 		switch(argc) {
 		case 0:
-			if (!(pw = getpwuid(uid))) {
-				(void)fprintf(stderr,
-				    "chpass: unknown user: uid %u\n", uid);
-				exit(1);
-			}
+			if (!(pw = getpwuid(uid)))
+				errx(1, "unknown user: uid %u", uid);
 			break;
 		case 1:
-			if (!(pw = getpwnam(*argv))) {
-				(void)fprintf(stderr,
-				    "chpass: unknown user %s.\n", *argv);
-				exit(1);
-			}
+			if (!(pw = getpwnam(*argv)))
+				errx(1, "unknown user: %s", *argv);
 			if (uid && uid != pw->pw_uid)
 				baduser();
 			break;
@@ -146,14 +149,17 @@ main(argc, argv)
 	exit(0);
 }
 
+void
 baduser()
 {
-	(void)fprintf(stderr, "chpass: %s\n", strerror(EACCES));
-	exit(1);
+
+	errx(1, "%s", strerror(EACCES));
 }
 
+void
 usage()
 {
+
 	(void)fprintf(stderr, "usage: chpass [-a list] [-s shell] [user]\n");
 	exit(1);
 }

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pw_copy.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)pw_copy.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -14,20 +14,23 @@ static char sccsid[] = "@(#)pw_copy.c	8.1 (Berkeley) %G%";
  * record, by chpass(1) and passwd(1).
  */
 
+#include <err.h>
 #include <pwd.h>
 #include <stdio.h>
 #include <string.h>
 
-extern char *progname, *tempname;
+#include <pw_util.h>
 
+extern char *tempname;
+
+void
 pw_copy(ffd, tfd, pw)
 	int ffd, tfd;
 	struct passwd *pw;
 {
-	register FILE *from, *to;
-	register int done;
-	register char *p;
-	char buf[8192];
+	FILE *from, *to;
+	int done;
+	char *p, buf[8192];
 
 	if (!(from = fdopen(ffd, "r")))
 		pw_error(_PATH_MASTERPASSWD, 1, 1);
@@ -35,9 +38,8 @@ pw_copy(ffd, tfd, pw)
 		pw_error(tempname, 1, 1);
 
 	for (done = 0; fgets(buf, sizeof(buf), from);) {
-		if (!index(buf, '\n')) {
-			(void)fprintf(stderr, "%s: %s: line too long\n",
-			    progname, _PATH_MASTERPASSWD);
+		if (!strchr(buf, '\n')) {
+			warnx("%s: line too long", _PATH_MASTERPASSWD);
 			pw_error(NULL, 0, 1);
 		}
 		if (done) {
@@ -46,9 +48,8 @@ pw_copy(ffd, tfd, pw)
 				goto err;
 			continue;
 		}
-		if (!(p = index(buf, ':'))) {
-			(void)fprintf(stderr, "%s: %s: corrupted entry\n",
-			    progname, _PATH_MASTERPASSWD);
+		if (!(p = strchr(buf, ':'))) {
+			warnx("%s: corrupted entry", _PATH_MASTERPASSWD);
 			pw_error(NULL, 0, 1);
 		}
 		*p = '\0';
