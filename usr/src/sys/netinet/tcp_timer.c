@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1988, 1990 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)tcp_timer.c	7.16 (Berkeley) %G%
+ *	@(#)tcp_timer.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -165,13 +165,14 @@ tcp_timers(tp, timer)
 		if (++tp->t_rxtshift > TCP_MAXRXTSHIFT) {
 			tp->t_rxtshift = TCP_MAXRXTSHIFT;
 			tcpstat.tcps_timeoutdrop++;
-			tp = tcp_drop(tp, ETIMEDOUT);
+			tp = tcp_drop(tp, tp->t_softerror ?
+			    tp->t_softerror : ETIMEDOUT);
 			break;
 		}
 		tcpstat.tcps_rexmttimeo++;
-		rexmt = ((tp->t_srtt >> 2) + tp->t_rttvar) >> 1;
-		rexmt *= tcp_backoff[tp->t_rxtshift];
-		TCPT_RANGESET(tp->t_rxtcur, rexmt, TCPTV_MIN, TCPTV_REXMTMAX);
+		rexmt = TCP_REXMTVAL(tp) * tcp_backoff[tp->t_rxtshift];
+		TCPT_RANGESET(tp->t_rxtcur, rexmt,
+		    tp->t_rttmin, TCPTV_REXMTMAX);
 		tp->t_timer[TCPT_REXMT] = tp->t_rxtcur;
 		/*
 		 * If losing, let the lower level know and try for
@@ -185,7 +186,7 @@ tcp_timers(tp, timer)
 #if BSD>=43
 			in_losing(tp->t_inpcb);
 #endif
-			tp->t_rttvar += (tp->t_srtt >> 2);
+			tp->t_rttvar += (tp->t_srtt >> TCP_RTT_SHIFT);
 			tp->t_srtt = 0;
 		}
 		tp->snd_nxt = tp->snd_una;
@@ -218,11 +219,12 @@ tcp_timers(tp, timer)
 		 * to go below this.)
 		 */
 		{
-		u_int win = MIN(tp->snd_wnd, tp->snd_cwnd) / 2 / tp->t_maxseg;
+		u_int win = min(tp->snd_wnd, tp->snd_cwnd) / 2 / tp->t_maxseg;
 		if (win < 2)
 			win = 2;
 		tp->snd_cwnd = tp->t_maxseg;
 		tp->snd_ssthresh = win * tp->t_maxseg;
+		tp->t_dupacks = 0;
 		}
 		(void) tcp_output(tp);
 		break;
