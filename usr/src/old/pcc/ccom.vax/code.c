@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)code.c	1.7 (Berkeley) %G%";
+static char *sccsid ="@(#)code.c	1.8 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -11,7 +11,9 @@ int proflg = 0;	/* are we generating profiling code? */
 int strftn = 0;  /* is the current function one which returns a value */
 int gdebug;
 int fdefflag;  /* are we within a function definition ? */
+#ifndef STABDOT
 char NULLNAME[8];
+#endif
 int labelno;
 
 # define putstr(s)	fputs((s), stdout)
@@ -167,7 +169,7 @@ bfcode( a, n ) int a[]; {
 	char *toreg();
 
 	if( nerrors ) return;
-	locctr( PROG );
+	(void) locctr( PROG );
 	p = &stab[curftn];
 	putstr( "	.align	1\n");
 	defnam( p );
@@ -203,7 +205,7 @@ bfcode( a, n ) int a[]; {
 			temp = p->offset;  /* save register number */
 			p->sclass = PARAM;  /* forget that it is a register */
 			p->offset = NOOFFSET;
-			oalloc( p, &off );
+			(void) oalloc( p, &off );
 /*tbl*/		printf( "	%s	%d(ap),r%d\n", toreg(p->stype), p->offset/SZCHAR, temp );
 			p->offset = temp;  /* remember register number */
 			p->sclass = REGISTER;   /* remember that it is a register */
@@ -476,13 +478,13 @@ register struct sw *p;
 {
 	register int q;
 
-	q = select(m);
+	q = selectheap(m);
 	heapsw[n] = p[q];
 	if( q>1 ) makeheap(p, q-1, 2*n);
 	if( q<m ) makeheap(p+q, m-q, 2*n+1);
 }
 
-select(m) {
+selectheap(m) {
 	register int l,i,k;
 
 	for(i=1; ; i*=2)
