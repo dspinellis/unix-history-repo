@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)null_vnops.c	1.5 (Berkeley) %G%
+ *	@(#)null_vnops.c	1.6 (Berkeley) %G%
  *
  * Ancestors:
  *	@(#)lofs_vnops.c	1.2 (Berkeley) 6/18/92
@@ -133,9 +133,9 @@ null_bypass(ap)
 		/*
 		 * We're not guaranteed that any but the first vnode
 		 * are of our type.  Check for and don't map any
-		 * that aren't.
+		 * that aren't.  (Must map first vp or vclean fails.)
 		 */
-		if ((*this_vp_p)->v_op != null_vnodeop_p) {
+		if (i && (*this_vp_p)->v_op != null_vnodeop_p) {
 			old_vps[i] = NULL;
 		} else {
 			old_vps[i] = *this_vp_p;
@@ -224,7 +224,7 @@ null_getattr(ap)
  * problems in the UFS, so currently AVOID_CACHING hacks
  * around the bug.
  */
-#define AVOID_CACHING
+/* #define AVOID_CACHING */
 
 int
 null_inactive (ap)
@@ -242,11 +242,16 @@ null_inactive (ap)
 	vp->v_type = VBAD;   /* The node is clean (no reclaim needed). */
 	vrele (lowervp);
 #else
-#ifdef DIAGNOSTIC
-	if (VOP_ISLOCKED(ap->a_vp)) {
-		panic ("null_inactive: inactive node is locked.");
+#ifdef DIAGNOSTIC  /* NEEDSWORK: goes away */
+	if (VOP_ISLOCKED(NULLVPTOLOWERVP(ap->a_vp))) {
+		panic ("null_inactive: inactive's lowervp is locked.");
 	};
 #endif
+	/*
+	 * Remember we're inactive so we 
+	 * don't send locks through.
+	 */
+	VTONULL(ap->a_vp)->null_isinactive = 1;
 	/*
 	 * Do nothing (and _don't_ bypass).
 	 * Wait to vrele lowervp until reclaim,
@@ -279,7 +284,8 @@ null_reclaim (ap)
 	 */
 	/* After this assignment, this node will not be re-used. */
 #ifdef DIAGNOSTIC
-	if (lowervp->v_usecount == 1 && ISLOCKED(lowervp)) {
+	/* XXX - this is only a bug if it's locked by ourselves */
+	if (lowervp->v_usecount == 1 && VOP_ISLOCKED(lowervp)) {
 		panic("null_reclaim: lowervp is locked but must go away.");
 	};
 #endif
@@ -333,6 +339,25 @@ null_print (ap)
 	return 0;
 }
 
+#if 0
+int
+null_lock(ap)
+	struct vop_lock_args *ap;
+{
+	if (VTONULL(ap->a_vp)->null_isinactive)
+		return 0;
+	else return null_bypass(ap);
+}
+
+int
+null_unlock(ap)
+	struct vop_lock_args *ap;
+{
+	if (VTONULL(ap->a_vp)->null_isinactive)
+		return 0;
+	else return null_bypass(ap);
+}
+#endif
 
 /*
  * Global vfs data structures
@@ -350,6 +375,10 @@ struct vnodeopv_entry_desc null_vnodeop_entries[] = {
 	{ &vop_inactive_desc, null_inactive },
 	{ &vop_reclaim_desc, null_reclaim },
 	{ &vop_print_desc, null_print },
+#if 0
+	{ &vop_lock_desc, null_lock },
+	{ &vop_unlock_desc, null_unlock },
+#endif
 
 	{ &vop_bmap_desc, null_bmap },
 	{ &vop_strategy_desc, null_strategy },

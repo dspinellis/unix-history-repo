@@ -29,8 +29,9 @@ struct null_mount {
 struct null_node {
 	struct null_node	*null_forw;	/* Hash chain */
 	struct null_node	*null_back;
-	struct vnode	*null_lowervp;	/* Aliased vnode - VREFed once */
-	struct vnode	*null_vnode;	/* Back pointer to vnode/null_node */
+	struct vnode	        *null_lowervp;	/* VREFed once */
+	struct vnode		*null_vnode;	/* Back pointer */
+	int			null_isinactive;
 };
 
 extern int null_node_create __P((struct mount *mp, struct vnode *target, struct vnode **vpp));
