@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fts.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)fts.c	5.8 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -256,14 +256,15 @@ ftsread(sp)
 
 	/* directory in pre-order */
 	if (p->fts_info == FTS_D) {
-		/* may have been skipped or crossed mount point */
+		/* if skipped or crossed mount point, do post-order visit */
 		if (instr == FTS_SKIP || sp->fts_options & FTS_XDEV &&
 		    p->fts_statb.st_dev != sp->sdev) {
 			if (sp->fts_child) {
 				fts_lfree(sp->fts_child);
 				sp->fts_child = NULL;
 			}
-			goto next;
+			p->fts_info = FTS_DP;
+			return(p);
 		} 
 
 		/* read the directory if necessary, and return first entry */
