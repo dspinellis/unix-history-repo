@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwframe.c	3.7 83/08/19";
+static	char *sccsid = "@(#)wwframe.c	3.8 83/08/23";
 #endif
 
 #include "ww.h"
@@ -29,8 +29,13 @@ struct ww *wframe;
 		b2 = c < 0 || frameok(w, r, c);
 
 		for (; c < w->ww_w.r; c++) {
-			a3 = w->ww_index == *smap++;
-			b3 = c + 1 >= wwncol || frameok(w, r, c + 1);
+			if (c + 1 >= wwncol) {
+				a3 = 1;
+				b3 = 1;
+			} else {
+				a3 = w->ww_index == *smap++;
+				b3 = frameok(w, r, c + 1);
+			}
 			if (b2) {
 				code = 0;
 				if ((a1 || a2) && b1)
@@ -59,8 +64,13 @@ struct ww *wframe;
 		b2 = c < 0 || frameok(w, r, c);
 
 		for (; c < w->ww_w.r; c++) {
-			a3 = w->ww_index == *smap++;
-			b3 = c + 1 >= wwncol || frameok(w, r, c + 1);
+			if (c + 1 >= wwncol) {
+				a3 = 1;
+				b3 = 1;
+			} else {
+				a3 = w->ww_index == *smap++;
+				b3 = frameok(w, r, c + 1);
+			}
 			if (b2) {
 				code = 0;
 				if ((a1 || a2) && b1)
@@ -88,8 +98,13 @@ struct ww *wframe;
 		b2 = r < 0 || frameok(w, r, c);
 
 		for (; r < w->ww_w.b; r++) {
-			a3 = w->ww_index == wwsmap[r + 1][c + 1];
-			b3 = r + 1 >= wwnrow || frameok(w, r + 1, c);
+			if (r + 1 >= wwnrow) {
+				a3 = 1;
+				b3 = 1;
+			} else {
+				a3 = w->ww_index == wwsmap[r + 1][c + 1];
+				b3 = frameok(w, r + 1, c);
+			}
 			if (b2) {
 				code = 0;
 				if ((a1 || a2) && b1)
@@ -117,8 +132,13 @@ struct ww *wframe;
 		b2 = r < 0 || frameok(w, r, c);
 
 		for (; r < w->ww_w.b; r++) {
-			a3 = w->ww_index == wwsmap[r + 1][c - 1];
-			b3 = r + 1 >= wwnrow || frameok(w, r + 1, c);
+			if (r + 1 >= wwnrow) {
+				a3 = 1;
+				b3 = 1;
+			} else {
+				a3 = w->ww_index == wwsmap[r + 1][c - 1];
+				b3 = frameok(w, r + 1, c);
+			}
 			if (b2) {
 				code = 0;
 				if ((a1 || a2) && b1)
