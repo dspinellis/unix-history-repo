@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)trees.c	4.9 (Berkeley) %G%";
+static char *sccsid ="@(#)trees.c	4.10 (Berkeley) %G%";
 #endif
 
 # include "pass1.h"
@@ -947,6 +947,7 @@ convert( p, f )  register NODE *p; {
 
 	}
 
+#ifndef econvert
 econvert( p ) register NODE *p; {
 
 	/* change enums to ints, or appropriate types */
@@ -964,6 +965,7 @@ econvert( p ) register NODE *p; {
 		if( p->in.op == ICON && ty != LONG ) p->in.type = p->fn.csiz = INT;
 		}
 	}
+#endif
 
 NODE *
 pconvert( p ) register NODE *p; {
@@ -1082,7 +1084,7 @@ tymatch(p)  register NODE *p; {
 	/* satisfy the types of various arithmetic binary ops */
 
 	/* rules are:
-		if assignment, op, type of LHS
+		if assignment, type of LHS
 		if any float or doubles, make double
 		if any longs, make long
 		otherwise, make int
@@ -1124,7 +1126,7 @@ tymatch(p)  register NODE *p; {
 	else if( t1==LONG || t2==LONG ) t = LONG;
 	else t = INT;
 
-	if( asgop(o) ){
+	if( o == ASSIGN || o == CAST || o == RETURN ){
 		tu = p->in.left->in.type;
 		t = t1;
 		}
@@ -1137,9 +1139,11 @@ tymatch(p)  register NODE *p; {
 	   are those involving FLOAT/DOUBLE, and those
 	   from LONG to INT and ULONG to UNSIGNED */
 
-	if( t != t1 ) p->in.left = makety( p->in.left, tu, 0, (int)tu );
+	if( t != t1 && ! asgop(o) )
+		p->in.left = makety( p->in.left, tu, 0, (int)tu );
 
-	if( t != t2 || o==CAST ) p->in.right = makety( p->in.right, tu, 0, (int)tu );
+	if( t != t2 || o==CAST )
+		p->in.right = makety( p->in.right, tu, 0, (int)tu );
 
 	if( asgop(o) ){
 		p->in.type = p->in.left->in.type;
