@@ -10,13 +10,13 @@
 @c %**end of header
 
 @ifinfo
-$Id: options.texi,v 1.3 1994/01/06 18:17:09 rgrimes Exp $
+$Id: options.texi,v 1.4 1994/02/21 15:06:22 rgrimes Exp $
 
 This file documents the configuration options available in the FreeBSD
 operating system.
 
 @display
-Copyright @copyright{} 1993, Garrett A. Wollman.  All rights reserved.
+Copyright @copyright{} 1993, 1994, Garrett A. Wollman.  All rights reserved.
 
 Redistribution and use in source and printed forms, with or without
 modification, are permitted provided that the following conditions
@@ -33,7 +33,7 @@ Trademarks are property of their respective owners.
 
 @titlepage
 @title Configuration Options in FreeBSD
-@subtitle for FreeBSD 1.0
+@subtitle for FreeBSD 1.1
 @author Garrett A. Wollman
 @author FreeBSD Project
 
@@ -45,10 +45,11 @@ registered trademark and NFS is a trademark of Sun Microsystems, Inc.
 Ultrix is a registered trademark of Digital Equipment Corporation.
 Xerox is a registered trademark and XNS is a trademark of Xerox
 Corporation.  VESA is a trademark of the Video Electronics Standards
-Association.  All other trademarks are property of their respective
-owners.  FreeBSD is nobody's trademark, and damn proud of it.
+Association.  System V is a registered trademark of Novell Corporation.
+All other trademarks are property of their respective owners.  FreeBSD
+is nobody's trademark, and damn proud of it.
 
-Copyright @copyright{} 1993, Garrett A. Wollman.  All rights reserved.
+Copyright @copyright{} 1993, 1994, Garrett A. Wollman.  All rights reserved.
 
 Redistribution and use in source and printed forms, with or without
 modification, are permitted provided that the following conditions
@@ -70,7 +71,7 @@ authorship.
 @top FreeBSD Configuration Options
 
 This document describes kernel configuration options relevant to the
-FreeBSD operating system version 1.0.  It is intended for readers who
+FreeBSD operating system version 1.1.  It is intended for readers who
 already have a general understanding of the process of configuring a BSD
 kernel and wish to get a general overview of the meaning of various
 configuration options.  This document covers configurable options and
@@ -108,16 +109,6 @@ The @var{number} given is the maximum number of simultaneous users
 permitted.  (NB: in previous version of BPF, the @var{number} had to be
 greater than the number of interfaces; this space is now dynamically
 allocated so this requirement is no longer present.)
-
-@item pseudo-device devpager
-@itemx pseudo-device swappager
-@itemx pseudo-device vnodepager
-@findex devpager
-@findex swappager
-@findex vnodepager
-@cindex Pagers
-These @emph{mandatory} pseudo-devices provide VM system support for
-memory-mapped devices, swap space, and memory-mapped files, respectively.
 
 @item options CCITT
 @findex CCITT
@@ -169,6 +160,7 @@ subnet.
 This pseudo-device provides link-layer support for Ethernet device
 drivers.  It is mandatory for all systems which include Ethernet or
 Ethernet-like devices, such as @samp{ed}, @samp{ie}, and @samp{is}.
+This code is due for a redesign.
 
 @item options EON
 @itemx pseudo-device eon
@@ -381,16 +373,27 @@ serial links.  It includes support for Van Jacobson header compression.
 will be configured.  See also the @samp{slattach} manual page.
 
 @item options SYSVSHM
+@item options SYSVSEM
+@item options SYSVMSG
 @itemx options SHMMAXPGS=@var{value}
 @findex SYSVSHM
+@findex SYSVSEM
+@findex SYSVMSG
 @findex SHMMAXPGS
 @cindex System V shared memory
-@cindex Shared memory
+@cindex System V semaphores
+@cindex System V message queues
+@cindex System V IPC
+@cindex Shared memory, System V
+@cindex Semaphores, System V
+@cindex Message queues, System V
+@cindex IPC, System V
 The @samp{SYSVSHM} option enables kernel-side emulation of System
 V-compatible shared memory.  The @samp{SHMMAXPGS} option (default 64
 pages or 256K) determines the maximum amount of shared memory available
-under this mechanism.  (This number will be increased in the next
-release.)
+under this mechanism.  The @samp{SYSVSEM} option provides emulation of
+System V-compatible semaphores, and likewise @samp{SYSVMSG} for message
+queues.
 
 @item options RMP
 @findex RMP
@@ -684,18 +687,27 @@ appropriately.  The @samp{ed1} line shown is for the Novell boards; the
 @samp{ed0} line is appropriate for all other supported controllers.
 (The Novell controllers cannot be configured to use port 0x280.)
 
-@item controller fd0 at isa? port "IO_FD1" bio irq 6 drq 2 vector fdintr
-@itemx disk fd0 at fd0 drive 0
-@itemx disk fd1 at fd0 drive 1
+@item controller fdc0 at isa? port "IO_FD1" bio irq 6 drq 2 vector fdintr
+@itemx disk fd0 at fdc0 drive 0
+@itemx disk fd1 at fdc0 drive 1
+@itemx tape ft0 at fdc0 drive 2
 @findex fd
+@findex ft
 @cindex Floppy disk
+@cindex Floppy tape
+@cindex QIC-80
+@cindex Tape drives
+@cindex Cartridge tape drives
+@cindex Quarter-Inch-Cartridge (QIC) tape drives
 @cindex Disk drives
-The @samp{fd} driver provides support for the standard PC floppy disk
-controller and drives.  There are known to be numerous bugs and
-difficulties in this driver, but there are no alternatives available at
-present.  The controller's identification will eventually be changed to
-@samp{fdc0} rather than @samp{fd0}, to not conflict with the name of the
-drives.
+The @samp{fdc} driver provides support for the standard PC floppy-disk
+controller.  The @samp{fd} sub-driver supports 3.5-- and 5.25-inch
+floppy disks in the standard 360KB, 720KB, 1200KB, 1440KB, and 2880KB
+formats, as well as a number of other formats not supported by DOS.  The
+@samp{ft} driver is available for QIC-80 ``floppy tape'' support.
+The drivers support formatting of both tapes and disks.  This driver is
+substantially improved from that shipped in previous releases of
+FreeBSD.
 
 @item device ie0 at isa? port 0x360 net irq 7 iomem 0xd0000 vector ieintr
 @findex ie
@@ -743,12 +755,15 @@ support interrupt-driven operations.  If you receive @samp{ISA strayintr
 are that your controller supports interrupt-driven operation, and you
 should switch to the @samp{lpt} driver.
 
+The @samp{lpa} driver is obsolete, and will be removed in release 1.2,
+to be replaced by special flags to the @samp{lpt} driver.
+
 @item device mcd0 at isa? port 0x300 bio irq 10 vector mcdintr
 @findex mcd
 @cindex Mitsumi CD-ROM
 @cindex CD-ROM
-This device provides support for the Mitsumi non-SCSI CD-ROM drive (or
-at least certain versions thereof).
+This device provides support for the Mitsumi non-SCSI CD-ROM drive.
+Performance is known to be quite slow.
 
 @c mse, anyone?
 
@@ -796,14 +811,16 @@ are also supported.
 @item device uha0 at isa? port "IO_UHA0" bio irq 14 drq 5 vector uhaintr
 @findex uha
 @cindex Ultrastor 14F
+@cindex Ultrastor 34F
 @cindex SCSI host adaptors
 This device supports the Ultrastor 14F and related SCSI controllers.  It
 is included in the @samp{GENERICBT} distribution kernel, and requires
-@samp{scbus} (@pxref{SCSI}) as a prerequisite.
+@samp{scbus} (@pxref{SCSI}) as a prerequisite.  The Ultrastor 24F is not
+supported.
 
-@item controller wd0 at isa? port "IO_WD1" bio irq 14 vector wdintr
-@itemx disk wd0 at wd0 drive 0
-@itemx disk wd1 at wd0 drive 1
+@item controller wdc0 at isa? port "IO_WD1" bio irq 14 vector wdintr
+@itemx disk wd0 at wdc0 drive 0
+@itemx disk wd1 at wdc0 drive 1
 @findex wd
 @cindex Western Digital WD100x
 @cindex ST-506 hard disks
@@ -813,14 +830,16 @@ is included in the @samp{GENERICBT} distribution kernel, and requires
 @cindex Disk drives
 The @samp{wd} device supports standard ST-506, RLL, ESDI, and IDE hard
 disks, as controlled by the Western Digital WD100x series of controllers
-(and compatible hardware).  Otherwise, the comments for @samp{fd} apply
-here as well.
+(and compatible hardware).  This version is substantially improved from
+that provided in FreeBSD 1.0.
 
 @item device wt0 at isa? port 0x300 bio irq 5 drq 1 vector wtintr
 @findex wt
 @cindex Archive QIC-02
 @cindex Wangtek QIC-02
 @cindex Cartridge tape drives
+@cindex QIC-02
+@cindex QIC-36
 @cindex Tape drives
 @cindex Quarter-Inch-Cartridge (QIC) tape drives
 This driver supports Archive QIC-02 and Wangtek QIC-02 and QIC-36
@@ -868,10 +887,6 @@ routines, which were described in the previous sections, and the generic
 SCSI device drivers, which handle the standardized interactions with
 devices on the SCSI bus.
 
-Work is underway which will significantly change the way that device
-unit numbers are matched up with SCSI target numbers; stay tuned for
-details.
-
 @c devices: cd, ch, scbus, sd, sg, st
 
 @table @code
@@ -911,15 +926,15 @@ The @samp{sd} driver provides access to non-removable SCSI disks.  One
 @samp{sd} device should be defined for each disk you expect to have
 simultaneously connected to the system.
 
-@item device sg0
-@findex sg
-@cindex SCSI devices
-@cindex Generic SCSI
-@cindex Unsupported SCSI devices
-This driver provides support for development of user-mode drivers and
-other programs which access the SCSI bus directly.  One @samp{sg} device
-should be defined for each @emph{host adaptor} you have installed in
-your system.
+@c @item device sg0
+@c @findex sg
+@c @cindex SCSI devices
+@c @cindex Generic SCSI
+@c @cindex Unsupported SCSI devices
+@c This driver provides support for development of user-mode drivers and
+@c other programs which access the SCSI bus directly.  One @samp{sg} device
+@c should be defined for each @emph{host adaptor} you have installed in
+@c your system.
 
 @item device st0
 @findex st
@@ -930,6 +945,15 @@ The @samp{st} driver supports generic SCSI tape drives.  One @samp{st}
 device should be defined for each tape drive you wish to access.  See
 the @samp{st} manual page for information about how to manipulate the
 parameters of this device.
+
+@item device uk0
+@findex uk
+@cindex SCSI devices
+@cindex Unknown SCSI devices
+The @samp{uk} driver provides an attachment point for all otherwise
+unrecognized SCSI devices.  You can't actually do anything with such a
+device, except perhaps send it an inquiry command using the @samp{scsi}
+program (q.v.).
 @end table
 
 @node Internals, Index, Devices, Top
