@@ -36,18 +36,21 @@
 #	fd*	"floppy" disk drives (3 1/2", 5 1/4")
 #	as*	"SCSI" disk/tape/CDROM drives
 #	sd*	"NEW type scsi disks"
+#	cd*	"NEW type cdrom disks"
 #
 # Console ports:
-#	vga	stock pccons vga (note it has no keyboard name or minor!)
-#	vgaco	codrv vga
-#	kbdco	codrv kbd
+#	pc*	devices for stock pccons (cleans up co devices) 
+#	co*	devices for codrv (cleans up pc devices)
+#	vty*	virtual console devices for codrv (cleans up pc devices)
 # 
 # Terminal ports:
 #	com*	standard PC COM ports
 #	tty*	alias for PC COM ports, this is what the system really wants
+#	sio*	fast interrupt PC COM ports
 #
 # Pseudo terminals:
 #	pty*	set of 16 master and slave pseudo terminals
+#	vty*	virtual terminals using codrv console
 #
 # Printers:
 #	lpt*	stock lp
@@ -57,12 +60,13 @@
 #
 # Special purpose devices:
 #	bpf*	packet filter
-#	speaker	pc speaker
 #	dcf*	dcf clock
+#	speaker	pc speaker
+#	tw*	xten power controller
 #
 # PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
 # --------------------         -----   ----------------------
-# CURRENT PATCH LEVEL:         2       00135
+# CURRENT PATCH LEVEL:         3       00160
 # --------------------         -----   ----------------------
 #
 # 16 Feb 93	Julian Elischer		ADDED for SCSI system
@@ -74,6 +78,10 @@
 # 08 Apr 93	Rodney W. Grimes	Cleanup chgrp, chown and chmod stuff
 #					Added duplicate name tty=com,
 #					added speaker, dcf
+# 22 Apr 93	Holger Veit		device create for co,pc,vty
+# 26 May 93	Rodney W. Grimes	Redid all to be in bdev/cdev order.
+# 26 May 93	Gene Stark		Added tw xten power controller
+#		Rodney W. Grimes	Added sio serial port (fast interrupt)
 #
 
 PATH=/sbin:/bin/:/usr/bin:/usr/sbin:
@@ -83,8 +91,11 @@ do
 case $i in
 
 all)
-	sh MAKEDEV std wt0 fd0 fd1 wd0 wd1 as0 as1 sd0 sd1 tty0 tty1 pty0 st0
-	sh MAKEDEV ch0 cd0 lpt0 lpt1 lpt2 lpa0 lpa1 lpa2 speaker
+	sh MAKEDEV std						# standard
+	sh MAKEDEV wd0 wd1 fd0 fd1 wt0 sd0 sd1 as0 as1 st0 cd0	# bdev
+	sh MAKEDEV pty0 tty0 tty1 tty2 tty3 pc0 lpt0 lpt1 lpt2	# cdev
+	sh MAKEDEV ch0 tw0 bpf0 co0 vty04 dcf0 lpa0 lpa1 lpa2	# cdev
+	sh MAKEDEV speaker mse0 sio0 sio1 sio2 sio3		# cdev
 	;;
 std)
 	rm -f console drum mem kmem null tty klog stdin stdout stderr
@@ -269,18 +280,56 @@ lpt*)
 	chown root.wheel lpt$unit
 	;;
 
-# Note: the stock pccons driver does not have a minor for the keyboard
-vga|vgaco|kbdco)
+tw*)
+	unit=`expr $i : 'tw\(.*\)'`
+	rm -f tw$unit
+	mknod tw$unit c 19 $unit
+	chown root.wheel tw$unit
+	;;
+
+# hv 22-apr-93 use this to create the necessary devices for codrv
+# this will cleanup /dev/vga left from pccons
+co*)
 	chr=21
-	device=`expr ${i} : '\(.*\)co'`
-	case ${i} in
-	vga) name=vga; chr=12; minor=0;;
-	kbdco) name=kbdco; chr=21; minor=0;;
-	vgaco) name=vgaco; chr=21; minor=128;;
-	esac
-	rm -f ${name}
+	name=vga
+ 	rm -rf ${name}
+	mknod ${name} c ${chr} 128
+	ln ${name} ${name}co
+	chmod 644 ${name}
+	chown root.wheel ${name}
+
+	chr=21
+	name=kbd
+ 	rm -rf ${name}
+	mknod ${name} c ${chr} 128
+	ln ${name} ${name}co
+	chmod 644 ${name}
+	chown root.wheel ${name}
+	;;
+
+# hv 22-apr-93 use this to create the necessary video device for
+# pccons driver
+pc*)
+	chr=12
+	minor=0
+ 	name=vga
+	rm -f ${name} kbd kbdco vgaco ttyv[0-9][0-9]
 	mknod ${name} c ${chr} ${minor}
 	chown root.wheel $name
+	;;
+
+# hv 22-apr-93 use this to create virtual consoles for codrv
+# /dev/ttyv00-12
+# use as MAKEDEV vtyNN to create NN entries
+vty*)
+	chr=12
+	units=`expr $i : 'vty\(.*\)'`
+	umask 0
+	eval `echo ${chr} ${units} | awk ' { c=$1; n=$2 } END {
+		for (i = 0; i < n; i++)
+			printf("rm -f ttyv%01x; mknod ttyv%01x c %d %d;", \
+				i, i, c, i); }'`
+	umask 77
 	;;
 
 bpf*)
@@ -310,6 +359,13 @@ speaker)
 	rm -f speaker
 	mknod speaker c 26 0
 	chown root.wheel speaker
+	;;
+
+sio*)
+	unit=`expr $i : '...\(.*\)'`
+	rm -f sio0$unit
+	mknod sio0$unit c 28 $unit
+	chown uucp.wheel sio0$unit
 	;;
 
 local)

@@ -37,7 +37,7 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         4       00135
+ * CURRENT PATCH LEVEL:         5       00160
  * --------------------         -----   ----------------------
  *
  * 10 Feb 93	Jordan K. Hubbard	Added select entry for com driver
@@ -49,6 +49,11 @@
  * 10 Mar 83	Rodney W. Grimes	General clean up of the above patches
  * 06 Apr 93	Rodney W. Grimes	Fixed NLPT for LPA driver case, added
  *					spkr, dcfclock
+ * 23 Apr 93	Holger Veit		added codrv
+ * 25 May 93	Bruce Evans		New fast interrupt serial driver (sio)
+ * 		Gene Stark		Xten power controller info added (tw)
+ *		Rick Macklem		Bus mouse driver (mse)
+ *
  */
 static char rcsid[] = "$Header: /usr/src/sys.386bsd/i386/i386/RCS/conf.c,v 1.2 92/01/21 14:21:57 william Exp Locker: toor $";
 
@@ -261,6 +266,30 @@ int	lptopen(),lptclose(),lptwrite(),lptioctl();
 #define	lptioctl	enxio
 #endif
 
+#include "co.h"
+#if NCO > 0
+int	coopen(),coclose(),coread(),coioctl(),coselect(),comap();
+#define pcmmap		comap
+#else
+#define coopen		enxio
+#define coclose		enxio
+#define coread		enxio
+#define coioctl		enxio
+#define coselect	enxio
+#define comap		enxio
+#endif
+
+#include "tw.h"
+#if NTW > 0
+int	twopen(),twclose(),twread(),twwrite(),twselect();
+#else
+#define twopen		enxio
+#define twclose		enxio
+#define twread		enxio
+#define twwrite		enxio
+#define twselect	enxio
+#endif
+
 int	fdopen();
 
 #include "bpfilter.h"
@@ -300,10 +329,38 @@ int	lpaopen(),lpaclose(),lpawrite(),lpaioctl();
 #if NSPEAKER > 0
 int     spkropen(),spkrclose(),spkrwrite(),spkrioctl();
 #else
-#define spkropen  enxio
-#define spkrclose enxio
-#define spkrwrite enxio
-#define spkrioctl enxio
+#define spkropen	enxio
+#define spkrclose	enxio
+#define spkrwrite	enxio
+#define spkrioctl	enxio
+#endif
+
+#include "mse.h"
+#if NMSE > 0
+int	mseopen(),mseclose(),mseread(),mseselect();
+#else
+#define	mseopen		enxio
+#define	mseclose	enxio
+#define	mseread		enxio
+#define	mseselect	enxio
+#endif
+
+#include "sio.h"
+#if NSIO > 0
+int	sioopen(),sioclose(),sioread(),siowrite(),sioioctl(),sioselect(),
+	siostop();
+#define sioreset	enxio
+extern	struct tty sio_tty[];
+#else
+#define sioopen		enxio
+#define sioclose	enxio
+#define sioread		enxio
+#define siowrite	enxio
+#define sioioctl	enxio
+#define siostop		enxio
+#define sioreset	enxio
+#define sioselect	enxio
+#define	sio_tty		NULL
 #endif
 
 struct cdevsw	cdevsw[] =
@@ -345,7 +402,7 @@ struct cdevsw	cdevsw[] =
 	  enodev,	enodev,		nullop,		NULL,
 	  seltrue,	enodev,		enodev },
 	{ pcopen,	pcclose,	pcread,		pcwrite,	/*12*/
-	  pcioctl,	nullop,		nullop,		&pccons, /* vga */
+	  pcioctl,	nullop,		nullop,		&pccons, /* pc */
 	  ttselect,	pcmmap,		NULL },
 #if	NSD > 0
 	{ sdopen,	sdclose,	rawread,	rawwrite,	/*13*/
@@ -371,15 +428,15 @@ struct cdevsw	cdevsw[] =
 	{ enxio,	enxio,		enxio,		enxio,		/*18*/
 	  enxio,	enxio,		enxio,		NULL,	/* scsi generic */
 	  enxio,	enxio,		enxio },
-	{ enxio,	enxio,		enxio,		enxio,		/*19*/
-	  enxio,	enxio,		enxio,		NULL,	/* xten power ctrlr*/
-	  enxio,	enxio,		enxio },
+	{ twopen,	twclose,	twread,		twwrite,	/*19*/
+	  enodev,	nullop,		nullop,		NULL,	/* tw */
+	  twselect,	enodev,		enodev },
 	{ enxio,	enxio,		enxio,		enxio,		/*20*/
 	  enxio,	enxio,		enxio,		NULL,	/* soundblaster?*/
 	  enxio,	enxio,		enxio },
-	{ enxio,	enxio,		enxio,		enxio,		/*21*/
-	  enxio,	enxio,		enxio,		NULL,	/* codrv */
-	  enxio,	enxio,		enxio },
+	{ coopen,	coclose,	coread,		enxio,		/*21*/
+	  coioctl,	nullop,		nullop,		NULL,	/* co */
+	  coselect,	comap,		NULL },
 	{ fdopen,	enxio,		enxio,		enxio,		/*22*/
 	  enxio,	enxio,		enxio,		NULL,	/* fd (!=Fd) */
 	  enxio,	enxio,		enxio },
@@ -395,6 +452,12 @@ struct cdevsw	cdevsw[] =
 	{ spkropen,     spkrclose,      enxio,          spkrwrite,      /*26*/
 	  spkrioctl,    enxio,          enxio,          NULL,	/* spkr */
 	  enxio,        enxio,          enxio },
+	{ mseopen,	mseclose,	mseread,	nullop,		/*27*/
+	  nullop,	enodev,		nullop,		NULL,	/* mse */
+	  mseselect,	enodev,		NULL },
+	{ sioopen,	sioclose,	sioread,	siowrite,	/*28*/
+	  sioioctl,	siostop,	sioreset,	sio_tty, /* sio */
+	  sioselect,	enodev,		NULL },
 /*
  * If you need a cdev major number, please contact the 386bsd patchkit 
  * coordinator by sending mail to "patches@cs.montana.edu".
