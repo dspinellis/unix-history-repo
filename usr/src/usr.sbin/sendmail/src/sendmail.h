@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	5.35 (Berkeley) %G%
+ *	@(#)sendmail.h	5.36 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	5.35		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	5.36		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -572,11 +572,11 @@ EXTERN int	SafeAlias;	/* minutes to wait until @:@ in alias file */
 EXTERN time_t	TimeOut;	/* time until timeout */
 EXTERN FILE	*InChannel;	/* input connection */
 EXTERN FILE	*OutChannel;	/* output connection */
-EXTERN int	RealUid;	/* when Daemon, real uid of caller */
-EXTERN int	RealGid;	/* when Daemon, real gid of caller */
-EXTERN int	DefUid;		/* default uid to run as */
+EXTERN uid_t	RealUid;	/* when Daemon, real uid of caller */
+EXTERN gid_t	RealGid;	/* when Daemon, real gid of caller */
+EXTERN uid_t	DefUid;		/* default uid to run as */
+EXTERN gid_t	DefGid;		/* default gid to run as */
 EXTERN char	*DefUser;	/* default user to run as (from DefUid) */
-EXTERN int	DefGid;		/* default gid to run as */
 EXTERN int	OldUmask;	/* umask when sendmail starts up */
 EXTERN int	Errors;		/* set if errors (local to single pass) */
 EXTERN int	ExitStat;	/* exit status code */
@@ -593,6 +593,7 @@ EXTERN int	QueueFactor;	/* slope of queue function */
 EXTERN time_t	QueueIntvl;	/* intervals between running the queue */
 EXTERN char	*AliasFile;	/* location of alias file */
 EXTERN char	*HelpFile;	/* location of SMTP help file */
+EXTERN char	*ErrMsgFile;	/* file to prepend to all error messages */
 EXTERN char	*StatFile;	/* location of statistics summary */
 EXTERN char	*QueueDir;	/* location of queue directory */
 EXTERN char	*FileName;	/* name to print on error messages */
