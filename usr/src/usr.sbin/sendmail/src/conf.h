@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.185 (Berkeley) %G%
+ *	@(#)conf.h	8.186 (Berkeley) %G%
  */
 
 /*
@@ -450,7 +450,7 @@ typedef int		pid_t;
 **	See also BSD defines.
 */
 
-#ifdef BSD4_4
+#if defined(BSD4_4) && !defined(__bsdi__)
 # define HASUNSETENV	1	/* has unsetenv(3) call */
 # define USESETEUID	1	/* has useable seteuid(2) call */
 # include <sys/cdefs.h>
