@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c.1	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c.1	5.9 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -41,6 +41,7 @@ static char sccsid[] = "@(#)login.c.1	5.8 (Berkeley) %G%";
 #define	SCPYN(a, b)	strncpy(a, b, sizeof(a))
 
 #define NMAX	sizeof(utmp.ut_name)
+#define HMAX	sizeof(utmp.ut_host)
 
 #define	FALSE	0
 #define	TRUE	-1
@@ -225,15 +226,27 @@ main(argc, argv)
 		 * see if root logins on this terminal are permitted.
 		 */
 		if (!invalid && pwd->pw_uid == 0 && !rootterm(tty)) {
-			syslog(LOG_CRIT, "ROOT LOGIN REFUSED %s", tty);
+			if (utmp.ut_host[0])
+				syslog(LOG_CRIT,
+				    "ROOT LOGIN REFUSED ON %s FROM %.*s",
+				    tty, HMAX, utmp.ut_host);
+			else
+				syslog(LOG_CRIT,
+				    "ROOT LOGIN REFUSED ON %s", tty);
 			invalid = TRUE;
 		}
 		if (invalid) {
 			printf("Login incorrect\n");
 			if (++t >= 5) {
-				syslog(LOG_CRIT,
-				    "REPEATED LOGIN FAILURES %s, %s",
-					tty, utmp.ut_name);
+				if (utmp.ut_host[0])
+					syslog(LOG_CRIT,
+					    "REPEATED LOGIN FAILURES ON %s FROM %.*s, %.*s",
+					    tty, HMAX, utmp.ut_host,
+					    NMAX, utmp.ut_name);
+				else
+					syslog(LOG_CRIT,
+					    "REPEATED LOGIN FAILURES ON %s, %.*s",
+						tty, NMAX, utmp.ut_name);
 				ioctl(0, TIOCHPCL, (struct sgttyb *) 0);
 				close(0), close(1), close(2);
 				sleep(10);
@@ -349,7 +362,11 @@ main(argc, argv)
 	if (tty[sizeof("tty")-1] == 'd')
 		syslog(LOG_INFO, "DIALUP %s, %s", tty, pwd->pw_name);
 	if (pwd->pw_uid == 0)
-		syslog(LOG_NOTICE, "ROOT LOGIN %s", tty);
+		if (utmp.ut_host[0])
+			syslog(LOG_NOTICE, "ROOT LOGIN %s FROM %.*s",
+			    tty, HMAX, utmp.ut_host);
+		else
+			syslog(LOG_NOTICE, "ROOT LOGIN %s", tty);
 	if (!quietlog) {
 		struct stat st;
 
