@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.21 (Berkeley) %G%
+#	@(#)Makefile	5.22 (Berkeley) %G%
 
 NOOBJ=	oobj
 
@@ -19,6 +19,7 @@ NAMEDB=	localhost.rev named.boot root.cache
 PCS=	pcs750.bin
 WCS1=	wcs fppwcs poc poc1 poc2 fppoc
 WCS2=	fpevent fppwcs fppwcs_dual hdcwcs load_diags start_fpp wcs wcs_dual
+RBOOTD=	rbootd.conf
 
 all clean cleandir depend etc install lint:
 
@@ -74,6 +75,10 @@ distribution:
 	    ${DESTDIR}/var/run/utmp
 	(cd etc.${MACHINE}; install -c -o ${BINOWN} -g ${BINGRP} -m 444 \
 	    fstab.* ${DESTDIR}/etc)
+.if ${MACHINE} == "hp300"
+	(cd etc.hp300; install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${RBOOTD} \
+	    ${DESTDIR}/etc)
+.endif
 .if ${MACHINE} == "tahoe"
 	(cd etc.tahoe; install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${WCS1} \
 	    ${DESTDIR}/)
