@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cp.c	5.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)cp.c	5.32 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -50,6 +50,7 @@ static char sccsid[] = "@(#)cp.c	5.31 (Berkeley) %G%";
 
 #define FILE_TO_FILE 1
 #define FILE_TO_DIR  2
+#define DIR_TO_DNE  3
 
 #define STRIP_TRAILING_SLASH(p) { \
         while ((p).p_end > (p).p_path && (p).p_end[-1] == '/') \
@@ -72,14 +73,14 @@ main(argc, argv)
 	char **argv;
 {
 	extern int optind;
-	struct stat to_stat;
+	struct stat to_stat, tmp_stat;
 	register int c, r;
 	char *p;
 	char *target;
 	int fts_options;
 	int type;
 	FTS *ftsp;
-	int hflag;
+	int hflag, Hflag;
 
 	/*
 	 * The utility cp(1) is used by mv(1) -- except for usage statements,
@@ -98,11 +99,12 @@ main(argc, argv)
          *     all symbolic links on the command line.
          * 
          */
-	hflag = rflag = orflag = 0;
+	Hflag = hflag = rflag = orflag = 0;
 	fts_options = FTS_NOCHDIR | FTS_LOGICAL;
 	while ((c = getopt(argc, argv, "HRfhipr")) != EOF) 
 		switch ((char)c) {
 		case 'H':
+			Hflag = 1;
 			fts_options |= FTS_COMFOLLOW;
 			break;
 		case 'f':
@@ -196,12 +198,30 @@ main(argc, argv)
 	if (r == -1 || !S_ISDIR(to_stat.st_mode)) {
 		/*
 		 * Case (1).  Target is not a directory.
-		 */
+		 */ 
 		if (argc > 1) {
 			usage();
 			exit(1);
 		}
-		type = FILE_TO_FILE;
+		/*
+		 * Need to detect the case:
+		 * % cp -R dir foo
+		 * Where dir is a directory and foo does not exist, because 
+		 * in this special case we want pathname concatenations
+		 * turned on but not for the initial mkdir().
+		 */
+		if (r == -1) {
+			if (orflag || (rflag && (hflag || Hflag)))
+				stat(*argv, &tmp_stat);
+			else
+				lstat(*argv, &tmp_stat);
+			
+			if (S_ISDIR(tmp_stat.st_mode) && (rflag || orflag))
+				type = DIR_TO_DNE;
+			else
+				type = FILE_TO_FILE;
+		} else
+			type = FILE_TO_FILE;
 	}
 	else
 		/*
@@ -227,7 +247,10 @@ copy(type, ftsp)
 	struct stat to_stat;
 	int dne;
 	register FTSENT *curr;
-	
+	char *c;
+	char *n;
+	register int base, nlen;
+
 	while(curr = fts_read(ftsp)) {
 		if (curr->fts_info == FTS_ERR || curr->fts_info == FTS_NS) {
 			err("%s: %s", curr->fts_path, 
@@ -244,23 +267,58 @@ copy(type, ftsp)
 		}
 
 		/*
-		 * If we are in case(2) above, we need to append the 
+		 * If we are in case (2) or (3) above, we need to append the 
                  * source name to the target name.  
                  */
-		if (type == FILE_TO_DIR) {
+		if (type != FILE_TO_FILE) {
 			if ((curr->fts_namelen + to.target_end - to.p_path + 1)
 			    > MAXPATHLEN) {
 				err("%s/%s: name too long (not copied)", 
 				    to.p_path, curr->fts_name);
 				continue;
 			}
+
+			/*
+			 * We need to remember roots of traversals so we can
+			 * create correct pathnames.  In the case where
+			 * we have a directory copied to a non-existent one:
+			 * % cp -R a/dir noexist
+			 * we want the path names to be noexist/foo rather than
+			 * noexist/dir/foo, where foo is a file in dir, as 
+			 * opposed to the case where the target exists.
+			 */
+			if (curr->fts_level == FTS_ROOTLEVEL) {
+				if (type != DIR_TO_DNE) {
+					c = rindex(curr->fts_path, '/');
+					base = (c == NULL)? 0 : 
+						(int) (c - curr->fts_path + 1);
+
+				/*
+				 * This is necessary to assure that
+				 * correct concatentation of paths ending
+				 * in ".." occurs.  This is somewhat
+				 * tricky.  Note that the old
+				 * cp(1) did not handle these cases 
+				 * correctly.  This is sort of a hack
+				 * but it is the easiest way to
+				 * fix the problem.
+				 */
+					if (!strcmp(&curr->fts_path[base], 
+					    ".."))
+						base += 1;
+				} else
+					base = curr->fts_pathlen;
+			}
+
 			if (to.target_end[-1] != '/') {
 				*to.target_end = '/';
 				*(to.target_end + 1) = 0;
 			}
-			(void)strncat(to.target_end + 1, curr->fts_name, 
-                            curr->fts_namelen);
-			to.p_end = to.target_end + curr->fts_namelen + 1;
+			n = &curr->fts_path[base];
+			nlen = curr->fts_pathlen - base;
+
+			(void)strncat(to.target_end + 1, n, nlen);
+			to.p_end = to.target_end + nlen + 1;
 			*to.p_end = 0;
 			STRIP_TRAILING_SLASH(to);
 		}
@@ -275,7 +333,7 @@ copy(type, ftsp)
 			            "%s: %s and %s are identical (not copied).\n",
 				    progname, to.p_path, curr->fts_path);
 				exit_val = 1;
-				return;
+				continue;
 			}
 			dne = 0;
 		}
