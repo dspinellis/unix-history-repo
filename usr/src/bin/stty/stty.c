@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)stty.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)stty.c	5.28 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -26,16 +26,13 @@ static char sccsid[] = "@(#)stty.c	5.27 (Berkeley) %G%";
 #include "stty.h"
 #include "extern.h"
 
-static char usage[] = "usage: stty: [-eg] [-f file] [options]";
+char *usage = "usage: stty: [-eg] [-f file] [options]";
 
 main(argc, argv) 
 	int argc;
 	char **argv;
 {
-	register struct modes *mp;
-	register struct cchar *cp;
 	struct info i;
-	struct key *kp;
 	enum FMT fmt;
 	int ch;
 
@@ -91,82 +88,30 @@ args:	argc -= optind;
 	}
 	
 	for (i.set = i.wset = 0; *argv; ++argv) {
-		i.off = **argv == '-';
-		if (kp = ksearch(i.off ? *argv + 1 : *argv)) {
-			if (!(kp->flags & F_OFFOK) && i.off)
-				err("illegal option -- %s\n%s", *argv, usage);
-			if (kp->flags & F_NEEDARG && !(i.arg = *++argv))
-				err("option requires an argument -- %s\n%s",
-				    kp->name, usage);
-			kp->f(&i);
+		if (ksearch(&argv, &i))
 			continue;
-		}
-		
 
-#define	CHK(s)	(**argv == s[0] && !strcmp(*argv, s))
-		for (mp = cmodes; mp->name; ++mp)
-			if (CHK(mp->name)) {
-				i.t.c_cflag &= ~mp->unset;
-				i.t.c_cflag |= mp->set;
-				i.set = 1;
-				goto next;
-			}
-		for (mp = imodes; mp->name; ++mp)
-			if (CHK(mp->name)) {
-				i.t.c_iflag &= ~mp->unset;
-				i.t.c_iflag |= mp->set;
-				i.set = 1;
-				goto next;
-			}
-		for (mp = lmodes; mp->name; ++mp)
-			if (CHK(mp->name)) {
-				i.t.c_lflag &= ~mp->unset;
-				i.t.c_lflag |= mp->set;
-				i.set = 1;
-				goto next;
-			}
-		for (mp = omodes; mp->name; ++mp)
-			if (CHK(mp->name)) {
-				i.t.c_oflag &= ~mp->unset;
-				i.t.c_oflag |= mp->set;
-				i.set = 1;
-				goto next;
-			}
-
-		for (cp = cchars1; cp->name; ++cp)
-			if (CHK(cp->name))
-				goto ccfound;
-		for (cp = cchars2; cp->name; ++cp) {
-			if (!CHK(cp->name))
-				continue;
-ccfound:		if (!*++argv)
-				err("option requires an argument -- %s\n%s",
-				    cp->name, usage);
-			if (CHK("undef") || CHK("<undef>"))
-				i.t.c_cc[cp->sub] = _POSIX_VDISABLE;
-			else if (**argv == '^')
-				i.t.c_cc[cp->sub] = 
-				    ((*argv)[1] == '?') ? 0177 :
-				    ((*argv)[1] == '-') ? _POSIX_VDISABLE :
-				    (*argv)[1] & 037;
-			else
-				i.t.c_cc[cp->sub] = **argv;
-			i.set = 1;
+		if (csearch(&argv, &i))
 			continue;
-		}
+
+		if (msearch(&argv, &i))
+			continue;
 
 		if (isdigit(**argv)) {
-			cfsetospeed(&i.t, atoi(*argv));
-			cfsetispeed(&i.t, atoi(*argv));
+			int speed;
+
+			speed = atoi(*argv);
+			cfsetospeed(&i.t, speed);
+			cfsetispeed(&i.t, speed);
 			continue;
 		}
+
 		if (!strncmp(*argv, "gfmt1", sizeof("gfmt1") - 1)) {
 			gread(&i.t, *argv + sizeof("gfmt1") - 1);
 			continue;
 		}
 
 		err("illegal option -- %s\n%s", *argv, usage);
-next:		continue;
 	}
 
 	if (i.set && tcsetattr(i.fd, 0, &i.t) < 0)

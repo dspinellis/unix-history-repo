@@ -6,11 +6,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)modes.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)modes.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <stddef.h>
+#include <string.h>
 #include "stty.h"
 
 /*
@@ -153,3 +154,45 @@ struct modes omodes[] = {
 	"-oxtabs",	0, OXTABS,
 	NULL
 };
+
+#define	CHK(s)	(*name == s[0] && !strcmp(name, s))
+
+msearch(argvp, ip)
+	char ***argvp;
+	struct info *ip;
+{
+	register struct modes *mp;
+	register char *name;
+
+	name = **argvp;
+
+	for (mp = cmodes; mp->name; ++mp)
+		if (CHK(mp->name)) {
+			ip->t.c_cflag &= ~mp->unset;
+			ip->t.c_cflag |= mp->set;
+			ip->set = 1;
+			return(1);
+		}
+	for (mp = imodes; mp->name; ++mp)
+		if (CHK(mp->name)) {
+			ip->t.c_iflag &= ~mp->unset;
+			ip->t.c_iflag |= mp->set;
+			ip->set = 1;
+			return(1);
+		}
+	for (mp = lmodes; mp->name; ++mp)
+		if (CHK(mp->name)) {
+			ip->t.c_lflag &= ~mp->unset;
+			ip->t.c_lflag |= mp->set;
+			ip->set = 1;
+			return(1);
+		}
+	for (mp = omodes; mp->name; ++mp)
+		if (CHK(mp->name)) {
+			ip->t.c_oflag &= ~mp->unset;
+			ip->t.c_oflag |= mp->set;
+			ip->set = 1;
+			return(1);
+		}
+	return(0);
+}

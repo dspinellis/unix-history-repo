@@ -6,12 +6,15 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cchar.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)cchar.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
 #include "stty.h"
+#include "extern.h"
 
 /*
  * Special control characters.
@@ -37,7 +40,7 @@ struct cchar cchars1[] = {
 	"stop",		VSTOP,		CSTOP,
 	"susp",		VSUSP,		CSUSP,
 	"werase",	VWERASE,	CWERASE,
-	NULL
+	"",						/* not NULL */
 };
 
 struct cchar cchars2[] = {
@@ -46,5 +49,48 @@ struct cchar cchars2[] = {
 	"rprnt",	VREPRINT, 	CREPRINT,
 	"xoff",		VSTOP,		CSTOP,
 	"xon",		VSTART,		CSTART,
-	NULL
+	"",						/* not NULL */
 };
+
+csearch(argvp, ip)
+	char ***argvp;
+	struct info *ip;
+{
+	extern char *usage;
+	register struct cchar *cp;
+	struct cchar tmp;
+	char *arg, *name;
+	static int c_cchar __P((const void *, const void *));
+		
+	name = **argvp;
+
+	tmp.name = name;
+	if (!(cp = (struct cchar *)bsearch(&tmp, cchars1,
+	    sizeof(cchars1)/sizeof(struct cchar), sizeof(struct cchar),
+	    c_cchar)) && !(cp = (struct cchar *)bsearch(&tmp, cchars1,
+	    sizeof(cchars1)/sizeof(struct cchar), sizeof(struct cchar),
+	    c_cchar)))
+		return(0);
+
+	arg = *++*argvp;
+	if (!arg)
+		err("option requires an argument -- %s\n%s", name, usage);
+
+#define CHK(s)  (*name == s[0] && !strcmp(name, s))
+	if (CHK("undef") || CHK("<undef>"))
+		ip->t.c_cc[cp->sub] = _POSIX_VDISABLE;
+	else if (arg[0] == '^')
+		ip->t.c_cc[cp->sub] = (arg[1] == '?') ? 0177 :
+		    (arg[1] == '-') ? _POSIX_VDISABLE : arg[1] & 037;
+	else
+		ip->t.c_cc[cp->sub] = arg[0];
+	ip->set = 1;
+	return(1);
+}
+
+static
+c_cchar(a, b)
+        const void *a, *b;
+{
+        return(strcmp(((struct cchar *)a)->name, ((struct cchar *)b)->name));
+}
