@@ -1,4 +1,4 @@
-/*	conf.c	3.4	%G%	*/
+/*	conf.c	3.5	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -17,15 +17,15 @@
 int	nulldev();
 int	nodev();
 
-int	hpstrategy(), hpread(), hpwrite(), hpintr();
+int	hpstrategy(),hpread(),hpwrite(),hpintr();
 struct	buf	hptab;
  
-int	htopen(), htclose(), htstrategy(), htread(), htwrite();
+int	htopen(),htclose(),htstrategy(),htread(),htwrite();
 struct	buf	httab;
 
 #ifdef ERNIE
-int	urpopen(), urpstrategy(), urpread(), urpwrite();
-struct	buf	urptab;
+int	upstrategy(),upread(),upwrite(),upreset();
+struct	buf	uptab;
 #endif
 
 struct bdevsw	bdevsw[] =
@@ -33,31 +33,30 @@ struct bdevsw	bdevsw[] =
 /* 0 */	nulldev,	nulldev,	hpstrategy,	&hptab,
 /* 1 */	htopen,		htclose,	htstrategy,	&httab,
 #ifdef ERNIE
-/* 2 */	nodev,		nodev,		nodev,		0,
-/* 3 */	urpopen,	nulldev,	urpstrategy,	&urptab,
+/* 2 */	nulldev,	nulldev,	upstrategy,	&uptab,
 #endif
 	0,
 };
 
-int	cnopen(), cnclose(), cnread(), cnwrite(), cnioctl();
+int	cnopen(),cnclose(),cnread(),cnwrite(),cnioctl();
 
 #ifdef ERNIE
-int	dhopen(), dhclose(), dhread(), dhwrite(), dhioctl(), dhstop();
+int	dhopen(),dhclose(),dhread(),dhwrite(),dhioctl(),dhstop(),dhreset();
 struct	tty dh11[];
 #endif
 
-int	flopen(), flclose(), flread(), flwrite();
+int	flopen(),flclose(),flread(),flwrite();
 
-int	dzopen(), dzclose(), dzread(), dzwrite(), dzioctl(), dzstop();
+int	dzopen(),dzclose(),dzread(),dzwrite(),dzioctl(),dzstop(),dzreset();
 struct	tty dz_tty[];
 
-int	syopen(), syread(), sywrite(), syioctl();
+int	syopen(),syread(),sywrite(),syioctl();
 
-int 	mmread(), mmwrite();
+int 	mmread(),mmwrite();
 
 #ifdef ERNIE
-int	vpopen(), vpclose(), vpwrite(), vpioctl();
-int	vaopen(), vaclose(), vawrite(), vaioctl();
+int	vpopen(),vpclose(),vpwrite(),vpioctl(),vpreset();
+int	vaopen(), vaclose(), vawrite(), vaioctl(),vareset();
 #endif
 
 int	mxopen(), mxclose(), mxread(), mxwrite(), mxioctl();
@@ -66,35 +65,51 @@ char	*mcwrite();
 
 struct cdevsw	cdevsw[] =
 {
-/* 0 */		cnopen, cnclose, cnread, cnwrite, cnioctl, nulldev, 0,
-/* 1 */		dzopen, dzclose, dzread, dzwrite, dzioctl, dzstop, dz_tty,
-/* 2 */		syopen, nulldev, syread, sywrite, syioctl, nulldev, 0,
-/* 3 */		nulldev, nulldev, mmread, mmwrite, nodev, nulldev, 0,
-/* 4 */		nulldev, nulldev, hpread, hpwrite, nodev, nodev, 0,
-/* 5 */		htopen,  htclose, htread, htwrite, nodev, nodev, 0,
+/*0*/	cnopen,		cnclose,	cnread,		cnwrite,
+	cnioctl,	nulldev,	nulldev,	0,
+/*1*/	dzopen,		dzclose,	dzread,		dzwrite,
+	dzioctl,	dzstop,		dzreset,	dz_tty,
+/*2*/	syopen,		nulldev,	syread,		sywrite,
+	syioctl,	nulldev,	nulldev,	0,
+/*3*/	nulldev,	nulldev,	mmread,		mmwrite,
+	nodev,		nulldev,	nulldev,	0,
+/*4*/	nulldev,	nulldev,	hpread,		hpwrite,
+	nodev,		nodev,		nulldev,	0,
+/*5*/	htopen,		htclose,	htread,		htwrite,
+	nodev,		nodev,		nulldev,	0,
 #ifdef ERNIE
-/* 6 */		vpopen, vpclose, nodev, vpwrite, vpioctl, nulldev, 0,
+/*6*/	vpopen,		vpclose,	nodev,		vpwrite,
+	vpioctl,	nulldev,	vpreset,	0,
 #else
-/* 6 */		nodev, nodev, nodev, nodev, nodev, nodev, 0,
+/*6*/	nodev,		nodev,		nodev,		nodev,
+	nodev,		nodev,		nulldev,	0,
 #endif
-/* 7 */		nodev, nodev, nodev, nodev, nodev, nodev, 0,
-/* 8 */		flopen, flclose, flread, flwrite, nodev, nodev, 0,
-/* 9 */		mxopen, mxclose, mxread, mxwrite, mxioctl, nulldev, 0,
+/*7*/	nodev,		nodev,		nodev,		nodev,
+	nodev,		nodev,		nulldev,	0,
+/*8*/	flopen,		flclose,	flread,		flwrite,
+	nodev,		nodev,		nulldev,	0,
+/*9*/	mxopen,		mxclose,	mxread,		mxwrite,
+	mxioctl,	nulldev,	nulldev,	0,
 #ifdef ERNIE
-/* 10 */	vaopen, vaclose, nodev, vawrite, vaioctl, nulldev, 0,
-/* 11 */	urpopen, nulldev, urpread, urpwrite, nodev, nodev, 0,
-/* 12 */	dhopen, dhclose, dhread, dhwrite, dhioctl, dhstop, dh11,
+/*10*/	vaopen,		vaclose,	nodev,		vawrite,
+	vaioctl,	nulldev,	vareset,	0,
+/*11*/	nodev,		nodev,		nodev,		nodev,
+	nodev,		nodev,		nulldev,	0,
+/*12*/	dhopen,		dhclose,	dhread,		dhwrite,
+	dhioctl,	dhstop,		dhreset,	dh11,
+/*13*/	nulldev,	nulldev,	upread,		upwrite,
+	nodev,		nodev,		upreset,	0,
 #endif
-		0,
+	0,	
 };
 
-int	ttyopen(), ttread(), nullioctl(), ttstart();
+int	ttyopen(),ttread(),nullioctl(),ttstart();
 char	*ttwrite();
-int	ttyinput(), ttyrend();
-int	bkopen(), bkclose(), bkread(), bkinput(), bkioctl();
-int	ntyopen(), ntyclose(), ntread();
-char 	*ntwrite();
-int	ntyinput(), ntyrend();
+int	ttyinput(),ttyrend();
+int	bkopen(),bkclose(),bkread(),bkinput(),bkioctl();
+int	ntyopen(),ntyclose(),ntread();
+char	*ntwrite();
+int	ntyinput(),ntyrend();
  
 struct	linesw linesw[] =
 {
