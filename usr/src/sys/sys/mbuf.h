@@ -1,4 +1,4 @@
-/* mbuf.h 4.7 81/11/29 */
+/* mbuf.h 4.8 81/12/09 */
 
 /*
  * Constants related to memory allocator.
@@ -12,8 +12,6 @@
 
 /*
  * Macros for type conversion
- *
- * CONSTANTS HERE ARE A CROCK
  */
 
 /* network cluster number to virtual address, and back */
@@ -35,7 +33,14 @@ struct mbuf {
 	struct	mbuf *m_act;		/* link in higher-level mbuf list */
 };
 
-#define	M_WAIT	1
+/* flags to m_get */
+#define	M_DONTWAIT	0
+#define	M_WAIT		1
+
+/* flags to m_pgalloc */
+#define	MPG_MBUFS	0		/* put new mbufs on free list */
+#define	MPG_CLUSTERS	1		/* put new clusters on free list */
+#define	MPG_SPACE	2		/* don't free; caller wants space */
 
 #define	MGET(m, i) \
 	{ int ms = splimp(); \
@@ -64,7 +69,7 @@ struct mbstat {
 	short	m_bufs;			/* # free msg buffers */
 	short	m_hiwat;		/* # free mbufs allocated */
 	short	m_lowat;		/* min. # free mbufs */
-	short	m_pages;		/* # pages owned by network */
+	short	m_clusters;		/* # pages owned by network */
 	short	m_drops;		/* times failed to find space */
 };
 
@@ -77,4 +82,5 @@ struct	mbuf *mfree, *mclfree;
 int	nmclfree;
 char	mclrefcnt[NMBCLUSTERS];
 struct	mbuf *m_get(), *m_getclr(), *m_free(), *m_more(), *m_copy();
+caddr_t	m_clalloc();
 #endif
