@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	6.35 (Berkeley) %G%
+ *	@(#)locore.s	6.36 (Berkeley) %G%
  */
 
 #include "psl.h"
@@ -751,6 +751,7 @@ start:
 	mfpr	$P1BR,PCB_P1BR(r1)
 	mfpr	$P1LR,PCB_P1LR(r1)
 	movl	$CLSIZE,PCB_SZPT(r1)		# init u.u_pcb.pcb_szpt
+	movl	r10,PCB_R10(r1)
 	movl	r11,PCB_R11(r1)
 	movab	1f,PCB_PC(r1)			# initial pc
 	clrl	PCB_PSL(r1)			# mode(k,k), ipl=0
@@ -762,6 +763,8 @@ start:
 /* put signal trampoline code in u. area */
 1:	movab	_u,r0
 	movc3	$19,sigcode,PCB_SIGC(r0)
+/* save boot device in global _bootdev */
+	movl	r10,_bootdev
 /* save reboot flags in global _boothowto */
 	movl	r11,_boothowto
 /* calculate firstaddr, and call main() */

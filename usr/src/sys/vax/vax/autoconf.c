@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1982 Regents of the University of California.
+ * Copyright (c) 1982,1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	6.17 (Berkeley) %G%
+ *	@(#)autoconf.c	6.18 (Berkeley) %G%
  */
 
 /*
@@ -28,6 +28,7 @@
 #include "vm.h"
 #include "conf.h"
 #include "dmap.h"
+#include "reboot.h"
 
 #include "cpu.h"
 #include "mem.h"
@@ -113,6 +114,8 @@ configure()
 			mtpr(TBIS, Sysbase);
 #if GENERIC
 			setconf();
+#else
+			setroot();
 #endif
 			/*
 			 * Configure swap area and related system
@@ -857,4 +860,108 @@ swapconf()
 		dumplo = (*bdevsw[major(dumpdev)].d_psize)(dumpdev) - physmem;
 	if (dumplo < 0)
 		dumplo = 0;
+}
+
+#define	DOSWAP			/* Change swdevt, argdev, and dumpdev too */
+u_long	bootdev;		/* should be dev_t, but not until 32 bits */
+
+static	char devname[][2] = {
+	'h','p',	/* 0 = hp */
+	0,0,		/* 1 = ht */
+	'u','p',	/* 2 = up */
+	'r','k',	/* 3 = hk */
+	0,0,		/* 4 = sw */
+	0,0,		/* 5 = tm */
+	0,0,		/* 6 = ts */
+	0,0,		/* 7 = mt */
+	0,0,		/* 8 = tu */
+	'r','a',	/* 9 = ra */
+	0,0,		/* 10 = ut */
+	'r','b',	/* 11 = rb */
+	0,0,		/* 12 = uu */
+	0,0,		/* 13 = rx */
+	'r','l',	/* 14 = rl */
+};
+
+#define	PARTITIONMASK	0x7
+#define	PARTITIONSHIFT	3
+
+/*
+ * Attempt to find the device from which we were booted.
+ * If we can do so, and not instructed not to do so,
+ * change rootdev to correspond to the load device.
+ */
+setroot()
+{
+	int  majdev, mindev, unit, part, adaptor, i;
+	dev_t temp, orootdev;
+	struct swdevt *swp;
+
+	if (boothowto & RB_DFLTROOT)
+		return;
+	majdev = (bootdev >> B_TYPESHIFT) & B_TYPEMASK;
+	if (majdev > sizeof(devname) / sizeof(devname[0]))
+		return;
+	adaptor = (bootdev >> B_ADAPTORSHIFT) & B_ADAPTORMASK;
+	part = (bootdev >> B_PARTITIONSHIFT) & B_PARTITIONMASK;
+	unit = (bootdev >> B_UNITSHIFT) & B_UNITMASK;
+	if (majdev == 0) {	/* MBA device */
+		register struct mba_device *mbap;
+
+		for (mbap = mbdinit; mbap->mi_driver; mbap++)
+			if (mbap->mi_alive && mbap->mi_drive == unit &&
+			    mbap->mi_mbanum == adaptor &&
+			    mbap->mi_drive == unit)
+			    	break;
+		if (mbap->mi_driver == 0)
+			return;
+		mindev = mbap->mi_unit;
+	} else {
+		register struct uba_device *ubap;
+
+		for (ubap = ubdinit; ubap->ui_driver; ubap++)
+			if (ubap->ui_alive && ubap->ui_slave == unit &&
+			   ubap->ui_ubanum == adaptor &&
+			   ubap->ui_driver->ud_dname[0] == devname[majdev][0] &&
+			   ubap->ui_driver->ud_dname[1] == devname[majdev][1])
+			    	break;
+
+		if (ubap->ui_driver == 0)
+			return;
+		mindev = ubap->ui_unit;
+	}
+	mindev = (mindev << PARTITIONSHIFT) + part;
+	orootdev = rootdev;
+	rootdev = makedev(majdev, mindev);
+
+#ifdef DOSWAP
+	/*
+	 * If the original rootdev is the same as the one
+	 * just calculated, don't need to adjust the swap configuration.
+	 */
+	if (rootdev == orootdev)
+		return;
+
+	mindev &= ~PARTITIONMASK;
+	for (swp = swdevt; swp->sw_dev; swp++) {
+		if (majdev == major(swp->sw_dev) &&
+		    mindev == (minor(swp->sw_dev) & ~PARTITIONMASK)) {
+			temp = swdevt[0].sw_dev;
+			swdevt[0].sw_dev = swp->sw_dev;
+			swp->sw_dev = temp;
+			break;
+		}
+	}
+	if (swp->sw_dev == 0)
+		return;
+
+	/*
+	 * If argdev and dumpdev were the same as the old primary swap
+	 * device, move them to the new primary swap device.
+	 */
+	if (temp == dumpdev)
+		dumpdev = swdevt[0].sw_dev;
+	if (temp == argdev)
+		argdev = swdevt[0].sw_dev;
+#endif
 }
