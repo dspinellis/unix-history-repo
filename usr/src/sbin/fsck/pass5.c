@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)pass5.c	3.1 (Berkeley) %G%";
+static char version[] = "@(#)pass5.c	3.2 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -35,6 +35,21 @@ pass5()
 		if (cgrp.cg_magic != CG_MAGIC) {
 			pfatal("CG %d: BAD MAGIC NUMBER\n", c);
 			bzero((char *)&cgrp, (int)sblock.fs_cgsize);
+		}
+		for (i = 0, n = 0; i < sblock.fs_ipg; i += NBBY, n++)
+			if (cgrp.cg_iused[n] != 0xff)
+				break;
+		for ( ; i < sblock.fs_ipg; i++) {
+			if (isclr(cgrp.cg_iused, i)) {
+				if (i < cgrp.cg_irotor) {
+					if (debug) printf(
+					    "cg %d, first free %d, irotor %d\n",
+					     c, i, cgrp.cg_irotor);
+					cgrp.cg_irotor = i;
+					cgdirty();
+					break;
+				}
+			}
 		}
 		for (b = 0; b < sblock.fs_fpg; b += sblock.fs_frag) {
 			blk = blkmap(&sblock, cgrp.cg_free, b);
