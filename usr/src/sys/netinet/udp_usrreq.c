@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	4.33	82/10/09	*/
+/*	udp_usrreq.c	4.34	82/10/16	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -106,8 +106,10 @@ udp_input(m0)
 	udp_in.sin_addr = ui->ui_src;
 	m->m_len -= sizeof (struct udpiphdr);
 	m->m_off += sizeof (struct udpiphdr);
+SBCHECK(&inp->inp_socket->so_rcv, "udpinput before");
 	if (sbappendaddr(&inp->inp_socket->so_rcv, (struct sockaddr *)&udp_in, m) == 0)
 		goto bad;
+SBCHECK(&inp->inp_socket->so_rcv, "udpinput after");
 	sorwakeup(inp->inp_socket);
 	return;
 bad:
