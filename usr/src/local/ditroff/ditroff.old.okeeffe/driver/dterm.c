@@ -1,4 +1,4 @@
-/* @(#)dterm.c	1.4	(Berkeley)	%G%"
+/* @(#)dterm.c	1.5	(Berkeley)	%G%"
  *
  *	Converts ditroff output to text on a terminal.  It is NOT meant to
  *	produce readable output, but is to show one how one's paper is (in
@@ -33,8 +33,8 @@
 
 
 #define	FATAL		1
-#define	PGWIDTH		133
-#define	PGHEIGHT	110
+#define	PGWIDTH		266		/* WAY too big - for good measure */
+#define	PGHEIGHT	220
 #define LINELEN		78
 #define SPECFILE	"/usr/lib/font/devter/specfile"
 
@@ -51,15 +51,16 @@
 #define sqr(x)		(long int)(x)*(x)
 
 
-char	SccsId [] = "@(#)dterm.c	1.4	(Berkeley)	%G%";
+char	SccsId [] = "@(#)dterm.c	1.5	(Berkeley)	%G%";
 
 char	**spectab;		/* here go the special characters */
 char	*specfile = SPECFILE;	/* place to look up special characters */
 char	*malloc();
 
-int 	keepon	= 0;		/* flag:  Don't stop at the end of each page? */
-int	output	= 0;		/* do we do output at all? */
-int	nolist	= 0;		/* output page list if > 0 */
+int 	keepon	= 0;	/* flags:  Don't stop at the end of each page? */
+int	clearsc = 0;		/* Put out form feed at each page? */
+int	output	= 0;		/* Do we do output at all? */
+int	nolist	= 0;		/* Output page list if > 0 */
 int	olist[20];		/* pairs of page numbers */
 
 float	hscale	= 10.0;		/* characters and lines per inch for output */
@@ -83,7 +84,7 @@ long	pgadr[40];	/* their seek addresses */
 
 int	DP;			/* step size for drawing */
 int	drawdot = '.';		/* draw with this character */
-int	maxdots	= 32000;	/* maximum number of dots in an object */
+int	maxdots	= 3200;		/* maximum number of dots in an object */
 
 
 
@@ -109,14 +110,18 @@ char **argv;
 		case 'o':		/* output list */
 			outlist(++*argv);
 			break;
-		case 'c':		/* continue (^L too) at endofpage */
+		case 'c':		/* continue at endofpage */
 			keepon = 1;
 			break;
- 		case 'w':		/* "wide" format */
+		case 'L':		/* form feed after each page */
+			clearsc = 1;
+			break;
+ 		case 'w':		/* "wide" printer format */
 			hscale = 16.0;
 			vscale = 9.6;
 			linelen = 131;
 			keepon = 1;
+			clearsc = 1;
 			break;
 	    }
 	    argc--;
@@ -324,8 +329,9 @@ FILE *fp;
 		fscanf(fp, "%d", &n);
 		hscale = (float) n / hscale;
 		vscale = (float) n / vscale;
-		if((DP = n / 10 - 6) < 1) DP = 1;	/* guess the drawing */
-		break;					/* resolution */
+		DP = min (hscale, vscale);	/* guess the drawing */
+		DP = max (DP, 1);		/* resolution */
+		break;
 	case 'f':	/* font used */
 	case 'T':	/* device name */
 	case 't':	/* trailer */
@@ -423,8 +429,8 @@ t_page(n)	/* do whatever new page functions */
 	putpage();
 	fflush(stdout);
 
+	if (clearsc) putchar('');
 	if (keepon) {
-		putchar('');
 		t_init(1);
 		return;
 	}
@@ -649,6 +655,7 @@ char *s;
 		numdots = abs (yd);
 		numdots = min(numdots, maxdots);
 		motincr = DP * sgn (yd);
+		put1(drawdot);
 		for (i = 0; i < numdots; i++) {
 			vmot(motincr);
 			put1(drawdot);
@@ -656,7 +663,9 @@ char *s;
 	} else
 	if (yd == 0) {
 		numdots = abs (xd);
+		numdots = min(numdots, maxdots);
 		motincr = DP * sgn (xd);
+		put1(drawdot);
 		for (i = 0; i < numdots; i++) {
 			hmot(motincr);
 			put1(drawdot);
@@ -679,6 +688,7 @@ char *s;
 	    }
 	    numdots = min(numdots, maxdots);
 	    incrway = sgn ((int) slope);
+	    put1(drawdot);
 	    for (i = 0; i < numdots; i++) {
 		val -= incrway;
 		if (dirmot == 'h')
