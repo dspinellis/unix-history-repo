@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_open.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_open.c	5.22 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -23,16 +23,17 @@ static char sccsid[] = "@(#)bt_open.c	5.21 (Berkeley) %G%";
 #include <sys/param.h>
 #include <sys/stat.h>
 
-#include <signal.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <limits.h>
 #define	__DBINTERFACE_PRIVATE
 #include <db.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <limits.h>
+#include <signal.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+
 #include "btree.h"
 
 static int nroot __P((BTREE *));
@@ -67,6 +68,8 @@ __bt_open(fname, flags, mode, openinfo)
 	pgno_t ncache;
 	struct stat sb;
 	int nr;
+
+	t = NULL;
 
 	/*
 	 * Intention is to make sure all of the user's selections are okay
@@ -229,7 +232,8 @@ __bt_open(fname, flags, mode, openinfo)
 			if (b.psize > MAX_PAGE_OFFSET)
 				b.psize = MAX_PAGE_OFFSET;
 		}
-		t->bt_flags |= b.flags & R_DUP ? 0 : BTF_NODUPS;
+		if (!(b.flags & R_DUP))
+			SET(t, BTF_NODUPS);
 		t->bt_free = P_INVALID;
 		t->bt_lorder = b.lorder;
 		t->bt_nrecs = 0;
@@ -268,7 +272,7 @@ __bt_open(fname, flags, mode, openinfo)
 	if ((t->bt_mp =
 	    mpool_open(NULL, t->bt_fd, t->bt_psize, ncache)) == NULL)
 		goto err;
-	if (NOTSET(t, BTF_INMEM))
+	if (!ISSET(t, BTF_INMEM))
 		mpool_filter(t->bt_mp, __bt_pgin, __bt_pgout, t);
 
 	/* Create a root page if new tree. */
