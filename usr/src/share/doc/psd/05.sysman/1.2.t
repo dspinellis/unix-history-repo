@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)1.2.t	6.4 (Berkeley) %G%
+.\"	@(#)1.2.t	6.5 (Berkeley) %G%
 .\"
 .sh "Memory management\(dg
 .NH 3
@@ -110,6 +110,7 @@ it maps; the call
 .DS
 msync(addr, len);
 caddr_t addr; int len;
+.DE
 writes any modified pages back to the filesystem and updates
 the file modification time.
 If \fIlen\fP is 0, all modified pages within the region containing \fIaddr\fP
