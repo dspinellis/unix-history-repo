@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)varargs.h	8.1 (Berkeley) %G%
+ *	@(#)varargs.h	8.2 (Berkeley) %G%
  *
- * from: $Header: varargs.h,v 1.7 93/05/07 18:10:36 torek Exp $
+ * from: $Header: varargs.h,v 1.8 93/09/27 00:53:20 torek Exp $
  */
 
 #ifndef _MACHINE_VARARGS_H_
@@ -27,11 +27,20 @@ typedef char *va_list;
 #if __GNUC__ == 1
 #define __extension__
 #define	va_dcl	int va_alist;
-#else /* gcc2 wants to see the '...' token */
+#else /* gcc2 */
+#ifdef __GCC_NEW_VARARGS__	/* gcc 2.4.5 */
+#define va_alist __builtin_va_alist
+#define	va_dcl	int __builtin_va_alist;
+#else				/* gcc 2.3.3 */
 #define	va_dcl	int va_alist; ...
 #endif
+#endif
 
+#ifdef __GCC_NEW_VARARGS__
+#define	va_start(ap)	((ap) = (char *)__builtin_saveregs())
+#else
 #define	va_start(ap)	(__builtin_saveregs(), (ap) = (char *)&va_alist)
+#endif
 #define va_end(ap)	/* empty */
 
 /* Note, we can assume C code here; C++ does not use <varargs.h>. */
