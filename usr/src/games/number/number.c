@@ -1,204 +1,215 @@
+/*
+ * Copyright (c) 1987 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
 
-static char sccsid[] = "	number.c	4.2	86/11/26	";
+#ifndef lint
+static char sccsid[] = "	number.c	4.3	87/04/02	";
+#endif
 
 #include <stdio.h>
+#include <ctype.h>
 
-int	flag;
-int max = 21;
-char	*card[] =
+#define	YES		1
+#define	NO		0
+#define	EOS		'\0'
+#define	MAXNUM		65		/* biggest number we handle */
+
+static char	*name1[] = {
+	"",		"one",		"two",		"three",
+	"four",		"five",		"six",		"seven",
+	"eight",	"nine",		"ten",		"eleven",
+	"twelve",	"thirteen",	"fourteen",	"fifteen",
+	"sixteen",	"seventeen",	"eighteen",	"nineteen",
+},
+		*name2[] = {
+	"",		"ten",		"twenty",	"thirty",
+	"forty",	"fifty",	"sixty",	"seventy",
+	"eighty",	"ninety",
+},
+		*name3[] = {
+	"hundred",	"thousand",	"million",	"billion",
+	"trillion",	"quadrillion",	"quintillion",	"sextillion",
+	"septillion",	"octillion",	"nonillion",	"decillion",
+	"undecillion",	"duodecillion",	"tredecillion",	"quattuordecillion",
+	"quindecillion",		"sexdecillion",	
+	"septendecillion",		"octodecillion",
+	"novemdecillion",		"vigintillion",
+};
+
+main(argc,argv)
+	int	argc;
+	char	**argv;
 {
-	"hundred",
-	"thousand",
-	"million",
-	"billion",
-	"trillion",
-	"quadrillion",
-	"quintillion",
-	"sextillion",
-	"septillion",
-	"octillion",
-	"nonillion",
-	"decillion",
-	"undecillion",
-	"duodecillion",
-	"tredecillion",
-	"quattuordecillion",
-	"quindecillion",
-	"sexdecillion",
-	"septendecillion",
-	"octodecillion",
-	"novemdecillion",
-	"vigintillion"
-};
-char *unit[] = {
-	"zero",
-	"one",
-	"two",
-	"three",
-	"four",
-	"five",
-	"six",
-	"seven",
-	"eight",
-	"nine"
-};
-char *teen[] = {
-	"ten",
-	"eleven",
-	"twelve",
-	"thirteen",
-	"fourteen",
-	"fifteen",
-	"sixteen",
-	"seventeen",
-	"eighteen",
-	"nineteen"
-};
-char *decade[] = {
-	"zero",
-	"ten",
-	"twenty",
-	"thirty",
-	"forty",
-	"fifty",
-	"sixty",
-	"seventy",
-	"eighty",
-	"ninety"
-};
-char	line[100];
-main()
-{
-	register c, i, fraction;
-	int r;
+	register int	cnt;
+	char	line[MAXNUM * 2 + 2];		/* MAXNUM '.' MAXNUM '\0' */
 
-
-	fraction = 0;
-	while((c = getchar()) != EOF) {
-		if(!digit(c))  {
-			fraction = (c == '.');
-			putchar(c);
-			continue;
+	if (argc > 1)
+		for (cnt = 1;cnt < argc;++cnt) {
+			convert(argv[cnt]);
+			puts("...");
 		}
-		if(fraction) {
-			while(digit(c)) {
-				putchar(' ');
-				putchar(c);
-				if((c=getchar()) == EOF)
-					exit(1);
+	else
+		while (fgets(line,sizeof(line),stdin)) {
+			convert(line);
+			puts("...");
+		}
+	exit(0);
+}
+
+static
+convert(line)
+	char	*line;
+{
+	register int	len,
+			ret;
+	register char	*C,
+			*fraction;
+
+	for (fraction = NULL, C = line;*C && *C != '\n';++C)
+		if (!isdigit(*C))
+			switch(*C) {
+			case '-':
+				if (C != line)
+					usage(NO);
+				break;
+			case '.':
+				if (!fraction) {
+					fraction = C + 1;
+					*C = EOS;
+					break;
+				}
+			default:
+				usage(NO);
 			}
-			putchar(' ');
-			goto out;
+	*C = EOS;
+	if (*line == '-') {
+		puts("minus");
+		++line;
+	}
+	ret = NO;
+	if (len = strlen(line)) {
+		if (len > MAXNUM)
+			usage(YES);
+		ret = unit(len,line);
+	}
+	if (fraction && (len = strlen(fraction))) {
+		if (len > MAXNUM)
+			usage(YES);
+		for (C = fraction;*C;++C)
+			if (*C != '0') {
+				if (ret)
+					puts("and");
+				if (unit(len,fraction)) {
+					++ret;
+					pfract(len);
+				}
+				break;
+			}
+	}
+	if (!ret)
+		puts("zero.");
+}
+
+static
+unit(len,C)
+	register int	len;
+	register char	*C;
+{
+	register int	off,
+			ret;
+
+	ret = NO;
+	if (len > 3) {
+		if (len % 3) {
+			off = len % 3;
+			len -= off;
+			if (number(C,off)) {
+				ret = YES;
+				printf(" %s.\n",name3[len / 3]);
+			}
+			C += off;
 		}
-
-		putchar(' ');
-		i = 0;
-		line[i++] = '0';
-		line[i++] = '0';
-		while(c == '0')
-			if((c=getchar()) == EOF)
-				exit(1);
-		while(digit(c)) {
-			if(i < 98)
-				line[i++] = c;
-			if((c=getchar()) == EOF)
-				exit(1);
+		for (;len > 3;C += 3) {
+			len -= 3;
+			if (number(C,3)) {
+				ret = YES;
+				printf(" %s.\n",name3[len / 3]);
+			}
 		}
-		line[i] = 0;
-		r = i/3;
-		if(r == 0) {
-			print("zero");
-			goto out;
+	}
+	if (number(C,len)) {
+		puts(".");
+		ret = YES;
+	}
+	return(ret);
+}
+
+static
+number(C,len)
+	register char	*C;
+	int	len;
+{
+	register int	val,
+			ret;
+
+	ret = 0;
+	switch(len) {
+	case 3:
+		if (*C != '0') {
+			++ret;
+			printf("%s hundred",name1[*C - '0']);
 		}
-		conv(line+i-3*r, r);
+		++C;
+		/*FALLTHROUGH*/
+	case 2:
+		val = (C[1] - '0') + (C[0] - '0') * 10;
+		if (val) {
+			if (ret++)
+				putchar(' ');
+			if (val < 20)
+				fputs(name1[val],stdout);
+			else {
+				fputs(name2[val / 10],stdout);
+				if (val % 10)
+					printf("-%s",name1[val % 10]);
+			}
+		}
+		break;
+	case 1:
+		if (*C != '0') {
+			++ret;
+			fputs(name1[*C - '0'],stdout);
+		}
+	}
+	return(ret);
+}
 
-out:
-		fraction = (c == '.');
-		nline();
-		printf("...\n");
-		if(c != '\n')
-			putchar(c);
+static
+pfract(len)
+	register int	len;
+{
+	static char	*pref[] = { "", "ten-", "hundred-" };
+
+	switch(len) {
+	case 1:
+		puts("tenths.");
+		break;
+	case 2:
+		puts("hundredths.");
+		break;
+	default:
+		printf("%s%sths.\n",pref[len % 3],name3[len / 3]);
 	}
 }
 
-conv(p, c)
-char *p;
+static
+usage(toobig)
+	int	toobig;
 {
-
-	if(c > max) {
-		conv(p, c-max);
-		print(card[max]);
-		nline();
-		p += (c-max)*3;
-		c = max;
-	}
-	while(c > 1) {
-		c--;
-		conv(p, 1);
-		cprint(card[c]);
-		nline();
-		p += 3;
-	}
-	ones(p[0]);
-	cprint(card[0]);
-	tens(p);
-	ones(p[2]);
-}
-
-ones(d)
-{
-	if(d=='0')
-		return;
-	print(unit[d-'0']);
-}
-
-tens(p)
-char *p;
-{
-
-	switch(p[1]) {
-
-	case '0':
-		return;
-
-	case '1':
-		print(teen[p[2]-'0']);
-		p[2] = '0';
-		return;
-	}
-
-	print(decade[p[1]-'0']);
-}
-
-
-digit(c)
-{
-
-	if(c < '0' || c > '9')
-		return(0);
-	return(1);
-}
-
-nline()
-{
-
-	if(flag)
-		printf(".\n");
-	flag = 0;
-}
-
-cprint(s)
-{
-
-	if(flag)
-		print(s);
-}
-
-print(s)
-{
-
-	if(flag)
-		printf(" ");
-	printf(s);
-	flag = 1;
+	if (toobig)
+		fprintf(stderr,"number: number too large, max %d digits.\n",MAXNUM);
+	fputs("usage: number # ...\n",stderr);
+	exit(-1);
 }
