@@ -7,7 +7,7 @@
 #
 #  Tested on IRIX 5.2 and 5.3 by Kari E. Hurtta <Kari.Hurtta@fmi.fi>.
 #
-#	@(#)Makefile.IRIX.5.x	8.1 (Berkeley) %G%
+#	@(#)Makefile.IRIX.5.x	8.2 (Berkeley) %G%
 #
 SHELL=	/bin/sh
 
@@ -72,19 +72,21 @@ all: ${ALL}
 sendmail: ${BEFORE} ${OBJS}
 	${CC} -o sendmail ${OBJS} ${LIBDIRS} ${LIBS}
 
-NROFF=	nroff -h
+#NROFF=	nroff -h
+NROFF=	groff -Tascii
+MANDOC=	-mandoc
 
 aliases.0: aliases.5
-	${NROFF} -mandoc aliases.5 > aliases.0
+	${NROFF} ${MANDOC} aliases.5 > aliases.0
 
 mailq.0: mailq.1
-	${NROFF} -mandoc mailq.1 > mailq.0
+	${NROFF} ${MANDOC} mailq.1 > mailq.0
 
 newaliases.0: newaliases.1
-	${NROFF} -mandoc newaliases.1 > newaliases.0
+	${NROFF} ${MANDOC} newaliases.1 > newaliases.0
 
 sendmail.0: sendmail.8
-	${NROFF} -mandoc sendmail.8 > sendmail.0
+	${NROFF} ${MANDOC} sendmail.8 > sendmail.0
 
 install: install-sendmail install-docs
 
