@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.43 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.44 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1725,7 +1725,7 @@ giveresponse(stat, m, mci, ctladdr, e)
 
 	if (stat != EX_TEMPFAIL)
 		setstat(stat);
-	if (stat != EX_OK)
+	if (stat != EX_OK && (stat != EX_TEMPFAIL || e->e_message == NULL))
 	{
 		if (e->e_message != NULL)
 			free(e->e_message);
