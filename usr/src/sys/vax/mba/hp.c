@@ -1,4 +1,4 @@
-/*	hp.c	3.9	%G%	*/
+/*	hp.c	3.10	%G%	*/
 
 /*
  * RP06/RM03 disk driver
@@ -415,6 +415,7 @@ register struct buf *bp;
 	int dn, bn, cn, tn, sn, ns, nt;
 	extern char buffers[NBUF][BSIZE];
 	struct pte mpte;
+	short bcr;
 
 	/*
 	 * Npf is the number of sectors transferred before the sector
@@ -422,7 +423,9 @@ register struct buf *bp;
 	 * mapping (the first part of)the transfer.
 	 * O is offset within a memory page of the first byte transferred.
 	 */
-	npf = btop((mbp->mba_bcr&0xffff) + bp->b_bcount) - 1;
+	bcr = mbp->mba_bcr;		/* get into short so can sign extend */
+	npf = btop(bcr + bp->b_bcount) - 1;
+	printf("bcr %d npf %d\n", bcr, npf);
 	if (bp->b_flags&B_PHYS)
 		reg = 128 + npf;
 	else
@@ -443,7 +446,7 @@ register struct buf *bp;
 	 * in main memory.
 	 */
 	i = (rp->hpec1&0xffff) - 1;		/* -1 makes 0 origin */
-	bit = i&017;
+	bit = i&07;
 	i = (i&~07)>>3;
 	byte = i + o;
 	/*
@@ -461,7 +464,7 @@ register struct buf *bp;
 		bit -= 8;
 	}
 	hptab.b_active++;		/* Either complete or continuing */
-	if (mbp->mba_bcr == 0)
+	if (bcr == 0)
 		return (0);
 	/*
 	 * Have to continue the transfer... clear the drive,
