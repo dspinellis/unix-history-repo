@@ -1,4 +1,4 @@
-/*	rxreg.h	4.2	83/02/21	*/
+/*	rxreg.h	4.3	83/02/21	*/
 
 /*
  * RX02 registers
@@ -52,6 +52,15 @@ struct rxdevice {
 "\20\14RXES_NXM\13RXES_WCOF\11RXES_DRV1\10RXES_RDY\7RXES_DDMK\6RXES_DDEN\5\
 RXES_DNER\4RXES_ACLO\3RXES_ID\1RXES_CRC"
 
+/* 
+ * Ioctl commands, move to dkio.h later
+ */
+#define RXIOC_FORMAT	(('d'<<8)|1)	/* format the disk */
+#define RXIOC_WDDS	(('d'<<8)|2)	/* write `deleted data' mark */
+					/* on next sector */
+#define RXIOC_RDDSMK	(('d'<<8)|3)	/* did last read sector contain */
+					/* `deleted data'?*/
+
 #ifdef RXDEFERR
 /*
  * Table of values for definitive error code (rxxt[0] & 0xff)
@@ -68,10 +77,11 @@ struct rxdeferr {
 	{ 0110,	"No SEP clock seen" },
 	{ 0120,	"No preamble found" },
 	{ 0130,	"Preamble, but no ID mark" },
+	{ 0140, "Header CRC error"},
 	{ 0150,	"Track addr wrong in header" },
 	{ 0160,	"Too many tries for ID AM" },
 	{ 0170,	"No data AM found" },
-	{ 0200,	"CRC error" },
+	{ 0200,	"Data CRC error" },
 	{ 0220,	"Maintenance test failure" },
 	{ 0230,	"Word count overflow" },
 	{ 0240,	"Density error" },
