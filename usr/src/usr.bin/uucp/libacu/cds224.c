@@ -1,9 +1,8 @@
 #ifndef lint
-static char sccsid[] = "@(#)cds224.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)cds224.c	1.2 (Berkeley) %G%";
 #endif !lint
 
 #include "../condevs.h"
-#ifdef CDS224
 
 /*
  *	conopn: establish dial-out connection through a Concord CDS 224.
@@ -107,4 +106,3 @@ cdscls224(fd)
 		delock(devSel);
 	}
 }
-#endif CDS224

@@ -1,9 +1,8 @@
 #ifndef lint
-static char sccsid[] = "@(#)dn.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)dn.c	4.3 (Berkeley) %G%";
 #endif
 
 #include "../condevs.h"
-#ifdef DN11
 #define ACULAST "-<"
 
 /***
@@ -141,4 +140,3 @@ register int fd;
 		delock(devSel);
 	}
 }
-#endif DN11

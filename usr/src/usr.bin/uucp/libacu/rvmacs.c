@@ -1,9 +1,8 @@
 #ifndef lint
-static char sccsid[] = "@(#)rvmacs.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)rvmacs.c	4.5 (Berkeley) %G%";
 #endif
 
 #include "../condevs.h"
-#ifdef	RVMACS
 
 /*
  * Racal-Vadic 'RV820' MACS system with 831 adaptor.
@@ -180,4 +179,3 @@ register int fd;
 		delock(devSel);
 	}
 }
-#endif

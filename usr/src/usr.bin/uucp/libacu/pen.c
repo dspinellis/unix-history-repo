@@ -1,12 +1,11 @@
 #ifndef lint
-static char sccsid[] = "@(#)pen.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)pen.c	4.3 (Berkeley) %G%";
 #endif
 
 /*
  *	Speaker's quick and dirty penril hack.  STA 4/1/85.
  */
 #include "../condevs.h"
-#ifdef	PENRIL
 
 penopn(telno, flds, dev)
 char *flds[], *telno;
@@ -100,4 +99,3 @@ int fd;
 		delock(devSel);
 	}
 }
-#endif PENRIL
