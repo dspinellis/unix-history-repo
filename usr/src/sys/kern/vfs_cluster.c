@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_cluster.c	7.23 (Berkeley) %G%
+ *	@(#)vfs_cluster.c	7.24 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -612,6 +612,7 @@ loop:
 		 */
 		if (bp->b_vp == vp || (flags & B_SYNC) == 0) {
 			(void) bawrite(bp);
+			s = splbio();
 		} else {
 			(void) bwrite(bp);
 			goto loop;
