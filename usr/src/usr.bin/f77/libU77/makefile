@@ -1,5 +1,5 @@
 # Makefile for f77 system lib, libU77.a
-#	@(#)makefile	1.13	%G%
+#	@(#)makefile	1.14	%G%
 
 DESTDIR =
 LIB = libU77.a
@@ -55,6 +55,7 @@ SOURCES = \
 	perror_.c \
 	putc_.c \
 	qsort_.c \
+	rename_.c \
 	signal_.c \
 	sleep_.c \
 	stat_.c \
@@ -104,6 +105,7 @@ OBJECTS = \
 	perror_.o \
 	putc_.o \
 	qsort_.o \
+	rename_.o \
 	signal_.o \
 	sleep_.o \
 	stat_.o \
