@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)gerror_.c	5.1	%G%
+ *	@(#)gerror_.c	5.2	%G%
  */
 
 /*
@@ -21,7 +21,6 @@
 #include	<stdio.h>
 #include	"../libI77/f_errno.h"
 
-extern char *sys_errlist[];
 extern int sys_nerr;
 extern char *f_errlist[];
 extern int f_nerr;
@@ -30,9 +29,10 @@ gerror_(s, len)
 char *s; long len;
 {
 	char *mesg;
+	char *strerror();
 
 	if (errno >=0 && errno < sys_nerr)
-		mesg = sys_errlist[errno];
+		mesg = strerror(errno);
 	else if (errno >= F_ER && errno < (F_ER + f_nerr))
 		mesg = f_errlist[errno - F_ER];
 	else

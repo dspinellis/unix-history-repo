@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utility.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)utility.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 
@@ -293,10 +293,9 @@ fatalperror(f, msg)
 	int f;
 	char *msg;
 {
-	char buf[BUFSIZ];
-	extern char *sys_errlist[];
+	char buf[BUFSIZ], *strerror();
 
-	(void) sprintf(buf, "%s: %s\r\n", msg, sys_errlist[errno]);
+	(void) sprintf(buf, "%s: %s\r\n", msg, strerror(errno));
 	fatal(f, buf);
 }
 
