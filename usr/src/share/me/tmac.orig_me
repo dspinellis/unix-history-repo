@@ -7,15 +7,17 @@
 .\"*		Eric Allman						*
 .\"*		Electronics Research Laboratory				*
 .\"*		U.C. Berkeley.						*
+.\"*	current address:						*
+.\"*		Britton-Lee, Inc.					*
 .\"*									*
-.\"*	VERSION 2.12	First Release: 11 Sept 1978			*
+.\"*	VERSION 2.13	First Release: 11 Sept 1978			*
 .\"*	See file \*(||/revisions for revision history			*
 .\"*									*
 .\"*	Documentation is available.					*
 .\"*									*
 .\"**********************************************************************
 .\"
-.\"	@(#)tmac.orig_me	2.12	%G%
+.\"	@(#)tmac.orig_me	2.13	%G%
 .\"	%beginstrip%
 .\"
 .\"	Code on .de commands:
@@ -722,13 +724,8 @@
 .de b			\" *** enter boldface (underline in NROFF)
 .nr _F \\n(.f
 .ul 0
-.ie t \
-.	ft 3
-.el \
-.	ul 10000
+.ft \\n($b
 .if \\n(.$ \&\\$1\f\\n(_F\\$2
-.if \\n(.$ \
-.	ul 0
 .rr _F
 ..
 .de rb			\" *** enter real boldface (not underlined in NROFF)
@@ -758,13 +755,9 @@
 .if \\n~>0 \
 \{\
 .	ul 0
-.	ie \\n~>4 \
-\{\
-.		if n .ul 10000
-.		if t .ft 3
-.	\}
-.	el \
-.		ft \\n~
+.	if \\n~>4 \
+.		nr ~ \\n($b
+.	ft \\n~
 .\}
 .rr ~
 ..
@@ -1004,6 +997,13 @@
 .	ds ] ]
 .	ds < <
 .	ds > >
+.\}
+.nr $b \nb			\" figure the real font 8 font
+.rr b
+.if \n($b=0 \
+\{\
+.	if n .nr $b 2		\" italic
+.	if t .nr $b 3		\" bold
 .\}
 .nr ps 0.5v			\" paragraph pre/post spacing
 .if \n($T \
