@@ -22,7 +22,9 @@ static int shell_pid = 0;
 
 static char *ourENVlist[200];		/* Lots of room */
 
-static int sock = -1;
+static int
+    sock = -1,				/* Connected socket */
+    serversock;				/* Server (listening) socket */
 
 static enum { DEAD, UNCONNECTED, CONNECTED } state;
 
@@ -41,9 +43,11 @@ static struct SREGS inputSregs;
 static void
 kill_connection()
 {
-    state = DEAD;
-    (void) close(sock);
-    sock = -1;
+    state = UNCONNECTED;
+    if (sock != -1) {
+	(void) close(sock);
+	sock = -1;
+    }
 }
 
 
@@ -87,7 +91,7 @@ char	*message;
 	return -1;
     }
     sd.length = htons(length);
-    if (api_exch_outtype(EXCH_TYPE_BYTES, sizeof sd, (char *)&sd) == -1) {
+    if (api_exch_outtype(EXCH_TYPE_STORE_DESC, sizeof sd, (char *)&sd) == -1) {
 	return -1;
     }
     if (api_exch_outtype(EXCH_TYPE_BYTES, length, message) == -1) {
@@ -98,13 +102,13 @@ char	*message;
 
 
 /*
- * doconnect()
+ * doassociate()
  *
  * Negotiate with the other side and try to do something.
  */
 
 static int
-doconnect()
+doassociate()
 {
     struct passwd *pwent;
     char
@@ -118,9 +122,24 @@ doconnect()
 	return -1;
     }
     sprintf(promptbuf, "Enter password for user %s:", pwent->pw_name);
-    api_exch_outcommand(EXCH_SEND_AUTH);
-    api_exch_outtype(EXCH_TYPE_BYTES, strlen(promptbuf), promptbuf);
-    api_exch_outtype(EXCH_TYPE_BYTES, strlen(pwent->pw_name), pwent->pw_name);
+    if (api_exch_outcommand(EXCH_SEND_AUTH) == -1) {
+	return -1;
+    }
+    sd.length = htons(strlen(promptbuf));
+    if (api_exch_outtype(EXCH_TYPE_STORE_DESC, sizeof sd, (char *)&sd) == -1) {
+	return -1;
+    }
+    if (api_exch_outtype(EXCH_TYPE_BYTES, strlen(promptbuf), promptbuf) == -1) {
+	return -1;
+    }
+    sd.length = htons(strlen(pwent->pw_name));
+    if (api_exch_outtype(EXCH_TYPE_STORE_DESC, sizeof sd, (char *)&sd) == -1) {
+	return -1;
+    }
+    if (api_exch_outtype(EXCH_TYPE_BYTES,
+			strlen(pwent->pw_name), pwent->pw_name) == -1) {
+	return -1;
+    }
     if (api_exch_incommand(EXCH_AUTH) == -1) {
 	return -1;
     }
@@ -130,7 +149,7 @@ doconnect()
     sd.length = ntohs(sd.length);
     if (sd.length > sizeof buffer) {
 	doreject("Password entered was too long");
-	return 0;
+	return -1;
     }
     if (api_exch_intype(EXCH_TYPE_BYTES, sd.length, buffer) == -1) {
 	return -1;
@@ -138,8 +157,23 @@ doconnect()
     buffer[sd.length] = 0;
 
     /* Is this the correct password? */
+    if (strlen(pwent->pw_name)) {
+	char *ptr;
+	int i;
+
+	ptr = pwent->pw_name;
+	i = 0;
+	while (i < sd.length) {
+	    buffer[i++] ^= *ptr++;
+	    if (*ptr == 0) {
+		ptr = pwent->pw_name;
+	    }
+	}
+    }
     if (strcmp(crypt(buffer, pwent->pw_passwd), pwent->pw_passwd) == 0) {
-	api_exch_outcommand(EXCH_CONNECTED);
+	if (api_exch_outcommand(EXCH_ASSOCIATED) == -1) {
+	    return -1;
+	}
     } else {
 	doreject("Invalid password");
 	sleep(10);		/* Don't let us do too many of these */
@@ -296,6 +330,43 @@ int	length;
     storage_must_send = 1;	/* Needs to go back */
 }
 
+/*
+ * Accept a connection from an API client, aborting if the child dies.
+ */
+
+static int
+doconnect()
+{
+    fd_set fdset;
+    int i;
+
+    sock = -1;
+    FD_ZERO(&fdset);
+    while (shell_active && (sock == -1)) {
+	FD_SET(serversock, &fdset);
+	if ((i = select(serversock+1, &fdset, 0, 0, 0)) < 0) {
+	    if (errno = EINTR) {
+		continue;
+	    } else {
+		perror("in select waiting for API connection");
+		return -1;
+	    }
+	} else {
+	    i = accept(serversock, 0, 0);
+	    if (i == -1) {
+		perror("accepting API connection");
+		return -1;
+	    }
+	    sock = i;
+	}
+    }
+    /* If the process has already exited, we may need to close */
+    if ((shell_active == 0) && (sock != -1)) {
+	(void) close(sock);
+	sock = -1;
+	setcommandmode();	/* In case child_died sneaked in */
+    }
+}
 
 /*
  * shell_continue() actually runs the command, and looks for API
@@ -312,17 +383,27 @@ shell_continue()
 	pause();			/* Nothing to do */
 	break;
     case UNCONNECTED:
-	if (api_exch_incommand(EXCH_CONNECT) == -1) {
+	if (doconnect() == -1) {
 	    kill_connection();
-	} else {
-	    switch (doconnect()) {
-	    case -1:
+	    return -1;
+	}
+	if (api_exch_init(sock, "client") == -1) {
+	    return -1;
+	}
+	while (state == UNCONNECTED) {
+	    if (api_exch_incommand(EXCH_ASSOCIATE) == -1) {
 		kill_connection();
-		break;
-	    case 0:
-		break;
-	    case 1:
-		state = CONNECTED;
+		return -1;
+	    } else {
+		switch (doassociate()) {
+		case -1:
+		    kill_connection();
+		    return -1;
+		case 0:
+		    break;
+		case 1:
+		    state = CONNECTED;
+		}
 	    }
 	}
 	break;
@@ -373,9 +454,10 @@ child_died()
 		printf("[Hit return to continue]");
 		fflush(stdout);
 		(void) gets(inputbuffer);
-		setconnmode();
-		ConnectScreen();	/* Turn screen on (if need be) */
 	    }
+	    setconnmode();
+	    ConnectScreen();	/* Turn screen on (if need be) */
+	    (void) close(serversock);
 	}
     }
     signal(SIGCHLD, child_died);
@@ -394,7 +476,7 @@ shell(argc,argv)
 int	argc;
 char	*argv[];
 {
-    int serversock, length;
+    int length;
     struct sockaddr_in server;
     char sockNAME[100];
     static char **whereAPI = 0;
@@ -453,37 +535,7 @@ char	*argv[];
 	    perror("vfork");
 	    (void) close(serversock);
 	} else {
-	    fd_set fdset;
-	    int i;
-
-	    FD_ZERO(&fdset);
-	    FD_SET(serversock, &fdset);
-	    while (shell_active) {
-		if ((i = select(serversock+1, &fdset, 0, 0, 0)) < 0) {
-		    if (errno = EINTR) {
-			continue;
-		    } else {
-			perror("in select waiting for API connection");
-			break;
-		    }
-		} else {
-		    i = accept(serversock, 0, 0);
-		    if (i == -1) {
-			perror("accepting API connection");
-		    }
-		    sock = i;
-		    api_exch_init(sock);
-		    state = UNCONNECTED;
-		    break;
-		}
-	    }
-	    (void) close(serversock);
-	    /* If the process has already exited, we may need to close */
-	    if ((shell_active == 0) && (sock != -1)) {
-		(void) close(sock);
-		sock = -1;
-		setcommandmode();	/* In case child_died sneaked in */
-	    }
+	    state = UNCONNECTED;
 	}
     } else {				/* New process */
 	register int i;
