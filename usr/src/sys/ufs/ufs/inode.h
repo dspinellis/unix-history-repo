@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)inode.h	7.15 (Berkeley) %G%
+ *	@(#)inode.h	7.16 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -143,4 +143,145 @@ struct ufid {
 	ino_t	ufid_ino;	/* file number (ino) */
 	long	ufid_gen;	/* generation number */
 };
-#endif
+
+/*
+ * Prototypes for UFS vnode operations
+ */
+int	ufs_lookup __P((
+		struct vnode *vp,
+		struct nameidata *ndp,
+		struct proc *p));
+int	ufs_create __P((
+		struct nameidata *ndp,
+		struct vattr *vap,
+		struct proc *p));
+int	ufs_mknod __P((
+		struct nameidata *ndp,
+		struct vattr *vap,
+		struct ucred *cred,
+		struct proc *p));
+int	ufs_open __P((
+		struct vnode *vp,
+		int mode,
+		struct ucred *cred,
+		struct proc *p));
+int	ufs_close __P((
+		struct vnode *vp,
+		int fflag,
+		struct ucred *cred,
+		struct proc *p));
+int	ufs_access __P((
+		struct vnode *vp,
+		int mode,
+		struct ucred *cred,
+		struct proc *p));
+int	ufs_getattr __P((
+		struct vnode *vp,
+		struct vattr *vap,
+		struct ucred *cred,
+		struct proc *p));
+int	ufs_setattr __P((
+		struct vnode *vp,
+		struct vattr *vap,
+		struct ucred *cred,
+		struct proc *p));
+int	ufs_read __P((
+		struct vnode *vp,
+		struct uio *uio,
+		int ioflag,
+		struct ucred *cred));
+int	ufs_write __P((
+		struct vnode *vp,
+		struct uio *uio,
+		int ioflag,
+		struct ucred *cred));
+int	ufs_ioctl __P((
+		struct vnode *vp,
+		int command,
+		caddr_t data,
+		int fflag,
+		struct ucred *cred,
+		struct proc *p));
+int	ufs_select __P((
+		struct vnode *vp,
+		int which,
+		int fflags,
+		struct ucred *cred,
+		struct proc *p));
+int	ufs_mmap __P((
+		struct vnode *vp,
+		int fflags,
+		struct ucred *cred,
+		struct proc *p));
+int	ufs_fsync __P((
+		struct vnode *vp,
+		int fflags,
+		struct ucred *cred,
+		int waitfor,
+		struct proc *p));
+int	ufs_seek __P((
+		struct vnode *vp,
+		off_t oldoff,
+		off_t newoff,
+		struct ucred *cred));
+int	ufs_remove __P((
+		struct nameidata *ndp,
+		struct proc *p));
+int	ufs_link __P((
+		struct vnode *vp,
+		struct nameidata *ndp,
+		struct proc *p));
+int	ufs_rename __P((
+		struct nameidata *fndp,
+		struct nameidata *tdnp,
+		struct proc *p));
+int	ufs_mkdir __P((
+		struct nameidata *ndp,
+		struct vattr *vap,
+		struct proc *p));
+int	ufs_rmdir __P((
+		struct nameidata *ndp,
+		struct proc *p));
+int	ufs_symlink __P((
+		struct nameidata *ndp,
+		struct vattr *vap,
+		char *target,
+		struct proc *p));
+int	ufs_readdir __P((
+		struct vnode *vp,
+		struct uio *uio,
+		struct ucred *cred,
+		int *eofflagp));
+int	ufs_readlink __P((
+		struct vnode *vp,
+		struct uio *uio,
+		struct ucred *cred));
+int	ufs_abortop __P((
+		struct nameidata *ndp));
+int	ufs_inactive __P((
+		struct vnode *vp,
+		struct proc *p));
+int	ufs_reclaim __P((
+		struct vnode *vp));
+int	ufs_lock __P((
+		struct vnode *vp));
+int	ufs_unlock __P((
+		struct vnode *vp));
+int	ufs_bmap __P((
+		struct vnode *vp,
+		daddr_t bn,
+		struct vnode **vpp,
+		daddr_t *bnp));
+int	ufs_strategy __P((
+		struct buf *bp));
+int	ufs_print __P((
+		struct vnode *vp));
+int	ufs_islocked __P((
+		struct vnode *vp));
+int	ufs_advlock __P((
+		struct vnode *vp,
+		caddr_t id,
+		int op,
+		struct flock *fl,
+		int flags));
+#endif /* KERNEL */
