@@ -1,4 +1,4 @@
-/*	@(#)genassym.c	6.5 (Berkeley) %G% */
+/*	genassym.c	6.6	85/04/22	*/
 
 #define KERNEL
 #define	VAX780	1
@@ -79,6 +79,6 @@ main()
 	printf("#define\tRU_MINFLT %d\n", &rup->ru_minflt);
 	printf("#else\n");
 	printf("asm(\".set\tU_ARG,%d\");\n", up->u_arg);
-	printf("asm(\".set\tU_QSAVE,%d\");\n", up->u_qsave);
+	printf("asm(\".set\tU_QSAVE,%d\");\n", &up->u_qsave);
 	printf("#endif\n");
 }
