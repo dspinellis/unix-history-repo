@@ -1,0 +1,974 @@
+Info file ../info/texinfo, produced by Makeinfo, -*- Text -*- from
+input file texinfo.texinfo.
+
+This file documents Texinfo, a documentation system that uses a
+single source file to produce both on-line help and a printed manual.
+
+This is edition 1.1 of the Texinfo documentation, and is for the
+Texinfo that is distributed as part of Version 18 of GNU Emacs.
+
+Copyright (C) 1988 Free Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of
+this manual under the conditions for verbatim copying, provided that
+the entire resulting derived work is distributed under the terms of a
+permission notice identical to this one.
+
+Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that this permission notice may be stated in a
+translation approved by the Foundation.
+
+
+
+File: texinfo,  Node: Using texinfo-show-structure,  Next: Running Info-Validate,  Prev: Debugging with Tex,  Up: Catching Mistakes
+
+Using `texinfo-show-structure'
+==============================
+
+It is not always easy to keep track of the nodes, chapters, sections
+and subsections of a Texinfo file.  This is especially true if you
+are revising or adding to a Texinfo file that someone else has written.
+
+In GNU Emacs, in Texinfo mode, there is a command that will list all
+the lines that begin with the @-commands that specify the structure:
+@node, @chapter, @section, @appendix and so on.  This is the
+`texinfo-show-structure' command.  It is bound to the keyboard
+command `C-c C-s'.  `texinfo-show-structure' displays the lines that
+begin with the node and chapter structuring @-commands in another
+window called the `*Occur*' buffer.  For example, when
+`texinfo-show-structure' is run on the first part of this chapter, it
+produces the following:
+
+     Lines matching
+     "^@\\(chapter\\|unnum\\|appendix\\|sect\\|sub\\|heading\\|major
+     \\|node\\)" in buffer new-texinfo-manual.texinfo.
+       2:@node     catching mistakes, @-Command Syntax, running info, top
+       4:@chapter Catching Mistakes
+      41:@node debugging with info, debugging with tex, , catching mistakes
+      43:@section Catching errors with Info Formatting
+
+This means that lines 2, 4, 41 and 43 began with `@node', `@chapter',
+`@node', and `@section' respectively.  If you move your cursor into
+the `*Occur*' window, you can position the cursor over one of the
+lines and use the `C-c C-c' command (`occur-mode-goto-occurrence'),
+to jump to the corresponding spot in the Texinfo file.  *Note :
+(emacs)Other Repeating Search,  for more information about
+`occur-mode-goto-occurrence'.
+
+The first line in the `*Occur*' window describes the "regular
+expression" specified by TEXINFO-HEADING-PATTERN.  This regular
+expression is the pattern that `texinfo-show-structure' looks for. 
+*Note : (emacs)Regexps, for more information.
+
+When you give the `texinfo-show-structure' command, it will show the
+structure of the whole buffer.  If you want to see the structure of
+just a part of the buffer, of one chapter, for example, use the `C-x
+n' (`narrow-to-region') command to mark the region.  (*Note :
+(emacs)Narrowing.)  This is how the example used above was generated.
+(To see the whole buffer again, use `C-x w' (`widen').)
+
+You can remind yourself of the structure of a Texinfo file by looking
+at the list in the `*Occur*' window; and if you have mis-named a node
+or left out a section, you can correct the mistake.
+
+* Menu:
+
+* Using Occur::
+
+
+
+File: texinfo,  Node: Using Occur,  Prev: Using texinfo-show-structure,  Up: Using texinfo-show-structure
+
+Using `occur'
+-------------
+
+Sometimes the `texinfo-show-structure' command produces too much
+information.  Perhaps you want to remind yourself of the overall
+structure of a Texinfo file, and are overwhelmed by the detailed list
+produced by `texinfo-show-structure'.  In this case, you can use the
+`occur' command itself.  To do this, type
+
+     `M-x occur'
+
+and then, when prompted, type a "regexp", a regular expression for
+the pattern you want to match.   (*Note : (emacs)Regexps.) `occur'
+works from the current location of the cursor in the buffer to the
+end of the buffer.  If you want to run `occur' on the whole buffer,
+place the cursor at the beginning of the buffer.  For example, to see
+all the lines that contain the word `@chapter' in them, just type
+`@chapter'.  This will produce a list of the chapters.  It will also
+list all the sentences with `@chapter' in the middle of the line.  If
+you want to see only those lines that start with the word `@chapter',
+type `^@chapter' when prompted by `occur'.  If you want to see all
+the lines that end with a word or phrase, end the last word with a
+`$'; for example, `catching mistakes$'.  This can be helpful when you
+want to see all the nodes that are part of the same chapter or
+section and therefore have the same `Up' pointer.
+
+*Note : (emacs)Other Repeating Search, for more information.
+
+
+
+File: texinfo,  Node: Running Info-Validate,  Prev: Using texinfo-show-structure,  Up: Catching Mistakes
+
+Finding Badly Referenced Nodes
+==============================
+
+You can check whether any of the `Next', `Previous', `Up' or other
+node pointers fail to point to a node with the `Info-validate' command.
+This command checks that every node pointer points to an existing node.
+
+To use this command, you first need to load the `info' library and
+then do `M-x Info-validate'.
+
+     `M-x load-library RET info RET' 
+     `M-x Info-validate'
+
+(Note that all the `Info' commands require an uppercase `I'.)
+
+If your file is ok, you will receive a message that says ``File
+appears valid''.  However, if you have a pointer that does not point
+to a node, error messages will be displayed in a buffer called
+`*problems in info file*'.
+
+For example, `Info-validate' was run on a test file that contained
+only the first node of this manual.  One of the messages said:
+
+     In node "Overview", invalid Next: Texinfo Mode
+
+This meant that the node called `Overview' had a `Next' pointer that
+did not point to anything (which was true in this case, since the
+test file had only one node in it).
+
+Now suppose we add a node named `Texinfo Mode' to our test case but
+we don't specify a `Previous' for this node.  Then we will get the
+following error message:
+
+     In node "Texinfo Mode", should have Previous: Overview
+
+This is because every `Next' pointer should be matched by a
+`Previous' (in the node where the `Next' points) which points back.
+
+`Info-validate' also checks that all menu items and cross-references
+point to actual nodes.
+
+Significantly, `Info-validate' does not work with large files that
+have been split.  (Info thinks of a large file as being over 100,000
+bytes, approximately.)  In order to use `Info-validate' on a large
+file, you must run `texinfo-format-buffer' with an argument so that
+it does not split the Info file, and then create a tag table.
+
+* Menu:
+
+* Info-Validating a Large File:: Running `Info-validate' on a large file.
+* Splitting::                    Splitting a file manually.
+
+ 
+
+File: texinfo,  Node: Info-Validating a Large File,  Next: Splitting,  Prev: Running Info-Validate,  Up: Running Info-Validate
+
+Running `Info-validate' on a Large File.
+----------------------------------------
+
+You can run `Info-validate' only on a single Info file.  The command
+will not work on indirect subfiles that are generated when the master
+file is split.  If you have a large file (longer than 100,000 bytes),
+you need to run the `texinfo-format-buffer' command in such a way
+that it does not create indirect subfiles.  You will also need to
+create a tag table.  When you have done this, you can run
+`Info-validate' and look for badly referenced nodes.
+
+After you have validated the node structure, you can rerun
+`texinfo-format-buffer' in the normal way so it will construct the
+tag table and split the file automatically or, you can make the tag
+table and split the file manually.
+
+To prevent the `texinfo-format-buffer' command from splitting a
+Texinfo file into smaller Info files, give a prefix to the `M-x
+texinfo-format-buffer' command:
+
+     C-u  M-x texinfo-format-buffer
+
+When you do this, Texinfo will not split the file and will not create
+a tag table for it.
+
+Before you can run `M-x Info-validate' on the Info file, you need to
+create a tag table for it.  In order to do this, you first need to
+load the `info' library into Emacs with the following command:
+
+     M-x load-library RET info RET
+
+Then you can give the command:
+
+     M-x Info-tagify
+
+This creates a file which you can validate.
+
+     M-x Info-validate
+
+After you have checked the validity of the nodes, you can either run
+`M-x texinfo-format-buffer' as you would normally, or else tagify and
+split the file manually with the two commands `Info-tagify' and
+`Info-split'.
+
+
+
+File: texinfo,  Node: Splitting,  Prev: Info-Validating a Large File,  Up: Running Info-Validate
+
+Splitting a File Manually
+-------------------------
+
+If the file has more than 100,000 or so bytes in it, you should split
+it or else let the `texinfo-format-buffer' command do it for you
+automatically.  (Generally you will let `texinfo-format-buffer' do
+this job for you.  *Note Creating an Info File::.)
+
+The split off files are called the indirect subfiles.
+
+Info files are split to save memory.  With smaller files, Emacs does
+not have make such a large buffer to hold the information.  This way,
+Emacs can save memory.
+
+If the Info file has more than 30 nodes, you should also make a tag
+table for it. *Note Info-Validating a Large File::, for information
+about creating a tag table.
+
+Before running `Info-split', you need to load the `info' library into
+Emacs by giving the command `M-x load-library RET info RET'.  After
+you have done this, you can give the two commands:
+
+     M-x Info-tagify
+     M-x Info-split
+
+(Note that the `I' in `Info' is uppercase.)
+
+When you use the `Info-split' command, the buffer is modified into a
+(small) Info file which lists the indirect subfiles.  This file
+should be saved in place of the original visited file.  The indirect
+subfiles are written in the same directory the original file is in,
+with names generated by appending `-' and a number to the original
+file name.
+
+The primary file still functions as an Info file, but it contains
+just the tag table and a directory of subfiles.
+
+
+
+File: texinfo,  Node: Command Syntax,  Next: Include Files,  Prev: Catching Mistakes,  Up: Top
+
+@-Command Syntax
+****************
+
+The character `@' is used to start special Texinfo commands.  (It has
+the same meaning that `\' has in plain TeX.)  Syntactically, there
+are three classes of @-commands:
+
+1. Non-alphabetic commands: @ followed by a punctuation character.
+      These commands are always part of the text within a paragraph,
+     and never take any argument.  The two characters (@ and the
+     other one) are complete in themselves.  For example, `@.', `@:',
+     `@{' and `@}'.
+
+2. Alphabetic commands used within a paragraph.
+      These commands have @ followed by a letter or a word, followed
+     by an argument within braces.  For example, the command `@dfn'
+     indicates the introductory or defining use of a term; it is used
+     as follows: `In Texinfo, @-commands are @dfn{mark-up} commands.'
+
+3. Alphabetic commands used outside of paragraphs.
+      Each such command occupies an entire line.  The line starts with
+     @, followed by the name of the command (a word) such as
+     `@center' or `@cindex'.  If no argument is needed, the word is
+     followed by the end of the line.  If there is an argument, it is
+     separated from the command name by a space.
+
+Thus, the alphabetic commands fall into two classes that have
+different argument syntax.  You cannot tell which class a command
+falls in by the appearance of its name, but you can tell by the
+command's meaning: if it makes sense to use the command together with
+other words as part of a paragraph, the command is in class 2 and
+must be followed by an argument in braces; otherwise, it is in class
+3 and uses the rest of the line as its argument.
+
+The purpose of having different syntax for commands of classes 2 and
+3 is to make the Texinfo file easier to read, and also to help the
+GNU Emacs paragraph and filling commands work properly.  There is
+only one exception to this rule: the command `@refill', which is
+always used at the end of a paragraph immediately following the final
+period or other punctuation character.  `@refill' takes no argument. 
+`@refill' never confuses the Emacs paragraph commands because it
+cannot start at the beginning of a line.
+
+
+
+File: texinfo,  Node: Include Files,  Next: TeX Input,  Prev: Command Syntax,  Up: Top
+
+Include Files
+*************
+
+When Info was first created, it was customary to create many small
+Info files on one subject.  By doing this, Emacs did not have to make
+a large buffer to hold the whole of a large Info file; instead, Emacs
+allocated just enough memory for the small Info file that was needed
+at the time.  This way, Emacs could avoid wasting memory.  Include
+files were designed as a way to create a single, large printed manual
+out of several smaller Info files.
+
+However, because large Info files can now be split, include files are
+no longer strictly necessary and they are used infrequently.  Most
+often, they are now used in projects where several different people
+are writing different sections of a document simultaneously.
+
+How Include Files Work
+======================
+
+In a Texinfo file, a line of the form `@include `filename'' is
+ignored when the Info file is generated, but in a printed manual it
+causes the contents of the file `filename' to be processed and
+included in the manual.  The contents of the file `filename' can be
+ignored by Info because the first file can refer to `filename' with
+menus as well as cross references.  In the Info system, all the
+information is, as it were, `in one place'.  However, when two
+printed manuals are made from two separate Texinfo files, the two
+manuals are separate, and even if they give each other as references,
+the references are to separate documents.  Consequently, you will
+sometimes want to create a comprehensive, printed manual that
+contains all the necessary information together in one place.
+
+`@include' files are special Texinfo files that are used only for
+making such a comprehensive manual.  They are listed inside an outer
+file that contains nothing but the beginning and end matter of a
+Texinfo file and a number of `@include' commands listing the included
+files.
+
+An `@include' file--a file that will be listed inside an outer file
+and processed with the `@include' command--should not start with
+`\input texinfo', as that has already been done by the outer file,
+and the character `\' has already been redefined to generate a
+backslash in the output.  Instead, an `@include' file usually begins
+with a node; it lacks the beginning and ending of a Texinfo file that
+are described in the chapters on beginning and ending a file.  *Note
+Beginning a File::, and *note Ending a File::.
+
+Likewise, an `@include' file should not end with `@bye', since that
+would terminate TeX processing immediately.
+
+Here is an example of a outer Texinfo file with `@include' files
+within it:
+
+     \input texinfo @c -*-texinfo-*-
+     @setfilename  include 
+     @settitle Include Manual
+     
+     @setchapternewpage odd
+     @titlepage
+     @sp 12
+     @center @titlefont{Include Manual}
+     @sp 2
+     @center by Whom Ever
+     
+     @page
+     Copyright @copyright{} 1988 Free Software Foundation, Inc.
+     @end titlepage
+     
+     @include foo.texinfo
+     @include bar.texinfo
+     
+     @unnumbered Concept Index
+     @printindex cp
+     
+     @summarycontents
+     @contents
+     
+     @bye
+
+
+
+File: texinfo,  Node: TeX Input,  Next: Sample Permissions,  Prev: Include Files,  Up: Top
+
+TeX Input Initialization
+************************
+
+You must put an input command on the first line of every Texinfo file
+to tell TeX to use the `texinfo.tex' file when it is processing the
+Texinfo source file.  Otherwise TeX will not know what to do with the
+@-commands.  (The TeX input command is written as `\input texinfo'. 
+*Note First Line::.)
+
+TeX needs to be told where to find the `texinfo.tex' file that you
+have told it to input.  The preferred way to do this is to put
+`texinfo.tex' in the default inputs directory, which is the
+`/usr/lib/tex/macros' directory.  If this is done (as it usually is
+when GNU Emacs is installed), TeX will find the file and you don't
+have to do anything.  Alternatively, you can put `texinfo.tex' in the
+directory in which the Texinfo source file is located.
+
+However, you may want to specify the location of the `\input' file
+yourself.  One way to do this is to write the complete path for the
+file after the `\input' command.  Another way is to set the
+`TEXINPUTS' environment variable in your `.cshrc' or `.profile' file.
+The `TEXINPUTS' environment variable will tell TeX where to find the
+`texinfo.tex' file and any other file that you might want TeX to use.
+
+Whether you use a `.cshrc' or `.profile' file depends on whether you
+use `csh' or `sh' for your shell command interpreter.  When you use
+`csh', it looks to the `.cshrc' file for initialization information,
+and when you use `sh', it looks to the `.profile' file.
+
+In a `.cshrc' file, you could use the following `csh' command sequence:
+
+     setenv TEXINPUTS .:/usr/me/mylib:/usr/lib/tex/macros
+
+In a `.profile' file, you could use the following `sh' command
+sequence:
+
+     TEXINPUTS=.:/usr/me/mylib:/usr/lib/tex/macros
+     export TEXINPUTS
+
+This would cause TeX to look for `\input' file first in the current
+directory, indicated by the `.', then in a hypothetical user's
+`me/mylib' directory, and finally in the system library.
+
+
+
+File: texinfo,  Node: Sample Permissions,  Next: Command Index,  Prev: TeX Input,  Up: Top
+
+Standard text for Copying Permissions
+*************************************
+
+Texinfo files should contain sections that tell the readers that they
+have the right to copy and distribute the Info file, the printed
+manual and any accompanying software.  This appendix contains the
+standard text of the Free Software Foundation copying permission
+notice.  For an example of the text that could be used for the
+Distribution, General Public License and NO WARRANTY sections of a
+document, see the latest version of the ``GNU Emacs Manual''.
+
+The texts of the Free Software Foundation copying permission notice
+in the `@ifinfo' section and in the `@titlepage' section are slightly
+different.
+
+The `@ifinfo' section usually begins with a line that says what the
+file documents.  This is what a person looking at the file will first
+read if he or she reads the unprocessed Texinfo file or if he or she
+uses the advanced Info command `g *'.  *note info: (info)Expert, for
+more information. (If the reader uses the regular Info commands, he
+or she will usually start reading at the first node and skip this
+first section, which is not in a node.)
+
+In the `@ifinfo' section, the summary sentence should be followed by
+a copyright notice and then by the copying permission notice.  One of
+the copying permission paragraphs is enclosed in `@ignore' and `@end
+ignore' commands.  This paragraph states that the Texinfo file can be
+processed through TeX and printed, provided the printed manual
+carries the proper copying permission notice.  This paragraph is not
+made part of the Info file since it is not relevant to the Info file;
+but it is a mandatory part of the Texinfo file since it permits
+people to process the Texinfo file in TeX.
+
+In the printed manual, the Free Software Foundation copying
+permission notice follows the copyright notice and publishing
+information and is located within the region delineated by the
+`@titlepage' and `@end titlepage' commands.  The copying permission
+notice is exactly the same as the notice in the `@ifinfo' section
+except that the paragraph enclosed in `@ignore' and `@end ignore'
+commands is not part of the notice.
+
+To make it simpler to copy the permission notice into each section of
+the Texinfo file, the complete permission notices for each section
+are reproduced in full below even though most of the information is
+redundant.
+
+Note that you my have to specify the correct name of a section
+mentioned in the permission notice.  For example, in the ``GDB
+Manual'', the name of the section referring to the General Public
+License is called the ``GDB General Public License'', but in the
+sample shown below, that section is referred to generically as the
+``General Public License''.
+
+* Menu:
+
+* Ifinfo Permissions::
+* Titlepage Permissions::
+
+
+
+File: texinfo,  Node: Ifinfo Permissions,  Next: Titlepage Permissions,  Prev: Sample Permissions,  Up: Sample Permissions
+
+Ifinfo Copying Permissions
+==========================
+
+In the `@ifinfo' section of the Texinfo file, the standard Free
+Software Foundation permission notices reads as follows:
+
+     This file documents ...
+     
+     Copyright 1988 Free Software Foundation, Inc.
+     
+     Permission is granted to make and distribute verbatim copies of
+     this manual provided the copyright notice and this permission notice
+     are preserved on all copies.
+     
+     @ignore
+     Permission is granted to process this file through TeX and print the
+     results, provided the printed document carries a copying permission
+     notice identical to this one except for the removal of this paragraph
+     (this paragraph not being relevant to the printed manual).
+     
+     @end ignore
+     Permission is granted to copy and distribute modified versions of this
+     manual under the conditions for verbatim copying, provided also that the
+     sections entitled ``Distribution'' and ``General Public License'' are
+     included exactly as in the original, and provided that the entire
+     resulting derived work is distributed under the terms of a permission
+     notice identical to this one.
+     
+     Permission is granted to copy and distribute translations of this manual
+     into another language, under the above conditions for modified versions,
+     except that the sections entitled ``Distribution'' and ``General Public
+     License'' may be included in a translation approved by the author instead
+     of in the original English.
+
+ 
+
+File: texinfo,  Node: Titlepage Permissions,  Prev: Ifinfo Permissions,  Up: Sample Permissions
+
+Titlepage Copying Permissions
+=============================
+
+In the `@titlepage' section of the Texinfo file, the standard Free
+Software Foundation copying permission notices follows the copyright
+notice and publishing information.  The standard phrasing is:
+
+     Permission is granted to make and distribute verbatim copies of
+     this manual provided the copyright notice and this permission notice
+     are preserved on all copies.
+     
+     Permission is granted to copy and distribute modified versions of this
+     manual under the conditions for verbatim copying, provided also that the
+     sections entitled ``Distribution'' and ``General Public License'' are
+     included exactly as in the original, and provided that the entire
+     resulting derived work is distributed under the terms of a permission
+     notice identical to this one.
+     
+     Permission is granted to copy and distribute translations of this manual
+     into another language, under the above conditions for modified versions,
+     except that the sections entitled ``Distribution'' and ``General Public
+     License'' may be included in a translation approved by the author instead
+     of in the original English.
+
+ 
+
+File: texinfo,  Node: Command Index,  Next: Concept Index,  Prev: Sample Permissions,  Up: Top
+
+Command Index
+*************
+
+(When used in a Texinfo file, @-commands are preceded by an `@'.)
+
+* Menu:
+
+* *: Line Breaks.
+* TeX: Tex.
+* appendix: Unnumbered and Appendix.
+* appendixsec: Section.
+* appendixsubsec: Subsection.
+* appendixsubsubsec: Subsubsection.
+* asterisk: Line Breaks.
+* at-sign colons: Insert Colon.
+* at-sign periods: Insert Period.
+* at-signs: Inserting An Atsign.
+* b (bold font): Fonts.
+* br (paragraph breaks): Br.
+* bullet: Bullet.
+* bye: Ending a File.
+* center: Center.
+* chapter: Chapter.
+* cite: Cite.
+* code: Code.
+* copyright: Copyright & Printed Permissions.
+* ctrl: Ctrl.
+* dfn: Dfn.
+* display: Display.
+* dots: Dots.
+* emph: Emph and Strong.
+* end: Lists and Tables.
+* end: Quotations and Examples.
+* enumerate: Enumerate.
+* example: Example.
+* file: File.
+* filll: Copyright & Printed Permissions.
+* group: Group.
+* i (italic font): Fonts.
+* ifinfo: Conditionals.
+* iftex: Conditionals.
+* inforef: Inforef.
+* item: Itemize.
+* item: Table.
+* itemize: Itemize.
+* itemx: Itemx.
+* kbd: Kbd.
+* key: Key.
+* left-braces: Insert Left Brace.
+* menu: Menu.
+* need: Need.
+* node: Structuring.
+* noindent: Noindent.
+* page: Page.
+* pxref: Pxref.
+* quotation: Quotation.
+* refill: Refill.
+* right-braces: Insert Left Brace.
+* samp: Samp.
+* section: Section.
+* setchapternewpage: Setchapternewpage.
+* setfilename: Setfilename.
+* settitle: Settitle.
+* sp (line spacing): Sp.
+* start-of-header: Start-of-Header.
+* strong: Emph and Strong.
+* subsection: Subsection.
+* subsubsection: Subsubsection.
+* t (typewriter font): Fonts.
+* table: Table.
+* texindex (for sorting indices): Printing Hardcopy.
+* texinfo-format-buffer: Creating an Info File.
+* texinfo-format-region: Info on a Region.
+* texinfo-show-structure: Using texinfo-show-structure.
+* titlefont: Titlepage.
+* titlepage: Titlepage.
+* unnumbered: Unnumbered and Appendix.
+* unnumberedsec: Section.
+* unnumberedsubsec: Subsection.
+* unnumberedsubsubsec: Subsubsection.
+* var: Var.
+* vskip: Copyright & Printed Permissions.
+* w (preventing a line break): W.
+* xref: Xref.
+
+
+ 
+
+File: texinfo,  Node: Concept Index,  Prev: Command Index,  Up: Top
+
+Concept Index
+*************
+
+* Menu:
+
+* @-Command Syntax: Command Syntax.
+* Badly referenced nodes: Running Info-Validate.
+* Beginning a Texinfo file: Beginning a File.
+* Beginning line of a Texinfo file: First Line.
+* Braces, inserting: Braces Atsigns Periods.
+* Breaks in a line: Line Breaks.
+* Breaks in a paragraph: Br.
+* Bullets, inserting: Dots Bullets Tex.
+* Catching errors with Info Formatting: Debugging with Info.
+* Catching errors with TeX Formatting: Debugging with Tex.
+* Catching mistakes: Catching Mistakes.
+* Centering a line: Center.
+* Chapter structuring: Structuring.
+* Characteristics of the Info file: Info File.
+* Characteristics, printed manual: Printed Manual.
+* Checking for badly referenced nodes: Running Info-Validate.
+* Combining Indices: Combining Indices.
+* Commands to insert single characters: Braces Atsigns Periods.
+* Commands, inserting them: Inserting.
+* Commands, specifying them within text: Specifying.
+* Compile command for formatting: Compile-Command.
+* Conditionals: Conditionals.
+* Contents, Table of: Contents.
+* Conventions, syntactic: Conventions.
+* Copying permissions: Sample Permissions.
+* Copyright: Copyright & Printed Permissions.
+* Copyright page: Titlepage & Copyright Page.
+* Correcting mistakes: Catching Mistakes.
+* Creating an on-line Info file: Creating an Info File.
+* Creating indices: Indices.
+* Cross references: Cross References.
+* Cross references using inforef: Inforef.
+* Cross references using pxref: Pxref.
+* Cross references using xref: Xref.
+* Debugger, using the Emacs Lisp: Using the Emacs Lisp Debugger.
+* Debugging the Texinfo structure: Catching Mistakes.
+* Debugging with Info Formatting: Debugging with Info.
+* Debugging with TeX Formatting: Debugging with Tex.
+* Defining the entries of an index: Index Entries.
+* Definitions, specifying them within text: Specifying.
+* Dir directory for Info installation: Installing an Info File.
+* Display: Display.
+* Distribution: License and Distribution.
+* Dots, inserting: Dots Bullets Tex.
+* Dots, inserting: Dots.
+* Emacs: Texinfo Mode.
+* Emacs Lisp debugger: Using the Emacs Lisp Debugger.
+* Emphasizing text: Emphasis.
+* Ending a Texinfo file: Ending a File.
+* Entries for an index: Index Entries.
+* Enumerate: Enumerate.
+* Examples: Example.
+* Examples: Quotations and Examples.
+* File beginning: Beginning a File.
+* File ending: Ending a File.
+* File structure, showing it: Showing the Structure.
+* Files, specifying them within text: Specifying.
+* Finding badly referenced nodes: Running Info-Validate.
+* First line of a Texinfo file: First Line.
+* Formatting a file for Info: Creating an Info File.
+* Formatting paragraphs: Formatting Paragraphs.
+* Formatting requirements: Requirements.
+* Formatting with the compile command: Compile-Command.
+* Frequently used commands, inserting them: Inserting.
+* GNU Emacs: Texinfo Mode.
+* General syntactic conventions: Conventions.
+* Generating menus with indices: Printing Indices & Menus.
+* Group: Group.
+* Hardcopy, printing it: Printing Hardcopy.
+* Header for Texinfo files: Header.
+* Highlighting: Specifying.
+* Holding text together vertically: Group.
+* Ifinfo: Conditionals.
+* Ifinfo permissions: Ifinfo Permissions.
+* Iftex: Conditionals.
+* Include files: Include Files.
+* Index entries: Index Entries.
+* Indices: Indices.
+* Indices, combining them: Combining Indices.
+* Indices, printing: Printing Indices & Menus.
+* Indices, sorting: Printing Hardcopy.
+* Indices, two letter names: Combining Indices.
+* Indirect subfiles: Creating an Info File.
+* Info file characteristics: Info File.
+* Info file installation: Installing an Info File.
+* Info file requirement for @setfilename: Setfilename.
+* Info file, splitting manually: Splitting.
+* Info validating a large file: Info-Validating a Large File.
+* Info, creating an on-line file: Creating an Info File.
+* Info, formatting on a region: Info on a Region.
+* Info-validate,  running the command: Running Info-Validate.
+* Inforef for cross references: Inforef.
+* Inserting braces, @ and periods: Braces Atsigns Periods.
+* Inserting dots: Dots.
+* Inserting frequently used commands: Inserting.
+* Installing an Info file: Installing an Info File.
+* Itemize: Itemize.
+* Itemx: Itemx.
+* License agreement: License and Distribution.
+* Line breaks: Line Breaks.
+* Line breaks, preventing: W.
+* Line spacing: Sp.
+* Lists and tables, making them: Lists and Tables.
+* Local variables: Compile-Command.
+* Looking for badly referenced nodes: Running Info-Validate.
+* Making a printed manual: Printing Hardcopy.
+* Making a tag table manually: Info-Validating a Large File.
+* Making cross references: Cross References.
+* Making lists and tables: Lists and Tables.
+* Marking text within a paragraph: Marking Text.
+* Master menu: Top Node.
+* Menus: Menu.
+* Menus generated with indices: Printing Indices & Menus.
+* Mistakes, catching: Catching Mistakes.
+* Mode, using Texinfo: Texinfo Mode.
+* Names for indices: Combining Indices.
+* Need: Need.
+* Node and chapter structuring: Structuring.
+* Node structuring: Structuring.
+* Nodes, catching mistakes: Catching Mistakes.
+* Nodes, checking for badly referenced nodes: Running Info-Validate.
+* Nodes, correcting mistakes: Catching Mistakes.
+* Occur, using the command: Using Occur.
+* Overview of Texinfo: Overview.
+* Page breaks: Page.
+* Pages, starting odd: Setchapternewpage.
+* Paragraph breaks: Br.
+* Paragraphs, formatting: Formatting Paragraphs.
+* Periods, inserting: Braces Atsigns Periods.
+* Permissions: Sample Permissions.
+* Permissions, printed: Copyright & Printed Permissions.
+* Preface: License and Distribution.
+* Preventing indentation in the printed text: Refilling & Noindent.
+* Printed manual characteristics: Printed Manual.
+* Printed permissions: Copyright & Printed Permissions.
+* Printing an index: Printing Indices & Menus.
+* Printing hardcopy: Printing Hardcopy.
+* Problems, catching: Catching Mistakes.
+* Pxref for cross references: Pxref.
+* Quotations: Quotation.
+* Quotations: Quotations and Examples.
+* References: Cross References.
+* Refilling paragraphs automatically: Refilling & Noindent.
+* Requirements for formatting: Requirements.
+* Running Info: Creating an Info File.
+* Running Info on a region: Info on a Region.
+* Running Info-validate: Running Info-Validate.
+* Running Info-validate on a large file: Info-Validating a Large File.
+* Sample texinfo file: Short Sample.
+* Setfilename command: Setfilename.
+* Showing the structure of a file: Using texinfo-show-structure.
+* Showing the structure of a file: Showing the Structure.
+* Single characters,  commands to insert: Braces Atsigns Periods.
+* Sorting indices: Printing Hardcopy.
+* Spaces from line to line: Sp.
+* Special typesetting commands: Dots Bullets Tex.
+* Specifying commands, files and the like: Specifying.
+* Splitting an Info file manually: Splitting.
+* Starting chapters: Setchapternewpage.
+* Structure of Texinfo, catching mistakes: Catching Mistakes.
+* Structure of a file, showing it: Showing the Structure.
+* Structuring of nodes and chapters: Structuring.
+* Syntactic conventions: Conventions.
+* TEXINPUTS environment variable: TeX Input.
+* Table of contents: Contents.
+* Tables and lists, making them: Lists and Tables.
+* Tables, making two-column: Table.
+* Tag table, making manually: Info-Validating a Large File.
+* TeX Input Initialization: TeX Input.
+* TeX commands, using them: Using Tex Commands.
+* TeX-logo, inserting: Dots Bullets Tex.
+* Texinfo file beginning: Beginning a File.
+* Texinfo file ending: Ending a File.
+* Texinfo file header: Header.
+* Texinfo file structure, showing it: Showing the Structure.
+* Texinfo mode: Texinfo Mode.
+* Texinfo overview: Overview.
+* Titlepage: Titlepage.
+* Titlepage: Titlepage & Copyright Page.
+* Titlepage permissions: Titlepage Permissions.
+* Top node: Top Node.
+* Two letter names for indices: Combining Indices.
+* Typesetting commands for dots and the like: Dots Bullets Tex.
+* Using TeX commands: Using Tex Commands.
+* Using occur: Using Occur.
+* Using texinfo-show-structure to catch mistakes: Using texinfo-show-structure.
+* Using the Emacs Lisp debugger: Using the Emacs Lisp Debugger.
+* Validating a large file: Info-Validating a Large File.
+* Vertically holding text together: Group.
+* Xref for cross references: Xref.
+* cshrc initialization file: TeX Input.
+* end-of-header: End-of-Header.
+* profile initialization file: TeX Input.
+* start-of-header: Start-of-Header.
+* texinfo-show-structure for catching mistakes: Using texinfo-show-structure.
+
+
+ 
+Tag Table:
+Node: Top1064
+Node: License6576
+Node: Overview8743
+Node: Info File11940
+Node: Printed Manual15506
+Node: Conventions17534
+Node: Short Sample20789
+Node: Texinfo Mode23980
+Node: Info on a Region25451
+Node: Showing the Structure26069
+Node: Inserting27213
+Node: Beginning a File28387
+Node: Header31572
+Node: First Line32331
+Node: Start-of-Header33327
+Node: Setfilename34275
+Node: Settitle34783
+Node: Setchapternewpage35793
+Node: End-of-Header36462
+Node: Permissions for Info37260
+Node: Titlepage & Copyright Page37978
+Node: Titlepage38728
+Node: Center39902
+Node: Copyright & Printed Permissions40150
+Node: Top Node42158
+Node: License and Distribution44836
+Node: Ending a File46334
+Node: Contents47202
+Node: Indices48677
+Node: Index Entries51173
+Node: Combining Indices53372
+Node: Printing Indices & Menus55005
+Node: Structuring57378
+Node: Chapter62701
+Node: Unnumbered and Appendix63301
+Node: Section63769
+Node: Subsection64358
+Node: Subsubsection64857
+Node: Node65384
+Node: Menu70082
+Node: Quotations and Examples73145
+Node: Quotation74083
+Node: Example74682
+Node: Display75843
+Node: Lists and Tables76202
+Node: Itemize77514
+Node: Enumerate79396
+Node: Table80637
+Node: Itemx83168
+Node: Cross References85345
+Node: Xref87174
+Node: Pxref91449
+Node: Inforef92382
+Node: Formatting Paragraphs93005
+Node: Refilling & Noindent94270
+Node: Refill95076
+Node: Noindent96247
+Node: Breaks Blank-Lines Groups97202
+Node: Line Breaks98732
+Node: Sp99144
+Node: Br99406
+Node: W99651
+Node: Page99919
+Node: Group100153
+Node: Need100909
+Node: Marking Text101208
+Node: Specifying102066
+Node: Code104535
+Node: Samp106393
+Node: File107427
+Node: Kbd107825
+Node: Key108829
+Node: Ctrl109890
+Node: Var110793
+Node: Dfn111677
+Node: Cite112281
+Node: Braces Atsigns Periods112477
+Node: Inserting An Atsign113635
+Node: Insert Left Brace113806
+Node: Insert Colon114066
+Node: Insert Period114794
+Node: Dots Bullets Tex115546
+Node: Dots116386
+Node: Bullet116759
+Node: Tex116962
+Node: Emphasis117164
+Node: Emph and Strong117974
+Node: Fonts118312
+Node: Conditionals118896
+Node: Using Tex Commands120430
+Node: Printing Hardcopy121454
+Node: Requirements126489
+Node: Compile-Command129167
+Node: Creating an Info File129971
+Node: Installing an Info File133352
+Node: Catching Mistakes135148
+Node: Debugging with Info136382
+Node: Using the Emacs Lisp Debugger139555
+Node: Debugging with Tex141746
+Node: Using texinfo-show-structure145281
+Node: Using Occur147903
+Node: Running Info-Validate149366
+Node: Info-Validating a Large File151476
+Node: Splitting153240
+Node: Command Syntax154772
+Node: Include Files157027
+Node: TeX Input160191
+Node: Sample Permissions162224
+Node: Ifinfo Permissions165095
+Node: Titlepage Permissions166758
+Node: Command Index168064
+Node: Concept Index170213
