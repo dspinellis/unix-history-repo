@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_vv.c	7.10 (Berkeley) %G%
+ *	@(#)if_vv.c	7.11 (Berkeley) %G%
  */
 
 #include "vv.h"
@@ -970,10 +970,8 @@ gottype:
 	 * allocate another.
 	 */
 	M_PREPEND(m, sizeof (struct vv_header), M_DONTWAIT);
-	if (m == 0) {
-		error = ENOBUFS;
-		goto bad;
-	}
+	if (m == 0)
+		return (ENOBUFS);
 	vv = mtod(m, struct vv_header *);
 	vv->vh_shost = vs->vs_host;
 	vv->vh_dhost = dest;
