@@ -25,7 +25,7 @@ static char sccsid[] = "@(#)intr.c	5.1 (Berkeley) 6/7/85";
  * Changes to distinguish explicit from implicit conversions with intrconv().
  * 
  * Revision 1.2  84/12/15  01:02:33  donn
- * Added a case for an integer*4 result from len() in inline().  Previously
+ * Added a case for an integer*4 result from len() in inlne().  Previously
  * only -i2 provoked len() inline, sigh.
  * 
  */
@@ -450,7 +450,7 @@ int i, rettype;
 Addrp ap;
 register struct Specblock *sp;
 register struct Chain *cp;
-expptr inline(), mkcxcon(), mkrealcon();
+expptr inlne(), mkcxcon(), mkrealcon();
 register struct Incstblock *cstp;
 expptr q, ep;
 int mtype;
@@ -593,7 +593,7 @@ switch(f1field)
 		if(mtype != sp->atype)
 			goto badtype;
 		fixargs(YES, argsp);
-		if(q = inline(sp-spectab, mtype, argsp->listp))
+		if(q = inlne(sp-spectab, mtype, argsp->listp))
 			{
 			frchain( &(argsp->listp) );
 			free( (charptr) argsp);
@@ -721,7 +721,7 @@ fatali("intraddr: impossible f1=%d\n", (int) packed.bits.f1);
 
 
 
-expptr inline(fno, type, args)
+expptr inlne(fno, type, args)
 int fno;
 int type;
 struct Chain *args;

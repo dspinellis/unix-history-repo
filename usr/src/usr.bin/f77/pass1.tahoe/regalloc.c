@@ -334,7 +334,7 @@ Addrp ap;
   if (!ISVAR(ap))
     fatal("regalloc:  bad data sent to getvar");
 
-  memoffset = ap->memoffset->constblock.const.ci;
+  memoffset = ap->memoffset->constblock.constant.ci;
 
   for (q = ainfo->varlist; q; q = q->link)
     if (q->memoffset == memoffset)
@@ -661,7 +661,7 @@ LOCAL alreg()
       rp->vstg = ap->vstg;
       rp->vtype = ap->vtype;
       rp->memno = ap->memno;
-      rp->memoffset = ap->memoffset->constblock.const.ci;
+      rp->memoffset = ap->memoffset->constblock.constant.ci;
       rp->isarrayarg = NO;
       rp->stgp = ap;
     }
@@ -784,7 +784,7 @@ LOCAL alreg()
 		    ap = (Addrp) sp->expr->exprblock.leftp;
 		    if ((ap->vstg == rp->vstg) && (ap->memno == rp->memno) &&
 			fixedaddress(ap) &&
-			(ap->memoffset->constblock.const.ci == rp->memoffset))
+			(ap->memoffset->constblock.constant.ci == rp->memoffset))
 		      {
 			changetoreg(ap, i);
 			goto L1;
@@ -1405,7 +1405,7 @@ expptr p;
 	{
 	  if (ISREGTYPE(ap->vtype))
 	    {
-	      varinfo = lookupvar(addrinfo, ap->memoffset->constblock.const.ci);
+	      varinfo = lookupvar(addrinfo, ap->memoffset->constblock.constant.ci);
 	      varinfo->refs++;
 	    }
 	}
@@ -1560,7 +1560,7 @@ expptr p;
 
 	  if (fixedaddress(ap))
 	    {
-	      memoffset = ap->memoffset->constblock.const.ci;
+	      memoffset = ap->memoffset->constblock.constant.ci;
 	      for (i = toplcv + 1; i <= topregvar; i++)
 		if ((rp = regtab[i]) &&
 		    !rp->isarrayarg &&
@@ -1619,7 +1619,7 @@ expptr p;
 
       if (fixedaddress(ap))
 	{
-          memoffset = ap->memoffset->constblock.const.ci;
+          memoffset = ap->memoffset->constblock.constant.ci;
 	  for (i = toplcv + 1; i <= topregvar; i++)
 	    if ((rp = regtab[i]) &&
 		!rp->isarrayarg &&
@@ -1932,7 +1932,7 @@ Slotp sp;
       (l->addrblock.vstg == regtab[i]->vstg) &&
       (l->addrblock.memno == regtab[i]->memno) &&
       fixedaddress(l) &&
-      (l->addrblock.memoffset->constblock.const.ci == regtab[i]->memoffset))
+      (l->addrblock.memoffset->constblock.constant.ci == regtab[i]->memoffset))
     return YES;
 
   return NO;

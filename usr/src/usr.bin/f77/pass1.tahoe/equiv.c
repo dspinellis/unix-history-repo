@@ -83,7 +83,7 @@ for(i = 0 ; i < nequiv ; ++i)
 
 			offp = suboffset(itemp);
 			if(ISICON(offp))
-				offset = offp->constblock.const.ci;
+				offset = offp->constblock.constant.ci;
 			else	{
 				dclerr("illegal subscript in equivalence ",
 					np);

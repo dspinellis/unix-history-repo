@@ -240,13 +240,13 @@ ioerrlab = ioendlab = skiplab = jumplab = 0;
 
 if(p = V(IOSEND))
 	if(ISICON(p))
-		ioendlab = execlab(p->constblock.const.ci) ->labelno;
+		ioendlab = execlab(p->constblock.constant.ci) ->labelno;
 	else
 		err("bad end= clause");
 
 if(p = V(IOSERR))
 	if(ISICON(p))
-		ioerrlab = execlab(p->constblock.const.ci) ->labelno;
+		ioerrlab = execlab(p->constblock.constant.ci) ->labelno;
 	else
 		err("bad err= clause");
 
@@ -706,7 +706,7 @@ if(p = V(IOSFMT))
 		}
 	else if( ISICON(p) )
 		{
-		if( (k = fmtstmt( mklabel(p->constblock.const.ci) )) > 0 )
+		if( (k = fmtstmt( mklabel(p->constblock.constant.ci) )) > 0 )
 			{
 			fmtp = (Addrp) mkaddcon(k);
 			varfmt = NO;
@@ -929,14 +929,14 @@ register expptr p;
       if (!ISICON(q->memoffset))
 	fatal(badoffset);
 
-      op = mkiodata(q->memno, q->memoffset->constblock.const.ci, blklen);
+      op = mkiodata(q->memno, q->memoffset->constblock.constant.ci, blklen);
       if (op->tag != 0)
 	fatal(badoffset);
 
       if (type == TYADDR)
 	{
 	  op->tag = NDLABEL;
-	  op->val.label = p->constblock.const.ci;
+	  op->val.label = p->constblock.constant.ci;
 	}
       else
 	{
@@ -996,7 +996,7 @@ register Addrp p;
 	  op->tag = NDADDR;
 	  op->val.addr.stg = p->vstg;
 	  op->val.addr.memno = p->memno;
-	  op->val.addr.offset = p->memoffset->constblock.const.ci;
+	  op->val.addr.offset = p->memoffset->constblock.constant.ci;
 	}
       else
 	badtag("ioseta", p->tag);
@@ -1162,7 +1162,7 @@ register int len;
 	  type = cp->vtype;
 	  if (type != TYIOINT)
 	    badtype("outolist", type);
-	  prconi(initfile, type, cp->const.ci);
+	  prconi(initfile, type, cp->constant.ci);
 	  clen += typesize[type];
 	  frexpr((tagptr) cp);
 	  break;

@@ -352,7 +352,7 @@ register Constp cp;
 #if HERE == TAHOE
     case TYSHORT:
     { static short shrt;
-      shrt = cp->const.ci;
+      shrt = cp->constant.ci;
       return ((char *)&shrt);
     }
     case TYLONG:
@@ -360,11 +360,11 @@ register Constp cp;
     case TYREAL:
     case TYDREAL:
     case TYDCOMPLEX:
-      return ((char *)&cp->const);
+      return ((char *)&cp->constant);
     case TYCOMPLEX:
       { static float quad[2];
-      quad[0] = cp->const.cd[0];
-      quad[1] = cp->const.cd[1];
+      quad[0] = cp->constant.cd[0];
+      quad[1] = cp->constant.cd[1];
       return ((char *)quad);
       }
 #endif
@@ -372,18 +372,18 @@ register Constp cp;
 #if HERE == VAX
     case TYLONG:
     case TYLOGICAL:
-      swab4((char *)&cp->const.ci, lng, 4);
+      swab4((char *)&cp->constant.ci, lng, 4);
       return (lng);
 
     case TYSHORT:
     case TYREAL:
     case TYDREAL:
     case TYDCOMPLEX:
-      swab((char *)cp->const.cd, shrt, typesize[cp->vtype]);
+      swab((char *)cp->constant.cd, shrt, typesize[cp->vtype]);
       return (shrt);
     case TYCOMPLEX:
-      swab((char *)cp->const.cd, shrt, 4);
-      swab((char *)&(cp->const.cd[1]), &shrt[4], 4);
+      swab((char *)cp->constant.cd, shrt, 4);
+      swab((char *)&(cp->constant.cd[1]), &shrt[4], 4);
       return (shrt);
 #endif
 
@@ -877,7 +877,7 @@ if (anylocals == YES)
 if(argvec)
 	{
 	if (argvec->tag != TADDR) badtag ("prolog",argvec->tag);
-	argloc = argvec->memoffset->constblock.const.ci + SZINT;
+	argloc = argvec->memoffset->constblock.constant.ci + SZINT;
 			/* first slot holds count */
 	if(proctype == TYCHAR)
 		{
@@ -943,7 +943,7 @@ for(p = ep->arglist ; p ; p = p->nextp)
 		size = typesize[ q->vtype ];
 		if(q->vtype == TYCHAR)
 			if( ISICON(q->vleng) )
-				size *= q->vleng->constblock.const.ci;
+				size *= q->vleng->constblock.constant.ci;
 			else
 				size = -1;
 
@@ -973,12 +973,12 @@ for(p = ep->arglist ; p ; p = p->nextp)
 					p->datap->nameblock.vardesc.varno +
 						ARGOFFSET);
 				}
-			else if(dp->baseoffset->constblock.const.ci != 0)
+			else if(dp->baseoffset->constblock.constant.ci != 0)
 				{
 				if(size > 0)
 					{
 					p2pij("\tsubl2\t$%ld,%d(r12)",
-						dp->baseoffset->constblock.const.ci * size,
+						dp->baseoffset->constblock.constant.ci * size,
 						p->datap->nameblock.vardesc.varno +
 							ARGOFFSET);
 					}

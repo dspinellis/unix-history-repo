@@ -358,7 +358,7 @@ switch(p->tag)
 				type = tyint;
 			case TYLONG:
 			case TYSHORT:
-				p2icon(p->constblock.const.ci, types2[type]);
+				p2icon(p->constblock.constant.ci, types2[type]);
 				free( (charptr) p );
 				break;
 
@@ -366,7 +366,7 @@ switch(p->tag)
 				p2triple(PCC_ICON, 1, PCCT_INT|PCCTM_PTR);
 				p2word(0L);
 				p2name(memname(STGCONST,
-					(int) p->constblock.const.ci) );
+					(int) p->constblock.constant.ci) );
 				free( (charptr) p );
 				break;
 
@@ -430,7 +430,7 @@ switch(p->tag)
 				/*   m * (2**k) -> m<<k   */
 				if(INT(p->exprblock.leftp->headblock.vtype) &&
 				   ISICON(p->exprblock.rightp) &&
-				   ( (k = log2(p->exprblock.rightp->constblock.const.ci))>0) )
+				   ( (k = log2(p->exprblock.rightp->constblock.constant.ci))>0) )
 					{
 					p->exprblock.opcode = OPLSHIFT;
 					frexpr(p->exprblock.rightp);
@@ -627,10 +627,10 @@ switch(p->exprblock.opcode)	/* check for special cases and rewrite */
 		if(ISREAL(p->exprblock.leftp->headblock.vtype) &&
 		   ISREAL(p->exprblock.rightp->headblock.vtype) &&
 		   ISCONST(p->exprblock.rightp) &&
-		   p->exprblock.rightp->constblock.const.cd[0]==0)
+		   p->exprblock.rightp->constblock.constant.cd[0]==0)
 			{
 			p->exprblock.rightp->constblock.vtype = TYINT;
-			p->exprblock.rightp->constblock.const.ci = 0;
+			p->exprblock.rightp->constblock.constant.ci = 0;
 			}
 #endif
 	}
@@ -674,7 +674,7 @@ int type;
 int ncomma;
 
 if(!ISICON(p->exprblock.rightp) ||
-    (k = p->exprblock.rightp->constblock.const.ci)<2)
+    (k = p->exprblock.rightp->constblock.constant.ci)<2)
 	fatal("putpower: bad call");
 base = p->exprblock.leftp;
 type = base->headblock.vtype;
@@ -1020,7 +1020,7 @@ switch(p->tag)
 
 			case OPCONV:
 				if(!ISICON(p->exprblock.vleng)
-				   || p->exprblock.vleng->constblock.const.ci!=1
+				   || p->exprblock.vleng->constblock.constant.ci!=1
 				   || ! INT(p->exprblock.leftp->headblock.vtype) )
 					fatal("putch1: bad character conversion");
 				t = mkaltemp(TYCHAR, ICON(1) );
@@ -1607,10 +1607,10 @@ if(p->tag==TEXPR && p->exprblock.opcode==OPSTAR)
 		{
 		p->exprblock.opcode = OPPLUS;
 		lp->exprblock.opcode = OPSTAR;
-		prod = rp->constblock.const.ci *
-			lp->exprblock.rightp->constblock.const.ci;
-		lp->exprblock.rightp->constblock.const.ci = rp->constblock.const.ci;
-		rp->constblock.const.ci = prod;
+		prod = rp->constblock.constant.ci *
+			lp->exprblock.rightp->constblock.constant.ci;
+		lp->exprblock.rightp->constblock.constant.ci = rp->constblock.constant.ci;
+		rp->constblock.constant.ci = prod;
 		}
 	}
 
@@ -1619,7 +1619,7 @@ if(p->tag==TEXPR && p->exprblock.opcode==OPPLUS &&
 	{
 	rp = p->exprblock.rightp;
 	lp = p->exprblock.leftp;
-	offset += rp->constblock.const.ci;
+	offset += rp->constblock.constant.ci;
 	frexpr(rp);
 	free( (charptr) p );
 	*p0 = lp;
@@ -1627,7 +1627,7 @@ if(p->tag==TEXPR && p->exprblock.opcode==OPPLUS &&
 
 if( ISCONST(p) )
 	{
-	offset += p->constblock.const.ci;
+	offset += p->constblock.constant.ci;
 	frexpr(p);
 	*p0 = NULL;
 	}
