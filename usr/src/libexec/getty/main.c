@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #define USE_OLD_TTY
@@ -165,7 +165,6 @@ main(argc, argv)
 	if (argc > 1)
 		tname = argv[1];
 	for (;;) {
-		int ldisp = OTTYDISC;
 		int off = 0;
 
 		gettable(tname, tabent, tabstrs);
