@@ -14,25 +14,27 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
-SUBDIR=	scripts scripts.${MACHINE} adb.${MACHINE}
+MAN=	adb.0
 
-all: FRC
-	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS}); done
+all depend clean lint tags: FRC
+	cd adb.${MACHINE}; make ${MFLAGS} DESTDIR=${DESTDIR} $@
 
-depend: FRC
-	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} depend); done
+cleandir: clean
+	rm -f ${MAN} tags .depend
+	cd adb.${MACHINE}; make ${MFLAGS} DESTDIR=${DESTDIR} $@
 
 SCRIPTDIR=	/usr/lib/adb
-install: FRC
-	rm -rf ${SCRIPTDIR}
+
+install: ${MAN}
+	rm -rf ${DESTDIR}/${SCRIPTDIR}
 	mkdir ${DESTDIR}/${SCRIPTDIR}
 	chown bin.bin ${DESTDIR}/${SCRIPTDIR}
 	chmod 755 ${DESTDIR}/${SCRIPTDIR}
-	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} install); done
-
-clean: FRC
-	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean); done
+	cd adb.${MACHINE}; make ${MFLAGS} DESTDIR=${DESTDIR} $@
+	cd scripts; make ${MFLAGS} DESTDIR=${DESTDIR} $@
+	cd scripts.${MACHINE}; make ${MFLAGS} DESTDIR=${DESTDIR} $@
+	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 
 FRC:
