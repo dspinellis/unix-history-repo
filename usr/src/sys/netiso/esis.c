@@ -24,7 +24,7 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-/*	@(#)esis.c	7.13 (Berkeley) %G% */
+/*	@(#)esis.c	7.14 (Berkeley) %G% */
 #ifndef lint
 static char *rcsid = "$Header: esis.c,v 4.10 88/09/15 18:57:03 hagens Exp $";
 #endif
@@ -856,6 +856,22 @@ struct	iso_addr *isoa;
 
 	if (type == ESIS_ESH)
 		*naddrp = naddr;
+	else {
+		/* add suggested es config timer option to ISH */
+		if (M_TRAILINGSPACE(m) < 4) {
+			printf("esis_shoutput: extending packet\n");
+			EXTEND_PACKET(m, m0, cp);
+		}
+		*cp++ = ESISOVAL_ESCT;
+		*cp++ = 2;
+		HTOC(*cp, *(cp+1), esis_esconfig_time);
+		len += 4;
+		m->m_len += 4;
+		IFDEBUG(D_ESISOUTPUT)
+			printf("m0 0x%x, m 0x%x, data 0x%x, len %d, cp 0x%x\n",
+			m0, m, m->m_data, m->m_len, cp);
+		ENDDEBUG
+	}
 
 	m0->m_pkthdr.len = len;
 	pdu->esis_hdr_len = len;
