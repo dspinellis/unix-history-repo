@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getttyent.3	6.3 (Berkeley) %G%
+.\"	@(#)getttyent.3	6.4 (Berkeley) %G%
 .\"
 .TH GETTTYENT 3  ""
 .UC 6
@@ -55,16 +55,18 @@ is typically a name from the
 .IR termcap (5)
 data base.
 The environment variable `TERM' is initialized with this name by
+.IR getty (8)
+or
 .IR login (1).
 .IP ty_status
 is a mask of bit fields which indicate various actions to be allowed on this
 tty line. The following is a description of each flag.
 .RS
 .IP TTY_ON \w'TTY_SECURE'u+3
-Enables logins. (i.e.,
+Enables logins (i.e.,
 .IR init (8)
 will start the specified ``getty" command
-on this entry.)
+on this entry).
 .IP TTY_SECURE
 Allows root to login on this terminal. Note that `TTY_ON' must be included
 for this to be useful.
@@ -75,13 +77,14 @@ associated with the line.  The window system will be started before
 the command specified in the
 .I ty_getty
 entry is executed.
-If none is specified, this will be the null string.
+If none is specified, this will be null.
 .IP ty_comment
-is the trailing comment field, if any.
+is the trailing comment field, if any; a leading delimiter and white space
+will be removed.
 .PP
 .I Getttyent
 reads the next
-line (opening the file if necessary);
+line from the ttys file, opening the file if necessary;
 .I setttyent
 rewinds the file;
 .I endttyent
@@ -95,7 +98,7 @@ is found
 .SH FILES
 /etc/ttys
 .SH "SEE ALSO"
-ttys(5), init(8), getty(8), login(1), gettytab(5), termcap(5), ttyslot(3)
+login(1), ttyslot(3), ttys(5), gettytab(5), termcap(5), getty(8), init(8)
 .SH DIAGNOSTICS
 Null pointer
 (0) returned on EOF or error.
