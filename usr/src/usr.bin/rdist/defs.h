@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)defs.h	5.1 (Berkeley) %G%
+ *	@(#)defs.h	5.2 (Berkeley) %G%
  */
 
 #include <stdio.h>
@@ -100,6 +100,7 @@ struct linkbuf {
 	dev_t	devnum;
 	int	count;
 	char	pathname[BUFSIZ];
+	char	target[BUFSIZ];
 	struct	linkbuf *nextp;
 };
 

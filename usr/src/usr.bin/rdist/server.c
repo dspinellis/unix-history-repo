@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)server.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)server.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "defs.h"
@@ -17,6 +17,7 @@ struct	linkbuf *ihead;		/* list of files with more than one link */
 char	buf[BUFSIZ];		/* general purpose buffer */
 char	target[BUFSIZ];		/* target/source directory name */
 char	*tp;			/* pointer to end of target name */
+char	*Tdest;			/* pointer to last T dest*/
 int	catname;		/* cat name to target name */
 char	*stp[32];		/* stack of saved tp's for directories */
 int	oumask;			/* old umask for creating files */
@@ -186,6 +187,7 @@ install(src, dest, destdir, opts)
 	int destdir, opts;
 {
 	char *rname;
+	char destcopy[BUFSIZ];
 
 	if (dest == NULL) {
 		opts &= ~WHOLE; /* WHOLE mode only useful if renaming */
@@ -236,9 +238,16 @@ install(src, dest, destdir, opts)
 	if (response() < 0)
 		return;
 
+	if (destdir) {
+		strcpy(destcopy, dest);
+		Tdest = destcopy;
+	}
 	sendf(rname, opts);
+	Tdest = 0;
 }
 
+#define protoname() (pw ? pw->pw_name : user)
+#define protogroup() (gr ? gr->gr_name : group)
 /*
  * Transfer the file or directory in target[].
  * rname is the name of the file on the remote host.
@@ -255,6 +264,7 @@ sendf(rname, opts)
 	struct direct *dp;
 	char *otp, *cp;
 	extern struct subcmd *subcmds;
+	static char user[15], group[15];
 
 	if (debug)
 		printf("sendf(%s, %x)\n", rname, opts);
@@ -273,14 +283,15 @@ sendf(rname, opts)
 
 	if (pw == NULL || pw->pw_uid != stb.st_uid)
 		if ((pw = getpwuid(stb.st_uid)) == NULL) {
-			error("%s: no password entry for uid %d\n", target,
-				stb.st_uid);
-			return;
+			log(lfp, "%s: no password entry for uid \n", target);
+			pw = NULL;
+			sprintf(user, ":%d", stb.st_uid);
 		}
 	if (gr == NULL || gr->gr_gid != stb.st_gid)
 		if ((gr = getgrgid(stb.st_gid)) == NULL) {
-			error("%s: no name for group %d\n", target, stb.st_gid);
-			return;
+			log(lfp, "%s: no name for group %d\n", target);
+			gr = NULL;
+			sprintf(group, ":%d", stb.st_gid);
 		}
 	if (u == 1) {
 		if (opts & VERIFY) {
@@ -298,7 +309,7 @@ sendf(rname, opts)
 			return;
 		}
 		(void) sprintf(buf, "D%o %04o 0 0 %s %s %s\n", opts,
-			stb.st_mode & 07777, pw->pw_name, gr->gr_name, rname);
+			stb.st_mode & 07777, protoname(), protogroup(), rname);
 		if (debug)
 			printf("buf = %s", buf);
 		(void) write(rem, buf, strlen(buf));
@@ -339,9 +350,27 @@ sendf(rname, opts)
 	case S_IFLNK:
 		if (u != 1)
 			opts |= COMPARE;
+		if (stb.st_nlink > 1) {
+			struct linkbuf *lp;
+
+			if ((lp = savelink(&stb)) != NULL) {
+				/* install link */
+				if (*lp->target == 0)
+				(void) sprintf(buf, "k%o %s %s\n", opts,
+					lp->pathname, rname);
+				else
+				(void) sprintf(buf, "k%o %s/%s %s\n", opts,
+					lp->target, lp->pathname, rname);
+				if (debug)
+					printf("buf = %s", buf);
+				(void) write(rem, buf, strlen(buf));
+				(void) response();
+				return;
+			}
+		}
 		(void) sprintf(buf, "K%o %o %ld %ld %s %s %s\n", opts,
 			stb.st_mode & 07777, stb.st_size, stb.st_mtime,
-			pw->pw_name, gr->gr_name, rname);
+			protoname(), protogroup(), rname);
 		if (debug)
 			printf("buf = %s", buf);
 		(void) write(rem, buf, strlen(buf));
@@ -374,8 +403,12 @@ sendf(rname, opts)
 
 		if ((lp = savelink(&stb)) != NULL) {
 			/* install link */
+			if (*lp->target == 0)
 			(void) sprintf(buf, "k%o %s %s\n", opts,
 				lp->pathname, rname);
+			else
+			(void) sprintf(buf, "k%o %s/%s %s\n", opts,
+				lp->target, lp->pathname, rname);
 			if (debug)
 				printf("buf = %s", buf);
 			(void) write(rem, buf, strlen(buf));
@@ -390,7 +423,7 @@ sendf(rname, opts)
 	}
 	(void) sprintf(buf, "R%o %o %ld %ld %s %s %s\n", opts,
 		stb.st_mode & 07777, stb.st_size, stb.st_mtime,
-		pw->pw_name, gr->gr_name, rname);
+		protoname(), protogroup(), rname);
 	if (debug)
 		printf("buf = %s", buf);
 	(void) write(rem, buf, strlen(buf));
@@ -457,6 +490,10 @@ savelink(stp)
 		lp->devnum = stp->st_dev;
 		lp->count = stp->st_nlink - 1;
 		strcpy(lp->pathname, target);
+		if (Tdest)
+			strcpy(lp->target, Tdest);
+		else
+			*lp->target = 0;
 	}
 	return(NULL);
 }
@@ -485,6 +522,7 @@ update(rname, opts, stp)
 	if (debug)
 		printf("buf = %s", buf);
 	(void) write(rem, buf, strlen(buf));
+again:
 	cp = s = buf;
 	do {
 		if (read(rem, cp, 1) != 1)
@@ -510,9 +548,15 @@ update(rname, opts, stp)
 		}
 		return(0);
 
+	case '\3':
+		*--cp = '\0';
+		if (lfp != NULL) 
+			log(lfp, "update: note: %s\n", s);
+		goto again;
+
 	default:
 		*--cp = '\0';
-		error("update: unexpected response '%s'\n", buf);
+		error("update: unexpected response '%s'\n", s);
 		return(0);
 	}
 
@@ -795,8 +839,12 @@ recvf(cmd, type)
 
 		if ((f1 = fopen(target, "r")) == NULL)
 			goto badt;
-		if ((f2 = fopen(new, "r")) == NULL)
-			goto badn;
+		if ((f2 = fopen(new, "r")) == NULL) {
+		badn:
+			error("%s:%s: %s\n", host, new, sys_errlist[errno]);
+			(void) unlink(new);
+			return;
+		}
 		while ((c = getc(f1)) == getc(f2))
 			if (c == EOF) {
 				(void) fclose(f1);
@@ -825,10 +873,7 @@ recvf(cmd, type)
 	tvp[1].tv_sec = mtime;
 	tvp[1].tv_usec = 0;
 	if (utimes(new, tvp) < 0) {
-badn:
-		error("%s:%s: %s\n", host, new, sys_errlist[errno]);
-		(void) unlink(new);
-		return;
+		note("%s:utimes failed %s: %s\n", host, new, sys_errlist[errno]);
 	}
 	if (chog(new, owner, group, mode) < 0) {
 		(void) unlink(new);
@@ -877,19 +922,30 @@ hardlink(cmd)
 	}
 	*cp++ = '\0';
 
-	if (catname)
+	if (catname) {
 		(void) sprintf(tp, "/%s", cp);
+	}
 	if (lstat(target, &stb) == 0) {
-		if ((stb.st_mode & S_IFMT) != S_IFREG) {
+		int mode = stb.st_mode & S_IFMT;
+		if (mode != S_IFREG && mode != S_IFLNK) {
 			error("%s:%s: not a regular file\n", host, target);
 			return;
 		}
 		exists = 1;
 	}
-	if (chkparent(target) < 0 ||
-	    exists && unlink(target) < 0 ||
-	    link(oldname, target) < 0) {
-		error("%s:%s: %s\n", host, target, sys_errlist[errno]);
+	if (chkparent(target) < 0 ) {
+		error("%s:%s: %s (no parent)\n",
+			host, target, sys_errlist[errno]);
+		return;
+	}
+	if (exists && (unlink(target) < 0)) {
+		error("%s:%s: %s (unlink)\n",
+			host, target, sys_errlist[errno]);
+		return;
+	}
+	if (link(oldname, target) < 0) {
+		error("%s:can't link %s to %s\n",
+			host, target, oldname);
 		return;
 	}
 	ack();
@@ -936,32 +992,40 @@ chog(file, owner, group, mode)
 
 	uid = userid;
 	if (userid == 0) {
-		if (pw == NULL || strcmp(owner, pw->pw_name) != 0) {
+		if (*owner == ':') {
+			uid = atoi(owner + 1);
+		} else if (pw == NULL || strcmp(owner, pw->pw_name) != 0) {
 			if ((pw = getpwnam(owner)) == NULL) {
 				if (mode & 04000) {
-					error("%s:%s: unknown login name\n",
+					note("%s:%s: unknown login name, clearing setuid",
 						host, owner);
-					return(-1);
+					mode &= ~04000;
+					uid = 0;
 				}
 			} else
 				uid = pw->pw_uid;
 		} else
 			uid = pw->pw_uid;
+		if (*group == ':') {
+			gid = atoi(group + 1);
+			goto ok;
+		}
 	} else if ((mode & 04000) && strcmp(user, owner) != 0)
 		mode &= ~04000;
 	gid = -1;
 	if (gr == NULL || strcmp(group, gr->gr_name) != 0) {
-		if ((gr = getgrnam(group)) == NULL) {
+		if ((*group == ':' && (getgrgid(gid = atoi(group + 1)) == NULL))
+		   || ((gr = getgrnam(group)) == NULL)) {
 			if (mode & 02000) {
-				error("%s:%s: unknown group\n", host, group);
-				return(-1);
+				note("%s:%s: unknown group", host, group);
+				mode &= ~02000;
 			}
 		} else
 			gid = gr->gr_gid;
 	} else
 		gid = gr->gr_gid;
 	if (userid && gid >= 0) {
-		for (i = 0; gr->gr_mem[i] != NULL; i++)
+		if (gr) for (i = 0; gr->gr_mem[i] != NULL; i++)
 			if (!(strcmp(user, gr->gr_mem[i])))
 				goto ok;
 		mode &= ~02000;
@@ -972,10 +1036,8 @@ ok:
 		setreuid(userid, 0);
 	if (chown(file, uid, gid) < 0 ||
 	    (mode & 06000) && chmod(file, mode) < 0) {
-		if (userid)
-			setreuid(0, userid);
-		error("%s:%s: %s\n", host, file, sys_errlist[errno]);
-		return(-1);
+		note("%s: chown or chmod failed: file %s:  %s",
+			     host, file, sys_errlist[errno]);
 	}
 	if (userid)
 		setreuid(0, userid);
@@ -1346,6 +1408,10 @@ response()
 			return(1);
 		}
 		return(0);
+	case '\3':
+		*--cp = '\0';
+		log(lfp, "Note: %s\n",s);
+		return(response());
 
 	default:
 		s--;
@@ -1374,4 +1440,21 @@ cleanup()
 {
 	(void) unlink(tmpfile);
 	exit(1);
+}
+
+note(fmt, a1, a2, a3)
+{
+	static char buf[BUFSIZ];
+	sprintf(buf, fmt, a1, a2, a3);
+	comment(buf);
+}
+
+comment(s)
+char *s;
+{
+	char c = '\3';
+	write(rem, &c, 1);
+	write(rem, s, strlen(s));
+	c = '\n';
+	write(rem, &c, 1);
 }
