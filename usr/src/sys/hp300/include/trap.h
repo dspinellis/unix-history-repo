@@ -11,11 +11,11 @@
  *
  * from: Utah $Hdr: trap.h 1.1 90/07/09$
  *
- *	@(#)trap.h	7.3 (Berkeley) %G%
+ *	@(#)trap.h	7.4 (Berkeley) %G%
  */
 
 /*
- * Trap type values
+ * Trap codes
  */
 
 #define	T_BUSERR	0
