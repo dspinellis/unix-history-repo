@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -22,12 +22,12 @@ initialize(startup)
 	puts("Version 4.2, fall 1984.");
 	puts("First Adventure game written by His Lordship, the honorable");
 	puts("Admiral D.W. Riggle\n");
+	location = dayfile;
 	srand(getpid());
-	getutmp(uname);
-	wiz = wizard(uname);
+	getutmp(usrname);
+	wiz = wizard(usrname);
 	wordinit();
 	if (startup) {
-		location = dayfile;
 		direction = NORTH;
 		time = 0;
 		snooze = CYCLE * 1.5;
