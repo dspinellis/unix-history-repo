@@ -9,7 +9,7 @@
 
 #ifdef FASTTAG
 #ifndef lint
-static char *sccsid = "@(#)ex_tagio.c	7.2 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_tagio.c	7.3 (Berkeley) %G%";
 #endif
 
 #include <sys/file.h>
@@ -78,11 +78,11 @@ int fd;
 	cp = ibuf + cc;
 	while (--cnt > 0) {
 		if (++cc > bcnt) {
+			block += b_size;
 			if ((bcnt = read(fd, ibuf, b_size)) <= 0) {
 				offset = cc;
 				return (NULL);
 			}
-			block += b_size;
 			cp = ibuf;
 			cc = 1;
 		}
