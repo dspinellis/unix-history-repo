@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)scanner.c	3.4 84/04/11";
+static	char *sccsid = "@(#)scanner.c	3.5 84/04/15";
 #endif
 
 #include <stdio.h>
@@ -54,30 +54,22 @@ s_gettok()
 	register char *p = buf;
 	register c;
 	register state = 0;
-	char quote;
 
 loop:
 	c = s_getc();
 	switch (state) {
-	case 0:				/* blank skipping */
+	case 0:
 		switch (c) {
 		case ' ':
 		case '\t':
 			break;
-		default:
-			(void) s_ungetc(c);
-			state = 1;
-		}
-		break;
-	case 1:				/* beginning of token */
-		switch (c) {
 		case '\n':
 		case ';':
 			cx.x_token = T_EOL;
 			state = -1;
 			break;
 		case '#':
-			state = 4;
+			state = 1;
 			break;
 		case EOF:
 			cx.x_token = T_EOF;
@@ -100,9 +92,10 @@ loop:
 			state = 2;
 			break;
 		case '"':
-		case '\'':
-			quote = c;
 			state = 3;
+			break;
+		case '\'':
+			state = 4;
 			break;
 		case '\\':
 			switch (c = s_gettok1()) {
@@ -202,6 +195,12 @@ loop:
 			break;
 		}
 		break;
+	case 1:				/* got # */
+		if (c == '\n' || c == EOF) {
+			(void) s_ungetc(c);
+			state = 0;
+		}
+		break;
 	case 2:				/* unquoted string */
 		switch (c) {
 		case 'a': case 'b': case 'c': case 'd': case 'e':
@@ -223,9 +222,10 @@ loop:
 				*p++ = c;
 			break;
 		case '"':
-		case '\'':
-			quote = c;
 			state = 3;
+			break;
+		case '\'':
+			state = 4;
 			break;
 		case '\\':
 			switch (c = s_gettok1()) {
@@ -249,38 +249,38 @@ loop:
 					cx.x_token = T_IF;
 				break;
 			case 't':
-				if (strcmp(buf, "then") == 0)
+				if (buf[1] == 'h' && buf[2] == 'e'
+				    && buf[3] == 'n' && buf[4] == 0)
 					cx.x_token = T_THEN;
 				break;
 			case 'e':
-				switch (buf[1]) {
-				case 'n':
-					if (strcmp(buf, "endif") == 0)
-						cx.x_token = T_ENDIF;
-					break;
-				case 'l':
-					if (strcmp(buf, "else") == 0)
-						cx.x_token = T_ELSE;
-					if (strcmp(buf, "elsif") == 0)
+				if (buf[1] == 'n' && buf[2] == 'd'
+				    && buf[3] == 'i' && buf[4] == 'f'
+				    && buf[5] == 0)
+					cx.x_token = T_ENDIF;
+				else if (buf[1] == 'l' && buf[2] == 's')
+					if (buf[3] == 'i' && buf[4] == 'f'
+					    && buf[5] == 0)
 						cx.x_token = T_ELSIF;
-					break;
-				}
+					else if (buf[3] == 'e' && buf[4] == 0)
+						cx.x_token = T_ELSE;
 				break;
 			}
-			if (cx.x_token == T_STR)
-				if ((cx.x_val.v_str = str_cpy(buf)) == 0) {
-					p_memerror();
-					cx.x_token = T_EOF;
-				}
+			if (cx.x_token == T_STR
+			    && (cx.x_val.v_str = str_cpy(buf)) == 0) {
+				p_memerror();
+				cx.x_token = T_EOF;
+			}
 			state = -1;
 			break;
 		}
 		break;
-	case 3:				/* quoted string */
+	case 3:				/* " quoted string */
 		switch (c) {
 		case '\n':
 			(void) s_ungetc(c);
 		case EOF:
+		case '"':
 			state = 2;
 			break;
 		case '\\':
@@ -294,17 +294,33 @@ loop:
 			}
 			break;
 		default:
-			if (c == quote)
-				state = 2;
-			else if (p < buf + sizeof buf - 1)
+			if (p < buf + sizeof buf - 1)
 				*p++ = c;
 			break;
 		}
 		break;
-	case 4:				/* got # */
-		if (c == '\n' || c == EOF) {
+	case 4:				/* ' quoted string */
+		switch (c) {
+		case '\n':
 			(void) s_ungetc(c);
-			state = 1;
+		case EOF:
+		case '\'':
+			state = 2;
+			break;
+		case '\\':
+			switch (c = s_gettok1()) {
+			case -1:
+			case -2:	/* newlines are invisible */
+				break;
+			default:
+				if (p < buf + sizeof buf - 1)
+					*p++ = c;
+			}
+			break;
+		default:
+			if (p < buf + sizeof buf - 1)
+				*p++ = c;
+			break;
 		}
 		break;
 	case 10:			/* got 0 */
