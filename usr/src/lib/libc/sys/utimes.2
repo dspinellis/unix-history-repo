@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)utimes.2	6.6 (Berkeley) %G%
+.\"     @(#)utimes.2	6.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt UTIMES 2
@@ -28,8 +28,8 @@ time.
 If the times are specified (the
 .Fa times
 argument is
-.No non- Ns Dv NULL )
-the caller must be the owner of the file or be the superuser.
+.Pf non- Dv NULL )
+the caller must be the owner of the file or be the super-user.
 .Pp
 If the times are not specified (the
 .Fa times
