@@ -1,6 +1,7 @@
-#	@(#)windowrc	3.1 83/08/22
+#	@(#)windowrc	3.2 83/08/22
 
 # configuration file example for window manager
+# to be installed in ~/.windowrc
 #
 # creates two unequal sized windows of full screen width.
 
