@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)queue.h	8.4 (Berkeley) %G%
+ *	@(#)queue.h	8.5 (Berkeley) %G%
  */
 
 #ifndef	_SYS_QUEUE_H_
@@ -17,16 +17,16 @@
  * A list is headed by a single forward pointer (or an array of forward
  * pointers for a hash table header). The elements are doubly linked
  * so that an arbitrary element can be removed without a need to
- * traverse the list. New elements can be added to the list after
- * an existing element or at the head of the list. A list may only be
- * traversed in the forward direction.
+ * traverse the list. New elements can be added to the list before
+ * or after an existing element or at the head of the list. A list
+ * may only be traversed in the forward direction.
  *
  * A tail queue is headed by a pair of pointers, one to the head of the
  * list and the other to the tail of the list. The elements are doubly
  * linked so that an arbitrary element can be removed without a need to
- * traverse the list. New elements can be added to the list after
- * an existing element, at the head of the list, or at the end of the
- * list. A tail queue may only be traversed in the forward direction.
+ * traverse the list. New elements can be added to the list before or
+ * after an existing element, at the head of the list, or at the end of
+ * the list. A tail queue may only be traversed in the forward direction.
  *
  * A circle queue is headed by a pair of pointers, one to the head of the
  * list and the other to the tail of the list. The elements are doubly
@@ -68,6 +68,13 @@ struct {								\
 	(elm)->field.le_prev = &(listelm)->field.le_next;		\
 }
 
+#define	LIST_INSERT_BEFORE(listelm, elm, field) {			\
+	(elm)->field.le_prev = (listelm)->field.le_prev;		\
+	(elm)->field.le_next = (listelm);				\
+	*(listelm)->field.le_prev = (elm);				\
+	(listelm)->field.le_prev = &(elm)->field.le_next;		\
+}
+
 #define LIST_INSERT_HEAD(head, elm, field) {				\
 	if (((elm)->field.le_next = (head)->lh_first) != NULL)		\
 		(head)->lh_first->field.le_prev = &(elm)->field.le_next;\
@@ -107,7 +114,7 @@ struct {								\
 
 #define TAILQ_INSERT_HEAD(head, elm, field) {				\
 	if (((elm)->field.tqe_next = (head)->tqh_first) != NULL)	\
-		(elm)->field.tqe_next->field.tqe_prev =			\
+		(head)->tqh_first->field.tqe_prev =			\
 		    &(elm)->field.tqe_next;				\
 	else								\
 		(head)->tqh_last = &(elm)->field.tqe_next;		\
@@ -130,6 +137,13 @@ struct {								\
 		(head)->tqh_last = &(elm)->field.tqe_next;		\
 	(listelm)->field.tqe_next = (elm);				\
 	(elm)->field.tqe_prev = &(listelm)->field.tqe_next;		\
+}
+
+#define	TAILQ_INSERT_BEFORE(listelm, elm, field) {			\
+	(elm)->field.tqe_prev = (listelm)->field.tqe_prev;		\
+	(elm)->field.tqe_next = (listelm);				\
+	*(listelm)->field.tqe_prev = (elm);				\
+	(listelm)->field.tqe_prev = &(elm)->field.tqe_next;		\
 }
 
 #define TAILQ_REMOVE(head, elm, field) {				\
