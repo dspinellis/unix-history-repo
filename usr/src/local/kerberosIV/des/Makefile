@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 
 LIB=	des
 CFLAGS+=-DKERBEROS -I. -I${.CURDIR}/../include
@@ -8,25 +8,32 @@ SRCS=	cbc_encrypt.c cksum.c debug_decl.c des.c key_parity.c \
 CLEANFILES+=key_perm.h s_table.h ip.c p.c fp.c odd.h p_table.h
 
 TDIR=	${.CURDIR}/..
-key_perm.h: ${TDIR}/make_key_perm/obj/make_key_perm
+key_perm.h:
+	cd ${TDIR}/make_key_perm; make
 	${TDIR}/make_key_perm/obj/make_key_perm key_perm.h
 
-p_table.h: ${TDIR}/make_p_table/obj/make_p_table
+p_table.h:
+	cd ${TDIR}/make_p_table; make
 	${TDIR}/make_p_table/obj/make_p_table p_table.h
 
-s_table.h: ${TDIR}/make_s_table/obj/make_s_table
+s_table.h:
+	cd ${TDIR}/make_s_table; make
 	${TDIR}/make_s_table/obj/make_s_table s_table.h
 
-ip.c: ${TDIR}/make_ip/obj/make_ip
+ip.c:
+	cd ${TDIR}/make_ip; make
 	${TDIR}/make_ip/obj/make_ip ip.c
 
-p.c: ${TDIR}/make_p/obj/make_p
+p.c:
+	cd ${TDIR}/make_p; make
 	${TDIR}/make_p/obj/make_p p.c
 
-fp.c: ${TDIR}/make_fp/obj/make_fp
+fp.c:
+	cd ${TDIR}/make_fp; make
 	${TDIR}/make_fp/obj/make_fp fp.c
 
-odd.h: ${TDIR}/make_odd/obj/make_odd
+odd.h:
+	cd ${TDIR}/make_odd; make
 	${TDIR}/make_odd/obj/make_odd odd.h
 
 .include <bsd.lib.mk>
