@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_bio.c	8.7 (Berkeley) %G%
+ *	@(#)nfs_bio.c	8.8 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -180,7 +180,8 @@ nfs_bioread(vp, uio, ioflag, cred)
 				    rabp->b_flags |= B_INVAL;
 				    brelse(rabp);
 				}
-			    }
+			    } else
+				brelse(rabp);
 			}
 		    }
 		}
@@ -285,7 +286,8 @@ again:
 				    rabp->b_flags |= B_INVAL;
 				    brelse(rabp);
 				}
-			    }
+			    } else
+				brelse(rabp);
 			}
 		}
 		on = 0;
