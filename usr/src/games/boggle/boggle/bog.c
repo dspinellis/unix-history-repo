@@ -1,18 +1,33 @@
-/* vi: set tabstop=4 : */
-
-/*
- * bog - the game of boggle
+/*-
+ * Copyright (c) 1993 The Regents of the University of California.
+ * All rights reserved.
  *
- * 6-Mar-89     changed loaddict() to use a large buffer and check for overflow,
- *              minor cleanup
+ * This code is derived from software contributed to Berkeley by
+ * Barry Brachman.
+ *
+ * %sccs.include.redist.c%
  */
 
-#include "bog.h"
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1993 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)bog.c	5.2 (Berkeley) %G%";
+#endif /* not lint */
 
 #include <ctype.h>
+#include <err.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
-char *version = "bog V1.3 brachman@ubc.csnet 6-Mar-89";
+#include "bog.h"
+#include "extern.h"
+
+static int	compar __P((const void *, const void *));
 
 struct dictindex dictindex[26];
 
@@ -25,7 +40,7 @@ struct dictindex dictindex[26];
  *	C D E F
  */
 static int adjacency[16][16] = {
-/*    0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F */
+/*        0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F */
 	{ 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },		/* 0 */
 	{ 1, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 },		/* 1 */
 	{ 0, 1, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 },		/* 2 */
@@ -60,15 +75,12 @@ int nmwords;
 int ngames = 0;
 int tnmwords = 0, tnpwords = 0;
 
-#ifdef TIMER
 #include <setjmp.h>
-
 jmp_buf env;
-#endif TIMER
 
 long start_t;
 
-static FILE *dictfp = (FILE *) NULL;
+static FILE *dictfp;
 
 int batch;
 int debug;
@@ -76,148 +88,124 @@ int minlength;
 int reuse;
 int tlimit;
 
-char *batchword(), *getline();
-
-long atol();
-long random();
-
+int
 main(argc, argv)
-int argc;
-char **argv;
+	int argc;
+	char *argv[];
 {
-	int done, i, selfuse, sflag;
-	char *bspec, *p;
 	long seed;
-	FILE *opendict();
+	int ch, done, i, selfuse, sflag;
+	char *bspec, *p;
 
-	debug = 0;
-	bspec = (char *) NULL;
-	reuse = 0;
-	batch = 0;
-	selfuse = 0;
+	batch = debug = reuse = selfuse = sflag = 0;
+	bspec = NULL;
 	minlength = 3;
 	tlimit = 180;		/* 3 minutes is standard */
-	sflag = 0;
 
-	for (i = 1; i < argc; i++) {
-		if (argv[i][0] == '-') {
-			switch (argv[i][1]) {
-			case 'b':
-				batch = 1;
-				break;
-			case 'd':
-				debug = 1;
-				break;
-			case 's':
-				sflag = 1;
-				seed = atol(&argv[i][2]);
-				break;
-			case 't':
-				if ((tlimit = atoi(&argv[i][2])) < 1) {
-					(void) fprintf(stderr, "Bad time limit\n");
-					exit(1);
-				}
-				break;
-			case 'w':
-				if ((minlength = atoi(&argv[i][2])) < 3) {
-					(void) fprintf(stderr, "Min word length must be > 2\n");
-					exit(1);
-				}
-				break;
-			default:
-				usage();
-				/*NOTREACHED*/
-			}
-		}
-		else if (strcmp(argv[i], "+") == 0)
-			reuse = 1;
-		else if (strcmp(argv[i], "++") == 0)
-			selfuse = 1;
-		else if (islower(argv[i][0])) {
-			if (strlen(argv[i]) != 16) {
-				usage();
-				/*NOTREACHED*/
-			}
-			/* This board is assumed to be valid... */
-			bspec = argv[i];
-		}
-		else {
+	while ((ch = getopt(argc, argv, "bds:t:w:")) != EOF)
+		switch(ch) {
+		case 'b':
+			batch = 1;
+			break;
+		case 'd':
+			debug = 1;
+			break;
+		case 's':
+			sflag = 1;
+			seed = atol(optarg);
+			break;
+		case 't':
+			if ((tlimit = atoi(optarg)) < 1)
+				errx(1, "bad time limit");
+			break;
+		case 'w':
+			if ((minlength = atoi(optarg)) < 3)
+				errx(1, "min word length must be > 2");
+			break;
+		case '?':
+		default:
 			usage();
-			/*NOREACHED*/
 		}
+	argc -= optind;
+	argv += optind;
+
+	if (strcmp(argv[0], "+") == 0)
+		reuse = 1;
+	else if (strcmp(argv[0], "++") == 0)
+		selfuse = 1;
+	else if (islower(argv[0][0])) {
+		if (strlen(argv[0]) != 16) {
+			usage();
+
+			/* This board is assumed to be valid... */
+			bspec = argv[0];
+		} else
+			usage();
 	}
 
-	if (batch && bspec == (char *) NULL) {
-		(void) fprintf(stderr, "Must give both -b and a board setup\n");
-		exit(1);
-	}
+	if (batch && bspec == NULL)
+		errx(1, "must give both -b and a board setup");
 
-	if (selfuse) {
+	if (selfuse)
 		for (i = 0; i < 16; i++)
 			adjacency[i][i] = 1;
-	}
 
 	if (batch) {
 		newgame(bspec);
-		while ((p = batchword(stdin)) != (char *) NULL)
+		while ((p = batchword(stdin)) != NULL)
 			(void) printf("%s\n", p);
+		exit (0);
 	}
-	else {
-		setup(sflag, seed);
-		prompt("Loading the dictionary...");
-		if ((dictfp = opendict(DICT)) == (FILE *) NULL) {
-			(void) fprintf(stderr, "Can't load %s\n", DICT);
-			cleanup();
-			exit(1);
-		}
+	setup(sflag, seed);
+	prompt("Loading the dictionary...");
+	if ((dictfp = opendict(DICT)) == NULL) {
+		warn("%s", DICT);
+		cleanup();
+		exit(1);
+	}
 #ifdef LOADDICT
-		if (loaddict(dictfp) < 0) {
-			(void) fprintf(stderr, "Can't load %s\n", DICT);
-			cleanup();
-			exit(1);
-		}
-		(void) fclose(dictfp);
-		dictfp = (FILE *) NULL;
+	if (loaddict(dictfp) < 0) {
+		warnx("can't load %s", DICT);
+		cleanup();
+		exit(1);
+	}
+	(void)fclose(dictfp);
+	dictfp = NULL;
 #endif
-		if (loadindex(DICTINDEX) < 0) {
-			(void) fprintf(stderr, "Can't load %s\n", DICTINDEX);
-			cleanup();
-			exit(1);
-		}
+	if (loadindex(DICTINDEX) < 0) {
+		warnx("can't load %s", DICTINDEX);
+		cleanup();
+		exit(1);
+	}
 
-		prompt("Type <space> to begin...");
-		while (inputch() != ' ')
-			;
+	prompt("Type <space> to begin...");
+	while (inputch() != ' ');
 
-		done = 0;
-		while (!done) {
-			newgame(bspec);
-			bspec = (char *) NULL;		/* reset for subsequent games */
-			playgame();
-			prompt("Type <space> to continue, any cap to quit...");
-			delay(50);					/* wait for user to quit typing */
-			flushin(stdin);
-			while (1) {
-				int ch;
-
-				ch = inputch();
-				if (ch == '\033')
-					findword();
-				else if (ch == '\014' || ch == '\022')	/* ^l or ^r */
-					redraw();
-				else {
-					if (isupper(ch)) {
-						done = 1;
-						break;
-					}
-					if (ch == ' ')
-						break;
+	for (done = 0; !done;) {
+		newgame(bspec);
+		bspec = NULL;	/* reset for subsequent games */
+		playgame();
+		prompt("Type <space> to continue, any cap to quit...");
+		delay(50);	/* wait for user to quit typing */
+		flushin(stdin);
+		for (;;) {
+			ch = inputch();
+			if (ch == '\033')
+				findword();
+			else if (ch == '\014' || ch == '\022')	/* ^l or ^r */
+				redraw();
+			else {
+				if (isupper(ch)) {
+					done = 1;
+					break;
 				}
+				if (ch == ' ')
+					break;
 			}
 		}
-		cleanup();
 	}
-	exit(0);
+	cleanup();
+	exit (0);
 }
 
 /*
@@ -226,17 +214,16 @@ char **argv;
  */
 char *
 batchword(fp)
-FILE *fp;
+	FILE *fp;
 {
 	register int *p, *q;
 	register char *w;
-	char *nextword();
 
 	q = &wordpath[MAXWORDLEN + 1];
 	p = wordpath;
 	while (p < q)
 		*p++ = -1;
-	while ((w = nextword(fp)) != (char *) NULL) {
+	while ((w = nextword(fp)) != NULL) {
 		if (wordlen < minlength)
 			continue;
 		p = wordpath;
@@ -244,9 +231,9 @@ FILE *fp;
 			*p++ = -1;
 		usedbits = 0;
 		if (checkword(w, -1, wordpath) != -1)
-			return(w);
+			return (w);
 	}
-	return((char *) NULL);
+	return (NULL);
 }
 
 /*
@@ -254,13 +241,13 @@ FILE *fp;
  * Reset the word lists from last game
  * Keep track of the running stats
  */
+void
 playgame()
 {
 	/* Can't use register variables if setjmp() is used! */
 	int i, *p, *q;
 	long t;
 	char buf[MAXWORDLEN + 1];
-	int compar();
 
 	ngames++;
 	npwords = 0;
@@ -282,7 +269,7 @@ playgame()
 	}
 
 	while (1) {
-		if (getline(buf) == (char *) NULL) {
+		if (getline(buf) == NULL) {
 			if (feof(stdin))
 				clearerr(stdin);
 			break;
@@ -296,7 +283,8 @@ playgame()
 			int remaining;
 
 			remaining = tlimit - (int) (t - start_t);
-			(void) sprintf(buf, "%d:%02d", remaining / 60, remaining % 60);
+			(void)snprintf(buf, sizeof(buf),
+			    "%d:%02d", remaining / 60, remaining % 60);
 			showstr(buf, 1);
 			continue;
 		}
@@ -323,7 +311,7 @@ playgame()
 				if (strcmp(pword[i], buf) == 0)
 					break;
 			}
-			if (i != npwords) {			/* already used the word */
+			if (i != npwords) {	/* already used the word */
 				badword();
 				showword(i);
 			}
@@ -334,8 +322,8 @@ playgame()
 
 				len = strlen(buf) + 1;
 				if (npwords == MAXPWORDS - 1 ||
-						pwordsp + len >= &pwords[MAXPSPACE]) {
-					(void) fprintf(stderr, "Too many words!\n");
+				    pwordsp + len >= &pwords[MAXPSPACE]) {
+					warnx("Too many words!");
 					cleanup();
 					exit(1);
 				}
@@ -354,7 +342,7 @@ timesup: ;
 	 * entry to help out checkdict()
 	 */
 	qsort(pword, npwords, sizeof(pword[0]), compar);
-	pword[npwords] = (char *) NULL;
+	pword[npwords] = NULL;
 
 	/*
 	 * These words don't need to be sorted since the dictionary is sorted
@@ -375,9 +363,10 @@ timesup: ;
  * Words must end with a null
  * Return 1 on success, -1 on failure
  */
+int
 checkword(word, prev, path)
-char *word;
-int prev, *path;
+	char *word;
+	int prev, *path;
 {
 	register char *p, *q;
 	register int i, *lm;
@@ -390,7 +379,7 @@ int prev, *path;
 	}
 
 	if (*word == '\0')
-		return(1);
+		return (1);
 
 	lm = letter_map[*word - 'a'];
 
@@ -406,11 +395,11 @@ int prev, *path;
 		q = subword;
 		while (*p != '\0') {
 			if (*letter_map[*p - 'a'] == -1)
-				return(-1);
+				return (-1);
 			*q++ = *p;
 			if (*p++ == 'q') {
 				if (*p++ != 'u')
-					return(-1);
+					return (-1);
 			}
 		}
 		*q = '\0';
@@ -418,35 +407,38 @@ int prev, *path;
 			*path = *lm;
 			usedbits |= (1 << *lm);
 			if (checkword(subword + 1, *lm, path + 1) > 0)
-				return(1);
+				return (1);
 			usedbits &= ~(1 << *lm);
 			lm++;
 		}
-		return(-1);
+		return (-1);
 	}
 
 	/*
 	 * A cube is only adjacent to itself in the adjacency matrix if selfuse
-	 * was set, so a cube can't be used twice in succession if only the reuse
-	 * flag is set
+	 * was set, so a cube can't be used twice in succession if only the
+	 * reuse flag is set
 	 */
 	for (i = 0; lm[i] != -1; i++) {
 		if (adjacency[prev][lm[i]]) {
 			int used;
 
 			used = 1 << lm[i];
-			/* If necessary, check if the square has already been used */
+			/*
+			 * If necessary, check if the square has already
+			 * been used.
+			 */
 			if (!reuse && (usedbits & used))
 					continue;
 			*path = lm[i];
 			usedbits |= used;
 			if (checkword(word + 1, lm[i], path + 1) > 0)
-				return(1);
+				return (1);
 			usedbits &= ~used;
 		}
 	}
 	*path = -1;		/* in case of a backtrack */
-	return(-1);
+	return (-1);
 }
 
 /*
@@ -454,12 +446,12 @@ int prev, *path;
  * At this point it is already known that the word can be formed from
  * the current board
  */
+int
 validword(word)
-char *word;
+	char *word;
 {
 	register int j;
 	register char *q, *w;
-	char *nextword();
 
 	j = word[0] - 'a';
 	if (dictseek(dictfp, dictindex[j].start, 0) < 0) {
@@ -468,7 +460,7 @@ char *word;
 		exit(1);
 	}
 
-	while ((w = nextword(dictfp)) != (char *) NULL) {
+	while ((w = nextword(dictfp)) != NULL) {
 		int ch;
 
 		if (*w != word[0])	/* end of words starting with word[0] */
@@ -477,11 +469,11 @@ char *word;
 		while ((ch = *w++) == *q++ && ch != '\0')
 			;
 		if (*(w - 1) == '\0' && *(q - 1) == '\0')
-			return(1);
+			return (1);
 	}
-	if (dictfp != (FILE *) NULL && feof(dictfp))	/* Special case for z's */
+	if (dictfp != NULL && feof(dictfp))	/* Special case for z's */
 		clearerr(dictfp);
-	return(0);
+	return (0);
 }
 
 /*
@@ -489,6 +481,7 @@ char *word;
  * Delete words from the machine list that the player has found
  * Assume both the dictionary and the player's words are already sorted
  */
+void
 checkdict()
 {
 	register char *p, **pw, *w;
@@ -502,14 +495,15 @@ checkdict()
 	qi = &wordpath[MAXWORDLEN + 1];
 
 	(void) dictseek(dictfp, 0L, 0);
-	while ((w = nextword(dictfp)) != (char *) NULL) {
+	while ((w = nextword(dictfp)) != NULL) {
 		if (wordlen < minlength)
 			continue;
 		if (*w != prevch) {
 			/*
-			 * If we've moved on to a word with a different first letter
-			 * then we can speed things up by skipping all words starting
-			 * with a letter that doesn't appear in the cube
+			 * If we've moved on to a word with a different first
+			 * letter then we can speed things up by skipping all
+			 * words starting with a letter that doesn't appear in
+			 * the cube.
 			 */
 			i = (int) (*w - 'a');
 			while (i < 26 && letter_map[i][0] == -1)
@@ -519,15 +513,16 @@ checkdict()
 			previndex = prevch - 'a';
 			prevch = i + 'a';
 			/*
-			 * Fall through if the word's first letter appears in the cube
-			 * (i.e., if we can't skip ahead), otherwise seek to the
-			 * beginning of words in the dictionary starting with the
-			 * next letter (alphabetically) appearing in the cube and then
-			 * read the first word
+			 * Fall through if the word's first letter appears in
+			 * the cube (i.e., if we can't skip ahead), otherwise
+			 * seek to the beginning of words in the dictionary
+			 * starting with the next letter (alphabetically)
+			 * appearing in the cube and then read the first word.
 			 */
 			if (i != previndex + 1) {
-				if (dictseek(dictfp, dictindex[i].start, 0) < 0) {
-					(void) fprintf(stderr, "Seek error in checkdict()\n");
+				if (dictseek(dictfp,
+				    dictindex[i].start, 0) < 0) {
+					warnx("seek error in checkdict()");
 					cleanup();
 					exit(1);
 				}
@@ -543,20 +538,19 @@ checkdict()
 			continue;
 
 		st = 1;
-		while (*pw != (char *) NULL && (st = strcmp(*pw, w)) < 0)
+		while (*pw != NULL && (st = strcmp(*pw, w)) < 0)
 			pw++;
 		if (st == 0)			/* found it */
 			continue;
 		if (nmwords == MAXMWORDS ||
-					mwordsp + wordlen + 1 >= &mwords[MAXMSPACE]) {
-			(void) fprintf(stderr, "Too many words!\n");
+		    mwordsp + wordlen + 1 >= &mwords[MAXMSPACE]) {
+			warnx("too many words!");
 			cleanup();
 			exit(1);
 		}
 		mword[nmwords++] = mwordsp;
 		p = w;
-		while (*mwordsp++ = *p++)
-			;
+		while (*mwordsp++ = *p++);
 	}
 }
 
@@ -565,8 +559,9 @@ checkdict()
  * If the argument is non-null then it is assumed to be a legal board spec
  * in ascending cube order, oth. make a random board
  */
+void
 newgame(b)
-char *b;
+	char *b;
 {
 	register int i, p, q;
 	char *tmp;
@@ -578,7 +573,7 @@ char *b;
 		"bfiorx", "dknotu", "abjmoq", "egintv"
 	};
 
-	if (b == (char *) NULL) {
+	if (b == NULL) {
 		/*
 		 * Shake the cubes and make the board
 		 */
@@ -634,24 +629,17 @@ char *b;
 
 }
 
+int
 compar(p, q)
-char **p, **q;
+	const void *p, *q;
 {
-	return(strcmp(*p, *q));
+	return (strcmp(*(char **)p, *(char **)q));
 }
 
+void
 usage()
 {
-(void) fprintf(stderr,
-"Usage: bog [-b] [-d] [-s#] [-t#] [-w#] [+[+]] [boardspec]\n");
-(void) fprintf(stderr, "-b: 'batch mode' (boardspec must be present)\n");
-(void) fprintf(stderr, "-d: debug\n");
-(void) fprintf(stderr, "-s#: use # as the random number seed\n");
-(void) fprintf(stderr, "-t#: time limit is # seconds\n");
-(void) fprintf(stderr, "-w#: minimum word length is # letters\n");
-(void) fprintf(stderr, "+: can reuse a cube, but not twice in succession\n");
-(void) fprintf(stderr, "++: can reuse cubes arbitrarily\n");
-(void) fprintf(stderr, "boardspec: the first board to use (use 'q' for 'qu')\n");
+	(void) fprintf(stderr,
+	    "usage: bog [-bd] [-s#] [-t#] [-w#] [+[+]] [boardspec]\n");
 	exit(1);
 }
-

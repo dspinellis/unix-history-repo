@@ -1,14 +1,29 @@
-/* vi: set tabstop=4 : */
+/*-
+ * Copyright (c) 1993 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Barry Brachman.
+ *
+ * %sccs.include.redist.c%
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)timer.c	5.2 (Berkeley) %G%";
+#endif /* not lint */
+
+#include <sys/param.h>
+
+#include <curses.h>
+#include <setjmp.h>
+#include <stdio.h>
+#include <time.h>
+#include <unistd.h>
 
 #include "bog.h"
+#include "extern.h"
 
-#ifdef TIMER
-
-#include <setjmp.h>
-#include <curses.h>
-#include <stdio.h>
-
-static int waitch();
+static int waitch __P((long));
 
 /*
  * Update the display of the remaining time while waiting for a character
@@ -16,17 +31,18 @@ static int waitch();
  * non-zero; oth. return the character
  * Leave the cursor where it was initially
  */
+int
 timerch()
 {
-	int col, remaining, row;
-	long prevt, t;
 	extern int tlimit;
 	extern long start_t;
 	extern jmp_buf env;
+	long prevt, t;
+	int col, remaining, row;
 
 	getyx(stdscr, row, col);
 	prevt = 0L;
-	while (1) {
+	for (;;) {
 		if (waitch(1000L) == 1)
 			break;
 		time(&t);
@@ -43,33 +59,30 @@ timerch()
 		move(row, col);
 		refresh();
 	}
-	return(getch() & 0177);
+	return (getch() & 0177);
 }
 
 /*
  * Wait up to 'delay' microseconds for input to appear
  * Returns 1 if input is ready, 0 oth.
  */
-
-#ifdef BSD42
-
-#include <sys/time.h>
-
-static
+static int
 waitch(delay)
-long delay;
+	long delay;
 {
-	int fdbits;
+	fd_set fdbits;
 	struct timeval duration;
 
-	duration.tv_sec = 0L;
+	duration.tv_sec = 0;
 	duration.tv_usec = delay;
-	fdbits = 1;
-	return(select(32, &fdbits, 0, 0, &duration));
+	FD_ZERO(&fdbits);
+	FD_SET(STDIN_FILENO, &fdbits);
+	return (select(32, &fdbits, NULL, NULL, &duration));
 }
 
+void
 delay(tenths)
-int tenths;
+	int tenths;
 {
 	struct timeval duration;
 
@@ -77,95 +90,3 @@ int tenths;
 	duration.tv_sec = (long) (tenths / 10);
 	select(32, 0, 0, 0, &duration);
 }
-#endif BSD42
-
-#ifdef SYSV
-
-#include <sys/ioctl.h>
-
-/*
- * This is not too efficient...
- */
-static
-waitch(delay)
-long delay;
-{
-	int nchars;
-
-	if (ioctl(fileno(stdin), FIONREAD, &nchars) < 0) {
-		perror("ioctl():");
-		cleanup();
-		exit(1);
-	}
-	return(nchars > 0);
-}
-
-/*
- * Do nothing for the given number of tenths of a second
- */
-delay(tenths)
-int tenths;
-{
-	int n;
-
-	n = tenths / 10;
-	if (n == 0)
-		n == 1;
-	sleep(n);
-}
-
-#endif SYSV
-
-#ifdef ATARI
-
-#include <osbind.h>
-
-/*
- * The ST curses turns on the cursor only when a read is performed
- * Since there's nothing better to do at this point the cursor can
- * be enabled
- */
-static
-waitch(delay)
-long delay;
-{
-
-	Bconout(2, '\033');
-	Bconout(2, 'e');
-	return(Cconis() == -1);
-}
-
-/*
- * Do nothing for the given number of tenths of a second
- */
-delay(tenths)
-int tenths;
-{
-	int n;
-
-	n = tenths / 10;
-	if (n == 0)
-		n == 1;
-	sleep(n);
-}
-
-#endif ATARI
-
-#else !TIMER
-
-/*
- * Do nothing for the given number of tenths of a second
- */
-delay(tenths)
-int tenths;
-{
-	int n;
-
-	n = tenths / 10;
-	if (n == 0)
-		n == 1;
-	sleep(n);
-}
-
-#endif TIMER
-

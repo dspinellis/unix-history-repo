@@ -1,19 +1,33 @@
-/* vi: set tabstop=4 : */
+/*-
+ * Copyright (c) 1993 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Barry Brachman.
+ *
+ * %sccs.include.redist.c%
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)help.c	5.2 (Berkeley) %G%";
+#endif /* not lint */
 
 #include <curses.h>
 #include <stdio.h>
 
 #include "bog.h"
+#include "extern.h"
 
+int
 help()
 {
+	extern int nlines;
 	int eof, i;
 	FILE *fp;
 	WINDOW *win;
 	char buf[BUFSIZ];
-	extern int ncols, nlines;
 
-	if ((fp = fopen(HELPFILE, "r")) == (FILE *) NULL)
+	if ((fp = fopen(HELPFILE, "r")) == NULL)
 		return(-1);
 	win = newwin(0, 0, 0, 0);
 	clearok(win, 1);
@@ -39,7 +53,8 @@ help()
 			break;
 		}
 		wmove(win, nlines - 1, 0);
-		wprintw(win, "Type <space> to continue, anything else to quit...");
+		wprintw(win,
+		    "Type <space> to continue, anything else to quit...");
 		wrefresh(win);
 		if ((inputch() & 0177) != ' ')
 			break;
@@ -48,9 +63,6 @@ help()
 
 	fclose(fp);
 	if (eof) {
-		extern char *version;
-
-		wprintw(win, "%s", version);
 		wmove(win, nlines - 1, 0);
 		wprintw(win, "Hit any key to continue...");
 		wrefresh(win);
@@ -61,4 +73,3 @@ help()
 	refresh();
 	return(0);
 }
-

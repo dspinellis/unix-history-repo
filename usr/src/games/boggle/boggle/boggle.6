@@ -1,13 +1,19 @@
-.TH BOG 1-LOCAL "22 February 1988"
+.\" Copyright (c) 1993 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Barry Brachman.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)boggle.6	5.2 (Berkeley) %G%
+.\"
+.TH BOGGLE 6 ""
 .UC
 .SH NAME
 boggle \- word search game
 .SH SYNOPSIS
-bog [-b] [-d] [-s#] [-t#] [-w#] [+[+]] [boardspec]
-.br
-mkdict
-.br
-mkindex
+boggle [-bd] [-s seed] [-t time] [-w length] [+[+]] [boardspec]
 .SH DESCRIPTION
 The object of
 .I boggle
@@ -63,31 +69,6 @@ is printed to stdout.
 .PP
 Help is available during play by typing `?'.
 More detailed information on the game is given there.
-.PP
-.I Mkdict
-reads a word list from stdin, one word per line, and writes a dictionary
-usable by
-.I boggle
-to stdout.
-The dictionary is assumed to be sorted.
-Improper words are filtered out.
-.PP
-.I Mkindex
-reads a dictionary produced by
-.I mkdict
-from stdin
-and writes an index file usable by
-.I boggle
-to stdout.
-.SH FILES
-.I Bog
-accesses a dictionary file, a dictionary index file, and a helpfile.
-Locations are system dependent.
-The dictionary file must have been created by
-.I mkdict
-and the index file by
-.I mkindex.
-boggle(6), boggletool(6)
 .SH BUGS
 If there are a great many words in the cube the final display of the words
 may scroll off of the screen.  (On a 25 line screen about 130 words can be
@@ -99,7 +80,7 @@ When using the '+' or '++' options the display of words found in the board
 doesn't indicate reused cubes.
 .SH AUTHOR
 Boggle is a trademark of Parker Brothers.
-.sp 2
+.br
 Barry Brachman
 .br
 Dept. of Computer Science
