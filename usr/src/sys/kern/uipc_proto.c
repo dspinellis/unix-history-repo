@@ -1,4 +1,4 @@
-/*	uipc_proto.c	4.14	82/01/25	*/
+/*	uipc_proto.c	4.15	82/02/01	*/
 
 #include "../h/param.h"
 #include "../h/socket.h"
@@ -93,7 +93,7 @@ struct protosw protosw[] = {
   raw_usrreq,
   raw_init,	0,		0,		0,
 },
-{ SOCK_RAW,	PF_INET,	IPPROTO_RAW,	PR_ATOMIC,
+{ SOCK_RAW,	PF_INET,	IPPROTO_RAW,	PR_ATOMIC|PR_ADDR,
   rip_input,	rip_output,	rip_ctlinput,	0,
   rip_usrreq,
   0,		0,		0,		0,
