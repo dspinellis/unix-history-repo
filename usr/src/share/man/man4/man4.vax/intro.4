@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)intro.4	6.3 (Berkeley) %G%
+.\"	@(#)intro.4	6.4 (Berkeley) %G%
 .\"
 .TH INTRO 4 ""
 .UC 4
@@ -24,13 +24,6 @@ due to errors in device operation;
 see
 .IR syslogd (8)
 for more information.
-.PP
-This section contains both devices
-which may be configured into the system, ``4'' entries,
-and network related information,
-``4N'', ``4P'', and ``4F'' entries;
-The networking support is introduced in
-.IR intro (4N).
 .SH "VAX DEVICE SUPPORT"
 This section describes the hardware supported on the DEC VAX-11.
 Software support for these devices comes in two forms.  A hardware
@@ -61,10 +54,7 @@ The autoconfiguration system is described in
 .IR autoconf (4).
 A list of the supported devices is given below.
 .SH SEE ALSO
-intro(4),
-intro(4N),
-autoconf(4),
-config(8).
+intro(4), netintro(4), autoconf(4), config(8).
 .PP
 Building 4.3BSD UNIX Systems with \fIConfig\fP (SMM:2)
 .SH "LIST OF DEVICES"
