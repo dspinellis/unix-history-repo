@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static	char sccsid[] = "@(#)events.c	1.4 (Berkeley) %G%";
+static	char sccsid[] = "@(#)events.c	1.5 (Berkeley) %G%";
 
 /*
  * Event/breakpoint managment.
@@ -120,11 +120,15 @@ Cmdlist cmdlist;
     register Event e;
 
     e = new(Event);
-    ++eventid;
-    e->id = eventid;
+    e->id = ++eventid;
     e->temporary = istmp;
     e->condition = econd;
     e->actions = cmdlist;
+    if (tracebpts) {
+	debugevent("event_alloc: new", e);
+	putchar('\n');
+	fflush(stdout);
+    }
     eventlist_append(e, eventlist);
     translate(e);
     return e;
@@ -149,10 +153,8 @@ unsigned int id;
 	    found = true;
 	    foreach (Breakpoint, bp, bplist)
 		if (bp->event == e) {
-		    if (tracebpts) {
-			printf("deleting breakpoint at 0x%x\n", bp->bpaddr);
-			fflush(stdout);
-		    }
+		    if (tracebpts)
+			debugbpt("delevent: deleting", bp);
 		    list_delete(list_curitem(bplist), bplist);
 		}
 	    endfor
@@ -442,14 +444,8 @@ Cmdlist actions;
     p->bpaddr = addr;
     p->bpline = line;
     p->actions = actions;
-    if (tracebpts) {
-	if (e == nil) {
-	    printf("new bp at 0x%x for event ??\n", addr, e->id);
-	} else {
-	    printf("new bp at 0x%x for event %d\n", addr, e->id);
-	}
-	fflush(stdout);
-    }
+    if (tracebpts)
+	debugbpt("bp_alloc: new", p);
     bplist_append(p, bplist);
     return p;
 }
@@ -485,21 +481,13 @@ public Boolean bpact()
     found = false;
     foreach (Breakpoint, p, bplist)
 	if (p->bpaddr == pc) {
-	    if (tracebpts) {
-		printf("breakpoint for event %d found at location 0x%x\n",
-		    p->event->id, pc);
-	    }
+	    if (tracebpts)
+		debugbpt("bpact: found", p);
 	    found = true;
-	    if (p->event->temporary) {
-		if (not delevent(p->event->id)) {
-		    printf("!! dbx.bpact: can't find event %d\n",
-			p->event->id);
-		}
-	    }
 	    evalcmdlist(p->actions);
-	    if (isstopped) {
-		eventId = p->event->id;
-	    }
+	    eventId = p->event->id;
+	    if (p->event->temporary and not delevent(p->event->id))
+		printf("!! dbx.bpact: can't find event %d\n", eventId);
 	}
     endfor
     if (isstopped) {
@@ -527,15 +515,15 @@ Event event;
 Cmdlist cmdlist;
 {
     register Trcmd trcmd;
-    Breakpoint bp;
     Cmdlist actions;
     Address ret;
 
     trcmd = new(Trcmd);
-    ++trid;
-    trcmd->trid = trid;
+    trcmd->trid = ++trid;
     trcmd->event = event;
     trcmd->cmdlist = cmdlist;
+    if (tracebpts)
+	debugtrace("traceon: adding", trcmd);
     single_stepping = true;
     if (inst) {
 	inst_tracing = true;
@@ -545,11 +533,16 @@ Cmdlist cmdlist;
     }
     ret = return_addr();
     if (ret != 0) {
-	actions = buildcmdlist(build(O_TRACEOFF, trcmd->trid));
-	bp = bp_alloc(event, (Address) ret, 0, actions);
-    }
-    if (tracebpts) {
-	printf("adding trace %d for event %d\n", trcmd->trid, event->id);
+	/*
+	 * Must create new temporary event for traceoff action;
+	 * otherwise traceoff will take place but the breakpoint
+	 * won't be deleted.  This results in a panic the next
+	 * time we enter the region where tracing takes place since
+	 * the associate trace id (of the traceoff command) no
+	 * longer exists.
+	 */
+	event_once(build(O_EQ, build(O_SYM, pcsym), build(O_LCON, ret)),
+	    buildcmdlist(build(O_TRACEOFF, trcmd->trid)));
     }
 }
 
@@ -583,6 +576,7 @@ Integer id;
 	    }
 	endfor
 	if (not found) {
+	    debugallevents("traceoff");
 	    panic("missing trid %d", id);
 	}
     }
@@ -601,13 +595,120 @@ Integer id;
 private printrmtr(t)
 Trcmd t;
 {
-    if (tracebpts) {
-	printf("removing trace %d", t->trid);
-	if (t->event != nil) {
-	    printf(" for event %d", t->event->id);
-	}
-	printf("\n");
+    if (tracebpts)
+	debugtrace("removing", t);
+}
+
+/*
+ * Debugging routines.
+ */
+debugallevents(s)
+String s;
+{
+    register Trcmd t;
+    register Event e;
+    register Breakpoint bp;
+
+    if (s)
+	printf("%s:\n", s);
+    if (eachline) {
+	printf("Traces (eachline):\n");
+	foreach (Trcmd, t, eachline)
+	    debugtrace("\t", t);
+	endfor
     }
+    if (eachinst) {
+	printf("Trace (eachinst):\n");
+	foreach (Trcmd, t, eachinst)
+	    debugtrace("\t", t);
+	endfor
+    }
+    if (bplist) {
+	printf("Breakpoints:\n");
+	foreach (Breakpoint, bp, bplist)
+	    debugbpt("\t", bp);
+	endfor
+    }
+    if (eventlist) {
+	printf("Events:\n");
+	foreach (Event, e, eventlist)
+	    debugevent("\t", e);
+	    putchar('\n');
+	endfor
+    }
+    fflush(stdout);
+}
+
+private debugtrace(s, t)
+String s;
+Trcmd t;
+{
+
+    if (s)
+	printf("%s ", s);
+    printf("trace %d ", t->trid);
+    debugevent("for", t->event);
+    printf("\n");
+    fflush(stdout);
+}
+
+private debugbpt(s, bp)
+String s;
+Breakpoint bp;
+{
+
+    if (s)
+	printf("%s ", s);
+    debugevent("breakpoint for", bp->event);
+    printf("; loc 0x%x", bp->bpaddr);
+    if (bp->actions)
+	debugactions(" ", bp->actions, nil);
+    putchar('\n');
+    fflush(stdout);
+}
+
+private debugevent(s, e)
+String s;
+Event e;
+{
+
+    if (s)
+	printf("%s ", s);
+    if (e == nil) {
+	printf("nil event");
+	return;
+    }
+    if (e->temporary)
+	printf("temporary ");
+    printf("event %d", e->id);
+}
+
+debugactions(s, cl, condition)
+String s;
+Cmdlist cl;
+Node condition;
+{
+    Command c;
+
+    if (s)
+	printf("%s ", s);
+    c = list_element(Command, list_head(cl));
+    if (c->op == O_PRINTCALL) {
+	printf("trace ");
+	printname(stdout, c->value.sym);
+	return;
+    }
+    if (list_size(cl) > 1)
+	printf("{ ");
+    foreach (Command, c, cl)
+	printcmd(stdout, c);
+	if (not list_islast())
+	    printf("; ");
+    endfor
+    if (list_size(cl) > 1)
+	printf(" }");
+    if (condition)
+	printcond(condition);
 }
 
 /*
