@@ -46,7 +46,7 @@ sys/kern_time.c		standard
 sys/quota_charges.c	standard
 sys/quota_share.c	standard
 sys/quota_sys.c		standard
-sys/subr_mcount.c	standard profiling-routine
+sys/subr_mcount.c	optional profiling-routine
 sys/subr_prf.c		standard
 sys/subr_rmap.c		standard
 sys/subr_xxx.c		standard
