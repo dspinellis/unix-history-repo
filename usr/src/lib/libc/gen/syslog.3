@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)syslog.3	6.3 (Berkeley) %G%
+.\"	@(#)syslog.3	6.4 (Berkeley) %G%
 .\"
 .TH SYSLOG 3 ""
 .UC 5
@@ -132,6 +132,12 @@ The authorization system:
 .IR login (1),
 .IR su (1),
 .IR getty (8),
+etc.
+.IP LOG_LPR \w'LOG_WARNING'u+3
+The line printer spooling system:
+.IR lpr (1),
+.IR lpc (8),
+.IR lpd (8),
 etc.
 .IP LOG_LOCAL0 \w'LOG_WARNING'u+3
 Reserved for local use.
