@@ -84,14 +84,16 @@ int	mtdev = 1;
 int	term;
 int	chksum;
 int	recno;
-int	first = 0;
-int	linkerrok;
+int	first;
+int	prtlinkerr;
 int	freemem = 1;
 int	nblock = 0;
 int	onintr();
 int	onquit();
 int	onhup();
+#ifdef notdef
 int	onterm();
+#endif
 
 daddr_t	low;
 daddr_t	high;
@@ -108,6 +110,7 @@ char	*strcat();
 char	*rindex();
 char	*getcwd();
 char	*getwd();
+char	*getmem();
 
 main(argc, argv)
 int	argc;
@@ -152,7 +155,7 @@ char	*argv[];
 			mktemp(tname);
 			if ((tfile = fopen(tname, "w")) == NULL) {
 				fprintf(stderr,
-				 "Tar: cannot create temporary file (%s)\n",
+				 "tar: cannot create temporary file (%s)\n",
 				 tname);
 				done(1);
 			}
@@ -212,7 +215,7 @@ char	*argv[];
 			break;
 
 		case 'l':
-			linkerrok++;
+			prtlinkerr++;
 			break;
 
 		case 'h':
@@ -347,14 +350,14 @@ dorep(argv)
 		}
 		putfile(*argv++, cp2, parent);
 		if (chdir(wdir) < 0) {
-			fprintf(stderr, "cannot change back?: ");
+			fprintf(stderr, "tar: cannot change back?: ");
 			perror(wdir);
 		}
 	}
 	putempty();
 	putempty();
 	flushtape();
-	if (linkerrok == 0)
+	if (prtlinkerr == 0)
 		return;
 	for (; ihead != NULL; ihead = ihead->nextp) {
 		if (ihead->count == 0)
@@ -421,12 +424,11 @@ putfile(longname, shortname, parent)
 	int infile = 0;
 	long blocks;
 	char buf[TBLOCK];
-	char *origbuf;
 	char *bigbuf;
-	register char *cp, *cp2;
+	register char *cp;
 	struct direct *dp;
 	DIR *dirp;
-	int i, j;
+	int i;
 	char newparent[NAMSIZ+64];
 	extern int errno;
 	int	maxread;
@@ -485,7 +487,7 @@ putfile(longname, shortname, parent)
 			fprintf(stderr, "tar: %s: directory read error\n",
 			    longname);
 			if (chdir(parent) < 0) {
-				fprintf(stderr, "cannot change back?: ");
+				fprintf(stderr, "tar: cannot change back?: ");
 				perror(parent);
 			}
 			return;
@@ -505,7 +507,7 @@ putfile(longname, shortname, parent)
 		}
 		closedir(dirp);
 		if (chdir(parent) < 0) {
-			fprintf(stderr, "cannot change back?: ");
+			fprintf(stderr, "tar: cannot change back?: ");
 			perror(parent);
 		}
 		break;
@@ -530,11 +532,9 @@ putfile(longname, shortname, parent)
 		}
 		dblock.dbuf.linkname[i] = '\0';
 		dblock.dbuf.linkflag = '2';
-		if (vflag) {
-			fprintf(vfile, "a %s ", longname);
-			fprintf(vfile, "symbolic link to %s\n",
-			    dblock.dbuf.linkname);
-		}
+		if (vflag)
+			fprintf(vfile, "a %s symbolic link to %s\n",
+			    longname, dblock.dbuf.linkname);
 		sprintf(dblock.dbuf.size, "%11lo", 0);
 		sprintf(dblock.dbuf.chksum, "%6o", checksum());
 		writetape((char *)&dblock);
@@ -568,23 +568,15 @@ putfile(longname, shortname, parent)
 				dblock.dbuf.linkflag = '1';
 				sprintf(dblock.dbuf.chksum, "%6o", checksum());
 				writetape( (char *) &dblock);
-				if (vflag) {
-					fprintf(vfile, "a %s ", longname);
-					fprintf(vfile, "link to %s\n",
-					    lp->pathname);
-				}
+				if (vflag)
+					fprintf(vfile, "a %s link to %s\n",
+					    longname, lp->pathname);
 				lp->count--;
 				close(infile);
 				return;
 			}
-			lp = (struct linkbuf *) malloc(sizeof(*lp));
-			if (lp == NULL) {
-				if (freemem) {
-					fprintf(stderr,
-				"tar: out of memory, link information lost\n");
-					freemem = 0;
-				}
-			} else {
+			lp = (struct linkbuf *) getmem(sizeof(*lp));
+			if (lp != NULL) {
 				lp->nextp = ihead;
 				ihead = lp;
 				lp->inum = stbuf.st_ino;
@@ -594,10 +586,8 @@ putfile(longname, shortname, parent)
 			}
 		}
 		blocks = (stbuf.st_size + (TBLOCK-1)) / TBLOCK;
-		if (vflag) {
-			fprintf(vfile, "a %s ", longname);
-			fprintf(vfile, "%ld blocks\n", blocks);
-		}
+		if (vflag)
+			fprintf(vfile, "a %s %ld blocks\n", longname, blocks);
 		sprintf(dblock.dbuf.chksum, "%6o", checksum());
 		hint = writetape((char *)&dblock);
 		maxread = max(stbuf.st_blksize, (nblock * TBLOCK));
@@ -669,9 +659,12 @@ gotit:
 				continue;
 			}
 		}
-		if (checkdir(dblock.dbuf.name))
+		if (checkdir(dblock.dbuf.name)) {	/* have a directory */
+			if (mflag == 0)
+				dodirtimes(&dblock);
 			continue;
-		if (dblock.dbuf.linkflag == '2') {
+		}
+		if (dblock.dbuf.linkflag == '2') {	/* symlink */
 			unlink(dblock.dbuf.name);
 			if (symlink(dblock.dbuf.linkname, dblock.dbuf.name)<0) {
 				fprintf(stderr, "tar: %s: symbolic link failed\n",
@@ -684,21 +677,14 @@ gotit:
 #ifdef notdef
 			/* ignore alien orders */
 			chown(dblock.dbuf.name, stbuf.st_uid, stbuf.st_gid);
-			if (mflag == 0) {
-				struct timeval tv[2];
-
-				tv[0].tv_sec = time(0);
-				tv[0].tv_usec = 0;
-				tv[1].tv_sec = stbuf.st_mtime;
-				tv[1].tv_usec = 0;
-				utimes(dblock.dbuf.name, tv);
-			}
+			if (mflag == 0)
+				setimes(dblock.dbuf.name, stbuf.st_mtime);
 			if (pflag)
 				chmod(dblock.dbuf.name, stbuf.st_mode & 07777);
 #endif
 			continue;
 		}
-		if (dblock.dbuf.linkflag == '1') {
+		if (dblock.dbuf.linkflag == '1') {	/* regular link */
 			unlink(dblock.dbuf.name);
 			if (link(dblock.dbuf.linkname, dblock.dbuf.name) < 0) {
 				fprintf(stderr, "tar: %s: cannot link\n",
@@ -706,7 +692,7 @@ gotit:
 				continue;
 			}
 			if (vflag)
-				fprintf(vfile, "%s linked to %s",
+				fprintf(vfile, "%s linked to %s\n",
 				    dblock.dbuf.name, dblock.dbuf.linkname);
 			continue;
 		}
@@ -719,7 +705,7 @@ gotit:
 		chown(dblock.dbuf.name, stbuf.st_uid, stbuf.st_gid);
 		blocks = ((bytes = stbuf.st_size) + TBLOCK-1)/TBLOCK;
 		if (vflag)
-			fprintf(vfile, "x %s, %ld bytes, %ld tape blocks",
+			fprintf(vfile, "x %s, %ld bytes, %ld tape blocks\n",
 			    dblock.dbuf.name, bytes, blocks);
 		for (; blocks > 0;) {
 			register int nread;
@@ -730,14 +716,7 @@ gotit:
 			if (nwant > (blocks*TBLOCK))
 				nwant = (blocks*TBLOCK);
 			nread = readtbuf(&bufp, nwant);
-			if (bytes > nread) {
-				if (write(ofile, bufp, nread) < 0) {
-					fprintf(stderr,
-					"tar: %s: HELP - extract write error\n",
-					    dblock.dbuf.name);
-					done(2);
-				}
-			} else if (write(ofile, bufp, (int) bytes) < 0) {
+			if (write(ofile, bufp, (int)min(nread, bytes)) < 0) {
 				fprintf(stderr,
 				    "tar: %s: HELP - extract write error\n",
 				    dblock.dbuf.name);
@@ -745,20 +724,16 @@ gotit:
 			}
 			bytes -= nread;
 			blocks -= (((nread-1)/TBLOCK)+1);
-			fprintf(stderr,"\n");
 		}
 		close(ofile);
-		if (mflag == 0) {
-			struct timeval tv[2];
-
-			tv[0].tv_sec = time(0);
-			tv[0].tv_usec = 0;
-			tv[1].tv_sec = stbuf.st_mtime;
-			tv[1].tv_usec = 0;
-			utimes(dblock.dbuf.name, tv);
-		}
+		if (mflag == 0)
+			setimes(dblock.dbuf.name, stbuf.st_mtime);
 		if (pflag)
 			chmod(dblock.dbuf.name, stbuf.st_mode & 07777);
+	}
+	if (mflag == 0) {
+		dblock.dbuf.name[0] = '\0';	/* process the whole stack */
+		dodirtimes(&dblock);
 	}
 }
 
@@ -847,20 +822,25 @@ select(pairp, st)
 	printf("%c", *ap);
 }
 
+/*
+ * Make all directories needed by `name'.  If `name' is a
+ * directory itself on the tar tape (indicated by a trailing '/'),
+ * return 1; else 0.
+ */
 checkdir(name)
 	register char *name;
 {
 	register char *cp;
 
 	/*
-	 * Quick check for existance of directory.
+	 * Quick check for existence of directory.
 	 */
 	if ((cp = rindex(name, '/')) == 0)
 		return (0);
 	*cp = '\0';
-	if (access(name, 0) >= 0) {
+	if (access(name, 0) == 0) {	/* already exists */
 		*cp = '/';
-		return (cp[1] == '\0');
+		return (cp[1] == '\0');	/* return (lastchar == '/') */
 	}
 	*cp = '/';
 
@@ -904,11 +884,13 @@ onhup()
 	term++;
 }
 
+#ifdef notdef
 onterm()
 {
 	signal(SIGTERM, SIG_IGN);
 	term++;
 }
+#endif
 
 tomodes(sp)
 register struct stat *sp;
@@ -986,6 +968,7 @@ checkf(name, mode, howmuch)
 	return (1);
 }
 
+/* Is the current file a new file, or the newest one of the same name? */
 checkupdate(arg)
 	char *arg;
 {
@@ -1010,6 +993,9 @@ done(n)
 	exit(n);
 }
 
+/*
+ * Does s2 begin with the string s1, on a directory boundary?
+ */
 prefix(s1, s2)
 	register char *s1, *s2;
 {
@@ -1051,7 +1037,7 @@ bsrch(s, n, l, h)
 
 loop:
 	if (l >= h)
-		return (-1L);
+		return ((daddr_t) -1);
 	m = l + (h-l)/2 - N/2;
 	if (m < l)
 		m = l;
@@ -1064,7 +1050,7 @@ loop:
 		m++;
 	}
 	if (m >= h)
-		return (-1L);
+		return ((daddr_t) -1);
 	m1 = m;
 	j = i;
 	for(i++; i<N; i++) {
@@ -1100,14 +1086,14 @@ cmp(b, s, n)
 	return (b[i+1] == ' '? 0 : -1);
 }
 
-readtape (buffer)
+readtape(buffer)
 	char *buffer;
 {
 	char *bufp;
-	int nread;
 
-	if (first==0) getbuf();
-	readtbuf (&bufp, TBLOCK);
+	if (first == 0)
+		getbuf();
+	readtbuf(&bufp, TBLOCK);
 	bcopy(bufp, buffer, TBLOCK);
 	return(TBLOCK);
 }
@@ -1148,14 +1134,14 @@ writetbuf(buffer, n)
 	register char *buffer;
 	register int n;
 {
-	int	i;
-	if (first==0) {
+
+	if (first == 0) {
 		getbuf();
 		first = 1;
 	}
 	if (recno >= nblock) {
-		if ( write(mt, tbuf, TBLOCK*nblock) < 0) {
-			perror("tar");
+		if (write(mt, tbuf, TBLOCK*nblock) < 0) {
+			fprintf(stderr,"tar: tape write error\n");
 			done(2);
 		}
 		recno = 0;
@@ -1169,7 +1155,7 @@ writetbuf(buffer, n)
 	 */
 	while (recno == 0 && n >= nblock) {
 		if (write(mt, buffer, TBLOCK*nblock) < 0) {
-			perror("tar");
+			fprintf(stderr,"tar: tape write error\n");
 			done(2);
 		}
 		n -= nblock;
@@ -1195,7 +1181,6 @@ writetbuf(buffer, n)
 backtape()
 {
 	static struct mtop mtop = {MTBSR, 1};
-	struct mtget mtget;
 
 	if (mtdev == 0) {
 		if (ioctl(mt, MTIOCTOP, &mtop) < 0) {
@@ -1203,7 +1188,7 @@ backtape()
 			done(4);
 		}
 	} else
-		lseek(mt, (long) -TBLOCK*nblock, 1);
+		lseek(mt, (daddr_t) -TBLOCK*nblock, 1);
 	recno--;
 }
 
@@ -1218,13 +1203,10 @@ bread(fd, buf, size)
 	int size;
 {
 	int count;
-	int i;
 	static int lastread = 0;
 
-	if (!Bflag) {
-			return (read(fd, buf, size)); 
-	}
-
+	if (!Bflag)
+		return (read(fd, buf, size)); 
 
 	for (count = 0; count < size; count += lastread) {
 		if (lastread < 0) {
@@ -1251,16 +1233,15 @@ getcwd(buf)
 
 getbuf()
 {
-	struct mtget mtget;
 	
-	if ( mtdev == 1) {
+	if (mtdev == 1) {
 		fstat(mt, &stbuf);
 		if ((stbuf.st_mode & S_IFMT) == S_IFCHR)
 			mtdev = 0;
 		else
 			mtdev = -1;
 	}
-	if (nblock==0) {
+	if (nblock == 0) {
 		if (mtdev == 0)
 			nblock = FILEBLOCK;
 		else {
@@ -1268,7 +1249,8 @@ getbuf()
 			nblock = stbuf.st_blocks / TBLOCK;
 		}
 	}
-	if (nblock == 0) nblock = FILEBLOCK;
+	if (nblock == 0)
+		nblock = FILEBLOCK;
 	tbuf = (union hblock *)malloc(nblock*TBLOCK);
 	if (tbuf == NULL) {
 		fprintf(stderr, "tar: blocksize %d too big, can't get memory\n",
@@ -1277,52 +1259,85 @@ getbuf()
 	}
 }
 
+/*
+ * We are really keeping a directory stack, but since all the
+ * elements of it share a common prefix, we can make do with one
+ * string.  We keep only the current directory path, with an associated
+ * array of mtime's, one for each '/' in the path.  A negative mtime
+ * means no mtime.  The mtime's are offset by one (first index 1, not
+ * 0) because calling this with the null string causes mtime[0] to be set.
+ *
+ * This stack algorithm is not guaranteed to work for tapes created
+ * with the 'r' option, but the vast majority of tapes with
+ * directories are not.  This avoids saving every directory record on
+ * the tape and setting all the times at the end.
+ */
+char dirstack[NAMSIZ];
+#define NTIM (NAMSIZ/2+1)		/* a/b/c/d/... */
+time_t mtime[NTIM];
 
-chgreel(x, fl)
-	int x, fl;
+dodirtimes(hp)
+	union hblock *hp;
 {
-	register int f;
-	char str[BUFSIZ];
-	char *pstr;
-	FILE *devtty;
-	struct stat statb;
+	register char *p = dirstack;
+	register char *q = hp->dbuf.name;
+	register int ndir = 0;
+	char *savp;
+	int savndir;
 
-	perror("tar");
-	fprintf(stderr, "Can't %s\n", x ? "write output": "read input");
-	fstat(fl, &statb);
-	if ((statb.st_mode & S_IFMT) != S_IFCHR)
-		done(2);
-
-	close(fl);
-	devtty = fopen("/dev/tty", "r");
-	for (;;) {
-		fprintf(stderr, "tar: If you want to go on, type \"yes\" or a new\npathname of a device/file name when you are ready\n");
-		if (fgets(str, sizeof (str), devtty) == NULL)
-			break;
-		str[strlen(str) - 1] = '\0';
-
-		switch (*str) {
-		case '\0':
-		case 'N':
-		case 'n':
-			goto done;
-
-		case 'Y':
-		case 'y':
-		case '\n':
-			pstr = usefile;
-			break;
-
-		default:
-			pstr = str;
-		}
-		if ((f = open(pstr, x ? 1 : 0)) >= 0) {
-			fclose(devtty);
-			return (f);
-		}
-		fprintf(stderr, "tar: open of %s failed\n", pstr);
+	/* Find common prefix */
+	while (*p == *q) {
+		if (*p++ == '/')
+			++ndir;
+		q++;
 	}
-done:
-	fclose(devtty);
-	return (-1);
+
+	savp = p;
+	savndir = ndir;
+	while (*p) {
+		/*
+		 * Not a child: unwind the stack, setting the times.
+		 * The order we do this doesn't matter, so we go "forward."
+		 */
+		if (*p++ == '/')
+			if (mtime[++ndir] >= 0) {
+				*--p = '\0';	/* zap the slash */
+				setimes(dirstack, mtime[ndir]);
+				*p++ = '/';
+			}
+	}
+	p = savp;
+	ndir = savndir;
+
+	/* Push this one on the "stack" */
+	while (*p = *q++)	/* append the rest of the new dir */
+		if (*p++ == '/')
+			mtime[++ndir] = -1;
+	mtime[ndir] = stbuf.st_mtime;	/* overwrite the last one */
+}
+
+setimes(path, mt)
+	char *path;
+	time_t mt;
+{
+	struct timeval tv[2];
+
+	tv[0].tv_sec = time((time_t *) 0);
+	tv[1].tv_sec = mt;
+	tv[0].tv_usec = tv[1].tv_usec = 0;
+	if (utimes(path, tv) < 0)
+		fprintf(stderr, "tar: can't set time on %s\n", path);
+}
+
+char *
+getmem(size)
+{
+	char *p = malloc((unsigned) size);
+
+	if (p == NULL && freemem) {
+		fprintf(stderr,
+		    "tar: out of memory, link and directory modtime info lost\n");
+		freemem = 0;
+	}
+	return (p);
 }
