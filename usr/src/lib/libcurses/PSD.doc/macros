@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)macros	8.1 (Berkeley) %G%
+.\"	@(#)macros	6.9 (Berkeley) %G%
 .\"
 .\" this is the uncommented version.  The commented one is in "macros.coms"
 .ie t .ds _ \d\(mi\u
@@ -88,7 +88,7 @@
 .if \\n(.$==0 .tm error
 .nr ll 0
 .nr dg 0
-\fR
+.ft R
 .if '\\$\\n(.$'.' .nr ll 1
 .if '\\$\\n(.$',' .nr ll 1
 .if '\\$\\n(.$')' .nr ll 1
@@ -112,7 +112,7 @@
 .if \\n(.$>1 \{\
 .       if \\n(ll==0 .as ot ;
 .       if '\\$\\n(.$'\(dg' .as ot ;
-\}
+.\}
 .if \\n(ll==1 .as ot \\$\\n(.$
 \\*(ot
 ..
