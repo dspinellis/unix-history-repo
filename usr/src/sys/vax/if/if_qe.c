@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_qe.c	7.20 (Berkeley) %G%
+ *	@(#)if_qe.c	7.21 (Berkeley) %G%
  */
 
 /* from  @(#)if_qe.c	1.15	(ULTRIX)	4/16/86 */
@@ -857,7 +857,7 @@ qeread(sc, ifrw, len)
 	struct ifrw *ifrw;
 	int len;
 {
-	struct ether_header *eh;
+	struct ether_header *eh, ehm;
     	struct mbuf *m;
 	int off, resid, s;
 	struct ifqueue *inq;
@@ -892,10 +892,11 @@ qeread(sc, ifrw, len)
 	 * information to be at the front, but we still have to drop
 	 * the type and length which are at the front of any trailer data.
 	 */
+	bcopy((caddr_t)eh, (caddr_t)&ehm, sizeof(ehm));
 	m = if_ubaget(&sc->qe_uba, ifrw, len, off, &sc->qe_if);
 
 	if (m)
-		ether_input(&sc->qe_if, eh, m);
+		ether_input(&sc->qe_if, &ehm, m);
 }
 
 /*
