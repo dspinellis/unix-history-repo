@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_compat.c 1.43 92/04/23$
  *
- *	@(#)hpux_compat.c	7.30 (Berkeley) %G%
+ *	@(#)hpux_compat.c	7.31 (Berkeley) %G%
  */
 
 /*
@@ -205,7 +205,7 @@ hpuxwaitpid(p, uap, retval)
 	struct hpuxwaitpid_args *uap;
 	int *retval;
 {
-	int sig, *statp, error;
+	int rv, sig, xstat, error;
 
 	uap->rusage = 0;
 	error = wait4(p, uap, retval);
@@ -217,16 +217,24 @@ hpuxwaitpid(p, uap, retval)
 		error = EINTR;
 	if (error)
 		return (error);
-	sig = retval[1] & 0xFF;
-	if (sig == WSTOPPED) {
-		sig = (retval[1] >> 8) & 0xFF;
-		retval[1] = (bsdtohpuxsig(sig) << 8) | WSTOPPED;
-	} else if (sig)
-		retval[1] = (retval[1] & 0xFF00) |
-			bsdtohpuxsig(sig & 0x7F) | (sig & 0x80);
-	if (statp)
-		if (suword((caddr_t)statp, retval[1]))
-			error = EFAULT;
+	if (uap->status) {
+		/*
+		 * Wait4 already wrote the status out to user space,
+		 * pull it back, change the signal portion, and write
+		 * it back out.
+		 */
+		rv = fuword((caddr_t)uap->status);
+		if (WIFSTOPPED(rv)) {
+			sig = WSTOPSIG(rv);
+			rv = W_STOPCODE(bsdtohpuxsig(sig));
+		} else if (WIFSIGNALED(rv)) {
+			sig = WTERMSIG(rv);
+			xstat = WEXITSTATUS(rv);
+			rv = W_EXITCODE(xstat, bsdtohpuxsig(sig)) |
+				WCOREDUMP(rv);
+		}
+		(void)suword((caddr_t)uap->status, rv);
+	}
 	return (error);
 }
 
@@ -264,6 +272,30 @@ hpuxopen(p, uap, retval)
 	if (mode & HPUXFEXCL)
 		uap->mode |= O_EXCL;
 	return (open(p, uap, retval));
+}
+
+/*
+ * Old creat system call.
+ */
+struct hpuxcreat_args {
+	char	*fname;
+	int	fmode;
+};
+hpuxcreat(p, uap, retval)
+	struct proc *p;
+	register struct hpuxcreat_args *uap;
+	int *retval;
+{
+	struct nargs {
+		char	*fname;
+		int	mode;
+		int	crtmode;
+	} openuap;
+
+	openuap.fname = uap->fname;
+	openuap.crtmode = uap->fmode;
+	openuap.mode = O_WRONLY | O_CREAT | O_TRUNC;
+	return (open(p, &openuap, retval));
 }
 
 /* XXX */
@@ -1123,11 +1155,15 @@ hpuxioctl(p, uap, retval)
 		}
 		break;
 
-	/* SYS 5 termio */
+	/* SYS 5 termio and POSIX termios */
 	case HPUXTCGETA:
 	case HPUXTCSETA:
 	case HPUXTCSETAW:
 	case HPUXTCSETAF:
+	case HPUXTCGETATTR:
+	case HPUXTCSETATTR:
+	case HPUXTCSETATTRD:
+	case HPUXTCSETATTRF:
 		error = hpuxtermio(fp, com, data, p);
 		break;
 
@@ -1331,10 +1367,6 @@ hpuxlockf(p, uap, retval)
 	struct hpuxlockf_args *uap;
 	int *retval;
 {
-#ifdef DEBUG
-	log(LOG_DEBUG, "%d: lockf(%d, %d, %d)\n",
-	    p->p_pid, uap->fd, uap->func, uap->size);
-#endif
 	return (0);
 }
 
@@ -1605,6 +1637,8 @@ hpuxdumpu(vp, cred)
  * to avoid HPUXCOMPAT dependencies in those files and to make sure that
  * HP-UX compatibility still works even when COMPAT is not defined.
  */
+#ifdef COMPAT_OHPUX
+
 #define HPUX_HZ	50
 
 #include "sys/times.h"
@@ -1909,4 +1943,5 @@ ohpuxstat1(vp, ub, p)
 	ds.ohst_ctime = (int)vattr.va_ctime.ts_sec;
 	return (copyout((caddr_t)&ds, (caddr_t)ub, sizeof(ds)));
 }
+#endif
 #endif
