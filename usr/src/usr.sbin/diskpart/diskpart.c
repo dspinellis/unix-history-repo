@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)diskpart.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)diskpart.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -123,6 +123,10 @@ main(argc, argv)
 	 */
 	badsecttable = dp->d_nsectors + roundup(badsecttable, dp->d_nsectors);
 	threshhold = howmany(spc, badsecttable);
+	if (dp->d_badsectforw == 0) {
+		badsecttable = 0;
+		threshhold = 0;
+	}
 
 	/* 
 	 * Figure out if disk is large enough for
@@ -184,10 +188,17 @@ main(argc, argv)
 				printf("\t0,\t0,\n");
 				continue;
 			}
-			printf("\t%d,\t%d,\t\t/* %c=cyl %d thru %d */\n",
-				defpart[def][part], startcyl[part],
-				'A' + part, startcyl[part],
-				startcyl[part] + numcyls[part] - 1);
+			if (dp->d_sectoffset == 0) {
+			       printf("\t%d,\t%d,\t\t/* %c=cyl %d thru %d */\n",
+					defpart[def][part], startcyl[part],
+					'A' + part, startcyl[part],
+					startcyl[part] + numcyls[part] - 1);
+				continue;
+			}
+			printf("\t%d,\t%d,\t\t/* %c=sectors %d thru %d */\n",
+				defpart[def][part], spc * startcyl[part],
+				'A' + part, spc * startcyl[part],
+				spc * startcyl[part] + defpart[def][part] - 1);
 		}
 		exit(0);
 	}
@@ -210,8 +221,10 @@ main(argc, argv)
 			defparam[PART('g')].p_fsize = temp;
 		}
 		printf("%s:\\\n", dp->d_name);
-		printf("\t:ty=%s:ns#%d:nt#%d:nc#%d:\\\n", dp->d_type,
-			dp->d_nsectors, dp->d_ntracks, dp->d_ncylinders);
+		printf("\t:ty=%s:ns#%d:nt#%d:nc#%d:%s%s\\\n", dp->d_type,
+			dp->d_nsectors, dp->d_ntracks, dp->d_ncylinders,
+			dp->d_badsectforw ? "sf:" : "",
+			dp->d_sectoffset ? "so:" : "");
 		for (nparts = 0, part = PART('a'); part < NPARTITIONS; part++)
 			if (defpart[def][part] != 0)
 				nparts++;
@@ -284,6 +297,20 @@ gettype:
 	}
 	dp->d_type = type;
 	fprintf(stderr, "(type <cr> to get default value, if only one)\n");
+	fprintf(stderr, "Do %ss require sector or cylinder offsets (%s)? ",
+		dp->d_name, "cylinder");
+	(void) gets(buf);
+	if (*buf == 's')
+		dp->d_sectoffset = 1;
+	else
+		dp->d_sectoffset = 0;
+	fprintf(stderr, "Do %ss support bad144 bad block forwarding (yes)? ",
+		dp->d_name);
+	(void) gets(buf);
+	if (*buf != 'n')
+		dp->d_badsectforw = 1;
+	else
+		dp->d_badsectforw = 0;
 	for (fp = fields; fp->f_name != NULL; fp++) {
 again:
 		fprintf(stderr, "%s ", fp->f_name);
