@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- * 	@(#)lp.h	5.9 (Berkeley) %G%
+ * 	@(#)lp.h	5.10 (Berkeley) %G%
  */
 
 
@@ -71,7 +71,7 @@ struct queue {
 
 #include <sys/cdefs.h>
 
-_BEGIN_DECLS
+__BEGIN_DECLS
 struct dirent;
 
 void     blankfill __P((int));
@@ -97,4 +97,4 @@ void     rmremote __P((void));
 void     show __P((char *, char *, int));
 int      startdaemon __P((char *));
 void     warn __P((void));
-_END_DECLS
+__END_DECLS
