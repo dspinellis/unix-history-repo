@@ -2,17 +2,16 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)syslog.3	5.1 (Berkeley) %G%
+.\"	@(#)syslog.3	6.1 (Berkeley) %G%
 .\"
-.\"	@(#)syslog.3	1.2		11/14/82
-.TH SYSLOG 3 "14 November 1982"
+.TH SYSLOG 3 ""
 .UC 5
 .SH NAME
-syslog, openlog, closelog \- control system log
+syslog, openlog, closelog, setlogmask \- control system log
 .SH SYNOPSIS
 .B "#include <syslog.h>
 .PP
-.B "openlog(ident, logstat)
+.B "openlog(ident, logopt, maskpri)
 .br
 .B "char *ident;
 .PP
@@ -21,12 +20,14 @@ syslog, openlog, closelog \- control system log
 .B "char *message;
 .PP
 .B "closelog()
+.PP
+.B "setlogmask(maskpri)
 .SH DESCRIPTION
 .I Syslog
-arranges to write the
+arranges to write
 .I message
 onto the system log maintained by
-.IR syslog (8).
+.IR syslogd (8).
 The message is tagged with
 .IR priority .
 The message looks like a
@@ -37,37 +38,69 @@ is replaced by the current error message (collected from
 .IR errno ).
 A trailing newline is added if needed.
 This message will be read by
-.IR syslog (8)
-and output to the system console or files as appropriate.
+.IR syslogd (8)
+and written to the system console, log files, or forwarded to
+.I syslogd
+on another host as appropriate.
+If
+.I syslog
+cannot pass the message to
+.I syslogd
+and the message is priority LOG_FAIL or higher,
+it attempts to write the message on
+.IR /dev/console.
 .PP
 If special processing is needed,
 .I openlog
 can be called to initialize the log file.
-Parameters are
+The parameter
 .I ident
-which is prepended to every message, and
-.I logstat
-which is a bit field indicating special status; current values are:
-.IP LOG_PID \w'LOG_PID'u+3
+is a string that is prepended to every message.
+.I Logopt
+is a bit field indicating logging options.
+Current values for
+.I logopt
+are:
+.IP LOG_PID \w'LOG_ODELAY'u+3
 log the process id with each message:
 useful for identifying instantiations of daemons.
-.LP
-.I Openlog
-returns zero on success.
-If it cannot open the file
-.I /dev/log,
-it writes on
-.I /dev/console
-instead and returns \-1.
+.IP LOG_CONS \w'LOG_ODELAY'u+3
+Force writing error messages to the console if unable to send it to
+.I syslogd.
+This option is safe to use in daemon processes that have no controlling
+terminal since
+.I syslog
+will fork before opening the console.
+.IP LOG_ODELAY \w'LOG_ODELAY'u+3
+Delay opening the connection to
+.I syslogd
+until the first error occurs. Useful for programs that need to manage the
+order in which file descriptors are allocated.
+.PP
+The
+.I maskpri
+parameter is a mask for screening out low priority messages.
+Calls to
+.I syslog
+with a priority whose corresponding bit in
+.I maskpri
+is not set are ignored.
+The default allows all priorities to be logged.
 .PP
 .I Closelog
 can be used to close the log file.
+.PP
+.I Setlogmask
+sets the log priority mask to
+.I maskpri
+and returns the previous mask.
+Priorities and masks of 0 are ignored.
 .SH EXAMPLES
 .nf
 syslog(LOG_SALERT, "who: internal error 23");
 
-openlog("serverftp", LOG_PID);
+openlog("serverftp", LOG_PID, 0);
 syslog(LOG_INFO, "Connection from host %d", CallingHost);
 .fi
-.SH "SEE ALSO
-syslog(8)
+.SH "SEE ALSO"
+syslogd(8)
