@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)snake.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)snake.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -31,18 +31,9 @@ static char sccsid[] = "@(#)snake.c	5.4 (Berkeley) %G%";
  *	cc -O snake.c move.c -o snake -lm -ltermlib
  */
 
-#include "snake.h"
+#include <sys/param.h>
 #include <pwd.h>
-
-	/*
-	 * If CHECKBUSY is defined, the file BUSY must be executable
-	 * and must return a value which is used to determine the priority
-	 * a which snake runs.  A zero value means no nice.
-	 * If BUSY does not exist, snake won't play.
-	 */
-#ifndef BUSY
-#define BUSY	"/usr/games/lib/busy"
-#endif
+#include "snake.h"
 
 	/*
 	 * This is the data file for scorekeeping.
@@ -79,10 +70,7 @@ struct point snake[6];
 
 int loot, penalty;
 int long tl, tm=0L;
-int argcount;
-char **argval;
 int moves;
-static char str[BSIZE];
 char stri[BSIZE];
 char *p;
 char ch, savec;
@@ -96,46 +84,45 @@ main(argc,argv)
 int argc;
 char **argv;
 {
-	int i,k;
-	int j;
-	long time();
+	extern char *optarg;
+	extern int optind;
+	int ch, i, j, k;
+	time_t time();
+	long atol();
 	int stop();
-	extern char _sobuf[];
 
-	argcount = argc;
-	argval = argv;
-	penalty = loot = 0;
-	getcap();
-	ccnt -= 2; lcnt -= 2;	/* compensate for border */
-	busy();
-	time(&tv);
+	(void)time(&tv);
+	srandom((int)tv);
 
-	for (i=1; i<argc; i++) {
-		switch(argv[i][1]) {
+	while ((ch = getopt(argc, argv, "l:w:")) != EOF)
+		switch((char)ch) {
+#ifdef notdef
 		case 'd':
-			sscanf(argv[1], "-d%ld", &tv);
+			tv = atol(optarg);
 			break;
+#endif
 		case 'w':	/* width */
-		case 'c':	/* columns */
-			ccnt = atoi(argv[i]+2);
+			ccnt = atoi(optarg);
 			break;
 		case 'l':	/* length */
-		case 'h':	/* height */
-		case 'r':	/* rows */
-			lcnt = atoi(argv[i]+2);
+			lcnt = atoi(optarg);
 			break;
+		case '?':
 		default:
-			printf("bad option %s\n", argv[1]);
+			fputs("usage: snake [-d seed] [-w width] [-l length]\n", stderr);
+			exit(1);
 		}
+
+	penalty = loot = 0;
+	getcap();
+
+	i = MIN(lcnt, ccnt);
+	if (i < 4) {
+		cook();
+		printf("snake: screen too small for a fair game.\n");
+		exit(1);
 	}
 
-	srand((int)tv);
-	setbuf(stdout,_sobuf);
-	i = ((lcnt < ccnt) ? lcnt : ccnt);	/* min screen edge */
-	if (i < 4) {
-		printf("Screen too small for a fair game\n");
-		done();
-	}
 	/*
 	 * chunk is the amount of money the user gets for each $.
 	 * The formula below tries to be fair for various screen sizes.
@@ -163,10 +150,10 @@ char **argv;
 	putpad(TI); /*	String to begin programs that use cm */
 	putpad(KS); /*	Put terminal in keypad transmit mode */
 
-	random(&finish);
-	random(&you);
-	random(&money);
-	random(&snake[0]);
+	snrand(&finish);
+	snrand(&you);
+	snrand(&money);
+	snrand(&snake[0]);
 
 	if ((orig.sg_ospeed < B9600) ||
 	    ((! CM) && (! TA))) fast=0;
@@ -241,7 +228,6 @@ mainloop()
 		lastc = c;
 		switch (c){
 		case CTRL('z'):
-		case CTRL('c'):
 			suspend();
 			continue;
 		case EOT:
@@ -251,26 +237,6 @@ mainloop()
 			length(moves);
 			logit("quit");
 			done();
-		case '!':
-			cook();
-			putchar('\n');
-			putchar(c);
-			fflush(stdout);
-			j = read(0,stri,BSIZE);
-			stri[j] = 0;
-			if (fork() == 0) {
-				setuid(getuid());
-				system(stri);
-			} else
-				wait(0);
-			printf("READY?\n");
-			fflush(stdout);
-			raw();
-			c = getchar();
-			ungetc(c,stdin);
-			putpad(KS);
-			putpad(TI);
-			point(&cursor,0,lcnt-1);
 		case CTRL('l'):
 			setup();
 			winnings(cashvalue);
@@ -383,7 +349,7 @@ mainloop()
 				if(k < repeat)
 					pchar(&you,' ');
 				do {
-					random(&money);
+					snrand(&money);
 				} while (money.col == finish.col && money.line == finish.line ||
 					 money.col < 5 && money.line == 0 ||
 					 money.col == you.col && money.line == you.line);
@@ -401,7 +367,7 @@ mainloop()
 				logit("won");
 				post(cashvalue,0);
 				length(moves);
-				done(0);
+				done();
 			}
 			if (pushsnake())break;
 		}
@@ -453,53 +419,33 @@ drawbox()
 	}
 }
 
-
-random(sp)
+snrand(sp)
 struct point *sp;
 {
-	register int issame;
 	struct point p;
 	register int i;
 
-	sp->col = sp->line = -1;	/* impossible */
-	do {
-		issame = 0;
-		p.col = ((rand()>>8) & 0377)% ccnt;
-		p.line = ((rand()>>8) & 0377)% lcnt;
+	for (;;) {
+		p.col = random() % ccnt;
+		p.line = random() % lcnt;
 
 		/* make sure it's not on top of something else */
-		if (p.line == 0 && p.col <5) issame++;
-		if(same(&p, &you)) issame++;
-		if(same(&p, &money)) issame++;
-		if(same(&p, &finish)) issame++;
-		for (i=0; i<5; i++)
-			if(same(&p, &snake[i])) issame++;
-
-	} while (issame);
+		if (p.line == 0 && p.col < 5)
+			continue;
+		if (same(&p, &you))
+			continue;
+		if (same(&p, &money))
+			continue;
+		if (same(&p, &finish))
+			continue;
+		for (i = 0; i < 5; i++)
+			if (same(&p, &snake[i]))
+				break;
+		if (i < 5)
+			continue;
+		break;
+	}
 	*sp = p;
-}
-
-busy()
-{
-	FILE *pip, *popen();
-	char c;
-	int b,r;
-	float a;
-
-#ifdef CHECKBUSY
-	if (! strcmp (argval[0], "test")) return;
-	if ((access(BUSY,1) != 0) || (pip = popen(BUSY,"r")) == NULL){
-		printf("Sorry, no snake just now.\n");
-		done();
-	}
-	fscanf(pip,"%d",&b);
-	pclose(pip);
-	if (b > 20) {
-		printf("Sorry, the system is too heavily loaded right now.\n");
-		done();
-	}
-	nice(b);
-#endif
 }
 
 post(iscore, flag)
@@ -598,7 +544,13 @@ struct point *sp, *np;
 		wt[i]=0;
 		if (d.col<0 || d.col>=ccnt || d.line<0 || d.line>=lcnt)
 			continue;
-		if (d.line == 0 && d.col < 5) continue;
+		/*
+		 * Change to allow snake to eat you if you're on the money,
+		 * otherwise, you can just crouch there until the snake goes
+		 * away.  Not positive it's right.
+		 *
+		 * if (d.line == 0 && d.col < 5) continue;
+		 */
 		if (same(&d,&money)) continue;
 		if (same(&d,&finish)) continue;
 		wt[i]= i==w ? loot/10 : 1;
@@ -625,19 +577,20 @@ spacewarp(w)
 int w;{
 	struct point p;
 	int j;
-	
-	random(&you);
+	char *str;
+
+	snrand(&you);
 	point(&p,COLUMNS/2 - 8,LINES/2 - 1);
 	if (p.col < 0)
 		p.col = 0;
 	if (p.line < 0)
 		p.line = 0;
 	if (w) {
-		strcpy(str,"BONUS!!!");
+		str = "BONUS!!!";
 		loot = loot - penalty;
 		penalty = 0;
 	} else {
-		strcpy(str,"SPACE WARP!!!");
+		str = "SPACE WARP!!!";
 		penalty += loot/PENALTY;
 	}
 	for(j=0;j<3;j++){
@@ -688,7 +641,7 @@ snap()
 stretch(ps)
 struct point *ps;{
 	struct point p;
-	
+
 	point(&p,you.col,you.line);
 	if(abs(ps->col-you.col) < 6){
 		if(you.line < ps->line){
@@ -888,15 +841,9 @@ suspend()
 {
 	char *sh;
 
+	ll();
 	cook();
-#ifdef SIGTSTP
 	kill(getpid(), SIGTSTP);
-#else
-	sh = getenv("SHELL");
-	if (sh == NULL)
-		sh = "/bin/sh";
-	system(sh);
-#endif
 	raw();
 	setup();
 	winnings(cashvalue);
