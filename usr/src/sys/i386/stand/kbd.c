@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kbd.c	7.2 (Berkeley) %G%
+ *	@(#)kbd.c	7.3 (Berkeley) %G%
  */
 
 #define	L		0x01	/* locking function */
