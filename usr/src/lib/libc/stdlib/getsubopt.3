@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)getsubopt.3	5.6 (Berkeley) %G%
+.\"     @(#)getsubopt.3	5.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GETSUBOPT 3
@@ -12,13 +12,14 @@
 .Nm getsubopt
 .Nd get sub options from an argument
 .Sh SYNOPSIS
-.Fd #include <stdio.h>
+.Fd #include <stdlib.h>
 .Vt extern char *suboptarg
 .Ft int
 .Fn getsubopt "char **optionp" "char * const *tokens" "char **valuep"
 .Sh DESCRIPTION
 The
 .Fn getsubopt
+function
 parses a string containing tokens delimited by one or more tab, space or
 comma
 .Pq Ql \&,
@@ -105,7 +106,6 @@ while ((ch = getopt(argc, argv, "ab:")) != \-1) {
 				else
 					error("missing sub option");
 				break;
-			}
 		}
 		break;
 	}
