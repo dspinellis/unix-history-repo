@@ -1,4 +1,4 @@
-/*	sed1.c	4.2	85/04/05	*/
+/*	sed1.c	4.3	87/12/21	*/
 
 #include	<stdio.h>
 #include "sed.h"
@@ -42,7 +42,7 @@ execute(file)
 char *file;
 {
 	register char *p1, *p2;
-	register union reptr	*ipc;
+	register struct reptr	*ipc;
 	int	c;
 	char	*execp;
 
@@ -336,7 +336,7 @@ char	*alp, *aep;
 	}
 }
 substitute(ipc)
-union reptr	*ipc;
+struct reptr	*ipc;
 {
 	if(match(ipc->re1, 0) == 0)	return(0);
 
@@ -403,7 +403,7 @@ char	*asp, *al1, *al2;
 }
 
 command(ipc)
-union reptr	*ipc;
+struct reptr	*ipc;
 {
 	register int	i;
 	register char	*p1, *p2, *p3;

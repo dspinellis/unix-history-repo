@@ -1,4 +1,4 @@
-/*	sed0.c	4.4	87/09/16	*/
+/*	sed0.c	4.5	87/12/21	*/
 
 #include <sys/param.h>
 #include <stdio.h>
@@ -120,7 +120,7 @@ fcomp()
 
 	register char	*p, *op, *tp;
 	char	*address();
-	union reptr	*pt, *pt1;
+	struct reptr	*pt, *pt1;
 	int	i;
 	struct label	*lpt;
 	char fbuf[MAXPATHLEN + 1], *newstr();
@@ -920,7 +920,7 @@ struct label	*ptr;
 dechain()
 {
 	struct label	*lptr;
-	union reptr	*rptr, *trptr;
+	struct reptr	*rptr, *trptr;
 
 	for(lptr = labtab; lptr < lab; lptr++) {
 

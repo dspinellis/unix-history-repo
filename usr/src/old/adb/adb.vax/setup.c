@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)setup.c	4.10 (Berkeley) 85/05/09";
+static	char sccsid[] = "@(#)setup.c	4.11 (Berkeley) 87/12/21";
 /*
  * adb - routines to read a.out+core at startup
  */
@@ -71,7 +71,7 @@ setsym()
 	if (read(fsym, strtab + sizeof (ssiz), ssiz) != ssiz)
 		goto readerr;
 	for (sp = symtab; sp < esymtab; sp++)
-		if (sp->n_strx)
+		if (sp->n_un.n_strx)
 			/* SHOULD PERFORM RANGE CHECK HERE */
 			sp->n_un.n_name = strtab + sp->n_un.n_strx;
 nosymt:
