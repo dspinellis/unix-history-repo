@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)nm.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)nm.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -37,9 +37,8 @@ static char sccsid[] = "@(#)nm.c	5.4 (Berkeley) %G%";
 #include <errno.h>
 #include <ctype.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-
-extern int errno;
 
 int ignore_bad_archive_entries = 1;
 int print_only_external_symbols;
@@ -139,8 +138,7 @@ process_file(fname)
 	 * first check whether this is an object file - read a object
 	 * header, and skip back to the beginning
 	 */
-	if (fread((char *)&exec_head, 1, sizeof(exec_head), fp) !=
-	    sizeof(exec_head)) {
+	if (fread((char *)&exec_head, sizeof(exec_head), (size_t)1, fp) != 1) {
 		(void)fprintf(stderr, "nm: %s: bad format.\n", fname);
 		(void)fclose(fp);
 		return(1);
@@ -149,7 +147,7 @@ process_file(fname)
 
 	/* this could be an archive */
 	if (N_BADMAG(exec_head)) {
-		if (fread(magic, 1, sizeof(magic), fp) != sizeof(magic) ||
+		if (fread(magic, sizeof(magic), (size_t)1, fp) != 1 ||
 		    strncmp(magic, ARMAG, SARMAG)) {
 			(void)fprintf(stderr,
 			    "nm: %s: not object file or archive.\n", fname);
@@ -173,18 +171,17 @@ show_archive(fname, fp)
 {
 	struct ar_hdr ar_head;
 	struct exec exec_head;
-	off_t esize;
-	int i, last_ar_off, rval;
+	int i, rval;
+	long last_ar_off;
 	char *p, *name, *emalloc();
 	long atol();
 
-	name = emalloc((u_int)(sizeof(ar_head.ar_name) + strlen(fname) + 3));
+	name = emalloc(sizeof(ar_head.ar_name) + strlen(fname) + 3);
 
 	rval = 0;
 
 	/* while there are more entries in the archive */
-	while (fread((char *)&ar_head, 1, sizeof(ar_head), fp) ==
-	    sizeof(ar_head)) {
+	while (fread((char *)&ar_head, sizeof(ar_head), (size_t)1, fp) == 1) {
 		/* bad archive entry - stop processing this archive */
 		if (strncmp(ar_head.ar_fmag, ARFMAG, sizeof(ar_head.ar_fmag))) {
 			(void)fprintf(stderr,
@@ -198,11 +195,9 @@ show_archive(fname, fp)
 		 * current archive entry if the object name is to be printed
 		 * on each output line
 		 */
-		if (print_file_each_line) {
-			(void)sprintf(name, "%s:", fname);
-			p = name + strlen(name);
-		} else
-			p = name;
+		p = name;
+		if (print_file_each_line)
+			p += sprintf(p, "%s:", fname);
 		for (i = 0; i < sizeof(ar_head.ar_name); ++i)
 			if (ar_head.ar_name[i] && ar_head.ar_name[i] != ' ')
 				*p++ = ar_head.ar_name[i];
@@ -212,8 +207,8 @@ show_archive(fname, fp)
 		last_ar_off = ftell(fp);
 
 		/* get and check current object's header */
-		if (fread((char *)&exec_head, 1, sizeof(exec_head), fp) !=
-		    sizeof(exec_head)) {
+		if (fread((char *)&exec_head, sizeof(exec_head),
+		    (size_t)1, fp) != 1) {
 			(void)fprintf(stderr, "nm: %s: premature EOF.\n", name);
 			(void)free(name);
 			return(1);
@@ -232,14 +227,13 @@ show_archive(fname, fp)
 					(void)printf("\n%s:\n", name);
 				rval |= show_objfile(name, fp);
 			}
-		esize = atol(ar_head.ar_size);
 
 		/*
-		 * skip to next archive object - esize&1 is added to stay
-	 	 * on even starting points relative to the start of the
-		 * archive file
+		 * skip to next archive object - it starts at the next
+	 	 * even byte boundary
 		 */
-		if (fseek(fp, (long)(last_ar_off + esize + (esize&1)),
+#define even(x) (((x) + 1) & ~1)
+		if (fseek(fp, last_ar_off + even(atol(ar_head.ar_size)),
 		    SEEK_SET)) {
 			(void)fprintf(stderr,
 			    "nm: %s: %s\n", fname, strerror(errno));
@@ -261,14 +255,14 @@ show_objfile(objname, fp)
 	char *objname;
 	FILE *fp;
 {
-	register struct nlist *names;
+	register struct nlist *names, *np;
 	register int i, nnames, nrawnames;
 	struct exec head;
 	long stabsize;
 	char *stab, *emalloc();
 
 	/* read a.out header */
-	if (fread((char *)&head, sizeof(head), 1, fp) != 1) {
+	if (fread((char *)&head, sizeof(head), (size_t)1, fp) != 1) {
 		(void)fprintf(stderr,
 		    "nm: %s: cannot read header.\n", objname);
 		return(1);
@@ -305,9 +299,9 @@ show_objfile(objname, fp)
 	}
 
 	/* get memory for the symbol table */
-	names = (struct nlist *)emalloc((u_int)head.a_syms);
+	names = (struct nlist *)emalloc((size_t)head.a_syms);
 	nrawnames = head.a_syms / sizeof(*names);
-	if (fread((char *)names, 1, (int)head.a_syms, fp) != head.a_syms) {
+	if (fread((char *)names, (size_t)head.a_syms, (size_t)1, fp) != 1) {
 		(void)fprintf(stderr,
 		    "nm: %s: cannot read symbol table.\n", objname);
 		(void)free((char *)names);
@@ -319,20 +313,20 @@ show_objfile(objname, fp)
 	 * 4-byte-integer gives the total size of the string table
 	 * _including_ the size specification itself.
 	 */
-	if (fread((char *)&stabsize, sizeof(stabsize), 1, fp) != 1) {
+	if (fread((char *)&stabsize, sizeof(stabsize), (size_t)1, fp) != 1) {
 		(void)fprintf(stderr,
 		    "nm: %s: cannot read stab size.\n", objname);
 		(void)free((char *)names);
 		return(1);
 	}
-	stab = emalloc((u_int)stabsize);
+	stab = emalloc((size_t)stabsize);
 
 	/*
 	 * read the string table offset by 4 - all indices into the string
 	 * table include the size specification.
 	 */
 	stabsize -= 4;		/* we already have the size */
-	if (fread(stab + 4, 1, (int)stabsize, fp) != stabsize) {
+	if (fread(stab + 4, (size_t)stabsize, (size_t)1, fp) != 1) {
 		(void)fprintf(stderr,
 		    "nm: %s: stab truncated..\n", objname);
 		(void)free((char *)names);
@@ -349,40 +343,37 @@ show_objfile(objname, fp)
 	 *
 	 * filter out all entries which we don't want to print anyway
 	 */
-	for (i = nnames = 0; i < nrawnames; ++i) {
-		if (SYMBOL_TYPE(names[i].n_type) == N_UNDF && names[i].n_value)
-			names[i].n_type = N_COMM | (names[i].n_type & N_EXT);
-		if (!print_all_symbols && IS_DEBUGGER_SYMBOL(names[i].n_type))
+	for (np = names, i = nnames = 0; i < nrawnames; np++, i++) {
+		if (SYMBOL_TYPE(np->n_type) == N_UNDF && np->n_value)
+			np->n_type = N_COMM | (np->n_type & N_EXT);
+		if (!print_all_symbols && IS_DEBUGGER_SYMBOL(np->n_type))
 			continue;
-		if (print_only_external_symbols &&
-		    !IS_EXTERNAL(names[i].n_type))
+		if (print_only_external_symbols && !IS_EXTERNAL(np->n_type))
 			continue;
 		if (print_only_undefined_symbols &&
-		    (SYMBOL_TYPE(names[i].n_type) != N_UNDF))
+		    SYMBOL_TYPE(np->n_type) != N_UNDF)
 			continue;
 
 		/*
 		 * make n_un.n_name a character pointer by adding the string
 		 * table's base to n_un.n_strx
 		 *
-		 * don't mess with null offsets
+		 * don't mess with zero offsets
 		 */
-		if (names[i].n_un.n_name)
-			names[i].n_un.n_name = stab + names[i].n_un.n_strx;
+		if (np->n_un.n_strx)
+			np->n_un.n_name = stab + np->n_un.n_strx;
 		else
-			names[i].n_un.n_name = "";
-		if (nnames != i)
-			names[nnames] = names[i];
-		++nnames;
+			np->n_un.n_name = "";
+		names[nnames++] = *np;
 	}
 
 	/* sort the symbol table if applicable */
 	if (sort_func)
-		qsort((char *)names, (int)nnames, sizeof(*names), sort_func);
+		qsort((char *)names, (size_t)nnames, sizeof(*names), sort_func);
 
 	/* print out symbols */
-	for (i = 0; i < nnames; ++i)
-		print_symbol(objname, &names[i]);
+	for (np = names, i = 0; i < nnames; np++, i++)
+		print_symbol(objname, np);
 
 	(void)free((char *)names);
 	(void)free(stab);
@@ -395,19 +386,19 @@ show_objfile(objname, fp)
  */
 print_symbol(objname, sym)
 	char *objname;
-	struct nlist *sym;
+	register struct nlist *sym;
 {
 	char *typestring(), typeletter();
 
 	if (print_file_each_line)
-		printf("%s:", objname);
+		(void)printf("%s:", objname);
 
 	/*
 	 * handle undefined-only format seperately (no space is
 	 * left for symbol values, no type field is printed)
 	 */
 	if (print_only_undefined_symbols) {
-		printf("%s\n", sym->n_un.n_name);
+		(void)puts(sym->n_un.n_name);
 		return;
 	}
 
@@ -425,7 +416,7 @@ print_symbol(objname, sym)
 		(void)printf(" %c ", typeletter(sym->n_type));
 
 	/* print the symbol's name */
-	(void)printf("%s\n", sym->n_un.n_name ? sym->n_un.n_name : "");
+	(void)puts(sym->n_un.n_name);
 }
 
 /*
@@ -514,9 +505,11 @@ typeletter(type)
  * cmp_name()
  *	compare two symbols by their names
  */
-cmp_name(a, b)
-	struct nlist *a, *b;
+cmp_name(a0, b0)
+	void *a0, *b0;
 {
+	struct nlist *a = a0, *b = b0;
+
 	return(sort_direction == FORWARD ?
 	    strcmp(a->n_un.n_name, b->n_un.n_name) :
 	    strcmp(b->n_un.n_name, a->n_un.n_name));
@@ -526,9 +519,11 @@ cmp_name(a, b)
  * cmp_value()
  *	compare two symbols by their values
  */
-cmp_value(a, b)
-	struct nlist *a, *b;
+cmp_value(a0, b0)
+	void *a0, *b0;
 {
+	register struct nlist *a = a0, *b = b0;
+
 	if (SYMBOL_TYPE(a->n_type) == N_UNDF)
 		if (SYMBOL_TYPE(b->n_type) == N_UNDF)
 			return(0);
@@ -537,16 +532,16 @@ cmp_value(a, b)
 	else if (SYMBOL_TYPE(b->n_type) == N_UNDF)
 		return(1);
 	if (a->n_value == b->n_value)
-		return(cmp_name(a, b));
+		return(cmp_name((void *)a, (void *)b));
 	return(sort_direction == FORWARD ? a->n_value > b->n_value :
 	    a->n_value < b->n_value);
 }
 
 char *
 emalloc(size)
-	u_int size;
+	size_t size;
 {
-	char *p, *malloc();
+	char *p;
 
 	/* NOSTRICT */
 	if (!(p = malloc(size))) {
@@ -558,6 +553,6 @@ emalloc(size)
 
 usage()
 {
-	(void)fprintf(stderr, "usage: nm [-agnopruw] [file ...]");
+	(void)fprintf(stderr, "usage: nm [-agnopruw] [file ...]\n");
 	exit(1);
 }
