@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)trapov_.c	5.2	%G%
+ *	@(#)trapov_.c	5.3	%G%
  *
  *	Fortran/C floating-point overflow handler
  *
@@ -31,6 +31,54 @@
 # include "../libI77/fiodefs.h"
 # define SIG_VAL	int (*)()
 
+/*
+ *	Potential operand values
+ */
+typedef	union operand_types {
+		char	o_byte;
+		short	o_word;
+		long	o_long;
+		float	o_float;
+		long	o_quad[2];
+		double	o_double;
+	} anyval;
+
+/*
+ *	the fortran unit control table
+ */
+extern unit units[];
+
+/*
+ * Fortran message table is in main
+ */
+struct msgtbl {
+	char	*mesg;
+	int	dummy;
+};
+extern struct msgtbl	act_fpe[];
+
+anyval *get_operand_address(), *addr_of_reg();
+char *opcode_name();
+
+/*
+ * trap type codes
+ */
+# define INT_OVF_T	1
+# define INT_DIV_T	2
+# define FLT_OVF_T	3
+# define FLT_DIV_T	4
+# define FLT_UND_T	5
+# define DEC_OVF_T	6
+# define SUB_RNG_T	7
+# define FLT_OVF_F	8
+# define FLT_DIV_F	9
+# define FLT_UND_F	10
+
+# define RES_ADR_F	0
+# define RES_OPC_F	1
+# define RES_OPR_F	2
+
+#ifdef vax
 /*
  *	Operand modes
  */
@@ -64,41 +112,10 @@
 # define AP	0xc
 
 /*
- * trap type codes
- */
-# define INT_OVF_T	1
-# define INT_DIV_T	2
-# define FLT_OVF_T	3
-# define FLT_DIV_T	4
-# define FLT_UND_T	5
-# define DEC_OVF_T	6
-# define SUB_RNG_T	7
-# define FLT_OVF_F	8
-# define FLT_DIV_F	9
-# define FLT_UND_F	10
-
-# define RES_ADR_F	0
-# define RES_OPC_F	1
-# define RES_OPR_F	2
-
-/*
- *	Potential operand values
- */
-typedef	union operand_types {
-		char	o_byte;
-		short	o_word;
-		long	o_long;
-		float	o_float;
-		long	o_quad[2];
-		double	o_double;
-	} anyval;
-
-/*
  *	GLOBAL VARIABLES (we need a few)
  *
  *	Actual program counter and locations of registers.
  */
-#if	vax
 static char	*pc;
 static int	*regs0t6;
 static int	*regs7t11;
@@ -110,26 +127,6 @@ static union	{
 	} retrn;
 static int	(*sigill_default)() = (SIG_VAL)-1;
 static int	(*sigfpe_default)();
-#endif	vax
-
-/*
- *	the fortran unit control table
- */
-extern unit units[];
-
-/*
- * Fortran message table is in main
- */
-struct msgtbl {
-	char	*mesg;
-	int	dummy;
-};
-extern struct msgtbl	act_fpe[];
-
-
-
-anyval *get_operand_address(), *addr_of_reg();
-char *opcode_name();
 
 /*
  *	This routine sets up the signal handler for the floating-point
@@ -140,7 +137,6 @@ trapov_(count, rtnval)
 	int *count;
 	double *rtnval;
 {
-#if	vax
 	extern got_overflow(), got_illegal_instruction();
 
 	sigfpe_default = signal(SIGFPE, got_overflow);
@@ -198,7 +194,6 @@ got_overflow(signo, codeword, myaddr, pc, ps)
 				}
 				return;
 	}
-#endif	vax
 }
 
 int 
@@ -207,7 +202,6 @@ ovcnt_()
 	return total_overflows;
 }
 
-#if	vax
 /*
  *	got_illegal_instruction - handle "illegal instruction" signals.
  *
@@ -669,3 +663,97 @@ char *opcode_name(opcode)
 	}
 }
 #endif	vax
+
+#ifdef tahoe
+/*
+ *	NO RESERVED OPERAND EXCEPTION ON RESULT OF FP OVERFLOW ON TAHOE.
+ * 	JUST PRINT THE OVERFLOW MESSAGE. RESULT IS 0 (zero).
+ */
+
+/*
+ *	GLOBAL VARIABLES (we need a few)
+ *
+ *	Actual program counter and locations of registers.
+ */
+static char	*pc;
+static int	*regs0t1;
+static int	*regs2t12;
+static int	max_messages;
+static int	total_overflows;
+static union	{
+	long	v_long[2];
+	double	v_double;
+	} retrn;
+static int	(*sigill_default)() = (SIG_VAL)-1;
+static int	(*sigfpe_default)();
+
+
+/*
+ *	This routine sets up the signal handler for the floating-point
+ *	and reserved operand interrupts.
+ */
+
+trapov_(count, rtnval)
+	int *count;
+	double *rtnval;
+{
+	extern got_overflow();
+
+	sigfpe_default = signal(SIGFPE, got_overflow);
+	total_overflows = 0;
+	max_messages = *count;
+	retrn.v_double = *rtnval;
+}
+
+
+
+/*
+ *	got_overflow - routine called when overflow occurs
+ *
+ *	This routine just prints a message about the overflow.
+ *	It is impossible to find the bad result at this point.
+ * 	 NEXT 2 LINES DON'T HOLD FOR TAHOE !
+ *	Instead, we wait until we get the reserved operand exception
+ *	when we try to use it.  This raises the SIGILL signal.
+ */
+
+/*ARGSUSED*/
+got_overflow(signo, codeword, sc)
+	int signo, codeword;
+	struct sigcontext *sc;
+{
+	int	*sp, i;
+	FILE	*ef;
+
+	signal(SIGFPE, got_overflow);
+	ef = units[STDERR].ufd;
+	switch (codeword) {
+		case INT_OVF_T:
+		case INT_DIV_T:
+		case FLT_UND_T:
+		case FLT_DIV_T:
+				if (sigfpe_default > (SIG_VAL)7)
+					return((*sigfpe_default)(signo, codeword, sc));
+				else
+					sigdie(signo, codeword, sc);
+					/* NOTREACHED */
+
+		case FLT_OVF_T:
+				if (++total_overflows <= max_messages) {
+					fprintf(ef, "trapov: %s",
+						act_fpe[codeword-1].mesg);
+					fprintf(ef, ": Current PC = %X", sc->sc_pc);
+					if (total_overflows == max_messages)
+						fprintf(ef, ": No more messages will be printed.\n");
+					else
+						fputc('\n', ef);
+				}
+				return;
+	}
+}
+int 
+ovcnt_()
+{
+	return total_overflows;
+}
+#endif tahoe
