@@ -34,6 +34,13 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00039
+ * --------------------         -----   ----------------------
+ *
+ * 10 Aug 92	David Dawes		Fixed "remove directory" bug
  */
 
 #ifndef lint
@@ -59,6 +66,7 @@ static char sccsid[] = "@(#)compat.c	5.7 (Berkeley) 3/1/91";
 #include    <sys/wait.h>
 #include    <sys/errno.h>
 #include    <ctype.h>
+#include    <sys/stat.h>				/* 10 Aug 92*/
 #include    "make.h"
 extern int errno;
 
@@ -80,6 +88,7 @@ static int  	    CompatRunCommand();
  * CompatInterrupt --
  *	Interrupt the creation of the current target and remove it if
  *	it ain't precious.
+ *    Don't unlink it if it is a directory	XXX 10 Aug 92
  *
  * Results:
  *	None.
@@ -95,12 +104,16 @@ CompatInterrupt (signo)
     int	    signo;
 {
     GNode   *gn;
+    struct stat sbuf;					/* 10 Aug 92*/
     
     if ((curTarg != NILGNODE) && !Targ_Precious (curTarg)) {
 	char 	  *file = Var_Value (TARGET, curTarg);
 
-	if (unlink (file) == SUCCESS) {
-	    printf ("*** %s removed\n", file);
+	stat (file, &sbuf);
+	if (!(sbuf.st_mode & S_IFDIR)) {
+	    if (unlink (file) == SUCCESS) {
+		printf ("*** %s removed\n", file);
+	    }
 	}
 
 	/*
