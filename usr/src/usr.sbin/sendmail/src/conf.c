@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.165 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.166 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -2118,7 +2118,7 @@ usershellok(shell)
 	register char *p;
 	extern char *getusershell();
 
-	if (shell == NULL || shell[0] == '\0')
+	if (shell == NULL || shell[0] == '\0' || ConfigLevel <= 1)
 		return TRUE;
 
 	setusershell();
