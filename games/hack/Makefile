@@ -14,7 +14,7 @@ SRCS=	alloc.c hack.Decl.c hack.apply.c hack.bones.c hack.c hack.cmd.c \
 	hack.wizard.c hack.worm.c hack.worn.c hack.zap.c rnd.c
 CFLAGS+= -I.
 MAN6=	hack.6
-DEPSRCS= hack.onames.h
+DPSRCS= hack.onames.h
 DPADD=	${LIBTERM}
 LDADD=	-ltermcap
 HIDEGAME=hidegame
