@@ -1,0 +1,22 @@
+# include	"monop.h"
+# include	"deck.h"
+
+extern bool	trading, spec, fixing, told_em;
+
+extern char	*yn[], *comlist[], *name_list[], *lucky_mes[];
+
+extern int	num_play, player, num_doub, num_luck, (*func[])();
+
+extern DECK	deck[2];
+
+extern MON	mon[];
+
+extern PLAY	*play, *cur_p;
+
+extern PROP	prop[];
+
+extern RR_S	rr[];
+
+extern SQUARE	board[];
+
+extern UTIL_S	util[];
