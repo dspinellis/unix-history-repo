@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	7.110 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.111 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -905,7 +905,7 @@ struct __lseek_args {
 /*
  * Seek system call.
  */
-__lseek(p, uap, retval)
+lseek(p, uap, retval)
 	struct proc *p;
 	register struct __lseek_args *uap;
 	int *retval;
@@ -945,17 +945,16 @@ __lseek(p, uap, retval)
 	return (0);
 }
 
+#if defined(COMPAT_43) || defined(COMPAT_SUNOS)
 /*
  * Old lseek system call.
- *
- * XXX should be COMPAT_43, but too much breaks.
  */
 struct lseek_args {
 	int	fdes;
 	long	off;
 	int	sbase;
 };
-lseek(p, uap, retval)
+olseek(p, uap, retval)
 	struct proc *p;
 	register struct lseek_args *uap;
 	int *retval;
@@ -971,6 +970,7 @@ lseek(p, uap, retval)
 	*(long *)retval = qret;
 	return (error);
 }
+#endif /* COMPAT_43 */
 
 /*
  * Check access permissions.
@@ -1196,6 +1196,30 @@ lstat(p, uap, retval)
 		sb.st_blocks = sb1.st_blocks;
 	}
 	error = copyout((caddr_t)&sb, (caddr_t)uap->ub, sizeof (sb));
+	return (error);
+}
+
+/*
+ * Pathconf system call.
+ */
+struct pathconf_args {
+	char	*fname;
+	int	name;
+};
+/* ARGSUSED */
+pathconf(p, uap, retval)
+	struct proc *p;
+	register struct pathconf_args *uap;
+	int *retval;
+{
+	int error;
+	struct nameidata nd;
+
+	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->fname, p);
+	if (error = namei(&nd))
+		return (error);
+	error = VOP_PATHCONF(nd.ni_vp, uap->name, retval);
+	vput(nd.ni_vp);
 	return (error);
 }
 
@@ -1518,7 +1542,7 @@ struct __truncate_args {
  * Truncate a file given its path name.
  */
 /* ARGSUSED */
-__truncate(p, uap, retval)
+truncate(p, uap, retval)
 	struct proc *p;
 	register struct __truncate_args *uap;
 	int *retval;
@@ -1559,7 +1583,7 @@ struct __ftruncate_args {
  * Truncate a file given a file descriptor.
  */
 /* ARGSUSED */
-__ftruncate(p, uap, retval)
+ftruncate(p, uap, retval)
 	struct proc *p;
 	register struct __ftruncate_args *uap;
 	int *retval;
