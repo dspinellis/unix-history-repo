@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)strip.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)strip.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -87,7 +87,6 @@ s_sym(fn, fd, ep)
 	int fd;
 	register EXEC *ep;
 {
-	static int pagesize = -1;
 	register off_t fsize;
 
 	/* If no symbols or data/text relocation info, quit. */
@@ -95,15 +94,9 @@ s_sym(fn, fd, ep)
 		return;
 
 	/*
-	 * New file size is the header plus text and data segments; OMAGIC
-	 * and NMAGIC formats have the text/data immediately following the
-	 * header.  ZMAGIC format wastes the rest of of header page.
+	 * New file size is the header plus text and data segments.
 	 */
-	if (ep->a_magic == ZMAGIC)
-		fsize = pagesize == -1 ? (pagesize = getpagesize()) : pagesize;
-	else
-		fsize = sizeof(EXEC);
-	fsize += ep->a_text + ep->a_data;
+	fsize = N_DATOFF(*ep) + ep->a_data;
 
 	/* Set symbol size and relocation info values to 0. */
 	ep->a_syms = ep->a_trsize = ep->a_drsize = 0;
