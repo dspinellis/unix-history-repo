@@ -1,0 +1,294 @@
+.TH TAR 1 "13 January 1983"
+.SH NAME
+tar \- tape archiver
+.SH SYNOPSIS
+\fBtar\fP [ key ] [ name ... ]
+.SH DESCRIPTION
+.PP
+\fITar\fP saves and restores multiple files on a single file (usually a magnetic
+tape, but it can be any file).  
+.IR Tar 's
+actions are controlled by the \fIkey\fP argument.  The \fIkey\fP
+is a string of characters containing at most one function letter and possibly
+one or more function modifiers.  Other arguments to \fItar\fP
+are file or directory names specifying which files to dump or restore.
+In all cases, appearance of a directory name refers to
+the files and (recursively) subdirectories of that directory.
+.PP
+The function portion of the key is specified by one of the following letters:
+.TP 8
+.B r
+The named files are written on the end of the tape.  The
+.B c
+function implies this.
+.TP 8
+.B x
+The named files are extracted from the tape.  If the named file
+matches a directory whose contents had been written onto the tape, this
+directory is (recursively) extracted.  The owner, modification time, and mode
+are restored (if possible).  If no file argument is given, the entire content
+of the tape is extracted.  Note that if multiple entries specifying the same
+file are on the tape, the last one overwrites all earlier.
+.TP 8
+.B t
+The names of the specified files are listed each time they occur on
+the tape.  If no file argument is given, all of the names on the tape
+are listed.
+.TP 8
+.B u
+The named files are added to the tape if either they are not
+already there or have been modified since last put on the tape.
+.TP 8
+.B c
+Create a new tape; writing begins on the beginning of the tape
+instead of after the last file.  This command implies
+.BR r .
+.TP 8
+.B o
+On output, tar normally places information specifying owner and modes
+of directories in the archive.  Former versions of tar, when encountering
+this information will give error message of the form
+.br
+	"<name>/: cannot create".
+.br
+This option will suppress the directory information.
+.TP 8
+.B p
+This option says to restore files to their original modes,
+ignoring the present umask(2).  Setuid and sticky information
+will also be restored to the super-user.
+.PP
+The following characters may be used in addition to the letter
+which selects the function desired.
+.TP 10
+.B 0, ..., 9
+This modifier selects an alternate drive on which the tape is mounted.
+The default is drive 0 at 1600 bpi, which is normally /dev/rmt8.
+.TP 10
+.B v
+Normally
+.I tar
+does its work silently.  The
+.B v
+(verbose) option make
+.I tar
+type the name of each file it treats preceded by the function
+letter.  With the
+.B t
+function, the verbose option
+gives more information about the tape entries than just their names.
+.TP 10
+.B w
+.I Tar
+prints the action to be taken followed by file name, then
+wait for user confirmation. If a word beginning with `y'
+is given, the action is done. Any other input means don't do it.
+.TP 10
+.B f
+.I Tar
+uses the next argument as the name of the archive instead of
+/dev/rmt?. If the name of the file is `\-', tar writes to standard output or
+reads from standard input, whichever is appropriate. Thus,
+.I tar
+can be used as the head or tail of a filter chain.
+.I Tar
+can also be used to move hierarchies with the command
+.ce 1
+cd fromdir; tar cf - . | (cd todir; tar xf -)
+.TP 10
+.B b
+.I Tar
+uses the next argument as the blocking factor for tape records. The
+default is 20 (the maximum). This option should only be used with raw magnetic
+tape archives (See 
+.B f
+above).  The block size is determined automatically
+when reading tapes (key letters `x' and `t').
+.TP 10
+.B l
+tells 
+.I tar
+to complain if it cannot resolve all of the links to the
+files dumped. If this is not specified, no error messages are printed.
+.TP 10
+.B m
+tells 
+.I tar
+not to restore the modification times.  The modification time
+will be the time of extraction.
+.TP 10
+.B h
+Force 
+.I tar
+to follow symbolic links as if they were normal files or
+directories.  Normally, 
+.I tar
+does not follow symbolic links.
+.TP 10
+.B B
+Forces input and output blocking to 20 blocks per record.  This option
+was added so that 
+.I tar
+can work across a communications channel where the block may not
+be maintained.
+.PP
+If a file name is preceded by 
+.BR \-C ,
+then 
+.I tar
+will perform a
+.IR chdir (2)
+to that file name.  This allows multiple directories not
+related by a close common parent to be archived using short
+relative path names.  For example, to archive files from /usr/include
+and from /etc, one might use
+.ce 1
+tar c -C /usr include -C / etc
+.PP
+Previous restrictions dealing with
+.IR tar 's
+inability to properly handle blocked archives have been lifted.
+.PP
+.SH FILES
+/dev/rmt?
+.br
+/tmp/tar*
+.SH DIAGNOSTICS
+Complaints about bad key characters and tape read/write errors.
+.br
+Complaints if enough memory is not available to hold the link tables.
+.SH BUGS
+There is no way to ask for the
+.IR n -th
+occurrence of a file.
+.br
+Tape errors are handled ungracefully.
+.br
+The 
+.B u
+option can be slow.
+.br
+The current limit on file name length is 100 characters.
+.br
+There is no way to selectively follow symbolic links.
+.  \".SH MESSAGES
+.  \".IP "tar: usage  tar -{txruB}[cvfblmh] [tapefile] [blocksize] file1 file2..." 5
+.  \".br
+.  \"This is the standard memory jogger message that tells you how to use 
+.  \".IR tar .
+.  \"You will get this message if you just type a \fItar\fP
+.  \"command without arguments, or in several other places where \fItar\fP
+.  \"complains about something or other.
+.  \".IP "tar: x: unknown option" 5
+.  \".br
+.  \"You typed a \fItar\fP command line option which was not in the set of options
+.  \"that \fItar\fP knows about.  Function letters are in the set c (create),
+.  \"o (xxxx), p (xxx), t (table of contents), u (update), and x (extract).  Function
+.  \"modifiers are from the set b (specify blocksize), f (specify name of
+.  \"archive file), l (don't complain about missing links), m (use the
+.  \"extract time as the modification time), s (follow symbolic links), v
+.  \"(verbose), and B (force standard blocking for network operations).
+.  \".IP "tar: b: argument missing" 5
+.  \".br
+.  \"You specified the b (specify blocksize) function modifier but did not
+.  \"specify a blocksize.
+.  \".IP "Invalid blocksize nn." 5
+.  \".br
+.  \"You specified a blocksize which \fItar\fP
+.  \"cannot deal with.  Blocksizes must be in the range of xxxxx-yyyyy.
+.  \".IP "tar: cannot get memory for blocksize nn" 5
+.  \".br
+.  \"\fITar\fP cannot obtain enough memory to handle the specified blocksize.
+.  \"Specify a smaller blocksize.
+.  \".IP "tar: f: argument missing" 5
+.  \".br
+.  \"You typed the f (specify name of archive file) function modifier on the
+.  \"command line but forgot the name of the archive file.
+.  \".IP "Tar: cannot create temporary file (\fIfilename\fP)" 5
+.  \".IP "Can only create standard output archives" 5
+.  \".br
+.  \".IP "tar: cannot open \fIfilename\fP" 5
+.  \".br
+.  \".IP "Missing links to \fIfilename\fP" 5
+.  \".IP "directory checksum error" 5
+.  \".IP "tar: \fIfilename\fP: cannot open file" 5
+.  \".IP "\fIfilename\fP: file name too long" 5
+.  \".br
+.  \"You specified a filename or a pathname which is longer than the maximum
+.  \"that \fItar\fP can handle.  The current maximum length is 100 characters.
+.  \".IP "\fIfilename\fP: directory read error" 5
+.  \".br
+.  \".IP "tar: \fIfilename\fP is not a file. Not dumped" 5
+.  \".br
+.  \".IP "\fIfilename\fP: file name too long" 5
+.  \".br
+.  \".IP "\fIfilename\fP: symbolic link too long" 5
+.  \".br
+.  \".IP "a \fIfilename\fP " 5
+.  \".br
+.  \".IP "link to \fIfilename\fP" 5
+.  \".br
+.  \".IP "Out of memory. Link information lost" 5
+.  \".br
+.  \"\fITar\fP cannot store all the links to files.  This only means that
+.  \"when the files are extracted again, the links won't be made.
+.  \".IP "\fIfilename\fP: file changed size" 5
+.  \".br
+.  \".IP "\fIfilename\fP: symbolic link failed" 5
+.  \".br
+.  \".IP "\fIfilename\fP: cannot link" 5
+.  \".br
+.  \".SH "INFORMATIVE MESSAGES"
+.  \".LP
+.  \"The messages below are those you get when you specify the v (verbose)
+.  \"option on the \fItar\fP command line.
+.  \".IP "a \fIfilename\fP nnnn blocks" 5
+.  \".br
+.  \"File \fIfilename\fP, of size \fInnnn\fP blocks, was added to the archive.
+.  \".IP "a \fIfilename\fP " 5
+.  \".br
+.  \".IP "symbolic link to \fIfilename\fP" 5
+.  \".br
+.  \".IP "x \fIfilename\fP, nnnn bytes, mmmm tape blocks" 5
+.  \".br
+.  \"A file was extracted, of \fInnnn\fP bytes in length, and of \fImmmm\fP
+.  \"tape blocks long.
+.  \".IP "\fIfile_1\fP linked to \fIfile_2\fP" 5
+.  \".br
+.  \".IP "x \fIfile_1\fP symbolic link to \fIfile_2\fP" 5
+.  \".br
+.  \".SH "DISASTER MESSAGES"
+.  \".LP
+.  \"There are a few messages which \fItar\fP
+.  \"displays when disaster strikes.  Here they are.
+.  \".IP "tar: \fIfilename\fP: HELP - extract write error" 5
+.  \".br
+.  \".IP " linked to \fIfilename\fP" 5
+.  \".br
+.  \".IP " symbolic link to \fIfilename\fP" 5
+.  \".br
+.  \".IP "tar: cannot find mkdir!" 5
+.  \".br
+.  \"\fITar\fP needs to use the 
+.  \".IR mkdir (1)
+.  \"utility to make directories, and it seems to be missing from the system.
+.  \".IP "\fIx\fP " 5
+.  \".br
+.  \".IP "\fIfilename\fP: " 5
+.  \".br
+.  \".IP "pwd failed!" 5
+.  \".br
+.  \".IP "/" 5
+.  \".br
+.  \".IP "Tar: tape read error" 5
+.  \".br
+.  \".IP "Tar: error, tape blocksize appears to be \fInnnn\fP bytes" 5
+.  \".br
+.  \".IP "Tar: blocksize = \fInnnn\fP" 5
+.  \".br
+.  \".IP "Tar: tape write error" 5
+.  \".br
+.  \".IP "Tar: tape write error" 5
+.  \".br
+.  \".IP "Tar: tape backspace error" 5
+.  \".br
