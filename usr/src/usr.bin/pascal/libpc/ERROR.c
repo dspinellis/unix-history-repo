@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)ERROR.c 1.3 %G%";
+static char sccsid[] = "@(#)ERROR.c 1.4 %G%";
 
 #include	<stdio.h>
 #include	<signal.h>
@@ -14,18 +14,15 @@ static char sccsid[] = "@(#)ERROR.c 1.3 %G%";
  * from errdata by the makefile using the editor script make.ed1.
  */
 long
-ERROR(errnum, errordata)
+ERROR(errnum, errdata)
 
-	short	errnum;
-	double	errordata;
-{
+	int	errnum;
 	union cvt {
 		long	longdat;
 		char	*strngdat;
 		double	dbldat;
 	} errdata;
-
-	errdata.dbldat = errordata;
+{
 	PFLUSH();
 	if (_entry[errnum].entryaddr != 0) {
 		(*_entry[errnum].entryaddr)(errdata);
