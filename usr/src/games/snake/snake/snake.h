@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)snake.h	5.2 (Berkeley) %G%
+ *	@(#)snake.h	5.3 (Berkeley) %G%
  */
 
 # include <stdio.h>
@@ -53,3 +53,6 @@ struct sgttyb orig, new;
 struct ltchars olttyc, nlttyc;
 #endif
 struct point *point();
+
+#define	same(s1, s2)	((s1)->line == (s2)->line && (s1)->col == (s2)->col)
+
