@@ -1,0 +1,34 @@
+#	@(#)README	5.1 (Berkeley) %G%
+
+Alpha+1 release.
+Mon Jul 27 17:58:48 EDT 1992
+henry@zoo.toronto.edu
+
+New this time:  improvements to the manual pages, and an important
+extension, the REG_STARTEND option to regexec().
+
+installation notes:
+--------
+Limits.h, stdlib.h are fakes for ANSI headers not present on my system;
+delete them if you've got real ones.
+
+Memmove.c is a fake for an ANSI subroutine I don't have.
+
+Split.c is used for regression testing but is not part of the RE routines
+themselves.
+
+Just "make" will build regcomp.o, regexec.o, regfree.o, and regerror.o
+(the actual routines), bundle them together into a test program, and run
+a regression test on them.  No output is good output.
+
+Regex.h is for /usr/include.  All other .h files are internal only.
+
+For an ANSI compiler, you want to uncomment the prototype parameters in
+the function declarations in regex.h.
+
+If you have an ANSI compiler, take -Dconst= out of Makefile's CFLAGS.
+Do not take -DPOSIX_MISTAKE out.  You probably want to put -DNDEBUG in,
+to get rid of all the assertion tests, for building production versions
+after you've run the regression test.  (The regression test won't quite
+compile with -DNDEBUG at the moment.)
+--------
