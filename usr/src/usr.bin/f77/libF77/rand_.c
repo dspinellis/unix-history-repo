@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rand_.c	5.3	%G%
+ *	@(#)rand_.c	5.4	%G%
  *
  * Routines to return random values
  *
@@ -20,7 +20,7 @@
  *	(see rand(3))
  */
 
-#if	defined(vax) || defined(tahoe)
+#if	defined(vax) || defined(tahoe) || defined(hp300)
 #define	RANDMAX		2147483647
 #else	vax || tahoe
 #if	pdp11
