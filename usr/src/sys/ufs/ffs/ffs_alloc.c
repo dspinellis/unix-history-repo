@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-static char vers[] = "@(#)ffs_alloc.c 1.12 %G%";
+static char vers[] = "@(#)ffs_alloc.c 1.13 %G%";
 
 /*	alloc.c	4.8	81/03/08	*/
 
@@ -91,6 +91,8 @@ realloccg(dev, bprev, bpref, osize, nsize)
 	bno = fragextend(dev, fs, cg, (long)bprev, osize, nsize);
 	if (bno != 0) {
 		bp = bread(dev, fsbtodb(fs, bno), osize);
+		if (bp->b_flags & B_ERROR)
+			return (0);
 		bp->b_bcount = nsize;
 		blkclr(bp->b_un.b_addr + osize, nsize - osize);
 		return (bp);
@@ -103,6 +105,8 @@ realloccg(dev, bprev, bpref, osize, nsize)
 		 * make a new copy
 		 */
 		obp = bread(dev, fsbtodb(fs, bprev), osize);
+		if (obp->b_flags & B_ERROR)
+			return (0);
 		bp = getblk(dev, fsbtodb(fs, bno), nsize);
 		cp = bp->b_un.b_addr;
 		bp->b_un.b_addr = obp->b_un.b_addr;
@@ -275,35 +279,32 @@ fragextend(dev, fs, cg, bprev, osize, nsize)
 		return (0);
 	cgp = bp->b_un.b_cg;
 	bno = bprev % fs->fs_fpg;
-	for (i = osize / fs->fs_fsize; i < frags; i++) {
+	for (i = osize / fs->fs_fsize; i < frags; i++)
+		if (isclr(cgp->cg_free, bno + i)) {
+			brelse(bp);
+			return (0);
+		}
+	/*
+	 * the current fragment can be extended
+	 * deduct the count on fragment being extended into
+	 * increase the count on the remaining fragment (if any)
+	 * allocate the extended piece
+	 */
+	for (i = frags; i < fs->fs_frag - bbase; i++)
 		if (isclr(cgp->cg_free, bno + i))
 			break;
+	cgp->cg_frsum[i - osize / fs->fs_fsize]--;
+	if (i != frags)
+		cgp->cg_frsum[i - frags]++;
+	for (i = osize / fs->fs_fsize; i < frags; i++) {
+		clrbit(cgp->cg_free, bno + i);
+		cgp->cg_cs.cs_nffree--;
+		fs->fs_cstotal.cs_nffree--;
+		fs->fs_cs(fs, cg).cs_nffree--;
 	}
-	if (i == frags) {
-		/*
-		 * the current fragment can be extended
-		 * deduct the count on fragment being extended into
-		 * increase the count on the remaining fragment (if any)
-		 * allocate the extended piece
-		 */
-		for (i = frags; i < fs->fs_frag - bbase; i++)
-			if (isclr(cgp->cg_free, bno + i))
-				break;
-		cgp->cg_frsum[i - osize / fs->fs_fsize]--;
-		if (i != frags)
-			cgp->cg_frsum[i - frags]++;
-		for (i = osize / fs->fs_fsize; i < frags; i++) {
-			clrbit(cgp->cg_free, bno + i);
-			cgp->cg_cs.cs_nffree--;
-			fs->fs_cstotal.cs_nffree--;
-			fs->fs_cs(fs, cg).cs_nffree--;
-		}
-		fs->fs_fmod++;
-		bdwrite(bp);
-		return (bprev);
-	}
-	brelse(bp);
-	return (0);
+	fs->fs_fmod++;
+	bdwrite(bp);
+	return (bprev);
 }
 
 daddr_t
@@ -385,48 +386,79 @@ alloccgblk(fs, cgp, bpref)
 	daddr_t bno;
 	int cylno, pos;
 	short *cylbp;
-	int i, j;
+	register int i;
 
 	if (bpref == 0) {
 		bpref = cgp->cg_rotor;
+		goto norot;
+	}
+	bpref &= ~(fs->fs_frag - 1);
+	bpref %= fs->fs_fpg;
+	/*
+	 * if the requested block is available, use it
+	 */
+	if (isblock(fs, cgp->cg_free, bpref/fs->fs_frag)) {
+		bno = bpref;
+		goto gotit;
+	}
+	if (fs->fs_cpc == 0)
+		goto norot;
+	/*
+	 * check for a block available on the same cylinder
+	 * beginning with one which is rotationally optimal
+	 */
+	cylno = cbtocylno(fs, bpref);
+	cylbp = cgp->cg_b[cylno];
+	if (fs->fs_rotdelay == 0) {
+		pos = cbtorpos(fs, bpref);
 	} else {
-		bpref &= ~(fs->fs_frag - 1);
-		bpref %= fs->fs_fpg;
 		/*
-		 * if the requested block is available, use it
+		 * here we convert ms of delay to frags as:
+		 * (frags) = (ms) * (rev/sec) * (sect/rev) /
+		 *	((sect/frag) * (ms/sec))
+		 * then round up to the next rotational position
 		 */
-		if (isblock(fs, cgp->cg_free, bpref/fs->fs_frag)) {
-			bno = bpref;
-			goto gotit;
-		}
-		/*
-		 * check for a block available on the same cylinder
-		 * beginning with one which is rotationally optimal
-		 */
-		i = bpref * NSPF(fs);
-		cylno = i / fs->fs_spc;
-		cylbp = cgp->cg_b[cylno];
-		pos = (i + (fs->fs_rotdelay == 0) ? 0 :
-		       1 + fs->fs_rotdelay * HZ * fs->fs_nsect /
-		       (NSPF(fs) * 1000)) % fs->fs_nsect * NRPOS / fs->fs_nsect;
-		for (i = pos; i < NRPOS; i++)
+		bpref += fs->fs_rotdelay * fs->fs_rps * fs->fs_nsect /
+		    (NSPF(fs) * 1000);
+		pos = cbtorpos(fs, bpref);
+		pos = (pos + 1) % NRPOS;
+	}
+	/*
+	 * check the summary information to see if a block is 
+	 * available in the requested cylinder starting at the
+	 * optimal rotational position and proceeding around.
+	 */
+	for (i = pos; i < NRPOS; i++)
+		if (cylbp[i] > 0)
+			break;
+	if (i == NRPOS)
+		for (i = 0; i < pos; i++)
 			if (cylbp[i] > 0)
 				break;
-		if (i == NRPOS)
-			for (i = 0; i < pos; i++)
-				if (cylbp[i] > 0)
-					break;
-		if (cylbp[i] > 0) {
-			bpref = cylno * fs->fs_spc / NSPB(fs);
-			for (j = fs->fs_postbl[i]; j > -1; j = fs->fs_rotbl[j]) {
-				if (isblock(fs, cgp->cg_free, bpref + j)) {
-					bno = (bpref + j) * fs->fs_frag;
-					goto gotit;
-				}
+	if (cylbp[i] > 0) {
+		/*
+		 * found a rotational position, now find the actual
+		 * block. A panic if none is actually there.
+		 */
+		pos = cylno % fs->fs_cpc;
+		bno = (cylno - pos) * fs->fs_spc / NSPB(fs);
+		if (fs->fs_postbl[pos][i] == -1)
+			panic("alloccgblk: cyl groups corrupted");
+		for (i = fs->fs_postbl[pos][i]; ; i += fs->fs_rotbl[i]) {
+			if (isblock(fs, cgp->cg_free, bno + i)) {
+				bno = (bno + i) * fs->fs_frag;
+				goto gotit;
 			}
-			panic("alloccgblk: can't find blk in cyl");
+			if (fs->fs_rotbl[i] == 0)
+				break;
 		}
+		panic("alloccgblk: can't find blk in cyl");
 	}
+norot:
+	/*
+	 * no blocks in the requested cylinder, so take next
+	 * available one in this cylinder group.
+	 */
 	bno = mapsearch(fs, cgp, bpref, fs->fs_frag);
 	if (bno == 0)
 		return (0);
@@ -436,8 +468,7 @@ gotit:
 	cgp->cg_cs.cs_nbfree--;
 	fs->fs_cstotal.cs_nbfree--;
 	fs->fs_cs(fs, cgp->cg_cgx).cs_nbfree--;
-	i = bno * NSPF(fs);
-	cgp->cg_b[i/fs->fs_spc][i%fs->fs_nsect*NRPOS/fs->fs_nsect]--;
+	cgp->cg_b[cbtocylno(fs, bno)][cbtorpos(fs, bno)]--;
 	fs->fs_fmod++;
 	return (cgp->cg_cgx * fs->fs_fpg + bno);
 }
@@ -521,8 +552,7 @@ fre(dev, bno, size)
 		cgp->cg_cs.cs_nbfree++;
 		fs->fs_cstotal.cs_nbfree++;
 		fs->fs_cs(fs, cg).cs_nbfree++;
-		i = bno * NSPF(fs);
-		cgp->cg_b[i/fs->fs_spc][i%fs->fs_nsect*NRPOS/fs->fs_nsect]++;
+		cgp->cg_b[cbtocylno(fs, bno)][cbtorpos(fs, bno)]++;
 	} else {
 		bbase = bno - (bno % fs->fs_frag);
 		/*
@@ -559,9 +589,7 @@ fre(dev, bno, size)
 			cgp->cg_cs.cs_nbfree++;
 			fs->fs_cstotal.cs_nbfree++;
 			fs->fs_cs(fs, cg).cs_nbfree++;
-			i = bbase * NSPF(fs);
-			cgp->cg_b[i / fs->fs_spc]
-				 [i % fs->fs_nsect * NRPOS / fs->fs_nsect]++;
+			cgp->cg_b[cbtocylno(fs, bbase)][cbtorpos(fs, bbase)]++;
 		}
 	}
 	fs->fs_fmod++;

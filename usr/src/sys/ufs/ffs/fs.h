@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-/*	fs.h	1.10	%G%	*/
+/*	fs.h	1.11	%G%	*/
 
 /*
  * Each disk drive contains some number of file systems.
@@ -14,31 +14,22 @@
  * super-block data does not change, so the copies need not be
  * referenced further unless disaster strikes.
  *
- * For file system fs and a cylinder group number cg:
- *	[BBLOCK]	Boot sector
- *	[SBLOCK]	Super-block
- *	[CBLOCK(fs)]	Cylinder group block
- *	[IBLOCK(fs)..IBLOCK(fs)+fs.fs_ipg/INOPB(fs))
- *			Inode blocks
- *	[IBLOCK(fs)+fs.fs_ipg/INOPB(fs)..fs.fs_fpg/fs.fs_frag)
- *			Data blocks
- * The beginning of data blocks for cg in fs is also given by
- * the ``cgdmin(cg,fs)'' macro.
+ * For file system fs, the offsets of the various blocks of interest
+ * are given in the super block as:
+ *	[fs->fs_bblkno]		Boot sector
+ *	[fs->fs_sblkno]		Super-block
+ *	[fs->fs_cblkno]		Cylinder group block
+ *	[fs->fs_iblkno]		Inode blocks
+ *	[fs->fs_dblkno]		Data blocks
+ * The beginning of cylinder group cg in fs, is given by
+ * the ``cgbase(cg, fs)'' macro.
  *
- * The boot and super blocks are given in absolute disk addresses.
+ * The first boot and super blocks are given in absolute disk addresses.
  */
 #define BBSIZE		1024
 #define SBSIZE		8192
 #define	BBLOCK		((daddr_t)(0))
 #define	SBLOCK		((daddr_t)(BBLOCK + BBSIZE / DEV_BSIZE))
-/*
- * The cylinder group and inode blocks are given in file system
- * addresses, and hence must be converted to disk addresses by
- * the ``fsbtodb(fs, bno)'' macro.
- */
-#define	CBLOCK(fs) \
-  ((daddr_t)(roundup(howmany(BBSIZE + SBSIZE, (fs)->fs_fsize), (fs)->fs_frag)))
-#define	IBLOCK(fs)	((daddr_t)(CBLOCK(fs) + (fs)->fs_frag))
 
 /*
  * Addresses stored in inodes are capable of addressing fragments
@@ -165,16 +156,21 @@ struct csum {
 struct	fs
 {
 	long	fs_magic;		/* magic number */
-	daddr_t	fs_sblkno;		/* offset of super-block in filesys */
+	daddr_t	fs_bblkno;		/* abs addr of boot-block in filesys */
+	daddr_t	fs_sblkno;		/* abs addr of super-block in filesys */
+	daddr_t	fs_cblkno;		/* offset of cyl-block in filesys */
+	daddr_t	fs_iblkno;		/* offset of inode-blocks in filesys */
+	daddr_t	fs_dblkno;		/* offset of data-blocks in filesys */
 	time_t 	fs_time;    		/* last time written */
 	long	fs_size;		/* number of blocks in fs */
 	long	fs_dsize;		/* number of data blocks in fs */
 	long	fs_ncg;			/* number of cylinder groups */
 	long	fs_bsize;		/* size of basic blocks in fs */
 	long	fs_fsize;		/* size of frag blocks in fs */
-	long	fs_frag;		/* number of frags in a block in fs */
+	short	fs_frag;		/* number of frags in a block in fs */
 	short	fs_minfree;		/* minimum percentage of free blocks */
 	short	fs_rotdelay;		/* num of ms for optimal next block */
+	short	fs_rps;			/* disk revolutions per second */
 /* sizes determined by number of cylinder groups and their sizes */
 	daddr_t fs_csaddr;		/* blk addr of cyl grp summary area */
 	long	fs_cssize;		/* size of cyl grp summary area */
@@ -198,8 +194,9 @@ struct	fs
 /* these fields retain the current block allocation info */
 	long	fs_cgrotor;		/* last cg searched */
 	struct	csum *fs_csp[NBUF];	/* list of fs_cs info buffers */
-	short	fs_postbl[NRPOS];	/* head of blocks for each rotation */
-	short	fs_rotbl[1];		/* list of blocks for each rotation */
+	short	fs_cpc;			/* cyl per cycle in postbl */
+	short	fs_postbl[MAXCPG][NRPOS];/* head of blocks for each rotation */
+	u_char	fs_rotbl[1];		/* list of blocks for each rotation */
 /* actually longer */
 };
 
@@ -213,12 +210,15 @@ struct	fs
 	[(indx) % ((fs)->fs_bsize / sizeof(struct csum))]
 
 /*
- * MAXBPC bounds the number of blocks of data per cylinder,
- * and is limited by the fact that the super block is of size SBSIZE.
- * Its size is derived from the size of blocks and the (struct fs) size,
- * by the number of remaining bits.
+ * MAXBPC bounds the size of the rotational layout tables and
+ * is limited by the fact that the super block is of size SBSIZE.
+ * The size of these tables is INVERSELY proportional to the block
+ * size of the file system. It is aggravated by sector sizes that
+ * are not powers of two, as this increases the number of cylinders
+ * included before the rotational pattern repeats (fs_cpc).
+ * Its size is derived from the number of bytes remaining in (struct fs)
  */
-#define	MAXBPC	((SBSIZE - sizeof (struct fs)) / sizeof(short))
+#define	MAXBPC	(SBSIZE - sizeof (struct fs))
 
 /*
  * Cylinder group block for a file system.
@@ -261,29 +261,33 @@ struct	cg {
 /*
  * Cylinder group macros to locate things in cylinder groups.
  *
+ * cylinder group to disk block address of spare boot block
+ * and super block
+ * Note that these are in absolute addresses, and can NOT
+ * in general be expressable in terms of file system addresses.
+ */
+#define	cgbblock(c,fs)	(fsbtodb(fs, cgbase(c,fs)) + (fs)->fs_bblkno)
+#define	cgsblock(c,fs)	(fsbtodb(fs, cgbase(c,fs)) + (fs)->fs_sblkno)
+
+/*
  * cylinder group to disk block at very beginning
  */
 #define	cgbase(c,fs)	((daddr_t)((fs)->fs_fpg * (c)))
 
 /*
- * cylinder group to spare super block address
- */
-#define	cgsblock(c,fs)	(cgbase(c,fs) + dbtofsb(fs, SBLOCK))
-
-/*
  * convert cylinder group to index of its cg block
  */
-#define	cgtod(c,fs)	(cgbase(c,fs) + CBLOCK(fs))
+#define	cgtod(c,fs)	(cgbase(c,fs) + (fs)->fs_cblkno)
 
 /*
  * give address of first inode block in cylinder group
  */
-#define	cgimin(c,fs)	(cgbase(c,fs) + IBLOCK(fs))
+#define	cgimin(c,fs)	(cgbase(c,fs) + (fs)->fs_iblkno)
 
 /*
  * give address of first data block in cylinder group
  */
-#define	cgdmin(c,fs)	(cgimin(c,fs) + (fs)->fs_ipg / INOPF(fs))
+#define	cgdmin(c,fs)	(cgbase(c,fs) + (fs)->fs_dblkno)
 
 /*
  * turn inode number into cylinder group number
@@ -294,8 +298,8 @@ struct	cg {
  * turn inode number into file system block address
  */
 #define	itod(x,fs) \
-	((daddr_t)(cgimin(itog(x,fs),fs) + (fs)->fs_frag * \
-	((x) % (fs)->fs_ipg / INOPB(fs))))
+	((daddr_t)(cgimin(itog(x,fs),fs) + \
+	(x) % (fs)->fs_ipg / INOPB(fs) * (fs)->fs_frag))
 
 /*
  * turn inode number into file system block offset
@@ -311,6 +315,14 @@ struct	cg {
  * give cylinder group block number for a file system block
  */
 #define	dtogd(d,fs)	((d) % (fs)->fs_fpg)
+
+/*
+ * compute the cylinder and rotational position of a cyl block addr
+ */
+#define cbtocylno(fs, bno) \
+	((bno) * NSPF(fs) / (fs)->fs_spc)
+#define cbtorpos(fs, bno) \
+	((bno) * NSPF(fs) % (fs)->fs_nsect * NRPOS / (fs)->fs_nsect)
 
 /*
  * determining the size of a file block in the file system

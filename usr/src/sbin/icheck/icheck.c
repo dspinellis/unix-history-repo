@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)icheck.c	1.12 (Berkeley) %G%";
+static	char *sccsid = "@(#)icheck.c	1.13 (Berkeley) %G%";
 
 /*
  * icheck
@@ -485,9 +485,8 @@ makecg()
 			}
 			if (j == sblock.fs_frag) {
 				cgrp.cg_cs.cs_nbfree++;
-				s = d * NSPF(&sblock);
-				cgrp.cg_b[s/sblock.fs_spc]
-				  [s%sblock.fs_nsect*NRPOS/sblock.fs_nsect]++;
+				cgrp.cg_b[cbtocylno(&sblock, d)]
+				    [cbtorpos(&sblock, d)]++;
 			} else if (j > 0) {
 				cgrp.cg_cs.cs_nffree += j;
 				blk = ((cgrp.cg_free[d / NBBY] >> (d % NBBY)) &
