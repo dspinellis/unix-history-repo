@@ -1,0 +1,38 @@
+MKDIR(1)                     BSD Reference Manual                     MKDIR(1)
+
+NNAAMMEE
+     mmkkddiirr - make directories
+
+SSYYNNOOPPSSIISS
+     mmkkddiirr [--pp] [--mm _m_o_d_e] _d_i_r_e_c_t_o_r_y___n_a_m_e _._._.
+
+DDEESSCCRRIIPPTTIIOONN
+     MMkkddiirr creates the directories named as operands, in the order specified,
+     using mode rwxrwxrwx (0777) as modified by the current umask(2).
+
+     The options are as follows:
+
+     --mm      Set the file permission bits of the final created directory to
+             the specified mode.  The mode argument can be in any of the for-
+             mats specified to the chmod(1) command.  If a symbolic mode is
+             specified, the operation characters ``+'' and ``-'' are inter-
+             preted relative to an initial mode of ``a=rwx''.
+
+     --pp      Create intermediate directories as required.  If this option is
+             not specified, the full path prefix of each operand must already
+             exist.  Intermediate directories are created with permission bits
+             of rwxrwxrwx (0777) as modified by the current umask, plus write
+             and search permission for the owner.
+
+     The user must have write permission in the parent directory.
+
+     MMkkddiirr exits 0 if successful, and >0 if an error occurred.
+
+SSEEEE AALLSSOO
+     rmdir(1)
+
+SSTTAANNDDAARRDDSS
+     The mmkkddiirr utility is expected to be IEEE Std1003.2 (``POSIX'') compati-
+     ble.
+
+4.4BSD                         January 25, 1994                              1
