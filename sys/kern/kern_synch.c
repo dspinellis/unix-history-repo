@@ -32,7 +32,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_synch.c	7.18 (Berkeley) 6/27/91
- *	$Id: kern_synch.c,v 1.2 1993/10/16 15:24:32 rgrimes Exp $
+ *	$Id: kern_synch.c,v 1.3 1993/11/25 01:33:13 wollman Exp $
  */
 
 #include "param.h"
@@ -588,29 +588,39 @@ setpri(p)
 }
 
 #if NDDB > 0
-#define	DDBFUNC(s)	ddb_##s
+#define	DDBFUNC(s)	db_##s
 void
 DDBFUNC(ps) () {
 	int np;
+	int nl=0;
 	struct proc *ap, *p, *pp;
 	np = nprocs;
 	p = ap = allproc;
-    printf("  pid  proc    addr     uid     ppid  pgrp   flag stat comm         wchan\n");
+    db_printf("  pid  proc    addr     uid     ppid  pgrp   flag stat comm         wchan\n");
     while (--np >= 0) {
+	/*
+	 * XXX just take 20 for now...
+	 */
+	if(nl++==20) {
+		db_printf("--More--");
+		cngetc();
+		db_printf("\b\b\b\b\b\b\b\b");
+		nl=0;
+	}
 	pp = p->p_pptr;
 	if (pp == 0)
 		pp = p;
 	if (p->p_stat) {
-	    printf("%5d %06x %06x %3d %5d %5d  %06x  %d  %s   ",
+	    db_printf("%5d %06x %06x %3d %5d %5d  %06x  %d  %s   ",
 		   p->p_pid, ap, p->p_addr, p->p_cred->p_ruid, pp->p_pid, 
 		   p->p_pgrp->pg_id, p->p_flag, p->p_stat,
 		   p->p_comm);
 	    if (p->p_wchan) {
 		if (p->p_wmesg)
-		    printf("%s ", p->p_wmesg);
-		printf("%x", p->p_wchan);
+		    db_printf("%s ", p->p_wmesg);
+		db_printf("%x", p->p_wchan);
 	    }
-	    printf("\n");
+	    db_printf("\n");
 	}
 	ap = p->p_nxt;
 	if (ap == 0 && np > 0)
