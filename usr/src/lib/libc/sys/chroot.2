@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)chroot.2	6.3 (Berkeley) %G%
+.\"	@(#)chroot.2	6.4 (Berkeley) %G%
 .\"
 .TH CHROOT 2 ""
 .UC 5
@@ -25,6 +25,10 @@ the starting point for path names beginning with ``/''.
 .PP
 In order for a directory to become the root directory
 a process must have execute (search) access to the directory.
+.PP
+It should be noted that
+.I chroot
+has no effect on the process's current directory.
 .PP
 This call is restricted to the super-user.
 .SH "RETURN VALUE
