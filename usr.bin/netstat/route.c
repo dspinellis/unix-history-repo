@@ -54,6 +54,7 @@ static char sccsid[] = "@(#)route.c	5.20 (Berkeley) 11/29/90";
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 extern	int nflag, aflag, Aflag, af;
 int do_rtent;
@@ -61,7 +62,7 @@ extern	char *routename(), *netname(), *plural();
 #ifdef NS
 extern	char *ns_print();
 #endif
-extern	char *malloc();
+
 #define kget(p, d) \
 	(kvm_read((off_t)(p), (char *)&(d), sizeof (d)))
 
@@ -81,6 +82,8 @@ struct bits {
 	{ RTF_XRESOLVE,	'X' },
 	{ RTF_LLINFO,	'L' },
 	{ RTF_REJECT,	'R' },
+	{ RTF_PROTO2,	'2' },
+	{ RTF_PROTO1,	'1' },
 	{ 0 }
 };
 
@@ -118,6 +121,7 @@ p_proto(proto)
 /*
  * Print routing tables.
  */
+int
 routepr(hostaddr, netaddr, hashsizeaddr, treeaddr)
 	off_t hostaddr, netaddr, hashsizeaddr, treeaddr;
 {
@@ -129,14 +133,26 @@ routepr(hostaddr, netaddr, hashsizeaddr, treeaddr)
 	int hashsize;
 	int i, doinghost = 1;
 
+	if (!treeaddr) {
+		printf("Could not find routing tables\n");
+		return 1;
+	}
 	printf("Routing tables\n");
 	if (Aflag)
 		printf("%-8.8s ","Address");
-	printf("%-16.16s %-18.18s %-6.6s  %6.6s%8.8s  %-5.5s %-6.6s %-6.6s\n",
+	printf("%-16.16s %-18.18s %-6.6s  %6.6s%8.8s  %-5.5s",
 		"Destination", "Gateway",
-		"Flags", "Refs", "Use", "Iface", "MTU", "Rtt");
-	if (treeaddr)
-		return treestuff(treeaddr);
+		"Flags", "Refs", "Use", "Iface");
+	if(!aflag) {
+		printf("%-6.6s %-6.6s\n", "MTU", "Rtt");
+	} else {
+		printf("\n    %8s %8s %8s %8s %8s %8s %8s %8s\n",
+		       "MTU", "Hopcount", "Expire", "recvpipe",
+		       "sendpipe", "ssthresh", "RTT", "RTT var.");
+	}
+
+	return treestuff(treeaddr);
+
 }
 
 static union {
@@ -384,14 +400,88 @@ register struct rtentry *rt;
 	kget(rt->rt_ifp, ifnet);
 	kvm_read((off_t)ifnet.if_name, name, 16);
 	printf(" %.2s%d", name, ifnet.if_unit);
-	if(rt->rt_rmx.rmx_mtu)
-	  printf(" %6d", rt->rt_rmx.rmx_mtu);
-	else
-	  printf(" %-6s", "-");
-	if(rt->rt_rmx.rmx_rtt)
-	  printf(" %6.3f", (1. * rt->rt_rmx.rmx_rtt) / RTM_RTTUNIT);
-	else
-	  printf(" %-6s", "-");
+	if(aflag) {
+	  /*
+	   * MTU
+	   */
+	  if(rt->rt_rmx.rmx_mtu)
+	    printf("\n    %7d%c", rt->rt_rmx.rmx_mtu, 
+		   (rt->rt_rmx.rmx_locks & RTV_MTU) ? '*' : ' ');
+	  else
+	    printf("\n    %-7s ", "-");
+
+	  /*
+	   * Hop count
+	   */
+	  if(rt->rt_rmx.rmx_hopcount)
+	    printf(" %7d%c", rt->rt_rmx.rmx_hopcount,
+		   (rt->rt_rmx.rmx_locks & RTV_HOPCOUNT) ? '*' : ' ');
+	  else
+	    printf(" %-6s ", "-");
+	  
+	  /*
+	   * Expiration time
+	   */
+	  if(rt->rt_rmx.rmx_expire)
+	    printf(" %7d%c", rt->rt_rmx.rmx_expire,
+		   (rt->rt_rmx.rmx_locks & RTV_EXPIRE) ? '*' : ' ');
+	  else
+	    printf(" %-7s ", "-");
+
+	  /*
+	   * Receive pipe size (bytes)
+	   */
+	  if(rt->rt_rmx.rmx_recvpipe)
+	    printf(" %7d%c", rt->rt_rmx.rmx_recvpipe,
+		   (rt->rt_rmx.rmx_locks & RTV_RPIPE) ? '*' : ' ');
+	  else
+	    printf(" %-7s ", "-");
+
+	  /*
+	   * Send pipe size (bytes)
+	   */
+	  if(rt->rt_rmx.rmx_sendpipe)
+	    printf(" %7d%c", rt->rt_rmx.rmx_sendpipe,
+		   (rt->rt_rmx.rmx_locks & RTV_SPIPE) ? '*' : ' ');
+	  else
+	    printf(" %-7s ", "-");
+
+	  /*
+	   * Slow-start threshold (bytes)
+	   */
+	  if(rt->rt_rmx.rmx_ssthresh)
+	    printf(" %7d%c", rt->rt_rmx.rmx_ssthresh,
+		   (rt->rt_rmx.rmx_locks & RTV_SSTHRESH) ? '*' : ' ');
+	  else
+	    printf(" %-7s ", "-");
+
+	  /*
+	   * Round-trip time (seconds)
+	   */
+	  if(rt->rt_rmx.rmx_rtt)
+	    printf(" %7.4f%c", (1.0 * rt->rt_rmx.rmx_rtt) / RTM_RTTUNIT,
+		   (rt->rt_rmx.rmx_locks & RTV_RTT) ? '*' : ' ');
+	  else
+	    printf(" %-7s ", "-");
+
+	  /*
+	   * Round-trip time variance (seconds)
+	   */
+	  if(rt->rt_rmx.rmx_rttvar)
+	    printf(" %7.4f%c", (1.0 * rt->rt_rmx.rmx_rttvar) / RTM_RTTUNIT,
+		   (rt->rt_rmx.rmx_locks & RTV_RTTVAR) ? '*' : ' ');
+	  else
+	    printf(" %-7s ", "-");
+	} else {		/* no -a flag */
+	  if(rt->rt_rmx.rmx_mtu)
+	    printf(" %6d", rt->rt_rmx.rmx_mtu);
+	  else
+	    printf(" %-6s", "-");
+	  if(rt->rt_rmx.rmx_rtt)
+	    printf(" %6.3f", (1. * rt->rt_rmx.rmx_rtt) / RTM_RTTUNIT);
+	  else
+	    printf(" %-6s", "-");
+	}
 	printf(rt->rt_nodes[0].rn_dupedkey ? " =>\n" : "\n");
 }
 
