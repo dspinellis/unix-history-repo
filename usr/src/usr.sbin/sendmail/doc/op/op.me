@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	8.1 (Berkeley) %G%
+.\"	@(#)op.me	8.2 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:08-%''Sendmail Installation and Operation Guide'
@@ -40,9 +40,9 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 8.1
+Version 8.2
 .sp
-For Sendmail Version 8.1
+For Sendmail Version 8.2
 .)l
 .sp 2
 .pp
@@ -1411,6 +1411,30 @@ for this run only.
 Some options have security implications.
 Sendmail allows you to set these,
 but refuses to run as root thereafter.
+.sh 2 "Logging Traffic"
+.pp
+Many SMTP implementations do not fully implement the protocol.
+For example, some personal computer based SMTPs
+do not understand continuation lines in reply codes.
+These can be very hard to trace.
+If you suspect such a problem, you can set traffic logging using the
+.b \-X
+flag.
+For example,
+.(b
+/usr/\*(SD/sendmail \-X /tmp/traffic -bd
+.)b
+will log all traffic in the file
+.i /tmp/traffic .
+.pp
+This logs a lot of data very quickly and should never be used
+during normal operations.
+After starting up such a daemon,
+force the errant implementation to send a message to your host.
+All message traffic in and out of
+.i sendmail ,
+including the incoming SMTP traffic,
+will be logged in this file.
 .sh 1 "TUNING"
 .pp
 There are a number of configuration parameters
@@ -4061,11 +4085,35 @@ if it cannot be opened,
 no error is produced,
 and sendmail will behave as if the map existed but was empty.
 .ip "\-N"
-Normally sendmail does not include the trailing null byte
-on a string as part of the key.
-If this flag is indicated,
-it will be included.
-This is for compatibility with some methods of building the maps.
+Normally when maps are written,
+the trailing null byte is not included as part of the key.
+If this flag is indicated it will be included.
+During lookups, only the null-byte-included form will be searched.
+See also
+.b \-O.
+.ip "\-O"
+If neither
+.b \-N
+or
+.b \-O
+are specified,
+.i sendmail
+uses an adaptive algorithm to decide whether or not to look for null bytes
+on the end of keys.
+It starts by trying both;
+if it finds any key with a null byte it never tries again without a null byte
+and vice versa.
+If this flag is specified,
+it never tries with a null byte;
+this can speed matches but is never necessary.
+If both
+.b \-N
+and
+.b \-O
+are specified,
+.i sendmail
+will never try any matches at all \(em
+that is, everything will appear to fail.
 .ip "\-a\fIx\fP"
 Append the character
 .i x
@@ -5778,6 +5826,13 @@ The
 .b \-p
 flag has been added
 to pass in protocol information.
+.pp
+The
+.b \-X
+flag has been added
+to allow logging of all protocol in and out of
+.i sendmail
+for debugging.
 .sh 2 "Enhanced Command Line Flags"
 .pp
 The
@@ -6165,6 +6220,11 @@ The
 line will be deleted before sending.
 Any addresses in the argument vector will be deleted
 from the send list.
+.ip "\-X \fIlogfile\fP"
+Log all traffic in and out of sendmail in the indicated
+.i logfile
+for debugging mailer problems.
+This produces a lot of data very quickly and should be used sparingly.
 .pp
 There are a number of options that may be specified as
 primitive flags
@@ -6456,7 +6516,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 8.1
+.\"Version 8.2
 .\".ce 0
 .pn 2
 .bp
