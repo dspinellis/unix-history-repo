@@ -1,12 +1,12 @@
-/*	param.h	6.4	84/08/28	*/
+/*	param.h	6.5	84/08/29	*/
 
 /*
  * Machine type dependent parameters.
  */
 #ifdef KERNEL
-#include "../machine/param.h"
+#include "../machine/machparam.h"
 #else
-#include <machine/param.h>
+#include <machine/machparam.h>
 #endif
 
 #define	NPTEPG		(NBPG/(sizeof (struct pte)))
