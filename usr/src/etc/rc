@@ -1,9 +1,9 @@
 #
-#	@(#)rc	5.3 (Berkeley) %G%
+#	@(#)rc	5.4 (Berkeley) %G%
 #
 
 HOME=/; export HOME
-PATH=/bin:/sbin:/usr/sbin:/usr/bin:/usr/ucb
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
 export PATH
 
 if [ -r /fastboot ]
@@ -13,11 +13,9 @@ then
 elif [ $1x = autobootx ]
 then
 	echo Automatic reboot in progress... 		>/dev/console
-	date						>/dev/console
 	fsck -p						>/dev/console 2>&1
 	case $? in
 	0)
-		date >/dev/console
 		;;
 	2)
 		exit 1
@@ -38,14 +36,13 @@ then
 		exit 1
 		;;
 	esac
-else
-	date >/dev/console
 fi
 
 # check the password file
 if [ -f /etc/ptmp ]
 then
-	echo '/etc/ptmp -- password file may be incorrect' > /dev/console
+	echo 'password file may be incorrect -- /etc/ptmp exists' \
+	    > /dev/console
 fi
 
 umount -a
@@ -65,57 +62,56 @@ ps -U							>/dev/console 2>&1
 rm -f /etc/nologin
 rm -f /usr/spool/uucp/LCK.*
 rm -f /usr/spool/uucp/STST/*
+(cd /var/run; rm -rf *)
 
 chmod 666 /dev/tty[pqrs]*
 
 # set hostname, turn on network
 . /etc/netstart
 
-			echo 'starting system logger'	>/dev/console
+echo 'starting system logger'	>/dev/console
 rm -f /dev/log
 syslogd
 
-# /var/crash should be a symbolic link to the crash directory
-# if core dumps are to be saved.
+# /var/crash should be a directory or a symbolic link
+# to the crash directory if core dumps are to be saved.
 if [ -d /var/crash ]; then
-	echo		'checking for core dump... '	>/dev/console
-	savecore /var/crash				>/dev/console 2>&1
+	echo 'checking for core dump... '	>/dev/console
+ 	savecore /var/crash			>/dev/console 2>&1
 fi
 
-			echo preserving editor files 	>/dev/console
-(cd /tmp; /usr/lib/ex3.7preserve -a)
-			echo clearing /tmp 		>/dev/console
+echo preserving editor files  >/dev/console
+(cd /tmp; /usr/libexec/ex3.7preserve -a)
+echo clearing /tmp 	>/dev/console
 (cd /tmp; find . ! -name . ! -name lost+found ! -name quotas -exec rm -r {} \; )
-			echo clearing /var/run
-(cd /var/run; rm -rf *)
 
-			echo -n standard daemons:	>/dev/console
-update;			echo -n ' update'		>/dev/console
-cron;			echo -n ' cron'			>/dev/console
-accton /usr/adm/acct;	echo -n ' accounting'		>/dev/console
-			echo '.'			>/dev/console
+echo -n standard daemons: >/dev/console
+echo -n ' update'	>/dev/console;	update
+echo -n ' cron'		>/dev/console;	cron
+echo -n ' accounting'	>/dev/console;	accton /var/account/acct
+echo    '.'		>/dev/console
 
-echo -n starting network daemons:			>/dev/console
+echo -n starting network daemons: >/dev/console
 
 # $routedflags is imported from /etc/netstart;
 # if $routedflags == NO, routed isn't run.
 if [ X${routedflags} != X"NO" ]; then
-	routed $routedflags; echo -n ' routed'		>/dev/console
+    echo -n ' routed'	>/dev/console; routed $routedflags
 fi
 
-{ echo -n ' named'; named; }				>/dev/console
-inetd;			echo -n ' inetd'		>/dev/console
+echo -n ' named'	>/dev/console;	named >/dev/console 2>&1
+echo -n ' inetd'	>/dev/console;	inetd
 
 # $rwhod is imported from /etc/netstart;
 # if $rwhod is set to something other than NO, rwhod is run.
 if [ ${rwhod-NO} != "NO" ]; then
-	rwhod;		echo -n ' rwhod'		>/dev/console
+    echo -n ' rwhod'	>/dev/console;	rwhod
 fi
 
-/usr/lib/lpd;		echo -n ' printer'		>/dev/console
-			echo '.'			>/dev/console
+echo -n ' printer'	>/dev/console;	lpd
+echo    '.'		>/dev/console
 
 sh /etc/rc.local
 
-			date				>/dev/console
+date			>/dev/console
 exit 0
