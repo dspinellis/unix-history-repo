@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	"robots.h"
@@ -135,15 +135,7 @@ __cputchar(ch)
 void
 quit()
 {
-	mvcur(0, COLS - 1, LINES - 1, 0);
-	if (CE) {
-		tputs(CE, 1, __cputchar);
-		endwin();
-	}
-	else {
-		endwin();
-		putchar('\n');
-	}
+	endwin();
 	exit(0);
 	/* NOTREACHED */
 }
