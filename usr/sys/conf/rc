@@ -1,0 +1,16 @@
+if ! -r l.s -o ! -r c.c goto bad
+as l.s
+mv a.out ../low.o
+as mch.s
+mv a.out ../mch.o
+cc -c c.c
+mv c.o ../conf.o
+mv l.s low.s
+mv c.c conf.c
+ld -x ../low.o ../mch.o ../conf.o ../lib1 ../lib2
+mv a.out ../../../unix
+chmod 644 low.s conf.c ../low.o ../mch.o ../conf.o ../../../unix
+echo rm mkconf.c and rc when done
+exit
+: bad
+echo l.s or c.c not found
