@@ -7,13 +7,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)null_subr.c	8.6 (Berkeley) %G%
+ *	@(#)null_subr.c	8.7 (Berkeley) %G%
  *
  * $Id: lofs_subr.c,v 1.11 1992/05/30 10:05:43 jsp Exp jsp $
  */
 
 #include <sys/param.h>
 #include <sys/systm.h>
+#include <sys/proc.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/vnode.h>
@@ -58,6 +59,7 @@ null_node_find(mp, lowervp)
 	struct mount *mp;
 	struct vnode *lowervp;
 {
+	struct proc *p = curproc;	/* XXX */
 	struct null_node_hashhead *hd;
 	struct null_node *a;
 	struct vnode *vp;
@@ -78,7 +80,7 @@ loop:
 			 * stuff, but we don't want to lock
 			 * the lower node.
 			 */
-			if (vget(vp, 0)) {
+			if (vget(vp, 0, p)) {
 				printf ("null_node_find: vget failed.\n");
 				goto loop;
 			};
