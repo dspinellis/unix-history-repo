@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)in.c	7.28 (Berkeley) %G%
+ *	@(#)in.c	7.29 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -207,7 +207,7 @@ in_canforward(in)
 		return (0);
 	if (IN_CLASSA(i)) {
 		net = i & IN_CLASSA_NET;
-		if (net == 0 || net == IN_LOOPBACKNET)
+		if (net == 0 || net == (IN_LOOPBACKNET << IN_CLASSA_NSHIFT))
 			return (0);
 	}
 	return (1);
