@@ -1,4 +1,4 @@
-/*	up.c	3.19	%G%	*/
+/*	up.c	3.20	%G%	*/
 
 /*
  * Emulex UNIBUS disk driver with overlapped seeks and ECC recovery.
@@ -33,9 +33,9 @@
 #include "../h/dir.h"
 #include "../h/user.h"
 #include "../h/map.h"
+#include "../h/pte.h"
 #include "../h/mba.h"
 #include "../h/mtpr.h"
-#include "../h/pte.h"
 #include "../h/uba.h"
 #include "../h/vm.h"
 

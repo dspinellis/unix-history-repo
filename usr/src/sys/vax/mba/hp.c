@@ -1,4 +1,4 @@
-/*	hp.c	3.8	%G%	*/
+/*	hp.c	3.9	%G%	*/
 
 /*
  * RP06/RM03 disk driver
@@ -7,15 +7,15 @@
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/dk.h"
-#include "../h/dk.h"
 #include "../h/buf.h"
 #include "../h/conf.h"
 #include "../h/dir.h"
 #include "../h/user.h"
 #include "../h/map.h"
+#include "../h/pte.h"
 #include "../h/mba.h"
 #include "../h/mtpr.h"
-#include "../h/pte.h"
+#include "../h/vm.h"
 
 #define	DK_N	0
 #define	DK_NMAX	1
@@ -40,7 +40,9 @@ struct	device
 	int	hpec2;		/* Burst error bit pattern */
 };
 
-#define	HPADDR	((struct device *)(MBA0 + MBA_ERB))
+#define	HPMBA		MBA0
+#define	HPMBANUM	0
+
 #define	NHP	2
 #define	RP	022
 #define	RM	024
@@ -146,6 +148,8 @@ register struct buf *bp;
 	long sz, bn;
 	struct size *sizes;
 
+	if ((mbaact&(1<<HPMBANUM)) == 0)
+		mbainit(HPMBANUM);
 	xunit = minor(bp->b_dev) & 077;
 	sz = bp->b_bcount;
 	sz = (sz+511) >> 9;
@@ -154,7 +158,7 @@ register struct buf *bp;
 		struct device *hpaddr;
 
 		/* determine device type */
-		hpaddr = (struct device *)((int*)HPADDR + 32*unit);
+		hpaddr = mbadev(HPMBA, unit);
 		hp_type[unit] = hpaddr->hpdt;
 	}
 	if (hp_type[unit] == RM) {
@@ -192,7 +196,8 @@ register unit;
 	int sn, cn, csn;
 
 	((struct mba_regs *)MBA0)->mba_cr |= MBAIE;
-	HPADDR->hpas = 1<<unit;
+	hpaddr = mbadev(HPMBA, 0);
+	hpaddr->hpas = 1<<unit;
 
 	if(unit >= NHP)
 		return;
@@ -201,7 +206,7 @@ register unit;
 	dp = &hputab[unit];
 	if((bp=dp->b_actf) == NULL)
 		return;
-	hpaddr = (struct device *)((int *)HPADDR + 32*unit);
+	hpaddr = mbadev(HPMBA, unit);
 	if((hpaddr->hpds & VV) == 0) {
 		hpaddr->hpcs1 = PRESET|GO;
 		hpaddr->hpof = FMT22;
@@ -289,7 +294,7 @@ loop:
 	tn = sn/ns;
 	sn = sn%ns;
 
-	hpaddr =  (struct device *)((int *)HPADDR + 32*dn);
+	hpaddr = mbadev(HPMBA, dn);
 	if ((hpaddr->hpds & (DPR|MOL)) != (DPR|MOL)) {
 		hptab.b_active = 0;
 		hptab.b_errcnt = 0;
@@ -300,11 +305,11 @@ loop:
 	}
 	if(hptab.b_errcnt >= 16) {
 		hpaddr->hpof = hp_offset[hptab.b_errcnt & 017] | FMT22;
-		((struct mba_regs *)MBA0)->mba_cr &= ~MBAIE;
+		HPMBA->mba_cr &= ~MBAIE;
 		hpaddr->hpcs1 = OFFSET|GO;
 		while(hpaddr->hpds & PIP)
 			;
-		((struct mba_regs *)MBA0)->mba_cr |= MBAIE;
+		HPMBA->mba_cr |= MBAIE;
 	}
 	hpaddr->hpdc = cn;
 	hpaddr->hpda = (tn << 8) + sn;
@@ -334,12 +339,13 @@ hpintr(mbastat, as)
 			dk_busy &= ~(1<<(DK_N+NHP));
 		else if (DK_N+unit <= DK_NMAX)
 			dk_busy &= ~(1<<(DK_N+unit));
-		hpaddr = (struct device *)((int *)HPADDR + 32*unit);
-		if (hpaddr->hpds & ERR || mbastat & MBAEBITS) {		/* error bit */
+		hpaddr = mbadev(HPMBA, unit);
+		if (hpaddr->hpds & ERR || mbastat & MBAEBITS) {
 			while((hpaddr->hpds & DRY) == 0)
 				;
 			if(++hptab.b_errcnt > 28 || hpaddr->hper1&WLE)
-				bp->b_flags |= B_ERROR; else
+				bp->b_flags |= B_ERROR;
+			else
 				hptab.b_active = 0;
 			if(hptab.b_errcnt > 27)
 				deverror(bp, mbastat, hpaddr->hper1);
@@ -349,20 +355,20 @@ hpintr(mbastat, as)
 			}
 			hpaddr->hpcs1 = DCLR|GO;
 			if((hptab.b_errcnt&07) == 4) {
-				((struct mba_regs *)MBA0)->mba_cr &= ~MBAIE;
+				HPMBA->mba_cr &= ~MBAIE;
 				hpaddr->hpcs1 = RECAL|GO;
 				while(hpaddr->hpds & PIP)
 					;
-				((struct mba_regs *)MBA0)->mba_cr |= MBAIE;
+				HPMBA->mba_cr |= MBAIE;
 			}
 		}
 		if(hptab.b_active) {
 			if(hptab.b_errcnt) {
-				((struct mba_regs *)MBA0)->mba_cr &= ~MBAIE;
+				HPMBA->mba_cr &= ~MBAIE;
 				hpaddr->hpcs1 = RTC|GO;
 				while(hpaddr->hpds & PIP)
 					;
-				((struct mba_regs *)MBA0)->mba_cr |= MBAIE;
+				HPMBA->mba_cr |= MBAIE;
 			}
 			hptab.b_active = 0;
 			hptab.b_errcnt = 0;
@@ -370,7 +376,7 @@ hpintr(mbastat, as)
 			dp->b_active = 0;
 			dp->b_errcnt = 0;
 			dp->b_actf = bp->av_forw;
-			bp->b_resid = -(((struct mba_regs *)MBA0)->mba_bcr) & 0xffff;
+			bp->b_resid = -HPMBA->mba_bcr & 0xffff;
 			iodone(bp);
 			if(dp->b_actf)
 				hpustart(unit);
@@ -378,7 +384,7 @@ hpintr(mbastat, as)
 		as &= ~(1<<unit);
 	} else {
 		if(as == 0)
-			((struct mba_regs *)MBA0)->mba_cr |= MBAIE;
+			HPMBA->mba_cr |= MBAIE;
 	}
 	for(unit=0; unit<NHP; unit++)
 		if(as & (1<<unit))
@@ -402,89 +408,87 @@ hpecc(rp, bp)
 register struct device *rp;
 register struct buf *bp;
 {
-	register i;
-	register b, n, map, mix;
-	register char *cp;
-	register mask;
-	short piget();
+	struct mba_regs *mbp = HPMBA;
+	register int i;
+	caddr_t addr;
+	int reg, bit, byte, npf, mask, o;
+	int dn, bn, cn, tn, sn, ns, nt;
 	extern char buffers[NBUF][BSIZE];
+	struct pte mpte;
 
-	b = (((((struct mba_regs *)MBA0)->mba_bcr&0xffff) +
-		(bp->b_bcount) - 1)>>9)&0177;
-	printf("%D ", bp->b_blkno+b);
+	/*
+	 * Npf is the number of sectors transferred before the sector
+	 * containing the ECC error, and reg is the MBA register
+	 * mapping (the first part of)the transfer.
+	 * O is offset within a memory page of the first byte transferred.
+	 */
+	npf = btop((mbp->mba_bcr&0xffff) + bp->b_bcount) - 1;
+	if (bp->b_flags&B_PHYS)
+		reg = 128 + npf;
+	else
+		reg = btop(bp->b_un.b_addr - buffers[0]) + npf;
+	o = (int)bp->b_un.b_addr & PGOFSET;
+	printf("%D ", bp->b_blkno + npf);
 	prdev("ECC", bp->b_dev);
 	mask = rp->hpec2&0xffff;
 	if (mask == 0) {
 		rp->hpof = FMT22;
-		return(0);
+		return (0);
 	}
-	i = (rp->hpec1&0xffff) - 1;
-	n = i&017;
-	i = (i&~017)>>3;
-	if (bp->b_flags&B_PHYS)
-		map = 128 + b;
-	else
-		map = ((bp->b_un.b_addr - (char *)buffers)>>9) + b;
-	mix = i + ((int)bp->b_un.b_addr&0x1ff);
-	i += b<<9;
-	if ( i < bp->b_bcount) {
-		cp = (char *)((((int *)MBA0_MAP)[map+(mix>>9)]&0x1fffff)<<9)+(mix&0x1ff);
-		piput((int)cp,piget((int)cp)^(mask<<n));
+
+	/*
+	 * Compute the byte and bit position of the error.
+	 * The variable i is the byte offset in the transfer,
+	 * the variable byte is the offset from a page boundary
+	 * in main memory.
+	 */
+	i = (rp->hpec1&0xffff) - 1;		/* -1 makes 0 origin */
+	bit = i&017;
+	i = (i&~07)>>3;
+	byte = i + o;
+	/*
+	 * Correct while possible bits remain of mask.  Since mask
+	 * contains 11 bits, we continue while the bit offset is > -11.
+	 * Also watch out for end of this block and the end of the whole
+	 * transfer.
+	 */
+	while (i < 512 && (int)ptob(npf)+i < bp->b_bcount && bit > -11) {
+		mpte = mbp->mba_map[reg+btop(byte)];
+		addr = ptob(mpte.pg_pfnum) + (byte & PGOFSET);
+		putmemc(addr, getmemc(addr)^(mask<<bit));
+		byte++;
+		i++;
+		bit -= 8;
 	}
-	mix += 2;
-	i += 2;
-	if (i < bp->b_bcount) {
-		cp = (char *)((((int *)MBA0_MAP)[map+(mix>>9)]&0x1fffff)<<9)+(mix&0x1ff);
-		piput((int)cp,piget((int)cp)^(mask>>(16-n)));
+	hptab.b_active++;		/* Either complete or continuing */
+	if (mbp->mba_bcr == 0)
+		return (0);
+	/*
+	 * Have to continue the transfer... clear the drive,
+	 * and compute the position where the transfer is to continue.
+	 * We have completed npf+1 sectores of the transfer already;
+	 * restart at offset o of next sector (i.e. in MBA register reg+1).
+	 */
+	rp->hpcs1 = DCLR|GO;
+	dn = dkunit(bp);
+	bn = dkblock(bp);
+	if (hp_type[dn] == RM) {
+		ns = NRMSECT;
+		nt = NRMTRAC;
+	} else {
+		ns = NSECT;
+		nt = NTRAC;
 	}
-	hptab.b_active++;
-	if (((struct mba_regs *)MBA0)->mba_bcr) {
-		i = bp->b_blkno%(NSECT*NTRAC);
-		i = ((i/NSECT)<<8)+(i%NSECT);
-		i = NSECT*(i>>8) + (i&0377) + b + 1;
-		if (i >= NSECT*NTRAC) {
-			i -= NSECT*NTRAC;
-			rp->hpdc = bp->b_cylin + 1;
-		} else
-			rp->hpdc = bp->b_cylin;
-		rp->hpda = ((i/NSECT)<<8) + (i%NSECT);
-		rp->hpcs1 = DCLR|GO;
-		((struct mba_regs *)MBA0)->mba_sr = -1;
-		((struct mba_regs *)MBA0)->mba_var =
-			((map+1)<<9)|((int)bp->b_un.b_addr&0x1ff);
-		rp->hpcs1 = RCOM|GO;
-		return(1);
-	} else
-		return(0);
-}
-
-short
-piget(pad)
-{
-	register b, savemap;
-	register short s;
-
-	savemap = (int)mmap;
-	b = (pad>>9)&0x7fffff;
-	*(int *)mmap = b|(PG_V|PG_KR);
-	mtpr(TBIS, vmmap);
-	s = *(short *)&vmmap[pad&0x1ff];
-	*(int *)mmap = savemap;
-	mtpr(TBIS, vmmap);
-	return(s);
-}
-
-piput(pad, val)
-{
-	register b, savemap;
-	register short *p;
-
-	savemap = (int)mmap;
-	b = (pad>>9)&0x7fffff;
-	*(int *)mmap = b|(PG_V|PG_KW);
-	mtpr(TBIS, vmmap);
-	p = (short *)&vmmap[pad&0x1ff];
-	*p = val;
-	*(int *)mmap = savemap;
-	mtpr(TBIS, vmmap);
+	cn = bp->b_cylin;
+	sn = bn%(ns*nt) + npf + 1;
+	tn = sn/ns;
+	sn %= ns;
+	cn += tn/nt;
+	tn %= nt;
+	rp->hpdc = cn;
+	rp->hpda = (tn<<8) + sn;
+	mbp->mba_sr = -1;
+	mbp->mba_var = (int)ptob(reg+1) + o;
+	rp->hpcs1 = RCOM|GO;
+	return (1);
 }

@@ -1,4 +1,4 @@
-/*	mba.c	3.3	%G%	*/
+/*	mba.c	3.4	%G%	*/
 
 #include "../h/param.h"
 #include "../h/buf.h"
@@ -21,11 +21,11 @@
 #define	MBARCOM	0x38
 #define	GO	01
 
-int mbaboff;
+extern	char buffers[NBUF][BSIZE];
 
 mbastart(bp, adcr)
-register struct buf *bp;
-int *adcr;
+	register struct buf *bp;
+	int *adcr;
 {
 	register int i;
 	int npf;
@@ -35,15 +35,12 @@ int *adcr;
 	int vaddr;
 	register struct mba_regs *mbap;
 	struct proc *rp;
-	extern int mbanum[], *mbaloc[];
-	extern char buffers[NBUF][BSIZE];
 
-	mbap = (struct mba_regs *)mbaloc[mbanum[major(bp->b_dev)]];
+	mbap = mbainfo[mbanum[major(bp->b_dev)]].mi_loc;
 	if ((bp->b_flags & B_PHYS) == 0)
-		vaddr = (bp->b_un.b_addr - (char *)buffers) + mbaboff;
+		vaddr = (bp->b_un.b_addr - buffers[0]);
 	else {
-		io = (struct pte *)mbap;
-		io += (MBA_MAP + 128*4)/4;
+		io = &mbap->mba_map[128];
 		v = btop(bp->b_un.b_addr);
 		o = (int)bp->b_un.b_addr & PGOFSET;
 		npf = btoc(bp->b_bcount + o);
@@ -80,22 +77,32 @@ int *adcr;
 		*adcr = MBAWCOM | GO;
 }
 
-mbainit()
+mbainit(mbanum)
+	int mbanum;
 {
-	register int *io0, *io1, *b, t, j;
-	extern int *mbaloc[];
-	extern char buffers[NBUF][BSIZE];
+	register struct pte *io, *b;
+	register int i;
+	register struct mba_info *mi;
+	register struct mba_regs *mbap;
+	unsigned v;
 
-	io0 = mbaloc[0] + (MBA_MAP/4);
-	io1 = mbaloc[1] + (MBA_MAP/4);
-	b = (int *)Sysmap + ((((int) buffers)>>9)&PG_PFNUM);
-	j = NBUF * CLSIZE + ((int)buffers & 0x1ff ? 1 : 0);
-	do {
-		t = PG_V | (*b++ & PG_PFNUM);
-		*io0++ = t;
-		*io1++ = t;
-	} while (--j>0);
-	*io0 = 0;		/* invalidate next entry */
-	*io1 = 0;
-	mbaboff = (int)buffers & 0x1ff;
+	mi = &mbainfo[mbanum];
+	v = btop((int)mi->mi_phys);
+	b = mi->mi_map;
+	for (i = 0; i < 8192; i += NBPG) {
+		*(int *)b++ = PG_V | PG_KW | v;
+		mtpr(TBIS, ptob(v));
+		v++;
+	}
+	mbap = mi->mi_loc;
+	mbap->mba_cr = MBAINIT;
+	mbap->mba_cr = MBAIE;
+	io = mbap->mba_map;
+	b = &Sysmap[btop(((int)buffers[0])&0x7fffffff)];
+	for (i = NBUF * CLSIZE; i > 0; i--) {
+		*(int *)io++ = PG_V | b->pg_pfnum;
+		b++;
+	}
+	*(int *)io = 0;
+	mbaact |= (1<<mbanum);
 }

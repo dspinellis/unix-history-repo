@@ -1,4 +1,4 @@
-/*	vfs_bio.c	3.9	%G%	*/
+/*	vfs_bio.c	3.10	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -487,6 +487,8 @@ register struct buf *bp;
 {
 	register int s;
 
+	if (bp->b_flags & B_DONE)
+		panic("dup iodone");
 	bp->b_flags |= B_DONE;
 	if (bp->b_flags & B_DIRTY) {
 		if (bp->b_flags & B_ERROR)
