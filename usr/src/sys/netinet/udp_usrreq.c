@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	6.5	84/07/31	*/
+/*	udp_usrreq.c	6.6	84/08/21	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -8,6 +8,7 @@
 #include "../h/socket.h"
 #include "../h/socketvar.h"
 #include "../h/errno.h"
+#include "../h/stat.h"
 
 #include "../net/if.h"
 #include "../net/route.h"
@@ -349,6 +350,12 @@ udp_usrreq(so, req, m, nam, rights)
 		in_setpeeraddr(inp, nam);
 		break;
 
+	case PRU_SENSE:
+		/*
+		 * stat: don't bother with a blocksize.
+		 */
+		return (0);
+
 	case PRU_SENDOOB:
 	case PRU_FASTTIMO:
 	case PRU_SLOWTIMO:
@@ -358,7 +365,6 @@ udp_usrreq(so, req, m, nam, rights)
 		break;
 
 	case PRU_CONTROL:
-	case PRU_SENSE:
 	case PRU_RCVD:
 	case PRU_RCVOOB:
 		return (EOPNOTSUPP);	/* do not free mbuf's */
