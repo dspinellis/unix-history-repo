@@ -24,6 +24,8 @@
 .\"			to provide variant functions.
 .\"		---	an internal macro.
 .\"
+.\"	@(#)tmac.orig_me	1.3	%G%
+.\"
 .if !\n(.V .tm You are using the wrong version of NROFF/TROFF!!
 .if !\n(.V .tm This macro package works only on the version seven
 .if !\n(.V .tm release of NROFF and TROFF.
@@ -145,7 +147,7 @@
 ..
 .\"		*** INTERNAL HEADER AND FOOTER MACROS ***
 .de @h			\" --- header
-.if \n@>0 .tm >> @h %=\\n% ?a=\\n(?a ?b=\\n(?b
+.if \n@>0 .tm >> @h %=\\n% ?a=\\n(?a ?b=\\n(?b ?w=\\n(?w
 .if (\\n(.i+\\n(.o)>=\\n(.l \
 .	tm Line \\n(c. -- Offset + indent exceeds line length
 .if t .if (\\n(.l+\\n(.o)>7.75i \
@@ -229,9 +231,10 @@
 .	mk #T			\" for tbl commands
 .	ns
 .\}
-.if \\n(?a \
+.if \\n(?a&(\\n($c<2:\\n(?w=0) \
 \{\
 .	nr ?a 0			\" output floating keep
+.	nr ?w 0
 .	@k |t
 .\}
 .os
