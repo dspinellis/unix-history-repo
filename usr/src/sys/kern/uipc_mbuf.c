@@ -8,7 +8,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)uipc_mbuf.c	7.4.1.2 (Berkeley) %G%
+ *	@(#)uipc_mbuf.c	7.6 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
