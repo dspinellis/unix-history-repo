@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	3.6 83/08/25";
+static	char *sccsid = "@(#)main.c	3.7 83/08/26";
 #endif
 
 #include "defs.h"
@@ -17,6 +17,7 @@ char **argv;
 	register char *p;
 	char fflag = 0;
 	char dflag = 0;
+	char xflag = 0;
 	int imask;
 	struct timezone timezone;
 
@@ -43,6 +44,9 @@ char **argv;
 			case 'D':
 				debug++;
 				break;
+			case 'x':
+				xflag++;
+				break;
 			default:
 				(void) usage();
 			}
@@ -61,10 +65,14 @@ char **argv;
 		(void) fprintf(stderr, "Can't do windows on this terminal.\n");
 		exit(1);
 	}
-	if (debug) {
+	if (debug)
 		wwnewtty.ww_tchars.t_quitc = wwoldtty.ww_tchars.t_quitc;
-		(void) wwsettty(0, &wwnewtty);
+	if (xflag) {
+		wwnewtty.ww_tchars.t_stopc = wwoldtty.ww_tchars.t_stopc;
+		wwnewtty.ww_tchars.t_startc = wwoldtty.ww_tchars.t_startc;
 	}
+	if (debug || xflag)
+		(void) wwsettty(0, &wwnewtty);
 
 	if ((cmdwin = wwopen(WWO_REVERSE, 1, wwncol, 0, 0, 0)) == 0) {
 		(void) wwflush();
