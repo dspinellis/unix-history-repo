@@ -1,4 +1,4 @@
-/*	mode.h	4.2	81/05/14	*/
+/*	mode.h	4.3	87/03/22	*/
 
 #include "machine.h"
 /*
@@ -7,7 +7,7 @@
 
 #define MAXCOM	64
 #define MAXARG	32
-#define LINSIZ	512
+#define LINSIZ	1024
 TYPE	long	ADDR;
 TYPE	short	INT;
 TYPE	int		VOID;
