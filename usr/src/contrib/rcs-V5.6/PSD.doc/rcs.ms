@@ -1,4 +1,4 @@
-.\"	@(#)rcs.ms	8.2 (Berkeley) %G%
+.\"	@(#)rcs.ms	8.3 (Berkeley) %G%
 .\"
 .\" Format this file with:
 .\" pic file | tbl | troff -ms
@@ -138,6 +138,7 @@ All later check-in commands will ask for a log entry,
 which should summarize the changes made.
 (The first revision is assigned a default log message,
 which just records the fact that it is the initial revision.)
+.ne 1i
 .PP
 Files ending in \fI,v\fR
 are called \fIRCS files\fR (\fIv\fR stands for \fIv\fRersions);
@@ -376,7 +377,7 @@ arrow dashed
 .PE
 .ce 1
 Figure 2.  A slender revision tree.
-.sp 0
+.sp
 Now imagine a customer requesting a fix of
 a problem in revision 1.3, although actual development has moved on
 to release 2.  RCS does not permit an extra
@@ -576,7 +577,7 @@ F2:     FD("1.3.1.2 ")
 .PE
 .ce 1
 Figure 5.  A revision tree with reverse and forward deltas.
-.sp 0
+.sp 
 .PP
 Although implementing fast check-out for the latest trunk revision,
 this arrangement has the disadvantage that generation of other revisions
@@ -622,16 +623,7 @@ deltas have been applied to the piece table, a sequential pass
 through the table looks up each line in the RCS file and copies it to
 the output file, updating identification markers at the same time.
 Of course, the RCS file must permit random access, since the copied
-lines are scattered throughout that file.  Figure 6 illustrates an
-RCS file with two revisions and the corresponding piece tables.
-.ne 13
-.sp 6
-.ce 1
-\fIFigure 6 is not available.\fP
-.sp 5
-.ce 1
-Figure 6.  An RCS file and its piece tables
-.sp 0
+lines are scattered throughout that file.
 .PP
 The piece table approach has the property that the time for applying a single
 delta is roughly determined by the size of the delta, and not by the
@@ -1010,6 +1002,7 @@ on our two machines.  The goal was to determine the mean number of
 revisions per RCS file, as well as the space consumed by them.
 Table II shows the results.  (Tables I and II were produced at different
 times and are unrelated.)
+.pl +1
 .br
 .TS
 center,box,tab(#);
@@ -1025,6 +1018,7 @@ Files with#1477# 4578#3.10#8074#6041#1.34
 .TE
 .ce 1
 Table II.  Statistics for RCS files.
+.pl -1
 .PP
 The mean number of revisions per RCS file is 1.39.
 Columns 5 and 6 show the mean sizes (in bytes) of an RCS file
