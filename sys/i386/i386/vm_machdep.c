@@ -38,7 +38,7 @@
  *
  *	from: @(#)vm_machdep.c	7.3 (Berkeley) 5/13/91
  *	Utah $Hdr: vm_machdep.c 1.16.1.1 89/06/23$
- *	$Id: vm_machdep.c,v 1.21 1994/04/25 23:48:20 davidg Exp $
+ *	$Id: vm_machdep.c,v 1.22 1994/05/24 22:05:09 ats Exp $
  */
 
 #include "npx.h"
@@ -703,7 +703,7 @@ insert:
 				/*
 				 * free the old kva
 				 */
-3ifndef NOBOUNCE
+#ifndef NOBOUNCE
 				vm_bounce_kva_free( orig1begin, ap->b_bufsize, 0);
 #endif
 				--clstats[ap->b_bcount/PAGE_SIZE];
