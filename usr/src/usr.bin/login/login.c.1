@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)login.c.1	4.36 (Berkeley) 85/04/01";
+static	char *sccsid = "@(#)login.c.1	4.37 (Berkeley) 85/04/02";
 #endif
 
 /*
@@ -541,7 +541,7 @@ doremoteterm(term, tp)
 		ws.ws_row = ws.ws_col = -1;
 		ws.ws_xpixel = ws.ws_ypixel = -1;
 		if (cp) {
-			ws.ws_row = atoi(++cp);
+			ws.ws_row = atoi(cp);
 			cp = index(cp, ',');
 			if (cp == 0)
 				goto done;
