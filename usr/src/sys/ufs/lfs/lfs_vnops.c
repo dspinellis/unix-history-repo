@@ -1,4 +1,4 @@
-/*	lfs_vnops.c	6.11	84/07/08	*/
+/*	lfs_vnops.c	6.12	84/07/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -1039,7 +1039,7 @@ rename()
 			sizeof (struct dirtemplate), (off_t)0, 1, (int *)0);
 		if (error == 0) {
 			dirbuf.dotdot_ino = dp->i_number;
-			dp->i_id = ++nextinodeid;
+			cacheinval(dp);
 			(void) rdwri(UIO_WRITE, ip, (caddr_t)&dirbuf,
 			  sizeof (struct dirtemplate), (off_t)0, 1, (int *)0);
 		}
@@ -1309,6 +1309,7 @@ rmdir()
 	 */
 	ip->i_nlink -= 2;
 	itrunc(ip, (u_long)0);
+	cacheinval(ip);
 out:
 	if (dp)
 		iput(dp);
