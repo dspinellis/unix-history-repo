@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -14,11 +14,12 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)tcp_usrreq.c	7.10 (Berkeley) %G%
+ *	@(#)tcp_usrreq.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
+#include "malloc.h"
 #include "mbuf.h"
 #include "socket.h"
 #include "socketvar.h"
@@ -383,6 +384,7 @@ tcp_ctloutput(op, so, level, optname, mp)
 
 u_long	tcp_sendspace = 1024*4;
 u_long	tcp_recvspace = 1024*4;
+
 /*
  * Attach TCP protocol to socket, allocating
  * internet protocol control block, tcp control block,

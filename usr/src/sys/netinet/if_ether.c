@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_ether.c	7.7 (Berkeley) %G%
+ *	@(#)if_ether.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -27,6 +27,7 @@
 
 #include "param.h"
 #include "systm.h"
+#include "malloc.h"
 #include "mbuf.h"
 #include "socket.h"
 #include "time.h"
@@ -76,7 +77,6 @@ int	arptab_size = ARPTAB_SIZE;	/* for arp command */
 #define	ARPT_KILLC	20	/* kill completed entry in 20 mins. */
 #define	ARPT_KILLI	3	/* kill incomplete entry in 3 minutes */
 
-u_char	etherbroadcastaddr[6] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 extern struct ifnet loif;
 
 /*
@@ -112,10 +112,11 @@ arpwhohas(ac, addr)
 	register struct ether_arp *ea;
 	struct sockaddr sa;
 
-	if ((m = m_get(M_DONTWAIT, MT_DATA)) == NULL)
+	if ((m = m_gethdr(M_DONTWAIT, MT_DATA)) == NULL)
 		return;
-	m->m_len = sizeof *ea;
-	m->m_off = MMAXOFF - m->m_len;
+	m->m_len = sizeof(*ea);
+	m->m_pkthdr.len = sizeof(*ea);
+	MH_ALIGN(m, sizeof(*ea));
 	ea = mtod(m, struct ether_arp *);
 	eh = (struct ether_header *)sa.sa_data;
 	bzero((caddr_t)ea, sizeof (*ea));
@@ -167,7 +168,7 @@ arpresolve(ac, m, destip, desten, usetrailers)
 	int s;
 
 	*usetrailers = 0;
-	if (in_broadcast(*destip)) {	/* broadcast address */
+	if (m->m_flags & M_BCAST) {	/* broadcast */
 		bcopy((caddr_t)etherbroadcastaddr, (caddr_t)desten,
 		    sizeof(etherbroadcastaddr));
 		return (1);
@@ -255,7 +256,6 @@ arpinput(ac, m)
 
 	if (ac->ac_if.if_flags & IFF_NOARP)
 		goto out;
-	IF_ADJ(m);
 	if (m->m_len < sizeof(struct arphdr))
 		goto out;
 	ar = mtod(m, struct arphdr *);
@@ -312,7 +312,7 @@ in_arpinput(ac, m)
 	bcopy((caddr_t)ea->arp_spa, (caddr_t)&isaddr, sizeof (isaddr));
 	bcopy((caddr_t)ea->arp_tpa, (caddr_t)&itaddr, sizeof (itaddr));
 	if (!bcmp((caddr_t)ea->arp_sha, (caddr_t)ac->ac_enaddr,
-	  sizeof (ea->arp_sha)))
+	    sizeof (ea->arp_sha)))
 		goto out;	/* it's from me, ignore it. */
 	if (!bcmp((caddr_t)ea->arp_sha, (caddr_t)etherbroadcastaddr,
 	    sizeof (ea->arp_sha))) {
@@ -558,25 +558,4 @@ arpioctl(cmd, data)
 	}
 	splx(s);
 	return (0);
-}
-
-/*
- * Convert Ethernet address to printable (loggable) representation.
- */
-char *
-ether_sprintf(ap)
-	register u_char *ap;
-{
-	register i;
-	static char etherbuf[18];
-	register char *cp = etherbuf;
-	static char digits[] = "0123456789abcdef";
-
-	for (i = 0; i < 6; i++) {
-		*cp++ = digits[*ap >> 4];
-		*cp++ = digits[*ap++ & 0xf];
-		*cp++ = ':';
-	}
-	*--cp = 0;
-	return (etherbuf);
 }

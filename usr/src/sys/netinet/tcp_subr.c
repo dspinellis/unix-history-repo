@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -14,11 +14,12 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)tcp_subr.c	7.14 (Berkeley) %G%
+ *	@(#)tcp_subr.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
+#include "malloc.h"
 #include "mbuf.h"
 #include "socket.h"
 #include "socketvar.h"
@@ -51,6 +52,10 @@ tcp_init()
 
 	tcp_iss = 1;		/* wrong */
 	tcb.inp_next = tcb.inp_prev = &tcb;
+	if (max_protohdr < sizeof(struct tcpiphdr))
+		max_protohdr = sizeof(struct tcpiphdr);
+	if (max_linkhdr + sizeof(struct tcpiphdr) > MHLEN)
+		panic("tcp_init");
 }
 
 /*
@@ -71,7 +76,6 @@ tcp_template(tp)
 		m = m_get(M_DONTWAIT, MT_HEADER);
 		if (m == NULL)
 			return (0);
-		m->m_off = MMAXOFF - sizeof (struct tcpiphdr);
 		m->m_len = sizeof (struct tcpiphdr);
 		n = mtod(m, struct tcpiphdr *);
 	}
@@ -107,13 +111,13 @@ tcp_template(tp)
  * In any case the ack and sequence number of the transmitted
  * segment are as specified by the parameters.
  */
-tcp_respond(tp, ti, ack, seq, flags)
+tcp_respond(tp, ti, m, ack, seq, flags)
 	struct tcpcb *tp;
 	register struct tcpiphdr *ti;
+	register struct mbuf *m;
 	tcp_seq ack, seq;
 	int flags;
 {
-	register struct mbuf *m;
 	int win = 0, tlen;
 	struct route *ro = 0;
 
@@ -121,8 +125,8 @@ tcp_respond(tp, ti, ack, seq, flags)
 		win = sbspace(&tp->t_inpcb->inp_socket->so_rcv);
 		ro = &tp->t_inpcb->inp_route;
 	}
-	if (flags == 0) {
-		m = m_get(M_DONTWAIT, MT_HEADER);
+	if (m == 0) {
+		m = m_gethdr(M_DONTWAIT, MT_HEADER);
 		if (m == NULL)
 			return;
 #ifdef TCP_COMPAT_42
@@ -131,14 +135,14 @@ tcp_respond(tp, ti, ack, seq, flags)
 		tlen = 0;
 #endif
 		m->m_len = sizeof (struct tcpiphdr) + tlen;
+		m->m_data += max_linkhdr;
 		*mtod(m, struct tcpiphdr *) = *ti;
 		ti = mtod(m, struct tcpiphdr *);
 		flags = TH_ACK;
 	} else {
-		m = dtom(ti);
 		m_freem(m->m_next);
 		m->m_next = 0;
-		m->m_off = (int)ti - (int)m;
+		m->m_data = (caddr_t)ti;
 		tlen = 0;
 		m->m_len = sizeof (struct tcpiphdr);
 #define xchg(a,b,type) { type t; t=a; a=b; b=t; }
