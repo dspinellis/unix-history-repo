@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)headers.c	3.32		%G%);
+SCCSID(@(#)headers.c	3.33		%G%);
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -113,10 +113,12 @@ chompheader(line, def)
 	h->h_value = newstr(fvalue);
 
 	/* hack to see if this is a new format message */
-	if (bitset(H_RCPT, h->h_flags) &&
+	if (!def && bitset(H_RCPT, h->h_flags) &&
 	    (index(fvalue, ',') != NULL || index(fvalue, '(') != NULL ||
-	     index(fvalue, '<') != NULL) || index(fvalue, ';') != NULL)
+	     index(fvalue, '<') != NULL || index(fvalue, ';') != NULL))
+	{
 		CurEnv->e_oldstyle = FALSE;
+	}
 
 	/* send to this person if we so desire */
 	if (!def && GrabTo && bitset(H_RCPT, h->h_flags))
