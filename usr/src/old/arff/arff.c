@@ -1,4 +1,6 @@
-static	char *sccsid = "@(#)arff.c	4.11 (Berkeley) 82/06/27";
+#ifndef lint
+static	char sccsid[] = "@(#)arff.c	4.12 (Berkeley) 82/12/23";
+#endif
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -25,7 +27,7 @@ struct rt_ent {
 	u_short	rt_len;		/* length of file */
 	char	rt_chan;	/* only used in temporary files */
 	char	rt_job;		/* only used in temporary files */
-	struct rt_dat rt_date;	/* creation date */
+	struct	rt_dat rt_date;	/* creation date */
 };
 
 #define RT_TEMP		1
@@ -50,11 +52,6 @@ struct	rt_dir {
 	char		_dirpad[6];
 };
 
-extern struct rt_dir	rt_dir[RT_DIRSIZE];
-extern int		rt_entsiz;
-extern int		floppydes;
-extern char		*rt_last;
-
 typedef struct fldope {
 	int	startad;
 	int	count;
@@ -63,19 +60,20 @@ struct	rt_ent	*rtdope;
 
 FLDOPE *lookup();
 
-#define rt(p) ((struct rt_ent *) p )
-#define Ain1 03100
-#define Ain2 050
-#define flag(c) (flg[('c') - 'a'])
+#define	rt(p)	((struct rt_ent *) p )
+#define	Ain1	03100
+#define	Ain2	050
+#define	flag(c)	(flg[('c') - 'a'])
 
-char *man = "rxtd";
-char zeroes[512];
+char	*man = "rxtd";
+char	zeroes[512];
 
 extern char *val;
 extern char table[256];
 struct rt_dir rt_dir[RT_DIRSIZE] = {
-	{4, 0, 1, 0, 14},
-	{ {0, RT_NULL, {0, 0, 0}, 494, 0}, {0, RT_ESEG} }
+	{ 4, 0, 1, 0, 14 },
+	{ { 0, RT_NULL, { 0, 0, 0 }, 494, 0 },
+	  { 0, RT_ESEG } }
 };
 
 int	rt_entsiz;
@@ -200,7 +198,7 @@ notfound()
 			fprintf(stderr, "arff: %s not found\n", namv[i]);
 			n++;
 		}
-	return(n);
+	return (n);
 }
 
 mesg(c)
@@ -219,27 +217,27 @@ tcmd()
 	register struct rt_ent *rde;
 
 	rt_init();
-	if (namc == 0)
-		for (segnum = 0; segnum != -1;
-		     segnum = rt_dir[segnum].rt_axhead.rt_nxtseg - 1)
-		{
-			last = rt_last + segnum*2*RT_BLOCK;
-			for (de = ((char *)&rt_dir[segnum])+10; de <= last; 
-			    de += rt_entsiz)
-				if (rtls(rt(de))) {
-					nleft = (last-de)/rt_entsiz;
-#define ENTRIES "\n%d entries remaining in directory segment %d.\n"
-					printf(ENTRIES, nleft, segnum+1);
-					break;
-				}
-		}
-	else
+	if (namc != 0) {
 		for (i = 0; i < namc; i++)
 			if (dope = lookup(namv[i])) {
 				rde = dope->rtdope;
 				rtls(rde);
 				namv[i] = 0;
 			}
+		return;
+	}
+	for (segnum = 0; segnum != -1;
+	  segnum = rt_dir[segnum].rt_axhead.rt_nxtseg - 1) {
+		last = rt_last + segnum*2*RT_BLOCK;
+		for (de = ((char *)&rt_dir[segnum])+10; de <= last; 
+		    de += rt_entsiz)
+			if (rtls(rt(de))) {
+				nleft = (last-de)/rt_entsiz;
+#define ENTRIES "\n%d entries remaining in directory segment %d.\n"
+				printf(ENTRIES, nleft, segnum+1);
+				break;
+			}
+	}
 }
 
 rtls(de)
@@ -275,9 +273,9 @@ rtls(de)
 		break;
 
 	case RT_ESEG:
-		return(1);
+		return (1);
 	}
-	return(0);
+	return (0);
 }
 
 xcmd()
@@ -288,26 +286,30 @@ xcmd()
 	register int i;
 
 	rt_init();
-	if (namc == 0) {
-		for (segnum = 0; segnum != -1;
-		     segnum = rt_dir[segnum].rt_axhead.rt_nxtseg-1)
-			for (last = rt_last+(segnum*2*RT_BLOCK),
-			     de = ((char *)&rt_dir[segnum])+10; de <= last; 
-			     de += rt_entsiz)
-				switch (rt(de)->rt_stat) {
-				case RT_ESEG:
-					return;
-				case RT_TEMP:
-				case RT_FILE:
-					sunrad50(name,rt(de)->rt_name);
-					rtx(name);
-				case RT_NULL:
-				;
-				}
-	} else
+	if (namc != 0) {
 		for (i = 0; i < namc; i++)
 			if (rtx(namv[i]) == 0)
 				namv[i] = 0;
+		return;
+	}
+	for (segnum = 0; segnum != -1;
+	     segnum = rt_dir[segnum].rt_axhead.rt_nxtseg-1)
+		for (last = rt_last+(segnum*2*RT_BLOCK),
+		     de = ((char *)&rt_dir[segnum])+10; de <= last; 
+		     de += rt_entsiz)
+			switch (rt(de)->rt_stat) {
+
+			case RT_ESEG:
+				return;
+
+			case RT_TEMP:
+			case RT_FILE:
+				sunrad50(name,rt(de)->rt_name);
+				rtx(name);
+
+			case RT_NULL:
+				break;
+			}
 }
 
 rtx(name)
@@ -327,7 +329,7 @@ rtx(name)
 			printf("x - %s\n",name);
 
 		if ((file = creat(name, 0666)) < 0)
-			return(1);
+			return (1);
 		count = dope->count;
 		startad = dope->startad;
 		for( ; count > 0 ; count -= 512) {
@@ -336,9 +338,9 @@ rtx(name)
 			startad += 512;
 		}
 		close(file);
-		return(0);
+		return (0);
 	}
-	return(1);
+	return (1);
 }
 
 rt_init()
@@ -422,14 +424,14 @@ lookup(name)
 					result.startad = 512*
 						(rt_dir[segnum].rt_axhead.rt_stfile + index);
 					result.rtdope = (struct rt_ent *) de;
-					return(&result);
+					return (&result);
 				}
 
 			case RT_NULL:
 				index += rt(de)->rt_len;
 			}
         }
-	return((FLDOPE *) 0);
+	return ((FLDOPE *) 0);
 
 }
 
@@ -437,7 +439,7 @@ static
 samename(a, b)
 	u_short a[], b[];
 {
-	return(*a == *b && a[1] == b[1] && a[2] == b[2] );
+	return (*a == *b && a[1] == b[1] && a[2] == b[2] );
 }
 
 rad50(cp, out)
@@ -583,7 +585,7 @@ trans(logical)
 		sector *= 2;
 	sector += 26 + ((track = (logical/26))-1)*6;
 	sector %= 26;
-	return((((track*26)+sector) << 7) + bytes);
+	return ((((track*26)+sector) << 7) + bytes);
 }
 
 lread(startad, count, obuff)
@@ -649,7 +651,7 @@ rtr(name)
 
 	if (stat(name, bufp) < 0) {
 		perror(name);
-		return(-1);
+		return (-1);
 	}
 	if (dope = lookup(name)) {
 		/* can replace, no problem */
@@ -658,29 +660,33 @@ rtr(name)
 			printf("r - %s\n",name),
 			toflop(name, bufp->st_size, dope);
 		else {
-			fprintf(stderr, "%s will not fit in currently used file on floppy\n",name);
-			return(-1);
+			fprintf(stderr,
+			  "%s will not fit in currently used file on floppy\n",
+			  name);
+			return (-1);
 		}
-	} else {
-		/* Search for vacant spot */
-		for (segnum = 0; segnum != -1;
-		     segnum = rt_dir[segnum].rt_axhead.rt_nxtseg - 1)
-		{
-			last = rt_last + segnum*2*RT_BLOCK;
-			for (de = rt_dir[segnum].rt_ents;
-			    rt(de)->rt_stat != RT_ESEG; de++)
-				if ((de)->rt_stat == RT_NULL) {
-					if (bufp->st_size <= (de->rt_len*512)) {
-						printf("a - %s\n",name),
-						mkent(de, segnum, bufp,name);
-						goto found;
-					}
-					continue;
-				}
-	    }
-	    printf("%s: no slot for file\n", name);
-	    return (-1);
+		goto found;
 	}
+	/*
+	 * Search for vacant spot
+	 */
+	for (segnum = 0; segnum != -1;
+	     segnum = rt_dir[segnum].rt_axhead.rt_nxtseg - 1)
+	{
+		last = rt_last + segnum*2*RT_BLOCK;
+		for (de = rt_dir[segnum].rt_ents;
+		    rt(de)->rt_stat != RT_ESEG; de++)
+			if ((de)->rt_stat == RT_NULL) {
+				if (bufp->st_size <= (de->rt_len*512)) {
+					printf("a - %s\n",name),
+					mkent(de, segnum, bufp,name);
+					goto found;
+				}
+				continue;
+			}
+	}
+	printf("%s: no slot for file\n", name);
+	return (-1);
 
 found:
 	if (dope = lookup(name)) {
@@ -710,8 +716,8 @@ mkent(de, segnum, bufp, name)
 		/* no entries left on segment */
 		if (flag(o))
 			goto overwrite;
-		fprintf(stderr,"Directory segment #%d full on  %s\n",segnum+1,
-			defdev);
+		fprintf(stderr, "Directory segment #%d full on  %s\n",
+			segnum+1, defdev);
 		exit(1);
 	}	
 	/* copy directory entries up */
@@ -796,11 +802,11 @@ rtk(name)
 		de->rt_name[0] = 0;
 		de->rt_name[1] = 0;
 		de->rt_name[2] = 0;
-		* ((u_short *)&(de->rt_date)) = 0;
+		*((u_short *)&(de->rt_date)) = 0;
 		dirdirty = 1;
-		return(0);
+		return (0);
 	}
-	return(1);
+	return (1);
 }
 
 scrunch()
@@ -812,7 +818,8 @@ scrunch()
 	     segnum = rt_dir[segnum].rt_axhead.rt_nxtseg - 1) {
 		dirdirty = 0;
 		for (de = rt_dir[segnum].rt_ents; de <= rt_curend[segnum]; de++)
-			if (de->rt_stat == RT_NULL && de[1].rt_stat == RT_NULL) {
+			if (de->rt_stat == RT_NULL &&
+			    de[1].rt_stat == RT_NULL) {
 				(de+1)->rt_len += de->rt_len;
 				for (workp = de; workp < rt_curend[segnum]; workp++)
 					*workp = workp[1];
