@@ -37,13 +37,16 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         2       00071
+ * CURRENT PATCH LEVEL:         3       00082
  * --------------------         -----   ----------------------
  *
  * 14 Aug 92	Arne Henrik Juul	Added code in the kernel to
  *					allow for DST in the BIOS.
  * 17 Jan 93	Bruce Evans		Fixed leap year and second
  *					calculations
+ * 01 Feb 93	Julian Elischer		Added code to for the cpu
+ *					speed independent spinwait()
+ *					function, (used by scsi and others)
  */
 
 /*
@@ -60,14 +63,17 @@
 
 #define DAYST 119
 #define DAYEN 303
+#define XTALSPEED 1193182
 
 startrtclock() {
 	int s;
 
+	findcpuspeed();		/* use the clock (while it's free)
+					to find the cpu speed */
 	/* initialize 8253 clock */
 	outb (IO_TIMER1+3, 0x36);
-	outb (IO_TIMER1, 1193182/hz);
-	outb (IO_TIMER1, (1193182/hz)/256);
+	outb (IO_TIMER1, XTALSPEED/hz);
+	outb (IO_TIMER1, (XTALSPEED/hz)/256);
 
 	/* initialize brain-dead battery powered clock */
 	outb (IO_RTC, RTC_STATUSA);
@@ -81,6 +87,32 @@ startrtclock() {
 	outb (IO_RTC, RTC_DIAG);
 	outb (IO_RTC+1, 0);
 }
+
+unsigned int delaycount;	/* calibrated loop variable (1 millisecond) */
+
+#define FIRST_GUESS	0x2000
+findcpuspeed()
+{
+	unsigned char low;
+	unsigned int remainder;
+
+	/* Put counter in count down mode */
+	outb(IO_TIMER1+3, 0x34);
+	outb(IO_TIMER1, 0xff);
+	outb(IO_TIMER1, 0xff);
+	delaycount = FIRST_GUESS;
+	spinwait(1);
+	/* Read the value left in the counter */
+	low 	= inb(IO_TIMER1);	/* least siginifcant */
+	remainder = inb(IO_TIMER1);	/* most significant */
+	remainder = (remainder<<8) + low ;
+	/* Formula for delaycount is :
+	 *  (loopcount * timer clock speed)/ (counter ticks * 1000)
+	 */
+	delaycount = (FIRST_GUESS * (XTALSPEED/1000)) / (0xffff-remainder);
+}
+
+
 
 /* convert 2 digit BCD number */
 bcd(i)
@@ -214,3 +246,17 @@ enablertclock() {
 	setidt(ICU_OFFSET+0, &V(clk), SDT_SYS386IGT, SEL_KPL);
 	splnone();
 }
+
+
+
+
+spinwait(millisecs)
+int millisecs;		/* number of milliseconds to delay */
+{
+	int i, j;
+
+	for (i=0;i<millisecs;i++)
+		for (j=0;j<delaycount;j++)
+			;
+}
+
