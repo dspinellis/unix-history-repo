@@ -241,7 +241,6 @@ lexicon c;			/* character to unget */
  * Construct a control character sequence
  * for a special character.
  */
-#if	defined(DEBUG)
 char *
 uncontrol(c)
 	register int c;
@@ -263,7 +262,6 @@ uncontrol(c)
 	}
 	return (buf);
 }
-#endif	/* defined(DEBUG) */
 
 /* compare two strings, ignoring case */
 
