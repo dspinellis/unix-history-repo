@@ -1,7 +1,7 @@
 #
 # Machine Language Assist for UC Berkeley Virtual Vax/Unix
 #
-#	locore.s		3.15	%G%
+#	locore.s		3.16	%G%
 #
 
 	.set	HIGH,31		# mask for total disable
@@ -28,8 +28,8 @@
 	.globl	Scbbase
 Scbbase:
 	.long	Xstray + INTSTK		# unused
-	.long	Xmachcheck + HALT	# machine check interrupt
-	.long	Xkspnotval + HALT	# kernel stack not valid
+	.long	Xmachcheck + INTSTK	# machine check interrupt
+	.long	Xkspnotval + INTSTK	# kernel stack not valid
 	.long	Xpowfail + HALT		# power fail
 	.long	Xprivinflt		# privileged instruction 
 	.long	Xxfcflt			# xfc instruction 
@@ -44,9 +44,9 @@ Scbbase:
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
 	.long	Xsyscall		# chmk
-	.long	Xchme+HALT		# chme
-	.long	Xchms+HALT		# chms
-	.long	Xchmu+HALT		# chmu
+	.long	Xchme+INTSTK		# chme
+	.long	Xchms+INTSTK		# chms
+	.long	Xchmu+INTSTK		# chmu
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
@@ -223,14 +223,29 @@ _coresw:
 # Catch random or unexpected interrupts
 #
 	.align	2
-Xrandom:
 Xmachcheck:
+	pushab	Emachk
+	calls	$1,_panic
+
+	.align	2
 Xkspnotval:
+	pushab	Eksp
+	calls	$1,_panic
+
+	.align	2
 Xpowfail:
+	halt
+
+	.align	2
 Xchme:
 Xchms:
 Xchmu:
-	halt
+	pushab	Echm
+	calls	$1,_panic
+
+Emachk:	.asciz	"Machine check"
+Eksp:	.asciz	"KSP not valid"
+Echm:	.asciz	"CHM? in kernel"
 
 	.align	2
 Xstray:
