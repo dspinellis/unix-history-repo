@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwupdate.c	3.9 83/12/02";
+static	char *sccsid = "@(#)wwupdate.c	3.10 83/12/21";
 #endif
 
 #include "ww.h"
@@ -80,21 +80,35 @@ wwupdate()
 				j++;
 			}
 			tt.tt_nmodes = m;
-			(*tt.tt_move)(i, c);
 			if (wwwrap
 			    && i == wwnrow - 1 && q - buf + c == wwncol) {
 				if (tt.tt_hasinsert) {
-					(*tt.tt_write)(buf + 1, q - buf - 1);
-					(*tt.tt_move)(i, c);
-					tt.tt_ninsert = 1;
-					(*tt.tt_write)(buf, 1);
-					tt.tt_ninsert = 0;
+					if (q - buf != 1) {
+						(*tt.tt_move)(i, c);
+						(*tt.tt_write)(buf + 1,
+							q - buf - 1);
+						(*tt.tt_move)(i, c);
+						tt.tt_ninsert = 1;
+						(*tt.tt_write)(buf, 1);
+						tt.tt_ninsert = 0;
+					} else {
+						(*tt.tt_move)(i, c - 1);
+						(*tt.tt_write)(buf, 1);
+						tt.tt_nmodes = ns[-2].c_m;
+						(*tt.tt_move)(i, c - 1);
+						tt.tt_ninsert = 1;
+						(*tt.tt_write)(&ns[-2].c_c, 1);
+						tt.tt_ninsert = 0;
+					}
 				} else {
+					(*tt.tt_move)(i, c);
 					os[-1] = lastc;
 					(*tt.tt_write)(buf, q - buf - 1);
 				}
-			} else
+			} else {
+				(*tt.tt_move)(i, c);
 				(*tt.tt_write)(buf, q - buf);
+			}
 			didit++;
 		}
 		if (!didit)
