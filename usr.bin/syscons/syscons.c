@@ -31,7 +31,7 @@
 #include <sys/types.h>
 #include <sys/file.h>
 #include <sys/ioctl.h>
-#include <sys/console.h>
+#include <machine/console.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
