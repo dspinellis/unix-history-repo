@@ -1,4 +1,4 @@
-#	@(#)4.4todo	5.3 (Berkeley) %G%
+#	@(#)4.4todo	5.4 (Berkeley) %G%
 
 Target for alpha tape release: May 31.
 Target architectures: 386/486, HP300, Sparc, DECstation 3100/5000.
@@ -25,7 +25,8 @@ LFS				TK		4	1 mo	13 Apr
 Mpool(3) interface		TK		5	2 wk	27 Apr
 Bug list pass			TK/Marc		6	2 wk	04 May
 ANSI C compatibility		TK/Chris	7	1 wk	18 May
-subr_rmap.c			TK		8	1 wk	31 May
+make				TK		8	2 wk	31 May
+subr_rmap.c			TK		9
 
 Routed update			Keith
 
