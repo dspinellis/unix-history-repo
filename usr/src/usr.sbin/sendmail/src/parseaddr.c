@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	8.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	8.33 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -641,7 +641,7 @@ rewrite(pvp, ruleset, reclevel, e)
 	struct match mlist[MAXMATCH];	/* stores match on LHS */
 	char *npvp[MAXATOM+1];		/* temporary space for rebuild */
 
-	if (OpMode == MD_TEST || tTd(21, 2))
+	if (OpMode == MD_TEST || tTd(21, 1))
 	{
 		printf("rewrite: ruleset %2d   input:", ruleset);
 		printav(pvp);
@@ -1180,7 +1180,7 @@ rewrite(pvp, ruleset, reclevel, e)
 		}
 	}
 
-	if (OpMode == MD_TEST || tTd(21, 2))
+	if (OpMode == MD_TEST || tTd(21, 1))
 	{
 		printf("rewrite: ruleset %2d returns:", ruleset);
 		printav(pvp);
