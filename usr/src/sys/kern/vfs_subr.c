@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	7.94 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.95 (Berkeley) %G%
  */
 
 /*
@@ -1060,7 +1060,7 @@ int kinfo_vgetfailed;
 /* ARGSUSED */
 sysctl_vnode(where, sizep)
 	char *where;
-	int *sizep;
+	size_t *sizep;
 {
 	register struct mount *mp = rootfs;
 	struct mount *omp;
