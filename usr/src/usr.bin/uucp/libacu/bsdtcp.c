@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)bsdtcp.c	4.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)bsdtcp.c	4.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "condevs.h"
@@ -30,7 +30,7 @@ register char *flds[];
 	struct	sockaddr_in hisctladdr;
 	int s = -1, port;
 	extern int errno;
-	extern char *sys_errlist[];
+	extern const char *const sys_errlist[];
 
 	sp = getservbyname(flds[F_CLASS], "tcp");
 	if (sp == NULL) {
