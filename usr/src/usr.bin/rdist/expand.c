@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)expand.c	4.12 (Berkeley) 85/02/04";
+static	char *sccsid = "@(#)expand.c	4.13 (Berkeley) 85/04/03";
 #endif
 
 #include "defs.h"
@@ -50,8 +50,14 @@ expand(list, wh)
 		prnames(list);
 	}
 
-	if (wh == 0)
+	if (wh == 0) {
+		register char *cp;
+
+		for (nl = list; nl != NULL; nl = nl->n_next)
+			for (cp = nl->n_name; *cp; cp++)
+				*cp = *cp & TRIM;
 		return(list);
+	}
 
 	which = wh;
 	path = tpathp = pathp = pathbuf;
@@ -557,7 +563,7 @@ addpath(c)
 	if (pathp >= lastpathp)
 		yyerror("Pathname too long");
 	else {
-		*pathp++ = c;
+		*pathp++ = c & TRIM;
 		*pathp = '\0';
 	}
 }
