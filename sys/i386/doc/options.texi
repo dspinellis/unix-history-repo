@@ -10,7 +10,7 @@
 @c %**end of header
 
 @ifinfo
-$Id: options.texi,v 1.1 1993/11/06 00:07:44 wollman Exp $
+$Id: options.texi,v 1.2 1993/11/13 22:47:37 rgrimes Exp $
 
 This file documents the configuration options available in the FreeBSD
 operating system.
@@ -902,12 +902,6 @@ device-independent routines that manage SCSI transactions, keep track of
 attached devices, and act as glue between SCSI-device-specific drivers
 and system-specific host adaptors.  This device is @emph{mandatory} for
 all SCSI systems.
-
-@item options SCSIDUMP
-@findex SCSIDUMP
-@cindex SCSI devices
-This option allows the system to take crash dumps on SCSI disks.  I
-don't know why this isn't defined by default.
 
 @item device sd0
 @findex sd
