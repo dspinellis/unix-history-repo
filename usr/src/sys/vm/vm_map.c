@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_map.c	8.8 (Berkeley) %G%
+ *	@(#)vm_map.c	8.9 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -338,6 +338,10 @@ vm_map_reference(map)
 		return;
 
 	simple_lock(&map->ref_lock);
+#ifdef DEBUG
+	if (map->ref_count == 0)
+		panic("vm_map_reference: zero ref_count");
+#endif
 	map->ref_count++;
 	simple_unlock(&map->ref_lock);
 }
@@ -353,16 +357,13 @@ void
 vm_map_deallocate(map)
 	register vm_map_t	map;
 {
-	register int		c;
 
 	if (map == NULL)
 		return;
 
 	simple_lock(&map->ref_lock);
-	c = --map->ref_count;
-	simple_unlock(&map->ref_lock);
-
-	if (c > 0) {
+	if (--map->ref_count > 0) {
+		simple_unlock(&map->ref_lock);
 		return;
 	}
 
@@ -371,11 +372,13 @@ vm_map_deallocate(map)
 	 *	to it.
 	 */
 
-	vm_map_lock(map);
+	vm_map_lock_drain_interlock(map);
 
 	(void) vm_map_delete(map, map->min_offset, map->max_offset);
 
 	pmap_destroy(map->pmap);
+
+	vm_map_unlock(map);
 
 	FREE(map, M_VMMAP);
 }
