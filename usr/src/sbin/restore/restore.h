@@ -1,4 +1,4 @@
-/*	restore.h	3.10	85/01/18	*/
+/*	restore.h	3.11	85/02/18	*/
 
 #include <stdio.h>
 #include <sys/param.h>
@@ -55,6 +55,7 @@ struct entry {
 #define KEEP		0x0004	/* entry is not to change */
 #define REMOVED		0x0010	/* entry has been removed */
 #define TMPNAME		0x0020	/* entry has been given a temporary name */
+#define EXISTED		0x0040	/* directory already existed during extract */
 /*
  * functions defined on entry structs
  */

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	3.18	(Berkeley)	85/01/18";
+static char sccsid[] = "@(#)utilities.c	3.19	(Berkeley)	85/02/18";
 #endif
 
 /* Copyright (c) 1983 Regents of the University of California */
@@ -97,6 +97,7 @@ newnode(np)
 		badentry(np, "newnode: not a node");
 	cp = myname(np);
 	if (mkdir(cp, 0777) < 0) {
+		np->e_flags |= EXISTED;
 		fprintf(stderr, "Warning: ");
 		(void) fflush(stderr);
 		perror(cp);
@@ -270,6 +271,8 @@ flagvalues(ep)
 		(void) strcat(flagbuf, "|NEW");
 	if (ep->e_flags & KEEP)
 		(void) strcat(flagbuf, "|KEEP");
+	if (ep->e_flags & EXISTED)
+		(void) strcat(flagbuf, "|EXISTED");
 	return (&flagbuf[1]);
 }
 

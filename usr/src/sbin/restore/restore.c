@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)restore.c	3.19	(Berkeley)	84/03/22";
+static char sccsid[] = "@(#)restore.c	3.20	(Berkeley)	85/02/18";
 #endif
 
 /* Copyright (c) 1983 Regents of the University of California */
@@ -706,10 +706,10 @@ checkrestore()
 
 	vprintf(stdout, "Check the symbol table.\n");
 	for (i = ROOTINO; i < maxino; i++) {
-		for (ep= lookupino(i); ep != NIL; ep = ep->e_links) {
+		for (ep = lookupino(i); ep != NIL; ep = ep->e_links) {
 			ep->e_flags &= ~KEEP;
 			if (ep->e_type == NODE)
-				ep->e_flags &= ~NEW;
+				ep->e_flags &= ~(NEW|EXISTED);
 			if (ep->e_flags != NULL)
 				badentry(ep, "incomplete operations");
 		}

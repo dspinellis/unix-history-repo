@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)dirs.c	3.19	(Berkeley)	85/02/13";
+static char sccsid[] = "@(#)dirs.c	3.20	(Berkeley)	85/02/18";
 #endif
 
 /* Copyright (c) 1983 Regents of the University of California */
@@ -461,6 +461,10 @@ setdirmodes()
 		if (command == 'i' || command == 'x') {
 			if (ep == NIL)
 				continue;
+			if (ep->e_flags & EXISTED) {
+				ep->e_flags &= ~NEW;
+				continue;
+			}
 			if (node.ino == ROOTINO &&
 		   	    reply("set owner/mode for '.'") == FAIL)
 				continue;
