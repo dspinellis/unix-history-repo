@@ -114,6 +114,7 @@ main(argc, argv)
 	char buf[MAX(MAXPATHLEN, LINE_MAX * 2)], tbuf[1024];
 	char buf2[MAXPATHLEN];
 
+	umask(022);
 	strcpy(prefix, _PATH_PWD);
 	makeold = 0;
 	while ((ch = getopt(argc, argv, "d:pv")) != EOF)
