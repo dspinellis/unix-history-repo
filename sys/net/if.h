@@ -75,7 +75,7 @@ struct ifnet {
 	char	*if_name;		/* name, e.g. ``en'' or ``lo'' */
 	short	if_unit;		/* sub-unit for lower level driver */
 	short	if_mtu;			/* maximum transmission unit */
-	short	if_oflags;		/* up/down, broadcast, etc. */
+	short	if_flags;		/* up/down, broadcast, etc. */
 	short	if_timer;		/* time 'til if_watchdog called */
 	int	if_metric;		/* routing metric (external only) */
 	struct	ifaddr *if_addrlist;	/* linked list of addresses per if */
@@ -116,8 +116,6 @@ struct ifnet {
 	int	if_noproto;		/* destined for unsupported protocol */
 	int	if_baudrate;		/* linespeed */
         int	if_pcount;		/* number of promiscuous listeners */
-/* new longer if_flags here for alignment; recompile netstat anyway */
-	u_int	if_flags;		/* flags defined below */
 };
 
 #define	IFF_UP		0x1		/* interface is up */
@@ -128,25 +126,18 @@ struct ifnet {
 #define	IFF_NOTRAILERS	0x20		/* avoid use of trailers */
 #define	IFF_RUNNING	0x40		/* resources allocated */
 #define	IFF_NOARP	0x80		/* no address resolution protocol */
+/* next two not supported now, but reserved: */
 #define	IFF_PROMISC	0x100		/* receive all packets */
 #define	IFF_ALLMULTI	0x200		/* receive all multicast packets */
 #define	IFF_OACTIVE	0x400		/* transmission in progress */
 #define	IFF_SIMPLEX	0x800		/* can't hear own transmissions */
-#define	IFF_LLC0	0x1000		/* IEEE 802.2 LLC class 0 in use */
-#define	IFF_LLC1	0x2000		/* IEEE 802.2 LLC class 1 in use */
-#define	IFF_LLC2	0x4000		/* IEEE 802.2 LLC class 2 in use */
-					/* note IEEE 802.2 == ISO 8802-2 */
-#define IFF_MULTICAST	0x8000		/* driver supports IP multicast */
-#define IFF_VIRTUAL	0x10000		/* this interface is a VIF */
-#define IFF_ALTPHYS	0x20000		/* use alternative physical if in */
-					/* driver (e.g., AUI vs BNC vs UTP) */
-#define IFF_ALTPHYS2	0x40000		/* same as above, in case you have */
-					/* more than just two phys types */
+#define	IFF_LLC0	0x1000		/* interface driver control/status */
+#define	IFF_LLC1	0x2000		/* interface driver control/status */
+#define	IFF_LLC2	0x4000		/* interface driver control/status */
 
 /* flags set internally only: */
 #define	IFF_CANTCHANGE \
-	(IFF_BROADCAST|IFF_POINTOPOINT|IFF_RUNNING|IFF_OACTIVE|IFF_SIMPLEX \
-	|IFF_MULTICAST|IFF_VIRTUAL)
+	(IFF_BROADCAST|IFF_POINTOPOINT|IFF_RUNNING|IFF_OACTIVE|IFF_SIMPLEX)
 
 /*
  * Output queues (ifp->if_snd) and internetwork datagram level (pup level 1)
