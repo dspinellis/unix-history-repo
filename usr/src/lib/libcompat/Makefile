@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 
 LIB=compat
 CFLAGS+=-DLIBC_SCCS -DSYSLIBC_SCCS
@@ -8,7 +8,7 @@ AINC=	-I${.CURDIR}/../libc/${MACHINE}
 	${.CURDIR}/4.3/${MACHINE} ${.CURDIR}/4.3
 
 # compat 4.1 sources
-SRCS=	ftime.c getpw.c gtty.c stty.c tell.c times.c utime.c vlimit.c vtimes.c
+SRCS=	ftime.c getpw.c gtty.c stty.c tell.c vlimit.c vtimes.c
 
 .if (${MACHINE} == "vax")
 SRCS+=	reset.s
