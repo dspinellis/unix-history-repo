@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.19 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 SUBDIR=	ac accton amd arp chown chroot cron dev_mkdb diskpart edquota \
 	inetd kgmon kvm_mkdb lpr mkproto mtree nvi.recover portmap \
