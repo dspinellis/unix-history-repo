@@ -1,0 +1,1452 @@
+
+
+
+AWK(1)                   Utility Commands                  AWK(1)
+
+
+NNAAMMEE
+       awk - pattern scanning and processing language
+
+SSYYNNOOPPSSIISS
+       aawwkk  [ POSIX or GNU style options ] --ff _p_r_o_g_r_a_m_-_f_i_l_e [ ---- ]
+       file ...
+       aawwkk [ POSIX or GNU style options ]  [  ----  ]  _p_r_o_g_r_a_m_-_t_e_x_t
+       file ...
+
+DDEESSCCRRIIPPTTIIOONN
+       _G_a_w_k  is  the GNU Project's implementation of the AWK pro-
+       gramming language.  In  the  4.4BSD  distribution,  it  is
+       installed  as  _a_w_k.   It conforms to the definition of the
+       language in the POSIX 1003.2 Command Language  And  Utili-
+       ties  Standard.   This  version  in  turn  is based on the
+       description in  _T_h_e  _A_W_K  _P_r_o_g_r_a_m_m_i_n_g  _L_a_n_g_u_a_g_e,  by  Aho,
+       Kernighan,  and  Weinberger,  with the additional features
+       defined in the System V Release 4  version  of  UNIX  _a_w_k.
+       _G_a_w_k also provides some GNU-specific extensions.
+
+       The  command  line consists of options to _g_a_w_k itself, the
+       AWK program text (if not supplied via  the  --ff  or  ----ffiillee
+       options),  and values to be made available in the AARRGGCC and
+       AARRGGVV pre-defined AWK variables.
+
+OOPPTTIIOONNSS
+       _G_a_w_k options may be either the traditional POSIX one  let-
+       ter  options,  or the GNU style long options.  POSIX style
+       options start with a single ``-'', while GNU long  options
+       start  with  ``--''.   GNU style long options are provided
+       for both GNU-specific features and for POSIX mandated fea-
+       tures.   Other  implementations  of  the  AWK language are
+       likely to only accept the traditional one letter  options.
+
+       Following  the  POSIX  standard, _g_a_w_k-specific options are
+       supplied via arguments to  the  --WW  option.   Multiple  --WW
+       options may be supplied, or multiple arguments may be sup-
+       plied  together  if  they  are  separated  by  commas,  or
+       enclosed  in quotes and separated by white space.  Case is
+       ignored in arguments to the --WW option.  Each --WW option has
+       a  corresponding GNU style long option, as detailed below.
+
+       _G_a_w_k accepts the following options.
+
+       --FF _f_s
+       ----ffiieelldd--sseeppaarraattoorr==_f_s
+              Use _f_s for the input field separator (the value  of
+              the FFSS predefined variable).
+
+       --vv _v_a_r==_v_a_l
+
+
+
+
+Free Software Foundation  April 15 1993                         1
+
+
+
+
+
+
+
+
+AWK(1)                   Utility Commands                  AWK(1)
+
+
+       ----aassssiiggnn==_v_a_r==_v_a_l
+              Assign  the  value _v_a_l, to the variable _v_a_r, before
+              execution of the  program  begins.   Such  variable
+              values  are  available to the BBEEGGIINN block of an AWK
+              program.
+
+       --ff _p_r_o_g_r_a_m_-_f_i_l_e
+       ----ffiillee==_p_r_o_g_r_a_m_-_f_i_l_e
+              Read the AWK program source from the file  _p_r_o_g_r_a_m_-
+              _f_i_l_e,  instead of from the first command line argu-
+              ment.  Multiple --ff (or ----ffiillee) options may be used.
+
+       --WW ccoommppaatt
+       ----ccoommppaatt    Run  in  _c_o_m_p_a_t_i_b_i_l_i_t_y mode.  In compatibility
+                   mode, _g_a_w_k behaves identically  to  UNIX  _a_w_k;
+                   none of the GNU-specific extensions are recog-
+                   nized.  See GGNNUU EEXXTTEENNSSIIOONNSS,  below,  for  more
+                   information.
+
+       --WW ccooppyylleefftt
+       --WW ccooppyyrriigghhtt
+       ----ccooppyylleefftt
+       ----ccooppyyrriigghhtt Print  the  short version of the GNU copyright
+                   information message on the standard error out-
+                   put.
+
+       --WW hheellpp
+       --WW uussaaggee
+       ----hheellpp
+       ----uussaaggee     Print a relatively short summary of the avail-
+                   able options on the standard error output.
+
+       --WW lliinntt
+       ----lliinntt      Provide warnings  about  constructs  that  are
+                   dubious or non-portable to other AWK implemen-
+                   tations.
+       --WW ppoossiixx
+       ----ppoossiixx     This turns on  _c_o_m_p_a_t_i_b_i_l_i_t_y  mode,  with  the
+                   following additional restrictions:
+
+                   +o \\xx escape sequences are not recognized.
+
+                   +o The synonym ffuunncc for the keyword ffuunnccttiioonn is
+                     not recognized.
+
+                   +o The operators **** and ****== cannot be  used  in
+                     place of ^^ and ^^==.
+
+       --WW ssoouurrccee==_p_r_o_g_r_a_m_-_t_e_x_t
+       ----ssoouurrccee==_p_r_o_g_r_a_m_-_t_e_x_t
+                   Use  _p_r_o_g_r_a_m_-_t_e_x_t  as AWK program source code.
+
+
+
+Free Software Foundation  April 15 1993                         2
+
+
+
+
+
+
+
+
+AWK(1)                   Utility Commands                  AWK(1)
+
+
+                   This option allows  the  easy  intermixing  of
+                   library  functions (used via the --ff and ----ffiillee
+                   options) with source code entered on the  com-
+                   mand  line.   It  is  intended  primarily  for
+                   medium to large  size  AWK  programs  used  in
+                   shell scripts.
+                   The  --WW  ssoouurrccee==  form of this option uses the
+                   rest of the command line argument for _p_r_o_g_r_a_m_-
+                   _t_e_x_t;  no  other  options to --WW will be recog-
+                   nized in the same argument.
+
+       --WW vveerrssiioonn
+       ----vveerrssiioonn   Print version information for this  particular
+                   copy  of  _g_a_w_k  on  the standard error output.
+                   This is useful mainly for knowing if the  cur-
+                   rent copy of _g_a_w_k on your system is up to date
+                   with respect to  whatever  the  Free  Software
+                   Foundation is distributing.
+
+       ----          Signal  the  end of options. This is useful to
+                   allow further arguments  to  the  AWK  program
+                   itself  to start with a ``-''.  This is mainly
+                   for consistency with the argument parsing con-
+                   vention used by most other POSIX programs.
+
+       Any  other  options are flagged as illegal, but are other-
+       wise ignored.
+
+AAWWKK PPRROOGGRRAAMM EEXXEECCUUTTIIOONN
+       An AWK program consists of a  sequence  of  pattern-action
+       statements and optional function definitions.
+
+              _p_a_t_t_e_r_n   {{ _a_c_t_i_o_n _s_t_a_t_e_m_e_n_t_s }}
+              ffuunnccttiioonn _n_a_m_e((_p_a_r_a_m_e_t_e_r _l_i_s_t)) {{ _s_t_a_t_e_m_e_n_t_s }}
+
+       _G_a_w_k  first  reads  the  program  source from the _p_r_o_g_r_a_m_-
+       _f_i_l_e(s) if specified, or from the first  non-option  argu-
+       ment  on the command line.  The --ff option may be used mul-
+       tiple times on the command line.  _G_a_w_k will read the  pro-
+       gram  text  as  if all the _p_r_o_g_r_a_m_-_f_i_l_es had been concate-
+       nated together.  This is useful for building libraries  of
+       AWK  functions, without having to include them in each new
+       AWK program that uses them.  To use a library function  in
+       a  file from a program typed in on the command line, spec-
+       ify //ddeevv//ttttyy as one of the _p_r_o_g_r_a_m_-_f_i_l_es, type  your  pro-
+       gram, and end it with a ^^DD (control-d).
+
+       The  environment  variable AAWWKKPPAATTHH specifies a search path
+       to use when finding source files named with the --ff option.
+       If  this  variable  does  not  exist,  the default path is
+       ""..:://uussrr//lliibb//aawwkk:://uussrr//llooccaall//lliibb//aawwkk"".  If a file name given
+
+
+
+Free Software Foundation  April 15 1993                         3
+
+
+
+
+
+
+
+
+AWK(1)                   Utility Commands                  AWK(1)
+
+
+       to  the  --ff  option  contains  a  ``/'' character, no path
+       search is performed.
+
+       _G_a_w_k executes AWK programs in the following order.  First,
+       _g_a_w_k  compiles  the  program into an internal form.  Next,
+       all variable assignments specified via the --vv  option  are
+       performed.   Then,  _g_a_w_k  executes  the  code in the BBEEGGIINN
+       block(s) (if any), and then proceeds  to  read  each  file
+       named  in  the AARRGGVV array.  If there are no files named on
+       the command line, _g_a_w_k reads the standard input.
+
+       If a filename on the command line has the form _v_a_r==_v_a_l  it
+       is treated as a variable assignment. The variable _v_a_r will
+       be assigned the value _v_a_l.  (This happens after any  BBEEGGIINN
+       block(s) have been run.)  Command line variable assignment
+       is most useful for dynamically  assigning  values  to  the
+       variables  AWK  uses  to  control how input is broken into
+       fields and records. It  is  also  useful  for  controlling
+       state  if  multiple  passes  are needed over a single data
+       file.
+
+       If the value of a particular  element  of  AARRGGVV  is  empty
+       (""""), _g_a_w_k skips over it.
+
+       For  each  line  in  the  input,  _g_a_w_k  tests to see if it
+       matches any _p_a_t_t_e_r_n in the AWK program.  For each  pattern
+       that  the line matches, the associated _a_c_t_i_o_n is executed.
+       The patterns are tested in the order  they  occur  in  the
+       program.
+
+       Finally,  after  all the input is exhausted, _g_a_w_k executes
+       the code in the EENNDD block(s) (if any).
+
+VVAARRIIAABBLLEESS AANNDD FFIIEELLDDSS
+       AWK variables are dynamic; they come into  existence  when
+       they  are  first  used.  Their values are either floating-
+       point numbers or strings, or both, depending upon how they
+       are  used.  AWK  also has one dimensional arrays; multiply
+       dimensioned arrays may be simulated.  Several  pre-defined
+       variables  are  set  as  a  program  runs;  these  will be
+       described as needed and summarized below.
+
+   FFiieellddss
+       As each input line is read,  _g_a_w_k  splits  the  line  into
+       _f_i_e_l_d_s,  using  the  value of the FFSS variable as the field
+       separator.  If FFSS is a single character, fields are  sepa-
+       rated  by that character.  Otherwise, FFSS is expected to be
+       a full regular expression.  In the special case that FFSS is
+       a  single  blank,  fields  are separated by runs of blanks
+       and/or tabs.  Note  that  the  value  of  IIGGNNOORREECCAASSEE  (see
+       below)  will also affect how fields are split when FFSS is a
+
+
+
+Free Software Foundation  April 15 1993                         4
+
+
+
+
+
+
+
+
+AWK(1)                   Utility Commands                  AWK(1)
+
+
+       regular expression.
+
+       If the FFIIEELLDDWWIIDDTTHHSS variable is set to  a  space  separated
+       list  of  numbers,  each  field  is expected to have fixed
+       width, and _g_a_w_k will split up the record using the  speci-
+       fied widths.  The value of FFSS is ignored.  Assigning a new
+       value to FFSS overrides the use of FFIIEELLDDWWIIDDTTHHSS, and restores
+       the default behavior.
+
+       Each  field  in  the  input  line may be referenced by its
+       position, $$11, $$22, and so on.  $$00 is the  whole  line.  The
+       value  of a field may be assigned to as well.  Fields need
+       not be referenced by constants:
+
+              nn == 55
+              pprriinntt $$nn
+
+       prints the fifth field in the input line.  The variable NNFF
+       is set to the total number of fields in the input line.
+
+       References to non-existent fields (i.e., fields after $$NNFF)
+       produce the null-string.  However,  assigning  to  a  non-
+       existent field (e.g., $$((NNFF++22)) == 55) will increase the value
+       of NNFF, create any intervening fields with the null  string
+       as  their  value,  and  cause the value of $$00 to be recom-
+       puted, with the fields being separated  by  the  value  of
+       OOFFSS.
+
+   BBuuiilltt--iinn VVaarriiaabblleess
+       AWK's built-in variables are:
+
+
+       AARRGGCC        The number of command line arguments (does not
+                   include  options  to  _g_a_w_k,  or  the   program
+                   source).
+
+       AARRGGIINNDD      The  index  in  AARRGGVV of the current file being
+                   processed.
+
+       AARRGGVV        Array of command line arguments. The array  is
+                   indexed  from  0  to  AARRGGCC  -  1.  Dynamically
+                   changing the contents of AARRGGVV can control  the
+                   files used for data.
+
+       CCOONNVVFFMMTT     The  conversion format for numbers, ""%%..66gg"", by
+                   default.
+
+       EENNVVIIRROONN     An array containing the values of the  current
+                   environment.   The  array  is  indexed  by the
+                   environment variables, each element being  the
+                   value  of that variable (e.g., EENNVVIIRROONN[[""HHOOMMEE""]]
+
+
+
+Free Software Foundation  April 15 1993                         5
+
+
+
+
+
+
+
+
+AWK(1)                   Utility Commands                  AWK(1)
+
+
+                   might be //uu//aarrnnoolldd).  Changing this array does
+                   not  affect  the  environment seen by programs
+                   which _g_a_w_k spawns via redirection or the  ssyyss--
+                   tteemm(())  function.  (This may change in a future
+                   version of _g_a_w_k.)
+
+       EERRRRNNOO       If a system error occurs either doing a  redi-
+                   rection  for  ggeettlliinnee,  during a read for ggeett--
+                   lliinnee, or during a cclloossee, then EERRRRNNOO will  con-
+                   tain a string describing the error.
+
+       FFIIEELLDDWWIIDDTTHHSS A  white-space  separated list of fieldwidths.
+                   When set, _g_a_w_k parses the input into fields of
+                   fixed width, instead of using the value of the
+                   FFSS variable as the field separator.  The fixed
+                   field  width  facility  is still experimental;
+                   expect the semantics to change as _g_a_w_k evolves
+                   over time.
+
+       FFIILLEENNAAMMEE    The  name  of  the  current input file.  If no
+                   files are specified on the command  line,  the
+                   value of FFIILLEENNAAMMEE is ``-''.
+
+       FFNNRR         The  input  record number in the current input
+                   file.
+
+       FFSS          The input field separator, a blank by default.
+
+       IIGGNNOORREECCAASSEE  Controls  the  case-sensitivity of all regular
+                   expression operations.  If  IIGGNNOORREECCAASSEE  has  a
+                   non-zero   value,  then  pattern  matching  in
+                   rules,  field  splitting  with   FFSS,   regular
+                   expression  matching  with  ~~  and !!~~, and the
+                   ggssuubb(()), iinnddeexx(()), mmaattcchh(()), sspplliitt(()),  and  ssuubb(())
+                   pre-defined  functions  will  all  ignore case
+                   when  doing  regular  expression   operations.
+                   Thus, if IIGGNNOORREECCAASSEE is not equal to zero, //aaBB//
+                   matches all of the strings ""aabb"",  ""aaBB"",  ""AAbb"",
+                   and ""AABB"".  As with all AWK variables, the ini-
+                   tial value of IIGGNNOORREECCAASSEE is zero, so all regu-
+                   lar  expression  operations are normally case-
+                   sensitive.
+
+       NNFF          The number of  fields  in  the  current  input
+                   record.
+
+       NNRR          The total number of input records seen so far.
+
+       OOFFMMTT        The output  format  for  numbers,  ""%%..66gg"",  by
+                   default.
+
+
+
+
+Free Software Foundation  April 15 1993                         6
+
+
+
+
+
+
+
+
+AWK(1)                   Utility Commands                  AWK(1)
+
+
+       OOFFSS         The   output   field  separator,  a  blank  by
+                   default.
+
+       OORRSS         The output  record  separator,  a  newline  by
+                   default.
+
+       RRSS          The  input  record  separator,  a  newline  by
+                   default.  RRSS is exceptional in that  only  the
+                   first  character  of  its string value is used
+                   for separating records.  (This  will  probably
+                   change in a future release of _g_a_w_k.)  If RRSS is
+                   set to the null string, then records are sepa-
+                   rated  by  blank lines.  When RRSS is set to the
+                   null string, then the newline character always
+                   acts  as  a  field  separator,  in addition to
+                   whatever value FFSS may have.
+
+       RRSSTTAARRTT      The index of the first  character  matched  by
+                   mmaattcchh(()); 0 if no match.
+
+       RRLLEENNGGTTHH     The  length  of the string matched by mmaattcchh(());
+                   -1 if no match.
+
+       SSUUBBSSEEPP      The character used to separate  multiple  sub-
+                   scripts  in array elements, ""\\003344"" by default.
+
+   AArrrraayyss
+       Arrays are subscripted with an expression  between  square
+       brackets  ([[  and  ]]).  If the expression is an expression
+       list (_e_x_p_r, _e_x_p_r ...)   then  the  array  subscript  is  a
+       string  consisting  of  the  concatenation of the (string)
+       value of each expression, separated by the  value  of  the
+       SSUUBBSSEEPP variable.  This facility is used to simulate multi-
+       ply dimensioned arrays. For example:
+
+              ii == ""AA"" ;; jj == ""BB"" ;; kk == ""CC""
+              xx[[ii,, jj,, kk]] == ""hheelllloo,, wwoorrlldd\\nn""
+
+       assigns the string ""hheelllloo,, wwoorrlldd\\nn"" to the element of  the
+       array  xx which is indexed by the string ""AA\\003344BB\\003344CC"". All
+       arrays in AWK are associative,  i.e.,  indexed  by  string
+       values.
+
+       The  special  operator  iinn  may  be used in an iiff or wwhhiillee
+       statement to see if an array has an index consisting of  a
+       particular value.
+
+              iiff ((vvaall iinn aarrrraayy))
+                   pprriinntt aarrrraayy[[vvaall]]
+
+       If the array has multiple subscripts, use ((ii,, jj)) iinn aarrrraayy.
+
+
+
+Free Software Foundation  April 15 1993                         7
+
+
+
+
+
+
+
+
+AWK(1)                   Utility Commands                  AWK(1)
+
+
+       The iinn construct may also be used in a ffoorr loop to iterate
+       over all the elements of an array.
+
+       An  element  may be deleted from an array using the ddeelleettee
+       statement.
+
+   VVaarriiaabbllee TTyyppiinngg AAnndd CCoonnvveerrssiioonn
+       Variables and fields may be (floating point)  numbers,  or
+       strings,  or  both.  How the value of a variable is inter-
+       preted depends upon its context.  If  used  in  a  numeric
+       expression,  it  will be treated as a number, if used as a
+       string it will be treated as a string.
+
+       To force a variable to be treated as a number,  add  0  to
+       it;  to force it to be treated as a string, concatenate it
+       with the null string.
+
+       When a string must be converted to a number,  the  conver-
+       sion is accomplished using _a_t_o_f(3).  A number is converted
+       to a string by using the value  of  CCOONNVVFFMMTT  as  a  format
+       string for _s_p_r_i_n_t_f(3), with the numeric value of the vari-
+       able as the argument.  However, even though all numbers in
+       AWK  are  floating-point,  integral values are _a_l_w_a_y_s con-
+       verted as integers.  Thus, given
+
+              CCOONNVVFFMMTT == ""%%22..22ff""
+              aa == 1122
+              bb == aa """"
+
+       the variable bb has a value of ""1122"" and not ""1122..0000"".
+
+       _G_a_w_k performs comparisons as follows: If two variables are
+       numeric,  they  are compared numerically.  If one value is
+       numeric and the  other  has  a  string  value  that  is  a
+       ``numeric string,'' then comparisons are also done numeri-
+       cally.  Otherwise, the numeric value  is  converted  to  a
+       string  and a string comparison is performed.  Two strings
+       are compared, of course, as  strings.   According  to  the
+       POSIX standard, even if two strings are numeric strings, a
+       numeric comparison is performed.  However, this is clearly
+       incorrect, and _g_a_w_k does not do this.
+
+       Uninitialized  variables  have the numeric value 0 and the
+       string value "" (the null, or empty, string).
+
+PPAATTTTEERRNNSS AANNDD AACCTTIIOONNSS
+       AWK is a line oriented language. The pattern comes  first,
+       and  then  the action. Action statements are enclosed in {{
+       and }}.  Either the pattern may be missing, or  the  action
+       may  be  missing, but, of course, not both. If the pattern
+       is missing, the action will be executed for  every  single
+
+
+
+Free Software Foundation  April 15 1993                         8
+
+
+
+
+
+
+
+
+AWK(1)                   Utility Commands                  AWK(1)
+
+
+       line of input.  A missing action is equivalent to
+
+              {{ pprriinntt }}
+
+       which prints the entire line.
+
+       Comments  begin  with  the  ``#''  character, and continue
+       until the end of the line.  Blank lines  may  be  used  to
+       separate  statements.   Normally,  a statement ends with a
+       newline, however, this is not the case for lines ending in
+       a  ``,'',  ``{'',  ``?'', ``:'', ``&&'', or ``||''.  Lines
+       ending in ddoo or eellssee also have their statements  automati-
+       cally  continued on the following line.  In other cases, a
+       line can be continued by ending it with a ``\'', in  which
+       case the newline will be ignored.
+
+       Multiple  statements  may be put on one line by separating
+       them with a ``;''.  This applies to  both  the  statements
+       within the action part of a pattern-action pair (the usual
+       case), and to the pattern-action statements themselves.
+
+   PPaatttteerrnnss
+       AWK patterns may be one of the following:
+
+              BBEEGGIINN
+              EENNDD
+              //_r_e_g_u_l_a_r _e_x_p_r_e_s_s_i_o_n//
+              _r_e_l_a_t_i_o_n_a_l _e_x_p_r_e_s_s_i_o_n
+              _p_a_t_t_e_r_n &&&& _p_a_t_t_e_r_n
+              _p_a_t_t_e_r_n |||| _p_a_t_t_e_r_n
+              _p_a_t_t_e_r_n ?? _p_a_t_t_e_r_n :: _p_a_t_t_e_r_n
+              ((_p_a_t_t_e_r_n))
+              !! _p_a_t_t_e_r_n
+              _p_a_t_t_e_r_n_1,, _p_a_t_t_e_r_n_2
+
+       BBEEGGIINN and EENNDD are two special kinds of patterns which  are
+       not  tested  against  the  input.  The action parts of all
+       BBEEGGIINN patterns are merged as if  all  the  statements  had
+       been  written  in  a single BBEEGGIINN block. They are executed
+       before any of the input is read. Similarly,  all  the  EENNDD
+       blocks  are  merged,  and  executed  when all the input is
+       exhausted (or when an eexxiitt statement is executed).   BBEEGGIINN
+       and EENNDD patterns cannot be combined with other patterns in
+       pattern expressions.  BBEEGGIINN and EENNDD patterns  cannot  have
+       missing action parts.
+
+       For  //_r_e_g_u_l_a_r  _e_x_p_r_e_s_s_i_o_n// patterns, the associated state-
+       ment is executed for each input line that matches the reg-
+       ular  expression.   Regular  expressions  are  the same as
+       those in _e_g_r_e_p(1), and are summarized below.
+
+
+
+
+Free Software Foundation  April 15 1993                         9
+
+
+
+
+
+
+
+
+AWK(1)                   Utility Commands                  AWK(1)
+
+
+       A _r_e_l_a_t_i_o_n_a_l _e_x_p_r_e_s_s_i_o_n  may  use  any  of  the  operators
+       defined  below in the section on actions.  These generally
+       test whether certain fields match certain regular  expres-
+       sions.
+
+       The  &&&&, ||||, and !!  operators are logical AND, logical OR,
+       and logical NOT, respectively, as in C.   They  do  short-
+       circuit evaluation, also as in C, and are used for combin-
+       ing more primitive pattern expressions. As  in  most  lan-
+       guages,  parentheses  may  be  used to change the order of
+       evaluation.
+
+       The ??:: operator is like the same operator  in  C.  If  the
+       first pattern is true then the pattern used for testing is
+       the second pattern, otherwise it is the third. Only one of
+       the second and third patterns is evaluated.
+
+       The  _p_a_t_t_e_r_n_1,,  _p_a_t_t_e_r_n_2 form of an expression is called a
+       range pattern.  It matches all input records starting with
+       a  line  that  matches  _p_a_t_t_e_r_n_1,  and  continuing until a
+       record that matches _p_a_t_t_e_r_n_2, inclusive. It does not  com-
+       bine with any other sort of pattern expression.
+
+   RReegguullaarr EExxpprreessssiioonnss
+       Regular  expressions are the extended kind found in _e_g_r_e_p.
+       They are composed of characters as follows:
+
+       _c          matches the non-metacharacter _c.
+
+       _\_c         matches the literal character _c.
+
+       ..          matches any character except newline.
+
+       ^^          matches the beginning of a line or a string.
+
+       $$          matches the end of a line or a string.
+
+       [[_a_b_c_._._.]]   character class, matches any of the  characters
+                  _a_b_c_._._..
+
+       [[^^_a_b_c_._._.]]  negated  character class, matches any character
+                  except _a_b_c_._._.  and newline.
+
+       _r_1||_r_2      alternation: matches either _r_1 or _r_2.
+
+       _r_1_r_2       concatenation: matches _r_1, and then _r_2.
+
+       _r++         matches one or more _r's.
+
+       _r**         matches zero or more _r's.
+
+
+
+
+Free Software Foundation  April 15 1993                        10
+
+
+
+
+
+
+
+
+AWK(1)                   Utility Commands                  AWK(1)
+
+
+       _r??         matches zero or one _r's.
+
+       ((_r))        grouping: matches _r.
+
+       The escape sequences that are valid  in  string  constants
+       (see below) are also legal in regular expressions.
+
+   AAccttiioonnss
+       Action statements are enclosed in braces, {{ and }}.  Action
+       statements consist of the usual  assignment,  conditional,
+       and looping statements found in most languages. The opera-
+       tors,  control  statements,  and  input/output  statements
+       available are patterned after those in C.
+
+   OOppeerraattoorrss
+       The  operators  in AWK, in order of increasing precedence,
+       are
+
+
+       == ++== --==
+       **== //== %%== ^^== Assignment. Both absolute  assignment  ((_v_a_r  ==
+                   _v_a_l_u_e))   and  operator-assignment  (the  other
+                   forms) are supported.
+
+       ??::          The C conditional  expression.  This  has  the
+                   form  _e_x_p_r_1 ?? _e_x_p_r_2 :: _e_x_p_r_3. If _e_x_p_r_1 is true,
+                   the value of the expression is  _e_x_p_r_2,  other-
+                   wise it is _e_x_p_r_3.  Only one of _e_x_p_r_2 and _e_x_p_r_3
+                   is evaluated.
+
+       ||||          Logical OR.
+
+       &&&&          Logical AND.
+
+       ~~ !!~~        Regular  expression  match,   negated   match.
+                   NNOOTTEE:: Do not use a constant regular expression
+                   (//ffoooo//) on the left-hand side of a  ~~  or  !!~~.
+                   Only  use  one  on  the  right-hand side.  The
+                   expression //ffoooo// ~~ _e_x_p has the same meaning as
+                   (((($$00  ~~  //ffoooo//))  ~~  _e_x_p)).  This is usually _n_o_t
+                   what was intended.
+
+       << >>
+       <<== >>==
+       !!== ====       The regular relational operators.
+
+       _b_l_a_n_k       String concatenation.
+
+       ++ --         Addition and subtraction.
+
+       ** // %%       Multiplication, division, and modulus.
+
+
+
+Free Software Foundation  April 15 1993                        11
+
+
+
+
+
+
+
+
+AWK(1)                   Utility Commands                  AWK(1)
+
+
+       ++ -- !!       Unary plus, unary minus, and logical negation.
+
+       ^^           Exponentiation  (****  may also be used, and ****==
+                   for the assignment operator).
+
+       ++++ ----       Increment and decrement, both prefix and post-
+                   fix.
+
+       $$           Field reference.
+
+   CCoonnttrrooll SSttaatteemmeennttss
+       The control statements are as follows:
+
+              iiff ((_c_o_n_d_i_t_i_o_n)) _s_t_a_t_e_m_e_n_t [ eellssee _s_t_a_t_e_m_e_n_t ]
+              wwhhiillee ((_c_o_n_d_i_t_i_o_n)) _s_t_a_t_e_m_e_n_t
+              ddoo _s_t_a_t_e_m_e_n_t wwhhiillee ((_c_o_n_d_i_t_i_o_n))
+              ffoorr ((_e_x_p_r_1;; _e_x_p_r_2;; _e_x_p_r_3)) _s_t_a_t_e_m_e_n_t
+              ffoorr ((_v_a_r iinn _a_r_r_a_y)) _s_t_a_t_e_m_e_n_t
+              bbrreeaakk
+              ccoonnttiinnuuee
+              ddeelleettee _a_r_r_a_y[[_i_n_d_e_x]]
+              eexxiitt [ _e_x_p_r_e_s_s_i_o_n ]
+              {{ _s_t_a_t_e_m_e_n_t_s }}
+
+   II//OO SSttaatteemmeennttss
+       The input/output statements are as follows:
+
+
+       cclloossee((_f_i_l_e_n_a_m_e))       Close file (or pipe, see below).
+
+       ggeettlliinnee               Set  $$00  from next input record; set
+                             NNFF, NNRR, FFNNRR.
+
+       ggeettlliinnee <<_f_i_l_e         Set $$00 from next record of _f_i_l_e; set
+                             NNFF.
+
+       ggeettlliinnee _v_a_r           Set  _v_a_r from next input record; set
+                             NNFF, FFNNRR.
+
+       ggeettlliinnee _v_a_r <<_f_i_l_e     Set _v_a_r from next record of _f_i_l_e.
+
+       nneexxtt                  Stop processing  the  current  input
+                             record.  The  next  input  record is
+                             read and processing starts over with
+                             the  first  pattern  in the AWK pro-
+                             gram. If the end of the  input  data
+                             is  reached,  the  EENNDD  block(s), if
+                             any, are executed.
+
+       nneexxtt ffiillee             Stop processing  the  current  input
+                             file.   The  next  input record read
+
+
+
+Free Software Foundation  April 15 1993                        12
+
+
+
+
+
+
+
+
+AWK(1)                   Utility Commands                  AWK(1)
+
+
+                             comes  from  the  next  input  file.
+                             FFIILLEENNAAMMEE is updated, FFNNRR is reset to
+                             1, and processing starts  over  with
+                             the  first  pattern  in the AWK pro-
+                             gram. If the end of the  input  data
+                             is  reached,  the  EENNDD  block(s), if
+                             any, are executed.
+
+       pprriinntt                 Prints the current record.
+
+       pprriinntt _e_x_p_r_-_l_i_s_t       Prints expressions.
+
+       pprriinntt _e_x_p_r_-_l_i_s_t >>_f_i_l_e Prints expressions on _f_i_l_e.
+
+       pprriinnttff _f_m_t_, _e_x_p_r_-_l_i_s_t Format and print.
+
+       pprriinnttff _f_m_t_, _e_x_p_r_-_l_i_s_t >>_f_i_l_e
+                             Format and print on _f_i_l_e.
+
+       ssyysstteemm((_c_m_d_-_l_i_n_e))      Execute the  command  _c_m_d_-_l_i_n_e,  and
+                             return  the  exit status.  (This may
+                             not be available on  non-POSIX  sys-
+                             tems.)
+
+       Other  input/output  redirections  are  also  allowed. For
+       pprriinntt and pprriinnttff, >>>>_f_i_l_e appends output to the _f_i_l_e, while
+       || _c_o_m_m_a_n_d writes on a pipe.  In a similar fashion, _c_o_m_m_a_n_d
+       || ggeettlliinnee pipes into ggeettlliinnee.  GGeettlliinnee will  return  0  on
+       end of file, and -1 on an error.
+
+   TThhee _p_r_i_n_t_f SSttaatteemmeenntt
+       The  AWK  versions  of  the pprriinnttff statement and sspprriinnttff(())
+       function (see below) accept the following conversion spec-
+       ification formats:
+
+       %%cc     An ASCII character.  If the argument used for %%cc is
+              numeric, it is treated as a character and  printed.
+              Otherwise,  the argument is assumed to be a string,
+              and the only first  character  of  that  string  is
+              printed.
+
+       %%dd     A decimal number (the integer part).
+
+       %%ii     Just like %%dd.
+
+       %%ee     A    floating    point    number    of   the   form
+              [[--]]dd..ddddddddddddEE[[++--]]dddd.
+
+       %%ff     A floating point number of the form  [[--]]dddddd..dddddddddddd.
+
+       %%gg     Use  ee  or ff conversion, whichever is shorter, with
+
+
+
+Free Software Foundation  April 15 1993                        13
+
+
+
+
+
+
+
+
+AWK(1)                   Utility Commands                  AWK(1)
+
+
+              nonsignificant zeros suppressed.
+
+       %%oo     An unsigned octal number (again, an integer).
+
+       %%ss     A character string.
+
+       %%xx     An unsigned hexadecimal number (an integer).
+
+       %%XX     Like %%xx, but using AABBCCDDEEFF instead of aabbccddeeff.
+
+       %%%%     A single %% character; no argument is converted.
+
+       There are optional, additional  parameters  that  may  lie
+       between the %% and the control letter:
+
+       --      The  expression should be left-justified within its
+              field.
+
+       _w_i_d_t_h  The field should be padded to this  width.  If  the
+              number  has  a leading zero, then the field will be
+              padded with zeros.  Otherwise  it  is  padded  with
+              blanks.
+
+       .._p_r_e_c  A number indicating the maximum width of strings or
+              digits to the right of the decimal point.
+
+       The dynamic _w_i_d_t_h and _p_r_e_c  capabilities  of  the  ANSI  C
+       pprriinnttff(())  routines  are supported.  A ** in place of either
+       the wwiiddtthh or pprreecc specifications will cause  their  values
+       to be taken from the argument list to pprriinnttff or sspprriinnttff(()).
+
+   SSppeecciiaall FFiillee NNaammeess
+       When doing I/O redirection from  either  pprriinntt  or  pprriinnttff
+       into  a  file, or via ggeettlliinnee from a file, _g_a_w_k recognizes
+       certain special  filenames  internally.   These  filenames
+       allow  access  to  open  file  descriptors  inherited from
+       _g_a_w_k's parent process (usually the shell).  Other  special
+       filenames  provide  access  information  about the running
+       ggaawwkk process.  The filenames are:
+
+       //ddeevv//ppiidd    Reading this file returns the  process  ID  of
+                   the  current  process,  in decimal, terminated
+                   with a newline.
+
+       //ddeevv//ppppiidd   Reading this file returns the  parent  process
+                   ID  of the current process, in decimal, termi-
+                   nated with a newline.
+
+       //ddeevv//ppggrrppiidd Reading this file returns the process group ID
+                   of the current process, in decimal, terminated
+                   with a newline.
+
+
+
+Free Software Foundation  April 15 1993                        14
+
+
+
+
+
+
+
+
+AWK(1)                   Utility Commands                  AWK(1)
+
+
+       //ddeevv//uusseerr   Reading this file returns a single record ter-
+                   minated  with a newline.  The fields are sepa-
+                   rated with blanks.  $$11 is  the  value  of  the
+                   _g_e_t_u_i_d(2)  system call, $$22 is the value of the
+                   _g_e_t_e_u_i_d(2) system call, $$33 is the value of the
+                   _g_e_t_g_i_d(2)  system call, and $$44 is the value of
+                   the _g_e_t_e_g_i_d(2) system call.  If there are  any
+                   additional  fields,  they  are  the  group IDs
+                   returned by  _g_e_t_g_r_o_u_p_s(2).   (Multiple  groups
+                   may not be supported on all systems.)
+
+       //ddeevv//ssttddiinn  The standard input.
+
+       //ddeevv//ssttddoouutt The standard output.
+
+       //ddeevv//ssttddeerrrr The standard error output.
+
+       //ddeevv//ffdd//_n   The   file   associated  with  the  open  file
+                   descriptor _n.
+
+       These are particularly  useful  for  error  messages.  For
+       example:
+
+              pprriinntt ""YYoouu bblleeww iitt!!"" >> ""//ddeevv//ssttddeerrrr""
+
+       whereas you would otherwise have to use
+
+              pprriinntt ""YYoouu bblleeww iitt!!"" || ""ccaatt 11>>&&22""
+
+       These  file  names may also be used on the command line to
+       name data files.
+
+   NNuummeerriicc FFuunnccttiioonnss
+       AWK has the following pre-defined arithmetic functions:
+
+
+       aattaann22((_y,, _x)) returns the arctangent of _y_/_x in radians.
+
+       ccooss((_e_x_p_r))   returns the cosine in radians.
+
+       eexxpp((_e_x_p_r))   the exponential function.
+
+       iinntt((_e_x_p_r))   truncates to integer.
+
+       lloogg((_e_x_p_r))   the natural logarithm function.
+
+       rraanndd(())      returns a random number between 0 and 1.
+
+       ssiinn((_e_x_p_r))   returns the sine in radians.
+
+       ssqqrrtt((_e_x_p_r))  the square root function.
+
+
+
+Free Software Foundation  April 15 1993                        15
+
+
+
+
+
+
+
+
+AWK(1)                   Utility Commands                  AWK(1)
+
+
+       ssrraanndd((_e_x_p_r)) use _e_x_p_r as a new seed for the  random  number
+                   generator. If no _e_x_p_r is provided, the time of
+                   day will be used.  The  return  value  is  the
+                   previous seed for the random number generator.
+
+   SSttrriinngg FFuunnccttiioonnss
+       AWK has the following pre-defined string functions:
+
+
+       ggssuubb((_r,, _s,, _t))           for each  substring  matching  the
+                               regular expression _r in the string
+                               _t, substitute the  string  _s,  and
+                               return  the  number  of  substitu-
+                               tions.  If _t is not supplied,  use
+                               $$00.
+
+       iinnddeexx((_s,, _t))             returns  the index of the string _t
+                               in the string _s, or 0 if _t is  not
+                               present.
+
+       lleennggtthh((_s))               returns  the  length of the string
+                               _s, or the length of $$00 if _s is not
+                               supplied.
+
+       mmaattcchh((_s,, _r))             returns  the  position  in _s where
+                               the regular expression  _r  occurs,
+                               or 0 if _r is not present, and sets
+                               the values of RRSSTTAARRTT and  RRLLEENNGGTTHH.
+
+       sspplliitt((_s,, _a,, _r))          splits the string _s into the array
+                               _a on the regular expression _r, and
+                               returns the number of fields. If _r
+                               is omitted, FFSS is used.
+
+       sspprriinnttff((_f_m_t,, _e_x_p_r_-_l_i_s_t)) prints _e_x_p_r_-_l_i_s_t according to _f_m_t,
+                               and  returns the resulting string.
+
+       ssuubb((_r,, _s,, _t))            just like  ggssuubb(()),  but  only  the
+                               first    matching   substring   is
+                               replaced.
+
+       ssuubbssttrr((_s,, _i,, _n))         returns the _n-character  substring
+                               of _s starting at _i.  If _n is omit-
+                               ted, the rest of _s is used.
+
+       ttoolloowweerr((_s_t_r))            returns a copy of the string  _s_t_r,
+                               with all the upper-case characters
+                               in _s_t_r translated to their  corre-
+                               sponding  lower-case counterparts.
+                               Non-alphabetic characters are left
+                               unchanged.
+
+
+
+Free Software Foundation  April 15 1993                        16
+
+
+
+
+
+
+
+
+AWK(1)                   Utility Commands                  AWK(1)
+
+
+       ttoouuppppeerr((_s_t_r))            returns  a copy of the string _s_t_r,
+                               with all the lower-case characters
+                               in  _s_t_r translated to their corre-
+                               sponding upper-case  counterparts.
+                               Non-alphabetic characters are left
+                               unchanged.
+
+   TTiimmee FFuunnccttiioonnss
+       Since one of the primary uses of AWK programs is  process-
+       ing  log  files  that contain time stamp information, _g_a_w_k
+       provides the following two functions  for  obtaining  time
+       stamps and formatting them.
+
+
+       ssyyssttiimmee(()) returns the current time of day as the number of
+                 seconds since the Epoch (Midnight  UTC,  January
+                 1, 1970 on POSIX systems).
+
+       ssttrrffttiimmee((_f_o_r_m_a_t, _t_i_m_e_s_t_a_m_p))
+                 formats _t_i_m_e_s_t_a_m_p according to the specification
+                 in _f_o_r_m_a_t_.  The _t_i_m_e_s_t_a_m_p should be of the  same
+                 form  as returned by ssyyssttiimmee(()).  If _t_i_m_e_s_t_a_m_p is
+                 missing, the current time of day is  used.   See
+                 the specification for the ssttrrffttiimmee(()) function in
+                 ANSI C for the format conversions that are guar-
+                 anteed to be available.  A public-domain version
+                 of _s_t_r_f_t_i_m_e(3) and a man page for it are shipped
+                 with  _g_a_w_k;  if  that  version was used to build
+                 _g_a_w_k, then all of the conversions  described  in
+                 that man page are available to _g_a_w_k_.
+
+   SSttrriinngg CCoonnssttaannttss
+       String  constants  in  AWK  are  sequences  of  characters
+       enclosed between double quotes (""). Within  strings,  cer-
+       tain _e_s_c_a_p_e _s_e_q_u_e_n_c_e_s are recognized, as in C. These are:
+
+
+       \\\\   A literal backslash.
+
+       \\aa   The  ``alert'' character; usually the ASCII BEL char-
+            acter.
+
+       \\bb   backspace.
+
+       \\ff   form-feed.
+
+       \\nn   newline.
+
+       \\rr   carriage return.
+
+       \\tt   horizontal tab.
+
+
+
+Free Software Foundation  April 15 1993                        17
+
+
+
+
+
+
+
+
+AWK(1)                   Utility Commands                  AWK(1)
+
+
+       \\vv   vertical tab.
+
+       \\xx_h_e_x _d_i_g_i_t_s
+            The character represented by the string of  hexadeci-
+            mal  digits following the \\xx.  As in ANSI C, all fol-
+            lowing hexadecimal digits are considered part of  the
+            escape  sequence.  (This feature should tell us some-
+            thing about language  design  by  committee.)   E.g.,
+            "\x1B" is the ASCII ESC (escape) character.
+
+       \\_d_d_d The  character  represented by the 1-, 2-, or 3-digit
+            sequence of octal digits. E.g. "\033"  is  the  ASCII
+            ESC (escape) character.
+
+       \\_c   The literal character _c.
+
+       The escape sequences may also be used inside constant reg-
+       ular expressions (e.g., //[[ \\tt\\ff\\nn\\rr\\vv]]// matches whitespace
+       characters).
+
+FFUUNNCCTTIIOONNSS
+       Functions in AWK are defined as follows:
+
+              ffuunnccttiioonn _n_a_m_e((_p_a_r_a_m_e_t_e_r _l_i_s_t)) {{ _s_t_a_t_e_m_e_n_t_s }}
+
+       Functions  are executed when called from within the action
+       parts of regular pattern-action statements. Actual parame-
+       ters supplied in the function call are used to instantiate
+       the formal parameters declared in  the  function.   Arrays
+       are  passed  by  reference,  other variables are passed by
+       value.
+
+       Since functions were not originally part of the  AWK  lan-
+       guage, the provision for local variables is rather clumsy:
+       they are declared as extra  parameters  in  the  parameter
+       list.  The  convention is to separate local variables from
+       real parameters by extra spaces in the parameter list. For
+       example:
+
+              ffuunnccttiioonn  ff((pp,, qq,,     aa,, bb)) {{ ## aa && bb aarree llooccaall
+                             .......... }}
+
+              //aabbcc//     {{ ...... ;; ff((11,, 22)) ;; ...... }}
+
+       The  left  parenthesis  in  a function call is required to
+       immediately follow the function name, without  any  inter-
+       vening  white space.  This is to avoid a syntactic ambigu-
+       ity with the  concatenation  operator.   This  restriction
+       does not apply to the built-in functions listed above.
+
+       Functions  may  call  each  other  and  may  be recursive.
+
+
+
+Free Software Foundation  April 15 1993                        18
+
+
+
+
+
+
+
+
+AWK(1)                   Utility Commands                  AWK(1)
+
+
+       Function parameters used as local variables  are  initial-
+       ized  to the null string and the number zero upon function
+       invocation.
+
+       The word ffuunncc may be used in place of ffuunnccttiioonn.
+
+EEXXAAMMPPLLEESS
+       Print and sort the login names of all users:
+
+            BBEEGGIINN     {{ FFSS == ""::"" }}
+                 {{ pprriinntt $$11 || ""ssoorrtt"" }}
+
+       Count lines in a file:
+
+                 {{ nnlliinneess++++ }}
+            EENNDD  {{ pprriinntt nnlliinneess }}
+
+       Precede each line by its number in the file:
+
+            {{ pprriinntt FFNNRR,, $$00 }}
+
+       Concatenate and line number (a variation on a theme):
+
+            {{ pprriinntt NNRR,, $$00 }}
+
+SSEEEE AALLSSOO
+       _e_g_r_e_p(1)
+
+       _T_h_e _A_W_K _P_r_o_g_r_a_m_m_i_n_g _L_a_n_g_u_a_g_e,  Alfred  V.  Aho,  Brian  W.
+       Kernighan, Peter J. Weinberger, Addison-Wesley, 1988. ISBN
+       0-201-07981-X.
+
+       _T_h_e _G_A_W_K _M_a_n_u_a_l, Edition 0.15, published by the Free Soft-
+       ware Foundation, 1993.
+
+PPOOSSIIXX CCOOMMPPAATTIIBBIILLIITTYY
+       A  primary  goal  for _g_a_w_k is compatibility with the POSIX
+       standard, as well as with the latest version of UNIX  _a_w_k.
+       To  this end, _g_a_w_k incorporates the following user visible
+       features which are not described in the AWK book, but  are
+       part  of  _a_w_k  in System V Release 4, and are in the POSIX
+       standard.
+
+       The --vv option for assigning variables before program  exe-
+       cution  starts  is  new.   The book indicates that command
+       line variable assignment happens when _a_w_k would  otherwise
+       open  the  argument  as  a  file, which is after the BBEEGGIINN
+       block is executed.  However, in  earlier  implementations,
+       when  such  an  assignment appeared before any file names,
+       the assignment would happen _b_e_f_o_r_e  the  BBEEGGIINN  block  was
+       run.   Applications  came  to  depend on this ``feature.''
+
+
+
+Free Software Foundation  April 15 1993                        19
+
+
+
+
+
+
+
+
+AWK(1)                   Utility Commands                  AWK(1)
+
+
+       When _a_w_k was changed  to  match  its  documentation,  this
+       option  was added to accomodate applications that depended
+       upon the old behavior.  (This feature was agreed  upon  by
+       both the AT&T and GNU developers.)
+
+       The --WW option for implementation specific features is from
+       the POSIX standard.
+
+       When processing arguments, _g_a_w_k uses  the  special  option
+       ``----''  to  signal  the end of arguments, and warns about,
+       but otherwise ignores, undefined options.
+
+       The AWK book does not define the return value of  ssrraanndd(()).
+       The  System V Release 4 version of UNIX _a_w_k (and the POSIX
+       standard) has it return the seed it was  using,  to  allow
+       keeping   track  of  random  number  sequences.  Therefore
+       ssrraanndd(()) in _g_a_w_k also returns its current seed.
+
+       Other new features are: The use  of  multiple  --ff  options
+       (from  MKS  _a_w_k); the EENNVVIIRROONN array; the \\aa, and \\vv escape
+       sequences (done originally  in  _g_a_w_k  and  fed  back  into
+       AT&T's  version);  the  ttoolloowweerr(())  and  ttoouuppppeerr(()) built-in
+       functions (from AT&T); and the ANSI C conversion  specifi-
+       cations in pprriinnttff (done first in AT&T's version).
+
+GGNNUU EEXXTTEENNSSIIOONNSS
+       _G_a_w_k has some extensions to POSIX _a_w_k.  They are described
+       in this section.  All the extensions described here can be
+       disabled by invoking _g_a_w_k with the --WW ccoommppaatt option.
+
+       The  following features of _g_a_w_k are not available in POSIX
+       _a_w_k.
+
+              +o The \\xx escape sequence.
+
+              +o The ssyyssttiimmee(()) and ssttrrffttiimmee(()) functions.
+
+              +o The special file names available for I/O redirec-
+                tion are not recognized.
+
+              +o The AARRGGIINNDD and EERRRRNNOO variables are not special.
+
+              +o The  IIGGNNOORREECCAASSEE variable and its side-effects are
+                not available.
+
+              +o The FFIIEELLDDWWIIDDTTHHSS variable and  fixed  width  field
+                splitting.
+
+              +o No  path  search is performed for files named via
+                the --ff option.  Therefore the AAWWKKPPAATTHH environment
+                variable is not special.
+
+
+
+Free Software Foundation  April 15 1993                        20
+
+
+
+
+
+
+
+
+AWK(1)                   Utility Commands                  AWK(1)
+
+
+              +o The use of nneexxtt ffiillee to abandon processing of the
+                current input file.
+
+       The AWK book does not  define  the  return  value  of  the
+       cclloossee(())  function.   _G_a_w_k's cclloossee(()) returns the value from
+       _f_c_l_o_s_e(3), or _p_c_l_o_s_e(3), when  closing  a  file  or  pipe,
+       respectively.
+
+       When  _g_a_w_k is invoked with the --WW ccoommppaatt option, if the _f_s
+       argument to the --FF option is ``t'', then FFSS will be set to
+       the  tab  character.   Since this is a rather ugly special
+       case, it is not the default behavior.  This behavior  also
+       does not occur if --WW ppoossiixx has been specified.
+
+HHIISSTTOORRIICCAALL FFEEAATTUURREESS
+       There  are  two features of historical AWK implementations
+       that _g_a_w_k supports.  First, it is  possible  to  call  the
+       lleennggtthh(())  built-in function not only with no argument, but
+       even without parentheses!  Thus,
+
+              aa == lleennggtthh
+
+       is the same as either of
+
+              aa == lleennggtthh(())
+              aa == lleennggtthh(($$00))
+
+       This feature is marked  as  ``deprecated''  in  the  POSIX
+       standard,  and  _g_a_w_k will issue a warning about its use if
+       --WW lliinntt is specified on the command line.
+
+       The other feature is the use  of  the  ccoonnttiinnuuee  statement
+       outside the body of a wwhhiillee, ffoorr, or ddoo loop.  Traditional
+       AWK implementations have treated such usage as  equivalent
+       to the nneexxtt statement.  _G_a_w_k will support this usage if --WW
+       ppoossiixx has not been specified.
+
+BBUUGGSS
+       The --FF option is not  necessary  given  the  command  line
+       variable assignment feature; it remains only for backwards
+       compatibility.
+
+       If your system actually has support for  //ddeevv//ffdd  and  the
+       associated //ddeevv//ssttddiinn, //ddeevv//ssttddoouutt, and //ddeevv//ssttddeerrrr files,
+       you may get different output from _g_a_w_k than you would  get
+       on  a  system  without  those files.  When _g_a_w_k interprets
+       these files internally,  it  synchronizes  output  to  the
+       standard  output  with  output  to //ddeevv//ssttddoouutt, while on a
+       system with those files, the output is actually to differ-
+       ent open files.  Caveat Emptor.
+
+
+
+
+Free Software Foundation  April 15 1993                        21
+
+
+
+
+
+
+
+
+AWK(1)                   Utility Commands                  AWK(1)
+
+
+VVEERRSSIIOONN IINNFFOORRMMAATTIIOONN
+       This man page documents _g_a_w_k, version 2.15.
+
+       Starting  with  the  2.15 version of _g_a_w_k, the --cc, --VV, --CC,
+       --aa, and --ee options of the 2.11 version are no longer  rec-
+       ognized.
+
+AAUUTTHHOORRSS
+       The  original  version of UNIX _a_w_k was designed and imple-
+       mented  by  Alfred  Aho,  Peter  Weinberger,   and   Brian
+       Kernighan  of AT&T Bell Labs. Brian Kernighan continues to
+       maintain and enhance it.
+
+       Paul Rubin and Jay Fenlason, of the Free Software  Founda-
+       tion,  wrote _g_a_w_k, to be compatible with the original ver-
+       sion of _a_w_k distributed in  Seventh  Edition  UNIX.   John
+       Woods  contributed  a number of bug fixes.  David Trueman,
+       with contributions from Arnold Robbins, made _g_a_w_k compati-
+       ble with the new version of UNIX _a_w_k.
+
+       The  initial  DOS  port  was done by Conrad Kwok and Scott
+       Garfinkle.  Scott Deifik is the  current  DOS  maintainer.
+       Pat  Rankin did the port to VMS, and Michal Jaegermann did
+       the port to the Atari ST.
+
+AACCKKNNOOWWLLEEDDGGEEMMEENNTTSS
+       Brian Kernighan of Bell Labs provided valuable  assistance
+       during testing and debugging.  We thank him.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Free Software Foundation  April 15 1993                        22
+
+
+
+
+
