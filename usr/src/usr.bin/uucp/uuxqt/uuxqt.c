@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uuxqt.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)uuxqt.c	5.2 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -8,7 +8,7 @@ static char sccsid[] = "@(#)uuxqt.c	5.1 (Berkeley) %G%";
 #ifdef	NDIR
 #include "ndir.h"
 #else
-#include <dir.h>
+#include <sys/dir.h>
 #endif
 
 #define APPCMD(d) {\
