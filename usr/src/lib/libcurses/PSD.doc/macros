@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)macros	5.1 (Berkeley) %G%
+.\"	@(#)macros	6.1 (Berkeley) %G%
 .\"
 .\" this is the uncommented version.  The commented one is in "macros.coms"
 .ie t .ds _ \d\(mi\u
@@ -12,14 +12,16 @@
 .ds db database
 .ie n .ds f \fI
 .el .ds f \fB
-.ds tc \*f/etc/termcap\fP
+.ds tc \*ftermcap\fP(5)
 .ds Es This returns ERR if it would cause the screen to scroll illegally.
 .ds Nm This has no associated \*(lq\fBmv\fP\*(rq command.
 .ie t .ds m \fB\s-2\(dg\s+2\fP
 .el .ds m [*]
 .hy WINDOW
-.he ''\*(Ln''
-.fo ''\- % \-''
+.\".he ''\*(Ln''
+.\".fo ''\- % \-''
+.oh '\*(Ln''PS1:18-%'
+.eh 'PS1:18-%''\*(Ln'
 .de Un
 .b
 \s-2\\$2UNIX\\$1\s+2
