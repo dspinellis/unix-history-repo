@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.40	%G%";
+static char SccsId[] = "@(#)deliver.c	3.41	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -384,8 +384,15 @@ sendoff(m, pvp, editfcn, ctladdr)
 		(void) close(pvect[1]);
 		if (!bitset(M_RESTR, m->m_flags))
 		{
+			extern int DefUid, DefGid;
+
 			(void) setuid(ctladdr->q_uid);
 			(void) setgid(ctladdr->q_gid);
+			if (getruid() == 0)
+			{
+				setuid(DefUid);
+				setgid(DefGid);
+			}
 		}
 # ifndef VFORK
 		/*
