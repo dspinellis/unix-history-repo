@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)compress.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)compress.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 /* 
@@ -341,6 +341,7 @@ fprintf(stderr,"Usage: compress [-fvc] [-b maxbits] [file ...]\n");
 #endif /* DEBUG */
 int nomagic = 0;	/* Use a 3-byte magic number header, unless old file */
 int zcat_flg = 0;	/* Write output on stdout, suppress messages */
+int precious = 1;	/* Don't unlink output file on interrupt */
 int quiet = 1;		/* don't tell me about compression */
 
 /*
@@ -632,6 +633,7 @@ register int argc; char **argv;
 		    perror(ofname);
 		    continue;
 		}
+		precious = 0;
 		if(!quiet)
 			fprintf(stderr, "%s: ", *fileptr);
 	    }
@@ -647,6 +649,7 @@ register int argc; char **argv;
 #endif /* DEBUG */
 	    if(zcat_flg == 0) {
 		copystat(*fileptr, ofname);	/* Copy stats */
+		precious = 1;
 		if((exit_stat == 1) || (!quiet))
 			putc('\n', stderr);
 	    }
@@ -1337,7 +1340,7 @@ foreground()
 
 onintr ( )
 {
-    if (!zcat_flg)
+    if (!precious)
 	unlink ( ofname );
     exit ( 1 );
 }
@@ -1464,7 +1467,7 @@ long int num, den;
 
 version()
 {
-	fprintf(stderr, "%s, Berkeley 5.7 %G%\n", rcs_ident);
+	fprintf(stderr, "%s, Berkeley 5.8 %G%\n", rcs_ident);
 	fprintf(stderr, "Options: ");
 #ifdef vax
 	fprintf(stderr, "vax, ");
