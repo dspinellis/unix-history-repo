@@ -1,26 +1,18 @@
+static char vprmSCCSid[] = "@(#)vprm.c	1.2\t%G%";
+
 #include <sys/types.h>
 #include <dir.h>
 #include <stat.h>
 #include <stdio.h>
 
-char	line[128];
-int	linel;
-int	wide;
-char	*spooldir;
-FILE	*df;
-FILE	*dfb;
+char *basename();
+
 extern	char _sobuf[];
 
 main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	register int i;
-	register char *ap, *cp;
-	int cnt;
-	int oldargc;
-	char **oldargv;
-
 	setbuf(stdout, _sobuf);
 	argc--, argv++;
 	if (argc == 0) {
@@ -28,120 +20,171 @@ main(argc, argv)
 		exit(1);
 	}
 
-
-	oldargc = argc; oldargv = argv;
-
-	printf("Varian - ");
-	if (chdir("/usr/spool/vad") < 0)
-		perror("/usr/spool/vad");
-	else {
-		df = fopen(".", "r");
-		if (df == NULL)
-			perror("/usr/spool/vad");
-		else do {
-			clobber(*oldargv++);
-		} while (--oldargc);
-	}
-
-	printf("Versatec - ");
-	if (chdir("/usr/spool/vpd") < 0)
-		perror("/usr/spool/vpd");
-	else {
-		df = fopen(".", "r");
-		if (df == NULL)
-			perror("/usr/spool/vpd");
-		else do {
-			clobber(*argv++);
-		} while (--argc);
-	}
+	/* Look for something to delete both in Varian and Versatec spool dirs. */
+	delete("Varian", "/usr/spool/vad", argc, argv);
+	delete("Versatec", "/usr/spool/vpd", argc, argv);
 }
+
+/*
+ * Look through the argv list for things to delete.
+ */
 
-clobber(cp)
-	char *cp;
+delete(devname, spooldir, argc, argv)
+char *devname, *spooldir, *argv[];
+int argc;
 {
-	struct dir dirent;
-	int did = 0;
+	FILE *dir;		/* The spool dir. */
+	struct dir dirent;	/* An entry read from the spool dir.*/
+	int deletion = 0;	/* Flag noting something has been deleted. */
 
-	rewind(df);
-	while (fread(&dirent, sizeof dirent, 1, df) == 1) {
-		if (dirent.d_ino == 0)
-			continue;
-		if (dirent.d_name[0] != 'd' || dirent.d_name[1] != 'f')
-			continue;
-		if (dirent.d_name[7] == 0 || dirent.d_name[8] != 0)
-			continue;
-		if (chkclob(cp, dirent.d_name)) {
-			did++;
-			printf("removing %s\n", dirent.d_name+3);
-			unlink(dirent.d_name);
-			dirent.d_name[0] = 'c'; unlink(dirent.d_name);
-			dirent.d_name[2] = 'b'; unlink(dirent.d_name);
-			dirent.d_name[2] = 'a';
-			dirent.d_name[0] = 'l'; unlink(dirent.d_name);
-			dirent.d_name[0] = 't'; unlink(dirent.d_name);
-			dirent.d_name[0] = 'd';
-		}
+	/* Change to the spool directory. */
+	if (chdir(spooldir) < 0) {
+		perror(spooldir);
+		return(1);
 	}
-	if (did == 0)
-		printf("%s: nothing to remove\n", cp);
-}
 
-chkclob(pattern, file)
-	char *pattern, *file;
-{
-	register char *id = pattern;
+	/* Open it. */
+	if ((dir = fopen(".", "r")) == NULL) {
+		perror(spooldir);
+		return(1);
+	}
+
+	printf("%s -", devname);
 
 	/*
-	 * Quick check for matching id
+	 * Loop through the args and the spool dir, looking for a spool
+	 * command file (has a prefix of 'df'),
+	 * and trying to match it with the argument.
 	 */
-	if (any(id[0], "cd") && id[1] == 'f' && id[2] == 'a')
-		id += 3;
-	if (strcmp(file+3, id) == 0)
-		return (1);
-	/*
-	 * Now check for matching filename 'B', 'F' or id 'L'
-	 */
-	dfb = fopen(file, "r");
-	if (dfb == NULL)
-		return (0);
-	while (getline()) switch (line[0]) {
-
-	case 'L':
-	case 'B':
-	case 'F':
-	case 'T':
-		if (strcmp(line+1, pattern) == 0) {
-			fclose(dfb);
-			return (1);
+	while (argc-- > 0) {
+		rewind(dir);
+		while (fread(&dirent, sizeof dirent, 1, dir) == 1) {
+			if (dirent.d_ino == 0)
+				continue;
+			if (dirent.d_name[0] == 'd' &&
+			    dirent.d_name[1] == 'f') {
+				if (delcheck(dirent.d_name, *argv)) {
+					printf(" removing %s", dirent.d_name+3);
+					deletion = 1;
+				}
+			}
 		}
-		continue;
+		argv++;
 	}
-	fclose(dfb);
-	return (0);
+
+	if (!deletion)
+		printf(" nothing to remove\n");
+	else
+		putchar('\n');
 }
 
-any(c, cp)
-	char c;
-	register char *cp;
+
+/*
+ * delcheck tries to match the given arg against the given command file in
+ * various ways.  For instance, if dfname = 'dfa12345', then there is a match if
+ * arg == 'dfa12345', or
+ * arg == '12345', or
+ * arg == the name given on the L line of the file (the owner), or
+ * arg == the basename of a file given on a command line in the file.
+ * If there is a match, all the U (unlink) commands in the command file
+ * are executed, and then the command file itself is unlinked.
+ */
+
+int
+delcheck(dfname, arg)
+char *dfname, *arg;
 {
+	FILE *df = NULL;	/* The command file. */
+	int delfile = 0;	/* A match was found, so do a deletion. */
+	char line[256];		/* Command line in command file. */
 
-	while (*cp)
-		if (c == *cp++)
-			return (1);
-	return (0);
+	if (strcmp(arg, dfname) == 0)
+		delfile = 1;	/* arg == 'dfa12345'. */
+	else if (strcmp(arg, dfname+3) == 0)
+		delfile = 1;	/* arg == '12345' (skip 'dfa'). */
+	else {			/* No match; look inside on command lines. */
+		if ((df = fopen(dfname, "r")) == NULL)
+			return(0);
+		while (!delfile && getline(df, line)) {
+			switch (line[0]) {
+				case 'L':
+					/* Check owner name. */
+					if (strcmp(arg, line+1) == 0)
+						delfile = 1;
+					break;
+
+				case 'C':
+				case 'V':
+				case 'F':
+				case 'G':
+				case 'P':
+				case 'T':
+					/* Check command line arg. */
+					if (strcmp (basename(arg), basename(line)) == 0)
+						delfile = 1;
+					break;
+			}
+		}
+	}
+
+	if (delfile) {
+		if (df == NULL)		/* File not open yet. */
+			df = fopen(dfname, "r");
+		if (df == NULL)
+			return(0);
+		
+		/* Run through the command file, executing Unlink commands. */
+		rewind(df);
+		while (getline(df, line)) {
+			if (line[0] == 'U')
+				unlink(line+1);
+		}
+
+		unlink(dfname);		/* Now unlink the command file itself. */
+	}
+
+	if (df != NULL)
+		fclose(df);
+	return(delfile);
 }
 
-getline()
+
+
+
+getline(file, line)
+FILE *file;
+char *line;
 {
 	register int i, c;
 
 	i = 0;
-	while ((c = getc(dfb)) != '\n') {
+	while ((c = getc(file)) != '\n') {
 		if (c <= 0)
 			return(0);
-		if (i < 100)
+		if (i < 256)
 			line[i++] = c;
 	}
 	line[i++] = 0;
 	return (1);
+}
+
+
+/*
+ * basename gets the final component of the given pathname. E.g. "c" in
+ * /a/b/c.
+ */
+
+char *
+basename(pathname)
+char *pathname;
+{
+	register char *lastname;
+
+	lastname = pathname + strlen(pathname)-1; /* Move to last char in name. */
+	while (lastname >= pathname) {
+		if (*lastname == '/')
+			return(lastname + 1);
+		lastname--;
+	}
+	return(pathname);		/* No /'s at all. */
 }
