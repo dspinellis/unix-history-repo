@@ -16,6 +16,7 @@ There are portions of NetBSD that has been intergraged into FreeBSD
 as well.  We would like to thank all the contributors to NetBSD for
 their work.
 
+
 Hardware Contributors:
 
 A special thanks to Robert Bruce and Jack Velte of Walnut Creek CDROM
@@ -23,17 +24,28 @@ for providing a 486/DX2-66 EISA/VL system that is being used for the
 development work.  It would have been impossible to do this release
 with out their support.
 
+Dermot McDonnell for his donation of a Toshiba XM3401B CDROM
+drive.
+
+
 FreeBSD core:
+
 Andrew Moore <alm@netcom.com>
+Andreas Schulz <ats@g386bsd.first.bmd.de>
 J.T. Conklin <jtc@winsey.com>
+Christoph Robitschko <chmr@edvz.tu-graz.ac.at>
 David Greenman <davidg@implode.rain.com>
 Jordan K. Hubbard <jkh@whisker.lotus.ie>
 Nate Williams <nate@bsd.coe.montana.edu>
 Paul Richards <paul@isl.cf.ac.uk>
 Rich Murphey <rich@lamprey.utmb.edu>
+Rod Shady <crt@tiamat.umd.umich.edu>
 Rodney W. Grimes <rgrimes@cdrom.com>
+Scott Mace <emace@tenet.edu>
+
 
 Additional FreeBSD Contributors:
+
 Adam Glass <glass@postgres.berkeley.edu>
 Andrew A. Chernov <ache@astral.msk.su>
 Andrew Herbert <andrew@werple.apana.org.au>
@@ -42,7 +54,6 @@ Bruce Evans <bde@kralizec.zeta.org.au>
 Charles Hannum
 Chris G. Demetriou <cdg@sun-lamp.cs.berkeley.edu>
 Chris Torek <torek@ee.lbl.gov>
-Christoph Robitschko <chmr@edvz.tu-graz.ac.at>
 Dave Burgess <burgess@hrd769.brooks.af.mil>
 Dave Rivers <rivers@ponds.uucp>
 David Dawes <dawes@physics.su.OZ.AU>
@@ -64,15 +75,15 @@ Paul Kranenburg <pk@cs.few.eur.nl>
 Paul Mackerras <paulus@cs.anu.edu.au>
 Poul-Henning Kamp <phk@data.fls.dk>
 Sascha Wildner <swildner@channelz.GUN.de>
-Scotty ?
-Scott Mace <emace@tenet.edu>
 Sean Eric Fagan <sef@kithrup.com>
 Steven Wallace <swallace@ece.uci.edu>
 Terry Lee <terry@uivlsi.csl.uiuc.edu> <terry@uivlsisd.csl.uiuc.edu>
 Theo Deraadt <deraadt@fsa.ca>
 Yoval Yarom <yval@cs.huji.ac.il>
 
-PATCH KIT PATCH CONTRIBUTORS:
+
+Patch kit patch contributors:
+
 Adam Glass <glass@postgres.berkeley.edu>
 Adrian Hall <adrian@ibmpcug.co.uk>
 Andrew A. Chernov <ache@astral.msk.su>
