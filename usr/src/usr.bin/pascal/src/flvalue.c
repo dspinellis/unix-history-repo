@@ -74,8 +74,7 @@ flvalue( r , formalp )
 			/*
 			 *	allocate space for the thunk
 			 */
-		    tempnlp = tmpalloc( sizeof ( struct formalrtn ) ,
-				nl+TSTR, NOREG);
+		    tempnlp = tmpalloc(sizeof(struct formalrtn), NIL, NOREG);
 #		    ifdef OBJ
 			put(2 , O_LV | cbn << 8 + INDX ,
 				(int)tempnlp -> value[ NL_OFFS ] );
