@@ -8,7 +8,7 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	1.3 (Berkeley) %G%
+#	@(#)Makefile	1.4 (Berkeley) %G%
 #
 
 # The following is the telnet makefile for tn3270, using the shared telnet
@@ -32,7 +32,7 @@ SRCS=	commands.c main.c network.c ring.c \
 	tn3270.c utilities.c
 ALLHC=		${ALLH} ${SRCS}
 ALLPRINT =	${ALLHC}
-ALLSOURCE=	${ALLHC} Makefile
+ALLSOURCE=	${ALLHC} Makefile Makefile_ultrix
 OBJS=	commands.o main.o network.o ring.o sys_bsd.o sys_dos.o \
 	telnet.o terminal.o tn3270.o utilities.o
 
@@ -51,8 +51,8 @@ depend: FRC ${SRCS}
 lint: FRC ${SRCS}
 	lint ${CFLAGS} ${SRCS}
 
-tags: FRC ${ALLSOURCE}
-	ctags ${ALLSOURCE}
+tags: FRC ${ALLHC}
+	ctags ${ALLHC}
 
 print:	FRC ${ALLPRINT}
 	${PRINT} ${ALLPRINT}
