@@ -30,18 +30,17 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)systm.h	7.17 (Berkeley) 5/25/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         2       00158
- * --------------------         -----   ----------------------
- *
- * 11 Dec 92	Williams Jolitz		Fixed and tty handling
- * 25 Apr 93	Bruce Evans		Support for intr-0.1
- * 16 May 93	Rodney W. Grimes	Added prototype for spinwait
- *					Disabled prototype for wakeup, timeout
+ *	from: @(#)systm.h	7.17 (Berkeley) 5/25/91
+ *	$Id$
  */
+
+#ifndef _SYS_SYSTM_H_
+#define _SYS_SYSTM_H_
+
+extern struct sysent {		/* system call table */
+	int	sy_narg;	/* number of arguments */
+	int	(*sy_call)();	/* implementing function */
+} sysent[];
 
 /* Prototypes I needed to fix that kern_exit warning
     ---- this really the first step in the work that's 
@@ -52,7 +51,7 @@ void	cpu_exit __P((struct proc *));
 void    swtch __P((void));
 
 
-extern char *panicstr;		/* panic message */
+extern const char *panicstr;	/* panic message */
 extern char version[];		/* system version */
 extern char copyright[];	/* system copyright */
 
@@ -76,11 +75,6 @@ extern struct vnode *rootvp;	/* vnode equivalent to above */
 
 extern dev_t swapdev;		/* swapping device */
 extern struct vnode *swapdev_vp;/* vnode equivalent to above */
-
-extern struct sysent {		/* system call table */
-	int	sy_narg;	/* number of arguments */
-	int	(*sy_call)();	/* implementing function */
-} sysent[];
 
 extern int boothowto;		/* reboot flags, from console subsystem */
 #ifdef	KADB
@@ -106,11 +100,11 @@ int	selscan __P((struct proc *p, fd_set *ibits, fd_set *obits,
 int	seltrue __P((dev_t dev, int which, struct proc *p));
 void	selwakeup  __P((pid_t pid, int coll));
 
-void	panic __P((char *));
+__dead void	panic __P((const char *));
 void	tablefull __P((char *));
-void	addlog __P((const char *, ...));
+int	addlog __P((const char *, ...));
 void	log __P((int, const char *, ...));
-void	printf __P((const char *, ...));
+int	printf __P((const char *, ...));
 int	sprintf __P((char *buf, const char *, ...));
 void	ttyprintf __P((struct tty *, const char *, ...));
 
@@ -186,3 +180,4 @@ nonint	wakeup		__P((caddr_t chan));
  * Machine-dependent function declarations.
  */
 #include <machine/cpufunc.h>
+#endif /* _SYS_SYSTM_H_ */

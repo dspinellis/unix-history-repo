@@ -30,8 +30,12 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)msgbuf.h	7.5 (Berkeley) 5/2/91
+ *	from: @(#)msgbuf.h	7.5 (Berkeley) 5/2/91
+ *	$Id$
  */
+
+#ifndef _SYS_MSGBUF_H_
+#define _SYS_MSGBUF_H_
 
 #define	MSG_BSIZE	(4096 - 3 * sizeof(long))
 struct	msgbuf {
@@ -42,5 +46,8 @@ struct	msgbuf {
 	char	msg_bufc[MSG_BSIZE];	/* buffer */
 };
 #ifdef KERNEL
-struct	msgbuf *msgbufp;
+extern struct	msgbuf *msgbufp;
+extern int	msgbufmapped;
 #endif
+
+#endif /* !_SYS_MSGBUF_H_ */
