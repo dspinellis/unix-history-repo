@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_bmap.c	8.4 (Berkeley) %G%
+ *	@(#)ufs_bmap.c	8.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -79,10 +79,9 @@ ufs_bmaparray(vp, bn, bnp, ap, nump, runp)
 	struct mount *mp;
 	struct vnode *devvp;
 	struct indir a[NIADDR], *xap;
-	daddr_t *bap, daddr;
+	daddr_t daddr;
 	long metalbn;
-	int bb, error, maxrun, num, off;
-	struct vop_strategy_args vop_strategy_a;
+	int error, maxrun, num;
 
 	ip = VTOI(vp);
 	mp = vp->v_mount;

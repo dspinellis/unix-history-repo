@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)radix.c	8.1 (Berkeley) %G%
+ *	@(#)radix.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -357,13 +357,11 @@ rn_addroute(v_arg, n_arg, head, treenodes)
 	struct radix_node treenodes[2];
 {
 	caddr_t v = (caddr_t)v_arg, netmask = (caddr_t)n_arg;
-	register int j;
-	register caddr_t cp;
 	register struct radix_node *t, *x, *tt;
 	struct radix_node *saved_tt, *top = head->rnh_treetop;
 	short b = 0, b_leaf;
-	int vlen = *(u_char *)v, mlen, keyduplicated;
-	caddr_t cplim; unsigned char *maskp;
+	int mlen, keyduplicated;
+	caddr_t cplim;
 	struct radix_mask *m, **mp;
 
 	/*

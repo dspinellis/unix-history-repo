@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)udp_usrreq.c	8.2 (Berkeley) %G%
+ *	@(#)udp_usrreq.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -600,9 +600,7 @@ udp_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	void *newp;
 	size_t newlen;
 {
-	extern int ip_ttl;
-
-	/* all sysctl names at this level are terminal */
+	/* All sysctl names at this level are terminal. */
 	if (namelen != 1)
 		return (ENOTDIR);
 

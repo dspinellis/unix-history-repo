@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vnops.c	8.4 (Berkeley) %G%
+ *	@(#)ffs_vnops.c	8.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -206,7 +206,6 @@ ffs_fsync(ap)
 	} */ *ap;
 {
 	register struct vnode *vp = ap->a_vp;
-	struct inode *ip = VTOI(vp);
 	register struct buf *bp;
 	struct timeval tv;
 	struct buf *nbp;

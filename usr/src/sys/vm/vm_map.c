@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_map.c	8.1 (Berkeley) %G%
+ *	@(#)vm_map.c	8.2 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -198,7 +198,7 @@ vm_map_t vm_map_create(pmap, min, max, pageable)
 	boolean_t	pageable;
 {
 	register vm_map_t	result;
-	extern vm_map_t		kernel_map, kmem_map;
+	extern vm_map_t		kmem_map;
 
 	if (kmem_map == NULL) {
 		result = kmap_free;

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)umap_vnops.c	8.1 (Berkeley) %G%
+ *	@(#)umap_vnops.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -40,9 +40,7 @@ umap_bypass(ap)
 	} */ *ap;
 {
 	extern int (**umap_vnodeop_p)();  /* not extern, really "forward" */
-	int *mapdata, nentries ;
-	int *gmapdata, gnentries ;
-	struct ucred **credpp,*credp, *savecredp, *saveucredp, *savecompcredp ;
+	struct ucred **credpp,*credp, *savecredp, *savecompcredp;
 	struct ucred *compcredp;
 	register struct vnode **this_vp_p;
 	int error;

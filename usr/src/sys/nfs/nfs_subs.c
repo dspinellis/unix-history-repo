@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_subs.c	8.2 (Berkeley) %G%
+ *	@(#)nfs_subs.c	8.3 (Berkeley) %G%
  */
 
 /*
@@ -553,7 +553,6 @@ nfsm_strtmbuf(mb, bpos, cp, siz)
 nfs_init()
 {
 	register int i;
-	union nqsrvthead *lhp;
 
 	nfsrtt.pos = 0;
 	rpc_vers = txdr_unsigned(RPC_VER2);

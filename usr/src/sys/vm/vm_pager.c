@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_pager.c	8.4 (Berkeley) %G%
+ *	@(#)vm_pager.c	8.5 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -123,7 +123,6 @@ vm_pager_allocate(type, handle, size, prot, off)
 	vm_prot_t prot;
 	vm_offset_t off;
 {
-	vm_pager_t pager;
 	struct pagerops *ops;
 
 	ops = (type == PG_DFLT) ? dfltpagerops : pagertab[type];

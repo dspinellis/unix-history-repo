@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	8.6 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	8.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -688,8 +688,6 @@ relookup(dvp, vpp, cnp)
 	struct componentname *cnp;
 {
 	register struct vnode *dp = 0;	/* the directory we are searching */
-	struct vnode *tdp;		/* saved dp */
-	struct mount *mp;		/* mount table entry */
 	int docache;			/* == 0 do not cache last component */
 	int wantparent;			/* 1 => wantparent or lockparent flag */
 	int rdonly;			/* lookup read-only flag bit */
@@ -795,7 +793,6 @@ relookup(dvp, vpp, cnp)
 		panic ("relookup: symlink found.\n");
 #endif
 
-nextname:
 	/*
 	 * Check for read-only file systems.
 	 */
@@ -878,7 +875,6 @@ ufs_rename(ap)
 	struct timeval tv;
 	int doingdirectory = 0, oldparent = 0, newparent = 0;
 	int error = 0;
-	int fdvpneedsrele = 1, tdvpneedsrele = 1;
 	u_char namlen;
 
 #ifdef DIAGNOSTIC
