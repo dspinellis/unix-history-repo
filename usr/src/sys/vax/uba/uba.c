@@ -1,4 +1,4 @@
-/*	uba.c	6.3	85/01/18	*/
+/*	uba.c	6.4	85/03/19	*/
 
 #include "../machine/pte.h"
 
@@ -105,7 +105,7 @@ ubasetup(uban, bp, flags)
 	struct buf *bp;
 {
 	register struct uba_hd *uh = &uba_hd[uban];
-	register int temp;
+	int pfnum, temp;
 	int npf, reg, bdp;
 	unsigned v;
 	register struct pte *pte, *io;
@@ -168,9 +168,11 @@ ubasetup(uban, bp, flags)
 		pte = vtopte(rp, v);
 	io = &uh->uh_uba->uba_map[reg];
 	while (--npf != 0) {
-		if (pte->pg_pfnum == 0)
+		pfnum = pte->pg_pfnum;
+		if (pfnum == 0)
 			panic("uba zero uentry");
-		*(int *)io++ = pte++->pg_pfnum | temp;
+		pte++;
+		*(int *)io++ = pfnum | temp;
 	}
 	*(int *)io++ = 0;
 	return (ubinfo);
