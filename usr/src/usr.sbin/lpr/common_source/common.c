@@ -2,11 +2,37 @@
  * Copyright (c) 1983 Regents of the University of California.
  * All rights reserved.
  *
- * %sccs.include.redist.c%
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)common.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)common.c	5.9 (Berkeley) 8/6/92";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -23,60 +49,62 @@ static char sccsid[] = "@(#)common.c	5.8 (Berkeley) %G%";
 #include <stdio.h>
 #include <string.h>
 #include "lp.h"
+#include "pathnames.h"
 
 /*
  * Routines and data common to all the line printer functions.
  */
 
-int	DU;		/* daeomon user-id */
-int	MX;		/* maximum number of blocks to copy */
-int	MC;		/* maximum number of copies allowed */
+char	*AF;		/* accounting file */
+long	 BR;		/* baud rate if lp is a tty */
+char	*CF;		/* name of cifplot filter (per job) */
+char	*DF;		/* name of tex filter (per job) */
+long	 DU;		/* daeomon user-id */
+long	 FC;		/* flags to clear if lp is a tty */
+char	*FF;		/* form feed string */
+long	 FS;		/* flags to set if lp is a tty */
+char	*GF;		/* name of graph(1G) filter (per job) */
+long	 HL;		/* print header last */
+char	*IF;		/* name of input filter (created per job) */
+char	*LF;		/* log file for error messages */
+char	*LO;		/* lock file name */
 char	*LP;		/* line printer device name */
+long	 MC;		/* maximum number of copies allowed */
+long	 MX;		/* maximum number of blocks to copy */
+char	*NF;		/* name of ditroff filter (per job) */
+char	*OF;		/* name of output filter (created once) */
+char	*PF;		/* name of vrast filter (per job) */
+long	 PL;		/* page length */
+long	 PW;		/* page width */
+long	 PX;		/* page width in pixels */
+long	 PY;		/* page length in pixels */
+char	*RF;		/* name of fortran text filter (per job) */
+char    *RG;		/* resricted group */
 char	*RM;		/* remote machine name */
 char	*RP;		/* remote printer name */
-char	*LO;		/* lock file name */
-char	*ST;		/* status file name */
+long	 RS;		/* restricted to those with local accounts */
+long	 RW;		/* open LP for reading and writing */
+long	 SB;		/* short banner instead of normal header */
+long	 SC;		/* suppress multiple copies */
 char	*SD;		/* spool directory */
-char	*AF;		/* accounting file */
-char	*LF;		/* log file for error messages */
-char	*OF;		/* name of output filter (created once) */
-char	*IF;		/* name of input filter (created per job) */
-char	*RF;		/* name of fortran text filter (per job) */
+long	 SF;		/* suppress FF on each print job */
+long	 SH;		/* suppress header page */
+char	*ST;		/* status file name */
 char	*TF;		/* name of troff filter (per job) */
-char	*NF;		/* name of ditroff filter (per job) */
-char	*DF;		/* name of tex filter (per job) */
-char	*GF;		/* name of graph(1G) filter (per job) */
-char	*VF;		/* name of vplot filter (per job) */
-char	*CF;		/* name of cifplot filter (per job) */
-char	*PF;		/* name of vrast filter (per job) */
-char	*FF;		/* form feed string */
 char	*TR;		/* trailer string to be output when Q empties */
-short	SC;		/* suppress multiple copies */
-short	SF;		/* suppress FF on each print job */
-short	SH;		/* suppress header page */
-short	SB;		/* short banner instead of normal header */
-short	HL;		/* print header last */
-short	RW;		/* open LP for reading and writing */
-short	PW;		/* page width */
-short	PL;		/* page length */
-short	PX;		/* page width in pixels */
-short	PY;		/* page length in pixels */
-short	BR;		/* baud rate if lp is a tty */
-int	FC;		/* flags to clear if lp is a tty */
-int	FS;		/* flags to set if lp is a tty */
-int	XC;		/* flags to clear for local mode */
-int	XS;		/* flags to set for local mode */
-short	RS;		/* restricted to those with local accounts */
+char	*VF;		/* name of vplot filter (per job) */
+long	 XC;		/* flags to clear for local mode */
+long	 XS;		/* flags to set for local mode */
 
 char	line[BUFSIZ];
-char	pbuf[BUFSIZ/2];	/* buffer for printcap strings */
-char	*bp = pbuf;	/* pointer into pbuf for pgetent() */
+char	*bp;		/* pointer into printcap buffer. */
 char	*name;		/* program name */
 char	*printer;	/* printer name */
 			/* host machine name */
 char	host[MAXHOSTNAMELEN];
 char	*from = host;	/* client's machine name */
 int	sendtorem;	/* are we sending to a remote? */
+char	*printcapdb[2] = { _PATH_PRINTCAP, 0 };
 
 static int compar __P((const void *, const void *));
 
