@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)inet_addr.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)inet_addr.c	5.12 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -36,7 +36,7 @@ inet_addr(cp)
  * This replaces inet_addr, the return value from which
  * cannot distinguish between failure and a local broadcast address.
  */
-unsigned long
+int
 inet_aton(cp, addr)
 	register const char *cp;
 	struct in_addr *addr;

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)inet.h	5.8 (Berkeley) %G%
+ *	@(#)inet.h	5.9 (Berkeley) %G%
  */
 
 #ifndef _INET_H_
@@ -16,7 +16,7 @@
 
 __BEGIN_DECLS
 unsigned long	 inet_addr __P((const char *));
-unsigned long	 inet_aton __P((const char *, struct in_addr *));
+int		 inet_aton __P((const char *, struct in_addr *));
 unsigned long	 inet_lnaof __P((struct in_addr));
 struct in_addr	 inet_makeaddr __P((u_long , u_long));
 unsigned long	 inet_netof __P((struct in_addr));
