@@ -32,7 +32,16 @@
  * Name Resolution is specified in AH.
  */
 
-#define	NAME_RESOLUTION	0x81
+#define	NAME_RESOLUTION		0x81
+
+#if	defined(unix)
+/*
+ * In unix, we offer a service to allow the application to keep from
+ * having to poll us constantly.
+ */
+#define	PS_OR_OIA_MODIFIED	0x99
+
+#endif	/* defined(unix) */
 
 /*
  * Codes specified in AL for various services.
