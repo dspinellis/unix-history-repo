@@ -2,7 +2,7 @@
  * Copyright (c) 1980, 1991 The Regents of the University of California.
  * All rights reserved.
  *
- * %sccs.include.proprietary.c%
+ * %sccs.include.redist.c%
  */
 
 #ifndef lint
@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)w.c	5.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)w.c	5.29 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -85,6 +85,7 @@ struct nlist nl[] = {
 #define usage()	fprintf(stderr, "usage: %s: %s\n", program, USAGE)
 
 main(argc, argv)
+	int argc;
 	char **argv;
 {
 	register int i;
@@ -127,14 +128,9 @@ main(argc, argv)
 		}
 	argc -= optind;
 	argv += optind;
-	if (argc == 1) {
-		sel_user = argv[0];
-		argv++, argc--;
-	}
-	if (argc) {
-		usage();
-		exit(1);
-	}
+
+	if (*argv)
+		sel_user = *argv;
 
 	if (header && kvm_nlist(nl) != 0) {
 		error("can't get namelist");
@@ -170,10 +166,10 @@ main(argc, argv)
 			if (nl[X_CNTTY].n_value) {
 				struct tty cn_tty, *cn_ttyp;
 				
-				if (kvm_read(nl[X_CNTTY].n_value,
-					     &cn_ttyp, sizeof (cn_ttyp)) > 0) {
+				if (kvm_read((void *)nl[X_CNTTY].n_value,
+				    &cn_ttyp, sizeof(cn_ttyp)) > 0) {
 					(void)kvm_read(cn_ttyp, &cn_tty,
-						       sizeof (cn_tty));
+					    sizeof (cn_tty));
 					cn_dev = cn_tty.t_dev;
 				}
 				nl[X_CNTTY].n_value = 0;
@@ -199,8 +195,8 @@ main(argc, argv)
 		 * Print how long system has been up.
 		 * (Found by looking for "boottime" in kernel)
 		 */
-		(void)kvm_read((off_t)nl[X_BOOTTIME].n_value, &boottime, 
-			sizeof (boottime));
+		(void)kvm_read((void *)nl[X_BOOTTIME].n_value, &boottime, 
+		    sizeof (boottime));
 		uptime = now - boottime.tv_sec;
 		uptime += 30;
 		days = uptime / (60*60*24);
@@ -340,20 +336,6 @@ prttime(tim, tail)
 
 #include <varargs.h>
 
-warning(va_alist)
-	va_dcl
-{
-	char *fmt;
-	va_list ap;
-
-	fprintf(stderr, "%s: warning: ", program);
-	va_start(ap);
-	fmt = va_arg(ap, char *);
-	(void) vfprintf(stderr, fmt, ap);
-	va_end(ap);
-	fprintf(stderr, "\n");
-}
-
 error(va_alist)
 	va_dcl
 {
@@ -366,19 +348,4 @@ error(va_alist)
 	(void) vfprintf(stderr, fmt, ap);
 	va_end(ap);
 	fprintf(stderr, "\n");
-}
-
-syserror(va_alist)
-	va_dcl
-{
-	char *fmt;
-	va_list ap;
-	extern errno;
-
-	fprintf(stderr, "%s: ", program);
-	va_start(ap);
-	fmt = va_arg(ap, char *);
-	(void) vfprintf(stderr, fmt, ap);
-	va_end(ap);
-	fprintf(stderr, ": %s\n", strerror(errno));
 }
