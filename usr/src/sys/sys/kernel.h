@@ -1,4 +1,4 @@
-/*	kernel.h	6.1	83/07/29	*/
+/*	kernel.h	6.2	85/06/07	*/
 
 /*
  * Global variables for the kernel
@@ -8,7 +8,7 @@ long	rmalloc();
 
 /* 1.1 */
 long	hostid;
-char	hostname[32];
+char	hostname[MAXHOSTNAMELEN];
 int	hostnamelen;
 
 /* 1.2 */
