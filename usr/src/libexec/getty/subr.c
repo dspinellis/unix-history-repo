@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)subr.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)subr.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -385,6 +385,7 @@ struct	portselect {
 	{ "B2400",	"std.2400" },
 	{ "B4800",	"std.4800" },
 	{ "B9600",	"std.9600" },
+	{ "B19200",	"std.19200" },
 	{ 0 }
 };
 

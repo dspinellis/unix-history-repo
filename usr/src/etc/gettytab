@@ -2,7 +2,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)gettytab	5.4 (Berkeley) %G%
+#	@(#)gettytab	5.5 (Berkeley) %G%
 #
 #
 # Most of the table entries here are just copies of the
@@ -46,6 +46,8 @@ f|std.1200|1200-baud:\
 	:sp#4800:ht:
 2|std.9600|9600-baud:\
 	:sp#9600:
+g|std.19200|19200-baud:\
+	:sp#19200:
 
 #
 # Dial in rotary tables, speed selection via 'break'
@@ -109,8 +111,8 @@ r|P1200|Plugboard-1200:\
 #
 # XXXX Port selector
 #
-s|Port Selector:\
-	:ps:sp#1200:
+s|DSW|Port Selector:\
+	:ps:sp#2400:
 
 #
 # Auto-baud speed detect entry for Micom 600.
