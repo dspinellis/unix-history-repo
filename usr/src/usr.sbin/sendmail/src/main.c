@@ -3,7 +3,7 @@
 # include <sgtty.h>
 # include "sendmail.h"
 
-SCCSID(@(#)main.c	4.16		%G%);
+SCCSID(@(#)main.c	4.17		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -131,8 +131,8 @@ main(argc, argv, envp)
 			if (ConfFile[0] == '\0')
 				ConfFile = "sendmail.cf";
 			safecf = FALSE;
-			setuid(getruid());
 			setgid(getrgid());
+			setuid(getruid());
 			break;
 		}
 		else if (strncmp(p, "-bz", 3) == 0)
@@ -164,7 +164,7 @@ main(argc, argv, envp)
 # endif V6
 
 # ifdef LOG
-	openlog("sendmail", LOG_PID);
+	openlog("sendmail", LOG_PID, 0);
 # endif LOG
 	errno = 0;
 	from = NULL;
@@ -350,8 +350,8 @@ main(argc, argv, envp)
 	{
 	  case MD_FREEZE:
 		/* this is critical to avoid forgeries of the frozen config */
-		setuid(getuid());
 		setgid(getgid());
+		setuid(getuid());
 
 		/* freeze the configuration */
 		freeze(FreezeFile);
