@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dumpmain.c	1.3 (UKC) %G%	5.6 (Berkeley) 2/23/87";
+static char sccsid[] = "@(#)dumpmain.c	1.4 (UKC) %G%	5.6 (Berkeley) 2/23/87";
 #endif not lint
 
 #include "dump.h"
@@ -344,8 +344,8 @@ main(argc, argv)
 	putitime();
 #ifndef RDUMP
 	if (!pipeout) {
-		close(to);
 		rewind();
+		close(to);
 	}
 #else
 	tflush(1);
