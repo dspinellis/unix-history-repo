@@ -76,15 +76,11 @@ summary of the changes in that release.
 		turns out that the UK ``Grey Book'' protocols require
 		that functionality.
 	Fix a fix in previous release -- if gethostname and gethostbyname
-		return a name without dots, and if a DNS lookup of that
-		name fails, wait one minute and try again even if DNS
-		not specified in the config file -- the problem is that
-		this code is executed before the config file is read.
-		This can result in an extra 60 second delay on startup
-		if (1) you have DNS compiled in, (2) you are not running
-		DNS, (3) your system hostname (as returned by hostname(1))
-		has no dot, AND (4) the canonical name listed in /etc/hosts
-		or your NIS map has no dot.
+		return a name without dots, and if an attempt to canonify
+		that name fails, wait one minute and try again.  This can
+		result in an extra 60 second delay on startup if your system
+		hostname (as returned by hostname(1)) has no dot and no names
+		listed in /etc/hosts or your NIS map have a dot.
 	Check for proper domain name on HELO and EHLO commands per
 		RFC 1123 section 5.2.5.  Problem noted by Thomas Dwyer III
 		of Michigan Technological University.
@@ -381,8 +377,6 @@ summary of the changes in that release.
 		    128.32.149.68	mammoth mammoth.CS.Berkeley.EDU
 		this change will use the second name as the canonical
 		machine name instead of the initial, unqualified name.
-		This heuristic is only used for finding your own name on
-		startup, when the system may not be fully configured yet.
 	Change dequote map to replace spaces in quoted text with a value
 		indicated by the -s flag on the dequote map definition.
 		For example, ``Mdequote dequote -s_'' will change
@@ -513,6 +507,8 @@ summary of the changes in that release.
 		an X-Authentication-Warning: will be added.  This really
 		just creates new entries in class 't', so "Ft/file/name"
 		can be used to read trusted user names from a file.
+		Trusted users are also allowed to execute programs even
+		if they have a shell that isn't in /etc/shells.
 	Improve NEWDB alias file rebuilding so it will create them
 		properly if they do not already exist.  This had been
 		a MAYBENEXTRELEASE feature in 8.6.9.
@@ -746,7 +742,8 @@ summary of the changes in that release.
 		all output files) has been moved to 52.100.  This makes
 		things more consistent (flags below .100 don't change
 		semantics) and separates out the backgrounding so that
-		IBM's SRC can be used.
+		it doesn't happen automatically on other unrelated debugging
+		flags.
 	If -t is used but no addresses are found in the header, give an
 		error message rather than just doing nothing.  Fix from
 		Motonori Nakamura.
@@ -769,6 +766,13 @@ summary of the changes in that release.
 	Add "-m" flag to makesendmail script -- this tells you what object
 		directory and Makefile it will use, but doesn't actually do
 		the make.
+	Do some additional checking on the contents of the qf file to try
+		to detect attacks against the qf file.  In particular,
+		abort on any line beginning "From ", and add an "end of
+		file" line -- any data after that line is prohibited.
+	If /etc/sendmail.cf exists, use it regardless of the compile-time
+		setting of _PATH_SENDMAILCF.  This allows sendmail 8 to
+		have consistent install instructions.
 	PORTABILITY FIXES:
 		Solaris 2 from Rob McMahon <cudcv@csv.warwick.ac.uk>.
 		System V Release 4 from Motonori Nakamura of Ritsumeikan
@@ -1014,6 +1018,7 @@ summary of the changes in that release.
 		cf/mailer/procmail.m4
 		cf/ostype/amdahl-uts.m4
 		cf/ostype/hpux10.m4
+		cf/ostype/isc4.1.m4
 		cf/ostype/ptx2.m4
 		cf/ostype/unknown.m4
 		contrib/bsdi.mc
@@ -1024,6 +1029,7 @@ summary of the changes in that release.
 		smrsh/smrsh.c
 		src/Makefiles/Makefile.CSOS
 		src/Makefiles/Makefile.EWS-UX_V
+		src/Makefiles/Makefile.HP-UX.10
 		src/Makefiles/Makefile.IRIX.5.x
 		src/Makefiles/Makefile.IRIX64
 		src/Makefiles/Makefile.ISC
