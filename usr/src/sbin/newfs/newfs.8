@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)newfs.8	6.3 (Berkeley) %G%
+.\"	@(#)newfs.8	6.4 (Berkeley) %G%
 .\"
 .TH NEWFS 8 ""
 .UC 5
@@ -13,67 +13,36 @@ newfs \- construct a new file system
 [
 .B \-N
 ] [
-.B \-v
-] [
-.B \-n
-] [
 .B mkfs-options
 ]
-.B special disk-type
+.B special
 .SH DESCRIPTION
 .I Newfs
-is a ``friendly'' front-end to the
+replaces the more obtuse
 .IR mkfs (8)
 program.
+Before running 
+.IR newfs ,
+the disk must be labeled using 
+.IR disklabel (8).
 .I Newfs
-will look up the type of disk a file system is
-being created on in the disk description
-file
-.IR /etc/disktab ,
-calculate the appropriate
-parameters to use in calling
-.IR mkfs ,
-then build the file system by forking 
-.I mkfs 
-and, if the file system is a root partition,
-install the necessary bootstrap programs
-in the initial 8 sectors of the device.
-The
-.B \-n
-option prevents the 
-bootstrap programs from being installed.
+builds a file system on the specified special device
+basing its defaults on the information in the disk label.
+Typically the defaults are reasonable, however
+.I newfs
+has numerous options to allow the defaults to be selectively overridden.
 The
 .B \-N
 option causes the file system parameters to be printed out
 without actually creating the file system.
 .PP
-If the 
-.B \-v
-option is supplied, 
-.I newfs
-will print out its actions, including
-the parameters passed to
-.IR mkfs .
-.PP
-Options which may be used to override default
-parameters passed to
-.I mkfs
-are:
-.TP 10
-.B \-s size
-The size of the file system in sectors.
+The following options define the general layout policies.
 .TP 10
 .B \-b block-size
 The block size of the file system in bytes.  
 .TP 10
 .B \-f frag-size
 The fragment size of the file system in bytes.
-.TP 10
-.B \-t #tracks/cylinder
-.TP 10
-.B \-c #cylinders/group
-The number of cylinders per cylinder group in a file system.
-The default value used is 16.
 .TP 10
 .B \-m free space %
 The percentage of space reserved from normal users; the minimum
@@ -87,30 +56,80 @@ the default is to optimize for space;
 if the value of minfree greater than or equal to 10%,
 the default is to optimize for time.
 .TP 10
-.B \-r revolutions/minute
-The speed of the disk in revolutions per minute (normally 3600).
-.TP 10
-.B \-S sector-size
-The size of a sector in bytes (almost never anything but 512).
-.TP 10
 .B \-i number of bytes per inode
 This specifies the density of inodes in the file system.
 The default is to create an inode for each 2048 bytes of data space.
 If fewer inodes are desired, a larger number should be used;
 to create more inodes a smaller number should be given.
-.SH FILES
-/etc/disktab	for disk geometry and file system partition information 
-.br
-/etc/mkfs	to actually build the file system
-.br
-/usr/mdec	for boot strapping programs
+.TP 10
+.B \-c #cylinders/group
+The number of cylinders per cylinder group in a file system.
+The default value used is 16.
+.TP 10
+.B \-s size
+The size of the file system in sectors.
+.PP
+The following options override the standard sizes for the disk geometry. 
+Their default values are taken from the disk label.
+Changing these defaults is useful only when using
+.I newfs
+to build a file system whose raw image will eventually be used
+on a different type of disk than the one on which it is initially
+created (for example on a write-once disk).
+.TP 10
+.B \-r revolutions/minute
+The speed of the disk in revolutions per minute.
+.TP 10
+.B \-S sector-size
+The size of a sector in bytes (almost never anything but 512).
+.TP 10
+.B \-d sectors/track
+The number of sectors/track available for data
+allocation by the file system.
+This does not include sectors reserved at the end of each track for
+bad block replacement (see \fB\-p\fP below).
+.TP 10
+.B \-t #tracks/cylinder
+The number of tracks/cylinder available for data
+allocation by the file system.
+.TP 10
+.B \-p spare sectors per track
+Spare sectors (bad sector replacements) are physical sectors
+that occupy space at the end of each track.
+They are not counted as part of the sectors/track (\fB\-d\fP)
+since they are not available to the file system for data allocation.
+.TP 10
+.B \-a spare sectors per cylinder
+Spare sectors (bad sector replacements) are physical sectors
+that occupy space at the end of the last track in the cylinder.
+They are deducted from the sectors/track (\fB\-d\fP)
+of the last track of each cylinder
+since they are not available to the file system for data allocation.
+.TP 10
+.B \-l hardware sector interleave
+Used to describe perturbations in the media format to
+compensate for a slow controller.
+Interleave is physical sector interleave on each track,
+specified as the denominator of the ratio:
+.nf
+	sectors read / sectors passed over
+.fi
+Thus an interleave of 1/1 implies contiguous layout, while 1/2
+implies logical sector 0 is separated by one sector from logical
+sector 1.
+.TP 10
+.B \-k sector 0 skew, per track
+Used to describe perturbations in the media format to
+compensate for a slow controller.
+Track skew is the offset of sector 0 on track N
+relative to sector 0 on track N-1 on the same cylinder.
 .SH "SEE ALSO"
 disktab(5),
 fs(5),
+disklabel(8),
 diskpart(8),
 fsck(8),
 format(8),
-mkfs(8),
 tunefs(8)
 .PP
 M. McKusick, W. Joy, S. Leffler, R. Fabry,
@@ -118,5 +137,3 @@ M. McKusick, W. Joy, S. Leffler, R. Fabry,
 \fIACM Transactions on Computer Systems 2\fP, 3.
 pp 181-197, August 1984.
 (reprinted in the System Manager's Manual, SMM:14)
-.SH BUGS
-Should figure out the type of the disk without the user's help.
