@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsnode.h	7.24 (Berkeley) %G%
+ *	@(#)nfsnode.h	7.25 (Berkeley) %G%
  */
 
 /*
@@ -51,12 +51,13 @@ struct nfsnode {
 			time_t	un_expiry; /* Lease expiry time */
 			struct	nfsnode *un_tnext; /* Nqnfs timer chain */
 			struct	nfsnode *un_tprev;
+			long	un_spare; /* pad to 8-byte boundary */
 		} un_nqnfs;
 	} n_un;
 	struct	sillyrename n_silly;	/* Silly rename struct */
 	struct	timeval n_atim;		/* Special file times */
 	struct	timeval n_mtim;
-	long	n_spare[5];		/* Up to a power of 2 */
+	long	n_spare[4];		/* Up to a power of 2 */
 };
 
 #define	n_mtime		n_un.un_nfs.un_mtime
