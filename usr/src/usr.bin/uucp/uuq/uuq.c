@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uuq.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)uuq.c	4.4 (Berkeley) %G%";
 #endif
 
 /*
@@ -62,7 +62,7 @@ int lflag;
 
 char *malloc(), *calloc();
 float atof();
-float baudrate = 800.;
+float baudrate = 1200.;
 char Username[BUFSIZ];
 char Filename[BUFSIZ];
 int Maxulen = 0;
@@ -87,8 +87,8 @@ char **argv;
 			break;
 		case 's':
 			sysname = &argv[0][2];
-			if (strlen(sysname) > 7)
-				sysname[7] = '\0';
+			if (strlen(sysname) > SYSNSIZE)
+				sysname[SYSNSIZE] = '\0';
 			break;
 		case 'u':
 			user = &argv[0][2];
@@ -113,7 +113,8 @@ char **argv;
 	}
 
 	subchdir(Spool);
-	baudrate *= 6.; 	/* convert to chars/minute */
+	baudrate *= 0.7;	/* reduce speed because of protocol overhead */
+	baudrate *= 6.; 	/* convert to chars/minute (60/10) */
 	gather();
 	nsys = 0;
 	for (sp = syshead; sp; sp = sp->s_sysp) {
@@ -193,7 +194,7 @@ gather()
 	 * Find all the spool files in the spooling directory
 	 */
 	if ((df = opendir(subdir(Spool, CMDPRE))) == NULL) {
-		fprintf(stderr, "can't examine spooling area\n");
+		fprintf(stderr, "can't examine spooling area");
 		exit(1);
 	}
 	for (;;) {
