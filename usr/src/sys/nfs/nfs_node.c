@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_node.c	7.10 (Berkeley) %G%
+ *	@(#)nfs_node.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -225,35 +225,6 @@ nfs_reclaim(vp)
 		np->n_flag |= NLOCKED;
 		nfs_blkflush(vp, (daddr_t)0, np->n_size, TRUE);
 	}
-	return (0);
-}
-
-/*
- * Remove any nfsnodes in the nfsnode cache belonging to mount.
- *
- * There should not be any active ones, return error if any are found
- * (nb: this is a user error, not a system err).
- */
-nfs_nflush(mntp)
-	struct mount *mntp;
-{
-	register struct vnode *nvp, *vp;
-	int busy = 0;
-
-	for (vp = mntp->m_mounth; vp; vp = nvp) {
-		nvp = vp->v_mountf;
-		if (vp->v_count) {
-			busy++;
-			continue;
-		}
-		/*
-		 * With v_count == 0, all we need to do is clear out the
-		 * vnode data structures and we are done.
-		 */
-		vgone(vp);
-	}
-	if (busy)
-		return (EBUSY);
 	return (0);
 }
 
