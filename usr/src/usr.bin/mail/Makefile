@@ -1,7 +1,7 @@
 #
 # Unix version 7.
 #
-# Sccs Id = "@(#)Makefile	2.5 %G%";
+# Sccs Id = "@(#)Makefile	2.6 %G%";
 #
 
 CFLAGS=-O -DVMUNIX -DV7
@@ -58,8 +58,8 @@ $S:
 
 srcs:	$S
 
-tags:
-	${CTAGS} *.c;
+tags:	$(SRCS)
+	${CTAGS} $(SRCS);
 
 clean:
 	$(RM) -f *.o
