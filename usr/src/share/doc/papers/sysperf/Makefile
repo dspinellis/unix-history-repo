@@ -1,6 +1,7 @@
-#	@(#)Makefile	1.4 (Berkeley) %G%
+#	@(#)Makefile	1.5 (Berkeley) %G%
 
 DIR=	papers/sysperf
+MACROS= -ms
 SRCS=	0.t 1.t 2.t 3.t 4.t 5.t 6.t 7.t
 EXTRA=	a1.t a2.t
 OBJS=	paper.tmp appendix.tmp
