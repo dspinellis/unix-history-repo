@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ndbm.3	6.3 (Berkeley) %G%
+.\"	@(#)ndbm.3	6.4 (Berkeley) %G%
 .\"
 .TH NDBM 3X  ""
 .UC 6
@@ -64,6 +64,10 @@ int dbm_clearerr(db)
 These functions maintain key/content pairs in a data base.
 The functions will handle very large (a billion blocks)
 databases and will access a keyed item in one or two file system accesses.
+An advantage over the
+.IR dbm (3x)
+package
+is that these functions can have more than one database open at a time.
 .PP
 .IR Key s
 and
@@ -133,6 +137,14 @@ Routines that return a
 .I datum
 indicate errors with a null (0)
 .I dptr.
+If
+.IR dbm_store
+called with a
+.I flags
+value of
+.B DBM_INSERT
+finds an existing entry with the same key
+it returns 1.
 .SH BUGS
 The `.pag' file will contain holes so that its apparent size is about
 four times its actual content.  Older UNIX systems may create real
