@@ -1,4 +1,4 @@
-/*	@(#)uucp.h	5.17	%G%	*/
+/*	@(#)uucp.h	5.18	%G%	*/
 
 #include <stdio.h>
 
@@ -109,8 +109,12 @@
  * If you are just running 4.2bsd, define BSD4_2
  * If you are running the BRL version of 4.2BSD define BRL4_2, NOT BSD4_3
  */
+#ifndef BSD4_3
 #define BSD4_3 	/**/
+#endif
+#ifndef BSD4_2
 #define BSD4_2 	/**/
+#endif
 /*#define BRL4_2 /**/
 
 #if defined(BRL4_2) && !defined(BSD4_2)
