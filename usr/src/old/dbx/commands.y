@@ -5,7 +5,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)commands.y	5.3 (Berkeley) %G%
+ *	@(#)commands.y	5.4 (Berkeley) %G%
  */
 /*
  * Yacc grammar for debugger commands.
@@ -656,7 +656,7 @@ list_command:
 {
 	$$ = build(O_LIST,
 	    build(O_LCON, (long) cursrcline),
-	    build(O_LCON, (long) cursrcline + 9)
+	    build(O_LCON, (long) cursrcline + srcwindowlen() - 1)
 	);
 }
 |
@@ -672,7 +672,7 @@ list_command:
 |
     LIST symbol
 {
-	$$ = build(O_LIST, $2);
+	$$ = build(O_LIST, $2, $2);
 }
 ;
 line_number:
