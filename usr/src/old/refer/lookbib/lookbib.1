@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)lookbib.1	5.1 (Berkeley) %G%
+.\"	@(#)lookbib.1	6.1 (Berkeley) %G%
 .\"
-.TH LOOKBIB 1 "18 July 1983"
+.TH LOOKBIB 1 ""
 .UC 5
 .SH NAME
 indxbib, lookbib \- build inverted index for a bibliography, find references in a bibliography
@@ -13,7 +13,9 @@ indxbib, lookbib \- build inverted index for a bibliography, find references in 
 database  ...
 .br
 .B lookbib
-database
+[
+.B \-n
+] database
 .SH DESCRIPTION
 .I Indxbib
 makes an inverted index to the named
@@ -58,6 +60,10 @@ to find sets of bibliographic references.
 It reads keywords typed after the ``>'' prompt on the terminal,
 and retrieves records containing all these keywords.
 If nothing matches, nothing is returned except another ``>'' prompt.
+.PP
+.I Lookbib
+will ask if you need instructions, and will print some brief information if
+you reply ``y''.  The ``\-n'' flag turns off the prompt for instructions.
 .PP
 It is possible to search multiple databases,
 as long as they have a common index made by
