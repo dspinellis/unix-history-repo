@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_timer.h	6.4 (Berkeley) %G%
+ *	@(#)tcp_timer.h	6.5 (Berkeley) %G%
  */
 
 /*
@@ -58,6 +58,8 @@
 #define	TCPTV_MSL	( 15*PR_SLOWHZ)		/* max seg lifetime */
 #define	TCPTV_SRTTBASE	0			/* base roundtrip time;
 						   if 0, no idea yet */
+#define	TCPTV_SRTTDFLT	(  5*PR_SLOWHZ)		/* assumed RTT if no info */
+
 #define	TCPTV_KEEP	( 45*PR_SLOWHZ)		/* keep alive - 45 secs */
 #define	TCPTV_PERSMIN	(  5*PR_SLOWHZ)		/* retransmit persistance */
 
@@ -83,7 +85,7 @@ char *tcptimers[] =
  * each time a new value of tp->t_rtt is available.  The initial
  * retransmit timeout is then based on
  *    tp->t_timer[TCPT_REXMT] = tcp_beta * tp->t_srtt;
- * limited, however to be at least TCPTV_REXMTLO and at most TCPTV_REXMTHI.
+ * limited, however to be at least TCPTV_MIN and at most TCPTV_MAX.
  */
 float	tcp_alpha, tcp_beta;
 
