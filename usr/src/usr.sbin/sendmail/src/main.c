@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.65 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.66 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -79,10 +79,8 @@ bool		Warn_Q_option = FALSE;	/* warn about Q option use */
 **	This allows "ps" listings to give more useful information.
 */
 
-# ifdef SETPROCTITLE
 char		**Argv = NULL;		/* pointer to argument vector */
 char		*LastArgv = NULL;	/* end of argv */
-# endif /* SETPROCTITLE */
 
 static void	obsolete();
 
@@ -278,7 +276,6 @@ main(argc, argv, envp)
 	UserEnviron[j] = NULL;
 	environ = UserEnviron;
 
-# ifdef SETPROCTITLE
 	/*
 	**  Save start and extent of argv for setproctitle.
 	*/
@@ -288,7 +285,6 @@ main(argc, argv, envp)
 		LastArgv = envp[i - 1] + strlen(envp[i - 1]);
 	else
 		LastArgv = argv[argc - 1] + strlen(argv[argc - 1]);
-# endif /* SETPROCTITLE */
 
 	if (setsignal(SIGINT, SIG_IGN) != SIG_IGN)
 		(void) setsignal(SIGINT, intsig);
