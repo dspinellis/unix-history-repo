@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.118 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.119 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -714,9 +714,7 @@ main(argc, argv, envp)
 	if (warn_C_flag)
 		auth_warning(CurEnv, "Processed by %s with -C %s",
 			RealUserName, ConfFile);
-	if (warn_f_flag != '\0' &&
-	    ((st = stab(RealUserName, ST_CLASS, ST_FIND)) == NULL ||
-	     !bitnset('t', st->s_class)))
+	if (warn_f_flag != '\0' && !wordinclass(RealUserName, 't'))
 		auth_warning(CurEnv, "%s set sender to %s using -%c",
 			RealUserName, from, warn_f_flag);
 	if (Warn_Q_option)
