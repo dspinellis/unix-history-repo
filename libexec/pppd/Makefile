@@ -1,22 +1,24 @@
-#
-#	$Id: Makefile,v 1.1 1993/08/27 02:11:39 rgrimes Exp $
-#
-PROG=	pppd
-MAN8=	pppd.8
-SRCS=	main.c magic.c fsm.c lcp.c ipcp.c upap.c logwtmp.c chap.c md5.c
-MD5SRCS = md5driver.c
+#	$Id: Makefile.bsd,v 1.3 1993/12/15 04:59:26 paulus Exp $
 
 DEBUG_FLAGS = -DDEBUGFSM -DDEBUGLCP -DDEBUGIPCP -DDEBUGUPAP -DDEBUGCHAP \
 	-DDEBUGMAIN
+CFLAGS+= ${DEBUG_FLAGS}
 
-CFLAGS=	-DKVMLIB -DPPP ${DEBUG_FLAGS}
+PROG=	pppd
+SRCS=	main.c magic.c fsm.c lcp.c ipcp.c upap.c chap.c md5.c \
+	auth.c options.c sys-bsd.c
+MAN8=	pppd.8
+BINMODE=4555
+BINGRP=	daemon
+BINOWN=	root
+
+.if exists(/usr/lib/libcrypt.a)
+DPADD+= ${LIBCRYPT}
+LDADD+= -lcrypt
+.endif
 
 DPADD+=	${LIBUTIL}
 LDADD+=	-lutil
-
-BINOWN=		root
-BINGRP=		daemon
-BINMODE=	4555
 
 md5driver: md5.h md5.o md5driver.o
 	$(CC) $(CFLAGS) -o md5driver md5driver.o md5.o

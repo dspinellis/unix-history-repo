@@ -17,6 +17,10 @@
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
+#ifndef lint
+static char rcsid[] = "$Id: magic.c,v 1.1 1993/11/11 03:54:25 paulus Exp $";
+#endif
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/time.h>
