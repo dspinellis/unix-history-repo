@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.5 (Berkeley) %G%
+.\"	@(#)op.me	6.6 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,9 +40,9 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.5
+Version 6.6
 .sp
-For Sendmail Version 6.7
+For Sendmail Version 6.11
 .)l
 .sp 2
 .pp
@@ -2554,6 +2554,12 @@ The class
 is set to be the set of all names
 this host is known by.
 This can be used to match local hostnames.
+.pp
+The class
+.b $=k
+is set to be the same as
+.b $k ,
+that is, the UUCP node name.
 .sh 3 "M \*- define mailer"
 .pp
 Programs and interfaces to mailers
@@ -5327,7 +5333,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.5
+.\"Version 6.6
 .\".ce 0
 .pn 2
 .bp
