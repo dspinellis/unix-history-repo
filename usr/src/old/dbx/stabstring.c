@@ -5,10 +5,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)stabstring.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)stabstring.c	5.3 (Berkeley) %G%";
 #endif not lint
 
-static char rcsid[] = "$Header: stabstring.c,v 1.4 87/12/01 01:41:33 donn Exp $";
+static char rcsid[] = "$Header: stabstring.c,v 1.5 88/04/01 18:13:58 donn Exp $";
 
 /*
  * String information interpretation
@@ -146,13 +146,15 @@ private Char *curchar;
 
 #define makeParameter(s, n, cl, off) \
 { \
-    newSym(s, n); \
-    s->storage = STK; \
-    s->class = cl; \
-    s->symvalue.offset = off; \
+    if ((s = lookup(n)) == nil or s->block != curblock) { \
+	newSym(s, n); \
+	s->storage = STK; \
+	s->class = cl; \
+	s->symvalue.offset = off; \
+	getType(s); \
+    } \
     curparam->chain = s; \
     curparam = s; \
-    getType(s); \
 }
 
 public entersym (name, np)
@@ -292,7 +294,7 @@ struct nlist *np;
 		 * Bug in SGI C compiler -- generates stab offset
 		 * for parameters with size added in.
 		 */
-		if (curlang == findlanguage(".c")) {
+		if (s->storage == STK and curlang == findlanguage(".c")) {
 		    s->symvalue.offset -= size(s);
 		}
 #	    endif
