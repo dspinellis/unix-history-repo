@@ -24,7 +24,7 @@
 .\"			to provide variant functions.
 .\"		---	an internal macro.
 .\"
-.\"	@(#)tmac.orig_me	1.4	%G%
+.\"	@(#)tmac.orig_me	1.5	%G%
 .\"
 .if !\n(.V .tm You are using the wrong version of NROFF/TROFF!!
 .if !\n(.V .tm This macro package works only on the version seven
@@ -162,6 +162,7 @@
 .rn |6 |2
 .rn |7 |3
 .nr _w 0			\" reset max footnote width
+.nr ?W 0			\" no wide floats this page (yet)
 .nr ?I 1
 .\" begin actual header stuff
 .ev 2
@@ -200,7 +201,7 @@
 .if \n@>3 .tm >> @n nl=\\n(nl %=\\n% ?f=\\n(?f ?o=\\n(?o
 .if \\n(bm<=0 \
 .	nr bm \\n(.Vu
-.if \\n(_w<=\\n($l \
+.if (\\n(_w<=\\n($l)&(\\n(?W=0) \
 \{\
 .	nr _b (\\n(ppu*\\n($ru)/2u	\" compute fudge factor (must be < 1P)
 .	if \\n(_bu>((\\n(bmu-\\n(fmu-(\\n(tpu*\\n($ru))/2u) \
