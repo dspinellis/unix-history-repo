@@ -106,7 +106,7 @@ dev_pager_alloc(handle, size, prot, foff)
 	vm_prot_t prot;
 	vm_offset_t foff;
 {
-	dev_t dev;
+	unsigned long dev;
 	vm_pager_t pager;
 	int (*mapfunc)();
 	vm_object_t object;
@@ -129,8 +129,8 @@ dev_pager_alloc(handle, size, prot, foff)
 	/*
 	 * Make sure this device can be mapped.
 	 */
-	dev = ((struct vnode *)handle)->v_rdev;
-	mapfunc = cdevsw[major(dev)].d_mmap;
+	dev = (u_long)handle;
+	mapfunc = cdevsw[major((dev_t)dev)].d_mmap;
 	if (mapfunc == NULL || mapfunc == enodev || mapfunc == nullop)
 		return(NULL);
 
@@ -257,7 +257,7 @@ dev_pager_getpage(pager, m, sync)
 	register vm_object_t object;
 	vm_offset_t offset, paddr;
 	vm_page_t page;
-	dev_t dev;
+	unsigned long dev;
 	int (*mapfunc)(), prot;
 
 #ifdef DEBUG
@@ -266,15 +266,15 @@ dev_pager_getpage(pager, m, sync)
 #endif
 
 	object = m->object;
-	dev = (dev_t)((struct vnode *)pager->pg_handle)->v_rdev;
+	dev = (u_long)pager->pg_handle;
 	offset = m->offset + object->paging_offset;
 	prot = PROT_READ;	/* XXX should pass in? */
-	mapfunc = cdevsw[major(dev)].d_mmap;
-#ifdef DIAGNOSTIC
+	mapfunc = cdevsw[major((dev_t)dev)].d_mmap;
+
 	if (mapfunc == NULL || mapfunc == enodev || mapfunc == nullop)
 		panic("dev_pager_getpage: no map function");
-#endif
-	paddr = pmap_phys_address((*mapfunc)(dev, (int)offset, prot));
+
+	paddr = pmap_phys_address((*mapfunc)((dev_t)dev, (int)offset, prot));
 #ifdef DIAGNOSTIC
 	if (paddr == -1)
 		panic("dev_pager_getpage: map function returns error");
@@ -335,21 +335,26 @@ dev_pager_getfake(paddr)
 
 	if (queue_empty(&dev_pager_fakelist)) {
 		m = (vm_page_t)malloc(PAGE_SIZE, M_VMPGDATA, M_WAITOK);
+		/* bzero isn't really necessary, but we're being extra tidy */
+		bzero((caddr_t)m, PAGE_SIZE);
 		for (i = PAGE_SIZE / sizeof(*m); i > 0; i--) {
 			queue_enter(&dev_pager_fakelist, m, vm_page_t, pageq);
 			m++;
 		}
 	}
 	queue_remove_first(&dev_pager_fakelist, m, vm_page_t, pageq);
+
+	/* Initialize all fields to zero */
+	bzero((caddr_t)m, sizeof(*m));
+
 #if 0
 	m->flags = PG_BUSY | PG_CLEAN | PG_FAKE | PG_FICTITIOUS;
 #endif
-	m->busy = 1;
-	m->clean = 1;
-	m->fake = 1;
-	m->fictitious = 1;
-	m->phys_addr = paddr;
+
+	m->busy = m->clean = m->fake = m->fictitious = TRUE;
 	m->wire_count = 1;
+	m->phys_addr = paddr;
+
 	return(m);
 }
 

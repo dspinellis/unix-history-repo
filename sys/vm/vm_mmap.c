@@ -37,7 +37,7 @@
  *
  *	from: Utah $Hdr: vm_mmap.c 1.3 90/01/21$
  *	from: @(#)vm_mmap.c	7.5 (Berkeley) 6/28/91
- *	$Id: vm_mmap.c,v 1.10 1993/11/22 09:49:53 davidg Exp $
+ *	$Id: vm_mmap.c,v 1.11 1993/11/25 01:39:08 wollman Exp $
  */
 
 /*
@@ -502,6 +502,7 @@ vm_mmap(map, addr, size, prot, maxprot, flags, handle, foff)
 		vp = (struct vnode *)handle;
 		if (vp->v_type == VCHR) {
 			type = PG_DEVICE;
+			handle = (caddr_t)vp->v_rdev;
 		} else
 			type = PG_VNODE;
 	}
