@@ -1,4 +1,4 @@
-#	@(#)bsd.lib.mk	5.9 (Berkeley) %G%
+#	@(#)bsd.lib.mk	5.10 (Berkeley) %G%
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -93,6 +93,18 @@ realinstall: beforeinstall
 	${RANLIB} -t ${DESTDIR}/usr/lib/lib${LIB}_p.a
 #	install -c -o ${LIBOWN} -g ${LIBGRP} -m ${LIBMODE} \
 #	    llib-l${LIB}.ln ${DESTDIR}${LINTLIBDIR}
+.if defined(LINKS) && !empty(LINKS)
+	@set ${LINKS}; \
+	while test $$# -ge 2; do \
+		l=${DESTDIR}$$1; \
+		shift; \
+		t=${DESTDIR}$$1; \
+		shift; \
+		echo $$t -\> $$l; \
+		rm -f $$t; \
+		ln $$l $$t; \
+	done; true
+.endif
 
 install: afterinstall
 afterinstall: realinstall maninstall
