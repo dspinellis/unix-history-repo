@@ -1,4 +1,4 @@
-/*	old.ucb.grep.c	4.1	82/05/07	*/
+/*	old.ucb.grep.c	4.2	83/04/29	*/
 
 #include <stdio.h>
 /*
@@ -215,7 +215,7 @@ execute(file)
 
 	if (file) {
 		if ((f = open(file, 0)) < 0) {
-			fprintf(stderr, "Can't open %s\n", file);
+			perror(file);
 		}
 	} else
 		f = 0;

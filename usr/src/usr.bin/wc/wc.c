@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)wc.c	4.4 (Berkeley) %G%";
+static char *sccsid = "@(#)wc.c	4.5 (Berkeley) %G%";
 /* wc line and word count */
 
 #include <stdio.h>
@@ -83,7 +83,7 @@ char **argv;
 	fp = stdin;
 	do {
 		if(argc>1 && (fp=fopen(argv[i], "r")) == NULL) {
-			fprintf(stderr, "wc: can't open %s\n", argv[i]);
+			perror(argv[i]);
 			continue;
 		}
 		linect = 0;
