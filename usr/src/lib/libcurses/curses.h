@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)curses.h	5.1 (Berkeley) %G%
+ *	@(#)curses.h	5.2 (Berkeley) %G%
  */
 
 # ifndef WINDOW
@@ -97,7 +97,8 @@ int	__void__;
  */
 # define	addch(ch)	VOID(waddch(stdscr, ch))
 # define	getch()		VOID(wgetch(stdscr))
-# define	addstr(str)	VOID(waddstr(stdscr, str))
+# define	addbytes(da,co)	VOID(waddbytes(stdscr, da,co))
+# define	addstr(str)	VOID(waddbytes(stdscr, str, strlen(str)))
 # define	getstr(str)	VOID(wgetstr(stdscr, str))
 # define	move(y, x)	VOID(wmove(stdscr, y, x))
 # define	clear()		VOID(wclear(stdscr))
@@ -118,13 +119,17 @@ int	__void__;
  */
 #define	mvwaddch(win,y,x,ch)	VOID(wmove(win,y,x)==ERR?ERR:waddch(win,ch))
 #define	mvwgetch(win,y,x)	VOID(wmove(win,y,x)==ERR?ERR:wgetch(win))
-#define	mvwaddstr(win,y,x,str)	VOID(wmove(win,y,x)==ERR?ERR:waddstr(win,str))
+#define	mvwaddbytes(win,y,x,da,co) \
+		VOID(wmove(win,y,x)==ERR?ERR:waddbytes(win,da,co))
+#define	mvwaddstr(win,y,x,str) \
+		VOID(wmove(win,y,x)==ERR?ERR:waddbytes(win,str,strlen(str)))
 #define mvwgetstr(win,y,x,str)  VOID(wmove(win,y,x)==ERR?ERR:wgetstr(win,str))
 #define	mvwinch(win,y,x)	VOID(wmove(win,y,x) == ERR ? ERR : winch(win))
 #define	mvwdelch(win,y,x)	VOID(wmove(win,y,x) == ERR ? ERR : wdelch(win))
 #define	mvwinsch(win,y,x,c)	VOID(wmove(win,y,x) == ERR ? ERR:winsch(win,c))
 #define	mvaddch(y,x,ch)		mvwaddch(stdscr,y,x,ch)
 #define	mvgetch(y,x)		mvwgetch(stdscr,y,x)
+#define	mvaddbytes(y,x,da,co)	mvwaddbytes(stdscr,y,x,da,co)
 #define	mvaddstr(y,x,str)	mvwaddstr(stdscr,y,x,str)
 #define mvgetstr(y,x,str)       mvwgetstr(stdscr,y,x,str)
 #define	mvinch(y,x)		mvwinch(stdscr,y,x)
