@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)w.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)w.c	5.17 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -208,7 +208,7 @@ main(argc, argv)
 		printf(HEADER);
 	}
 
-	for (p = kvm_nextproc(); p != NULL; p = kvm_nextproc()) {
+	while ((p = kvm_nextproc()) != NULL) {
 		if (p->p_stat == SZOMB || (p->p_flag & SCTTY) == 0)
 			continue;
 		e = kvm_geteproc(p);
