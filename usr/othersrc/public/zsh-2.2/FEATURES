@@ -1,0 +1,66 @@
+very close to ksh/sh grammar, with csh additions
+most features of ksh, bash, and tcsh
+75 builtins, 73 options, 144 key bindings
+short for loops, ex: for i (*.c) echo $i
+select
+shell functions
+conditional expressions (test builtin, [ ... ], and ksh-style [[ ... ]])
+global aliases (may be expanded anywhere on the line)
+directory stack access with =num
+process substitution (vi =(cmd) edits the output of cmd)
+generalized pipes (ls foo >>(cmd1) 2>>(cmd2) pipes stdout to cmd1
+  and stderr to cmd2)
+arithmetic expressions
+advanced globbing:
+  ls **/file  searches recursively for "file" in subdirectories
+  ls file<20->  matches file20, file30, file100, etc.
+  ls *.(c|pro)  matches *.c and *.pro
+  ls *(R)  matches only world-readable files
+  ls *.c~lex.c  matches all .c files except lex.c
+null command shorthands:
+  "< file" is same as "more <file"
+  "> file" is same as "cat >file"
+  ">> file" is same as "cat >>file"
+ksh-style coprocesses
+automatic file stream teeing (ls >foo >bar puts output in two places)
+chpwd() function run every time you change directory (useful for
+  updating the status line)
+job control
+csh-style history
+full vi line editing, including "c2w" and "y$" and such things
+full emacs line editing
+incremental history search
+magic-space history
+spelling correction
+array parameters
+$HOSTTYPE, $LINENO, $RANDOM, $SECONDS, $cdpath, $COLUMNS, $fignore,
+  $HISTCHARS, $mailpath
+with autocd option, typing a directory name by itself is the same as
+  typing "cd dirname"
+menu completion: pressing TAB repeatedly cycles through the possible matches
+incremental path hashing
+automatic process time reporting for commands that run over a certain limit
+full tcsh-style prompt substitution
+utmp login/logout reporting
+with histverify option, performing csh-style history expansions causes the
+  input line to be brought up for editing instead of being executed
+with sunkeyboardhack option, accidently typed trailing ` characters
+  are removed from the input line (for those of you with Sun keyboards :-) )
+autoloaded functions (loaded from a file when they are first referenced)
+"cd old new" replaces "old" with "new" in directory string
+generalized argument completion, including:
+  - command name completion
+  - filename and path completion
+  - hostname completion
+  - key binding completion
+  - option completion
+  - variable name completion
+  - user-specified keyword completion
+prompt on right side of screen
+directory stacks
+history datestamps and execution time records
+command scheduling (like at(1), but in the shell's context)
+tty mode freezing
+up to 9 startup files (but you only need 1 or 2)
+8-bit clean
+which -a cmd lists all occurences of "cmd" in the path

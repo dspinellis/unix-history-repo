@@ -1,0 +1,437 @@
+You have permission to copy the zsh distribution in whole or in part
+as long as you don't try to make money off of it, or pretend that you
+wrote it.
+
+This is zsh 2.2.0.
+
+To get this shell running, cd into the src directory and type
+"buildzsh".  I tested it on the following machines, where it compiled
+just by running this script:
+
+Sun SPARCServer 4/690 running SunOS 4.1.2
+NeXTstation running Mach 2.0
+DECStation-5000 running ULTRIX 4.2
+Iris 4D/20 running IRIX 4.0.1
+HP 9000/834 running HP-UX 7.00
+IBM RS6000 running AIX 3.2
+(rumored to work on a Pyramid)
+
+In general, the more BSD-like your system, the more likely it will work.
+
+Tabstops are 3 spaces.  If you're going to look at my code, run it
+though "expand -3" first, or set your tab stops to the same as mine.
+
+There is a zsh mailing list, "zsh-list@cs.uow.edu.au".  To have yourself
+added to the list, send a request to "zsh-request@cs.uow.edu.au".
+
+The author can be reached via email to one of the following addresses:
+"pfalstad@phoenix.princeton.edu", "pfalstad@cs.ucsd.edu", "pf@ttisms.com",
+"pf@gnu.ai.mit.edu".
+
+Thanks to the following people for help, ideas, accounts, comments,
+patches, etc.:
+ 
+Charles Hannum
+David Dobkin
+Jim Mattson
+Carlos Carvalho
+Bart Schaefer
+Peter Gray
+Pure Software, Inc.
+Chris P. Ross
+Gary Oberbrunner
+Jonathan Hardwick
+John Navarra
+Michael Lamoureux
+Rick Lyons
+Duncan Sinclair
+Mark R. Rubin
+John Guthrie
+James Bonfield
+Chris Moore
+Thomas Winder
+David J. MacKenzie
+Charles Rendleman
+Richard Ohnemus
+Nik Gervae
+Gottfried Necker
+Goran Larsson
+Paul E. Maisano
+Norbert Kiesel
+Josh Diamond
+Bill Miskovetz
+Peter Moore
+Geoff Wing
+Kent Dickey
+Jean-Jacques Moreau
+Michael Brown
+Bruce Anderson
+Stephen Dum
+Lars E. Thon
+Michael Brennan
+Xev Gittler
+Jarkko Hietaniemi
+Zbigniew J Tyrlik
+Pierre Racz
+Rick Ohnemus
+Richard Dean
+Gary D. Kline
+Robert A. Fabian
+Byron Rakitzis
+Dan Bernstein
+Jonathan Kamens
+Vincent Granet
+David Wilson
+Greg Noel
+Paul Lew
+Dan Esbensen
+Kartik Subbarao
+Ross Bunker
+Michael Marucheck
+Christopher Pirazzi
+Steve Giovanetti
+Kennedy Lemke
+Emin Gun Sirer
+Kazuo Itoh
+lots of other people, I'm sure
+
+Modification history:
+
+2.2.0-2.1.0:
+o should be faster in general
+o fewer compilation warnings
+o SPROMPT now uses %R instead of %s for the incorrect string
+o no longer tries to create FIFOs on NeXTs (thereby causing a panic)
+o now gets usernames from NIS on irises without crashing (SGI's getpwnam()
+  called my strdup(), the pricks.  Took me forever to find that.  :-) )
+o fewer 7-bit assumptions
+o which/whence/type have new options:
+  -a = all (find all occurences of command in path)
+  -c = csh-style which (default for "which" command)
+o error message for cd str1 str2 is fixed
+o relative paths (including .) in cdpath now work
+o exclusion patterns in glob: ls *.c~lex.c prints all .c files but lex.c
+o bug with command substitution in chpwd fixed (buffers flushed twice)
+o relative paths in $path now work
+o "kill -9 -FOO" no longer kills shell
+o new options to history/fc:
+	-d = prints date commands were entered
+	-D = prints running time of commands
+o "history <num>" prints all commands SINCE <num> as well
+o history stored differently - should be more efficient
+o bg'ing a suspended zsh no longer causes problems
+o "set" no longer prints ONLY exported params (duh)
+o functions +t now allowed
+o redirection is done AFTER filename generation
+o print changes:
+  o print -u# prints to fd #
+  o print -p prints to coproc
+  o -D and -P perform \ substitution first
+  o print -0 changed to print -N
+o read changes:
+  o read -u# reads from fd #
+  o read -p reads from coproc
+  o read -z waits for input if nothing on buffer stack
+  o no longer reads from fd 0 if shell is getting input from there
+  o echo -n foo | read x  now works
+o getopts is now POSIX conformant
+o compctl builtin added, replacing hostcmds, foocmds, etc.  Controls
+  completion of various commands in zle.
+  format: compctl -options cmdnams ...
+  options tell where to get possible matches from, and include:
+	 -c = command names
+	 -f = filenames
+	 -h = hostnames ($hosts)
+	 -o = options
+	 -v = vars
+	 -b = bindings
+	 -k name = elements of $name array
+  Any number of these options may be used together.
+  In addition, compctl -C -options will set the default completion
+  names when in command position (by default -c), and compctl -D -options
+  will set the default completion names used after unrecognized commands
+  or after redirections (by default -f).
+o foo && bar || fuu now works
+o ttyctl builtin added
+  ttyctl -f freezes the tty.  no changes made to the tty settings by
+	 external programs will be honored when this command is in effect.
+  ttyctl -u unfreezes the tty.
+  typically, "ttyctl -f" would be used in a zlogin or zshrc script after
+  "stty" has been called to set up the terminal.
+o [[ -e file ]] is now equivalent to [[ -a file ]]
+o [[ -h file ]] is now equivalent to [[ -L file ]]
+o the path is now hashed incrementally.
+  o if the HASHCMDS option is unset, path hashing is not done at all.
+  o if the HASHCMDS option is set but HASHDIRS is unset, commands are placed
+	 in the hash table when first executed.
+  o if the HASHCMDS and HASHDIRS options are both set, commands are placed
+	 in the hash table when first executed, along with all commands in
+	 the directory that command was found in (and all directories earlier
+	 in the path).  This is the default situation.
+o "for i (*.c) do /bin/echo $i ; done | more" no longer hangs
+o coprocesses now work properly
+o READNULLCMD is now used instead of NULLCMD for "< file"
+o POSTEDIT is printed whenever the editor exits
+o rm path/path/* is now reported by checkrmall()
+o cmd >&- works
+o cmd >>! file works
+o time cmd no longer forks an extra process
+o setopt printexitvalue ; echo `false` no longer prints anything
+o here documents work inside eval, etc.
+o $(...) works inside here documents
+o "time" by itself prints the shell timings
+o locals in precmd() or chpwd() work
+o new glob qualifiers
+  o pat(M) sets markdirs, pat(^M) unsets it
+  o pat(N) sets nullglob, ...
+  o pat(D) sets globdots, ...
+o ls * only sorts numeric filenames specially if NUMERICGLOBSORT is set
+o setopt braceccl lets "echo {a-zA-Z}" work
+o new options: pushdignoredups nohistbeep overstrike
+o ls **/file is now equivalent to ls ****/file
+o !'s in history are now escaped when you return to them
+o history substitution is not done in script files
+o echo $(!-2) works
+o histverify and correct 'e' no longer put the edit line in the history
+o the :x, :q, and :gs modifiers work properly now
+o zsh -c 'ls =(ls)' no longer hangs
+o VSWTCH is now set to ^Z on the irises
+o zsh & no longer causes havoc
+o USERNAME and LOGNAME are kept separate
+o $manpath has been added for easy access to the $MANPATH components
+o zsh now realizes if it is running under emacs, and resigns itself to
+  the fact rather than panicking
+o SIGQUIT is ignored in the PRODUCTION version of zsh, and kills the shell
+  in the DEBUG version, rather than vice versa.
+o GLOBALZSHENV has been added, and GLOBALZPROFILE is sourced in the
+  proper place
+o "kill %" no longer causes the prompt to be printed 3 times if notify
+  is set on a NeXT
+o REPORTTIME has been added; if a job runs longer than this many seconds,
+  timing statistics are reported
+o timing statistics now include a job name (%J)
+o no longer talks about SIGHUPed jobs if the kill failed
+o no longer talks about running jobs which don't exist if you do eval exit
+  or if you have notify unset
+o foo=bar comman[tab], for/select/foreach i (*.c[tab] both work
+o [base]num inside $[...] works
+o foo=pat(n|ern) works
+o cd - prints the new directory
+o l[tab] works if l is an alias
+o select foo ; ... works (in $argv is assumed)
+o select reads from the right input
+o math identifiers can now contain numbers and _'s.
+o lots of serious memory heap trashing and leaks fixed
+o echo $HOME[*] no longer crashes the shell
+o SIGWINCH now changes LINES and COLUMNS in the environment
+o typeset +r TTY; TTY=foo no longer causes problems
+o ~ substitution is no longer done in FIGNORE
+o assignment to SECONDS works
+o "else if" is no longer a synonym for "elif" <thud>
+o lots of problems with null lists in flow constructs fixed
+o no correction done for >file
+o echo ${foo%bar is no longer weird
+o modifying array substitutions works
+o ^O can be bound to something
+o command substitution in signal handlers no longer causes problems
+o spelling correction is better ($PAHT is corrected), and SPROMPT
+  allows all the regular PROMPT escapes
+o new prompt escape sequence: %D{...} formats ... part using strftime
+o shell input no longer butchered using IFS
+o vi cmd mode has 's' bound to visubstitute, as it should be
+o you can use ^XS and ^XR in i-search mode
+o bindings to ^Z and ^@ work now on the irises
+o ^V{^S,^Q,^Z,etc} now works on sgttyb victims
+o nopromptclobber changed to nopromptcr
+o vi 'u' undo works a little better (?)
+o ESC-key bindings aren't screwed up if VISUAL is set to vi
+o newline in prompt now works reliably
+o vi change and delete work with forward-word/search, etc.
+o somewhat suboptimal screen refresh on irises fixed (several seconds
+  per character inserted when TERM=xterm??)
+o select list printing slightly different
+o magic-space's handling of hatchars "fixed"
+
+0.03-1.0:
+	- "..../" is now "****/".  I know this isn't backward compatible,
+	  but I had no choice; the string "..../" was unquotable.
+	- parser was rewritten and improved
+	- completion was improved, several bugs fixed (including
+	  the "$([tab]" bug)
+	- vi mode editing is improved
+	- the value of PWD and OLDPWD in the environment now change
+	- the PROMPT formatting strings %W and %D now print the month
+	  correctly
+	- >&2 echo "error message" no longer prints "bad file number"
+	- ${foo%pat} no longer alters the value of foo
+	- $_ works
+	- ALL_EXPORT no longer causes let statements to crash the shell
+	- continue works
+	- echo $MAIL no longer dumps core if MAIL is null
+	- the new tty driver is selected by default
+	- the s modifier no longer complains if it can't find the string
+	  to substitute
+	- list-choices no longer fignores files
+	- cd is now smarter about symlinks
+	- negative subscripts other than -1 now work
+	- $(<filename) works better if filename contains $, ~, or =
+	- rehash no longer wastes memory
+	- with name=value assignments, name is checked to see if it is
+	  a valid identifier
+	- !1; !2 no longer eats the semicolon
+	- $foo:h never returns the empty string if foo starts with /
+	- select crashed with some compilers
+	- problems with aliases in <(...) constructs have been fixed
+	- links pointing to nowhere are denoted with an '&' in listtypes
+	- negative arguments are supported
+	- the shell does not screw around with the tty so much
+	- lots of other stuff
+
+0.02-0.03:
+	- two stupid bugs that were introduced in the last patch were fixed:
+	  - multiple command substitution on a line failed
+	  - a file descriptor leak caused the shell to crash after a while
+	- added 'An Introduction to the Z Shell'
+	- behaves properly when the tty session dies suddenly
+	- had a serious memory leak on some systems
+	- the test and [ builtins have been added, although [[...]]
+	  is more efficient
+	- in your prompt, %m2 now prints foo.bar, %m3 prints foo.bar.com, etc.
+	- the -D and -P options to print have been added
+	- the NULLCMD and ZDOTDIR parameters have been added
+	- ${*:-foo} works
+	- "$@" and "$arr[@]" work like ksh
+	- .zprofile is sourced before .zshrc in login shells
+	- the CSHJUNKIEQUOTES and PUSHDMINUS options have been added
+	- REAL_TTY compilation switch added
+	- aliases beginning with a space cause the history line to be junked
+	  if HISTIGNORESPACE is set
+	- echo prints bad options instead of complaining about them
+	- "set -o" no longer dumps core
+	- "alias a=alias; date >a" no longer creates a file called "alias"
+	- "function foo() \n { date }" is now legal (the () and the newline
+	  are allowed)
+	- nested brace expressions work properly
+	- disabled commands stay disabled after a rehash (or after the shell
+	  finishes sourcing your .zshrc)
+	- corrected aliases work
+	- executables in the currect directory are now completed
+	- in "case foo", "foo" is not interpreted as a directory name with autocd
+	- aliases were not always interpreted properly after a completion
+	- bindkey '^?' didn't work
+	- echo ${HOST:-{bar}} didn't work
+	- editor update is more efficient in some cases
+	- menucomplete works even better
+	- assign to an array element "foo[1]=bar" didn't always work
+	- doesn't print directories like "~tmp" if HOME=/
+	- quotes in case statement patterns caused problems
+	- pressing ^C right after typing "fc" caused the editor to share
+	  the tty with the shell
+	- echo $(echo 2) produced no output, but echo $(echo x) worked fine (weird)
+
+0.01-0.02:
+	- added script to convert most csh aliases to zsh aliases or functions
+	- fc -l (history) now appears in the history itself; HISTNOSTORE
+	  option added to get old behavior
+	- the POSIX process group race has been fixed; so 'w | more' should
+	  no longer hang
+	- FCEDIT added, to match the documentation
+	- %{...%} in the prompt added
+	- execute-named-cmd and execute-last-named-cmd bindings added
+	- sources ~/.zshenv in all shells, even if not interactive, unless
+	  -f is given
+	- ^ and # are no longer `magic' by default; use EXTENDEDGLOB option
+	  to use them
+	- now checks for tty sanity before each command
+	- if the right side of a variable assignment expands to more than
+	  one word, array assignment is assumed; so foo=*.c now works
+	- ~foo is no longer expanded in completion
+	- select now works even if the argument list is not sorted
+	- menucompletebeep option added
+	- emacs mode is now 8-bit clean by default; use bindkey -em
+	  to get your meta key back
+	- fc -R, fc -W added
+	- nocorrect added
+	- lines from history file are now split into words at spaces
+	- glob-complete, accept-and-menu-complete,
+	  beginning-of-line-hist, end-of-line-hist bindings added
+	- insert-last-word bound to M-. in emacs mode by default; now moves
+	  back through the history if run repeatedly
+	- J and K now bound to history search in vi mode
+	- delete-char no longer core dumps on an empty line
+	- menu-complete works better
+	- the editor checks the settings of VISUAL and EDITOR to set
+	  default bindings
+	- using [[ ... ]] expressions on a symbolic link works as expected
+	- various problems with globbing were fixed
+	- xx is now the same as !! if HISTCHARS=x
+	- added config.h entry for compilers that don't know about void *
+	- lexical analysis made more efficient
+	- "if echo $? ; then : ; fi" no longer always prints 0
+	- removed all enums, '\x7f's from code
+	- in "case foo in bar) xxx ;; esac", foo and bar are no longer subject
+	  to command alias expansion
+	- works on platforms where toupper('A') != 'A'
+	- \e sequence added to echo
+	- + options now work with set
+	- AUTORESUME and AUTOCD work better
+	- getopts works better (?)
+	- spell checking works better
+	- "let 2+3=" no longer crashes the shell
+	- "foo=bar; echo ${=foo}" no longer crashes the shell
+	- "zsh -c" or "zsh -o" no longer causes a core dump
+	- "unset MAIL; echo $MAIL" no longer causes a core dump
+	- "(xterm&xterm&)&" no longer causes a core dump
+	- "echo $HOM[tab]" beeps instead of deleting "$HOM"
+	- incremental history search works better
+	- the pwd of a fg'd job is now printed _before_ resuming it
+	- rv=`echo -n foo` no longer puts garbage in $rv
+	- "=1/*" now works as expected
+	- ^Z can now be bound to something
+	- the STTY parameter and the builtin builtin are now documented
+	- IFS=x; foo=`echo foo` no longer puts a newline in $foo
+	- $status added for csh compatibility
+	- arrays are automatically expanded if you say 'foo[1234]=x'
+	- shell now ignores SIGQUIT (it was commented out before :-)
+	- the times builtin works on systems where times() returns > 0
+	- no longer hangs the terminal if you ^S before flow control
+	  is turned off
+	- "date ; read foo" now works in interactive shells
+	- <<-foo is now parsed as <<- foo, not << -foo
+	- fixed various errors in the documentation
+
+0.00-0.01:
+	- %M and %m now work as documented.
+	- bad things no longer happen if COLUMNS is set to 0
+	- SH_WORD_SPLIT and ${=foo} now work
+	- the default value of WORDCHARS includes more characters
+	- if the cursor is at the end of the line, vi-cmd-mode
+	  moves it back one position.
+	- delete-char now acts more like x in vi.
+	- a "prompt" parameter has been added, which is equivalent to
+	  PROMPT and PS1.
+	- zsh no longer expands symbolic links.  The CHASELINKS option
+	  has been provided to get the old behavior.
+	- history searches ignore lines that are the same as the line
+	  in the buffer.
+	- you can get a literal ! in your prompt now with \!.
+	- -z, -n, and != in [[ ... ]] expressions work.
+	- the shell no longer hangs when inputting "[[ ]\n"
+	- the "menu-complete" and "menu-expand-or-complete" bindings have
+	  been added.
+	- menu-complete no longer beeps.
+	- reverse-menu-complete no longer dumps core if it gets called before
+	  a normal completion.
+	- typeahead lines are no longer thrown away on machines with sgttyb.
+	- !foo no longer matches lines with 'foo' in them (not at the beginning)
+	- kill -9 % no longer kills the shell
+	- no longer sources .zshrc from shell scripts or with -c
+	- no longer needs limits.h, strtol
+	- exporting HOSTTYPE, etc. works
+	- fixed serious bugs related to . in path
+	- numbers in weird bases now work
+
+Known Bugs
+	- terminal acts weird under OpenWindows cmdtool
+	- xterm run in background inherits bad terminal modes
+
