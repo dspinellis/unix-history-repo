@@ -1,7 +1,7 @@
-/*	draw.c	1.2	83/09/14
+/*	draw.c	1.3	83/11/01
  *
  *	This file contains the functions for producing the graphics
- *   images in the varian/versatec drivers for ditroff.
+ *   images in the canon/imagen driver for ditroff.
  */
 
 
@@ -41,8 +41,9 @@ extern putint();
 
 #define START	1
 #define POINT	0
-#define xbound(x)	(x < 0 ? 0 : x > MAXX ? MAXX : x)
-#define ybound(y)	(y < 0 ? 0 : y > MAXY ? MAXY : y)
+/* the imagen complains if a path is drawn at < 1, or > limit, so truncate. */
+#define xbound(x)	(x < 1 ? 1 : x > MAXX ? MAXX : x)
+#define ybound(y)	(y < 1 ? 1 : y > MAXY ? MAXY : y)
 
 
 int	linethickness = -1;	/* number of pixels wide to make lines */
@@ -633,16 +634,14 @@ int numpoints;
 
 
 /*----------------------------------------------------------------------------
- | Routine:	HGtline(xstart, ystart, xend, yend)
+ | Routine:	line(xstart, ystart, xend, yend)
  |
  | Results:	Creates a drawing path and draws the line.  If the line falls
  |		off the end of the page, a crude clipping is done:  truncating
  |		the offending ordinate.
- |
- | Bugs:	Does NOTHING about line style yet...
  *----------------------------------------------------------------------------*/
 
-HGtline(x0, y0, x1, y1)
+line(x0, y0, x1, y1)
 int x0, y0, x1, y1;
 {
     byte(ASPATH);		/* send the coordinates first */
@@ -653,4 +652,104 @@ int x0, y0, x1, y1;
     word(ybound(y1));
     byte(ADRAW);		/* now draw it */
     byte(15);		/* black */
-}  /* end HGtline */
+}  /* end line */
+
+
+/*----------------------------------------------------------------------------*
+ | Routine:	change (x_position, y_position, visible_flag)
+ |
+ | Results:	As HGtline passes from the invisible to visible (or vice
+ |		versa) portion of a line, change is called to either draw
+ |		the line, or initialize the beginning of the next one.
+ |		Change calls line to draw segments if visible_flag is set
+ |		(which means we're leaving a visible area).
+ *----------------------------------------------------------------------------*/
+
+change (x, y, vis)
+register int x;
+register int y;
+register int vis;
+{
+    static int xorg;
+    static int yorg;
+
+    if (vis)		/* leaving a visible area, draw it. */
+	line (xorg, yorg, x, y);
+    else {		/* otherwise, we're entering one, remember beginning */
+	xorg = x;
+	yorg = y;
+    }
+}
+
+
+/*----------------------------------------------------------------------------
+ | Routine:	HGtline (xstart, ystart, xend, yend)
+ |
+ | Results:	Draws a line from (x0,y0) to (x1,y1) using line(x0,y0,x1,y1)
+ |		to place individual segments of dotted or dashed lines.
+ *----------------------------------------------------------------------------*/
+
+HGtline(x0, y0, x1, y1)
+register int x0;
+register int y0;
+int x1;
+int y1;
+{
+    register int dx;
+    register int dy;
+    register int res1;
+    register int visible;
+    int res2;
+    int xinc;
+    int yinc;
+    int slope;
+
+
+    if (linmod == -1) {
+	line(x0, y0, x1, y1);
+	return;
+    }
+    xinc = 1;
+    yinc = 1;
+    if ((dx = x1-x0) < 0) {
+        xinc = -1;
+        dx = -dx;
+    }
+    if ((dy = y1-y0) < 0) {
+        yinc = -1;
+        dy = -dy;
+    }
+    slope = xinc*yinc;
+    res1 = 0;
+    res2 = 0;
+    visible = 0;
+    if (dx >= dy) 
+        while (x0 != x1) {
+            if((((x0+slope*y0)&linmod)&&1)^visible) {
+	    	change(x0, y0, visible);
+		visible = !visible;
+	    }
+            if (res1 > res2) {
+                res2 += dx - res1;
+                res1 = 0;
+                y0 += yinc;
+            }
+            res1 += dy;
+            x0 += xinc;
+        } 
+    else 
+        while (y0 != y1) {
+            if((((x0+slope*y0)&linmod)&&1)^visible) {
+		change(x0, y0, visible);
+		visible = !visible;
+	    }
+            if (res1 > res2) {
+                res2 += dy - res1;
+                res1 = 0;
+                x0 += xinc;
+            }
+            res1 += dx;
+            y0 += yinc;
+        }
+    if(visible) change(x1, y1, 1);
+}
