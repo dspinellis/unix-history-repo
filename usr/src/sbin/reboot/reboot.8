@@ -1,0 +1,59 @@
+.\" Copyright (c) 1990, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)reboot.8	5.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt REBOOT 8
+.Os
+.Sh NAME
+.Nm reboot
+.Nd
+restarting the system
+.Sh SYNOPSIS
+.Nm reboot
+.Op Fl nq
+.Sh DESCRIPTION
+The
+.Nm reboot
+utility flushes the file system cache to disk, sends all running processes
+a SIGTERM (and subsequently a SIGKILL) and restarts the system.
+The restart is logged, including entering a shutdown record into the login
+accounting file.
+.Pp
+The options are as follows:
+.Bl -tag -width Ds
+.It Fl n
+If the
+.Fl n
+option is specified,
+.Nm reboot
+neither flushes the file system cache or does any logging of the restart.
+.It Fl q
+If the
+.Fl q
+option is specified,
+.Nm reboot
+restarts the system quickly and ungracefully.
+Processes are not signalled, the file system cache is not flushed and the
+restart is not logged.
+This option should not be used.
+.El
+.Pp
+Normally, when the system needs to be restarted, the
+.Xr shutdown 8
+utility is used and users given advance warning of the impending
+restart.
+.Sh SEE ALSO
+.Xr sync 1 ,
+.Xr utmp 5 ,
+.Xr boot 8 ,
+.Xr halt 8 ,
+.Xr shutdown 8 ,
+.Sh HISTORY
+The
+.Nm
+command is
+.Ud .
