@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_sig.c	7.48 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.49 (Berkeley) %G%
  */
 
 #define	SIGPROP		/* include signal properties table */
@@ -502,7 +502,7 @@ killpg1(cp, signo, pgid, all)
 		/* 
 		 * broadcast 
 		 */
-		for (p = allproc; p != NULL; p = p->p_nxt) {
+		for (p = (struct proc *)allproc; p != NULL; p = p->p_nxt) {
 			if (p->p_pid <= 1 || p->p_flag&SSYS || 
 			    p == cp || !CANSIGNAL(cp, pc, p, signo))
 				continue;
