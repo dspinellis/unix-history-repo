@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	6.20 (Berkeley) %G%
+ *	@(#)machdep.c	6.21 (Berkeley) %G%
  */
 
 #include "reg.h"
@@ -487,6 +487,11 @@ memenable()
 	register struct mcr *mcr;
 	register int m;
 
+#ifdef	VAX8600
+	if (cpu == VAX_8600) {
+		M8600_ENA;
+	} else
+#endif
 	for (m = 0; m < nmcr; m++) {
 		mcr = mcraddr[m];
 		switch (mcrtype[m]) {
@@ -525,9 +530,45 @@ memenable()
  */
 memerr()
 {
+#ifdef VAX8600
+	register int reg11;	/* known to be r11 below */
+#endif
 	register struct mcr *mcr;
 	register int m;
 
+#ifdef VAX8600
+	if (cpu == VAX_8600) {
+		int mdecc, mear, mstat1, mstat2, array;
+
+		/*
+		 * Scratchpad registers in the Ebox must be read by
+		 * storing their ID number in ESPA and then immediately
+		 * reading ESPD's contents with no other intervening
+		 * machine instructions!
+		 *
+		 * The asm's below have a number of constants which
+		 * are defined correctly in mem.h and mtpr.h.
+		 */
+		asm("mtpr $0x27,$0x4e; mfpr $0x4f,r11");
+		mdecc = reg11;	/* must acknowledge interrupt? */
+		if (M8600_MEMERR(mdecc)) {
+			asm("mtpr $0x2a,$0x4e; mfpr $0x4f,r11");
+			mear = reg11;
+			asm("mtpr $0x25,$0x4e; mfpr $0x4f,r11");
+			mstat1 = reg11;
+			asm("mtpr $0x26,$0x4e; mfpr $0x4f,r11");
+			mstat2 = reg11;
+			array = M8600_ARRAY(mear);
+
+			printf("mcr0: ecc error, addr %x (array %d) syn %x\n",
+				M8600_ADDR(mear), array, M8600_SYN(mdecc));
+			printf("\tMSTAT1 = %b\n\tMSTAT2 = %b\n",
+				    mstat1, M8600_MSTAT1_BITS,
+				    mstat2, M8600_MSTAT2_BITS);
+			M8600_INH;
+		}
+	} else
+#endif
 	for (m = 0; m < nmcr; m++) {
 		mcr = mcraddr[m];
 		switch (mcrtype[m]) {
@@ -725,7 +766,7 @@ boot(paniced, arghowto)
 		tocons(TXDB_BOOT);
 	}
 #if defined(VAX750) || defined(VAX730)
-	if (cpu != VAX_780)
+	if (cpu == VAX_750 || cpu == VAX_730)
 		{ asm("movl r11,r5"); }		/* boot flags go in r5 */
 #endif
 	for (;;)
@@ -788,12 +829,28 @@ dumpsys()
  * Print out the machine check frame and then give up.
  */
 #if VAX8600
-#define NMC8600	6
+#define NMC8600	7
 char *mc8600[] = {
 	"unkn type",	"fbox error",	"ebox error",	"ibox error",
-	"mbox error",	"tbuf error"
+	"mbox error",	"tbuf error",	"mbox 1D error"
 };
+/* codes for above */
+#define	MC_FBOX		1
+#define	MC_EBOX		2
+#define	MC_IBOX		3
+#define	MC_MBOX		4
+#define	MC_TBUF		5
+#define	MC_MBOX1D	6
+
+/* error bits */
+#define	MBOX_FE		0x8000		/* Mbox fatal error */
+#define	FBOX_SERV	0x10000000	/* Fbox service error */
+#define	IBOX_ERR	0x2000		/* Ibox error */
+#define	EBOX_ERR	0x1e00		/* Ebox error */
+#define	MBOX_1D		0x81d0000	/* Mbox 1D error */
+#define EDP_PE		0x200
 #endif
+
 #if defined(VAX780) || defined(VAX750)
 char *mc780[] = {
 	"cp read",	"ctrl str par",	"cp tbuf par",	"cp cache par",
@@ -804,6 +861,7 @@ char *mc780[] = {
 #define MC750_TBERR	2		/* type code of cp tbuf par */
 #define	MC750_TBPAR	4		/* tbuf par bit in mcesr */
 #endif
+
 #if VAX730
 #define	NMC730	12
 char *mc730[] = {
@@ -892,19 +950,22 @@ machinecheck(cmcf)
 	case VAX_8600: {
 		register struct mc8600frame *mcf = (struct mc8600frame *)cmcf;
 
-		if (mcf->mc6_ebcs & 0x8000)
-			mcf->mc6_ehmsts |= 0x4;
-		else if (mcf->mc6_ehmsts & 0x10000000)
-			mcf->mc6_ehmsts |= 0x1;
-		else if (mcf->mc6_ebcs & 0x1e00)	
-			if (mcf->mc6_ebcs & 0x200)
-				mcf->mc6_ehmsts |= 0x4;
+		if (mcf->mc6_ebcs & MBOX_FE)
+			mcf->mc6_ehmsts |= MC_MBOX;
+		else if (mcf->mc6_ehmsts & FBOX_SERV)
+			mcf->mc6_ehmsts |= MC_FBOX;
+		else if (mcf->mc6_ebcs & EBOX_ERR) {
+			if (mcf->mc6_ebcs & EDP_PE)
+				mcf->mc6_ehmsts |= MC_MBOX;
 			else
-				mcf->mc6_ehmsts |= 0x2;
-		else if (mcf->mc6_ehmsts & 0x2000)
-			mcf->mc6_ehmsts |= 0x3;
-		if (!(mcf->mc6_ehmsts & 0xf) && (mcf->mc6_mstat1 & 0xf00))
-			mcf->mc6_ehmsts |= 0x5;
+				mcf->mc6_ehmsts |= MC_EBOX;
+		} else if (mcf->mc6_ehmsts & IBOX_ERR)
+			mcf->mc6_ehmsts |= MC_IBOX;
+		else if (mcf->mc6_mstat1 & M8600_TB_ERR)
+			mcf->mc6_ehmsts |= MC_TBUF;
+		else if ((mcf->mc6_cslint & MBOX_1D) == MBOX_1D)
+			mcf->mc6_ehmsts |= MC_MBOX1D;
+
 		type = mcf->mc6_ehmsts & 0x7;
 		if (type < NMC8600)
 			printf("machine check %x: %s", type, mc8600[type]);
