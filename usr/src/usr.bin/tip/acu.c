@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)acu.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)acu.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "tip.h"
@@ -76,6 +76,8 @@ connect()
 				*cp++ = '\0';
 			
 			if (conflag = (*acu->acu_dialer)(phnum, CU)) {
+				if (CM != NOSTR)
+					pwrite(FD, CM, size(CM));
 				logent(value(HOST), phnum, acu->acu_name,
 					"call completed");
 				return (NOSTR);
@@ -112,6 +114,8 @@ connect()
 			
 			if (conflag = (*acu->acu_dialer)(phnum, CU)) {
 				fclose(fd);
+				if (CM != NOSTR)
+					pwrite(FD, CM, size(CM));
 				logent(value(HOST), phnum, acu->acu_name,
 					"call completed");
 				return (NOSTR);
