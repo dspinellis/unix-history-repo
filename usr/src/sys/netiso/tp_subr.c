@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_subr.c	7.17 (Berkeley) %G%
+ *	@(#)tp_subr.c	7.18 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -324,8 +324,9 @@ tp_goodack(tpcb, cdt, seq, subseq)
 		 * OSI combines the keepalive and persistance functions.
 		 * So, there is no persistance timer per se, to restart.
 		 */
-		tpcb->tp_timer[TM_data_retrans] =
-			(seq == tpcb->tp_sndnew) ? 0 : tpcb->tp_rxtcur;
+		if (tpcb->tp_class != TP_CLASS_0)
+			tpcb->tp_timer[TM_data_retrans] =
+				(seq == tpcb->tp_sndnew) ? 0 : tpcb->tp_rxtcur;
 		/*
 		 * When new data is acked, open the congestion window.
 		 * If the window gives us less than ssthresh packets
@@ -544,7 +545,8 @@ send:
 		 * Initialize shift counter which is used for backoff
 		 * of retransmit time.
 		 */
-		if (tpcb->tp_timer[TM_data_retrans] == 0) {
+		if (tpcb->tp_timer[TM_data_retrans] == 0 &&
+			tpcb->tp_class != TP_CLASS_0) {
 			tpcb->tp_timer[TM_data_retrans] = tpcb->tp_dt_ticks;
 			tpcb->tp_timer[TM_sendack] = tpcb->tp_keepalive_ticks;
 			tpcb->tp_rxtshift = 0;
@@ -858,8 +860,10 @@ register struct tp_pcb *tpcb;
 				tpcb->tp_rsycnt--;
 				m_freem(*mp);
 			}
-		if (tpcb->tp_rsycnt)
-			panic("tp_rsyflush");
+		if (tpcb->tp_rsycnt) {
+			printf("tp_rsyflush %x\n", tpcb);
+			tpcb->tp_rsycnt = 0;
+		}
 	}
 	free((caddr_t)tpcb->tp_rsyq, M_PCB);
 	tpcb->tp_rsyq = 0;
