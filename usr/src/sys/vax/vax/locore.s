@@ -1,4 +1,4 @@
-/*	locore.s	4.33	81/03/06	*/
+/*	locore.s	4.34	81/03/08	*/
 
 #include "../h/mtpr.h"
 #include "../h/trap.h"
@@ -6,7 +6,7 @@
 #include "../h/pte.h"
 #include "../h/cpu.h"
 #include "../h/nexus.h"
-#include "../h/uba.h"
+#include "../h/ubareg.h"
 #include "mba.h"
 
 	.set	HIGH,0x1f	# mask for total disable
