@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)RESET.c 1.4 %G%";
+static char sccsid[] = "@(#)RESET.c 1.5 %G%";
 
 #include "h00vars.h"
 
@@ -31,6 +31,8 @@ RESET(filep, name, maxnamlen, datasize)
 		return;
 	}
 	filep->funit |= (SYNC | FREAD);
+	if (filep->funit & FTEXT)
+		filep->funit |= EOLN;
 	if (filep->fblk > PREDEF) {
 		setbuf(filep->fbuf, &filep->buf[0]);
 	}
