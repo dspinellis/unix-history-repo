@@ -1,0 +1,43 @@
+cc -O -DHERE=VAX -DTARGET=VAX -DFAMILY=PCC -DUCBVAXASM -DUCBPASS2 -c driver.c
+cc -O -DHERE=VAX -DTARGET=VAX -DFAMILY=PCC -DUCBVAXASM -DUCBPASS2 -c vaxx.c
+cc -n driver.o vaxx.o -o f77
+text	data	bss	dec	hex
+11200	1948	2528	15676	3d3c
+cc -O -DHERE=VAX -DTARGET=VAX -DFAMILY=PCC -DUCBVAXASM -DUCBPASS2 -c main.c
+cc -O -DHERE=VAX -DTARGET=VAX -DFAMILY=PCC -DUCBVAXASM -DUCBPASS2 -c init.c
+grep -n . <tokens | sed "s/\([^:]*\):\(.*\)/#define \2 \1/" >tokdefs
+( sed <tokdefs "s/#define/%token/" ; cat gram.head gram.dcl gram.expr gram.exec gram.io ) >gram.in
+yacc  gram.in
+
+conflicts: 4 shift/reduce
+(expect 4 shift/reduce)
+mv y.tab.c gram.c
+rm gram.in
+cc -O -DHERE=VAX -DTARGET=VAX -DFAMILY=PCC -DUCBVAXASM -DUCBPASS2 -c gram.c
+cc -O -DHERE=VAX -DTARGET=VAX -DFAMILY=PCC -DUCBVAXASM -DUCBPASS2 -c lex.c
+cc -O -DHERE=VAX -DTARGET=VAX -DFAMILY=PCC -DUCBVAXASM -DUCBPASS2 -c proc.c
+Fatal error in /lib/ccom
+*** Error code 8
+
+Stop.
+cc -O -DHERE=VAX -DTARGET=VAX -DFAMILY=PCC -DUCBVAXASM -DUCBPASS2 -c proc.c
+"proc.c", line 824: warning: illegal pointer combination
+cc -O -DHERE=VAX -DTARGET=VAX -DFAMILY=PCC -DUCBVAXASM -DUCBPASS2 -c equiv.c
+cc -O -DHERE=VAX -DTARGET=VAX -DFAMILY=PCC -DUCBVAXASM -DUCBPASS2 -c data.c
+cc -O -DHERE=VAX -DTARGET=VAX -DFAMILY=PCC -DUCBVAXASM -DUCBPASS2 -c expr.c
+"expr.c", line 126: warning: illegal pointer combination
+"expr.c", line 938: warning: illegal pointer combination
+cc -O -DHERE=VAX -DTARGET=VAX -DFAMILY=PCC -DUCBVAXASM -DUCBPASS2 -c exec.c
+cc -O -DHERE=VAX -DTARGET=VAX -DFAMILY=PCC -DUCBVAXASM -DUCBPASS2 -c intr.c
+"intr.c", line 642: warning: illegal pointer combination
+cc -O -DHERE=VAX -DTARGET=VAX -DFAMILY=PCC -DUCBVAXASM -DUCBPASS2 -c io.c
+"io.c", line 585: warning: illegal pointer combination
+cc -O -DHERE=VAX -DTARGET=VAX -DFAMILY=PCC -DUCBVAXASM -DUCBPASS2 -c misc.c
+cc -O -DHERE=VAX -DTARGET=VAX -DFAMILY=PCC -DUCBVAXASM -DUCBPASS2 -c error.c
+cc -O -DHERE=VAX -DTARGET=VAX -DFAMILY=PCC -DUCBVAXASM -DUCBPASS2 -c put.c
+cc -O -DHERE=VAX -DTARGET=VAX -DFAMILY=PCC -DUCBVAXASM -DUCBPASS2 -c putpcc.c
+cc -O -DHERE=VAX -DTARGET=VAX -DFAMILY=PCC -DUCBVAXASM -DUCBPASS2 -c vax.c
+LOAD
+text	data	bss	dec	hex
+64512	23552	6108	94172	16fdc
+touch compiler
