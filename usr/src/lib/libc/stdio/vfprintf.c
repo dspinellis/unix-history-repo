@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vfprintf.c	5.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)vfprintf.c	5.36 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -35,9 +35,10 @@ static char sccsid[] = "@(#)vfprintf.c	5.35 (Berkeley) %G%";
 
 #define	PUTC(ch)	(void) putc(ch, fp)
 
-#define	ARG() \
-	_ulong = flags&LONGINT ? va_arg(argp, long) : \
-	    flags&SHORTINT ? va_arg(argp, short) : va_arg(argp, int);
+#define ARG(basetype) \
+	_ulong = flags&LONGINT ? va_arg(argp, long basetype) : \
+	    flags&SHORTINT ? (short basetype)va_arg(argp, int) : \
+	    va_arg(argp, int)
 
 #define	todigit(c)	((c) - '0')
 #define	tochar(n)	((n) + '0')
@@ -190,7 +191,7 @@ rflag:		switch (*++fmt) {
 			/*FALLTHROUGH*/
 		case 'd':
 		case 'i':
-			ARG();
+			ARG(int);
 			if ((long)_ulong < 0) {
 				_ulong = -_ulong;
 				sign = '-';
@@ -248,7 +249,7 @@ rflag:		switch (*++fmt) {
 			flags |= LONGINT;
 			/*FALLTHROUGH*/
 		case 'o':
-			ARG();
+			ARG(unsigned);
 			base = 8;
 			goto nosign;
 		case 'p':
@@ -288,14 +289,14 @@ rflag:		switch (*++fmt) {
 			flags |= LONGINT;
 			/*FALLTHROUGH*/
 		case 'u':
-			ARG();
+			ARG(unsigned);
 			base = 10;
 			goto nosign;
 		case 'X':
 			digs = "0123456789ABCDEF";
 			/* FALLTHROUGH */
 		case 'x':
-			ARG();
+			ARG(unsigned);
 			base = 16;
 			/* leading 0x/X only if non-zero */
 			if (flags & ALT && _ulong != 0)
