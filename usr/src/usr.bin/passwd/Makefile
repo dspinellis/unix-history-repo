@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.8.1.1 (Berkeley) %G%
+#	@(#)Makefile	5.9 (Berkeley) %G%
 
 PROG=	passwd
 SRCS=	passwd.c
