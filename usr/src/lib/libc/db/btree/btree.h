@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)btree.h	5.4 (Berkeley) %G%
+ *	@(#)btree.h	5.5 (Berkeley) %G%
  */
 
 #include <mpool.h>
@@ -103,9 +103,12 @@ typedef struct BINTERNAL {
 
 /* Copy a BINTERNAL entry to the page. */
 #define	WR_BINTERNAL(p, size, pgno, flags) { \
-	*((size_t *)p)++ = size; \
-	*((pgno_t *)p)++ = pgno; \
-	*((u_char *)p)++ = flags; \
+	*(size_t *)p = size; \
+	p += sizeof(size_t); \
+	*(pgno_t *)p = pgno; \
+	p += sizeof(pgno_t); \
+	*(u_char *)p = flags; \
+	p += sizeof(u_char); \
 }
 
 /*
@@ -127,7 +130,8 @@ typedef struct RINTERNAL {
 
 /* Copy a RINTERAL entry to the page. */
 #define	WR_RINTERNAL(p, nrecs, pgno) { \
-	*((recno_t *)p)++ = nrecs; \
+	*(recno_t *)p = nrecs; \
+	p += sizeof(recno_t); \
 	*(pgno_t *)p = pgno; \
 }
 
@@ -153,9 +157,12 @@ typedef struct BLEAF {
 
 /* Copy a BLEAF entry to the page. */
 #define	WR_BLEAF(p, key, data, flags) { \
-	*((size_t *)p)++ = key->size; \
-	*((size_t *)p)++ = data->size; \
-	*((u_char *)p)++ = flags; \
+	*(size_t *)p = key->size; \
+	p += sizeof(size_t); \
+	*(size_t *)p = data->size; \
+	p += sizeof(size_t); \
+	*(u_char *)p = flags; \
+	p += sizeof(u_char); \
 	bcopy(key->data, p, key->size); \
 	p += key->size; \
 	bcopy(data->data, p, data->size); \
@@ -181,8 +188,10 @@ typedef struct RLEAF {
 
 /* Copy a RLEAF entry to the page. */
 #define	WR_RLEAF(p, data, flags) { \
-	*((size_t *)p)++ = data->size; \
-	*((u_char *)p)++ = flags; \
+	*(size_t *)p = data->size; \
+	p += sizeof(size_t); \
+	*(u_char *)p = flags; \
+	p += sizeof(u_char); \
 	bcopy(data->data, p, data->size); \
 }
 
