@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.9 (Berkeley) %G%
+#	@(#)Makefile	4.10 (Berkeley) %G%
 #
 # The system has two monitoring schemes, utilizing either ``prof''
 # or ``gprof''. DFLMON determines the default profiler; mon.o
@@ -25,6 +25,7 @@ DFLMON=	mon.o
 MACHINE=vax
 COMPAT=	compat-4.1 compat-sys5
 ALL=	gen inet net stdio ${MACHINE} ${COMPAT}
+TAGSFILE=tags
 
 libc.a libc_p.a: ${MACHINE}/csu ${ALL}
 	-mkdir tmp
@@ -46,14 +47,20 @@ ${MACHINE}/csu ${ALL}: FRC
 
 FRC:
 
-clean:
-	for i in ${MACHINE}/csu ${ALL}; do (cd $$i; make ${MFLAGS} clean); done
-	rm -f t1 tmp/*.o
-	-rmdir tmp
-
 install: 
 	${INSTALL} libc.a ${DESTDIR}/lib/libc.a
 	ranlib ${DESTDIR}/lib/libc.a
 	${INSTALL} libc_p.a ${DESTDIR}/usr/lib/libc_p.a
 	ranlib ${DESTDIR}/usr/lib/libc_p.a
 	cd ${MACHINE}/csu; make DESTDIR=${DESTDIR} install
+
+tags:
+	for i in ${ALL}; do \
+		(cd $$i; make ${MFLAGS} TAGSFILE=../${TAGSFILE} tags); \
+	done
+	sort -u +0 -1 tags -o tags
+
+clean:
+	for i in ${MACHINE}/csu ${ALL}; do (cd $$i; make ${MFLAGS} clean); done
+	rm -f t1 tmp/*.o
+	-rmdir tmp
