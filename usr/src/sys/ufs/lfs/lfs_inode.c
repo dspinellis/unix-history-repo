@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_inode.c	8.7 (Berkeley) %G%
+ *	@(#)lfs_inode.c	8.8 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -26,12 +26,6 @@
 
 #include <ufs/lfs/lfs.h>
 #include <ufs/lfs/lfs_extern.h>
-
-int
-lfs_init()
-{
-	return (ufs_init());
-}
 
 /* Search a block for a specific dinode. */
 struct dinode *
