@@ -1,14 +1,15 @@
 #ifndef lint
-static char *sccsid = "@(#)dd.c	4.9 (Berkeley) %G%";
+static char *sccsid = "@(#)dd.c	5.1 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
-#include <sys/file.h>
 #include <sys/ioctl.h>
 #include <sys/mtio.h>
 #include <sys/stat.h>
-#include <stdio.h>
 #include <signal.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <stdio.h>
 
 #define	BIG	2147483647
 #define	LCASE	01
@@ -148,7 +149,7 @@ char	atoibm[] =
 	0356,0357,0372,0373,0374,0375,0376,0377,
 };
 
-enum ftype { unknown, reg, chr, tape, pipe } iftype;
+enum ftype { unknown, reg, chr, tape, ispipe } iftype;
 enum ftype checktype();
 
 main(argc, argv)
@@ -310,7 +311,7 @@ char	**argv;
 			}
 			break;
 		case reg:
-			lseek(ibf, skip*ibs, L_INCR);
+			lseek(ibf, skip*ibs, SEEK_CUR);
 			break;
 		default:
 			while (skip--)
@@ -320,14 +321,14 @@ char	**argv;
 	if (seekn)
 	    switch (checktype(obf)) {
 		case reg:
-			lseek(obf, (long)obs*seekn, L_INCR);
+			lseek(obf, (long)obs*seekn, SEEK_CUR);
 			break;
-		case pipe:
+		case ispipe:
 			fprintf(stderr, "dd: can't seek on pipe\n");
 			break;
 		default:
 			while (seekn--)
-				lseek(obf, (long)obs, L_INCR);
+				lseek(obf, (long)obs, SEEK_CUR);
 			break;
 	}
 
@@ -653,7 +654,7 @@ checktype(fd)
 	if (fstat(fd, &st) == -1)
 		return (unknown);
 	if (S_ISFIFO(st.st_mode))
-		return (pipe);
+		return (ispipe);
 	if (S_ISCHR(st.st_mode)) {
 		if (ioctl(fd, MTIOCGET, (char *)&mt) != -1)
 			return (tape);
@@ -668,9 +669,9 @@ advance(fd, fdtype, count)
 	switch (fdtype) {
 	case reg:
 	case chr:
-		lseek(fd, count, L_INCR);
+		lseek(fd, count, SEEK_CUR);
 		break;
-	case pipe:
+	case ispipe:
 	case tape:
 		break;
 	default:
