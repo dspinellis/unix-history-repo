@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)spec_vnops.c	7.3 (Berkeley) %G%
+ *	@(#)spec_vnops.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -274,7 +274,8 @@ blk_close(vp, flag, cred)
 		 * we can, for instance, change floppy disks.
 		 */
 		bflush(dev);
-		binval(dev);
+		if (binval(dev))
+			return (0);
 		/*
 		 * We don't want to really close the device if it is still
 		 * in use. Since every use (buffer, inode, swap, cmap)
