@@ -1,0 +1,157 @@
+	 ==== /usr/lib/lisp directory ====
+
+  This directory contains a number of different kinds of files.  The meanings
+of the file suffixes are:
+	.l - lisp source		.o - compiled lisp	
+	.x - lisp cross reference   	
+
+    -- Contents --
+
+Makefile:
+    Input for make program.
+    'make all' makes all object files
+    'make required' makes only those object files needed to build the
+	default lisp system
+
+SCCS
+    Directory for checkpointing source.  This directory is normally not
+    distributed since it requires a special license to get the sccs
+    software
+
+as:
+    Berkeley assembler. Probably a copy of /bin/as except in those places
+    whose internal politics prevent the berkeley assembler from being the
+    standard one.
+    This assembler is called from liszt.
+
+manual
+    directory containing nroff output form of manual pages.
+    used by the 'help' function in lisp.
+
+nld
+    berkeley loader.  Usually a copy of /bin/ld.  Used by 'cfasl'
+    and 'ffasl' functions.
+
++++++ class A software +++++
+--- supported and documented by people at Berkeley.
+
+common0.l
+    Lisp functions which must exist in order to read in the syntax
+    and charmac files interpreted.  These are the lowest level files.
+
+common1.l
+    Most lisp coded lisp functions are in here.  
+    * Loaded into the standard lisp.
+
+common2.l
+    Other lisp coded lisp functions.  contains the pretty printer.
+    * Loaded into the standard lisp.
+
+syntax.l
+    Contains the setsyntax and getsyntax functions, as well as
+    the defintions of Franz's syntax classes.
+    * Loaded into the standard lisp.
+
+charmac.l
+    Contains the ever popular backquote macro and the sharp sign macro
+    * Loaded into the standard lisp.
+
+toplevel.l
+    standard berkeley franz top level.  Contains top-level and break
+    handlers as well as startup function for liszt -r and autoloads.
+    * Loaded into the standard lisp.
+
+trace.l
+    Joseph Lister Trace package from Berkeley.
+    Automatically loaded when a call to 'trace' is made.
+
+
++++++  class B +++++
+--- contributed software.  Not supported by people at Berkeley but
+documented in the Franz Lisp Manual. 
+    
+cmuenv.l
+    a file which just loads the cmu files to create the complete cmu
+    environment (macros, toplevel, file package, and editor).
+    
+cmuedit.l
+    an interlisp like interactive editor. Documented in chapter 16.
+    
+cmufile.l
+    a file package. This is documented in chapter 13
+    
+cmufncs.l
+    functions required by the cmu macros and other run time packages.
+    Some of these should move into the auxfns files
+
+cmumacs.l
+    compile time macros required for compiling other cmu files.  These
+    are also useful at runtime.
+    
+cmutpl.l
+    the cmu top level (containing a shell like history facility).
+    Documented in chapter 13.
+    
+
+
+editor.l
+
+fix.l
+    fixit package from cmu.   It has been modified to allow it to compile
+    with only the macros in cmumacs.  this is autoloaded when the 
+    function (debug) is invoked.
+
++++++  class C
+---  donated by individuals.  Not officially documented or supported.
+---  some files may contain documentation at the beginning, others
+---  may be documented in other lisp manuals
+
+jkfmacs.l
+    Some addition macros such as a nice 'If' macro and a msg macro for
+    printing multiple values in one call.
+
+
+machacks.l
+    a list of macros for generating a maclisp environment.
+
+
+step.l
+    Step package from cmu (and from mit).  It has been modified for the
+    new evalhook and funcallhook in Franz.  Will autoload when the 
+    function step is referenced.
+
+syscall.l
+    A set of macros for doing syscall's.  very unix dependent at this point.
+
+sysfunc.l
+    file from cmu.  Probably should be removed and functions put elsewhere.
+    
+tackon
+    program to put a 'fasl' type map onto an object file.
+    use is: 'tackon map objectfile'
+
+
+ucido.l
+    do function from ucilisp.  should be in ucifnc but isn't due to 
+    supposed compiler problems (which I don't believe still exist).
+
+ucifnc.l
+    set of macros and functions for generating a ucilisp environment.
+    automatically loaded when -u is done.
+
+
++++++ Class D
+----- files from the MacLisp/LispM world.  Not documented or supported
+----- by Berkeley, however they may be integrated into our code.
+
+loop.l
+    a macro for writing loops
+
+flavors.l
+    an object creator/definer
+
+struct.l 
+    a macro for defining structures
+
+structinit.l
+    a file required to compile struct.l
