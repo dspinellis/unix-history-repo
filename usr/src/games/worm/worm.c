@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)worm.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)worm.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -30,7 +30,7 @@ static char sccsid[] = "@(#)worm.c	5.2 (Berkeley) %G%";
 #define RUNLEN 8
 #define when break;case
 #define otherwise break;default
-#define CNTRL(p) ('p'-'A'+1)
+#define CNTRL(p) (p-'A'+1)
 #ifndef baudrate
 # define	baudrate()	_tty.sg_ospeed
 #endif
@@ -190,9 +190,9 @@ char ch;
 		when 'K': y--; running = RUNLEN/2; ch = tolower(ch);
 		when 'L': x++; running = RUNLEN; ch = tolower(ch);
 		when '\f': setup(); return;
-		when CNTRL(Z): suspend(); return;
-		when CNTRL(C): crash(); return;
-		when CNTRL(D): crash(); return;
+		when CNTRL('Z'): suspend(); return;
+		when CNTRL('C'): crash(); return;
+		when CNTRL('D'): crash(); return;
 		otherwise: if (! running) alarm(1);
 			   return;
 	}
