@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)quotacheck.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)quotacheck.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -23,6 +23,7 @@ static char sccsid[] = "@(#)quotacheck.c	8.4 (Berkeley) %G%";
  */
 #include <sys/param.h>
 #include <sys/stat.h>
+#include <sys/queue.h>
 
 #include <ufs/ufs/dinode.h>
 #include <ufs/ufs/quota.h>
