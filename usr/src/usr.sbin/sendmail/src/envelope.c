@@ -3,7 +3,7 @@
 #include "sendmail.h"
 #include <sys/stat.h>
 
-SCCSID(@(#)envelope.c	3.10		%G%);
+SCCSID(@(#)envelope.c	3.11		%G%);
 
 /*
 **  NEWENVELOPE -- allocate a new envelope
@@ -653,6 +653,7 @@ setsender(from)
 	}
 	rewrite(pvp, 3);
 	rewrite(pvp, 1);
+	rewrite(pvp, 4);
 	cataddr(pvp, buf, sizeof buf);
 	define('f', newstr(buf), CurEnv);
 
