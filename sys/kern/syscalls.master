@@ -219,7 +219,7 @@
 #endif
 162	UNIMPL	0 nosys
 163	UNIMPL	0 nosys
-164	UNIMPL	0 nosys
+164	STD	1 uname
 165	UNIMPL	0 nosys
 166	UNIMPL	0 nosys
 167	UNIMPL	0 nosys

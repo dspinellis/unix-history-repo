@@ -40,7 +40,7 @@
  * 26 May 93	Holger Veit		Remove hard coded escapes
  *		Rodney W. Grimes	Added two more \n to clean up output
  */
-static char rcsid[] = "$Header: /a/cvs/386BSD/src/sys/kern/init_main.c,v 1.4 1993/09/10 05:53:10 nate Exp $";
+static char rcsid[] = "$Header: /a/cvs/386BSD/src/sys/kern/init_main.c,v 1.5 1993/09/10 20:42:02 rgrimes Exp $";
 
 #include "param.h"
 #include "filedesc.h"
@@ -57,6 +57,7 @@ static char rcsid[] = "$Header: /a/cvs/386BSD/src/sys/kern/init_main.c,v 1.4 199
 #include "protosw.h"
 #include "reboot.h"
 #include "user.h"
+#include "utsname.h"
 
 #include "ufs/quota.h"
 
@@ -64,12 +65,13 @@ static char rcsid[] = "$Header: /a/cvs/386BSD/src/sys/kern/init_main.c,v 1.4 199
 
 #include "vm/vm.h"
 
-char	bsd_version[] =
-"FreeBSD release 1.0";
 char	copyright[] =
 "Copyright (c) 1989,1990,1991,1992 William F. Jolitz. All rights reserved.\n\
 Copyright (c) 1982,1986,1989,1991 The Regents of the University\n\
 of California.  All rights reserved.\n\n";
+
+/* For uname() */
+struct utsname utsname;
 
 /*
  * Components of process 0;
@@ -105,6 +107,7 @@ main()
 	register struct proc *p;
 	register struct filedesc0 *fdp;
 	int s, rval[2];
+	char *cp;
 
 	/*
 	 * Initialize curproc before any possible traps/probes
@@ -119,7 +122,6 @@ main()
 	startrtclock();
 	consinit();
 
-	printf("\n%s  [1.0.%s]\n", bsd_version, version+9);
 	printf("%s", copyright);
 
 	vm_mem_init();
@@ -277,6 +279,30 @@ main()
 	 * to verify the time from the file system.
 	 */
 	boottime = p->p_stats->p_start = time;
+
+	/*
+	 * Setup version number for uname syscall
+	 * XXX probably should go elsewhere.
+	 */
+	bzero(utsname.sysname, sizeof(utsname.sysname));
+	for (cp = version, i= 0;
+	     *cp && *cp != ' ' && i <= sizeof(utsname.sysname);
+	     )
+	  utsname.sysname[i++] = *cp++;
+	bzero(utsname.release, sizeof(utsname.release));
+	for (cp++, i= 0; *cp && *cp != ' ' && i <= sizeof(utsname.release);)
+	  utsname.release[i++] = *cp++;
+	bzero(utsname.version, sizeof(utsname.version));
+	for (; *cp != '('; cp++);
+	for (cp++, i= 0; *cp && *cp != ')' && i <= sizeof(utsname.version);)
+	  utsname.version[i++] = *cp++;
+	for (; *cp != '#'; cp++);
+	if(i <= sizeof(utsname.version))
+	  utsname.version[i++] = '#';
+	for (cp++; *cp && *cp != ':' && i <= sizeof(utsname.version);)
+	  utsname.version[i++] = *cp++;
+	strncpy(utsname.machine, MACHINE, sizeof(utsname.machine));
+	utsname.machine[sizeof(utsname.machine)-1] = '\0';
 
 	/*
 	 * make init process

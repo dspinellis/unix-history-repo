@@ -38,6 +38,7 @@
 #include "kernel.h"
 #include "proc.h"
 #include "reboot.h"
+#include "utsname.h"
 
 /* ARGSUSED */
 gethostid(p, uap, retval)
@@ -106,6 +107,23 @@ sethostname(p, uap, retval)
 	error = copyin((caddr_t)uap->hostname, hostname, uap->len);
 	hostname[hostnamelen] = 0;
 	return (error);
+}
+
+struct uname_args {
+        struct utsname  *name;
+};
+
+/* ARGSUSED */
+int
+uname(p, uap, retval)
+	struct proc *p;
+	struct uname_args *uap;
+	int *retval;
+{
+	bcopy(hostname, utsname.nodename, sizeof(utsname.nodename));
+	utsname.nodename[sizeof(utsname.nodename)-1] = '\0';
+	return (copyout((caddr_t)&utsname, (caddr_t)uap->name,
+		sizeof(struct utsname)));
 }
 
 struct reboot_args {
