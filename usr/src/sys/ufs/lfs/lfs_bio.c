@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_bio.c	8.9 (Berkeley) %G%
+ *	@(#)lfs_bio.c	8.10 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -73,6 +73,7 @@ lfs_bwrite(ap)
 		    bp->b_lblkno > 0) {
 			/* Out of space, need cleaner to run */
 			wakeup(&lfs_allclean_wakeup);
+			wakeup(&fs->lfs_nextseg);
 			if (error = tsleep(&fs->lfs_avail, PCATCH | PUSER,
 			    "cleaner", NULL)) {
 				brelse(bp);
