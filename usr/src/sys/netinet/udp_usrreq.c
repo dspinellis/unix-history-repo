@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1988, 1990 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)udp_usrreq.c	7.14 (Berkeley) %G%
+ *	@(#)udp_usrreq.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -38,6 +38,8 @@
 #include "ip_icmp.h"
 #include "udp.h"
 #include "udp_var.h"
+
+struct	inpcb *udp_last_inpcb = &udb;
 
 /*
  * UDP protocol implementation.
@@ -65,10 +67,12 @@ udp_input(m, iphlen)
 	register struct ip *ip;
 	register struct udphdr *uh;
 	register struct inpcb *inp;
+	struct mbuf *opts = 0;
 	int len;
 	struct ip save_ip;
 
-#ifndef notyet
+	udpstat.udps_ipackets++;
+#ifndef notyet	/* should skip this, make available & use on returned packets */
 	if (iphlen > sizeof (struct ip))
 		ip_stripoptions(m, (struct mbuf *)0);
 #endif
@@ -122,14 +126,24 @@ udp_input(m, iphlen)
 	/*
 	 * Locate pcb for datagram.
 	 */
-	inp = in_pcblookup(&udb,
-	    ip->ip_src, uh->uh_sport, ip->ip_dst, uh->uh_dport,
-	    INPLOOKUP_WILDCARD);
+	inp = udp_last_inpcb;
+	if (inp->inp_lport != uh->uh_dport ||
+	    inp->inp_fport != uh->uh_sport ||
+	    inp->inp_faddr.s_addr != ip->ip_src.s_addr ||
+	    inp->inp_laddr.s_addr != ip->ip_dst.s_addr) {
+		inp = in_pcblookup(&udb, ip->ip_src, uh->uh_sport,
+		    ip->ip_dst, uh->uh_dport, INPLOOKUP_WILDCARD);
+		if (inp)
+			udp_last_inpcb = inp;
+		udpstat.udpps_pcbcachemiss++;
+	}
 	if (inp == 0) {
 		/* don't send ICMP response for broadcast packet */
 		udpstat.udps_noport++;
-		if (m->m_flags & M_BCAST)
+		if (m->m_flags & M_BCAST) {
+			udpstat.udps_noportbcast++;
 			goto bad;
+		}
 		*ip = save_ip;
 		icmp_error(m, ICMP_UNREACH, ICMP_UNREACH_PORT);
 		return;
@@ -141,29 +155,85 @@ udp_input(m, iphlen)
 	 */
 	udp_in.sin_port = uh->uh_sport;
 	udp_in.sin_addr = ip->ip_src;
+	if (inp->inp_flags & INP_CONTROLOPTS) {
+		struct mbuf **mp = &opts;
+		struct mbuf *udp_saveopt();
+
+		if (inp->inp_flags & INP_RECVDSTADDR) {
+			*mp = udp_saveopt((caddr_t) &ip->ip_dst,
+			    sizeof(struct in_addr), IP_RECVDSTADDR);
+			if (*mp)
+				mp = &(*mp)->m_next;
+		}
+#ifdef notyet
+		/* options were tossed above */
+		if (inp->inp_flags & INP_RECVOPTS) {
+			*mp = udp_saveopt((caddr_t) opts_deleted_above,
+			    sizeof(struct in_addr), IP_RECVOPTS);
+			if (*mp)
+				mp = &(*mp)->m_next;
+		}
+		/* ip_srcroute doesn't do what we want here, need to fix */
+		if (inp->inp_flags & INP_RECVRETOPTS) {
+			*mp = udp_saveopt((caddr_t) ip_srcroute(),
+			    sizeof(struct in_addr), IP_RECVRETOPTS);
+			if (*mp)
+				mp = &(*mp)->m_next;
+		}
+#endif
+	}
 iphlen = sizeof(struct ip);
 	iphlen += sizeof(struct udphdr);
 	m->m_len -= iphlen;
 	m->m_pkthdr.len -= iphlen;
 	m->m_data += iphlen;
 	if (sbappendaddr(&inp->inp_socket->so_rcv, (struct sockaddr *)&udp_in,
-	    m, (struct mbuf *)0) == 0)
+	    m, opts) == 0) {
+		udpstat.udps_fullsock++;
 		goto bad;
-	udpstat.udps_ipackets++;
+	}
 	sorwakeup(inp->inp_socket);
 	return;
 bad:
 	m_freem(m);
+	if (opts)
+		m_freem(opts);
+}
+
+/*
+ * Create a "control" mbuf containing the specified data
+ * with the specified type for presentation with a datagram.
+ */
+struct mbuf *
+udp_saveopt(p, size, type)
+	caddr_t p;
+	register int size;
+	int type;
+{
+	register struct cmsghdr *cp;
+	struct mbuf *m;
+
+	if ((m = m_get(M_DONTWAIT, MT_CONTROL)) == NULL)
+		return ((struct mbuf *) NULL);
+	cp = (struct cmsghdr *) mtod(m, struct cmsghdr *);
+	bcopy(p, (caddr_t)cp + size, size);
+	size += sizeof(*cp);
+	m->m_len = size;
+	cp->cmsg_len = size;
+	cp->cmsg_level = IPPROTO_IP;
+	cp->cmsg_type = type;
+	return (m);
 }
 
 /*
  * Notify a udp user of an asynchronous error;
  * just wake up so that he can collect error status.
  */
-udp_notify(inp)
+udp_notify(inp, errno)
 	register struct inpcb *inp;
 {
 
+	inp->inp_socket->so_error = errno;
 	sorwakeup(inp->inp_socket);
 	sowwakeup(inp->inp_socket);
 }
@@ -251,7 +321,8 @@ udp_output(inp, m, addr, control)
 		ui->ui_sum = 0xffff;
 	}
 	((struct ip *)ui)->ip_len = sizeof (struct udpiphdr) + len;
-	((struct ip *)ui)->ip_ttl = udp_ttl;
+	((struct ip *)ui)->ip_ttl = inp->inp_ip.ip_ttl;	/* XXX */
+	((struct ip *)ui)->ip_tos = inp->inp_ip.ip_tos;	/* XXX */
 	udpstat.udps_opackets++;
 	error = ip_output(m, inp->inp_options, &inp->inp_route,
 	    inp->inp_socket->so_options & (SO_DONTROUTE | SO_BROADCAST));
@@ -280,6 +351,7 @@ udp_usrreq(so, req, m, addr, control)
 {
 	struct inpcb *inp = sotoinpcb(so);
 	int error = 0;
+	int s;
 
 	if (req == PRU_CONTROL)
 		return (in_control(so, (int)m, (caddr_t)addr,
@@ -288,6 +360,12 @@ udp_usrreq(so, req, m, addr, control)
 		error = EINVAL;
 		goto release;
 	}
+	/*
+	 * block udp_input while changing udp pcb queue,
+	 * addresses; should be done for individual cases,
+	 * but it's not worth it.
+	 */
+	s = splnet();
 	switch (req) {
 
 	case PRU_ATTACH:
@@ -295,12 +373,15 @@ udp_usrreq(so, req, m, addr, control)
 			error = EINVAL;
 			break;
 		}
+		s = splnet();
 		error = in_pcballoc(so, &udb);
+		splx(s);
 		if (error)
 			break;
 		error = soreserve(so, udp_sendspace, udp_recvspace);
 		if (error)
 			break;
+		((struct inpcb *) so->so_pcb)->inp_ip.ip_ttl = udp_ttl;
 		break;
 
 	case PRU_DETACH:
@@ -348,10 +429,8 @@ udp_usrreq(so, req, m, addr, control)
 		break;
 
 	case PRU_SEND:
-		error = udp_output(inp, m, addr, control);
-		m = NULL;
-		control = NULL;
-		break;
+		splx(s);
+		return (udp_output(inp, m, addr, control));
 
 	case PRU_ABORT:
 		soisdisconnected(so);
@@ -387,6 +466,8 @@ udp_usrreq(so, req, m, addr, control)
 	default:
 		panic("udp_usrreq");
 	}
+	splx(s);
+
 release:
 	if (control) {
 		printf("udp control data unexpectedly retained\n");
