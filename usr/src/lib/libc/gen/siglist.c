@@ -1,4 +1,6 @@
-/*	@(#)siglist.c	4.1 (Berkeley) %G%	*/
+/*	@(#)siglist.c	4.2 (Berkeley) %G%	*/
+
+#include <signal.h>
 
 char	*sys_siglist[NSIG] = {
 	"Signal 0",
