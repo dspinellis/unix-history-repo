@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -187,7 +187,7 @@ static char *errorlist[] =
 #define ERR_NOHOME	77
     "No $home variable set",
 #define ERR_HISTUS	78
-    "Usage: history [-rht] [# number of events]",
+    "Usage: history [-rh] [# number of events]",
 #define ERR_SPDOLLT	79
     "$ or < not allowed with $# or $?",
 #define ERR_NEWLINE	80
@@ -279,7 +279,7 @@ seterror(id, va_alist)
 #endif
 	if (id < 0 || id > sizeof(errorlist) / sizeof(errorlist[0]))
 	    id = ERR_INVALID;
-	xvsprintf(berr, errorlist[id], va);
+	vsprintf(berr, errorlist[id], va);
 	va_end(va);
 
 	seterr = strsave(berr);
@@ -325,32 +325,27 @@ stderror(id, va_alist)
     if (id < 0 || id > sizeof(errorlist) / sizeof(errorlist[0]))
 	id = ERR_INVALID;
 
-    /*
-     * Must flush before we print as we wish output before the error to go on
-     * (some form of) standard output, while output after goes on (some form
-     * of) diagnostic output. If didfds then output will go to 1/2 else to
-     * FSHOUT/FSHDIAG. See flush in sh.print.c.
-     */
-    flush();
+    (void) fflush(cshout);
+    (void) fflush(csherr);
     haderr = 1;			/* Now to diagnostic output */
     timflg = 0;			/* This isn't otherwise reset */
 
 
     if (!(flags & ERR_SILENT)) {
 	if (flags & ERR_NAME)
-	    xprintf("%s: ", bname);
+	    (void) fprintf(csherr, "%s: ", bname);
 	if ((flags & ERR_OLD))
 	    /* Old error. */
-	    xprintf("%s.\n", seterr);
+	    (void) fprintf(csherr, "%s.\n", seterr);
 	else {
 #if __STDC__
 	    va_start(va, id);
 #else
 	    va_start(va);
 #endif
-	    xvprintf(errorlist[id], va);
+	    (void) vfprintf(csherr, errorlist[id], va);
 	    va_end(va);
-	    xprintf(".\n");
+	    (void) fprintf(csherr, ".\n");
 	}
     }
 
@@ -364,6 +359,8 @@ stderror(id, va_alist)
     if (v = gargv)
 	gargv = 0, blkfree(v);
 
+    (void) fflush(cshout);
+    (void) fflush(csherr);
     didfds = 0;			/* Forget about 0,1,2 */
     /*
      * Go away if -e or we are a child shell

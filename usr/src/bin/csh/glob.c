@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)glob.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)glob.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -24,7 +24,7 @@ static char sccsid[] = "@(#)glob.c	5.22 (Berkeley) %G%";
 #include "csh.h"
 #include "extern.h"
 
-static int noglob, nonomatch;
+static int noglob;
 static int pargsiz, gargsiz;
 
 /*
@@ -238,7 +238,7 @@ globexpand(v)
 	Char   *b;
 	Char  **vp, **bp;
 
-	if (b = Strchr(s, LBRC)) {
+	if ((b = Strchr(s, LBRC)) != NULL && b[1] != '\0') {
 	    Char  **bl;
 	    int     len;
 
@@ -328,14 +328,18 @@ static Char **
 libglob(vl)
     Char  **vl;
 {
-    int     gflgs = GLOB_QUOTE | GLOB_NOCHECK;
+    int     gflgs = GLOB_QUOTE | GLOB_NOMAGIC;
     glob_t  globv;
     char   *ptr;
+    int     nonomatch = adrof(STRnonomatch) != 0, magic = 0, match = 0;
 
     globv.gl_offs = 0;
     globv.gl_pathv = 0;
     globv.gl_pathc = 0;
-    nonomatch = adrof(STRnonomatch) != 0;
+
+    if (nonomatch)
+	gflgs |= GLOB_NOCHECK;
+
     do {
 	ptr = short2qstr(*vl);
 	switch (glob(ptr, gflgs, 0, &globv)) {
@@ -349,15 +353,15 @@ libglob(vl)
 	default:
 	    break;
 	}
-	if (!nonomatch && (globv.gl_matchc == 0) &&
-	    (globv.gl_flags & GLOB_MAGCHAR)) {
-	    globfree(&globv);
-	    return (NULL);
+	if (globv.gl_flags & GLOB_MAGCHAR) {
+	    match |= (globv.gl_matchc != 0);
+	    magic = 1;
 	}
 	gflgs |= GLOB_APPEND;
     }
     while (*++vl);
-    vl = blk2short(globv.gl_pathv);
+    vl = (globv.gl_pathc == 0 || (magic && !match && !nonomatch)) ? 
+	NULL : blk2short(globv.gl_pathv);
     globfree(&globv);
     return (vl);
 }
@@ -598,7 +602,7 @@ backeval(cp, literal)
 
 	(void) close(pvec[0]);
 	(void) dmove(pvec[1], 1);
-	(void) dmove(SHDIAG, 2);
+	(void) dmove(SHERR, 2);
 	initdesc();
 	/*
 	 * Bugfix for nested backquotes by Michael Greim <greim@sbsvax.UUCP>,

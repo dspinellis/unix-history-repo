@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sem.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)sem.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -155,7 +155,7 @@ execute(t, wanttty, pipein, pipeout)
 	/*
 	 * We have to fork for eval too.
 	 */
-	    (bifunc && (t->t_dflg & F_PIPEIN) != 0 &&
+	    (bifunc && (t->t_dflg & (F_PIPEIN | F_PIPEOUT)) != 0 &&
 	     bifunc->bfunct == doeval))
 	    if (t->t_dtyp == NODE_PAREN ||
 		t->t_dflg & (F_REPEAT | F_AMPERSAND) || bifunc) {
@@ -177,7 +177,7 @@ execute(t, wanttty, pipein, pipeout)
 	    }
 	    else {
 		int     ochild, osetintr, ohaderr, odidfds;
-		int     oSHIN, oSHOUT, oSHDIAG, oOLDSTD, otpgrp;
+		int     oSHIN, oSHOUT, oSHERR, oOLDSTD, otpgrp;
 		sigset_t omask;
 
 		/*
@@ -199,7 +199,7 @@ execute(t, wanttty, pipein, pipeout)
 		odidfds = didfds;
 		oSHIN = SHIN;
 		oSHOUT = SHOUT;
-		oSHDIAG = SHDIAG;
+		oSHERR = SHERR;
 		oOLDSTD = OLDSTD;
 		otpgrp = tpgrp;
 		ocsigmask = csigmask;
@@ -221,7 +221,7 @@ execute(t, wanttty, pipein, pipeout)
 		    didfds = odidfds;
 		    SHIN = oSHIN;
 		    SHOUT = oSHOUT;
-		    SHDIAG = oSHDIAG;
+		    SHERR = oSHERR;
 		    OLDSTD = oOLDSTD;
 		    tpgrp = otpgrp;
 		    csigmask = ocsigmask;
@@ -326,7 +326,7 @@ execute(t, wanttty, pipein, pipeout)
 	    break;
 	}
 	if (t->t_dtyp != NODE_PAREN) {
-	    doexec(t);
+	    doexec(NULL, t);
 	    /* NOTREACHED */
 	}
 	/*
@@ -334,7 +334,7 @@ execute(t, wanttty, pipein, pipeout)
 	 */
 	OLDSTD = dcopy(0, FOLDSTD);
 	SHOUT = dcopy(1, FSHOUT);
-	SHDIAG = dcopy(2, FSHDIAG);
+	SHERR = dcopy(2, FSHERR);
 	(void) close(SHIN);
 	SHIN = -1;
 	didfds = 0;
@@ -440,7 +440,7 @@ doio(t, pipein, pipeout)
 	     */
 	    (void) dcopy(SHIN, 0);
 	    (void) dcopy(SHOUT, 1);
-	    (void) dcopy(SHDIAG, 2);
+	    (void) dcopy(SHERR, 2);
 	    cp = globone(dp = Dfix1(cp), G_IGNORE);
 	    (void) strncpy(tmp, short2str(cp), MAXPATHLEN);
 	    tmp[MAXPATHLEN] = '\0';
@@ -478,7 +478,7 @@ doio(t, pipein, pipeout)
 	 * so > /dev/std{out,err} work
 	 */
 	(void) dcopy(SHOUT, 1);
-	(void) dcopy(SHDIAG, 2);
+	(void) dcopy(SHERR, 2);
 	if ((flags & F_APPEND) &&
 #ifdef O_APPEND
 	    (fd = open(tmp, O_WRONLY | O_APPEND)) >= 0);
@@ -512,7 +512,7 @@ doio(t, pipein, pipeout)
 	(void) dup(1);
     }
     else {
-	(void) dup(SHDIAG);
+	(void) dup(SHERR);
 	(void) ioctl(2, FIONCLEX, NULL);
     }
     didfds = 1;

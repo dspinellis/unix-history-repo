@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dir.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)dir.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -56,10 +56,10 @@ dinit(hp)
     /* Don't believe the login shell home, because it may be a symlink */
     tcp = getwd(path);		/* see ngetwd.c for System V version */
     if (tcp == NULL || *tcp == '\0') {
-	(void) xprintf("csh: %s\n", path);
+	(void) fprintf(csherr, "csh: %s\n", path);
 	if (hp && *hp) {
 	    tcp = short2str(hp);
-	    (void) xprintf(emsg, tcp);
+	    (void) fprintf(csherr, emsg, tcp);
 	    if (chdir(tcp) == -1)
 		cp = NULL;
 	    else
@@ -68,7 +68,7 @@ dinit(hp)
 	else
 	    cp = NULL;
 	if (cp == NULL) {
-	    (void) xprintf(emsg, "/");
+	    (void) fprintf(csherr, emsg, "/");
 	    if (chdir("/") == -1)
 		/* I am not even try to print an error message! */
 		xexit(1);
@@ -160,8 +160,10 @@ skipargs(v, str)
  * dodirs - list all directories in directory loop
  */
 void
-dodirs(v)
-    Char  **v;
+/*ARGSUSED*/
+dodirs(v, t)
+    Char **v;
+    struct command *t;
 {
     skipargs(&v, "");
 
@@ -186,7 +188,7 @@ printdirs()
 	if (dp == &dhead)
 	    continue;
 	if (dirflag & DIR_VERT) {
-	    xprintf("%d\t", idx++);
+	    (void) fprintf(cshout, "%d\t", idx++);
 	    cur = 0;
 	}
 	if (!(dirflag & DIR_LONG) && hp != NULL && !eq(hp, STRslash) &&
@@ -197,14 +199,14 @@ printdirs()
 
 	cur += len;
 	if ((dirflag & DIR_LINE) && cur >= 80 - 1 && len < 80) {
-	    xprintf("\n");
+	    (void) fprintf(cshout, "\n");
 	    cur = len;
 	}
-	xprintf(s != dp->di_name ? "~%s%c" : "%s%c",
+	(void) fprintf(cshout, s != dp->di_name ? "~%s%c" : "%s%c",
 		short2str(s), (dirflag & DIR_VERT) ? '\n' : ' ');
     } while ((dp = dp->di_prev) != dcwd);
     if (!(dirflag & DIR_VERT))
-	xprintf("\n");
+	(void) fprintf(cshout, "\n");
 }
 
 void
@@ -213,9 +215,9 @@ dtildepr(home, dir)
 {
 
     if (!eq(home, STRslash) && prefix(home, dir))
-	xprintf("~%s", short2str(dir + Strlen(home)));
+	(void) fprintf(cshout, "~%s", short2str(dir + Strlen(home)));
     else
-	xprintf("%s", short2str(dir));
+	(void) fprintf(cshout, "%s", short2str(dir));
 }
 
 void
@@ -304,8 +306,10 @@ dnormalize(cp)
  * dochngd - implement chdir command.
  */
 void
-dochngd(v)
-    Char  **v;
+/*ARGSUSED*/
+dochngd(v, t)
+    Char **v;
+    struct command *t;
 {
     register Char *cp;
     register struct directory *dp;
@@ -447,8 +451,10 @@ dfollow(cp)
  *	with numeric argument (+n) bring it to top.
  */
 void
-dopushd(v)
-    Char  **v;
+/*ARGSUSED*/
+dopushd(v, t)
+    Char **v;
+    struct command *t;
 {
     register struct directory *dp;
 
@@ -530,8 +536,10 @@ dfind(cp)
  *	with a numeric argument just discard it.
  */
 void
-dopopd(v)
-    Char  **v;
+/*ARGSUSED*/
+dopopd(v, t)
+    Char **v;
+    struct command *t;
 {
     register struct directory *dp, *p = NULL;
 

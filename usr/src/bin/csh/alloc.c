@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)alloc.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)alloc.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -106,16 +106,16 @@ static u_int nmalloc[NBUCKETS];
 #ifdef DEBUG
 #define CHECK(a, str, p) \
     if (a) { \
-	xprintf(str, p);	\
-	xprintf("memtop = %lx membot = %lx.\n", memtop, membot);	\
+	(void) fprintfcsherr, (str, p);	\
+	(void) fprintf(csherr, "memtop = %lx membot = %lx.\n", memtop, membot);\
 	abort(); \
     }	\
     else
 #else
 #define CHECK(a, str, p) \
     if (a) { \
-	xprintf(str, p);	\
-	xprintf("memtop = %lx membot = %lx.\n", memtop, membot);	\
+	(void) fprintf(csherr, str, p);	\
+	(void) fprintf(csherr, "memtop = %lx membot = %lx.\n", memtop, membot);\
 	return; \
     }	\
     else
@@ -153,7 +153,7 @@ malloc(nbytes)
 	stderror(ERR_NOMEM);
 #else
 	showall();
-	xprintf("nbytes=%d: Out of memory\n", nbytes);
+	(void) fprintf(csherr, "nbytes=%d: Out of memory\n", nbytes);
 	abort();
 #endif
 	/* fool lint */
@@ -487,30 +487,34 @@ Free(p)
  * frees for each size category.
  */
 void
-showall()
+/*ARGSUSED*/
+showall(v, t)
+    Char **v;
+    struct command *t;
 {
 #ifndef SYSMALLOC
     register int i, j;
     register union overhead *p;
     int     totfree = 0, totused = 0;
 
-    xprintf("csh current memory allocation:\nfree:\t");
+    (void) fprintf(cshout, "csh current memory allocation:\nfree:\t");
     for (i = 0; i < NBUCKETS; i++) {
 	for (j = 0, p = nextf[i]; p; p = p->ov_next, j++);
-	xprintf(" %4d", j);
+	(void) fprintf(cshout, " %4d", j);
 	totfree += j * (1 << (i + 3));
     }
-    xprintf("\nused:\t");
+    (void) fprintf(cshout, "\nused:\t");
     for (i = 0; i < NBUCKETS; i++) {
-	xprintf(" %4d", nmalloc[i]);
+	(void) fprintf(cshout, "%4d", nmalloc[i]);
 	totused += nmalloc[i] * (1 << (i + 3));
     }
-    xprintf("\n\tTotal in use: %d, total free: %d\n",
+    (void) fprintf(cshout, "\n\tTotal in use: %d, total free: %d\n",
 	    totused, totfree);
-    xprintf("\tAllocated memory from 0x%lx to 0x%lx.  Real top at 0x%lx\n",
+    (void) fprintf(cshout, 
+	    "\tAllocated memory from 0x%lx to 0x%lx.  Real top at 0x%lx\n",
 	    membot, memtop, (char *) sbrk(0));
 #else
-    xprintf("Allocated memory from 0x%lx to 0x%lx (%ld).\n",
+    (void) fprintf(cshout, "Allocated memory from 0x%lx to 0x%lx (%ld).\n",
 	    membot, memtop = (char *) sbrk(0), memtop - membot);
 #endif				/* SYSMALLOC */
 }
