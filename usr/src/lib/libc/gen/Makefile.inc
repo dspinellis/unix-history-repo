@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.16 (Berkeley) %G%
+#	@(#)Makefile.inc	5.17 (Berkeley) %G%
 
 # gen sources
 .PATH: ${.CURDIR}/${MACHINE}/gen ${.CURDIR}/gen ${.CURDIR}/gen/regexp
@@ -91,9 +91,8 @@ MLINKS+=syslog.3 closelog.3 syslog.3 openlog.3 syslog.3 setlogmask.3 \
 MLINKS+=ttyname.3 isatty.3 ttyname.3 ttyslot.3
 MLINKS+=tzset.3 tzsetwall.3
 
-errlst.o:
+errlst.o errlst.po:
 	${CC} -S ${CFLAGS} ${.IMPSRC}
 	ed - < ${.CURDIR}/${MACHINE}/:errfix errlst.s
-	${AS} -o errlst.o errlst.s
-	cp errlst.o errlst.po
+	${AS} -o ${.TARGET} errlst.s
 	rm -f errlst.s
