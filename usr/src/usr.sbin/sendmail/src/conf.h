@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	5.18 (Berkeley) %G%
+ *	@(#)conf.h	5.19 (Berkeley) %G%
  */
 
 /*
@@ -46,6 +46,7 @@
 # define DAEMON		1	/* include the daemon (requires IPC & SMTP) */
 # define SETPROCTITLE	1	/* munge argv to display current status */
 # define NAMED_BIND	1	/* use Berkeley Internet Domain Server */
+# define USERDB		1	/* look in user database */
 
 /*
 **  Older systems don't have this error code -- it should be in

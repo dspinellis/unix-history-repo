@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	5.18 (Berkeley) %G%
+ *	@(#)sendmail.h	5.19 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	5.18		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	5.19		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -555,6 +555,7 @@ EXTERN char	*TrustedUsers[MAXTRUST+1];	/* list of trusted users */
 EXTERN char	*UserEnviron[MAXUSERENVIRON+1];	/* saved user environment */
 EXTERN int	CheckpointInterval;	/* queue file checkpoint interval */
 EXTERN bool	WildcardMX;	/* we have wildcard MX records */
+EXTERN char	*UdbFileName;	/* user database file name [udbexpand.c] */
 /*
 **  Trace information
 */

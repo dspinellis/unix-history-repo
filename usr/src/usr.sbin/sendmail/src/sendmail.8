@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)sendmail.8	6.8 (Berkeley) %G%
+.\"     @(#)sendmail.8	6.9 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SENDMAIL 8
@@ -313,6 +313,13 @@ failed messages will be returned to the sender.
 The default is three days.
 .It Li t Ns Ar stz , Ar dtz
 Set the name of the time zone.
+.It Li U Ns Ar userdatabase
+If set, a user database is consulted to get forwarding information.
+You can consider this an adjunct to the aliasing mechanism,
+except that the database is intended to be distributed;
+aliases are local to a particular host.
+This may not be available if your sendmail does not have the
+USERDB option compiled in.
 .It Li u Ns Ar N
 Set the default user id for mailers.
 .It Li w
