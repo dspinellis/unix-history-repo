@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.77 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.78 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -842,11 +842,9 @@ getla()
 static char  rcsid[] = "@(#)$Id: getloadavg.c,v 1.16 1991/06/21 12:51:15 paul Exp $";
 #endif /* !lint */
 
-#   ifdef apollo
+#ifdef apollo
 # undef volatile
 #    include <apollo/base.h>
-#    include <apollo/time.h>
-#    include <sys/types.h>
 
 /* ARGSUSED */
 int getloadavg( call_data )
