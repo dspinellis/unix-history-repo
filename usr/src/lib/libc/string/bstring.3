@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)bstring.3	6.4 (Berkeley) %G%
+.\"	@(#)bstring.3	6.5 (Berkeley) %G%
 .\"
 .TH BSTRING 3  ""
 .UC 5
@@ -10,6 +10,7 @@
 bcopy, bcmp, bzero, ffs \- bit and byte string operations
 .SH SYNOPSIS
 .nf
+.B void
 .B bcopy(src, dst, length)
 .B char *src, *dst;
 .B int length;
@@ -18,6 +19,7 @@ bcopy, bcmp, bzero, ffs \- bit and byte string operations
 .B char *b1, *b2;
 .B int length;
 .PP
+.B void
 .B bzero(b, length)
 .B char *b;
 .B int length;
