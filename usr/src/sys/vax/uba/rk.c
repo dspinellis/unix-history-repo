@@ -1,18 +1,16 @@
-/*	rk.c	4.18	%G%	*/
+/*	rk.c	4.19	%G%	*/
 
 #include "rk.h"
 #if NHK > 0
+int	rkwaitdry;
 /*
  * RK11/RK07 disk driver
  *
  * This driver mimics up.c; see it for an explanation of common code.
  *
  * TODO:
- *	Correct to handle spun-down drives
- *	Check write lock handling
  *	Add reading of bad sector information and disk layout from sector 1
  *	Add bad sector forwarding code
- *	Fix drive recognition
  */
 #define	DELAY(i)		{ register int j; j = i; while (--j > 0); }
 #include "../h/param.h"
@@ -108,12 +106,12 @@ rkslave(ui, reg)
 {
 	register struct rkdevice *rkaddr = (struct rkdevice *)reg;
 
-	rkaddr->rkcs1 = RK_CDT;
+	rkaddr->rkcs1 = RK_CDT|RK_CCLR;
 	rkaddr->rkcs2 = ui->ui_slave;
+	rkaddr->rkcs1 = RK_CDT|RK_SELECT|RK_GO;
 	rkwait(rkaddr);
-/* SHOULD TRY THIS BY PULLING A PLUG */
-/* A DELAY OR SOMETHING MAY BE NEEDED */
-	if (rkaddr->rkcs2&RK_NED) {
+	DELAY(50);
+	if (rkaddr->rkcs2&RK_NED || (rkaddr->rkds&RK_SVAL) == 0) {
 		rkaddr->rkcs1 = RK_CDT|RK_CCLR;
 		return (0);
 	}
@@ -190,27 +188,27 @@ rkustart(ui)
 		return (0);
 	dk_busy &= ~(1<<ui->ui_dk);
 	dp = &rkutab[ui->ui_unit];
-	if ((bp = dp->b_actf) == NULL)
-		goto out;
 	um = ui->ui_mi;
+	rkaddr = (struct rkdevice *)um->um_addr;
 	if (um->um_tab.b_active) {
 		rk_softc[um->um_ctlr].sc_softas |= 1<<ui->ui_slave;
 		return (0);
 	}
-	rkaddr = (struct rkdevice *)um->um_addr;
 	rkaddr->rkcs1 = RK_CDT|RK_CERR;
 	rkaddr->rkcs2 = ui->ui_slave;
 	rkaddr->rkcs1 = RK_CDT|RK_SELECT|RK_GO;
 	rkwait(rkaddr);
-	if (dp->b_active)
-		goto done;
-	dp->b_active = 1;
+	rkaddr->rkcs1 = RK_CDT|RK_DCLR|RK_GO;
+	rkwait(rkaddr);
+	if ((bp = dp->b_actf) == NULL)
+		goto out;
 	if ((rkaddr->rkds & RK_VV) == 0) {
 		/* SHOULD WARN SYSTEM THAT THIS HAPPENED */
-		rkaddr->rkcs1 = RK_CDT|RK_IE|RK_PACK|RK_GO;
+		rkaddr->rkcs1 = RK_CDT|RK_PACK|RK_GO;
 		rkwait(rkaddr);
-		didie = 1;
 	}
+	if ((rkaddr->rkds & RK_DREADY) != RK_DREADY)
+		goto done;
 	if (rk_softc[um->um_ctlr].sc_ndrive == 1)
 		goto done;
 	if (bp->b_cylin == rkcyl[ui->ui_unit])
@@ -247,6 +245,7 @@ rkstart(um)
 	struct rkst *st;
 	daddr_t bn;
 	int sn, tn, cmd;
+	int waitdry;
 
 loop:
 	if ((dp = um->um_tab.b_actf) == NULL)
@@ -267,6 +266,30 @@ loop:
 	rkaddr->rkcs2 = ui->ui_slave;
 	rkaddr->rkcs1 = RK_CDT|RK_SELECT|RK_GO;
 	rkwait(rkaddr);
+	waitdry = 0;
+	while ((rkaddr->rkds&RK_SVAL) == 0) {
+		if (++waitdry > 32)
+			break;
+		rkwaitdry++;
+	}
+	if ((rkaddr->rkds&RK_DREADY) != RK_DREADY) {
+		printf("rk%d not ready", dkunit(bp));
+		if ((rkaddr->rkds&RK_DREADY) != RK_DREADY) {
+			printf("\n");
+			rkaddr->rkcs1 = RK_CDT|RK_DCLR|RK_GO;
+			rkwait(rkaddr);
+			rkaddr->rkcs1 = RK_CDT|RK_CERR;
+			rkwait(rkaddr);
+			um->um_tab.b_active = 0;
+			um->um_tab.b_errcnt = 0;
+			dp->b_actf = bp->av_forw;
+			dp->b_active = 0;
+			bp->b_flags |= B_ERROR;
+			iodone(bp);
+			goto loop;
+		}
+		printf(" (came back!)\n");
+	}
 	if (um->um_tab.b_errcnt >= 16 && (bp->b_flags&B_READ) != 0) {
 		rkaddr->rkatt = rk_offset[um->um_tab.b_errcnt & 017];
 		rkaddr->rkcs1 = RK_CDT|RK_OFFSET|RK_GO;
@@ -315,33 +338,11 @@ rkintr(rk11)
 		dk_busy &= ~(1 << ui->ui_dk);
 		if (rkaddr->rkcs1 & RK_CERR) {
 			int recal;
-#ifdef notdef
-			int del = 0;
-#endif
 			u_short ds = rkaddr->rkds;
 			u_short cs2 = rkaddr->rkcs2;
 			u_short er = rkaddr->rker;
 			if (sc->sc_recal)
 				printf("recal CERR\n");
-#ifdef notdef
-/* THIS ATTEMPTED TO FIND OUT IF THE DRIVE IS SPUN */
-/* DOWN BUT IT DOESN'T SEEM TO WORK... THE DRIVE SEEMS TO */
-/* TELL PAINFULLY LITTLE WHEN IT IS SPUN DOWN (I.E. NOTHING CHANGES) */
-/* THE DRIVE JUST KEEPS SAYING IT WANTS ATTENTION AND BLOWING ALL COMMANDS */
-			if (ds & RK_CDA) {
-				rkaddr->rkcs1 = RK_CDT|RK_CERR;
-				rkaddr->rkcs2 = ui->ui_slave;
-				rkaddr->rkcs1 = RK_CDT|RK_SELECT|RK_GO;
-				rkwait(rkaddr);
-				while ((rkaddr->rkds & RK_SVAL) == 0)
-					if (++del > 512)
-						break;
-			}
-			if (del > 512) {
-				printf("rk%d is down\n", dkunit(bp));
-				bp->b_flags |= B_ERROR;
-			} else
-#endif
 			if (ds & RK_WLE) {
 				printf("rk%d is write locked\n", dkunit(bp));
 				bp->b_flags |= B_ERROR;
@@ -349,8 +350,9 @@ rkintr(rk11)
 			    ds&RKDS_HARD || er&RKER_HARD || cs2&RKCS2_HARD) {
 				bp->b_flags |= B_ERROR;
 				harderr(bp);
-				printf("rk%d cs2=%b ds=%b er=%b\n",
-				    dkunit(bp), cs2, RKCS2_BITS, ds, 
+				printf("rk%d%c cs2=%b ds=%b er=%b\n",
+				    dkunit(bp), 'a'+(minor(bp->b_dev)&07),
+				    cs2, RKCS2_BITS, ds, 
 				    RKDS_BITS, er, RKER_BITS);
 			} else
 				um->um_tab.b_active = 0;
@@ -399,6 +401,7 @@ retry:
 		}
 		as &= ~(1<<ui->ui_slave);
 	}
+att:
 	for (unit = 0; as; as >>= 1, unit++)
 		if (as & 1)
 			if (rkustart(rkip[rk11][unit]))
@@ -408,6 +411,10 @@ retry:
 			needie = 0;
 	if (needie)
 		rkaddr->rkcs1 = RK_CDT|RK_IE;
+	if ((rkaddr->rkcs1 & RK_IE) == 0) {
+		printf("cs1 %o not ie\n", rkaddr->rkcs1);
+		rkaddr->rkcs1 |= RK_CDT|RK_IE;
+	}
 }
 
 rkwait(addr)
@@ -456,7 +463,7 @@ rkecc(ui)
 	npf = btop((rk->rkwc * sizeof(short)) + bp->b_bcount) - 1;
 	reg = btop(um->um_ubinfo&0x3ffff) + npf;
 	o = (int)bp->b_un.b_addr & PGOFSET;
-	printf("SOFT ECC rk%d%c bn%d\n", dkunit(bp),
+	printf("soft ecc rk%d%c bn%d\n", dkunit(bp),
 	    'a'+(minor(bp->b_dev)&07), bp->b_blkno + npf);
 	mask = rk->rkec2;
 	ubapurge(um);
@@ -559,7 +566,7 @@ active:
 		sc->sc_wticks++;
 		if (sc->sc_wticks >= 20) {
 			sc->sc_wticks = 0;
-			printf("LOST rkintr ");
+			printf("lost rkintr ");
 			ubareset(um->um_ubanum);
 		}
 	}
