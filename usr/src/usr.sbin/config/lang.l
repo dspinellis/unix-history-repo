@@ -1,5 +1,5 @@
 %{
-/*	lang.l	1.2	81/02/24	*/
+/*	lang.l	1.3	81/02/25	*/
 
 #include <ctype.h>
 #include "y.tab.h"
@@ -21,7 +21,7 @@ struct kt {
 	"device", DEVICE, "controller", CONTROLLER, "uba", UBA, "mba", MBA,
 	"csr", CSR, "nexus", NEXUS, "drive", DRIVE, "vector", VECTOR,
 	"pseudo-device", PSEUDO_DEVICE, "flags", FLAGS, "trace", TRACE,
-	"disk", DISK, "tape", CONTROLLER, "slave", SLAVE, "at", AT,
+	"disk", DISK, "tape", DEVICE, "slave", SLAVE, "at", AT,
 	0,0,
 };
 %}
