@@ -1,6 +1,6 @@
 C
 C ioinit - initialize the I/O system
-C		@(#)ioinit.f	1.3
+C		@(#)ioinit.f	1.4
 C synopsis:
 C	logical function ioinit (cctl, bzro, apnd, prefix, vrbose)
 C	logical cctl, bzro, apnd, vrbose
@@ -30,9 +30,7 @@ C
 	character	form, blank
 	character*32	ename
 	character*256	fname
-	common /opnbof/	ibof
-	common /ccntrl/	ictl
-	common /blzero/	izro
+	common /ioiflg/	ibof, ictl, izro
 
 	if (cctl) then
 	    ictl = 1
