@@ -1,4 +1,4 @@
-.\"	@(#)2.t	1.3	(Copyright 1986 M. K. McKusick)	86/12/04
+.\"	@(#)2.t	1.4	(Copyright 1986 M. K. McKusick)	86/12/04
 .NH
 The Future of UNIX at Berkeley
 .PP
@@ -107,18 +107,25 @@ toward convergence on a compatible file system interface [Karels86].
 .NH 2
 Changes to the Protocol Layering Interface
 .PP
-The original work on restructuring the internal kernel interfaces
+The original work on restructuring the UNIX character I/O system
 to allow flexible configuration of the internal modules by user
 processes was done at Bell Laboratories [Ritchie84].
 Known as stackable line disciplines, these interfaces allowed a user
 process to open a raw terminal port and then push on appropriate
 processing modules (such as one to do line editing).
-With the advent of networking, an obvious extension was to provide
-processing modules capable of implementing various protocols such as
-Internet's TCP and IP and Xerox's SPP and IDP.
-By stacking a terminal processing module on top of a stream based
-networking protocol, a user could build a ``network virtual terminal''
-without all the delay and expense of using \fBtelnet\fP or \fBrlogin\fP.
+This model allowed terminal processing modules to be used with
+virtual-circuit network modules to create ``network virtual terminals''
+by stacking a terminal processing module on top of a
+networking protocol.
+.PP
+The design of the networking facilities for 4.2BSD took
+a very different approach based on the
+.B socket
+interface.
+This design allows a single system to support multiple sets of networking
+protocols with stream, datagram and other types of access.
+Protocol modules may deal with multiplexing of data from different connections
+onto a single transport medium.
 .PP
 A problem with stackable line disciplines though, is that they
 are inherently linear in nature.
@@ -127,15 +134,22 @@ associated with multiplexing.
 The simple and elegant stackable line discipline implementation
 of Eighth Edition UNIX was converted to the full production implementation
 of Streams in System V Release 3.
-In doing the conversion, many pragmatic issues \- including the handling of
-multiplexed connections \- were addressed.
-Unfortunately, the implementation is complexity increased in kind.
+In doing the conversion, many pragmatic issues were addressed,
+including the handling of
+multiplexed connections and commercially important protocols.
+Unfortunately, the implementation complexity increased enormously.
 .PP
 Because AT&T will not allow others to include Streams unless they
-also change their interface to comply with the System V Interface Definition,
+also change their interface to comply with the System V Interface Definition
+base and Networking Extension,
 we cannot use the Release 3 implementation of Streams in the Berkeley system.
-Given that compatibility thus will be impossible,
+Given that compatibility thus will be difficult,
 we feel we will have complete freedom to make our
 choices based solely on technical merits.
 As a result, our implementation will appear far more like the simpler
-stackable line disciplines than the more complex Streams [Chandler86].
+stackable line disciplines than the more complex Release 3 Streams [Chandler86].
+A socket interface will be used rather than a character device interface,
+and demultiplexing will be handled internally by the protocols in the kernel.
+However, like Streams,
+the interfaces between kernel protocol modules will follow a uniform
+convention.
