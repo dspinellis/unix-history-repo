@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)newfs.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -152,7 +152,7 @@ main(argc, argv)
 				    optarg);
 			break;
 		case 'b':	/* used for LFS */
-			if ((bsize = atoi(optarg)) < MINBSIZE)
+			if ((bsize = atoi(optarg)) < LFS_MINBLOCKSIZE)
 				fatal("%s: bad block size", optarg);
 			break;
 		case 'c':
