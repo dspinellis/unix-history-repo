@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)proc.h	7.29 (Berkeley) %G%
+ *	@(#)proc.h	7.30 (Berkeley) %G%
  */
 
 #ifndef _PROC_H_
@@ -116,7 +116,6 @@ struct	proc {
 	int	p_thread;	/* id for this "thread" (Mach glue) XXX */
 	struct	user *p_addr;	/* kernel virtual addr of u-area (PROC ONLY) */
 	swblk_t	p_swaddr;	/* disk address of u area when swapped */
-	int	*p_regs;	/* saved registers during syscall/trap */
 	struct	mdproc p_md;	/* any machine-dependent fields */
 
 	u_short	p_xstat;	/* Exit status for wait; also stop signal */
@@ -217,6 +216,14 @@ struct	prochd {
 } qs[NQS];
 
 int	whichqs;		/* bit mask summarizing non-empty qs's */
+
+int	sleep __P((caddr_t chan, int pri));
+int	tsleep __P((caddr_t chan, int pri, char *wmesg, int timo));
+int	unsleep __P((struct proc *));
+int	wakeup __P((caddr_t));
+int	setrun __P((struct proc *));
+int	setpri __P((struct proc *));
+
 #endif	/* KERNEL */
 
 #endif	/* !_PROC_H_ */
