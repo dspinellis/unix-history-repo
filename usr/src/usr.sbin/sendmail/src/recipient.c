@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.68 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.44.1.6 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -103,7 +103,7 @@ sendto(list, copyf, ctladdr, qflags)
 		bufp = buf;
 	else
 		bufp = xalloc(i);
-	strcpy(bufp, denlstring(list, FALSE));
+	strcpy(bufp, denlstring(list, FALSE, TRUE));
 
 	for (p = bufp; *p != '\0'; )
 	{

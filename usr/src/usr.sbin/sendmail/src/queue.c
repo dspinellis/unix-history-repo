@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.64 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.41.1.3 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.64 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.41.1.3 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -216,7 +216,7 @@ queueup(e, queueall, announce)
 
 	/* message from envelope, if it exists */
 	if (e->e_message != NULL)
-		fprintf(tfp, "M%s\n", denlstring(e->e_message, FALSE));
+		fprintf(tfp, "M%s\n", denlstring(e->e_message, TRUE, FALSE));
 
 	/* send various flag bits through */
 	p = buf;
@@ -232,11 +232,11 @@ queueup(e, queueall, announce)
 
 	/* $r and $s and $_ macro values */
 	if ((p = macvalue('r', e)) != NULL)
-		fprintf(tfp, "$r%s\n", denlstring(p, FALSE));
+		fprintf(tfp, "$r%s\n", denlstring(p, TRUE, FALSE));
 	if ((p = macvalue('s', e)) != NULL)
-		fprintf(tfp, "$s%s\n", denlstring(p, FALSE));
+		fprintf(tfp, "$s%s\n", denlstring(p, TRUE, FALSE));
 	if ((p = macvalue('_', e)) != NULL)
-		fprintf(tfp, "$_%s\n", denlstring(p, FALSE));
+		fprintf(tfp, "$_%s\n", denlstring(p, TRUE, FALSE));
 
 	/* output name of sender */
 	fprintf(tfp, "S%s\n", denlstring(p, FALSE));
@@ -251,7 +251,7 @@ queueup(e, queueall, announce)
 		if (!bitset(QDONTSEND|QBADADDR, q->q_flags))
 		{
 			printctladdr(q, tfp);
-			fprintf(tfp, "E%s\n", denlstring(q->q_paddr, FALSE));
+			fprintf(tfp, "E%s\n", denlstring(q->q_paddr, TRUE, FALSE));
 		}
 	}
 
@@ -440,7 +440,7 @@ printctladdr(a, tfp)
 	else
 		uname = pw->pw_name;
 
-	fprintf(tfp, "C%s:%s\n", uname, denlstring(a->q_paddr, FALSE));
+	fprintf(tfp, "C%s:%s\n", uname, denlstring(a->q_paddr, TRUE, FALSE));
 }
 /*
 **  RUNQUEUE -- run the jobs in the queue.
