@@ -3,14 +3,14 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	7.19 (Berkeley) %G%
+#	@(#)Makefile	7.20 (Berkeley) %G%
 #
 #
 # Copyright (c) 1980 Regents of the University of California.
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	7.19 (Berkeley) %G%
+#	@(#)Makefile	7.20 (Berkeley) %G%
 #
 #
 # Copyright (c) 1980 Regents of the University of California.
@@ -41,7 +41,7 @@ BINDIR=		/usr/ucb
 NBINDIR=	/usr/new
 LIBDIR=		/usr/lib
 OPTIONS=	-DCRYPT -DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX \
-		-DFASTTAG -DUNIX_SBRK -DFLOCKFILE
+		-DFASTTAG -DUNIX_SBRK
 CFLAGS=		-DTABS=8 -O ${OPTIONS}
 LDFLAGS=	-z				# or -i or -n
 LIBC=		/lib/libc.a
