@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ps.c	6.4 (Berkeley) %G%
+ *	@(#)ps.c	6.5 (Berkeley) %G%
  */
 
 /*
@@ -36,7 +36,8 @@
 #include "ubavar.h"
 #include "psreg.h"
 
-int	psprobe(), psattach(), psintr();
+int	psprobe(), psattach(), psextsync();
+int	psclockintr(), pssystemintr(), psdeviceintr(), psdmaintr();
 struct	uba_device *psdinfo[NPS];
 u_short	psstd[] = { 0 };
 struct	uba_driver psdriver = 
@@ -50,7 +51,7 @@ struct	uba_driver psdriver =
 
 #define PSPRI				(PZERO+1)
 
-#define PSWAIT() {register short int i, j; i=20000; while((i-- != 0)\
+#define PSWAIT() {register short i, j; i=20000; while((i-- != 0)\
 	&& (((j=psaddr->ps_iostat)&DIOREADY)==0));}
 
 struct ps {
@@ -75,7 +76,7 @@ struct ps {
 	} ps_dbuffer;
 	struct {
 		enum { SINGLE_STEP_MAP, AUTO_MAP } state;
-		enum { RUNNING_MAP, WAITING_RF, WAITING_START } mode;
+		enum { RUNNING_MAP, WAITING_RF, WAITING_START, STOPPED_MAP } mode;
 		unsigned short int maddrs[MAXAUTOMAP];
 		short int nmaddrs;
 		short int mcntr;
@@ -96,6 +97,9 @@ struct ps {
 	int last_request;
 	int strayrequest;
 	int ps_icnt;
+	int last_request2;
+	int last_funnyrequest;
+	int funny_cnt;
 } ps[NPS];
 
 psprobe(reg)
@@ -104,6 +108,12 @@ psprobe(reg)
 	register int br, cvec;
 	register struct psdevice *psaddr = (struct psdevice *) reg;
 
+#ifdef lint
+	br = 0; cvec = br; br = cvec;
+	psclockintr((dev_t)0); pssystemintr((dev_t)0);
+	psdeviceintr((dev_t)0); psdmaintr((dev_t)0);
+	psextsync(0, 0);
+#endif
 	psaddr->ps_iostat = PSRESET;
 	DELAY(200);
 	psaddr->ps_addr = RTCIE;
@@ -124,7 +134,7 @@ psprobe(reg)
 
 /*ARGSUSED*/
 psattach(ui)
-	register struct uba_device *ui;
+	struct uba_device *ui;
 {
 
 }
@@ -143,14 +153,18 @@ psopen(dev)
 	psp->ps_uid = u.u_uid;
 	psp->ps_strayintr = 0;
 	psp->ps_refresh.state = SINGLE_STEP_RF;
+	psp->ps_refresh.mode = STOPPED_RF;
 	psp->ps_refresh.waiting = 0;
 	psp->ps_refresh.stop = 0;
 	psp->ps_dbuffer.state = OFF_DB;
 	psp->ps_map.state = SINGLE_STEP_MAP;
+	psp->ps_map.mode = STOPPED_MAP;
 	psp->ps_map.waiting = 0;
 	psp->ps_map.stop = 0;
 	psp->ps_clock.ticked = 0;
+	psp->ps_clock.missed = 0;
 	psp->ps_refresh.icnt = psp->ps_map.icnt = psp->ps_clock.icnt = 0;
+	psp->ps_hit.icnt = 0;
 	psp->ps_icnt = 0;
 	maptouser(ui->ui_addr);
 	return (0);
@@ -168,7 +182,7 @@ psclose(dev)
 	psaddr->ps_addr = RFSR;		/* set in auto refresh mode */
 	PSWAIT();
 	psaddr->ps_data = AUTOREF;
-	unmaptouser(psaddr);
+	unmaptouser((caddr_t)psaddr);
 }
 
 /*ARGSUSED*/
@@ -201,13 +215,13 @@ psioctl(dev, cmd, data, flag)
 		break;
 
 	case PSIOAUTOREFRESH:
-		n = fuword(waddr++);
+		n = fuword((caddr_t)waddr++);
 		if (n == -1)
 			return (EFAULT);
 		if (n < 0 || n > MAXAUTOREFRESH)
 			return (EINVAL);
 		for (i = 0; i < n; i++) {
-			if ((arg = fuword(waddr++)) == -1)
+			if ((arg = fuword((caddr_t)waddr++)) == -1)
 				return (EFAULT);
 			psp->ps_refresh.sraddrs[i] = arg;
 		}
@@ -218,17 +232,17 @@ psioctl(dev, cmd, data, flag)
 		break;
 
 	case PSIOAUTOMAP:
-		n = fuword(waddr++);
+		n = fuword((caddr_t)waddr++);
 		if (n == -1)
 			return (EFAULT);
 		if (n < 0 || n > MAXAUTOMAP)
 			return (EINVAL);
 		for (i = 0; i < n; i++) {
-			if ((arg = fuword(waddr++)) == -1)
+			if ((arg = fuword((caddr_t)waddr++)) == -1)
 				return (EFAULT);
 			psp->ps_map.maddrs[i] = arg;
 		}
-		if ((arg = fuword(waddr++)) == -1)
+		if ((arg = fuword((caddr_t)waddr++)) == -1)
 			return (EFAULT);
 		psp->ps_map.outputstart = arg;
 		psp->ps_map.state = AUTO_MAP;
@@ -246,10 +260,10 @@ psioctl(dev, cmd, data, flag)
 		break;
 
 	case PSIODOUBLEBUFFER:
-		if ((arg = fuword(waddr++)) == -1)
+		if ((arg = fuword((caddr_t)waddr++)) == -1)
 			return (EFAULT);
 		psp->ps_dbuffer.dbaddrs[0] = arg;
-		if ((arg = fuword(waddr++)) == -1)
+		if ((arg = fuword((caddr_t)waddr++)) == -1)
 			return (EFAULT);
 		if (arg <= 0 || arg > MAXDBSIZE)
 			return (EINVAL);
@@ -267,7 +281,7 @@ psioctl(dev, cmd, data, flag)
 	case PSIOTIMEREFRESH:
 		if (psp->ps_refresh.state != SINGLE_STEP_RF)
 			return(EINVAL);
-		if ((arg = fuword(waddr++)) == -1)
+		if ((arg = fuword((caddr_t)waddr++)) == -1)
 			return(EFAULT);
 		psp->ps_refresh.state = TIME_RF;
 		psp->ps_refresh.timecnt = arg;
@@ -318,12 +332,12 @@ psioctl(dev, cmd, data, flag)
 	return (0);
 }
 
-#define SAVEPSADDR() {register short int i, x;x=spl6();i=psaddr->ps_addr;\
-		while(((i=psaddr->ps_iostat)&DIOREADY)==0);\
-		savepsaddr=psaddr->ps_data;splx(x);}
-#define RESTORPSADDR() {register int x,i;x=spl6();\
-		while(((i=psaddr->ps_iostat)&DIOREADY)==0);\
-		psaddr->ps_addr=savepsaddr;splx(x);}
+#define SAVEPSADDR() {register short i,xx1;xx1=spl6();i=psaddr->ps_addr;\
+		while(((psaddr->ps_iostat)&DIOREADY)==0);\
+		savepsaddr=psaddr->ps_data;splx(xx1);}
+#define RESTORPSADDR() {register short xx2;xx2=spl6();\
+		while(((psaddr->ps_iostat)&DIOREADY)==0);\
+		psaddr->ps_addr=savepsaddr;splx(xx2);}
 
 psclockintr(dev)
 	dev_t dev;
@@ -341,7 +355,7 @@ psclockintr(dev)
 	if (psp->ps_refresh.state == AUTO_RF) {
 		if (psp->ps_refresh.mode == SYNCING_RF
 					&& psp->ps_refresh.state != TIME_RF) {
-			psrfnext(psp, psaddr);
+			(void) psrfnext(psp, psaddr);
 		} else {
 			psp->ps_clock.ticked++;
 			psp->ps_clock.missed++;
@@ -362,7 +376,7 @@ pssystemintr(dev)
 	register struct psdevice *psaddr =
 			(struct psdevice *) psdinfo[PSUNIT(dev)]->ui_addr;
 	register struct ps *psp = &ps[PSUNIT(dev)];
-	short int request;
+	short int request, tmp;
 	register int savepsaddr, x;
 
 	if (!psp->ps_open)
@@ -372,16 +386,23 @@ pssystemintr(dev)
 	PSWAIT();
 	psaddr->ps_addr = SYSREQ;
 	PSWAIT();
-	request = psaddr->ps_data&0377;
+	request = psaddr->ps_data;
+	request = request&0377;
+	psp->last_request2 = psp->last_request;
 	psp->last_request = request;
+	if(request&(~(HALT_REQ|RFSTOP_REQ|HIT_REQ))) {
+		psp->last_funnyrequest = request;
+		psp->funny_cnt++;
+	}
 	PSWAIT();
 	psaddr->ps_addr = SYSREQ;
+	tmp = request&(~(HALT_REQ|MOSTOP_REQ));   /* acknowledge */
 	PSWAIT();
-	psaddr->ps_data = request&(~(HALT_REQ|MOSTOP_REQ));   /* acknowledge */
+	psaddr->ps_data = tmp;
 
 	if (request & (MOSTOP_REQ|HALT_REQ)) {	/* Map stopped */
 		psp->ps_map.icnt++;
-		psmapstop(psaddr);		/* kill it dead */
+		psmapstop(psaddr, psp, request);	/* kill it dead */
 		if (psp->ps_map.waiting) {
 			psp->ps_map.waiting = 0;
 			wakeup(&psp->ps_map.waiting);
@@ -390,21 +411,34 @@ pssystemintr(dev)
 				goto tryrf;
 			}
 		}
-		if (psp->ps_map.state == AUTO_MAP)
-			if (!psmapnext(psp, psaddr)) {
-				psp->ps_map.mcntr = 0;
-				/* prepare for next round */
-				pssetmapbounds(psp, psaddr);
-				if (psp->ps_refresh.mode == WAITING_MAP) {
+		if((psp->ps_map.state==AUTO_MAP) && (!psmapnext(psp, psaddr))){
+			psp->ps_map.mcntr = 0;
+			/* prepare for next round */
+			pssetmapbounds(psp, psaddr);
+			if (psp->ps_refresh.state == AUTO_RF) {
+				if(psp->ps_refresh.mode == WAITING_MAP){
 					if (psp->ps_dbuffer.state == ON_DB)
 						/* fill other db */
 						psdbswitch(psp, psaddr);
 					else
 						psp->ps_map.mode = WAITING_RF;
-					psrfnext(psp, psaddr);	/* start rf */
+#ifdef EXTERNAL_SYNC
+					x = spl6();
+#endif
+					(void) psrfnext(psp, psaddr);
+#ifdef EXTERNAL_SYNC
+					splx(x);
+#endif
 				} else
 					psp->ps_map.mode = WAITING_RF;
+			} else {	/* no auto refresh */
+				if (psp->ps_dbuffer.state == ON_DB)
+					/* fill other db */
+					psdbswitch(psp, psaddr);
+				else
+					(void) psmapnext(psp, psaddr);
 			}
+		}
 	}
 tryrf:
 	if (request & RFSTOP_REQ) {		/* Refresh stopped */
@@ -428,18 +462,16 @@ tryrf:
 					if (psp->ps_dbuffer.state == ON_DB)
 						psdbswitch(psp, psaddr);
 					else
-						psmapnext(psp, psaddr);
+						(void) psmapnext(psp, psaddr);
 				}
 				psp->ps_refresh.srcntr = 0;
 #ifdef EXTERNAL_SYNC
 				x = spl6();
 #endif
-				if (!psp->ps_clock.ticked ||
-						!psrfnext(psp, psaddr)) {
-					psp->ps_refresh.mode = SYNCING_RF;
-				}
-				psp->ps_clock.ticked = 0;
 				psp->ps_refresh.mode = SYNCING_RF;
+				if (psp->ps_clock.ticked)
+					(void) psrfnext(psp, psaddr);
+				psp->ps_clock.ticked = 0;
 #ifdef EXTERNAL_SYNC
 				splx(x);
 #endif
@@ -458,38 +490,44 @@ psrfnext(psp, psaddr)
 	register struct ps *psp;
 	register struct psdevice *psaddr;
 {
+	unsigned short int start, last;
 
 	if (psp->ps_refresh.srcntr < psp->ps_refresh.nsraddrs)
 		psrfstart(psp->ps_refresh.sraddrs[psp->ps_refresh.srcntr++],
-						psp, psaddr);
+						0, psp, psaddr);
 	else if (psp->ps_refresh.srcntr == psp->ps_refresh.nsraddrs
 				&& psp->ps_dbuffer.state == ON_DB) {
-		psrfstart(psp->ps_dbuffer.dbaddrs[psp->ps_dbuffer.rbuffer],
-						psp, psaddr);
+		start = psp->ps_dbuffer.dbaddrs[psp->ps_dbuffer.rbuffer];
+		last = start+psp->ps_dbuffer.dbsize;
+		psrfstart(start, last, psp, psaddr);
 		psp->ps_refresh.srcntr++;	/* flag for after dbuffer */
 	} else
 		return(0);
 	return(1);
 }
 
-psrfstart(dfaddr, psp, psaddr)
-	short int dfaddr;
+psrfstart(dfaddr, last, psp, psaddr)
+	unsigned short int dfaddr, last;
 	register struct ps *psp;
 	register struct psdevice *psaddr;
 {
-	int dummy;
+	short int dummy;
 
 	PSWAIT();
 	psaddr->ps_addr = RFASA;
 	PSWAIT();
 	psaddr->ps_data = dfaddr;
 	PSWAIT();
-	dummy = psaddr->ps_data;	/* just access to get to status reg */
+	if(last != 0)
+		psaddr->ps_data = last;
+	else
+		dummy = psaddr->ps_data;/* just access to get to status reg */
 	PSWAIT();
 	psaddr->ps_data = RFSTART;	/* may want to | this value in */
 	psp->ps_refresh.mode = RUNNING_RF;
 }
 
+/*ARGSUSED*/
 psrfstop(psaddr, psp)
 	register struct psdevice *psaddr;
 	register struct ps *psp;
@@ -508,7 +546,7 @@ psdbswitch(psp, psaddr)
 
 	psp->ps_dbuffer.rbuffer = !psp->ps_dbuffer.rbuffer;
 	pssetmapbounds(psp, psaddr);
-	psmapnext(psp, psaddr);
+	(void) psmapnext(psp, psaddr);
 }
 
 psmapnext(psp, psaddr)
@@ -527,14 +565,15 @@ pssetmapbounds(psp, psaddr)
 	register struct ps *psp;
 	register struct psdevice *psaddr;
 {
-	unsigned short int start;
+	unsigned short int start, last;
 
 	PSWAIT();
 	psaddr->ps_addr = MAOL;
 	PSWAIT();
 	if (psp->ps_dbuffer.state == ON_DB) {
-		psaddr->ps_data = (start = psp->ps_dbuffer.dbaddrs[!psp->ps_dbuffer.rbuffer])
-				+psp->ps_dbuffer.dbsize-2;   /* 2 for a refresh halt command */
+		start = psp->ps_dbuffer.dbaddrs[!psp->ps_dbuffer.rbuffer];
+		last = start+psp->ps_dbuffer.dbsize-2;   /* 2 for halt cmd */
+		psaddr->ps_data = last;
 		PSWAIT();
 		psaddr->ps_data = start;
 	} else {
@@ -545,11 +584,10 @@ pssetmapbounds(psp, psaddr)
 }
 
 psmapstart(dfaddr, psp, psaddr)
-	int dfaddr;
+	unsigned short int dfaddr;
 	register struct ps *psp;
 	register struct psdevice *psaddr;
 {
-	int data;
 
 	PSWAIT();
 	psaddr->ps_addr = MAIA;
@@ -560,22 +598,35 @@ psmapstart(dfaddr, psp, psaddr)
 	psp->ps_map.mode = RUNNING_MAP;
 }
 
-psmapstop(psaddr)
-	register struct psdevice *psaddr;
-{
+int pskillcnt = 1;
 
-	PSWAIT();
-	psaddr->ps_addr = MASR;
-	PSWAIT();
-	psaddr->ps_data = 0;	/* zero MAI bit */
-	PSWAIT();
-	psaddr->ps_addr = MAIA;
-	PSWAIT();
-	psaddr->ps_data = 0;	/* zero input address register */
-	PSWAIT();
-	psaddr->ps_addr = SYSREQ;
-	PSWAIT();
-	psaddr->ps_data = HALT_REQ|MOSTOP_REQ;	/* overkill?? */
+psmapstop(psaddr, psp, request)
+	register struct psdevice *psaddr;
+	register struct ps *psp;
+	short int request;
+{
+	register int i;
+
+	request = request&(HALT_REQ|MOSTOP_REQ); 	/* overkill?? */
+	for(i = 0; i < pskillcnt; i++) {
+		PSWAIT();
+		psaddr->ps_addr = MASR;
+		PSWAIT();
+		psaddr->ps_data = IOUT;		/* zero MAI & MAO bits */
+		PSWAIT();
+		psaddr->ps_addr = MAIA;
+		PSWAIT();
+		psaddr->ps_data = 0;		/* 0 input address register */
+		PSWAIT();
+		psaddr->ps_addr = MAOA;
+		PSWAIT();
+		psaddr->ps_data = 0;		/* 0 output address register */
+		PSWAIT();
+		psaddr->ps_addr = SYSREQ;
+		PSWAIT();
+		psaddr->ps_data = request;
+	}
+	psp->ps_map.mode = STOPPED_MAP;
 }
 
 /*ARGSUSED*/
@@ -594,11 +645,13 @@ psdmaintr(dev)
 	printf("ps dma intr\n");
 }
 
+/*ARGSUSED*/
 psreset(uban)
 	int uban;
 {
 }
 
+/*ARGSUSED*/
 psextsync(PC, PS) {
 	register int n;
 	register struct psdevice *psaddr;
@@ -613,7 +666,7 @@ psextsync(PC, PS) {
 					&& psp->ps_refresh.state != TIME_RF) {
 			psaddr = (struct psdevice *) psdinfo[n]->ui_addr;
 			SAVEPSADDR();
-			psrfnext(psp, psaddr);
+			(void) psrfnext(psp, psaddr);
 			RESTORPSADDR();
 		} else {
 			psp->ps_clock.ticked++;
