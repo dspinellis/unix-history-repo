@@ -3,13 +3,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys.c	7.8 (Berkeley) %G%
+ *	@(#)sys.c	7.9 (Berkeley) %G%
  */
 
 #include "sys/param.h"
-#include "sys/time.h"
-#include "sys/vnode.h"
-#include "ufs/inode.h"
+#include "ufs/dinode.h"
 #include "ufs/fs.h"
 #include "ufs/dir.h"
 #include "sys/reboot.h"
@@ -42,7 +40,7 @@ openi(n, io)
 	io->i_ma = io->i_buf;
 	cc = devread(io);
 	dp = (struct dinode *)io->i_buf;
-	io->i_ino.i_ic = dp[itoo(&io->i_fs, n)].di_ic;
+	io->i_ino = dp[itoo(&io->i_fs, n)];
 	return (cc);
 }
 
@@ -100,7 +98,7 @@ sbmap(io, bn)
 	register struct iob *io;
 	daddr_t bn;
 {
-	register struct inode *ip;
+	register struct dinode *ip;
 	int i, j, sh;
 	daddr_t nb, *bap;
 
@@ -114,7 +112,7 @@ sbmap(io, bn)
 	 * blocks 0..NDADDR are direct blocks
 	 */
 	if(bn < NDADDR) {
-		nb = ip->i_db[bn];
+		nb = ip->di_db[bn];
 		return (nb);
 	}
 
@@ -138,7 +136,7 @@ sbmap(io, bn)
 	/*
 	 * fetch the first indirect block address from the inode
 	 */
-	nb = ip->i_ib[NIADDR - j];
+	nb = ip->di_ib[NIADDR - j];
 	if (nb == 0) {
 		printf("bn void %D\n",bn);
 		return ((daddr_t)0);
@@ -172,40 +170,6 @@ sbmap(io, bn)
 	return (nb);
 }
 
-static ino_t
-dlook(s, io, dir)
-	char *s;
-	register struct iob *io;
-	char *dir;
-{
-	register struct direct *dp;
-	register struct inode *ip;
-	struct dirstuff dirp;
-	int len;
-
-	if (s == NULL || *s == '\0')
-		return (0);
-	ip = &io->i_ino;
-	if ((ip->i_mode&IFMT) != IFDIR) {
-		printf("%s: not a directory\n", dir);
-		return (0);
-	}
-	if (ip->i_size == 0) {
-		printf("%s: zero length directory\n", dir);
-		return (0);
-	}
-	len = strlen(s);
-	dirp.loc = 0;
-	dirp.io = io;
-	for (dp = readdir(&dirp); dp != NULL; dp = readdir(&dirp)) {
-		if(dp->d_ino == 0)
-			continue;
-		if (dp->d_namlen == len && !strcmp(s, dp->d_name))
-			return (dp->d_ino);
-	}
-	return (0);
-}
-
 /*
  * get next entry in a directory.
  */
@@ -220,7 +184,7 @@ readdir(dirp)
 
 	io = dirp->io;
 	for(;;) {
-		if (dirp->loc >= io->i_ino.i_size)
+		if (dirp->loc >= io->i_ino.di_size)
 			return (NULL);
 		off = blkoff(&io->i_fs, dirp->loc);
 		if (off == 0) {
@@ -230,7 +194,7 @@ readdir(dirp)
 				return (NULL);
 			io->i_bn = fsbtodb(&io->i_fs, d) + io->i_boff;
 			io->i_ma = io->i_buf;
-			io->i_cc = blksize(&io->i_fs, &io->i_ino, lbn);
+			io->i_cc = dblksize(&io->i_fs, &io->i_ino, lbn);
 			if (devread(io) < 0) {
 				errno = io->i_error;
 				printf("bn %D: directory read error\n",
@@ -244,6 +208,40 @@ readdir(dirp)
 			continue;
 		return (dp);
 	}
+}
+
+static ino_t
+dlook(s, io, dir)
+	char *s;
+	register struct iob *io;
+	char *dir;
+{
+	register struct direct *dp;
+	register struct dinode *ip;
+	struct dirstuff dirp;
+	int len;
+
+	if (s == NULL || *s == '\0')
+		return (0);
+	ip = &io->i_ino;
+	if ((ip->di_mode&IFMT) != IFDIR) {
+		printf("%s: not a directory\n", dir);
+		return (0);
+	}
+	if (ip->di_size == 0) {
+		printf("%s: zero length directory\n", dir);
+		return (0);
+	}
+	len = strlen(s);
+	dirp.loc = 0;
+	dirp.io = io;
+	for (dp = readdir(&dirp); dp != NULL; dp = readdir(&dirp)) {
+		if(dp->d_ino == 0)
+			continue;
+		if (dp->d_namlen == len && !strcmp(s, dp->d_name))
+			return (dp->d_ino);
+	}
+	return (0);
 }
 
 lseek(fdesc, addr, ptr)
@@ -291,14 +289,14 @@ getc(fdesc)
 	p = io->i_ma;
 	if (io->i_cc <= 0) {
 		if ((io->i_flgs & F_FILE) != 0) {
-			diff = io->i_ino.i_size - io->i_offset;
+			diff = io->i_ino.di_size - io->i_offset;
 			if (diff <= 0)
 				return (-1);
 			fs = &io->i_fs;
 			lbn = lblkno(fs, io->i_offset);
 			io->i_bn = fsbtodb(fs, sbmap(io, lbn)) + io->i_boff;
 			off = blkoff(fs, io->i_offset);
-			size = blksize(fs, &io->i_ino, lbn);
+			size = dblksize(fs, &io->i_ino, lbn);
 		} else {
 			io->i_bn = io->i_offset / DEV_BSIZE;
 			off = 0;
@@ -311,7 +309,7 @@ getc(fdesc)
 			return (-1);
 		}
 		if ((io->i_flgs & F_FILE) != 0) {
-			if (io->i_offset - off + size >= io->i_ino.i_size)
+			if (io->i_offset - off + size >= io->i_ino.di_size)
 				io->i_cc = diff + off;
 			io->i_cc -= off;
 		}
@@ -366,8 +364,8 @@ read(fdesc, buf, count)
 		return (i);
 	}
 #endif
-	if (file->i_offset+count > file->i_ino.i_size)
-		count = file->i_ino.i_size - file->i_offset;
+	if (file->i_offset+count > file->i_ino.di_size)
+		count = file->i_ino.di_size - file->i_offset;
 	if ((i = count) <= 0)
 		return (0);
 	/*
@@ -378,7 +376,7 @@ read(fdesc, buf, count)
 	while (i) {
 		off = blkoff(fs, file->i_offset);
 		lbn = lblkno(fs, file->i_offset);
-		size = blksize(fs, &file->i_ino, lbn);
+		size = dblksize(fs, &file->i_ino, lbn);
 		if (off == 0 && size <= i) {
 			file->i_bn = fsbtodb(fs, sbmap(file, lbn)) +
 			    file->i_boff;
@@ -479,7 +477,7 @@ open(str, how)
 			*t = tolower(*t);
 	switch(*t) {
 	case '(':	/* type(adapt, ctlr, drive, partition)file */
-		if ((file->i_ino.i_dev = getdev(str, t - str)) == -1)
+		if ((file->i_dev = getdev(str, t - str)) == -1)
 			goto bad;
 		for (argp = args + 4, cnt = 0; *t != ')'; ++cnt) {
 			for (++t; isspace(*t); ++t);
@@ -501,7 +499,7 @@ open(str, how)
 		break;
 	case ':':	/* [A-Za-z]*[0-9]*[A-Za-z]:file */
 		for (t = str; *t != ':' && !isdigit(*t); ++t);
-		if ((file->i_ino.i_dev = getdev(str, t - str)) == -1)
+		if ((file->i_dev = getdev(str, t - str)) == -1)
 			goto bad;
 		if ((file->i_unit = getunit(t)) == -1)
 			goto bad;
@@ -519,7 +517,7 @@ open(str, how)
 #else
 	{
 #endif /* SMALL */
-		file->i_ino.i_dev = B_TYPE(bootdev);
+		file->i_dev = B_TYPE(bootdev);
 		file->i_adapt = B_ADAPTOR(bootdev);
 		file->i_ctlr = B_CONTROLLER(bootdev);
 		file->i_unit = B_UNIT(bootdev);
@@ -527,7 +525,7 @@ open(str, how)
 		t = str;
 	}
 
-	opendev = MAKEBOOTDEV(file->i_ino.i_dev, file->i_adapt, file->i_ctlr,
+	opendev = MAKEBOOTDEV(file->i_dev, file->i_adapt, file->i_ctlr,
 	    file->i_unit, file->i_part);
 
 	if (errno = devopen(file))
