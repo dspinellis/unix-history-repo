@@ -1,4 +1,4 @@
-/*	uda.c	6.1	83/07/29	*/
+/*	uda.c	6.2	83/11/15	*/
 
 #include "ra.h"
 #if NUDA > 0
@@ -72,11 +72,11 @@ struct size {
 	15884,	0,		/* A=blk 0 thru 15883 */
 	33440,	15884,		/* B=blk 15884 thru 49323 */
 	-1,	0,		/* C=blk 0 thru end */
-	15884,	340670,		/* D=blk 340670 thru 356553 */
-	55936,	356554,		/* E=blk 356554 thru 412489 */
-	-1,	412490,		/* F=blk 412490 thru end */
-	82080,	49324,		/* G=blk 49324 thru 131403 */
-	-1,	131404,		/* H=blk 131404 thru end */
+	15884,	242606,		/* D=blk 242606 thru 258489 */
+	307200,	258490,		/* E=blk 258490 thru 565689 */
+	-1,	565690,		/* F=blk 565690 thru end */
+	-1,	242606,		/* G=blk 242606 thru end */
+	193282,	49324,		/* H=blk 49324 thru 242605 */
 };
 /* END OF STUFF WHICH SHOULD BE READ IN PER DISK */
 
