@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)rwhod.8	6.1 (Berkeley) %G%
+.\"	@(#)rwhod.8	6.2 (Berkeley) %G%
 .\"
 .TH RWHOD 8C ""
 .UC 5
@@ -31,10 +31,8 @@ servers' status messages, validating them, then recording
 them in a collection of files located in the directory
 .IR /usr/spool/rwho .
 .PP
-The
-.I rwho
-server transmits and receives messages at the port indicated
-in the ``rwho'' service specification, see 
+The server transmits and receives messages at the port indicated
+in the ``rwho'' service specification; see 
 .IR services (5).
 The messages sent and received, are of the form:
 .PP
@@ -66,20 +64,21 @@ All fields are converted to network byte order prior to
 transmission.  The load averages are as calculated by the
 .IR w (1)
 program, and represent load averages over the 5, 10, and 15 minute 
-intervals prior to a server's transmission.  The host name
+intervals prior to a server's transmission; they are multiplied by 100
+for representation in an integer.  The host name
 included is that returned by the
 .IR gethostname (2)
-system call.
+system call, with any trailing domain name omitted.
 The array at the end of the message contains information about
 the users logged in to the sending machine.  This information 
 includes the contents of the 
 .IR utmp (5)
 entry for each non-idle terminal line and a value indicating the
-time since a character was last received on the terminal line.
+time in seconds since a character was last received on the terminal line.
 .PP
 Messages received by the
 .I rwho
-server are discarded unless they originated at a
+server are discarded unless they originated at an
 .I rwho
 server's port.  In addition, if the host's name, as specified
 in the message, contains any unprintable ASCII characters, the
@@ -93,17 +92,19 @@ These files contain only the most recent message, in the
 format described above.
 .PP
 Status messages are generated approximately once every
-60 seconds.  
+3 minutes.
 .I Rwhod
 performs an
 .IR nlist (3)
-on /vmunix every 10 minutes to guard against
+on /vmunix every 30 minutes to guard against
 the possibility that this file is not the system
 image currently operating.
 .SH "SEE ALSO"
 rwho(1C),
 ruptime(1C)
 .SH BUGS
-Should relay status information between networks. 
-People often interpret the server dieing
+There should be a way to relay status information between networks. 
+Status information should be sent only upon request rather than continuously.
+People often interpret the server dying
+or network communtication failures
 as a machine going down.
