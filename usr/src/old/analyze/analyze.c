@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)analyze.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)analyze.c	4.2 (Berkeley) %G%";
 #include <stdio.h>
 #include <sys/param.h>
 #include <sys/dir.h>
@@ -22,6 +22,7 @@ int	vflg;
 int	mflg;
 int	fflg;
 int	sflg;
+int	uflg;
 
 /* use vprintf with care; it plays havoc with ``else's'' */
 #define	vprintf	if (vflg) printf
@@ -32,6 +33,7 @@ struct	proc proc[NPROC];
 struct	text text[NTEXT];
 struct	map swapmap[SMAPSIZ];
 struct	cmap *cmap;
+int	ecmx;
 struct	pte *usrpt;
 struct	pte *Usrptma;
 int	firstfree;
@@ -86,9 +88,9 @@ struct	nlist nl[] = {
 #define	X_USRPT 1
 	{ "_usrpt" },
 #define	X_PTMA	2
-	{ "_Usrptma" },
+	{ "_Usrptmap" },
 #define	X_FIRSTFREE 3
-	{ "_firstfr" },
+	{ "_firstfree" },
 #define	X_MAXFREE 4
 	{ "_maxfree" },
 #define	X_TEXT 5
@@ -152,6 +154,10 @@ main(argc, argv)
 			dflg++;
 			break;
 
+		case 'u':
+			uflg++;
+			break;
+
 		default:
 			goto usage;
 		}
@@ -197,6 +203,7 @@ usage:
 		exit(1);
 	}
 	i = (get(nl[X_ECMAP].n_value) - get(nl[X_CMAP].n_value));
+	ecmx = i / sizeof (struct cmap);
 	cmap = (struct cmap *)calloc(i, 1);
 	if (cmap == NULL) {
 		fprintf(stderr, "not enough mem for %x bytes of cmap\n", i);
@@ -516,8 +523,12 @@ getu(p)
 {
 	int i, w, cc, errs = 0;
 
+	if (uflg && (p->p_flag & SLOAD))
+		printf("pid %d u. pages:", p->p_pid);
 	for (i = 0; i < UPAGES; i++) {
 		if (p->p_flag & SLOAD) {
+			if (uflg)
+				printf(" %x", p->p_addr[i].pg_pfnum);
 			lseek(fcore, ctob(p->p_addr[i].pg_pfnum), 0);
 			if (read(fcore, u_area.buf[i], NBPG) != NBPG)
 				perror("core u. read"), errs++;
@@ -527,6 +538,8 @@ getu(p)
 				perror("swap u. read"), errs++;
 		}
 	}
+	if (uflg && (p->p_flag & SLOAD))
+		printf("\n");
 	return (errs);
 }
 
@@ -603,7 +616,7 @@ summary()
 	register struct paginfo *zp;
 	register int pfnum;
 
-	for (i = firstfree + UPAGES; i < maxfree; i++) {
+	for (i = firstfree + UPAGES; i < maxfree; i+= CLSIZE) {
 		zp = &paginfo[i];
 		if (zp->z_type == ZLOST)
 			dumpcm("lost", i);
@@ -629,8 +642,8 @@ dumpcm(cp, pg)
 	int cm;
 	register struct cmap *c;
 
-	printf("%s page %x ", cp, pg);
 	cm = pgtocm(pg);
+	printf("cm %x %s page %x ", cm, cp, pg);
 	c = &cmap[cm];
 	printf("\t[%x, %x", c->c_page, c->c_ndx);
 	if (c->c_type != CTEXT)
@@ -660,6 +673,11 @@ dumpcm(cp, pg)
 		printf(" intrans");
 	if (c->c_blkno)
 		printf(" blkno %x mdev %d", c->c_blkno, c->c_mdev);
+	if (c->c_hlink) {
+		printf(" hlink %x page %x", c->c_hlink, cmtopg(c->c_hlink));
+		if (c->c_hlink > ecmx)
+			printf(" <<<");
+	}
 	printf("\n");
 }
 
