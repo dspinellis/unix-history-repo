@@ -1,18 +1,27 @@
 Hello, Emacs, this is an -*- Indented-Text -*- file!
 
-$Id: Changes,v 1.3 1994/04/05 18:52:11 wollman Exp $
+$Id: Changes,v 1.4 1994/04/14 18:02:13 wollman Exp $
 
 This file is intended to keep track of important kernel and user
 changes in FreeBSD between releases.  Entries are in reverse
 chronological order; userids can be decoded with the chart at the end
 of this file.
 
+---------------
 Since 1.1 BETA:
+---------------
+
+- I/O clustering is implemented for all block devices.  This should
+  substantially improve the performance of disk drives which don't
+  have write-behind caches, especially on IDE drives.  (dyson/davidg)
+
 - Allow mbufs to point to other ``external'' objects than just
   clusters, and add in performance enhancements for NFS from Yuval
   Yarom.  (davidg)
 
 - Yet more VM system improvements.  (dyson/davidg)
+  o 4-MB systems should now spend substantially less time in the VM
+    system.
   o General cleanup and some portability fixes.
   o A new system process is now responsible for keeping page
     statistics, rather than making the pagedaemon do it, which was
@@ -68,7 +77,14 @@ Since 1.1 BETA:
 - `struct tty's now allocated dynamically, and ring buffers can be
   deallocated. (guido)
 
+
+---------------------------
 Between 1.1 BETA and 1.0.2:
+---------------------------
+
+- QIC-40 and QIC-80 tapes are now supported, using the `ft' driver
+  from Jim Babb.  (alm/nate)
+
 - Improved lpt driver, should no longer lock up when lprm is done on
   an active job.  Fixed up the probe routine so that it works on most
   if not all printers now. (csgr/rgrimes)
@@ -233,17 +249,10 @@ Between 1.1 BETA and 1.0.2:
 
 - Make it possible to mmap(2) /dev/mem.  (julian)
 
-Between 1.0.2 and 1.0:
 
-Between 1.0 EPSILON and 1.0 GAMMA:
-
-Between 1.0 GAMMA and 1.0 BETA:
-
-Between 1.0 BETA and 1.0 ALPHA:
-
-Between 1.0 ALPHA and Patchkit 0.2.4:
-
+-----------------------
 Userids map as follows:
+-----------------------
 ache		Andrew Chernov
 alm		Andrew Moore
 ats		Andreas Schulz
