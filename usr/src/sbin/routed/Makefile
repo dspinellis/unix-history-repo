@@ -1,11 +1,11 @@
-#	@(#)Makefile	4.6 (Berkeley) %G%
+#	@(#)Makefile	4.7 (Berkeley) %G%
 #
 ALL=	routed
 OBJS=	af.o if.o input.o main.o output.o startup.o tables.o timer.o \
 	trace.o inet.o
 CFLAGS=
 C2=	/lib/c2
-ASMSCRIPT= /sys/machine/asm.sed
+INLINE= /sys/machine/inline/inline
 DESTDIR=
 LDFLAGS=
 
@@ -21,7 +21,7 @@ install: routed
 # inline code expansions.
 .c.o:
 	${CC} -S ${CFLAGS} $*.c
-	${C2} $*.s | sed -f ${ASMSCRIPT} | ${AS} -o $*.o
+	${C2} $*.s | ${INLINE} | ${AS} -o $*.o
 	rm -f $*.s
 
 clean:
