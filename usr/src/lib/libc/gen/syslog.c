@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)syslog.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslog.c	5.21 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -40,6 +40,7 @@ static char sccsid[] = "@(#)syslog.c	5.20 (Berkeley) %G%";
 #include <sys/file.h>
 #include <sys/signal.h>
 #include <sys/syslog.h>
+#include <sys/uio.h>
 #include <netdb.h>
 #include <strings.h>
 #include <varargs.h>
@@ -71,7 +72,7 @@ vsyslog(pri, fmt, ap)
 	register char *p;
 	time_t now, time();
 	int pid, saved_errno;
-	char tbuf[2048], fmt_cpy[1024], *ctime();
+	char tbuf[2048], fmt_cpy[1024], *stdp, *ctime();
 
 	saved_errno = errno;
 
@@ -90,6 +91,8 @@ vsyslog(pri, fmt, ap)
 	(void)time(&now);
 	(void)sprintf(tbuf, "<%d>%.15s ", pri, ctime(&now) + 4);
 	for (p = tbuf; *p; ++p);
+	if (LogStat & LOG_PERROR)
+		stdp = p;
 	if (LogTag) {
 		(void)strcpy(p, LogTag);
 		for (; *p; ++p);
@@ -121,8 +124,23 @@ vsyslog(pri, fmt, ap)
 
 	(void)vsprintf(p, fmt_cpy, ap);
 
+	cnt = strlen(tbuf);
+
+	/* output to stderr if requested */
+	if (LogStat & LOG_PERROR) {
+		struct iovec iov[2];
+		register struct iovec *v = iov;
+
+		v->iov_base = stdp;
+		v->iov_len = cnt - (stdp - tbuf);
+		++v;
+		v->iov_base = "\n";
+		v->iov_len = 1;
+		(void)writev(2, iov, 2);
+	}
+
 	/* output the message to the local logger */
-	if (send(LogFile, tbuf, cnt = strlen(tbuf), 0) >= 0 ||
+	if (send(LogFile, tbuf, cnt, 0) >= 0 ||
 	    !(LogStat&LOG_CONS))
 		return;
 
