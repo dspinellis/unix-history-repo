@@ -8,7 +8,7 @@
 # include "sendmail.h"
 # include "conf.h"
 
-SCCSID(@(#)util.c	3.17		%G%);
+SCCSID(@(#)util.c	3.18		%G%);
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
@@ -514,7 +514,6 @@ putline(l, fp, fullsmtp)
 	bool fullsmtp;
 {
 	register char *p;
-	char s1, s2;
 
 	if (!fullsmtp)
 	{
@@ -523,7 +522,7 @@ putline(l, fp, fullsmtp)
 	}
 
 	/* find the end of the line */
-	p = index('\n', l);
+	p = index(l, '\n');
 	if (p == NULL)
 		p = &l[strlen(l)];
 
