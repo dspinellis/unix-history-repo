@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	4.10 83/05/09";
+static char sccsid[] = "@(#)rwhod.c	4.11 (Berkeley) 83/05/28";
 #endif
 
 #include <sys/types.h>
@@ -155,10 +155,12 @@ main()
 			continue;
 		}
 #endif
+#ifdef notyet
 		if (wd.wd_vers != WHODVERSION)
 			continue;
 		if (wd.wd_type != WHODTYPE_STATUS)
 			continue;
+#endif
 		if (!verify(wd.wd_hostname)) {
 			fprintf(stderr, "rwhod: malformed host name from %x\n",
 				from.sin_addr);
@@ -171,6 +173,7 @@ main()
 			perror(path);
 			continue;
 		}
+#ifdef notyet
 #if vax || pdp11
 		{
 			int i, n = (cc - WHDRSIZE)/sizeof(struct utmp);
@@ -188,6 +191,7 @@ main()
 				we++;
 			}
 		}
+#endif
 #endif
 		(void) time(&wd.wd_recvtime);
 		(void) write(whod, (char *)&wd, cc);
@@ -243,7 +247,15 @@ onalrm()
 		utmpent = cc / sizeof (struct utmp);
 		for (i = 0; i < utmpent; i++)
 			if (utmp[i].ut_name[0]) {
-				we->we_utmp = utmp[i];
+				bcopy(utmp[i].ut_line, we->we_utmp.out_line,
+				   sizeof (utmp[i].ut_line));
+				bcopy(utmp[i].ut_name, we->we_utmp.out_name,
+				   sizeof (utmp[i].ut_name));
+#ifdef notyet
+				we->we_utmp.out_time = htonl(utmp[i].ut_time);
+#else
+				we->we_utmp.out_time = utmp[i].ut_time;
+#endif
 				if (we >= wlast)
 					break;
 				we++;
@@ -252,30 +264,30 @@ onalrm()
 	}
 	we = mywd.wd_we;
 	for (i = 0; i < utmpent; i++) {
-		if (stat(we->we_utmp.ut_line, &stb) >= 0)
+		if (stat(we->we_utmp.out_line, &stb) >= 0)
+#ifdef notyet
+			we->we_idle = htonl(now - stb.st_atime);
+#else
 			we->we_idle = now - stb.st_atime;
+#endif
 		we++;
 	}
 	(void) lseek(kmemf, (long)nl[NL_AVENRUN].n_value, 0);
 	(void) read(kmemf, (char *)avenrun, sizeof (avenrun));
 	for (i = 0; i < 3; i++)
+#ifdef notyet
+		mywd.wd_loadav[i] = htonl(avenrun[i] * 100);
+#else
 		mywd.wd_loadav[i] = avenrun[i] * 100;
-	cc = (char *)we - (char *)&mywd;
-	(void) time(&mywd.wd_sendtime);
-#if vax || pdp11
-	mywd.wd_sendtime = htonl(mywd.wd_sendtime);
-	for (i = 0; i < 3; i++)
-		mywd.wd_loadav[i] = htonl(mywd.wd_loadav[i]);
-	mywd.wd_boottime = htonl(mywd.wd_boottime);
-	we = mywd.wd_we;
-	for (i = 0; i < utmpent; i++) {
-		we->we_idle = htonl(we->we_idle);
-		we->we_utmp.ut_time = htonl(we->we_utmp.ut_time);
-		we++;
-	}
 #endif
+	cc = (char *)we - (char *)&mywd;
+#ifdef notyet
+	mywd.wd_sendtime = htonl(time(0));
 	mywd.wd_vers = WHODVERSION;
 	mywd.wd_type = WHODTYPE_STATUS;
+#else
+	mywd.wd_sendtime = time(0);
+#endif
 	for (np = neighbors; np != NULL; np = np->n_next)
 		(void) sendto(s, (char *)&mywd, cc, 0,
 			np->n_addr, np->n_addrlen);
@@ -308,6 +320,9 @@ loop:
 	}
 	(void) lseek(kmemf, (long)nl[NL_BOOTTIME].n_value, 0);
 	(void) read(kmemf, (char *)&mywd.wd_boottime, sizeof (mywd.wd_boottime));
+#ifdef notyet
+	mywd.wd_boottime = htonl(mywd.wd_boottime);
+#endif
 }
 
 /*
@@ -390,3 +405,67 @@ configure(s)
 	}
 	return (1);
 }
+
+#ifdef DEBUG
+sendto(s, buf, cc, flags, to, tolen)
+	int s;
+	char *buf;
+	int cc, flags;
+	char *to;
+	int tolen;
+{
+	register struct whod *w = (struct whod *)buf;
+	register struct whoent *we;
+	struct sockaddr_in *sin = (struct sockaddr_in *)to;
+	char *interval();
+
+	printf("sendto %x.%d\n", ntohl(sin->sin_addr), ntohs(sin->sin_port));
+	printf("hostname %s %s\n", w->wd_hostname,
+	   interval(w->wd_sendtime - w->wd_boottime, "  up"));
+	printf("load %4.2f, %4.2f, %4.2f\n",
+	    w->wd_loadav[0] / 100.0, w->wd_loadav[1] / 100.0,
+	    w->wd_loadav[2] / 100.0);
+	cc -= WHDRSIZE;
+	for (we = w->wd_we, cc /= sizeof (struct whoent); cc > 0; cc--, we++) {
+		printf("%-8.8s %s:%s %.12s",
+			 we->we_utmp.out_name,
+			 w->wd_hostname, we->we_utmp.out_line,
+			ctime((time_t *)&we->we_utmp.out_time)+4);
+		we->we_idle /= 60;
+		if (we->we_idle) {
+			if (we->we_idle >= 100*60)
+				we->we_idle = 100*60 - 1;
+			if (we->we_idle >= 60)
+				printf(" %2d", we->we_idle / 60);
+			else
+				printf("   ");
+			printf(":%02d", we->we_idle % 60);
+		}
+		printf("\n");
+	}
+}
+
+char *
+interval(time, updown)
+	int time;
+	char *updown;
+{
+	static char resbuf[32];
+	int days, hours, minutes;
+
+	if (time < 0 || time > 3*30*24*60*60) {
+		(void) sprintf(resbuf, "   %s ??:??", updown);
+		return (resbuf);
+	}
+	minutes = (time + 59) / 60;		/* round to minutes */
+	hours = minutes / 60; minutes %= 60;
+	days = hours / 24; hours %= 24;
+	if (days)
+		(void) sprintf(resbuf, "%s %2d+%02d:%02d",
+		    updown, days, hours, minutes);
+	else
+		(void) sprintf(resbuf, "%s    %2d:%02d",
+		    updown, hours, minutes);
+	return (resbuf);
+}
+#endif
