@@ -49,6 +49,8 @@ regex_t *
 optpat(s)
 	char *s;
 {
+	static char *neuter();
+
 	int n;
 	if (*s == '\0') {
 		if (!previous) regerr("RE error: no previous pattern");
@@ -60,13 +62,39 @@ optpat(s)
 		return previous;
 	}
 	patlock = 0;
-	if (n = regcomp(previous, s, 0)) {
+	if (n = regcomp(previous, *o_magic ? s : neuter(s), 
+	    *o_ignorecase ? REG_ICASE : 0)) {
 		regerr("RE error: %d", n);
 		free(previous);
 		return previous = NULL;
 	}
 	return previous;
 }
+
+/* escape BRE meta-characters in a string */
+static char *
+neuter(s)
+	char *s;
+{
+	static char *hd = NULL;
+
+	char *t;
+	int n = strlen(s);
+
+	free(hd);
+	if ((hd = t = (char *) malloc(n + n + 1)) == NULL)
+		return NULL;
+	if (*s == '^')
+		*t++ = *s++;
+	while (*s) {
+		if (*s == '.' || *s == '\\' || *s == '[' || *s == '*')
+			*t++ = '\\';
+		*t++ = *s++;
+	}
+	*t = '\0';
+	return hd;
+}
+
 #else
 static char	*previous;	/* the previous regexp, used when null regexp is given */
 
