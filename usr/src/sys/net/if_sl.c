@@ -1,4 +1,4 @@
-/*	@(#)if_sl.c	7.3 (Berkeley) %G% */
+/*	@(#)if_sl.c	7.4 (Berkeley) %G% */
 
 /*
  * Serial Line interface
@@ -46,9 +46,7 @@
 #include "../netinet/ip.h"
 #endif
 
-#ifdef vax
-#include "../vax/mtpr.h"
-#endif vax
+#include "../machine/mtpr.h"
 
 /*
  * N.B.: SLMTU is now a hard limit on input packet size.
