@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)pstat.c	4.4 (Berkeley) %G%";
+static char *sccsid = "@(#)pstat.c	4.5 (Berkeley) %G%";
 /*
  * Print system stuff
  */
@@ -60,6 +60,16 @@ struct nlist nl[] = {
 	{ "_chans" },
 #define	SSCHANS	15
 	{ "_schans" },
+#define	SNPROC	16
+	{ "_nproc" },
+#define	SNTEXT	17
+	{ "_ntext" },
+#define	SNFILE	18
+	{ "_nfile" },
+#define	SNINODE	19
+	{ "_ninode" },
+#define	SNSWAPMAP 20
+	{ "_nswapmap" },
 	0,
 };
 
@@ -167,7 +177,7 @@ char **argv;
 		exit(1);
 	}
 	if (filf||totflg)
-		dofil();
+		dofile();
 	if (inof||totflg)
 		doinode();
 	if (prcf||totflg)
@@ -180,35 +190,37 @@ char **argv;
 		dousr();
 	if (swpf||totflg)
 		doswap();
-	if (mpxf||totflg)
+	if (mpxf)
 		dompx();
-	if (groupf||totflg)
+	if (groupf)
 		dogroup();
 }
 
 doinode()
 {
 	register struct inode *ip;
-	struct inode xinode[NINODE];
-	register int nin, loc;
+	struct inode *xinode, *ainode;
+	register int nin;
+	int ninode;
 
 	nin = 0;
-	lseek(fc, (long)nl[SINODE].n_value, 0);
-	read(fc, xinode, sizeof(xinode));
-	for (ip = xinode; ip < &xinode[NINODE]; ip++)
+	ninode = getw(nl[SNINODE].n_value);
+	xinode = (struct inode *)calloc(ninode, sizeof (struct inode));
+	lseek(fc, (int)(ainode = (struct inode *)getw(nl[SINODE].n_value)), 0);
+	read(fc, xinode, ninode * sizeof(struct inode));
+	for (ip = xinode; ip < &xinode[ninode]; ip++)
 		if (ip->i_count)
 			nin++;
 	if (totflg) {
-		printf("%3d/%3d inodes\n", nin, NINODE);
+		printf("%3d/%3d inodes\n", nin, ninode);
 		return;
 	}
-	printf("%d/%d active xinodes\n", nin, NINODE);
+	printf("%d/%d active inodes\n", nin, ninode);
 	printf("   LOC    FLAGS  CNT DEVICE   INO  MODE  NLK UID   SIZE/DEV\n");
-	loc = nl[SINODE].n_value;
-	for (ip = xinode; ip < &xinode[NINODE]; ip++, loc += sizeof(xinode[0])) {
+	for (ip = xinode; ip < &xinode[ninode]; ip++) {
 		if (ip->i_count == 0)
 			continue;
-		printf("%8.1x ", loc);
+		printf("%8.1x ", ainode + (ip - xinode));
 		putf(ip->i_flag&ILOCK, 'L');
 		putf(ip->i_flag&IUPD, 'U');
 		putf(ip->i_flag&IACC, 'A');
@@ -227,6 +239,17 @@ doinode()
 			printf("%10ld", ip->i_size);
 		printf("\n");
 	}
+	free(xinode);
+}
+
+getw(loc)
+	off_t loc;
+{
+	int word;
+
+	lseek(fc, loc, 0);
+	read(fc, &word, sizeof (word));
+	return (word);
 }
 
 putf(v, n)
@@ -234,32 +257,34 @@ putf(v, n)
 	if (v)
 		printf("%c", n);
 	else
-		printf("_");
+		printf(" ");
 }
 
 dotext()
 {
 	register struct text *xp;
-	struct text xtext[NTEXT];
-	register loc;
+	int ntext;
+	struct text *xtext, *atext;
 	int ntx;
 
 	ntx = 0;
-	lseek(fc, (long)nl[STEXT].n_value, 0);
-	read(fc, xtext, sizeof(xtext));
-	for (xp = xtext; xp < &xtext[NTEXT]; xp++)
+	ntext = getw(nl[SNTEXT].n_value);
+	xtext = (struct text *)calloc(ntext, sizeof (struct text));
+	lseek(fc, (int)(atext = (struct text *)getw(nl[STEXT].n_value)), 0);
+	read(fc, xtext, ntext * sizeof (struct text));
+	for (xp = xtext; xp < &xtext[ntext]; xp++)
 		if (xp->x_iptr!=NULL)
 			ntx++;
 	if (totflg) {
-		printf("%3d/%3d texts\n", ntx, NTEXT);
+		printf("%3d/%3d texts\n", ntx, ntext);
 		return;
 	}
+	printf("%d/%d active texts\n", ntx, ntext);
 	printf("   LOC   FLAGS DADDR      CADDR  RSS SIZE      IPTR  CNT CCNT\n");
-	loc = nl[STEXT].n_value;
-	for (xp = xtext; xp < &xtext[NTEXT]; xp++, loc+=sizeof(xtext[0])) {
+	for (xp = xtext; xp < &xtext[ntext]; xp++) {
 		if (xp->x_iptr == NULL)
 			continue;
-		printf("%8.1x", loc);
+		printf("%8.1x", atext + (xp - xtext));
 		printf(" ");
 		putf(xp->x_flag&XPAGI, 'P');
 		putf(xp->x_flag&XTRC, 'T');
@@ -276,31 +301,35 @@ dotext()
 		printf("%5d", xp->x_ccount);
 		printf("\n");
 	}
+	free(xtext);
 }
 
 doproc()
 {
-	struct proc xproc[NPROC];
+	struct proc *xproc, *aproc;
+	int nproc;
 	register struct proc *pp;
 	register loc, np;
 	struct pte apte;
 
-	lseek(fc, (long)nl[SPROC].n_value, 0);
-	read(fc, xproc, sizeof(xproc));
+	nproc = getw(nl[SNPROC].n_value);
+	xproc = (struct proc *)calloc(nproc, sizeof (struct proc));
+	lseek(fc, (int)(aproc = (struct proc *)getw(nl[SPROC].n_value)), 0);
+	read(fc, xproc, nproc * sizeof (struct proc));
 	np = 0;
-	for (pp=xproc; pp < &xproc[NPROC]; pp++)
+	for (pp=xproc; pp < &xproc[nproc]; pp++)
 		if (pp->p_stat)
 			np++;
 	if (totflg) {
-		printf("%3d/%3d processes\n", np, NPROC);
+		printf("%3d/%3d processes\n", np, nproc);
 		return;
 	}
-	printf("%d/%d processes\n", np, NPROC);
+	printf("%d/%d processes\n", np, nproc);
 	printf("   LOC    S    F POIP PRI      SIG  UID SLP TIM  CPU  NI   PGRP    PID   PPID    ADDR   RSS SRSS SIZE    WCHAN    LINK   TEXTP CLKT\n");
-	for (loc=nl[SPROC].n_value,pp=xproc; pp<&xproc[NPROC]; pp++,loc+=sizeof(xproc[0])) {
+	for (pp=xproc; pp<&xproc[nproc]; pp++) {
 		if (pp->p_stat==0 && allflg==0)
 			continue;
-		printf("%8x", loc);
+		printf("%8x", aproc + (pp - xproc));
 		printf(" %2d", pp->p_stat);
 		printf(" %4x", pp->p_flag & 0xffff);
 		printf(" %4d", pp->p_poip);
@@ -538,26 +567,29 @@ char *s;
 	return(v);
 }
 
-dofil()
+dofile()
 {
-	struct file xfile[NFILE];
+	int nfile;
+	struct file *xfile, *afile;
 	register struct file *fp;
 	register nf;
 	int loc;
 
 	nf = 0;
-	lseek(fc, (long)nl[SFIL].n_value, 0);
-	read(fc, xfile, sizeof(xfile));
-	for (fp=xfile; fp < &xfile[NFILE]; fp++)
+	nfile = getw(nl[SNFILE].n_value);
+	xfile = (struct file *)calloc(nfile, sizeof (struct file));
+	lseek(fc, (int)(afile = (struct file *)getw(nl[SFIL].n_value)), 0);
+	read(fc, xfile, nfile * sizeof (struct file));
+	for (fp=xfile; fp < &xfile[nfile]; fp++)
 		if (fp->f_count)
 			nf++;
 	if (totflg) {
-		printf("%3d/%3d files\n", nf, NFILE);
+		printf("%3d/%3d files\n", nf, nfile);
 		return;
 	}
-	printf("%d/%d open files\n", nf, NFILE);
+	printf("%d/%d open files\n", nf, nfile);
 	printf("   LOC   FLG  CNT   INO    OFFS\n");
-	for (fp=xfile,loc=nl[SFIL].n_value; fp < &xfile[NFILE]; fp++,loc+=sizeof(xfile[0])) {
+	for (fp=xfile,loc=nl[SFIL].n_value; fp < &xfile[nfile]; fp++,loc+=sizeof(xfile[0])) {
 		if (fp->f_count==0)
 			continue;
 		printf("%8x ", loc);
@@ -572,31 +604,39 @@ dofil()
 
 doswap()
 {
-	struct proc proc[NPROC];
-	struct text xtext[NTEXT];
-	struct map swapmap[SMAPSIZ];
+	struct proc *proc;
+	int nproc;
+	struct text *xtext;
+	int ntext;
+	struct map *swapmap;
+	int nswapmap;
 	register struct proc *pp;
 	int nswap, used, tused, free;
 	register struct map *mp;
 	register struct text *xp;
 
-	lseek(fc, (long)nl[SPROC].n_value, 0);
-	read(fc, proc, sizeof(proc));
-	lseek(fc, (long)nl[SWAPMAP].n_value, 0);
-	read(fc, swapmap, sizeof(swapmap));
-	lseek(fc, (long)nl[SNSWAP].n_value, 0);
-	read(fc, &nswap, sizeof(nswap));
+	nproc = getw(nl[SNPROC].n_value);
+	proc = (struct proc *)calloc(nproc, sizeof (struct proc));
+	lseek(fc, getw(nl[SPROC].n_value), 0);
+	read(fc, proc, nproc * sizeof (struct proc));
+	nswapmap = getw(nl[SNSWAPMAP].n_value);
+	swapmap = (struct map *)calloc(nswapmap, sizeof (struct map));
+	lseek(fc, getw(nl[SWAPMAP].n_value), 0);
+	read(fc, swapmap, nswapmap * sizeof (struct map));
+	nswap = getw(nl[SNSWAP].n_value);
 	free = 0;
-	for (mp = swapmap; mp < &swapmap[SMAPSIZ]; mp++)
+	for (mp = swapmap; mp < &swapmap[nswapmap]; mp++)
 		free += mp->m_size;
-	lseek(fc, (long)nl[STEXT].n_value, 0);
-	read(fc, xtext, sizeof(xtext));
+	ntext = getw(nl[SNTEXT].n_value);
+	xtext = (struct text *)calloc(ntext, sizeof (struct text));
+	lseek(fc, getw(nl[STEXT].n_value), 0);
+	read(fc, xtext, ntext * sizeof (struct text));
 	tused = 0;
-	for (xp = xtext; xp < &xtext[NTEXT]; xp++)
+	for (xp = xtext; xp < &xtext[ntext]; xp++)
 		if (xp->x_iptr!=NULL)
 			tused += xdsize(xp);
 	used = tused;
-	for (pp = proc; pp < &proc[NPROC]; pp++) {
+	for (pp = proc; pp < &proc[nproc]; pp++) {
 		if (pp->p_stat == 0 || pp->p_stat == SZOMB)
 			continue;
 		if (pp->p_flag & SSYS)
