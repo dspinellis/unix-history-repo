@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)5.t	6.6 (Berkeley) %G%
+.\"	@(#)5.t	6.7 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -36,7 +36,7 @@ Xerox NS support is enabled with the NS option.
 ISO OSI support is enabled with the ISO option.
 In either case, include the pseudo-devices
 ``pty'', and ``loop'' in your machine's configuration
-file.  
+file. 
 The ``pty'' pseudo-device forces the pseudo terminal device driver
 to be configured into the system, see
 .Xr pty (4),
@@ -222,7 +222,7 @@ especially for multi-homed hosts using Serial Line IP (SLIP).
 Unfortunately, we were not able to obtain permission to
 include it on \*(4B.
 .PP
-If you do not wish to or cannot obtain 
+If you do not wish to or cannot obtain
 .Xr gated ,
 the distribution does include
 .Xr routed (8)
@@ -376,8 +376,8 @@ _
 /usr/sbin/named	Internet name server	/etc/rc
 /sbin/routed	routing table management daemon	/etc/rc
 /usr/sbin/rwhod	system status daemon	/etc/rc
-/usr/sbin/timed	time synchronization daemon	/etc/rc.local
-/usr/sbin/sendmail	SMTP server	/etc/rc.local
+/usr/sbin/timed	time synchronization daemon	/etc/rc
+/usr/sbin/sendmail	SMTP server	/etc/rc
 /usr/libexec/rshd	shell server	inetd
 /usr/libexec/rexecd	exec server	inetd
 /usr/libexec/rlogind	login server	inetd
@@ -514,8 +514,8 @@ system call is performed by the server to restrict the client
 from moving outside that part of the filesystem where the
 user ftp home directory is located.  Because a
 .Xr chroot
-call is used, certain programs and files used by the server 
-process must be placed in the ftp home directory. 
+call is used, certain programs and files used by the server
+process must be placed in the ftp home directory.
 Further, one must be
 sure that all directories and executable images are unwritable.
 The following directory setup is recommended.  The

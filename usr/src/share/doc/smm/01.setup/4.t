@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)4.t	6.7 (Berkeley) %G%
+.\"	@(#)4.t	6.8 (Berkeley) %G%
 .\"
 .ds LH "Installing/Operating \*(4B
 .ds CF \*(Dy
@@ -26,7 +26,7 @@ and building system images, consult the document ``Building
 .NH 3
 Kernel organization
 .PP
-As distributed, the kernel source is in a 
+As distributed, the kernel source is in a
 separate tar image.  The source may be physically
 located anywhere within any filesystem so long as
 a symbolic link to the location is created for the file
@@ -50,6 +50,7 @@ kern		kernel functions broken down as follows
 	tty	terminal handling and job control
 	vfs	filesystem management
 	uipc	interprocess communication (sockets)
+	subr	miscellaneous support routines
 vm		virtual memory management
 ufs		local filesystems broken down as follows
 	ufs	common local filesystem routines
@@ -70,12 +71,14 @@ netx25	CCITT X.25 protocols (X.25 Packet Level, HDLC/LAPB)
 .TE
 .LP
 A separate subdirectory is provided for each machine architecture
-.TE
+.TS
 l l.
 hp300	HP 9000/300 series of Motorola 68000-based machines
 i386	Intel 386/486-based PC machines
-pmax	Digital 3100 workstations
-sparc	Sun Microsystems Sparcstation
+luna68k	Omron 68000-based workstations
+news3400	Sony News MIPS-based workstations
+pmax	Digital 3100/5000 MIPS-based workstations
+sparc	Sun Microsystems SPARCstation 1, 1+, and 2
 tahoe	(deprecated) CCI Power 6-series machines
 vax	(deprecated) Digital VAX machines
 .TE
@@ -387,7 +390,7 @@ by eliminating the need to allocate an indirect block.
 However, if the block size is increased and an indirect
 block is still required, then more disk space will be
 used by the file because indirect blocks are allocated
-according to the block size of the filesystem. 
+according to the block size of the filesystem.
 .PP
 In selecting a fragment size for a filesystem, at least
 two considerations should be given.  The major performance
@@ -408,10 +411,10 @@ use fragment sizes of at least 1 kbytes to minimize the amount
 of work required in conversion.
 .PP
 A second, more important, consideration when selecting the
-fragment size for a filesystem is the level of fragmentation 
+fragment size for a filesystem is the level of fragmentation
 on the disk.  With an 8:1 fragment to block ratio, storage fragmentation
 occurs much sooner, particularly with a busy filesystem running
-near full capacity.  By comparison, the level of fragmentation in a 
+near full capacity.  By comparison, the level of fragmentation in a
 4:1 fragment to block ratio filesystem is one tenth as severe.  This
 means that on filesystems where many files are created and
 deleted, the 512 byte fragment size is more likely to result in apparent
@@ -507,7 +510,7 @@ l l l l n n.
 /dev/\*(Dk0g	/a	ufs	rw	1	2
 /dev/\*(Dk1a	/var	ufs	rw	1	2
 /dev/\*(Dk1b	none	swap	sw	0	0
-/dev/\*(Dk1g	/usr	ufs	rw	1	2
+/dev/\*(Dk1g	/usr	ufs	ro	1	2
 .TE
 We could set
 .Pn /var
@@ -584,7 +587,7 @@ The std.9600 parameter provided to
 is used in searching the file
 .Pn /etc/gettytab ;
 it specifies a terminal's characteristics (such as baud rate).
-To make custom terminal types, consult 
+To make custom terminal types, consult
 .Xr gettytab (5)
 before modifying
 .Pn /etc/gettytab .
@@ -646,7 +649,7 @@ the accounting and noticeably the
 .Xr ps (1)
 command make good use of the convention that tty names
 (by default, and also after dialups are named as suggested above)
-are distinct in the last 2 characters. 
+are distinct in the last 2 characters.
 Change this and you may be sorry later, as the heuristic
 .Xr ps (1)
 uses based on these conventions will then break down and
@@ -662,7 +665,7 @@ each a directory and a password, and putting users who will wish
 to share software in the same groups.
 .PP
 Several guest accounts have been provided on the distribution
-system; these accounts are for people at Berkeley, 
+system; these accounts are for people at Berkeley,
 Bell Laboratories, and others
 who have done major work on UNIX in the past.  You can delete these accounts,
 or leave them on the system if you expect that these people would have
@@ -686,7 +689,7 @@ The first lines in
 hostname=\fImysitename\fP
 /bin/hostname $hostname
 .DE
-to define the value returned by the 
+to define the value returned by the
 .Xr gethostname (2)
 system call.  If you are running the name server, your site
 name should be your fully qualified domain name.  Programs such as
@@ -739,7 +742,7 @@ transfer of the job to the remote machine.  If the destination
 machine is unreachable, the job will remain queued until it is
 possible to transfer the files to the spooling queue on the
 remote machine.  The
-.Xr lpq 
+.Xr lpq
 program shows the contents of spool
 queues on both the local and remote machines.
 .PP
@@ -805,12 +808,12 @@ and then adjust the necessary configuration files.
 You should also set up the file
 .Pn /etc/aliases
 for your installation, creating mail groups as appropriate.
-Documents describing 
+Documents describing
 .Xr sendmail 's
 operation and installation are also included in the System Manager's Manual.
 .NH 3
 Setting up a UUCP connection
-.PP
+.LP
 The version of
 .Xr uucp
 included in \*(4B has the following features:
@@ -925,7 +928,7 @@ To install
 .Xr uucp
 on your system,
 start by selecting a site name
-(shorter than 14 characters).  
+(shorter than 14 characters). 
 A
 .Xr uucp
 account must be created in the password file and a password set up.
