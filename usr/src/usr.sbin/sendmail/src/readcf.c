@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.97 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.98 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -71,7 +71,6 @@ readcf(cfname)
 {
 	FILE *cf;
 	int ruleset = 0;
-	int nextruleset = MAXRWSETS;
 	char *q;
 	struct rewrite *rwp = NULL;
 	char *bp;
@@ -372,59 +371,7 @@ readcf(cfname)
 			break;
 
 		  case 'S':		/* select rewriting set */
-			for (p = &bp[1]; isascii(*p) && isspace(*p); p++)
-				continue;
-			if (!isascii(*p))
-			{
-				syserr("invalid argument to S line: \"%.20s\"", 
-					&bp[1]);
-				break;
-			}
-			if (isdigit(*p))
-			{
-				ruleset = atoi(p);
-				if (ruleset >= MAXRWSETS / 2 || ruleset < 0)
-				{
-					syserr("bad ruleset %d (%d max)",
-						ruleset, MAXRWSETS / 2);
-					ruleset = 0;
-				}
-			}
-			else
-			{
-				STAB *s;
-				char delim;
-
-				q = p;
-				while (*p != '\0' && isascii(*p) &&
-				       (isalnum(*p) || strchr("-_$", *p) != NULL))
-					p++;
-				while (isascii(*p) && isspace(*p))
-					*p++ = '\0';
-				delim = *p;
-				if (delim != '\0')
-					*p++ = '\0';
-				s = stab(q, ST_RULESET, ST_ENTER);
-				if (s->s_ruleset != 0)
-					ruleset = s->s_ruleset;
-				else if (delim == '=')
-				{
-					ruleset = atoi(p);
-					if (ruleset >= MAXRWSETS / 2 || ruleset < 0)
-					{
-						syserr("bad ruleset %s = %d (%d max)",
-							q, ruleset, MAXRWSETS / 2);
-						ruleset = 0;
-					}
-				}
-				else if ((ruleset = --nextruleset) < MAXRWSETS / 2)
-				{
-					syserr("%s: too many named rulesets (%d max)",
-						q, MAXRWSETS / 2);
-					ruleset = 0;
-				}
-				s->s_ruleset = ruleset;
-			}
+			ruleset = strtorwset(&bp[1], NULL, ST_ENTER);
 			rwp = NULL;
 			break;
 
@@ -864,12 +811,9 @@ makemailer(line)
 
 		  case 'S':		/* sender rewriting ruleset */
 		  case 'R':		/* recipient rewriting ruleset */
-			i = strtol(p, &endp, 10);
-			if (i < 0 || i >= MAXRWSETS)
-			{
-				syserr("invalid rewrite set, %d max", MAXRWSETS);
+			i = strtorwset(p, &endp, ST_ENTER);
+			if (i < 0)
 				return;
-			}
 			if (fcode == 'S')
 				m->m_sh_rwset = m->m_se_rwset = i;
 			else
@@ -878,13 +822,9 @@ makemailer(line)
 			p = endp;
 			if (*p++ == '/')
 			{
-				i = strtol(p, NULL, 10);
-				if (i < 0 || i >= MAXRWSETS)
-				{
-					syserr("invalid rewrite set, %d max",
-						MAXRWSETS);
+				i = strtorwset(p, NULL);
+				if (i < 0)
 					return;
-				}
 				if (fcode == 'S')
 					m->m_sh_rwset = i;
 				else
@@ -2210,6 +2150,107 @@ makemapentry(line)
 	}
 
 	return &s->s_map;
+}
+/*
+**  STRTORWSET -- convert string to rewriting set number
+**
+**	Parameters:
+**		p -- the pointer to the string to decode.
+**		endp -- if set, store the trailing delimiter here.
+**		stabmode -- ST_ENTER to create this entry, ST_FIND if
+**			it must already exist.
+**
+**	Returns:
+**		The appropriate ruleset number.
+**		-1 if it is not valid (error already printed)
+*/
+
+int
+strtorwset(p, endp, stabmode)
+	char *p;
+	char **endp;
+	int stabmode;
+{
+	int ruleset;
+	static int nextruleset = MAXRWSETS;
+
+	while (isascii(*p) && isspace(*p))
+		p++;
+	if (!isascii(*p))
+	{
+		syserr("invalid ruleset name: \"%.20s\"", p);
+		return -1;
+	}
+	if (isdigit(*p))
+	{
+		ruleset = strtol(p, endp, 10);
+		if (ruleset >= MAXRWSETS / 2 || ruleset < 0)
+		{
+			syserr("bad ruleset %d (%d max)",
+				ruleset, MAXRWSETS / 2);
+			ruleset = -1;
+		}
+	}
+	else
+	{
+		STAB *s;
+		char delim;
+		char *q;
+
+		q = p;
+		while (*p != '\0' && isascii(*p) &&
+		       (isalnum(*p) || strchr("-_$", *p) != NULL))
+			p++;
+		while (isascii(*p) && isspace(*p))
+			*p++ = '\0';
+		delim = *p;
+		if (delim != '\0')
+			*p = '\0';
+		s = stab(q, ST_RULESET, stabmode);
+		if (delim != '\0')
+			*p = delim;
+
+		if (s == NULL)
+		{
+			syserr("unknown ruleset %s", q);
+			return -1;
+		}
+
+		if (stabmode == ST_ENTER && delim == '=')
+		{
+			ruleset = strtol(p, endp, 10);
+			if (ruleset >= MAXRWSETS / 2 || ruleset < 0)
+			{
+				syserr("bad ruleset %s = %d (%d max)",
+					q, ruleset, MAXRWSETS / 2);
+				ruleset = -1;
+			}
+		}
+		else
+		{
+			if (endp != NULL)
+				*endp = p;
+			if (s->s_ruleset > 0)
+				ruleset = s->s_ruleset;
+			else if ((ruleset = --nextruleset) < MAXRWSETS / 2)
+			{
+				syserr("%s: too many named rulesets (%d max)",
+					q, MAXRWSETS / 2);
+				ruleset = -1;
+			}
+		}
+		if (s->s_ruleset > 0 && ruleset >= 0 && ruleset != s->s_ruleset)
+		{
+			syserr("%s: ruleset changed value (old %d, new %d)",
+				q, ruleset, s->s_ruleset);
+			ruleset = s->s_ruleset;
+		}
+		else if (ruleset > 0)
+		{
+			s->s_ruleset = ruleset;
+		}
+	}
+	return ruleset;
 }
 /*
 **  INITTIMEOUTS -- parse and set timeout values
