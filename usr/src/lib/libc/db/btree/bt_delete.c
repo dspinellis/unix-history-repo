@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_delete.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_delete.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -59,11 +59,13 @@ __bt_delete(dbp, key, flags)
 		 * the delete cursor bit to have been set requires that the
 		 * scan be initialized, so no reason to check.
 		 */
+		if (!ISSET(t, BTF_SEQINIT))
+                        goto einval;
 		status = ISSET(t, BTF_DELCRSR) ?
 		    RET_SPECIAL : __bt_crsrdel(t, &t->bt_bcursor);
 		break;
 	default:
-		errno = EINVAL;
+einval:		errno = EINVAL;
 		return (RET_ERROR);
 	}
 	if (status == RET_SUCCESS)
