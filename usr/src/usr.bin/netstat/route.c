@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.9 (Berkeley) 87/02/03";
+static char sccsid[] = "@(#)route.c	5.10 (Berkeley) 87/04/28";
 #endif
 
 #include <stdio.h>
@@ -211,8 +211,8 @@ netname(in, mask)
 	register i;
 	int subnetshift;
 
-	in.s_addr = ntohl(in.s_addr);
-	if (!nflag && in.s_addr) {
+	i = ntohl(in.s_addr);
+	if (!nflag && i) {
 		if (mask == 0) {
 			if (IN_CLASSA(i)) {
 				mask = IN_CLASSA_NET;
@@ -230,10 +230,10 @@ netname(in, mask)
 			 * Guess at the subnet mask, assuming reasonable
 			 * width subnet fields.
 			 */
-			while (in.s_addr &~ mask)
+			while (i &~ mask)
 				mask = (long)mask >> subnetshift;
 		}
-		net = in.s_addr & mask;
+		net = i & mask;
 		while ((mask & 1) == 0)
 			mask >>= 1, net >>= 1;
 		np = getnetbyaddr(net, AF_INET);
@@ -242,16 +242,15 @@ netname(in, mask)
 	}	
 	if (cp)
 		strcpy(line, cp);
-	else if ((in.s_addr & 0xffffff) == 0)
-		sprintf(line, "%u", C(in.s_addr >> 24));
-	else if ((in.s_addr & 0xffff) == 0)
-		sprintf(line, "%u.%u", C(in.s_addr >> 24) , C(in.s_addr >> 16));
-	else if ((in.s_addr & 0xff) == 0)
-		sprintf(line, "%u.%u.%u", C(in.s_addr >> 24),
-			C(in.s_addr >> 16), C(in.s_addr >> 8));
+	else if ((i & 0xffffff) == 0)
+		sprintf(line, "%u", C(i >> 24));
+	else if ((i & 0xffff) == 0)
+		sprintf(line, "%u.%u", C(i >> 24) , C(i >> 16));
+	else if ((i & 0xff) == 0)
+		sprintf(line, "%u.%u.%u", C(i >> 24), C(i >> 16), C(i >> 8));
 	else
-		sprintf(line, "%u.%u.%u.%u", C(in.s_addr >> 24),
-			C(in.s_addr >> 16), C(in.s_addr >> 8), C(in.s_addr));
+		sprintf(line, "%u.%u.%u.%u", C(i >> 24),
+			C(i >> 16), C(i >> 8), C(i));
 	return (line);
 }
 
