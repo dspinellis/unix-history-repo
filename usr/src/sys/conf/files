@@ -8,7 +8,6 @@ kern/kern_exit.c	standard
 kern/kern_fork.c	standard
 kern/kern_kinfo.c	standard
 kern/kern_ktrace.c	standard
-kern/kern_lock.c	standard
 kern/kern_malloc.c	standard
 kern/kern_physio.c	standard
 kern/kern_proc.c	standard
@@ -47,11 +46,12 @@ kern/vfs_vnops.c	standard
 kern/uipc_domain.c	standard
 kern/uipc_mbuf.c	standard
 kern/uipc_proto.c	standard
-kern/uipc_shm.c		optional sysvshm
 kern/uipc_socket.c	standard
 kern/uipc_socket2.c	standard
 kern/uipc_syscalls.c	standard
 kern/uipc_usrreq.c	standard
+kern/sysv_shm.c		optional sysvshm
+vm/kern_lock.c		standard
 vm/vm_fault.c		standard
 vm/vm_glue.c		standard
 vm/vm_init.c		standard
