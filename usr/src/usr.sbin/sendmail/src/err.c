@@ -3,7 +3,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)err.c	3.17		%G%);
+SCCSID(@(#)err.c	3.18		%G%);
 
 /*
 **  SYSERR -- Print error message.
@@ -32,7 +32,7 @@ char	*sys_errlist[];
 syserr(fmt, a, b, c, d, e)
 	char *fmt;
 {
-	static char errbuf[MAXLINE+1];
+	static char errbuf[2*BUFSIZ];
 	extern char Arpa_Syserr[];
 
 	/* format the error message */
@@ -116,7 +116,7 @@ message(num, msg, a, b, c, d, e)
 	register char *num;
 	register char *msg;
 {
-	char errbuf[MAXLINE];
+	char errbuf[2*BUFSIZ];
 
 	errno = 0;
 	fmtmsg(errbuf, To, num, msg, a, b, c, d, e);
@@ -178,12 +178,14 @@ fmtmsg(eb, to, num, fmt, a, b, c, d, e)
 	if (to != NULL && to[0] != '\0')
 	{
 		(void) sprintf(eb, "%s... ", to);
-		eb += strlen(eb);
+		while (*eb != '\0')
+			*eb++ &= 0177;
 	}
 
 	/* output the message */
 	(void) sprintf(eb, fmt, a, b, c, d, e);
-	eb += strlen(eb);
+	while (*eb != '\0')
+		*eb++ &= 0177;
 
 	/* output the error code, if any */
 	if (errno != 0)
