@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_bio.c	7.13 (Berkeley) %G%
+ *	@(#)nfs_bio.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -47,13 +47,15 @@ nfs_bioread(vp, uio, ioflag, cred)
 	struct ucred *cred;
 {
 	register struct nfsnode *np = VTONFS(vp);
-	struct nfsmount *nmp;
 	struct buf *bp;
 	struct vattr vattr;
 	daddr_t lbn, bn, rablock;
 	int diff, error = 0;
 	long n, on;
 
+#ifdef lint
+	ioflag = ioflag;
+#endif /* lint */
 	if (uio->uio_rw != UIO_READ)
 		panic("nfs_read mode");
 	if (uio->uio_resid == 0)
@@ -91,7 +93,6 @@ nfs_bioread(vp, uio, ioflag, cred)
 			}
 		}
 	}
-	nmp = VFSTONFS(vp->v_mount);
 	do {
 	    switch (vp->v_type) {
 	    case VREG:

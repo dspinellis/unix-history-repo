@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_subs.c	7.24 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.25 (Berkeley) %G%
  */
 
 /*
@@ -61,7 +61,7 @@ static u_long *rpc_uidp = (u_long *)0;
 static u_long nfs_xid = 1;
 static char *rpc_unixauth;
 extern long hostid;
-extern enum vtype v_type[NFLNK+1];
+enum vtype ntov_type[7] = { VNON, VREG, VDIR, VBLK, VCHR, VLNK, VNON };
 extern struct proc *nfs_iodwant[NFS_MAXASYNCDAEMON];
 extern struct map nfsmap[NFS_MSIZ];
 extern struct nfsreq nfsreqh;
@@ -504,12 +504,6 @@ nfs_init()
 	/* Ensure async daemons disabled */
 	for (i = 0; i < NFS_MAXASYNCDAEMON; i++)
 		nfs_iodwant[i] = (struct proc *)0;
-	v_type[0] = VNON;
-	v_type[1] = VREG;
-	v_type[2] = VDIR;
-	v_type[3] = VBLK;
-	v_type[4] = VCHR;
-	v_type[5] = VLNK;
 	nfs_xdrneg1 = txdr_unsigned(-1);
 	nfs_nhinit();			/* Init the nfsnode table */
 	nfsrv_initcache();		/* Init the server request cache */
@@ -600,7 +594,7 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 	int error = 0;
 	struct mbuf *md;
 	enum vtype type;
-	dev_t rdev;
+	long rdev;
 	struct timeval mtime;
 	struct vnode *nvp;
 
@@ -611,7 +605,7 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 		return (error);
 	fp = (struct nfsv2_fattr *)cp2;
 	type = nfstov_type(fp->fa_type);
-	rdev = fxdr_unsigned(dev_t, fp->fa_rdev);
+	rdev = fxdr_unsigned(long, fp->fa_rdev);
 	fxdr_time(&fp->fa_mtime, &mtime);
 	/*
 	 * If v_type == VNON it is a new node, so fill in the v_type,
@@ -622,7 +616,10 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 	 */
 	np = VTONFS(vp);
 	if (vp->v_type == VNON) {
-		vp->v_type = type;
+		if (type == VCHR && rdev == 0xffffffff)
+			vp->v_type = type = VFIFO;
+		else
+			vp->v_type = type;
 		if (vp->v_type == VFIFO) {
 #ifdef FIFO
 			extern struct vnodeops fifo_nfsv2nodeops;
@@ -633,7 +630,7 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 		}
 		if (vp->v_type == VCHR || vp->v_type == VBLK) {
 			vp->v_op = &spec_nfsv2nodeops;
-			if (nvp = checkalias(vp, rdev, vp->v_mount)) {
+			if (nvp = checkalias(vp, (dev_t)rdev, vp->v_mount)) {
 				/*
 				 * Reinitialize aliased node.
 				 */
@@ -666,8 +663,8 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 		np->n_size = vap->va_size;
 	vap->va_size_rsv = 0;
 	vap->va_blocksize = fxdr_unsigned(long, fp->fa_blocksize);
-	vap->va_rdev = rdev;
-	vap->va_bytes = fxdr_unsigned(long, fp->fa_blocks) * vap->va_blocksize;
+	vap->va_rdev = (dev_t)rdev;
+	vap->va_bytes = fxdr_unsigned(long, fp->fa_blocks) * NFS_FABLKSIZE;
 	vap->va_bytes_rsv = 0;
 	vap->va_fsid = vp->v_mount->mnt_stat.f_fsid.val[0] | 0x8000;
 	vap->va_fileid = fxdr_unsigned(long, fp->fa_fileid);
@@ -732,46 +729,50 @@ nfs_namei(ndp, fhp, len, mdp, dposp)
 	int flag;
 	int error;
 
-	flag = ndp->ni_nameiop & OPFLAG;
-	/*
-	 * Copy the name from the mbuf list to the d_name field of ndp
-	 * and set the various ndp fields appropriately.
-	 */
-	cp = *dposp;
-	md = *mdp;
-	rem = mtod(md, caddr_t)+md->m_len-cp;
-	ndp->ni_hash = 0;
-	for (i = 0; i < len;) {
-		while (rem == 0) {
-			md = md->m_next;
-			if (md == NULL)
-				return (EBADRPC);
-			cp = mtod(md, caddr_t);
-			rem = md->m_len;
-		}
-		if (*cp == '\0' || *cp == '/')
-			return (EINVAL);
-		if (*cp & 0200)
-			if ((*cp&0377) == ('/'|0200) || flag != DELETE)
+	if ((ndp->ni_nameiop & HASBUF) == 0) {
+		flag = ndp->ni_nameiop & OPFLAG;
+		/*
+		 * Copy the name from the mbuf list to the d_name field of ndp
+		 * and set the various ndp fields appropriately.
+		 */
+		cp = *dposp;
+		md = *mdp;
+		rem = mtod(md, caddr_t)+md->m_len-cp;
+		ndp->ni_hash = 0;
+		for (i = 0; i < len;) {
+			while (rem == 0) {
+				md = md->m_next;
+				if (md == NULL)
+					return (EBADRPC);
+				cp = mtod(md, caddr_t);
+				rem = md->m_len;
+			}
+			if (*cp == '\0' || *cp == '/')
 				return (EINVAL);
-		ndp->ni_dent.d_name[i++] = *cp;
-		ndp->ni_hash += (unsigned char)*cp * i;
-		cp++;
-		rem--;
-	}
-	*mdp = md;
-	*dposp = cp;
-	len = nfsm_rndup(len)-len;
-	if (len > 0) {
-		if (rem < len) {
-			if (error = nfs_adv(mdp, dposp, len, rem))
-				return (error);
-		} else
-			*dposp += len;
-	}
+			if (*cp & 0200)
+				if ((*cp&0377) == ('/'|0200) || flag != DELETE)
+					return (EINVAL);
+			ndp->ni_dent.d_name[i++] = *cp;
+			ndp->ni_hash += (unsigned char)*cp * i;
+			cp++;
+			rem--;
+		}
+		*mdp = md;
+		*dposp = cp;
+		len = nfsm_rndup(len)-len;
+		if (len > 0) {
+			if (rem < len) {
+				if (error = nfs_adv(mdp, dposp, len, rem))
+					return (error);
+			} else
+				*dposp += len;
+		}
+	} else
+		i = len;
 	ndp->ni_namelen = i;
 	ndp->ni_dent.d_namlen = i;
 	ndp->ni_dent.d_name[i] = '\0';
+	ndp->ni_segflg = UIO_SYSSPACE;
 	ndp->ni_pathlen = 1;
 	ndp->ni_pnbuf = ndp->ni_dirp = ndp->ni_ptr = &ndp->ni_dent.d_name[0];
 	ndp->ni_next = &ndp->ni_dent.d_name[i];

@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vfsops.c	7.21 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	7.22 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -310,13 +310,10 @@ nfs_unmount(mp, mntflags)
 	int mntflags;
 {
 	register struct nfsmount *nmp;
-	register struct nfsreq *rep;
-	struct nfsreq *rep2;
 	struct nfsnode *np;
 	struct vnode *vp;
 	int flags = 0;
 	int error;
-	int s;
 
 	if (mntflags & MNT_FORCE)
 		return (EINVAL);
@@ -453,5 +450,8 @@ nfs_quotactl(mp, cmd, uid, arg)
 	uid_t uid;
 	caddr_t arg;
 {
+#ifdef lint
+	mp = mp; cmd = cmd; uid = uid; arg = arg;
+#endif /* lint */
 	return (EOPNOTSUPP);
 }

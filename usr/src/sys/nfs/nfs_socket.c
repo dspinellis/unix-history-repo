@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_socket.c	7.12 (Berkeley) %G%
+ *	@(#)nfs_socket.c	7.13 (Berkeley) %G%
  */
 
 /*
@@ -218,7 +218,6 @@ nfs_reconnect(rep, nmp)
 	register struct nfsmount *nmp;
 {
 	register struct nfsreq *rp;
-	register struct socket *so;
 	int error;
 
 	if (rep->r_procp)
@@ -229,6 +228,9 @@ nfs_reconnect(rep, nmp)
 		tprintf(NULLVP, "Nfs server %s, trying a reconnect\n",
 			nmp->nm_mountp->mnt_stat.f_mntfromname);
 	while (error = nfs_connect(nmp)) {
+#ifdef lint
+		error = error;
+#endif /* lint */
 		if ((nmp->nm_flag & NFSMNT_INT) && nfs_sigintr(rep->r_procp))
 			return (EINTR);
 		tsleep((caddr_t)&lbolt, PSOCK, "nfscon", 0);
@@ -484,6 +486,10 @@ errout:
 			printf("nfs_rcv odd length!\n");
 			fcp = mtod(m, caddr_t);
 			mnew = m2 = (struct mbuf *)0;
+#ifdef lint
+			m3 = (struct mbuf *)0;
+			mlen = 0;
+#endif /* lint */
 			while (m) {
 				if (m2 == NULL || mlen == 0) {
 					MGET(m2, M_WAIT, MT_DATA);
@@ -860,7 +866,7 @@ nfsmout:
  * - verify it
  * - fill in the cred struct.
  */
-nfs_getreq(so, prog, vers, maxproc, nam, mrp, mdp, dposp, retxid, proc, cr,
+nfs_getreq(so, prog, vers, maxproc, nam, mrp, mdp, dposp, retxid, procnum, cr,
 	lockp, msk, mtch)
 	struct socket *so;
 	u_long prog;
@@ -871,7 +877,7 @@ nfs_getreq(so, prog, vers, maxproc, nam, mrp, mdp, dposp, retxid, proc, cr,
 	struct mbuf **mdp;
 	caddr_t *dposp;
 	u_long *retxid;
-	u_long *proc;
+	u_long *procnum;
 	register struct ucred *cr;
 	int *lockp;
 	struct mbuf *msk, *mtch;
@@ -920,12 +926,12 @@ nfs_getreq(so, prog, vers, maxproc, nam, mrp, mdp, dposp, retxid, proc, cr,
 		m_freem(mrep);
 		return (EPROGMISMATCH);
 	}
-	*proc = fxdr_unsigned(u_long, *p++);
-	if (*proc == NFSPROC_NULL) {
+	*procnum = fxdr_unsigned(u_long, *p++);
+	if (*procnum == NFSPROC_NULL) {
 		*mrp = mrep;
 		return (0);
 	}
-	if (*proc > maxproc || *p++ != rpc_auth_unix) {
+	if (*procnum > maxproc || *p++ != rpc_auth_unix) {
 		m_freem(mrep);
 		return (EPROCUNAVAIL);
 	}

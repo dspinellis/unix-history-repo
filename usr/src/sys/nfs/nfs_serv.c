@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_serv.c	7.19 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.20 (Berkeley) %G%
  */
 
 /*
@@ -45,6 +45,8 @@
 #include "mount.h"
 #include "mbuf.h"
 #include "errno.h"
+#include "../ufs/quota.h"
+#include "../ufs/inode.h"
 #include "nfsv2.h"
 #include "nfs.h"
 #include "xdr_subs.h"
@@ -58,7 +60,8 @@
 extern u_long nfs_procids[NFS_NPROCS];
 extern u_long nfs_xdrneg1;
 extern u_long nfs_false, nfs_true;
-nfstype nfs_type[VSOCK+1]={ NFNON, NFREG, NFDIR, NFBLK, NFCHR, NFLNK, NFNON, };
+nfstype nfs_type[9]={ NFNON, NFREG, NFDIR, NFBLK, NFCHR, NFLNK, NFNON,
+		      NFCHR, NFNON };
 
 /*
  * nfs getattr service
@@ -348,6 +351,9 @@ nfsrv_read(mrep, md, dpos, cred, xid, mrq, repstat)
 	 */
 	i = 0;
 	m3 = (struct mbuf *)0;
+#ifdef lint
+	m2 = (struct mbuf *)0;
+#endif /* lint */
 	while (left > 0) {
 		MGET(m, M_WAIT, MT_DATA);
 		if (left > MINCLSIZE)
@@ -530,6 +536,7 @@ nfsrv_create(mrep, md, dpos, cred, xid, mrq, repstat)
 	register u_long *p;
 	register long t1;
 	caddr_t bpos;
+	long rdev;
 	int error = 0;
 	char *cp2;
 	struct mbuf *mb, *mb2, *mreq;
@@ -547,17 +554,44 @@ nfsrv_create(mrep, md, dpos, cred, xid, mrq, repstat)
 	if (error = nfs_namei(ndp, fhp, len, &md, &dpos))
 		nfsm_reply(0);
 	VATTR_NULL(vap);
-	nfsm_disect(p, u_long *, NFSX_UNSIGNED);
+	nfsm_disect(p, u_long *, NFSX_SATTR);
 	/*
 	 * Iff doesn't exist, create it
 	 * otherwise just truncate to 0 length
 	 *   should I set the mode too ??
 	 */
 	if (ndp->ni_vp == NULL) {
-		vap->va_type = VREG;
-		vap->va_mode = nfstov_mode(*p++);
-		if (error = VOP_CREATE(ndp, vap))
+		vap->va_type = IFTOVT(fxdr_unsigned(u_long, *p));
+		vap->va_mode = nfstov_mode(*p);
+		rdev = fxdr_unsigned(long, *(p+3));
+		if (vap->va_type == VREG) {
+			if (error = VOP_CREATE(ndp, vap))
+				nfsm_reply(0);
+		} else if (vap->va_type == VCHR || vap->va_type == VBLK ||
+			vap->va_type == VFIFO) {
+			if (vap->va_type == VCHR && rdev == 0xffffffff)
+				vap->va_type = VFIFO;
+			if (vap->va_type == VFIFO) {
+#ifndef FIFO
+				VOP_ABORTOP(ndp);
+				error = ENXIO;
+				nfsm_reply(0);
+#endif /* FIFO */
+			} else if (error = suser(cred, (short *)0)) {
+				VOP_ABORTOP(ndp);
+				nfsm_reply(0);
+			} else
+				vap->va_rdev = (dev_t)rdev;
+			if (error = VOP_MKNOD(ndp, vap, cred))
+				nfsm_reply(0);
+			ndp->ni_nameiop = LOOKUP | LOCKLEAF | HASBUF;
+			if (error = nfs_namei(ndp, fhp, len, &md, &dpos))
+				nfsm_reply(0);
+		} else {
+			VOP_ABORTOP(ndp);
+			error = ENXIO;
 			nfsm_reply(0);
+		}
 		vp = ndp->ni_vp;
 	} else {
 		vp = ndp->ni_vp;
@@ -810,7 +844,7 @@ nfsrv_symlink(mrep, md, dpos, cred, xid, mrq, repstat)
 	struct vnode *vp;
 	nfsv2fh_t nfh;
 	fhandle_t *fhp;
-	long len, tlen, len2;
+	long len, len2;
 
 	pathcp = (char *)0;
 	ndinit(ndp);

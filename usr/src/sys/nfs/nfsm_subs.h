@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfsm_subs.h	7.7 (Berkeley) %G%
+ *	@(#)nfsm_subs.h	7.8 (Berkeley) %G%
  */
 
 /*
@@ -270,8 +270,11 @@ extern struct mbuf *nfsm_reqh();
 	fp->fa_gid = txdr_unsigned(vap->va_gid); \
 	fp->fa_size = txdr_unsigned(vap->va_size); \
 	fp->fa_blocksize = txdr_unsigned(vap->va_blocksize); \
-	fp->fa_rdev = txdr_unsigned(vap->va_rdev); \
-	fp->fa_blocks = txdr_unsigned(vap->va_bytes / vap->va_blocksize); \
+	if (vap->va_type == VFIFO) \
+		fp->fa_rdev = 0xffffffff; \
+	else \
+		fp->fa_rdev = txdr_unsigned(vap->va_rdev); \
+	fp->fa_blocks = txdr_unsigned(vap->va_bytes / NFS_FABLKSIZE); \
 	fp->fa_fsid = txdr_unsigned(vap->va_fsid); \
 	fp->fa_fileid = txdr_unsigned(vap->va_fileid); \
 	fp->fa_atime.tv_sec = txdr_unsigned(vap->va_atime.tv_sec); \
