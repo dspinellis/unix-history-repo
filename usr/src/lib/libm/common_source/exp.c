@@ -13,7 +13,7 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)exp.c	4.3 (Berkeley) 8/21/85; 1.4 (ucb.elefunt) %G%";
+"@(#)exp.c	4.3 (Berkeley) 8/21/85; 1.5 (ucb.elefunt) %G%";
 #endif not lint
 
 /* EXP(X)
@@ -129,7 +129,7 @@ double x;
 		    /* return 2^k*[1+x+x*c/(2+c)]  */
 			z=x*x;
 			c= x - z*(p1+z*(p2+z*(p3+z*(p4+z*p5))));
-			return  scalb(1.0+(hi-(lo-x*c/(2.0-c))),k);
+			return  scalb(1.0+(hi-(lo-(x*c)/(2.0-c))),k);
 
 		}
 		/* end of x > lntiny */
