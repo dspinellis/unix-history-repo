@@ -14,13 +14,13 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 #
 
 DEFS=	-DLIBC_SCCS
 CFLAGS=	-O ${DEFS}
-SRCS=	ecvt.c gcvt.c sibuf.c sobuf.c strout.c
-OBJS=	ecvt.o gcvt.o sibuf.o sobuf.o strout.o
+SRCS=	ecvt.c gcvt.c recv.c send.c sibuf.c sobuf.c strout.c wait.c wait3.c
+OBJS=	ecvt.o gcvt.o recv.o send.o sibuf.o sobuf.o strout.o wait.o wait3.o
 TAGSFILE=tags
 
 .c.o:
