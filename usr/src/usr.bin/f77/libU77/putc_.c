@@ -1,5 +1,5 @@
 /*
-char id_putc[] = "@(#)putc_.c	1.1";
+char id_putc[] = "@(#)putc_.c	1.2";
  *
  * write a character to the standard output
  *
@@ -19,15 +19,19 @@ extern unit units[];	/* logical units table from iolib */
 long putc_(c, clen)
 char *c; long clen;
 {
-	int i;
+	int	i;
+	unit	*lu;
 
-	if (!units[STDOUT].ufd)
+	lu = &units[STDOUT];
+	if (!lu->ufd)
 		return((long)(errno=F_ERNOPEN));
-	putc (*c, units[STDOUT].ufd);
-	if (ferror(units[STDOUT].ufd))
+	if (!lu->uwrt)
+		nowwriting(lu);
+	putc (*c, lu->ufd);
+	if (ferror(lu->ufd))
 	{
 		i = errno;
-		clearerr(units[STDOUT].ufd);
+		clearerr(lu->ufd);
 		return((long)i);
 	}
 	return(0L);

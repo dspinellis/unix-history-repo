@@ -1,5 +1,5 @@
 /*
-char id_fputc[] = @(#)fputc_.c	1.2";
+char id_fputc[] = @(#)fputc_.c	1.3";
  *
  * write a character to a logical unit bypassing formatted I/O
  *
@@ -19,17 +19,21 @@ extern unit units[];	/* logical units table from iolib */
 long fputc_(u, c, clen)
 long *u; char *c; long clen;
 {
-	int i;
+	int	i;
+	unit	*lu;
 
 	if (*u < 0 || *u >= MXUNIT)
 		return((long)(errno=F_ERUNIT));
-	if (!units[*u].ufd)
+	lu = &units[*u];
+	if (!lu->ufd)
 		return((long)(errno=F_ERNOPEN));
-	putc (*c, units[*u].ufd);
-	if (ferror(units[*u].ufd))
+	if (!lu->uwrt)
+		nowwriting(lu);
+	putc (*c, lu->ufd);
+	if (ferror(lu->ufd))
 	{
 		i = errno;
-		clearerr(units[*u].ufd);
+		clearerr(lu->ufd);
 		return((long)i);
 	}
 	return(0L);
