@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)a.out.h	5.2 (Berkeley) %G%
+ *	@(#)a.out.h	5.3 (Berkeley) %G%
  */
 
 /*
@@ -20,10 +20,19 @@
 #define	N_BADMAG(x) \
     (((x).a_magic)!=OMAGIC && ((x).a_magic)!=NMAGIC && ((x).a_magic)!=ZMAGIC)
 
+#if defined(vax) || defined(tahoe)
 #define	N_TXTOFF(x) \
-	((x).a_magic==ZMAGIC ? 1024 : sizeof (struct exec))
+	((x).a_magic == ZMAGIC ? 1024 : sizeof (struct exec))
+#endif
+
+#if defined(hp300)
+#define	N_TXTOFF(x) \
+	((x).a_magic == ZMAGIC ? 4096 : sizeof (struct exec))
+#endif
+
 #define N_SYMOFF(x) \
 	(N_TXTOFF(x) + (x).a_text+(x).a_data + (x).a_trsize+(x).a_drsize)
+
 #define	N_STROFF(x) \
 	(N_SYMOFF(x) + (x).a_syms)
 
