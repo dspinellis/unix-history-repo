@@ -1,4 +1,4 @@
-\"	@(#)gathering.me	1.1 %G%
+\"	@(#)gathering.me	1.2 %G%
 .sh 1 "Gathering Profile Data"
 .pp
 Routine calls or statement executions can be measured by having a
@@ -8,17 +8,15 @@ The additions can be inline increments to counters [Knuth71]
 monitoring routines [Unix].
 The counter increment overhead is low, and is suitable for
 statement level profiling.
-A call to the monitoring routine has an overhead on par with a
-call to a regular routine, and is therefore reasonably suited
-only to routine level profiling.
+A call of the monitoring routine has an overhead comparable with a
+call of a regular routine, and is therefore only suited
+to routine level profiling.
 However, the monitoring routine solution has certain advantages.
 Whatever counters are needed by the monitoring routine can be
 managed by the monitoring routine itself, rather than being
 distributed around the code.
-In particular, a monitoring routine can be called from separately
-compiled programs,
-whereas the counters would have to be distributed among the separately
-compiled modules.
+In particular, a monitoring routine can easily be called from separately
+compiled programs.
 In addition, different monitoring routines can be linked into the
 program to assemble different profiling data without having to
 change the compiler or recompile the program.
@@ -59,15 +57,15 @@ listing of the profile data.
 An advantage of this approach is that the profile data for
 several executions of a program can be combined by the
 post-processing to provide a profile of a large number of
-executions, and a large amount of program execution time.
+executions.
 .pp
 The execution time monitoring consists of three parts.
 The first part allocates and initializes the runtime monitoring data
 structures before the program begins execution.
-The third part condenses these data structures and writes them
-to a file as the program terminates.
 The second part is the monitoring routine invoked from the
 prologue of each profiled routine.
+The third part condenses the data structures and writes them
+to a file as the program terminates.
 The monitoring routine is discussed in detail in the following sections.
 .sh 2 "Execution Counts"
 .pp
@@ -107,7 +105,7 @@ We use the call site as the primary key with the callee
 address being the secondary key.
 Since each call site typically calls only one callee, we can
 reduce (usually to one) the number of minor lookups based on the callee.
-Another alternative, would use the callee as the primary key and the
+Another alternative would use the callee as the primary key and the
 call site as the secondary key.
 Such an organization has the advantage of associating callers with
 callees, at the expense of longer lookups in the monitoring
@@ -128,31 +126,31 @@ Not all callers and callees can be identified by the monitoring
 routine.
 Routines that were compiled without the profiling augmentations
 will not call the monitoring routine as part of their prologue,
-and thus we will never discover arcs whose heads are in these
+and thus no arcs will be recorded whose heads are in these
 routines.
 One need not profile all the routines in a program.
 Routines that are not profiled run at full speed.
 Certain routines, notably exception handlers, are invoked by
 non-standard calling sequences.
-Thus we may know the head of an arc, but find it difficult or
+Thus the monitoring routine may know the head of an arc,
+but find it difficult or
 impossible to determine the tail of the arc.
 Often in these cases the apparent tail of the arc is not a call
 site at all.
-Such anomalies cause us to declare a routine invocation
-``spontaneous''.
+Such anomalous invocations are declared ``spontaneous''.
 .sh 2 "Execution Times"
 .pp
 The execution times for routines can be gathered in at least two
 ways.
 One method measures the execution time of a routine by measuring
 the elapsed time from routine entry to routine exit.
-Unfortunately, time measurement is complicated on time sharing
-systems by the interruptions of program time relative to real time.
+Unfortunately, time measurement is complicated on time-sharing
+systems by the interruptions of program.
 A second method records the value of the program counter at some
 interval, and infers execution time from the distribution of the
 samples within the program.
-This technique is particularly suited to time sharing systems,
-where the interruptions of program time can serve as the basis for sampling
+This technique is particularly suited to time-sharing systems,
+where the interruptions of program can serve as the basis for sampling
 the program counter.
 Notice that, whereas the first method could provide exact timings,
 the second is inherently a statistical approximation.
@@ -189,5 +187,5 @@ was traversed by this execution of the program.
 The recorded histogram consists of counters of the number of
 times the program counter was found to be in each of the ranges covered
 by the histogram.
-The ranges themselves are not output, since they can be summarized as a
-lower and upper bound for the histogram and a step size.
+The ranges themselves are summarized as a
+lower and upper bound and a step size.
