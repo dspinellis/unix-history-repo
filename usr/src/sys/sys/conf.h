@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.3 (Berkeley) %G%
+ *	@(#)conf.h	8.4 (Berkeley) %G%
  */
 
 /*
@@ -22,6 +22,16 @@ struct tty;
 struct uio;
 struct vnode;
 
+/*
+ * Types for d_type.
+ */
+#define	D_TAPE	1
+#define	D_DISK	2
+#define	D_TTY	3
+
+/*
+ * Block device switch table
+ */
 struct bdevsw {
 	int	(*d_open)	__P((dev_t dev, int oflags, int devtype,
 				     struct proc *p));
@@ -32,13 +42,16 @@ struct bdevsw {
 				     int fflag, struct proc *p));
 	int	(*d_dump)	();	/* parameters vary by architecture */
 	int	(*d_psize)	__P((dev_t dev));
-	int	d_flags;
+	int	d_type;
 };
 
 #ifdef KERNEL
 extern struct bdevsw bdevsw[];
 #endif
 
+/*
+ * Character device switch table
+ */
 struct cdevsw {
 	int	(*d_open)	__P((dev_t dev, int oflags, int devtype,
 				     struct proc *p));
@@ -54,6 +67,7 @@ struct cdevsw {
 	int	(*d_select)	__P((dev_t dev, int which, struct proc *p));
 	int	(*d_mmap)	__P(());
 	int	(*d_strategy)	__P((struct buf *bp));
+	int	d_type;
 };
 
 #ifdef KERNEL
