@@ -7,43 +7,43 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_syscalls.c	7.33 (Berkeley) %G%
+ *	@(#)nfs_syscalls.c	7.34 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "kernel.h"
-#include "file.h"
-#include "stat.h"
-#include "vnode.h"
-#include "mount.h"
-#include "proc.h"
-#include "uio.h"
-#include "malloc.h"
-#include "buf.h"
-#include "mbuf.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "domain.h"
-#include "protosw.h"
-#include "namei.h"
-#include "netinet/in.h"
-#include "netinet/tcp.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <sys/file.h>
+#include <sys/stat.h>
+#include <sys/vnode.h>
+#include <sys/mount.h>
+#include <sys/proc.h>
+#include <sys/uio.h>
+#include <sys/malloc.h>
+#include <sys/buf.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/domain.h>
+#include <sys/protosw.h>
+#include <sys/namei.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
 #ifdef ISO
-#include "netiso/iso.h"
+#include <netiso/iso.h>
 #endif
-#include "machine/endian.h"
-#include "rpcv2.h"
-#include "nfsv2.h"
-#include "nfs.h"
-#include "nfsrvcache.h"
-#include "nfsmount.h"
-#include "nqnfs.h"
+#include <machine/endian.h>
+#include <nfs/rpcv2.h>
+#include <nfs/nfsv2.h>
+#include <nfs/nfs.h>
+#include <nfs/nfsrvcache.h>
+#include <nfs/nfsmount.h>
+#include <nfs/nqnfs.h>
 
 /* Global defs. */
 extern u_long nfs_prog, nfs_vers;
 extern int (*nfsrv_procs[NFS_NPROCS])();
-extern struct buf *nfs_bqueuehead, **nfs_bqueuetail;
+extern struct queue_entry nfs_bufq;
 extern struct proc *nfs_iodwant[NFS_MAXASYNCDAEMON];
 extern int nfs_numasync;
 extern time_t nqnfsstarttime;
@@ -590,19 +590,15 @@ nfssvc_iod(p)
 	 * Just loop around doin our stuff until SIGKILL
 	 */
 	for (;;) {
-		while (nfs_bqueuehead == NULL && error == 0) {
+		while (nfs_bufq.qe_next == NULL && error == 0) {
 			nfs_iodwant[myiod] = p;
 			error = tsleep((caddr_t)&nfs_iodwant[myiod],
 				PWAIT | PCATCH, "nfsidl", 0);
 			nfs_iodwant[myiod] = (struct proc *)0;
 		}
-		while ((bp = nfs_bqueuehead) != NULL) {
+		while ((bp = nfs_bufq.qe_next) != NULL) {
 			/* Take one off the front of the list */
-			if (dp = bp->b_actf)
-				dp->b_actb = bp->b_actb;
-			else
-				nfs_bqueuetail = bp->b_actb;
-			*bp->b_actb = dp;
+			queue_remove(&nfs_bufq, bp, struct buf *, b_freelist);
 			(void) nfs_doio(bp, (struct proc *)0);
 		}
 		if (error) {
