@@ -1,4 +1,4 @@
-/*	kern_clock.c	3.10	%G%	*/
+/*	kern_clock.c	3.11	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -236,6 +236,8 @@ out:
 		}
 #endif
 	}
+	if (!BASEPRI(ps))
+		unhang();
 	if (USERMODE(ps)) {
 		/*
 		 * We do this last since it
