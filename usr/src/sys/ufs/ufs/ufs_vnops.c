@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	7.84 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.85 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -289,7 +289,7 @@ ufs_setattr(vp, vap, cred, p)
 	if (vap->va_size != VNOVAL) {
 		if (vp->v_type == VDIR)
 			return (EISDIR);
-		if (error = VOP_TRUNCATE(vp, vap->va_size, 0)) /* IO_SYNC? */
+		if (error = VOP_TRUNCATE(vp, vap->va_size, 0, cred))
 			return (error);
 	}
 	ip = VTOI(vp);
@@ -981,7 +981,8 @@ ufs_rename(fdvp, fvp, fcnp,
 		if (doingdirectory) {
 			if (--xp->i_nlink != 0)
 				panic("rename: linked directory");
-			error = VOP_TRUNCATE(ITOV(xp), (u_long)0, IO_SYNC);
+			error = VOP_TRUNCATE(ITOV(xp), (off_t)0, IO_SYNC,
+			    tcnp->cn_cred);
 		}
 		xp->i_flag |= ICHG;
 		ufs_iput(xp);
@@ -1256,7 +1257,7 @@ ufs_rmdir(dvp, vp, cnp)
 	 * worry about them later.
 	 */
 	ip->i_nlink -= 2;
-	error = VOP_TRUNCATE(vp, (u_long)0, IO_SYNC);
+	error = VOP_TRUNCATE(vp, (off_t)0, IO_SYNC, cnp->cn_cred);
 	cache_purge(ITOV(ip));
 out:
 	if (dvp)

@@ -235,9 +235,9 @@ struct vnodeops {
 		    int mode, struct ucred *cred, struct vnode **vpp));
 #define	VOP_VFREE(v,i,m)	(*((v)->v_op->vop_vfree))(v,i,m)
 	void	(*vop_vfree) __P((struct vnode *pvp, ino_t ino, int mode));
-#define	VOP_TRUNCATE(v,l,f)	(*((v)->v_op->vop_truncate))(v,l,f)
-	int	(*vop_truncate)
-		    __P((struct vnode *vp, off_t length, int flags));
+#define	VOP_TRUNCATE(v,l,f,c)	(*((v)->v_op->vop_truncate))(v,l,f,c)
+	int	(*vop_truncate) __P((struct vnode *vp,
+		    off_t length, int flags, struct ucred *cred));
 #define	VOP_UPDATE(v,ta,tm,w)	(*((v)->v_op->vop_update))(v,ta,tm,w)
 	int	(*vop_update) __P((struct vnode *vp,
 		    struct timeval *ta, struct timeval *tm, int waitfor));

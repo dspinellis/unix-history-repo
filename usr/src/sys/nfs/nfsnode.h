@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsnode.h	7.18 (Berkeley) %G%
+ *	@(#)nfsnode.h	7.19 (Berkeley) %G%
  */
 
 /*
@@ -254,7 +254,8 @@ void	nfs_vfree __P((
 int	nfs_truncate __P((
 		struct vnode *vp,
 		off_t length,
-		int flags));
+		int flags,
+		struct ucred *cred));
 int	nfs_update __P((
 		struct vnode *vp,
 		struct timeval *ta,

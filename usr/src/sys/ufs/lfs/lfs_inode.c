@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_inode.c	7.60 (Berkeley) %G%
+ *	@(#)lfs_inode.c	7.61 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -215,10 +215,11 @@ lfs_update(vp, ta, tm, waitfor)
  */
 /* ARGSUSED */
 int
-lfs_truncate(vp, length, flags)
+lfs_truncate(vp, length, flags, cred)
 	struct vnode *vp;
 	off_t length;
 	int flags;
+	struct ucred *cred;
 {
 	register INDIR *ap;
 	register int i;
