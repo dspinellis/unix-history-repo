@@ -1,4 +1,4 @@
-/*	rsp.h	4.2	83/06/01	*/
+/*	rsp.h	4.3	83/06/08	*/
 
 /*
  * TU58 transfer protocol constants and data structures
@@ -21,24 +21,6 @@ struct packet {
 };
 
 /*
- * State information
- */
-struct tu {
-	u_char	*tu_rbptr;	/* pointer to buffer for read */
-	int	tu_rcnt;	/* how much to read */
-	u_char	*tu_wbptr;	/* pointer to buffer for write */
-	int	tu_wcnt;	/* how much to write */
-	int	tu_state;	/* current state of tansfer operation */
-	int	tu_flag;	/* read in progress flag */
-	char	*tu_addr;	/* real buffer data address */
-	int	tu_count;	/* real requested count */
-	int	tu_serrs;	/* count of soft errors */
-	int	tu_cerrs;	/* count of checksum errors */
-	int	tu_herrs;	/* count of hard errors */
-	char    tu_dopen[2];	/* drive is open */
-};
-
-/*
  * States
  */
 #define	TUS_INIT1	0	/* sending nulls */
@@ -54,8 +36,10 @@ struct tu {
 #define	TUS_GETC	10	/* reading checksum */
 #define	TUS_GET		11	/* reading an entire packet */
 #define	TUS_WAIT	12	/* waiting for continue */
+#define	TUS_RCVERR	13	/* receiver error in pseudo DMA routine */
+#define	TUS_CHKERR	14	/* checksum error in pseudo DMA routine */
 
-#define	TUS_NSTATES	13
+#define	TUS_NSTATES	15
 
 #define	printstate(state) \
 	if ((state) < TUS_NSTATES) \
