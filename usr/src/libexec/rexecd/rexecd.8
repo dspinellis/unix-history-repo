@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)rexecd.8	6.1 (Berkeley) %G%
+.\"	@(#)rexecd.8	6.2 (Berkeley) %G%
 .\"
 .TH REXECD 8C ""
 .UC 5
@@ -15,7 +15,7 @@ rexecd \- remote execution server
 is the server for the 
 .IR rexec (3X)
 routine.  The server provides remote execution facilities
-with authentication based on user names and encrypted
+with authentication based on user names and
 passwords.
 .PP
 .I Rexecd
@@ -39,7 +39,7 @@ port on the client's machine.
 A null terminated user name of at most 16 characters
 is retrieved on the initial socket.
 .IP 4)
-A null terminated, encrypted, password of at most
+A null terminated, unencrypted password of at most
 16 characters is retrieved on the initial socket.  
 .IP 5)
 A null terminated command to be passed to a
@@ -55,18 +55,15 @@ and group protections of the user.
 If any of these steps fail the connection is
 aborted with a diagnostic message returned.
 .IP 7)
-A null byte is returned on the connection associated
-with the
-.B stderr 
+A null byte is returned on the initial socket
 and the command line is passed to the normal login
 shell of the user.  The
 shell inherits the network connections established
 by
 .IR rexecd .
 .SH DIAGNOSTICS
-All diagnostic messages are returned on the connection
-associated with the
-.BR stderr ,
+Except for the last one listed below,
+all diagnostic messages are returned on the initial socket,
 after which any network connections are closed.
 An error is indicated by a leading byte with a value of
 1 (0 is returned in step 7 above upon successful completion
@@ -106,13 +103,19 @@ A
 .I fork
 by the server failed.
 .PP
-.B ``/bin/sh: ...''
+.B ``<shellname>: ...''
 .br
 The user's login shell could not be started.
+This message is returned
+on the connection associated with the
+.BR stderr ,
+and is not preceded by a flag byte.
+.SH SEE ALSO
+rexec(3X)
 .SH BUGS
 Indicating ``Login incorrect'' as opposed to ``Password incorrect''
 is a security breach which allows people to probe a system for users
 with null passwords.
 .PP
-A facility to allow all data exchanges to be encrypted should be
+A facility to allow all data and password exchanges to be encrypted should be
 present.
