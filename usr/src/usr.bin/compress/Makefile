@@ -1,15 +1,12 @@
-#	@(#)Makefile	5.14 (Berkeley) %G%
-
-# USERMEM should be the amount of available user memory in bytes.
-# Set it to zero, for physical memory less than 1 Meg.
-USERMEM=4194304
+#	@(#)Makefile	5.15 (Berkeley) %G%
 
 PROG=	compress
-CFLAGS+=-DBSD4_2 -DSACREDMEM=256000 -DUSERMEM=${USERMEM}
-DPADD=	${LIBCOMPAT}
-LDADD=	-lcompat
-LINKS=	${BINDIR}/compress ${BINDIR}/uncompress \
-	${BINDIR}/compress ${BINDIR}/zcat
+CFLAGS=	-g
+LINKS=	${BINDIR}/compress ${BINDIR}/uncompress
 MLINKS=	compress.1 uncompress.1 compress.1 zcat.1
+
+afterinstall:
+	install -c -o ${BINOWN} -g ${BINGRP} -m ${BINMODE} \
+	    ${.CURDIR}/zcat.sh ${DESTDIR}/usr/bin/zcat
 
 .include <bsd.prog.mk>
