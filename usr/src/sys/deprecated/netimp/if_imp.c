@@ -1,4 +1,4 @@
-/*	if_imp.c	4.17	82/03/19	*/
+/*	if_imp.c	4.18	82/03/19	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -333,7 +333,7 @@ COUNT(IMPINPUT);
 	case IMPLINK_IP:
 		m->m_len -= sizeof(struct imp_leader);
 		m->m_off += sizeof(struct imp_leader);
-		setipintr();
+		schednetisr(NETISR_IP);
 		inq = &ipintrq;
 		break;
 #endif

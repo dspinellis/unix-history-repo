@@ -1,4 +1,4 @@
-/*	if_en.c	4.42	82/03/15	*/
+/*	if_en.c	4.43	82/03/19	*/
 
 #include "en.h"
 
@@ -407,7 +407,7 @@ COUNT(ENRINT);
 
 #ifdef INET
 	case ENPUP_IPTYPE:
-		setipintr();
+		schednetisr(NETISR_IP);
 		inq = &ipintrq;
 		break;
 #endif

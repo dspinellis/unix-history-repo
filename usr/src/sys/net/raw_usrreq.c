@@ -1,4 +1,4 @@
-/*	raw_usrreq.c	4.10	82/03/15	*/
+/*	raw_usrreq.c	4.11	82/03/19	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -66,7 +66,7 @@ COUNT(RAW_INPUT);
 	else
 		IF_ENQUEUE(&rawintrq, m);
 	splx(s);
-	setrawintr();
+	schednetisr(NETISR_RAW);
 }
 
 /*
