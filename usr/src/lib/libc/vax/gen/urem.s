@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	.asciz "@(#)urem.s	5.4 (Berkeley) %G%"
+	.asciz "@(#)urem.s	5.5 (Berkeley) %G%"
 #endif /* LIBC_SCCS and not lint */
 
 #include "DEFS.h"
@@ -41,9 +41,9 @@ Ldifference:
 	ret
 
 ASENTRY(aurem,0)
+	movl	DIVIDEND,r3
 	movl	DIVISOR,r2
 	jlss	La_easy		# big divisor: settle by comparison
-	movl	DIVIDEND,r3
 	movl	(r3),r0
 	jlss	La_hard		# big dividend: need extended division
 	divl3	r2,r0,r1	# small divisor and dividend: signed modulus
