@@ -2,31 +2,26 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)nm.1	4.1 (Berkeley) %G%
+.\"	@(#)nm.1	5.1 (Berkeley) %G%
 .\"
-.TH NM 1 
+.TH NM 1 "7 February 1983"
 .UC 4
 .SH NAME
 nm \- print name list
 .SH SYNOPSIS
 .B nm
 [
-.B \-agnopru
+.B \-gnopru
 ]
 [ file ... ]
 .SH DESCRIPTION
 .I Nm
 prints the name list (symbol table) of each object
 .I file
-in the argument list.
-If an argument
-is an archive, a listing for each object
-file in the archive will be produced.
-If no
+in the argument list.  If an argument is an archive, a listing for each object
+file in the archive will be produced.  If no
 .I file
-is given, the symbols in
-`a.out'
-are listed.
+is given, the symbols in "a.out" are listed.
 .PP
 Each symbol name is preceded by its value (blanks if undefined)
 and one of the letters
@@ -56,17 +51,10 @@ or
 for sdb symbol table entries (see
 .B \-a
 below).
-If the symbol is local (non-external) the type letter is in
-lower case.
+If the symbol is local (non-external) the type letter is in lower case.
 The output is sorted alphabetically.
 .PP
 Options are:
-.TP
-.B \-a
-Include all symbols in candidates for printing; normally
-symbols destined for
-.IR sdb (1)
-are excluded.
 .TP
 .B  \-g
 Print only global (external) symbols.
@@ -75,8 +63,7 @@ Print only global (external) symbols.
 Sort numerically rather than alphabetically.
 .TP
 .B  \-o
-Prepend file or archive element name to each
-output line rather than only once.
+Prepend file or archive element name to each output line rather than only once.
 .TP
 .B  \-p
 Don't sort; print in symbol-table order.
