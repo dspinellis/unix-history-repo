@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_syscalls.c	7.20 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.21 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -272,6 +272,7 @@ statfs(scp)
 		struct statfs *buf;
 	} *uap = (struct a *)scp->sc_ap;
 	register struct vnode *vp;
+	register struct mount *mp;
 	register struct nameidata *ndp = &scp->sc_nd;
 	struct statfs sb;
 	int error;
@@ -282,8 +283,11 @@ statfs(scp)
 	if (error = namei(ndp))
 		RETURN (error);
 	vp = ndp->ni_vp;
-	if (error = VFS_STATFS(vp->v_mount, &sb))
+	mp = vp->v_mount;
+	if (error = VFS_STATFS(mp, &sb))
 		goto out;
+	sb.f_flags = mp->m_flag & M_VISFLAGMASK;
+	sb.f_fsid = mp->m_fsid;
 	error = copyout((caddr_t)&sb, (caddr_t)uap->buf, sizeof(sb));
 out:
 	vput(vp);
@@ -298,13 +302,17 @@ fstatfs(scp)
 		struct statfs *buf;
 	} *uap = (struct a *)scp->sc_ap;
 	struct file *fp;
+	struct mount *mp;
 	struct statfs sb;
 	int error;
 
 	if (error = getvnode(scp->sc_ofile, uap->fd, &fp))
 		RETURN (error);
-	if (error = VFS_STATFS(((struct vnode *)fp->f_data)->v_mount, &sb))
+	mp = ((struct vnode *)fp->f_data)->v_mount;
+	if (error = VFS_STATFS(mp, &sb))
 		RETURN (error);
+	sb.f_flags = mp->m_flag & M_VISFLAGMASK;
+	sb.f_fsid = mp->m_fsid;
 	RETURN (copyout((caddr_t)&sb, (caddr_t)uap->buf, sizeof(sb)));
 }
 
@@ -332,6 +340,8 @@ getfsstat(scp)
 		    ((mp->m_flag & M_MLOCK) == 0)) {
 			if (error = VFS_STATFS(mp, sfsp))
 				RETURN (error);
+			sfsp->f_flags = mp->m_flag & M_VISFLAGMASK;
+			sfsp->f_fsid = mp->m_fsid;
 			sfsp++;
 		}
 		mp = mp->m_prev;
