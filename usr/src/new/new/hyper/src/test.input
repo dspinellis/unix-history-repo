@@ -1,0 +1,27 @@
+*
+* machines on the local adater (control and access codes don't matter)
+*
+direct azure	6100 0 0;
+direct bronze	6101 0 0;
+direct dadcad	6102 0 0;
+
+*
+* machines in Beaverton reachable directly through the link adapter
+*
+direct cyber	2100 1100 0;
+direct tekcad	2400 1100 0;
+direct tekcrd	2201 1100 0;
+direct tekid	2500 1100 0;
+direct teklabs	2200 1100 0;
+
+*
+* machines in Willsonville 
+*
+gateway iddic	tekcrd teklabs cyber tekcad tekid;
+gateway iddme	tekcrd teklabs cyber tekcad tekid;
+
+*
+* machines on the beaverton auxiliary trunk
+* (that the link adapter is not connected to)
+*
+gateway metals	tekcrd teklabs cyber;
