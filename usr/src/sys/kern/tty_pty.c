@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty_pty.c	7.16 (Berkeley) %G%
+ *	@(#)tty_pty.c	7.17 (Berkeley) %G%
  */
 
 /*
@@ -50,7 +50,6 @@ int ptydebug = 0;
 
 #define	PF_RCOLL	0x01
 #define	PF_WCOLL	0x02
-#define	PF_NBIO		0x04
 #define	PF_PKT		0x08		/* packet mode */
 #define	PF_STOPPED	0x10		/* user told stopped */
 #define	PF_REMOTE	0x20		/* remote and flow controlled input */
@@ -403,10 +402,9 @@ ptcwrite(dev, uio, flag)
 	register struct uio *uio;
 {
 	register struct tty *tp = &pt_tty[minor(dev)];
-	register struct iovec *iov;
-	register char *cp;
+	register u_char *cp;
 	register int cc = 0;
-	char locbuf[BUFSIZ];
+	u_char locbuf[BUFSIZ];
 	int cnt = 0;
 	struct pt_ioctl *pti = &pt_ioctl[minor(dev)];
 	int error = 0;
@@ -417,18 +415,12 @@ again:
 	if (pti->pt_flags & PF_REMOTE) {
 		if (tp->t_canq.c_cc)
 			goto block;
-		while (uio->uio_iovcnt > 0 && tp->t_canq.c_cc < TTYHOG - 1) {
-			iov = uio->uio_iov;
-			if (iov->iov_len == 0) {
-				uio->uio_iovcnt--;	
-				uio->uio_iov++;
-				continue;
-			}
+		while (uio->uio_resid > 0 && tp->t_canq.c_cc < TTYHOG - 1) {
 			if (cc == 0) {
-				cc = MIN(iov->iov_len, BUFSIZ);
-				cc = MIN(cc, TTYHOG - 1 - tp->t_canq.c_cc);
+				cc = min(uio->uio_resid, BUFSIZ);
+				cc = min(cc, TTYHOG - 1 - tp->t_canq.c_cc);
 				cp = locbuf;
-				error = uiomove(cp, cc, uio);
+				error = uiomove((caddr_t)cp, cc, uio);
 				if (error)
 					return (error);
 				/* check again for safety */
@@ -436,7 +428,7 @@ again:
 					return (EIO);
 			}
 			if (cc)
-				(void) b_to_q(cp, cc, &tp->t_canq);
+				(void) b_to_q((char *)cp, cc, &tp->t_canq);
 			cc = 0;
 		}
 		(void) putc(0, &tp->t_canq);
@@ -444,17 +436,11 @@ again:
 		wakeup((caddr_t)&tp->t_canq);
 		return (0);
 	}
-	while (uio->uio_iovcnt > 0) {
-		iov = uio->uio_iov;
+	while (uio->uio_resid > 0) {
 		if (cc == 0) {
-			if (iov->iov_len == 0) {
-				uio->uio_iovcnt--;	
-				uio->uio_iov++;
-				continue;
-			}
-			cc = MIN(iov->iov_len, BUFSIZ);
+			cc = min(uio->uio_resid, BUFSIZ);
 			cp = locbuf;
-			error = uiomove(cp, cc, uio);
+			error = uiomove((caddr_t)cp, cc, uio);
 			if (error)
 				return (error);
 			/* check again for safety */
@@ -467,7 +453,7 @@ again:
 				wakeup((caddr_t)&tp->t_rawq);
 				goto block;
 			}
-			(*linesw[tp->t_line].l_rint)(*cp++&0377, tp);
+			(*linesw[tp->t_line].l_rint)(*cp++, tp);
 			cnt++;
 			cc--;
 		}
@@ -481,18 +467,19 @@ block:
 	 */
 	if ((tp->t_state&TS_CARR_ON) == 0)
 		return (EIO);
-	if ((pti->pt_flags & PF_NBIO) || (flag & IO_NDELAY)) {
-		iov->iov_base -= cc;
-		iov->iov_len += cc;
+	if (flag & IO_NDELAY) {
+		/* adjust for data copied in but not written */
 		uio->uio_resid += cc;
-		uio->uio_offset -= cc;
 		if (cnt == 0)
 			return (EWOULDBLOCK);
 		return (0);
 	}
 	if (error = tsleep((caddr_t)&tp->t_rawq.c_cf, TTOPRI | PCATCH,
-	    ttyout, 0))
+	    ttyout, 0)) {
+		/* adjust for data copied in but not written */
+		uio->uio_resid += cc;
 		return (error);
+	}
 	goto again;
 }
 
@@ -570,22 +557,15 @@ ptyioctl(dev, cmd, data, flag)
 			ttyflush(tp, FREAD|FWRITE);
 			return (0);
 
-		case FIONBIO:
-			if (*(int *)data)
-				pti->pt_flags |= PF_NBIO;
-			else
-				pti->pt_flags &= ~PF_NBIO;
-			return (0);
-
 		case TIOCSETP:		
 		case TIOCSETN:
 		case TIOCSETD:
 		case TIOCSETA:
 		case TIOCSETAW:
 		case TIOCSETAF:
-		case JUNK_TIOCSETAS:
-		case JUNK_TIOCSETAWS:
-		case JUNK_TIOCSETAFS:
+		case JUNK_TIOCSETAS:	/* XXX */
+		case JUNK_TIOCSETAWS:	/* XXX */
+		case JUNK_TIOCSETAFS:	/* XXX */
 			while (getc(&tp->t_outq) >= 0)
 				;
 			break;
@@ -612,7 +592,7 @@ ptyioctl(dev, cmd, data, flag)
 	 */
 	if (linesw[tp->t_line].l_rint != ttyinput) {
 		(*linesw[tp->t_line].l_close)(tp);
-		tp->t_line = 0;
+		tp->t_line = TTYDISC;
 		(void)(*linesw[tp->t_line].l_open)(dev, tp, flag);
 		error = ENOTTY;
 	}
@@ -635,9 +615,9 @@ ptyioctl(dev, cmd, data, flag)
 		case TIOCSETA:
 		case TIOCSETAW:
 		case TIOCSETAF:
-		case JUNK_TIOCSETAS:
-		case JUNK_TIOCSETAWS:
-		case JUNK_TIOCSETAFS:
+		case JUNK_TIOCSETAS:	/* XXX */
+		case JUNK_TIOCSETAWS:	/* XXX */
+		case JUNK_TIOCSETAFS:	/* XXX */
 		case TIOCSETP:
 		case TIOCSETN:
 #ifdef	COMPAT_43
