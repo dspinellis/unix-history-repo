@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)rec.c 1.1 %G%";
+static	char sccsid[] = "@(#)rec.c 1.2 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -182,8 +182,7 @@ deffld(p, s, t)
 		    /*
 		     * and the size of the record is incremented.
 		     */
-		p -> value[ NL_OFFS ] = fp -> value[ NL_OFFS ]
-					    + even( width( t ) );
+		p -> value[ NL_OFFS ] = fp -> value[ NL_OFFS ] + width( t );
 		p -> value[ NL_FLDSZ ] = p -> value[ NL_OFFS ];
 #endif
 		if (t != NIL) {
