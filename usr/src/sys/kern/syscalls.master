@@ -1,4 +1,4 @@
-	@(#)syscalls.master	7.19 (Berkeley) %G%
+	@(#)syscalls.master	7.18 (Berkeley) %G%
 ; System call name/number master file.
 ; Processed to created init_sysent.c, syscalls.c and syscall.h.
 
@@ -88,7 +88,7 @@
 #endif
 54	STD	3 ioctl
 55	STD	1 reboot
-56	STD	1 revoke
+56	STD	2 revoke
 57	STD	2 symlink
 58	STD	3 readlink
 59	STD	3 execve
