@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)headers.c	3.30		%G%);
+SCCSID(@(#)headers.c	3.31		%G%);
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -90,7 +90,7 @@ chompheader(line, def)
 		return (hi->hi_flags);
 
 	/* count Received: lines to avoid loops (simulate hop counts) */
-	if (strcmp(fname, "received") == 0)
+	if (bitset(H_TRACE, hi->hi_flags))
 		HopCount++;
 
 	/* create/fill in a new node */
@@ -101,31 +101,27 @@ chompheader(line, def)
 		h->h_field = newstr(fname);
 		h->h_value = NULL;
 		h->h_link = *hp;
-		h->h_flags = hi->hi_flags;
 		h->h_mflags = mopts | hi->hi_mflags;
 		*hp = h;
 	}
+	h->h_flags = hi->hi_flags;
 	if (def)
 		h->h_flags |= H_DEFAULT;
 	else if (mopts == 0)
 		h->h_flags &= ~H_CHECK;
 	if (h->h_value != NULL)
 		free(h->h_value);
-	if (!def && strcmp(fname, "from") == 0)
-	{
-		/* turn it into a macro -- will be expanded later */
-		h->h_value = newstr(crackaddr(fvalue));
-		h->h_flags |= H_DEFAULT;
-	}
-	else
-		h->h_value = newstr(fvalue);
 		(void) sendto(h->h_value, 0, (ADDRESS *) NULL, 0);
 
 	/* hack to see if this is a new format message */
 	if (bitset(H_RCPT, h->h_flags) &&
 	    (index(fvalue, ',') != NULL || index(fvalue, '(') != NULL ||
-	     index(fvalue, '<') != NULL))
+	     index(fvalue, '<') != NULL) || index(fvalue, ';') != NULL)
 		CurEnv->e_oldstyle = FALSE;
+
+	/* send to this person if we so desire */
+	if (!def && GrabTo && bitset(H_RCPT, h->h_flags))
+		sendto(h->h_value, 0, (ADDRESS *) NULL, &CurEnv->e_sendqueue);
 
 	return (h->h_flags);
 }
@@ -372,7 +368,7 @@ eatheader()
 	{
 		/* adjust total priority by message priority */
 		CurEnv->e_msgpriority = CurEnv->e_msgsize;
-		p = hvalue("priority");
+		p = hvalue("precedence");
 		if (p != NULL)
 			CurEnv->e_class = priencode(p);
 		else
@@ -380,17 +376,24 @@ eatheader()
 		CurEnv->e_msgpriority -= CurEnv->e_class * WKPRIFACT;
 	}
 
-	/* special handling */
-	p = hvalue("special-handling");
+	/* return receipt to */
+	p = hvalue("return-receipt-to");
 	if (p != NULL)
-		spechandling(p);
+		CurEnv->e_receiptto = p;
 
 	/* from person */
-	p = hvalue("sender");
-	if (p == NULL)
-		p = CurEnv->e_origfrom;
 	if (ArpaMode)
-		setfrom(p, (char *) NULL);
+	{
+		register struct hdrinfo *hi = HdrInfo;
+
+		for (p = NULL; p == NULL && hi->hi_field != NULL; hi++)
+		{
+			if (bitset(H_FROM, hi->hi_flags))
+				p = hvalue(hi->hi_field);
+		}
+		if (p != NULL)
+			setfrom(p, (char *) NULL);
+	}
 
 	/* full name of from person */
 	p = hvalue("full-name");
@@ -452,79 +455,6 @@ priencode(p)
 			break;
 	}
 	return (pl->pri_val);
-}
-/*
-**  SPECHANDLE -- do special handling
-**
-**	Parameters:
-**		p -- pointer to list of special handling words.
-**
-**	Returns:
-**		none.
-**
-**	Side Effects:
-**		Sets flags as indicated by p.
-*/
-
-struct handling
-{
-	char	*han_name;		/* word to get this magic */
-	int	han_what;		/* what to do, see below */
-};
-
-/* modes for han_what */
-# define	HAN_NONE	0	/* nothing special */
-# define	HAN_RRECEIPT	1	/* give return receipt */
-
-struct handling	Handling[] =
-{
-	"return-receipt-requested",	HAN_RRECEIPT,
-	NULL,				HAN_NONE
-};
-
-spechandling(p)
-	register char *p;
-{
-	register char *w;
-	register struct handling *h;
-	extern bool sameword();
-
-	while (*p != '\0')
-	{
-		/* collect a word to compare to */
-		while (*p != '\0' && (*p == ',' || isspace(*p)))
-			p++;
-		if (*p == '\0')
-			break;
-		w = p;
-		while (*p != '\0' && *p != ',' && !isspace(*p))
-			p++;
-		if (*p != '\0')
-			*p++ = '\0';
-
-		/* scan the special handling table */
-		for (h = Handling; h->han_name != NULL; h++)
-			if (sameword(h->han_name, w))
-				break;
-
-		/* see if we can do anything interesting */
-		switch (h->han_what)
-		{
-		  case HAN_NONE:	/* nothing to be done */
-			break;
-
-		  case HAN_RRECEIPT:	/* give return receipt */
-			CurEnv->e_retreceipt = TRUE;
-# ifdef DEBUG
-			if (tTd(30, 3))
-				printf(">>> Return receipt requested\n");
-# endif DEBUG
-			break;
-
-		  default:
-			syserr("spechandling: handling %d (%s)", h->han_what, w);
-		}
-	}
 }
 /*
 **  CRACKADDR -- parse an address and turn it into a macro
