@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	8.44 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.45 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	8.44 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.45 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -430,11 +430,16 @@ smtpmailfrom(m, mci, e)
 	SmtpPhase = mci->mci_phase = "client MAIL";
 	setproctitle("%s %s: %s", e->e_id, CurHostName, mci->mci_phase);
 	r = reply(m, mci, e, TimeOuts.to_mail, NULL);
-	if (r < 0 || REPLYTYPE(r) == 4)
+	if (r < 0 || r == 421)
 	{
+		/* communications failure/service shutting down */
 		mci->mci_exitstat = EX_TEMPFAIL;
 		mci->mci_errno = errno;
 		smtpquit(m, mci, e);
+		return EX_TEMPFAIL;
+	}
+	else if (REPLYTYPE(r) == 4)
+	{
 		return EX_TEMPFAIL;
 	}
 	else if (r == 250)
@@ -443,14 +448,12 @@ smtpmailfrom(m, mci, e)
 	}
 	else if (r == 501 || r == 553)
 	{
-		/* syntax error in arguments */
-		smtpquit(m, mci, e);
+		/* syntax error in arguments/mailbox name not allowed */
 		return EX_DATAERR;
 	}
 	else if (r == 552)
 	{
-		/* signal service unavailable */
-		smtpquit(m, mci, e);
+		/* exceeded storage allocation */
 		return EX_UNAVAILABLE;
 	}
 
