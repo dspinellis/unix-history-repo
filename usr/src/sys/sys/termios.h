@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)termios.h	7.7 (Berkeley) %G%
+ *	@(#)termios.h	7.8 (Berkeley) %G%
  */
 
 /*
@@ -60,7 +60,7 @@
 #define VMIN		16	/* !ICANON */
 #define VTIME		17	/* !ICANON */
 #ifndef _POSIX_SOURCE
-#define VINFO		18	/* ISIG */
+#define VINFO		18	/* ICANON */
 /*			19	   spare 2 */
 #define	NCC		20
 #endif  /*_POSIX_SOURCE */
@@ -158,7 +158,6 @@
 #define TOSTOP		0x00400000	/* stop background jobs from output */
 #ifndef _POSIX_SOURCE
 #define FLUSHO		0x00800000	/* output being flushed (state) */
-#define	NOHANG		0x01000000	/* XXX this should go away */
 #define	NOKERNINFO	0x02000000	/* no kernel output from VINFO */
 #define PENDIN		0x20000000	/* XXX retype pending input (state) */
 #endif  /*_POSIX_SOURCE */
