@@ -1,6 +1,6 @@
-SCCSID = "@(#)pimakefile 1.11 %G%"
+SCCSID = "@(#)pimakefile 1.12 %G%"
 WHOAMI = pi
-INSTALLNAME = pi
+INSTALLNAME = /usr/ucb/pi
 VERSION = 2.0
 
 MKSTR = /usr/ucb/mkstr
