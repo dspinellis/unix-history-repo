@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)cd.1	6.4 (Berkeley) %G%
+.\"     @(#)cd.1	6.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CD 1
@@ -23,18 +23,8 @@ environment variable (see below).
 .Sh ENVIRONMENT
 The following environment variables affect the execution of cd:
 .Pp
-.Tw Fl
-.Tp Ev HOME
-If
-.Nm cd
-is invoked without arguments, the
-.Ev HOME
-environment variable is checked for a default directory name.
-If
-.Ev HOME
-exists and contains a directory name, that directory becomes the new
-working directory.
-.Tp Ev CDPATH
+.Bl -tag -width indent
+.It Ev CDPATH
 If the
 .Ar directory
 operand does not begin with a slash (/) character, and the first
@@ -46,12 +36,21 @@ variable, in the order listed.
 The new working directory is set to the first matching directory found.
 An empty string in place of a directory pathname represents the current
 directory.
-.Nm Cd
-will print the pathname of the new working directory if it was an element of
-.Ev CDPATH .
+If the new working directory was derived from
+.Ev CDPATH ,
+it will be printed to the standard output.
+.It Ev HOME
+If
+.Nm cd
+is invoked without arguments and the
+.Ev HOME
+environment variable exists and contains a directory name, that directory
+becomes the new working directory.
+.El
+.Pp
 See
 .Xr csh 1
-for info on environment variables.
+for more information on environment variables.
 .Tp
 .Pp
 The
