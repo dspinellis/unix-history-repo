@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)print.c 4.9 %G%";
+static	char sccsid[] = "@(#)print.c 4.10 %G%";
 /*
  *
  *	UNIX debugger
@@ -283,7 +283,9 @@ printtrace(modif)
 		WHILE cntval--
 		DO	char *name;
 			chkerr();
-			IF callpc > 0x80000000 - 0x200 * UPAGES
+			/* if in extended pcb must be signal trampoline code */
+			IF KERNOFF - ctob(UPAGES) < callpc ANDF
+			    (unsigned)callpc < KERNOFF
 			THEN	name = "sigtramp";
 				ntramp++;
 			ELSE	ntramp = 0;
@@ -303,7 +305,15 @@ printtrace(modif)
 				printf("%R", get(argp += 4, DSP));
 				IF --narg!=0 THEN printc(','); FI
 			POOL
-			printf(") from %x\n",callpc);
+			IF ntramp == 1
+			THEN callpc=get(frame+84, DSP);
+			ELSE callpc=get(frame+16, DSP);
+			FI
+			IF callpc != 0
+			THEN	prints(") from ");
+				psymoff(callpc, ISYM, "\n");
+			ELSE	prints(")\n");
+			FI
 
 			IF modif=='C'
 			THEN	WHILE localsym(frame,argp)
@@ -317,10 +327,6 @@ printtrace(modif)
 				OD
 			FI
 
-			IF ntramp == 1
-			THEN callpc=get(frame+84, DSP);
-			ELSE callpc=get(frame+16, DSP);
-			FI
 			argp=get(frame+8, DSP);
 			lastframe=frame;
 			frame=get(frame+12, DSP)&EVEN;
