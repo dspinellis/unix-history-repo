@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_var.h	6.3 (Berkeley) %G%
+ *	@(#)tcp_var.h	6.4 (Berkeley) %G%
  */
 
 /*
@@ -20,7 +20,6 @@ struct tcpcb {
 	short	t_timer[TCPT_NTIMERS];	/* tcp timers */
 	short	t_rxtshift;		/* log(2) of rexmt exp. backoff */
 	struct	mbuf *t_tcpopt;		/* tcp options */
-	struct	mbuf *t_ipopt;		/* ip options */
 	short	t_maxseg;		/* maximum segment size */
 	char	t_force;		/* 1 if forcing out a byte */
 	u_char	t_flags;
@@ -61,12 +60,14 @@ struct tcpcb {
 /* transmit timing stuff */
 	short	t_idle;			/* inactivity time */
 	short	t_rtt;			/* round trip time */
+	u_short max_rcvd;		/* most peer has sent into window */
 	tcp_seq	t_rtseq;		/* sequence number being timed */
 	float	t_srtt;			/* smoothed round-trip time */
 /* out-of-band data */
 	char	t_oobflags;		/* have some */
 	char	t_iobc;			/* input character */
 #define	TCPOOB_HAVEDATA	0x01
+#define	TCPOOB_HADDATA	0x02
 };
 
 #define	intotcpcb(ip)	((struct tcpcb *)(ip)->inp_ppcb)
