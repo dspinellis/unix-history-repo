@@ -11,11 +11,9 @@
  * %sccs.include.redist.c%
  *
  * from: Utah $Hdr: pte.h 1.13 92/01/20$
- * OMRON: $Id: pte.h,v 1.2 92/06/14 06:22:11 moti Exp $
+ * from: hp300/hp300/pte.h	7.4 (Berkeley) 6/5/92
  *
- * from: hp300/hp300/pte.h	7.1 (Berkeley) 6/4/92
- *
- *	@(#)pte.h	7.1 (Berkeley) %G%
+ *	@(#)pte.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -26,6 +24,14 @@ struct ste {
 	unsigned int	sg_pfnum:20;	/* page table frame number */
 	unsigned int	:8;		/* reserved at 0 */
 	unsigned int	:1;		/* reserved at 1 */
+	unsigned int	sg_prot:1;	/* write protect bit */
+	unsigned int	sg_v:2;		/* valid bits */
+};
+
+struct ste40 {
+	unsigned int	sg_ptaddr:24;	/* page table page addr */
+	unsigned int	:4;		/* reserved at 0 */
+	unsigned int	sg_u;		/* hardware modified (dirty) bit */
 	unsigned int	sg_prot:1;	/* write protect bit */
 	unsigned int	sg_v:2;		/* valid bits */
 };
@@ -54,10 +60,11 @@ typedef struct pte	pt_entry_t;	/* Mach page table entry */
 #define	SG_PROT		0x00000004	/* access protection mask */
 #define	SG_RO		0x00000004
 #define	SG_RW		0x00000000
+#define	SG_U		0x00000008	/* modified bit (68040) */
 #define	SG_FRAME	0xfffff000
 #define	SG_IMASK	0xffc00000
-#define	SG_PMASK	0x003ff000
 #define	SG_ISHIFT	22
+#define	SG_PMASK	0x003ff000
 #define	SG_PSHIFT	12
 
 /* 68040 additions */
