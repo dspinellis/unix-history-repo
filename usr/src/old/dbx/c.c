@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)c.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)c.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 static char rcsid[] = "$Header: c.c,v 1.5 84/12/26 10:38:23 linton Exp $";
@@ -434,6 +434,7 @@ Symbol s;
     register Symbol t;
     register Address a;
     integer i, len;
+    register String str;
 
     switch (s->class) {
 	case CONST:
@@ -468,11 +469,16 @@ Symbol s;
 		t == t_char->type
 	    ) {
 		len = size(s);
-		sp -= len;
-		if (s->language == primlang) {
-		    printf("%.*s", len, sp);
-		} else {
-		    printf("\"%.*s\"", len, sp);
+		str = (String) (sp -= len);
+		if (s->language != primlang) {
+		    putchar('"');
+		}
+		while (len > 0) {
+		    printchar(*str++);
+		    len--;
+		}
+		if (s->language != primlang) {
+		    putchar('"');
 		}
 	    } else {
 		printarray(s);
@@ -676,7 +682,7 @@ long i;
     lb = s->symvalue.rangev.lower;
     ub = s->symvalue.rangev.upper;
     if (i < lb or i > ub) {
-	error("subscript out of range");
+	warning("subscript out of range");
     }
     push(long, base + (i - lb) * size(t->type));
 }
