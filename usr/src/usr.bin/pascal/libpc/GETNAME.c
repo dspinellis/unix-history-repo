@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)GETNAME.c 1.6 %G%";
+static char sccsid[] = "@(#)GETNAME.c 1.7 %G%";
 
 #include "h00vars.h"
 
@@ -108,7 +108,9 @@ GETNAME(filep, name, namlim, datasize)
 		 * a new one of the form #tmp.xxxxxx
 		 */
 		filep->funit |= TEMP;
-		sprintf(filep->fname, "#tmp.%c%d", 'a' + filep->fblk, getpid());
+		sprintf(filep->fname, "#tmp.%c%d", filep->fblk <= 'z' - 'a' + 1
+		    ? 'a' + filep->fblk : 'A' + filep->fblk - ('z' - 'a' + 1),
+		    getpid());
 		filep->pfname = &filep->fname[0];
 		return(filep);
 	}
