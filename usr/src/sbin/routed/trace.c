@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)trace.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)trace.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -91,18 +91,19 @@ trace(ifd, who, p, len, m)
 		ifd->ifd_front = ifd->ifd_records;
 	if (ifd->ifd_count < NRECORDS)
 		ifd->ifd_count++;
-	if (t->ift_size > 0 && t->ift_packet)
+	if (t->ift_size > 0 && t->ift_size < len && t->ift_packet) {
 		free(t->ift_packet);
-	t->ift_packet = 0;
+		t->ift_packet = 0;
+	}
 	t->ift_stamp = time(0);
 	t->ift_who = *who;
-	if (len > 0) {
+	if (len > 0 && t->ift_packet == 0) {
 		t->ift_packet = malloc(len);
-		if (t->ift_packet)
-			bcopy(p, t->ift_packet, len);
-		else
+		if (t->ift_packet == 0)
 			len = 0;
 	}
+	if (len > 0)
+		bcopy(p, t->ift_packet, len);
 	t->ift_size = len;
 	t->ift_metric = m;
 }
@@ -178,6 +179,7 @@ dumpif(fd, ifp)
 		dumptrace(fd, "from", &ifp->int_input);
 		fprintf(fd, "*** end packet history ***\n");
 	}
+	fflush(fd);
 }
 
 dumptrace(fd, dir, ifd)
@@ -191,6 +193,7 @@ dumptrace(fd, dir, ifd)
 	if (ifd->ifd_front == ifd->ifd_records &&
 	    ifd->ifd_front->ift_size == 0) {
 		fprintf(fd, "%s: no packets.\n", cp);
+		fflush(fd);
 		return;
 	}
 	fprintf(fd, "%s trace:\n", cp);
@@ -224,6 +227,7 @@ dumppacket(fd, dir, who, cp, size)
 		fprintf(fd, "Bad cmd 0x%x %s %x.%d\n", msg->rip_cmd,
 		    dir, inet_ntoa(who->sin_addr), ntohs(who->sin_port));
 		fprintf(fd, "size=%d cp=%x packet=%x\n", size, cp, packet);
+		fflush(fd);
 		return;
 	}
 	switch (msg->rip_cmd) {
@@ -251,4 +255,5 @@ dumppacket(fd, dir, who, cp, size)
 		fprintf(fd, "\n");
 		break;
 	}
+	fflush(fd);
 }
