@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	5.36 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	5.37 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	5.36 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	5.37 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -227,14 +227,50 @@ loop:
 	}
 
 	/*
-	 * We do at least one level of search if
-	 *	- there is no dot and RES_DEFNAME is set, or
-	 *	- there is at least one dot, there is no trailing dot,
-	 *	  and RES_DNSRCH is set.
-	 */
+	**  If there is at least one dot, start by searching the
+	**  unmodified name.  This lets us get "vse.CS" in Czechoslovakia
+	**  instead of CS.Berkeley.EDU.
+	*/
+
 	ret = -1;
-	if ((n == 0 && _res.options & RES_DEFNAMES) ||
-	   (n > 0 && *--cp != '.' && _res.options & RES_DNSRCH))
+	if (n >= 1)
+	{
+		/*
+		**  Try the unmodified name.
+		*/
+
+		if (tTd(8, 5))
+			printf("getcanonname: trying %s\n", host);
+		ret = res_query(host, C_IN, qtype, &answer, sizeof(answer));
+		if (ret > 0)
+		{
+			cp = host;
+			if (tTd(8, 8))
+				printf("\tYES\n");
+		}
+		else
+		{
+			if (tTd(8, 8))
+				printf("\tNO: h_errno=%d\n", h_errno);
+			if (errno == ECONNREFUSED)
+			{
+				/* no server -- try again later */
+				h_errno = TRY_AGAIN;
+				return FALSE;
+			}
+		}
+	}
+
+	/*
+	**  We do at least one level of search if
+	**	- there is no dot and RES_DEFNAME is set, or
+	**	- there is at least one dot, there is no trailing dot,
+	**	  and RES_DNSRCH is set.
+	*/
+
+	if (ret < 0 &&
+		((n == 0 && _res.options & RES_DEFNAMES) ||
+		 (n > 0 && *--cp != '.' && _res.options & RES_DNSRCH)))
 	{
 		for (domain = _res.dnsrch; *domain; domain++)
 		{
@@ -263,9 +299,12 @@ loop:
 			 * from finding this entry higher in the domain.
 			 * If we get some other error (negative answer or
 			 * server failure), then stop searching up,
-			 * but try the input name below in case it's fully-qualified.
+			 * but try the input name below in case it's
+			 * fully-qualified.
 			 */
-			if (errno == ECONNREFUSED) {
+
+			if (errno == ECONNREFUSED)
+			{
 				h_errno = TRY_AGAIN;
 				return FALSE;
 			}
@@ -280,7 +319,7 @@ loop:
 				return FALSE;
 		}
 	}
-	if (ret < 0)
+	if (ret < 0 && n <= 0)
 	{
 		/*
 		**  Try the unmodified name.
@@ -299,10 +338,11 @@ loop:
 		{
 			if (tTd(8, 8))
 				printf("\tNO: h_errno=%d\n", h_errno);
-			if (h_errno != NO_DATA)
-				return FALSE;
 		}
 	}
+
+	if (ret <= 0 && h_errno != NO_DATA)
+		return FALSE;
 
 	/* find first satisfactory answer */
 	hp = (HEADER *)&answer;
