@@ -2,10 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)mailaddr.7	5.1 (Berkeley) %G%
+.\"	@(#)mailaddr.7	6.1 (Berkeley) %G%
 .\"
-.\"	@(#)mailaddr.7	4.1		7/28/83
-.TH MAILADDR 7
+.TH MAILADDR 7 ""
 .UC 5
 .SH NAME
 mailaddr \- mail addressing description
@@ -252,6 +251,12 @@ Hosts on bitnet may be accessed using:
 .PP
 		user@host.BITNET
 .PP
+.SH BUGS
+The RFC822 group syntax
+(``group:user1,user2,user3;'')
+is not supported except in the special case of
+``group:;''
+because of a conflict with old berknet-style addresses.
 .SH SEE ALSO
 mail(1), sendmail(8);
 Crocker, D. H.,
