@@ -7,7 +7,7 @@
 **  All rights reserved.  The Berkeley software License Agreement
 **  specifies the terms and conditions for redistribution.
 **
-**	@(#)sendmail.h	5.10 (Berkeley) %G%
+**	@(#)sendmail.h	5.10.1.1 (Berkeley) %G%
 */
 
 /*
@@ -19,7 +19,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	5.10		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	5.10.1.1		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -593,3 +593,10 @@ extern EVENT	*setevent();
 extern char	*sfgets();
 extern char	*queuename();
 extern time_t	curtime();
+
+/*
+**  HACK to fix bug in C compiler on CCI
+*/
+
+#undef isascii
+#define isascii(x)	(((x) & ~0177) != 0)
