@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file	@(#)termcap.src	5.5 (Berkeley) %G%
+#	Termcap source file	@(#)termcap.src	5.6 (Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -1425,7 +1425,7 @@ dv|vt100-w-nam|dec vt100 132 cols (w/advanced video), no am:\
 	:co#132:li#24:rs=\E>\E[?3h\E[?4l\E[?5l\E[?8h:vt@:tc=vt100-nam:
 # vt 102	(from lai@decwrl)
 vt102|vt-102|dec vt102:\
-	:do=^J:bl=^G:co#80:li#24:cl=50\E[;H\E[2J:\
+	:do=^J:co#80:li#24:cl=50\E[;H\E[2J:\
 	:le=^H:bs:cm=5\E[%i%d;%dH:nd=2\E[C:up=2\E[A:\
 	:ce=3\E[K:cd=50\E[J:so=2\E[7m:se=2\E[m:us=2\E[4m:ue=2\E[m:\
 	:md=2\E[1m:mr=2\E[7m:mb=2\E[5m:me=2\E[m:is=\E[1;24r\E[24;1H:\
@@ -1471,7 +1471,7 @@ do|vt200-ws|vt220-ws|dec vt200 series; 132 col.; smooth scroll:\
 	:rs=\E>\E[?3h\E[?4h\E[?5l\E[?7h\E[?8h:\
 	:co#132:tc=vt200:
 vs|xterm|vs100|xterm terminal emulator (X window system):\
-	:do=^J:bl=^G:le=^H:ho=\E[H:\
+	:do=^J:le=^H:ho=\E[H:\
 	:co#80:li#65:cl=\E[H\E[2J:bs:am:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
 	:ce=\E[K:cd=\E[J:so=\E[7m:se=2\E[m:us=\E[4m:ue=\E[m:\
 	:md=\E[1m:mr=\E[7m:me=2\E[m:\
@@ -1665,7 +1665,7 @@ l3|adm3|3|lsi adm3:\
 l4|adm42|42|lsi adm42:\
 	:vs=\EC\E3 \E3(:do=^J:al=270\EE:am:le=^H:bs:cd=\EY:ce=\ET:cl=\E;:\
 	:cm=\E=%+ %+ :co#80:dc=\EW:dl=\ER:ei=\Er:im=\Eq:ip=6*:li#24:\
-	:bt=\EI:nd=^L:se=\EG0:so=\EG4:ta=\t:up=^k:ma=^K^P:pc=\177:
+	:bt=\EI:nd=^L:se=\EG0:so=\EG4:up=^k:ma=^K^P:pc=\177:
 l5|adm5|5|lsi adm5:\
 	:do=^J:cd=\EY:ce=\ET:do=^J:kb=^H:kh=^^:\
 	:ma=^Hh^Jj^Kk^Ll^^H:se=\EG:sg#1:so=\EG:tc=adm3aplus:
