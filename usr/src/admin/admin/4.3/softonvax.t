@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)softonvax.t	5.1 (Berkeley) %G%
+.\"	@(#)softonvax.t	5.2 (Berkeley) %G%
 .\"
 .LG
 .B
@@ -44,7 +44,7 @@ as a bootstrap system for new hardware
 running 3BSD, 4.0BSD, 4.1BSD, or \s-2UNIX/32V\s0),
 or to update a system running the 4.2BSD release of August, 1983.
 Hardware configurations supported for booting are described below and in the
-document ``Installing and operating 4.2BSD''.
+document ``Installing and Operating 4.2BSD''.
 The things most notable for sites that are updating
 4.3BSD to this new release are:
 .IP 1)
@@ -80,12 +80,12 @@ with a program size of up to 6 megabytes.
 The hard limit on the size of data and stack has been raised to
 roughly 17 megabytes with a soft limit of 6 megabytes.
 The soft limit nay be increased up to
-the hard limit with the csh limit command.
+the hard limit with the \fIcsh limit\fP command.
 These numbers can be increased up to 64 megabytes per process
 on systems willing to dedicate increased
 disk space for paging the process image.
 .PP
-The system now associates the number of rows and columns
+The system now maintains the number of rows and columns
 associated with each terminal or window on the system.
 If these parameters are changed, all processes associated 
 with the terminal or window receive a ``window size change'' signal.
@@ -109,10 +109,11 @@ There are two new screen based editors in 4.3BSD.
 In addition to the venerable modefull editor \fIvi\fP,
 are added two modeless editors.
 The first is GNU \fIemacs\fP, full of functionality but somewhat big and slow.
-the other is \fIjove\fP from BRL, a mean and lean editor in the same tradition.
+The other is \fIjove\fP from BRL,
+a mean and lean editor in the army tradition.
 .PP
 An alternative to \fIMail\fP is now available in the fourth rewrite
-of the Rand mail handler \fImh\fP.
+of the Rand mail handler, \fImh\fP.
 For those users that spend half their day reading mail,
 this mail handler backed by an 8650 is up to the job.
 .SH
@@ -190,14 +191,14 @@ interface is possible only on a totally quiescent system.
 What this distribution does not contain
 .PP
 Two new system facilities that had been planned for the 4.2BSD
-release were dropped in order that the current system might
+release were dropped in order that the 4.2BSD system might
 be distributed at the earliest possible time.
 We mention them here mostly to point out that they have still not
 been added to this system:
 .IP 1)
 Enhanced memory management support.  This being the support of
 large address space processes, sharing of memory between processes, and
-mapping disk file to and from a process' address space.
+mapping disk files to and from a process' address space.
 .IP 2)
 Portals and wrapping.  These two notions are part of the original
 interprocess communication design.  Their implementation required
@@ -208,7 +209,7 @@ At the time of the release, no single remote file system scheme
 fully addressed the wide spectrum of semantic correctness and
 reasonable performance.
 Like networking, we do not expect that any single remote
-file system will ever solve all needs,
+file system will ever solve all needs.
 Consequently we are working to design a framework that will
 support the full range of remote file system protocols
 just as we did with multiple network protocol support.
