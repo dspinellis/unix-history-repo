@@ -28,7 +28,7 @@ CHAR		*lp;
 INT		radix;
 STRING		errflg;
 L_INT		localval;
-CHAR		isymbol[BSIZE];
+CHAR		isymbol[1024];
 
 CHAR		lastc,peekc;
 

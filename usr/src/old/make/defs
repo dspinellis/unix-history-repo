@@ -1,8 +1,8 @@
-/* defs 4.3 82/04/20 */
+/* defs 4.4 82/05/07 */
 #include <stdio.h>
 #include <ctype.h>
 #include <sys/param.h>
-#include <ndir.h>
+#include <dir.h>
 
 #define SHELLCOM "/bin/sh"
 
