@@ -1,164 +1,171 @@
-static char *sccsid = "@(#)look.c	4.2 (Berkeley) %G%";
+/*
+ * Copyright (c) 1987 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1987 Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif not lint
+
+#ifndef lint
+static char sccsid[] = "@(#)look.c	4.3 (Berkeley) %G%";
+#endif not lint
+
+#include <sys/types.h>
+#include <sys/file.h>
+#include <sys/stat.h>
 #include <stdio.h>
 #include <ctype.h>
 
-FILE *dfile;
-char *filenam  = "/usr/dict/words";
+#define	EOS		'\0'
+#define	MAXLINELEN	250
+#define	YES		1
 
-int fold;
-int dict;
-int tab;
-char entry[250];
-char word[250];
-char key[50];
+static int	fold, dict, len;
 
-main(argc,argv)
-char **argv;
+main(argc, argv)
+	int	argc;
+	char	**argv;
 {
-	register c;
-	long top,bot,mid;
-	while(argc>=2 && *argv[1]=='-') {
-		for(;;) {
-			switch(*++argv[1]) {
-			case 'd':
-				dict++;
-				continue;
-			case 'f':
-				fold++;
-				continue;
-			case 't':
-				tab = argv[1][1];
-				if(tab)
-					++argv[1];
-				continue;
-			case 0:
-				break;
-			default:
-				continue;
-			}
+	extern char	*optarg;
+	extern int	optind;
+	static char	*filename = "/usr/dict/words";
+	register off_t	bot, mid, top;
+	register int	c;
+	struct stat	sb;
+	char	entry[MAXLINELEN], copy[MAXLINELEN];
+
+	while ((c = getopt(argc, argv, "df")) != EOF)
+		switch((char)c) {
+		case 'd':
+			dict = YES;
 			break;
+		case 'f':
+			fold = YES;
+			break;
+		case '?':
+		default:
+			usage();
 		}
-		argc --;
-		argv++;
+	argv += optind;
+	argc -= optind;
+
+	switch(argc) {
+	case 1:	/* if nothing set, default to dictionary order and folding */
+		if (!dict && !fold)
+			dict = fold = YES;
+		break;
+	case 2:
+		filename = argv[1];
+		break;
+	default:
+		usage();
 	}
-	if(argc<=1)
-		return;
-	if(argc==2) {
-		fold++;
-		dict++;
-	} else
-		filenam = argv[2];
-	dfile = fopen(filenam,"r");
-	if(dfile==NULL) {
-		fprintf(stderr,"look: can't open %s\n",filenam);
+
+	if (!freopen(filename, "r", stdin)) {
+		fprintf(stderr,"look: can't read %s.\n", filename);
 		exit(2);
 	}
-	canon(argv[1],key);
-	bot = 0;
-	fseek(dfile,0L,2);
-	top = ftell(dfile);
-	for(;;) {
-		mid = (top+bot)/2;
-		fseek(dfile,mid,0);
-		do {
-			c = getc(dfile);
-			mid++;
-		} while(c!=EOF && c!='\n');
-		if(!getword(entry))
+	if (fstat(fileno(stdin), &sb)) {
+		perror("look: fstat");
+		exit(2);
+	}
+
+	len = strlen(*argv);
+	canon(*argv, *argv);
+	len = strlen(*argv);		/* may have changed */
+	if (len > MAXLINELEN - 1) {
+		fputs("look: search string is too long.\n", stderr);
+		exit(2);
+	}
+
+	for (bot = 0, top = sb.st_size;;) {
+		mid = (top + bot) / 2;
+		(void)fseek(stdin, mid, L_SET);
+
+		for (++mid; (c = getchar()) != EOF && c != '\n'; ++mid);
+		if (!getline(entry))
 			break;
-		canon(entry,word);
-		switch(compare(key,word)) {
-		case -2:
-		case -1:
-		case 0:
-			if(top<=mid)
+		canon(entry, copy);
+		if (strncmp(*argv, copy, len) <= 0) {
+			if (top <= mid)
 				break;
 			top = mid;
-			continue;
-		case 1:
-		case 2:
+		}
+		else
 			bot = mid;
-			continue;
-		}
-		break;
 	}
-	fseek(dfile,bot,0);
-	while(ftell(dfile)<top) {
-		if(!getword(entry))
-			return;
-		canon(entry,word);
-		switch(compare(key,word)) {
-		case -2:
-			return;
-		case -1:
-		case 0:
-			puts(entry,stdout);
+	(void)fseek(stdin, bot, L_SET);
+	while (ftell(stdin) < top) {
+		register int val;
+
+		if (!getline(entry))
+			exit(0);
+		canon(entry, copy);
+		if (!(val = strncmp(*argv, copy, len))) {
+			puts(entry);
 			break;
-		case 1:
-		case 2:
-			continue;
 		}
-		break;
+		if (val < 0)
+			exit(0);
 	}
-	while(getword(entry)) {
-		canon(entry,word);
-		switch(compare(key,word)) {
-		case -1:
-		case 0:
-			puts(entry,stdout);
-			continue;
-		}
-		break;
+	while (getline(entry)) {
+		canon(entry, copy);
+		if (strncmp(*argv, copy, len))
+			break;
+		puts(entry);
 	}
 	exit(0);
 }
 
-compare(s,t)
-register char *s,*t;
+/*
+ * getline --
+ *	get a line
+ */
+static
+getline(buf)
+	char	*buf;
 {
-	for(;*s==*t;s++,t++)
-		if(*s==0)
-			return(0);
-	return(*s==0? -1:
-		*t==0? 1:
-		*s<*t? -2:
-		2);
-}
+	register int	c;
 
-getword(w)
-char *w;
-{
-	register c;
-	for(;;) {
-		c = getc(dfile);
-		if(c==EOF)
+	for (;;) {
+		if ((c = getchar()) == EOF)
 			return(0);
-		if(c=='\n')
+		if (c == '\n')
 			break;
-		*w++ = c;
+		*buf++ = c;
 	}
-	*w = 0;
+	*buf = EOS;
 	return(1);
 }
 
-canon(old,new)
-char *old,*new;
+/*
+ * canon --
+ *	create canonical version of word
+ */
+static
+canon(src, copy)
+	register char	*src, *copy;
 {
-	register c;
-	for(;;) {
-		*new = c = *old++;
-		if(c==0||c==tab) {
-			*new = 0;
-			break;
-		}
-		if(dict) {
-			if(!isalnum(c))
-				continue;
-		}
-		if(fold) {
-			if(isupper(c))
-				*new += 'a' - 'A';
-		}
-		new++;
-	}
+	register int	cnt;
+	register char	c;
+
+	for (cnt = len + 1; (c = *src++) && cnt; --cnt)
+		if (!dict || isalnum(c))
+			*copy++ = fold && isupper(c) ? tolower(c) : c;
+	*copy = EOS;
+}
+
+/*
+ * usage --
+ *	print a usage message and die
+ */
+static
+usage()
+{
+	fputs("usage: look [-df] string [file]\n", stderr);
+	exit(1);
 }
