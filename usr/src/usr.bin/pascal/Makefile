@@ -1,45 +1,34 @@
 #
-# Copyright (c) 1980 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1989 The Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)Makefile	5.4 (Berkeley) %G%
+# Redistribution and use in source and binary forms are permitted
+# provided that the above copyright notice and this paragraph are
+# duplicated in all such forms and that any documentation,
+# advertising materials, and other materials related to such
+# distribution and use acknowledge that the software was developed
+# by the University of California, Berkeley.  The name of the
+# University may not be used to endorse or promote products derived
+# from this software without specific prior written permission.
+# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+#
+#	@(#)Makefile	5.5 (Berkeley) %G%
 #
 CFLAGS=	-O
 
-# Programs that live in subdirectories, and have makefiles of their own.
-#
 SUBDIR=	pi pc0 px pxp pdx utilities
 
-all:
+all clean cleandir install lint tags:
 	for i in eyacc ${SUBDIR}; do \
-		(cd $$i; make ${MFLAGS}); \
-	done
+		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} $@); done
 
 ${SUBDIR}: FRC
 	cd $@; make ${MFLAGS}
-
-tags: FRC
-	for i in eyacc ${SUBDIR}; do \
-		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} tags); \
-	done
-
-install: FRC
-	for i in eyacc ${SUBDIR}; do \
-		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install); \
-	done
-
-clean: FRC
-	rm -f a.out core *.s *.o
-	for i in eyacc ${SUBDIR}; do \
-		(cd $$i; make ${MFLAGS} clean); \
-	done
 
 depend:
 	(cd eyacc; make ${MFLAGS} depend)
 	(cd eyacc; make ${MFLAGS} all)
 	for i in ${SUBDIR}; do \
-		(cd $$i; make ${MFLAGS} depend); \
-	done
-
-FRC:
+		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} depend); done
