@@ -61,28 +61,15 @@ protopr(off, name)
 	register struct inpcb *prev, *next;
 	int istcp;
 
-	if (off == 0) {
-		printf("%s control block: symbol not in namelist\n", name);
+	if (off == 0)
 		return;
-	}
 	istcp = strcmp(name, "tcp") == 0;
 	klseek(kmem, off, 0);
 	read(kmem, &cb, sizeof (struct inpcb));
 	inpcb = cb;
 	prev = (struct inpcb *)off;
-	if (first) {
-		printf("Active connections");
-		if (aflag)
-			printf(" (including servers)");
-		putchar('\n');
-		if (Aflag)
-			printf("%-8.8s ", "PCB");
-		printf(Aflag ? "%-5.5s %-6.6s %-6.6s  %-18.18s %-18.18s %s\n" :
-			"%-5.5s %-6.6s %-6.6s  %-22.22s %-22.22s %s\n",
-			"Proto", "Recv-Q", "Send-Q",
-			"Local Address", "Foreign Address", "(state)");
-		first = 0;
-	}
+	if (inpcb.inp_next == (struct inpcb *)off)
+		return;
 	while (inpcb.inp_next != (struct inpcb *)off) {
 		char *cp;
 
@@ -104,8 +91,25 @@ protopr(off, name)
 			klseek(kmem, (off_t)inpcb.inp_ppcb, 0);
 			read(kmem, &tcpcb, sizeof (tcpcb));
 		}
+		if (first) {
+			printf("Active Internet connections");
+			if (aflag)
+				printf(" (including servers)");
+			putchar('\n');
+			if (Aflag)
+				printf("%-8.8s ", "PCB");
+			printf(Aflag ?
+				"%-5.5s %-6.6s %-6.6s  %-18.18s %-18.18s %s\n" :
+				"%-5.5s %-6.6s %-6.6s  %-22.22s %-22.22s %s\n",
+				"Proto", "Recv-Q", "Send-Q",
+				"Local Address", "Foreign Address", "(state)");
+			first = 0;
+		}
 		if (Aflag)
-			printf("%8x ", inpcb.inp_ppcb);
+			if (istcp)
+				printf("%8x ", inpcb.inp_ppcb);
+			else
+				printf("%8x ", next);
 		printf("%-5.5s %6d %6d ", name, sockb.so_rcv.sb_cc,
 			sockb.so_snd.sb_cc);
 		inetprint(&inpcb.inp_laddr, inpcb.inp_lport, name);
@@ -130,18 +134,16 @@ tcp_stats(off, name)
 {
 	struct tcpstat tcpstat;
 
-	if (off == 0) {
-		printf("%sstat: symbol not in namelist\n", name);
+	if (off == 0)
 		return;
-	}
 	klseek(kmem, off, 0);
 	read(kmem, (char *)&tcpstat, sizeof (tcpstat));
-	printf("%s:\n\t%d bad header checksum%s\n", name,
+	printf("%s:\n\t%d incomplete header%s\n", name,
+		tcpstat.tcps_hdrops, plural(tcpstat.tcps_hdrops));
+	printf("\t%d bad checksum%s\n",
 		tcpstat.tcps_badsum, plural(tcpstat.tcps_badsum));
 	printf("\t%d bad header offset field%s\n",
 		tcpstat.tcps_badoff, plural(tcpstat.tcps_badoff));
-	printf("\t%d incomplete header%s\n",
-		tcpstat.tcps_hdrops, plural(tcpstat.tcps_hdrops));
 #ifdef notdef
 	printf("\t%d bad segment%s\n",
 		tcpstat.tcps_badsegs, plural(tcpstat.badsegs));
@@ -159,18 +161,16 @@ udp_stats(off, name)
 {
 	struct udpstat udpstat;
 
-	if (off == 0) {
-		printf("%sstat: symbol not in namelist\n", name);
+	if (off == 0)
 		return;
-	}
 	klseek(kmem, off, 0);
 	read(kmem, (char *)&udpstat, sizeof (udpstat));
-	printf("%s:\n\t%d bad header checksum%s\n", name,
-		udpstat.udps_badsum, plural(udpstat.udps_badsum));
-	printf("\t%d incomplete header%s\n",
+	printf("%s:\n\t%d incomplete header%s\n", name,
 		udpstat.udps_hdrops, plural(udpstat.udps_hdrops));
 	printf("\t%d bad data length field%s\n",
 		udpstat.udps_badlen, plural(udpstat.udps_badlen));
+	printf("\t%d bad checksum%s\n",
+		udpstat.udps_badsum, plural(udpstat.udps_badsum));
 }
 
 /*
@@ -182,18 +182,30 @@ ip_stats(off, name)
 {
 	struct ipstat ipstat;
 
-	if (off == 0) {
-		printf("%sstat: symbol not in namelist\n", name);
+	if (off == 0)
 		return;
-	}
 	klseek(kmem, off, 0);
 	read(kmem, (char *)&ipstat, sizeof (ipstat));
-	printf("%s:\n\t%d bad header checksum%s\n", name,
+	printf("%s:\n\t%d total packets received\n", name,
+		ipstat.ips_total);
+	printf("\t%d bad header checksum%s\n",
 		ipstat.ips_badsum, plural(ipstat.ips_badsum));
 	printf("\t%d with size smaller than minimum\n", ipstat.ips_tooshort);
 	printf("\t%d with data size < data length\n", ipstat.ips_toosmall);
 	printf("\t%d with header length < data size\n", ipstat.ips_badhlen);
 	printf("\t%d with data length < header length\n", ipstat.ips_badlen);
+	printf("\t%d fragment%s received\n",
+		ipstat.ips_fragments, plural(ipstat.ips_fragments));
+	printf("\t%d fragment%s dropped (dup or out of space)\n",
+		ipstat.ips_fragdropped, plural(ipstat.ips_fragdropped));
+	printf("\t%d fragment%s dropped after timeout\n",
+		ipstat.ips_fragtimeout, plural(ipstat.ips_fragtimeout));
+	printf("\t%d packet%s forwarded\n",
+		ipstat.ips_forward, plural(ipstat.ips_forward));
+	printf("\t%d packet%s not forwardable\n",
+		ipstat.ips_cantforward, plural(ipstat.ips_cantforward));
+	printf("\t%d redirect%s sent\n",
+		ipstat.ips_redirectsent, plural(ipstat.ips_redirectsent));
 }
 
 static	char *icmpnames[] = {
@@ -213,7 +225,9 @@ static	char *icmpnames[] = {
 	"time stamp",
 	"time stamp reply",
 	"information request",
-	"information request reply"
+	"information request reply",
+	"address mask request",
+	"address mask reply",
 };
 
 /*
@@ -226,16 +240,12 @@ icmp_stats(off, name)
 	struct icmpstat icmpstat;
 	register int i, first;
 
-	if (off == 0) {
-		printf("%sstat: symbol not in namelist\n", name);
+	if (off == 0)
 		return;
-	}
 	klseek(kmem, off, 0);
 	read(kmem, (char *)&icmpstat, sizeof (icmpstat));
 	printf("%s:\n\t%d call%s to icmp_error\n", name,
 		icmpstat.icps_error, plural(icmpstat.icps_error));
-	printf("\t%d error%s not generated 'cuz old message too short\n",
-		icmpstat.icps_oldshort, plural(icmpstat.icps_oldshort));
 	printf("\t%d error%s not generated 'cuz old message was icmp\n",
 		icmpstat.icps_oldicmp, plural(icmpstat.icps_oldicmp));
 	for (first = 1, i = 0; i < ICMP_IREQREPLY + 1; i++)
@@ -255,8 +265,6 @@ icmp_stats(off, name)
 		icmpstat.icps_checksum, plural(icmpstat.icps_checksum));
 	printf("\t%d message%s with bad length\n",
 		icmpstat.icps_badlen, plural(icmpstat.icps_badlen));
-	printf("\t%d message response%s generated\n",
-		icmpstat.icps_reflect, plural(icmpstat.icps_reflect));
 	for (first = 1, i = 0; i < ICMP_IREQREPLY + 1; i++)
 		if (icmpstat.icps_inhist[i] != 0) {
 			if (first) {
@@ -266,6 +274,8 @@ icmp_stats(off, name)
 			printf("\t\t%s: %d\n", icmpnames[i],
 				icmpstat.icps_inhist[i]);
 		}
+	printf("\t%d message response%s generated\n",
+		icmpstat.icps_reflect, plural(icmpstat.icps_reflect));
 }
 
 /*
