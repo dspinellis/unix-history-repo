@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/file.h>
@@ -438,7 +438,7 @@ doslave(cmd, prev, next)
 			} else {
 				if (p->count != 1 || atomic(read, cmd,
 				    tblock[trecno], TP_BSIZE) != TP_BSIZE) {
-					msg("Master/slave protocol botched");
+					msg("Master/slave protocol botched.\n");
 					dumpabort();
 				}
 			}
