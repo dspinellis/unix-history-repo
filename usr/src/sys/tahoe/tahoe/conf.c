@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.c	7.8 (Berkeley) %G%
+ *	@(#)conf.c	7.9 (Berkeley) %G%
  */
 
 #include "sys/param.h"
@@ -57,7 +57,7 @@ int	cyioctl(),cyreset();
 
 struct bdevsw	bdevsw[] =
 {
-	{ enodev,	nullop,	enodev,		enodev,		/*0*/
+	{ enodev,	nullop,		enodev,		enodev,		/*0*/
 	  enodev,	0,		0 },
 	{ vdopen,	vdclose,	vdstrategy,	vdioctl,	/*1*/
 	  vddump,	vdsize,		0 },
@@ -88,7 +88,7 @@ int	vxopen(),vxclose(),vxread(),vxwrite(),vxioctl(),vxstop(),vxreset();
 struct	tty vx_tty[];
 #endif
 
-int	syopen(),syread(),sywrite(),syioctl(),syselect();
+int	cttyopen(),cttyread(),cttywrite(),cttyioctl(),cttyselect();
 
 int 	mmrw();
 #define	mmselect	seltrue
@@ -183,73 +183,73 @@ int	ttselect(), seltrue();
 
 struct cdevsw	cdevsw[] =
 {
-	cnopen,		cnclose,	cnread,		cnwrite,	/*0*/
-	cnioctl,	nullop,	nullop,	&cons,
-	ttselect,	enodev,		NULL,
-	vxopen,		vxclose,	vxread,		vxwrite,	/*1*/
-	vxioctl,	vxstop,		vxreset,	vx_tty,
-	ttselect,	enodev,		NULL,
-	syopen,		nullop,	syread,		sywrite,	/*2*/
-	syioctl,	nullop,	nullop,	NULL,
-	syselect,	enodev,		NULL,
-	nullop,	nullop,	mmrw,		mmrw,		/*3*/
-	enodev,		nullop,	nullop,	NULL,
-	mmselect,	enodev,		NULL,
-	enodev,		nullop,	enodev,		enodev,		/*4*/
-	enodev,		enodev,		nullop,	NULL,
-	seltrue,	enodev,		NULL,
-	vdopen,		vdclose,	rawread,	rawwrite,	/*5*/
-	vdioctl,	enodev,		nullop,	NULL,
-	seltrue,	enodev,		vdstrategy,
-	hdopen,		hdclose,	rawread,	rawwrite,	/*6*/
-	hdioctl,	enodev,		nullop,	NULL,
-	seltrue,	enodev,		hdstrategy,
-	cyopen,		cyclose,	rawread,	rawwrite,	/*7*/
-	cyioctl,	enodev,		cyreset,	NULL,
-	seltrue,	enodev,		cystrategy,
-	nullop,	nullop,	rawread,	rawwrite,	/*8*/
-	enodev,		enodev,		nullop,	NULL,
-	enodev,		enodev,		swstrategy,
-	ptsopen,	ptsclose,	ptsread,	ptswrite,	/*9*/
-	ptyioctl,	ptsstop,	enodev,		pt_tty,
-	ttselect,	enodev,		NULL,
-	ptcopen,	ptcclose,	ptcread,	ptcwrite,	/*10*/
-	ptyioctl,	nullop,	enodev,		pt_tty,
-	ptcselect,	enodev,		NULL,
-	mpdlopen,	mpdlclose,	enodev,		mpdlwrite,	/*11*/
-	mpdlioctl,	enodev,		nullop,	NULL,
-	seltrue,	enodev,		NULL,
-	mpopen,		mpclose,	mpread,		mpwrite,	/*12*/
-	mpioctl,	mpstop,		nullop,	mp_tty,
-	ttselect,	enodev,		NULL,
-	enodev,		enodev,		enodev,		enodev,		/*13*/
-	enodev,		enodev,		nullop,	NULL,
-	enodev,		enodev,		NULL,
-	iiopen,		iiclose,	nullop,	nullop,	/*14*/
-	iiioctl,	nullop,	nullop,	NULL,
-	seltrue,	enodev,		NULL,
-	logopen,	logclose,	logread,	enodev,		/*15*/
-	logioctl,	enodev,		nullop,	NULL,
-	logselect,	enodev,		NULL,
-	enpr_open,	enpr_close,	enpr_read,	enpr_write,	/*16*/
-	enpr_ioctl,	enodev,		nullop,	NULL,
-	enodev,		enodev,		NULL,
-	enodev,		enodev,		enodev,		enodev,		/*17*/
-	enodev,		enodev,		nullop,	NULL,
-	enodev,		enodev,		NULL,
-	dropen,		drclose,	drread,		drwrite,	/*18*/
-	drioctl,	enodev,		drreset,	NULL,
-	enodev,		enodev,		NULL,
-	enodev,		enodev,		enodev,		enodev,		/*19*/
-	enodev,		enodev,		nullop,	NULL,
-	enodev,		enodev,		NULL,
+	{ cnopen,	cnclose,	cnread,		cnwrite,	/*0*/
+	  cnioctl,	nullop,		nullop,		&cons,
+	  ttselect,	enodev,		NULL },
+	{ vxopen,	vxclose,	vxread,		vxwrite,	/*1*/
+	  vxioctl,	vxstop,		vxreset,	vx_tty,
+	  ttselect,	enodev,		NULL },
+	{ cttyopen,	nullop,		cttyread,	cttywrite,	/*2*/
+	  cttyioctl,	nullop,		nullop,		NULL,
+	  cttyselect,	enodev,		NULL },
+	{ nullop,	nullop,		mmrw,		mmrw,		/*3*/
+	  enodev,	nullop,		nullop,		NULL,
+	  mmselect,	enodev,		NULL },
+	{ enodev,	nullop,		enodev,		enodev,		/*4*/
+	  enodev,	enodev,		nullop,		NULL,
+	  seltrue,	enodev,		NULL },
+	{ vdopen,	vdclose,	rawread,	rawwrite,	/*5*/
+	  vdioctl,	enodev,		nullop,		NULL,
+	  seltrue,	enodev,		vdstrategy },
+	{ hdopen,	hdclose,	rawread,	rawwrite,	/*6*/
+	  hdioctl,	enodev,		nullop,		NULL,
+	  seltrue,	enodev,		hdstrategy },
+	{ cyopen,	cyclose,	rawread,	rawwrite,	/*7*/
+	  cyioctl,	enodev,		cyreset,	NULL,
+	  seltrue,	enodev,		cystrategy },
+	{ nullop,	nullop,		rawread,	rawwrite,	/*8*/
+	  enodev,	enodev,		nullop,		NULL,
+	  enodev,	enodev,		swstrategy },
+	{ ptsopen,	ptsclose,	ptsread,	ptswrite,	/*9*/
+	  ptyioctl,	ptsstop,	enodev,		pt_tty,
+	  ttselect,	enodev,		NULL },
+	{ ptcopen,	ptcclose,	ptcread,	ptcwrite,	/*10*/
+	  ptyioctl,	nullop,		enodev,		pt_tty,
+	  ptcselect,	enodev,		NULL },
+	{ mpdlopen,	mpdlclose,	enodev,		mpdlwrite,	/*11*/
+	  mpdlioctl,	enodev,		nullop,		NULL,
+	  seltrue,	enodev,		NULL },
+	{ mpopen,	mpclose,	mpread,		mpwrite,	/*12*/
+	  mpioctl,	mpstop,		nullop,		mp_tty,
+	  ttselect,	enodev,		NULL },
+	{ enodev,	enodev,		enodev,		enodev,		/*13*/
+	  enodev,	enodev,		nullop,		NULL,
+	  enodev,	enodev,		NULL },
+	{ iiopen,	iiclose,	nullop,		nullop,		/*14*/
+	  iiioctl,	nullop,		nullop,		NULL,
+	  seltrue,	enodev,		NULL },
+	{ logopen,	logclose,	logread,	enodev,		/*15*/
+	  logioctl,	enodev,		nullop,		NULL,
+	  logselect,	enodev,		NULL },
+	{ enpr_open,	enpr_close,	enpr_read,	enpr_write,	/*16*/
+	  enpr_ioctl,	enodev,		nullop,		NULL,
+	  enodev,	enodev,		NULL },
+	{ enodev,	enodev,		enodev,		enodev,		/*17*/
+	  enodev,	enodev,		nullop,		NULL,
+	  enodev,	enodev,		NULL },
+	{ dropen,	drclose,	drread,		drwrite,	/*18*/
+	  drioctl,	enodev,		drreset,	NULL,
+	  enodev,	enodev,		NULL },
+	{ fdopen,	enodev,		enodev,		enodev,		/*19*/
+	  enodev,	enodev,		enodev,		NULL,
+	  enodev,	enodev,		NULL },
 /* 20-30 are reserved for local use */
-	ikopen,		ikclose,	ikread,		ikwrite,	/*20*/
-	ikioctl,	enodev,		nullop,	NULL,
-	enodev,		enodev,		NULL,
-	fdopen,		enodev,		enodev,		enodev,		/*21*/
-	enodev,		enodev,		enodev,		NULL,
-	enodev,		enodev,		NULL,
+	{ ikopen,	ikclose,	ikread,		ikwrite,	/*20*/
+	  ikioctl,	enodev,		nullop,		NULL,
+	  enodev,	enodev,		NULL },
+	{ fdopen,	enodev,		enodev,		enodev,		/*21*/
+	  enodev,	enodev,		enodev,		NULL,
+	  enodev,	enodev,		NULL },
 };
 int	nchrdev = sizeof (cdevsw) / sizeof (cdevsw[0]);
 
