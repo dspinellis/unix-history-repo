@@ -1,4 +1,4 @@
-/*	savax.h	4.1	81/03/15	*/
+/*	savax.h	4.2	81/03/16	*/
 
 /*
  * Standalone definitions peculiar to vaxen
@@ -32,5 +32,4 @@ struct	uba_regs **ubaddr;
 
 #define	UNITTOUBA(unit)		((unit)>>3)
 #define	ubauba(unit)		(ubaddr[UNITTOUBA(unit)])
-#define	ubamem(unit, off)	\
-	((struct device *)(umaddr[UNITTOUBA(unit)]+(off&017777)))
+#define	ubamem(unit, off)	((umaddr[UNITTOUBA(unit)]+(off&017777)))

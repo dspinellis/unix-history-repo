@@ -1,4 +1,4 @@
-/*	ht.c	4.3	81/03/15	*/
+/*	ht.c	4.4	81/03/16	*/
 
 /*
  * TM03/TU?? tape driver
@@ -59,7 +59,7 @@ retry:
 		htaddr->htcs1 = HT_SREV|HT_GO;
 		return (0);
 	}
-	if (func == HT_RCOM || func == HT_WCOM)
+	if (func == READ || func == WRITE)
 		mbastart(io, func);
 	else
 		htaddr->htcs1 = func|HT_GO;

@@ -1,4 +1,4 @@
-/*	boot.c	4.2	81/03/15	*/
+/*	boot.c	4.3	81/03/16	*/
 
 #include "../h/param.h"
 #include "../h/ino.h"
@@ -31,6 +31,9 @@ main()
 	register howto, devtype;	/* howto=r11, devtype=r10 */
 	int io, retry;
 
+#ifdef lint
+	howto = 0; devtype = 0;
+#endif
 	printf("\nBoot\n");
 #ifdef JUSTASK
 	howto = RB_ASKNAME|RB_SINGLE;
@@ -53,14 +56,14 @@ main()
 			printf(": %s\n", line);
 		io = open(line, 0);
 		if (io >= 0)
-			copyunix(howto, io);
+			copyunix(io);
 		if (++retry > 2)
 			howto = RB_SINGLE|RB_ASKNAME;
 	}
 }
 
-copyunix(howto, io)
-	register howto, io;
+copyunix(io)
+	register io;
 {
 	struct exec x;
 	register int i;
