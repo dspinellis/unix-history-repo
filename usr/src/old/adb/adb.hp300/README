@@ -1,0 +1,5 @@
+This is a version of adb(1) that runs on the HP 68K, from Mike Hibler of
+the Systems Programming Group of the University of Utah Computer Science
+Department.  The SCCS id's are, presumably, the SCCS ids of the files
+that he started with.  The SCCS files for this version of adb can be found
+in ../adb.vax/SCCS.
