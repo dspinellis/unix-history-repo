@@ -24,7 +24,7 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-/*	@(#)esis.c	7.10 (Berkeley) %G% */
+/*	@(#)esis.c	7.11 (Berkeley) %G% */
 #ifndef lint
 static char *rcsid = "$Header: esis.c,v 4.10 88/09/15 18:57:03 hagens Exp $";
 #endif
@@ -33,6 +33,7 @@ static char *rcsid = "$Header: esis.c,v 4.10 88/09/15 18:57:03 hagens Exp $";
 
 #include "types.h"
 #include "param.h"
+#include "systm.h"
 #include "mbuf.h"
 #include "domain.h"
 #include "protosw.h"
