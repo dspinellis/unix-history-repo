@@ -1,39 +1,41 @@
 /*
- * Copyright (c) 1983 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1983, 1988 Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1983 Regents of the University of California.\n\
+"@(#) Copyright (c) 1983, 1988 Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)hostid.c	5.4 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)hostid.c	5.5 (Berkeley) %G%";
+#endif /* not lint */
 
 #include <sys/types.h>
 #include <stdio.h>
-#include <ctype.h>
 #include <netdb.h>
-
-extern	char *index();
-extern	unsigned long inet_addr();
-extern	long gethostid();
 
 main(argc, argv)
 	int argc;
 	char **argv;
 {
 	register char *id;
-	u_long addr;
-	long hostid;
 	struct hostent *hp;
+	u_long addr, inet_addr();
+	long hostid, gethostid();
+	char *index();
 
 	if (argc < 2) {
-		printf("%#x\n", gethostid());
+		printf("%#lx\n", gethostid());
 		exit(0);
 	}
 
@@ -47,11 +49,9 @@ main(argc, argv)
 	} else {
 		if (id[0] == '0' && (id[1] == 'x' || id[1] == 'X'))
 			id += 2;
-		if (sscanf(id, "%x", &hostid) != 1) {
-usage:
-			fprintf(stderr,
-			    "usage: %s [hexnum or internet address]\n",
-			    argv[0]);
+		if (sscanf(id, "%lx", &hostid) != 1) {
+usage:			fputs("usage: hostid [hexnum or internet address]\n",
+			    stderr);
 			exit(1);
 		}
 	}
