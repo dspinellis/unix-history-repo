@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)b.c	4.2 %G%";
+static char sccsid[] = "@(#)b.c	4.3 %G%";
 #endif
 
 #include "awk.def"
@@ -40,6 +40,7 @@ node	*point[MAXLIN];
 
 int	setcnt;
 int	line;
+int	maxfoll;  /* index of highest foll[] entry set by cfoll() */
 
 
 struct fa *makedfa(p)	/* returns dfa for tree pointed to by p */
@@ -91,7 +92,7 @@ node *p;
 {
 	switch(type(p)) {
 		LEAF
-			xfree(foll[(int) left(p)]);
+			foll_free((int) left(p));
 			xfree(p);
 			break;
 		UNARY
@@ -152,6 +153,7 @@ register node *v;
 	int prev;
 	int *add();
 
+	maxfoll = -1;
 	switch(type(v)) {
 		LEAF
 			setcnt = 0;
@@ -163,6 +165,8 @@ register node *v;
 			}
 			else
 				foll[ (int) left(v)] = foll[prev];
+			if ((int)left(v) > maxfoll)
+				maxfoll = (int)left(v);
 			break;
 		UNARY
 			cfoll(left(v));
@@ -488,7 +492,9 @@ struct fa *cgotofn()
 		}
 	}
 	for (i=0; i<=n; i++) {
-		xfree(state[i]);	/* free state[i] */
+		/* N.b. state[0] == foll[0], not separately allocated */
+		if (i>0)
+			xfree(state[i]);       /* free state[i] */
 		pfa = where[i];
 		pfa->st = where[0];
 		dprintf("state %d: (%o)\n", i, pfa, NULL);
@@ -536,4 +542,20 @@ register char *p;
 		if ((count = pfa->cch) < 0) return(1);
 	} while(*p++ != 0);
 	return(0);
+}
+
+/*
+ * Free foll[i], taking into account identical foll[] entries.
+ * This is necessary because cfoll() uses the same physical follow set for
+ * several foll[] entries when the set is identical.  Called by freetr().
+ */
+foll_free(i)
+int i;
+{
+	register int j;
+	int *p = foll[i];
+	if (p==NULL) return;
+	for (j=0; j<=maxfoll; j++) 
+		if (foll[j]==p) foll[j]=NULL;
+	xfree(p);
 }
