@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cp.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)cp.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -475,13 +475,16 @@ setfile(fs, fd)
 	int fd;
 {
 	static struct timeval tv[2];
+	char path[100];
 
 	fs->st_mode &= S_ISUID|S_ISGID|S_IRWXU|S_IRWXG|S_IRWXO;
 
 	tv[0].tv_sec = fs->st_atime;
 	tv[1].tv_sec = fs->st_mtime;
-	if (utimes(to.p_path, tv))
-		error(to.p_path);
+	if (utimes(to.p_path, tv)) {
+		(void)snprintf(path, sizeof(path), "utimes: %s", to.p_path);
+		error(path);
+	}
 	/*
 	 * Changing the ownership probably won't succeed, unless we're root
 	 * or POSIX_CHOWN_RESTRICTED is not set.  Set uid/gid before setting
@@ -490,12 +493,17 @@ setfile(fs, fd)
 	 */
 	if (fd ? fchown(fd, fs->st_uid, fs->st_gid) :
 	    chown(to.p_path, fs->st_uid, fs->st_gid)) {
-		if (errno != EPERM)
-			error(to.p_path);
+		if (errno != EPERM) {
+			(void)snprintf(path, sizeof(path),
+			    "chown: %s", to.p_path);
+			error(path);
+		}
 		fs->st_mode &= ~(S_ISUID|S_ISGID);
 	}
-	if (fd ? fchmod(fd, fs->st_mode) : chmod(to.p_path, fs->st_mode))
-		error(to.p_path);
+	if (fd ? fchmod(fd, fs->st_mode) : chmod(to.p_path, fs->st_mode)) {
+		(void)snprintf(path, sizeof(path), "chown: %s", to.p_path);
+		error(path);
+	}
 }
 
 ismember(gid)
