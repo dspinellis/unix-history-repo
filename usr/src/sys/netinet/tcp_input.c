@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_input.c	6.17 (Berkeley) %G%
+ *	@(#)tcp_input.c	6.18 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -245,11 +245,10 @@ tcp_input(m0)
 	tiflags = ti->ti_flags;
 
 	/*
-	 * Drop TCP and IP headers.
+	 * Drop TCP and IP headers; TCP options were dropped above.
 	 */
-	off += sizeof (struct ip);
-	m->m_off += off;
-	m->m_len -= off;
+	m->m_off += sizeof(struct tcpiphdr);
+	m->m_len -= sizeof(struct tcpiphdr);
 
 	/*
 	 * Convert TCP protocol specific fields to host format.
