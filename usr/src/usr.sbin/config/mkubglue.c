@@ -1,6 +1,6 @@
 /*
  * Make the uba interrupt file ubglue.s
- *	mkubglue.c	1.3	81/02/26
+ *	mkubglue.c	1.4	81/05/22
  */
 #include <stdio.h>
 #include "config.h"
@@ -21,10 +21,17 @@ ubglue()
 	mp = dp->d_conn;
 	if (mp != NULL && mp != -1 && !eq(mp->d_name, "mba"))
 	{
-	    if (dp->d_vec1 != NULL)
-		dump_vec(fp, dp->d_vec1, dp->d_unit);
-	    if (dp->d_vec2 != NULL)
-		dump_vec(fp, dp->d_vec2, dp->d_unit);
+	    struct idlst *id, *id2;
+	    for (id = dp->d_vec; id; id = id->id_next) {
+		for (id2 = dp->d_vec; id2; id2 = id2->id_next) {
+		    if (id2 == id) {
+			dump_vec(fp, id->id, dp->d_unit);
+			break;
+		    }
+		    if (!strcmp(id->id, id2->id))
+			break;
+		}
+	    }
 	}
     }
     fclose(fp);

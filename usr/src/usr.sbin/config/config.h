@@ -1,5 +1,5 @@
 /*
- * config.h	1.4	81/03/31
+ * config.h	1.5	81/05/22
  * Definitions that everybody needs to know
  */
 
@@ -19,14 +19,18 @@ struct file_list {
 	char *f_needs;
 };
 
+struct	idlst {
+	char *id;
+	struct idlst *id_next;
+};
+
 typedef char bool;
 
 struct device {
 	int d_type;			/* CONTROLLER, DEVICE, UBA or MBA */
 	struct device *d_conn;		/* What it is connected to */
 	char *d_name;			/* Name of device (e.g. rk11) */
-	char *d_vec1;			/* First interrupt vector */
-	char *d_vec2;			/* Second interrupt vector */
+	struct idlist *d_vec;		/* Interrupt vectors */
 	int d_addr;			/* Address of csr */
 	int d_unit;			/* Unit number */
 	int d_drive;			/* Drive number */
