@@ -1,4 +1,4 @@
-/*	kdbparam.h	7.1	86/11/20	*/
+/*	kdbparam.h	7.2	86/11/20	*/
 
 #include <sys/vm.h>
 
@@ -22,6 +22,7 @@
 #define shorten(a)	(((a) >> 16) & 0xffff)
 #define	itol(a,b)	(((a) << 16) | ((b) & 0xffff))
 #define	byte(a)		(((a) >> 24) & 0xff)
+#define	btol(a)		((a) << 24)
 
 /*
  * INSTACK tells whether its argument is a stack address.
