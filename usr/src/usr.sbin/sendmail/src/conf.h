@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.45 (Berkeley) %G%
+ *	@(#)conf.h	8.46 (Berkeley) %G%
  */
 
 /*
@@ -167,7 +167,7 @@
 # else
 			/* SunOS 4.1.x */
 #  define HASSTATFS	1	/* has the statfs(2) syscall */
-/* #  define HASFLOCK	1	/* has flock(2) call */
+#  define HASFLOCK	1	/* has flock(2) call */
 #  include <vfork.h>
 
 # endif
@@ -229,7 +229,7 @@ extern long	dgux_inet_addr();
 # define HASUNSETENV	1	/* has unsetenv(3) call */
 # define HASSETREUID	1	/* has setreuid(2) call */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
-/* # define HASFLOCK	1	/* has flock(2) call */
+# define HASFLOCK	1	/* has flock(2) call */
 # define LA_TYPE	LA_INT
 # ifndef _PATH_SENDMAILPID
 #  define _PATH_SENDMAILPID	"/var/run/sendmial.pid"
@@ -268,6 +268,8 @@ typedef int		pid_t;
 
 /*
 **  4.4 BSD
+**
+**	See also BSD defines.
 */
 
 #ifdef BSD4_4
@@ -285,6 +287,8 @@ typedef int		pid_t;
 **  386BSD / FreeBSD 1.0E (works) / NetBSD (not tested)
 **
 **  4.3BSD clone, closer to 4.4BSD
+**
+**	See also BSD defines.
 */
 
 #ifdef __386BSD__
@@ -388,7 +392,7 @@ typedef int		pid_t;
 
 #ifdef RISCOS
 # define HASUNSETENV	1	/* has unsetenv(3) call */
-/* # define HASFLOCK	1	/* has flock(2) call */
+# define HASFLOCK	1	/* has flock(2) call */
 # define LA_TYPE	LA_INT
 # define LA_AVENRUN	"avenrun"
 # define _PATH_UNIX	"/unix"
