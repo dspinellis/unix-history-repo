@@ -1,0 +1,13 @@
+#print
+Suppose you wanted to print from the current
+line to the end of the file?  What's the command
+for that?  Again, type "answer COMMAND" where
+COMMAND is what your line with "p" will look like.
+#copyin
+#user
+#uncopyin
+#match .,$p
+#log
+#next
+10.3e 5
+10.1b 10

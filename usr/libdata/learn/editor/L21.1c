@@ -1,0 +1,87 @@
+#print
+This directory contains a file "list" which has
+a list of words in it.  What word is on the last line
+of the file?  The file is rather long - I'd suggest you
+not try to print all of it.  Type "answer WORD" where
+WORD is the word on the last line of the file.
+#create list
+aardvark
+adapt
+addition
+alert
+allege
+alphabet
+announce
+answer
+apple
+architect
+arrange
+avoid
+this
+is
+going
+to
+be
+very
+boring
+if
+you
+keep
+trying
+to
+print
+the
+whole
+file
+you
+should
+have
+said
+$p
+and
+I
+would
+suggest
+you
+hit
+delete
+now
+and
+try
+that
+instead
+i
+am
+very
+patient
+and
+you
+are
+not
+going
+to
+like
+waiting
+for
+all
+of
+this
+to
+go
+on
+for
+ver
+...
+...
+..
+...
+year
+youth
+zebra
+#copyin
+#user
+#uncopyin
+#match zebra
+#log
+#next
+21.1d 5

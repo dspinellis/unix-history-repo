@@ -1,0 +1,19 @@
+#print
+There is a mistyped word in the third line of the file "problem".
+Fix it, rewrite the file, and type "ready".
+#create Ref
+The computer costs too much.
+No one knows how to use it.
+The switchboard in the main office is broken.
+It takes too long to get anything done.
+#create problem
+The computer costs too much.
+No one knows how to use it.
+The switchboard in thb main office is broken.
+It takes too long to get anything done.
+#user
+#cmp problem Ref
+#log
+#next
+42.1a 10
+42.2a 5

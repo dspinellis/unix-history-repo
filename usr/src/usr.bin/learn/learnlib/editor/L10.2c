@@ -1,0 +1,18 @@
+#print
+And you can also use other kinds of
+addresses with the "$" address.
+For example, you can use ".", or
+combinations with ".", as addresses.
+Consider printing from the current
+line to the end of the file - what
+would the "p" command look like?
+Type "answer COMMAND" where "COMMAND"
+is that command.
+#copyin
+#user
+#uncopyin
+#match .,$p
+#log
+#next
+10.1b 3
+10.3a 0
