@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	6.70 (Berkeley) %G%
+ *	@(#)sendmail.h	6.71 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	6.70		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	6.71		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -776,6 +776,7 @@ EXTERN bool	QuickAbort;	/*  .... but only if we want a quick abort */
 EXTERN bool	LogUsrErrs;	/* syslog user errors (e.g., SMTP RCPT cmd) */
 EXTERN bool	SendMIMEErrors;	/* send error messages in MIME format */
 EXTERN bool	MatchGecos;	/* look for user names in gecos field */
+EXTERN bool	UseErrorsTo;	/* use Errors-To: header (back compat) */
 EXTERN char	SpaceSub;	/* substitution for <lwsp> */
 EXTERN int	PrivacyFlags;	/* privacy flags */
 extern char	*ConfFile;	/* location of configuration file [conf.c] */
