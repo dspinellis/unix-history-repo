@@ -6,7 +6,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)sed.test	5.1 (Berkeley) %G%
+#	@(#)sed.test	5.2 (Berkeley) %G%
 #
 
 # sed Regression Tests
@@ -54,7 +54,7 @@ tests()
 	test_addr
 	echo Testing commands
 	test_group
-	test_aci
+	test_acid
 	test_branch
 	test_pattern
 	test_print
@@ -235,9 +235,9 @@ test_group()
 	mark '3.4' ; $SED -e '4,12!s/^/^/' lines1
 }
 
-test_aci()
+test_acid()
 {
-	echo Testing a c and i commands
+	echo Testing a c d and i commands
 	mark '4.1' ; $SED -n -e '
 s/^/before_i/p
 20i\
@@ -279,6 +279,7 @@ hello
 #8,3c\
 #hello
 #' lines1
+	mark '4.8' ; $SED d <lines1
 }
 
 test_branch()
