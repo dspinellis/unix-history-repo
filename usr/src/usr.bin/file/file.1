@@ -1,9 +1,9 @@
-.\" Copyright (c) 1990, 1993
+.\" Copyright (c) 1990, 1993, 1994
 .\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)file.1	8.1 (Berkeley) %G%
+.\"     @(#)file.1	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt FILE 1
@@ -13,26 +13,32 @@
 .Nd identify file content
 .Sh SYNOPSIS
 .Nm file
-.Ar
+.Op Fl h
+.Ar file ...
 .Sh DESCRIPTION
 .Nm File
-tests the given argument(s) and reports
-the content type(s). 
-If
-the file type is text,
-it attempts to determine
-the type of text (e.g.
+tests the specified files and attempts to classify them.
+If a file is a text file,
+it attempts to determine the type of text (e.g.
 .Xr csh 1
-commands or C code).
+commands or C source code).
+.Pp
+The options are as follows:
+.Bl -tag -width Ds
+.It Fl h
+If a symbolic link is specified, identify the file as a symbolic
+link.
+By default, symbolic links are only identified if they reference
+non-existent files.
+.El
+.Sh COMPATIBILITY
+Previous implementations of the
+.Nm file
+utility did not follow symbolic links by default.
 .Sh BUGS
 As many tests are used and
-.Nm
-stops testing on the first successful one,
-it can make mistakes.
-In particular, 
-.Nm
-does not recognize Pascal or
-.Tn LISP .
+.Nm file
+stops testing on the first successful one, it can often make mistakes.
 .Sh HISTORY
 A
 .Nm file
