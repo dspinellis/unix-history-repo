@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)temp.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)temp.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -37,7 +37,6 @@ char	tempMesg[14];
 tinit()
 {
 	register char *cp;
-	char buf[PATHSIZE];
 
 	mktemp(strcpy(tempMail, "/tmp/RsXXXXXX"));
 	mktemp(strcpy(tempResid, "/tmp/RqXXXXXX"));
@@ -66,11 +65,9 @@ tinit()
 		} else
 			myname = savestr(cp);
 	}
-	if ((cp = value("HOME")) == NOSTR)
+	if ((cp = getenv("HOME")) == NOSTR)
 		cp = ".";
 	homedir = savestr(cp);
-	sprintf(buf, "%s/.mailrc", homedir);
-	mailrc = savestr(buf);
 	if (debug)
-		printf("user = %s, mailrc = %s\n", myname, mailrc);
+		printf("user = %s, homedir = %s\n", myname, homedir);
 }
