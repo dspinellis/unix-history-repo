@@ -1,4 +1,4 @@
-/* in_systm.h 4.4 81/11/18 */
+/* in_systm.h 4.5 81/11/20 */
 
 /*
  * Miscellaneous internetwork
@@ -30,22 +30,6 @@ typedef	u_long	n_time;			/* ms since 00:00 GMT, byte rev */
 #define	splimp		spl5
 #define	setsoftnet()	mtpr(SIRR, 12)
 /* splnet is defined in ../sys/asm.sed */
-
-/*
- * Network statistics record.
- *
- * SHOULD BE KEPT PER INTERFACE, AND WITH CNT, RATE, SUM.
- */
-struct	net_stat {
-	int	imp_resets;		/* # times imp reset */
-	int	imp_flushes;		/* # packets flushed by imp */
-	int	imp_drops;		/* # msgs from imp no-one wants */
-	int	m_drops;		/* # mbuf drops from lack of bufs */
-	int	ip_badsum;		/* # bad ip checksums */
-	int	t_badsum;		/* # bad tcp checksums */
-	int	t_badsegs;		/* # bad tcp segments */
-	int	t_unack;		/* # tcp segs placed on rcv_unack */
-};
 
 #ifdef	KERNEL
 n_time	iptime();

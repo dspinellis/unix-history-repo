@@ -1,4 +1,4 @@
-/* socketvar.h 4.5 81/11/18 */
+/* socketvar.h 4.6 81/11/20 */
 
 /*
  * Kernel structure per socket.
@@ -10,7 +10,6 @@ struct socket {
 	short	so_type;		/* generic type, see socket.h */
 	short	so_options;		/* from socket call, see socket.h */
 	short	so_state;		/* internal state flags SS_*, below */
-	short	so_isfilerefd;		/* no file table reference */
 	caddr_t	so_pcb;			/* protocol control block */
 	struct	protosw *so_proto;	/* protocol handle */
 	struct	sockbuf {
@@ -39,11 +38,11 @@ struct socket {
  */
 #define	SS_USERGONE		0x01	/* no file table ref any more */
 #define	SS_ISCONNECTED		0x02	/* socket connected to a peer */
-#define	SS_ISCONNECTING		0x03	/* in process of connecting to peer */
-#define	SS_ISDISCONNECTING	0x04	/* in process of disconnecting */
-#define	SS_CANTSENDMORE		0x08	/* can't send more data to peer */
-#define	SS_CANTRCVMORE		0x10	/* can't receive more data from peer */
-#define	SS_CONNAWAITING		0x20	/* connections awaiting acceptance */
+#define	SS_ISCONNECTING		0x04	/* in process of connecting to peer */
+#define	SS_ISDISCONNECTING	0x08	/* in process of disconnecting */
+#define	SS_CANTSENDMORE		0x10	/* can't send more data to peer */
+#define	SS_CANTRCVMORE		0x20	/* can't receive more data from peer */
+#define	SS_CONNAWAITING		0x40	/* connections awaiting acceptance */
 
 /*
  * Macros for sockets and socket buffering.
@@ -101,7 +100,3 @@ struct socket {
 
 #define	sorwakeup(so)	sbwakeup(&(so)->so_rcv)
 #define	sowwakeup(so)	sbwakeup(&(so)->so_snd)
-
-#ifdef KERNEL
-struct	mbuf *sbcopy();
-#endif

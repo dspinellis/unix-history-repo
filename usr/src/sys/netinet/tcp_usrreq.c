@@ -1,4 +1,4 @@
-/* tcp_usrreq.c 1.30 81/11/18 */
+/* tcp_usrreq.c 1.31 81/11/20 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -7,9 +7,9 @@
 #include "../h/socketvar.h"
 #include "../h/protosw.h"
 #include "../net/inet.h"
-#include "../net/inet_host.h"
 #include "../net/inet_pcb.h"
 #include "../net/inet_systm.h"
+#include "../net/if.h"
 #include "../net/imp.h"
 #include "../net/ip.h"
 #include "../net/ip_var.h"
@@ -87,6 +87,7 @@ tcp_tcancel(tp)
 		*tmp++ = 0;
 }
 
+struct	tcpcb *tcp_newtcpcb();
 /*
  * Process a TCP user request for tcp tb.  If this is a send request
  * then m is the mbuf chain of send data.  If this is a timer expiration
@@ -138,17 +139,26 @@ COUNT(TCP_USRREQ);
 	switch (req) {
 
 	case PRU_ATTACH:
-		if (tp) {
+		if (inp) {
 			error = EISCONN;
 			break;
 		}
-		tcp_attach(so);
-		tp = sototcpcb(so);
-		if (so->so_options & SO_ACCEPTCONN) {
-			inp->inp_lhost = in_hostalloc(&n_lhost);	/*XXX*/
-			inp->inp_lport = in_pcbgenport(&tcb);
+		tp = tcp_newtcpcb();
+		if (tp == 0) {
+			error = ENOBUFS;
+			break;
+		}
+		error = in_pcballoc(so, &tcb, 2048, 2048, (struct sockaddr_in *)addr);
+		if (error) {
+			m_free(dtom(tp));
+			break;
+		}
+		inp = (struct inpcb *)so->so_pcb;
+		tp->t_inpcb = inp;
+		inp->inp_ppcb = (caddr_t)tp;
+		if (so->so_options & SO_ACCEPTCONN)
 			nstate = LISTEN;
-		} else
+		else
 			nstate = CLOSED;
 		break;
 
@@ -159,8 +169,8 @@ COUNT(TCP_USRREQ);
 	case PRU_CONNECT:
 		if (tp->t_state != 0 && tp->t_state != CLOSED)
 			goto bad;
-		inp->inp_fhost = in_hosteval((struct sockaddr *)addr, &error);
-		if (inp->inp_fhost == 0)
+		error = in_pcbsetpeer(inp, (struct sockaddr_in *)addr);
+		if (error)
 			break;
 		(void) tcp_sndctl(tp);
 		nstate = SYN_SENT;
@@ -168,7 +178,8 @@ COUNT(TCP_USRREQ);
 		break;
 
 	case PRU_ACCEPT:
-		return (EOPNOTSUPP);		/* XXX */
+		soisconnected(so);
+		break;
 
 	case PRU_DISCONNECT:
 		if ((tp->tc_flags & TC_FIN_RCVD) == 0)
@@ -297,11 +308,16 @@ abort:
 	return (error);
 }
 
-tcp_attach(so)
-	struct socket *so;
+struct tcpcb *
+tcp_newtcpcb()
 {
-	register struct tcpcb *tp = sototcpcb(so);
-COUNT(TCP_ATTACH);
+	struct mbuf *m = m_getclr(0);
+	register struct tcpcb *tp;
+COUNT(TCP_NEWTCPCB);
+
+	if (m == 0)
+		return (0);
+	tp = mtod(m, struct tcpcb *);
 
 	/*
 	 * Make empty reassembly queue.
@@ -316,6 +332,7 @@ COUNT(TCP_ATTACH);
 	    tp->iss = tcp_iss;
 	tp->snd_off = tp->iss + 1;
 	tcp_iss += (ISSINCR >> 1) + 1;
+	return (tp);
 }
 
 tcp_detach(tp)
@@ -332,6 +349,7 @@ tcp_disconnect(tp)
 {
 	register struct tcpiphdr *t;
 
+COUNT(TCP_DISCONNECT);
 	tcp_tcancel(tp);
 	t = tp->seg_next;
 	for (; t != (struct tcpiphdr *)tp; t = (struct tcpiphdr *)t->ti_next)
@@ -348,6 +366,7 @@ tcp_abort(tp)
 	register struct tcpcb *tp;
 {
 
+COUNT(TCP_ABORT);
 	switch (tp->t_state) {
 
 	case SYN_RCVD:
@@ -458,6 +477,7 @@ tcp_sense(m)
 	struct mbuf *m;
 {
 
+COUNT(TCP_SENSE);
 	return (EOPNOTSUPP);
 }
 
@@ -466,8 +486,8 @@ tcp_error(tp, errno)
 	int errno;
 {
 	struct socket *so = tp->t_inpcb->inp_socket;
-COUNT(TCP_ERROR);
 
+COUNT(TCP_ERROR);
 	so->so_error = errno;
 	sorwakeup(so);
 	sowwakeup(so);

@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	4.6	81/11/18	*/
+/*	udp_usrreq.c	4.7	81/11/20	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -8,7 +8,6 @@
 #include "../h/socket.h"
 #include "../h/socketvar.h"
 #include "../net/inet.h"
-#include "../net/inet_host.h"
 #include "../net/inet_pcb.h"
 #include "../net/inet_systm.h"
 #include "../net/ip.h"
@@ -43,7 +42,7 @@ udp_input(m0)
 	m = m0;
 	ui = mtod(m, struct udpiphdr *);
 	if (ui->ui_len > sizeof (struct ip))
-		ip_stripoptions((struct ip *)ui);
+		ip_stripoptions((struct ip *)ui, (char *)0);
 	if (m->m_len < sizeof (struct udpiphdr) &&
 	    m_pullup(m, sizeof (struct udpiphdr)) == 0) {
 		udpstat.udps_hdrops++;
@@ -54,7 +53,7 @@ udp_input(m0)
 	 * Make mbuf data length reflect udp length.
 	 * If not enough data to reflect udp length, drop.
 	 */
-	ulen = ntohs(ui->ui_ulen);
+	ulen = ntohs((u_short)ui->ui_ulen);
 	len = sizeof (struct udpiphdr) + ulen;
 	if (((struct ip *)ui)->ip_len != len) {
 		if (len > ((struct ip *)ui)->ip_len) {
@@ -71,7 +70,7 @@ udp_input(m0)
 	if (udpcksum) {
 		ui->ui_next = ui->ui_prev = 0;
 		ui->ui_x1 = 0;
-		ui->ui_len = htons(sizeof (struct udpiphdr) + ulen);
+		ui->ui_len = htons((u_short)(sizeof (struct udpiphdr) + ulen));
 		if (ui->ui_sum = inet_cksum(m, len)) {
 			udpstat.udps_badsum++;
 			printf("udp cksum %x\n", ui->ui_sum);
@@ -99,7 +98,7 @@ udp_input(m0)
 	 */
 	udp_in.sin_port = ui->ui_sport;
 	udp_in.sin_addr = ui->ui_src;
-	if (sbappendaddr(inp->inp_socket, &udp_in, m) == 0)
+	if (sbappendaddr(&inp->inp_socket->so_snd, (struct sockaddr *)&udp_in, m) == 0)
 		goto bad;
 	return;
 bad:
@@ -114,10 +113,8 @@ udp_ctlinput(m)
 }
 
 /*ARGSUSED*/
-udp_output(inp, raddr, rport, m0)
+udp_output(inp, m0)
 	struct inpcb *inp;
-	struct in_addr *raddr;
-	u_short rport;
 	struct mbuf *m0;
 {
 	register struct mbuf *m;
@@ -145,12 +142,12 @@ udp_output(inp, raddr, rport, m0)
 	ui->ui_next = ui->ui_prev = 0;
 	ui->ui_x1 = 0;
 	ui->ui_pr = IPPROTO_UDP;
-	ui->ui_len = htons(sizeof (struct udphdr) + len);
-	ui->ui_src.s_addr = htonl(inp->inp_lhost);
-	ui->ui_dst.s_addr = htonl(raddr->s_addr);
+	ui->ui_len = htons((u_short)(sizeof (struct udphdr) + len));
+	ui->ui_src.s_addr = htonl(inp->inp_laddr.s_addr);
+	ui->ui_dst.s_addr = htonl(inp->inp_faddr.s_addr);
 	ui->ui_sport = htons(inp->inp_lport);
 	ui->ui_dport = htons(inp->inp_fport);
-	ui->ui_ulen = htons(len);
+	ui->ui_ulen = htons((u_short)len);
 
 	/*
 	 * Stuff checksum and output datagram.
@@ -171,7 +168,6 @@ udp_usrreq(so, req, m, addr)
 	caddr_t addr;
 {
 	struct inpcb *inp = sotoinpcb(so);
-	struct sockaddr_in *sin;
 	int error;
 
 	switch (req) {
@@ -179,9 +175,9 @@ udp_usrreq(so, req, m, addr)
 	case PRU_ATTACH:
 		if (inp != 0)
 			return (EINVAL);
-		inp = in_pcballoc();
-		if (inp == NULL)
-			return (ENOBUFS);
+		error = in_pcballoc(so, &udb, 2048, 2048, (struct sockaddr_in *)addr);
+		if (error)
+			return (error);
 		so->so_pcb = (caddr_t)inp;
 		break;
 
@@ -192,10 +188,10 @@ udp_usrreq(so, req, m, addr)
 		break;
 
 	case PRU_CONNECT:
-		if (inp->inp_fhost)
+		if (inp->inp_faddr.s_addr)
 			return (EISCONN);
-		in_hosteval(inp, (struct sockaddr *)addr, &error);
-		if (inp->inp_fhost == 0)
+		error = in_pcbsetpeer(inp, (struct sockaddr_in *)addr);
+		if (error)
 			return (error);
 		soisconnected(so);
 		break;
@@ -204,10 +200,9 @@ udp_usrreq(so, req, m, addr)
 		return (EOPNOTSUPP);
 
 	case PRU_DISCONNECT:
-		if (inp->inp_fhost == 0)
+		if (inp->inp_faddr.s_addr == 0)
 			return (ENOTCONN);
-		in_hostfree(inp->inp_fhost);
-		inp->inp_fhost = 0;
+		inp->inp_faddr.s_addr = 0;
 		soisdisconnected(so);
 		break;
 
@@ -217,15 +212,18 @@ udp_usrreq(so, req, m, addr)
 
 	case PRU_SEND:
 		if (addr) {
-			if (inp->inp_fhost)
+			if (inp->inp_faddr.s_addr)
 				return (EISCONN);
-			sin = (struct sockaddr_in *)addr;
-			if (sin->sin_family != AF_INET)
-				return (EAFNOSUPPORT);
-			udp_output(inp, sin->sin_addr, sin->sin_port, m);
-		} else
-			udp_output(inp,
-			    inp->inp_fhost->h_addr, inp->inp_fport, m);
+			error = in_pcbsetpeer(inp, (struct sockaddr_in *)addr);
+			if (error)
+				return (error);
+		} else {
+			if (inp->inp_faddr.s_addr == 0)
+				return (ENOTCONN);
+		}
+		udp_output(inp, m);
+		if (addr)
+			inp->inp_faddr.s_addr = 0;
 		break;
 
 	case PRU_ABORT:
@@ -243,9 +241,10 @@ udp_usrreq(so, req, m, addr)
 	return (0);
 }
 
+/*ARGSUSED*/
 udp_sense(m)
 	struct mbuf *m;
 {
-	return (EOPNOTSUPP);
 
+	return (EOPNOTSUPP);
 }

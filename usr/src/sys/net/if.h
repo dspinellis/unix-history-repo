@@ -1,4 +1,4 @@
-/*	if.h	4.1	81/11/18	*/
+/*	if.h	4.2	81/11/20	*/
 
 /*
  * Structure defining a network interface.
@@ -21,6 +21,7 @@ struct ifnet {
 		int	(*if_output)();		/* output routine */
 		int	(*if_ubareset)();	/* uba reset routine */
 	} *if_sw;
+	struct	ifnet *if_next;
 };
 
 /* bits in if_flags */

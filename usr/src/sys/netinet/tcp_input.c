@@ -1,4 +1,4 @@
-/* tcp_input.c 1.25 81/11/18 */
+/* tcp_input.c 1.26 81/11/20 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -9,7 +9,6 @@
 #include "../net/inet_pcb.h"
 #include "../net/inet_systm.h"
 #include "../net/imp.h"
-#include "../net/inet_host.h"
 #include "../net/ip.h"
 #include "../net/ip_var.h"
 #include "../net/tcp.h"
@@ -23,6 +22,7 @@ tcp_drain()
 {
 	register struct inpcb *ip;
 
+COUNT(TCP_DRAIN);
 	for (ip = tcb.inp_next; ip != &tcb; ip = ip->inp_next)
 		tcp_drainunack(intotcpcb(ip));
 }
@@ -32,6 +32,7 @@ tcp_drainunack(tp)
 {
 	register struct mbuf *m;
 
+COUNT(TCP_DRAINUNACK);
 	for (m = tp->seg_unack; m; m = m->m_act)
 		m_freem(m);
 	tp->seg_unack = 0;
@@ -41,8 +42,11 @@ tcp_ctlinput(m)
 	struct mbuf *m;
 {
 
+COUNT(TCP_CTLINPUT);
 	m_freem(m);
 }
+
+struct	sockaddr_in tcp_sockaddr = { AF_INET };
 
 tcp_input(m0)
 	struct mbuf *m0;
@@ -68,7 +72,7 @@ COUNT(TCP_INPUT);
 	m = m0;
 	ti = mtod(m, struct tcpiphdr *);
 	if (ti->ti_len > sizeof (struct ip))
-		ip_stripoptions((struct ip *)ti);
+		ip_stripoptions((struct ip *)ti, (char *)0);
 	if (m->m_len < sizeof (struct tcpiphdr) &&
 	    m_pullup(m, sizeof (struct tcpiphdr)) == 0) {
 		tcpstat.tcps_hdrops++;
@@ -83,7 +87,7 @@ COUNT(TCP_INPUT);
 	if (tcpcksum) {
 		ti->ti_next = ti->ti_prev = 0;
 		ti->ti_x1 = 0;
-		ti->ti_len = htons(tlen);
+		ti->ti_len = htons((u_short)tlen);
 		if (ti->ti_sum = inet_cksum(m, len)) {
 			tcpstat.tcps_badsum++;
 			printf("tcp cksum %x\ti", ti->ti_sum);
@@ -111,7 +115,7 @@ COUNT(TCP_INPUT);
 	ti->ti_dst.s_addr = ntohl(ti->ti_dst.s_addr);
 	ti->ti_sport = ntohs(ti->ti_sport);
 	ti->ti_dport = ntohs(ti->ti_dport);
-	inp = in_pcblookup(&tcb, &ti->ti_src, ti->ti_sport, &ti->ti_dst, ti->ti_dport);
+	inp = in_pcblookup(&tcb, ti->ti_src, ti->ti_sport, ti->ti_dst, ti->ti_dport);
 	if (inp == 0)
 		goto notwanted;
 	tp = intotcpcb(inp);		/* ??? */
@@ -167,8 +171,7 @@ COUNT(TCP_INPUT);
 			tp->t_rexmt = 0;
 			tp->t_rexmttl = 0;
 			tp->t_persist = 0;
-			in_hostfree(inp->inp_fhost);
-			inp->inp_fhost = 0;
+			inp->inp_faddr.s_addr = 0;
 			tp->t_state = LISTEN;
 			goto bad;
 
@@ -236,12 +239,12 @@ good:
 	switch (tp->t_state) {
 
 	case LISTEN:
-		if ((tiflags&TH_SYN) == 0 ||
-		    ((inp->inp_lhost = in_hostalloc(&ti->ti_src)) == 0)) {
+		tcp_sockaddr.sin_addr = ti->ti_src;
+		tcp_sockaddr.sin_port = ti->ti_sport;
+		if ((tiflags&TH_SYN) == 0 || in_pcbsetpeer(inp, &tcp_sockaddr)) {
 			nstate = EFAILEC;
 			goto done;
 		}
-		inp->inp_fport = ti->ti_sport;
 		tp->t_template = tcp_template(tp);
 		tcp_ctldat(tp, ti, 1);
 		if (tp->tc_flags&TC_FIN_RCVD) {
@@ -410,7 +413,7 @@ done:
 			register struct mbuf *n;
 			/* inline expansion of m_freem */
 			while (m) {
-				MFREE(n, m);
+				MFREE(m, n);
 				m = n;
 			}
 		}
@@ -433,7 +436,7 @@ notwanted:
 	if (tiflags&TH_ACK)
 		ti->ti_seq = ti->ti_ackno;
 	else {
-		ti->ti_ackno = htonl(ntohl(ti->ti_seq) + ti->ti_len);
+		ti->ti_ackno = htonl((unsigned)(ntohl(ti->ti_seq) + ti->ti_len));
 		ti->ti_seq = 0;
 	}
 	ti->ti_flags = ((tiflags & TH_ACK) ? 0 : TH_ACK) | TH_RST;

@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.6	81/11/18	*/
+/*	uipc_socket.c	4.7	81/11/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -90,6 +90,10 @@ sofree(so)
 {
 
 COUNT(SOFREE);
+	if (so->so_pcb || (so->so_state & SS_USERGONE) == 0)
+		return;
+	sbrelease(&so->so_snd);
+	sbrelease(&so->so_rcv);
 	m_free(dtom(so));
 }
 
@@ -125,8 +129,8 @@ COUNT(SOCLOSE);
 	}
 	u.u_error = (*so->so_proto->pr_usrreq)(so, PRU_DETACH, 0, 0);
 discard:
-	if (so->so_pcb == 0)
-		sofree(so);
+	so->so_state |= SS_USERGONE;
+	sofree(so);
 	splx(s);
 }
 

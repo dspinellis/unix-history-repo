@@ -1,4 +1,4 @@
-/*	ip_output.c	1.14	81/11/18	*/
+/*	ip_output.c	1.15	81/11/20	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -8,7 +8,6 @@
 #include "../net/inet.h"
 #include "../net/inet_systm.h"
 #include "../net/imp.h"
-#include "../net/inet_host.h"
 #include "../net/ip.h"
 #include "../net/ip_var.h"
 
@@ -62,7 +61,7 @@ COUNT(IP_OUTPUT);
 		mh->m_off = MMAXOFF - hlen;
 		mhip = mtod(mh, struct ip *);
 		*mhip = *ip;
-		if (ip->ip_hl > sizeof (struct ip) >> 2) {
+		if (hlen > sizeof (struct ip)) {
 			int olen = ip_optcopy(ip, mhip, off);
 			mh->m_len = sizeof (struct ip) + olen;
 		} else
@@ -79,7 +78,7 @@ COUNT(IP_OUTPUT);
 			m_free(mh);
 			goto bad;
 		}
-		ip_send(mh);
+		ip_send(mhip);
 	}
 bad:
 	m_freem(m);
@@ -87,7 +86,7 @@ bad:
 
 /*
  * Copy options from ip to jp.
- * If off is 0 all options are copies
+ * If off is 0 all options are copied
  * otherwise copy selectively.
  */
 ip_optcopy(ip, jp, off)
@@ -97,6 +96,7 @@ ip_optcopy(ip, jp, off)
 	register u_char *cp, *dp;
 	int opt, optlen, cnt;
 
+COUNT(IP_OPTCOPY);
 	cp = (u_char *)(ip + 1);
 	dp = (u_char *)(jp + 1);
 	cnt = (ip->ip_hl << 2) - sizeof (struct ip);
@@ -111,7 +111,7 @@ ip_optcopy(ip, jp, off)
 		if (optlen > cnt)			/* XXX */
 			optlen = cnt;			/* XXX */
 		if (off == 0 || IPOPT_COPIED(opt)) {
-			bcopy(cp, dp, optlen);
+			bcopy((caddr_t)cp, (caddr_t)dp, (unsigned)optlen);
 			dp += optlen;
 		}
 	}
@@ -119,6 +119,8 @@ ip_optcopy(ip, jp, off)
 		*dp++ = IPOPT_EOL;
 	return (optlen);
 }
+
+/* REST OF CODE HERE IS GARBAGE */
 
 ip_send(ip)
 	register struct ip *ip;
@@ -161,3 +163,5 @@ COUNT(IP_SEND);
 	setsoftnet();
 #endif IMPLOOP
 }
+
+/* END GARBAGE */
