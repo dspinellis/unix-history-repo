@@ -1,4 +1,4 @@
-#	srt0.c	4.1	%G%
+#	srt0.c	4.2	%G%
 
 # Startup code for standalone system
 # Non-relocating version -- for programs which are loaded by boot
@@ -18,7 +18,7 @@
 ubic:
 	movl	*$PHYSUBA,r0		# while ((up->uba_cnfgr & UBIC) == 0)
 	bitl	$0x10000,r0		# 	continue;
-	jeql	wait
+	jeql	ubic
 	movab	_edata,r0
 clr:
 	clrl	(r0)+
