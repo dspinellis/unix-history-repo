@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.25 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -325,12 +325,15 @@ displaydir(stats, num)
 {
 	register char *p, *savedpath;
 	LS *lp;
-	u_long save;
 
 	if (num > 1 && !f_specialdir) {
-		save = stats[0].lstat.st_flags;
+		u_long save1, save2;
+
+		save1 = stats[0].lstat.st_btotal;
+		save2 = stats[0].lstat.st_maxlen;
 		qsort((char *)stats, num, sizeof(LS), sortfcn);
-		stats[0].lstat.st_flags = save;
+		stats[0].lstat.st_btotal = save1;
+		stats[0].lstat.st_maxlen = save2;
 	}
 
 	printfcn(stats, num);
@@ -457,24 +460,15 @@ tabdir(lp, s_stats, s_names)
 		/* save name length for -C format */
 		stats[cnt].len = dp->d_namlen;
 		/* calculate number of blocks if -l format */
-		if (f_longform)
+		if (f_longform || f_size)
 			blocks += stats[cnt].lstat.st_blocks;
 		/* save max length if -C format */
-		else if (!f_singlecol && maxlen < (int)dp->d_namlen)
+		if (!f_longform && !f_singlecol && maxlen < (int)dp->d_namlen)
 			maxlen = dp->d_namlen;
 		++cnt;
 	}
-	/*
-	 * overload -- we probably have to save either blocks or maxlen
-	 * with the lstat array, so we stuff it into an unused field in
-	 * the first stat structure.  If there's ever a type larger than
-	 * u_long, fix this.  This information must be saved if qsort
-	 * is called.
-	 */
-	if (f_longform)
-		stats[0].lstat.st_flags = blocks;
-	else if (!f_singlecol)
-		stats[0].lstat.st_flags = maxlen;
+	stats[0].lstat.st_btotal = blocks;
+	stats[0].lstat.st_maxlen = maxlen;
 	closedir(dirp);
 	return(cnt);
 }
