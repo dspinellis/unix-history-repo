@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file @(#)termcap.src	1.3	(Berkeley) %G%
+#	Termcap source file @(#)termcap.src	1.4	(Berkeley) %G%
 #	Mark Horton, U.C. Berkeley
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
@@ -793,8 +793,8 @@ NL|aaa-60|ann arbor ambassador/60 lines:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;0;0;60p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#60:tc=aaa-unk:
 NS|aaa-unk-s|ann arbor ambassador unknown with/status:\
-	:hs:i2=\E7\E[>51h\E[H\E[2K\E[>51l\E8:\
-	:ts=\E7\E[>51h\E[H\E[2K:fs=\E[>51l\E8:\
+	:hs:es:i2=\E7\E[>51h\E[H\E[2K\E[>51l\E8:\
+	:ts=\E7\E[>51h\E[H\E[2K\E[%i%d`:fs=\E[>51l\E8:\
 	:ds=\E7\E[>51h\E[H\E[2K\E[>51l\E8:\
 	:tc=aaa-unk:
 NM|aaa-18-s|ambassador|ann arbor ambassador/18 lines + status line:\
