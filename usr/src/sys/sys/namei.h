@@ -1,4 +1,4 @@
-/*	namei.h	6.8	85/02/15	*/
+/*	namei.h	6.9	85/03/07	*/
 
 #ifndef _NAMEI_
 #define	_NAMEI_
@@ -20,7 +20,6 @@ struct nameidata {
 	short	ni_error;		/* error return if any */
 	off_t	ni_endoff;		/* end of useful stuff in directory */
 	struct	inode *ni_pdir;		/* inode of parent directory of dirp */
-	struct	buf *ni_pathbp;		/* unresolved pathname */
 	struct	iovec ni_iovec;		/* MUST be pointed to by ni_iov */
 	struct	uio ni_uio;		/* directory I/O parameters */
 	struct	direct ni_dent;		/* current directory entry */
