@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	1.19 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.20 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -1473,6 +1473,7 @@ makecg()
 	int c, blk;
 	daddr_t dbase, d, dmin, dmax;
 	long i, j, s;
+	int x;
 	register struct csum *cs;
 	register DINODE *dp;
 
@@ -1489,8 +1490,9 @@ makecg()
 		dbase = cgbase(&sblock, c);
 		dmax = dbase + sblock.fs_fpg;
 		if (dmax > sblock.fs_size)
-			dmax = sblock.fs_size;
-		dmin = cgdmin(&sblock, c) - dbase;
+			for ( ; dmax > sblock.fs_size ; dmax--)
+				clrbit(cgrp.cg_free, dmax - dbase);
+		dmin = sblock.fs_dblkno;
 		cs = &sblock.fs_cs(&sblock, c);
 		cgrp.cg_time = time(0);
 		cgrp.cg_magic = CG_MAGIC;
@@ -1556,10 +1558,12 @@ makecg()
 				fragacct(&sblock, blk, cgrp.cg_frsum, 1);
 			}
 		}
+		x = 0;
 		for (j = d; d < dmax - dbase; d++) {
 			if (!getbmap(dbase+d)) {
 				setbit(cgrp.cg_free, d);
 				cgrp.cg_cs.cs_nffree++;
+				x++;
 			} else
 				clrbit(cgrp.cg_free, d);
 		}
