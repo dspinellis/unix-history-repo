@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfs_vfsops.c	7.21 (Berkeley) %G%
+ *	@(#)mfs_vfsops.c	7.22 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -15,6 +15,7 @@
 #include <sys/mount.h>
 #include <sys/signalvar.h>
 #include <sys/vnode.h>
+#include <sys/malloc.h>
 
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>
@@ -83,7 +84,8 @@ mfs_mount(mp, path, data, ndp, p)
 	devvp->v_type = VBLK;
 	if (checkalias(devvp, makedev(255, mfs_minor++), (struct mount *)0))
 		panic("mfs_mount: dup dev");
-	mfsp = VTOMFS(devvp);
+	mfsp = (struct mfsnode *)malloc(sizeof *mfsp, M_MFSNODE, M_WAITOK);
+	devvp->v_data = mfsp;
 	mfsp->mfs_baseoff = args.base;
 	mfsp->mfs_size = args.size;
 	mfsp->mfs_vnode = devvp;
