@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ip_icmp.c	7.5 (Berkeley) %G%
+ *	@(#)ip_icmp.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -251,7 +251,7 @@ icmp_input(m, ifp)
 		if (icmplen < ICMP_MASKLEN || (ia = ifptoia(ifp)) == 0)
 			break;
 		icp->icmp_type = ICMP_MASKREPLY;
-		icp->icmp_mask = ntohl(ia->ia_netmask);
+		icp->icmp_mask = htonl(ia->ia_subnetmask);
 		if (ip->ip_src.s_addr == 0) {
 			if (ia->ia_ifp->if_flags & IFF_BROADCAST)
 			    ip->ip_src = satosin(&ia->ia_broadaddr)->sin_addr;
