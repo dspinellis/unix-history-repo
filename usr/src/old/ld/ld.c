@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ld.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)ld.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -698,8 +698,8 @@ load1arg(cp)
 		}
 		while (ldrand())
 			continue;
-		cfree((char *)tab);
-		cfree(tabstr);
+		free((char *)tab);
+		free(tabstr);
 		nextlibp(-1);
 		break;
 
@@ -778,7 +778,7 @@ ldrand()
 
 	tplast = &tab[tnum-1];
 	for (tp = tab; tp <= tplast; tp++) {
-		if ((hp = slookup(tp->ran_un.ran_name)) == 0)
+		if ((hp = slookup(tp->ran_un.ran_name)) == 0 || *hp == 0)
 			continue;
 		sp = *hp;
 		if (sp->n_type != N_EXT+N_UNDF)
@@ -1458,8 +1458,8 @@ load2td(creloc, position, b1, b2)
 	bwrite(codep, codesz, b1);
 	if (rflag)
 		bwrite(relp, relsz, b2);
-	cfree((char *)relp);
-	cfree(codep);
+	free((char *)relp);
+	free(codep);
 }
 
 finishout()
