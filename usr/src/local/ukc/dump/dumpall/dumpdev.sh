@@ -1,12 +1,14 @@
 #!/bin/sh
-#	dumpdev.sh	1.1	%G%
+#	dumpdev.sh	1.2	%G%
 #	shell script to dump a single device
 #	the script is called with a single
 #	parameter - which is the device to be dumped
 #
-dumpdata=dumpdata
+PATH=:/etc:/bin:/usr/bin:
+#
+dumpdata=/etc/dumpdata
 dumpcycle=${dumpdata}/dumpcycle
-dump=one
+dump=/etc/dump
 labelchk="t"
 #
 dev=$1
