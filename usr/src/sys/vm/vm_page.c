@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_page.c	7.14 (Berkeley) %G%
+ *	@(#)vm_page.c	7.15 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -197,8 +197,8 @@ void vm_page_startup(start, end)
 	 *	of a page structure per page).
 	 */
 
-	cnt.v_free_count = npages =
-		(*end - *start)/(PAGE_SIZE + sizeof(struct vm_page));
+	cnt.v_free_count = npages = (*end - *start + sizeof(struct vm_page))
+		/ (PAGE_SIZE + sizeof(struct vm_page));
 
 	/*
 	 *	Record the extent of physical memory that the
