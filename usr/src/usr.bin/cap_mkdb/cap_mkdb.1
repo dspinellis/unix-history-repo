@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)cap_mkdb.1	5.1 (Berkeley) %G%
+.\"	@(#)cap_mkdb.1	5.2 (Berkeley) %G%
 .\"
 .Dd ""
 .Dt CAP_MKDB 1
@@ -26,18 +26,19 @@ logical database constructed by the concatenation of the specified
 files .
 The hashed database is stored into a file named by the basename
 of the first file argument and the string
-.Dq .db .
+.Dq .db .  
 The
 .Xr getcap 3
 routines can access the database in this form much more quickly
-than they can the original text file.
+than they can the original text file(s).
 .Pp
-The options are as follows:
+.Sh OPTIONS
 .Bl -tag -width XXXXXX -indent
 .It Fl f Ar outfile
 Specify a different database basename.
 .El
 .Pp
+.Sh RETURN VALUE
 The
 .Nm cap_mkdb 
 utility exits 0 on success and >0 if an error occurs.
@@ -45,3 +46,8 @@ utility exits 0 on success and >0 if an error occurs.
 .Xr dbopen 3 ,
 .Xr getcap 3 ,
 .Xr termcap 5
+
+
+
+
+
