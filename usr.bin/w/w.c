@@ -179,6 +179,11 @@ main(argc, argv)
 		*nextp = ep;
 		nextp = &(ep->next);
 		bcopy(&utmp, &(ep->utmp), sizeof (struct utmp));
+		if (!strncmp(ep->utmp.ut_line, "uu", 2)) {
+			ep->idle = 0;
+			ep->tdev = -1;
+			continue;
+		}
 		stp = ttystat(ep->utmp.ut_line);
 		ep->tdev = stp->st_rdev;
 #if defined(hp300) || defined(i386)
