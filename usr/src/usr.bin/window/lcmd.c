@@ -1,11 +1,12 @@
 #ifndef lint
-static	char *sccsid = "@(#)lcmd.c	3.18 84/04/08";
+static	char *sccsid = "@(#)lcmd.c	3.19 84/05/06";
 #endif
 
 #include "defs.h"
 #include "value.h"
 #include "lcmd.h"
 
+int l_alias();
 int l_close();
 int l_cursormodes();
 int l_debug();
@@ -20,11 +21,13 @@ int l_shell();
 int l_source();
 int l_terse();
 int l_time();
+int l_unalias();
 int l_unset();
 int l_variable();
 int l_window();
 int l_write();
 
+struct lcmd_arg arg_alias[];
 struct lcmd_arg arg_cursormodes[];
 struct lcmd_arg arg_debug[];
 struct lcmd_arg arg_escape[];
@@ -36,12 +39,14 @@ struct lcmd_arg arg_shell[];
 struct lcmd_arg arg_source[];
 struct lcmd_arg arg_terse[];
 struct lcmd_arg arg_time[];
+struct lcmd_arg arg_unalias[];
 struct lcmd_arg arg_unset[];
 struct lcmd_arg arg_window[];
 struct lcmd_arg arg_null[] = 0;
 
 struct lcmd_tab lcmd_tab[] = {
 	"%",		1,	l_select,	arg_select,
+	"alias",	1,	l_alias,	arg_alias,
 	"buffer",	2,	l_nline,	arg_nline,
 	"close",	2,	l_close,	0,
 	"cursormodes",	2,	l_cursormodes,	arg_cursormodes,
@@ -57,7 +62,8 @@ struct lcmd_tab lcmd_tab[] = {
 	"source",	2,	l_source,	arg_source,
 	"terse",	2,	l_terse,	arg_terse,
 	"time",		2,	l_time,		arg_time,
-	"unset",	1,	l_unset,	arg_unset,
+	"unalias",	3,	l_unalias,	arg_unalias,
+	"unset",	3,	l_unset,	arg_unset,
 	"variable",	1,	l_variable,	arg_null,
 	"window",	2,	l_window,	arg_window,
 	"write",	2,	l_write,	0,
@@ -87,10 +93,12 @@ char *filename;
 	return 0;
 }
 
-dolongcmd(buffer)
+dolongcmd(buffer, arg, narg)
 char *buffer;
+struct value *arg;
+int narg;
 {
-	if (cx_beginbuf(buffer) < 0)
+	if (cx_beginbuf(buffer, arg, narg) < 0)
 		return -1;
 	p_start();
 	err_end();

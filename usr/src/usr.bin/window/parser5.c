@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)parser5.c	3.3 84/04/06";
+static	char *sccsid = "@(#)parser5.c	3.4 84/05/06";
 #endif
 
 #include "parser.h"
@@ -40,10 +40,6 @@ char flag;
 		return -1;
 	switch (v->v_type) {
 	case V_NUM:
-		if (op == T_DOLLAR && (v->v_str = str_itoa(v->v_num)) == 0) {
-			p_memerror();
-			return -1;
-		}
 		break;
 	case V_STR:
 		switch (op) {
@@ -62,20 +58,31 @@ char flag;
 	switch (op) {
 	case T_DOLLAR: {
 		struct var *r;
-		if ((r = var_lookup(v->v_str)) == 0) {
-			p_error("%s: Undefined variable.", v->v_str);
-			str_free(v->v_str);
-			v->v_type = V_ERR;
-			return 0;
-		}
-		str_free(v->v_str);
-		if (flag) {
-			*v = r->r_val;
-			if (v->v_type == V_STR
-			    && (v->v_str = str_cpy(v->v_str)) == 0) {
-				p_memerror();
-				return -1;
+		if (v->v_type == V_NUM) {
+			v->v_num--;
+			if (cx.x_type != X_BUF || cx.x_arg == 0
+			    v->v_num < 0 || v->v_num >= cx.x_narg) {
+				p_error("%d: No such argument.", v->v_num);
+				v->v_type = V_ERR;
+				return 0;
 			}
+			if (flag)
+				*v = cx.x_arg[v->v_num];
+		} else {
+			if ((r = var_lookup(v->v_str)) == 0) {
+				p_error("%s: Undefined variable.", v->v_str);
+				str_free(v->v_str);
+				v->v_type = V_ERR;
+				return 0;
+			}
+			str_free(v->v_str);
+			if (flag)
+				*v = r->r_val;
+		}
+		if (v->v_type == V_STR
+		    && (v->v_str = str_cpy(v->v_str)) == 0) {
+			p_memerror();
+			return -1;
 		}
 		break;
 		}
@@ -104,14 +111,8 @@ register struct value *v;
 char flag;
 {
 	v->v_type = V_ERR;
-#ifdef DEBUG
-	error("expr12: %d.", flag);
-#endif
 	switch (token) {
 	case T_MOD:
-#ifdef DEBUG
-		error("expr12: %.");
-#endif
 		if (flag) {
 			v->v_type = V_STR;
 			v->v_str = str_cpy("%");
@@ -119,9 +120,6 @@ char flag;
 		(void) s_gettok();
 		break;
 	case T_NUM:
-#ifdef DEBUG
-		error("expr12: NUM %d.", token_num);
-#endif
 		if (flag) {
 			v->v_type = V_NUM;
 			v->v_num = token_num;
@@ -129,9 +127,6 @@ char flag;
 		(void) s_gettok();
 		break;
 	case T_STR:
-#ifdef DEBUG
-		error("expr12: STR %s.", token_str);
-#endif
 		if (flag) {
 			v->v_type = V_STR;
 			v->v_str = token_str;
@@ -153,33 +148,15 @@ char flag;
 		(void) s_gettok();
 		break;
 	default:
-#ifdef DEBUG
-		error("expr12: token %d.", token);
-#endif
 		return -1;
 	}
 	while (token == T_LP) {
 		char *cmd;
 
 		(void) s_gettok();
-		switch (v->v_type) {
-		case V_STR:
-			cmd = v->v_str;
-			break;
-		case V_ERR:
-			flag = 0;
-			cmd = 0;
-			break;
-		case V_NUM:
-			if ((cmd = str_itoa(v->v_num)) == 0) {
-				p_memerror();
-				return -1;
-			}
-			break;
-		}
-#ifdef DEBUG
-		error("expr12: function %s.", cmd);
-#endif
+		if (p_convstr(v) < 0)
+			return -1;
+		cmd = v->v_type == V_STR ? v->v_str : 0;
 		if (p_function(cmd, v, flag) < 0) {
 			if (cmd)
 				str_free(cmd);

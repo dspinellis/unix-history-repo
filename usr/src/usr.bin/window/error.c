@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)error.c	3.9 84/04/08";
+static	char *sccsid = "@(#)error.c	3.10 84/05/06";
 #endif
 
 #include "defs.h"
@@ -13,9 +13,12 @@ static	char *sccsid = "@(#)error.c	3.9 84/04/08";
 error(fmt, a, b, c, d, e, f, g, h)
 char *fmt;
 {
+	register struct context *x;
 	register struct ww *w;
 
-	if (cx.x_type != X_FILE) {
+	for (x = &cx; x != 0 && x->x_type != X_FILE; x = x->x_link)
+		;
+	if (x == 0) {
 		if (terse)
 			wwbell();
 		else {
@@ -24,30 +27,30 @@ char *fmt;
 		}
 		return;
 	}
-	if (cx.x_noerr)
+	if (x->x_noerr)
 		return;
-	if ((w = cx.x_errwin) == 0) {
+	if ((w = x->x_errwin) == 0) {
 		char buf[512];
 
-		(void) sprintf(buf, "Errors from %s", cx.x_filename);
-		if ((w = cx.x_errwin = openiwin(ERRLINES, buf)) == 0) {
+		(void) sprintf(buf, "Errors from %s", x->x_filename);
+		if ((w = x->x_errwin = openiwin(ERRLINES, buf)) == 0) {
 			wwputs("Can't open error window.  ", cmdwin);
-			cx.x_noerr = 1;
+			x->x_noerr = 1;
 			return;
 		}
 	}
 	if (more(w, 0) == 2) {
-		cx.x_noerr = 1;
+		x->x_noerr = 1;
 		return;
 	}
-	wwprintf(w, "line %d: ", cx.x_lineno);
+	wwprintf(w, "line %d: ", x->x_lineno);
 	wwprintf(w, fmt, a, b, c, d, e, f, g, h);
 	wwputc('\n', w);
 }
 
 err_end()
 {
-	if (cx.x_errwin != 0) {
+	if (cx.x_type == X_FILE && cx.x_errwin != 0) {
 		if (!cx.x_noerr)
 			waitnl(cx.x_errwin);
 		closeiwin(cx.x_errwin);

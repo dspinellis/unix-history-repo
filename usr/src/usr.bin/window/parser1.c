@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)parser1.c	3.13 84/04/06";
+static	char *sccsid = "@(#)parser1.c	3.14 84/05/06";
 #endif
 
 #include "parser.h"
@@ -36,25 +36,13 @@ char flag;
 p_statement(flag)
 char flag;
 {
-#ifdef DEBUG
-	error("statement: %d.", flag);
-#endif
 	switch (token) {
 	case T_EOL:
-#ifdef DEBUG
-		error("statement: EOL.", flag);
-#endif
 		(void) s_gettok();
 		return 0;
 	case T_IF:
-#ifdef DEBUG
-		error("statement: IF.", flag);
-#endif
 		return p_if(flag);
 	default:
-#ifdef DEBUG
-		error("statement: command.", flag);
-#endif
 		return p_command(flag);
 	}
 }
@@ -118,10 +106,8 @@ char flag;
 {
 	struct value t;
 	char *cmd;
+	int p_function(), p_assign();
 
-#ifdef DEBUG
-	error("command: %d.", flag);
-#endif
 	switch (token) {
 	case T_MOD:
 		t.v_type = V_STR;
@@ -142,44 +128,17 @@ char flag;
 		if (p_expr(&t, flag) < 0)
 			return -1;
 		if (token == T_EOF) {
-#ifdef DEBUG
-			error("command: expression.");
-#endif
 			val_free(t);
 			return 0;
 		}
 	}
-	switch (t.v_type) {
-	case V_ERR:
-		cmd = 0;
-		break;
-	case V_STR:
-		cmd = t.v_str;
-		break;
-	case V_NUM:
-		if ((cmd = str_itoa(t.v_num)) == 0) {
-			p_memerror();
-			return -1;
-		}
-	}
-	if (token == T_ASSIGN) {
-#ifdef DEBUG
-		error("command: assignment %s.", cmd == 0 ? "ERR" : cmd);
-#endif
-		if (p_assign(cmd, &t, flag) < 0) {
-			if (cmd)
-				str_free(cmd);
-			return -1;
-		}
-	} else {
-#ifdef DEBUG
-		error("command: function %s.", cmd == 0 ? "ERR" : cmd);
-#endif
-		if (p_function(cmd, &t, flag) < 0) {
-			if (cmd)
-				str_free(cmd);
-			return -1;
-		}
+	if (token != T_ASSIGN && p_convstr(&t) < 0)
+		return -1;
+	cmd = t.v_type == V_STR ? t.v_str : 0;
+	if ((*(token == T_ASSIGN ? p_assign : p_function))(cmd, &t, flag) < 0) {
+		if (cmd)
+			str_free(cmd);
+		return -1;
 	}
 	if (cmd)
 		str_free(cmd);

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	3.24 84/04/16";
+static	char *sccsid = "@(#)main.c	3.25 84/05/06";
 #endif
 
 #include "defs.h"
@@ -119,7 +119,7 @@ char **argv;
 	setterse(tflag);
 	setcmd(1);
 	if (cmd != 0)
-		(void) dolongcmd(cmd);
+		(void) dolongcmd(cmd, (struct value *)0, 0);
 	if (!fflag) {
 		if (dflag || doconfig() < 0)
 			dodefault();

@@ -1,10 +1,11 @@
 #ifndef lint
-static	char *sccsid = "@(#)parser2.c	3.4 84/04/06";
+static	char *sccsid = "@(#)parser2.c	3.5 84/05/06";
 #endif
 
 #include "parser.h"
 #include "var.h"
 #include "lcmd.h"
+#include "alias.h"
 
 /*
  * name == 0 means we don't have a function name but
@@ -15,31 +16,34 @@ char *name;
 register struct value *v;
 {
 	struct value t;
-	register struct lcmd_tab *c;
+	register struct lcmd_tab *c = 0;
+	register struct alias *a = 0;
 	register struct lcmd_arg *ap;
 	register i;
 	struct value av[LCMD_NARG + 1];
 	register struct value *vp;
 
-	if (name != 0) {
-		if ((c = lcmd_lookup(name)) == 0) {
-			p_error("%s: No such command.", name);
+	if (name != 0)
+		if (c = lcmd_lookup(name))
+			name = c->lc_name;
+		else if (a = alias_lookup(name))
+			name = a->a_name;
+		else {
+			p_error("%s: No such command or alias.", name);
 			flag = 0;
 		}
-	} else
-		c = 0;
 
-	if (c != 0)
-		for (vp = av; vp < &av[LCMD_NARG + 1]; vp++)
-			vp->v_type = V_ERR;
+	for (vp = av; vp < &av[LCMD_NARG + 1]; vp++)
+		vp->v_type = V_ERR;
 
 	for (i = 0;;) {
 		ap = 0;
+		vp = 0;
 		if (p_expr0(&t, flag) < 0)
 			if (!p_synerred() && token == T_MUL) {
 				if (c != 0)
 					if (c->lc_arg[i].arg_name == 0)
-						p_error("%s: Too many arguments.", c->lc_name);
+						p_error("%s: Too many arguments.", name);
 					else
 						i++;
 				(void) s_gettok();
@@ -49,29 +53,17 @@ register struct value *v;
 		if (t.v_type == V_ERR)
 			flag = 0;
 		if (token != T_ASSIGN) {
-			if (c != 0)
-				if (i >= LCMD_NARG || c->lc_arg != 0
-				    && (ap = c->lc_arg + i)->arg_name == 0) {
-					p_error("%s: Too many arguments.",
-						c->lc_name);
-					ap = 0;
-					vp = 0;
-					flag = 0;
-				} else
-					vp = &av[i++];
+			if (i >= LCMD_NARG || c != 0 && c->lc_arg != 0
+			    && (ap = c->lc_arg + i)->arg_name == 0) {
+				p_error("%s: Too many arguments.", name);
+				flag = 0;
+			} else
+				vp = &av[i++];
 		} else {
 			char *tmp;
-			switch (t.v_type) {
-			case V_ERR:
-				tmp = 0;
-				break;
-			case V_NUM:
-				if (p_convstr(&t) < 0)
-					goto abort;
-			case V_STR:
-				tmp = t.v_str;
-				break;
-			}
+			if (p_convstr(&t) < 0)
+				goto abort;
+			tmp = t.v_type == V_STR ? t.v_str : 0;
 			(void) s_gettok();
 			if (p_expr(&t, flag) < 0) {
 				if (tmp)
@@ -82,18 +74,24 @@ register struct value *v;
 			if (t.v_type == V_ERR)
 				flag = 0;
 			if (tmp) {
-				/* we know c != 0 */
-				for (ap = c->lc_arg, vp = av;
-				     ap != 0 && ap->arg_name != 0; ap++, vp++)
-					if (str_match(tmp, ap->arg_name,
-							ap->arg_minlen))
-						break;
-				if (ap == 0 || ap->arg_name == 0) {
-					p_error("%s: Unknown argument \"%s\".",
-						c->lc_name, tmp);
+				if (c == 0) {
+					/* an aliase */
+					p_error("%s: Bad alias syntax.", name);
 					flag = 0;
-					ap = 0;
-					vp = 0;
+				} else {
+					for (ap = c->lc_arg, vp = av;
+					     ap != 0 && ap->arg_name != 0 &&
+						!str_match(tmp, ap->arg_name,
+							ap->arg_minlen);
+					     ap++, vp++)
+						;
+					if (ap == 0 || ap->arg_name == 0) {
+						p_error("%s: Unknown argument \"%s\".",
+							name, tmp);
+						flag = 0;
+						ap = 0;
+						vp = 0;
+					}
 				}
 				str_free(tmp);
 			}
@@ -101,7 +99,7 @@ register struct value *v;
 		if (ap != 0) {
 			if (vp->v_type != V_ERR) {
 				p_error("%s: Argument %d (%s) duplicated.",
-					c->lc_name, ap - c->lc_arg + 1,
+					name, ap - c->lc_arg + 1,
 					ap->arg_name);
 				flag = 0;
 				vp = 0;
@@ -110,7 +108,7 @@ register struct value *v;
 			} else if (ap->arg_type == ARG_NUM && t.v_type != V_NUM
 			    || ap->arg_type == ARG_STR && t.v_type != V_STR) {
 				p_error("%s: Argument %d (%s) type mismatch.",
-					c->lc_name, ap - c->lc_arg + 1,
+					name, ap - c->lc_arg + 1,
 					ap->arg_name);
 				flag = 0;
 				vp = 0;
@@ -130,15 +128,22 @@ register struct value *v;
 		flag = 0;		/* look for legal follow set */
 	v->v_type = V_ERR;
 	if (flag)
-		(*c->lc_func)(v, av);
-	if (c != 0)
-		for (vp = av; vp < &av[LCMD_NARG]; vp++)
-			val_free(*vp);
+		if (c != 0)
+			(*c->lc_func)(v, av);
+		else
+			if (dolongcmd(a->a_buf, av, i) < 0)
+				p_memerror();
+	if (p_abort()) {
+		val_free(*v);
+		v->v_type = V_ERR;
+		goto abort;
+	}
+	for (vp = av; vp < &av[LCMD_NARG]; vp++)
+		val_free(*vp);
 	return 0;
 abort:
-	if (c != 0)
-		for (vp = av; vp < &av[LCMD_NARG]; vp++)
-			val_free(*vp);
+	for (vp = av; vp < &av[LCMD_NARG]; vp++)
+		val_free(*vp);
 	return -1;
 }
 

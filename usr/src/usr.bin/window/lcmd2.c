@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)lcmd2.c	3.3 84/04/08";
+static	char *sccsid = "@(#)lcmd2.c	3.4 84/05/06";
 #endif
 
 #include "defs.h"
@@ -8,6 +8,7 @@ static	char *sccsid = "@(#)lcmd2.c	3.3 84/04/08";
 #include "var.h"
 #include "lcmd.h"
 #include <sys/resource.h>
+#include "alias.h"
 
 /*ARGSUSED*/
 l_iostat(v, a)
@@ -174,7 +175,7 @@ register struct var *r;
 {
 	if (more(w, 0) == 2)
 		return -1;
-	wwprintf(w, "%16s\t", r->r_name);
+	wwprintf(w, "%16s    ", r->r_name);
 	switch (r->r_val.v_type) {
 	case V_STR:
 		wwprintf(w, "%s\n", r->r_val.v_str);
@@ -221,4 +222,65 @@ struct value *v, *a;
 			(*shell)++;
 		else
 			*shell = shellfile;
+}
+
+struct lcmd_arg arg_alias[] = {
+	{ "name",	1,	ARG_STR },
+	{ "string",	1,	ARG_STR },
+	0
+};
+
+l_alias(v, a)
+struct value *v, *a;
+{
+	if (a->v_type == V_ERR) {
+		register struct ww *w;
+		int printalias();
+
+		if ((w = openiwin(wwnrow - 3, "Aliases")) == 0) {
+			error("Can't open alias window: %s.", wwerror());
+			return;
+		}
+		if (alias_walk(printalias, (int)w) >= 0)
+			waitnl(w);
+		closeiwin(w);
+	} else {
+		register struct alias *ap = 0;
+
+		if (ap = alias_lookup(a->v_str)) {
+			if ((v->v_str = str_cpy(ap->a_buf)) == 0) {
+				p_memerror();
+				return;
+			}
+			v->v_type = V_STR;
+		}
+		if (a[1].v_type == V_STR &&
+		    alias_set(a[0].v_str, a[1].v_str) == 0) {
+			p_memerror();
+			return;
+		}
+	}
+}
+
+printalias(w, a)
+register struct ww *w;
+register struct alias *a;
+{
+	if (more(w, 0) == 2)
+		return -1;
+	wwprintf(w, "%16s    %s\n", a->a_name, a->a_buf);
+	return 0;
+}
+
+struct lcmd_arg arg_unalias[] = {
+	{ "name",	1,	ARG_STR },
+	0
+};
+
+l_unalias(v, a)
+struct value *v, *a;
+{
+	if (a->v_type == ARG_STR)
+		v->v_num = alias_unset(a->v_str);
+	v->v_type = V_NUM;
 }
