@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)pftn.c	1.17 (Berkeley) %G%";
+static char *sccsid ="@(#)pftn.c	1.18 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -1391,6 +1391,10 @@ nidcl( p ) NODE *p; { /* handle unitialized declarations */
 
 	defid( p, class );
 
+	/* if an array is not initialized, no empty dimension */
+	if( class!=EXTERN && ISARY(p->in.type) && dimtab[p->fn.cdim]==0 )
+		uerror("null storage definition");
+
 #ifndef LCOMM
 	if( class==EXTDEF || class==STATIC )
 #else
@@ -1529,8 +1533,8 @@ tyreduce( p ) register NODE *p; {
 		t += (ARY-PTR);
 		temp = p->in.right->tn.lval;
 		p->in.right->in.op = FREE;
-		if( ( temp == 0 ) & ( p->in.left->tn.op == LB ) )
-			uerror( "Null dimension" );
+		if( temp == 0 && p->in.left->tn.op == LB )
+			uerror( "null dimension" );
 		}
 
 	p->in.left->in.type = t;
@@ -1565,13 +1569,19 @@ fixtype( p, class ) register NODE *p; {
 		}
 
 	/* detect function arguments, watching out for structure declarations */
-	/* for example, beware of f(x) struct [ int a[10]; } *x; { ... } */
+	/* for example, beware of f(x) struct { int a[10]; } *x; { ... } */
 	/* the danger is that "a" will be converted to a pointer */
 
-	if( class==SNULL && blevel==1 && !(instruct&(INSTRUCT|INUNION)) ) class = PARAM;
+	if( class==SNULL && blevel==1 && !(instruct&(INSTRUCT|INUNION)) )
+		class = PARAM;
 	if( class == PARAM || ( class==REGISTER && blevel==1 ) ){
 		if( type == FLOAT ) type = DOUBLE;
 		else if( ISARY(type) ){
+#ifdef LINT
+			if( hflag && dimtab[p->fn.cdim]!=0 )
+				werror("array[%d] type changed to pointer",
+					dimtab[p->fn.cdim]);
+#endif
 			++p->fn.cdim;
 			type += (PTR-ARY);
 			}
