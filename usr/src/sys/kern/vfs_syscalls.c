@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	7.107 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.108 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -22,6 +22,7 @@
 #include <sys/dirent.h>
 
 #include <vm/vm.h>
+#include <sys/sysctl.h>
 
 #ifdef REF_DIAGNOSTIC
 #define CURCOUNT (curproc ? curproc->p_spare[0] : 0)
@@ -258,6 +259,7 @@ dounmount(mp, flags, p)
  */
 #ifdef DIAGNOSTIC
 int syncprt = 0;
+struct ctldebug debug0 = { "syncprt", &syncprt };
 #endif
 
 struct sync_args {
