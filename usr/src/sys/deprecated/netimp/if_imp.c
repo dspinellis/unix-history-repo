@@ -1,4 +1,4 @@
-/*	if_imp.c	4.7	82/02/16	*/
+/*	if_imp.c	4.8	82/02/21	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -58,7 +58,7 @@ struct imp_softc {
  * Messages from IMP regarding why
  * it's going down.
  */
-static char *impmsg[] = {
+static char *impmessage[] = {
 	"in 30 seconds",
 	"for hardware PM",
 	"to reload software",
@@ -87,7 +87,7 @@ COUNT(IMPATTACH);
 	ifp->if_mtu = IMP_MTU;
 	ifp->if_net = ui->ui_flags;
 	/* this should be found by talking to the imp */
-	ifp->if_addr.s_addr = 0x4e00000a;;
+	ifp->if_addr.s_addr = 0x4e00000a;
 	ifp->if_init = impinit;
 	ifp->if_output = impoutput;
 	/* reset is handled at the hardware level */
@@ -137,6 +137,7 @@ impinput(unit, m)
 	register struct ifqueue *inq;
 	struct control_leader *cp;
 	struct in_addr addr;
+	struct mbuf *next;
 
 COUNT(IMP_INPUT);
 	/*
@@ -210,7 +211,7 @@ COUNT(IMP_INPUT);
 		 * the host resets the IMP interface.
 		 */
 		if (sc->imp_state != IMPS_INIT) {
-			imperr(sc, "leader error");
+			impmsg(sc, "leader error");
 			hostreset(sc->imp_if.if_net);	/* XXX */
 			impnoops(sc);
 		}
@@ -226,7 +227,7 @@ COUNT(IMP_INPUT);
 			sc->imp_state = IMPS_GOINGDOWN;
 			timeout(impdown, sc, 30 * hz);
 		}
-		imperr(sc, "going down %s", impmsg[ip->il_link & IMP_DMASK]);
+		impmsg(sc, "going down %s", impmessage[ip->il_link&IMP_DMASK]);
 		goto drop;
 
 	/*
@@ -249,7 +250,7 @@ COUNT(IMP_INPUT);
 		sin = &sc->imp_if.if_addr;
 		sc->imp_if.if_host[0] = sin->s_host = ip->il_host;
 		sin->s_imp = ip->il_imp;
-		imperr(sc, "reset (host %d/imp %d)", ip->il_host,
+		impmsg(sc, "reset (host %d/imp %d)", ip->il_host,
 			ntohs(ip->il_imp));
 		/* restart output in case something was q'd */
 		(*sc->imp_cb.ic_start)(sc->imp_if.if_unit);
@@ -264,24 +265,9 @@ COUNT(IMP_INPUT);
 	 */
 	case IMPTYPE_RFNM:
 	case IMPTYPE_INCOMPLETE:
-		if (hp && hp->h_rfnm) {
-			register struct mbuf *n;
-
-			hp->h_rfnm--;
-			/* poke holding queue */
-			if (n = hp->h_q) {
-				if (n->m_act == n)
-					hp->h_q = 0;
-				else {
-					n = n->m_act;
-					hp->h_q->m_act = n->m_act;
-				}
-				(void) impsnd(sc, n);
-				goto rawlinkin;
-			}
-			if (hp->h_rfnm == 0)
-				hostfree(hp);
-		}
+		if (hp && hp->h_rfnm)
+			if (next = hostdeque(hp))
+				(void) impsnd(sc, next);
 		goto rawlinkin;
 
 	/*
@@ -291,12 +277,12 @@ COUNT(IMP_INPUT);
 	 * TODO: NOTIFY THE PROTOCOL
 	 */
 	case IMPTYPE_HOSTDEAD:
-		imperr(sc, "host dead");	/* XXX */
+		impmsg(sc, "host dead");	/* XXX */
 		goto common;			/* XXX */
 
 	/* SHOULD SIGNAL ROUTING DAEMON */
 	case IMPTYPE_HOSTUNREACH:
-		imperr(sc, "host unreachable");	/* XXX */
+		impmsg(sc, "host unreachable");	/* XXX */
 	common:
 		if (hp)
 			hostfree(hp);		/* won't work right */
@@ -307,7 +293,7 @@ COUNT(IMP_INPUT);
 	 * noops to the IMP to clear the interface.
 	 */
 	case IMPTYPE_BADDATA:
-		imperr(sc, "data error");
+		impmsg(sc, "data error");
 		if (hp)
 			hp->h_rfnm = 0;
 		impnoops(sc);
@@ -317,7 +303,7 @@ COUNT(IMP_INPUT);
 	 * Interface reset.
 	 */
 	case IMPTYPE_RESET:
-		imperr(sc, "interface reset");
+		impmsg(sc, "interface reset");
 		impnoops(sc);
 		goto drop;
 
@@ -364,12 +350,12 @@ impdown(sc)
 	struct imp_softc *sc;
 {
 	sc->imp_state = IMPS_DOWN;
-	imperr(sc, "marked down");
+	impmsg(sc, "marked down");
 	/* notify protocols with messages waiting? */
 }
 
 /*VARARGS*/
-imperr(sc, fmt, a1, a2)
+impmsg(sc, fmt, a1, a2)
 	struct imp_softc *sc;
 	char *fmt;
 {
@@ -505,37 +491,14 @@ COUNT(IMPSND);
 		 * If IMP would block, queue until RFNM
 		 */
 		if (hp) {
-			register struct mbuf *n;
-			int cnt;
-
 			if (hp->h_rfnm < 8) {
 				hp->h_rfnm++;
 				splx(x);
 				goto enque;
 			}
-			/*
-			 * Keeping the count in the host structure
-			 * causes the packing scheme to lose too much.
-			 */
-			cnt = 0;
-			if (n = hp->h_q)
-				do {
-					n = n->m_act;
-					cnt++;
-				} while (n != hp->h_q);
-			if (cnt >= 8)
+			if (hp->h_qcnt >= 8)	/* high water mark */
 				goto drop;
-
-			/*
-			 * Q is kept as circular list with h_q
-			 * (head) pointing to the last entry.
-			 */
-			if ((n = hp->h_q) == 0)
-				hp->h_q = m->m_act = m;
-			else {
-				m->m_act = n->m_act;
-				hp->h_q = n->m_act = m;
-			}
+			HOST_ENQUE(hp, m);
 			splx(x);
 			goto start;
 		}

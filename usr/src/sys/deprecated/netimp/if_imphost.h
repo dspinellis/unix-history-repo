@@ -1,4 +1,4 @@
-/*	if_imphost.h	4.3	82/02/16	*/
+/*	if_imphost.h	4.4	82/02/21	*/
 
 /*
  * Host structure used with IMP's.
@@ -11,13 +11,10 @@
 struct host {
 	struct	mbuf *h_q;		/* holding queue */
 	struct	in_addr h_addr;		/* host's address */
-	u_short	h_status;          	/* host status */
+	short	h_qcnt;          	/* size of holding q */
 	u_char	h_rfnm;			/* # outstanding rfnm's */
 	u_char	h_refcnt;		/* reference count */
 };
-
-#define	HOSTS_DOWN	0		/* host believed down */
-#define HOSTS_UP	128 		/* host up */
 
 /*
  * Host structures, as seen inside an mbuf.
@@ -28,7 +25,37 @@ struct host {
  * automatically at the time a structure is free'd.
  */
 #define	HPMBUF	((MLEN - sizeof(int)) / sizeof(struct host))
-#define	HOSTHASH(a)	(((a).s_addr&~0x80000000) % HPMBUF)
+#if vax
+#define	HOSTHASH(a)	((((a).s_addr>>8)+(a).s_net) % HPMBUF)
+#endif
+
+/*
+ * In-line expansions for queuing operations on
+ * host message holding queue.  Queue is maintained
+ * as circular list with the head pointing to the
+ * last message in the queue.
+ */
+#define	HOST_ENQUE(hp, m) { \
+	register struct mbuf *n; \
+	hp->h_qcnt++; \
+	if ((n = hp->h_q) == 0) \
+		hp->h_q = m->m_act = m; \
+	else { \
+		m->m_act = n->m_act; \
+		hp->h_q = n->m_act = m; \
+	} \
+}
+#define	HOST_DEQUE(hp, m) { \
+	if (m = hp->h_q) { \
+		if (m->m_act == m) \
+			hp->h_q = 0; \
+		else { \
+			m = m->m_act; \
+			hp->h_q->m_act = m->m_act; \
+		} \
+		hp->h_qcnt--; \
+	} \
+}
 
 struct hmbuf {
 	int	hm_count;		/* # of struct's in use */
@@ -38,4 +65,5 @@ struct hmbuf {
 #ifdef KERNEL
 struct host *hostlookup();
 struct host *hostenter();
+struct mbuf *hostdeque();
 #endif
