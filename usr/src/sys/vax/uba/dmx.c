@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dmx.c	7.3 (Berkeley) %G%
+ *	@(#)dmx.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -102,6 +102,7 @@ dmxopen(tp, sc, flag)
 	 * If this is first open, initialize tty state to default.
 	 */
 	if ((tp->t_state&TS_ISOPEN) == 0) {
+		tp->t_state |= TS_WOPEN;
 		ttychars(tp);
 #ifndef PORTSELECTOR
 		if (tp->t_ispeed == 0) {
@@ -132,9 +133,8 @@ dmxopen(tp, sc, flag)
 		    tp->t_cflag&CLOCAL)
 			break;
 		tp->t_state |= TS_WOPEN;
-		if ((error = tsleep((caddr_t)&tp->t_rawq, TTIPRI | PCATCH,
-				    ttopen, 0)) ||
-		    (error = ttclosed(tp)))
+		if (error = ttysleep(tp, (caddr_t)&tp->t_rawq, TTIPRI | PCATCH,
+		    ttopen, 0))
 			break;
 	}
 	splx(s);
