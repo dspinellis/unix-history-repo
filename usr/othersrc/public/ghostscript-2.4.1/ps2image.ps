@@ -1,0 +1,124 @@
+%    Copyright (C) 1990, 1991 Aladdin Enterprises.  All rights reserved.
+%    Distributed by Free Software Foundation, Inc.
+%
+% This file is part of Ghostscript.
+%
+% Ghostscript is distributed in the hope that it will be useful, but
+% WITHOUT ANY WARRANTY.  No author or distributor accepts responsibility
+% to anyone for the consequences of using it or for whether it serves any
+% particular purpose or works at all, unless he says so in writing.  Refer
+% to the Ghostscript General Public License for full details.
+%
+% Everyone is granted permission to copy, modify and redistribute
+% Ghostscript, but only under the conditions described in the Ghostscript
+% General Public License.  A copy of this license is supposed to have been
+% given to you along with Ghostscript so you can know your rights and
+% responsibilities.  It should be in a file named COPYING.  Among other
+% things, the copyright notice and this notice must be preserved on all
+% copies.
+
+% Convert a .ps file to another .ps file containing only a bit image.
+% Usage:
+%	(filename) ps2image
+% This replaces the current device, writing the output on the file
+% instead of to the device.  To display the image at a later time,
+% simply run the file that was written.
+
+% Initialize, and redefine copypage and showpage.
+/ps2idict 25 dict def
+ps2idict begin
+				% Save the showpage operator
+  /realshowpage /showpage load def
+				% Define a monochrome palette
+  /monopalette <00 ff> def
+				% The main procedure
+  /ps2image
+   {				% Open the file
+     (w) file /myfile exch def
+     myfile (/readimage ) writestring
+     myfile /readimage load write==only
+     myfile ( bind def\n) writestring
+					% Get the device parameters
+     currentdevice getdeviceprops dicttomark
+     dup /HWSize get aload pop
+       /devheight exch def
+       /devwidth exch def
+     /InitialMatrix get
+       /devmatrix exch def
+				% Make a corresponding memory device
+     devmatrix devwidth devheight monopalette
+     makeimagedevice
+     /mydevice exch def
+     mydevice setdevice		% (does an erasepage)
+     /rowwidth devwidth 7 add 8 idiv def
+     /row rowwidth 7 add 8 idiv 8 mul string def	% pad for findcommon
+     /prevrow row length string def
+				% Replace the definition of showpage
+     userdict /showpage { ps2idict begin myshowpage end } bind put
+   } def
+				% Procedure for reading and displaying
+				% the rendered image.
+				% <width> <height> readimage
+  /readimage
+   { gsave matrix setmatrix
+     1 matrix
+     3 index 7 add 8 idiv string currentfile exch
+     				% At each iteration of the loop,
+				% the stack contains <file> <buffer>
+      { 2 copy
+        1 index token pop	% starting index
+        2 index token pop	% count
+	getinterval
+        readhexstring pop pop dup }
+     3 1 roll
+     7 2 roll
+     image pop pop
+     grestore showpage
+   } def
+/findcommon		% prevrow row -> stopindex startindex
+ { 2 copy eq
+    { 0 0 }
+    { dup length
+       { 8 sub 2 copy 8 getinterval 3 index 2 index 8 getinterval
+         ne { 8 add exit } if
+       } loop
+       { 1 sub 2 copy get 3 index 2 index get
+         ne { 1 add exit } if
+       } loop
+      0
+       { 3 index 1 index 8 getinterval 3 index 2 index 8 getinterval
+         ne { exit } if
+	 8 add
+       } loop
+       { 3 index 1 index get 3 index 2 index get
+         ne { exit } if
+	 1 add
+       } loop
+    }
+   ifelse
+   4 2 roll pop pop
+ } bind def
+				% Write the image on the file
+  /myshowpage
+   { myfile devwidth write==only   myfile ( ) writestring
+     myfile devheight write==only   myfile ( readimage\n) writestring
+     0 1 prevrow length 1 sub { prevrow exch 0 put } for
+	 			% Write the hex data
+     0 1 devheight 1 sub
+      { mydevice exch row 0 rowwidth getinterval copyscanlines
+        prevrow row findcommon
+	   			% stack now has stop index, start index
+	exch 1 index sub 2 copy exch	% start, length, length, start
+	myfile exch write==only   myfile ( ) writestring
+	myfile exch write==only   myfile ( ) writestring
+	getinterval myfile exch writehexstring
+	row prevrow copy pop
+	myfile (\n) writestring
+      } for
+     myfile flushfile
+     erasepage initgraphics
+   } bind def
+
+end
+
+/ps2image { ps2idict begin ps2image end } bind def
