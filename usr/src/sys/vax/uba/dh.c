@@ -1,4 +1,4 @@
-/*	dh.c	4.3	%G%	*/
+/*	dh.c	4.4	%G%	*/
 
 #include "../conf/dh.h"
 #if NDH11 > 0
@@ -246,7 +246,7 @@ caddr_t addr;
 	cmd = (*linesw[tp->t_line].l_ioctl)(tp, cmd, addr);
 	if (cmd==0)
 		return;
-	if (ttioctl(cmd, tp, addr, dev, flag)) {
+	if (ttioctl(tp, cmd, addr, flag)) {
 		if (cmd==TIOCSETP||cmd==TIOCSETN)
 			dhparam(dev);
 	} else switch(cmd) {
