@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)last.c	4.6 (Berkeley) %G%";
+static	char *sccsid = "@(#)last.c	4.7 (Berkeley) %G%";
 #endif
 
 /*
@@ -62,6 +62,8 @@ main(ac, av)
 		if (strlen(argv[i])>2)
 			continue;
 		if (!strcmp(argv[i], "~"))
+			continue;
+		if (!strcmp(argv[i], "ftp"))
 			continue;
 		if (getpwnam(argv[i]))
 			continue;
@@ -165,6 +167,8 @@ want(bp)
 
 	if (bp->ut_line[0] == '~' && bp->ut_name[0] == '\0')
 		strcpy(bp->ut_name, "reboot");		/* bandaid */
+	if (strncmp(bp->ut_line, "ftp", 3) == 0)
+		bp->ut_line[3] = '\0';
 	if (bp->ut_name[0] == 0)
 		return (0);
 	if (nameargs == 0)
