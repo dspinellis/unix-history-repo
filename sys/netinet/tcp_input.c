@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tcp_input.c	7.25 (Berkeley) 6/30/90
- *	$Id: tcp_input.c,v 1.7 1994/01/29 12:10:20 davidg Exp $
+ *	$Id: tcp_input.c,v 1.8 1994/01/30 01:00:28 davidg Exp $
  */
 
 #include "param.h"
@@ -461,7 +461,7 @@ findpcb:
 			 *	congestion avoidance sender won't send more until
 			 *	he gets an ACK.
 			 */
-			if (ti->ti_len < tp->t_maxseg) {
+			if ((unsigned)ti->ti_len < tp->t_maxseg) {
 				tp->t_flags |= TF_ACKNOW;
 				tcp_output(tp);
 			} else {
