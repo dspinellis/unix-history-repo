@@ -1,4 +1,4 @@
-/*	locore.s	6.18	84/08/28	*/
+/*	locore.s	6.19	84/09/04	*/
 
 #include "psl.h"
 #include "pte.h"
@@ -1004,7 +1004,8 @@ JSBENTRY(Setjmp, R0)
 	rsb
 #endif
 
-#define PCLOC 16
+#define PCLOC 16	/* location of pc in calls frame */
+#define APLOC 8		/* location of ap,fp in calls frame */
 	.align	1
 JSBENTRY(Longjmp, R0)
 	movl	(r0)+,newfp	# must save parameters in memory as all
@@ -1027,6 +1028,22 @@ newpc:	.space	4
 newfp:	.space	4
 4:	.asciz	"longjmp"
 	.text
+/*
+ * setjmp that saves all registers as the call frame may not
+ * be available to recover them in the usual mannor by longjmp.
+ * Called before swapping out the u. area, restored by resume()
+ * below.
+ */
+ENTRY(savectx, 0)
+	movl	4(ap),r0
+	movq	r6,(r0)+
+	movq	r8,(r0)+
+	movq	r10,(r0)+
+	movq	APLOC(fp),(r0)+	# save ap, fp
+	addl3	$8,ap,(r0)+	# save sp
+	movl	PCLOC(fp),(r0)	# save pc
+	clrl	r0
+	ret
 
 	.globl	_whichqs
 	.globl	_qs
@@ -1170,11 +1187,25 @@ res0:
 	bneq	res1
 	rei
 res1:
-	movl	_u+PCB_SSWAP,r0
+	movl	_u+PCB_SSWAP,r0			# longjmp to saved context
 	clrl	_u+PCB_SSWAP
-	movab	_Longjmp,(sp)
+	movq	(r0)+,r6
+	movq	(r0)+,r8
+	movq	(r0)+,r10
+	movq	(r0)+,r12
+	movl	(r0)+,r1
+	cmpl	r1,sp				# must be a pop
+	bgequ	1f
+	pushab	2f
+	calls	$1,_panic
+	/* NOTREACHED */
+1:
+	movl	r1,sp
+	movl	(r0),(sp)			# address to return to
 	movl	$PSL_PRVMOD,4(sp)		# ``cheating'' (jfr)
 	rei
+
+2:	.asciz	"ldctx"
 
 /*
  * {fu,su},{byte,word}, all massaged by asm.sed to jsb's
