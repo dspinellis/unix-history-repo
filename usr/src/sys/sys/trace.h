@@ -1,4 +1,4 @@
-/*	trace.h	4.6	81/03/11	*/
+/*	trace.h	4.7	81/04/18	*/
 
 /*
  * File system buffer tracing points; all trace <dev, bn>
@@ -41,6 +41,11 @@
 #define	TR_VADVISE	40	/* vadvise occurred with <arg, pid> */
 
 /*
+ * Miscellaneous
+ */
+#define	TR_STAMP	50	/* user said vtrace(VTR_STAMP, value); */
+
+/*
  * This defines the size of the trace flags array.
  */
 #define	TR_NFLAGS	100	/* generous */
@@ -57,6 +62,7 @@
 #define	VTR_VALUE	2		/* return value of a trace flag */
 #define	VTR_UALARM	3		/* set alarm to go off (sig 16) */
 					/* in specified number of hz */
+#define	VTR_STAMP	4		/* user specified stamp */
 #ifdef KERNEL
 #ifdef TRACE
 char	traceflags[TR_NFLAGS];
