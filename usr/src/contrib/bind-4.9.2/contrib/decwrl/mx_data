@@ -1,0 +1,16 @@
+# this file tells mkdb what MX's to use on any host.  the entry marked "*"
+# is not a wildcard MX (since these are a bad idea), but rather is added
+# to every host's MX.
+#
+# there are no order-dependencies in this file; the "*" entry can appear
+# anywhere.  note that every host will automatically be its own "cost 0"
+# MX; anything else from this file will be added on top of that default.
+#
+# as in named, the "@" name represents the domain's root.
+
+src-visitor	5 inet-gw-1
+		5 inet-gw-2
+
+*		10 pobox1
+		20 inet-gw-1
+		20 inet-gw-2
