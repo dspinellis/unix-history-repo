@@ -113,12 +113,32 @@ tape.
 By default,
 .I ansitape
 uses the maximum block size permitted by the ANSI standard, 2048.
-Some systems will permit a much large block size, and if large
+Some systems will permit a much larger block size, and if large
 files are being put on the tape it may be advantageous to do so.
 .I Ansitape
 will take the next argument of the keyargs list as the blocksize for the tape.
 Values below 18 or above 32k will be limited to that range.
 The standard scale factors b=512 and k=1024 are accepted.
+.TP 8
+.B F
+The 
+.B F
+flag allows
+.I ansitape
+to write ansi 'D' format fixed record length tapes.
+The next two keyargs must be the recordsize and blocksize to be used,
+with the same scale factors and range limits as for the
+.B b
+option.
+The files to be written by the
+.B F
+flag must be in fixed format on the unix end - all lines should be
+.I EXACTLY
+.B recordsize
+bytes long plus a terminating newline (which will be discarded).
+Note that this is exactly the same format produced by
+.I ansitape
+when reading an ansi 'D' format tape.
 .PP
 .I Ansitape
 will not copy directories, character or block special files,
@@ -135,7 +155,6 @@ length and the affected file will be truncated.
 .SH BUGS
 Ansitape quietly truncates names longer than 17 characters.
 .br
-ANSI 'f' format files can be read but not written.
-.br
-Multivolume tapes can not be handled.
+Multivolume tapes can be read (provided no files cross the
+volume boundary) but not written.
 .br

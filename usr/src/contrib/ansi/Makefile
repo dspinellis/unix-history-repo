@@ -1,15 +1,20 @@
-#	@(#)Makefile	5.4	(Berkeley)	87/07/26
+#
+# Copyright (c) 1987 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)Makefile	5.5	(Berkeley)	%G%
 #
 DESTDIR=
 CFLAGS=	-O
 SRCS=	vmsprep.c ansitape.c
-MSRC=	vmsprep.n ansitape.n
+MSRC=	vmsprep.1 ansitape.1
 MOBJ=	vmsprep.0 ansitape.0
 
-.SUFFIXES: .n .0
+.SUFFIXES: .1 .0
 
-.n.0:
-	../../man/manroff $*.n > $*.0
+.1.0:
+	/usr/man/manroff $*.1 > $*.0
 
 all: ansitape vmsprep
 
