@@ -12,7 +12,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_input.c	7.18 (Berkeley) %G%
+ *	@(#)pk_input.c	7.19 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -294,10 +294,11 @@ struct mbuf_cache pk_input_cache = {0 };
  *  demultiplexes based on the logical channel number.
  *
  *  We change the original conventions of the UBC code here --
- *  since there may be multiple pkcb's for 802.2 class 2
- *  for a given interface, we must be informed which one it is;
- *  so we overwrite the pkthdr.rcvif; it can be recovered if necessary.
- *
+ *  since there may be multiple pkcb's for a given interface
+ *  of type 802.2 class 2, we retrieve which one it is from
+ *  m_pkthdr.rcvif (which has been overwritten by lower layers);
+ *  That field is then restored for the benefit of upper layers which
+ *  may make use of it, such as CLNP.
  */
 
 #define RESTART_DTE_ORIGINATED(xp) (((xp) -> packet_cause == X25_RESTART_DTE_ORIGINATED) || \
@@ -365,6 +366,8 @@ register struct mbuf *m;
 		pk_bad_packet = m;
 		return;
 	}
+
+	m -> m_pkthdr.rcvif = pkp -> pk_ia -> ia_ifp;
 
 	switch (ptype + lcdstate) {
 	/* 
