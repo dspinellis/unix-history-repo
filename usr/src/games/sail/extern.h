@@ -1,5 +1,5 @@
 /*
- * @(#)extern.h	2.3 83/12/17
+ * @(#)extern.h	2.4 84/02/23
  */
 #include <stdio.h>
 #include <signal.h>
@@ -93,7 +93,9 @@
 #define W_RIG4		36
 #define W_BEGIN		37
 #define W_END		38
+#define W_DDEAD		39
 
+#define NLOG 10
 struct logs {
 	char l_name[20];
 	int l_uid;
@@ -243,6 +245,7 @@ int game;
 int alive;
 int people;
 char isplayer;
+char hasdriver;
 
 char *info();
 char *quality();
