@@ -1,4 +1,4 @@
-/*	proc.h	3.2	%H%	*/
+/*	proc.h	3.3	%H%	*/
 
 /*
  * One structure allocated per active
@@ -22,9 +22,12 @@ struct	proc
 	char	p_time;		/* resident time for scheduling */
 	char	p_nice;		/* nice for cpu usage */
 	char	p_slptime;	/* time since last block */
-	int	p_flag;
+	char	p_cursig;
 	int	p_sig;		/* signals pending to this process */
-	int	p_ignsig;	/* ignored signals */
+	long	p_siga0;	/* low bit of 2 bit signal action */
+	long	p_siga1;	/* high bit of 2 bit signal action */
+#define	p_ignsig p_siga0	/* ignored signal mask */
+	int	p_flag;
 	short	p_uid;		/* user id, used to direct tty signals */
 	short	p_pgrp;		/* name of process group leader */
 	short	p_pid;		/* unique process id */
@@ -46,6 +49,7 @@ struct	proc
 	short	p_aveflt;	/* average of p_faults into past */
 	short	p_ndx;		/* proc index for memall (because of vfork) */
 	short	p_idhash;	/* hashed based on p_pid for kill+exit+... */
+	struct	proc *p_pptr;	/* pointer to process structure of parent */
 };
 
 #define	PIDHSZ		63
@@ -121,9 +125,11 @@ struct	xproc
 	char	xp_time;	/* resident time for scheduling */
 	char	xp_nice;	/* nice for cpu usage */
 	char	xp_slptime;
-	int	xp_flag;
+	char	p_cursig;
 	int	xp_sig;		/* signals pending to this process */
-	int	xp_ignsig;
+	int	xp_siga0;
+	int	xp_siga1;
+	int	xp_flag;
 	short	xp_uid;		/* user id, used to direct tty signals */
 	short	xp_pgrp;	/* name of process group leader */
 	short	xp_pid;		/* unique process id */
