@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)intr.c	8.2 (Berkeley) %G%
+ *	@(#)intr.c	8.3 (Berkeley) %G%
  *
  * from: $Header: intr.c,v 1.22 93/09/26 19:48:06 torek Exp $ (LBL)
  */
@@ -27,9 +27,7 @@
 
 #include <machine/cpu.h>
 #include <machine/ctlreg.h>
-#ifdef DIAGNOSTIC
 #include <machine/instr.h>
-#endif
 #include <machine/trap.h>
 
 #include <sparc/sparc/clockreg.h>
