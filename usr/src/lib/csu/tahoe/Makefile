@@ -9,11 +9,12 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 #
 DEFS=	-DLIBC_SCCS
 CFLAGS=	-O ${DEFS}
-SRCS=	gmon.c mon.c
+CSRCS=	gmon.c mon.c
+ASRCS=	crt0.s  mcrt0.s
 OBJS=	crt0.o mcrt0.o gcrt0.o
 TAGSFILE=tags
 
@@ -50,5 +51,15 @@ install:
 
 clean:
 	rm -f *.o *mon.s a.out core ${TAGSFILE}
+
+tags:
+	cwd=`pwd`; \
+	for i in ${CSRCS}; do \
+		ctags -a -f ${TAGSFILE} $$cwd/$$i; \
+	done
+	(P=`pwd`; \
+	egrep "^ENTRY(.*)|^SYSCALL(.*)" ${ASRCS} | sed \
+"s;\([^:]*\):\([^(]*\)(\([^, )]*\)\(.*\);\3 $$P/\1 /^\2(\3\4$$/;" \
+		>> ${TAGSFILE})
 
 depend:
