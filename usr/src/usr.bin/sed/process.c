@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)process.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)process.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -604,10 +604,12 @@ cfclose(cp)
 			if (cp->u.s->wfd != -1 && close(cp->u.s->wfd))
 				err(FATAL,
 				    "%s: %s", cp->u.s->wfile, strerror(errno));
+			cp->u.s->wfd = -1;
 			break;
 		case 'w':
 			if (cp->u.fd != -1 && close(cp->u.fd))
 				err(FATAL, "%s: %s", cp->t, strerror(errno));
+			cp->u.fd = -1;
 			break;
 		case '{':
 			cfclose(cp->u.c);
