@@ -1,4 +1,4 @@
-#	makefile	4.4	85/05/04
+#	makefile	4.5	87/02/15
 #
 CFLAGS=	-O -w
 LIBS=	../libpw.a ../libPW.a ../libwrt.a
@@ -118,7 +118,6 @@ install: all
 	install -s help ${DESTDIR}/usr/local
 	install -s prt ${DESTDIR}/usr/local
 	install -s prs ${DESTDIR}/usr/local
-	install -s rmdel ${DESTDIR}/usr/local
 	install -c sccsdiff.sh ${DESTDIR}/usr/local/sccsdiff
 	install -s what ${DESTDIR}/usr/local
 	install -s val ${DESTDIR}/usr/local
