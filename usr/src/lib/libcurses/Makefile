@@ -1,110 +1,53 @@
-#	Makefile	1.16	83/07/02
+#	Makefile	1.17	83/07/02
 #
-# cursor package maker
+# curses package
 #
-HEADERS=curses.h curses.ext
 CFILES=	box.c clear.c initscr.c endwin.c mvprintw.c mvscanw.c mvwin.c \
 	newwin.c overlay.c overwrite.c printw.c scanw.c refresh.c \
 	touchwin.c erase.c clrtobot.c clrtoeol.c cr_put.c cr_tty.c \
 	longname.c delwin.c insertln.c deleteln.c scroll.c getstr.c \
 	getch.c addstr.c addch.c move.c curses.c unctrl.c standout.c \
 	tstp.c insch.c delch.c
-
-OBJS=	box.o clear.o initscr.o endwin.o mvprintw.o mvscanw.o mvwin.o \
-	newwin.o overlay.o overwrite.o printw.o scanw.o refresh.o \
-	touchwin.o erase.o clrtobot.o clrtoeol.o cr_put.o cr_tty.o \
-	longname.o delwin.o insertln.o deleteln.o scroll.o getstr.o \
-	getch.o addstr.o addch.o move.o curses.o unctrl.o standout.o \
-	tstp.o insch.o delch.o
-
-POBJS=	box.p clear.p initscr.p endwin.p mvprintw.p mvscanw.p mvwin.p \
-	newwin.p overlay.p overwrite.p printw.p scanw.p refresh.p \
-	touchwin.p erase.p clrtobot.p clrtoeol.p cr_put.p cr_tty.p \
-	longname.p delwin.p insertln.p deleteln.p scroll.p getstr.p \
-	getch.p addstr.p addch.p move.p curses.p unctrl.p standout.p \
-	tstp.p insch.p delch.p
-
+OBJS=	addch.o addstr.o box.o clear.o clrtobot.o clrtoeol.o cr_put.o \
+	cr_tty.o curses.o delch.o deleteln.o delwin.o endwin.o erase.o \
+	getch.o getstr.o initscr.o insch.o insertln.o longname.o move.o \
+	mvprintw.o mvscanw.o mvwin.o newwin.o overlay.o overwrite.o \
+	printw.o refresh.o scanw.o scroll.o standout.o touchwin.o tstp.o \
+	unctrl.o
 CTAGS=	ctags
-CC=	cc
-LINT=	lint
-LPASS1=	/usr/lib/lint/lint1
-AR=	ar
-RM=	rm -f
-LN=	ln
-CFL=	
-CFLAGS=	-O ${CFL}
-LDFLAGS=-n
-INSTALL=${DESTDIR}/usr/lib/libcurses.a ${DESTDIR}/usr/include/curses.h \
-	${DESTDIR}/usr/lib/lint/llib-lcurses.ln
+CFLAGS=	-O
 
-.SUFFIXES: .p
+.c.o:
+	${CC} -c -p ${CFLAGS} $*.c
+	ld -x -r $*.o
+	mv a.out profiled/$*.o
+	${CC} -c ${CFLAGS} $*.c
+	ld -x -r $*.o
+	mv a.out $*.o
 
-.c.p:
-	${RM} x.c
-	ln $*.c x.c
-	${CC} ${CFLAGS} -p -c x.c
-	mv x.o $*.p
+libcurses libcurses_p: ${OBJS}
+	@echo building profiled libcurses
+	@cd profiled; ar cr ../libcurses_p ${OBJS}
+	@echo building normal libcurses
+	@ar cr libcurses ${OBJS}
 
-.DEFAULT:
-	sccs get $@
+install: libcurses libcurses_p
+	install -m 644 libcurses ${DESTDIR}/usr/lib/libcurses.a
+	ranlib ${DESTDIR}/usr/lib/libcurses.a
+	install -m 644 libcurses_p ${DESTDIR}/usr/lib/libcurses_p.a
+	ranlib ${DESTDIR}/usr/lib/libcurses_p.a
 
-libcurses: ${HEADERS} crlib
+clean:
+	rm -f ${OBJS} profiled/*.o a.out core test errs libcurses libcurses_p
 
-crlib: ${OBJS}
-	${AR} rv crlib $?
-	ranlib crlib
+ctags:
+	${CTAGS} ${CFILES} curses.h
 
-pcrlib: ${POBJS}
-	${RM} x.c
-	${AR} rv pcrlib $?
-	ranlib pcrlib
+lint:
+	lint -hxb ${CFILES} -lcurses > lint.out
 
 test:	libcurses test.o
 	${CC} ${LDFLAGS} ${CFLAGS} -o test test.o crlib -ltermlib
 
 cat.o:	curses.h
 	${CC} -c ${CFLAGS} cat.c
-
-new:	cleanup ctags
-	${CC} -c ${CFLAGS} ${CFILES}
-	${AR} qv crlib ${OBJS}
-	${RM} /ya/staff/arnold/=eye/crlib /ya/staff/arnold/=hacks/crlib \
-	      /ya/staff/arnold/=eye/curses.h /ya/staff/arnold/=hacks/curses.h
-
-clean:
-	${RM} ${OBJS} crlib
-
-ctags:
-	${CTAGS} ${CFILES} curses.h
-
-lint:
-	${LINT} -hxb ${CFL} ${CFILES} -lcurses > lint.out
-
-lpr:
-	-pr curses.h ${CFILES} | lpr
-	-lpq
-
-tp:
-	tp crm0 Makefile tags ${HEADERS} ${CFILES} llib-lcurses
-
-tar:
-	tar crvf curses.tar Makefile tags ${HEADERS} ${CFILES} llib-lcurses
-
-ar:
-	ar crv curses.ar Makefile tags ${HEADERS} ${CFILES} llib-lcurses
-
-llib-lcurses.ln: llib-lcurses
-	-(/lib/cpp -C -Dlint llib-lcurses | ${LPASS1} > llib-lcurses.ln ) 2>&1 | grep -v warning
-
-install: ${INSTALL}
-
-${DESTDIR}/usr/lib/libcurses.a: crlib
-	install -m 644 crlib ${DESTDIR}/usr/lib/libcurses.a
-	ranlib ${DESTDIR}/usr/lib/libcurses.a
-
-${DESTDIR}/usr/include/curses.h: curses.h
-	install -c curses.h ${DESTDIR}/usr/include/
-
-${DESTDIR}/usr/lib/lint/llib-lcurses.ln: llib-lcurses.ln
-	install -c llib-lcurses ${DESTDIR}/usr/lib/lint
-	install -c llib-lcurses.ln ${DESTDIR}/usr/lib/lint
