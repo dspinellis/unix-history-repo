@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.66 (Berkeley) %G%
+ *	@(#)conf.h	8.67 (Berkeley) %G%
  */
 
 /*
@@ -157,7 +157,6 @@
 #if defined(sun) && !defined(BSD)
 
 # define LA_TYPE	LA_INT
-# define HASSETREUID	1	/* has setreuid(2) call */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
 # define HASUNAME	1	/* use System V uname(2) system call */
 
@@ -167,13 +166,14 @@
 
 # ifdef SOLARIS
 			/* Solaris 2.x (a.k.a. SunOS 5.x) */
-#  define SYSTEM5	1	/* use System V definitions */
-#  define setreuid(r, e)	seteuid(e)
+			/* see also __svr4__ defines below */
 #  include <sys/time.h>
 #  define gethostbyname	solaris_gethostbyname	/* get working version */
 #  define gethostbyaddr	solaris_gethostbyaddr	/* get working version */
 #  define GIDSET_T	gid_t
-#  define _PATH_UNIX	"/kernel/unix"
+#  ifndef _PATH_UNIX
+#   define _PATH_UNIX	"/kernel/unix"
+#  endif
 #  ifndef _PATH_SENDMAILCF
 #   define _PATH_SENDMAILCF	"/etc/mail/sendmail.cf"
 #  endif
@@ -183,6 +183,7 @@
 
 # else
 			/* SunOS 4.0.3 or 4.1.x */
+#  define HASSETREUID	1	/* has setreuid(2) call */
 #  define HASSTATFS	1	/* has the statfs(2) syscall */
 #  define HASFLOCK	1	/* has flock(2) call */
 #  include <vfork.h>
@@ -506,20 +507,8 @@ extern void		*malloc();
 */
 
 #ifdef DELL_SVR4
-# define SYSTEM5	1
-# define HASSETREUID	1	/* has seteuid(2) call & working saved uids */
-# define setreuid(r, e)	seteuid(e)
-/* # include <sys/time.h> */
-# define _PATH_UNIX	"/unix"
-# ifndef _PATH_SENDMAILCF
-#  define _PATH_SENDMAILCF	"/usr/ucblib/sendmail.cf"
-# endif
-# ifndef _PATH_SENDMAILPID
-#  define _PATH_SENDMAILPID	"/usr/ucblib/sendmail.pid"
-# endif
-# ifndef SYSLOG_BUFSIZE
-#  define SYSLOG_BUFSIZE	128
-# endif
+				/* no changes necessary */
+				/* see general __svr4__ defines below */
 #endif
 
 
@@ -643,6 +632,26 @@ typedef int		pid_t;
 # define HASSETREUID	1	/* has setreuid(2) call */
 # define HASINITGROUPS	1	/* has initgroups(2) call */
 # define HASFLOCK	1	/* has flock(2) call */
+#endif
+
+/* general System V Release 4 defines */
+#ifdef __svr4__
+# define SYSTEM5	1
+# define HASSETREUID	1	/* has seteuid(2) call & working saved uids */
+# define setreuid(r, e)	seteuid(e)
+
+# ifndef _PATH_UNIX
+#  define _PATH_UNIX		"/unix"
+# endif
+# ifndef _PATH_SENDMAILCF
+#  define _PATH_SENDMAILCF	"/usr/ucblib/sendmail.cf"
+# endif
+# ifndef _PATH_SENDMAILPID
+#  define _PATH_SENDMAILPID	"/usr/ucblib/sendmail.pid"
+# endif
+# ifndef SYSLOG_BUFSIZE
+#  define SYSLOG_BUFSIZE	128
+# endif
 #endif
 
 /* general System V defines */
