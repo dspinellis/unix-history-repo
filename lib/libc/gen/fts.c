@@ -1,6 +1,6 @@
 /*-
- * Copyright (c) 1990 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,7 +32,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fts.c	5.40 (Berkeley) 7/23/92";
+static char sccsid[] = "@(#)fts.c	8.1 (Berkeley) 6/4/93";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -356,8 +356,15 @@ next:	tmp = p;
 	if (p = p->fts_link) {
 		free(tmp);
 
-		/* If reached the top, load the paths for the next root. */
+		/*
+		 * If reached the top, return to the original directory, and
+		 * load the paths for the next root.
+		 */
 		if (p->fts_level == FTS_ROOTLEVEL) {
+			if (!ISSET(FTS_NOCHDIR) && FCHDIR(sp, sp->fts_rfd)) {
+				SET(FTS_STOP);
+				return (NULL);
+			}
 			fts_load(sp, p);
 			return (sp->fts_cur = p);
 		}
@@ -530,10 +537,12 @@ fts_children(sp, instr)
  *
  * The real slowdown in walking the tree is the stat calls.  If FTS_NOSTAT is
  * set and it's a physical walk (so that symbolic links can't be directories),
- * we assume that the number of subdirectories in a node is equal to the number
- * of links to the parent.  This allows stat calls to be skipped in any leaf
- * directories and for any nodes after the directories in the parent node have
- * been found.  This empirically cuts the stat calls by about 2/3.
+ * we can do things quickly.  First, if it's a 4.4BSD file system, the type
+ * of the file is in the directory entry.  Otherwise, we assume that the number
+ * of subdirectories in a node is equal to the number of links to the parent.
+ * The former skips all stat calls.  The latter skips stat calls in any leaf
+ * directories and for any files after the subdirectories in the directory have
+ * been found, cutting the stat calls by about 2/3.
  */
 static FTSENT *
 fts_build(sp, type)
@@ -596,6 +605,7 @@ fts_build(sp, type)
 	 * needed sorted entries or stat information, they had better be
 	 * checking FTS_NS on the returned nodes.
 	 */
+	cderrno = 0;
 	if (nlinks || type == BREAD)
 		if (FCHDIR(sp, dirfd(dirp))) {
 			if (nlinks && type == BREAD)
@@ -603,10 +613,8 @@ fts_build(sp, type)
 			cur->fts_flags |= FTS_DONTCHDIR;
 			descend = 0;
 			cderrno = errno;
-		} else {
+		} else
 			descend = 1;
-			cderrno = 0;
-		}
 	else
 		descend = 0;
 
@@ -669,21 +677,29 @@ mem1:				saved_errno = errno;
 			} else
 				p->fts_info = FTS_NSOK;
 			p->fts_accpath = cur->fts_accpath;
-		} else if (nlinks) {
+		} else if (nlinks == 0
+#ifdef DT_DIR
+		    || nlinks > 0 && 
+		    dp->d_type != DT_DIR && dp->d_type != DT_UNKNOWN
+#endif
+		    ) {
+			p->fts_accpath =
+			    ISSET(FTS_NOCHDIR) ? p->fts_path : p->fts_name;
+			p->fts_info = FTS_NSOK;
+		} else {
 			/* Build a file name for fts_stat to stat. */
 			if (ISSET(FTS_NOCHDIR)) {
 				p->fts_accpath = p->fts_path;
 				bcopy(p->fts_name, cp, p->fts_namelen + 1);
 			} else
 				p->fts_accpath = p->fts_name;
+			/* Stat it. */
 			p->fts_info = fts_stat(sp, p, 0);
+
+			/* Decrement link count if applicable. */
 			if (nlinks > 0 && (p->fts_info == FTS_D ||
 			    p->fts_info == FTS_DC || p->fts_info == FTS_DOT))
 				--nlinks;
-		} else {
-			p->fts_accpath =
-			    ISSET(FTS_NOCHDIR) ? p->fts_path : p->fts_name;
-			p->fts_info = FTS_NSOK;
 		}
 
 		/* We walk in directory order so "ls -f" doesn't get upset. */
