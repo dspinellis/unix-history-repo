@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)printf.c	5.5 (Berkeley) %G%
+ *	@(#)printf.c	5.6 (Berkeley) %G%
  */
 
 /*
@@ -98,9 +98,6 @@ reswitch:	switch (ch = *fmt++) {
 			while (ch = *p++)
 				putchar(ch);
 			break;
-		case 'D':
-			lflag = 1;
-			/* FALLTHROUGH */
 		case 'd':
 			ul = lflag ?
 			    va_arg(ap, long) : va_arg(ap, int);
@@ -110,25 +107,16 @@ reswitch:	switch (ch = *fmt++) {
 			}
 			kprintn(ul, 10);
 			break;
-		case 'O':
-			lflag = 1;
-			/* FALLTHROUGH */
 		case 'o':
 			ul = lflag ?
 			    va_arg(ap, u_long) : va_arg(ap, u_int);
 			kprintn(ul, 8);
 			break;
-		case 'U':
-			lflag = 1;
-			/* FALLTHROUGH */
 		case 'u':
 			ul = lflag ?
 			    va_arg(ap, u_long) : va_arg(ap, u_int);
 			kprintn(ul, 10);
 			break;
-		case 'X':
-			lflag = 1;
-			/* FALLTHROUGH */
 		case 'x':
 			ul = lflag ?
 			    va_arg(ap, u_long) : va_arg(ap, u_int);
