@@ -1,4 +1,4 @@
-/*	conf.c	3.9	%G%	*/
+/*	conf.c	3.10	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -113,7 +113,6 @@ char	*ttwrite();
 int	ttyinput(),ttyrend();
 int	bkopen(),bkclose(),bkread(),bkinput(),bkioctl();
 int	ntyopen(),ntyclose(),ntread();
-int	okopen(),okread(),okioctl(),okinput();
 char	*ntwrite();
 int	ntyinput(),ntyrend();
  
@@ -125,14 +124,12 @@ struct	linesw linesw[] =
 	bkinput, nodev, nulldev, ttstart, nulldev,	/* 1 */
 	ntyopen, ntyclose, ntread, ntwrite, nullioctl,
 	ntyinput, ntyrend, nulldev, ttstart, nulldev,	/* 2 */
-	okopen, nulldev, okread, ttwrite, okioctl,
-	okinput, nodev, nulldev, ttstart, nulldev,	/* 3 */
 	mxopen, mxclose, mcread, mcwrite, mxioctl,
-	nulldev, nulldev, nulldev, nulldev, nulldev,	/* 4 */
+	nulldev, nulldev, nulldev, nulldev, nulldev,	/* 3 */
 	0
 };
  
-int	nldisp = 4;
+int	nldisp = 3;
  
 struct	buf	buf[NBUF];
 struct	file	file[NFILE];
