@@ -1,0 +1,8 @@
+
+This directory contains some text files of documentation for GNU Emacs
+or of interest to Emacs users, some programs used by or with Emacs,
+and the file of on-line documentation for Emacs.
+
+`termcap.dat' is for VMS.  It is a copy of the `/etc/termcap' file
+used on Unix.
+
