@@ -9,7 +9,7 @@
  * Startup -- interface with user.
  */
 
-static char *SccsId = "@(#)main.c	2.9 %G%";
+static char *SccsId = "@(#)main.c	2.10 %G%";
 
 jmp_buf	hdrjmp;
 
@@ -207,6 +207,13 @@ main(argc, argv)
 			noheader++;
 			break;
 
+		case 'v':
+			/*
+			 * Send mailer verbose flag
+			 */
+			assign("verbose", "");
+			break;
+
 		default:
 			fprintf(stderr, "Unknown flag: %s\n", argv[i]);
 			exit(1);
@@ -270,7 +277,7 @@ main(argc, argv)
 		if (setjmp(hdrjmp) == 0) {
 			if ((prevint = sigset(SIGINT, SIG_IGN)) != SIG_IGN)
 				sigset(SIGINT, hdrstop);
-			announce();
+			announce(!0);
 			fflush(stdout);
 			sigset(SIGINT, prevint);
 		}
