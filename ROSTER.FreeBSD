@@ -95,6 +95,7 @@ ports/wu-ftpd           Justin T. Gibbs         gibbs@freefall.cdrom.com
 ports/xcdplayer		Steven Wallace		swallace@freefall.cdrom.com
 ports/xjewel		Jeffrey Hsu		hsu@freefall.cdrom.com
 ports/xlock             Scott Mace              smace@freefall.cdrom.com
+ports/xmine             J"org Wunsch            joerg_wunsch@uriah.sax.de
 ports/xphoon		Satoshi Asami		asami@cs.berkeley.edu
 ports/xv                Scott Mace              smace@freefall.cdrom.com
 ports/ytalk             Geoff Rehmet            csgr@cs.ru.ac.za
