@@ -1,4 +1,4 @@
-/*	netisr.h	4.2	82/10/31	*/
+/*	netisr.h	4.3	83/01/17	*/
 
 /*
  * The networking code runs off software interrupts.
@@ -25,6 +25,7 @@
 #define	NETISR_RAW	0		/* same as AF_UNSPEC */
 #define	NETISR_IP	2		/* same as AF_INET */
 #define	NETISR_NS	6		/* same as AF_NS */
+#define	NETISR_ND	7		/* network disk protocol */
 
 #define	schednetisr(anisr)	{ netisr |= 1<<(anisr); setsoftnet(); }
 
