@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)find.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)find.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -31,8 +31,6 @@ find_formplan(argv)
 	char **argv;
 {
 	PLAN *plan, *tail, *new;
-	PLAN *c_print(), *find_create(), *not_squish(), *or_squish();
-	PLAN *paren_squish();
 
 	/*
 	 * for each argument in the command line, determine what kind of node
