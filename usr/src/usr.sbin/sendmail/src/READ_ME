@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.22 (Berkeley) %G%
+#	@(#)READ_ME	8.23 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -15,9 +15,12 @@ For detailed instructions, please read the document ../doc/op.me:
 
 The Makefile is for the new (4.4BSD) Berkeley make, available from
 ftp.uu.net in the directory /systems/unix/bsd-sources/usr.bin/make.
-It has assumptions about the 4.4 file system layout built in.  There
-is also a Makefile.dist which is much less clever, but works on the
-old traditional make.  You can use this using:
+(Paul Southworth <pauls@umich.edu> published a description of porting
+this make in comp.unix.bsd.)  This Makefile has assumptions about the
+4.4 file system layout built in.
+
+There is also a Makefile.dist which is much less clever, but works on
+the old traditional make.  You can use this using:
 
 	make -f Makefile.dist
 
@@ -88,6 +91,7 @@ NeXT		Define this if you are on a NeXT box.  (This one may
 		have to make -- see below.
 _AIX3		Define this if you are IBM AIX 3.x.
 RISCOS		Define this if you are running RISC/os from MIPS.
+_SCO_unix_	Define this if you are on SCO UNIX.
 
 If you are a system that sendmail has already been ported to, you
 probably won't have to touch these.  But if you are porting, you may
@@ -296,6 +300,31 @@ BSDI (BSD/386)
 	copy ../contrib/oldbind.compat.c into src and add
 	oldbind.compat.o to OBJADD in the Makefile.
 
+Linux
+	From: Karl London <karl@borg.demon.co.uk>
+	Subject: Little bit to add to a readme for Linux for 8.6
+	Date: Fri, 10 Sep 1993 20:16:05 +0100 (BST)
+
+	Below is a copy of a section of the /usr/include/unistd.h from
+	linux libc-4.4.1 which needs changing because of a bug in the
+	header files. Should be fixed for future releases..
+
+	Karl
+
+	The #if 0 and #endif are new!!
+
+	-------
+
+	   If OPTS begins with `--', then non-option arguments
+	   are treated as arguments to the option '\0'.
+	   This behavior is specific to the GNU `getopt'.  */
+	#if 0
+	extern int getopt __P ((int __argc, char *__const * __argv,
+				__const char *__opts));
+	#endif
+	extern int opterr;
+	extern int optind;
+
 Both NEWDB and NDBM
 	If you use both -DNDBM and -DNEWDB, you must delete the module
 	ndbm.o from libdb.a and delete the file "ndbm.h" from the files
@@ -367,4 +396,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.22, last update %G% 11:50:29)
+(Version 8.23, last update %G% 19:38:17)
