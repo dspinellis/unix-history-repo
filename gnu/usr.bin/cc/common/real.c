@@ -3297,10 +3297,18 @@ ltoe (lp, y)
       ll = (unsigned long) (*lp);
     }
   /* move the long integer to yi significand area */
+#if HOST_BITS_PER_LONG == 64
+  yi[M] = (unsigned EMUSHORT) (ll >> 48);
+  yi[M + 1] = (unsigned EMUSHORT) (ll >> 32);
+  yi[M + 2] = (unsigned EMUSHORT) (ll >> 16);
+  yi[M + 3] = (unsigned EMUSHORT) ll;
+  yi[E] = EXONE + 47;		/* exponent if normalize shift count were 0 */
+#else
   yi[M] = (unsigned EMUSHORT) (ll >> 16);
   yi[M + 1] = (unsigned EMUSHORT) ll;
-
   yi[E] = EXONE + 15;		/* exponent if normalize shift count were 0 */
+#endif
+
   if ((k = enormlz (yi)) > NBITS)/* normalize the significand */
     ecleaz (yi);		/* it was zero */
   else
@@ -3329,10 +3337,18 @@ ultoe (lp, y)
   ll = *lp;
 
   /* move the long integer to ayi significand area */
+#if HOST_BITS_PER_LONG == 64
+  yi[M] = (unsigned EMUSHORT) (ll >> 48);
+  yi[M + 1] = (unsigned EMUSHORT) (ll >> 32);
+  yi[M + 2] = (unsigned EMUSHORT) (ll >> 16);
+  yi[M + 3] = (unsigned EMUSHORT) ll;
+  yi[E] = EXONE + 47;		/* exponent if normalize shift count were 0 */
+#else
   yi[M] = (unsigned EMUSHORT) (ll >> 16);
   yi[M + 1] = (unsigned EMUSHORT) ll;
-
   yi[E] = EXONE + 15;		/* exponent if normalize shift count were 0 */
+#endif
+
   if ((k = enormlz (yi)) > NBITS)/* normalize the significand */
     ecleaz (yi);		/* it was zero */
   else
@@ -3358,7 +3374,8 @@ eifrac (x, i, frac)
      unsigned EMUSHORT *frac;
 {
   unsigned EMUSHORT xi[NI];
-  int k;
+  int j, k;
+  unsigned long ll;
 
   emovi (x, xi);
   k = (int) xi[E] - (EXONE - 1);
@@ -3371,10 +3388,8 @@ eifrac (x, i, frac)
     }
   if (k > (HOST_BITS_PER_LONG - 1))
     {
-      /*
-	 ;	long integer overflow: output large integer
-	 ;	and correct fraction
-	 */
+      /* long integer overflow: output large integer
+	 and correct fraction  */
       if (xi[0])
 	*i = ((unsigned long) 1) << (HOST_BITS_PER_LONG - 1);
       else
@@ -3382,33 +3397,33 @@ eifrac (x, i, frac)
       eshift (xi, k);
       if (extra_warnings)
 	warning ("overflow on truncation to integer");
-      goto lab11;
     }
-
-  if (k > 16)
+  else if (k > 16)
     {
-      /*
-	 ; shift more than 16 bits: shift up k-16, output the integer,
-	 ; then complete the shift to get the fraction.
-	 */
-      k -= 16;
-      eshift (xi, k);
-
-      *i = (long) (((unsigned long) xi[M] << 16) | xi[M + 1]);
-      eshup6 (xi);
-      goto lab10;
+      /* Shift more than 16 bits: first shift up k-16 mod 16,
+	 then shift up by 16's.  */
+      j = k - ((k >> 4) << 4);
+      eshift (xi, j);
+      ll = xi[M];
+      k -= j;
+      do
+	{
+	  eshup6 (xi);
+	  ll = (ll << 16) | xi[M];
+	}
+      while ((k -= 16) > 0);
+      *i = ll;
+      if (xi[0])
+	*i = -(*i);
     }
-
-  /* shift not more than 16 bits */
-  eshift (xi, k);
-  *i = (long) xi[M] & 0xffff;
-
- lab10:
-
-  if (xi[0])
-    *i = -(*i);
- lab11:
-
+  else
+    {
+      /* shift not more than 16 bits */
+      eshift (xi, k);
+      *i = (long) xi[M] & 0xffff;
+      if (xi[0])
+	*i = -(*i);
+    }
   xi[0] = 0;
   xi[E] = EXONE - 1;
   xi[M] = 0;
@@ -3421,24 +3436,19 @@ eifrac (x, i, frac)
 }
 
 
-/*
-;	Find unsigned long integer and fractional parts
+/* Find unsigned long integer and fractional parts.
+   A negative e type input yields integer output = 0
+   but correct fraction.  */
 
-;	unsigned long i;
-;	unsigned EMUSHORT x[NE], frac[NE];
-;	xifrac (x, &i, frac);
-
-  A negative e type input yields integer output = 0
-  but correct fraction.
-*/
 void 
 euifrac (x, i, frac)
      unsigned EMUSHORT *x;
-     long *i;
+     unsigned long *i;
      unsigned EMUSHORT *frac;
 {
+  unsigned long ll;
   unsigned EMUSHORT xi[NI];
-  int k;
+  int j, k;
 
   emovi (x, xi);
   k = (int) xi[E] - (EXONE - 1);
@@ -3449,42 +3459,42 @@ euifrac (x, i, frac)
       emovo (xi, frac);
       return;
     }
-  if (k > 32)
+  if (k > HOST_BITS_PER_LONG)
     {
-      /*
-	 ;	long integer overflow: output large integer
-	 ;	and correct fraction
-	 */
+      /* Long integer overflow: output large integer
+	 and correct fraction.
+	 Note, the BSD microvax compiler says that ~(0UL)
+	 is a syntax error.  */
       *i = ~(0L);
       eshift (xi, k);
       if (extra_warnings)
 	warning ("overflow on truncation to unsigned integer");
-      goto lab10;
     }
-
-  if (k > 16)
+  else if (k > 16)
     {
-      /*
-	 ; shift more than 16 bits: shift up k-16, output the integer,
-	 ; then complete the shift to get the fraction.
-	 */
-      k -= 16;
+      /* Shift more than 16 bits: first shift up k-16 mod 16,
+	 then shift up by 16's.  */
+      j = k - ((k >> 4) << 4);
+      eshift (xi, j);
+      ll = xi[M];
+      k -= j;
+      do
+	{
+	  eshup6 (xi);
+	  ll = (ll << 16) | xi[M];
+	}
+      while ((k -= 16) > 0);
+      *i = ll;
+    }
+  else
+    {
+      /* shift not more than 16 bits */
       eshift (xi, k);
-
-      *i = (long) (((unsigned long) xi[M] << 16) | xi[M + 1]);
-      eshup6 (xi);
-      goto lab10;
+      *i = (long) xi[M] & 0xffff;
     }
 
-  /* shift not more than 16 bits */
-  eshift (xi, k);
-  *i = (long) xi[M] & 0xffff;
-
- lab10:
-
-  if (xi[0])
+  if (xi[0])  /* A negative value yields unsigned integer 0. */
     *i = 0L;
-
   xi[0] = 0;
   xi[E] = EXONE - 1;
   xi[M] = 0;
@@ -4900,7 +4910,9 @@ todec (x, y)
 /* If special NaN bit patterns are required, define them in tm.h
    as arrays of unsigned 16-bit shorts.  Otherwise, use the default
    patterns here. */
-#ifndef TFMODE_NAN
+#ifdef TFMODE_NAN
+TFMODE_NAN;
+#else
 #ifdef MIEEE
 unsigned EMUSHORT TFnan[8] =
  {0x7fff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff};
@@ -4910,7 +4922,9 @@ unsigned EMUSHORT TFnan[8] = {0, 0, 0, 0, 0, 0, 0x8000, 0xffff};
 #endif
 #endif
 
-#ifndef XFMODE_NAN
+#ifdef XFMODE_NAN
+XFMODE_NAN;
+#else
 #ifdef MIEEE
 unsigned EMUSHORT XFnan[6] = {0x7fff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff};
 #endif
@@ -4919,7 +4933,9 @@ unsigned EMUSHORT XFnan[6] = {0, 0, 0, 0xc000, 0xffff, 0};
 #endif
 #endif
 
-#ifndef DFMODE_NAN
+#ifdef DFMODE_NAN
+DFMODE_NAN;
+#else
 #ifdef MIEEE
 unsigned EMUSHORT DFnan[4] = {0x7fff, 0xffff, 0xffff, 0xffff};
 #endif
@@ -4928,7 +4944,9 @@ unsigned EMUSHORT DFnan[4] = {0, 0, 0, 0xfff8};
 #endif
 #endif
 
-#ifndef SFMODE_NAN
+#ifdef SFMODE_NAN
+SFMODE_NAN;
+#else
 #ifdef MIEEE
 unsigned EMUSHORT SFnan[2] = {0x7fff, 0xffff};
 #endif
@@ -4975,4 +4993,68 @@ enum machine_mode mode;
     *nan++ = *p++;
 }
 
+/* Convert an SFmode target `float' value to a REAL_VALUE_TYPE.
+   This is the inverse of the function `etarsingle' invoked by
+   REAL_VALUE_TO_TARGET_SINGLE.  */
+
+REAL_VALUE_TYPE
+ereal_from_float (f)
+     unsigned long f;
+{
+  REAL_VALUE_TYPE r;
+  unsigned EMUSHORT s[2];
+  unsigned EMUSHORT e[NE];
+
+  /* Convert 32 bit integer to array of 16 bit pieces in target machine order.
+   This is the inverse operation to what the function `endian' does.  */
+#if WORDS_BIG_ENDIAN
+  s[0] = (unsigned EMUSHORT) (f >> 16);
+  s[1] = (unsigned EMUSHORT) f;
+#else
+  s[0] = (unsigned EMUSHORT) f;
+  s[1] = (unsigned EMUSHORT) (f >> 16);
+#endif
+  /* Convert and promote the target float to E-type. */
+  e24toe (s, e);
+  /* Output E-type to REAL_VALUE_TYPE. */
+  PUT_REAL (e, &r);
+  return r;
+}
+
+/* Convert a DFmode target `double' value to a REAL_VALUE_TYPE.
+   This is the inverse of the function `etardouble' invoked by
+   REAL_VALUE_TO_TARGET_DOUBLE.
+
+   The DFmode is stored as an array of longs (i.e., HOST_WIDE_INTs)
+   with 32 bits of the value per each long.  The first element
+   of the input array holds the bits that would come first in the
+   target computer's memory.  */
+
+REAL_VALUE_TYPE
+ereal_from_double (d)
+     unsigned long d[];
+{
+  REAL_VALUE_TYPE r;
+  unsigned EMUSHORT s[4];
+  unsigned EMUSHORT e[NE];
+
+  /* Convert array of 32 bit pieces to equivalent array of 16 bit pieces.
+     This is the inverse of `endian'.   */
+#if WORDS_BIG_ENDIAN
+  s[0] = (unsigned EMUSHORT) (d[0] >> 16);
+  s[1] = (unsigned EMUSHORT) d[0];
+  s[2] = (unsigned EMUSHORT) (d[1] >> 16);
+  s[3] = (unsigned EMUSHORT) d[1];
+#else
+  s[0] = (unsigned EMUSHORT) d[0];
+  s[1] = (unsigned EMUSHORT) (d[0] >> 16);
+  s[2] = (unsigned EMUSHORT) d[1];
+  s[3] = (unsigned EMUSHORT) (d[1] >> 16);
+#endif
+  /* Convert target double to E-type. */
+  e53toe (s, e);
+  /* Output E-type to REAL_VALUE_TYPE. */
+  PUT_REAL (e, &r);
+  return r;
+}
 #endif /* EMU_NON_COMPILE not defined */

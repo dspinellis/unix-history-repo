@@ -2189,7 +2189,7 @@ gen_call_pop (operand0, operand1, operand2, operand3)
   if (GET_CODE (addr) != REG && HALF_PIC_P () && !CONSTANT_ADDRESS_P (addr))
     XEXP (operands[0], 0) = force_reg (Pmode, addr);
 
-  if (! call_insn_operand (operands[0], QImode))
+  if (! expander_call_insn_operand (operands[0], QImode))
     operands[0]
       = change_address (operands[0], VOIDmode,
 			copy_to_mode_reg (Pmode, XEXP (operands[0], 0)));
@@ -2230,7 +2230,7 @@ gen_call (operand0, operand1)
   if (GET_CODE (addr) != REG && HALF_PIC_P () && !CONSTANT_ADDRESS_P (addr))
     XEXP (operands[0], 0) = force_reg (Pmode, addr);
 
-  if (! call_insn_operand (operands[0], QImode))
+  if (! expander_call_insn_operand (operands[0], QImode))
     operands[0]
       = change_address (operands[0], VOIDmode,
 			copy_to_mode_reg (Pmode, XEXP (operands[0], 0)));
@@ -2273,7 +2273,7 @@ gen_call_value_pop (operand0, operand1, operand2, operand3, operand4)
   if (GET_CODE (addr) != REG && HALF_PIC_P () && !CONSTANT_ADDRESS_P (addr))
     XEXP (operands[1], 0) = force_reg (Pmode, addr);
 
-  if (! call_insn_operand (operands[1], QImode))
+  if (! expander_call_insn_operand (operands[1], QImode))
     operands[1]
       = change_address (operands[1], VOIDmode,
 			copy_to_mode_reg (Pmode, XEXP (operands[1], 0)));
@@ -2317,7 +2317,7 @@ gen_call_value (operand0, operand1, operand2)
   if (GET_CODE (addr) != REG && HALF_PIC_P () && !CONSTANT_ADDRESS_P (addr))
     XEXP (operands[1], 0) = force_reg (Pmode, addr);
 
-  if (! call_insn_operand (operands[1], QImode))
+  if (! expander_call_insn_operand (operands[1], QImode))
     operands[1]
       = change_address (operands[1], VOIDmode,
 			copy_to_mode_reg (Pmode, XEXP (operands[1], 0)));
@@ -2358,7 +2358,7 @@ gen_untyped_call (operand0, operand1, operand2)
     XEXP (operands[0], 0) = force_reg (Pmode, addr);
 
   operands[1] = change_address (operands[1], DImode, XEXP (operands[1], 0));
-  if (! call_insn_operand (operands[1], QImode))
+  if (! expander_call_insn_operand (operands[1], QImode))
     operands[1]
       = change_address (operands[1], VOIDmode,
 			copy_to_mode_reg (Pmode, XEXP (operands[1], 0)));

@@ -11,7 +11,7 @@ extern rtx *recog_dup_loc[];
 extern char recog_dup_num[];
 extern
 #ifdef __GNUC__
-volatile
+__volatile__
 #endif
 void fatal_insn_not_found ();
 

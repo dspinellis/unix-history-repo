@@ -1,5 +1,5 @@
 /* Common subexpression elimination for GNU compiler.
-   Copyright (C) 1987, 1988, 1989, 1992. 1993 Free Software Foundation, Inc.
+   Copyright (C) 1987, 1988, 1989, 1992, 1993 Free Software Foundation, Inc.
 
 This file is part of GNU CC.
 
@@ -5619,6 +5619,9 @@ record_jump_cond (code, mode, op0, op1, reversed_nonequality)
       qty_comparison_code[reg_qty[REGNO (op0)]] = code;
       if (GET_CODE (op1) == REG)
 	{
+	  /* Look it up again--in case op0 and op1 are the same.  */
+	  op1_elt = lookup (op1, op1_hash_code, mode);
+
 	  /* Put OP1 in the hash table so it gets a new quantity number.  */
 	  if (op1_elt == 0)
 	    {
@@ -7319,6 +7322,12 @@ invalidate_skipped_set (dest, set)
 
   if (GET_CODE (dest) == MEM)
     note_mem_written (dest, &skipped_writes_memory);
+
+  /* There are times when an address can appear varying and be a PLUS
+     during this scan when it would be a fixed address were we to know
+     the proper equivalences.  So promote "nonscalar" to be "all".  */
+  if (skipped_writes_memory.nonscalar)
+    skipped_writes_memory.all = 1;
 
   if (GET_CODE (dest) == REG || GET_CODE (dest) == SUBREG
       || (! skipped_writes_memory.all && ! cse_rtx_addr_varies_p (dest)))

@@ -3554,6 +3554,7 @@ build_unary_op (code, xarg, noconvert)
 	}
       else if (TREE_CODE (arg) == FUNCTION_DECL
 	       && DECL_NAME (arg)
+	       && DECL_CONTEXT (arg) == NULL_TREE
 	       && IDENTIFIER_LENGTH (DECL_NAME (arg)) == 4
 	       && IDENTIFIER_POINTER (DECL_NAME (arg))[0] == 'm'
 	       && ! strcmp (IDENTIFIER_POINTER (DECL_NAME (arg)), "main"))

@@ -175,4 +175,5 @@ init_all_optabs ()
   movstr_optab[(int) SImode] = CODE_FOR_movstrsi;
   ffs_optab->handlers[(int) SImode].insn_code = CODE_FOR_ffssi2;
   ffs_optab->handlers[(int) HImode].insn_code = CODE_FOR_ffshi2;
+  strlen_optab->handlers[(int) SImode].insn_code = CODE_FOR_strlensi;
 }

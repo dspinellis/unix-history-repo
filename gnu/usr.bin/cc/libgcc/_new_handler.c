@@ -82,9 +82,7 @@ typedef union
 } DIunion;
 extern DItype __fixunssfdi (SFtype a);
 extern DItype __fixunsdfdi (DFtype a);
-typedef void *__gnuc_va_list;
 typedef	 	size_t;
-		
 typedef long fpos_t;		 
 struct __sbuf {
 	unsigned char *_base;
@@ -159,9 +157,9 @@ int	 sscanf  (char *, const char *, ...) 		;
 FILE	*tmpfile  (void) 		;
 char	*tmpnam  (char *) 		;
 int	 ungetc  (int, FILE *) 		;
-int	 vfprintf  (FILE *, const char *, __gnuc_va_list) 		;
-int	 vprintf  (const char *, __gnuc_va_list) 		;
-int	 vsprintf  (char *, const char *, __gnuc_va_list) 		;
+int	 vfprintf  (FILE *, const char *, char *			) 		;
+int	 vprintf  (const char *, char *			) 		;
+int	 vsprintf  (char *, const char *, char *			) 		;
 char	*ctermid  (char *) 		;
 FILE	*fdopen  (int, const char *) 		;
 int	 fileno  (FILE *) 		;
@@ -175,16 +173,16 @@ void	 setbuffer  (FILE *, char *, int) 		;
 int	 setlinebuf  (FILE *) 		;
 char	*tempnam  (const char *, const char *) 		;
 int	 snprintf  (char *, size_t, const char *, ...) 		;
-int	 vsnprintf  (char *, size_t, const char *, __gnuc_va_list) 		;
-int	 vscanf  (const char *, __gnuc_va_list) 		;
-int	 vsscanf  (const char *, const char *, __gnuc_va_list) 		;
+int	 vsnprintf  (char *, size_t, const char *, char *			) 		;
+int	 vscanf  (const char *, char *			) 		;
+int	 vsscanf  (const char *, const char *, char *			) 		;
 FILE	*funopen  (const void *,
 		int (*)(void *, char *, int),
 		int (*)(void *, const char *, int),
 		fpos_t (*)(void *, fpos_t, int),
 		int (*)(void *)) 		;
 int	__srget  (FILE *) 		;
-int	__svfscanf  (FILE *, const char *, __gnuc_va_list) 		;
+int	__svfscanf  (FILE *, const char *, char *			) 		;
 int	__swbuf  (int, FILE *) 		;
 static inline int __sputc(int _c, FILE *_p) {
 	if (--_p->_w >= 0 || (_p->_w >= _p->_lbfsize && (char)_c != '\n'))

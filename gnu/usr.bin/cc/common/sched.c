@@ -844,7 +844,12 @@ add_dependence (insn, elem, dep_type)
     {
       /* Notes will never intervene here though, so don't bother checking
 	 for them.  */
-      while (NEXT_INSN (next) && SCHED_GROUP_P (NEXT_INSN (next)))
+      /* We must reject CODE_LABELs, so that we don't get confused by one
+	 that has LABEL_PRESERVE_P set, which is represented by the same
+	 bit in the rtl as SCHED_GROUP_P.  A CODE_LABEL can never be
+	 SCHED_GROUP_P.  */
+      while (NEXT_INSN (next) && SCHED_GROUP_P (NEXT_INSN (next))
+	     && GET_CODE (NEXT_INSN (next)) != CODE_LABEL)
 	next = NEXT_INSN (next);
 
       /* Again, don't depend an insn on itself.  */
@@ -1881,11 +1886,9 @@ sched_analyze_2 (x, insn)
 	    for (i = 0; i < FIRST_PSEUDO_REGISTER; i++)
 	      {
 		for (u = reg_last_uses[i]; u; u = XEXP (u, 1))
-		  if (GET_CODE (PATTERN (XEXP (u, 0))) != USE)
-		    add_dependence (insn, XEXP (u, 0), REG_DEP_ANTI);
+		  add_dependence (insn, XEXP (u, 0), REG_DEP_ANTI);
 		reg_last_uses[i] = 0;
-		if (reg_last_sets[i]
-		    && GET_CODE (PATTERN (reg_last_sets[i])) != USE)
+		if (reg_last_sets[i])
 		  add_dependence (insn, reg_last_sets[i], 0);
 		reg_last_sets[i] = insn;
 	      }
@@ -2026,11 +2029,9 @@ sched_analyze (head, tail)
 	    if (call_used_regs[i] || global_regs[i])
 	      {
 		for (u = reg_last_uses[i]; u; u = XEXP (u, 1))
-		  if (GET_CODE (PATTERN (XEXP (u, 0))) != USE)
-		    add_dependence (insn, XEXP (u, 0), REG_DEP_ANTI);
+		  add_dependence (insn, XEXP (u, 0), REG_DEP_ANTI);
 		reg_last_uses[i] = 0;
-		if (reg_last_sets[i]
-		    && GET_CODE (PATTERN (reg_last_sets[i])) != USE)
+		if (reg_last_sets[i])
 		  add_dependence (insn, reg_last_sets[i], REG_DEP_ANTI);
 		reg_last_sets[i] = insn;
 		/* Insn, being a CALL_INSN, magically depends on
