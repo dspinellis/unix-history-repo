@@ -1,4 +1,4 @@
-/*	if.h	6.1	83/07/29	*/
+/*	if.h	6.2	83/08/28	*/
 
 /*
  * Structures defining a network interface, providing a packet
@@ -77,6 +77,7 @@ struct ifnet {
 #define	IFF_POINTOPOINT	0x10		/* interface is point-to-point link */
 #define	IFF_NOTRAILERS	0x20		/* avoid use of trailers */
 #define	IFF_RUNNING	0x40		/* resources allocated */
+#define	IFF_NOARP	0x80		/* no address resolution protocol */
 
 /*
  * Output queues (ifp->if_snd) and internetwork datagram level (pup level 1)
