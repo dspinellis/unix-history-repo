@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)popen.c	1.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)popen.c	1.8 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -45,7 +45,7 @@ FILE *ptr;
 
 	f = fileno(ptr);
 	fclose(ptr);
-	omask = sigblock(mask(SIGINT)|mask(SIGQUIT)|mask(SIGHUP));
+	omask = sigblock(sigmask(SIGINT)|sigmask(SIGQUIT)|sigmask(SIGHUP));
 	while((r = wait(&status)) != popen_pid[f] && r != -1)
 		;
 	if(r == -1)

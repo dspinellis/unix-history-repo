@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)fio.c	2.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)fio.c	2.18 (Berkeley) %G%";
 #endif
 
 #include "rcv.h"
@@ -395,7 +395,7 @@ done:
 }
 
 static int sigdepth = 0;		/* depth of holdsigs() */
-static int sigmask = 0;
+static int omask = 0;
 /*
  * Hold signals SIGHUP - SIGQUIT.
  */
@@ -404,7 +404,7 @@ holdsigs()
 	register int i;
 
 	if (sigdepth++ == 0)
-		sigmask = sigblock(mask(SIGHUP)|mask(SIGINT)|mask(SIGQUIT));
+		omask = sigblock(sigmask(SIGHUP)|sigmask(SIGINT)|sigmask(SIGQUIT));
 }
 
 /*
@@ -415,7 +415,7 @@ relsesigs()
 	register int i;
 
 	if (--sigdepth == 0)
-		sigsetmask(sigmask);
+		sigsetmask(omask);
 }
 
 /*
