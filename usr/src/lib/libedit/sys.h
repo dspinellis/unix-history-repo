@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sys.h	5.2 (Berkeley) %G%
+ *	@(#)sys.h	5.3 (Berkeley) %G%
  */
 
 /*
@@ -50,10 +50,13 @@ typedef char* ioctl_t;
 #endif
 
 #include <stdio.h>
+#define REGEXP
 
-#ifdef sun
+#ifdef SUNOS
+# undef REGEXP
+# include <malloc.h>
 typedef void (*sig_t)__P((int));
-#ifdef __GNUC__
+# ifdef __GNUC__
 /*
  * Broken hdrs.
  */
@@ -71,13 +74,13 @@ extern int	errno, sys_nerr;
 extern char	*sys_errlist[];
 extern void	perror		__P((const char *));
 extern int	read		__P((int, const char*, int));
-#include <string.h>
-#define strerror(e)	sys_errlist[e]
-#endif
-#ifdef SABER
+#  include <string.h>
+#  define strerror(e)	sys_errlist[e]
+# endif
+# ifdef SABER
 extern ptr_t    memcpy		__P((ptr_t, const ptr_t, size_t));
 extern ptr_t    memset		__P((ptr_t, int, size_t));
-#endif
+# endif
 extern char    *fgetline	__P((FILE *, int *));
 #endif
 

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)el.h	5.2 (Berkeley) %G%
+ *	@(#)el.h	5.3 (Berkeley) %G%
  */
 
 /*
@@ -23,9 +23,6 @@
 #define ANCHOR
 
 #include <stdio.h>
-#ifdef sun
-#include <malloc.h>
-#endif
 #include <sys/types.h>
 
 #define EL_BUFSIZ	1024		/* Maximum line size		*/
