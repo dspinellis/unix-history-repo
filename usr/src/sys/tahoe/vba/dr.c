@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)dr.c	7.4 (Berkeley) %G%
+ *	@(#)dr.c	7.5 (Berkeley) %G%
  */
 
 #include "dr.h"
@@ -32,14 +32,12 @@
 
 #include "param.h"
 #include "conf.h"
-#include "dir.h"
 #include "user.h"
 #include "proc.h"
 #include "map.h"
 #include "ioctl.h"
 #include "buf.h"
 #include "vm.h"
-#include "uio.h"
 #include "kernel.h"
 
 #include "../tahoevba/vbavar.h"
