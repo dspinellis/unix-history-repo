@@ -1,0 +1,49 @@
+.TH NETMAIL UCB 2/24/79 UCB
+.ds s UCB
+.SH NAME
+netmail \- read mail on a remote machine over the network
+.SH SYNOPSIS
+.B netmail
+[
+.B \-l
+login ] [
+.B \-p
+password ]
+[
+.B \-n
+] [
+.B \-f
+] [ machine ]
+.SH DESCRIPTION
+The mail for the specified user is read on the specified
+.I machine.
+If the machine specification is omitted, the default machine is used.
+The remote login name is indicated by the
+.B \-l
+and 
+.B \-p
+options (or will be prompted for on the terminal).
+A password is required.
+.B \-f
+and
+.B \-n
+behave exactly as in
+.IR net (\*s).
+.PP
+The mail will be delivered in the file ``mbox.\fImachine\fP''
+in the user's login directory.
+.PP
+.I Netmail
+executes the
+.IR net (\*s)
+command.
+.SH AUTHOR
+Eric Schmidt
+.SH FILES
+.DT
+~/mbox.\(**	mail delivery point
+.SH "SEE ALSO"
+net(\*s), netrm(\*s), netq(\*s), netlog(\*s), netcp(\*s),
+netlpr(\*s), mail(1)
+.SH BUGS
+Received mail is not concatenated with existing mbox.\fImachine\fP.
