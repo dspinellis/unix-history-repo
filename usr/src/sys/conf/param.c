@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)param.c	7.6 (Berkeley) %G%
+ *	@(#)param.c	7.7 (Berkeley) %G%
  */
 
 #ifndef lint
@@ -60,7 +60,12 @@ int	nproc = NPROC;
 int	ntext = 36 + MAXUSERS;
 #define NINODE ((NPROC + 16 + MAXUSERS) + 32)
 int	ninode = NINODE;
+#ifndef NFS
 int	nchsize = NINODE * 11 / 10;
+#else
+int	nnfsnode = NINODE;
+int	nchsize = (2 * NINODE) * 11 / 10;
+#endif /* NFS */
 int	nfile = 16 * (NPROC + 16 + MAXUSERS) / 10 + 32;
 int	ncallout = 16 + NPROC;
 int	nclist = 60 + 12 * MAXUSERS;
