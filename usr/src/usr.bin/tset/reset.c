@@ -1,33 +1,46 @@
-static char *sccsid = "@(#)reset.c	4.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)reset.c	4.2 (Berkeley) %G%";
 /*
- * reset - set the teletype mode bits to be sensible
- *
- * Kurt Shoens
- *
- * Very useful after crapping out in raw.
- * Modified by Mark Horton to know about tchars
- * and to not mess with peoples chars unless they are null.
+ * reset 
  */
 #include <sgtty.h>
-#define chk(val, dft) (val==0 ? dft : val)
+
+#define	CTRL(x)	('x'&037)
 
 main()
 {
 	struct sgttyb buf;
 	struct tchars tbuf;
+	struct ltchars ltbuf;
 
 	gtty(2, &buf);
 	ioctl(2, TIOCGETC, &tbuf);
+	ioctl(2, TIOCGLTC, &ltbuf);
 	buf.sg_flags &= ~(RAW|CBREAK|VTDELAY|ALLDELAY);
 	buf.sg_flags |= XTABS|ECHO|CRMOD|ANYP;
-	buf.sg_erase = chk(buf.sg_erase, '\08');	/* ^H */
-	buf.sg_kill = chk(buf.sg_kill, '\30');		/* ^X */
-	tbuf.t_intrc = chk(tbuf.t_intrc, '\177');	/* ^? */
-	tbuf.t_quitc = chk(tbuf.t_quitc, '\34');	/* ^\ */
-	tbuf.t_startc = chk(tbuf.t_startc, '\22');	/* ^Q */
-	tbuf.t_stopc = chk(tbuf.t_stopc, '\24');	/* ^S */
-	tbuf.t_eofc = chk(tbuf.t_eofc, '\4');		/* ^D */
+	reset(&buf.sg_erase, CTRL(h));
+	reset(&buf.sg_kill, '@');
+	reset(&tbuf.t_intrc, 0177);
+	reset(&tbuf.t_quitc, CTRL(\\\\));
+	reset(&tbuf.t_startc, CTRL(q));
+	reset(&tbuf.t_stopc, CTRL(s));
+	reset(&tbuf.t_eofc, CTRL(d));
+	reset(&ltbuf.t_suspc, CTRL(z));
+	reset(&ltbuf.t_dsuspc, CTRL(y));
+	reset(&ltbuf.t_rprntc, CTRL(r));
+	reset(&ltbuf.t_flushc, CTRL(o));
+	reset(&ltbuf.t_lnextc, CTRL(v));
+	reset(&ltbuf.t_werasc, CTRL(w));
 	/* brkc is left alone */
 	ioctl(2, TIOCSETN, &buf);
 	ioctl(2, TIOCSETC, &tbuf);
+	ioctl(2, TIOCSLTC, &ltbuf);
+}
+
+reset(cp, def)
+	char *cp;
+	int def;
+{
+
+	if (*cp == 0 || (*cp&0377)==0377)
+		*cp = def;
 }
