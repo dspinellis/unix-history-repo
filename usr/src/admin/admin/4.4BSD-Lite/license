@@ -1,8 +1,8 @@
-.\"	@(#)license	1.11 (Berkeley) %G%
+.\"	@(#)license	1.12 (Berkeley) %G%
 .\"
 .nr LL 6.8i
-.OF '(4/94)'''
-.EF '(4/94)'''
+.OF '(3/94)'''
+.EF '(3/94)'''
 .ll 6.8i
 .ce 2
 .ps 11
