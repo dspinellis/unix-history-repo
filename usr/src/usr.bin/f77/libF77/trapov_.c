@@ -3,8 +3,8 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)trapov_.c	5.1	%G%
- */
+ *	@(#)trapov_.c	5.2	%G%
+ *
  *	Fortran/C floating-point overflow handler
  *
  *	The idea of these routines is to catch floating-point overflows

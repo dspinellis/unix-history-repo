@@ -3,8 +3,8 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)traper_.c	5.1	%G%
- */
+ *	@(#)traper_.c	5.2	%G%
+ *
  * Full of Magic! DON'T CHANGE ANYTHING !!
  *
  * To use from f77:
