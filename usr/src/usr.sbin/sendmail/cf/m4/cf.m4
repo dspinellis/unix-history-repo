@@ -6,7 +6,7 @@ divert(0)dnl
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)cf.m4	2.12 (Berkeley) %G%
+#	@(#)cf.m4	2.13 (Berkeley) %G%
 #
 
 
@@ -34,6 +34,7 @@ define(`MAILER',
 define(`DOMAIN', `include(../domain/$1.m4)')
 define(`FEATURE', `include(../feature/$1.m4)')
 define(`HACK', `include(../hack/$1.m4)')
+define(`OLDSENDMAIL', `undefine(`NEWSENDMAIL')')
 define(`VERSIONID', ``#####  $1  #####'')
 define(`LOCAL_RULE_3', `divert(2)')
 define(`LOCAL_RULE_0', `divert(3)')
