@@ -1,4 +1,4 @@
-/*	vp.c	4.1	%G%	*/
+/*	vp.c	4.2	%G%	*/
 
 #include "../conf/vp.h"
 #if NVP > 0
@@ -23,7 +23,7 @@ unsigned minvpph();
 
 struct	vpregs {
 	short	plbcr;
-	short	fill;
+	short	pbxaddr;
 	short	prbcr;
 	unsigned short pbaddr;
 	short	plcsr;
@@ -152,6 +152,7 @@ vpstart()
 
 	if (vp11.vp_count) {
 		VPADDR->pbaddr = vp11.vp_bufp;
+		VPADDR->pbxaddr = (vp11.vp_bufp>>12)&0x30;
 		if (vp11.vp_state & (PRINT|PPLOT))
 			VPADDR->prbcr = vp11.vp_count;
 		else
