@@ -1,4 +1,4 @@
-/*	trap.c	4.22	82/10/21	*/
+/*	trap.c	4.23	82/10/31	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -66,22 +66,22 @@ trap(sp, type, code, pc, psl)
 			panic(trap_type[type]);
 		panic("trap");
 
-	case PROTFLT + USER:	/* protection fault */
+	case T_PROTFLT+USER:	/* protection fault */
 		i = SIGBUS;
 		break;
 
-	case PRIVINFLT + USER:	/* privileged instruction fault */
-	case RESADFLT + USER:	/* reserved addressing fault */
-	case RESOPFLT + USER:	/* resereved operand fault */
+	case T_PRIVINFLT+USER:	/* privileged instruction fault */
+	case T_RESADFLT+USER:	/* reserved addressing fault */
+	case T_RESOPFLT+USER:	/* resereved operand fault */
 		u.u_code = type &~ USER;
 		i = SIGILL;
 		break;
 
-	case ASTFLT + USER:
+	case T_ASTFLT+USER:
 		astoff();
 		goto out;
 
-	case ARITHTRAP + USER:
+	case T_ARITHTRAP+USER:
 		u.u_code = code;
 		i = SIGFPE;
 		break;
@@ -90,36 +90,36 @@ trap(sp, type, code, pc, psl)
 	 * If the user SP is above the stack segment,
 	 * grow the stack automatically.
 	 */
-	case SEGFLT + USER:
+	case T_SEGFLT+USER:
 		if (grow((unsigned)locr0[SP]) || grow(code))
 			goto out;
 		i = SIGSEGV;
 		break;
 
-	case TABLEFLT:		/* allow page table faults in kernel mode */
-	case TABLEFLT + USER:   /* page table fault */
+	case T_TABLEFLT:	/* allow page table faults in kernel mode */
+	case T_TABLEFLT+USER:   /* page table fault */
 		panic("ptable fault");
 
-	case PAGEFLT:		/* allow page faults in kernel mode */
-	case PAGEFLT + USER:	/* page fault */
+	case T_PAGEFLT:		/* allow page faults in kernel mode */
+	case T_PAGEFLT+USER:	/* page fault */
 		i = u.u_error;
 		pagein(code);
 		u.u_error = i;
-		if (type == PAGEFLT)
+		if (type == T_PAGEFLT)
 			return;
 		goto out;
 
-	case BPTFLT + USER:	/* bpt instruction fault */
-	case TRCTRAP + USER:	/* trace trap */
+	case T_BPTFLT+USER:	/* bpt instruction fault */
+	case T_TRCTRAP+USER:	/* trace trap */
 		locr0[PS] &= ~PSL_T;
 		i = SIGTRAP;
 		break;
 
-	case XFCFLT + USER:	/* xfc instruction fault */
+	case T_XFCFLT+USER:	/* xfc instruction fault */
 		i = SIGEMT;
 		break;
 
-	case COMPATFLT + USER:	/* compatibility mode fault */
+	case T_COMPATFLT+USER:	/* compatibility mode fault */
 		u.u_acflag |= ACOMPAT;
 		u.u_code = code;
 		i = SIGILL;
