@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	4.12		%G%);
+SCCSID(@(#)parseaddr.c	4.13		%G%);
 
 /*
 **  PARSEADDR -- Parse an address
@@ -799,7 +799,7 @@ rewrite(pvp, ruleset)
 		}
 		else
 		{
-			bmove((char *) npvp, (char *) pvp,
+			bcopy((char *) npvp, (char *) pvp,
 				(int) (avp - npvp) * sizeof *avp);
 		}
 # ifdef DEBUG
