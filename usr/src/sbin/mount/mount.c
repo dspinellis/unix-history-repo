@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	5.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	5.34 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "pathnames.h"
@@ -63,8 +63,10 @@ char **vfslist, **makevfslist();
 #ifdef NFS
 int xdr_dir(), xdr_fh();
 char *getnfsargs();
-struct nfs_args nfsargs = {
-	(struct sockaddr_in *)0,
+struct nfs_args nfsdefargs = {
+	(struct sockaddr *)0,
+	SOCK_DGRAM,
+	0,
 	(nfsv2fh_t *)0,
 	0,
 	NFS_WSIZE,
@@ -231,9 +233,11 @@ mountfs(spec, name, flags, type, options, mntopts)
 	register int cnt;
 	int argc, status, i;
 	struct ufs_args args;
+	struct nfs_args nfsargs;
 	char *argp, *argv[50];
 	char execname[MAXPATHLEN + 1], flagval[12];
 
+	nfsargs = nfsdefargs;
 	if (mntopts)
 		getstdopts(mntopts, &flags);
 	if (options)
@@ -262,7 +266,7 @@ mountfs(spec, name, flags, type, options, mntopts)
 			getnfsopts(mntopts, &nfsargs, &opflags, &retrycnt);
 		if (options)
 			getnfsopts(options, &nfsargs, &opflags, &retrycnt);
-		if (argp = getnfsargs(spec, name, type))
+		if (argp = getnfsargs(spec, &nfsargs))
 			break;
 		return (1);
 #endif /* NFS */
@@ -599,6 +603,10 @@ getnfsopts(optarg, nfsargsp, opflagsp, retrycntp)
 			nfsargsp->flags |= NFSMNT_SOFT;
 		} else if (!strcmp(cp, "intr")) {
 			nfsargsp->flags |= NFSMNT_INT;
+		} else if (!strcmp(cp, "tcp")) {
+			nfsargsp->sotype = SOCK_STREAM;
+		} else if (!strcmp(cp, "noconn")) {
+			nfsargsp->flags |= NFSMNT_NOCONN;
 		} else if (!strcmp(cp, "retry") && num > 0) {
 			*retrycntp = num;
 		} else if (!strcmp(cp, "rsize") && num > 0) {
@@ -619,8 +627,9 @@ getnfsopts(optarg, nfsargsp, opflagsp, retrycntp)
 }
 
 char *
-getnfsargs(spec)
+getnfsargs(spec, nfsargsp)
 	char *spec;
+	struct nfs_args *nfsargsp;
 {
 	extern int errno;
 	register CLIENT *clp;
@@ -704,10 +713,10 @@ getnfsargs(spec)
 		return (0);
 	}
 	saddr.sin_port = htons(tport);
-	nfsargs.addr = &saddr;
-	nfsargs.fh = &nfhret.nfh;
-	nfsargs.hostname = nam;
-	return ((caddr_t)&nfsargs);
+	nfsargsp->addr = (struct sockaddr *) &saddr;
+	nfsargsp->fh = &nfhret.nfh;
+	nfsargsp->hostname = nam;
+	return ((caddr_t)nfsargsp);
 }
 
 /*
