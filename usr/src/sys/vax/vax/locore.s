@@ -1,4 +1,4 @@
-/*	locore.s	6.6	84/02/15	*/
+/*	locore.s	6.7	84/03/22	*/
 
 #include "../machine/psl.h"
 #include "../machine/pte.h"
@@ -14,7 +14,6 @@
 #include "../vax/clock.h"
 #include "../vaxuba/ubareg.h"
 
-#include "dh.h"
 #include "dz.h"
 #include "uu.h"
 #include "ps.h"
@@ -172,12 +171,6 @@ SCBVEC(hardclock):
 	rei
 SCBVEC(softclock):
 	PUSHR
-#if NDZ > 0
-	calls	$0,_dztimer
-#endif
-#if NDH > 0
-	calls	$0,_dhtimer
-#endif
 	pushl	4+6*4(sp); pushl 4+6*4(sp);
 	calls	$2,_softclock			# softclock(pc,psl)
 	POPR; 
