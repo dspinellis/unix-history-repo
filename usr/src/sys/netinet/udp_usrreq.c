@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	4.42	83/01/04	*/
+/*	udp_usrreq.c	4.43	83/01/13	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -203,11 +203,10 @@ udp_output(inp, m0)
 }
 
 /*ARGSUSED*/
-udp_usrreq(so, req, m, nam, opt)
+udp_usrreq(so, req, m, nam)
 	struct socket *so;
 	int req;
 	struct mbuf *m, *nam;
-	struct socketopt *opt;
 {
 	struct inpcb *inp = sotoinpcb(so);
 	int error = 0;
