@@ -1,5 +1,5 @@
-/* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_vops.c	6.3 %G%";
+/* Copyright (c) 1981 Regents of the University of California */
+static char *sccsid = "@(#)ex_vops.c	7.1	%G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -621,7 +621,7 @@ smallchange:
  * you are better off with slowopen.
  */
 voOpen(c, cnt)
-	char c;
+	int c;	/* mjm: char --> int */
 	register int cnt;
 {
 	register int ind = 0, i;

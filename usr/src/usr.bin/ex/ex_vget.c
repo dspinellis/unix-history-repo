@@ -1,5 +1,5 @@
-/* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_vget.c	6.2 %G%";
+/* Copyright (c) 1981 Regents of the University of California */
+static char *sccsid = "@(#)ex_vget.c	6.3 %G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -15,7 +15,7 @@ static char *sccsid = "@(#)ex_vget.c	6.2 %G%";
  * Return the key.
  */
 ungetkey(c)
-	char c;
+	int c;		/* mjm: char --> int */
 {
 
 	if (Peekkey != ATTN)
@@ -27,7 +27,7 @@ ungetkey(c)
  */
 getkey()
 {
-	register char c;
+	register int c;		/* mjm: char --> int */
 
 	do {
 		c = getbr();
@@ -64,6 +64,7 @@ getbr()
 	char ch;
 	register int c, d;
 	register char *colp;
+	int cnt;
 #define BEEHIVE
 #ifdef BEEHIVE
 	static char Peek2key;
@@ -101,7 +102,7 @@ getATTN:
 	}
 	flusho();
 again:
-	if (read(slevel == 0 ? 0 : ttyindes, &ch, 1) != 1) {
+	if ((c=read(slevel == 0 ? 0 : ttyindes, &ch, 1)) != 1) {
 		if (errno == EINTR)
 			goto getATTN;
 		error("Input read error");
@@ -455,7 +456,7 @@ map(c,maps)
 					if ((c=='#' ? peekkey() : fastpeekkey()) == 0) {
 #ifdef MDEBUG
 						if (trace)
-							fprintf(trace,"fpk=0: return '%c'",c);
+							fprintf(trace,"fpk=0: will return '%c'",c);
 #endif
 						/*
 						 * Nothing waiting.  Push back
@@ -467,7 +468,15 @@ map(c,maps)
 						 * to undo part of an insertion
 						 * so if in input mode don't.
 						 */
+#ifdef MDEBUG
+						if (trace)
+							fprintf(trace, "Call macpush, b %d %d %d\n", b[0], b[1], b[2]);
+#endif
 						macpush(&b[1],maps == arrows);
+#ifdef MDEBUG
+						if (trace)
+							fprintf(trace, "return %d\n", c);	
+#endif
 						return(c);
 					}
 					*q = getkey();
@@ -511,11 +520,7 @@ int canundo;
 
 	if (st==0 || *st==0)
 		return;
-#ifdef notdef
-	if (!value(UNDOMACRO))
-		canundo = 0;
-#endif
-#ifdef TRACE
+#ifdef MDEBUG
 	if (trace)
 		fprintf(trace, "macpush(%s), canundo=%d\n",st,canundo);
 #endif
@@ -629,9 +634,19 @@ fastpeekkey()
 	 * as separate.  notimeout is provided for people who dislike such
 	 * nondeterminism.
 	 */
+#ifdef MDEBUG
+	if (trace)
+		fprintf(trace,"\nfastpeekkey: ",c);
+#endif
 	if (value(TIMEOUT) && inopen >= 0) {
 		signal(SIGALRM, trapalarm);
+#ifdef MDEBUG
+		alarm(10);
+		if (trace)
+			fprintf(trace, "set alarm ");
+#else
 		alarm(1);
+#endif
 	}
 	CATCH
 		c = peekkey();
@@ -644,7 +659,7 @@ fastpeekkey()
 		c = 0;
 #ifdef MDEBUG
 	if (trace)
-		fprintf(trace,"[TOUT]",c);
+		fprintf(trace,"[TIMEOUT]",c);
 #endif
 	ENDCATCH
 #ifdef MDEBUG

@@ -1,5 +1,5 @@
 /* Copyright (c) 1979 Regents of the University of California */
-static char *sccsid = "@(#)ex_unix.c	6.1 %G%";
+static char *sccsid = "@(#)ex_unix.c	6.1 10/18/80";
 #include "ex.h"
 #include "ex_temp.h"
 #include "ex_tty.h"
@@ -232,7 +232,7 @@ filter(mode)
 	register int mode;
 {
 	static int pvec[2];
-	register ttymode f;
+	ttymode f;	/* mjm: was register */
 	register int lines = lineDOL();
 
 	mode++;
@@ -251,7 +251,7 @@ filter(mode)
 			setrupt();
 			io = pvec[1];
 			close(pvec[0]);
-			putfile();
+			putfile(1);
 			exit(0);
 		}
 		close(pvec[1]);

@@ -1,5 +1,5 @@
 /* block copy from from to to, count bytes */
-static char *sccsid = "@(#)bcopy.c	6.1 %G%";
+static char *sccsid = "@(#)bcopy.c	7.1	%G%";
 bcopy(from, to, count)
 #ifdef vax
 	char *from, *to;
@@ -12,7 +12,7 @@ bcopy(from, to, count)
 	register char *from, *to;
 	register int count;
 {
-	while (count--)
+	while ((count--) > 0)	/* mjm */
 		*to++ = *from++;
 }
 #endif

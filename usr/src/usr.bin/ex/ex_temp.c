@@ -1,5 +1,5 @@
-/* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_temp.c	6.2 %G%";
+/* Copyright (c) 1981 Regents of the University of California */
+static char *sccsid = "@(#)ex_temp.c	7.1	%G%";
 #include "ex.h"
 #include "ex_temp.h"
 #include "ex_vis.h"
@@ -15,7 +15,7 @@ static char *sccsid = "@(#)ex_temp.c	6.2 %G%";
 char	tfname[40];
 char	rfname[40];
 int	havetmp;
-short	tfile = -1;
+/* short	tfile = -1;	mjm: in ex_space.c */
 short	rfile = -1;
 
 fileinit()
@@ -331,7 +331,7 @@ oops:
 TSYNC()
 {
 
-	if (dirtcnt > 12) {
+	if (dirtcnt > MAXDIRT) {	/* mjm: 12 --> MAXDIRT */
 #ifdef VMUNIX
 		if (stilinc)
 			tflush();

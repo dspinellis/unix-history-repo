@@ -1,5 +1,5 @@
-/* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_vmain.c	6.2 %G%";
+/* Copyright (c) 1981 Regents of the University of California */
+static char *sccsid = "@(#)ex_vmain.c	7.1	%G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"

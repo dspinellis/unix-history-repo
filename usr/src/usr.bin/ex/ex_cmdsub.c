@@ -1,5 +1,5 @@
-/* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_cmdsub.c	6.1 %G%";
+/* Copyright (c) 1981 Regents of the University of California */
+static char *sccsid = "@(#)ex_cmdsub.c	7.1	%G%";
 #include "ex.h"
 #include "ex_argv.h"
 #include "ex_temp.h"
@@ -257,7 +257,7 @@ move()
 		setdot();
 	}
 	nonzero();
-	adt = address(0);
+	adt = address((char*)0);
 	if (adt == 0)
 		serror("%s where?|%s requires a trailing address", Command);
 	newline();
@@ -469,7 +469,7 @@ tagfind(quick)
 	int tfcount = 0;
 	int omagic;
 	char *fn, *fne;
-#ifdef VMUNIX
+#ifdef STDIO		/* mjm: was VMUNIX */
 	/*
 	 * We have lots of room so we bring in stdio and do
 	 * a binary search on the tags file.
@@ -520,7 +520,7 @@ badtag:
 			fne = 0;	/* done, quit after this time */
 		else
 			*fne = 0;	/* null terminate filename */
-#ifdef VMUNIX
+#ifdef STDIO		/* mjm: was VMUNIX */
 		iof = fopen(fn, "r");
 		if (iof == NULL)
 			continue;
@@ -547,7 +547,7 @@ badtag:
 			register char *lp = lasttag;
 			char *oglobp;
 
-#ifdef VMUNIX
+#ifdef STDIO		/* mjm: was VMUNIX */
 			mid = (top + bot) / 2;
 			fseek(iof, mid, 0);
 			if (mid > 0)	/* to get first tag in file to work */
@@ -562,7 +562,7 @@ badtag:
 			while (*cp && *lp == *cp)
 				cp++, lp++;
 			if ((*lp || !iswhite(*cp)) && (value(TAGLENGTH)==0 || lp-lasttag < value(TAGLENGTH))) {
-#ifdef VMUNIX
+#ifdef STDIO		/* mjm: was VMUNIX */
 				if (*lp > *cp)
 					bot = mid + 1;
 				else
@@ -576,7 +576,7 @@ goleft:
 			/*
 			 * We found the tag.  Decode the line in the file.
 			 */
-#ifdef VMUNIX
+#ifdef STDIO		/* mjm: was VMUNIX */
 			fclose(iof);
 #else
 			close(io);
@@ -658,7 +658,7 @@ badtags:
 		/*
 		 * No such tag in this file.  Close it and try the next.
 		 */
-#ifdef VMUNIX
+#ifdef STDIO		/* mjm: was VMUNIX */
 		fclose(iof);
 #else
 		close(io);
@@ -1069,7 +1069,7 @@ mapcmd(un, ab)
 {
 	char lhs[100], rhs[100];	/* max sizes resp. */
 	register char *p;
-	register char c;
+	register int c;		/* mjm: char --> int */
 	char *dname;
 	struct maps *mp;	/* the map structure we are working on */
 

@@ -1,5 +1,5 @@
-/* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_vops2.c	6.2 %G%";
+/* Copyright (c) 1981 Regents of the University of California */
+static char *sccsid = "@(#)ex_vops2.c	6.3 %G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -9,8 +9,8 @@ static char *sccsid = "@(#)ex_vops2.c	6.2 %G%";
  * and mostly, insert mode (and a subroutine
  * to read an input line, including in the echo area.)
  */
-char	*vUA1, *vUA2;
-char	*vUD1, *vUD2;
+extern char	*vUA1, *vUA2;		/* mjm: extern; also in ex_vops.c */
+extern char	*vUD1, *vUD2;		/* mjm: extern; also in ex_vops.c */
 
 /*
  * Obleeperate characters in hardcopy
@@ -104,7 +104,7 @@ bool	gobbled;
 char	*ogcursor;
 
 vappend(ch, cnt, indent)
-	char ch;
+	int ch;		/* mjm: char --> int */
 	int cnt, indent;
 {
 	register int i;
@@ -807,8 +807,10 @@ vbackup:
 			}
 def:
 			if (!backsl) {
+				int cnt;
 				putchar(c);
-				flush();
+				if (ioctl(0, FIONREAD, &cnt) != 0 || cnt==0)
+					flush();
 			}
 			if (gcursor > &genbuf[LBSIZE - 2])
 				error("Line too long");

@@ -1,5 +1,5 @@
-/* Copyright (c) 1980 Regents of the University of California */
-/* sccs id:	@(#)ex_tune.h	6.2 %G%  */
+/* Copyright (c) 1981 Regents of the University of California */
+/* sccs id:	@(#)ex_tune.h	7.1	%G%  */
 /*
  * Definitions of editor parameters and limits
  */
@@ -11,10 +11,10 @@
  * "/usr/lib/..." here, "/lib" will be tried only for strings.
  */
 #include "local/uparm.h"
-#define	EXRECOVER	libpath(ex3.6recover)
-#define	EXPRESERVE	libpath(ex3.6preserve)
+#define	EXRECOVER	libpath(ex3.7recover)
+#define	EXPRESERVE	libpath(ex3.7preserve)
 #ifndef VMUNIX
-#define	EXSTRINGS	libpath(ex3.6strings)
+#define	EXSTRINGS	libpath(ex3.7strings)
 #endif
 
 /*
@@ -109,5 +109,5 @@
  * Attention is the interrupt character (normally 0177 -- delete).
  * Quit is the quit signal (normally FS -- control-\) and quits open/visual.
  */
-#define	ATTN	(-2)
+#define	ATTN	(-2)	/* mjm: (char) ??  */
 #define	QUIT	('\\' & 037)

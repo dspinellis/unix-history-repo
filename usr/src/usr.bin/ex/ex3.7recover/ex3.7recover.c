@@ -1,21 +1,20 @@
-/* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex3.7recover.c	6.1 %G%";
+/* Copyright (c) 1981 Regents of the University of California */
+static char *sccsid = "@(#)ex3.7recover.c	7.1	%G%";
+#include <stdio.h>	/* mjm: BUFSIZ: stdio = 512, VMUNIX = 1024 */
+#undef	BUFSIZ		/* mjm: BUFSIZ different */
+#undef	EOF		/* mjm: EOF and NULL effectively the same */
+#undef	NULL
 #include "ex.h"
 #include "ex_temp.h"
 #include "ex_tty.h"
 #include "local/uparm.h"
 
-#undef	BUFSIZ
-#undef	EOF
-#undef	NULL
+/* #undef	BUFSIZ		mjm: move to before ex.h */
+/* #undef	EOF		mjm: move to before ex.h */
+/* #undef	NULL		mjm: move to before ex.h */
 
-#include <stdio.h>
+/* #include <stdio.h>		mjm: move to before ex.h */
 #include <sys/dir.h>
-
-/*
- * Ex recovery program
- *	exrecover dir name
- *	exrecover -r
  *
  * This program searches through the specified directory and then
  * the directory usrpath(preserve) looking for an instance of the specified
@@ -139,7 +138,7 @@ main(argc, argv)
 	 */
 	if (dol > zero) {
 		addr1 = one; addr2 = dol; io = 1;
-		putfile();
+		putfile(0);
 	}
 
 	/*

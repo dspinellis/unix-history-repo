@@ -1,5 +1,5 @@
-/* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_vadj.c	6.2 %G%";
+/* Copyright (c) 1981 Regents of the University of California */
+static char *sccsid = "@(#)ex_vadj.c	7.1	%G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -255,9 +255,17 @@ vinslin(p, cnt, l)
 		/*
 		 * Use insert line.
 		 */
-		vgoto(p, 0), vputp(AL, WECHO + 1 - p);
+		vgoto(p, 0);
+		if (XV)
+			vputp(tgoto(AL, 0, p), WECHO + 1 - p);
+		else
+			vputp(AL, WECHO + 1 - p);
 		for (i = cnt - 1; i > 0; i--) {
-			vgoto(outline+1, 0), vputp(AL, WECHO + 1 - outline);
+			vgoto(outline+1, 0);
+			if (XV)
+				vputp(tgoto(AL, 0, outline+1), WECHO + 1 - outline);
+			else
+				vputp(AL, WECHO + 1 - outline);
 			if ((hold & HOLDAT) == 0)
 				putchar('@');
 		}
@@ -719,7 +727,10 @@ vdellin(p, cnt, l)
 	 */
 	vgoto(p, 0);
 	for (i = 0; i < cnt; i++)
-		vputp(DL, WECHO - p);
+		if (XV)
+			vputp(tgoto(DL, 0, p), WECHO - p);
+		else
+			vputp(DL, WECHO - p);
 	vadjDL(p, cnt);
 	vcloseup(l, cnt);
 }

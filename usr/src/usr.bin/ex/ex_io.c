@@ -1,5 +1,5 @@
-/* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_io.c	6.2 %G%";
+/* Copyright (c) 1981 Regents of the University of California */
+static char *sccsid = "@(#)ex_io.c	7.1	%G%";
 #include "ex.h"
 #include "ex_argv.h"
 #include "ex_temp.h"
@@ -352,7 +352,7 @@ rop(c)
 			break;
 		switch (magic) {
 
-		case 0405:	/* Interdata? overlay */
+		case 0405:	/* data overlay on exec */
 		case 0407:	/* unshared */
 		case 0410:	/* shared text */
 		case 0411:	/* separate I/D */
@@ -406,10 +406,19 @@ rop(c)
 
 rop2()
 {
+	line *first, *last, *a;
 
 	deletenone();
 	clrstats();
+	first = addr2 + 1;
 	ignore(append(getfile, addr2));
+	last = dot;
+	for (a=first; a<=last; a++) {
+		if (a==first+5 && last-first > 10)
+			a = last - 4;
+		getline(*a);
+		checkmodeline(linebuf);
+	}
 }
 
 rop3(c)
@@ -574,7 +583,7 @@ cre:
 		lseek(io, 0l, 2);
 		break;
 	}
-	putfile();
+	putfile(0);
 	ignore(iostats());
 	if (c != 2 && addr1 == one && addr2 == dol) {
 		if (eq(file, savedfile))
@@ -664,7 +673,8 @@ cntch);
 /*
  * Write a range onto the io stream.
  */
-putfile()
+putfile(isfilter)
+int isfilter;
 {
 	line *a1;
 	register char *fp, *lp;
@@ -684,7 +694,7 @@ putfile()
 			if (--nib < 0) {
 				nib = fp - genbuf;
 #ifdef CRYPT
-                		if(kflag)
+                		if(kflag && !isfilter)
                                         crblock(perm, genbuf, nib, cntch);
 #endif
 				if (write(io, genbuf, nib) != nib) {
@@ -702,7 +712,7 @@ putfile()
 	} while (a1 <= addr2);
 	nib = fp - genbuf;
 #ifdef CRYPT
-	if(kflag)
+	if(kflag && !isfilter)
 		crblock(perm, genbuf, nib, cntch);
 #endif
 	if (write(io, genbuf, nib) != nib) {
@@ -829,4 +839,32 @@ iostats()
 		flush();
 	}
 	return (cntnull != 0 || cntodd != 0);
+}
+
+#if USG | USG3TTY
+/* It's so wonderful how we all speak the same language... */
+# define index strchr
+# define rindex strrchr
+#endif
+
+checkmodeline(line)
+char *line;
+{
+	char *beg, *end;
+	char cmdbuf[1024];
+	char *index(), *rindex();
+
+	beg = index(line, ':');
+	if (beg == NULL)
+		return;
+	if (beg[-2] != 'e' && beg[-2] != 'v') return;
+	if (beg[-1] != 'x' && beg[-1] != 'i') return;
+
+	strncpy(cmdbuf, beg+1, sizeof cmdbuf);
+	end = rindex(cmdbuf, ':');
+	if (end == NULL)
+		return;
+	*end = 0;
+	globp = cmdbuf;
+	commands(1, 1);
 }

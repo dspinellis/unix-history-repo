@@ -1,13 +1,13 @@
-/* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_cmds2.c	6.1 %G%";
+/* Copyright (c) 1981 Regents of the University of California */
+static char *sccsid = "@(#)ex_cmds2.c	7.1	%G%";
 #include "ex.h"
 #include "ex_argv.h"
 #include "ex_temp.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
 
-bool	pflag, nflag;
-int	poffset;
+extern bool	pflag, nflag;		/* mjm: extern; also in ex_cmds.c */
+extern int	poffset;		/* mjm: extern; also in ex_cmds.c */
 
 /*
  * Subroutines for major command loop.
