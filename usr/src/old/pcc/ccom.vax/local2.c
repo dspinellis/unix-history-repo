@@ -1,4 +1,4 @@
-static char *sccsid ="@(#)local2.c	1.2 (Berkeley) %G%";
+static char *sccsid ="@(#)local2.c	1.3 (Berkeley) %G%";
 # include "mfile2"
 # include "ctype.h"
 # ifdef FORT
@@ -420,7 +420,6 @@ zzzcode( p, c ) register NODE *p; {
 
 				}
 			else if( p->in.op == STARG ){  /* store an arg into a temporary */
-				l = getlr( p, '3' );
 				r = p->in.left;
 				}
 			else cerror( "STASG bad" );
@@ -452,9 +451,13 @@ zzzcode( p, c ) register NODE *p; {
 					break;
 			}
 			adrput(r);
-			printf(",");
-			adrput(l);
-			printf("\n");
+			if( p->in.op == STASG ){
+				printf(",");
+				adrput(l);
+				printf("\n");
+				}
+			else
+				printf(",(sp)\n");
 
 			if( r->in.op == NAME ) r->in.op = ICON;
 			else if( r->in.op == OREG ) r->in.op = REG;
@@ -839,7 +842,7 @@ int gc_numbytes;
 
 gencall( p, cookie ) register NODE *p; {
 	/* generate the call given by p */
-	register NODE *p1, *ptemp;
+	register NODE *p1;
 	register temp, temp1;
 	register m;
 
@@ -857,19 +860,7 @@ gencall( p, cookie ) register NODE *p; {
 	SETOFF(temp1,4);
 
 	if( p->in.right ){ /* make temp node, put offset in, and generate args */
-		ptemp = talloc();
-		ptemp->in.op = OREG;
-		ptemp->tn.lval = -1;
-		ptemp->tn.rval = SP;
-#ifndef FLEXNAMES
-		ptemp->in.name[0] = '\0';
-#else
-		ptemp->in.name = "";
-#endif
-		ptemp->in.rall = NOPREF;
-		ptemp->in.su = 0;
-		genargs( p->in.right, ptemp );
-		ptemp->in.op = FREE;
+		genargs( p->in.right );
 		}
 
 	p1 = p->in.left;
