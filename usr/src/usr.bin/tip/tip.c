@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tip.c	4.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)tip.c	4.17 (Berkeley) %G%";
 #endif
 
 /*
@@ -451,13 +451,19 @@ pwrite(fd, buf, n)
 {
 	register int i;
 	register char *bp;
+	extern int errno;
 
 	bp = buf;
 	for (i = 0; i < n; i++) {
 		*bp = partab[(*bp) & 0177];
 		bp++;
 	}
-	write(fd, buf, n);
+	if (write(fd, buf, n) < 0) {
+		if (errno == EIO)
+			abort("Lost carrier.");
+		/* this is questionable */
+		perror("write");
+	}
 }
 
 /*

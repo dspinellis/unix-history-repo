@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	4.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	4.13 (Berkeley) %G%";
 #endif
 
 #include "tip.h"
@@ -539,20 +539,29 @@ chdirectory()
 	printf("!\r\n");
 }
 
+abort(msg)
+	char *msg;
+{
+
+	kill(pid, SIGTERM);
+	disconnect(msg);
+	if (msg != NOSTR)
+		printf("\r\n%s", msg);
+	printf("\r\n[EOT]\r\n");
+	delock(uucplock);
+	unraw();
+	exit(0);
+}
+
 finish()
 {
 	char *dismsg;
 
 	if ((dismsg = value(DISCONNECT)) != NOSTR) {
-		write(FD,dismsg,strlen(dismsg));
+		write(FD, dismsg, strlen(dismsg));
 		sleep(5);
 	}
-	kill(pid, SIGTERM);
-	disconnect();
-	printf("\r\n[EOT]\r\n");
-	delock(uucplock);
-	unraw();
-	exit(0);
+	abort(NOSTR);
 }
 
 intcopy()
