@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.58 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.59 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -537,7 +537,7 @@ R< > $=D . $+ < $+ >	$#_LOCAL_ $: $1 . $2		dotted name?
 R< > $+ + $* < $+ >	$#_LOCAL_ $@ $2 $: $1		plussed name?
 R< > $+ < $+ >		$#_LOCAL_ $: @ $1			nope, local address',
 `R$=L < @ $=w . >		$#_LOCAL_ $: @ $1			special local names
-R$+ + $* < @ $=2 . >	$#_LOCAL_ $@ $2 $: $1		plussed name
+R$+ + $* < @ $=w . >	$#_LOCAL_ $@ $2 $: $1		plussed name
 R$+ < @ $=w . >		$#_LOCAL_ $: $1			nonplussed name')
 ifdef(`MAILER_TABLE',
 `
