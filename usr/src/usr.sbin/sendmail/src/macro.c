@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)macro.c	3.20		%G%);
+SCCSID(@(#)macro.c	4.1		%G%);
 
 char	*Macro[128];
 

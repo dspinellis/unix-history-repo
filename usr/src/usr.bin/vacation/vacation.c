@@ -5,7 +5,7 @@
 # include "useful.h"
 # include "userdbm.h"
 
-SCCSID(@(#)vacation.c	3.9		%G%);
+SCCSID(@(#)vacation.c	4.1		%G%);
 
 /*
 **  VACATION -- return a message to the sender when on vacation.

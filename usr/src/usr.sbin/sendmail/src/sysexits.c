@@ -1,7 +1,7 @@
 # include <sysexits.h>
 # include "useful.h"
 
-SCCSID(@(#)sysexits.c	3.6		%G%);
+SCCSID(@(#)sysexits.c	4.1		%G%);
 
 /*
 **  SYSEXITS.C -- error messages corresponding to sysexits.h

@@ -1,7 +1,7 @@
 #
 #	Makefile for sendmail documentation
 #
-#	@(#)Makefile	3.2		%G%
+#	@(#)Makefile	4.1		%G%
 #
 
 OBJS=	intro.lpr op.lpr usenix.lpr

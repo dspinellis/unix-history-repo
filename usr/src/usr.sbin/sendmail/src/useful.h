@@ -1,7 +1,7 @@
 /*
 **  USEFUL.H -- Some useful stuff.
 **
-**	@(#)useful.h	3.13		%G%
+**	@(#)useful.h	4.1		%G%
 */
 
 # ifndef makedev

@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)err.c	3.40		%G%);
+SCCSID(@(#)err.c	4.1		%G%);
 
 /*
 **  SYSERR -- Print error message.
