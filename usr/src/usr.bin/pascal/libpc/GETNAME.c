@@ -1,8 +1,9 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)GETNAME.c 1.8 %G%";
+static char sccsid[] = "@(#)GETNAME.c 1.9 %G%";
 
 #include "h00vars.h"
+#include "libpc.h"
 
 /*
  * GETNAME - activate a file
@@ -31,9 +32,16 @@ GETNAME(filep, name, namlim, datasize)
 	register int	cnt;
 	struct iorec	locvar;
 
-	if (filep->fblk >= MAXFILES || _actfile[filep->fblk] != filep) {
+	if (filep->fblk < MAXFILES && _actfile[filep->fblk] == filep) {
+		/* 
+		 * Close and immediately reactivate the file.
+		 */
+		PFCLOSE(filep);
+		_actfile[filep->fblk] = filep;
+		filep->funit &= (TEMP | FTEXT);
+	} else {
 		/*
-		 * initialize a new filerecord
+		 * Initialize a new file record.
 		 */
 		filep->funit = 0;
 		if (datasize == 0) {
@@ -46,7 +54,7 @@ GETNAME(filep, name, namlim, datasize)
 		filep->llimit = 0x7fffffff;
 		filep->fileptr = &filep->window[0];
 		/*
-		 * check to see if file is global, or allocated in
+		 * Check to see if file is global, or allocated in
 		 * the stack by checking its address against the
 		 * address of one of our routine's local variables.
 		 */
@@ -66,7 +74,7 @@ gotone:
 		filep->fblk = _filefre;
 		_actfile[_filefre] = filep;
 		/*
-		 * link the newrecord into the file chain
+		 * Link the newrecord into the file chain.
 		 */
 		prev = (struct iorec *)&_fchain;
 		next = _fchain.fchain;
@@ -74,45 +82,28 @@ gotone:
 			prev = next;
 			next = next->fchain;
 		}
+		if (filep->flev == GLVL)
+			/*
+			 * Must order global files so that all dynamic files
+			 * within a record are grouped together.
+			 */
+			while (next != FILNIL && (struct iorec *)filep > next) {
+				prev = next;
+				next = next->fchain;
+			}
 		filep->fchain = next;
 		prev->fchain = filep;
-	} else {
-		if ((filep->funit & FDEF) == 0 && filep->fbuf != NULL) {
-			/*
-			 * have a previous buffer, close associated file
-			 */
-			if (filep->fblk > PREDEF) {
-				fflush(filep->fbuf);
-				setbuf(filep->fbuf, NULL);
-			}
-			fclose(filep->fbuf);
-			if (ferror(filep->fbuf)) {
-				ERROR("%s: Close failed\n", filep->pfname);
-				return;
-			}
-			/*
-			 * renamed temporary files are discarded
-			 */
-			if ((filep->funit & TEMP) && name != NULL) {
-			    	if (unlink(filep->pfname)) {
-					PERROR("Could not remove ",
-						filep->pfname);
-					return;
-				}
-			}
-		}
-		filep->funit &= (TEMP | FTEXT);
 	}
 	/*
-	 * get the filename associated with the buffer
+	 * Get the filename associated with the buffer.
 	 */
 	if (name == NULL) {
 		if (*filep->fname != NULL) {
 			return(filep);
 		}
 		/*
-		 * no name given and no previous name, so generate
-		 * a new one of the form #tmp.xxxxxx
+		 * No name given and no previous name, so generate
+		 * a new one of the form #tmp.xxxxxx.
 		 */
 		filep->funit |= TEMP;
 		sprintf(filep->fname, "#tmp.%c%d", tmpname[filep->fblk],
@@ -121,8 +112,8 @@ gotone:
 		return(filep);
 	}
 	/*
-	 * trim trailing blanks, and insure that the name 
-	 * will fit into the file structure
+	 * Trim trailing blanks, and insure that the name 
+	 * will fit into the file structure.
 	 */
 	for (cnt = 0; cnt < maxnamlen; cnt++)
 		if (name[cnt] == '\0' || name[cnt] == ' ')
@@ -134,7 +125,7 @@ gotone:
 	maxnamlen = cnt;
 	filep->funit &= ~TEMP;
 	/*
-	 * put the new name into the structure
+	 * Put the new name into the structure.
 	 */
 	for (cnt = 0; cnt < maxnamlen; cnt++)
 		filep->fname[cnt] = name[cnt];

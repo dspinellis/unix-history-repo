@@ -1,8 +1,13 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)PCLOSE.c 1.4 %G%";
+static char sccsid[] = "@(#)PCLOSE.c 1.5 %G%";
+
+/*
+ * Close all files associated with the topmost stack frame.
+ */
 
 #include "h00vars.h"
+#include "libpc.h"
 
 PCLOSE(level)
 
@@ -12,27 +17,7 @@ PCLOSE(level)
 
 	next = _fchain.fchain;
 	while(next != FILNIL && next->flev <= level) {
-		if (next->fbuf != 0) {
-			if ((next->funit & FDEF) == 0) {
-				if (next->fblk > PREDEF) {
-					fflush(next->fbuf);
-					setbuf(next->fbuf, NULL);
-				}
-				fclose(next->fbuf);
-				if (ferror(next->fbuf)) {
-					ERROR("%s: Close failed\n",
-						next->pfname);
-					return;
-				}
-			}
-			if ((next->funit & TEMP) != 0 &&
-			    unlink(next->pfname)) {
-				PERROR("Could not remove ", next->pfname);
-				return;
-			}
-		}
-		_actfile[next->fblk] = FILNIL;
-		next = next->fchain;
+		next = PFCLOSE(next);
 	}
 	_fchain.fchain = next;
 }
