@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cp.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)cp.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -195,7 +195,7 @@ copy()
 	else if (to_stat.st_dev == from_stat.st_dev &&
 	    to_stat.st_ino == from_stat.st_ino) {
 		fprintf(stderr,
-		    "cp: \"%s\" and \"%s\" are identical (not copied).\n",
+		    "cp: %s and %s are identical (not copied).\n",
 		    to.p_path, from.p_path);
 		exit_val = 1;
 		return;
@@ -222,7 +222,7 @@ copy()
 		}
 		else if ((to_stat.st_mode & S_IFMT) != S_IFDIR) {
 			(void)fprintf(stderr,
-			   "cp: \"%s\": not a directory.\n",
+			   "cp: %s: not a directory.\n",
 			   to.p_path);
 			return;
 		}
@@ -246,8 +246,7 @@ copy()
 copy_file(mode)
 	u_short mode;			/* Permissions for new file. */
 {
-	int from_fd, to_fd, rcount, wcount, r;
-	char c;
+	int from_fd, to_fd, rcount, wcount;
 
 	from_fd = open(from.p_path, O_RDONLY, 0);
 	if (from_fd == -1) {
@@ -265,11 +264,15 @@ copy_file(mode)
 		 mode);
 
 	if (to_fd == -1 && errno == EEXIST && interactive_flag) {
-		(void)fprintf(stderr, "overwrite \"%s\"? ", to.p_path);
-		r = scanf("%1s", &c);
-		if (r != 1 || c != 'y')
+		int checkch, ch;
+
+		(void)fprintf(stderr, "overwrite %s? ", to.p_path);
+		checkch = ch = getchar();
+		while (ch != '\n' && ch != EOF)
+			ch = getchar();
+		if (checkch != 'y')
 			return(0);
-		/* Try again. */
+		/* try again. */
 		to_fd = open(to.p_path, O_WRONLY | O_CREAT | O_TRUNC, mode);
 	}
 
@@ -300,7 +303,7 @@ copy_dir()
 
 	dir_cnt = scandir(from.p_path, &dir_list, NULL, NULL);
 	if (dir_cnt == -1) {
-		(void)fprintf(stderr, "cp: Can't read directory \"%s\".\n",
+		(void)fprintf(stderr, "cp: can't read directory %s.\n",
 		    from.p_path);
 		exit_val = 1;
 	}
@@ -404,7 +407,7 @@ path_set(p, string)
 	char *string;
 {
 	if (strlen(string) > MAXPATHLEN) {
-		fprintf(stderr, "cp: \"%s\": Name too long.\n", string);
+		fprintf(stderr, "cp: %s: name too long.\n", string);
 		exit_val = 1;
 		return(0);
 	}
@@ -442,7 +445,7 @@ path_append(p, name, len)
 	 */
 	if ((len + p->p_end - p->p_path + 1) > MAXPATHLEN) {
 		fprintf(stderr,
-		    "cp: \"%s/%s\": Name too long.\n", p->p_path, name);
+		    "cp: %s/%s: name too long.\n", p->p_path, name);
 		exit_val = 1;
 		return(0);
 	}
