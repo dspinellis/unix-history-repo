@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.18 (Berkeley) %G%
+.\"	@(#)op.me	6.19 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,7 +40,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.18
+Version 6.19
 .sp
 For Sendmail Version 6.27
 .)l
@@ -1371,6 +1371,10 @@ which have no guarantee of promptness.
 .ip datafinal\(dg
 The wait for a reply from the dot terminating a message.
 [1h, 10m].
+If this is shorter than the time actually needed
+for the receiver to deliver the message,
+duplicates will be generated.
+This is discussed in RFC 1047.
 .ip rset
 The wait for a reply from a RSET command
 [5m, unspecified].
@@ -1560,7 +1564,7 @@ plus one
 exceeds the priority of the message \(em
 that is, the message is queued iff:
 .EQ
-pri > { bold q } over { LA - bold x + 1 }
+pri > { bold q } over { LA - { bold x } + 1 }
 .EN
 The
 .b q
@@ -1931,6 +1935,11 @@ Ob needmailhelo, noexpn
 .)b
 insists that the HELO command be used before a MAIL command is accepted
 and disables the EXPN command.
+.pp
+The
+.q restrictmailq
+option restricts printing the queue to the group that owns the queue directory.
+It is absurd to set this if you don't also protect the logs.
 .sh 1 "THE WHOLE SCOOP ON THE CONFIGURATION FILE"
 .pp
 This section describes the configuration file
@@ -3244,8 +3253,16 @@ needexpnhelo	Insist on HELO command before EXPN
 noexpn	Disallow EXPN entirely
 needvrfyhelo	Insist on HELO command before VRFY
 novrfy	Disallow VRFY entirely
-goaway	Disallow essentially all status queries
+restrictmailq	Restrict mailq command
+goaway	Disallow essentially all SMTP status queries
 .)b
+The
+.q goaway
+pseudo-flag sets all flags except
+.q restrictmailq .
+If mailq is restricted,
+only people in the same group as the queue directory
+can print the queue.
 .ip P\fIpostmaster\fP
 If set,
 copies of error messages will be sent to the named
@@ -3753,7 +3770,7 @@ feel free to develop your own.
 .pp
 One general point applies to all of these philosophies:
 it is almost always a mistake
-to try to do full name resolution.
+to try to do full host route resolution.
 For example,
 if you are on a UUCP-only site
 and you are trying to get names of the form
@@ -5680,7 +5697,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.18
+.\"Version 6.19
 .\".ce 0
 .pn 2
 .bp
