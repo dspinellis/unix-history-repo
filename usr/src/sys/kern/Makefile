@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	7.7 (Berkeley) %G%
+#	@(#)Makefile	7.8 (Berkeley) %G%
 #
 # Put the ../sys stuff near the end so that subroutine definitions win when
 # there is a struct tag with the same name (eg., vmmeter).  The real
@@ -31,15 +31,20 @@ TTAHOE=	../tahoe/tags
 STAHOE=	../tahoeif/*.[ch]  ../tahoevba/*.[ch] ../tahoe/*.[ch]
 ATAHOE=	../tahoe/*.s
 
+THP300=	../hp300/tags
+SHP300=	 ../hpux/*.[ch]../hpdev/*.[ch] ../hp300/*.[ch]
+AHP300=	../hp300/*.s
+
 # Directories in which to place tags links (other than primary T$MACH)
 DGEN=	kern sys net netimp netinet netns ufs
 DVAX=	vaxif vaxmba vaxuba
 DTAHOE=	tahoeif tahoevba
+DHP300=	hpdev hpux
 
 all:
 	@echo "make tags or links only"
 
-tags: tahoetags vaxtags
+tags: tahoetags vaxtags hp300tags
 
 tahoetags:
 	-ctags -dtf ${TTAHOE} ${COMM} ${STAHOE} ${HDR}
@@ -61,17 +66,26 @@ sed "s;\([^:]*\):\([^(]*\)(\([^, )]*\)\(.*\);\3 \1 /^\2(\3\4$$/;" \
 		>> ${TVAX}
 	sort -o ${TVAX} ${TVAX}
 
+hp300tags:
+	-ctags -dtf ${THP300} ${COMM} ${SHP300} ${HDR}
+	egrep "^ENTRY(.*)|^ALTENTRY(.*)" ${AHP300} | \
+sed "s;\([^:]*\):\([^(]*\)(\([^, )]*\)\(.*\);\3 \1 /^\2(\3\4$$/;" \
+		>> ${THP300}
+	sort -o ${THP300} ${THP300}
+
 links:
 	-for i in ${DVAX}; do \
 	    rm -f ../$$i/tags; ln -s ../vax/tags ../$$i/tags; done
 	-for i in ${DTAHOE}; do \
 	    rm -f ../$$i/tags; ln -s ../tahoe/tags ../$$i/tags; done
+	-for i in ${DHP300}; do \
+	    rm -f ../$$i/tags; ln -s ../tahoe/tags ../$$i/tags; done
 	-for i in ${DGEN}; do \
 	    rm -f ../$$i/tags; \
-	    ln -s ../tahoe/tags ../$$i/tags; done
+	    ln -s ../machine/tags ../$$i/tags; done
 
-init_sysent.c syscalls.c ../sys/syscall.h: syscalls.master
-	-mv init_sysent.c init_sysent.c.bak
-	-mv syscalls.c syscalls.c.bak
-	-mv ../sys/syscall.h ../sys/syscall.h.bak
+init_sysent.c syscalls.c ../sys/syscall.h: makesyscalls.sh syscalls.master
+	-mv -f init_sysent.c init_sysent.c.bak
+	-mv -f syscalls.c syscalls.c.bak
+	-mv -f ../sys/syscall.h ../sys/syscall.h.bak
 	sh makesyscalls.sh syscalls.master
