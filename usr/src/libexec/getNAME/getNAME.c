@@ -1,7 +1,18 @@
-static char *sccsid = "@(#)getNAME.c	4.1 (Berkeley) %G%";
+#ifndef lint
+static char *sccsid = "@(#)getNAME.c	4.2 (Berkeley) %G%";
+#endif
+
+/*
+ * Get name sections from manual pages.
+ *	-t	for building toc
+ *	-i	for building intro entries
+ *	other	apropos database
+ */
+#include <strings.h>
 #include <stdio.h>
 
 int tocrc;
+int intro;
 
 main(argc, argv)
 	int argc;
@@ -11,6 +22,8 @@ main(argc, argv)
 	argc--, argv++;
 	if (!strcmp(argv[0], "-t"))
 		argc--, argv++, tocrc++;
+	if (!strcmp(argv[0], "-i"))
+		argc--, argv++, intro++;
 	while (argc > 0)
 		getfrom(*argv++), argc--;
 	exit(0);
@@ -49,27 +62,10 @@ getfrom(name)
 			break;
 	}
 	trimln(headbuf);
-	if (tocrc) {
-		register char *dp = name, *ep;
-
-again:
-		while (*dp && *dp != '.')
-			putchar(*dp++);
-		if (*dp)
-			for (ep = dp+1; *ep; ep++)
-				if (*ep == '.') {
-					putchar(*dp++);
-					goto again;
-				}
-		putchar('(');
-		if (*dp)
-			dp++;
-		while (*dp)
-			putchar (*dp++);
-		putchar(')');
-		putchar(' ');
-	}
-	printf("%s\t", headbuf);
+	if (tocrc)
+		doname(name);
+	if (!intro)
+		printf("%s\t", headbuf);
 	for (;;) {
 		if (fgets(linbuf, sizeof linbuf, stdin) == NULL)
 			break;
@@ -80,6 +76,10 @@ again:
 				break;
 		}
 		trimln(linbuf);
+		if (intro) {
+			split(linbuf, name);
+			continue;
+		}
 		if (i != 0)
 			printf(" ");
 		i++;
@@ -96,4 +96,59 @@ trimln(cp)
 		cp++;
 	if (*--cp == '\n')
 		*cp = 0;
+}
+
+doname(name)
+	char *name;
+{
+	register char *dp = name, *ep;
+
+again:
+	while (*dp && *dp != '.')
+		putchar(*dp++);
+	if (*dp)
+		for (ep = dp+1; *ep; ep++)
+			if (*ep == '.') {
+				putchar(*dp++);
+				goto again;
+			}
+	putchar('(');
+	if (*dp)
+		dp++;
+	while (*dp)
+		putchar (*dp++);
+	putchar(')');
+	putchar(' ');
+}
+
+split(line, name)
+	char *line, *name;
+{
+	register char *cp, *dp;
+	char *sp, *sep;
+
+	cp = index(line, '-');
+	if (cp == 0)
+		return;
+	sp = cp + 1;
+	for (--cp; *cp == ' ' || *cp == '\t' || *cp == '\\'; cp--)
+		;
+	*++cp = '\0';
+	while (*sp && (*sp == ' ' || *sp == '\t'))
+		sp++;
+	for (sep = "", dp = line; dp && *dp; dp = cp, sep = "\n") {
+		cp = index(dp, ',');
+		if (cp) {
+			register char *tp;
+
+			for (tp = cp - 1; *tp == ' ' || *tp == '\t'; tp--)
+				;
+			*++tp = '\0';
+			for (++cp; *cp == ' ' || *cp == '\t'; cp++)
+				;
+		}
+		printf("%s%s\t", sep, dp);
+		doname(name);
+		printf("\t%s", sp);
+	}
 }
