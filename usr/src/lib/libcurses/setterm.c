@@ -1,10 +1,8 @@
 /*
  * Terminal initialization routines.
  *
- * %G% (Berkeley) @(#)setterm.c	1.8
+ * %G% (Berkeley) @(#)setterm.c	1.9
  */
-
-# undef	DEBUG
 
 # include	"curses.ext"
 # include	"cr_ex.h"
