@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)Cover.infopacket	5.2 (Berkeley) %G%
+.\"	@(#)Cover.infopacket	5.3 (Berkeley) %G%
 .\"
 .so HEADERS
 .NH
@@ -97,25 +97,26 @@ How to obtain 4.3BSD
 .PP
 This section should be read by existing licensees as well as new licensees.
 All previous 4.2BSD licensees will be required to sign
-Addendum Number One to the Berkeley License Agreement (6/83).  The
+Addendum Number One to the revised Berkeley License Agreement (6/83).  The
 fee for the 4.3BSD update is $600.00.  For new licensees, we require 
-execution of the aforementioned revised Berkeley License Agreement (4/86),
+execution of the revised Berkeley License Agreement (4/86), 
 in which reference to the inclusion of 4.3BSD has been incorporated.  The
 fee for release 4.3BSD for new licensees is $1,000.00. 
 .PP
 Because we are a research and development organization and not a commercial
-organization, we make our research results available for a license fee.
-We only distribute the whole system
+organization, we make our research results available for a fee, which covers
+only our costs for the distribution.
+We distribute only the whole system
 and cannot send individual pieces of the system.
 Because the software is distributed `As Is' and is partially derived
-from licensed material, we are required by the
-University of California to have a formal license arrangement with each
+from licensed material, we are required 
+to have a formal license arrangement with each
 organization to which we distribute. 
 All material is considered licensed material regardless of its
 availability from other sources which make such material publicly available.
-In addition, we are required
-to secure a copy of the AT&T Software Agreement with your organization 
-and confirm it with AT&T before the software can be shipped.
+In addition, we are required to confirm the existence of your organization's
+Software Agreement with AT&T and to secure a copy of it before 4.3BSD
+can be shipped.
 Finally, we ask that you supply us with the configuration
 of your system and identify the administrative and technical contacts.
 .PP
@@ -159,9 +160,14 @@ A check from a U.S. bank for $1,000.00 U.S. (for 4.3BSD) or $600.00 (for
 must be received before the distribution can be sent.
 If you must issue a Purchase Order, please issue one that is blank-backed.
 If this is not possible, insert and initialize in the body of the Purchase
-Order the following clause: "The terms and conditions of this Purchase
-Order are not acceptable.  The revised Berkeley License Agreement
-(4/86) prevails."
+Order the following clause: ``The terms and conditions of this Purchase
+Order are not accepted by The Regents of the University of California.
+The revised Berkeley License Agreement
+(4/86) governs.'' In the case of 4.2 licensees, substitute ``The terms and
+conditions of this Purchase Order are not accepted by The Regents
+of the University
+of California.  The revised Berkeley License Agreement (6/83)
+and Addendum Number One govern.''
 .IP \(bu
 The Site Information Form and Equipment List completely filled out and dated.
 The signed Berkeley License Agreement will be sent to the person listed
@@ -192,12 +198,14 @@ Because of the differential in costs of shipping outside the United States,
 we ask that organizations beyond the North American continent pay
 the collect shipping charges.
 .PP
-The most expedient way to insure that your distribution is sent as quickly
-as possible is to include in a single package two copies of the completed and properly
+The most expedient way to insure that your full distribution is sent as quickly
+as possible is to include in a single package two copies
+of the completed and properly
 signed Berkeley License Agreement (\fBwithout modification\fR), two complete copies of
 your AT&T Software Agreement, the appropriate check properly made out to 
-``The Regents of the University of California'', and a completely filled out
-Site Information Form and to send this single package to the address noted above.
+``The Regents of the University of California,'' and a completely filled out
+Site Information Form and Equipment List,
+and to send this single package to the address noted above.
 .PP
 Please note that if you modify the 
 Berkeley License Agreement, you may experience
@@ -235,26 +243,30 @@ chooses not to redistribute internally, each entity
 may receive 4.3BSD from the distribution group by forwarding a letter from
 the parent organization to The Regents of the University of California
 authorizing this entity to receive 4.3BSD.
-The form of the authorization should be:
+The form of the authorization required is as follows:
 .RS
 .IP 
-I authorize (entity's name) a (division, company) of (organization's name)
-to receive a copy of 4.3BSD under the terms and conditions of the Revised
-Berkeley License Agreement for 4.2 (including 4.3 update) held
+``I authorize (entity's name), a (division, company) of (organization's name),
+to receive a copy of 4.3BSD under the terms and conditions of the revised
+Berkeley License Agreement (4/86) for 4.3BSD 
 between (organization's name) and The Regents of the University of California.
 I warrant that (entity's name) will abide by said Agreement,
 and that I have the authority to make this authorization on behalf of
 (organization's name).
-.sp
-Please send a copy of 4.3BSD to (designate name and address of organization/department).
+Please send a copy of 4.3BSD to
+(designate name and address of organization/department).''
 .RE
 .sp
-This statement must be signed by the same officeholder (or 
-replacement)
-who signed the Berkeley License Agreement for 4.2BSD (6/83), which
-includes the 4.3BSD update. 
+In the case of 4.2 licensees, the above quoted language must be used except
+that the reference to ``Berkeley License Agreement (4/86) for 4.3BSD'' should
+be replaced by ``Berkeley License Agreement (6/83) and Addendum Number One for
+4.3BSD.''
+.sp
+The above authorizations must be signed by the same officeholder (or 
+replacement) who signed the 
+relevant Berkeley License Agreement.
 The cost of the distribution (or update)
-is unchanged.
+is applicable to each copy distributed.
 .RE
 .IP \(bu
 If your AT&T Software Agreement is with an individual entity within a large organization,
@@ -270,10 +282,11 @@ If you are a part of the University of California,
 Ask Pam True (415) 642-6348 in Berkeley Campus Materiel Management
 for an application for an additional CPU 
 authorization under The Regents of the University
-of California's Software Agreement with AT&T.  You will need to send
-a copy of this application to
-the Computer Systems Research Group along with the following:
-1) a letter signed by the Director or Head of Department requesting 4.3BSD stating that you have read and understood the Berkeley
+of California's Software Agreement with AT&T.  We will receive the completed
+application from Materiel Management. In addition, the following items must
+be sent to the Computer Systems Research Group:
+1) a letter signed by the Director or Head of Department requesting 4.3BSD,
+stating that you have read and understood the Berkeley
 License Agreement and that your organization will abide by it, 2)
 an IOC for $1,000.00 or $600.00 (update), and 3) a Site Information Form and
 Equipment List.
@@ -315,9 +328,10 @@ to the Contracting Officer stating that the contractor
 agrees to abide by the terms and conditions of the Berkeley License Agreement
 for 4.3BSD and ask that
 the Contracting Officer sign the Berkeley License
-Agreements for 4.3BSD. 
+Agreement for 4.3BSD. 
 The Contracting Officer should then return the signed 
-Berkeley License Agreements directly to the Computer Systems Research Group  with a cover
+Berkeley License Agreement directly to the Computer Systems Research Group
+with a cover
 letter stating that the contractor is hereby authorized to receive a copy
 of 4.3BSD.
 .SH
