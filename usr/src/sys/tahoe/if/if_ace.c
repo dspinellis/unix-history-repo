@@ -1,12 +1,10 @@
-/*	if_ace.c	1.10	86/07/16	*/
+/*	if_ace.c	1.11	86/11/29	*/
 
 /*
  * ACC VERSAbus Ethernet controller
  */
 #include "ace.h"
 #if NACE > 0
-
-#include "../machine/pte.h"
 
 #include "param.h"
 #include "systm.h"
@@ -35,6 +33,9 @@
 #include "../netns/ns.h"
 #include "../netns/ns_if.h"
 #endif
+
+#include "../machine/cpu.h"
+#include "../machine/pte.h"
 
 #include "../tahoe/mtpr.h"
 #include "../tahoeif/if_acereg.h"
