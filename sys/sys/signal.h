@@ -185,7 +185,7 @@ struct	sigcontext {
  */
 #define sigmask(m)	(1 << ((m)-1))
 
-#define	BADSIG		((__sighandler_t) -1)
+#define	SIG_ERR		((__sighandler_t) -1)
 #endif	/* _POSIX_SOURCE */
   
 #define	SIG_DFL		((__sighandler_t) 0)
