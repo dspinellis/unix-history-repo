@@ -1,7 +1,7 @@
 /*
-**  CONF.H -- All user-configurable parameters
+**  CONF.H -- All user-configurable parameters for sendmail
 **
-**	@(#)conf.h	3.1		%G%
+**	@(#)conf.h	3.2		%G%
 */
 
 
@@ -33,5 +33,3 @@
 #define QUEUE		1	/* enable queueing */
 #define UGLYUUCP	1	/* output ugly UUCP From lines */
 #define DAEMON		1	/* include the daemon (requires IPC) */
-#define VMUNIX		1	/* VMUNIX options (4.1bsd) */
-/* #define NVMUNIX	1	/* new VMUNIX options (4.2bsd, requires VMUNIX) */
