@@ -281,7 +281,7 @@ int whichbuf;				/* ignored when file in memory */
 	else {
 	    tiline[whichbuf] = baseline;
 #ifndef lint		/* complains of long accuracy */
-	    Lseek(tifd, (long)baseline / lines_per_buf * BUFFERSIZE, 0);
+	    Lseek(tifd, (off_t)baseline / lines_per_buf * BUFFERSIZE, 0);
 #endif
 	    if (read(tifd, tibuf[whichbuf], BUFFERSIZE) < 0)
 		fatal2("Error reading tmp file %s.\n", TMPINNAME);
