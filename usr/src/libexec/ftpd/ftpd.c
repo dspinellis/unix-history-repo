@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	4.29 (Berkeley) %G%";
+static	char sccsid[] = "@(#)ftpd.c	4.30 (Berkeley) %G%";
 #endif
 
 /*
@@ -62,7 +62,6 @@ int	mode;
 int	usedefault = 1;		/* for data transfers */
 char	hostname[32];
 char	remotehost[32];
-struct	servent *sp;
 
 /*
  * Timeout intervals for retrying connections
@@ -83,17 +82,22 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	int ctrl, s, options = 0;
+	int options = 0, addrlen;
 	char *cp;
 
-	sp = getservbyname("ftp", "tcp");
-	if (sp == 0) {
-		fprintf(stderr, "ftpd: ftp/tcp: unknown service\n");
+	addrlen = sizeof (his_addr);
+	if (getpeername(0, &his_addr, &addrlen) < 0) {
+		fprintf(stderr, "%s: ", argv[0]);
+		perror("getpeername");
 		exit(1);
 	}
-	ctrl_addr.sin_port = sp->s_port;
-	data_source.sin_port = htons(ntohs(sp->s_port) - 1);
-	signal(SIGPIPE, lostconn);
+	addrlen = sizeof (ctrl_addr);
+	if (getsockname(0, &ctrl_addr, &addrlen) < 0) {
+		fprintf(stderr, "%s: ", argv[0]);
+		perror("getsockname");
+		exit(1);
+	}
+	data_source.sin_port = htons(ntohs(ctrl_addr.sin_port) - 1);
 	debug = 0;
 	argc--, argv++;
 	while (argc > 0 && *argv[0] == '-') {
@@ -118,79 +122,31 @@ main(argc, argv)
 			break;
 
 		default:
-			fprintf(stderr, "Unknown flag -%c ignored.\n", *cp);
+			fprintf(stderr, "ftpd: Unknown flag -%c ignored.\n",
+			     *cp);
 			break;
 		}
 nextopt:
 		argc--, argv++;
 	}
-#ifndef DEBUG
-	if (fork())
-		exit(0);
-	for (s = 0; s < 10; s++)
-		if (!logging || (s != 2))
-			(void) close(s);
-	(void) open("/", O_RDONLY);
-	(void) dup2(0, 1);
-	if (!logging)
-		(void) dup2(0, 2);
-	{ int tt = open("/dev/tty", O_RDWR);
-	  if (tt > 0) {
-		ioctl(tt, TIOCNOTTY, 0);
-		close(tt);
-	  }
-	}
-#endif
-	while ((s = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		perror("ftpd: socket");
-		sleep(5);
-	}
-	if (options & SO_DEBUG)
-		if (setsockopt(s, SOL_SOCKET, SO_DEBUG, 0, 0) < 0)
-			perror("ftpd: setsockopt (SO_DEBUG)");
-	if (setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, 0, 0) < 0)
-		perror("ftpd: setsockopt (SO_KEEPALIVE)");
-	while (bind(s, &ctrl_addr, sizeof (ctrl_addr), 0) < 0) {
-		perror("ftpd: bind");
-		sleep(5);
-	}
-	signal(SIGCHLD, reapchild);
-	listen(s, 10);
+	signal(SIGPIPE, lostconn);
+	signal(SIGCHLD, SIG_IGN);
+	/* do telnet option negotiation here */
+	/*
+	 * Set up default state
+	 */
+	logged_in = 0;
+	data = -1;
+	type = TYPE_A;
+	form = FORM_N;
+	stru = STRU_F;
+	mode = MODE_S;
+	gethostname(hostname, sizeof (hostname));
+	reply(220, "%s FTP server (%s) ready.",
+		hostname, version);
 	for (;;) {
-		int hisaddrlen = sizeof (his_addr);
-
-		ctrl = accept(s, &his_addr, &hisaddrlen, 0);
-		if (ctrl < 0) {
-			if (errno == EINTR)
-				continue;
-			perror("ftpd: accept");
-			continue;
-		}
-		if (fork() == 0) {
-			signal (SIGCHLD, SIG_IGN);
-			dolog(&his_addr);
-			close(s);
-			dup2(ctrl, 0), close(ctrl), dup2(0, 1);
-			/* do telnet option negotiation here */
-			/*
-			 * Set up default state
-			 */
-			logged_in = 0;
-			data = -1;
-			type = TYPE_A;
-			form = FORM_N;
-			stru = STRU_F;
-			mode = MODE_S;
-			(void) getsockname(0, &ctrl_addr, sizeof (ctrl_addr));
-			gethostname(hostname, sizeof (hostname));
-			reply(220, "%s FTP server (%s) ready.",
-				hostname, version);
-			for (;;) {
-				setjmp(errcatch);
-				yyparse();
-			}
-		}
-		close(ctrl);
+		setjmp(errcatch);
+		yyparse();
 	}
 }
 
@@ -222,7 +178,7 @@ pass(passwd)
 	}
 	if (!guest) {		/* "ftp" is only account allowed no password */
 		xpasswd = crypt(passwd, pw->pw_passwd);
-		if (*pw->pw_passwd == '\0' || strcmp(xpasswd, pw->pw_passwd)) {
+		if (strcmp(xpasswd, pw->pw_passwd) != 0) {
 			reply(530, "Login incorrect.");
 			pw = NULL;
 			return;
@@ -238,7 +194,6 @@ pass(passwd)
 
 	if (guest)			/* grab wtmp before chroot */
 		wtmp = open("/usr/adm/wtmp", O_WRONLY|O_APPEND);
-
 	if (guest && chroot(pw->pw_dir) < 0) {
 		reply(550, "Can't set guest privileges.");
 		goto bad;
@@ -742,8 +697,7 @@ dologin(pw)
 		SCPYN(utmp.ut_host, remotehost);
 		utmp.ut_time = time(0);
 		(void) write(wtmp, (char *)&utmp, sizeof (utmp));
-		if (!guest)
-			(void) close(wtmp);
+		(void) close(wtmp);
 	}
 }
 
@@ -754,8 +708,9 @@ dologin(pw)
 dologout(status)
 	int status;
 {
+
 	if (!logged_in)
-		_exit(status);
+		return;
 	seteuid(0);
 	if (guest && (wtmp >= 0))
 		lseek(wtmp, 0, L_XTND);
