@@ -11,16 +11,14 @@
  * %sccs.include.redist.c%
  *
  * from: Utah $Hdr: cpu.h 1.16 91/03/25$
- * OMRON: $Id: cpu.h,v 1.2 92/06/14 06:27:54 moti Exp $
+ * from: hp300/include/cpu.h	7.13 (Berkeley) 12/27/92
  *
- * from: hp300/include/cpu.h   7.12 (Berkeley) 7/8/92
- *
- *	@(#)cpu.h	7.2 (Berkeley) %G%
+ *	@(#)cpu.h	7.3 (Berkeley) %G%
  */
 
 /*
- * Exported definitions unique to luna/68k cpu support, taken from:
- * hp300/68k.
+ * Exported definitions unique to luna/68k cpu support,
+ * taken from hp300/68k.
  */
 
 /*
@@ -41,7 +39,6 @@
  * longword boundary).
  */
 struct clockframe {
-	u_short	pad;		/* pad to get stack aligned */
 	u_short	sr;		/* sr at time of interrupt */
 	u_long	pc;		/* pc at time of interrupt */
 	u_short	vo;		/* vector offset (4-word frame) */
