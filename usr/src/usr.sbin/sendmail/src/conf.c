@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.4 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -149,6 +149,7 @@ setdefaults()
 	MciCacheTimeout = 300;
 	setdefuser();
 	setupmaps();
+	setupmailers();
 }
 
 
@@ -282,7 +283,20 @@ host_map_init(map, mapname, args)
 		map->map_app = newstr(map->map_app);
 	return TRUE;
 }
+/*
+**  SETUPMAILERS -- initialize default mailers
+*/
 
+setupmailers()
+{
+	char buf[100];
+
+	strcpy(buf, "*file*, P=/dev/null, F=lsDEu, A=FILE");
+	makemailer(buf);
+
+	strcpy(buf, "*include*, P=/dev/null, F=su, A=INCLUDE");
+	makemailer(buf);
+}
 /*
 **  GETRUID -- get real user id (V7)
 */

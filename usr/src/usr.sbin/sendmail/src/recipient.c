@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	6.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	6.2 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -258,16 +258,11 @@ recipient(a, sendq, e)
 	}
 	stripquotes(buf);
 
-	/* do sickly crude mapping for program mailing, etc. */
-	if (m == LocalMailer && buf[0] == '|')
+	/* check for direct mailing to restricted mailers */
+	if (a->q_alias == NULL && m == ProgMailer && !ForceMail)
 	{
-		a->q_mailer = m = ProgMailer;
-		a->q_user++;
-		if (a->q_alias == NULL && !ForceMail)
-		{
-			a->q_flags |= QDONTSEND|QBADADDR;
-			usrerr("Cannot mail directly to programs");
-		}
+		a->q_flags |= QDONTSEND|QBADADDR;
+		usrerr("Cannot mail directly to programs", m->m_name);
 	}
 
 	/*
@@ -337,71 +332,33 @@ recipient(a, sendq, e)
 	}
 
 	/*
-	**  Alias the name and handle :include: specs.
+	**  Alias the name and handle special mailer types.
 	*/
 
   trylocaluser:
 	if (tTd(29, 7))
 		printf("at trylocaluser %s\n", a->q_user);
 
-	if (m == LocalMailer && !bitset(QDONTSEND, a->q_flags))
+	if (bitset(QDONTSEND, a->q_flags))
+		return (a);
+
+	if (m == InclMailer)
 	{
-		if (strncmp(a->q_user, ":include:", 9) == 0)
+		a->q_flags |= QDONTSEND;
+		if (a->q_alias == NULL && !ForceMail)
 		{
-			a->q_flags |= QDONTSEND;
-			if (a->q_alias == NULL && !ForceMail)
-			{
-				a->q_flags |= QBADADDR;
-				usrerr("Cannot mail directly to :include:s");
-			}
-			else
-			{
-				message(Arpa_Info, "including file %s", &a->q_user[9]);
-				(void) include(&a->q_user[9], FALSE, a, sendq, e);
-			}
+			a->q_flags |= QBADADDR;
+			usrerr("Cannot mail directly to :include:s");
 		}
 		else
 		{
-			/* try aliasing */
-			alias(a, sendq, e);
-
-# ifdef USERDB
-			/* if not aliased, look it up in the user database */
-			if (!bitset(QDONTSEND|QNOTREMOTE, a->q_flags))
-			{
-				extern int udbexpand();
-
-				if (udbexpand(a, sendq, e) == EX_TEMPFAIL)
-				{
-					a->q_flags |= QQUEUEUP;
-					if (e->e_message == NULL)
-						e->e_message = newstr("Deferred: user database error");
-# ifdef LOG
-					if (LogLevel > 3)
-						syslog(LOG_INFO, "%s: deferred: udbexpand",
-							e->e_id);
-# endif
-					message(Arpa_Info, "queued (user database error)");
-					return (a);
-				}
-			}
-# endif
+			message(Arpa_Info, "including file %s", &a->q_user[9]);
+			(void) include(&a->q_user[9], FALSE, a, sendq, e);
 		}
+		return (a);
 	}
 
-	/*
-	**  If the user is local and still being sent, verify that
-	**  the address is good.  If it is, try to forward.
-	**  If the address is already good, we have a forwarding
-	**  loop.  This can be broken by just sending directly to
-	**  the user (which is probably correct anyway).
-	*/
-
-	if (bitset(QDONTSEND, a->q_flags) || m != LocalMailer)
-		return (a);
-
-	/* see if this is to a file */
-	if (buf[0] == '/')
+	if (m == FileMailer)
 	{
 		struct stat stb;
 		extern bool writable();
@@ -421,6 +378,38 @@ recipient(a, sendq, e)
 		}
 		return (a);
 	}
+
+	if (m != LocalMailer)
+		return (a);
+
+	/* try aliasing */
+	alias(a, sendq, e);
+
+# ifdef USERDB
+	/* if not aliased, look it up in the user database */
+	if (!bitset(QDONTSEND|QNOTREMOTE, a->q_flags))
+	{
+		extern int udbexpand();
+
+		if (udbexpand(a, sendq, e) == EX_TEMPFAIL)
+		{
+			a->q_flags |= QQUEUEUP;
+			if (e->e_message == NULL)
+				e->e_message = newstr("Deferred: user database error");
+# ifdef LOG
+			if (LogLevel > 3)
+				syslog(LOG_INFO, "%s: deferred: udbexpand",
+					e->e_id);
+# endif
+			message(Arpa_Info, "queued (user database error)");
+			return (a);
+		}
+	}
+# endif
+
+	/* if it was an alias or a UDB expansion, just return now */
+	if (bitset(QDONTSEND, a->q_flags))
+		return (a);
 
 	/*
 	**  If we have a level two config file, then pass the name through

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	6.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	6.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1463,9 +1463,9 @@ buildaddr(tv, a)
 	register char **tv;
 	register ADDRESS *a;
 {
-	static char buf[MAXNAME];
 	struct mailer **mp;
 	register struct mailer *m;
+	static char buf[MAXNAME];
 
 	if (a == NULL)
 		a = (ADDRESS *) xalloc(sizeof *a);
@@ -1520,6 +1520,7 @@ buildaddr(tv, a)
 		usrerr(buf);
 		return (NULL);
 	}
+
 	for (mp = Mailer; (m = *mp++) != NULL; )
 	{
 		if (!strcasecmp(m->m_name, *tv))
@@ -1570,9 +1571,27 @@ buildaddr(tv, a)
 		tv++;
 		a->q_flags |= QNOTREMOTE;
 	}
+	tv++;
+
+	/* do special mapping for local mailer */
+	if (m == LocalMailer && *tv != NULL)
+	{
+		if (**tv == '|')
+			a->q_mailer = m = ProgMailer;
+		else if (**tv == '/')
+			a->q_mailer = m = FileMailer;
+		else if (**tv == ':')
+		{
+			/* may be :include: */
+			cataddr(tv, buf, sizeof buf);
+			buf[9] = '\0';
+			if (strcasecmp(buf, ":include:") == 0)
+				a->q_mailer = m = InclMailer;
+		}
+	}
 
 	/* rewrite according recipient mailer rewriting rules */
-	rewrite(++tv, 2);
+	rewrite(tv, 2);
 	if (m->m_r_rwset > 0)
 		rewrite(tv, m->m_r_rwset);
 	rewrite(tv, 4);
