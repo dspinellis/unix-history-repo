@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmdtab.c	4.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmdtab.c	4.6 (Berkeley) %G%";
 #endif
 
 /*
@@ -8,22 +8,22 @@ static char sccsid[] = "@(#)cmdtab.c	4.5 (Berkeley) %G%";
 
 #include "lpc.h"
 
-int	abort(), clean(), enable(), disable(), help();
-int	quit(), restart(), start(), status(), stop();
-int	topq(), down();
+int	abort(), clean(), enable(), disable(), down(), help();
+int	quit(), restart(), start(), status(), stop(), topq(), up();
 
 char	aborthelp[] =	"terminate a spooling daemon immediately and disable printing";
 char	cleanhelp[] =	"remove cruft files from a queue";
 char	enablehelp[] =	"turn a spooling queue on";
 char	disablehelp[] =	"turn a spooling queue off";
+char	downhelp[] =	"do a 'stop' followed by 'disable' and put a message in status";
 char	helphelp[] =	"get help on commands";
 char	quithelp[] =	"exit lpc";
-char	restarthelp[] =	"restart a spooling daemon that has died";
+char	restarthelp[] =	"kill (if possible) and restart a spooling daemon";
 char	starthelp[] =	"enable printing and start a spooling daemon";
-char	statushelp[] =	"show status of daemon";
+char	statushelp[] =	"show status of daemon and queue";
 char	stophelp[] =	"stop a spooling daemon after current job completes and disable printing";
-char	downhelp[] =	"do a 'stop' followed by 'disable' and put a message in status";
 char	topqhelp[] =	"put job at top of printer queue";
+char	uphelp[] =	"enable everything and restart spooling daemon";
 
 struct cmd cmdtab[] = {
 	{ "abort",	aborthelp,	abort,		1 },
@@ -39,6 +39,7 @@ struct cmd cmdtab[] = {
 	{ "status",	statushelp,	status,		0 },
 	{ "stop",	stophelp,	stop,		1 },
 	{ "topq",	topqhelp,	topq,		1 },
+	{ "up",		uphelp,		up,		1 },
 	{ "?",		helphelp,	help,		0 },
 	{ 0 },
 };
