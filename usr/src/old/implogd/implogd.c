@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)implogd.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)implogd.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <sgtty.h>
@@ -19,6 +19,7 @@ static char sccsid[] = "@(#)implogd.c	5.2 (Berkeley) %G%";
 #include <sys/time.h>
 #include <sys/param.h>
 #include <sys/socket.h>
+#include <sys/syslog.h>
 #include <sys/file.h>
 
 #include <netinet/in.h>
@@ -48,15 +49,17 @@ struct sockstamp {
 main(argc, argv)
 	char *argv[];
 {
-	int s;
+	int i, s;
 	time_t t;
 	struct sockstamp from;
 
 	argc--, argv++;
+	openlog("implogd", LOG_PID | LOG_ODELAY, LOG_DAEMON);
 	if (argc > 0 && !strcmp(argv[0], "-d"))
 		options |= SO_DEBUG;
 	log = open(LOGFILE, O_CREAT|O_WRONLY|O_APPEND, 0644);
 	if (log < 0) {
+		syslog(LOG_ERR, "%s: %m\n", LOGFILE);
 		perror("implogd: open");
 		exit(1);
 	}
@@ -64,14 +67,16 @@ main(argc, argv)
 	from.sin_len = sizeof (time_t);
 	write(log, (char *)&from, sizeof (from));
 	if ((s = socket(AF_IMPLINK, SOCK_RAW, 0)) < 0) {
+		syslog(LOG_ERR, "socket: %m\n");
 		perror("implogd: socket");
 		exit(5);
 	}
 #ifndef DEBUG
 	if (fork())
 		exit(0);
-	for (s = 0; s < 10; s++)
-		(void) close(t);
+	for (i = 0; i < 10; i++)
+		if (i != log && i != s)
+			(void) close(i);
 	(void) open("/", 0);
 	(void) dup2(0, 1);
 	(void) dup2(0, 2);
@@ -88,6 +93,7 @@ main(argc, argv)
 		len = recvfrom(s, request, sizeof (request), 0,
 			&from, &fromlen);
 		if (len < 0) {
+			syslog(LOG_ERR, "recvfrom: %m\n");
 			perror("implogd: recvfrom");
 			continue;
 		}
