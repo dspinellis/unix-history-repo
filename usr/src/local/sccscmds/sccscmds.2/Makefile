@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.4	(Berkeley)	87/07/27
+#	@(#)Makefile	4.5	(Berkeley)	88/02/03
 #
 all:
 	cd util; make $(MFLAGS)
@@ -15,3 +15,5 @@ clean:
 	cd util; make $(MFLAGS) clean
 	cd com; make $(MFLAGS) clean
 	cd cmd; make $(MFLAGS) clean
+
+depend:
