@@ -12,10 +12,11 @@
 
 /*
  * the METOO definition has the bugfiler exit with an error (-1) status
- * if there's a problem.  Sendmail then mails off a copy of the problem
- * mail to "owner-bugs".  This is great if you would have otherwise lost
- * the bug report.  It's not so great if you get a whole bunch of mail
- * that you really don't want.
+ * if there's a problem.  This causes sendmail to send off a copy of the
+ * report (as failed mail) to the "owner" of the mail alias that executed
+ * the bugfiler.  This is great if you would have otherwise lost the bug
+ * report.  It's not so great if you get a whole bunch of mail that you
+ * really don't want.
  */
 #define METOO
 
@@ -26,6 +27,7 @@
 #define LOCK_FILE	"bug:lock"		/* lock file name */
 #define SUMMARY_FILE	"summary"		/* summary file */
 #define TMP_BUG		"errors/BUG_XXXXXX"	/* tmp bug report */
+#define TMP_DIR		"errors"		/* tmp directory */
 
 #define CHN		(char *)NULL	/* null arg string */
 #define COMMENT		'#'		/* comment in redist file */
