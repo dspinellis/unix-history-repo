@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_mkquery.c	6.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_mkquery.c	6.14 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
@@ -68,9 +68,9 @@ res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 			return (-1);
 		cp += n;
 		buflen -= n;
-		putshort(type, cp);
+		__putshort(type, cp);
 		cp += sizeof(u_short);
-		putshort(class, cp);
+		__putshort(class, cp);
 		cp += sizeof(u_short);
 		hp->qdcount = htons(1);
 		if (op == QUERY || data == NULL)
@@ -83,13 +83,13 @@ res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 			return (-1);
 		cp += n;
 		buflen -= n;
-		putshort(T_NULL, cp);
+		__putshort(T_NULL, cp);
 		cp += sizeof(u_short);
-		putshort(class, cp);
+		__putshort(class, cp);
 		cp += sizeof(u_short);
-		putlong(0, cp);
+		__putlong(0, cp);
 		cp += sizeof(u_long);
-		putshort(0, cp);
+		__putshort(0, cp);
 		cp += sizeof(u_short);
 		hp->arcount = htons(1);
 		break;
@@ -101,13 +101,13 @@ res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 		if (buflen < 1 + RRFIXEDSZ + datalen)
 			return (-1);
 		*cp++ = '\0';	/* no domain name */
-		putshort(type, cp);
+		__putshort(type, cp);
 		cp += sizeof(u_short);
-		putshort(class, cp);
+		__putshort(class, cp);
 		cp += sizeof(u_short);
-		putlong(0, cp);
+		__putlong(0, cp);
 		cp += sizeof(u_long);
-		putshort(datalen, cp);
+		__putshort(datalen, cp);
 		cp += sizeof(u_short);
 		if (datalen) {
 			bcopy(data, cp, datalen);
@@ -135,13 +135,13 @@ res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 		if ((n = dn_comp(dname, cp, buflen, dnptrs, lastdnptr)) < 0)
 			return (-1);
 		cp += n;
-		putshort(type, cp);
+		__putshort(type, cp);
                 cp += sizeof(u_short);
-                putshort(class, cp);
+                __putshort(class, cp);
                 cp += sizeof(u_short);
-		putlong(0, cp);
+		__putlong(0, cp);
 		cp += sizeof(u_long);
-		putshort(datalen, cp);
+		__putshort(datalen, cp);
                 cp += sizeof(u_short);
 		if (datalen) {
 			bcopy(data, cp, datalen);
@@ -158,13 +158,13 @@ res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 		if ((n = dn_comp(dname, cp, buflen, dnptrs, lastdnptr)) < 0)
 			return (-1);
 		cp += n;
-		putshort(newrr->r_type, cp);
+		__putshort(newrr->r_type, cp);
                 cp += sizeof(u_short);
-                putshort(newrr->r_class, cp);
+                __putshort(newrr->r_class, cp);
                 cp += sizeof(u_short);
-		putlong(0, cp);
+		__putlong(0, cp);
 		cp += sizeof(u_long);
-		putshort(newrr->r_size, cp);
+		__putshort(newrr->r_size, cp);
                 cp += sizeof(u_short);
 		if (newrr->r_size) {
 			bcopy(newrr->r_data, cp, newrr->r_size);

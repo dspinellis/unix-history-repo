@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_query.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_query.c	5.8 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -121,7 +121,7 @@ res_search(name, class, type, answer, anslen)
 {
 	register char *cp, **domain;
 	int n, ret, got_nodata = 0;
-	char *hostalias();
+	static char *hostalias();
 
 	if ((_res.options & RES_INIT) == 0 && res_init() == -1)
 		return (-1);
@@ -221,7 +221,7 @@ res_querydomain(name, domain, class, type, answer, anslen)
 	return (res_query(longname, class, type, answer, anslen));
 }
 
-char *
+static char *
 hostalias(name)
 	register char *name;
 {
