@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getcwd.3	5.1 (Berkeley) %G%
+.\"	@(#)getcwd.3	6.1 (Berkeley) %G%
 .\"
-.TH GETWD 3 "25 February 1983"
+.TH GETWD 3 ""
 .UC 5
 .SH NAME
 getwd \- get current working directory pathname
@@ -19,7 +19,9 @@ copies the absolute pathname of the current working directory to
 .I pathname
 and returns a pointer to the result.
 .SH LIMITATIONS
-Maximum pathname length is MAXPATHLEN characters (1024).
+Maximum pathname length is MAXPATHLEN characters (1024),
+as defined in
+.I <sys/param.h>.
 .SH DIAGNOSTICS
 .I Getwd
 returns zero and places a message in
