@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	5.24 (Berkeley) %G%
+.\"	@(#)op.me	5.25 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,9 +40,9 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 5.24
+Version 5.25
 .sp
-For Sendmail Version 5.133
+For Sendmail Version 6.1
 .)l
 .sp 2
 .pp
@@ -246,6 +246,14 @@ SYS5TZ
 and
 LOCKF
 respectively.
+.pp
+If you don't have the
+.i unsetenv
+routine in your system library, define the UNSETENV compilation flag.
+.pp
+You may also have to define the compilation variable LA_TYPE
+to describe how your load average is computed.
+This is described in detail in section 6.1.
 .sh 3 "Compilation and installation"
 .pp
 After making the local system configuration described above,
@@ -1648,7 +1656,10 @@ is represented by the two files
 .i aliases.dir
 and
 .i aliases.pag
-(both in /etc).
+(both in /etc)
+(or
+.i aliases.db
+if you are running with the new Berkeley database primitives).
 The mode on these files should match the mode
 on /etc/aliases.
 If
@@ -1844,7 +1855,7 @@ configuration-file compiler.
 An overview of the configuration file
 is given first,
 followed by details of the semantics.
-.sh 2 "The Syntax"
+.sh 2 "Configuration File Lines"
 .pp
 The configuration file is organized as a series of lines,
 each of which begins with a single character
@@ -1907,7 +1918,188 @@ the input is rewritten to the
 The
 .i comments
 are ignored.
-.sh 3 "D \*- define macro"
+.sh 4 "The left hand side"
+.pp
+The left hand side of rewriting rules contains a pattern.
+Normal words are simply matched directly.
+Metasyntax is introduced using a dollar sign.
+The metasymbols are:
+.(b
+.ta \w'\fB$=\fP\fIx\fP  'u
+\fB$*\fP	Match zero or more tokens
+\fB$+\fP	Match one or more tokens
+\fB$\-\fP	Match exactly one token
+\fB$=\fP\fIx\fP	Match any token in class \fIx\fP
+\fB$~\fP\fIx\fP	Match any token not in class \fIx\fP
+.)b
+If any of these match,
+they are assigned to the symbol
+.b $ \c
+.i n
+for replacement on the right hand side,
+where
+.i n
+is the index in the LHS.
+For example,
+if the LHS:
+.(b
+$\-:$+
+.)b
+is applied to the input:
+.(b
+UCBARPA:eric
+.)b
+the rule will match, and the values passed to the RHS will be:
+.(b
+.ta 4n
+$1	UCBARPA
+$2	eric
+.)b
+.sh 4 "The right hand side"
+.pp
+When the left hand side of a rewriting rule matches,
+the input is deleted and replaced by the right hand side.
+Tokens are copied directly from the RHS
+unless they begin with a dollar sign.
+Metasymbols are:
+.(b
+.ta \w'$#mailer\0\0\0'u
+\fB$\fP\fIn\fP	Substitute indefinite token \fIn\fP from LHS
+\fB$[\fP\fIname\fP\fB$]\fP	Canonicalize \fIname\fP
+\fB$(\fP\fImap key\fP \fB$@\fP\fIarguments\fP \fB$:\fP\fIdefault\fP \fB$)\fP
+	Generalized keyed mapping function
+\fB$>\fP\fIn\fP	\*(lqCall\*(rq ruleset \fIn\fP
+\fB$#\fP\fImailer\fP	Resolve to \fImailer\fP
+\fB$@\fP\fIhost\fP	Specify \fIhost\fP
+\fB$:\fP\fIuser\fP	Specify \fIuser\fP
+.)b
+.pp
+The
+.b $ \c
+.i n
+syntax substitutes the corresponding value from a
+.b $+ ,
+.b $\- ,
+.b $* ,
+.b $= ,
+or
+.b $~
+match on the LHS.
+It may be used anywhere.
+.pp
+A host name enclosed between
+.b $[
+and
+.b $]
+is looked up using the
+.i gethostent \|(3)
+routines and replaced by the canonical name.
+For example,
+.q $[csam$]
+might become
+.q lbl-csam.arpa
+and
+.q $[[128.32.130.2]$]
+would become
+.q vangogh.CS.Berkeley.EDU.
+.pp
+The
+.b $(
+\&...
+.b $)
+syntax is a more general form of lookup;
+it uses a named map instead of an implicit map.
+If no lookup is found, the indicted
+.i default
+is inserted;
+if no default is specified and no lookup matches,
+the value is left unchanged.
+.pp
+The
+.b $> \c
+.i n
+syntax
+causes the remainder of the line to be substituted as usual
+and then passed as the argument to ruleset
+.i n .
+The final value of ruleset
+.i n
+then becomes
+the substitution for this rule.
+.pp
+The
+.b $#
+syntax should
+.i only
+be used in ruleset zero.
+It causes evaluation of the ruleset to terminate immediately,
+and signals to sendmail that the address has completely resolved.
+The complete syntax is:
+.(b
+\fB$#\fP\fImailer\fP\fB$@\fP\fIhost\fP\fB$:\fP\fIuser\fP
+.)b
+This specifies the
+{mailer, host, user}
+3-tuple necessary to direct the mailer.
+If the mailer is local
+the host part may be omitted.
+The
+.i mailer
+and
+.i host
+must be a single word,
+but the
+.i user
+may be multi-part.
+.pp
+A RHS may also be preceded by a
+.b $@
+or a
+.b $:
+to control evaluation.
+A
+.b $@
+prefix causes the ruleset to return with the remainder of the RHS
+as the value.
+A
+.b $:
+prefix causes the rule to terminate immediately,
+but the ruleset to continue;
+this can be used to avoid continued application of a rule.
+The prefix is stripped before continuing.
+.pp
+The
+.b $@
+and
+.b $:
+prefixes may precede a
+.b $>
+spec;
+for example:
+.(b
+.ta 8n
+R$+	$:$>7$1
+.)b
+matches anything,
+passes that to ruleset seven,
+and continues;
+the
+.b $:
+is necessary to avoid an infinite loop.
+.pp
+Substitution occurs in the order described,
+that is,
+parameters from the LHS are substituted,
+hostnames are canonicalized,
+.q subroutines
+are called,
+and finally
+.b $# ,
+.b $@ ,
+and
+.b $:
+are processed.
+..sh 3 "D \*- define macro"
 .pp
 Macros are named with a single character.
 These may be selected from the entire ASCII set,
@@ -1928,431 +2120,6 @@ is the name of the macro
 and
 .i val
 is the value it should have.
-Macros can be interpolated in most places using the escape sequence
-.b $ \c
-.i x .
-.sh 3 "C and F \*- define classes"
-.pp
-Classes of words may be defined
-to match on the left hand side of rewriting rules,
-where a
-.q word
-is a sequence of characters that do not contain characters
-in the $o macro.
-For example
-a class of all local names for this site
-might be created
-so that attempts to send to oneself
-can be eliminated.
-These can either be defined directly in the configuration file
-or read in from another file.
-Classes may be given names
-from the set of upper case letters.
-Lower case letters and special characters
-are reserved for system use.
-.pp
-The syntax is:
-.(b F
-.b C \c
-.i c\|word1
-.i word2...
-.br
-.b F \c
-.i c\|file
-.)b
-The first form defines the class
-.i c
-to match any of the named words.
-It is permissible to split them among multiple lines;
-for example, the two forms:
-.(b
-CHmonet ucbmonet
-.)b
-and
-.(b
-CHmonet
-CHucbmonet
-.)b
-are equivalent.
-The second form
-reads the elements of the class
-.i c
-from the named
-.i file .
-.sh 3 "M \*- define mailer"
-.pp
-Programs and interfaces to mailers
-are defined in this line.
-The format is:
-.(b F
-.b M \c
-.i name ,
-{\c
-.i field =\c
-.i value \|}*
-.)b
-where
-.i name
-is the name of the mailer
-(used internally only)
-and the
-.q field=name
-pairs define attributes of the mailer.
-Fields are:
-.(b
-.ta 1i
-Path	The pathname of the mailer
-Flags	Special flags for this mailer
-Sender	A rewriting set for sender addresses
-Recipient	A rewriting set for recipient addresses
-Argv	An argument vector to pass to this mailer
-Eol	The end-of-line string for this mailer
-Maxsize	The maximum message length to this mailer
-Linelimit	The maximum line length in the message body
-.)b
-Only the first character of the field name is checked.
-.sh 3 "H \*- define header"
-.pp
-The format of the header lines that sendmail inserts into the message
-are defined by the
-.b H
-line.
-The syntax of this line is:
-.(b F
-.b H [\c
-.b ? \c
-.i mflags \c
-.b ? ]\c
-.i hname \c
-.b :
-.i htemplate
-.)b
-Continuation lines in this spec
-are reflected directly into the outgoing message.
-The
-.i htemplate
-is macro expanded before insertion into the message.
-If the
-.i mflags
-(surrounded by question marks)
-are specified,
-at least one of the specified flags
-must be stated in the mailer definition
-for this header to be automatically output.
-If one of these headers is in the input
-it is reflected to the output
-regardless of these flags.
-.pp
-Some headers have special semantics
-that will be described below.
-.sh 3 "O \*- set option"
-.pp
-There are a number of
-.q random
-options that
-can be set from a configuration file.
-Options are represented by single characters.
-The syntax of this line is:
-.(b F
-.b O \c
-.i o\|value
-.)b
-This sets option
-.i o
-to be
-.i value .
-Depending on the option,
-.i value
-may be a string, an integer,
-a boolean
-(with legal values
-.q t ,
-.q T ,
-.q f ,
-or
-.q F ;
-the default is TRUE),
-or
-a time interval.
-.sh 3 "T \*- define trusted users"
-.pp
-Trusted users
-are those users who are permitted
-to override the sender address
-using the
-.b \-f
-flag.
-These typically are
-.q root,
-.q uucp,
-and
-.q network,
-but on some users it may be convenient
-to extend this list to include other users,
-perhaps to support
-a separate
-UUCP
-login for each host.
-The syntax of this line is:
-.(b F
-.b T \c
-.i user1
-.i user2 ...
-.)b
-There may be more than one of these lines.
-.sh 3 "P \*- precedence definitions"
-.pp
-Values for the
-.q "Precedence:"
-field may be defined using the
-.b P
-control line.
-The syntax of this field is:
-.(b
-\fBP\fP\fIname\fP\fB=\fP\fInum\fP
-.)b
-When the
-.i name
-is found in a
-.q Precedence:
-field,
-the message class is set to
-.i num .
-Higher numbers mean higher precedence.
-Numbers less than zero
-have the special property
-that error messages will not be returned.
-The default precedence is zero.
-For example,
-our list of precedences is:
-.(b
-Pfirst-class=0
-Pspecial-delivery=100
-Pjunk=\-100
-.)b
-.sh 3 "V \*- configuration version level"
-.pp
-To provide compatibility with old configuration files,
-the
-.b V
-line has been added to define some very basic semantics
-of the configuration file.
-These are not intended to be long term supports;
-rather, they describe compatibility features
-which will probably be removed in future releases.
-.pp
-.q Old
-configuration files are defined as level one.
-Level two files make the following changes:
-.np
-Host name canonification ($[ ... $])
-appends a dot if the name is recognized;
-this gives the config file a way of finding out if anything matched.
-(Actually, this just initializes the
-.q host
-map with the
-.q \-a.
-flag \*- you can reset it to anything you prefer
-by declaring the map explicitly.)
-.np
-Default host name extension is consistent throughout processing;
-level one configurations turned off domain extension
-(that is, adding the local domain name)
-during certain points in processing.
-Level two configurations are expected to include a trailing dot
-to indicate that the name is already canonical.
-.np
-Local names that are not aliases
-are passed through a new distinguished ruleset five;
-this can be used to append a local relay.
-This behaviour can be prevented by resolving the local name
-with an initial `@'.
-That is, something that resolves to a local mailer and a user name of
-.q vikki
-will be passed through ruleset five,
-but a user name of
-.q @vikki
-will have the `@' stripped,
-will not be passed through ruleset five,
-but will otherwise be treated the same as the prior example.
-The expectation is that this might be used to implement a policy
-where mail sent to
-.q vikki
-was handled by a central hub,
-but mail sent to
-.q vikki@localhost
-was delivered directly.
-.pp
-Level three files
-allow # initiated comments on all lines.
-Exceptions are backslash escaped # marks
-and the $# syntax.
-.sh 3 "K \*- key file declaration"
-.pp
-Special maps can be defined using the line:
-.(b
-Kmapname mapclass arguments
-.)b
-The
-.i mapname
-is the handle by which this map is referenced in the rewriting rules.
-The
-.i mapclass
-is the name of a type of map;
-these are compiled in to sendmail.
-The
-.i arguments
-are interpreted depending on the class;
-typically,
-there would be a single argument naming the file containing the map.
-.pp
-Maps are referenced using the syntax:
-.(b
-$( \fImap\fP \fIkey\fP $@ \fIarguments\fP $: \fIdefault\fP $)
-.)b
-where either or both of the
-.i arguments
-or
-.i default
-portion may be omitted.
-The
-.i arguments
-may appear more than once.
-The indicated
-.i key
-and
-.i arguments
-are passed to the appropriate mapping function.
-If it returns a value, it replaces the input.
-If it does not return a value and the
-.i default
-is specified, the
-.i default
-replaces the input.
-Otherwise, the input is unchanged.
-.pp
-During replacement of either a map value or default
-the string
-.q %\fIn\fP
-(where
-.i n
-is a digit)
-is replaced by the corresponding
-.i argument .
-Argument zero
-is always the original pattern.
-For example, the rule
-.(b
-R$- ! $+	$: $(uucp $1 $@ $2 $: %1 @ %0 . UUCP $)
-.)b
-Looks up the UUCP name in a (user defined) UUCP map;
-if not found it turns it into
-.q ``\&.UUCP'' form.  The database might contain records like:
-.(b
-decvax	%1@%0.DEC.COM
-research	%1@%0.ATT.COM
-.)b
-.pp
-The built in map with both name and class
-.q host
-is the host name canonicalization lookup.
-Thus,
-the syntax:
-.(b
-$(host \fIhostname\fP$)
-.)b
-is equivalent to:
-.(b
-$[\fIhostname\fP$]
-.)b
-.pp
-There are four predefined database lookup classes:
-.q dbm ,
-.q btree ,
-.q hash ,
-and
-.q nis .
-The first requires that sendmail be compiled with the
-.b ndbm
-library;
-the second two require the
-.b db
-library,
-and the third requires that sendmail be compiled with NIS support.
-All four accept as arguments the some optional flags
-and a filename (or a mapname for NIS).
-Known flags are:
-.ip "\-o"
-Indicates that this map is optional \*- that is,
-if it cannot be opened,
-no error is produced,
-and sendmail will behave as if the map existed but was empty.
-.ip "\-N"
-Normally sendmail does not include the trailing null byte
-on a string as part of the key.
-If this flag is indicated,
-it will be included.
-This is for compatibility with some methods of building the maps.
-.ip "\-a\fIx\fP"
-Append the character
-.i x
-on successful matches.
-For example, the default
-.i host
-map appends a dot on successful matches.
-.ip "\-d\fIdomain\fP"
-Use the indicated
-.i domain
-instead of the default domain.
-Used only for NIS maps.
-.ip "\-f"
-Fold upper to lower case before looking up the key.
-.ip "\-m"
-Match only (without replacing the value).
-If you only care about the existence of a key and not the value
-(as you might when searching the NIS map
-.q hosts.byname
-for example),
-this flag prevents the map from substituting the value.
-However,
-The \-a argument is still appended on a match,
-and the default is still taken if the match fails.
-.pp
-The
-.i dbm
-map appends the strings
-.q \&.pag
-and
-.q \&.dir
-to the given filename;
-the two
-.i db -based
-maps do not.
-.pp
-The program
-.i makemap (8)
-can be used to build any of the three database-oriented maps.
-It takes the following flags:
-.ip \-f
-Fold upper to lower case in the map.
-.ip \-N
-Include null bytes in keys.
-.ip \-o
-Append to an existing (old) file.
-.ip \-r
-Allow replacement of existing keys;
-normally, re-inserting an existing key is an error.
-.ip \-v
-Print what is happening.
-.pp
-New classes can be added in the routine
-.b setupmaps
-in file
-.b conf.c .
-.sh 2 "The Semantics"
-.pp
-This section describes the semantics of the configuration file.
-.sh 3 "Special macros, conditionals"
 .pp
 Macros are interpolated
 using the construct
@@ -2615,195 +2382,7 @@ and
 .b $s
 fields are set to the protocol used to communicate with sendmail
 and the sending hostname.
-.sh 3 "Special classes"
-.pp
-The class
-.b $=w
-is set to be the set of all names
-this host is known by.
-This can be used to match local hostnames.
-.sh 3 "The left hand side"
-.pp
-The left hand side of rewriting rules contains a pattern.
-Normal words are simply matched directly.
-Metasyntax is introduced using a dollar sign.
-The metasymbols are:
-.(b
-.ta \w'\fB$=\fP\fIx\fP  'u
-\fB$*\fP	Match zero or more tokens
-\fB$+\fP	Match one or more tokens
-\fB$\-\fP	Match exactly one token
-\fB$=\fP\fIx\fP	Match any token in class \fIx\fP
-\fB$~\fP\fIx\fP	Match any token not in class \fIx\fP
-.)b
-If any of these match,
-they are assigned to the symbol
-.b $ \c
-.i n
-for replacement on the right hand side,
-where
-.i n
-is the index in the LHS.
-For example,
-if the LHS:
-.(b
-$\-:$+
-.)b
-is applied to the input:
-.(b
-UCBARPA:eric
-.)b
-the rule will match, and the values passed to the RHS will be:
-.(b
-.ta 4n
-$1	UCBARPA
-$2	eric
-.)b
-.sh 3 "The right hand side"
-.pp
-When the left hand side of a rewriting rule matches,
-the input is deleted and replaced by the right hand side.
-Tokens are copied directly from the RHS
-unless they begin with a dollar sign.
-Metasymbols are:
-.(b
-.ta \w'$#mailer\0\0\0'u
-\fB$\fP\fIn\fP	Substitute indefinite token \fIn\fP from LHS
-\fB$[\fP\fIname\fP\fB$]\fP	Canonicalize \fIname\fP
-\fB$(\fP\fImap key\fP \fB$@\fP\fIarguments\fP \fB$:\fP\fIdefault\fP \fB$)\fP
-	Generalized keyed mapping function
-\fB$>\fP\fIn\fP	\*(lqCall\*(rq ruleset \fIn\fP
-\fB$#\fP\fImailer\fP	Resolve to \fImailer\fP
-\fB$@\fP\fIhost\fP	Specify \fIhost\fP
-\fB$:\fP\fIuser\fP	Specify \fIuser\fP
-.)b
-.pp
-The
-.b $ \c
-.i n
-syntax substitutes the corresponding value from a
-.b $+ ,
-.b $\- ,
-.b $* ,
-.b $= ,
-or
-.b $~
-match on the LHS.
-It may be used anywhere.
-.pp
-A host name enclosed between
-.b $[
-and
-.b $]
-is looked up using the
-.i gethostent \|(3)
-routines and replaced by the canonical name.
-For example,
-.q $[csam$]
-might become
-.q lbl-csam.arpa
-and
-.q $[[128.32.130.2]$]
-would become
-.q vangogh.berkeley.edu.
-.pp
-The
-.b $(
-\&...
-.b $)
-syntax is a more general form of lookup;
-it uses a named map instead of an implicit map.
-If no lookup is found, the indicted
-.i default
-is inserted;
-if no default is specified and no lookup matches,
-the value is left unchanged.
-.pp
-The
-.b $> \c
-.i n
-syntax
-causes the remainder of the line to be substituted as usual
-and then passed as the argument to ruleset
-.i n .
-The final value of ruleset
-.i n
-then becomes
-the substitution for this rule.
-.pp
-The
-.b $#
-syntax should
-.i only
-be used in ruleset zero.
-It causes evaluation of the ruleset to terminate immediately,
-and signals to sendmail that the address has completely resolved.
-The complete syntax is:
-.(b
-\fB$#\fP\fImailer\fP\fB$@\fP\fIhost\fP\fB$:\fP\fIuser\fP
-.)b
-This specifies the
-{mailer, host, user}
-3-tuple necessary to direct the mailer.
-If the mailer is local
-the host part may be omitted.
-The
-.i mailer
-and
-.i host
-must be a single word,
-but the
-.i user
-may be multi-part.
-.pp
-A RHS may also be preceded by a
-.b $@
-or a
-.b $:
-to control evaluation.
-A
-.b $@
-prefix causes the ruleset to return with the remainder of the RHS
-as the value.
-A
-.b $:
-prefix causes the rule to terminate immediately,
-but the ruleset to continue;
-this can be used to avoid continued application of a rule.
-The prefix is stripped before continuing.
-.pp
-The
-.b $@
-and
-.b $:
-prefixes may precede a
-.b $>
-spec;
-for example:
-.(b
-.ta 8n
-R$+	$:$>7$1
-.)b
-matches anything,
-passes that to ruleset seven,
-and continues;
-the
-.b $:
-is necessary to avoid an infinite loop.
-.pp
-Substitution occurs in the order described,
-that is,
-parameters from the LHS are substituted,
-hostnames are canonicalized,
-.q subroutines
-are called,
-and finally
-.b $# ,
-.b $@ ,
-and
-.b $:
-are processed.
-.sh 3 "Semantics of rewriting rule sets"
+.sh 4 "Semantics of rewriting rule sets"
 .pp
 There are five rewriting sets
 that have specific semantics.
@@ -2919,47 +2498,343 @@ Ruleset four is applied to all addresses
 in the message.
 It is typically used
 to translate internal to external form.
-.sh 3 "Mailer flags etc."
+.sh 3 "C and F \*- define classes"
 .pp
-There are a number of flags that may be associated with each mailer,
-each identified by a letter of the alphabet.
-Many of them are assigned semantics internally.
-These are detailed in Appendix C.
+Classes of words may be defined
+to match on the left hand side of rewriting rules,
+where a
+.q word
+is a sequence of characters that do not contain characters
+in the $o macro.
+For example
+a class of all local names for this site
+might be created
+so that attempts to send to oneself
+can be eliminated.
+These can either be defined directly in the configuration file
+or read in from another file.
+Classes may be given names
+from the set of upper case letters.
+Lower case letters and special characters
+are reserved for system use.
+.pp
+The syntax is:
+.(b F
+.b C \c
+.i c\|word1
+.i word2...
+.br
+.b F \c
+.i c\|file
+.)b
+The first form defines the class
+.i c
+to match any of the named words.
+It is permissible to split them among multiple lines;
+for example, the two forms:
+.(b
+CHmonet ucbmonet
+.)b
+and
+.(b
+CHmonet
+CHucbmonet
+.)b
+are equivalent.
+The second form
+reads the elements of the class
+.i c
+from the named
+.i file .
+.pp
+The class
+.b $=w
+is set to be the set of all names
+this host is known by.
+This can be used to match local hostnames.
+.sh 3 "M \*- define mailer"
+.pp
+Programs and interfaces to mailers
+are defined in this line.
+The format is:
+.(b F
+.b M \c
+.i name ,
+{\c
+.i field =\c
+.i value \|}*
+.)b
+where
+.i name
+is the name of the mailer
+(used internally only)
+and the
+.q field=name
+pairs define attributes of the mailer.
+Fields are:
+.(b
+.ta 1i
+Path	The pathname of the mailer
+Flags	Special flags for this mailer
+Sender	A rewriting set for sender addresses
+Recipient	A rewriting set for recipient addresses
+Argv	An argument vector to pass to this mailer
+Eol	The end-of-line string for this mailer
+Maxsize	The maximum message length to this mailer
+Linelimit	The maximum line length in the message body
+.)b
+Only the first character of the field name is checked.
+.pp
+The following flags may be set in the mailer description.
 Any other flags may be used freely
 to conditionally assign headers to messages
 destined for particular mailers.
-.sh 3 "The \*(lqerror\*(rq mailer"
+.nr ii 4n
+.ip C
+If mail is
+.i received
+from a mailer with this flag set,
+any addresses in the header that do not have an at sign
+(\c
+.q @ )
+after being rewritten by ruleset three
+will have the
+.q @domain
+clause from the sender
+tacked on.
+This allows mail with headers of the form:
+.(b
+From: usera@hosta
+To: userb@hostb, userc
+.)b
+to be rewritten as:
+.(b
+From: usera@hosta
+To: userb@hostb, userc@hosta
+.)b
+automatically.
+.ip D
+This mailer wants a
+.q Date:
+header line.
+.ip e
+This mailer is expensive to connect to,
+so try to avoid connecting normally;
+any necessary connection will occur during a queue run.
+.ip E
+Escape lines beginning with
+.q From
+in the message with a `>' sign.
+.ip f
+The mailer wants a
+.b \-f
+.i from
+flag,
+but only if this is a network forward operation
+(i.e.,
+the mailer will give an error
+if the executing user
+does not have special permissions).
+.ip F
+This mailer wants a
+.q From:
+header line.
+.ip h
+Upper case should be preserved in host names
+for this mailer.
+.ip I
+This mailer will be speaking SMTP
+to another
+.i sendmail
+\*-
+as such it can use special protocol features.
+This option is not required
+(i.e.,
+if this option is omitted the transmission will still operate successfully,
+although perhaps not as efficiently as possible).
+.ip l
+This mailer is local
+(i.e.,
+final delivery will be performed).
+.ip L
+Limit the line lengths as specified in RFC821.
+This deprecated option should be replaced by the
+.b L=
+mail declaration.
+For historic reasons, the
+.b L
+flag also sets the
+.b 7
+flag.
+.ip m
+This mailer can send to multiple users
+on the same host
+in one transaction.
+When a
+.b $u
+macro occurs in the
+.i argv
+part of the mailer definition,
+that field will be repeated as necessary
+for all qualifying users.
+.ip M
+This mailer wants a
+.q Message-Id:
+header line.
+.ip n
+Do not insert a UNIX-style
+.q From
+line on the front of the message.
+.ip p
+Use the return-path in the SMTP
+.q "MAIL FROM:"
+command
+rather than just the return address;
+although this is required in RFC821,
+many hosts do not process return paths properly.
+.ip P
+This mailer wants a
+.q Return-Path:
+line.
+.ip r
+Same as
+.b f ,
+but sends a
+.b \-r
+flag.
+.ip s
+Strip quote characters off of the address
+before calling the mailer.
+.ip S
+Don't reset the userid
+before calling the mailer.
+This would be used in a secure environment
+where
+.i sendmail
+ran as root.
+This could be used to avoid forged addresses.
+This flag is suppressed if given from an
+.q unsafe
+environment
+(e.g, a user's mail.cf file).
+.ip u
+Upper case should be preserved in user names
+for this mailer.
+.ip U
+This mailer wants Unix-style
+.q From
+lines with the ugly UUCP-style
+.q "remote from <host>"
+on the end.
+.ip x
+This mailer wants a
+.q Full-Name:
+header line.
+.ip X
+This mailer want to use the hidden dot algorithm
+as specified in RFC821;
+basically,
+any line beginning with a dot
+will have an extra dot prepended
+(to be stripped at the other end).
+This insures that lines in the message containing a dot
+will not terminate the message prematurely.
+.ip 7
+Strip all output to seven bits.
+This is the default if the
+.b L
+flag is set.
+Note that setting this is not
+sufficient to get full eight bit data passed through
+.i sendmail ;
+the
+.b 8
+option must also be set.
 .pp
 The mailer with the special name
 .q error
 can be used to generate a user error.
-The (optional) host field is a numeric exit status to be returned,
+The (optional) host field is an exit status to be returned,
 and the user field is a message to be printed.
+The exit status may be numeric or one of the values
+USAGE, NOUSER, NOHOST, UNAVAILABLE, SOFTWARE, TEMPFAIL, PROTOCOL, or CONFIG
+to return the corresponding EX_ exit code.
 For example, the entry:
 .(b
-$#error$:Host unknown in this domain
+$#error $@ NOHOST $: Host unknown in this domain
 .)b
 on the RHS of a rule
 will cause the specified error to be generated
+and the
+.q "Host unknown"
+exit status to be returned
 if the LHS matches.
 This mailer is only functional in ruleset zero.
-.sh 2 "Options"
+.sh 3 "H \*- define header"
 .pp
-The following options may be set using the
-.b \-o
-flag on the command line
-or the
-.b O
-line in the configuration file.
-If specified on the command line,
-most will cause
-.i sendmail
-to relinquish its setuid permissions.
-The options that will not cause this are
-d, e, E, i, L, m, o, r, s, v, C, and 8.
-Also, M (define macro) when defining the r or s macros
-is also considered
-.q safe .
+The format of the header lines that sendmail inserts into the message
+are defined by the
+.b H
+line.
+The syntax of this line is:
+.(b F
+.b H [\c
+.b ? \c
+.i mflags \c
+.b ? ]\c
+.i hname \c
+.b :
+.i htemplate
+.)b
+Continuation lines in this spec
+are reflected directly into the outgoing message.
+The
+.i htemplate
+is macro expanded before insertion into the message.
+If the
+.i mflags
+(surrounded by question marks)
+are specified,
+at least one of the specified flags
+must be stated in the mailer definition
+for this header to be automatically output.
+If one of these headers is in the input
+it is reflected to the output
+regardless of these flags.
+.pp
+Some headers have special semantics
+that will be described below.
+.sh 3 "O \*- set option"
+.pp
+There are a number of
+.q random
+options that
+can be set from a configuration file.
+Options are represented by single characters.
+The syntax of this line is:
+.(b F
+.b O \c
+.i o\|value
+.)b
+This sets option
+.i o
+to be
+.i value .
+Depending on the option,
+.i value
+may be a string, an integer,
+a boolean
+(with legal values
+.q t ,
+.q T ,
+.q f ,
+or
+.q F ;
+the default is TRUE),
+or
+a time interval.
+.pp
+The options supported are:
 .nr ii 1i
 .ip a\fIN\fP
 If set,
@@ -3062,6 +2937,18 @@ Set the default group id
 for mailers to run in
 to
 .i n .
+.ip G
+Allow fuzzy matching on the GECOS field.
+If this flag is set,
+and the usual user name lookups fail
+(that is, there is no alias with this name and a
+.i getpwnam
+fails),
+sequentially search the password file
+for a matching entry in the GECOS field.
+This also requires that MATCHGECOS
+be turned on during compilation.
+This option is not recommended.
 .ip h\fIN\fP
 The maximum hop count.
 Messages that have been processed more than
@@ -3283,172 +3170,295 @@ Normally the input is stripped to seven bits as per RFC822.
 See also the
 .b L
 mailer flag.
-.sh 2 "Mailer Flags"
-The following flags may be set in the mailer description.
-.nr ii 4n
-.ip A
-This is an Arpanet-compatible mailer,
-and all appropriate modes should be set.
-.ip C
-If mail is
-.i received
-from a mailer with this flag set,
-any addresses in the header that do not have an at sign
-(\c
-.q @ )
-after being rewritten by ruleset three
-will have the
-.q @domain
-clause from the sender
-tacked on.
-This allows mail with headers of the form:
-.(b
-From: usera@hosta
-To: userb@hostb, userc
-.)b
-to be rewritten as:
-.(b
-From: usera@hosta
-To: userb@hostb, userc@hosta
-.)b
-automatically.
-.ip D
-This mailer wants a
-.q Date:
-header line.
-.ip e
-This mailer is expensive to connect to,
-so try to avoid connecting normally;
-any necessary connection will occur during a queue run.
-.ip E
-Escape lines beginning with
-.q From
-in the message with a `>' sign.
-.ip f
-The mailer wants a
+.lp
+All options can be specified on the command line using the
+\-o flag,
+but most will cause
+.i sendmail
+to relinquish its setuid permissions.
+The options that will not cause this are
+d, e, E, i, L, m, o, r, s, v, C, and 8.
+Also, M (define macro) when defining the r or s macros
+is also considered
+.q safe .
+.sh 3 "T \*- define trusted users"
+.pp
+Trusted users
+are those users who are permitted
+to override the sender address
+using the
 .b \-f
-.i from
-flag,
-but only if this is a network forward operation
-(i.e.,
-the mailer will give an error
-if the executing user
-does not have special permissions).
-.ip F
-This mailer wants a
-.q From:
-header line.
-.ip h
-Upper case should be preserved in host names
-for this mailer.
-.ip I
-This mailer will be speaking SMTP
-to another
-.i sendmail
-\*-
-as such it can use special protocol features.
-This option is not required
-(i.e.,
-if this option is omitted the transmission will still operate successfully,
-although perhaps not as efficiently as possible).
-.ip l
-This mailer is local
-(i.e.,
-final delivery will be performed).
-.ip L
-Limit the line lengths as specified in RFC821.
-This deprecated option should be replaced by the
-.b L=
-mail declaration.
-For historic reasons, the
-.b L
-flag also sets the
-.b 7
 flag.
-.ip m
-This mailer can send to multiple users
-on the same host
-in one transaction.
-When a
-.b $u
-macro occurs in the
-.i argv
-part of the mailer definition,
-that field will be repeated as necessary
-for all qualifying users.
-.ip M
-This mailer wants a
-.q Message-Id:
-header line.
-.ip n
-Do not insert a UNIX-style
-.q From
-line on the front of the message.
-.ip p
-Use the return-path in the SMTP
-.q "MAIL FROM:"
-command
-rather than just the return address;
-although this is required in RFC821,
-many hosts do not process return paths properly.
-.ip P
-This mailer wants a
-.q Return-Path:
-line.
-.ip r
-Same as
-.b f ,
-but sends a
-.b \-r
-flag.
-.ip s
-Strip quote characters off of the address
-before calling the mailer.
-.ip S
-Don't reset the userid
-before calling the mailer.
-This would be used in a secure environment
-where
-.i sendmail
-ran as root.
-This could be used to avoid forged addresses.
-This flag is suppressed if given from an
-.q unsafe
-environment
-(e.g, a user's mail.cf file).
-.ip u
-Upper case should be preserved in user names
-for this mailer.
-.ip U
-This mailer wants Unix-style
-.q From
-lines with the ugly UUCP-style
-.q "remote from <host>"
-on the end.
-.ip x
-This mailer wants a
-.q Full-Name:
-header line.
-.ip X
-This mailer want to use the hidden dot algorithm
-as specified in RFC821;
-basically,
-any line beginning with a dot
-will have an extra dot prepended
-(to be stripped at the other end).
-This insures that lines in the message containing a dot
-will not terminate the message prematurely.
-.ip 7
-Strip all output to seven bits.
-This is the default if the
-.b L
-flag is set.
-Note that setting this is not
-sufficient to get full eight bit data passed through
-.i sendmail ;
+These typically are
+.q root,
+.q uucp,
+and
+.q network,
+but on some users it may be convenient
+to extend this list to include other users,
+perhaps to support
+a separate
+UUCP
+login for each host.
+The syntax of this line is:
+.(b F
+.b T \c
+.i user1
+.i user2 ...
+.)b
+There may be more than one of these lines.
+.sh 3 "P \*- precedence definitions"
+.pp
+Values for the
+.q "Precedence:"
+field may be defined using the
+.b P
+control line.
+The syntax of this field is:
+.(b
+\fBP\fP\fIname\fP\fB=\fP\fInum\fP
+.)b
+When the
+.i name
+is found in a
+.q Precedence:
+field,
+the message class is set to
+.i num .
+Higher numbers mean higher precedence.
+Numbers less than zero
+have the special property
+that error messages will not be returned.
+The default precedence is zero.
+For example,
+our list of precedences is:
+.(b
+Pfirst-class=0
+Pspecial-delivery=100
+Pjunk=\-100
+.)b
+.sh 3 "V \*- configuration version level"
+.pp
+To provide compatibility with old configuration files,
 the
-.b 8
-option must also be set.
+.b V
+line has been added to define some very basic semantics
+of the configuration file.
+These are not intended to be long term supports;
+rather, they describe compatibility features
+which will probably be removed in future releases.
+.pp
+.q Old
+configuration files are defined as level one.
+Level two files make the following changes:
+.np
+Host name canonification ($[ ... $])
+appends a dot if the name is recognized;
+this gives the config file a way of finding out if anything matched.
+(Actually, this just initializes the
+.q host
+map with the
+.q \-a.
+flag \*- you can reset it to anything you prefer
+by declaring the map explicitly.)
+.np
+Default host name extension is consistent throughout processing;
+level one configurations turned off domain extension
+(that is, adding the local domain name)
+during certain points in processing.
+Level two configurations are expected to include a trailing dot
+to indicate that the name is already canonical.
+.np
+Local names that are not aliases
+are passed through a new distinguished ruleset five;
+this can be used to append a local relay.
+This behaviour can be prevented by resolving the local name
+with an initial `@'.
+That is, something that resolves to a local mailer and a user name of
+.q vikki
+will be passed through ruleset five,
+but a user name of
+.q @vikki
+will have the `@' stripped,
+will not be passed through ruleset five,
+but will otherwise be treated the same as the prior example.
+The expectation is that this might be used to implement a policy
+where mail sent to
+.q vikki
+was handled by a central hub,
+but mail sent to
+.q vikki@localhost
+was delivered directly.
+.pp
+Level three files
+allow # initiated comments on all lines.
+Exceptions are backslash escaped # marks
+and the $# syntax.
+.sh 3 "K \*- key file declaration"
+.pp
+Special maps can be defined using the line:
+.(b
+Kmapname mapclass arguments
+.)b
+The
+.i mapname
+is the handle by which this map is referenced in the rewriting rules.
+The
+.i mapclass
+is the name of a type of map;
+these are compiled in to sendmail.
+The
+.i arguments
+are interpreted depending on the class;
+typically,
+there would be a single argument naming the file containing the map.
+.pp
+Maps are referenced using the syntax:
+.(b
+$( \fImap\fP \fIkey\fP $@ \fIarguments\fP $: \fIdefault\fP $)
+.)b
+where either or both of the
+.i arguments
+or
+.i default
+portion may be omitted.
+The
+.i arguments
+may appear more than once.
+The indicated
+.i key
+and
+.i arguments
+are passed to the appropriate mapping function.
+If it returns a value, it replaces the input.
+If it does not return a value and the
+.i default
+is specified, the
+.i default
+replaces the input.
+Otherwise, the input is unchanged.
+.pp
+During replacement of either a map value or default
+the string
+.q %\fIn\fP
+(where
+.i n
+is a digit)
+is replaced by the corresponding
+.i argument .
+Argument zero
+is always the original pattern.
+For example, the rule
+.(b
+.ta 1.5i
+R$- ! $+	$: $(uucp $1 $@ $2 $: %1 @ %0 . UUCP $)
+.)b
+Looks up the UUCP name in a (user defined) UUCP map;
+if not found it turns it into
+.q \&.UUCP
+form.
+The database might contain records like:
+.(b
+decvax	%1@%0.DEC.COM
+research	%1@%0.ATT.COM
+.)b
+.pp
+The built in map with both name and class
+.q host
+is the host name canonicalization lookup.
+Thus,
+the syntax:
+.(b
+$(host \fIhostname\fP$)
+.)b
+is equivalent to:
+.(b
+$[\fIhostname\fP$]
+.)b
+.pp
+There are four predefined database lookup classes:
+.q dbm ,
+.q btree ,
+.q hash ,
+and
+.q nis .
+The first requires that sendmail be compiled with the
+.b ndbm
+library;
+the second two require the
+.b db
+library,
+and the third requires that sendmail be compiled with NIS support.
+All four accept as arguments the some optional flags
+and a filename (or a mapname for NIS).
+Known flags are:
+.ip "\-o"
+Indicates that this map is optional \*- that is,
+if it cannot be opened,
+no error is produced,
+and sendmail will behave as if the map existed but was empty.
+.ip "\-N"
+Normally sendmail does not include the trailing null byte
+on a string as part of the key.
+If this flag is indicated,
+it will be included.
+This is for compatibility with some methods of building the maps.
+.ip "\-a\fIx\fP"
+Append the character
+.i x
+on successful matches.
+For example, the default
+.i host
+map appends a dot on successful matches.
+.ip "\-d\fIdomain\fP"
+Use the indicated
+.i domain
+instead of the default domain.
+Used only for NIS maps.
+.ip "\-f"
+Fold upper to lower case before looking up the key.
+.ip "\-m"
+Match only (without replacing the value).
+If you only care about the existence of a key and not the value
+(as you might when searching the NIS map
+.q hosts.byname
+for example),
+this flag prevents the map from substituting the value.
+However,
+The \-a argument is still appended on a match,
+and the default is still taken if the match fails.
+.pp
+The
+.i dbm
+map appends the strings
+.q \&.pag
+and
+.q \&.dir
+to the given filename;
+the two
+.i db -based
+maps do not.
+.pp
+The program
+.i makemap (8)
+can be used to build any of the three database-oriented maps.
+It takes the following flags:
+.ip \-f
+Fold upper to lower case in the map.
+.ip \-N
+Include null bytes in keys.
+.ip \-o
+Append to an existing (old) file.
+.ip \-r
+Allow replacement of existing keys;
+normally, re-inserting an existing key is an error.
+.ip \-v
+Print what is happening.
+.pp
+New classes can be added in the routine
+.b setupmaps
+in file
+.b conf.c .
 .sh 2 "Building a Configuration File From Scratch"
 .pp
 Building a configuration table from scratch is an extremely difficult job.
@@ -4167,6 +4177,48 @@ Set all of the compilation parameters appropriate for System V.
 .ip LA_TYPE
 The load average type.
 Details are described below.
+.lp
+The are four built-in ways of computing the load average.
+.i Sendmail
+tries to auto-configure them based on imperfect guesses;
+you can select one using the
+.i cc
+option
+.b \-DLA_TYPE= \c
+.i type ,
+where
+.i type
+is:
+.ip LA_INT
+The kernel stores the load average in the kernel as an array of long integers.
+The actual values are scaled by a factor FSCALE
+(default 256).
+.ip LA_FLOAT
+The kernel stores the load average in the kernel as an array of
+double precision floats.
+.ip LA_SUBR
+Call the
+.i getloadavg
+routine to get the load average as an array of doubles.
+.ip LA_ZERO
+Always return zero as the load average.
+This is the fallback case.
+.lp
+If type
+.sm LA_INT
+or
+.sm LA_FLOAT
+is specified,
+you may also need to specify
+.sm _PATH_UNIX
+(the path to your system binary)
+and
+.sm LA_AVENRUN
+(the name of the variable containing the load average in the kernel;
+usually
+.q _avenrun
+or
+.q avenrun ).
 .sh 2 "Parameters in src/conf.h"
 .pp
 Parameters and compilation options
@@ -4310,6 +4362,9 @@ between aliasing and forwarding.
 It also uses the NEWDB package.
 This may change in future releases.
 .sh 2 "Configuration in src/conf.c"
+.pp
+The following changes can be made in conf.c.
+.sh 3 "Built-in Header Semantics"
 .pp
 Not all header semantics are defined in the configuration file.
 Header lines that should only be included by certain mailers
@@ -4469,6 +4524,7 @@ if possible;
 this is stored in the macro
 .b $x
 and used in a number of ways.
+.sh 3 "SMTP Reply Codes"
 .pp
 The file
 .i conf.c
@@ -4512,6 +4568,7 @@ these are generated when the user has specified something wrong,
 and hence the error is permanent,
 i.e.,
 it will not work simply by resubmitting the request.
+.sh 3 "Restricting Use of Email"
 .pp
 If it is necessary to restrict mail through a relay,
 the
@@ -4562,50 +4619,15 @@ of the message in the error return.
 The actual use of this routine is highly dependent on the
 implementation,
 and use should be limited.
+.sh 3 "Load Average Computation"
 .pp
 The routine
 .i getla
 should return an approximation of the current system load average
 as an integer.
-There are four versions included on compilation flags.
-You can force one version in the Makefile using the
-.i cc
-option
-.b \-DLA_TYPE= \c
-.i type ,
-where
-.i type
-is:
-.ip LA_INT
-The kernel stores the load average in the kernel as an array of long integers.
-The actual values are scaled by a factor FSCALE
-(default 256).
-.ip LA_FLOAT
-The kernel stores the load average in the kernel as an array of
-double precision floats.
-.ip LA_SUBR
-Call the
-.i getloadavg
-routine to get the load average as an array of doubles.
-.ip LA_ZERO
-Always return zero as the load average.
-This is the fallback case.
-.lp
-If type
-.sm LA_INT
-or
-.sm LA_FLOAT
-is specified,
-you may also need to specify
-.sm _PATH_UNIX
-(the path to your system binary)
-and
-.sm LA_AVENRUN
-(the name of the variable containing the load average in the kernel;
-usually
-.q _avenrun
-or
-.q avenrun ).
+There are four versions included on compilation flags
+as described above.
+.sh 3 "New Database Map Classes"
 .pp
 New key maps can be added by creating a class initialization function
 and a lookup function.
@@ -4715,6 +4737,8 @@ Generalized keyed files is an idea taken directly from
 .b sendmail
 (albeit with a completely different implementation).
 They can be useful on large sites.
+.pp
+R6 also understands YP.
 .sh 2 "Parsing Bug Fixes"
 .pp
 A number of small bugs having to do with things like
@@ -4740,12 +4764,14 @@ Several new options have been added,
 many to support new features,
 others to allow tuning that was previously available
 only by recompiling.
-They are described in detail in Appendix B.
+They are described in detail in Section 5.1.5.
 Briefly,
 .ip C
 Set checkpoint interval.
 .ip E
 Default error message.
+.ip G
+Enable GECOS matching.
 .ip h
 Maximum hop count.
 .ip J
@@ -4771,6 +4797,24 @@ The total number of MX records that can be used has been raised to 20.
 .pp
 The number of queued messages that can be handled at one time
 has been raised from 600 to 1000.
+.sh 2 "Auto-Quoting in Addresses"
+.pp
+Previously, the
+.q "Full Name <email address>"
+syntax would generate incorrect protocol output
+if
+.q "Full Name"
+had special characters such as dot.
+This version puts quotes around such names.
+.sh 2 "Symbolic Names On Error Mailer"
+.pp
+Several names have been built in to the $@ portion of the $#error
+mailer.
+.sh 2 "Portability and Security Enhancements"
+.pp
+A number of internal changes have been made to enhance portability.
+.pp
+Several fixes have been made to increase the paranoia factor.
 .++ A
 .+c "COMMAND LINE FLAGS"
 .ba 0
@@ -5127,7 +5171,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 5.24
+.\"Version 5.25
 .\".ce 0
 .pn 2
 .bp
