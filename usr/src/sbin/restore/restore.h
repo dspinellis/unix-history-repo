@@ -4,14 +4,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)restore.h	5.9 (Berkeley) %G%
+ *	@(#)restore.h	5.10 (Berkeley) %G%
  */
 
-#include <stdio.h>
 #include <sys/param.h>
 #include <sys/time.h>
-#include <ufs/dinode.h>
-#include <ufs/fs.h>
+#include <ufs/ufs/dinode.h>
+#include <ufs/ffs/fs.h>
+#include <stdio.h>
 
 /*
  * Flags
