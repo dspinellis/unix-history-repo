@@ -1,6 +1,6 @@
 /* Copyright (c) 1980 Regents of the University of California */
 
-static char sccsid[] = "@(#)flvalue.c 1.9 %G%";
+static char sccsid[] = "@(#)flvalue.c 1.10 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -23,7 +23,7 @@ flvalue( r , formalp )
     struct nl	*formalp;
     {
 	struct nl	*p;
-	long		tempoff;
+	struct nl	*tempnlp;
 	char		*typename;
 #ifdef PC
 	char		extname[ BUFSIZ ];
@@ -55,6 +55,7 @@ flvalue( r , formalp )
 #		    endif OBJ
 #		    ifdef PC
 			putRV( p -> symbol , bn , p -> value[ NL_OFFS ] , 
+				p -> extra_flags ,
 				p2type( p ) );
 #		    endif PC
 		    return p;
@@ -73,10 +74,11 @@ flvalue( r , formalp )
 			/*
 			 *	allocate space for the thunk
 			 */
-		    tempoff = tmpalloc( sizeof ( struct formalrtn ) ,
+		    tempnlp = tmpalloc( sizeof ( struct formalrtn ) ,
 				nl+TSTR, NOREG);
 #		    ifdef OBJ
-			put(2 , O_LV | cbn << 8 + INDX , (int)tempoff );
+			put(2 , O_LV | cbn << 8 + INDX ,
+				(int)tempnlp -> value[ NL_OFFS ] );
 			put(2, O_FSAV | bn << 8, (long)p->entloc);
 #		    endif OBJ
 #		    ifdef PC
@@ -89,7 +91,8 @@ flvalue( r , formalp )
 			putleaf( P2ICON , 0 , 0 , p2type( p ) , extname );
 			putleaf( P2ICON , bn , 0 , P2INT , 0 );
 			putop( P2LISTOP , P2INT );
-			putLV( 0 , cbn , tempoff , P2STRTY );
+			putLV( 0 , cbn , tempnlp -> value[NL_OFFS] ,
+				tempnlp -> extra_flags , P2STRTY );
 			putop( P2LISTOP , P2INT );
 			putop( P2CALL , P2PTR | P2STRTY );
 #		    endif PC

@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pcfunc.c 1.5 %G%";
+static	char sccsid[] = "@(#)pcfunc.c 1.6 %G%";
 
 #include "whoami.h"
 #ifdef PC
@@ -29,7 +29,7 @@ pcfunccod( r )
 	int argc, *argv;
 	int tr[2], tr2[4];
 	char		*funcname;
-	long		tempoff;
+	struct nl	*tempnlp;
 	long		temptype;
 	struct nl	*rettype;
 
@@ -244,20 +244,23 @@ mathfunc:
 			if ( isa( p1 , "d" ) ) {
 			    temptype = P2DOUBLE;
 			    rettype = nl + TDOUBLE;
-			    tempoff = tmpalloc(sizeof(double), rettype, REGOK);
+			    tempnlp = tmpalloc(sizeof(double), rettype, REGOK);
 			} else if ( isa( p1 , "i" ) ) {
 			    temptype = P2INT;
 			    rettype = nl + T4INT;
-			    tempoff = tmpalloc(sizeof(long), rettype, REGOK);
+			    tempnlp = tmpalloc(sizeof(long), rettype, REGOK);
 			} else {
 			    error("%s's argument must be an integer or real, not %s", p->symbol, nameof(p1));
 			    return NIL;
 			}
-			putRV( 0 , cbn , tempoff , temptype , 0 );
+			putRV( 0 , cbn , tempnlp -> value[ NL_OFFS ] ,
+				tempnlp -> extra_flags , temptype , 0 );
 			p1 = rvalue( (int *) argv[1] , NLNIL , RREQ );
 			putop( P2ASSIGN , temptype );
-			putRV( 0 , cbn , tempoff , temptype , 0 );
-			putRV( 0 , cbn , tempoff , temptype , 0 );
+			putRV( 0 , cbn , tempnlp -> value[ NL_OFFS ] ,
+				tempnlp -> extra_flags , temptype , 0 );
+			putRV( 0 , cbn , tempnlp -> value[ NL_OFFS ] ,
+				tempnlp -> extra_flags , temptype , 0 );
 			putop( P2MUL , temptype );
 			putop( P2COMOP , temptype );
 			return rettype;

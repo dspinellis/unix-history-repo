@@ -1,6 +1,6 @@
 /* Copyright (c) 1980 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pccaseop.c 1.6 %G%";
+static	char sccsid[] = "@(#)pccaseop.c 1.7 %G%";
 
 #include "whoami.h"
 #ifdef PC
@@ -47,7 +47,7 @@ pccaseop( tcase )
     int	*tcase;
 {
     struct nl	*exprtype;
-    int		exproff;
+    struct nl	*exprnlp;
     struct nl	*rangetype;
     long	low;
     long	high;
@@ -101,8 +101,9 @@ pccaseop( tcase )
 	     *	save its c-type and jump to the code to do the switch.
 	     */
 	exprctype = p2type( exprtype );
-	exproff = tmpalloc( sizeof (long) , nl + T4INT , NOREG );
-	putRV( 0 , cbn , exproff , P2INT );
+	exprnlp = tmpalloc( sizeof (long) , nl + T4INT , NOREG );
+	putRV( 0 , cbn , exprnlp -> value[ NL_OFFS ] ,
+			exprnlp -> extra_flags , P2INT );
 	(void) rvalue( (int *) tcase[2] , NIL , RREQ );
 	putop( P2ASSIGN , P2INT );
 	putop( P2FORCE , P2INT );
@@ -191,7 +192,8 @@ pccaseop( tcase )
     putlab( ctab[0].clabel );
     putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR ) , "_ERROR" );
     putleaf( P2ICON , ECASE , 0 , P2INT , 0 );
-    putRV( 0 , cbn , exproff , P2INT );
+    putRV( 0 , cbn , exprnlp -> value[ NL_OFFS ] ,
+		    exprnlp -> extra_flags , P2INT );
     putop( P2LISTOP , P2INT );
     putop( P2CALL , P2INT );
     putdot( filename , line );

@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)fhdr.c 1.2 %G%";
+static char sccsid[] = "@(#)fhdr.c 1.3 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -115,6 +115,7 @@ funchdr(r)
 		    p->nl_flags |= NMOD;
 #		    ifdef PC
 			enclosing[ cbn ] = r[2];
+			p -> extra_flags |= NGLOBAL;
 #		    endif PC
 		    break;
 	    case T_FDEC:
@@ -145,6 +146,7 @@ funchdr(r)
 		    }
 #		    ifdef PC
 			enclosing[ cbn ] = r[2];
+			p -> extra_flags |= NGLOBAL;
 #		    endif PC
 		    break;
 	    default:
@@ -187,6 +189,7 @@ funchdr(r)
 				(int)-leven(roundup(
 			            (int)(DPOFF1+lwidth(p->type)),
 				    (long)align(p->type))));
+			    cp -> extra_flags |= NLOCAL;
 #			endif PC
 			cp->chain = p;
 			p->ptr[NL_FVAR] = cp;
@@ -416,6 +419,9 @@ params(p, formalist)
 				    break;
 			    }
 			if (dp != NIL) {
+#				ifdef PC
+				    dp -> extra_flags |= NPARAM;
+#				endif PC
 				chainp->chain = dp;
 				chainp = dp;
 			}

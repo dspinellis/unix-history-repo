@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pclval.c 1.3 %G%";
+static	char sccsid[] = "@(#)pclval.c 1.4 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -38,6 +38,7 @@ pclvalue( r , modflag , required )
 	struct nl		*firstp;
 	struct nl		*lastp;
 	char			*firstsymbol;
+	char			firstextra_flags;
 	int			firstbn;
 
 	if ( r == NIL ) {
@@ -56,6 +57,7 @@ pclvalue( r , modflag , required )
 	}
 	firstsymbol = p -> symbol;
 	firstbn = bn;
+	firstextra_flags = p -> extra_flags;
 	c = r[3];
 	if ( ( modflag & NOUSE ) && ! lptr( c ) ) {
 		p -> nl_flags = flagwas;
@@ -95,8 +97,8 @@ pclvalue( r , modflag , required )
 			 * of the WITHPTR or REF
 			 * as the base of our lvalue
 			 */
-			putRV( firstsymbol , firstbn , p -> value[ 0 ]
-				    , p2type( p ) );
+			putRV( firstsymbol , firstbn , p -> value[ 0 ] ,
+				firstextra_flags , p2type( p ) );
 			firstsymbol = 0;
 			f = 0;		/* have an lv on stack */
 			o = 0;
@@ -135,8 +137,8 @@ pclvalue( r , modflag , required )
 				 * Pointer qualification.
 				 */
 				if ( f ) {
-					putLV( firstsymbol , firstbn , o
-					       , p2type( p ) );
+					putLV( firstsymbol , firstbn , o ,
+					    firstextra_flags , p2type( p ) );
 					firstsymbol = 0;
 				} else {
 					if (o) {
@@ -177,8 +179,8 @@ pclvalue( r , modflag , required )
 			case T_ARGL:
 			case T_ARY:
 				if ( f ) {
-					putLV( firstsymbol , firstbn , o
-						, p2type( p ) );
+					putLV( firstsymbol , firstbn , o ,
+					    firstextra_flags , p2type( p ) );
 					firstsymbol = 0;
 				} else {
 					if (o) {
@@ -205,9 +207,11 @@ pclvalue( r , modflag , required )
 	}
 	if (f) {
 		if ( required == LREQ ) {
-		    putLV( firstsymbol , firstbn , o , p2type( p -> type ) );
+		    putLV( firstsymbol , firstbn , o ,
+			    firstextra_flags , p2type( p -> type ) );
 		} else {
-		    putRV( firstsymbol , firstbn , o , p2type( p -> type ) );
+		    putRV( firstsymbol , firstbn , o ,
+			    firstextra_flags , p2type( p -> type ) );
 		}
 	} else {
 		if (o) {

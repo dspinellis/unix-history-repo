@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pcproc.c 1.5 %G%";
+static	char sccsid[] = "@(#)pcproc.c 1.6 %G%";
 
 #include "whoami.h"
 #ifdef PC
@@ -52,10 +52,10 @@ pcproc(r)
 	int *pua, *pui, *puz;
 	int i, j, k;
 	int itemwidth;
-	char	*readname;
-	long	tempoff;
-	long	readtype;
-	struct tmps soffset;
+	char		*readname;
+	struct nl	*tempnlp;
+	long		readtype;
+	struct tmps	soffset;
 
 #define	CONPREC 4
 #define	VARPREC 8
@@ -162,8 +162,9 @@ pcproc(r)
 			putleaf( P2ICON , 0 , 0 , P2INT , "_PFLUSH" );
 			putop( P2UNARY P2CALL , P2INT );
 			putdot( filename , line );
-			putRV( 0 , cbn , CURFILEOFFSET , P2PTR|P2STRTY );
-			putLV( "__err" , 0 , 0 , P2PTR|P2STRTY );
+			putRV( 0 , cbn , CURFILEOFFSET , NLOCAL ,
+				P2PTR|P2STRTY );
+			putLV( "__err" , 0 , 0 , NGLOBAL , P2PTR|P2STRTY );
 			putop( P2ASSIGN , P2PTR|P2STRTY );
 			putdot( filename , line );
 		} else if (argv != NIL && (al = argv[1])[0] != T_WEXP) {
@@ -185,8 +186,8 @@ pcproc(r)
 				 * processing the rest of the
 				 * arguments to write.
 				 */
-				putRV( 0 , cbn , CURFILEOFFSET
-					, P2PTR|P2STRTY );
+				putRV( 0 , cbn , CURFILEOFFSET , NLOCAL ,
+					P2PTR|P2STRTY );
 				putleaf( P2ICON , 0 , 0
 				    , ADDTYPE( P2FTN | P2INT , P2PTR )
 				    , "_UNIT" );
@@ -206,14 +207,17 @@ pcproc(r)
 				 * Set up for writing on 
 				 * standard output.
 				 */
-				putRV( 0, cbn , CURFILEOFFSET , P2PTR|P2STRTY );
-				putLV( "_output" , 0 , 0 , P2PTR|P2STRTY );
+				putRV( 0, cbn , CURFILEOFFSET ,
+					NLOCAL , P2PTR|P2STRTY );
+				putLV( "_output" , 0 , 0 , NGLOBAL ,
+					P2PTR|P2STRTY );
 				putop( P2ASSIGN , P2PTR|P2STRTY );
 				putdot( filename , line );
 			}
 		} else {
-			putRV( 0, cbn , CURFILEOFFSET , P2PTR|P2STRTY );
-			putLV( "_output" , 0 , 0 , P2PTR|P2STRTY );
+			putRV( 0, cbn , CURFILEOFFSET , NLOCAL ,
+				P2PTR|P2STRTY );
+			putLV( "_output" , 0 , 0 , NGLOBAL , P2PTR|P2STRTY );
 			putop( P2ASSIGN , P2PTR|P2STRTY );
 			putdot( filename , line );
 		}
@@ -390,8 +394,8 @@ pcproc(r)
 				putleaf( P2ICON , 0 , 0
 				    , ADDTYPE( P2FTN | P2INT , P2PTR )
 				    , "_PUT" );
-				putRV( 0 , cbn , CURFILEOFFSET
-					, P2PTR|P2STRTY );
+				putRV( 0 , cbn , CURFILEOFFSET , NLOCAL ,
+					P2PTR|P2STRTY );
 				putop( P2CALL , P2INT );
 				putdot( filename , line );
 				continue;
@@ -523,8 +527,8 @@ pcproc(r)
 					    putleaf( P2ICON , 0 , 0
 						, ADDTYPE( P2FTN|P2INT , P2PTR )
 						, "_WRITEC" );
-					    putRV( 0 , cbn , CURFILEOFFSET
-						    , P2PTR|P2STRTY );
+					    putRV( 0 , cbn , CURFILEOFFSET ,
+						    NLOCAL , P2PTR|P2STRTY );
 					    stkrval( alv , NIL , RREQ );
 					    putop( P2LISTOP , P2INT );
 					} else {
@@ -536,8 +540,8 @@ pcproc(r)
 					putleaf( P2ICON , 0 , 0
 					    , ADDTYPE( P2FTN | P2INT , P2PTR )
 					    , "_ACTFILE" );
-					putRV( 0, cbn , CURFILEOFFSET
-						, P2PTR|P2STRTY );
+					putRV( 0, cbn , CURFILEOFFSET ,
+						NLOCAL , P2PTR|P2STRTY );
 					putop( P2CALL , P2INT );
 					putop( P2LISTOP , P2INT );
 					putop( P2CALL , P2INT );
@@ -570,13 +574,13 @@ pcproc(r)
 				    putleaf( P2ICON , 0 , 0
 					, ADDTYPE( P2FTN | P2INT , P2PTR )
 					, "_WRITEF" );
-				    putRV( 0 , cbn , CURFILEOFFSET
-					    , P2PTR|P2STRTY );
+				    putRV( 0 , cbn , CURFILEOFFSET ,
+					    NLOCAL , P2PTR|P2STRTY );
 				    putleaf( P2ICON , 0 , 0
 					, ADDTYPE( P2FTN | P2INT , P2PTR )
 					, "_ACTFILE" );
-				    putRV( 0 , cbn , CURFILEOFFSET
-					    , P2PTR|P2STRTY );
+				    putRV( 0 , cbn , CURFILEOFFSET ,
+					    NLOCAL , P2PTR|P2STRTY );
 				    putop( P2CALL , P2INT );
 				    putop( P2LISTOP , P2INT );
 				} else {
@@ -586,8 +590,8 @@ pcproc(r)
 				    putleaf( P2ICON , 0 , 0
 					, ADDTYPE( P2FTN | P2INT , P2PTR )
 					, "_ACTFILE" );
-				    putRV( 0 , cbn , CURFILEOFFSET
-					    , P2PTR|P2STRTY );
+				    putRV( 0 , cbn , CURFILEOFFSET ,
+					    NLOCAL , P2PTR|P2STRTY );
 				    putop( P2CALL , P2INT );
 				}
 				putCONG( &format[ fmtstart ]
@@ -604,15 +608,19 @@ pcproc(r)
 				    if ( ( typ == TDOUBLE && al[3] == NIL )
 					|| typ == TSTR ) {
 					soffset = sizes[cbn].curtmps;
-					tempoff = tmpalloc(sizeof(long),
+					tempnlp = tmpalloc(sizeof(long),
 						nl+T4INT, REGOK);
-					putRV( 0 , cbn , tempoff , P2INT );
+					putRV( 0 , cbn ,
+					    tempnlp -> value[ NL_OFFS ] ,
+					    tempnlp -> extra_flags , P2INT );
 					ap = stkrval( al[2] , NIL , RREQ );
 					putop( P2ASSIGN , P2INT );
 					putleaf( P2ICON , 0 , 0
 					    , ADDTYPE( P2FTN | P2INT , P2PTR )
 					    , "_MAX" );
-					putRV( 0 , cbn , tempoff , P2INT );
+					putRV( 0 , cbn ,
+					    tempnlp -> value[ NL_OFFS ] ,
+					    tempnlp -> extra_flags , P2INT );
 				    } else {
 					if (opt('t')
 					    || typ == TSTR || typ == TDOUBLE) {
@@ -645,7 +653,10 @@ pcproc(r)
 					    putleaf( P2ICON , 0 , 0
 						, ADDTYPE( P2FTN | P2INT , P2PTR )
 						, "_MAX" );
-					    putRV( 0 , cbn , tempoff , P2INT );
+					    putRV( 0 , cbn ,
+						tempnlp -> value[ NL_OFFS ] ,
+						tempnlp -> extra_flags ,
+						P2INT );
 					    tmpfree(&soffset);
 					    putleaf( P2ICON , 8 , 0 , P2INT , 0 );
 					    putop( P2LISTOP , P2INT );
@@ -748,8 +759,8 @@ pcproc(r)
 				    putleaf( P2ICON , 0 , 0
 					, ADDTYPE( P2FTN | P2INT , P2PTR )
 					, "_WRITES" );
-				    putRV( 0 , cbn , CURFILEOFFSET
-					    , P2PTR|P2STRTY );
+				    putRV( 0 , cbn , CURFILEOFFSET ,
+					    NLOCAL , P2PTR|P2STRTY );
 				    ap = stkrval(alv, NIL , RREQ );
 				    putop( P2LISTOP , P2INT );
 				} else {
@@ -763,10 +774,14 @@ pcproc(r)
 					     *	min, inline expanded as
 					     *	temp < len ? temp : len
 					     */
-					putRV( 0 , cbn , tempoff , P2INT );
+					putRV( 0 , cbn ,
+					    tempnlp -> value[ NL_OFFS ] ,
+					    tempnlp -> extra_flags , P2INT );
 					putleaf( P2ICON , strnglen , 0 , P2INT , 0 );
 					putop( P2LT , P2INT );
-					putRV( 0 , cbn , tempoff , P2INT );
+					putRV( 0 , cbn ,
+					    tempnlp -> value[ NL_OFFS ] ,
+					    tempnlp -> extra_flags , P2INT );
 					putleaf( P2ICON , strnglen , 0 , P2INT , 0 );
 					putop( P2COLON , P2INT );
 					putop( P2QUEST , P2INT );
@@ -784,7 +799,8 @@ pcproc(r)
 				putleaf( P2ICON , 0 , 0
 				    , ADDTYPE( P2FTN | P2INT , P2PTR )
 				    , "_ACTFILE" );
-				putRV( 0, cbn , CURFILEOFFSET , P2PTR|P2STRTY );
+				putRV( 0, cbn , CURFILEOFFSET , NLOCAL ,
+					P2PTR|P2STRTY );
 				putop( P2CALL , P2INT );
 				putop( P2LISTOP , P2INT );
 				putop( P2CALL , P2INT );
@@ -811,8 +827,8 @@ pcproc(r)
 				    putleaf( P2ICON , 0 , 0
 					, ADDTYPE( P2FTN | P2INT , P2PTR )
 					, "_WRITLN" );
-				    putRV( 0 , cbn , CURFILEOFFSET
-					    , P2PTR|P2STRTY );
+				    putRV( 0 , cbn , CURFILEOFFSET ,
+					    NLOCAL , P2PTR|P2STRTY );
 				} else {
 				    putleaf( P2ICON , 0 , 0
 					, ADDTYPE( P2FTN | P2INT , P2PTR )
@@ -821,8 +837,8 @@ pcproc(r)
 				    putleaf( P2ICON , 0 , 0
 					, ADDTYPE( P2FTN | P2INT , P2PTR )
 					, "_ACTFILE" );
-				    putRV( 0 , cbn , CURFILEOFFSET
-					    , P2PTR|P2STRTY );
+				    putRV( 0 , cbn , CURFILEOFFSET ,
+					    NLOCAL , P2PTR|P2STRTY );
 				    putop( P2CALL , P2INT );
 				    putop( P2LISTOP , P2INT );
 				}
@@ -861,7 +877,8 @@ pcproc(r)
 				 */
 				file = argv[1];
 				filetype = ap->type;
-				putRV( 0, cbn , CURFILEOFFSET , P2PTR|P2STRTY );
+				putRV( 0, cbn , CURFILEOFFSET , NLOCAL ,
+					P2PTR|P2STRTY );
 				putleaf( P2ICON , 0 , 0 
 					, ADDTYPE( P2FTN | P2INT , P2PTR )
 					, "_UNIT" );
@@ -876,15 +893,18 @@ pcproc(r)
 				 * Default is read from
 				 * standard input.
 				 */
-				putRV( 0, cbn , CURFILEOFFSET , P2PTR|P2STRTY );
-				putLV( "_input" , 0 , 0 , P2PTR|P2STRTY );
+				putRV( 0, cbn , CURFILEOFFSET , NLOCAL ,
+					P2PTR|P2STRTY );
+				putLV( "_input" , 0 , 0 , NGLOBAL ,
+					P2PTR|P2STRTY );
 				putop( P2ASSIGN , P2PTR|P2STRTY );
 				putdot( filename , line );
 				input->nl_flags |= NUSED;
 			}
 		} else {
-			putRV( 0, cbn , CURFILEOFFSET , P2PTR|P2STRTY );
-			putLV( "_input" , 0 , 0 , P2PTR|P2STRTY );
+			putRV( 0, cbn , CURFILEOFFSET , NLOCAL ,
+				P2PTR|P2STRTY );
+			putLV( "_input" , 0 , 0 , NGLOBAL , P2PTR|P2STRTY );
 			putop( P2ASSIGN , P2PTR|P2STRTY );
 			putdot( filename , line );
 			input->nl_flags |= NUSED;
@@ -937,8 +957,8 @@ pcproc(r)
 				if (file != NIL)
 					stklval(file, NOFLAGS);
 				else /* Magic */
-					putRV( "_input" , 0 , 0
-						, P2PTR | P2STRTY );
+					putRV( "_input" , 0 , 0 , NGLOBAL ,
+						P2PTR | P2STRTY );
 				putop( P2CALL , P2INT );
 				switch ( classify( filetype ) ) {
 				    case TBOOL:
@@ -976,8 +996,8 @@ pcproc(r)
 				putleaf( P2ICON , 0 , 0 
 					, ADDTYPE( P2FTN | P2INT , P2PTR )
 					, "_GET" );
-				putRV( 0 , cbn , CURFILEOFFSET 
-					, P2PTR|P2STRTY );
+				putRV( 0 , cbn , CURFILEOFFSET , NLOCAL ,
+					P2PTR|P2STRTY );
 				putop( P2CALL , P2INT );
 				putdot( filename , line );
 				continue;
@@ -1024,7 +1044,8 @@ pcproc(r)
 			putleaf( P2ICON , 0 , 0
 				, ADDTYPE( P2FTN | readtype , P2PTR )
 				, readname );
-			putRV( 0 , cbn , CURFILEOFFSET , P2PTR|P2STRTY );
+			putRV( 0 , cbn , CURFILEOFFSET , NLOCAL ,
+				P2PTR|P2STRTY );
 			if ( op == O_READE ) {
 				sprintf( format , PREFIXFORMAT , LABELPREFIX
 					, listnames( ap ) );
@@ -1055,7 +1076,8 @@ pcproc(r)
 			putleaf( P2ICON , 0 , 0 
 				, ADDTYPE( P2FTN | P2INT , P2PTR )
 				, "_READLN" );
-			putRV( 0 , cbn , CURFILEOFFSET , P2PTR|P2STRTY );
+			putRV( 0 , cbn , CURFILEOFFSET , NLOCAL ,
+				P2PTR|P2STRTY );
 			putop( P2CALL , P2INT );
 			putdot( filename , line );
 		} else if (argc == 0)
@@ -1068,7 +1090,7 @@ pcproc(r)
 			error("%s expects one argument", p->symbol);
 			return;
 		}
-		putRV( 0 , cbn , CURFILEOFFSET , P2PTR|P2STRTY );
+		putRV( 0 , cbn , CURFILEOFFSET , NLOCAL , P2PTR|P2STRTY );
 		putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
 			, "_UNIT" );
 		ap = stklval(argv[1], NOFLAGS);
@@ -1083,7 +1105,7 @@ pcproc(r)
 		putdot( filename , line );
 		putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
 			, op == O_GET ? "_GET" : "_PUT" );
-		putRV( 0 , cbn , CURFILEOFFSET , P2PTR|P2STRTY );
+		putRV( 0 , cbn , CURFILEOFFSET , NLOCAL , P2PTR|P2STRTY );
 		putop( P2CALL , P2INT );
 		putdot( filename , line );
 		return;
@@ -1322,7 +1344,7 @@ pcproc(r)
 			error("page expects one argument");
 			return;
 		}
-		putRV( 0 , cbn , CURFILEOFFSET , P2PTR|P2STRTY );
+		putRV( 0 , cbn , CURFILEOFFSET , NLOCAL , P2PTR|P2STRTY );
 		putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
 			, "_UNIT" );
 		ap = stklval(argv[1], NOFLAGS);
@@ -1339,8 +1361,7 @@ pcproc(r)
 		    putleaf( P2ICON , 0 , 0
 			, ADDTYPE( P2FTN | P2INT , P2PTR )
 			, "_PAGE" );
-		    putRV( 0 , cbn , CURFILEOFFSET
-			    , P2PTR|P2STRTY );
+		    putRV( 0 , cbn , CURFILEOFFSET , NLOCAL , P2PTR|P2STRTY );
 		} else {
 		    putleaf( P2ICON , 0 , 0
 			, ADDTYPE( P2FTN | P2INT , P2PTR )
@@ -1349,8 +1370,7 @@ pcproc(r)
 		    putleaf( P2ICON , 0 , 0
 			, ADDTYPE( P2FTN | P2INT , P2PTR )
 			, "_ACTFILE" );
-		    putRV( 0 , cbn , CURFILEOFFSET
-			    , P2PTR|P2STRTY );
+		    putRV( 0 , cbn , CURFILEOFFSET , NLOCAL , P2PTR|P2STRTY );
 		    putop( P2CALL , P2INT );
 		    putop( P2LISTOP , P2INT );
 		}

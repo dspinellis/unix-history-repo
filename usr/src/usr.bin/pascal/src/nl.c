@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)nl.c 1.4 %G%";
+static	char sccsid[] = "@(#)nl.c 1.5 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -336,6 +336,10 @@ initnl()
 		input = hdefnl ( *cp++ , VAR , np , 0 );
 		output = hdefnl ( *cp++ , VAR , np , 0 );
 #	endif
+#	ifdef PC
+	    input -> extra_flags |= NGLOBAL;
+	    output -> extra_flags |= NGLOBAL;
+#	endif PC
 
 	/*
 	 *	built in constants
@@ -616,6 +620,21 @@ casedef:
 				printf("\tVTOREC=[%d]", nloff(p->ptr[NL_VTOREC]));
 				break;
 		}
+#		ifdef PC
+		    if ( p -> extra_flags != 0 ) {
+			pchr( '\t' );
+			if ( p -> extra_flags & NEXTERN )
+			    printf( "NEXTERN " );
+			if ( p -> extra_flags & NLOCAL )
+			    printf( "NLOCAL " );
+			if ( p -> extra_flags & NPARAM )
+			    printf( "NPARAM " );
+			if ( p -> extra_flags & NGLOBAL )
+			    printf( "NGLOBAL " );
+			if ( p -> extra_flags & NREGVAR )
+			    printf( "NREGVAR " );
+		    }
+#		endif PC
 #		ifdef PTREE
 		    pchr( '\t' );
 		    pPrintPointer( stdout , "%s" , p -> inTree );
