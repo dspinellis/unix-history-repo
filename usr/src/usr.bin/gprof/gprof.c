@@ -1,5 +1,5 @@
 #ifndef lint
-    static	char *sccsid = "@(#)gprof.c	1.9 (Berkeley) %G%";
+    static	char *sccsid = "@(#)gprof.c	1.10 (Berkeley) %G%";
 #endif lint
 
 #include "gprof.h"
@@ -433,8 +433,8 @@ asgnsamples()
 	time = ccnt;
 #	ifdef DEBUG
 	    if ( debug & SAMPLEDEBUG ) {
-		printf( "[asgnsamples] ccnt %d time %f totime %f\n" ,
-			ccnt , time , totime );
+		printf( "[asgnsamples] pcl 0x%x pch 0x%x ccnt %d\n" ,
+			pcl , pch , ccnt );
 	    }
 #	endif DEBUG
 	totime += time;
@@ -449,8 +449,9 @@ asgnsamples()
 	    if (overlap>0) {
 #		ifdef DEBUG
 		    if ( debug & SAMPLEDEBUG ) {
-			printf( "[asgnsamples] %s gets %f ticks\n" ,
-				nl[j].name , overlap*time/scale );
+			printf( "[asgnsamples] (0x%x-0x%x) %s gets %f ticks\n" ,
+				svalue0 , svalue1 , nl[j].name , 
+				overlap*time/scale );
 		    }
 #		endif DEBUG
 		nl[j].time += overlap*time/scale;
