@@ -1,37 +1,35 @@
-/*	tuboot.s	4.1	83/02/16	*/
+/*	tuboot.c	4.3	83/06/19	*/
 
 /*
  * VAX tu58 console cassette boot block
  *
- * Thomas Ferrin  27oct82
+ * Helge Skrivervik CSRG/UCB 18jun83
  *
- * Reads a program from a tp directory on tape
- * and executes it.  Program must be stripped of
+ * Reads a program from a rt-11 directory on tape
+ * and executes it.  Programs must be stripped of
  * the header and is loaded ``bits as is''.
  * You can return to this loader via ``ret'' as
  * you are called ``calls $0,ent''.
- * 
- * Helge Skrivervik CSRG/UCB 18jun83
- * 	Changed to use rt-11 format directory & files
- *	instead of tp format
+ * Error checking and recovery is almost nonexistant
+ * due to the severe space constraints.
+ *
+ * NOTE: Any changes to this program are likely to
+ *	 bring the size over 512 bytes ....
+ *
+ * Based on tp format bootstrap originally written by Thomas Ferrin.
+ *
  */
+	.set	CTABLE,0x400	/* where to load the rad50 cnv table */
 	.set	RELOC,0x70000
-/* a.out defines */
-	.set	HDRSIZ,040	/* size of file header for VAX */
-	.set	MAGIC,0410	/* file type id in header */
-	.set	TSIZ,4		/* text size */
-	.set	DSIZ,8		/* data size */
-	.set	BSIZ,12		/* bss size */
-	.set	TENT,024	/* task header entry loc */
 /* rt-11 directory definitions */
 	.set	DIRBLK,6	/* rt-11 directory starts at block 6 */
 	.set	FILSIZ,8	/* rt-11 direc entry offset for file size */
 	.set	ENTSIZ,14	/* size of 1 rt-11 dir entry, bytes */
 	.set	BLKSIZ,512	/* tape block size, bytes */
 	.set	NUMDIR,2	/* no. of dir blocks on tape */
-	.set	RT_FNSIZ,8	/* size of rad50 filename + 2 */
+	.set	FNSIZ,8		/* size of rad50 filename + 2 */
 	.set	NAME,2		/* direc entry offset for filename */
-	.set	RT_STAT,1	/* direc entry offset for entry status */
+	.set	STATUS,1	/* direc entry offset for entry status */
 /* rt-11 directory entry status */
 	.set	RT_ESEG,8	/* end of directory segment */
 	.set	RT_NULL,2	/* empty entry */
@@ -59,7 +57,7 @@
 /* local stack variables */
 	.set	ext,-4				/* file ext. */
 	.set	name,-20			/* 12 bytes for full name */
-	.set	rt_name,-20-RT_FNSIZ		/* rad50 file name */
+	.set	rt_name,-20-FNSIZ		/* rad50 file name */
 
 /* 
  * Initialization.
@@ -69,14 +67,13 @@ init:
 	nop;nop;nop;nop;nop	/* some no-ops for 750 boot rom to skip */
 	nop;nop;nop;nop;nop 
 	movl	$RELOC,fp	/* core loc to which to move this program */
-	addl3	$name,fp,sp	/* set stack pointer; leave room for locals */
+	addl3	$rt_name,fp,sp	/* set stack pointer; leave room for locals */
 	clrl	r0
 1:
 	movc3	$end,(r0),(fp)	/* move boot up to relocated position */
 	jmp	start+RELOC
 
 start:
-/* init tu58 */
 	mtpr	$TU_BREAK,$CSTS		/* set break condition */
 	clrl	r2			/* nulls */
 	bsbw	xmit2			/* wait 2 character times */
@@ -88,12 +85,16 @@ start:
 	cmpb	r7,$TU_CONTINUE		/* is it a continue flag? */
 	bneq	1b			/* nope, look more */
 
-	clrq	rt_name(fp)		/* init rad50 filename */
 	movab	name(fp),r4		/* start of filename storage */
+	clrq	(r4)			/* init name field */
+	clrq	name+8(fp)
+	clrq	rt_name(fp)		/* init rad50 filename */
 	movzbl	$'=,r0			/* prompt character */
 	bsbw	putc			/* output char to main console */
 
-/* read in a file name */
+/* 
+ * Read in a file name from console. 
+ */
 	movl	r4,r1			/* loc at which to store file name */
 nxtc:
 	bsbw	getc			/* get input char's in file name */
@@ -102,14 +103,13 @@ nxtc:
 	movb	r0,(r1)+
 	brb	nxtc
 nullc:
-	subl3	r4,r1,r9		/* size of path name */
+	cmpl	r4,r1
 	beql	start			/* restart if empty string */
 	clrb	(r1)			/* add null byte at end */
-	incl	r9			/* and fix length */
 
 /*
- * user-specified filename has been stored at name(fp) 
- * read in entire directory contents into low core 
+ * User-specified filename has been stored at name(fp),
+ * read the entire directory contents into low core.
  */
 dirred:
 	movl	$DIRBLK,r10		/* directory starts at block DIRBLK */
@@ -118,21 +118,24 @@ dirred:
 	bsbw	taper			/* read no. bytes indicated */
 /*
  * Read in the character conversion table which reside in block 1
- * (the second block) on the cassette.
+ * (the second block) on the cassette. Place it after the directory
+ * on low core (from 0x400).
  */
-	movl	$1,r10			/* start block */
+	movl	$1,r10			/* block number */
 	movl	$BLKSIZ,r6		/* read one block */
-	movl	0x400,r11		/* place it after the directory */
 	bsbw	taper
 
 /*
  * Convert the ascii filename to rad50.
+ * R4 still points to name(fp)
  */
-	movab	name(fp),r4		/* ptr to ascii name */
 	movl	$6,r3			/* max length of filename */
 1:
 	cmpb	$'.,(r4)+		/* look for '.' */
+	beql	1f
 	sobgtr	r3,1b
+	incl	r4			/* point past '.' if ext is present */
+1:
 	clrb	-1(r4)			/* end name with null */
 	movl	$3,r3			/* max length of extension */
 	movab	ext(fp),r5		/* place extension here */
@@ -153,18 +156,18 @@ dirred:
  */
 
 	movab	rt_name(fp),r4		/* search for this file */
-	movl	$10,r5			/* dir buff loc = 0, point to first */
-					/* file entry */
-	movzwl	-2(r5),r3		/* r3 = block # where files begin */
+	movl	$10,r5			/* point to first file entry */
+	movzwl	-2(r5),r10		/* r10 = block # where files begin */
 2:
 	cmpc3	$6,NAME(r5),(r4)	/* see if dir entry matches filename */
 	beql	fndfil			/* found match */
 1:
-	addw2	FILSIZ(r5),r3		/* add file length to block pointer */
+	addw2	FILSIZ(r5),r10		/* add file length to block pointer */
 	addl2	$ENTSIZ,r5		/* move to next entry */
-#	cpmb	RT_STAT(r5),$RT_NULL	/* check if deleted file */
-#	beql	1b
-	cmpb	RT_STAT(r5),$RT_ESEG	/* check if end of segment */
+#	cpmb	STATUS(r5),$RT_NULL	/* check if deleted file */
+#	beql	1b /* not really necessary since deleted entries will fail */
+		   /* to compare anyway */
+	cmpb	STATUS(r5),$RT_ESEG	/* check if end of segment */
 	bneq	2b
 	brw	start			/* entry not in directory; start over */
 
@@ -172,12 +175,12 @@ dirred:
  * Found desired directory entry 
  */
 fndfil:
-	movl	r3,r10			/* start block no., 2 bytes */
+					/* start block no., 2 bytes in r10 */
 	movzwl	FILSIZ(r5),r6		/* file size (blocks) */
 	mull2	$BLKSIZ,r6		/* file size (bytes) */
-#	cmpl	r6,$RELOC-512		/* check if file fits below stack */
-#	blss	filok
-#	brw	start			/* file too large */
+	cmpl	r6,$RELOC-512		/* check if file fits below stack */
+	blss	filok
+	brw	start			/* file too large */
 
 /* 
  * Read in desired file from tape.
@@ -186,7 +189,6 @@ filok:
 	movl	r6,r5			/* start of bss space */
 	clrl	r11			/* start address */
 	bsbb	taper
-#	bsbb	rew
 
 /* 
  * Clear core.
@@ -199,24 +201,16 @@ filok:
 /* 
  * Jump to start of file & execute.
  */
-	addl3	$20,fp,ap
+	addl3	$20,fp,ap		/* ?? */
 	clrl	r5
 	calls	$0,(r5)
 bad:
 	brw	start
 
-/* rewind tape */
-#ifdef notdef
-rew:
-	movb	$5,readcom+2		/* position opcode */
-	clrl	r10			/* block 0 */
-	clrl	r6			/* 0 bytes */
-	bsbb	taper
-	movb	$2,readcom+2		/* read opcode */
-	rsb
-#endif
-
-/* read (r6) bytes from (r10) into loc (r11) */
+/* 
+ * Read (r6) bytes from block (r10) 
+ * into loc (r11).
+ */
 taper:
 	clrl	r8			/* initialize checksum */
 	movab	readcom,r0		/* read command packet addr */
@@ -226,7 +220,9 @@ taper:
 	bsbb	xmit			/* xmit and update ckecksum */
 	sobgtr	r1,1b			/* loop if more */
 
-	/* now do variable part of packet */
+/* 
+ * Now do variable part of packet. 
+ */
 	movl	r6,r2			/* byte count */
 	bsbb	xmit
 	movl	r10,r2			/* starting block number */
@@ -234,26 +230,29 @@ taper:
 	movzwl	r8,r2			/* accumulated ckecksum */
 	bsbb	xmit
 
-	/* collect read packet from device */
-	movl	r11,r0			/* starting addr */
+/* 
+ * Collect read packet from device. 
+ */
 1:
 	bsbb	recv2			/* get 2 packet characters */
 	decb	r2			/* data packet? */
 	bneq	1f			/* branch on end of data */
 	movzbl	r1,r8			/* get byte count of packet */
 
-	/* read data into memory */
+/* 
+ * Read data into memory.
+ */
 2:
 	bsbb	recv1			/* get a char */
-	movb	r1,(r0)+		/* stuff into memory */
+	movb	r1,(r11)+		/* stuff into memory */
 	sobgtr	r8,2b			/* loop if more */
 	bsbb	recv2			/* skip checksum */
 	brb	1b			/* read next packet */
 
-	/* end of data xfer; check for errors */
+/* 
+ * End of data xfer; check for errors.
+ */
 1:
-	subl2	r6,r0			/* all bytes xfered? */
-	bneq	9f			/* nope, error */
 	bsbb	recv2			/* get success code */
 	tstl	r1			/* error in read? */
 	blss	9f			/* branch if status error */
@@ -263,7 +262,7 @@ taper:
 	sobgtr	r0,1b
 	rsb
 
-	/* fatal error */
+/* Fatal error */
 9:
 	movab	ermsg,r1
 1:
@@ -272,13 +271,14 @@ taper:
 	bsbb	putc
 	brb	1b
 
-	/* update checksum in r8 and xmit 2 characters */
+/* 
+ * Update checksum in r8 and xmit 2 characters.
+ */
 xmit:
 	addw2	r2,r8			/* update checksum */
-	bcc	xmit2			/* branch if no overflow */
-	incw	r8			/* add  in carry */
+	adwc	$0,r8			/* add  in carry */
 
-	/* send the 2 characters contained in r2 */
+/* send the 2 characters contained in r2 */
 xmit2:
 	bsbb	1f			/* xmit one of 'em */
 	ashl	$-8,r2,r2		/* get next char */
@@ -289,12 +289,16 @@ xmit2:
 	mtpr	r2,$CSTD		/* send char */
 	rsb
 
-	/* receive 2 characters, return in r2 and r1 */
+/* 
+ * Receive 2 characters, return in r2 and r1.
+ */
 recv2:
 	bsbb	recv1			/* recv one of 'em */
 					/* fall into... */
 
-	/* receive 1 character */
+/* 
+ * Receive 1 character.
+ */
 recv1:
 	movzbl	r1,r2			/* save previous byte */
 1:
@@ -326,8 +330,7 @@ putc:
  * to radix 50 (rt-11) format.
  */
 rad50:
-	movl	$0x400,r6		/* address of conversion table */
-1:
+	clrw	r1
 	bsbb	getb50			/* get next ascii byte, exit if null */
 	mull3	$03100,r0,r1
 	bsbb	getb50
@@ -336,13 +339,12 @@ rad50:
 	bsbb	getb50
 	addl2	r0,r1			/* last byte, just add it in */
 	movw	r1,(r5)+		/* save result */
-	brb	1b
+	brb	rad50
 
 getb50:
 	movzbl	(r4)+,r0		/* get next ascii byte */
 	beql	1f			/* if zero: end of string */
-	addl2	r6,r0			/* calculate conversion table address */
-	movzbl	(r0),r0			/* and get the r50 byte from the table*/
+	movzbl	CTABLE(r0),r0		/* and get the r50 byte from the table*/
 	rsb
 1:
 	tstl	(sp)+			/* we're through, get back to where */
@@ -362,5 +364,5 @@ readcom:
 					/* byte count and block number follow */
 
 ermsg:
-	.asciz	"tu58 err\r\n"
+	.asciz	"tu err\r\n"
 end:
