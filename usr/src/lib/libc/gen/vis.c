@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vis.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)vis.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -133,11 +133,11 @@ strvis(dst, src, flag)
 	int flag;
 {
 	register char c;
-	char *start = dst;
+	char *start;
 
-	for (;c = *src; src++)
-		dst = vis(dst, c, flag, *(src+1));
-
+	for (start = dst; c = *src;)
+		dst = vis(dst, c, flag, *++src);
+	*dst = '\0';
 	return (dst - start);
 }
 
