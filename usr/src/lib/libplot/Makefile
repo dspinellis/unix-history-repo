@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	4.13 (Berkeley) %G%
+#	@(#)Makefile	4.14 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -24,6 +24,7 @@ ALL=	libf77plot libplot lib300 lib300s lib4013 lib4014 lib450 libvt0 \
 SUBDIRS=tf77 plot t4013 t4014 t300 t300s t450 vt0 aed bitgraph dumb gigi \
 	hp2648 hp7221 imagen grn
 MAN=	plot.0
+MDIR=	${DESTDIR}/usr/man/cat3
 
 all: ${ALL}
 
@@ -94,5 +95,16 @@ install: ${MAN}
 		ranlib ${DESTDIR}/usr/lib/$$i.a; \
 	done
 	install -c -o bin -g bin -m 444 plot.0 ${DESTDIR}/usr/man/cat3
+	rm -f ${MDIR}/arc.0; ln ${MDIR}/plot.0 ${MDIR}/arc.0
+	rm -f ${MDIR}/circle.0; ln ${MDIR}/plot.0 ${MDIR}/circle.0
+	rm -f ${MDIR}/cont.0; ln ${MDIR}/plot.0 ${MDIR}/cont.0
+	rm -f ${MDIR}/erase.0; ln ${MDIR}/plot.0 ${MDIR}/erase.0
+	rm -f ${MDIR}/label.0; ln ${MDIR}/plot.0 ${MDIR}/label.0
+	rm -f ${MDIR}/line.0; ln ${MDIR}/plot.0 ${MDIR}/line.0
+	rm -f ${MDIR}/linemod.0; ln ${MDIR}/plot.0 ${MDIR}/linemod.0
+	rm -f ${MDIR}/move.0; ln ${MDIR}/plot.0 ${MDIR}/move.0
+	rm -f ${MDIR}/openpl.0; ln ${MDIR}/plot.0 ${MDIR}/openpl.0
+	rm -f ${MDIR}/point.0; ln ${MDIR}/plot.0 ${MDIR}/point.0
+	rm -f ${MDIR}/space.0; ln ${MDIR}/plot.0 ${MDIR}/space.0
 
 FRC:
