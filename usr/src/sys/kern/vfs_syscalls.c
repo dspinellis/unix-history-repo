@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_syscalls.c	7.24 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.25 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -785,7 +785,7 @@ saccess(scp)
 			mode |= VWRITE;
 		if (uap->fmode & X_OK)
 			mode |= VEXEC;
-		if ((error = vn_writechk(vp)) == 0)
+		if ((mode & VWRITE) == 0 || (error = vn_writechk(vp)) == 0)
 			error = VOP_ACCESS(vp, mode, ndp->ni_cred);
 	}
 	vput(vp);
