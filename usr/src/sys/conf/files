@@ -19,7 +19,6 @@ kern/kern_descrip.c	standard
 kern/kern_exec.c	standard
 kern/kern_exit.c	standard
 kern/kern_fork.c	standard
-kern/kern_kinfo.c	standard
 kern/kern_ktrace.c	standard
 kern/kern_malloc.c	standard
 kern/kern_physio.c	standard
