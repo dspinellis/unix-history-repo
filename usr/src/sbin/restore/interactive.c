@@ -1,7 +1,7 @@
 /* Copyright (c) 1985 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)interactive.c	3.4	(Berkeley)	%G%";
+static char sccsid[] = "@(#)interactive.c	3.5	(Berkeley)	%G%";
 #endif not lint
 
 #include "restore.h"
@@ -109,7 +109,7 @@ loop:
 	 */
 	case 'h':
 	case '?':
-		fprintf(stderr, "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+		fprintf(stderr, "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
 			"Available commands are:\n",
 			"\tls [arg] - list directory\n",
 			"\tcd arg - change directory\n",
@@ -119,6 +119,7 @@ loop:
 			"\tdelete [arg] - delete `arg' from",
 			" list of files to be extracted\n",
 			"\textract - extract requested files\n",
+			"\tsetmodes - set modes of requested directories\n",
 			"\tquit - immediately exit program\n",
 			"\tverbose - toggle verbose flag",
 			" (useful with ``ls'')\n",
@@ -165,7 +166,7 @@ loop:
 	/*
 	 * Just restore requested directory modes.
 	 */
-	case 'R':
+	case 's':
 		setdirmodes();
 		break;
 	/*
