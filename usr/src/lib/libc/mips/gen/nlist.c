@@ -1,4 +1,4 @@
-/* @(#)nlist.c	4.1 (Berkeley) %G% */
+/* @(#)nlist.c	4.2 (Berkeley) %G% */
 #include <sys/types.h>
 #include <pagsiz.h>
 #include <a.out.h>
