@@ -1,4 +1,4 @@
-/* in.h 4.6 81/11/29 */
+/* in.h 4.7 82/01/24 */
 
 /*
  * Constants and structures defined by the internet system,
@@ -8,13 +8,13 @@
 /*
  * Protocols
  */
-#define	IPPROTO_RAW		-1
 #define	IPPROTO_ICMP		1		/* control message protocol */
 #define	IPPROTO_GG		2		/* gateway^2 (deprecated) */
 #define	IPPROTO_TCP		6		/* tcp */
 #define	IPPROTO_PUP		12		/* pup */
 #define	IPPROTO_UDP		17		/* user datagram protocol */
 
+#define	IPPROTO_RAW		255		/* raw IP packet */
 #define	IPPROTO_MAX		256
 
 /*
