@@ -1,0 +1,50 @@
+head     1.1;
+access   ;
+symbols  ;
+locks    ;
+comment  @@;
+
+
+1.1
+date     83.03.01.16.22.43;  author cooper;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Makefile for Courier compiler.
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@CFLAGS = -O
+OBJS = y.tab.o main.o sem.o code1.o code2.o
+SRCS = y.tab.c main.c sem.c code1.c code2.c
+DESTDIR = /usr/local
+
+courier:	$(OBJS)
+		$(CC) $(CFLAGS) -o courier $(OBJS) -ll
+
+y.tab.o:	lex.yy.c
+
+lex.yy.c:	scanner.l
+		lex scanner.l
+
+y.tab.c:	courier.y
+		yacc courier.y
+
+$(OBJS):	Courier.h
+
+lint:		y.tab.c
+		lint -hnux $(SRCS)
+
+install:	courier
+		install -s courier $(DESTDIR)
+
+clean:
+		rm -f *.o y.tab.[ch] lex.yy.c
+@
