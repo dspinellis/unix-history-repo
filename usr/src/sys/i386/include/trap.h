@@ -7,7 +7,7 @@
  *
  * %sccs.include.noredist.c%
  *
- *	@(#)trap.h	5.1 (Berkeley) %G%
+ *	@(#)trap.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -33,23 +33,23 @@
 #define	T_KDBTRAP	17	/* kernel debugger trap */
 
 #define	T_DIVIDE	18	/* integer divide fault */
-#define	T_DEBUG		19	/* debug fault/trap catchall */
-#define	T_NMI		20	/* non-maskable trap */
-#define	T_OFLOW		21	/* overflow trap */
-#define	T_BOUND		22	/* bound instruction fault */
-#define	T_DNA		23	/* device not available fault */
-#define	T_DOUBLEFLT	24	/* double fault */
-#define	T_FPOPFLT	25	/* fp coprocessor operand fetch fault */
-#define	T_TSSFLT	26	/* invalid tss fault */
-#define	T_SEGNPFLT	27	/* segment not present fault */
-#define	T_STKFLT	28	/* stack fault */
-#define	T_RESERVED	29	/* stack fault */
+#define	T_NMI		19	/* non-maskable trap */
+#define	T_OFLOW		20	/* overflow trap */
+#define	T_BOUND		21	/* bound instruction fault */
+#define	T_DNA		22	/* device not available fault */
+#define	T_DOUBLEFLT	23	/* double fault */
+#define	T_FPOPFLT	24	/* fp coprocessor operand fetch fault */
+#define	T_TSSFLT	25	/* invalid tss fault */
+#define	T_SEGNPFLT	26	/* segment not present fault */
+#define	T_STKFLT	27	/* stack fault */
+#define	T_RESERVED	28	/* reserved fault base */
 
 /* definitions for <sys/signal.h> */
 #define	    ILL_RESAD_FAULT	T_RESADFLT
 #define	    ILL_PRIVIN_FAULT	T_PRIVINFLT
 #define	    ILL_RESOP_FAULT	T_RESOPFLT
 #define	    ILL_ALIGN_FAULT	T_ALIGNFLT
+#define	    ILL_FPOP_FAULT	T_FPOPFLT	/* coprocessor operand fault */
 
 /* codes for SIGFPE/ARITHTRAP */
 #define	    FPE_INTOVF_TRAP	0x1	/* integer overflow */
@@ -57,3 +57,11 @@
 #define	    FPE_FLTDIV_TRAP	0x3	/* floating/decimal divide by zero */
 #define	    FPE_FLTOVF_TRAP	0x4	/* floating overflow */
 #define	    FPE_FLTUND_TRAP	0x5	/* floating underflow */
+#define	    FPE_FPU_NP_TRAP	0x6	/* floating point unit not present */
+#define	    FPE_SUBRNG_TRAP	0x7	/* subrange out of bounds */
+
+/* codes for SIGBUS */
+#define	    BUS_PAGE_FAULT	T_PAGEFLT	/* page fault protection base */
+#define	    BUS_SEGNP_FAULT	T_SEGNPFLT	/* segment not present */
+#define	    BUS_STK_FAULT	T_STKFLT	/* stack segment */
+#define	    BUS_SEGM_FAULT	T_RESERVED	/* segment protection base */
