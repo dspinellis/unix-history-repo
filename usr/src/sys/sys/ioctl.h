@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ioctl.h	6.17 (Berkeley) %G%
+ *	@(#)ioctl.h	6.18 (Berkeley) %G%
  */
 
 /*
@@ -208,6 +208,7 @@ struct winsize {
 #define	NETLDISC	1		/* line discip for berk net */
 #define	NTTYDISC	2		/* new tty discipline */
 #define	TABLDISC	3		/* tablet discipline */
+#define	SLIPLDISC	4		/* serial IP discipline */
 
 #define	FIOCLEX		_IO(f, 1)		/* set exclusive use on fd */
 #define	FIONCLEX	_IO(f, 2)		/* remove exclusive use */
