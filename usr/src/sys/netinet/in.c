@@ -1,4 +1,4 @@
-/*	in.c	4.10	82/10/30	*/
+/*	in.c	4.11	82/11/13	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -64,7 +64,6 @@ in_netof(in)
 		return (((i)&IN_CLASSC_NET) >> IN_CLASSC_NSHIFT);
 }
 
-#ifdef notdef
 /*
  * Return the host portion of an internet address.
  */
@@ -80,7 +79,6 @@ in_lnaof(in)
 	else
 		return ((i)&IN_CLASSC_HOST);
 }
-#endif
 
 /*
  * Initialize an interface's routing
