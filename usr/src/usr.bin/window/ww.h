@@ -1,4 +1,4 @@
-/*	@(#)ww.h	3.46 88/03/19		*/
+/*	@(#)ww.h	3.47 88/03/19		*/
  * Copyright (c) 1983 Regents of the University of California.
  * All rights reserved.
  *
@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)ww.h	3.46 (Berkeley) %G%
+ *	@(#)ww.h	3.47 (Berkeley) %G%
  */
 
 #include <sgtty.h>
