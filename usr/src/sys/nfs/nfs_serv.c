@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_serv.c	7.22 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.23 (Berkeley) %G%
  */
 
 /*
@@ -562,6 +562,8 @@ nfsrv_create(mrep, md, dpos, cred, xid, mrq, repstat)
 	 */
 	if (ndp->ni_vp == NULL) {
 		vap->va_type = IFTOVT(fxdr_unsigned(u_long, *p));
+		if (vap->va_type == VNON)
+			vap->va_type = VREG;
 		vap->va_mode = nfstov_mode(*p);
 		rdev = fxdr_unsigned(long, *(p+3));
 		if (vap->va_type == VREG) {
