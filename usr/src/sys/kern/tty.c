@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty.c	7.1 (Berkeley) %G%
+ *	@(#)tty.c	7.2 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -503,6 +503,20 @@ ttioctl(tp, com, data, flag)
 	case TIOCGWINSZ:
 		*(struct winsize *)data = tp->t_winsize;
 		break;
+
+	case TIOCCONS:
+	    {
+		extern struct tty *constty;
+
+		if (constty != NULL)
+			return (EBUSY);
+#ifndef	UCONSOLE
+		if (!suser())
+			return (EPERM);
+#endif
+		constty = tp;
+		break;
+	    }
 
 	default:
 		return (-1);
