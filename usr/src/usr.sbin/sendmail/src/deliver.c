@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.59 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.60 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1115,6 +1115,28 @@ tryhost:
 
 			/* close any other cached connections */
 			mci_flush(FALSE, mci);
+
+			/* move into some "safe" directory */
+			if (m->m_execdir != NULL)
+			{
+				char *p, *q;
+				char buf[MAXLINE];
+
+				for (p = m->m_execdir; p != NULL; p = q)
+				{
+					q = strchr(p, ':');
+					if (q != NULL)
+						*q = '\0';
+					expand(p, buf, &buf[sizeof buf] - 1, e);
+					if (q != NULL)
+						*q++ = ':';
+					if (tTd(11, 20))
+						printf("openmailer: trydir %s\n",
+							buf);
+					if (buf[0] != '\0' && chdir(buf) >= 0)
+						break;
+				}
+			}
 
 			/* arrange to filter std & diag output of command */
 			if (clever)
