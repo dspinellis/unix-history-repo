@@ -1,5 +1,5 @@
 # Makefile for f77 system lib, libU77.a
-# @(#)Makefile	1.2 (Berkeley) %G%
+# @(#)Makefile	1.3 (Berkeley) %G%
 
 CFLAGS	      = -O
 
@@ -129,7 +129,7 @@ all:		$(LIBRARY) $(LIBRARY_P)
 
 $(LIBRARY):	$(OBJS) Version
 		@echo -n "Loading $(LIBRARY) ... "
-		@ar cru $(LIBRARY) $(OBJS) Version
+		@ar cru $(LIBRARY) $(OBJS) ioinit.f Version
 		@ranlib $(LIBRARY)
 		@echo "done"
 
