@@ -15,6 +15,17 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
+/*
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00140
+ * --------------------         -----   ----------------------
+ *
+ * 20 Apr 93	Dave Burgess	silence compile warnings...
+ *
+ */
+
 /* Written by Paul Rubin, David MacKenzie, and Stuart Kemp. */
 
 /* Options:
@@ -101,7 +112,7 @@ void copy ();
 void copy_simple ();
 void copy_with_block ();
 void copy_with_unblock ();
-/*void error ();*/
+void error ();
 void parse_conversion ();
 void print_stats ();
 void translate_charset ();
@@ -1013,8 +1024,14 @@ b=512, k=1024, w=2, xm=number m\n",
   exit (1);
 }
 
-error(n,e, s,s1) {
-if(e) fprintf(stderr,"error %d:", e);
-fprintf(stderr,s, s1);
-if(n) exit(n);
+void
+error(n,e,s,s1) 
+int n, e, s1;
+char *s;
+{
+  if(e) 
+    fprintf(stderr,"error %d:", e);
+  fprintf(stderr,s, s1);
+  if(n) 
+    exit(n);
 }
