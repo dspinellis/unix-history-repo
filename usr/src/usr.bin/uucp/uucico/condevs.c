@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)condevs.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)condevs.c	5.12 (Berkeley) %G%";
 #endif
 
 /*
@@ -50,6 +50,7 @@ struct condev condevs[] = {
 	{ "ACU", "hayes", Acuopn, hyspopn, hyscls },
 	{ "ACU", "hayespulse", Acuopn, hyspopn, hyscls },
 	{ "ACU", "hayestone", Acuopn, hystopn, hyscls },
+	{ "WATS", "hayestone", Acuopn, hystopn, hyscls },
 #endif HAYES
 #ifdef HAYESQ	/* a version of hayes that doesn't use result codes */
 	{ "ACU", "hayesq", Acuopn, hysqpopn, hysqcls },
@@ -84,7 +85,6 @@ struct condev condevs[] = {
 #ifdef VA820
 	{ "ACU", "va820", Acuopn, va820opn, va820cls },
 	{ "WATS", "va820", Acuopn, va820opn, va820cls },
-	{ "LOCAL", "va820", Acuopn, va820opn, va820cls },
 #endif VA820
 #ifdef RVMACS
 	{ "ACU", "rvmacs", Acuopn, rvmacsopn, rvmacscls },
@@ -252,9 +252,13 @@ register char *flds[];
 	register FILE *dfp;
 	struct Devices dev;
 	int retval = CF_NODEV;
-	char nobrand[MAXPH];
+	char nobrand[MAXPH], *line;
 
 	exphone(flds[F_PHONE], phone);
+	if (snccmp(flds[F_LINE], "LOCAL") == SAME)
+		line = "ACU";
+	else
+		line = flds[F_LINE];
 	devSel[0] = '\0';
 	nobrand[0] = '\0';
 	DEBUG(4, "Dialing %s\n", phone);
@@ -262,68 +266,66 @@ register char *flds[];
 	ASSERT(dfp != NULL, "Can't open", DEVFILE, 0);
 
 	acustatus = 0;	/* none found, none locked */
-	for(cd = condevs; cd->CU_meth != NULL; cd++) {
-		if (snccmp(flds[F_LINE], cd->CU_meth) == SAME) {
-			rewind(dfp);
-			while(rddev(dfp, &dev) != FAIL) {
-			/*
-			 * for each ACU L.sys line, try at most twice
-			 * (TRYCALLS) to establish carrier.  The old way tried every
-			 * available dialer, which on big sites takes forever!
-			 * Sites with a single auto-dialer get one try.
-			 * Sites with multiple dialers get a try on each of two
-			 * different dialers.
-			 * To try 'harder' to connect to a remote site,
-			 * use multiple L.sys entries.
-			 */
-			if (acustatus > TRYCALLS)
-				continue;
-			if (strcmp(flds[F_CLASS], dev.D_class) != SAME)
-				continue;
-			if (snccmp(flds[F_LINE], dev.D_type) != SAME)
-				continue;
-			if (dev.D_brand[0] == '\0') {
-				logent("Acuopn","No 'brand' name on ACU");
-				continue;
-			}
-			if (snccmp(dev.D_brand, cd->CU_brand) != SAME) {
+	while (rddev(dfp, &dev) != FAIL) {
+		/*
+		 * for each ACU L.sys line, try at most twice
+		 * (TRYCALLS) to establish carrier.  The old way tried every
+		 * available dialer, which on big sites takes forever!
+		 * Sites with a single auto-dialer get one try.
+		 * Sites with multiple dialers get a try on each of two
+		 * different dialers.
+		 * To try 'harder' to connect to a remote site,
+		 * use multiple L.sys entries.
+		 */
+		if (acustatus > TRYCALLS)
+			break;
+		if (strcmp(flds[F_CLASS], dev.D_class) != SAME)
+			continue;
+		if (snccmp(line, dev.D_type) != SAME)
+			continue;
+		if (dev.D_brand[0] == '\0') {
+			logent("Acuopn","No 'brand' name on ACU");
+			continue;
+		}
+		for(cd = condevs; cd->CU_meth != NULL; cd++) {
+			if (snccmp(line, cd->CU_meth) == SAME) {
+				if (snccmp(dev.D_brand, cd->CU_brand) == SAME) 
+					break;
 				strncpy(nobrand, dev.D_brand, sizeof nobrand);
-				continue;
-			}
-
-			if (mlock(dev.D_line) == FAIL) {
-				acustatus++;
-				continue;
-			}
-			if (acustatus < 1)
-				acustatus = 1;	/* has been found */
-#ifdef DIALINOUT
-#ifdef ALLACUINOUT
-			if (1) {
-#else !ALLACUINOUT
-			if (snccmp("inout", dev.D_calldev) == SAME) {
-#endif !ALLACUINOUT
-				if (disable(dev.D_line) == FAIL) {
-					delock(dev.D_line);
-					continue;
-				}
-			}  else
-				reenable();
-#endif DIALINOUT
-
-			DEBUG(4, "Using %s\n", cd->CU_brand);
-			acustatus++;
-			fd = (*(cd->CU_open))(phone, flds, &dev);
-			if (fd > 0) {
-				CU_end = cd->CU_clos;   /* point CU_end at close func */
-				fclose(dfp);
-				strcpy(devSel, dev.D_line);   /* save for later unlock() */
-				return fd;
-			} else
-				delock(dev.D_line);
-			retval = CF_DIAL;
 			}
 		}
+
+		if (mlock(dev.D_line) == FAIL) {
+			acustatus++;
+			continue;
+		}
+		if (acustatus < 1)
+			acustatus = 1;	/* has been found */
+#ifdef DIALINOUT
+#ifdef ALLACUINOUT
+		if (1) {
+#else !ALLACUINOUT
+		if (snccmp("inout", dev.D_calldev) == SAME) {
+#endif !ALLACUINOUT
+			if (disable(dev.D_line) == FAIL) {
+				delock(dev.D_line);
+				continue;
+			}
+		}  else
+			reenable();
+#endif DIALINOUT
+
+		DEBUG(4, "Using %s\n", cd->CU_brand);
+		acustatus++;
+		fd = (*(cd->CU_open))(phone, flds, &dev);
+		if (fd > 0) {
+			CU_end = cd->CU_clos;   /* point CU_end at close func */
+			fclose(dfp);
+			strcpy(devSel, dev.D_line);   /* save for later unlock() */
+			return fd;
+		} else
+			delock(dev.D_line);
+		retval = CF_DIAL;
 	}
 	fclose(dfp);
 	if (acustatus == 0) {
@@ -438,7 +440,6 @@ register char *dev;
 	DEBUG(4, "Disable %s\n", rdev);
 	if (enbcall("disable", rdev) == FAIL)
 		return FAIL;
-	logent(rdev, "DISABLED LOGIN");
 	strcpy(enbdev, rdev);
 	return SUCCESS;
 }
@@ -449,7 +450,6 @@ reenable()
 		return;
 	DEBUG(4, "Reenable %s\n", enbdev);
 	(void) enbcall("enable", enbdev);
-	logent(enbdev, "REENABLED LOGIN");
 	enbdev[0] = '\0';
 }
 
