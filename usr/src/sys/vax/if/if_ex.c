@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_ex.c	6.11 (Berkeley) %G%
+ *	@(#)if_ex.c	6.12 (Berkeley) %G%
  */
 
 
@@ -143,19 +143,16 @@ exprobe(reg)
 	 */
 	br = 0x15;
 	cvec = (uba_hd[numuba].uh_lastiv -= 4);
-#ifdef DEBUG
-printf("exprobe%d: cvec = %o\n", ex_ncall, cvec);
-#endif
 	ex_cvecs[ex_ncall].xc_csraddr = addr;
-	ex_cvecs[ex_ncall++].xc_cvec = cvec;
+	ex_cvecs[ex_ncall].xc_cvec = cvec;
 	/*
 	 * Reset EXOS and run self-test (guaranteed to
 	 * complete within 2 seconds).
 	 */
 	addr->xd_porta = EX_RESET;
-	i = 1000000;
+	i = 2000;
 	while (((addr->xd_portb & EX_TESTOK) == 0) && --i)
-		;
+		DELAY(1000);
 	if ((addr->xd_portb & EX_TESTOK) == 0) {
 		printf("ex: self-test failed\n");
 		return 0;
@@ -163,6 +160,7 @@ printf("exprobe%d: cvec = %o\n", ex_ncall, cvec);
 #ifdef lint
 	br = br;
 #endif
+	ex_ncall++;
 	return (sizeof(struct exdevice));
 }
 
@@ -202,9 +200,9 @@ exattach(ui)
 	while ((bp->mb_status & MH_OWNER) == MH_EXOS)	/* poll for reply */
 		;
 	printf("ex%d: HW %c.%c, NX %c.%c, hardware address %s\n",
-		ui->ui_unit, ether_sprintf(bp->mb_na.na_addrs),
-		xs->xs_cm.cm_vc[2], xs->xs_cm.cm_vc[3],
-		xs->xs_cm.cm_vc[0], xs->xs_cm.cm_vc[1]);
+		ui->ui_unit, xs->xs_cm.cm_vc[2], xs->xs_cm.cm_vc[3],
+		xs->xs_cm.cm_vc[0], xs->xs_cm.cm_vc[1],
+		ether_sprintf(bp->mb_na.na_addrs));
 	bcopy((caddr_t)bp->mb_na.na_addrs, (caddr_t)xs->xs_addr,
 	    sizeof (xs->xs_addr));
 
