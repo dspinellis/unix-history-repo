@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)conf.c	7.7 (Berkeley) %G%
+ *	@(#)conf.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -531,6 +531,22 @@ int	qvopen(), qvclose(), qvread(), qvwrite(), qvioctl(), qvstop(),
 #define qvcons_init	nodev
 #endif
 
+#include "qd.h"
+#if NQD > 0
+int	qdopen(), qdclose(), qdread(), qdwrite(), qdioctl(), qdstop(),
+	qdreset(), qdselect(), qdcons_init();
+#else
+#define qdopen	nodev
+#define qdclose	nodev
+#define qdread	nodev
+#define qdwrite	nodev
+#define qdioctl	nodev
+#define qdstop	nodev
+#define qdreset	nulldev
+#define qdselect	nodev
+#define qdcons_init	nodev
+#endif
+
 #if defined(INGRES)
 int	iiioctl(), iiclose(), iiopen();
 #else
@@ -667,9 +683,9 @@ struct cdevsw	cdevsw[] =
 	qvopen,		qvclose,	qvread, 	qvwrite,	/*40*/
 	qvioctl,	qvstop,		qvreset,	0,
 	qvselect,	nodev,
-	nodev,		nodev,		nodev,		nodev,		/*41*/
-	nodev,		nulldev,	nulldev,	0,
-	nodev,		nodev,
+	qdopen,		qdclose,	qdread, 	qdwrite,	/*41*/
+	qdioctl,	qdstop,		qdreset,	0,
+	qdselect,	nodev,
 /* 42-50 reserved to local sites */
 	nodev,		nodev,		nodev,		nodev,		/*42*/
 	nodev,		nulldev,	nulldev,	0,
