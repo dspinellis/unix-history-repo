@@ -4,9 +4,9 @@
 # include "sendmail.h"
 
 # ifdef DBM
-static char SccsId[] = "@(#)alias.c	3.24	%G%	(with DBM)";
+static char SccsId[] = "@(#)alias.c	3.25	%G%	(with DBM)";
 # else DBM
-static char SccsId[] = "@(#)alias.c	3.24	%G%	(without DBM)";
+static char SccsId[] = "@(#)alias.c	3.25	%G%	(without DBM)";
 # endif DBM
 
 /*
@@ -427,7 +427,7 @@ forward(user)
 	ADDRESS *user;
 {
 	char buf[60];
-	struct stat stbuf;
+	extern bool safefile();
 
 # ifdef DEBUG
 	if (Debug)
@@ -444,8 +444,7 @@ forward(user)
 	/* good address -- look for .forward file in home */
 	define('z', user->q_home);
 	(void) expand("$z/.forward", buf, &buf[sizeof buf - 1]);
-	if (stat(buf, &stbuf) < 0 || stbuf.st_uid != user->q_uid ||
-	    !bitset(S_IREAD, stbuf.st_mode))
+	if (!safefile(buf, user->q_uid, S_IREAD))
 		return;
 
 	/* we do have an address to forward to -- do it */

@@ -36,7 +36,7 @@
 
 
 
-static char SccsId[] = "@(#)conf.c	3.33	%G%";
+static char SccsId[] = "@(#)conf.c	3.34	%G%";
 
 
 # include <whoami.h>		/* definitions of machine id's at berkeley */
@@ -291,7 +291,10 @@ getegid()
 
 getruid()
 {
-	return (getuid());
+	if (Daemon)
+		return (RealUid);
+	else
+		return (getuid());
 }
 
 
@@ -301,7 +304,10 @@ getruid()
 
 getrgid()
 {
-	return (getgid());
+	if (Daemon)
+		return (RealGid);
+	else
+		return (getgid());
 }
 
 # endif V6
