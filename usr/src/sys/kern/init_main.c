@@ -1,4 +1,4 @@
-/*	init_main.c	4.33	82/07/22	*/
+/*	init_main.c	4.34	82/08/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -105,7 +105,7 @@ main(firstaddr)
 	kmstartup();
 #endif
 
-	fs = mountfs(rootdev, 0, 0);
+	fs = mountfs(rootdev, 0, (struct inode *)0);
 	if (fs == 0)
 		panic("iinit");
 	bcopy("/", fs->fs_fsmnt, 2);
