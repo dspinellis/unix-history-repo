@@ -4,20 +4,17 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	5.1 (Berkeley) %G%
+ *	@(#)extern.h	5.2 (Berkeley) %G%
  */
 
 typedef struct {
-	enum { EOS, INFINITE, NORMAL, RANGE, SEQUENCE, SET, ULSET } state;
+	enum { STRING1, STRING2 } which;
+	enum { EOS, INFINITE, NORMAL, RANGE, SEQUENCE, SET } state;
 	int	 cnt;			/* character count */
 	int	 lastch;		/* last character */
+	int	equiv[2];		/* equivalence set */
 	int	*set;			/* set of characters */
 	char	*str;			/* user's string */
-
-#define	T_CLASS	0x01			/* class != lower/upper */
-#define	T_SEQ	0x02			/* sequence */
-#define	T_UL	0x04			/* lower/upper classes */
-	u_int	type;			/* Permissible string conventions. */
 } STR;
 
 #include <limits.h>
