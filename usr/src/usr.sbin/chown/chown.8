@@ -2,18 +2,18 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)chown.8	4.1 (Berkeley) %G%
+.\"	@(#)chown.8	5.1 (Berkeley) %G%
 .\"
-.TH CHOWN 8 "4/3/81"
+.TH CHOWN 8 "18 July 1983"
 .UC 4
 .SH NAME
-chown, chgrp \- change owner or group
+chown \- change owner
 .SH SYNOPSIS
 .B /etc/chown
+[
+.B \-f
+]
 owner file ...
-.PP
-.B /etc/chgrp
-group file ...
 .SH DESCRIPTION
 .I Chown
 changes the owner of the
@@ -23,20 +23,14 @@ to
 The owner may be either a decimal UID or
 a login name found in the password file.
 .PP
-.I Chgrp
-changes the group-ID of the
-.I files
-to
-.IR group .
-The group may be either a decimal GID or
-a group name found in the group-ID file.
-.PP
-Only the super-user can change owner or group,
-in order to simplify as yet unimplemented accounting procedures.
+Only the super-user can change owner,
+in order to simplify accounting procedures.
+No errors are reported when the
+.B \-f
+(force) option is given.
 .SH FILES
 /etc/passwd
-.br
-/etc/group
 .SH "SEE ALSO"
+chgrp(1),
 chown(2),
 passwd(5), group(5)
