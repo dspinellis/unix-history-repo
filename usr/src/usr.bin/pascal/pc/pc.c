@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)pc.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)pc.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -274,12 +274,12 @@ main(argc, argv)
 			asargx = 1;
 			if (Jflag)
 				asargs[asargx++] = "-J";
-#			ifdef vax
+#			if defined(vax) || defined(tahoe)
 				if (tflag) {
 					asargs[asargx++] = "-t";
 					asargs[asargx++] = tmpdir;
 				}
-#			endif vax
+#			endif vax || tahoe
 			asargs[asargx++] = argp;
 			asargs[asargx++] = "-o";
 			tfile[1] = setsuf(argp, 'o');
@@ -329,12 +329,12 @@ main(argc, argv)
 		asargx = 1;
 		if (Jflag)
 			asargs[asargx++] = "-J";
-#		ifdef vax
+#		if defined(vax) || defined(tahoe)
 			if (tflag) {
 				asargs[asargx++] = "-t";
 				asargs[asargx++] = tmpdir;
 			}
-#		endif vax
+#		endif vax || tahoe
 		asargs[asargx++] = tfile[0];
 		asargs[asargx++] = "-o";
 		tfile[1] = setsuf(argp, 'o');
