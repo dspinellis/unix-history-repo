@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.1 (Berkeley) %G%
+#	@(#)Makefile.inc	8.1 (Berkeley) %G%
 
 # machine-independent string sources (from ../../string)
 SRCS+=	bcmp.c bcopy.c index.c memchr.c memcmp.c memset.c rindex.c strcat.c \
