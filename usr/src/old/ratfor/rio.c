@@ -4,7 +4,7 @@ Original BTL Ratfor System for 4.2
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)rio.c	1.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)rio.c	8.1 (Berkeley) %G%";
 #endif /* not lint */
 
 
