@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vfs_syscalls.c	7.74 (Berkeley) 6/21/91
- *	$Id: vfs_syscalls.c,v 1.5 1993/10/23 16:02:54 davidg Exp $
+ *	$Id: vfs_syscalls.c,v 1.6 1993/11/25 01:33:43 wollman Exp $
  */
 
 #include "param.h"
@@ -151,30 +151,10 @@ update:
 	/*
 	 * Set the mount level flags.
 	 */
-	if (uap->flags & MNT_RDONLY)
-		mp->mnt_flag |= MNT_RDONLY;
-	else
-		mp->mnt_flag &= ~MNT_RDONLY;
-	if (uap->flags & MNT_NOSUID)
-		mp->mnt_flag |= MNT_NOSUID;
-	else
-		mp->mnt_flag &= ~MNT_NOSUID;
-	if (uap->flags & MNT_NOEXEC)
-		mp->mnt_flag |= MNT_NOEXEC;
-	else
-		mp->mnt_flag &= ~MNT_NOEXEC;
-	if (uap->flags & MNT_NODEV)
-		mp->mnt_flag |= MNT_NODEV;
-	else
-		mp->mnt_flag &= ~MNT_NODEV;
-	if (uap->flags & MNT_NOCORE)
-		mp->mnt_flag |= MNT_NOCORE;
-	else
-		mp->mnt_flag &= ~MNT_NOCORE;
-	if (uap->flags & MNT_SYNCHRONOUS)
-		mp->mnt_flag |= MNT_SYNCHRONOUS;
-	else
-		mp->mnt_flag &= ~MNT_SYNCHRONOUS;
+	mp->mnt_flag &=
+		~(MNT_RDONLY|MNT_NOSUID|MNT_NOEXEC|MNT_NODEV|MNT_SYNCHRONOUS);
+	mp->mnt_flag |= uap->flags &
+		(MNT_RDONLY|MNT_NOSUID|MNT_NOEXEC|MNT_NODEV|MNT_SYNCHRONOUS);
 	/*
 	 * Mount the filesystem.
 	 */
@@ -658,6 +638,7 @@ open(p, uap, retval)
 		return (error);
 	}
 	vp = ndp->ni_vp;
+	VOP_UNLOCK(vp);
 	fp->f_flag = fmode & FMASK;
 	if (fmode & (O_EXLOCK | O_SHLOCK)) {
 		lf.l_whence = SEEK_SET;
@@ -671,7 +652,6 @@ open(p, uap, retval)
 		if ((fmode & FNONBLOCK) == 0)
 			type |= F_WAIT;
 		if (error = VOP_ADVLOCK(vp, (caddr_t)fp, F_SETLK, &lf, type)) {
-			VOP_UNLOCK(vp);
 			(void) vn_close(vp, fp->f_flag, fp->f_cred, p);
 			ffree(fp);
 			fdp->fd_ofiles[indx] = NULL;
@@ -679,7 +659,6 @@ open(p, uap, retval)
 		}
 		fp->f_flag |= FHASLOCK;
 	}
-	VOP_UNLOCK(vp);
 	fp->f_type = DTYPE_VNODE;
 	fp->f_ops = &vnops;
 	fp->f_data = (caddr_t)vp;
