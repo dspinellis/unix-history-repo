@@ -2,6 +2,9 @@
 #
  $History$
 # $Log: bsd.lib.mk,v $
+# Revision 1.4  1993/07/07  21:42:45  nate
+# Cleaned up header files and added core.* to clean directives
+#
 # Revision 1.3  1993/07/02  06:44:30  root
 # New manual page system
 #
@@ -82,14 +85,14 @@ llib-l${LIB}.ln: ${SRCS}
 
 .if !target(clean)
 clean:
-	rm -f a.out Errs errs mklog core core.* ${CLEANFILES} ${OBJS} \
+	rm -f a.out Errs errs mklog ${CLEANFILES} ${OBJS} \
 	    lib${LIB}.a llib-l${LIB}.ln
 	rm -f ${POBJS} profiled/*.o lib${LIB}_p.a
 .endif
 
 .if !target(cleandir)
 cleandir:
-	rm -f a.out Errs errs mklog core core.* ${CLEANFILES} ${OBJS} \
+	rm -f a.out Errs errs mklog ${CLEANFILES} ${OBJS} \
 	    lib${LIB}.a llib-l${LIB}.ln \
 	    ${.CURDIR}/tags .depend
 	rm -f ${POBJS} profiled/*.o lib${LIB}_p.a

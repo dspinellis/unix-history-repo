@@ -93,12 +93,12 @@ all: ${PROG} _PROGSUBDIR
 
 .if !target(clean)
 clean: _PROGSUBDIR
-	rm -f a.out [Ee]rrs mklog core core.* ${PROG} ${OBJS} ${CLEANFILES} 
+	rm -f a.out [Ee]rrs mklog ${PROG} ${OBJS} ${CLEANFILES} 
 .endif
 
 .if !target(cleandir)
 cleandir: _PROGSUBDIR
-	rm -f a.out [Ee]rrs mklog core core.* ${PROG} ${OBJS} ${CLEANFILES} \
+	rm -f a.out [Ee]rrs mklog ${PROG} ${OBJS} ${CLEANFILES} \
 	      ${.CURDIR}/tags .depend
 	cd ${.CURDIR}; rm -rf obj;
 .endif
