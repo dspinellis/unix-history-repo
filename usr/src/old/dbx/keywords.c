@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)keywords.c 1.2 %G%";
+static char sccsid[] = "@(#)keywords.c 1.3 %G%";
 
 /*
  * Keyword management.
@@ -20,7 +20,7 @@ static char sccsid[] = "@(#)keywords.c 1.2 %G%";
 
 private String reserved[] ={
     "alias", "and", "assign", "at", "call", "catch", "cont",
-    "delete", "div", "dump", "edit", "file", "func",
+    "debug", "delete", "div", "dump", "edit", "file", "func",
     "gripe", "help", "if", "ignore", "in",
     "list", "mod", "next", "nexti", "nil", "not", "or",
     "print", "psym", "quit", "run",
