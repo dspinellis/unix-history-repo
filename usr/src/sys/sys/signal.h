@@ -1,4 +1,4 @@
-/*	signal.h	4.4	83/08/14	*/
+/*	signal.h	6.1	83/08/14	*/
 
 #ifndef	NSIG
 #define NSIG	32
