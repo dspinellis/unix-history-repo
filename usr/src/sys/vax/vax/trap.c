@@ -1,9 +1,10 @@
-/*	trap.c	4.11	81/11/20	*/
+/*	trap.c	4.12	82/03/31	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/dir.h"
 #include "../h/user.h"
+#include "assym.s"
 #include "../h/proc.h"
 #include "../h/reg.h"
 #include "../h/seg.h"
