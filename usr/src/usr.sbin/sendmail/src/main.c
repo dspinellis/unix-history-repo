@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.109 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.110 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -665,7 +665,9 @@ main(argc, argv, envp)
 #ifdef XDEBUG
 	checkfd012("before readcf");
 #endif
+	vendor_pre_defaults(CurEnv);
 	readcf(getcfname(), safecf, CurEnv);
+	vendor_post_defaults(CurEnv);
 
 	if (tTd(0, 1))
 	{
