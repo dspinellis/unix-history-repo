@@ -4,15 +4,8 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ktrace.h	1.2 (Berkeley) %G%
+ *	@(#)ktrace.h	5.1 (Berkeley) %G%
  */
-
-#include <sys/param.h>
-#include <sys/file.h>
-#include <sys/user.h>
-#include <sys/proc.h>
-#include <sys/ktrace.h>
-#include <stdio.h>
 
 #define ALL_POINTS (KTRFAC_SYSCALL | KTRFAC_SYSRET | KTRFAC_NAMEI | \
 		  KTRFAC_GENIO | KTRFAC_PSIG)
