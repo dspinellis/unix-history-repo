@@ -1,329 +1,220 @@
-static char *sccsid = "@(#)script.c	4.2 (Berkeley) %G%";
- /*
-  * script - makes copy of terminal conversation. usage:
-  *
-  * script [ -n ] [ -s ] [ -q ] [ -a ] [ -S shell ] [ file ]
-  * conversation saved in file. default is DFNAME
-  */
-
-#define DFNAME "typescript"
-
-#ifdef HOUXP
-#define STDSHELL "/bin/sh"
-#define NEWSHELL "/p4/3723mrh/bin/csh"
-char *shell = NEWSHELL;
+#ifndef lint
+static char *sccsid = "@(#)script.c	4.3 82/03/26";
 #endif
-
-#ifdef HOUXT
-#define STDSHELL "/bin/sh"
-#define NEWSHELL "/t1/bruce/ucb/bin/csh"
-char *shell = NEWSHELL;
-#endif
-
-#ifdef CORY
-#define STDSHELL "/bin/sh"
-#define NEWSHELL "/bin/csh"
-char *shell = NEWSHELL;
-#endif
-
-#ifdef CC
-#define STDSHELL "/bin/sh"
-#define NEWSHELL "/bin/csh"
-char *shell = NEWSHELL;
-#endif
-
-#ifndef STDSHELL
-# define V7ENV
-#endif
-
-#ifdef V7ENV
-#include <signal.h>
-/* used for version 7 with environments - gets your environment shell */
-#define STDSHELL "/bin/sh"
-#define NEWSHELL "/bin/csh"
-char *shell;	/* initialized in the code */
-# include <sys/types.h>
-# include <sys/stat.h>
-# define MODE st_mode
-# define STAT stat
-char *getenv();
-
-#else
-
 /*
- * The following is the structure of the block returned by
- * the stat and fstat system calls.
+ * script
  */
+#include <stdio.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/ioctl.h>
+#include <sgtty.h>
+#include <time.h>
 
-struct inode {
-	char	i_minor;	/* +0: minor device of i-node */
-	char	i_major;	/* +1: major device */
-	int	i_number;	/* +2 */
-	int	i_flags;	/* +4: see below */
-	char	i_nlinks;	/* +6: number of links to file */
-	char	i_uid;		/* +7: user ID of owner */
-	char	i_gid;		/* +8: group ID of owner */
-	char	i_size0;	/* +9: high byte of 24-bit size */
-	int	i_size1;	/* +10: low word of 24-bit size */
-	int	i_addr[8];	/* +12: block numbers or device number */
-	int	i_actime[2];	/* +28: time of last access */
-	int	i_modtime[2];	/* +32: time of last modification */
-};
+char	*getenv();
+char	*ctime();
+char	*shell;
+FILE	*fscript;
+int	master;
+int	slave;
+int	child;
+char	*fname = "typescript";
+int	finish();
 
-#define	IALLOC	0100000
-#define	IFMT	060000
-#define		IFDIR	040000
-#define		IFCHR	020000
-#define		IFBLK	060000
-#define MODE i_flags
-#define STAT inode
-#endif
+struct	sgttyb b;
+struct	tchars tc;
+struct	ltchars lc;
+int	lb;
+int	l;
+char	*line = "/dev/ptyXX";
+int	aflg;
 
-char	*tty;		/* name of users tty so can turn off writes */
-char	*ttyname();	/* std subroutine */
-int	mode = 0622;	/* old permission bits for users tty */
-int	outpipe[2];	/* pipe from shell to output */
-int	fd;		/* file descriptor of typescript file */
-int	inpipe[2];	/* pipe from input to shell */
-long	tvec;		/* current time */
-char	buffer[256];	/* for block I/O's */
-int	n;		/* number of chars read */
-int	status;		/* dummy for wait sys call */
-char	*fname;		/* name of typescript file */
-int	forkval, ttn;	/* temps for error checking */
-int	qflg;		/* true if -q (quiet) flag */
-int	aflg;		/* true if -q (append) flag */
-struct STAT sbuf;
-int	flsh();
+main(argc, argv)
+	int argc;
+	char *argv[];
+{
+	int f;
 
-main(argc,argv) int argc; char **argv; {
-
-	if ((tty = ttyname(2)) < 0) {
-		printf("Nested script not allowed.\n");
-		fail();
-	}
-
-#ifdef V7ENV
 	shell = getenv("SHELL");
-#endif
+	if (shell == 0)
+		shell = "/bin/sh";
+	argc--, argv++;
+	while (argc > 0 && argv[0][0] == '-') {
+		switch (argv[0][1]) {
 
-	while ( argc > 1 && argv[1][0] == '-') {
-		switch(argv[1][1]) {
-			case 'n':
-				shell = NEWSHELL;
-				break;
-			case 's':
-				shell = STDSHELL;
-				break;
-			case 'S':
-				shell = argv[2];
-				argc--; argv++;
-				break;
-			case 'q':
-				qflg++;
-				break;
-			case 'a':
-				aflg++;
-				break;
-			default:
-				printf("Bad flag %s - ignored\n",argv[1]);
-		}
-		argc--; argv++;
-	}
+		case 'a':
+			aflg++;
+			break;
 
-	if (argc > 1) {
-		fname = argv[1];
-		if (!aflg && stat(fname,&sbuf) >= 0) {
-			printf("File %s already exists.\n",fname);
-			done();
+		default:
+			fprintf(stderr,
+			    "usage: script [ -a ] [ typescript ]\n");
+			exit(1);
 		}
-	} else	fname = DFNAME;
-	if (!aflg) {
-		fd = creat(fname,0);	/* so can't cat/lpr typescript from inside */
-	} else {
-		/* try to append to existing file first */
-		fd = open(fname,1);
-		if (fd >= 0) lseek(fd,0l,2);
-		    else     fd = creat(fname,0);
+		argc--, argv++;
 	}
-	if (fd<0) {
-		printf("Can't create %s\n",fname);
-		if (unlink(fname)==0) {
-			printf("because of previous typescript bomb - try again\n");
-		}
+	if (argc > 0)
+		fname = argv[0];
+	if ((fscript = fopen(fname, aflg ? "a" : "w")) == NULL) {
+		perror(fname);
 		fail();
 	}
-
-	chmod(fname,0);	/* in case it already exists */
+	getmaster();
+	printf("Script started, file is %s\n", fname);
 	fixtty();
-	if (!qflg) {
-		printf("Script started, file is %s\n",fname);
-		check(write(fd,"Script started on ",18));
-		time(&tvec);
-		check(write(fd,ctime(&tvec),25));
-	}
-	pipe(inpipe);
-	pipe(outpipe);
 
-	forkval = fork();
-	if (forkval < 0)
-		goto ffail;
-	if (forkval == 0) {
-		forkval = fork();
-		if (forkval < 0)
-			goto ffail;
-		if (forkval == 0)
+	(void) signal(SIGCHLD, finish);
+	child = fork();
+	if (child < 0) {
+		perror("fork");
+		fail();
+	}
+	if (child == 0) {
+		f = fork();
+		if (f < 0) {
+			perror("fork");
+			fail();
+		}
+		if (f)
 			dooutput();
-		forkval = fork();
-		if (forkval < 0)
-			goto ffail;
-		if (forkval == 0)
-			doinput();
-		doshell();
+		else
+			doshell();
 	}
-	close(inpipe[0]); close(inpipe[1]);
-	close(outpipe[0]); close(outpipe[1]);
-	signal(SIGINT, SIG_IGN);
-	signal(SIGQUIT, done);
-	wait(&status);
-	done();
-	/*NOTREACHED*/
-
-ffail:
-	printf("Fork failed. Try again.\n");
-	fail();
+	doinput();
 }
 
-/* input process - copy tty to pipe and file */
 doinput()
 {
+	char ibuf[BUFSIZ];
+	int cc;
 
-	signal(SIGINT, SIG_IGN);
-	signal(SIGQUIT, SIG_IGN);
-	signal(SIGTSTP, SIG_IGN);
-
-	close(inpipe[0]);
-	close(outpipe[0]);
-	close(outpipe[1]);
-
-	/* main input loop - copy until end of file (ctrl D) */
-	while ((n=read(0,buffer,256)) > 0) {
-		check(write(fd,buffer,n));
-		write(inpipe[1],buffer,n);
-	}
-
-	/* end of script - close files and exit */
-	close(inpipe[1]);
-	close(fd);
+	(void) fclose(fscript);
+	while ((cc = read(0, ibuf, BUFSIZ)) > 0)
+		(void) write(master, ibuf, cc);
 	done();
 }
 
-/* do output process - copy to tty & file */
+#include <wait.h>
+
+finish()
+{
+	union wait status;
+
+	if (wait3(&status, WNOHANG, 0) != child)
+		return;
+	done();
+}
+
 dooutput()
 {
+	time_t tvec;
+	char obuf[BUFSIZ];
+	int cc;
 
-	signal(SIGINT, flsh);
-	signal(SIGQUIT, SIG_IGN);
-	signal(SIGTSTP, SIG_IGN);
-	close(0);
-	close(inpipe[0]);
-	close(inpipe[1]);
-	close(outpipe[1]);
-
-	/* main output proc loop */
-	while (n=read(outpipe[0],buffer,256)) {
-		if (n > 0) { /* -1 means trap to flsh just happened */
-			write(1,buffer,n);
-			check(write(fd,buffer,n));
-		}
+	(void) close(0);
+	tvec = time((time_t *)0);
+	fprintf(fscript, "Script started on %s", ctime(&tvec));
+	for (;;) {
+		cc = read(master, obuf, sizeof (obuf));
+		if (cc <= 0)
+			break;
+		(void) write(1, obuf, cc);
+		(void) fwrite(obuf, 1, cc, fscript);
 	}
-
-	/* output sees eof - close files and exit */
-	if (!qflg) {
-		printf("Script done, file is %s\n",fname);
-		check(write(fd,"\nscript done on ",16));
-		time(&tvec);
-		check(write(fd,ctime(&tvec),25));
-	}
-	close(fd);
+	tvec = time((time_t *)0);
+	fprintf(fscript,"\nscript done on %s", ctime(&tvec));
+	(void) fclose(fscript);
+	(void) close(master);
 	exit(0);
 }
 
-/* exec shell, after diverting std input & output */
 doshell()
 {
+	int t;
 
-	close(0);
-	dup(inpipe[0]);
-	close(1);
-	dup(outpipe[1]);
-	close(2);
-	dup(outpipe[1]);
-
-	/* close useless files */
-	close(inpipe[0]);
-	close(inpipe[1]);
-	close(outpipe[0]);
-	close(outpipe[1]);
+	t = open("/dev/tty", 2);
+	if (t >= 0) {
+		ioctl(t, TIOCNOTTY, (char *)0);
+		(void) close(t);
+	}
+	getslave();
+	(void) close(master);
+	(void) fclose(fscript);
+	dup2(slave, 0);
+	dup2(slave, 1);
+	dup2(slave, 2);
+	(void) close(slave);
 	execl(shell, "sh", "-i", 0);
-	execl(STDSHELL, "sh", "-i", 0);
-	execl(NEWSHELL, "sh", "-i", 0);
-	printf("Can't execute shell\n");
+	perror(shell);
 	fail();
 }
 
 fixtty()
 {
+	struct sgttyb sbuf;
 
-	fstat(2, &sbuf);
-	mode = sbuf.MODE&0777;
-	chmod(tty, 0600);
-}
-
-/* come here on rubout to flush output - this doesn't work */
-flsh()
-{
-
-	signal(SIGINT, flsh);
-	/* lseek(outpipe[0],0l,2);	/* seeks on pipes don't work !"$"$!! */
+	sbuf = b;
+	sbuf.sg_flags |= RAW;
+	sbuf.sg_flags &= ~ECHO;
+	ioctl(0, TIOCSETP, (char *)&sbuf);
 }
 
 fail()
 {
 
-	unlink(fname);
-	kill(0, 15);	/* shut off other script processes */
+	(void) kill(0, SIGTERM);
 	done();
 }
 
 done()
 {
 
-	chmod(tty, mode);
-	chmod(fname, 0664);
-	exit();
+	ioctl(0, TIOCSETP, (char *)&b);
+	printf("Script done, file is %s\n", fname);
+	exit(0);
 }
 
-#ifndef V7ENV
-#ifndef CC
-char *ttyname(i) int i; {
-	char *string;
-	string = "/dev/ttyx";
-	string[8] = ttyn(fd);
-	if (string[8] == 'x') return((char *) (-1));
-		else return(string);
-}
-#endif
-#endif
-
-check(n)
-int n;
+getmaster()
 {
-	/* checks the result of a write call, if neg
-	   assume ran out of disk space & die */
-	if (n < 0) {
-		write(1,"Disk quota exceeded - script quits\n",35);
-		kill(0,15);
-		done();
+	char c;
+	struct stat stb;
+	int i;
+
+	for (c = 'p'; c <= 's'; c++) {
+		line[strlen("/dev/pty")] = c;
+		line[strlen("/dev/ptyp")] = '0';
+		if (stat(line, &stb) < 0)
+			break;
+		for (i = 0; i < 16; i++) {
+			line[strlen("/dev/ptyp")] = "0123456789abcdef"[i];
+			master = open(line, 2);
+			if (master >= 0) {
+				ioctl(0, TIOCGETP, (char *)&b);
+				ioctl(0, TIOCGETC, (char *)&tc);
+				ioctl(0, TIOCGETD, (char *)&l);
+				ioctl(0, TIOCGLTC, (char *)&lc);
+				ioctl(0, TIOCLGET, (char *)&lb);
+				return;
+			}
+		}
 	}
+	fprintf(stderr, "Out of pty's\n");
+	fail();
+}
+
+getslave()
+{
+
+	line[strlen("/dev/")] = 't';
+	slave = open(line, 2);
+	if (slave < 0) {
+		perror(line);
+		fail();
+	}
+	ioctl(slave, TIOCSETP, (char *)&b);
+	ioctl(slave, TIOCSETC, (char *)&tc);
+	ioctl(slave, TIOCSLTC, (char *)&lc);
+	ioctl(slave, TIOCLSET, (char *)&lb);
+	ioctl(slave, TIOCSETD, (char *)&l);
 }
