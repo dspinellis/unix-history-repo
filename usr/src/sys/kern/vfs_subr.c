@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	7.55 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.56 (Berkeley) %G%
  */
 
 /*
@@ -1113,6 +1113,27 @@ vprint(label, vp)
 	printf("\n\t");
 	VOP_PRINT(vp);
 }
+
+#ifdef DEBUG
+/*
+ * List all of the locked vnodes in the system.
+ * Called when debugging the kernel.
+ */
+printlockedvnodes()
+{
+	register struct mount *mp;
+	register struct vnode *vp;
+
+	printf("Locked vnodes\n");
+	mp = rootfs;
+	do {
+		for (vp = mp->mnt_mounth; vp; vp = vp->v_mountf)
+			if (VOP_ISLOCKED(vp))
+				vprint((char *)0, vp);
+		mp = mp->mnt_next;
+	} while (mp != rootfs);
+}
+#endif
 
 int kinfo_vdebug = 1;
 int kinfo_vgetfailed;
