@@ -1,8 +1,7 @@
-SCCSID = "@(#)Makefile	1.3 (Berkeley) %G%"
+SCCSID = "@(#)Makefile	1.4 (Berkeley) %G%"
 DESTDIR=
 ED=	-ex
 AS=	-as
-VERSION= version
 EYACC=	/usr/ucb/eyacc
 CFLAGS=	-O -DPXP -w
 OBJS=	call.o case.o const.o cset.o \
@@ -27,6 +26,12 @@ doprnt.o: doprnt.c
 y.tab.c: pas.y
 	${EYACC} pas.y
 	${ED} - y.tab.c < gram
+
+version: version.c Version.o
+	cc -o version version.c Version.o
+
+newversion: version
+	version > Version.c
 
 clean:
 	-rm -f pi1:2strings a.out core
