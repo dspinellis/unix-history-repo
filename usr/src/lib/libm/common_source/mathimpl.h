@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mathimpl.h	5.4 (Berkeley) %G%
+ *	@(#)mathimpl.h	5.5 (Berkeley) %G%
  */
 
 #include <sys/cdefs.h>
@@ -67,3 +67,6 @@
 extern double	exp__E();
 extern double	log__L();
 
+struct Double {double a, b;};
+double exp__D __P((double, double));
+struct Double log__D __P((double));
