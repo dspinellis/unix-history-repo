@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)arff.c	4.4 (Berkeley) 81/03/22";
+static	char *sccsid = "@(#)arff.c	4.5 (Berkeley) 81/04/08";
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <time.h>
@@ -62,7 +62,7 @@ char zeroes[512];
 extern char *val;
 extern char table[256];
 struct rt_dir	
-   rt_dir[RT_DIRSIZE] = {{4,0,1,0,14},{0,RT_NULL,{0,0,0},494,0}, {0,RT_ESEG}};
+   rt_dir[RT_DIRSIZE] = {{{4,0,1,0,14},{0,RT_NULL,{0,0,0},494,0}, {0,RT_ESEG}}};
 int		rt_entsiz;
 int		rt_nleft;
 struct rt_ent	*rt_curend[RT_DIRSIZE];
@@ -365,7 +365,8 @@ rt_init()
 		}
 		for (i=1; i<dirnum; i++)
 		   lread((6+2*i)*RT_BLOCK,2*RT_BLOCK,(char *)&rt_dir[i]);
-	}
+	} else
+		dirnum = 1;
 
 	rt_entsiz = 2*rt_dir[0].rt_axhead.rt_entpad + 14;
 	rt_entsiz = 14;			/* assume rt_entpad = 0 ??? */
@@ -619,11 +620,9 @@ rcmd()
 	register int i;
 
 	rt_init();
-	if(namc>0)
+	if (namc>0)
 		for(i = 0; i < namc; i++)
 			if(rtr(namv[i])==0) namv[i]=0;
-	
-	
 }
 
 rtr(name)
@@ -634,7 +633,10 @@ char *name;
 	int segnum;
 	register char *last;
 
-	if(stat(name,bufp)<0) return(1);
+	if(stat(name,bufp)<0) {
+		perror(name);
+		return(-1);
+	}
 	if(dope = lookup(name)) {
 		/* can replace, no problem */
 		de = dope->rtdope;
@@ -643,7 +645,7 @@ char *name;
 			toflop(name,bufp->st_size,dope);
 		else {
 			fprintf(stderr, "%s will not fit in currently used file on floppy\n",name);
-			return(1);
+			return(-1);
 		}
 	} else {
 	    /* Search for vacant spot */
@@ -663,13 +665,15 @@ char *name;
 			}
 		}
 	    }
-	    return(3);
+	    printf("%s: no slot for file\n", name);
+	    return (-1);
 	}
 found:	if(dope=lookup(name)) {
 		toflop(name,bufp->st_size,dope);
-		return(0);
+		return (0);
 	}
-	return(7);
+	printf("%s: internal error, added then not found\n", name);
+	return (-1);
 
 }
 mkent(de,segnum,bufp,name)
