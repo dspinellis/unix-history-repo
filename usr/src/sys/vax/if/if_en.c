@@ -1,5 +1,6 @@
-/*	if_en.c	4.24	81/12/22	*/
+/*	if_en.c	4.26	81/12/22	*/
 
+#define ENKLUDGE
 #include "en.h"
 
 /*
@@ -101,6 +102,12 @@ COUNT(ENATTACH);
 	es->es_if.if_net = ui->ui_flags;
 	es->es_if.if_host[0] =
 	    (~(((struct endevice *)eninfo[ui->ui_unit]->ui_addr)->en_addr)) & 0xff;
+#ifdef ENKLUDGE
+	if (es->es_if.if_net == 10) {
+		es->es_if.if_host[0] <<= 16;
+		es->es_if.if_host[0] |= 0x4e;
+	}
+#endif
 	es->es_if.if_addr =
 	    if_makeaddr(es->es_if.if_net, es->es_if.if_host[0]);
 	es->es_if.if_init = eninit;
@@ -408,7 +415,11 @@ enoutput(ifp, m0, pf)
 		register struct ip *ip = mtod(m0, struct ip *);
 		int off;
 
+#ifndef ENKLUDGE
 		dest = ip->ip_dst.s_addr >> 24;
+#else
+		dest = (ip->ip_dst.s_addr >> 8) & 0xff;
+#endif
 		off = ntohs((u_short)ip->ip_len) - m->m_len;
 		if (off > 0 && (off & 0x1ff) == 0 && m->m_off >= MMINOFF + 2) {
 			type = ENPUP_TRAIL + (off>>9);
