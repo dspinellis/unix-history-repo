@@ -1,0 +1,28 @@
+#once #create message
+.ND
+.LP
+Another practice one for using "over".
+Modify the file "Example" so it produces
+output that looks like this one, then type "ready".
+.pl 1
+#once #create Ref
+.LP
+.EQ
+a + b over c + d = e over f
+.EN
+.pl 1
+#once #create Example
+.LP
+.EQ
+replace me
+.EN
+.pl 1
+#
+#once neqn Ref | nroff >X1 &
+#once neqn message Ref | nroff -T$TERM %s/tinyms -
+#user
+neqn Example | nroff >X2
+#cmp X1 X2
+#log
+#next
+4.1b 10

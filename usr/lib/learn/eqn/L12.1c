@@ -1,0 +1,44 @@
+#once #create message
+.ND
+.tr %$
+.EQ
+delim $$
+.EN
+.LP
+Of course the thing with bars or braces around it can
+still be part of larger expressions: the input
+   .EQ
+   left | {a over b ~+~ c over d} over 2 right | over a+b+c+d
+   .EN
+produces
+.EQ
+left | {a over b ~+~ c over d} over 2 right | over a+b+c+d
+.EN
+
+For practice, modify file "Example" so it produces output
+that looks like this, then type "ready".
+.pl 1
+#once #create Ref
+.LP
+.EQ
+left |
+{a over b ~+~ c over d} over 2
+right |
+sup half
+.EN
+.pl 1
+#once #create Example
+.LP
+.EQ
+replace me
+.EN
+.pl 1
+#
+#once neqn Ref | nroff >X1 &
+#once neqn message Ref | nroff -T$TERM %s/tinyms -
+#user
+neqn Example | nroff >X2
+#cmp X1 X2
+#log
+#next
+12.1d 10
