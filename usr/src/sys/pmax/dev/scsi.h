@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)scsi.h	7.3 (Berkeley) %G%
+ *	@(#)scsi.h	7.4 (Berkeley) %G%
  *
  * scsi.h --
  *
@@ -525,6 +525,6 @@ struct scsi_fmt_sense {
  */
 extern void scsiGroup0Cmd();
 extern void scsiGroup1Cmd();
-#endif KERNEL
+#endif /* KERNEL */
 
 #endif /* _SCSI_H */
