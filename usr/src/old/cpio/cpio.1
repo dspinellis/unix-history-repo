@@ -1,31 +1,16 @@
-.ll 68
-.ce
-UNIX\(rg
-.FS "\&"
-UNIX is a registered trademark of AT&T
-.FE
-System V
-.sp 2
-.in +1
-NAME
-.br
-.in +5
+.\"	@(#)cpio.1	5.2 (Berkeley) %G%
+.\"
+.TH CPIO 1 ""
+.UC 7
+.SH NAME
 cpio - copy file archives in and out
-.in -5
-.sp
-SYNOPSIS
-.br
-.in +5
+.SH SYNOPSIS
 cpio -o [ acBv ]
-.sp
-cpio -i [ BcdmrtuvfsSb6 ] [ patterns ]
-.sp
-cpio -p [ adlmruv ] directory
-.sp
-.in -5
-DESCRIPTION
 .br
-.in +5
+cpio -i [ BcdmrtuvfsSb6 ] [ patterns ]
+.br
+cpio -p [ adlmruv ] directory
+.SH DESCRIPTION
 Cpio -o (copy out) reads the standard input to obtain a list
 of path names and copies those files onto the standard
 output together with path name and status information.
@@ -53,56 +38,50 @@ copied into the destination directory tree based upon the
 options described below.
 .sp
 The meanings of the available options are:
-.VL 6 0 1
-.LI a
+.IP a
 Reset access times of input files after they have been
 copied.
-.LI B
+.IP B
 Input/output is to be blocked 5,120 bytes to the record  
 (does not apply to the pass options; meaningful only 
 with data directed to or from /dev/rmt/??).
-.LI d
+.IP d
 Directories are to be created as needed.
-.LI c
+.IP c
 Write header information in ASCII character form for
 portability.
-.LI r
+.IP r
 Interactively rename files.  If the user types a null
 line, the files is skipped.
-.LI t
+.IP t
 Print a table of contents of the input.  No files are
 created.
-.LI u
+.IP u
 Copy unconditionally (normally, an older file will not
 replace a newer file with the same name).
-.LI v
+.IP v
 Verbose: causes a list of file names to be printed.  
 When used with the t option, the table of contents
 looks like the output of an ls -l command (see ls(1)).
-.LI l
+.IP l
 Whenever possible, link files rather than copying them.
 Usable only with the -p option.
-.LI m
+.IP m
 Retain previous file modification time.  This option is
 ineffective on directories that are being copied.
-.LI f
+.IP f
 Copy in all files except those in patterns.
-.LI s
+.IP s
 Swap bytes.  Use only with the -i option.
-.LI S
+.IP S
 Swap halfwords.  Use only with the -i option.
-.LI b
+.IP b
 Swap both bytes and halfwords.  Use only with the -i
 option.
-.LI 6 
+.IP 6
 Process an old (i.e., UNIX System Sixth Edition format)
 file.  Only useful with -i (copy in).
-.LE
-.sp
-.in -5
-EXAMPLES
-.br
-.in +5
+.SH EXAMPLES
 The first example below copies the contents of a directory
 into an archive; the second duplicates a directory
 hierarchy:
@@ -116,24 +95,22 @@ find . -depth -print | cpio -pdl newdir
 .br
 .sp
 .in -5
-The trivial case ``find . -depth -print | cpio -oB >/dev/fmt/0m''
+The trivial case
+.nf
+.in +5
+``find . -depth -print | cpio -oB >/dev/fmt/0m''
+.in -5
+.fi
 can be handled more efficiently by:
-.sp
 .in +5
 find . -cpio /dev/rmt/0m
+.in -5
 .sp
-.in -10
-SEE ALSO
-.br
-.in +5
+.SH SEE ALSO
 ar(1), find(1), ls(1).
 .br
 cpio(4) in the UNIX System User Reference Manual.
-.sp
-.in -5
-BUGS
-.br
-.in +5
+.SH BUGS
 Path names are restricted to 128 characters.  If there are
 too many unique linked files, the program runs out of memory
 to keep track of them and, thereafter, linking information
@@ -141,4 +118,3 @@ is lost.  Only the super-user can copy special files.  The
 -B option does not work with certain magnetic tape drives
 (see un32(7) in the UNIX System Administrator Reference 
 Manual).
-.sp
