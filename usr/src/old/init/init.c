@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	5.11 (Berkeley) %G%";
 #endif not lint
 
 #include <signal.h>
@@ -274,7 +274,7 @@ multiple()
 				/* disown the window system */
 				if (p->wpid)
 					kill(p->wpid, SIGHUP);
-				rmut(p);
+				cleanutmp(p);
 				dfork(p);
 			}
 		}
@@ -379,7 +379,7 @@ term(p)
 {
 
 	if (p->pid != 0) {
-		rmut(p);
+		cleanutmp(p);
 		kill(p->pid, SIGKILL);
 	}
 	p->pid = 0;
@@ -421,59 +421,11 @@ dfork(p)
 	p->pid = pid;
 }
 
-/*
- * Remove utmp entry.
- */
-rmut(p)
+cleanutmp(p)
 	register struct tab *p;
 {
-	register f;
-	int found = 0;
-	static unsigned utmpsize;
-	static struct utmp *utmp;
-	register struct utmp *u;
-	int nutmp;
-	struct stat statbf;
-
-	f = open(utmpf, O_RDWR);
-	if (f >= 0) {
-		fstat(f, &statbf);
-		if (utmpsize < statbf.st_size) {
-			utmpsize = statbf.st_size + 10 * sizeof(struct utmp);
-			if (utmp)
-				utmp = (struct utmp *)realloc(utmp, utmpsize);
-			else
-				utmp = (struct utmp *)malloc(utmpsize);
-			if (!utmp)
-				syslog(LOG_ERR, "utmp malloc failed");
-		}
-		if (statbf.st_size && utmp) {
-			nutmp = read(f, utmp, statbf.st_size);
-			nutmp /= sizeof(struct utmp);
-			for (u = utmp ; u < &utmp[nutmp] ; u++) {
-				if (u->ut_name[0] == 0 ||
-				    SCMPN(u->ut_line, p->line))
-					continue;
-				lseek(f, ((long)u)-((long)utmp), L_SET);
-				SCPYN(u->ut_name, "");
-				SCPYN(u->ut_host, "");
-				time(&u->ut_time);
-				write(f, (char *)u, sizeof(*u));
-				found++;
-			}
-		}
-		close(f);
-	}
-	if (found) {
-		f = open(wtmpf, O_WRONLY|O_APPEND);
-		if (f >= 0) {
-			SCPYN(wtmp.ut_line, p->line);
-			SCPYN(wtmp.ut_name, "");
-			SCPYN(wtmp.ut_host, "");
-			time(&wtmp.ut_time);
-			write(f, (char *)&wtmp, sizeof(wtmp));
-			close(f);
-		}
+	if (logout(p->line)) {
+		logwtmp(p->line);
 		/*
 		 * After a proper login force reset
 		 * of error detection code in dfork.
@@ -516,7 +468,7 @@ idle()
 			if (p->wpid == pid)
 				p->wpid = -1;
 			if (p->pid == pid) {
-				rmut(p);
+				cleanutmp(p);
 				p->pid = -1;
 			}
 		}
