@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.t	6.16 (Berkeley) %G%
+.\"	@(#)2.t	6.17 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -645,6 +645,11 @@ requires quite a bit more disk space than SunOS does.
 It is currently difficult (though not completely impossible) to
 run \*(4B diskless.  These instructions assume you will have a local
 boot, swap, and root filesystem.
+.IP 6)
+Although serial consoles are supposed to be supported,
+last-minute testing showed otherwise.
+You will therefore need a keyboard, frame buffer, and video display,
+at least to get started.
 .NH 3
 The Procedure
 .PP
