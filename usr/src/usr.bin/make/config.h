@@ -19,51 +19,13 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)config.h	5.2 (Berkeley) %G%
+ *	@(#)config.h	5.3 (Berkeley) %G%
  */
 
-/*-
- * config.h --
- *	Configuration constants for the local site.
- */
-
-/*
- * DEFSYSPATH
- *	Is the absolute path of the location of system makefiles.
- * SYSPATHDOC
- *	Documentation string to tell what the directory is.
- */
-#define DEFSYSPATH	"/usr/public/lib/pmake"
-#define SYSPATHDOC	"\tDirectory for system makefiles: /usr/public/lib/pmake"
-
-/*
- * DEFSHELL
- *	The index of the default shell description in job.c. It indexes the
- *	'shells' table:
- *	    0	  	C Shell
- *	    1	  	Bourne Shell
- *	    2	  	Unknown
- * SHELLDOC
- *	Documentation string to tell what shell is used by default.
- */
-#define DEFSHELL  	1
-#define SHELLDOC  	"\tDefault shell: Bourne"
-
-/*
- * DEFSHELLDIR
- *	The directory in which the C Shell and Bourne Shell are to be found.
- */
-#define DEFSHELLDIR	"/bin"
-
-/*
- * DEFSYSMK
- *	The absolute path of the default system makefile. It should probably
- *	be in DEFSYSPATH.
- * SYSMKDOC
- *	Documentation string to tell where the system makefile is.
- */
-#define DEFSYSMK  	"/usr/public/lib/pmake/system.mk"
-#define SYSMKDOC  	"\tSystem makefile: /usr/public/lib/pmake/system.mk"
+#define	DEFSHELL	1			/* Bourne shell */
+#define	DEFSHELLDIR	"/bin"			/* Bourne shell directory */
+#define	DEFSYSMK  	"/usr/share/mk/sys.mk"	/* system makefile */
+#define	DEFSYSPATH	"/usr/share/mk"		/* system makefile directory */
 
 /*
  * DEFMAXJOBS

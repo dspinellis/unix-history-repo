@@ -27,7 +27,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -168,10 +168,6 @@ static char 	    *help[] = {
 #ifdef CAN_EXPORT
 "-x	    	Allow exportation of commands.",
 #endif
-"System configuration information:",
-SYSPATHDOC,
-SHELLDOC,
-SYSMKDOC,
 };
 
 
