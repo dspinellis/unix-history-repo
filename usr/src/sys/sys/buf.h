@@ -1,4 +1,4 @@
-/*	buf.h	4.10	81/02/27	*/
+/*	buf.h	4.11	81/02/27	*/
 
 /*
  * The header for buffers in the buffer pool and otherwise used
@@ -67,6 +67,8 @@ extern	char *buffers;
 extern	int nbuf;
 extern	struct buf *swbuf;		/* swap I/O headers */
 extern	int nswbuf;
+extern	short *swsize;
+extern	int *swpf;
 extern	struct buf bfreelist[BQUEUES];	/* heads of available lists */
 extern	struct buf bswlist;		/* head of free swap header list */
 extern	struct buf *bclnlist;		/* head of cleaned page list */
