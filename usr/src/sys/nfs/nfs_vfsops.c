@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vfsops.c	7.29 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	7.30 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -260,21 +260,21 @@ nfs_mount(mp, path, data, ndp, p)
 	struct mbuf *nam;
 	struct vnode *vp;
 	char pth[MNAMELEN], hst[MNAMELEN];
-	int len;
+	u_int len;
 	nfsv2fh_t nfh;
 
 	if (mp->mnt_flag & MNT_UPDATE)
 		return (0);
 	if (error = copyin(data, (caddr_t)&args, sizeof (struct nfs_args)))
 		return (error);
-	if (error=copyin((caddr_t)args.fh, (caddr_t)&nfh, sizeof (nfsv2fh_t)))
+	if (error = copyin((caddr_t)args.fh, (caddr_t)&nfh, sizeof (nfsv2fh_t)))
 		return (error);
 	if (error = copyinstr(path, pth, MNAMELEN-1, &len))
 		return (error);
-	bzero(&pth[len], MNAMELEN-len);
+	bzero(&pth[len], MNAMELEN - len);
 	if (error = copyinstr(args.hostname, hst, MNAMELEN-1, &len))
 		return (error);
-	bzero(&hst[len], MNAMELEN-len);
+	bzero(&hst[len], MNAMELEN - len);
 	/* sockargs() call must be after above copyin() calls */
 	if (error = sockargs(&nam, (caddr_t)args.addr,
 		sizeof (struct sockaddr), MT_SONAME))
