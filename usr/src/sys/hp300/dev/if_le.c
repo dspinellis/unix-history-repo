@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_le.c	7.11 (Berkeley) %G%
+ *	@(#)if_le.c	7.12 (Berkeley) %G%
  */
 
 #include "le.h"
@@ -15,7 +15,7 @@
 /*
  * AMD 7990 LANCE
  *
- * This driver will generate and accept tailer encapsulated packets even
+ * This driver will accept tailer encapsulated packets even
  * though it buys us nothing.  The motivation was to avoid incompatibilities
  * with VAXen, SUNs, and others that handle and benefit from them.
  * This reasoning is dubious.
@@ -48,10 +48,6 @@
 #include "netns/ns_if.h"
 #endif
 
-#ifdef ISO
-extern	char all_es_snpa[], all_is_snpa[], all_l1is_snpa[], all_l2is_snpa[];
-#endif
-
 #include "../include/cpu.h"
 #include "../hp300/isr.h"
 #include "../include/mtpr.h"
@@ -61,7 +57,6 @@ extern	char all_es_snpa[], all_is_snpa[], all_l1is_snpa[], all_l2is_snpa[];
 #if NBPFILTER > 0
 #include "../net/bpf.h"
 #include "../net/bpfdesc.h"
-char hprmp_multi[] = { 9, 0, 9, 0, 0, 4};
 #endif
 
 /* offsets for:	   ID,   REGS,    MEM,  NVRAM */
@@ -112,7 +107,6 @@ struct	le_softc {
 	int	sc_txoff;
 	int	sc_busy;
 	short	sc_iflags;
-	caddr_t sc_bpf;
 } le_softc[NLE];
 
 /* access LANCE registers */
@@ -165,13 +159,8 @@ leattach(hd)
 	 * Setup for transmit/receive
 	 */
 	ler2->ler2_mode = LE_MODE;
-#if defined(ISO) || NBPFILTER > 0
-	ler2->ler2_ladrf0 = 0xffffffff;
-	ler2->ler2_ladrf1 = 0xffffffff;
-#else
-	ler2->ler2_ladrf0 = 0;
-	ler2->ler2_ladrf1 = 0;
-#endif
+	ler2->ler2_ladrf[0] = 0;
+	ler2->ler2_ladrf[1] = 0;
 	ler2->ler2_rlen = LE_RLEN;
 	ler2->ler2_rdra = (int)lemem->ler2_rmd;
 	ler2->ler2_tlen = LE_TLEN;
@@ -186,13 +175,93 @@ leattach(hd)
 	ifp->if_ioctl = leioctl;
 	ifp->if_output = ether_output;
 	ifp->if_start = lestart;
+#ifdef MULTICAST
+	ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX | IFF_MULTICAST;
+#else
 	ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX;
+#endif
 #if NBPFILTER > 0
-	bpfattach(&le->sc_bpf, ifp, DLT_EN10MB, sizeof(struct ether_header));
+	bpfattach(&ifp->if_bpf, ifp, DLT_EN10MB, sizeof(struct ether_header));
 #endif
 	if_attach(ifp);
 	return (1);
 }
+
+#ifdef MULTICAST
+/*
+ * Setup the logical address filter
+ */
+void
+lesetladrf(sc)
+	register struct le_softc *sc;
+{
+	register volatile struct lereg2 *ler2 = sc->sc_r2;
+	register struct ifnet *ifp = &sc->sc_if;
+	register struct ether_multi *enm;
+	register u_char *cp;
+	register u_long crc;
+	register u_long c;
+	register int i, len;
+	struct ether_multistep step;
+
+	/*
+	 * Set up multicast address filter by passing all multicast
+	 * addresses through a crc generator, and then using the high
+	 * order 6 bits as a index into the 64 bit logical address
+	 * filter. The high order two bits select the word, while the
+	 * rest of the bits select the bit within the word.
+	 */
+
+	ler2->ler2_ladrf[0] = 0;
+	ler2->ler2_ladrf[1] = 0;
+	ifp->if_flags &= ~IFF_ALLMULTI;
+	ETHER_FIRST_MULTI(step, &sc->sc_ac, enm);
+	while (enm != NULL) {
+		if (bcmp((caddr_t)&enm->enm_addrlo,
+		    (caddr_t)&enm->enm_addrhi, sizeof(enm->enm_addrlo)) == 0) {
+			/*
+			 * We must listen to a range of multicast
+			 * addresses. For now, just accept all
+			 * multicasts, rather than trying to set only
+			 * those filter bits needed to match the range.
+			 * (At this time, the only use of address
+			 * ranges is for IP multicast routing, for
+			 * which the range is big enough to require all
+			 * bits set.)
+			 */
+			ler2->ler2_ladrf[0] = 0xffffffff;
+			ler2->ler2_ladrf[1] = 0xffffffff;
+			ifp->if_flags |= IFF_ALLMULTI;
+			return;
+		}
+
+		cp = (unsigned char *)&enm->enm_addrlo;
+		c = *cp;
+		crc = 0xffffffff;
+		len = 6;
+		while (len-- > 0) {
+			c = *cp;
+			for (i = 0; i < 8; i++) {
+				if ((c & 0x01) ^ (crc & 0x01)) {
+					crc >>= 1;
+					crc = crc ^ 0xedb88320;
+				}
+				else
+					crc >>= 1;
+				c >>= 1;
+			}
+			cp++;
+		}
+		/* Just want the 6 most significant bits. */
+		crc = crc >> 26;
+
+		/* Turn on the corresponding bit in the filter. */
+		ler2->ler2_ladrf[crc >> 5] |= 1 << (crc & 0x1f);
+
+		ETHER_NEXT_MULTI(step, enm);
+	}
+}
+#endif
 
 ledrinit(ler2, le)
 	register struct lereg2 *ler2;
@@ -219,6 +288,13 @@ ledrinit(ler2, le)
 		ler2->ler2_tmd[i].tmd2 = 0;
 		ler2->ler2_tmd[i].tmd3 = 0;
 	}
+	/* Setup the logical address filter */
+#ifdef MULTICAST
+	lesetladrf(le);
+#else
+	ler2->ler2_ladrf[0] = 0;
+	ler2->ler2_ladrf[1] = 0;
+#endif
 }
 
 lereset(unit)
@@ -323,8 +399,8 @@ lestart(ifp)
 		 * If bpf is listening on this interface, let it 
 		 * see the packet before we commit it to the wire.
 		 */
-		if (le->sc_bpf)
-			bpf_tap(le->sc_bpf, le->sc_r2->ler2_tbuf[le->sc_tmd],
+		if (ifp->if_bpf)
+			bpf_tap(ifp->if_bpf, le->sc_r2->ler2_tbuf[le->sc_tmd],
 				len);
 #endif
 
@@ -518,7 +594,7 @@ leread(unit, buf, len)
 	register struct le_softc *le = &le_softc[unit];
 	register struct ether_header *et;
     	struct mbuf *m;
-	int off, resid;
+	int off, resid, flags;
 
 	le->sc_if.if_ipackets++;
 	et = (struct ether_header *)buf;
@@ -549,32 +625,36 @@ leread(unit, buf, len)
 		le->sc_if.if_ierrors++;
 		return;
 	}
+	flags = 0;
+	if (bcmp((caddr_t)etherbroadcastaddr,
+	    (caddr_t)et->ether_dhost, sizeof(etherbroadcastaddr)) == 0)
+		flags |= M_BCAST;
+	if (et->ether_dhost[0] & 1)
+		flags |= M_MCAST;
+
 #if NBPFILTER > 0
 	/*
 	 * Check if there's a bpf filter listening on this interface.
-	 * If so, hand off the raw packet to bpf, which must deal with
-	 * trailers in its own way.
+	 * If so, hand off the raw packet to enet.
 	 */
-	if (le->sc_bpf)
-		bpf_tap(le->sc_bpf, buf, len + sizeof(struct ether_header));
+	if (le->sc_if.if_bpf) {
+		bpf_tap(le->sc_if.if_bpf, buf, len + sizeof(struct ether_header));
+
+		/*
+		 * Keep the packet if it's a broadcast or has our
+		 * physical ethernet address (or if we support
+		 * multicast and it's one).
+		 */
+		if (
+#ifdef MULTICAST
+		    (flags & (M_BCAST | M_MCAST)) == 0 &&
+#else
+		    (flags & M_BCAST) == 0 &&
 #endif
-#if defined(ISO) || NBPFILTER > 0
-	/*
-	 * Note that the interface cannot be in promiscuous mode if
-	 * there are no bpf listeners.  If we are in promiscuous
-	 * mode, we have to check if this packet is really ours.
-	 * However, there may be appropriate multicate addresses involved
-	 */
-#define NOT_TO(p) (bcmp(et->ether_dhost, p, sizeof(et->ether_dhost)) != 0)
-	if (et->ether_dhost[0] & 1) {
-		if (NOT_TO(etherbroadcastaddr) && NOT_TO(hprmp_multi)
-#ifdef ISO
-		    && NOT_TO(all_es_snpa) && NOT_TO(all_is_snpa)
-		    && NOT_TO(all_l1is_snpa) && NOT_TO(all_l2is_snpa)
-#endif
-		     ) return;
-	} else if ((le->sc_if.if_flags & IFF_PROMISC) && NOT_TO(le->sc_addr))
-		return;
+		    bcmp(et->ether_dhost, le->sc_addr,
+			sizeof(et->ether_dhost)) != 0)
+			return;
+	}
 #endif
 	/*
 	 * Pull packet off interface.  Off is nonzero if packet
@@ -583,6 +663,7 @@ leread(unit, buf, len)
 	 * the type and length which are at the front of any trailer data.
 	 */
 	m = m_devget((char *)(et + 1), len, off, &le->sc_if, 0);
+	m->m_flags |= flags;
 	if (m == 0)
 		return;
 	ether_input(&le->sc_if, et, m);
@@ -689,6 +770,24 @@ leioctl(ifp, cmd, data)
 		}
 		break;
 
+#ifdef MULTICAST
+	case SIOCADDMULTI:
+	case SIOCDELMULTI:
+		/* Update our multicast list  */
+		error = (cmd == SIOCADDMULTI) ?
+		    ether_addmulti((struct ifreq *)data, &le->sc_ac) :
+		    ether_delmulti((struct ifreq *)data, &le->sc_ac);
+
+		if (error == ENETRESET) {
+			/*
+			 * Multicast list has changed; set the hardware
+			 * filter accordingly.
+			 */
+			lereset(ifp->if_unit);
+			error = 0;
+		}
+		break;
+#endif
 	default:
 		error = EINVAL;
 	}
