@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)streams.c	2.3	%G%";
+static char sccsid[] = "@(#)streams.c	2.4	%G%";
 #endif not lint
 #
 
@@ -10,7 +10,8 @@ static char sccsid[] = "@(#)streams.c	2.3	%G%";
 /*  getword(stream,p,ignore):
         read next sequence of nonspaces on current line into *p.
     null if no more words on current line.
-    %x (x in ignore) terminates line.
+    %x (x in ignore) terminates line and any following non-blank lines that
+       don't begin with '%'
     all words of the form %a are returned as null.
     *p is a null terminated string (char p[maxstr]).
 */
@@ -19,6 +20,7 @@ FILE *stream;
 char *p, *ignore;
 {   char c;
     char *oldp, *stop;
+    long save;
 
     oldp= p;
     stop= p+maxstr-1;
@@ -35,7 +37,12 @@ char *p, *ignore;
     if (oldp[0]=='%')
     {   oldp[0]= NULL;
         if (index(ignore, oldp[1]) != NULL)
-            while (c!='\n') c=getc(stream);
+	{   do{ while (c!='\n') c=getc(stream);
+                save= ftell(stream);
+                c= getc(stream);
+	    }   while (c!= EOF && !isspace(c) && c!='%');
+            pos(save);
+	}
     }
 }
 
@@ -86,10 +93,12 @@ long int x;
     pos(x);
     start= x;
     /*  find start of first non-blank record        */
+        c= getc(stream);
         for(;;)
-        {   c= getc(stream);
-            if      (c=='\n')           start= ftell(stream);
-            else if (!isspace(c))       break;
+        {   if      (c=='\n')          {start= ftell(stream); c= getc(stream);}
+            else if (c=='#')           while (c!='\n') c=getc(stream);
+            else if (!isspace(c))      break;
+            else                       c= getc(stream);
         }
 
     if (feof(stream))   { pos(start);  start= EOF;  }
