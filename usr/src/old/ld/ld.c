@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ld.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)ld.c	5.10 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -403,7 +403,7 @@ char **argv;
 		case 'u':
 		case 'e':
 			if (++c >= argc)
-				error(1, "-u or -c: arg missing");
+				error(1, " -u or -e: arg missing");
 			enter(slookup(*p++));
 			if (ap[i]=='e')
 				entrypt = lastsym;
