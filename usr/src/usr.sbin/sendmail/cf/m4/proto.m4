@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.56 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.57 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -64,6 +64,12 @@ CPFAX
 ')dnl
 # "Smart" relay host (may be null)
 DS`'ifdef(`SMART_HOST', SMART_HOST)
+
+ifdef(`LUSER_RELAY',
+`# place to which unknown users should be forwarded
+Kuser user -m -a<>
+DL`'LUSER_RELAY
+', `dnl')
 
 ifdef(`MAILER_TABLE',
 `# Mailer table (overriding domains)
@@ -526,7 +532,11 @@ R$*			$: $>98 $1
 R$* < @ $=w . >		$: < $R @ $H > $1 < @ $2 . >	if both relay & hub ...
 R<$+ @ $+ > $* < $+ >	$: $>_SET_95_ < $H > $3 < $4 >	... send direct to hub
 R<$* @ $* > $* < $+ >	$: $3 < $4 >
-ifdef(`_LOCAL_NOT_STICKY_',
+ifdef(`_STICKY_LOCAL_DOMAIN_',
+`R$+ < @ $=w . >		$: < $H > $1 < @ $2 . >		first try hub
+R< $+ > $+ < $+ >	$#_LOCAL_ $: $2			yep ....
+R< > $=D . $+ < $+ >	$#_LOCAL_ $: $1 . $2		dotted name?
+R< > $+ < $+ >		$#_LOCAL_ $: @ $1			nope, local address',
 `R$+ < @ $=w . >		$#_LOCAL_ $: $1			dispose directly',
 `R$+ < @ $=w . >		$: $>_SET_95_ < $H > $1 < @ $2 . >	sticky local names
 R$+ < @ $=w . >		$#_LOCAL_ $: @ $1		sticky local names')
@@ -600,6 +610,14 @@ S5
 # if we have a "special dotted user", convert it back to the base name
 R$=D . *		$#_LOCAL_ $: $1
 R$=D . $+		$#_LOCAL_ $: $1 . *
+
+# prepend an empty "forward host" on the front
+R$+			$: <> $1
+
+ifdef(`LUSER_RELAY',
+`# send unrecognized local users to a relay host
+R< > $+			$: < $L > $( user $1 $)		look up user
+R< $* > $+ <>		$: <> $2			found; strip $L')
 
 # see if we have a relay or a hub
 R$+			$: $>_SET_95_ < $R > $1		try relay
