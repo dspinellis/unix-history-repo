@@ -1,4 +1,4 @@
-/*	locore.s	1.17	87/06/06	*/
+/*	locore.s	1.18	87/06/22	*/
 
 #include "../tahoe/mtpr.h"
 #include "../tahoe/trap.h"
@@ -601,7 +601,7 @@ _/**/mname:	.globl	_/**/mname;		\
 	SYSMAP(alignmap	,alignutl	,1		)	/* XXX */
 	SYSMAP(msgbufmap,msgbuf		,MSGBUFPTECNT	)
 	SYSMAP(Mbmap	,mbutl		,NMBCLUSTERS*CLSIZE+CLSIZE )
-	SYSMAP(kmempt	,kmembase	,100*CLSIZE 	)
+	SYSMAP(kmempt	,kmembase	,1024*CLSIZE 	)
 #ifdef	GPROF
 	SYSMAP(profmap	,profbase	,600*CLSIZE	)
 #endif
