@@ -2,19 +2,13 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)0.t	6.3 (Berkeley) %G%
+.\"	@(#)0.t	6.4 (Berkeley) %G%
 .\"
-.EH 'SMM:6-%''4.3BSD Line Printer Spooler Manual'
-.OH '4.3BSD Line Printer Spooler Manual''SMM:6-%'
 .if n .ND
 .TL
 4.3BSD Line Printer Spooler Manual
-.sp
-.de D?
-.ie \\n(.$>1 Revised \\$1 \\$2 \\$3
-.el DRAFT of \n(mo/\n(dy/\n(yr
-..
-.D? 
+.EH 'SMM:6-%''4.3BSD Line Printer Spooler Manual'
+.OH '4.3BSD Line Printer Spooler Manual''SMM:6-%'
 .AU
 Ralph Campbell
 .AI
@@ -31,6 +25,13 @@ This document describes the structure and installation procedure
 for the line printer spooling system
 developed for the 4.3BSD version
 of the UNIX* operating system.
+.de D?
+.ie \\n(.$>1 Revised \\$1 \\$2 \\$3
+.el DRAFT of \n(mo/\n(dy/\n(yr
+..
+.sp 2
+.LP
+.D? 
 .AE
 .de IR
 \fI\\$1\fP\\$2
