@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ld.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)ld.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -1311,6 +1311,73 @@ tracesym()
 	printf(" %s\n", cursym.n_un.n_name);
 }
 
+#if !defined(tahoe)
+/* for machines which allow arbitrarily aligned word and longword accesses */
+#define	getw(cp)	(*(short *)(cp))
+#define	getl(cp)	(*(long *)(cp))
+#define	putw(cp, w)	(*(short *)(cp) = (w))
+#define	putl(cp, l)	(*(long *)(cp) = (l))
+#else
+short
+getw(cp)
+	char *cp;
+{
+	union {
+		short	w;
+		char	c[2];
+	} w;
+
+	w.c[0] = *cp++;
+	w.c[1] = *cp++;
+	return (w.w);
+}
+
+getl(cp)
+	char *cp;
+{
+	union {
+		long	l;
+		char	c[4];
+	} l;
+
+	l.c[0] = *cp++;
+	l.c[1] = *cp++;
+	l.c[2] = *cp++;
+	l.c[3] = *cp++;
+	return (l.l);
+}
+
+putw(cp, v)
+	char *cp;
+	short v;
+{
+	union {
+		short	w;
+		char	c[2];
+	} w;
+
+	w.w = v;
+	*cp++ = w.c[0];
+	*cp++ = w.c[1];
+}
+
+putl(cp, v)
+	char *cp;
+	long v;
+{
+	union {
+		long	l;
+		char	c[4];
+	} l;
+
+	l.l = v;
+	*cp++ = l.c[0];
+	*cp++ = l.c[1];
+	*cp++ = l.c[2];
+	*cp++ = l.c[3];
+}
+#endif
+
 /*
  * This routine relocates the single text or data segment argument.
  * Offsets from external symbols are resolved by adding the value
@@ -1358,11 +1425,11 @@ load2td(creloc, position, b1, b2)
 			break;
 
 		case 1:		/* word */
-			tw = *(short *)cp;
+			tw = getw(cp);
 			break;
 
 		case 2:		/* long */
-			tw = *(long *)cp;
+			tw = getl(cp);
 			break;
 
 		default:
@@ -1440,10 +1507,10 @@ load2td(creloc, position, b1, b2)
 		case 1:		/* word */
 			if (tw < -32768 || tw > 32767)
 				error(0, "word displacement overflow");
-			*(short *)cp = tw;
+			putw(cp, tw);
 			break;
 		case 2:		/* long */
-			*(long *)cp = tw;
+			putl(cp, tw);
 			break;
 		}
 		/*
