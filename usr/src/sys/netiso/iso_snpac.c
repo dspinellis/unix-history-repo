@@ -26,7 +26,7 @@ SOFTWARE.
  */
 /* $Header: iso_snpac.c,v 1.8 88/09/19 13:51:36 hagens Exp $ */
 /* $Source: /usr/argo/sys/netiso/RCS/iso_snpac.c,v $ */
-/*	@(#)iso_snpac.c	7.11 (Berkeley) %G% */
+/*	@(#)iso_snpac.c	7.12 (Berkeley) %G% */
 
 #ifndef lint
 static char *rcsid = "$Header: iso_snpac.c,v 1.8 88/09/19 13:51:36 hagens Exp $";
@@ -134,6 +134,7 @@ struct sockaddr *sa;
 	struct ifnet *ifp = rt->rt_ifp;
 	int addrlen = ifp->if_addrlen;
 	static struct rtentry *recursing = 0;
+#define LLC_SIZE 3 /* XXXXXX do this right later */
 
 	IFDEBUG (D_SNPA)
 		printf("llc_rtrequest(%d, %x, %x)\n", req, rt, sa);
@@ -148,6 +149,13 @@ struct sockaddr *sa;
 			recursing = rt;
 			rt->rt_llinfo = (caddr_t)rtalloc1(&gate->sa, 1);
 			recursing = 0;
+			if (rt->rt_rmx.rmx_mtu == 0) {
+				rt->rt_rmx.rmx_mtu =
+				    ((rt2 = (struct rtentry *)rt->rt_llinfo) &&
+					    (rt2->rt_rmx.rmx_mtu)) ?
+				    rt2->rt_rmx.rmx_mtu :
+				    rt->rt_ifp->if_mtu - LLC_SIZE;
+			}
 			return;
 
 		case RTM_DELETE:
@@ -172,11 +180,11 @@ struct sockaddr *sa;
 						Bcopy(sa, gate, gate->sa.sa_len);
 						gate->sdl.sdl_alen = 0;
 					}
-					return;
+					break;
 				}
 			if (ifa == 0)
 				log(LOG_DEBUG, "llc_rtrequest: can't find LL ifaddr for iface\n");
-			return;
+			break;
 		}
 		/* FALLTHROUGH */
 	case RTM_RESOLVE:
@@ -186,7 +194,7 @@ struct sockaddr *sa;
 		 */
 		if (gate->sdl.sdl_family != AF_LINK) {
 			log(LOG_DEBUG, "llc_rtrequest: got non-link non-gateway route\n");
-			return;
+			break;
 		}
 		if (lc != 0)
 			log(LOG_DEBUG, "llc_rtrequest: losing old rt_llinfo\n");
@@ -194,7 +202,7 @@ struct sockaddr *sa;
 		rt->rt_llinfo = (caddr_t)lc;
 		if (lc == 0) {
 			log(LOG_DEBUG, "llc_rtrequest: malloc failed\n");
-			return;
+			break;
 		}
 		Bzero(lc, sizeof(*lc));
 		lc->lc_rt = rt;
@@ -215,6 +223,9 @@ struct sockaddr *sa;
 		rt->rt_llinfo = 0;
 		rt->rt_flags &= ~RTF_LLINFO;
 		break;
+	}
+	if (rt->rt_rmx.rmx_mtu == 0) {
+			rt->rt_rmx.rmx_mtu = rt->rt_ifp->if_mtu - LLC_SIZE;
 	}
 }
 /*
