@@ -1,6 +1,6 @@
 # include	"../hdr/defines.h"
 
-static char Sccsid[] = "@(#)pf_ab.c	1.4	%G%";
+static char Sccsid[] = "@(#)pf_ab.c	1.5	%G%";
 
 pf_ab(s,pp,all)
 char *s;
@@ -10,9 +10,9 @@ int all;
 	register char *p;
 	register int i;
 	extern char *Datep;
-	char *xp;
+	char *xp, *buf;
 
-	xp = p = alloca(size(s));
+	xp = p = buf = alloc(size(s));
 	copy(s,p);
 	for (; *p; p++)
 		if (*p == '\n') {
@@ -37,8 +37,10 @@ int all;
 	p = Datep;
 	pp->pf_ilist = 0;
 	pp->pf_elist = 0;
-	if (!all || !*p)
+	if (!all || !*p) {
+		free(buf);
 		return;
+	}
 	p += 2;
 	xp = alloc(size(p));
 	copy(p,xp);
@@ -54,4 +56,5 @@ int all;
 	}
 	if (*p == 'x')
 		pp->pf_elist = ++p;
+	free(buf);
 }

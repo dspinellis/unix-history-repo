@@ -109,8 +109,9 @@ struct ixg *ixgp;
 	int *v, *ip;
 	int type, cnt;
 	struct ixg *cur, *prev;
+	char buf[BUFSIZ];
 
-	v = ip = alloca(BUFSIZ);
+	v = ip = (int *)buf;
 	++p;
 	type = *p++;
 	NONBLANK(p);

@@ -25,7 +25,7 @@ char *file, *func;
 		sprintf(str = Error,"`%s' nonexistent (ut4)",file);
 		break;
 	case EACCES:
-		str = alloca(size(file));
+		str = malloc(size(file));
 		copy(file,str);
 		file = str;
 		sprintf(str = Error,"directory `%s' unwritable (ut2)",
