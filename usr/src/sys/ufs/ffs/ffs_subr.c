@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_subr.c	7.25 (Berkeley) %G%
+ *	@(#)ffs_subr.c	7.26 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -24,8 +24,13 @@
  * remaining space in the directory.
  */
 int
-ffs_blkatoff (ap)
-	struct vop_blkatoff_args *ap;
+ffs_blkatoff(ap)
+	struct vop_blkatoff_args /* {
+		struct vnode *a_vp;
+		off_t a_offset;
+		char **a_res;
+		struct buf **a_bpp;
+	} */ *ap;
 {
 	struct inode *ip;
 	register struct fs *fs;
@@ -91,7 +96,6 @@ ffs_checkoverlap(bp, ip)
 	struct buf *bp;
 	struct inode *ip;
 {
-	USES_VOP_BMAP;
 	register struct buf *ebp, *ep;
 	register daddr_t start, last;
 	struct vnode *vp;
