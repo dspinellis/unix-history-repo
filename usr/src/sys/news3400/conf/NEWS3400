@@ -1,4 +1,4 @@
-#	@(#)NEWS3400	7.4 (Berkeley) %G%
+#	@(#)NEWS3400	7.5 (Berkeley) %G%
 #
 # NWS-3400
 #
@@ -26,6 +26,7 @@ options		MROUTING
 options		KTRACE
 options		"TCP_COMPAT_42"
 options		"COMPAT_43"
+options		SWAPPAGER,VNODEPAGER,DEVPAGER
 
 #options	ISO
 #options	TPIP
@@ -67,13 +68,10 @@ device		rs1	at hb0		flags 0xf	priority 64
 device		rs2	at hb0		flags 0xf	priority 80
 
 pseudo-device	sl		2
-pseudo-device	pty		64
 pseudo-device	bpfilter	16
+pseudo-device	pty
 pseudo-device	loop
 pseudo-device	ether
 
-pseudo-device	swappager
-pseudo-device	vnodepager
-pseudo-device	devpager
 pseudo-device	bm
 pseudo-device	"nwb253"
