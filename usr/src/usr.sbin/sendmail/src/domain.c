@@ -1,25 +1,30 @@
 /*
-**  Sendmail
-**  Copyright (c) 1986  Eric P. Allman
-**  Berkeley, California
-**
-**  Copyright (c) 1986 Regents of the University of California.
-**  All rights reserved.  The Berkeley software License Agreement
-**  specifies the terms and conditions for redistribution.
-*/
+ * Copyright (c) 1988 Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
+ *
+ *  Sendmail
+ *  Copyright (c) 1986  Eric P. Allman
+ *  Berkeley, California
+ */
 
 #include "sendmail.h"
 
-#ifndef MXDOMAIN
 #ifndef lint
-static char	SccsId[] = "@(#)domain.c	5.9 (Berkeley) %G% (no MXDOMAIN)";
-#endif not lint
-#else MXDOMAIN
+#ifdef MXDOMAIN
+static char sccsid[] = "@(#)domain.c	5.10 (Berkeley) %G% (with MXDOMAIN)";
+#else
+static char sccsid[] = "@(#)domain.c	5.10 (Berkeley) %G% (without MXDOMAIN)";
+#endif
+#endif /* not lint */
 
-#ifndef lint
-static char	SccsId[] = "@(#)domain.c	5.9 (Berkeley) %G%";
-#endif not lint
-
+#ifdef MXDOMAIN
 # include <sys/param.h>
 # include <arpa/nameser.h>
 # include <resolv.h>
