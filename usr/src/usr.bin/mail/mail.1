@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)mail.1	6.6 (Berkeley) %G%
+.\"	@(#)mail.1	6.7 (Berkeley) %G%
 .\"
 .TH MAIL 1 ""
 .UC 4
@@ -488,6 +488,17 @@ option.  Arguments are of the form
 ``option=value''
 (no space before or after =) or
 ``option.''
+.TP
+.B saveignore
+\fBSaveignore\fP is to \fBsave\fP what \fBignore\fP is to \fBprint\fP
+and \fBtype\fP.  Header fields thus marked are filtered out when
+saving a message by \fBsave\fP or when automatically saving to mbox.
+.TP
+.B saveretain
+\fBSaveretain\fP is to \fBsave\fP what \fBretain\fP is to \fBprint\fP
+and \fBtype\fP.  Header fields thus marked are the only ones saved
+with a message when saving by \fBsave\fP or when automatically saving to mbox.
+\fBSaveretain\fP overrides \fBsaveignore\fP.
 .TP
 .B shell
 (\fBsh\fR) Invokes an interactive version of the shell.
