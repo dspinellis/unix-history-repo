@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	6.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	6.12 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -199,11 +199,21 @@ savemail(e)
 
 			if (state == ESM_MAIL)
 			{
-				if (e->e_errorqueue == NULL &&
-				    strcmp(e->e_from.q_paddr, "<>") != 0)
-					(void) sendtolist(e->e_from.q_paddr,
+				if (e->e_errorqueue == NULL)
+				{
+					char *rpath;
+
+					if (strcmp(e->e_returnpath, "<>") != 0)
+						rpath = e->e_returnpath;
+					else if (strcmp(e->e_from.q_paddr, "<>") != 0)
+						rpath = e->e_from.q_paddr;
+					else
+						rpath = NULL;
+					if (rpath != NULL)
+						(void) sendtolist(rpath,
 							  (ADDRESS *) NULL,
 							  &e->e_errorqueue, e);
+				}
 
 				/* deliver a cc: to the postmaster if desired */
 				if (PostMasterCopy != NULL)
