@@ -1,4 +1,4 @@
-#	Makefile	4.26	83/02/16
+#	Makefile	4.27	83/02/18
 
 DESTDIR=/
 CFLAGS=	-O -DSTANDALONE ${COPTS} 
@@ -6,11 +6,13 @@ COPTS=	-DVAX780 -DVAX750 -DVAX730
 730OPTS=-O -DVAX730
 RELOC=	70000
 SRCS=	sys.c conf.c prf.c machdep.c \
-	autoconf.c hp.c ht.c idc.c mba.c mt.c rk.c rl.c tm.c ts.c \
-	up.c uba.c uda.c ut.c \
+	autoconf.c hp.c hpmaptype.c ht.c idc.c mba.c mt.c rk.c \
+	rl.c tm.c ts.c \
+	up.c upmaptype.c uba.c uda.c ut.c \
 	drtest.c format.c up.new.c
-DRIVERS=autoconf.o hp.o ht.o idc.o mba.o mt.o rk.o rl.o tm.o ts.o \
-	up.o uba.o uda.o ut.o
+DRIVERS=autoconf.o hp.o hpmaptype.o ht.o idc.o mba.o mt.o \
+	rk.o rl.o tm.o ts.o \
+	up.o upmaptype.o uba.o uda.o ut.o
 NEWDRIVERS=hp.new.o up.new.o
 
 ALL=	/usr/lib/libsa.a srt0.o boot tpboot copy tpcopy \
