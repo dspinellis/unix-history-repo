@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)exp.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)exp.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /* EXP(X)
@@ -66,63 +66,48 @@ static char sccsid[] = "@(#)exp.c	5.3 (Berkeley) %G%";
  * shown.
  */
 
-#if defined(vax)||defined(tahoe)	/* VAX D format */
-#ifdef vax
-#define _0x(A,B)	0x/**/A/**/B
-#else	/* vax */
-#define _0x(A,B)	0x/**/B/**/A
-#endif	/* vax */
-/* static double */
-/* ln2hi  =  6.9314718055829871446E-1    , Hex  2^  0   *  .B17217F7D00000 */
-/* ln2lo  =  1.6465949582897081279E-12   , Hex  2^-39   *  .E7BCD5E4F1D9CC */
-/* lnhuge =  9.4961163736712506989E1     , Hex  2^  7   *  .BDEC1DA73E9010 */
-/* lntiny = -9.5654310917272452386E1     , Hex  2^  7   * -.BF4F01D72E33AF */
-/* invln2 =  1.4426950408889634148E0     ; Hex  2^  1   *  .B8AA3B295C17F1 */
-/* p1     =  1.6666666666666602251E-1    , Hex  2^-2    *  .AAAAAAAAAAA9F1 */
-/* p2     = -2.7777777777015591216E-3    , Hex  2^-8    * -.B60B60B5F5EC94 */
-/* p3     =  6.6137563214379341918E-5    , Hex  2^-13   *  .8AB355792EF15F */
-/* p4     = -1.6533902205465250480E-6    , Hex  2^-19   * -.DDEA0E2E935F84 */
-/* p5     =  4.1381367970572387085E-8    , Hex  2^-24   *  .B1BB4B95F52683 */
-static long     ln2hix[] = { _0x(7217,4031), _0x(0000,f7d0)};
-static long     ln2lox[] = { _0x(bcd5,2ce7), _0x(d9cc,e4f1)};
-static long    lnhugex[] = { _0x(ec1d,43bd), _0x(9010,a73e)};
-static long    lntinyx[] = { _0x(4f01,c3bf), _0x(33af,d72e)};
-static long    invln2x[] = { _0x(aa3b,40b8), _0x(17f1,295c)};
-static long        p1x[] = { _0x(aaaa,3f2a), _0x(a9f1,aaaa)};
-static long        p2x[] = { _0x(0b60,bc36), _0x(ec94,b5f5)};
-static long        p3x[] = { _0x(b355,398a), _0x(f15f,792e)};
-static long        p4x[] = { _0x(ea0e,b6dd), _0x(5f84,2e93)};
-static long        p5x[] = { _0x(bb4b,3431), _0x(2683,95f5)};
-#define    ln2hi    (*(double*)ln2hix)
-#define    ln2lo    (*(double*)ln2lox)
-#define   lnhuge    (*(double*)lnhugex)
-#define   lntiny    (*(double*)lntinyx)
-#define   invln2    (*(double*)invln2x)
-#define       p1    (*(double*)p1x)
-#define       p2    (*(double*)p2x)
-#define       p3    (*(double*)p3x)
-#define       p4    (*(double*)p4x)
-#define       p5    (*(double*)p5x)
+#include "mathimpl.h"
 
-#else	/* defined(vax)||defined(tahoe)	*/
-static double
-p1     =  1.6666666666666601904E-1    , /*Hex  2^-3    *  1.555555555553E */
-p2     = -2.7777777777015593384E-3    , /*Hex  2^-9    * -1.6C16C16BEBD93 */
-p3     =  6.6137563214379343612E-5    , /*Hex  2^-14   *  1.1566AAF25DE2C */
-p4     = -1.6533902205465251539E-6    , /*Hex  2^-20   * -1.BBD41C5D26BF1 */
-p5     =  4.1381367970572384604E-8    , /*Hex  2^-25   *  1.6376972BEA4D0 */
-ln2hi  =  6.9314718036912381649E-1    , /*Hex  2^ -1   *  1.62E42FEE00000 */
-ln2lo  =  1.9082149292705877000E-10   , /*Hex  2^-33   *  1.A39EF35793C76 */
-lnhuge =  7.1602103751842355450E2     , /*Hex  2^  9   *  1.6602B15B7ECF2 */
-lntiny = -7.5137154372698068983E2     , /*Hex  2^  9   * -1.77AF8EBEAE354 */
-invln2 =  1.4426950408889633870E0     ; /*Hex  2^  0   *  1.71547652B82FE */
-#endif	/* defined(vax)||defined(tahoe)	*/
+vc(ln2hi,  6.9314718055829871446E-1  ,7217,4031,0000,f7d0,   0, .B17217F7D00000)
+vc(ln2lo,  1.6465949582897081279E-12 ,bcd5,2ce7,d9cc,e4f1, -39, .E7BCD5E4F1D9CC)
+vc(lnhuge, 9.4961163736712506989E1   ,ec1d,43bd,9010,a73e,   7, .BDEC1DA73E9010)
+vc(lntiny,-9.5654310917272452386E1   ,4f01,c3bf,33af,d72e,   7,-.BF4F01D72E33AF)
+vc(invln2, 1.4426950408889634148E0   ,aa3b,40b8,17f1,295c,   1, .B8AA3B295C17F1)
+vc(p1,     1.6666666666666602251E-1  ,aaaa,3f2a,a9f1,aaaa,  -2, .AAAAAAAAAAA9F1)
+vc(p2,    -2.7777777777015591216E-3  ,0b60,bc36,ec94,b5f5,  -8,-.B60B60B5F5EC94)
+vc(p3,     6.6137563214379341918E-5  ,b355,398a,f15f,792e, -13, .8AB355792EF15F)
+vc(p4,    -1.6533902205465250480E-6  ,ea0e,b6dd,5f84,2e93, -19,-.DDEA0E2E935F84)
+vc(p5,     4.1381367970572387085E-8  ,bb4b,3431,2683,95f5, -24, .B1BB4B95F52683)
+
+#ifdef vccast
+#define    ln2hi    vccast(ln2hi)
+#define    ln2lo    vccast(ln2lo)
+#define   lnhuge    vccast(lnhuge)
+#define   lntiny    vccast(lntiny)
+#define   invln2    vccast(invln2)
+#define       p1    vccast(p1)
+#define       p2    vccast(p2)
+#define       p3    vccast(p3)
+#define       p4    vccast(p4)
+#define       p5    vccast(p5)
+#endif
+
+ic(p1,     1.6666666666666601904E-1,  -3,  1.555555555553E)
+ic(p2,    -2.7777777777015593384E-3,  -9, -1.6C16C16BEBD93)
+ic(p3,     6.6137563214379343612E-5, -14,  1.1566AAF25DE2C)
+ic(p4,    -1.6533902205465251539E-6, -20, -1.BBD41C5D26BF1)
+ic(p5,     4.1381367970572384604E-8, -25,  1.6376972BEA4D0)
+ic(ln2hi,  6.9314718036912381649E-1,  -1,  1.62E42FEE00000)
+ic(ln2lo,  1.9082149292705877000E-10,-33,  1.A39EF35793C76)
+ic(lnhuge, 7.1602103751842355450E2,    9,  1.6602B15B7ECF2)
+ic(lntiny,-7.5137154372698068983E2,    9, -1.77AF8EBEAE354)
+ic(invln2, 1.4426950408889633870E0,    0,  1.71547652B82FE)
 
 double exp(x)
 double x;
 {
-	double scalb(), copysign(), z,hi,lo,c;
-	int k,finite();
+	double  z,hi,lo,c;
+	int k;
 
 #if !defined(vax)&&!defined(tahoe)
 	if(x!=x) return(x);	/* x is NaN */

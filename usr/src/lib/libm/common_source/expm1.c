@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)expm1.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)expm1.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /* EXPM1(X)
@@ -75,44 +75,37 @@ static char sccsid[] = "@(#)expm1.c	5.3 (Berkeley) %G%";
  * shown.
  */
 
-#if defined(vax)||defined(tahoe)	/* VAX D format */
-#ifdef vax
-#define _0x(A,B)	0x/**/A/**/B
-#else	/* vax */
-#define _0x(A,B)	0x/**/B/**/A
-#endif	/* vax */
-/* static double */
-/* ln2hi  =  6.9314718055829871446E-1    , Hex  2^  0   *  .B17217F7D00000 */
-/* ln2lo  =  1.6465949582897081279E-12   , Hex  2^-39   *  .E7BCD5E4F1D9CC */
-/* lnhuge =  9.4961163736712506989E1     , Hex  2^  7   *  .BDEC1DA73E9010 */
-/* invln2 =  1.4426950408889634148E0     ; Hex  2^  1   *  .B8AA3B295C17F1 */
-static long     ln2hix[] = { _0x(7217,4031), _0x(0000,f7d0)};
-static long     ln2lox[] = { _0x(bcd5,2ce7), _0x(d9cc,e4f1)};
-static long    lnhugex[] = { _0x(ec1d,43bd), _0x(9010,a73e)};
-static long    invln2x[] = { _0x(aa3b,40b8), _0x(17f1,295c)};
-#define    ln2hi    (*(double*)ln2hix)
-#define    ln2lo    (*(double*)ln2lox)
-#define   lnhuge    (*(double*)lnhugex)
-#define   invln2    (*(double*)invln2x)
-#else	/* defined(vax)||defined(tahoe)	*/
-static double
-ln2hi  =  6.9314718036912381649E-1    , /*Hex  2^ -1   *  1.62E42FEE00000 */
-ln2lo  =  1.9082149292705877000E-10   , /*Hex  2^-33   *  1.A39EF35793C76 */
-lnhuge =  7.1602103751842355450E2     , /*Hex  2^  9   *  1.6602B15B7ECF2 */
-invln2 =  1.4426950408889633870E0     ; /*Hex  2^  0   *  1.71547652B82FE */
-#endif	/* defined(vax)||defined(tahoe)	*/
+#include "mathimpl.h"
+
+vc(ln2hi,  6.9314718055829871446E-1  ,7217,4031,0000,f7d0,   0, .B17217F7D00000)
+vc(ln2lo,  1.6465949582897081279E-12 ,bcd5,2ce7,d9cc,e4f1, -39, .E7BCD5E4F1D9CC)
+vc(lnhuge, 9.4961163736712506989E1   ,ec1d,43bd,9010,a73e,   7, .BDEC1DA73E9010)
+vc(invln2, 1.4426950408889634148E0   ,aa3b,40b8,17f1,295c,   1, .B8AA3B295C17F1)
+
+ic(ln2hi,  6.9314718036912381649E-1,   -1, 1.62E42FEE00000)
+ic(ln2lo,  1.9082149292705877000E-10, -33, 1.A39EF35793C76)
+ic(lnhuge, 7.1602103751842355450E2,     9, 1.6602B15B7ECF2)
+ic(invln2, 1.4426950408889633870E0,     0, 1.71547652B82FE)
+
+#ifdef vccast
+#define	ln2hi	vccast(ln2hi)
+#define	ln2lo	vccast(ln2lo)
+#define	lnhuge	vccast(lnhuge)
+#define	invln2	vccast(invln2)
+#endif
 
 double expm1(x)
 double x;
 {
-	static double one=1.0, half=1.0/2.0; 
-	double scalb(), copysign(), exp__E(), z,hi,lo,c;
-	int k,finite();
+	const static double one=1.0, half=1.0/2.0; 
+	double  z,hi,lo,c;
+	int k;
 #if defined(vax)||defined(tahoe)
 	static prec=56;
 #else	/* defined(vax)||defined(tahoe) */
 	static prec=53;
 #endif	/* defined(vax)||defined(tahoe) */
+
 #if !defined(vax)&&!defined(tahoe)
 	if(x!=x) return(x);	/* x is NaN */
 #endif	/* !defined(vax)&&!defined(tahoe) */

@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cabs.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)cabs.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /* HYPOT(X,Y)
@@ -76,39 +76,31 @@ static char sccsid[] = "@(#)cabs.c	5.3 (Berkeley) %G%";
  * from decimal to binary accurately enough to produce the hexadecimal values
  * shown.
  */
+#include "mathimpl.h"
 
-#if defined(vax)||defined(tahoe)	/* VAX D format */
-#ifdef vax
-#define _0x(A,B)	0x/**/A/**/B
-#else	/* vax */
-#define _0x(A,B)	0x/**/B/**/A
-#endif	/* vax */
-/* static double */
-/* r2p1hi =  2.4142135623730950345E0     , Hex  2^  2   *  .9A827999FCEF32 */
-/* r2p1lo =  1.4349369327986523769E-17   , Hex  2^-55   *  .84597D89B3754B */
-/* sqrt2  =  1.4142135623730950622E0     ; Hex  2^  1   *  .B504F333F9DE65 */
-static long    r2p1hix[] = { _0x(8279,411a), _0x(ef32,99fc)};
-static long    r2p1lox[] = { _0x(597d,2484), _0x(754b,89b3)};
-static long     sqrt2x[] = { _0x(04f3,40b5), _0x(de65,33f9)};
-#define   r2p1hi    (*(double*)r2p1hix)
-#define   r2p1lo    (*(double*)r2p1lox)
-#define    sqrt2    (*(double*)sqrt2x)
-#else	/* defined(vax)||defined(tahoe)	*/
-static double
-r2p1hi =  2.4142135623730949234E0     , /*Hex  2^1     *  1.3504F333F9DE6 */
-r2p1lo =  1.2537167179050217666E-16   , /*Hex  2^-53   *  1.21165F626CDD5 */
-sqrt2  =  1.4142135623730951455E0     ; /*Hex  2^  0   *  1.6A09E667F3BCD */
-#endif	/* defined(vax)||defined(tahoe)	*/
+vc(r2p1hi, 2.4142135623730950345E0   ,8279,411a,ef32,99fc,   2, .9A827999FCEF32)
+vc(r2p1lo, 1.4349369327986523769E-17 ,597d,2484,754b,89b3, -55, .84597D89B3754B)
+vc(sqrt2,  1.4142135623730950622E0   ,04f3,40b5,de65,33f9,   1, .B504F333F9DE65)
+
+ic(r2p1hi, 2.4142135623730949234E0   ,   1, 1.3504F333F9DE6)
+ic(r2p1lo, 1.2537167179050217666E-16 , -53, 1.21165F626CDD5)
+ic(sqrt2,  1.4142135623730951455E0   ,   0, 1.6A09E667F3BCD)
+
+#ifdef vccast
+#define	r2p1hi	vccast(r2p1hi)
+#define	r2p1lo	vccast(r2p1lo)
+#define	sqrt2	vccast(sqrt2)
+#endif
 
 double
 hypot(x,y)
 double x, y;
 {
-	static double zero=0, one=1, 
+	static const double zero=0, one=1, 
 		      small=1.0E-18;	/* fl(1+small)==1 */
-	static ibig=30;	/* fl(1+2**(2*ibig))==1 */
-	double copysign(),scalb(),logb(),sqrt(),t,r;
-	int finite(), exp;
+	static const ibig=30;	/* fl(1+2**(2*ibig))==1 */
+	double t,r;
+	int exp;
 
 	if(finite(x))
 	    if(finite(y))
@@ -186,11 +178,11 @@ struct { double x,y;} *z;
 double hypot(x,y)
 double x, y;
 {
-	static double zero=0, one=1;
+	static const double zero=0, one=1;
 		      small=1.0E-18;	/* fl(1+small)==1 */
-	static ibig=30;	/* fl(1+2**(2*ibig))==1 */
-	double copysign(),scalb(),logb(),sqrt(),temp;
-	int finite(), exp;
+	static const ibig=30;	/* fl(1+2**(2*ibig))==1 */
+	double temp;
+	int exp;
 
 	if(finite(x))
 	    if(finite(y))

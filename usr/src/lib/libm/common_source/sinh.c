@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sinh.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)sinh.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /* SINH(X)
@@ -63,28 +63,22 @@ static char sccsid[] = "@(#)sinh.c	5.3 (Berkeley) %G%";
  * from decimal to binary accurately enough to produce the hexadecimal values
  * shown.
  */
-#if defined(vax)||defined(tahoe)
-#ifdef vax
-#define _0x(A,B)	0x/**/A/**/B
-#else	/* vax */
-#define _0x(A,B)	0x/**/B/**/A
-#endif	/* vax */
-/* static double */
-/* mln2hi =  8.8029691931113054792E1     , Hex  2^  7   *  .B00F33C7E22BDB */
-/* mln2lo = -4.9650192275318476525E-16   , Hex  2^-50   * -.8F1B60279E582A */
-/* lnovfl =  8.8029691931113053016E1     ; Hex  2^  7   *  .B00F33C7E22BDA */
-static long    mln2hix[] = { _0x(0f33,43b0), _0x(2bdb,c7e2)};
-static long    mln2lox[] = { _0x(1b60,a70f), _0x(582a,279e)};
-static long    lnovflx[] = { _0x(0f33,43b0), _0x(2bda,c7e2)};
-#define   mln2hi    (*(double*)mln2hix)
-#define   mln2lo    (*(double*)mln2lox)
-#define   lnovfl    (*(double*)lnovflx)
-#else	/* defined(vax)||defined(tahoe) */
-static double 
-mln2hi =  7.0978271289338397310E2     , /*Hex  2^ 10   *  1.62E42FEFA39EF */
-mln2lo =  2.3747039373786107478E-14   , /*Hex  2^-45   *  1.ABC9E3B39803F */
-lnovfl =  7.0978271289338397310E2     ; /*Hex  2^  9   *  1.62E42FEFA39EF */
-#endif	/* defined(vax)||defined(tahoe) */
+
+#include "mathimpl.h"
+
+vc(mln2hi, 8.8029691931113054792E1   ,0f33,43b0,2bdb,c7e2,   7, .B00F33C7E22BDB)
+vc(mln2lo,-4.9650192275318476525E-16 ,1b60,a70f,582a,279e, -50,-.8F1B60279E582A)
+vc(lnovfl, 8.8029691931113053016E1   ,0f33,43b0,2bda,c7e2,   7, .B00F33C7E22BDA)
+
+ic(mln2hi, 7.0978271289338397310E2,    10, 1.62E42FEFA39EF)
+ic(mln2lo, 2.3747039373786107478E-14, -45, 1.ABC9E3B39803F)
+ic(lnovfl, 7.0978271289338397310E2,     9, 1.62E42FEFA39EF)
+
+#ifdef vccast
+#define	mln2hi	vccast(mln2hi)
+#define	mln2lo	vccast(mln2lo)
+#define	lnovfl	vccast(lnovfl)
+#endif
 
 #if defined(vax)||defined(tahoe)
 static max = 126                      ;
@@ -96,8 +90,8 @@ static max = 1023                     ;
 double sinh(x)
 double x;
 {
-	static double  one=1.0, half=1.0/2.0 ;
-	double expm1(), t, scalb(), copysign(), sign;
+	static const double  one=1.0, half=1.0/2.0 ;
+	double t, sign;
 #if !defined(vax)&&!defined(tahoe)
 	if(x!=x) return(x);	/* x is NaN */
 #endif	/* !defined(vax)&&!defined(tahoe) */

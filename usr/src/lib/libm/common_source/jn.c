@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)jn.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)jn.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -40,7 +40,7 @@ static char sccsid[] = "@(#)jn.c	5.2 (Berkeley) %G%";
 	values of n>1.
 */
 
-#include <math.h>
+#include "mathimpl.h"
 #if defined(vax)||defined(tahoe)
 #include <errno.h>
 #else	/* defined(vax)||defined(tahoe) */
@@ -52,7 +52,6 @@ jn(n,x) int n; double x;{
 	int i;
 	double a, b, temp;
 	double xsq, t;
-	double j0(), j1();
 
 	if(n<0){
 		n = -n;
@@ -94,11 +93,9 @@ yn(n,x) int n; double x;{
 	int i;
 	int sign;
 	double a, b, temp;
-	double y0(), y1();
 
 	if (x <= 0) {
 #if defined(vax)||defined(tahoe)
-		extern double infnan();
 		return(infnan(EDOM));	/* NaN */
 #else	/* defined(vax)||defined(tahoe) */
 		return(zero/zero);	/* IEEE machines: invalid operation */

@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)log.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)log.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /* LOG(X)
@@ -75,36 +75,30 @@ static char sccsid[] = "@(#)log.c	5.3 (Berkeley) %G%";
  * shown.
  */
 
-#if defined(vax)||defined(tahoe)	/* VAX D format */
 #include <errno.h>
-#ifdef vax
-#define _0x(A,B)	0x/**/A/**/B
-#else	/* vax */
-#define _0x(A,B)	0x/**/B/**/A
-#endif	/* vax */
-/* static double */
-/* ln2hi  =  6.9314718055829871446E-1    , Hex  2^  0   *  .B17217F7D00000 */
-/* ln2lo  =  1.6465949582897081279E-12   , Hex  2^-39   *  .E7BCD5E4F1D9CC */
-/* sqrt2  =  1.4142135623730950622E0     ; Hex  2^  1   *  .B504F333F9DE65 */
-static long     ln2hix[] = { _0x(7217,4031), _0x(0000,f7d0)};
-static long     ln2lox[] = { _0x(bcd5,2ce7), _0x(d9cc,e4f1)};
-static long     sqrt2x[] = { _0x(04f3,40b5), _0x(de65,33f9)};
-#define    ln2hi    (*(double*)ln2hix)
-#define    ln2lo    (*(double*)ln2lox)
-#define    sqrt2    (*(double*)sqrt2x)
-#else	/* defined(vax)||defined(tahoe)	*/
-static double
-ln2hi  =  6.9314718036912381649E-1    , /*Hex  2^ -1   *  1.62E42FEE00000 */
-ln2lo  =  1.9082149292705877000E-10   , /*Hex  2^-33   *  1.A39EF35793C76 */
-sqrt2  =  1.4142135623730951455E0     ; /*Hex  2^  0   *  1.6A09E667F3BCD */
-#endif	/* defined(vax)||defined(tahoe)	*/
+#include "mathimpl.h"
+
+vc(ln2hi, 6.9314718055829871446E-1  ,7217,4031,0000,f7d0,   0, .B17217F7D00000)
+vc(ln2lo, 1.6465949582897081279E-12 ,bcd5,2ce7,d9cc,e4f1, -39, .E7BCD5E4F1D9CC)
+vc(sqrt2, 1.4142135623730950622E0   ,04f3,40b5,de65,33f9,   1, .B504F333F9DE65)
+
+ic(ln2hi, 6.9314718036912381649E-1,   -1, 1.62E42FEE00000)
+ic(ln2lo, 1.9082149292705877000E-10, -33, 1.A39EF35793C76)
+ic(sqrt2, 1.4142135623730951455E0,     0, 1.6A09E667F3BCD)
+
+#ifdef vccast
+#define	ln2hi	vccast(ln2hi)
+#define	ln2lo	vccast(ln2lo)
+#define	sqrt2	vccast(sqrt2)
+#endif
+
 
 double log(x)
 double x;
 {
-	static double zero=0.0, negone= -1.0, half=1.0/2.0;
-	double logb(),scalb(),copysign(),log__L(),s,z,t;
-	int k,n,finite();
+	const static double zero=0.0, negone= -1.0, half=1.0/2.0;
+	double s,z,t;
+	int k,n;
 
 #if !defined(vax)&&!defined(tahoe)
 	if(x!=x) return(x);	/* x is NaN */
@@ -130,7 +124,6 @@ double x;
 
 	   else {
 #if defined(vax)||defined(tahoe)
-		extern double infnan();
 		if ( x == zero )
 		    return (infnan(-ERANGE));	/* -INF */
 		else

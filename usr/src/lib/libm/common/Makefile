@@ -14,12 +14,12 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
-CFLAGS=	-O
-LIBC=	/lib/libc.a
+CFLAGS=	-O -I..
 SRCS=	atan2.c sincos.c tan.c
 OBJS=	atan2.o sincos.o tan.o
+MAN=
 
 .c.o:
 	${CC} -p ${CFLAGS} -c $*.c
@@ -35,22 +35,14 @@ all: ../libm.a ../libm_p.a
 	cd ../profiled; ar cru ../libm_p.a ${OBJS}
 	ar cru ../libm.a ${OBJS}
 
-depend: FRC
-	mkdep ${CFLAGS} ${SRCS}
-
-tags: FRC
-	ctags ${SRCS}
-
-clean: FRC
+clean:
 	rm -f ${OBJS} a.out
 
-FRC:
+cleandir:
+	rm -f ${MAN} tags .depend
 
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
+depend: ${SRCS}
+	mkdep ${CFLAGS} ${SRCS}
 
-atan2.o: atan2.c
-sincos.o: sincos.c trig.h
-tan.o: tan.c trig.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
+tags: ${SRCS}
+	ctags ${SRCS}

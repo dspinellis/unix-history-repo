@@ -21,20 +21,22 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)floor.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)floor.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
-#if defined(vax)||defined(tahoe)
-#ifdef vax
-#define _0x(A,B)	0x/**/A/**/B
-#else	/* vax */
-#define _0x(A,B)	0x/**/B/**/A
-#endif	/* vax */
-static long Lx[] = {_0x(0000,5c00),_0x(0000,0000)};	/* 2**55 */
-#define L *(double *) Lx
-#else	/* defined(vax)||defined(tahoe) */
-static double L = 4503599627370496.0E0;		/* 2**52 */
-#endif	/* defined(vax)||defined(tahoe) */
+#include "mathimpl.h"
+
+vc(L, 4503599627370496.0E0 ,0000,5c00,0000,0000, 55, 1.0) /* 2**55 */
+
+ic(L, 4503599627370496.0E0, 52, 1.0)			  /* 2**52 */
+
+#ifdef vccast
+#define	L	vccast(L)
+#endif
+
+
+double ceil();
+double floor();
 
 /*
  * floor(x) := the largest integer no larger than x;
@@ -47,7 +49,7 @@ double
 floor(x)
 double x;
 {
-	double y,ceil();
+	double y;
 
 	if (
 #if !defined(vax)&&!defined(tahoe)
@@ -68,7 +70,7 @@ double
 ceil(x)
 double x;
 {
-	double y,floor();
+	double y;
 
 	if (
 #if !defined(vax)&&!defined(tahoe)
@@ -111,7 +113,9 @@ double
 rint(x)
 double x;
 {
-	double s,t,one = 1.0,copysign();
+	double s,t;
+	const double one = 1.0;
+
 #if !defined(vax)&&!defined(tahoe)
 	if (x != x)				/* NaN */
 		return (x);

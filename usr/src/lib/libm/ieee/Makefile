@@ -14,12 +14,12 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
-CFLAGS=	-O
-LIBC=	/lib/libc.a
-SRCS=	cbrt.c support.c
-OBJS=	cbrt.o support.o
+CFLAGS=	-O -I..
+SRCS=	cabs.c cbrt.c support.c
+OBJS=	cabs.o cbrt.o support.o
+MAN=
 
 .c.o:
 	${CC} -p ${CFLAGS} -c $*.c
@@ -31,25 +31,18 @@ OBJS=	cbrt.o support.o
 
 all: ../libm.a ../libm_p.a
 
-../libm.a ../libm_p.a: ${OBJS} FRC
+../libm.a ../libm_p.a: ${OBJS}
 	cd ../profiled; ar cru ../libm_p.a ${OBJS}
 	ar cru ../libm.a ${OBJS}
-
-depend: FRC
-	mkdep ${CFLAGS} ${SRCS}
-
-tags: FRC
-	ctags ${SRCS}
 
 clean:
 	rm -f ${OBJS} a.out
 
-FRC:
+cleandir: clean
+	rm -f ${MAN} tags .depend
 
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
+depend: ${SRCS}
+	mkdep ${CFLAGS} ${SRCS}
 
-cbrt.o: cbrt.c
-support.o: support.c /usr/include/errno.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
+tags: ${SRCS}
+	ctags ${SRCS}
