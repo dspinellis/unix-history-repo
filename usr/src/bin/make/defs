@@ -1,0 +1,134 @@
+/* defs 4.4 82/05/07 */
+#include <stdio.h>
+#include <ctype.h>
+#include <sys/param.h>
+#include <dir.h>
+
+#define SHELLCOM "/bin/sh"
+
+typedef long int TIMETYPE;
+
+#ifdef unix
+/*  to install metering, add a statement like */
+#define METERFILE "/usr/sif/make/Meter"
+/* to turn metering on, set external variable meteron to 1 */
+#endif
+
+/* define FSTATIC to be static on systems with C compilers
+   supporting file-static; otherwise define it to be null
+*/
+#define FSTATIC static
+
+#define NO 0
+#define YES 1
+
+#define unequal strcmp
+#define HASHSIZE 1021
+#define NLEFTS 512
+#define NCHARS 500
+#define NINTS  250
+#define INMAX 2500
+#define OUTMAX 3500
+#define QBUFMAX 2500
+#define MAXDIR 10
+
+#define ALLDEPS  1
+#define SOMEDEPS 2
+
+#define META 01
+#define TERMINAL 02
+extern char funny[128];
+
+
+#define ALLOC(x) (struct x *) ckalloc(sizeof(struct x))
+
+extern int sigivalue;
+extern int sigqvalue;
+extern int waitpid;
+extern int dbgflag;
+extern int prtrflag;
+extern int silflag;
+extern int noexflag;
+extern int keepgoing;
+extern int noruleflag;
+extern int touchflag;
+extern int questflag;
+extern int ndocoms;
+extern int ignerr;
+extern int okdel;
+extern int inarglist;
+extern char *prompt;
+extern int nopdir;
+extern char junkname[ ];
+
+
+
+struct nameblock
+	{
+	struct nameblock *nxtnameblock;
+	char *namep;
+	struct lineblock *linep;
+	int done:3;
+	int septype:3;
+	TIMETYPE modtime;
+	};
+
+extern struct nameblock *mainname ;
+extern struct nameblock *firstname;
+
+struct lineblock
+	{
+	struct lineblock *nxtlineblock;
+	struct depblock *depp;
+	struct shblock *shp;
+	};
+extern struct lineblock *sufflist;
+
+struct depblock
+	{
+	struct depblock *nxtdepblock;
+	struct nameblock *depname;
+	};
+
+struct shblock
+	{
+	struct shblock *nxtshblock;
+	char *shbp;
+	};
+
+struct varblock
+	{
+	struct varblock *nxtvarblock;
+	char *varname;
+	char *varval;
+	int noreset:1;
+	int used:1;
+	};
+extern struct varblock *firstvar;
+
+struct pattern
+	{
+	struct pattern *nxtpattern;
+	char *patval;
+	};
+extern struct pattern *firstpat;
+
+struct dirhdr
+	{
+	struct dirhdr *nxtopendir;
+	DIR *dirfc;
+	char *dirn;
+	};
+extern struct dirhdr *firstod;
+
+
+struct chain
+	{
+	struct chain *nextp;
+	char *datap;
+	};
+
+char *copys(), *concat(), *subst();
+int *ckalloc();
+struct nameblock *srchname(), *makename();
+TIMETYPE exists();
