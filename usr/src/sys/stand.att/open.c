@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)open.c	7.6 (Berkeley) %G%
+ *	@(#)open.c	8.1 (Berkeley) %G%
  */
 
 #include <sys/param.h>

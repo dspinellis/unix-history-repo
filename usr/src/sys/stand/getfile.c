@@ -1,10 +1,10 @@
 /*-
- * Copyright (c) 1993 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)getfile.c	7.1 (Berkeley) %G%
+ *	@(#)getfile.c	8.1 (Berkeley) %G%
  */
 
 getfile(prompt, mode)
