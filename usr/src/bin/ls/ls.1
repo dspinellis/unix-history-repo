@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)ls.1	8.1 (Berkeley) %G%
+.\"     @(#)ls.1	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt LS 1
@@ -279,6 +279,11 @@ many pathname text columns to display
 based on the width provided.
 (See
 .Fl C . )
+.It Ev TZ
+The timezone to use when displaying dates.
+See
+.Xr environ 7
+for more information.
 .El
 .Sh COMPATIBILITY
 The group field is now automatically included in the long listing for
