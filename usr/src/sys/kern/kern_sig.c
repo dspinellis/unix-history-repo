@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sig.c	7.46 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.47 (Berkeley) %G%
  */
 
 #define	SIGPROP		/* include signal properties table */
@@ -416,8 +416,9 @@ sigaltstack(p, uap, retval)
 	if (uap->oss && (error = copyout((caddr_t)&psp->ps_sigstk,
 	    (caddr_t)uap->oss, sizeof (struct sigaltstack))))
 		return (error);
-	if (uap->nss && (error = copyin((caddr_t)uap->nss, (caddr_t)&ss,
-	    sizeof (ss))))
+	if (uap->nss == 0)
+		return (0);
+	if (error = copyin((caddr_t)uap->nss, (caddr_t)&ss, sizeof (ss)))
 		return (error);
 	if (ss.ss_flags & SA_DISABLE) {
 		if (psp->ps_sigstk.ss_flags & SA_ONSTACK)
