@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_seq.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_seq.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -66,6 +66,7 @@ __bt_seq(dbp, key, data, flags)
 	t = dbp->internal;
 	switch(flags) {
 	case R_NEXT:
+	case R_PREV:
 		if (ISSET(t, BTF_SEQINIT)) {
 			status = bt_seqadv(t, &e, flags);
 			break;
@@ -73,18 +74,8 @@ __bt_seq(dbp, key, data, flags)
 		/* FALLTHROUGH */
 	case R_CURSOR:
 	case R_FIRST:
-		status = bt_seqset(t, &e, key, flags);
-		SET(t, BTF_SEQINIT);
-		break;
-	case R_PREV:
-		if (ISSET(t, BTF_SEQINIT)) {
-			status = bt_seqadv(t, &e, flags);
-			break;
-		}
-		/* FALLTHROUGH */
 	case R_LAST:
 		status = bt_seqset(t, &e, key, flags);
-		SET(t, BTF_SEQINIT);
 		break;
 	default:
 		errno = EINVAL;
@@ -95,11 +86,10 @@ __bt_seq(dbp, key, data, flags)
 		status = __bt_ret(t, &e, key, data);
 
 		/* Update the actual cursor. */
-		if (status == RET_SUCCESS) {
-			t->bt_bcursor.pgno = e.page->pgno;
-			t->bt_bcursor.index = e.index;
-		}
+		t->bt_bcursor.pgno = e.page->pgno;
+		t->bt_bcursor.index = e.index;
 		mpool_put(t->bt_mp, e.page, 0);
+		SET(t, BTF_SEQINIT);
 	}
 	return (status);
 }
@@ -140,13 +130,16 @@ bt_seqset(t, ep, key, flags)
 		return (RET_ERROR);
 
 	/*
-	 * If R_CURSOR set, find the first instance of the key in the tree and
-	 * point the cursor at it.  Otherwise, find the first or the last record
-	 * in the tree and point the cursor at it.  The cursor may not be moved
-	 * until a new key has been found.
+	 * Find the first, last or specific key in the tree and point the cursor
+	 * at it.  The cursor may not be moved until a new key has been found.
 	 */
 	switch(flags) {
 	case R_CURSOR:				/* Keyed scan. */
+		/*
+		 * Find the first instance of the key or the smallest key which
+		 * is greater than or equal to the specified key.  If run out
+		 * of keys, return RET_SPECIAL.
+		 */
 		if (key->data == NULL || key->size == 0) {
 			errno = EINVAL;
 			return (RET_ERROR);
@@ -154,9 +147,22 @@ bt_seqset(t, ep, key, flags)
 		e = __bt_first(t, key, &exact);	/* Returns pinned page. */
 		if (e == NULL)
 			return (RET_ERROR);
-		if (!exact) {
-			mpool_put(t->bt_mp, e->page, 0);
-			return (RET_SPECIAL);
+		/*
+		 * If at the end of a page, skip any empty pages and find the
+		 * next entry.
+		 */
+		if (e->index == NEXTINDEX(e->page)) {
+			h = e->page;
+			do {
+				pg = h->nextpg;
+				mpool_put(t->bt_mp, h, 0);
+				if (pg == P_INVALID)
+					return (RET_SPECIAL);
+				if ((h = mpool_get(t->bt_mp, pg, 0)) == NULL)
+					return (RET_ERROR);
+			} while (NEXTINDEX(h) == 0);
+			e->index = 0;
+			e->page = h;
 		}
 		*ep = *e;
 		break;
