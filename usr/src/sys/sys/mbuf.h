@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mbuf.h	7.6 (Berkeley) %G%
+ *	@(#)mbuf.h	7.7 (Berkeley) %G%
  */
 
 /*
@@ -67,7 +67,6 @@ struct mbuf {
 /* flags to m_pgalloc */
 #define	MPG_MBUFS	0		/* put new mbufs on free list */
 #define	MPG_CLUSTERS	1		/* put new clusters on free list */
-#define	MPG_SPACE	2		/* don't free; caller wants space */
 
 /* length to m_copy to copy all */
 #define	M_COPYALL	1000000000
@@ -142,7 +141,7 @@ struct mbuf {
 struct mbstat {
 	u_long	m_mbufs;	/* mbufs obtained from page pool */
 	u_long	m_clusters;	/* clusters obtained from page pool */
-	u_long	m_space;	/* interface pages obtained from page pool */
+	u_long	m_spare;	/* spare field */
 	u_long	m_clfree;	/* free clusters */
 	u_long	m_drops;	/* times failed to find space */
 	u_long	m_wait;		/* times waited for space */

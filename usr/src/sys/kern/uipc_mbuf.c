@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_mbuf.c	7.2 (Berkeley) %G%
+ *	@(#)uipc_mbuf.c	7.3 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -87,10 +87,6 @@ m_clalloc(ncl, how, canwait)
 			(void) m_free(m);
 			m++;
 		}
-		break;
-
-	case MPG_SPACE:
-		mbstat.m_space++;
 		break;
 	}
 	return ((caddr_t)m);
