@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)touch.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)touch.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -44,9 +44,7 @@ main(argc, argv)
 	int aflag, cflag, fflag, mflag, ch, fd, len, rval, timeset;
 	char *p;
 
-	aflag = mflag = 1;
-	cflag = fflag = timeset = 0;
-
+	aflag = cflag = fflag = mflag = timeset = 0;
 	if (gettimeofday(&tv[0], NULL))
 		err(1, "gettimeofday");
 
@@ -54,7 +52,6 @@ main(argc, argv)
 		switch(ch) {
 		case 'a':
 			aflag = 1;
-			mflag = 0;
 			break;
 		case 'c':
 			cflag = 1;
@@ -63,7 +60,6 @@ main(argc, argv)
 			fflag = 1;
 			break;
 		case 'm':
-			aflag = 0;
 			mflag = 1;
 			break;
 		case 'r':
@@ -80,6 +76,10 @@ main(argc, argv)
 		}
 	argc -= optind;
 	argv += optind;
+
+	/* Default is both -a and -m. */
+	if (aflag == 0 && mflag == 0)
+		aflag = mflag = 1;
 
 	/*
 	 * If no -r or -t flag, at least two operands, the first of which
