@@ -1,0 +1,41 @@
+BIT_CLR	pickmove.c	/^#define BIT_CLR(a, b)	((a)[(b)\/BITS_PER_INT] &= ~/
+BIT_SET	pickmove.c	/^#define BIT_SET(a, b)	((a)[(b)\/BITS_PER_INT] |= (/
+BIT_TEST	pickmove.c	/^#define BIT_TEST(a, b)	((a)[(b)\/BITS_PER_INT] & (/
+Mmain	main.c	/^main(argc, argv)$/
+addframes	pickmove.c	/^addframes(level)$/
+appendcombo	pickmove.c	/^appendcombo(cbp, color)$/
+ask	bdisp.c	/^ask(str)$/
+bdinit	bdinit.c	/^bdinit(bp)$/
+bdisp	bdisp.c	/^bdisp()$/
+bdisp_init	bdisp.c	/^bdisp_init()$/
+bdump	bdisp.c	/^bdump(fp)$/
+bdwho	bdisp.c	/^bdwho(update)$/
+better	pickmove.c	/^better(sp, sp1, us)$/
+checkframes	pickmove.c	/^checkframes(cbp, fcbp, osp, s, vertices)$/
+clearcombo	pickmove.c	/^clearcombo(cbp, open)$/
+ctos	stoc.c	/^ctos(mp)$/
+cursfini	bdisp.c	/^cursfini()$/
+cursinit	bdisp.c	/^cursinit()$/
+dislog	bdisp.c	/^dislog(str)$/
+dlog	main.c	/^dlog(str)$/
+getline	bdisp.c	/^getline(buf, size)$/
+init_overlap	bdinit.c	/^init_overlap()$/
+list_eq	pickmove.c	/^list_eq(scbpp, cbpp, n)$/
+log	main.c	/^log(str)$/
+lton	stoc.c	/^lton(c)$/
+makecombo	pickmove.c	/^makecombo(ocbp, osp, off, s)$/
+makecombo2	pickmove.c	/^makecombo2(ocbp, osp, off, s)$/
+makeempty	pickmove.c	/^makeempty(ocbp)$/
+makemove	makemove.c	/^makemove(us, mv)$/
+markcombo	pickmove.c	/^markcombo(ocbp)$/
+panic	main.c	/^panic(str)$/
+pickmove	pickmove.c	/^pickmove(us)$/
+printcombo	pickmove.c	/^printcombo(cbp, str)$/
+quit	main.c	/^quit()$/
+readinput	main.c	/^readinput(fp)$/
+scanframes	pickmove.c	/^scanframes(color)$/
+sortcombo	pickmove.c	/^sortcombo(scbpp, cbpp, fcbp)$/
+stoc	stoc.c	/^stoc(s)$/
+update_overlap	makemove.c	/^update_overlap(osp)$/
+updatecombo	pickmove.c	/^updatecombo(cbp, color)$/
+whatsup	main.c	/^whatsup(signum)$/

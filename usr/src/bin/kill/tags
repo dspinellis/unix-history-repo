@@ -1,0 +1,5 @@
+Mkill	kill.c	/^main(argc, argv)$/
+nosig	kill.c	/^nosig(name)$/
+printsignals	kill.c	/^printsignals(fp)$/
+signame_to_signum	kill.c	/^signame_to_signum(sig)$/
+usage	kill.c	/^usage()$/
