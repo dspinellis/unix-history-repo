@@ -802,7 +802,7 @@ defun(name, func)
  * Delete a function if it exists.
  */
 
-void
+int
 unsetfunc(name)
 	char *name;
 	{
@@ -811,5 +811,7 @@ unsetfunc(name)
 	if ((cmdp = cmdlookup(name, 0)) != NULL && cmdp->cmdtype == CMDFUNCTION) {
 		freefunc(cmdp->param.func);
 		delete_cmd_entry();
+		return (0);
 	}
+	return (1);
 }
