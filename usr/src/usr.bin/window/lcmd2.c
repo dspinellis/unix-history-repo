@@ -40,9 +40,9 @@ struct value *v, *a;
 	wwprintf(w, "ttflush\twrite\terror\tzero\tchar\n");
 	wwprintf(w, "%d\t%d\t%d\t%d\t%d\n",
 		wwnflush, wwnwr, wwnwre, wwnwrz, wwnwrc);
-	wwprintf(w, "token\tuse\tsaving\ttotal\tbaud\n");
-	wwprintf(w, "%d\t%d\t%d\t%d\t%d/%d\n",
-		wwntokdef, wwntokuse, wwntoksave, wwntokc,
+	wwprintf(w, "token\tuse\tbad\tsaving\ttotal\tbaud\n");
+	wwprintf(w, "%d\t%d\t%d\t%d\t%d\t%d/%d\n",
+		wwntokdef, wwntokuse, wwntokbad, wwntoksave, wwntokc,
 		wwntokc - wwntoksave ?
 			(int) ((float) wwbaud * wwntokc /
 					(wwntokc - wwntoksave)) :
