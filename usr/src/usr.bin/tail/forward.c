@@ -9,13 +9,15 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)forward.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)forward.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/mman.h>
+
+#include <limits.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <unistd.h>
@@ -174,9 +176,14 @@ rlines(fp, off, sbp)
 	if (!(size = sbp->st_size))
 		return;
 
+	if (size > SIZE_T_MAX) {
+		err(0, "%s: %s", fname, strerror(EFBIG));
+		return;
+	}
+
 	if ((start = mmap(NULL, (size_t)size,
-	    PROT_READ, MAP_FILE, fileno(fp), (off_t)0)) == (caddr_t)-1) {
-		err(0, "%s", strerror(errno));
+	    PROT_READ, 0, fileno(fp), (off_t)0)) == (caddr_t)-1) {
+		err(0, "%s: %s", fname, strerror(EFBIG));
 		return;
 	}
 
@@ -194,8 +201,8 @@ rlines(fp, off, sbp)
 		ierr();
 		return;
 	}
-	if (munmap(start, size)) {
-		err(0, "%s", strerror(errno));
+	if (munmap(start, (size_t)size)) {
+		err(0, "%s: %s", fname, strerror(errno));
 		return;
 	}
 }
