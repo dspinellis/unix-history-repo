@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.32 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "restore.h"
@@ -1034,9 +1034,10 @@ accthdr(header)
 	long blks, i;
 
 	if (header->c_type == TS_TAPE) {
-		fprintf(stderr, "Volume header");
+		fprintf(stderr, "Volume header (%s inode format) ",
+		    oldinofmt ? "old" : "new");
  		if (header->c_firstrec)
- 			fprintf(stderr, " begins with record %d",
+ 			fprintf(stderr, "begins with record %d",
  				header->c_firstrec);
  		fprintf(stderr, "\n");
 		previno = 0x7fffffff;
