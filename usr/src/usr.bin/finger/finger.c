@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)finger.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)finger.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -93,7 +93,7 @@ main(argc, argv)
 		if (entries == 0)
 			(void)printf("No one logged on.\n");
 	} else {
-		userlist(argv);
+		userlist(argc, argv);
 		/*
 		 * Assign explicit "large" format if names given and -s not
 		 * explicitly stated.  Force the -l AFTER we get names so any
@@ -114,17 +114,17 @@ main(argc, argv)
 loginlist()
 {
 	register PERSON *pn;
-	register int fd;
+	FILE *fp;
 	struct passwd *pw;
 	struct utmp user;
 	char name[UT_NAMESIZE + 1];
 
-	if ((fd = open(_PATH_UTMP, O_RDONLY, 0)) < 0) {
+	if ((fp = fopen(_PATH_UTMP, "r")) == NULL) {
 		(void)fprintf(stderr, "finger: can't read %s.\n", _PATH_UTMP);
 		exit(2);
 	}
 	name[UT_NAMESIZE] = NULL;
-	while (read(fd, (char *)&user, sizeof(user)) == sizeof(user)) {
+	while (fread((char *)&user, sizeof(user), 1, fp) == 1) {
 		if (!user.ut_name[0])
 			continue;
 		if ((pn = find_person(user.ut_name)) == NULL) {
@@ -135,67 +135,69 @@ loginlist()
 		}
 		enter_where(&user, pn);
 	}
-	(void)close(fd);
+	(void)fclose(fp);
 	for (pn = phead; lflag && pn != NULL; pn = pn->next)
 		enter_lastlog(pn);
 }
 
-#define	ARGIGNORE	(char *)0x01
-
-userlist(argv)
-	char **argv;
+userlist(argc, argv)
+	register argc;
+	register char **argv;
 {
-	register char **ap;
+	register i;
 	register PERSON *pn;
 	PERSON *nethead;
 	struct utmp user;
 	struct passwd *pw;
-	int fd, dolocal, *used, *index();
+	int dolocal, *used;
+	FILE *fp;
+	char *index();
+
+	if (!(used = (int *)calloc((u_int)argc, (u_int)sizeof(int)))) {
+		(void)fprintf(stderr, "finger: out of space.\n");
+		exit(1);
+	}
 
 	/* pull out all network requests */
-	for (ap = argv, dolocal = 0, nethead = NULL; *ap; ap++) {
-		if (!index(*ap, '@')) {
+	for (i = 0, dolocal = 0, nethead = NULL; i < argc; i++) {
+		if (!index(argv[i], '@')) {
 			dolocal = 1;
 			continue;
 		}
 		pn = palloc();
 		pn->next = nethead;
 		nethead = pn;
-		pn->name = *ap;
-		*ap = ARGIGNORE;
+		pn->name = argv[i];
+		used[i] = -1;
 	}
 
 	if (!dolocal)
 		goto net;
-
-	if (!(used = (int *)calloc((u_int)(ap - argv), (u_int)sizeof(int)))) {
-		(void)fprintf(stderr, "finger: out of space.\n");
-		exit(1);
-	}
 
 	/*
 	 * traverse the list of possible login names and check the login name
 	 * and real name against the name specified by the user.
 	 */
 	if (mflag) {
-		for (ap = argv; *ap; ap++)
-			if (*ap != ARGIGNORE && (pw = getpwnam(*ap))) {
+		for (i = 0; i < argc; i++)
+			if (used[i] >= 0 && (pw = getpwnam(argv[i]))) {
 				enter_person(pw);
-				used[ap - argv] = 1;
+				used[i] = 1;
 			}
 	} else while (pw = getpwent())
-		for (ap = argv; *ap; ap++)
-			if (*ap != ARGIGNORE &&
-			    (!strcasecmp(pw->pw_name, *ap) || match(pw, *ap))) {
+		for (i = 0; i < argc; i++)
+			if (used[i] >= 0 &&
+			    (!strcasecmp(pw->pw_name, argv[i]) ||
+			    match(pw, argv[i]))) {
 				enter_person(pw);
-				used[ap - argv] = 1;
+				used[i] = 1;
 			}
 
 	/* list errors */
-	for (ap = argv; *ap; ap++)
-		if (*ap != ARGIGNORE && !used[ap - argv])
+	for (i = 0; i < argc; i++)
+		if (!used[i])
 			(void)fprintf(stderr,
-			    "finger: %s: no such user.\n", *ap);
+			    "finger: %s: no such user.\n", argv[i]);
 
 	/* handle network requests */
 net:	for (pn = nethead; pn; pn = pn->next) {
@@ -211,18 +213,18 @@ net:	for (pn = nethead; pn; pn = pn->next) {
 	 * Scan thru the list of users currently logged in, saving
 	 * appropriate data whenever a match occurs.
 	 */
-	if ((fd = open(_PATH_UTMP, O_RDONLY, 0)) < 0) {
+	if ((fp = fopen(_PATH_UTMP, "r")) == NULL) {
 		(void)fprintf( stderr, "finger: can't read %s.\n", _PATH_UTMP);
 		exit(1);
 	}
-	while (read(fd, (char *)&user, sizeof(user)) == sizeof(user)) {
+	while (fread((char *)&user, sizeof(user), 1, fp) == 1) {
 		if (!user.ut_name[0])
 			continue;
 		if ((pn = find_person(user.ut_name)) == NULL)
 			continue;
 		enter_where(&user, pn);
 	}
-	(void)close(fd);
+	(void)fclose(fp);
 	for (pn = phead; pn != NULL; pn = pn->next)
 		enter_lastlog(pn);
 }
