@@ -3,11 +3,12 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 #
-SCCSID = @(#)Makefile 5.6 %G%
-INSTALL = ${DESTDIR}/usr/ucb
+SCCSID = @(#)Makefile 5.7 %G%
+INSTALL = ${DESTDIR}/usr/bin
 INSTALLIB = ${DESTDIR}/usr/lib
+INSTALLX = ${DESTDIR}/usr/libexec
 SRCDIR=	../src
 PX_HEADER = px_header
 NM = nm -go
@@ -24,7 +25,8 @@ install: all pxref.p
 	install -m 644 temp ${INSTALLIB}/${PX_HEADER}
 	for i in ${PROGS}; do (install -s $$i ${INSTALL}/$$i ); done
 	for i in ${FILES}; do (install -m 644 -c $$i ${INSTALLIB}/$$i ); done
-	install -s pc3 ${INSTALLIB}/pc3
+#	install -s pc3 ${INSTALLIB}/pc3
+	install -s pc3 ${INSTALLX}/pc3
 	cd pc2; make DESTDIR=${DESTDIR} install
 	-pc -w pxref.p
 	install -s a.out ${INSTALL}/pxref
@@ -89,10 +91,10 @@ picture: ${SRCDIR}/OPnames.h ${SRCDIR}/pic.c
 	pic >picture
 	${RM} pic
 
-clean:
+cleandir clean:
 	${RM} pix px_header pxref pmerge pc pc3 \
 	pcexterns.s *.o errs opc opc.c pic pic.c picture
-	cd pc2; make clean
+	cd pc2; make $@
 
 print: picture
 	@pr READ_ME Makefile picture
