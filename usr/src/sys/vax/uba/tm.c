@@ -1,4 +1,4 @@
-/*	tm.c	4.26	81/03/09	*/
+/*	tm.c	4.27	81/03/09	*/
 
 #include "te.h"
 #if NTM > 0
@@ -14,6 +14,7 @@
  *	test using file system on tape
  */
 #include "../h/param.h"
+#include "../h/systm.h"
 #include "../h/buf.h"
 #include "../h/dir.h"
 #include "../h/conf.h"
@@ -194,7 +195,12 @@ tmopen(dev, flag)
 		u.u_error = ENXIO;
 		return;
 	}
+get:
 	tmcommand(dev, TM_SENSE, 1);
+	if (sc->sc_erreg&TMER_SDWN) {
+		sleep((caddr_t)&lbolt, PZERO+1);
+		goto get;
+	}
 	dens = TM_IE | TM_GO | (ui->ui_slave << 8);
 	if ((minor(dev) & T_1600BPI) == 0)
 		dens |= TM_D800;
@@ -202,6 +208,7 @@ tmopen(dev, flag)
 	    (sc->sc_erreg&TMER_BOT) == 0 && (flag&FWRITE) &&
 		dens != sc->sc_dens ||
 	    (flag&(FREAD|FWRITE)) == FWRITE && sc->sc_erreg&TMER_WRL) {
+		printf("er %o dens %o sc->sc_dens %o flag %o\n", sc->sc_erreg, dens, sc->sc_dens, flag);
 		/*
 		 * Not online or density switch in mid-tape or write locked.
 		 */
@@ -262,8 +269,7 @@ tmcommand(dev, com, count)
 		 * This special check is because B_BUSY never
 		 * gets cleared in the non-waiting rewind case.
 		 */
-		if (bp->b_command == TM_REW && bp->b_repcnt == 0 &&
-		    (bp->b_flags&B_DONE))
+		if (bp->b_repcnt == 0 && (bp->b_flags&B_DONE))
 			break;
 		bp->b_flags |= B_WANTED;
 		sleep((caddr_t)bp, PRIBIO);
