@@ -9,15 +9,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)device_pager.c	7.7 (Berkeley) %G%
+ *	@(#)device_pager.c	7.8 (Berkeley) %G%
  */
 
 /*
  * Page to/from special files.
  */
-
-#include "devpager.h"
-#if NDEVPAGER > 0
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -248,4 +245,3 @@ dev_pager_haspage(pager, offset)
 #endif
 	return(TRUE);
 }
-#endif
