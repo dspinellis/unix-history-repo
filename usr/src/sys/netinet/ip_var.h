@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1993 Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ip_var.h	7.10 (Berkeley) %G%
+ *	@(#)ip_var.h	7.11 (Berkeley) %G%
  */
 
 /*
@@ -124,6 +124,7 @@ struct	ipstat {
 struct	ipstat	ipstat;
 struct	ipq	ipq;			/* ip reass. queue */
 u_short	ip_id;				/* ip packet ctr, for ids */
+int	ip_defttl;			/* default IP ttl */
 
 struct	mbuf *ip_srcroute();
 #endif
