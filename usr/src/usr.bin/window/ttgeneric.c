@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ttgeneric.c	3.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)ttgeneric.c	3.34 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -65,15 +65,20 @@ struct tt_str *gen_BC;
 struct tt_str *gen_ND;
 struct tt_str *gen_HO;
 struct tt_str *gen_NL;
+struct tt_str *gen_CR;
 struct tt_str *gen_AS;
 struct tt_str *gen_AE;
 struct tt_str *gen_XS;
 struct tt_str *gen_XE;
+struct tt_str *gen_SF;
+struct tt_str *gen_SR;
+struct tt_str *gen_CS;
 char gen_MI;
 char gen_MS;
 char gen_AM;
 char gen_OS;
 char gen_BS;
+char gen_DA;
 char gen_DB;
 char gen_NS;
 char gen_XN;
@@ -214,9 +219,13 @@ register int row, col;
 		gen_setinsert(0);
 	if (!gen_MS && tt.tt_modes)
 		gen_setmodes(0);
+	if (row < tt.tt_scroll_top || row > tt.tt_scroll_bot)
+		gen_setscroll(tt.tt_nrow - 1, 0);
 	if (tt.tt_row == row) {
-		if (tt.tt_col == col)
-			return;
+		if (col == 0) {
+			ttxputs(gen_CR);
+			goto out;
+		}
 		if (tt.tt_col == col - 1) {
 			if (gen_ND) {
 				ttxputs(gen_ND);
@@ -296,6 +305,26 @@ gen_delchar()
 	tttputs(gen_DC, gen_CO - tt.tt_col);
 }
 
+gen_scroll_down()
+{
+	gen_move(tt.tt_scroll_bot, 0);
+	ttxputs(gen_SF);
+}
+
+gen_scroll_up()
+{
+	gen_move(tt.tt_scroll_top, 0);
+	ttxputs(gen_SR);
+}
+
+gen_setscroll(top, bot)
+{
+	tttgoto(gen_CS, bot, top);
+	tt.tt_scroll_top = top;
+	tt.tt_scroll_bot = bot;
+	tt.tt_row = tt.tt_col = -10;
+}
+
 tt_generic()
 {
 	gen_PC = tttgetstr("pc");
@@ -326,15 +355,20 @@ tt_generic()
 	gen_ND = ttxgetstr("nd");
 	gen_HO = ttxgetstr("ho");
 	gen_NL = ttxgetstr("nl");
+	gen_CR = ttxgetstr("cr");
 	gen_AS = ttxgetstr("as");
 	gen_AE = ttxgetstr("ae");
 	gen_XS = ttxgetstr("XS");
 	gen_XE = ttxgetstr("XE");
+	gen_SF = ttxgetstr("sf");
+	gen_SR = ttxgetstr("sr");
+	gen_CS = ttxgetstr("cs");
 	gen_MI = tgetflag("mi");
 	gen_MS = tgetflag("ms");
 	gen_AM = tgetflag("am");
 	gen_OS = tgetflag("os");
 	gen_BS = tgetflag("bs");
+	gen_DA = tgetflag("da");
 	gen_DB = tgetflag("db");
 	gen_NS = tgetflag("ns");
 	gen_XN = tgetflag("xn");
@@ -342,19 +376,25 @@ tt_generic()
 	gen_LI = tgetnum("li");
 	gen_UG = tgetnum("ug");
 	gen_SG = tgetnum("sg");
+	if (gen_CL == 0 || gen_OS || gen_CM == 0)
+		return -1;
 
 	if (gen_NL == 0) {
 		static struct tt_str nl = { "\n", 1 };
 		gen_NL = &nl;
 	}
+	if (gen_CR == 0) {
+		static struct tt_str cr = { "\r", 1 };
+		gen_CR = &cr;
+	}
 	if (gen_BC == 0 && gen_BS) {
 		static struct tt_str bc = { "\b", 1 };
 		gen_BC = &bc;
 	}
+	if (gen_SF == 0 && !gen_NS)
+		gen_SF = gen_NL;
 	BC = gen_BC ? gen_BC->ts_str : 0;
 	UP = gen_UP ? gen_UP->ts_str : 0;
-	if (gen_CL == 0 || gen_OS || gen_CM == 0)
-		return -1;
 
 	if (gen_DC)
 		tt.tt_delchar = gen_delchar;
@@ -366,6 +406,16 @@ tt_generic()
 		tt.tt_clreol = gen_clreol;
 	if (gen_CD)
 		tt.tt_clreos = gen_clreos;
+	if (gen_SF)
+		tt.tt_scroll_down = gen_scroll_down;
+	/*
+	 * Don't allow scroll_up if da or db but not cs.
+	 * See comment in wwscroll.c.
+	 */
+	if (gen_SR && (gen_CS || !gen_DA && !gen_DB))
+		tt.tt_scroll_up = gen_scroll_up;
+	if (gen_CS)
+		tt.tt_setscroll = gen_setscroll;
 	if (gen_SG > 0)
 		gen_SO = 0;
 	if (gen_UG > 0 || gen_US && gen_SO && ttstrcmp(gen_US, gen_SO) == 0)
@@ -381,7 +431,6 @@ tt_generic()
 	tt.tt_hasinsert = gen_IM != 0;
 	tt.tt_wrap = gen_AM;
 	tt.tt_retain = gen_DB;
-	tt.tt_noscroll = gen_NS;
 	tt.tt_ncol = gen_CO;
 	tt.tt_nrow = gen_LI;
 	tt.tt_init = gen_init;

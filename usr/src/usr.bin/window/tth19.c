@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tth19.c	3.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)tth19.c	3.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -141,11 +141,16 @@ register char row, col;
 	if (tt.tt_row == row) {
 		if (tt.tt_col == col)
 			return;
+		if (col == 0) {
+			pc(\r);
+			goto out;
+		}
 		if (tt.tt_col == col - 1) {
 			esc();
 			pc(C);
 			goto out;
-		} else if (tt.tt_col == col + 1) {
+		}
+		if (tt.tt_col == col + 1) {
 			pc(\b);
 			goto out;
 		}
@@ -155,7 +160,8 @@ register char row, col;
 			esc();
 			pc(A);
 			goto out;
-		} else if (tt.tt_row == row - 1) {
+		}
+		if (tt.tt_row == row - 1) {
 			pc(\n);
 			goto out;
 		}
@@ -219,6 +225,19 @@ h19_delchar()
 	pc(N);
 }
 
+h19_scroll_down()
+{
+	h19_move(NROW - 1, 0);
+	pc(\n);
+}
+
+h19_scroll_up()
+{
+	h19_move(0, 0);
+	esc();
+	pc(I);
+}
+
 tt_h19()
 {
 	float cpms = (float) wwbaud / 10000;	/* char per ms */
@@ -239,6 +258,8 @@ tt_h19()
 	tt.tt_move = h19_move;
 	tt.tt_write = h19_write;
 	tt.tt_putc = h19_putc;
+	tt.tt_scroll_down = h19_scroll_down;
+	tt.tt_scroll_up = h19_scroll_up;
 	tt.tt_setinsert = h19_setinsert;
 	tt.tt_setmodes = h19_setmodes;
 

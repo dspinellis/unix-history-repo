@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwscroll.c	3.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwscroll.c	3.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -62,7 +62,8 @@ int leaveit;
 	int row1x, row2x;
 	int nvis;
 	int nvismax;
-	int deleted = 0;
+	int scrolled = 0;
+	int (*scroll_func)();
 
 	/*
 	 * See how many lines on the screen are affected.
@@ -89,47 +90,68 @@ int leaveit;
 
 	/*
 	 * If it's a good idea to scroll and the terminal can, then do it.
+	 * We handle retain (da and db) by putting the burden on scrolling up,
+	 * which is the less common operation.  It must ensure that
+	 * text is not pushed below the screen, so scrolling down doesn't
+	 * have to worry about it.
 	 */
-	if (nvis < nvismax / 2) {
-		/* not worth it */
-	} else if (!tt.tt_noscroll && row1x == 0 && row2x == wwnrow && dir > 0)
-	{
-		/*
-		 * We're going to assume that a line feed at the
-		 * bottom of the screen will cause a scroll, unless
-		 * "ns" is set.  This should work at least 99%
-		 * of the time.  At any rate, vi seems to do it.
-		 */
-		if (tt.tt_row != wwnrow - 1)
-			(*tt.tt_move)(wwnrow - 1, 0);
-		ttputc('\n');
-		deleted++;
-	} else if (tt.tt_delline && tt.tt_insline) {
-		/*
-		 * Don't worry about retain when scrolling down,
-		 * but do worry when scrolling up, for hp2621.
-		 */
-		if (dir > 0) {
-			(*tt.tt_move)(row1x, 0);
-			(*tt.tt_delline)();
-			if (row2x < wwnrow) {
-				(*tt.tt_move)(row2x - 1, 0);
-				(*tt.tt_insline)();
-			}
-		} else {
-			if (tt.tt_retain || row2x != wwnrow) {
-				(*tt.tt_move)(row2x - 1, 0);
-				(*tt.tt_delline)();
-			}
-			(*tt.tt_move)(row1x, 0);
+	if (nvis < nvismax / 2)
+		goto no_scroll;		/* not worth it */
+	/*
+	 * Try scrolling region (or scrolling the whole screen) first.
+	 * Can we assume "sr" doesn't push text below the screen
+	 * so we don't have to worry about retain below?
+	 * What about scrolling down with a newline?  It probably does
+	 * push text above (with da).  Scrolling up would then have
+	 * to take care of that.
+	 * It's easy to be fool proof, but that slows things down.
+	 * The current solution is to disallow tt_scroll_up if da or db is true
+	 * but cs (scrolling region) is not.  Again, we sacrifice scrolling
+	 * up in favor of scrolling down.  The idea is having scrolling regions
+	 * probably means we can scroll (even the whole screen) with impunity.
+	 * This lets us work efficiently on simple terminals (use newline
+	 * on the bottom to scroll), on any terminal without retain, and
+	 * on vt100 style scrolling regions (I think).
+	 */
+	if (scroll_func = dir > 0 ? tt.tt_scroll_down : tt.tt_scroll_up) {
+		if (tt.tt_scroll_top != row1x || tt.tt_scroll_bot != row2x - 1)
+			if (tt.tt_setscroll == 0)
+				scroll_func = 0;
+			else
+				(*tt.tt_setscroll)(row1x, row2x - 1);
+		if (scroll_func) {
+			(*scroll_func)();
+			goto did_scroll;
+		}
+	}
+	/*
+	 * Try insert/delete line.
+	 * Don't worry about retain when scrolling down,
+	 * but do worry when scrolling up, for hp2621.
+	 */
+	if (tt.tt_delline == 0 || tt.tt_insline == 0)
+		goto no_scroll;
+	if (dir > 0) {
+		(*tt.tt_move)(row1x, 0);
+		(*tt.tt_delline)();
+		if (row2x < wwnrow) {
+			(*tt.tt_move)(row2x - 1, 0);
 			(*tt.tt_insline)();
 		}
-		deleted++;
+	} else {
+		if (tt.tt_retain || row2x != wwnrow) {
+			(*tt.tt_move)(row2x - 1, 0);
+			(*tt.tt_delline)();
+		}
+		(*tt.tt_move)(row1x, 0);
+		(*tt.tt_insline)();
 	}
+did_scroll:
+	scrolled = 1;
 	/*
 	 * Fix up the old screen.
 	 */
-	if (deleted) {
+	{
 		register union ww_char *tmp;
 		register union ww_char **cpp, **cqq;
 
@@ -152,6 +174,7 @@ int leaveit;
 			tmp++->c_w = ' ';
 	}
 
+no_scroll:
 	/*
 	 * Fix the new screen.
 	 */
@@ -171,7 +194,7 @@ int leaveit;
 					*cpp++ = *cqq++;
 				*cpp = tmp;
 			}
-			if (deleted) {
+			if (scrolled) {
 				register char *p, *q;
 
 				p = &wwtouched[row1x];
@@ -200,7 +223,7 @@ int leaveit;
 					*--cpp = *--cqq;
 				*cqq = tmp;
 			}
-			if (deleted) {
+			if (scrolled) {
 				register char *p, *q;
 
 				p = &wwtouched[row2x];
@@ -219,7 +242,7 @@ int leaveit;
 			wwredrawwin1(w, row2x, row2, dir);
 		}
 	} else {
-		if (deleted) {
+		if (scrolled) {
 			register char *p;
 
 			p = &wwtouched[row1x];
@@ -232,5 +255,5 @@ out:
 		else
 			wwredrawwin1(w, row1 + leaveit, row2, dir);
 	}
-	return deleted;
+	return scrolled;
 }

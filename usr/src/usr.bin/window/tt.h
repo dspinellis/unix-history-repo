@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)tt.h	3.18 (Berkeley) %G%
+ *	@(#)tt.h	3.19 (Berkeley) %G%
  */
 
 /*
@@ -30,6 +30,9 @@ struct tt {
 	int (*tt_clreol)();
 	int (*tt_clreos)();
 	int (*tt_clear)();
+	int (*tt_scroll_down)();
+	int (*tt_scroll_up)();
+	int (*tt_setscroll)();		/* set scrolling region */
 	int (*tt_setinsert)();		/* set insert mode */
 	int (*tt_setmodes)();		/* set display modes */
 
@@ -40,6 +43,8 @@ struct tt {
 	char tt_ninsert;		/* insert mode on next write */
 	int tt_row;			/* cursor row */
 	int tt_col;			/* cursor column */
+	int tt_scroll_top;		/* top of scrolling region */
+	int tt_scroll_bot;		/* bottom of scrolling region */
 
 		/* terminal info */
 	int tt_nrow;			/* number of display rows */
@@ -48,7 +53,6 @@ struct tt {
 	char tt_availmodes;		/* the display modes supported */
 	char tt_wrap;			/* has auto wrap around */
 	char tt_retain;			/* can retain below (db flag) */
-	char tt_noscroll;		/* terminal doesn't scroll (ns flag) */
 
 		/* the frame characters */
 	short *tt_frame;
