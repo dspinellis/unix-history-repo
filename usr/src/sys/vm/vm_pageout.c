@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_pageout.c	7.6 (Berkeley) %G%
+ *	@(#)vm_pageout.c	7.7 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -40,11 +40,11 @@
  *	The proverbial page-out daemon.
  */
 
-#include "param.h"
+#include <sys/param.h>
 
-#include "vm.h"
-#include "vm_page.h"
-#include "vm_pageout.h"
+#include <vm/vm.h>
+#include <vm/vm_page.h>
+#include <vm/vm_pageout.h>
 
 int	vm_pages_needed;	/* Event on which pageout daemon sleeps */
 
@@ -53,6 +53,7 @@ int	vm_page_free_min_sanity = 40;
 /*
  *	vm_pageout_scan does the dirty work for the pageout daemon.
  */
+void
 vm_pageout_scan()
 {
 	register vm_page_t	m;
