@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -22,6 +22,7 @@ static char sccsid[] = "@(#)main.c	8.1 (Berkeley) %G%";
 #include <ufs/ufs/dinode.h>
 #include <protocols/dumprestore.h>
 
+#include <err.h>
 #include <errno.h>
 #include <signal.h>
 #include <stdio.h>
@@ -70,9 +71,9 @@ main(argc, argv)
 			bflag = 1;
 			ntrec = strtol(optarg, &p, 10);
 			if (*p)
-				err("illegal blocksize -- %s", optarg);
+				errx(1, "illegal blocksize -- %s", optarg);
 			if (ntrec <= 0)
-				err("block size must be greater than 0");
+				errx(1, "block size must be greater than 0");
 			break;
 		case 'c':
 			cvtflag = 1;
@@ -92,7 +93,8 @@ main(argc, argv)
 		case 't':
 		case 'x':
 			if (command != '\0')
-				err("%c and %c options are mutually exclusive",
+				errx(1,
+				    "%c and %c options are mutually exclusive",
 				    ch, command);
 			command = ch;
 			break;
@@ -106,9 +108,9 @@ main(argc, argv)
 			/* Dumpnum (skip to) for multifile dump tapes. */
 			dumpnum = strtol(optarg, &p, 10);
 			if (*p)
-				err("illegal dump number -- %s", optarg);
+				errx(1, "illegal dump number -- %s", optarg);
 			if (dumpnum <= 0)
-				err("dump number must be greater than 0");
+				errx(1, "dump number must be greater than 0");
 			break;
 		case 'v':
 			vflag = 1;
@@ -123,7 +125,7 @@ main(argc, argv)
 	argv += optind;
 
 	if (command == '\0')
-		err("none of i, R, r, t or x options specified");
+		errx(1, "none of i, R, r, t or x options specified");
 
 	if (signal(SIGINT, onintr) == SIG_IGN)
 		(void) signal(SIGINT, SIG_IGN);
@@ -277,7 +279,7 @@ obsolete(argcp, argvp)
 	/* Allocate space for new arguments. */
 	if ((*argvp = nargv = malloc((argc + 1) * sizeof(char *))) == NULL ||
 	    (p = flagsp = malloc(strlen(ap) + 2)) == NULL)
-		err("%s", strerror(errno));
+		err(1, NULL);
 
 	*nargv++ = *argv;
 	argv += 2;
@@ -288,7 +290,7 @@ obsolete(argcp, argvp)
 		case 'f':
 		case 's':
 			if ((nargv[0] = malloc(strlen(*argv) + 2 + 1)) == NULL)
-				err("%s", strerror(errno));
+				err(1, NULL);
 			nargv[0][0] = '-';
 			nargv[0][1] = *ap;
 			(void)strcpy(&nargv[0][2], *argv);
@@ -314,33 +316,4 @@ obsolete(argcp, argvp)
 
 	/* Copy remaining arguments. */
 	while (*nargv++ = *argv++);
-}
-
-#if __STDC__
-#include <stdarg.h>
-#else
-#include <varargs.h>
-#endif
-
-__dead void
-#if __STDC__
-err(const char *fmt, ...)
-#else
-err(fmt, va_alist)
-	char *fmt;
-        va_dcl
-#endif
-{
-	va_list ap;
-#if __STDC__
-	va_start(ap, fmt);
-#else
-	va_start(ap);
-#endif
-	(void)fprintf(stderr, "restore: ");
-	(void)vfprintf(stderr, fmt, ap);
-	va_end(ap);
-	(void)fprintf(stderr, "\n");
-	exit(1);
-	/* NOTREACHED */
 }
