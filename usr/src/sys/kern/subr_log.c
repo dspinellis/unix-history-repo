@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_log.c	7.4 (Berkeley) %G%
+ *	@(#)subr_log.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -84,7 +84,11 @@ logread(dev, uio)
 			return (EWOULDBLOCK);
 		}
 		logsoftc.sc_state |= LOG_RDWAIT;
-		sleep((caddr_t)&msgbuf, LOG_RDPRI);
+		if (error = tsleep((caddr_t)&msgbuf, LOG_RDPRI | PCATCH,
+		    "klog", 0)) {
+			splx(s);
+			return (error);
+		}
 	}
 	splx(s);
 	logsoftc.sc_state &= ~LOG_RDWAIT;
