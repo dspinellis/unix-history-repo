@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1983 The Regents of the University of California.
+ * Copyright (c) 1983, 1988 The Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -17,12 +17,12 @@
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1983 The Regents of the University of California.\n\
+"@(#) Copyright (c) 1983, 1988 The Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -73,25 +73,24 @@ int		do_krb_login();
 #endif	/* KERBEROS */
 
 char	*envinit[2];
-struct	utmp	utmp;
-#define	NMAX	sizeof(utmp.ut_name)
-char		lusername[NMAX+1], rusername[NMAX+1];
-static char	term[64] = "TERM=";
-#define	ENVSIZE	(strlen("TERM="))
-struct	passwd	nouser = {"", "nope", -1, -1, -1, "", "", "", "" };
+struct	utmp utmp;
+#define	NMAX sizeof(utmp.ut_name)
+char	lusername[NMAX+1], rusername[NMAX+1];
+static	char term[64] = "TERM=";
+#define	ENVSIZE	(sizeof("TERM=")-1)	/* skip null for concatenation */
+int	keepalive = 1;
 
 #define	SUPERUSER(pwd)	((pwd)->pw_uid == 0)
 
-# ifndef TIOCPKT_WINDOW
-# define TIOCPKT_WINDOW 0x80
-# endif TIOCPKT_WINDOW
+#ifndef TIOCPKT_WINDOW
+#define TIOCPKT_WINDOW 0x80
+#endif
 
 extern	int errno;
 int	reapchild();
 struct	passwd *getpwnam(), *pwd;
 char	*malloc();
 
-/*ARGSUSED*/
 main(argc, argv)
 	int argc;
 	char **argv;
@@ -104,14 +103,17 @@ main(argc, argv)
 	openlog("rlogind", LOG_PID | LOG_AUTH, LOG_AUTH);
 
 	opterr = 0;
-	while ((ch = getopt(argc, argv, "l")) != EOF)
-		switch((char)ch) {
+	while ((ch = getopt(argc, argv, "ln")) != EOF)
+		switch (ch) {
 		case 'l':
 			_check_rhosts_file = 0;
 			break;
+		case 'n':
+			keepalive = 0;
+			break;
 		case '?':
 		default:
-			syslog(LOG_ERR, "usage: rlogind [-l]");
+			syslog(LOG_ERR, "usage: rlogind [-l] [-n]");
 			break;
 		}
 	argc -= optind;
@@ -123,9 +125,9 @@ main(argc, argv)
 		perror("getpeername");
 		exit(1);
 	}
-	if (setsockopt(0, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof (on)) < 0) {
+	if (keepalive &&
+	    setsockopt(0, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof (on)) < 0)
 		syslog(LOG_WARNING, "setsockopt (SO_KEEPALIVE): %m");
-	}
 	doit(0, &from);
 }
 
@@ -155,17 +157,17 @@ doit(f, fromp)
 	/*
 	 * XXX 1st char tells us which client we're talking to
 	 */
-	switch(c) {
+	switch (c) {
 
-	case	KERB_RCMD:
+	case KERB_RCMD:
 		break;
 
-	case	KERB_RCMD_MUTUAL:
+	case KERB_RCMD_MUTUAL:
 		encrypt = 1;
 		break;
 
 
-	case	OLD_RCMD:
+	case OLD_RCMD:
 	default:
 		fatal(f, "Remote host requires Kerberos authentication");
 	}
@@ -173,7 +175,6 @@ doit(f, fromp)
 	if (c != 0)
 		exit(1);
 #endif
-
 
 	alarm(0);
 	fromp->sin_port = ntohs((u_short)fromp->sin_port);
@@ -190,19 +191,18 @@ doit(f, fromp)
 #ifdef	KERBEROS
 	retval = do_krb_login(hp->h_name, fromp, encrypt);
 	write(f, &c, 1);
-	if(retval == 0) {
+	if (retval == 0)
 		authenticated++;
-	} else {
-		if(retval > 0)
+	else
+		if (retval > 0)
 			fatal(f, krb_err_txt[retval]);
-	}
 #else
 	if (fromp->sin_family != AF_INET ||
 	    fromp->sin_port >= IPPORT_RESERVED ||
 	    fromp->sin_port < IPPORT_RESERVED/2)
 		fatal(f, "Permission denied");
 	write(f, "", 1);
-	if(do_rlogin(hp->h_name) == 0)
+	if (do_rlogin(hp->h_name) == 0)
 		authenticated++;
 #endif
 
@@ -251,25 +251,19 @@ gotpty:
 	if (pid < 0)
 		fatalperror(f, "");
 	if (pid == 0) {
-		if(setsid() < 0)
+		if (setsid() < 0)
 			fatalperror(f, "setsid");
-		if(ioctl(t, TIOCSCTTY, 0) < 0)
+		if (ioctl(t, TIOCSCTTY, 0) < 0)
 			fatalperror(f, "ioctl(sctty)");
 		close(f), close(p);
 		dup2(t, 0), dup2(t, 1), dup2(t, 2);
 		close(t);
-		if(authenticated)
-			execl("/bin/login", "login",
-				"-h", hp->h_name,
-				"-f", pwd->pw_name,
-				"-p", 0
-			);
+		if (authenticated)
+			execl("/bin/login", "login", "-p", "-f",
+			    "-h", hp->h_name, pwd->pw_name, 0);
 		else
-			execl("/bin/login", "login",
-				"-h", hp->h_name,
-				"-p", pwd->pw_name,
-				0
-			);
+			execl("/bin/login", "login", "-p", "-h", hp->h_name,
+			    pwd->pw_name, 0);
 		fatalperror(2, "/bin/login");
 		/*NOTREACHED*/
 	}
@@ -281,13 +275,11 @@ gotpty:
 	 * routines will croak.
 	 */
 
-	if(encrypt)
+	if (encrypt)
 		(void) des_write(f, SECURE_MESSAGE, sizeof(SECURE_MESSAGE));
 	else
-		ioctl(f, FIONBIO, &on);
-#else
-	ioctl(f, FIONBIO, &on);
 #endif
+		ioctl(f, FIONBIO, &on);
 
 	ioctl(p, FIONBIO, &on);
 	ioctl(p, TIOCPKT, &on);
@@ -334,7 +326,7 @@ protocol(f, p)
 {
 	char pibuf[1024], fibuf[1024], *pbp, *fbp;
 	register pcc = 0, fcc = 0;
-	int cc;
+	int cc, nfd, pmask, fmask;
 	char cntl;
 
 	/*
@@ -344,22 +336,29 @@ protocol(f, p)
 	 */
 	(void) signal(SIGTTOU, SIG_IGN);
 	send(f, oobdata, 1, MSG_OOB);	/* indicate new rlogin */
+	if (f > p)
+		nfd = f + 1;
+	else
+		nfd = p + 1;
+	fmask = 1 << f;
+	pmask = 1 << p;
 	for (;;) {
 		int ibits, obits, ebits;
 
 		ibits = 0;
 		obits = 0;
 		if (fcc)
-			obits |= (1<<p);
+			obits |= pmask;
 		else
-			ibits |= (1<<f);
+			ibits |= fmask;
 		if (pcc >= 0)
 			if (pcc)
-				obits |= (1<<f);
+				obits |= fmask;
 			else
-				ibits |= (1<<p);
-		ebits = (1<<p);
-		if (select(16, &ibits, &obits, &ebits, 0) < 0) {
+				ibits |= pmask;
+		ebits = pmask;
+		if (select(nfd, &ibits, obits ? &obits : (int *)NULL,
+		    &ebits, 0) < 0) {
 			if (errno == EINTR)
 				continue;
 			fatalperror(f, "select");
@@ -370,27 +369,24 @@ protocol(f, p)
 			continue;
 		}
 #define	pkcontrol(c)	((c)&(TIOCPKT_FLUSHWRITE|TIOCPKT_NOSTOP|TIOCPKT_DOSTOP))
-		if (ebits & (1<<p)) {
+		if (ebits & pmask) {
 			cc = read(p, &cntl, 1);
 			if (cc == 1 && pkcontrol(cntl)) {
 				cntl |= oobdata[0];
 				send(f, &cntl, 1, MSG_OOB);
 				if (cntl & TIOCPKT_FLUSHWRITE) {
 					pcc = 0;
-					ibits &= ~(1<<p);
+					ibits &= ~pmask;
 				}
 			}
 		}
-		if (ibits & (1<<f)) {
+		if (ibits & fmask) {
 #ifdef	KERBEROS
-			if(encrypt) {
+			if (encrypt)
 				fcc = des_read(f, fibuf, sizeof(fibuf));
-			} else {
-				fcc = read(f, fibuf, sizeof(fibuf));
-			}
-#else
-			fcc = read(f, fibuf, sizeof (fibuf));
+			else
 #endif
+				fcc = read(f, fibuf, sizeof(fibuf));
 			if (fcc < 0 && errno == EWOULDBLOCK)
 				fcc = 0;
 			else {
@@ -415,10 +411,11 @@ protocol(f, p)
 							goto top; /* n^2 */
 						}
 					}
+				obits |= pmask;		/* try write */
 			}
 		}
 
-		if ((obits & (1<<p)) && fcc > 0) {
+		if ((obits & pmask) && fcc > 0) {
 			cc = write(p, fbp, fcc);
 			if (cc > 0) {
 				fcc -= cc;
@@ -426,16 +423,20 @@ protocol(f, p)
 			}
 		}
 
-		if (ibits & (1<<p)) {
+		if (ibits & pmask) {
 			pcc = read(p, pibuf, sizeof (pibuf));
 			pbp = pibuf;
 			if (pcc < 0 && errno == EWOULDBLOCK)
 				pcc = 0;
 			else if (pcc <= 0)
 				break;
-			else if (pibuf[0] == 0)
+			else if (pibuf[0] == 0) {
 				pbp++, pcc--;
-			else {
+#ifdef	KERBEROS
+				if (!encrypt)
+#endif
+					obits |= fmask;	/* try a write */
+			} else {
 				if (pkcontrol(pibuf[0])) {
 					pibuf[0] |= oobdata[0];
 					send(f, &pibuf[0], 1, MSG_OOB);
@@ -443,16 +444,13 @@ protocol(f, p)
 				pcc = 0;
 			}
 		}
-		if ((obits & (1<<f)) && pcc > 0) {
+		if ((obits & fmask) && pcc > 0) {
 #ifdef	KERBEROS
-			if(encrypt) {
+			if (encrypt)
 				cc = des_write(f, pbp, pcc);
-			} else {
-				cc = write(f, pbp, pcc);
-			}
-#else
-			cc = write(f, pbp, pcc);
+			else
 #endif
+				cc = write(f, pbp, pcc);
 			if (cc < 0 && errno == EWOULDBLOCK) {
 				/* also shouldn't happen */
 				sleep(5);
@@ -621,8 +619,7 @@ do_krb_login(host, dest, encrypt)
 			authopts, 0,
 			ticket, "rcmd",
 			instance, dest, &faddr,
-			kdata, "", schedule, version
-		 );
+			kdata, "", schedule, version);
 		 des_set_key(kdata->session, schedule);
 
 	} else {
@@ -630,8 +627,7 @@ do_krb_login(host, dest, encrypt)
 			authopts, 0,
 			ticket, "rcmd",
 			instance, dest, (struct sockaddr_in *) 0,
-			kdata, "", (bit_64 *) 0, version
-		 );
+			kdata, "", (bit_64 *) 0, version);
 	}
 
 	if(rc != KSUCCESS) {
