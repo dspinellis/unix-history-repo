@@ -1,55 +1,77 @@
-.\"	@(#)refer.1	4.1 (Berkeley) %G%
+.\"	@(#)refer.1	5.1 (Berkeley) %G%
 .\"
-.TH REFER 1 4/1/81
+.TH REFER 1 "18 July 1983"
 .AT 3
 .SH NAME
-refer, lookbib \- find and insert literature references in documents
+refer \- find and insert literature references in documents
 .SH SYNOPSIS
 .B refer
-[ option ] ...
-.PP
-.B lookbib
-[ file ] ...
+[
+.B \-a
+] [
+.B \-b
+] [
+.B \-c
+] [
+.B \-e
+] [
+.BI \-f n
+] [
+.BI \-k x
+] [
+.BI \-l m,n
+] [
+.B \-n
+] [
+.B \-p
+bib
+] [
+.BI \-s keys
+] [
+.BI \-B l.m
+] [
+.B \-P
+] [
+.B \-S
+] [ file ... ]
 .SH DESCRIPTION
-.I Lookbib
-accepts keywords from the standard input 
-and searches a bibliographic data base for references
-that contain those keywords anywhere in title, author,
-journal name, etc.
-Matching references are printed on the standard output.
-Blank lines are taken as delimiters between queries.
-.PP
 .I Refer
 is a preprocessor for
 .I nroff
 or
 .IR troff (1)
-that finds and formats references.
-The input files (standard input default) are copied to the standard output,
-except for lines between .[ and .]
-command lines, which are assumed to contain keywords as for
-.I lookbib,
-and are replaced by information from the bibliographic data base.
-The user may avoid the search, override fields from it, or
-add new fields.
+that finds and formats references for footnotes or endnotes.
+It is also the base for a series of programs designed to
+index, search, sort, and print stand-alone bibliographies,
+or other data entered in the appropriate form.
+.PP
+Given an incomplete citation with sufficiently precise keywords,
+.I refer
+will search a bibliographic database for references
+containing these keywords anywhere in the title, author, journal, etc.
+The input file (or standard input)
+is copied to standard output,
+except for lines between .[ and .] delimiters,
+which are assumed to contain keywords,
+and are replaced by information from the bibliographic database.
+The user may also search different databases,
+override particular fields, or add new fields.
 The reference data, from whatever source, are assigned to a set of
 .I troff
 strings.
 Macro packages such as
 .IR ms (7)
 print the finished reference text from these strings.
-A flag is placed in the text at the point of reference;
-by default the references are indicated by numbers.
-.br
-.sp
+By default references are flagged by footnote numbers.
+.PP
 The following options are available:
 .TP 6
 .BI \-a r
 Reverse the first
-.I r
+.I n
 author names (Jones, J. A. instead of J. A. Jones).
 If
-.I r
+.I n
 is omitted all author names are reversed.
 .ns
 .TP
@@ -57,32 +79,37 @@ is omitted all author names are reversed.
 Bare mode: do not put any flags in text (neither numbers nor labels).
 .ns
 .TP
-.BI \-c string
+.BI \-c keys
 Capitalize (with C\s-2APS\s0 S\s-2MALL\s+2 C\s-2APS\s0)
 the fields whose key-letters are in
-.IR string .
+.IR keys .
 .ns
 .TP
 .B \-e
 Instead of leaving the references where encountered,
-accumulate them
-until a sequence of the form
+accumulate them until a sequence of the form
 .nf
-		.[
-		$LIST$
-		.]
+	.[
+	$LIST$
+	.]
 .fi
-is encountered, and then write out all references
-collected so far.  Collapse references to the same source.
+is encountered, and then write out all references collected so far.
+Collapse references to same source.
+.ns
+.TP
+.BI \-f n
+Set the footnote number to
+.I n
+instead of the default of 1 (one).
+With labels rather than numbers,
+this flag is a no-op.
 .ns
 .TP
 .BI \-k x
-Instead of numbering references, use labels as specified in
-a
-reference data line
-beginning
+Instead of numbering references, use labels as specified in a
+reference data line beginning
 .I %x;
-by default 
+by default
 .I x
 is
 .B L.
@@ -100,27 +127,31 @@ digits of the date are used.
 If either
 .I m
 or
-.BI , n
+.I n
 is omitted the entire name or date respectively is used.
 .ns
 .TP
-.B \-p
-Take the next argument as a file of
-references to be searched.
+.B \-n
+Do not search the default file /usr/dict/papers/Ind.
+If there is a REFER environment variable,
+the specified file will be searched instead of the default file;
+in this case the
+.B \-n
+flag has no effect.
+.ns
+.TP
+.BI \-p \0bib
+Take the next argument
+.I bib
+as a file of references to be searched.
 The default file is searched last.
 .ns
 .TP
-.B \-n
-Do not search the default file.
-.ns
-.TP
 .BI \-s keys
-Sort references by fields whose key-letters are in
-the
+Sort references by fields whose key-letters are in the
 .I keys
 string;
-permute
-reference numbers in text accordingly.
+permute reference numbers in text accordingly.
 Implies
 .BR \-e .
 The key-letters in
@@ -134,31 +165,101 @@ The default is
 which sorts on the senior author and then date; to sort, for example,
 on all authors and then title use
 .BR -sA+T .
+.ns
+.TP
+.BI \-B l.m
+Bibliography mode.
+Take a file composed of records separated by blank lines,
+and turn them into
+.I troff
+input.
+Label
+.I l
+will be turned into the macro
+.I .m
+with
+.I l
+defaulting to
+.B %X
+and
+.I .m
+defaulting to
+.B .AP
+(annotation paragraph).
+.ns
+.TP
+.B \-P
+Place punctuation marks .,:;?! after the reference signal,
+rather than before.
+(Periods and commas used to be done with strings.)
+.ns
+.TP
+.B \-S
+Produce references in the Natural or Social Science format.
 .PP
-.\"To use your own references, put them in the format
-.\"described in
-.\".IR pubindex (1)
-.\"They can be searched
-.\"more rapidly by running
-.\".IR pubindex (1)
-.\"on them before using
-.\".I refer;
-.\"failure to index results in a linear search.
-.PP
+To use your own references,
+put them in the format described below.
+They can be searched more rapidly by running
+.IR indxbib (1)
+on them before using
+.I refer;
+failure to index results in a linear search.
 When
 .I refer
-is used with
+is used with the
 .I eqn,
 .I neqn
 or
-.I tbl,
+.I tbl
+preprocessors
 .I refer
 should be first, to minimize the volume
-of data passed through
-pipes.
+of data passed through pipes.
+.PP
+The
+.I refer
+preprocessor and associated programs
+expect input from a file of references
+composed of records separated by blank lines.
+A record is a set of lines (fields),
+each containing one kind of information.
+Fields start on a line beginning with a ``%'',
+followed by a key-letter, then a blank,
+and finally the contents of the field,
+and continue until the next line starting with ``%''.
+The output ordering and formatting of fields
+is controlled by the macros specified for
+.I nroff/troff
+(for footnotes and endnotes) or
+.I roffbib
+(for stand-alone bibliographies).
+For a list of the most common key-letters
+and their corresponding fields, see
+.IR addbib (1).
+An example of a
+.I refer
+entry is given below.
+.SH EXAMPLE
+.PP
+.nf
+%A	M. E. Lesk
+%T	Some Applications of Inverted Indexes on the \s-1UNIX\s0 System
+%B	\s-1UNIX\s0 Programmer's Manual
+%V	2b
+%I	Bell Laboratories
+%C	Murray Hill, NJ
+%D	1978
+.fi
 .SH FILES
-.ta 1.5i
-/usr/dict/papers	directory of default publication lists and indexes
+.ta \w'/usr/dict/papers\0\0'u
+/usr/dict/papers	directory of default publication lists
 .br
-/usr/lib/refer	directory of programs
+/usr/lib/refer  	directory of companion programs
 .SH SEE ALSO
+addbib(1), sortbib(1), roffbib(1), indxbib(1), lookbib(1)
+.SH AUTHOR
+Mike Lesk
+.SH BUGS
+Blank spaces at the end of lines in bibliography fields
+will cause the records to sort and reverse incorrectly.
+Sorting large numbers of references causes a core dump.
