@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)crypt.3	6.3 (Berkeley) %G%
+.\"     @(#)crypt.3	6.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CRYPT 3
@@ -25,7 +25,7 @@
 .Ft void
 .Fn des_setkey "const char *key"
 .Ft void
-.Fn des_cipher "const char *in" "char *out" "u_long salt" "int count"
+.Fn des_cipher "const char *in" "char *out" "long salt" "int count"
 .Sh DESCRIPTION
 The
 .Xr crypt
@@ -41,11 +41,7 @@ The first argument to
 is
 a
 .Dv NUL Ns -terminated
-string (normally a password typed by
-a user)
-first argument is a
-.Dv NUL Ns -terminated
-(normally a user's typed
+string (normally a password typed by a user).
 The second is a character array, 9 bytes in length, consisting of an
 underscore (``_'') followed by 4 bytes of iteration count and 4 bytes
 of salt.
@@ -127,6 +123,7 @@ as described above.
 .Xr passwd 1 ,
 .Xr getpass 3 ,
 .Xr passwd 5
+.sp
 .Rs
 .%T "Mathematical Cryptology for Computer Scientists and Mathematicians"
 .%A Wayne Patterson
