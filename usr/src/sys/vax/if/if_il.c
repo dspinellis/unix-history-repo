@@ -1,11 +1,10 @@
-/*	if_il.c	4.6	82/06/13	*/
+/*	if_il.c	4.7	82/06/18	*/
 
 #include "il.h"
 
 /*
  * Interlan Ethernet Communications Controller interface
  */
-
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/mbuf.h"
@@ -37,10 +36,11 @@ struct	uba_device *ilinfo[NIL];
 u_short ilstd[] = { 0 };
 struct	uba_driver ildriver =
 	{ ilprobe, 0, ilattach, 0, ilstd, "il", ilinfo };
-u_char	il_ectop[3] = { 0x02, 0x60, 0x8c };
 #define	ILUNIT(x)	minor(x)
-
 int	ilinit(),iloutput(),ilreset();
+
+u_char	il_ectop[3] = { 0x02, 0x60, 0x8c };
+u_char	ilbroadcastaddr[6] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
 /*
  * Ethernet software status per interface.
@@ -98,28 +98,29 @@ ilattach(ui)
 	struct uba_device *ui;
 {
 	register struct il_softc *is = &il_softc[ui->ui_unit];
-	register struct sockaddr_in *sin;
+	register struct ifnet *ifp = &is->is_if;
 	register struct ildevice *addr = (struct ildevice *)ui->ui_addr;
-	register int i;
-	int s;
-	int ubaddr;
+	register short csr;
+	struct sockaddr_in *sin;
+	int i, s, ubaddr;
 COUNT(ILATTACH);
 
-	is->is_if.if_unit = ui->ui_unit;
-	is->is_if.if_name = "il";
-	is->is_if.if_mtu = ILMTU;
-	is->is_if.if_net = ui->ui_flags;
+	ifp->if_unit = ui->ui_unit;
+	ifp->if_name = "il";
+	ifp->if_mtu = ILMTU;
+	ifp->if_net = ui->ui_flags;
 
 	/*
 	 * Reset the board
 	 */
 	s = splimp();
-	addr->il_csr = ((ubaddr>>2)&0xc000)|ILC_RESET;
-	while (!(addr->il_csr & IL_CDONE))
-		/* Busy wait */;
-	if (addr->il_csr & IL_STATUS)
-		printf("il%d: %s\n", ui->ui_unit,
-		    ildiag[addr->il_csr & IL_STATUS]);
+	csr = ((ubaddr>>2)&0xc000)|ILC_RESET;
+	addr->il_csr = csr;
+	do
+		csr = addr->il_csr;
+	while ((csr&IL_CDONE) == 0);
+	if (csr &= IL_STATUS)
+		printf("il%d: %s\n", ui->ui_unit, ildiag[csr]);
 	splx(s);
 	
 	/*
@@ -130,41 +131,44 @@ COUNT(ILATTACH);
 	s = splimp();
 	addr->il_bar = ubaddr & 0xffff;
 	addr->il_bcr = sizeof(ilbuf);
-	addr->il_csr = ((ubaddr>>2)&0xc000)|ILC_STAT;
-	while (!(addr->il_csr & IL_CDONE))
-		/* Busy wait */;
-	if (addr->il_csr & IL_STATUS)
-		printf("il%d: %s\n", ui->ui_unit,
-		    ilerrs[addr->il_csr & IL_STATUS]);
+	csr = ((ubaddr>>2)&0xc000)|ILC_STAT;
+	addr->il_csr = csr;
+	do
+		csr = addr->il_csr;
+	while ((csr&IL_CDONE) == 0);
+	if (csr &= IL_STATUS)
+		printf("il%d: %s\n", ui->ui_unit, ilerrs[csr]);
 	splx(s);
 	ubarelse(ui->ui_ubanum, &ubaddr);
 	/*
 	 * Fill in the Ethernet address from the status buffer
 	 */
-	for (i=0; i<6; i++)
-		is->is_enaddr[i] = ilbuf.ils_addr[i];
+	bcopy(ilbuf.ils_addr, is->is_enaddr, 6);
 	printf("il%d: addr=%x:%x:%x:%x:%x:%x module=%s firmware=%s\n",
 		ui->ui_unit,
 		is->is_enaddr[0]&0xff, is->is_enaddr[1]&0xff,
 		is->is_enaddr[2]&0xff, is->is_enaddr[3]&0xff,
 		is->is_enaddr[4]&0xff, is->is_enaddr[5]&0xff,
 		ilbuf.ils_module, ilbuf.ils_firmware);
-	is->is_if.if_host[0] = ((is->is_enaddr[3]&0xff)<<16) | 0x800000 |
+	ifp->if_host[0] = ((is->is_enaddr[3]&0xff)<<16) | 0x800000 |
 	    ((is->is_enaddr[4]&0xff)<<8) | (is->is_enaddr[5]&0xff);
-	sin = (struct sockaddr_in *)&is->is_if.if_addr;
+	sin = (struct sockaddr_in *)&ifp->if_addr;
 	sin->sin_family = AF_INET;
-	sin->sin_addr = if_makeaddr(is->is_if.if_net, is->is_if.if_host[0]);
+	sin->sin_addr = if_makeaddr(ifp->if_net, ifp->if_host[0]);
 
-	sin = (struct sockaddr_in *)&is->is_if.if_broadaddr;
+	sin = (struct sockaddr_in *)&ifp->if_broadaddr;
 	sin->sin_family = AF_INET;
-	sin->sin_addr = if_makeaddr(is->is_if.if_net, 0);
-	is->is_if.if_flags = IFF_BROADCAST;
+	sin->sin_addr = if_makeaddr(ifp->if_net, INADDR_ANY);
+	ifp->if_flags = IFF_BROADCAST;
 
-	is->is_if.if_init = ilinit;
-	is->is_if.if_output = iloutput;
-	is->is_if.if_ubareset = ilreset;
+	ifp->if_init = ilinit;
+	ifp->if_output = iloutput;
+	ifp->if_ubareset = ilreset;
 	is->is_ifuba.ifu_flags = UBA_CANTWAIT;
-	if_attach(&is->is_if);
+#ifdef notdef
+	is->is_ifuba.ifu_flags |= UBA_NEEDBDP;
+#endif
+	if_attach(ifp);
 }
 
 /*
@@ -194,8 +198,8 @@ ilinit(unit)
 	register struct il_softc *is = &il_softc[unit];
 	register struct uba_device *ui = ilinfo[unit];
 	register struct ildevice *addr;
-	register i;
-	int s;
+	int i, s;
+	short csr;
 
 	if (if_ubainit(&is->is_ifuba, ui->ui_ubanum,
 	    sizeof (struct il_rheader), (int)btoc(ILMTU)) == 0) { 
@@ -214,14 +218,14 @@ ilinit(unit)
 	 */
 	s = splimp();
 	addr->il_csr = ILC_ONLINE;
-	while (!(addr->il_csr & IL_CDONE))
-		/* Busy wait */;
+	while ((addr->il_csr & IL_CDONE) == 0)
+		;
 	addr->il_bar = is->is_ifuba.ifu_r.ifrw_info & 0xffff;
 	addr->il_bcr = sizeof(struct il_rheader) + ILMTU + 6;
-	addr->il_csr = ((is->is_ifuba.ifu_r.ifrw_info>>2)&0xc000)|
-			ILC_RCV|IL_RIE;
-	while (!(addr->il_csr & IL_CDONE))
-		/* Busy wait */;
+	csr = ((is->is_ifuba.ifu_r.ifrw_info>>2)&0xc000)|ILC_RCV|IL_RIE;
+	addr->il_csr = csr;
+	while ((addr->il_csr & IL_CDONE) == 0)
+		;
 	is->is_startrcv = 0;
 	is->is_oactive = 1;
 	is->is_if.if_flags |= IFF_UP;
@@ -238,34 +242,25 @@ ilinit(unit)
 ilstart(dev)
 	dev_t dev;
 {
-        int unit = ILUNIT(dev);
+        int unit = ILUNIT(dev), dest, len;
 	struct uba_device *ui = ilinfo[unit];
 	register struct il_softc *is = &il_softc[unit];
 	register struct ildevice *addr;
-	register len;
 	struct mbuf *m;
-	int dest;
+	short csr;
 COUNT(ILSTART);
 
-	/*
-	 * Dequeue another request and copy it into the buffer.
-	 * If no more requests, just return.
-	 */
 	IF_DEQUEUE(&is->is_if.if_snd, m);
 	if (m == 0)
 		return;
 	len = if_wubaput(&is->is_ifuba, m);
-
-	/*
-	 * Flush BDP, then start the output.
-	 */
 	if (is->is_ifuba.ifu_flags & UBA_NEEDBDP)
 		UBAPURGE(is->is_ifuba.ifu_uba, is->is_ifuba.ifu_w.ifrw_bdp);
 	addr = (struct ildevice *)ui->ui_addr;
 	addr->il_bar = is->is_ifuba.ifu_w.ifrw_info & 0xffff;
 	addr->il_bcr = len;
-	addr->il_csr = ((is->is_ifuba.ifu_w.ifrw_info>>2)&0xc000)|
-			ILC_XMIT|IL_CIE|IL_RIE;
+	csr = ((is->is_ifuba.ifu_w.ifrw_info>>2)&0xc000)|ILC_XMIT|IL_CIE|IL_RIE;
+	addr->il_csr = csr;
 	is->is_oactive = 1;
 }
 
@@ -278,42 +273,43 @@ COUNT(ILSTART);
 ilcint(unit)
 	int unit;
 {
-	register struct uba_device *ui = ilinfo[unit];
 	register struct il_softc *is = &il_softc[unit];
+	struct uba_device *ui = ilinfo[unit];
 	register struct ildevice *addr = (struct ildevice *)ui->ui_addr;
-	register int err;
+	short csr;
 COUNT(ILCINT);
 
+	csr = addr->il_csr;
 	if (is->is_oactive == 0) {
-		printf("il%d: strange xmit interrupt!\n", unit);
+		printf("il%d: stray xmit interrupt, csr=%b\n", unit,
+			csr, IL_BITS);
 		return;
 	}
 	is->is_if.if_opackets++;
 	is->is_oactive = 0;
-	if (err = (addr->il_csr & IL_STATUS)){
+	if (csr &= IL_STATUS) {
 		is->is_if.if_oerrors++;
-		printf("il%d: output error %d\n", unit, err);
+		printf("il%d: output error %d\n", unit, csr);
 	}
+
 	/*
 	 * Hang receive buffer if it couldn't be done earlier (in ilrint).
 	 */
 	if (is->is_startrcv) {
 		addr->il_bar = is->is_ifuba.ifu_r.ifrw_info & 0xffff;
 		addr->il_bcr = sizeof(struct il_rheader) + ILMTU + 6;
-		addr->il_csr = ((is->is_ifuba.ifu_r.ifrw_info>>2)&0xc000)|
-				ILC_RCV|IL_RIE;
-		while (!(addr->il_csr & IL_CDONE))
-			/* Busy wait */;
+		csr = ((is->is_ifuba.ifu_r.ifrw_info>>2)&0xc000)|ILC_RCV|IL_RIE;
+		addr->il_csr = csr;
+		while ((addr->il_csr & IL_CDONE) == 0)
+			;
 		is->is_startrcv = 0;
 	}
 	if (is->is_ifuba.ifu_xtofree) {
 		m_freem(is->is_ifuba.ifu_xtofree);
 		is->is_ifuba.ifu_xtofree = 0;
 	}
-	if (is->is_if.if_snd.ifq_head == 0) {
-		return;
-	}
-	ilstart(unit);
+	if (is->is_if.if_snd.ifq_head)
+		ilstart(unit);
 }
 
 /*
@@ -334,6 +330,7 @@ ilrint(unit)
     	struct mbuf *m;
 	int len, off, resid;
 	register struct ifqueue *inq;
+	short csr;
 
 COUNT(ILRINT);
 	is->is_if.if_ipackets++;
@@ -341,7 +338,7 @@ COUNT(ILRINT);
 		UBAPURGE(is->is_ifuba.ifu_uba, is->is_ifuba.ifu_r.ifrw_bdp);
 	il = (struct il_rheader *)(is->is_ifuba.ifu_r.ifrw_addr);
 	len = il->ilr_length - sizeof(struct il_rheader);
-	if (il->ilr_status&0x3 || len < 46 || len > ILMTU) {
+	if ((il->ilr_status&0x3) || len < 46 || len > ILMTU) {
 		is->is_if.if_ierrors++;
 #ifdef notdef
 		if (is->is_if.if_ierrors % 100 == 0)
@@ -402,8 +399,9 @@ COUNT(ILRINT);
 	if (IF_QFULL(inq)) {
 		IF_DROP(inq);
 		m_freem(m);
-	} else
-		IF_ENQUEUE(inq, m);
+		goto setup;
+	}
+	IF_ENQUEUE(inq, m);
 
 setup:
 	/*
@@ -411,15 +409,16 @@ setup:
 	 * If waiting for transmit command completion, set flag
 	 * and wait until command completes.
 	 */
-	if (!is->is_oactive) {
-		addr->il_bar = is->is_ifuba.ifu_r.ifrw_info & 0xffff;
-		addr->il_bcr = sizeof(struct il_rheader) + ILMTU + 6;
-		addr->il_csr = ((is->is_ifuba.ifu_r.ifrw_info>>2)&0xc000)|
-				ILC_RCV|IL_RIE;
-		while (!(addr->il_csr & IL_CDONE))
-			/* Busy wait */;
-	} else
+	if (is->is_oactive) {
 		is->is_startrcv = 1;
+		return;
+	}
+	addr->il_bar = is->is_ifuba.ifu_r.ifrw_info & 0xffff;
+	addr->il_bcr = sizeof(struct il_rheader) + ILMTU + 6;
+	csr = ((is->is_ifuba.ifu_r.ifrw_info>>2)&0xc000)|ILC_RCV|IL_RIE;
+	addr->il_csr = csr;
+	while ((addr->il_csr & IL_CDONE) == 0)
+		;
 }
 
 /*
@@ -437,8 +436,7 @@ iloutput(ifp, m0, dst)
 	register struct il_softc *is = &il_softc[ifp->if_unit];
 	register struct mbuf *m = m0;
 	register struct il_xheader *il;
-	register int off;
-	register int i;
+	register int off, i;
 
 COUNT(ILOUTPUT);
 	switch (dst->sa_family) {
@@ -501,18 +499,11 @@ gottype:
 	}
 	il = mtod(m, struct il_xheader *);
 	if ((dest &~ 0xff) == 0)
-		for (i=0; i<6; i++)
-			il->ilx_dhost[i] = 0xff;
+		bcopy(ilbroadcastaddr, il->ilx_dhost, 6);
 	else {
-		if (dest & 0x8000) {
-			il->ilx_dhost[0] = is->is_enaddr[0];
-			il->ilx_dhost[1] = is->is_enaddr[1];
-			il->ilx_dhost[2] = is->is_enaddr[2];
-		} else {
-			il->ilx_dhost[0] = il_ectop[0];
-			il->ilx_dhost[1] = il_ectop[1];
-			il->ilx_dhost[2] = il_ectop[2];
-		}
+		u_char *to = dest & 0x8000 ? is->is_enaddr : il_ectop;
+
+		bcopy(to, il->ilx_dhost, 3);
 		il->ilx_dhost[3] = (dest>>8) & 0x7f;
 		il->ilx_dhost[4] = (dest>>16) & 0xff;
 		il->ilx_dhost[5] = (dest>>24) & 0xff;
@@ -526,18 +517,17 @@ gottype:
 	s = splimp();
 	if (IF_QFULL(&ifp->if_snd)) {
 		IF_DROP(&ifp->if_snd);
-		error = ENOBUFS;
-		goto qfull;
+		splx(s);
+		m_freem(m);
+		return (ENOBUFS);
 	}
 	IF_ENQUEUE(&ifp->if_snd, m);
 	if (is->is_oactive == 0)
 		ilstart(ifp->if_unit);
 	splx(s);
 	return (0);
-qfull:
-	m0 = m;
-	splx(s);
+
 bad:
 	m_freem(m0);
-	return(error);
+	return (error);
 }
