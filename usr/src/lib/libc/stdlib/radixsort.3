@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)radixsort.3	5.1 (Berkeley) %G%
+.\"	@(#)radixsort.3	5.2 (Berkeley) %G%
 .\"
 .TH radixsort 3 ""
 .SH NAME
@@ -39,8 +39,8 @@ Applications may specify a sort order by providing the
 argument.
 If non-NULL,
 .I table
-must reference an array of UCHAR_MAX (the maximum byte size) bytes which
-contains the sort weight of each byte.
+must reference an array of UCHAR_MAX + 1 bytes which contains the sort
+weight of each possible byte value.
 The end-of-string byte must have a sort weight of 0.
 More than one byte may have the same sort weight.
 .I Table
