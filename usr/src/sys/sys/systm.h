@@ -1,4 +1,4 @@
-/*	systm.h	4.12	81/02/27	*/
+/*	systm.h	4.13	81/02/28	*/
 
 /*
  * Random set of variables
@@ -83,3 +83,4 @@ char	vmmap[];		/* poor name! */
 int	umbabeg,umbaend;	/* where sensitive vm begins/ends */
 int	noproc;			/* no one is running just now */
 extern	int catcher[256];
+char	*panicstr;
