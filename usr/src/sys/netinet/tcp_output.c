@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)tcp_output.c	7.13.1.2 (Berkeley) %G%
+ *	@(#)tcp_output.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -48,7 +48,7 @@ tcp_output(tp)
 	register struct tcpcb *tp;
 {
 	register struct socket *so = tp->t_inpcb->inp_socket;
-	register int len, win;
+	register long len, win;
 	struct mbuf *m0;
 	int off, flags, error;
 	register struct mbuf *m;
@@ -213,8 +213,11 @@ send:
 	MGET(m, M_DONTWAIT, MT_HEADER);
 	if (m == NULL)
 		return (ENOBUFS);
-	m->m_off = MMAXOFF - sizeof (struct tcpiphdr);
+#define	MAXLINKHDR	32		/* belongs elsewhere */
+#define	DATASPACE  (MMAXOFF - (MMINOFF + MAXLINKHDR + sizeof (struct tcpiphdr)))
+	m->m_off = MMINOFF + MAXLINKHDR;
 	m->m_len = sizeof (struct tcpiphdr);
+	ti = mtod(m, struct tcpiphdr *);
 	if (len) {
 		if (tp->t_force && len == 1)
 			tcpstat.tcps_sndprobe++;
@@ -225,9 +228,15 @@ send:
 			tcpstat.tcps_sndpack++;
 			tcpstat.tcps_sndbyte += len;
 		}
-		m->m_next = m_copy(so->so_snd.sb_mb, off, len);
-		if (m->m_next == 0)
-			len = 0;
+		if (len <= DATASPACE) {
+			m_copydata(so->so_snd.sb_mb, off, len,
+			    mtod(m, caddr_t) + sizeof(struct tcpiphdr));
+			m->m_len += len;
+		} else {
+			m->m_next = m_copy(so->so_snd.sb_mb, off, len);
+			if (m->m_next == 0)
+				len = 0;
+		}
 	} else if (tp->t_flags & TF_ACKNOW)
 		tcpstat.tcps_sndacks++;
 	else if (flags & (TH_SYN|TH_FIN|TH_RST))
@@ -237,7 +246,6 @@ send:
 	else
 		tcpstat.tcps_sndwinup++;
 
-	ti = mtod(m, struct tcpiphdr *);
 	if (tp->t_template == 0)
 		panic("tcp_output");
 	bcopy((caddr_t)tp->t_template, (caddr_t)ti, sizeof (struct tcpiphdr));
@@ -294,6 +302,8 @@ send:
 	 */
 	if (win < so->so_rcv.sb_hiwat / 4 && win < tp->t_maxseg)
 		win = 0;
+	if (win > IP_MAXPACKET)
+		win = IP_MAXPACKET;
 	if (win < (int)(tp->rcv_adv - tp->rcv_nxt))
 		win = (int)(tp->rcv_adv - tp->rcv_nxt);
 	if (win > IP_MAXPACKET)
