@@ -9,7 +9,7 @@
  * Still more user commands.
  */
 
-static char *SccsId = "@(#)cmd3.c	2.2 %G%";
+static char *SccsId = "@(#)cmd3.c	2.3 %G%";
 
 /*
  * Process a shell escape by saving signals, ignoring signals,
@@ -247,6 +247,9 @@ respond(msgvec)
 			np = elide(extract(cp, GCC));
 			mapf(np, rcv);
 			np = delname(np, myname);
+			if (altnames != 0)
+				for (ap = altnames; *ap; ap++)
+					np = delname(np, *ap);
 			head.h_cc = detract(np, 0);
 		}
 	}
