@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)spp_usrreq.c	7.12 (Berkeley) %G%
+ *	@(#)spp_usrreq.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -1451,7 +1451,9 @@ spp_usrreq(so, req, m, nam, controlp)
 				cb->s_shdr.sp_dt = *(u_char *)(&p[2]);
 				spp_newchecks[3]++;
 			}
+			m_freem(controlp);
 		}
+		controlp = NULL;
 		error = spp_output(cb, m);
 		m = NULL;
 		break;
@@ -1481,6 +1483,8 @@ spp_usrreq(so, req, m, nam, controlp)
 	if (cb && (so->so_options & SO_DEBUG || traceallspps))
 		spp_trace(SA_USER, (u_char)ostate, cb, (struct spidp *)0, req);
 release:
+	if (controlp != NULL)
+		m_freem(controlp);
 	if (m != NULL)
 		m_freem(m);
 	splx(s);
