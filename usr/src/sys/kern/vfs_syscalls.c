@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_syscalls.c	7.26 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.27 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -1396,6 +1396,43 @@ umask(scp)
 	scp->sc_retval1 = scp->sc_cmask;
 	scp->sc_cmask = uap->mask & 07777;
 	RETURN (0);
+}
+
+/*
+ * Void all references to file by ripping underlying filesystem
+ * away from vnode.
+ */
+revoke(scp)
+	register struct syscontext *scp;
+{
+	struct a {
+		char	*fname;
+	} *uap = (struct a *)scp->sc_ap;
+	register struct nameidata *ndp = &scp->sc_nd;
+	register struct vnode *vp;
+	struct vattr vattr;
+	int error;
+
+	ndp->ni_nameiop = LOOKUP | FOLLOW;
+	ndp->ni_segflg = UIO_USERSPACE;
+	ndp->ni_dirp = uap->fname;
+	if (error = namei(ndp))
+		RETURN (error);
+	vp = ndp->ni_vp;
+	if (vp->v_type != VCHR && vp->v_type != VBLK) {
+		error = EINVAL;
+		goto out;
+	}
+	if (error = VOP_GETATTR(vp, &vattr, scp->sc_cred))
+		goto out;
+	if (scp->sc_uid != vattr.va_uid ||
+	    (error = suser(scp->sc_cred, &scp->sc_acflag)))
+		goto out;
+	if (vp->v_count > 1)
+		vgone(vp);
+out:
+	vrele(vp);
+	RETURN (error);
 }
 
 getvnode(ofile, fdes, fpp)
