@@ -1,9 +1,20 @@
 #
 # Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# All rights reserved.
 #
-#	@(#)Makefile	5.8	(Berkeley)	%G%
+# Redistribution and use in source and binary forms are permitted
+# provided that the above copyright notice and this paragraph are
+# duplicated in all such forms and that any documentation,
+# advertising materials, and other materials related to such
+# distribution and use acknowledge that the software was developed
+# by the University of California, Berkeley.  The name of the
+# University may not be used to endorse or promote products derived
+# from this software without specific prior written permission.
+# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+#
+#	@(#)Makefile	5.9 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -12,10 +23,7 @@ SRCS=	comp.c boggle.c
 all: boggle bogdict
 
 bogdict: comp sfile
-	-if [ -f /usr/local/lib/w2a ]; \
-		then dict=/usr/local/lib/w2a; \
-		else dict=/usr/dict/words; fi; \
-	sed -f sfile $$dict | uniq | ./comp >bogdict
+	sed -f sfile /usr/dict/words | uniq | ./comp >bogdict
 
 boggle: ${LIBC}
 	${CC} -o $@ ${CFLAGS} $@.c
