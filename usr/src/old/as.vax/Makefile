@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.10 (Berkeley) %G%
+#	@(#)Makefile	5.11 (Berkeley) %G%
 #
 #	as.h		Definitions for data structures
 #	asnumber.h	Definitions for all numbers: byte .. G format float
@@ -77,6 +77,8 @@ instrs.as: ${.CURDIR}/instrs
 	(echo FLAVOR AS ; cat ${.CURDIR}/instrs) | \
 	    awk -f ${.CURDIR}/instrs > instrs.as
 
-.depend: instrs.as astoks.h
-
 .include <bsd.prog.mk>
+
+${OBJS} .depend: instrs.as astoks.h
+
+
