@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)dbopen.3	5.4 (Berkeley) %G%
+.\"	@(#)dbopen.3	5.5 (Berkeley) %G%
 .\"
 .TH DB 3  ""
 .UC 7
@@ -91,7 +91,7 @@ A pointer to a routine to remove key/data pairs from the database.
 Its function prototype is:
 .sp
 .RS
-delete(const DB *db, const VALUE *key);
+delete(const DB *db, const DBT *key);
 .RE
 .sp
 The
@@ -106,7 +106,7 @@ the database.
 Its function prototype is:
 .sp
 .RS
-get(const DB *db, const VALUE *key, VALUE *data);
+get(const DB *db, const DBT *key, DBT *data);
 .RE
 .sp
 The address and length of the data associated with the specified
@@ -125,7 +125,7 @@ Its function prototype is:
 .sp
 .RS
 .RS
-put(const DB *db, const VALUE *key, const VALUE *data, u_long flag);
+put(const DB *db, const DBT *key, const DBT *data, u_long flag);
 .RE
 .sp
 .TP
@@ -162,7 +162,7 @@ retrieval from the database.
 Its function prototype is:
 .sp
 .RS
-seq(const DB *db, VALUE *key, VALUE *data, int flag);
+seq(const DB *db, DBT *key, DBT *data, int flag);
 .RE
 .sp
 The address and length of the key are returned in the structure
