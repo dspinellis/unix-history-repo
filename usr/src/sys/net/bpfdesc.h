@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *      @(#)bpfdesc.h	7.3 (Berkeley) %G%
+ *      @(#)bpfdesc.h	7.4 (Berkeley) %G%
  *
  * @(#) $Header: bpfdesc.h,v 1.9 91/10/27 21:22:38 mccanne Exp $ (LBL)
  */
@@ -41,11 +41,10 @@ struct bpf_d {
 	struct bpf_insn *bd_filter; 	/* filter code */
 	u_long		bd_rcount;	/* number of packets received */
 	u_long		bd_dcount;	/* number of packets dropped */
-	struct proc *	bd_selproc;	/* process that last selected us */
+	struct selinfo	bd_selproc;	/* process that last selected us */
 
 	u_char		bd_promisc;	/* true if listening promiscuously */
 	u_char		bd_state;	/* idle, waiting, or timed out */
-	u_char		bd_selcoll;	/* true if selects collide */
 	u_char		bd_immediate;	/* true to return on packet arrival */
 #if BSD < 199103
 	int		bd_timedout;
