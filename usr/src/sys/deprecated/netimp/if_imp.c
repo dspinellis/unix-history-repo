@@ -1,4 +1,4 @@
-/*	if_imp.c	4.6	82/02/16	*/
+/*	if_imp.c	4.7	82/02/16	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -87,7 +87,7 @@ COUNT(IMPATTACH);
 	ifp->if_mtu = IMP_MTU;
 	ifp->if_net = ui->ui_flags;
 	/* this should be found by talking to the imp */
-	ifp->if_addr = 0x4e00000a;;
+	ifp->if_addr.s_addr = 0x4e00000a;;
 	ifp->if_init = impinit;
 	ifp->if_output = impoutput;
 	/* reset is handled at the hardware level */
@@ -270,14 +270,14 @@ COUNT(IMP_INPUT);
 			hp->h_rfnm--;
 			/* poke holding queue */
 			if (n = hp->h_q) {
-				if (n->m_next == n)
+				if (n->m_act == n)
 					hp->h_q = 0;
 				else {
-					n = n->m_next;
-					hp->h_q->m_next = n->m_next;
+					n = n->m_act;
+					hp->h_q->m_act = n->m_act;
 				}
 				(void) impsnd(sc, n);
-				break;
+				goto rawlinkin;
 			}
 			if (hp->h_rfnm == 0)
 				hostfree(hp);
@@ -341,7 +341,7 @@ COUNT(IMP_INPUT);
 #endif
 
 	default:
-rawlinkin:
+	rawlinkin:
 		impproto.sp_protocol = ip->il_link;
 		impdst.sin_addr = sc->imp_if.if_addr;
 		impsrc.sin_addr.s_net = ip->il_network;
@@ -444,7 +444,11 @@ COUNT(IMPOUTPUT);
 	imp = mtod(m, struct imp_leader *);
 	imp->il_format = IMP_NFF;
 	imp->il_mtype = IMPTYPE_DATA;
+#ifdef notdef
 	imp->il_network = dnet;
+#else
+	imp->il_network = 0;
+#endif
 	imp->il_host = dhost;
 	imp->il_imp = dimp;
 	imp->il_length = htons((len + sizeof(struct imp_leader)) << 3);
@@ -515,8 +519,10 @@ COUNT(IMPSND);
 			 */
 			cnt = 0;
 			if (n = hp->h_q)
-				for (; n != hp->h_q; n = n->m_next)
+				do {
+					n = n->m_act;
 					cnt++;
+				} while (n != hp->h_q);
 			if (cnt >= 8)
 				goto drop;
 
@@ -525,10 +531,10 @@ COUNT(IMPSND);
 			 * (head) pointing to the last entry.
 			 */
 			if ((n = hp->h_q) == 0)
-				hp->h_q = m->m_next = m;
+				hp->h_q = m->m_act = m;
 			else {
-				m->m_next = n->m_next;
-				hp->h_q = n->m_next = m;
+				m->m_act = n->m_act;
+				hp->h_q = n->m_act = m;
 			}
 			splx(x);
 			goto start;

@@ -1,4 +1,4 @@
-/*	if_imphost.c	4.3	82/02/16	*/
+/*	if_imphost.c	4.4	82/02/16	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -149,10 +149,14 @@ COUNT(HOSTRELEASE);
 	 * Discard any packets left on the waiting q
 	 */
 	if (m = hp->h_q) {
-		m = m->m_next;
-		hp->h_q->m_next = 0;
+		register struct mbuf *n;
+
+		do {
+			n = m->m_act;
+			m_freem(m);
+			m = n;
+		} while (m != hp->h_q);
 		hp->h_q = 0;
-		m_freem(m);
 	}
 	if (--mtod(mh, struct hmbuf *)->hm_count)
 		return;
