@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)dirent.h	5.1 (Berkeley) %G%
+ *	@(#)dirent.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -37,7 +37,7 @@ struct	dirent {
 /*
  * Definitions for library routines operating on directories.
  */
-#define DIRBLKSIZ	512
+#define	DIRBLKSIZ	1024
 
 typedef struct _dirdesc {
 	int	dd_fd;
