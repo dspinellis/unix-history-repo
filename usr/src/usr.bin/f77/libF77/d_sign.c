@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)d_sign.c	5.2	%G%
+ *	@(#)d_sign.c	5.3	%G%
  */
 
 #ifndef tahoe
@@ -15,9 +15,9 @@ x = (*a >= 0 ? *a : - *a);
 return( *b >= 0 ? x : -x);
 }
 
-#else tahoe
+#else
 
-#include <tahoemath/FP.h>
+#include <tahoe/math/FP.h>
 
 double d_sign(a,b)
 double *a, *b;
@@ -28,4 +28,4 @@ if ((*a < 0) || (*b < 0))
 	*(unsigned long *)&x ^= SIGN_BIT;
 return(x);
 }
-#endif tahoe
+#endif
