@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)lfs_vnops.c	7.19 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	7.20 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -103,6 +103,50 @@ struct vnodeops ufs_vnodeops = {
 	ufs_strategy,
 };
 
+int	spec_lookup(),
+	spec_open(),
+	spec_read(),
+	spec_write(),
+	spec_strategy(),
+	spec_ioctl(),
+	spec_select(),
+	spec_close(),
+	spec_badop(),
+	spec_nullop();
+
+struct vnodeops spec_inodeops = {
+	spec_lookup,
+	spec_badop,
+	spec_badop,
+	spec_open,
+	spec_close,
+	ufs_access,
+	ufs_getattr,
+	ufs_setattr,
+	spec_read,
+	spec_write,
+	spec_ioctl,
+	spec_select,
+	spec_badop,
+	spec_nullop,
+	spec_badop,
+	spec_badop,
+	spec_badop,
+	spec_badop,
+	spec_badop,
+	spec_badop,
+	spec_badop,
+	spec_badop,
+	spec_badop,
+	spec_badop,
+	ufs_inactive,
+	ufs_reclaim,
+	ufs_lock,
+	ufs_unlock,
+	spec_badop,
+	spec_strategy,
+};
+
 enum vtype iftovt_tab[8] = {
 	VNON, VCHR, VDIR, VBLK, VREG, VLNK, VSOCK, VBAD,
 };
@@ -135,17 +179,19 @@ ufs_mknod(ndp, vap, cred)
 	struct ucred *cred;
 	struct vattr *vap;
 {
+	register struct vnode *vp;
 	struct inode *ip;
 	int error;
 
 	if (error = maknode(MAKEIMODE(vap->va_type, vap->va_mode), ndp, &ip))
 		return (error);
+	vp = ITOV(ip);
 	if (vap->va_rdev) {
 		/*
 		 * Want to be able to use this to make badblock
 		 * inodes, so don't truncate the dev number.
 		 */
-		ITOV(ip)->v_rdev = ip->i_rdev = vap->va_rdev;
+		vp->v_rdev = ip->i_rdev = vap->va_rdev;
 		ip->i_flag |= IACC|IUPD|ICHG;
 	}
 	/*
@@ -153,11 +199,9 @@ ufs_mknod(ndp, vap, cred)
 	 * checked to see if it is an alias of an existing entry
 	 * in the inode cache.
 	 */
-	remque(ip);
-	ip->i_forw = ip;
-	ip->i_back = ip;
-	ITOV(ip)->v_type = VNON;
 	iput(ip);
+	vp->v_type = VNON;
+	vgone(vp);
 	return (0);
 }
 
