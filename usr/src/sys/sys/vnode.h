@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vnode.h	7.9 (Berkeley) %G%
+ *	@(#)vnode.h	7.10 (Berkeley) %G%
  */
 
 /*
@@ -132,8 +132,8 @@ struct vnodeops {
 #define	VOP_ACCESS(v,f,c)	(*((v)->v_op->vn_access))((v),(f),(c))
 #define	VOP_GETATTR(v,a,c)	(*((v)->v_op->vn_getattr))((v),(a),(c))
 #define	VOP_SETATTR(v,a,c)	(*((v)->v_op->vn_setattr))((v),(a),(c))
-#define	VOP_READ(v,u,o,i,c)	(*((v)->v_op->vn_read))((v),(u),(o),(i),(c))
-#define	VOP_WRITE(v,u,o,i,c)	(*((v)->v_op->vn_write))((v),(u),(o),(i),(c))
+#define	VOP_READ(v,u,i,c)	(*((v)->v_op->vn_read))((v),(u),(i),(c))
+#define	VOP_WRITE(v,u,i,c)	(*((v)->v_op->vn_write))((v),(u),(i),(c))
 #define	VOP_IOCTL(v,o,d,f,c)	(*((v)->v_op->vn_ioctl))((v),(o),(d),(f),(c))
 #define	VOP_SELECT(v,w,c)	(*((v)->v_op->vn_select))((v),(w),(c))
 #define	VOP_MMAP(v,c)		(*((v)->v_op->vn_mmap))((v),(c))
