@@ -93,6 +93,9 @@ ring_consumed(ring, count)
 Ring *ring;
 int count;
 {
+    if (count == 0)	/* don't update anything */
+	return;
+
     ring->consume = ring_increment(ring, ring->consume, count);
     ring->consumetime = ++ring_clock;
     /*
