@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rcp.c	4.8 83/08/12";
+static char sccsid[] = "@(#)rcp.c	4.9 84/01/26";
 #endif
 
 /*
@@ -102,13 +102,13 @@ main(argc, argv)
 					*suser++ = 0;
 					if (!okname(suser))
 						continue;
-		(void) sprintf(buf, "rsh %s -L %s -n %s %s '%s:%s'",
-					    argv[i], suser, cmd,
-					    src, argv[argc - 1], targ);
+		(void) sprintf(buf, "rsh %s -l %s -n %s %s '%s.%s:%s'",
+					    argv[i], suser, cmd, src,
+					    argv[argc - 1], tuser, targ);
 				} else
-		(void) sprintf(buf, "rsh %s -n %s %s '%s:%s'",
-					    argv[i], cmd,
-					    src, argv[argc - 1], targ);
+		(void) sprintf(buf, "rsh %s -n %s %s '%s.%s:%s'",
+					    argv[i], cmd, src,
+					    argv[argc - 1], tuser, targ);
 				(void) susystem(buf);
 			} else {
 				if (rem == -1) {
