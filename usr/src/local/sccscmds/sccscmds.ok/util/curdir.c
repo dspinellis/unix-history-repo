@@ -1,5 +1,5 @@
 /*
- * SCCSID(@(#)curdir.c	4.4);
+ * SCCSID(@(#)curdir.c	4.5);
  */
 #include	<sys/param.h>
 #include	<sys/stat.h>
@@ -10,7 +10,7 @@
 
 static	char	*name;
 
-static	int	off	= -1;
+static	int	off;
 static	struct	stat	d, dd;
 static	struct	direct	*dir;
 static	DIR	*dirp;
@@ -22,6 +22,7 @@ char *np;
 {
 	int rdev, rino;
 
+	off = -1;
 	*np++ = '/';
 	name = np;
 	stat("/", &d);
