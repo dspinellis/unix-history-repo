@@ -1,4 +1,4 @@
-/*	cons.c	7.2	89/05/01	*/
+/*	cons.c	7.3	89/05/05	*/
 
 /*
  * Tahoe console processor driver
@@ -10,13 +10,11 @@
  */
 #include "param.h"
 #include "conf.h"
-#include "dir.h"
 #include "ioctl.h"
 #include "user.h"
 #include "proc.h"
 #include "tty.h"
 #include "ttydefaults.h"
-#include "uio.h"
 #include "callout.h"
 #include "systm.h"
 #include "kernel.h"
