@@ -15,19 +15,16 @@ static unsigned int
     my_sequence,
     your_sequence;
 
-static char ibuffer[40], *ibuf_next, *ibuf_last;
+static char ibuffer[4000], *ibuf_next, *ibuf_last;
 #define	IBUFADDED(i)		ibuf_last += (i)
-#define	IBUFAVAILABLE()		(ibuf_last -ibuf_next)
+#define	IBUFAVAILABLE()		(ibuf_last-ibuf_next)
 #define	IBUFFER()		ibuffer
+#define	IBUFFREE()		(ibuffer+sizeof ibuffer-ibuf_last-1)
 #define	IBUFGETBYTES(w,l)	{ memcpy(w, ibuf_next, l); ibuf_next += l; }
-#define	IBUFGETCHAR()		(*ibuf_next++)
-#define	IBUFGETSHORT()		((*ibuf_next++<<8)|(*ibuf_next++&0xff))
 #define	IBUFRESET()		(ibuf_next = ibuf_last = ibuffer)
 
-char obuffer[40], *obuf_next;
+char obuffer[4000], *obuf_next;
 #define	OBUFADDBYTES(w,l)	{ memcpy(obuf_next, w, l); obuf_next += l; }
-#define	OBUFADDCHAR(c)		(*obuf_next++ = c)
-#define	OBUFADDSHORT(s)		{*obuf_next++ = (s)>>8; *obuf_next++ = s; }
 #define	OBUFAVAILABLE()		(obuf_next - obuffer)
 #define	OBUFFER()		obuffer
 #define	OBUFRESET()		obuf_next = obuffer
@@ -52,36 +49,48 @@ outflush()
 
 
 static int
-infill(count)
-int count;
+iget(location, length)
+char	*location;
+int	length;
 {
     int i;
+    int count;
 
     if (OBUFAVAILABLE()) {
 	if (outflush() == -1) {
 	    return -1;
 	}
     }
-    if (ibuf_next == ibuf_last) {
-	IBUFRESET();
+    if ((count = IBUFAVAILABLE()) != 0) {
+	if (count > length) {
+	    count = length;
+	}
+	IBUFGETBYTES(location, count);
+	length -= count;
+	location += count;
     }
-    if ((count -= IBUFAVAILABLE()) < 0) {
-	return 0;
-    }
-    while (count) {
-	if ((i = read(sock, IBUFFER(), count)) < 0) {
+    while (length) {
+	if (ibuf_next == ibuf_last) {
+	    IBUFRESET();
+	}
+	if ((count = read(sock, IBUFFER(), IBUFFREE())) < 0) {
 	    WHO_ARE_WE();
 	    perror("read");
 	    return -1;
 	}
-	if (i == 0) {
+	if (count == 0) {
 	    /* Reading past end-of-file */
 	    WHO_ARE_WE();
 	    fprintf(stderr, "End of file read\r\n");
 	    return -1;
 	}
-	count -= i;
-	IBUFADDED(i);
+	IBUFADDED(count);
+	if (count > length) {
+	    count = length;
+	}
+	IBUFGETBYTES(location, count);
+	length -= count;
+	location += count;
     }
     return 0;
 }
@@ -136,12 +145,9 @@ send_state()
 static int
 receive_state()
 {
-    if (IBUFAVAILABLE() < sizeof exch_state) {
-	if (infill(sizeof exch_state) == -1) {
-	    return -1;
-	}
+    if (iget((char *)&exch_state, sizeof exch_state) == -1) {
+	return -1;
     }
-    IBUFGETBYTES((char *)&exch_state, sizeof exch_state);
     if (conversation != CONTENTION) {
 	if (exch_state.your_sequence != my_sequence) {
 	    WHO_ARE_WE();
@@ -352,14 +358,8 @@ char
 		type, length, ntohs(exch_state.length));
 	return -1;
     }
-    while (length) {
-	if ((i = read(sock, location, length)) < 0) {
-	    WHO_ARE_WE();
-	    perror("read");
-	    return -1;
-	}
-	length -= i;
-	location += i;
+    if (iget(location, length) == -1) {
+	return -1;
     }
     return 0;
 }
