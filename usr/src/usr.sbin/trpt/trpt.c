@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)trpt.c	4.11 %G%";
+static char sccsid[] = "@(#)trpt.c	4.12 %G%";
 #endif
 
 #include <sys/param.h>
@@ -116,7 +116,6 @@ again:
 		fprintf(stderr, "trpt: "); perror("tcp_debx");
 		exit(3);
 	}
-	printf("tcp_debx=%d\n", tcp_debx);
 	(void) lseek(0, nl[0].n_value, 0);
 	if (read(0, tcp_debug, sizeof (tcp_debug)) != sizeof (tcp_debug)) {
 		fprintf(stderr, "trpt: "); perror("tcp_debug");
@@ -167,7 +166,7 @@ dotrace(tcpcb)
 	register int i;
 	register struct tcp_debug *td;
 
-	for (i = 0; i < tcp_debx % TCP_NDEBUG; i++) {
+	for (i = tcp_debx % TCP_NDEBUG; i < TCP_NDEBUG; i++) {
 		td = &tcp_debug[i];
 		if (tcpcb && td->td_tcb != tcpcb)
 			continue;
@@ -175,7 +174,7 @@ dotrace(tcpcb)
 		tcp_trace(td->td_act, td->td_ostate, td->td_tcb, &td->td_cb,
 		    &td->td_ti, td->td_req);
 	}
-	for (i = tcp_debx % TCP_NDEBUG; i < TCP_NDEBUG; i++) {
+	for (i = 0; i < tcp_debx % TCP_NDEBUG; i++) {
 		td = &tcp_debug[i];
 		if (tcpcb && td->td_tcb != tcpcb)
 			continue;
