@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)st.c	7.5 (Berkeley) %G%
+ *	@(#)st.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -102,7 +102,10 @@ stinit(hd)
 	register struct hp_device *hd;
 {
 	register struct st_softc *sc = &st_softc[hd->hp_unit];
+	register struct buf *bp;
 
+	for (bp = sttab; bp < &sttab[NST]; bp++)
+		bp->b_actb = &bp->b_actf;
 	sc->sc_hd = hd;
 	sc->sc_punit = stpunit(hd->hp_flags);
 	sc->sc_type = stident(sc, hd);
@@ -266,17 +269,11 @@ ststrategy(bp)
 	register struct buf *dp = &sttab[unit];
 	int s;
 
-	bp->av_forw = NULL;
-
+	bp->b_actf = NULL;
 	s = splbio();
-
-	if (dp->b_actf == NULL)
-		dp->b_actf = bp;
-	else
-		dp->b_actl->av_forw = bp;
-
-	dp->b_actl = bp;
-
+	bp->b_actb = dp->b_actb;
+	*dp->b_actb = bp;
+	dp->b_actb = &bp->b_actf;
 	if (dp->b_active == 0) {
 		dp->b_active = 1;
 		stustart(unit);
@@ -292,7 +289,7 @@ stustart(unit)
 	register struct st_softc *sc = &st_softc[unit];
 	register struct hp_device *hp = sc->sc_hd;
 	register struct scsi_queue *dq = &sc->sc_dq;
-	register struct buf *bp = sttab[unit].b_actf;
+	register struct buf *dp, *bp = sttab[unit].b_actf;
 	register struct scsi_fmt_cdb *cmd;
 	long nblks;
 
@@ -315,8 +312,11 @@ stustart(unit)
 		bp->b_error = EIO;
 		
 		sttab[unit].b_errcnt = 0;
-		sttab[unit].b_actf = bp->b_actf;
-		
+		if (dp = bp->b_actf)
+			dp->b_actb = bp->b_actb;
+		else
+			sttab[unit].b_actb = bp->b_actb;
+		*bp->b_actb = dp;
 		bp->b_resid = 0;
 		
 		biodone(bp);
@@ -394,7 +394,7 @@ stintr(unit, stat)
 	register struct st_softc *sc = &st_softc[unit];
 	register struct scsi_xsense *xp = (struct scsi_xsense *) xsense_buff;
 	register struct scsi_queue *dq = &sc->sc_dq;
-	register struct buf *bp = dq->dq_bp;
+	register struct buf *dp, *bp = dq->dq_bp;
 	int ctlr  = dq->dq_ctlr;
 	int slave = dq->dq_slave;
 
@@ -480,8 +480,11 @@ stintr(unit, stat)
 
 done:
 	sttab[unit].b_errcnt = 0;
-	sttab[unit].b_actf = bp->b_actf;
-	
+	if (dp = bp->b_actf)
+		dp->b_actb = bp->b_actb;
+	else
+		sttab[unit].b_actb = bp->b_actb;
+	*bp->b_actb = dp;
 	bp->b_resid = 0;
 
 	biodone(bp);
