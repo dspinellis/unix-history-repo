@@ -1,8 +1,8 @@
-	@(#)syscalls.master	8.1 (Berkeley) %G%
+	@(#)syscalls.master	8.2 (Berkeley) %G%
 ; System call name/number master file (or rather, slave, from HP-UX).
 ; Processed to created hpux_sysent.c, hpux_syscalls.c and hpux_syscall.h.
 ;
-; from:	Utah $Hdr: hpux_sysent.c 1.26 92/12/26$
+; from:	Utah $Hdr: hpux_sysent.c 1.33 93/08/13$
 ;
 
 ; Columns: number type nargs name altname/comments
@@ -25,7 +25,7 @@
 
 0	UNIMPL	0 indir or out-of-range
 1	STD	1 exit
-2	STD	0 fork
+2	STD	0 hpuxfork fork
 3	STD	3 hpuxread read
 4	STD	3 hpuxwrite write
 5	STD	3 hpuxopen open
@@ -89,7 +89,7 @@
 63	STD	2 hpuxulimit ulimit
 64	UNIMPL	0 nosys
 65	UNIMPL	0 nosys
-66	STD	0 vfork
+66	STD	0 hpuxvfork vfork
 67	STD	0 hpuxread vread
 68	STD	0 hpuxwrite vwrite
 69	UNIMPL	0 nosys
@@ -302,7 +302,7 @@
 269	UNIMPL	0 nosys
 270	UNIMPL	0 nosys
 271	UNIMPL	0 nosys
-272	UNIMPL	0 nosys
+272	STD	1 fchdir
 273	UNIMPL	0 nosys
 274	UNIMPL	0 nosys
 275	COMPAT	3 accept
@@ -322,3 +322,30 @@
 289	STD	2 shutdown
 290	STD	3 socket
 291	STD	4 socketpair
+292	UNIMPL	0 nosys
+293	UNIMPL	0 nosys
+294	UNIMPL	0 nosys
+295	UNIMPL	0 nosys
+296	UNIMPL	0 nosys
+297	UNIMPL	0 nosys
+298	UNIMPL	0 nosys
+299	UNIMPL	0 nosys
+300	UNIMPL	0 nosys
+301	UNIMPL	0 nosys
+302	UNIMPL	0 nosys
+303	UNIMPL	0 nosys
+304	UNIMPL	0 nosys
+305	UNIMPL	0 nosys
+306	UNIMPL	0 nosys
+307	UNIMPL	0 nosys
+308	UNIMPL	0 nosys
+309	UNIMPL	0 nosys
+310	UNIMPL	0 nosys
+311	UNIMPL	0 nosys
+312	STD	4 hpuxsemctl nsemctl
+313	NOTIMPL	3 msgctl
+#ifdef SYSVSHM
+314	STD	3 hpuxnshmctl nshmctl
+#else
+314	NOTIMPL	3 nshmctl
+#endif

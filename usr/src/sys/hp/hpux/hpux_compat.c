@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: hpux_compat.c 1.59 93/06/15$
+ * from: Utah $Hdr: hpux_compat.c 1.64 93/08/05$
  *
- *	@(#)hpux_compat.c	8.1 (Berkeley) %G%
+ *	@(#)hpux_compat.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -77,7 +77,7 @@ char hpuxcontext[] =
 char	domainname[MAXHOSTNAMELEN] = "unknown";
 int	domainnamelen = 7;
 
-#define NERR	79
+#define NERR	83
 #define BERR	1000
 
 /* indexed by BSD errno */
@@ -89,7 +89,8 @@ short bsdtohpuxerrnomap[NERR] = {
 /*40*/	218, 219, 220, 221, 222, 223, 224, 225, 226, 227,
 /*50*/	228, 229, 230, 231, 232, 233, 234, 235, 236, 237,
 /*60*/	238, 239, 249, 248, 241, 242, 247,BERR,BERR,BERR,
-/*70*/   70,  71,BERR,BERR,BERR,BERR,BERR,  46,BERR
+/*70*/   70,  71,BERR,BERR,BERR,BERR,BERR,  46, 251,BERR,
+/*80*/ BERR,BERR,  11
 };
 
 notimp(p, uap, retval, code, nargs)
@@ -121,6 +122,36 @@ notimp(p, uap, retval, code, nargs)
 	error = nosys(p, uap, retval);
 #endif
 	uprintf("HP-UX system call %d not implemented\n", code);
+	return (error);
+}
+
+/*
+ * HP-UX fork and vfork need to map the EAGAIN return value appropriately.
+ */
+hpuxfork(p, uap, retval)
+	struct proc *p;
+	struct hpuxwait3_args *uap;
+	int *retval;
+{
+	int error;
+
+	error = fork(p, uap, retval);
+	if (error == EAGAIN)
+		error = OEAGAIN;
+	return (error);
+}
+
+hpuxvfork(p, uap, retval)
+	struct proc *p;
+	struct hpuxwait3_args *uap;
+	int *retval;
+
+{
+	int error;
+
+	error = vfork(p, uap, retval);
+	if (error == EAGAIN)
+		error = OEAGAIN;
 	return (error);
 }
 
@@ -347,7 +378,7 @@ hpuxfcntl(p, uap, retval)
 			*fp |= UF_NONBLOCK_ON;
 		else
 			*fp &= ~UF_NONBLOCK_ON;
-		if (uap->arg & FNONBLOCK)
+		if (uap->arg & HPUXNDELAY)
 			*fp |= UF_FNDELAY_ON;
 		else
 			*fp &= ~UF_FNDELAY_ON;
@@ -371,7 +402,7 @@ hpuxfcntl(p, uap, retval)
 			if (*fp & UF_NONBLOCK_ON)
 				*retval |= HPUXNONBLOCK;
 			if ((*fp & UF_FNDELAY_ON) == 0)
-				*retval &= ~FNONBLOCK;
+				*retval &= ~HPUXNDELAY;
 		}
 		if (mode & O_CREAT)
 			*retval |= HPUXFCREAT;
@@ -409,7 +440,7 @@ hpuxread(p, uap, retval)
 
 		if (*fp & UF_NONBLOCK_ON) {
 			*retval = -1;
-			error = EAGAIN;
+			error = OEAGAIN;
 		} else if (*fp & UF_FNDELAY_ON) {
 			*retval = 0;
 			error = 0;
@@ -431,7 +462,7 @@ hpuxwrite(p, uap, retval)
 
 		if (*fp & UF_NONBLOCK_ON) {
 			*retval = -1;
-			error = EAGAIN;
+			error = OEAGAIN;
 		} else if (*fp & UF_FNDELAY_ON) {
 			*retval = 0;
 			error = 0;
@@ -453,7 +484,7 @@ hpuxreadv(p, uap, retval)
 
 		if (*fp & UF_NONBLOCK_ON) {
 			*retval = -1;
-			error = EAGAIN;
+			error = OEAGAIN;
 		} else if (*fp & UF_FNDELAY_ON) {
 			*retval = 0;
 			error = 0;
@@ -475,7 +506,7 @@ hpuxwritev(p, uap, retval)
 
 		if (*fp & UF_NONBLOCK_ON) {
 			*retval = -1;
-			error = EAGAIN;
+			error = OEAGAIN;
 		} else if (*fp & UF_FNDELAY_ON) {
 			*retval = 0;
 			error = 0;
@@ -933,6 +964,20 @@ hpuxshmget(p, uap, retval)
 	return (shmget(p, uap, retval));
 }
 
+hpuxshmctl(p, uap, retval)
+	struct proc *p;
+	int *uap, *retval;
+{
+	return (hpuxshmctl1(p, uap, retval, 0));
+}
+
+hpuxnshmctl(p, uap, retval)
+	struct proc *p;
+	int *uap, *retval;
+{
+	return (hpuxshmctl1(p, uap, retval, 1));
+}
+
 /*
  * Handle HP-UX specific commands.
  */
@@ -941,24 +986,70 @@ struct hpuxshmctl_args {
 	int cmd;
 	caddr_t buf;
 };
-hpuxshmctl(p, uap, retval)
+hpuxshmctl1(p, uap, retval, isnew)
 	struct proc *p;
 	struct hpuxshmctl_args *uap;
 	int *retval;
+	int isnew;
 {
 	register struct shmid_ds *shp;
 	register struct ucred *cred = p->p_ucred;
+	struct hpuxshmid_ds sbuf;
 	int error;
 
 	if (error = shmvalid(uap->shmid))
 		return (error);
 	shp = &shmsegs[uap->shmid % SHMMMNI];
-	if (uap->cmd == SHM_LOCK || uap->cmd == SHM_UNLOCK) {
+	switch (uap->cmd) {
+	case SHM_LOCK:
+	case SHM_UNLOCK:
 		/* don't really do anything, but make them think we did */
 		if (cred->cr_uid && cred->cr_uid != shp->shm_perm.uid &&
 		    cred->cr_uid != shp->shm_perm.cuid)
 			return (EPERM);
 		return (0);
+
+	case IPC_STAT:
+		if (!isnew)
+			break;
+		error = ipcaccess(&shp->shm_perm, IPC_R, cred);
+		if (error == 0) {
+			sbuf.shm_perm.uid = shp->shm_perm.uid;
+			sbuf.shm_perm.gid = shp->shm_perm.gid;
+			sbuf.shm_perm.cuid = shp->shm_perm.cuid;
+			sbuf.shm_perm.cgid = shp->shm_perm.cgid;
+			sbuf.shm_perm.mode = shp->shm_perm.mode;
+			sbuf.shm_perm.seq = shp->shm_perm.seq;
+			sbuf.shm_perm.key = shp->shm_perm.key;
+			sbuf.shm_segsz = shp->shm_segsz;
+			sbuf.shm_ptbl = shp->shm_handle;	/* XXX */
+			sbuf.shm_lpid = shp->shm_lpid;
+			sbuf.shm_cpid = shp->shm_cpid;
+			sbuf.shm_nattch = shp->shm_nattch;
+			sbuf.shm_cnattch = shp->shm_nattch;	/* XXX */
+			sbuf.shm_atime = shp->shm_atime;
+			sbuf.shm_dtime = shp->shm_dtime;
+			sbuf.shm_ctime = shp->shm_ctime;
+			error = copyout((caddr_t)&sbuf, uap->buf, sizeof sbuf);
+		}
+		return (error);
+
+	case IPC_SET:
+		if (!isnew)
+			break;
+		if (cred->cr_uid && cred->cr_uid != shp->shm_perm.uid &&
+		    cred->cr_uid != shp->shm_perm.cuid) {
+			return (EPERM);
+		}
+		error = copyin(uap->buf, (caddr_t)&sbuf, sizeof sbuf);
+		if (error == 0) {
+			shp->shm_perm.uid = sbuf.shm_perm.uid;
+			shp->shm_perm.gid = sbuf.shm_perm.gid;
+			shp->shm_perm.mode = (shp->shm_perm.mode & ~0777)
+				| (sbuf.shm_perm.mode & 0777);
+			shp->shm_ctime = time.tv_sec;
+		}
+		return (error);
 	}
 	return (shmctl(p, uap, retval));
 }
@@ -1159,6 +1250,10 @@ hpuxtobsdioctl(com)
 		com = TIOCLSET; break;
 	case HPUXTIOCLGET:
 		com = TIOCLGET; break;
+	case HPUXTIOCGWINSZ:
+		com = TIOCGWINSZ; break;
+	case HPUXTIOCSWINSZ:
+		com = TIOCSWINSZ; break;
 	}
 	return(com);
 }
@@ -1266,11 +1361,15 @@ hpuxioctl(p, uap, retval)
 		if (*(int *)data & HPUXLTOSTOP)
 			*(int *)data = LTOSTOP;
 		/* fall into */
+
+	/* simple mapping cases */
 	case HPUXTIOCLGET:
 	case HPUXTIOCSLTC:
 	case HPUXTIOCGLTC:
 	case HPUXTIOCSPGRP:
 	case HPUXTIOCGPGRP:
+	case HPUXTIOCGWINSZ:
+	case HPUXTIOCSWINSZ:
 		error = (*fp->f_ops->fo_ioctl)
 			(fp, hpuxtobsdioctl(com), data, p);
 		if (error == 0 && com == HPUXTIOCLGET) {
@@ -1289,7 +1388,7 @@ hpuxioctl(p, uap, retval)
 	case HPUXTCSETATTR:
 	case HPUXTCSETATTRD:
 	case HPUXTCSETATTRF:
-		error = hpuxtermio(fp, com, data, p);
+		error = hpuxtermio(uap->fdes, com, data, p);
 		break;
 
 	default:
