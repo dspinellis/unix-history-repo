@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)forop.c 1.6 %G%";
+static char sccsid[] = "@(#)forop.c 1.7 %G%";
 
 #include	"whoami.h"
 #include	"0.h"
@@ -48,9 +48,14 @@ forop( arg )
 	int		goc;		/* saved gocnt */
 	int		again;		/* label at the top of the loop */
 	int		after;		/* label after the end of the loop */
+	bool		shadowed;	/* shadowing for var in temporary? */
+	long		s_offset;	/* saved offset of real for variable */
+	long		s_flags;	/* saved flags of real for variable */
+	long		s_forv;		/* saved NL_FORV of the for variable */
 
 	goc = gocnt;
 	forvar = NIL;
+	shadowed = FALSE;
 	if ( arg == NIL ) {
 	    goto byebye;
 	}
@@ -65,6 +70,9 @@ forop( arg )
 	stat = arg[4];
 	if (lhs == NIL) {
 nogood:
+	    if (forvar != NIL) {
+		forvar->value[ NL_FORV ] = FORVAR;
+	    }
 	    rvalue( init , NIL , RREQ );
 	    rvalue( term , NIL , RREQ );
 	    statement( stat );
@@ -77,6 +85,7 @@ nogood:
 	if ( forvar == NIL ) {
 	    goto nogood;
 	}
+	s_forv = forvar -> value[ NL_FORV ];
 	if ( lhs[3] != NIL ) {
 	    error("For variable %s must be unqualified", forvar->symbol);
 	    goto nogood;
@@ -96,15 +105,6 @@ nogood:
 	codeoff();
 	fortype = lvalue( lhs , MOD , RREQ );
 	codeon();
-	    /*
-	     * mark the forvar so we can't change it during the loop
-	     */
-	if ( forvar->value[ NL_FORV ] & FORBOUND ) {
-	    error("Can't modify the for variable %s in the range of the loop", forvar->symbol);
-	    forvar = NIL;
-	    goto nogood;
-	}
-	forvar -> value[ NL_FORV ] |= LOOPVAR;
 	if ( fortype == NIL ) {
 	    goto nogood;
 	}
@@ -112,21 +112,18 @@ nogood:
 	    error("For variable %s cannot be %ss", forvar->symbol, nameof( fortype ) );
 	    goto nogood;
 	}
+	if ( forvar->value[ NL_FORV ] & FORVAR ) {
+	    error("Can't modify the for variable %s in the range of the loop", forvar->symbol);
+	    forvar = NIL;
+	    goto nogood;
+	}
 	    /*
 	     * allocate space for the initial and termination expressions
-	     * save the old offset of this variable in NL_SOFFS
-	     * save the old flags (and block) in NL_FORV
-	     * and mark the variable as being a for-variable in a temporary
-	     * set the new offset to be the offset of the initial temp
-	     * set the flags/block to be the old flags and the current block
+	     * the initial is tentatively placed in a register as it will
+	     * shadow the for loop variable in the body of the loop.
 	     */
 	initoff = tmpalloc(sizeof(long), nl+T4INT, REGOK);
-	forvar -> value[ NL_SOFFS ] = forvar -> value[ NL_OFFS ];
-	forvar -> value[ NL_FORV ] = TEMPBOUND | forvar -> nl_flags;
-	forvar -> value[ NL_OFFS ] = initoff;
-	forflags = NLFLAGS( forvar -> nl_flags ) + cbn;
-	forvar -> nl_flags = forflags;
-	termoff = tmpalloc(sizeof(long), nl+T4INT, REGOK);
+	termoff = tmpalloc(sizeof(long), nl+T4INT, NOREG);
 #	ifdef PC
 		/*
 		 * compute and save the initial expression
@@ -140,6 +137,9 @@ nogood:
 	inittype = rvalue( init , fortype , RREQ );
 	if ( incompat( inittype , fortype , init ) ) {
 	    cerror("Type of initial expression clashed with index type in 'for' statement");
+	    if (forvar != NIL) {
+		forvar->value[ NL_FORV ] = FORVAR;
+	    }
 	    rvalue( term , NIL , RREQ );
 	    statement( stat );
 	    goto byebye;
@@ -162,6 +162,9 @@ nogood:
 	termtype = rvalue( term , fortype , RREQ );
 	if ( incompat( termtype , fortype , term ) ) {
 	    cerror("Type of limit expression clashed with index type in 'for' statement");
+	    if (forvar != NIL) {
+		forvar->value[ NL_FORV ] = FORVAR;
+	    }
 	    statement( stat );
 	    goto byebye;
 	}
@@ -188,12 +191,7 @@ nogood:
 		 * assign the initial expression to the for variable.
 		 * see the note in asgnop1 about why this is an rvalue.
 		 */
-	    forvar -> value[ NL_OFFS ] = forvar -> value[ NL_SOFFS ];
-	    forflags |= forvar -> nl_flags;
-	    forvar -> nl_flags = (char) forvar -> value[ NL_FORV ] &~ FORBOUND;
 	    lvalue( lhs , NOUSE , RREQ );
-	    forvar -> value[ NL_OFFS ] = initoff;
-	    forvar -> nl_flags = forflags;
 	    if ( opt( 't' ) ) {
 		precheck( fortype , "_RANG4" , "_RSNG4" );
 	    }
@@ -224,16 +222,25 @@ nogood:
 		 * okay, then we have to execute the body, but first,
 		 * assign the initial expression to the for variable.
 		 */
-	    forvar -> value[ NL_OFFS ] = forvar -> value[ NL_SOFFS ];
-	    forflags |= forvar -> nl_flags;
-	    forvar -> nl_flags = (char) forvar -> value[ NL_FORV ] &~ FORBOUND;
 	    lvalue( lhs , NOUSE , LREQ );
-	    forvar -> value[ NL_OFFS ] = initoff;
-	    forvar -> nl_flags = forflags;
 	    put(2, O_RV4 | cbn<<8+INDX, initoff);
 	    rangechk(fortype, nl+T4INT);
 	    gen(O_AS2, O_AS2, width(fortype), sizeof(long));
 #	endif OBJ
+	    /*
+	     *	shadowing the real for variable
+	     *	with the initail expression temporary:
+	     *	save the real for variable's offset, flags
+	     *	(including nl_block).
+	     *	replace them with the initial expression's offset,
+	     *	and mark it as being a for variable.
+	     */
+	shadowed = TRUE;
+	s_offset = forvar -> value[ NL_OFFS ];
+	s_flags = forvar -> nl_flags;
+	forvar -> value[ NL_OFFS ] = initoff;
+	forvar -> nl_flags = cbn;
+	forvar -> value[ NL_FORV ] = FORVAR;
 	    /*
 	     * and don't forget ...
 	     */
@@ -317,14 +324,12 @@ nogood:
 #	endif OBJ
 byebye:
 	noreach = 0;
-	if ( forvar != NIL ) {
-	    if (forvar -> value[ NL_FORV ] & TEMPBOUND ) {
-		forvar -> value[ NL_OFFS ] = forvar -> value[ NL_SOFFS ];
-		forvar -> nl_flags =
-			    (char)  ( ( forvar -> value[ NL_FORV ] &~ FORBOUND )
-				    | NLFLAGS( forvar -> nl_flags ) );
-	    }
-	    forvar -> value[ NL_FORV ] = NIL;
+	if (forvar != NIL) {
+	    forvar -> value[ NL_FORV ] = s_forv;
+	}
+	if ( shadowed ) {
+	    forvar -> value[ NL_OFFS ] = s_offset;
+	    forvar -> nl_flags = s_flags;
 	}
 	if ( goc != gocnt ) {
 	    putcnt();

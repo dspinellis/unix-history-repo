@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)lval.c 1.6 %G%";
+static char sccsid[] = "@(#)lval.c 1.7 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -114,7 +114,7 @@ lvalue(r, modflag , required )
 	 * Loop and handle each
 	 * qualification on the name
 	 */
-	if (c == NIL && (modflag&ASGN) && ( p->value[NL_FORV] & FORBOUND ) ) {
+	if (c == NIL && (modflag&ASGN) && ( p->value[NL_FORV] & FORVAR ) ) {
 		error("Can't modify the for variable %s in the range of the loop", p->symbol);
 		return (NIL);
 	}
