@@ -1,23 +1,22 @@
-/*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1982, 1986 The Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)tty.h	7.8 (Berkeley) %G%
+ * %sccs.include.redist.c%
+ *
+ *	@(#)tty.h	7.9 (Berkeley) %G%
  */
 
 #include <sys/termios.h>
 
 /*
- * A clist structure is the head of a linked list queue
- * of characters.  The characters are stored in blocks
- * containing a link and CBSIZE (param.h) characters. 
- * The routines in tty_subr.c manipulate these structures.
+ * Clists are character lists, which is a variable length linked list
+ * of cblocks, wiht a count of the number of characters in the list.
  */
 struct clist {
-	int	c_cc;		/* character count */
-	char	*c_cf;		/* pointer to first char */
-	char	*c_cl;		/* pointer to last char */
+	int	c_cc;		/* count of characters in queue */
+	char	*c_cf;		/* first character/cblock */
+	char	*c_cl;		/* last chararacter/cblock */
 };
 
 /*
@@ -64,20 +63,20 @@ struct tty {
 	short	t_gen;			/* generation number */
 };
 
-#define	TTIPRI	28
-#define	TTOPRI	29
+#define	TTIPRI	25			/* sleep priority for tty reads */
+#define	TTOPRI	26			/* sleep priority for tty writes */
 
-/* limits */
 #define	TTMASK	15
 #define	OBUFSIZ	100
 #define	TTYHOG	1024
+
 #ifdef KERNEL
 #define TTMAXHIWAT	roundup(2048, CBSIZE)
 #define TTMINHIWAT	roundup(100, CBSIZE)
 #define TTMAXLOWAT	256
 #define TTMINLOWAT	32
 extern	struct ttychars ttydefaults;
-#endif /*KERNEL*/
+#endif /* KERNEL */
 
 /* internal state bits */
 #define	TS_TIMEOUT	0x000001	/* delay timeout in progress */
@@ -99,7 +98,7 @@ extern	struct ttychars ttydefaults;
 #define	TS_ERASE	0x040000	/* within a \.../ for PRTRUB */
 #define	TS_LNCH		0x080000	/* next character is literal */
 #define	TS_TYPEN	0x100000	/* retyping suspended input (PENDIN) */
-#define	TS_CNTTB	0x200000	/* counting tab width, leave FLUSHO alone */
+#define	TS_CNTTB	0x200000	/* counting tab width, ignore FLUSHO */
 
 #define	TS_LOCAL	(TS_BKSL|TS_ERASE|TS_LNCH|TS_TYPEN|TS_CNTTB)
 
