@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_subs.c	8.7 (Berkeley) %G%
+ *	@(#)nfs_subs.c	8.8 (Berkeley) %G%
  */
 
 
@@ -1186,8 +1186,11 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 			if (nvp) {
 				/*
 				 * Discard unneeded vnode, but save its nfsnode.
+				 * Since the nfsnode does not have a lock, its
+				 * vnode lock has to be carried over.
 				 */
-				LIST_REMOVE(np, n_hash);
+				nvp->v_vnlock = vp->v_vnlock;
+				vp->v_vnlock = NULL;
 				nvp->v_data = vp->v_data;
 				vp->v_data = NULL;
 				vp->v_op = spec_vnodeop_p;
@@ -1197,8 +1200,6 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 				 * Reinitialize aliased node.
 				 */
 				np->n_vnode = nvp;
-				nhpp = NFSNOHASH(nfs_hash(np->n_fhp, np->n_fhsize));
-				LIST_INSERT_HEAD(nhpp, np, n_hash);
 				*vpp = vp = nvp;
 			}
 		}
