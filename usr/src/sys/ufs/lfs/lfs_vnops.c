@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vnops.c	7.51 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	7.52 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -849,18 +849,15 @@ ufs_link(vp, ndp)
 	register struct inode *ip = VTOI(vp);
 	int error;
 
+	if ((unsigned short)ip->i_nlink >= LINK_MAX)
+		return (EMLINK);
 	if (ndp->ni_dvp != vp)
 		ILOCK(ip);
-	if (ip->i_nlink == LINK_MAX - 1) {
-		error = EMLINK;
-		goto out;
-	}
 	ip->i_nlink++;
 	ip->i_flag |= ICHG;
 	error = iupdat(ip, &time, &time, 1);
 	if (!error)
 		error = direnter(ip, ndp);
-out:
 	if (ndp->ni_dvp != vp)
 		IUNLOCK(ip);
 	if (error) {
@@ -995,9 +992,14 @@ ufs_rename(fndp, tndp)
 		 * parent we don't fool with the link count.
 		 */
 		if (doingdirectory && newparent) {
+			if ((unsigned short)dp->i_nlink >= LINK_MAX) {
+				error = EMLINK;
+				goto bad;
+			}
 			dp->i_nlink++;
 			dp->i_flag |= ICHG;
-			error = iupdat(dp, &time, &time, 1);
+			if (error = iupdat(dp, &time, &time, 1))
+				goto bad;
 		}
 		if (error = direnter(ip, tndp))
 			goto out;
@@ -1187,6 +1189,10 @@ ufs_mkdir(ndp, vap)
 
 	dvp = ndp->ni_dvp;
 	dp = VTOI(dvp);
+	if ((unsigned short)dp->i_nlink >= LINK_MAX) {
+		iput(dp);
+		return (EMLINK);
+	}
 	dmode = vap->va_mode&0777;
 	dmode |= IFDIR;
 	/*
