@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1985 Regents of the University of California.
+ * Copyright (c) 1985, 1989 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	5.14.1.1 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -46,7 +46,9 @@ extern	char *remglob();
 extern	char *getenv();
 extern	char *index();
 extern	char *rindex();
+#ifdef RESTART
 extern off_t restart_point;
+#endif
 extern char reply_string[];
 
 char *mname;
@@ -470,6 +472,7 @@ mput(argc, argv)
 	mflag = 0;
 }
 
+#ifdef RESTART
 reget(argc, argv)
 	char *argv[];
 {
@@ -481,13 +484,20 @@ get(argc, argv)
 {
 	(void) getit(argc, argv, 0, restart_point ? "r+w" : "w" );
 }
+#endif
 
 /*
  * Receive one file.
  */
+#ifdef RESTART
 getit(argc, argv, restartit, mode)
+#else
+get(argc, argv)
+#endif
 	char *argv[];
+#ifdef RESTART
 	char *mode;
+#endif
 {
 	int loc = 0;
 
@@ -508,7 +518,11 @@ getit(argc, argv, restartit, mode)
 usage:
 		printf("usage: %s remote-file [ local-file ]\n", argv[0]);
 		code = -1;
+#ifndef RESTART
+		return;
+#else
 		return (0);
+#endif
 	}
 	if (argc < 3) {
 		(void) strcat(line, " ");
@@ -522,7 +536,11 @@ usage:
 		goto usage;
 	if (!globulize(&argv[2])) {
 		code = -1;
+#ifndef RESTART
+		return;
+#else
 		return (0);
+#endif
 	}
 	if (loc && mcase) {
 		char *tp = argv[1], *tp2, tmpbuf[MAXPATHLEN];
@@ -547,6 +565,7 @@ usage:
 		argv[2] = dotrans(argv[2]);
 	if (loc && mapflag)
 		argv[2] = domap(argv[2]);
+#ifdef RESTART
 	if (restartit) {
 		struct stat stbuf;
 		int ret;
@@ -604,6 +623,9 @@ usage:
 	recvrequest("RETR", argv[2], argv[1], mode);
 	restart_point = 0;
 	return (0);
+#else
+	recvrequest("RETR", argv[2], argv[1], "w");
+#endif
 }
 
 mabort()
@@ -1890,6 +1912,7 @@ cdup()
 	(void) command("CDUP");
 }
 
+#ifdef RESTART
 /* restart transfer at specific point */
 restart(argc, argv)
 	int argc;
@@ -1904,6 +1927,7 @@ restart(argc, argv)
 		    "execute get, put or append to initiate transfer");
 	}
 }
+#endif
 
 /* show remote system type */
 syst()
@@ -2039,13 +2063,14 @@ modtime(argc, argv)
 }
 
 /*
- * show status on reomte machine
+ * show status on remote machine
  */
 rmtstatus(argc, argv)
 	char *argv[];
 {
 	(void) command(argc > 1 ? "STAT %s" : "STAT" , argv[1]);
 }
+#ifdef RESTART
 
 /*
  * get file if modtime is more recent than current file
@@ -2057,3 +2082,4 @@ newer(argc, argv)
 		printf("Local file \"%s\" is newer than remote file \"%s\"\n",
 			argv[1], argv[2]);
 }
+#endif
