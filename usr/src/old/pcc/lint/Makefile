@@ -1,5 +1,5 @@
 #
-#	@(#)Makefile	1.4	(Berkeley)	%G%
+#	@(#)Makefile	1.5	(Berkeley)	%G%
 #
 M=/usr/src/lib/mip
 #LOAD1=-s
@@ -8,8 +8,9 @@ LOAD1=
 LOAD2=
 CFLAGS=-O -DFLEXNAMES
 head: lpass1 lpass2 llib-port.ln llib-lc.ln;
-lpass1: cgram.o xdefs.o scan.o comm1.o pftn.o trees.o optim.o lint.o
-	cc $(LOAD1) cgram.o xdefs.o scan.o comm1.o pftn.o trees.o optim.o lint.o
+lpass1: cgram.o xdefs.o scan.o comm1.o pftn.o trees.o optim.o lint.o hash.o
+	cc $(LOAD1) cgram.o xdefs.o scan.o comm1.o pftn.o trees.o optim.o \
+		lint.o hash.o
 	mv a.out lpass1
 trees.o: $M/manifest macdefs $M/mfile1 $M/trees.c
 	cc -c $(CFLAGS) -I$M -I. $M/trees.c
@@ -38,8 +39,8 @@ shrink:
 	rm -f *.o
 clean: shrink
 	rm -f lpass1 lpass2 cgram.c llib-lc.ln llib-port.ln
-lpass2: lpass2.o
-	cc $(LOAD2) lpass2.o
+lpass2: lpass2.o hash.o
+	cc $(LOAD2) lpass2.o hash.o
 	mv a.out lpass2
 lpass2.o: $M/manifest lmanifest
 	cc $(CFLAGS) -c -I$M -I. lpass2.c
