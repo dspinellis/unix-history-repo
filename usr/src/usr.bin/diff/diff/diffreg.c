@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)diffreg.c 4.12 %G%";
+static	char sccsid[] = "@(#)diffreg.c 4.13 %G%";
 
 #include "diff.h"
 /*
@@ -730,6 +730,16 @@ change(a,b,c,d)
 		range(a,b," ");
 		putchar('\n');
 		break;
+        case D_NREVERSE:
+                if (a>b)
+                        printf("a%d %d\n",b,d-c+1);
+                else {
+                        printf("d%d %d\n",a,b-a+1);
+                        if (!(c>d))
+                           /* add changed lines */
+                           printf("a%d %d\n",b, d-c+1);
+                }
+                break;
 	}
 	if(opt == D_NORMAL || opt == D_IFDEF) {
 		fetch(ixold,a,b,input[0],"< ", 1);

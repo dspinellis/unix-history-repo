@@ -1,4 +1,4 @@
-/*	diff.h	4.6	85/06/07	*/
+/*	diff.h	4.7	85/08/16	*/
 
 /*
  * diff - common declarations
@@ -21,6 +21,8 @@ int	opt;
 #define	D_REVERSE	1	/* Reverse editor script */
 #define	D_CONTEXT	2	/* Diff with context */
 #define	D_IFDEF		3	/* Diff with merged #ifdef's */
+#define	D_NREVERSE	4	/* Reverse ed script with numbered
+				   lines and no trailing . */
 
 int	tflag;			/* expand tabs on output */
 
@@ -73,7 +75,6 @@ char	**diffargv;		/* option list to pass to recursive diffs */
  * the '/'.
  */
 char	*file1, *file2, *efile1, *efile2;
-struct	stat stb1, stb2;
 struct	stat stb1, stb2;
 
 char	*malloc(), *talloc(), *ralloc();
