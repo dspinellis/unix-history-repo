@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lprint.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)lprint.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -215,16 +215,18 @@ demi_print(str, oddfield)
 show_text(directory, file_name, header)
 	char *directory, *file_name, *header;
 {
-	register int ch;
+	register int ch, lastc;
+	register FILE *fp;
 
 	(void)sprintf(tbuf, "%s/%s", directory, file_name);
-	if (!freopen(tbuf, "r", stdin))
+	if ((fp = fopen(tbuf, "r")) == NULL)
 		return(0);
 	(void)printf("%s\n", header);
-	while ((ch = getchar(fp)) != EOF)
-		vputc(ch);
-	if (ch != '\n')
+	while ((ch = getc(fp)) != EOF)
+		vputc(lastc = ch);
+	if (lastc != '\n')
 		(void)putchar('\n');
+	(void)fclose(fp);
 	return(1);
 }
 
