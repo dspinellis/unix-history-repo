@@ -9,16 +9,19 @@
  * ongoing  research  project and hence should  feel  obligated  to report
  * their  experiences (good or bad) with these elementary function  codes,
  * using "sendbug 4bsd-bugs@BERKELEY", to the authors.
- *
- * @(#)infnan.s	1.1 (Berkeley) 8/21/85; 1.2 (ucb.elefunt) %G%
- *
+ */
+	.data
+	.align	2
+_sccsid:
+.asciz	"@(#)infnan.s	1.1 (Berkeley) 8/21/85; 1.3 (ucb.elefunt) %G%"
+
+/*
  * infnan(arg) int arg;
  * where arg :=    EDOM	if result is  NaN
  *	     :=  ERANGE	if result is +INF
  *	     := -ERANGE if result is -INF
  *
  * The Reserved Operand Fault is generated inside of this routine.
- *
  */	
 	.globl	_infnan
 	.set	EDOM,33

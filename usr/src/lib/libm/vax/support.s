@@ -9,9 +9,13 @@
  * ongoing  research  project and hence should  feel  obligated  to report
  * their  experiences (good or bad) with these elementary function  codes,
  * using "sendbug 4bsd-bugs@BERKELEY", to the authors.
- *
- * @(#)support.s	1.3 (Berkeley) 8/21/85; 1.2 (ucb.elefunt) %G%
- *
+ */
+	.data
+	.align	2
+_sccsid:
+.asciz	"@(#)support.s	1.3 (Berkeley) 8/21/85; 1.3 (ucb.elefunt) %G%"
+
+/*
  * copysign(x,y),
  * logb(x),
  * scalb(x,N),
