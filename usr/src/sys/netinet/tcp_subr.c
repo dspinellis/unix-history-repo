@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_subr.c	7.3 (Berkeley) %G%
+ *	@(#)tcp_subr.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -102,9 +102,10 @@ tcp_respond(tp, ti, ack, seq, flags)
 	tcp_seq ack, seq;
 	int flags;
 {
-	struct mbuf *m;
+	register struct mbuf *m;
 	int win = 0, tlen;
 	struct route *ro = 0;
+	extern int tcp_keeplen;
 
 	if (tp) {
 		win = sbspace(&tp->t_inpcb->inp_socket->so_rcv);
@@ -114,7 +115,8 @@ tcp_respond(tp, ti, ack, seq, flags)
 		m = m_get(M_DONTWAIT, MT_HEADER);
 		if (m == NULL)
 			return;
-		m->m_len = sizeof (struct tcpiphdr) + 1;
+		tlen = tcp_keeplen;
+		m->m_len = sizeof (struct tcpiphdr) + tlen;
 		*mtod(m, struct tcpiphdr *) = *ti;
 		ti = mtod(m, struct tcpiphdr *);
 		flags = TH_ACK;
@@ -123,13 +125,13 @@ tcp_respond(tp, ti, ack, seq, flags)
 		m_freem(m->m_next);
 		m->m_next = 0;
 		m->m_off = (int)ti - (int)m;
+		tlen = 0;
 		m->m_len = sizeof (struct tcpiphdr);
 #define xchg(a,b,type) { type t; t=a; a=b; b=t; }
 		xchg(ti->ti_dst.s_addr, ti->ti_src.s_addr, u_long);
 		xchg(ti->ti_dport, ti->ti_sport, u_short);
 #undef xchg
 	}
-	tlen = 0;
 	ti->ti_next = ti->ti_prev = 0;
 	ti->ti_x1 = 0;
 	ti->ti_len = htons((u_short)(sizeof (struct tcphdr) + tlen));
