@@ -1,4 +1,4 @@
-/*	locore.s	4.60	82/01/16	*/
+/*	locore.s	4.61	82/01/30	*/
 
 #include "../h/mtpr.h"
 #include "../h/trap.h"
@@ -306,7 +306,7 @@ SCBVEC(protflt):
 segflt:
 	TRAP(SEGFLT)
 SCBVEC(transflt):
-	bitl	$1,(sp)+
+	bitl	$2,(sp)+
 	bnequ	tableflt
 	TRAP(PAGEFLT)
 tableflt: 
