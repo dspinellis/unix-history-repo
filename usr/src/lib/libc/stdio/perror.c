@@ -16,15 +16,16 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)perror.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)perror.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 #include <sys/uio.h>
 
-int	errno;
-extern int	sys_nerr;
-extern char	*sys_errlist[];
+int errno;
+extern int sys_nerr;
+extern char *sys_errlist[];
+
 perror(s)
 	char *s;
 {
@@ -46,4 +47,12 @@ perror(s)
 	v->iov_base = "\n";
 	v->iov_len = 1;
 	(void)writev(2, iov, (v - iov) + 1);
+}
+
+char *
+strerror(errnum)
+	int errnum;
+{
+	return((u_int)errnum < sys_nerr ?
+	    sys_errlist[errnum] : "Unknown error");
 }
