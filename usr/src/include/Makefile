@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.39 (Berkeley) %G%
+#	@(#)Makefile	5.40 (Berkeley) %G%
 #
 # Doing a make install builds /usr/include
 #
@@ -8,12 +8,12 @@
 all clean cleandir depend lint tags:
 
 SUBDIRS=arpa protocols
-STD=	a.out.h ar.h assert.h bitstring.h ctype.h ndbm.h \
-	dirent.h disktab.h fstab.h fts.h glob.h grp.h kvm.h limits.h \
-	math.h memory.h mp.h netdb.h nlist.h paths.h pcc.h pwd.h ranlib.h \
-	regexp.h resolv.h setjmp.h sgtty.h stab.h stdarg.h stddef.h \
-	stdlib.h stdio.h string.h strings.h struct.h sysexits.h time.h \
-	ttyent.h tzfile.h utmp.h varargs.h vfont.h vis.h
+STD=	a.out.h ar.h assert.h bitstring.h ctype.h dirent.h disktab.h \
+	fstab.h fts.h glob.h grp.h kvm.h limits.h math.h memory.h mp.h \
+	ndbm.h netdb.h nlist.h paths.h pcc.h pwd.h ranlib.h regexp.h \
+	resolv.h setjmp.h sgtty.h stab.h stdarg.h stddef.h stdio.h \
+	stdlib.h string.h strings.h struct.h sysexits.h time.h ttyent.h \
+	tzfile.h utmp.h varargs.h vfont.h vis.h
 LMCH=	float.h frame.h
 LSYS=	errno.h fcntl.h signal.h syslog.h termios.h unistd.h
 NOOBJ=	noobj
@@ -24,7 +24,7 @@ DIRS+=	hp300 hpdev
 .elif (${MACHINE} == "tahoe")
 DIRS+=	tahoe tahoemath tahoevba tahoeif
 .elif (${MACHINE} == "vax")
-DIRS+=	vax vaxmba vaxuba vaxif
+DIRS+=	vax vaxbi vaxif vaxmba vaxuba
 .endif
 
 # Define SHARED to indicate whether you want symbolic links to the system
@@ -32,8 +32,6 @@ DIRS+=	vax vaxmba vaxuba vaxif
 # in environments where it's not possible to keep /sys publicly readable)
 # SHARED=	copies
 SHARED=	symlinks
-
-all include clean cleandir depend lint tags:
 
 install: ${SHARED}
 	@echo installing ${STD}
@@ -60,7 +58,7 @@ install: ${SHARED}
 	    ${DESTDIR}/usr/include/Makefile
 	rm -f ${DESTDIR}/usr/include/machine
 	ln -s ./${MACHINE} ${DESTDIR}/usr/include/machine
-	chown ${BINOWN}.${BINGRP} ${DESTDIR}/usr/include/machine;
+	chown ${BINOWN}.${BINGRP} ${DESTDIR}/usr/include/machine
 	@echo installing ${LSYS}
 	@-for i in ${LSYS}; do \
 		rm -f ${DESTDIR}/usr/include/$$i; \
@@ -74,6 +72,14 @@ install: ${SHARED}
 		chown ${BINOWN}.${BINGRP} ${DESTDIR}/usr/include/$$i; \
 	done
 
+copies:
+	@echo copies: ${DIRS}
+	@-for i in ${DIRS}; do \
+		rm -rf ${DESTDIR}/usr/include/$$i; \
+		cd /sys; \
+		tar cf - $$i/*.h | (cd ${DESTDIR}/usr/include; tar xpfB -); \
+	done
+
 		rm -rf ${DESTDIR}/usr/include/$$i; \
 		if [ ! -s ${DESTDIR}/usr/include/$$i ]; \
 		then \
@@ -84,9 +90,15 @@ install: ${SHARED}
 		fi; \
 	done
 
-		rm -rf ${DESTDIR}/usr/include/$$i; \
-		cd /sys; \
-		tar cf - $$i/*.h | (cd ${DESTDIR}/usr/include; tar xpfB -); \
+		if [ ! -d $$i ]; \
+		then \
+			mkdir $$i; \
+		fi; \
+		for j in `cd /sys/$$i; echo *.h`; do \
+			cmp -s /sys/$$i/$$j $$i/$$j || \
+			install -c -o ${BINOWN} -g ${BINGRP} -m 444 \
+			    ${SYS}/$$i/$$j $$i/$$j; \
+		done; \
 	done
 
 .include <bsd.prog.mk>
