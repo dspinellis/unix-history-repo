@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file	@(#)termcap.src	5.9 (Berkeley) %G%
+#	Termcap source file	@(#)termcap.src	5.10 (Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -2149,9 +2149,10 @@ zh|appleII|apple ii plus:vs=\024\103\066:ve=\024\103\062:\
 	:cd=\013:so=\017:se=\016:cm=\036%r%+ %+ :is=\024T1\016:do=^J:kd=^J:\
 	:vb=\024G1\024T1:kr=:
 #  Gary Ford 21NOV83
+#  New version from ee178aci%sdcc7@SDCSVAX.ARPA  Fri Oct 11 21:27:00 1985
 zi|apple-80|apple II with smarterm 80 col:\
-	:do=^J:co#80:li#24:le=^H:bs:am:cl=50^L:cm=5^^%r%+ %+ :bt=2^R:cd=50^K:\
-	:ce=3^]:nd=2^\:up=2^_:is=^TR^V^A:
+	:am:bs:bt=^R:bw:cd=10*^K:ce=10^]:cl=10*^L:cm=^^%r%+ %+ :\
+	:co#80:cr=10*^M:do=^J:ho=^Y:le=^H:li#24:nd=^\\:up=^_:
 #
 zj|lisa|apple lisa xenix console display (white on black):\
 	:al=\E[L:am:bs:cd=\E[J:ce=\E[K:cl=^L:cm=\E[%i%d;%dH:co#88:\
