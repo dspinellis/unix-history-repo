@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: grf.c 1.28 89/08/14$
  *
- *	@(#)grf.c	7.3 (Berkeley) %G%
+ *	@(#)grf.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -327,12 +327,9 @@ grflock(gp, block)
 			return(EAGAIN);
 		do {
 			gp->g_flags |= GF_WANTED;
-			sleep((caddr_t)&gp->g_flags, PZERO+1);
-
 			if (error = tsleep((caddr_t)&gp->g_flags,
 					   (PZERO+1) | PCATCH, devioc, 0))
 				return (error);
-
 		} while (gp->g_lockp);
 	}
 	gp->g_lockp = p;
@@ -461,8 +458,17 @@ hpuxgrfioctl(dev, cmd, data, flag)
 	 */
 	case IOMAPMAP:
 		error = iommap(dev, (caddr_t *)data);
+#if 0
+		/*
+		 * It may not be worth kludging this (using p_devtmp) to
+		 * make this work.  It was an undocumented side-effect
+		 * in HP-UX that the mapped address was the return value
+		 * of the ioctl.  The only thing I remember that counted
+		 * on this behavior was the rbox X10 server.
+		 */
 		if (!error)
 			u.u_r.r_val1 = *(int *)data;	/* XXX: this sux */
+#endif
 		break;
 
 	case IOMAPUNMAP:
@@ -586,20 +592,19 @@ grfmmap(dev, addrp)
 	struct proc *p = u.u_procp;		/* XXX */
 	struct grf_softc *gp = &grf_softc[GRFUNIT(dev)];
 	struct mapmem *mp;
-	int len, grfmapin();
+	int len, error, grfmapin();
 
 #ifdef DEBUG
 	if (grfdebug & GDB_MMAP)
 		printf("grfmmap(%d): addr %x\n", p->p_pid, *addrp);
 #endif
 	len = gp->g_display.gd_regsize + gp->g_display.gd_fbsize;
-	if (u.u_error = mmalloc(p, minor(dev), addrp, len, MM_RW|MM_CI|MM_NOCORE, &grfops, &mp))
-		return(u.u_error);
-	if (!mmmapin(p, mp, grfmapin)) {
-		mmfree(p, mp);
-		return(u.u_error);
-	}
-	return(0);
+	error = mmalloc(p, minor(dev), addrp, len, MM_RW|MM_CI|MM_NOCORE,
+			&grfops, &mp);
+	if (error == 0)
+		if (error = mmmapin(p, mp, grfmapin))
+			(void) mmfree(p, mp);
+	return(error);
 }
 
 grfunmmap(dev, addr)
@@ -626,7 +631,7 @@ grfunmmap(dev, addr)
 			mpp = &mp->mm_next;
 			continue;
 		}
-		grfexit(mp);
+		(void) grfexit(mp);
 		found++;
 	}
 	return(found ? 0 : EINVAL);
@@ -648,7 +653,7 @@ grfexit(mp)
 	grfrmpid(gp);
 #endif
 	mmmapout(p, mp);
-	mmfree(p, mp);
+	return(mmfree(p, mp));
 }
 
 #ifdef HPUXCOMPAT
@@ -659,20 +664,19 @@ iommap(dev, addrp)
 	struct proc *p = u.u_procp;		/* XXX */
 	struct grf_softc *gp = &grf_softc[GRFUNIT(dev)];
 	struct mapmem *mp;
-	int len, grfmapin();
+	int len, error, grfmapin();
 
 #ifdef DEBUG
 	if (grfdebug & (GDB_MMAP|GDB_IOMAP))
 		printf("iommap(%d): addr %x\n", p->p_pid, *addrp);
 #endif
 	len = gp->g_display.gd_regsize;
-	if (u.u_error = mmalloc(p, minor(dev), addrp, len, MM_RW|MM_CI|MM_NOCORE, &grfiomops, &mp))
-		return(u.u_error);
-	if (!mmmapin(p, mp, grfmapin)) {
-		mmfree(p, mp);
-		return(u.u_error);
-	}
-	return(0);
+	error = mmalloc(p, minor(dev), addrp, len, MM_RW|MM_CI|MM_NOCORE,
+			&grfiomops, &mp);
+	if (error == 0)
+		if (error = mmmapin(p, mp, grfmapin))
+			(void) mmfree(p, mp);
+	return(error);
 }
 
 iounmmap(dev, addr)
@@ -702,7 +706,7 @@ iounmmap(dev, addr)
 			mpp = &mp->mm_next;
 			continue;
 		}
-		grfexit(mp);
+		(void) grfexit(mp);
 		found++;
 	}
 	return(found ? 0 : EINVAL);
@@ -802,7 +806,7 @@ grflckmmap(dev, addrp)
 	struct proc *p = u.u_procp;		/* XXX */
 	struct grf_softc *gp = &grf_softc[GRFUNIT(dev)];
 	struct mapmem *mp;
-	int grflckmapin();
+	int error, grflckmapin();
 
 #ifdef DEBUG
 	if (grfdebug & (GDB_MMAP|GDB_LOCK))
@@ -814,13 +818,12 @@ grflckmmap(dev, addrp)
 		if (gp->g_locks == NULL)
 			return(ENOMEM);
 	}
-	if (u.u_error = mmalloc(p, minor(dev), addrp, NBPG, MM_RW|MM_CI, &grflckops, &mp))
-		return(u.u_error);
-	if (!mmmapin(p, mp, grflckmapin)) {
-		mmfree(p, mp);
-		return(u.u_error);
-	}
-	return(0);
+	error = mmalloc(p, minor(dev), addrp, NBPG, MM_RW|MM_CI,
+			&grflckops, &mp);
+	if (error == 0)
+		if (error = mmmapin(p, mp, grflckmapin))
+			(void) mmfree(p, mp);
+	return(error);
 }
 
 grflckunmmap(dev, addr)
@@ -838,7 +841,7 @@ grflckunmmap(dev, addr)
 	for (mp = u.u_mmap; mp; mp = mp->mm_next)
 		if (mp->mm_ops == &grflckops && mp->mm_id == unit &&
 		    mp->mm_uva == addr) {
-			grfexit(mp);
+			(void) grfexit(mp);
 			return(0);
 		}
 	return(EINVAL);
