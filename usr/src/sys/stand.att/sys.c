@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys.c	7.3 (Berkeley) %G%
+ *	@(#)sys.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -457,6 +457,7 @@ open(str, how)
 gotfile:
 	(file = &iob[fdesc])->i_flgs |= F_ALLOC;
 
+#ifndef	SMALL
 	for (cp = str; *cp && *cp != '/' && *cp != ':' && *cp != '('; cp++)
 		;
 	if (*cp == '(') {
@@ -480,12 +481,14 @@ gotfile:
 		}
 		cp++;
 	} else if (*cp != ':') {
+#endif
 		/* default bootstrap unit and device */
 		file->i_ino.i_dev = (bootdev >> B_TYPESHIFT) & B_TYPEMASK;
 		file->i_unit = ((bootdev >> B_UNITSHIFT) & B_UNITMASK) +
 		     (8 * ((bootdev >> B_ADAPTORSHIFT) & B_ADAPTORMASK));
 		file->i_boff = (bootdev >> B_PARTITIONSHIFT) & B_PARTITIONMASK;
 		cp = str;
+#ifndef	SMALL
 	} else {
 # define isdigit(n)	((n>='0') && (n<='9'))
 		if (cp == str)
@@ -510,6 +513,7 @@ gotfile:
 			goto badspec;
 		}
 	}
+#endif
 	opendev = file->i_ino.i_dev << B_TYPESHIFT;
 	opendev |= ((file->i_unit % 8) << B_UNITSHIFT);
 	opendev |= ((file->i_unit / 8) << B_ADAPTORSHIFT);
@@ -559,6 +563,7 @@ bad:
 	return (-1);
 }
 
+#ifndef SMALL
 static
 getdev(str, len)
 	char *str;
@@ -590,6 +595,7 @@ getunit(cp)
 	}
 	return (i);
 }
+#endif
 
 close(fdesc)
 	int fdesc;
