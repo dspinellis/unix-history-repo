@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)soelim.c	4.3 (Berkeley) %G%";
+static char *sccsid = "@(#)soelim.c	4.4 (Berkeley) %G%";
 
 #include <stdio.h>
 /*
@@ -58,7 +58,7 @@ int process(file)
 	}
 	for (;;) {
 		c = getc(soee);
-		if (c < 0)
+		if (c == EOF)
 			break;
 		if (c != '.')
 			goto simple;
@@ -98,7 +98,7 @@ donename:
 			printf(".so");
 			goto simple;
 		}
-		*cp++ = 0;
+		*cp = 0;
 		if (process(fname) < 0)
 			if (isfile)
 				printf(".so %s\n", fname);
@@ -107,6 +107,10 @@ simple:
 		if (c == EOF)
 			break;
 		putchar(c);
+		if (c != '\n') {
+			c = getc(soee);
+			goto simple;
+		}
 	}
 	if (soee != stdin) {
 		fclose(soee);
