@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)passwd.c	4.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)passwd.c	4.34 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -34,6 +34,7 @@ static char sccsid[] = "@(#)passwd.c	4.33 (Berkeley) %G%";
 #include <pwd.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <strings.h>
 
 uid_t uid;
 
@@ -44,14 +45,12 @@ main(argc, argv)
 	extern int errno;
 	struct passwd *pw;
 	struct rlimit rlim;
-	uid_t euid;
 	FILE *temp_fp;
 	int fd;
 	char *fend, *np, *passwd, *temp, *tend;
 	char from[MAXPATHLEN], to[MAXPATHLEN];
-	char *getnewpasswd(), *strerror(), *strcpy();
+	char *getnewpasswd();
 
-	euid = geteuid();
 	uid = getuid();
 	switch(--argc) {
 	case 0:
@@ -109,7 +108,7 @@ main(argc, argv)
 	printf("Changing password for %s.\n", pw->pw_name);
 	np = getnewpasswd(pw, temp);
 
-	if (!copy(pw->pw_name, np, temp_fp))
+	if (!copy(pw->pw_name, np, temp_fp, pw))
 		goto bad;
 
 	(void)fclose(temp_fp);
@@ -160,18 +159,24 @@ bad:		fprintf(stderr, "; password unchanged.\n");
 	exit(0);
 }
 
-copy(name, np, fp)
+copy(name, np, fp, pw)
 	char *name, *np;
 	FILE *fp;
+	struct passwd *pw;
 {
+	register int done;
 	register char *p;
-	char buf[1024], *index();
+	char buf[1024];
 
-	while (fgets(buf, sizeof(buf), stdin)) {
+	for (done = 0; fgets(buf, sizeof(buf), stdin);) {
 		/* skip lines that are too big */
 		if (!index(buf, '\n')) {
 			fprintf(stderr, "passwd: line too long.\n");
 			return(0);
+		}
+		if (done) {
+			fprintf(fp, "%s", buf);
+			continue;
 		}
 		if (!(p = index(buf, ':'))) {
 			fprintf(stderr, "passwd: corrupted entry.\n");
@@ -187,7 +192,16 @@ copy(name, np, fp)
 			fprintf(stderr, "passwd: corrupted entry.\n");
 			return(0);
 		}
-		fprintf(fp, "%s:%s%s", buf, np, p);
+		/*
+		 * reset change time to zero; when classes are implemented,
+		 * go and get the "offset" value for this class and reset
+		 * the timer.
+		 */
+		fprintf(fp, "%s:%s:%d:%d:%s:%ld:%ld:%s:%s:%s\n",
+		    pw->pw_name, np, pw->pw_uid, pw->pw_gid,
+		    pw->pw_class, 0L, pw->pw_expire, pw->pw_gecos,
+		    pw->pw_dir, pw->pw_shell);
+		done = 1;
 	}
 	return(1);
 }
@@ -198,7 +212,7 @@ getnewpasswd(pw, temp)
 	char *temp;
 {
 	register char *p, *t;
-	char buf[10], salt[2], *crypt(), *getpass(), *strcpy();
+	char buf[10], salt[2], *crypt(), *getpass();
 	time_t time();
 
 	if (uid && pw->pw_passwd &&
