@@ -1,0 +1,66 @@
+
+
+
+PRMAIL(1)	    UNIX Programmer's Manual		PRMAIL(1)
+
+
+
+NAME
+     prmail - print out mail in the post office
+
+SYNOPSIS
+     prmail [ user ... ]
+
+DESCRIPTION
+     _P_r_m_a_i_l prints the mail which waits for you, or the specified
+     user, in the post office.	The mail is not disturbed.
+
+FILES
+     /usr/spool/mail/*	 post office
+
+SEE ALSO
+     biff(1), mail(1), from(1), binmail(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/26/87          April 29, 1985                         1
+
+
+

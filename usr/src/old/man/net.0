@@ -1,0 +1,132 @@
+
+
+
+NET(1)		    UNIX Programmer's Manual		   NET(1)
+
+
+
+NAME
+     net - execute a command on a remote machine
+
+SYNOPSIS
+     net [ -m machine ] [ -l login ] [ -p password ] [ -r
+     respfile ] [ - ] [ -f ] [ -n ] [ -q ] command
+
+DESCRIPTION
+     The _n_e_t command sends the specified _c_o_m_m_a_n_d (which should be
+     enclosed in quotes) over the network to the specified (or
+     default) remote machine.  The network will notify the user
+     when the command has been executed and will return to him
+     any output or error indication by `writing' (see _w_r_i_t_e(1))
+     to the terminal if he is still logged in, or `mailing' (see
+     _m_a_i_l(1)) otherwise.
+
+     There are a number of options, which must precede the com-
+     mand.  Options may be specified on the command line, preced-
+     ing the command, or in a file ``.netrc'' in the user's login
+     directory.  The ``.netrc'' file is not described here.  The
+     -m option specifies the desired remote machine.  If a remote
+     machine is not specified, the default one is used.  The
+     machine name may be a one letter abbreviation or a full
+     name; upper- and lower-case distinctions are ignored.  If
+     the standard output and standard error files are to be
+     saved, the -r option returns to the originating user a file
+     (_r_e_s_p_f_i_l_e) containing the standard output and error files
+     when the command was executed on the remote machine.  If
+     this option is used, no message is written back.  The pres-
+     ence of a non-zero length _r_e_s_p_f_i_l_e indicates completion.
+     The -q option suppresses all acknowledgements unless an
+     error occurs, there is output from the command, or the exit
+     code of _c_o_m_m_a_n_d is non-zero.
+
+     If the -l and -p options are not specified, and the login
+     name and password are not in the ``.netrc'' file, a remote
+     login name and password is prompted for on the terminal; the
+     -f flag forces login name and password prompting.	A single
+     - indicates that the standard input from the local machine
+     is to be taken and transmitted to the remote machine, where
+     it will be the standard input for _c_o_m_m_a_n_d. The -n flag
+     forces all acknowledgment and output messages to be mailed
+     rather than written on the terminal.  Options do not need to
+     be separated by spaces, i.e. either ``-m C'' or ``-mC'' is
+     accepted.	There are also other options intended to be used
+     by higher level application programs and shell scripts only;
+     they will not be described here.
+
+     The net command prepares a file to be sent to the remote
+     machine and queues it in the `network queue.' _N_e_t_q (1) gives
+     information about the queues.
+
+
+
+
+Printed 7/26/87              4/29/85				1
+
+
+
+
+
+
+NET(1)		    UNIX Programmer's Manual		   NET(1)
+
+
+
+AUTHOR
+     Eric Schmidt
+
+FILES
+     /usr/spool/berknet/logfilelogfile with information about net
+     activity
+     /usr/spool/berknet/plogfile?log file including packet
+     transmission statistics
+     /usr/spool/berknet/netstat?statistics file
+     /usr/net/network.map     local network names and topology
+
+BUGS
+     -q should be the default.
+
+SEE ALSO
+     netrm(1), netq(1), netlog(1), netcp(1), netlpr(1), net-
+     mail(1), netlogin(1), mail(1)
+     ``An Introduction to the Berkeley Network", by Eric Schmidt
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/26/87              4/29/85				2
+
+
+

@@ -1,0 +1,66 @@
+
+
+
+NETLOG(1)	    UNIX Programmer's Manual		NETLOG(1)
+
+
+
+NAME
+     netlog - print the last few lines of the network log file
+
+SYNOPSIS
+     netlog [ -lines ]
+
+DESCRIPTION
+     _N_e_t_l_o_g prints the last few lines of the network log file
+     indicating recent network activity.
+
+FILES
+     /usr/spool/berknet/logfilethe log
+
+SEE ALSO
+     net(1), netrm(1), netq(1), netcp(1), netlpr(1), netmail(1),
+     netlogin(1), mail(1)
+
+BUGS
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/26/87              4/29/85				1
+
+
+
+
+
+

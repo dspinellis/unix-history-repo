@@ -1,0 +1,132 @@
+
+
+
+NETLOGIN(1)	    UNIX Programmer's Manual	      NETLOGIN(1)
+
+
+
+NAME
+     netlogin - provide login name and password for a remote
+     machine
+
+SYNOPSIS
+     netlogin -m machine [ -l login ]
+
+DESCRIPTION
+     The _n_e_t_l_o_g_i_n command sets the login name and password for
+     the specified _m_a_c_h_i_n_e in a rather unusual way.  The user
+     should type (to the C shell)
+
+	  setenv MACH_m_a_c_h_i_n_e `netlogin -m _m_a_c_h_i_n_e`
+
+     or (to the default Version 7 ``Bourne'' shell)
+
+	  MACH_m_a_c_h_i_n_e=`netlogin -m _m_a_c_h_i_n_e`; export MACH_m_a_c_h_i_n_e
+
+     to his login shell.  (Note the back-quotes).  For example,
+
+	  setenv MACHA `netlogin -m A`
+
+     will prompt the user for his login name and password on the
+     A machine and
+
+	  setenv MACHA `netlogin -m A -l myname`
+
+     will prompt the user for the password to account `A:myname'.
+
+     The _n_e_t(1) command will read the environment looking for
+     environment variables beginning with ``MACH'' and followed
+     by a valid machine name on the local network.  If found it
+     will use that information rather than prompt the user every
+     time he executes a network command.  This environment infor-
+     mation is ignored if login names and passwords are specified
+     on the command line of network commands using the -l and -p
+     options or in the ._n_e_t_r_c file.
+
+     This procedure for specifying passwords is somewhat safer
+     than putting the remote passwords in the ._n_e_t_r_c file.  The
+     passwords in the environment are encrypted and the environ-
+     ment information is useless after the user logs out.  Use
+     the _p_r_i_n_t_e_n_v(1) command to see the encrypted password.
+
+AUTHOR
+     Eric Schmidt
+
+SEE ALSO
+     net(1), netrm(1), netq(1), netlog(1), netcp(1), netlpr(1),
+     netmail(1), printenv(1), csh(1)
+
+
+
+
+
+Printed 7/26/87              4/29/85				1
+
+
+
+
+
+
+NETLOGIN(1)	    UNIX Programmer's Manual	      NETLOGIN(1)
+
+
+
+BUGS
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/26/87              4/29/85				2
+
+
+
+
+
+
