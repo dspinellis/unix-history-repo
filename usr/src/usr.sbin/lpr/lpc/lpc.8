@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)lpc.8	5.1 (Berkeley) %G%
+.\"	@(#)lpc.8	6.1 (Berkeley) %G%
 .\"
-.TH LPC 8 "4 July 1983"
+.TH LPC 8 ""
 .UC 5
 .ad
 .SH NAME
@@ -58,8 +58,25 @@ for the specified printers.
 .TP
 clean { all | printer ... }
 .br
-Remove all files beginning with ``cf'', ``tf'', or ``df''
+Remove any temporary files, data files, and control files that cannot
+be printed (i.e., do not form a complete printer job)
 from the specified printer queue(s) on the local machine.
+.TP
+disable { all | printer ... }
+.br
+Turn the specified printer queues off.  This prevents new
+printer jobs from being entered into the queue by
+.IR lpr .
+.TP
+down { all | printer } message ...
+.br
+Turn the specified printer queue off, disable printing and put
+.I message
+in the printer status file. The message doesn't need to be quoted, the
+remaining arguments are treated like
+.IR echo (1).
+This is normally used to take a printer down and let others know why
+(lpq will indicate the printer is down and print the status message).
 .TP
 enable { all | printer ... }
 .br
@@ -74,12 +91,6 @@ quit
 .br
 Exit from lpc.
 .TP
-disable { all | printer ... }
-.br
-Turn the specified printer queues off.  This prevents new
-printer jobs from being entered into the queue by
-.IR lpr .
-.TP
 restart { all | printer ... }
 .br
 Attempt to start a new printer daemon. 
@@ -87,12 +98,14 @@ This is useful when some abnormal condition causes the daemon to
 die unexpectedly leaving jobs in the queue.
 .I Lpq
 will report that there is no daemon present when this condition occurs. 
+If the user is the super-user,
+try to abort the current daemon first (i.e., kill and restart a stuck daemon).
 .TP
 start { all | printer ... }
 .br
 Enable printing and start a spooling daemon for the listed printers.
 .TP
-status [ all ] [ printer ... ]
+status { all | printer ... }
 Display the status of daemons and queues on the local machine.
 .TP
 stop { all | printer ... }
@@ -103,6 +116,11 @@ printing.
 topq printer [ jobnum ... ] [ user ... ]
 .br
 Place the jobs in the order listed at the top of the printer queue.
+.TP
+up { all | printer ... }
+.br
+Enable everything and start a new printer daemon. Undoes the effects of
+.IR down .
 .SH FILES
 .nf
 .ta \w'/etc/printcap           'u
