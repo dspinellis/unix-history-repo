@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.31 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.32 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.31 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.32 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -285,7 +285,8 @@ queueup(e, queueall, announce)
 		if (bitset(H_DEFAULT, h->h_flags))
 		{
 			(void) expand(h->h_value, buf, &buf[sizeof buf], e);
-			fprintf(tfp, "%s: %s\n", h->h_field, buf);
+			if (buf[0] != '\0')
+				fprintf(tfp, "%s: %s\n", h->h_field, buf);
 		}
 		else if (bitset(H_FROM|H_RCPT, h->h_flags))
 		{
