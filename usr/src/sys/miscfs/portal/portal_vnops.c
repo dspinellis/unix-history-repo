@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)portal_vnops.c	8.6 (Berkeley) %G%
+ *	@(#)portal_vnops.c	8.7 (Berkeley) %G%
  *
  * $Id: portal_vnops.c,v 1.4 1992/05/30 10:05:24 jsp Exp jsp $
  */
@@ -497,6 +497,42 @@ portal_reclaim(ap)
 }
 
 /*
+ * Return POSIX pathconf information applicable to special devices.
+ */
+portal_pathconf(ap)
+	struct vop_pathconf_args /* {
+		struct vnode *a_vp;
+		int a_name;
+		int *a_retval;
+	} */ *ap;
+{
+
+	switch (ap->a_name) {
+	case _PC_LINK_MAX:
+		*ap->a_retval = LINK_MAX;
+		return (0);
+	case _PC_MAX_CANON:
+		*ap->a_retval = MAX_CANON;
+		return (0);
+	case _PC_MAX_INPUT:
+		*ap->a_retval = MAX_INPUT;
+		return (0);
+	case _PC_PIPE_BUF:
+		*ap->a_retval = PIPE_BUF;
+		return (0);
+	case _PC_CHOWN_RESTRICTED:
+		*ap->a_retval = 1;
+		return (0);
+	case _PC_VDISABLE:
+		*ap->a_retval = _POSIX_VDISABLE;
+		return (0);
+	default:
+		return (EINVAL);
+	}
+	/* NOTREACHED */
+}
+
+/*
  * Print out the contents of a Portal vnode.
  */
 /* ARGSUSED */
@@ -632,6 +668,7 @@ struct vnodeopv_entry_desc portal_vnodeop_entries[] = {
 	{ &vop_strategy_desc, portal_strategy },	/* strategy */
 	{ &vop_print_desc, portal_print },		/* print */
 	{ &vop_islocked_desc, portal_islocked },	/* islocked */
+	{ &vop_pathconf_desc, portal_pathconf },	/* pathconf */
 	{ &vop_advlock_desc, portal_advlock },		/* advlock */
 	{ &vop_blkatoff_desc, portal_blkatoff },	/* blkatoff */
 	{ &vop_valloc_desc, portal_valloc },		/* valloc */

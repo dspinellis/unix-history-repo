@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)procfs_vnops.c	8.2 (Berkeley) %G%
+ *	@(#)procfs_vnops.c	8.3 (Berkeley) %G%
  *
  * From:
  *	$Id: procfs_vnops.c,v 3.2 1993/12/15 09:40:17 jsp Exp $
@@ -195,6 +195,42 @@ procfs_reclaim(ap)
 
 	error = procfs_freevp(ap->a_vp);
 	return (error);
+}
+
+/*
+ * Return POSIX pathconf information applicable to special devices.
+ */
+procfs_pathconf(ap)
+	struct vop_pathconf_args /* {
+		struct vnode *a_vp;
+		int a_name;
+		int *a_retval;
+	} */ *ap;
+{
+
+	switch (ap->a_name) {
+	case _PC_LINK_MAX:
+		*ap->a_retval = LINK_MAX;
+		return (0);
+	case _PC_MAX_CANON:
+		*ap->a_retval = MAX_CANON;
+		return (0);
+	case _PC_MAX_INPUT:
+		*ap->a_retval = MAX_INPUT;
+		return (0);
+	case _PC_PIPE_BUF:
+		*ap->a_retval = PIPE_BUF;
+		return (0);
+	case _PC_CHOWN_RESTRICTED:
+		*ap->a_retval = 1;
+		return (0);
+	case _PC_VDISABLE:
+		*ap->a_retval = _POSIX_VDISABLE;
+		return (0);
+	default:
+		return (EINVAL);
+	}
+	/* NOTREACHED */
 }
 
 /*
@@ -423,12 +459,10 @@ procfs_lookup(ap)
 	struct vnode *dvp = ap->a_dvp;
 	char *pname = cnp->cn_nameptr;
 	int error = 0;
-	int flag;
 	pid_t pid;
 	struct vnode *nvp;
 	struct pfsnode *pfs;
 	struct proc *procp;
-	int mode;
 	pfstype pfs_type;
 	int i;
 

@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kernfs_vnops.c	8.3 (Berkeley) %G%
+ *	@(#)kernfs_vnops.c	8.4 (Berkeley) %G%
  */
 
 /*
@@ -561,6 +561,42 @@ kernfs_reclaim(ap)
 }
 
 /*
+ * Return POSIX pathconf information applicable to special devices.
+ */
+kernfs_pathconf(ap)
+	struct vop_pathconf_args /* {
+		struct vnode *a_vp;
+		int a_name;
+		int *a_retval;
+	} */ *ap;
+{
+
+	switch (ap->a_name) {
+	case _PC_LINK_MAX:
+		*ap->a_retval = LINK_MAX;
+		return (0);
+	case _PC_MAX_CANON:
+		*ap->a_retval = MAX_CANON;
+		return (0);
+	case _PC_MAX_INPUT:
+		*ap->a_retval = MAX_INPUT;
+		return (0);
+	case _PC_PIPE_BUF:
+		*ap->a_retval = PIPE_BUF;
+		return (0);
+	case _PC_CHOWN_RESTRICTED:
+		*ap->a_retval = 1;
+		return (0);
+	case _PC_VDISABLE:
+		*ap->a_retval = _POSIX_VDISABLE;
+		return (0);
+	default:
+		return (EINVAL);
+	}
+	/* NOTREACHED */
+}
+
+/*
  * Print out the contents of a /dev/fd vnode.
  */
 /* ARGSUSED */
@@ -655,40 +691,41 @@ struct vnodeopv_entry_desc kernfs_vnodeop_entries[] = {
 	{ &vop_lookup_desc, kernfs_lookup },	/* lookup */
 	{ &vop_create_desc, kernfs_create },	/* create */
 	{ &vop_mknod_desc, kernfs_mknod },	/* mknod */
-	{ &vop_open_desc, kernfs_open },		/* open */
+	{ &vop_open_desc, kernfs_open },	/* open */
 	{ &vop_close_desc, kernfs_close },	/* close */
 	{ &vop_access_desc, kernfs_access },	/* access */
 	{ &vop_getattr_desc, kernfs_getattr },	/* getattr */
 	{ &vop_setattr_desc, kernfs_setattr },	/* setattr */
-	{ &vop_read_desc, kernfs_read },		/* read */
+	{ &vop_read_desc, kernfs_read },	/* read */
 	{ &vop_write_desc, kernfs_write },	/* write */
 	{ &vop_ioctl_desc, kernfs_ioctl },	/* ioctl */
 	{ &vop_select_desc, kernfs_select },	/* select */
-	{ &vop_mmap_desc, kernfs_mmap },		/* mmap */
+	{ &vop_mmap_desc, kernfs_mmap },	/* mmap */
 	{ &vop_fsync_desc, kernfs_fsync },	/* fsync */
-	{ &vop_seek_desc, kernfs_seek },		/* seek */
+	{ &vop_seek_desc, kernfs_seek },	/* seek */
 	{ &vop_remove_desc, kernfs_remove },	/* remove */
-	{ &vop_link_desc, kernfs_link },		/* link */
+	{ &vop_link_desc, kernfs_link },	/* link */
 	{ &vop_rename_desc, kernfs_rename },	/* rename */
 	{ &vop_mkdir_desc, kernfs_mkdir },	/* mkdir */
 	{ &vop_rmdir_desc, kernfs_rmdir },	/* rmdir */
 	{ &vop_symlink_desc, kernfs_symlink },	/* symlink */
 	{ &vop_readdir_desc, kernfs_readdir },	/* readdir */
-	{ &vop_readlink_desc, kernfs_readlink },	/* readlink */
+	{ &vop_readlink_desc, kernfs_readlink },/* readlink */
 	{ &vop_abortop_desc, kernfs_abortop },	/* abortop */
-	{ &vop_inactive_desc, kernfs_inactive },	/* inactive */
+	{ &vop_inactive_desc, kernfs_inactive },/* inactive */
 	{ &vop_reclaim_desc, kernfs_reclaim },	/* reclaim */
-	{ &vop_lock_desc, kernfs_lock },		/* lock */
+	{ &vop_lock_desc, kernfs_lock },	/* lock */
 	{ &vop_unlock_desc, kernfs_unlock },	/* unlock */
-	{ &vop_bmap_desc, kernfs_bmap },		/* bmap */
-	{ &vop_strategy_desc, kernfs_strategy },	/* strategy */
+	{ &vop_bmap_desc, kernfs_bmap },	/* bmap */
+	{ &vop_strategy_desc, kernfs_strategy },/* strategy */
 	{ &vop_print_desc, kernfs_print },	/* print */
-	{ &vop_islocked_desc, kernfs_islocked },	/* islocked */
+	{ &vop_islocked_desc, kernfs_islocked },/* islocked */
+	{ &vop_pathconf_desc, kernfs_pathconf },/* pathconf */
 	{ &vop_advlock_desc, kernfs_advlock },	/* advlock */
-	{ &vop_blkatoff_desc, kernfs_blkatoff },	/* blkatoff */
+	{ &vop_blkatoff_desc, kernfs_blkatoff },/* blkatoff */
 	{ &vop_valloc_desc, kernfs_valloc },	/* valloc */
 	{ &vop_vfree_desc, kernfs_vfree },	/* vfree */
-	{ &vop_truncate_desc, kernfs_truncate },	/* truncate */
+	{ &vop_truncate_desc, kernfs_truncate },/* truncate */
 	{ &vop_update_desc, kernfs_update },	/* update */
 	{ &vop_bwrite_desc, kernfs_bwrite },	/* bwrite */
 	{ (struct vnodeop_desc*)NULL, (int(*)())NULL }
