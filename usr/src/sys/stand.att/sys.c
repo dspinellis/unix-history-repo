@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys.c	7.6 (Berkeley) %G%
+ *	@(#)sys.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -13,9 +13,9 @@
 #include "reboot.h"
 #include "saio.h"
 
-#define	isdigit(c)	((c) >= '0' && (c) <= '9')
+#define	isdigit(c)	((u_int)((c) - '0') <= 9)
 #define	isspace(c)	((c) == ' ' || (c) == '\t')
-#define	isupper(c)	((c) >= 'A' && (c) <= 'Z')
+#define	isupper(c)	((u_int)((c) - 'A') <= 'Z' - 'A')
 #define	tolower(c)	((c) - 'A' + 'a')
 
 ino_t	dlook();
