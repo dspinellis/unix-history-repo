@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)thash4.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)thash4.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -48,7 +48,7 @@ char **argv;
 	ctl.bsize = atoi(*argv++);
 	ctl.ffactor = atoi(*argv++);
 	ctl.nelem = atoi(*argv++);
-	ctl.ncached = atoi(*argv++);
+	ctl.cachesize = atoi(*argv++);
 	ctl.lorder = 0;
 	if (!(dbp = hash_open( NULL, O_CREAT|O_RDWR, 0400, &ctl))) {
 		/* create table */
