@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stdlib.h	5.23 (Berkeley) %G%
+ *	@(#)stdlib.h	5.24 (Berkeley) %G%
  */
 
 #ifndef _STDLIB_H_
@@ -82,7 +82,6 @@ int	 mbtowc __P((wchar_t *, const char *, size_t));
 size_t	 wcstombs __P((char *, const wchar_t *, size_t));
 
 #ifndef _ANSI_SOURCE
-void	 cfree __P((void *));
 int	 putenv __P((const char *));
 int	 setenv __P((const char *, const char *, int));
 #endif
