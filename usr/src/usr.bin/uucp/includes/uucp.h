@@ -1,4 +1,4 @@
-/*	@(#)uucp.h	5.15	%G%	*/
+/*	@(#)uucp.h	5.16	%G%	*/
 
 #include <stdio.h>
 
@@ -25,9 +25,6 @@
  * named /etc/uucpname or /local/uucpname.
  * If your site does that, define UUNAME.
  *
- * Systems running 3Com's UNET will have the getmyhname() call.
- * If you want to, define GETMYHNAME.
- *
  * You should also define MYNAME to be your uucp name.
  *
  * For each of the above that are defined, uucp checks them in order.
@@ -39,7 +36,6 @@
 /* #define WHOAMI	/**/
 /* #define CCWHOAMI	/**/
 /* #define UUNAME	/**/
-/* #define GETMYHNAME	/**/
 /* If the above fails ... */
 #define	MYNAME	"erehwon"
 
