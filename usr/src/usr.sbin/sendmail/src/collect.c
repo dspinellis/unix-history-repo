@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)collect.c	3.46		%G%);
+SCCSID(@(#)collect.c	3.47		%G%);
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -39,13 +39,10 @@ maketemp(from)
 	register FILE *tf;
 	char buf[MAXFIELD+1];
 	register char *p;
-	char *xfrom;
 	extern char *hvalue();
 	extern char *mktemp();
-	static char tempfname[40];
+	static char tempfname[60];
 	extern char *macvalue();
-	register HDR *h;
-	extern HDR *hrvalue();
 	extern char *index();
 
 	/*
@@ -220,84 +217,11 @@ maketemp(from)
 	**	Examples are who is the from person & the date.
 	*/
 
-	/* message id */
-	h = hrvalue("message-id");
-	if (h == NULL)
-		syserr("No Message-Id spec");
-	else if (bitset(H_DEFAULT, h->h_flags))
-	{
-		(void) expand(h->h_value, buf, &buf[sizeof buf - 1], CurEnv);
-		MsgId = newstr(buf);
-	}
-	else
-		MsgId = h->h_value;
-# ifdef DEBUG
-	if (tTd(30, 1))
-		printf("Message-Id: %s\n", MsgId);
-# endif DEBUG
+	eatheader();
 
-	/* message priority */
-	if (!QueueRun)
-	{
-		/* adjust total priority by message priority */
-		CurEnv->e_msgpriority = CurEnv->e_msgsize;
-		p = hvalue("priority");
-		if (p != NULL)
-			CurEnv->e_class = priencode(p);
-		else
-			CurEnv->e_class = PRI_NORMAL;
-		CurEnv->e_msgpriority -= CurEnv->e_class * WKPRIFACT;
-	}
-
-	/* special handling */
-	p = hvalue("special-handling");
-	if (p != NULL)
-		spechandling(p);
-
-	/* from person */
-	xfrom = hvalue("sender");
-	if (xfrom == NULL)
-		xfrom = CurEnv->e_origfrom;
-	if (ArpaMode)
-		setfrom(xfrom, (char *) NULL);
-
-	/* full name of from person */
-	p = hvalue("full-name");
-	if (p != NULL)
-		define('x', p);
-	else
-	{
-		extern char *getxpart();
-
-		/*
-		**  Try to extract the full name from a general From:
-		**  field.  We take anything which is a comment as a
-		**  first choice.  Failing in that, we see if there is
-		**  a "machine readable" name (in <angle brackets>); if
-		**  so we take anything preceeding that clause.
-		**
-		**  If we blow it here it's not all that serious.
-		*/
-
-		p = hvalue("original-from");
-		if (p == NULL)
-			p = CurEnv->e_origfrom;
-		p = getxpart(p);
-		if (p != NULL)
-			define('x', newstr(p));
-	}
-
-	/* date message originated */
-	p = hvalue("posted-date");
-	if (p == NULL)
-		p = hvalue("date");
-	if (p != NULL)
-	{
-		define('a', p);
-		/* we don't have a good way to do canonical conversion ....
-		define('d', newstr(arpatounix(p)));
-		.... so we will ignore the problem for the time being */
-	}
+	/*
+	**  Add an Apparently-To: line if we have no recipient lines.
+	*/
 
 	if (hvalue("to") == NULL && hvalue("cc") == NULL &&
 	    hvalue("bcc") == NULL && hvalue("apparently-to") == NULL)
@@ -324,19 +248,6 @@ maketemp(from)
 
 	if ((TempFile = fopen(CurEnv->e_df, "r")) == NULL)
 		syserr("Cannot reopen %s", CurEnv->e_df);
-
-# ifdef DEBUG
-	if (tTd(30, 2))
-	{
-		HDR *h;
-		extern char *capitalize();
-
-		printf("----- collected header -----\n");
-		for (h = CurEnv->e_header; h != NULL; h = h->h_link)
-			printf("%s: %s\n", capitalize(h->h_field), h->h_value);
-		printf("----------------------------\n");
-	}
-# endif DEBUG
 
 	/*
 	**  Log collection information.
@@ -434,120 +345,3 @@ eatfrom(fm)
 }
 
 # endif NOTUNIX
-/*
-**  PRIENCODE -- encode external priority names into internal values.
-**
-**	Parameters:
-**		p -- priority in ascii.
-**
-**	Returns:
-**		priority as a numeric level.
-**
-**	Side Effects:
-**		none.
-*/
-
-struct prio
-{
-	char	*pri_name;	/* external name of priority */
-	int	pri_val;	/* internal value for same */
-};
-
-static struct prio	Prio[] =
-{
-	"alert",		PRI_ALERT,
-	"quick",		PRI_QUICK,
-	"first-class",		PRI_FIRSTCL,
-	"normal",		PRI_NORMAL,
-	"second-class",		PRI_SECONDCL,
-	"third-class",		PRI_THIRDCL,
-	"junk",			PRI_JUNK,
-	NULL,			PRI_NORMAL,
-};
-
-priencode(p)
-	char *p;
-{
-	register struct prio *pl;
-	extern bool sameword();
-
-	for (pl = Prio; pl->pri_name != NULL; pl++)
-	{
-		if (sameword(p, pl->pri_name))
-			break;
-	}
-	return (pl->pri_val);
-}
-/*
-**  SPECHANDLE -- do special handling
-**
-**	Parameters:
-**		p -- pointer to list of special handling words.
-**
-**	Returns:
-**		none.
-**
-**	Side Effects:
-**		Sets flags as indicated by p.
-*/
-
-struct handling
-{
-	char	*han_name;		/* word to get this magic */
-	int	han_what;		/* what to do, see below */
-};
-
-/* modes for han_what */
-# define	HAN_NONE	0	/* nothing special */
-# define	HAN_RRECEIPT	1	/* give return receipt */
-
-struct handling	Handling[] =
-{
-	"return-receipt-requested",	HAN_RRECEIPT,
-	NULL,				HAN_NONE
-};
-
-spechandling(p)
-	register char *p;
-{
-	register char *w;
-	register struct handling *h;
-	extern bool sameword();
-
-	while (*p != '\0')
-	{
-		/* collect a word to compare to */
-		while (*p != '\0' && (*p == ',' || isspace(*p)))
-			p++;
-		if (*p == '\0')
-			break;
-		w = p;
-		while (*p != '\0' && *p != ',' && !isspace(*p))
-			p++;
-		if (*p != '\0')
-			*p++ = '\0';
-
-		/* scan the special handling table */
-		for (h = Handling; h->han_name != NULL; h++)
-			if (sameword(h->han_name, w))
-				break;
-
-		/* see if we can do anything interesting */
-		switch (h->han_what)
-		{
-		  case HAN_NONE:	/* nothing to be done */
-			break;
-
-		  case HAN_RRECEIPT:	/* give return receipt */
-			CurEnv->e_retreceipt = TRUE;
-# ifdef DEBUG
-			if (tTd(30, 3))
-				printf(">>> Return receipt requested\n");
-# endif DEBUG
-			break;
-
-		  default:
-			syserr("spechandling: handling %d (%s)", h->han_what, w);
-		}
-	}
-}
