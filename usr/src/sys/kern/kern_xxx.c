@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_xxx.c	7.4 (Berkeley) %G%
+ *	@(#)kern_xxx.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -26,8 +26,9 @@ sethostid()
 		long	hostid;
 	} *uap = (struct a *)u.u_ap;
 
-	if (suser())
-		hostid = uap->hostid;
+	if (u.u_error = suser(u.u_cred, &u.u_acflag))
+		return;
+	hostid = uap->hostid;
 }
 
 gethostname()
@@ -50,7 +51,7 @@ sethostname()
 		u_int	len;
 	} *uap = (struct a *)u.u_ap;
 
-	if (!suser())
+	if (u.u_error = suser(u.u_cred, &u.u_acflag))
 		return;
 	if (uap->len > sizeof (hostname) - 1) {
 		u.u_error = EINVAL;
@@ -67,6 +68,7 @@ reboot()
 		int	opt;
 	};
 
-	if (suser())
-		boot(((struct a *)u.u_ap)->opt);
+	if (u.u_error = suser(u.u_cred, &u.u_acflag))
+		return;
+	boot(((struct a *)u.u_ap)->opt);
 }

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_prot.c	7.4 (Berkeley) %G%
+ *	@(#)kern_prot.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -169,12 +169,14 @@ setreuid()
 	ruid = uap->ruid;
 	if (ruid == -1)
 		ruid = u.u_ruid;
-	if (u.u_ruid != ruid && u.u_uid != ruid && !suser())
+	if (u.u_ruid != ruid && u.u_uid != ruid &&
+	    (u.u_error = suser(u.u_cred, &u.u_acflag)))
 		return;
 	euid = uap->euid;
 	if (euid == -1)
 		euid = u.u_uid;
-	if (u.u_ruid != euid && u.u_uid != euid && !suser())
+	if (u.u_ruid != euid && u.u_uid != euid &&
+	    (u.u_error = suser(u.u_cred, &u.u_acflag)))
 		return;
 	/*
 	 * Everything's okay, do it.
@@ -202,12 +204,14 @@ setregid()
 	rgid = uap->rgid;
 	if (rgid == -1)
 		rgid = u.u_rgid;
-	if (u.u_rgid != rgid && u.u_gid != rgid && !suser())
+	if (u.u_rgid != rgid && u.u_gid != rgid &&
+	    (u.u_error = suser(u.u_cred, &u.u_acflag)))
 		return;
 	egid = uap->egid;
 	if (egid == -1)
 		egid = u.u_gid;
-	if (u.u_rgid != egid && u.u_gid != egid && !suser())
+	if (u.u_rgid != egid && u.u_gid != egid &&
+	    (u.u_error = suser(u.u_cred, &u.u_acflag)))
 		return;
 	if (u.u_rgid != rgid) {
 		leavegroup(u.u_rgid);
@@ -227,7 +231,7 @@ setgroups()
 	register int *lp;
 	int groups[NGROUPS];
 
-	if (!suser())
+	if (u.u_error = suser(u.u_cred, &u.u_acflag))
 		return;
 	if (uap->gidsetsize > sizeof (u.u_groups) / sizeof (u.u_groups[0])) {
 		u.u_error = EINVAL;
@@ -328,11 +332,11 @@ setlogname()
 		u_int	namelen;
 	} *uap = (struct a *)u.u_ap;
 
-	if(suser()) {
-		if(uap->namelen > sizeof (u.u_logname) - 1)
-			u.u_error = EINVAL;
-		else
-			u.u_error = copyin((caddr_t)uap->namebuf,
-				(caddr_t)u.u_logname, uap->namelen);
-	} 
+	if (u.u_error = suser(u.u_cred, &u.u_acflag))
+		return;
+	if (uap->namelen > sizeof (u.u_logname) - 1)
+		u.u_error = EINVAL;
+	else
+		u.u_error = copyin((caddr_t)uap->namebuf,
+			(caddr_t)u.u_logname, uap->namelen);
 }

@@ -35,6 +35,8 @@ static char *rcsid = "$Header: iso_snpac.c,v 1.8 88/09/19 13:51:36 hagens Exp $"
 
 #include "types.h"
 #include "param.h"
+#include "../ufs/dir.h"
+#include "user.h"
 #include "mbuf.h"
 #include "domain.h"
 #include "protosw.h"
@@ -42,7 +44,6 @@ static char *rcsid = "$Header: iso_snpac.c,v 1.8 88/09/19 13:51:36 hagens Exp $"
 #include "socketvar.h"
 #include "errno.h"
 #include "ioctl.h"
-#include "time.h"
 #include "kernel.h"
 
 #include "../net/if.h"
@@ -582,7 +583,7 @@ caddr_t	data;	/* data for the cmd */
 	ENDDEBUG
 
 	if (cmd == SIOCSSTYPE) {
-		if (!suser())
+		if (suser(u.u_cred, &u.u_acflag))
 			return(EACCES);
 		if ((rq->sr_type & (SNPA_ES|SNPA_IS)) == (SNPA_ES|SNPA_IS))
 			return(EINVAL);

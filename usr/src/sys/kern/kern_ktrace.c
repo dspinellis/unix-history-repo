@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_ktrace.c	1.1 (Berkeley) %G%
+ *	@(#)kern_ktrace.c	1.2 (Berkeley) %G%
  */
 
 #ifdef KTRACE
@@ -155,10 +155,8 @@ ktrace()
 	 * Until security implications are thought through,
 	 * limit tracing to root.
 	 */
-	if (!suser()) {
-		u.u_error = EACCES;
+	if (!ktrace_nocheck && (u.u_error = suser(u.u_cred, &u.u_acflag)))
 		return;
-	}
 	if (ops != KTROP_CLEAR) {
 		/*
 		 * an operation which requires a file argument.
