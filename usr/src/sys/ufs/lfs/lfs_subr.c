@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_subr.c	7.4 (Berkeley) %G%
+ *	@(#)lfs_subr.c	7.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -74,33 +74,6 @@ lfs_ifind(fs, ino, page)
 	/* NOTREACHED */
 }
 
-/* Set values in the ifile for the inode. */
-void
-lfs_iset(ip, daddr, atime)
-	INODE *ip;
-	daddr_t daddr;
-	time_t atime;
-{
-	BUF *bp;
-	IFILE *ifp;
-	struct lfs *fs;
-	ino_t ino;
-
-#ifdef VERBOSE
-	printf("lfs_iset: setting ino %d daddr %lx time %lx\n",
-	    ip->i_number, daddr, atime);
-#endif
-
-	fs = ip->i_lfs;
-	ino = ip->i_number;
-	LFS_IENTRY(ifp, fs, ino, bp);
-
-	ifp->if_daddr = daddr;
-	ifp->if_st_atime = atime;
-	lfs_bwrite(bp);
-}
-
-/* Translate an inode number to a disk address. */
 daddr_t
 lfs_itod(fs, ino)
 	struct lfs *fs;
@@ -113,12 +86,11 @@ lfs_itod(fs, ino)
 #ifdef VERBOSE
 	printf("lfs_itod %d\n", ino);
 #endif
-	/* Read the appropriate block from the ifile. */
+	/* Translate an inode number to a disk address. */
 	LFS_IENTRY(ifp, fs, ino, bp);
-
 	if (ifp->if_daddr == LFS_UNUSED_DADDR)
 		panic("lfs_itod: unused disk address");
 	iaddr = ifp->if_daddr;
-	brelse(bp);
+	LFS_IRELEASE(fs, bp);
 	return (iaddr);
 }
