@@ -182,4 +182,4 @@ clean:
 #
 
 print:
-	pr *.h [a-z]*/*.{h,rep,c}
+	pr *.h [a-z]*/*.{h,rep,yacc,lex,c}
