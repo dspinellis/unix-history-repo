@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	4.25	82/09/04	*/
+/*	uipc_syscalls.c	4.26	82/09/06	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -43,11 +43,6 @@ connect()
 }
 
 socketpair()
-{
-
-}
-
-spipe()
 {
 
 }
@@ -98,10 +93,7 @@ shutdown()
  */
 
 static	struct sockproto localproto = { PF_UNIX, 0 };
-/*
- * Pipe system call interface.
- */
-opipe()
+pipe()
 {
 	register struct file *rf, *wf;
 	struct socket *rso, *wso;

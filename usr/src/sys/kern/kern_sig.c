@@ -1,4 +1,4 @@
-/*	kern_sig.c	5.5	82/09/04	*/
+/*	kern_sig.c	5.6	82/09/06	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -709,11 +709,11 @@ core()
 	u.u_error =rdwri(UIO_WRITE, ip,
 	    (caddr_t)&u, ctob(UPAGES),
 	    0, 1, (int *)0);
-	if (u.u_error)
+	if (u.u_error == 0)
 	rdwri(UIO_WRITE, ip,
 	    (caddr_t)ctob(u.u_tsize), ctob(u.u_dsize),
 	    ctob(UPAGES), 0, (int *)0);
-	if (u.u_error)
+	if (u.u_error == 0)
 	rdwri(UIO_WRITE, ip,
 	    (caddr_t)(USRSTACK-ctob(u.u_ssize)), ctob(u.u_ssize),
 	    ctob(UPAGES)+ctob(u.u_dsize), 0, (int *)0);
@@ -733,10 +733,10 @@ oalarm()
 	register struct proc *p = u.u_procp;
 	int s = spl7();
 
-	p->p_realtimer.itimer_reload = 0;
-	u.u_r.r_val1 = p->p_realtimer.itimer_value.tv_sec;
-	p->p_realtimer.itimer_value.tv_sec = uap->deltat;
-	p->p_realtimer.itimer_value.tv_usec = 0;
+	timerclear(&p->p_realtimer.it_interval);
+	u.u_r.r_val1 = p->p_realtimer.it_value.tv_sec;
+	p->p_realtimer.it_value.tv_sec = uap->deltat;
+	p->p_realtimer.it_value.tv_usec = 0;
 	splx(s);
 }
 

@@ -1,4 +1,4 @@
-/*	sys_generic.c	5.12	82/09/04	*/
+/*	sys_generic.c	5.13	82/09/06	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -568,4 +568,14 @@ nullioctl(tp, cmd, data, flags)
 	tp = tp; data = data; flags = flags;
 #endif
 	return (cmd);
+}
+
+ostty()
+{
+
+}
+
+ogtty()
+{
+
 }

@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.36	82/09/04	*/
+/*	kern_proc.c	4.37	82/09/06	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -27,11 +27,51 @@
 gethostid()
 {
 
+	u.u_r.r_val1 = hostid;
 }
 
 sethostid()
 {
+	struct a {
+		int	hostid;
+	} *uap = (struct a *)u.u_ap;
 
+	if (suser())
+		hostid = uap->hostid;
+}
+
+gethostname()
+{
+	register struct a {
+		char	*hostname;
+		int	len;
+	} *uap = (struct a *)u.u_ap;
+	register u_int len;
+
+	len = uap->len;
+	if (len > hostnamelen)
+		len = hostnamelen;
+	if (copyout((caddr_t)hostname, (caddr_t)uap->hostname, len))
+		u.u_error = EFAULT;
+}
+
+sethostname()
+{
+	register struct a {
+		char	*hostname;
+		u_int	len;
+	} *uap = (struct a *)u.u_ap;
+
+	if (!suser())
+		return;
+	if (uap->len > sizeof (hostname) - 1) {
+		u.u_error = EINVAL;
+		return;
+	}
+	hostnamelen = uap->len;
+	if (copyin((caddr_t)uap->hostname, hostname, uap->len))
+		u.u_error = EFAULT;
+	hostname[hostnamelen] = 0;
 }
 
 /*
@@ -604,7 +644,7 @@ done:
 	swtch();
 }
 
-wait()
+owait()
 {
 	struct rusage ru, *rup;
 
@@ -832,4 +872,173 @@ pfind(pid)
 		if (p->p_pid == pid)
 			return (p);
 	return ((struct proc *)0);
+}
+
+/*
+ * Create a new process-- the internal version of
+ * sys fork.
+ * It returns 1 in the new process, 0 in the old.
+ */
+newproc(isvfork)
+	int isvfork;
+{
+	register struct proc *p;
+	register struct proc *rpp, *rip;
+	register int n;
+	register struct file *fp;
+
+	p = NULL;
+	/*
+	 * First, just locate a slot for a process
+	 * and copy the useful info from this process into it.
+	 * The panic "cannot happen" because fork has already
+	 * checked for the existence of a slot.
+	 */
+retry:
+	mpid++;
+	if (mpid >= 30000) {
+		mpid = 0;
+		goto retry;
+	}
+	for (rpp = proc; rpp < procNPROC; rpp++) {
+		if (rpp->p_stat == NULL && p==NULL)
+			p = rpp;
+		if (rpp->p_pid==mpid || rpp->p_pgrp==mpid)
+			goto retry;
+	}
+	if ((rpp = p) == NULL)
+		panic("no procs");
+
+	/*
+	 * Make a proc table entry for the new process.
+	 */
+	rip = u.u_procp;
+#ifdef QUOTA
+	(rpp->p_quota = rip->p_quota)->q_cnt++;
+#endif
+	rpp->p_stat = SIDL;
+	timerclear(&rpp->p_realtimer.it_value);
+	rpp->p_flag = SLOAD | (rip->p_flag & (SPAGI|SNUSIG));
+	if (isvfork) {
+		rpp->p_flag |= SVFORK;
+		rpp->p_ndx = rip->p_ndx;
+	} else
+		rpp->p_ndx = rpp - proc;
+	rpp->p_uid = rip->p_uid;
+	rpp->p_pgrp = rip->p_pgrp;
+	rpp->p_nice = rip->p_nice;
+	rpp->p_textp = isvfork ? 0 : rip->p_textp;
+	rpp->p_pid = mpid;
+	rpp->p_ppid = rip->p_pid;
+	rpp->p_pptr = rip;
+	rpp->p_osptr = rip->p_cptr;
+	if (rip->p_cptr)
+		rip->p_cptr->p_ysptr = rpp;
+	rpp->p_ysptr = NULL;
+	rpp->p_cptr = NULL;
+	rip->p_cptr = rpp;
+	rpp->p_time = 0;
+	rpp->p_cpu = 0;
+	rpp->p_siga0 = rip->p_siga0;
+	rpp->p_siga1 = rip->p_siga1;
+	/* take along any pending signals, like stops? */
+	if (isvfork) {
+		rpp->p_tsize = rpp->p_dsize = rpp->p_ssize = 0;
+		rpp->p_szpt = clrnd(ctopt(UPAGES));
+		forkstat.cntvfork++;
+		forkstat.sizvfork += rip->p_dsize + rip->p_ssize;
+	} else {
+		rpp->p_tsize = rip->p_tsize;
+		rpp->p_dsize = rip->p_dsize;
+		rpp->p_ssize = rip->p_ssize;
+		rpp->p_szpt = rip->p_szpt;
+		forkstat.cntfork++;
+		forkstat.sizfork += rip->p_dsize + rip->p_ssize;
+	}
+	rpp->p_rssize = 0;
+	rpp->p_maxrss = rip->p_maxrss;
+	rpp->p_wchan = 0;
+	rpp->p_slptime = 0;
+	rpp->p_pctcpu = 0;
+	rpp->p_cpticks = 0;
+	n = PIDHASH(rpp->p_pid);
+	p->p_idhash = pidhash[n];
+	pidhash[n] = rpp - proc;
+	multprog++;
+
+	/*
+	 * Increase reference counts on shared objects.
+	 */
+	for (n = 0; n < NOFILE; n++) {
+		fp = u.u_ofile[n];
+		if (fp == NULL)
+			continue;
+		fp->f_count++;
+		if (u.u_pofile[n]&RDLOCK)
+			fp->f_inode->i_rdlockc++;
+		if (u.u_pofile[n]&WRLOCK)
+			fp->f_inode->i_wrlockc++;
+	}
+	u.u_cdir->i_count++;
+	if (u.u_rdir)
+		u.u_rdir->i_count++;
+
+	/*
+	 * Partially simulate the environment
+	 * of the new process so that when it is actually
+	 * created (by copying) it will look right.
+	 * This begins the section where we must prevent the parent
+	 * from being swapped.
+	 */
+	rip->p_flag |= SKEEP;
+	if (procdup(rpp, isvfork))
+		return (1);
+
+	/*
+	 * Make child runnable and add to run queue.
+	 */
+	(void) spl6();
+	rpp->p_stat = SRUN;
+	setrq(rpp);
+	(void) spl0();
+
+	/*
+	 * Cause child to take a non-local goto as soon as it runs.
+	 * On older systems this was done with SSWAP bit in proc
+	 * table; on VAX we use u.u_pcb.pcb_sswap so don't need
+	 * to do rpp->p_flag |= SSWAP.  Actually do nothing here.
+	 */
+	/* rpp->p_flag |= SSWAP; */
+
+	/*
+	 * Now can be swapped.
+	 */
+	rip->p_flag &= ~SKEEP;
+
+	/*
+	 * If vfork make chain from parent process to child
+	 * (where virtal memory is temporarily).  Wait for
+	 * child to finish, steal virtual memory back,
+	 * and wakeup child to let it die.
+	 */
+	if (isvfork) {
+		u.u_procp->p_xlink = rpp;
+		u.u_procp->p_flag |= SNOVM;
+		while (rpp->p_flag & SVFORK)
+			sleep((caddr_t)rpp, PZERO - 1);
+		if ((rpp->p_flag & SLOAD) == 0)
+			panic("newproc vfork");
+		uaccess(rpp, Vfmap, &vfutl);
+		u.u_procp->p_xlink = 0;
+		vpassvm(rpp, u.u_procp, &vfutl, &u, Vfmap);
+		u.u_procp->p_flag &= ~SNOVM;
+		rpp->p_ndx = rpp - proc;
+		rpp->p_flag |= SVFDONE;
+		wakeup((caddr_t)rpp);
+	}
+
+	/*
+	 * 0 return means parent.
+	 */
+	return (0);
 }
