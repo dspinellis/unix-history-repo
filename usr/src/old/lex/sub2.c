@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)sub2.c	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)sub2.c	4.2 (Berkeley) %G%";
 #endif
 
 # include "ldefs.c"
@@ -26,7 +26,7 @@ cfoll(v)
 			else if(i == RCCL || i == RNCCL){	/* compress ccl list */
 				for(j=1; j<NCH;j++)
 					symbol[j] = (i==RNCCL);
-				p = left[v];
+				p = (char *)left[v];
 				while(*p)
 					symbol[*p++] = (i == RCCL);
 				p = pcptr;
@@ -40,7 +40,7 @@ cfoll(v)
 				*pcptr++ = 0;
 				if(pcptr > pchar + pchlen)
 					error("Too many packed character classes");
-				left[v] = p;
+				left[v] = (int)p;
 				name[v] = RCCL;	/* RNCCL eliminated */
 # ifdef DEBUG
 				if(debug && *p){
@@ -173,7 +173,7 @@ first(v)	/* calculate set of positions with v as root which can be active initia
 			break;
 		case RSCON:
 			i = stnum/2 +1;
-			p = right[v];
+			p = (char *)right[v];
 			while(*p)
 				if(*p++ == i){
 					first(left[v]);
@@ -241,7 +241,7 @@ cgoto(){
 			else switch(name[curpos]){
 			case RCCL:
 				tryit = TRUE;
-				q = left[curpos];
+				q = (char *)left[curpos];
 				while(*q){
 					for(j=1;j<NCH;j++)
 						if(cindex[j] == *q)
@@ -852,7 +852,7 @@ layout(){
 		else
 			{
 			int *fbarr;
-			fbarr = myalloc(2*NCH, sizeof(*fbarr));
+			fbarr = (int *)myalloc(2*NCH, sizeof(*fbarr));
 			if (fbarr==0)
 				error("No space for char table reverse",0);
 			for(i=0; i<ZCH; i++)
