@@ -1,0 +1,11 @@
+DEFS=""
+LIBS=""
+INSTALL="/usr/bin/install -c"
+INSTALLDATA="/usr/bin/install -c -m 644"
+CC="gcc -O"
+CFLAGS="-g"
+LDFLAGS=""
+LN_S="ln -s"
+ALLOCA=""
+UUDIR="# "
+
