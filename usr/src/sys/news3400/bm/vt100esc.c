@@ -9,7 +9,7 @@
  *
  * from: $Hdr: vt100esc.c,v 4.300 91/06/09 06:14:59 root Rel41 $ SONY
  *
- *	@(#)vt100esc.c	7.5 (Berkeley) %G%
+ *	@(#)vt100esc.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -1223,7 +1223,7 @@ parm_set(sp, parm, terminator)
 		}
 		break;
 	case 'd':
-		if (parm[0] >= DIM_CNT_MIN && parm[0] <= DIM_CNT_MAX)
+		if (parm[0] >= DIM_CNT_MIN /* && parm[0] <= DIM_CNT_MAX */)
 			dim_cnt = a_dim_on = parm[0];
 		else
 			a_dim_on = 0;
