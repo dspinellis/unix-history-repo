@@ -6,7 +6,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#       @(#)makesendmail	8.18 (Berkeley) %G%
+#       @(#)makesendmail	8.19 (Berkeley) %G%
 #
 
 #
@@ -42,7 +42,11 @@ in
 esac
 
 # tweak operating system release
-rbase=`echo $rel | sed 's/\..*//''`
+case $os
+in
+  HP-UX)	rbase=`echo $rel | sed -e 's/^[^.]*\.0*//' -e 's/\..*//'`;;
+  *)		rbase=`echo $rel | sed -e 's/\..*//'`
+esac
 
 # heuristic tweaks to clean up names
 if [ "$os" = "unix" ]
@@ -70,6 +74,8 @@ then
 else
 	sfx=".${SENDMAIL_SUFFIX}"
 fi
+
+echo "Making sendmail with os=$os, rel=$rel, rbase=$rbase, arch=$arch, sfx=$sfx"
 
 # now try to find a reasonable object directory
 if [ -r obj.$os.$rel.$arch$sfx ]; then
