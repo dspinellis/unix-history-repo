@@ -1,7 +1,12 @@
-/* Copyright (c) 1982 Regents of the University of California */
+/*
+ * Copyright (c) 1982 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
 
-static char sccsid[] = "@(#)y.tab.h 1.1 %G%";
-
+#ifndef lint
+static char sccsid[] = "@(#)y.tab.h	5.1 (Berkeley) %G%";
+#endif not lint
 
 typedef union  {
 	SYM *y_sym;
