@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid [] = "@(#)udb.c	5.1 (Berkeley) %G%";
+static char sccsid [] = "@(#)udb.c	5.2 (Berkeley) %G%";
 #endif
 
 #include "sendmail.h"
@@ -63,7 +63,7 @@ udbexpand(a, sendq)
 				printf("no userdb specified\n");
 			return;
 		}
-		dbp = hash_open(UdbFileName, O_RDONLY, 0644, NULL);
+		dbp = dbopen(UdbFileName, O_RDONLY, 0644, DB_HASH, NULL);
 		if (dbp == NULL)
 		{
 			extern int errno;
