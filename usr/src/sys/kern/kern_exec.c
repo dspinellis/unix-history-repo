@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_exec.c	7.30 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.31 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -25,6 +25,7 @@
 #include "uio.h"
 #include "acct.h"
 #include "exec.h"
+#include "ktrace.h"
 
 #include "machine/reg.h"
 #include "machine/pte.h"
@@ -655,8 +656,18 @@ getxfile(p, vp, ep, flags, nargc, uid, gid)
 	 * set SUID/SGID protections, if no tracing
 	 */
 	if ((p->p_flag&STRC)==0) {
-		if (uid != cred->cr_uid || gid != cred->cr_gid)
+		if (uid != cred->cr_uid || gid != cred->cr_gid) {
 			u.u_cred = cred = crcopy(cred);
+			/*
+			 * If process is being ktraced, turn off - unless
+			 * root set it.
+			 */
+			if (p->p_tracep && !(p->p_traceflag & KTRFAC_ROOT)) {
+				vrele(p->p_tracep);
+				p->p_tracep = NULL;
+				p->p_traceflag = 0;
+			}
+		}
 		cred->cr_uid = uid;
 		cred->cr_gid = gid;
 		p->p_uid = uid;
