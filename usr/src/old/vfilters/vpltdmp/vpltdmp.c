@@ -5,20 +5,19 @@
 /*	All rights reserved					*/
 /*								*/
 /****************************************************************/
-/*  VPLTDMP: version 4.3			updated %G%
+/*  VPLTDMP: version 4.4			updated %G%
  *
  *  reads raster file created by vplot and dumps it onto the
  *  Varian or Versatec plotter.
  *  Input comes from file descriptor 0, output is to file descriptor 1.
  */
 #include <stdio.h>
-#include <signal.h>
 #include <sys/vcmd.h>
 
 #define IN	0
 #define OUT	1
 
-static	char *Sid = "@(#)vpltdmp.c	4.3\t%G%";
+static	char *Sid = "@(#)vpltdmp.c	4.4\t%G%";
 
 int	plotmd[] = { VPLOT };
 int	prtmd[]  = { VPRINT };
@@ -33,9 +32,10 @@ int	PAGE_LINES;		/* number of raster lines per page. */
 char	*name, *host, *acctfile;
 
 main(argc, argv)
-char *argv[];
+	int argc;
+	char *argv[];
 {
-	register int n, bytes;
+	register int n;
 
 	while (--argc) {
 		if (**++argv == '-') {
@@ -62,19 +62,7 @@ char *argv[];
 			acctfile = *argv;
 	}
 
-	ioctl(OUT, VSETSTATE, plotmd);
-
-	bytes = 0;
-	while ((n = read(IN, buf, sizeof(buf))) > 0) {
-		if (write(OUT, buf, n) != n)
-			exit(1);
-		bytes += n;
-	}
-	if (bytes & 1) {	/* make sure even number bytes are sent */
-		write(OUT, "", 1);
-		bytes++;
-	}
-	lines = bytes / BYTES_PER_LINE;
+	n = putplot();
 
 	ioctl(OUT, VSETSTATE, prtmd);
 	if (varian)
@@ -82,7 +70,35 @@ char *argv[];
 	else
 		write(OUT, "\n\n\n\n\n", 6);
 	account(name, host, *argv);
-	exit(0);
+	exit(n);
+}
+
+putplot()
+{
+	register char *cp;
+	register int bytes, n;
+
+	cp = buf;
+	bytes = 0;
+	ioctl(OUT, VSETSTATE, plotmd);
+	while ((n = read(IN, cp, sizeof(buf))) > 0) {
+		if (write(OUT, cp, n) != n)
+			return(1);
+		bytes += n;
+	}
+	/*
+	 * Make sure we send complete raster lines.
+	 */
+	if ((n = bytes % BYTES_PER_LINE) > 0) {
+		n = BYTES_PER_LINE - n;
+		for (cp = &buf[n]; cp > buf; )
+			*--cp = 0;
+		if (write(OUT, cp, n) != n)
+			return(1);
+		bytes += n;
+	}
+	lines += bytes / BYTES_PER_LINE;
+	return(0);
 }
 
 account(who, from, acctfile)
