@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)pathnames.h	5.1 (Berkeley) %G%
+ *	@(#)pathnames.h	5.2 (Berkeley) %G%
  */
 
 #include <paths.h>
@@ -26,7 +26,6 @@
 #define	_PATH_MASTERLOCK	"/var/spool/lpd.lock"
 #define	_PATH_PR		"/usr/bin/pr"
 #define	_PATH_PRINTCAP		"/etc/printcap"
-#define	_PATH_SENDMAIL		"/usr/libexec/sendmail"
 #define	_PATH_SOCKETNAME	"/var/run/printer"
 #define	_PATH_VFONT		"/usr/libdata/vfont/"
 #define	_PATH_VFONTB		"/usr/libdata/vfont/B"
