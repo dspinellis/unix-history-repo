@@ -1,4 +1,4 @@
-/*	vfs_lookup.c	4.10	82/02/27	*/
+/*	vfs_lookup.c	4.11	82/03/06	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -41,7 +41,16 @@ namei(func, flag, follow)
 	nbp = geteblk();
 	nlink = 0;
 	for (i=0, cp = nbp->b_un.b_addr; *cp = (*func)(); i++) {
+		if ((*cp&0377) == ('/'|0200)) {
+			u.u_error = EPERM;
+			break;
+		}
+#ifdef notdef
 		if (*cp++&0200 && flag==1 || cp >= nbp->b_un.b_addr+BSIZE) {
+#else
+		cp++;
+		if (cp >= nbp->b_un.b_addr+BSIZE) {
+#endif
 			u.u_error = ENOENT;
 			break;
 		}
@@ -76,11 +85,17 @@ dirloop:
 		u.u_error = ENOTDIR;
 	(void) access(dp, IEXEC);
 	for (i=0; *cp!='\0' && *cp!='/'; i++) {
+#ifdef notdef
 		if (i >= DIRSIZ) {
 			u.u_error = ENOENT;
 			break;
 		}
 		u.u_dbuf[i] = *cp++;
+#else
+		if (i < DIRSIZ)
+			u.u_dbuf[i] = *cp;
+		cp++;
+#endif
 	}
 	if (u.u_error)
 		goto out;
