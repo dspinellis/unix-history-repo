@@ -1,2 +1,2 @@
-SUBDIR= cc cpp cc1 libgcc cc1plus cc1obj #libobjc
+SUBDIR= gcc gcpp gcc1 libgcc gcc1plus gcc1obj #libobjc
 .include <bsd.subdir.mk>

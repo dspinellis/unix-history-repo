@@ -1,6 +1,6 @@
 #	@(#)Makefile	6.2 (Berkeley) 2/2/91
 
-PROG=		cc1
+PROG=		gcc1
 BINDIR=		/usr/libexec
 SRCS=		c-parse.c c-lang.c  c-lex.c c-pragma.c c-decl.c \
 		c-typeck.c c-convert.c c-aux-info.c c-iterate.c \

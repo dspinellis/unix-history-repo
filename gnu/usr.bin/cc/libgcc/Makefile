@@ -1,4 +1,5 @@
 LIB=	gcc
+CC=	gcc
 CFLAGS=		-I../common
 
 SRCS= _mulsi3.c _udivsi3.c _divsi3.c _umodsi3.c _modsi3.c \

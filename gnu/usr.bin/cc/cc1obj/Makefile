@@ -1,4 +1,4 @@
-PROG=           cc1obj
+PROG=           gcc1obj
 BINDIR=         /usr/libexec
 SRCS=		objc-parse.c objc-act.c  \
 		c-lex.c c-pragma.c c-decl.c c-typeck.c c-convert.c\

@@ -7,9 +7,4 @@ BINDIR=		/usr/bin
 CFLAGS+=        -I$(.CURDIR) -I$(.CURDIR)/../common
 .PATH:          $(.CURDIR)/../common 
 
-
-afterinstall:
-	-rm -f $(DESTDIR)$(BINDIR)/cc
-	cd $(DESTDIR)$(BINDIR); ln -s gcc cc
-
 .include <bsd.prog.mk>
