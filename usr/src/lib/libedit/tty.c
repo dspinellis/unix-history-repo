@@ -9,7 +9,7 @@
  */
 
 #if !defined(lint) && !defined(SCCSID)
-static char sccsid[] = "@(#)tty.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)tty.c	5.3 (Berkeley) %G%";
 #endif /* not lint && not SCCSID */
 
 /* 
@@ -18,6 +18,18 @@ static char sccsid[] = "@(#)tty.c	5.2 (Berkeley) %G%";
 #include "sys.h"
 #include "tty.h"
 #include "el.h"
+
+typedef struct ttymodes_t {
+    char *m_name;
+    int   m_value;
+    int   m_type;
+} ttymodes_t;
+
+typedef struct ttymap_t {
+    int nch, och;		 /* Internal and termio rep of chars */
+    el_action_t bind[3]; 	/* emacs, vi, and vi-cmd */
+} ttymap_t;
+
 
 private ttyperm_t ttyperm = {   
     {
@@ -35,10 +47,8 @@ private ttyperm_t ttyperm = {
 	{ "lflag:", ISIG,
 		    (NOFLSH|ICANON|ECHO|ECHOK|ECHONL|EXTPROC|IEXTEN|FLUSHO) },
 	{ "chars:", (C_SH(C_MIN)|C_SH(C_TIME)|C_SH(C_SWTCH)|C_SH(C_DSWTCH)|
-		     C_SH(C_WERASE)|C_SH(C_REPRINT)|C_SH(C_SUSP)|C_SH(C_DSUSP)|
-		     C_SH(C_EOF)|C_SH(C_EOL)|C_SH(C_DISCARD)|C_SH(C_PGOFF)|
-		     C_SH(C_KILL2)|C_SH(C_PAGE)|C_SH(C_STATUS)|C_SH(C_LNEXT)), 
-		     0 }
+		     C_SH(C_SUSP)|C_SH(C_DSUSP)|C_SH(C_EOL)|C_SH(C_DISCARD)|
+		     C_SH(C_PGOFF)|C_SH(C_PAGE)|C_SH(C_STATUS)), 0 }
     },
     {
 	{ "iflag:", 0, IXON | IXOFF },
@@ -79,11 +89,42 @@ private ttychar_t ttychar = {
     }
 };
 
-typedef struct ttymodes_t {
-    char *m_name;
-    int   m_value;
-    int   m_type;
-} ttymodes_t;
+private ttymap_t tty_map[] = {
+#ifdef VERASE
+	{ C_ERASE,   VERASE,	
+	    { ED_DELETE_PREV_CHAR, VI_DELETE_PREV_CHAR, ED_PREV_CHAR } },
+#endif /* VERASE */
+#ifdef VERASE2
+	{ C_ERASE2,  VERASE2,	
+	    { ED_DELETE_PREV_CHAR, VI_DELETE_PREV_CHAR, ED_PREV_CHAR } },
+#endif /* VERASE2 */
+#ifdef VKILL
+    	{ C_KILL,    VKILL,	
+	    { EM_KILL_LINE, VI_KILL_LINE_PREV, ED_UNASSIGNED } },
+#endif /* VKILL */
+#ifdef VKILL2
+    	{ C_KILL2,   VKILL2,	
+	    { EM_KILL_LINE, VI_KILL_LINE_PREV, ED_UNASSIGNED } },
+#endif /* VKILL2 */
+#ifdef VEOF
+    	{ C_EOF,     VEOF,	
+	    { EM_DELETE_OR_LIST, VI_LIST_OR_EOF, ED_UNASSIGNED } },
+#endif /* VEOF */
+#ifdef VWERASE
+    	{ C_WERASE,  VWERASE,	
+	    { ED_DELETE_PREV_WORD, ED_DELETE_PREV_WORD, ED_PREV_WORD } },
+#endif /* VWERASE */
+#ifdef VREPRINT
+   	{ C_REPRINT, VREPRINT,	
+	    { ED_REDISPLAY, ED_INSERT, ED_REDISPLAY } },
+#endif /* VREPRINT */
+#ifdef VLNEXT
+    	{ C_LNEXT,   VLNEXT,	
+	    { ED_QUOTED_INSERT, ED_QUOTED_INSERT, ED_UNASSIGNED } },
+#endif /* VLNEXT */
+	{ -1,	     -1,	
+	    { ED_UNASSIGNED, ED_UNASSIGNED, ED_UNASSIGNED } }
+    };
 
 private ttymodes_t ttymodes[] = {
 # ifdef	IGNBRK
@@ -339,7 +380,7 @@ private ttymodes_t ttymodes[] = {
 # endif /* VDSUSP */
 # if defined(VREPRINT)
     { "reprint",	C_SH(C_REPRINT),M_CHAR },
-# endif /* WREPRINT */
+# endif /* VREPRINT */
 # if defined(VDISCARD)
     { "discard",	C_SH(C_DISCARD),M_CHAR },
 # endif /* VDISCARD */
@@ -383,6 +424,7 @@ private void    tty__getchar	__P((struct termios *, unsigned char *));
 private void    tty__setchar	__P((struct termios *, unsigned char *));
 private speed_t tty__getspeed	__P((struct termios *));
 private int     tty_setup	__P((EditLine *));
+private void	tty_bind_char	__P((EditLine *));
 
 #define t_qu t_ts
 
@@ -561,7 +603,7 @@ tty__getchar(td, s)
 # endif /* VDSUSP */
 # ifdef VREPRINT
     s[C_REPRINT]= td->c_cc[VREPRINT];
-# endif /* WREPRINT */
+# endif /* VREPRINT */
 # ifdef VDISCARD
     s[C_DISCARD]= td->c_cc[VDISCARD];
 # endif /* VDISCARD */
@@ -644,7 +686,7 @@ tty__setchar(td, s)
 # endif /* VDSUSP */
 # ifdef VREPRINT
     td->c_cc[VREPRINT]	= s[C_REPRINT];
-# endif /* WREPRINT */
+# endif /* VREPRINT */
 # ifdef VDISCARD
     td->c_cc[VDISCARD]	= s[C_DISCARD];
 # endif /* VDISCARD */
@@ -671,6 +713,52 @@ tty__setchar(td, s)
 # endif /* VTIME */
 } /* tty__setchar */
 
+
+/* tty_bind_char():
+ *	Rebind the editline functions
+ */
+private void
+tty_bind_char(el)
+    EditLine *el;
+{
+    unsigned char *t_n = el->el_tty.t_c[ED_IO];
+    unsigned char *t_o = el->el_tty.t_ed.c_cc;
+    unsigned char new[2], old[2];
+    ttymap_t *tp;
+    el_action_t  *dmap, *dalt, *map, *alt;
+    new[1] = old[1] = '\0';
+
+
+    map = el->el_map.key;
+    alt = el->el_map.alt;
+    if (el->el_map.type == MAP_VI) {
+	dmap = el->el_map.vii;
+	dalt = el->el_map.vic;
+    }
+    else {
+	dmap = el->el_map.emacs;
+	dalt = NULL;
+    }
+
+    for (tp = tty_map; tp->nch != -1; tp++) {
+	new[0] = t_n[tp->nch];
+	old[0] = t_o[tp->och];
+	if (new[0] == old[0])
+	    continue;
+	/* Put the old default binding back, and set the new binding */
+	key_clear(el, map, old);
+	map[old[0]] = dmap[old[0]];
+	key_clear(el, map, new);
+	/* MAP_VI == 1, MAP_EMACS == 0... */
+	map[new[0]] = tp->bind[el->el_map.type];
+	if (dalt) {
+	    key_clear(el, alt, old);
+	    alt[old[0]] = dalt[old[0]];
+	    key_clear(el, alt, new);
+	    alt[new[0]] = tp->bind[el->el_map.type+1];
+	}
+    }
+}
 
 /* tty_rawmode():
  * 	Set terminal into 1 character at a time mode.
@@ -778,6 +866,7 @@ tty_rawmode(el)
 		    if (el->el_tty.t_t[ED_IO][M_CHAR].t_clrmask & C_SH(i))
 			el->el_tty.t_c[ED_IO][i] = el->el_tty.t_vdisable;
 		}
+		tty_bind_char(el);
 		tty__setchar(&el->el_tty.t_ed, el->el_tty.t_c[ED_IO]);
 
 		for (i = 0; i < C_NCC; i++) {
