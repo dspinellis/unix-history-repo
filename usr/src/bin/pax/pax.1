@@ -7,7 +7,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)pax.1	8.2 (Berkeley) %G%
+.\"	@(#)pax.1	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt PAX 1
@@ -42,7 +42,6 @@
 .Ar ...
 .Ek
 .Op Ar pattern ...
-.sp
 .Nm pax
 .Fl r
 .Op Fl cdiknuvDYZ
@@ -79,10 +78,9 @@
 .Ar ...
 .Ek
 .Op Ar pattern ...
-.sp
 .Nm pax
 .Fl w
-.Op Fl dituvHLX
+.Op Fl dituvHLPX
 .Bk -words
 .Op Fl b Ar blocksize
 .Ek
@@ -122,11 +120,10 @@
 .Ar ...
 .Ek
 .Op Ar file ...
-.sp
 .Nm pax
 .Fl r
 .Fl w
-.Op Fl diklntuvDHLXYZ
+.Op Fl diklntuvDHLPXYZ
 .Bk -words
 .Op Fl p Ar string
 .Ar ...
@@ -159,64 +156,19 @@
 will read, write, and list the members of an archive file,
 and will copy directory hierarchies.
 .Nm Pax 
-supports a wide variety of different archive formats.
-These archive formats are described in more detail under the
+operation is independent of the specific archive format,
+and supports a wide variety of different archive formats.
+A list of supported archive formats can be found under the description of the
 .Fl x
 option.
 .Pp
-The operand
-.Ar directory
-specifies a destination directory pathname.
-.Nm Pax
-will exit with a non-zero exit status
-if the
-.Ar directory
-operand does not exist, or it is not writable by the user,
-or it is not of type directory.
-.Pp
-The operand
-.Ar pattern
-is used to select one or more pathnames of archive members using the pattern
-matching notation described by
-.Xr fnmatch 3 .
-When no
-.Ar patterns
-are specified, all members of the archive will be selected.
-When a 
-.Ar pattern
-matches a directory, the entire file hierarchy rooted at that directory will
-be selected.
-If at the completion of operation a
-.Ar pattern
-operand did not select at least one archive member,
-.Nm pax
-will write these
-.Ar pattern
-operands in a diagnostic message to
-.Dv standard error
-and then exit with a non-zero exit status.
-.Pp
-The operand
-.Ar file
-specifies the pathname of a file to be copied or archived.
-If at the completion of operation a
-.Ar file
-operand did not select at least one archived file,
-.Nm pax
-will write these
-.Ar file
-operand pathnames in a diagnostic message to
-.Dv standard error
-and then exit with a non-zero exit status.
-.Pp
-.Nm Pax
-operates in one of four operational modes based on the presence of
-the
+The presence of the
 .Fl r
 and the
 .Fl w
-options.
-These operational modes are:
+options specifies which of the following functional modes
+.Nm pax
+will operate under:
 .Em list , read , write ,
 and
 .Em copy.
@@ -226,13 +178,12 @@ and
 .Nm Pax
 will write to
 .Dv standard output
-a table of contents of the members of the
-archive file read from
+a table of contents of the members of the archive file read from
 .Dv standard input ,
 whose pathnames match the specified
 .Ar patterns.
-The table of contents is written with one filename per line and is not buffered
-more than a single line at a time.
+The table of contents contains one filename per line
+and is written using single line buffering.
 .It Fl r
 .Em Read .
 .Nm Pax
@@ -240,12 +191,11 @@ extracts the members of the archive file read from the
 .Dv standard input ,
 with pathnames matching the specified 
 .Ar patterns.
-The format and the blocking of the archive is automatically determined on
-input.
+The archive format and blocking is automatically determined on input.
 When an extracted file is a directory, the entire file hierarchy
 rooted at that directory is extracted.
 All extracted files are created relative to the current file hierarchy.
-The ownership, access and modification times, and file mode of
+The setting of ownership, access and modification times, and file mode of
 the extracted files are discussed in more detail under the
 .Fl p
 option.
@@ -259,12 +209,12 @@ operands to
 using the specified archive format.
 When no 
 .Ar file
-operands are specified, a list of files to copy, one per line, is read from 
+operands are specified, a list of files to copy with one per line is read from 
 .Dv standard input .
-A 
+When a 
 .Ar file
-operand that is also a directory will include the entire file hierarchy rooted
-at that directory.
+operand is also a directory, the entire file hierarchy rooted
+at that directory will be included.
 .It Fl r Fl w
 .Em Copy .
 .Nm Pax
@@ -274,19 +224,18 @@ operands to the destination
 .Ar directory .
 When no 
 .Ar file
-operands are specified, a list of files to copy, one per line, is read from
+operands are specified, a list of files to copy with one per line is read from
 the
 .Dv standard input .
-A
+When a
 .Ar file
-operand that is also a directory will include the entire file
-hierarchy rooted at that directory.
+operand is also a directory the entire file
+hierarchy rooted at that directory will be included.
 The effect of the
 .Em copy
-is as if the copied files were
-written to an archive file and then subsequently extracted,
-except that there may be hard links between the original and the
-copied files (see the
+is as if the copied files were written to an archive file and then
+subsequently extracted, except that there may be hard links between
+the original and the copied files (see the
 .Fl l
 option below).
 .Pp
@@ -313,6 +262,53 @@ will attempt to recover from media defects and will search through the archive
 to locate and process the largest number of archive members possible (see the
 .Fl E
 option for more details on error handling).
+.Sh OPERANDS
+.Pp
+The
+.Ar directory
+operand specifies a destination directory pathname.
+If the
+.Ar directory
+operand does not exist, or it is not writable by the user,
+or it is not of type directory,
+.Nm Pax
+will exit with a non-zero exit status.
+.Pp
+The
+.Ar pattern
+operand is used to select one or more pathnames of archive members.
+Archive members are selected using the pattern matching notation described
+by
+.Xr fnmatch 3 .
+When the 
+.Ar pattern
+operand is not supplied, all members of the archive will be selected.
+When a 
+.Ar pattern
+matches a directory, the entire file hierarchy rooted at that directory will
+be selected.
+When a
+.Ar pattern
+operand does not select at least one archive member,
+.Nm pax
+will write these
+.Ar pattern
+operands in a diagnostic message to
+.Dv standard error
+and then exit with a non-zero exit status.
+.Pp
+The
+.Ar file
+operand specifies the pathname of a file to be copied or archived.
+When a
+.Ar file
+operand does not select at least one archive member,
+.Nm pax
+will write these
+.Ar file
+operand pathnames in a diagnostic message to
+.Dv standard error
+and then exit with a non-zero exit status.
 .Sh OPTIONS
 .Pp
 The following options are supported:
@@ -346,7 +342,8 @@ When no
 .Ar file
 operands are specified,
 .Dv standard input
-is read for a list of pathnames, one per line, without any leading or trailing
+is read for a list of pathnames with one per line without any leading or
+trailing
 .Aq blanks .
 .It Fl a
 Append
@@ -394,8 +391,7 @@ can be separated by
 to indicate a product.
 A specific archive device may impose additional restrictions on the size
 of blocking it will support.
-When blocking is not specified,
-the default 
+When blocking is not specified, the default 
 .Ar blocksize
 is dependent on the specific archive format being used (see the
 .Fl x
@@ -808,6 +804,9 @@ Follow only command line symbolic links while performing a physical file
 system traversal.
 .It Fl L
 Follow all symbolic links to perform a logical file system traversal.
+.It Fl P
+Do not follow symbolic links, perform a physical file system traversal.
+This is the default mode.
 .It Fl T Ar [from_date][,to_date][/[c][m]]
 Allow files to be selected based on a file modification or inode change
 time falling within a specified time range of 
@@ -1077,6 +1076,8 @@ The options
 .Fl E ,
 .Fl G ,
 .Fl H ,
+.Fl L ,
+.Fl P ,
 .Fl T ,
 .Fl U ,
 .Fl Y ,

@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ar_subs.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ar_subs.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -584,8 +584,8 @@ append()
 	 * reading the archive may take a long time. If verbose tell the user
 	 */
 	if (vflag) {
-		(void)fputs("pax: Reading archive to position at the end...",
-		     stderr);
+		(void)fprintf(stderr,
+			"%s: Reading archive to position at the end...", argv0);
 		vfpart = 1;
 	}
 

@@ -16,7 +16,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pax.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)pax.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -53,7 +53,7 @@ int	uflag;			/* ignore older modification time files */
 int	vflag;			/* produce verbose output */
 int	Dflag;			/* same as uflag except inode change time */
 int	Hflag;			/* follow command line symlinks (write only) */
-int	Lflag;			/* follow symlinks when writing archive */
+int	Lflag;			/* follow symlinks when writing */
 int	Xflag;			/* archive files with same device id only */
 int	Yflag;			/* same as Dflg except after name mode */
 int	Zflag;			/* same as uflg except after name mode */
@@ -66,6 +66,7 @@ int	exit_val;		/* exit value */
 int	docrc;			/* check/create file crc */
 char	*dirptr;		/* destination dir in a copy */
 char	*ltmfrmt;		/* -v locale time format (if any) */
+char	*argv0;			/* root of argv[0] */
 sigset_t s_mask;		/* signal mask for cleanup critical sect */
 
 /*
@@ -375,43 +376,4 @@ gen_init()
     out:
 	syswarn(1, errno, "Unable to set up signal handler");
 	return(-1);
-}
-
-/*
- * usage()
- *	print the usage summary to the user
- */
-
-#if __STDC__
-void
-usage(void)
-#else
-void
-usage()
-#endif
-{
-	(void)fputs("usage: pax [-cdnv] [-E limit] [-f archive] ", stderr);
-	(void)fputs("[-s replstr] ... [-U user] ...", stderr);
-	(void)fputs("\n           [-G group] ... ", stderr);
-	(void)fputs("[-T [from_date][,to_date]] ... ", stderr);
-	(void)fputs("[pattern ...]\n", stderr);
-	(void)fputs("       pax -r [-cdiknuvDYZ] [-E limit] ", stderr);
-	(void)fputs("[-f archive] [-o options] ... \n", stderr);
-	(void)fputs("           [-p string] ... [-s replstr] ... ", stderr);
-	(void)fputs("[-U user] ... [-G group] ...\n           ", stderr);
-	(void)fputs("[-T [from_date][,to_date]] ... ", stderr);
-	(void)fputs(" [pattern ...]\n", stderr);
-	(void)fputs("       pax -w [-dituvHLX] [-b blocksize] ", stderr);
-	(void)fputs("[ [-a] [-f archive] ] [-x format] \n", stderr);
-	(void)fputs("           [-B bytes] [-s replstr] ... ", stderr);
-	(void)fputs("[-o options] ... [-U user] ...", stderr);
-	(void)fputs("\n           [-G group] ... ", stderr);
-	(void)fputs("[-T [from_date][,to_date][/[c][m]]] ... ", stderr);
-	(void)fputs("[file ...]\n", stderr);
-	(void)fputs("       pax -r -w [-diklntuvDHLXYZ]", stderr);
-	(void)fputs("[-p string] ... [-s replstr] ... [-U user] ...", stderr);
-	(void)fputs("\n           [-G group] ... ", stderr);
-	(void)fputs("[-T [from_date][,to_date][/[c][m]]] ... ", stderr);
-	(void)fputs("[file ...]\n           directory\n", stderr);
-	exit(1);
 }

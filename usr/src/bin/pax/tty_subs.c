@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tty_subs.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)tty_subs.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -166,7 +166,7 @@ warn(set, fmt, va_alist)
 		(void)fputc('\n', stderr);
 		vfpart = 0;
 	}
-	(void)fputs("pax: ", stderr);
+	(void)fprintf(stderr, "%s: ", argv0);
 	(void)vfprintf(stderr, fmt, ap);
 	va_end(ap);
 	(void)fputc('\n', stderr);
@@ -206,7 +206,7 @@ syswarn(set, errnum, fmt, va_alist)
 		(void)fputc('\n', stderr);
 		vfpart = 0;
 	}
-	(void)fputs("pax: ", stderr);
+	(void)fprintf(stderr, "%s: ", argv0);
 	(void)vfprintf(stderr, fmt, ap);
 	va_end(ap);
 

@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tar.h	8.1 (Berkeley) %G%
+ *	@(#)tar.h	8.2 (Berkeley) %G%
  */
 
 /*
@@ -81,6 +81,16 @@ typedef struct {
  */
 #define TAR_NODIR	"nodir"
 #define TAR_OPTION	"write_opt"
+
+/*
+ * default device names
+ */
+#define	DEV_0		"/dev/rmt0"
+#define	DEV_1		"/dev/rmt1"
+#define	DEV_4		"/dev/rmt4"
+#define	DEV_5		"/dev/rmt5"
+#define	DEV_7		"/dev/rmt7"
+#define	DEV_8		"/dev/rmt8"
 #endif /* _PAX_ */
 
 /*

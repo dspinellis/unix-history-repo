@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pax.h	8.1 (Berkeley) %G%
+ *	@(#)pax.h	8.2 (Berkeley) %G%
  */
 
 /*
@@ -136,10 +136,11 @@ typedef struct {
  */
 typedef struct pattern {
 	char		*pstr;		/* pattern to match, user supplied */
+	char		*pend;		/* end of a prefix match */
 	int		plen;		/* length of pstr */
 	int		flgs;		/* processing/state flags */
-#define MTCH		0x1		/* this pattern has been matched */
-#define DIR_MTCH	0x2		/* this pattern matched a directory */
+#define MTCH		0x1		/* pattern has been matched */
+#define DIR_MTCH	0x2		/* pattern matched a directory */
 	struct pattern	*fow;		/* next pattern */
 } PATTERN;
 

@@ -8,8 +8,16 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)options.h	8.1 (Berkeley) %G%
+ *	@(#)options.h	8.2 (Berkeley) %G%
  */
+
+/*
+ * argv[0] names. Used for tar and cpio emulation
+ */
+
+#define NM_TAR  "tar"
+#define NM_CPIO "cpio"
+#define NM_PAX  "pax"
 
 /*
  * Constants used to specify the legal sets of flags in pax. For each major
@@ -44,18 +52,19 @@
 #define	CEF	0x00100000	/* nonstandard extension */
 #define	CGF	0x00200000	/* nonstandard extension */
 #define	CHF	0x00400000	/* nonstandard extension */
-#define	CLF	0x00800000
-#define	CTF	0x01000000	/* nonstandard extension */
-#define	CUF	0x02000000	/* nonstandard extension */
-#define	CXF	0x04000000
-#define	CYF	0x08000000	/* nonstandard extension */
-#define	CZF	0x10000000	/* nonstandard extension */
+#define	CLF	0x00800000	/* nonstandard extension */
+#define	CPF	0x01000000	/* nonstandard extension */
+#define	CTF	0x02000000	/* nonstandard extension */
+#define	CUF	0x04000000	/* nonstandard extension */
+#define	CXF	0x08000000
+#define	CYF	0x10000000	/* nonstandard extension */
+#define	CZF	0x20000000	/* nonstandard extension */
 
 /*
  * ascii string indexed by bit position above (alter the above and you must
  * alter this string) used to tell the user what flags caused us to complain
  */
-#define FLGCH	"abcdfiklnoprstuvwxBDEGHLTUXYZ"
+#define FLGCH	"abcdfiklnoprstuvwxBDEGHLPTUXYZ"
 
 /*
  * legal pax operation bit patterns
@@ -72,7 +81,7 @@
  * Illegal option flag subsets based on pax operation
  */
 
-#define	BDEXTR	(AF|BF|LF|TF|WF|XF|CBF|CHF|CLF|CXF)
+#define	BDEXTR	(AF|BF|LF|TF|WF|XF|CBF|CHF|CLF|CPF|CXF)
 #define	BDARCH	(CF|KF|LF|NF|PF|RF|CDF|CEF|CYF|CZF)
 #define	BDCOPY	(AF|BF|FF|OF|XF|CBF|CEF)
-#define	BDLIST (AF|BF|IF|KF|LF|OF|PF|RF|TF|UF|WF|XF|CBF|CDF|CHF|CLF|CXF|CYF|CZF)
+#define	BDLIST (AF|BF|IF|KF|LF|OF|PF|RF|TF|UF|WF|XF|CBF|CDF|CHF|CLF|CPF|CXF|CYF|CZF)

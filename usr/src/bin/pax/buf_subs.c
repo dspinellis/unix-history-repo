@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)buf_subs.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)buf_subs.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -30,10 +30,14 @@ static char sccsid[] = "@(#)buf_subs.c	8.1 (Berkeley) %G%";
  * routines which implement archive and file buffering
  */
 
-#define MAXFBSZ		4096		/* max block size for hole detection */
-#define MINFBSZ		512		/* min block size for hole detection */
+#define MINFBSZ		512		/* default block size for hole detect */
 #define MAXFLT          10              /* default media read error limit */
 
+/*
+ * Need to change bufmem to dynamic allocation when the upper
+ * limit on blocking size is removed (though that will violate pax spec)
+ * MAXBLK define and tests will also need to be updated.
+ */
 static char bufmem[MAXBLK+BLKMULT];	/* i/o buffer + pushback id space */
 static char *buf;			/* normal start of i/o buffer */
 static char *bufend;			/* end or last char in i/o buffer */
@@ -724,10 +728,10 @@ rd_wrfile(arcn, ofd, left)
 
 	/*
 	 * pass the blocksize of the file being written to the write routine,
-	 * if an odd size, use the default MINFBSZ
+	 * if the size is zero, use the default MINFBSZ
 	 */
         if (fstat(ofd, &sb) == 0) {
-		if ((sb.st_blksize > 0) && (sb.st_blksize <= MAXFBSZ))
+		if (sb.st_blksize > 0)
 			sz = (int)sb.st_blksize;
         } else
                 syswarn(0,errno,"Unable to obtain block size for file %s",fnm);
@@ -827,10 +831,10 @@ cp_file(arcn, fd1, fd2)
 
 	/*
 	 * pass the blocksize of the file being written to the write routine,
-	 * if an odd size, use the default MINFBSZ
+	 * if the size is zero, use the default MINFBSZ
 	 */
         if (fstat(fd2, &sb) == 0) {
-		if ((sb.st_blksize > 0) && (sb.st_blksize <= MAXFBSZ))
+		if (sb.st_blksize > 0)
 			sz = sb.st_blksize;
         } else
                 syswarn(0,errno,"Unable to obtain block size for file %s",fnm);
