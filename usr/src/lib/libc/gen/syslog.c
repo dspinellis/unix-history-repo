@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)syslog.c	5.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslog.c	5.35 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -67,13 +67,20 @@ vsyslog(pri, fmt, ap)
 {
 	register int cnt;
 	register char *p;
-	time_t now, time();
+	time_t now;
 	int fd, saved_errno;
-	char tbuf[2048], fmt_cpy[1024], *stdp, *ctime();
+	char *stdp, tbuf[2048], fmt_cpy[1024];
 
-	/* check for invalid bits or no priority set */
-	if (!LOG_PRI(pri) || (pri &~ (LOG_PRIMASK|LOG_FACMASK)) ||
-	    !(LOG_MASK(pri) & LogMask))
+#define	INTERNALLOG	LOG_ERR|LOG_CONS|LOG_PERROR|LOG_PID
+	/* Check for invalid bits. */
+	if (pri & ~(LOG_PRIMASK|LOG_FACMASK)) {
+		syslog(INTERNALLOG,
+		    "syslog: unknown facility/priority: %x", pri);
+		pri &= LOG_PRIMASK|LOG_FACMASK;
+	}
+
+	/* Check priority against setlogmask values. */
+	if (!LOG_MASK(LOG_PRI(pri)) & LogMask)
 		return;
 
 	saved_errno = errno;
@@ -198,6 +205,7 @@ closelog()
 }
 
 /* setlogmask -- set the log mask level */
+int
 setlogmask(pmask)
 	int pmask;
 {
