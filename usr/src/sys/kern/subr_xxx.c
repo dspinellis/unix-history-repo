@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_xxx.c	7.3 (Berkeley) %G%
+ *	@(#)subr_xxx.c	7.4 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -71,53 +71,6 @@ max(a, b)
 {
 
 	return (a > b ? a : b);
-}
-#endif
-
-extern	cabase, calimit;
-extern	struct pte camap[];
-
-caddr_t	cacur = (caddr_t)&cabase;
-caddr_t	camax = (caddr_t)&cabase;
-int	cax = 0;
-/*
- * This is a kernel-mode storage allocator.
- * It is very primitive, currently, in that
- * there is no way to give space back.
- * It serves, for the time being, the needs of
- * auto-configuration code and the like which
- * need to allocate some stuff at boot time.
- */
-caddr_t
-calloc(size)
-	int size;
-{
-	register caddr_t res;
-	register int i;
-
-	if (cacur+size >= (caddr_t)&calimit)
-		panic("calloc");
-	while (cacur+size > camax) {
-		(void) vmemall(&camap[cax], CLSIZE, &proc[0], CSYS);
-		vmaccess(&camap[cax], camax, CLSIZE);
-		for (i = 0; i < CLSIZE; i++)
-			clearseg(camap[cax++].pg_pfnum);
-		camax += NBPG * CLSIZE;
-	}
-	res = cacur;
-	cacur += size;
-	return (res);
-}
-
-#ifdef GPROF
-/*
- * Stub routine in case it is ever possible to free space.
- */
-cfreemem(cp, size)
-	caddr_t cp;
-	int size;
-{
-	printf("freeing %x, size %d\n", cp, size);
 }
 #endif
 
