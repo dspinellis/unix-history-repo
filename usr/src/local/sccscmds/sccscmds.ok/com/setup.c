@@ -1,6 +1,6 @@
 # include	"../hdr/defines.h"
 
-SCCSID(@(#)setup	2.2);
+static char Sccsid[] = "@(#)setup.c	1.3	%G%";
 
 setup(pkt,serial)
 register struct packet *pkt;
@@ -8,7 +8,7 @@ int serial;
 {
 	register int n;
 	register struct apply *rap;
-	int	first_app	1;
+	int	first_app = 1;
 
 	pkt->p_apply[serial].a_inline = 1;
 	for (n = maxser(pkt); n; n--) {
@@ -73,9 +73,9 @@ register struct apply *ap;
 int code, reason;
 {
 	if (code == EMPTY)
-		ap->a_reason =| reason;
+		ap->a_reason |= reason;
 	else if (ap->a_code == EMPTY) {
 		ap->a_code = code;
-		ap->a_reason =| reason;
+		ap->a_reason |= reason;
 	}
 }

@@ -1,9 +1,9 @@
 # include	"../hdr/defines.h"
 # define msg(s,help)	fprintf(pkt->p_stdout,msgstr,s,pkt->p_glnno,help)
 
-SCCSID(@(#)rdmod	2.1);
+static char Sccsid[] = "@(#)rdmod.c	1.2	%G%";
 
-static char msgstr[]	"Inex conflict %s at line %u (%s)\n";
+static char msgstr[] = "Inex conflict %s at line %u (%s)\n";
 
 readmod(pkt)
 register struct packet *pkt;

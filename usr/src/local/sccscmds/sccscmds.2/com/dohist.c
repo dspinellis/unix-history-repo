@@ -1,6 +1,6 @@
 # include	"../hdr/defines.h"
 
-SCCSID(@(#)dohist	2.1);
+static char Sccsid[] = "@(#)dohist.c	1.3	%G%";
 
 char	Cstr[RESPSIZE];
 char	Mstr[RESPSIZE];
@@ -157,6 +157,6 @@ register int n;
 	p = &stbuf[stind];
 	if (&p[n] >= &stbuf[STBUFSZ])
 		fatal("out of space (co22)");
-	stind =+ n;
+	stind += n;
 	return(p);
 }

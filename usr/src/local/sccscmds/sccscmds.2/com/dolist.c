@@ -1,8 +1,8 @@
 # include	"../hdr/defines.h"
 
-SCCSID(@(#)dolist.c	4.2);
+static char Sccsid[] = "@(#)dolist.c	4.3	%G%";
 
-static char br[] "bad range (co12)";
+static char br[] = "bad range (co12)";
 
 dolist(pkt,list,ch)
 struct packet *pkt;
@@ -54,7 +54,7 @@ char ch;
 }
 
 
-static char dls[] "delta list syntax (co13)";
+static char dls[] = "delta list syntax (co13)";
 
 getasid(p,sp)
 register char *p;
