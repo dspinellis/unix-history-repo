@@ -9,7 +9,7 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)clock.c	5.2 (Berkeley) %G%
+ *	@(#)clock.c	5.3 (Berkeley) %G%
  */
 
 /*
@@ -19,6 +19,7 @@
 #include "time.h"
 #include "kernel.h"
 #include "icu.h"
+#include "isa.h"
 
 #define DAYST 119
 #define DAYEN 303
@@ -26,13 +27,9 @@
 startrtclock() {
 
 	/* initialize 8253 clock */
-	outb (0x43, 0x36);
-	outb (0x40, 1193182/60);
-	outb (0x40, (1193182/60)/256);
-}
-
-clkreld() {
-pg("clkreld");
+	outb (IO_TIMER0+3, 0x36);
+	outb (IO_TIMER0, 1193182/hz);
+	outb (IO_TIMER0, (1193182/hz)/256);
 }
 
 /* convert 2 digit BCD number */
@@ -83,7 +80,7 @@ int m,leap;
 
 
 /*
- * Initialze the time of day register, based on the time base which is, e.g.
+ * Initialize the time of day register, based on the time base which is, e.g.
  * from a filesystem.
  */
 inittodr(base)
@@ -92,20 +89,13 @@ inittodr(base)
 	unsigned long sec;
 	int leap,day_week,t,yd;
 
-	outb(0x70,9); /* year    */
-	sec = bcd(inb(0x71)); leap = !(sec % 4); sec += ytos(sec);
-	outb(0x70,8); /* month   */
-	yd = mtos(bcd(inb(0x71)),leap); sec += yd;
-	outb(0x70,7); /* date    */
-	t = (bcd(inb(0x71))-1) * 86400; sec += t; yd += t;
-	outb(0x70,6); /* day     */
-	day_week = inb(0x71);
-	outb(0x70,4); /* hour    */
-	sec += bcd(inb(0x71)) * 3600;
-	outb(0x70,2); /* minutes */
-	sec += bcd(inb(0x71)) * 60;
-	outb(0x70,0); /* seconds */
-	sec += bcd(inb(0x71));
+	sec = bcd(rtcin(9)); leap = !(sec % 4); sec += ytos(sec); /* year    */
+	yd = mtos(bcd(rtcin(8)),leap); sec += yd;		/* month   */
+	t = (bcd(rtcin(7))-1) * 86400; sec += t; yd += t;	/* date    */
+	day_week = rtcin(6);					/* day     */
+	sec += bcd(rtcin(4)) * 3600;				/* hour    */
+	sec += bcd(rtcin(2)) * 60;				/* minutes */
+	sec += bcd(rtcin(0));					/* seconds */
 
 	/* XXX off by one? Need to calculate DST on SUNDAY */
 	/* Perhaps we should have the RTC hold GMT time to save */
@@ -119,6 +109,7 @@ inittodr(base)
 	time.tv_sec = sec;
 }
 
+#ifdef garbage
 /*
  * Initialze the time of day register, based on the time base which is, e.g.
  * from a filesystem.
@@ -127,22 +118,33 @@ test_inittodr(base)
 	time_t base;
 {
 
-	outb(0x70,9); /* year    */
-	printf("%d ",bcd(inb(0x71)));
-	outb(0x70,8); /* month   */
-	printf("%d ",bcd(inb(0x71)));
-	outb(0x70,7); /* day     */
-	printf("%d ",bcd(inb(0x71)));
-	outb(0x70,4); /* hour    */
-	printf("%d ",bcd(inb(0x71)));
-	outb(0x70,2); /* minutes */
-	printf("%d ",bcd(inb(0x71)));
-	outb(0x70,0); /* seconds */
-	printf("%d\n",bcd(inb(0x71)));
+	outb(IO_RTC,9); /* year    */
+	printf("%d ",bcd(inb(IO_RTC+1)));
+	outb(IO_RTC,8); /* month   */
+	printf("%d ",bcd(inb(IO_RTC+1)));
+	outb(IO_RTC,7); /* day     */
+	printf("%d ",bcd(inb(IO_RTC+1)));
+	outb(IO_RTC,4); /* hour    */
+	printf("%d ",bcd(inb(IO_RTC+1)));
+	outb(IO_RTC,2); /* minutes */
+	printf("%d ",bcd(inb(IO_RTC+1)));
+	outb(IO_RTC,0); /* seconds */
+	printf("%d\n",bcd(inb(IO_RTC+1)));
 
 	time.tv_sec = base;
 }
+#endif
 
+/*
+ * retreve a value from realtime clock
+ */
+u_char rtcin(n) {
+	u_char val;
+
+	outb(IO_RTC,n);
+	do val = inb(IO_RTC+1) ; while (val != inb(IO_RTC+1));
+	return (val);
+}
 
 /*
  * Restart the clock.
