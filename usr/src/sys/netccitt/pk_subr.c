@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_subr.c	7.19 (Berkeley) %G%
+ *	@(#)pk_subr.c	7.20 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -937,7 +937,7 @@ register struct pklcd *lcp;
 
 	if (m == 0)
 		return 0;
-	if (m -> m_flags & M_PKTHDR == 0)
+	if ((m -> m_flags & M_PKTHDR) == 0)
 		panic ("pk_fragment");
 	totlen = m -> m_pkthdr.len;
 	m -> m_act = 0;
