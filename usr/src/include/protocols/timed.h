@@ -4,17 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-/*	@(#)timed.h	1.1	(Berkeley)	%G%	*/
-
-#define NHOSTS		30	/* max number of hosts controlled by timed */
-
-struct host {
-	char *name;
-	char *addr;
-	int length;
-	long delta;
-	u_short seq;
-};
+/*	@(#)timed.h	1.2	(Berkeley)	%G%	*/
 
 /*
  * Time Synchronization Protocol
@@ -28,7 +18,7 @@ struct tsp {
 	u_char	tsp_vers;
 	short	tsp_seq;
 	struct timeval tsp_time;
-	char tsp_name[32];
+	char tsp_name[MAXHOSTNAMELEN];
 };
  
 /*
@@ -61,7 +51,7 @@ struct tsp {
 
 #ifdef TSPTYPES
 char *tsptype[TSPTYPENUMBER] =
-  { "#0", "ADJTIME", "ACK", "MASTERREQ", "MASTERACK", "SETTIME", "MASTERUP", 
+  { "ANY", "ADJTIME", "ACK", "MASTERREQ", "MASTERACK", "SETTIME", "MASTERUP", 
   "SLAVEUP", "ELECTION", "ACCEPT", "REFUSE", "CONFLICT", "RESOLVE", "QUIT", 
   "DATE", "DATEREQ", "DATEACK", "TRACEON", "TRACEOFF", "MSITE", 
   "MSITEREQ", "TEST" };
