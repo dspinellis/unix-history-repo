@@ -1,4 +1,4 @@
-/*	llib-lc	1.27	85/11/07	*/
+/*	llib-lc	1.28	85/11/28	*/
 /* LINTLIBRARY */
 #include <sys/types.h>
 #include <fstab.h>
@@ -47,7 +47,7 @@ int	getegid() { return(1); }
 int	geteuid() { return(1); }
 int	getgid() { return(1); }
 int	getgroups( n, g ) int *n, *g; { return 0; }
-int	gethostid() { return 1; }
+long	gethostid() { return 1L; }
 int	gethostname( n, l ) char *n; int l; { return 0 ;}
 int	getitimer( w, v ) struct itimerval *v; { return 0; }
 int	getpagesize() { return 1; }
@@ -102,7 +102,7 @@ int	send( s, m, l, f )  char *m; { return l; }
 int	sendto( s, m, l, f, t, tl ) char *m; struct sockaddr *t; { return l; }
 int	sendmsg( s, m, l) struct msghdr m[]; { return l; }
 int	setgroups( n, g) int *g; { return 0; }
-int	sethostid( h ) { return 0;}
+int	sethostid( h ) long h; { return 0;}
 int	sethostname( n, l ) char *n; int l; { return 0 ;}
 int	setitimer( w, v, ov ) struct itimerval *v, *ov; { return 0; }
 int	setpgrp( g, pg) { return 0; }
