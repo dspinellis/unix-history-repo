@@ -1,5 +1,5 @@
 # ifndef lint
-static char *sccsid ="@(#)local2.c	1.21 (Berkeley) %G%";
+static char *sccsid ="@(#)local2.c	1.22 (Berkeley) %G%";
 # endif
 
 # include "pass2.h"
@@ -411,6 +411,47 @@ zzzcode( p, c ) register NODE *p; {
 		zzzcode(s, 'A');
 
 		s->in.op = FREE;
+		return;
+		}
+
+	case 'J':	/* unsigned DIV/MOD with constant divisors */
+		{
+		register int ck = INAREG;
+		int label1, label2;
+
+		/* case constant <= 1 is handled by optim() in pass 1 */
+		/* case constant < 0x80000000 is handled in table */
+		switch( p->in.op ) {
+		/* case DIV: handled in hardops() */
+		case MOD:
+			if( p->in.left->in.op == REG &&
+			    p->in.left->tn.rval == resc->tn.rval )
+				goto asgmod;
+			label1 = getlab();
+			expand(p, ck, "movl\tAL,A1\n\tcmpl\tA1,AR\n");
+			printf("\tjlssu\tL%d\n", label1);
+			expand(p, ck, "\tsubl2\tAR,A1\n");
+			printf("L%d:", label1);
+			break;
+		case ASG DIV:
+			label1 = getlab();
+			label2 = getlab();
+			expand(p, ck, "cmpl\tAL,AR\n");
+			printf("\tjgequ\tL%d\n", label1);
+			expand(p, ck, "\tmovl\t$1,AL\n");
+			printf("\tjbr\tL%d\nL%d:\n", label2, label1);
+			expand(p, ck, "\tclrl\tAL\n");
+			printf("L%d:", label2);
+			break;
+		case ASG MOD:
+		asgmod:
+			label1 = getlab();
+			expand(p, ck, "cmpl\tAL,AR\n");
+			printf("\tjlssu\tL%d\n", label1);
+			expand(p, ck, "\tsubl2\tAR,AL\n");
+			printf("L%d:", label1);
+			break;
+			}
 		return;
 		}
 
@@ -860,8 +901,11 @@ insput( p ) NODE *p; {
 	cerror( "insput" );
 	}
 
-/*ARGSUSED*/
-upput( p, off ) NODE *p; int off; {
+upput( p, size ) NODE *p; int size; {
+	if( size == SZLONG && p->in.op == REG ) {
+		putstr( rnames[p->tn.rval + 1] );
+		return;
+		}
 	cerror( "upput" );
 	}
 
@@ -1265,6 +1309,15 @@ hardops(p)  register NODE *p; {
 	return;
 
 	convert:
+	if( p->in.right->in.op == ICON && p->in.right->tn.name[0] == '\0' ) {
+		/* 'J', 'K' in zzzcode() -- assumes DIV or MOD operations */
+		/* save a subroutine call -- use at most 5 instructions */
+		if( p->in.op == DIV &&
+		     (unsigned) p->in.right->tn.lval >= 0x80000000 )
+			/* easy to do here, harder to do in zzzcode() */
+			p->in.op = UGE;
+		return;
+		}
 	if( asgop( o ) ) {
 		old = NIL;
 		switch( p->in.left->in.op ){
