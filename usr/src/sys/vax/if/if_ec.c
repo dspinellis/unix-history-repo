@@ -1,4 +1,4 @@
-/*	if_ec.c	4.16	82/06/13	*/
+/*	if_ec.c	4.17	82/06/17	*/
 
 #include "ec.h"
 
@@ -112,9 +112,10 @@ COUNT(ECPROBE);
 	addr->ec_xcr = EC_XINTEN|EC_XWBN;
 	DELAY(100000);
 	addr->ec_xcr = EC_XCLR;
-	if (cvec > 0 && cvec != 0x200)
+	if (cvec > 0 && cvec != 0x200) {
 		cvec -= 010;
-		br += 2;
+		br += 2;		/* rcv is xmit + 2 */
+	}
 	return (1);
 }
 
@@ -126,61 +127,57 @@ COUNT(ECPROBE);
 ecattach(ui)
 	struct uba_device *ui;
 {
-	register struct ec_softc *es = &ec_softc[ui->ui_unit];
-	register struct sockaddr_in *sin;
+	struct ec_softc *es = &ec_softc[ui->ui_unit];
+	register struct ifnet *ifp = &es->es_if;
 	register struct ecdevice *addr = (struct ecdevice *)ui->ui_addr;
-	register int i, j;
-	register u_char *cp;
+	struct sockaddr_in *sin;
+	int i, j;
+	u_char *cp;
 COUNT(ECATTACH);
 
-	es->es_if.if_unit = ui->ui_unit;
-	es->es_if.if_name = "ec";
-	es->es_if.if_mtu = ECMTU;
-	es->es_if.if_net = ui->ui_flags;
+	ifp->if_unit = ui->ui_unit;
+	ifp->if_name = "ec";
+	ifp->if_mtu = ECMTU;
+	ifp->if_net = ui->ui_flags;
 
 	/*
-	 * Read the ethernet address off the board,
-	 * one nibble at a time!
+	 * Read the ethernet address off the board, one nibble at a time.
 	 */
 	addr->ec_xcr = EC_UECLR;
 	addr->ec_rcr = EC_AROM;
 	cp = es->es_enaddr;
+#define	NEXTBIT	addr->ec_rcr = EC_AROM|EC_ASTEP; addr->ec_rcr = EC_AROM
 	for (i=0; i<6; i++) {
 		*cp = 0;
 		for (j=0; j<=4; j+=4) {
 			*cp |= ((addr->ec_rcr >> 8) & 0xf) << j;
-			addr->ec_rcr = EC_AROM|EC_ASTEP;
-			addr->ec_rcr = EC_AROM;
-			addr->ec_rcr = EC_AROM|EC_ASTEP;
-			addr->ec_rcr = EC_AROM;
-			addr->ec_rcr = EC_AROM|EC_ASTEP;
-			addr->ec_rcr = EC_AROM;
-			addr->ec_rcr = EC_AROM|EC_ASTEP;
-			addr->ec_rcr = EC_AROM;
+			NEXTBIT; NEXTBIT; NEXTBIT; NEXTBIT;
 		}
 		cp++;
 	}
+#ifdef notdef
 	printf("ec%d: addr=%x:%x:%x:%x:%x:%x\n", ui->ui_unit,
 		es->es_enaddr[0]&0xff, es->es_enaddr[1]&0xff,
 		es->es_enaddr[2]&0xff, es->es_enaddr[3]&0xff,
 		es->es_enaddr[4]&0xff, es->es_enaddr[5]&0xff);
-	es->es_if.if_host[0] = ((es->es_enaddr[3]&0xff)<<16) |
+#endif
+	ifp->if_host[0] = ((es->es_enaddr[3]&0xff)<<16) |
 	    ((es->es_enaddr[4]&0xff)<<8) | (es->es_enaddr[5]&0xff);
 	sin = (struct sockaddr_in *)&es->es_if.if_addr;
 	sin->sin_family = AF_INET;
-	sin->sin_addr = if_makeaddr(es->es_if.if_net, es->es_if.if_host[0]);
+	sin->sin_addr = if_makeaddr(ifp->if_net, ifp->if_host[0]);
 
-	sin = (struct sockaddr_in *)&es->es_if.if_broadaddr;
+	sin = (struct sockaddr_in *)&ifp->if_broadaddr;
 	sin->sin_family = AF_INET;
-	sin->sin_addr = if_makeaddr(es->es_if.if_net, 0);
-	es->es_if.if_flags = IFF_BROADCAST;
+	sin->sin_addr = if_makeaddr(ifp->if_net, INADDR_ANY);
+	ifp->if_flags = IFF_BROADCAST;
 
-	es->es_if.if_init = ecinit;
-	es->es_if.if_output = ecoutput;
-	es->es_if.if_ubareset = ecreset;
+	ifp->if_init = ecinit;
+	ifp->if_output = ecoutput;
+	ifp->if_ubareset = ecreset;
 	for (i=0; i<16; i++)
 		es->es_buf[i] = &umem[ui->ui_ubanum][0600000+2048*i];
-	if_attach(&es->es_if);
+	if_attach(ifp);
 }
 
 /*
@@ -207,13 +204,9 @@ COUNT(ECRESET);
 ecinit(unit)
 	int unit;
 {
-	register struct ec_softc *es = &ec_softc[unit];
-	register struct uba_device *ui = ecinfo[unit];
-	register struct ecdevice *addr;
-	register i;
-	int s;
-
-	addr = (struct ecdevice *)ui->ui_addr;
+	struct ec_softc *es = &ec_softc[unit];
+	struct ecdevice *addr;
+	int i, s;
 
 	/*
 	 * Hang receive buffers and start any pending
@@ -221,6 +214,7 @@ ecinit(unit)
 	 * Writing into the rcr also makes sure the memory
 	 * is turned on.
 	 */
+	addr = (struct ecdevice *)ecinfo[unit]->ui_addr;
 	s = splimp();
 	for (i=ECRHBF; i>=ECRLBF; i--)
 		addr->ec_rcr = EC_READ|i;
@@ -242,23 +236,16 @@ ecinit(unit)
 ecstart(dev)
 	dev_t dev;
 {
-        int unit = ECUNIT(dev);
-	struct uba_device *ui = ecinfo[unit];
-	register struct ec_softc *es = &ec_softc[unit];
-	register struct ecdevice *addr;
+        int unit = ECUNIT(dev), dest;
+	struct ec_softc *es = &ec_softc[unit];
+	struct ecdevice *addr;
 	struct mbuf *m;
 	caddr_t ecbuf;
-	int dest;
 COUNT(ECSTART);
 
 	if (es->es_oactive)
 		goto restart;
 
-	/*
-	 * Not already active: dequeue another request
-	 * and copy it into the buffer.  If no more requests,
-	 * just return.
-	 */
 	IF_DEQUEUE(&es->es_if.if_snd, m);
 	if (m == 0) {
 		es->es_oactive = 0;
@@ -267,10 +254,7 @@ COUNT(ECSTART);
 	ecput(es->es_buf[ECTBF], m);
 
 restart:
-	/*
-	 * Start the output.
-	 */
-	addr = (struct ecdevice *)ui->ui_addr;
+	addr = (struct ecdevice *)ecinfo[unit]->ui_addr;
 	addr->ec_xcr = EC_WRITE|ECTBF;
 	es->es_oactive = 1;
 }
@@ -282,15 +266,20 @@ restart:
 ecxint(unit)
 	int unit;
 {
-	register struct uba_device *ui = ecinfo[unit];
 	register struct ec_softc *es = &ec_softc[unit];
-	register struct ecdevice *addr = (struct ecdevice *)ui->ui_addr;
+	register struct ecdevice *addr =
+		(struct ecdevice *)ecinfo[unit]->ui_addr;
 COUNT(ECXINT);
 
 	if (es->es_oactive == 0)
 		return;
-	if (addr->ec_xcr&EC_XDONE == 0 || addr->ec_xcr&EC_XBN != ECTBF)
-		printf("ec%d: strange xmit interrupt!\n", unit);
+	if ((addr->ec_xcr&EC_XDONE) == 0 || (addr->ec_xcr&EC_XBN) != ECTBF) {
+		printf("ec%d: stray xmit interrupt, xcr=%b\n", unit,
+			addr->ec_xcr, EC_XBITS);
+		es->es_oactive = 0;
+		addr->ec_xcr = EC_XCLR;
+		return;
+	}
 	es->es_if.if_opackets++;
 	es->es_oactive = 0;
 	es->es_mask = ~0;
@@ -302,10 +291,8 @@ COUNT(ECXINT);
 		m_freem(es->es_ifuba.ifu_xtofree);
 		es->es_ifuba.ifu_xtofree = 0;
 	}
-	if (es->es_if.if_snd.ifq_head == 0) {
-		return;
-	}
-	ecstart(unit);
+	if (es->es_if.if_snd.ifq_head)
+		ecstart(unit);
 }
 
 /*
@@ -321,9 +308,8 @@ COUNT(ECCOLLIDE);
 
 	printf("ec%d: collision\n", unit);
 	es->es_if.if_collisions++;
-	if (es->es_oactive == 0)
-		return;
-	ecdocoll(unit);
+	if (es->es_oactive)
+		ecdocoll(unit);
 }
 
 ecdocoll(unit)
@@ -402,11 +388,9 @@ ecread(unit)
 	struct ecdevice *addr = (struct ecdevice *)ecinfo[unit]->ui_addr;
 	register struct ec_header *ec;
     	struct mbuf *m;
-	int len, off, resid;
+	int len, off, resid, ecoff, buf;
 	register struct ifqueue *inq;
 	caddr_t ecbuf;
-	int ecoff;
-	int buf;
 COUNT(ECREAD);
 
 	es->es_if.if_ipackets++;
@@ -479,8 +463,9 @@ COUNT(ECREAD);
 	if (IF_QFULL(inq)) {
 		IF_DROP(inq);
 		m_freem(m);
-	} else
-		IF_ENQUEUE(inq, m);
+		goto setup;
+	}
+	IF_ENQUEUE(inq, m);
 
 setup:
 	/*
@@ -507,8 +492,7 @@ ecoutput(ifp, m0, dst)
 	register struct ec_softc *es = &ec_softc[ifp->if_unit];
 	register struct mbuf *m = m0;
 	register struct ec_header *ec;
-	register int off;
-	register int i;
+	register int off, i;
 	struct mbuf *mcopy = (struct mbuf *) 0;		/* Null */
 
 COUNT(ECOUTPUT);
@@ -581,6 +565,7 @@ gottype:
 	for (i=0; i<6; i++)
 		ec->ec_shost[i] = es->es_enaddr[i];
 	if ((dest &~ 0xff) == 0)
+		/* broadcast address */
 		for (i=0; i<6; i++)
 			ec->ec_dhost[i] = 0xff;
 	else {
@@ -613,11 +598,10 @@ gottype:
 	if (es->es_oactive == 0)
 		ecstart(ifp->if_unit);
 	splx(s);
+
 gotlocal:
-	if (mcopy)				/* Kludge, but it works! */
-		return(looutput(&loif, mcopy, dst));
-	else
-		return (0);
+	return(mcopy ? looutput(&loif, mcopy, dst) : 0);
+
 qfull:
 	m0 = m;
 	splx(s);
@@ -627,44 +611,46 @@ bad:
 }
 
 /*
- * Routine to copy from mbufs to UNIBUS memory.
- * Similar in spirit to if_wubaput.
+ * Routine to copy from mbuf chain to transmitter
+ * buffer in UNIBUS memory.
  */
 ecput(ecbuf, m)
-	char *ecbuf;
+	u_char *ecbuf;
 	struct mbuf *m;
 {
-	register int len;
 	register struct mbuf *mp;
-	register char *bp, *mcp;
-	register int i;
+	register u_char *bp;
+	register int off;
 
 COUNT(ECPUT);
-	len = 0;
-	for (mp=m; mp; mp=mp->m_next)
-		len += mp->m_len;
-	*(u_short *)ecbuf = 2048 - len;
-	bp = ecbuf + 2048 - len;
-	mp = m;
-	while (mp) {
-		mcp = mtod(mp, char *);
-		i = 0;
-		if ((int)bp&1) {
+	for (off = 2048, mp = m; mp; mp = mp->m_next)
+		off -= mp->m_len;
+	*(u_short *)ecbuf = off;
+	bp = (u_char *)(ecbuf + off);
+	for (mp = m; mp; mp = m_free(mp)) {
+		register unsigned len;
+		register u_char *mcp;
+
+		len = mp->m_len;
+		if (len == 0)
+			continue;
+		mcp = mtod(mp, u_char *);
+		if ((unsigned)bp & 01) {
 			*bp++ = *mcp++;
-			i++;
+			len--;
 		}
-		while (i < mp->m_len) {
-			*(short *)bp = *(short *)mcp;
-			bp += 2;
-			mcp += 2;
-			i += 2;
+		for (; len > 1; len -= sizeof (u_short)) {
+			*(u_short *)bp = *(u_short *)mcp;
+			bp += sizeof (u_short);
+			mcp += sizeof (u_short);
 		}
-		if (mp->m_len&1)
+		if (len)
 			*bp++ = *mcp++;
-		mp = m_free(mp);
 	}
-	if (bp != ecbuf+2048)
-		printf("ec: bad ecput!\n");
+#ifdef notdef
+	if (bp - ecbuf != 2048)
+		printf("ec: bad ecput, diff=%d\n", bp-ecbuf);
+#endif
 }
 
 /*
@@ -680,15 +666,14 @@ ecget(ecbuf, totlen, off0)
 	int totlen, off0;
 {
 	struct mbuf *top, **mp, *m;
-	int off = off0;
-	int len;
-	register char *cp = ecbuf + ECRDOFF + sizeof (struct ec_header);
-	register char *mcp;
+	int off = off0, len;
+	register char *cp, *mcp;
 	register int i;
 
 COUNT(ECGET);
 	top = 0;
 	mp = &top;
+	cp = ecbuf + ECRDOFF + sizeof (struct ec_header);
 	while (totlen > 0) {
 		MGET(m, 0);
 		if (m == 0)
@@ -714,12 +699,12 @@ COUNT(ECGET);
 			m->m_off = MMINOFF;
 		}
 		mcp = mtod(m, char *);
-		for (i=0; i<len; i+=2) {
+		for (i = 0; i < len; i += sizeof (short)) {
 			*(short *)mcp = *(short *)cp;
-			mcp += 2;
-			cp += 2;
+			mcp += sizeof (short);
+			cp += sizeof (short);
 		}
-		if (len&1)
+		if (len & 01)
 			*mcp++ = *cp++;
 		*mp = m;
 		mp = &m->m_next;
