@@ -7,10 +7,9 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	5.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	5.30 (Berkeley) %G%";
 #endif /* not lint */
 
-# include <sys/param.h>
 # include <errno.h>
 # include "sendmail.h"
 
@@ -379,7 +378,7 @@ eatheader(e)
 # ifdef LOG
 	if (!QueueRun && LogLevel > 1)
 	{
-		char hbuf[100];
+		char hbuf[MAXNAME];
 		char *name = hbuf;
 		extern char *inet_ntoa();
 

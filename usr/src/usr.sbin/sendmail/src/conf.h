@@ -5,12 +5,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	5.32 (Berkeley) %G%
+ *	@(#)conf.h	5.33 (Berkeley) %G%
  */
 
 /*
 **  CONF.H -- All user-configurable parameters for sendmail
 */
+
+# include <sys/param.h>
 
 /*
 **  Table sizes, etc....
@@ -28,6 +30,8 @@
 # define MAXUSERENVIRON	40		/* max # of items in user environ */
 # define MAXMXHOSTS	20		/* max # of MX records */
 # define SMTPLINELIM	990		/* maximum SMTP line length */
+# define MAXKEY		128		/* maximum size of a database key */
+# define MEMCHUNKSIZE	1024		/* chunk size for memory allocation */
 
 # ifndef QUEUESIZE
 # define QUEUESIZE	1000		/* max # of jobs per queue run */
