@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)local2.c	1.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)local2.c	1.22 (Berkeley) %G%";
 #endif
 
 # include "pass2.h"
@@ -315,6 +315,25 @@ zzzcode( p, c ) register NODE *p; {
 	case 'F':	/* masked constant for fields */
 		printf(ACONFMT, (p->in.right->tn.lval&((1<<fldsz)-1))<<fldshf);
 		return;
+
+	case 'I':	/* produce value of bitfield assignment */
+			/* avoid shifts -- shifts are SLOW on this machine */
+		{
+			register NODE *r = p->in.right;
+			if(r->in.op == ICON && r->tn.name[0] == '\0') {
+				putstr("movl\t");
+				printf(ACONFMT, r->tn.lval & ((1<<fldsz)-1));
+				}
+			else {
+				putstr("andl3\t");
+				printf(ACONFMT, (1 << fldsz) - 1);
+				putchar(',');
+				adrput(r);
+				}
+			putchar(',');
+			adrput(resc);
+			break;
+			}
 
 	case 'H':	/* opcode for shift */
 		if(p->in.op == LS || p->in.op == ASG LS)
