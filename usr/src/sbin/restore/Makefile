@@ -1,6 +1,6 @@
 # Copyright (c) 1982 Regents of the University of California
 #
-#	@(#)Makefile	4.4	(Berkeley)	%G%
+#	@(#)Makefile	4.5	(Berkeley)	%G%
 #
 DESTDIR=
 CFLAGS= -O
@@ -18,7 +18,7 @@ rrestor.o: restor.c
 	mv restor.o rrestor.o
 
 install: rrestor restor
-	install rrestor ${DESTDIR}/etc/rrestor
+	install -m 4755 rrestor ${DESTDIR}/etc/rrestor
 	install restor ${DESTDIR}/etc/restor
 
 clean:

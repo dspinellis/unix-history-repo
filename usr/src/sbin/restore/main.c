@@ -1,7 +1,7 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
 #ifndef lint
-char version[] = "@(#)main.c 2.14 %G%";
+char version[] = "@(#)main.c 2.15 %G%";
 #endif
 
 /*	Modified to include h option (recursively extract all files within
@@ -202,6 +202,7 @@ nohost:
 	if (host == 0)
 		goto nohost;
 #endif
+	setuid(getuid());	/* no longer need or want root privileges */
 	doit(command, argc, argv);
 	done(0);
 }
