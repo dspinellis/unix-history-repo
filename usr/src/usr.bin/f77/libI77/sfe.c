@@ -1,5 +1,5 @@
 /*
-char id_sfe[] = "@(#)sfe.c	1.5";
+char id_sfe[] = "@(#)sfe.c	1.6";
  *
  * sequential formatted external routines
  */
@@ -149,7 +149,7 @@ x_tab()
 {	int n;
 	if(reclen < recpos) reclen = recpos;
 	if(curunit->useek)
-	{	if((recpos+cursor) < 0) return(F_ERBREC);
+	{	if((recpos+cursor) < 0) cursor = -recpos;	/* to BOR */
 		n = reclen - recpos;	/* distance to eor, n>=0 */
 		if((cursor-n) > 0)
 		{	fseek(cf,(long)n,1);  /* find current eor */
