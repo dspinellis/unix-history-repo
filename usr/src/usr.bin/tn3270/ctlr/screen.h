@@ -6,9 +6,15 @@
 
 /* defines and defines to describe how to deal with the screen */
 
+#if	!defined(MSDOS)
 #define	MAXNUMBERLINES		43		/* 3278-4 */
 #define	MAXNUMBERCOLUMNS	132		/* 3278-5 */
 #define	MAXSCREENSIZE		3564		/* (27*132) 3278-5 */
+#else	/* !defined(MSDOS) */	/* MSDOS has memory constraints */
+#define	MAXNUMBERLINES		25		/* XXX */
+#define	MAXNUMBERCOLUMNS	80
+#define	MAXSCREENSIZE		(MAXNUMBERLINES*MAXNUMBERCOLUMNS)
+#endif	/* !defined(MSDOS) */	/* MSDOS has memory constraints */
 #define LowestScreen()	0
 #define HighestScreen()	(ScreenSize-1)
 
