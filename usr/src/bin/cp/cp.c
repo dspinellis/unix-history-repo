@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cp.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)cp.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -63,9 +63,11 @@ static char sccsid[] = "@(#)cp.c	5.4 (Berkeley) %G%";
 #include <strings.h>
 
 typedef struct {
-	char	*p_path;	/* Pointer to the start of a path. */
-	char	*p_end;		/* Pointer to NULL at end of path. */
+	char	*p_path;	/* pointer to the start of a path. */
+	char	*p_end;		/* pointer to NULL at end of path. */
 } path_t;
+
+#define	type(st)	((st).st_mode&S_IFMT)
 
 char *path_append(), *path_basename();
 void path_restore();
@@ -85,10 +87,15 @@ main(argc, argv)
 	extern int optind, errno;
 	struct stat to_stat;
 	register int c, r;
+	int force_flag;
 	char *old_to, *malloc();
 
-	while ((c = getopt(argc, argv, "Rhipr")) != EOF) {
-	switch ((char) c) {
+	force_flag = 0;
+	while ((c = getopt(argc, argv, "Rfhipr")) != EOF) {
+	switch ((char)c) {
+		case 'f':
+			force_flag = 1;
+			break;
 		case 'h':
 			symfollow = 1;
 			break;
@@ -114,6 +121,9 @@ main(argc, argv)
 
 	if (argc < 2)
 		usage();
+
+	if (force_flag)
+		interactive_flag = 0;
 
 	my_umask = umask(0);
 	(void)umask(my_umask);
@@ -146,10 +156,10 @@ main(argc, argv)
 
 	r = stat(to.p_path, &to_stat);
 	if (r == -1 && errno != ENOENT) {
-		error(to.p_path);
+		error(to.p_path, "stat");
 		exit(1);
 	}
-	if (r == -1 || (to_stat.st_mode & S_IFMT) != S_IFDIR) {
+	if (r == -1 || type(to_stat) != S_IFDIR) {
 		/*
 		 * Case (1).  Target is not a directory.
 		 */
@@ -178,18 +188,16 @@ main(argc, argv)
 	exit(exit_val);
 }
 
-/*
- * Copy file or directory at "from" to "to".
- */
+/* copy file or directory at "from" to "to". */
 copy()
 {
 	struct stat from_stat, to_stat;
-	int new_target_dir, statval;
+	int statval;
 
 	statval = symfollow || !recursive_flag ?
 	    stat(from.p_path, &from_stat) : lstat(from.p_path, &from_stat);
 	if (statval == -1) {
-		error(from.p_path);
+		error(from.p_path, "stat");
 		return;
 	}
 
@@ -205,62 +213,57 @@ copy()
 		return;
 	}
 
-	if ((from_stat.st_mode & S_IFMT) == S_IFLNK) {
+	switch(type(from_stat)) {
+	case S_IFLNK:
 		copy_link(to_stat.st_ino != -1);
 		return;
-	}
-
-	new_target_dir = 0;
-	if ((from_stat.st_mode & S_IFMT) != S_IFDIR) {
-		if (!copy_file(from_stat.st_mode))
-			return;
-	}
-	else {
+	case S_IFDIR:
 		if (!recursive_flag) {
 			(void)fprintf(stderr,
-			   "cp: \"%s\" is a directory (not copied).\n",
-			   from.p_path);
+			    "cp: %s is a directory (not copied).\n",
+			    from.p_path);
 			exit_val = 1;
 			return;
 		}
 		if (to_stat.st_ino == -1) {
 			if (mkdir(to.p_path, 0777) < 0) {
-				error(to.p_path);
+				error(to.p_path, "mkdir");
 				return;
 			}
-			new_target_dir = 1;
+			from_stat.st_mode &= ~my_umask;
 		}
-		else if ((to_stat.st_mode & S_IFMT) != S_IFDIR) {
-			(void)fprintf(stderr,
-			   "cp: %s: not a directory.\n",
-			   to.p_path);
+		else if (type(to_stat) != S_IFDIR) {
+			(void)fprintf(stderr, "cp: %s: not a directory.\n",
+			    to.p_path);
 			return;
 		}
 		copy_dir();
+		break;
+	case S_IFCHR:
+	case S_IFBLK:
+		if (recursive_flag) {
+			copy_special(&from_stat, &to_stat);
+			if (preserve_flag)
+				setfile(&from_stat);
+			return;
+		}
+		/* FALLTHROUGH */
+	default:
+		if (!copy_file(from_stat.st_mode))
+			return;
 	}
-	/* Preserve old times/modes if necessary. */
 	if (preserve_flag)
-		(void)chmod(to.p_path, (int) from_stat.st_mode);
-	else if (new_target_dir)
-		(void)chmod(to.p_path, (int) from_stat.st_mode & ~my_umask);
-	if (preserve_flag || new_target_dir) {
-		static struct timeval tv[2];
-
-		tv[0].tv_sec = from_stat.st_atime;
-		tv[1].tv_sec = from_stat.st_mtime;
-		if (utimes(to.p_path, tv))
-			error(to.p_path);
-	}
+		setfile(&from_stat);
 }
 
 copy_file(mode)
-	u_short mode;			/* Permissions for new file. */
+	u_short mode;			/* permissions for new file. */
 {
-	int from_fd, to_fd, rcount, wcount;
+	register int from_fd, to_fd, rcount, wcount;
 
 	from_fd = open(from.p_path, O_RDONLY, 0);
 	if (from_fd == -1) {
-		error(from.p_path);
+		error(from.p_path, "open");
 		(void)close(from_fd);
 		return(0);
 	}
@@ -287,7 +290,7 @@ copy_file(mode)
 	}
 
 	if (to_fd == -1) {
-		error(to.p_path);
+		error(to.p_path, "open");
 		(void)close(from_fd);
 		return(0);
 	}
@@ -295,7 +298,7 @@ copy_file(mode)
 	while ((rcount = read(from_fd, buf, MAXBSIZE)) > 0) {
 		wcount = write(to_fd, buf, rcount);
 		if (rcount != wcount || wcount == -1) {
-			error(from.p_path);
+			error(from.p_path, "write");
 			break;
 		}
 	}
@@ -335,12 +338,12 @@ copy_dir()
 		}
 
 		if (stat(from.p_path, &from_stat) < 0) {
-			error(dp->d_name);
+			error(dp->d_name, "stat");
 			path_restore(&from, old_from);
 			continue;
 		}
 
-		if ((from_stat.st_mode & S_IFMT) != S_IFDIR) {
+		if (type(from_stat) != S_IFDIR) {
 			old_to = path_append(&to, dp->d_name,
 			    (int)dp->d_namlen);
 			if (!old_to) {
@@ -356,7 +359,7 @@ copy_dir()
 		path_restore(&from, old_from);
 	}
 
-	/* Then copy directories. */
+	/* then copy directories. */
 	for (i = 0; i < dir_cnt; ++i) {
 		dp = dir_list[i];
 		if (!dp)
@@ -386,26 +389,54 @@ copy_link(exists)
 	char link[MAXPATHLEN];
 
 	if (readlink(from.p_path, link, sizeof(link)) == -1) {
-		error(from.p_path);
+		error(from.p_path, "readlink");
 		return;
 	}
 	if (exists && unlink(to.p_path)) {
-		error(to.p_path);
+		error(to.p_path, "unlink");
 		return;
 	}
 	if (symlink(link, to.p_path)) {
-		error(link);
+		error(link, "symlink");
 		return;
 	}
 }
 
-error(s)
-	char *s;
+copy_special(from_stat, to_stat)
+	struct stat *from_stat, *to_stat;
+{
+	if (to_stat->st_ino != -1 && unlink(to.p_path)) {
+		error(to.p_path, "unlink");
+		return;
+	}
+	if (mknod(to.p_path, from_stat->st_mode,  from_stat->st_rdev)) {
+		error(to.p_path, "mknod");
+		return;
+	}
+}
+
+setfile(fs)
+	struct stat *fs;
+{
+	static struct timeval tv[2];
+
+	if (chown(to.p_path, fs->st_uid, fs->st_gid))
+		error(to.p_path, "chown");
+	if (chmod(to.p_path, fs->st_mode))
+		error(to.p_path, "chmod");
+	tv[0].tv_sec = fs->st_atime;
+	tv[1].tv_sec = fs->st_mtime;
+	if (utimes(to.p_path, tv))
+		error(to.p_path, "utimes");
+}
+
+error(s, call)
+	char *s, *call;
 {
 	extern int errno;
 
 	exit_val = 1;
-	(void)fprintf(stderr, "cp: %s: %s\n", s, strerror(errno));
+	(void)fprintf(stderr, "cp: %s: %s: %s\n", call, s, strerror(errno));
 }
 
 /********************************************************************
