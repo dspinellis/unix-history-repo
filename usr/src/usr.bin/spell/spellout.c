@@ -1,10 +1,11 @@
 #ifndef lint
-static char sccsid[] = "@(#)spellout.c	4.1 %G%";
+static char sccsid[] = "@(#)spellout.c	4.2 %G%";
 #endif
 
 #include "spell.h"
 
 main(argc, argv)
+int argc;
 char **argv;
 {
 	register i, j;

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)spell.c	4.3 %G%";
+static char sccsid[] = "@(#)spell.c	4.4 %G%";
 #endif
 
 #include "spell.h"
@@ -125,6 +125,7 @@ char *deriv[40];
 char affix[40];
 
 main(argc,argv)
+int argc;
 char **argv;
 {
 	register char *ep, *cp;
@@ -185,6 +186,7 @@ lcase:
 
 suffix(ep,lev)
 char *ep;
+int lev;
 {
 	register struct suftab *t;
 	register char *cp, *sp;
@@ -217,12 +219,14 @@ nop()
 
 strip(ep,d,a,lev)
 char *ep,*d,*a;
+int lev;
 {
 	return(putsuf(ep,a,lev)||suffix(ep,lev));
 }
 
 s(ep,d,a,lev)
 char *ep,*d,*a;
+int lev;
 {
 	if(lev>DLEV+1)
 		return(0);
@@ -233,6 +237,7 @@ char *ep,*d,*a;
 
 an(ep,d,a,lev)
 char *ep,*d,*a;
+int lev;
 {
 	if(!isupper(*word))	/*must be proper name*/
 		return(0);
@@ -241,6 +246,7 @@ char *ep,*d,*a;
 
 ize(ep,d,a,lev)
 char *ep,*d,*a;
+int lev;
 {
 	*ep++ = 'e';
 	return(strip(ep,"",d,lev));
@@ -248,6 +254,7 @@ char *ep,*d,*a;
 
 y_to_e(ep,d,a,lev)
 char *ep,*d,*a;
+int lev;
 {
 	char c = *ep;
 	*ep++ = 'e';
@@ -259,6 +266,7 @@ char *ep,*d,*a;
 
 ily(ep,d,a,lev)
 char *ep,*d,*a;
+int lev;
 {
 	if(ep[-1]=='i')
 		return(i_to_y(ep,d,a,lev));
@@ -268,6 +276,7 @@ char *ep,*d,*a;
 
 ncy(ep,d,a,lev)
 char *ep, *d, *a;
+int lev;
 {
 	if(skipv(skipv(ep-1))<word)
 		return(0);
@@ -277,6 +286,7 @@ char *ep, *d, *a;
 
 bility(ep,d,a,lev)
 char *ep,*d,*a;
+int lev;
 {
 	*ep++ = 'l';
 	return(y_to_e(ep,d,a,lev));
@@ -284,6 +294,7 @@ char *ep,*d,*a;
 
 i_to_y(ep,d,a,lev)
 char *ep,*d,*a;
+int lev;
 {
 	if(ep[-1]=='i') {
 		ep[-1] = 'y';
@@ -294,6 +305,7 @@ char *ep,*d,*a;
 
 es(ep,d,a,lev)
 char *ep,*d,*a;
+int lev;
 {
 	if(lev>DLEV)
 		return(0);
@@ -312,6 +324,7 @@ char *ep,*d,*a;
 
 metry(ep,d,a,lev)
 char *ep, *d,*a;
+int lev;
 {
 	ep[-2] = 'e';
 	ep[-1] = 'r';
@@ -320,6 +333,7 @@ char *ep, *d,*a;
 
 tion(ep,d,a,lev)
 char *ep,*d,*a;
+int lev;
 {
 	switch(ep[-2]) {
 	case 'c':
@@ -334,6 +348,7 @@ char *ep,*d,*a;
 /*	possible consonant-consonant-e ending*/
 CCe(ep,d,a,lev)
 char *ep,*d,*a;
+int lev;
 {
 	switch(ep[-1]) {
 	case 'l':
@@ -371,6 +386,7 @@ char *ep,*d,*a;
 /*	possible consonant-vowel-consonant-e ending*/
 VCe(ep,d,a,lev)
 char *ep,*d,*a;
+int lev;
 {
 	char c;
 	c = ep[-1];
@@ -410,6 +426,7 @@ next:	;
 
 putsuf(ep,a,lev)
 char *ep,*a;
+int lev;
 {
 	register char *cp;
 	char *bp;
@@ -417,7 +434,7 @@ char *ep,*a;
 	int val = 0;
 	char space[20];
 	deriv[lev] = a;
-	if(putw(word,ep,lev))
+	if(putword(word,ep,lev))
 		return(1);
 	bp = word;
 	pp = space;
@@ -426,7 +443,7 @@ char *ep,*a;
 		*pp++ = '+';
 		while(*pp = *cp++)
 			pp++;
-		if(putw(bp,ep,lev+1)) {
+		if(putword(bp,ep,lev+1)) {
 			val = 1;
 			break;
 		}
@@ -435,8 +452,9 @@ char *ep,*a;
 	return(val);
 }
 
-putw(bp,ep,lev)
+putword(bp,ep,lev)
 char *bp,*ep;
+int lev;
 {
 	register i, j;
 	char duple[3];
@@ -493,6 +511,7 @@ char *s;
 }
 
 vowel(c)
+int c;
 {
 	switch(Tolower(c)) {
 	case 'a':
