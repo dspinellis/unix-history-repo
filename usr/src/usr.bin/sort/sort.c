@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)sort.c	4.5 (Berkeley) %G%";
+static	char *sccsid = "@(#)sort.c	4.6 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
@@ -8,7 +8,7 @@ static	char *sccsid = "@(#)sort.c	4.5 (Berkeley) %G%";
 #define	L	1024
 #define	N	7
 #define	C	20
-#ifdef	vax
+#ifndef pdp11
 #define	MEM	(64*2048)
 #else
 #define	MEM	(16*2048)
@@ -405,7 +405,7 @@ merge(a,b)
 	i = j;
 	while(i > 0) {
 		cp = ibuf[i-1]->l;
-		if(!cflg && (uflg == 0 || muflg ||
+		if (!cflg && (uflg == 0 || muflg || i == 1 ||
 			(*compare)(ibuf[i-1]->l,ibuf[i-2]->l)))
 			do
 				putc(*cp, os);
