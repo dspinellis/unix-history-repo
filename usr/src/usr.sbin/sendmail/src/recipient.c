@@ -2,7 +2,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)recipient.c	3.50		%G%);
+SCCSID(@(#)recipient.c	3.51		%G%);
 
 /*
 **  SENDTOLIST -- Designate a send list.
@@ -327,7 +327,7 @@ recipient(a, sendq)
 			    (*p = '\0', !safefile(buf, getruid(), S_IWRITE|S_IEXEC)))
 			{
 				a->q_flags |= QBADADDR;
-				giveresponse(EX_CANTCREAT, m);
+				giveresponse(EX_CANTCREAT, m, CurEnv);
 			}
 		}
 		else
@@ -340,7 +340,7 @@ recipient(a, sendq)
 			if (pw == NULL)
 			{
 				a->q_flags |= QBADADDR;
-				giveresponse(EX_NOUSER, m);
+				giveresponse(EX_NOUSER, m, CurEnv);
 			}
 			else
 			{

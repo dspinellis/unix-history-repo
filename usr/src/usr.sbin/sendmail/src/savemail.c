@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-SCCSID(@(#)savemail.c	3.54		%G%);
+SCCSID(@(#)savemail.c	3.55		%G%);
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -255,7 +255,8 @@ returntosender(msg, returnto, sendbody)
 		if (q->q_alias == NULL)
 			addheader("to", q->q_paddr, ee);
 	}
-	addheader("subject", msg, ee);
+	(void) sprintf(buf, "MAIL FAILURE: %s", msg);
+	addheader("subject", buf, ee);
 
 	/* fake up an address header for the from person */
 	expand("$n", buf, &buf[sizeof buf - 1], CurEnv);

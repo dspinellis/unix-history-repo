@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.139		%G%);
+SCCSID(@(#)deliver.c	3.140		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -219,7 +219,7 @@ deliver(e, firstto)
 
 		if (!checkcompat(to))
 		{
-			giveresponse(EX_UNAVAILABLE, m);
+			giveresponse(EX_UNAVAILABLE, m, e);
 			continue;
 		}
 
@@ -271,7 +271,7 @@ deliver(e, firstto)
 			if (user[0] == '/')
 			{
 				rcode = mailfile(user, getctladdr(to));
-				giveresponse(rcode, m);
+				giveresponse(rcode, m, e);
 				continue;
 			}
 		}
@@ -361,7 +361,7 @@ deliver(e, firstto)
 				if (i != EX_OK)
 				{
 					markfailure(e, to, i);
-					giveresponse(i, m);
+					giveresponse(i, m, e);
 				}
 				else
 				{
@@ -395,7 +395,7 @@ deliver(e, firstto)
 	*/
 
 	if (tobuf[0] != '\0')
-		giveresponse(rcode, m);
+		giveresponse(rcode, m, e);
 	if (rcode != EX_OK)
 	{
 		for (to = tochain; to != NULL; to = to->q_tchain)
@@ -435,10 +435,17 @@ markfailure(e, q, rcode)
 	else if (curtime() > e->e_ctime + TimeOut)
 	{
 		extern char *pintvl();
+		char buf[MAXLINE];
 
 		if (!bitset(EF_TIMEOUT, e->e_flags))
-			message(Arpa_Info, "Cannot send message for %s",
+		{
+			(void) sprintf(buf, "Cannot send message for %s",
 				pintvl(TimeOut, FALSE));
+			if (e->e_message != NULL)
+				free(e->e_message);
+			e->e_message = newstr(buf);
+			message(Arpa_Info, buf);
+		}
 		q->q_flags |= QBADADDR;
 		e->e_flags |= EF_TIMEOUT;
 	}
@@ -853,15 +860,16 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 */
 
 /*ARGSUSED*/
-giveresponse(stat, m)
+giveresponse(stat, m, e)
 	int stat;
 	register MAILER *m;
+	ENVELOPE *e;
 {
 	register char *statmsg;
 	extern char *SysExMsg[];
 	register int i;
 	extern int N_SysEx;
-	char buf[30];
+	char buf[MAXLINE];
 
 	/*
 	**  Compute status message from code.
@@ -876,6 +884,21 @@ giveresponse(stat, m)
 		stat = EX_UNAVAILABLE;
 		statmsg = buf;
 	}
+	else if (stat == EX_TEMPFAIL)
+	{
+		extern char *sys_errlist[];
+		extern int sys_nerr;
+
+		(void) sprintf(buf, "%.3s ", SysExMsg[i]);
+		if (errno > 0 && errno < sys_nerr)
+		{
+			(void) strcat(buf, sys_errlist[errno]);
+			(void) strcat(buf, " [deferred]");
+		}
+		else
+			(void) strcat(buf, "deferred");
+		statmsg = buf;
+	}
 	else
 		statmsg = SysExMsg[i];
 
@@ -883,10 +906,8 @@ giveresponse(stat, m)
 	**  Print the message as appropriate
 	*/
 
-	if (stat == 0)
+	if (stat == EX_OK || stat == EX_TEMPFAIL)
 		message(Arpa_Info, &statmsg[4]);
-	else if (stat == EX_TEMPFAIL)
-		message(Arpa_Info, "deferred");
 	else
 	{
 		Errors++;
@@ -905,6 +926,12 @@ giveresponse(stat, m)
 
 	if (stat != EX_TEMPFAIL)
 		setstat(stat);
+	if (stat != EX_OK)
+	{
+		if (e->e_message != NULL)
+			free(e->e_message);
+		e->e_message = newstr(&statmsg[4]);
+	}
 }
 /*
 **  LOGDELIVERY -- log the delivery in the system log
