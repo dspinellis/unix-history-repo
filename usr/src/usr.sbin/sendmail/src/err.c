@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	8.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	8.8 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -239,6 +239,10 @@ putoutmsg(msg, holdmsg)
 	char *msg;
 	bool holdmsg;
 {
+	/* display for debugging */
+	if (tTd(54, 8))
+		printf("--- %s%s\n", msg, holdmsg ? " (held)" : "");
+
 	/* output to transcript if serious */
 	if (CurEnv->e_xfp != NULL && strchr("456", msg[0]) != NULL)
 		fprintf(CurEnv->e_xfp, "%s\n", msg);
