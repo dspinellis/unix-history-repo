@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 PROG=	hexdump
 SRCS=	conv.c display.c hexdump.c hexsyntax.c odsyntax.c parse.c
