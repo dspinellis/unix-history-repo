@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)proc.c 4.1 %G%";
+static	char *sccsid = "@(#)proc.c 4.2 %G%";
 
 #include "sh.h"
 #include "sh.dir.h"
@@ -115,13 +115,13 @@ found:
 		} while((fp = fp->p_friends) != pp);
 		while(fp->p_pid != fp->p_jobid)
 			fp = fp->p_friends;
+		if (jobflags&PSTOPPED) {
+			if (pcurrent && pcurrent != fp)
+				pprevious = pcurrent;
+			pcurrent = fp;
+		} else
+			pclrcurr(fp);
 		if (jobflags&PFOREGND) {
-			if (jobflags&PSTOPPED) {
-				if (pcurrent && pcurrent != fp)
-					pprevious = pcurrent;
-				pcurrent = fp;
-			} else
-				pclrcurr(fp);
 			if (jobflags & (PSIGNALED|PSTOPPED|PPTIME) ||
 #ifdef IIASA
 			    jobflags & PAEXITED ||
@@ -139,8 +139,6 @@ found:
 				if ((jobflags&PSTOPPED) == 0)
 					pflush(pp);
 			} else {
-				if ((jobflags&PSTOPPED) == 0)
-					pclrcurr(fp);
 				fp->p_flags |= PNEEDNOTE;
 				neednote++;
 			}
@@ -392,7 +390,9 @@ palloc(pid, t)
 				for (np = proclist.p_next; np; np = np->p_next)
 					if (np->p_index == i)
 						goto tryagain;
-				pmaxindex = pp->p_index = i;
+				pp->p_index = i;
+				if (i > pmaxindex)
+					pmaxindex = i;
 				break;			
 			tryagain:;
 			}
@@ -900,6 +900,8 @@ pstart(pp, foregnd)
 				np->p_flags &= ~PFOREGND;
 		}
 	} while((np = np->p_friends) != pp);
+	if (!foregnd)
+		pclrcurr(pp);
 	pprint(pp, foregnd ? NAME|JOBDIR : NUMBER|NAME|AMPERSAND);
 	if (foregnd)
 		ioctl(FSHTTY, TIOCSPGRP, &pp->p_jobid);
@@ -968,20 +970,24 @@ match:
 }
 
 /*
- * pgetcurr - find a job that is not pp and ``most recent''
+ * pgetcurr - find most recent job that is not pp, preferably stopped
  */
 struct process *
 pgetcurr(pp)
 	register struct process *pp;
 {
 	register struct process *np;
+	register struct process *xp = PNULL;
 
 	for (np = proclist.p_next; np; np = np->p_next)
 		if (np != pcurrent && np != pp && np->p_pid &&
 		    np->p_pid == np->p_jobid) {
-			return (np);
+			if (np->p_flags & PSTOPPED)
+				return (np);
+			if (xp == PNULL)
+				xp = np;
 		}
-	return (PNULL);
+	return (xp);
 }
 
 /*
