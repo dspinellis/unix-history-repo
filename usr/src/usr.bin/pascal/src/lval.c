@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)lval.c 1.2 %G%";
+static	char sccsid[] = "@(#)lval.c 1.3 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -161,7 +161,8 @@ lvalue(r, modflag , required )
 					if (o) {
 					    put2(O_OFF, o);
 					}
-					put(1, PTR_IND);
+				        if (p->class != FILET || bn == 0)
+					    put(1, PTR_IND);
 				}
 				/*
 				 * Pointer cannot be
@@ -352,7 +353,7 @@ arycod(np, el)
 			    }
 		    }
 		    put(4, width(ap) != 4 ? O_INX2 : O_INX4,w,( short ) p->range[0],
-			   ( short ) ( p->range[1] - p->range[0] ) );
+			   ( short ) ( p->range[1] ) );
 #		endif OBJ
 #		ifdef PC
 			/*
