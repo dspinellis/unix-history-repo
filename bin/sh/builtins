@@ -61,6 +61,7 @@ execcmd		exec
 exitcmd		exit
 exportcmd	export readonly
 #exprcmd	expr test [
+falsecmd	false
 fgcmd -j	fg
 getoptscmd	getopts
 hashcmd		hash

@@ -899,6 +899,9 @@ returncmd(argc, argv)  char **argv; {
 	return ret;
 }
 
+falsecmd(argc, argv)  char **argv; {
+	return 1;
+}
 
 truecmd(argc, argv)  char **argv; {
 	return 0;
