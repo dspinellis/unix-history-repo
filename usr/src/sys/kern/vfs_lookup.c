@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_lookup.c	7.15 (Berkeley) %G%
+ *	@(#)vfs_lookup.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -318,11 +318,11 @@ dirloop:
 		} else
 			ndp->ni_pnbuf[linklen] = '\0';
 		ndp->ni_ptr = cp;
-		ndp->ni_pathlen += linklen;
 		vput(dp);
 		dp = ndp->ni_dvp;
-		if (lockparent && *ndp->ni_next == '\0')
+		if (lockparent && ndp->ni_pathlen == 1)
 			VOP_UNLOCK(dp);
+		ndp->ni_pathlen += linklen;
 		goto start;
 	}
 
