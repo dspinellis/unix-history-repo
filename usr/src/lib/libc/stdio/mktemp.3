@@ -1,31 +1,84 @@
-.\"	@(#)mktemp.3	6.4 (Berkeley) %G%
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)mktemp.3	6.5 (Berkeley) %G%
 .\"
 .TH MKTEMP 3  ""
 .AT 3
 .SH NAME
-mktemp \- make a unique file name
+mktemp \- create a unique file name
 .SH SYNOPSIS
 .nf
-.B char *mktemp(template)
-.B char *template;
+.ft B
+char *
+mktemp(template)
+char *template;
 .sp
-.B mkstemp(template)
-.B char *template;
+mkstemp(template)
+char *template;
+.ft R
 .fi
 .SH DESCRIPTION
-\fIMktemp\fP creates a unique file name and returns the address of
-the template.  The template should contain a file name with trailing
-\fIX\fP's, normally something like \fI/tmp/tempXXXXXX\fP.  The \fIX\fP's
-are replaced by the current process number and/or a unique letter
-combination.  \fIMkstemp\fP makes the same replacement to the template
-but creates the template file, mode 0600, and returns a file descriptor
-open for reading and writing.  \fIMkstemp\fP avoids the race between testing
-whether the file exists and opening it for use.  The number of file
-name combinations \fImktemp\fP and \fImkstemp\fP will try depends on
-the number of \fIX\fP's placed on the end of the template; six \fIX\fP's
-will result in them trying roughly 26 ** 6 combinations.
+.I Mktemp
+takes a file name template and overwrites it to create a unique file
+name for use by the application.
+The template may be any file name with some number of X's appended
+to it, for example ``/tmp/temp.XXXX''.
+The trailing X's are replaced with the current process number and/or a
+unique letter combination.
+The number of unique file names
+.I mktemp
+can return depends on the number of X's provided; six X's will
+result in
+.I mktemp
+testing roughly 26 ** 6 combinations.
+.PP
+.I Mkstemp
+makes the same replacement to the template and creates the template file,
+mode 0600, returning a file descriptor opened for reading and writing.
+This avoids the race between testing for a file's existence and opening it
+for use.
+.PP
+.I Mktemp
+returns a pointer to the template on success and NULL on failure.
+.I Mkstemp
+returns -1 if no suitable file could be created.
+.SH ERRORS
+.I Mktemp
+and
+.I mkstemp
+may set
+.I errno
+to one of the following values:
+.TP
+[ENOTDIR]
+The pathname portion of the template is not an existing directory.
+.PP
+.I Mktemp
+and
+.I mkstemp
+may also set
+.I errno
+to any value specified by the
+.IR stat (2)
+function.
+.I Mkstemp
+may also set
+.I errno
+to any value specified by the
+.IR open (2)
+function.
 .SH "SEE ALSO"
 chmod(2), getpid(2), open(2), stat(2)
-.SH DIAGNOSTICS
-\fIMktemp\fP returns NULL on failure, \fImkstemp\fP returns -1 if no
-suitable file could be created.
