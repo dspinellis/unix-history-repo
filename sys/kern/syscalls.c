@@ -195,7 +195,7 @@ char *syscallnames[] = {
 #endif
 	"#162",			/* 162 = nosys */
 	"#163",			/* 163 = nosys */
-	"#164",			/* 164 = nosys */
+	"uname",			/* 164 = uname */
 	"#165",			/* 165 = nosys */
 	"#166",			/* 166 = nosys */
 	"#167",			/* 167 = nosys */

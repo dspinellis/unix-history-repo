@@ -158,6 +158,7 @@ int	async_daemon();
 int	getfh();
 #else
 #endif
+int	uname();
 #ifdef SYSVSHM
 int	shmsys();
 #else
@@ -402,7 +403,7 @@ struct sysent sysent[] = {
 #endif
 	0, nosys,			/* 162 = nosys */
 	0, nosys,			/* 163 = nosys */
-	0, nosys,			/* 164 = nosys */
+	1, uname,			/* 164 = uname */
 	0, nosys,			/* 165 = nosys */
 	0, nosys,			/* 166 = nosys */
 	0, nosys,			/* 167 = nosys */
