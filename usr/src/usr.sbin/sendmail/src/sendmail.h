@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.84		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.85		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -34,6 +34,7 @@ static char SmailSccsId[] =	"@(#)sendmail.h	3.84		%G%";
 # define MAXHOP		30		/* max value of HopCount */
 # define MAXATOM	100		/* max atoms per address */
 # define MAXMAILERS	25		/* maximum mailers known to system */
+# define MAXRWSETS	30		/* max # of sets of rewriting rules */
 # define SPACESUB	('.'|0200)	/* substitution for <lwsp> */
 /*
 **  Address structure.
@@ -100,6 +101,7 @@ struct mailer
 	short	m_mno;		/* mailer number internally */
 	char	*m_from;	/* pattern for From: header */
 	char	**m_argv;	/* template argument vector */
+	short	m_rwset;	/* apply this rewriting set to addresses */
 };
 
 typedef struct mailer	MAILER;
@@ -262,20 +264,33 @@ struct rewrite
 	struct rewrite	*r_next;/* next in chain */
 };
 
-extern struct rewrite	*RewriteRules[];
+EXTERN struct rewrite	*RewriteRules[MAXRWSETS];
 
-# define MATCHANY	'\020'	/* match one or more tokens */
-# define MATCHONE	'\021'	/* match exactly one token */
-# define MATCHCLASS	'\022'	/* match one token in a class */
-# define MATCHREPL	'\023'	/* replacement on RHS for above */
+/*
+**  Special characters in rewriting rules.
+**	These are used internally only.
+**	The COND* rules are actually used in macros rather than in
+**		rewriting rules, but are given here because they
+**		cannot conflict.
+*/
 
+/* left hand side items */
+# define MATCHZANY	'\020'	/* match zero or more tokens */
+# define MATCHANY	'\021'	/* match one or more tokens */
+# define MATCHONE	'\022'	/* match exactly one token */
+# define MATCHCLASS	'\023'	/* match one token in a class */
+# define MATCHREPL	'\024'	/* replacement on RHS for above */
+
+/* right hand side items */
 # define CANONNET	'\025'	/* canonical net, next token */
 # define CANONHOST	'\026'	/* canonical host, next token */
 # define CANONUSER	'\027'	/* canonical user, next N tokens */
+# define CALLSUBR	'\030'	/* call another rewriting set */
 
-# define CONDIF		'\030'	/* conditional if-then */
-# define CONDELSE	'\031'	/* conditional else */
-# define CONDFI		'\032'	/* conditional fi */
+/* conditionals in macros */
+# define CONDIF		'\031'	/* conditional if-then */
+# define CONDELSE	'\032'	/* conditional else */
+# define CONDFI		'\033'	/* conditional fi */
 /*
 **  Symbol table definitions
 */
@@ -404,6 +419,7 @@ EXTERN int	ExitStat;	/* exit status code */
 EXTERN int	HopCount;	/* hop count */
 EXTERN int	AliasLevel;	/* depth of aliasing */
 EXTERN int	MotherPid;	/* proc id of parent process */
+EXTERN int	LineNumber;	/* line number in current input */
 EXTERN time_t	QueueIntvl;	/* intervals between running the queue */
 EXTERN char	*HostName;	/* name of this host for SMTP messages */
 EXTERN char	*Transcript;	/* the transcript file name */

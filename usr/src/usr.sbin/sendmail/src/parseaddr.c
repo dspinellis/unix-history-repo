@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	3.50		%G%);
+SCCSID(@(#)parseaddr.c	3.51		%G%);
 
 /*
 **  PARSE -- Parse an address
@@ -379,14 +379,15 @@ toktype(c)
 **
 **	For each rewrite rule, 'avp' points the address vector we
 **	are trying to match against, and 'pvp' points to the pattern.
-**	If pvp points to a special match value (MATCHANY, MATCHONE,
-**	MATCHCLASS) then the address in avp matched is saved away
-**	in the match vector (pointed to by 'mvp').
+**	If pvp points to a special match value (MATCHZANY, MATCHANY,
+**	MATCHONE, MATCHCLASS) then the address in avp matched is
+**	saved away in the match vector (pointed to by 'mvp').
 **
 **	When a match between avp & pvp does not match, we try to
 **	back out.  If we back up over a MATCHONE or a MATCHCLASS
 **	we must also back out the match in mvp.  If we reach a
-**	MATCHANY we just extend the match and start over again.
+**	MATCHANY or MATCHZANY we just extend the match and start
+**	over again.
 **
 **	When we finally match, we rewrite the address vector
 **	and try over again.
@@ -418,16 +419,16 @@ rewrite(pvp, ruleset)
 	register char *rp;		/* rewrite pointer */
 	register char **avp;		/* address vector pointer */
 	register char **rvp;		/* rewrite vector pointer */
-	struct rewrite *rwr;		/* pointer to current rewrite rule */
+	register struct match *mlp;	/* cur ptr into mlist */
+	register struct rewrite *rwr;	/* pointer to current rewrite rule */
 	struct match mlist[MAXMATCH];	/* stores match on LHS */
-	struct match *mlp;		/* cur ptr into mlist */
 	char *npvp[MAXATOM+1];		/* temporary space for rebuild */
 	extern bool sameword();
 
 # ifdef DEBUG
 	if (tTd(21, 9))
 	{
-		printf("rewrite: original pvp:\n");
+		printf("rewrite: ruleset %d, original pvp:\n", ruleset);
 		printav(pvp);
 	}
 # endif DEBUG
@@ -449,15 +450,30 @@ rewrite(pvp, ruleset)
 
 		/* try to match on this rule */
 		mlp = mlist;
-		for (rvp = rwr->r_lhs, avp = pvp; *avp != NULL; )
+		rvp = rwr->r_lhs;
+		avp = pvp;
+		while ((ap = *avp) != NULL || *rvp != NULL)
 		{
-			ap = *avp;
 			rp = *rvp;
-
+# ifdef DEBUG
+			if (tTd(21, 35))
+			{
+				printf("ap=\"");
+				xputs(ap);
+				printf("\", rp=\"");
+				xputs(rp);
+				printf("\"\n");
+			}
+# endif DEBUG
 			if (rp == NULL)
 			{
 				/* end-of-pattern before end-of-address */
-				goto fail;
+				goto backup;
+			}
+			if (ap == NULL && *rp != MATCHZANY)
+			{
+				/* end-of-input */
+				break;
 			}
 
 			switch (*rp)
@@ -469,28 +485,36 @@ rewrite(pvp, ruleset)
 				/* match any token in a class */
 				class = rp[1];
 				if (!isalpha(class))
-					goto fail;
+					goto backup;
 				if (isupper(class))
 					class -= 'A';
 				else
 					class -= 'a';
 				s = stab(ap, ST_CLASS, ST_FIND);
 				if (s == NULL || (s->s_class & (1L << class)) == 0)
-					goto fail;
+					goto backup;
 
 				/* explicit fall-through */
 
 			  case MATCHONE:
 			  case MATCHANY:
 				/* match exactly one token */
-				mlp->first = mlp->last = avp++;
+				mlp->first = avp;
+				mlp->last = avp++;
+				mlp++;
+				break;
+
+			  case MATCHZANY:
+				/* match zero or more tokens */
+				mlp->first = avp;
+				mlp->last = avp - 1;
 				mlp++;
 				break;
 
 			  default:
 				/* must have exact match */
 				if (!sameword(rp, ap))
-					goto fail;
+					goto backup;
 				avp++;
 				break;
 			}
@@ -499,15 +523,16 @@ rewrite(pvp, ruleset)
 			rvp++;
 			continue;
 
-		  fail:
+		  backup:
 			/* match failed -- back up */
 			while (--rvp >= rwr->r_lhs)
 			{
 				rp = *rvp;
-				if (*rp == MATCHANY)
+				if (*rp == MATCHANY || *rp == MATCHZANY)
 				{
 					/* extend binding and continue */
-					mlp[-1].last = avp++;
+					avp = ++mlp[-1].last;
+					avp++;
 					rvp++;
 					break;
 				}
@@ -532,13 +557,28 @@ rewrite(pvp, ruleset)
 
 		if (rvp >= rwr->r_lhs && *rvp == NULL)
 		{
+			rvp = rwr->r_rhs;
 # ifdef DEBUG
 			if (tTd(21, 12))
 			{
 				printf("-----rule matches:\n");
-				printav(rwr->r_rhs);
+				printav(rvp);
 			}
 # endif DEBUG
+
+			/* see if this is a "subroutine" call */
+			rp = *rvp;
+			if (*rp == CALLSUBR)
+			{
+				rp = *++rvp;
+# ifdef DEBUG
+				if (tTd(21, 2))
+					printf("-----callsubr %s\n", rp);
+# endif DEBUG
+				rewrite(pvp, atoi(rp));
+				rwr = rwr->r_next;
+				continue;
+			}
 
 			/* substitute */
 			for (rvp = rwr->r_rhs, avp = npvp; *rvp != NULL; rvp++)
@@ -555,25 +595,25 @@ rewrite(pvp, ruleset)
 					{
 						printf("$%c:", rp[1]);
 						pp = m->first;
-						do
+						while (pp <= m->last)
 						{
 							printf(" %x=\"", *pp);
 							(void) fflush(stdout);
-							printf("%s\"", *pp);
-						} while (pp++ != m->last);
+							printf("%s\"", *pp++);
+						}
 						printf("\n");
 					}
 # endif DEBUG
 					pp = m->first;
-					do
+					while (pp <= m->last)
 					{
 						if (avp >= &npvp[MAXATOM])
 						{
 							syserr("rewrite: expansion too long");
 							return;
 						}
-						*avp++ = *pp;
-					} while (pp++ != m->last);
+						*avp++ = *pp++;
+					}
 				}
 				else
 				{
@@ -894,6 +934,11 @@ remotename(name, m, force)
 	**  First put this address into canonical form.
 	**	First turn it into a macro.
 	**	Then run it through ruleset 4.
+	**	If the mailer defines a rewriting set, run it through
+	**		there next.
+	**	The intent is that ruleset 4 puts the name into a
+	**		canonical form; the mailer's ruleset then
+	**		does any customization.
 	*/
 
 	/* save away the extraneous pretty stuff */
@@ -904,6 +949,8 @@ remotename(name, m, force)
 	if (pvp == NULL)
 		return (name);
 	rewrite(pvp, 4);
+	if (m->m_rwset > 0)
+		rewrite(pvp, m->m_rwset);
 
 	/*
 	**  See if this mailer wants the name to be rewritten.  There are
