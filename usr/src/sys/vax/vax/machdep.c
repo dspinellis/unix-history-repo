@@ -1,4 +1,4 @@
-/*	machdep.c	4.21	81/03/03	*/
+/*	machdep.c	4.22	81/03/06	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -30,7 +30,7 @@
 int	coresw = 0;
 int	printsw = 0;
 
-char	version[] = "VM/UNIX (Berkeley Version 4.21) 81/03/03 11:04:57 \n";
+char	version[] = "VAX/UNIX (Berkeley Version 4.22) 81/03/06 11:38:06 \n";
 int	icode[] =
 {
 	0x9f19af9f,	/* pushab [&"init",0]; pushab */
@@ -185,7 +185,7 @@ clkinit(base)
 	 * and VMS, VMS runs on GMT...).
 	 */
 	if (todr < TODRZERO) {
-		printf("WARNING: todr too small (battery backup failed?)");
+		printf("WARNING: todr too small");
 		time = base;
 		/*
 		 * Believe the time in the file system for lack of
@@ -397,7 +397,7 @@ memerr()
 #if VAX780
 		case VAX_780:
 			if (M780_ERR(mcr)) {
-				printf("memerr mcr%d addr %x syn %x\n",
+				printf("mcr%d: soft ecc addr %x syn %x\n",
 				    m, M780_ADDR(mcr), M780_SYN(mcr));
 				M780_INH(mcr);
 			}
@@ -406,7 +406,7 @@ memerr()
 #if VAX750
 		case VAX_750:
 			if (M750_ERR(mcr)) {
-				printf("memerr mcr%d addr %x syn %x\n",
+				printf("mcr%d: soft ecc addr %x syn %x\n",
 				    m, M750_ADDR(mcr), M750_SYN(mcr));
 				M750_INH(mcr);
 			}
