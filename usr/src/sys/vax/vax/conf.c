@@ -1,4 +1,4 @@
-/*	conf.c	3.1	%H%	*/
+/*	conf.c	3.2	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -88,20 +88,31 @@ struct cdevsw	cdevsw[] =
 		0,
 };
 
-int	ttyopen(),ttread();
+int	ttyopen(),ttread(),nullioctl(),ttstart();
 char	*ttwrite();
 int	ttyinput(), ttyrend();
+#ifdef BERKNET
+int	netopen(), netclose(), netread(), netinput(), netioctl();
+#endif
  
 struct	linesw linesw[] =
 {
-	ttyopen, nulldev, ttread, ttwrite, nodev,
+	ttyopen, nulldev, ttread, ttwrite, nullioctl,
 	ttyinput, ttyrend, nulldev, nulldev, nulldev,	/* 0 */
+#ifdef BERKNET
+	netopen, netclose, netread, ttwrite, netioctl,
+	netinput, nodev, nulldev, ttstart, nulldev,	/* 1 */
+#endif
 	mxopen, mxclose, mcread, mcwrite, mxioctl,
-	nulldev, nulldev, nulldev, nulldev, nulldev,	/* 1 */
+	nulldev, nulldev, nulldev, nulldev, nulldev,	/* 1 or 2 */
 	0
 };
  
+#ifdef BERKNET
+int	nldisp = 2;
+#else
 int	nldisp = 1;
+#endif
 dev_t	rootdev	= makedev(0, 0);
 dev_t	swapdev	= makedev(0, 1);
 dev_t	pipedev	= makedev(0, 0);
