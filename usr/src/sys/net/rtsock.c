@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rtsock.c	7.18 (Berkeley) %G%
+ *	@(#)rtsock.c	7.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -251,8 +251,7 @@ route_output(m, so)
 			break;
 
 		case RTM_CHANGE:
-			if (gate &&
-			    (gate->sa_len > (len = rt->rt_gateway->sa_len)))
+			if (gate && rt_setgate(rt, rt_key(rt), gate))
 				senderr(EDQUOT);
 			/* new gateway could require new ifaddr, ifp;
 			   flags may also be different; ifp may be specified
@@ -275,8 +274,6 @@ route_output(m, so)
 				    rt->rt_ifp = ifp;
 				}
 			}
-			if (gate)
-				Bcopy(gate, rt->rt_gateway, len);
 			rt_setmetrics(rtm->rtm_inits, &rtm->rtm_rmx,
 					&rt->rt_rmx);
 			if (rt->rt_ifa && rt->rt_ifa->ifa_rtrequest)
