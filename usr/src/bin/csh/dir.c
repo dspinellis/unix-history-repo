@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)dir.c 4.1 %G%";
+static	char *sccsid = "@(#)dir.c 4.2 %G%";
 
 #include "sh.h"
 #include "sh.dir.h"
@@ -25,8 +25,13 @@ dinit(hp)
 
 	if (loginsh && hp)
 		cp = hp;
-	else
+	else {
 		cp = getwd(path);
+		if (cp == NULL) {
+			write(2, path, strlen(path));
+			exit(1);
+		}
+	}
 	dp = (struct directory *)calloc(sizeof (struct directory), 1);
 	dp->di_name = savestr(cp);
 	dp->di_count = 0;
