@@ -1,4 +1,4 @@
-/*	sys_generic.c	5.30	83/01/23	*/
+/*	sys_generic.c	5.31	83/02/18	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -155,6 +155,8 @@ rwuio(uio, rw)
 		uio->uio_offset = fp->f_offset;
 		if ((ip->i_mode&IFMT) == IFREG) {
 			ILOCK(ip);
+			if (fp->f_flag&FAPPEND && rw == UIO_WRITE)
+				uio->uio_offset = fp->f_offset = ip->i_size;
 			u.u_error = rwip(ip, uio, rw);
 			IUNLOCK(ip);
 		} else
