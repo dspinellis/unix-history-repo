@@ -1,18 +1,16 @@
 .\" Copyright (c) 1983, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)rwho.1	6.6 (Berkeley) %G%
+.\"     @(#)rwho.1	6.7 (Berkeley) %G%
 .\"
-.Vx
-.Vx
 .Dd 
 .Dt RWHO 1
 .Os BSD 4.2
 .Sh NAME
 .Nm rwho
-.Nd who's logged in on local machines
+.Nd who is logged in on local machines
 .Sh SYNOPSIS
 .Nm rwho
 .Op Fl a
@@ -38,17 +36,19 @@ unless the
 .Fl a
 flag is given.
 .Sh FILES
-.Dw /var/spool/rwho/rhowd.*
-.Di L
-.Dp Pa /var/spool/rwho/whod.*
+.Bl -tag -width /var/spool/rwho/rhowd.* -compact
+.It Pa /var/spool/rwho/whod.*
 information about other machines
-.Dp
+.El
 .Sh SEE ALSO
 .Xr ruptime 1 ,
 .Xr rwhod 8
 .Sh HISTORY
-.Nm Rwho
-appeared in 4.3 BSD.
+The
+.Nm rwho
+command
+appeared in
+.Bx 4.3 .
 .Sh BUGS
 This is unwieldy when the number of machines
 on the local net is large.
