@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)sigsuspend.2	6.3 (Berkeley) %G%
+.\"	@(#)sigsuspend.2	6.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SIGSUSPEND 2
@@ -12,7 +12,7 @@
 .Nm sigsuspend
 .Nd atomically release blocked signals and wait for interrupt
 .Sh SYNOPSIS
-.Fd #include <sys/signal.h>
+.Fd #include <signal.h>
 .Ft int
 .Fn sigsuspend "const sigset_t *sigmask"
 .Sh DESCRIPTION

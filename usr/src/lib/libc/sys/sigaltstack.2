@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)sigaltstack.2	5.1 (Berkeley) %G%
+.\"     @(#)sigaltstack.2	5.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SIGALTSTACK 2
@@ -13,7 +13,7 @@
 .Nd set and/or get signal stack context
 .Sh SYNOPSIS
 .Fd #include <sys/types.h>
-.Fd #include <sys/signal.h>
+.Fd #include <signal.h>
 .Bd -literal
 struct sigaltstack {
 	caddr_t ss_sp;
