@@ -1,18 +1,25 @@
 # Makefile for the f77 math & startup lib - libF77.a
 
-#	@(#)makefile	1.4	%G%
+#	@(#)makefile	1.5	%G%
 
-LIBDIR = /usr/ucb/lib
-TAPE = /dev/nrmt1
+LIB = libF77.a
+
+# for the CFO 11's
+#LIBDIR = /usr/ucb/lib
+#TAPE = /dev/nrmt1
+
+# for the VAX
+LIBDIR = /usr/lib
+TAPE = /dev/rnmt0.1600
 
 # compile, then strip unnecessary symbols
 .c.o :
-	cc -O -c -DPDP11 $*.c
+	cc -O -c -DVAX $*.c
 	-ld -r -x $*.o
 	mv a.out $*.o
 
-MISC =	main.o s_rnge.o abort_.o getarg_.o iargc_.o signal_.o s_stop.o \
-	s_paus.o system_.o getenv_.o rand_.o range.o \
+MISC =	Version.o main.o s_rnge.o abort_.o getarg_.o iargc_.o signal_.o \
+	s_stop.o s_paus.o system_.o getenv_.o rand_.o range.o \
 	dbesj0_.o dbesj1_.o dbesjn_.o dbesy0_.o dbesy1_.o dbesyn_.o \
 	besj0_.o besj1_.o besjn_.o besy0_.o besy1_.o besyn_.o
 POW =	pow_ci.o pow_dd.o pow_di.o pow_hh.o pow_ii.o  pow_ri.o pow_zi.o pow_zz.o
@@ -30,30 +37,32 @@ DBL =	d_abs.o d_acos.o d_asin.o d_atan.o d_atn2.o\
 INT =	i_abs.o i_dim.o i_dnnt.o i_indx.o i_len.o i_mod.o i_nint.o i_sign.o
 HALF =	h_abs.o h_dim.o h_dnnt.o h_indx.o h_len.o h_mod.o  h_nint.o h_sign.o
 CMP =	l_ge.o l_gt.o l_le.o l_lt.o hl_ge.o hl_gt.o hl_le.o hl_lt.o
-CHAR =	s_cat.o s_cmp.o s_copy.o lnblnk_.o rindex_.o
+EFL =	ef1asc_.o ef1cmc_.o
+CHAR =	s_cat.o rindex_.o s_cmp.o s_copy.o lnblnk_.o
 
 ALL =	$(MISC) $(POW) $(CX) $(DCX) $(REAL) $(DBL) $(INT) $(HALF) \
-	$(CMP) $(CHAR) cabs.o tanh.o sinh.o
+	$(CMP) $(EFL) $(CHAR) cabs.o tanh.o sinh.o
 
-libF77.a:	$(ALL)
+all:	$(LIB)
+
+$(LIB):	$(ALL)
 	@echo 'Loading...'
-	@rm -f libF77.a
-	@ar rc libF77.a $(ALL)
-	@ls -l libF77.a
-	@echo 'Done'
+	@rm -f $(LIB)
+	@ar rc $(LIB) $(ALL)
+	@ls -l $(LIB)
 
 c_abs.c c_cos.c c_div.c c_div.c c_exp.c c_log.c c_sin.c c_sqrt.c d_cnjg.c d_imag.c pow_ci.c pow_zi.c pow_zz.c r_cnjg.c r_imag.c z_abs.c z_cos.c z_div.c z_div.c z_exp.c z_log.c z_sin.c z_sqrt.c:	complex
 
-install:	libF77.a
-	mv $(LIBDIR)/libF77.a $(LIBDIR)/libF77.a.old
-	cp libF77.a $(LIBDIR)/libF77.a
-	ranlib $(LIBDIR)/libF77.a
+install:	$(LIB)
+	mv $(LIBDIR)/$(LIB) $(LIBDIR)/$(LIB).old
+	cp $(LIB) $(LIBDIR)/$(LIB)
+	ranlib $(LIBDIR)/$(LIB)
 
 clean:
-	rm -f $(ALL) libF77.a
+	rm -f $(ALL) $(LIB)
 
-SOURCES = main.c s_rnge.c abort_.c getarg_.c iargc_.c signal_.c s_stop.c \
-	s_paus.c system_.c getenv_.c rand_.c bit.c range.c \
+SOURCES = Version.c main.c s_rnge.c abort_.c getarg_.c iargc_.c signal_.c \
+	s_stop.c s_paus.c system_.c getenv_.c rand_.c bit.c range.c \
 	dbesj0_.c dbesj1_.c dbesjn_.c dbesy0_.c dbesy1_.c dbesyn_.c \
 	besj0_.c besj1_.c besjn_.c besy0_.c besy1_.c besyn_.c \
 	cabs.c tanh.c sinh.c \
@@ -73,6 +82,7 @@ SOURCES = main.c s_rnge.c abort_.c getarg_.c iargc_.c signal_.c s_stop.c \
 	i_abs.c i_dim.c i_dnnt.c i_indx.c i_len.c i_mod.c i_nint.c i_sign.c \
 	h_abs.c h_dim.c h_dnnt.c h_indx.c h_len.c h_mod.c  h_nint.c h_sign.c \
 	l_ge.c l_gt.c l_le.c l_lt.c hl_ge.c hl_gt.c hl_le.c hl_lt.c \
+	ef1asc_.c ef1cmc_.c \
 	s_cat.c s_cmp.c s_copy.c lnblnk_.o rindex_.o
 
 print:	index
@@ -85,4 +95,5 @@ mkindx:	mkindx.c
 	@cc mkindx.c -o mkindx
 
 tape:
-	@tar cbf 20 $(TAPE) Makefile man complex $(SOURCES) mkindx.c
+	@tar cbf 20 $(TAPE) Makefile man complex $(SOURCES) \
+	mkindx.c bit.c subout.c
