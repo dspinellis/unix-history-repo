@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_pcb.c	7.21 (Berkeley) %G%
+ *	@(#)tp_pcb.c	7.22 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -636,7 +636,7 @@ tp_attach(so, protocol)
 	}
 
 	if (so->so_snd.sb_hiwat == 0 || so->so_rcv.sb_hiwat == 0)
-		error = soreserve(so, tp_sendsize, tp_recvsize);
+		error = soreserve(so, tp_sendspace, tp_recvspace);
 		/* later an ioctl will allow reallocation IF still in closed state */
 
 	if (error)
