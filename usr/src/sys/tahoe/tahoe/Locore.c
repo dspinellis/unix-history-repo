@@ -1,4 +1,4 @@
-/*	Locore.c	1.3	86/12/15	*/
+/*	Locore.c	1.4	87/06/06	*/
 
 #include "../tahoe/mtpr.h"
 #include "../tahoe/trap.h"
@@ -167,8 +167,8 @@ struct	pte mmap[1];
 char	vmmap[1];
 struct	pte msgbufmap[3*NBPG];
 struct	msgbuf msgbuf;
-struct	pte camap[16];
-int	cabase, calimit;
+struct	pte kmempt[100];
+int	kmembase, kmemlimit;
 struct	pte Mbmap[NMBCLUSTERS/CLSIZE];
 struct	mbuf mbutl[NMBCLUSTERS*CLBYTES/sizeof (struct mbuf)];
 
