@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)gmon.c	4.11 (Berkeley) %G%";
+static	char *sccsid = "@(#)gmon.c	4.12 (Berkeley) %G%";
 
 #ifdef DEBUG
 #include <stdio.h>
@@ -19,8 +19,10 @@ static unsigned long	s_textsize = 0;
 static char		*minsbrk = 0;
 
 static int	ssiz;
-static int	*sbuf;
+static char	*sbuf;
 static int	s_scale;
+    /* see profil(2) where this is describe (incorrectly) */
+#define		SCALE_1_TO_1	0x10000L
 
 #define	MSG "No space for monitor buffer(s)\n"
 
@@ -71,7 +73,6 @@ monstartup(lowpc, highpc)
     minsbrk = sbrk(0);
     tos[0].link = 0;
     monitor( lowpc , highpc , buffer , monsize , tolimit );
-    moncontrol(1);
 }
 
 _mcleanup()
@@ -245,7 +246,8 @@ asm(".data");
 monitor( lowpc , highpc , buf , bufsiz , nfunc )
     char	*lowpc;
     char	*highpc;
-    int		*buf, bufsiz;
+    char	*buf;	/* declared ``short buffer[]'' in monitor(3) */
+    int		bufsiz;
     int		nfunc;	/* not used, available for compatability only */
 {
     register o;
@@ -260,17 +262,14 @@ monitor( lowpc , highpc , buf , bufsiz , nfunc )
     ( (struct phdr *) buf ) -> lpc = lowpc;
     ( (struct phdr *) buf ) -> hpc = highpc;
     ( (struct phdr *) buf ) -> ncnt = ssiz;
-    o = sizeof(struct phdr);
-    buf = (int *) ( ( (int) buf ) + o );
-    bufsiz -= o;
+    bufsiz -= sizeof(struct phdr);
     if ( bufsiz <= 0 )
 	return;
-    o = ( ( (char *) highpc - (char *) lowpc) );
+    o = highpc - lowpc;
     if( bufsiz < o )
-	o = ( (float) bufsiz / o ) * 65536;
+	s_scale = ( (float) bufsiz / o ) * SCALE_1_TO_1;
     else
-	o = 65536;
-    s_scale = o;
+	s_scale = SCALE_1_TO_1;
     moncontrol(1);
 }
 
