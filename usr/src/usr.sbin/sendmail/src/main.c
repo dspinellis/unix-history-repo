@@ -8,7 +8,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.42	%G%";
+static char	SccsId[] = "@(#)main.c	3.43	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -106,6 +106,7 @@ static char	SccsId[] = "@(#)main.c	3.42	%G%";
 char	InFileName[] = "/tmp/mailtXXXXXX";
 char	Transcript[] = "/tmp/mailxXXXXXX";
 int	NextMailer = 0;		/* "free" index into Mailer struct */
+static char	*FullName;	/* sender's full name */
 
 
 
@@ -118,14 +119,12 @@ main(argc, argv)
 {
 	register char *p;
 	char *realname;
-	char *fullname = NULL;
 	extern char *getlogin();
 	char *locname;
 	extern int finis();
 	extern char Version[];
 	char *from;
 	typedef int (*fnptr)();
-	struct passwd *pw;
 	extern char *arpadate();
 	extern char *AliasFile;		/* location of alias file */
 	extern char *ConfFile;		/* location of configuration file */
@@ -140,11 +139,12 @@ main(argc, argv)
 	char ybuf[10];			/* holds tty id */
 	bool aliasinit = FALSE;
 	extern char *ttyname();
-	char cfbuf[60];			/* holds .cf filename */
 	extern bool safefile();
 	bool canrename;
 
 	argv[argc] = NULL;
+	InChannel = stdin;
+	OutChannel = stdout;
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
 		(void) signal(SIGINT, finis);
 	if (signal(SIGHUP, SIG_IGN) != SIG_IGN)
@@ -253,7 +253,7 @@ main(argc, argv)
 					break;
 				}
 			}
-			fullname = p;
+			FullName = p;
 			break;
 
 		  case 'h':	/* hop count */
@@ -381,7 +381,11 @@ main(argc, argv)
 
 		  case 'D':	/* run as a daemon */
 			Daemon = TRUE;
-			MailBack = TRUE;
+			/* explicit fall-through */
+
+		  case 'p':	/* run SMTP protocol */
+			Smtp = TRUE;
+			ArpaMode = ARPA_SMTP;
 			break;
 
 		  default:
@@ -432,64 +436,16 @@ main(argc, argv)
 
 	if (Daemon)
 		getrequests();
+	
+	/*
+	if (Smtp)
+		smtp();
 
 	/*
-	locname = getname();
-	if (locname == NULL || locname[0] == '\0')
-	{
-		errno = 0;
-		p = getlogin();
-		errno = 0;
-	}
-	if (Daemon || p == NULL)
-	{
-		extern struct passwd *getpwuid();
-		int uid;
-
-		uid = getruid();
-		pw = getpwuid(uid);
-		if (pw == NULL)
-			syserr("Who are you? (uid=%d)", uid);
-		else
-			p = pw->pw_name;
-	}
-	else
-	{
-		extern struct passwd *getpwnam();
-
-		pw = getpwnam(p);
-		if (pw == NULL)
-			syserr("Who are you? (name=%s)", p);
-	}
-	if (p == NULL || p[0] == '\0' || pw == NULL)
-		finis();
-
-	realname = p;
-
-	/*
-	**  Process passwd file entry.
+	**  Set the sender
 	*/
 
-	/* run user's .mailcf file */
-	define('z', pw->pw_dir);
-	(void) expand("$z/.mailcf", cfbuf, &cfbuf[sizeof cfbuf - 1]);
-	if (safefile(cfbuf, getruid(), S_IREAD))
-		readcf(cfbuf, FALSE);
-
-	/* extract full name from passwd file */
-	if ((fullname == NULL || fullname[0] == '\0') &&
-	    pw != NULL && pw->pw_gecos != NULL)
-	{
-		char nbuf[MAXNAME];
-
-		buildfname(pw->pw_gecos, realname, nbuf);
-		if (ArpaMode == ARPA_NONE && from == NULL && nbuf[0] != '\0')
-			fullname = newstr(nbuf);
-	}
-	if (fullname != NULL && fullname[0] != '\0')
-		define('x', fullname);
-
-	setfrom(from, realname);
+	setsender(from);
 
 	if (!Daemon && argc <= 0 && !GrabTo)
 		usrerr("Usage: /etc/sendmail [flags] addr...");
@@ -513,10 +469,7 @@ main(argc, argv)
 
 	if (GrabTo)
 		DontSend = TRUE;
-	if (Daemon)
-		getrecipients();
-	else
-		sendtoargv(argv);
+	sendtoargv(argv);
 
 	/* if we have had errors sofar, drop out now */
 	if (Errors > 0 && ExitStat == EX_OK)
@@ -558,27 +511,7 @@ main(argc, argv)
 	**	If verifying, just ack.
 	*/
 
-	for (i = 0; Mailer[i] != NULL; i++)
-	{
-		ADDRESS *q;
-
-		for (q = Mailer[i]->m_sendq; q != NULL; q = q->q_next)
-		{
-			if (verifyonly)
-			{
-				To = q->q_paddr;
-				if (!bitset(QDONTSEND|QBADADDR, q->q_flags))
-				{
-					if (q->q_mailer == MN_LOCAL || q->q_mailer == MN_PROG)
-						message(Arpa_Info, "deliverable");
-					else
-						message(Arpa_Info, "queueable");
-				}
-			}
-			else
-				(void) deliver(q, (fnptr) NULL);
-		}
-	}
+	sendall(verifyonly);
 
 	/*
 	** All done.
@@ -747,4 +680,88 @@ openxscrpt()
 		syserr("Can't create %s", Transcript);
 	(void) chmod(Transcript, 0600);
 	setbuf(stdout, (char *) NULL);
+}
+/*
+**  SETSENDER -- set sendmail's idea of the sender.
+**
+**	Parameters:
+**		from -- the person we would like to believe this
+**			is from.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		Sets the idea of the sender.
+*/
+
+setsender(from)
+	char *from;
+{
+	register char *p;
+	extern char *getlogin();
+	register struct passwd *pw;
+	char *realname;
+	char cfbuf[40];
+
+	/*
+	**  Figure out the real user executing us.
+	**	Getlogin can return errno != 0 on non-errors.
+	*/
+
+	if (!Daemon)
+	{
+		errno = 0;
+		p = getlogin();
+		errno = 0;
+	}
+	if (Daemon || p == NULL)
+	{
+		extern struct passwd *getpwuid();
+		int uid;
+
+		uid = getruid();
+		pw = getpwuid(uid);
+		if (pw == NULL)
+			syserr("Who are you? (uid=%d)", uid);
+		else
+			p = pw->pw_name;
+	}
+	else
+	{
+		extern struct passwd *getpwnam();
+
+		pw = getpwnam(p);
+		if (pw == NULL)
+			syserr("Who are you? (name=%s)", p);
+	}
+	if (p == NULL || p[0] == '\0' || pw == NULL)
+		finis();
+
+	realname = p;
+
+	/*
+	**  Process passwd file entry.
+	*/
+
+	/* run user's .mailcf file */
+	define('z', pw->pw_dir);
+	(void) expand("$z/.mailcf", cfbuf, &cfbuf[sizeof cfbuf - 1]);
+	if (safefile(cfbuf, getruid(), S_IREAD))
+		readcf(cfbuf, FALSE);
+
+	/* extract full name from passwd file */
+	if ((FullName == NULL || FullName[0] == '\0') &&
+	    pw != NULL && pw->pw_gecos != NULL)
+	{
+		char nbuf[MAXNAME];
+
+		buildfname(pw->pw_gecos, realname, nbuf);
+		if (ArpaMode == ARPA_NONE && from == NULL && nbuf[0] != '\0')
+			FullName = newstr(nbuf);
+	}
+	if (FullName != NULL && FullName[0] != '\0')
+		define('x', FullName);
+
+	setfrom(from, realname);
 }

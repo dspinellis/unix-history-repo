@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)collect.c	3.23	%G%";
+static char	SccsId[] = "@(#)collect.c	3.24	%G%";
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -138,14 +138,19 @@ maketemp(from)
 	for (; !feof(stdin); !feof(stdin) && fgets(buf, sizeof buf, stdin) != NULL)
 	{
 		register int i;
+		register char *bp = buf;
 
 		/* check for end-of-message */
 		if (!IgnrDot && buf[0] == '.' && (buf[1] == '\n' || buf[1] == '\0'))
 			break;
 
+		/* check for transparent dot */
+		if (Smtp && *bp == '.')
+			bp++;
+
 # ifndef NOTUNIX
 		/* Hide UNIX-like From lines */
-		if (strncmp(buf, "From ", 5) == 0)
+		if (strncmp(bp, "From ", 5) == 0)
 		{
 			fputs(">", tf);
 			MsgSize++;
@@ -157,10 +162,10 @@ maketemp(from)
 		**  file, and insert a newline if missing.
 		*/
 
-		i = strlen(buf);
+		i = strlen(bp);
 		MsgSize += i;
-		fputs(buf, tf);
-		if (buf[i - 1] != '\n')
+		fputs(bp, tf);
+		if (bp[i - 1] != '\n')
 			fputs("\n", tf);
 		if (ferror(tf))
 		{

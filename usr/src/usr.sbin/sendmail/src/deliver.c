@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.47	%G%";
+static char SccsId[] = "@(#)deliver.c	3.48	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -850,5 +850,46 @@ mailfile(filename, ctladdr)
 		if ((stat & 0377) != 0)
 			stat = EX_UNAVAILABLE << 8;
 		return ((stat >> 8) & 0377);
+	}
+}
+/*
+**  SENDALL -- actually send all the messages.
+**
+**	Parameters:
+**		verifyonly -- if set, only give verification messages.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		Scans the send lists and sends everything it finds.
+*/
+
+sendall(verifyonly)
+	bool verifyonly;
+{
+	register int i;
+	typedef int (*fnptr)();
+
+	for (i = 0; Mailer[i] != NULL; i++)
+	{
+		ADDRESS *q;
+
+		for (q = Mailer[i]->m_sendq; q != NULL; q = q->q_next)
+		{
+			if (verifyonly)
+			{
+				To = q->q_paddr;
+				if (!bitset(QDONTSEND|QBADADDR, q->q_flags))
+				{
+					if (q->q_mailer == MN_LOCAL || q->q_mailer == MN_PROG)
+						message(Arpa_Info, "deliverable");
+					else
+						message(Arpa_Info, "queueable");
+				}
+			}
+			else
+				(void) deliver(q, (fnptr) NULL);
+		}
 	}
 }
