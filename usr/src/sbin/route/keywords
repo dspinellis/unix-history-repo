@@ -1,4 +1,4 @@
-#	@(#)keywords	5.3 (Berkeley) %G%
+#	@(#)keywords	5.4 (Berkeley) %G%
 
 add
 change
@@ -27,6 +27,7 @@ net
 netmask
 osi
 recvpipe
+reject
 rtt
 rttvar
 sendpipe
