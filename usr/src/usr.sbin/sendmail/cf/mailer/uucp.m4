@@ -16,7 +16,7 @@ POPDIVERT
 ###   UUCP Mailer specification   ###
 #####################################
 
-VERSIONID(`@(#)uucp.m4	8.12 (Berkeley) %G%')
+VERSIONID(`@(#)uucp.m4	8.13 (Berkeley) %G%')
 
 #
 #  There are innumerable variations on the UUCP mailer.  It really
@@ -58,9 +58,9 @@ R$* :; <@>			$@ $1 :;
 
 R$* < @ $* . >			$1 < @ $2 >		strip trailing dots
 R$* < @ $=w >			$1			strip local name
-R<@ $- . UUCP. > : $+		$1 ! $2			convert to UUCP format
+R<@ $- . UUCP > : $+		$1 ! $2			convert to UUCP format
 R<@ $+ > : $+			$1 ! $2			convert to UUCP format
-R$* < @ $- . UUCP. >		$2 ! $1			convert to UUCP format
+R$* < @ $- . UUCP >		$2 ! $1			convert to UUCP format
 R$* < @ $+ >			$2 ! $1			convert to UUCP format
 R$&h ! $+ ! $+			$@ $1 ! $2		$h!...!user => ...!user
 R$&h ! $+			$@ $&h ! $1		$h!user => $h!user
@@ -77,9 +77,9 @@ R$* :; <@>			$@ $1 :;
 
 R$* < @ $* . >			$1 < @ $2 >		strip trailing dots
 R$* < @ $j >			$1			strip local name
-R<@ $- . UUCP. > : $+		$1 ! $2			convert to UUCP format
+R<@ $- . UUCP > : $+		$1 ! $2			convert to UUCP format
 R<@ $+ > : $+			$1 ! $2			convert to UUCP format
-R$* < @ $- . UUCP. >		$2 ! $1			convert to UUCP format
+R$* < @ $- . UUCP >		$2 ! $1			convert to UUCP format
 R$* < @ $+ >			$2 ! $1			convert to UUCP format
 R$&h ! $+ ! $+			$@ $1 ! $2		$h!...!user => ...!user
 R$&h ! $+			$@ $&h ! $1		$h!user => $h!user
@@ -112,9 +112,9 @@ R$* :; <@>			$@ $1 :;
 
 R$* < @ $* . >			$1 < @ $2 >		strip trailing dots
 R$* < @ $=w >			$1			strip local name
-R<@ $- . UUCP. > : $+		$1 ! $2			convert to UUCP format
+R<@ $- . UUCP > : $+		$1 ! $2			convert to UUCP format
 R<@ $+ > : $+			$1 ! $2			convert to UUCP format
-R$* < @ $- . UUCP. >		$2 ! $1			convert to UUCP format
+R$* < @ $- . UUCP >		$2 ! $1			convert to UUCP format
 R$* < @ $+ >			$@ $2 ! $1		convert to UUCP format
 
 R$&h ! $+ ! $+			$@ $1 ! $2		$h!...!user => ...!user
