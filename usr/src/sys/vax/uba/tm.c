@@ -1,4 +1,4 @@
-/*	tm.c	4.20	%G%	*/
+/*	tm.c	4.21	%G%	*/
 
 #include "te.h"
 #if NTM > 0
@@ -780,10 +780,8 @@ tmdump()
 	start = 0;
 	num = maxfree;
 #define	phys(a,b)	((b)((int)(a)&0x7fffffff))
-	if (tmdinfo[0] == 0) {
-		printf("dna\n");
-		return (-1);
-	}
+	if (tmdinfo[0] == 0)
+		return (ENXIO);
 	ui = phys(tmdinfo[0], struct uba_dinfo *);
 	up = phys(ui->ui_hd, struct uba_hd *)->uh_physuba;
 #if VAX780
@@ -803,6 +801,8 @@ tmdump()
 	tmeof(addr);
 	tmeof(addr);
 	tmwait(addr);
+	if (addr->tmcs&TM_ERR)
+		return (EIO);
 	addr->tmcs = TM_REW | TM_GO;
 	tmwait(addr);
 	return (0);
