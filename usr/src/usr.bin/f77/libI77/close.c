@@ -1,5 +1,5 @@
 /*
-char id_close[] = "@(#)close.c	1.5";
+char id_close[] = "@(#)close.c	1.6";
  *
  * close.c  -  f77 file close, flush, exit routines
  */
@@ -7,6 +7,7 @@ char id_close[] = "@(#)close.c	1.5";
 #include "fio.h"
 
 static char FROM_OPEN[] =	"\2";
+static char clse[]	=	"close";
 
 f_clos(a) cllist *a;
 {	unit *b;
@@ -17,11 +18,11 @@ f_clos(a) cllist *a;
 	external = YES;
 	errflag = a->cerr;
 	lunit = a->cunit;
-	if(not_legal(lunit)) err(errflag,F_ERUNIT,"close");
+	if(not_legal(lunit)) err(errflag,F_ERUNIT,clse);
 	if(lunit==STDERR && (!a->csta || *a->csta != FROM_OPEN[0]))
 		err(errflag,F_ERUNIT,"can't close stderr");
 	b= &units[lunit];
-	if(!b->ufd) err(errflag,F_ERNOPEN,"close");
+	if(!b->ufd) err(errflag,F_ERNOPEN,clse);
 	if(a->csta && *a->csta != FROM_OPEN[0])
 		switch(lcase(*a->csta))
 		{
@@ -33,7 +34,7 @@ f_clos(a) cllist *a;
 		default:
 	keep:
 		case 'k':
-			if(b->uwrt && (n=t_runc(b,errflag))) return(n);
+			if(b->uwrt && (n=t_runc(b,errflag,clse))) return(n);
 			fclose(b->ufd);
 			break;
 		}

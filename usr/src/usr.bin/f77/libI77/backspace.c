@@ -1,5 +1,5 @@
 /*
-char id_backspace[] = "@(#)backspace.c	1.5";
+char id_backspace[] = "@(#)backspace.c	1.6";
  *
  * Backspace records
  */
@@ -35,7 +35,7 @@ alist	*a;
 		return(OK);
 	if(!b->useek)
 		err(errflag, F_ERNOBKSP, bksp)
-	if(b->uwrt && (n = t_runc(b, errflag)))
+	if(b->uwrt && (n = t_runc(b, errflag, bksp)))	/* sets 'reading' */
 		return(n);
 	if(b->url)		/* direct access, purely academic */
 	{	y = x%(long)b->url;
@@ -53,8 +53,6 @@ alist	*a;
 	{	rewind(b->ufd);
 		return(OK);
 	}
-	if (b->uwrt && ! nowreading(b))
-		err(errflag, errno, bksp)
 	while (last_char(b->ufd) != '\n')	/* slow but simple */
 		;
 	return(OK);

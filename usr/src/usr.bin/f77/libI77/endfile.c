@@ -1,5 +1,5 @@
 /*
-char id_endfile[] = "@(#)endfile.c	1.6";
+char id_endfile[] = "@(#)endfile.c	1.7";
  *
  * endfile
  */
@@ -26,12 +26,13 @@ alist	*a;
 		return(0);
 	lfname = b->ufnm;
 	b->uend = YES;
-	return ( t_runc (b, errflag) );
+	return ( t_runc (b, errflag, endf) );
 }
 
-t_runc (b, flag)
+t_runc (b, flag, str)
 unit	*b;
 ioflag	flag;
+char	*str;
 {
 	long	loc;
 
@@ -41,6 +42,8 @@ ioflag	flag;
 		return (OK);	/* don't truncate direct access files, etc. */
 	loc = ftell (b->ufd);
 	if (truncate (b->ufnm, loc) != 0)
-		err (flag, errno, endf)
+		err (flag, errno, str)
+	if (b->uwrt && ! nowreading(b))
+		err (flag, errno, str)
 	return (OK);
 }
