@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	7.59 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	7.60 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -229,7 +229,7 @@ ffs_mountfs(devvp, mp, p)
 		goto out;
 	}
 	ump = malloc(sizeof *ump, M_UFSMNT, M_WAITOK);
-	ump->um_fs = malloc((u_long)fs->fs_sbsize, M_SUPERBLK,
+	ump->um_fs = malloc((u_long)fs->fs_sbsize, M_UFSMNT,
 	    M_WAITOK);
 	bcopy((caddr_t)bp->b_un.b_addr, (caddr_t)ump->um_fs,
 	   (u_int)fs->fs_sbsize);
@@ -273,7 +273,7 @@ ffs_mountfs(devvp, mp, p)
 		fs->fs_dbsize = size;
 	}
 	blks = howmany(fs->fs_cssize, fs->fs_fsize);
-	base = space = malloc((u_long)fs->fs_cssize, M_SUPERBLK,
+	base = space = malloc((u_long)fs->fs_cssize, M_UFSMNT,
 	    M_WAITOK);
 	for (i = 0; i < blks; i += fs->fs_frag) {
 		size = fs->fs_bsize;
@@ -286,7 +286,7 @@ ffs_mountfs(devvp, mp, p)
 		error = bread(devvp, fsbtodb(fs, fs->fs_csaddr + i), size,
 			NOCRED, &bp);
 		if (error) {
-			free(base, M_SUPERBLK);
+			free(base, M_UFSMNT);
 			goto out;
 		}
 		bcopy((caddr_t)bp->b_un.b_addr, space, (u_int)size);
@@ -319,7 +319,7 @@ out:
 	if (needclose)
 		(void)VOP_CLOSE(devvp, ronly ? FREAD : FREAD|FWRITE, NOCRED, p);
 	if (ump) {
-		free(ump->um_fs, M_SUPERBLK);
+		free(ump->um_fs, M_UFSMNT);
 		free(ump, M_UFSMNT);
 		mp->mnt_data = (qaddr_t)0;
 	}
