@@ -9,13 +9,13 @@
  * All advertising materials mentioning features or use of this software
  * must display the following acknowledgement:
  *	This product includes software developed by the University of
- *	California, Lawrence Berkeley Laboratories.
+ *	California, Lawrence Berkeley Laboratory.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)timerreg.h	7.3 (Berkeley) %G%
+ *	@(#)timerreg.h	7.4 (Berkeley) %G%
  *
- * from: $Header: timerreg.h,v 1.6 92/07/07 04:56:09 leres Exp $ (LBL)
+ * from: $Header: timerreg.h,v 1.7 92/11/26 03:05:09 leres Exp $ (LBL)
  */
 
 /*
