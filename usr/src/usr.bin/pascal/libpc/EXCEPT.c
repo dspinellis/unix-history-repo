@@ -1,9 +1,8 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)EXCEPT.c 1.2 %G%";
+static char sccsid[] = "@(#)EXCEPT.c 1.3 %G%";
 
 #include	<signal.h>
-#include	"whoami.h"
 
 /*
  * catch runtime arithmetic errors
@@ -12,10 +11,11 @@ EXCEPT(signum, type)
 	int signum, type;
 {
 	signal(SIGFPE, EXCEPT);
-#ifndef VAX
+#ifndef vax
 	ERROR("Overflow, underflow, or division by zero in arithmetic operation\n");
 	return;
-#else
+#endif notvax
+#ifdef vax
 	/*
 	 * The values for this switch statement come from page 12-5 of
 	 * Volume 1 of the 1978 VAX 11/780 Architecture Handbook
@@ -40,5 +40,5 @@ EXCEPT(signum, type)
 		ERROR("Panic: Computational error in interpreter\n");
 		return;
 	}
-#endif
+#endif vax
 }
