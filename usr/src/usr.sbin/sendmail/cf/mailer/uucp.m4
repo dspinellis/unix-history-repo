@@ -13,7 +13,7 @@ POPDIVERT
 ###   UUCP Mailer specification   ###
 #####################################
 
-VERSIONID(`@(#)uucp.m4	6.7 (Berkeley) %G%')
+VERSIONID(`@(#)uucp.m4	6.8 (Berkeley) %G%')
 
 Msuucp,		P=UUCP_MAILER_PATH, F=mDFMhuU, S=12, R=22, M=100000,
 		A=uux - -r -z -a$f -gC $h!rmail ($u)
@@ -25,10 +25,10 @@ Muucp,		P=UUCP_MAILER_PATH, F=DFMhuU, S=12, R=22, M=100000,
 S12
 
 # handle error address as a special case
-R<>				$n			errors to mailer-daemon
+R<@>				$n			errors to mailer-daemon
 
 # don't qualify list:; syntax
-R$* :;				$@ $1 :;
+R$* :; <@>			$@ $1 :;
 
 R$* < @ $j. >			$1			strip local name
 R$* < @ $- . UUCP >		$2 ! $1			convert to UUCP format
@@ -39,7 +39,7 @@ R$+				$: $k ! $1		prepend our name
 S22
 
 # don't touch list:; syntax
-R$* :;				$@ $1 ;:
+R$* :; <@>			$@ $1 ;:
 
 R$* < @ $j. >			$1			strip local name
 R$* < @ $- . UUCP >		$2 ! $1			convert to UUCP format
