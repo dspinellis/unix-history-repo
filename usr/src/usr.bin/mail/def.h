@@ -9,7 +9,7 @@
 #undef isdigit
 
 /*
- * Sccs Id = "@(#)def.h	1.7 %G%";
+ * Sccs Id = "@(#)def.h	1.8 %G%";
  */
 
 /*
@@ -104,6 +104,7 @@ struct cmd {
 #define	W	0400		/* Illegal when read only bit */
 #define	F	01000		/* Is a conditional command */
 #define	T	02000		/* Is a transparent command */
+#define	R	04000		/* Cannot be called from collect */
 
 /*
  * Oft-used mask values
