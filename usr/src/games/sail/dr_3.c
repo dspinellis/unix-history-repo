@@ -1,298 +1,350 @@
 #ifndef lint
-static	char *sccsid = "@(#)dr_3.c	1.3 83/05/20";
+static	char *sccsid = "@(#)dr_3.c	1.4 83/07/20";
 #endif
-#include "externs.h"
 
-extern int dtab[];
+#include "driver.h"
 
 moveall()		/* move all comp ships */
 {
-	register int n, k, l, m, ma, closest;
-	int weakest[5];
-	int ta, af, jj;
-	char command[10], clast[20][10];
-	int row[20], col[20], dir[20], r1, r2, c1, c2, d1, d2;
-	struct File *ptr;
+	register struct ship *sp, *sq;		/* r11, r10 */
+	register int n;				/* r9 */
+	struct ship *closest;
+	register int k, l, m, ma;		/* r8, r7, r6, */
+	int ta, af;
+	int row[NSHIP], col[NSHIP], dir[NSHIP], r1, r2, c1, c2, d1, d2;
+	char clast[NSHIP][sizeof SHIP(0)->file->last];
 
-	for (n=0; n < scene[game].vessels; n++){
-		ptr = scene[game].ship[n].file;
-		if (!ptr -> captain[0] && scene[game].ship[n].shipdir){
-				
-			if (!ptr -> struck && windspeed && !grappled(n) && !fouled(n) && specs[scene[game].ship[n].shipnum].crew3){
-				ta = maxturns(n);
-				jj = 0100000;
-				af = ta & jj;
-				jj = 077777;
-				ta = ta & jj;
-				ma = maxmove(n, pos[n].dir, 0);
-				closest = closestenemy(n, 0, 0);
-				if (closest == 30000) 
-					command[0] = '\0';
-				else
-					closeon(n, closest, command, ta, ma, af);
-			}
+	/*
+	 * first try to create moves for OUR ships
+	 */
+	foreachship(sp) {
+		if (sp->file->captain[0] || sp->shipdir == 0)
+			continue;
+		if (!sp->file->struck && windspeed && !snagged(sp)
+		    && sp->specs->crew3) {
+			ta = maxturns(sp);
+			af = ta & 0100000;
+			ta &= 077777;
+			ma = maxmove(sp, sp->file->dir, 0);
+			closest = closestenemy(sp, 0, 0);
+			if (closest == 0)
+				*sp->file->last = '\0';
 			else
-				command[0] = '\0';
-			strcpy(ptr -> last, command);
-		}
+				closeon(sp, closest, sp->file->last,
+					ta, ma, af);
+		} else
+			*sp->file->last = '\0';
 	}
-	for (n=0; n < scene[game].vessels; n++){
-		strcpy(clast[n], scene[game].ship[n].file -> last);
-		if (fouled(n) || grappled(n))
+	/*
+	 * Then execute the moves for ALL ships (dead ones too),
+	 * saving old positions in row[], col[], dir[],
+	 * and the moves in clase[][].
+	 * The new positions are written out.
+	 */
+	n = 0;
+	foreachship(sp) {
+		if (snagged(sp))
 			clast[n][0] = '\0';
-		row[n] = pos[n].row;
-		col[n] = pos[n].col;
-		dir[n] = pos[n].dir;
-		score(clast[n],n, 0, 1, 0);
+		else
+			(void) strcpy(clast[n], sp->file->last);
+		row[n] = sp->file->row;
+		col[n] = sp->file->col;
+		dir[n] = sp->file->dir;
+		moveship(sp, clast[n]);
+		n++;
 	}
-	for (k=0; stillmoving(clast, k); k++){
-		for (n=0; n < scene[game].vessels; n++){
+	/*
+	 * Now resolve collisions.
+	 * This is the tough part.
+	 */
+	for (k = 0; stillmoving(clast, k); k++) {
+		/*
+		 * Step once.
+		 * And propagate the nulls at the end of clast[].
+		 */
+		n = 0;
+		foreachship(sp) {
 			if (dir[n])
-				step(clast[n][k], n, row, col, dir);
+				step(clast[n][k], sp, row+n, col+n, dir+n);
 			if (!clast[n][k])
 				clast[n][k+1] = '\0';
+			n++;
 		}
-		for (n=0; n < scene[game].vessels; n++){
-			if ((d1 = pos[n].dir) && !isolated(n)){
-				r1 = pos[n].row;
-				c1 = pos[n].col;
-				pos[n].dir = dir[n];
-				pos[n].row = row[n];
-				pos[n].col = col[n];
-				for (l=0; l < scene[game].vessels; l++){
-					if (d2 = pos[l].dir && l != n){
-						r2 = pos[l].row;
-						c2 = pos[l].col;
-						pos[l].dir = dir[l];
-						pos[l].row = row[l];
-						pos[l].col = col[l];
-						if ((foul(n,l) || grapple(n,l)) && push(n,l) && range(n,l) > 1){
-							Write(l,0,6,pos[n].row-1);
-							if (pos[n].dir == 1 || pos[n].dir == 5)
-								Write(l,0,8,pos[n].col-1);
-							else
-								Write(l,0,8,pos[n].col);
-							Write(l,0,10,pos[n].dir);
-						}
-						if (!range(n,l) && !foul(n,l) && push(n,l)){
-							makesignal("collision with %s (%c%c)", l, n);
-							if (die() < 4){
-								makesignal("fouled with %s (%c%c)", l, n);
-								for (m=0;scene[game].ship[n].file -> fouls[m].turnfoul && m < 10; m++);
-								if (m < 10){
-									Write(FILES + n, 0, 84 + m*4, turn);
-									Write(FILES + n, 0, 84 + m*4 + 2, l);
-								}
-								for (m=0;scene[game].ship[l].file -> fouls[m].turnfoul && m < 10; m++);
-								if (m < 10){
-									Write(FILES + l, 0, 84 + m*4, turn);
-									Write(FILES + l, 0, 84 + m*4 + 2, n);
-								}
-							}
-							clast[n][k+1] = '\0';
-							pos[n].row = r2;
-							pos[n].col = c2;
-							pos[n].dir = d2;
-							score(clast[n],n,n,1,0);
-							Write(l,0,6,pos[n].row-1);
-							if (pos[n].dir == 1 || pos[n].dir == 5)
-								Write(l,0,8,pos[n].col-1);
-							else
-								Write(l,0,8,pos[n].col);
-							Write(l,0,10,pos[n].dir);
-							Write(FILES + l, 0, 82, 0);
-							Write(FILES + n, 0, 82, 0);
-						}
-						else {
-							pos[l].row = r2;
-							pos[l].col = c2;
-							pos[l].dir = d2;
-						}
-					}
+		/*
+		 * The real stuff.
+		 */
+		n = 0;
+		foreachship(sp) {
+			if ((d1 = sp->file->dir) == 0 || isolated(sp))
+				continue;
+			r1 = sp->file->row;
+			c1 = sp->file->col;
+			sp->file->dir = dir[n];
+			sp->file->row = row[n];
+			sp->file->col = col[n];
+			l = 0;
+			foreachship(sq) {
+				if ((d2 = sq->file->dir) == 0 || sp == sq)
+					continue;
+				r2 = sq->file->row;
+				c2 = sq->file->col;
+				sq->file->dir = dir[l];
+				sq->file->row = row[l];
+				sq->file->col = col[l];
+				if (grappled2(sp, sq)
+				    && push(sp, sq) && range(sp, sq) > 1) {
+					Write(W_SHIPROW, sq, 0,
+						sp->file->row - 1, 0, 0, 0);
+					if (sp->file->dir == 1
+					    || sp->file->dir == 5) /* XXX */
+						Write(W_SHIPCOL, sq, 0,
+							sp->file->col - 1,
+							0, 0, 0);
+					else
+						Write(W_SHIPCOL, sq, 0,
+							sp->file->col, 0, 0, 0);
+					Write(W_SHIPDIR, sq, 0,
+						sp->file->dir, 0, 0, 0);
 				}
-				pos[n].row = r1;
-				pos[n].col = c1;
-				pos[n].dir = d1;
+				if (!range(sp, sq) && !fouled2(sp, sq)
+				    && push(sp, sq)) {
+					makesignal(sp,
+						"collision with %s (%c%c)", sq);
+					if (die() < 4) {
+						makesignal(sp,
+							"fouled with %s (%c%c)",
+							sq);
+						for (m = 0; m < NSHIP && sp->file->fouls[m].turnfoul; m++)
+							;
+						if (m < NSHIP)
+							Write(W_FOUL, sp, 0,
+								m, turn, l, 0);
+						for (m = 0; m < NSHIP && sq->file->fouls[m].turnfoul; m++)
+							;
+						if (m < NSHIP)
+							Write(W_FOUL, sq, 0,
+								m, turn, n, 0);
+					}
+					clast[n][k+1] = '\0';
+					sp->file->row = r2;
+					sp->file->col = c2;
+					sp->file->dir = d2;
+					moveship(sp, clast[n]);
+					Write(W_SHIPROW, sq, 0,
+						sp->file->row-1, 0, 0, 0);
+					if (sp->file->dir == 1
+					    || sp->file->dir == 5)
+						Write(W_SHIPCOL, sq, 0,
+							sp->file->col-1, 0, 0, 0);
+					else
+						Write(W_SHIPCOL, sq, 0,
+							sp->file->col, 0, 0, 0);
+					Write(W_SHIPDIR, sq, 0,
+						sp->file->dir, 0, 0, 0);
+					Write(W_DRIFT, sq, 0, 0, 0, 0, 0);
+					Write(W_DRIFT, sp, 0, 0, 0, 0, 0);
+				} else {
+					sq->file->row = r2;
+					sq->file->col = c2;
+					sq->file->dir = d2;
+				}
+				l++;
 			}
+			sp->file->row = r1;
+			sp->file->col = c1;
+			sp->file->dir = d1;
+			n++;
 		}
 	}
-	for(n=0; n < scene[game].vessels; n++)
-		scene[game].ship[n].file -> last[0] = NULL;
+	/*
+	 * Clear old moves.
+	 */
+	foreachship(sp)
+		sp->file->last[0] = 0;
 }
 
 stillmoving(last, k)
-register char last[20][10];
+char last[][sizeof SHIP(0)->file->last];	/* how's that for portability */
 register int k;
 {
-	register int n;
+	register struct ship *sp;
+	register char (*p)[sizeof *last];	/* and this? */
 
-	for (n=0; n < scene[game].vessels; n++)
-		if (last[n][k]) return(1);
-	return(0);
+	p = last;
+	foreachship(sp) {
+		if ((*p)[k])
+			return 1;
+		p++;
+	}
+	return 0;
 }
 
 isolated(ship)
-register int ship;
+register struct ship *ship;
 {
-	register int n;
+	register struct ship *sp;
 
-	for (n=0; n < scene[game].vessels; n++)
-		if (ship != n && range(ship, n) <= 10)
-			return(0);
-		return(1);
+	foreachship(sp) {
+		if (ship != sp && range(ship, sp) <= 10)
+			return 0;
+	}
+	return 1;
 }
 
+/* XXX */
 push(from, to)
-register int from, to;
+register struct ship *from, *to;
 {
 	int bow1r, bow1c, bow2r, bow2c, stern1r, stern1c, stern2r, stern2c;
 	register int bs, sb;
 
-	stern1r = bow1r = pos[from].row;
-	stern1c = bow1c = pos[from].col;
-	stern2r = bow2r = pos[to].row;
-	stern2c = bow2c = pos[to].col;
-	drdc(&stern2r, &stern2c, pos[to].dir);
+	stern1r = bow1r = from->file->row;
+	stern1c = bow1c = from->file->col;
+	stern2r = bow2r = to->file->row;
+	stern2c = bow2c = to->file->col;
+	stern2r += dr[to->file->dir];
+	stern2c += dc[to->file->dir];
 	bs = bow1r - stern2r + bow1c - stern2c;
 	sb = stern1r - bow2r + stern1c - bow2c;
 	if (!bs)
-		return(1);
-	drdc(&stern1r, &stern1c, pos[from].dir);
+		return 1;
+	stern1r += dr[from->file->dir];
+	stern1c += dc[from->file->dir];
 	if(!sb)
-		return(0);
-	if ((sb = specs[scene[game].ship[to].shipnum].class) > (bs = specs[scene[game].ship[from].shipnum].class))
-		return(1);
+		return 0;
+	sb = to->specs->class;
+	bs = from->specs->class;
+	if (sb > bs)
+		return 1;
 	if (sb < bs)
-		return(0);
-	return(from < to);
+		return 0;
+	return from < to;
 }
 
-step(com, shipnum, row, col, dir)
-int shipnum, row[20], col[20], dir[20];
+step(com, ship, row, col, dir)
+register struct ship *ship;
+register int *row, *col, *dir;
 char com;
 {
-	int dr = 0, dc = 0;
 	register int dist;
 
-	switch(com){
-
-		case 'r':
-			if (++dir[shipnum] == 9)
-				dir[shipnum] = 1;
-			break;
-		case 'l':
-			if (!--dir[shipnum])
-				dir[shipnum] = 8;
-			break;
-		case '0':
-		case '1':
-		case '2':
-		case '3':
-		case '4':
-		case '5':
-		case '6':
-		case '7':
-			drdc(&dr, &dc, dir[shipnum]);
-			if (!(dir[shipnum] % 2))
-				dist = dtab[com - '0'];
-			else
-				dist = com - '0';
-			row[shipnum] -= dr * dist;
-			col[shipnum] -= dc * dist;
-			dr = dc = 0;
-			break;
-		case 'b':
-			break;
-		case 'd':
-			drdc(&dr, &dc, winddir);
-			dist = 1 - ((specs[scene[game].ship[shipnum].shipnum].class < 3 || fouled(shipnum) || grappled(shipnum)) && turn % 2);
-			row[shipnum] -= dr * dist;
-			col[shipnum] -= dc * dist;
-			break;
+	switch (com) {
+	case 'r':
+		if (++*dir == 9)
+			*dir = 1;
+		break;
+	case 'l':
+		if (--*dir == 0)
+			*dir = 8;
+		break;
+	case '0': case '1': case '2': case '3':
+	case '4': case '5': case '6': case '7':
+		if (*dir % 2 == 0)
+			dist = dtab[com - '0'];
+		else
+			dist = com - '0';
+		*row -= dr[*dir] * dist;
+		*col -= dc[*dir] * dist;
+		break;
+	case 'b':
+		break;
+	case 'd':
+		if (ship->specs->class >= 3 && !snagged(ship)
+		    || turn % 2 == 0) {
+			*row -= dr[winddir];
+			*col -= dc[winddir];
+		}
+		break;
 	}
 }
 
-send(from, to, sections, offset)
-int from, to, sections, offset;
+sendbp(from, to, sections, isdefense)
+register struct ship *from, *to;
+int sections;
+char isdefense;
 {
 	int n;
-	struct BP *ptr;
+	register struct BP *bp;
 
-	ptr = offset == 200 ? scene[game].ship[from].file -> OBP : scene[game].ship[from].file -> DBP;
-	for (n=0; n<3 && ptr[n].turnsent; n++);
-	if (n < 3 && sections){
-		Write(FILES + from, 0, 30 + (offset > 200)*18 + 6*n, turn);
-		Write(FILES + from, 0, 30 + (offset > 200)*18 + 6*n + 2, to);
-		Write(FILES + from, 0, 30 + (offset > 200)*18 + 6*n + 4, sections);
-		if (offset == 200)
-			makesignal("boarding the %s (%c%c)", to, from);
+	bp = isdefense ? from->file->DBP : from->file->OBP;
+	for (n = 0; n < 3 && bp[n].turnsent; n++)
+		;
+	if (n < 3 && sections) {
+		Write(isdefense ? W_DBP : W_OBP, from, 0,
+			turn, to-SHIP(0), sections, 0);
+		if (isdefense)
+			makesignal(from, "repelling boarders",
+				(struct ship *)0);
 		else
-			makesignal("repelling boarders", 0, from);
+			makesignal(from, "boarding the %s (%c%c)", to);
 	}
 }
 
-toughmelee(shipnum, toship, defense, count)
-int shipnum, toship, defense, count;
+toughmelee(ship, to, isdefense, count)
+register struct ship *ship, *to;
+int isdefense, count;
 {
-	int n, OBP = 0, DBP = 0, obp = 0, dbp = 0;
+	register struct BP *bp;
+	register obp = 0;
+	int n, OBP = 0, DBP = 0, dbp = 0;
 	int qual;
-	struct BP *ptr1;
-	struct shipspecs *ptr;
 
-	ptr = &specs[scene[game].ship[shipnum].shipnum];
-	ptr1 = defense ? scene[game].ship[shipnum].file -> DBP : scene[game].ship[shipnum].file -> OBP ;
-	qual = ptr -> qual;
-	for (n=0; n < 3; n++){
-		if (ptr1[n].turnsent && (toship == ptr1[n].toship || defense)){
-			obp += ptr1[n].mensent / 100 ? ptr -> crew1 * qual : 0;
-			obp += (ptr1[n].mensent % 100)/10 ? ptr -> crew2 * qual : 0;
-			obp += ptr1[n].mensent % 10 ? ptr -> crew3 * qual : 0;
+	qual = ship->specs->qual;
+	bp = isdefense ? ship->file->DBP : ship->file->OBP;
+	for (n = 0; n < NBP; n++, bp++) {
+		if (bp->turnsent && (to == bp->toship || isdefense)) {
+			obp += bp->mensent / 100
+				? ship->specs->crew1 * qual : 0;
+			obp += (bp->mensent % 100)/10
+				? ship->specs->crew2 * qual : 0;
+			obp += bp->mensent % 10
+				? ship->specs->crew3 * qual : 0;
 		}
 	}
-	if (count || defense)
-		return(obp);
-	OBP = toughmelee(toship, shipnum, 0, count + 1);
-	dbp = toughmelee(shipnum, toship, 1, count + 1);
-	DBP = toughmelee(toship, shipnum, 1, count + 1);
+	if (count || isdefense)
+		return obp;
+	OBP = toughmelee(to, ship, 0, count + 1);
+	dbp = toughmelee(ship, to, 1, count + 1);
+	DBP = toughmelee(to, ship, 1, count + 1);
 	if (OBP > obp + 10 || OBP + DBP >= obp + dbp + 10)
-		return(1);
+		return 1;
 	else
-		return(0);
+		return 0;
 }
 
 reload()
 {
-	register int n;
+	register struct ship *sp;
 
-	for (n=0; n < scene[game].vessels; n++)
-		loadwith[n] = 0;
+	foreachship(sp) {
+		sp->file->loadwith = 0;
+	}
 }
 
 checksails()
 {
-	register int n, rig, full; 
-	struct shipspecs *ptr;
-	int close;
+	register struct ship *sp;
+	register int rig, full; 
+	struct ship *close;
 
-	for (n=0; n < scene[game].vessels; n++){
-		ptr = &specs[scene[game].ship[n].shipnum];
-		rig = ptr -> rig1;
-		if (windspeed == 6 || (windspeed == 5 && ptr -> class > 4))
+	foreachship(sp) {
+		if (sp->file->captain[0] != 0)
+			continue;
+		rig = sp->specs->rig1;
+		if (windspeed == 6 || windspeed == 5 && sp->specs->class > 4)
 			rig = 0;
-		if (!scene[game].ship[n].file -> captain[0]){
-			if (rig && ptr -> crew3) {
-				close = closestenemy(n,0,0);
-				if (close != 30000) {
-					if (range(n, close) > 9)
-						full = 1;
-					else
-						full = 0;
-				} else 
+		if (rig && sp->specs->crew3) {
+			close = closestenemy(sp, 0, 0);
+			if (close != 0) {
+				if (range(sp, close) > 9)
+					full = 1;
+				else
 					full = 0;
-			} else
+			} else 
 				full = 0;
-			if ((scene[game].ship[n].file -> FS != 0) != full)
-				Write(FILES + n, 0, 230, full);
-		}
+		} else
+			full = 0;
+		if ((sp->file->FS != 0) != full)
+			Write(W_FS, sp, 0, full, 0, 0, 0);
 	}
 }

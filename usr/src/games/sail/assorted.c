@@ -1,11 +1,12 @@
 #ifndef lint
-static	char *sccsid = "@(#)assorted.c	1.1 83/03/17";
+static	char *sccsid = "@(#)assorted.c	1.2 83/07/20";
 #endif
-#define EXPLODE 5
+
 #include "externs.h"
 
-table(rig, shot, hittable, onship, fromship, roll)
-int rig, shot, hittable, onship, fromship, roll;
+table(rig, shot, hittable, on, from, roll)
+struct ship *on, *from;
+int rig, shot, hittable, roll;
 {
 	register int hhits = 0, chits = 0, ghits = 0, rhits = 0;
 	int Ghit = 0, Hhit = 0, Rhit = 0, Chit = 0;
@@ -13,272 +14,252 @@ int rig, shot, hittable, onship, fromship, roll;
 	int crew[3];
 	register int n;
 	int rigg[4];
-	char message[60];
-	struct shipspecs *ptr;
-	struct File *ptr1;
+	char *message;
+	struct Tables *tp;
 
-	ptr = &specs[scene[game].ship[onship].shipnum];
-	ptr1 = scene[game].ship[onship].file;
-	pc = ptr1 -> pcrew;
-	hull = ptr -> hull;
-	crew[0] = ptr -> crew1;
-	crew[1] = ptr -> crew2;
-	crew[2] = ptr -> crew3;
-	rigg[0] = ptr -> rig1;
-	rigg[1] = ptr -> rig2;
-	rigg[2] = ptr -> rig3;
-	rigg[3] = ptr -> rig4;
-	if (shot == GRAPE)
+	pc = on->file->pcrew;
+	hull = on->specs->hull;
+	crew[0] = on->specs->crew1;
+	crew[1] = on->specs->crew2;
+	crew[2] = on->specs->crew3;
+	rigg[0] = on->specs->rig1;
+	rigg[1] = on->specs->rig2;
+	rigg[2] = on->specs->rig3;
+	rigg[3] = on->specs->rig4;
+	if (shot == L_GRAPE)
 		Chit = chits = hittable;
 	else {
-		Chit = chits = rig ? RigTable[hittable][roll-1].C : HullTable[hittable][roll-1].C;
-		Rhit = rhits = rig ? RigTable[hittable][roll-1].R : HullTable[hittable][roll-1].R;
-		Hhit = hhits = rig ? RigTable[hittable][roll-1].H : HullTable[hittable][roll-1].H;
-		Ghit = ghits = rig ? RigTable[hittable][roll-1].G : HullTable[hittable][roll-1].G;
-		if (ptr1 -> FS)
+		tp = &(rig ? RigTable : HullTable)[hittable][roll-1];
+		Chit = chits = tp->C;
+		Rhit = rhits = tp->R;
+		Hhit = hhits = tp->H;
+		Ghit = ghits = tp->G;
+		if (on->file->FS)
 			rhits *= 2;
-		if (shot == CHAIN){
+		if (shot == L_CHAIN) {
 			Ghit = ghits = 0;
 			Hhit = hhits = 0;
 		}
 	}
-	if (ptr1 -> captured > -1){
-		pc -= (chits + 1)/2;
+	if (on->file->captured != 0) {
+		pc -= (chits + 1) / 2;
 		chits /= 2;
 	}
-	for (n=0; n < 3; n++)
-		if (chits > crew[n]){
+	for (n = 0; n < 3; n++)
+		if (chits > crew[n]) {
 			chits -= crew[n];
 			crew[n] = 0;
-		}
-		else {
+		} else {
 			crew[n] -= chits;
 			chits = 0;
 		}
-	for (n=0; n < 3; n++)
+	for (n = 0; n < 3; n++)
 		if (rhits > rigg[n]){
 			rhits -= rigg[n];
 			rigg[n] = 0;
-		}
-		else {
+		} else {
 			rigg[n] -= rhits;
 			rhits = 0;
 		}
-	if (rigg[3] != -1 && rhits > rigg[3]){
+	if (rigg[3] != -1 && rhits > rigg[3]) {
 		rhits -= rigg[3];
 		rigg[3] = 0;
-	} else if (rigg[3] != -1){
+	} else if (rigg[3] != -1) {
 		rigg[3] -= rhits;
 	}
 	if (rig && !rigg[2] && (!rigg[3] || rigg[3] == -1))
-		makesignal("dismasted!", 0, onship);
-	if (portside(fromship, onship, 0)){
-		guns = ptr -> gunL;
-		car = ptr -> carL;
+		makesignal(on, "dismasted!", (struct ship *)0);
+	if (portside(from, on, 0)) {
+		guns = on->specs->gunL;
+		car = on->specs->carL;
 	} else {
-		guns = ptr -> gunR;
-		car = ptr -> carR;
+		guns = on->specs->gunR;
+		car = on->specs->carR;
 	}
-	if (ghits > car){
+	if (ghits > car) {
 		ghits -= car;
 		car = 0;
-	}
-	else {
+	} else {
 		car -= ghits;
 		ghits = 0;
 	}
 	if (ghits > guns){
 		ghits -= guns;
 		guns = 0;
-	}
-	else {
+	} else {
 		guns -= ghits;
 		ghits = 0;
 	}
 	hull -= ghits;
-	if (portside(fromship, onship, 0) && Ghit){
-		Write(SPECS + onship, 0, 20, guns);
-		Write(SPECS + onship, 0, 24, car);
-	}
-	else if (Ghit){
-		Write(SPECS + onship, 0, 22, guns);
-		Write(SPECS + onship, 0, 26, car);
-	}
+	if (Ghit)
+		Write(portside(from, on, 0) ? W_GUNL : W_GUNR,
+			on, 0, guns, car, 0, 0);
 	hull -= hhits;
 	hull = hull < 0 ? 0 : hull;
-	if (ptr1 -> captured > -1 && Chit){
-		Write(FILES + onship, 0, 70, pc);
-	}
+	if (on->file->captured != 0 && Chit)
+		Write(W_PCREW, on, 0, pc, 0, 0, 0);
 	if (Hhit)
-		Write(SPECS + onship, 0, 10, hull);
+		Write(W_HULL, on, 0, hull, 0, 0, 0);
 	if (Chit)
-		for (n=0; n < 3; n++)
-			Write(SPECS + onship, 0, 14 + 2*n, crew[n]);
+		Write(W_CREW, on, 0, crew[0], crew[1], crew[2], 0);
 	if (Rhit)
-		for (n=0; n < 4; n++)
-			Write(SPECS + onship, 0, 28 + 2*n, rigg[n]);
-	switch(shot){
-		case ROUND:
-			strcpy(message, "firing round");
-			break;
-		case GRAPE:
-			strcpy(message, "firing grape");
-			break;
-		case CHAIN:
-			strcpy(message, "firing chain");
-			break;
-		case DOUBLE:
-			strcpy(message, "firing double");
-			break;
-		case EXPLODE:
-			strcpy(message, "exploding");
+		Write(W_RIGG, on, 0, rigg[0], rigg[1], rigg[2], rigg[3]);
+	switch (shot) {
+	case L_ROUND:
+		message = "firing round shot on %s (%c%c)";
+		break;
+	case L_GRAPE:
+		message = "firing grape shot on %s (%c%c)";
+		break;
+	case L_CHAIN:
+		message = "firing chain shot on %s (%c%c)";
+		break;
+	case L_DOUBLE:
+		message = "firing double shot on %s (%c%c)";
+		break;
+	case L_EXPLODE:
+		message = "exploding shot on %s (%c%c)";
 	}
-	strcat(message, " shot on %s (%c%c)");
-	makesignal(message, onship, fromship);
-	if (roll == 6 && rig){
-		switch(Rhit){
-			case 0:
-				strcpy(message, "fore topsail sheets parted");
-				break;
-			case 1:
-				strcpy(message, "mizzen shrouds parted");
-				break;
-			case 2:
-				strcpy(message, "main topsail yard shot away");
-				break;
-			case 4:
-				strcpy(message, "fore topmast and foremast shrouds shot away");
-				break;
-			case 5:
-				strcpy(message, "mizzen mast and yard shot through");
-				break;
-			case 6:
-				strcpy(message, "foremast and spritsail yard shattered");
-				break;
-			case 7:
-				strcpy(message, "main topmast and mizzen mast shattered");
-				break;
+	makesignal(from, message, on);
+	if (roll == 6 && rig) {
+		switch(Rhit) {
+		case 0:
+			message = "fore topsail sheets parted";
+			break;
+		case 1:
+			message = "mizzen shrouds parted";
+			break;
+		case 2:
+			message = "main topsail yard shot away";
+			break;
+		case 4:
+			message = "fore topmast and foremast shrouds shot away";
+			break;
+		case 5:
+			message = "mizzen mast and yard shot through";
+			break;
+		case 6:
+			message = "foremast and spritsail yard shattered";
+			break;
+		case 7:
+			message = "main topmast and mizzen mast shattered";
+			break;
 		}
-		makesignal(message, 0, onship);
-	}
-	else if (roll == 6) {
-		switch(Hhit){
-			case 0:
-				strcpy(message, "anchor cables severed");
-				break;
-			case 1:
-				strcpy(message, "two anchor stocks shot away");
-				break;
-			case 2:
-				strcpy(message, "quarterdeck bulwarks damaged");
-				break;
-			case 3:
-				strcpy(message, "three gun ports shot away");
-				break;
-			case 4:
-				strcpy(message, "four guns dismounted");
-				break;
-			case 5:
-				strcpy(message, "rudder cables shot through");
-				Write(SPECS + onship, 0, 4, 0);
-				break;
-			case 6:
-				strcpy(message, "shot holes below the water line");
-				break;
+		makesignal(on, message, (struct ship *)0);
+	} else if (roll == 6) {
+		switch (Hhit) {
+		case 0:
+			message = "anchor cables severed";
+			break;
+		case 1:
+			message = "two anchor stocks shot away";
+			break;
+		case 2:
+			message = "quarterdeck bulwarks damaged";
+			break;
+		case 3:
+			message = "three gun ports shot away";
+			break;
+		case 4:
+			message = "four guns dismounted";
+			break;
+		case 5:
+			message = "rudder cables shot through";
+			Write(W_TA, on, 0, 0, 0, 0, 0);
+			break;
+		case 6:
+			message = "shot holes below the water line";
+			break;
 		}
-		makesignal(message, 0, onship);
+		makesignal(on, message, (struct ship *)0);
 	}
-	if ((Chit > 1 && ptr1 -> readyL <= -30000 && ptr1 -> readyR <= -30000) || Chit == 4){
-		ptr -> qual--;
-		if (ptr -> qual <= 0){
-			makesignal("crew mutinying!", 0, onship);
-			ptr -> qual = 5;
-			Write(FILES + onship, 0, 68, onship);
+	if (Chit > 1 && on->file->readyL&R_INITIAL && on->file->readyR&R_INITIAL || Chit == 4) {
+		on->specs->qual--;
+		if (on->specs->qual <= 0) {
+			makesignal(on, "crew mutinying!", (struct ship *)0);
+			on->specs->qual = 5;
+			Write(W_CAPTURED, on, 0, on-SHIP(0), 0, 0, 0);
 		} else 
-			makesignal("crew demoralized", 0, onship);
-		Write(SPECS + onship, 0, 12, ptr -> qual);
+			makesignal(on, "crew demoralized", (struct ship *)0);
+		Write(W_QUAL, on, 0, on->specs->qual, 0, 0, 0);
 	}
 	if (!hull)
-		strike(onship, fromship);
+		strike(on, from);
 }
 
-
-cleanfoul(fromship, toship, offset)
-int fromship, toship, offset;
+cleanfoul(from, to, which)
+register struct ship *from, *to;
+int which;
 {
-	register int n = -1;
+	register int n;
+	register struct snag *s = to->file->fouls;
 
-	Write(FILES + fromship, 0, 84 + offset*4, 0);
-	do {
-		n++;
-	} while ((!scene[game].ship[toship].file -> fouls[n].turnfoul || scene[game].ship[toship].file -> fouls[n].toship != fromship) && n < 10);
-	if (n < 10)
-		Write(FILES + toship, 0, 84 + 4*n, 0);
-	if (!grapple(fromship, toship) && !foul(fromship,toship)){
-		if (!fouled(fromship) && !grappled(fromship)){
-			unboard(fromship,fromship, 1);		/* defense */
-			unboard(fromship,fromship, 0);		/* defense */
+	Write(W_FOUL, from, 0, which, 0, 0, 0);
+	for (n = 0; n < NSHIP && (s->turnfoul || s->toship != from); n++, s++)
+		;
+	if (n < NSHIP)
+		Write(W_FOUL, to, 0, n, 0, 0, 0);
+	if (!snagged2(from, to)) {
+		if (!fouled(from) && !grappled(from)) {
+			unboard(from, from, 1);		/* defense */
+			unboard(from, from, 0);		/* defense */
 		} else
-			unboard(fromship,toship, 0);		/* defense */
-		if (!fouled(toship) && !grappled(toship)){	/* defense */
-			unboard(toship,toship, 1);
-			unboard(toship,toship, 0);
+			unboard(from, to, 0);		/* defense */
+		if (!fouled(to) && !grappled(to)) {	/* defense */
+			unboard(to, to, 1);
+			unboard(to, to, 0);
 		} else
-			unboard(toship, fromship, 0);			/* offense */
+			unboard(to, from, 0);		/* offense */
 	}
 }
 
-
-cleangrapple(fromship, toship, offset)
-int fromship, toship, offset;
+cleangrapple(from, to, which)
+register struct ship *from, *to;
+int which;
 {
-	register int n = -1;
+	register int n;
+	register struct snag *s = to->file->grapples;
 
-	Write(FILES + fromship, 0, 124 + offset*4, 0);
-	do {
-		n++;
-	} while ((!scene[game].ship[toship].file -> grapples[n].turnfoul || scene[game].ship[toship].file -> grapples[n].toship != fromship) && n < 10);
-	if (n < 10)
-		Write(FILES + toship, 0, 124 + 4*n, 0);
-	if (!grapple(fromship, toship) && !foul(fromship,toship)){
-		if (!fouled(fromship) && !grappled(fromship)){
-			unboard(fromship,fromship, 1);		/* defense */
-			unboard(fromship,fromship, 0);		/* defense */
+	Write(W_GRAP, from, 0, which, 0, 0, 0);
+	for (n = 0; n < NSHIP && (s->turnfoul || s->toship != from); n++, s++)
+		;
+	if (n < NSHIP)
+		Write(W_FOUL, to, 0, n, 0, 0, 0);
+	if (!snagged2(from, to)) {
+		if (!fouled(from) && !grappled(from)) {
+			unboard(from, from, 1);		/* defense */
+			unboard(from, from, 0);		/* defense */
 		} else
-			unboard(fromship,toship, 0);		/* defense */
-		if (!fouled(toship) && !grappled(toship)){	/* defense */
-			unboard(toship,toship, 1);
-			unboard(toship,toship, 0);
+			unboard(from, to, 0);		/* defense */
+		if (!fouled(to) && !grappled(to)) {	/* defense */
+			unboard(to, to, 1);
+			unboard(to, to, 0);
 		} else
-			unboard(toship, fromship, 0);			/* offense */
+			unboard(to, from, 0);		/* offense */
 	}
 }
 
-
-strike(shipnum, fromship)
-int shipnum, fromship;
+strike(ship, from)
+register struct ship *ship, *from;
 {
 	int points;
 
-	if (!scene[game].ship[shipnum].file -> struck){
-		Write(FILES + shipnum, 0, 66, 1);
-		points = specs[scene[game].ship[shipnum].shipnum].pts + scene[game].ship[fromship].file -> points;
-		Write(FILES + fromship, 0, 20, points);
-		unboard(shipnum, shipnum, 0);		/* all offense */
-		unboard(shipnum, shipnum, 1);		/* all defense */
-		switch(die()){
-
-			case 3:
-			case 4:		/* ship may sink */
-				Write(FILES + shipnum, 0, 234, 1);
-				break;
-			case 5:
-			case 6:		/* ship may explode */
-				Write(FILES + shipnum, 0, 232, 1);
-				break;
-		}
-		Write(FILES + shipnum, 1, 164, "striking her colours!");
+	if (ship->file->struck)
+		return;
+	Write(W_STRUCK, ship, 0, 1, 0, 0, 0);
+	points = ship->specs->pts + from->file->points;
+	Write(W_POINTS, from, 0, points, 0, 0, 0);
+	unboard(ship, ship, 0);		/* all offense */
+	unboard(ship, ship, 1);		/* all defense */
+	switch (die()) {
+	case 3:
+	case 4:		/* ship may sink */
+		Write(W_SINK, ship, 0, 1, 0, 0, 0);
+		break;
+	case 5:
+	case 6:		/* ship may explode */
+		Write(W_EXPLODE, ship, 0, 1, 0, 0, 0);
+		break;
 	}
+	Write(W_SIGNAL, ship, 1, (int) "striking her colours!", 0, 0, 0);
 }
-
-

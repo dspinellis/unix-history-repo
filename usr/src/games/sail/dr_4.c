@@ -1,46 +1,40 @@
 #ifndef lint
-static	char *sccsid = "@(#)dr_4.c	1.1 83/03/17";
+static	char *sccsid = "@(#)dr_4.c	1.2 83/07/20";
 #endif
 #include "externs.h"
 
-ungrap(from,to)
-int from, to;
+ungrap(from, to)
+register struct ship *from, *to;
 {
-	int k;
+	register k;
+	register struct snag *sp = from->file->grapples;
 
-	if(grapple(from, to)){
-		for (k = 0; k < 10; k++){
-			if (scene[game].ship[from].file -> grapples[k].turnfoul && to == scene[game].ship[from].file -> grapples[k].toship && (die() < 3 || scene[game].ship[from].nationality == scene[game].ship[to].nationality)){
-				cleangrapple(from, to, k);
-				makesignal("ungrappling %s (%c%c)", to, from);
-			}
+	if (grappled2(from, to)) {
+		for (k = 0; k < NSHIP; k++, sp++) {
+			if (sp->turnfoul == 0 || to != sp->toship)
+				continue;
+			if (from->nationality == to->nationality && die() >= 3)
+				continue;
+			cleangrapple(from, to, k);
+			makesignal(from, "ungrappling %s (%c%c)", to);
 		}
 	}
 }
 
 grap(from, to)
-int from,to;
+register struct ship *from, *to;
 {
-	int number, captured, l;
+	register l;
 
-	if ((captured = scene[game].ship[to].file -> captured) < 0)
-		captured = to;
-	number = die() < 3;
-	if (!number && scene[game].ship[from].nationality == scene[game].ship[captured].nationality)
-		number = 1;
-	if (number){
-		for (l=0; l < 10 && scene[game].ship[from].file -> grapples[l].turnfoul; l++);
-		if (l < 10){
-			Write(FILES + from, 0, 124 + l*4, turn);
-			Write(FILES + from, 0, 124 + l*4 + 2, to);
-		}
-		for (l=0; l < 10 && scene[game].ship[to].file -> grapples[l].turnfoul; l++);
-		if (l < 10){
-			Write(FILES + to, 0, 124 + l*4, turn);
-			Write(FILES + to, 0, 124 + l*4 + 2, from);
-		}
-		makesignal("grappled with %s (%c%c)", to, from);
-	}
+	if (from->nationality != capship(to)->nationality && die() >= 3)
+		return;
+	for (l = 0; l < NSHIP && from->file->grapples[l].turnfoul; l++)
+		;
+	if (l < NSHIP)
+		Write(W_GRAP, from, 0, l, turn, to-SHIP(0), 0);
+	for (l = 0; l < NSHIP && to->file->grapples[l].turnfoul; l++)
+		;
+	if (l < NSHIP)
+		Write(W_GRAP, to, 0, l, turn, from-SHIP(0), 0);
+	makesignal(from, "grappled with %s (%c%c)", to);
 }
-
-
