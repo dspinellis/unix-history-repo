@@ -1,26 +1,40 @@
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 
 CFLAGS=	-O -DLIBC_SCCS
-OBJS=	crt0.o
+OBJS=	crt0.o mcrt0.o gcrt0.o
+CLEANFILES+=	gmon.o mon.o moncrt0.o core a.out
 
 all: ${OBJS}
 
 crt0.o: crt0.c
-	${CC} -S -DCRT0 ${.ALLSRC}
-	grep -v "^#[ _]" < ${.PREFIX}.s > x.s
-	ed x.s < :fix
-	mv x.s ${.PREFIX}.s
-	${CPP} -traditional crt0.s > x.s
-	${AS} -o x.o x.s
-	${LD} -x -r -o crt0.o x.o
-	rm -f x.s x.o crt0.s
+	${CC} -c -DCRT0 ${.ALLSRC}
+	${LD} -x -r ${.TARGET}
+	mv a.out ${.TARGET}
+
+moncrt0.o: crt0.c
+	${CC} -c -DMCRT0 ${.ALLSRC} -o ${.TARGET}
+	${LD} -x -r ${.TARGET}
+	mv a.out ${.TARGET}
+
+mcrt0.o: moncrt0.o mon.o
+	${LD} -x -r -o ${.TARGET} moncrt0.o mon.o
+
+gcrt0.o: moncrt0.o gmon.o
+	${LD} -x -r -o ${.TARGET} moncrt0.o gmon.o
+
+mon.o: mon.c
+	${CC} -c ${DEFS} ${.IMPSRC}
+	${LD} -x -r ${.TARGET}
+	mv a.out ${.TARGET}
+
+gmon.o: gmon.c gmon.h
+	${CC} -c ${DEFS} ${.IMPSRC}
+	${LD} -x -r ${.TARGET}
+	mv a.out ${.TARGET}
 
 install:
 	install -o ${BINOWN} -g ${BINGRP} -m 444 ${OBJS} \
 	    ${DESTDIR}/usr/lib
-
-cleandir clean:
-	rm -f ${OBJS} gmon.o mon.o moncrt0.o core a.out x.s x.o crt0.s
 
 depend lint tags:
 
