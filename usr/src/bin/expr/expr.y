@@ -1,4 +1,8 @@
 /* Yacc productions for "expr" command: */
+%{
+typedef char *yystype;
+#define	YYSTYPE yystype
+%}
 
 %token OR AND ADD SUBT MULT DIV REM EQ GT GEQ LT LEQ NEQ
 %token A_STRING SUBSTR LENGTH INDEX NOARG MATCH
@@ -662,7 +666,7 @@ register	count;
 	return(1);
 }
 
-static char *sccsid = "@(#)expr.y	4.7 (Berkeley) %G%";
+static char *sccsid = "@(#)expr.y	4.8 (Berkeley) %G%";
 yyerror(s)
 
 {
