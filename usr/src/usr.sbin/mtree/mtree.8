@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)mtree.8	5.1 (Berkeley) %G%
+.\"	@(#)mtree.8	5.2 (Berkeley) %G%
 .\"
 .TH MTREE 8 ""
 .UC 7
@@ -36,11 +36,11 @@ specification is read from the standard input by default, or from
 the file
 .I spec
 if the
-.I -f
+.I \-f
 option is provided.
 .I Mtree
 then walks the tree specified by the
-.I -p
+.I \-p
 option, or by default, the tree rooted in the current directory, and
 verifies that the tree matches the specification.
 Messages are written to standard output for any nodes which exist
@@ -49,32 +49,32 @@ characteristics do not match those of the specification.
 .PP
 The options are as follows:
 .TP
--c
+\-c
 Print to standard output a specification for the tree.
 .TP
--d
+\-d
 Ignore everything except directory type nodes.
 .TP
--e
+\-e
 Stops
 .I mtree
 from objecting to nodes that are in the tree but not in the
 specification.
 .TP
--r
+\-r
 Remove any nodes in the tree that are not described in the
 specification.
 .TP
--u
+\-u
 The
-.I -u
+.I \-u
 option causes
 .I mtree
 to modify the owner, group, and permissions of existing nodes to
 match the specification.
 Missing directories are also created.
 .TP
--x
+\-x
 Don't traverse any mount points when creating a specification.
 .PP
 Specifications consist of ``keywords'', i.e. special strings that specify
@@ -83,79 +83,92 @@ No keywords have default values, and if a keyword has no set value no
 checks on it are performed.
 The only keyword which
 .B must
-be set is ``type''.
+be set is
+.BR type .
 Currently supported keywords are as follows:
 .TP
-cksum
+.B cksum
 The checksum of the file using the algorithm specified by
 the program
 .IR cksum (1).
-Ignored for any nodes other than type file.
+Ignored for any nodes other than type
+.BR file .
 .TP
-dmode
+.B dmode
 The directory type node's permissions as an octal value.
 This keyword may only be used globally, i.e. not as part of a node
 specification line.
 .TP
-fmode
+.B fmode
 The file type node's permissions as an octal value.
 This keyword may only be used globally, i.e. not as part of a node
 specification line.
 .TP
-group
+.B group
 The group of the node; may be either numeric or symbolic.
 .TP
-mode
+.B mode
 The current node's permissions as an octal value.
 This keyword may only be used locally, i.e. not for setting a value
 to be retained for future node specifications.
 .TP
-nlink
+.B nlink
 The number of hard links the node is expected to have.
-Ignored for nodes of type directory.
+Ignored for nodes of type
+.BR directory .
 .TP
-owner
+.B owner
 The owner of the node; may be either numeric or symbolic.
 .TP
-size
+.B size
 The size, in bytes, of the node.
-Ignored for any nodes other than type file.
+Ignored for any nodes other than type
+.BR file .
 .TP
-slink
+.B slink
 The file a symbolic link is expected to reference.
+Ignored for any nodes other than type
+.BR link .
 .TP
-type
+.B type
 The type of the node; may be set to one of the following:
 .TS
 l l.
-block	block special device
-char	character special device
-dir	directory
-file	regular file
-link	symbolic link
-socket	socket
+\fBblock\fP	block special device
+\fBchar\fP	character special device
+\fBdir\fP	directory
+\fBfile\fP	regular file
+\fBlink\fP	symbolic link
+\fBsocket\fP	socket
 .TE
 .PP
 There are five types of lines in a specification.
 .PP
 The first type sets the value of a keyword and consists of three fields:
-the string ``/set'', a keyword, an equals sign, and the keyword's value.
-Whitespace is required between the ``set'' and the keyword, but no
-whitespace is allowed in the rest of the line.
+the string
+.BR /set ,
+a keyword, an equals sign, and the keyword's value.
+Whitespace is required between the
+.B set
+and the keyword, but no whitespace is allowed in the rest of the line.
 Once a key word is set, the value remains unchanged until either
 reset or unset.
 .PP
 The second type of line unsets keywords and consists of two fields:
-the string ``/unset'' and a keyword, separated by whitespace.
+the string
+.B /unset
+and a keyword, separated by whitespace.
 .PP
-The third type of line consists of two fields: the string ``/ignore'' and
-a name, separated by whitespace.
+The third type of line consists of two fields: the string
+.B /ignore
+and a name, separated by whitespace.
 This causes
 .I mtree
 to ignore the referenced file as well as all files below it in the tree.
 .PP
 The fourth type of line is a node specification and consists of the name
 of a file followed by zero or more whitespace separated fields.
+The name may be preceded by any amount of whitespace characters.
 Each of these fields consists of a keyword, followed by an equals
 sign (=), followed by the keyword's value, without intervening whitespace.
 The values override, without changing, the current value of the
@@ -171,10 +184,12 @@ descend one level.
 Any non-directory will be presumed to be below the current directory
 path.
 Which brings us to the last type of line in a specification: a line
-containing just the string ``..'' causes the current directory path to
-ascend one level.
+containing just the string
+.B ..
+causes the current directory path to ascend one level.
 .PP
-Empty lines and lines beginning with a hash mark (``#'') are ignored.
+Empty lines and lines whose first non-whitespace character is a hash mark
+(``#'') are ignored.
 .PP
 .I Mtree
 exits 0 on success and >0 if an error occurred or the tree did not
@@ -186,18 +201,18 @@ find(1), stat(2), ftwalk(3), mkproto(8)
 l l l l l l.
 # BSD root file system
 #
-set type=file
-set owner=bin
-set group=bin
-set dmode=755
-set fmode=555
-set links=1
+/set type=file
+/set owner=bin
+/set group=bin
+/set dmode=755
+/set fmode=555
+/set links=1
 
 bin				type=directory
 	adb
 	cat
 \..
-set fmode=640
+/set fmode=640
 dev
 	MAKEDEV
 	kmem			type=char group=kmem
