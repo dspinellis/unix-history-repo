@@ -2,7 +2,7 @@
 # include "sendmail.h"
 # include <ctype.h>
 
-static char SccsId[] = "@(#)readcf.c	3.5	%G%";
+static char SccsId[] = "@(#)readcf.c	3.6	%G%";
 
 /*
 **  READCF -- read control file.
@@ -30,11 +30,8 @@ readcf(cfname)
 	char buf[MAXLINE];
 	register char *p;
 	struct rewrite *rwp = NULL;
-	extern char *xalloc();
 	extern char **prescan();
 	extern char **copyplist();
-	extern char *rindex();
-	extern char *newstr();
 	int class;
 	int ruleset = 0;
 
@@ -101,7 +98,7 @@ readcf(cfname)
 			break;
 
 		  case 'H':		/* required header line */
-			chompheader(&buf[1], TRUE);
+			(void) chompheader(&buf[1], TRUE);
 			break;
 
 		  case 'C':		/* word class */
@@ -142,105 +139,10 @@ readcf(cfname)
 		}
 	}
 
-/*
-	printrules();
-*/
-}
-/*
-**  RWCRACK -- crack rewrite line.
-**
-**	Parameters:
-**		l -- line to crack.
-**
-**	Returns:
-**		local copy of cracked line.
-**
-**	Side Effects:
-**		none.
-*/
-
-char **
-rwcrack(l)
-	register char *l;
-{
-	char *av[MAXATOM];
-	int ac = 0;
-	register char **avp;
-	char buf[MAXNAME];
-	register char *b;
-	bool wasdelim = FALSE;
-	char *delims = ":@!^.";
-	extern char *index();
-	bool tchange;
-	extern char *newstr(), *xalloc();
-
-	for (avp = av; *l != '\0' && *l != '\n'; avp++)
-	{
-		b = buf;
-		tchange = FALSE;
-		while (!tchange)
-		{
-			if (*l != '$')
-			{
-				if (wasdelim || index(delims, *l) != NULL)
-					tchange = TRUE;
-				wasdelim = (index(delims, *l) != NULL);
-				if (wasdelim)
-					tchange = TRUE;
-				*b++ = *l++;
-				continue;
-			}
-
-			tchange = TRUE;
-			switch (*++l)
-			{
-			  case '$':		/* literal $ */
-				*b++ = *l;
-				break;
-
-			  case '+':		/* match anything */
-				*b++ = MATCHANY;
-				*b++ = *++l;
-				break;
-
-			  case '-':		/* match one token */
-				*b++ = MATCHONE;
-				*b++ = *++l;
-				break;
-
-			  case '#':		/* canonical net name */
-				*b++ = CANONNET;
-				break;
-
-			  case '@':		/* canonical host name */
-				*b++ = CANONHOST;
-				break;
-
-			  case ':':		/* canonical user name */
-				*b++ = CANONUSER;
-				break;
-
-			  default:
-				*b++ = '$';
-				l--;
-				break;
-			}
-			l++;
-		}
-
-		/* save the argument we have collected */
-		*b = '\0';
-		*avp = newstr(buf);
-		ac++;
-	}
-
-	/* allocate new space for vector */
-	ac++;
-	*avp = NULL;
-	avp = (char **) xalloc(ac * sizeof *av);
-	bmove(av, avp, ac * sizeof *av);
-
-	return (avp);
+# ifdef DEBUG
+	if (Debug > 6)
+		printrules();
+# endif DEBUG
 }
 /*
 **  PRINTRULES -- print rewrite rules (for debugging)

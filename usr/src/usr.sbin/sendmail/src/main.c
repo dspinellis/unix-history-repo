@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.14	%G%";
+static char	SccsId[] = "@(#)main.c	3.15	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -151,32 +151,23 @@ main(argc, argv)
 	extern char *getlogin();
 	char *locname;
 	extern int finis();
-	extern ADDRESS *parse();
-	register ADDRESS *q;
 	extern char Version[];
-	extern int errno;
 	char *from;
 	typedef int (*fnptr)();
 	char nbuf[MAXLINE];		/* holds full name */
 	struct passwd *pw;
-	extern char *newstr();
-	extern char *index();
-	extern char *strcpy(), *strcat();
+	extern char *arpadate();
 	char *cfname;
 	register int i;
 	char pbuf[10];			/* holds pid */
 	char tbuf[10];			/* holds "current" time */
 	char cbuf[5];			/* holds hop count */
 	char dbuf[30];			/* holds ctime(tbuf) */
-	extern char *sprintf();
-# ifndef V6
-	extern char *getenv();
-# endif V6
 	bool canrename;
 
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
-		signal(SIGINT, finis);
-	signal(SIGTERM, finis);
+		(void) signal(SIGINT, finis);
+	(void) signal(SIGTERM, finis);
 	setbuf(stdout, (char *) NULL);
 # ifdef LOG
 	openlog("sendmail", 0);
@@ -185,10 +176,10 @@ main(argc, argv)
 # ifdef DEBUGFILE
 	if ((i = open(DEBUGFILE, 1)) > 0)
 	{
-		lseek(i, 0L, 2);
-		close(1);
-		dup(i);
-		close(i);
+		(void) lseek(i, 0L, 2);
+		(void) close(1);
+		(void) dup(i);
+		(void) close(i);
 		Debug++;
 	}
 # endif DEBUGFILE
@@ -254,7 +245,7 @@ main(argc, argv)
 				break;	/* (default) */
 
 			  case 'q':	/* be silent about it */
-				freopen("/dev/null", "w", stdout);
+				(void) freopen("/dev/null", "w", stdout);
 				break;
 
 			  case 'm':	/* mail back */
@@ -334,18 +325,18 @@ main(argc, argv)
 	*/
 
 	/* process id */
-	sprintf(pbuf, "%d", getpid());
+	(void) sprintf(pbuf, "%d", getpid());
 	define('p', pbuf);
 
 	/* hop count */
-	sprintf(cbuf, "%d", HopCount);
+	(void) sprintf(cbuf, "%d", HopCount);
 	define('c', cbuf);
 
 	/* time as integer, unix time, arpa time */
-	time(&CurTime);
-	sprintf(tbuf, "%ld", &CurTime);
+	(void) time(&CurTime);
+	(void) sprintf(tbuf, "%ld", &CurTime);
 	define('t', tbuf);
-	strcpy(dbuf, ctime(&CurTime));
+	(void) strcpy(dbuf, ctime(&CurTime));
 	*index(dbuf, '\n') = '\0';
 	define('d', dbuf);
 	define('a', arpadate(dbuf));
@@ -362,7 +353,7 @@ main(argc, argv)
 		char cfbuf[60];
 
 		define('z', p);
-		expand("$z/.mailcf", cfbuf, &cfbuf[sizeof cfbuf - 1]);
+		(void) expand("$z/.mailcf", cfbuf, &cfbuf[sizeof cfbuf - 1]);
 		if (access(cfbuf, 2) == 0)
 			readcf(cfbuf);
 	}
@@ -410,7 +401,7 @@ main(argc, argv)
 		{
 			if (*p == '&')
 			{
-				strcpy(nb, realname);
+				(void) strcpy(nb, realname);
 				*nb = toupper(*nb);
 				while (*nb != '\0')
 					nb++;
@@ -436,7 +427,7 @@ main(argc, argv)
 
 	setfrom(from, realname);
 
-	expand("$l", FromLine, &FromLine[sizeof FromLine - 1]);
+	(void) expand("$l", FromLine, &FromLine[sizeof FromLine - 1]);
 # ifdef DEBUG
 	if (Debug)
 		printf("From person = \"%s\"\n", From.q_paddr);
@@ -474,9 +465,9 @@ main(argc, argv)
 			}
 			else
 			{
-				strcpy(nbuf, argv[0]);
-				strcat(nbuf, "@");
-				strcat(nbuf, argv[2]);
+				(void) strcpy(nbuf, argv[0]);
+				(void) strcat(nbuf, "@");
+				(void) strcat(nbuf, argv[2]);
 				p = nbuf;
 				argv += 2;
 				argc -= 2;
@@ -515,7 +506,7 @@ main(argc, argv)
 
 		for (q = Mailer[i]->m_sendq; q != NULL; q = q->q_next)
 		{
-			deliver(q, (fnptr) NULL);
+			(void) deliver(q, (fnptr) NULL);
 		}
 	}
 
@@ -583,7 +574,7 @@ setfrom(from, realname)
 	if (from == NULL || parse(from, &From, 0) == NULL)
 	{
 		from = newstr(realname);
-		parse(from, &From, 0);
+		(void) parse(from, &From, 0);
 	}
 	else
 		FromFlag = TRUE;
@@ -603,7 +594,7 @@ setfrom(from, realname)
 	rewrite(pvp, 1);
 	frombuf[0] = '\0';
 	while (*pvp != NULL)
-		strcat(frombuf, *pvp++);
+		(void) strcat(frombuf, *pvp++);
 
 	define('f', newstr(frombuf));
 }
@@ -635,8 +626,8 @@ finis()
 		savemail();
 
 	if (HasXscrpt)
-		unlink(Transcript);
-	unlink(InFileName);
+		(void) unlink(Transcript);
+	(void) unlink(InFileName);
 	exit(ExitStat);
 }
 /*
@@ -663,10 +654,10 @@ openxscrpt()
 {
 	extern char *mktemp();
 
-	mktemp(Transcript);
+	(void) mktemp(Transcript);
 	HasXscrpt++;
 	if (freopen(Transcript, "w", stdout) == NULL)
 		syserr("Can't create %s", Transcript);
-	chmod(Transcript, 0600);
+	(void) chmod(Transcript, 0600);
 	setbuf(stdout, (char *) NULL);
 }

@@ -88,7 +88,7 @@
 
 
 
-static char SccsId[] = "@(#)conf.c	3.14	%G%";
+static char SccsId[] = "@(#)conf.c	3.15	%G%";
 
 
 # include <whoami.h>		/* definitions of machine id's at berkeley */
@@ -276,7 +276,6 @@ ttypath()
 	struct stat stbuf;
 	register int i;
 	static char pathn[] = "/dev/ttyx";
-	extern int errno;
 
 	/* compute the pathname of the controlling tty */
 	if ((i = ttyn(2)) == 'x' && (i = ttyn(1)) == 'x' && (i = ttyn(0)) == 'x')
@@ -336,7 +335,7 @@ fdopen(fd, type)
 	register FILE *f;
 
 	f = fopen("/dev/null", type);
-	close(fileno(f));
+	(void) close(fileno(f));
 	fileno(f) = fd;
 	return (f);
 }
@@ -404,8 +403,8 @@ ttypath()
 {
 	struct stat stbuf;
 	register char *pathn;
-	extern int errno;
 	extern char *ttyname();
+	extern char *getlogin();
 
 	/* compute the pathname of the controlling tty */
 	if ((pathn = ttyname(2)) == NULL && (pathn = ttyname(1)) == NULL && (pathn = ttyname(0)) == NULL)
@@ -456,5 +455,11 @@ bool
 checkcompat(to)
 	register ADDRESS *to;
 {
+# ifdef lint
+	ADDRESS *x = to;
+
+	to = x;
+# endif lint
+
 	return (TRUE);
 }

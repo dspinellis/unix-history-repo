@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.16	%G%";
+static char SccsId[] = "@(#)deliver.c	3.17	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -38,15 +38,11 @@ deliver(to, editfcn)
 	register char *p;
 	register struct mailer *m;
 	register int i;
-	extern int errno;
 	extern putmessage();
-	extern char *index();
 	extern bool checkcompat();
 	char *pv[MAXPV+1];
-	extern char *newstr();
 	char tobuf[MAXLINE];
 	char buf[MAXNAME];
-	extern char *expand();
 	bool firstone;
 
 	if (bitset(QDONTSEND, to->q_flags))
@@ -83,7 +79,7 @@ deliver(to, editfcn)
 			*pvp++ = "-f";
 		else
 			*pvp++ = "-r";
-		expand("$g", buf, &buf[sizeof buf - 1]);
+		(void) expand("$g", buf, &buf[sizeof buf - 1]);
 		*pvp++ = newstr(buf);
 	}
 
@@ -103,7 +99,7 @@ deliver(to, editfcn)
 			break;
 
 		/* this entry is safe -- go ahead and process it */
-		expand(*mvp, buf, &buf[sizeof buf - 1]);
+		(void) expand(*mvp, buf, &buf[sizeof buf - 1]);
 		*pvp++ = newstr(buf);
 		if (pvp >= &pv[MAXPV - 3])
 		{
@@ -212,13 +208,13 @@ deliver(to, editfcn)
 
 		/* create list of users for error messages */
 		if (tobuf[0] != '\0')
-			strcat(tobuf, ",");
-		strcat(tobuf, to->q_paddr);
+			(void) strcat(tobuf, ",");
+		(void) strcat(tobuf, to->q_paddr);
 		define('u', user);		/* to user */
 		define('z', to->q_home);	/* user's home */
 
 		/* expand out this user */
-		expand(user, buf, &buf[sizeof buf - 1]);
+		(void) expand(user, buf, &buf[sizeof buf - 1]);
 		*pvp++ = newstr(buf);
 		if (pvp >= &pv[MAXPV - 2])
 		{
@@ -240,7 +236,7 @@ deliver(to, editfcn)
 
 	while (*++mvp != NULL)
 	{
-		expand(*mvp, buf, &buf[sizeof buf - 1]);
+		(void) expand(*mvp, buf, &buf[sizeof buf - 1]);
 		*pvp++ = newstr(buf);
 		if (pvp >= &pv[MAXPV])
 			syserr("deliver: pv overflow after $u for %s", pv[0]);
@@ -260,7 +256,7 @@ deliver(to, editfcn)
 		editfcn = putmessage;
 	if (m == Mailer[M_PRIVATE])
 	{
-		expand("$z/.mailer", buf, &buf[sizeof buf - 1]);
+		(void) expand("$z/.mailer", buf, &buf[sizeof buf - 1]);
 		m->m_mailer = buf;
 	}
 	i = sendoff(m, pv, editfcn);
@@ -321,32 +317,32 @@ sendoff(m, pvp, editfcn)
 # endif
 		if (pid >= 0)
 			break;
-		sleep(NFORKTRIES - i);
+		sleep((unsigned) NFORKTRIES - i);
 	}
 	if (pid < 0)
 	{
 		syserr("Cannot fork");
-		close(pvect[0]);
-		close(pvect[1]);
+		(void) close(pvect[0]);
+		(void) close(pvect[1]);
 		return (-1);
 	}
 	else if (pid == 0)
 	{
 		/* child -- set up input & exec mailer */
 		/* make diagnostic output be standard output */
-		close(2);
-		dup(1);
-		signal(SIGINT, SIG_IGN);
-		close(0);
+		(void) close(2);
+		(void) dup(1);
+		(void) signal(SIGINT, SIG_IGN);
+		(void) close(0);
 		if (dup(pvect[0]) < 0)
 		{
 			syserr("Cannot dup to zero!");
 			_exit(EX_OSERR);
 		}
-		close(pvect[0]);
-		close(pvect[1]);
+		(void) close(pvect[0]);
+		(void) close(pvect[1]);
 		if (!bitset(M_RESTR, m->m_flags))
-			setuid(getuid());
+			(void) setuid(getuid());
 # ifndef VFORK
 		/*
 		**  We have to be careful with vfork - we can't mung up the
@@ -374,18 +370,18 @@ sendoff(m, pvp, editfcn)
 		/* syserr fails because log is closed */
 		/* syserr("Cannot exec %s", m->m_mailer); */
 		printf("Cannot exec %s\n", m->m_mailer);
-		fflush(stdout);
+		(void) fflush(stdout);
 		_exit(EX_UNAVAILABLE);
 	}
 
 	/* write out message to mailer */
-	close(pvect[0]);
-	signal(SIGPIPE, pipesig);
+	(void) close(pvect[0]);
+	(void) signal(SIGPIPE, pipesig);
 	mfile = fdopen(pvect[1], "w");
 	if (editfcn == NULL)
 		editfcn = putmessage;
 	(*editfcn)(mfile, m);
-	fclose(mfile);
+	(void) fclose(mfile);
 
 	/*
 	**  Wait for child to die and report status.
@@ -425,7 +421,7 @@ sendoff(m, pvp, editfcn)
 **		m -- the mailer descriptor for this mailer.
 **
 **	Returns:
-**		stat.
+**		none.
 **
 **	Side Effects:
 **		Errors may be incremented.
@@ -446,7 +442,6 @@ giveresponse(stat, force, m)
 	extern int N_SysEx;
 	extern long MsgSize;
 	char buf[30];
-	extern char *sprintf();
 
 	i = stat - EX__BASE;
 	if (i < 0 || i > N_SysEx)
@@ -488,7 +483,7 @@ giveresponse(stat, force, m)
 
 	if (statmsg == NULL)
 	{
-		sprintf(buf, "error %d", stat);
+		(void) sprintf(buf, "error %d", stat);
 		statmsg = buf;
 	}
 
@@ -496,7 +491,6 @@ giveresponse(stat, force, m)
 	syslog(LOG_INFO, "%s->%s: %ld: %s", From.q_paddr, To, MsgSize, statmsg);
 # endif LOG
 	setstat(stat);
-	return (stat);
 }
 /*
 **  PUTMESSAGE -- output a message to the final mailer.
@@ -526,7 +520,6 @@ putmessage(fp, m)
 	register char *p;
 	extern char *arpadate();
 	bool anyheader = FALSE;
-	extern char *expand();
 	extern char *capitalize();
 	extern char SentDate[];
 
@@ -543,7 +536,7 @@ putmessage(fp, m)
 			continue;
 		if (bitset(H_DEFAULT, h->h_flags))
 		{
-			expand(h->h_value, buf, &buf[sizeof buf]);
+			(void) expand(h->h_value, buf, &buf[sizeof buf]);
 			p = buf;
 		}
 		else
@@ -561,7 +554,7 @@ putmessage(fp, m)
 	/* output the body of the message */
 	rewind(stdin);
 	while (!ferror(fp) && (i = fread(buf, 1, BUFSIZ, stdin)) > 0)
-		fwrite(buf, 1, i, fp);
+		(void) fwrite(buf, 1, i, fp);
 
 	if (ferror(fp))
 	{
@@ -587,7 +580,7 @@ putmessage(fp, m)
 pipesig()
 {
 	syserr("Broken pipe");
-	signal(SIGPIPE, SIG_IGN);
+	(void) signal(SIGPIPE, SIG_IGN);
 }
 /*
 **  SENDTO -- Designate a send list.
@@ -614,7 +607,6 @@ sendto(list, copyf)
 	register char *q;
 	register char c;
 	ADDRESS *a;
-	extern ADDRESS *parse();
 	bool more;
 
 	/* more keeps track of what the previous delimiter was */
@@ -660,8 +652,6 @@ recipient(a)
 	register ADDRESS *q;
 	register struct mailer *m;
 	extern bool forward();
-	extern int errno;
-	extern bool sameaddr();
 
 	To = a->q_paddr;
 	m = Mailer[a->q_mailer];
@@ -696,7 +686,7 @@ recipient(a)
 
 				a->q_home = newstr(pw->pw_dir);
 				define('z', a->q_home);
-				expand("$z/.mailer", xbuf, &xbuf[sizeof xbuf - 1]);
+				(void) expand("$z/.mailer", xbuf, &xbuf[sizeof xbuf - 1]);
 				if (access(xbuf, 1) == 0)
 				{
 					a->q_mailer = M_PRIVATE;
@@ -777,6 +767,6 @@ mailfile(filename)
 
 	putmessage(f, Mailer[1]);
 	fputs("\n", f);
-	fclose(f);
+	(void) fclose(f);
 	return (EX_OK);
 }
