@@ -1,0 +1,23 @@
+.TH BASENAME 1L \" -*- nroff -*-
+.SH NAME
+basename \- strip directory and suffix from filenames
+.SH SYNOPSIS
+.B basename
+name [suffix]
+.SH DESCRIPTION
+This manual page
+documents the GNU version of
+.BR basename .
+The
+.B basename
+command removes any leading path from
+.IR name ;
+If
+.I suffix
+is specified and is identical to the end of
+.IR name ,
+it is removed from
+.I name
+as well.
+.B basename
+prints the resulting name on the standard output.

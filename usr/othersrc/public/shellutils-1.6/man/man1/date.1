@@ -1,0 +1,113 @@
+.TH DATE 1L \" -*- nroff -*-
+.SH NAME
+date \- print or set the system date and time
+.SH SYNOPSIS
+.B date
+[\-u] [\-s new-date] [+FORMAT] [MMDDhhmm[[CC]YY][.ss]]
+.SH DESCRIPTION
+This manual page
+documents the GNU version of
+.BR date .
+.B date
+with no arguments prints the current time and date (in the format
+of the `%c' directive described below).
+If given an argument that starts with a `+', it prints the current
+time and date in a format controlled by that argument, which has the
+same format as the format string passed to the `strftime' function.
+Except for directives that start with `%', characters in that string
+are printed unchanged.
+.PP
+The directives are:
+.IP %
+a literal %
+.IP n
+a newline
+.IP t
+a horizontal tab
+.PP
+Time fields:
+.IP %H
+hour (00..23)
+.IP %I
+hour (00..12)
+.IP %M
+minute (00..59)
+.IP %p
+locale's AM or PM
+.IP %r
+time, 12-hour (hh:mm:ss [AP]M)
+.IP %S
+second (00..61)
+.IP %T
+time, 24-hour (hh:mm:ss)
+.IP %X
+locale's time representation (%H:%M:%S)
+.IP %Z
+time zone (e.g., EDT), or nothing if no time zone is determinable
+.PP
+Date fields:
+.IP %a
+locale's abbreviated weekday name (Sun..Sat)
+.IP %A
+locale's full weekday name, variable length (Sunday..Saturday)
+.IP %b
+locale's abbreviated month name (Jan..Dec)
+.IP %B
+locale's full month name, variable length (January..December)
+.IP %c
+locale's date and time (Sat Nov 04 12:02:33 EST 1989)
+.IP %d
+day of month (01..31)
+.IP %D
+date (mm/dd/yy)
+.IP %h
+same as %b
+.IP %j
+day of year (001..366)
+.IP %m
+month (01..12)
+.IP %U
+week number of year with Sunday as first day of week (00..53)
+.IP %w
+day of week (0..6)
+.IP %W
+week number of year with Monday as first day of week (00..53)
+.IP %x
+locale's date representation (mm/dd/yy)
+.IP %y
+last two digits of year (00..99)
+.IP %Y
+year (1970...)
+.PP
+If given an argument that does not start with `+',
+.B date
+sets the system clock to the time and date specified by that argument.
+The argument must consist entirely of digits, which have the following
+meaning:
+.IP MM
+month
+.IP DD
+day within month
+.IP hh
+hour
+.IP mm
+minute
+.IP CC
+first two digits of year (optional)
+.IP YY
+last two digits of year (optional)
+.IP ss
+second (optional)
+.PP
+Only the superuser can set the system clock.
+.SS OPTIONS
+.TP
+.I "\-s new-date"
+Set the time and date to
+.IR new-date ,
+which can be in almost any common format.
+It can contain month names, timezones, `am' and `pm', etc.
+.TP
+.I \-u
+Print or set the time and date in Universal Coordinated Time (also
+known as Greenwich Mean Time) instead of in local (wall clock) time.
