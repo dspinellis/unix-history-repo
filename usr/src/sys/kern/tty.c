@@ -1,4 +1,4 @@
-/*	tty.c	6.15	85/04/17	*/
+/*	tty.c	6.16	85/05/27	*/
 
 #include "../machine/reg.h"
 
@@ -1558,17 +1558,3 @@ ttwakeup(tp)
 		gsignal(tp->t_pgrp, SIGIO); 
 	wakeup((caddr_t)&tp->t_rawq);
 }
-
-#if !defined(vax)
-scanc(size, cp, table, mask)
-	register int size;
-	register char *cp, table[];
-	register int mask;
-{
-	register int i = 0;
-
-	while ((table[*(u_char *)(cp + i)]&mask) == 0 && i < size)
-		i++;
-	return (size - i);
-}
-#endif
