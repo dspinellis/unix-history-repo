@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)pwd_mkdb.8	8.1 (Berkeley) %G%
+.\"	@(#)pwd_mkdb.8	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt PWD_MKDB 8
@@ -49,18 +49,18 @@ The databases are used by the C library password routines (see
 exits zero on success, non-zero on failure.
 .Sh FILES
 .Bl -tag -width Pa -compact
-.It Pa /var/db/pwd.db
-The insecure password database file.
-.It Pa /var/db/pwd.db.tmp
-A temporary file.
-.It Pa /var/db/spwd.db
-The secure password database file.
-.It Pa /var/db/spwd.db.tmp
-A temporary file.
 .It Pa /etc/master.passwd
 The current password file.
 .It Pa /etc/passwd
 A Version 7 format password file.
+.It Pa /etc/pwd.db
+The insecure password database file.
+.It Pa /etc/pwd.db.tmp
+A temporary file.
+.It Pa /etc/spwd.db
+The secure password database file.
+.It Pa /etc/spwd.db.tmp
+A temporary file.
 .El
 .Sh BUGS
 Because of the necessity for atomic update of the password files,
