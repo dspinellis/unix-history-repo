@@ -20,9 +20,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	5.12 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	5.13 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	5.12 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	5.13 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -94,6 +94,7 @@ smtpinit(m, pvp)
 	SmtpState = SMTP_CLOSED;
 	SmtpError[0] = '\0';
 	SmtpPhase = "user open";
+	setproctitle("%s %s: %s", CurEnv->e_id, pvp[1], SmtpPhase);
 	SmtpPid = openmailer(m, pvp, (ADDRESS *) NULL, TRUE, &SmtpOut, &SmtpIn);
 	if (SmtpPid < 0)
 	{
@@ -115,9 +116,11 @@ smtpinit(m, pvp)
 			}
 			else
 			{
+				r = errno;
 				fprintf(CurEnv->e_xfp,
 					"421 %s.%s... Deferred: %s\n",
 					pvp[1], m->m_name, errstring(errno));
+				errno = r;
 			}
 		}
 		return (ExitStat);
@@ -134,6 +137,7 @@ smtpinit(m, pvp)
 		goto tempfail;
 	gte = setevent((time_t) 300, greettimeout, 0);
 	SmtpPhase = "greeting wait";
+	setproctitle("%s %s: %s", CurEnv->e_id, CurHostName, SmtpPhase);
 	r = reply(m);
 	clrevent(gte);
 	if (r < 0 || REPLYTYPE(r) != 2)
@@ -146,6 +150,7 @@ smtpinit(m, pvp)
 
 	smtpmessage("HELO %s", m, MyHostName);
 	SmtpPhase = "HELO wait";
+	setproctitle("%s %s: %s", CurEnv->e_id, CurHostName, SmtpPhase);
 	r = reply(m);
 	if (r < 0)
 		goto tempfail;
@@ -199,6 +204,7 @@ smtpinit(m, pvp)
 			buf[0] == '@' ? ',' : ':', buf);
 	}
 	SmtpPhase = "MAIL wait";
+	setproctitle("%s %s: %s", CurEnv->e_id, CurHostName, SmtpPhase);
 	r = reply(m);
 	if (r < 0 || REPLYTYPE(r) == 4)
 		goto tempfail;
@@ -253,6 +259,7 @@ smtprcpt(to, m)
 	smtpmessage("RCPT To:<%s>", m, remotename(to->q_user, m, FALSE, TRUE));
 
 	SmtpPhase = "RCPT wait";
+	setproctitle("%s %s: %s", CurEnv->e_id, CurHostName, SmtpPhase);
 	r = reply(m);
 	if (r < 0 || REPLYTYPE(r) == 4)
 		return (EX_TEMPFAIL);
@@ -295,6 +302,7 @@ smtpdata(m, e)
 	/* send the command and check ok to proceed */
 	smtpmessage("DATA", m);
 	SmtpPhase = "DATA wait";
+	setproctitle("%s %s: %s", CurEnv->e_id, CurHostName, SmtpPhase);
 	r = reply(m);
 	if (r < 0 || REPLYTYPE(r) == 4)
 		return (EX_TEMPFAIL);
@@ -315,6 +323,7 @@ smtpdata(m, e)
 
 	/* check for the results of the transaction */
 	SmtpPhase = "result wait";
+	setproctitle("%s %s: %s", CurEnv->e_id, CurHostName, SmtpPhase);
 	r = reply(m);
 	if (r < 0 || REPLYTYPE(r) == 4)
 		return (EX_TEMPFAIL);
