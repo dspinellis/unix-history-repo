@@ -1,41 +1,15 @@
-#	@(#)Makefile.inc	5.10 (Berkeley) %G%
+#	@(#)Makefile.inc	5.11 (Berkeley) %G%
 
-# string sources
 .PATH: ${.CURDIR}/${MACHINE}/string ${.CURDIR}/string
 
+# machine-independent string sources
 SRCS+=	memccpy.c strcasecmp.c strcoll.c strdup.c strerror.c \
 	strftime.c strmode.c strtok.c strxfrm.c swab.c
 
-.if   (${MACHINE} == "hp300" || ${MACHINE} == "luna68k")
-SRCS+=	bcmp.s bcopy.s bzero.s ffs.s index.s memchr.c memcmp.c memset.c \
-	rindex.s strcat.c strcmp.s strcpy.s strcspn.c strlen.s \
-	strncat.c strncmp.s strncpy.s strpbrk.c strsep.c \
-	strspn.c strstr.c
-.elif (${MACHINE} == "i386")
-SRCS+=	bcmp.c bcopy.c bzero.s ffs.c index.c memchr.c memcmp.c memset.c \
-	rindex.c strcat.c strcmp.c strcpy.c strcspn.c strlen.c \
-	strncat.c strncmp.c strncpy.c strpbrk.c strsep.c \
-	strspn.c strstr.c
-.elif (${MACHINE} == "mips")
-SRCS+=	bcmp.s bcopy.s bzero.s ffs.s index.s memchr.c memcmp.c memset.c \
-	rindex.s strcat.c strcmp.s strcpy.c strcspn.c strlen.s \
-	strncat.c strncmp.c strncpy.c strpbrk.c strsep.c \
-	strspn.c strstr.c
-.elif (${MACHINE} == "tahoe")
-SRCS+=	bcmp.s bcopy.s bzero.s ffs.s index.c memchr.c memcmp.s memset.c \
-	rindex.c strcat.s strcmp.s strcpy.s strcspn.c strlen.s \
-	strncat.s strncmp.s strncpy.s strpbrk.c strsep.c \
-	strspn.c strstr.c
-SRCS+=	memmove.s
-.elif (${MACHINE} == "vax")
-SRCS+=	bcmp.s bcopy.s bzero.s ffs.s index.c memchr.s memcmp.s memset.s \
-	rindex.s strcat.s strcmp.s strcpy.s strcspn.s strlen.s \
-	strncat.s strncmp.s strncpy.s strpbrk.s strsep.s \
-	strspn.s strstr.s
-SRCS+=	memmove.s strchr.s strrchr.s
-.endif
+# machine-dependent string sources
+.include "${.CURDIR}/${MACHINE}/string/Makefile.inc"
 
-# if no machine specific memmove(3), build one out of bcopy(3).
+# If no machine specific memmove(3), build one out of bcopy(3).
 .if empty(SRCS:Mmemmove.s)
 OBJS+=	memmove.o
 memmove.o: bcopy.c
@@ -49,7 +23,7 @@ memmove.po: bcopy.c
 	@mv a.out ${.TARGET}
 .endif
 
-# if no machine specific memcpy(3), build one out of bcopy(3).
+# If no machine specific memcpy(3), build one out of bcopy(3).
 .if empty(SRCS:Mmemcpy.s)
 OBJS+=	memcpy.o
 memcpy.o: bcopy.c
@@ -63,7 +37,7 @@ memcpy.po: bcopy.c
 	@mv a.out ${.TARGET}
 .endif
 
-# if no machine specific strchr(3), build one out of index(3).
+# If no machine specific strchr(3), build one out of index(3).
 .if empty(SRCS:Mstrchr.s)
 OBJS+=	strchr.o
 strchr.o: index.c
@@ -77,7 +51,7 @@ strchr.po: index.c
 	@mv a.out ${.TARGET}
 .endif
 
-# if no machine specific strrchr(3), build one out of rindex(3).
+# If no machine specific strrchr(3), build one out of rindex(3).
 .if empty(SRCS:Mstrrchr.s)
 OBJS+=	strrchr.o
 strrchr.o: rindex.c
