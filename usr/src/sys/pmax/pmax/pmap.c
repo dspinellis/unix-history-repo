@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap.c	7.1 (Berkeley) %G%
+ *	@(#)pmap.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -115,7 +115,6 @@ u_int	whichpids[2] = {	/* bit mask of hardware PID's in use */
 };
 
 struct pmap	kernel_pmap_store;
-pmap_t		kernel_pmap;
 pmap_t		cur_pmap;	/* current pmap mapped in hardware */
 
 vm_offset_t    	avail_start;	/* PA of first available physical page */
@@ -198,12 +197,7 @@ pmap_bootstrap(firstaddr)
 	/* XXX need to decide how to set cnt.v_page_size */
 	pmaxpagesperpage = 1;
 
-	/*
-	 * The kernel's pmap is statically allocated so we don't
-	 * have to use pmap_create, which is unlikely to work
-	 * correctly at this part of the boot sequence.
-	 */
-	kernel_pmap = cur_pmap = &kernel_pmap_store;
+	cur_pmap = &kernel_pmap_store;
 	simple_lock_init(&kernel_pmap->pm_lock);
 	kernel_pmap->pm_count = 1;
 }
