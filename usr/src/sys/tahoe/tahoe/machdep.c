@@ -1,4 +1,4 @@
-/*	machdep.c	1.12	87/02/26	*/
+/*	machdep.c	1.13	87/03/26	*/
 
 #include "param.h"
 #include "systm.h"
@@ -44,6 +44,10 @@ int	nbuf = 0;
 int	bufpages = BUFPAGES;
 #else
 int	bufpages = 0;
+#endif
+#include "yc.h"
+#if NCY > 0
+#include "../tahoevba/cyreg.h"
 #endif
 
 /*
@@ -91,6 +95,13 @@ startup(firstaddr)
 	    (name) = (type *)v; v = (caddr_t)((name)+(num))
 #define	valloclim(name, type, num, lim) \
 	    (name) = (type *)v; v = (caddr_t)((lim) = ((name)+(num)))
+#if NCY > 0
+	/*
+	 * Allocate raw buffers for tapemaster controllers
+	 * first, as they need buffers in the first megabyte.
+	 */
+	valloc(cybuf, char, NCY * CYMAXIO);
+#endif
 	valloclim(inode, struct inode, ninode, inodeNINODE);
 	valloclim(file, struct file, nfile, fileNFILE);
 	valloclim(proc, struct proc, nproc, procNPROC);
@@ -415,41 +426,34 @@ boot(arghowto)
 	register int howto;		/* r11 == how to boot */
 	register int devtype;		/* r10 == major of root dev */
 
-#ifdef lint
-	howto = 0; devtype = 0; dummy = 0; dummy = dummy;
-	printf("howto %d, devtype %d\n", arghowto, devtype);
-#endif
-	(void) spl1();
 	howto = arghowto;
 	if ((howto&RB_NOSYNC) == 0 && waittime < 0 && bfreelist[0].b_forw) {
+		register struct buf *bp;
+		int iter, nbusy;
+
 		waittime = 0;
-		update();
+		(void) splnet();
 		printf("syncing disks... ");
 		/*
 		 * Release inodes held by texts before update.
 		 */
 		xumount(NODEV);
-		{ register struct buf *bp;
-		  int iter, nbusy, oldnbusy;
+		update();
 
-		  oldnbusy = 0;
-		  for (iter = 0; iter < 1000; iter++) {
-			DELAY(1000);
+		for (iter = 0; iter < 20; iter++) {
 			nbusy = 0;
 			for (bp = &buf[nbuf]; --bp >= buf; )
 				if ((bp->b_flags & (B_BUSY|B_INVAL)) == B_BUSY)
 					nbusy++;
 			if (nbusy == 0)
 				break;
-			if (nbusy != oldnbusy) {
-				printf("%d ", nbusy);
-				oldnbusy = nbusy;
-			}
-		  }
-		  if (iter >= 1000 && nbusy)
-			printf("- i/o timeout, giving up...");
+			printf("%d ", nbusy);
+			DELAY(40000 * iter);
 		}
-		printf("done\n");
+		if (nbusy)
+			printf("giving up\n");
+		else
+			printf("done\n");
 		DELAY(10000);			/* wait for printf to finish */
 	}
 	mtpr(IPL, 0x1f);			/* extreme priority */
@@ -462,11 +466,15 @@ boot(arghowto)
 			;
 	} else {
 		if (howto & RB_DUMP) {
-			doadump();		/* TXDB_BOOT's itsself */
+			doadump();		/* CPBOOT's itsself */
 			/*NOTREACHED*/
 		}
 		tocons(CPBOOT);
 	}
+#ifdef lint
+	dummy = 0; dummy = dummy;
+	printf("howto %d, devtype %d\n", arghowto, devtype);
+#endif
 	for (;;)
 		asm("halt");
 	/*NOTREACHED*/
