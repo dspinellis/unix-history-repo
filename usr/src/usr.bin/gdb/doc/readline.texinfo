@@ -1,0 +1,425 @@
+\input texinfo    @c -*-texinfo-*-
+@comment %**start of header (This is for running Texinfo on a region.)
+@setfilename readline.info
+@settitle Line Editing Commands
+@comment %**end of header (This is for running Texinfo on a region.)
+@synindex fn vr
+
+@iftex
+@comment finalout
+@end iftex
+
+@ifinfo
+This document describes the GNU Readline Library, a utility for aiding
+in the consitency of user interface across discrete programs that need
+to provide a command line interface.
+
+Copyright (C) 1988 Free Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+pare preserved on all copies.
+
+@ignore
+Permission is granted to process this file through TeX and print the
+results, provided the printed document carries copying permission
+notice identical to this one except for the removal of this paragraph
+(this paragraph not being relevant to the printed manual).
+
+@end ignore
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the entire
+resulting derived work is distributed under the terms of a permission
+notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that this permission notice may be stated in a translation approved
+by the Foundation.
+@end ifinfo
+
+@setchapternewpage odd
+@titlepage
+@sp 11
+@center @titlefont{GNU Readline Library}
+@sp 2
+@center by Brian Fox
+@sp 2
+@center Version 1.0
+@sp 2
+@center February 1989
+
+@comment   Include the Distribution inside the titlepage environment so
+@c that headings are turned off. 
+
+@page
+@vskip 0pt plus 1filll
+Copyright @copyright{} 1989 Free Software Foundation, Inc.
+
+@sp 2
+This document describes the GNU Readline Library, a utility for aiding
+in the consistency of user interface across discrete programs that need
+to provide a command line interface.
+@sp 2
+
+Published by the Free Software Foundation @*
+675 Massachusetts Avenue, @*
+Cambridge, MA 02139 USA
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the entire
+resulting derived work is distributed under the terms of a permission
+notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that this permission notice may be stated in a translation approved
+by the Foundation.
+
+@end titlepage
+
+@node Top, Readline Top, ,(DIR)
+@chapter GNU Readline Library
+
+@ifinfo
+This document describes the GNU Readline Library, a utility for aiding
+in the consistency of user interface across discrete programs that need
+to provide a command line interface.
+@end ifinfo
+
+@menu
+* Readline Top::	GNU Readline User's Manual
+* Readline Technical::	GNU Readline Programmer's Manual
+@end menu
+@include inc-readline.texinfo
+@node Readline Technical, , Top, Top
+@chapter Readline Programmer's Manual
+
+This manual describes the interface between the GNU Readline Library and
+user programs.  If you are a programmer, and you wish to include the
+features found in GNU Readline in your own programs, such as completion,
+line editing, and interactive history manipulation, this documentation
+is for you.
+
+@menu
+* Default Behaviour::	Using the default behaviour of Readline.
+* Custom Functions::	Adding your own functions to Readline.
+* Custom Completers::	Supplanting or supplementing Readline's
+			completion functions.
+* Variable Index::	Index of externally tweakable variables.
+@end menu
+
+@node Default Behaviour, Custom Functions, Readline Technical, Readline Technical
+@section Default Behaviour
+
+Many programs provide a command line interface, such as @code{mail},
+@code{ftp}, and @code{sh}.  For such programs, the default behaviour of
+Readline is sufficient.  This section describes how to use Readline in
+the simplest way possible, perhaps to replace calls in your code to
+@code{gets ()}.
+
+@findex readline ()
+@cindex readline, function
+The function @code{readline} prints a prompt and then reads and returns
+a single line of text from the user.  The line which @code{readline ()}
+returns is allocated with @code{malloc ()}; you should @code{free ()}
+the line when you are done with it.  The declaration in ANSI C is
+
+@example
+@code{char *readline (char *@var{prompt});}
+@end example
+
+So, one might say
+@example
+@code{char *line = readline ("Enter a line: ");}
+@end example
+in order to read a line of text from the user.
+
+The line which is returned has the final newline removed, so only the
+text of the line remains.
+
+If readline encounters an EOF while reading the line, and the line is
+empty at that point, then @code{(char *)NULL} is returned.  Otherwise,
+the line is ended just as if a newline was typed.
+
+If you want the user to be able to get at the line later, (with
+@key{C-p} for example), you must call @code{add_history ()} to save the
+line away in a @dfn{history} list of such lines.
+
+@example
+@code{add_history (line)};
+@end example
+
+For full details on the GNU History Library, see the associated manual.
+
+It is polite to avoid saving empty lines on the history list, since
+no one has a burning need to reuse a blank line.  Here is a function
+which usefully replaces the standard @code{gets ()} library function:
+
+@example
+/* A static variable for holding the line. */
+static char *my_gets_line = (char *)NULL;
+
+/* Read a string, and return a pointer to it.  Returns NULL on EOF. */
+char *
+my_gets ()
+@{
+  /* If the buffer has already been allocated, return the memory
+     to the free pool. */
+  if (my_gets_line != (char *)NULL)
+    free (my_gets_line);
+
+  /* Get a line from the user. */
+  my_gets_line = readline ("");
+
+  /* If the line has any text in it, save it on the history. */
+  if (my_get_line && *my_gets_line)
+    add_history (my_gets_line);
+
+  return (my_gets_line);
+@}
+@end example
+
+The above code gives the user the default behaviour of @key{TAB}
+completion: completion on file names.  If you do not want readline to
+complete on filenames, you can change the binding of the @key{TAB} key
+with @code{rl_bind_key ()}.
+
+@findex rl_bind_key ()
+
+@example
+@code{int rl_bind_key (int @var{key}, (int (*)())@var{function});}
+@end example
+
+@code{rl_bind_key ()} takes 2 arguments; @var{key} is the character that
+you want to bind, and @var{function} is the address of the function to
+run when @var{key} is pressed.  Binding @key{TAB} to @code{rl_insert ()}
+makes @key{TAB} just insert itself.
+
+@code{rl_bind_key ()} returns non-zero if @var{key} is not a valid
+ASCII character code (between 0 and 255).
+
+@example
+@code{rl_bind_key ('\t', rl_insert);}
+@end example
+
+@node Custom Functions, Custom Completers, Default Behaviour, Readline Technical
+@section Custom Functions
+
+Readline provides a great many functions for manipulating the text of
+the line.  But it isn't possible to anticipate the needs of all
+programs.  This section describes the various functions and variables
+defined in within the Readline library which allow a user program to add
+customized functionality to Readline.
+
+@menu
+* The Function Type::	C declarations to make code readable.
+* Function Naming::	How to give a function you write a name.
+* Keymaps::		Making keymaps.
+* Binding Keys::	Changing Keymaps.
+* Function Writing::	Variables and calling conventions.
+* Allowing Undoing::	How to make your functions undoable.
+@end menu
+
+@node The Function Type, Function Naming, Custom Functions, Custom Functions
+For the sake of readabilty, we declare a new type of object, called
+@dfn{Function}.  `Function' is a C language function which returns an
+@code{int}.  The type declaration for `Function' is:
+
+@code{typedef int Function ();}
+
+The reason for declaring this new type is to make it easier to discuss
+pointers to C functions.  Let us say we had a variable called @var{func}
+which was a pointer to a function.  Instead of the classic C declaration
+
+@code{int (*)()func;}
+
+we have
+
+@code{Function *func;}
+
+@node Function Naming, Keymaps, The Function Type, Custom Functions
+@subsection Naming a Function
+
+The user can dynamically change the bindings of keys while using
+Readline.  This is done by representing the function with a descriptive
+name.  The user is able to type the descriptive name when referring to
+the function.  Thus, in an init file, one might find
+
+@example
+Meta-Rubout:	backward-kill-word
+@end example
+
+This binds @key{Meta-Rubout} to the function @emph{descriptively} named
+@code{backward-kill-word}.  You, as a programmer, should bind the
+functions you write to descriptive names as well.  Here is how to do
+that.
+
+@defun rl_add_defun (char *name, Function *function, int key)
+Add @var{name} to the list of named functions.  Make @var{function} be
+the function that gets called.  If @var{key} is not -1, then bind it to
+@var{function} using @code{rl_bind_key ()}.
+@end defun
+
+Using this function alone is sufficient for most applications.  It is
+the recommended way to add a few functions to the default functions that
+Readline has built in already.  If you need to do more or different
+things than adding a function to Readline, you may need to use the
+underlying functions described below.
+
+@node Keymaps, Binding Keys, Function Naming, Custom Functions
+@subsection Selecting a Keymap
+
+Key bindings take place on a @dfn{keymap}.  The keymap is the
+association between the keys that the user types and the functions that
+get run.  You can make your own keymaps, copy existing keymaps, and tell
+Readline which keymap to use.
+
+@defun rl_make_bare_keymap ()
+Returns a new, empty keymap.  The space for the keymap is allocated with
+@code{malloc ()}; you should @code{free ()} it when you are done.
+@end defun
+
+@defun rl_copy_keymap (Keymap map)
+Return a new keymap which is a copy of @var{map}.
+@end defun
+
+@defun rl_make_keymap ()
+Return a new keymap with the printing characters bound to rl_insert,
+the lowercase Meta characters bound to run their equivalents, and
+the Meta digits bound to produce numeric arguments.
+@end defun
+
+@node Binding Keys, Function Writing, Keymaps, Custom Functions
+@subsection Binding Keys
+
+You associate keys with functions through the keymap.  Here are
+the functions for doing that.
+
+@defun rl_bind_key (int key, Function *function)
+Binds @var{key} to @var{function} in the currently selected keymap.
+Returns non-zero in the case of an invalid @var{key}.
+@end defun
+
+@defun rl_bind_key_in_map (int key, Function *function, Keymap map)
+Bind @var{key} to @var{function} in @var{map}.  Returns non-zero in the case
+of an invalid @var{key}.
+@end defun
+
+@defun rl_unbind_key (int key)
+Make @var{key} do nothing in the currently selected keymap.
+Returns non-zero in case of error.
+@end defun
+
+@defun rl_unbind_key_in_map (int key, Keymap map)
+Make @var{key} be bound to the null function in @var{map}.
+Returns non-zero in case of error.
+@end defun
+
+@node Function Writing, Allowing Undoing, Binding Keys, Custom Functions
+@subsection Writing a New Function
+
+In order to write new functions for Readline, you need to know the
+calling conventions for keyboard invoked functions, and the names of the
+variables that describe the current state of the line gathered so far.
+
+@defvar char *rl_line_buffer
+This is the line gathered so far.  You are welcome to modify the
+contents of this, but see Undoing, below.
+@end defvar
+
+@defvar int rl_point
+The offset of the current cursor position in @var{rl_line_buffer}.
+@end defvar
+
+@defvar int rl_end
+The number of characters present in @code{rl_line_buffer}.  When
+@code{rl_point} is at the end of the line, then @code{rl_point} and
+@code{rl_end} are equal.
+@end defvar
+
+The calling sequence for a command @code{foo} looks like
+
+@example
+@code{foo (count, key)}
+@end example
+
+where @var{count} is the numeric argument (or 1 if defaulted) and
+@var{key} is the key that invoked this function.
+
+It is completely up to the function as to what should be done with the
+numeric argument; some functions use it as a repeat count, other
+functions as a flag, and some choose to ignore it.  In general, if a
+function uses the numeric argument as a repeat count, it should be able
+to do something useful with a negative argument as well as a positive
+argument.  At the very least, it should be aware that it can be passed a
+negative argument.
+
+@node Allowing Undoing, , Function Writing, Custom Functions
+@subsection Allowing Undoing
+
+Supporting the undo command is a painless thing to do, and makes your
+function much more useful to the end user.  It is certainly easy to try
+something if you know you can undo it.  I could use an undo function for
+the stock market.
+
+If your function simply inserts text once, or deletes text once, and it
+calls @code{rl_insert_text ()} or @code{rl_delete_text ()} to do it, then
+undoing is already done for you automatically, and you can safely skip
+this section.
+
+If you do multiple insertions or multiple deletions, or any combination
+of these operations, you will want to group them together into one
+operation.  This can be done with @code{rl_begin_undo_group ()} and 
+@code{rl_end_undo_group ()}.
+
+@defun rl_begin_undo_group ()
+Begins saving undo information in a group construct.  The undo
+information usually comes from calls to @code{rl_insert_text ()} and
+@code{rl_delete_text ()}, but they could be direct calls to
+@code{rl_add_undo ()}.
+@end defun
+
+@defun rl_end_undo_group ()
+Closes the current undo group started with @code{rl_begin_undo_group
+()}.  There should be exactly one call to @code{rl_end_undo_group ()}
+for every call to @code{rl_begin_undo_group ()}.
+@end defun
+
+Finally, if you neither insert nor delete text, but directly modify the
+existing text (e.g. change its case), you call @code{rl_modifying ()}
+once, just before you modify the text.  You must supply the indices of
+the text range that you are going to modify.
+
+@defun rl_modifying (int start, int end)
+Tell Readline to save the text between @var{start} and @var{end} as a
+single undo unit.  It is assumed that subsequent to this call you will
+modify that range of text in some way.
+@end defun
+
+@subsection An Example
+
+Let us say that we are actually going to put an example here.
+
+@node Custom Completers, Variable Index, Custom Functions, Readline Technical
+
+Typically, a program that reads commands from the user has a way of
+disambiguating between commands and data.  If your program is one of
+these, then it can provide completion for either commands, or data, or
+both commands and data.  The following sections describe how your
+program and Readline cooperate to provide this service to end users.
+
+@menu
+@end menu
+
+@node Variable Index, , Custom Completers, Readline Technical
+@appendix Variable Index
+@printindex vr
+@contents
+
+@bye
+
