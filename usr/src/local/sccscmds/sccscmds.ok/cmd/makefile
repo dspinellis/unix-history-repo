@@ -1,4 +1,4 @@
-#	makefile	4.2	83/12/22
+#	makefile	4.3	83/12/22
 #
 CFLAGS=	-O -w
 LIBS=	../libpw.a ../libPW.a ../libwrt.a
@@ -46,7 +46,7 @@ delta:	delta.o ../com/comobj.a ctime.o alloc.o
 	$(CC) -o delta delta.o ../com/comobj.a $(LIBS) ctime.o alloc.o
 
 delta.o:	delta.c ../hdr/defines.h ../hdr/had.h
-	$(CC) -c $(CFLAGS) delta.c
+	$(CC) -c $(CFLAGS) -DLOGDELTA delta.c
 
 get:	get.o ../com/comobj.a ctime.o alloc.o
 	$(CC) -y_getwd -o get get.o ../com/comobj.a $(LIBS) ctime.o alloc.o
