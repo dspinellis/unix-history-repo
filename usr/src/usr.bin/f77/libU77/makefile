@@ -1,11 +1,12 @@
 # Makefile for f77 system lib, libU77.a
-#	@(#)makefile	1.3	%G%
+#	@(#)makefile	1.4	%G%
 
 LIB = libU77.a
 LPR = lpr
 
 # for 11's
-#LIBDIR = /usr/ucb/lib
+#ENV = ucb
+#LIBDIR = /usr/$(ENV)/lib
 #TAPE = /dev/nrmt1
 
 # for Vax
@@ -147,3 +148,132 @@ clean:
 
 tape:
 	@tar cbf 20 $(TAPE) Makefile man $(SOURCES) mkindx.c mkvers.c
+
+# below here is SCCS stuff ---
+
+access_.c:	s.access_.c
+	rm -f access_.c
+	get s.access_.c
+chdir_.c:	s.chdir_.c
+	rm -f chdir_.c
+	get s.chdir_.c
+ctime_.c:	s.ctime_.c
+	rm -f ctime_.c
+	get s.ctime_.c
+dtime_.c:	s.dtime_.c
+	rm -f dtime_.c
+	get s.dtime_.c
+etime_.c:	s.etime_.c
+	rm -f etime_.c
+	get s.etime_.c
+fdate_.c:	s.fdate_.c
+	rm -f fdate_.c
+	get s.fdate_.c
+fgetc_.c:	s.fgetc_.c
+	rm -f fgetc_.c
+	get s.fgetc_.c
+fork_.c:	s.fork_.c
+	rm -f fork_.c
+	get s.fork_.c
+fputc_.c:	s.fputc_.c
+	rm -f fputc_.c
+	get s.fputc_.c
+fseek_.c:	s.fseek_.c
+	rm -f fseek_.c
+	get s.fseek_.c
+fstat_.c:	s.fstat_.c
+	rm -f fstat_.c
+	get s.fstat_.c
+ftell_.c:	s.ftell_.c
+	rm -f ftell_.c
+	get s.ftell_.c
+gerror_.c:	s.gerror_.c
+	rm -f gerror_.c
+	get s.gerror_.c
+getarg_.c:	s.getarg_.c
+	rm -f getarg_.c
+	get s.getarg_.c
+getc_.c:	s.getc_.c
+	rm -f getc_.c
+	get s.getc_.c
+getcwd_.c:	s.getcwd_.c
+	rm -f getcwd_.c
+	get s.getcwd_.c
+getenv_.c:	s.getenv_.c
+	rm -f getenv_.c
+	get s.getenv_.c
+getgid_.c:	s.getgid_.c
+	rm -f getgid_.c
+	get s.getgid_.c
+getlog_.c:	s.getlog_.c
+	rm -f getlog_.c
+	get s.getlog_.c
+getpid_.c:	s.getpid_.c
+	rm -f getpid_.c
+	get s.getpid_.c
+getuid_.c:	s.getuid_.c
+	rm -f getuid_.c
+	get s.getuid_.c
+gmtime_.c:	s.gmtime_.c
+	rm -f gmtime_.c
+	get s.gmtime_.c
+iargc_.c:	s.iargc_.c
+	rm -f iargc_.c
+	get s.iargc_.c
+idate_.c:	s.idate_.c
+	rm -f idate_.c
+	get s.idate_.c
+ierrno_.c:	s.ierrno_.c
+	rm -f ierrno_.c
+	get s.ierrno_.c
+isatty_.c:	s.isatty_.c
+	rm -f isatty_.c
+	get s.isatty_.c
+itime_.c:	s.itime_.c
+	rm -f itime_.c
+	get s.itime_.c
+kill_.c:	s.kill_.c
+	rm -f kill_.c
+	get s.kill_.c
+loc_.c:	s.loc_.c
+	rm -f loc_.c
+	get s.loc_.c
+link_.c:	s.link_.c
+	rm -f link_.c
+	get s.link_.c
+ltime_.c:	s.ltime_.c
+	rm -f ltime_.c
+	get s.ltime_.c
+perror_.c:	s.perror_.c
+	rm -f perror_.c
+	get s.perror_.c
+putc_.c:	s.putc_.c
+	rm -f putc_.c
+	get s.putc_.c
+qsort_.c:	s.qsort_.c
+	rm -f qsort_.c
+	get s.qsort_.c
+signal_.c:	s.signal_.c
+	rm -f signal_.c
+	get s.signal_.c
+sleep_.c:	s.sleep_.c
+	rm -f sleep_.c
+	get s.sleep_.c
+stat_.c:	s.stat_.c
+	rm -f stat_.c
+	get s.stat_.c
+system_.c:	s.system_.c
+	rm -f system_.c
+	get s.system_.c
+time_.c:	s.time_.c
+	rm -f time_.c
+	get s.time_.c
+ttynam_.c:	s.ttynam_.c
+	rm -f ttynam_.c
+	get s.ttynam_.c
+unlink_.c:	s.unlink_.c
+	rm -f unlink_.c
+	get s.unlink_.c
+wait_.c:	s.wait_.c
+	rm -f wait_.c
+	get s.wait_.c
