@@ -11,8 +11,8 @@
 #undef CPP_PREDEFINES
 #define CPP_PREDEFINES "-Dunix -Di386 -D__FreeBSD__ -D____386BSD____ -D__386BSD__ -DBSD_NET2"
 
-/* Like the default, except no -lg.  */
-#define LIB_SPEC "%{!p:%{!pg:-lc}}%{p:-lc_p}%{pg:-lc_p}"
+/* Like the default, except no -lg and no shared profiling libraries.  */
+#define LIB_SPEC "%{!p:%{!pg:-lc}}%{p:-lc_p -Bstatic}%{pg:-lc_p -Bstatic}"
 
 #undef SIZE_TYPE
 #define SIZE_TYPE "unsigned int"
