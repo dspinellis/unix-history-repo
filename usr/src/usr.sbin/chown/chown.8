@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)chown.8	6.6 (Berkeley) %G%
+.\"     @(#)chown.8	6.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CHOWN 8
@@ -17,7 +17,7 @@
 .Ar owner Op Ar :group
 .Ar file ...
 .Nm chown
-.Op Fl Rf
+.Op Fl HRfh
 .Ar :group
 .Ar file ...
 .Sh DESCRIPTION
@@ -26,13 +26,28 @@ sets the user ID and/or the group ID of the specified files.
 .Pp
 The options are as follows:
 .Bl -tag -width Ds
+.It Fl H
+When encountering a symbolic link on the command line, follow it.  All other
+symbolic links encountered in the traversal are not followed.
 .It Fl R
 Change the user ID and/or the group ID for the file hierarchies rooted
 in the files instead of just the files themselves.
 .It Fl f
 Don't report any failure to change file owner or group, nor modify
 the exit status to reflect such failures.
+.It Fl h
+When encountering a symbolic link, change the ownership of the object the link
+points to rather than the link itself.
 .El
+.Pp
+With respect to symbolic links, unless the
+.Fl h
+or 
+.Fl H 
+flags are set,
+.Nm chown
+changes the ownership of the link itself rather than the object it 
+points to.
 .Pp
 The
 .Ar owner
@@ -72,7 +87,8 @@ group names may contain the dot character.
 .Sh SEE ALSO
 .Xr chgrp 1 ,
 .Xr find 1 ,
-.Xr chown 2
+.Xr chown 2 ,
+.Xr fts 3
 .Sh STANDARDS
 The
 .Nm chown
