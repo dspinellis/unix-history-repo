@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)termcap.3	6.6 (Berkeley) %G%
+.\"     @(#)termcap.3	6.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt TERMCAP 3
@@ -25,7 +25,7 @@
 .Fn tgetnum "char *id"
 .Fn tgetflag "char *id"
 .Ft char *
-.Fn tgetstr "char *id" "char *area"
+.Fn tgetstr "char *id" "char **area"
 .Ft char *
 .Fn tgoto "char *cm" destcol destline
 .Fn tputs "register char *cp" "int affcnt" "int (*outc)()"
