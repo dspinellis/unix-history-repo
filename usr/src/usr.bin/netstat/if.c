@@ -54,12 +54,12 @@ intpr(interval, ifnetaddr)
 	}
 	klseek(kmem, ifnetaddr, 0);
 	read(kmem, (char *)&ifnetaddr, sizeof ifnetaddr);
-	printf("%-5.5s %-5.5s %-10.10s  %-12.12s %-7.7s %-5.5s %-7.7s %-5.5s",
+	printf("%-5.5s %-5.5s %-11.11s %-15.15s %8.8s %5.5s %8.8s %5.5s",
 		"Name", "Mtu", "Network", "Address", "Ipkts", "Ierrs",
 		"Opkts", "Oerrs");
-	printf(" %-6.6s", "Collis");
+	printf(" %5s", "Coll");
 	if (tflag)
-		printf(" %-6.6s", "Timer");
+		printf(" %s", "Time");
 	putchar('\n');
 	ifaddraddr = 0;
 	while (ifnetaddr || ifaddraddr) {
@@ -88,16 +88,16 @@ intpr(interval, ifnetaddr)
 		}
 		printf("%-5.5s %-5d ", name, ifnet.if_mtu);
 		if (ifaddraddr == 0) {
-			printf("%-10.10s  ", "none");
-			printf("%-12.12s ", "none");
+			printf("%-11.11s ", "none");
+			printf("%-15.15s ", "none");
 		} else {
 			klseek(kmem, ifaddraddr, 0);
 			read(kmem, (char *)&ifaddr, sizeof ifaddr);
 			ifaddraddr = (off_t)ifaddr.ifa.ifa_next;
 			switch (ifaddr.ifa.ifa_addr.sa_family) {
 			case AF_UNSPEC:
-				printf("%-10.10s  ", "none");
-				printf("%-12.12s ", "none");
+				printf("%-11.11s ", "none");
+				printf("%-15.15s ", "none");
 				break;
 			case AF_INET:
 				sin = (struct sockaddr_in *)&ifaddr.in.ia_addr;
@@ -107,27 +107,27 @@ intpr(interval, ifnetaddr)
 				 */
 				in = inet_makeaddr(ifaddr.in.ia_subnet,
 					INADDR_ANY);
-				printf("%-10.10s  ", netname(in));
+				printf("%-11.11s ", netname(in));
 #else
-				printf("%-10.10s  ",
+				printf("%-11.11s ",
 					netname(htonl(ifaddr.in.ia_subnet),
 						ifaddr.in.ia_subnetmask));
 #endif
-				printf("%-12.12s ", routename(sin->sin_addr));
+				printf("%-15.15s ", routename(sin->sin_addr));
 				break;
 			case AF_NS:
 				{
 				struct sockaddr_ns *sns =
 				(struct sockaddr_ns *)&ifaddr.in.ia_addr;
 				u_long net;
-				char host[8];
+				char netnum[8];
 				char *ns_phost();
 
 				*(union ns_net *) &net = sns->sns_addr.x_net;
-				sprintf(host, "%lxH", ntohl(net));
-				upHex(host);
-				printf("ns:%-8s ", host);
-				printf("%-12s ", ns_phost(sns));
+				sprintf(netnum, "%lxH", ntohl(net));
+				upHex(netnum);
+				printf("ns:%-8s ", netnum);
+				printf("%-15s ", ns_phost(sns));
 				}
 				break;
 			default:
@@ -139,7 +139,7 @@ intpr(interval, ifnetaddr)
 						break;
 				n = cp - (char *)ifaddr.ifa.ifa_addr.sa_data + 1;
 				cp = (char *)ifaddr.ifa.ifa_addr.sa_data;
-				if (n <= 6)
+				if (n <= 7)
 					while (--n)
 						printf("%02d.", *cp++ & 0xff);
 				else
@@ -149,12 +149,12 @@ intpr(interval, ifnetaddr)
 				break;
 			}
 		}
-		printf("%-7d %-5d %-7d %-5d %-6d",
+		printf("%8d %5d %8d %5d %5d",
 		    ifnet.if_ipackets, ifnet.if_ierrors,
 		    ifnet.if_opackets, ifnet.if_oerrors,
 		    ifnet.if_collisions);
 		if (tflag)
-			printf(" %-6d", ifnet.if_timer);
+			printf(" %3d", ifnet.if_timer);
 		putchar('\n');
 	}
 }
@@ -222,7 +222,7 @@ sidewaysintpr(interval, off)
 banner:
 	printf("    input   %-6.6s    output       ", interesting->ift_name);
 	if (lastif - iftot > 0)
-		printf("   input  (Total)    output       ");
+		printf("     input  (Total)    output");
 	for (ip = iftot; ip < iftot + MAXIF; ip++) {
 		ip->ift_ip = 0;
 		ip->ift_ie = 0;
@@ -231,10 +231,10 @@ banner:
 		ip->ift_co = 0;
 	}
 	putchar('\n');
-	printf("%-7.7s %-5.5s %-7.7s %-5.5s %-5.5s ",
+	printf("%8.8s %5.5s %8.8s %5.5s %5.5s ",
 		"packets", "errs", "packets", "errs", "colls");
 	if (lastif - iftot > 0)
-		printf("%-7.7s %-5.5s %-7.7s %-5.5s %-5.5s ",
+		printf("%8.8s %5.5s %8.8s %5.5s %5.5s ",
 			"packets", "errs", "packets", "errs", "colls");
 	putchar('\n');
 	fflush(stdout);
@@ -249,7 +249,7 @@ loop:
 		klseek(kmem, off, 0);
 		read(kmem, (char *)&ifnet, sizeof ifnet);
 		if (ip == interesting)
-			printf("%-7d %-5d %-7d %-5d %-5d ",
+			printf("%8d %5d %8d %5d %5d ",
 				ifnet.if_ipackets - ip->ift_ip,
 				ifnet.if_ierrors - ip->ift_ie,
 				ifnet.if_opackets - ip->ift_op,
@@ -268,13 +268,14 @@ loop:
 		off = (off_t) ifnet.if_next;
 	}
 	if (lastif - iftot > 0)
-		printf("%-7d %-5d %-7d %-5d %-5d\n",
+		printf("%8d %5d %8d %5d %5d ",
 			sum->ift_ip - total->ift_ip,
 			sum->ift_ie - total->ift_ie,
 			sum->ift_op - total->ift_op,
 			sum->ift_oe - total->ift_oe,
 			sum->ift_co - total->ift_co);
 	*total = *sum;
+	putchar('\n');
 	fflush(stdout);
 	line++;
 	oldmask = sigblock(sigmask(SIGALRM));
