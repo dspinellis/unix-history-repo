@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)slave.c	2.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)slave.c	2.7 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -373,7 +373,7 @@ loop:
                                 to.tsp_type = TSP_QUIT;
                                 server = from;
                                 msg = acksend(&to, &server, answer->tsp_name,
-                                    TSP_MASTERACK, (struct netinfo *)NULL);
+                                    TSP_ACK, (struct netinfo *)NULL);
                                 if (msg == NULL) {
                                         syslog(LOG_ERR, "error on sending QUIT");
                                 } else {
