@@ -26,7 +26,7 @@ static char copyright[] =
 #endif	/* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	6.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	6.8 (Berkeley) %G%";
 #endif	/* not lint */
 
 /*
@@ -1380,10 +1380,10 @@ int	length;			/* length of suboption data */
 	    case TELQUAL_IS:
 		{
 		    char tmpbuf[sizeof subbuffer];
-		    int minlen = min(length, sizeof tmpbuf);
+		    int minlen = min(length-4, sizeof tmpbuf-1);
 
 		    memcpy(tmpbuf, pointer+2, minlen);
-		    tmpbuf[minlen-1] = 0;
+		    tmpbuf[minlen] = 0;
 		    fprintf(NetTrace, "is %s.\n", tmpbuf);
 		}
 		break;
