@@ -2,13 +2,16 @@
  * Copyright (c) 1992 The Regents of the University of California.
  * All rights reserved.
  *
+ * This code is derived from software contributed to Berkeley by
+ * Chris Torek and Darren F. Provine.
+ *
  * %sccs.include.redist.c%
  *
- *	@(#)scores.c	5.1 (Berkeley) %G%
+ *	@(#)scores.c	5.2 (Berkeley) %G%
  */
 
 /*
- * score code for Tetris, by Darren Provine (kilroy@gboro.glassboro.edu)
+ * Score code for Tetris, by Darren Provine (kilroy@gboro.glassboro.edu)
  * modified 22 January 1992, to limit the number of entries any one
  * person has.
  *
