@@ -12,19 +12,17 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)snscore.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)snscore.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <stdio.h>
 #include <sys/types.h>
 #include <pwd.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include "pathnames.h"
 
 char *recfile = _PATH_RAWSCORES;
 #define MAXPLAYERS 256
-
-struct	passwd	*getpwuid();
-char	*malloc();
 
 struct	player	{
 	short	uids;
