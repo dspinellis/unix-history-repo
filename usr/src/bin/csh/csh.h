@@ -3,8 +3,9 @@
  * All rights reserved.  The Berkeley Software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sh.h	5.6 (Berkeley) 2/25/91
+ *	@(#)csh.h	5.8 (Berkeley) %G%
  */
+
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/resource.h>
