@@ -1,6 +1,6 @@
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 
-MIP=	${.CURDIR}/../../../libexec/pcc/mip
+MIP=	${.CURDIR}/../../mip
 
 PROG=	lintpass2
 SRCS=	hash.c lpass2.c
