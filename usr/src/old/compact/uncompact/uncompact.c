@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uncompact.c	4.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)uncompact.c	4.8 (Berkeley) %G%";
 #endif
 
 /*
@@ -124,7 +124,7 @@ decompress(cfp, uncfp)
 	register struct node *p;
 	register short j;
 	register int m;
-	register struct cio *dp = &d;
+	register union cio *dp = &d;
 	char b;
 
 	p = dict;
