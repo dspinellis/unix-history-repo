@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uipc_socket.c	7.15 (Berkeley) %G%
+ *	@(#)uipc_socket.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -27,6 +27,7 @@
 #include "protosw.h"
 #include "socket.h"
 #include "socketvar.h"
+#include "tsleep.h"
 
 /*
  * Socket operation routines.
@@ -158,7 +159,8 @@ soclose(so)
 			    (so->so_state & SS_NBIO))
 				goto drop;
 			while (so->so_state & SS_ISCONNECTED)
-				sleep((caddr_t)&so->so_timeo, PZERO+1);
+				tsleep((caddr_t)&so->so_timeo, PZERO+1,
+					SLP_SO_LINGER, 0);
 		}
 	}
 drop:
@@ -276,12 +278,12 @@ bad:
  * inform user that this would block and do nothing.
  * Otherwise, if nonblocking, send as much as possible.
  */
-sosend(so, nam, uio, flags, rights, control)
+sosend(so, nam, uio, flags, control)
 	register struct socket *so;
 	struct mbuf *nam;
 	register struct uio *uio;
 	int flags;
-	struct mbuf *rights, *control;
+	struct mbuf *control;
 {
 	struct mbuf *top = 0, **mp;
 	register struct mbuf *m;
@@ -295,8 +297,8 @@ sosend(so, nam, uio, flags, rights, control)
 	    (flags & MSG_DONTROUTE) && (so->so_options & SO_DONTROUTE) == 0 &&
 	    (so->so_proto->pr_flags & PR_ATOMIC);
 	u.u_ru.ru_msgsnd++;
-	if (rights)
-		rlen = rights->m_len;
+	if (control)
+		rlen = control->m_len;
 #define	snderr(errno)	{ error = errno; splx(s); goto release; }
 
 restart:
@@ -392,11 +394,10 @@ nopages:
 		    s = splnet();				/* XXX */
 		    error = (*so->so_proto->pr_usrreq)(so,
 			(flags & MSG_OOB) ? PRU_SENDOOB : PRU_SEND,
-			top, (caddr_t)nam, rights, control);
+			top, (caddr_t)nam, control);
 		    splx(s);
 		    if (dontroute)
 			    so->so_options &= ~SO_DONTROUTE;
-		    rights = 0;
 		    rlen = 0;
 		    top = 0;
 		    mp = &top;
@@ -437,7 +438,7 @@ soreceive(so, aname, uio, flagsp, rightsp, controlp)
 	register struct mbuf *m;
 	register int flags, len, error = 0, s, offset;
 	struct protosw *pr = so->so_proto;
-	struct mbuf *nextrecord;
+	struct mbuf *nextrecord, *m_with_eor;
 	int moff;
 
 	if (rightsp)
@@ -569,13 +570,14 @@ panic("receive 3a");
 		m->m_nextpkt = nextrecord;
 	moff = 0;
 	offset = 0;
+	m_with_eor = 0;
 	while (m && uio->uio_resid > 0 && error == 0) {
 		if (m->m_type == MT_OOBDATA)
 			flags |= MSG_OOB;
 		else if (m->m_type != MT_DATA && m->m_type != MT_HEADER)
 			panic("receive 3");
 		if (m->m_flags & M_EOR)
-			flags |= MSG_EOR;
+			m_with_eor = m;
 		len = uio->uio_resid;
 		so->so_state &= ~SS_RCVATMARK;
 		if (so->so_oobmark && len > so->so_oobmark - offset)
@@ -616,11 +618,13 @@ panic("receive 3a");
 			} else
 				offset += len;
 		}
+		if (m_with_eor)
+			break;
 	}
-	if (m && (flags & MSG_EOR)) {
-		flags &= ~MSG_EOR;
-		if ((flags & MSG_PEEK) == 0)
-			m->m_flags |= M_EOR;
+	if (m_with_eor) {
+		if (m != m_with_eor)
+			flags |= MSG_EOR;
+		/* else data not consumed from mbuf */
 	}
 	if ((flags & MSG_PEEK) == 0) {
 		if (m == 0)
