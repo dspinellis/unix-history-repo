@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)source.c 1.3 %G%";
+static char sccsid[] = "@(#)source.c 1.4 %G%";
 
 /*
  * Source file management.
@@ -45,7 +45,7 @@ private String prevsource = nil;
  * and then find its location within the pointed to array.
  */
 
-typedef int Seekaddr;
+typedef long Seekaddr;
 
 #define NSLOTS 20
 #define NLINESPERSLOT 500
@@ -101,7 +101,7 @@ Lineno l1, l2;
 		    ub = lastlinenum;
 		}
 		f = srcfp;
-		fseek(f, (long) srcaddr(lb), 0);
+		fseek(f, srcaddr(lb), 0);
 		for (i = lb; i <= ub; i++) {
 		    printf("%5d   ", i);
 		    while ((c = getc(f)) != '\n') {
@@ -158,7 +158,7 @@ String filename;
 private skimsource()
 {
     register int c;
-    register Lineno count;
+    register Seekaddr count;
     register File f;
     register Lineno linenum;
     register Seekaddr lastaddr;
