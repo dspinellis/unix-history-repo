@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)proc.h	7.35 (Berkeley) %G%
+ *	@(#)proc.h	7.36 (Berkeley) %G%
  */
 
 #ifndef _PROC_H_
@@ -99,9 +99,7 @@ struct	proc {
 
 	int	p_sig;		/* signals pending to this process */
 
-	struct	timeval p_utime; /* user time */
-	struct	timeval p_stime; /* system time */
-	long	p_spare[2];	/* tmp spares to avoid shifting eproc */
+	long	p_spare[6];	/* tmp spares to avoid shifting eproc */
 
 /* end area that is zeroed on creation */
 #define	p_endzero	p_startcopy
@@ -207,7 +205,7 @@ extern	struct proc *pidhash[];		/* in param.c */
 struct	proc *pfind();			/* find process by id */
 extern	struct pgrp *pgrphash[];	/* in param.c */
 struct 	pgrp *pgfind();			/* find process group by id */
-struct	proc *allproc;			/* list of active procs */
+volatile struct proc *allproc;		/* list of active procs */
 struct	proc *zombproc;			/* list of zombie procs */
 extern	struct proc proc0;		/* process slot for swapper */
 struct	proc *initproc, *pageproc;	/* process slots for init, pager */
@@ -222,12 +220,13 @@ struct	prochd {
 
 int	whichqs;		/* bit mask summarizing non-empty qs's */
 
-int	sleep __P((void *chan, int pri));
+void	sleep __P((void *chan, int pri));
 int	tsleep __P((void *chan, int pri, char *wmesg, int timo));
-int	unsleep __P((struct proc *));
-int	wakeup __P((void *chan));
-int	setrun __P((struct proc *));
-int	setpri __P((struct proc *));
+void	unsleep __P((struct proc *));
+void	wakeup __P((void *chan));
+void	setrun __P((struct proc *));
+void	setpri __P((struct proc *));
+void	swtch __P((void));
 
 #endif	/* KERNEL */
 
