@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.25 (Berkeley) %G%
+		@(#)README	8.26 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -1202,5 +1202,5 @@ M4 DIVERSIONS
    5	locally interpreted names (overrides $R)
    6	local configuration (at top of file)
    7	mailer definitions
-   8	special local name recognition (late in ruleset 3)
+   8
    9	special local rulesets (1 and 2)

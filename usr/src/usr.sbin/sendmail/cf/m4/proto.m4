@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.42 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.43 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -456,8 +456,6 @@ R$* < @ $* $~P > $*		$: $1 < @ $[ $2 $3 $] > $4')
 R$* < @ $=w > $*		$: $1 < @ $2 . > $3
 R$* < @ $* $=P > $*		$: $1 < @ $2 $3 . > $4
 R$* < @ $* . . > $*		$1 < @ $2 . > $3
-
-undivert(8)dnl
 
 # if this is the local hostname, make sure we treat is as canonical
 R$* < @ $j > $*			$: $1 < @ $j . > $2
