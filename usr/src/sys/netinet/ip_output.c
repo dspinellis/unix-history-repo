@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ip_output.c	6.15 (Berkeley) %G%
+ *	@(#)ip_output.c	6.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -89,7 +89,7 @@ ip_output(m, opt, ro, flags)
 	if (flags & IP_ROUTETOIF) {
 		struct in_ifaddr *ia;
 
-		ia = (struct in_ifadddr *)ifa_ifwithdstaddr(dst);
+		ia = (struct in_ifaddr *)ifa_ifwithdstaddr(dst);
 		if (ia == 0)
 			ia = in_iaonnetof(in_netof(ip->ip_dst));
 		if (ia == 0) {
