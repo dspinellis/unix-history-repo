@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: clock.c 1.18 91/01/21$
  *
- *	@(#)clock.c	7.1 (Berkeley) %G%
+ *	@(#)clock.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -78,9 +78,9 @@ inittodr(base)
 		badbase = 1;
 	}
 
-	s = splclock();
 	c = (volatile struct chiptime *)MACH_CLOCK_ADDR;
 	/* don't read clock registers while they are being updated */
+	s = splclock();
 	while ((c->rega & REGA_UIP) == 1)
 		;
 	sec = c->sec;
@@ -90,6 +90,7 @@ inittodr(base)
 	mon = c->mon;
 	year = c->year + 19;
 	splx(s);
+
 	/* simple sanity checks */
 	if (year < 70 || mon < 1 || mon > 12 || day < 1 || day > 31 ||
 	    hour > 23 || min > 59 || sec > 59) {
@@ -139,6 +140,7 @@ resettodr()
 {
 	register volatile struct chiptime *c;
 	register int t, t2, t3;
+	int s;
 
 	/* compute the year */
 	t2 = time.tv_sec / SECDAY;
@@ -148,7 +150,9 @@ resettodr()
 		t++;
 		t2 -= LEAPYEAR(t) ? 366 : 365;
 	}
+
 	c = (volatile struct chiptime *)MACH_CLOCK_ADDR;
+	s = splclock();
 	c->regb |= REGB_SET_TIME;
 	c->year = t - 19;
 
@@ -172,4 +176,6 @@ resettodr()
 	c->min = t / 60;
 	c->sec = t % 60;
 	c->regb &= ~REGB_SET_TIME;
+	MachEmptyWriteBuffer();
+	splx(s);
 }
