@@ -1,0 +1,95 @@
+%!
+% ** Copyright (C) 1989, 1990 by Aladdin Enterprises.  All rights reserved. **
+
+% Test line rendering (stroke).
+
+% Exercise all the combinations of cap and join styles
+% for one-line, two-line, and closed paths.
+
+gsave
+2.0 setmiterlimit
+2.0 setlinewidth
+8 8 scale
+
+5 20 translate
+{0 1 2}				% line cap
+ { setlinecap gsave
+   {0 1 2}			% line join
+    { setlinejoin gsave
+      { {3 7 lineto}
+        {3 7 lineto 5 1 lineto}
+	{3 7 lineto 5 3 lineto closepath}
+      }
+       { gsave 0 0 moveto exec
+         gsave stroke grestore
+	 0.5 setlinewidth 1 0 0 setrgbcolor stroke
+	 grestore 10 0 translate
+       } forall
+      grestore 35 0 translate
+    } forall
+   grestore 0 20 translate
+ } forall
+
+showpage
+grestore
+
+% Exercise the miter limit.  The lower row of lines should bevel at
+% 90 degrees, the upper at 60 degrees.
+
+gsave
+1.5 setlinewidth
+0 setgray
+10 10 scale
+5 20 translate
+[1.415 2.0]
+ { setmiterlimit 0 10 translate 0 0 moveto
+   5 30 360
+    { gsave 2.5 0 rlineto rotate 2.5 0 rlineto stroke grestore
+      6.5 0 rmoveto
+    } for
+ } forall
+
+showpage
+grestore
+
+% Here are some boundary conditions, contributed by Mark Rawling.
+
+gsave
+1 setlinecap
+2.6 setmiterlimit
+3.0 setlinewidth
+
+5 5 scale
+10 20 translate
+
+% [ 0.5 sqrt dup dup dup neg exch 0 0 ] concat	% 45 rotate
+
+{0 1 2}                        % line join
+{
+    setlinejoin gsave
+    0 0 moveto 0 10 lineto 10 0 lineto gsave stroke grestore
+    15 0 translate
+    0 0 moveto 0 10 lineto 10 20 lineto gsave stroke grestore
+    15 0 translate
+    10 0 moveto 10 10 lineto 0 20 lineto gsave stroke grestore
+    15 0 translate
+    10 0 moveto 10 10 lineto 0 0 lineto gsave stroke grestore
+    grestore
+    gsave
+    0 20 translate
+    0 20 moveto 0 10 lineto 10 20 lineto gsave stroke grestore
+    15 0 translate
+    0 20 moveto 0 10 lineto 10 0 lineto gsave stroke grestore
+    15 0 translate
+    10 20 moveto 10 10 lineto 0 0 lineto gsave stroke grestore
+    15 0 translate
+    10 20 moveto 10 10 lineto 0 20 lineto gsave stroke grestore
+    grestore 60 0 translate
+} forall
+
+showpage
+grestore
+
+% End
+
+quit
