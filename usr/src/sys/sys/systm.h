@@ -4,10 +4,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)systm.h	7.17 (Berkeley) %G%
+ *	@(#)systm.h	7.18 (Berkeley) %G%
  */
 
-extern char *panicstr;		/* panic message */
+extern const char *panicstr;	/* panic message */
 extern char version[];		/* system version */
 extern char copyright[];	/* system copyright */
 
@@ -56,7 +56,7 @@ int	enxio __P((void));
 int	eopnotsupp __P((void));
 int	seltrue __P((dev_t dev, int which, struct proc *p));
 
-void	panic __P((char *));
+void	panic __P((const char *, ...));
 void	tablefull __P((char *));
 void	addlog __P((const char *, ...));
 void	log __P((int, const char *, ...));
