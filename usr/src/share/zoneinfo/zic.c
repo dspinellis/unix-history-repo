@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)zic.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)zic.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef notdef
@@ -1322,10 +1322,8 @@ const int			zonecount;
 	*/
 	gmtoff = zpfirst->z_gmtoff;
 	stdoff = 0;
-#ifdef lint
 	starttime = 0;
 	startttisstd = FALSE;
-#endif /* defined lint */
 	for (i = 0; i < zonecount; ++i) {
 		usestart = i > 0;
 		useuntil = i < (zonecount - 1);
