@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	7.100 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.101 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -75,17 +75,18 @@ mount(p, uap, retval)
 			return (EINVAL);
 		}
 		mp = vp->v_mount;
+		flag = mp->mnt_flag;
 		/*
-		 * We allow going from read-only to read-write,
-		 * but not from read-write to read-only.
+		 * We only allow the filesystem to be reloaded if it
+		 * is currently mounted read-only.
 		 */
-		if ((mp->mnt_flag & MNT_RDONLY) == 0 &&
-		    (uap->flags & MNT_RDONLY) != 0) {
+		if ((uap->flags & MNT_RELOAD) &&
+		    ((mp->mnt_flag & MNT_RDONLY) == 0)) {
 			vput(vp);
 			return (EOPNOTSUPP);	/* Needs translation */
 		}
-		flag = mp->mnt_flag;
-		mp->mnt_flag |= MNT_UPDATE;
+		mp->mnt_flag |=
+		    uap->flags & (MNT_RELOAD | MNT_FORCE | MNT_UPDATE);
 		VOP_UNLOCK(vp);
 		goto update;
 	}
@@ -131,35 +132,22 @@ update:
 	 */
 	if (uap->flags & MNT_RDONLY)
 		mp->mnt_flag |= MNT_RDONLY;
-	else
-		mp->mnt_flag &= ~MNT_RDONLY;
-	if (uap->flags & MNT_NOSUID)
-		mp->mnt_flag |= MNT_NOSUID;
-	else
-		mp->mnt_flag &= ~MNT_NOSUID;
-	if (uap->flags & MNT_NOEXEC)
-		mp->mnt_flag |= MNT_NOEXEC;
-	else
-		mp->mnt_flag &= ~MNT_NOEXEC;
-	if (uap->flags & MNT_NODEV)
-		mp->mnt_flag |= MNT_NODEV;
-	else
-		mp->mnt_flag &= ~MNT_NODEV;
-	if (uap->flags & MNT_SYNCHRONOUS)
-		mp->mnt_flag |= MNT_SYNCHRONOUS;
-	else
-		mp->mnt_flag &= ~MNT_SYNCHRONOUS;
-	if (uap->flags & MNT_UNION)
-		mp->mnt_flag |= MNT_UNION;
-	else
-		mp->mnt_flag &= ~MNT_UNION;
+	else if (mp->mnt_flag & MNT_RDONLY)
+		mp->mnt_flag |= MNT_WANTRDWR;
+	mp->mnt_flag &=~
+	    (MNT_NOSUID | MNT_NOEXEC | MNT_NODEV | MNT_SYNCHRONOUS | MNT_UNION);
+	mp->mnt_flag |= uap->flags &
+	    (MNT_NOSUID | MNT_NOEXEC | MNT_NODEV | MNT_SYNCHRONOUS | MNT_UNION);
 	/*
 	 * Mount the filesystem.
 	 */
 	error = VFS_MOUNT(mp, uap->dir, uap->data, &nd, p);
 	if (mp->mnt_flag & MNT_UPDATE) {
-		mp->mnt_flag &= ~MNT_UPDATE;
 		vrele(vp);
+		if (mp->mnt_flag & MNT_WANTRDWR)
+			mp->mnt_flag &= ~MNT_RDONLY;
+		mp->mnt_flag &=~
+		    (MNT_UPDATE | MNT_RELOAD | MNT_FORCE | MNT_WANTRDWR);
 		if (error)
 			mp->mnt_flag = flag;
 		return (error);
