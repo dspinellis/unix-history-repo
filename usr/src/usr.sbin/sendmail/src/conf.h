@@ -419,17 +419,31 @@ extern int		errno;
 
 
 /*
-**  RISC/os 4.51
+**  RISC/os 4.52
 **
-**	Untested...
+**	Gives a ton of warning messages, but otherwise compiles.
 */
 
 #ifdef RISCOS
+
 # define HASUNSETENV	1	/* has unsetenv(3) call */
 # define HASFLOCK	1	/* has flock(2) call */
+# define WAITUNION	1	/* use "union wait" as wait argument type */
+# define NEEDGETOPT	1	/* need a replacement for getopt(3) */
 # define LA_TYPE	LA_INT
 # define LA_AVENRUN	"avenrun"
 # define _PATH_UNIX	"/unix"
+# undef WIFEXITED
+
+# define setpgid	setpgrp
+
+extern int		errno;
+typedef int		pid_t;
+#define			SIGFUNC_DEFINED
+typedef int		(*sigfunc_t)();
+extern char		*getenv();
+extern void		*malloc();
+
 #endif
 
 
