@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machdep.c 1.51 89/11/28$
  *
- *	@(#)machdep.c	7.11 (Berkeley) %G%
+ *	@(#)machdep.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -306,17 +306,17 @@ again:
 /*
  * Clear registers on exec
  */
-setregs(entry, retval)
+setregs(p, entry, retval)
+	register struct proc *p;
 	u_long entry;
 	int retval[2];
 {
-	register struct proc *p = curproc;
 
 	p->p_regs[PC] = entry & ~1;
 #ifdef FPCOPROC
 	/* restore a null state frame */
-	u.u_pcb.pcb_fpregs.fpf_null = 0;
-	m68881_restore(&u.u_pcb.pcb_fpregs);
+	p->p_addr->u_pcb.pcb_fpregs.fpf_null = 0;
+	m68881_restore(&p->p_addr->u_pcb.pcb_fpregs);
 #endif
 #ifdef HPUXCOMPAT
 	if (p->p_flag & SHPUX) {
@@ -342,10 +342,10 @@ setregs(entry, retval)
 	if ((p->p_pptr->p_flag & SHPUX) &&
 	    (p->p_flag & STRC)) {
 		tweaksigcode(1);
-		u.u_pcb.pcb_flags |= PCB_HPUXTRACE;
-	} else if (u.u_pcb.pcb_flags & PCB_HPUXTRACE) {
+		p->p_addr->u_pcb.pcb_flags |= PCB_HPUXTRACE;
+	} else if (p->p_addr->u_pcb.pcb_flags & PCB_HPUXTRACE) {
 		tweaksigcode(0);
-		u.u_pcb.pcb_flags &= ~PCB_HPUXTRACE;
+		p->p_addr->u_pcb.pcb_flags &= ~PCB_HPUXTRACE;
 	}
 #endif
 }
@@ -442,16 +442,15 @@ identifycpu()
 tweaksigcode(ishpux)
 {
 	static short *sigtrap = NULL;
+	extern short sigcode[], esigcode[];
 
 	/* locate trap instruction in pcb_sigc */
 	if (sigtrap == NULL) {
-		register struct pcb *pcp = &u.u_pcb;
-
-		sigtrap = &pcp->pcb_sigc[sizeof(pcp->pcb_sigc)/sizeof(short)];
-		while (--sigtrap >= pcp->pcb_sigc)
+		sigtrap = esigcode;
+		while (--sigtrap >= sigcode)
 			if ((*sigtrap & 0xFFF0) == 0x4E40)
 				break;
-		if (sigtrap < pcp->pcb_sigc)
+		if (sigtrap < sigcode)
 			panic("bogus sigcode\n");
 	}
 	*sigtrap = ishpux ? 0x4E42 : 0x4E41;
@@ -534,6 +533,7 @@ sendsig(catcher, sig, mask, code)
 	register struct sigacts *ps = p->p_sigacts;
 	register short ft;
 	int oonstack, fsize;
+	extern char sigcode[], esigcode[];
 
 	frame = (struct frame *)p->p_regs;
 	ft = frame->f_format;
@@ -687,7 +687,7 @@ sendsig(catcher, sig, mask, code)
 	/*
 	 * Signal trampoline code is at base of user stack.
 	 */
-	frame->f_pc = USRSTACK - sizeof(u.u_pcb.pcb_sigc);
+	frame->f_pc = USRSTACK - (esigcode - sigcode);
 #ifdef DEBUG
 	if ((sigdebug & SDB_KSTACK) && p->p_pid == sigpid)
 		printf("sendsig(%d): sig %d returns\n",
@@ -877,7 +877,7 @@ boot(howto)
 {
 	/* take a snap shot before clobbering any registers */
 	if (curproc)
-		resume((u_int)pcbb(curproc));
+		savectx(curproc->p_addr, 0);
 
 	boothowto = howto;
 	if ((howto&RB_NOSYNC) == 0 && waittime < 0 && bfreelist[0].b_forw) {
@@ -1352,11 +1352,12 @@ regdump(rp, sbytes)
 	splx(s);
 }
 
-#define KSADDR	((int *)&(((char *)&u)[(UPAGES-1)*NBPG]))
+extern char kstack[];
+#define KSADDR	((int *)&(kstack[(UPAGES-1)*NBPG]))
 
 dumpmem(ptr, sz, ustack)
- register int *ptr;
- int sz;
+	register int *ptr;
+	int sz;
 {
 	register int i, val;
 	extern char *hexstr();
@@ -1370,7 +1371,8 @@ dumpmem(ptr, sz, ustack)
 			if ((val = fuword(ptr++)) == -1)
 				break;
 		} else {
-			if (ustack == 0 && (ptr < KSADDR || ptr > KSADDR+(NBPG/4-1)))
+			if (ustack == 0 &&
+			    (ptr < KSADDR || ptr > KSADDR+(NBPG/4-1)))
 				break;
 			val = *ptr++;
 		}
