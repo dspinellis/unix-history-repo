@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_qe.c	7.16 (Berkeley) %G%
+ *	@(#)if_qe.c	7.17 (Berkeley) %G%
  */
 
 /* from  @(#)if_qe.c	1.15	(ULTRIX)	4/16/86 */
@@ -166,12 +166,7 @@ extern char all_es_snpa[], all_is_snpa[];
 #define	QETIMEOUT	2		/* transmit timeout, must be > 1 */
 #define QESLOWTIMEOUT	40		/* timeout when no xmits in progress */
 
-/*
- * This constant should really be 60 because the qna adds 4 bytes of crc.
- * However when set to 60 our packets are ignored by deuna's , 3coms are
- * okay ??????????????????????????????????????????
- */
-#define MINDATA 64
+#define MINDATA 60
 
 /*
  * Ethernet software status per interface.
@@ -517,6 +512,8 @@ qestart(ifp)
 			buf_addr = sc->qe_ifw[index].ifw_info;
 			len = if_ubaput(&sc->qe_uba, &sc->qe_ifw[index], m);
 		}
+		if( len < MINDATA )
+			len = MINDATA;
 		/*
 		 *  Does buffer end on odd byte ?
 		 */
@@ -524,8 +521,6 @@ qestart(ifp)
 			len++;
 			rp->qe_odd_end = 1;
 		}
-		if( len < MINDATA )
-			len = MINDATA;
 		rp->qe_buf_len = -(len/2);
 		buf_addr = UBAI_ADDR(buf_addr);
 		rp->qe_flag = rp->qe_status1 = QE_NOTYET;
