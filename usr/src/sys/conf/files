@@ -1,52 +1,3 @@
-kdb/kdb_access.c	optional kadb
-kdb/kdb_command.c	optional kadb
-kdb/kdb_ctype.c		optional kadb
-kdb/kdb_expr.c		optional kadb
-kdb/kdb_format.c	optional kadb
-kdb/kdb_input.c		optional kadb
-kdb/kdb_message.c	optional kadb
-kdb/kdb_output.c	optional kadb
-kdb/kdb_pcs.c		optional kadb
-kdb/kdb_print.c		optional kadb
-kdb/kdb_runpcs.c	optional kadb
-kdb/kdb_sym.c		optional kadb
-kdb/kdb_trap.c		optional kadb
-net/af.c		standard
-net/if.c		standard
-net/if_ethersubr.c	standard
-net/if_loop.c		optional loop
-net/if_sl.c		optional sl
-net/raw_cb.c		standard
-net/raw_usrreq.c	standard
-net/route.c		standard
-netimp/if_imp.c		optional imp
-netimp/if_imphost.c	optional imp
-netimp/raw_imp.c	optional imp
-netinet/if_ether.c	optional ether
-netinet/in.c		optional inet
-netinet/in_pcb.c	optional inet
-netinet/in_proto.c	optional inet
-netinet/ip_icmp.c	optional inet
-netinet/ip_input.c	optional inet
-netinet/ip_output.c	optional inet
-netinet/raw_ip.c	optional inet
-netinet/tcp_debug.c	optional inet
-netinet/tcp_input.c	optional inet
-netinet/tcp_output.c	optional inet
-netinet/tcp_subr.c	optional inet
-netinet/tcp_timer.c	optional inet
-netinet/tcp_usrreq.c	optional inet
-netinet/udp_usrreq.c	optional inet
-netns/idp_usrreq.c	optional ns
-netns/ns.c		optional ns
-netns/ns_error.c	optional ns
-netns/ns_ip.c		optional ns
-netns/ns_input.c	optional ns
-netns/ns_output.c	optional ns
-netns/ns_pcb.c		optional ns
-netns/ns_proto.c	optional ns
-netns/spp_debug.c	optional ns
-netns/spp_usrreq.c	optional ns
 kern/init_main.c	standard
 kern/init_sysent.c	standard
 kern/kern_acct.c	standard
@@ -129,6 +80,56 @@ nfs/nfs_socket.c	optional nfs
 nfs/nfs_subs.c		optional nfs
 nfs/nfs_syscalls.c	optional nfs
 nfs/nfs_vfsops.c	optional nfs
+kdb/kdb_access.c	optional kadb
+kdb/kdb_command.c	optional kadb
+kdb/kdb_ctype.c		optional kadb
+kdb/kdb_expr.c		optional kadb
+kdb/kdb_format.c	optional kadb
+kdb/kdb_input.c		optional kadb
+kdb/kdb_message.c	optional kadb
+kdb/kdb_output.c	optional kadb
+kdb/kdb_pcs.c		optional kadb
+kdb/kdb_print.c		optional kadb
+kdb/kdb_runpcs.c	optional kadb
+kdb/kdb_sym.c		optional kadb
+kdb/kdb_trap.c		optional kadb
+net/af.c		standard
+net/if.c		standard
+net/if_ethersubr.c	optional ether
+net/if_loop.c		optional loop
+net/if_sl.c		optional sl
+net/raw_cb.c		standard
+net/raw_usrreq.c	standard
+net/route.c		standard
+net/slcompress.c	optional sl
+netimp/if_imp.c		optional imp
+netimp/if_imphost.c	optional imp
+netimp/raw_imp.c	optional imp
+netinet/if_ether.c	optional ether
+netinet/in.c		optional inet
+netinet/in_pcb.c	optional inet
+netinet/in_proto.c	optional inet
+netinet/ip_icmp.c	optional inet
+netinet/ip_input.c	optional inet
+netinet/ip_output.c	optional inet
+netinet/raw_ip.c	optional inet
+netinet/tcp_debug.c	optional inet
+netinet/tcp_input.c	optional inet
+netinet/tcp_output.c	optional inet
+netinet/tcp_subr.c	optional inet
+netinet/tcp_timer.c	optional inet
+netinet/tcp_usrreq.c	optional inet
+netinet/udp_usrreq.c	optional inet
+netns/idp_usrreq.c	optional ns
+netns/ns.c		optional ns
+netns/ns_error.c	optional ns
+netns/ns_ip.c		optional ns
+netns/ns_input.c	optional ns
+netns/ns_output.c	optional ns
+netns/ns_pcb.c		optional ns
+netns/ns_proto.c	optional ns
+netns/spp_debug.c	optional ns
+netns/spp_usrreq.c	optional ns
 netiso/clnp_debug.c	optional iso
 netiso/clnp_er.c	optional iso
 netiso/clnp_frag.c	optional iso
