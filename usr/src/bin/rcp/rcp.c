@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rcp.c	5.30.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rcp.c	5.31 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -33,6 +33,7 @@ static char sccsid[] = "@(#)rcp.c	5.30.1.1 (Berkeley) %G%";
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include "pathnames.h"
 
@@ -121,19 +122,19 @@ main(argc, argv)
 		(void) sprintf(msgbuf, "can't get entry for %s/tcp service",
 			shell);
 		old_warning(msgbuf);
-		sp = getservbyname("shell", "tcp");
+		sp = getservbyname(shell = "shell", "tcp");
 	}
 #else
-	sp = getservbyname("shell", "tcp");
+	sp = getservbyname(shell = "shell", "tcp");
 #endif
 	if (sp == NULL) {
-		(void)fprintf(stderr, "rcp: shell/tcp: unknown service\n");
+		(void)fprintf(stderr, "rcp: %s/tcp: unknown service\n", shell);
 		exit(1);
 	}
 	port = sp->s_port;
 
 	if (!(pwd = getpwuid(userid = getuid()))) {
-		(void)fprintf(stderr, "rcp: unknown user %d.\n", userid);
+		(void)fprintf(stderr, "rcp: unknown user %d.\n", (int)userid);
 		exit(1);
 	}
 
@@ -187,7 +188,7 @@ toremote(targ, argc, argv)
 {
 	int i, tos;
 	char *bp, *host, *src, *suser, *thost, *tuser;
-	char *colon(), *malloc();
+	char *colon();
 
 	*targ++ = 0;
 	if (*targ == 0)
@@ -213,10 +214,11 @@ toremote(targ, argc, argv)
 			if (*src == 0)
 				src = ".";
 			host = index(argv[i], '@');
-			if (!(bp = malloc((u_int)(strlen(_PATH_RSH) +
+			if (!(bp = malloc(strlen(_PATH_RSH) +
 				    strlen(argv[i]) + strlen(src) +
-				    tuser ? strlen(tuser) : 0 + strlen(thost) +
-				    strlen(targ)) + CMDNEEDS + 20)))
+				    (tuser ? strlen(tuser) : 0) +
+				    strlen(thost) +
+				    strlen(targ) + CMDNEEDS + 20)))
 					nospace();
 			if (host) {
 				*host++ = 0;
@@ -239,7 +241,7 @@ toremote(targ, argc, argv)
 			(void)free(bp);
 		} else {			/* local to remote */
 			if (rem == -1) {
-				if (!(bp = malloc((u_int)strlen(targ) +
+				if (!(bp = malloc(strlen(targ) +
 				    CMDNEEDS + 20)))
 					nospace();
 				(void)sprintf(bp, "%s -t %s", cmd, targ);
@@ -276,12 +278,12 @@ tolocal(argc, argv)
 {
 	int i, tos;
 	char *bp, *host, *src, *suser;
-	char *colon(), *malloc();
+	char *colon();
 
 	for (i = 0; i < argc - 1; i++) {
 		if (!(src = colon(argv[i]))) {	/* local to local */
-			if (!(bp = malloc((u_int)(strlen(_PATH_CP) +
-			    strlen(argv[i]) + strlen(argv[argc - 1])) + 20)))
+			if (!(bp = malloc(strlen(_PATH_CP) +
+			    strlen(argv[i]) + strlen(argv[argc - 1]) + 20)))
 				nospace();
 			(void)sprintf(bp, "%s%s%s %s %s", _PATH_CP,
 			    iamrecursive ? " -r" : "", pflag ? " -p" : "",
@@ -305,7 +307,7 @@ tolocal(argc, argv)
 			host = argv[i];
 			suser = pwd->pw_name;
 		}
-		if (!(bp = malloc((u_int)(strlen(src)) + CMDNEEDS + 20)))
+		if (!(bp = malloc(strlen(src) + CMDNEEDS + 20)))
 			nospace();
 		(void)sprintf(bp, "%s -f %s", cmd, src);
 #ifdef KERBEROS
@@ -446,7 +448,7 @@ notreg:			(void)close(f);
 			 */
 			(void)sprintf(buf, "T%ld 0 %ld 0\n", stb.st_mtime,
 			    stb.st_atime);
-			(void)write(rem, buf, strlen(buf));
+			(void)write(rem, buf, (int)strlen(buf));
 			if (response() < 0) {
 				(void)close(f);
 				continue;
@@ -454,7 +456,7 @@ notreg:			(void)close(f);
 		}
 		(void)sprintf(buf, "C%04o %ld %s\n", stb.st_mode&07777,
 		    stb.st_size, last);
-		(void)write(rem, buf, strlen(buf));
+		(void)write(rem, buf, (int)strlen(buf));
 		if (response() < 0) {
 			(void)close(f);
 			continue;
@@ -501,14 +503,14 @@ rsource(name, statp)
 	if (pflag) {
 		(void)sprintf(path, "T%ld 0 %ld 0\n", statp->st_mtime,
 		    statp->st_atime);
-		(void)write(rem, path, strlen(path));
+		(void)write(rem, path, (int)strlen(path));
 		if (response() < 0) {
 			closedir(d);
 			return;
 		}
 	}
 	(void)sprintf(path, "D%04o %d %s\n", statp->st_mode&07777, 0, last);
-	(void)write(rem, path, strlen(path));
+	(void)write(rem, path, (int)strlen(path));
 	if (response() < 0) {
 		closedir(d);
 		return;
@@ -585,7 +587,7 @@ sink(argc, argv)
 	char ch, *targ, *why;
 	int amt, count, exists, first, mask, mode;
 	int ofd, setimes, size, targisdir;
-	char *np, *vect[1], buf[BUFSIZ], *malloc();
+	char *np, *vect[1], buf[BUFSIZ];
 
 #define	atime	tv[0]
 #define	mtime	tv[1]
@@ -620,7 +622,7 @@ sink(argc, argv)
 
 		if (buf[0] == '\01' || buf[0] == '\02') {
 			if (iamremote == 0)
-				(void)write(2, buf + 1, strlen(buf + 1));
+				(void)write(2, buf + 1, (int)strlen(buf + 1));
 			if (buf[0] == '\02')
 				exit(1);
 			errs++;
@@ -684,11 +686,11 @@ sink(argc, argv)
 		if (targisdir) {
 			static char *namebuf;
 			static int cursize;
-			int need;
+			size_t need;
 
 			need = strlen(targ) + strlen(cp) + 250;
 			if (need > cursize) {
-				if (!(namebuf = malloc((u_int)need)))
+				if (!(namebuf = malloc(need)))
 					error("out of memory\n");
 			}
 			(void)sprintf(namebuf, "%s%s%s", targ,
@@ -796,8 +798,7 @@ allocbuf(bp, fd, blksize)
 	int fd, blksize;
 {
 	struct stat stb;
-	int size;
-	char *malloc();
+	size_t size;
 
 	if (fstat(fd, &stb) < 0) {
 		error("rcp: fstat: %s\n", strerror(errno));
@@ -809,7 +810,7 @@ allocbuf(bp, fd, blksize)
 	if (bp->cnt < size) {
 		if (bp->buf != 0)
 			free(bp->buf);
-		bp->buf = (char *)malloc((u_int)size);
+		bp->buf = malloc(size);
 		if (!bp->buf) {
 			error("rcp: malloc: out of memory\n");
 			return(0);
