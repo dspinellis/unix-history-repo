@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.148 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.149 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -911,7 +911,7 @@ deliver(e, firstto)
 		**	with the others, so we fudge on the To person.
 		*/
 
-		if (m == FileMailer)
+		if (strcmp(m->m_mailer, "[FILE]") == 0)
 		{
 			rcode = mailfile(user, ctladdr, e);
 			giveresponse(rcode, m, NULL, ctladdr, xstart, e);
