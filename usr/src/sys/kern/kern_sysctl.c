@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sysctl.c	7.20 (Berkeley) %G%
+ *	@(#)kern_sysctl.c	7.21 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -21,7 +21,7 @@
 
 #define snderr(e) { error = (e); goto release;}
 extern int kinfo_doproc(), kinfo_rtable(), kinfo_vnode(), kinfo_file();
-extern int kinfo_meter();
+extern int kinfo_meter(), kinfo_loadavg(), kinfo_clockrate();
 struct kinfo_lock kinfo_lock;
 
 /* ARGSUSED */
@@ -58,6 +58,14 @@ getkerninfo(p, uap, retval)
 
 	case KINFO_METER:
 		server = kinfo_meter;
+		break;
+
+	case KINFO_LOADAVG:
+		server = kinfo_loadavg;
+		break;
+
+	case KINFO_CLOCKRATE:
+		server = kinfo_clockrate;
 		break;
 
 	default:
