@@ -43,7 +43,7 @@ struct nspcb nsrawpcb;
 struct ifqueue	nsintrq;
 int	nsqmaxlen = IFQ_MAXLEN;
 
-int	idpcksum = 0;
+int	idpcksum = 1;
 
 ns_init()
 {
@@ -155,7 +155,7 @@ next:
 			 *
 			 * Suggestion of Bill Nesheim, Cornell U.
 			 */
-			if(idp->idp_tc < NS_MAXHOPS) {
+			if (idp->idp_tc < NS_MAXHOPS) {
 				idp_forward(idp);
 				goto next;
 			}
@@ -184,9 +184,11 @@ next:
 			m_adj(m0, -1);
 		}
 		switch (idp->idp_pt) {
+
 			case NSPROTO_SPP:
 				spp_input(m,nsp);
 				break;
+
 			case NSPROTO_ERROR:
 				ns_err_input(m);
 				break;
@@ -237,6 +239,7 @@ idp_ctlinput(cmd, arg)
 		type = ntohs(type);
 	}
 	switch (type) {
+
 	case NS_ERR_UNREACH_HOST:
 	case NS_ERR_NOSOCK:
 		ns_pcbnotify(ns, (int)nsctlerrmap[cmd], idp_abort, 0);
@@ -287,7 +290,7 @@ idp_forward(idp)
 	 */
 	mcopy = m_copy(dtom(idp), 0, imin(ntohs(idp->idp_len), 42));
 
-	if((ok_there = idp_do_route(&idp->idp_dna,&idp_droute))==0) {
+	if ((ok_there = idp_do_route(&idp->idp_dna,&idp_droute))==0) {
 		type = NS_ERR_UNREACH_HOST, code = 0;
 		goto senderror;
 	}
@@ -384,12 +387,13 @@ struct route *ro;
 
 	dst->sns_family = AF_NS;
 	dst->sns_addr = *src;
+	dst->sns_addr.x_port = 0;
 	rtalloc(ro);
 	if (ro->ro_rt == 0 || ro->ro_rt->rt_ifp == 0) {
-		return(0);
+		return (0);
 	}
 	ro->ro_rt->rt_use++;
-	return(1);
+	return (1);
 }
 
 idp_undo_route(ro)
