@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)access.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)access.c	5.2 (Berkeley) %G%";
 #endif
 
 /*
@@ -122,13 +122,30 @@ readcore(off, addr, len)
  * (cached ptrace) to allow some cacheing.  cptrace also converts a
  * read/write op and a space into a ptrace op, and returns 0 on success
  * and hence takes a pointer to the value cell rather than the value.
- *
- * N.B.: The cache retains the pid, so that killing and restarting
- * a process invalidates the cache entry.  If pid's were reused fast
- * enough this could fail, and we would need a cache-invalidate
- * routine, to be called whenever a process is started.  Fortunately
- * that is not now the case.
  */
+struct cache {
+	short	rop, wop;		/* ptrace ops for read and write */
+	int	valid;			/* true iff cache entry valid */
+	int	*addr;			/* address of cached value */
+	int	val;			/* and the value */
+};
+static struct cache icache = { PT_READ_I, PT_WRITE_I };
+static struct cache dcache = { PT_READ_D, PT_WRITE_D };
+
+/*
+ * Invalidate one or both caches.
+ * This is the only function that accepts two spaces simultaneously.
+ */
+cacheinval(space)
+	int space;
+{
+
+	if (space & SP_INSTR)
+		icache.valid = 0;
+	if (space & SP_DATA)
+		dcache.valid = 0;
+}
+
 int	cachehit, cachemiss;		/* statistics */
 
 static int
@@ -136,19 +153,11 @@ cptrace(rw, space, p, addr, val)
 	enum rwmode rw;
 	int space, p, *addr, *val;
 {
-	static struct cache {
-		short	rop, wop;	/* ptrace ops for read and write */
-		int	pid;		/* pid, iff cache entry valid */
-		int	*addr;		/* address of cached value */
-		int	val;		/* and the value */
-	} cache[2] = { {PT_READ_D, PT_WRITE_D}, {PT_READ_I, PT_WRITE_I} };
-	register struct cache *c;
+	register struct cache *c = space & SP_DATA ? &dcache : &icache;
 	int v;
 
-	/* set c to point to cache[0] for dspace, cache[1] for ispace */
-	c = space & SP_DATA ? &cache[0] : &cache[1];
 	if (rw == RWMODE_READ) {
-		if (c->pid == p && c->addr == addr) {
+		if (c->valid && c->addr == addr) {
 			cachehit++;
 			*val = c->val;
 			return (0);
@@ -159,12 +168,12 @@ cptrace(rw, space, p, addr, val)
 			return (-1);
 		*val = v;
 	} else {
-		c->pid = 0;		/* paranoia */
+		c->valid = 0;		/* paranoia */
 		errno = 0;
 		if (ptrace(c->wop, p, addr, v = *val) == -1 && errno)
 			return (-1);
 	}
-	c->pid = p;
+	c->valid = 1;
 	c->addr = addr;
 	c->val = v;
 	return (0);
