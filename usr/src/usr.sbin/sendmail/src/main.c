@@ -5,7 +5,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.30	%G%";
+static char	SccsId[] = "@(#)main.c	3.31	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -125,6 +125,7 @@ bool	SuprErrs;	/* supress errors if set */
 bool	Verbose;	/* set if blow-by-blow desired */
 bool	GrabTo;		/* if set, read recipient addresses from msg */
 bool	DontSend;	/* mark recipients as QDONTSEND */
+bool	NoReturn;	/* don't return content of letter to sender */
 int	Debug;		/* debug level */
 int	Errors;		/* count of errors */
 int	AliasLevel;	/* current depth of aliasing */

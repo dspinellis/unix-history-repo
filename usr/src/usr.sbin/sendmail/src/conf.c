@@ -32,7 +32,7 @@
 
 
 
-static char SccsId[] = "@(#)conf.c	3.26	%G%";
+static char SccsId[] = "@(#)conf.c	3.27	%G%";
 
 
 # include <whoami.h>		/* definitions of machine id's at berkeley */
@@ -272,6 +272,9 @@ ttypath()
 **	message should be given using "usrerr" and FALSE should
 **	be returned.
 **
+**	'NoReturn' can be set to suppress the return-to-sender
+**	function; this should be done on huge messages.
+**
 **	Parameters:
 **		to -- the person being sent to.
 **
@@ -287,11 +290,11 @@ bool
 checkcompat(to)
 	register ADDRESS *to;
 {
-# ifdef lint
-	ADDRESS *x = to;
-
-	to = x;
-# endif lint
-
+	if (to->q_mailer != MN_LOCAL && MsgSize > 100000)
+	{
+		usrerr("Message exceeds 100000 bytes");
+		NoReturn++;
+		return (FALSE);
+	}
 	return (TRUE);
 }

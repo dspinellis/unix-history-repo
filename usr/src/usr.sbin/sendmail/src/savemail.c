@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)savemail.c	3.15	%G%";
+static char	SccsId[] = "@(#)savemail.c	3.16	%G%";
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -219,7 +219,9 @@ errhdr(fp)
 	fprintf(fp, "\n   ----- Transcript of session follows -----\n");
 	while (fgets(buf, sizeof buf, xfile) != NULL)
 		fputs(buf, fp);
-	if (TempFile != NULL)
+	if (NoReturn)
+		fprintf(fp, "\n   ----- Return message suppressed -----\n\n");
+	else if (TempFile != NULL)
 	{
 		fprintf(fp, "\n   ----- Unsent message follows -----\n");
 		(void) fflush(fp);
