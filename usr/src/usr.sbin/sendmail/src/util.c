@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <stdio.h>
@@ -587,9 +587,11 @@ sfgets(buf, siz, fp)
 	{
 		if (setjmp(CtxReadTimeout) != 0)
 		{
+# ifdef LOG
 			syslog(LOG_NOTICE,
 			    "timeout waiting for input from %s\n",
 			    RealHostName);
+# endif
 			errno = 0;
 			usrerr("timeout waiting for input");
 			buf[0] = '\0';
