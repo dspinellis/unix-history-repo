@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	6.30 (Berkeley) %G%
+ *	@(#)sendmail.h	6.31 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	6.30		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	6.31		%G%";
 # endif lint
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -289,6 +289,8 @@ typedef struct envelope	ENVELOPE;
 #define EF_RESPONSE	000200		/* this is an error or return receipt */
 #define EF_RESENT	000400		/* this message is being forwarded */
 #define EF_VRFYONLY	001000		/* verify only (don't expand aliases) */
+#define EF_WARNING	002000		/* warning message has been sent */
+#define EF_QUEUERUN	004000		/* this envelope is from queue */
 
 EXTERN ENVELOPE	*CurEnv;	/* envelope currently being processed */
 /*
@@ -606,7 +608,6 @@ EXTERN bool	Verbose;	/* set if blow-by-blow desired */
 EXTERN bool	GrabTo;		/* if set, get recipients from msg */
 EXTERN bool	NoReturn;	/* don't return letter to sender */
 EXTERN bool	SuprErrs;	/* set if we are suppressing errors */
-EXTERN bool	QueueRun;	/* currently running message from the queue */
 EXTERN bool	HoldErrs;	/* only output errors to transcript */
 EXTERN bool	NoConnect;	/* don't connect to non-local mailers */
 EXTERN bool	SuperSafe;	/* be extra careful, even if expensive */
@@ -616,7 +617,6 @@ EXTERN bool	CheckAliases;	/* parse addresses during newaliases */
 EXTERN bool	UseNameServer;	/* use internet domain name server */
 EXTERN bool	EightBit;	/* try to preserve 8-bit data */
 EXTERN int	SafeAlias;	/* minutes to wait until @:@ in alias file */
-EXTERN time_t	TimeOut;	/* time until timeout */
 EXTERN FILE	*InChannel;	/* input connection */
 EXTERN FILE	*OutChannel;	/* output connection */
 EXTERN uid_t	RealUid;	/* when Daemon, real uid of caller */
@@ -696,6 +696,9 @@ EXTERN struct
 	time_t	to_helo;	/* HELO command */
 	time_t	to_quit;	/* QUIT command */
 	time_t	to_miscshort;	/* misc short commands (NOOP, VERB, etc) */
+			/* following are per message */
+	time_t	to_q_return;	/* queue return timeout */
+	time_t	to_q_warning;	/* queue warning timeout */
 } TimeOuts;
 
 

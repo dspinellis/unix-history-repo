@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	6.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	6.19 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1237,7 +1237,13 @@ setoption(opt, val, sticky)
 		break;
 
 	  case 'T':		/* queue timeout */
-		TimeOut = convtime(val);
+		p = strchr(val, '/');
+		if (p != NULL)
+		{
+			*p++ = '\0';
+			TimeOuts.to_q_warning = convtime(p);
+		}
+		TimeOuts.to_q_return = convtime(val);
 		break;
 
 	  case 't':		/* time zone name */

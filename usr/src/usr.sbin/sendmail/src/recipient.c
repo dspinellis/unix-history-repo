@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	6.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	6.30 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -237,7 +237,7 @@ recipient(a, sendq, e)
 	*/
 
 	/* set the queue timeout */
-	a->q_timeout = TimeOut;
+	a->q_timeout = TimeOuts.to_q_return;
 
 	/* get unquoted user for file, program or user.name check */
 	(void) strcpy(buf, a->q_user);
@@ -249,7 +249,8 @@ recipient(a, sendq, e)
 	stripquotes(buf);
 
 	/* check for direct mailing to restricted mailers */
-	if (a->q_alias == NULL && m == ProgMailer)
+	if (a->q_alias == NULL && m == ProgMailer &&
+	    !bitset(EF_QUEUERUN, e->e_flags))
 	{
 		a->q_flags |= QBADADDR;
 		usrerr("550 Cannot mail directly to programs", m->m_name);
@@ -303,7 +304,7 @@ recipient(a, sendq, e)
 	if (m == InclMailer)
 	{
 		a->q_flags |= QDONTSEND;
-		if (a->q_alias == NULL)
+		if (a->q_alias == NULL && !bitset(EF_QUEUERUN, e->e_flags))
 		{
 			a->q_flags |= QBADADDR;
 			usrerr("550 Cannot mail directly to :include:s");
@@ -325,7 +326,7 @@ recipient(a, sendq, e)
 
 		p = strrchr(buf, '/');
 		/* check if writable or creatable */
-		if (a->q_alias == NULL && !QueueRun)
+		if (a->q_alias == NULL && !bitset(EF_QUEUERUN, e->e_flags))
 		{
 			a->q_flags |= QBADADDR;
 			usrerr("550 Cannot mail directly to files");

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.39 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.40 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -140,6 +140,8 @@ int	DtableSize =	50;		/* max open files; reset in 4.2bsd */
 **		default values.
 */
 
+#define DAYS		* 24 * 60 * 60
+
 setdefaults(e)
 	register ENVELOPE *e;
 {
@@ -163,7 +165,8 @@ setdefaults(e)
 	MciCacheTimeout = 300;			/* option K */
 	LogLevel = 9;				/* option L */
 	settimeouts(NULL);			/* option r */
-	TimeOut = 5 * 24 * 60 * 60;		/* option T */
+	TimeOuts.to_q_return = 5 DAYS;		/* option T */
+	TimeOuts.to_q_warning = 0;		/* option T */
 	setdefuser();
 	setupmaps();
 	setupmailers();

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.51 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.52 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -98,8 +98,8 @@ deliver(e, firstto)
 	**		This should be on a per-mailer basis.
 	*/
 
-	if (NoConnect && !QueueRun && bitnset(M_EXPENSIVE, m->m_flags) &&
-	    !Verbose)
+	if (NoConnect && !bitset(EF_QUEUERUN, e->e_flags) &&
+	    bitnset(M_EXPENSIVE, m->m_flags) && !Verbose)
 	{
 		for (; to != NULL; to = to->q_next)
 		{
@@ -530,19 +530,19 @@ markfailure(e, q, rcode)
 	register ADDRESS *q;
 	int rcode;
 {
+	char buf[MAXLINE];
+	extern char *pintvl();
+
 	if (rcode == EX_OK)
 		return;
 	else if (rcode != EX_TEMPFAIL && rcode != EX_IOERR && rcode != EX_OSERR)
 		q->q_flags |= QBADADDR;
-	else if (curtime() > e->e_ctime + TimeOut)
+	else if (curtime() > e->e_ctime + TimeOuts.to_q_return)
 	{
-		extern char *pintvl();
-		char buf[MAXLINE];
-
 		if (!bitset(EF_TIMEOUT, e->e_flags))
 		{
 			(void) sprintf(buf, "Cannot send message for %s",
-				pintvl(TimeOut, FALSE));
+				pintvl(TimeOuts.to_q_return, FALSE));
 			if (e->e_message != NULL)
 				free(e->e_message);
 			e->e_message = newstr(buf);
@@ -553,7 +553,30 @@ markfailure(e, q, rcode)
 		fprintf(e->e_xfp, "421 %s... Message timed out\n", q->q_paddr);
 	}
 	else
+	{
 		q->q_flags |= QQUEUEUP;
+		if (TimeOuts.to_q_warning > 0 &&
+		    curtime() > e->e_ctime + TimeOuts.to_q_warning)
+		{
+			if (!bitset(EF_WARNING, e->e_flags) &&
+			    e->e_class >= 0)
+			{
+				(void) sprintf(buf,
+					"warning: cannot send message for %s",
+					pintvl(TimeOuts.to_q_warning, FALSE));
+				if (e->e_message != NULL)
+					free(e->e_message);
+				e->e_message = newstr(buf);
+				message(buf);
+				e->e_flags |= EF_WARNING|EF_TIMEOUT;
+			}
+			fprintf(e->e_xfp,
+				"%s... Warning: message still undelivered after %s\n",
+				q->q_paddr, pintvl(TimeOuts.to_q_warning, FALSE));
+			fprintf(e->e_xfp, "Will keep trying until message is %s old\n",
+				pintvl(TimeOuts.to_q_return, FALSE));
+		}
+	}
 }
 /*
 **  DOFORK -- do a fork, retrying a couple of times on failure.
