@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: mem.c 1.14 90/10/12$
  *
- *	@(#)mem.c	8.1 (Berkeley) %G%
+ *	@(#)mem.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -59,10 +59,11 @@ mmrw(dev, uio, flags)
 		case 0:
 			v = (u_long)uio->uio_offset;
 			c = iov->iov_len;
-			if (v + c >= physmem)
+			if (v + c <= btoc(physmem))
+				v += MACH_CACHED_MEMORY_ADDR;
+			else
 				return (EFAULT);
-			error = uiomove((caddr_t)(MACH_CACHED_MEMORY_ADDR + v),
-				(int)c, uio);
+			error = uiomove((caddr_t)v, (int)c, uio);
 			continue;
 
 /* minor device 1 is kernel memory */
