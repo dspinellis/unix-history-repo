@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.7 (Berkeley) %G%
+.\"	@(#)op.me	6.8 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,7 +40,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.7
+Version 6.8
 .sp
 For Sendmail Version 6.11
 .)l
@@ -4187,30 +4187,32 @@ This section describes what changes can be made
 and what has to be modified to make them.
 .sh 2 "Parameters in src/Makefile"
 .pp
-These parameters are not intended to describe site policy;
-these should be defined in src/conf.h.
-.ip DBM
-If set,
-the
-.q DBM
-package in UNIX is used
-(see
-.i dbm(3X)
-in the UNIX Programmer's Manual).
-If not set,
-a much less efficient algorithm for processing aliases is used.
+These parameters are intended to describe the compilation environment,
+not site policy,
+and should normally be defined in src/Makefile.
 .ip NDBM
 If set,
 the new version of the DBM library
 that allows multiple databases will be used.
-.q DBM
-must also be set.
+If neither NDBM nor NEWDB are set,
+a much less efficient method of alias lookup is used.
 .ip NEWDB
 If set, use the new database package from Berkeley (from 4.4BSD).
 This package is substantially faster than DBM or NDBM.
-If NEWDB and DBM are both set,
-sendmail will read old DBM files,
+If NEWDB and NDBM are both set,
+sendmail will read DBM files,
 but will create and use NEWDB files.
+.ip YPCOMPAT
+If set together with
+.i both
+NEWDB and NDBM,
+.i sendmail
+will create both DBM and NEWDB files if and only if
+the file /var/yp/Makefile
+exists and is readable.
+This is intended for compatibility with Sun Microsystems'
+.i mkalias
+program used on YP masters.
 .ip LOCKF
 Use System V
 .b lockf
@@ -5334,7 +5336,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.7
+.\"Version 6.8
 .\".ce 0
 .pn 2
 .bp
