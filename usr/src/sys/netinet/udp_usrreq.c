@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)udp_usrreq.c	6.20 (Berkeley) %G%
+ *	@(#)udp_usrreq.c	6.21 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -134,6 +134,18 @@ bad:
 	m_freem(m);
 }
 
+/*
+ * Notify a udp user of an asynchronous error;
+ * just wake up so that he can collect error status.
+ */
+udp_notify(inp)
+	register struct inpcb *inp;
+{
+
+	sorwakeup(inp->inp_socket);
+	sowwakeup(inp->inp_socket);
+}
+
 udp_ctlinput(cmd, sa)
 	int cmd;
 	struct sockaddr *sa;
@@ -167,7 +179,7 @@ udp_ctlinput(cmd, sa)
 		if (inetctlerrmap[cmd] == 0)
 			return;		/* XXX */
 		in_pcbnotify(&udb, &sin->sin_addr, (int)inetctlerrmap[cmd],
-			(int (*)())0);
+			udp_notify);
 	}
 }
 
