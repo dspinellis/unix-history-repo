@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_conv.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_conv.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -80,7 +80,7 @@ __bt_pgout(t, pg, p)
  *	h:	page to convert
  *
  * Warnings:
- *	Everywhere else in the code, the pgno_t and index_t types are
+ *	Everywhere else in the code, the pgno_t and indx_t types are
  *	opaque.  These routines know what they really are.
  */
 static void

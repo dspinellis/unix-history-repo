@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)btree.h	5.9 (Berkeley) %G%
+ *	@(#)btree.h	5.10 (Berkeley) %G%
  */
 
 #include <mpool.h>
@@ -48,15 +48,15 @@ typedef struct PAGE {
 #define	P_PRESERVE	0x20		/* never delete this chain of pages */
 	u_long	flags;
 
-	index_t	lower;			/* lower bound of free space on page */
-	index_t	upper;			/* upper bound of free space on page */
-	index_t	linp[1];		/* long-aligned VARIABLE LENGTH DATA */
+	indx_t	lower;			/* lower bound of free space on page */
+	indx_t	upper;			/* upper bound of free space on page */
+	indx_t	linp[1];		/* long-aligned VARIABLE LENGTH DATA */
 } PAGE;
 
 /* First and next index. */
 #define	BTDATAOFF	(sizeof(pgno_t) + sizeof(pgno_t) + sizeof(pgno_t) + \
-			    sizeof(u_long) + sizeof(index_t) + sizeof(index_t))
-#define	NEXTINDEX(p)	(((p)->lower - BTDATAOFF) / sizeof(index_t))
+			    sizeof(u_long) + sizeof(indx_t) + sizeof(indx_t))
+#define	NEXTINDEX(p)	(((p)->lower - BTDATAOFF) / sizeof(indx_t))
 
 /*
  * For pages other than overflow pages, there is an array of offsets into the
@@ -214,12 +214,12 @@ typedef struct RLEAF {
  */
 typedef struct EPGNO {
 	pgno_t	pgno;			/* the page number */
-	index_t	index;			/* the index on the page */
+	indx_t	index;			/* the index on the page */
 } EPGNO;
 
 typedef struct EPG {
 	PAGE	*page;			/* the (pinned) page */
-	index_t	 index;			/* the index on the page */
+	indx_t	 index;			/* the index on the page */
 } EPG;
 
 /*
@@ -263,8 +263,8 @@ typedef struct BTREE {
 	int	bt_rfd;			/* R: record file descriptor */
 
 	pgno_t	bt_free;		/* next free page */
-	index_t	bt_psize;		/* page size */
-	index_t	bt_ovflsize;		/* cut-off for key/data overflow */
+	indx_t	bt_psize;		/* page size */
+	indx_t	bt_ovflsize;		/* cut-off for key/data overflow */
 	int	bt_lorder;		/* byte order */
 					/* sorted order */
 	enum { NOT, BACK, FORWARD, } bt_order;

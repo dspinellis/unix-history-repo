@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_debug.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_debug.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -138,7 +138,7 @@ __bt_dpage(h)
 	BLEAF *bl;
 	RINTERNAL *ri;
 	RLEAF *rl;
-	index_t cur, top;
+	indx_t cur, top;
 	char *sep;
 
 	(void)fprintf(stderr, "    page %d: (", h->pgno);
