@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ffs_alloc.c	6.14 (Berkeley) %G%
+ *	@(#)ffs_alloc.c	6.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -112,7 +112,7 @@ realloccg(ip, bprev, bpref, osize, nsize)
 	daddr_t bno;
 	register struct fs *fs;
 	register struct buf *bp, *obp;
-	int cg;
+	int cg, request;
 	
 	fs = ip->i_fs;
 	if ((unsigned)osize > fs->fs_bsize || fragoff(fs, osize) != 0 ||
@@ -151,7 +151,11 @@ realloccg(ip, bprev, bpref, osize, nsize)
 	}
 	if (bpref >= fs->fs_size)
 		bpref = 0;
-	bno = (daddr_t)hashalloc(ip, cg, (long)bpref, fs->fs_bsize,
+	if (fs->fs_optim == FS_OPTSPACE)
+		request = nsize;
+	else /* if (fs->fs_optim == FS_OPTTIME) */
+		request = fs->fs_bsize;
+	bno = (daddr_t)hashalloc(ip, cg, (long)bpref, request,
 		(u_long (*)())alloccg);
 	if (bno > 0) {
 		obp = bread(ip->i_dev, fsbtodb(fs, bprev), osize);
@@ -168,9 +172,9 @@ realloccg(ip, bprev, bpref, osize, nsize)
 		}
 		brelse(obp);
 		free(ip, bprev, (off_t)osize);
-		if (nsize < fs->fs_bsize)
+		if (nsize < request)
 			free(ip, bno + numfrags(fs, nsize),
-				(off_t)(fs->fs_bsize - nsize));
+				(off_t)(request - nsize));
 		ip->i_blocks += btodb(nsize - osize);
 		ip->i_flag |= IUPD|ICHG;
 		return (bp);
