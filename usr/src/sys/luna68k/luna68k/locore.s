@@ -13,7 +13,7 @@
  * from: Utah $Hdr: locore.s 1.62 92/01/20$
  * from: hp300/hp300/locore.s	7.20 (Berkeley) 12/28/92
  *
- *	@(#)locore.s	7.8 (Berkeley) %G%
+ *	@(#)locore.s	7.9 (Berkeley) %G%
  */
 
 /*
@@ -669,9 +669,15 @@ start:
 	movc	d0,vbr			| XXXX please remove these 2 lines
 /* 
  * a5 contains parameters address from booter.
- * First, we copy parameters to save area.
- * (Now just save maxmem and so on. Not complete yet.) XXXX
+ * First, we copy whole parameters to Kernel InterFace Field
  */
+
+	movl	#KIFF_SIZE,sp@-		| KIFF size
+	pea	_KernInter		| KIFF address
+	pea	a5@			| bootor's KIFF address
+	jbsr	_bcopy
+	lea	sp@(12),sp		| pop value args
+
 	movl	a5@(KI_MAXADDR),d0	| maxaddr
 	moveq	#PGSHIFT,d1
 	lsrl	d1,d0			| convert to page (click) number
@@ -690,10 +696,7 @@ start:
 /*
  * LUNA  PIO initialization.
  */
-	movb	#PIO_MODED,PIO0_CTL	| read dipswitch
-	movb	PIO0_B,d0		| dipsw-2 (from portB)
-	lsll	#8,d0
-	movb	PIO0_A,d0		| dipsw-1 (from portA)
+	movw	PIO0_A,d0		| dipsw-1,2 (from port A&B)
 	movw	d0,_dipswitch
 
 /* configure kernel and proc0 VA space so we can get going */
@@ -2001,6 +2004,9 @@ _clock_on:
 	.globl	_dipswitch
 _dipswitch:
 	.word	0		| dipsw(front panel) value
+	.globl	_KernInter
+_KernInter:			| Kernel InterFace Field
+	.space	KIFF_SIZE
 #ifdef DEBUG
 	.globl	fulltflush, fullcflush
 fulltflush:
