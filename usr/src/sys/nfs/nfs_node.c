@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_node.c	7.18 (Berkeley) %G%
+ *	@(#)nfs_node.c	7.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -242,8 +242,14 @@ nfs_lock(vp)
 
 	while (np->n_flag & NLOCKED) {
 		np->n_flag |= NWANT;
+		if (np->n_lockholder == u.u_procp->p_pid)
+			panic("locking against myself");
+		np->n_lockwaiter = u.u_procp->p_pid;
 		sleep((caddr_t)np, PINOD);
 	}
+	np->n_lockwaiter = 0;
+	np->n_lockholder = u.u_procp->p_pid;
+	u.u_spare[0]++;
 	np->n_flag |= NLOCKED;
 }
 
@@ -255,6 +261,10 @@ nfs_unlock(vp)
 {
 	register struct nfsnode *np = VTONFS(vp);
 
+	if ((np->n_flag & NLOCKED) == 0)
+		vprint("nfs_unlock: unlocked nfsnode", vp);
+	np->n_lockholder = 0;
+	u.u_spare[0]--;
 	np->n_flag &= ~NLOCKED;
 	if (np->n_flag & NWANT) {
 		np->n_flag &= ~NWANT;
