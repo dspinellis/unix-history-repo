@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)cu.c	4.2 (Berkeley) %G%";
+static	char *sccsid = "@(#)cu.c	4.3 (Berkeley) 81/02/28";
 #include <stdio.h>
 #include <signal.h>
 #include <sgtty.h>
@@ -112,8 +112,12 @@ char *av[];
 	int speed;
 	char *telno;
 	struct sgttyb stbuf;
+	int cleanup();
 
 	signal(SIGALRM, sig14);
+	signal(SIGINT, cleanup);
+	signal(SIGHUP, cleanup);
+	signal(SIGQUIT, cleanup);
 	if (ac < 2) {
 		prf(connmsg[8]);
 		exit(8);
@@ -594,7 +598,8 @@ rd()
 agin:
 	while (rdc(ln) == 1) {
 		if (!slnt) wrc(1);
-		*p++=c;
+		if (p < &b[600])
+			*p++=c;
 		if (c!='\n') continue;
 		q=p; 
 		p=b;
