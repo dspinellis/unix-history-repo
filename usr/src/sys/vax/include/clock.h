@@ -1,4 +1,4 @@
-/*	clock.h	4.3	%G%	*/
+/*	clock.h	4.4	81/02/19	*/
 
 /*
  * VAX clock registers

@@ -1,4 +1,4 @@
-/*	pcb.h	4.2	%G%	*/
+/*	pcb.h	4.3	81/02/19	*/
 
 /*
  * VAX process control block

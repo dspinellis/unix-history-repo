@@ -1,4 +1,4 @@
-/*	buf.h	4.7	%G%	*/
+/*	buf.h	4.8	81/02/19	*/
 
 /*
  * The header for buffers in the buffer pool and otherwise used

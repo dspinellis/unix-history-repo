@@ -1,4 +1,4 @@
-/*	dir.h	4.1	%G%	*/
+/*	dir.h	4.2	81/02/19	*/
 
 #ifndef	DIRSIZ
 #define	DIRSIZ	14

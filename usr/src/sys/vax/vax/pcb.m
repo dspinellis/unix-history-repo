@@ -1,5 +1,5 @@
 #
-#	pcb.m	4.1	%G%
+#	pcb.m	4.2	81/02/19
 #
 #
 #	VAX process control block

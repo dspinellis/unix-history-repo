@@ -1,4 +1,4 @@
-/*	mem.h	4.1	81/02/19	*/
+/*	mem.h	4.2	81/02/19	*/
 
 /*
  * Memory controller registers

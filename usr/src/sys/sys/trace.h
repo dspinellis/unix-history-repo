@@ -1,3 +1,5 @@
+/*	trace.h	4.2	81/02/19	*/
+
 #define	bit(a)		(1<<(a))
 
 #define	TR_BREAD	bit(0)

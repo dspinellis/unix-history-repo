@@ -1,4 +1,4 @@
-/*	pte.h	4.4	%G%	*/
+/*	pte.h	4.5	81/02/19	*/
 
 /*
  * VAX page table entry

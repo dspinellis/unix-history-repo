@@ -1,4 +1,4 @@
-/*	hpreg.h	4.1	81/02/19	*/
+/*	hpreg.h	4.2	81/02/19	*/
 
 struct	device
 {
