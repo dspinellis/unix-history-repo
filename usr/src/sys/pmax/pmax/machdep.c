@@ -10,7 +10,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	7.5 (Berkeley) %G%
+ *	@(#)machdep.c	7.6 (Berkeley) %G%
  */
 
 /* from: Utah $Hdr: machdep.c 1.63 91/04/24$ */
@@ -477,6 +477,7 @@ cpu_startup()
 	callfree = callout;
 	for (i = 1; i < ncallout; i++)
 		callout[i-1].c_next = &callout[i];
+	callout[i-1].c_next = NULL;
 
 #ifdef DEBUG
 	pmapdebug = opmapdebug;
