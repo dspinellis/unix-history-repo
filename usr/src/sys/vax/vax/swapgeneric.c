@@ -1,4 +1,4 @@
-/*	swapgeneric.c	6.1	83/07/29	*/
+/*	swapgeneric.c	4.8	83/08/05	*/
 
 #include "mba.h"
 
@@ -34,6 +34,7 @@ extern	struct mba_driver hpdriver;
 extern	struct uba_driver scdriver;
 extern	struct uba_driver hkdriver;
 extern	struct uba_driver idcdriver;
+extern	struct uba_driver hldriver;
 extern	struct uba_driver udadriver;
 
 struct	genericconf {
@@ -45,7 +46,7 @@ struct	genericconf {
 	{ (caddr_t)&scdriver,	"up",	makedev(2, 0),	},
 	{ (caddr_t)&udadriver,	"ra",	makedev(9, 0),	},
 	{ (caddr_t)&idcdriver,	"rb",	makedev(11, 0),	},
-	{ (caddr_t)&idcdriver,	"rl",	makedev(11, 0),	},
+	{ (caddr_t)&hldriver,	"rl",	makedev(14, 0),	},
 	{ (caddr_t)&hkdriver,	"hk",	makedev(3, 0),	},
 	{ 0 },
 };
