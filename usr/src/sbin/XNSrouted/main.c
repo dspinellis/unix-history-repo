@@ -15,14 +15,13 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * XNS Routing Information Protocol Daemon
  */
 #include "defs.h"
-#include <sys/ioctl.h>
 #include <sys/time.h>
 
 #include <net/if.h>
@@ -36,7 +35,7 @@ int	supplier = -1;		/* process should supply updates */
 extern int gateway;
 
 struct	rip *msg = (struct rip *) &packet[sizeof (struct idp)]; 
-int	hup(), fkexit();
+void	hup(), fkexit(), timer();
 
 main(argc, argv)
 	int argc;
@@ -120,7 +119,7 @@ main(argc, argv)
 	msg->rip_cmd = htons(RIPCMD_REQUEST);
 	msg->rip_nets[0].rip_dst = ns_anynet;
 	msg->rip_nets[0].rip_metric =  htons(HOPCNT_INFINITY);
-	toall(sendmsg);
+	toall(sndmsg);
 	signal(SIGALRM, timer);
 	signal(SIGHUP, hup);
 	signal(SIGINT, hup);
@@ -143,7 +142,7 @@ process(fd)
 	cc = recvfrom(fd, packet, sizeof (packet), 0, &from, &fromlen);
 	if (cc <= 0) {
 		if (cc < 0 && errno != EINTR)
-			syslog("recvfrom: %m");
+			syslog(LOG_ERR, "recvfrom: %m");
 		return;
 	}
 	if (tracepackets > 1 && ftrace) {
@@ -177,14 +176,14 @@ getsocket(type, proto, sns)
 
 	retry = 1;
 	while ((s = socket(domain, type, proto)) < 0 && retry) {
-		syslog("socket: %m");
+		syslog(LOG_ERR, "socket: %m");
 		sleep(5 * retry);
 		retry <<= 1;
 	}
 	if (retry == 0)
 		return (-1);
-	while (bind(s, sns, sizeof (*sns), 0) < 0 && retry) {
-		syslog("bind: %m");
+	while (bind(s, (struct sockaddr *)sns, sizeof (*sns)) < 0 && retry) {
+		syslog(LOG_ERR, "bind: %m");
 		sleep(5 * retry);
 		retry <<= 1;
 	}
@@ -193,17 +192,17 @@ getsocket(type, proto, sns)
 	if (domain==AF_NS) {
 		struct idp idp;
 		if (setsockopt(s, 0, SO_HEADERS_ON_INPUT, &on, sizeof(on))) {
-			syslog("setsockopt SEE HEADERS: %m");
+			syslog(LOG_ERR, "setsockopt SEE HEADERS: %m");
 			exit(1);
 		}
 		idp.idp_pt = NSPROTO_RI;
 		if (setsockopt(s, 0, SO_DEFAULT_HEADERS, &idp, sizeof(idp))) {
-			syslog("setsockopt SET HEADER: %m");
+			syslog(LOG_ERR, "setsockopt SET HEADER: %m");
 			exit(1);
 		}
 	}
 	if (setsockopt(s, SOL_SOCKET, SO_BROADCAST, &on, sizeof (on)) < 0) {
-		syslog("setsockopt SO_BROADCAST: %m");
+		syslog(LOG_ERR, "setsockopt SO_BROADCAST: %m");
 		exit(1);
 	}
 	return (s);
@@ -212,6 +211,7 @@ getsocket(type, proto, sns)
 /*
  * Fork and exit on EMT-- for profiling.
  */
+void
 fkexit()
 {
 	if (fork() == 0)

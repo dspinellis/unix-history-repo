@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)timer.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)timer.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -23,6 +23,7 @@ int	timeval = -TIMER_RATE;
  * Timer routine.  Performs routing information supply
  * duties and manages timers on routing table entries.
  */
+void
 timer()
 {
 	register struct rthash *rh;
@@ -69,7 +70,7 @@ again:
 					(satons_addr(rt->rt_dst)).x_net;
 				msg->rip_nets[0].rip_metric =
 				   	htons(min(rt->rt_metric+1, HOPCNT_INFINITY));
-				toall(sendmsg);
+				toall(sndmsg);
 			}
 		}
 	}
@@ -86,6 +87,7 @@ again:
 /*
  * On hangup, let everyone know we're going away.
  */
+void
 hup()
 {
 	register struct rthash *rh;
