@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fhpib.c	7.4 (Berkeley) %G%
+ *	@(#)fhpib.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -454,15 +454,20 @@ fhpibwait(hd, x)
 }
 
 /*
- * XXX: this will have to change if we every allow more than one
+ * XXX: this will have to change if we ever allow more than one
  * pending operation per HP-IB.
  */
-fhpibppwatch(unit)
+void
+fhpibppwatch(arg)
+	void *arg;
 {
-	register struct hpib_softc *hs = &hpib_softc[unit];
+	register int unit;
+	register struct hpib_softc *hs;
 	register struct fhpibdevice *hd;
 	register int slave;
 
+	unit = (int)arg;
+	hs = &hpib_softc[unit];
 	if ((hs->sc_flags & HPIBF_PPOLL) == 0)
 		return;
 	hd = (struct fhpibdevice *)hs->sc_hc->hp_addr;
@@ -473,7 +478,7 @@ fhpibppwatch(unit)
 			hd->hpib_stat = ST_IENAB;
 			hd->hpib_imask = IM_IDLE | IM_ROOM;
 		} else
-			timeout(fhpibppwatch, unit, 1);
+			timeout(fhpibppwatch, (void *)unit, 1);
 		return;
 	}
 	if ((fhpibdebug & FDB_PPOLL) && unit == fhpibdebugunit)

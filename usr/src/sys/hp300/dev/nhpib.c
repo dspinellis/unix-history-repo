@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nhpib.c	7.5 (Berkeley) %G%
+ *	@(#)nhpib.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -307,16 +307,20 @@ nhpibwait(hd, x)
 	return(0);
 }
 
-nhpibppwatch(unit)
-	register int unit;
+void
+nhpibppwatch(arg)
+	void *arg;
 {
-	register struct hpib_softc *hs = &hpib_softc[unit];
+	register struct hpib_softc *hs;
+	register int unit;
 
+	unit = (int)arg;
+	hs = &hpib_softc[unit];
 	if ((hs->sc_flags & HPIBF_PPOLL) == 0)
 		return;
 	if (nhpibppoll(unit) & (0x80 >> hs->sc_sq.dq_forw->dq_slave))
        		((struct nhpibdevice *)hs->sc_hc->hp_addr)->hpib_mim = MIS_BO;
 	else
-		timeout(nhpibppwatch, unit, 1);
+		timeout(nhpibppwatch, (void *)unit, 1);
 }
 #endif

@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: rd.c 1.38 90/10/12$
  *
- *	@(#)rd.c	7.14 (Berkeley) %G%
+ *	@(#)rd.c	7.15 (Berkeley) %G%
  */
 
 /*
@@ -635,11 +635,12 @@ done:
 /*
  * Called from timeout() when handling maintenance releases
  */
-rdrestart(unit)
-	int unit;
+void
+rdrestart(arg)
+	void *arg;
 {
 	int s = splbio();
-	rdustart(unit);
+	rdustart((int)arg);
 	splx(s);
 }
 
@@ -913,7 +914,7 @@ rderror(unit)
 		rdstats[unit].rdtimeouts++;
 #endif
 		hpibfree(&rs->sc_dq);
-		timeout(rdrestart, unit, rdtimo*hz);
+		timeout(rdrestart, (void *)unit, rdtimo * hz);
 		return(0);
 	}
 	/*
