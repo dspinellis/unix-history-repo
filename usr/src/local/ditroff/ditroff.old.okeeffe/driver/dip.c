@@ -1,4 +1,4 @@
-/*	dip.c	1.10	(Berkeley)	84/05/09
+/*	dip.c	1.10	(Berkeley)	84/05/17
  *	dip
  *	driver for impress/imagen canon laser printer
  */
@@ -29,6 +29,7 @@ Dt ...\n	draw operation 't':
 	D~ x y x y ...	wiggly line by x,y then x,y ...
 	Dg x y x y ...	gremlin spline by x,y then x,y ...
 	Dp s x y ...	polygon filled with s by x,y then ...
+	DP s x y ...	unbordered polygon filled with s by x,y then ...
 nb a	end of line (information only -- no action needed)
 	b = space before line, a = after
 pn	new page begins -- set v to 0
@@ -126,8 +127,7 @@ int	family;
 int	hpos;		/* current horizontal position (left = 0) */
 int	vpos;		/* current vertical position (down positive) */
 int	lastw	= 0;	/* width of last input character */
-extern int linethickness;	/* line drawing pars:  Thickness (pixels) */
-extern int style;		/*   and type (SOLID, DOTTED, . . . ) */
+extern int polyborder;		/* flag to turn off borders around a polygon */
 
 typedef struct {
 	int	font;
@@ -330,6 +330,8 @@ register FILE *fp;
 				sscanf(buf+1, "%d %d %d %d", &n, &m, &n1, &m1);
 				drawarc(n, m, n1, m1);
 				break;
+			case 'P':
+				polyborder = 0;		/* borderless polygon */
 			case 'p':	/* polygon */
 				sscanf(buf+1, "%d", &m);/* get stipple */
 				n = 1;			/* number first */
@@ -337,7 +339,9 @@ register FILE *fp;
 				while (isdigit(buf[n])) n++;
 				setfill(m);		/* set up stipple */
 				drawwig(buf+n, fp, -1);	/* draw polygon */
-				break;
+				polyborder = 1;		/* assume polygons */
+				break;			/*   all have borders */
+
 			case 'g':	/* gremlin curve */
 				drawwig(buf+1, fp, 0);
 				break;
@@ -443,7 +447,7 @@ FILE *fp;		/* returns -1 upon "stop" command */
 		return -1;
 	case 'r':	/* resolution assumed when prepared */
 		fscanf(fp, "%d", &n);
-		if (n!=RES) error(FATAL,"Input computed with wrong resolution");
+		if (n!=RES) error(FATAL,"Input computed for wrong printer");
 		break;
 	case 'f':	/* font used */
 		fscanf(fp, "%d %s", &n, str);
