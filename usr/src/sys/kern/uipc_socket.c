@@ -1,4 +1,4 @@
-/*	uipc_socket.c	6.1	83/08/23	*/
+/*	uipc_socket.c	6.2	83/09/28	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
