@@ -20,7 +20,6 @@
 #include "protosw.h"
 #include "errno.h"
 #include "ioctl.h"
-#include "user.h"
 #include "stat.h"
 
 #include "../net/if.h"
@@ -315,8 +314,8 @@ register struct ifnet *ifp;
 		return (0);
 
 	case SIOCSIFCONF_X25:
-		if (error = suser (u.u_cred, &u.u_acflag))
-			return (error);
+		if ((so->so_state & SS_PRIV) == 0)
+			return (EPERM);
 		if (ifp == 0)
 			panic ("pk_control");
 		if (ifa == (struct ifaddr *)0) {
@@ -395,7 +394,9 @@ int cmd, level, optname;
 		return (0);
 
 	case PK_ACCTFILE:
-		if (m -> m_len)
+		if ((so->so_state & SS_PRIV) == 0)
+			error = EPERM;
+		else if (m -> m_len)
 			error = pk_accton (mtod (m, char *));
 		else
 			error = pk_accton ((char *)0);
