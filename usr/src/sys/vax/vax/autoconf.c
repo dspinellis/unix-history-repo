@@ -1,4 +1,4 @@
-/*	autoconf.c	4.42	82/10/13	*/
+/*	autoconf.c	4.43	82/10/23	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -200,10 +200,6 @@ unconfig:
 			continue;
 		}
 	}
-#if VAX780
-	if (cpu == VAX_780)
-		{ int ubawatch(); timeout(ubawatch, (caddr_t)0, hz); }
-#endif
 }
 
 #if NMBA > 0
