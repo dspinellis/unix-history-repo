@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfs_vfsops.c	7.28 (Berkeley) %G%
+ *	@(#)mfs_vfsops.c	7.29 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -240,7 +240,7 @@ mfs_start(mp, flags, p)
 		 * EINTR/ERESTART.
 		 */
 		if (error = tsleep((caddr_t)vp, mfs_pri, "mfsidl", 0))
-			if (dounmount(mp, MNT_NOFORCE, p) != 0)
+			if (dounmount(mp, 0, p) != 0)
 				CLRSIG(p, CURSIG(p));
 	}
 	return (error);
