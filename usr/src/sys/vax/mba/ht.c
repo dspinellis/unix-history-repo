@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ht.c	7.2 (Berkeley) %G%
+ *	@(#)ht.c	7.3 (Berkeley) %G%
  */
 
 #include "tu.h"
@@ -30,6 +30,7 @@
 #include "cmap.h"
 #include "uio.h"
 #include "tty.h"
+#include "syslog.h"
 
 #include "../machine/pte.h"
 #include "../vax/cpu.h"
