@@ -37,7 +37,7 @@ static	char	sccsid[] = "@(#)outbound.c	3.1  10/29/86";
 
 #include "../telnet.ext"
 
-#include "../apilib/disp_asc.h"
+#include "../api/disp_asc.h"
 
 #include "../ctlr/hostctlr.h"
 #include "../ctlr/inbound.ext"

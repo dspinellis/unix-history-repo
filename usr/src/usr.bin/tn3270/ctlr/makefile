@@ -55,13 +55,13 @@ KBD	= 3270pc.kbd
 KBD	= unix.kbd
 
 # The source files...
-ALLH =	function.h hostctlr.h inbound.ext oia.h \
+ALLH =	api.h function.h hostctlr.h inbound.ext oia.h \
 	options.ext options.h outbound.ext screen.h scrnctlr.h
 
-ALLC =	function.c inbound.c oia.c options.c outbound.c
+ALLC =	api.c function.c inbound.c oia.c options.c outbound.c
 
 # Note: NO function.o!
-ALLO =	inbound$O oia$O options$O outbound$O
+ALLO =	api$O inbound$O oia$O options$O outbound$O
 
 ALLPRINT =	3180.kbd 3270pc.kbd unix.kbd ${ALLH} ${ALLC}
 
@@ -132,11 +132,14 @@ depend:
 
 # DO NOT DELETE THIS LINE
 
+api$O: api.h ../general/general.h ../api/disp_asc.h screen.h oia.h
+api$O: ../general/globals.h
+function$O: function.h
 inbound$O: ../general/general.h function.h hostctlr.h oia.h scrnctlr.h screen.h
-inbound$O: options.h ../apilib/dctype.h ../apilib/ebc_disp.h
-inbound$O: ../general/globals.h inbound.ext outbound.ext ../telnet.ext kbd.out
+inbound$O: options.h ../api/dctype.h ../api/ebc_disp.h ../general/globals.h
+inbound$O: inbound.ext outbound.ext ../telnet.ext kbd.out
 oia$O: ../general/general.h oia.h ../general/globals.h
 options$O: options.h ../general/globals.h options.ext
-outbound$O: ../general/general.h hostctlr.h oia.h screen.h ../apilib/ebc_disp.h
+outbound$O: ../general/general.h hostctlr.h oia.h screen.h ../api/ebc_disp.h
 outbound$O: ../general/globals.h options.ext ../telnet.ext inbound.ext
 outbound$O: outbound.ext ../general/bsubs.ext

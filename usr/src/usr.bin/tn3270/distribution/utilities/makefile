@@ -56,7 +56,7 @@ ALLO = tnrecv$O
 all:	tnrecv$X
 
 tnrecv$X:	tnrecv$O
-	${CC} ${CFLAGS} -o $@ tnrecv$O $L ../apilib/apiliblib.a
+	${CC} ${CFLAGS} -o $@ tnrecv$O $L ../api/apilib.a
 
 clean:
 	for i in makefile.bak ${ALLO} errs tnrecv$X; \
@@ -98,6 +98,6 @@ depend:
 
 # DO NOT DELETE THIS LINE
 
-#include "apilib.h" "tncomp.h" "../api/api.h" "../ctlr/function.h"
-#include "../ctlr/hostctlr.h" "../ctlr/oia.h" "../ctlr/screen.h"
-#include "../ascii/disp_asc.h" "../ascii/astosc.h" "../general/general.h"
+#include "tncomp.h" "../api/api.h" "../ctlr/function.h" "../ctlr/hostctlr.h"
+#include "../ctlr/oia.h" "../ctlr/screen.h" "../apilib/disp_asc.h"
+#include "../apilib/astosc.h" "../general/general.h"

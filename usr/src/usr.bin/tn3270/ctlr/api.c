@@ -7,10 +7,10 @@
 #include "api.h"
 #include "../general/general.h"
 
-#include "../apilib/disp_asc.h"
+#include "../api/disp_asc.h"
 
-#include "../ctlr/screen.h"
-#include "../ctlr/oia.h"
+#include "screen.h"
+#include "oia.h"
 
 #include "../general/globals.h"
 
