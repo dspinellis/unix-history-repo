@@ -36,9 +36,10 @@ static	char	sccsid[] = "@(#)mset.c	3.1  10/29/86";
 #else	/* defined(unix) */
 #include <string.h>
 #endif	/* defined(unix) */
+#include "../ctlr/function.h"
+
 #include "state.h"
-#define LETS_SEE_ASCII
-#include "m4.out"
+#include "astosc.h"
 
 #include "../general/globals.h"
 #include "map3270.ext"
@@ -296,9 +297,9 @@ int strcount;
     if (head->next) {
 	recurse(strcount, head->next);
     }
-    if (head->result != TC_GOTO) {
+    if (head->result != STATE_GOTO) {
 	rptr->match_end = addString(strcount, head->match);
-	rptr->result = TC_Ascii[head->result - TC_LOWEST].tc_name;
+	rptr->result = astosc[head->result].name;
 	rptr = doRegister(rptr);
     } else {
 	(void) addString(strcount, head->match);
@@ -341,7 +342,7 @@ char *argv[];
 	exit(1);
 	/*NOTREACHED*/
     }
-    head = InitControl(keybdPointer, picky);
+    head = InitControl(keybdPointer, picky, ascii_to_index);
     if (!head) {
 	return(1);
     }

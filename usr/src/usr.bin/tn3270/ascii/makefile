@@ -18,13 +18,11 @@ KBD	= unix.kbd
 
 
 # The source files...
-ALLH = ascebc.h disp_asc.h state.h
+ALLH = astosc.h ascebc.h disp_asc.h state.h
 
-ALLC = map3270.c termin.c asctab.c ebctab.c
+ALLC = astosc.c map3270.c termin.c asctab.c ebctab.c
 
-ALLO	= map3270.o termin.o asctab.o ebctab.o disp_asc.o
-
-M4FILE = termcodes.m4
+ALLO	= astosc.o map3270.o termin.o asctab.o ebctab.o disp_asc.o
 
 .s.o:
 	/lib/cpp -E $< | as -o $@
@@ -34,7 +32,7 @@ ascii.lib:	$(ALLO)
 	ranlib ascii.lib
 
 clean:
-	rm -f $(ALLO) m4.out astosc.out disp_asc.out asc_disp.out \
+	rm -f $(ALLO) astosc.out disp_asc.out asc_disp.out \
 				errs makefile.bak ascii.lib
 
 print:
@@ -52,7 +50,7 @@ lint:
 .DEFAULT:
 	sccs get $<
 
-astosc.out:	../ctlr/function.h ../ctlr/hostctlr.h ../ctlr/$(KBD) m4.out
+astosc.out:	../ctlr/function.h ../ctlr/hostctlr.h ../ctlr/$(KBD)
 	(cd ../tools; make mkastosc $(MFLAGS) )
 	-/bin/rm $@
 	../tools/mkastosc < ../ctlr/$(KBD) > $@
@@ -75,11 +73,6 @@ disp_asc.o:	disp_asc.h asc_disp.out disp_asc.out
 	$(CC) $(CFLAGS) -c TMPfunc.c
 	-/bin/mv TMPfunc.o $@
 
-m4.out:		termcodes.m4
-	/bin/rm -f m4.out
-	m4 termcodes.m4 > m4.out
-	/bin/chmod 444 m4.out
-
 depend:
 	grep '^#include' ${ALLC} | grep -v '<' | \
 	sed -e 's/:[^"]*"\([^"]*\)".*/: \1/' \
@@ -98,9 +91,10 @@ depend:
 
 # DO NOT DELETE THIS LINE
 
-map3270.o: m4.out state.h ../general/globals.h map3270.ext default.map
-termin.o: ../general/general.h m4.out state.h ../general/globals.h
-termin.o: ../ctlr/function.h ../ctlr/inbound.ext ../ctlr/outbound.ext
-termin.o: ../telnet.ext termin.ext astosc.out
+astosc.o: ../general/general.h ../ctlr/function.h astosc.h state.h astosc.out
+map3270.o: state.h ../general/globals.h map3270.ext default.map
+termin.o: ../general/general.h ../ctlr/function.h ../ctlr/inbound.ext
+termin.o: ../ctlr/outbound.ext ../telnet.ext termin.ext astosc.h state.h
+termin.o: ../general/globals.h
 asctab.o: ascebc.h
 ebctab.o: ascebc.h
