@@ -2,6 +2,8 @@
 +/"xxx"8t"index"8t"order"nbbb++
 +/"w.nr"16t"w.nc"nDDn
 +/"w.t"16t"w.b"16t"w.l"16t"w.r"nDDDD
++/"i.nr"16t"i.nc"nDDn
++/"i.t"16t"i.b"16t"i.l"16t"i.r"nDDDD
 +/"nline"16t"scroll"16t"cur.r"16t"cur.c"nDDDD
 +/"win"16t"buf"16t"cov"16t"fmap"16tnpppp
 +/"nvis"np

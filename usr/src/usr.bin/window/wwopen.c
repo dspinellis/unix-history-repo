@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwopen.c	3.10 83/08/26";
+static	char *sccsid = "@(#)wwopen.c	3.11 83/09/14";
 #endif
 
 #include "ww.h"
@@ -26,15 +26,19 @@ wwopen(flags, nrow, ncol, row, col, nline)
 	}
 	w->ww_index = i;
 
-	if ((w->ww_w.nr = nrow) <= 0
-	    || (w->ww_w.nc = ncol) <= 0
-	    || (w->ww_w.l = col) < 0
-	    || (w->ww_w.r = col + ncol) > wwncol
-	    || (w->ww_w.t = row) < 0
-	    || (w->ww_w.b = row + nrow) > wwnrow) {
-		wwerrno = WWE_SIZE;
-		goto bad;
-	}
+	w->ww_w.t = row;
+	w->ww_w.b = row + nrow;
+	w->ww_w.l = col;
+	w->ww_w.r = col + ncol;
+	w->ww_w.nr = nrow;
+	w->ww_w.nc = ncol;
+	w->ww_i.t = MAX(w->ww_w.t, 0);
+	w->ww_i.b = MIN(w->ww_w.b, wwnrow);
+	w->ww_i.l = MAX(w->ww_w.l, 0);
+	w->ww_i.r = MIN(w->ww_w.r, wwncol);
+	w->ww_i.nr = w->ww_i.b - w->ww_i.t;
+	w->ww_i.nc = w->ww_i.r - w->ww_i.l;
+
 	w->ww_nline = MAX(nline, w->ww_w.nr);
 
 	if (flags & WWO_PTY) {

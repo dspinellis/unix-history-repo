@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwflush.c	3.3 83/08/15";
+static	char *sccsid = "@(#)wwflush.c	3.4 83/09/14";
 #endif
 
 #include "ww.h"
@@ -7,6 +7,10 @@ static	char *sccsid = "@(#)wwflush.c	3.3 83/08/15";
 
 wwflush()
 {
-	(*tt.tt_move)(wwcursorrow, wwcursorcol);
+	if (wwcursorrow < 0 || wwcursorrow >= wwnrow
+	    || wwcursorcol < 0 || wwcursorcol >= wwncol)
+		(*tt.tt_move)(0, 0);
+	else
+		(*tt.tt_move)(wwcursorrow, wwcursorcol);
 	(void) fflush(stdout);
 }

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwwrite.c	3.9 83/08/26";
+static	char *sccsid = "@(#)wwwrite.c	3.10 83/09/14";
 #endif
 
 #include "ww.h"
@@ -9,50 +9,57 @@ register struct ww *w;
 register char *p;
 int n;
 {
-	char c;
-	char hascursor = 0;
+	char hascursor;
 
 	wwnwrite++;
 	wwnwritec += n;
 	if (hascursor = w->ww_hascursor)
 		wwcursor(w, 0);
-	while (--n >= 0) {
-		c = *p++ & 0x7f;
-		switch (w->ww_wstate) {
-		case 0:
-			if (!ISCTRL(c)) {
-				int i, j;
-				register union ww_char *bp;
-				union ww_char *bq;
+	while (n > 0) {
+		if (w->ww_wstate == 0 && !ISCTRL(*p)) {
+			register i;
+			int crow, ccol;
+			register union ww_char *bp;
+			union ww_char *bq;
+
+			if (w->ww_insert) {
+				n--;
+				wwinschar(w, w->ww_scroll + w->ww_cur.r,
+					w->ww_cur.c,
+					*p++ | w->ww_modes << WWC_MSHIFT);
+				goto right;
+			}
+
+			bp = bq = &w->ww_buf[w->ww_scroll+w->ww_cur.r]
+				[w->ww_cur.c];
+			if ((i = w->ww_w.nc - w->ww_cur.c) > n)
+				i = n;
+			while (--i >= 0 && !ISCTRL(*p))
+				bp++->c_w = *p++ | w->ww_modes << WWC_MSHIFT;
+			i = bp - bq;
+			n -= i;
+			bp = bq;
+
+			crow = wwcurrow(w);
+			ccol = wwcurcol(w);
+			if (ccol < w->ww_i.l) {
+				bp += w->ww_i.l - ccol;
+				ccol = w->ww_i.l;
+			}
+			w->ww_cur.c += i;
+			if (crow >= w->ww_i.t && crow < w->ww_i.b) {
 				register union ww_char *ns;
 				register char *smap;
 				register char *win;
 				char *touched;
 
-				if (w->ww_insert) {
-					wwinschar(w, w->ww_scroll + w->ww_cur.r,
-						w->ww_cur.c,
-						c | w->ww_modes << WWC_MSHIFT);
-					goto right;
-				}
-				i = w->ww_w.nc - w->ww_cur.c - 1;
-				bp = bq = &w->ww_buf[w->ww_scroll+w->ww_cur.r]
-					[w->ww_cur.c];
-				bp++->c_w = c | w->ww_modes << WWC_MSHIFT;
-				while (n > 0 && --i >= 0 && !ISCTRL(*p)) {
-					n--;
-					bp++->c_w = *p++ & 0x7f
-						| w->ww_modes << WWC_MSHIFT;
-				}
-				win = &w->ww_win[w->ww_cur.r][w->ww_cur.c];
-				i = wwcurrow(w);
-				j = wwcurcol(w);
-				smap = &wwsmap[i][j];
-				ns = &wwns[i][j];
-				touched = &wwtouched[i];
-				j = i = bp - bq;
-				bp = bq;
-				while (--i >= 0) {
+				win = &w->ww_win[w->ww_cur.r][ccol - w->ww_w.l];
+				smap = &wwsmap[crow][ccol];
+				ns = &wwns[crow][ccol];
+				touched = &wwtouched[crow];
+				if (i > w->ww_i.r - ccol)
+					i = w->ww_i.r - ccol;
+				while (--i >= 0)
 					if (*smap++ == w->ww_index) {
 						*touched = 1;
 						ns++->c_w = bp++->c_w
@@ -62,14 +69,17 @@ int n;
 						bp++;
 						win++;
 					}
-				}
-				if ((w->ww_cur.c += j) >= w->ww_w.nc) {
-					w->ww_cur.c = 0;
-					goto lf;
-				}
-				break;
 			}
-			switch (c) {
+			if (w->ww_cur.c >= w->ww_w.nc) {
+				w->ww_cur.c = 0;
+				goto lf;
+			}
+			continue;
+		}
+		n--;
+		switch (w->ww_wstate) {
+		case 0:
+			switch (*p++) {
 			case '\n':
 				if (w->ww_mapnl)
 					w->ww_cur.c = 0;
@@ -110,7 +120,7 @@ int n;
 			break;
 		case 1:
 			w->ww_wstate = 0;
-			switch (c) {
+			switch (*p++) {
 			case '@':
 				w->ww_insert = 1;
 				break;
@@ -175,11 +185,11 @@ int n;
 			}
 			break;
 		case 2:
-			w->ww_cur.r = (c - ' ') % w->ww_w.nr;
+			w->ww_cur.r = (*p++ - ' ') % w->ww_w.nr;
 			w->ww_wstate++;
 			break;
 		case 3:
-			w->ww_cur.c = (c - ' ') % w->ww_w.nc;
+			w->ww_cur.c = (*p++ - ' ') % w->ww_w.nc;
 			w->ww_wstate = 0;
 			break;
 		}

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd1.c	3.10 83/08/31";
+static	char *sccsid = "@(#)cmd1.c	3.11 83/09/14";
 #endif
 
 #include "defs.h"
@@ -149,8 +149,9 @@ int id, nrow, ncol, row, col;
 
 	if (id < 0 && (id = findid()) < 0)
 		return 0;
-	if (row <= 0) {
-		error("Bad row number.");
+	if (row + nrow <= 0 || row > wwnrow - 1
+	    || col + ncol <= 0 || col > wwncol - 1) {
+		error("Illegal window size or position.");
 		return 0;
 	}
 	if ((w = wwopen(WWO_PTY, nrow, ncol, row, col, nline)) == 0) {

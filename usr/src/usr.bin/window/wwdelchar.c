@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwdelchar.c	3.4 83/08/16";
+static	char *sccsid = "@(#)wwdelchar.c	3.5 83/09/14";
 #endif
 
 #include "ww.h"
@@ -10,8 +10,13 @@ register struct ww *w;
 {
 	register i;
 	int row = line - w->ww_scroll;
+	int srow = row + w->ww_w.t;
+	int scol = col + w->ww_w.l;
 	int nvis;
 
+	/*
+	 * First, shift the line.
+	 */
 	{
 		register union ww_char *p, *q;
 
@@ -21,8 +26,21 @@ register struct ww *w;
 			*p++ = *q++;
 		p->c_w = ' ';
 	}
-	if (row < 0 || row >= w->ww_w.nr)
+
+	/*
+	 * If can't see it, just return.
+	 */
+	if (srow < w->ww_i.t || srow >= w->ww_i.b
+	    || w->ww_i.r <= 0 || w->ww_i.r <= scol)
 		return;
+
+	if (scol < w->ww_i.l)
+		scol = w->ww_i.l;
+	col = scol - w->ww_w.l;
+
+	/*
+	 * Now find out how much is actually changed, and fix wwns.
+	 */
 	{
 		register union ww_char *buf;
 		register char *win;
@@ -31,20 +49,15 @@ register struct ww *w;
 		char *touched;
 
 		nvis = 0;
-		smap = &wwsmap[row + w->ww_w.t][col + w->ww_w.l];
-		for (i = w->ww_w.nc - col; i > 0; i--)
-			if (*smap == w->ww_index)
-				break;
-			else {
-				smap++;
-				col++;
-			}
+		smap = &wwsmap[srow][scol];
+		for (i = w->ww_i.r - scol; i > 0 && *smap++ != w->ww_index; i--)
+			col++, scol++;
 		if (i <= 0)
 			return;
 		buf = &w->ww_buf[line][col];
 		win = &w->ww_win[row][col];
-		ns = &wwns[row + w->ww_w.t][col + w->ww_w.l];
-		touched = &wwtouched[row + w->ww_w.t];
+		ns = &wwns[srow][scol];
+		touched = &wwtouched[srow];
 		for (; --i >= 0;) {
 			if (*win) {
 				if ((*win & (WWM_COV|WWM_GLS)) != 0) {
@@ -63,17 +76,19 @@ register struct ww *w;
 			}
 		}
 	}
-	col += w->ww_w.l;
-	row += w->ww_w.t;
-	if (nvis > (wwncol - col) / 2) {
+
+	/*
+	 * Can/Should we use delete character?
+	 */
+	if (tt.tt_delchar != 0 && nvis > (wwncol - scol) / 2) {
 		register union ww_char *p, *q;
 
-		(*tt.tt_move)(row, col);
+		(*tt.tt_move)(srow, scol);
 		(*tt.tt_delchar)();
 
-		p = &wwos[row][col];
+		p = &wwos[srow][scol];
 		q = p + 1;
-		for (i = wwncol - col - 1; --i >= 0;)
+		for (i = wwncol - scol; --i > 0;)
 			*p++ = *q++;
 		p->c_w = ' ';
 	}

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwredrawwin.c	3.3 83/08/18";
+static	char *sccsid = "@(#)wwredrawwin.c	3.4 83/09/14";
 #endif
 
 #include "ww.h"
@@ -7,12 +7,13 @@ static	char *sccsid = "@(#)wwredrawwin.c	3.3 83/08/18";
 wwredrawwin(w)
 register struct ww *w;
 {
-	wwredrawwin1(w, 0, w->ww_w.nr - 1, w->ww_scroll);
+	wwredrawwin1(w, w->ww_i.t - w->ww_w.t, w->ww_i.b - w->ww_w.t,
+		w->ww_scroll);
 }
 
-wwredrawwin1(w, srow, erow, offset)
+wwredrawwin1(w, row1, row2, scroll)
 register struct ww *w;
-int srow, erow, offset;
+int row1, row2, scroll;
 {
 	int i;
 	register j;
@@ -22,13 +23,13 @@ int srow, erow, offset;
 	register union ww_char *ns;
 	char *touched;
 
-	touched = &wwtouched[srow + w->ww_w.t];
-	for (i = srow; i <= erow; i++, touched++) {
-		ns = &wwns[i + w->ww_w.t][w->ww_w.l];
-		smap = &wwsmap[i + w->ww_w.t][w->ww_w.l];
-		buf = w->ww_buf[offset + i];
-		win = w->ww_win[i];
-		for (j = w->ww_w.nc; --j >= 0;)
+	touched = &wwtouched[row1 + w->ww_w.t];
+	for (i = row1; i < row2; i++, touched++) {
+		ns = &wwns[i + w->ww_w.t][w->ww_i.l];
+		smap = &wwsmap[i + w->ww_w.t][w->ww_i.l];
+		buf = &w->ww_buf[scroll + i][w->ww_i.l - w->ww_w.l];
+		win = &w->ww_win[i][w->ww_i.l - w->ww_w.l];
+		for (j = w->ww_i.nc; --j >= 0;)
 			if (*smap++ != w->ww_index)
 				win++, ns++, buf++;
 			else {
