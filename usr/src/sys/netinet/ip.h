@@ -1,4 +1,4 @@
-/*	ip.h	6.1	83/07/29	*/
+/*	ip.h	6.2	84/02/15	*/
 
 /*
  * Definitions for internet protocol version 4.
@@ -34,13 +34,13 @@ struct ip {
  * Definitions for options.
  */
 #define	IPOPT_COPIED(o)		((o)&0x80)
-#define	IPOPT_CLASS(o)		((o)&0x40)
-#define	IPOPT_NUMBER(o)		((o)&0x3f)
+#define	IPOPT_CLASS(o)		((o)&0x60)
+#define	IPOPT_NUMBER(o)		((o)&0x1f)
 
 #define	IPOPT_CONTROL		0x00
-#define	IPOPT_RESERVED1		0x10
-#define	IPOPT_DEBMEAS		0x20
-#define	IPOPT_RESERVED2		0x30
+#define	IPOPT_RESERVED1		0x20
+#define	IPOPT_DEBMEAS		0x40
+#define	IPOPT_RESERVED2		0x60
 
 #define	IPOPT_EOL		0		/* end of option list */
 #define	IPOPT_NOP		1		/* no operation */
