@@ -2,7 +2,7 @@
 # include <pwd.h>
 # include "dlvrmail.h"
 
-static char SccsId[] = "@(#)conf.c	1.6	%G%";
+static char SccsId[] = "@(#)conf.c	1.7	%G%";
 # include <whoami.h>
 
 /*
@@ -48,7 +48,7 @@ static char SccsId[] = "@(#)conf.c	1.6	%G%";
 # ifdef ING70
 static char	*BerkLocal[] = { "i", "ingres", "ing70", NULL };
 # define ArpaLocal	NULL
-char		*MyLocNam = "Ing70";
+char		*MyLocName = "Ing70";
 # define HASARPA
 # define V6
 # endif ING70
@@ -56,14 +56,14 @@ char		*MyLocNam = "Ing70";
 # ifdef INGVAX
 /* untested */
 static char	*BerkLocal[] = { "j", "ingvax", NULL };
-char		*MyLocNam = "IngVax";
+char		*MyLocName = "IngVax";
 # endif INGVAX
 
 # ifdef CSVAX
 /* untested */
 static char	*BerkLocal[] = { "v", "csvax", "vax", NULL };
 static char	*UucpLocal[] = { "ucbvax", "ernie", NULL };
-char		*MyLocNam = "CSVAX";
+char		*MyLocName = "CSVAX";
 # define HASUUCP
 # define NETV6MAIL
 # endif CSVAX
@@ -71,26 +71,26 @@ char		*MyLocNam = "CSVAX";
 # ifdef CORY
 /* untested */
 static char	*BerkLocal[] = { "y", "cory", NULL };
-char		*MyLocNam = "Cory";
+char		*MyLocName = "Cory";
 # endif CORY
 
 # ifdef IMAGE
 /* untested */
 static char	*BerkLocal[] = { "m", "image", NULL };
-char		*MyLocNam = "Image";
+char		*MyLocName = "Image";
 # define V6
 # endif IMAGE
 
 # ifdef ESVAX
 /* untested */
 static char	*BerkLocal[] = { "o", "esvax", NULL };
-char		*MyLocNam = "ESVAX";
+char		*MyLocName = "ESVAX";
 # endif ESVAX
 
 # ifdef EECS40
 /* untested */
 static char	*BerkLocal[] = { "z", "eecs40", NULL };
-char		*MyLocNam = "EECS40";
+char		*MyLocName = "EECS40";
 # define V6
 # endif EECS40
 
