@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_compat.c 1.64 93/08/05$
  *
- *	@(#)hpux_compat.c	8.4 (Berkeley) %G%
+ *	@(#)hpux_compat.c	8.5 (Berkeley) %G%
  */
 
 /*
@@ -93,10 +93,10 @@ short bsdtohpuxerrnomap[NERR] = {
 /*80*/ BERR,BERR,  11
 };
 
-notimp(p, uap, retval, code, nargs)
+notimp(p, uap, retval, code, argsize)
 	struct proc *p;
-	int *uap, *retval;
-	int code, nargs;
+	register_t *uap, *retval;
+	int code, argsize;
 {
 	int error = 0;
 #ifdef DEBUG
@@ -104,9 +104,9 @@ notimp(p, uap, retval, code, nargs)
 	extern char *hpuxsyscallnames[];
 
 	printf("HP-UX %s(", hpuxsyscallnames[code]);
-	if (nargs)
-		while (nargs--)
-			printf("%x%c", *argp++, nargs? ',' : ')');
+	if (argsize)
+		while (argsize -= sizeof (register_t))
+			printf("%x%c", *argp++, argsize? ',' : ')');
 	else
 		printf(")");
 	printf("\n");
@@ -207,7 +207,7 @@ hpuxwait(p, uap, retval)
 	int sig, *statp, error;
 
 	statp = uap->status;	/* owait clobbers first arg */
-	error = owait(p, uap, retval);
+	error = compat_43_wait(p, uap, retval);
 	/*
 	 * HP-UX wait always returns EINTR when interrupted by a signal
 	 * (well, unless its emulating a BSD process, but we don't bother...)
@@ -1666,7 +1666,7 @@ hpuxgetrlimit(p, uap, retval)
 		return (EINVAL);
 	if (uap->which == HPUXRLIMIT_NOFILE)
 		uap->which = RLIMIT_NOFILE;
-	return (ogetrlimit(p, uap, retval));
+	return (compat_43_getrlimit(p, uap, retval));
 }
 
 hpuxsetrlimit(p, uap, retval)
@@ -1678,7 +1678,7 @@ hpuxsetrlimit(p, uap, retval)
 		return (EINVAL);
 	if (uap->which == HPUXRLIMIT_NOFILE)
 		uap->which = RLIMIT_NOFILE;
-	return (osetrlimit(p, uap, retval));
+	return (compat_43_setrlimit(p, uap, retval));
 }
 
 /*
@@ -2011,7 +2011,7 @@ struct	ohpuxstat {
 /*
  * SYS V style setpgrp()
  */
-ohpuxsetpgrp(p, uap, retval)
+compat_43_hpuxsetpgrp(p, uap, retval)
 	register struct proc *p;
 	int *uap, *retval;
 {
@@ -2024,7 +2024,7 @@ ohpuxsetpgrp(p, uap, retval)
 struct ohpuxtime_args {
 	long	*tp;
 };
-ohpuxtime(p, uap, retval)
+compat_43_hpuxtime(p, uap, retval)
 	struct proc *p;
 	register struct ohpuxtime_args *uap;
 	int *retval;
@@ -2041,7 +2041,7 @@ ohpuxtime(p, uap, retval)
 struct ohpuxstime_args {
 	int	time;
 };
-ohpuxstime(p, uap, retval)
+compat_43_hpuxstime(p, uap, retval)
 	struct proc *p;
 	register struct ohpuxstime_args *uap;
 	int *retval;
@@ -2064,7 +2064,7 @@ ohpuxstime(p, uap, retval)
 struct ohpuxftime_args {
 	struct	hpuxtimeb *tp;
 };
-ohpuxftime(p, uap, retval)
+compat_43_hpuxftime(p, uap, retval)
 	struct proc *p;
 	register struct ohpuxftime_args *uap;
 	int *retval;
@@ -2084,7 +2084,7 @@ ohpuxftime(p, uap, retval)
 struct ohpuxalarm_args {
 	int	deltat;
 };
-ohpuxalarm(p, uap, retval)
+compat_43_hpuxalarm(p, uap, retval)
 	register struct proc *p;
 	register struct ohpuxalarm_args *uap;
 	int *retval;
@@ -2112,7 +2112,7 @@ ohpuxalarm(p, uap, retval)
 struct ohpuxnice_args {
 	int	niceness;
 };
-ohpuxnice(p, uap, retval)
+compat_43_hpuxnice(p, uap, retval)
 	register struct proc *p;
 	register struct ohpuxnice_args *uap;
 	int *retval;
@@ -2128,7 +2128,7 @@ ohpuxnice(p, uap, retval)
 struct ohpuxtimes_args {
 	struct	tms *tmsb;
 };
-ohpuxtimes(p, uap, retval)
+compat_43_hpuxtimes(p, uap, retval)
 	struct proc *p;
 	register struct ohpuxtimes_args *uap;
 	int *retval;
@@ -2167,7 +2167,7 @@ struct ohpuxutime_args {
 	char	*fname;
 	time_t	*tptr;
 };
-ohpuxutime(p, uap, retval)
+compat_43_hpuxutime(p, uap, retval)
 	struct proc *p;
 	register struct ohpuxutime_args *uap;
 	int *retval;
@@ -2201,7 +2201,7 @@ ohpuxutime(p, uap, retval)
 	return (error);
 }
 
-ohpuxpause(p, uap, retval)
+compat_43_hpuxpause(p, uap, retval)
 	struct proc *p;
 	int *uap, *retval;
 {
@@ -2217,7 +2217,7 @@ struct ohpuxfstat_args {
 	int	fd;
 	struct ohpuxstat *sb;
 };
-ohpuxfstat(p, uap, retval)
+compat_43_hpuxfstat(p, uap, retval)
 	struct proc *p;
 	register struct ohpuxfstat_args *uap;
 	int *retval;
@@ -2230,7 +2230,7 @@ ohpuxfstat(p, uap, retval)
 		return (EBADF);
 	if (fp->f_type != DTYPE_VNODE)
 		return (EINVAL);
-	return (ohpuxstat1((struct vnode *)fp->f_data, uap->sb, p));
+	return (compat_43_hpuxstat1((struct vnode *)fp->f_data, uap->sb, p));
 }
 
 /*
@@ -2240,7 +2240,7 @@ struct ohpuxstat_args {
 	char	*fname;
 	struct ohpuxstat *sb;
 };
-ohpuxstat(p, uap, retval)
+compat_43_hpuxstat(p, uap, retval)
 	struct proc *p;
 	register struct ohpuxstat_args *uap;
 	int *retval;
@@ -2251,13 +2251,13 @@ ohpuxstat(p, uap, retval)
 	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->fname, p);
 	if (error = namei(&nd))
 		return (error);
-	error = ohpuxstat1(nd.ni_vp, uap->sb, p);
+	error = compat_43_hpuxstat1(nd.ni_vp, uap->sb, p);
 	vput(nd.ni_vp);
 	return (error);
 }
 
 int
-ohpuxstat1(vp, ub, p)
+compat_43_hpuxstat1(vp, ub, p)
 	struct vnode *vp;
 	struct ohpuxstat *ub;
 	struct proc *p;
