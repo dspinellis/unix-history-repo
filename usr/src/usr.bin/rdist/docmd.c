@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)docmd.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)docmd.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -230,8 +230,13 @@ makeconn(rhost)
 		if (*cp == '\0' && n == VERSION)
 			return(1);
 		error("connection failed: version numbers don't match (local %d, remote %d)\n", VERSION, n);
-	} else
+	} else {
 		error("connection failed: version numbers don't match\n");
+		error("got unexpected input:");
+		do {
+			error("%c", *cp);
+		} while (*cp != '\n' && read(rem, cp, 1) == 1);
+	}
 	closeconn();
 	return(0);
 }
