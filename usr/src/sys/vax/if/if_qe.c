@@ -17,11 +17,11 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_qe.c	7.10 (Berkeley) %G%
+ *	@(#)if_qe.c	7.11 (Berkeley) %G%
  */
 
 /* from  @(#)if_qe.c	1.15	(ULTRIX)	4/16/86 */
- 
+
 /****************************************************************
  *								*
  *        Licensed from Digital Equipment Corporation 		*
@@ -46,7 +46,7 @@
  *								*
  ****************************************************************/
 /* ---------------------------------------------------------------------
- * Modification History 
+ * Modification History
  *
  * 15-Apr-86  -- afd
  *	Rename "unused_multi" to "qunused_multi" for extending Generic
@@ -65,11 +65,11 @@
  *	mprintf.
  *
  *  09/16/85 -- Larry Cohen
- * 		Add 43bsd alpha tape changes for subnet routing		
+ * 		Add 43bsd alpha tape changes for subnet routing
  *
  *  1 Aug 85 -- rjl
  *	Panic on a non-existent memory interrupt and the case where a packet
- *	was chained.  The first should never happen because non-existant 
+ *	was chained.  The first should never happen because non-existant
  *	memory interrupts cause a bus reset. The second should never happen
  *	because we hang 2k input buffers on the device.
  *
@@ -112,10 +112,10 @@
  *  13 Feb. 84 -- rjl
  *
  *	Initial version of driver. derived from IL driver.
- * 
+ *
  * ---------------------------------------------------------------------
  */
- 
+
 #include "qe.h"
 #if	NQE > 0
 /*
@@ -158,24 +158,24 @@
 #include "if_uba.h"
 #include "../vaxuba/ubareg.h"
 #include "../vaxuba/ubavar.h"
- 
-#if NQE > 1
+
+#if NQE == 1 && !defined(QNIVERT)
 #define NRCV	15	 		/* Receive descriptors		*/
 #else
-#define NRCV	20	 		/* Receive descriptors		*/
+#define NRCV	10	 		/* Receive descriptors		*/
 #endif
 #define NXMT	5	 		/* Transmit descriptors		*/
 #define NTOT	(NXMT + NRCV)
 
 #define	QETIMEOUT	2		/* transmit timeout, must be > 1 */
- 
+
 /*
  * This constant should really be 60 because the qna adds 4 bytes of crc.
  * However when set to 60 our packets are ignored by deuna's , 3coms are
  * okay ??????????????????????????????????????????
  */
 #define MINDATA 64
- 
+
 /*
  * Ethernet software status per interface.
  *
@@ -211,22 +211,21 @@ struct	qe_softc {
 } qe_softc[NQE];
 
 struct	uba_device *qeinfo[NQE];
- 
+
 extern struct timeval time;
- 
+
 int	qeprobe(), qeattach(), qeintr(), qetimeout();
 int	qeinit(), qeoutput(), qeioctl(), qereset();
- 
+
 u_short qestd[] = { 0 };
 struct	uba_driver qedriver =
 	{ qeprobe, 0, qeattach, 0, qestd, "qe", qeinfo };
- 
-#define QE_TIMEO	(15)
+
 #define	QEUNIT(x)	minor(x)
 /*
  * The deqna shouldn't receive more than ETHERMTU + sizeof(struct ether_header)
  * but will actually take in up to 2048 bytes. To guard against the receiver
- * chaining buffers (which we aren't prepared to handle) we allocate 2kb 
+ * chaining buffers (which we aren't prepared to handle) we allocate 2kb
  * size buffers.
  */
 #define MAXPACKETSIZE 2048		/* Should really be ETHERMTU	*/
@@ -239,24 +238,24 @@ qeprobe(reg, ui)
 {
 	register int br, cvec;		/* r11, r10 value-result */
 	register struct qedevice *addr = (struct qedevice *)reg;
-	register struct qe_ring *rp; 
+	register struct qe_ring *rp;
 	register struct qe_ring *prp; 	/* physical rp 		*/
 	register int i;
 	register struct qe_softc *sc = &qe_softc[ui->ui_unit];
- 
+
 #ifdef lint
 	br = 0; cvec = br; br = cvec;
 	qeintr(0);
 #endif
- 
+
 	/*
-	 * The QNA interrupts on i/o operations. To do an I/O operation 
+	 * The QNA interrupts on i/o operations. To do an I/O operation
 	 * we have to setup the interface by transmitting a setup  packet.
 	 */
 	addr->qe_csr = QE_RESET;
 	addr->qe_csr &= ~QE_RESET;
 	addr->qe_vector = (uba_hd[numuba].uh_lastiv -= 4);
- 
+
 	/*
 	 * Map the communications area and the setup packet.
 	 */
@@ -265,10 +264,10 @@ qeprobe(reg, ui)
 	sc->rringaddr = (struct qe_ring *) uballoc(0, (caddr_t)sc->rring,
 		sizeof(struct qe_ring) * (NTOT+2), 0);
 	prp = (struct qe_ring *)UBAI_ADDR((int)sc->rringaddr);
- 
+
 	/*
 	 * The QNA will loop the setup packet back to the receive ring
-	 * for verification, therefore we initialize the first 
+	 * for verification, therefore we initialize the first
 	 * receive & transmit ring descriptors and link the setup packet
 	 * to them.
 	 */
@@ -276,25 +275,25 @@ qeprobe(reg, ui)
 	    sizeof(sc->setup_pkt));
 	qeinitdesc(sc->rring, (caddr_t)UBAI_ADDR(sc->setupaddr),
 	    sizeof(sc->setup_pkt));
- 
+
 	rp = (struct qe_ring *)sc->tring;
 	rp->qe_setup = 1;
 	rp->qe_eomsg = 1;
 	rp->qe_flag = rp->qe_status1 = QE_NOTYET;
 	rp->qe_valid = 1;
- 
+
 	rp = (struct qe_ring *)sc->rring;
 	rp->qe_flag = rp->qe_status1 = QE_NOTYET;
 	rp->qe_valid = 1;
- 
+
 	/*
 	 * Get the addr off of the interface and place it into the setup
 	 * packet. This code looks strange due to the fact that the address
-	 * is placed in the setup packet in col. major order. 
+	 * is placed in the setup packet in col. major order.
 	 */
 	for( i = 0 ; i < 6 ; i++ )
 		sc->setup_pkt[i][1] = addr->qe_sta_addr[i];
- 
+
 	qesetup( sc );
 	/*
 	 * Start the interface and wait for the packet.
@@ -315,7 +314,7 @@ qeprobe(reg, ui)
 	sc->ipl = br = qbgetpri();
 	return( sizeof(struct qedevice) );
 }
- 
+
 /*
  * Interface exists: make available by filling in network interface
  * record.  System will initialize the interface when it is ready
@@ -328,28 +327,28 @@ qeattach(ui)
 	register struct ifnet *ifp = &sc->qe_if;
 	register struct qedevice *addr = (struct qedevice *)ui->ui_addr;
 	register int i;
- 
+
 	ifp->if_unit = ui->ui_unit;
 	ifp->if_name = "qe";
 	ifp->if_mtu = ETHERMTU;
 	ifp->if_flags = IFF_BROADCAST;
- 
+
 	/*
 	 * Read the address from the prom and save it.
 	 */
 	for( i=0 ; i<6 ; i++ )
-		sc->setup_pkt[i][1] = sc->qe_addr[i] = addr->qe_sta_addr[i] & 0xff;  
+		sc->setup_pkt[i][1] = sc->qe_addr[i] = addr->qe_sta_addr[i] & 0xff;
 	addr->qe_vector |= 1;
 	printf("qe%d: %s, hardware address %s\n", ui->ui_unit,
 		addr->qe_vector&01 ? "delqa":"deqna",
 		ether_sprintf(sc->qe_addr));
 	addr->qe_vector &= ~1;
- 
+
 	/*
 	 * Save the vector for initialization at reset time.
 	 */
 	sc->qe_intvec = addr->qe_vector;
- 
+
 	ifp->if_init = qeinit;
 	ifp->if_output = qeoutput;
 	ifp->if_ioctl = qeioctl;
@@ -358,7 +357,7 @@ qeattach(ui)
 	sc->qe_uba.iff_flags = UBA_CANTWAIT;
 	if_attach(ifp);
 }
- 
+
 /*
  * Reset of interface after UNIBUS reset.
  * If interface is on specified uba, reset its state.
@@ -367,7 +366,7 @@ qereset(unit, uban)
 	int unit, uban;
 {
 	register struct uba_device *ui;
- 
+
 	if (unit >= NQE || (ui = qeinfo[unit]) == 0 || ui->ui_alive == 0 ||
 		ui->ui_ubanum != uban)
 		return;
@@ -375,9 +374,9 @@ qereset(unit, uban)
 	qe_softc[unit].qe_if.if_flags &= ~IFF_RUNNING;
 	qeinit(unit);
 }
- 
+
 /*
- * Initialization of interface. 
+ * Initialization of interface.
  */
 qeinit(unit)
 	int unit;
@@ -388,16 +387,16 @@ qeinit(unit)
 	register struct ifnet *ifp = &sc->qe_if;
 	register i;
 	int s;
- 
+
 	/* address not known */
 	if (ifp->if_addrlist == (struct ifaddr *)0)
 			return;
 	if (sc->qe_flags & QEF_RUNNING)
 		return;
- 
+
 	if ((ifp->if_flags & IFF_RUNNING) == 0) {
 		/*
-		 * map the communications area onto the device 
+		 * map the communications area onto the device
 		 */
 		i = uballoc(0, (caddr_t)sc->rring,
 		    sizeof(struct qe_ring) * (NTOT+2), 0);
@@ -417,7 +416,7 @@ qeinit(unit)
 		    sizeof (struct ether_header), (int)btoc(MAXPACKETSIZE),
 		    sc->qe_ifr, NRCV, sc->qe_ifw, NXMT) == 0) {
 	fail:
-			printf("qe%d: can't initialize\n", unit);
+			printf("qe%d: can't allocate uba resources\n", unit);
 			sc->qe_if.if_flags &= ~IFF_UP;
 			return;
 		}
@@ -433,27 +432,27 @@ qeinit(unit)
 		sc->rring[i].qe_valid = 1;
 	}
 	qeinitdesc(&sc->rring[i], (caddr_t)NULL, 0);
- 
+
 	sc->rring[i].qe_addr_lo = (short)sc->rringaddr;
 	sc->rring[i].qe_addr_hi = (short)((int)sc->rringaddr >> 16);
 	sc->rring[i].qe_chain = 1;
 	sc->rring[i].qe_flag = sc->rring[i].qe_status1 = QE_NOTYET;
 	sc->rring[i].qe_valid = 1;
- 
+
 	for( i = 0 ; i <= NXMT ; i++ )
 		qeinitdesc(&sc->tring[i], (caddr_t)NULL, 0);
 	i--;
- 
+
 	sc->tring[i].qe_addr_lo = (short)sc->tringaddr;
 	sc->tring[i].qe_addr_hi = (short)((int)sc->tringaddr >> 16);
 	sc->tring[i].qe_chain = 1;
 	sc->tring[i].qe_flag = sc->tring[i].qe_status1 = QE_NOTYET;
 	sc->tring[i].qe_valid = 1;
- 
+
 	sc->nxmit = sc->otindex = sc->tindex = sc->rindex = 0;
- 
+
 	/*
-	 * Take the interface out of reset, program the vector, 
+	 * Take the interface out of reset, program the vector,
 	 * enable interrupts, and tell the world we are up.
 	 */
 	s = splimp();
@@ -468,9 +467,8 @@ qeinit(unit)
 	qesetup( sc );
 	qestart( unit );
 	splx( s );
- 
 }
- 
+
 /*
  * Start output on interface.
  *
@@ -485,8 +483,8 @@ qestart(unit)
 	register index;
 	struct mbuf *m;
 	int buf_addr, len, s;
- 
-	 
+
+
 	s = splimp();
 	addr = (struct qedevice *)ui->ui_addr;
 	/*
@@ -495,12 +493,12 @@ qestart(unit)
 	 * a ring and fill it the device will loop indefinately on the
 	 * packet and continue to flood the net with packets until you
 	 * break the ring. For this reason we never queue more than n-1
-	 * packets in the transmit ring. 
+	 * packets in the transmit ring.
 	 *
 	 * The microcoders should have obeyed their own defination of the
 	 * flag and status words, but instead we have to compensate.
 	 */
-	for( index = sc->tindex; 
+	for( index = sc->tindex;
 		sc->tring[index].qe_valid == 0 && sc->nxmit < (NXMT-1) ;
 		sc->tindex = index = ++index % NXMT){
 		rp = &sc->tring[index];
@@ -519,7 +517,7 @@ qestart(unit)
 			len = if_ubaput(&sc->qe_uba, &sc->qe_ifw[index], m);
 		}
 		/*
-		 *  Does buffer end on odd byte ? 
+		 *  Does buffer end on odd byte ?
 		 */
 		if( len & 1 ) {
 			len++;
@@ -535,9 +533,9 @@ qestart(unit)
 		rp->qe_eomsg = 1;
 		rp->qe_flag = rp->qe_status1 = QE_NOTYET;
 		rp->qe_valid = 1;
-		sc->nxmit++;
-		sc->qe_if.if_timer = QETIMEOUT;
-			
+		if (sc->nxmit++ == 0)
+			sc->qe_if.if_timer = QETIMEOUT;
+
 		/*
 		 * See if the xmit list is invalid.
 		 */
@@ -549,7 +547,7 @@ qestart(unit)
 	}
 	splx( s );
 }
- 
+
 /*
  * Ethernet interface interrupt processor
  */
@@ -559,28 +557,31 @@ qeintr(unit)
 	register struct qe_softc *sc = &qe_softc[unit];
 	struct qedevice *addr = (struct qedevice *)qeinfo[unit]->ui_addr;
 	int buf_addr, csr;
- 
+
+/*
 	splx(sc->ipl);
+*/
+	(void) splimp();
 	csr = addr->qe_csr;
 	addr->qe_csr = QE_RCV_ENABLE | QE_INT_ENABLE | QE_XMIT_INT | QE_RCV_INT | QE_ILOOP;
-	if( csr & QE_RCV_INT ) 
+	if( csr & QE_RCV_INT )
 		qerint( unit );
 	if( csr & QE_XMIT_INT )
 		qetint( unit );
 	if( csr & QE_NEX_MEM_INT )
-		panic("qe: Non existant memory interrupt");
-	
+		printf("qe%d: Nonexistent memory interrupt\n", unit);
+
 	if( addr->qe_csr & QE_RL_INVALID && sc->rring[sc->rindex].qe_status1 == QE_NOTYET ) {
 		buf_addr = (int)&sc->rringaddr[sc->rindex];
 		addr->qe_rcvlist_lo = (short)buf_addr;
 		addr->qe_rcvlist_hi = (short)(buf_addr >> 16);
 	}
 }
- 
+
 /*
  * Ethernet interface transmit interrupt.
  */
- 
+
 qetint(unit)
 	int unit;
 {
@@ -589,8 +590,8 @@ qetint(unit)
 	register struct ifxmt *ifxp;
 	int status1, setupflag;
 	short len;
- 
- 
+
+
 	while( sc->otindex != sc->tindex && sc->tring[sc->otindex].qe_status1 != QE_NOTYET && sc->nxmit > 0 ) {
 		/*
 		 * Save the status words from the descriptor so that it can
@@ -636,11 +637,11 @@ qetint(unit)
 	}
 	qestart( unit );
 }
- 
+
 /*
  * Ethernet interface receiver interrupt.
- * If can't determine length from type, then have to drop packet.  
- * Othewise decapsulate packet based on type and pass to type specific 
+ * If can't determine length from type, then have to drop packet.
+ * Othewise decapsulate packet based on type and pass to type specific
  * higher-level input routine.
  */
 qerint(unit)
@@ -650,7 +651,7 @@ qerint(unit)
 	register struct qe_ring *rp;
 	int len, status1, status2;
 	int bufaddr;
- 
+
 	/*
 	 * Traverse the receive ring looking for packets to pass back.
 	 * The search is complete when we find a descriptor not in use.
@@ -673,7 +674,7 @@ qerint(unit)
 			panic("qe: chained packet");
 		len = ((status1 & QE_RBL_HI) | (status2 & QE_RBL_LO)) + 60;
 		sc->qe_if.if_ipackets++;
- 
+
 		if (status1 & QE_ERROR) {
 			if ((status1 & QE_RUNT) == 0)
 				sc->qe_if.if_ierrors++;
@@ -715,14 +716,14 @@ qeoutput(ifp, m0, dst)
 	register struct ether_header *eh;
 	register int off;
 	int usetrailers;
- 
+
 	if ((ifp->if_flags & (IFF_UP|IFF_RUNNING)) != (IFF_UP|IFF_RUNNING)) {
 		error = ENETDOWN;
 		goto bad;
 	}
 
 	switch (dst->sa_family) {
- 
+
 #ifdef INET
 	case AF_INET:
 		idst = ((struct sockaddr_in *)dst)->sin_addr;
@@ -751,20 +752,20 @@ qeoutput(ifp, m0, dst)
 		goto gottype;
 #endif
 
- 
+
 	case AF_UNSPEC:
 		eh = (struct ether_header *)dst->sa_data;
  		bcopy((caddr_t)eh->ether_dhost, (caddr_t)edst, sizeof (edst));
 		type = eh->ether_type;
 		goto gottype;
- 
+
 	default:
 		printf("qe%d: can't handle af%d\n", ifp->if_unit,
 			dst->sa_family);
 		error = EAFNOSUPPORT;
 		goto bad;
 	}
- 
+
 gottrailertype:
 	/*
 	 * Packet to be sent as trailer: move first packet
@@ -776,7 +777,7 @@ gottrailertype:
 	m = m0->m_next;
 	m0->m_next = 0;
 	m0 = m;
- 
+
 gottype:
 	/*
 	 * Add local net header.  If no space in first mbuf,
@@ -800,7 +801,7 @@ gottype:
 	eh->ether_type = htons((u_short)type);
  	bcopy((caddr_t)edst, (caddr_t)eh->ether_dhost, sizeof (edst));
  	bcopy((caddr_t)is->qe_addr, (caddr_t)eh->ether_shost, sizeof (is->qe_addr));
- 
+
 	/*
 	 * Queue message on interface, and start output if interface
 	 * not yet active.
@@ -816,13 +817,13 @@ gottype:
 	qestart(ifp->if_unit);
 	splx(s);
 	return (0);
- 
+
 bad:
 	m_freem(m0);
 	return (error);
 }
- 
- 
+
+
 /*
  * Process an ioctl request.
  */
@@ -834,9 +835,9 @@ qeioctl(ifp, cmd, data)
 	struct qe_softc *sc = &qe_softc[ifp->if_unit];
 	struct ifaddr *ifa = (struct ifaddr *)data;
 	int s = splimp(), error = 0;
- 
+
 	switch (cmd) {
- 
+
 	case SIOCSIFADDR:
 		ifp->if_flags |= IFF_UP;
 		qeinit(ifp->if_unit);
@@ -852,7 +853,7 @@ qeioctl(ifp, cmd, data)
 		case AF_NS:
 		    {
 			register struct ns_addr *ina = &(IA_SNS(ifa)->sns_addr);
-			
+
 			if (ns_nullhost(*ina))
 				ina->x_host = *(union ns_host *)(sc->qe_addr);
 			else
@@ -876,12 +877,12 @@ qeioctl(ifp, cmd, data)
 
 	default:
 		error = EINVAL;
- 
+
 	}
 	splx(s);
 	return (error);
 }
- 
+
 /*
  * set ethernet address for unit
  */
@@ -899,8 +900,8 @@ qe_setaddr(physaddr, unit)
 		qesetup(sc);
 	qeinit(unit);
 }
- 
- 
+
+
 /*
  * Initialize a ring descriptor with mbuf allocation side effects
  */
@@ -913,7 +914,7 @@ qeinitdesc(rp, addr, len)
 	 * clear the entire descriptor
 	 */
 	bzero((caddr_t)rp, sizeof(struct qe_ring));
- 
+
 	if( len ) {
 		rp->qe_buf_len = -(len/2);
 		rp->qe_addr_lo = (short)addr;
@@ -928,7 +929,7 @@ qesetup( sc )
 struct qe_softc *sc;
 {
 	register i, j;
- 
+
 	/*
 	 * Copy the target address to the rest of the entries in this row.
 	 */
@@ -960,13 +961,13 @@ qeread(sc, ifrw, len)
     	struct mbuf *m;
 	int off, resid, s;
 	struct ifqueue *inq;
- 
+
 	/*
 	 * Deal with trailer protocol: if type is INET trailer
 	 * get true type from first 16-bit word past data.
 	 * Remember that type was trailer by setting off.
 	 */
- 
+
 	eh = (struct ether_header *)ifrw->ifrw_addr;
 	eh->ether_type = ntohs((u_short)eh->ether_type);
 #define	qedataaddr(eh, off, type)	((type)(((caddr_t)((eh)+1)+(off))))
@@ -984,7 +985,7 @@ qeread(sc, ifrw, len)
 		off = 0;
 	if (len == 0)
 		return;
- 
+
 	/*
 	 * Pull packet off interface.  Off is nonzero if packet
 	 * has trailing header; qeget will then force this header
@@ -992,10 +993,10 @@ qeread(sc, ifrw, len)
 	 * the type and length which are at the front of any trailer data.
 	 */
 	m = if_ubaget(&sc->qe_uba, ifrw, len, off, &sc->qe_if);
- 
+
 	if (m == 0)
 		return;
- 
+
 	if (off) {
 		struct ifnet *ifp;
 
@@ -1023,12 +1024,12 @@ qeread(sc, ifrw, len)
 		break;
 
 #endif
- 
+
 	default:
 		m_freem(m);
 		return;
 	}
- 
+
 	s = splimp();
 	if (IF_QFULL(inq)) {
 		IF_DROP(inq);
@@ -1047,10 +1048,10 @@ qetimeout(unit)
 	int unit;
 {
 	register struct qe_softc *sc;
- 
+
 	sc = &qe_softc[unit];
 	log(LOG_ERR, "qe%d: transmit timeout, restarted %d\n",
-	     unit, ++sc->qe_restarts);
+	     unit, sc->qe_restarts++);
 	qerestart(sc);
 }
 /*
@@ -1063,8 +1064,9 @@ qerestart(sc)
 	register struct qedevice *addr = sc->addr;
 	register struct qe_ring *rp;
 	register i;
- 
+
 	addr->qe_csr = QE_RESET;
+	addr->qe_csr &= ~QE_RESET;
 	qesetup( sc );
 	for (i = 0, rp = sc->tring; i < NXMT; rp++, i++) {
 		rp->qe_flag = rp->qe_status1 = QE_NOTYET;
