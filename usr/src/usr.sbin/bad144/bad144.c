@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)bad144.c	4.2 (Berkeley) 81/05/11";
+static	char *sccsid = "@(#)bad144.c	4.3 (Berkeley) 83/02/20";
 
 /*
  * bad144
@@ -22,61 +22,43 @@ static	char *sccsid = "@(#)bad144.c	4.2 (Berkeley) 81/05/11";
  */
 #include <sys/types.h>
 #include <sys/dkbad.h>
-#include <stdio.h>
 
-struct diskinfo {
-	char	*di_type;	/* type name of disk */
-	int	di_size;	/* size of entire volume in sectors */
-	int	di_nsect;	/* sectors per track */
-	int	di_ntrak;	/* tracks per cylinder */
-} diskinfo[] = {
-	"rk06",		22*3*411,	22,	3,
-	"rk07",		22*3*815,	22,	3,
-	"rm03",		32*5*823,	32,	5,
-	"rm05",		32*19*823,	32,	19,
-	"rp06",		22*19*815,	22,	19,
-	"rm80",		31*14*559,	31,	14,
-	"rp05",		22*19*411,	22,	19,
-	"rp07",		50*32*630,	50,	32,
-	0,
-};
+#include <stdio.h>
+#include <disktab.h>
+
 struct	dkbad dkbad;
 
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	register struct diskinfo *di;
 	register struct bt_bad *bt;
+	register struct disktab *dp;
 	char name[BUFSIZ];
-	int i, f, bad, oldbad, errs;
+	int size, i, f, bad, oldbad, errs;
 
 	argc--, argv++;
 	if (argc < 2) {
-		fprintf(stderr, "usage: bad type disk [ snum [ bn ... ] ]\n");
-		fprintf(stderr, "e.g.: bad rk07 hk0\n");
+		fprintf(stderr, "usage: bad144 type disk [ snum [ bn ... ] ]\n");
+		fprintf(stderr, "e.g.: bad144 rk07 hk0\n");
 		exit(1);
 	}
-	for (di = diskinfo; di->di_type; di++)
-		if (!strcmp(di->di_type, argv[0]))
-			goto found;
-	fprintf(stderr, "%s: not a known disk type\n", argv[0]);
-	fprintf(stderr, "known types:");
-	for (di = diskinfo; di->di_type; di++)
-		fprintf(stderr, " %s", di->di_type);
-	fprintf(stderr, "\n");
-	exit(1);
-found:
+	dp = getdiskbyname(argv[0]);
+	if (dp == NULL) {
+		fprintf(stderr, "%s: unknown disk type\n", argv[0]);
+		exit(1);
+	}
 	sprintf(name, "/dev/r%sc", argv[1]);
 	argc -= 2;
 	argv += 2;
+	size = dp->d_nsectors * dp->d_ntracks * dp->d_ncylinders; 
 	if (argc == 0) {
 		f = open(name, 0);
 		if (f < 0) {
 			perror(name);
 			exit(1);
 		}
-		lseek(f, 512 * (di->di_size - di->di_nsect), 0);
+		lseek(f, dp->d_secsize * (size - dp->d_nsectors), 0);
 		printf("bad block information at 0x%x in %s:\n",
 		    tell(f), name);
 		if (read(f, &dkbad, sizeof (struct dkbad)) !=
@@ -86,11 +68,14 @@ found:
 		}
 		printf("cartidge serial number: %d(10)\n", dkbad.bt_csn);
 		switch (dkbad.bt_flag) {
+
 		case -1:
 			printf("alignment cartridge\n");
 			break;
+
 		case 0:
 			break;
+
 		default:
 			printf("bt_flag=%x(16)?\n", dkbad.bt_flag);
 			break;
@@ -102,8 +87,8 @@ found:
 			if (bad < 0)
 				break;
 			printf("sn=%d, cn=%d, tn=%d, sn=%d\n",
-			    (bt->bt_cyl*di->di_ntrak + (bt->bt_trksec>>8)) *
-				di->di_nsect + (bt->bt_trksec&0xff),
+			    (bt->bt_cyl*dp->d_ntracks + (bt->bt_trksec>>8)) *
+				dp->d_nsectors + (bt->bt_trksec&0xff),
 			    bt->bt_cyl, bt->bt_trksec>>8, bt->bt_trksec&0xff);
 			bt++;
 		}
@@ -117,29 +102,30 @@ found:
 	dkbad.bt_csn = atoi(*argv++);
 	argc--;
 	dkbad.bt_mbz = 0;
-	if (argc > 2 * di->di_nsect || argc > 126) {
-		printf("bad: too many bad sectors specified\n");
-		if (2 * di->di_nsect > 126)
+	if (argc > 2 * dp->d_nsectors || argc > 126) {
+		printf("bad144: too many bad sectors specified\n");
+		if (2 * dp->d_nsectors > 126)
 			printf("limited to 126 by information format\n");
 		else
 			printf("limited to %d (only 2 tracks of sectors)\n",
-			    2 * di->di_nsect);
+			    2 * dp->d_nsectors);
 		exit(1);
 	}
 	errs = 0;
 	i = 0;
 	while (argc > 0) {
 		int sn = atoi(*argv++);
+
 		argc--;
-		if (sn < 0 || sn >= di->di_size) {
+		if (sn < 0 || sn >= size) {
 			printf("%d: out of range [0,%d) for %s\n",
-			    sn, di->di_size, di->di_type);
+			    sn, size, dp->d_name);
 			errs++;
 		}
-		dkbad.bt_bad[i].bt_cyl = sn / (di->di_nsect*di->di_ntrak);
-		sn %= (di->di_nsect*di->di_ntrak);
+		dkbad.bt_bad[i].bt_cyl = sn / (dp->d_nsectors*dp->d_ntracks);
+		sn %= (dp->d_nsectors*dp->d_ntracks);
 		dkbad.bt_bad[i].bt_trksec =
-		    ((sn/di->di_nsect) << 8) + (sn%di->di_nsect);
+		    ((sn/dp->d_nsectors) << 8) + (sn%dp->d_nsectors);
 		i++;
 	}
 	while (i < 126) {
@@ -149,7 +135,7 @@ found:
 	}
 	if (errs)
 		exit(1);
-	lseek(f, 512 * (di->di_size - di->di_nsect), 0);
+	lseek(f, dp->d_secsize * (size - dp->d_nsectors), 0);
 	if (write(f, (caddr_t)&dkbad, sizeof (dkbad)) != sizeof (dkbad)) {
 		perror(name);
 		exit(1);
