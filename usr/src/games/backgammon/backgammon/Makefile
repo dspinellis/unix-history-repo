@@ -1,5 +1,6 @@
-#	Makefile	1.1	82/05/11
+#	Makefile	1.2	82/10/24
 
+DESTDIR=
 CFLAGS= -O -DV7
 OBJS= allow.o board.o check.o extra.o fancy.o init.o main.o move.o\
 	odds.o one.o save.o subs.o table.o text.o message.o
@@ -8,7 +9,6 @@ TOBJS= allow.o board.o check.o data.o fancy.o init.o odds.o one.o save.o subs.o\
 SRCS= allow.c board.c check.c data.c extra.c fancy.c init.c main.c\
 	move.c odds.c one.c save.c subs.c table.c teach.c text.c ttext1.c\
 	ttext2.c tutor.c message.c
-TARF=	bg.tar
 
 all: backgammon teachgammon backgammon.doc
 
@@ -44,14 +44,8 @@ backgammon.doc: backgammon.src
 
 #	Installation
 install:
-	-chmod 711 backgammon teachgammon
-	pubrm backgammon
-	public backgammon
+	install backgammon ${DESTDIR}/usr/games/backgammon
+	install teachgammon ${DESTDIR}/usr/games/teachgammon
 
-news:
-	pubrm gammon.news
-	public gammon.news
-
-tar:
-	tar crvf ${TARF} ${SRCS} back.h tutor.h makefile execl.c Mesgfix Savefix backgammon.src
-
+clean:
+	rm -f ${OBJS} ${TOBJS}
