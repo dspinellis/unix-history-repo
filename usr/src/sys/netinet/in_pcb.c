@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)in_pcb.c	6.8 (Berkeley) %G%
+ *	@(#)in_pcb.c	6.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -128,7 +128,7 @@ in_pcbconnect(inp, nam)
 #define	satosin(sa)	((struct sockaddr_in *)(sa))
 		if (sin->sin_addr.s_addr == INADDR_ANY)
 		    sin->sin_addr = IA_SIN(in_ifaddr)->sin_addr;
-		else if (sin->sin_addr.s_addr == INADDR_BROADCAST &&
+		else if (sin->sin_addr.s_addr == (u_long)INADDR_BROADCAST &&
 		  (in_ifaddr->ia_ifp->if_flags & IFF_BROADCAST))
 		    sin->sin_addr = satosin(&in_ifaddr->ia_broadaddr)->sin_addr;
 	}
@@ -208,6 +208,8 @@ in_pcbdetach(inp)
 
 	so->so_pcb = 0;
 	sofree(so);
+	if (inp->inp_options)
+		m_free(inp->inp_options);
 	if (inp->inp_route.ro_rt)
 		rtfree(inp->inp_route.ro_rt);
 	remque(inp);
@@ -244,8 +246,8 @@ in_setpeeraddr(inp, nam)
 
 /*
  * Pass some notification to all connections of a protocol
- * associated with address dst.  Call the
- * protocol specific routine to handle each connection.
+ * associated with address dst.  Call the protocol specific
+ * routine (if any) to handle each connection.
  */
 in_pcbnotify(head, dst, errno, notify)
 	struct inpcb *head;
@@ -256,18 +258,17 @@ in_pcbnotify(head, dst, errno, notify)
 	int s = splimp();
 
 	for (inp = head->inp_next; inp != head;) {
-		if (inp->inp_faddr.s_addr != dst->s_addr) {
-	next:
+		if (inp->inp_faddr.s_addr != dst->s_addr ||
+		    inp->inp_socket == 0) {
 			inp = inp->inp_next;
 			continue;
 		}
-		if (inp->inp_socket == 0)
-			goto next;
 		if (errno) 
 			inp->inp_socket->so_error = errno;
 		oinp = inp;
 		inp = inp->inp_next;
-		(*notify)(oinp);
+		if (notify)
+			(*notify)(oinp);
 	}
 	splx(s);
 }
@@ -287,7 +288,6 @@ in_rtchange(inp)
 		 * output is attempted.
 		 */
 	}
-	/* SHOULD NOTIFY HIGHER-LEVEL PROTOCOLS */
 }
 
 struct inpcb *
