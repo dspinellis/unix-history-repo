@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)main.c	2.11.1.1	(Berkeley)	%G%";
+static	char sccsid[] = "@(#)main.c	2.11.1.2	(Berkeley)	%G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -406,19 +406,29 @@ check(dev)
 				lastino = inum;
 				if (ftypeok(dp) == 0)
 					goto unknown;
-				if (dp->di_size < 0)
+				if (dp->di_size < 0) {
+					if (debug)
+						printf("bad size %d:",
+							dp->di_size);
 					goto unknown;
+				}
 				ndb = howmany(dp->di_size, sblock.fs_bsize);
 				if (SPECIAL)
 					ndb++;
 				for (j = ndb; j < NDADDR; j++)
-					if (dp->di_db[j] != 0)
+					if (dp->di_db[j] != 0) {
+						if (debug)
+							printf("bad direct addr:");
 						goto unknown;
+					}
 				for (j = 0, ndb -= NDADDR; ndb > 0; j++)
 					ndb /= NINDIR(&sblock);
 				for (; j < NIADDR; j++)
-					if (dp->di_ib[j] != 0)
+					if (dp->di_ib[j] != 0) {
+						if (debug)
+							printf("bad indirect addr:");
 						goto unknown;
+					}
 				n_files++;
 				if (setlncnt(dp->di_nlink) <= 0) {
 					if (badlnp < &badlncnt[MAXLNCNT])
@@ -1030,24 +1040,10 @@ pass5(blk, size)
 	for (; size > 0; blk++, size--) {
 		if (outrange(blk)) {
 			fixcg = 1;
-			if (preen)
-				pfatal("BAD BLOCKS IN BIT MAPS.");
-			if (++badblk >= MAXBAD) {
-				printf("EXCESSIVE BAD BLKS IN BIT MAPS.");
-				if (reply("CONTINUE") == 0)
-					errexit("");
-				return (STOP);
-			}
+			++badblk;
 		} else if (getfmap(blk)) {
 			fixcg = 1;
-			if (preen)
-				pfatal("DUP BLKS IN BIT MAPS.");
-			if (++dupblk >= DUPTBLSIZE) {
-				printf("EXCESSIVE DUP BLKS IN BIT MAPS.");
-				if (reply("CONTINUE") == 0)
-					errexit("");
-				return (STOP);
-			}
+			++dupblk;
 		} else {
 			n_ffree++;
 			setfmap(blk);
@@ -1481,6 +1477,8 @@ ftypeok(dp)
 		return (1);
 
 	default:
+		if (debug)
+			printf("bad file type 0%o\n", dp->di_mode);
 		return (0);
 	}
 }
@@ -1652,7 +1650,10 @@ makecg()
 		cgrp.cg_time = time(0);
 		cgrp.cg_magic = CG_MAGIC;
 		cgrp.cg_cgx = c;
-		cgrp.cg_ncyl = sblock.fs_cpg;
+		if (c == sblock.fs_ncg - 1)
+			cgrp.cg_ncyl = sblock.fs_ncyl % sblock.fs_cpg;
+		else
+			cgrp.cg_ncyl = sblock.fs_cpg;
 		cgrp.cg_niblk = sblock.fs_ipg;
 		cgrp.cg_ndblk = dmax - dbase;
 		cgrp.cg_cs.cs_ndir = 0;
@@ -1726,12 +1727,14 @@ makecg()
 			} else
 				clrbit(cgrp.cg_free, d);
 		}
+		for (; d % sblock.fs_frag != 0; d++)
+			clrbit(cgrp.cg_free, d);
 		if (j != d) {
 			blk = blkmap(&sblock, cgrp.cg_free, j);
 			fragacct(&sblock, blk, cgrp.cg_frsum, 1);
 		}
-		for (; d < MAXBPG(&sblock); d++)
-			clrbit(cgrp.cg_free, d);
+		for (d /= sblock.fs_frag; d < MAXBPG(&sblock); d ++)
+			clrblock(&sblock, cgrp.cg_free, d);
 		sblock.fs_cstotal.cs_nffree += cgrp.cg_cs.cs_nffree;
 		sblock.fs_cstotal.cs_nbfree += cgrp.cg_cs.cs_nbfree;
 		sblock.fs_cstotal.cs_nifree += cgrp.cg_cs.cs_nifree;
@@ -1988,6 +1991,33 @@ isblock(fs, cp, h)
 	default:
 		error("isblock bad fs_frag %d\n", fs->fs_frag);
 		return (0);
+	}
+}
+
+/*
+ * take a block out of the map
+ */
+clrblock(fs, cp, h)
+	struct fs *fs;
+	unsigned char *cp;
+	int h;
+{
+	switch ((fs)->fs_frag) {
+	case 8:
+		cp[h] = 0;
+		return;
+	case 4:
+		cp[h >> 1] &= ~(0x0f << ((h & 0x1) << 2));
+		return;
+	case 2:
+		cp[h >> 2] &= ~(0x03 << ((h & 0x3) << 1));
+		return;
+	case 1:
+		cp[h >> 3] &= ~(0x01 << (h & 0x7));
+		return;
+	default:
+		error("clrblock bad fs_frag %d\n", fs->fs_frag);
+		return;
 	}
 }
 
