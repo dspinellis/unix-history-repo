@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -40,13 +40,11 @@ static char sccsid[] = "@(#)print.c	8.3 (Berkeley) %G%";
 
 #include "ps.h"
 
-static void printval __P((char*, struct var *));
-
 void
 printheader()
 {
-	register VAR *v;
-	register struct varent *vent;
+	VAR *v;
+	struct varent *vent;
 
 	for (vent = vhead; vent; vent = vent->next) {
 		v = vent->var;
@@ -68,7 +66,6 @@ command(k, ve)
 	KINFO *k;
 	VARENT *ve;
 {
-	extern int termwidth, totwidth;
 	VAR *v;
 
 	v = ve->var;
@@ -79,8 +76,8 @@ command(k, ve)
 				(void)printf("%s ", k->ki_env);
 			(void)printf("%s", k->ki_args);
 		} else {
-			register int left = termwidth - (totwidth - v->width);
-			register char *cp;
+			int left = termwidth - (totwidth - v->width);
+			char *cp;
 
 			if (left < 1) /* already wrapped, just use std width */
 				left = v->width;
@@ -131,9 +128,9 @@ state(k, ve)
 	KINFO *k;
 	VARENT *ve;
 {
-	register struct proc *p;
-	register int flag;
-	register char *cp;
+	struct proc *p;
+	int flag;
+	char *cp;
 	VAR *v;
 	char buf[16];
 
@@ -332,12 +329,12 @@ started(k, ve)
 	if (!now)
 		(void)time(&now);
 	if (now - k->ki_u.u_start.tv_sec < 24 * SECSPERHOUR) {
-		static char fmt[] = "%l:@M%p";
-		fmt[3] = '%';			/* I *hate* SCCS... */
+		/* I *hate* SCCS... */
+		static char fmt[] = __CONCAT("%l:%", "M%p");
 		(void)strftime(buf, sizeof(buf) - 1, fmt, tp);
 	} else if (now - k->ki_u.u_start.tv_sec < 7 * SECSPERDAY) {
-		static char fmt[] = "%a@I%p";
-		fmt[2] = '%';			/* I *hate* SCCS... */
+		/* I *hate* SCCS... */
+		static char fmt[] = __CONCAT("%a%", "I%p");
 		(void)strftime(buf, sizeof(buf) - 1, fmt, tp);
 	} else
 		(void)strftime(buf, sizeof(buf) - 1, "%e%b%y", tp);
@@ -439,7 +436,6 @@ cputime(k, ve)
 	KINFO *k;
 	VARENT *ve;
 {
-	extern int sumrusage;
 	VAR *v;
 	long secs;
 	long psecs;	/* "parts" of a second. first micro, then centi */
@@ -479,8 +475,6 @@ double
 getpcpu(k)
 	KINFO *k;
 {
-	extern fixpt_t ccpu;
-	extern int fscale, nlistread, rawcpu;
 	struct proc *p;
 	static int failure;
 
@@ -516,7 +510,6 @@ double
 getpmem(k)
 	KINFO *k;
 {
-	extern int mempages, nlistread;
 	static int failure;
 	struct proc *p;
 	struct eproc *e;
@@ -617,6 +610,48 @@ trss(k, ve)
  * Generic output routines.  Print fields from various prototype
  * structures.
  */
+static void
+printval(bp, v)
+	char *bp;
+	VAR *v;
+{
+	static char ofmt[32] = "%";
+	char *fcp, *cp;
+
+	cp = ofmt + 1;
+	fcp = v->fmt;
+	if (v->flag & LJUST)
+		*cp++ = '-';
+	*cp++ = '*';
+	while (*cp++ = *fcp++);
+
+	switch (v->type) {
+	case CHAR:
+		(void)printf(ofmt, v->width, *(char *)bp);
+		break;
+	case UCHAR:
+		(void)printf(ofmt, v->width, *(u_char *)bp);
+		break;
+	case SHORT:
+		(void)printf(ofmt, v->width, *(short *)bp);
+		break;
+	case USHORT:
+		(void)printf(ofmt, v->width, *(u_short *)bp);
+		break;
+	case LONG:
+		(void)printf(ofmt, v->width, *(long *)bp);
+		break;
+	case ULONG:
+		(void)printf(ofmt, v->width, *(u_long *)bp);
+		break;
+	case KPTR:
+		(void)printf(ofmt, v->width, *(u_long *)bp &~ KERNBASE);
+		break;
+	default:
+		errx(1, "unknown type %d", v->type);
+	}
+}
+
 void
 pvar(k, ve)
 	KINFO *k;
@@ -665,46 +700,4 @@ rvar(k, ve)
 		printval((char *)((char *)(&k->ki_u.u_ru) + v->off), v);
 	else
 		(void)printf("%*s", v->width, "-");
-}
-
-static void
-printval(bp, v)
-	char *bp;
-	VAR *v;
-{
-	static char ofmt[32] = "%";
-	register char *fcp, *cp;
-
-	cp = ofmt + 1;
-	fcp = v->fmt;
-	if (v->flag & LJUST)
-		*cp++ = '-';
-	*cp++ = '*';
-	while (*cp++ = *fcp++);
-
-	switch (v->type) {
-	case CHAR:
-		(void)printf(ofmt, v->width, *(char *)bp);
-		break;
-	case UCHAR:
-		(void)printf(ofmt, v->width, *(u_char *)bp);
-		break;
-	case SHORT:
-		(void)printf(ofmt, v->width, *(short *)bp);
-		break;
-	case USHORT:
-		(void)printf(ofmt, v->width, *(u_short *)bp);
-		break;
-	case LONG:
-		(void)printf(ofmt, v->width, *(long *)bp);
-		break;
-	case ULONG:
-		(void)printf(ofmt, v->width, *(u_long *)bp);
-		break;
-	case KPTR:
-		(void)printf(ofmt, v->width, *(u_long *)bp &~ KERNBASE);
-		break;
-	default:
-		errx(1, "unknown type %d", v->type);
-	}
 }

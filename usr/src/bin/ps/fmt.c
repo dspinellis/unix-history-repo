@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)fmt.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)fmt.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -27,9 +27,9 @@ static char *shquote __P((char **));
  */
 static char *
 shquote(argv)
-	register char **argv;
+	char **argv;
 {
-	register char **p, *dst, *src;
+	char **p, *dst, *src;
 	static char buf[1024];		/* XXX */
 
 	if (*argv == 0) {
@@ -52,19 +52,19 @@ static char *
 cmdpart(arg0)
 	char *arg0;
 {
-	register char *cp;
+	char *cp;
 
 	return ((cp = strrchr(arg0, '/')) != NULL ? cp + 1 : arg0);
 }
 
 char *
 fmt_argv(argv, cmd, maxlen)
-	register char **argv;
-	register char *cmd;
+	char **argv;
+	char *cmd;
 	int maxlen;
 {
-	register int len;
-	register char *ap, *cp;
+	int len;
+	char *ap, *cp;
 
 	if (argv == 0 || argv[0] == 0) {
 		if (cmd == NULL)
