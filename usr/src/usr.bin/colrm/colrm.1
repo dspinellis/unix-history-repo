@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)colrm.1	6.6 (Berkeley) %G%
+.\"     @(#)colrm.1	6.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt COLRM 1
@@ -13,25 +13,40 @@
 .Nd remove columns from a file
 .Sh SYNOPSIS
 .Nm colrm
-.Op Ar startcol Op Ar endcol
+.Op Ar start Op Ar stop
 .Sh DESCRIPTION
 .Nm Colrm
-removes selected columns from a file.  Input is taken from standard input.
-Output is sent to standard output.
+removes selected columns from the lines of a file.
+A column is defined as a single character in a line.
+Input is read from the standard input.
+Output is written to the standard output.
 .Pp
-If called with one parameter the columns
-of each line will be removed starting with the specified column.
-If called with two parameters the columns from the first column
-to the last column will be removed.
+If only the
+.Ar start
+column is specified, columns numbered less than the
+.Ar start
+column will be written.
+If both
+.Ar start
+and
+.Ar stop
+columns are specified, columns numbered less than the
+.Ar start
+column
+or greater than the
+.Ar stop
+column will be written.
+Column numbering starts with one, not zero.
 .Pp
-Column numbering starts with column 1.
+Tab characters increment the column count to the next multiple of eight.
+Backspace characters decrement the column count by one.
 .Sh SEE ALSO
 .Xr awk 1 ,
 .Xr column 1 ,
-.Xr expand 1 ,
+.Xr cut 1 ,
 .Xr paste 1
 .Sh HISTORY
 The
-.Nm
+.Nm colrm
 command appeared in 
 .Bx 3.0 .
