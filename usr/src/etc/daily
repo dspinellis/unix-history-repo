@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)daily	5.12 (Berkeley) %G%
+#	@(#)daily	5.13 (Berkeley) %G%
 #
 PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/local
 host=`hostname -s`
@@ -16,7 +16,8 @@ if [ -d /tmp ]; then
 	    >/dev/null 2>&1; }
 fi
 
-if [ -d /var/tmp ]; then
+CLEANVARTMP=0
+if [ -d /var/tmp -a $CLEANVARTMP = 1 ]; then
 	cd /var/tmp && {
 	find . ! -name . -atime +7 -exec rm -f -- {} \;
 	find . ! -name . -type d -mtime +1 -exec rmdir -- {} \; \
@@ -41,10 +42,22 @@ if [ -d /var/rwho ] ; then
 fi
 
 cd /tmp
-find / ! -fstype local -a -prune -o \
-	\( -name '[#,]*' -o -name '.#*' -o -name a.out -o -name core \
+TMP=daily.$$
+find / \( ! -fstype local -o -fstype rdonly \) -a -prune -o \
+	-name 'core.*' -a -print -o \
+	\( -name '[#,]*' -o -name '.#*' -o -name a.out \
 	   -o -name '*.CKP' -o -name '.emacs_[0-9]*' \) \
-		-a -atime +3 -exec rm -f -- {} \;
+		-a -atime +3 -a -exec rm -f -- {} \; -a -print > $TMP
+echo ""
+echo "Core dumps:"
+egrep 'core\.' $TMP
+
+echo ""
+echo "Deleted files:"
+egrep -v 'core\.' $TMP
+
+rm -f $TMP
+	
 msgs -c
 if [ -f /etc/news.expire ]; then
 	/etc/news.expire
@@ -80,6 +93,27 @@ if [ -f /etc/Distfile ]; then
 		cp /etc/Distfile $bak/Distfile.bak
 	fi
 fi
+
+ROOTBACKUP=0
+# If filesystem named /altroot is type ufs, on /dev/.* and mounted "xx",
+# use it as a backup root filesystem to be updated daily.
+[ ROOTBACKUP = 1 ] && {
+	echo ""
+	echo "Backing up root filesystem:"
+	rootdev=`awk '$2 == "/" && $1 ~ /^\/dev\// && $3 == "ufs" && \
+	    $4 == "rw" \
+		 { print substr($1, 6) }' < /etc/fstab`
+	rootbak=`awk '$2 == "/altroot" && $1 ~ /^\/dev\// && $3 == "ufs" && \
+	    $4 == "xx" \
+		{ print substr($1, 6) }' < /etc/fstab`
+	[ X$rootdev != X -a X$rootbak != X ] && {
+		sync
+		echo "copying /dev/r$rootdev to /dev/r$rootbak"
+		dd if=/dev/r$rootdev of=/dev/r$rootbak bs=16b seek=1 skip=1 \
+			conv=noerror,sync
+		fsck -y /dev/r$rootbak
+	}
+}
 
 echo ""
 echo "Running calendar:"
@@ -142,7 +176,12 @@ fsck -n | grep -v '^\*\* Phase'
 echo ""
 if [ -f /etc/Distfile ]; then
 	echo "Running rdist:"
-	rdist -f /etc/Distfile
+	if [ -d /var/log/rdist ]; then
+		logf=`date | awk '{printf "%s.%s.%s", $6, $2, $3}'`
+		rdist -f /etc/Distfile 2>&1 | tee /var/log/rdist/$logf
+	else
+		rdist -f /etc/Distfile 
+	fi
 fi
 
 sh /etc/security | mail -s "daily insecurity output" root
