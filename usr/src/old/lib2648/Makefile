@@ -1,5 +1,5 @@
 #
-#	Makefile	4.1	83/03/09
+#	Makefile	4.2	83/05/23
 #
 LIBDIR=	/usr/lib
 DESTDIR=
@@ -32,7 +32,7 @@ tags:	/tmp
 	ctags ${SRCS}
 
 clean:
-	rm lib2648.a ${OBJS}
+	rm -f lib2648.a ${OBJS}
 
 vgrind:
 	tee index </dev/null
