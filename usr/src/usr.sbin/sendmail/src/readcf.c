@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.54 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.55 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1212,8 +1212,8 @@ struct optioninfo
 	"TimeFactor",		'Z',		FALSE,
 #define O_BSP		0x80
 	"BrokenSmtpPeers",	O_BSP,		TRUE,
-#define O_SQBH		0x81
-	"SortQueueByHost",	O_SQBH,		TRUE,
+#define O_QUEUESORTORD,	0x81
+	"QueueSortOrder",	O_QUEUESORTORD,	TRUE,
 #define O_DNICE		0x82
 	"DeliveryNiceness",	O_DNICE,	TRUE,
 #define O_MQA		0x83
@@ -1778,8 +1778,22 @@ setoption(opt, val, sticky)
 		BrokenSmtpPeers = atobool(val);
 		break;
 
-	  case O_SQBH:		/* sort work queue by host first */
-		SortQueueByHost = atobool(val);
+	  case O_QUEUESORTORD:	/* queue sorting order */
+		switch (*val)
+		{
+		  case 'h':	/* Host first */
+		  case 'H':
+			QueueSortOrder = QS_BYHOST;
+			break;
+
+		  case 'p':	/* Priority order */
+		  case 'P':
+			QueueSortOrder = QS_BYPRIORITY;
+			break;
+
+		  default:
+			syserr("Invalid queue sort order \"%s\"", val);
+		}
 		break;
 
 	  case O_DNICE:		/* delivery nice value */

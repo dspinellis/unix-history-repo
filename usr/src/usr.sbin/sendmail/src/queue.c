@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.59 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.60 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.59 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.60 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -787,7 +787,7 @@ orderq(doall)
 		i = NEED_P | NEED_T;
 		if (QueueLimitSender != NULL)
 			i |= NEED_S;
-		if (SortQueueByHost || QueueLimitRecipient != NULL)
+		if (QueueSortOrder == QS_BYHOST || QueueLimitRecipient != NULL)
 			i |= NEED_R;
 		while (i != 0 && fgets(lbuf, sizeof lbuf, cf) != NULL)
 		{
@@ -839,17 +839,7 @@ orderq(doall)
 
 	wc = min(wn, QUEUESIZE);
 
-	if (!SortQueueByHost)
-	{
-		extern workcmpf0();
-
-		/*
-		**  Simple sort based on queue priority only.
-		*/
-
-		qsort((char *) wlist, wc, sizeof *wlist, workcmpf0);
-	}
-	else
+	if (QueueSortOrder == QS_BYHOST)
 	{
 		extern workcmpf1();
 		extern workcmpf2();
@@ -895,6 +885,16 @@ orderq(doall)
 		*/
 
 		qsort((char *) wlist, wc, sizeof *wlist, workcmpf2);
+	}
+	else
+	{
+		extern workcmpf0();
+
+		/*
+		**  Simple sort based on queue priority only.
+		*/
+
+		qsort((char *) wlist, wc, sizeof *wlist, workcmpf0);
 	}
 
 	/*

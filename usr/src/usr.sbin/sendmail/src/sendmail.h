@@ -739,6 +739,12 @@ EXTERN int	MimeMode;
 #define MM_CVTMIME	0x0001		/* convert 8 to 7 bit MIME */
 #define MM_PASS8BIT	0x0002		/* just send 8 bit data blind */
 #define MM_MIME8BIT	0x0004		/* convert 8-bit data to MIME */
+
+/* queue sorting order algorithm */
+EXTERN int	QueueSortOrder;
+
+#define QS_BYPRIORITY	0		/* sort by message priority */
+#define QS_BYHOST	1		/* sort by first host name */
 /*
 **  Additional definitions
 */
@@ -932,7 +938,6 @@ EXTERN char	*PostMasterCopy;	/* address to get errs cc's */
 EXTERN int	CheckpointInterval;	/* queue file checkpoint interval */
 EXTERN bool	DontPruneRoutes;	/* don't prune source routes */
 EXTERN bool	BrokenSmtpPeers;	/* peers can't handle 2-line greeting */
-EXTERN bool	SortQueueByHost;	/* order queue by host name first */
 EXTERN int	MaxMciCache;		/* maximum entries in MCI cache */
 EXTERN time_t	MciCacheTimeout;	/* maximum idle time on connections */
 EXTERN char	*QueueLimitRecipient;	/* limit queue runs to this recipient */
