@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_types.h	7.3 (Berkeley) %G%
+ *	@(#)if_types.h	7.4 (Berkeley) %G%
  */
 
 
@@ -36,3 +36,7 @@
 #define	IFT_XETHER	0x1a		/* obsolete 3MB experimental ethernet */
 #define	IFT_NSIP	0x1b		/* XNS over IP */
 #define	IFT_SLIP	0x1c		/* IP over generic TTY */
+#define	IFT_ULTRA	0x1d		/* Ultra Technologies */
+#define	IFT_DS3		0x1e		/* Generic T3 */
+#define	IFT_SIP		0x1f		/* SMDS */
+#define	IFT_FRELAY	0x20		/* Frame Relay */
