@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)files.c	4.11 (Berkeley) 85/08/30";
+static	char *sccsid = "@(#)files.c	4.12 (Berkeley) 86/01/09";
 #include <fcntl.h>
 
 /* UNIX DEPENDENT PROCEDURES */
@@ -227,7 +227,7 @@ if(endir==0)
 	else {
 	       path = pth; 
 	       *path = '\0';
-	       if (*cp->varval != '.') strcpy(pth,".:");
+	       if (strncmp(cp->varval, ".:", 2) != 0) strcpy(pth,".:");
 	       strcat(pth, cp->varval);
 	       }
 	}
