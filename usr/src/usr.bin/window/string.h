@@ -1,9 +1,10 @@
 /*
- *	@(#)string.h	3.2 84/01/05
+ *	@(#)string.h	3.3 84/04/05
  */
 #define STR_DEBUG
 
 char *str_cpy();
+char *str_ncpy();
 char *str_cat();
 char *str_itoa();
 
