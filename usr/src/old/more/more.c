@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)more.c	4.19 (Berkeley) 84/07/12";
+static	char *sccsid = "@(#)more.c	4.20 (Berkeley) 84/09/17";
 #endif
 
 /*
@@ -66,7 +66,6 @@ char		*shell;		/* The name of the shell to use */
 int		shellp;		/* A previous shell command exists */
 char		ch;
 jmp_buf		restore;
-char		obuf[BUFSIZ];	/* stdout buffer */
 char		Line[LINSIZ];	/* Line buffer */
 int		Lpp = 24;	/* lines per page */
 char		*Clear;		/* clear screen */
@@ -1351,13 +1350,12 @@ register int nskip;
 initterm ()
 {
     char	buf[TBUFSIZ];
-    char	clearbuf[100];
+    static char	clearbuf[TBUFSIZ];
     char	*clearptr, *padstr;
     int		ldisc;
     char	*term;
     int		tgrp;
 
-    setbuf(stdout, obuf);
 retry:
     if (!(no_tty = gtty(fileno(stdout), &otty))) {
 	/*
