@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)scan.c	2.7 (Berkeley) %G%";
+static char *sccsid ="@(#)scan.c	2.8 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -1013,10 +1013,91 @@ lxtitle(){
 			}
 
 		lxget( ' ', LEXWS );
+		c = getchar();
+		if( c == '\n' )
+			continue;
+		if( c == 'i' ){
+			/* #ident -- currently a no-op */
+			lxget( c, LEXLET );
+			if( strcmp( yytext, "ident" ) )
+				werror( "%s: undefined control", yytext );
+			while( (c = getchar()) != '\n' && c != EOF )
+				;
+			continue;
+			}
+		if( c == 'p' ){
+			/* #pragma -- special instructions */
+			lxget( c, LEXLET );
+			if( strcmp( yytext, "pragma" ) ) {
+				werror( "%s: undefined control", yytext );
+				while( (c = getchar()) != '\n' && c != EOF )
+					;
+				continue;
+				}
+			lxget( ' ' , LEXWS );
+			switch( c = getchar() ){
+# ifdef LINT
+			case 'V':
+				lxget( c, LEXLET|LEXDIG );
+				{
+					extern int vaflag;
+					int i;
+					i = yytext[7]?yytext[7]-'0':0;
+					yytext[7] = '\0';
+					if( strcmp( yytext, "VARARGS" ) ) break;
+					vaflag = i;
+					break;
+					}
+			case 'L':
+				lxget( c, LEXLET );
+				if( strcmp( yytext, "LINTLIBRARY" ) ) break;
+				{
+					extern int libflag;
+					libflag = 1;
+					}
+				break;
+
+			case 'A':
+				lxget( c, LEXLET );
+				if( strcmp( yytext, "ARGSUSED" ) ) break;
+				{
+					extern int argflag, vflag;
+					argflag = 1;
+					vflag = 0;
+					}
+				break;
+
+			case 'N':
+				lxget( c, LEXLET );
+				if( strcmp( yytext, "NOTREACHED" ) ) break;
+				reached = 0;
+				break;
+#endif
+
+			case '\n':
+			case EOF:
+				continue;
+				}
+			while( (c = getchar()) != '\n' && c != EOF )
+				;
+			continue;
+			}
+		if( !isdigit(c) ){
+			if( isalpha(c) ){
+				lxget( c, LEXLET );
+				werror( "%s: undefined control", yytext );
+				}
+			while( (c = getchar()) != '\n' && c != EOF )
+				;
+			continue;
+			}
+			
 		val = 0;
-		for( c=getchar(); isdigit(c); c=getchar() ){
+		do {
 			val = val*10+ c - '0';
 			}
+		while( isdigit( c = getchar() ) );
+
 		if( c == EOF )
 			continue;
 		ungetc( c, stdin );
