@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)startup.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)startup.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -234,7 +234,7 @@ gwkludge()
 	bzero((char *)&dst, sizeof (dst));
 	bzero((char *)&gate, sizeof (gate));
 	bzero((char *)&route, sizeof(route));
-	/* format: {net | host} XX gateway XX metric DD [passive]\n */
+/* format: {net | host} XX gateway XX metric DD [passive | external]\n */
 #define	readentry(fp) \
 	fscanf((fp), "%s %s gateway %s metric %d %s\n", \
 		type, dname, gname, &metric, qual)

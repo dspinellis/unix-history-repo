@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tables.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)tables.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -133,15 +133,34 @@ rtadd(dst, gate, metric, state)
 	rt->rt_hash = hash;
 	rt->rt_dst = *dst;
 	rt->rt_router = *gate;
-	rt->rt_metric = metric;
 	rt->rt_timer = 0;
 	rt->rt_flags = RTF_UP | flags;
 	rt->rt_state = state | RTS_CHANGED;
 	rt->rt_ifp = if_ifwithdstaddr(&rt->rt_router);
 	if (rt->rt_ifp == 0)
 		rt->rt_ifp = if_ifwithnet(&rt->rt_router);
-	if (metric)
+	if (rt->rt_ifp == 0) {
+		if (dst->sa_family < af_max && gate->sa_family < af_max)
+			syslog(LOG_ERR,
+		   "route to net/host %s goes through unreachable gateway %s\n",
+			   (*afswitch[dst->sa_family].af_format)(dst),
+			   (*afswitch[gate->sa_family].af_format)(gate));
+		free((char *)rt);
+		return;
+	}
+	if ((state & RTS_INTERFACE) == 0)
 		rt->rt_flags |= RTF_GATEWAY;
+	/*
+	 * Set rt_ifmetric to the amount by which we
+	 * increment the route when sending it to others.
+	 */
+	if (state & RTS_INTERFACE) {
+		rt->rt_metric = 0;
+		rt->rt_ifmetric = metric + 1;
+	} else {
+		rt->rt_metric = metric;
+		rt->rt_ifmetric = rt->rt_ifp->int_metric + 1;
+	}
 	insque(rt, rh);
 	TRACE_ACTION(ADD, rt);
 	/*
@@ -177,13 +196,15 @@ rtchange(rt, gate, metric)
 	}
 	if (doioctl || metricchanged) {
 		TRACE_ACTION(CHANGE FROM, rt);
-		if ((rt->rt_state & RTS_INTERFACE) && metric) {
+		if ((rt->rt_state & RTS_INTERFACE) &&
+		    metric > rt->rt_ifp->int_metric) {
 			rt->rt_state &= ~RTS_INTERFACE;
+			rt->rt_flags |= RTF_GATEWAY;
 			syslog(LOG_ERR,
 				"changing route from interface %s (timed out)",
 				rt->rt_ifp->int_name);
 		}
-		if (doioctl) {
+		if (doioctl || delete) {
 			oldroute = rt->rt_rt;
 			rt->rt_router = *gate;
 			rt->rt_ifp = if_ifwithdstaddr(&rt->rt_router);
@@ -191,10 +212,6 @@ rtchange(rt, gate, metric)
 				rt->rt_ifp = if_ifwithnet(&rt->rt_router);
 		}
 		rt->rt_metric = metric;
-		if (metric)
-			rt->rt_flags |= RTF_GATEWAY;
-		else
-			rt->rt_flags &= ~RTF_GATEWAY;
 		rt->rt_state |= RTS_CHANGED;
 		TRACE_ACTION(CHANGE TO, rt);
 	}
@@ -215,7 +232,6 @@ rtdelete(rt)
 			rt->rt_ifp->int_name);
 	TRACE_ACTION(DELETE, rt);
 	if (install && (rt->rt_state & (RTS_INTERNAL | RTS_EXTERNAL)) == 0 &&
-	    rt->rt_metric != HOPCNT_INFINITY &&
 	    ioctl(s, SIOCDELRT, (char *)&rt->rt_rt))
 		perror("SIOCDELRT");
 	remque(rt);
