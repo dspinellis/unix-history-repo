@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_exec.c	7.5 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.6 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -135,13 +135,14 @@ execve()
 		break;
 
 	default:
-		if (exdata.ex_shell[0] != '#' || exdata.ex_shell[1] != '!' ||
-		    indir++) {
+		if (exdata.ex_shell[0] != '#' ||
+		    exdata.ex_shell[1] != '!' ||
+		    indir) {
 			u.u_error = ENOEXEC;
 			goto bad;
 		}
 		for (cp = &exdata.ex_shell[2];; ++cp) {
-			if (cp == &exdata.ex_shell[MAXINTERP]) {
+			if (cp >= &exdata.ex_shell[MAXINTERP]) {
 				u.u_error = ENOEXEC;
 				goto bad;
 			}
@@ -152,16 +153,21 @@ execve()
 			if (*cp == '\t')
 				*cp = ' ';
 		}
-		for (cp = &exdata.ex_shell[2]; *cp == ' '; ++cp);
+		cp = &exdata.ex_shell[2];
+		while (*cp == ' ')
+			cp++;
 		ndp->ni_dirp = cp;
-		for (; *cp && *cp != ' '; ++cp);
+		while (*cp && *cp != ' ')
+			cp++;
 		if (*cp) {
-			for (*cp++ = '\0'; *cp == ' '; ++cp);
+			*cp++ = '\0';
+			while (*cp == ' ')
+				cp++;
 			if (*cp)
 				bcopy((caddr_t)cp, (caddr_t)cfarg, MAXINTERP);
-		}
-		else
+		} else
 			cfarg[0] = '\0';
+		indir = 1;
 		iput(ip);
 		ndp->ni_nameiop = LOOKUP | FOLLOW;
 		ndp->ni_segflg = UIO_SYSSPACE;
