@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.63 (Berkeley) %G%
+#	@(#)READ_ME	8.64 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -714,6 +714,11 @@ DELL SVR4
 	*    KIM@FINFILES.BITNET   *  Postmaster and Hostmaster at LUT.FI   *
 	 *    + 358 200 865 718    *  Unix area moderator at NIC.FUNET.FI  *
 
+ConvexOS 10.1 and below
+	In order to use the name server, you must create the file
+	/etc/use_nameserver.  If this file does not exist, the call
+	to res_init() will fail and you will have absolutely no
+	access to DNS, including MX records.
 
 Non-DNS based sites
 	This version of sendmail always tries to connect to the Domain
@@ -852,4 +857,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.63, last update %G% 12:56:57)
+(Version 8.64, last update %G% 13:08:35)
