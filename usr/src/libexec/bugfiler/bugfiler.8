@@ -79,7 +79,7 @@ Valid reports are also entered in the file
 report in the \fIfolder\fP in the format:
 .PP
 .DT
-	Filename
+	Filename		Date
 .br
 		Subject:
 .br
@@ -91,7 +91,8 @@ report in the \fIfolder\fP in the format:
 .br
 .PP
 "Filename" is the concatenation of \fIsystem, folder,\fP and a number as
-described above.  The "Subject:" and "Index:" lines are copies of the
+described above.  "Date" is the date as reported by the system clock, using
+ctime(3).  The "Subject:" and "Index:" lines are copies of the
 "Subject:" and "Index:" lines contained in the bug report.  The "Owner"
 and "Status" fields are intended to provide a rudimentary method of
 tracking the status of bug reports.
