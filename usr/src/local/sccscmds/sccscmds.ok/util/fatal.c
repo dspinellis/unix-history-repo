@@ -1,7 +1,9 @@
-static char Sccsid[] = "@(#)fatal.c	1.3	%G%";
+static char Sccsid[] = "@(#)fatal.c	1.4	%G%";
 
 # include	"../hdr/macros.h"
 # include	"../hdr/fatal.h"
+#include <sys/syscall.h>
+#define	syswrite(a,b,c)	syscall(SYS_write,a,b,c)
 
 /*
 	General purpose error handler.
