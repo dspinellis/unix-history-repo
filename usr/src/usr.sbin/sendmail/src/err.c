@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	6.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	6.15 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -309,6 +309,7 @@ fmtmsg(eb, to, num, eno, fmt, ap)
 	va_list ap;
 {
 	char del;
+	char *meb;
 
 	/* output the reply code */
 	if (isdigit(*fmt))
@@ -338,6 +339,8 @@ fmtmsg(eb, to, num, eno, fmt, ap)
 			*eb++ &= 0177;
 	}
 
+	meb = eb;
+
 	/* output the message */
 	(void) vsprintf(eb, fmt, ap);
 	while (*eb != '\0')
@@ -351,6 +354,9 @@ fmtmsg(eb, to, num, eno, fmt, ap)
 		(void) sprintf(eb, ": %s", errstring(eno));
 		eb += strlen(eb);
 	}
+
+	if (CurEnv->e_message == NULL)
+		CurEnv->e_message = newstr(meb);
 }
 /*
 **  ERRSTRING -- return string description of error code
