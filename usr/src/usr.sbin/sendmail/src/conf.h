@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.135 (Berkeley) %G%
+ *	@(#)conf.h	8.136 (Berkeley) %G%
  */
 
 /*
@@ -554,6 +554,38 @@ extern int		errno;
 # define SFS_BAVAIL	f_bfree		/* alternate field name */
 # define TZ_TYPE	TZ_TM_NAME	/* use tm->tm_name */
 # undef NETUNIX			/* no unix domain socket support */
+#endif
+
+
+/*
+**  ISC (SunSoft) Unix.
+**
+**	Contributed by J.J. Bailey <jjb@jagware.bcc.com>
+*/
+
+#ifdef ISC_UNIX
+# include <net/errno.h>
+# define SYSTEM5	1	/* include all the System V defines */
+# define SYS5SIGNALS	1	/* SysV signal semantics -- reset on each sig */
+# define HASGETUSERSHELL 0	/* does not have getusershell(3) call */
+# define HASSETREUID	1	/* has setreuid(2) call */
+# define NEEDFSYNC	1	/* needs the fsync(2) call stub */
+# undef NETUNIX			/* no unix domain socket support */
+# define FORK		fork
+# define MAXPATHLEN	1024
+# define LA_TYPE	LA_SHORT
+# define SFS_TYPE	SFS_STATFS	/* use <sys/statfs.h> statfs() impl */
+# define SFS_BAVAIL	f_bfree		/* alternate field name */
+# define _PATH_UNIX	"/unix"
+# ifndef _PATH_SENDMAILCF
+#  define _PATH_SENDMAILCF	"/usr/lib/sendmail.cf"
+# endif
+# ifndef _PATH_SENDMAILPID
+#  define _PATH_SENDMAILPID	"/etc/sendmail.pid"
+# endif
+
+typedef short		pid_t;
+
 #endif
 
 
@@ -1122,11 +1154,9 @@ extern struct group	*getgrent(), *getgrnam(), *getgrgid();
 # ifndef TZ_TYPE
 #  define TZ_TYPE	TZ_TZNAME	/* use tzname[] vector */
 # endif
-# ifndef ALTOS_SYS_V
-#  define bcopy(s, d, l)	(memmove((d), (s), (l)))
-#  define bzero(d, l)		(memset((d), '\0', (l)))
-#  define bcmp(s, d, l)		(memcmp((s), (d), (l)))
-# endif
+# define bcopy(s, d, l)		(memmove((d), (s), (l)))
+# define bzero(d, l)		(memset((d), '\0', (l)))
+# define bcmp(s, d, l)		(memcmp((s), (d), (l)))
 #endif
 
 /* general POSIX defines */
@@ -1156,6 +1186,16 @@ extern struct group	*getgrent(), *getgrnam(), *getgrgid();
 
 #ifdef _CRAYCOM
 # undef HASSETSID		/* despite POSIX claim, doesn't have setsid */
+#endif
+
+#ifdef ISC_UNIX
+# undef bcopy			/* despite SystemV claim, uses BSD bcopy */
+#endif
+
+#ifdef ALTOS_SYS_V
+# undef bcopy			/* despite SystemV claim, uses BSD bcopy */
+# undef bzero			/* despite SystemV claim, uses BSD bzero */
+# undef bcmp			/* despite SystemV claim, uses BSD bcmp */
 #endif
 
 
