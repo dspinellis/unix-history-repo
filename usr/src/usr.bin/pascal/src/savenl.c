@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)savenl.c 1.2 %G%";
+static char sccsid[] = "@(#)savenl.c 1.3 %G%";
 
 /*
  * savenl - routines for saving namelist and line number information
@@ -228,11 +228,14 @@ LOCAL int olc = HEADER_BYTES;
 lineno(line)
 int line;
 {
+	OBJLINE info;
+
 	if (line != oline) {
 		nlhdr.nlines++;
-		nlsize += 2;
-		putc(line - oline, linesfp);
-		putc(lc - olc, linesfp);
+		nlsize += sizeof(OBJLINE);
+		info.separate.lineincr = line - oline;
+		info.separate.addrincr = lc - olc;
+		putw(info.together, linesfp);
 		oline = line;
 		olc = lc;
 	}
