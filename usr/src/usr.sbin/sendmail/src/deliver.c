@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.122		%G%);
+SCCSID(@(#)deliver.c	3.123		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -1422,7 +1422,7 @@ sendall(e, verifyonly)
 # ifdef DEBUG
 	if (tTd(13, 1))
 	{
-		printf("\nSENDALL: verify %d, sendqueue:\n");
+		printf("\nSENDALL: verify %d, sendqueue:\n", verifyonly);
 		printaddr(e->e_sendqueue, TRUE);
 	}
 # endif DEBUG
