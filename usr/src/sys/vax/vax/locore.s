@@ -1,9 +1,10 @@
-/*	locore.s	6.4	83/11/07	*/
+/*	locore.s	6.5	84/02/07	*/
 
 #include "../machine/psl.h"
 #include "../machine/pte.h"
 
 #include "../h/errno.h"
+#include "../h/cmap.h"
 
 #include "../vax/mtpr.h"
 #include "../vax/trap.h"
@@ -491,7 +492,7 @@ segflt:
 SCBVEC(transflt):
 	bitl	$2,(sp)+
 	bnequ	tableflt
-	jsb	Fastreclaim		# try and avoid pagein
+ 	jsb	Fastreclaim		# try and avoid pagein
 	TRAP(PAGEFLT)
 tableflt: 
 	TRAP(TABLEFLT)
@@ -585,7 +586,7 @@ start:
 /* count up memory */
 	clrl	r7
 1:	pushl	$4; pushl r7; calls $2,_badaddr; tstl r0; bneq 9f
-	acbl	$8192*1024-1,$64*1024,r7,1b
+	acbl	$MAXMEM*1024-1,$64*1024,r7,1b
 9:
 /* clear memory from kernel bss and pages for proc 0 u. and page table */
 	movab	_edata,r6
@@ -1139,8 +1140,7 @@ kacerr:
  *	for the purpose of simulating a reference bit)
  *
  * Built in constants:
- *	CLSIZE of 2, USRSTACK of 0x7ffff000, any bit fields
- *	in pte's or the core map
+ *	CLSIZE of 2, any bit fields in pte's
  */
 	.text
 	.globl	Fastreclaim
@@ -1184,14 +1184,14 @@ Fastreclaim:
 	subl2	_firstfree,r0
 	ashl	$-1,r0,r0	
 	incl	r0			# pgtocm(pte->pg_pfnum) 
-	mull2	$12,r0
+	mull2	$SZ_CMAP,r0
 	addl2	_cmap,r0		# &cmap[pgtocm(pte->pg_pfnum)] 
 	tstl	r2
 	jeql	2f			# if (type == CTEXT &&
-	jbc	$29,4(r0),2f		#     c_intrans)
+	jbc	$C_INTRANS,(r0),2f	#     c_intrans)
 	POPR; rsb			# 	let pagein handle it
 2:
-	jbc	$30,4(r0),2f		# if (c_free)
+	jbc	$C_FREE,(r0),2f		# if (c_free)
 	POPR; rsb			# 	let pagein handle it 
 2:
 	bisb2	$0x80,3(r4)		# pte->pg_v = 1;
