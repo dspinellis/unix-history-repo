@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fifo.h	7.2 (Berkeley) %G%
+ *	@(#)fifo.h	7.3 (Berkeley) %G%
  */
 
 #ifdef FIFO
@@ -15,18 +15,19 @@ int	fifo_badop(),
 	fifo_ebadf();
 
 int	fifo_lookup __P((
-		struct vnode *vp,
-		struct nameidata *ndp,
-		struct proc *p));
+		struct vnode *dvp,
+		struct vnode **vpp,
+		struct componentname *cnp));
 #define fifo_create ((int (*) __P(( \
-		struct nameidata *ndp, \
-		struct vattr *vap, \
-		struct proc *p))) fifo_badop)
+		struct vnode *dvp, \
+ 		struct vnode **vpp, \
+		struct componentname *cnp, \
+		struct vattr *vap))) fifo_badop)
 #define fifo_mknod ((int (*) __P(( \
-		struct nameidata *ndp, \
-		struct vattr *vap, \
-		struct ucred *cred, \
-		struct proc *p))) fifo_badop)
+		struct vnode *dvp, \
+		struct vnode **vpp, \
+		struct componentname *cnp, \
+		struct vattr *vap))) fifo_badop)
 int	fifo_open __P((
 		struct vnode *vp,
 		int mode,
@@ -92,28 +93,35 @@ int	fifo_select __P((
 		off_t newoff, \
 		struct ucred *cred))) fifo_badop)
 #define fifo_remove ((int (*) __P(( \
-		struct nameidata *ndp, \
-		struct proc *p))) fifo_badop)
+		struct vnode *dvp, \
+	        struct vnode *vp, \
+		struct componentname *cnp))) fifo_badop)
 #define fifo_link ((int (*) __P(( \
-		struct vnode *vp, \
-		struct nameidata *ndp, \
-		struct proc *p))) fifo_badop)
+		register struct vnode *vp, \
+		struct vnode *tdvp, \
+		struct componentname *cnp))) fifo_badop)
 #define fifo_rename ((int (*) __P(( \
-		struct nameidata *fndp, \
-		struct nameidata *tdnp, \
-		struct proc *p))) fifo_badop)
+		struct vnode *fdvp, \
+	        struct vnode *fvp, \
+		struct componentname *fcnp, \
+		struct vnode *tdvp, \
+		struct vnode *tvp, \
+		struct componentname *tcnp))) fifo_badop)
 #define fifo_mkdir ((int (*) __P(( \
-		struct nameidata *ndp, \
-		struct vattr *vap, \
-		struct proc *p))) fifo_badop)
+		struct vnode *dvp, \
+		struct vnode **vpp, \
+		struct componentname *cnp, \
+		struct vattr *vap))) fifo_badop)
 #define fifo_rmdir ((int (*) __P(( \
-		struct nameidata *ndp, \
-		struct proc *p))) fifo_badop)
+		struct vnode *dvp, \
+		struct vnode *vp, \
+		struct componentname *cnp))) fifo_badop)
 #define fifo_symlink ((int (*) __P(( \
-		struct nameidata *ndp, \
+		struct vnode *dvp, \
+		struct vnode **vpp, \
+		struct componentname *cnp, \
 		struct vattr *vap, \
-		char *target, \
-		struct proc *p))) fifo_badop)
+		char *target))) fifo_badop)
 #define fifo_readdir ((int (*) __P(( \
 		struct vnode *vp, \
 		struct uio *uio, \
@@ -124,7 +132,8 @@ int	fifo_select __P((
 		struct uio *uio, \
 		struct ucred *cred))) fifo_badop)
 #define fifo_abortop ((int (*) __P(( \
-		struct nameidata *ndp))) fifo_badop)
+		struct vnode *dvp, \
+		struct componentname *cnp))) fifo_badop)
 #define fifo_inactive ((int (*) __P(( \
 		struct vnode *vp, \
 		struct proc *p))) nullop)
