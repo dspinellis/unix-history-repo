@@ -5,7 +5,7 @@
 # include "useful.h"
 # include "userdbm.h"
 
-SCCSID(@(#)vacation.c	3.7		%G%);
+SCCSID(@(#)vacation.c	3.8		%G%);
 
 /*
 **  VACATION -- return a message to the sender when on vacation.
@@ -42,7 +42,7 @@ SCCSID(@(#)vacation.c	3.7		%G%);
 
 # define ONEWEEK	(60L*60L*24L*7L)
 
-long	Timeout = ONEWEEK;	/* timeout between notices per user */
+time_t	Timeout = ONEWEEK;	/* timeout between notices per user */
 
 struct dbrec
 {
@@ -62,7 +62,7 @@ main(argc, argv)
 	extern char *newstr();
 	extern char *getfrom();
 	extern bool knows();
-	extern long convtime();
+	extern time_t convtime();
 
 	/* process arguments */
 	while (--argc > 0 && (p = *++argv) != NULL && *p == '-')
@@ -111,10 +111,11 @@ main(argc, argv)
 	if (!knows(from))
 	{
 		/* mark this person as knowing */
-		setknows(from, buf);
+		setknows(from);
 
 		/* send the message back */
-		(void) strcat(buf, ".msg");
+		(void) strcpy(buf, homedir);
+		(void) strcat(buf, "/.vacation.msg");
 		sendmessage(buf, from, myname);
 		/* never returns */
 	}
@@ -205,7 +206,6 @@ knows(user)
 setknows(user)
 	char *user;
 {
-	register int i;
 	DATUM k, d;
 	struct dbrec xrec;
 
@@ -326,4 +326,32 @@ syserr(f, p)
 	_doprnt(f, &p, stderr);
 	fprintf(stderr, "\n");
 	exit(EX_USAGE);
+}
+/*
+**  NEWSTR -- copy a string
+**
+**	Parameters:
+**		s -- the string to copy.
+**
+**	Returns:
+**		A copy of the string.
+**
+**	Side Effects:
+**		none.
+*/
+
+char *
+newstr(s)
+	char *s;
+{
+	char *p;
+
+	p = malloc(strlen(s) + 1);
+	if (p == NULL)
+	{
+		syserr("newstr: cannot alloc memory");
+		exit(EX_OSERR);
+	}
+	strcpy(p, s);
+	return (p);
 }
