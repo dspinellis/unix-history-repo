@@ -1132,9 +1132,12 @@ parsebackq: {
 	if (!oldstyle && (readtoken() != TRP))
 		synexpect(TRP);
 	(*nlpp)->n = n;
-	/* Start reading from old file again.  */
-	if (oldstyle)
+	/* Start reading from old file again, and clear tokpushback since
+	   any pushed back token from the string is no longer relevant.  */
+	if (oldstyle) {
 		popfile();
+		tokpushback = 0;
+	}
 	while (stackblocksize() <= savelen)
 		growstackblock();
 	STARTSTACKSTR(out);
