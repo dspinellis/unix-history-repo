@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)dbopen.3	5.22 (Berkeley) %G%
+.\"	@(#)dbopen.3	5.23 (Berkeley) %G%
 .\"
 .TH DBOPEN 3 ""
 .UC 7
@@ -25,7 +25,7 @@ const void *openinfo);
 .SH DESCRIPTION
 .IR Dbopen
 is the library interface to database files.
-The supported file formats are btree, hashed and record oriented.
+The supported file formats are btree, hashed and UNIX file oriented.
 The btree format is a representation of a sorted, balanced tree structure.
 The hashed format is an extensible, dynamic hashing scheme.
 The flat-file format is a byte stream file with fixed or variable length
@@ -79,7 +79,7 @@ DBTYPE type;
 int (*close)(const DB *db);
 int (*del)(const DB *db, const DBT *key, u_int flags);
 int (*get)(const DB *db, DBT *key, DBT *data, u_int flags);
-int (*put)(const DB *db, const DBT *key, const DBT *data,
+int (*put)(const DB *db, DBT *key, const DBT *data,
 .ti +5
 u_int flags);
 int (*sync)(const DB *db);
@@ -88,8 +88,8 @@ int (*seq)(const DB *db, DBT *key, DBT *data, u_int flags);
 } DB;
 .fi
 .PP
-These elements a database type and a set of functions performing various
-actions.
+These elements describe a database type and a set of functions performing
+various actions.
 These functions take a pointer to a structure as returned by
 .IR dbopen ,
 and sometimes one or more pointers to key/data structures and a flag value.
@@ -121,6 +121,7 @@ may be set to the following value:
 .TP
 R_CURSOR
 Delete the record referenced by the cursor.
+The cursor must have previously been initialized.
 .RE
 .IP
 .I Delete
@@ -152,32 +153,57 @@ The parameter
 may be set to one of the following values:
 .RS
 .TP
-R_APPEND
-Append the data to the tree, creating a new key/data pair.
-(Applicable only to the DB_RECNO access method.)
-.TP
 R_CURSOR
 Replace the key/data pair referenced by the cursor.
+The cursor must have previously been initialized.
+.TP
+R_CURSORLOG
+Store the data into the tree after the record referenced by the cursor,
+creating a new key/data pair if the database is empty or if the cursor
+references the last entry in the database, otherwise overwriting the
+record after the cursor.
+If the cursor is unitialized, the first record in the database is
+created or overwritten.
+In any case, the cursor is set to reference the stored record, and the
+record number of the stored record is returned in the
+.I key
+structure.
+(Applicable only to the DB_RECNO access method.)
 .TP
 R_IAFTER
 Append the data immediately after the data referenced by
 .IR key ,
 creating a new key/data pair.
+The record number of the appended key/data pair is returned in the
+.I key
+structure.
 (Applicable only to the DB_RECNO access method.)
 .TP
 R_IBEFORE
 Insert the data immediately before the data referenced by
 .IR key ,
 creating a new key/data pair.
+The record number of the inserted key/data pair is returned in the
+.I key
+structure.
 (Applicable only to the DB_RECNO access method.)
 .TP
 R_NOOVERWRITE
 Enter the new key/data pair only if the key does not previously exist.
+.TP
+R_SETCURSOR
+Store the key/data pair, setting or initializing the position of the
+cursor to reference it.
+(Applicable only to the DB_BTREE and DB_RECNO access methods.)
 .RE
 .IP
-R_APPEND, R_IAFTER and R_IBEFORE are available only for the DB_RECNO access
-method because they each imply that the access method is able to create new
-keys.
+R_SETCURSOR is available only for the DB_BTREE and DB_RECNO access
+methods because it implies that the keys have an inherent order
+which does not change.
+.IP
+R_CURSORLOG, R_IAFTER and R_IBEFORE are available only for the DB_RECNO
+access method because they each imply that the access method is able to
+create new keys.
 This is only true if the keys are ordered and independent, record numbers
 for example.
 .IP
@@ -225,49 +251,35 @@ R_CURSOR
 The data associated with the specified key is returned.
 This differs from the
 .I get
-routines in that it sets the ``cursor'' to the location of the
-key as well.
+routines in that it sets or initializes the cursor to the location of
+the key as well.
 (Note, for the DB_BTREE access method, the returned key is not necessarily an
 exact match for the specified key.
 The returned key is the smallest key greater than or equal to the specified
 key, permitting partial key matches and range searches.)
 .TP
 R_FIRST
-The first key/data pair of the database is returned.
+The first key/data pair of the database is returned, and the cursor
+is set or initialized to reference it.
 .TP
 R_LAST
-The last key/data pair of the database is returned.
+The last key/data pair of the database is returned, and the cursor
+is set or initialized to reference it.
 (Applicable only to the DB_BTREE and DB_RECNO access methods.)
 .TP
 R_NEXT
-Retrieve the key/data pair immediately after the key/data pair most recently
-retrieved using the
-.I seq
-routine.
-The cursor is moved to the returned key/data pair.
-If
-.I flag
-is set to R_NEXT the first time the
-.I seq
-routine is called, the first key/data pair of the database is returned.
+Retrieve the key/data pair immediately after the cursor.
+If the cursor is not yet set, this is the same as the R_FIRST flag.
 .TP
 R_PREV
-Retrieve the key/data pair immediately before the key/data pair most recently
-retrieved using the
-.I seq
-routine.
-The cursor is moved to the returned key/data pair.
-If
-.I flag
-is set to R_PREV the first time the
-.I seq
-routine is called, the last key/data pair of the database is returned.
+Retrieve the key/data pair immediately before the cursor.
+If the cursor is not yet set, this is the same as the R_LAST flag.
 (Applicable only to the DB_BTREE and DB_RECNO access methods.)
 .RE
 .IP
 R_LAST and R_PREV are available only for the DB_BTREE and DB_RECNO
-access methods because they each imply that the keys have an inherent order
-which does not change.
+access methods because they each imply that the keys have an inherent
+order which does not change.
 .IP
 .I Seq
 routines return -1 on error (setting
@@ -330,8 +342,10 @@ A file is incorrectly formatted.
 .TP
 [EINVAL]
 A parameter has been specified (hash function, pad byte etc.) that is
-incompatible with the current file specification or there is a mismatch
-between the version number of file and the software.
+incompatible with the current file specification or which is not
+meaningful for the function (for example, use of the cursor without
+prior initialization) or there is a mismatch between the version
+number of file and the software.
 .PP
 The
 .I close
