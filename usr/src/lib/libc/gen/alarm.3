@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)alarm.3	4.1 (Berkeley) %G%
+.\"	@(#)alarm.3	5.1 (Berkeley) %G%
 .\"
-.TH ALARM 2 
+.TH ALARM 3C  "18 July 1983"
 .UC 4
 .SH NAME
 alarm \- schedule signal after specified time
@@ -14,32 +14,24 @@ alarm \- schedule signal after specified time
 .B unsigned seconds;
 .fi
 .SH DESCRIPTION
+.ft B
+This interface is obsoleted by setitimer(2).
+.ft R
+.PP
 .I Alarm
 causes signal SIGALRM, see
-.IR signal (2),
+.IR signal (3C),
 to be sent to the invoking process
 in a number of seconds given by the argument.
 Unless caught or ignored, the signal terminates the process.
 .PP
-Alarm requests are not stacked;
-successive calls reset the alarm clock.
+Alarm requests are not stacked; successive calls reset the alarm clock.
 If the argument is 0, any alarm request is canceled.
-Because the clock has a 1-second resolution,
-the signal may occur up to one second early;
-because of scheduling delays,
+Because of scheduling delays,
 resumption of execution of when the signal is
 caught may be delayed an arbitrary amount.
 The longest specifiable delay time is 2147483647 seconds.
 .PP
-The return value is the amount of time
-previously remaining in the alarm clock.
+The return value is the amount of time previously remaining in the alarm clock.
 .SH "SEE ALSO"
-pause(2), signal(2), sigsys(2), sigset(3), sleep(3)
-.SH "ASSEMBLER (PDP-11)"
-(alarm = 27.)
-.br
-(seconds in r0)
-.br
-.B sys alarm
-.br
-(previous amount in r0)
+sigpause(2), sigvec(2), signal(3C), sleep(3)
