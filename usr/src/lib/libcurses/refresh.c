@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)refresh.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)refresh.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
@@ -15,12 +15,14 @@ static char sccsid[] = "@(#)refresh.c	5.10 (Berkeley) %G%";
 static int curwin;
 static short ly, lx;
 
+int doqch = 1;
+
 WINDOW *_win;
 
 static void	domvcur __P((int, int, int, int));
 static int	makech __P((WINDOW *, int));
 static void	quickch __P((WINDOW *));	
-static void	scrolln __P((WINDOW*, int, int));
+static void	scrolln __P((WINDOW *, int, int));
 /*
  * wrefresh --
  *	Make the current screen look like "win" over the area coverd by
@@ -49,11 +51,13 @@ wrefresh(win)
 	_win = win;
 	curwin = (win == curscr);
 
-	for (wy = 0; wy < win->maxy; wy++) {
-		wlp = win->lines[wy];
-		if (wlp->flags & __ISDIRTY)
-			wlp->hash = __hash(wlp->line, win->maxx);
-	}
+	if (!curwin)
+		for (wy = 0; wy < win->maxy; wy++) {
+			wlp = win->lines[wy];
+			if (wlp->flags & __ISDIRTY)
+				wlp->hash = __hash(wlp->line, win->maxx);
+		}
+
 	if (win->flags & __CLEAROK || curscr->flags & __CLEAROK || curwin) {
 		if ((win->flags & __FULLWIN) || curscr->flags & __CLEAROK) {
 			tputs(CL, 0, __cputchar);
@@ -81,7 +85,7 @@ wrefresh(win)
 #endif
 
 #ifndef NOQCH
-	if (!__noqch)
+	if (!__noqch && (win->flags & __FULLWIN) && !curwin)
     		quickch(win);
 #endif
 	for (wy = 0; wy < win->maxy; wy++) {
@@ -89,7 +93,8 @@ wrefresh(win)
 		__TRACE("%d\t%d\t%d\n",
 		    wy, win->lines[wy]->firstch, win->lines[wy]->lastch);
 #endif
-		curscr->lines[wy]->hash = win->lines[wy]->hash;
+		if (!curwin)
+			curscr->lines[wy]->hash = win->lines[wy]->hash;
 		if (win->lines[wy]->flags & __ISDIRTY)
 			if (makech(win, wy) == ERR)
 				return (ERR);
@@ -200,13 +205,23 @@ makech(win, wy)
 			break;
 		}
 		domvcur(ly, lx, y, wx + win->begx);
+
 #ifdef DEBUG
-		__TRACE("makech: 1: wx = %d, lx = %d, newy = %d, newx = %d\n", 
-		    wx, lx, y, wx + win->begx);
+		__TRACE("makech: 1: wx = %d, ly= %d, lx = %d, newy = %d, newx = %d\n", 
+		    wx, ly, lx, y, wx + win->begx);
 #endif
 		ly = y;
 		lx = wx + win->begx;
 		while (*nsp != *csp && wx <= lch) {
+#ifdef notdef
+			/* XXX
+			 * The problem with this code is that we can't count on
+			 * terminals wrapping around after the 
+			 * last character on the previous line has been output
+			 * In effect, what then could happen is that the CE 
+			 * clear the previous line and do nothing to the
+			 * next line.
+			 */
 			if (ce != NULL && wx >= nlsp && *nsp == ' ') {
 				/* Check for clear to end-of-line. */
 				ce = &curscr->lines[ly]->line[COLS - 1];
@@ -231,10 +246,11 @@ makech(win, wy)
 				}
 				ce = NULL;
 			}
+#endif
 
 			/* Enter/exit standout mode as appropriate. */
 			if (SO && (*nsp & __STANDOUT) !=
-			    (curscr->flags & __STANDOUT)) {
+			    (curscr->flags & __WSTANDOUT)) {
 				if (*nsp & __STANDOUT) {
 					tputs(SO, 0, __cputchar);
 					curscr->flags |= __WSTANDOUT;
@@ -259,10 +275,12 @@ makech(win, wy)
 						putchar((*csp = *nsp) & 0177);
 					else
 						putchar(*nsp & 0177);
-					if (win->flags & __FULLWIN && !curwin)
+#ifdef notdef
+					if (win->flags & __FULLWIN && !curwin){
 						scroll(curscr);
-					ly = win->begy + wy;
-					lx = win->begx + wx;
+#endif
+					ly = win->begy + win->maxy - 1;
+					lx = win->begx + win->maxx - 1;
 					return (OK);
 				} else
 					if (win->flags & __SCROLLWIN) {
@@ -319,6 +337,9 @@ domvcur(oy, ox, ny, nx)
 		tputs(SE, 0, __cputchar);
 		curscr->flags &= ~__WSTANDOUT;
 	}
+#ifdef DEBUG
+	__TRACE("domvcur: oy=%d, ox=%d, ny=%d, nx=%d\n", oy, ox, ny, nx);
+#endif	
 	mvcur(oy, ox, ny, nx);
 }
 
@@ -333,10 +354,13 @@ static void
 quickch(win)
 	WINDOW *win;
 {
-#define THRESH		win->maxy / 2
+#define THRESH		win->maxy / 4
 
-	register LINE *wlp, *clp;
-	register int bsize, curs, curw, starts, startw, i;
+	register LINE *clp, *tmp1, *tmp2;
+	register int bsize, curs, curw, starts, startw, i, j;
+	int n, target, remember;
+	char buf[1024];
+	u_int blank_hash;
 
 	for (bsize = win->maxy; bsize >= THRESH; bsize--)
 		for (startw = 0; startw <= win->maxy - bsize; startw++)
@@ -360,16 +384,57 @@ quickch(win)
 		bsize, starts, startw, curw, curs);
 #endif
 	scrolln(win, starts, startw);
-	
-	/* Mark the block as clean and retain consistency. */
-	for (i = startw; i < startw + bsize; i++) {
-		wlp = win->lines[i];
-		clp = curscr->lines[i];
-		wlp->flags &= ~(__ISDIRTY | __ISPASTEOL);
-		bcopy(wlp->line, clp->line, win->maxx);
-		clp->hash = wlp->hash;
-	}
 
+	n = startw - starts;
+
+	/* So we don't have to call __hash() each time */
+	(void)memset(buf, ' ', win->maxx);
+	blank_hash = __hash(buf, win->maxx);
+
+	/*
+	 * Perform the rotation to maintain the consistency of curscr.
+	 */
+	i = 0;
+	tmp1 = curscr->lines[0];
+	remember = 0;
+	for (j = 0; j < win->maxy; j++) {
+		target = (i + n + win->maxy) % win->maxy;
+		tmp2 = curscr->lines[target];
+		curscr->lines[target] = tmp1;
+		/* Mark block as clean and blank out scrolled lines. */
+		clp = curscr->lines[target];
+		__TRACE("quickch: n=%d startw=%d curw=%d i = %d target=%d ",
+			n, startw, curw, i, target);
+		if (target >= startw && target < curw) {
+			__TRACE("-- notdirty");
+			win->lines[target]->flags &= ~__ISDIRTY;
+		} else if ((n < 0 && target >= win->maxy + n) || 
+			 (n > 0 && target < n)) {
+			if (clp->hash != blank_hash) {
+				(void)memset(clp->line, ' ', win->maxx);
+				__TRACE("-- memset");
+				clp->hash = blank_hash;
+			} else 
+				__TRACE(" -- nonmemset");
+			touchline(win, target, 0, win->maxx - 1);
+		} else {
+			__TRACE(" -- just dirty");
+			touchline(win, target, 0, win->maxx - 1);
+		}
+		__TRACE("\n");
+		if (target == remember) {
+			i = target + 1;
+			tmp1 = curscr->lines[i];
+			remember = i;
+		} else {
+			tmp1 = tmp2;
+			i = target;
+		}
+	}
+	__TRACE("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n");
+	for (i = 0; i < curscr->maxy; i++)
+		__TRACE("Q: %d: %.70s\n", i,
+	           curscr->lines[i]->line);
 }
 
 static void
@@ -384,13 +449,13 @@ scrolln(win, starts, startw)
 	n = starts - startw;
 
 	if (n > 0) {
-		mvcur(oy, ox, startw, 0);
+		mvcur(oy, ox, 0, 0);
 		if (DL)
 			tputs(tscroll(DL, n), 0, __cputchar);
 		else
 			for(i = 0; i < n; i++)
 				tputs(dl, 0, __cputchar);
-		mvcur(startw, 0, oy, ox);
+		mvcur(0, 0, oy, ox);
 	} else {
 		/* Delete the bottom lines */
 		mvcur(oy, 0, win->maxy + n, 0);		/* n < 0 */
@@ -408,5 +473,7 @@ scrolln(win, starts, startw)
 			for(i = n; i < 0; i++)
 				tputs(al, 0, __cputchar);
 		mvcur(starts, 0, oy, ox);
-	}
+	}		
 }
+
+
