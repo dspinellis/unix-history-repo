@@ -1,0 +1,107 @@
+This file contains two sample remote files,
+each using a different style.  Pick one you
+like but don't use both!
+
+
+First example:
+
+#
+# General dialer definitions used below
+#
+dial1200|1200 Baud Able Quadracall attributes:\
+	:dv=/dev/cul1:br#1200:cu=/dev/cua1:at=dn11:du:
+dial300|300 Bizcomp 1022 attributes:\
+	:dv=/dev/cul0:br#300:cu=/dev/cua0:at=dn11:du:
+#
+# UNIX system definitions
+#
+unix1200|1200 Baud dial-out to another UNIX system:\
+	:el=^U^C^R^O^D^S^Q:ie=%$:oe=^D:tc=dial1200:
+unix300|300 Baud dial-out to another UNIX system:\
+	:el=^U^C^R^O^D^S^Q:ie=%$:oe=^D:tc=dial300:
+#
+# System descriptions
+#
+45|Sytek PDP-11/45:dv=/dev/ttyh1:br#9600:hw:el=^U^C^R^O^D^S^Q:ie=%$:oe=^D:
+
+bert|CSRG ARPA VAX-11/780:pn=@:tc=unix1200:
+ernie|UCB VAX-11/780:pn=@:tc=unix1200:
+lbl|LBL VAX-11/780:pn=@:tc=unix1200:
+decvax|DEC VAX-11/780:pn=@:tc=unix1200:
+
+casevax|cwrunix|CWRU VAX-11/750:pn=@:tc=unix1200:
+cwruecmp|ecmp|CWRU VAX-11/780:pn=@:tc=unix1200:
+case|CWRU DEC-20:pn=@:tc=unix1200:
+
+ames|Ames TIP:pn=@:tc=unix1200:
+navy|navy PWB 11/70:pn=@:tc=unix300:
+
+gi750|General Instruments VAX-11/750, Arizona:pn=@:tc=unix1200:
+gi|General Instruments VAX-11/780, Utah:pn=@:tc=unix1200:
+
+video:dv=/dev/tty04:br#4800:
+
+
+
+
+Second example:
+
+45z|PDP-11/45Z system:\
+	:dv=/dev/tty32:br#9600:el=^U^C^S^Q^D:ie=%$:oe=^D:
+decvax|DEC VAX-11/780:\
+	:pn=41148:tc=UNIX-300:
+decvax-1200|DEC VAX-11/780:\
+	:pn=41230:tc=UNIX-1200:
+decmail:\
+	:pn=42311:tc=VMS-1200:
+ems:\
+	:pn=41991:tc=VMS-1200:
+vms750|nymph|NPG 750:\
+	:dv=/dev/tty36,/dev/tty37:br#9600:el=^Z^U^C^S^Q^O:ie=$@:oe=^Z:
+spa|SPA VAX-11/780:\
+	:pn=8=2270513:tc=UNIX-300:
+vax4|DECnet hub:\
+	:pn=41662:tc=VMS-1200:
+star|VMS development system:\
+	:pn=41701:tc=VMS-1200:
+sultan|Software Tools:\
+	:pn=41701:tc=UNIX-1200:
+cghub|demo room timesharing VAX:\
+	:pn=41023,41024:tc=VMS-300
+phenix|phenix-300|Distributed systems:\
+	:pn=8=2472765,8=2472766,8=2472767,8=2472768:tc=VMS-300
+market|arpanet:\
+	:pn=8=2317437,8=2317438,8=2317447,8=2317447,8=2317448,8=2317449,\
+	:8=2317450,8=2317451:tc=TOPS20-1200
+market300|arpanet300:\
+	:pn=8=2311120,8=2311125,8=2311128:tc=TOPS20-300
+tip0|tip1200:tc=UNIX-1200:
+tip300:tc=UNIX-300:
+cu0|cu300:tc=UNIX-300:
+cu1200:tc=UNIX-1200:
+UNIX-300:\
+	:dv=/dev/cua0:el=^D^U^C^S^Q^O@:du:at=df02:ie=#$%:oe=^D:br#300:
+UNIX-1200:\
+	:dv=/dev/cua1,/dev/cua2,/dev/cua4:el=^D^U^C^S^Q^O@:du:at=df03:\
+	:ie=#$%:oe=^D:br#1200:
+VMS-300|TOPS20-300:\
+	:dv=/dev/cua0:el=^Z^U^C^S^Q^O:du:at=df02:ie=$@:oe=^Z:br#300:
+VMS-1200|TOPS20-1200:\
+	:dv=/dev/cua1,/dev/cua2,/dev/cua4:el=^Z^U^C^S^Q^O:du:at=df03:\
+	:ie=$@:oe=^Z:br#1200:
+--------------------------------------------------------------------
+The attributes are:
+
+dv	device to use for the tty
+el	EOL marks (default is NULL)
+du	make a call flag (dial up)
+pn	phone numbers (@ =>'s search phones file; possibly taken from
+			      PHONES environment variable)
+at	ACU type
+ie	input EOF marks	(default is NULL)
+oe	output EOF string (default is NULL)
+cu	call unit (default is dv)
+br	baud rate (defaults to 300)
+fs	frame size (default is BUFSIZ) -- used in buffering writes
+	  on receive operations
+tc	to continue a capability
