@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef sunos
@@ -330,6 +330,8 @@ main(argc, argv)
 	tp_bshift = ffs(TP_BSIZE) - 1;
 	if (TP_BSIZE != (1 << tp_bshift))
 		quit("TP_BSIZE (%d) is not a power of 2", TP_BSIZE);
+	if (sblock->fs_inodefmt >= FS_44INODEFMT)
+		spcl.c_flags |= DR_NEWINODEFMT;
 	maxino = sblock->fs_ipg * sblock->fs_ncg - 1;
 	mapsize = roundup(howmany(sblock->fs_ipg * sblock->fs_ncg, NBBY),
 		TP_BSIZE);
