@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: swap_pager.c 1.4 91/04/30$
  *
- *	@(#)swap_pager.c	7.12 (Berkeley) %G%
+ *	@(#)swap_pager.c	7.13 (Berkeley) %G%
  */
 
 /*
@@ -651,7 +651,7 @@ swap_pager_io(swp, m, flags)
 	else
 		--swap_pager_poip;
 #endif
-	rv = (bp->b_flags & B_ERROR) ? VM_PAGER_FAIL : VM_PAGER_OK;
+	rv = (bp->b_flags & B_ERROR) ? VM_PAGER_ERROR : VM_PAGER_OK;
 	bp->b_flags &= ~(B_BUSY|B_WANTED|B_PHYS|B_PAGET|B_UAREA|B_DIRTY);
 	bp->av_forw = bswlist.av_forw;
 	bswlist.av_forw = bp;
@@ -669,7 +669,7 @@ swap_pager_io(swp, m, flags)
 #ifdef DEBUG
 	if (swpagerdebug & SDB_IO)
 		printf("swpg_io:  IO done: bp %x, rv %d\n", bp, rv);
-	if ((swpagerdebug & SDB_FAIL) && rv == VM_PAGER_FAIL)
+	if ((swpagerdebug & SDB_FAIL) && rv == VM_PAGER_ERROR)
 		printf("swpg_io: IO error\n");
 #endif
 	vm_pager_unmap_page(kva);
