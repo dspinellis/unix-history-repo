@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.34 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.35 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.34 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.35 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -266,6 +266,14 @@ queueup(e, queueall, announce)
 		if (bitset(H_RESENT, h->h_flags) && !bitset(EF_RESENT, e->e_flags))
 			continue;
 
+		/* expand macros; if null, don't output header at all */
+		if (bitset(H_DEFAULT, h->h_flags))
+		{
+			(void) expand(h->h_value, buf, &buf[sizeof buf], e);
+			if (buf[0] == '\0')
+				continue;
+		}
+
 		/* output this header */
 		fprintf(tfp, "H");
 
@@ -284,9 +292,7 @@ queueup(e, queueall, announce)
 		/* output the header: expand macros, convert addresses */
 		if (bitset(H_DEFAULT, h->h_flags))
 		{
-			(void) expand(h->h_value, buf, &buf[sizeof buf], e);
-			if (buf[0] != '\0')
-				fprintf(tfp, "%s: %s\n", h->h_field, buf);
+			fprintf(tfp, "%s: %s\n", h->h_field, buf);
 		}
 		else if (bitset(H_FROM|H_RCPT, h->h_flags))
 		{
