@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)kgmon.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)kgmon.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <machine/pte.h>
@@ -73,7 +73,7 @@ int	debug = 0;
 
 main(argc, argv)
 	int argc;
-	char *argv[];
+	char **argv;
 {
 	extern char *optarg;
 	extern int optind;
@@ -99,18 +99,15 @@ main(argc, argv)
 			    "usage: kgmon [-bhrp] [system [core]]\n");
 			exit(1);
 		}
+	argc -= optind;
+	argv += optind;
 
-	openmode = (bflag || hflag || pflag || rflag) ? O_RDWR : O_RDONLY;
-
-	argv += optind + 1;
-	argc -= optind + 1;
 	kmemf = _PATH_KMEM;
-	if (argc > 0) {
+	if (*argv) {
 		system = *argv;
-		argv++, argc--;
-		if (argc > 0) {
+		if (*++argv) {
 			kmemf = *argv;
-			kflag++;
+			++kflag;
 		}
 	}
 	else
@@ -125,6 +122,8 @@ main(argc, argv)
 		    "kgmon: profiling: not defined in kernel.\n");
 		exit(10);
 	}
+
+	openmode = (bflag || hflag || pflag || rflag) ? O_RDWR : O_RDONLY;
 	kmem = open(kmemf, openmode);
 	if (kmem < 0) {
 		openmode = O_RDONLY;
