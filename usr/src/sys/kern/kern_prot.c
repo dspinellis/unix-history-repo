@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_prot.c	7.25 (Berkeley) %G%
+ *	@(#)kern_prot.c	7.26 (Berkeley) %G%
  */
 
 /*
@@ -117,7 +117,7 @@ getegid(p, uap, retval)
 
 struct getgroups_args {
 	u_int	gidsetsize;
-	int	*gidset;		/* XXX not yet POSIX */
+	gid_t	*gidset;
 };
 getgroups(p, uap, retval)
 	struct proc *p;
@@ -125,10 +125,7 @@ getgroups(p, uap, retval)
 	int *retval;
 {
 	register struct pcred *pc = p->p_cred;
-	register gid_t *gp;
-	register int *lp;
 	register u_int ngrp;
-	int groups[NGROUPS];
 	int error;
 
 	if ((ngrp = uap->gidsetsize) == 0) {
@@ -138,10 +135,8 @@ getgroups(p, uap, retval)
 	if (ngrp < pc->pc_ucred->cr_ngroups)
 		return (EINVAL);
 	ngrp = pc->pc_ucred->cr_ngroups;
-	for (gp = pc->pc_ucred->cr_groups, lp = groups; lp < &groups[ngrp]; )
-		*lp++ = *gp++;
-	if (error = copyout((caddr_t)groups, (caddr_t)uap->gidset,
-	    ngrp * sizeof (groups[0])))
+	if (error = copyout((caddr_t)pc->pc_ucred->cr_groups,
+	    (caddr_t)uap->gidset, ngrp * sizeof(gid_t)))
 		return (error);
 	*retval = ngrp;
 	return (0);
@@ -211,7 +206,7 @@ setpgid(curp, uap, retval)
 }
 
 struct setuid_args {
-	int	uid;
+	uid_t	uid;
 };
 /* ARGSUSED */
 setuid(p, uap, retval)
@@ -240,7 +235,7 @@ setuid(p, uap, retval)
 }
 
 struct seteuid_args {
-	int	euid;
+	uid_t	euid;
 };
 /* ARGSUSED */
 seteuid(p, uap, retval)
@@ -267,7 +262,7 @@ seteuid(p, uap, retval)
 }
 
 struct setgid_args {
-	int	gid;
+	gid_t	gid;
 };
 /* ARGSUSED */
 setgid(p, uap, retval)
@@ -291,7 +286,7 @@ setgid(p, uap, retval)
 }
 
 struct setegid_args {
-	int	egid;
+	gid_t	egid;
 };
 /* ARGSUSED */
 setegid(p, uap, retval)
@@ -315,7 +310,7 @@ setegid(p, uap, retval)
 
 struct setgroups_args {
 	u_int	gidsetsize;
-	int	*gidset;
+	gid_t	*gidset;
 };
 /* ARGSUSED */
 setgroups(p, uap, retval)
@@ -324,23 +319,18 @@ setgroups(p, uap, retval)
 	int *retval;
 {
 	register struct pcred *pc = p->p_cred;
-	register gid_t *gp;
 	register u_int ngrp;
-	register int *lp;
-	int error, groups[NGROUPS];
+	int error;
 
 	if (error = suser(pc->pc_ucred, &p->p_acflag))
 		return (error);
 	if ((ngrp = uap->gidsetsize) > NGROUPS)
 		return (EINVAL);
-	if (error = copyin((caddr_t)uap->gidset, (caddr_t)groups,
-	    ngrp * sizeof (groups[0])))
-		return (error);
 	pc->pc_ucred = crcopy(pc->pc_ucred);
+	if (error = copyin((caddr_t)uap->gidset,
+	    (caddr_t)pc->pc_ucred->cr_groups, ngrp * sizeof(gid_t)))
+		return (error);
 	pc->pc_ucred->cr_ngroups = ngrp;
-	/* convert from int's to gid_t's */
-	for (gp = pc->pc_ucred->cr_groups, lp = groups; ngrp--; )
-		*gp++ = *lp++;
 	p->p_flag |= SUGID;
 	return (0);
 }
