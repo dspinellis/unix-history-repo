@@ -35,7 +35,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)jobs.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)jobs.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "shell.h"
@@ -49,7 +49,6 @@ static char sccsid[] = "@(#)jobs.c	8.1 (Berkeley) %G%";
 #include "jobs.h"
 #include "options.h"
 #include "trap.h"
-#include "signames.h"
 #include "syntax.h"
 #include "input.h"
 #include "output.h"
@@ -59,6 +58,7 @@ static char sccsid[] = "@(#)jobs.c	8.1 (Berkeley) %G%";
 #include <fcntl.h>
 #include <signal.h>
 #include <errno.h>
+#include <unistd.h>
 #ifdef BSD
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -272,8 +272,8 @@ showjobs(change) {
 				if ((i & 0xFF) == 0177)
 					i >>= 8;
 #endif
-				if ((i & 0x7F) <= MAXSIG && sigmesg[i & 0x7F])
-					scopy(sigmesg[i & 0x7F], s);
+				if ((i & 0x7F) < NSIG && sys_siglist[i & 0x7F])
+					scopy(sys_siglist[i & 0x7F], s);
 				else
 					fmtstr(s, 64, "Signal %d", i & 0x7F);
 				if (i & 0x80)
@@ -736,8 +736,8 @@ dowait(block, job)
 			if (status == SIGTSTP && rootshell && iflag)
 				outfmt(out2, "%%%d ", job - jobtab + 1);
 #endif
-			if (status <= MAXSIG && sigmesg[status])
-				out2str(sigmesg[status]);
+			if (status < NSIG && sys_siglist[status])
+				out2str(sys_siglist[status]);
 			else
 				outfmt(out2, "Signal %d", status);
 			if (core)
