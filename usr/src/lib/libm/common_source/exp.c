@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)exp.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)exp.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /* EXP(X)
@@ -133,7 +133,7 @@ double x;
 
 /* returns exp(r = x + c) for |c| < |x| with no overlap.  */
 
-double exp__D(x, c)
+double __exp__D(x, c)
 double x, c;
 {
 	double  z,hi,lo, t;
