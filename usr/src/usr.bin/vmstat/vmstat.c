@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.42 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.43 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -672,10 +672,9 @@ cpustats()
 		pct = 100 / total;
 	else
 		pct = 0;
-	(void)printf("%2.0f ",				/* user + nice */
-	    (cur.time[0] + cur.time[1]) * pct);
-	(void)printf("%2.0f ", cur.time[2] * pct);	/* system */
-	(void)printf("%2.0f", cur.time[3] * pct);	/* idle */
+	(void)printf("%2.0f ", (cur.time[CP_USER] + cur.time[CP_NICE]) * pct);
+	(void)printf("%2.0f ", (cur.time[CP_SYS] + cur.time[CP_INTR]) * pct);
+	(void)printf("%2.0f", cur.time[CP_IDLE] * pct);
 }
 
 void
