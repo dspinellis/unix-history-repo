@@ -1,7 +1,7 @@
 /*
 **  USEFUL.H -- Some useful stuff.
 **
-**	@(#)useful.h	3.5	%G%
+**	@(#)useful.h	3.6	%G%
 */
 
 # ifndef makedev
@@ -21,8 +21,8 @@ typedef char	bool;
 # define bitset(bit, word)	((word) & (bit))
 
 /* define the types of some common functions */
-extern char	*strcpy();
-extern char	*strcat();
+extern char	*strcpy(), *strncpy();
+extern char	*strcat(), *strncat();
 extern char	*malloc();
 extern char	*index(), *rindex();
 extern int	errno;
