@@ -1,4 +1,4 @@
-/*	param.h	1.2	86/01/20	*/
+/*	param.h	1.3	86/01/24	*/
 
 /*
  * Machine dependent constants for TAHOE.
@@ -18,6 +18,18 @@
 #define	MAXDKEY	255		/* maximal allowed data key */
 #define	NCKEY	(MAXCKEY+1)	/* # code keys, including 0 (reserved) */
 #define	NDKEY	(MAXDKEY+1)	/* # data keys, including 0 (reserved) */
+
+/*
+ * Statistics maintained for code and
+ * data cache key allocations algorithms.
+ */
+struct	keystats {
+	long	ks_allocs;	/* number of keys allocated */
+	long	ks_free;	/* key allocated from free slot */
+	long	ks_norefs;	/* key marked in use, but refcnt 0 */
+	long	ks_taken;	/* key taken from single process */
+	long	ks_shared;	/* key taken from multiple processes */
+};
 
 /*
  * Some macros for units conversion
