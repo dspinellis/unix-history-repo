@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)input_lines.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)input_lines.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -42,7 +42,7 @@ input_lines(fp, errnum)
 	register char *l_text = text;
 	LINE *l_temp_line, *l_temp1;
 	long l_ttl = 0;
-	int l_nn_max = nn_max, l_jmp_flag;
+	int l_nn_max = nn_max;
 	char *l_text2;
 
 	if (End_default)

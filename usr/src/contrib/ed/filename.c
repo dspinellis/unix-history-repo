@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)filename.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)filename.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -86,7 +86,7 @@ filename(inputt, errnum)
 					l_fname[l_cnt++] = ss;
 				else {
 					*errnum = -1;
-					return;
+					return (NULL);
 				}
 
 		if (l_cnt >= FILENAME_LEN) {
