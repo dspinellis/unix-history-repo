@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)quot.c	4.17 (Berkeley) 89/07/30";
+static char *sccsid = "@(#)quot.c	4.18 (Berkeley) 90/04/30";
 #endif
 
 /*
@@ -10,7 +10,7 @@ static char *sccsid = "@(#)quot.c	4.17 (Berkeley) 89/07/30";
 #include <sys/time.h>
 #include <sys/vnode.h>
 #include <sys/file.h>
-#include <ufs/inode.h>
+#include <ufs/dinode.h>
 #include <ufs/fs.h>
 #include <stdio.h>
 #include <ctype.h>
@@ -106,9 +106,10 @@ quotall()
 	char dev[MAXNAMLEN + 10], *rindex();
 
 	while (fs = getfsent()) {
-		if (strcmp(fs->fs_type, FSTAB_RO) &&
+		if (strcmp(fs->fs_vfstype, "ufs") ||
+		    (strcmp(fs->fs_type, FSTAB_RO) &&
 		    strcmp(fs->fs_type, FSTAB_RW) &&
-		    strcmp(fs->fs_type, FSTAB_RQ))
+		    strcmp(fs->fs_type, FSTAB_RQ)))
 			continue;
 		cp = rindex(fs->fs_spec, '/');
 		if (cp == 0)
