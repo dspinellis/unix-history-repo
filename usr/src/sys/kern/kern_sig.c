@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_sig.c	7.9 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -792,7 +792,7 @@ core()
 		return (EFAULT);
 	if (u.u_procp->p_textp) {
 		VOP_LOCK(u.u_procp->p_textp->x_vptr);
-		error = vn_access(u.u_procp->p_textp->x_vptr, VREAD, u.u_cred);
+		error = VOP_ACCESS(u.u_procp->p_textp->x_vptr, VREAD, u.u_cred);
 		VOP_UNLOCK(u.u_procp->p_textp->x_vptr);
 		if (error)
 			return (EFAULT);
