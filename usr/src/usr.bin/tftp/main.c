@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /* Many bug fixes are from Jim Guyton <guyton@rand-unix> */
@@ -187,7 +187,7 @@ struct	modes {
 	{ "netascii",   "netascii" },
 	{ "binary",     "octet" },
 	{ "image",      "octet" },
-	{ "octect",     "octet" },
+	{ "octet",     "octet" },
 /*      { "mail",       "mail" },       */
 	{ 0,		0 }
 };
@@ -516,8 +516,13 @@ command(top)
 		putchar('\n');
 	for (;;) {
 		printf("%s> ", prompt);
-		if (gets(line) == 0)
-			continue;
+		if (gets(line) == 0) {
+			if (feof(stdin)) {
+				quit();
+			} else {
+				continue;
+			}
+		}
 		if (line[0] == 0)
 			continue;
 		makeargv();
