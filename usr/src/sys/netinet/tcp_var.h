@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)tcp_var.h	7.6.1.1 (Berkeley) %G%
+ *	@(#)tcp_var.h	7.6.1.2 (Berkeley) %G%
  */
 
 /*
@@ -23,7 +23,10 @@
 
 #ifndef BSD
 #define BSD 42	/* if we're not 4.3, pretend we're 4.2 */
+#define OLDSTAT	/* set if we have to use old netstat binaries */
 #endif
+
+/* #define OLDSTAT	/* set if we have to use old netstat binaries */
 
 #if sun || BSD < 43
 #define TCP_COMPAT_42	/* set if we have to interop w/4.2 systems */
@@ -144,6 +147,22 @@ struct tcpcb {
  * but that's inconvenient at the moment.
  */
 struct	tcpstat {
+#ifdef OLDSTAT
+	/*
+	 * Declare statistics the same as in 4.3
+	 * at the start of tcpstat (same size and
+	 * position) for netstat.
+	 */
+	int	tcps_rcvbadsum;
+	int	tcps_rcvbadoff;
+	int	tcps_rcvshort;
+	int	tcps_badsegs;
+	int	tcps_unack;
+#define	tcps_badsum	tcps_rcvbadsum
+#define	tcps_badoff	tcps_rcvbadoff
+#define	tcps_hdrops	tcps_rcvshort
+
+#endif OLDSTAT
 	u_long	tcps_connattempt;	/* connections initiated */
 	u_long	tcps_accepts;		/* connections accepted */
 	u_long	tcps_connects;		/* connections established */
@@ -174,9 +193,11 @@ struct	tcpstat {
 	u_long	tcps_rcvtotal;		/* total packets received */
 	u_long	tcps_rcvpack;		/* packets received in sequence */
 	u_long	tcps_rcvbyte;		/* bytes received in sequence */
+#ifndef OLDSTAT
 	u_long	tcps_rcvbadsum;		/* packets received with ccksum errs */
 	u_long	tcps_rcvbadoff;		/* packets received with bad offset */
 	u_long	tcps_rcvshort;		/* packets received too short */
+#endif
 	u_long	tcps_rcvduppack;	/* duplicate-only packets received */
 	u_long	tcps_rcvdupbyte;	/* duplicate-only bytes received */
 	u_long	tcps_rcvpartduppack;	/* packets with some duplicate data */
