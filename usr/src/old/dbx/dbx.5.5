@@ -2,12 +2,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)dbx.5.5	6.1 (Berkeley) %G%
+.\"	@(#)dbx.5.5	6.2 (Berkeley) %G%
 .\"
-.TH DBXSTAB 5 "1 October 1984"
+.TH DBX 5 ""
 .UC 6
 .SH NAME
-dbxstab \- dbx symbol information
+dbx \- dbx symbol table information
 .SH DESCRIPTION
 The compiler symbol information generated
 for \fIdbx\fP(1) uses the same structure
@@ -75,7 +75,7 @@ Thus there are no restrictions on the kind or length of information
 in the string field, and it was not necessary
 to modify the assembler or loader when extending or modifying
 the format of this information.
-
+.sp
 .PP
 Below is a grammar describing the syntax of the symbol string.
 Except in the case of a constant whose value is a string,
@@ -258,8 +258,8 @@ ExportInfo:
     `p' NumParams `;' ParamList `;'
     `v' TypeId
     `c' `=' Constant
-.fi
 
+.fi
 .PP
 A `?' indicates that the symbol information is continued in
 the next stab entry.
@@ -267,6 +267,5 @@ This directive can only occur where a `;' would otherwise
 separate the fields of a record or constants in an enumeration.
 It is useful when the number of elements in one of these lists
 is large.
-
 .SH "SEE ALSO"
 dbx(1), stab(5), a.out(5)
