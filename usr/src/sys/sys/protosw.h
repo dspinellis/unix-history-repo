@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)protosw.h	7.3 (Berkeley) %G%
+ *	@(#)protosw.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -134,6 +134,7 @@ char *prurequests[] = {
  */
 #define	PRC_IFDOWN		0	/* interface transition */
 #define	PRC_ROUTEDEAD		1	/* select new route if possible */
+#define	PRC_QUENCH2		3	/* DEC congestion bit says slow down */
 #define	PRC_QUENCH		4	/* some said to slow down */
 #define	PRC_MSGSIZE		5	/* message size forced drop */
 #define	PRC_HOSTDEAD		6	/* normally from IMP */
@@ -156,7 +157,7 @@ char *prurequests[] = {
 
 #ifdef PRCREQUESTS
 char	*prcrequests[] = {
-	"IFDOWN", "ROUTEDEAD", "#2", "#3",
+	"IFDOWN", "ROUTEDEAD", "#2", "DEC-BIT-QUENCH2",
 	"QUENCH", "MSGSIZE", "HOSTDEAD", "HOSTUNREACH",
 	"NET-UNREACH", "HOST-UNREACH", "PROTO-UNREACH", "PORT-UNREACH",
 	"FRAG-UNREACH", "SRCFAIL-UNREACH", "NET-REDIRECT", "HOST-REDIRECT",
