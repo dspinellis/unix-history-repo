@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.43 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.44 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -53,14 +53,15 @@ static char sccsid[] = "@(#)login.c	5.43 (Berkeley) %G%";
 #include "pathnames.h"
 
 #ifdef	KERBEROS
-#include <kerberos/krb.h>
-#include <sys/termios.h>
+#include <krb.h>
+#include <sgtty.h>
 #include <netdb.h>
 char		realm[REALM_SZ];
 int		kerror = KSUCCESS, notickets = 1;
 KTEXT_ST	ticket;
 AUTH_DAT	authdata;
 char		savehost[MAXHOSTNAMELEN];
+char		tkfile[MAXPATHLEN];
 unsigned long	faddr;
 struct	hostent	*hp;
 #define	PRINCIPAL_NAME	pwd->pw_name
@@ -156,6 +157,7 @@ main(argc, argv)
 			break;
 		case '?':
 		default:
+			syslog(LOG_ERR, "invalid flag");
 			(void)fprintf(stderr,
 			    "usage: login [-fp] [username]\n");
 			exit(1);
@@ -230,7 +232,10 @@ main(argc, argv)
 		if (fflag && pwd) {
 			int uid = getuid();
 
-			passwd_req = pwd->pw_uid == 0 ||
+			passwd_req =
+#ifndef	KERBEROS
+			     pwd->pw_uid == 0 ||
+#endif
 			    (uid && uid != pwd->pw_uid);
 		}
 
@@ -256,19 +261,39 @@ main(argc, argv)
 		 */
 
 		if (pwd && (krb_get_lrealm(realm,1) == KSUCCESS)) {
+
 			/*
-			 * get TGT for local realm; be careful about uid's
-			 * here for ticket file ownership
+			 * get TGT for local realm
+			 *	convention: store tickets in file
+			 *	associated with tty name
 			 */
-			(void)setreuid(geteuid(),pwd->pw_uid);
-			kerror = krb_get_pw_in_tkt(
-				PRINCIPAL_NAME, PRINCIPAL_INST, realm,
-				INITIAL_TICKET, realm, DEFAULT_TKT_LIFE, pp);
-			(void)setuid(0);
+
+			(void)sprintf(tkfile, "%s_%s", TKT_ROOT, tty);
+			kerror = INTK_ERR;
+			if (setenv("KRBTKFILE", tkfile, 1) < 0)
+				syslog(LOG_ERR, "couldn't set tkfile environ");
+			else {
+				kerror = krb_get_pw_in_tkt(
+					PRINCIPAL_NAME, PRINCIPAL_INST, realm,
+					INITIAL_TICKET, realm, DEFAULT_TKT_LIFE,
+					pp);
+				if ((kerror == KSUCCESS) &&
+				    (chown(tkfile, pwd->pw_uid) < 0)) {
+					syslog(LOG_ERR,
+						"couldn't chown tkfile: %m");
+					kerror = INTK_ERR;
+				}
+			}
 			/*
 			 * If we got a TGT, get a local "rcmd" ticket and
 			 * check it so as to ensure that we are not
 			 * talking to a bogus Kerberos server
+			 *
+			 * There are 2 cases where we still allow a login:
+			 *	1> the VERIFY_SERVICE doesn't exist in the KDC
+			 *	2> local host has no srvtab, as (hopefully)
+			 *	   indicated by a return value of RD_AP_UNDEC
+			 *	   from krb_rd_req()
 			 */
 			if (kerror == INTK_OK) {
 				(void) strncpy(savehost,
@@ -277,8 +302,13 @@ main(argc, argv)
 				savehost[sizeof(savehost)-1] = NULL;
 				kerror = krb_mk_req(&ticket, VERIFY_SERVICE,
 					savehost, realm, 33);
+				/*
+				 * if the "VERIFY_SERVICE" doesn't exist in the
+				 * KDC for this host, still allow login,
+				 * but log the error condition
+				 */
 				if (kerror == KDC_PR_UNKNOWN) {
-					syslog(LOG_WARNING,
+					syslog(LOG_NOTICE,
 					    "Warning: TGT not verified (%s)",
 						krb_err_txt[kerror]);
 					bzero(pp, strlen(pp));
@@ -287,7 +317,7 @@ main(argc, argv)
 				} else if (kerror != KSUCCESS) {
 					printf("Unable to use TGT: (%s)\n",
 						krb_err_txt[kerror]);
-					syslog(LOG_WARNING,
+					syslog(LOG_NOTICE,
 					    "Unable to use TGT: (%s)",
 						krb_err_txt[kerror]);
 					dest_tkt();
@@ -301,10 +331,24 @@ main(argc, argv)
 					    if ((kerror = krb_rd_req(&ticket,
 						VERIFY_SERVICE, savehost, faddr,
 						&authdata, "")) != KSUCCESS) {
-						    printf("Unable to verify rcmd ticket: (%s)\n",
+
+						if (kerror = RD_AP_UNDEC) {
+							syslog(LOG_NOTICE,
+							  "krb_rd_req: (%s)\n",
+							  krb_err_txt[kerror]);
+							bzero(pp, strlen(pp));
+							notickets = 0;
+							break;	/* ok */
+						} else {
+						    printf("Unable to verify %s ticket: (%s)\n",
+							VERIFY_SERVICE,
 							krb_err_txt[kerror]);
-						syslog(LOG_WARNING, "couldn't verify rcmd ticket: %s",
+						    syslog(LOG_NOTICE,
+						    "couldn't verify %s ticket: %s",
+							VERIFY_SERVICE,
 							krb_err_txt[kerror]);
+						}
+						/* fall thru: no login */
 					    } else {
 						bzero(pp, strlen(pp));
 						notickets = 0;	/* got ticket */
@@ -315,6 +359,7 @@ main(argc, argv)
 
 			}
 		}
+
 #endif
 		(void) bzero(pp, strlen(pp));
 		if (pwd && !strcmp(p, pwd->pw_passwd))
@@ -384,6 +429,7 @@ main(argc, argv)
 		(void)printf("Warning: no Kerberos tickets issued\n");
 #endif
 
+#if BSD > 43
 	if (pwd->pw_change || pwd->pw_expire)
 		(void)gettimeofday(&tp, (struct timezone *)NULL);
 	if (pwd->pw_change)
@@ -410,6 +456,7 @@ main(argc, argv)
 			    months[ttp->tm_mon], ttp->tm_mday,
 			    TM_YEAR_BASE + ttp->tm_year);
 		}
+#endif
 
 	/* nothing else left to fail -- really log in */
 	{
@@ -483,8 +530,10 @@ main(argc, argv)
 	strcpy(tbuf + 1, (p = rindex(pwd->pw_shell, '/')) ?
 	    p + 1 : pwd->pw_shell);
 
+#if	BSD > 43
 	if (setlogname(pwd->pw_name, strlen(pwd->pw_name)) < 0)
 		syslog(LOG_ERR, "setlogname() failure: %m");
+#endif
 
 	/* discard permissions last so can't get killed and drop core */
 	(void)setuid(pwd->pw_uid);
@@ -541,7 +590,8 @@ jmp_buf motdinterrupt;
 motd()
 {
 	register int fd, nchars;
-	int (*oldint)(), sigint();
+	sig_t oldint;
+	int sigint();
 	char tbuf[8192];
 
 	if ((fd = open(_PATH_MOTDFILE, O_RDONLY, 0)) < 0)
