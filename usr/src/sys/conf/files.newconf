@@ -1,4 +1,4 @@
-#	@(#)files.newconf	7.2 (Berkeley) %G%
+#	@(#)files.newconf	7.3 (Berkeley) %G%
 
 # generic attributes
 define	disk
@@ -7,9 +7,10 @@ define	ifnet
 define	tty
 
 # net device attributes - we have generic code for ether.
-# we should have imp but right now it is broken.
+# we should have imp but right now it is a pseudo-device.
 define	ether
 # define	imp
+pseudo-device imp
 
 # scsi driver and associated stuff
 define	scsi { target = -1 }
