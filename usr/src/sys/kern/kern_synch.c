@@ -1,4 +1,4 @@
-/*	kern_synch.c	6.1	83/07/29	*/
+/*	kern_synch.c	6.2	84/05/22	*/
 
 #include "../machine/pte.h"
 
@@ -42,7 +42,7 @@ schedcpu()
 	register int s, a;
 
 	wakeup((caddr_t)&lbolt);
-	for (p = proc; p < procNPROC; p++) if (p->p_stat && p->p_stat!=SZOMB) {
+	for (p = allproc; p != NULL; p = p->p_nxt) {
 		if (p->p_time != 127)
 			p->p_time++;
 		if (p->p_stat==SSLEEP || p->p_stat==SSTOP)

@@ -1,4 +1,4 @@
-/*	kern_fork.c	6.1	83/07/29	*/
+/*	kern_fork.c	6.2	84/05/22	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -47,14 +47,13 @@ fork1(isvfork)
 	register a;
 
 	a = 0;
-	p2 = NULL;
-	for (p1 = proc; p1 < procNPROC; p1++) {
-		if (p1->p_stat==NULL && p2==NULL)
-			p2 = p1;
-		else {
-			if (p1->p_uid==u.u_uid && p1->p_stat!=NULL)
+	if (u.u_uid != 0) {
+		for (p1 = allproc; p1; p1 = p1->p_nxt)
+			if (p1->p_uid == u.u_uid)
 				a++;
-		}
+		for (p1 = zombproc; p1; p1 = p1->p_nxt)
+			if (p1->p_uid == u.u_uid)
+				a++;
 	}
 	/*
 	 * Disallow if
@@ -62,9 +61,10 @@ fork1(isvfork)
 	 *  not su and too many procs owned; or
 	 *  not su and would take last slot.
 	 */
+	p2 = freeproc;
 	if (p2==NULL)
 		tablefull("proc");
-	if (p2==NULL || (u.u_uid!=0 && (p2==procNPROC-1 || a>MAXUPRC))) {
+	if (p2==NULL || (u.u_uid!=0 && (p2->p_nxt == NULL || a>MAXUPRC))) {
 		u.u_error = EAGAIN;
 		if (!isvfork) {
 			(void) vsexpand(0, &u.u_cdmap, 1);
@@ -94,32 +94,58 @@ out:
 newproc(isvfork)
 	int isvfork;
 {
-	register struct proc *p;
 	register struct proc *rpp, *rip;
 	register int n;
 	register struct file *fp;
+	static int pidchecked = 0;
 
-	p = NULL;
 	/*
 	 * First, just locate a slot for a process
 	 * and copy the useful info from this process into it.
 	 * The panic "cannot happen" because fork has already
 	 * checked for the existence of a slot.
 	 */
-retry:
 	mpid++;
+retry:
 	if (mpid >= 30000) {
-		mpid = 0;
-		goto retry;
+		mpid = 100;
+		pidchecked = 0;
 	}
-	for (rpp = proc; rpp < procNPROC; rpp++) {
-		if (rpp->p_stat == NULL && p==NULL)
-			p = rpp;
-		if (rpp->p_pid==mpid || rpp->p_pgrp==mpid)
-			goto retry;
+	if (mpid >= pidchecked) {
+		int doingzomb = 0;
+		pidchecked = 30000;
+		/*
+		 * Scan the proc table to check whether this pid
+		 * is in use.  Remember the lowest pid that's greater
+		 * than mpid, so we can avoid checking for a while.
+		 */
+		rpp = allproc;
+again:
+		for (; rpp != NULL; rpp = rpp->p_nxt) {
+			if (rpp->p_pid==mpid || rpp->p_pgrp==mpid) {
+				mpid++;
+				if (mpid >= pidchecked)
+					goto retry;
+			}
+			if ((rpp->p_pid > mpid) && (pidchecked > rpp->p_pid))
+				pidchecked = rpp->p_pid;
+			if ((rpp->p_pgrp > mpid) && (pidchecked > rpp->p_pgrp))
+				pidchecked = rpp->p_pgrp;
+		}
+		if (!doingzomb) {
+			doingzomb = 1;
+			rpp = zombproc;
+			goto again;
+		}
 	}
-	if ((rpp = p) == NULL)
+	if ((rpp = freeproc) == NULL)
 		panic("no procs");
+
+	freeproc = rpp->p_nxt;			/* off freeproc */
+	rpp->p_nxt = allproc;			/* onto allproc */
+	rpp->p_nxt->p_prev = &rpp->p_nxt;	/*   (allproc is never NULL) */
+	rpp->p_prev = &allproc;
+	allproc = rpp;
 
 	/*
 	 * Make a proc table entry for the new process.
@@ -176,7 +202,7 @@ retry:
 	rpp->p_pctcpu = 0;
 	rpp->p_cpticks = 0;
 	n = PIDHASH(rpp->p_pid);
-	p->p_idhash = pidhash[n];
+	rpp->p_idhash = pidhash[n];
 	pidhash[n] = rpp - proc;
 	multprog++;
 
@@ -194,9 +220,6 @@ retry:
 		u.u_rdir->i_count++;
 
 	/*
-	 * Partially simulate the environment
-	 * of the new process so that when it is actually
-	 * created (by copying) it will look right.
 	 * This begins the section where we must prevent the parent
 	 * from being swapped.
 	 */
