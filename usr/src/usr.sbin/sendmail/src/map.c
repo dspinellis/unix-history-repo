@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	6.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	6.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -161,6 +161,14 @@ map_parseargs(map, ap)
 **		none.
 */
 
+struct rwbuf
+{
+	int	rwb_len;	/* size of buffer */
+	char	*rwb_buf;	/* ptr to buffer */
+};
+
+struct rwbuf	RwBufs[2];	/* buffers for rewriting output */
+
 char *
 map_rewrite(map, s, slen, av)
 	register MAP *map;
@@ -172,10 +180,9 @@ map_rewrite(map, s, slen, av)
 	register char c;
 	char **avp;
 	register char *ap;
+	register struct rwbuf *rwb;
 	int i;
 	int len;
-	static int buflen = -1;
-	static char *buf = NULL;
 
 	if (tTd(23, 1))
 	{
@@ -189,6 +196,10 @@ map_rewrite(map, s, slen, av)
 		}
 		printf("\n");
 	}
+
+	rwb = RwBufs;
+	if (av == NULL)
+		rwb++;
 
 	/* count expected size of output (can safely overestimate) */
 	i = len = slen;
@@ -214,16 +225,16 @@ map_rewrite(map, s, slen, av)
 	}
 	if (map->map_app != NULL)
 		len += strlen(map->map_app);
-	if (buflen < ++len)
+	if (rwb->rwb_len < ++len)
 	{
 		/* need to malloc additional space */
-		buflen = len;
-		if (buf != NULL)
-			free(buf);
-		buf = xalloc(buflen);
+		rwb->rwb_len = len;
+		if (rwb->rwb_buf != NULL)
+			free(rwb->rwb_buf);
+		rwb->rwb_buf = xalloc(rwb->rwb_len);
 	}
 
-	bp = buf;
+	bp = rwb->rwb_buf;
 	if (av == NULL)
 	{
 		bcopy(s, bp, slen);
@@ -264,8 +275,8 @@ map_rewrite(map, s, slen, av)
 	else
 		*bp = '\0';
 	if (tTd(23, 1))
-		printf("map_rewrite => %s\n", buf);
-	return buf;
+		printf("map_rewrite => %s\n", rwb->rwb_buf);
+	return rwb->rwb_buf;
 }
 /*
 **  NDBM modules
