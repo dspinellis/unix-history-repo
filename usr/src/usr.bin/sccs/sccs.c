@@ -63,7 +63,7 @@
 **		info		Tell what files being edited.
 **		clean		Remove all files that can be
 **				regenerated from SCCS files.
-**		status		Like info, but return exit status, for
+**		check		Like info, but return exit status, for
 **				use in makefiles.
 **		fix		Remove a top delta & reedit, but save
 **				the previous changes in that delta.
@@ -72,6 +72,9 @@
 **		UIDUSER -- determine who the user is by looking at the
 **			uid rather than the login name -- for machines
 **			where SCCS gets the user in this way.
+**		SRCDIR -- if defined, forces the -d flag to take on
+**			this value.  This is so that the setuid
+**			aspects of this program cannot be abused.
 **
 **	Compilation Instructions:
 **		cc -O -n -s sccs.c
@@ -84,7 +87,7 @@
 # define UIDUSER
 # endif
 
-static char SccsId[] = "@(#)sccs.c	1.26 %G%";
+static char SccsId[] = "@(#)sccs.c	1.27 %G%";
 
 # define bitset(bit, word)	((bit) & (word))
 
@@ -95,6 +98,8 @@ typedef char	bool;
 # ifdef UIDUSER
 # include <pwd.h>
 # endif UIDUSER
+
+char	MyName[] = "sccs";
 
 struct sccsprog
 {
@@ -160,7 +165,11 @@ struct pfile
 };
 
 char	*SccsPath = "SCCS";	/* pathname of SCCS files */
+# ifdef SRCDIR
+char	*SccsDir = SRCDIR;	/* directory to begin search from */
+# else
 char	*SccsDir = "";		/* directory to begin search from */
+# endif
 bool	RealUser;		/* if set, running as real user */
 # ifdef DEBUG
 bool	Debug;			/* turn on tracing */
@@ -179,7 +188,7 @@ main(argc, argv)
 
 	if (argc < 2)
 	{
-		fprintf(stderr, "Usage: sccs [flags] command [flags]\n");
+		fprintf(stderr, "Usage: %s [flags] command [flags]\n", MyName);
 		exit(EX_USAGE);
 	}
 	argv[argc] = NULL;
@@ -197,6 +206,7 @@ main(argc, argv)
 				RealUser++;
 				break;
 
+# ifndef SRCDIR
 			  case 'p':		/* path of sccs files */
 				SccsPath = ++p;
 				break;
@@ -204,6 +214,7 @@ main(argc, argv)
 			  case 'd':		/* directory to search from */
 				SccsDir = ++p;
 				break;
+# endif
 
 # ifdef DEBUG
 			  case 'T':		/* trace */
@@ -212,7 +223,7 @@ main(argc, argv)
 # endif
 
 			  default:
-				fprintf(stderr, "Sccs: unknown option -%s\n", p);
+				usrerr("unknown option -%s", p);
 				break;
 			}
 		}
@@ -255,7 +266,7 @@ command(argv, forkflag)
 	cmd = lookup(argv[0]);
 	if (cmd == NULL)
 	{
-		fprintf(stderr, "Sccs: Unknown command \"%s\"\n", argv[0]);
+		usrerr("Unknown command \"%s\"", argv[0]);
 		exit(EX_USAGE);
 	}
 
@@ -289,19 +300,19 @@ command(argv, forkflag)
 			xcommand(&argv[1], *p != '\0', nav[0], nav[1], nav[2],
 				 nav[3], nav[4], nav[5], nav[6]);
 		}
-		fprintf(stderr, "Sccs internal error: CMACRO\n");
+		syserr("internal error: CMACRO");
 		exit(EX_SOFTWARE);
 
 	  case FIX:		/* fix a delta */
 		if (strncmp(argv[1], "-r", 2) != 0)
 		{
-			fprintf(stderr, "Sccs: -r flag needed for fix command\n");
+			usrerr("-r flag needed for fix command");
 			break;
 		}
 		xcommand(&argv[1], TRUE, "get", "-k", NULL);
 		xcommand(&argv[1], TRUE, "rmdel", NULL);
 		xcommand(&argv[2], FALSE, "get", "-e", "-g", NULL);
-		fprintf(stderr, "Sccs internal error: FIX\n");
+		syserr("FIX");
 		exit(EX_SOFTWARE);
 
 	  case CLEAN:
@@ -321,7 +332,7 @@ command(argv, forkflag)
 		break;
 
 	  default:
-		fprintf(stderr, "Sccs internal error: oper %d\n", cmd->sccsoper);
+		syserr("oper %d", cmd->sccsoper);
 		exit(EX_SOFTWARE);
 	}
 }
@@ -401,7 +412,7 @@ callprog(progpath, flags, argv, forkflag)
 		i = fork();
 		if (i < 0)
 		{
-			fprintf(stderr, "Sccs: cannot fork");
+			syserr("cannot fork");
 			exit(EX_OSERR);
 		}
 		else if (i > 0)
@@ -441,8 +452,7 @@ callprog(progpath, flags, argv, forkflag)
 	*/
 
 	execv(progpath, argv);
-	fprintf(stderr, "Sccs: cannot execute ");
-	perror(progpath);
+	syserr("cannot execute %s", progpath);
 	exit(EX_UNAVAILABLE);
 }
 /*
@@ -620,7 +630,7 @@ clean(mode)
 	dirfd = fopen(SccsPath, "r");
 	if (dirfd == NULL)
 	{
-		fprintf(stderr, "Sccs: cannot open %s\n", SccsPath);
+		usrerr("cannot open %s", SccsPath);
 		return;
 	}
 
@@ -715,7 +725,7 @@ unedit(fn)
 		q = &pfn[-1];
 	if (q[1] != 's' || q[2] != '.')
 	{
-		fprintf(stderr, "Sccs: bad file name \"%s\"\n", fn);
+		usrerr("bad file name \"%s\"", fn);
 		return (FALSE);
 	}
 
@@ -737,7 +747,7 @@ unedit(fn)
 	tfp = fopen(tfn, "w");
 	if (tfp == NULL)
 	{
-		fprintf(stderr, "Sccs: cannot create \"%s\"\n", tfn);
+		usrerr("cannot create \"%s\"", tfn);
 		exit(EX_OSERR);
 	}
 
@@ -745,7 +755,7 @@ unedit(fn)
 	pw = getpwuid(getuid());
 	if (pw == NULL)
 	{
-		fprintf(stderr, "Sccs: who are you?\n");
+		syserr("who are you? (uid=%d)", getuid());
 		exit(EX_OSERR);
 	}
 	myname = pw->pw_name;
@@ -773,12 +783,12 @@ unedit(fn)
 	{
 		if (freopen(tfn, "r", tfp) == NULL)
 		{
-			fprintf(stderr, "Sccs: cannot reopen \"%s\"\n", tfn);
+			syserr("cannot reopen \"%s\"", tfn);
 			exit(EX_OSERR);
 		}
 		if (freopen(pfn, "w", pfp) == NULL)
 		{
-			fprintf(stderr, "Sccs: cannot create \"%s\"\n", pfn);
+			usrerr("cannot create \"%s\"", pfn);
 			return (FALSE);
 		}
 		while (fgets(buf, sizeof buf, tfp) != NULL)
@@ -857,4 +867,57 @@ nextfield(p)
 	}
 	*p++ = '\0';
 	return (p);
+}
+/*
+**  USRERR -- issue user-level error
+**
+**	Parameters:
+**		f -- format string.
+**		p1-p3 -- parameters to a printf.
+**
+**	Returns:
+**		-1
+**
+**	Side Effects:
+**		none.
+*/
+
+usrerr(f, p1, p2, p3)
+	char *f;
+{
+	fprintf(stderr, "\n%s: ", MyName);
+	fprintf(stderr, f, p1, p2, p3);
+	fprintf(stderr, "\n");
+
+	return (-1);
+}
+/*
+**  SYSERR -- print system-generated error.
+**
+**	Parameters:
+**		f -- format string to a printf.
+**		p1, p2, p3 -- parameters to f.
+**
+**	Returns:
+**		never.
+**
+**	Side Effects:
+**		none.
+*/
+
+syserr(f, p1, p2, p3)
+	char *f;
+{
+	extern int errno;
+
+	fprintf(stderr, "\n%s SYSERR: ", MyName);
+	fprintf(stderr, f, p1, p2, p3);
+	fprintf(stderr, "\n");
+	if (errno == 0)
+		exit(EX_SOFTWARE);
+	else
+	{
+		perror(0);
+		exit(EX_OSERR);
+	}
 }
