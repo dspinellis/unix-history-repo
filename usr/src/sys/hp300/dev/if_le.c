@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_le.c	7.9 (Berkeley) %G%
+ *	@(#)if_le.c	7.10 (Berkeley) %G%
  */
 
 #include "le.h"
@@ -21,6 +21,7 @@
  * This reasoning is dubious.
  */
 #include "sys/param.h"
+#include "sys/proc.h"
 #include "sys/systm.h"
 #include "sys/mbuf.h"
 #include "sys/buf.h"
@@ -75,7 +76,7 @@ struct	isr le_isr[NLE];
 int	ledebug = 0;		/* console error messages */
 
 int	leintr(), leinit(), leioctl(), lestart(), ether_output();
-struct	mbuf *leget();
+struct	mbuf *m_devget();
 extern	struct ifnet loif;
 
 /*
@@ -272,13 +273,16 @@ lereset(unit)
 leinit(unit)
 	int unit;
 {
-	struct le_softc *le = &le_softc[unit];
-	register struct ifnet *ifp = &le->sc_if;
+	register struct ifnet *ifp = &le_softc[unit].sc_if;
+	register struct ifaddr *ifa;
 	int s;
 
 	/* not yet, if address still unknown */
-	if (ifp->if_addrlist == (struct ifaddr *)0)
-		return;
+	for (ifa = ifp->if_addrlist;; ifa = ifa->ifa_next)
+		if (ifa == 0)
+			return;
+		else if (ifa->ifa_addr && ifa->ifa_addr->sa_family != AF_LINK)
+			break;
 	if ((ifp->if_flags & IFF_RUNNING) == 0) {
 		s = splimp();
 		ifp->if_flags |= IFF_RUNNING;
@@ -321,14 +325,16 @@ again:
 #endif
 	tmd->tmd3 = 0;
 	tmd->tmd2 = -len;
-	tmd->tmd1 = LE_OWN | LE_STP | LE_ENP;
 	if (++le->sc_tmd >= LETBUF)
 		le->sc_tmd = 0;
 	if (++le->sc_txcnt >= LETBUF) {
 		le->sc_txcnt = LETBUF;
 		le->sc_if.if_flags |= IFF_OACTIVE;
-	} else
+		tmd->tmd1 = LE_OWN | LE_STP | LE_ENP;
+	} else {
+		tmd->tmd1 = LE_OWN | LE_STP | LE_ENP;
 		goto again;
+	}
 	return (0);
 }
 
@@ -396,7 +402,7 @@ lexint(unit)
 	register struct letmd *tmd;
 	int i, loopcount = 0;
 
-	if ((le->sc_if.if_flags & IFF_OACTIVE) == 0) {
+	if (le->sc_txcnt == 0) {
 		le->sc_xint++;
 		return;
 	}
@@ -582,11 +588,11 @@ leread(unit, buf, len)
 #endif
 	/*
 	 * Pull packet off interface.  Off is nonzero if packet
-	 * has trailing header; leget will then force this header
+	 * has trailing header; m_devget will then force this header
 	 * information to be at the front, but we still have to drop
 	 * the type and length which are at the front of any trailer data.
 	 */
-	m = leget(buf, len, off, &le->sc_if);
+	m = m_devget((char *)(et + 1), len, off, &le->sc_if, 0);
 	if (m == 0)
 		return;
 	ether_input(&le->sc_if, et, m);
@@ -617,74 +623,6 @@ leput(lebuf, m)
 		tlen = LEMINSIZE;
 	}
 	return(tlen);
-}
-
-/*
- * Routine to copy from board local memory into mbufs.
- */
-struct mbuf *
-leget(lebuf, totlen, off0, ifp)
-	char *lebuf;
-	int totlen, off0;
-	struct ifnet *ifp;
-{
-	register struct mbuf *m;
-	struct mbuf *top = 0, **mp = &top;
-	register int off = off0, len;
-	register char *cp;
-	char *epkt;
-
-	lebuf += sizeof (struct ether_header);
-	cp = lebuf;
-	epkt = cp + totlen;
-	if (off) {
-		cp += off + 2 * sizeof(u_short);
-		totlen -= 2 * sizeof(u_short);
-	}
-
-	MGETHDR(m, M_DONTWAIT, MT_DATA);
-	if (m == 0)
-		return (0);
-	m->m_pkthdr.rcvif = ifp;
-	m->m_pkthdr.len = totlen;
-	m->m_len = MHLEN;
-
-	while (totlen > 0) {
-		if (top) {
-			MGET(m, M_DONTWAIT, MT_DATA);
-			if (m == 0) {
-				m_freem(top);
-				return (0);
-			}
-			m->m_len = MLEN;
-		}
-		len = min(totlen, epkt - cp);
-		if (len >= MINCLSIZE) {
-			MCLGET(m, M_DONTWAIT);
-			if (m->m_flags & M_EXT)
-				m->m_len = len = min(len, MCLBYTES);
-			else
-				len = m->m_len;
-		} else {
-			/*
-			 * Place initial small packet/header at end of mbuf.
-			 */
-			if (len < m->m_len) {
-				if (top == 0 && len + max_linkhdr <= m->m_len)
-					m->m_data += max_linkhdr;
-				m->m_len = len;
-			} else
-				len = m->m_len;
-		}
-		bcopy(cp, mtod(m, caddr_t), (unsigned)len);
-		cp += len;
-		*mp = m;
-		mp = &m->m_next;
-		totlen -= len;
-		if (cp == epkt)
-			cp = lebuf;
-	}
-	return (top);
 }
 
 /*
