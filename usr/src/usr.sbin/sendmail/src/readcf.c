@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	5.50 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	5.51 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -345,11 +345,14 @@ readcf(cfname)
 	fclose(cf);
 	FileName = NULL;
 
-	/* set up host map */
-	strcpy(buf, "host host");
-	if (ConfigLevel >= 2)
-		strcat(buf, " -a.");
-	makemapentry(buf);
+	if (stab("host", ST_MAP, ST_FIND) == NULL)
+	{
+		/* user didn't initialize: set up host map */
+		strcpy(buf, "host host");
+		if (ConfigLevel >= 2)
+			strcat(buf, " -a.");
+		makemapentry(buf);
+	}
 }
 /*
 **  TOOMANY -- signal too many of some option
