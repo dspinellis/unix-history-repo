@@ -78,7 +78,7 @@ Martin Birgmeier
 Paul Kranenburg <pk@cs.few.eur.nl>
 Paul Mackerras <paulus@cs.anu.edu.au>
 Poul-Henning Kamp <phk@login.dkuug.dk>
-Rod Shady <crt@tiamat.umd.umich.edu>
+Rod Shady <rls@id.net>
 Sascha Wildner <swildner@channelz.GUN.de>
 Sean Eric Fagan <sef@kithrup.com>
 Steven Wallace <swallace@ece.uci.edu>
@@ -179,4 +179,4 @@ Wolfgang Solfrank <ws@tools.de>
 Wolfgang Stanglmeier <wolf@dentaro.GUN.de>
 Yuval Yarom <yval@cs.huji.ac.il>
 
-$Id: CONTRIB.FreeBSD,v 1.28 1994/02/13 13:35:03 davidg Exp $
+$Id: CONTRIB.FreeBSD,v 1.29 1994/02/13 21:41:19 joerg Exp $
