@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.65		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.66		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -374,3 +374,4 @@ extern ADDRESS	*parse();
 extern char	*xalloc();
 extern char	*expand();
 extern bool	sameaddr();
+extern FILE	*dfopen();

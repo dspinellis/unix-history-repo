@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)collect.c	3.35		%G%);
+SCCSID(@(#)collect.c	3.36		%G%);
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -51,13 +51,13 @@ collect(sayok)
 	strcpy(tempfname, QueueDir);
 	strcat(tempfname, "/dfaXXXXXX");
 	(void) mktemp(tempfname);
-	(void) close(creat(tempfname, 0600));
-	if ((tf = fopen(tempfname, "w")) == NULL)
+	if ((tf = dfopen(tempfname, "w")) == NULL)
 	{
 		syserr("Cannot create %s", tempfname);
 		NoReturn = TRUE;
 		finis();
 	}
+	chmod(tempfname, 0600);
 	InFileName = tempfname;
 
 	/*
