@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)mount.8	6.11 (Berkeley) %G%
+.\"	@(#)mount.8	6.12 (Berkeley) %G%
 .\"
 .TH MOUNT 8 ""
 .UC 4
@@ -23,6 +23,9 @@ mount, umount \- mount and dismount file systems
 .B mount
 [
 .B \-afrwu
+] [
+.B \-t
+nfs | ufs | external_type
 ]
 .br
 .B mount
@@ -46,9 +49,10 @@ special node
 .PP
 .B umount
 [
-.B \-a
+.B \-af
 ] [
-.B \-f
+.B \-t
+nfs | ufs | external_type
 ]
 .br
 .B umount
@@ -163,11 +167,28 @@ or
 all of the file systems described in
 .I fstab
 are mounted or unmounted.
+The optional argument \fI-t\fP can be used
+to indicate that the actions should only be taken on
+filesystems of the specified type.
+More than one type may be specified in a comma separated list.
+The list of filesystem types can be prefixed with ``no'' to
+specify the filesystem types on which no action should be taken.
+For example, the mount command:
+.br
+	mount -a -t nonfs,mfs
+.br
+mounts all filesystems except those of type NFS and MFS.
 .PP
 The system maintains a list of currently mounted file systems.
 If invoked without an argument,
 .I mount
 prints the list.
+The optional argument \fI-t\fP can be used
+to indicate that only filesystems of the specified type
+should be listed.
+More than one type may be specified in a comma separated list.
+The list of filesystem types can be prefixed with ``no'' to
+indicate the types of filesystems to be excluded from the listing.
 .PP
 Physically write-protected and magnetic tape file
 systems must be mounted read-only
