@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	3.24	(Berkeley)	85/01/14";
+static char sccsid[] = "@(#)tape.c	3.25	(Berkeley)	85/01/18";
 #endif
 
 /* Copyright (c) 1983 Regents of the University of California */
@@ -187,8 +187,10 @@ getvol(nextvol)
 	union u_spcl tmpspcl;
 #	define tmpbuf tmpspcl.s_spcl
 
-	if (nextvol == 1)
+	if (nextvol == 1) {
 		tapesread = 0;
+		gettingfile = 0;
+	}
 	if (pipein) {
 		if (nextvol != 1)
 			panic("Changing volumes on pipe input?\n");
