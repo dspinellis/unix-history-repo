@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_inode.c	7.20 (Berkeley) %G%
+ *	@(#)ffs_inode.c	7.21 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -434,7 +434,7 @@ itrunc(oip, length)
 	for (i = NDADDR - 1; i > lastblock; i--)
 		oip->i_db[i] = 0;
 	oip->i_flag |= ICHG|IUPD;
-	allerror = syncip(oip);
+	allerror = syncip(oip, MNT_WAIT);
 
 	/*
 	 * Indirect blocks first.
