@@ -1,5 +1,5 @@
 #	from: @(#)sys.mk	5.11 (Berkeley) 3/13/91
-#	$Id: sys.mk,v 1.4 1994/01/31 06:10:42 rgrimes Exp $
+#	$Id: sys.mk,v 1.5 1994/02/04 03:19:16 wollman Exp $
 
 unix=		We run FreeBSD, not UNIX.
 
@@ -100,3 +100,7 @@ YFLAGS=-d
 	rm -f lex.yy.c
 
 .include <bsd.own.mk>
+
+.if exists(/etc/make.conf)
+.include </etc/make.conf>
+.endif
