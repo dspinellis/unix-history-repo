@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)catman.8	6.4 (Berkeley) %G%
+.\"	@(#)catman.8	6.5 (Berkeley) %G%
 .\"
 .TH CATMAN 8 ""
 .UC 4
@@ -69,8 +69,8 @@ If the environment variable `MANPATH' is set,
 its value is used for the default path.
 .PP
 If the nroff source file contains only a line of the form `.so manx/yyy.x',
-a link is made in the catx directory to the appropriate preformatted manual
-page.
+a symbolic link is made in the catx directory to the appropriate
+preformatted manual page.
 This feature allows easy distribution of the preformatted manual pages
 among a group of associated machines with
 .I rdist(1).
