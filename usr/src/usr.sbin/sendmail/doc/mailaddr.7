@@ -1,10 +1,10 @@
-.\"	@(#)mailaddr.7	3.1		%G%
+.\"	@(#)mailaddr.7	4.1		%G%
 .TH MAILADDR 7
 .UC 4
 .SH NAME
 mailaddr \- mail addressing description
 .SH DESCRIPTION
-Mail addresses are based on the ARPANET protocols
+Mail addresses are based on the ARPANET protocol
 listed at the end of this manual page.
 These addresses are in the general format
 .PP
@@ -89,7 +89,6 @@ before being sent on for compatibility with older UUCP hosts.
 .PP
 The current implementation is not able to route messages
 automatically through the UUCP network.
-This feature is planned for the 4.2 release.
 Until that time you must explicitly tell the mail system
 which hosts to send your message through
 to get to your final destination.
@@ -214,24 +213,21 @@ your address would be:
 .PP
 From UUCP, your address would be:
 .PP
-		ucbvax!monet.yourname
+		ucbvax!yourname%monet
 .PP
 .I Computer Center.
 The Berkeley Computer Center
-is in a subdomain of Berkeley
-so that they may administer
-their own name space.
+is in a subdomain of Berkeley.
 Messages to the computer center
-should be addressed to one of:
+should be addressed to:
 .PP
-		user@host.CC.Berkeley.ARPA
-.br
 		user%host.CC@Berkeley.ARPA
 .PP
-depending on where the message is being sent from.
-The
-``.Berkeley.ARPA''
-may be omitted if the message is sent from inside Berkeley.
+The alternate syntax:
+.PP
+		user@host.CC
+.PP
+may be used if the message is sent from inside Berkeley.
 .PP
 For the time being
 Computer Center hosts
@@ -250,4 +246,9 @@ Hosts on bitnet may be accessed using:
 .PP
 		user@host.BITNET
 .PP
-This works from 4.2 machines.
+.SH SEE ALSO
+mail(1), sendmail(8);
+Crocker, D. H.,
+.ul
+Standard for the Format of Arpa Internet Text Messages,
+RFC822.
