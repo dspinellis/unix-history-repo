@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ey5.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ey5.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /* fake portable I/O routines, for those
@@ -37,10 +37,6 @@ FILE *copen( s, c )
 cflush(x) FILE *x; { /* fake! sets file to x */
   fflush( cout );
   cout = x;
-  }
-
-system(){
-  error( "The function \"system\" is called" );
   }
 
 cclose(i) FILE *i; {
