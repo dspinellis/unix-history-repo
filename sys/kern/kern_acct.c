@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_acct.c	7.18 (Berkeley) 5/11/91
- *	$Id: kern_acct.c,v 1.5 1993/10/19 05:46:05 davidg Exp $
+ *	$Id: kern_acct.c,v 1.6 1993/11/09 03:47:03 ache Exp $
  */
 
 #include "param.h"
@@ -184,7 +184,7 @@ acctwatch(resettime)
 		acctp = NULL;
 		log(LOG_NOTICE, "Accounting suspended\n");
 	}
-	s = splhigh(); *resettime = time; slpx(s);
+	s = splhigh(); *resettime = time; splx(s);
 	resettime->tv_sec += 15;
 	timeout(acctwatch, (caddr_t)resettime, hzto(resettime));
 }
