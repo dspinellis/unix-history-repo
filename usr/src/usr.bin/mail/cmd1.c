@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmd1.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmd1.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -72,39 +72,8 @@ headers(msgvec)
 }
 
 /*
- * Set the list of alternate names for out host.
- */
-local(namelist)
-	char **namelist;
-{
-	register int c;
-	register char **ap, **ap2, *cp;
-
-	c = argcount(namelist) + 1;
-	if (c == 1) {
-		if (localnames == 0)
-			return(0);
-		for (ap = localnames; *ap; ap++)
-			printf("%s ", *ap);
-		printf("\n");
-		return(0);
-	}
-	if (localnames != 0)
-		cfree((char *) localnames);
-	localnames = (char **) calloc((unsigned) c, sizeof (char *));
-	for (ap = namelist, ap2 = localnames; *ap; ap++, ap2++) {
-		cp = (char *) calloc((unsigned) strlen(*ap) + 1, sizeof (char));
-		strcpy(cp, *ap);
-		*ap2 = cp;
-	}
-	*ap2 = 0;
-	return(0);
-}
-
-/*
  * Scroll to the next/previous screen
  */
-
 scroll(arg)
 	char arg[];
 {
