@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)disks.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)disks.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -23,7 +23,7 @@ static char sccsid[] = "@(#)disks.c	5.13 (Berkeley) %G%";
 static void dkselect __P((char *, int, int []));
 static int read_names __P((void));
 
-static struct nlist nl[] = {
+static struct nlist namelist[] = {
 #define	X_DK_NDRIVE	0
 	{ "_dk_ndrive" },
 #define	X_DK_WPMS	1
@@ -66,11 +66,11 @@ dkinit()
 	if (once)
 		return(1);
 
-	if (kvm_nlist(kd, nl)) {
-		nlisterr(nl);
+	if (kvm_nlist(kd, namelist)) {
+		nlisterr(namelist);
 		return(0);
 	}
-	if (nl[X_DK_NDRIVE].n_value == 0) {
+	if (namelist[X_DK_NDRIVE].n_value == 0) {
 		error("dk_ndrive undefined in kernel");
 		return(0);
 	}

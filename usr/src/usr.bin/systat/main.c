@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -23,7 +23,7 @@ static char sccsid[] = "@(#)main.c	5.12 (Berkeley) %G%";
 #include "systat.h"
 #include "extern.h"
 
-static struct nlist nl[] = {
+static struct nlist namelist[] = {
 #define X_FIRST		0
 #define	X_HZ		0
 	{ "_hz" },
@@ -80,12 +80,12 @@ main(argc, argv)
 		error("%s", errbuf);
 		exit(1);
 	}
-	if (kvm_nlist(kd, nl)) {
-		nlisterr(nl);
+	if (kvm_nlist(kd, namelist)) {
+		nlisterr(namelist);
 		exit(1);
 	}
-	if (nl[X_FIRST].n_type == 0) {
-		fprintf(stderr, "Couldn't namelist.\n");
+	if (namelist[X_FIRST].n_type == 0) {
+		fprintf(stderr, "couldn't read namelist.\n");
 		exit(1);
 	}
 	signal(SIGINT, die);
@@ -232,17 +232,18 @@ error(fmt, va_alist)
 }
 
 void
-nlisterr(nl)
-	struct nlist nl[];
+nlisterr(namelist)
+	struct nlist namelist[];
 {
 	int i, n;
 
 	n = 0;
 	clear();
 	mvprintw(2, 10, "systat: nlist: can't find following symbols:");
-	for (i = 0; nl[i].n_name != NULL && *nl[i].n_name != '\0'; i++)
-		if (nl[i].n_value == 0)
-			mvprintw(2 + ++n, 10, "%s", nl[i].n_name);
+	for (i = 0;
+	    namelist[i].n_name != NULL && *namelist[i].n_name != '\0'; i++)
+		if (namelist[i].n_value == 0)
+			mvprintw(2 + ++n, 10, "%s", namelist[i].n_name);
 	move(CMDLINE, 0);
 	clrtoeol();
 	refresh();
