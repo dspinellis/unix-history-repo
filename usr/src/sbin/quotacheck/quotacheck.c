@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)quotacheck.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)quotacheck.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -49,6 +49,14 @@ union {
 long dev_bsize = 1;
 long maxino;
 
+struct quotaname {
+	long	flags;
+	char	grpqfname[MAXPATHLEN + 1];
+	char	usrqfname[MAXPATHLEN + 1];
+};
+#define	HASUSR	1
+#define	HASGRP	2
+
 struct fileusage {
 	struct	fileusage *fu_next;
 	u_long	fu_curinodes;
@@ -62,9 +70,6 @@ struct fileusage *fuhead[MAXQUOTAS][FUHASH];
 struct fileusage *lookup();
 struct fileusage *addid();
 struct dinode *getnextinode();
-
-#define	HASUSR	1
-#define	HASGRP	2
 
 int	aflag;			/* all file systems */
 int	gflag;			/* check group quotas */
@@ -164,21 +169,37 @@ usage()
 needchk(fs)
 	register struct fstab *fs;
 {
-	int auxdata = 0;
+	register struct quotaname *qnp;
+	char *qfnp;
 
-	if (gflag && hasquota(fs->fs_mntops, GRPQUOTA))
-		auxdata |= HASGRP;
-	if (uflag && hasquota(fs->fs_mntops, USRQUOTA))
-		auxdata |= HASUSR;
-	return (auxdata);
+	if (strcmp(fs->fs_vfstype, "ufs") ||
+	    strcmp(fs->fs_type, FSTAB_RW))
+		return (0);
+	if ((qnp = (struct quotaname *)malloc(sizeof *qnp)) == 0) {
+		fprintf(stderr, "out of memory for quota structures\n");
+		exit(1);
+	}
+	qnp->flags = 0;
+	if (gflag && hasquota(fs, GRPQUOTA, &qfnp)) {
+		strcpy(qnp->grpqfname, qfnp);
+		qnp->flags |= HASGRP;
+	}
+	if (uflag && hasquota(fs, USRQUOTA, &qfnp)) {
+		strcpy(qnp->usrqfname, qfnp);
+		qnp->flags |= HASUSR;
+	}
+	if (qnp->flags)
+		return ((int)qnp);
+	free((char *)qnp);
+	return (0);
 }
 
 /*
  * Scan the specified filesystem to check quota(s) present on it.
  */
-chkquota(fsname, mntpt, auxdata)
+chkquota(fsname, mntpt, qnp)
 	char *fsname, *mntpt;
-	long auxdata;
+	register struct quotaname *qnp;
 {
 	register struct fileusage *fup;
 	register struct dinode *dp;
@@ -191,10 +212,10 @@ chkquota(fsname, mntpt, auxdata)
 	}
 	if (vflag) {
 		fprintf(stdout, "*** Checking ");
-		if (auxdata & HASUSR)
+		if (qnp->flags & HASUSR)
 			fprintf(stdout, "%s%s", qfextension[USRQUOTA],
-			    (auxdata & HASGRP) ? " and " : "");
-		if (auxdata & HASGRP)
+			    (qnp->flags & HASGRP) ? " and " : "");
+		if (qnp->flags & HASGRP)
 			fprintf(stdout, "%s", qfextension[GRPQUOTA]);
 		fprintf(stdout, " quotas for %s (%s)\n", fsname, mntpt);
 	}
@@ -211,7 +232,7 @@ chkquota(fsname, mntpt, auxdata)
 				continue;
 			if ((mode = dp->di_mode & IFMT) == 0)
 				continue;
-			if (auxdata & HASGRP) {
+			if (qnp->flags & HASGRP) {
 				fup = addid((u_long)dp->di_gid, GRPQUOTA,
 				    (char *)0);
 				fup->fu_curinodes++;
@@ -219,7 +240,7 @@ chkquota(fsname, mntpt, auxdata)
 				    mode == IFLNK)
 					fup->fu_curblocks += dp->di_blocks;
 			}
-			if (auxdata & HASUSR) {
+			if (qnp->flags & HASUSR) {
 				fup = addid((u_long)dp->di_uid, USRQUOTA,
 				    (char *)0);
 				fup->fu_curinodes++;
@@ -230,10 +251,10 @@ chkquota(fsname, mntpt, auxdata)
 		}
 	}
 	freeinodebuf();
-	if (auxdata & HASUSR)
-		errs += update(mntpt, USRQUOTA);
-	if (auxdata & HASGRP)
-		errs += update(mntpt, GRPQUOTA);
+	if (qnp->flags & HASUSR)
+		errs += update(mntpt, qnp->usrqfname, USRQUOTA);
+	if (qnp->flags & HASGRP)
+		errs += update(mntpt, qnp->grpqfname, GRPQUOTA);
 	close(fi);
 	return (errs);
 }
@@ -241,22 +262,19 @@ chkquota(fsname, mntpt, auxdata)
 /*
  * Update a specified quota file.
  */
-update(fsname, type)
-	char *fsname;
+update(fsname, quotafile, type)
+	char *fsname, *quotafile;
 	register int type;
 {
 	register struct fileusage *fup;
 	register FILE *qfi, *qfo;
 	register u_long id, lastid;
 	struct dqblk dqbuf;
-	char quotafile[MAXPATHLEN + 1];
 	extern int errno;
 	static int warned = 0;
 	static struct dqblk zerodqbuf;
 	static struct fileusage zerofileusage;
 
-	(void) sprintf(quotafile, "%s/%s.%s", fsname, qfname,
-	    qfextension[type]);
 	if ((qfo = fopen(quotafile, "r+")) == NULL) {
 		if (errno != ENOENT) {
 			perror(quotafile);
@@ -266,6 +284,9 @@ update(fsname, type)
 			perror(quotafile);
 			return (1);
 		}
+		fprintf(stderr, "Creating quota file %s\n", quotafile);
+		(void) fchown(fileno(qfo), getuid(), getquotagid());
+		(void) fchmod(fileno(qfo), 0640);
 	}
 	if ((qfi = fopen(quotafile, "r")) == NULL) {
 		perror(quotafile);
@@ -346,30 +367,53 @@ oneof(target, list, cnt)
 }
 
 /*
+ * Determine the group identifier for quota files.
+ */
+getquotagid()
+{
+	struct group *gr;
+
+	if (gr = getgrnam(quotagroup))
+		return (gr->gr_gid);
+	return (-1);
+}
+
+/*
  * Check to see if a particular quota is to be enabled.
  */
-hasquota(options, type)
-	char *options;
+hasquota(fs, type, qfnamep)
+	register struct fstab *fs;
 	int type;
+	char **qfnamep;
 {
 	register char *opt;
-	char buf[BUFSIZ];
-	char *strtok();
+	char *cp, *index(), *strtok();
 	static char initname, usrname[100], grpname[100];
+	static char buf[BUFSIZ];
 
 	if (!initname) {
 		sprintf(usrname, "%s%s", qfextension[USRQUOTA], qfname);
 		sprintf(grpname, "%s%s", qfextension[GRPQUOTA], qfname);
 		initname = 1;
 	}
-	strcpy(buf, options);
+	strcpy(buf, fs->fs_mntops);
 	for (opt = strtok(buf, ","); opt; opt = strtok(NULL, ",")) {
+		if (cp = index(opt, '='))
+			*cp++ = '\0';
 		if (type == USRQUOTA && strcmp(opt, usrname) == 0)
-			return(1);
+			break;
 		if (type == GRPQUOTA && strcmp(opt, grpname) == 0)
-			return(1);
+			break;
 	}
-	return (0);
+	if (!opt)
+		return (0);
+	if (cp) {
+		*qfnamep = cp;
+		return (1);
+	}
+	(void) sprintf(buf, "%s/%s.%s", fs->fs_file, qfname, qfextension[type]);
+	*qfnamep = buf;
+	return (1);
 }
 
 /*
