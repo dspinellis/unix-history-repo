@@ -1,5 +1,5 @@
 /*
-char id_open[] = "@(#)open.c	1.10";
+char id_open[] = "@(#)open.c	1.11";
  *
  * open.c  -  f77 file open routines
  */
@@ -14,14 +14,18 @@ char id_open[] = "@(#)open.c	1.10";
 #define OLD	(st=='o')
 #define OPEN	(b->ufd)
 #define FROM_OPEN	"\2"	/* for use in f_clos() */
+#define BUF_LEN 256
 
 extern char *tmplate;
 extern char *fortfile;
 
+char *getenv();
+
 f_open(a) olist *a;
 {	unit *b;
 	int n,exists;
-	char buf[256],st;
+	char buf[BUF_LEN], env_name[BUF_LEN];
+	char *env_val, *p1, *p2, ch, st;
 	cllist x;
 
 	lfname = NULL;
@@ -37,8 +41,29 @@ f_open(a) olist *a;
 	{	strcpy(buf,tmplate);
 		mktemp(buf);
 	}
-	else if(a->ofnm) g_char(a->ofnm,a->ofnmlen,buf);
-	else sprintf(buf,fortfile,lunit);
+	else 
+	{
+		if(a->ofnm) g_char(a->ofnm,a->ofnmlen,buf);
+		else sprintf(buf,fortfile,lunit);
+		/*   check if overriding file name via environment variable
+		 *   first copy tail of name - delete periods as Bourne Shell
+		 *      croaks if any periods in name
+		 */
+		 p1 = buf;
+		 p2 = env_name;
+		 while ((ch = *p1++) != '\0') {
+			if(ch == '/') p2 = env_name;
+			else if(ch != '.') *p2++ = ch;
+		 }
+		 if(p2 != env_name) {
+		    *p2 = '\0';
+		    if( (env_val = getenv( env_name  )) != NULL ) {
+			if(strlen(env_val) >= BUF_LEN-1 )
+			    err(errflag,F_ERSTAT,"open: file name too long");
+			strcpy(buf, env_val);
+		    }
+		 }
+	}
 	lfname = &buf[0];
 	if(OPEN)
 	{
@@ -58,12 +83,15 @@ f_open(a) olist *a;
 	exists = (access(buf,0)==NULL);
 	if(!exists && OLD) err(errflag,F_EROLDF,"open");
 	if( exists && NEW) err(errflag,F_ERNEWF,"open");
+	errno = F_ERSYS;
 	if(isdev(buf))
 	{	if((b->ufd = fopen(buf,"r")) != NULL) b->uwrt = NO;
 		else	err(errflag,errno,buf)
 	}
 	else
-	{	if((b->ufd = fopen(buf, "a")) != NULL)
+	{	
+		errno = F_ERSYS;
+		if((b->ufd = fopen(buf, "a")) != NULL)
 		{	if(!opneof)
 			{	if(freopen(buf, "r", b->ufd) != NULL)
 					b->uwrt = NO;
