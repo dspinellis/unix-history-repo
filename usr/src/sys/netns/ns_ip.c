@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1982 Regents of the University of California.
+ * Copyright (c) 1985 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns_ip.c	6.8 (Berkeley) %G%
+ *	@(#)ns_ip.c	6.9 (Berkeley) %G%
  */
 
 /*
@@ -18,6 +18,7 @@
 #include "socketvar.h"
 #include "errno.h"
 #include "ioctl.h"
+#include "protosw.h"
 
 #include "../net/if.h"
 #include "../net/netisr.h"
@@ -91,6 +92,7 @@ nsipioctl(ifp, cmd, data)
 	caddr_t data;
 {
 	int error = 0;
+	struct ifreq *ifr;
 
 	switch (cmd) {
 
@@ -100,6 +102,12 @@ nsipioctl(ifp, cmd, data)
 		 * Everything else is done at a higher level.
 		 */
 		break;
+
+	case SIOCSIFFLAGS:
+		ifr = (struct ifreq *)data;
+		if ((ifr->ifr_flags & IFF_UP) == 0)
+			error = nsip_free(ifp);
+
 
 	default:
 		error = EINVAL;
@@ -314,9 +322,15 @@ nsip_route(m)
 		src = (struct sockaddr_in *)&ia->ia_addr;
 	}
 	/*
-	 * Is there space?
+	 * Is there a free (pseudo-)interface or space?
 	 */
-	m = nsipattach();
+	for (m = nsip_list; m; m = m->m_next) {
+		struct ifnet *ifp = mtod(m, struct ifnet *);
+		if ((ifp->if_flags & IFF_UP) == 0)
+			break;
+	}
+	if (m == (struct mbuf *) 0)
+		m = nsipattach();
 	if (m==NULL) {return (ENOBUFS);}
 	ifn = mtod(m, struct ifnet_en *);
 
@@ -332,5 +346,61 @@ nsip_route(m)
 	ifr.ifr_dstaddr = * (struct sockaddr *) ns_dst;
 	return(ns_control((struct socket *)0, (int)SIOCSIFADDR, (caddr_t)&ifr,
 			(struct ifnet *)ifn));
+}
+
+nsip_free(ifp)
+struct ifnet *ifp;
+{
+	register struct ifnet_en *ifn = (struct ifnet_en *)ifp;
+	struct route *ro = & ifn->ifen_route;
+
+	if (ro->ro_rt) {
+		RTFREE(ro->ro_rt);
+		ro->ro_rt = 0;
+	}
+	ifp->if_flags &= ~IFF_UP;
+	return (0);
+}
+
+nsip_ctlinput(cmd, sa)
+	int cmd;
+	struct sockaddr *sa;
+{
+	extern u_char inetctlerrmap[];
+	struct sockaddr_in *sin;
+	int in_rtchange();
+
+	if ((unsigned)cmd > PRC_NCMDS)
+		return;
+	if (sa->sa_family != AF_INET && sa->sa_family != AF_IMPLINK)
+		return;
+	sin = (struct sockaddr_in *)sa;
+	if (sin->sin_addr.s_addr == INADDR_ANY)
+		return;
+
+	switch (cmd) {
+
+	case PRC_ROUTEDEAD:
+	case PRC_REDIRECT_NET:
+	case PRC_REDIRECT_HOST:
+	case PRC_REDIRECT_TOSNET:
+	case PRC_REDIRECT_TOSHOST:
+		nsip_rtchange(&sin->sin_addr);
+		break;
+	}
+}
+
+nsip_rtchange(dst)
+	register struct in_addr *dst;
+{
+	register struct mbuf *m;
+	register struct ifnet_en *ifn;
+
+	for (m = nsip_list; m; m = m->m_next)
+		if (ifn->ifen_dst.s_addr == dst->s_addr &&
+			ifn->ifen_route.ro_rt) {
+				RTFREE(ifn->ifen_route.ro_rt);
+				ifn->ifen_route.ro_rt = 0;
+		}
 }
 #endif
