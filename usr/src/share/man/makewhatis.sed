@@ -1,15 +1,15 @@
-#!/bin/sh -
+#!/usr/bin/sed -nf
 #
-# Copyright (c) 1988, 1993
+# Copyright (c) 1988, 1993, 1994
 #	The Regents of the University of California.  All rights reserved.
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)makewhatis.sed	8.3 (Berkeley) %G%
+#	@(#)makewhatis.sed	8.4 (Berkeley) %G%
 #
 
 /^[a-zA-Z][a-zA-Z0-9\._+\-]*(\([a-zA-Z0-9\._+\-]*\).*/ {
-	s;^[a-zA-Z0-9]*(\([a-zA-Z0-9\._+\-]*\).*;\1;
+	s;^[a-zA-Z0-9\._+\-]*(\([a-zA-Z0-9\._+\-]*\).*;\1;
 	h
 	d
 }
