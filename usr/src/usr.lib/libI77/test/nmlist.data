@@ -1,0 +1,36 @@
+ &nml
+ &end
+ &nml key=1 ii=10 &end
+ &nml key=2 ivec=3*8, 2*7,-238, 99,98 &end
+ &nml key=3 ivec=-2, 4*7,-84,13,5 &end
+ &nml key=4 ivec(4)=6 &end
+ &nml key=5 ivec(2)=8,9,ivec(7)=-909,-945 &end
+ &nml key=6 l1=.false., l2=.true., lvec=6*.true. &end
+ &nml key=7 l1=true, l2=false, lvec=6*false &end
+ &nml key=8 l1=.true., l2=.false., lvec=t,f,2*t,ft,tf &end
+ &nml key=9 &end
+ &nml key=-999 &end
+ &nmc &end
+ &nmc
+xch = 'f', chvec=5*'a',2*'b',5*'c',
+ &end
+ &nmc
+ych='|',chvec='ab','cd',10*'?',str='ABCDEFGHIJ',strv='A1234','B1234','C1234','D1234','E1234','F1234',&end
+z&nmc strv(0)=2*'abc',strv(4)='hi' &end
+ &nmc key=-999 &end
+ &nmrd key=0 &end
+ &nmrd key=1 r = 1.5e-38 &end
+ &nmrd key=2 r = 2.5d-28 &end
+ &nmrd key=3 d = 3.5e-38 &end
+ &nmrd key=4 d = 4.5e-28 &end
+ &nmrd key=5 rvec=10*-5.12345678901 &end
+ &nmrd key=6 darr=10*-5.12345678901 &end
+ &nmrd key=6 darr=12*-3.141500123456789d0 &end
+ &nmrd key=7 darr(-10,1,1)=3.6 &end   			4th element
+ &nmrd key=8 darr(-9,0,2)=3.3, 3.4, 3.5 &end		8th element
+ &nmrd key = -999 &end
+ &nmcmp key = 0 &end
+ &nmcmp c=(1.2e+38,1.3d-34),cvec=3*(0.1,0.2)&end
+ &nmcmp z=(1.2e+38,1.3d-34),zvec=3*(0.1,0.2)&end
+ &nmcmp cvec(2)=(1,2),zvec(4)=(1.1,2.1)&end
+ &nmcmp key=-999 &end
