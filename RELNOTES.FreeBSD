@@ -21,9 +21,9 @@ for more details.
 For a list of contributors, please see the file "CONTRIB.FreeBSD",
 which should be bundled with your distribution.
 
-The core of FreeBSD does not containt DES code so that it can be
+The core of FreeBSD does not contain DES code so that it can be
 exported outside the United States.  There is an add on package to
-the core distribution for use only in the United States that contain
+the core distribution for use only in the United States that contains
 the programs that normally use DES.  The auxilliary packages are
 provided separately for use by anyone.
 
@@ -144,7 +144,7 @@ is anything but, that almost no one in the "core team" makes money
 from distributions or anything else connected with FreeBSD.  We simply
 provide this information as a public service for those wishing to get
 their releases from somewhere other than the net (and the easier it
-is for you to get ahold of our software, the happier we are).
+is for you to obtain our software, the happier we are).
 
 
 4. Reporting problems, making suggestions, submitting code.
@@ -227,7 +227,7 @@ Special mention to:
 	Steven Wallace				Rick Weldon
 	Terry Williams				Garrett Wollman
 
-	And everyone at the University of Montana for their initial support.
+	And everyone at Montana State University for their initial support.
 
 
 Thanks to everyone, especially those not mentioned, and we sincerely
@@ -236,4 +236,4 @@ hope you enjoy this release of FreeBSD!
 
 			The FreeBSD Core Group
 
-$Id: RELNOTES.FreeBSD,v 1.2 1993/08/30 07:13:50 rgrimes Exp $
+$Id: RELNOTES.FreeBSD,v 1.3 1993/08/30 07:37:46 rgrimes Exp $
