@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)compile.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)compile.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -313,7 +313,9 @@ compile_delimited(p, d)
 			*d++ = '\n';
 			p += 2;
 			continue;
-		} else if (*p == c) {
+		} else if (*p == '\\' && p[1] == '\\')
+			*d++ = *p++;
+		else if (*p == c) {
 			*d = '\0';
 			return (p + 1);
 		}
@@ -389,7 +391,7 @@ compile_subst(p, s)
 "\\%c not defined in the RE", *p);
 					if (s->maxbref < ref)
 						s->maxbref = ref;
-				} else if (*p == '&')
+				} else if (*p == '&' || *p == '\\')
 					*sp++ = '\\';
 			} else if (*p == c) {
 				p++;
