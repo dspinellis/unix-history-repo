@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_exec.c	7.50 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.51 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -373,7 +373,7 @@ execve(p, uap, retval)
 	 */
 	ucp = USRSTACK - szsigcode - nc - NBPW;
 	ap = ucp - na*NBPW - 3*NBPW;
-	p->p_regs[SP] = ap;
+	cpu_setstack(p, ap);
 	(void) suword((caddr_t)ap, na-ne);
 	nc = 0;
 	cp = (char *) execargs;
