@@ -1,0 +1,66 @@
+.th PLOT VII 2/25/75
+.sh NAME
+plot: openpl et al. \*- graphics interface
+.sh SYNOPSIS
+.nf
+.ft B
+openpl( )
+.s3
+erase( )
+.s3
+label(s)
+char s[ ];
+.s3
+line(x1, y1, x2, y2)
+.s3
+circle(x, y, r)
+.s3
+arc(x, y, x0, y0, x1, y1)
+.s3
+dot(x, y, dx, n, pattern)
+int pattern[ ];
+.s3
+move(x, y)
+.s3
+point(x, y)
+.s3
+linemod(s)
+char s[ ];
+.s3
+space(x0, y0, x1, y1)
+.s3
+closepl( )
+.fi
+.s3
+.ft R
+.sh DESCRIPTION
+These subroutines
+generate
+graphic output in a relatively
+device-independent manner.
+See
+.it plot
+(VI)
+for a description
+of the meaning of the subroutines.
+.s3
+There are four libraries containing these routines,
+one that produces general graphics commands on the standard output,
+and one each for the vt0 storage scope, the Diablo plotting
+terminal and the Tektronix 4014 terminal.
+.it Openpl
+must be used before any of the others to open the
+device for writing.
+.it Closepl
+flushes the output.
+.sh FILES
+/usr/lib/plot.a	produces output for plotting filters
+.br
+/usr/lib/vt0.a	produces output on vt0 storage scope
+.br
+/usr/lib/gsip.a	produces output on Diablo terminal
+.br
+/usr/lib/tek.a	produces output for the Tektronix 4014 terminal
+.sh "SEE ALSO"
+plot (VI), graph (VI)
+.sh BUGS
