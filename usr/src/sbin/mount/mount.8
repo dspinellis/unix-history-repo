@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)mount.8	6.13 (Berkeley) %G%
+.\"	@(#)mount.8	6.14 (Berkeley) %G%
 .\"
 .TH MOUNT 8 ""
 .UC 4
@@ -133,6 +133,12 @@ I/O system calls will retry until the server responds (default)
 .IP "soft" 12
 I/O system calls will fail and return errno after \fIretrans\fP request
 retransmissions
+.IP "spongy" 12
+Soft semantics for the stat, lookup, fsstat, readlink and readdir
+filesystem operations and hard semantics for the others.
+This option is meant to be similar to hard,
+except that processes will not be hung forever when
+they trip over mount points to dead servers.
 .IP "bg" 12
 If the first mount request times out, do retries in background
 .IP "intr" 12
