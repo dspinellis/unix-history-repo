@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)stat.c	1.2 (Berkeley) %G%";
+static	char *sccsid = "@(#)stat.c	1.3 (Berkeley) %G%";
 /* Copyright (c) 1979 Regents of the University of California */
 #
 /*
@@ -113,10 +113,6 @@ top:
 			ppnl();
 			indent();
 			withop(s);
-			break;
-		case T_ASRT:
-			ppitem();
-			asrtop(s);
 			break;
 	}
 	setinfo(s[1]);
@@ -304,13 +300,4 @@ int *r;
 		statement(s);
 		ppgoout(l);
 	}
-}
-
-asrtop(s)
-	int *s;
-{
-
-	ppkw("assert");
-	ppspac();
-	rvalue(s[2], NIL);
 }
