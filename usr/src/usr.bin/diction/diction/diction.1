@@ -1,11 +1,13 @@
+.\" Copyright (c) 1988 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
 .\"
-.\" @(#)diction.1	4.2	(Berkeley)	82/11/06
+.\"	@(#)diction.1	4.3 (Berkeley) %G%
 .\"
-.TH DICTION 1 
+.TH DICTION 1 ""
+.AT 3
 .SH NAME
-diction \- print wordy sentences
-.br
-explain \- interactive thesaurus for diction
+diction, explain \- print wordy sentences; thesaurus for diction
 .SH SYNOPSIS
 .B diction
 [
@@ -48,7 +50,7 @@ with
 .I pfile.
 If the flag
 .B \-n
-is also supplied the default file will be supressed.
+is also supplied the default file will be suppressed.
 .PP
 .I Explain
 is an interactive thesaurus for the phrases found by diction.
@@ -57,3 +59,7 @@ deroff(1)
 .SH BUGS
 Use of non-standard formatting macros may cause
 incorrect sentence breaks.
+In particular,
+.I diction
+doesn't grok
+.B \-me.
