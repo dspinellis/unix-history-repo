@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)su.c	4.5 (Berkeley) %G%";
+static char *sccsid = "@(#)su.c	4.6 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -94,7 +94,8 @@ ok:
 		cleanenv[4] = getenv("TERM");
 		environ = cleanenv;
 	}
-	setenv("USER", pwd->pw_name, userbuf);
+	if (strcmp(user, "root"))
+		setenv("USER", pwd->pw_name, userbuf);
 	setenv("SHELL", shell, shellbuf);
 	setenv("HOME", pwd->pw_dir, homebuf);
 	setpriority(PRIO_PROCESS, 0, 0);
