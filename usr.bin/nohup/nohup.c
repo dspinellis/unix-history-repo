@@ -107,7 +107,8 @@ dofile()
 	   If a file is created, the file's permission bits shall be
 	   set to S_IRUSR | S_IWUSR. */
 #define	FILENAME	"nohup.out"
-	if ((fd = open(FILENAME, O_RDWR|O_CREAT|O_APPEND, S_IRUSR|S_IWUSR)) >= 0)
+	p = FILENAME;
+	if ((fd = open(p, O_RDWR|O_CREAT|O_APPEND, S_IRUSR|S_IWUSR)) >= 0)
 		goto dupit;
 	if ((p = getenv("HOME")) != NULL) {
 		(void)strcpy(path, p);
