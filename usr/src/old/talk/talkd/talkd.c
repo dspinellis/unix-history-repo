@@ -1,13 +1,14 @@
-/*
- * Copyright (c) 1983 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1983, 1985
+ *	The Regents of the University of California.  All rights reserved.
+ *
+ * %sccs.include.redist.c%
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1983 Regents of the University of California.\n\
- All rights reserved.\n";
+"@(#) Copyright (c) 1983, 1985\n\
+	Regents of the University of California.  All rights reserved.\n";
 #endif not lint
 
 #ifndef lint
