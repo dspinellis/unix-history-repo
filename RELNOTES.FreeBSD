@@ -150,7 +150,9 @@ Should you be dissatisfied for any reason, the CD comes with an
 unconditional return policy.
 
 Note that Walnut Creek CDROM does NOT provide technical support for FreeBSD,
-you need to contact the FreeBSD team for that.
+you need to contact the FreeBSD team for that.  Please see section 4 for
+more information.
+
 
 3. 1/4" Tape, 4mm DAT, floppy
 
@@ -207,6 +209,19 @@ submit a bug report, you can try to send it to:
 Otherwise, for any questions or suggestions, please send mail to:
 
 		FreeBSD-questions@freefall.cdrom.com
+
+Additionally, being a volunteer effort, we are always happy to have
+extra hands willing to help - there are already far more enhancements
+to be done than we can ever manage to do by ourselves!  To contact us
+on technical matters, or with offers of help, you may send mail to:
+
+		FreeBSD-hackers@freefall.cdrom.com
+
+All but the FreeBSD-bugs groups can be freely joined by anyone wishing to
+do so.  Send mail to MajorDomo@freefall.cdrom.com and include the keyword
+`help' on a line by itself somewhere in the body of the message.  This
+will give you more information on joining the various lists, accessing
+archives, etc.
 
 
 5. Acknowledgements
@@ -272,4 +287,4 @@ hope you enjoy this release of FreeBSD!
 
 			The FreeBSD Core Group
 
-$Id: RELNOTES.FreeBSD,v 1.13 1993/10/16 11:43:32 rgrimes Exp $
+$Id: RELNOTES.FreeBSD,v 1.14 1993/10/16 12:02:43 rgrimes Exp $
