@@ -1,0 +1,42 @@
+.\" from Symmetric Computer Systems.
+.\" Modifications Copyright (c) 1987 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)disklabel.5.5	6.1 (Berkeley) %G%
+.\"
+.TH DISKLABEL 5 ""
+.UC 7
+.SH NAME
+disklabel \- disk pack label
+.SH SYNOPSIS
+.B #include <sys/disklabel.h>
+.SH DESCRIPTION
+Each disk or disk pack on a system may contain a disk label
+which provides detailed information
+about the geometry of the disk and the partitions into which the disk
+is divided.
+It should be initialized when the disk is formatted,
+and may be changed later with the
+.IR disklabel (8)
+program.
+This information is used by the system disk driver and by the bootstrap
+program to determine how to program the drive
+and where to find the filesystems on the disk partitions.
+Additional information is used by the filesystem in order
+to use the disk most efficiently and to locate important filesystem information.
+The label is located in sector number
+.I LABELSECTOR
+of the drive, usually sector 0 where it may be found
+without any information about the disk geometry.
+It is at an offset
+.I LABELOFFSET
+from the beginning of the sector, to allow room for the initial bootstrap.
+The format of the disk label, as specified in
+.RI < sys/disklabel.h >,
+is
+.nf
+.DT
+.so /usr/include/sys/disklabel.h
+.SH "SEE ALSO"
+disktab(5), disklabel(8)
