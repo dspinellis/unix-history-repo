@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	6.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	6.13 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -240,6 +240,7 @@ readcf(cfname)
 					  case MATCHONE:
 					  case MATCHCLASS:
 					  case MATCHNCLASS:
+					  case CANONHOST:
 						nfuzzy++;
 						break;
 
@@ -249,10 +250,6 @@ readcf(cfname)
 
 					  case CANONNET:
 						botch = "$#";
-						break;
-
-					  case CANONHOST:
-						botch = "$@";
 						break;
 
 					  case CANONUSER:

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	6.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	6.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -902,6 +902,10 @@ _rewrite(pvp, ruleset)
 				avp = mlp->last;
 				rvp++;
 				mlp++;
+				break;
+
+			  case CANONHOST:
+				/* match zero tokens */
 				continue;
 			}
 
