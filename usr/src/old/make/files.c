@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)files.c	4.6 (Berkeley) 83/02/09";
+static	char *sccsid = "@(#)files.c	4.7 (Berkeley) 83/05/18";
 /* UNIX DEPENDENT PROCEDURES */
 
 
@@ -9,7 +9,7 @@ char *builtin[] =
 #ifdef pwb
 	".SUFFIXES : .L .out .o .c .f .e .r .y .yr .ye .l .s .z .x .t .h .cl",
 #else
-	".SUFFIXES : .out .o .c .f .e .r .y .yr .ye .l .s .cl .p",
+	".SUFFIXES : .out .o .c .f .F .e .r .y .yr .ye .l .s .cl .p",
 #endif
 	"YACC=yacc",
 	"YACCR=yacc -r",
@@ -48,7 +48,7 @@ char *builtin[] =
 	".cl.o :",
 	"\tclass -c $<",
 
-	".e.o .r.o .f.o :",
+	".e.o .r.o .F.o .f.o :",
 	"\t$(FC) $(RFLAGS) $(EFLAGS) $(FFLAGS) -c $<",
 
 	".s.o :",
@@ -114,7 +114,7 @@ char *builtin[] =
 	".s.out .c.out .o.out :",
 	"\t$(CC) $(CFLAGS) $< $(LOADLIBES) -o $@",
 
-	".f.out .r.out .e.out :",
+	".f.out .F.out .r.out .e.out :",
 	"\t$(FC) $(EFLAGS) $(RFLAGS) $(FFLAGS) $< $(LOADLIBES) -o $@",
 	"\t-rm $*.o",
 
