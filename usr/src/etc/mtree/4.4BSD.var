@@ -434,3 +434,9 @@ vi.recover	type=dir uname=root mode=01777
 
 # ./tmp
 ..
+
+# ./users
+/set type=file gname=wheel uname=nobody mode=0600
+users	type=dir uname=root mode=755
+# ./users
+..
