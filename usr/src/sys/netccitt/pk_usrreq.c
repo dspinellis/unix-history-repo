@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_usrreq.c	7.10 (Berkeley) %G%
+ *	@(#)pk_usrreq.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -50,7 +50,7 @@ struct mbuf *control;
 	register int error = 0;
 
 	if (req == PRU_CONTROL)
-		return (pk_control(so, (int)m, (caddr_t)nam,
+		return (pk_control (so, (int)m, (caddr_t)nam,
 			(struct ifnet *)control));
 	if (control && control -> m_len) {
 		error = EINVAL;
@@ -151,6 +151,7 @@ struct mbuf *control;
 		lcp -> lcd_rxcnt++;
 		lcp -> lcd_template = pk_template (lcp -> lcd_lcn, X25_RR);
 		pk_output (lcp);
+		/*pk_flowcontrol (lcp, sbspace (&so -> so_rcv) <= 0, 1);*/
 		break;
 
 	/* 
@@ -160,10 +161,10 @@ struct mbuf *control;
 		if (m == 0) {
 			MGETHDR(m, M_WAITOK, MT_OOBDATA);
 			m -> m_pkthdr.len = m -> m_len = 1;
-			*mtod(m, octet *) = 0;
+			*mtod (m, octet *) = 0;
 		}
 		if (m -> m_pkthdr.len > 32) {
-			m_freem(m);
+			m_freem (m);
 			error = EMSGSIZE;
 			break;
 		}
@@ -175,10 +176,10 @@ struct mbuf *control;
 	 */
 	case PRU_SEND: 
 		if (control) {
-			register struct cmsghdr *ch = mtod(m, struct cmsghdr *);
+			register struct cmsghdr *ch = mtod (m, struct cmsghdr *);
 			control -> m_len -= sizeof (*ch);
 			control -> m_data += sizeof (*ch);
-			pk_ctloutput(PRCO_SETOPT, so, ch -> cmsg_level,
+			pk_ctloutput (PRCO_SETOPT, so, ch -> cmsg_level,
 					ch -> cmsg_type, &control);
 		}
 		if (m)
@@ -244,11 +245,11 @@ struct mbuf *control;
 				unsigned len =  n -> m_pkthdr.len;
 				so -> so_rcv.sb_mb = n -> m_nextpkt;
 				if (len !=  n -> m_len &&
-				    (n = m_pullup(n, len)) == 0)
+				    (n = m_pullup (n, len)) == 0)
 					break;
 				m -> m_len = len;
-				bcopy(mtod(m, caddr_t), mtod(n, caddr_t), len);
-				m_freem(n);
+				bcopy (mtod (m, caddr_t), mtod (n, caddr_t), len);
+				m_freem (n);
 			}
 			break;
 		}
@@ -261,7 +262,7 @@ struct mbuf *control;
 	}
 release:
 	if (control != NULL)
-		m_freem(control);
+		m_freem (control);
 	return (error);
 }
 
@@ -274,10 +275,10 @@ release:
 pk_start (lcp)
 register struct pklcd *lcp;
 {
-	extern int pk_send();
+	extern int pk_send ();
 
 	lcp -> lcd_send = pk_send;
-	return (pk_output(lcp));
+	return (pk_output (lcp));
 }
 
 /*ARGSUSED*/
@@ -311,10 +312,10 @@ register struct ifnet *ifp;
 		return (0);
 
 	case SIOCSIFCONF_X25:
-		if (error = suser(u.u_cred, &u.u_acflag))
+		if (error = suser (u.u_cred, &u.u_acflag))
 			return (error);
 		if (ifp == 0)
-			panic("pk_control");
+			panic ("pk_control");
 		if (ifa == (struct ifaddr *)0) {
 			register struct mbuf *m;
 
@@ -322,7 +323,7 @@ register struct ifnet *ifp;
 				M_IFADDR, M_WAITOK);
 			if (ia == 0)
 				return (ENOBUFS);
-			bzero((caddr_t)ia, sizeof (*ia));
+			bzero ((caddr_t)ia, sizeof (*ia));
 			if (ifa = ifp -> if_addrlist) {
 				for ( ; ifa -> ifa_next; ifa = ifa -> ifa_next)
 					;
@@ -343,24 +344,24 @@ register struct ifnet *ifp;
 		old_maxlcn = ia -> ia_maxlcn;
 		ia -> ia_xc = ifr -> ifr_xc;
 		if (ia -> ia_chan && (ia -> ia_maxlcn != old_maxlcn)) {
-			pk_restart(&ia -> ia_pkcb, X25_RESTART_NETWORK_CONGESTION);
+			pk_restart (&ia -> ia_pkcb, X25_RESTART_NETWORK_CONGESTION);
 			dev_lcp = ia -> ia_chan[0];
-			free((caddr_t)ia -> ia_chan, M_IFADDR);
+			free ((caddr_t)ia -> ia_chan, M_IFADDR);
 			ia -> ia_chan = 0;
 		}
 		if (ia -> ia_chan == 0) {
-			n = (ia -> ia_maxlcn + 1) * sizeof(struct pklcd *);
-			ia -> ia_chan = (struct pklcd **) malloc(n, M_IFADDR, M_WAITOK);
+			n = (ia -> ia_maxlcn + 1) * sizeof (struct pklcd *);
+			ia -> ia_chan = (struct pklcd **) malloc (n, M_IFADDR, M_WAITOK);
 			if (ia -> ia_chan) {
-				bzero((caddr_t)ia -> ia_chan, n);
+				bzero ((caddr_t)ia -> ia_chan, n);
 				if (dev_lcp == 0)
-					dev_lcp = pk_attach((struct socket *)0);
+					dev_lcp = pk_attach ((struct socket *)0);
 				ia -> ia_chan[0] = dev_lcp;
 				dev_lcp -> lcd_state = READY;
 				dev_lcp -> lcd_pkp = &ia -> ia_pkcb;
 			} else {
 				if (dev_lcp)
-					pk_close(dev_lcp);
+					pk_close (dev_lcp);
 				return (ENOBUFS);
 			}
 		}
@@ -383,7 +384,7 @@ register struct ifnet *ifp;
 	}
 }
 
-pk_ctloutput(cmd, so, level, optname, mp)
+pk_ctloutput (cmd, so, level, optname, mp)
 struct socket *so;
 struct mbuf **mp;
 int cmd, level, optname;
@@ -397,7 +398,7 @@ int cmd, level, optname;
 		if (m == 0)
 			return (EINVAL);
 		if (m -> m_len)
-			error = pk_accton (mtod(m, char *));
+			error = pk_accton (mtod (m, char *));
 		else
 			error = pk_accton ((char *)0);
 		(void) m_freem (m);
@@ -551,7 +552,7 @@ register struct mbuf *m;
 		m -> m_data++;
 		m -> m_pkthdr.len--;
 	}
-	if ((error = pk_fragment(lcp, m, mqbit & 0x80, mqbit &0x40, 1)) == 0)
+	if ((error = pk_fragment (lcp, m, mqbit & 0x80, mqbit & 0x40, 1)) == 0)
 		error = pk_output (lcp);
 	return (error);
 bad:
