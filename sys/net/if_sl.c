@@ -72,7 +72,7 @@
  * interrupts and network activity; thus, splimp must be >= spltty.
  */
 
-/* $Header: /usr/bill/working/sys/net/RCS/if_sl.c,v 1.2 92/01/15 17:36:38 william Exp $ */
+/* $Header: /a/cvs/386BSD/src/sys/net/if_sl.c,v 1.1.1.1 1993/06/12 14:57:51 rgrimes Exp $ */
 /* from if_sl.c,v 1.11 84/10/04 12:54:47 rick Exp */
 
 #include "sl.h"
@@ -375,7 +375,7 @@ sloutput(ifp, m, dst)
 		m_freem(m);
 		return (ENETDOWN);	/* sort of */
 	}
-	if ((sc->sc_ttyp->t_state & TS_CARR_ON) == 0) {
+	if ((sc->sc_ttyp->t_state & (TS_CARR_ON | CLOCAL)) == 0) {
 		m_freem(m);
 		return (EHOSTUNREACH);
 	}
@@ -429,15 +429,14 @@ slstart(tp)
 
 	for (;;) {
 		/*
-		 * If there is more in the output queue, just send it now.
+		 * Call output process whether or not there is any output.
 		 * We are being called in lieu of ttstart and must do what
 		 * it would.
 		 */
-		if (RB_LEN(&tp->t_out) != 0) {
-			(*tp->t_oproc)(tp);
-			if (RB_LEN(&tp->t_out) > SLIP_HIWAT)
-				return;
-		}
+		(*tp->t_oproc)(tp);
+		if (RB_LEN(&tp->t_out) > SLIP_HIWAT)
+			return;
+
 		/*
 		 * This happens briefly when the line shuts down.
 		 */
@@ -651,7 +650,8 @@ slinput(c, tp)
 	sc = (struct sl_softc *)tp->t_sc;
 	if (sc == NULL)
 		return;
-	if (c & TTY_ERRORMASK || !(tp->t_state & TS_CARR_ON)) {	/* XXX */
+	if (c & TTY_ERRORMASK || (tp->t_state & (TS_CARR_ON | CLOCAL)) == 0) {
+		/* XXX */
 		sc->sc_flags |= SC_ERROR;
 		return;
 	}
