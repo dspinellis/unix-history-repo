@@ -19,7 +19,7 @@ POPDIVERT
 ###   Local and Program Mailer specification   ###
 ##################################################
 
-VERSIONID(`@(#)local.m4	8.11 (Berkeley) %G%')
+VERSIONID(`@(#)local.m4	8.12 (Berkeley) %G%')
 
 Mlocal,		P=LOCAL_MAILER_PATH, F=CONCAT(`lsDFMAw5:/|@', LOCAL_MAILER_FLAGS), S=10, R=20/40, T=X-Unix,
 		A=LOCAL_MAILER_ARGS
@@ -32,7 +32,6 @@ R$+			$: $>40 $1
 
 S20
 R$+ < @ $* >		$: $1			strip host part
-R$+ + $*		$: $1			strip +argument part
 
 S40
 ifdef(`_ALWAYS_ADD_DOMAIN_',
