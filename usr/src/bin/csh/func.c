@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)func.c 4.4 %G%";
+static	char *sccsid = "@(#)func.c 4.5 81/06/19";
 
 #include "sh.h"
 #include <sys/ioctl.h>
@@ -165,6 +165,8 @@ donewgrp(v)
 	char **v;
 {
 
+	if (chkstop == 0 && setintr)
+		panystop(0);
 	signal(SIGTERM, parterm);
 	execl("/bin/newgrp", "newgrp", v[1], 0);
 	execl("/usr/bin/newgrp", "newgrp", v[1], 0);
