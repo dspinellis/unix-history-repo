@@ -20,7 +20,7 @@ static int
 #define	X_AREA_NULL	0xc6, ""
 
 static void
-SetXarea(x, xwhy)
+OiaXArea(x, xwhy)
 int	x;
 char	*xwhy;
 {
@@ -37,7 +37,7 @@ char	*xwhy;
 }
 
 
-SetInsert(onoff)
+OiaInsert(onoff)
 int	onoff;
 {
     Insert = onoff;
@@ -47,56 +47,60 @@ int	onoff;
     } else {
 	OperatorInformationArea.insert = 0;
     }
+    ScreenOIA(&OperatorInformationArea);
 }
 
-SetSystemLocked(onoff)
+OiaSystemLocked(onoff)
 int	onoff;
 {
     SystemLocked = onoff;
 
     if ((PWait == 0) && (TWait == 0)) {
-	SetXArea(X_AREA_SYSTEM);
+	OiaXArea(X_AREA_SYSTEM);
     }
+    ScreenOIA(&OperatorInformationArea);
 }
 
-SetPWait(onoff)
+OiaPWait(onoff)
 int	onoff;
 {
     PWait = onoff;
 
     if (onoff) {
-	SetXArea(X_AREA_CLOCK);
+	OiaXArea(X_AREA_CLOCK);
     } else {
 	if (SystemLocked) {
-	    SetXArea(X_AREA_SYSTEM);
+	    OiaXArea(X_AREA_SYSTEM);
 	} else {
-	    SetXArea(X_AREA_NULL);
+	    OiaXArea(X_AREA_NULL);
 	}
     }
+    ScreenOIA(&OperatorInformationArea);
 }
 
-SetTWait(onoff)
+OiaTWait(onoff)
 int	onoff;
 {
     TWait = onoff;
 
-    SetPWait(onoff);
+    OiaPWait(onoff);
 }
 
-SetOnlineA(onoff)
+OiaOnlineA(onoff)
 int	onoff;
 {
     OnlineA = onoff;
 
     if (onoff) {
-	SetMyJob(1);
+	OiaMyJob(1);
 	OperatorInformationArea.online = OIA_ONLINE_A;
     } else {
 	OperatorInformationArea.online = 0;
     }
+    ScreenOIA(&OperatorInformationArea);
 }
 
-SetReady3274(onoff)
+OiaReady3274(onoff)
 int	onoff;
 {
     Ready3274 = onoff;
@@ -106,9 +110,10 @@ int	onoff;
     } else {
 	OperatorInformationArea.ready = 0;
     }
+    ScreenOIA(&OperatorInformationArea);
 }
 
-SetMyJob(onoff)
+OiaMyJob(onoff)
 int	onoff;
 {
     MyJob = onoff;
@@ -118,4 +123,5 @@ int	onoff;
     } else {
 	OperatorInformationArea.ownership = 0;
     }
+    ScreenOIA(&OperatorInformationArea);
 }
