@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ctl_transact.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)ctl_transact.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "talk_ctl.h"
@@ -52,8 +52,21 @@ ctl_transact(target, msg, type, rp)
 		wait.tv_usec = 0;
 		/* resend message until a response is obtained */
 		do {
+#ifdef	MSG_EOR
+			/*
+			 * New sockaddr structure has 1st 8bits as
+			 * length field.  We have to zero these out
+			 * to be compatible with old talkd's (yech)
+			 */
+			msg.addr.sa_len = 0;
+			msg.ctl_addr.sa_len = 0;
+#endif
 			cc = sendto(ctl_sockt, (char *)&msg, sizeof (msg), 0,
 				&daemon_addr, sizeof (daemon_addr));
+#ifdef	MSG_EOR
+			msg.addr.sa_len = sizeof(struct sockaddr_in);
+			msg.ctl_addr.sa_len = sizeof(struct sockaddr_in);
+#endif
 			if (cc != sizeof (msg)) {
 				if (errno == EINTR)
 					continue;
