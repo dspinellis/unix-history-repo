@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static	char sccsid[] = "@(#)asparse.c 4.4 %G%";
+static	char sccsid[] = "@(#)asparse.c 4.5 %G%";
 #include <stdio.h>
 #include "as.h"
 #include "asexpr.h"
@@ -1035,13 +1035,8 @@ int funnyreg(val, regnoback)		/*what the read head will sit on*/
 yyerror(s, a1, a2,a3,a4,a5)
 	char	*s;
 {
-	FILE		*sink;
 
-#ifdef DEBUG
-	sink = stdout;
-#else not DEBUG
-	sink = stderr;
-#endif DEBUG
+#define	sink stdout
 
 	if (anyerrs == 0 && ! silent) 
 		fprintf(sink, "Assembler:\n");
