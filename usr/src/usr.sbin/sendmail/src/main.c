@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.55.1.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.87 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
