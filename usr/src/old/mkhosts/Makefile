@@ -1,51 +1,39 @@
-#
-# Copyright (c) 1988 Regents of the University of California.
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms are permitted
-# provided that the above copyright notice and this paragraph are
-# duplicated in all such forms and that any documentation, advertising
-# materials, and other materials related to such redistribution and
-# use acknowledge that the software was developed by the University
-# of California, Berkeley.  The name of the University may not be
-# used to endorse or promote products derived from this software
-# without specific prior written permission.  THIS SOFTWARE IS PROVIDED
-# ``AS IS'' AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-# WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
-# FITNESS FOR A PARTICULAR PURPOSE.
-#
-# @(#)Makefile	5.3 (Berkeley) %G%
-#
+#	@(#)Makefile	5.4 (Berkeley) %G%
 
-CFLAGS=	-O
-LIBC=	/lib/libc.a
 SRCS=	mkhosts.c
-OBJS=
-MAN=	mkhosts.0
+MAN8=	mkhosts.0
+.PATH:	${.CURDIR}
 
-all: mkhosts
+all: mkhosts ${MAN8}
 
-mkhosts: ${LIBC}
-	@echo "Mkhosts only works with the dbm version of the hostent routines."
-	@echo "If gethosts() is not in libc, mkhosts isn't installed."
-	-${CC} -o $@ ${CFLAGS} $@.c || make clean
+mkhosts: ${LIBC} mkhosts.c
+	@echo "Mkhosts requires the dbm version of the hostent(3) routines."
+	@echo "If gethosts(3) is not in libc, mkhosts will not be installed."
+	-${CC} -o ${.TARGET} ${CFLAGS} ${.CURDIR}/${.PREFIX}.c || \
+	    cd ${.CURDIR} && ${MAKE} clean
 
 clean:
-	rm -f ${OBJS} core mkhosts
+	rm -f core mkhosts mkhosts.o
 
 cleandir: clean
-	rm -f ${MAN} tags .depend
+	rm -f ${MAN8} tags .depend
 
 depend: ${SRCS}
-	mkdep -p ${CFLAGS} ${SRCS}
+	mkdep -p ${CFLAGS} ${.ALLSRC}
 
-install: ${MAN}
-	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8;
+install: maninstall
 	-if [ -f mkhosts ]; then \
-	    install -s -o bin -g bin -m 755 mkhosts ${DESTDIR}/usr/sbin; fi
+	    install ${STRIP} -o ${BINOWN} -g ${BINGRP} -m ${BINMODE} \
+		mkhosts ${DESTDIR}${BINDIR}; \
+	else \
+		exit 0; \
+	fi
 
 lint: ${SRCS}
-	lint ${CFLAGS} ${SRCS}
+	cd ${.CURDIR}; lint ${CFLAGS} ${LINTFLAGS} ${SRCS}
 
 tags: ${SRCS}
-	ctags ${SRCS}
+	cd ${.CURDIR}; ctags ${SRCS}
+
+.include <bsd.own.mk>
+.include <bsd.man.mk>
