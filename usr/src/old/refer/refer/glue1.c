@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)glue1.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)glue1.c	4.3 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -252,6 +252,8 @@ todir(t)
 char *t;
 {
 	char *s;
+
+	usedir[0] = 0;
 	s=t;
 	while (*s) s++;
 	while (s>=t && *s != '/') s--;
