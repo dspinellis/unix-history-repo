@@ -1,4 +1,4 @@
-/*	Locore.c	4.27	83/08/11	*/
+/*	Locore.c	6.1	83/08/11	*/
 
 #include "dz.h"
 #include "mba.h"
