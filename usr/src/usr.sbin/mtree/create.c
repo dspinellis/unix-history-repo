@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)create.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)create.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -247,17 +247,16 @@ output(offset, fmt, va_alist)
 #endif
 {
 	va_list ap;
-	int len;
 	char buf[1024];
 #if __STDC__
 	va_start(ap, fmt);
 #else
 	va_start(ap);
 #endif
-	len = vsnprintf(buf, sizeof(buf), fmt, ap);
+	(void)vsnprintf(buf, sizeof(buf), fmt, ap);
 	va_end(ap);
 
-	if (*offset + len > MAXLINELEN - 3) {
+	if (*offset + strlen(buf) > MAXLINELEN - 3) {
 		(void)printf(" \\\n%*s", INDENTNAMELEN, "");
 		*offset = INDENTNAMELEN;
 	}

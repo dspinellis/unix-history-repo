@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ex3.7recover.c	7.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)ex3.7recover.c	7.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>	/* mjm: BUFSIZ: stdio = 512, VMUNIX = 1024 */
@@ -780,7 +780,6 @@ fpr(fmt, va_alist)
 #endif
 {
 	va_list ap;
-	int len;
 	char buf[BUFSIZ];
 
 #if __STDC__
@@ -788,7 +787,7 @@ fpr(fmt, va_alist)
 #else
 	va_start(ap);
 #endif
-	len = vsnprintf(buf, sizeof(buf), fmt, ap);
+	(void)vsnprintf(buf, sizeof(buf), fmt, ap);
 	va_end(ap);
-	write(2, buf, len);
+	write(2, buf, strlen(buf));
 }

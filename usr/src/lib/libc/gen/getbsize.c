@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)getbsize.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)getbsize.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -75,7 +75,8 @@ underflow:		(void)fprintf(stderr,
 	} else
 		blocksize = n = 512;
 
-	*headerlenp = snprintf(header, sizeof(header), "%d%s-blocks", n, form);
+	(void)snprintf(header, sizeof(header), "%d%s-blocks", n, form);
+	*headerlenp = strlen(header);
 	*blocksizep = blocksize;
 	return (header);
 }
