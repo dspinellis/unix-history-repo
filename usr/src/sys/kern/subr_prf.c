@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_prf.c	7.25 (Berkeley) %G%
+ *	@(#)subr_prf.c	7.26 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -47,10 +47,10 @@ int	(*v_poll)() = cnpoll;		/* kdb hook to enable input polling */
 extern	cnputc();			/* standard console putc */
 int	(*v_putc)() = cnputc;          	/* routine to putc on virtual console */
 
-static void logpri __P((int level));
-static void putchar __P((int ch, int flags, struct tty *tp));
-void kprintf __P((const char *fmt, int flags, struct tty *tp, va_list));
-static void kprintn __P((u_long num, int base, int flags, struct tty *tp));
+static void  logpri __P((int level));
+static void  putchar __P((int ch, int flags, struct tty *tp));
+static void  kprintf __P((const char *fmt, int flags, struct tty *tp, va_list));
+static char *ksprintn __P((u_long num, int base, int *len));
 
 extern	cnputc();			/* standard console putc */
 extern	struct tty cons;		/* standard console tty */
@@ -228,9 +228,12 @@ static void
 logpri(level)
 	int level;
 {
+	register int ch;
+	register char *p;
 
 	putchar('<', TOLOG, NULL);
-	kprintn((u_long)level, 10, TOLOG, NULL);
+	for (p = ksprintn((u_long)level, 10, NULL); ch = *p--;)
+		putchar(ch, TOLOG, NULL);
 	putchar('>', TOLOG, NULL);
 }
 
@@ -285,7 +288,7 @@ printf(fmt /*, va_alist */)
  * The format %b is supported to decode error registers.
  * Its usage is:
  *
- *	kprintf("reg=%b\n", regval, "<base><arg>*");
+ *	printf("reg=%b\n", regval, "<base><arg>*");
  *
  * where <base> is the output base expressed as a control character, e.g.
  * \10 gives octal; \20 gives hex.  Each arg is a sequence of characters,
@@ -293,7 +296,7 @@ printf(fmt /*, va_alist */)
  * the next characters (up to a control character, i.e. a character <= 32),
  * give the name of the register.  Thus:
  *
- *	kprintf("reg=%b\n", 3, "\10\2BITTWO\1BITONE\n");
+ *	printf("reg=%b\n", 3, "\10\2BITTWO\1BITONE\n");
  *
  * would produce output:
  *
@@ -307,9 +310,12 @@ printf(fmt /*, va_alist */)
  *	char *fmt;
  *	u_int arg1, ...;
  *
- *	kprintf("prefix: %r, other stuff\n", fmt, ap);
+ *	printf("prefix: %r, other stuff\n", fmt, ap);
+ *
+ * Space or zero padding and a field width are supported for the numeric
+ * formats only.
  */
-void
+static void
 kprintf(fmt, flags, tp, ap)
 	register const char *fmt;
 	int flags;
@@ -318,10 +324,13 @@ kprintf(fmt, flags, tp, ap)
 {
 	register char *p;
 	register int ch, n;
-	unsigned long ul;
-	int lflag, set;
+	u_long ul;
+	int base, lflag, tmp, width;
+	char padc;
 
 	for (;;) {
+		padc = ' ';
+		width = 0;
 		while ((ch = *fmt++) != '%') {
 			if (ch == '\0')
 				return;
@@ -329,27 +338,40 @@ kprintf(fmt, flags, tp, ap)
 		}
 		lflag = 0;
 reswitch:	switch (ch = *fmt++) {
+		case '0':
+			padc = '0';
+			goto reswitch;
+		case '1': case '2': case '3': case '4':
+		case '5': case '6': case '7': case '8': case '9':
+			for (width = 0;; ++fmt) {
+				width = width * 10 + ch - '0';
+				ch = *fmt;
+				if (ch < '0' || ch > '9')
+					break;
+			}
+			goto reswitch;
 		case 'l':
 			lflag = 1;
 			goto reswitch;
 		case 'b':
 			ul = va_arg(ap, int);
 			p = va_arg(ap, char *);
-			kprintn(ul, *p++, flags, tp);
+			for (p = ksprintn(ul, *p++, NULL); ch = *p--;)
+				putchar(ch, flags, tp);
 
 			if (!ul)
 				break;
 
-			for (set = 0; n = *p++;) {
+			for (tmp = 0; n = *p++;) {
 				if (ul & (1 << (n - 1))) {
-					putchar(set ? ',' : '<', flags, tp);
+					putchar(tmp ? ',' : '<', flags, tp);
 					for (; (n = *p) > ' '; ++p)
 						putchar(n, flags, tp);
-					set = 1;
+					tmp = 1;
 				} else
 					for (; *p > ' '; ++p);
 			}
-			if (set)
+			if (tmp)
 				putchar('>', flags, tp);
 			break;
 		case 'c':
@@ -364,67 +386,41 @@ reswitch:	switch (ch = *fmt++) {
 			while (ch = *p++)
 				putchar(ch, flags, tp);
 			break;
-		case 'D':
-			lflag = 1;
-			/* FALLTHROUGH */
 		case 'd':
-			ul = lflag ?
-			    va_arg(ap, long) : va_arg(ap, int);
+			ul = lflag ? va_arg(ap, long) : va_arg(ap, int);
 			if ((long)ul < 0) {
 				putchar('-', flags, tp);
 				ul = -(long)ul;
 			}
-			kprintn(ul, 10, flags, tp);
-			break;
-		case 'O':
-			lflag = 1;
-			/* FALLTHROUGH */
+			base = 10;
+			goto number;
 		case 'o':
-			ul = lflag ?
-			    va_arg(ap, u_long) : va_arg(ap, u_int);
-			kprintn(ul, 8, flags, tp);
-			break;
-		case 'U':
-			lflag = 1;
-			/* FALLTHROUGH */
+			ul = lflag ? va_arg(ap, u_long) : va_arg(ap, u_int);
+			base = 8;
+			goto number;;
 		case 'u':
-			ul = lflag ?
-			    va_arg(ap, u_long) : va_arg(ap, u_int);
-			kprintn(ul, 10, flags, tp);
-			break;
-		case 'X':
-			lflag = 1;
-			/* FALLTHROUGH */
+			ul = lflag ? va_arg(ap, u_long) : va_arg(ap, u_int);
+			base = 10;
+			goto number;
 		case 'x':
-			ul = lflag ?
-			    va_arg(ap, u_long) : va_arg(ap, u_int);
-			kprintn(ul, 16, flags, tp);
+			ul = lflag ? va_arg(ap, u_long) : va_arg(ap, u_int);
+			base = 16;
+number:			p = ksprintn(ul, base, &tmp);
+			if (width && (width -= tmp) > 0)
+				while (width--)
+					putchar(padc, flags, tp);
+			while (ch = *p--)
+				putchar(ch, flags, tp);
 			break;
 		default:
 			putchar('%', flags, tp);
 			if (lflag)
 				putchar('l', flags, tp);
+			/* FALLTHROUGH */
+		case '%':
 			putchar(ch, flags, tp);
 		}
 	}
-}
-
-static void
-kprintn(ul, base, flags, tp)
-	u_long ul;
-	int base, flags;
-	struct tty *tp;
-{
-					/* hold a long in base 8 */
-	char *p, buf[(sizeof(long) * NBBY / 3) + 1];
-
-	p = buf;
-	do {
-		*p++ = "0123456789abcdef"[ul % base];
-	} while (ul /= base);
-	do {
-		putchar(*--p, flags, tp);
-	} while (p > buf);
 }
 
 /*
