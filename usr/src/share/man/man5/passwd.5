@@ -1,69 +1,111 @@
-.\"	@(#)passwd.5	6.2 (Berkeley) %G%
+.\" Copyright (c) 1988 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)passwd.5	6.3 (Berkeley) %G%
 .\"
 .TH PASSWD 5  ""
 .AT 3
 .SH NAME
-passwd \- password file
+passwd \- password files
 .SH DESCRIPTION
 .I Passwd
-contains for each user the
-following information:
-.HP 10
-name (login name, contains no upper case)
-.br
-.ns
-.HP 10
-encrypted password
-.br
-.ns
-.HP 10
-numerical user ID
-.br
-.ns
-.HP 10
-numerical group ID
-.br
-.ns
-.HP 10
-user's real name, office, extension, home phone.
-.br
-.ns
-.HP 10
-initial working directory
-.br
-.ns
-.HP 10
-program to use as Shell
+files are files consisting of newline separated records, one per user,
+containing ten colon (``:'') separated fields.  These fields are as
+follows:
 .PP
-The name may contain `&', meaning insert the login name.
-This information is set by the
-.IR chfn (1)
-command and used by the
+.RS
+ name		user's login name
+ password		user's \fIencrypted\fP password
+ uid			user's id
+ gid			user's login group id
+ class		user's general classification (unused)
+ change		password change time
+ expire		account expiration time
+ gecos		general information about the user
+ home_dir		user's home directory
+ shell		user's login shell
+.RE
+.PP
+The
+.I name
+field is the login used to access the computer account, and the
+.I uid
+field is the number associated with it.  They should both be unique
+across the system (and often across a group of systems) since they
+control file access.
+.PP
+While it is possible to have multiple entries with identical login names
+and/or identical user id's, it is usually a mistake to do so.  Routines
+that manipulate these files will often return only one of the multiple
+entries, and that one by random selection.
+.PP
+The password field is the
+.I encrypted
+form of the password.
+If the
+.I password
+field is empty, no password will be required to gain access to the
+machine.  This is almost invariably a mistake.
+Because these files contain the encrypted user passwords, they should
+not be readable by anyone without appropriate privileges.
+.PP
+The group field is the group that the user will be placed in upon login.
+Since this system supports multiple groups (see
+.IR groups (1))
+this field currently has little special meaning.
+.PP
+The
+.I class
+field is currently unused.  In the near future it will be a key to
+a
+.IR termcap (5)
+style database of user attributes.
+.PP
+The
+.I change
+field is the number in seconds, GMT, from the epoch, until the
+password for the account must be changed.
+.PP
+The
+.I expire
+field is the number in seconds, GMT, from the epoch, until the
+account expires.
+.PP
+The
+.I gecos
+field normally contains comma (``,'') separated subfields as follows:
+.PP
+.RS
+ name		user's full name
+ office		user's office number
+ wphone		user's work phone number
+ hphone		user's home phone number
+.RE
+.PP
+This information is used by the
 .IR finger (1)
-command.
+program.
 .PP
-This is an ASCII file.  Each field within each user's entry
-is separated from the next by a colon.
-Each user is separated from the next by a new-line.
-If the password field is null, no password is demanded;
-if the Shell field is null, then
-.I /bin/sh
-is used.
+The user's home directory is the full UNIX path name where the user
+will be placed on login.
 .PP
-This file resides in directory /etc.
-Because of the encrypted
-passwords, it can and does have general read
-permission and can be used, for example,
-to map numerical user ID's to names.
-.PP
-Appropriate precautions must be taken to lock the file against changes
-if it is to be edited with a text editor;
-.IR vipw (8)
-does the necessary locking.
-.SH FILES
-/etc/passwd
+The shell field is the command interpreter the user prefers.
+If the
+.I shell
+field is empty, the Bourne shell (\fI/bin/sh\fP) is assumed.
 .SH "SEE ALSO"
-getpwent(3), login(1), crypt(3), passwd(1), group(5), chfn(1), finger(1),
-vipw(8), adduser(8)
+chpass(1), login(1), passwd(1), getpwent(3), mkpasswd(8), vipw(8) adduser(8)
 .SH BUGS
-User information (name, office, etc.) should be stored elsewhere.
+User information should (and eventually will) be stored elsewhere.
