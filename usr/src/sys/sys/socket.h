@@ -1,4 +1,4 @@
-/*	socket.h	4.12	82/01/13	*/
+/*	socket.h	4.13	82/01/24	*/
 
 /*
  * Externally visible attributes of sockets.
@@ -37,7 +37,7 @@
  */
 struct sockproto {
 	short	sp_family;		/* protocol family */
-	u_short	sp_protocol;		/* protocol within family */
+	short	sp_protocol;		/* protocol within family */
 };
 
 #define	PF_UNSPEC	0		/* unspecified */
