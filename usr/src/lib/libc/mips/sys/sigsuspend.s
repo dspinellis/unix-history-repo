@@ -11,7 +11,7 @@
 #include "SYS.h"
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	ASMSTR("@(#)sigsuspend.s	5.1 (Berkeley) %G%")
+	ASMSTR("@(#)sigsuspend.s	5.2 (Berkeley) %G%")
 #endif /* LIBC_SCCS and not lint */
 
 LEAF(sigsuspend)
@@ -19,7 +19,7 @@ LEAF(sigsuspend)
 	li	v0, SYS_sigsuspend
 	syscall
 	bne	a3, zero, 1f
-	move	v0, zero		# shouldn't happen
+	move	v0, zero		# should not happen
 	j	ra
 1:
 	j	_cerror
