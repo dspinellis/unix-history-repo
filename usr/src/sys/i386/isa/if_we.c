@@ -7,7 +7,7 @@
  *
  * %sccs.include.noredist.c%
  *
- *	@(#)if_we.c	5.2 (Berkeley) %G%
+ *	@(#)if_we.c	5.3 (Berkeley) %G%
  */
 
 /*
@@ -22,10 +22,10 @@
  * Western Digital 8003 ethernet/starlan adapter
  *
  * Supports the following interface cards:
- * WD8003E, WD8003EBT, WD8003S, WD8003SBT
+ * WD8003E, WD8003EBT, WD8003S, WD8003SBT, WD8013EBT
  *
  * The Western Digital card is one of many AT/MCA ethernet interfaces
- * based on the National N8390/NS32490 Network Interface chip set.
+ * based on the National DS8390 Network Interface chip set.
  */
 #include "param.h"
 #include "mbuf.h"
@@ -81,7 +81,7 @@ struct	we_softc {
 	u_char	we_type;		/* interface type code		*/
 	u_short	we_vector;		/* interrupt vector 		*/
 	caddr_t	we_io_ctl_addr;		/* i/o bus address, control	*/
-	caddr_t	we_io_nic_addr;		/* i/o bus address, NS32490	*/
+	caddr_t	we_io_nic_addr;		/* i/o bus address, DS8390	*/
 
 	caddr_t	we_vmem_addr;		/* card RAM virtual memory base */
 	u_long	we_vmem_size;		/* card RAM bytes		*/
@@ -220,7 +220,7 @@ westop(unit)
 	int s;
  
 	/*
-	 * Shutdown NS32490
+	 * Shutdown DS8390
 	 */
 	s = splimp();
 	wecmd.cs_byte = inb(sc->we_io_nic_addr + WD_P0_COMMAND);
@@ -232,7 +232,7 @@ westop(unit)
 }
 
 /*
- * Initialization of interface (really just NS32490). 
+ * Initialization of interface (really just DS8390). 
  */
 weinit(unit)
 	int unit;
@@ -251,7 +251,7 @@ weinit(unit)
 		return;
 
 	/*
-	 * Initialize NS32490 in order given in NSC NIC manual.
+	 * Initialize DS8390 in order given in NSC NIC manual.
 	 * this is stock code...please see the National manual for details.
 	 */
 	s = splhigh();
@@ -271,7 +271,6 @@ weinit(unit)
 		sc->we_vmem_size / WD_PAGE_SIZE);
 	outb(sc->we_io_nic_addr + WD_P0_BNRY, WD_TXBUF_SIZE);
 	outb(sc->we_io_nic_addr + WD_P0_ISR, 0xff);
-#define WD_I_CONFIG	0xff
 	outb(sc->we_io_nic_addr + WD_P0_IMR, WD_I_CONFIG);
 	wecmd.cs_ps = 1;
 	outb(sc->we_io_nic_addr + WD_P0_COMMAND, wecmd.cs_byte);
@@ -311,7 +310,7 @@ westart(unit)
 	union we_command wecmd;
  
 	/*
-	 * The NS32490 has only one transmit buffer, if it is busy we
+	 * The DS8390 has only one transmit buffer, if it is busy we
 	 * must wait until the transmit interrupt completes.
 	 */
 	s = splhigh();
@@ -342,17 +341,13 @@ westart(unit)
 	 * back because the hardware can't hear its own
 	 * transmits.
 	 */
-#ifdef notyet
 	if (bcmp((caddr_t)(mtod(m0, struct ether_header *)->ether_dhost),
 	   (caddr_t)etherbroadcastaddr,
 	   sizeof(etherbroadcastaddr)) == 0) {
 		weread(sc, m0);
 	} else {
-#endif
 		m_freem(m0);
-#ifdef notyet
 	}
-#endif
 
 	/*
 	 * Init transmit length registers, and set transmit start flag.
@@ -386,18 +381,13 @@ weintr(unit)
 	wecmd.cs_byte = inb(sc->we_io_nic_addr + WD_P0_COMMAND);
 	wecmd.cs_ps = 0;
 	outb(sc->we_io_nic_addr + WD_P0_COMMAND, wecmd.cs_byte);
-	/* outb(sc->we_io_nic_addr + WD_P0_IMR, 0); */
+	outb(sc->we_io_nic_addr + WD_P0_IMR, 0);
 	weisr.is_byte = inb(sc->we_io_nic_addr + WD_P0_ISR);
-#ifdef notdef
-printf("weintr %x ", inb(sc->we_io_nic_addr + WD_P0_ISR));
-outb(sc->we_io_nic_addr+WD_P0_IMR,0xff);
-#endif
 	outb(sc->we_io_nic_addr + WD_P0_ISR, 0xff);
 	(void) splx(s);
 
 	/* transmit error */
 	if (weisr.is_txe) {
-printf("txe\n");
 		/* need to read these registers to clear status */
 		sc->we_if.if_collisions +=
 		    inb(sc->we_io_nic_addr + WD_P0_TBCR0);
@@ -406,7 +396,6 @@ printf("txe\n");
 
 	/* receiver error */
 	if (weisr.is_rxe) {
-printf("rxe\n");
 		/* need to read these registers to clear status */
 		(void) inb(sc->we_io_nic_addr + 0xD);
 		(void) inb(sc->we_io_nic_addr + 0xE);
@@ -476,17 +465,13 @@ static Bdry;
 	wecmd.cs_ps = 1;
 	outb(sc->we_io_nic_addr + WD_P0_COMMAND, wecmd.cs_byte);
 	curr = inb(sc->we_io_nic_addr + WD_P1_CURR);
-printf("Bd %x cur %x ", bnry, curr);
-if(Bdry && Bdry > bnry){
+if(Bdry && Bdry > bnry)
 	bnry =Bdry;
-printf("bd %x! ", bnry);
-}
 	while (bnry != curr)
 	{
 		/* get pointer to this buffer header structure */
 		wer = (struct we_ring *)(sc->we_vmem_addr + (bnry << 8));
         	len = wer->we_count - 4;	/* count includes CRC */
-printf("l %d", len);
 		pkt = (caddr_t)(wer + 1) /*- 2*/;	/* 2 - word align pkt data */
         	count = len /*+ 2*/;		/* copy two extra bytes */
 		endp = (caddr_t)(sc->we_vmem_addr + sc->we_vmem_size);
@@ -527,7 +512,6 @@ printf("l %d", len);
 
 outofbufs:
 		/* advance on chip Boundry register */
-printf("nx %x ", wer->we_next_packet);
 		bnry = wer->we_next_packet;
 		wecmd.cs_byte = inb(sc->we_io_nic_addr + WD_P0_COMMAND);
 		wecmd.cs_ps = 0;
@@ -549,9 +533,7 @@ printf("nx %x ", wer->we_next_packet);
 		wecmd.cs_ps = 1;
 		outb(sc->we_io_nic_addr + WD_P0_COMMAND, wecmd.cs_byte);
 		curr = inb(sc->we_io_nic_addr + WD_P1_CURR);
-printf("bd %x cur %x ", bnry-1, curr);
 	}
-printf("bD %x\n", bnry);
 Bdry = bnry;
 }
 
@@ -761,18 +743,15 @@ weread(sc, m)
 	m->m_len += sizeof (struct ifnet *);
 	*(mtod(m, struct ifnet **)) = &sc->we_if;
 
-printf("ty %x ", type);
 	switch (type) {
 
 #ifdef INET
 	case ETHERTYPE_IP:
-printf("ip ");
 		scn = NETISR_IP;
 		inq = &ipintrq;
 		break;
 
 	case ETHERTYPE_ARP:
-printf("arp ");
 		arpinput(&sc->we_ac, m);
 		return;
 #endif
