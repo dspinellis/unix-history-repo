@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sd.c	7.4 (Berkeley) %G%
+ *	@(#)sd.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -540,6 +540,11 @@ sdioctl(dev, cmd, data, flag, p)
 		((struct partinfo *)data)->disklab = lp;
 		((struct partinfo *)data)->part =
 		    &lp->d_partitions[sdpart(dev)];
+		break;
+
+        case DIOCWLABEL:
+        case DIOCSDINFO:
+        case DIOCWDINFO:
 		break;
 
 	default:
