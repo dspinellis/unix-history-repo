@@ -1,4 +1,4 @@
-/*	trace.h	4.3	83/05/25	*/
+/*	trace.h	4.4	84/04/09	*/
 
 /*
  * Routing table management daemon.
@@ -24,6 +24,7 @@ struct	iftrace {
 struct	ifdebug {
 	struct	iftrace *ifd_records;	/* array of trace records */
 	struct	iftrace *ifd_front;	/* next empty trace record */
+	int	ifd_count;		/* number of unprinted records */
 	struct	interface *ifd_if;	/* for locating stuff */
 };
 

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)timer.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)timer.c	4.5 (Berkeley) %G%";
 #endif
 
 /*
@@ -72,4 +72,31 @@ again:
 	if (timetobroadcast)
 		toall(supply);
 	alarm(TIMER_RATE);
+}
+
+/*
+ * On hangup, let everyone know we're going away.
+ */
+hup()
+{
+	register struct rthash *rh;
+	register struct rt_entry *rt;
+	struct rthash *base = hosthash;
+	int doinghost = 1;
+
+	if (supplier) {
+again:
+		for (rh = base; rh < &base[ROUTEHASHSIZ]; rh++) {
+			rt = rh->rt_forw;
+			for (; rt != (struct rt_entry *)rh; rt = rt->rt_forw)
+				rt->rt_metric = HOPCNT_INFINITY;
+		}
+		if (doinghost) {
+			doinghost = 0;
+			base = nethash;
+			goto again;
+		}
+		toall(supply);
+	}
+	exit(1);
 }
