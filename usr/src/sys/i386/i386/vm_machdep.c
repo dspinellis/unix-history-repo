@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_machdep.c	5.8 (Berkeley) %G%
+ *	@(#)vm_machdep.c	7.1 (Berkeley) %G%
  */
 
 /*
@@ -79,11 +79,11 @@ cpu_fork(p1, p2)
 	 * First, fault in a page of pte's to map it.
 	 */
         addr = trunc_page((u_int)vtopte(kstack));
-	(void)vm_fault(p2->p_vmspace->vm_map,
+	(void)vm_fault(&p2->p_vmspace->vm_map,
 		trunc_page((u_int)vtopte(kstack)), VM_PROT_READ, FALSE);
 	for (i=0; i < UPAGES; i++)
-		pmap_enter(p2->p_vmspace->vm_pmap, kstack+i*NBPG,
-			pmap_extract(kernel_pmap, p2->p_addr), VM_PROT_READ, 1);
+		pmap_enter(&p2->p_vmspace->vm_pmap, kstack+i*NBPG,
+			pmap_extract(kernel_pmap, ((int)p2->p_addr)+i*NBPG), VM_PROT_READ, 1);
 
 	pmap_activate(&p2->p_vmspace->vm_pmap, &up->u_pcb);
 
@@ -101,6 +101,7 @@ cpu_fork(p1, p2)
 	return (0);
 }
 
+#ifdef notyet
 /*
  * cpu_exit is called as the last action during exit.
  *
@@ -117,7 +118,7 @@ cpu_fork(p1, p2)
  */
 struct proc *swtch_to_inactive();
 cpu_exit(p)
-	struct proc *p;
+	register struct proc *p;
 {
 	static struct pcb nullpcb;	/* pcb to overwrite on last swtch */
 
@@ -132,6 +133,21 @@ cpu_exit(p)
 	swtch();
 	/* NOTREACHED */
 }
+#else
+cpu_exit(p)
+	register struct proc *p;
+{
+	
+	(void) vm_map_remove(&p->p_vmspace->vm_map, VM_MIN_ADDRESS,
+		    VM_MAXUSER_ADDRESS);
+	swtch();
+}
+cpu_wait(p) struct proc *p; {
+	/* drop per-process resources */
+	vmspace_free(p->p_vmspace);
+	kmem_free(kernel_map, (vm_offset_t)p->p_addr, ctob(UPAGES));
+}
+#endif
 
 /*
  * Set a red zone in the kernel stack after the u. area.

@@ -18,7 +18,7 @@
  * space, and to reduce the cost of memory to each process.
  *
  *	Derived from: hp300/@(#)pmap.c	7.1 (Berkeley) 12/5/90
- *	@(#)pmap.c	7.4	%G%
+ *	@(#)pmap.c	7.5	%G%
  */
 
 /*
@@ -570,7 +570,11 @@ pmap_remove(pmap, sva, eva)
 		} while (++ix != i386pagesperpage);
 		if (pmap == &curproc->p_vmspace->vm_pmap)
 			pmap_activate(pmap, (struct pcb *)curproc->p_addr);
-		load_cr3(((struct pcb *)curproc->p_addr)->pcb_ptd);
+		/* are we current address space or kernel? */
+		/*if (pmap->pm_pdir[PTDPTDI].pd_pfnum == PTDpde.pd_pfnum
+			|| pmap == kernel_pmap)
+		load_cr3(curpcb->pcb_ptd);*/
+		tlbflush();
 
 #ifdef needednotdone
 reduce wiring count on page table pages as references drop
@@ -965,7 +969,31 @@ validate:
 cache, tlb flushes
 #endif
 /*pads(pmap);*/
-	load_cr3(((struct pcb *)curproc->p_addr)->pcb_ptd);
+	/*load_cr3(((struct pcb *)curproc->p_addr)->pcb_ptd);*/
+	tlbflush();
+}
+
+/*
+ *      pmap_page_protect:
+ *
+ *      Lower the permission for all mappings to a given page.
+ */
+void
+pmap_page_protect(phys, prot)
+        vm_offset_t     phys;
+        vm_prot_t       prot;
+{
+        switch (prot) {
+        case VM_PROT_READ:
+        case VM_PROT_READ|VM_PROT_EXECUTE:
+                pmap_copy_on_write(phys);
+                break;
+        case VM_PROT_ALL:
+                break;
+        default:
+                pmap_remove_all(phys);
+                break;
+        }
 }
 
 /*
@@ -1057,7 +1085,7 @@ struct pte *pmap_pte(pmap, va)
 			if (pmap->pm_pdir[PTDPTDI].pd_pfnum
 				!= APTDpde.pd_pfnum) {
 				APTDpde = pmap->pm_pdir[PTDPTDI];
-				load_cr3(((struct pcb *)curproc->p_addr)->pcb_ptd);
+				tlbflush();
 			}
 			return((struct pte *) avtopte(va));
 		}
@@ -1131,7 +1159,7 @@ void pmap_update()
 	if (pmapdebug & PDB_FOLLOW)
 		printf("pmap_update()");
 #endif
-	load_cr3(((struct pcb *)curproc->p_addr)->pcb_ptd);
+	tlbflush();
 }
 
 /*
