@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)more.c	4.5 (Berkeley) 82/03/15";
+static	char *sccsid = "@(#)more.c	4.6 (Berkeley) 82/05/11";
 
 /*
 ** more.c - General purpose tty output filter and file perusal program
@@ -16,7 +16,6 @@ static	char *sccsid = "@(#)more.c	4.5 (Berkeley) 82/03/15";
 #include <sgtty.h>
 #include <setjmp.h>
 #include <sys/types.h>
-#include <sys/dir.h>
 #include <sys/stat.h>
 #include <local/uparm.h>
 
