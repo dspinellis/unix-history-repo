@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)chdir.2	6.3 (Berkeley) %G%
+.\"	@(#)chdir.2	6.4 (Berkeley) %G%
 .\"
 .TH CHDIR 2 ""
 .UC 4
@@ -15,11 +15,24 @@ chdir(path)
 char *path;
 .ft R
 .fi
+.LP
+.nf
+.ft B
+fchdir(fd)
+int fd;
+.fi
+.ft R
 .SH DESCRIPTION
 .I Path
 is the pathname of a directory.
 .I Chdir
 causes this directory
+to become the current working directory,
+the starting point for path names not beginning with ``/''.
+.PP
+.I Fchdir
+causes the directory referenced by
+.I fd
 to become the current working directory,
 the starting point for path names not beginning with ``/''.
 .PP
@@ -60,5 +73,16 @@ points outside the process's allocated address space.
 .TP 15
 [EIO]
 An I/O error occurred while reading from or writing to the file system.
+.LP
+.I Fchdir
+will fail and the current working directory will be unchanged if
+one or more of the following are true:
+.TP 15
+[ENOTDIR]
+The file descriptor does not reference a directory.
+.TP 15
+EBADF
+.I fd
+is not a valid open file descriptor.
 .SH "SEE ALSO"
 chroot(2)
