@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.2.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.2.1.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -40,10 +40,14 @@ static char sccsid[] = "@(#)rlogind.c	5.2.1.1 (Berkeley) %G%";
 #include <syslog.h>
 #include <strings.h>
 
+# ifndef TIOCPKT_WINDOW
+# define TIOCPKT_WINDOW 0x80
+# endif TIOCPKT_WINDOW
+
 extern	errno;
 int	reapchild();
 struct	passwd *getpwnam();
-char	*crypt(), *malloc();
+char	*malloc();
 
 main(argc, argv)
 	int argc;
@@ -71,6 +75,7 @@ int	netf;
 extern	errno;
 char	*line;
 extern	char	*inet_ntoa();
+
 
 doit(f, fromp)
 	int f;
@@ -114,7 +119,7 @@ doit(f, fromp)
 				goto gotpty;
 		}
 	}
-	fatal(f, "All network ports in use");
+	fatal(f, "Out of ptys");
 	/*NOTREACHED*/
 gotpty:
 	netf = f;
@@ -188,7 +193,8 @@ protocol(f, p)
 {
 	char pibuf[1024], fibuf[1024], *pbp, *fbp;
 	register pcc = 0, fcc = 0;
-	int cc, stop = TIOCPKT_DOSTOP;
+	int cc, stop = TIOCPKT_DOSTOP, wsize;
+	static char oob[] = {TIOCPKT_WINDOW};
 
 	/*
 	 * Must ignore SIGTTOU, otherwise we'll stop
@@ -196,6 +202,7 @@ protocol(f, p)
 	 * (our pgrp is that of the master pty).
 	 */
 	(void) signal(SIGTTOU, SIG_IGN);
+	send(f, oob, 1, MSG_OOB);	/* indicate new rlogin */
 	for (;;) {
 		int ibits = 0, obits = 0;
 
@@ -229,6 +236,7 @@ protocol(f, p)
 				if (fcc <= 0)
 					break;
 				fbp = fibuf;
+
 			top:
 				for (cp = fibuf; cp < fibuf+fcc; cp++)
 					if (cp[0] == magic[0] &&
@@ -241,10 +249,23 @@ protocol(f, p)
 								bcopy(cp, cp+n, left);
 							fcc -= n;
 							goto top; /* n^2 */
-						}
-					}
+						} /* if (n) */
+					} /* for (cp = ) */
+				} /* else */
+		} /* if (ibits & (1<<f)) */
+
+		if ((obits & (1<<p)) && fcc > 0) {
+			wsize = fcc;
+			do {
+				cc = write(p, fbp, wsize);
+				wsize /= 2;
+			} while (cc<0 && errno==EWOULDBLOCK && wsize);
+			if (cc > 0) {
+				fcc -= cc;
+				fbp += cc;
 			}
 		}
+
 		if (ibits & (1<<p)) {
 			pcc = read(p, pibuf, sizeof (pibuf));
 			pbp = pibuf;
@@ -256,6 +277,8 @@ protocol(f, p)
 				pbp++, pcc--;
 			else {
 #define	pkcontrol(c)	((c)&(TIOCPKT_FLUSHWRITE|TIOCPKT_NOSTOP|TIOCPKT_DOSTOP))
+				int out = FREAD;
+
 				if (pkcontrol(pibuf[0])) {
 				/* The following 3 lines do nothing. */
 					int nstop = pibuf[0] &
@@ -265,27 +288,22 @@ protocol(f, p)
 						stop = nstop;
 					pibuf[0] |= nstop;
 					send(f, &pibuf[0], 1, MSG_OOB);
+					if (pibuf[0] & TIOCPKT_FLUSHWRITE)
+					  ioctl(p, TIOCFLUSH, (char *)&out);
+
 				}
 				pcc = 0;
 			}
 		}
 		if ((obits & (1<<f)) && pcc > 0) {
-			cc = write(f, pbp, pcc);
-			if (cc < 0 && errno == EWOULDBLOCK) {
-				/* also shouldn't happen */
-				sleep(5);
-				continue;
-			}
+			wsize = pcc;
+			do {
+				cc = write(f, pbp, wsize);
+				wsize /= 2;
+			} while (cc<0 && errno==EWOULDBLOCK && wsize);
 			if (cc > 0) {
 				pcc -= cc;
 				pbp += cc;
-			}
-		}
-		if ((obits & (1<<p)) && fcc > 0) {
-			cc = write(p, fbp, fcc);
-			if (cc > 0) {
-				fcc -= cc;
-				fbp += cc;
 			}
 		}
 	}
