@@ -7,16 +7,22 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mkboottape.c	7.1 (Berkeley) %G%
+ *	@(#)mkboottape.c	7.2 (Berkeley) %G%
  */
 
-#include <stdio.h>
 #include <sys/param.h>
+#include <sys/stat.h>
 #include <sys/exec.h>
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <string.h>
 #include "../dev/devDiskLabel.h"
 
-char	block[DEV_BSIZE];
-char	*tapedev, *rootdev, *bootfname;
+void err __P((const char *, ...));
+void usage __P((void));
 
 /*
  * This program takes a kernel and the name of the special device file that
@@ -26,76 +32,75 @@ char	*tapedev, *rootdev, *bootfname;
  *
  * usage: mkboottape [-b] tapedev vmunix minirootdev size
  */
+int
 main(argc, argv)
 	int argc;
 	char *argv[];
 {
 	register int i, n;
-	int ifd, ofd, rfd;
 	Dec_DiskBoot decBootInfo;
 	ProcSectionHeader shdr;
 	struct exec aout;
-	int nsectors;
 	long loadAddr;
 	long execAddr;
 	long textoff;
 	long length;
 	long rootsize;
-	int makebootfile = 0;
+	int ifd, ofd, rfd;
+	int makebootfile;
+	int nsectors;
+	char block[DEV_BSIZE];
 
-	if (argc > 1 && strcmp(argv[1], "-b") == 0) {
-		argc--;
-		argv++;
-		makebootfile = 1;
-	}
+	makebootfile = 0;
+	while ((i = getopt(argc, argv, "b")) != EOF)
+		switch(i) {
+		case 'b':
+			makebootfile = 1;
+			break;
+		case '?':
+		default:
+			usage();
+		}
+	argc -= optind;
+	argv += optind;
+
 	if (argc != 5)
 		usage();
-	tapedev = argv[1];
-	bootfname = argv[2];
-	rootdev = argv[3];
 	rootsize = atoi(argv[4]);
-	ifd = open(bootfname, 0, 0);
-	if (ifd < 0) {
-	bootferr:
-		perror(bootfname);
-		exit(1);
-	}
-	rfd = open(rootdev, 0, 0);
-	if (rfd < 0) {
-		perror(rootdev);
-		exit(1);
-	}
+
 	if (makebootfile)
-		ofd = creat(tapedev, 0666);
+		ofd = open(argv[1], O_CREAT|O_TRUNC|O_WRONLY, DEFFILEMODE);
 	else
-		ofd = open(tapedev, 2, 0);
-	if (ofd < 0) {
-	deverr:
-		perror(tapedev);
-		exit(1);
-	}
+		ofd = open(argv[1], O_RDWR, 0);
+	if (ofd < 0)
+deverr:		err("%s: %s", argv[1], strerror(errno));
+
+	if ((ifd = open(argv[2], O_RDONLY, 0)) < 0)
+bootferr:	err("%s: %s", argv[2], strerror(errno));
+
+	if ((rfd = open(argv[3], 0, 0)) < 0)
+rooterr:	err("%s: %s", argv[3], strerror(errno));
+
 
 	/*
 	 * Check for exec header and skip to code segment.
 	 */
-	i = read(ifd, (char *)&aout, sizeof(aout));
-	if (i != sizeof(aout) || aout.ex_fhdr.magic != COFF_MAGIC ||
-	    aout.a_magic != OMAGIC) {
-		fprintf(stderr, "Need impure text format (OMAGIC) file\n");
-		exit(1);
-	}
+	if (read(ifd, &aout, sizeof(aout)) != sizeof(aout) ||
+	    aout.ex_fhdr.magic != COFF_MAGIC || aout.a_magic != OMAGIC)
+		err("need impure text format (OMAGIC) file");
+
 	loadAddr = aout.ex_aout.codeStart;
 	execAddr = aout.a_entry;
 	length = aout.a_text + aout.a_data;
 	textoff = N_TXTOFF(aout);
-	printf("Input file is COFF format\n");
-	printf("load %x, start %x, len %d\n", loadAddr, execAddr, length);
+	(void)printf("Input file is COFF format\n");
+	(void)printf("load %x, start %x, len %d\n", loadAddr, execAddr, length);
 
 	/*
 	 * Compute size of boot program rounded to page size + mini-root size.
 	 */
 	nsectors = (((length + aout.a_bss + NBPG - 1) & ~(NBPG - 1)) >>
-		DEV_BSHIFT) + rootsize;
+	    DEV_BSHIFT) + rootsize;
 
 	if (makebootfile) {
 		/*
@@ -141,14 +146,13 @@ main(argc, argv)
 			goto deverr;
 	}
 	/* seek to start of text */
-	if (lseek(ifd, textoff, 0) < 0)
+	if (lseek(ifd, textoff, SEEK_SET) < 0)
 		goto bootferr;
 
 	/*
 	 * Write the remaining code to the correct place on the tape.
 	 */
-	i = length;
-	while (i > 0) {
+	for (i = length; i > 0; i -= n) {
 		n = DEV_BSIZE;
 		if (n > i)
 			n = i;
@@ -156,48 +160,68 @@ main(argc, argv)
 			goto bootferr;
 		if (write(ofd, block, n) != n)
 			goto deverr;
-		i -= n;
 	}
 
 	/*
 	 * Pad the boot file with zeros to the start of the mini-root.
 	 */
 	bzero(block, DEV_BSIZE);
-	i = ((nsectors - rootsize) << DEV_BSHIFT) - length;
-	while (i > 0) {
+	for (i = ((nsectors - rootsize) << DEV_BSHIFT) - length;
+	    i > 0; i -= n) {
 		n = DEV_BSIZE;
 		if (n > i)
 			n = i;
 		if (write(ofd, block, n) != n)
 			goto deverr;
-		i -= n;
 	}
 
 	/*
 	 * Write the mini-root to tape.
 	 */
-	i = rootsize;
-	while (i > 0) {
-		if (read(rfd, block, DEV_BSIZE) != DEV_BSIZE) {
-			perror(rootdev);
-			break;
-		}
+	for (i = rootsize; i > 0; i--) {
+		if (read(rfd, block, DEV_BSIZE) != DEV_BSIZE)
+			goto rooterr;
 		if (write(ofd, block, DEV_BSIZE) != DEV_BSIZE)
 			goto deverr;
-		i--;
 	}
 
-	printf("Wrote %d sectors\n", nsectors);
+	(void)printf("mkboottape: wrote %d sectors\n", nsectors);
 	exit(0);
 }
 
+void
 usage()
 {
-	printf("Usage: mkboottape [-b] tapedev vmunix minirootdev size\n");
-	printf("where:\n");
-	printf("\t\"tapedev\" is the tape drive device\n");
-	printf("\t\"vmunix\" is a -N format file\n");
-	printf("\t\"minitrootdev\" is the character device of a mini-root file system disk\n");
-	printf("\t\"size\" is the number of 512 byte blocks in the file system\n");
+	(void)fprintf(stderr,
+	    "usage: mkboottape [-b] tapedev vmunix minirootdev size\n");
 	exit(1);
+}
+
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+
+void
+#if __STDC__
+err(const char *fmt, ...)
+#else
+err(fmt, va_alist)
+	char *fmt;
+        va_dcl
+#endif
+{
+	va_list ap;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	(void)fprintf(stderr, "mkboottape: ");
+	(void)vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	(void)fprintf(stderr, "\n");
+	exit(1);
+	/* NOTREACHED */
 }
