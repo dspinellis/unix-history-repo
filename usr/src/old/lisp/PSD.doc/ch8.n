@@ -2,11 +2,11 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ch8.n	6.1 (Berkeley) %G%
+.\"	@(#)ch8.n	6.2 (Berkeley) %G%
 .\"
 ." $Header: ch8.n,v 1.4 83/07/27 15:12:22 layer Exp $
 .Lc Functions,\ Fclosures,\ and\ Macros 8
-.sh 2 valid\ function\ objects 8
+.sh 2 valid\ function\ objects \n(ch 1
 .pp
 There are many different objects which can occupy the function field of 
 a symbol object.
@@ -583,7 +583,7 @@ compiled Lisp function.
 The difference is that the discipline field of a binary object
 for a foreign function is a string 
 whose first character is given in the following table:
-.sp 1v
+.(b
 .TS
 box center ;
 c | c .
@@ -604,6 +604,7 @@ _
 d	double-c-function
 _
 .TE
+.)b
 Two functions are provided for setting-up foreign functions.
 .i Cfasl
 loads an object file into the Lisp system and sets up one foreign
