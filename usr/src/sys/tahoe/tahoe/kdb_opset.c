@@ -1,10 +1,28 @@
-/*	kdb_opset.c	7.1	86/11/20	*/
+/*	kdb_opset.c	7.2	86/11/23	*/
 
 #include "../kdb/defs.h"
 
 /*
- * Instruction printing
+ * Instruction printing.
  */
+
+REGLIST reglist[] = {
+	"p2lr",	&pcb.pcb_p2lr,	"p2br",	(int *)&pcb.pcb_p2br,
+	"p1lr",	&pcb.pcb_p1lr,	"p1br",	(int *)&pcb.pcb_p1br,
+	"p0lr",	&pcb.pcb_p0lr,	"p0br",	(int *)&pcb.pcb_p0br,
+	"ksp",	&pcb.pcb_ksp,	"hfs",	&pcb.pcb_hfs,
+	"psl",	&pcb.pcb_psl,	"pc",	&pcb.pcb_pc,
+	"ach",	&pcb.pcb_ach,	"acl",	&pcb.pcb_acl,
+	"usp",	&pcb.pcb_usp,	"fp",	&pcb.pcb_fp,
+	"r12",	&pcb.pcb_r12,	"r11",	&pcb.pcb_r11,
+	"r10",	&pcb.pcb_r10,	"r9",	&pcb.pcb_r9,
+	"r8",	&pcb.pcb_r8,	"r7",	&pcb.pcb_r7,
+	"r6",	&pcb.pcb_r6,	"r5",	&pcb.pcb_r5,
+	"r4",	&pcb.pcb_r4,	"r3",	&pcb.pcb_r3,
+	"r2",	&pcb.pcb_r2,	"r1",	&pcb.pcb_r1,
+	"r0",	&pcb.pcb_r0,
+	0
+};
 
 /*
  * Argument access types
