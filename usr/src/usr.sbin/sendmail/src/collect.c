@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)collect.c	3.29	%G%";
+static char	SccsId[] = "@(#)collect.c	3.30	%G%";
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -64,6 +64,20 @@ maketemp(from)
 	InFileName = tempfname;
 
 	/*
+	**  Create the Mail-From line if we want to.
+	*/
+
+	if (macvalue('s') != NULL)
+	{
+		char xbuf[50];
+
+		sprintf(xbuf, "Mail-From: %s$s received by $i at $b",
+			macvalue('r') == NULL ? "" : "$r host ");
+		(void) expand(xbuf, buf, &buf[sizeof buf - 1]);
+		chompheader(buf, FALSE);
+	}
+
+	/*
 	**  Tell ARPANET to go ahead.
 	*/
 
@@ -87,7 +101,7 @@ maketemp(from)
 # endif NOTUNIX
 
 	/*
-	**  Copy stdin to temp file & do message editting.
+	**  Copy stdin to temp file & do message editing.
 	**	To keep certain mailers from getting confused,
 	**	and to keep the output clean, lines that look
 	**	like UNIX "From" lines are deleted in the header,

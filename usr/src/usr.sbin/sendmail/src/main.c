@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.56	%G%";
+static char	SccsId[] = "@(#)main.c	3.57	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -603,6 +603,17 @@ setfrom(from, realname)
 # ifndef V6
 	From.q_home = getenv("HOME");
 # endif V6
+
+	/*
+	**  Set up the $r and $s macros to show who it came from.
+	*/
+
+	if (From.q_host != NULL && From.q_host[0] != '\0')
+	{
+		define('s', From.q_host);
+
+		/* should determine network type here */
+	}
 
 	/*
 	**  Rewrite the from person to dispose of possible implicit

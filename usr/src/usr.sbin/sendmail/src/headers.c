@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)headers.c	3.12	%G%";
+static char	SccsId[] = "@(#)headers.c	3.13	%G%";
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -81,8 +81,7 @@ chompheader(line, def)
 	/* search header list for this header */
 	for (hp = &Header, h = Header; h != NULL; hp = &h->h_link, h = h->h_link)
 	{
-		if (strcmp(fname, h->h_field) == 0 && bitset(H_DEFAULT, h->h_flags) &&
-		    !(bitset(H_FORCE, h->h_flags) && !QueueRun))
+		if (strcmp(fname, h->h_field) == 0 && bitset(H_DEFAULT, h->h_flags))
 			break;
 	}
 
@@ -97,16 +96,21 @@ chompheader(line, def)
 	if (bitset(H_EOH, hi->hi_flags))
 		return (hi->hi_flags);
 
+	/* don't put timestamps in every queue run */
+	if (QueueRun && h != NULL && bitset(H_FORCE, h->h_flags))
+		return (h->h_flags);
+
 	/* create/fill in a new node */
-	if (h == NULL)
+	if (h == NULL || bitset(H_FORCE, h->h_flags))
 	{
 		/* create a new node */
-		*hp = h = (HDR *) xalloc(sizeof *h);
+		h = (HDR *) xalloc(sizeof *h);
 		h->h_field = newstr(fname);
 		h->h_value = NULL;
-		h->h_link = NULL;
+		h->h_link = *hp;
 		h->h_flags = hi->hi_flags;
 		h->h_mflags = mopts | hi->hi_mflags;
+		*hp = h;
 	}
 	if (def)
 		h->h_flags |= H_DEFAULT;

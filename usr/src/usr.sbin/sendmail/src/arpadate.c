@@ -6,7 +6,7 @@
 # endif
 # include "useful.h"
 
-static char SccsId[] = "@(#)arpadate.c	3.7	%G%";
+static char SccsId[] = "@(#)arpadate.c	3.8	%G%";
 
 /*
 **  ARPADATE -- Create date in ARPANET format
@@ -34,41 +34,6 @@ static char SccsId[] = "@(#)arpadate.c	3.7	%G%";
 **		the format is and work appropriately.
 */
 
-struct cvttab
-{
-	char	*old;
-	char	*new;
-};
-
-struct cvttab	DowTab[] =
-{
-	"Sun",		"Sunday",
-	"Mon",		"Monday",
-	"Tue",		"Tuesday",
-	"Wed",		"Wednesday",
-	"Thu",		"Thursday",
-	"Fri",		"Friday",
-	"Sat",		"Saturday",
-	NULL,		NULL
-};
-
-struct cvttab	MonthTab[] =
-{
-	"Jan",		"January",
-	"Feb",		"February",
-	"Mar",		"March",
-	"Apr",		"April",
-	"May",		"May",
-	"Jun",		"June",
-	"Jul",		"July",
-	"Aug",		"August",
-	"Sep",		"September",
-	"Oct",		"October",
-	"Nov",		"November",
-	"Dec",		"December",
-	NULL,		NULL
-};
-
 char *
 arpadate(ud)
 	register char *ud;
@@ -78,7 +43,6 @@ arpadate(ud)
 	static char b[40];
 	extern char *ctime();
 	register int i;
-	struct cvttab *c;
 	extern struct tm *localtime();
 # ifdef V6
 	long t;
@@ -118,38 +82,21 @@ arpadate(ud)
 	else
 		*q++ = *p++;
 	*q++ = *p++;
-	*q++ = ' ';
+	*q++ = '-';
 
-	p = NULL;		/* Sep */
-	for (c = MonthTab; c->old != NULL; c++)
-	{
-		if (strncmp(&ud[4], c->old, 3) == 0)
-		{
-			p = c->new;
-			break;
-		}
-	}
-	if (p != NULL)
-	{
-		while (*p != '\0')
-			*q++ = *p++;
-	}
-	else
-	{
-		p = &ud[4];
-		*q++ = *p++;
-		*q++ = *p++;
-		*q++ = *p++;
-	}
-	*q++ = ' ';
+	p = &ud[4];		/* Sep */
+	*q++ = *p++;
+	*q++ = *p++;
+	*q++ = *p++;
+	*q++ = '-';
 
-	p = &ud[20];		/* 1979 */
-	for (i = 4; i > 0; i--)
-		*q++ = *p++;
+	p = &ud[22];		/* 1979 */
+	*q++ = *p++;
+	*q++ = *p++;
 	*q++ = ' ';
 
 	p = &ud[11];		/* 01:03:52 */
-	for (i = 5; i > 0; i--)
+	for (i = 8; i > 0; i--)
 		*q++ = *p++;
 
 				/* -PST or -PDT */
@@ -183,25 +130,14 @@ arpadate(ud)
 		*q++ = *p++;
 	}
 
-	p = NULL;		/* Mon */
-	for (c = DowTab; c->old != NULL; c++)
-	{
-		if (strncmp(&ud[0], c->old, 3) == 0)
-		{
-			p = c->new;
-			break;
-		}
-	}
-	if (p != NULL)
-	{
-		*q++ = ' ';
-		*q++ = '(';
-		while (*p != '\0')
-			*q++ = *p++;
-		*q++ = ')';
-	}
+	p = &ud[0];		/* Mon */
+	*q++ = ' ';
+	*q++ = '(';
+	*q++ = *p++;
+	*q++ = *p++;
+	*q++ = *p++;
+	*q++ = ')';
 
 	*q = '\0';
-
 	return (b);
 }

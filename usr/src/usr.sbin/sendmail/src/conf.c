@@ -36,7 +36,7 @@
 
 
 
-static char SccsId[] = "@(#)conf.c	3.40	%G%";
+static char SccsId[] = "@(#)conf.c	3.41	%G%";
 /*
 **  Header info table
 **	Final (null) entry contains the flags used for any other field.
@@ -65,6 +65,7 @@ struct hdrinfo	HdrInfo[] =
 	"received-date",	H_CHECK,		M_LOCAL,
 	"received-from",	H_CHECK,		M_LOCAL,
 	"precedence",		0,			0,
+	"mail-from",		H_FORCE,		0,
 	"via",			H_FORCE,		0,
 	NULL,			0,			0,
 };

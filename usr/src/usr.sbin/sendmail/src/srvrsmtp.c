@@ -1,10 +1,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-static char	SccsId[] =	"@(#)srvrsmtp.c	3.11	%G%	(no SMTP)";
+static char	SccsId[] =	"@(#)srvrsmtp.c	3.12	%G%	(no SMTP)";
 # else SMTP
 
-static char	SccsId[] =	"@(#)srvrsmtp.c	3.11	%G%";
+static char	SccsId[] =	"@(#)srvrsmtp.c	3.12	%G%";
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -113,6 +113,7 @@ smtp()
 		switch (c->cmdcode)
 		{
 		  case CMDHELO:		/* hello -- introduce yourself */
+			define('s', newstr(p));
 			message("250", "%s Hello %s, pleased to meet you", HostName, p);
 			break;
 
