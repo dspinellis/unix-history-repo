@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parse.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)parse.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -1728,6 +1728,9 @@ ParseReadLine ()
 	    break;
 	} else if (c == '\n') {
 	    lineno++;
+	} else if (c == '#') {
+		ungetc(c, curFILE); 
+		break;
 	} else {
 	    /*
 	     * Anything else breaks out without doing anything
