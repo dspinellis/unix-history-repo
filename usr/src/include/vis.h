@@ -14,32 +14,46 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vis.h	5.1 (Berkeley) %G%
+ *	@(#)vis.h	5.2 (Berkeley) %G%
+ */
+
+
+/*
+ * vis flags
  */
 
 /*
- * cencode flags
+ * to select alternate encoding format
  */
-#define	CENC_CSTYLE	1	/* use C-style backslash sequences */
-#define	CENC_GRAPH	2	/* encode as ^? and M- sequences */
-#define	CENC_OCTAL	4	/* encode as octal sequences */
-#define	CENC_ALL	(CENC_CSTYLE|CENC_GRAPH|CENC_OCTAL)
-#define	CENC_WHITE	8	/* encode white-space chars (sp-tb-nl) */
-#define	CENC_RACHAR	0x10	/* look at read-ahead char */
+#define	VIS_OCTAL	0x01	/* use octal \ddd format */
+#define	VIS_CSTYLE	0x02	/* use \[nrft...] where appropiate */
+/*
+ * to alter set of characters encoded
+ * (default is to encode all non-graphic except space, tab, and newline)
+ */
+#define	VIS_TAB		0x04	/* also encode tab */
+#define	VIS_WHITE	0x08	/* also encode space, tab, and newline */
+#define	VIS_SAFE	0x10	/* only encode "unsafe" characters */
+/*
+ * other
+ */
+#define	VIS_NOSLASH	0x20	/* inhibit printing '\' */
+#define	VIS_NEXTC	0x40	/* nextc character is valid */
+
+extern char *cvis();
 
 /*
- * cdecode flags
+ * unvis flags
  */
-#define	CDEC_HAT	1	/* treat ^ as special */
-#define	CDEC_END	2	/* reset decode machine */
+
+#define	UNVIS_HAT	0x01	/* treat ^ as special */
+#define	UNVIS_END	0x02	/* reset decode machine */
 
 /*
- * cdecode return codes
+ * return codes
  */
-#define	CDEC_NEEDMORE	0	/* not done, feed another char */
-#define	CDEC_OK		1	/* done, character ready */
-#define	CDEC_OKPUSH	2	/* done, push back passed char */
-#define	CDEC_NOCHAR	3	/* done, no character ready (hidden newline) */
-#define	CDEC_SYNBAD	-1	/* unrecognized escape sequence */
-
-extern char *cencode();
+#define	UNVIS_NEEDMORE	0	/* not done, feed another char */
+#define	UNVIS_OK		1	/* done, character ready */
+#define	UNVIS_OKPUSH	2	/* done, push back passed char */
+#define	UNVIS_NOCHAR	3	/* done, no character ready (hidden newline) */
+#define	UNVIS_SYNBAD	-1	/* unrecognized escape sequence */
