@@ -1,4 +1,4 @@
-/*	nexus.h	4.2	81/02/19	*/
+/*	nexus.h	4.3	81/02/26	*/
 
 /*
  * Information about nexus's.
@@ -13,6 +13,13 @@
 #endif
 #define	NEXSIZE	0x2000
 
+#if VAX780
+#define	NNEXUS	16
+#else
+#define	NNEXUS	6		/* 4 mba slots + mem + uba */
+#endif
+
+#ifndef LOCORE
 struct	nexus {
 	union nexcsr {
 		long	nex_csr;
@@ -20,8 +27,9 @@ struct	nexus {
 	} nexcsr;
 	long	nex_pad[NEXSIZE / sizeof (long) - 1];
 };
+#endif
 #ifdef	KERNEL
-extern struct nexus nexus[16];
+extern struct nexus nexus[NNEXUS];
 #endif
 
 /*
