@@ -4,7 +4,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)MAKEDEV	4.22 (Berkeley) %G%
+#	@(#)MAKEDEV	4.23 (Berkeley) %G%
 #
 # Device "make" file.  Valid arguments:
 #	std	standard devices
@@ -112,7 +112,8 @@ hp*|hk*|up*|ra*|rl*|rb*)
 	rl*) name=rl; blk=14; chr=32;;
 	esac
 	case $unit in
-	0|1|2|3|4|5|6|7)
+	0|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|\
+	17|18|19|20|21|22|23|24|25|26|27|28|29|30|31)
 		/etc/mknod ${name}${unit}a	b $blk `expr $unit '*' 8 + 0`
 		/etc/mknod ${name}${unit}b	b $blk `expr $unit '*' 8 + 1`
 		/etc/mknod ${name}${unit}c	b $blk `expr $unit '*' 8 + 2`
