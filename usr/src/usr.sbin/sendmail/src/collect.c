@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)collect.c	3.33		%G%);
+SCCSID(@(#)collect.c	3.34		%G%);
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -85,27 +85,27 @@ collect(sayok)
 	**  Try to read a UNIX-style From line
 	*/
 
-	if (fgets(buf, sizeof buf, stdin) == NULL)
+	if (fgets(buf, sizeof buf, InChannel) == NULL)
 		return;
 	fixcrlf(buf, FALSE);
 # ifndef NOTUNIX
 	if (!SaveFrom && strncmp(buf, "From ", 5) == 0)
 	{
 		eatfrom(buf);
-		(void) fgets(buf, sizeof buf, stdin);
+		(void) fgets(buf, sizeof buf, InChannel);
 		fixcrlf(buf, FALSE);
 	}
 # endif NOTUNIX
 
 	/*
-	**  Copy stdin to temp file & do message editing.
+	**  Copy InChannel to temp file & do message editing.
 	**	To keep certain mailers from getting confused,
 	**	and to keep the output clean, lines that look
 	**	like UNIX "From" lines are deleted in the header,
 	**	and prepended with ">" in the body.
 	*/
 
-	for (; !feof(stdin); !feof(stdin) && fgets(buf, sizeof buf, stdin) != NULL)
+	for (; !feof(InChannel); !feof(InChannel) && fgets(buf, sizeof buf, InChannel) != NULL)
 	{
 		register char c;
 		extern bool isheader();
@@ -117,16 +117,16 @@ collect(sayok)
 			break;
 
 		/* get the rest of this field */
-		while ((c = getc(stdin)) == ' ' || c == '\t')
+		while ((c = getc(InChannel)) == ' ' || c == '\t')
 		{
 			p = &buf[strlen(buf)];
 			*p++ = c;
-			if (fgets(p, sizeof buf - (p - buf), stdin) == NULL)
+			if (fgets(p, sizeof buf - (p - buf), InChannel) == NULL)
 				break;
 			fixcrlf(p, FALSE);
 		}
-		if (!feof(stdin))
-			(void) ungetc(c, stdin);
+		if (!feof(InChannel))
+			(void) ungetc(c, InChannel);
 
 		MsgSize += strlen(buf);
 
@@ -146,7 +146,7 @@ collect(sayok)
 	/* throw away a blank line */
 	if (buf[0] == '\n')
 	{
-		(void) fgets(buf, sizeof buf, stdin);
+		(void) fgets(buf, sizeof buf, InChannel);
 		fixcrlf(buf, FALSE);
 	}
 
@@ -154,7 +154,7 @@ collect(sayok)
 	**  Collect the body of the message.
 	*/
 
-	for (; !feof(stdin); !feof(stdin) && fgets(buf, sizeof buf, stdin) != NULL)
+	for (; !feof(InChannel); !feof(InChannel) && fgets(buf, sizeof buf, InChannel) != NULL)
 	{
 		register int i;
 		register char *bp = buf;
