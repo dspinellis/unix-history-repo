@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)machpats.c	7.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)machpats.c	7.2 (Berkeley) %G%";
 #endif not lint
 
 #include "inline.h"
@@ -157,8 +157,8 @@ struct pats vaxsubset_ptab[] = {
 	{ 3, "_bcmp\n",
 "	movl	(sp)+,r1\n\
 	movl	(sp)+,r3\n\
-	movl	(sp)+,r5\n\
-	movl	r5,r0\n\
+	movl	(sp)+,r0\n\
+	jeql	1f\n\
 2:\n\
 	cmpb	(r1)+,(r3)+\n\
 	jneq	1f\n\
@@ -167,9 +167,9 @@ struct pats vaxsubset_ptab[] = {
 
 	{ 3, "_llocc\n",
 "	movl	(sp)+,r4\n\
-	movl	(sp)+,r5\n\
+	movl	(sp)+,r0\n\
+	jeql	1f\n\
 	movl	(sp)+,r1\n\
-	movl	r5,r0\n\
 2:\n\
 	cmpb	r4,(r1)+\n\
 	jeql	1f\n\
@@ -178,9 +178,9 @@ struct pats vaxsubset_ptab[] = {
 
 	{ 3, "_locc\n",
 "	movl	(sp)+,r3\n\
-	movl	(sp)+,r4\n\
+	movl	(sp)+,r0\n\
+	jeql	1f\n\
 	movl	(sp)+,r5\n\
-	movl	r4,r0\n\
 2:\n\
 	cmpb	r3,(r5)+\n\
 	jeql	1f\n\
@@ -189,9 +189,9 @@ struct pats vaxsubset_ptab[] = {
 
 	{ 3, "_skpc\n",
 "	movl	(sp)+,r3\n\
-	movl	(sp)+,r4\n\
+	movl	(sp)+,r0\n\
+	jeql	1f\n\
 	movl	(sp)+,r5\n\
-	movl	r4,r0\n\
 2:\n\
 	cmpb	r3,(r5)+\n\
 	jneq	1f\n\
