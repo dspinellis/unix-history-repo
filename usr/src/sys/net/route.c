@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)route.c	6.10 (Berkeley) %G%
+ *	@(#)route.c	6.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -202,6 +202,7 @@ rtrequest(req, entry)
 	u_int af;
 	u_long hash;
 	struct ifaddr *ifa;
+	struct ifaddr *ifa_ifwithdstaddr();
 
 	af = entry->rt_dst.sa_family;
 	if (af >= AF_MAX)
@@ -254,7 +255,25 @@ rtrequest(req, entry)
 			error = EEXIST;
 			goto bad;
 		}
-		ifa = ifa_ifwithaddr(&entry->rt_gateway);
+		/*
+		 * If we are adding a route to an interface,
+		 * and the interface is a pt to pt link
+		 * we should search for the destination
+		 * as our clue to the interface.  Otherwise
+		 * we can use the local address.
+		 */
+		if ((entry->rt_flags & RTF_GATEWAY)==0) {
+			if (entry->rt_flags & RTF_HOST) 
+				ifa = ifa_ifwithdstaddr(&entry->rt_dst);
+			else
+				ifa = ifa_ifwithaddr(&entry->rt_gateway);
+		} else {
+		/* If we are adding a route to a remote net
+		 * or host, the gateway may still be on the
+		 * other end of a pt to pt link.
+		 */
+			ifa = ifa_ifwithdstaddr(&entry->rt_gateway);
+		}
 		if (ifa == 0) {
 			ifa = ifa_ifwithnet(&entry->rt_gateway);
 			if (ifa == 0) {

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if.c	6.7 (Berkeley) %G%
+ *	@(#)if.c	6.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -95,6 +95,27 @@ ifa_ifwithaddr(addr)
 		if ((ifp->if_flags & IFF_BROADCAST) &&
 		    equal(&ifa->ifa_broadaddr, addr))
 			return (ifa);
+	}
+	return ((struct ifaddr *)0);
+}
+/*
+ * Locate the point to point interface with a given destination address.
+ */
+/*ARGSUSED*/
+struct ifaddr *
+ifa_ifwithdstaddr(addr)
+	struct sockaddr *addr;
+{
+	register struct ifnet *ifp;
+	register struct ifaddr *ifa;
+
+	for (ifp = ifnet; ifp; ifp = ifp->if_next) 
+	    if (ifp->if_flags & IFF_POINTOPOINT)
+		for (ifa = ifp->if_addrlist; ifa; ifa = ifa->ifa_next) {
+			if (ifa->ifa_addr.sa_family != addr->sa_family)
+				continue;
+			if (equal(&ifa->ifa_dstaddr, addr))
+				return (ifa);
 	}
 	return ((struct ifaddr *)0);
 }
