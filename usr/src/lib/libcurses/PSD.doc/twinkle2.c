@@ -5,20 +5,20 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)twinkle2.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)twinkle2.c	6.1 (Berkeley) %G%";
 #endif not lint
 
-main() {
+extern int	_putchar();
 
+main()
+{
 	reg char	*sp;
-	char		*getenv();
-	int		_putchar(), die();
 
 	srand(getpid());		/* initialize random sequence */
 
 	if (isatty(0)) {
 	       gettmode();
-	       if (sp=getenv("TERM"))
+	       if ((sp = getenv("TERM")) != NULL)
 		       setterm(sp);
 		signal(SIGINT, die);
 	}
@@ -39,23 +39,14 @@ main() {
 	}
 }
 
-/*
- * _putchar defined for tputs() (and _puts())
- */
-_putchar(c)
-reg char	c; {
-
-	putchar(c);
-}
-
 puton(ch)
-char	ch; {
-
-	static int	lasty, lastx;
+char	ch;
+{
 	reg LOCS	*lp;
 	reg int		r;
 	reg LOCS	*end;
 	LOCS		temp;
+	static int	lasty, lastx;
 
 	end = &Layout[Numstars];
 	for (lp = Layout; lp < end; lp++) {
