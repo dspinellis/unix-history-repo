@@ -1,7 +1,7 @@
 #
 # Machine Language Assist for UC Berkeley Virtual Vax/Unix
 #
-#	locore.s		4.2	%G%
+#	locore.s		4.3	%G%
 #
 
 	.set	HIGH,31		# mask for total disable
@@ -328,15 +328,17 @@ ubasrv:
 #
 	bitl	$CFGFLT,UBA0+UCN_OFF  	# any SBI faults ?
 	beql	UBAflt
-	clrl	_waittime
-	pushr	$0xf  			# save regs 0-3
+	pushr	$0x3f  			# save regs 0-5
 	pushl	UBA0+UCN_OFF
 	pushl	UBA0+UST_OFF
 	pushab	SBIflt
 	calls	$3,_printf
-	pushab	SBImsg
-	calls	$1,_panic
-#	popr	$0xf
+#	pushab	SBImsg
+#	calls	$1,_panic
+	movl	UBA0+UCN_OFF,UBA0+UCN_OFF
+	calls	$0,_ubareset
+	popr	$0x3f
+	brw	int_ret
 
 #
 # No SBI fault bits set in UBA config reg - must be
@@ -344,7 +346,7 @@ ubasrv:
 #
 UBAflt:
 	movl	UBA0+UST_OFF,r2  	# UBA status reg
-	pushr	$0xf  			# save regs 0-3
+	pushr	$0x3f  			# save regs 0-3
 	mfpr	$IPL,-(sp)
 	mtpr	$HIGH,$IPL
 	pushl	UBA0+UFUBAR_OFF
@@ -354,7 +356,7 @@ UBAflt:
 	pushab	UBAmsg
 	calls	$4,_printf
 	mtpr	(sp)+,$IPL
-	popr	$0xf
+	popr	$0x3f
 	movl	r2,UBA0+UST_OFF		# clear error bits
 	bicl2	$0x80000000,r3  	# clear neg bit in vector
 	jneq	ubanorm  		# branch if normal UBA interrupt
