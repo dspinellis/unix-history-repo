@@ -1,4 +1,4 @@
-/*	tcp_input.c	6.7	84/11/01	*/
+/*	tcp_input.c	6.8	84/11/14	*/
 
 #include "param.h"
 #include "systm.h"
@@ -507,6 +507,11 @@ trimthenstep6:
 			    tcp_beta * tp->t_srtt, TCPTV_MIN, TCPTV_MAX);
 			tp->t_rxtshift = 0;
 		}
+		/*
+		 * When new data is acked, open the congestion window a bit.
+		 */
+		if (acked > 0)
+			tp->snd_cwnd = MIN(11 * tp->snd_cwnd / 10, 65535);
 		if (acked > so->so_snd.sb_cc) {
 			tp->snd_wnd -= so->so_snd.sb_cc;
 			sbdrop(&so->so_snd, so->so_snd.sb_cc);
@@ -609,7 +614,7 @@ step6:
 		 * soreceive.  It's hard to imagine someone
 		 * actually wanting to send this much urgent data.
 		 */
-		if (ti->ti_urp > tp->rcv_wnd + 1) {	/* XXX */
+		if (ti->ti_urp + (unsigned) so->so_rcv.sb_cc > 32767) {
 			ti->ti_urp = 0;			/* XXX */
 			tiflags &= ~TH_URG;		/* XXX */
 			ti->ti_flags &= ~TH_URG;	/* XXX */
@@ -650,9 +655,11 @@ badurp:							/* XXX */
 	 * case PRU_RCVD).  If a FIN has already been received on this
 	 * connection then we just ignore the text.
 	 */
-	if ((ti->ti_len || (tiflags&TH_FIN)) &&
-	    TCPS_HAVERCVDFIN(tp->t_state) == 0) {
-		tiflags = tcp_reass(tp, ti);
+	if (TCPS_HAVERCVDFIN(tp->t_state) == 0) {
+		if (ti->ti_len || (tiflags&TH_FIN))
+			tiflags = tcp_reass(tp, ti);
+		else
+			m_freem(m);
 		if (tcpnodelack == 0)
 			tp->t_flags |= TF_DELACK;
 		else
