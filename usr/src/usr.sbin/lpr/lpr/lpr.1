@@ -3,217 +3,223 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)lpr.1	6.5 (Berkeley) %G%
+.\"     @(#)lpr.1	6.6 (Berkeley) %G%
 .\"
-.TH LPR 1 "%Q"
-.UC 4
-.SH NAME
-lpr \- off line print
-.SH SYNOPSIS
-.B lpr
-[
-.BI \-P printer
-] [
-.BI \-# num
-] [
-.B \-C
-.I class
-] [
-.B \-J
-.I job
-] [
-.B \-T
-.I title
-] [
-.B \-U
-.I user
-] [
-.B \-i
-[
-.I numcols
-]] [
-.B \-1234
-.I font
-] [
-.BI \-w num
-] [
-.B \-pltndgvcfrmhs
-] [
-name ...
-]
-.SH DESCRIPTION
-.B Lpr
+.Dd 
+.Dt LPR 1
+.Os BSD 4
+.Sh NAME
+.Nm lpr
+.Nd off line print
+.Sh SYNOPSIS
+.Nm lpr
+.Oo
+.Op Fl P Ar printer
+.Op Fl \&# Ar num
+.Oo
+.Op Fl C Ar class
+.Op Fl J Ar job
+.Op Fl T Ar title
+.Op Fl U Ar user
+.Op Fl i Op Ar numcols
+.Op Fl 1234 Ar font
+.Oo
+.Op Fl w Ar num
+.Oo
+.Op Fl pltndgvcfrmhs
+.Op Ar name ...
+.Oo
+.Sh DESCRIPTION
+.Nm Lpr
 uses a spooling daemon to print the named files when facilities
 become available.  If no names appear, the standard input is assumed.
-The
-.B \-P
+.Fl P
 option may be used to force output to a specific printer.  Normally,
 the default printer is used (site dependent), or the value of the
-environment variable PRINTER is used.
-.PP
+environment variable
+.Ev PRINTER
+is used.
+.Pp
 The following single letter options are used to notify the line printer
 spooler that the files are not standard text files. The spooling daemon will
 use the appropriate filters to print the data accordingly.
-.IP \fB\-p\fP 5
+.Tw Fl
+.Tp Fl p
 Use
-.IR pr (1)
+.Xr pr  1
 to format the files (equivalent to
-.IR print ).
-.IP \fB\-l\fP 5
+.Em print  ) .
+.Tp Fl l
 Use a filter which allows control characters to be printed and suppresses
 page breaks.
-.IP \fB\-t\fP 5
+.Tp Fl t
 The files are assumed to contain data from
-.IR troff (1)
+.Xr troff  1
 (cat phototypesetter commands).
-.IP \fB\-n\fP 5
+.Tp Fl n
 The files are assumed to contain data from
-.I ditroff
+.Em ditroff
 (device independent troff).
-.IP \fB\-d\fP 5
+.Tp Fl d
 The files are assumed to contain data from
-.IR tex (l)
+.Em tex
 (DVI format from Stanford).
-.IP \fB\-g\fP 5
+.Tp Fl g
 The files are assumed to contain standard plot data as produced by the
-.IR plot (3X)
+.Xr plot
 routines (see also
-.IR plot (1G)
+.Xr plot
 for the filters used by the printer spooler).
-.IP \fB\-v\fP 5
+.Tp Fl v
 The files are assumed to contain a raster image for devices like the
 Benson Varian.
-.IP \fB\-c\fP 5
+.Tp Fl c
 The files are assumed to contain data produced by
-.IR cifplot (l).
-.IP \fB\-f\fP 5
+.Xr cifplot 1
+.Tp Fl f
 Use a filter which interprets the first character of each line as a
 standard FORTRAN carriage control character.
-.PP
+.Tp
+.Pp
 The remaining single letter options have the following meaning.
-.IP \fB\-r\fP 5
+.Tw Fl
+.Tp Fl r
 Remove the file upon completion of spooling or upon completion of
-printing (with the \fB\-s\fP option).
-.IP \fB\-m\fP 5
-Send mail upon completion.
-.IP \fB\-h\fP 5
-Suppress the printing of the burst page.
-.IP \fB\-s\fP 5
-Use symbolic links.  Usually files are copied to the spool directory.
-.PP 
+printing (with the
+.Fl s
+option).
 The
-.B \-C
-option takes the following argument as a job classification
-for use on the burst page.  For example,
-.PP
-.ti +0.5i
-lpr \-C EECS foo.c
-.PP
-causes the system name (the name returned by
-.IR hostname (1))
-to be replaced on the burst page by EECS,
-and the file foo.c to be printed.
-.PP
-The
-.B \-J
-option takes the following argument as the job name to print on the burst page.
-Normally, the first file's name is used.
-.PP
-The
-.B \-U
-option takes the following argument as the user name to print on the burst page,
-and to use for accounting purposes.
-This option is only honored if the real user-id is daemon
-(or that specified in the printcap file instead of daemon),
-and is intended for those instances where print filters wish to requeue jobs.
-.PP
-The
-.B \-T
-option uses the next argument as the title used by
-.IR pr (1)
-instead of the file name.
-.PP
-To get multiple copies of output, use the
-.BI \-# num
-option,
-where
-.I num
-is the number of copies desired of each file named.  For example,
-.PP
-.ti +0.5i
-lpr \-#3 foo.c bar.c more.c
-.PP
-would result in 3 copies of the file foo.c, followed by 3 copies
-of the file bar.c, etc.  On the other hand, 
-.PP
-.ti +0.5i
-cat foo.c bar.c more.c | lpr \-#3
-.PP
-will give three copies of the concatenation of the files.
-.PP
-The
-.B \-i
-option causes the output to be indented. If the next argument
-is numeric, it is used as the number of blanks to be printed before each
-line; otherwise, 8 characters are printed.
-.PP
-The
-.B \-w
-option takes the immediately following number to be
-the page width for
-.IR pr .
-.PP
-The
-.B \-s
+.Fl s
 option will use
-.IR symlink (2)
+.Xr symlink  2
 to link data files rather than trying to copy them so large files can be
 printed.  This means the files should
 not be modified or removed until they have been printed.
-.PP
-The option
-.B \-1234
-Specifies a font to be mounted on font position \fIi\fR.  The daemon
-will construct a \fI.railmag\fR file referencing
-\fI/usr/lib/vfont/name.size\fR.
-.SH FILES
-.nf
-.ta \w'/usr/spool/*/cf*       'u
-/etc/passwd	personal identification
-/etc/printcap	printer capabilities data base
-/usr/lib/lpd*	line printer daemons
-/usr/spool/*	directories used for spooling
-/usr/spool/*/cf*	daemon control files
-/usr/spool/*/df*	data files specified in "cf" files
-/usr/spool/*/tf*	temporary copies of "cf" files
-.fi
-.SH "SEE ALSO"
-lpq(1),
-lprm(1),
-pr(1),
-symlink(2),
-printcap(5),
-lpc(8),
-lpd(8)
-.SH DIAGNOSTICS
+.Tp Fl m
+Send mail upon completion.
+.Tp Fl h
+Suppress the printing of the burst page.
+.Tp Fl s
+Use symbolic links.  Usually files are copied to the spool directory.
+.Tp Fl C
+Uses the following argument as a job classification
+for use on the burst page.  For example,
+.Pp
+.Dl lpr \-C EECS foo.c
+.Pp
+causes the system name (the name returned by
+.Xr hostname  1  )
+to be replaced on the burst page by EECS,
+and the file foo.c to be printed.
+.Tp Fl J
+Uses the following argument as the job name to print on the burst page.
+Normally, the first file's name is used.
+.Tp Fl U
+Uses the following argument as the user name to print on the burst page,
+and for accounting purposes.
+This option is only honored if the real user-id is daemon
+(or that specified in the printcap file instead of daemon),
+and is intended for those instances where print filters wish to requeue jobs.
+.Tp Fl T
+Uses the next argument as the title used by
+.Xr pr  1
+instead of the file name.
+.Tc Fl \&#
+.Ar num
+.Cx
+The quantity
+.Ar num
+is the number of copies desired of each file named.  For example,
+.Pp
+.Dl lpr \-#3 foo.c bar.c more.c
+.Pp
+would result in 3 copies of the file foo.c, followed by 3 copies
+of the file bar.c, etc.  On the other hand,
+.Pp
+.Dl cat foo.c bar.c more.c \&| lpr \-#3
+.Pp
+will give three copies of the concatenation of the files.
+.Tc Fl i
+.Ws
+.Op numcols
+.Cx
+The output is indented. If the next argument
+is numeric
+.Pf \&( Ar numcols ) ,
+it is used as the number of blanks to be printed before each
+line; otherwise, 8 characters are printed.
+.Tc Fl w
+.Ar num
+.Cx
+Uses
+.Ar num
+as the page width for
+.Xr pr 1 .
+.Tp Fl 1234
+Specifies a font to be mounted on font position
+.Ar i  .
+The daemon
+will construct a
+.Li .railmag
+file referencing
+the font pathname.
+.Tp
+.Sh ENVIRONMENT
+If the following environment variable exists, it is used by
+.Nm lpr :
+.Tw Fl
+.Tp Ev PRINTER
+Specifies an alternate default printer.
+.Tp
+.Sh FILES
+.Dw /var/spool/output/*/tf*
+.Di L
+.Dp Pa /etc/passwd
+personal identification
+.Dp Pa /etc/printcap
+printer capabilities data base
+.Dp Pa /usr/sbin/lpd*
+line printer daemons
+.Dp Pa /var/spool/output/*
+directories used for spooling
+.Dp Pa /var/spool/output/*/cf*
+daemon control files
+.Dp Pa /var/spool/output/*/df*
+data files specified in "cf" files
+.Dp Pa /var/spool/output/*/tf*
+temporary copies of "cf" files
+.Dp
+.Sh SEE ALSO
+.Xr lpq 1 ,
+.Xr lprm 1 ,
+.Xr pr 1 ,
+.Xr symlink 2 ,
+.Xr printcap 5 ,
+.Xr lpc 8 ,
+.Xr lpd 8
+.Sh HISTORY
+.Nm Lpr
+appeared in 3 BSD.
+.Sh BUGS
+.Sh DIAGNOSTICS
 If you try to spool too large a file, it will be truncated.
-.I Lpr
+.Nm Lpr
 will object to printing binary files.
 If a user other than root prints a file and spooling is disabled,
-.I lpr
+.Nm lpr
 will print a message saying so and will not put jobs in the queue.
 If a connection to
-.I lpd
+.Xr lpd 1
 on the local machine cannot be made,
-.I lpr
+.Nm lpr
 will say that the daemon cannot be started.
 Diagnostics may be printed in the daemon's log file
 regarding missing spool files by
-.IR lpd .
-.SH BUGS
+.Xr lpd 1 .
+.Sh BUGS
 Fonts for
-.I troff
+.Xr troff 1
 and
-.I tex
+.Xr tex
 reside on the host with the printer. It is currently not possible to
 use local font libraries.
