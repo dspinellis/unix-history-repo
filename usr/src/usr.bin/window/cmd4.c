@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd4.c	1.1 83/07/19";
+static	char *sccsid = "@(#)cmd4.c	1.2 83/07/20";
 #endif
 
 #include "defs.h"
@@ -18,7 +18,7 @@ doquery()
 		if ((w = wwfind(i)) == 0)
 			continue;
 		done_it++;
-		wwsetcurrent(w);
+		wwsetcurwin(w);
 		wwsetcursor(w->ww_row, w->ww_col + 1);
 		for (;;) {
 			switch (bgetc()) {
@@ -27,23 +27,24 @@ doquery()
 				break;
 			case CTRL([):
 				setselwin(w);
-				return;
+				goto out;
 			case -1:
 				bread();
 				continue;
 			default:
 				wwputs("\rType return to continue, escape to select.", cmdwin);
-				wwsetcurrent(cmdwin);
+				wwsetcurwin(cmdwin);
 				Ding();
 				continue;
 			}
 			break;
 		}
 	}
+out:
 	if (!done_it)
 		wwputs("No windows.  ", cmdwin);
 	else {
-		wwsetcurrent(cmdwin);
+		wwsetcurwin(cmdwin);
 		wwputs("\r\n", cmdwin);
 	}
 }

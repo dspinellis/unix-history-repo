@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd.c	1.2 83/07/19";
+static	char *sccsid = "@(#)cmd.c	1.3 83/07/20";
 #endif
 
 #include "defs.h"
@@ -80,11 +80,13 @@ top:
 			wwsuspend();
 			break;
 		case '.':
-			quit++;
-			goto out;
+			doquit();
+			if (quit)
+				goto out;
+			break;
 		default:
 			Ding();
-			wwprintf(cmdwin, "(%x) Type ? for help.  ", c);
+			wwprintf(cmdwin, "Type ? for help.  ");
 			break;
 		}
 	}
@@ -95,7 +97,7 @@ top:
 	goto top;
 out:
 	if (!quit)
-		wwsetcurrent(selwin);
+		wwsetcurwin(selwin);
 	Whide(cmdwin->ww_win);
 }
 
@@ -125,8 +127,8 @@ register struct ww *w;
 	if (w) {
 		labelwin(w, WINVERSE);
 		/* bring it to the top just below cmdwin */
-		wwsetcurrent(w);
-		wwsetcurrent(cmdwin);
+		wwsetcurwin(w);
+		wwsetcurwin(cmdwin);
 	}
 }
 
