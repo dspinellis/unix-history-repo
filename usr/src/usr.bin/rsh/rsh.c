@@ -1,15 +1,17 @@
 #ifndef lint
-static char sccsid[] = "@(#)rsh.c	4.1 82/04/02";
+static char sccsid[] = "@(#)rsh.c	4.2 82/11/14";
 #endif
 
-#include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <net/in.h>
+#include <sys/ioctl.h>
 #include <sys/file.h>
+
+#include <netinet/in.h>
+
+#include <stdio.h>
 #include <errno.h>
 #include <signal.h>
-#include <sys/ioctl.h>
 #include <pwd.h>
 
 /*
@@ -114,7 +116,13 @@ another:
 		bp = buf;
 	rewrite:
 		rembits = 1<<rem;
-		(void) select(20, 0, &rembits, 100000);
+		if (select(16, 0, &rembits, 0, 0) < 0) {
+			if (errno != EINTR) {
+				perror("select");
+				exit(1);
+			}
+			goto rewrite;
+		}
 		if ((rembits & (1<<rem)) == 0)
 			goto rewrite;
 		wc = write(rem, bp, cc);
@@ -135,7 +143,13 @@ another:
 	readfrom = (1<<rfd2) | (1<<rem);
 	do {
 		ready = readfrom;
-		(void) select(32, &ready, 0, 10000000);
+		if (select(16, &ready, 0, 0, 0) < 0) {
+			if (errno != EINTR) {
+				perror("select");
+				exit(1);
+			}
+			continue;
+		}
 		if (ready & (1<<rfd2)) {
 			errno = 0;
 			cc = read(rfd2, buf, sizeof buf);
