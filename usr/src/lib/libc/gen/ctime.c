@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ctime.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)ctime.c	5.9 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include "sys/param.h"
@@ -223,14 +223,14 @@ tzsetkernel()
 {
 	struct timeval	tv;
 	struct timezone	tz;
-	char	*tztab();
+	char	*_tztab();
 
 	if (gettimeofday(&tv, &tz))
 		return -1;
 	s.timecnt = 0;		/* UNIX counts *west* of Greenwich */
 	s.ttis[0].tt_gmtoff = tz.tz_minuteswest * -SECS_PER_MIN;
 	s.ttis[0].tt_abbrind = 0;
-	(void)strcpy(s.chars, tztab(tz.tz_minuteswest, 0));
+	(void)strcpy(s.chars, _tztab(tz.tz_minuteswest, 0));
 	tzname[0] = tzname[1] = s.chars;
 #ifdef USG_COMPAT
 	timezone = tz.tz_minuteswest * 60;
