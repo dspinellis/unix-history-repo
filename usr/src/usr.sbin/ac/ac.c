@@ -1,7 +1,7 @@
 /*
  * acct [ -w wtmp ] [ -d ] [ -p ] [ people ]
  */
-static char *sccsid = "@(#)ac.c	4.4 (Berkeley) %G%";
+static char *sccsid = "@(#)ac.c	4.5 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -106,7 +106,7 @@ loop()
 		dtime = ibuf.ut_time;
 		return;
 	}
-	if(ibuf.ut_line[0] == '}') {
+	if(ibuf.ut_line[0] == '{') {
 		if(dtime == 0)
 			return;
 		for(tp = tbuf; tp < &tbuf[TSIZE]; tp++)
