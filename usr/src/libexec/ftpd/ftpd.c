@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -147,7 +147,6 @@ main(argc, argv)
 		case 't':
 			timeout = atoi(++cp);
 			goto nextopt;
-			break;
 
 		default:
 			fprintf(stderr, "ftpd: Unknown flag -%c ignored.\n",
@@ -376,21 +375,26 @@ pass(passwd)
 	login_attempts = 0;		/* this time successful */
 	(void) setegid((gid_t)pw->pw_gid);
 	(void) initgroups(pw->pw_name, pw->pw_gid);
-	if (chdir(pw->pw_dir)) {
-		reply(530, "User %s: can't change directory to %s.",
-			pw->pw_name, pw->pw_dir);
-		goto bad;
-	}
 
 	/* open wtmp before chroot */
 	(void)sprintf(ttyline, "ftp%d", getpid());
 	logwtmp(ttyline, pw->pw_name, remotehost);
 	logged_in = 1;
 
-	if (guest && chroot(pw->pw_dir) < 0) {
-		reply(550, "Can't set guest privileges.");
-		goto bad;
+	if (guest) {
+		if (chroot(pw->pw_dir) < 0) {
+			reply(550, "Can't set guest privileges.");
+			goto bad;
+		}
 	}
+	else if (chdir(pw->pw_dir))
+		if (chdir("/")) {
+			reply(530, "User %s: can't change directory to %s.",
+			    pw->pw_name, pw->pw_dir);
+			goto bad;
+		}
+		else
+			lreply(230, "No directory! Logging in with home=/");
 	if (seteuid((uid_t)pw->pw_uid) < 0) {
 		reply(550, "Can't set uid.");
 		goto bad;
@@ -413,16 +417,9 @@ retrieve(cmd, name)
 	struct stat st;
 	int (*closefunc)(), tmp;
 
-	if (cmd == 0) {
-#ifdef notdef
-		/* no remote command execution -- it's a security hole */
-		if (*name == '|')
-			fin = ftpd_popen(name + 1, "r"),
-			    closefunc = ftpd_pclose;
-		else
-#endif
-			fin = fopen(name, "r"), closefunc = fclose;
-	} else {
+	if (cmd == 0)
+		fin = fopen(name, "r"), closefunc = fclose;
+	else {
 		char line[BUFSIZ];
 
 		(void) sprintf(line, cmd, name), name = line;
@@ -442,7 +439,8 @@ retrieve(cmd, name)
 	dout = dataconn(name, st.st_size, "w");
 	if (dout == NULL)
 		goto done;
-	if ((tmp = send_data(fin, dout)) > 0 || ferror(dout) > 0) {
+	if ((tmp = send_data(fin, dout, st.st_blksize)) > 0 ||
+	    ferror(dout) > 0) {
 		perror_reply(550, name);
 	}
 	else if (tmp == 0) {
@@ -460,23 +458,15 @@ store(name, mode, unique)
 	int unique;
 {
 	FILE *fout, *din;
+	struct stat st;
 	int (*closefunc)(), tmp;
 	char *gunique();
 
-#ifdef notdef
-	/* no remote command execution -- it's a security hole */
-	if (name[0] == '|')
-		fout = ftpd_popen(&name[1], "w"), closefunc = ftpd_pclose;
-	else
-#endif
-	{
-		struct stat st;
+	if (unique && stat(name, &st) == 0 &&
+	    (name = gunique(name)) == NULL)
+		return;
 
-		if (unique && stat(name, &st) == 0 &&
-		    (name = gunique(name)) == NULL)
-			return;
-		fout = fopen(name, mode), closefunc = fclose;
-	}
+	fout = fopen(name, mode), closefunc = fclose;
 	if (fout == NULL) {
 		perror_reply(553, name);
 		return;
@@ -603,12 +593,13 @@ dataconn(name, size, mode)
  *
  * NB: Form isn't handled.
  */
-send_data(instr, outstr)
+send_data(instr, outstr, blksize)
 	FILE *instr, *outstr;
+	off_t blksize;
 {
-	register int c;
-	int netfd, filefd, cnt;
-	char buf[BUFSIZ];
+	register int c, cnt;
+	register char *buf;
+	int netfd, filefd;
 
 	transflag++;
 	if (setjmp(urgcatch)) {
@@ -627,28 +618,26 @@ send_data(instr, outstr)
 				(void) putc('\r', outstr);
 			}
 			(void) putc(c, outstr);
-		/*	if (c == '\r')			*/
-		/*		putc ('\0', outstr);	*/
 		}
 		transflag = 0;
 		if (ferror (instr) || ferror (outstr)) {
 			return (1);
 		}
 		return (0);
-		
+
 	case TYPE_I:
 	case TYPE_L:
+		if ((buf = malloc((u_int)blksize)) == NULL) {
+			transflag = 0;
+			return (1);
+		}
 		netfd = fileno(outstr);
 		filefd = fileno(instr);
-
-		while ((cnt = read(filefd, buf, sizeof (buf))) > 0) {
-			if (write(netfd, buf, cnt) < 0) {
-				transflag = 0;
-				return (1);
-			}
-		}
+		while ((cnt = read(filefd, buf, sizeof(buf))) > 0 &&
+		    write(netfd, buf, cnt) == cnt);
 		transflag = 0;
-		return (cnt < 0);
+		(void)free(buf);
+		return (cnt != 0);
 	}
 	reply(550, "Unimplemented TYPE %d in send_data", type);
 	transflag = 0;
@@ -726,29 +715,34 @@ fatal(s)
 	dologout(0);
 }
 
-reply(n, s, argp)
+/* VARARGS2 */
+reply(n, fmt, p0, p1, p2, p3, p4, p5)
 	int n;
-	char *s;
-	va_list argp;
+	char *fmt;
 {
 	printf("%d ", n);
-	printf(s, argp);
+	printf(fmt, p0, p1, p2, p3, p4, p5);
 	printf("\r\n");
 	(void)fflush(stdout);
 	if (debug) {
 		syslog(LOG_DEBUG, "<--- %d ", n);
-		syslog(LOG_DEBUG, s, argp);
+		syslog(LOG_DEBUG, fmt, p0, p1, p2, p3, p4, p5);
 	}
 }
 
-lreply(n, s)
+/* VARARGS2 */
+lreply(n, fmt, p0, p1, p2, p3, p4, p5)
 	int n;
-	char *s;
+	char *fmt;
 {
-	printf("%d- %s\r\n", n, s);
+	printf("%d- ", n);
+	printf(fmt, p0, p1, p2, p3, p4, p5);
+	printf("\r\n");
 	(void)fflush(stdout);
-	if (debug)
-		syslog(LOG_DEBUG, "<--- %d- %s", n, s);
+	if (debug) {
+		syslog(LOG_DEBUG, "<--- %d- ", n);
+		syslog(LOG_DEBUG, fmt, p0, p1, p2, p3, p4, p5);
+	}
 }
 
 ack(s)
