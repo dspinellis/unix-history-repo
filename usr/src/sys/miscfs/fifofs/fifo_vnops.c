@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fifo_vnops.c	7.18 (Berkeley) %G%
+ *	@(#)fifo_vnops.c	7.19 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -157,8 +157,8 @@ fifo_open(ap)
 			return (0);
 		while (fip->fi_writers == 0) {
 			VOP_UNLOCK(vp);
-			error = tsleep((caddr_t)&fip->fi_readers, PSOCK,
-				openstr, 0);
+			error = tsleep((caddr_t)&fip->fi_readers,
+			    PCATCH | PSOCK, openstr, 0);
 			VOP_LOCK(vp);
 			if (error)
 				break;
@@ -176,7 +176,7 @@ fifo_open(ap)
 			while (fip->fi_readers == 0) {
 				VOP_UNLOCK(vp);
 				error = tsleep((caddr_t)&fip->fi_writers,
-					PSOCK, openstr, 0);
+				    PCATCH | PSOCK, openstr, 0);
 				VOP_LOCK(vp);
 				if (error)
 					break;
