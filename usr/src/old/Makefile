@@ -1,6 +1,6 @@
-#	@(#)Makefile	5.8 (Berkeley) %G%
+#	@(#)Makefile	5.8.1.1 (Berkeley) %G%
 
-SUBDIR=	compact crypt hostid lex make yacc
+SUBDIR=	compact hostid lex make yacc
 
 .if ${MACHINE} == "vax"
 SUBDIR+=talk tp
