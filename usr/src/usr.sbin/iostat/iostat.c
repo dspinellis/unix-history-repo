@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)iostat.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)iostat.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -203,6 +203,14 @@ main(argc, argv)
 			reps = atoi(*argv);
 	}
 #endif
+
+	if (interval) {
+		if (!reps)
+			reps = -1;
+	} else
+		if (reps)
+			interval = 1;
+
 	for (i = 0; i < dk_ndrive && ndrives < 4; i++) {
 		if (dr_select[i] || dk_wpms[i] == 0)
 			continue;
@@ -272,7 +280,7 @@ main(argc, argv)
 		(void)printf("\n");
 		(void)fflush(stdout);
 
-		if (--reps <= 0)
+		if (reps >= 0 && --reps <= 0)
 			break;
 		if (interval)
 			(void)sleep(interval);
