@@ -1,4 +1,4 @@
-#	@(#)rc	5.28 (Berkeley) %G%
+#	@(#)rc	5.29 (Berkeley) %G%
 
 # System startup script run by init on autoboot
 # or after single-user.
@@ -150,7 +150,7 @@ echo -n ' printer';		lpd
 
 echo -n ' portmap';		portmap
 echo -n ' mountd';		mountd
-echo -n ' nfsd';		nfsd -u 0,0,4 -t 0,0
+echo -n ' nfsd';		nfsd -u -t
 echo -n ' nfsiod';		nfsiod 4
 
 echo -n ' sendmail';		sendmail -bd -q30m
