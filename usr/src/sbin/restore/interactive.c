@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)interactive.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)interactive.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "restore.h"
@@ -19,6 +19,7 @@ static char sccsid[] = "@(#)interactive.c	5.14 (Berkeley) %G%";
 /*
  * Things to handle interruptions.
  */
+static int runshell;
 static jmp_buf reset;
 static char *nextarg = NULL;
 
@@ -63,6 +64,7 @@ loop:
 		nextarg = NULL;
 		volno = 0;
 	}
+	runshell = 1;
 	getcmd(curdir, cmd, name, &alist);
 	switch (cmd[0]) {
 	/*
@@ -860,7 +862,7 @@ fmtentry(fp)
 void
 onintr()
 {
-	if (command == 'i')
+	if (command == 'i' && runshell)
 		longjmp(reset, 1);
 	if (reply("restore interrupted, continue") == FAIL)
 		done(1);
