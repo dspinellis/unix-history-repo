@@ -1,18 +1,18 @@
 /*	route.c	6.6	84/08/28	*/
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/mbuf.h"
-#include "../h/protosw.h"
-#include "../h/socket.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/ioctl.h"
-#include "../h/errno.h"
+#include "param.h"
+#include "systm.h"
+#include "mbuf.h"
+#include "protosw.h"
+#include "socket.h"
+#include "dir.h"
+#include "user.h"
+#include "ioctl.h"
+#include "errno.h"
 
-#include "../net/if.h"
-#include "../net/af.h"
-#include "../net/route.h"
+#include "if.h"
+#include "af.h"
+#include "route.h"
 
 int	rttrash;		/* routes not in table but not freed */
 struct	sockaddr wildcard;	/* zero valued cookie for wildcard searches */
