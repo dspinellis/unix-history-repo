@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	7.2 (Berkeley) %G%
+ *	@(#)machdep.c	7.3 (Berkeley) %G%
  */
 
 
@@ -28,6 +28,7 @@
 #include "mbuf.h"
 #include "msgbuf.h"
 #include "net/netisr.h"
+
 #include "vm/vm.h"
 #include "vm/vm_kern.h"
 #include "vm/vm_page.h"
@@ -57,29 +58,32 @@ int	bufpages = 0;
 #endif
 int	msgbufmapped;		/* set when safe to use msgbuf */
 
+/*
+ * Machine-dependent startup code
+ */
 int boothowto = 0, Maxmem = 0;
+long dumplo;
+int physmem, maxmem;
 extern int bootdev;
-int forcemaxmem;
+#ifdef SMALL
+extern int forcemaxmem;
+#endif
 int biosmem;
 
 extern cyloffset;
 
-/*
- * cpu_startup: allocate memory for variable-sized tables,
- * initialize cpu, and do autoconfiguration.
- */
-cpu_startup()
+cpu_startup(firstaddr)
+	int firstaddr;
 {
 	register int unixsize;
 	register unsigned i;
 	register struct pte *pte;
 	int mapaddr, j;
 	register caddr_t v;
-	int firstaddr, maxbufs, base, residual;
+	int maxbufs, base, residual;
 	extern long Usrptsize;
 	vm_offset_t minaddr, maxaddr;
 	vm_size_t size;
-
 
 	/*
 	 * Initialize error message buffer (at end of core).
@@ -231,18 +235,6 @@ again:
 	printf("using %d buffers containing %d bytes of memory\n",
 		nbuf, bufpages * CLBYTES);
 
-#ifdef somewhere
-	/*
-	 *  cmap must not allocate the hole, so toss memory
-	 */
-	if(firstaddr < 640/4 && maxmem > 1024/4){
-		printf("[not using %dK due to hole]\n", 4*(640/4 - firstaddr));
-		firstaddr = 0x100;
-	}
-	if(maxmem < 2048/4-10)
-	  printf("WARNING: NOT ENOUGH RAM MEMORY - RUNNING IN DEGRADED MODE\n");
-
-#endif
 	/*
 	 * Set up CPU-specific registers, cache, etc.
 	 */
@@ -315,8 +307,6 @@ sendsig(catcher, sig, mask, code)
 	regs = p->p_regs;
         oonstack = ps->ps_onstack;
 	frmtrap = curpcb->pcb_flags & FM_TRAP;
-/*#include "dbg.h"
-dprintf(DALLTRAPS|DPAGIN,"s %d %d ", sig, frm);*/
 	/*
 	 * Allocate and validate space for the signal handler
 	 * context. Note that if the stack is in P0 space, the
@@ -325,8 +315,6 @@ dprintf(DALLTRAPS|DPAGIN,"s %d %d ", sig, frm);*/
 	 * the space with a `brk'.
 	 */
         if (!ps->ps_onstack && (ps->ps_sigonstack & sigmask(sig))) {
-
-printf("onstack?");
 		fp = (struct sigframe *)(ps->ps_sigsp
 				- sizeof(struct sigframe));
                 ps->ps_onstack = 1;
@@ -343,7 +331,6 @@ printf("onstack?");
 		(void)grow((unsigned)fp);
 
 	if (useracc((caddr_t)fp, sizeof (struct sigframe), B_WRITE) == 0) {
-printf("fail %x %x\n", fp, regs[frmtrap?tESP:sESP]);
 		/*
 		 * Process has trashed its stack; give it an illegal
 		 * instruction to halt it in its tracks.
@@ -354,7 +341,6 @@ printf("fail %x %x\n", fp, regs[frmtrap?tESP:sESP]);
 		p->p_sigcatch &= ~sig;
 		p->p_sigmask &= ~sig;
 		psignal(p, SIGILL);
-/*dprintf(DALLTRAPS|DPAGIN,"ill ");*/
 		return;
 	}
 
@@ -388,7 +374,6 @@ printf("fail %x %x\n", fp, regs[frmtrap?tESP:sESP]);
 		fp->sf_sc.sc_ps = regs[tEFLAGS];
 		regs[tESP] = (int)fp;
 		regs[tEIP] = (int)((struct pcb *)kstack)->pcb_sigc;
-/*dprintf(DALLTRAPS|DPAGIN,"E ");*/
 	} else {
 		fp->sf_sc.sc_sp = regs[sESP];
 		fp->sf_sc.sc_fp = regs[sEBP];
@@ -396,7 +381,6 @@ printf("fail %x %x\n", fp, regs[frmtrap?tESP:sESP]);
 		fp->sf_sc.sc_ps = regs[sEFLAGS];
 		regs[sESP] = (int)fp;
 		regs[sEIP] = (int)((struct pcb *)kstack)->pcb_sigc;
-/*dprintf(DALLTRAPS|DPAGIN,"e "); */
 	}
 }
 
@@ -461,7 +445,6 @@ boot(arghowto)
 	extern char *panicstr;
 
 	howto = arghowto;
-pg("reboot?" );
 	if ((howto&RB_NOSYNC) == 0 && waittime < 0 && bfreelist[0].b_forw) {
 		register struct buf *bp;
 		int iter, nbusy;
@@ -604,9 +587,7 @@ initcpu()
 }
 
 /*
- * Set registers on exec.
- * XXX Should clear registers except sp, pc,
- * but would break init; should be fixed soon.
+ * Clear registers on exec
  */
 setregs(p, entry)
 	struct proc *p;
@@ -816,12 +797,12 @@ init386(first) { extern ssdtosd(), lgdt(), lidt(), lldt(), etext;
 	extern int sigcode,szsigcode;
 
 	proc0.p_addr = proc0paddr;
+
 	/*
 	 * Initialize the console before we print anything out.
 	 */
 
-/*pg("init386 first %x &x %x Maxmem %x", first, &x, Maxmem);
-pg("init386 PTmap[0] %x PTD[0] %x", *(int *)PTmap, *(int *)PTD);*/
+	cninit (KERNBASE+0xa0000);
 
 	/* make gdt memory segments */
 	gdt_segs[GCODE_SEL].ssd_limit = btoc((int) &etext + NBPG);
@@ -829,10 +810,10 @@ pg("init386 PTmap[0] %x PTD[0] %x", *(int *)PTmap, *(int *)PTD);*/
 	/* make ldt memory segments */
 	ldt_segs[LUCODE_SEL].ssd_limit = btoc(UPT_MIN_ADDRESS);
 	ldt_segs[LUDATA_SEL].ssd_limit = btoc(UPT_MIN_ADDRESS);
-/* Note. eventually want private ldts per process */
+	/* Note. eventually want private ldts per process */
 	for (x=0; x < 5; x++) ssdtosd(ldt_segs+x, ldt+x);
 
-/* exceptions */
+	/* exceptions */
 	setidt(0, &IDTVEC(div),  SDT_SYS386TGT, SEL_KPL);
 	setidt(1, &IDTVEC(dbg),  SDT_SYS386TGT, SEL_KPL);
 	setidt(2, &IDTVEC(nmi),  SDT_SYS386TGT, SEL_KPL);
@@ -866,19 +847,14 @@ pg("init386 PTmap[0] %x PTD[0] %x", *(int *)PTmap, *(int *)PTD);*/
 	setidt(30, &IDTVEC(rsvd13),  SDT_SYS386TGT, SEL_KPL);
 	setidt(31, &IDTVEC(rsvd14),  SDT_SYS386TGT, SEL_KPL);
 
-/*pg("isa");*/
 #include	"isa.h"
 #if	NISA >0
 	isa_defaultirq();
 #endif
 
-/*pg("gdt");*/
 	lgdt(gdt, sizeof(gdt)-1);
-/*pg("idt");*/
 	lidt(idt, sizeof(idt)-1);
-/*pg("ldt");*/
 	lldt(GSEL(GLDT_SEL, SEL_KPL));
-/*pg("after ldt");*/
 
 #ifdef notyet
 	/* determine amount of memory present so we can scale kernel PT */
@@ -890,9 +866,6 @@ pg("init386 PTmap[0] %x PTD[0] %x", *(int *)PTmap, *(int *)PTD);*/
 			if (probemem(i) == 0) break;
 	}
 	maxmem = i / NBPG;
-	if(forcemaxmem && maxmem > forcemaxmem)
-		maxmem = forcemaxmem-1;
-	cninit (KERNBASE+0xa0000);
 #else
 Maxmem = 8192 *1024 /NBPG;
 	maxmem = Maxmem;
@@ -945,14 +918,6 @@ Maxmem = 8192 *1024 /NBPG;
 	proc0.p_addr->u_pcb.pcb_flags = 0;
 	proc0.p_addr->u_pcb.pcb_ptd = IdlePTD;
 }
-
-/*probemem(i) {
-	int val;
-
-	val = *(int *) i;
-	*(int *) i = PAT;
-	asm("inb $0x84,%al" ::: "ax");
-}*/
 
 extern struct pte	*CMAP1, *CMAP2;
 extern caddr_t		CADDR1, CADDR2;

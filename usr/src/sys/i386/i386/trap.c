@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)trap.c	7.3 (Berkeley) %G%
+ *	@(#)trap.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -40,6 +40,10 @@
 
 struct	sysent sysent[];
 int	nsysent;
+unsigned rcr2();
+extern short cpl;
+
+
 /*
  * trap(frame):
  *	Exception, fault, and trap interface to BSD kernel. This
@@ -48,60 +52,23 @@ int	nsysent;
  * frame after the exception has been processed. Note that the
  * effect is as if the arguments were passed call by reference.
  */
-extern caddr_t edata;
-unsigned rcr2(), Sysbase;
-extern short cpl;
-int um;
+
 /*ARGSUSED*/
 trap(frame)
 	struct trapframe frame;
-/*#define type frame.tf_trapno
-#define code frame.tf_err
-#define pc frame.tf_eip*/
 {
 	register int i;
 	register struct proc *p = curproc;
 	struct timeval syst;
 	int ucode, type, code, eva;
 
-#ifdef DEBUG
-/*dprintf(DALLTRAPS, "\n%d(%s). trap",p->p_pid, p->p_comm);*/
-dprintf(DALLTRAPS, " pc:%x cs:%x ds:%x eflags:%x isp %x\n",
-		frame.tf_eip, frame.tf_cs, frame.tf_ds, frame.tf_eflags,
-		frame.tf_isp);
-dprintf(DALLTRAPS, "edi %x esi %x ebp %x ebx %x esp %x\n",
-		frame.tf_edi, frame.tf_esi, frame.tf_ebp,
-		frame.tf_ebx, frame.tf_esp);
-dprintf(DALLTRAPS, "edx %x ecx %x eax %x\n",
-		frame.tf_edx, frame.tf_ecx, frame.tf_eax);
-/*
-dprintf(DALLTRAPS, "sig %x %x %x \n",
-		p->p_sigignore, p->p_sigcatch, p->p_sigmask); */
-dprintf(DALLTRAPS, " ec %x type %x cpl %x ",
-		frame.tf_err&0xffff, frame.tf_trapno, cpl);
-printf("trap cr2 %x ", rcr2());
-#endif
-
-/*if(um && frame.tf_trapno == 0xc && (rcr2()&0xfffff000) == 0){
-	if (ISPL(locr0[tCS]) != SEL_UPL) {
-		if(curpcb->pcb_onfault) goto anyways;
-		locr0[tEFLAGS] |= PSL_T;
-		*(int *)PTmap |= 1; load_cr3(rcr3());
-		return;
-	}
-} else if (um) {
-printf("p %x ", *(int *) PTmap);
-*(int *)PTmap &= 0xfffffffe; load_cr3(rcr3());
-printf("p %x ", *(int *) PTmap);
-}
-anyways:
-
-if(pc == 0) um++;*/
-
 	frame.tf_eflags &= ~PSL_NT;	/* clear nested trap XXX */
 	type = frame.tf_trapno;
-	if(curpcb->pcb_onfault && frame.tf_trapno != 0xc)
-		{ frame.tf_eip = (int)curpcb->pcb_onfault; return;}
+	
+	if (curpcb->pcb_onfault && frame.tf_trapno != 0xc) {
+		frame.tf_eip = (int)curpcb->pcb_onfault;
+		return;
+	}
 
 	syst = p->p_stime;
 	if (ISPL(frame.tf_cs) == SEL_UPL) {
@@ -109,8 +76,6 @@ if(pc == 0) um++;*/
 		p->p_regs = (int *)&frame;
 		curpcb->pcb_flags |= FM_TRAP;	/* used by sendsig */
 	}
-if((caddr_t)p < edata) printf("trap with curproc garbage ");
-if((caddr_t)p->p_regs < edata) printf("trap with pregs garbage ");
 
 	ucode=0;
 	eva = rcr2();
@@ -118,7 +83,7 @@ if((caddr_t)p->p_regs < edata) printf("trap with pregs garbage ");
 	switch (type) {
 
 	default:
-bit_sucker:
+	we_re_toast:
 #ifdef KDB
 		if (kdb_trap(&psl))
 			return;
@@ -186,7 +151,8 @@ copyfault:
 		break;
 
 	case T_PAGEFLT:			/* allow page faults in kernel mode */
-		if (code & PGEX_P) goto bit_sucker;
+		if (code & PGEX_P) goto we_re_toast;
+
 		/* fall into */
 	case T_PAGEFLT|T_USER:		/* page fault */
 	    {
@@ -207,7 +173,6 @@ copyfault:
 		 * The last can occur during an exec() copyin where the
 		 * argument space is lazy-allocated.
 		 */
-		/*if (type == T_PAGEFLT && !curpcb->pcb_onfault)*/
 		if (type == T_PAGEFLT && va >= 0xfe000000)
 			map = kernel_map;
 		else
@@ -220,7 +185,7 @@ copyfault:
 #ifdef DEBUG
 		if (map == kernel_map && va == 0) {
 			printf("trap: bad kernel access at %x\n", va);
-			goto bit_sucker;
+			goto we_re_toast;
 		}
 #endif
 		/*
@@ -230,16 +195,15 @@ copyfault:
 		if ((caddr_t)va >= vm->vm_maxsaddr && map != kernel_map) {
 			nss = clrnd(btoc(USRSTACK-(unsigned)va));
 			if (nss > btoc(p->p_rlimit[RLIMIT_STACK].rlim_cur)) {
-pg("stk fuck");
 				rv = KERN_FAILURE;
 				goto nogo;
 			}
 		}
+
 		/* check if page table is mapped, if not, fault it first */
 #define pde_v(v) (PTD[((v)>>PD_SHIFT)&1023].pd_v)
 		if (!pde_v(va)) {
 			v = trunc_page(vtopte(va));
-/*pg("pt fault");*/
 			rv = vm_fault(map, v, ftype, FALSE);
 			if (rv != KERN_SUCCESS) goto nogo;
 			/* check if page table fault, increment wiring */
@@ -262,7 +226,6 @@ pg("stk fuck");
 			goto out;
 		}
 nogo:
-/*pg("nogo");*/
 		if (type == T_PAGEFLT) {
 			if (curpcb->pcb_onfault)
 				goto copyfault;
@@ -270,7 +233,7 @@ nogo:
 			       map, va, ftype, rv);
 			printf("  type %x, code %x\n",
 			       type, code);
-			goto bit_sucker;
+			goto we_re_toast;
 		}
 		i = (rv == KERN_PROTECTION_FAILURE) ? SIGBUS : SIGSEGV;
 		break;
@@ -278,7 +241,6 @@ nogo:
 
 	case T_TRCTRAP:	 /* trace trap -- someone single stepping lcall's */
 		frame.tf_eflags &= ~PSL_T;
-if (um) {*(int *)PTmap &= 0xfffffffe; load_cr3(rcr3()); }
 
 			/* Q: how do we turn it on again? */
 		return;
@@ -295,15 +257,10 @@ if (um) {*(int *)PTmap &= 0xfffffffe; load_cr3(rcr3()); }
 	case T_NMI|T_USER:
 		/* machine/parity/power fail/"kitchen sink" faults */
 		if(isa_nmi(code) == 0) return;
-		else goto bit_sucker;
+		else goto we_re_toast;
 #endif
 	}
-/*if(u.u_procp && (u.u_procp->p_pid == 1 || u.u_procp->p_pid == 3)) {
-	if( *(u_char *) 0xf7c != 0xc7) {
-		printf("%x!", *(u_char *) 0xf7c);
-		*(u_char *) 0xf7c = 0xc7;
-	}
-}*/
+
 	trapsignal(p, i, ucode);
 	if ((type & T_USER) == 0)
 		return;
@@ -365,7 +322,7 @@ syscall(frame)
 	struct timeval syst;
 	int error, opc;
 	int args[8], rval[2];
-int code;
+	int code;
 
 #ifdef lint
 	r0 = 0; r0 = r0; r1 = 0; r1 = r1;
@@ -388,7 +345,7 @@ int code;
 		params += sizeof (int);
 		callp = (code >= nsysent) ? &sysent[63] : &sysent[code];
 	}
-dprintf(DALLSYSC,"%d. call %d ", p->p_pid, code);
+
 	if ((i = callp->sy_narg * sizeof (int)) &&
 	    (error = copyin(params, (caddr_t)args, (u_int)i))) {
 		frame.sf_eax = error;
