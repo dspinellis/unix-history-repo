@@ -5,13 +5,15 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)itime.c	5.3 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)itime.c	5.4 (Berkeley) %G%";
+#endif /* not lint */
 
 #include "dump.h"
 #include <sys/file.h>
+#include <errno.h>
 
-char *prdate(d)
+char *
+prdate(d)
 	time_t d;
 {
 	char *p;
@@ -28,19 +30,31 @@ int	nidates = 0;
 int	idates_in = 0;
 struct	itime	*ithead = 0;
 
+void	readitimes();
+int	getrecord();
+int	makeidate();
+
+static void recout();
+
+void
 inititimes()
 {
 	FILE *df;
 
 	if ((df = fopen(increm, "r")) == NULL) {
-		perror(increm);
-		return;
+		if (errno == ENOENT) {
+			msg("WARNING: no file `%s'\n", increm);
+			return;
+		}
+		quit("cannot read %s: %s\n", increm, strerror(errno));
+		/* NOTREACHED */
 	}
 	(void) flock(fileno(df), LOCK_SH);
 	readitimes(df);
 	fclose(df);
 }
 
+void
 readitimes(df)
 	FILE *df;
 {
@@ -67,6 +81,7 @@ readitimes(df)
 		idatev[i] = &itwalk->it_value;
 }
 
+void
 getitime()
 {
 	register	struct	idates	*ip;
@@ -98,6 +113,7 @@ getitime()
 	}
 }
 
+void
 putitime()
 {
 	FILE		*df;
@@ -108,10 +124,8 @@ putitime()
 
 	if(uflag == 0)
 		return;
-	if ((df = fopen(increm, "r+")) == NULL) {
-		perror(increm);
-		dumpabort();
-	}
+	if ((df = fopen(increm, "r+")) == NULL)
+		quit("cannot rewrite %s: %s\n", increm, strerror(errno));
 	fd = fileno(df);
 	(void) flock(fd, LOCK_EX);
 	fname = disk;
@@ -121,12 +135,10 @@ putitime()
 	ithead = 0;
 	idates_in = 0;
 	readitimes(df);
-	if (fseek(df,0L,0) < 0) {   /* rewind() was redefined in dumptape.c */
-		perror("fseek");
-		dumpabort();
-	}
+	if (fseek(df, 0L, 0) < 0)
+		quit("fseek: %s\n", strerror(errno));
 	spcl.c_ddate = 0;
-	ITITERATE(i, itwalk){
+	ITITERATE(i, itwalk) {
 		if (strncmp(fname, itwalk->id_name,
 				sizeof (itwalk->id_name)) != 0)
 			continue;
@@ -142,34 +154,37 @@ putitime()
 		(struct idates *)calloc(1, sizeof(struct idates));
 	nidates += 1;
   found:
-	strncpy(itwalk->id_name, fname, sizeof (itwalk->id_name));
+	(void) strncpy(itwalk->id_name, fname, sizeof (itwalk->id_name));
 	itwalk->id_incno = incno;
 	itwalk->id_ddate = spcl.c_date;
 
-	ITITERATE(i, itwalk){
+	ITITERATE(i, itwalk) {
 		recout(df, itwalk);
 	}
-	if (ftruncate(fd, ftell(df))) {
-		perror("ftruncate");
-		dumpabort();
-	}
+	if (fflush(df))
+		quit("%s: %s\n", increm, strerror(errno));
+	if (ftruncate(fd, ftell(df)))
+		quit("ftruncate (%s): %s\n", increm, strerror(errno));
 	(void) fclose(df);
 	msg("level %c dump on %s\n", incno, prdate(spcl.c_date));
 }
 
+static void
 recout(file, what)
 	FILE	*file;
 	struct	idates	*what;
 {
-	fprintf(file, DUMPOUTFMT,
-		what->id_name,
-		what->id_incno,
-		ctime(&(what->id_ddate))
-	);
+
+	if (fprintf(file, DUMPOUTFMT,
+		    what->id_name,
+		    what->id_incno,
+		    ctime(&what->id_ddate)) < 0)
+		quit("%s: %s\n", increm, strerror(errno));
 }
 
 int	recno;
-int getrecord(df, idatep)
+int
+getrecord(df, idatep)
 	FILE	*df;
 	struct	idates	*idatep;
 {
@@ -192,7 +207,8 @@ int getrecord(df, idatep)
 
 time_t	unctime();
 
-int makeidate(ip, buf)
+int
+makeidate(ip, buf)
 	struct	idates	*ip;
 	char	*buf;
 {
@@ -203,50 +219,4 @@ int makeidate(ip, buf)
 	if (ip->id_ddate < 0)
 		return(-1);
 	return(0);
-}
-
-/*
- * This is an estimation of the number of TP_BSIZE blocks in the file.
- * It estimates the number of blocks in files with holes by assuming
- * that all of the blocks accounted for by di_blocks are data blocks
- * (when some of the blocks are usually used for indirect pointers);
- * hence the estimate may be high.
- */
-est(ip)
-	struct dinode *ip;
-{
-	long s, t;
-
-	/*
-	 * ip->di_size is the size of the file in bytes.
-	 * ip->di_blocks stores the number of sectors actually in the file.
-	 * If there are more sectors than the size would indicate, this just
-	 *	means that there are indirect blocks in the file or unused
-	 *	sectors in the last file block; we can safely ignore these
-	 *	(s = t below).
-	 * If the file is bigger than the number of sectors would indicate,
-	 *	then the file has holes in it.	In this case we must use the
-	 *	block count to estimate the number of data blocks used, but
-	 *	we use the actual size for estimating the number of indirect
-	 *	dump blocks (t vs. s in the indirect block calculation).
-	 */
-	esize++;
-	s = howmany(dbtob(ip->di_blocks), TP_BSIZE);
-	t = howmany(ip->di_size, TP_BSIZE);
-	if ( s > t )
-		s = t;
-	if (ip->di_size > sblock->fs_bsize * NDADDR) {
-		/* calculate the number of indirect blocks on the dump tape */
-		s += howmany(t - NDADDR * sblock->fs_bsize / TP_BSIZE,
-			TP_NINDIR);
-	}
-	esize += s;
-}
-
-bmapest(map)
-	char *map;
-{
-
-	esize++;
-	esize += howmany(msiz * sizeof map[0], TP_BSIZE);
 }
