@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)diffreg.c 4.6 %G%";
+static	char sccsid[] = "@(#)diffreg.c 4.7 %G%";
 
 #include "diff.h"
 /*
@@ -124,14 +124,12 @@ diffreg()
 	if ((f1 = fopen(file1, "r")) == NULL) {
 		fprintf(stderr, "diff: ");
 		perror(file1);
-		fclose(f1);
 		done();
 	}
 	if ((f2 = fopen(file2, "r")) == NULL) {
 		fprintf(stderr, "diff: ");
 		perror(file2);
 		fclose(f1);
-		fclose(f2);
 		done();
 	}
 	if (stb1.st_size != stb2.st_size)
