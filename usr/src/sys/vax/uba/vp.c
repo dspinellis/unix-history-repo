@@ -1,4 +1,4 @@
-/*	vp.c	4.10	81/11/18	*/
+/*	vp.c	4.11	82/04/01	*/
 
 #include "vp.h"
 #if NVP > 0
@@ -338,5 +338,10 @@ vpreset(uban)
 		sc->sc_count = sc->sc_bp->b_bcount;
 		vpstart(sc->sc_bp->b_dev);
 	}
+}
+
+vpselect()
+{
+	return (1);
 }
 #endif
