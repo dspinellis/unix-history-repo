@@ -1,20 +1,12 @@
-/*	tty_subr.c	4.6	%G%	*/
+/*	tty_subr.c	4.7	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/conf.h"
 #include "../h/buf.h"
 #include "../h/tty.h"
+#include "../h/clist.h"
 
-struct cblock {
-	struct	cblock *c_next;
-	char	c_info[CBSIZE];
-};
-
-struct	cblock cfree[NCLIST];
-struct	cblock *cfreelist;
-
-int	cfreecount;
 char	cwaiting;
 
 /*
@@ -505,30 +497,6 @@ struct clist *from, *to;
 	while ((c = getc(from)) >= 0)
 		(void) putc(c, to);
 }
-
-/*
- * Initialize clist by freeing all character blocks, then count
- * number of character devices. (Once-only routine)
- */
-cinit()
-{
-	register int ccp;
-	register struct cblock *cp;
-	register struct cdevsw *cdp;
-
-	ccp = (int)cfree;
-	ccp = (ccp+CROUND) & ~CROUND;
-	for(cp=(struct cblock *)ccp; cp < &cfree[NCLIST-1]; cp++) {
-		cp->c_next = cfreelist;
-		cfreelist = cp;
-		cfreecount += CBSIZE;
-	}
-	ccp = 0;
-	for(cdp = cdevsw; cdp->d_open; cdp++)
-		ccp++;
-	nchrdev = ccp;
-}
-
 
 /*
  * integer (2-byte) get/put
