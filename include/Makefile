@@ -70,7 +70,7 @@ copies:
 		cd /sys; \
 		tar cf - $$i/*.h | (cd ${DESTDIR}/usr/include; tar xpfB -); \
 	done
-	rm -f ${DESTDIR}/usr/include/machine
+	rm -rf ${DESTDIR}/usr/include/machine
 	mkdir ${DESTDIR}/usr/include/machine
 	cd /sys/${MACHINE}/include; \
 	tar cf - *.h | (cd ${DESTDIR}/usr/include/machine; tar xpfB -); \
