@@ -1,4 +1,4 @@
-/*	vfs_vnops.c	4.10	81/05/12	*/
+/*	vfs_vnops.c	4.11	81/05/15	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -282,6 +282,7 @@ slot:
 	u.u_ofile[i] = fp;
 	fp->f_count++;
 	fp->f_un.f_offset = 0;
+	fp->f_inode = 0;
 	lastf = fp + 1;
 	return (fp);
 }
