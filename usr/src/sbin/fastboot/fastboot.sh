@@ -15,7 +15,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)fastboot.sh	5.4 (Berkeley) %G%
+#	@(#)fastboot.sh	5.5 (Berkeley) %G%
 #
 cp /dev/null /fastboot
-/usr/sbin/reboot $*
+/sbin/reboot $*
