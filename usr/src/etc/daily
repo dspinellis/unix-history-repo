@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)daily	5.11 (Berkeley) %G%
+#	@(#)daily	5.12 (Berkeley) %G%
 #
 PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/local
 host=`hostname -s`
