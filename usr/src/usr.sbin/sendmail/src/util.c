@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -710,6 +710,7 @@ xfclose(fp, a, b)
 */
 
 static jmp_buf	CtxReadTimeout;
+static int	readtimeout();
 
 char *
 sfgets(buf, siz, fp, timeout, during)
@@ -721,7 +722,6 @@ sfgets(buf, siz, fp, timeout, during)
 {
 	register EVENT *ev = NULL;
 	register char *p;
-	static int readtimeout();
 
 	/* set the timeout */
 	if (timeout != 0)
@@ -1071,5 +1071,5 @@ checkfd012(where)
 			}
 		}
 	}
-#endif XDEBUG
+#endif /* XDEBUG */
 }

@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.5 (Berkeley) %G%
+ *	@(#)conf.h	8.6 (Berkeley) %G%
  */
 
 /*
@@ -115,6 +115,8 @@
 # define FORK		fork	/* no vfork primitive available */
 # define UNSETENV	1	/* need unsetenv(3) support */
 # define setpgrp	BSDsetpgrp
+# define HASSETREUID	1	/* have setreuid(2) call */
+# define GIDSET_T	gid_t
 # endif
 
 
@@ -221,6 +223,16 @@
 
 #if !defined(ultrix) && !defined(__hpux)
 # define IDENTPROTO	1	/* use IDENT proto (RFC 1413) */
+#endif
+
+/*
+**  If no type for argument two of getgroups call is defined, assume
+**  it's an integer -- unfortunately, there seem to be several choices
+**  here.
+*/
+
+#ifndef GIDSET_T
+# define GIDSET_T	int
 #endif
 
 /*

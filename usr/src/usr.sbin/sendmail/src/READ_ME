@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.4 (Berkeley) %G%
+#	@(#)READ_ME	8.5 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -78,6 +78,13 @@ HASSETREUID	Define this if you have setreuid(2) ***AND*** root can
 		Setting this improves the security somewhat, since
 		sendmail doesn't have to read .forward and :include: files
 		as root.
+GIDSET_T	The type of entries in a gidset passed as the second
+		argument to getgroups(2).  Historically this has been an
+		int, so this is the default, but some systems (such as
+		IRIX) pass it as a gid_t, which is an unsigned short.
+		This will make a difference, so it is important to get
+		this right!  However, it is only an issue if you have
+		group sets.
 LA_TYPE		The type of load average your kernel supports.  These
 		can be LA_SUBR (4) if you have the getloadavg(3) routine,
 		LA_FLOAT (3) if you read kmem and interpret the value
@@ -216,4 +223,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.4, last update %G% 11:30:32)
+(Version 8.5, last update %G% 20:50:04)

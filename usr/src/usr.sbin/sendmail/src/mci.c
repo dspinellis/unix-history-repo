@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mci.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)mci.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -227,7 +227,7 @@ mci_get(host, m)
 
 	/* clear CurHostAddr so we don't get a bogus address with this name */
 	bzero(&CurHostAddr, sizeof CurHostAddr);
-#endif DAEMON
+#endif
 
 	s = stab(host, ST_MCI + m->m_mno, ST_ENTER);
 	mci = &s->s_mci;
