@@ -1,10 +1,7 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
-DIR=	usd/19.awk
+DIR=	usd/16.awk
 SRCS=	awk
 MACROS=	-msU
-
-paper.${PRINTER}: ${SRCS}
-	${ROFF} ${SRCS} > ${.TARGET}
 
 .include <bsd.doc.mk>

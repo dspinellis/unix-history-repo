@@ -1,10 +1,7 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
-DIR=	usd/20.msmacros
+DIR=	usd/17.msmacros
 SRCS=	ms
 MACROS=	-msU
-
-paper.${PRINTER}: ${SRCS}
-	${ROFF} ${SRCS} > ${.TARGET}
 
 .include <bsd.doc.mk>

@@ -1,9 +1,9 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)tbl	6.2 (Berkeley) %G%
+.\"	@(#)tbl	6.3 (Berkeley) %G%
 .\"
-.EH 'USD:28-%''Tbl \(em A Program to Format Tables'
-.OH 'Tbl \(em A Program to Format Tables''USD:28-%'
+.EH 'USD:25-%''Tbl \(em A Program to Format Tables'
+.OH 'Tbl \(em A Program to Format Tables''USD:25-%'
 .if \nM=1 .RP
 \" .TM 76-1274-5 39199 39199-11
 .if \n(tm>0 .ND June 11, 1976*

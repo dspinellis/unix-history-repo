@@ -1,9 +1,9 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)e0	6.2 (Berkeley) %G%
+.\"	@(#)e0	6.3 (Berkeley) %G%
 .\"
-.EH 'USD:26-%''A System for Typesetting Mathematics'
-.OH 'A System for Typesetting Mathematics''USD:26-%'
+.EH 'USD:23-%''A System for Typesetting Mathematics'
+.OH 'A System for Typesetting Mathematics''USD:23-%'
 .nr PS 9
 .nr VS 11
 ....ND "Revised  April, 1977"

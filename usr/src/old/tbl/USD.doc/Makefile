@@ -1,10 +1,10 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
-DIR=	usd/28.tbl
+DIR=	usd/25.tbl
 SRCS=	tbl
 MACROS=	-msU
 
-paper.${PRINTER}: ${SRCS}
+paper.ps: ${SRCS}
 	${TBL} ${SRCS} | ${ROFF} > ${.TARGET}
 
 .include <bsd.doc.mk>
