@@ -1,4 +1,7 @@
-static char *sccsid ="@(#)local.c	1.4 (Berkeley) %G%";
+#ifndef lint
+static char *sccsid ="@(#)local.c	1.5 (Berkeley) %G%";
+#endif lint
+
 # include "mfile1"
 
 /*	this file contains code which is dependent on the target machine */
@@ -75,7 +78,6 @@ clocal(p) NODE *p; {
 
 		/* pointers all have the same representation; the type is inherited */
 
-	inherit:
 		p->in.left->in.type = p->in.type;
 		p->in.left->fn.cdim = p->fn.cdim;
 		p->in.left->fn.csiz = p->fn.csiz;
@@ -85,7 +87,25 @@ clocal(p) NODE *p; {
 	case SCONV:
 		m = (p->in.type == FLOAT || p->in.type == DOUBLE );
 		ml = (p->in.left->in.type == FLOAT || p->in.left->in.type == DOUBLE );
-		if( m != ml ) break;
+		o = p->in.left->in.op;
+		if( (o == FCON || o == DCON) && ml && !m ) {
+			/* float type to int type */
+			r = block( ICON, (NODE *)NULL, (NODE *)NULL, INT, 0, 0 );
+			if( o == FCON )
+				r->tn.lval = (int) p->in.left->fpn.fval;
+			else
+				r->tn.lval = (int) p->in.left->dpn.dval;
+			r->tn.rval = NONAME;
+			p->in.left->in.op = FREE;
+			p->in.left = r;
+			}
+		else
+#ifdef SPRECC
+			if ( ml || m )
+#else
+			if ( ml != m )
+#endif
+				break;
 
 		/* now, look for conversions downwards */
 
@@ -135,7 +155,13 @@ clocal(p) NODE *p; {
 		/* only if type of left operand is not unsigned */
 
 		if( ISUNSIGNED(p->in.left->in.type) ) break;
-		p->in.right = buildtree( UNARY MINUS, p->in.right, NIL );
+		if( p->in.right->in.op != UNARY MINUS )
+			p->in.right = buildtree( UNARY MINUS, p->in.right, NIL );
+		else {
+			r = p->in.right;
+			p->in.right = p->in.right->in.left;
+			r->in.op = FREE;
+		}
 		if( p->in.op == RS ) p->in.op = LS;
 		else p->in.op = ASG LS;
 		break;
@@ -175,6 +201,9 @@ cisreg( t ) TWORD t; { /* is an automatic variable of type t OK for a register v
 		|| t==USHORT || ISPTR(t)) return(1);		/* tbl */
 #else
 	if( t==INT || t==UNSIGNED || t==LONG || t==ULONG	/* wnj */
+#ifdef SPRECC
+		|| t==FLOAT
+#endif
 		|| ISPTR(t)) return (1);			/* wnj */
 #endif
 	return(0);
@@ -282,7 +311,8 @@ exname( p ) char *p; {
 	return( text );
 	}
 
-ctype( type ){ /* map types which are not defined on the local machine */
+ctype( type ) TWORD type;
+	{ /* map types which are not defined on the local machine */
 	switch( BTYPE(type) ){
 
 	case LONG:
@@ -295,7 +325,7 @@ ctype( type ){ /* map types which are not defined on the local machine */
 	return( type );
 	}
 
-noinit( t ) { /* curid is a variable which is defined but
+noinit() { /* curid is a variable which is defined but
 	is not initialized (and not a function );
 	This routine returns the stroage class for an uninitialized declaration */
 
@@ -326,7 +356,8 @@ isitlong( cb, ce ){ /* is lastcon to be long or short */
 isitfloat( s ) char *s; {
 	double atof();
 	dcon = atof(s);
-	return( FCON );
+	fcon = dcon;
+	return( fcon == dcon ? FCON : DCON );
 	}
 
 ecode( p ) NODE *p; {

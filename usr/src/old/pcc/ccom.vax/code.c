@@ -1,4 +1,7 @@
-static char *sccsid ="@(#)code.c	1.2 (Berkeley) %G%";
+#ifndef lint
+static char *sccsid ="@(#)code.c	1.3 (Berkeley) %G%";
+#endif lint
+
 # include "mfile1"
 # include <sys/types.h>
 # include <a.out.h>
@@ -94,7 +97,6 @@ efcode(){
 		register NODE *l, *r;
 		register struct symtab *p;
 		register TWORD t;
-		register int j;
 		int i;
 
 		p = &stab[curftn];
@@ -356,7 +358,7 @@ struct type_move {TWORD fromtype; char tostrng[8];} toreg_strs[] =
 	USHORT,	"movzwl",
 	UNSIGNED,	"movl",
 	ULONG,	"movl",
-	-1, ""
+	0, ""
 	};
 
 char
@@ -365,7 +367,7 @@ char
 {
 	struct type_move *p;
 
-	for ( p=toreg_strs; p->fromtype > 0; p++)
+	for ( p=toreg_strs; p->fromtype != 0; p++)
 		if (p->fromtype == type) return(p->tostrng);
 
 	/* type not found, must be a pointer type */
