@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)catman.c	4.4 (Berkeley) %G%";
+static char *sccsid = "@(#)catman.c	4.5 (Berkeley) %G%";
 #endif
 
 /*
@@ -8,9 +8,9 @@ static char *sccsid = "@(#)catman.c	4.4 (Berkeley) %G%";
  */
 #include <stdio.h>
 #include <sys/types.h>
-#include <stat.h>
-#include <time.h>
-#include <dir.h>
+#include <sys/stat.h>
+#include <sys/time.h>
+#include <sys/dir.h>
 #include <ctype.h>
 
 #define	SYSTEM(str)	(pflag ? printf("%s\n", str) : system(str))

@@ -1,13 +1,13 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)dirs.c	3.12	(Berkeley)	83/06/02";
+static char sccsid[] = "@(#)dirs.c	3.13	(Berkeley)	83/07/01";
 #endif
 
 #include "restore.h"
 #include <dumprestor.h>
 #include <sys/file.h>
-#include <dir.h>
+#include <sys/dir.h>
 
 /*
  * Symbol table of directories read from tape.

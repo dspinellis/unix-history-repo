@@ -1,17 +1,17 @@
 #ifndef lint
-static	char *sccsid = "@(#)comsat.c	4.7 83/06/12";
+static	char *sccsid = "@(#)comsat.c	4.8 83/07/01";
 #endif
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
 
 #include <netinet/in.h>
 
 #include <stdio.h>
 #include <sgtty.h>
 #include <utmp.h>
-#include <stat.h>
-#include <wait.h>
 #include <signal.h>
 #include <errno.h>
 #include <netdb.h>
