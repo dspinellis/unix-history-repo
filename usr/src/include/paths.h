@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)paths.h	5.15 (Berkeley) %G%
+ *	@(#)paths.h	5.16 (Berkeley) %G%
  */
 
 #ifndef _PATHS_H_
@@ -32,6 +32,7 @@
 /* Provide trailing slash, since mostly used for building pathnames. */
 #define	_PATH_DEV	"/dev/"
 #define	_PATH_TMP	"/tmp/"
+#define	_PATH_VARDB	"/var/db/"
 #define	_PATH_VARRUN	"/var/run/"
 #define	_PATH_VARTMP	"/var/tmp/"
 
