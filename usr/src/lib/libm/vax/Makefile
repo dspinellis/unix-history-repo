@@ -9,7 +9,7 @@
 # software without specific written prior permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 OBJS=	atan2.o cabs.o cbrt.o sqrt.o sincos.o tan.o argred.o support.o \
 	infnan.o
@@ -25,7 +25,7 @@ OBJS=	atan2.o cabs.o cbrt.o sqrt.o sincos.o tan.o argred.o support.o \
 
 all: ../libm.a ../libm_p.a
 
-../libm_p.a ../libm.a: ${OBJS}
+../libm_p.a ../libm.a: ${OBJS} FRC
 	cd ../profiled; ar cru ../libm_p.a ${OBJS}
 	ar cru ../libm.a ${OBJS}
 

@@ -9,7 +9,7 @@
 # software without specific written prior permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -26,7 +26,7 @@ OBJS=	atan2.o sincos.o tan.o
 
 all: ../libm.a ../libm_p.a
 
-../libm.a ../libm_p.a: ${OBJS}
+../libm.a ../libm_p.a: ${OBJS} FRC
 	cd ../profiled; ar cru ../libm_p.a ${OBJS}
 	ar cru ../libm.a ${OBJS}
 
