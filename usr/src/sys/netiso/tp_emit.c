@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_emit.c,v 5.5 88/11/18 17:27:20 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_emit.c,v $
- *	@(#)tp_emit.c	7.6 (Berkeley) %G% *
+ *	@(#)tp_emit.c	7.7 (Berkeley) %G% *
  *
  * This file contains tp_emit() and tp_error_emit(), which
  * form TPDUs and hand them to ip.
@@ -339,7 +339,11 @@ tp_emit(dutype,	tpcb, seq, eot, data)
 			data = (struct mbuf *)0;
 			if (tpcb->tp_xtd_format) {
 #ifdef BYTE_ORDER
-				hdr->tpdu_XAKseqX = htonl(seq);
+				union seq_type seqeotX;
+
+				seqeotX.s_seq = seq;
+				seqeotX.s_eot = 1;
+				hdr->tpdu_seqeotX = htonl(seqeotX.s_seqeot);
 #else
 				hdr->tpdu_XAKseqX = seq;
 #endif BYTE_ORDER
@@ -490,8 +494,11 @@ tp_emit(dutype,	tpcb, seq, eot, data)
 			ENDTRACE
 			if (tpcb->tp_xtd_format) {
 #ifdef BYTE_ORDER
-				hdr->tpdu_cdt = 0; 
-				hdr->tpdu_AKseqX = htonl(seq);
+				union seq_type seqeotX;
+
+				seqeotX.s_seq = seq;
+				seqeotX.s_eot = 0;
+				hdr->tpdu_seqeotX = htonl(seqeotX.s_seqeot);
 				hdr->tpdu_AKcdtX = htons(tpcb->tp_lcredit);
 #else
 				hdr->tpdu_cdt = 0; 
