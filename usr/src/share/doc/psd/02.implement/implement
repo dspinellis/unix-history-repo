@@ -1,5 +1,7 @@
-.\"	@(#)implement	6.1 (Berkeley) %G%
+.\"	@(#)implement	6.2 (Berkeley) %G%
 .\"
+.EH 'PS2:4-%''UNIX Implementation'
+.OH 'UNIX Implementation''PS2:4-%'
 .de P1
 .DS
 ..
@@ -24,8 +26,6 @@
 .de SP
 .sp \\$1
 ..
-.EH 'PS2:4-%''UNIX Implementation'
-.OH 'UNIX Implementation''PS2:4-%'
 .hw device
 .TL
 UNIX Implementation
@@ -240,8 +240,10 @@ because
 all the data associated with a process
 may be accessed
 starting from the process table entry.
-.KS
-.sp 2.44i
+.KF
+.in .375i
+.so fig1.pic
+.in -.375i
 .sp 2v
 .ce
 Fig. 1\(emProcess control data structure.
@@ -980,6 +982,15 @@ When the last access to the i-node goes
 away,
 the table entry is copied back to the
 secondary store i-list and the table entry is freed.
+.KF
+.in .25i
+.so fig2.pic
+.in -.25i
+.sp 2v
+.ce
+Fig. 2\(emFile system data structure.
+.sp
+.KE
 .PP
 All I/O operations on files are carried out
 with the aid of the corresponding i-node table entry.
@@ -1015,11 +1026,6 @@ The most common of these are
 and
 .UL close .
 The data structures maintained are shown in Fig. 2.
-.KS
-.sp 22P
-.ce
-Fig. 2\(emFile system data structure.
-.KE
 In the system data segment associated with a user,
 there is room for some (usually between 10 and 50) open files.
 This open file table consists of pointers that can be used to access
