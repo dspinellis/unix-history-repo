@@ -1,0 +1,5 @@
+m ../CLUlib/x ~CLU/lib/* xfax
+ext f
+loc f
+o
+ce ../CLUlib/xdefs ../CLUlib/cursors
