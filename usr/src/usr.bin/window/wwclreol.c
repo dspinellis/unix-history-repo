@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwclreol.c	3.9 83/09/15";
+static	char *sccsid = "@(#)wwclreol.c	3.10 83/12/02";
 #endif
 
 #include "ww.h"
@@ -47,27 +47,26 @@ char cleared;
 		register char *smap, *win;
 		register char *touched;
 
-		smap = &wwsmap[row][col];
-		s = &wwns[row][col];
+		i = col;
+		smap = &wwsmap[row][i];
+		s = &wwns[row][i];
+		win = w->ww_win[row];
 		touched = &wwtouched[row];
-		win = &w->ww_win[row][col];
 		ncleared = nblank = 0;
 
-		for (i = w->ww_i.r - col; --i >= 0;) {
+		for (; i < w->ww_i.r; i++) {
 			if (*smap++ != w->ww_index) {
 				if (s++->c_w == ' ')
 					nblank++;
-				win++;
 				continue;
 			}
 			ncleared++; 
 			*touched = 1;
-			if (*win == 0) {
+			if (win[i] == 0) {
 				nblank++;
 				s++->c_w = ' ';
-				win++;
 			} else
-				s++->c_w = ' ' | *win++ << WWC_MSHIFT;
+				s++->c_w = ' ' | win[i] << WWC_MSHIFT;
 		}
 	}
 

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwlabel.c	3.8 83/11/23";
+static	char *sccsid = "@(#)wwlabel.c	3.9 83/12/02";
 #endif
 
 #include "ww.h"
@@ -14,52 +14,46 @@ struct ww *w;
 struct ww *f;
 char *l;
 {
-	int i;
+	int row;
 	register j;
-	register char *p;
+	int jj;
 	register char *win;
 	register union ww_char *buf;
 	register union ww_char *ns;
 	register char *fmap;
-	char *smap;
-	char *touched;
+	register char *smap;
+	char touched;
+	char *p;
 
 	if (f->ww_fmap == 0)
 		return;
 
-	i = w->ww_w.t - 1;
-	if (i < f->ww_i.t || i >= f->ww_i.b)
+	row = w->ww_w.t - 1;
+	if (row < f->ww_i.t || row >= f->ww_i.b)
 		return;
+	win = f->ww_win[row];
+	buf = f->ww_buf[row];
+	fmap = f->ww_fmap[row];
+	ns = wwns[row];
+	smap = wwsmap[row];
+	touched = wwtouched[row];
+	mode <<= WWC_MSHIFT;
+
+	jj = MIN(w->ww_i.r, f->ww_i.r);
 	j = w->ww_i.l + where;
-	win = &f->ww_win[i][j];
-	buf = &f->ww_buf[i][j];
-	fmap = &f->ww_fmap[i][j];
-
-	ns = &wwns[i][j];
-	smap = &wwsmap[i][j];
-	touched = &wwtouched[i];
-
-	j = MIN(w->ww_i.r, f->ww_i.r) - j;
-	for (; j > 0 && *l;)
-		for (p = unctrl(*l++); j > 0 && *p; j--) {
+	while (j < jj && *l)
+		for (p = unctrl(*l++); j < jj && *p; j++, p++) {
 			/* can't label if not already framed */
-			if (*win++ & WWM_GLS) {
-				p++;
-				buf++;
-				ns++;
-				fmap++;
-				smap++;
-			} else if (*smap++ != f->ww_index) {
-				buf++->c_w = mode << WWC_MSHIFT | *p++;
-				*fmap++ |= WWF_LABEL;
-				ns++;
-				win++;
-			} else {
-				*touched = 1;
-				ns++->c_w = (buf++->c_w
-					= mode << WWC_MSHIFT | *p++)
-						^ *win++ << WWC_MSHIFT;
-				*fmap++ |= WWF_LABEL;
+			if (win[j] & WWM_GLS)
+				continue;
+			if (smap[j] != f->ww_index)
+				buf[j].c_w = mode | *p;
+			else {
+				ns[j].c_w = (buf[j].c_w = mode | *p)
+						^ win[j] << WWC_MSHIFT;
+				touched = 1;
 			}
+			fmap[j] |= WWF_LABEL;
 		}
+	wwtouched[row] = touched;
 }

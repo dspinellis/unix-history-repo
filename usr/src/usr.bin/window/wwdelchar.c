@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwdelchar.c	3.7 83/11/23";
+static	char *sccsid = "@(#)wwdelchar.c	3.8 83/12/02";
 #endif
 
 #include "ww.h"
@@ -42,33 +42,33 @@ register struct ww *w;
 		register char *win;
 		register union ww_char *ns;
 		register char *smap;
-		char *touched;
+		char touched;
 
 		nvis = 0;
 		smap = &wwsmap[row][col];
-		for (i = w->ww_i.r - col; i > 0 && *smap++ != w->ww_index; i--)
-			col++;
-		if (i <= 0)
+		for (i = col; i < w->ww_i.r && *smap++ != w->ww_index; i++)
+			;
+		if (i >= w->ww_i.r)
 			return;
-		buf = &w->ww_buf[row][col];
-		win = &w->ww_win[row][col];
-		ns = &wwns[row][col];
-		smap = &wwsmap[row][col];
-		touched = &wwtouched[row];
-		for (; --i >= 0;)
-			if (*smap++ != w->ww_index) {
-				ns++;
-				buf++;
-				win++;
-			} else if (*win) {
-				ns++->c_w = buf++->c_w ^ *win++ << WWC_MSHIFT;
-				*touched = 1;
-			} else {
-				*ns++ = *buf++;
-				win++;
+		col = i;
+		buf = w->ww_buf[row];
+		win = w->ww_win[row];
+		ns = wwns[row];
+		smap = &wwsmap[row][i];
+		touched = wwtouched[row];
+		for (; i < w->ww_i.r; i++) {
+			if (*smap++ != w->ww_index)
+				continue;
+			touched = 1;
+			if (win[i])
+				ns[i].c_w =
+					buf[i].c_w ^ win[i] << WWC_MSHIFT;
+			else {
 				nvis++;
-				*touched = 1;
+				ns[i] = buf[i];
 			}
+		}
+		wwtouched[row] = touched;
 	}
 
 	/*
