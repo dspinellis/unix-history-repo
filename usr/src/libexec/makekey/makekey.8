@@ -1,6 +1,6 @@
-.\"	@(#)makekey.8	4.1 (Berkeley) %G%
+.\"	@(#)makekey.8	5.1 (Berkeley) %G%
 .\"
-.TH MAKEKEY 8 "4/1/81"
+.TH MAKEKEY 8 "4 February 1983"
 .AT 3
 .SH NAME
 makekey \- generate encryption key
@@ -12,15 +12,14 @@ improves the usefulness of encryption schemes depending on a key by
 increasing the amount of time required to search the key space.  It
 reads 10 bytes from its standard input, and writes 13 bytes on its
 standard output.  The output depends on the input in a way intended to
-be difficult to compute (i.e. to require a substantial fraction of a
-second).
+be difficult to compute (that is, to require a substantial fraction of
+a second).
 .PP
 The first eight input bytes
 (the
 .IR "input key" )
 can be arbitrary ASCII characters.
-The last 
-two (the
+The last two (the
 .IR salt )
 are best chosen from the set of digits, upper- and lower-case
 letters, and `.' and `/'.
@@ -34,17 +33,15 @@ the salt is used to select one of 4096 cryptographic
 machines all based on the National Bureau of Standards
 DES algorithm, but modified in 4096 different ways.
 Using the input key as key,
-a constant string is fed into the machine and recirculated
-a number of times.
+a constant string is fed into the machine and recirculated a number of times.
 The 64 bits that come out are distributed into the
 66 useful key bits in the result.
 .PP
 .I Makekey
-is intended for programs that perform encryption
-(e.g.
+is intended for programs that perform encryption (for instance,
 .I ed
 and
 .IR crypt (1)).
-Usually its input and output will be pipes.
+Usually makekey's input and output will be pipes.
 .SH SEE ALSO
 crypt(1), ed(1)
