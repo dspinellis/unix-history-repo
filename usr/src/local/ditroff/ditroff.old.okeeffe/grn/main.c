@@ -1,4 +1,4 @@
-/*	main.c	1.21	(Berkeley)	85/06/24
+/*	main.c	1.22	(Berkeley)	85/07/19
  *
  *	This file contains the main and file system dependent routines
  * for processing gremlin files into troff input.  The program watches
@@ -83,9 +83,7 @@ extern ELT *DBInit(), *DBRead();
 extern POINT *PTInit(), *PTMakePoint();
 
 
-#ifdef SUN
-#define GREMLIB		"/usr/local/lib/gremlin/"
-#else
+#ifndef GREMLIB
 #define GREMLIB		"/usr/local/gremlib/"
 #endif
 
