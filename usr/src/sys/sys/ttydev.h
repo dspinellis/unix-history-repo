@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ttydev.h	7.4 (Berkeley) %G%
+ *	@(#)ttydev.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -72,13 +72,13 @@ struct speedtab {
 #define	DMGET		3
 
 /*
- * Exceptional conditions possible on character input.
+ * Flags on character passed to ttyinput
  */
-#define TTY_FE		0x01000000	/* Framing error or BREAK condition */
-#define TTY_PE		0x02000000	/* Parity error */
 #define TTY_CHARMASK	0x000000ff	/* Character mask */
 #define TTY_QUOTE	0x00000100	/* Character quoted */
 #define TTY_ERRORMASK	0xff000000	/* Error mask */
+#define TTY_FE		0x01000000	/* Framing error or BREAK condition */
+#define TTY_PE		0x02000000	/* Parity error */
 
 #endif /* KERNEL */
 
