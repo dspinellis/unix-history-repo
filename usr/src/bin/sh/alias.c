@@ -1,3 +1,17 @@
+/*-
+ * Copyright (c) 1993
+ *	The Regents of the University of California.  All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Kenneth Almquist.
+ *
+ * %sccs.include.redist.c%
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)alias.c	1.3 (Berkeley) %G%";
+#endif /* not lint */
+
 #include "shell.h"
 #include "input.h"
 #include "output.h"
