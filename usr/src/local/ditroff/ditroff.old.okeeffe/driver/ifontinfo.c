@@ -118,13 +118,13 @@ char **argv;
 	    g[i].g_bitp = rd3();
 	}
 
-	if ((fixtowdth = FIXPIX * p.p_mag / 1000.0) == 0.0)
-	    fixtowdth = FIXPIX;
+	if ((fixtowdth = FIXIN * p.p_res * p.p_mag / 1000.0) == 0.0)
+	    fixtowdth = FIXIN * p.p_res;
 
 	if (!msgflag) {
 	printf("Font %s, size %.2f, ", argv[1], p.p_desiz * FIX);
 	printf("first %d, last %d, res %d, ", p.p_first, p.p_last, p.p_res);
-	printf("mag %.2f\n", fixtowdth / FIXPIX);
+	printf("mag %.2f\n", fixtowdth / (FIXIN * p.p_res));
 	printf("spacewidth %.2f, rot %d, cadv %d, ladv %d\n",
 		p.p_wordsp * fixtowdth, p.p_rot, p.p_cadv, p.p_ladv);
 	while (idstrings < endstring) {
