@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)umount.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)umount.c	4.3 (Berkeley) %G%";
 #include <stdio.h>
 #include <fstab.h>
 /*
@@ -28,31 +28,44 @@ char **argv;
 		return(1);
 	}
 	if (strcmp(argv[1], "-a") == 0){
-		FILE	*fs_file;
-		struct	fstab	fs;
-		if ((fs_file = fopen(FSTAB, "r")) == NULL){
-			perror(FSTAB);
-			exit(1);
-		}
-		while (!feof(fs_file)){
-			fscanf(fs_file, FSTABFMT, FSTABARG(&fs));
-			if (strcmp(fs.fs_file, "/") == 0)
-				continue;
-			if (strcmp(fs.fs_type, "rw") &&
-			    strcmp(fs.fs_type, "ro"))
-				continue;
-			fprintf(stderr, "Unmounting special file %s\n",
-				fs.fs_spec);
-			fflush(stderr);
-			if (umountfs(fs.fs_spec))
-				continue;
-		}
-		fclose(fs_file);
+		if (setfsent() == 0)
+			perror(FSTAB), exit(1);
+		umountall();
+		endfsent();
 	} else {
-		if (umountfs(argv[1]))
+		int	back;
+		if (back = umountfs(argv[1])){
+			if (back < 0)
+				perror("umount");
 			exit(1);
+		}
 	}
 	exit(0);
+}
+/*
+ *	It is important to unmount the files in
+ *	reverse! order from the order they were mounted,
+ *	so that file systems mounted as children to other
+ *	file systems get removed in the right order.
+ */
+umountall()
+{
+	struct	fstab	fs;
+	struct	fstab	*fsp;
+	if ( (fsp = getfsent()) == 0)
+		return;
+	fs = *fsp;	/* save info locally; it is static from getfsent() */
+	umountall();
+	if (strcmp(fs.fs_file, "/") == 0)
+		return;
+	if (strcmp(fs.fs_type, FSTAB_RW) &&
+	    strcmp(fs.fs_type, FSTAB_RO))
+		return;
+	if (umountfs(fs.fs_spec) < 0)
+		fprintf(stdout, "Unmount of special file %s FAILED\n", fs.fs_spec);
+	else
+		fprintf(stdout, "Unmounted special file %s\n", fs.fs_spec);
+	fflush(stdout);
 }
 
 int umountfs(name)
@@ -63,8 +76,7 @@ int umountfs(name)
 	int	mf;
 
 	if (umount(name) < 0) {
-		perror("umount");
-		return(1);
+		return(-1);
 	}
 	p1 = name;
 	while(*p1++)
