@@ -1,22 +1,25 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	4.3 (Berkeley) %G%";
 #endif
 
 /*
  * FTP User Program -- Command Routines.
  */
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/socket.h>
 
 #include <signal.h>
 #include <stdio.h>
 #include <errno.h>
 #include <netdb.h>
+#include <stat.h>
 
 #include "ftp.h"
 #include "ftp_var.h"
 
-int	autologin = 1;
+extern	char *globerr;
+extern	char **glob();
+extern	short gflag;
 
 /*
  * Connect to peer server and
@@ -197,9 +200,6 @@ setstruct(argc, argv)
 put(argc, argv)
 	char *argv[];
 {
-	int fd;
-	register int n, addr;
-	register char *cp, *targ;
 
 	if (!connected) {
 		printf("Not connected.\n");
@@ -230,19 +230,70 @@ usage:
 	}
 	if (argc < 3) 
 		goto usage;
+	if (!globulize(&argv[1]))
+		return;
 	sendrequest("STOR", argv[1], argv[2]);
 }
 
 /*
- * Receive a single file.
+ * Send one or more files.
+ */
+mput(argc, argv)
+	char *argv[];
+{
+	char **cpp, *dst;
+	int i;
+
+	if (!connected) {
+		printf("Not connected.\n");
+		return;
+	}
+	if (argc < 2) {
+		printf("%s local-file remote-file, or\n", argv[0]);
+		printf("%s local-files\n", argv[0]);
+		return;
+	}
+	if (argc == 3)  {
+		if (!globulize(&argv[1]))
+			return;
+		sendrequest("STOR", argv[1], argv[2]);
+		return;
+	}
+	/*
+	 * Check for shell metacharacters which we might
+	 * want to expand into a list of file names.
+	 */
+	for (i = 1; i < argc; i++) {
+		if (!doglob) {
+			if (!skip(argv[0], argv[i]))
+				sendrequest("STOR", argv[i], argv[i]);
+			continue;
+		}
+		cpp = glob(argv[i]);
+		if (globerr != NULL) {
+			printf("%s: %s\n", argv[i], globerr);
+			if (cpp)
+				blkfree(cpp);
+			continue;
+		}
+		if (cpp == NULL) {
+			printf("%s: no match\n", argv[i]);
+			continue;
+		}
+		while (*cpp != NULL) {
+			if (!skip(argv[0], *cpp))
+				sendrequest("STOR", *cpp, *cpp);
+			free(*cpp), cpp++;
+		}
+	}
+}
+
+/*
+ * Receive one file.
  */
 get(argc, argv)
 	char *argv[];
 {
-	int fd;
-	register int n, addr;
-	register char *cp;
-	char *src;
 
 	if (!connected) {
 		printf("Not connected.\n");
@@ -260,7 +311,7 @@ get(argc, argv)
 	}
 	if (argc < 2) {
 usage:
-		printf("%s remote-file local-file\n", argv[0]);
+		printf("%s remote-file [ local-file ]\n", argv[0]);
 		return;
 	}
 	if (argc < 3) {
@@ -273,7 +324,112 @@ usage:
 	}
 	if (argc < 3) 
 		goto usage;
+	if (!globulize(&argv[2]))
+		return;
 	recvrequest("RETR", argv[2], argv[1]);
+}
+
+/*
+ * Get multiple files.
+ */
+mget(argc, argv)
+	char *argv[];
+{
+	char temp[16], *dst, dstpath[MAXPATHLEN], buf[MAXPATHLEN];
+	FILE *ftemp;
+	int madedir = 0, oldverbose;
+	struct stat stb;
+
+	if (!connected) {
+		printf("Not connected.\n");
+		return;
+	}
+	if (argc == 2)
+		argc++, argv[2] = argv[1];
+	if (argc < 2) {
+		strcat(line, " ");
+		printf("(remote-directory) ");
+		gets(&line[strlen(line)]);
+		makeargv();
+		argc = margc;
+		argv = margv;
+	}
+	if (argc < 2) {
+usage:
+		printf("%s remote-directory [ local-directory ], or\n",
+			argv[0]);
+		printf("%s remote-files local-directory\n", argv[0]);
+		return;
+	}
+	if (argc < 3) {
+		strcat(line, " ");
+		printf("(local-directory) ");
+		gets(&line[strlen(line)]);
+		makeargv();
+		argc = margc;
+		argv = margv;
+	}
+	if (argc < 3) 
+		goto usage;
+	dst = argv[argc - 1];
+	if (!globulize(&dst))
+		return;
+	/*
+	 * If destination doesn't exist,
+	 * try and create it.
+	 */
+	if (stat(dst, &stb) < 0) {
+		if (mkdir(dst, 0777) < 0) {
+			perror(dst);
+			return;
+		}
+		madedir++;
+	} else {
+		if ((stb.st_mode & S_IFMT) != S_IFDIR) {
+			printf("%s: not a directory\n", dst);
+			return;
+		}
+	}
+	/*
+	 * Multiple files, just get each one without an nlst.
+	 */
+	if (argc > 3) {
+		int i;
+
+		for (i = 1; i < argc - 1; i++)
+			recvrequest("RETR",
+			  sprintf(dstpath, "%s/%s", dst, argv[i]), argv[i]);
+		return;
+	}
+	/*
+	 * Get a directory full of files.  Perform an
+	 * nlst to find the file names, then retrieve
+	 * each individually.  If prompting is on, ask
+	 * before grabbing each file.
+	 */
+	strcpy(temp, "/tmp/ftpXXXXXX");
+	mktemp(temp);
+	oldverbose = verbose, verbose = 0;
+	recvrequest("NLST", temp, argv[1]);
+	verbose = oldverbose;
+	ftemp = fopen(temp, "r");
+	unlink(temp);
+	if (ftemp == NULL) {
+		printf("can't find list of remote files, oops\n");
+		if (madedir)
+			(void) rmdir(dst);
+		return;
+	}
+	while (fgets(buf, sizeof (buf), ftemp) != NULL) {
+		char *cp = index(buf, '\n');
+
+		if (cp)
+			*cp = '\0';
+		if (skip(argv[0], buf))
+			continue;
+		recvrequest("RETR", sprintf(dstpath, "%s/%s", dst, buf), buf);
+	}
+	fclose(ftemp);
 }
 
 char *
@@ -297,8 +453,9 @@ status(argc, argv)
 		printf("Not connected.\n");
 	printf("Mode: %s; Type: %s; Form: %s; Structure: %s\n",
 		modename, typename, formname, structname);
-	printf("Verbose: %s; Bell: %s; Prompting: %s\n", 
-		onoff(verbose), onoff(bell), onoff(interactive));
+	printf("Verbose: %s; Bell: %s; Prompting: %s; Globbing: %s\n", 
+		onoff(verbose), onoff(bell), onoff(interactive),
+		onoff(doglob));
 }
 
 /*
@@ -347,10 +504,21 @@ setprompt()
 }
 
 /*
+ * Toggle metacharacter interpretation
+ * on local file names.
+ */
+/*VARARGS*/
+setglob()
+{
+	
+	doglob = !doglob;
+	printf("Globbing %s.\n", onoff(doglob));
+}
+
+/*
  * Set debugging mode on/off and/or
  * set level of debugging.
  */
-/*VARARGS*/
 setdebug(argc, argv)
 	char *argv[];
 {
@@ -399,8 +567,6 @@ cd(argc, argv)
 	(void) command("CWD %s", argv[1]);
 }
 
-#include <pwd.h>
-
 /*
  * Set current working directory
  * on local machine.
@@ -408,26 +574,22 @@ cd(argc, argv)
 lcd(argc, argv)
 	char *argv[];
 {
-	static struct passwd *pw = NULL;
+	char buf[MAXPATHLEN];
+	extern char *home;
 
-	if (argc < 2) {
-		if (pw == NULL) {
-			pw = getpwnam(getlogin());
-			if (pw == NULL)
-				pw = getpwuid(getuid());
-		}
-		if (pw == NULL) {
-			printf("ftp: can't find home directory.\n");
-			return;
-		}
-		argc++, argv[1] = pw->pw_dir;
-	}
+	if (argc < 2)
+		argc++, argv[1] = home;
 	if (argc != 2) {
 		printf("%s local-directory\n", argv[0]);
 		return;
 	}
-	if (chdir(argv[1]) < 0)
+	if (!globulize(&argv[1]))
+		return;
+	if (chdir(argv[1]) < 0) {
 		perror(argv[1]);
+		return;
+	}
+	printf("Local directory now %s\n", getwd(buf));
 }
 
 /*
@@ -504,6 +666,8 @@ ls(argc, argv)
 		return;
 	}
 	cmd = argv[0][0] == 'l' ? "NLST" : "LIST";
+	if (strcmp(argv[2], "-") && !globulize(&argv[2]))
+		return;
 	recvrequest(cmd, argv[2], argv[1]);
 }
 
@@ -686,4 +850,54 @@ disconnect()
 	cout = NULL;
 	connected = 0;
 	data = -1;
+}
+
+skip(cmd, file)
+	char *cmd, *file;
+{
+	char line[BUFSIZ];
+
+	if (!interactive)
+		return (0);
+	printf("%s %s? ", cmd, file);
+	fflush(stdout);
+	gets(line);
+	return (*line == 'y');
+}
+
+fatal(msg)
+	char *msg;
+{
+
+	fprintf(stderr, "ftp: %s\n");
+	exit(1);
+}
+
+/*
+ * Glob a local file name specification with
+ * the expectation of a single return value.
+ * Can't control multiple values being expanded
+ * from the expression, we return only the first.
+ */
+globulize(cpp)
+	char **cpp;
+{
+	char **globbed;
+
+	if (!doglob)
+		return (1);
+	globbed = glob(*cpp);
+	if (globerr != NULL) {
+		printf("%s: %s\n", *cpp, globerr);
+		if (globbed)
+			blkfree(globbed);
+		return (0);
+	}
+	if (globbed) {
+		*cpp = *globbed++;
+		/* don't waste too much memory */
+		if (*globbed)
+			blkfree(globbed);
+	}
+	return (1);
 }
