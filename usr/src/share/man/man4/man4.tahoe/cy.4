@@ -2,123 +2,129 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)cy.4	6.1 (Berkeley) %G%
+.\"	@(#)cy.4	6.2 (Berkeley) %G%
 .\"
 .TH CY 4 ""
 .UC 7
 .SH NAME
 cy \- Cipher/tapemaster magtape interface
 .SH SYNOPSIS
-tapemaster0 at vba address ff4000 
+.B "controller cy0 at vba? csr 0xffff4000 vector cyintr"
 .br
+.B "device yc0 at cy0 drive 0"
 .SH DESCRIPTION
 The Cipher F880, M990/Tapemaster combination provides a standard tape drive
 interface as described in
 .IR mt (4).
-The Cipher F880 tape drive operates at 1600 or 3200 bpi - controlled by a switch on the drive. The Cipher M990 operates at 1600,3200 or 6250 bpi - controlled by switches on the front of the drive.
+The Cipher F880 tape drive operates at 1600 or 3200 bpi \-
+controlled by a switch on the drive. 
+The Cipher M990 operates at 1600, 3200 or 6250 bpi \-
+controlled by switches on the front of the drive.
+.PP
+The Tapemaster controller board is actually a Multibus controller
+accessed through a Halversa Multibus to VERSAbus converter card.
 .SH "SEE ALSO"
 mt(1), tar(1), mt(4)
 .SH DIAGNOSTICS
-Listed below are all possible error messages and an explanation of what
-the messages mean. Any comment related to hardware problems is in no way
-definitive or complete. Every error will produce one or more messages.
-Some errors, such as tape is write protected, are displayed on the user's terminal. All system errors are also displayed on the system console with the status that caused the drive to fail.
-.br
-The meaning of the status fields are:
-.sp 1
-.in +0.1i
-.nf
- 7      0 15     8
-+--------|--------+
-|||||||||||||||||||
-+-----------------+
- ^^^^^^^^ ^^^^---^
- |||||||| ||||
- |||||||| |||+---- ERROR - This 5-bit field specifies an error
- |||||||| |||              code when a non-recoverable error is
- |||||||| |||              encountered.
- |||||||| ||+----- E     - (Enter) The Parameter Block has been
- |||||||| ||               entered and execution has been begun.
- |||||||| |+------ C     - (Complete) The TAPEMASTER has
- |||||||| |                successfully completed the command.
- |||||||| +------- R	- (Retry) At least one retry was executed
- ||||||||                  by the TAPEMASTER during this command.
- |||||||+---------       - Unused.
- ||||||+---------- P	- (Write Protect) The tape does not have
- ||||||                    a write enable ring.
- |||||+----------- FB	- (Formatter Busy) The Formatter is busy.
- ||||+------------ R	- (Ready) The selected drive is ready.
- |||+------------- EOT	- (End of Tape)The EOT marker was detected.
- ||+-------------- LP	- (Load Point) The tape is at load point.
- |+--------------- OL	- (On Line) The drive is On Line.
- +---------------- FM	- (Filemark) A filemark was detected on
-                           this operation.
-.fi
-.sp 1
-.sp 1
-.in -0.2i
-Error messages will be displayed with the drive number (# stands for number), the message and its error code.
-.sp 1
-	\fBcy#: Drive timed out during transfer\fP.            
-.br
-Time out errors during transfer; this may be due to trying to read a blank tape or the controller failing to interrupt or the drive dropping off-line ... (Error:01-05)\fR 
-.sp1
-	\fBcy#: Tape is write protected\fP.
-.br
-An attempt was made to write on the tape drive when no write ring was present; this message is written only on the terminal of the user who tried to access the tape. (Error:11)\fR
-.sp1
-	\fBcy#: Drive is not on-line\fP.
-.br
-An attempt was made to access the tape while it was offline; this message is written only on the terminal of the user who tried to access the tape. (Error:10)\fR
-.sp1
-\fB	cy#: Controller referenced non-existent system memory\fP.
-A memory time-out occurred during a system memory reference. (Error:06)\fR.
-.sp1
-\fB	cy#: Controller diagnostics failed\fP.
-.br
-An error occurred in the micro-diagnostics or the diagnostic mode jumper was not installed while attempting to execute a Diagnostics command. (Error:08,13)\fR
-.sp1
-\fB	cy#: Unsatisfactory media found\fP.
-.br
-A tape time-out occured, because the tape drive did not supply an expected read or write strobe. This normally occurs when attempting to read a larger record than was written. It may also occur during a write due to a damaged tape. This message is written on the terminal of the user who tried to access the tape. (Error:0F)\fR
-.sp1
-	\fBcy#: Checksum error in controller proms\fP.
-.br
-An error was detected while calculating a checksum on the PROM. (Error:0E)\fR
-.sp1
-\fB	cy#: Unrecoverable media error during read\fP.
-.br
-A hard or soft error occurred which could not eliminated by retry. (Error:0A)\fR
-.sp1
-\fB	cy#: Unrecoverable tape parity error\fP.
-.br
-A read parity error occurred on the byte interface between the drive and the TAPEMASTER. (Error:0D)\fR 
-.sp1
-\fB	cy#: Blank tape found (data expected)\fP.
-.br
-Blank tape was encountered where data was expected. (Error:07)\fR
-.sp1
-.sp1
-\fB****Tapemaster controller time-out during initialization!****\fP
-.br
-Tapemaster controller failed to acknowledge the first attention while initializing the tape parameter blocks.\fP
-.sp1
-\fR****Tapemaster configuration failure!****\fP
-.br
-Tapemaster failed while initializng the on-board registers, memory and calculate the buffer space which is available for buffered operations.\fP
-.sp1
-\fR****Unrecoverble hardware error****\fP
-.br
-An unrecoverable hardware error occured. Controller or drive failure!!\fP
-.sp1
-The following are Warning messages:
-.sp1
-	\fRcy#: # cm of tape were used for recovering bad spots.\fP
-.br
-Displays the number of centimeters of tape that were skipped over while retrying due to bad spots on the tape.\fP
-.sp1
-	\fRcy#: Maximum block size is #!\fP
-.br
-Specified block size exceeded the displayed maximum block size.\fP
-
-BUGS
+\fBcy%d: %dkb buffer\fP.  The formatter was found to have a
+%d kilobyte buffer during autoconfiguration.
+.PP
+\fBcy%d: timeout or err during init, status=%b\fP.  The controller
+timed out or an error occurred on a nop command during autoconfiguration;
+the controller may be hung.
+.PP
+\fBcy%d: configuration failure, status=%b\fP.  The controller
+timed out or an error occurred on a configure command during
+autoconfiguration; the controller may be hung.
+.PP
+\fByc%d: no write ring\fR.  An attempt was made to write on the tape drive
+when no write ring was present; this message is written on the terminal of
+the user who tried to access the tape.
+.PP
+\fByc%d: not online\fR.  An attempt was made to access the tape while it
+was offline; this message is written on the terminal of the user
+who tried to access the tape.
+.PP
+\fBcy%d: i/o size too large\fP.  A read or a write request exceeded the
+maximum transfer size for the controller \- 32 kilobytes; this message
+is written on the terminal of the user who made the read or write request.
+.PP
+\fByc%d: hard error bn%d status=%b\fR.   A tape error occurred
+at block \fIbn\fR; the cy error register is
+printed in hexadecimal with the bits symbolically decoded.  Any error is
+fatal on non-raw tape; when possible the driver will have retried
+the operation which failed several times before reporting the error.
+For known errors, the trailing %s is one of the following:
+.RS
+\fBtimeout\fP, \fBtimeout1\fP, \fBtimeout2\fP, \fBtimeout3\fP, \fBtimeout4\fP. 
+Time out errors; this may be due to trying to read a blank tape
+or the controller failing to interrupt or the drive dropping off-line.
+.PP
+\fBnon-existent memory\fP.  A controller transfer to memory timed out.
+.PP
+\fBblank tape\fP.  The controller detected a blank tape when
+data was expected.
+.PP
+\fBmicro-diagnostic\fP, \fBmissing diagnostic jumper\fP. 
+An error occurred in the micro-diagnostics or
+the diagnostic mode jumper was not installed while attempting to execute
+a diagnostics command.
+.PP
+\fBeot/bot detected\fP.  The controller unexpectedly encountered
+end-of-tape or beginning-of-tape during an operation.
+.PP
+\fBretry unsuccessful\fP.  
+An error occurred which could not be recovered by repeated retries.
+.PP
+\fBfifo over/under-flow\fP.
+The controller was unable to transfer data to the drive fast enough.
+This usually occurs because a transfer was performed without using the
+controller's internal buffer.
+.PP
+\fBdrive to controller parity error\fP.
+A parity error was detected by the controller in data transferred
+between the drive and the controller's internal buffer.
+.PP
+\fBprom checksum\fP.
+The controller thinks its PROM is corrupted.
+.PP
+\fBtime out tape strobe (record length error)\fP.
+The controller timed out while looking for an inter-record gap.
+This usually occurs because the records on the tape are larger than
+expected (or can be handled).
+.PP
+\fBtape not ready\fP.
+The drive does not respond; usually the power has been turned off
+or a cable has come off.
+.PP
+\fBwrite protected\fP.
+A write ring was present in the tape when a write was attempted.
+.PP
+\fBinvalid link pointer\fP.
+An invalid pointer was encountered in a tape parameter block.
+.PP
+\fBunexpected file mark\fP.
+A tape file mark was encountered while trying to read or space.
+.PP
+\fBinvalid byte count\fP.
+An invalid byte count parameter was encountered in a tape parameter
+block.
+.PP
+\fBunidentified hardware error\fP, \fBstreaming terminated\fP.
+These should not happen.
+.RE
+.PP
+\fByc%d: lost interrupt\fP.
+The controller failed to respond with an interrupt signifying completion
+of the current command.  The system will attempt to abort the
+outstanding command and reset the controller.
+.PP
+\fBcy%d: reset failed\fP.
+The system was unable to reset the controller.  This is normally preceded
+by another message from the driver.
+.SH BUGS
+The controller supports only 20-bit addresses.  The only way the
+system can insure the controller will be able to address data
+to be transferred
+is to copy it into an intermediate buffer allocated in the first megabyte
+of system memory.

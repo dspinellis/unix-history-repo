@@ -2,55 +2,47 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)vd.4	6.1 (Berkeley) %G%
+.\"	@(#)vd.4	6.2 (Berkeley) %G%
 .\"
 .TH VD 4 ""
 .UC 7
 .SH NAME
-vd / (fsd, smd, xfd, fuj, xsd) \- versabus storage module controller/drives
+vd \- VERSAbus storage module controller/drives
 .SH SYNOPSIS
-.B "VD controller at vba addresses 0xf2[0-7]00"
+.B "controller vd0 at vba? csr 0xffff2000 vector vdintr"
 .br
-.B "160 Mb FSD "
-.br
-.B "300 Mb SMD "
-.br
-.B "340 Mb XFD "
-.br
-.B "360 Mb FUJ "
-.br
-.B "515 Mb XSD "
+.B "disk dk0 at vd0 drive 0"
 .SH DESCRIPTION
-This is a generic VERSABUS storage module disk driver for CCI's VD
-controller.
+This is a generic VERSAbus storage module disk driver for the
+Computer Consoles smd and smd-e disk controllers.
 .PP
 Files with minor device numbers 0 through 7 refer to various portions
 of drive 0;
 minor devices 8 through 15 refer to drive 1, etc.
-The standard device names begin with `fsd, `smd', `fuj', `xfd',
-or `xfd' followed by
+The standard device names begin with ``dk'' followed by
 the drive number and then a letter a-h for partitions 0-7 respectively.
-The character ? stands here for a drive number in the range 0 - 1f (hex).
+The character ? stands here for a drive number in the range 0-7.
 .PP
 The block files access the disk via the system's normal
 buffering mechanism and may be read and written without regard to
 physical disk records.  There is also a `raw' interface
 which provides for direct transmission between the disk
 and the user's read or write buffer.
-A single read or write call results in exactly one I/O operation
-and therefore raw I/O is considerably more efficient when
+A single read or write call results in exactly one i/o operation
+and therefore raw i/o is considerably more efficient when
 many words are transmitted.  The names of the raw files
 conventionally begin with an extra `r.'
 .PP
-In raw I/O counts should be a multiple of 1024 bytes (a disk block).
+In raw i/o counts should be a multiple of 1024 bytes (a disk block).
 Likewise
 .I seek
 calls should specify a multiple of 1024 bytes.
 .SH "DISK SUPPORT"
 The driver tries to access the last track on each drive
 to determine the type of drive attached.  The driver recognizes
-five different drives: CDC FSD (160 Mb), CDC 9766 (300 Mb),
-CDC XFSD (340 Mb), CDC 515Mb, and Fujitsu 360 Mb.
+six different drives: CDC FSD (160 MB), CDC 9766 (300 MB),
+CDC XFSD (340 MB), CDC 515MB, Fujitsu 360 MB, and Fujitsu
+Eagle (440 MB).
 The origin and size of the pseudo-disks on each drive are
 as follows:
 .PP
@@ -121,209 +113,76 @@ The ?c partition maps the rest of the pack,
 except the last 5 cylinders which are reserved for bad sector forwarding,
 and diagnostic use.
 .SH FILES
-/dev/fsd[0-7][a-f]	fsd block files
+/dev/dk[0-7][a-f]	dk block files
 .br
-/dev/rfsd[0-7][a-f]	fsd raw files
-.br
-/dev/smd[0-7][a-f]	smd block files
-.br
-/dev/rsmd[0-7][a-f]	smd raw files
-.br
-/dev/xfd[0-7][a-f]	xfd block files
-.br
-/dev/rxfd[0-7][a-f]	xfd raw files
-.br
-/dev/fuj[0-7][a-f]	fuj block files
-.br
-/dev/rfuj[0-7][a-f]	fuj raw files
-.br
-/dev/xsd[0-7][a-f]	xsd block files
-.br
-/dev/rxsd[0-7][a-f]	xsd raw files
-.br
+/dev/rdk[0-7][a-f]	dk raw files
 .SH SEE ALSO
 disktab(5)
 .SH DIAGNOSTICS
-The driver prints out a number of error messages, indicating that
-the error bit in the DCB'c op error status register was set.
-The contents of the register are printed, as well as an indication
-of the operation attempted and drive number.
-The status word is displayed in hexadecimal, so
-conversion to binary is up to the operator.
-The meaning of the status word's bit fields are:
-.sp 1
-.in +3m
-.nf
-31                              0
-+--------------------------------+
-||||||||||||||||||||||||||||||||||
-+--------------------------------+
- ^^^^^ ^^^^^^^^^^^^^^^^^^^^^^^^^^
- ||||| |||||||||||||||||||||||||+-- Header CRC error detected.
- ||||| ||||||||||||||||||||||||+--- Header compare error.
- ||||| |||||||||||||||||||||||+---- Disk write protected.
- ||||| ||||||||||||||||||||||+----- Controller fault.
- ||||| |||||||||||||||||||||+------ Disk seek error.
- ||||| ||||||||||||||||||||+------- Uncorrectable data error.
- ||||| |||||||||||||||||||+-------- Disk not on cylinder.
- ||||| ||||||||||||||||||+--------- Disk drive not ready.
- ||||| |||||||||||||||||+---------- Alternate track accessed.
- ||||| ||||||||||||||||+----------- Seek started.
- ||||| |||||||||||||||+------------ Invalid disk address issued.
- ||||| ||||||||||||||+------------- Non-existent memory error.
- ||||| |||||||||||||+-------------- Main memory parity error.
- ||||| ||||||||||||+--------------- Data compare error.
- ||||| |||||||||||+---------------- Drive is ready.
- ||||| ||||||||||+----------------- Operation aborted.
- ||||| |||||||||+------------------ Tried data strobe early.
- ||||| ||||||||+------------------- Tried data strobe late.
- ||||| |||||||+-------------------- Tried track offset plus.
- ||||| ||||||+--------------------- Tried track offset minus.
- ||||| |||||+---------------------- Controller performed data correction.
- ||||| ||||+----------------------- Uncorrected error happened (hard).
- ||||| |||+------------------------ Corrected error happened (soft).
- ||||| ||+------------------------- An error happened (hard or soft).
- ||||| |+-------------------------- Invalid command.
- ||||+-+--------------------------- unused.
- |||+------------------------------ DCB aborted by system.
- ||+------------------------------- Unsuccessful completion.
- |+-------------------------------- DCB completed.
- +--------------------------------- DCB started.
-.fi
-.in -3m
+\fBvd%d: %s controller\fP.
+This message is printed during autoconfiguration to identify
+the type of controller, either ``smd'' or ``smde''.
 .PP
-In addition, if the controller is an SMD-E controller then an error code
-will also be printed.  The error codes are:
-.sp 1
-.in +3m
-.nf
-\fICode\fP		\fIMeaning\fP
-
-\fICommand related errors\fP:
-
-01		Bad MDCB pointer
-02		Bad DCB pointer
-03		Invalid command
-04		Invalid disk address
-05		Invalid sector in command
-06		Gap specification error
-07		sector per track error
-08		bytes per sector error
-09		Interleave error
-0A		Invalid head address
-0B		Invalid DMA burst count
-0C		Invalid sector count
-0D		Drive number out of range
-0E		Too many total sectors
-
-
-\fIHard errors\fP:
-
-10		Disk not ready
-11		Seek error
-12		Disk write protected
-13		Unit not selected (command sent to non-existent drive)
-14		Seek error timeout
-15		Fault timeout
-16		Drive faulted
-17		Ready timeout
-18		Data Overrun
-19		No index pulse on write format
-1A		Sector not found
-1B		Retry performed - Soft error
-1C		Invalid sync in data field
-1D		seek timeout error
-1E		Busy timeout
-1F		Not on cylinder
-20		RTZ timeout
-21		Unit not initialized
-22		Seek error
-23		Mapped header error
-24		Header error - Sync word bad
-25		Header error - Wrong cylinder address
-26		Header error - Wrong head address
-27		Header error - Pad word bad
-28		Sector write protected
-2A		Header check sum error
-2B		Alternate track accessed
-2C		Read time-out error
-2D		On-cylinder timeout during offset adjust
-2E		Good header found on defective track
-
-
-\fIDMA transfer errors\fP
-
-30		DMA bus error
-31		DMA parity error
-32		DMA timeout
-
-
-\fIMiscellaneous errors\fP:
-
-40		Track offset minus
-41		Track offset plus
-42		Data strobe early
-43		Data strobe late
-44		Drive ready
-45		Data compare error
-47		Alternate track accessed
-48		Header CRC error
-49		Uncorrectable error
-4A		ECC code error - data field code
-4B		Abort
-4C		Out of buffer space
-4D		Controller performed data correction
-4E		Alternate track accessed
-
-
-\fIPOC related errors\fP
-
-50 - 53		Buffer RAM error (banks 0 - 3)
-54 - 57		Buffer RAM clear error (banks 0 - 3)
-58 - 5B		Event RAM Error (banks 0 - 3)
-5C - 5F		Event RAM clear error (banks 0 - 3)
-60		ROM CRC error
-61		Timer short error
-62		Shared RAM error
-63		Shared RAM clear error
-64		Illegal interupt or exception
-65		Disk sequencer did not initialize
-66		Restart FF did not initialize
-67		Data parity error FF did not initialize
-68		Versabus error FF did not initialize
-69		Unit select panel did not clear
-6A		Versabus interupt pending FF did not clear
-6B		Restart interupt FF did not init
-6C		Timer long error
-
-70		DMA gate array init started
-71		ROM CRC test started
-72		Local RAM test started
-73		Buffer RAM test started
-74		Event RAM test started
-75		SERDES gate array init started
-
-
-\fIIllegal interupts or exceptions\fP
-
-80		Bus error
-81		Address error
-82		Illegal instruction
-83		Divide by zero
-84		CHK instruction
-85		TRAPV instruction
-86		Privileged instruction
-87		Trace trap
-88		Line 1010 emulator
-89		Line 1111 emulator
-8A - 8C		Reserved (1 - 3)
-8D		Uninitialized interupt
-8E		Reserved 4
-8F		Spurious interupt
-91 - 97		"Hot" interupts on lines 1 - 7
-
-.fi
-.in -3m
+\fBvd%d: init error\fP.
+During autoconfiguration the controller failed to respond to
+an initialize command.
+.PP
+\fBvd%d: diagnostic error\fP.
+During autoconfiguration the controller failed  to respond to
+a diagnostic command.
+.PP
+\fBdk%d: unknown drive type\fP.
+The system was unable to identify the specified drive as
+one of the drives described above; the drive will not be
+configured.
+.PP
+\fBvd%d: drive %d: config error\fP.
+The system encountered a hard error when it tried to configure
+a drive during autoconfiguration.
+.PP
+\fBvd%d: starting drives, wait ... \fP.
+This message indicates the system is about to tell the
+controller to ``start'' the drives attached to  it.
+.PP
+\fBdk%d: %s <ntrak %d, ncyl %d, nsec %d>\fP.
+For each drive recognized during autoconfiguration the system
+prints a message of this form.  The drive type is displayed
+as well as the geometry: tracks/cylinder, cylinders, and sectors/track.
+.PP
+\fBvd%d: lost interrupt, status %b, error code %x\fP.
+The system failed to receive an interrupt from the controller after
+submitting a request.  The error status field of the device control
+block is printed in hexadecimal followed by a symbolic description.
+If this is an smde controller, the error code is also displayed.
+The system attempts to abort the current request and simulate an
+interrupt to unwedge the controller.
+.PP
+\fBvd%d: stray interrupt\fP.
+The system received an unexpected interrupt; it is ignored.
+.PP
+\fBdk%d%c: hard error sn%d status %b ecode %x\fP.
+An unrecoverable error was encountered.  The sector number reported
+is a physical sector number on the drive.  The error status and code
+are displayed as described previously.  If the drive is write protected,
+``status %b ecode %x'' will not be shown.
+.PP
+\fBdk%d%c: soft error sn%d status %b ecode %x\fP.
+A recoverable error was detected by the controller.  The status and
+error code information will not be shown if the controller indicated
+it corrected the error itself.
+.PP
+\fBvd%d: drive %d: couldn't reset\fP.
+The system was unable to reconfigure a drive during a controller reset.
+.PP
+\fBvd%d: controller timeout\fP.
+The controller failed to complete an operation within a reasonable
+time.  This message is usually followed by another message indicating
+what operation timed out; e.g. ``during config'' for a configuration
+command.
 .SH BUGS
-.I write
-scribbles on the tail of incomplete blocks.
+Writes
+scribble on the tail of incomplete blocks.
+.PP
+The partition tables for the file systems should be read off of each
+pack, as they are never quite what any single installation would prefer,
+and this would make packs more portable.
