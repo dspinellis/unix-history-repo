@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)appen.B	4.1 (Berkeley) %G%
+.\"	@(#)appen.B	5.1 (Berkeley) %G%
 .\"
 .ie t .he ''\fBAppendix B\fR''
 .el .he ''\fIAppendix B\fR''
