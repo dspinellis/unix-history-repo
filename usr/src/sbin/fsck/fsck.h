@@ -3,11 +3,12 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)fsck.h	5.6 (Berkeley) %G%
+ *	@(#)fsck.h	5.7 (Berkeley) %G%
  */
 
-#define	MAXDUP		10	/* limit on dup blks (per inode) */
-#define	MAXBAD		10	/* limit on bad blks (per inode) */
+#define	MAXDUP		10	 /* limit on dup blks (per inode) */
+#define	MAXBAD		10	 /* limit on bad blks (per inode) */
+#define MAXBUFSPACE	128*1024 /* maximum space to allocate to buffers */
 
 typedef	int	(*SIG_TYP)();
 
@@ -30,42 +31,45 @@ typedef struct direct	DIRECT;
 #define	SPECIAL(dip) \
 	(((dip)->di_mode & IFMT) == IFBLK || ((dip)->di_mode & IFMT) == IFCHR)
 
-#define	MAXNINDIR	(MAXBSIZE / sizeof (daddr_t))
-#define	MAXINOPB	(MAXBSIZE / sizeof (struct dinode))
-#define	SPERB		(MAXBSIZE / sizeof(short))
-
+/*
+ * buffer cache structure.
+ */
 struct bufarea {
-	struct bufarea	*b_next;		/* must be first */
+	struct bufarea	*b_next;		/* free list queue */
+	struct bufarea	*b_prev;		/* free list queue */
 	daddr_t	b_bno;
 	int	b_size;
 	int	b_errs;
+	int	b_flags;
 	union {
-		char	b_buf[MAXBSIZE];	/* buffer space */
-		short	b_lnks[SPERB];		/* link counts */
-		daddr_t	b_indir[MAXNINDIR];	/* indirect block */
-		struct	fs b_fs;		/* super block */
-		struct	cg b_cg;		/* cylinder group */
-		struct dinode b_dinode[MAXINOPB]; /* inode block */
+		char	*b_buf;			/* buffer space */
+		daddr_t	*b_indir;		/* indirect block */
+		struct	fs *b_fs;		/* super block */
+		struct	cg *b_cg;		/* cylinder group */
+		struct dinode *b_dinode;	/* inode block */
 	} b_un;
 	char	b_dirty;
 };
 
+#define	B_INUSE 1
 typedef struct bufarea BUFAREA;
 
-BUFAREA	inoblk;			/* inode blocks */
-BUFAREA	fileblk;		/* other blks in filesys */
+#define	MINBUFS		5	/* minimum number of buffers required */
+BUFAREA	bufhead;		/* head of list of other blks in filesys */
 BUFAREA	sblk;			/* file system superblock */
 BUFAREA	cgblk;			/* cylinder group blocks */
+BUFAREA	*getdatablk();
 
-#define	initbarea(x)	(x)->b_dirty = 0;(x)->b_bno = (daddr_t)-1
 #define	dirty(x)	(x)->b_dirty = 1
-#define	inodirty()	inoblk.b_dirty = 1
+#define	initbarea(x) \
+	(x)->b_dirty = 0; \
+	(x)->b_bno = (daddr_t)-1; \
+	(x)->b_flags = 0;
+
 #define	sbdirty()	sblk.b_dirty = 1
 #define	cgdirty()	cgblk.b_dirty = 1
-
-#define	dirblk		fileblk.b_un
-#define	sblock		sblk.b_un.b_fs
-#define	cgrp		cgblk.b_un.b_cg
+#define	sblock		(*sblk.b_un.b_fs)
+#define	cgrp		(*cgblk.b_un.b_cg)
 
 struct filecntl {
 	int	rfdes;
