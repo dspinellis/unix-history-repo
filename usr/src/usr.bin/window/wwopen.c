@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)wwopen.c	3.21 %G%";
+static char sccsid[] = "@(#)wwopen.c	3.22 %G%";
 #endif
 
 /*
@@ -104,7 +104,10 @@ wwopen(flags, nrow, ncol, row, col, nline)
 	if (flags & WWO_GLASS)
 		m |= WWM_GLS;
 	if (flags & WWO_REVERSE)
-		m |= WWM_REV;
+		if (wwavailmodes & WWM_REV)
+			m |= WWM_REV;
+		else
+			flags &= ~WWO_REVERSE;
 	for (i = w->ww_w.t; i < w->ww_w.b; i++)
 		for (j = w->ww_w.l; j < w->ww_w.r; j++)
 			w->ww_win[i][j] = m;

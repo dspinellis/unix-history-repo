@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)wwupdate.c	3.16 %G%";
+static char sccsid[] = "@(#)wwupdate.c	3.17 %G%";
 #endif
 
 /*
@@ -81,13 +81,13 @@ wwupdate1(top, bot)
 			if (j > wwncol)
 				break;
 			p = buf;
-			m = ns[-1].c_m & tt.tt_availmodes;
+			m = ns[-1].c_m;
 			c = j - 1;
 			os[-1] = ns[-1];
 			*p++ = ns[-1].c_c;
 			n = 5;
 			q = p;
-			while (j < wwncol && (ns->c_m&tt.tt_availmodes) == m) {
+			while (j < wwncol && ns->c_m == m) {
 				*p++ = ns->c_c;
 				if (ns->c_w == os->c_w) {
 					if (--n <= 0)
