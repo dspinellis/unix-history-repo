@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)whatis.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)whatis.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -127,7 +127,8 @@ match(bp, str)
 		for (; *bp && !isdigit(*bp) && !isalpha(*bp); ++bp);
 		if (!*bp)
 			break;
-		for (start = bp++; *bp && (isdigit(*bp) || isalpha(*bp)); ++bp);
+		for (start = bp++;
+		    *bp && (*bp == '_' || isdigit(*bp) || isalpha(*bp)); ++bp);
 		if (bp - start == len && !strncasecmp(start, str, len))
 			return(1);
 	}
