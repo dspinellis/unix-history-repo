@@ -1,4 +1,4 @@
-/*	dh.c	4.34	81/05/18	*/
+/*	dh.c	4.35	81/06/02	*/
 
 #include "dh.h"
 #if NDH > 0
@@ -255,7 +255,9 @@ dhopen(dev, flag)
 	if ((dhact&(1<<dh)) == 0) {
 		addr->un.dhcsr |= DH_IE;
 		dhact |= (1<<dh);
+#if NBK > 0
 		addr->dhsilo = 16;
+#endif
 	}
 	splx(s);
 	/*
