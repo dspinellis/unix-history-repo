@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)proc.h	7.13 (Berkeley) %G%
+ *	@(#)proc.h	7.14 (Berkeley) %G%
  */
 
 /*
@@ -187,7 +187,6 @@ int	whichqs;		/* bit mask summarizing non-empty qs's */
 #define	SOWEUPC	0x0200000	/* owe process an addupc() call at next ast */
 #define	SSEL	0x0400000	/* selecting; wakeup/waiting danger */
 #define SEXEC	0x0800000	/* process called exec */
-#define	SULOCK	0x1000000	/* locked in core after swap error XXX */
-#define	SHPUX	0x2000000	/* HP-UX process (HPUXCOMPAT) */
-
-#define	SPTECHG	0x0000000	/* pte's for process have changed XXX */
+#define	SHPUX	0x1000000	/* HP-UX process (HPUXCOMPAT) */
+#define	SULOCK	0x2000000	/* locked in core after swap error XXX */
+#define	SPTECHG	0x4000000	/* pte's for process have changed XXX */
