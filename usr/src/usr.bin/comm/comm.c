@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)comm.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)comm.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/file.h>
@@ -67,12 +67,13 @@ done:	argc -= optind;
 
 	/* for each column printed, add another tab offset */
 	p = tabs;
+	col1 = col2 = col3 = NULL;
 	if (flag1)
 		col1 = *p++;
 	if (flag2)
 		col2 = *p++;
 	if (flag3)
-		col3 = *p++;
+		col3 = *p;
 
 	for (read1 = read2 = 1;;) {
 		/* read next line, check for EOF */
