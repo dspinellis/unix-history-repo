@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)read_password.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)read_password.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -50,7 +50,7 @@ local_des_read_pw_string(s,max,prompt,verify)
 {
     int ok = 0;
     char *ptr;
-    
+
     jmp_buf old_env;
     struct sgttyb tty_state;
     char key_string[BUFSIZ];
@@ -60,12 +60,12 @@ local_des_read_pw_string(s,max,prompt,verify)
     }
 
     /* XXX assume jmp_buf is typedef'ed to an array */
-    bcopy((char *)old_env, (char *)env, sizeof(env));
+    memmove((char *)env, (char *)old_env, sizeof(env));
     if (setjmp(env))
 	goto lose;
 
     /* save terminal state*/
-    if (ioctl(0,TIOCGETP,(char *)&tty_state) == -1) 
+    if (ioctl(0,TIOCGETP,(char *)&tty_state) == -1)
 	return -1;
 /*
     push_signals();
@@ -79,7 +79,7 @@ local_des_read_pw_string(s,max,prompt,verify)
 	(void) fflush(stdout);
 	while (!fgets(s, max, stdin));
 
-	if ((ptr = index(s, '\n')))
+	if ((ptr = strchr(s, '\n')))
 	    *ptr = '\0';
 	if (verify) {
 	    printf("\nVerifying, please re-enter %s",prompt);
@@ -88,7 +88,7 @@ local_des_read_pw_string(s,max,prompt,verify)
 		clearerr(stdin);
 		continue;
 	    }
-            if ((ptr = index(key_string, '\n')))
+	    if ((ptr = strchr(key_string, '\n')))
 	    *ptr = '\0';
 	    if (strcmp(s,key_string)) {
 		printf("\n\07\07Mismatch - try again\n");
@@ -101,7 +101,7 @@ local_des_read_pw_string(s,max,prompt,verify)
 
 lose:
     if (!ok)
-	bzero(s, max);
+	memset(s, 0, max);
     printf("\n");
     /* turn echo back on */
     tty_state.sg_flags |= ECHO;
@@ -110,9 +110,9 @@ lose:
 /*
     pop_signals();
 */
-    bcopy((char *)env, (char *)old_env, sizeof(env));
+    memmove((char *)old_env, (char *)env, sizeof(env));
     if (verify)
-	bzero(key_string, sizeof (key_string));
+	memset(key_string, 0, sizeof (key_string));
     s[max-1] = 0;		/* force termination */
     return !ok;			/* return nonzero if not okay */
 }

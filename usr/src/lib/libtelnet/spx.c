@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)spx.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)spx.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef	SPX
@@ -81,23 +81,23 @@ static Block	challenge	= { 0 };
 
 /*******************************************************************/
 
-gss_OID_set           actual_mechs;
-gss_OID               actual_mech_type, output_name_type;
-int                   major_status, status, msg_ctx = 0, new_status;
-int                   req_flags = 0, ret_flags, lifetime_rec;
-gss_cred_id_t         gss_cred_handle;
-gss_ctx_id_t          actual_ctxhandle, context_handle;
-gss_buffer_desc       output_token, input_token, input_name_buffer;
-gss_buffer_desc       status_string;
-gss_name_t            desired_targname, src_name;
-gss_channel_bindings  input_chan_bindings;
-char                  lhostname[GSS_C_MAX_PRINTABLE_NAME];
-char                  targ_printable[GSS_C_MAX_PRINTABLE_NAME];
-int                   to_addr=0, from_addr=0;
-char                  *address;
-gss_buffer_desc       fullname_buffer;
-gss_OID               fullname_type;
-gss_cred_id_t         gss_delegated_cred_handle;
+gss_OID_set		actual_mechs;
+gss_OID			actual_mech_type, output_name_type;
+int			major_status, status, msg_ctx = 0, new_status;
+int			req_flags = 0, ret_flags, lifetime_rec;
+gss_cred_id_t		gss_cred_handle;
+gss_ctx_id_t		actual_ctxhandle, context_handle;
+gss_buffer_desc		output_token, input_token, input_name_buffer;
+gss_buffer_desc		status_string;
+gss_name_t		desired_targname, src_name;
+gss_channel_bindings	input_chan_bindings;
+char			lhostname[GSS_C_MAX_PRINTABLE_NAME];
+char			targ_printable[GSS_C_MAX_PRINTABLE_NAME];
+int			to_addr=0, from_addr=0;
+char			*address;
+gss_buffer_desc		fullname_buffer;
+gss_OID			fullname_type;
+gss_cred_id_t		gss_delegated_cred_handle;
 
 /*******************************************************************/
 
@@ -110,32 +110,32 @@ Data(ap, type, d, c)
 	void *d;
 	int c;
 {
-        unsigned char *p = str_data + 4;
+	unsigned char *p = str_data + 4;
 	unsigned char *cd = (unsigned char *)d;
 
 	if (c == -1)
 		c = strlen((char *)cd);
 
-        if (0) {
-                printf("%s:%d: [%d] (%d)",
-                        str_data[3] == TELQUAL_IS ? ">>>IS" : ">>>REPLY",
-                        str_data[3],
-                        type, c);
-                printd(d, c);
-                printf("\r\n");
-        }
+	if (0) {
+		printf("%s:%d: [%d] (%d)",
+			str_data[3] == TELQUAL_IS ? ">>>IS" : ">>>REPLY",
+			str_data[3],
+			type, c);
+		printd(d, c);
+		printf("\r\n");
+	}
 	*p++ = ap->type;
 	*p++ = ap->way;
 	*p++ = type;
-        while (c-- > 0) {
-                if ((*p++ = *cd++) == IAC)
-                        *p++ = IAC;
-        }
-        *p++ = IAC;
-        *p++ = SE;
+	while (c-- > 0) {
+		if ((*p++ = *cd++) == IAC)
+			*p++ = IAC;
+	}
+	*p++ = IAC;
+	*p++ = SE;
 	if (str_data[3] == TELQUAL_IS)
 		printsub('>', &str_data[2], p - (&str_data[2]));
-        return(net_write(str_data, p - str_data));
+	return(net_write(str_data, p - str_data));
 }
 
 	int
@@ -143,7 +143,7 @@ spx_init(ap, server)
 	Authenticator *ap;
 	int server;
 {
-        gss_cred_id_t    tmp_cred_handle;
+	gss_cred_id_t	tmp_cred_handle;
 
 	if (server) {
 		str_data[3] = TELQUAL_REPLY;
@@ -153,17 +153,17 @@ spx_init(ap, server)
 		input_name_buffer.length = strlen(targ_printable);
 		input_name_buffer.value = targ_printable;
 		major_status = gss_import_name(&status,
-                                       &input_name_buffer,
-                                       GSS_C_NULL_OID,
-                                       &desired_targname);
+					&input_name_buffer,
+					GSS_C_NULL_OID,
+					&desired_targname);
 		major_status = gss_acquire_cred(&status,
-                                        desired_targname,
-                                        0,
-                                        GSS_C_NULL_OID_SET,
-                                        GSS_C_ACCEPT,
-                                        &tmp_cred_handle,
-                                        &actual_mechs,
-                                        &lifetime_rec);
+					desired_targname,
+					0,
+					GSS_C_NULL_OID_SET,
+					GSS_C_ACCEPT,
+					&tmp_cred_handle,
+					&actual_mechs,
+					&lifetime_rec);
 		if (major_status != GSS_S_COMPLETE) return(0);
 	} else {
 		str_data[3] = TELQUAL_IS;
@@ -178,9 +178,9 @@ spx_send(ap)
 	Block enckey;
 	int r;
 
-	gss_OID  actual_mech_type, output_name_type;
-	int           msg_ctx = 0, new_status, status;
-	int           req_flags = 0, ret_flags, lifetime_rec, major_status;
+	gss_OID	actual_mech_type, output_name_type;
+	int	msg_ctx = 0, new_status, status;
+	int	req_flags = 0, ret_flags, lifetime_rec, major_status;
 	gss_buffer_desc  output_token, input_token, input_name_buffer;
 	gss_buffer_desc  output_name_buffer, status_string;
 	gss_name_t    desired_targname;
@@ -202,9 +202,9 @@ spx_send(ap)
 	}
 
 	major_status = gss_import_name(&status,
-				       &input_name_buffer,
-				       GSS_C_NULL_OID,
-				       &desired_targname);
+					&input_name_buffer,
+					GSS_C_NULL_OID,
+					&desired_targname);
 
 
 	major_status = gss_display_name(&status,
@@ -237,35 +237,35 @@ spx_send(ap)
 	address[3] = (to_addr & 0xff);
 	input_chan_bindings->application_data.length = 0;
 
-        req_flags = 0;
-        if (deleg_flag)  req_flags = req_flags | 1;
-        if (mutual_flag) req_flags = req_flags | 2;
-        if (replay_flag) req_flags = req_flags | 4;
-        if (seq_flag)    req_flags = req_flags | 8;
+	req_flags = 0;
+	if (deleg_flag)  req_flags = req_flags | 1;
+	if (mutual_flag) req_flags = req_flags | 2;
+	if (replay_flag) req_flags = req_flags | 4;
+	if (seq_flag)    req_flags = req_flags | 8;
 
-        major_status = gss_init_sec_context(&status,         /* minor status */
+	major_status = gss_init_sec_context(&status,         /* minor status */
 					GSS_C_NO_CREDENTIAL, /* cred handle */
-                                        &actual_ctxhandle,   /* ctx handle */
-                                        desired_targname,    /* target name */
-                                        GSS_C_NULL_OID,      /* mech type */
-                                        req_flags,           /* req flags */
-                                        0,                   /* time req */
-                                        input_chan_bindings, /* chan binding */
-                                        GSS_C_NO_BUFFER,     /* input token */
-                                        &actual_mech_type,   /* actual mech */
-                                        &output_token,       /* output token */
-                                        &ret_flags,          /* ret flags */
-                                        &lifetime_rec);      /* time rec */
+					&actual_ctxhandle,   /* ctx handle */
+					desired_targname,    /* target name */
+					GSS_C_NULL_OID,      /* mech type */
+					req_flags,           /* req flags */
+					0,                   /* time req */
+					input_chan_bindings, /* chan binding */
+					GSS_C_NO_BUFFER,     /* input token */
+					&actual_mech_type,   /* actual mech */
+					&output_token,       /* output token */
+					&ret_flags,          /* ret flags */
+					&lifetime_rec);      /* time rec */
 
 	if ((major_status != GSS_S_COMPLETE) &&
 	    (major_status != GSS_S_CONTINUE_NEEDED)) {
-          gss_display_status(&new_status,
-                             status,
-                             GSS_C_MECH_CODE,
-                             GSS_C_NULL_OID,
-                             &msg_ctx,
-                             &status_string);
-          printf("%s\n", status_string.value);
+	  gss_display_status(&new_status,
+				status,
+				GSS_C_MECH_CODE,
+				GSS_C_NULL_OID,
+				&msg_ctx,
+				&status_string);
+	  printf("%s\n", status_string.value);
 	  return(0);
 	}
 
@@ -294,7 +294,7 @@ spx_is(ap, data, cnt)
 		return;
 	switch (*data++) {
 	case SPX_AUTH:
-	        input_token.length = cnt;
+		input_token.length = cnt;
 		input_token.value = (char *) data;
 
 		gethostname(lhostname, sizeof(lhostname));
@@ -306,18 +306,18 @@ spx_is(ap, data, cnt)
 		input_name_buffer.value = targ_printable;
 
 		major_status = gss_import_name(&status,
-                                       &input_name_buffer,
-                                       GSS_C_NULL_OID,
-                                       &desired_targname);
+					&input_name_buffer,
+					GSS_C_NULL_OID,
+					&desired_targname);
 
 		major_status = gss_acquire_cred(&status,
-                                        desired_targname,
-                                        0,
-                                        GSS_C_NULL_OID_SET,
-                                        GSS_C_ACCEPT,
-                                        &gss_cred_handle,
-                                        &actual_mechs,
-                                        &lifetime_rec);
+					desired_targname,
+					0,
+					GSS_C_NULL_OID_SET,
+					GSS_C_ACCEPT,
+					&gss_cred_handle,
+					&actual_mechs,
+					&lifetime_rec);
 
 		major_status = gss_release_name(&status, desired_targname);
 
@@ -343,33 +343,33 @@ spx_is(ap, data, cnt)
 		input_chan_bindings->application_data.length = 0;
 
 		major_status = gss_accept_sec_context(&status,
-					      &context_handle,
-                                              gss_cred_handle,
-                                              &input_token,
-                                              input_chan_bindings,
-                                              &src_name,
-                                              &actual_mech_type,
-                                              &output_token,
-                                              &ret_flags,
-                                              &lifetime_rec,
-                                              &gss_delegated_cred_handle);
+						&context_handle,
+						gss_cred_handle,
+						&input_token,
+						input_chan_bindings,
+						&src_name,
+						&actual_mech_type,
+						&output_token,
+						&ret_flags,
+						&lifetime_rec,
+						&gss_delegated_cred_handle);
 
 
 		if (major_status != GSS_S_COMPLETE) {
 
 		  major_status = gss_display_name(&status,
-					  src_name,
-                                          &fullname_buffer,
-                                          &fullname_type);
+					src_name,
+					&fullname_buffer,
+					&fullname_type);
 			Data(ap, SPX_REJECT, (void *)"auth failed", -1);
 			auth_finished(ap, AUTH_REJECT);
 			return;
 		}
 
 		major_status = gss_display_name(&status,
-                                          src_name,
-                                          &fullname_buffer,
-                                          &fullname_type);
+					src_name,
+					&fullname_buffer,
+					&fullname_type);
 
 
 		Data(ap, SPX_ACCEPT, (void *)output_token.value, output_token.length);
@@ -412,26 +412,26 @@ spx_reply(ap, data, cnt)
 		  input_token.length = cnt;
 
 		  major_status = gss_init_sec_context(&status, /* minor stat */
-                                        GSS_C_NO_CREDENTIAL, /* cred handle */
-                                        &actual_ctxhandle,   /* ctx handle */
-                                        desired_targname,    /* target name */
-                                        GSS_C_NULL_OID,      /* mech type */
-                                        req_flags,           /* req flags */
-                                        0,                   /* time req */
-                                        input_chan_bindings, /* chan binding */
-                                        &input_token,        /* input token */
-                                        &actual_mech_type,   /* actual mech */
-                                        &output_token,       /* output token */
-                                        &ret_flags,          /* ret flags */
-                                        &lifetime_rec);      /* time rec */
+					GSS_C_NO_CREDENTIAL, /* cred handle */
+					&actual_ctxhandle,   /* ctx handle */
+					desired_targname,    /* target name */
+					GSS_C_NULL_OID,      /* mech type */
+					req_flags,           /* req flags */
+					0,                   /* time req */
+					input_chan_bindings, /* chan binding */
+					&input_token,        /* input token */
+					&actual_mech_type,   /* actual mech */
+					&output_token,       /* output token */
+					&ret_flags,          /* ret flags */
+					&lifetime_rec);      /* time rec */
 
 		  if (major_status != GSS_S_COMPLETE) {
 		    gss_display_status(&new_status,
-				       status,
-				       GSS_C_MECH_CODE,
-				       GSS_C_NULL_OID,
-				       &msg_ctx,
-				       &status_string);
+					status,
+					GSS_C_MECH_CODE,
+					GSS_C_NULL_OID,
+					&msg_ctx,
+					&status_string);
 		    printf("[ SPX mutual response fails ... '%s' ]\r\n",
 			 status_string.value);
 		    auth_send_retry();
@@ -455,25 +455,25 @@ spx_status(ap, name, level)
 
 	gss_buffer_desc  fullname_buffer, acl_file_buffer;
 	gss_OID          fullname_type;
-        char acl_file[160], fullname[160];
-        int major_status, status = 0;
+	char acl_file[160], fullname[160];
+	int major_status, status = 0;
 	struct passwd  *pwd;
 
-        /*
-         * hard code fullname to
-         *   "SPX:/C=US/O=Digital/OU=LKG/OU=Sphinx/OU=Users/CN=Kannan Alagappan"
-         * and acl_file to "~kannan/.sphinx"
-         */
+	/*
+	 * hard code fullname to
+	 *   "SPX:/C=US/O=Digital/OU=LKG/OU=Sphinx/OU=Users/CN=Kannan Alagappan"
+	 * and acl_file to "~kannan/.sphinx"
+	 */
 
 	pwd = getpwnam(UserNameRequested);
 	if (pwd == NULL) {
-          return(AUTH_USER);   /*  not authenticated  */
-        }
+	  return(AUTH_USER);   /*  not authenticated  */
+	}
 
 	strcpy(acl_file, pwd->pw_dir);
 	strcat(acl_file, "/.sphinx");
-        acl_file_buffer.value = acl_file;
-        acl_file_buffer.length = strlen(acl_file);
+	acl_file_buffer.value = acl_file;
+	acl_file_buffer.length = strlen(acl_file);
 
 	major_status = gss_display_name(&status,
 					src_name,
@@ -483,15 +483,15 @@ spx_status(ap, name, level)
 	if (level < AUTH_USER)
 		return(level);
 
-        major_status = gss__check_acl(&status, &fullname_buffer,
-                                      &acl_file_buffer);
+	major_status = gss__check_acl(&status, &fullname_buffer,
+					&acl_file_buffer);
 
-        if (major_status == GSS_S_COMPLETE) {
+	if (major_status == GSS_S_COMPLETE) {
 	  strcpy(name, UserNameRequested);
 	  return(AUTH_VALID);
-        } else {
-           return(AUTH_USER);
-        }
+	} else {
+	   return(AUTH_USER);
+	}
 
 }
 

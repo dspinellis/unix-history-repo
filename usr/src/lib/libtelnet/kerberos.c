@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)kerberos.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)kerberos.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -33,7 +33,7 @@ static char sccsid[] = "@(#)kerberos.c	8.2 (Berkeley) %G%";
 #include <sys/types.h>
 #include <arpa/telnet.h>
 #include <stdio.h>
-#include <des.h>        /* BSD wont include this in krb.h, so we do it here */
+#include <des.h>	/* BSD wont include this in krb.h, so we do it here */
 #include <krb.h>
 #ifdef	__STDC__
 #include <stdlib.h>
@@ -87,32 +87,32 @@ Data(ap, type, d, c)
 	void *d;
 	int c;
 {
-        unsigned char *p = str_data + 4;
+	unsigned char *p = str_data + 4;
 	unsigned char *cd = (unsigned char *)d;
 
 	if (c == -1)
 		c = strlen((char *)cd);
 
-        if (auth_debug_mode) {
-                printf("%s:%d: [%d] (%d)",
-                        str_data[3] == TELQUAL_IS ? ">>>IS" : ">>>REPLY",
-                        str_data[3],
-                        type, c);
-                printd(d, c);
-                printf("\r\n");
-        }
+	if (auth_debug_mode) {
+		printf("%s:%d: [%d] (%d)",
+			str_data[3] == TELQUAL_IS ? ">>>IS" : ">>>REPLY",
+			str_data[3],
+			type, c);
+		printd(d, c);
+		printf("\r\n");
+	}
 	*p++ = ap->type;
 	*p++ = ap->way;
 	*p++ = type;
-        while (c-- > 0) {
-                if ((*p++ = *cd++) == IAC)
-                        *p++ = IAC;
-        }
-        *p++ = IAC;
-        *p++ = SE;
+	while (c-- > 0) {
+		if ((*p++ = *cd++) == IAC)
+			*p++ = IAC;
+	}
+	*p++ = IAC;
+	*p++ = SE;
 	if (str_data[3] == TELQUAL_IS)
 		printsub('>', &str_data[2], p - (&str_data[2]));
-        return(net_write(str_data, p - str_data));
+	return(net_write(str_data, p - str_data));
 }
 
 	int
@@ -151,7 +151,7 @@ kerberos4_send(ap)
 	CREDENTIALS cred;
 	int r;
 
-	printf("[ Trying KERBEROS4 ... ]\n");	
+	printf("[ Trying KERBEROS4 ... ]\n");
 	if (!UserNameRequested) {
 		if (auth_debug_mode) {
 			printf("Kerberos V4: no user name supplied\r\n");
@@ -159,7 +159,7 @@ kerberos4_send(ap)
 		return(0);
 	}
 
-	bzero(instance, sizeof(instance));
+	memset(instance, 0, sizeof(instance));
 
 	if (realm = krb_get_phost(RemoteHostName))
 		strncpy(instance, realm, sizeof(instance));
@@ -219,7 +219,7 @@ kerberos4_send(ap)
 		des_ecb_encrypt(challenge, challenge, sched, 1);
 	}
 #endif	/* ENCRYPTION */
-	
+
 	if (auth_debug_mode) {
 		printf("CK: %d:", kerberos4_cksum(auth.dat, auth.length));
 		printd(auth.dat, auth.length);
@@ -254,7 +254,7 @@ kerberos4_is(ap, data, cnt)
 				printf("No local realm\r\n");
 			return;
 		}
-		bcopy((void *)data, (void *)auth.dat, auth.length = cnt);
+		memmove((void *)auth.dat, (void *)data, auth.length = cnt);
 		if (auth_debug_mode) {
 			printf("Got %d bytes of authentication data\r\n", cnt);
 			printf("CK: %d:", kerberos4_cksum(auth.dat, auth.length));
@@ -271,7 +271,7 @@ kerberos4_is(ap, data, cnt)
 			return;
 		}
 #ifdef	ENCRYPTION
-		bcopy((void *)adat.session, (void *)session_key, sizeof(Block));
+		memmove((void *)session_key, (void *)adat.session, sizeof(Block));
 #endif	/* ENCRYPTION */
 		krb_kntoln(&adat, name);
 
@@ -303,7 +303,7 @@ kerberos4_is(ap, data, cnt)
 		 */
 		des_init_random_number_generator(session_key);
 		des_key_sched(session_key, sched);
-		bcopy((void *)data, (void *)datablock, sizeof(Block));
+		memmove((void *)datablock, (void *)data, sizeof(Block));
 		/*
 		 * Take the received encrypted challenge, and encrypt
 		 * it again to get a unique session_key for the

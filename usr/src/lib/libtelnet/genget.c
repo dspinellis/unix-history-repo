@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)genget.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)genget.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 
@@ -23,22 +23,22 @@ static char sccsid[] = "@(#)genget.c	8.1 (Berkeley) %G%";
 isprefix(s1, s2)
 	register char *s1, *s2;
 {
-        register int n = 0;
-        char *os1;
+	register int n = 0;
+	char *os1;
 	register char c1, c2;
 
-        if (*s1 == '\0')
-                return(-1);
-        os1 = s1;
+	if (*s1 == '\0')
+		return(-1);
+	os1 = s1;
 	c1 = *s1;
 	c2 = *s2;
-        while (LOWER(c1) == LOWER(c2)) {
+	while (LOWER(c1) == LOWER(c2)) {
 		if (c1 == '\0')
 			break;
-                c1 = *++s1;
-                c2 = *++s2;
-        }
-        return(*s1 ? 0 : (*s2 ? (s1 - os1) : (os1 - s1)));
+		c1 = *++s1;
+		c2 = *++s2;
+	}
+	return(*s1 ? 0 : (*s2 ? (s1 - os1) : (os1 - s1)));
 }
 
 static char *ambiguous;		/* special return value for command routines */

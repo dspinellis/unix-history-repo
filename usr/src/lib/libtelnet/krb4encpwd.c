@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)krb4encpwd.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)krb4encpwd.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 
@@ -99,32 +99,32 @@ Data(ap, type, d, c)
 	void *d;
 	int c;
 {
-        unsigned char *p = str_data + 4;
+	unsigned char *p = str_data + 4;
 	unsigned char *cd = (unsigned char *)d;
 
 	if (c == -1)
 		c = strlen((char *)cd);
 
-        if (0) {
-                printf("%s:%d: [%d] (%d)",
-                        str_data[3] == TELQUAL_IS ? ">>>IS" : ">>>REPLY",
-                        str_data[3],
-                        type, c);
-                printd(d, c);
-                printf("\r\n");
-        }
+	if (0) {
+		printf("%s:%d: [%d] (%d)",
+			str_data[3] == TELQUAL_IS ? ">>>IS" : ">>>REPLY",
+			str_data[3],
+			type, c);
+		printd(d, c);
+		printf("\r\n");
+	}
 	*p++ = ap->type;
 	*p++ = ap->way;
 	*p++ = type;
-        while (c-- > 0) {
-                if ((*p++ = *cd++) == IAC)
-                        *p++ = IAC;
-        }
-        *p++ = IAC;
-        *p++ = SE;
+	while (c-- > 0) {
+		if ((*p++ = *cd++) == IAC)
+			*p++ = IAC;
+	}
+	*p++ = IAC;
+	*p++ = SE;
 	if (str_data[3] == TELQUAL_IS)
 		printsub('>', &str_data[2], p - (&str_data[2]));
-        return(net_write(str_data, p - str_data));
+	return(net_write(str_data, p - str_data));
 }
 
 	int
@@ -132,7 +132,7 @@ krb4encpwd_init(ap, server)
 	Authenticator *ap;
 	int server;
 {
-        char hostname[80], *cp, *realm;
+	char hostname[80], *cp, *realm;
 	C_Block skey;
 
 	if (server) {
@@ -141,7 +141,7 @@ krb4encpwd_init(ap, server)
 		str_data[3] = TELQUAL_IS;
 		gethostname(hostname, sizeof(hostname));
 		realm = krb_realmofhost(hostname);
-		cp = index(hostname, '.');
+		cp = strchr(hostname, '.');
 		if (*cp != NULL) *cp = NULL;
 		if (read_service_key(KRB_SERVICE_NAME, hostname, realm, 0,
 					KEYFILE, (char *)skey)) {
@@ -188,10 +188,10 @@ krb4encpwd_is(ap, data, cnt)
 		return;
 	switch (*data++) {
 	case KRB4_ENCPWD_AUTH:
-		bcopy((void *)data, (void *)auth.dat, auth.length = cnt);
+		memmove((void *)auth.dat, (void *)data, auth.length = cnt);
 
 		gethostname(lhostname, sizeof(lhostname));
-		if ((cp = index(lhostname, '.')) != 0)  *cp = '\0';
+		if ((cp = strchr(lhostname, '.')) != 0)  *cp = '\0';
 
 		if (r = krb_rd_encpwd_req(&auth, KRB_SERVICE_NAME, lhostname, 0, &adat, NULL, challenge, r_user, r_passwd)) {
 			Data(ap, KRB4_ENCPWD_REJECT, (void *)"Auth failed", -1);
@@ -208,7 +208,7 @@ krb4encpwd_is(ap, data, cnt)
 		  return;
 		}
 
-		bcopy((void *)adat.session, (void *)session_key, sizeof(Block));
+		memmove((void *)session_key, (void *)adat.session, sizeof(Block));
 		Data(ap, KRB4_ENCPWD_ACCEPT, (void *)0, 0);
 		auth_finished(ap, AUTH_USER);
 		break;
@@ -218,7 +218,7 @@ krb4encpwd_is(ap, data, cnt)
 		 *  Take the received random challenge text and save
 		 *  for future authentication.
 		 */
-		bcopy((void *)data, (void *)challenge, sizeof(Block));
+		memmove((void *)challenge, (void *)data, sizeof(Block));
 		break;
 
 
@@ -240,7 +240,7 @@ krb4encpwd_is(ap, data, cnt)
 		  Data(ap, KRB4_ENCPWD_CHALLENGE, (void *)challenge, strlen(challenge));
 		}
 		break;
-		
+
 	default:
 		Data(ap, KRB4_ENCPWD_REJECT, 0, 0);
 		break;
@@ -259,8 +259,8 @@ krb4encpwd_reply(ap, data, cnt)
 	Block enckey;
 	CREDENTIALS cred;
 	int r;
-	char        randchal[REALM_SZ], instance[ANAME_SZ], *cp;
-        char        hostname[80], *realm;
+	char	randchal[REALM_SZ], instance[ANAME_SZ], *cp;
+	char	hostname[80], *realm;
 
 	if (cnt-- < 1)
 		return;
@@ -284,13 +284,13 @@ krb4encpwd_reply(ap, data, cnt)
 
 		gethostname(hostname, sizeof(hostname));
 		realm = krb_realmofhost(hostname);
-		bcopy((void *)data, (void *)challenge, cnt);
-		bzero(user_passwd, sizeof(user_passwd));
+		memmove((void *)challenge, (void *)data, cnt);
+		memset(user_passwd, 0, sizeof(user_passwd));
 		local_des_read_pw_string(user_passwd, sizeof(user_passwd)-1, "Password: ", 0);
 		UserPassword = user_passwd;
 		Challenge = challenge;
 		strcpy(instance, RemoteHostName);
-		if ((cp = index(instance, '.')) != 0)  *cp = '\0';
+		if ((cp = strchr(instance, '.')) != 0)  *cp = '\0';
 
 		if (r = krb_mk_encpwd_req(&krb_token, KRB_SERVICE_NAME, instance, realm, Challenge, UserNameRequested, user_passwd)) {
 		  krb_token.length = 0;
