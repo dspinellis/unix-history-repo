@@ -3,71 +3,72 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)shar.1	5.2 (Berkeley) %G%
+.\"     @(#)shar.1	5.3 (Berkeley) %G%
 .\"
-.TH SHAR 1 "%Q"
-.UC 7
-.SH NAME
-shar \- create a shell archive of files
-.SH SYNOPSIS
-.nf
-.ft B
-shar file ...
-.ft R
-.fi
-.SH DESCRIPTION
-.I Shar
+.Dd 
+.Dt SHAR 1
+.Os
+.Sh NAME
+.Nm shar
+.Nd create a shell archive of files
+.Sh SYNOPSIS
+.Nm shar Ar
+.Sh DESCRIPTION
+.Nm Shar
 writes an
-.IR sh (1)
+.Xr sh 1
 shell script to the standard output which will recreate the file
 hierarchy specified by the command line operands.
 Directories will be recreated and must be specified before the
 files they contain.
-.PP
-.I Shar
+.Pp
+.Nm Shar
 is normally used for distributing small numbers of files by
-.IR ftp (1)
+.Xr ftp  1
 or
-.IR mail (1).
-.SH SEE ALSO
-compress(1), mail(1), uuencode(1), tar(1)
-.SH BUGS
-.I Shar
+.Xr mail  1  .
+.Sh SEE ALSO
+.Xr compress 1 ,
+.Xr mail 1 ,
+.Xr uuencode 1 ,
+.Xr tar 1
+.Sh BUGS
+.Nm Shar
 makes no provisions for special types of files or files containing
 magic characters.
-.PP
+.Pp
 It is easy to insert trojan horses into
-.I shar
+.Nm shar
 files.
 It is strongly recommended that all shell archive files be examined
 before running them through
-.IR sh (1).
+.Xr sh  1  .
 Archives produced using this implementation of
-.I shar
+.Nm shar
 may be easily examined with the command:
-.sp
-.RS
+.Bd -literal -offset indent
 grep -v '^X' program.shar
-.RE
-.SH EXAMPLES
+.Ed
+.Sh EXAMPLES
 To create a shell archive of the program
-.IR ls (1)
+.Xr ls  1
 and mail it to Rick:
-.sp
-.RS
+.Bd -literal -offset indent
 cd ls
-.br
-shar `find . -print` | mail -s "ls source" rick
-.RE
-.sp
+shar `find . -print`  mail -s "ls source" rick
+.Ed
+.Pp
 To recreate the program directory:
-.sp
-.RS
+.Bd -literal -offset indent
 mkdir ls
-.br
 cd ls
-.br
+...
 <delete header lines and examine mailed archive>
-.br
+...
 sh archive
-.RE
+.Ed
+.Sh HISTORY
+The
+.Nm
+command
+.Ud .
