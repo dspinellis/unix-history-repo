@@ -1,4 +1,4 @@
-/*	ufs_vnops.c	4.44	82/12/19	*/
+/*	ufs_vnops.c	4.45	82/12/24	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -496,8 +496,11 @@ stat1(ip, ub)
 	ds.st_rdev = (dev_t)ip->i_rdev;
 	ds.st_size = ip->i_size;
 	ds.st_atime = ip->i_atime;
+	ds.st_spare1 = 0;
 	ds.st_mtime = ip->i_mtime;
+	ds.st_spare2 = 0;
 	ds.st_ctime = ip->i_ctime;
+	ds.st_spare3 = 0;
 	/* this doesn't belong here */
 	if ((ip->i_mode&IFMT) == IFBLK)
 		ds.st_blksize = BLKDEV_IOSIZE;
@@ -505,6 +508,7 @@ stat1(ip, ub)
 		ds.st_blksize = MAXBSIZE;
 	else
 		ds.st_blksize = ip->i_fs->fs_bsize;
+	ds.st_spare4[0] = ds.st_spare4[1] = ds.st_spare4[2] = 0;
 	if (copyout((caddr_t)&ds, (caddr_t)ub, sizeof(ds)) < 0)
 		u.u_error = EFAULT;
 }
