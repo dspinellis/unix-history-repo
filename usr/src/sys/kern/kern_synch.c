@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_synch.c	7.13 (Berkeley) %G%
+ *	@(#)kern_synch.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -13,8 +13,7 @@
 #include "kernel.h"
 #include "buf.h"
 
-#include "machine/psl.h"
-#include "machine/mtpr.h"
+#include "machine/cpu.h"
 
 /*
  * Force switch among equal priority processes every 100ms.
@@ -22,8 +21,7 @@
 roundrobin()
 {
 
-	runrun++;
-	aston();
+	need_resched();
 	timeout(roundrobin, (caddr_t)0, hz / 10);
 }
 
@@ -77,7 +75,7 @@ roundrobin()
  *    Solve (factor)**(power) =~ .1 given power (5*loadav):
  *	solving for factor,
  *      ln(factor) =~ (-2.30/5*loadav), or
- *      factor =~ exp(-1/((5/2.30)*loadav) =~ exp(-1/(2*loadav)) =
+ *      factor =~ exp(-1/((5/2.30)*loadav)) =~ exp(-1/(2*loadav)) =
  *          exp(-1/b) =~ (b-1)/b =~ b/(b+1).                    QED
  *
  * Proof of (2):
@@ -92,8 +90,8 @@ roundrobin()
  */
 
 /* calculations for digital decay to forget 90% of usage in 5*loadav sec */
-#define	get_b(loadav)		(2 * (loadav))
-#define	get_pcpu(b, cpu)	(((b) * ((cpu) & 0377)) / ((b) + FSCALE))
+#define	loadfactor(loadav)	(2 * (loadav))
+#define	decay_cpu(loadfac, cpu)	(((loadfac) * (cpu)) / ((loadfac) + FSCALE))
 
 /* decay 95% of `p_pctcpu' in 60 seconds; see CCPU_SHIFT before changing */
 fixpt_t	ccpu = 0.95122942450071400909 * FSCALE;		/* exp(-1/20) */
@@ -117,17 +115,21 @@ fixpt_t	ccpu = 0.95122942450071400909 * FSCALE;		/* exp(-1/20) */
  */
 schedcpu()
 {
-	register fixpt_t b = get_b(averunnable[0]);
+	register fixpt_t loadfac = loadfactor(averunnable[0]);
 	register struct proc *p;
-	register int s, a;
+	register int s;
+	register unsigned int newcpu;
 
 	wakeup((caddr_t)&lbolt);
 	for (p = allproc; p != NULL; p = p->p_nxt) {
-		if (p->p_time != 127)
-			p->p_time++;
-		if (p->p_stat==SSLEEP || p->p_stat==SSTOP)
-			if (p->p_slptime != 127)
-				p->p_slptime++;
+		/*
+		 * Increment time in/out of memory and sleep time
+		 * (if sleeping).  We ignore overflow; with 16-bit int's
+		 * (remember them?) overflow takes 45 days.
+		 */
+		p->p_time++;
+		if (p->p_stat == SSLEEP || p->p_stat == SSTOP)
+			p->p_slptime++;
 		p->p_pctcpu = (p->p_pctcpu * ccpu) >> FSHIFT;
 		/*
 		 * If the process has slept the entire second,
@@ -148,17 +150,13 @@ schedcpu()
 			(p->p_cpticks * FSCALE / hz)) >> FSHIFT;
 #endif
 		p->p_cpticks = 0;
-		a = (int) get_pcpu(b, p->p_cpu) + p->p_nice;
-		if (a < 0)
-			a = 0;
-		if (a > 255)
-			a = 255;
-		p->p_cpu = a;
-		(void) setpri(p);
+		newcpu = (u_int) decay_cpu(loadfac, p->p_cpu) + p->p_nice;
+		p->p_cpu = min(newcpu, UCHAR_MAX);
+		setpri(p);
 		s = splhigh();	/* prevent state changes */
 		if (p->p_pri >= PUSER) {
-#define	PPQ	(128 / NQS)
-			if ((p != u.u_procp || noproc) &&
+#define	PPQ	(128 / NQS)		/* priorities per queue */
+			if ((p != curproc || noproc) &&
 			    p->p_stat == SRUN &&
 			    (p->p_flag & SLOAD) &&
 			    (p->p_pri / PPQ) != (p->p_usrpri / PPQ)) {
@@ -171,34 +169,31 @@ schedcpu()
 		splx(s);
 	}
 	vmmeter();
-	if (runin!=0) {
-		runin = 0;
-		wakeup((caddr_t)&runin);
-	}
 	if (bclnlist != NULL)
-		wakeup((caddr_t)&proc[2]);
+		wakeup((caddr_t)pageproc);
 	timeout(schedcpu, (caddr_t)0, hz);
 }
 
 /*
  * Recalculate the priority of a process after it has slept for a while.
+ * For all load averages >= 1 and max p_cpu of 255, sleeping for at least
+ * six times the loadfactor will decay p_cpu to zero.
  */
 updatepri(p)
 	register struct proc *p;
 {
-	register int a = p->p_cpu & 0377;
-	register fixpt_t b = get_b(averunnable[0]);
+	register unsigned int newcpu = p->p_cpu;
+	register fixpt_t loadfac = loadfactor(averunnable[0]);
 
-	p->p_slptime--;		/* the first time was done in schedcpu */
-	while (a && --p->p_slptime)
-		a = (int) get_pcpu(b, a) /* + p->p_nice */;
-	p->p_slptime = 0;
-	if (a < 0)
-		a = 0;
-	if (a > 255)
-		a = 255;
-	p->p_cpu = a;
-	(void) setpri(p);
+	if (p->p_slptime > 5 * loadfac)
+		p->p_cpu = 0;
+	else {
+		p->p_slptime--;	/* the first time was done in schedcpu */
+		while (newcpu && --p->p_slptime)
+			newcpu = (int) decay_cpu(loadfac, newcpu);
+		p->p_cpu = min(newcpu, UCHAR_MAX);
+	}
+	setpri(p);
 }
 
 #define SQSIZE 0100	/* Must be power of 2 */
@@ -238,14 +233,13 @@ tsleep(chan, pri, wmesg, timo)
 	char *wmesg;
 	int timo;
 {
-	register struct proc *rp;
+	register struct proc *p = curproc;		/* XXX */
 	register struct slpque *qp;
 	register s;
 	int sig, catch = pri & PCATCH;
 	extern int cold;
 	int endtsleep();
 
-	rp = u.u_procp;
 	s = splhigh();
 	if (cold || panicstr) {
 		/*
@@ -259,58 +253,59 @@ tsleep(chan, pri, wmesg, timo)
 		return (0);
 	}
 #ifdef DIAGNOSTIC
-	if (chan == 0 || rp->p_stat != SRUN || rp->p_rlink)
+	if (chan == 0 || p->p_stat != SRUN || p->p_rlink)
 		panic("tsleep");
 #endif
-	rp->p_wchan = chan;
-	rp->p_wmesg = wmesg;
-	rp->p_slptime = 0;
-	rp->p_pri = pri & PRIMASK;
+	p->p_wchan = chan;
+	p->p_wmesg = wmesg;
+	p->p_slptime = 0;
+	p->p_pri = pri & PRIMASK;
 	qp = &slpque[HASH(chan)];
 	if (qp->sq_head == 0)
-		qp->sq_head = rp;
+		qp->sq_head = p;
 	else
-		*qp->sq_tailp = rp;
-	*(qp->sq_tailp = &rp->p_link) = 0;
+		*qp->sq_tailp = p;
+	*(qp->sq_tailp = &p->p_link) = 0;
 	if (timo)
-		timeout(endtsleep, (caddr_t)rp, timo);
+		timeout(endtsleep, (caddr_t)p, timo);
 	/*
-	 * If we stop in CURSIG/issig(), a wakeup or a SIGCONT
-	 * (or both) could occur while we were stopped.
+	 * We put ourselves on the sleep queue and start our timeout
+	 * before calling CURSIG, as we could stop there, and a wakeup
+	 * or a SIGCONT (or both) could occur while we were stopped.
 	 * A SIGCONT would cause us to be marked as SSLEEP
 	 * without resuming us, thus we must be ready for sleep
 	 * when CURSIG is called.  If the wakeup happens while we're
-	 * stopped, rp->p_wchan will be 0 upon return from CURSIG.
+	 * stopped, p->p_wchan will be 0 upon return from CURSIG.
 	 */
 	if (catch) {
-		rp->p_flag |= SSINTR;
-		if (sig = CURSIG(rp)) {
-			if (rp->p_wchan)
-				unsleep(rp);
-			rp->p_stat = SRUN;
+		p->p_flag |= SSINTR;
+		if (sig = CURSIG(p)) {
+			if (p->p_wchan)
+				unsleep(p);
+			p->p_stat = SRUN;
 			goto resume;
 		}
-		if (rp->p_wchan == 0) {
+		if (p->p_wchan == 0) {
 			catch = 0;
 			goto resume;
 		}
 	}
-	rp->p_stat = SSLEEP;
+	p->p_stat = SSLEEP;
 	(void) spl0();
-	u.u_ru.ru_nvcsw++;
+	p->p_stats->p_ru.ru_nvcsw++;
 	swtch();
 resume:
-	curpri = rp->p_usrpri;
+	curpri = p->p_usrpri;
 	splx(s);
-	rp->p_flag &= ~SSINTR;
-	if (rp->p_flag & STIMO) {
-		rp->p_flag &= ~STIMO;
+	p->p_flag &= ~SSINTR;
+	if (p->p_flag & STIMO) {
+		p->p_flag &= ~STIMO;
 		if (catch == 0 || sig == 0)
 			return (EWOULDBLOCK);
 	} else if (timo)
-		untimeout(endtsleep, (caddr_t)rp);
-	if (catch && (sig != 0 || (sig = CURSIG(rp)))) {
-		if (u.u_sigintr & sigmask(sig))
+		untimeout(endtsleep, (caddr_t)p);
+	if (catch && (sig != 0 || (sig = CURSIG(p)))) {
+		if (p->p_sigacts->ps_sigintr & sigmask(sig))
 			return (EINTR);
 		return (ERESTART);
 	}
@@ -345,7 +340,7 @@ sleep(chan, pri)
 	caddr_t chan;
 	int pri;
 {
-	register struct proc *rp;
+	register struct proc *p = curproc;		/* XXX */
 	register struct slpque *qp;
 	register s;
 	extern int cold;
@@ -357,7 +352,6 @@ sleep(chan, pri)
 		panic("old sleep");
 	}
 #endif
-	rp = u.u_procp;
 	s = splhigh();
 	if (cold || panicstr) {
 		/*
@@ -371,24 +365,24 @@ sleep(chan, pri)
 		return;
 	}
 #ifdef DIAGNOSTIC
-	if (chan==0 || rp->p_stat != SRUN || rp->p_rlink)
+	if (chan==0 || p->p_stat != SRUN || p->p_rlink)
 		panic("sleep");
 #endif
-	rp->p_wchan = chan;
-	rp->p_wmesg = NULL;
-	rp->p_slptime = 0;
-	rp->p_pri = pri;
+	p->p_wchan = chan;
+	p->p_wmesg = NULL;
+	p->p_slptime = 0;
+	p->p_pri = pri;
 	qp = &slpque[HASH(chan)];
 	if (qp->sq_head == 0)
-		qp->sq_head = rp;
+		qp->sq_head = p;
 	else
-		*qp->sq_tailp = rp;
-	*(qp->sq_tailp = &rp->p_link) = 0;
-	rp->p_stat = SSLEEP;
+		*qp->sq_tailp = p;
+	*(qp->sq_tailp = &p->p_link) = 0;
+	p->p_stat = SSLEEP;
 	(void) spl0();
-	u.u_ru.ru_nvcsw++;
+	p->p_stats->p_ru.ru_nvcsw++;
 	swtch();
-	curpri = rp->p_usrpri;
+	curpri = p->p_usrpri;
 	splx(s);
 }
 
@@ -416,7 +410,8 @@ unsleep(p)
 }
 
 /*
- * Wake up all processes sleeping on chan.
+ * Wakeup on "chan"; set all processes
+ * sleeping on chan to run state.
  */
 wakeup(chan)
 	register caddr_t chan;
@@ -433,7 +428,7 @@ restart:
 		if (p->p_rlink || p->p_stat != SSLEEP && p->p_stat != SSTOP)
 			panic("wakeup");
 #endif
-		if (p->p_wchan==chan) {
+		if (p->p_wchan == chan) {
 			p->p_wchan = 0;
 			*q = p->p_link;
 			if (qp->sq_tailp == &p->p_link)
@@ -442,6 +437,7 @@ restart:
 				/* OPTIMIZED INLINE EXPANSION OF setrun(p) */
 				if (p->p_slptime > 1)
 					updatepri(p);
+				p->p_slptime = 0;
 				p->p_stat = SRUN;
 				if (p->p_flag & SLOAD)
 					setrq(p);
@@ -449,15 +445,10 @@ restart:
 				 * Since curpri is a usrpri,
 				 * p->p_pri is always better than curpri.
 				 */
-				runrun++;
-				aston();
-				if ((p->p_flag&SLOAD) == 0) {
-					if (runout != 0) {
-						runout = 0;
-						wakeup((caddr_t)&runout);
-					}
-					wantin++;
-				}
+				if ((p->p_flag&SLOAD) == 0)
+					wakeup((caddr_t)&proc0);
+				else
+					need_resched();
 				/* END INLINE EXPANSION */
 				goto restart;
 			}
@@ -480,8 +471,9 @@ rqinit()
 }
 
 /*
- * Set the process running;
- * arrange for it to be swapped in if necessary.
+ * Change process state to be runnable,
+ * placing it on the run queue if it is in memory,
+ * and awakening the swapper if it isn't in memory.
  */
 setrun(p)
 	register struct proc *p;
@@ -512,38 +504,26 @@ setrun(p)
 	splx(s);
 	if (p->p_slptime > 1)
 		updatepri(p);
-	if (p->p_pri < curpri) {
-		runrun++;
-		aston();
-	}
-	if ((p->p_flag&SLOAD) == 0) {
-		if (runout != 0) {
-			runout = 0;
-			wakeup((caddr_t)&runout);
-		}
-		wantin++;
-	}
+	p->p_slptime = 0;
+	if ((p->p_flag&SLOAD) == 0)
+		wakeup((caddr_t)&proc0);
+	else if (p->p_pri < curpri)
+		need_resched();
 }
 
 /*
- * Set user priority.
- * The rescheduling flag (runrun)
- * is set if the priority is better
- * than the currently running process.
+ * Compute priority of process when running in user mode.
+ * Arrange to reschedule if the resulting priority
+ * is better than that of the current process.
  */
-setpri(pp)
-	register struct proc *pp;
+setpri(p)
+	register struct proc *p;
 {
-	register int p;
+	register unsigned int newpri;
 
-	p = (pp->p_cpu & 0377)/4;
-	p += PUSER + 2 * pp->p_nice;
-	if (p > 127)
-		p = 127;
-	if (p < curpri) {
-		runrun++;
-		aston();
-	}
-	pp->p_usrpri = p;
-	return (p);
+	newpri = PUSER + p->p_cpu / 4 + 2 * p->p_nice;
+	newpri = min(newpri, MAXPRI);
+	p->p_usrpri = newpri;
+	if (newpri < curpri)
+		need_resched();
 }
