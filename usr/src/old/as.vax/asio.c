@@ -1,5 +1,5 @@
 /* Coypright (c) 1980 Regents of the University of California */
-static	char sccsid[] = "@(#)asio.c 4.2 %G%";
+static	char sccsid[] = "@(#)asio.c 4.3 %G%";
 #include <stdio.h>
 #include "as.h"
 /*
@@ -25,83 +25,9 @@ Flushfield(n)
 	bitfield=0;
 }
 
-#ifdef ASFWRITE
 /*
- *	This is our version of fwrite...
- *	Hacked out fast version of fwrite that
- *	doesn't iterate over each and every character;
- *	We poke directly into the buffer area, and move things
- *	with a movc3.
+ *	Block I/O Routines
  */
-fwrite(p, n, m, f)
-	register char *p;
-	int n, m;
-	register FILE *f;
-{
-	register int cnt = n * m;
-	register int put;
-	register char *to;
-
-top:
-	if (cnt == 0)
-		return;
-	if (f->_cnt) {
-		put = f->_cnt;
-		if (put > cnt)
-			put = cnt;
-		f->_cnt -= put;
-		to = f->_ptr;
-		asm("movc3 r8,(r11),(r7)");
-		f->_ptr += put;
-		p += put;
-		cnt -= put;
-		goto top;
-	}
-	if (cnt >= BUFSIZ) {
-		fflush(f);
-		put = cnt - cnt % BUFSIZ;
-		if (write(f->_file, p, put) != put)
-			error(1, "Output write error in fwrite");
-		p += put;
-		cnt -= put;
-		goto top;
-	}
-	_flsbuf(*p++, f);
-	--cnt;
-	goto top;
-}
-
-/*
- *	This has been stolen from the usual place...
- *	It is put here so that the loader doesn't complain
- *	about multiple definitions in the archived object module.
- *
- *	archived in: /lib/libc.a
- *	object module from: /usr/src/libc/stdio/rdwr.c
- */
-fread(ptr, size, count, iop)
-	unsigned size, count;
-	register char *ptr;
-	register FILE *iop;
-{
-	register c;
-	unsigned ndone, s;
-
-	ndone = 0;
-	if (size)
-	for (; ndone<count; ndone++) {
-		s = size;
-		do {
-			if ((c = getc(iop)) >= 0)
-				*ptr++ = c;
-			else
-				return(ndone);
-		} while (--s);
-	}
-	return(ndone);
-}
-#endif ASFWRITE
-
 bopen(bp, off)
 	struct biobuf *bp;
 	off_t	off;
