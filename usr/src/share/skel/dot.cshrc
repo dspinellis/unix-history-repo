@@ -7,7 +7,9 @@ alias lf	ls -FA
 alias ll	ls -lA
 alias su	su -m
 
+setenv	EDITOR	vi
 setenv	EXINIT	'set autoindent'
+setenv	PAGER	more
 
 set path = (~/bin /bin /usr/{bin,X11/bin,contrib/bin,games,old/bin} /usr/local/bin)
 
