@@ -1,4 +1,5 @@
-#	@(#)Makefile	8.1 (Berkeley) 6/7/93
+#	From: @(#)Makefile	8.1 (Berkeley) 6/7/93
+#	$Id$
 
 PROG=	mklocale
 SRCS=	yacc.c lex.c
