@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)n7.c	4.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)n7.c	4.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "tdef.h"
@@ -53,7 +53,7 @@ extern int lss;
 extern int pto;
 extern int pfrom;
 extern int print;
-extern int nlist[NTRAP];
+extern int nlistx[NTRAP];
 extern int mlist[NTRAP];
 extern int *pnp;
 extern int nb;
@@ -477,7 +477,7 @@ int a;
 
 	for(i=0; i<NTRAP; i++){
 		if(mlist[i]){
-			if((j = nlist[i]) < 0)j += pl;
+			if((j = nlistx[i]) < 0)j += pl;
 			if(j == a)break;
 		}
 	}
@@ -512,7 +512,7 @@ int a;
 	}
 	for(i=0; i<NTRAP; i++){
 		if(mlist[i]){
-			if((j = nlist[i]) < 0)j += pl;
+			if((j = nlistx[i]) < 0)j += pl;
 			if((j -= a)  <=  0)continue;
 			if(j < k)k = j;
 		}
