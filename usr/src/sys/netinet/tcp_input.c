@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_input.c	7.11 (Berkeley) %G%
+ *	@(#)tcp_input.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -705,20 +705,32 @@ do_rst:
 				 * has been dropped and retransmit it.
 				 * Kludge snd_nxt & the congestion
 				 * window so we send only this one
-				 * packet.  Close the congestion
-				 * window to half its current size
-				 * to prevent a restart burst if this
-				 * packet fills all the holes in the
-				 * receiver's sequence space and she
-				 * advertises a fully open window on
-				 * the next real ack.
+				 * packet.  If this packet fills the
+				 * only hole in the receiver's seq.
+				 * space, the next real ack will fully
+				 * open our window.  This means we
+				 * have to do the usual slow-start to
+				 * not overwhelm an intermediate gateway
+				 * with a burst of packets.  Leave
+				 * here with the congestion window set
+				 * to allow 2 packets on the next real
+				 * ack and the exp-to-linear thresh
+				 * set for half the current window
+				 * size (since we know we're losing at
+				 * the current window size).
 				 */
 				if (tp->t_timer[TCPT_REXMT] == 0 ||
 				    ti->ti_ack != tp->snd_una)
 					tp->t_dupacks = 0;
 				else if (++tp->t_dupacks == tcprexmtthresh) {
 					tcp_seq onxt = tp->snd_nxt;
-					u_short cwnd = tp->snd_cwnd;
+					u_int win =
+					    MIN(tp->snd_wnd, tp->snd_cwnd) / 2 /
+						tp->t_maxseg;
+
+					if (win < 2)
+						win = 2;
+					tp->snd_ssthresh = win * tp->t_maxseg;
 
 					tp->t_timer[TCPT_REXMT] = 0;
 					tp->t_rtt = 0;
@@ -726,8 +738,6 @@ do_rst:
 					tp->snd_cwnd = tp->t_maxseg;
 					(void) tcp_output(tp);
 
-					if (cwnd >= 4 * tp->t_maxseg)
-						tp->snd_cwnd = cwnd / 2;
 					if (SEQ_GT(onxt, tp->snd_nxt))
 						tp->snd_nxt = onxt;
 					goto drop;
