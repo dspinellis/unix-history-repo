@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)find.c	4.6 (Berkeley) %G%";
+static char *sccsid = "@(#)find.c	4.7 (Berkeley) %G%";
 /*	find	COMPILE:	cc -o find -s -O -i find.c -lS	*/
 #include <stdio.h>
 #include <sys/param.h>
@@ -203,7 +203,8 @@ struct anode *e3() { /* parse parens and predicates */
 		i = s=='d' ? S_IFDIR :
 		    s=='b' ? S_IFBLK :
 		    s=='c' ? S_IFCHR :
-		    s=='f' ? 0100000 :
+		    s=='f' ? S_IFREG :
+		    s=='l' ? S_IFLNK :
 		    0;
 		return(mk(type, (struct anode *)i, (struct anode *)0));
 	}
