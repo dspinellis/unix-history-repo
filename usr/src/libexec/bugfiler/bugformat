@@ -24,8 +24,9 @@ If you're not running 4.3BSD, you should also replace "4.3BSD" on
 the same line with one of the following values.
 
 	version ::= 4.3BSD | 4.3BSD-tahoe | 4.3BSD-reno | net2
+			   | 4.4BSD-alpha
 
 For example, if your bug concerns the program "/usr/bin/file" and
 you're currently running 4.3BSD-Reno, you should replace "folder"
-with "usr.bin/file", and "net2" with "4.3BSD-Reno".  The folder
+with "usr.bin/file", and "4.4BSD-alpha" with "4.3BSD-Reno".  The folder
 "ideas" is for suggestions.
