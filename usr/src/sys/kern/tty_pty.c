@@ -1,4 +1,4 @@
-/*	tty_pty.c	4.14	82/01/17	*/
+/*	tty_pty.c	4.15	82/01/17	*/
 
 /*
  * Pseudo-teletype Driver
@@ -117,10 +117,17 @@ ptswrite(dev)
 ptsstart(tp)
 	struct tty *tp;
 {
-	struct pt_ioctl *pti = &pt_ioctl[minor(tp->t_dev)];
 
 	if (tp->t_state & TS_TTSTOP)
 		return;
+	ptcwakeup(tp);
+}
+
+ptcwakeup(tp)
+	struct tty *tp;
+{
+	struct pt_ioctl *pti = &pt_ioctl[minor(tp->t_dev)];
+
 	if (pti->pt_selr) {
 		selwakeup(pti->pt_selr, pti->pt_flags & PF_RCOLL);
 		pti->pt_selr = 0;
@@ -216,8 +223,8 @@ ptsstop(tp, flush)
 
 	if (flush == 0)
 		return;
-	pti->pt_send |= TIOCPKT_FLUSH;
-	ptsstart(tp);
+	pti->pt_send |= flush;
+	ptcwakeup(tp);
 }
 
 ptcselect(dev, rw)
@@ -227,30 +234,39 @@ ptcselect(dev, rw)
 	register struct tty *tp = &pt_tty[minor(dev)];
 	struct pt_ioctl *pti;
 	struct proc *p;
+	int s;
 
 	if ((tp->t_state&(TS_CARR_ON|TS_ISOPEN)) == 0)
 		return (1);
+	s = spl5();
 	switch (rw) {
 
 	case FREAD:
-		if (tp->t_outq.c_cc)
+		if (tp->t_outq.c_cc && (tp->t_state&TS_TTSTOP) == 0) {
+			splx(s);
 			return (1);
+		}
 		pti = &pt_ioctl[minor(dev)];
 		if ((p = pti->pt_selr) && p->p_wchan == (caddr_t)&selwait)
 			pti->pt_flags |= PF_RCOLL;
 		else
 			pti->pt_selr = u.u_procp;
-		return (0);
+		break;
 
 	case FWRITE:
-		if (tp->t_rawq.c_cc + tp->t_canq.c_cc < TTYHOG/2)
+		if (tp->t_rawq.c_cc + tp->t_canq.c_cc < TTYHOG/2) {
+			splx(s);
 			return (1);
+		}
 		pti = &pt_ioctl[minor(dev)];
 		if ((p = pti->pt_selw) && p->p_wchan == (caddr_t)&selwait)
 			pti->pt_flags |= PF_WCOLL;
 		else
 			pti->pt_selw = u.u_procp;
+		break;
 	}
+	splx(s);
+	return (0);
 }
 
 ptcwrite(dev)
