@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ufs_vnops.c	7.64 (Berkeley) 5/16/91
- *	$Id$
+ *	$Id: ufs_vnops.c,v 1.4 1993/10/16 18:18:03 rgrimes Exp $
  */
 
 #include "param.h"
@@ -1682,80 +1682,8 @@ ufs_advlock(vp, id, op, fl, flags)
 	int flags;
 {
 	register struct inode *ip = VTOI(vp);
-	register struct lockf *lock;
-	off_t start, end;
-	int error;
 
-	/*
-	 * Avoid the common case of unlocking when inode has no locks.
-	 */
-	if (ip->i_lockf == (struct lockf *)0) {
-		if (op != F_SETLK) {
-			fl->l_type = F_UNLCK;
-			return (0);
-		}
-	}
-	/*
-	 * Convert the flock structure into a start and end.
-	 */
-	switch (fl->l_whence) {
-
-	case SEEK_SET:
-	case SEEK_CUR:
-		/*
-		 * Caller is responsible for adding any necessary offset
-		 * when SEEK_CUR is used.
-		 */
-		start = fl->l_start;
-		break;
-
-	case SEEK_END:
-		start = ip->i_size + fl->l_start;
-		break;
-
-	default:
-		return (EINVAL);
-	}
-	if (start < 0)
-		return (EINVAL);
-	if (fl->l_len == 0)
-		end = -1;
-	else
-		end = start + fl->l_len - 1;
-	/*
-	 * Create the lockf structure
-	 */
-	MALLOC(lock, struct lockf *, sizeof *lock, M_LOCKF, M_WAITOK);
-	lock->lf_start = start;
-	lock->lf_end = end;
-	lock->lf_id = id;
-	lock->lf_inode = ip;
-	lock->lf_type = fl->l_type;
-	lock->lf_next = (struct lockf *)0;
-	lock->lf_block = (struct lockf *)0;
-	lock->lf_flags = flags;
-	/*
-	 * Do the requested operation.
-	 */
-	switch(op) {
-	case F_SETLK:
-		return (lf_setlock(lock));
-
-	case F_UNLCK:
-		error = lf_clearlock(lock);
-		FREE(lock, M_LOCKF);
-		return (error);
-
-	case F_GETLK:
-		error = lf_getlock(lock, fl);
-		FREE(lock, M_LOCKF);
-		return (error);
-	
-	default:
-		free(lock, M_LOCKF);
-		return (EINVAL);
-	}
-	/* NOTREACHED */
+	return (lf_advlock(&(ip->i_lockf), ip->i_size, id, op, fl, flags));
 }
 
 /*

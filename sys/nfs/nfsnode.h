@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	From:	@(#)nfsnode.h	7.12 (Berkeley) 4/16/91
- *	$Id$
+ *	$Id: nfsnode.h,v 1.2 1993/09/09 22:06:24 rgrimes Exp $
  */
 
 #ifndef __h_nfsnode
@@ -57,6 +57,7 @@ struct nfsnode {
 	struct	vattr n_vattr;	/* Vnode attribute cache */
 	struct	sillyrename *n_sillyrename;	/* Ptr to silly rename struct */
 	u_long	n_size;		/* Current size of file */
+	struct lockf *n_lockf; 	/* Locking record of file */
 	time_t	n_mtime;	/* Prev modify time to maintain data cache consistency*/
 	time_t	n_ctime;	/* Prev create time for name cache consistency*/
 	int	n_error;	/* Save write error value */

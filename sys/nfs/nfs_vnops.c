@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	From:	@(#)nfs_vnops.c	7.60 (Berkeley) 5/24/91
- *	$Id$
+ *	$Id: nfs_vnops.c,v 1.2 1993/09/09 22:06:13 rgrimes Exp $
  */
 
 /*
@@ -1743,8 +1743,9 @@ nfs_advlock(vp, id, op, fl, flags)
 	struct flock *fl;
 	int flags;
 {
+	register struct nfsnode *np = VTONFS(vp);
 
-	return (EOPNOTSUPP);
+	return (lf_advlock(&(np->n_lockf), np->n_size, id, op, fl, flags));
 }
 
 /*
