@@ -1,4 +1,4 @@
-/*	up.c	4.49	82/05/19	*/
+/*	up.c	4.50	82/05/19	*/
 
 #include "up.h"
 #if NSC > 0
@@ -863,6 +863,7 @@ updump(dev)
 	register struct uba_device *ui;
 	register short *rp;
 	struct upst *st;
+	register int retry;
 
 	unit = minor(dev) >> 3;
 	if (unit >= NUP)
@@ -874,20 +875,22 @@ updump(dev)
 	uba = phys(struct uba_hd *, ui->ui_hd)->uh_physuba;
 	ubainit(uba);
 	upaddr = (struct updevice *)ui->ui_physaddr;
-	DELAY(2000000);
+	DELAY(5000000);
 	num = maxfree;
-	start = 0;
 	upaddr->upcs2 = unit;
 	DELAY(100);
-	if ((upaddr->upcs1&UP_DVA) == 0)
-		return (EFAULT);
-	if ((upaddr->upds & UPDS_VV) == 0) {
-		upaddr->upcs1 = UP_DCLR|UP_GO;
-		upaddr->upcs1 = UP_PRESET|UP_GO;
-		upaddr->upof = UPOF_FMT22;
-	}
+	upaddr->upcs1 = UP_DCLR|UP_GO;
+	upaddr->upcs1 = UP_PRESET|UP_GO;
+	upaddr->upof = UPOF_FMT22;
+	retry = 0;
+	do {
+		DELAY(25);
+		if (++retry > 527)
+			break;
+	} while ((upaddr->upds & UPDS_RDY) == 0) {
 	if ((upaddr->upds & UPDS_DREADY) != UPDS_DREADY)
 		return (EFAULT);
+	start = 0;
 	st = &upst[ui->ui_type];
 	sizes = phys(struct size *, st->sizes);
 	if (dumplo < 0 || dumplo + num >= sizes[minor(dev)&07].nblocks)
@@ -914,9 +917,20 @@ updump(dev)
 		*--rp = 0;
 		*--rp = -blk*NBPG / sizeof (short);
 		*--rp = UP_GO|UP_WCOM;
+		retry = 0;
 		do {
 			DELAY(25);
+			if (++retry > 527)
+				break;
 		} while ((upaddr->upcs1 & UP_RDY) == 0);
+		if ((upaddr->upds & UPDS_DREADY) != UPDS_DREADY) {
+			printf("up%d: not ready", dkunit(bp));
+			if ((upaddr->upds & UPDS_DREADY) != UPDS_DREADY) {
+				printf("\n");
+				return (EIO);
+			}
+			printf(" (flakey)\n");
+		}
 		if (upaddr->upds&UPDS_ERR)
 			return (EIO);
 		start += blk*NBPG;
