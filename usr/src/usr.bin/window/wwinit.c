@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwinit.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwinit.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -24,7 +24,7 @@ wwinit()
 	char *kp;
 	int s;
 
-	wwdtablesize = getdtablesize();
+	wwdtablesize = 3;
 	wwhead.ww_forw = &wwhead;
 	wwhead.ww_back = &wwhead;
 
