@@ -84,7 +84,7 @@ vnode_pager_alloc(handle, size, prot)
 	 * Pageout to vnode, no can do yet.
 	 */
 	if (handle == NULL)
-		return(VM_PAGER_NULL);
+		return(NULL);
 
 	/*
 	 * Vnodes keep a pointer to any associated pager so no need to
@@ -92,17 +92,17 @@ vnode_pager_alloc(handle, size, prot)
 	 */
 	vp = (struct vnode *)handle;
 	pager = (vm_pager_t)vp->v_vmdata;
-	if (pager == VM_PAGER_NULL) {
+	if (pager == NULL) {
 		/*
 		 * Allocate pager structures
 		 */
 		pager = (vm_pager_t)malloc(sizeof *pager, M_VMPAGER, M_WAITOK);
-		if (pager == VM_PAGER_NULL)
-			return(VM_PAGER_NULL);
+		if (pager == NULL)
+			return(NULL);
 		vnp = (vn_pager_t)malloc(sizeof *vnp, M_VMPGDATA, M_WAITOK);
-		if (vnp == VN_PAGER_NULL) {
+		if (vnp == NULL) {
 			free((caddr_t)pager, M_VMPAGER);
-			return(VM_PAGER_NULL);
+			return(NULL);
 		}
 		/*
 		 * And an object of the appropriate size
@@ -114,7 +114,7 @@ vnode_pager_alloc(handle, size, prot)
 		} else {
 			free((caddr_t)vnp, M_VMPGDATA);
 			free((caddr_t)pager, M_VMPAGER);
-			return(VM_PAGER_NULL);
+			return(NULL);
 		}
 		/*
 		 * Hold a reference to the vnode and initialize pager data.
@@ -198,7 +198,7 @@ vnode_pager_putpage(pager, m, sync)
 	if (vpagerdebug & VDB_FOLLOW)
 		printf("vnode_pager_putpage(%x, %x)\n", pager, m);
 #endif
-	if (pager == VM_PAGER_NULL)
+	if (pager == NULL)
 		return;
 	err = vnode_pager_io((vn_pager_t)pager->pg_data, m, UIO_WRITE);
 	if (err == VM_PAGER_OK) {
@@ -294,7 +294,7 @@ vnode_pager_setsize(vp, nsize)
 	 * up back here.
 	 */
 	object = vm_object_lookup(pager);
-	if (object == VM_OBJECT_NULL)
+	if (object == NULL)
 		return;
 
 #ifdef DEBUG
@@ -354,7 +354,7 @@ vnode_pager_uncache(vp)
 	 * Not a mapped vnode
 	 */
 	pager = (vm_pager_t)vp->v_vmdata;
-	if (pager == vm_pager_null)
+	if (pager == NULL)
 		return (TRUE);
 	/*
 	 * Unlock the vnode if it is currently locked.
