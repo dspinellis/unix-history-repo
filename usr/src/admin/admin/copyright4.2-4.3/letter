@@ -39,8 +39,9 @@ I believe it to be reasonable for those few programs that it covers.
 Other programs that have not been modified,
 or have been less substantially modified at Berkeley,
 have not been marked as copyrighted.
-Programs received from sources other than 32/V or University work
-have not been marked.
+Some programs received as user contributed software from sources other
+than 32/V or University work have been marked with copyrights
+agreed to by the contributor.
 .pp
 The copyright notices that have been inserted are of two forms.
 The first form is for programs that still contain AT&T proprietary
@@ -93,8 +94,7 @@ and is displayed when checking the version of the program.
 .br
 .ne 2i
 .pp
-A tentative list of the source files to be copyrighted is attached
-as Appendix A.
+A list of the files to be copyrighted is attached as Appendix A.
 .pp
 We are now preparing
 to reclaim the copyright on the material that was distributed
@@ -108,7 +108,7 @@ To simplify the procedure,
 we will not annotate the list of files to indicate which of the two copyright
 notices should be used; 
 instead we will instruct them to put the more restrictive
-copyright requiring an AT&T license (appearing above as the first) 
+copyright requiring an AT&T license (appearing first above)
 in all the listed files.
 I have not specifically addressed the question of binary-only
 redistributions of 4.2BSD, which would not include most of the
@@ -130,6 +130,7 @@ cc:	Bill Moser, Business Services
 	Steele Lanphier, Patent Office
 	Pauline Schwartz, CSRG
 	Domenico Ferrari, EECS
+	Marshall Kirk McKusick, CSRG
 .fi
 .bp
 .rs
