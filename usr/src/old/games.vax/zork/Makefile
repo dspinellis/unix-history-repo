@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.1	(Berkeley)	%G%
+#	@(#)Makefile	4.2	(Berkeley)	%G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -7,7 +7,7 @@ zork: zork.c
 	cc ${CFLAGS} -o zork zork.c
 
 install:
-	install zork ${DESTDIR}/usr/games/zork
+	install -s zork ${DESTDIR}/usr/games/zork
 	cp zorklib/dtext.dat ${DESTDIR}/usr/games/lib
 	cp zorklib/dindex.dat ${DESTDIR}/usr/games/lib
 	cp zorklib/doverlay ${DESTDIR}/usr/games/lib
