@@ -1,4 +1,4 @@
-/*	ufs_vnops.c	4.38	82/10/10	*/
+/*	ufs_vnops.c	4.39	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -160,7 +160,7 @@ open1(ip, mode, checkpermissions)
 	fp->f_type = DTYPE_FILE;
 	i = u.u_r.r_val1;
 	fp->f_inode = ip;
-	openi(ip, mode);
+	u.u_error = openi(ip, mode);
 	if (u.u_error == 0) {
 		u.u_pofile[i] = flags;
 		return;
