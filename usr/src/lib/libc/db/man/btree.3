@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)btree.3	5.3 (Berkeley) %G%
+.\"	@(#)btree.3	5.4 (Berkeley) %G%
 .\"
 .TH BTREE 3 ""
 .UC 7
@@ -64,7 +64,7 @@ R_DUP
 Permit duplicate keys in the tree, i.e. permit insertion if the key to be
 inserted already exists in the tree.
 The default behavior, as described in
-.IR db (3),
+.IR dbopen (3),
 is to overwrite a matching key when inserting a new key or to fail if
 the R_NOOVERWRITE flag is specified.
 The R_DUP flag is overridden by the R_NOOVERWRITE flag, and if the
