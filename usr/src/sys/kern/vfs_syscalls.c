@@ -1,4 +1,4 @@
-/*	vfs_syscalls.c	4.51	83/02/10	*/
+/*	vfs_syscalls.c	4.51	83/02/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -597,6 +597,8 @@ chmod1(ip, mode)
 	ip->i_mode &= ~07777;
 	if (u.u_uid) {
 		mode &= ~ISVTX;
+		if (u.u_gid == ip->i_gid)
+			goto ok;
 		for (gp = u.u_groups; gp < &u.u_groups[NGROUPS]; gp++)
 			if (*gp == ip->i_gid)
 				goto ok;

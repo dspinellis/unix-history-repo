@@ -1,4 +1,4 @@
-/*	kern_prot.c	5.15	83/02/16	*/
+/*	kern_prot.c	5.15	83/02/20	*/
 
 /*
  * System calls related to processes and protection
@@ -183,14 +183,10 @@ setregid()
 		return;
 	if (u.u_rgid != rgid) {
 		leavegroup(u.u_rgid);
-		(void) entergroup(u.u_rgid);
+		(void) entergroup(rgid);
 		u.u_rgid = rgid;
 	}
-	if (u.u_gid != egid) {
-		leavegroup(u.u_gid);
-		(void) entergroup(egid);
-		u.u_gid = egid;
-	}
+	u.u_gid = egid;
 }
 
 #ifndef NOCOMPAT
@@ -204,7 +200,7 @@ osetgid()
 	uap = (struct a *)u.u_ap;
 	gid = uap->gid;
 	if (u.u_rgid == gid || u.u_gid == gid || suser()) {
-		leavegroup(u.u_gid); leavegroup(u.u_rgid);
+		leavegroup(u.u_rgid);
 		(void) entergroup(gid);
 		u.u_gid = gid;
 		u.u_rgid = gid;
