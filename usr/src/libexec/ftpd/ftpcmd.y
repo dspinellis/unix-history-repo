@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1985, 1988 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1985, 1988, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ftpcmd.y	5.28 (Berkeley) %G%
+ *	@(#)ftpcmd.y	8.1 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 %{
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpcmd.y	5.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpcmd.y	8.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
