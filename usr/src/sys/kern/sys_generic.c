@@ -1,4 +1,4 @@
-/*	sys_generic.c	5.7	82/08/11	*/
+/*	sys_generic.c	5.8	82/08/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -287,8 +287,18 @@ readi(ip)
 	type = ip->i_mode&IFMT;
 	if (type == IFCHR) {
 		register c = u.u_count;
-		(*cdevsw[major(dev)].d_read)(dev);
-		CHARGE(sc_tio * (c - u.u_count));
+		struct uio auio;
+		struct iovec aiov;
+		auio.uio_iov = &aiov;
+		auio.uio_iovcnt = 1;
+		aiov.iov_base = u.u_base;
+		aiov.iov_len = u.u_count;
+		auio.uio_offset = u.u_offset;
+		auio.uio_segflg = u.u_segflg;
+		auio.uio_resid = u.u_count;
+		(*cdevsw[major(dev)].d_read)(dev, &auio);
+		CHARGE(sc_tio * (c - auio.uio_resid));
+		u.u_count = auio.uio_resid;
 		return;
 	}
 	if (type != IFBLK) {

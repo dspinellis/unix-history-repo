@@ -1,4 +1,4 @@
-/*	kern_physio.c	4.30	82/05/22	*/
+/*	kern_physio.c	4.31	82/08/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -11,6 +11,7 @@
 #include "../h/pte.h"
 #include "../h/vm.h"
 #include "../h/trace.h"
+#include "../h/uio.h"
 
 /*
  * Swap IO headers -
@@ -165,18 +166,42 @@ swkill(p, rout)
  * faulted and locked. After the completion of the I/O, the above pages
  * are unlocked.
  */
-physio(strat, bp, dev, rw, mincnt)
-int (*strat)(); 
-register struct buf *bp;
-unsigned (*mincnt)();
+physio(strat, bp, dev, rw, mincnt, uio)
+	int (*strat)(); 
+	register struct buf *bp;
+	dev_t dev;
+	int rw;
+	unsigned (*mincnt)();
+	struct uio *uio;
 {
 	register int c;
+	struct uio auio;
+	register struct iovec *iov;
+	struct iovec aiov;
 	char *a;
-	int s;
+	int s, error = 0;
 
-	if (useracc(u.u_base,u.u_count,rw==B_READ?B_WRITE:B_READ) == NULL) {
+	if (uio == 0) {
+		uio = &auio;
+		uio->uio_iov = &aiov;
+		uio->uio_iovcnt = 1;
+		uio->uio_offset = u.u_offset;
+		uio->uio_segflg = u.u_segflg;
+		iov = &aiov;
+		iov->iov_base = u.u_base;
+		iov->iov_len = u.u_count;
+		uio->uio_resid = iov->iov_len;
+	} else
+		iov = uio->uio_iov;
+nextiov:
+	if (uio->uio_iovcnt == 0) {
+		u.u_count = uio->uio_resid;
+		return (0);
+	}
+	if (useracc(iov->iov_base,iov->iov_len,rw==B_READ?B_WRITE:B_READ) == NULL) {
+		u.u_count = uio->uio_resid;
 		u.u_error = EFAULT;
-		return;
+		return (EFAULT);
 	}
 	s = spl6();
 	while (bp->b_flags&B_BUSY) {
@@ -186,12 +211,12 @@ unsigned (*mincnt)();
 	splx(s);
 	bp->b_error = 0;
 	bp->b_proc = u.u_procp;
-	bp->b_un.b_addr = u.u_base;
-	while (u.u_count != 0) {
+	bp->b_un.b_addr = iov->iov_base;
+	while (iov->iov_len > 0) {
 		bp->b_flags = B_BUSY | B_PHYS | rw;
 		bp->b_dev = dev;
-		bp->b_blkno = u.u_offset >> PGSHIFT;
-		bp->b_bcount = u.u_count;
+		bp->b_blkno = uio->uio_offset >> PGSHIFT;
+		bp->b_bcount = iov->iov_len;
 		(*mincnt)(bp);
 		c = bp->b_bcount;
 		u.u_procp->p_flag |= SPHYSIO;
@@ -205,21 +230,30 @@ unsigned (*mincnt)();
 		if (bp->b_flags&B_WANTED)
 			wakeup((caddr_t)bp);
 		splx(s);
+		c -= bp->b_resid;
 		bp->b_un.b_addr += c;
-		u.u_count -= c;
-		u.u_offset += c;
+		iov->iov_len -= c;
+		uio->uio_resid -= c;
+		uio->uio_offset += c;
 		if (bp->b_flags&B_ERROR)
 			break;
 	}
 	bp->b_flags &= ~(B_BUSY|B_WANTED|B_PHYS);
-	u.u_count = bp->b_resid;
-	geterror(bp);
+	error = geterror(bp);
+	if (error) {
+		u.u_error = error;
+		u.u_count = uio->uio_resid;
+		return (error);
+	}
+	uio->uio_iov++;
+	uio->uio_iovcnt--;
+	goto nextiov;
 }
 
 /*ARGSUSED*/
 unsigned
 minphys(bp)
-struct buf *bp;
+	struct buf *bp;
 {
 
 	if (bp->b_bcount > 63 * 1024)

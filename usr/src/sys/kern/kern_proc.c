@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.31	82/08/11	*/
+/*	kern_proc.c	4.32	82/08/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -97,6 +97,7 @@ exece()
 	iovec.iov_len = sizeof (u.u_exdata);
 	uio.uio_offset = 0;
 	uio.uio_segflg = 1;
+	uio.uio_resid = iovec.iov_len;
 	u.u_error = readip(ip, &uio);
 	if (u.u_error)
 		goto bad;
