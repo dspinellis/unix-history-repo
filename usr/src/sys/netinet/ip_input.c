@@ -1,4 +1,4 @@
-/*	ip_input.c	1.33	82/03/19	*/
+/*	ip_input.c	1.34	82/03/23	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -298,8 +298,12 @@ insert:
 	t = m->m_next;
 	m->m_next = 0;
 	m_cat(m, t);
-	while ((q = q->ipf_next) != (struct ipasfrag *)fp)
-		m_cat(m, dtom(q));
+	q = q->ipf_next;
+	while (q != (struct ipasfrag *)fp) {
+		t = dtom(q);
+		q = q->ipf_next;
+		m_cat(m, t);
+	}
 
 	/*
 	 * Create header for new ip packet by
