@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)raw_ip.c	7.12 (Berkeley) %G%
+ *	@(#)raw_ip.c	7.13 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -127,6 +127,9 @@ rip_output(m, so, dst)
 		ip->ip_ttl = MAXTTL;
 		opts = inp->inp_options;
 	} else {
+		ip = mtod(m, struct ip *);
+		if (ip->ip_id == 0)
+			ip->ip_id = htons(ip_id++);
 		opts = NULL;
 		/* XXX prevent ip_output from overwriting header fields */
 		flags |= IP_RAWOUTPUT;
