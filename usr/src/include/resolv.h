@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)resolv.h	5.11 (Berkeley) %G%
+ *	@(#)resolv.h	5.12 (Berkeley) %G%
  */
 
 /*
@@ -20,12 +20,12 @@
 /*
  * Global defines and variables for resolver stub.
  */
-#define	MAXNS		3		/* max # name servers we'll track */
-#define	MAXDFLSRCH	3		/* # default domain levels to try */
-#define	MAXDNSRCH	6		/* max # domains in search path */
-#define	LOCALDOMAINPARTS 2		/* min levels in name that is "local" */
+#define	MAXNS			3	/* max # name servers we'll track */
+#define	MAXDFLSRCH		3	/* # default domain levels to try */
+#define	MAXDNSRCH		6	/* max # domains in search path */
+#define	LOCALDOMAINPARTS	2	/* min levels in name that is "local" */
 
-#define	RES_TIMEOUT	5		/* min. seconds between retries */
+#define	RES_TIMEOUT		5	/* min. seconds between retries */
 
 struct state {
 	int	retrans;	 	/* retransmition time interval */
@@ -60,10 +60,6 @@ extern struct state _res;
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-
-/* THESE SHOULD ALL BE PREFIXED WITH UNDERSCORES */
-extern char *p_cdname(), *p_rr(), *p_type(), *p_class(), *p_time();
-
 int	dn_comp __P((const char *, char *, int, char **, char **));
 int	dn_expand __P((const char *, const char *, const char *, char *, int));
 int	res_init __P((void));
