@@ -1,4 +1,4 @@
-	README	4.2	85/05/21
+	README	4.3	86/04/03
 
 Here are the currently supported types of printers:
 
@@ -20,6 +20,7 @@ itoh12		C:ITOH Prowriter, 12 pitch
 nec		NEC 55?0 or NEC 77?0 Spinwriter
 nec12		NEC 55?0 or NEC 77?0 Spinwriter, 12 pitch
 nec-t		NEC 55?0/77?0 Spinwriter, Tech-Math/Times-Roman thimble
+nec25-t		NEC 5525/7725 Spinwriter, Tech-Math/Times-Roman thimble
 qume		Qume Sprint 5 or 9
 qume12		Qume Sprint 5 or 9, 12 pitch
 xerox		Xerox 17?0 or Diablo 16?0
