@@ -1,0 +1,86 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)en.4	5.1 (Berkeley) %G%
+.\"
+.TH EN 4 "27 July 1983"
+.UC 5
+.SH NAME
+en \- Xerox 3 Mb/s Ethernet interface
+.SH SYNOPSIS
+.B "device en0 at uba0 csr 161000 vector enrint enxint encollide"
+.SH DESCRIPTION
+The
+.I en
+interface provides access to a 3 Mb/s Ethernet network.
+Due to limitations in the hardware, DMA transfers
+to and from the network must take place in the lower 64K bytes
+of the UNIBUS address space.
+.PP
+The network number is specified with a SIOCSIFADDR ioctl; the
+host's address is discovered by probing the on-board Ethernet
+address register.  No packets will be sent or accepted until 
+a network number is supplied.
+.PP
+The interface software implements an exponential backoff algorithm
+when notified of a collision on the cable.  This algorithm utilizes
+a 16-bit mask and the VAX-11's interval timer in calculating a series
+of random backoff values.  The algorithm is as follows:
+.TP 5
+1.
+Initialize the mask to be all 1's.
+.TP 5
+2.
+If the mask is zero, 16 retries have been made and we give
+up.
+.TP 5
+3.
+Shift the mask left one bit and formulate a backoff by
+masking the interval timer with the mask (this is actually
+the two's complement of the value).
+.TP 5
+4.
+Use the value calculated in step 3 to delay before retransmitting
+the packet.
+.PP
+The interface handles both Internet and PUP protocol families,
+with the interface address maintained in Internet format.
+PUP addresses are converted to Internet addresses by subsituting
+PUP network and host values for Internet network and local part
+values.
+.PP
+The interface normally tries to use a ``trailer'' encapsulation
+to minimize copying data on input and output.  This may be
+disabled, on a per-interface basis, by setting the IFF_NOTRAILERS
+flag with an SIOCSIFFLAGS ioctl.
+.SH DIAGNOSTICS
+.BR "en%d: output error" .
+The hardware indicated an error on
+the previous transmission.
+.PP
+.BR "en%d: send error" .
+After 16 retransmissions using the
+exponential backoff algorithm described above, the packet
+was dropped.
+.PP
+.BR "en%d: input error" .
+The hardware indicated an error
+in reading a packet off the cable.
+.PP
+.BR "en%d: can't handle af%d" .
+The interface was handed
+a message with addresses formatted in an unsuitable address
+family; the packet was dropped.
+.SH SEE ALSO
+intro(4N), inet(4F)
+.SH BUGS
+The device has insufficient buffering to handle back to
+back packets.  This makes use in a production environment
+painful.
+.PP
+The hardware does word at a time DMA without byte swapping.
+To compensate, byte swapping of user data must either be done 
+by the user or by the system.  A kludge to byte swap only
+IP packets is provided if the ENF_SWABIPS flag is defined in
+the driver and set at boot time with an SIOCSIFFLAGS ioctl.
