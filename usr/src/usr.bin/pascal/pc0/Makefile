@@ -1,4 +1,4 @@
-SCCSID = "@(#)Makefile 2.3 %G%"
+SCCSID = "@(#)Makefile 2.4 %G%"
 
 INSTALLDIR = $(DESTDIR)/usr/lib
 INSTALLNAME = ${INSTALLDIR}/pc0
@@ -60,10 +60,11 @@ a.out: ${OBJS} y.tab.o config.c
 	${CC} ${CFLAGS} ${LDFLAGS} ${OBJS} y.tab.o config.c
 
 ${OBJS}:
-	${RM} $*.c
-	cd ${SRCDIR}; ${MKSTR} - ${BINDIR}/${ERRORSTRINGS} ${BINDIR}/ $*.c
-	${CC} ${CFLAGS} -I. -I${SRCDIR} -c $*.c
-	${RM} $*.c
+	${RM} `basename $@ .o`.c
+	cd ${SRCDIR}; \
+	    ${MKSTR} - ${BINDIR}/${ERRORSTRINGS} ${BINDIR}/ `basename $@ .o`.c
+	${CC} ${CFLAGS} -I. -I${SRCDIR} -c `basename $@ .o`.c
+	${RM} `basename $@ .o`.c
 
 lint:
 	cd ${SRCDIR}; lint -I. -I${BINDIR} ${SRCS}  ${BINDIR}/*.c
