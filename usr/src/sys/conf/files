@@ -54,6 +54,7 @@ kern/kern_descrip.c	standard
 kern/kern_exec.c	standard
 kern/kern_exit.c	standard
 kern/kern_fork.c	standard
+kern/kern_ktrace.c	standard
 kern/kern_malloc.c	standard
 kern/kern_mman.c	standard
 kern/kern_proc.c	standard
@@ -78,7 +79,7 @@ kern/sys_inode.c	standard
 kern/sys_process.c	standard
 kern/sys_socket.c	standard
 kern/tty.c		standard
-kern/tty_bk.c		optional bk
+kern/tty_compat.c	standard
 kern/tty_conf.c		standard
 kern/tty_pty.c		optional pty
 kern/tty_subr.c		standard
