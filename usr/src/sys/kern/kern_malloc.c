@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_malloc.c	7.27 (Berkeley) %G%
+ *	@(#)kern_malloc.c	7.28 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -165,7 +165,7 @@ malloc(size, type, flags)
 		    "Data modified on freelist: word", i, va, size,
 		    "previous type", memname[savedtype], ((int *)va)[i],
 		    addrmask[i]);
-		panic("malloc: data modified on freelist");
+		/* panic("malloc: data modified on freelist"); */
 	}
 	freep->spare0 = 0;
 #endif /* DIAGNOSTIC */
