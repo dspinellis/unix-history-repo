@@ -3,10 +3,10 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)param.h	7.11 (Berkeley) %G%
+ *	@(#)param.h	7.12 (Berkeley) %G%
  */
 
-#define	BSD	198908		/* system version  (year & month) */
+#define	BSD	199002		/* system version (year & month) */
 #define BSD4_3	1
 
 #include <sys/syslimits.h>
@@ -14,12 +14,12 @@
 /*
  * Machine-independent constants
  */
-#define	NMOUNT	20		/* number of mountable file systems */
+#define	NMOUNT	30		/* number of mountable file systems */
 /* NMOUNT must be <= 255 unless c_mdev (cmap.h) is expanded */
 #define	MSWAPX	NMOUNT		/* pseudo mount table index for swapdev */
 #define	MAXUPRC	CHILD_MAX	/* max processes per user */
 #define	NOFILE	OPEN_MAX	/* max open files per process */
-#define	CANBSIZ	256		/* max size of typewriter line */
+#define	CANBSIZ	256		/* max size of tty input line */
 #define	NCARGS	ARG_MAX		/* # characters in exec arglist */
 #define	MAXINTERP	32	/* maximum interpreter file name length */
 #define	NGROUPS	NGROUPS_MAX	/* max number groups */
@@ -57,11 +57,6 @@
  */
 #ifdef KERNEL
 #include "signal.h"
-
-#define	ISSIG(p) \
-	((p)->p_sig && \
-	    ((p)->p_flag&STRC || ((p)->p_sig &~ (p)->p_sigmask)) && issig())
-
 #else
 #include <sys/signal.h>
 #endif
@@ -121,15 +116,6 @@
  * pool. It may be made larger without any effect on existing
  * file systems; however making it smaller make make some file
  * systems unmountable.
- *
- * Note that the blocked devices are assumed to have DEV_BSIZE
- * "sectors" and that fragments must be some multiple of this size.
- * Block devices are read in BLKDEV_IOSIZE units. This number must
- * be a power of two and in the range of
- *	DEV_BSIZE <= BLKDEV_IOSIZE <= MAXBSIZE
- * This size has no effect upon the file system, but is usually set
- * to the block size of the root file system, so as to maximize the
- * speed of ``fsck''.
  */
 #define	MAXBSIZE	8192
 #define MAXFRAG 	8
@@ -149,6 +135,35 @@
 #define MAXSYMLINKS	8
 
 /*
+ * bit map related macros
+ */
+#define	setbit(a,i)	((a)[(i)/NBBY] |= 1<<((i)%NBBY))
+#define	clrbit(a,i)	((a)[(i)/NBBY] &= ~(1<<((i)%NBBY)))
+#define	isset(a,i)	((a)[(i)/NBBY] & (1<<((i)%NBBY)))
+#define	isclr(a,i)	(((a)[(i)/NBBY] & (1<<((i)%NBBY))) == 0)
+
+/*
+ * Macros for counting and rounding.
+ */
+#ifndef howmany
+#define	howmany(x, y)	(((x)+((y)-1))/(y))
+#endif
+#define	roundup(x, y)	((((x)+((y)-1))/(y))*(y))
+#define powerof2(x)	((((x)-1)&(x))==0)
+
+/*
+ * Macros for fast min/max:
+ * with inline expansion, the "function" is faster.
+ */
+#ifdef KERNEL
+#define	MIN(a,b) min((a), (b))
+#define	MAX(a,b) max((a), (b))
+#else
+#define	MIN(a,b) (((a)<(b))?(a):(b))
+#define	MAX(a,b) (((a)>(b))?(a):(b))
+#endif
+
+/*
  * Constants for setting the parameters of the kernel memory allocator.
  *
  * 2 ** MINBUCKET is the smallest unit of memory that will be
@@ -164,29 +179,6 @@
  */
 #define MINBUCKET	4		/* 4 => min allocation of 16 bytes */
 #define MAXALLOCSAVE	(2 * CLBYTES)
-
-/*
- * bit map related macros
- */
-#define	setbit(a,i)	((a)[(i)/NBBY] |= 1<<((i)%NBBY))
-#define	clrbit(a,i)	((a)[(i)/NBBY] &= ~(1<<((i)%NBBY)))
-#define	isset(a,i)	((a)[(i)/NBBY] & (1<<((i)%NBBY)))
-#define	isclr(a,i)	(((a)[(i)/NBBY] & (1<<((i)%NBBY))) == 0)
-
-/*
- * Macros for fast min/max.
- */
-#define	MIN(a,b) (((a)<(b))?(a):(b))
-#define	MAX(a,b) (((a)>(b))?(a):(b))
-
-/*
- * Macros for counting and rounding.
- */
-#ifndef howmany
-#define	howmany(x, y)	(((x)+((y)-1))/(y))
-#endif
-#define	roundup(x, y)	((((x)+((y)-1))/(y))*(y))
-#define powerof2(x)	((((x)-1)&(x))==0)
 
 /*
  * Scale factor for scaled integers used to count %cpu time and load avgs.
