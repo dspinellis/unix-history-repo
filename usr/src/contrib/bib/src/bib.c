@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)bib.c	2.4	%G%";
+static char sccsid[] = "@(#)bib.c	2.5	%G%";
 #endif not lint
 /*
         Bib - bibliographic formatter
@@ -32,7 +32,9 @@ static char sccsid[] = "@(#)bib.c	2.4	%G%";
 
 /* global variables */
    FILE *rfd;                   /* reference temporary file              */
+#ifndef INCORE
    char reffile[] = TMPREFFILE ;/* temporary file (see bib.h)            */
+#endif not INCORE
    struct refinfo refinfo[MAXREFS];	/* reference information */
    struct refinfo *refssearch();
    struct refinfo *refshash[HASHSIZE];
@@ -181,7 +183,7 @@ cleanup(val)
    rdcite(fd, ch)
    FILE *fd;
    char ch;
-{  int n, getref();
+{  int getref();
    char huntstr[HUNTSIZE], c, info[HUNTSIZE];
 
    if (ch == '[')
@@ -228,12 +230,21 @@ cleanup(val)
          }
    error("end of file reading citation");
 }
+char	ncitetemplate[64];
+int	changecite;
 citemark(info, huntstr, tail)
 	char *info, *huntstr, *tail;
 {
 	char c = CITEMARK;
         long int  n;
+	/*
+	 *	getref sets ncitetemplate as a side effect
+	 */
 	n = getref(huntstr);
+	if (ncitetemplate[0]){
+		fprintf(tfd, "%c%s%c", FMTSTART, ncitetemplate, FMTEND);
+		ncitetemplate[0] = 0;
+	}
 	fprintf(tfd, "%c%d%c%s%c%s", c ,n, c, info, CITEEND, tail);
 }
 
@@ -248,13 +259,11 @@ citemark(info, huntstr, tail)
    huntstr[i] = c;
    huntstr[i+1] = 0;
 }
-
 /* getref - if an item was already referenced, return its reference index
                 otherwise create a new entry */
    int getref(huntstr)
    char huntstr[HUNTSIZE];
 {  char rf[REFSIZE], *r, *hunt();
-   reg	int  i;
    int	match(), getwrd();
    char	*realhstr;
    int hash;
@@ -264,7 +273,8 @@ citemark(info, huntstr, tail)
    realhstr = huntstr;
    if (strncmp(huntstr, "$C$", 3) == 0){
 	char *from, *to;
-	for(from = huntstr + 3, to = citetemplate; *from; from++, to++){
+	changecite++;
+	for(from = huntstr + 3, to = ncitetemplate; *from; from++, to++){
 		switch(*from){
 		case '\0':
 		case ' ':
@@ -452,8 +462,24 @@ int  fn, footrefs[];
 
 	/* now dump out values */
 	for (i = 0; i < ncites; i++) {
-		if (cites[i].num >= 0)
-			fputs(refinfo[cites[i].num].ri_cite, ofd);
+		if (cites[i].num >= 0) {
+			if (changecite){
+				char tempcite[128];
+				char ref[REFSIZE];
+				struct refinfo *p;
+				/*
+				 * rebuild the citation string,
+				 * using the current template in effect
+				 */
+				p = &refinfo[cites[i].num];
+				rdref(p, ref);
+				bldcite(tempcite, cites[i].num, ref);
+				strcat(tempcite, p->ri_disambig);
+				fputs(tempcite, ofd);
+			} else {
+				fputs(refinfo[cites[i].num].ri_cite, ofd);
+			}
+		}
 		if (cites[i].info) {
 			fputs(cites[i].info, ofd);
 			free(cites[i].info);
@@ -512,11 +538,27 @@ int  fn, footrefs[];
                   getch(c, ifd);
                   }
          }
-      if (c == CITEMARK)
+      if (c == FMTSTART)
+	 changefmt(ifd);
+      else if (c == CITEMARK)
          fn = putrefs(ifd, ofd, footrefs, fn);
       else if (c != EOF)
          putc(c, ofd);
       }
    if (dumped == false)
       bibwarning("Warning: references never dumped\n","");
+}
+/*
+ *	change citation format
+ */
+changefmt(ifd)
+	FILE	*ifd;
+{
+	char	c;
+	char	*to;
+	to = ncitetemplate;
+	while (getch(c, ifd) != FMTEND)
+		*to++ = c;
+	*to = 0;
+	strcpy(citetemplate, ncitetemplate);
 }

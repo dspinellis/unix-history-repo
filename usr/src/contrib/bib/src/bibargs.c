@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)bibargs.c	2.4	%G%";
+static char sccsid[] = "@(#)bibargs.c	2.5	%G%";
 #endif not lint
 /*
         Authored by: Tim Budd, University of Arizona, 1983.
@@ -213,7 +213,7 @@ incfile(np)
 {  char name[120];
    FILE *fd;
    char *p, line[LINELENGTH], dline[LINELENGTH], word[80], *tfgets();
-   int  i, j, getwrd();
+   int  i, getwrd();
 
    strcpy(bibfname, np);
    fd = fopen(np, "r");
@@ -437,7 +437,6 @@ char c;
 {  char line2[REFSIZE], word[LINELENGTH];
    reg	struct wordinfo *wp;
    reg	char *p, *q, *w;
-   reg	int i;
 
 	q = line2;
 	for (p = line; *p; /*VOID*/){
@@ -476,7 +475,6 @@ char c;
    struct wordinfo *wordsearch(word)
    char *word;
 {
-   reg int i;
    reg int lg;
    reg struct wordinfo *wp;
    lg = strlen(word);
@@ -672,7 +670,7 @@ char c;
    return(res);
 }
 
-/* makecites - make citation strings */
+/* makecites - make standard citation strings, using citetemplate currently in effect */
    makecites()
 {  char ref[REFSIZE], tempcite[100], *malloc();
    reg int  i;
@@ -680,7 +678,7 @@ char c;
    for (i = 0; i < numrefs; i++) {
       rdref(&refinfo[i], ref);
       bldcite(tempcite, i, ref);
-      refinfo[i].ri_cite = malloc(2 + strlen(tempcite)); /* leave room for disambig */
+      refinfo[i].ri_cite = malloc(2 + strlen(tempcite));
       if (refinfo[i].ri_cite == NULL)
          error("out of storage");
       strcpy(refinfo[i].ri_cite, tempcite);
@@ -930,22 +928,24 @@ return(cp);
                   single character disambiguators */
    disambiguate()
 {  reg int i, j;
-   char adstr[2];
+	char adstr;
 
    for (i = 0; i < numrefs; i = j) {
       j = i + 1;
       if (strcmp(refinfo[i].ri_cite, refinfo[j].ri_cite)==0) {
-         adstr[0] = 'a'; adstr[1] = 0;
+         adstr = 'a';
          for(j = i+1; strcmp(refinfo[i].ri_cite,refinfo[j].ri_cite) == 0; j++) {
-            adstr[0] = 'a' + (j-i);
+            adstr = 'a' + (j-i);
             if (j == numrefs)
                break;
-            strcat(refinfo[j].ri_cite, adstr);
+	    refinfo[j].ri_disambig[0] = adstr;
             }
-         adstr[0] = 'a';
-         strcat(refinfo[i].ri_cite, adstr);
+	 refinfo[i].ri_disambig[0] = 'a';
          }
      }
+  for (i = 0; i < numrefs; i++){
+	strcat(refinfo[i].ri_cite, refinfo[i].ri_disambig);
+  }
 }
 
 
