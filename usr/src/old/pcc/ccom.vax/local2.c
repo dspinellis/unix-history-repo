@@ -1,5 +1,5 @@
 # ifndef lint
-static char *sccsid ="@(#)local2.c	1.17 (Berkeley) %G%";
+static char *sccsid ="@(#)local2.c	1.18 (Berkeley) %G%";
 # endif
 
 # include "pass2.h"
@@ -13,6 +13,7 @@ int ftlab1, ftlab2;
 
 # define BITMASK(n) ((1L<<n)-1)
 
+/*ARGSUSED*/
 where(c){
 	fprintf( stderr, "%s, line %d: ", filename, lineno );
 	}
@@ -190,7 +191,7 @@ prtype(n) NODE *n;
 
 zzzcode( p, c ) register NODE *p; {
 	register m;
-	CONSZ val;
+	int val;
 	switch( c ){
 
 	case 'N':  /* logical ops, turned into 0-1 */
@@ -638,10 +639,12 @@ setregs(){ /* set up temporary registers */
 	;
 	}
 
+/*ARGSUSED*/
 rewfld( p ) NODE *p; {
 	return(1);
 	}
 
+/*ARGSUSED*/
 callreg(p) NODE *p; {
 	return( R0 );
 	}
@@ -688,7 +691,6 @@ offset( p, tyl ) register NODE *p; int tyl; {
 
 makeor2( p, q, b, o) register NODE *p, *q; register int b, o; {
 	register NODE *t;
-	register int i;
 	NODE *f;
 
 	p->in.op = OREG;
@@ -723,8 +725,11 @@ makeor2( p, q, b, o) register NODE *p, *q; register int b, o; {
 
 	p->tn.lval = t->tn.lval;
 #ifndef FLEXNAMES
-	for(i=0; i<NCHNAM; ++i)
-		p->in.name[i] = t->in.name[i];
+	{
+		register int i;
+		for(i=0; i<NCHNAM; ++i)
+			p->in.name[i] = t->in.name[i];
+	}
 #else
 	p->in.name = t->in.name;
 #endif
@@ -830,12 +835,12 @@ conput( p ) register NODE *p; {
 	}
 
 /*ARGSUSED*/
-insput( p ) register NODE *p; {
+insput( p ) NODE *p; {
 	cerror( "insput" );
 	}
 
 /*ARGSUSED*/
-upput( p, off ) register NODE *p; int off; {
+upput( p, off ) NODE *p; int off; {
 	cerror( "upput" );
 	}
 
@@ -994,6 +999,7 @@ genscall( p, cookie ) register NODE *p; {
 int gc_numbytes;
 /* tbl */
 
+/*ARGSUSED*/
 gencall( p, cookie ) register NODE *p; {
 	/* generate the call given by p */
 	register NODE *p1;
@@ -1080,6 +1086,7 @@ ccbranches[] = {
 	};
 /* tbl */
 
+/*ARGSUSED*/
 cbgen( o, lab, mode ) { /*   printf conditional and unconditional branches */
 
 /* tbl */
@@ -1099,6 +1106,7 @@ nextcook( p, cookie ) NODE *p; {
 	return( FORREW );
 	}
 
+/*ARGSUSED*/
 lastchance( p, cook ) NODE *p; {
 	/* forget it! */
 	return(0);
@@ -1108,7 +1116,6 @@ optim2( p ) register NODE *p; {
 	/* do local tree transformations and optimizations */
 
 	register NODE *l, *r;
-	int m, ml;
 
 	switch( p->in.op ) {
 
@@ -1148,7 +1155,7 @@ optim2( p ) register NODE *p; {
 #else
 		if( mixtypes(p, l) ) return;
 #endif
-		if( l->in.op == PCONV )
+		if( l->in.op == PCONV || l->in.op == CALL || l->in.op == UNARY CALL )
 			return;
 
 		/* Only trust it to get it right if the size is the same */
@@ -1183,6 +1190,7 @@ optim2( p ) register NODE *p; {
 		}
 	}
 
+/*ARGSUSED*/
 NODE * addroreg(l) NODE *l;
 				/* OREG was built in clocal()
 				 * for an auto or formal parameter
