@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)locate.c	2.4	%G%";
+static char sccsid[] = "@(#)locate.c	2.5	%G%";
 #endif not lint
 #
 
@@ -140,9 +140,11 @@ int  max_klen;          /* max key length */
         }
 
     total= 0;
-    for (i=0; i<refcnt; i++)    total += refs[i].length+1;
-    if (fflag){
-	total += strlen(refs[i].reffile) + 1;
+    for (i=0; i<refcnt; i++) {
+        total += refs[i].length+1;
+        if (fflag){
+	    total += strlen(refs[i].reffile) + 1;
+        }
     }
 
     allrefs= (char *) calloc(total+1, sizeof (char));
