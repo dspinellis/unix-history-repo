@@ -3,7 +3,7 @@
 # include <errno.h>
 # include "postbox.h"
 
-static char	SccsId[] = "@(#)collect.c	3.2	%G%";
+static char	SccsId[] = "@(#)collect.c	3.3	%G%";
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -61,6 +61,7 @@ collect()
 	extern char *hvalue();
 	extern char *makemsgid();
 	struct hdrinfo *hi;
+	extern char *strcpy(), *strcat(), *mktemp();
 
 	/*
 	**  Create the temp file name and create the file.
@@ -171,7 +172,7 @@ collect()
 		}
 		else
 		{
-			register int len;
+			register unsigned len;
 
 			/* concatenate the two values */
 			len = strlen(h->h_value) + strlen(fvalue) + 2;
@@ -388,6 +389,8 @@ makemsgid()
 	extern char *MyLocName;
 	extern char *ArpaHost;
 	static char buf[50];
+	extern long time();
+	extern char *sprintf();
 
 	time(&t);
 	sprintf(buf, "<%ld.%d.%s@%s>", t, getpid(), MyLocName, ArpaHost);

@@ -3,7 +3,7 @@
 # include <pwd.h>
 # include "postbox.h"
 
-static char SccsId[] = "@(#)alias.c	3.1	%G%";
+static char SccsId[] = "@(#)alias.c	3.2	%G%";
 
 /*
 **  ALIAS -- Compute aliases.

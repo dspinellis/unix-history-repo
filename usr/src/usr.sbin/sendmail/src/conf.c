@@ -130,10 +130,8 @@
 
 
 
-static char SccsId[] = "@(#)conf.c	3.2	%G%";
+static char SccsId[] = "@(#)conf.c	3.3	%G%";
 
-
-bool	UseMsgId = FALSE;	/* don't put message id's in anywhere */
 
 # include <whoami.h>		/* definitions of machine id's at berkeley */
 
@@ -354,57 +352,6 @@ initmacs()
 	MACRO('A') = ArpaHost;
 	MACRO('B') = BerkHost;
 	MACRO('U') = UucpHost;
-}
-/*
-**  GETNAME -- Get the current users login name.
-**
-**	This is in config.c because it is somewhat machine dependent.
-**	Examine it carefully for your installation.
-**
-**	Algorithm:
-**		See if the person is logged in.  If so, return
-**			the name s/he is logged in as.
-**		Look up the user id in /etc/passwd.  If found,
-**			return that name.
-**		Return NULL.
-**
-**	Parameters:
-**		none
-**
-**	Returns:
-**		The login name of this user.
-**		NULL if this person is noone.
-**
-**	Side Effects:
-**		none
-**
-**	Called By:
-**		main
-*/
-
-char *
-getname()
-{
-	register char *p;
-	register struct passwd *w;
-	extern char *getlogin();
-	extern struct passwd *getpwuid();
-	static char namebuf[9];
-
-	p = getlogin();
-	if (p != NULL && p[0] != '\0')
-		return (p);
-# ifdef V6
-	w = getpwuid(getuid() & 0377);
-# else
-	w = getpwuid(getuid());
-# endif V6
-	if (w != NULL)
-	{
-		strcpy(namebuf, w->pw_name);
-		return (namebuf);
-	}
-	return (NULL);
 }
 
 # ifdef V6
