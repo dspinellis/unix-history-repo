@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_input.c	7.4 (Berkeley) %G%
+ *	@(#)tcp_input.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -178,7 +178,7 @@ tcp_input(m0)
 	register struct tcpcb *tp = 0;
 	register int tiflags;
 	struct socket *so;
-	int todrop, acked, needoutput = 0;
+	int todrop, acked, ourfinisacked, needoutput = 0;
 	short ostate;
 	struct in_addr laddr;
 	int dropsocket = 0;
@@ -631,17 +631,13 @@ trimthenstep6:
 
 	/*
 	 * In SYN_RECEIVED state if the ack ACKs our SYN then enter
-	 * ESTABLISHED state and continue processing, othewise
+	 * ESTABLISHED state and continue processing, otherwise
 	 * send an RST.
 	 */
 	case TCPS_SYN_RECEIVED:
 		if (SEQ_GT(tp->snd_una, ti->ti_ack) ||
 		    SEQ_GT(ti->ti_ack, tp->snd_max))
 			goto dropwithreset;
-		tp->snd_una++;			/* SYN acked */
-		if (SEQ_LT(tp->snd_nxt, tp->snd_una))
-			tp->snd_nxt = tp->snd_una;
-		tp->t_timer[TCPT_REXMT] = 0;
 		tcpstat.tcps_connects++;
 		soisconnected(so);
 		tp->t_state = TCPS_ESTABLISHED;
@@ -716,11 +712,11 @@ trimthenstep6:
 		if (acked > so->so_snd.sb_cc) {
 			tp->snd_wnd -= so->so_snd.sb_cc;
 			sbdrop(&so->so_snd, (int)so->so_snd.sb_cc);
-#define	ourfinisacked	(acked > 0)
+			ourfinisacked = 1;
 		} else {
 			sbdrop(&so->so_snd, acked);
 			tp->snd_wnd -= acked;
-			acked = 0;
+			ourfinisacked = 0;
 		}
 		if ((so->so_snd.sb_flags & SB_WAIT) || so->so_snd.sb_sel)
 			sowwakeup(so);
@@ -787,7 +783,6 @@ trimthenstep6:
 			tp->t_timer[TCPT_2MSL] = 2 * TCPTV_MSL;
 			goto dropafterack;
 		}
-#undef ourfinisacked
 	}
 
 step6:
@@ -967,7 +962,8 @@ dropafterack:
 		goto drop;
 	if (tp->t_inpcb->inp_socket->so_options & SO_DEBUG)
 		tcp_trace(TA_RESPOND, ostate, tp, &tcp_saveti, 0);
-	tcp_respond(tp, ti, tp->rcv_nxt, tp->snd_nxt, TH_ACK);
+	tp->t_flags |= TF_ACKNOW;
+	(void) tcp_output(tp);
 	return;
 
 dropwithreset:
