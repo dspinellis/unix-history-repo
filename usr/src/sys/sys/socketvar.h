@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)socketvar.h	7.1 (Berkeley) %G%
+ *	@(#)socketvar.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -32,34 +32,34 @@ struct socket {
  */
 	struct	socket *so_head;	/* back pointer to accept socket */
 	struct	socket *so_q0;		/* queue of partial connections */
-	short	so_q0len;		/* partials on so_q0 */
 	struct	socket *so_q;		/* queue of incoming connections */
+	short	so_q0len;		/* partials on so_q0 */
 	short	so_qlen;		/* number of connections on so_q */
 	short	so_qlimit;		/* max number queued connections */
+	short	so_timeo;		/* connection timeout */
+	u_short	so_error;		/* error affecting connection */
+	short	so_pgrp;		/* pgrp for signals */
+	u_long	so_oobmark;		/* chars to oob mark */
 /*
  * Variables for socket buffering.
  */
 	struct	sockbuf {
-		u_short	sb_cc;		/* actual chars in buffer */
-		u_short	sb_hiwat;	/* max actual char count */
-		u_short	sb_mbcnt;	/* chars of mbufs used */
-		u_short	sb_mbmax;	/* max chars of mbufs to use */
-		u_short	sb_lowat;	/* low water mark (not used yet) */
-		short	sb_timeo;	/* timeout (not used yet) */
+		u_long	sb_cc;		/* actual chars in buffer */
+		u_long	sb_hiwat;	/* max actual char count */
+		u_long	sb_mbcnt;	/* chars of mbufs used */
+		u_long	sb_mbmax;	/* max chars of mbufs to use */
+		u_long	sb_lowat;	/* low water mark (not used yet) */
 		struct	mbuf *sb_mb;	/* the mbuf chain */
 		struct	proc *sb_sel;	/* process selecting read/write */
+		short	sb_timeo;	/* timeout (not used yet) */
 		short	sb_flags;	/* flags, see below */
 	} so_rcv, so_snd;
-#define	SB_MAX		65535		/* max chars in sockbuf */
+#define	SB_MAX		(64*1024)	/* max chars in sockbuf */
 #define	SB_LOCK		0x01		/* lock on data queue (so_rcv only) */
 #define	SB_WANT		0x02		/* someone is waiting to lock */
 #define	SB_WAIT		0x04		/* someone is waiting for data/space */
 #define	SB_SEL		0x08		/* buffer is selected */
 #define	SB_COLL		0x10		/* collision selecting */
-	short	so_timeo;		/* connection timeout */
-	u_short	so_error;		/* error affecting connection */
-	u_short	so_oobmark;		/* chars to oob mark */
-	short	so_pgrp;		/* pgrp for signals */
 };
 
 /*
@@ -84,8 +84,8 @@ struct socket {
 
 /* how much space is there in a socket buffer (so->so_snd or so->so_rcv) */
 #define	sbspace(sb) \
-    (MIN((int)((sb)->sb_hiwat - (sb)->sb_cc),\
-	 (int)((sb)->sb_mbmax - (sb)->sb_mbcnt)))
+    (MIN((long)((sb)->sb_hiwat - (sb)->sb_cc),\
+	 (long)((sb)->sb_mbmax - (sb)->sb_mbcnt)))
 
 /* do we have to send all at once on a socket? */
 #define	sosendallatonce(so) \
