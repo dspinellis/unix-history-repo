@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.105 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.106 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -311,18 +311,15 @@ setupmaps()
 		nisplus_map_lookup, null_map_store);
 #endif
 
-#if NAMED_BIND
-# if 0
+#if 0
 	MAPDEF("dns", NULL, 0,
 		dns_map_init, null_map_open, null_map_close,
 		dns_map_lookup, null_map_store);
-# endif
+#endif
 
-	/* old name for back compat */
 	MAPDEF("host", NULL, 0,
 		host_map_init, null_map_open, null_map_close,
 		host_map_lookup, null_map_store);
-#endif
 
 	MAPDEF("stab", NULL, MCF_ALIASOK|MCF_ALIASONLY,
 		map_parseargs, stab_map_open, null_map_close,
