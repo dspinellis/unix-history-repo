@@ -1,4 +1,4 @@
-/*	tty_subr.c	4.13	81/11/20	*/
+/*	tty_subr.c	4.14	82/02/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -382,11 +382,12 @@ struct clist *from, *to;
 		(void) putc(c, to);
 }
 
+#include "dmc.h"
+#if NDMC > 0
 /*
  * integer (2-byte) get/put
  * using clists
  */
-#ifdef unneeded
 getw(p)
 register struct clist *p;
 {
@@ -397,9 +398,7 @@ register struct clist *p;
 	s = getc(p);
 	return(s | (getc(p)<<8));
 }
-#endif
 
-#if 0
 putw(c, p)
 register struct clist *p;
 {
