@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rexecd.c	4.3 82/11/15";
+static char sccsid[] = "@(#)rexecd.c	4.4 82/11/15";
 #endif
 
 #include <sys/ioctl.h>
@@ -59,7 +59,7 @@ main(argc, argv)
 	}
 #endif
 	argc--, argv++;
-	f = socket(0, SOCK_STREAM, 0, 0);
+	f = socket(AF_INET, SOCK_STREAM, 0, 0);
 	if (f < 0) {
 		perror("rexecd: socket");
 		exit(1);
@@ -122,9 +122,6 @@ doit(f, fromp)
 	dup2(f, 0);
 	dup2(f, 1);
 	dup2(f, 2);
-#if vax
-	fromp->sin_port = ntohs((u_short)fromp->sin_port);
-#endif
 	(void) alarm(60);
 	port = 0;
 	for (;;) {
@@ -137,11 +134,13 @@ doit(f, fromp)
 	}
 	(void) alarm(0);
 	if (port != 0) {
-		s = socket(SOCK_STREAM, 0, &asin, 0);
+		s = socket(AF_INET, SOCK_STREAM, 0, 0);
 		if (s < 0)
 			exit(1);
+		if (bind(s, &asin, sizeof (asin), 0) < 0)
+			exit(1);
 		(void) alarm(60);
-		fromp->sin_port = ntohs((u_short)port);
+		fromp->sin_port = htons((u_short)port);
 		if (connect(s, fromp, sizeof (*fromp), 0) < 0)
 			exit(1);
 		(void) alarm(0);
