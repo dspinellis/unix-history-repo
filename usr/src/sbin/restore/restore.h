@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)restore.h	5.8 (Berkeley) %G%
+ *	@(#)restore.h	5.9 (Berkeley) %G%
  */
 
 #include <stdio.h>
