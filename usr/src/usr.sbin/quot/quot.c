@@ -12,16 +12,12 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)quot.c	4.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)quot.c	5.1 (Berkeley) %G%";
 #endif /* not lint */
 
-/*
- * quot
- */
-
 #include <sys/param.h>
-#include <ufs/dinode.h>
-#include <ufs/fs.h>
+#include <ufs/ufs/dinode.h>
+#include <ufs/ffs/fs.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdio.h>

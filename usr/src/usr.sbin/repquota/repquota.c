@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)repquota.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)repquota.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -23,7 +23,7 @@ static char sccsid[] = "@(#)repquota.c	5.11 (Berkeley) %G%";
  */
 #include <sys/param.h>
 #include <sys/stat.h>
-#include <ufs/quota.h>
+#include <ufs/ufs/quota.h>
 #include <fstab.h>
 #include <pwd.h>
 #include <grp.h>
