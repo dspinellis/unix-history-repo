@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.72 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.73 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -296,7 +296,10 @@ main(argc, argv, envp)
 
 #if NAMED_BIND
 	if (tTd(8, 8))
+	{
+		res_init();
 		_res.options |= RES_DEBUG;
+	}
 #endif
 
 	errno = 0;
