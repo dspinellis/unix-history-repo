@@ -325,8 +325,15 @@ struct pklcd *lcp;
 	register struct x25_packet *xp;
 	int cmd;
 
-	if (m0 == 0)
+	if (isop == 0)
+		return;
+	if (m0 == 0) {
+		isop->isop_chan = 0;
+		isop->isop_refcnt = 0;
+		lcp->lcd_upnext = 0;
+		lcp->lcd_upper = 0;
 		goto dead;
+	}
 	switch(m0->m_type) {
 	case MT_DATA:
 	case MT_OOBDATA:
@@ -340,6 +347,11 @@ struct pklcd *lcp;
 
 		case RR:
 			cmd = PRC_CONS_SEND_DONE;
+			break;
+
+		case CALL_ACCEPTED:
+			if (lcp->lcd_sb.sb_mb)
+				lcp->lcd_send(lcp); /* XXX - fix this */
 			break;
 
 		dead:
@@ -377,6 +389,8 @@ cons_connect(isop)
 		printf("\n" );
 	ENDDEBUG
 	NSAPtoDTE(isop->isop_faddr, &lcp->lcd_faddr);
+	lcp->lcd_upper = cons_tpinput;
+	lcp->lcd_upnext = (caddr_t)isop;
 	IFDEBUG(D_CCONN)
 		printf(
 		"calling make_partial_x25_packet( 0x%x, 0x%x, 0x%x)\n",
