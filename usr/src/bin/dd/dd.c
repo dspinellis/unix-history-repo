@@ -16,7 +16,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dd.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)dd.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -322,7 +322,7 @@ dd_out(force)
 			nw = write(out.fd, outp, cnt);
 			if (nw < 0)
 				err("%s: %s", out.name, strerror(errno));
-			outp += rw;
+			outp += nw;
 			st.bytes += nw;
 			if (nw == n) {
 				if (n != out.dbsz)
