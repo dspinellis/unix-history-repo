@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)whoami.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)whoami.c	4.2 (Berkeley) %G%";
 #include <pwd.h>
 /*
  * whoami
@@ -9,7 +9,7 @@ main()
 {
 	register struct passwd *pp;
 
-	pp = getpwuid(getuid());
+	pp = getpwuid(geteuid());
 	if (pp == 0) {
 		printf("Intruder alert.\n");
 		exit(1);
