@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)isofs_inode.c
- *	$Id: isofs_node.c,v 1.2 1993/07/20 03:27:29 jkh Exp $
+ *	$Id: isofs_node.c,v 1.3 1993/07/27 18:38:16 nate Exp $
  */
 
 #include "param.h"
@@ -238,15 +238,14 @@ isofs_inactive(vp, p)
 	 */
 
 	/*
-	 * Whenever any inode is registered to HASH by the iso_iget,
-         * All inode purged here immediately ( v_usecount is 0 )
-	 * It's too much penalty for cdrom, so I just comment out it.
-         * (I've confirmed purging them when hash is getting full.)
-         *
-         *                             amurai@spec.co.jp  July 22,'93
+	 * Purge symlink entries since they cause problems
+	 * when cached.  Leave other entries alone since flushing
+	 * them every time is a major performance hit.
 	 */
-	/*if (vp->v_usecount == 0*/ /* && ip->i_mode == 0 *//*)*/
-	/*	vgone(vp); */
+	if (vp->v_usecount == 0 && vp->v_type == VLNK) {
+/*		printf("Flushing symlink entry\n");*/
+		vgone(vp);
+	}
 	return (error);
 }
 
