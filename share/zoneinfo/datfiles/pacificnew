@@ -1,4 +1,4 @@
-# @(#)pacificnew	7.4
+# @(#)pacificnew	7.6
 
 # From Arthur David Olson (April 5, 1989):
 # On April 5, 1989, the U. S. House of Representatives passed (238-154) a bill
@@ -23,4 +23,4 @@
 ## 			-8:00	Twilite		P%sT
 
 # For now...
-Link	US/Pacific	US/Pacific-New	##
+Link	America/Los_Angeles	US/Pacific-New	##
