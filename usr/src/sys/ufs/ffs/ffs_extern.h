@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_extern.h	7.5 (Berkeley) %G%
+ *	@(#)ffs_extern.h	7.6 (Berkeley) %G%
  */
 
 struct buf;
@@ -21,8 +21,10 @@ struct uio;
 struct vnode;
 
 __BEGIN_DECLS
-int	ffs_alloc __P((struct inode *, daddr_t, daddr_t, int, daddr_t *));
-int	ffs_balloc __P((struct inode *, daddr_t, int, struct buf **, int));
+int	ffs_alloc __P((struct inode *,
+	    daddr_t, daddr_t, int, struct ucred *, daddr_t *));
+int	ffs_balloc __P((struct inode *,
+	    daddr_t, int, struct ucred *, struct buf **, int));
 int	ffs_blkatoff __P((struct vnode *, off_t, char **, struct buf **));
 int	ffs_blkfree __P((struct inode *, daddr_t, long));
 daddr_t	ffs_blkpref __P((struct inode *, daddr_t, int, daddr_t *));
@@ -40,14 +42,14 @@ int	ffs_mount __P((struct mount *,
 int	ffs_mountfs __P((struct vnode *, struct mount *, struct proc *));
 int	ffs_mountroot __P((void));
 int	ffs_read __P((struct vnode *, struct uio *, int, struct ucred *));
-int	ffs_realloccg
-	    __P((struct inode *, daddr_t, daddr_t, int, int, struct buf **));
+int	ffs_realloccg __P((struct inode *,
+	    daddr_t, daddr_t, int, int, struct ucred *, struct buf **));
 int	ffs_reclaim __P((struct vnode *));
 int	ffs_root __P((struct mount *, struct vnode **));
 void	ffs_setblock __P((struct fs *, u_char *, daddr_t));
 int	ffs_statfs __P((struct mount *, struct statfs *, struct proc *));
 int	ffs_sync __P((struct mount *, int));
-int	ffs_truncate __P((struct vnode *, off_t, int));
+int	ffs_truncate __P((struct vnode *, off_t, int, struct ucred *));
 int	ffs_unmount __P((struct mount *, int, struct proc *));
 int	ffs_update
 	    __P((struct vnode *, struct timeval *, struct timeval *, int));
