@@ -1,5 +1,5 @@
 /* USE <wait.h> */
-static	char sccsid[] = "@(#)cc.c 3.2 %G%";
+static	char sccsid[] = "@(#)cc.c 3.3 %G%";
 /*
  * cc - front end for C compiler
  */
@@ -144,7 +144,7 @@ main(argc, argv)
 	if (npassname && chpass ==0)
 		chpass = "012p";
 	if (chpass && npassname==0)
-		npassname = "/usr/c/";
+		npassname = "/usr/new/new";
 	if (chpass)
 	for (t=chpass; *t; t++) {
 		switch (*t) {
