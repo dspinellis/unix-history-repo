@@ -8,7 +8,7 @@
 # include "sendmail.h"
 # include "conf.h"
 
-SCCSID(@(#)util.c	4.10		%G%);
+SCCSID(@(#)util.c	4.11		%G%);
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
@@ -199,7 +199,6 @@ copyplist(list, copycont)
 **		prints av.
 */
 
-# ifdef DEBUG
 printav(av)
 	register char **av;
 {
@@ -213,7 +212,6 @@ printav(av)
 	}
 	putchar('\n');
 }
-# endif DEBUG
 /*
 **  LOWER -- turn letter into lower case.
 **
@@ -248,7 +246,6 @@ lower(c)
 **		output to stdout
 */
 
-# ifdef DEBUG
 xputs(s)
 	register char *s;
 {
@@ -277,7 +274,6 @@ xputs(s)
 	putchar('"');
 	(void) fflush(stdout);
 }
-# endif DEBUG
 /*
 **  MAKELOWER -- Translate a line into lower case
 **
@@ -612,6 +608,7 @@ sfgets(buf, siz, fp)
 		{
 			errno = ETIMEDOUT;
 			syserr("sfgets: timeout on read (mailer may be hung)");
+			buf[0] = '\0';
 			return (NULL);
 		}
 		ev = setevent((time_t) ReadTimeout, readtimeout, 0);
