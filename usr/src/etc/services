@@ -1,7 +1,7 @@
 #
 # Network services, Internet style
 #
-#	@(#)services	5.8 (Berkeley) %G%
+#	@(#)services	5.9 (Berkeley) %G%
 #
 echo		7/tcp
 echo		7/udp
@@ -66,6 +66,7 @@ conference	531/tcp		chat
 netnews		532/tcp		readnews
 netwall		533/udp				# -for emergency broadcasts
 uucp		540/tcp		uucpd		# uucp daemon
+rdist		541/tcp		rdistd		# rdist daemon
 remotefs	556/tcp		rfs_server rfs	# Brunhoff remote filesystem
 
 ingreslock	1524/tcp
