@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_user.c	7.3 (Berkeley) 4/21/91
- *	$Id$
+ *	$Id: vm_user.c,v 1.3 1993/10/16 16:20:59 rgrimes Exp $
  */
 
 /*
@@ -99,7 +99,7 @@ svm_allocate(p, uap, retval)
 	vm_offset_t addr;
 	int rv;
 
-	uap->map = p->p_map;		/* XXX */
+	uap->map = &p->p_vmspace->vm_map;		/* XXX */
 
 	if (copyin((caddr_t)uap->addr, (caddr_t)&addr, sizeof (addr)))
 		rv = KERN_INVALID_ARGUMENT;
@@ -126,7 +126,7 @@ svm_deallocate(p, uap, retval)
 {
 	int rv;
 
-	uap->map = p->p_map;		/* XXX */
+	uap->map = &p->p_vmspace->vm_map;		/* XXX */
 	rv = vm_deallocate(uap->map, uap->addr, uap->size);
 	return((int)rv);
 }
@@ -146,7 +146,7 @@ svm_inherit(p, uap, retval)
 {
 	int rv;
 
-	uap->map = p->p_map;		/* XXX */
+	uap->map = &p->p_vmspace->vm_map;		/* XXX */
 	rv = vm_inherit(uap->map, uap->addr, uap->size, uap->inherit);
 	return((int)rv);
 }
@@ -167,7 +167,7 @@ svm_protect(p, uap, retval)
 {
 	int rv;
 
-	uap->map = p->p_map;		/* XXX */
+	uap->map = &p->p_vmspace->vm_map;		/* XXX */
 	rv = vm_protect(uap->map, uap->addr, uap->size, uap->setmax, uap->prot);
 	return((int)rv);
 }
