@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)clnp_output.c	7.10 (Berkeley) %G%
+ *	@(#)clnp_output.c	7.11 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -81,6 +81,16 @@ static struct clnp_fixed echo_template = {
 	ISO8473_V1,		/* version */
 	CLNP_TTL,		/* ttl */
 	CLNP_EC|CNF_SEG_OK|CNF_ERR_OK,		/* type */
+	0,				/* segment length */
+	0				/* checksum */
+};
+
+static struct clnp_fixed echor_template = {
+	ISO8473_CLNP,	/* network identifier */
+	0,				/* length */
+	ISO8473_V1,		/* version */
+	CLNP_TTL,		/* ttl */
+	CLNP_ECR|CNF_SEG_OK|CNF_ERR_OK,		/* type */
 	0,				/* segment length */
 	0				/* checksum */
 };
@@ -345,6 +355,8 @@ int					flags;		/* flags */
 			*clnp = raw_template;
 		} else if (flags & CLNP_ECHO) {
 			*clnp = echo_template;
+		} else if (flags & CLNP_ECHOR) {
+			*clnp = echor_template;
 		} else {
 			*clnp = dt_template;
 		}

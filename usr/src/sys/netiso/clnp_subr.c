@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)clnp_subr.c	7.13 (Berkeley) %G%
+ *	@(#)clnp_subr.c	7.14 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -549,6 +549,42 @@ struct iso_addr		*final_dst;		/* final destination */
 	}
 	
 	return error;
+}
+
+/*
+ * FUNCTION:		clnp_echoreply
+ *
+ * PURPOSE:			generate an echo reply packet and transmit
+ *
+ * RETURNS:			result of clnp_output
+ *
+ * SIDE EFFECTS:	
+ */
+clnp_echoreply(ec_m, ec_len, ec_src, ec_dst, ec_oidxp)
+struct mbuf			*ec_m;		/* echo request */
+int					ec_len;		/* length of ec */
+struct sockaddr_iso	*ec_src;		/* src of ec */
+struct sockaddr_iso	*ec_dst; 	/* destination of ec (i.e., us) */
+struct clnp_optidx	*ec_oidxp;	/* options index to ec packet */
+{
+	struct isopcb	isopcb;
+	int				flags = CLNP_NOCACHE|CLNP_ECHOR;
+	int				ret;
+
+	/* fill in fake isopcb to pass to output function */
+	bzero(&isopcb, sizeof(isopcb));
+	isopcb.isop_laddr = ec_dst;
+	isopcb.isop_faddr = ec_src;
+
+	/* forget copying the options for now. If implemented, need only
+	 * copy record route option, but it must be reset to zero length */
+
+	ret = clnp_output(ec_m, &isopcb, ec_len, flags);
+
+	IFDEBUG(D_OUTPUT)
+		printf("clnp_echoreply: output returns %d\n", ret);
+	ENDDEBUG
+	return ret;
 }
 
 /*
