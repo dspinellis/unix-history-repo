@@ -1,4 +1,4 @@
-/*	if_ec.c	4.8	82/05/20	*/
+/*	if_ec.c	4.9	82/05/21	*/
 
 #include "ec.h"
 #include "imp.h"
@@ -39,6 +39,7 @@ struct	uba_device *ecinfo[NEC];
 u_short ecstd[] = { 0 };
 struct	uba_driver ecdriver =
 	{ ecprobe, 0, ecattach, 0, ecstd, "ec", ecinfo };
+u_char	ec_iltop[3] = { 0x02, 0x07, 0x01 };
 #define	ECUNIT(x)	minor(x)
 
 int	ecinit(),ecoutput(),ecreset();
@@ -161,12 +162,10 @@ COUNT(ECATTACH);
 		}
 		cp++;
 	}
-#ifdef notdef
 	printf("ec%d: addr=%x:%x:%x:%x:%x:%x\n", ui->ui_unit,
 		es->es_enaddr[0]&0xff, es->es_enaddr[1]&0xff,
 		es->es_enaddr[2]&0xff, es->es_enaddr[3]&0xff,
 		es->es_enaddr[4]&0xff, es->es_enaddr[5]&0xff);
-#endif
 	es->es_if.if_host[0] = ((es->es_enaddr[3]&0xff)<<16) |
 	    ((es->es_enaddr[4]&0xff)<<8) | (es->es_enaddr[5]&0xff);
 	sin = (struct sockaddr_in *)&es->es_if.if_addr;
@@ -272,9 +271,6 @@ COUNT(ECSTART);
 		es->es_oactive = 0;
 		return;
 	}
-#ifdef notdef
-	dest = mtod(m, struct ec_header *)->ec_dhost; /* wrong! */
-#endif
 	ecput(es->es_buf[ECTBF], m);
 
 restart:
@@ -313,8 +309,9 @@ COUNT(ECXINT);
 		m_freem(es->es_ifuba.ifu_xtofree);
 		es->es_ifuba.ifu_xtofree = 0;
 	}
-	if (es->es_if.if_snd.ifq_head == 0)
+	if (es->es_if.if_snd.ifq_head == 0) {
 		return;
+	}
 	ecstart(unit);
 }
 
@@ -401,9 +398,6 @@ ecrint(unit)
 	struct ecdevice *addr = (struct ecdevice *)ecinfo[unit]->ui_addr;
 COUNT(ECRINT);
 
-#ifdef notdef
-	printf("ec%d: ecrint:%d\n", unit, addr->ec_rcr & 0xf);
-#endif
 	while (addr->ec_rcr & EC_RDONE)
 		ecread(unit);
 }
@@ -597,10 +591,16 @@ gottype:
 		for (i=0; i<6; i++)
 			ec->ec_dhost[i] = 0xff;
 	else {
-		ec->ec_dhost[0] = es->es_enaddr[0];
-		ec->ec_dhost[1] = es->es_enaddr[1];
-		ec->ec_dhost[2] = es->es_enaddr[2];
-		ec->ec_dhost[3] = (dest>>8) & 0xff;
+		if (dest & 0x8000) {
+			ec->ec_dhost[0] = ec_iltop[0];
+			ec->ec_dhost[1] = ec_iltop[1];
+			ec->ec_dhost[2] = ec_iltop[2];
+		} else {
+			ec->ec_dhost[0] = es->es_enaddr[0];
+			ec->ec_dhost[1] = es->es_enaddr[1];
+			ec->ec_dhost[2] = es->es_enaddr[2];
+		}
+		ec->ec_dhost[3] = (dest>>8) & 0x7f;
 		ec->ec_dhost[4] = (dest>>16) & 0xff;
 		ec->ec_dhost[5] = (dest>>24) & 0xff;
 	}
