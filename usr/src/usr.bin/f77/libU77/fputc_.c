@@ -1,5 +1,5 @@
 /*
-char id_fputc[] = @(#)fputc_.c	1.3";
+char id_fputc[] = @(#)fputc_.c	1.4";
  *
  * write a character to a logical unit bypassing formatted I/O
  *
@@ -27,8 +27,8 @@ long *u; char *c; long clen;
 	lu = &units[*u];
 	if (!lu->ufd)
 		return((long)(errno=F_ERNOPEN));
-	if (!lu->uwrt)
-		nowwriting(lu);
+	if (!lu->uwrt && ! nowwriting(lu))
+		return((long)errno);
 	putc (*c, lu->ufd);
 	if (ferror(lu->ufd))
 	{

@@ -1,5 +1,5 @@
 /*
-char id_putc[] = "@(#)putc_.c	1.2";
+char id_putc[] = "@(#)putc_.c	1.3";
  *
  * write a character to the standard output
  *
@@ -25,8 +25,8 @@ char *c; long clen;
 	lu = &units[STDOUT];
 	if (!lu->ufd)
 		return((long)(errno=F_ERNOPEN));
-	if (!lu->uwrt)
-		nowwriting(lu);
+	if (!lu->uwrt && ! nowwriting(lu))
+		return((long)errno);
 	putc (*c, lu->ufd);
 	if (ferror(lu->ufd))
 	{
