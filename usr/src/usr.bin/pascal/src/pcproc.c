@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pcproc.c 1.13 %G%";
+static	char sccsid[] = "@(#)pcproc.c 1.14 %G%";
 
 #include "whoami.h"
 #ifdef PC
@@ -12,6 +12,16 @@ static	char sccsid[] = "@(#)pcproc.c 1.13 %G%";
 #include "opcode.h"
 #include	"pc.h"
 #include	"pcops.h"
+
+/*
+ * The constant REALSPC defines the amount of forced padding preceeding
+ * real numbers when they are printed. If REALSPC == 0, then no padding
+ * is added, REALSPC == 1 adds one extra blank irregardless of the width
+ * specified by the user.
+ *
+ * N.B. - Values greater than one require program mods.
+ */
+#define	REALSPC	0
 
 /*
  * The following array is used to determine which classes may be read
@@ -474,7 +484,8 @@ pcproc(r)
 					fmtspec = CONWIDTH + CONPREC;
 					break;
 				case CONWIDTH:
-					if (--field < 1)
+					field -= REALSPC;
+					if (field < 1)
 						field = 1;
 					prec = field - 7;
 					if (prec < 1)
@@ -488,11 +499,12 @@ pcproc(r)
 					break;
 				case CONWIDTH + CONPREC:
 				case CONWIDTH + VARPREC:
-					if (--field < 1)
+					field -= REALSPC;
+					if (field < 1)
 						field = 1;
 				}
 				format[0] = ' ';
-				fmtstart = 1;
+				fmtstart = 1 - REALSPC;
 				break;
 			case TSTR:
 				constval( alv );
@@ -649,7 +661,7 @@ pcproc(r)
 				    }
 				    switch ( typ ) {
 				    case TDOUBLE:
-					putleaf( P2ICON , 1 , 0 , P2INT , 0 );
+					putleaf( P2ICON , REALSPC , 0 , P2INT , 0 );
 					putop( P2LISTOP , P2INT );
 					putleaf( P2ICON , 1 , 0 , P2INT , 0 );
 					putop( P2LISTOP , P2INT );
@@ -669,7 +681,7 @@ pcproc(r)
 						tempnlp -> extra_flags ,
 						P2INT );
 					    tmpfree(&soffset);
-					    putleaf( P2ICON , 8 , 0 , P2INT , 0 );
+					    putleaf( P2ICON , 7 + REALSPC , 0 , P2INT , 0 );
 					    putop( P2LISTOP , P2INT );
 					    putleaf( P2ICON , 1 , 0 , P2INT , 0 );
 					    putop( P2LISTOP , P2INT );
