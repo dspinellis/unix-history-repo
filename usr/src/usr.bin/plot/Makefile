@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	4.12 (Berkeley) %G%
+#	@(#)Makefile	4.13 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -27,52 +27,52 @@ MAN=	plot.0
 all: ${ALL} debug
 
 tek: driver.o
-	${CC} ${CFLAGS} -o $@ driver.o -l4014 -lm
+	${CC} ${CFLAGS} -o $@ driver.o -l4014 -lm -lcompat
 
 t4013: driver.o
-	${CC} ${CFLAGS} -o $@ driver.o -l4013 -lm
+	${CC} ${CFLAGS} -o $@ driver.o -l4013 -lm -lcompat
 
 t300: driver.o
-	${CC} ${CFLAGS} -o $@ driver.o -l300 -lm
+	${CC} ${CFLAGS} -o $@ driver.o -l300 -lm -lcompat
 
 t300s: driver.o
-	${CC} ${CFLAGS} -o $@ driver.o -l300s -lm
+	${CC} ${CFLAGS} -o $@ driver.o -l300s -lm -lcompat
 
 t450: driver.o
-	${CC} ${CFLAGS} -o $@ driver.o -l450 -lm
+	${CC} ${CFLAGS} -o $@ driver.o -l450 -lm -lcompat
 
 aedplot: driver.o
-	${CC} ${CFLAGS} -o $@ driver.o -lplotaed
+	${CC} ${CFLAGS} -o $@ driver.o -lplotaed -lcompat
 
 bgplot: driver.o
-	${CC} ${CFLAGS} -o $@ driver.o -lplotbg -lm
+	${CC} ${CFLAGS} -o $@ driver.o -lplotbg -lm -lcompat
 
 crtplot: crtdriver.o crtplot.o
-	${CC} ${CFLAGS} -o $@ crtdriver.o crtplot.o -lcurses -ltermcap -lm
+	${CC} ${CFLAGS} -o $@ crtdriver.o crtplot.o -lcurses -ltermcap -lm -lcompat
 
 dumbplot: driver.o
-	${CC} ${CFLAGS} -o $@ driver.o -lplotdumb -ltermcap -lm
+	${CC} ${CFLAGS} -o $@ driver.o -lplotdumb -ltermcap -lm -lcompat
 
 gigiplot: driver.o
-	${CC} ${CFLAGS} -o $@ driver.o -lplotgigi -lm
+	${CC} ${CFLAGS} -o $@ driver.o -lplotgigi -lm -lcompat
 
 hpplot: driver.o
-	${CC} ${CFLAGS} -o $@ driver.o -lplot2648 -lm
+	${CC} ${CFLAGS} -o $@ driver.o -lplot2648 -lm -lcompat
 
 hp7221plot: driver.o
-	${CC} ${CFLAGS} -o $@ driver.o -lplot7221 -lm
+	${CC} ${CFLAGS} -o $@ driver.o -lplot7221 -lm -lcompat
 
 implot: driver.o
-	${CC} ${CFLAGS} -o $@ driver.o -lplotimagen -lm
+	${CC} ${CFLAGS} -o $@ driver.o -lplotimagen -lm -lcompat
 
 atoplot: atoplot.o
-	${CC} ${CFLAGS} -o $@ atoplot.o -lplot -lm
+	${CC} ${CFLAGS} -o $@ atoplot.o -lplot -lm -lcompat
 
 plottoa: plottoa.o
 	${CC} ${CFLAGS} -o $@ plottoa.o
 
 grnplot: driver.o
-	${CC} ${CFLAGS} -o $@ driver.o -lplotgrn -lm
+	${CC} ${CFLAGS} -o $@ driver.o -lplotgrn -lm -lcompat
 
 debug: debug.o
 	${CC} ${CFLAGS} -o $@ debug.o
@@ -87,7 +87,7 @@ depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 ${ALL} ${DESTDIR}/usr/libexec
+	install -s -o bin -g bin -m 755 ${ALL} ${DESTDIR}/usr/libexec/plot
 	install -c -o bin -g bin -m 755 plot.sh ${DESTDIR}/usr/bin/plot
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 
