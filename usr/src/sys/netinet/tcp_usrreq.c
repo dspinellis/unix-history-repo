@@ -1,4 +1,4 @@
-/*	tcp_usrreq.c	6.1	83/07/29	*/
+/*	tcp_usrreq.c	6.2	84/08/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -7,6 +7,7 @@
 #include "../h/socketvar.h"
 #include "../h/protosw.h"
 #include "../h/errno.h"
+#include "../h/stat.h"
 
 #include "../net/if.h"
 #include "../net/route.h"
@@ -235,11 +236,11 @@ tcp_usrreq(so, req, m, nam, rights)
 	case PRU_CONTROL:
 		error = EOPNOTSUPP;
 		break;
+/* END UNIMPLEMENTED HOOKS */
 
 	case PRU_SENSE:
-		error = EOPNOTSUPP;
-		break;
-/* END UNIMPLEMENTED HOOKS */
+		((struct stat *) m)->st_blksize = so->so_snd.sb_hiwat;
+		return (0);
 
 	case PRU_RCVOOB:
 		if (so->so_oobmark == 0 &&
