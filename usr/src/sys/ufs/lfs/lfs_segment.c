@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_segment.c	5.2 (Berkeley) %G%
+ *	@(#)lfs_segment.c	5.3 (Berkeley) %G%
  */
 
 #ifdef LOGFS
@@ -32,24 +32,14 @@
 #include "lfs_extern.h"
 
 /*
-Add a check so that if the segment is empty, you don't write it.
-Write the code with lfs_ialloc to allocate a new page of inodes if you have to.
-Make an incoming sync wait until the previous one finishes.  Keith
-	will write this.  When this happens, we no longer have to be
-	able to chain superblocks together and handle multiple segments
-	writing -- Seems like we can call biowait to wait for an io.
-	However, I don't think we want to wait on the summary I/O
-	necessarily, because if we've got lots of dirty buffers piling
-	up, it would be nice to process them and get the segment all
-	ready to write.  Perhaps we can just wait before firing up the
-	next set of writes, rather than waiting to start doing anything.
-	Also -- my lfs_writesuper should wait until all the segment writes
-	are done (I added a biowait, but we need to make sure that the SEGMENT
-	structure hasn't been freed before we get there).
-Need to keep vnode v_numoutput up to date for pending writes?
-???Could actually fire off the datablock writes before you finish.  This
-would give them a chance to get started earlier...
-*/
+ * Add a check so that if the segment is empty, you don't write it.
+ *
+ * Change lfs_ialloc to allocate a new page of inodes if you have to.
+ *
+ * Need to keep vnode v_numoutput up to date for pending writes?  Could
+ * actually fire off the datablock writes before you finish.  This would give
+ * them a chance to get started earlier.
+ */
 
 static int	 lfs_biocallback __P((BUF *));
 static void	 lfs_endsum __P((LFS *, SEGMENT *, int));
@@ -61,10 +51,11 @@ static void	 lfs_newsum __P((LFS *, SEGMENT *));
 static daddr_t	 lfs_nextseg __P((LFS *));
 static void	 lfs_updatemeta __P((LFS *, SEGMENT *, INODE *, daddr_t *, 
 		     BUF **, int));
-static void	 lfs_writeckp __P((LFS *, SEGMENT *));
+static SEGMENT	*lfs_writeckp __P((LFS *, SEGMENT *));
 static SEGMENT	*lfs_writefile __P((SEGMENT *, LFS *, VNODE *, int));
 static SEGMENT	*lfs_writeinode __P((LFS *, SEGMENT *, VNODE *));
 static void	 lfs_writeseg __P((LFS *, SEGMENT *));
+static void	 lfs_writesum __P((LFS *));
 static void	 lfs_writesuper __P((LFS *, SEGMENT *));
 static int	 match_data __P((BUF *));
 static int	 match_dindir __P((BUF *));
@@ -85,8 +76,24 @@ lfs_segwrite(mp, do_ckp)
 	LFS *fs;
 	VNODE *vp;
 	SEGMENT *sp;
+	int s;
 
 	fs = VFSTOUFS(mp)->um_lfs;
+	/*
+	 * LFS requires that the summary blocks be written after the rest of
+	 * the segment, and that the super blocks (on checkpoint) be written
+	 * last of all.  We keep a cumulative count of the outstanding blocks
+	 * from all of the segments, and write these blocks when this count
+	 * goes to zero.  If the disk drive catches up with us it could go
+	 * to zero before we finish, so we artificially increment it by one
+	 * until we've scheduled all of the writes we intend to do.  At the
+	 * moment, the user's process hangs around so we can sleep; this should
+	 * probably be redone using a kernel thread.
+	 */
+	s = splbio();
+	fs->lfs_iocount = 1;
+	splx(s);
+	
 	sp = lfs_newseg(fs);
 loop:
 	for (vp = mp->mnt_mounth; vp; vp = vp->v_mountf) {
@@ -109,13 +116,18 @@ loop:
 		sp = lfs_writefile(sp, fs, vp, do_ckp);
 		vput(vp);
 	}
+
 	if (do_ckp)
-		lfs_writeckp(fs, sp);
+		sp = lfs_writeckp(fs, sp);
 	else
 		lfs_writeseg(fs, sp);
-#ifdef NOTLFS
-	vflushbuf(ump->um_devvp, waitfor == MNT_WAIT ? B_SYNC : 0);
-#endif
+	s = splbio();
+	if (--fs->lfs_iocount)
+		sleep(&fs->lfs_iocount, PRIBIO + 1);
+	splx(s);
+	lfs_writesum(fs);
+	if (do_ckp)
+		lfs_writesuper(fs, sp);
 	return (0);
 }
 
@@ -125,84 +137,72 @@ lfs_biocallback(bp)
 {
 	LFS *fs;
 	SEGMENT *sp, *next_sp;
-	UFSMOUNT *ump;
 	VNODE *devvp;
 
 	/*
-	 * Grab the mount point for later (used to find the file system and
-	 * block device) and, if the contents are valid, move the buffer back
-	 * onto the clean list.
+	 * XXX
+	 * Reset the flags (probably wrong).  If the contents of the buffer
+	 * are valid, move back onto the clean list.
 	 */
-printf("lfs_biocallback: buffer %x\n", bp, bp->b_lblkno);
-	ump = VFSTOUFS(bp->b_vp->v_mount);
+	bp->b_flags &= ~(B_READ | B_DONE | B_ERROR | B_DELWRI);
+	fs = VFSTOUFS(bp->b_vp->v_mount)->um_lfs;
 	if (bp->b_flags & B_NOCACHE)
 		bp->b_vp = NULL;
-	else {
-		bp->b_flags &= ~(B_READ | B_DONE | B_ERROR | B_DELWRI);
+	else
 		reassignbuf(bp, bp->b_vp);
-	}
+	brelse(bp);
 
-	fs = ump->um_lfs;
-	devvp = ump->um_devvp;
-	brelse(bp);		/* move up... XXX */
+printf("callback: buffer: %x iocount %d\n", bp, fs->lfs_iocount);
+	if (fs->lfs_iocount == 0)
+		panic("lfs_biocallback: zero iocount\n");
 
-printf("\nlfs_biocallback: iocount %d\n", fs->lfs_iocount);
-	if (fs->lfs_iocount == 0) {
-		/* Wake up any other syncs waiting on this file system. */
-		return;
-	}
-	--fs->lfs_iocount;
-	if (fs->lfs_iocount == 0) {
-printf("\nlfs_biocallback: doing summary write\n");
-		/* Fire off summary writes */
-		for (sp = fs->lfs_seglist; sp; sp = next_sp) {
-			next_sp = sp->nextp;
-#ifdef MOVETONEWBUF
-			(*(sp->cbpp - 1))->b_dev = bp->b_dev;
-#endif
-			(devvp->v_op->vop_strategy)(*(sp->cbpp - 1));
-			free(sp->bpp, M_SEGMENT);
-			free(sp, M_SEGMENT);
-		}
-	}
+	if (--fs->lfs_iocount == 0)
+		wakeup(&fs->lfs_iocount);
 }
 
 static void
 lfs_endsum(fs, sp, calc_next)
 	LFS *fs;
 	SEGMENT *sp;
-	int calc_next;		/* if 1, calculate next, else -1 */
+	int calc_next;		/* If 1 calculate next, else set to -1. */
 {
 	BUF *bp;
 	SEGSUM *ssp;
 	daddr_t next_addr;
 	int npages, nseg_pages, nsums_per_blk;
 
-/* printf("lfs_endsum\n");		/**/
 	if (sp->sbp == NULL)
 		return;
 
 	ssp = sp->segsum;
-	if (!calc_next)
-		ssp->ss_nextsum = (daddr_t) -1;
-	else
-		ssp->ss_nextsum = sp->sum_addr - LFS_SUMMARY_SIZE / DEV_BSIZE;
+	ssp->ss_nextsum = calc_next ?
+	    sp->sum_addr - LFS_SUMMARY_SIZE / DEV_BSIZE : (daddr_t)-1;
 
-	if ((sp->sum_num % (fs->lfs_bsize / LFS_SUMMARY_SIZE)) == (nsums_per_blk - 1)) {
+	/*
+	 * XXX
+	 * I don't understand how sum_num works; the 0 base seems wrong.
+	 */
+	nsums_per_blk = fs->lfs_bsize / LFS_SUMMARY_SIZE;
+	if ((sp->sum_num % (fs->lfs_bsize / LFS_SUMMARY_SIZE)) ==
+	    (nsums_per_blk - 1)) {
 		/*
-		 * This buffer is now full.  Compute the next address if appropriate
-		 * and the checksum, and close the buffer by setting sp->sbp NULL.
+		 * This buffer is now full.  Compute the next address if
+		 * appropriate and the checksum, and close the buffer by
+		 * setting sp->sbp NULL.
 		 */
 		if (calc_next) {
 			nsums_per_blk = fs->lfs_bsize / LFS_SUMMARY_SIZE;
 			nseg_pages = 1 + sp->sum_num / nsums_per_blk;
-			npages = nseg_pages + (sp->ninodes + INOPB(fs) - 1) / INOPB(fs);
-			next_addr = fs->lfs_sboffs[0] + 
-			    (sp->seg_number + 1) * fsbtodb(fs, fs->lfs_ssize)
-			    - fsbtodb(fs, (npages - 1)) - LFS_SUMMARY_SIZE / DEV_BSIZE;
+			npages = nseg_pages +
+			    (sp->ninodes + INOPB(fs) - 1) / INOPB(fs);
+			next_addr = fs->lfs_sboffs[0] + (sp->seg_number + 1) *
+			    fsbtodb(fs, fs->lfs_ssize) -
+			    fsbtodb(fs, (npages - 1)) -
+			    LFS_SUMMARY_SIZE / DEV_BSIZE;
 			ssp->ss_nextsum = next_addr;
 		}
-		ssp->ss_cksum = cksum(&ssp->ss_cksum, LFS_SUMMARY_SIZE - sizeof(ssp->ss_cksum));
+		ssp->ss_cksum = cksum(&ssp->ss_cksum,
+		    LFS_SUMMARY_SIZE - sizeof(ssp->ss_cksum));
 		sp->sbp = NULL;
 	} else
 		/* Calculate cksum on previous segment summary */
@@ -241,8 +241,8 @@ lfs_gather(fs, sp, vp, match)
 			continue;
 		bremfree(bp);
 		bp->b_flags |= B_BUSY | B_CALL;
-		bp->b_dev = VTOI(fs->lfs_ivnode)->i_dev;
 		bp->b_iodone = lfs_biocallback;
+		bp->b_dev = VTOI(fs->lfs_ivnode)->i_dev;
 
 		*lbp++ = bp->b_lblkno;
 		*sp->cbpp++ = bp;
@@ -275,17 +275,15 @@ lfs_gather(fs, sp, vp, match)
 			fip->fi_ino = ip->i_number;
 			fip->fi_version = version;
 			bpp = sp->cbpp;
-			/* You know that you have a new FINFO either way */
+			/* You know that you have a new FINFO either way. */
 			start_lbp = lbp = fip->fi_blocks;
 			s = splbio();
 		}
 	}
 	splx(s);
 	lfs_updatemeta(fs, sp, ip, start_lbp, bpp, lbp - start_lbp);
-
 	return(sp);
 }
-
 
 static BUF *
 lfs_newbuf(fs, daddr, size)
@@ -294,42 +292,22 @@ lfs_newbuf(fs, daddr, size)
 	size_t size;
 {
 	BUF *bp;
-	VNODE *devvp;
 
 	bp = getnewbuf();
 	bremhash(bp);
-
-	/*
-	 * XXX
-	 * Need a devvp, but this isn't a particularly clean way to get one.
-	 * devvp = VTOI(fs->lfs_ivnode)->i_devvp;
-	 */
-#ifdef NOTWORKING
-	devvp = VFSTOUFS(fs->lfs_ivnode->v_mount)->um_devvp;
-	bgetvp(devvp, bp);
-#endif
 	bp->b_vp = fs->lfs_ivnode;
-	bp->b_dev = VTOI(fs->lfs_ivnode)->i_dev;
 	bp->b_bcount = 0;
 	bp->b_blkno = bp->b_lblkno = daddr;
 	bp->b_error = 0;
 	bp->b_resid = 0;
-	bp->b_flags |= B_CALL | B_DELWRI | B_NOCACHE | B_WRITE;
+	bp->b_flags |= B_DELWRI | B_NOCACHE;
 	bp->b_iodone = lfs_biocallback;
-#ifdef PROBABLYWRONG
-	binshash(bp, BUFHASH(devvp, daddr));
-#endif
+	bp->b_dev = VTOI(fs->lfs_ivnode)->i_dev;
 	allocbuf(bp, size);
-#ifdef PROBABLYWRONG
-	reassignbuf(bp, devvp);
-#endif
 	return (bp);
 }
 
-
-/*
- * Start a new segment
- */
+/* Start a new segment. */
 static SEGMENT *
 lfs_newseg(fs)
 	LFS *fs;
@@ -337,30 +315,30 @@ lfs_newseg(fs)
 	SEGMENT *sp;
 	SEGUSE *sup;
 
-printf("lfs_newseg\n");
-	/* Get buffer space to write out a segment */
+printf("lfs_newseg: new segment %x\n", fs->lfs_nextseg);
+
 	sp = malloc(sizeof(SEGMENT), M_SEGMENT, M_WAITOK);
-	sp->ibp = NULL;
-	sp->sbp = NULL;
+	sp->nextp = NULL;
 	sp->cbpp = sp->bpp =
 	    malloc(fs->lfs_ssize * sizeof(BUF *), M_SEGMENT, M_WAITOK);
-	sp->nextp = NULL;
+	sp->ibp = sp->sbp = NULL;
 	sp->sum_bytes_left = LFS_SUMMARY_SIZE;
 	sp->seg_bytes_left = (fs->lfs_segmask + 1) - LFS_SUMMARY_SIZE;
 	sp->saddr = fs->lfs_nextseg;
-printf("lfs_newseg: About to write segment %lx\n", sp->saddr);
 	sp->sum_addr = sp->saddr + sp->seg_bytes_left / DEV_BSIZE;
 	sp->ninodes = 0;
 	sp->sum_num = -1;
 	sp->seg_number =
 	    (sp->saddr - fs->lfs_sboffs[0]) / fsbtodb(fs, fs->lfs_ssize);
 
-	/* initialize segment summary info */
-	lfs_newsum(fs, sp);
+	/* Bump the segment count. */
+	fs->lfs_nextseg = lfs_nextseg(fs);
+	lfs_newsum(fs, sp);			/* Init sp->segsum. */
+
 	sup = fs->lfs_segtab + sp->seg_number;
 
 	if (sup->su_nbytes != 0) {
-		/* This is a segment containing a super block */
+		/* This is a segment containing a super block. */
 		FINFO *fip;
 		daddr_t lbn, *lbnp;
 		SEGSUM *ssp;
@@ -382,7 +360,6 @@ printf("lfs_newseg: About to write segment %lx\n", sp->saddr);
 	}
 	return(sp);
 }
-
 
 static void
 lfs_newsum(fs, sp)
@@ -408,11 +385,14 @@ printf("lfs_newsum\n");
 		    (sp->seg_number + 1) * fsbtodb(fs, fs->lfs_ssize)
 		    - fsbtodb(fs, npages);
 		sp->sbp = lfs_newbuf(fs, sp->sum_addr, fs->lfs_bsize);
+		if (sp->sum_num != 0)
+			sp->sbp->b_flags |= B_CALL;
 		sp->bpp[fs->lfs_ssize - npages] = sp->sbp;
 printf("Inserting summary block, address %x at index %d\n",
 sp->sbp->b_lblkno, fs->lfs_ssize - npages);
 		sp->seg_bytes_left -= fs->lfs_bsize;
-		sp->segsum = sp->sbp->b_un.b_addr + fs->lfs_bsize - LFS_SUMMARY_SIZE;
+		sp->segsum =
+		    sp->sbp->b_un.b_addr + fs->lfs_bsize - LFS_SUMMARY_SIZE;
 		sp->sum_addr += (fs->lfs_bsize - LFS_SUMMARY_SIZE) / DEV_BSIZE;
 	} else {
 		sp->segsum -= LFS_SUMMARY_SIZE;
@@ -420,7 +400,7 @@ sp->sbp->b_lblkno, fs->lfs_ssize - npages);
 	}
 
 	ssp = sp->segsum;
-	ssp->ss_next = fs->lfs_nextseg = lfs_nextseg(fs);
+	ssp->ss_next = fs->lfs_nextseg;
 	ssp->ss_prev = fs->lfs_lastseg;
 
 	/* Initialize segment summary info. */
@@ -473,7 +453,7 @@ lfs_updatemeta(fs, sp, ip, lbp, bpp, nblocks)
 	long lbn;
 
 printf("lfs_updatemeta of %d blocks\n", nblocks);	
-	if ((nblocks == 0) && (ip->i_flag & (IMOD|IACC|IUPD|ICHG)) == 0)
+	if (nblocks == 0 && (ip->i_flag & (IMOD | IACC | IUPD | ICHG)) == 0)
 		return;
 
 	/* First sort the blocks and add disk addresses */
@@ -548,7 +528,7 @@ printf("lfs_updatemeta: changing indirect block %d\n", iblkno);
 	}
 }
 
-static void
+static SEGMENT *
 lfs_writeckp(fs, sp)
 	LFS *fs;
 	SEGMENT *sp;
@@ -557,9 +537,9 @@ lfs_writeckp(fs, sp)
 	FINFO *fip;
 	INODE *ip;
 	SEGUSE *sup;
+	void *xp;
 	daddr_t *lbp;
 	int bytes_needed, i;
-	void *xp;
 
 printf("lfs_writeckp\n");
 	/*
@@ -588,24 +568,23 @@ printf("lfs_writeckp\n");
 #endif
 
 	/*
-	 * Now, update the segment usage information and the ifile inode and
-	 * and write it out
+	 * Update the segment usage information and the ifile inode
+	 * and write it out.
 	 */
-
 	sup = fs->lfs_segtab + sp->seg_number;
-	sup->su_nbytes = (fs->lfs_segmask + 1) - sp->seg_bytes_left + 
-	    bytes_needed;
+	sup->su_nbytes =
+	    (fs->lfs_segmask + 1) - sp->seg_bytes_left + bytes_needed;
 	sup->su_lastmod = time.tv_sec;
 	sup->su_flags = SEGUSE_DIRTY;
 
-	/* Get buffers for the segusage table and write it out */
+	/* Get buffers for the segusage table and write it out. */
 	ip = VTOI(fs->lfs_ivnode);
 	fip = sp->fip;
 	lbp = &fip->fi_blocks[fip->fi_nblocks];
 	for (xp = fs->lfs_segtab, i = 0; i < fs->lfs_segtabsz; 
 	    i++, xp += fs->lfs_bsize, lbp++) {
-		bp = lfs_newbuf(fs, sp->saddr, fs->lfs_bsize);
-		*sp->cbpp++ = bp;
+		*sp->cbpp++ = bp = lfs_newbuf(fs, sp->saddr, fs->lfs_bsize);
+		bp->b_flags |= B_CALL;
 		bcopy(xp, bp->b_un.b_words, fs->lfs_bsize);
 		ip->i_din.di_db[i] = sp->saddr;
 		sp->saddr += (1 << fs->lfs_fsbtodb);
@@ -614,7 +593,7 @@ printf("lfs_writeckp\n");
 	}
 	sp = lfs_writeinode(fs, sp, fs->lfs_ivnode);
 	lfs_writeseg(fs, sp);
-	lfs_writesuper(fs, sp);
+	return (sp);
 }
 
 /*
@@ -629,18 +608,15 @@ lfs_writefile(sp, fs, vp, do_ckp)
 	int do_ckp;
 {
 	FINFO *fip;
-	INODE *ip;
+	ino_t inum;
 
-	/* initialize the FINFO structure */
-	ip = VTOI(vp);
-printf("lfs_writefile: node %d\n", ip->i_number);
-loop:
+	/* Initialize the FINFO structure. */
+	inum = VTOI(vp)->i_number;
+printf("lfs_writefile: node %d\n", inum);
+	sp->fip->fi_ino = inum;
 	sp->fip->fi_nblocks = 0;
-	sp->fip->fi_ino = ip->i_number;
-	if (ip->i_number != LFS_IFILE_INUM)
-		sp->fip->fi_version = lfs_getversion(fs, ip->i_number);
-	else
-		sp->fip->fi_version = 1;
+	sp->fip->fi_version =
+	    inum == LFS_IFILE_INUM ? 1 : lfs_getversion(fs, inum);
 
 	sp = lfs_gather(fs, sp, vp, match_data);
 	if (do_ckp) {
@@ -651,13 +627,12 @@ loop:
 (void)printf("lfs_writefile: adding %d blocks to segment\n",
 sp->fip->fi_nblocks);
 	/* 
-	 * Update the inode for this file and reflect new inode
-	 * address in the ifile.  If this is the ifile, don't update
-	 * the inode, because we're checkpointing and will update the
-	 * inode with the segment usage information (so we musn't
-	 * bump the finfo pointer either).
+	 * Update the inode for this file and reflect new inode address in
+	 * the ifile.  If this is the ifile, don't update the inode, because
+	 * we're checkpointing and will update the inode with the segment
+	 * usage information (so we musn't bump the finfo pointer either).
 	 */
-	if (ip->i_number != LFS_IFILE_INUM) {
+	if (inum != LFS_IFILE_INUM) {
 		sp = lfs_writeinode(fs, sp, vp);
 		fip = sp->fip;
 		if (fip->fi_nblocks) {
@@ -696,7 +671,7 @@ printf("lfs_writeinode\n");
 		    (sp->seg_number + 1) * fsbtodb(fs, fs->lfs_ssize)
 		    - fsbtodb(fs, npages);
 		sp->ibp = lfs_newbuf(fs, next_addr, fs->lfs_bsize);
-		sp->ibp->b_flags |= B_BUSY;
+		sp->ibp->b_flags |= B_CALL;
 		sp->bpp[fs->lfs_ssize - npages] = sp->ibp;
 		sp->seg_bytes_left -= fs->lfs_bsize;
 printf("alloc inode block @ daddr %x, bp = %x inserted at %d\n", 
@@ -730,18 +705,11 @@ lfs_writeseg(fs, sp)
 	SEGUSE *sup;
 	VNODE *devvp;
 	int nblocks, nbuffers, ninode_blocks, nsegsums, nsum_pb;
-	int i, metaoff, nmeta;
-struct buf **xbp; int xi;
+	int i, metaoff, nmeta, s;
 
 printf("lfs_writeseg\n");
 	fs->lfs_lastseg = sntosa(fs, sp->seg_number);
 	lfs_endsum(fs, sp, 0);
-
-#ifdef HELLNO
-	/* Finish off any inodes */
-	if (sp->ibp)
-		brelse(sp->ibp);
-#endif
 
 	/*
 	 * Copy inode and summary block buffer pointers down so they are
@@ -750,6 +718,10 @@ printf("lfs_writeseg\n");
 	ssp = sp->segsum;
 	nsum_pb = fs->lfs_bsize / LFS_SUMMARY_SIZE;
 	nbuffers = sp->cbpp - sp->bpp;
+	/*
+	 * XXX
+	 * Why isn't this (sp->sum_num + nsum_pb - 1) / nsum_pb;
+	 */
 	nsegsums = 1 + sp->sum_num / nsum_pb;
 	ninode_blocks = (sp->ninodes + INOPB(fs) - 1) / INOPB(fs);
 	nmeta = ninode_blocks + nsegsums;
@@ -767,21 +739,42 @@ printf("lfs_writeseg\n");
 	/*
 	 * Since we need to guarantee that the summary block gets written last,
 	 * we issue the writes in two sets.  The first n-1 buffers first, and
-	 * then, after they've completed, the last 1 buffer.  Only when that
+	 * then, after they've completed, the summary buffer.  Only when that
 	 * final write completes is the segment valid.
 	 */
 	devvp = VFSTOUFS(fs->lfs_ivnode->v_mount)->um_devvp;
-	/*
-	 * Since no writes are yet scheduled, no need to block here; if we
-	 * scheduled the writes at multiple points, we'd need an splbio()
-	 * here.
-	 */
-	fs->lfs_iocount = nblocks - 1;
+	--nblocks;				/* Don't count summary. */
+
 	sp->nextp = fs->lfs_seglist;
 	fs->lfs_seglist = sp;
 
-	for (bpp = sp->bpp, i = 0; i < (nblocks - 1); i++, ++bpp)
-		/* (*(devvp->v_op->vop_strategy)) */ sdstrategy(*bpp);
+	s = splbio();
+	fs->lfs_iocount += nblocks;
+	splx(s);
+	for (bpp = sp->bpp, i = 0; i < nblocks; ++i, ++bpp)
+		(devvp->v_op->vop_strategy)(*bpp);
+}
+
+static void
+lfs_writesum(fs)
+	LFS *fs;
+{
+	BUF *bp;
+	SEGMENT *next_sp, *sp;
+	VNODE *devvp;
+
+printf("lfs_writesum\n");
+	devvp = NULL;
+	for (sp = fs->lfs_seglist; sp; sp = next_sp) {
+		bp = *(sp->cbpp - 1);
+		if (devvp == NULL)
+			devvp = VFSTOUFS(bp->b_vp->v_mount)->um_devvp;
+		(devvp->v_op->vop_strategy)(bp);
+		biowait(bp);
+		next_sp = sp->nextp;
+		free(sp->bpp, M_SEGMENT);
+		free(sp, M_SEGMENT);
+	}
 }
 
 static void
@@ -793,29 +786,22 @@ lfs_writesuper(fs, sp)
 	VNODE *devvp;
 
 printf("lfs_writesuper\n");
-	/* Wait for segment write to complete */
-	/* XXX probably should do this biowait(*(sp->cbpp - 1)); */
-
 	/* Get a buffer for the super block */
 	fs->lfs_cksum = cksum(fs, sizeof(LFS) - sizeof(fs->lfs_cksum));
 	bp = lfs_newbuf(fs, fs->lfs_sboffs[0], LFS_SBPAD);
-	bp->b_flags &= ~B_CALL;
-	bp->b_vp = NULL;
-	bp->b_iodone = NULL;
 	bcopy(fs, bp->b_un.b_lfs, sizeof(LFS));
 
 	/* Write the first superblock; wait. */
 	devvp = VFSTOUFS(fs->lfs_ivnode->v_mount)->um_devvp;
-#ifdef MOVETONEWBUF
-	bp->b_dev = devvp->v_rdev;
-#endif
-	(*devvp->v_op->vop_strategy)(bp);
+	(devvp->v_op->vop_strategy)(bp);
 	biowait(bp);
 	
 	/* Now, write the second one for which we don't have to wait */
 	bp->b_flags &= ~B_DONE;
 	bp->b_blkno = bp->b_lblkno = fs->lfs_sboffs[1];
-	(*devvp->v_op->vop_strategy)(bp);
+	(devvp->v_op->vop_strategy)(bp);
+
+	bp->b_vp = NULL;			/* No associated vnode. */
 	brelse(bp);
 }
 
@@ -825,7 +811,6 @@ match_data(bp)
 {
 	return(bp->b_lblkno >= 0);
 }
-
 
 match_dindir(bp)
 	BUF *bp;
