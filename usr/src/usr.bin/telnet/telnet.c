@@ -1,4 +1,4 @@
-static char sccsid[] = "@(#)telnet.c	4.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	4.9 (Berkeley) %G%";
 /*
  * User telnet program.
  */
@@ -11,13 +11,13 @@ static char sccsid[] = "@(#)telnet.c	4.8 (Berkeley) %G%";
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <net/in.h>
+#include <netdb.h>
 #define	TELOPTS
 #include "telnet.h"
 
 #define	ctrl(x)		((x) & 037)
 #define	strip(x)	((x)&0177)
 #define	INFINITY	10000000
-#define	swab(x)		((((x) >> 8) | ((x) << 8)) & 0xffff)
 
 char	ttyobuf[BUFSIZ], *tfrontp = ttyobuf, *tbackp = ttyobuf;
 char	netobuf[BUFSIZ] =
@@ -81,16 +81,22 @@ struct cmd cmdtab[] = {
 	0
 };
 
-struct	sockaddr_in sin = { AF_INET, swab(IPPORT_TELNET) };
+struct sockaddr_in sin = { AF_INET };
 
 int	intr(), deadpeer();
 char	*control();
 struct	cmd *getcmd();
+struct	servent *sp;
 
 main(argc, argv)
 	int argc;
 	char *argv[];
 {
+	sp = getservbyname("telnet", "tcp");
+	if (sp == 0) {
+		fprintf(stderr, "telnet: tcp/telnet: unknown service\n");
+		exit(1);
+	}
 	setbuf(stdin, 0);
 	setbuf(stdout, 0);
 	prompt = argv[0];
@@ -106,7 +112,7 @@ main(argc, argv)
 		command(1);
 }
 
-char host_name[100];
+struct	hostent *host;
 
 tn(argc, argv)
 	int argc;
@@ -115,7 +121,7 @@ tn(argc, argv)
 	register int c;
 
 	if (connected) {
-		printf("?Already connected to %s\n", host_name);
+		printf("?Already connected to %s\n", host->h_name);
 		return;
 	}
 	if (argc < 2) {
@@ -130,19 +136,21 @@ tn(argc, argv)
 		printf("usage: %s host-name [port]\n", argv[0]);
 		return;
 	}
-	sin.sin_addr.s_addr = rhost(&argv[1]);
-	if (sin.sin_addr.s_addr == (u_long)-1) {
+	host = gethostbyname(argv[1]);
+	if (host == 0) {
 		printf("%s: unknown host\n", argv[1]);
 		return;
 	}
+	bcopy(host->h_addr, &sin.sin_addr, host->h_length);
+	sin.sin_port = sp->s_port;
 	if (argc == 3) {
 		sin.sin_port = atoi(argv[2]);
 		if (sin.sin_port < 0) {
 			printf("%s: bad port number\n", argv[2]);
 			return;
 		}
-		sin.sin_port = swab(sin.sin_port);
 	}
+	sin.sin_port = htons(sin.sin_port);
 	if ((net = socket(SOCK_STREAM, 0, 0, options)) < 0) {
 		perror("socket");
 		return;
@@ -155,7 +163,6 @@ tn(argc, argv)
 		sigset(SIGINT, SIG_DFL);
 		return;
 	}
-	strcpy(host_name, argv[1]);
 	connected++;
 	call(status, "status", 0);
 	if (setjmp(peerdied) == 0)
@@ -171,7 +178,7 @@ tn(argc, argv)
 status()
 {
 	if (connected)
-		printf("Connected to %s.\n", host_name);
+		printf("Connected to %s.\n", host->h_name);
 	else
 		printf("No connection.\n");
 	printf("Escape character is '%s'.\n", control(escape));
@@ -325,18 +332,15 @@ telnet(s)
 	int on = 1;
 
 	mode(1);
-	if (showoptions)
-		printoption("<--", doopt, TELOPT_ECHO);
+	printoption("SENT", doopt, TELOPT_ECHO);
 	sprintf(nfrontp, doopt, TELOPT_ECHO);
 	nfrontp += sizeof(doopt) - 2;
 	hisopts[TELOPT_ECHO] = 1;
-	if (showoptions)
-		printoption("<--", doopt, TELOPT_SGA);
+	printoption("SENT", doopt, TELOPT_SGA);
 	sprintf(nfrontp, doopt, TELOPT_SGA);
 	nfrontp += sizeof(doopt) - 2;
 	hisopts[TELOPT_SGA] = 1;
-	if (showoptions)
-		printoption("<--", will, TELOPT_SGA);
+	printoption("SENT", will, TELOPT_SGA);
 	sprintf(nfrontp, will, TELOPT_SGA);
 	nfrontp += sizeof(doopt) - 2;
 	myopts[TELOPT_SGA] = 1;
@@ -509,38 +513,33 @@ telrcv()
 			continue;
 
 		case TS_WILL:
-			if (showoptions)
-				printoption("-->", will, c, !hisopts[c]);
+			printoption("RCVD", will, c, !hisopts[c]);
 			if (!hisopts[c])
 				willoption(c);
 			state = TS_DATA;
 			continue;
 
 		case TS_WONT:
-			if (showoptions)
-				printoption("-->", wont, c, hisopts[c]);
+			printoption("RCVD", wont, c, hisopts[c]);
 			if (hisopts[c])
 				wontoption(c);
 			state = TS_DATA;
 			continue;
 
 		case TS_DO:
-			if (showoptions)
-				printoption("-->", doopt, c, !myopts[c]);
+			printoption("RCVD", doopt, c, !myopts[c]);
 			if (!myopts[c])
 				dooption(c);
 			state = TS_DATA;
 			continue;
 
 		case TS_DONT:
-			if (showoptions)
-				printoption("-->", dont, c, myopts[c]);
+			printoption("RCVD", dont, c, myopts[c]);
 			if (myopts[c]) {
 				myopts[c] = 0;
 				sprintf(nfrontp, wont, c);
 				nfrontp += sizeof(wont) - 2;
-				if (showoptions)
-					printoption("<--", wont, c);
+				printoption("SENT", wont, c);
 			}
 			state = TS_DATA;
 			continue;
@@ -573,8 +572,7 @@ willoption(option)
 	}
 	sprintf(nfrontp, fmt, option);
 	nfrontp += sizeof(dont) - 2;
-	if (showoptions)
-		printoption("<--", fmt, option);
+	printoption("SENT", fmt, option);
 }
 
 wontoption(option)
@@ -597,8 +595,7 @@ wontoption(option)
 	}
 	sprintf(nfrontp, fmt, option);
 	nfrontp += sizeof(doopt) - 2;
-	if (showoptions)
-		printoption("<--", fmt, option);
+	printoption("SENT", fmt, option);
 }
 
 dooption(option)
@@ -622,8 +619,7 @@ dooption(option)
 	}
 	sprintf(nfrontp, fmt, option);
 	nfrontp += sizeof(doopt) - 2;
-	if (showoptions)
-		printoption("<--", fmt, option);
+	printoption("SENT", fmt, option);
 }
 
 /*
@@ -727,8 +723,8 @@ ttyflush(fd)
 
 	if ((n = tfrontp - tbackp) > 0)
 		n = write(fd, tbackp, n);
-	if (n < 0 && errno == EWOULDBLOCK)
-		n = 0;
+	if (n < 0)
+		return;
 	tbackp += n;
 	if (tbackp == tfrontp)
 		tbackp = tfrontp = ttyobuf;
@@ -743,7 +739,7 @@ netflush(fd)
 	if (n < 0) {
 		if (errno != ENOBUFS && errno != EWOULDBLOCK) {
 			mode(0);
-			perror(host_name);
+			perror(host->h_name);
 			close(fd);
 			longjmp(peerdied, -1);
 			/*NOTREACHED*/
@@ -760,6 +756,8 @@ printoption(direction, fmt, option, what)
 	char *direction, *fmt;
 	int option, what;
 {
+	if (!showoptions)
+		return;
 	printf("%s ", direction);
 	if (fmt == doopt)
 		fmt = "do";
