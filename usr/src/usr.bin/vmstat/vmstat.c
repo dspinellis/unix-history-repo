@@ -12,12 +12,13 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/file.h>
 #include <sys/vm.h>
+#include <sys/user.h>
 #include <sys/dkstat.h>
 #include <sys/buf.h>
 #include <sys/namei.h>
@@ -779,7 +780,7 @@ read_names()
 #endif
 
 #ifdef tahoe
-#include <vba/vbavar.h>
+#include <tahoe/vba/vbavar.h>
 
 /*
  * Read the drive names out of kmem.
@@ -815,15 +816,16 @@ read_names()
 #endif
 
 #ifdef hp300
-#include <hpdev/device.h>
+#include <hp300/dev/device.h>
 
 read_names()
 {
 	register char *p;
 	register u_long hp;
+	static char buf[BUFSIZ];
 	struct hp_device hdev;
 	struct driver hdrv;
-	static char buf[BUFSIZ];
+	char name[10];
 
 	hp = nl[X_HPDINIT].n_value;
 	if (hp == 0) {
