@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)kvm.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)kvm.c	5.22 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -74,12 +74,12 @@ static union {
 static	struct pte *Usrptmap, *usrpt;
 static	struct	pte *Sysmap;
 static	int	Syssize;
-#endif
 static	int	dmmin, dmmax;
+static	int	nswap;
+#endif
 static	int	pcbpf;
 static	int	argaddr0;	/* XXX */
 static	int	argaddr1;
-static	int	nswap;
 static	char	*tmp;
 #if defined(hp300)
 static	int	lowram;
@@ -102,12 +102,16 @@ static	struct ste *Sysseg;
 #endif
 
 static struct nlist nl[] = {
+#ifndef NEWVM
 	{ "_nswap" },
 #define	X_NSWAP		0
 	{ "_dmmin" },
 #define	X_DMMIN		X_NSWAP+1
 	{ "_dmmax" },
 #define	X_DMMAX		X_DMMIN+1
+#else
+#define	X_DMMAX		-1
+#endif
 	/*
 	 * everything here and down, only if a dead kernel
 	 */
@@ -356,8 +360,8 @@ kvm_getprocs(what, arg)
 			seterr("out of memory");
 			return (-1);
 		}
-		if ((ret = getkerninfo(what, kvmprocbase, &copysize, 
-		     arg)) == -1) {
+		if ((ret = getkerninfo(what, kvmprocbase, &copysize, arg))
+		     == -1) {
 			setsyserr("can't get proc list");
 			return (-1);
 		}
@@ -863,6 +867,7 @@ getkvars()
 		}
 #endif
 	}
+#ifndef NEWVM
 	if (kvm_read((void *) nl[X_NSWAP].n_value, &nswap, sizeof (long)) !=
 	    sizeof (long)) {
 		seterr("can't read nswap");
@@ -878,6 +883,7 @@ getkvars()
 		seterr("can't read dmmax");
 		return (-1);
 	}
+#endif
 	return (0);
 }
 
