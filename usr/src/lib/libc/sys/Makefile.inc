@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.15 (Berkeley) %G%
+#	@(#)Makefile.inc	5.16 (Berkeley) %G%
 
 # Missing: profil.0, ptrace.0
 
@@ -11,7 +11,7 @@ SRCS+=	Ovfork.s brk.s cerror.s exect.s fork.s pipe.s ptrace.s reboot.s \
 	sigsuspend.s syscall.s
 
 # modules with default implementations on all architectures:
-ASM=	accept.o access.o acct.o adjtime.o async_daemon.o bind.o chdir.o \
+ASM=	accept.o access.o acct.o adjtime.o bind.o chdir.o \
 	chflags.o chmod.o chown.o chroot.o close.o connect.o dup.o dup2.o \
 	execve.o fchdir.o fchflags.o fchmod.o fchown.o fcntl.o flock.o \
 	fstat.o fstatfs.o fsync.o ftruncate.o getdirentries.o \
@@ -83,7 +83,7 @@ ${PSEUDO}: ${.CURDIR}/${MACHINE}/SYS.h /usr/include/sys/syscall.h
 
 # Missing: profil.0, ptrace.0
 
-MAN2+=	accept.0 access.0 acct.0 adjtime.0 async_daemon.0 bind.0 brk.0 \
+MAN2+=	accept.0 access.0 acct.0 adjtime.0 bind.0 brk.0 \
 	chdir.0 chflags.0 chmod.0 chown.0 chroot.0 close.0 connect.0 \
 	dup.0 execve.0 _exit.0 fcntl.0 flock.0 fork.0 fsync.0 \
 	getdirentries.0 getdtablesize.0 getfh.0 getfsstat.0 getgid.0 \
