@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)process.h 1.3 %G%"; */
+/* static char sccsid[] = "@(#)process.h 1.4 %G%"; */
 
 /*
  * Definitions for process module.
@@ -13,7 +13,7 @@ typedef struct process PROCESS;
 
 PROCESS *process;
 
-start();		/* start up process */
+initstart();	/* initial process start up */
 run();			/* start program running */
 arginit();		/* initialize program arguments */
 setargs();		/* special argument handling */
