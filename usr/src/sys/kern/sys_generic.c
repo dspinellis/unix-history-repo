@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys_generic.c	7.8 (Berkeley) %G%
+ *	@(#)sys_generic.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -17,6 +17,9 @@
 #include "kernel.h"
 #include "stat.h"
 #include "malloc.h"
+#ifdef KTRACE
+#include "ktrace.h"
+#endif
 
 /*
  * Read system call.
@@ -46,19 +49,31 @@ readv()
 		unsigned iovcnt;
 	} *uap = (struct a *)u.u_ap;
 	struct uio auio;
-	struct iovec aiov[16];		/* XXX */
+	struct iovec aiov[UIO_SMALLIOV], *iov;
 
-	if (uap->iovcnt > sizeof(aiov)/sizeof(aiov[0])) {
-		u.u_error = EINVAL;
-		return;
-	}
-	auio.uio_iov = aiov;
+	if (uap->iovcnt > UIO_SMALLIOV) {
+		if (uap->iovcnt > UIO_MAXIOV) {
+			u.u_error = EINVAL;
+			return;
+		}
+		MALLOC(iov, struct iovec *, 
+		      sizeof(struct iovec) * uap->iovcnt, M_IOV, M_WAITOK);
+		if (iov == NULL) {
+			u.u_error = ENOMEM;
+			return;
+		}
+	} else
+		iov = aiov;
+	auio.uio_iov = iov;
 	auio.uio_iovcnt = uap->iovcnt;
-	u.u_error = copyin((caddr_t)uap->iovp, (caddr_t)aiov,
+	u.u_error = copyin((caddr_t)uap->iovp, (caddr_t)auio.uio_iov,
 	    uap->iovcnt * sizeof (struct iovec));
 	if (u.u_error)
-		return;
+		goto done;
 	rwuio(&auio, UIO_READ);
+done:
+	if (iov != aiov)
+		FREE(iov, M_IOV);
 }
 
 /*
@@ -89,19 +104,31 @@ writev()
 		unsigned iovcnt;
 	} *uap = (struct a *)u.u_ap;
 	struct uio auio;
-	struct iovec aiov[16];		/* XXX */
+	struct iovec aiov[UIO_SMALLIOV], *iov;
 
-	if (uap->iovcnt > sizeof(aiov)/sizeof(aiov[0])) {
-		u.u_error = EINVAL;
-		return;
-	}
-	auio.uio_iov = aiov;
+	if (uap->iovcnt > UIO_SMALLIOV) {
+		if (uap->iovcnt > UIO_MAXIOV) {
+			u.u_error = EINVAL;
+			return;
+		}
+		MALLOC(iov, struct iovec *, 
+		      sizeof(struct iovec) * uap->iovcnt, M_IOV, M_WAITOK);
+		if (iov == NULL) {
+			u.u_error = ENOMEM;
+			return;
+		}
+	} else
+		iov = aiov;
+	auio.uio_iov = iov;
 	auio.uio_iovcnt = uap->iovcnt;
-	u.u_error = copyin((caddr_t)uap->iovp, (caddr_t)aiov,
+	u.u_error = copyin((caddr_t)uap->iovp, (caddr_t)auio.uio_iov,
 	    uap->iovcnt * sizeof (struct iovec));
 	if (u.u_error)
-		return;
+		goto done;
 	rwuio(&auio, UIO_WRITE);
+done:
+	if (iov != aiov)
+		FREE(iov, M_IOV);
 }
 
 rwuio(uio, rw)
@@ -114,6 +141,10 @@ rwuio(uio, rw)
 	register struct file *fp;
 	register struct iovec *iov;
 	int i, count;
+#ifdef KTRACE
+	struct iovec *ktriov = NULL;
+#endif
+
 
 	GETF(fp, ((struct a *)u.u_ap)->fdes);
 	if ((fp->f_flag&(rw==UIO_READ ? FREAD : FWRITE)) == 0) {
@@ -136,6 +167,16 @@ rwuio(uio, rw)
 		iov++;
 	}
 	count = uio->uio_resid;
+#ifdef KTRACE
+	/* if tracing, save a copy of iovec */
+	if (KTRPOINT(u.u_procp, KTR_GENIO))  {
+		int iovlen = uio->uio_iovcnt * sizeof (struct iovec);
+
+		MALLOC(ktriov, struct iovec *, iovlen, M_TEMP, M_WAITOK);
+		if (ktriov != NULL)
+			bcopy((caddr_t)uio->uio_iov, (caddr_t)ktriov, iovlen);
+	}
+#endif
 	if (setjmp(&u.u_qsave)) {
 		if (uio->uio_resid == count) {
 			if ((u.u_sigintr & sigmask(u.u_procp->p_cursig)) != 0)
@@ -146,6 +187,13 @@ rwuio(uio, rw)
 	} else
 		u.u_error = (*fp->f_ops->fo_rw)(fp, rw, uio);
 	u.u_r.r_val1 = count - uio->uio_resid;
+#ifdef KTRACE
+	if (ktriov != NULL) {
+		ktrgenio(u.u_procp->p_tracep, ((struct a *)u.u_ap)->fdes,
+			rw, ktriov, u.u_r.r_val1);
+		FREE(ktriov, M_TEMP);
+	}
+#endif
 }
 
 /*
@@ -190,18 +238,17 @@ ioctl()
 	 */
 	size = IOCPARM_LEN(com);
 	if (size > IOCPARM_MAX) {
-		u.u_error = EFAULT;
+		u.u_error = ENOTTY;
 		return;
 	}
 	if (size > sizeof (stkbuf)) {
-		memp = (caddr_t)malloc((u_long)IOCPARM_MAX, M_IOCTLOPS,
+		memp = (caddr_t)malloc((u_long)IOCPARM_LEN(com), M_IOCTLOPS,
 		    M_WAITOK);
 		data = memp;
 	}
 	if (com&IOC_IN) {
 		if (size) {
-			u.u_error =
-			    copyin(uap->cmarg, data, (u_int)size);
+			u.u_error = copyin(uap->cmarg, data, (u_int)size);
 			if (u.u_error) {
 				if (memp)
 					free(memp, M_IOCTLOPS);
@@ -211,8 +258,8 @@ ioctl()
 			*(caddr_t *)data = uap->cmarg;
 	} else if ((com&IOC_OUT) && size)
 		/*
-		 * Zero the buffer on the stack so the user
-		 * always gets back something deterministic.
+		 * Zero the buffer so the user always
+		 * gets back something deterministic.
 		 */
 		bzero(data, size);
 	else if (com&IOC_VOID)
