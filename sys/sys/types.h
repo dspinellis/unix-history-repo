@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)types.h	7.17 (Berkeley) 5/6/91
- *	$Id: types.h,v 1.3 1993/11/28 14:23:11 ats Exp $
+ *	$Id: types.h,v 1.4 1993/11/30 21:54:25 ats Exp $
  */
 
 #ifndef _TYPES_H_
@@ -58,9 +58,20 @@ typedef	u_short	mode_t;			/* permissions */
 typedef u_long	fixpt_t;		/* fixed point number */
 
 #ifndef _POSIX_SOURCE
-typedef	struct	_uquad	{ u_long val[2]; } u_quad;
-typedef	struct	_quad	{   long val[2]; } quad;
-typedef	long *	qaddr_t;	/* should be typedef quad * qaddr_t; */
+#ifdef __STRICT_ANSI__
+typedef quad_t __attribute (( mode (DI) ));
+#else
+typedef long long quad_t;
+#endif
+typedef unsigned quad_t u_quad_t;
+typedef	quad_t *	qaddr_t;
+
+/* GCC_1 quad definitions */
+/*
+ * typedef	struct	_uquad	{ u_long val[2]; } u_quad;
+ * typedef	struct	_quad	{   long val[2]; } quad;
+ *typedef	long *	qaddr_t;
+ */
 
 #define	major(x)	((int)(((u_int)(x) >> 8)&0xff))	/* major number */
 #define	minor(x)	((int)((x)&0xff))		/* minor number */
