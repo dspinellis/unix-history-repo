@@ -13,8 +13,11 @@
 .Nd "save a core dump of the operating system"
 .Sh SYNOPSIS
 .Nm savecore
+.Op Fl fv
 .Ar dirname
 .Op Ar system
+.Nm savecore
+.Fl c
 .Sh DESCRIPTION
 .Nm Savecore
 is meant to be called near the end of the initialization file
@@ -25,9 +28,21 @@ Its function
 is to save the core dump of the system (assuming one was made) and to
 write a reboot message in the shutdown log.
 .Pp
+Options supported by
+.Nm savecore :
+.Bl -tag -width dirname
+.It Fl c
+Clears the dump without saving it.
+.It Fl f
+Forces a dump to be taken even if the magic number indicates
+there isn't a dump.
+.It Fl v
+Prints out some extra information.
+.El
+.Pp
 Operands supported by
 .Nm savecore :
-.Bl -tag -width Ar
+.Bl -tag -width dirname
 .It Ar dirname
 The directory name where the core dump will be written.
 .It Ar system
