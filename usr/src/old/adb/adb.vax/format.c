@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)format.c	4.5 %G%";
+static	char sccsid[] = "@(#)format.c	4.6 %G%";
 #endif
 /*
  *
@@ -227,16 +227,16 @@ STRING		ifp;
 			 *	fw.sa = wx;
 			 */
 			(*(struct bad_programming *)&fw).sa = wx;
-			IF (wx & ~0xFFFF00FF) == 0x8000
-			THEN printf("(reserved oprnd)");
+			IF (wx & ~0xFFFF007F) == 0x8000
+			THEN printf("(reserved operand)");
 			ELSE printf("%-16.9f", fw);
 			FI
 			dotinc=4; break;
 
 		    case 'F':
 			(*(struct bad_programming *)&fw).sa = wx;
-			IF (wx & ~0xFFFF00FF) == 0x8000
-			THEN printf("%-32s", "(reserved oprnd)");
+			IF (wx & ~0xFFFF007F) == 0x8000
+			THEN printf("%-32s", "(reserved operand)");
 			ELSE printf("%-32.18F", fw);
 			FI
 			dotinc=8; break;
