@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_lookup.c	7.31.1.1 (Berkeley) %G%
+ *	@(#)vfs_lookup.c	7.32 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -245,15 +245,8 @@ dirloop:
 	 * responsibility for freeing the pathname buffer.
 	 */
 	ndp->ni_hash = 0;
-	for (cp = ndp->ni_ptr; *cp != 0 && *cp != '/'; cp++) {
+	for (cp = ndp->ni_ptr; *cp != 0 && *cp != '/'; cp++)
 		ndp->ni_hash += (unsigned char)*cp;
-		if ((*cp & 0200) == 0)
-			continue;
-		if ((*cp & 0377) == ('/' | 0200) || flag != DELETE) {
-			error = EINVAL;
-			goto bad;
-		}
-	}
 	ndp->ni_namelen = cp - ndp->ni_ptr;
 	if (ndp->ni_namelen >= NAME_MAX) {
 		error = ENAMETOOLONG;
