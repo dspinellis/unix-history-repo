@@ -14,22 +14,22 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)errno.h	7.6 (Berkeley) %G%
+ *	@(#)errno.h	7.7 (Berkeley) %G%
  */
 
-#define	EPERM		1		/* Not owner */
+#define	EPERM		1		/* Operation not permitted */
 #define	ENOENT		2		/* No such file or directory */
 #define	ESRCH		3		/* No such process */
 #define	EINTR		4		/* Interrupted system call */
-#define	EIO		5		/* I/O error */
-#define	ENXIO		6		/* No such device or address */
-#define	E2BIG		7		/* Arg list too long */
+#define	EIO		5		/* Input/output error */
+#define	ENXIO		6		/* Device not configured */
+#define	E2BIG		7		/* Argument list too long */
 #define	ENOEXEC		8		/* Exec format error */
 #define	EBADF		9		/* Bad file descriptor */
-#define	ECHILD		10		/* No children */
+#define	ECHILD		10		/* No child processes */
 #define	EDEADLK		11		/* Resource deadlock avoided */
 					/* 11 was EAGAIN */
-#define	ENOMEM		12		/* Not enough memory */
+#define	ENOMEM		12		/* Cannot allocate memory */
 #define	EACCES		13		/* Permission denied */
 #define	EFAULT		14		/* Bad address */
 #ifndef _POSIX_SOURCE
@@ -38,11 +38,11 @@
 #endif
 #define	EEXIST		17		/* File exists */
 #define	EXDEV		18		/* Cross-device link */
-#define	ENODEV		19		/* No such device */
+#define	ENODEV		19		/* Operation not supported by device */
 #define	ENOTDIR		20		/* Not a directory */
 #define	EISDIR		21		/* Is a directory */
 #define	EINVAL		22		/* Invalid argument */
-#define	ENFILE		23		/* File table overflow */
+#define	ENFILE		23		/* Too many open files in system */
 #define	EMFILE		24		/* Too many open files */
 #define	ENOTTY		25		/* Inappropriate ioctl for device */
 #ifndef _POSIX_SOURCE
@@ -56,8 +56,8 @@
 #define	EPIPE		32		/* Broken pipe */
 
 /* math software */
-#define	EDOM		33		/* Argument too large */
-#define	ERANGE		34		/* Result too large */
+#define	EDOM		33		/* Numerical argument out of domain */
+#define	ERANGE		34		/* Numerical result out of range */
 
 /* non-blocking and interrupt i/o */
 #define	EAGAIN		35		/* Resource temporarily unavailable */
@@ -66,9 +66,7 @@
 #define	EINPROGRESS	36		/* Operation now in progress */
 #define	EALREADY	37		/* Operation already in progress */
 
-/* ipc/network software */
-
-	/* argument errors */
+/* ipc/network software -- argument errors */
 #define	ENOTSOCK	38		/* Socket operation on non-socket */
 #define	EDESTADDRREQ	39		/* Destination address required */
 #define	EMSGSIZE	40		/* Message too long */
@@ -82,7 +80,7 @@
 #define	EADDRINUSE	48		/* Address already in use */
 #define	EADDRNOTAVAIL	49		/* Can't assign requested address */
 
-	/* operational errors */
+/* ipc/network software -- operational errors */
 #define	ENETDOWN	50		/* Network is down */
 #define	ENETUNREACH	51		/* Network is unreachable */
 #define	ENETRESET	52		/* Network dropped connection on reset */
@@ -96,7 +94,6 @@
 #define	ETIMEDOUT	60		/* Connection timed out */
 #define	ECONNREFUSED	61		/* Connection refused */
 
-	/* */
 #define	ELOOP		62		/* Too many levels of symbolic links */
 #endif /* _POSIX_SOURCE */
 #define	ENAMETOOLONG	63		/* File name too long */
