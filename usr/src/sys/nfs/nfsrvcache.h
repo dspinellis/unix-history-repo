@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsrvcache.h	7.6 (Berkeley) %G%
+ *	@(#)nfsrvcache.h	7.7 (Berkeley) %G%
  */
 
 /*
@@ -22,7 +22,6 @@ struct nfsrvcache {
 	struct	nfsrvcache *rc_next;		/* Lru list */
 	struct	nfsrvcache **rc_prev;		/* Lru list */
 	u_long	rc_xid;				/* rpc id number */
-	time_t	rc_timestamp;			/* Time stamp */
 	union {
 		struct mbuf *ru_repmb;		/* Reply mbuf list OR */
 		int ru_repstat;			/* Reply status */
@@ -57,7 +56,3 @@ struct nfsrvcache {
 #define	RC_NQNFS	0x10
 #define	RC_INETADDR	0x20
 #define	RC_NAM		0x40
-
-/* Delay time after completion that request is dropped */
-#define	RC_DELAY	2		/* seconds */
-
