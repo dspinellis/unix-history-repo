@@ -13,9 +13,9 @@ CFLAGS	= $(OPTIMIZE) $(INCLUDES) $(DEFINES)
 # Lint flags
 LINTFLAGS	= -hbxaz
 
-ALLC = termout.c
+ALLC = termout.c system.c
 
-ALLO = termout.o
+ALLO = termout.o system.o
 
 ALLH =
 
@@ -66,6 +66,8 @@ depend:
 
 # DO NOT DELETE THIS LINE
 
-termout.o: ../telnet.ext ../ctlr/hostctlr.h ../ctlr/inbound.ext
-termout.o: ../ctlr/options.ext ../ctlr/outbound.ext ../ctlr/screen.h
-termout.o: ../keyboard/map3270.ext ../system/globals.h disp_asc.out
+termout.o: ../general.h ../telnet.ext ../ctlr/hostctlr.h ../ctlr/inbound.ext
+termout.o: ../ctlr/oia.h ../ctlr/options.ext ../ctlr/outbound.ext
+termout.o: ../ctlr/screen.h ../keyboard/map3270.ext ../system/globals.h video.h
+termout.o: disp_asc.out
+system.o: ../api/api.h spint.h

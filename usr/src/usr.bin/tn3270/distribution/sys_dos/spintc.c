@@ -2,7 +2,7 @@
 #include <dos.h>
 #include <stdlib.h>
 
-#include "../general.h"
+#include "../general/general.h"
 #include "spint.h"
 
 #define	PSP_ENVIRONMENT		0x2c
