@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)rexec.3	6.2 (Berkeley) %G%
+.\"	@(#)rexec.3	6.3 (Berkeley) %G%
 .\"
 .TH REXEC 3X ""
 .UC 5
@@ -11,11 +11,9 @@ rexec \- return stream to a remote command
 .SH SYNOPSIS
 .nf
 .PP
-.B "#include <sys/types.h>"
-.PP
 .B "rem = rexec(ahost, inport, user, passwd, cmd, fd2p);"
 .B char **ahost;
-.B u_short inport;
+.B int inport;
 .B "char *user, *passwd, *cmd;"
 .B int *fd2p;
 .fi
@@ -54,7 +52,7 @@ and
 .BR stdout .
 If
 .I fd2p
-is non-zero, then a auxiliary channel to a control
+is non-zero, then an auxiliary channel to a control
 process will be setup, and a descriptor for it will be placed
 in
 .IR *fd2p .
