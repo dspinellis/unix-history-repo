@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)rm.c	4.23 (Berkeley) %G%";
+static char *sccsid = "@(#)rm.c	4.24 (Berkeley) %G%";
 
 /*
  * rm - for ReMoving files, directories & trees.
@@ -6,6 +6,7 @@ static char *sccsid = "@(#)rm.c	4.23 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <sys/param.h>
+#include <sys/errno.h>
 #include <sys/stat.h>
 #include <sys/dir.h>
 #include <sys/file.h>
@@ -86,7 +87,7 @@ rm(arg, level)
 	}
 	if (lstat(arg, &buf)) {
 		if (!fflg) {
-			fprintf(stderr, "rm: %s nonexistent\n", arg);
+			fprintf(stderr, "rm: %s: %s\n", arg, strerror(errno));
 			errcode++;
 		}
 		return (0);		/* error */
@@ -108,14 +109,16 @@ rm(arg, level)
 			if (rmdir(arg) == 0)
 				return (1);	/* salvaged: removed empty dir */
 			if (!fflg) {
-				fprintf(stderr, "rm: %s not changed\n", arg);
+				fprintf(stderr, "rm: %s not removed: %s\n", arg,
+				    strerror(errno));
 				errcode++;
 			}
 			return (0);		/* error */
 		}
 		if ((dirp = opendir(arg)) == NULL) {
 			if (!fflg) {
-				fprintf(stderr, "rm: cannot read %s?\n", arg);
+				fprintf(stderr, "rm: cannot read %s: %s\n",
+				    arg, strerror(errno));
 				errcode++;
 			}
 			return (0);
@@ -137,7 +140,9 @@ rm(arg, level)
 			*cp++ = '\0';
 			if ((dirp = opendir(arg)) == NULL) {
 				if (!fflg) {
-					fprintf(stderr, "rm: cannot read %s?\n", arg);
+					fprintf(stderr,
+					    "rm: cannot reopen %s?: %s\n",
+					    arg, strerror(errno));
 					errcode++;
 				}
 				break;
@@ -171,7 +176,8 @@ rm(arg, level)
 		}
 		if (rmdir(arg) < 0) {
 			if (!fflg || iflg) {
-				fprintf(stderr, "rm: %s not removed\n", arg);
+				fprintf(stderr, "rm: %s not removed: %s\n", arg,
+				    strerror(errno));
 				errcode++;
 			}
 			return (0);
@@ -195,8 +201,7 @@ rm(arg, level)
 	}
 rm:	if (unlink(arg) < 0) {
 		if (!fflg || iflg) {
-			fprintf(stderr, "rm: %s: ", arg);
-			perror((char *)NULL);
+			fprintf(stderr, "rm: %s: %s\n", arg, strerror(errno));
 			errcode++;
 		}
 		return (0);
