@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ttgeneric.c	3.6 83/08/15";
+static	char *sccsid = "@(#)ttgeneric.c	3.7 83/08/17";
 #endif
 
 #include "ww.h"
@@ -17,7 +17,6 @@ char gen_frame[16] = {
 
 int gen_row, gen_col;
 char gen_modes;
-char gen_availmodes;
 char gen_insert;
 
 char *gen_CM;
@@ -85,7 +84,7 @@ register new;
 {
 	register diff;
 
-	new &= gen_availmodes;
+	new &= tt.tt_availmodes;
 	if ((diff = new ^ gen_modes) == 0)
 		return;
 	if (diff & WWM_REV) {
@@ -339,9 +338,9 @@ tt_generic()
 	}
 
 	if (gen_SO)
-		gen_availmodes |= WWM_REV;
+		tt.tt_availmodes |= WWM_REV;
 	if (gen_US)
-		gen_availmodes |= WWM_UL;
+		tt.tt_availmodes |= WWM_UL;
 	if (gen_IM)
 		tt.tt_setinsert = gen_setinsert;
 	if (gen_DC)

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwwrite.c	3.3 83/08/16";
+static	char *sccsid = "@(#)wwwrite.c	3.4 83/08/17";
 #endif
 
 #include "ww.h"
@@ -90,6 +90,18 @@ int n;
 				break;
 			case 'Y':
 				w->ww_wstate = 2;
+				break;
+			case 'p':
+				w->ww_modes |= WWM_REV;
+				break;
+			case 'q':
+				w->ww_modes &= ~WWM_REV;
+				break;
+			case 'r':
+				w->ww_modes |= WWM_UL;
+				break;
+			case 's':
+				w->ww_modes &= ~WWM_UL;
 				break;
 			}
 			break;
