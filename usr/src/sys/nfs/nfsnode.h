@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfsnode.h	7.6 (Berkeley) %G%
+ *	@(#)nfsnode.h	7.7 (Berkeley) %G%
  */
 
 /*
@@ -39,6 +39,8 @@ struct nfsnode {
 	u_long	n_size;		/* Current size of file */
 	time_t	n_mtime;	/* Prev modify time to maintain data cache consistency*/
 	int	n_error;	/* Save write error value */
+	pid_t	n_lockholder;	/* holder of nfsnode lock */
+	pid_t	n_lockwaiter;	/* most recent waiter for nfsnode lock */
 };
 
 #define	n_forw		n_chain[0]
