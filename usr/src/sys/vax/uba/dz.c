@@ -1,4 +1,4 @@
-/*	dz.c	6.4	84/08/30	*/
+/*	dz.c	6.5	84/12/20	*/
 
 #include "dz.h"
 #if NDZ > 0
@@ -297,7 +297,8 @@ dzioctl(dev, cmd, data, flag)
 		return (error);
 	error = ttioctl(tp, cmd, data, flag);
 	if (error >= 0) {
-		if (cmd == TIOCSETP || cmd == TIOCSETN)
+		if (cmd == TIOCSETP || cmd == TIOCSETN || cmd == TIOCLBIS ||
+		    cmd == TIOCLBIC || cmd == TIOCLSET)
 			dzparam(unit);
 		return (error);
 	}
