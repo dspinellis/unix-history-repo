@@ -262,11 +262,12 @@ main(argc,argv)
 		fprintf(stdout," wrote  %d files in %d blocks (%d lines, %d chars)\n",
 			totalwritefiles,totalwriteblocks,totalwritelines,totalwritechars);
 	}
+	return(0);
 }
 usage() {
 	fprintf(stderr,
 			"ansitape: usage: ansitape -{rxtc}[flnvb] [filename] [label] [filename] [blocksize] [files]\n");
-	exit();
+	exit(1);
 }
 
 writefile(tape,file,filename,tapename,filenum,year,day,blocksize,recordsize)

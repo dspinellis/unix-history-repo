@@ -143,6 +143,7 @@ int pipeout=0;
 	if(pipeout) fprintf(mover,"%s ",altscript);
 	fprintf(mover,"%s\n",scriptname);
 	fclose(mover);
+	return(0);
 }
 
 bumpname(name)
@@ -161,5 +162,5 @@ int i;
 }
 usage() {
 	fprintf(stderr,"vmsprep:  usage:  vmsprep dirname [dirname...] \n");
-	exit();
+	exit(1);
 }
