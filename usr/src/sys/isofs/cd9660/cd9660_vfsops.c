@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cd9660_vfsops.c	8.11 (Berkeley) %G%
+ *	@(#)cd9660_vfsops.c	8.12 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -92,7 +92,6 @@ cd9660_mountroot()
 		return (error);
 	}
 	CIRCLEQ_INSERT_TAIL(&mountlist, mp, mnt_list);
-	mp->mnt_flag |= MNT_ROOTFS;
 	mp->mnt_vnodecovered = NULLVP;
 	imp = VFSTOISOFS(mp);
 	bzero(imp->im_fsmnt, sizeof(imp->im_fsmnt));
@@ -374,13 +373,8 @@ cd9660_unmount(mp, mntflags, p)
 	register struct iso_mnt *isomp;
 	int i, error, ronly, flags = 0;
 	
-	if (mntflags & MNT_FORCE) {
-		extern int doforce;
-
-		if (!doforce || (mp->mnt_flag & MNT_ROOTFS))
-			return (EINVAL);
+	if (mntflags & MNT_FORCE)
 		flags |= FORCECLOSE;
-	}
 #if 0
 	mntflushbuf(mp, 0);
 	if (mntinvalbuf(mp))
