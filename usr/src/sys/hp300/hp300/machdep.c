@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machdep.c 1.68 92/01/20$
  *
- *	@(#)machdep.c	7.30 (Berkeley) %G%
+ *	@(#)machdep.c	7.31 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -329,22 +329,38 @@ setregs(p, entry, retval)
 #endif
 	}
 	/*
+	 * XXX This doesn't have much to do with setting registers but
+	 * I didn't want to muck up kern_exec.c with this code, so I
+	 * stuck it here.
+	 *
 	 * Ensure we perform the right action on traps type 1 and 2:
 	 * If our parent is an HPUX process and we are being traced, turn
 	 * on HPUX style interpretation.  Else if we were using the HPUX
 	 * style interpretation, revert to the BSD interpretation.
 	 *
-	 * XXX This doesn't have much to do with setting registers but
-	 * I didn't want to muck up kern_exec.c with this code, so I
-	 * stuck it here.
+	 * Note that we do this by changing the trap instruction in the
+	 * global "sigcode" array which then gets copied out to the user's
+	 * sigcode in the stack.  Since we are changing it in the global
+	 * array we must always reset it, even for non-HPUX processes.
+	 *
+	 * Note also that implementing it in this way creates a potential
+	 * race where we could have tweaked it for process A which then
+	 * blocks in the copyout to the stack and process B comes along
+	 * and untweaks it causing A to wind up with the wrong setting
+	 * when the copyout continues.  However, since we have already
+	 * copied something out to this user stack page (thereby faulting
+	 * it in), this scenerio is extremely unlikely.
 	 */
-	if ((p->p_pptr->p_flag & SHPUX) &&
-	    (p->p_flag & STRC)) {
-		tweaksigcode(1);
-		p->p_addr->u_pcb.pcb_flags |= PCB_HPUXTRACE;
-	} else if (p->p_addr->u_pcb.pcb_flags & PCB_HPUXTRACE) {
-		tweaksigcode(0);
-		p->p_addr->u_pcb.pcb_flags &= ~PCB_HPUXTRACE;
+	{
+		extern short sigcodetrap[];
+
+		if ((p->p_pptr->p_flag & SHPUX) && (p->p_flag & STRC)) {
+			p->p_addr->u_pcb.pcb_flags |= PCB_HPUXTRACE;
+			*sigcodetrap = 0x4E42;
+		} else {
+			p->p_addr->u_pcb.pcb_flags &= ~PCB_HPUXTRACE;
+			*sigcodetrap = 0x4E41;
+		}
 	}
 #endif
 }
@@ -447,25 +463,6 @@ identifycpu()
 		break;
 	}
 }
-
-#ifdef HPUXCOMPAT
-tweaksigcode(ishpux)
-{
-	static short *sigtrap = NULL;
-	extern short sigcode[], esigcode[];
-
-	/* locate trap instruction in pcb_sigc */
-	if (sigtrap == NULL) {
-		sigtrap = esigcode;
-		while (--sigtrap >= sigcode)
-			if ((*sigtrap & 0xFFF0) == 0x4E40)
-				break;
-		if (sigtrap < sigcode)
-			panic("bogus sigcode\n");
-	}
-	*sigtrap = ishpux ? 0x4E42 : 0x4E41;
-}
-#endif
 
 #define SS_RTEFRAME	1
 #define SS_FPSTATE	2
