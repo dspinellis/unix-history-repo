@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	6.55 (Berkeley) %G%
+ *	@(#)sendmail.h	6.56 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	6.55		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	6.56		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -465,8 +465,12 @@ NAMECANON
 	short		nc_errno;	/* cached errno */
 	short		nc_herrno;	/* cached h_errno */
 	short		nc_stat;	/* cached exit status code */
+	short		nc_flags;	/* flag bits */
 	char		*nc_cname;	/* the canonical name */
 };
+
+/* values for nc_flags */
+#define NCF_VALID	0x0001	/* entry valid */
 /*
 **  Mapping functions
 **
