@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lex.c	5.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)lex.c	5.29 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -292,7 +292,7 @@ loop:
 		break;
 	    }
 	}
-	else if (cmap(c, _META | _Q | _Q1 | _ESC)) {
+	else if (cmap(c, _META | _QF | _QB | _ESC)) {
 	    if (c == '\\') {
 		c = getC(0);
 		if (c == '\n') {
@@ -304,7 +304,7 @@ loop:
 		    *wp++ = '\\', --i;
 		c |= QUOTE;
 	    }
-	    else if (cmap(c, _Q | _Q1)) {	/* '"` */
+	    else if (cmap(c, _QF | _QB)) {	/* '"` */
 		c1 = c;
 		dolflg = c == '"' ? DOALL : DOEXCL;
 	    }
@@ -343,7 +343,7 @@ getC1(flag)
 	    if ((c = *lap++) == 0)
 		lap = 0;
 	    else {
-		if (cmap(c, _META | _Q | _Q1))
+		if (cmap(c, _META | _QF | _QB))
 		    c |= QUOTE;
 		return (c);
 	    }
@@ -1159,7 +1159,7 @@ gethent(sc)
 	    }
 	    np = lhsb;
 	    event = 0;
-	    while (!cmap(c, _ESC | _META | _Q | _Q1) && !any("${}:", c)) {
+	    while (!cmap(c, _ESC | _META | _QF | _QB) && !any("${}:", c)) {
 		if (event != -1 && Isdigit(c))
 		    event = event * 10 + c - '0';
 		else

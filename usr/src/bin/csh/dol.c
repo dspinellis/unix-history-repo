@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dol.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)dol.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -40,7 +40,7 @@ static Char *Dcp, **Dvp;	/* Input vector for Dreadc */
 
 #define	unDgetC(c)	Dpeekc = c
 
-#define QUOTES		(_Q|_Q1|_ESC)	/* \ ' " ` */
+#define QUOTES		(_QF|_QB|_ESC)	/* \ ' " ` */
 
 /*
  * The following variables give the information about the current
@@ -169,7 +169,7 @@ Dpack(wbuf, wp)
 	    Gcat(STRNULL, wbuf);
 	    return (NULL);
 	}
-	if (cmap(c, _SP | _NL | _Q | _Q1)) {	/* sp \t\n'"` */
+	if (cmap(c, _SP | _NL | _QF | _QB)) {	/* sp \t\n'"` */
 	    unDgetC(c);
 	    if (cmap(c, QUOTES))
 		return (wp);
