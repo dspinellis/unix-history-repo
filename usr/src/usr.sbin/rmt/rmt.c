@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rmt.c	4.2 82/04/19";
+static char sccsid[] = "@(#)rmt.c	4.3 82/05/19";
 #endif
 
 /*
@@ -59,7 +59,7 @@ if (debug) fprintf(debug, "rmtd: O %s %s\n", device, mode);
 		tape = open(device, atoi(mode));
 		if (tape < 0)
 			goto ioerror;
-		break;
+		goto respond;
 
 	case 'C':
 if (debug) fprintf(debug, "rmtd: C\n");
@@ -67,7 +67,7 @@ if (debug) fprintf(debug, "rmtd: C\n");
 		if (close(tape) < 0)
 			goto ioerror;
 		tape = -1;
-		break;
+		goto respond;
 
 	case 'L':
 		gets(count); gets(pos);
@@ -75,7 +75,7 @@ if (debug) fprintf(debug, "rmtd: L %s %s\n", count, pos);
 		rval = lseek(tape, (long) atoi(count), atoi(pos));
 		if (rval < 0)
 			goto ioerror;
-		break;
+		goto respond;
 
 	case 'W':
 		gets(count);
@@ -91,7 +91,7 @@ if (debug) fprintf(debug, "rmtd: premature eof\n");
 		rval = write(tape, record, n);
 		if (rval < 0)
 			goto ioerror;
-		break;
+		goto respond;
 
 	case 'R':
 		gets(count);
@@ -102,8 +102,10 @@ if (debug) fprintf(debug, "rmtd: R %s\n", count);
 		rval = read(tape, record, n);
 		if (rval < 0)
 			goto ioerror;
-		(void) write(1, record, n);
-		break;
+		(void) sprintf(resp, "A%d\n", rval);
+		(void) write(1, resp, strlen(resp));
+		(void) write(1, record, rval);
+		goto top;
 
 	case 'I':
 		gets(op); gets(count);
@@ -115,7 +117,7 @@ if (debug) fprintf(debug, "rmtd: I %s %s\n", op, count);
 			goto ioerror;
 		  rval = mtop.mt_count;
 		}
-		break;
+		goto respond;
 
 	case 'S':		/* status */
 if (debug) fprintf(debug, "rmtd: S\n");
@@ -124,13 +126,14 @@ if (debug) fprintf(debug, "rmtd: S\n");
 			goto ioerror;
 		  rval = sizeof (mtget);
 		  (void) write(1, (char *)&mtget, sizeof (mtget));
-		  break;
+		  goto respond;
 		}
 
 	default:
 if (debug) fprintf(debug, "rmtd: garbage command %c\n", c);
 		exit(1);
 	}
+respond:
 if (debug) fprintf(debug, "rmtd: A %d\n", rval);
 	(void) sprintf(resp, "A%d\n", rval);
 	(void) write(1, resp, strlen(resp));
