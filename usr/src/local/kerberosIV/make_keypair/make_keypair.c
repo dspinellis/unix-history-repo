@@ -1,12 +1,11 @@
 #include <sys/types.h>
-#include <kerberos/krb.h>
+#include <krb.h>
 #include <stdio.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/file.h>
+#include "pathnames.h"
 #include "register_proto.h"
-
-#define	KFILE	"update.key%s"
 
 main(argc, argv)
 char	**argv;
@@ -33,10 +32,13 @@ char	**argv;
 		make_key(sin.sin_addr);
 	}
 	printf("==========\n");
-	printf("One copy of the each key should be put in /kerberos on the\n");
-	printf("Kerberos machine (mode 600, owner root).\n");
+	printf("One copy of the each key should be put in %s on the\n",
+		SERVER_KEYDIR);
+	printf("Kerberos server machine (mode 600, owner root).\n");
 	printf("Another copy of each key should be put on the named\n");
-	printf("client as /.update.keyXXX.XXX.XXX.XXX (same modes as above).\n");
+	printf("client as %sXXX.XXX.XXX.XXX (same modes as above),\n",
+		CLIENT_KEYFILE);
+	printf("where the X's refer to digits of the host's inet address.\n");
 	fflush(stdout);
 }
 
