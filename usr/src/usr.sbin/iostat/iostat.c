@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)iostat.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)iostat.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -166,7 +166,8 @@ main(argc, argv)
 		(void)sprintf(buf, "dk%d", i);
 		dr_name[i] = strdup(buf);
 	}
-	read_names();
+	if (!read_names())
+		exit(1);
 	(void)nlread(X_HZ, hz);
 	(void)nlread(X_STATHZ, stathz);
 	if (stathz)
