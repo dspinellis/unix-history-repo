@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)popen.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)popen.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -66,7 +66,7 @@ Pclose(ptr)
 	i = fileno(ptr);
 	fclose(ptr);
 	omask = sigblock(sigmask(SIGINT)|sigmask(SIGHUP));
-	i = wait_command(pid[i]);
+	i = wait_child(pid[i]);
 	sigsetmask(omask);
 	return i;
 }
@@ -81,7 +81,7 @@ Pclose(ptr)
 /*VARARGS4*/
 run_command(cmd, mask, infd, outfd, a0, a1, a2)
 	char *cmd;
-	int infd, outfd;
+	int mask, infd, outfd;
 	char *a0, *a1, *a2;
 {
 	int pid;
@@ -94,7 +94,7 @@ run_command(cmd, mask, infd, outfd, a0, a1, a2)
 /*VARARGS4*/
 start_command(cmd, mask, infd, outfd, a0, a1, a2)
 	char *cmd;
-	int infd, outfd;
+	int mask, infd, outfd;
 	char *a0, *a1, *a2;
 {
 	int pid;
@@ -111,18 +111,7 @@ start_command(cmd, mask, infd, outfd, a0, a1, a2)
 		    (argv[i++] = a1) != NOSTR &&
 		    (argv[i++] = a2) != NOSTR)
 			argv[i] = NOSTR;
-		if (infd >= 0)
-			dup2(infd, 0);
-		if (outfd >= 0)
-			dup2(outfd, 1);
-		for (i = getdtablesize(); --i > 2;)
-			close(i);
-		for (i = 1; i <= NSIG; i++)
-			if (mask & sigmask(i))
-				(void) signal(i, SIG_IGN);
-		if ((mask & sigmask(SIGINT)) == 0)
-			(void) signal(SIGINT, SIG_DFL);
-		(void) sigsetmask(0);
+		prepare_child(mask, infd, outfd);
 		execvp(argv[0], argv);
 		perror(argv[0]);
 		_exit(1);
@@ -130,19 +119,123 @@ start_command(cmd, mask, infd, outfd, a0, a1, a2)
 	return pid;
 }
 
+prepare_child(mask, infd, outfd)
+	int mask, infd, outfd;
+{
+	int i;
+
+	if (infd >= 0)
+		dup2(infd, 0);
+	if (outfd >= 0)
+		dup2(outfd, 1);
+	for (i = getdtablesize(); --i > 2;)
+		close(i);
+	for (i = 1; i <= NSIG; i++)
+		if (mask & sigmask(i))
+			(void) signal(i, SIG_IGN);
+	if ((mask & sigmask(SIGINT)) == 0)
+		(void) signal(SIGINT, SIG_DFL);
+	(void) sigsetmask(0);
+}
+
 wait_command(pid)
 	int pid;
 {
-	union wait status;
 	int r;
 
-	while ((r = wait(&status)) >= 0 && r != pid)
-		;
-	if (r < 0)
-		return -1;
-	if (status.w_status != 0) {
+	if (wait_child(pid) < 0) {
 		printf("Fatal error in process.\n");
 		return -1;
 	}
 	return 0;
+}
+
+struct child {
+	int pid;
+	char done;
+	char free;
+	union wait status;
+	struct child *link;
+};
+static struct child *child;
+
+struct child *
+findchild(pid)
+	int pid;
+{
+	register struct child **cpp;
+
+	for (cpp = &child; *cpp != NULL && (*cpp)->pid != pid;
+	     cpp = &(*cpp)->link)
+			;
+	if (*cpp == NULL) {
+		*cpp = (struct child *) malloc(sizeof (struct child));
+		(*cpp)->pid = pid;
+		(*cpp)->done = (*cpp)->free = 0;
+		(*cpp)->link = NULL;
+	}
+	return *cpp;
+}
+
+delchild(cp)
+	register struct child *cp;
+{
+	register struct child **cpp;
+
+	for (cpp = &child; *cpp != cp; cpp = &(*cpp)->link)
+		;
+	*cpp = cp->link;
+	free((char *) cp);
+}
+
+sigchild()
+{
+	int pid;
+	union wait status;
+	register struct child *cp;
+
+	while ((pid = wait3(&status, WNOHANG, (struct timeval *)0)) > 0) {
+		cp = findchild(pid);
+		if (cp->free)
+			delchild(cp);
+		else {
+			cp->done = 1;
+			cp->status = status;
+		}
+	}
+}
+
+union wait wait_status;
+
+/*
+ * Wait for a specific child to die.
+ */
+wait_child(pid)
+	int pid;
+{
+	int mask = sigblock(sigmask(SIGCHLD));
+	register struct child *cp = findchild(pid);
+
+	while (!cp->done)
+		sigpause(mask);
+	wait_status = cp->status;
+	delchild(cp);
+	sigsetmask(mask);
+	return wait_status.w_status ? -1 : 0;
+}
+
+/*
+ * Mark a child as don't care.
+ */
+free_child(pid)
+	int pid;
+{
+	int mask = sigblock(sigmask(SIGCHLD));
+	register struct child *cp = findchild(pid);
+
+	if (cp->done)
+		delchild(cp);
+	else
+		cp->free = 1;
+	sigsetmask(mask);
 }

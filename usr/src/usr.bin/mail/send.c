@@ -16,12 +16,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)send.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)send.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
-#include <sys/wait.h>
-#include <sys/stat.h>
 
 /*
  * Mail -- a mail program
@@ -207,7 +205,6 @@ statusput(mp, obuf, prefix)
  * Interface between the argument list and the mail1 routine
  * which does all the dirty work.
  */
-
 mail(to, cc, bcc, smopts, subject)
 	struct name *to, *cc, *bcc, *smopts;
 	char *subject;
@@ -219,7 +216,7 @@ mail(to, cc, bcc, smopts, subject)
 	head.h_cc = cc;
 	head.h_bcc = bcc;
 	head.h_smopts = smopts;
-	(void) mail1(&head, 0);
+	mail1(&head, 0);
 	return(0);
 }
 
@@ -228,7 +225,6 @@ mail(to, cc, bcc, smopts, subject)
  * Send mail to a bunch of user names.  The interface is through
  * the mail routine below.
  */
-
 sendmail(str)
 	char *str;
 {
@@ -239,7 +235,7 @@ sendmail(str)
 	head.h_cc = NIL;
 	head.h_bcc = NIL;
 	head.h_smopts = NIL;
-	(void) mail1(&head, 0);
+	mail1(&head, 0);
 	return(0);
 }
 
@@ -247,27 +243,21 @@ sendmail(str)
  * Mail a message on standard input to the people indicated
  * in the passed header.  (Internal interface).
  */
-
 mail1(hp, printheaders)
 	struct header *hp;
 {
-	register char *cp;
-	int pid, i, p, gotcha;
-	union wait s;
-	char **namelist, *deliver;
-	struct name *to, *np;
-	struct stat sbuf;
-	FILE *mtf, *postage;
-	char **t;
+	char *cp;
+	int pid;
+	char **namelist;
+	struct name *to;
+	FILE *mtf;
 
 	/*
 	 * Collect user's mail from standard input.
 	 * Get the result as mtf.
 	 */
-
-	pid = -1;
 	if ((mtf = collect(hp, printheaders)) == NULL)
-		return(-1);
+		return;
 	if (value("interactive") != NOSTR)
 		if (value("askcc") != NOSTR)
 			grabh(hp, GCC);
@@ -275,6 +265,11 @@ mail1(hp, printheaders)
 			printf("EOT\n");
 			(void) fflush(stdout);
 		}
+	if (fsize(mtf) == 0)
+		if (hp->h_subject == NOSTR)
+			printf("No message, no subject; hope that's ok\n");
+		else
+			printf("Null message body; hope that's ok\n");
 	/*
 	 * Now, take the user names from the combined
 	 * to and cc lists and do all the alias
@@ -284,64 +279,45 @@ mail1(hp, printheaders)
 	to = usermap(cat(hp->h_bcc, cat(hp->h_to, hp->h_cc)));
 	if (to == NIL) {
 		printf("No recipients specified\n");
-		goto topdog;
+		senderr++;
 	}
 	/*
 	 * Look through the recipient list for names with /'s
 	 * in them which we write to as files directly.
 	 */
 	to = outof(to, mtf, hp);
-	rewind(mtf);
 	if (senderr) {
-topdog:
 		if (fsize(mtf) != 0) {
 			(void) remove(deadletter);
 			(void) exwrite(deadletter, mtf, 1);
 			rewind(mtf);
 		}
 	}
-	for (gotcha = 0, np = to; np != NIL; np = np->n_flink)
-		if ((np->n_type & GDEL) == 0) {
-			gotcha++;
-			break;
-		}
-	if (!gotcha)
-		goto out;
 	to = elide(to);
-	if (fsize(mtf) == 0)
-		if (hp->h_subject == NOSTR)
-			printf("No message, no subject; hope that's ok\n");
-		else
-			printf("Null message body; hope that's ok\n");
-	if (count(to) > 0 || hp->h_subject != NOSTR) {
-		/* don't do this unless we have to */
-		fixhead(hp, to);
-		if ((mtf = infix(hp, mtf)) == NULL) {
-			fprintf(stderr, ". . . message lost, sorry.\n");
-			return(-1);
-		}
+	if (count(to) == 0)
+		goto out;
+	fixhead(hp, to);
+	if ((mtf = infix(hp, mtf)) == NULL) {
+		fprintf(stderr, ". . . message lost, sorry.\n");
+		return;
 	}
 	namelist = unpack(cat(hp->h_smopts, to));
 	if (debug) {
+		char **t;
+
 		printf("Sendmail arguments:");
 		for (t = namelist; *t != NOSTR; t++)
 			printf(" \"%s\"", *t);
 		printf("\n");
-		(void) fflush(stdout);
-		return 0;
+		goto out;
 	}
 	if ((cp = value("record")) != NOSTR)
 		(void) savemail(expand(cp), mtf);
 	/*
-	 * Wait, to absorb a potential zombie, then
-	 * fork, set up the temporary mail file as standard
-	 * input for "mail" and exec with the user list we generated
-	 * far above. Return the process id to caller in case he
-	 * wants to await the completion of mail.
+	 * Fork, set up the temporary mail file as standard
+	 * input for "mail", and exec with the user list we generated
+	 * far above.
 	 */
-	while (wait3(&s, WNOHANG, (struct timeval *) 0) > 0)
-		;
-	rewind(mtf);
 	pid = fork();
 	if (pid == -1) {
 		perror("fork");
@@ -350,40 +326,32 @@ topdog:
 		goto out;
 	}
 	if (pid == 0) {
-#ifdef SIGTSTP
-		(void) signal(SIGTSTP, SIG_IGN);
-		(void) signal(SIGTTIN, SIG_IGN);
-		(void) signal(SIGTTOU, SIG_IGN);
-#endif
-		(void) signal(SIGHUP, SIG_IGN);
-		(void) signal(SIGINT, SIG_IGN);
-		(void) signal(SIGQUIT, SIG_IGN);
-		if (!stat(POSTAGE, &sbuf))
+		if (access(POSTAGE, 0) == 0) {
+			FILE *postage;
+
 			if ((postage = fopen(POSTAGE, "a")) != NULL) {
 				fprintf(postage, "%s %d %ld\n", myname,
 				    count(to), fsize(mtf));
 				(void) fclose(postage);
 			}
-		(void) close(0);
-		(void) dup(fileno(mtf));
-		for (i = getdtablesize(); --i > 2;)
-			(void) close(i);
-		if ((deliver = value("sendmail")) == NOSTR)
-			deliver = SENDMAIL;
-		execv(deliver, namelist);
-		perror(deliver);
+		}
+		prepare_child(sigmask(SIGHUP)|sigmask(SIGINT)|sigmask(SIGQUIT)|
+			sigmask(SIGTSTP)|sigmask(SIGTTIN)|sigmask(SIGTTOU),
+			fileno(mtf), -1);
+		if ((cp = value("sendmail")) != NOSTR)
+			cp = expand(cp);
+		else
+			cp = SENDMAIL;
+		execv(cp, namelist);
+		perror(cp);
 		exit(1);
 	}
+	if (value("verbose") != NOSTR)
+		(void) wait_child(pid);
+	else
+		free_child(pid);
 out:
-	if (value("verbose") != NOSTR) {
-		while ((p = wait(&s)) != pid && p != -1)
-			;
-		if (s.w_status != 0)
-			senderr++;
-		pid = 0;
-	}
 	(void) fclose(mtf);
-	return pid;
 }
 
 /*
@@ -415,7 +383,6 @@ fixhead(hp, tolist)
  * Prepend a header in front of the collected stuff
  * and return the new file.
  */
-
 FILE *
 infix(hp, fi)
 	struct header *hp;
@@ -425,7 +392,6 @@ infix(hp, fi)
 	register FILE *nfo, *nfi;
 	register int c;
 
-	rewind(fi);
 	if ((nfo = fopen(tempMail, "w")) == NULL) {
 		perror(tempMail);
 		return(fi);
@@ -444,6 +410,7 @@ infix(hp, fi)
 	}
 	if (ferror(fi)) {
 		perror("read");
+		rewind(fi);
 		return(fi);
 	}
 	(void) fflush(nfo);
@@ -451,6 +418,7 @@ infix(hp, fi)
 		perror(tempMail);
 		(void) fclose(nfo);
 		(void) fclose(nfi);
+		rewind(fi);
 		return(fi);
 	}
 	(void) fclose(nfo);
@@ -471,20 +439,20 @@ puthead(hp, fo, w)
 
 	gotcha = 0;
 	if (hp->h_to != NIL && w & GTO)
-		fmt("To: ", hp->h_to, fo, w&GCOMMA), gotcha++;
+		fmt("To:", hp->h_to, fo, w&GCOMMA), gotcha++;
 	if (hp->h_subject != NOSTR && w & GSUBJECT)
 		fprintf(fo, "Subject: %s\n", hp->h_subject), gotcha++;
 	if (hp->h_cc != NIL && w & GCC)
-		fmt("Cc: ", hp->h_cc, fo, w&GCOMMA), gotcha++;
+		fmt("Cc:", hp->h_cc, fo, w&GCOMMA), gotcha++;
 	if (hp->h_bcc != NIL && w & GBCC)
-		fmt("Bcc: ", hp->h_bcc, fo, w&GCOMMA), gotcha++;
+		fmt("Bcc:", hp->h_bcc, fo, w&GCOMMA), gotcha++;
 	if (gotcha && w & GNL)
 		(void) putc('\n', fo);
 	return(0);
 }
 
 /*
- * Format the given text to not exceed 72 characters.
+ * Format the given header line to not exceed 72 characters.
  */
 fmt(str, np, fo, comma)
 	char *str;
@@ -498,26 +466,20 @@ fmt(str, np, fo, comma)
 	col = strlen(str);
 	if (col)
 		fputs(str, fo);
-	len = strlen(np->n_name);
-	for (;;) {
-		fputs(np->n_name, fo);
-		col += len;
-		if (comma) {
-			putc(',', fo);
-			col++;
-		}
-		if ((np = np->n_flink) == NIL)
-			break;
+	for (; np != NIL; np = np->n_flink) {
 		if (np->n_flink == NIL)
 			comma = 0;
 		len = strlen(np->n_name);
-		if (col + len + comma > 72) {
+		col++;		/* for the space */
+		if (col + len + comma > 72 && col > 4) {
 			fputs("\n    ", fo);
 			col = 4;
-		} else {
+		} else
 			putc(' ', fo);
-			col++;
-		}
+		fputs(np->n_name, fo);
+		if (comma)
+			putc(',', fo);
+		col += len + comma;
 	}
 	putc('\n', fo);
 }
@@ -543,7 +505,6 @@ savemail(name, fi)
 	}
 	(void) time(&now);
 	fprintf(fo, "From %s %s", myname, ctime(&now));
-	rewind(fi);
 	while ((i = fread(buf, 1, sizeof buf, fi)) > 0)
 		(void) fwrite(buf, 1, i, fo);
 	(void) putc('\n', fo);
@@ -551,5 +512,6 @@ savemail(name, fi)
 	if (ferror(fo))
 		perror(name);
 	(void) fclose(fo);
+	rewind(fi);
 	return (0);
 }
