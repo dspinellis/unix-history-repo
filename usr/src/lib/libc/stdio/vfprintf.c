@@ -11,22 +11,18 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vfprintf.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)vfprintf.c	5.9 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-#include <sys/param.h>
+#include <sys/types.h>
 #include <varargs.h>
 #include <stdio.h>
 #include <ctype.h>
 
-#define	MAXBUF		120
-#define	DEFPREC		6
+#define	MAXBUF	120
+#define	DEFPREC	6
 
 #define	PUTC(ch, fd)	{++cnt; putc(ch, fd);}
-
-#define	EFORMAT		0x01
-#define	FFORMAT		0x02
-#define	GFORMAT		0x04
 
 #define	LONGINT		0x01
 #define	LONGDBL		0x02
@@ -120,9 +116,6 @@ flags:		switch (*++fmt) {
 		case 'l':
 			argsize |= LONGINT;
 			goto flags;
-		case '%':			/* "%#%" prints as "%" */
-			PUTC('%', fp);
-			break;
 		case 'c': {
 			char ch;
 
@@ -144,22 +137,13 @@ flags:		switch (*++fmt) {
 				PUTC(printsign, fp);
 			base = 10;
 			goto num1;
-		case 'E':
 		case 'e':
-			_double = va_arg(argp, double);
-			bp = _cvt(_double, prec, EFORMAT, buf,
-			    buf + sizeof(buf), *fmt);
-			goto pbuf;
+		case 'E':
 		case 'f':
-			_double = va_arg(argp, double);
-			bp = _cvt(_double, prec, FFORMAT, buf,
-			    buf + sizeof(buf), 'f');
-			goto pbuf;
-		case 'G':
 		case 'g':
+		case 'G':
 			_double = va_arg(argp, double);
-			bp = _cvt(_double, prec, GFORMAT, buf,
-			    buf + sizeof(buf), *fmt - 2);
+			bp = _cvt(_double, prec, buf, buf + sizeof(buf), *fmt);
 pbuf:			size = bp - buf;
 			if (size < width && !ladjust)
 				do {
@@ -254,15 +238,20 @@ num2:			while (++bp != &buf[MAXBUF])
 	return(ferror(fp) ? -1 : cnt);
 }
 
-char *
-_cvt(number, prec, format, startp, endp, fmtch)
+#define	EFORMAT	0x01
+#define	FFORMAT	0x02
+#define	GFORMAT	0x04
+
+static char *
+_cvt(number, prec, startp, endp, fmtch)
 	double number;
-	int prec, format;
+	register int prec;
 	char *startp, *endp, fmtch;
 {
 	register char *p;
+	register int expcnt, format;
 	double fract, integer, tmp, modf();
-	int decpt, expcnt;
+	int decpt;
 	char *savep;
 
 	if (prec == -1)				/* set default precision */
@@ -275,6 +264,20 @@ _cvt(number, prec, format, startp, endp, fmtch)
 	}
 	else if (printsign)
 		*startp++ = '+';
+
+	switch(fmtch) {
+	case 'e':
+	case 'E':
+		format = EFORMAT;
+		break;
+	case 'f':
+		format = FFORMAT;
+		break;
+	case 'g':
+	case 'G':
+		format = GFORMAT;
+		fmtch -= 2;
+	}
 
 	/*
 	 * if the alternate flag is set, or, at least one digit of precision
