@@ -1,4 +1,4 @@
-#	@(#)Makefile	8.1 (Berkeley) %G%
+#	@(#)Makefile	8.2 (Berkeley) %G%
 #
 # Doing a make install builds /usr/include
 #
@@ -14,8 +14,8 @@ FILES=	a.out.h ar.h assert.h bitstring.h ctype.h db.h dirent.h disktab.h \
 	math.h memory.h mp.h mpool.h ndbm.h netdb.h nlist.h paths.h pwd.h \
 	ranlib.h regex.h regexp.h resolv.h rune.h runetype.h setjmp.h \
 	sgtty.h signal.h stab.h stddef.h stdio.h stdlib.h string.h strings.h \
-	struct.h sysexits.h time.h ttyent.h tzfile.h unistd.h utime.h utmp.h \
-	vis.h
+	struct.h sysexits.h tar.h time.h ttyent.h tzfile.h unistd.h utime.h \
+	utmp.h vis.h
 
 MFILES=	float.h frame.h stdarg.h varargs.h
 LFILES=	errno.h fcntl.h syslog.h termios.h
