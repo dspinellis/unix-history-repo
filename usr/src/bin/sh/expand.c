@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)expand.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)expand.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -731,12 +731,14 @@ expandmeta(str, flag)
 			/* 
 			 * no matches 
 			 */
-			if (! zflag) {
+#ifdef PUTBACK_ZFLAG
+			if (! zflag) { ...
+#endif
+
 nometa:
 				*exparg.lastp = str;
 				rmescapes(str->text);
 				exparg.lastp = &str->next;
-			}
 		} else {
 			*exparg.lastp = NULL;
 			*savelastp = sp = expsort(*savelastp);
