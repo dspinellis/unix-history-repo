@@ -3,14 +3,14 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	7.25 (Berkeley) %G%
+#	@(#)Makefile	7.26 (Berkeley) %G%
 #
 #
 # Copyright (c) 1980 Regents of the University of California.
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	7.25 (Berkeley) %G%
+#	@(#)Makefile	7.26 (Berkeley) %G%
 #
 #
 # Copyright (c) 1987 The Regents of the University of California.
@@ -28,7 +28,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	7.25 (Berkeley) %G%
+#	@(#)Makefile	7.26 (Berkeley) %G%
 #
 VERSION=3.7
 #
@@ -48,9 +48,8 @@ VERSION=3.7
 #
 # If your system expands tabs to 4 spaces you should -DTABS=4 below
 #
-BINDIR=		/usr/ucb
-NBINDIR=	/usr/new
-LIBDIR=		/usr/lib
+BINDIR=		/usr/bin
+LIBDIR=		/usr/libexec
 OPTIONS=	-DLISPCODE -DCHDIR -DUCVISUAL -DVFORK -DVMUNIX \
 		-DFASTTAG -DUNIX_SBRK
 CFLAGS=		-DTABS=8 -O ${OPTIONS}
@@ -122,18 +121,14 @@ depend: ${SRCS}
 # install in standard place (/usr/ucb)
 install: ${MAN}
 	rm -f ${DESTDIR}/${BINDIR}/ex ${DESTDIR}/${BINDIR}/vi \
-		${DESTDIR}/${BINDIR}/view ${DESTDIR}/${BINDIR}/edit \
-		${DESTDIR}/${BINDIR}/e ${DESTDIR}/usr/bin/ex
+		${DESTDIR}/${BINDIR}/view ${DESTDIR}/${BINDIR}/edit
 	install -s -o bin -g bin -m 1755 ex ${DESTDIR}/${BINDIR}/ex
 	install -s -o root -m 4755 exrecover ${DESTDIR}/${LIBDIR}/ex${VERSION}recover
 	install -s -o root -m 4755 expreserve ${DESTDIR}/${LIBDIR}/ex${VERSION}preserve
 #	cp ex${VERSION}strings ${DESTDIR}/${LIBDIR}/ex${VERSION}strings
 	ln ${DESTDIR}/${BINDIR}/ex ${DESTDIR}/${BINDIR}/edit
-	ln ${DESTDIR}/${BINDIR}/ex ${DESTDIR}/${BINDIR}/e
-	ln ${DESTDIR}/${BINDIR}/ex ${DESTDIR}/${BINDIR}/vi
 	ln ${DESTDIR}/${BINDIR}/ex ${DESTDIR}/${BINDIR}/view
-	ln ${DESTDIR}/${BINDIR}/ex ${DESTDIR}/usr/bin/ex
-	-[ -d ${DESTDIR}/usr/preserve ] || mkdir ${DESTDIR}/usr/preserve
+	ln ${DESTDIR}/${BINDIR}/ex ${DESTDIR}/${BINDIR}/vi
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 
 lint: ${SRCS}
