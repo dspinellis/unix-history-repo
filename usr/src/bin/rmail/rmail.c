@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rmail.c	4.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)rmail.c	4.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -147,8 +147,10 @@ main(argc, argv)
 	 */
 	i = 0;
 	args[i++] = MAILER;
-	args[i++] = "-ee";
-	if (fsys[0] != '\0') {
+	args[i++] = "-oee";		/* no errors, just status */
+	args[i++] = "-odq";		/* queue it, don't try to deliver */
+	args[i++] = "-oi";		/* ignore '.' on a line by itself */
+	if (fsys[0] != '\0') {		/* set sender's host name */
 		static char junk2[512];
 
 		if (index(fsys, '.') == NULL) {
@@ -158,9 +160,10 @@ main(argc, argv)
 		(void) sprintf(junk2, "-oMs%s", fsys);
 		args[i++] = junk2;
 	}
+					/* set protocol used */
 	(void) sprintf(junk, "-oMr%s", Domain);
 	args[i++] = junk;
-	if (from[0] != '\0') {
+	if (from[0] != '\0') {		/* set name of ``from'' person */
 		static char junk2[512];
 
 		(void) sprintf(junk2, "-f%s", from);
@@ -170,6 +173,8 @@ main(argc, argv)
 		/*
 		 * don't copy arguments beginning with - as they will
 		 * be passed to sendmail and could be interpreted as flags
+		 * should be fixed in sendmail by using getopt(3), and
+		 * just passing "--" before regular args.
 		 */
 		if (**argv != '-')
 			args[i] = *argv;
@@ -190,10 +195,10 @@ main(argc, argv)
 		 * first line down the pipe. 
 		 */
 		int pipefd[2];
-# ifdef DEBUG
+#ifdef DEBUG
 		if (Debug)
 			printf("Not a regular file!\n");
-# endif DEBUG
+#endif
 		if (pipe(pipefd) < 0)
 			exit(EX_OSERR);
 		if (fork() == 0) {
