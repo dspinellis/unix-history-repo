@@ -1,4 +1,4 @@
-/*	lfs_vfsops.c	6.9	84/09/28	*/
+/*	lfs_vfsops.c	6.10	85/05/22	*/
 
 #include "param.h"
 #include "systm.h"
@@ -35,9 +35,14 @@ smount()
 	ip = namei(ndp);
 	if (ip == NULL)
 		return;
-	if (ip->i_count!=1 || (ip->i_mode&IFMT) != IFDIR) {
+	if (ip->i_count != 1) {
 		iput(ip);
 		u.u_error = EBUSY;
+		return;
+	}
+	if ((ip->i_mode&IFMT) != IFDIR) {
+		iput(ip);
+		u.u_error = ENOTDIR;
 		return;
 	}
 	fs = mountfs(dev, uap->ronly, ip);
@@ -62,11 +67,13 @@ mountfs(dev, ronly, ip)
 	caddr_t space;
 	int i, size;
 	register error;
+	int needclose = 0;
 
 	error =
 	    (*bdevsw[major(dev)].d_open)(dev, ronly ? FREAD : FREAD|FWRITE);
 	if (error)
 		goto out;
+	needclose = 1;
 	tp = bread(dev, SBLOCK, SBSIZE);
 	if (tp->b_flags & B_ERROR)
 		goto out;
@@ -140,6 +147,9 @@ out:
 		brelse(bp);
 	if (tp)
 		brelse(tp);
+	if (needclose)
+		(*bdevsw[major(dev)].d_close)(dev, ronly ? FREAD : FREAD|FWRITE);
+	binval(dev);
 	u.u_error = error;
 	return (0);
 }
@@ -251,8 +261,11 @@ getmdev(pdev, fname)
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = fname;
 	ip = namei(ndp);
-	if (ip == NULL)
+	if (ip == NULL) {
+		if (u.u_error == ENOENT)
+			return (ENODEV); /* needs translation */
 		return (u.u_error);
+	}
 	if ((ip->i_mode&IFMT) != IFBLK) {
 		iput(ip);
 		return (ENOTBLK);
