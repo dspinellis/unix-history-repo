@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)lpass2.c	1.11	(Berkeley)	%G%";
+static char sccsid[] = "@(#)lpass2.c	1.12	(Berkeley)	%G%";
 #endif lint
 
 # include "macdefs.h"
@@ -211,14 +211,14 @@ find(){
 #ifndef FLEXNAMES
 	h = hashstr(r.l.name, LCHNM) % NSZ;
 #else
-	h = *(int *)r.l.name % NSZ;
+	h = (int)r.l.name % NSZ;
 #endif
 	{	register STAB *p, *q;
 		for( p=q= &stab[h]; q->decflag; ){
 #ifndef FLEXNAMES
 			if( !strncmp( r.l.name, q->name, LCHNM))
 #else
-			if (strcmp(r.l.name, q->name) == 0)
+			if (r.l.name == q->name)
 #endif
 				if( ((q->decflag|r.l.decflag)&LST)==0 || q->fno==cfno )
 					return(q);
@@ -383,19 +383,21 @@ lastone(q) STAB *q; {
 			nu = 1;
 		}
 
-	switch( q->decflag ){
+	if( !ISFTN(q->symty.t.aty) ){
+		switch( q->decflag ){
 
-	case LIB:
-		nu = nd = 0;  /* don't complain about uses on libraries */
-		break;
-	case LDX:
-		if( !xflag ) break;
-	case LUV:
-	case LUE:
+		case LIB:
+			nu = nd = 0;  /* don't complain about uses on libraries */
+			break;
+		case LDX:
+			if( !xflag ) break;
+		case LUV:
+		case LUE:
 /* 01/04/80 */	case LUV | LUE:
-	case LUM:
-		nd = 1;
-	}
+		case LUM:
+			nd = 1;
+			}
+		}
 	if( uflag && ( nu || nd ) )
 #ifndef FLEXNAMES
 		printf( mess[nu][nd], q->name, LFNM, fnm[q->fno], q->fline );
