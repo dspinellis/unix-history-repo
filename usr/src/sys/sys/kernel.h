@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kernel.h	7.9 (Berkeley) %G%
+ *	@(#)kernel.h	7.10 (Berkeley) %G%
  */
 
 /* Global variables for the kernel. */
@@ -28,14 +28,9 @@ extern int stathz;			/* statistics clock's frequency */
 extern int profhz;			/* profiling clock's frequency */
 extern int lbolt;			/* once a second sleep address */
 
-struct loadavg {
-	fixpt_t ldavg[3];
-	long fscale;
-};
-extern struct loadavg averunnable;
 #if defined(COMPAT_43) && (defined(vax) || defined(tahoe))
 double	avenrun[3];
-#endif /* COMPAT_43 */
+#endif
 
 #ifdef GPROF
 extern int profiling;
