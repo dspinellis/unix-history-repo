@@ -4,7 +4,7 @@ pmax/pmax/conf.c		standard
 pmax/pmax/cons.c		standard
 pmax/pmax/fp.s			standard
 pmax/pmax/kadb.c		optional kadb
-pmax/pmax/machdep.c		standard config-dependent device-driver
+pmax/pmax/machdep.c		standard config-dependent
 pmax/pmax/mem.c			standard
 pmax/pmax/pmap.c		standard
 pmax/pmax/sys_machdep.c		standard
