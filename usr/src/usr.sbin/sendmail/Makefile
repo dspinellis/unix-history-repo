@@ -1,7 +1,7 @@
 #
 #	Makefile for sendmail base directory
 #
-#		@(#)Makefile	3.1		%G%
+#		@(#)Makefile	3.2		%G%
 #
 
 ALL=	src/sendmail aux/syslog
@@ -17,7 +17,7 @@ CP=	cp
 all:
 	cd lib; make
 	cd src; m4 Makefile.m4 > Makefile; make
-	cd aux; make
+	cd aux; m4 Makefile.m4 > Makefile; make
 
 install: $(ALL) $(DIRS)
 	$(CP)	aux/syslog	$(DESTDIR)/etc/syslog
