@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)touch.c	1.6 (Berkeley) %G%";
+static	char *sccsid = "@(#)touch.c	1.7 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <sys/types.h>
@@ -241,9 +241,13 @@ hackfile(name, files, ix, nerrors)
 	boolean	previewed;
 	int	errordest;	/* where errors go*/
 
-	previewed = preview(name, nerrors, files, ix);
-
-	errordest = settotouch(name);
+	if (!oktotouch(name)) {
+		previewed = FALSE;
+		errordest = TOSTDOUT;
+	} else {
+		previewed = preview(name, nerrors, files, ix);
+		errordest = settotouch(name);
+	}
 
 	if (errordest != TOSTDOUT)
 		touchedfiles[ix] = TRUE;
@@ -270,18 +274,16 @@ boolean preview(name, nerrors, files, ix)
 	int	back;
 	reg	Eptr	*erpp;
 
-	if (!oktotouch(name))
-		return(false);
 	if (nerrors <= 0)
-		return(false);
-	back = false;
+		return(FALSE);
+	back = FALSE;
 	if(query){
 		switch(inquire(terse
 		    ? "Preview? "
 		    : "Do you want to preview the errors first? ")){
 		case Q_YES:
 		case Q_yes:
-			back = true;
+			back = TRUE;
 			EITERATE(erpp, files, ix){
 				errorprint(stdout, *erpp, TRUE);
 			}
