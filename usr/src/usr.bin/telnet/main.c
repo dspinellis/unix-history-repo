@@ -8,23 +8,11 @@
 void
 tninit()
 {
-#if	defined(TN3270)
-    Sent3270TerminalType = 0;
-    Ifrontp = Ibackp = Ibuf;
-#endif	/* defined(TN3270) */
-
     init_terminal();
 
     init_network();
     
     init_telnet();
-
-#if	defined(TN3270)
-    init_ctlr();		/* Initialize some things */
-    init_keyboard();
-    init_screen();
-    init_system();
-#endif	/* defined(TN3270) */
 }
 
 
