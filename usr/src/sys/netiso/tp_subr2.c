@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_subr2.c	7.13 (Berkeley) %G%
+ *	@(#)tp_subr2.c	7.14 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -343,11 +343,11 @@ tp_quench( tpcb, cmd )
 	ENDDEBUG
 	switch(cmd) {
 		case PRC_QUENCH:
-			tpcb->tp_cong_win = 1;
+			tpcb->tp_cong_win = tpcb->tp_l_tpdusize;
 			IncStat(ts_quench);
 			break;
 		case PRC_QUENCH2:
-			tpcb->tp_cong_win = 1; /* might as well quench source also */
+			tpcb->tp_cong_win = tpcb->tp_l_tpdusize; /* might as well quench source also */
 			tpcb->tp_decbit = TP_DECBIT_CLEAR_COUNT;
 			IncStat(ts_rcvdecbit);
 			break;

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_emit.c	7.11 (Berkeley) %G%
+ *	@(#)tp_emit.c	7.12 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -148,6 +148,8 @@ tp_emit(dutype,	tpcb, seq, eot, data)
 	int csum_offset=0;
 	int datalen = 0;
 	int error = 0;
+ 	SeqNum olduwe;
+	int acking_ooo;
 
 	/* NOTE:
 	 * here we treat tpdu_li as if it DID include the li field, up until
@@ -218,9 +220,7 @@ tp_emit(dutype,	tpcb, seq, eot, data)
 				tpcb->tp_win_recv = tp_start_win << 8;
 				LOCAL_CREDIT(tpcb);
 				CONG_INIT_SAMPLE(tpcb);
-				tpcb->tp_ackrcvd = 0;
-			}
-			else
+			} else
 				LOCAL_CREDIT(tpcb);
 
 
@@ -431,68 +431,71 @@ tp_emit(dutype,	tpcb, seq, eot, data)
 		case AK_TPDU_type:/* ak not used in class 0 */
 			ASSERT( tpcb->tp_class != TP_CLASS_0); 
 			data = (struct mbuf *)0;
-			{ 	SeqNum olduwe = tpcb->tp_sent_uwe;
+			olduwe = tpcb->tp_sent_uwe;
 
+			if (seq != tpcb->tp_sent_rcvnxt || tpcb->tp_rsycnt == 0) {
+				LOCAL_CREDIT( tpcb ); 
 				tpcb->tp_sent_uwe = 
 					SEQ(tpcb,tpcb->tp_rcvnxt + tpcb->tp_lcredit -1);
-				LOCAL_CREDIT( tpcb ); 
 				tpcb->tp_sent_lcdt = tpcb->tp_lcredit;
+				acking_ooo = 0;
+			} else
+				acking_ooo = 1;
 
-				IFDEBUG(D_RENEG)
-					/* occasionally fake a reneging so 
-						you can test subsequencing */
-					if( olduwe & 0x1 ) {
-						tpcb->tp_reneged = 1;
-						IncStat(ts_ldebug);
-					}
-				ENDDEBUG
-				/* Are we about to reneg on credit? 
-				 * When might we do so?
-				 *	a) when using optimistic credit (which we no longer do).
-				 *  b) when drain() gets implemented (not in the plans).
-				 *  c) when D_RENEG is on.
-				 *  d) when DEC BIT response is implemented.
-				 *	(not- when we do this, we'll need to implement flow control
-				 *	confirmation)
-				 */
-				if( SEQ_LT(tpcb, tpcb->tp_sent_uwe, olduwe) ) {
+			IFDEBUG(D_RENEG)
+				/* occasionally fake a reneging so 
+					you can test subsequencing */
+				if( olduwe & 0x1 ) {
 					tpcb->tp_reneged = 1;
-					IncStat(ts_lcdt_reduced);
-					IFTRACE(D_CREDIT)
-						tptraceTPCB(TPPTmisc, 
-							"RENEG: olduwe newuwe lcredit rcvnxt",
-							olduwe,
-							tpcb->tp_sent_uwe, tpcb->tp_lcredit,
-							tpcb->tp_rcvnxt);
-					ENDTRACE
+					IncStat(ts_ldebug);
 				}
-
-				IFPERF(tpcb)
-					/* new lwe is less than old uwe means we're
-					 * acking before we received a whole window full
-					 */
-					if( SEQ_LT( tpcb, tpcb->tp_rcvnxt, olduwe) ) {
-						/* tmp1 = number of pkts fewer than the full window */
-						register int tmp1 = 
-							(int) SEQ_SUB( tpcb, olduwe, tpcb->tp_rcvnxt);
-
-						if(tmp1 > TP_PM_MAX)
-							tmp1 = TP_PM_MAX;
-						IncPStat( tpcb,  tps_ack_early[tmp1] );
-
-						/* tmp1 = amt of new cdt we're advertising */
-						tmp1 = SEQ_SUB( tpcb, seq, tpcb->tp_sent_rcvnxt);
-						if(tmp1 > TP_PM_MAX )
-							tmp1 = TP_PM_MAX;
-
-						IncPStat( tpcb, 
-								tps_cdt_acked [ tmp1 ]
-								[ ((tpcb->tp_lcredit > TP_PM_MAX)?
-									TP_PM_MAX:tpcb->tp_lcredit) ] );
-
-					}
-				ENDPERF
+			ENDDEBUG
+			/* Are we about to reneg on credit? 
+			 * When might we do so?
+			 *	a) when using optimistic credit (which we no longer do).
+			 *  b) when drain() gets implemented (not in the plans).
+			 *  c) when D_RENEG is on.
+			 *  d) when DEC BIT response is implemented.
+			 *	(not- when we do this, we'll need to implement flow control
+			 *	confirmation)
+			 */
+			if( SEQ_LT(tpcb, tpcb->tp_sent_uwe, olduwe) ) {
+				tpcb->tp_reneged = 1;
+				IncStat(ts_lcdt_reduced);
+				IFTRACE(D_CREDIT)
+					tptraceTPCB(TPPTmisc, 
+						"RENEG: olduwe newuwe lcredit rcvnxt",
+						olduwe,
+						tpcb->tp_sent_uwe, tpcb->tp_lcredit,
+						tpcb->tp_rcvnxt);
+				ENDTRACE
 			}
+			IFPERF(tpcb)
+				/* new lwe is less than old uwe means we're
+				 * acking before we received a whole window full
+				 */
+				if( SEQ_LT( tpcb, tpcb->tp_rcvnxt, olduwe) ) {
+					/* tmp1 = number of pkts fewer than the full window */
+					register int tmp1 = 
+						(int) SEQ_SUB( tpcb, olduwe, tpcb->tp_rcvnxt);
+
+					if(tmp1 > TP_PM_MAX)
+						tmp1 = TP_PM_MAX;
+					IncPStat( tpcb,  tps_ack_early[tmp1] );
+
+					/* tmp1 = amt of new cdt we're advertising */
+					tmp1 = SEQ_SUB( tpcb, seq, tpcb->tp_sent_rcvnxt);
+					if(tmp1 > TP_PM_MAX )
+						tmp1 = TP_PM_MAX;
+
+					IncPStat( tpcb, 
+							tps_cdt_acked [ tmp1 ]
+							[ ((tpcb->tp_lcredit > TP_PM_MAX)?
+								TP_PM_MAX:tpcb->tp_lcredit) ] );
+
+				}
+			ENDPERF
+
 			IFTRACE(D_ACKSEND)
 				tptraceTPCB(TPPTack, seq, tpcb->tp_lcredit, tpcb->tp_sent_uwe, 
 					tpcb->tp_r_subseq, 0);
@@ -514,7 +517,8 @@ tp_emit(dutype,	tpcb, seq, eot, data)
 				hdr->tpdu_AKseq = seq;
 				hdr->tpdu_AKcdt = tpcb->tp_lcredit;
 			}
-			if ((tpcb->tp_class == TP_CLASS_4) && tpcb->tp_reneged ) {
+			if ((tpcb->tp_class == TP_CLASS_4) &&
+				(tpcb->tp_reneged || acking_ooo)) {
 				/* 
 				 * Ack subsequence parameter req'd if WE reneged on 
 				 * credit offered.  (ISO 8073, 12.2.3.8.2, p. 74)
@@ -594,8 +598,14 @@ tp_emit(dutype,	tpcb, seq, eot, data)
 			}
 			tpcb->tp_reneged = 0;
 			tpcb->tp_sent_rcvnxt = seq;
-			tp_ctimeout(tpcb->tp_refp, TM_sendack, 
-				(int)tpcb->tp_keepalive_ticks);
+			if (tpcb->tp_fcredit == 0) {
+				int timo = tpcb->tp_keepalive_ticks;
+				if (tpcb->tp_rxtshift < TP_MAXRXTSHIFT)
+					tpcb->tp_rxtshift++;
+				timo = min(timo, ((int)tpcb->tp_dt_ticks) << tpcb->tp_rxtshift);
+				tp_ctimeout(tpcb, TM_sendack, timo);
+			} else
+				tp_ctimeout(tpcb, TM_sendack, tpcb->tp_keepalive_ticks);
 			IncStat(ts_AK_sent);
 			IncPStat(tpcb, tps_AK_sent);
 			IFDEBUG(D_ACKSEND)
@@ -691,9 +701,13 @@ tp_emit(dutype,	tpcb, seq, eot, data)
 			tpcb->tp_nlproto->nlp_output, tpcb->tp_netservice, error, datalen); 
 	ENDTRACE
 done:
-	if( error == E_CO_QFULL ) {
-		tp_quench(tpcb, PRC_QUENCH);
-		return 0;
+	if (error) {
+		if (dutype == AK_TPDU_type)
+			tp_ctimeout(tpcb, TM_sendack, 1);
+		if (error == E_CO_QFULL) {
+			tp_quench(tpcb, PRC_QUENCH);
+			return 0;
+		}
 	}
 	return error;
 }

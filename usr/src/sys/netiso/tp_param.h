@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_param.h	7.9 (Berkeley) %G%
+ *	@(#)tp_param.h	7.10 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -70,10 +70,10 @@ extern int N_TPREF;
 	 * wraparound in checksumming
 	 * (No mtu is likely to be larger than 4K anyway...)
 	 */
-#define		TP_NRETRANS			5 /* was 1; cray uses 6 */
+#define		TP_NRETRANS			12		/* TCP_MAXRXTSHIFT + 1 */
+#define		TP_MAXRXTSHIFT		6		/* factor of 64 */
 #define		TP_MAXPORT			0xefff
 
-#define		TP_RTT_NUM			0x7
 /* ALPHA: to be used in the context: gain= 1/(2**alpha), or 
  * put another way, gaintimes(x) (x)>>alpha (forgetting the case alpha==0) 
  */
@@ -308,7 +308,7 @@ bcopy((caddr_t)&(((struct tp_vbp *)(src))->tpv_val),(caddr_t)&(dst),sizeof(type)
 #if defined(ARGO_DEBUG)&&!defined(LOCAL_CREDIT_EXPAND)
 #define LOCAL_CREDIT(tpcb) tp_local_credit(tpcb)
 #else
-#define LOCAL_CREDIT(tpcb) {\
+#define LOCAL_CREDIT(tpcb) { if (tpcb->tp_rsycnt == 0) {\
     register struct sockbuf *xxsb = &((tpcb)->tp_sock->so_rcv);\
     register int xxi = sbspace(xxsb);\
     xxi = (xxi<0) ? 0 : ((xxi) / (tpcb)->tp_l_tpdusize);\
@@ -318,18 +318,14 @@ bcopy((caddr_t)&(((struct tp_vbp *)(src))->tpv_val),(caddr_t)&(dst),sizeof(type)
         if (xxi < (tpcb)->tp_lcredit) { \
             (tpcb)->tp_lcredit = xxi; \
         } \
-    } \
-    else { \
+    } else \
         (tpcb)->tp_lcredit = xxi; \
-    } \
-}
+} }
 #endif ARGO_DEBUG
 
 #ifdef KERNEL
-#ifdef ARGO_DEBUG
 #include "syslog.h"
 #define printf logpri(LOG_DEBUG),addlog
-#endif
 
 #ifndef  tp_NSTATES 
 
