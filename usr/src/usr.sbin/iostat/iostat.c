@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)iostat.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)iostat.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -174,14 +174,30 @@ main(argc, argv)
 	 * supplied as arguments and default drives.  If everything isn't
 	 * filled in and there are drives not taken care of, display the first
 	 * few that fit.
+	 *
+	 * The backward compatibility #ifdefs permit the syntax:
+	 *	iostat [ drives ] [ interval [ count ] ]
 	 */
-	for (ndrives = 0; *argv; ++argv)
+#define	BACKWARD_COMPATIBILITY
+	for (ndrives = 0; *argv; ++argv) {
+#ifdef	BACKWARD_COMPATIBILITY
+		if (isdigit(**argv))
+			break;
+#endif
 		for (i = 0; i < dk_ndrive; i++) {
 			if (strcmp(dr_name[i], *argv))
 				continue;
 			dr_select[i] = 1;
 			++ndrives;
 		}
+	}
+#ifdef	BACKWARD_COMPATIBILITY
+	if (*argv) {
+		interval = atoi(*argv);
+		if (*++argv)
+			reps = atoi(*argv);
+	}
+#endif
 	for (i = 0; i < dk_ndrive && ndrives < 4; i++) {
 		if (dr_select[i] || dk_wpms[i] == 0)
 			continue;
