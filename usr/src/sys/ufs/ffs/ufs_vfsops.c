@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vfsops.c	7.66 (Berkeley) %G%
+ *	@(#)ufs_vfsops.c	7.67 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -184,8 +184,8 @@ ufs_hang_addrlist(mp, argp)
 			goto out;
 		}
 	}
-	rn = (*rnh->rnh_add)((caddr_t)saddr, (caddr_t)smask, rnh->rnh_treetop,
-	    np->netc_rnodes);
+	rn = (*rnh->rnh_addaddr)((caddr_t)saddr, (caddr_t)smask, rnh,
+		np->netc_rnodes);
 	if (rn == 0 || np != (struct netcred *)rn) { /* already exists */
 		error = EPERM;
 		goto out;
@@ -221,8 +221,7 @@ ufs_free_addrlist(ump)
 
 	for (i = 0; i <= AF_MAX; i++)
 		if (rnh = ump->um_rtable[i]) {
-			(*rnh->rnh_walk)(rnh->rnh_treetop,
-				ufs_free_netcred, (caddr_t)0);
+			(*rnh->rnh_walktree)(rnh, ufs_free_netcred, (caddr_t)0);
 			free((caddr_t)rnh, M_RTABLE);
 			ump->um_rtable[i] = 0;
 		}
@@ -263,7 +262,7 @@ ufs_check_export(mp, ufhp, nam, vpp, exflagsp, credanonp)
 		rnh = ump->um_rtable[saddr->sa_family];
 		if (rnh != NULL) {
 			np = (struct netcred *)
-			    (*rnh->rnh_match)((caddr_t)saddr, rnh->rnh_treetop);
+			    (*rnh->rnh_matchaddr)((caddr_t)saddr, rnh);
 			if (np && np->netc_rnodes->rn_flags & RNF_ROOT)
 				np = NULL;
 		}
