@@ -3,18 +3,13 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.5	(Berkeley)	%G%
+#	@(#)Makefile	5.6	(Berkeley)	%G%
 #
 DESTDIR=
 CFLAGS=	-O
 SRCS=	vmsprep.c ansitape.c
 MSRC=	vmsprep.1 ansitape.1
 MOBJ=	vmsprep.0 ansitape.0
-
-.SUFFIXES: .1 .0
-
-.1.0:
-	/usr/man/manroff $*.1 > $*.0
 
 all: ansitape vmsprep
 
