@@ -70,22 +70,33 @@ gotif:
 	 * If source address not specified yet, use address
 	 * of outgoing interface.
 	 */
-	if (ip->ip_src.s_addr == 0)
+	if (ip->ip_src.s_addr == INADDR_ANY)
 		ip->ip_src.s_addr =
 		    ((struct sockaddr_in *)&ifp->if_addr)->sin_addr.s_addr;
 
 	/*
-	 * Have interface for packet.  Allow
-	 * broadcasts only by authorized users.
+	 * Map broadcast address to hardware's broadcast
+	 * address and verify user is allowed to send
+	 * such a packet.
 	 */
-	if (!allowbroadcast && (ifp->if_flags & IFF_BROADCAST)) {
+	if (in_lnaof(dst) == INADDR_ANY) {
 		struct sockaddr_in *sin;
 
-		sin = (struct sockaddr_in *)&ifp->if_broadaddr;
-		if (sin->sin_addr.s_addr == ip->ip_dst.s_addr) {
+		if ((ifp->if_flags & IFF_BROADCAST) == 0) {
+			error = EADDRNOTAVAIL;
+			goto bad;
+		}
+		if (!allowbroadcast) {
 			error = EACCES;
 			goto bad;
 		}
+		/* don't allow broadcast messages to be fragmented */
+		if (ip->ip_len > ifp->if_mtu) {
+			error = EMSGSIZE;
+			goto bad;
+		}
+		sin = (struct sockaddr_in *)&ifp->if_broadaddr;
+		dst.sin_addr = sin->sin_addr;
 	}
 
 	/*
