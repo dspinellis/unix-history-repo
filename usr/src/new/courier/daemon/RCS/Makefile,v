@@ -1,0 +1,34 @@
+head     1.1;
+access   ;
+symbols  ;
+locks    ;
+comment  @@;
+
+
+1.1
+date     83.03.01.16.19.00;  author cooper;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Makefile for Courier daemon.
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@OBJS = courierd.o
+CFLAGS =  -O
+LIBS = -ljobs
+DESTDIR = /etc
+
+courierd:	$(OBJS)
+	$(CC) $(CFLAGS) -o courierd $(OBJS) $(LIBS)
+
+install:	courierd
+	install -s courierd $(DESTDIR)
+@
