@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)uucpd.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)uucpd.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -33,15 +33,17 @@ static char sccsid[] = "@(#)uucpd.c	5.7 (Berkeley) %G%";
  * uucico's TCP channel causes this server to be run at the remote end.
  */
 
-#include "uucp.h"
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/wait.h>
+#include <sys/ioctl.h>
+#include <sys/file.h>
+#include <netinet/in.h>
 #include <netdb.h>
 #include <signal.h>
 #include <errno.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <sys/wait.h>
-#include <sys/ioctl.h>
 #include <pwd.h>
+#include <stdio.h>
 #include "pathnames.h"
 
 struct	sockaddr_in hisctladdr;
@@ -152,7 +154,7 @@ struct sockaddr_in *sinp;
 		fprintf(stderr, "user unknown\n");
 		return;
 	}
-	if (strcmp(pw->pw_shell, UUCICO)) {
+	if (strcmp(pw->pw_shell, _PATH_UUCICO)) {
 		fprintf(stderr, "Login incorrect.");
 		return;
 	}
