@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pax.h	1.1 (Berkeley) %G%
+ *	@(#)pax.h	1.2 (Berkeley) %G%
  */
 
 /*
@@ -23,7 +23,7 @@
 #define DEVBLK		8192	/* default read blksize for devices */
 #define FILEBLK		10240	/* default read blksize for files */
 #define PAXPATHLEN	3072	/* maximium path length for pax. MUST be */
-				/* longer than the system max */
+				/* longer than the system MAXPATHLEN */
 
 /*
  * Pax modes of operation
@@ -52,11 +52,11 @@
  * form the archive. Only those routines which deal directly with the archive 
  * are tailored to the oddities of the specifc format. All other routines are
  * independent of the archive format. Data flow in and out of the format
- * dependnent routines pass pointers to ARCHD structure (described below).
+ * dependent routines pass pointers to ARCHD structure (described below).
  */
 typedef struct {
 	char *name;		/* name of format, this is the name the user */
-				/* gives to -x to select it. */
+				/* gives to -x option to select it. */
 	int bsz;		/* default block size. used when the user */
 				/* does not specify a blocksize for writing */
 				/* Appends continue to with the blocksize */
@@ -66,38 +66,41 @@ typedef struct {
 				/* Headers are assumed to fit in a BLKMULT. */
 				/* If they are bigger, get_head() and */
 				/* get_arc() must be adjusted */
-	int udev;		/* does append require unique dev/ino. some */
+	int udev;		/* does append require unique dev/ino? some */
 				/* formats use the device and inode fields */
 				/* to specify hard links. when members in */
 				/* the archive have the same inode/dev they */
 				/* are assumed to be hard links. During */
 				/* append we may have to generate unique ids */
-				/* to avoid creating incorrect links */
+				/* to avoid creating incorrect hard links */
 	int hlk;		/* does archive store hard links info? if */
-				/* not we do not bother to look for them */
-				/* during write operations */
+				/* not, we do not bother to look for them */
+				/* during archive write operations */
 	int blkalgn;		/* writes must be aligned to blkalgn boundry */
 	int inhead;		/* is the trailer encoded in a valid header? */
-				/* if not, trailers are assumed to be */
-				/* invalid headers */
+				/* if not, trailers are assumed to be found */
+				/* in invalid headers (i.e like tar) */
 	int (*id)();		/* checks if a buffer is a valid header */
 				/* returns 1 if it is, o.w. returns a 0 */
 	int (*st_rd)();		/* initialize routine for read. so format */
 				/* can set up tables etc before it starts */
-				/* reading */
+				/* reading an archive */
 	int (*rd)();		/* read header routine. passed a pointer to */
 				/* ARCHD. It must extract the info from the */
 				/* format and store it in the ARCHD struct. */
+				/* This routine is expected to fill all the */
+				/* fields in the ARCHD (including stat buf) */
 				/* 0 is returned when a valid header is */
 				/* found. -1 when not valid. This routine */
 				/* set the skip and pad fields so the format */
 				/* independent routines know the amount of */
-				/* padding and the number of bytes to get to */
-				/* the next file header */
-	off_t (*end_rd)();	/* read is over. Allows format to clean up */
-				/* and MUST return the length of the trailer */
-				/* record (so append knows how many bytes */
-				/* to move back to rewrite the trailer */
+				/* padding and the number of bytes of data */
+				/* which follow the header. This info is */
+				/* used skip to the next file header */
+	off_t (*end_rd)();	/* read cleanup. Allows format to clean up */
+				/* and MUST RETURN THE LENGTH OF THE TRAILER */
+				/* RECORD (so append knows how many bytes */
+				/* to move back to rewrite the trailer) */
 	int (*st_wr)();		/* initialize routine for write operations */
 	int (*wr)();		/* write archive header. Passed an ARCHD */
 				/* filled with the specs on the next file to */
@@ -120,10 +123,10 @@ typedef struct {
 				/* this block, no point in looking at it)  */
 				/* CAUTION: parameters to this function are */
 				/* different for trailers inside or outside */
-				/* of headers. Se get_head() for details */
-	int (*rd_data)();	/* read/process file data on the archive */
-	int (*wr_data)();	/* read/process file data on the archive */
-	int (*options)();	/* process format options (-x) flags */
+				/* of headers. See get_head() for details */
+	int (*rd_data)();	/* read/process file data from the archive */
+	int (*wr_data)();	/* write/process file data to the archive */
+	int (*options)();	/* process format specific options (-o) */
 } FSUB;
 
 /*
@@ -147,9 +150,10 @@ typedef struct pattern {
  * the format independent routines and the format specific routines. When
  * new archive formats are added, they must accept requests and supply info
  * encoded in a structure of this type. The name fields are declared statically
- * here. The cost of malloc() and free on every archive member was found to be
- * excessive. Since there is only ONE of these flowting around, size is not a
- * big consideration.
+ * here, as there is only ONE of these floating around, size is not a major
+ * consideration. Eventually converting the name fields to a dynamic length
+ * may be required if and when the supporting operating system removes all
+ * restrictions on the length of pathnames it will resolve.
  */
 typedef struct {
 	int nlen;			/* file name length */
@@ -161,7 +165,9 @@ typedef struct {
 	struct stat sb;			/* stat buffer see stat(2) */
 	off_t pad;			/* bytes of padding after file xfer */
 	off_t skip;			/* bytes of real data after header */
-					/* the st_size field may not apply */
+					/* IMPORTANT. The st_size field does */
+					/* not always indicate the amount of */
+					/* data following the header. */
 	u_long crc;			/* file crc */
 	int type;			/* type of file node */
 #define PAX_DIR		1		/* directory */
@@ -172,7 +178,7 @@ typedef struct {
 #define PAX_SCK		6		/* socket */
 #define PAX_FIF		7		/* fifo */
 #define PAX_HLK		8		/* hard link */
-#define PAX_HRG		9		/* hard link (to a file if known) */
+#define PAX_HRG		9		/* hard link to a regular file */
 #define PAX_CTG		10		/* high performance file */ 
 } ARCHD;
 
@@ -202,3 +208,4 @@ typedef struct oplist {
  */
 #define HEX	16
 #define OCT	8
+#define _PAX_	1
