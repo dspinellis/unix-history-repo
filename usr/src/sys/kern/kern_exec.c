@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_exec.c	7.15 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -515,7 +515,7 @@ getxfile(vp, ep, nargc, uid, gid, cred)
 	mtpr(DCK, p->p_dkey);
 #endif
 	if (pagi && p->p_textp)
-		vinifod((struct fpte *)dptopte(p, 0),
+		vinifod(u.u_procp, (struct fpte *)dptopte(p, 0),
 		    PG_FTEXT, p->p_textp->x_vptr,
 		    (long)(1 + ts/CLSIZE), (size_t)btoc(ep->a_data));
 
@@ -524,8 +524,6 @@ getxfile(vp, ep, nargc, uid, gid, cred)
 	mtpr(TBIA, 0);
 #endif
 
-	if (u.u_error)
-		swkill(u.u_procp, "exec: I/O error mapping pages");
 	/*
 	 * set SUID/SGID protections, if no tracing
 	 */
