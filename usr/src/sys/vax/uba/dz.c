@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dz.c	6.9 (Berkeley) %G%
+ *	@(#)dz.c	6.10 (Berkeley) %G%
  */
 
 #include "dz.h"
@@ -85,8 +85,8 @@ struct	pdma dzpdma[NDZLINE];
 char	dz_speeds[] =
 	{ 0,020,021,022,023,024,0,025,026,027,030,032,034,036,037,0 };
  
-#ifndef PORTSELECTOR
-#define	ISPEED	B300
+#ifndef	PORTSELECTOR
+#define	ISPEED	B9600
 #define	IFLAGS	(EVENP|ODDP|ECHO)
 #else
 #define	ISPEED	B4800
@@ -238,19 +238,10 @@ dzrint(dz)
 		dzwait(dzaddr);		/* wait for them */
 		if (c & DZ_CD)		/* carrier status change? */
 		if (dzaddr->dzlcs & DZ_CD) {	/* carrier up? */
-			if ((tp->t_state&TS_CARR_ON) == 0) {
-				wakeup((caddr_t)&tp->t_rawq);
-				tp->t_state |= TS_CARR_ON;
-			}
-		} else {	/* no carrier */
-			if (tp->t_state&TS_CARR_ON) {
-				gsignal(tp->t_pgrp, SIGHUP);
-				gsignal(tp->t_pgrp, SIGCONT);
-				dzaddr->dzlcs = DZ_ACK|(c&7);
-				ttyflush(tp, FREAD|FWRITE);
-			}
-			tp->t_state &= ~TS_CARR_ON;
-		}
+			/* carrier present */
+			(void)(*linesw[tp->t_line].l_modem)(tp, 1);
+		} else if ((*linesw[tp->t_line].l_modem)(tp, 0) == 0)
+			dzaddr->dzlcs = DZ_ACK|(c&7);
 	}
 	while ((c = dzaddr->dzrbuf) < 0) {	/* char present */
 		dzchars[dz]++;
@@ -262,7 +253,7 @@ dzrint(dz)
 #ifdef PORTSELECTOR
 			if ((tp->t_state&TS_WOPEN) == 0)
 #endif
-			continue;
+				continue;
 		}
 		if (c&DZ_FE)
 			if (tp->t_flags & RAW)
@@ -594,23 +585,11 @@ dzscan()
 			car = dzaddr->dzmsr&bit;
 		if (car) {
 			/* carrier present */
-			if ((tp->t_state & TS_CARR_ON) == 0) {
-				wakeup((caddr_t)&tp->t_rawq);
-				tp->t_state |= TS_CARR_ON;
-			}
-		} else {
-			if ((tp->t_state&TS_CARR_ON) &&
-			    (tp->t_flags&NOHANG) == 0) {
-				/* carrier lost */
-				if (tp->t_state&TS_ISOPEN) {
-					gsignal(tp->t_pgrp, SIGHUP);
-					gsignal(tp->t_pgrp, SIGCONT);
-					dzaddr->dzdtr &= ~bit;
-					ttyflush(tp, FREAD|FWRITE);
-				}
-				tp->t_state &= ~TS_CARR_ON;
-			}
-		}
+			if ((tp->t_state & TS_CARR_ON) == 0)
+				(void)(*linesw[tp->t_line].l_modem)(tp, 1);
+		} else if ((tp->t_state&TS_CARR_ON) &&
+		    (*linesw[tp->t_line].l_modem)(tp, 0) == 0)
+			dzaddr->dzdtr &= ~bit;
 	}
 	for (i = 0; i < NDZ; i++) {
 		ave(dzrate[i], dzchars[i], 8);
