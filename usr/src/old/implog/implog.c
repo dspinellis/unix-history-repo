@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)implog.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)implog.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -224,7 +224,7 @@ process(l, f)
 	if (ip->il_format != IMP_NFF)
 		fn = impundef;
 	else {
-		for (mp = mtypes; mp->m_type != -1; mp++)
+		for (mp = mtypes; mp->m_type != (u_char)-1; mp++)
 			if (mp->m_type == ip->il_mtype)
 				break;
 		fn = mp->m_func;

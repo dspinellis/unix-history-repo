@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setup.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)setup.c	5.15 (Berkeley) %G%";
 #endif not lint
 
 #define DKTYPENAMES
@@ -288,6 +288,7 @@ calcsb(dev, devfd, fs)
 	register struct partition *pp;
 	register char *cp;
 	int i;
+	struct disklabel *getdisklabel();
 
 	cp = index(dev, '\0') - 1;
 	if (cp == (char *)-1 || (*cp < 'a' || *cp > 'h') && !isdigit(*cp)) {
