@@ -1,4 +1,3 @@
-conf/files	optional @(#)files	6.9 (Berkeley) %G%
 net/af.c		standard
 net/if.c		standard
 net/if_loop.c		optional loop
@@ -9,20 +8,20 @@ netimp/if_imp.c		optional imp inet
 netimp/if_imphost.c	optional imp inet
 netimp/raw_imp.c	optional imp inet
 netinet/if_ether.c	optional ether inet
-netinet/in.c		optional inet berktcp
-netinet/in_pcb.c	optional inet berktcp
-netinet/in_proto.c	optional inet berktcp
-netinet/ip_icmp.c	optional inet berktcp
-netinet/ip_input.c	optional inet berktcp
-netinet/ip_output.c	optional inet berktcp
-netinet/raw_ip.c	optional inet berktcp
-netinet/tcp_debug.c	optional inet berktcp
-netinet/tcp_input.c	optional inet berktcp
-netinet/tcp_output.c	optional inet berktcp
-netinet/tcp_subr.c	optional inet berktcp
-netinet/tcp_timer.c	optional inet berktcp
-netinet/tcp_usrreq.c	optional inet berktcp
-netinet/udp_usrreq.c	optional inet berktcp
+netinet/in.c		optional inet
+netinet/in_pcb.c	optional inet
+netinet/in_proto.c	optional inet
+netinet/ip_icmp.c	optional inet
+netinet/ip_input.c	optional inet
+netinet/ip_output.c	optional inet
+netinet/raw_ip.c	optional inet
+netinet/tcp_debug.c	optional inet
+netinet/tcp_input.c	optional inet
+netinet/tcp_output.c	optional inet
+netinet/tcp_subr.c	optional inet
+netinet/tcp_timer.c	optional inet
+netinet/tcp_usrreq.c	optional inet
+netinet/udp_usrreq.c	optional inet
 netns/idp_usrreq.c	optional ns
 netns/ns.c		optional ns
 netns/ns_error.c	optional ns
@@ -101,29 +100,29 @@ sys/vm_sw.c		standard
 sys/vm_swap.c		standard
 sys/vm_swp.c		standard
 sys/vm_text.c		standard
-bbnnet/icmp.c		optional inet bbnnet
-bbnnet/ic_output.c	optional inet bbnnet
-bbnnet/in.c		optional inet bbnnet
-bbnnet/in_pcb.c		optional inet bbnnet
-bbnnet/in_proto.c	optional inet bbnnet
-bbnnet/ip_input.c	optional inet bbnnet
-bbnnet/ip_output.c	optional inet bbnnet
-bbnnet/ip_usrreq.c	optional inet bbnnet
-bbnnet/raw_input.c	optional inet bbnnet
-bbnnet/tcp_input.c	optional inet bbnnet
-bbnnet/tcp_prim.c	optional inet bbnnet
-bbnnet/tcp_procs.c	optional inet bbnnet
-bbnnet/tcp_states.c	optional inet bbnnet
-bbnnet/tcp_usrreq.c	optional inet bbnnet
-bbnnet/udp_usrreq.c	optional inet bbnnet
-bbnnet/udp.c		optional inet bbnnet
-bbnnet/hmp.c		optional inet bbnnet hmp
-bbnnet/hmp_subr.c	optional inet bbnnet hmp
-bbnnet/hmp_traps.c	optional inet bbnnet hmp
-bbnnet/rdp_fsm.c	optional inet bbnnet rdp
-bbnnet/rdp_cksum.s	optional inet bbnnet
-bbnnet/rdp_input.c	optional inet bbnnet rdp
-bbnnet/rdp_prim.c	optional inet bbnnet rdp
-bbnnet/rdp_states.c	optional inet bbnnet rdp
-bbnnet/rdp_subr.c	optional inet bbnnet rdp
-bbnnet/rdp_usrreq.c	optional inet bbnnet rdp
+bbnnet/icmp.c		optional bbnnet
+bbnnet/ic_output.c	optional bbnnet
+bbnnet/in.c		optional bbnnet
+bbnnet/in_pcb.c		optional bbnnet
+bbnnet/in_proto.c	optional bbnnet
+bbnnet/ip_input.c	optional bbnnet
+bbnnet/ip_output.c	optional bbnnet
+bbnnet/ip_usrreq.c	optional bbnnet
+bbnnet/raw_input.c	optional bbnnet
+bbnnet/tcp_input.c	optional bbnnet
+bbnnet/tcp_prim.c	optional bbnnet
+bbnnet/tcp_procs.c	optional bbnnet
+bbnnet/tcp_states.c	optional bbnnet
+bbnnet/tcp_usrreq.c	optional bbnnet
+bbnnet/udp_usrreq.c	optional bbnnet
+bbnnet/udp.c		optional bbnnet
+bbnnet/hmp.c		optional bbnnet hmp
+bbnnet/hmp_subr.c	optional bbnnet hmp
+bbnnet/hmp_traps.c	optional bbnnet hmp
+bbnnet/rdp_fsm.c	optional bbnnet rdp
+bbnnet/rdp_cksum.s	optional bbnnet
+bbnnet/rdp_input.c	optional bbnnet rdp
+bbnnet/rdp_prim.c	optional bbnnet rdp
+bbnnet/rdp_states.c	optional bbnnet rdp
+bbnnet/rdp_subr.c	optional bbnnet rdp
+bbnnet/rdp_usrreq.c	optional bbnnet rdp
