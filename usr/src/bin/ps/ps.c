@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ps.c	5.47 (Berkeley) %G%";
+static char sccsid[] = "@(#)ps.c	5.48 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -52,7 +52,6 @@ static int needuser, needcomm, needenv;
 
 enum sort { DEFAULT, SORTMEM, SORTCPU } sortby = DEFAULT;
 
-static void	 err __P((const char *, ...));
 static char	*fmt __P((char **(*)(kvm_t *, const struct kinfo_proc *, int),
 		    KINFO *, char *, int));
 static char	*kludge_oldps_options __P((char *));
