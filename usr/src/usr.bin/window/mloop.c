@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)mloop.c	3.6 %G%";
+static char sccsid[] = "@(#)mloop.c	3.7 %G%";
 #endif
 
 #include "defs.h"
@@ -16,6 +16,7 @@ mloop()
 				(void) wwgetc();
 			error("Process died.");
 		} else {
+			register struct ww *w = wwcurwin;
 			register char *p;
 			register n;
 
@@ -25,8 +26,9 @@ mloop()
 				     p++)
 					;
 				if ((n = p - wwibp) > 0) {
-					(void) write(wwcurwin->ww_pty,
-						wwibp, n);
+					if (!w->ww_ispty && w->ww_stopped)
+						startwin(w);
+					(void) write(w->ww_pty, wwibp, n);
 					wwibp = p;
 				}
 				if (wwpeekc() == escapec) {
