@@ -1,6 +1,6 @@
-#	Makefile	4.2	82/06/03
+#	Makefile	4.3	82/10/23
 #
-CFLAGS = -n -O
+CFLAGS = -O
 
 all:	sh
 
