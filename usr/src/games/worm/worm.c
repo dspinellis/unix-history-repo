@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)worm.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)worm.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -77,9 +77,7 @@ char **argv;
 	signal(SIGALRM, wake);
 	signal(SIGINT, leave);
 	signal(SIGQUIT, leave);
-#ifdef SIGTSTP
 	signal(SIGTSTP, suspend);	/* process control signal */
-#endif
 	initscr();
 	crmode();
 	noecho();
@@ -250,7 +248,7 @@ crash()
 	clear();
 	move(23, 0);
 	refresh();
-	printf("Well you ran into something and the game is over.\n");
+	printf("Well, you ran into something and the game is over.\n");
 	printf("Your final score was %d\n", score);
 	leave();
 }
@@ -263,15 +261,8 @@ suspend()
 	refresh();
 	endwin();
 	fflush(stdout);
-#ifdef SIGTSTP
 	kill(getpid(), SIGTSTP);
 	signal(SIGTSTP, suspend);
-#else
-	sh = getenv("SHELL");
-	if (sh == NULL)
-		sh = "/bin/sh";
-	system(sh);
-#endif
 	crmode();
 	noecho();
 	setup();
