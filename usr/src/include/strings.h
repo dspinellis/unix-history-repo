@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)strings.h	5.5 (Berkeley) %G%
+ *	@(#)strings.h	5.6 (Berkeley) %G%
  */
 
 /* Routines described in string(3) */
@@ -23,7 +23,7 @@ int	strcmp(), strncmp(), strcasecmp(), strncasecmp(), strlen();
 
 /* Routines described in memory(BA_LIB); System V compatibility */
 char	*memccpy(), *memchr(), *memcpy(), *memset(), *strchr(),
-	*strpbrk(), *strrchr(), *strsep(), *strtok();
+	*strdup(), *strpbrk(), *strrchr(), *strsep(), *strtok();
 int	memcmp(), strcspn(), strspn();
 
 /* Routines from ANSI X3J11 */
