@@ -1,6 +1,8 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)tmps.c 1.12 %G%";
+#ifndef lint
+static char sccsid[] = "@(#)tmps.c 1.9.1.1 %G%";
+#endif
 
 #include "whoami.h"
 #include "0.h"
@@ -60,7 +62,9 @@ tmpinit(cbn)
 	int	cbn;
 {
 	struct om	*sizesp = &sizes[cbn];
+#	ifdef PC
 	int	i;
+#	endif PC
 
 	sizesp->om_max = -DPOFF1;
 	sizesp->curtmps.om_off = -DPOFF1;
@@ -75,6 +79,7 @@ tmpinit(cbn)
 /*
  * allocate runtime temporary variables
  */
+/*ARGSUSED*/
 struct nl *
 tmpalloc(size, type, mode)
 	long size;
@@ -146,7 +151,7 @@ tmpalloc(size, type, mode)
 	if ( offset < op->om_max ) {
 	        op->om_max = offset;
 	}
-	nlp = defnl( 0 , VAR , type , offset );
+	nlp = defnl( (char *) 0 , VAR , type , offset );
 #	ifdef PC
 	    nlp -> extra_flags = NLOCAL;
 	    putlbracket(ftnno, op);
@@ -157,13 +162,14 @@ tmpalloc(size, type, mode)
 /*
  * deallocate runtime temporary variables
  */
+/*ARGSUSED*/
 tmpfree(restore)
     register struct tmps	*restore;
 {
+#   ifdef PC
     register struct om		*op = &sizes[ cbn ];
     bool			change = FALSE;
 
-#   ifdef PC
 #	ifdef vax
 	    if (restore->next_avail[REG_GENERAL]
 		> op->curtmps.next_avail[REG_GENERAL]) {
@@ -186,16 +192,14 @@ tmpfree(restore)
 		    change = TRUE;
 	    }
 #	endif mc68000
-#   endif PC
     if (restore->om_off > op->curtmps.om_off) {
 	    op->curtmps.om_off = restore->om_off;
 	    change = TRUE;
     }
-#   ifdef PC
 	if (change) {
 	    putlbracket(ftnno, op);
 	}
-#   endif PC
+#endif PC
 }
 
 #ifdef PC
