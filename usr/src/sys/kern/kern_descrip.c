@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_descrip.c	7.12 (Berkeley) %G%
+ *	@(#)kern_descrip.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -27,8 +27,9 @@
 #include "socket.h"
 #include "socketvar.h"
 #include "stat.h"
-
 #include "ioctl.h"
+
+#define	p_devtmp	p_logname[11]
 
 /*
  * Descriptor management.
@@ -446,8 +447,6 @@ flock(p, uap, retval)
 /*
  * File Descriptor pseudo-device driver (/dev/fd/).
  *
- * Fred Blonder - U of Maryland	11-Sep-1984
- *
  * Opening minor device N dup()s the file (if any) connected to file
  * descriptor N belonging to the calling process.  Note that this driver
  * consists of only the ``open()'' routine, because all subsequent
@@ -458,26 +457,38 @@ fdopen(dev, mode, type)
 	dev_t dev;
 	int mode, type;
 {
-	struct file *fp, *wfp;
-	int indx, dfd;
+	struct proc *p = u.u_procp;		/* XXX */
 
 	/*
-	 * XXX
-	 * Horrid kludge: u.u_r.r_val1 contains the value of the new file
-	 * descriptor, which was set before the call to vn_open() by copen()
-	 * in vfs_syscalls.c.
+	 * XXX Kludge: set p->p_devtmp to contain the value of the
+	 * the file descriptor being sought for duplication. The error 
+	 * return ensures that the vnode for this device will be released
+	 * by vn_open. Open will detect this special error and take the
+	 * actions in dupfdopen below. Other callers of vn_open or VOP_OPEN
+	 * will simply report the error.
 	 */
-	indx = u.u_r.r_val1;
+	p->p_devtmp = minor(dev);
+	return (ENODEV);
+}
+
+/*
+ * Duplicate the specified descriptor to a free descriptor.
+ */
+dupfdopen(indx, dfd, mode)
+	register int indx, dfd;
+	int mode;
+{
+	register struct file *wfp;
+	struct file *fp;
+	
+	/*
+	 * If the to-be-dup'd fd number is greater than the allowed number
+	 * of file descriptors, or the fd to be dup'd has already been
+	 * closed, reject.  Note, check for new == old is necessary as
+	 * falloc could allocate an already closed to-be-dup'd descriptor
+	 * as the new descriptor.
+	 */
 	fp = u.u_ofile[indx];
-
-	/*
-	 * File system device minor number is the to-be-dup'd fd number.
-	 * If it is greater than the allowed number of file descriptors,
-	 * or the fd to be dup'd has already been closed, reject.  Note,
- 	 * check for new == old is necessary as u_falloc could allocate
-	 * an already closed to-be-dup'd descriptor as the new descriptor.
-	 */
-	dfd = minor(dev);
 	if ((u_int)dfd >= NOFILE || (wfp = u.u_ofile[dfd]) == NULL ||
 	    fp == wfp)
 		return (EBADF);
@@ -486,18 +497,12 @@ fdopen(dev, mode, type)
 	 * Check that the mode the file is being opened for is a subset 
 	 * of the mode of the existing descriptor.
 	 */
-	if ((mode & (FREAD|FWRITE) | wfp->f_flag) != wfp->f_flag)
+	if (((mode & (FREAD|FWRITE)) | wfp->f_flag) != wfp->f_flag)
 		return (EACCES);
 	u.u_ofile[indx] = wfp;
 	u.u_pofile[indx] = u.u_pofile[dfd];
 	wfp->f_count++;
 	if (indx > u.u_lastfile)
 		u.u_lastfile = indx;
-
-	/*
-	 * Delete references to this pseudo-device by returning a special
-	 * error (EJUSTRETURN) that will cause all resources to be freed,
-	 * then detected and cleared by copen().
-	 */
-	return (EJUSTRETURN);			/* XXX */
+	return (0);
 }
