@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fd.c	7.6 (Berkeley) %G%
+ *	@(#)fd.c	7.7 (Berkeley) %G%
  */
 
 #include "fd.h"
@@ -300,6 +300,7 @@ Fdopen(dev, flags)
 Fdclose(dev, flags)
 	dev_t dev;
 {
+	return (0);
 }
 
 /****************************************************************************/
