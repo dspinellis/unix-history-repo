@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)swapgeneric.c	7.1 (Berkeley) %G%
+ *	@(#)swapgeneric.c	7.2 (Berkeley) %G%
  */
 
 #include "mba.h"
@@ -129,19 +129,6 @@ doswap:
 		rootdev = dumpdev;
 }
 
-getchar()
-{
-	register c;
-
-	while ((mfpr(RXCS)&RXCS_DONE) == 0)
-		;
-	c = mfpr(RXDB)&0177;
-	if (c == '\r')
-		c = '\n';
-	cnputc(c);
-	return (c);
-}
-
 gets(cp)
 	char *cp;
 {
@@ -150,7 +137,7 @@ gets(cp)
 
 	lp = cp;
 	for (;;) {
-		c = getchar() & 0177;
+		cnputc(c = cngetc());
 		switch (c) {
 		case '\n':
 		case '\r':

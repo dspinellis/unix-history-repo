@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)trap.h	7.1 (Berkeley) %G%
+ *	@(#)trap.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -26,3 +26,4 @@
 #define	T_COMPATFLT	11		/* compatibility mode fault */
 #define	T_PAGEFLT	12		/* page fault */
 #define	T_TABLEFLT	13		/* page table fault */
+#define	T_KDBTRAP	14		/* kernel debugger trap */
