@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)termcap.src	5.57 (Berkeley) %G%
+#	@(#)termcap.src	5.58 (Berkeley) %G%
 #
 #	Termcap source file
 #	John Kunze, Berkeley
@@ -1339,7 +1339,7 @@ V5|vi55|Visual 55:\
 	:im=\Ea:ei=\Eb:mi:dc=\Ew:dm=:ed=:al=\EL:dl=\EM:cs=\E_%+A%+A:\
 	:ho=\EH:cl=\Ev:is=\Ev\E_AX\Eb\EW\E9P\ET:so=\EU:se=\ET:ms:\
 	:do=^J:le=^H:bs:cd=\EJ:ce=\EK:cm=\EY%+ %+ :co#80:li#24:\
-	:nd=\EC:pt:sr=\EI:up=\EA:ku=\EA:kd=\EB:kr=\EC:kl=\ED:kb=^H:
+	:nd=\EC:pt:am:sr=\EI:up=\EA:ku=\EA:kd=\EB:kr=\EC:kl=\ED:kb=^H:
 # # --------------------------------
 #
 # X: TEKTRONIX
