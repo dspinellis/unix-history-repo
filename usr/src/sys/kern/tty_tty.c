@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty_tty.c	7.6 (Berkeley) %G%
+ *	@(#)tty_tty.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -100,5 +100,5 @@ syselect(dev, flag)
 
 	if (ttyvp == NULL)
 		return (ENXIO);
-	return (VOP_SELECT(ttyvp, flag, NOCRED));
+	return (VOP_SELECT(ttyvp, flag, FREAD|FWRITE, NOCRED));
 }
