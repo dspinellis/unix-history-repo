@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	4.4 (Berkeley) 83/07/09";
+static char sccsid[] = "@(#)main.c	4.5 (Berkeley) 83/08/01";
 #endif
 
 /*
@@ -197,6 +197,7 @@ getname()
 	tmode.sg_flags = setflags(1);
 	prompt();
 	if (PF > 0) {
+		oflush();
 		sleep(PF);
 		PF = 0;
 	}
