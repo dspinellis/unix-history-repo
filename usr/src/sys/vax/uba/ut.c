@@ -1,4 +1,4 @@
-/*	ut.c	4.23	82/11/26	*/
+/*	ut.c	4.24	82/12/05	*/
 
 #include "tj.h"
 #if NUT > 0
@@ -23,6 +23,7 @@
 #include "../h/mtio.h"
 #include "../h/cmap.h"
 #include "../h/uio.h"
+#include "../h/kernel.h"
 
 #include "../vax/cpu.h"
 #include "../vaxuba/ubareg.h"
@@ -136,10 +137,7 @@ utopen(dev, flag)
 get:
 	utcommand(dev, UT_SENSE, 1);
 	if (sc->sc_dsreg&UTDS_PIP) {
-#ifdef notdef
-		/* this needs to be fixed */
 		sleep((caddr_t)&lbolt, PZERO+1);
-#endif
 		goto get;
 	}
 	sc->sc_dens = olddens;
