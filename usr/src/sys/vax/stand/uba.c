@@ -1,18 +1,17 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uba.c	7.3 (Berkeley) %G%
+ *	@(#)uba.c	7.4 (Berkeley) %G%
  */
-
-#include "../machine/pte.h"
 
 #include "param.h"
 #include "inode.h"
 #include "vm.h"
 #include "fs.h"
 
+#include "../vax/pte.h"
 #include "../vax/cpu.h"
 #include "../vaxuba/ubareg.h"
 
@@ -72,15 +71,19 @@ ubafree(io, mr)
 		break;
 #endif
 
+#if VAX780 || VAX8600
 	case VAX_8600:
 	case VAX_780:
 		ubauba(io->i_adapt)->uba_dpr[bdp] |= UBADPR_BNE;
 		break;
+#endif
 
+#if VAX750
 	case VAX_750:
 		ubauba(io->i_adapt)->uba_dpr[bdp] |=
 		     UBADPR_PURGE|UBADPR_NXM|UBADPR_UCE;
 		break;
+#endif
 
 	default:
 		break;

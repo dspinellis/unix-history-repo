@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1982, 1986, 1988, Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)savax.h	7.4 (Berkeley) %G%
+ *	@(#)savax.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -37,9 +37,11 @@
 
 struct	mba_regs **mbaddr;
 int	mbaact;
+int	nmba;
 
 caddr_t	*uioaddr;
 struct	uba_regs **ubaddr;
+int	nuba;
 
 #ifdef VAX8200
 caddr_t	kdbaddr[MAXNKDB];
