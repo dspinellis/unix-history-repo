@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty.c	7.8 (Berkeley) %G%
+ *	@(#)tty.c	7.9 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -843,7 +843,7 @@ ttyinput(c, tp)
 		if (tp->t_rawq.c_cc > TTYHOG) {
 			if (tp->t_outq.c_cc < TTHIWAT(tp) &&
 			    tp->t_line == NTTYDISC)
-				(void) ttyoutput(CTRL(g), tp);
+				(void) ttyoutput(CTRL('g'), tp);
 		} else if (putc(c, &tp->t_rawq) >= 0) {
 			ttwakeup(tp);
 			ttyecho(c, tp);
@@ -917,7 +917,7 @@ ttyinput(c, tp)
 	 */
 	if (tp->t_rawq.c_cc+tp->t_canq.c_cc >= TTYHOG) {
 		if (tp->t_line == NTTYDISC)
-			(void) ttyoutput(CTRL(g), tp);
+			(void) ttyoutput(CTRL('g'), tp);
 		goto endcase;
 	}
 
