@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)restore.c	3.10	(Berkeley)	83/04/16";
+static char sccsid[] = "@(#)restore.c	3.11	(Berkeley)	83/04/16";
 #endif
 
 #include "restore.h"
@@ -460,7 +460,8 @@ createleaves(symtabfile)
 		 * If the next available file is not the one which we
 		 * expect then we have missed one or more files. Since
 		 * we do not request files that were not on the tape,
-		 * the lost files must have been due to a tape read error.
+		 * the lost files must have been due to a tape read error,
+		 * or a file that was removed while the dump was in progress.
 		 */
 		while (first < curfile.ino) {
 			ep = lookupino(first);
@@ -470,6 +471,13 @@ createleaves(symtabfile)
 			ep->e_flags &= ~(NEW|EXTRACT);
 			first = lowerbnd(first);
 		}
+		/*
+		 * If we find files on the tape that have no corresponding
+		 * directory entries, then we must have found a file that
+		 * was created while the dump was in progress. Since we have 
+		 * no name for it, we discard it knowing that it will be
+		 * on the next incremental tape.
+		 */
 		if (first != curfile.ino) {
 			fprintf(stderr, "expected next file %d, got %d\n",
 				first, curfile.ino);
@@ -606,6 +614,8 @@ createlinks()
 		if (ep == NIL)
 			continue;
 		for (np = ep->e_links; np != NIL; np = np->e_links) {
+			if ((np->e_flags & NEW) == 0)
+				continue;
 			(void) strcpy(name, myname(ep));
 			if (ep->e_type == NODE) {
 				linkit(name, myname(np), SYMLINK);
