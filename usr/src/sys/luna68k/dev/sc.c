@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sc.c	7.1 (Berkeley) %G%
+ *	@(#)sc.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -751,8 +751,8 @@ scintr(ctlr)
 		if (dq->dq_imin == -1)
 			dq->dq_imin = wait;
 		else
-			dq->dq_imin = MIN(wait, dq->dq_imin);
-		dq->dq_imax = MAX(wait, dq->dq_imax);
+			dq->dq_imin = min(wait, dq->dq_imin);
+		dq->dq_imax = max(wait, dq->dq_imax);
 	} else {
 		if ((wait = ixfer_out(hd, len, buf)) == -1) {
 			goto time_out;
@@ -760,8 +760,8 @@ scintr(ctlr)
 		if (dq->dq_omin == -1)
 			dq->dq_omin = wait;
 		else 
-			dq->dq_omin = MIN(wait, dq->dq_omin);
-		dq->dq_omax = MAX(wait, dq->dq_omax);
+			dq->dq_omin = min(wait, dq->dq_omin);
+		dq->dq_omax = max(wait, dq->dq_omax);
 	}
 
 	return;
