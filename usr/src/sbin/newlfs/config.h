@@ -4,8 +4,15 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)config.h	8.1 (Berkeley) %G%
+ *	@(#)config.h	8.2 (Berkeley) %G%
  */
+
+/*
+ * The first boot and super blocks are given in absolute disk addresses.
+ * The byte-offset forms are preferred, as they don't imply a sector size.
+ */
+#define BBSIZE		8192
+#define SBSIZE		8192
 
 /*
  * The following two constants set the default block and fragment sizes.
@@ -37,6 +44,13 @@
  */
 #define MINFREE		10
 #define DEFAULTOPT	FS_OPTTIME
+
+/*
+ * Preference for optimization.
+ */
+#define FS_OPTTIME	0	/* minimize allocation time */
+#define FS_OPTSPACE	1	/* minimize disk fragmentation */
+
 
 /*
  * ROTDELAY gives the minimum number of milliseconds to initiate
