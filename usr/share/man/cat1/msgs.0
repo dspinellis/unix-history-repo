@@ -1,0 +1,111 @@
+MSGS(1)                      BSD Reference Manual                      MSGS(1)
+
+NNAAMMEE
+     mmssggss - system messages and junk mail program
+
+SSYYNNOOPPSSIISS
+     mmssggss [--ffhhllppqq] [_n_u_m_b_e_r] [_-_n_u_m_b_e_r]
+     mmssggss [--ss]
+     mmssggss [--cc] [-days]
+
+DDEESSCCRRIIPPTTIIOONN
+     MMssggss is used to read system messages.  These messages are sent by mailing
+     to the login `msgs' and should be short pieces of information which are
+     suitable to be read once by most users of the system.
+
+     MMssggss is normally invoked each time you login, by placing it in the file
+     _._l_o_g_i_n (or _._p_r_o_f_i_l_e if you use sh(1)).  It will then prompt you with the
+     source and subject of each new message.  If there is no subject line, the
+     first few non-blank lines of the message will be displayed.  If there is
+     more to the message, you will be told how long it is and asked whether
+     you wish to see the rest of the message.  The possible responses are:
+
+     --yy          Type the rest of the message.
+
+     RREETTUURRNN      Synonym for y.
+
+     --nn          Skip this message and go on to the next message.
+
+     --           Redisplay the last message.
+
+     --qq          Drop out of mmssggss; the next time mmssggss will pick up where it
+                 last left off.
+
+     --ss          Append the current message to the file ``Messages'' in the
+                 current directory; `s-' will save the previously displayed
+                 message. A `s' or `s-' may be followed by a space and a file
+                 name to receive the message replacing the default ``Mes-
+                 sages''.
+
+     --mm          A copy of the specified message is placed in a temporary
+                 mailbox and mail(1) is invoked on that mailbox.  Both `m' and
+                 `s' accept a numeric argument in place of the `-'.
+
+     MMssggss keeps track of the next message you will see by a number in the file
+     _._m_s_g_s_r_c in your home directory.  In the directory _/_v_a_r_/_m_s_g_s it keeps a
+     set of files whose names are the (sequential) numbers of the messages
+     they represent.  The file _/_v_a_r_/_m_s_g_s_/_b_o_u_n_d_s shows the low and high number
+     of the messages in the directory so that mmssggss can quickly determine if
+     there are no messages for you.  If the contents of _b_o_u_n_d_s is incorrect it
+     can be fixed by removing it; mmssggss will make a new _b_o_u_n_d_s file the next
+     time it is run.
+
+     The --ss option is used for setting up the posting of messages.  The line
+
+           msgs: "| /usr/ucb/msgs -s"
+
+     should be included in _/_e_t_c_/_a_l_i_a_s_e_s (see newaliases(1))  to enable posting
+     of messages.
+
+     The --cc option is used for performing cleanup on _/_v_a_r_/_m_s_g_s_. An entry with
+     the --cc option should be placed in _/_e_t_c_/_c_r_o_n_t_a_b to run every night.  This
+     will remove all messages over 21 days old.  A different expiration may be
+     specified on the command line to override the default.
+
+
+
+     Options when reading messages include:
+
+     --ff          Do not to say ``No new messages.''.  This is useful in a
+                 _._l_o_g_i_n file since this is often the case here.
+
+     --qq          Queries whether there are messages, printing ``There are new
+                 messages.'' if there are.  The command ``msgs -q'' is often
+                 used in login scripts.
+
+     --hh          Print the first part of messages only.
+
+     --ll          Option causes only locally originated messages to be report-
+                 ed.
+
+     _n_u_m         A message number can be given on the command line, causing
+                 mmssggss to start at the specified message rather than at the
+                 next message indicated by your _._m_s_g_s_r_c file.  Thus
+
+                       msgs -h 1
+
+                 prints the first part of all messages.
+
+     _-_n_u_m_b_e_r     Start _n_u_m_b_e_r messages back from the one indicated in the
+                 _._m_s_g_s_r_c file, useful for reviews of recent messages.
+
+     --pp          Pipe long messages through more(1).
+
+     Within mmssggss you can also go to any specific message by typing its number
+     when mmssggss requests input as to what to do.
+
+EENNVVIIRROONNMMEENNTT
+     MMssggss uses the HOME and TERM environment variables for the default home
+     directory and terminal type.
+
+FFIILLEESS
+     /usr/msgs/*  database
+     ~/.msgsrc    number of next message to be presented
+
+SSEEEE AALLSSOO
+     aliases(5),  mail(1),  more(1)
+
+HHIISSTTOORRYY
+     The mmssggss command appeared in 3.0BSD.
+
+4th Berkeley Distribution        June 6, 1993                                2

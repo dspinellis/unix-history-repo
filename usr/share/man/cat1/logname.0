@@ -1,0 +1,28 @@
+LOGNAME(1)                   BSD Reference Manual                   LOGNAME(1)
+
+NNAAMMEE
+     llooggnnaammee - display user's login name
+
+SSYYNNOOPPSSIISS
+     llooggnnaammee
+
+DDEESSCCRRIIPPTTIIOONN
+     The llooggnnaammee utility writes the user's login name to standard output fol-
+     lowed by a newline.
+
+     The llooggnnaammee utility explicitly ignores the LOGNAME and USER environment
+     variables because the environment cannot be trusted.
+
+     The llooggnnaammee utility exits 0 on success, and >0 if an error occurs.
+
+SSEEEE AALLSSOO
+     who(1),  whoami(1),  getlogin(3)
+
+SSTTAANNDDAARRDDSS
+     The llooggnnaammee function is expected to conform to IEEE Std1003.2
+     (``POSIX'').
+
+HHIISSTTOORRYY
+     The llooggnnaammee command appears in 4.4BSD.
+
+4.4BSD                           June 9, 1993                                1

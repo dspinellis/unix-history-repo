@@ -1,0 +1,39 @@
+MESG(1)                      BSD Reference Manual                      MESG(1)
+
+NNAAMMEE
+     mmeessgg - display (do not display) messages from other users
+
+SSYYNNOOPPSSIISS
+     mmeessgg [nn | yy]
+
+DDEESSCCRRIIPPTTIIOONN
+     The mmeessgg utility is invoked by a users to control write access others
+     have to the terminal device associated with the standard error output.
+     Write access is allowed by default, and programs such as talk(1) and
+     write(1) may display messages on the terminal.
+
+     Options available:
+
+     nn     Disallows messages.
+
+     yy     Permits messages to be displayed.
+
+     If no arguments are given, mmeessgg displays the present message status to
+     the standard error output.
+
+     The mmeessgg utility exits with one of the following values:
+
+            0    Messages are allowed.
+            1    Messages are not allowed.
+                 An error has occurred.
+
+FFIILLEESS
+     /dev/[pt]ty[pq]?
+
+SSEEEE AALLSSOO
+     biff(1),  talk(1),  write(1)
+
+HHIISSTTOORRYY
+     A mmeessgg command appeared in Version 6 AT&T UNIX.
+
+4.4BSD                           June 6, 1993                                1
