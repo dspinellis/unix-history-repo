@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)snake.c	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)snake.c	4.2 (Berkeley) %G%";
 #endif
 
 /*
@@ -484,11 +484,12 @@ busy()
 #endif
 }
 
-post(score, flag)
-int	score, flag;
+post(iscore, flag)
+int	iscore, flag;
 {
+	short	score = iscore;
 	int	rawscores;
-	short	uid = getuid();
+	short	uid;
 	short	oldbest=0;
 	short	allbwho=0, allbscore=0;
 	struct	passwd *p, *getpwuid();
