@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ubareg.h	7.2 (Berkeley) %G%
+ *	@(#)ubareg.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -44,6 +44,7 @@
 #define	UBAPAGES	496
 #define	NUBMREG		496
 #define	QBAPAGES	UBAPAGES	/* for now; should be 8192 */
+#define	UBAIOADDR	0760000		/* start of I/O page */
 #define	UBAIOPAGES	16
 
 #ifndef LOCORE
