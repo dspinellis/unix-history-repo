@@ -166,17 +166,22 @@ extern L_INT	getradj();
 #define P1BR	68
 #define P1LR	72
 
-#define	FP0	332
-#define	FP1	344
-#define	FP2	356
-#define	FP3	368
-#define	FP4	380
-#define	FP5	392
-#define	FP6	404
-#define	FP7	416
-#define	FPCR	428
-#define	FPSR	432
-#define	FPIAR	436
+#ifdef BSD4_4
+#define FPBASE	280
+#else
+#define FPBASE	332
+#endif
+#define	FP0	(FPBASE+0*12)
+#define	FP1	(FPBASE+1*12)
+#define	FP2	(FPBASE+2*12)
+#define	FP3	(FPBASE+3*12)
+#define	FP4	(FPBASE+4*12)
+#define	FP5	(FPBASE+5*12)
+#define	FP6	(FPBASE+6*12)
+#define	FP7	(FPBASE+7*12)
+#define	FPCR	(FPBASE+8*12+0)
+#define	FPSR	(FPBASE+8*12+4)
+#define	FPIAR	(FPBASE+8*12+8)
 #endif
 
 #if !defined(pdp11) && !defined(vax) && !defined(hp300)
