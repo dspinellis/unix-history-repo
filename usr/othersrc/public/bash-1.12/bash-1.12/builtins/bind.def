@@ -1,0 +1,178 @@
+This file is bind.def, from which is created bind.c.
+It implements the builtin "bind" in Bash.
+
+Copyright (C) 1987, 1989, 1991 Free Software Foundation, Inc.
+
+This file is part of GNU Bash, the Bourne Again SHell.
+
+Bash is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any later
+version.
+
+Bash is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+for more details.
+
+You should have received a copy of the GNU General Public License along
+with Bash; see the file COPYING.  If not, write to the Free Software
+Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+
+$PRODUCES bind.c
+
+$BUILTIN bind
+$DEPENDS_ON READLINE
+$FUNCTION bind_builtin
+$SHORT_DOC bind [-lvd] [-f filename] [-q name] [keyseq:readline-function]
+Bind a key sequence to a Readline function, or to a macro.  The
+syntax is equivalent to that found in ~/.inputrc, but must be
+passed as a single argument: bind '"\C-x\C-r": re-read-init-file'.
+Arguments we accept:
+  -l                 List names of functions.
+  -v                 List function names and bindings.
+  -d                 Dump functions and bindings such that they
+                     can be read back in.
+  -f  filename       Read key bindings from FILENAME.
+  -q  function-name  Query about which keys invoke the named function.
+$END
+
+#include <stdio.h>
+#include "../shell.h"
+#include <readline/readline.h>
+#include <readline/history.h>
+
+int
+bind_builtin (list)
+     WORD_LIST *list;
+{
+  extern int bash_readline_initialized;
+  int processing_args = 1;
+  int return_code = EXECUTION_SUCCESS;
+
+  begin_unwind_frame ("bind");
+  unwind_protect_pointer (rl_outstream);
+  rl_outstream = stdout;
+
+  if (!bash_readline_initialized)
+    initialize_readline ();
+    
+  while (processing_args && list && list->word->word[0] == '-')
+    {
+      register int i;
+      extern void rl_function_dumper ();
+      char *word = list->word->word;
+
+      list = list->next;
+
+      for (i = 1; word[i]; i++)
+	{
+	  switch (word[i])
+	    {
+	    case 'l':
+	      rl_list_funmap_names (0);
+	      break;
+
+	    case 'v':
+	      rl_function_dumper (0);
+	      break;
+
+	    case 'd':
+	      rl_function_dumper (1);
+	      break;
+
+	    case 'f':
+	      if (!list)
+		{
+		  builtin_error ("-f requires a file name");
+		  goto error_exit;
+		}
+	      else
+		{
+		  extern int errno;
+		  char *initfile;
+
+		  initfile = list->word->word;
+
+		  if (rl_read_init_file (initfile) != 0)
+		    {
+		      builtin_error ("Cannot read %s: %s",
+				     initfile, strerror (errno));
+		      goto error_exit;
+		    }
+		  else
+		    list = list->next;
+		}
+	      break;
+
+	    case 'q':
+	      if (!list)
+		{
+		  builtin_error ("-q requires the name of a function");
+		  goto error_exit;
+		}
+	      else while (list)
+		{
+		  extern Function *rl_named_function ();
+		  extern char **rl_invoking_keyseqs ();
+		  Function *function;
+		  char *name, **keyseqs;
+
+		  name = list->word->word;
+		  list = list->next;
+
+		  function = rl_named_function (name);
+
+		  if (!function)
+		    {
+		      builtin_error ("Unknown function name `%s'", name);
+		      goto error_exit;
+		    }
+
+		  keyseqs = rl_invoking_keyseqs (function);
+
+		  if (!keyseqs)
+		    {
+		      printf ("%s is not bound to any keys.\n", name);
+		    }
+		  else
+		    {
+		      register int j;
+
+		      printf ("%s can be invoked via ", name);
+
+		      for (j = 0; j < 5 && keyseqs[j]; j++)
+			printf ("\"%s\"%s", keyseqs[j],
+				keyseqs[j + 1] ? ", " : ".\n");
+
+		      if (keyseqs[j])
+			printf ("...\n");
+
+		      free_array (keyseqs);
+		    }
+		}
+	      break;
+
+	    case '-':
+	      processing_args = 0;
+	      break;
+
+	    default:
+	      builtin_error ("Bad argument %c", word[i]);
+
+	    error_exit:
+	      return_code = EXECUTION_FAILURE;
+	      goto bind_exit;
+	    }
+	}
+    }
+
+  while (list)
+    {
+      rl_parse_and_bind (list->word->word);
+      list = list->next;
+    }
+ bind_exit:
+  run_unwind_frame ("bind");
+  return (return_code);
+}
