@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_lookup.c	7.8 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -544,9 +544,9 @@ direnter(ip, ndp)
 		if (ndp->ni_offset&(DIRBLKSIZ-1))
 			panic("wdir: newblk");
 		ndp->ni_dent.d_reclen = DIRBLKSIZ;
-		error = rdwri(UIO_WRITE, dp, (caddr_t)&ndp->ni_dent,
-		    newentrysize, ndp->ni_offset, UIO_SYSSPACE, ndp->ni_cred,
-		    (int *)0);
+		ndp->ni_count = newentrysize;
+		ndp->ni_resid = newentrysize;
+		error = writeip(dp, &ndp->ni_uio, ndp->ni_cred);
 		if (DIRBLKSIZ > dp->i_fs->fs_fsize)
 			panic("wdir: blksize"); /* XXX - should grow w/balloc */
 		else
@@ -629,8 +629,8 @@ direnter(ip, ndp)
 }
 
 /*
- * Remove a directory entry after a call to namei, using the
- * parameters which it left in the u. area.  The u. entry
+ * Remove a directory entry after a call to namei, using
+ * the parameters which it left in nameidata. The entry
  * ni_offset contains the offset into the directory of the
  * entry to be eliminated.  The ni_count field contains the
  * size of the previous record in the directory.  If this
@@ -653,9 +653,8 @@ dirremove(ndp)
 		 * First entry in block: set d_ino to zero.
 		 */
 		ndp->ni_dent.d_ino = 0;
-		error = rdwri(UIO_WRITE, dp, (caddr_t)&ndp->ni_dent,
-		    (int)DIRSIZ(&ndp->ni_dent), ndp->ni_offset, UIO_SYSSPACE,
-		    ndp->ni_cred, (int *)0);
+		ndp->ni_count = ndp->ni_resid = DIRSIZ(&ndp->ni_dent);
+		error = writeip(dp, &ndp->ni_uio, ndp->ni_cred);
 	} else {
 		/*
 		 * Collapse new free space into previous entry.
@@ -682,9 +681,8 @@ dirrewrite(dp, ip, ndp)
 {
 
 	ndp->ni_dent.d_ino = ip->i_number;
-	return (rdwri(UIO_WRITE, dp, (caddr_t)&ndp->ni_dent,
-	    (int)DIRSIZ(&ndp->ni_dent), ndp->ni_offset, UIO_SYSSPACE,
-	    ndp->ni_cred, (int *)0));
+	ndp->ni_count = ndp->ni_resid = DIRSIZ(&ndp->ni_dent);
+	return (writeip(dp, &ndp->ni_uio, ndp->ni_cred));
 }
 
 /*
