@@ -14,12 +14,15 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)utmp.h	5.2 (Berkeley) %G%
+ *	@(#)utmp.h	5.3 (Berkeley) %G%
  */
 
+#define	UT_NAMESIZE	8
+#define	UT_LINESIZE	8
+#define	UT_HOSTSIZE	16
 struct utmp {
-	char	ut_line[8];
-	char	ut_name[8];
-	char	ut_host[16];
+	char	ut_line[UT_NAMESIZE];
+	char	ut_name[UT_LINESIZE];
+	char	ut_host[UT_HOSTSIZE];
 	time_t	ut_time;
 };
