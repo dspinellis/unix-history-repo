@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dirent.h	5.12 (Berkeley) %G%
+ *	@(#)dirent.h	5.13 (Berkeley) %G%
  */
 
 #ifndef _DIRENT_
@@ -66,8 +66,8 @@ extern int closedir(DIR *);
 extern long telldir(const DIR *);
 extern void seekdir(DIR *, long);
 extern int scandir(const char *, struct direct ***,
-    int (* )(struct direct *), int (* )(char *, char *));
-extern int alphasort(const struct direct **, const struct direct **);
+    int (* )(struct direct *), int (* )(void *, void *));
+extern int alphasort(const void *, const void *);
 #endif
 #else
 extern DIR *opendir();
