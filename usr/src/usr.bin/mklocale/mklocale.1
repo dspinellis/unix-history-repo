@@ -1,245 +1,231 @@
-mklocale - generate an LC_CTYPE locale file
-
-The mklocale reads a ctype locale definitions file from standard input and
-produces an LC_CTYPE file to standard output.  Contains a series of lines
-which describe the locale.  The following are the legal lines:
-
-    # Comment
-    /* Comment */
-    ENCODING	encoding_type
-    EUC_MASKS	codeset0-mask codeset1-mask codeset2-mask codeset3-mask maskbits
-    EUC_LENGTHS	codeset0-length codeset1-length codeset2-length codeset3-length 
-    CASE_MAP	transliterate_pairs
-    CONTROL	list	/* List of control characters */
-    DIGIT	list	/* List of decimal digits */
-    ENGLISH	list	/* List of non-ascii English characters */
-    IDEOGRAM	list	/* List of ideograms */
-    LOWER	list	/* List of lowercase letters (any alphabet) */
-    NUMERIC	list	/* List of non-ascii numeric characters */
-    PHONOGRAM	list	/* List of phongrams (syllabaries) */
-    PUNCT	list	/* List of puncutation characters */
-    BLANK	list	/* The blank (space) character(s) */
-    SPECIAL	list	/* List of Special symbols */
-    UPPER	list	/* List of uppercase letters (any alphabet) */
-    SPACE	list	/* List of whitespace characters */
-    XDIGIT	list	/* List of hexidecimal (a-f) characters */
-    WCHAR1	list	/* Same as Phonogram */
-    WCHAR2	list	/* Same as Ideogram */
-    WCHAR3	list	/* Same as English */
-    WCHAR4	list	/* Same as Numeric */
-    WCHAR5	list	/* Same as Special */
-    WCHAR6	list	/* not used currently */
-    WCHAR6	list	/* not used currently */
-    WCHAR8	list	/* not used currently */
-
-    ul		transliterate_pairs		/* same as CASE_MAP */
-    iscntrl	list				/* same as CONTROL */
-    isenglish	list				/* same as ENGLISH */
-    isideogram	list				/* same as IDEOGRAM */
-    isnumber	list				/* same as NUMERIC */
-    isphonogram	list				/* same as PHONOGRAM */
-    ispunct	list				/* same as PUNCT */
-    isblank	list				/* same as BLANK */
-    isspecial	list				/* same as SPECIAL */
-    isupper	list				/* same as UPPER */
-    isspace	list				/* same as SPACE */
-    isxdigit	list				/* same as XDIGIT */
-    iswchar1	list				/* same as WCHAR1 */
-    iswchar2	list				/* same as WCHAR2 */
-    iswchar3	list				/* same as WCHAR3 */
-    iswchar4	list				/* same as WCHAR4 */
-    iswchar5	list				/* same as WCHAR5 */
-    iswchar6	list				/* same as WCHAR6 */
-    iswchar7	list				/* same as WCHAR7 */
-    iswchar8	list				/* same as WCHAR8 */
-   
-where encoding_type can be one of:
-
-    C		Straight 8 bit encoding
-    NONE	Straight 8 bit encoding
-    EUC		EUC Encoding
-
-where codeset0-mask - codeset3-mask are the bits used determine which of
-the EUC code sets the character is from and maskbits determines which bits
-to look at when comparing with the codeset-masks.
-
-where codeset0-length - codeset3-length are the number of bytes needed to
-represent a single charcter in that codeset.
-
-where transliterate_pairs is one or more of the following
-
-	< char char >			/* first char maps to second char */
-	< char - char char - char >	/* first list maos to second list */
-
-where list is one or more of the following
-
-	char				/* a single character */
-	char - char			/* a series of characters */
-
-and where char is one of the following
-
-	'a'		/* a single ascii character */
-	0x61		/* hexidecimal value of chacater */
-	0141		/* octal value of character */
-	96		/* decimal value of character */
-
-A sample C language file is:
-
-    /*
-     * Standard LOCALE_CTYPE for the C Locale
-     */
-    ENCODING	NONE
-
-    #
-    # This is a comment
-    #
-    UPPER		'A' - 'Z'
-    LOWER		'a' - 'z'
-    DIGIT		'0' - '9'
-    SPACE		0x09 - 0x0d 0x20
-    PUNCT		0x21 - 0x2f 0x3a - 0x40 0x5b - 0x60 0x7b - 0x7e
-    CONTROL		0x00 - 0x1f 0x7f
-    XDIGIT		'a' - 'f' 'A' - 'F'
-    BLANK		' '
-    CASE_MAP        	<'A' - 'Z' 'a' - 'z'>
-
-A sample Japanese language file is:
-    /*
-     * Japanese LOCALE_CTYPE definitions using EUC of JIS character sets
-     */
-
-    ENCODING EUC
-
-    /*		JIS	JIS	JIS			*/
-    /*		X201	X208	X201 			*/
-    /*		00-7f		84-fe			*/
-
-    EUC_MASKS	0x0000	0x8080	0x0080	0x8000	0x8080
-    EUC_LENGTHS	1	2	2	3
-
-    /*
-     * Code Set 1
-     */
-
-    UPPER	'A' - 'Z'
-    LOWER	'a' - 'z'
-    DIGIT	'0' - '9'
-    SPACE	0x09 - 0x0d 0x20
-    PUNCT	0x21 - 0x2f 0x3a - 0x40 0x5b - 0x60 0x7b - 0x7e
-    CONTROL	0x00 - 0x1f 0x7f
-    XDIGIT	'a' - 'f' 'A' - 'F'
-    BLANK		' '
-    CASE_MAP	<'A' - 'Z' 'a' - 'z'>
-
-    /*
-     * Code Set 2
-     */
-
-    SPACE	0xa1a1
-    BLANK	0xa1a1
-    PHONOGRAM	0xa1bc
-    SPECIAL     0xa1a2 - 0xa1fe
-    PUNCT	0xa1a2 - 0xa1f8		/* A few too many in here... */
-
-    SPECIAL	0xa2a1 - 0xa2ae 0xa2ba - 0xa2c1 0xa2ca - 0xa2d0 0xa2dc - 0xa2ea
-    SPECIAL     0xa2f2 - 0xa2f9 0xa2fe
-
-    DIGIT	0xa3b0 - 0xa3b9
-    NUMERIC	0xa3b0 - 0xa3b9
-    ENGLISH	0xa3c1 - 0xa3da 0xa3e1 - 0xa3fa
-    UPPER	0xa3c1 - 0xa3da				/* Romaji */
-    LOWER	0xa3e1 - 0xa3fa				/* Romaji */
-    CASE_MAP    <0xa3c1 - 0xa3da 0xa3e1 - 0xa3fa>	/* English */
-    XDIGIT	0xa3c1 - 0xa3c6 0xa3e1 - 0xa3e6
-
-    PHONOGRAM	0xa4a1 - 0xa4f3
-
-    PHONOGRAM	0xa5a1 - 0xa5f6
-
-    UPPER	0xa6a1 - 0xa6b8				/* Greek */
-    LOWER	0xa6c1 - 0xa6d8				/* Greek */
-    CASE_MAP    <0xa6a1 - 0xa6c1 0xa6b8 - 0xa6d8>	/* Greek */
-
-    UPPER	0xa7a1 - 0xa7c1				/* Cyrillic */
-    LOWER	0xa7d1 - 0xa7f1				/* Cyrillic */
-    CASE_MAP    <0xa7a1 - 0xa7c1 0xa7d1 - 0xa7f1>	/* Cyrillic */
-
-    SPECIAL	0xa8a1 - 0xa8c0
-
-
-    IDEOGRAM    0xb0a1 - 0xb0fe
-    IDEOGRAM	0xb1a1 - 0xb1fe
-    IDEOGRAM	0xb2a1 - 0xb2fe
-    IDEOGRAM    0xb3a1 - 0xb3fe
-    IDEOGRAM	0xb4a1 - 0xb4fe
-    IDEOGRAM	0xb5a1 - 0xb5fe
-    IDEOGRAM    0xb6a1 - 0xb6fe
-    IDEOGRAM	0xb7a1 - 0xb7fe
-    IDEOGRAM	0xb8a1 - 0xb8fe
-    IDEOGRAM    0xb9a1 - 0xb9fe
-    IDEOGRAM	0xbaa1 - 0xbafe
-    IDEOGRAM	0xbba1 - 0xbbfe
-    IDEOGRAM    0xbca1 - 0xbcfe
-    IDEOGRAM	0xbda1 - 0xbdfe
-    IDEOGRAM	0xbea1 - 0xbefe
-    IDEOGRAM    0xbfa1 - 0xbffe
-    IDEOGRAM    0xc0a1 - 0xc0fe
-    IDEOGRAM	0xc1a1 - 0xc1fe
-    IDEOGRAM	0xc2a1 - 0xc2fe
-    IDEOGRAM    0xc3a1 - 0xc3fe
-    IDEOGRAM	0xc4a1 - 0xc4fe
-    IDEOGRAM	0xc5a1 - 0xc5fe
-    IDEOGRAM    0xc6a1 - 0xc6fe
-    IDEOGRAM	0xc7a1 - 0xc7fe
-    IDEOGRAM	0xc8a1 - 0xc8fe
-    IDEOGRAM    0xc9a1 - 0xc9fe
-    IDEOGRAM	0xcaa1 - 0xcafe
-    IDEOGRAM	0xcba1 - 0xcbfe
-    IDEOGRAM    0xcca1 - 0xccfe
-    IDEOGRAM	0xcda1 - 0xcdfe
-    IDEOGRAM	0xcea1 - 0xcefe
-    IDEOGRAM    0xcfa1 - 0xcfd3
-    IDEOGRAM    0xd0a1 - 0xd0fe
-    IDEOGRAM	0xd1a1 - 0xd1fe
-    IDEOGRAM	0xd2a1 - 0xd2fe
-    IDEOGRAM    0xd3a1 - 0xd3fe
-    IDEOGRAM	0xd4a1 - 0xd4fe
-    IDEOGRAM	0xd5a1 - 0xd5fe
-    IDEOGRAM    0xd6a1 - 0xd6fe
-    IDEOGRAM	0xd7a1 - 0xd7fe
-    IDEOGRAM	0xd8a1 - 0xd8fe
-    IDEOGRAM    0xd9a1 - 0xd9fe
-    IDEOGRAM	0xdaa1 - 0xdafe
-    IDEOGRAM	0xdba1 - 0xdbfe
-    IDEOGRAM    0xdca1 - 0xdcfe
-    IDEOGRAM	0xdda1 - 0xddfe
-    IDEOGRAM	0xdea1 - 0xdefe
-    IDEOGRAM    0xdfa1 - 0xdffe
-    IDEOGRAM    0xe0a1 - 0xe0fe
-    IDEOGRAM	0xe1a1 - 0xe1fe
-    IDEOGRAM	0xe2a1 - 0xe2fe
-    IDEOGRAM    0xe3a1 - 0xe3fe
-    IDEOGRAM	0xe4a1 - 0xe4fe
-    IDEOGRAM	0xe5a1 - 0xe5fe
-    IDEOGRAM    0xe6a1 - 0xe6fe
-    IDEOGRAM	0xe7a1 - 0xe7fe
-    IDEOGRAM	0xe8a1 - 0xe8fe
-    IDEOGRAM    0xe9a1 - 0xe9fe
-    IDEOGRAM	0xeaa1 - 0xeafe
-    IDEOGRAM	0xeba1 - 0xebfe
-    IDEOGRAM    0xeca1 - 0xecfe
-    IDEOGRAM	0xeda1 - 0xedfe
-    IDEOGRAM	0xeea1 - 0xeefe
-    IDEOGRAM    0xefa1 - 0xeffe
-    IDEOGRAM    0xf0a1 - 0xf0fe
-    IDEOGRAM	0xf1a1 - 0xf1fe
-    IDEOGRAM	0xf2a1 - 0xf2fe
-    IDEOGRAM    0xf3a1 - 0xf3fe
-    IDEOGRAM	0xf4a1 - 0xf4a4
-
-    /*
-     * This is for Code Set 3, half-width kana
-     */
-    SPECIAL	0xa1 - 0xdf
-    PHONOGRAM	0xa1 - 0xdf
-    CONTROL	0x84 - 0x97 0x9b - 0x9f 0xe0 - 0xfe
+.\" Copyright (c) 1993 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Paul Borman at Krystal Technologies.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)mklocale.1	5.2 (Berkeley) %G%
+.\"
+.Dd ""
+.Dt MKLOCALE 1
+.Os
+.Sh NAME
+.Nm mklocale
+.Nd make LC_CTYPE locale files
+.Sh SYNOPSIS
+.Nm mklocale
+.Ar "< src-file"
+.Ar "> language/LC_CTYPE"
+.Sh DESCRIPTION
+The
+.Nm mklocale
+utility reads a
+.Dv LC_CTYPE
+source file from standard input and produces a
+.Dv LC_CTYPE
+binary file on standard output suitable for placement in
+.Dv /usr/share/locale/\fIlanguage\fP/LC_CTYPE.
+.Pp
+The format of
+.Ar src-file
+is quite simple.
+It consists of a series of lines which start with a keyword and have
+associated data following.  C style comments are used
+to place comments in the file.
+.Pp
+Besides the keywords which will be listed below,
+the following are valid tokens in
+.Ar src-file :
+.Bl -tag -width literal
+.It Dv RUNE
+A
+.Dv RUNE
+may be any of the following:
+.Bl -tag -width 0x[0-9a-z]*
+.It Ar 'x'
+The ascii character
+.Ar x .
+.It Ar '\ex'
+The ANSI C character
+.Ar \ex
+where
+.Ar \ex
+is one of
+.Dv \ea ,
+.Dv \eb ,
+.Dv \ef ,
+.Dv \en ,
+.Dv \er ,
+.Dv \et ,
+or
+.Dv \ev .
+.It Ar 0x[0-9a-z]*
+A hexadecimal number representing a rune code.
+.It Ar 0[0-7]*
+An octal number representing a rune code.
+.It Ar [1-9][0-9]*
+A decimal number representing a rune code.
+.El
+.It Dv STRING
+A string enclosed in double quotes (").
+.It Dv THRU
+Either
+.Dv ...
+or
+.Dv - .
+Used to indicate ranges.
+.It Ar literal
+The follow characters are taken literally:
+.Bl -tag -width "<\|\|(\|\|["
+.It Dv "<\|(\|["
+Used to start a mapping.  All are equivalent.
+.It Dv ">\|\^)\|]"
+Used to end a mapping.  All are equivalent.
+.It Dv :
+Used as a delimiter in mappings.
+.El
+.El
+.sp
+Key words which should only appear once are:
+.Bl -tag -width PHONOGRAM
+.It Dv ENCODING
+Followed by a
+.Dv STRING
+which indicates the encoding mechanism to be used for this locale.
+The current encodings are:
+.Bl -tag -width NONE
+.It Dv NONE
+No translation and the default.
+.It Dv UTF2
+.Dv "Universal character set Transformation Format"
+adopted from
+.Nm "Plan 9 from Bell Labs" .
+This is the preferred encoding.
+.It Dv EUC
+.Dv EUC
+encoding as used by several
+vendors of
+.Ux
+systems.
+.El
+.It Dv VARIABLE
+This keyword must be followed by a single tab or space character,
+after which encoding specific data is placed.
+Currently only the 
+.Dv "EUC"
+encoding requires variable data.
+See 
+.Xr euc 4
+for further details.
+.It Dv INVALID
+A single
+.Dv RUNE
+follows and is used as the invalid rune for this locale.
+.El
+.sp
+The following keywords may appear multiple times and have the following
+format for data:
+.in +.5i
+.Bl -tag -width "<RUNE1 THRU RUNEn : RUNE2>"
+.It Dv <RUNE1 RUNE2>
+.Dv RUNE1
+is mapped to
+.Dv RUNE2 .
+.It Dv <RUNE1 THRU RUNEn : RUNE2>
+Runes
+.Dv RUNE1
+through
+.Dv RUNEn
+are mapped to
+.Dv RUNE2
+through
+.Dv RUNE2
++ n-1.
+.El
+.in -.5i
+.Bl -tag -width PHONOGRAM
+.It Dv MAPLOWER
+Defines the tolower mappings.
+.Dv RUNE2
+is the lower case representatin of
+.Dv RUNE1.
+.It Dv MAPUPPER
+Defines the toupper mappings.
+.Dv RUNE2
+is the upper case representatin of
+.Dv RUNE1.
+.It Dv TODIGIT
+Defines a map from runes to their digit value.
+.Dv RUNE2
+is the integer value represented  by
+.Dv RUNE1 .
+For example, the ascii character
+.Nm '0'
+would map to the decimal value
+.Nm 0 .
+Only values up to
+.Nm 255
+are allowed.
+.El
+.sp
+The following keywords may appear multiple times and have the following
+format for data:
+.in +.5i
+.Bl -tag -width "RUNE1 THRU RUNEn"
+.It Dv RUNE
+This rune has the property defined by the keyword.
+.It Dv "RUNE1 THRU RUNEn"
+All the runes between and including
+.Dv RUNE1
+and
+.Dv RUNEn
+have the property defined by the keyword.
+.El
+.in -.5i
+.Bl -tag -width PHONOGRAM
+.It Dv ALPHA
+Defines runes which are alphabetic, printable and graphic.
+.It Dv CONTROL
+Defines runes which are control characters.
+.It Dv DIGIT
+Defines runes which are decimal digits, printable and graphic.
+.It Dv GRAPH
+Defines runes which are graphic and printable.
+.It Dv LOWER
+Defines runes which are lower case, printable and graphic.
+.It Dv PUNCT
+Defines runes which are punctuation, printable and graphic.
+.It Dv SPACE
+Defines runes which are spaces.
+.It Dv UPPER
+Defines runes which are upper case, printable and graphic.
+.It Dv XDIGIT
+Defines runes which are hexadecimal digits, printable and graphic.
+.It Dv BLANK
+Defines runes which are blank.
+.It Dv PRINT
+Defines runes which are printable.
+.It Dv IDEOGRAM
+Defines runes which are ideograms, printable and graphic.
+.It Dv SPECIAL
+Defines runes which are special characters, printable and graphic.
+.It Dv PHONOGRAM
+Defines runes which are phonograms, printable and graphic.
+.El
+.Sh SEE ALSO
+.Xr mbrune 3 ,
+.Xr rune 3 ,
+.Xr setlocale 3 ,
+.Xr euc 4 ,
+.Xr utf2 4
+.Sh BUGS
+The
+.Nm mklocale
+utility is overly simplistic.
+.Sh HISTORY
+The
+.Nm mklocale
+utility first appeared in
+.Bx 4.4 .
