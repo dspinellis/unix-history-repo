@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static	char sccsid[] = "@(#)library.c	1.6 (Berkeley) %G%";
+static	char sccsid[] = "@(#)library.c	1.7 (Berkeley) %G%";
 
 static char rcsid[] = "$Header: library.c,v 1.5 84/12/26 10:39:52 linton Exp $";
 
@@ -430,35 +430,6 @@ INTFUNC *f;
  */
 
 public int sys_nsig = NSIG;
-public String sys_siglist[] = {
-    "no signal",
-    "hangup",
-    "interrupt",
-    "quit",
-    "illegal instruction",
-    "trace trap",
-    "IOT instruction",
-    "EMT instruction",
-    "floating point exception",
-    "kill",
-    "bus error",
-    "segmentation violation",
-    "bad argument to system call",
-    "broken pipe",
-    "alarm clock",
-    "soft kill",
-    "urgent I/O condition",
-    "stop signal not from tty",
-    "stop signal from tty",
-    "continue",
-    "child termination",
-    "stop (tty input)",
-    "stop (tty output)",
-    "possible input/output",
-    "exceeded CPU time limit",
-    "exceeded file size limit",
-    nil(String)
-};
 
 public psignal(s, n)
 String s;
@@ -466,6 +437,7 @@ integer n;
 {
     String msg;
     integer len;
+    extern String sys_siglist[];
 
     if (n >= 0 and n < sys_nsig) {
 	msg = sys_siglist[n];
