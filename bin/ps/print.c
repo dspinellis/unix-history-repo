@@ -256,7 +256,8 @@ tname(k, v)
 	if (dev == NODEV || (ttname = devname(dev, S_IFCHR)) == NULL)
 		(void) printf("%-*s", v->width, "??");
 	else {
-		if (strncmp(ttname, "tty", 3) == 0)
+		if (strncmp(ttname, "tty", 3) == 0 ||
+		    strncmp(ttname, "cua", 3) == 0)
 			ttname += 3;
 		(void) printf("%*.*s%c", v->width-1, v->width-1, ttname,
 			k->ki_e->e_flag & EPROC_CTTY ? ' ' : '-');
