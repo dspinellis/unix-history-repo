@@ -1,15 +1,13 @@
-/*
+/*-
  * Copyright (c) 1988, 1990 Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
+ *
+ * @(#)xi_sink.c	7.3 (Berkeley) %G%
  */
-#ifndef lint
-static char sccsid[] = "@(#)xi_sink.c	7.2 (Berkeley) %G%";
-#endif /* not lint */
-
 /*
- * This is a test program to be a sink for TP4 connections.
+ * This is a test program to be a sink for X.25 connections.
  */
 #include <sys/param.h>
 #include <sys/uio.h>
