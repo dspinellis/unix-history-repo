@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rcp.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rcp.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -19,6 +19,7 @@ static char sccsid[] = "@(#)rcp.c	5.1 (Berkeley) %G%";
  */
 #include <sys/param.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <sys/ioctl.h>
 
 #include <netinet/in.h>
@@ -34,12 +35,11 @@ int	rem;
 char	*colon(), *index(), *rindex(), *malloc(), *strcpy(), *sprintf();
 int	errs;
 int	lostconn();
-int	iamremote;
-
 int	errno;
 char	*sys_errlist[];
 int	iamremote, targetshouldbedirectory;
 int	iamrecursive;
+int	pflag;
 struct	passwd *pwd;
 struct	passwd *getpwuid();
 int	userid;
@@ -80,36 +80,52 @@ main(argc, argv)
 		fprintf(stderr, "who are you?\n");
 		exit(1);
 	}
-	argc--, argv++;
-	if (argc > 0 && !strcmp(*argv, "-r")) {
-		iamrecursive++;
-		argc--, argv++;
-	}
-	if (argc > 0 && !strcmp(*argv, "-d")) {
-		targetshouldbedirectory = 1;
-		argc--, argv++;
-	}
-	if (argc > 0 && !strcmp(*argv, "-f")) {
-		argc--, argv++; iamremote = 1;
-		(void) response();
-		(void) setuid(userid);
-		source(argc, argv);
-		exit(errs);
-	}
-	if (argc > 0 && !strcmp(*argv, "-t")) {
-		argc--, argv++; iamremote = 1;
-		(void) setuid(userid);
-		sink(argc, argv);
-		exit(errs);
+
+	for (argc--, argv++; argc > 0 && **argv == '-'; argc--, argv++) {
+		(*argv)++;
+		while (**argv) switch (*(*argv)++) {
+
+		    case 'r':
+			iamrecursive++;
+			break;
+
+		    case 'p':		/* preserve mtimes and atimes */
+			pflag++;
+			break;
+
+		    /* The rest of these are not for users. */
+		    case 'd':
+			targetshouldbedirectory = 1;
+			break;
+
+		    case 'f':		/* "from" */
+			iamremote = 1;
+			(void) response();
+			(void) setuid(userid);
+			source(--argc, ++argv);
+			exit(errs);
+
+		    case 't':		/* "to" */
+			iamremote = 1;
+			(void) setuid(userid);
+			sink(--argc, ++argv);
+			exit(errs);
+
+		    default:
+			fprintf(stderr,
+		"Usage: rcp [-rp] f1 f2, or: rcp [-rp] f1 ... fn d2\n");
+			exit(1);
+		}
 	}
 	rem = -1;
 	if (argc > 2)
 		targetshouldbedirectory = 1;
-	(void) sprintf(cmd, "rcp%s%s",
-	    iamrecursive ? " -r" : "", targetshouldbedirectory ? " -d" : "");
-	signal(SIGPIPE, lostconn);
+	(void) sprintf(cmd, "rcp%s%s%s",
+	    iamrecursive ? " -r" : "", pflag ? " -p" : "", 
+	    targetshouldbedirectory ? " -d" : "");
+	(void) signal(SIGPIPE, lostconn);
 	targ = colon(argv[argc - 1]);
-	if (targ) {
+	if (targ) {				/* ... to remote */
 		*targ++ = 0;
 		if (*targ == 0)
 			targ = ".";
@@ -137,7 +153,7 @@ main(argc, argv)
 #endif NAMESERVER
 		for (i = 0; i < argc - 1; i++) {
 			src = colon(argv[i]);
-			if (src) {
+			if (src) {		/* remote to remote */
 				*src++ = 0;
 				if (*src == 0)
 					src = ".";
@@ -174,7 +190,7 @@ main(argc, argv)
 					    tuser, thost, targ);
 #endif NAMESERVER
 				(void) susystem(buf);
-			} else {
+			} else {		/* local to remote */
 				if (rem == -1) {
 					(void) sprintf(buf, "%s -t %s",
 					    cmd, targ);
@@ -194,17 +210,18 @@ main(argc, argv)
 				source(1, argv+i);
 			}
 		}
-	} else {
+	} else {				/* ... to local */
 		if (targetshouldbedirectory)
 			verifydir(argv[argc - 1]);
 		for (i = 0; i < argc - 1; i++) {
 			src = colon(argv[i]);
-			if (src == 0) {
-				(void) sprintf(buf, "/bin/cp%s %s %s",
+			if (src == 0) {		/* local to local */
+				(void) sprintf(buf, "/bin/cp%s%s %s %s",
 				    iamrecursive ? " -r" : "",
+				    pflag ? " -p" : "",
 				    argv[i], argv[argc - 1]);
 				(void) susystem(buf);
-			} else {
+			} else {		/* remote to local */
 				*src++ = 0;
 				if (*src == 0)
 					src = ".";
@@ -308,7 +325,7 @@ susystem(s)
 	register int (*istat)(), (*qstat)();
 
 	if ((pid = vfork()) == 0) {
-		setuid(userid);
+		(void) setuid(userid);
 		execl("/bin/sh", "sh", "-c", s, (char *)0);
 		_exit(127);
 	}
@@ -318,8 +335,8 @@ susystem(s)
 		;
 	if (w == -1)
 		status = -1;
-	signal(SIGINT, istat);
-	signal(SIGQUIT, qstat);
+	(void) signal(SIGINT, istat);
+	(void) signal(SIGQUIT, qstat);
 	return (status);
 }
 
@@ -351,7 +368,7 @@ source(argc, argv)
 		case S_IFDIR:
 			if (iamrecursive) {
 				(void) close(f);
-				rsource(name, (int)stb.st_mode);
+				rsource(name, &stb);
 				continue;
 			}
 			/* fall into ... */
@@ -366,7 +383,20 @@ notreg:
 			last = name;
 		else
 			last++;
-		(void) sprintf(buf, "C%04o %D %s\n",
+		if (pflag) {
+			/*
+			 * Make it compatible with possible future
+			 * versions expecting microseconds.
+			 */
+			(void) sprintf(buf, "T%ld 0 %ld 0\n",
+			    stb.st_mtime, stb.st_atime);
+			(void) write(rem, buf, strlen(buf));
+			if (response() < 0) {
+				(void) close(f);
+				continue;
+			}
+		}
+		(void) sprintf(buf, "C%04o %ld %s\n",
 		    stb.st_mode&07777, stb.st_size, last);
 		(void) write(rem, buf, strlen(buf));
 		if (response() < 0) {
@@ -397,9 +427,9 @@ notreg:
 
 #include <sys/dir.h>
 
-rsource(name, mode)
+rsource(name, statp)
 	char *name;
-	int mode;
+	struct stat *statp;
 {
 	DIR *d = opendir(name);
 	char *last;
@@ -416,7 +446,16 @@ rsource(name, mode)
 		last = name;
 	else
 		last++;
-	(void) sprintf(buf, "D%04o %d %s\n", mode&07777, 0, last);
+	if (pflag) {
+		(void) sprintf(buf, "T%ld 0 %ld 0\n",
+		    statp->st_mtime, statp->st_atime);
+		(void) write(rem, buf, strlen(buf));
+		if (response() < 0) {
+			closedir(d);
+			return;
+		}
+	}
+	(void) sprintf(buf, "D%04o %d %s\n", statp->st_mode&07777, 0, last);
 	(void) write(rem, buf, strlen(buf));
 	if (response() < 0) {
 		closedir(d);
@@ -448,14 +487,14 @@ response()
 		lostconn();
 	switch (resp) {
 
-	case 0:
+	case 0:				/* ok */
 		return (0);
 
 	default:
 		*cp++ = resp;
 		/* fall into... */
-	case 1:
-	case 2:
+	case 1:				/* error, followed by err msg */
+	case 2:				/* fatal error, "" */
 		do {
 			if (read(rem, &c, 1) != 1)
 				lostconn();
@@ -492,10 +531,14 @@ sink(argc, argv)
 	int targisdir = 0;
 	int mask = umask(0);
 	char *myargv[1];
-	char cmdbuf[BUFSIZ], nambuf[BUFSIZ], buf[BUFSIZ];
+	char cmdbuf[BUFSIZ], nambuf[BUFSIZ];
+	int setimes = 0;
+	struct timeval tv[2];
+#define atime	tv[0]
+#define mtime	tv[1]
 #define	SCREWUP(str)	{ whopp = str; goto screwup; }
 
-	umask(mask);
+	(void) umask(mask);
 	if (argc != 1) {
 		error("rcp: ambiguous target\n");
 		exit(1);
@@ -530,6 +573,26 @@ sink(argc, argv)
 		if (*cp == 'E') {
 			ga();
 			return;
+		}
+
+#define getnum(t) (t) = 0; while (isdigit(*cp)) (t) = (t) * 10 + (*cp++ - '0');
+		if (*cp == 'T') {
+			setimes++;
+			cp++;
+			getnum(mtime.tv_sec);
+			if (*cp++ != ' ')
+				SCREWUP("mtime.sec not delimited");
+			getnum(mtime.tv_usec);
+			if (*cp++ != ' ')
+				SCREWUP("mtime.usec not delimited");
+			getnum(atime.tv_sec);
+			if (*cp++ != ' ')
+				SCREWUP("atime.sec not delimited");
+			getnum(atime.tv_usec);
+			if (*cp++ != '\0')
+				SCREWUP("atime.usec not delimited");
+			ga();
+			continue;
 		}
 		if (*cp != 'C' && *cp != 'D') {
 			/*
@@ -575,6 +638,12 @@ sink(argc, argv)
 				goto bad;
 			myargv[0] = nambuf;
 			sink(1, myargv);
+			if (setimes) {
+				setimes = 0;
+				if (utimes(nambuf, tv) < 0)
+					error("rcp: can't set times on %s: %s\n",
+					    nambuf, sys_errlist[errno]);
+			}
 			continue;
 		}
 		if ((of = creat(nambuf, mode)) < 0) {
@@ -582,11 +651,9 @@ sink(argc, argv)
 			error("rcp: %s: %s\n", nambuf, sys_errlist[errno]);
 			continue;
 		}
-		if (exists)
-			(void) fchmod(of, mode &~ mask);
 		ga();
 		if ((bp = allocbuf(&buffer, of, BUFSIZ)) < 0) {
-			close(of);
+			(void) close(of);
 			continue;
 		}
 		cp = bp->buf;
@@ -617,8 +684,14 @@ sink(argc, argv)
 			wrerr++;
 		(void) close(of);
 		(void) response();
+		if (setimes) {
+			setimes = 0;
+			if (utimes(nambuf, tv) < 0)
+				error("rcp: can't set times on %s: %s\n",
+				    nambuf, sys_errlist[errno]);
+		}				   
 		if (wrerr)
-			error("rcp: %s: %s\n", cp, sys_errlist[errno]);
+			error("rcp: %s: %s\n", nambuf, sys_errlist[errno]);
 		else
 			ga();
 	}
@@ -645,7 +718,7 @@ allocbuf(bp, fd, blksize)
 	if (bp->cnt < size) {
 		if (bp->buf != 0)
 			free(bp->buf);
-		bp->buf = (char *)malloc(size);
+		bp->buf = (char *)malloc((unsigned) size);
 		if (bp->buf == 0) {
 			error("rcp: malloc: out of memory\n");
 			return ((struct buffer *)-1);
@@ -655,7 +728,7 @@ allocbuf(bp, fd, blksize)
 	return (bp);
 }
 
-/*VARARGS*/
+/*VARARGS1*/
 error(fmt, a1, a2, a3, a4, a5)
 	char *fmt;
 	int a1, a2, a3, a4, a5;
