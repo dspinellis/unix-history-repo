@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1988, 1990 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uipc_socket2.c	7.10 (Berkeley) %G%
+ *	@(#)uipc_socket2.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -28,11 +28,17 @@
 #include "protosw.h"
 #include "socket.h"
 #include "socketvar.h"
-#include "tsleep.h"
 
 /*
  * Primitive routines for operating on sockets and socket buffers
  */
+
+/* strings for sleep message: */
+char	netio[] = "netio";
+char	netcon[] = "netcon";
+char	netcls[] = "netcls";
+
+u_long	sb_max = SB_MAX;		/* patchable */
 
 /*
  * Procedures to manipulate state flags of socket
@@ -119,9 +125,12 @@ soisdisconnected(so)
  * then we allocate a new structure, propoerly linked into the
  * data structure of the original socket, and return this.
  * Connstatus may be 0, or SO_ISCONFIRMING, or SO_ISCONNECTED.
+ *
+ * Currently, sonewconn() is defined as sonewconn1() in socketvar.h
+ * to catch calls that are missing the (new) second parameter.
  */
 struct socket *
-sonewsock(head, connstatus)
+sonewconn1(head, connstatus)
 	register struct socket *head;
 	int connstatus;
 {
@@ -161,8 +170,8 @@ soqinsque(head, so, q)
 	register struct socket *head, *so;
 	int q;
 {
-	register struct socket **prev;
 
+	register struct socket **prev;
 	so->so_head = head;
 	if (q == 0) {
 		head->so_q0len++;
@@ -258,7 +267,29 @@ sbwait(sb)
 {
 
 	sb->sb_flags |= SB_WAIT;
-	tsleep((caddr_t)&sb->sb_cc, PZERO+1, SLP_SO_SBWAIT, 0);
+	return (tsleep((caddr_t)&sb->sb_cc,
+	    (sb->sb_flags & SB_NOINTR) ? PSOCK : PSOCK | PCATCH, netio,
+	    sb->sb_timeo));
+}
+
+/* 
+ * Lock a sockbuf already known to be locked;
+ * return any error returned from sleep (EINTR).
+ */
+sb_lock(sb)
+	register struct sockbuf *sb;
+{
+	int error;
+
+	while (sb->sb_flags & SB_LOCK) {
+		sb->sb_flags |= SB_WANT;
+		if (error = tsleep((caddr_t)&sb->sb_flags, 
+		    (sb->sb_flags & SB_NOINTR) ? PSOCK : PSOCK|PCATCH,
+		    netio, 0))
+			return (error);
+	}
+	sb->sb_flags |= SB_LOCK;
+	return (0);
 }
 
 /*
@@ -330,6 +361,12 @@ soreserve(so, sndcc, rcvcc)
 		goto bad;
 	if (sbreserve(&so->so_rcv, rcvcc) == 0)
 		goto bad2;
+	if (so->so_rcv.sb_lowat == 0)
+		so->so_rcv.sb_lowat = 1;
+	if (so->so_snd.sb_lowat == 0)
+		so->so_snd.sb_lowat = MCLBYTES;
+	if (so->so_snd.sb_lowat > so->so_snd.sb_hiwat)
+		so->so_snd.sb_lowat = so->so_snd.sb_hiwat;
 	return (0);
 bad2:
 	sbrelease(&so->so_snd);
@@ -339,7 +376,7 @@ bad:
 
 /*
  * Allot mbufs to a sockbuf.
- * Attempt to scale cc so that mbcnt doesn't become limiting
+ * Attempt to scale mbmax so that mbcnt doesn't become limiting
  * if buffering efficiency is near the normal case.
  */
 sbreserve(sb, cc)
@@ -347,10 +384,12 @@ sbreserve(sb, cc)
 	u_long cc;
 {
 
-	if (cc > (u_long)SB_MAX * MCLBYTES / (2 * MSIZE + MCLBYTES))
+	if (cc > sb_max * MCLBYTES / (MSIZE + MCLBYTES))
 		return (0);
 	sb->sb_hiwat = cc;
-	sb->sb_mbmax = MIN(cc * 2, SB_MAX);
+	sb->sb_mbmax = min(cc * 2, sb_max);
+	if (sb->sb_lowat > sb->sb_hiwat)
+		sb->sb_lowat = sb->sb_hiwat;
 	return (1);
 }
 
