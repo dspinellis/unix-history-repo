@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)crt0.c	4.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)crt0.c	4.2 (Berkeley) %G%";
 
 /*
  *	C start up routine.
@@ -22,6 +22,7 @@ static	char *sccsid = "@(#)crt0.c	4.1 (Berkeley) %G%";
 
 char **environ;
 
+asm("#define _start start");
 start()
 {
 	struct kframe {
@@ -53,10 +54,4 @@ start()
 /*
  * null mcount, just in case some routine is compiled for profiling
  */
-asm("#define _mcount mcount");
-mcount()
-{
-	asm("	forgot to run ex script on gcrt0.s" );
-	asm( "	rsb" );
-	asm( "#undef _mcount");
-}
+asm("mcount:	rsb");
