@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.17 (Berkeley) %G%
+#	@(#)READ_ME	8.18 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -216,11 +216,6 @@ SETPROCTITLE	Try to set the string printed by "ps" to something
 +-------------------------------------+
 
 SunOS
-	If you are compiling on SunOS and want to use frozen configuration
-	files, you must use -Bstatic -- if you do not, frozen
-	configuration files fail in bizarre ways and you will open up
-	several security holes.
-
 	You may have to use -lresolv on SunOS.
 
 OSF/1
@@ -310,4 +305,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.17, last update %G% 08:17:06)
+(Version 8.18, last update %G% 11:51:54)

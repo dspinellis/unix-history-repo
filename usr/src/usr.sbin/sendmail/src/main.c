@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -91,7 +91,6 @@ main(argc, argv, envp)
 	register int i;
 	int j;
 	bool queuemode = FALSE;		/* process queue requests */
-	bool nothaw;
 	bool safecf = TRUE;
 	static bool reenter = FALSE;
 	char *argv0 = argv[0];
@@ -172,15 +171,11 @@ main(argc, argv, envp)
 
 	/*
 	**  Do a quick prescan of the argument list.
-	**	We do this to find out if we can potentially thaw the
-	**	configuration file.  If not, we do the thaw now so that
-	**	the argument processing applies to this run rather than
-	**	to the run that froze the configuration.
 	*/
 
 	argv[argc] = NULL;
 	av = argv;
-	nothaw = FALSE;
+
 #if defined(__osf__) || defined(_AIX3)
 # define OPTIONS	"B:b:C:cd:e:F:f:h:Iimno:p:q:r:sTtvX:x"
 #else
@@ -191,15 +186,6 @@ main(argc, argv, envp)
 			ConfFile = &p[2];
 			if (ConfFile[0] == '\0')
 				ConfFile = "sendmail.cf";
-			(void) setgid(RealGid);
-			(void) setuid(RealUid);
-			safecf = FALSE;
-			nothaw = TRUE;
-		}
-		else if (strncmp(p, "-bz", 3) == 0)
-			nothaw = TRUE;
-		else if (strncmp(p, "-d", 2) == 0)
-		{
 			tTsetup(tTdvect, sizeof tTdvect, "0-99.1");
 			tTflag(&p[2]);
 			setbuf(stdout, (char *) NULL);
@@ -375,12 +361,13 @@ main(argc, argv, envp)
 				auth_warning(CurEnv,
 					"Processed by %s with -C %s",
 					RealUserName, optarg);
+			ConfFile = optarg;
+			(void) setgid(RealGid);
+			(void) setuid(RealUid);
+			safecf = FALSE;
 			break;
 
-		  case 'd':	/* debugging -- redo in case frozen */
-			tTsetup(tTdvect, sizeof tTdvect, "0-99.1");
-			tTflag(&p[2]);
-			setbuf(stdout, (char *) NULL);
+		  case 'd':	/* debugging -- already done */
 			break;
 
 		  case 'f':	/* from address */
