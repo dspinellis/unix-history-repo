@@ -1,0 +1,2 @@
+ld -x *.o ../dmr/*.o ../slib.a
+../junk/ustr
