@@ -64,23 +64,6 @@ in /ucb/sendmail/KNOWNBUGS.
   the address in question.  The workaround is to turn off the `n'
   option.
 
-* owner-* alias that uses :include: broken.
-
-  If you have aliases set up as:
-
-	owner-listname:		:include:/some/file
-
-  sendmail will break because it considers this a "sender address",
-  which is not permitted to use the :include: syntax.  The easiest
-  workaround is to change this to:
-
-	owner-listname:		:include:/some/file,
-
-  (note the trailing comma); a somewhat cleaner solution is to use:
-
-	owner-listname:		listname-request
-	listname-request:	:include:/some/file
-
 * MX records that point at non-existent hosts work strangly.
 
   Consider the DNS records:
@@ -104,4 +87,4 @@ in /ucb/sendmail/KNOWNBUGS.
   can work around this by changing the $q definition to use
   ``address (name)''.
 
-(Version 8.10, last updated %G%)
+(Version 8.11, last updated %G%)
