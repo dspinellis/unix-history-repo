@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)csh.1	4.1 (Berkeley) %G%
+.\"	@(#)csh.1	5.1 (Berkeley) %G%
 .\"
-.TH CSH 1 9/1/81
+.TH CSH 1 "18 July 1983"
 .UC 4
 .de sh
 .br
@@ -34,26 +34,21 @@ arg ...
 is a first implementation of a command language interpreter
 incorporating a history mechanism (see
 .B "History Substitutions)"
-job control facilities
-(see
+job control facilities (see
 .B Jobs)
 and a C-like syntax.
 So as to be able to use its job control facilities, users of
 .I csh
-must (and automatically) use the new tty driver summarized in
-.IR newtty (4)
-and fully described in
+must (and automatically) use the new tty driver fully described in
 .IR tty (4).
 This new tty driver allows generation of interrupt characters
-from the keyboard to tell jobs to stop.
-See
+from the keyboard to tell jobs to stop.  See
 .IR stty (1)
 for details on setting options in the new tty driver.
 .PP
 An instance of
 .I csh
-begins by executing commands from the file `.cshrc'
-in the
+begins by executing commands from the file `.cshrc' in the
 .I home
 directory of the invoker.
 If this is a login shell then it also executes commands from the file
@@ -71,7 +66,7 @@ containing command scripts will be described later.
 .PP
 The shell then repeatedly performs the following actions:
 a line of command input is read and broken into
-.I words.
+.IR words .
 This sequence of words is placed on the command history list and then parsed.
 Finally each command in the current line is executed.
 .PP
@@ -354,8 +349,7 @@ while `!la' would look for a command starting `la'.
 The quotation of strings by `\'' and `"' can be used
 to prevent all or some of the remaining substitutions.
 Strings enclosed in `\'' are prevented any further interpretation.
-Strings enclosed in `"' are yet variable and command expanded
-as described below.
+Strings enclosed in `"' may be expanded as described below.
 .PP
 In both cases the resulting text becomes (all or part of) a single word;
 only in one special case (see
@@ -542,7 +536,7 @@ Substitutes the string `1' if name is set, `0' if it is not.
 .HP 5
 $?0
 .br
-Substitutes `1' if the current input filename is know, `0' if it is not.
+Substitutes `1' if the current input filename is known, `0' if it is not.
 .HP 5
 $$
 .br
@@ -700,8 +694,7 @@ Uses file
 as standard output like `>' but places output at the end of the file.
 If the variable
 .I noclobber
-is set, then
-it is an error for the file not to exist unless
+is set, then it is an error for the file not to exist unless
 one of the `!' forms is given.
 Otherwise similar to `>'.
 .PP
@@ -981,12 +974,13 @@ statements below.
 (As in
 .IR sh (1).)
 The arguments are read as input to the shell and the resulting
-command(s) executed.  This is usually used to execute commands
+command(s) executed in the context of the current shell.
+This is usually used to execute commands
 generated as the result of command or variable substitution, since
 parsing occurs before these substitutions.  See
 .IR tset (1)
 for an example of using
-.I eval.
+.IR eval .
 .HP 5
 .BR exec " command"
 .br
@@ -1069,7 +1063,7 @@ Execution continues after the specified line.
 .br
 Print a statistics line indicating how effective the internal hash
 table has been at locating commands (and avoiding
-.I exec's).
+.IR exec 's).
 An
 .I exec
 is attempted for each component of the
@@ -1087,6 +1081,10 @@ which does not begin with a `/'.
 .HP 5
 .BI "history \-r" " n"
 .br
+.ns
+.HP 5
+.BI "history \-h" " n"
+.br
 Displays the history event list; if \fIn\fR is given only the
 .I n
 most recent events are printed.
@@ -1094,6 +1092,12 @@ The
 .B \-r
 option reverses the order of printout to be most recent first
 rather than oldest first.
+The
+.B \-h
+option causes the history list to be printed without leading numbers.
+This is used to produce files suitable for sourceing using the \-h
+option to
+.IR source .
 .HP 5
 .BR if " (expr) command"
 .br
@@ -1257,14 +1261,6 @@ Terminate a login shell.
 Especially useful if
 .I ignoreeof
 is set.
-.HP 5
-.B  newgrp
-.br
-Changes the group identification of the caller; for details see
-.IR newgrp (1).
-A new shell is executed by
-.I newgrp
-so that the shell state is lost.
 .HP 5
 .B  nice
 .br
@@ -1491,6 +1487,10 @@ The second form performs the same function on the specified variable.
 .HP 5
 .BR source " name"
 .br
+.ns
+.HP 5
+.BR "source \-h" " name"
+.br
 The shell reads commands from
 .I name.
 .I Source
@@ -1501,11 +1501,11 @@ An error in a
 at any level terminates all nested
 .I source
 commands.
-Input during 
+Normally input during 
 .I source
-commands is
-.B never
-placed on the history list.
+commands is not placed on the history list;
+the \-h option causes the commands to be placed in the
+history list without being executed.
 .HP 5
 .B stop
 .br
@@ -1587,8 +1587,7 @@ If arguments are given
 the specified simple command is timed and a time summary
 as described under the
 .I time
-variable is printed.
-If necessary, an extra shell is created to print the time
+variable is printed.  If necessary, an extra shell is created to print the time
 statistic when the command completes.
 .HP 5
 .B umask
@@ -1717,7 +1716,7 @@ Spaces are, however, mandatory in separating components of
 .I expr
 which would otherwise be single words.
 .IP
-Special postfix `++' and `\-\-' operators increment and decrement
+Special postfix `++' and `\-\|\-' operators increment and decrement
 .I name
 respectively, i.e. `@  i++'.
 .sh "Pre-defined and environment variables"
@@ -1757,11 +1756,6 @@ as inferior
 processes will import the definition of
 .I path
 from the environment, and re-export it if you then change it.
-(It could be set once in the
-.I \&.login
-except that commands through
-.IR net (1)
-would not see the definition.)
 .TP 15
 .B argv
 \c
@@ -1900,6 +1894,17 @@ If a `!' appears in the string it will be replaced by the current event number
 unless a preceding `\e' is given.
 Default is `% ', or `# ' for the super-user.
 .TP 15
+.B savehist
+\c
+is given a numeric value to control the number of entries of the
+history list that are saved in ~/.history when the user logs out.
+Any command which has been referenced in this many events will be saved.
+During start up the shell sources ~/.history into the history list
+enabling history to be saved across logins.
+Too large values of
+.I savehist
+will slow down the shell during start up.
+.TP 15
 .B shell
 \c
 The file in which the shell resides.
@@ -1934,7 +1939,7 @@ after history substitution.
 .sh "Non-builtin command execution"
 When a command to be executed is found to not be a builtin command
 the shell attempts to execute the command via
-.IR  exec (2).
+.IR  execve (2).
 Each word in the variable
 .I path
 names a directory from which the shell will attempt to execute the command.
@@ -1949,7 +1954,7 @@ in a directory if there is a possibility that the command resides there.
 This greatly speeds command location when a large number of directories
 are present in the search path.
 If this mechanism has been turned off (via
-.I unhash),
+.IR unhash ),
 or if the shell was given a
 .B \-c
 or
@@ -1973,7 +1978,7 @@ from affecting the current shell.
 .PP
 If the file has execute permissions but is not an
 executable binary to the system, then it is assumed to be a
-file containing shell commands an a new shell is spawned to read it.
+file containing shell commands and a new shell is spawned to read it.
 .PP
 If there is an
 .I alias
@@ -2022,7 +2027,7 @@ and outputs are terminals.
 .B  \-n
 \c
 Commands are parsed, but not executed.
-This may aid in syntactic checking of shell scripts.
+This aids in syntactic checking of shell scripts.
 .TP 5
 .B  \-s
 \c
@@ -2119,10 +2124,10 @@ Command substitutions may substitute no more characters than are
 allowed in an argument list.
 To detect looping, the shell restricts the number of
 .I alias
-substititutions on a single line to 20.
+substitutions on a single line to 20.
 .SH "SEE ALSO"
-sh(1), newcsh(1), access(2), exec(2), fork(2), killpg(2), pipe(2), sigsys(2),
-umask(2), vlimit(2), wait(2), jobs(3), sigset(3), tty(4), a.out(5), environ(5),
+sh(1), access(2), execve(2), fork(2), killpg(2), pipe(2), sigvec(2),
+umask(2), setrlimit(2), wait(2), tty(4), a.out(5), environ(7),
 `An introduction to the C shell'
 .SH BUGS
 When a command is restarted from a stop,
@@ -2157,3 +2162,8 @@ to be combined with `|', and to be used with `&' and `;' metasyntax.
 It should be possible to use the `:' modifiers on the output of command
 substitutions.
 All and more than one `:' modifier should be allowed on `$' substitutions.
+.PP
+Symbolic links fool the shell.  In particular,
+.I dirs
+and `cd ..' don't work properly once you've crossed through a symbolic
+link.
