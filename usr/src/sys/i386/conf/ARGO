@@ -37,4 +37,8 @@ pseudo-device	loop
 pseudo-device	pty
 pseudo-device	ether
 pseudo-device	sl	2
+pseudo-device	log	4
 
+pseudo-device	swappager
+pseudo-device	vnodepager
+pseudo-device	devpager

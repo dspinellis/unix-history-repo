@@ -6,17 +6,18 @@ cpu		"i486"
 ident		CIRCE
 timezone	8 dst
 maxusers	10
+
+# Standard options
+options		QUOTA
 options		INET
-#options		NS
-#options		KADB
-#options		QUOTA
-options		NFS
-options		MFS
-options		DIAGNOSTIC
-options		"TCP_COMPAT_42"
+options		MFS,NFS,FIFO
 options		"COMPAT_43"
+options		"COMPAT_42","TCP_COMPAT_42"
+
+# Options specific to this host.
+options		DEBUG,DIAGNOSTIC
 options		KTRACE
-options		GATEWAY			# slip needs this for packet forwarding
+options		"NKMEMCLUSTERS=256"
 
 config		vmunix	root on dk0 swap on dk0
 
@@ -44,3 +45,8 @@ pseudo-device	pty
 pseudo-device	ether
 pseudo-device	sl	2
 
+pseudo-device	log	4
+
+pseudo-device	swappager
+pseudo-device	vnodepager
+pseudo-device	devpager
