@@ -1,9 +1,9 @@
-#	@(#)Makefile	4.11 (Berkeley) %G%
+#	@(#)Makefile	4.12 (Berkeley) %G%
 
 PROG=	c2
 SRCS=	c20.c c21.c c22.c
 CFLAGS+=-DCOPYCODE -DC2 -I.
-ASDIR=	${.CURDIR}/../../pgrm/as.${MACHINE}
+ASDIR=	${.CURDIR}/../../../pgrm/as.${MACHINE}
 NOMAN=	noman
 CLEANFILES=instrs.c2
 
