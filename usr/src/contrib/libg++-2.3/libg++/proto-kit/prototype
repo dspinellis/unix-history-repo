@@ -1,0 +1,176 @@
+#!/usr/local/bin/gawk -f
+#
+# types: types[x] = 1 for each type 'x' we have completed.  'x' has separators
+#
+# prototypes: 
+#	prototypes[x] = the number of dependent types 
+#			(x is base type string -- without variables. eg. AVLMap)
+#	prototypes[x,"variables"] = the type string with period separated variables
+#	prototypes[x,y] = a dependent type (y integer)
+#
+# lib_prototype[x] = 1
+# user_prototype[x] = 1
+#	"x" is base type string (eg. AVLMap)
+#
+# queue: queue of types to be done (with period separators)
+#		head: head of queue (where types added)
+#		tail: tail of queue (where types are processed)
+#
+
+
+#
+# get_template
+#
+function get_template (template_string, instance,   res, t_count, t_elements, i_count, i_elements, i) {
+	t_count = split (template_string, t_elements, ".");
+	i_count = split (instance, i_elements, ".");
+
+	for (i = 1 ; i < i_count ; i ++)
+	  {
+	    if (i > 1) res = (res ",");
+	    res = (res t_elements[i] "." i_elements[i]);
+	  }
+	return res;
+	}
+
+#
+# transform: takes an array of the form vars[variable] = value, and returns
+#	the instantiation of those variables according to template.
+#	"variable" is of the form <xxx>
+#
+function transform (vars, template,   res, pairs, map, count, i, var, preamble, postamble) {
+	res = template;
+	count = split(vars, pairs, ",");
+
+	for (i = 1 ; i <= count ; i++)
+	  {
+	    split(pairs[i],map,".");
+	    if (match(map[1],"<.+>") > 0)
+	      {
+		var = substr(map[1],RSTART,RLENGTH);
+		if (RSTART > 1)
+		  preamble = substr(map[1],1,RSTART);
+		if (RSTART + RLENGTH < length(map[1]))
+		  postamble = substr(map[1],RSTART+RLENGTH);
+
+		if (match(map[2],("^" preamble ".*" postamble "$")) > 0)
+		  {
+		    match(map[2],("^" preamble));
+		    if (RLENGTH > 0)
+		      map[2] = substr(map[2],RSTART+RLENGTH);
+		    match(map[2],(postamble "$"));
+		    if (RLENGTH > 0)
+		      map[2] = substr(map[2],1,RSTART-1);
+
+		    gsub(var, map[2], res);
+		  }
+	      }
+	  }
+	return res;
+	}
+
+function is_basic (t) {
+	if (basic_types[t] == 1)
+	  return 1;
+	return 0;
+	}
+
+function add_type (t,   c, e) {
+	c = split(t,e,".");
+
+	if ((is_basic(t) != 0) || (t ~ /_p$/) || (c <= 1))
+	  return 0;
+	if (match(t,"<.*>") > 0)
+	  return 0;
+
+	types[t] = 1;
+	return 1;
+	}
+
+function get_prototype (type,  count, names) {
+	count = split(type, names, ".");
+	return names[count];
+	}
+
+BEGIN {
+	head = 1;
+	tail = 1;
+	}
+
+($1 == "basic-type") || ($1 == "libg++-type") || ($1 == "user-type") { 
+	if ($1 == "basic-type")
+	  basic_types[$2] = 1 ;
+	if ($1 == "libg++-type")
+	  lib_types[$2] = 1;
+	if ($1 == "user-type") 
+	  {
+	    add_type($2);
+	    user_types[$2] = 1 ;
+	    for (i = 3 ; i <= NF ; i++)
+	      if (add_type($i) > 0)
+	        {
+		  queue[head] = $i;
+		  head ++;
+	        }
+	  }
+		
+	}
+
+($1 == "libg++-prototype") || ($1 == "user-prototype") {
+	proto = get_prototype($2);
+	prototypes[proto] = NF - 2;
+	prototypes[proto,"variables"] = $2;
+
+	if ($1 == "libg++-prototype")
+	  lib_prototypes[proto] = 1;
+	if ($1 == "user-prototype")
+	  user_prototypes[proto] = 1;
+
+	for (i = 3 ; i <= NF ; i ++)
+		prototypes[proto,i - 2] = $i;
+	}
+
+$1 == "instantiate" {
+	if (add_type($2) > 0)
+	  {
+	    queue[head] = $2;
+	    head ++;
+	  }
+	}
+
+END {
+	while (head > tail)
+	  {
+	    count = split(queue[tail], elements, ".");
+	    template = get_template(prototypes[elements[count],"variables"], queue[tail]);
+
+	    for (i = 1 ; i <= prototypes[elements[count]] ; i ++)
+	      {
+	        t = transform(template, prototypes[elements[count],i]);
+	 	if (add_type(t))
+		  {
+	    	    queue[head] = t;
+	    	    head++;
+		  }
+	      }
+	    tail ++;
+	  }
+
+	for (t in types)
+	  if (types[t] == 1)
+	    {
+	      proto = get_prototype(t);
+	      if ((output_type == "libg++-prototypes") && (lib_prototypes[proto] == 1))
+		print t;
+	      if ((output_type == "user-prototypes") && (user_prototypes[proto] == 1))
+		print t;
+	    }
+
+	if (output_type == "libg++-types")
+	  for (t in lib_types)
+	    print t;
+
+	if (output_type == "user-types")
+	  for (t in user_types)
+	    print t;
+	}
