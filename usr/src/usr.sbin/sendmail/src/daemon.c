@@ -2,7 +2,7 @@
 # include "sendmail.h"
 
 #ifndef DAEMON
-SCCSID(@(#)daemon.c	4.4		%G%	(w/o daemon mode));
+SCCSID(@(#)daemon.c	4.5		%G%	(w/o daemon mode));
 #else
 
 #include <sys/socket.h>
@@ -10,7 +10,7 @@ SCCSID(@(#)daemon.c	4.4		%G%	(w/o daemon mode));
 #include <netdb.h>
 #include <sys/wait.h>
 
-SCCSID(@(#)daemon.c	4.4		%G%	(with daemon mode));
+SCCSID(@(#)daemon.c	4.5		%G%	(with daemon mode));
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
@@ -60,7 +60,9 @@ SCCSID(@(#)daemon.c	4.4		%G%	(with daemon mode));
 */
 
 struct sockaddr_in	SendmailAddress;/* internet address of sendmail */
-int	DaemonSocket = -1;		/* fd describing socket */
+
+int	DaemonSocket	= -1;		/* fd describing socket */
+char	*NetName	= "ARPA";	/* name of home (local?) network */
 
 getrequests()
 {
@@ -183,7 +185,7 @@ getrequests()
 			/* determine host name */
 			hp = gethostbyaddr(&otherend.sin_addr, sizeof otherend.sin_addr, AF_INET);
 			if (hp != NULL)
-				(void) sprintf(buf, "%s.ARPA", hp->h_name);
+				(void) sprintf(buf, "%s.%s", hp->h_name, NetName);
 			else
 				/* this should produce a dotted quad */
 				(void) sprintf(buf, "%lx", otherend.sin_addr.s_addr);

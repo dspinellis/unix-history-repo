@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)readcf.c	4.2		%G%);
+SCCSID(@(#)readcf.c	4.3		%G%);
 
 /*
 **  READCF -- read control file.
@@ -584,6 +584,7 @@ printrules()
 
 static BITMAP	StickyOpt;		/* set if option is stuck */
 extern char	*WizWord;		/* the stored wizard password */
+extern char	*NetName;		/* name of home (local) network */
 
 setoption(opt, val, safe, sticky)
 	char opt;
@@ -719,6 +720,12 @@ setoption(opt, val, safe, sticky)
 	  case 'm':		/* send to me too */
 		MeToo = atobool(val);
 		break;
+
+# ifdef DAEMON
+	  case 'N':		/* home (local?) network name */
+		NetName = newstr(val);
+		break;
+# endif DAEMON
 
 	  case 'o':		/* assume old style headers */
 		if (atobool(val))
