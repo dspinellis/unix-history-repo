@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)domacro.c	1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)domacro.c	1.3 (Berkeley) %G%";
 #endif not lint
 
 #include "ftp_var.h"
@@ -117,7 +117,7 @@ TOP:
 			}
 			(*c->c_handler)(margc, margv);
 			if (bell && c->c_bell) {
-				(void) putchar(CTRL(g));
+				(void) putchar(CTRL('g'));
 			}
 			(void) strcpy(line, line2);
 			makeargv();
