@@ -1,4 +1,4 @@
-/*	sys_generic.c	5.6	82/08/10	*/
+/*	sys_generic.c	5.7	82/08/11	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -23,6 +23,7 @@
 #define	CHARGE(nothing)
 #endif
 #include "../h/descrip.h"
+#include "../h/uio.h"
 
 /*
  * Read system call.
@@ -488,4 +489,109 @@ iomove(cp, n, flag)
 	u.u_base += n;
 	u.u_offset += n;
 	u.u_count -= n;
+}
+
+readip(ip, uio)
+	register struct inode *ip;
+	register struct uio *uio;
+{
+	register struct iovec *iov = uio->uio_iov;
+	struct buf *bp;
+	struct fs *fs;
+	dev_t dev;
+	daddr_t lbn, bn;
+	off_t diff;
+	register int on, type;
+	register unsigned n;
+	int size;
+	long bsize;
+	extern int mem_no;
+	int error = 0;
+
+	uio->uio_resid = 0;
+	if (uio->uio_iovcnt == 0)
+		return (0);
+	dev = (dev_t)ip->i_rdev;
+	if (uio->uio_offset < 0 &&
+	    ((ip->i_mode&IFMT) != IFCHR || mem_no != major(dev))) {
+		error = EINVAL;
+		goto bad;
+	}
+	ip->i_flag |= IACC;
+	type = ip->i_mode&IFMT;
+	if (type == IFCHR) {
+		register c = u.u_count;
+		error = (*cdevsw[major(dev)].d_read)(dev, uio);
+		CHARGE(sc_tio * (c - u.u_count));
+		return (error);
+	}
+	if (type != IFBLK) {
+		dev = ip->i_dev;
+		fs = ip->i_fs;
+		bsize = fs->fs_bsize;
+	} else
+		bsize = BLKDEV_IOSIZE;
+nextiov:
+	if (uio->uio_iovcnt == 0)
+		goto getresid;
+	if (iov->iov_len > 0)
+	do {
+		lbn = uio->uio_offset / bsize;
+		on = uio->uio_offset % bsize;
+		n = MIN((unsigned)(bsize - on), iov->iov_len);
+		if (type != IFBLK) {
+			diff = ip->i_size - uio->uio_offset;
+			if (diff <= 0)
+				return;
+			if (diff < n)
+				n = diff;
+			bn = fsbtodb(fs, bmap(ip, lbn, B_READ));
+			if (u.u_error)
+				goto getresid;
+			size = blksize(fs, ip, lbn);
+		} else {
+			size = bsize;
+			bn = lbn * (BLKDEV_IOSIZE/DEV_BSIZE);
+			rablock = bn + (BLKDEV_IOSIZE/DEV_BSIZE);
+			rasize = bsize;
+		}
+		if ((long)bn<0) {
+			bp = geteblk(size);
+			clrbuf(bp);
+		} else if (ip->i_lastr + 1 == lbn)
+			bp = breada(dev, bn, size, rablock, rasize);
+		else
+			bp = bread(dev, bn, size);
+		ip->i_lastr = lbn;
+		n = MIN(n, size - bp->b_resid);
+		if (n != 0) {
+			if (uio->uio_segflg != 1) {
+				if (copyout(bp->b_un.b_addr+on, iov->iov_base, n)) {
+					error = EFAULT;
+					goto getresid;
+				}
+			} else
+				bcopy(bp->b_un.b_addr + on, iov->iov_base, n);
+			iov->iov_base += n;
+			uio->uio_offset += n;
+			iov->iov_len -= n;
+bad:
+			;
+		}
+		if (n + on == bsize || uio->uio_offset == ip->i_size)
+			bp->b_flags |= B_AGE;
+		brelse(bp);
+	} while (u.u_error == 0 && iov->iov_len != 0 && n != 0);
+	if (u.u_error == 0 && n > 0) {
+		iov++;
+		uio->uio_iovcnt--;
+		goto nextiov;
+	}
+getresid:
+	while (uio->uio_iovcnt > 0) {
+		uio->uio_resid += iov->iov_len;
+		iov++;
+		uio->uio_iovcnt--;
+	}
+	return (error);
 }
