@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)tth19.c	3.2 83/08/11";
+static	char *sccsid = "@(#)tth19.c	3.3 83/08/12";
 #endif
 
 #include "ww.h"
@@ -168,7 +168,7 @@ register char row, col;
 			goto out;
 		}
 	}
-	if (col == 1 && row == 1) {
+	if (col == 0 && row == 0) {
 		esc();
 		pc(H);
 		goto out;
