@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 1980 Regents of the University of California.
+ * Copyright (c) 1985 Sun Microsystems, Inc.
+ * Copyright (c) 1980 The Regents of the University of California.
  * Copyright (c) 1976 Board of Trustees of the University of Illinois.
  * All rights reserved.
  *
@@ -8,32 +9,16 @@
  * duplicated in all such forms and that any documentation,
  * advertising materials, and other materials related to such
  * distribution and use acknowledge that the software was developed
- * by the University of California, Berkeley and the University
- * of Illinois, Urbana.  The name of either
- * University may not be used to endorse or promote products derived
- * from this software without specific prior written permission.
+ * by the University of California, Berkeley, the University of Illinois,
+ * Urbana, and Sun Microsystems, Inc.  The name of either University
+ * or Sun Microsystems may not be used to endorse or promote products
+ * derived from this software without specific prior written permission.
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)indent_codes.h	5.5 (Berkeley) %G%
+ *	@(#)indent_codes.h	5.6 (Berkeley) %G%
  */
-
-/*
-FILE NAME:
-	indent_codes.h
-
-PURPOSE:
-	This include file contains defines for codes used within indent.  They
-	are here so that codes passed between and within routines can be
-	referenced symbolically.
-
-GLOBALS:
-	No global variables, just a bunch of defines
-
-FUNCTIONS:
-	None
-*/
 
 #define newline		1
 #define lparen		2
