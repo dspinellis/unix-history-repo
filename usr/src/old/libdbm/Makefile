@@ -1,10 +1,11 @@
-#	Makefile	4.2	83/08/20
+#	Makefile	4.3	83/10/17
 #
 CFLAGS=-O
 
 libdbm.a: dbm.c
 libdbm.a: dbm.h
-	${CC} -o libdbm.a ${CFLAGS} dbm.c
+	${CC} -c ${CFLAGS} dbm.c
+	mv dbm.o libdbm.a
 
 install:
 	install -m 644 libdbm.a $(DESTDIR)/usr/lib
