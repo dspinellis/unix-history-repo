@@ -1,0 +1,26 @@
+# Font /usr/lib/vfont/h19.10, max width 20, max height 34
+name hn
+spacewidth 72
+# char	width	u/d	octal
+charset
+\|	  72	 0	00
+\^	   0	 0	00
+K	  72	 3	0113
+L	  72	 3	0114
+`	  72	 3	0140
+a	  72	 3	0141
+b	  72	 3	0142
+c	  72	 3	0143
+d	  72	 3	0144
+e	  72	 3	0145
+f	  72	 3	0146
+h	  72	 3	0150
+i	  72	 3	0151
+k	  72	 3	0153
+l	  72	 3	0154
+m	  72	 3	0155
+n	  72	 3	0156
+s	  72	 3	0163
+t	  72	 3	0164
+u	  72	 3	0165
+v	  72	 3	0166
