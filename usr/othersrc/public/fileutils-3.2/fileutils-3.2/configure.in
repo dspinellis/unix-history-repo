@@ -1,0 +1,94 @@
+dnl Process this file with autoconf to produce a configure script.
+M_INIT(src/ls.c)
+M_SUBST(PROGS)dnl
+M_SUBST(LIBPROGS)dnl
+M_PROG_GCC
+M_PROG_RANLIB
+M_ISC
+M_HEADER_PRESENT(limits.h, M_DEFINE(HAVE_LIMITS_H))
+M_MAJOR_HEADER
+M_DIR_HEADER
+M_SIGTYPE
+echo checking how to get list of mounted filesystems
+if grep putmntent $INCLUDEDIR/sys/mnttab.h >/dev/null 2>&1; then
+  # SVR4
+  M_DEFINE(MOUNTED_GETMNTENT2) PROGS="$PROGS df" LIBOBJS="$LIBOBJS fsusage.o mountlist.o"
+elif test -f $INCLUDEDIR/sys/statfs.h && test -f $INCLUDEDIR/sys/fstyp.h &&
+  test -f $INCLUDEDIR/mnttab.h; then
+  # SVR3
+  M_DEFINE(MOUNTED_FREAD_FSTYP) PROGS="$PROGS df" LIBOBJS="$LIBOBJS fsusage.o mountlist.o"
+elif test -f $INCLUDEDIR/mntent.h; then
+  # 4.3BSD
+  M_DEFINE(MOUNTED_GETMNTENT1) PROGS="$PROGS df" LIBOBJS="$LIBOBJS fsusage.o mountlist.o"
+elif grep MOUNT_UFS $INCLUDEDIR/sys/mount.h >/dev/null 2>&1; then
+  # 4.4BSD
+  M_DEFINE(MOUNTED_GETMNTINFO) PROGS="$PROGS df" LIBOBJS="$LIBOBJS fsusage.o mountlist.o"
+elif test -f $INCLUDEDIR/sys/fs_types.h && test -f $INCLUDEDIR/sys/mount.h; then
+  # Ultrix
+  M_DEFINE(MOUNTED_GETMNT) PROGS="$PROGS df" LIBOBJS="$LIBOBJS fsusage.o mountlist.o"
+elif test -f $INCLUDEDIR/mnttab.h && test -f /etc/mnttab; then
+  # SVR2
+  M_DEFINE(MOUNTED_FREAD) PROGS="$PROGS df" LIBOBJS="$LIBOBJS fsusage.o mountlist.o"
+fi
+
+echo checking how to get filesystem space usage
+if test -f $INCLUDEDIR/sys/statvfs.h; then
+  # SVR4
+  M_DEFINE(STAT_STATVFS)
+elif test -f $INCLUDEDIR/sys/statfs.h; then
+  # SVR3
+  M_DEFINE(STAT_STATFS4)
+elif test -f $INCLUDEDIR/sys/vfs.h; then
+  # 4.3BSD
+  M_DEFINE(STAT_STATFS2_BSIZE)
+elif grep MOUNT_UFS $INCLUDEDIR/sys/mount.h >/dev/null 2>&1; then
+  # 4.4BSD
+  M_DEFINE(STAT_STATFS2_FSIZE)
+elif test -f $INCLUDEDIR/sys/mount.h; then
+  # Ultrix
+  M_DEFINE(STAT_STATFS2_FS_DATA)
+elif test -f $INCLUDEDIR/sys/filsys.h; then
+  # SVR2
+  M_DEFINE(STAT_READ)
+fi
+
+M_UID_T
+M_INTSIZE
+M_STDC_HEADERS
+M_UNISTD_H
+M_USG
+M_REPLACE_FUNCS(fnmatch mkdir mktime stpcpy strdup strstr rename)
+M_MISSING_FUNCS(strerror fchmod ftime mkfifo)
+M_LIBTHING_MISSING(ftruncate, , [ftruncate();], ftruncate_missing=1)
+if test -n "$ftruncate_missing"; then
+M_LIBTHING_PRESENT(fcntl emulation of ftruncate,
+[#include <sys/types.h>
+#include <fcntl.h>], [
+#if !defined(F_CHSIZE) && !defined(F_FREESP)
+chsize();
+#endif
+], LIBOBJS="$LIBOBJS ftruncate.o")
+fi
+
+case "$LIBOBJS" in
+*ftruncate.o*) ;;
+*) if test -n "$ftruncate_missing"; then M_DEFINE(FTRUNCATE_MISSING); fi
+;;
+esac
+
+case "$LIBOBJS" in
+*rename.o*)
+  LIBPROGS="$LIBPROGS mvdir"
+  M_DEFINE(MVDIR, \\\\\"\$(libdir)/mvdir\\\\\")
+  ;;
+esac
+
+M_VPRINTF
+M_ALLOCA
+M_ST_BLOCKS
+M_UTIME_NULL
+M_MINIX
+M_XENIX
+M_IRIX
+M_DYNIX
+M_OUTPUT(. lib src man)
