@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vnops.c	7.87 (Berkeley) %G%
+ *	@(#)ffs_vnops.c	7.88 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -213,6 +213,8 @@ ffs_read(ap)
 	if (uio->uio_resid == 0)
 		return (0);
 	fs = ip->i_fs;
+	if ((u_quad_t)uio->uio_offset > fs->fs_maxfilesize)
+		return (EFBIG);
 	ip->i_flag |= IACC;
 	do {
 		lbn = lblkno(fs, uio->uio_offset);
