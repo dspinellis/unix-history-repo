@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)pte.h	7.2 (Berkeley) %G%
+ *	@(#)pte.h	7.3 (Berkeley) %G%
  */
 
 /*
