@@ -2,7 +2,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_usrreq.c	7.29 (Berkeley) %G%
+ *	@(#)uipc_usrreq.c	7.30 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -342,13 +342,12 @@ unp_bind(unp, nam, p)
 {
 	struct sockaddr_un *soun = mtod(nam, struct sockaddr_un *);
 	register struct vnode *vp;
-	register struct nameidata *ndp;
 	struct vattr vattr;
 	int error;
 	struct nameidata nd;
 
-	ndp = &nd;
-	ndp->ni_dirp = soun->sun_path;
+	NDINIT(&nd, CREATE, FOLLOW | LOCKPARENT, UIO_SYSSPACE,
+		soun->sun_path, p);
 	if (unp->unp_vnode != NULL)
 		return (EINVAL);
 	if (nam->m_len == MLEN) {
@@ -357,27 +356,25 @@ unp_bind(unp, nam, p)
 	} else
 		*(mtod(nam, caddr_t) + nam->m_len) = 0;
 /* SHOULD BE ABLE TO ADOPT EXISTING AND wakeup() ALA FIFO's */
-	ndp->ni_nameiop = CREATE | FOLLOW | LOCKPARENT;
-	ndp->ni_segflg = UIO_SYSSPACE;
-	if (error = namei(ndp, p))
+	if (error = namei(&nd))
 		return (error);
-	vp = ndp->ni_vp;
+	vp = nd.ni_vp;
 	if (vp != NULL) {
-		VOP_ABORTOP(ndp->ni_dvp, &ndp->ni_cnd);
-		if (ndp->ni_dvp == vp)
-			vrele(ndp->ni_dvp);
+		VOP_ABORTOP(nd.ni_dvp, &nd.ni_cnd);
+		if (nd.ni_dvp == vp)
+			vrele(nd.ni_dvp);
 		else
-			vput(ndp->ni_dvp);
+			vput(nd.ni_dvp);
 		vrele(vp);
 		return (EADDRINUSE);
 	}
 	VATTR_NULL(&vattr);
 	vattr.va_type = VSOCK;
 	vattr.va_mode = 0777;
-	LEASE_CHECK(ndp->ni_dvp, p, p->p_ucred, LEASE_WRITE);
-	if (error = VOP_CREATE(ndp->ni_dvp, &ndp->ni_vp, &ndp->ni_cnd, &vattr))
+	LEASE_CHECK(nd.ni_dvp, p, p->p_ucred, LEASE_WRITE);
+	if (error = VOP_CREATE(nd.ni_dvp, &nd.ni_vp, &nd.ni_cnd, &vattr))
 		return (error);
-	vp = ndp->ni_vp;
+	vp = nd.ni_vp;
 	vp->v_socket = unp->unp_socket;
 	unp->unp_vnode = vp;
 	unp->unp_addr = m_copy(nam, 0, (int)M_COPYALL);
@@ -393,23 +390,19 @@ unp_connect(so, nam, p)
 	register struct sockaddr_un *soun = mtod(nam, struct sockaddr_un *);
 	register struct vnode *vp;
 	register struct socket *so2, *so3;
-	register struct nameidata *ndp;
 	struct unpcb *unp2, *unp3;
 	int error;
 	struct nameidata nd;
 
-	ndp = &nd;
-	ndp->ni_dirp = soun->sun_path;
+	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_SYSSPACE, soun->sun_path, p);
 	if (nam->m_data + nam->m_len == &nam->m_dat[MLEN]) {	/* XXX */
 		if (*(mtod(nam, caddr_t) + nam->m_len - 1) != 0)
 			return (EMSGSIZE);
 	} else
 		*(mtod(nam, caddr_t) + nam->m_len) = 0;
-	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
-	ndp->ni_segflg = UIO_SYSSPACE;
-	if (error = namei(ndp, p))
+	if (error = namei(&nd))
 		return (error);
-	vp = ndp->ni_vp;
+	vp = nd.ni_vp;
 	if (vp->v_type != VSOCK) {
 		error = ENOTSOCK;
 		goto bad;

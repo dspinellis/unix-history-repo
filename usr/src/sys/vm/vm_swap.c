@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_swap.c	7.18 (Berkeley) %G%
+ *	@(#)vm_swap.c	7.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -135,20 +135,16 @@ swapon(p, uap, retval)
 {
 	register struct vnode *vp;
 	register struct swdevt *sp;
-	register struct nameidata *ndp;
 	dev_t dev;
 	int error;
 	struct nameidata nd;
 
 	if (error = suser(p->p_ucred, &p->p_acflag))
 		return (error);
-	ndp = &nd;
-	ndp->ni_nameiop = LOOKUP | FOLLOW;
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = uap->name;
-	if (error = namei(ndp, p))
+	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->name, p);
+	if (error = namei(&nd))
 		return (error);
-	vp = ndp->ni_vp;
+	vp = nd.ni_vp;
 	if (vp->v_type != VBLK) {
 		vrele(vp);
 		return (ENOTBLK);
