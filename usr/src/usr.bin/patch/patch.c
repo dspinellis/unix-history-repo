@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)patch.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)patch.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 /* patch - a program to apply diffs to original files
@@ -1477,6 +1477,7 @@ another_hunk()
 	if (p_end >=0 && !p_ptrn_lines)
 	    fatal("No --- found in patch at line %d\n", pch_hunk_beg());
 	p_repl_lines = p_end - repl_beginning;
+	p_char[p_end+1] = '^';	/* add a stopper for apply_hunk */
     }
     else if (diff_type == NEW_CONTEXT_DIFF) {
 	long line_beginning = ftell(pfp);
@@ -1574,10 +1575,8 @@ another_hunk()
 		break;
 	    case '\t': case '\n':	/* assume the 2 spaces got eaten */
 		p_line[p_end] = savestr(buf);
-		if (p_end != p_ptrn_lines + 1) {
-		    context++;
-		    p_char[p_end] = ' ';
-		}
+		context++;
+		p_char[p_end] = ' ';
 		break;
 	    case ' ':
 		context++;
@@ -1612,6 +1611,7 @@ another_hunk()
 	    assert(filldst==p_end+1 || filldst==repl_beginning);
 	}
 	p_repl_lines = p_end - repl_beginning;
+	p_char[p_end+1] = '^';	/* add a stopper for apply_hunk */
     }
     else {				/* normal diff--fake it up */
 	char hunk_type;
