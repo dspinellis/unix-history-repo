@@ -1,10 +1,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)srvrsmtp.c	3.35		%G%	(no SMTP));
+SCCSID(@(#)srvrsmtp.c	3.36		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)srvrsmtp.c	3.35		%G%);
+SCCSID(@(#)srvrsmtp.c	3.36		%G%);
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -43,6 +43,7 @@ struct cmd
 # define CMDVERB	14	/* verb -- go into verbose mode */
 # define CMDDBGKILL	15	/* kill -- kill sendmail */
 # define CMDDBGWIZ	16	/* wiz -- become a wizard */
+# define CMDONEX	17	/* onex -- sending one transaction only */
 
 static struct cmd	CmdTab[] =
 {
@@ -59,6 +60,7 @@ static struct cmd	CmdTab[] =
 	"mrsq",		CMDMRSQ,
 	"helo",		CMDHELO,
 	"verb",		CMDVERB,
+	"onex",		CMDONEX,
 # ifdef DEBUG
 	"showq",	CMDDBGSHOWQ,
 	"debug",	CMDDBGDEBUG,
@@ -83,6 +85,8 @@ smtp()
 	bool hasmail;			/* mail command received */
 	int rcps;			/* number of recipients */
 	auto ADDRESS *vrfyqueue;
+	bool onexact = FALSE;		/* one transaction this connection */
+	bool firsttime = TRUE;		/* this is the first transaction */
 	char inp[MAXLINE];
 	extern char Version[];
 	extern tick();
@@ -150,6 +154,9 @@ smtp()
 			break;
 
 		  case CMDMAIL:		/* mail -- designate sender */
+			firsttime = FALSE;
+
+			/* check for validity of this command */
 			if (hasmail)
 			{
 				message("503", "Sender already specified");
@@ -309,6 +316,11 @@ smtp()
 		  case CMDVERB:		/* set verbose mode */
 			Verbose = TRUE;
 			message("200", "Verbose mode");
+			break;
+
+		  case CMDONEX:		/* doing one transaction only */
+			onexact = TRUE;
+			message("200", "Only one transaction");
 			break;
 
 # ifdef DEBUG

@@ -6,7 +6,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)main.c	3.137		%G%);
+SCCSID(@(#)main.c	3.138		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -339,7 +339,7 @@ main(argc, argv)
 
 	if (pass <= 1)
 	{
-		if (!safecf || OpMode == MD_FREEZE || !thaw())
+		if (!safecf || OpMode == MD_FREEZE || !thaw(FreezeFile))
 			readcf(ConfFile, safecf);
 		else
 			goto crackargs;
@@ -347,7 +347,7 @@ main(argc, argv)
 	switch (OpMode)
 	{
 	  case MD_FREEZE:
-		freeze();
+		freeze(FreezeFile);
 		exit(EX_OK);
 
 	  case MD_INITALIAS:
