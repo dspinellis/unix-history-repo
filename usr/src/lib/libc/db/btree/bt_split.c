@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_split.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_split.c	5.15 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -25,12 +25,12 @@ static char sccsid[] = "@(#)bt_split.c	5.14 (Berkeley) %G%";
 
 static int	 bt_broot __P((BTREE *, PAGE *, PAGE *, PAGE *));
 static PAGE	*bt_page
-		    __P((BTREE *, PAGE *, PAGE **, PAGE **, int *, size_t));
+		    __P((BTREE *, PAGE *, PAGE **, PAGE **, u_int *, size_t));
 static int	 bt_preserve __P((BTREE *, pgno_t));
 static PAGE	*bt_psplit
-		    __P((BTREE *, PAGE *, PAGE *, PAGE *, int *, size_t));
+		    __P((BTREE *, PAGE *, PAGE *, PAGE *, u_int *, size_t));
 static PAGE	*bt_root
-		    __P((BTREE *, PAGE *, PAGE **, PAGE **, int *, size_t));
+		    __P((BTREE *, PAGE *, PAGE **, PAGE **, u_int *, size_t));
 static int	 bt_rroot __P((BTREE *, PAGE *, PAGE *, PAGE *));
 static recno_t	 rec_total __P((PAGE *));
 
@@ -300,7 +300,7 @@ static PAGE *
 bt_page(t, h, lp, rp, skip, ilen)
 	BTREE *t;
 	PAGE *h, **lp, **rp;
-	int *skip;
+	u_int *skip;
 	size_t ilen;
 {
 	PAGE *l, *r, *tp;
@@ -402,7 +402,7 @@ static PAGE *
 bt_root(t, h, lp, rp, skip, ilen)
 	BTREE *t;
 	PAGE *h, **lp, **rp;
-	int *skip;
+	u_int *skip;
 	size_t ilen;
 {
 	PAGE *l, *r, *tp;
@@ -566,7 +566,7 @@ static PAGE *
 bt_psplit(t, h, l, r, pskip, ilen)
 	BTREE *t;
 	PAGE *h, *l, *r;
-	int *pskip;
+	u_int *pskip;
 	size_t ilen;
 {
 	BINTERNAL *bi;
