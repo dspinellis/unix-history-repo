@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.12 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.13 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -132,7 +132,7 @@ Do`'confOPERATORS
 
 # format of a total name
 Dq`'ifdef(`confFROM_HEADER', confFROM_HEADER,
-	ifdef(`_OLD_SENDMAIL_', `$g$?x ($x)$.', `$?x$x <$g>$|$g$.')))
+	ifdef(`_OLD_SENDMAIL_', `$g$?x ($x)$.', `$?x$x <$g>$|$g$.'))
 include(`../m4/version.m4')
 
 ###############
