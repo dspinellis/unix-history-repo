@@ -2,7 +2,7 @@
 # include <ctype.h>
 # include "dlvrmail.h"
 
-static char	SccsId[] = "@(#)parseaddr.c	2.1	%G%";
+static char	SccsId[] = "@(#)parseaddr.c	2.2	%G%";
 
 /*
 **  PARSE -- Parse an address
@@ -45,6 +45,9 @@ static char	SccsId[] = "@(#)parseaddr.c	2.1	%G%";
 **		alias
 **		savemail
 */
+
+# define DELIMCHARS	"()<>@!.,;:\\\""	/* word delimiters */
+# define SPACESUB	('.'|0200)		/* substitution for <lwsp> */
 
 addrq *
 parse(addr, a, copyf)
@@ -355,13 +358,15 @@ prescan(addr, buf, buflim, delim)
 	bool space;
 	bool quotemode;
 	bool bslashmode;
+	bool delimmode;
 	int cmntcnt;
 	int brccnt;
 	register char c;
 	register char *q;
 	extern bool any();
 
-	space = TRUE;
+	space = FALSE;
+	delimmode = TRUE;
 	q = buf;
 	bslashmode = quotemode = FALSE;
 	cmntcnt = brccnt = 0;
@@ -403,9 +408,15 @@ prescan(addr, buf, buflim, delim)
 				continue;
 			}
 		}
+		if (cmntcnt > 0)
+			continue;
+		else if (isascii(c) && isspace(c) && (space || delimmode))
+			continue;
 		else if (c == '<')
 		{
 			brccnt++;
+			delimmode = TRUE;
+			space = FALSE;
 			if (brccnt == 1)
 			{
 				/* we prefer using machine readable name */
@@ -437,22 +448,27 @@ prescan(addr, buf, buflim, delim)
 		**	of the document.....
 		*/
 
-		if (space && (c == 'a' || c == 'A') &&
+		if (delimmode && (c == 'a' || c == 'A') &&
 		    (p[0] == 't' || p[0] == 'T') &&
-		    (any(p[1], "()<>@,;:\\\"") || p[1] <= 040))
+		    (any(p[1], DELIMCHARS) || p[1] <= 040))
 		{
 			c = '@';
 			p++;
 		}
 
+		if (delimmode = any(c, DELIMCHARS))
+			space = FALSE;
+
 		/* skip blanks */
-		if (((c & 0200) != 0 || !isspace(c)) && cmntcnt <= 0)
+		if (!isascii(c) || !isspace(c))
 		{
-			if (q >= buflim)
+			if (q >= buflim-1)
 			{
 				usrerr("Address too long");
 				return (NULL);
 			}
+			if (space)
+				*q++ = SPACESUB;
 			*q++ = c;
 		}
 		space = isspace(c);
