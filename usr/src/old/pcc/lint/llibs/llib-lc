@@ -1,4 +1,4 @@
-/*	llib-lc	1.13	84/11/20	*/
+/*	llib-lc	1.14	84/11/21	*/
 /* LINTLIBRARY */
 #include <sys/types.h>
 #include <fstab.h>
@@ -253,8 +253,7 @@ int	fflush(f) FILE *f; {return(0);}
 int	fgetc(f)  FILE *f; {return 0; }
 char *	fgets( s, l, f ) char *s; FILE *f; { return(s); }
 int	_filbuf( f ) FILE *f; { return 0; }
-/* the unsigned is due to putc and putchar macro expansion */
-int	_flsbuf( c, f ) unsigned c; FILE *f; { return 0; }
+int	_flsbuf( c, f ) unsigned char c; FILE *f; { return 0; }
 FILE *	fopen(s,m) char *s, *m; { return(stdin); }
 	/* VARARGS */
 	fprintf( f, s ) FILE *f; char *s; {;}
