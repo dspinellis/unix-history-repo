@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_prf.c	7.34 (Berkeley) %G%
+ *	@(#)subr_prf.c	7.35 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -71,6 +71,7 @@ const char *panicstr;
  * the disks as this often leads to recursive panics.
  */
 #ifdef __GNUC__
+volatile void boot(int flags);	/* boot() does not return */
 volatile			/* panic() does not return */
 #endif
 void
@@ -114,7 +115,7 @@ panic(fmt /*, va_alist */)
  */
 void
 tablefull(tab)
-	char *tab;
+	const char *tab;
 {
 
 	log(LOG_ERR, "%s: table is full\n", tab);
