@@ -1,4 +1,4 @@
-#	Makefile	4.21	86/06/07
+#	Makefile	4.22	87/02/12
 #
 DESTDIR=
 CFLAGS=	-O
@@ -18,7 +18,7 @@ STDINST=bib jove mh patch rcs
 OPTDIR=	B dipress emacs enet mmdf news nntp notes pathalias rn \
 	spms sumacc umodem xns X
 
-all:	${SUBDIR}
+all:	${STDINST}
 
 ${SUBDIR}: FRC
 	cd $@; make ${MFLAGS}
