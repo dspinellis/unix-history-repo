@@ -271,7 +271,9 @@ onalrm()
 		utmptime = stb.st_mtime;
 		if (stb.st_size > utmpsize) {
 			utmpsize = stb.st_size + 10 * sizeof(struct utmp);
-			syslog(LOG_WARNING, "utmpsize(%d)", utmpsize);
+/* Commented out the following line, because it disturbs many people
+   that are booting/rebooting their machines often */
+/*			syslog(LOG_WARNING, "utmpsize(%d)", utmpsize); */
 			if (utmp)
 				utmp = (struct utmp *)realloc(utmp, utmpsize);
 			else
