@@ -1,12 +1,13 @@
-#	@(#)Makefile.inc	5.13 (Berkeley) %G%
+#	@(#)Makefile.inc	5.14 (Berkeley) %G%
 
 # machine-independent stdlib sources
 .PATH: ${.CURDIR}/${MACHINE}/stdlib ${.CURDIR}/stdlib
 
-SRCS+=	abort.c atexit.c atoi.c atol.c bsearch.c calloc.c div.c exit.c \
-	getenv.c getopt.c getsubopt.c heapsort.c labs.c ldiv.c malloc.c \
-	merge.c multibyte.c putenv.c qsort.c radixsort.c rand.c random.c \
-	setenv.c strtod.c strtol.c strtoq.c strtoul.c strtouq.c system.c
+SRCS+=	abort.c atexit.c atof.c atoi.c atol.c bsearch.c calloc.c div.c \
+	exit.c getenv.c getopt.c getsubopt.c heapsort.c labs.c ldiv.c \
+	malloc.c merge.c multibyte.c putenv.c qsort.c radixsort.c rand.c \
+	random.c setenv.c strtod.c strtol.c strtoq.c strtoul.c strtouq.c \
+	system.c
 
 # machine-dependent stdlib sources
 .include "${.CURDIR}/${MACHINE}/stdlib/Makefile.inc"
