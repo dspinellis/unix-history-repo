@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)acucntrl.c	5.13	(Berkeley) %G%";
+static char sccsid[] = "@(#)acucntrl.c	5.14	(Berkeley) %G%";
 #endif
 
 /*  acucntrl - turn around tty line between dialin and dialout
@@ -126,8 +126,11 @@ char usage[] = "Usage: acucntrl {dis|en}able ttydX\n";
 struct utmp utmp;
 char resettty, resetmodem;
 int etcutmp;
+extern int errno;
+extern char *sys_errlist[];
 off_t utmploc;
 off_t ttyslnbeg;
+off_t lseek();
 
 #define NAMSIZ	sizeof(utmp.ut_name)
 #define	LINSIZ	sizeof(utmp.ut_line)
@@ -142,11 +145,8 @@ int argc; char *argv[];
 	char *device;
 	int devfile;
 	int uid, gid;
-	off_t lseek();
 	struct passwd *getpwuid();
 	char *rindex();
-	extern int errno;
-	extern char *sys_errlist[];
 
 	/* check input arguments */
 	if (argc!=3) {
