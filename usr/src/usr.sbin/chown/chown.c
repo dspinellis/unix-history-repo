@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chown.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)chown.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -135,16 +135,19 @@ main(argc, argv)
 				continue;
 			fts_set(ftsp, p, FTS_SKIP);
 			break;
-		case FTS_DC:
-			warnx("tree cycle: %s", p->fts_path);
-			rval = 1;
+		case FTS_DC:			/* Ignore. */
 			continue;
-		case FTS_ERR:
+		case FTS_DNR:			/* Warn, chown, continue. */
+			errno = p->fts_errno;
+			warn("%s", p->fts_path);
+			rval = 1;
+			break;
+		case FTS_ERR:			/* Warn, continue. */
 			errno = p->fts_errno;
 			warn("%s", p->fts_path);
 			rval = 1;
 			continue;
-		case FTS_SL:
+		case FTS_SL:			/* Ignore. */
 		case FTS_SLNONE:
 			/*
 			 * The only symlinks that end up here are ones that
@@ -152,6 +155,8 @@ main(argc, argv)
 			 * doing a physical walk.
 			 */
 			continue;
+		default:
+			break;
 		}
 		if (chown(p->fts_accpath, uid, gid) && !fflag) {
 			chownerr(p->fts_path);
