@@ -5,12 +5,13 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)aux.c	5.4 (Berkeley) %G%";
+static char *sccsid = "@(#)aux.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include "rcv.h"
 #include <sys/stat.h>
 #include <ctype.h>
+#include <strings.h>
 
 /*
  * Mail -- a mail program
@@ -725,23 +726,6 @@ charcount(str, c)
 }
 
 /*
- * Find the rightmost pointer to an instance of the
- * character in the string and return it.
- */
-char *
-rindex(str, c)
-	char str[];
-	register int c;
-{
-	register char *cp, *cp2;
-
-	for (cp = str, cp2 = NOSTR; *cp; cp++)
-		if (c == *cp)
-			cp2 = cp;
-	return(cp2);
-}
-
-/*
  * See if the string is a number.
  */
 
@@ -769,24 +753,6 @@ anyof(s1, s2)
 		if (any(c, s2))
 			return(1);
 	return(0);
-}
-
-/*
- * Determine the leftmost index of the character
- * in the string.
- */
-
-char *
-index(str, ch)
-	char *str;
-{
-	register char *cp;
-	register int c;
-
-	for (c = ch, cp = str; *cp; cp++)
-		if (*cp == c)
-			return(cp);
-	return(NOSTR);
 }
 
 /*
