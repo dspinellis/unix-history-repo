@@ -1,0 +1,146 @@
+.TH NEWS 5
+.SH NAME
+news \- USENET network news article, utility files
+.SH DESCRIPTION
+.PP
+There are two formats of news articles:
+.BR A " and " B.
+.B A
+format is the only format that version 1 netnews systems can read or write.
+Systems running the version 2 netnews can read either format and there
+are provisions for the version 2 netnews to write in
+.BR A " format.  " A " format"
+looks like this:
+.LP
+.BI A article-ID
+.br
+.I newsgroups
+.br
+.I path
+.br
+.I date
+.br
+.I title
+.br
+.I Body of article
+.br
+.LP
+Only version 2 netnews systems can read and write
+.BR B " format.  " B " format"
+contains two extra pieces of information:  receival date and expiration
+date.  The basic structure of a
+.B B
+format file consists of a series of headers and then the body.  A header
+field is defined as a line with a capital letter in the 1st column and
+a colon somewhere on the line.  Unrecognized header fields are ignored.
+News is stored in the same format transmitted, see ``Standard for the
+Interchange of USENET Messages'' for a full description.
+The following fields are among those recognized:
+.TP 15
+Header
+Information
+.TP 15
+.B From:
+.I user@host.domain[.domain ...] (Full Name)
+.TP 15
+.B Newsgroups:
+.I Newsgroups
+.TP 15
+.B Message-ID:
+.I <Unique Identifier>
+.TP 15
+.B Subject:
+.I descriptive title
+.TP 15
+.B Date:
+.I Date Posted
+.TP 15
+.B Date-Received:
+.I Date received on local machine
+.TP 15
+.B Expires:
+.I Expiration Date
+.TP 15
+.B Reply-To:
+.I Address for mail replies
+.TP 15
+.B References:
+.I Article ID of article this is a follow-up to.
+.TP 15
+.B Control:
+.I Text of a control message
+.LP
+Here is an example of an article:
+.LP
+.nf
+Relay-Version: B 2.10	2/13/83 cbosgd.UUCP
+Posting-Version: B 2.10	2/13/83 eagle.UUCP
+Path: cbosgd!mhuxj!mhuxt!eagle!jerry
+From: jerry@eagle.uucp (Jerry Schwarz)
+Newsgroups: net.general
+Subject: Usenet Etiquette -- Please Read
+Message-ID: <642@eagle.UUCP>
+Date: Friday, 19-Nov-82 16:14:55 EST
+Followup-To: net.news
+Expires: Saturday, 1-Jan-83 00:00:00 EST
+Date-Received: Friday, 19-Nov-82 16:59:30 EST
+Organization: Bell Labs, Murray Hill
+
+The body of the article comes here, after a blank line.
+.fi
+.LP
+A
+.I sys
+file line has four fields, each seperated by colons:
+.LP
+.I system-name:subscriptions:flags:transmission command
+.PP
+Of these fields, on the
+.IR system-name " and " subscriptions " need"
+to be present.
+.PP
+The
+.I system name
+is the name of the system being sent to.  The
+.I subscriptions
+is the list of newsgroups to be transmitted to the system.  The
+.I flags
+are a set of letters describing how the article should be transmitted.
+The default is B.
+Valid flags include A (send in A format), B (send in B format),
+N (use ihave/sendme protocol),
+U (use uux -c and the name of the stored article in a %s string).
+.LP
+The
+.I transmission command
+is executed by the shell with the article to be transmitted as the standard
+input.
+The default is
+.BI "uux \- \-z \-r " sysname !rnews.
+Some examples:
+.LP
+.B "xyz:net.all"
+.br
+.B "oldsys:net.all,fa.all,to.oldsys:A"
+.br
+.B "berksys:net.all,ucb.all::/usr/lib/news/sendnews \-b berksys\\:rnews"
+.br
+.B "arpasys:net.all,arpa.all::/usr/lib/news/sendnews \-a rnews@arpasys"
+.br
+.B "old2:net.all,fa.all:A:/usr/lib/sendnews \-o old2\\:rnews"
+.br
+.B "user:fa.sf-lovers::mail user"
+.LP
+Somewhere in a
+.I sys
+file, there must be a line for the host system.  This line has no
+.IR flags " or " commands .
+A # as the first character in a line denotes a comment.
+.LP
+The history, active, and ngfile files have one line per item.
+.SH SEE ALSO
+inews(1),
+postnews(1),
+sendnews(8),
+uurec(8),
+readnews(1)
