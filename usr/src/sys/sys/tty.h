@@ -1,4 +1,4 @@
-/*	tty.h	4.7	82/01/14	*/
+/*	tty.h	4.8	82/01/20	*/
 
 #ifdef KERNEL
 #include "../h/ioctl.h"
@@ -27,8 +27,24 @@ struct clist {
  */
 struct tty
 {
-	struct	clist t_rawq;		/* device */
-	struct	clist t_canq;		/* tty */
+	union {
+		struct {
+			struct	clist T_rawq;
+			struct	clist T_canq;
+		} t_t;
+#define	t_rawq	t_nu.t_t.T_rawq		/* raw characters or partial line */
+#define	t_canq	t_nu.t_t.T_canq		/* raw characters or partial line */
+		struct {
+			struct	buf *T_bufp;
+			char	*T_cp;
+			int	T_inbuf;
+			int	T_rec;
+		} t_n;
+#define	t_bufp	t_nu.t_n.T_bufp		/* buffer allocated to protocol */
+#define	t_cp	t_nu.t_n.T_cp		/* pointer into the ripped off buffer */
+#define	t_inbuf	t_nu.t_n.T_inbuf	/* number chars in the buffer */
+#define	t_rec	t_nu.t_n.T_rec		/* have a complete record */
+	} t_nu;
 	struct	clist t_outq;		/* device */
 	int	(*t_oproc)();		/* device */
 	struct	proc *t_rsel;		/* tty */
