@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pac.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)pac.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -64,7 +64,7 @@ static struct	hent	*hashtab[HSHSIZE];	/* Hash table proper */
 
 static void	account __P((FILE *));
 static int	any __P((int, char []));
-stativ int	chkprinter __P((char *));
+static int	chkprinter __P((char *));
 static void	dumpit __P((void));
 static int	hash __P((char []));
 static struct	hent *enter __P((char []));
