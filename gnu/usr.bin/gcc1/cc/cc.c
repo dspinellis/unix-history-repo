@@ -310,7 +310,7 @@ struct compiler compilers[] =
 char *link_spec = "%{!c:%{!M*:%{!E:%{!S:ld %{o*} %l\
  %{A} %{d} %{e*} %{N} %{n} %{r} %{s} %{S} %{T*} %{t} %{u*} %{X} %{x} %{z}\
  %{y*} %{!A:%{!nostdlib:%S}} \
- %{L*} %o %{!nostdlib:%L -lgnulib %{!A:%E}}\n }}}}";
+ %{L*} %o %{!nostdlib:%L -lgnulib %L -lgnulib %{!A:%E}}\n }}}}";
 
 /* Accumulate a command (program name and args), and run it.  */
 
