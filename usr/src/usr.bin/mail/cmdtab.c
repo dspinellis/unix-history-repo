@@ -8,7 +8,7 @@
  * Define all of the command names and bindings.
  */
 
-static char *SccsId = "@(#)cmdtab.c	2.2 %G%";
+static char *SccsId = "@(#)cmdtab.c	2.3 %G%";
 
 extern int type(), preserve(), delete(), undelete(), next(), shell(), schdir();
 extern int save(), help(), headers(), pdot(), strace(), respond(), editor();
@@ -16,7 +16,7 @@ extern int edstop(), exit(), pcmdlist(), sendmail(), from();
 extern int messize(), psalloc(), deltype(), unset(), set(), source();
 extern int pversion(), group(), top(), core(), null(), stouch(), visual();
 extern int swrite(), dosh(), file(), echo(), Respond(), scroll(), ifcmd();
-extern int elsecmd(), endifcmd(), mboxit(), clobber();
+extern int elsecmd(), endifcmd(), mboxit(), clobber(), alternates();
 
 struct cmd cmdtab[] = {
 	"next",		next,		NDMLIST,	0,	MMNDEL,
@@ -66,6 +66,7 @@ struct cmd cmdtab[] = {
 	"if",		ifcmd,		F|M|RAWLIST,	1,	1,
 	"else",		elsecmd,	F|M|RAWLIST,	0,	0,
 	"endif",	endifcmd,	F|M|RAWLIST,	0,	0,
+	"alternates",	alternates,	M|RAWLIST,	0,	1000,
 	"core",		core,		M|NOLIST,	0,	0,
 	"#",		null,		M|NOLIST,	0,	0,
 	"clobber",	clobber,	M|RAWLIST,	0,	1,
