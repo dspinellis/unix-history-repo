@@ -1,23 +1,40 @@
-.\"	@(#)file.1	6.1 (Berkeley) %G%
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.TH FILE 1 ""
-.AT 3
-.SH NAME
-file \- determine file type
-.SH SYNOPSIS
-.B file
-file ...
-.SH DESCRIPTION
-.I File
-performs a series of tests on each argument
-in an attempt to classify it.
-If an argument appears to be ascii,
-.I file
-examines the first 512 bytes
-and tries to guess its language.
-.SH BUGS
-It often makes mistakes.
-In particular it often suggests that
-command files are C programs.
-.PP
-Does not recognize Pascal or LISP.
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)file.1	6.2 (Berkeley) %G%
+.\"
+.Dd 
+.Dt FILE 1
+.Os BSD 4.4
+.Sh NAME
+.Nm file
+.Nd identify file content
+.Sh SYNOPSIS
+.Nm file
+.Ar
+.Sh DESCRIPTION
+.Nm File
+tests the given argument(s) and reports
+the content type(s). 
+If
+the file type is text,
+it attempts to determine
+the type of text (e.g.
+.Xr csh 1
+commands or C code)
+.Pp
+As several tests
+are used and
+.Nm file
+stops testing on the first successful one,
+it can make mistakes.
+.Pp
+.Nm File
+does not recognize Pascal or LISP.
+.\" .Sh ENVIRONMENT
+.Sh HISTORY
+A
+.Nm file
+command appeared in Version 6 AT&T UNIX.

@@ -1,28 +1,38 @@
-.\" Copyright (c) 1983 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1983, 1990 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)gcore.1	6.1 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH GCORE 1 ""
-.UC 5
-.SH NAME
-gcore \- get core images of running processes
-.SH SYNOPSIS
-.B gcore
-process-id ...
-.SH DESCRIPTION
-.I Gcore
+.\"     @(#)gcore.1	6.2 (Berkeley) %G%
+.\"
+.Dd 
+.Dt GCORE 1
+.Os BSD 4.2
+.Sh NAME
+.Nm gcore
+.Nd get core images of running processes
+.Sh SYNOPSIS
+.Nm gcore
+.Ar process\-id ...
+.Sh DESCRIPTION
+.Nm Gcore
 creates a core image of each specified process,
 suitable for use with
-.IR adb (1)
+.Xr adb  1
 or
-.IR dbx (1).
-.SH FILES
-core.<process-id>	core images
-.SH BUGS
+.Xr dbx  1  .
+.Sh FILES
+.Dw core.<process-id>
+.Di L
+.Dp Pa core.<process-id>
+core images
+.Dp
+.Sh HISTORY
+.Nm Gcore
+appeared in 4.2 BSD.
+.Sh BUGS
 Paging activity that occurs while
-.I gcore
+.Nm gcore
 is running may cause the program
 to become confused.
 For best results,

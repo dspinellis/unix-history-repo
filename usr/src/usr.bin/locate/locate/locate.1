@@ -1,50 +1,49 @@
-.\" Copyright (c) 1989 The Regents of the University of California.
+.\" Copyright (c) 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" Redistribution and use in source and binary forms are permitted
-.\" provided that the above copyright notice and this paragraph are
-.\" duplicated in all such forms and that any documentation,
-.\" advertising materials, and other materials related to such
-.\" distribution and use acknowledge that the software was developed
-.\" by the University of California, Berkeley.  The name of the
-.\" University may not be used to endorse or promote products derived
-.\" from this software without specific prior written permission.
-.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\" %sccs.include.redist.man%
 .\"
-.\"	@(#)locate.1	5.1 (Berkeley) %G%
+.\"     @(#)locate.1	5.2 (Berkeley) %G%
 .\"
-.TH LOCATE 1 ""
-.UC 7
-.SH NAME
-locate \- find files
-.SH SYNOPSIS
-.ft B
-locate pattern
-.ft R
-.SH DESCRIPTION
-.I Locate
+.Dd 
+.Dt LOCATE 1
+.Os BSD 4.4
+.Sh NAME
+.Nm locate
+.Nd find files
+.Sh SYNOPSIS
+.Ar locate
+pattern
+.Sh DESCRIPTION
+.Nm Locate
 searches a database for all pathnames which match the specified
-.IR pattern .
+.Ar pattern  .
 The database is recomputed periodically, and contains the pathnames
 of all files which are publicly accessible.
-.PP
-Shell globbing and quoting characters (``*'', ``?'', ``\e'', ``['', and
-``]'') may be used in
-.IR pattern ,
+.Pp
+Shell globbing and quoting characters (``*'', ``?'', ``\e'', ``[''
+and ``]'')
+may be used in
+.Ar pattern  ,
 although they will have to be escaped from the shell.
 Preceding any character with a backslash (``\e'') eliminates any special
 meaning which it may have.
 The matching differs in that no characters must be matched explicitly,
 including slashes (``/'').
-.PP
+.Pp
 As a special case, a pattern containing no globbing characters (``foo'')
 is matched as though it were ``*foo*''.
-.SH FILES
-/var/db/locate.database
-.SH "SEE ALSO"
-find(1), fnmatch(3)
+.Sh FILES
+.Dw /var/db/locate.database
+.Di L
+.Dp Pa /var/db/locate.database
+.Dp
+.Sh SEE ALSO
+.Xr find 1 ,
+.Xr fnmatch 3
 .br
-Paper in February, 1983 issue of the USENIX publication
-.I ;login:.
+Paper in February,
+1983 issue of the USENIX publication
+.Sy ;login: .
+.Sh HISTORY
+4.4 BSD.

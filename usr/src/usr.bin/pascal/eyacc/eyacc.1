@@ -1,47 +1,50 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1980, 1990 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)eyacc.1	6.1 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH EYACC 1 "%G%"
-.UC 4
-.SH NAME
-eyacc \- modified yacc allowing much improved error recovery
-.SH SYNOPSIS
-.B eyacc
-[
-.B \-v
-]
-[ grammar ]
-.SH DESCRIPTION
-.I Eyacc
+.\"     @(#)eyacc.1	6.2 (Berkeley) %G%
+.\"
+.Dd 
+.Dt EYACC 1
+.Os BSD 4
+.Sh NAME
+.Nm eyacc
+.Nd modified yacc allowing much improved error recovery
+.Sh SYNOPSIS
+.Nm eyacc
+.Op Fl v
+.Op Ar grammar
+.Sh DESCRIPTION
+.Nm Eyacc
 is an old version of
-.IR yacc (1),
+.Xr yacc  1  ,
 which produces tables used by the Pascal system and its error recovery
 routines.
-.I Eyacc
+.Nm Eyacc
 fully enumerates test actions in its parser when an error token
 is in the look-ahead set.
 This prevents the parser from making undesirable reductions
 when an error occurs before the error is detected.
 The table format is different in
-.I eyacc
+.Nm eyacc
 than it was in the old
-.I yacc,
+.Xr yacc 1 ,
 as minor changes had been made for efficiency reasons.
-.SH "SEE ALSO"
-yacc(1)
+.Sh SEE ALSO
+.Xr yacc 1
 .br
-``Practical LR Error Recovery'' by Susan L. Graham, Charles B. Haley
-and W. N. Joy; SIGPLAN Conference on Compiler Construction, August 1979.
-.SH AUTHOR
+.Em Practical LR Error Recovery
+by Susan L.  Graham, Charles B. Haley and W. N. Joy;
+SIGPLAN Conference on Compiler Construction,
+August 1979.
+.Sh AUTHORS
 S. C. Johnson
-.PP
-.I Eyacc
+.Pp
+.Nm Eyacc
 modifications by Charles Haley and William Joy.
-.SH BUGS
-.I Pc
+.Sh BUGS
+.Xr Pc 1
 and its error recovery routines should be made into a library
 of routines for the new
-.I yacc.
+.Xr yacc 1 .
