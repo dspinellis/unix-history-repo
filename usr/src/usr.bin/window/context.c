@@ -1,9 +1,10 @@
 #ifndef lint
-static	char *sccsid = "@(#)context.c	3.1 83/11/22";
+static	char *sccsid = "@(#)context.c	3.2 83/11/22";
 #endif
 
 #include <stdio.h>
 #include "value.h"
+#include "string.h"
 #include "context.h"
 
 /*
@@ -18,7 +19,7 @@ cx_alloc()
 
 	if (cx.x_type != 0) {
 		xp = (struct context *)
-			malloc(1, (unsigned) sizeof (struct context));
+			malloc((unsigned) sizeof (struct context));
 		if (xp == 0)
 			return -1;
 		*xp = cx;
@@ -33,9 +34,11 @@ cx_alloc()
 
 cx_free()
 {
-	if (cx.x_link != 0) {
-		free(cx.x_link);
-		cx = *cx.x_link;
+	struct context *xp;
+
+	if ((xp = cx.x_link) != 0) {
+		cx = *xp;
+		free((char *)xp);
 	} else
 		cx.x_type = 0;
 }
