@@ -4,8 +4,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)paths.h	5.10 (Berkeley) %G%
+ *	@(#)paths.h	5.11 (Berkeley) %G%
  */
+
+#define	_PATH_DEFPATH	":/bin:/usr/bin"
 
 #define	_PATH_BSHELL	"/bin/sh"
 #define	_PATH_CONSOLE	"/dev/console"
