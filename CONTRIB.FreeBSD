@@ -9,8 +9,12 @@ This software was derived from William F. Jolitz's 386BSD release 0.1.
 Please see the file CONTRIB.386BSD for the list of contributors from 
 386BSD.
 
-Also included in this release are the patches from the patch kit version
+Included in this release are the patches from the patch kit version
 0.2.4.  The names of contributors from the patch kit are listed below.
+
+There are portions of NetBSD that has been intergraged into FreeBSD
+as well.  We would like to thank all the contributors to NetBSD for
+thier work.
 
 Hardware Contributors:
 
@@ -62,6 +66,7 @@ Sascha Wildner <swildner@channelz.GUN.de>
 Scotty ?
 Sean Eric Fagan <sef@kithrup.com>
 Terry Lee <terry@uivlsi.csl.uiuc.edu> <terry@uivlsisd.csl.uiuc.edu>
+Theo Deraadt <deraadt@fsa.ca>
 Yoval Yarom <???>
 
 PATCH KIT PATCH CONTRIBUTORS:
