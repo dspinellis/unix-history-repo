@@ -9,6 +9,7 @@
 
 #ifndef _STDLIB_H_
 #define _STDLIB_H_
+
 #include <machine/ansi.h>
 
 #ifdef	_BSD_SIZE_T_
@@ -17,6 +18,7 @@ typedef	_BSD_SIZE_T_	size_t;
 #endif
 
 #ifdef	_BSD_WCHAR_T_
+typedef	_BSD_WCHAR_T_	rune_t;
 typedef	_BSD_WCHAR_T_	wchar_t;
 #undef	_BSD_WCHAR_T_
 #endif
@@ -36,7 +38,8 @@ typedef struct {
 
 #define	RAND_MAX	0x7fffffff
 
-#define	MB_CUR_MAX	1	/* XXX */
+extern int __mb_cur_max;
+#define	MB_CUR_MAX	__mb_cur_max
 
 #include <sys/cdefs.h>
 
