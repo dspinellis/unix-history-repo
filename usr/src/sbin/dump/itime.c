@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)itime.c	1.5 (Berkeley) %G%";
+static	char *sccsid = "@(#)itime.c	1.6 (Berkeley) %G%";
 #include "dump.h"
 
 char *prdate(d)
@@ -224,7 +224,7 @@ est(ip)
 	s = fragroundup(sblock, ip->di_size) / TP_BSIZE;
 	if (ip->di_size > sblock->fs_bsize * NDADDR) {
 		/* calc number of indirect blocks on the dump tape */
-		s += howmany(s - NDADDR * BLKING(sblock) * sblock->fs_frag,
+		s += howmany(s - NDADDR * sblock->fs_bsize / TP_BSIZE,
 			TP_NINDIR);
 	}
 	esize += s;
