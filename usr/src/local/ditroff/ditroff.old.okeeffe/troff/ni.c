@@ -2,9 +2,13 @@
 
 /* You may want to change these names */
 
+#ifndef FONTDIR
+#define FONTDIR "/usr/lib/font"
+#endif
+
 #ifndef NROFF
-char	termtab[NS] = "/usr/lib/font";	/* rest added in ptinit() */
-char	fontfile[NS] = "/usr/lib/font";	/* rest added in casefp() */
+char	termtab[NS] = FONTDIR;		/* rest added in ptinit() */
+char	fontfile[NS] = FONTDIR;		/* rest added in casefp() */
 char	devname[10]	 = "va";	/* default typesetter */
 #endif
 char	obuf[OBUFSZ];	/* characters collected here for actual typesetter output */
