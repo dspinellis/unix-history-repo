@@ -1,6 +1,6 @@
-.\"	@(#)fputs.3	4.1 (Berkeley) %G%
+.\"	@(#)fputs.3	5.1 (Berkeley) %G%
 .\"
-.TH PUTS 3S 
+.TH PUTS 3S  "19 January 1983"
 .AT 3
 .SH NAME
 puts, fputs \- put a string on a stream
@@ -23,7 +23,7 @@ puts, fputs \- put a string on a stream
 copies the null-terminated string
 .I s
 to the standard output stream
-.I stdout
+.B stdout
 and appends a
 newline character.
 .PP
@@ -35,11 +35,13 @@ to the named output
 .PP
 Neither routine copies the terminal null character.
 .SH "SEE ALSO"
-fopen(3), gets(3),
-putc(3), printf(3),
-ferror(3)
+fopen(3S),
+gets(3S),
+putc(3S),
+printf(3S),
+ferror(3S)
 .br
-fread(3) for
+fread(3S) for
 .I fwrite
 .SH BUGS
 .I Puts
