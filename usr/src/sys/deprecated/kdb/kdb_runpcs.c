@@ -3,31 +3,31 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kdb_runpcs.c	7.3 (Berkeley) %G%
+ *	@(#)kdb_runpcs.c	7.4 (Berkeley) %G%
  */
 
 #include "../kdb/defs.h"
 
-char	*lp;
+char	*kdblp;
 
 /* breakpoints */
-BKPTR	bkpthead;
+BKPTR	kdbbkpthead;
 
-char	lastc;
+char	kdblastc;
 
-long	dot;
-int	adrflg;
-long	loopcnt;
-ADDR	userpc = 1;
+long	kdbdot;
+int	kdbadrflg;
+long	kdbloopcnt;
+ADDR	kdbuserpc = 1;
 
-runpcs(runmode, execsig)
+kdbrunpcs(runmode, execsig)
 {
 	register BKPTR bkpt;
 
-	if (adrflg)
-		userpc = dot;
+	if (kdbadrflg)
+		kdbuserpc = kdbdot;
 	if (execsig == 0)
-		printf("kdb: running\n");
+		kdbprintf("kdb: running\n");
 	if (runmode==SINGLE) {
 		/*
 		 * To single step, delete the
@@ -35,7 +35,7 @@ runpcs(runmode, execsig)
 		 * hardware single step in the
 		 * main loop.
 		 */
-		delbp();
+		kdbdelbp();
 		reset(SINGLE);
 	}
 	/*
@@ -45,15 +45,15 @@ runpcs(runmode, execsig)
 	 * we can just set our breakpoints and
 	 * continue.
 	 */
-	if (bkpt = scanbkpt(userpc)) {
-		execbkpt(bkpt);
+	if (bkpt = kdbscanbkpt(kdbuserpc)) {
+		kdbexecbkpt(bkpt);
 		/*NOTREACHED*/
 	}
-	setbp();
+	kdbsetbp();
 	reset(CONTIN);
 }
 
-static	int execbkptf;
+static	int kdbexecbkptf;
 
 /*
  * Continue execution after a trap.
@@ -65,94 +65,94 @@ static	int execbkptf;
  * next step.  Otherwise return 1 if we stopped because
  * of a breakpoint,
  */
-nextpcs(tracetrap)
+kdbnextpcs(tracetrap)
 	int tracetrap;
 {
 	register BKPTR bkpt;
 	short rc;
 
 	clrsstep();			/* clear hardware single step */
-	delbp();
-	if (execbkptf) {
-		execbkptf = 0;
-		runpcs(CONTIN, 1);
+	kdbdelbp();
+	if (kdbexecbkptf) {
+		kdbexecbkptf = 0;
+		kdbrunpcs(CONTIN, 1);
 		/*NOTREACHED*/
 	}
-	if (!tracetrap && (bkpt = scanbkpt(userpc))) {
+	if (!tracetrap && (bkpt = kdbscanbkpt(kdbuserpc))) {
 		/*
 		 * Stopped at a breakpoint,
 		 * execute any command.
 		 */
-		dot = bkpt->loc;
+		kdbdot = bkpt->loc;
 		if (bkpt->flag == BKPTEXEC ||
 		    ((bkpt->flag = BKPTEXEC) && bkpt->comm[0] != EOR &&
-		    command(bkpt->comm, ':') && --bkpt->count)) {
-			loopcnt++;
-			execbkpt(bkpt);
+		    kdbcommand(bkpt->comm, ':') && --bkpt->count)) {
+			kdbloopcnt++;
+			kdbexecbkpt(bkpt);
 		} else {
 			bkpt->count = bkpt->initcnt;
 			rc = 1;
 		}
 	} else
 		rc = 0;
-	if (--loopcnt > 0)
-		runpcs(rc ? CONTIN : SINGLE, 1);
+	if (--kdbloopcnt > 0)
+		kdbrunpcs(rc ? CONTIN : SINGLE, 1);
 	return (rc);
 }
 
 #define BPOUT 0
 #define BPIN 1
-static	int bpstate = BPOUT;
+static	int kdbbpstate = BPOUT;
 
-execbkpt(bkptr)
+kdbexecbkpt(bkptr)
 	BKPTR	bkptr;
 {
 
-	delbp();
+	kdbdelbp();
 	bkptr->flag = BKPTSET;
-	execbkptf++;
+	kdbexecbkptf++;
 	reset(SINGLE);
 }
 
 BKPTR
-scanbkpt(addr)
+kdbscanbkpt(addr)
 	ADDR addr;
 {
 	register BKPTR	bkptr;
 
-	for (bkptr = bkpthead; bkptr; bkptr = bkptr->nxtbkpt)
+	for (bkptr = kdbbkpthead; bkptr; bkptr = bkptr->nxtbkpt)
 		if (bkptr->flag && bkptr->loc == addr)
 			break;
 	return (bkptr);
 }
 
-delbp()
+kdbdelbp()
 {
 	register off_t a;
 	register BKPTR bkptr;
 
-	if (bpstate == BPOUT)
+	if (kdbbpstate == BPOUT)
 		return;
-	for (bkptr = bkpthead; bkptr; bkptr = bkptr->nxtbkpt)
+	for (bkptr = kdbbkpthead; bkptr; bkptr = bkptr->nxtbkpt)
 		if (bkptr->flag) {
 			a = bkptr->loc;
-			put((off_t)a, ISP, (long)bkptr->ins);
+			kdbput((off_t)a, ISP, (long)bkptr->ins);
 		}
-	bpstate = BPOUT;
+	kdbbpstate = BPOUT;
 }
 
-setbp()
+kdbsetbp()
 {
 	register off_t a;
 	register BKPTR bkptr;
 
-	if (bpstate == BPIN)
+	if (kdbbpstate == BPIN)
 		return;
-	for (bkptr = bkpthead; bkptr; bkptr = bkptr->nxtbkpt)
+	for (bkptr = kdbbkpthead; bkptr; bkptr = bkptr->nxtbkpt)
 		if (bkptr->flag) {
 			a = bkptr->loc;
-			bkptr->ins = get(a, ISP);
-			put(a, ISP, (long)SETBP(bkptr->ins));
+			bkptr->ins = kdbget(a, ISP);
+			kdbput(a, ISP, (long)SETBP(bkptr->ins));
 		}
-	bpstate = BPIN;
+	kdbbpstate = BPIN;
 }

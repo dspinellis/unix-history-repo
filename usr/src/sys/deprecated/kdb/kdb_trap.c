@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kdb_trap.c	7.7 (Berkeley) %G%
+ *	@(#)kdb_trap.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -11,18 +11,18 @@
  */
 #include "../kdb/defs.h"
 
-char	*NOEOR;
+char	*kdbNOEOR;
 
-int	executing;
-char	*lp;
+int	kdbexecuting;
+char	*kdblp;
 
-char	lastc;
+char	kdblastc;
 
-ADDR	userpc;
-int	lastcom;
+ADDR	kdbuserpc;
+int	kdblastcom;
 
-ADDR	maxoff = MAXOFF;
-long	maxpos = MAXPOS;
+ADDR	kdbmaxoff = MAXOFF;
+long	kdbmaxpos = MAXPOS;
 
 /*
  * Kdb trap handler; entered on all fatal
@@ -34,16 +34,16 @@ kdb(type, code, curproc, kstack)
 	int kstack;
 {
 
-	var[varchk('t')] = type;
-	var[varchk('c')] = code;
-	var[varchk('p')] = (int)curproc;
-	if (executing)
-		delbp();
-	executing = 0;
+	kdbvar[kdbvarchk('t')] = type;
+	kdbvar[kdbvarchk('c')] = code;
+	kdbvar[kdbvarchk('p')] = (int)curproc;
+	if (kdbexecuting)
+		kdbdelbp();
+	kdbexecuting = 0;
 	if (kstack)
-		printf("(from kernel stack)\n"); /* after delbp() */
-	printtrap((long)type, (long)code);
-	userpc = dot = pcb.pcb_pc;
+		kdbprintf("(from kernel stack)\n"); /* after delbp() */
+	kdbprinttrap((long)type, (long)code);
+	kdbuserpc = kdbdot = kdbpcb.pcb_pc;
 	switch (setexit()) {
 
 	case SINGLE:
@@ -54,52 +54,52 @@ kdb(type, code, curproc, kstack)
 	case PANIC:
 		return (0);
 	case 0:
-		if (nextpcs(type))
-			printf("breakpoint%16t");
+		if (kdbnextpcs(type))
+			kdbprintf("breakpoint%16t");
 		else
-			printf("stopped at%16t");
-		printpc();
+			kdbprintf("stopped at%16t");
+		kdbprintpc();
 		break;
 	}
-	if (executing)
-		delbp();
-	executing = 0;
+	if (kdbexecuting)
+		kdbdelbp();
+	kdbexecuting = 0;
 	for (;;) {
-		flushbuf();
-		if (errflg) {
-			printf("%s\n", errflg);
-			errflg = 0;
+		kdbflushbuf();
+		if (kdberrflg) {
+			kdbprintf("%s\n", kdberrflg);
+			kdberrflg = 0;
 		}
-		if (mkfault) {
-			mkfault=0;
-			printc('\n');
-			printf(DBNAME);
+		if (kdbmkfault) {
+			kdbmkfault=0;
+			kdbprintc('\n');
+			kdbprintf(DBNAME);
 		}
 		kdbwrite("kdb> ", 5);
-		lp=0; (void) rdc(); lp--;
-		(void) command((char *)0, lastcom);
-		if (lp && lastc!='\n')
-			error(NOEOR);
+		kdblp=0; (void) kdbrdc(); kdblp--;
+		(void) kdbcommand((char *)0, kdblastcom);
+		if (kdblp && kdblastc!='\n')
+			kdberror(kdbNOEOR);
 	}
 }
 
 /*
  * If there has been an error or a fault, take the error.
  */
-chkerr()
+kdbchkerr()
 {
-	if (errflg || mkfault)
-		error(errflg);
+	if (kdberrflg || kdbmkfault)
+		kdberror(kdberrflg);
 }
 
 /*
  * An error occurred; save the message for
  * later printing, and reset to main command loop.
  */
-error(n)
+kdberror(n)
 	char *n;
 {
 
-	errflg = n;
+	kdberrflg = n;
 	reset(ERROR);
 }
