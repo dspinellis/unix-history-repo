@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cpp.c	1.10 %G%";
+static char sccsid[] = "@(#)cpp.c	1.11 %G%";
 #endif lint
 
 #ifdef FLEXNAMES
@@ -112,9 +112,9 @@ char *ptrtab;
 
 char buffer[NCPS+BUFSIZ+BUFSIZ+NCPS];
 
-# define SBSIZE 120000		/* std = 12000, wnj aug 1979 */
-char	sbf[SBSIZE];
-char	*savch	= sbf;
+char	*lastcopy;
+
+char *malloc(), *realloc();
 
 # define DROP 0xFE	/* special character not legal ASCII or EBCDIC */
 # define WARN DROP
@@ -201,6 +201,7 @@ STATIC	struct symtab *varloc;
 STATIC	struct symtab *lneloc;
 STATIC	struct symtab *ulnloc;
 STATIC	struct symtab *uflloc;
+STATIC	struct symtab *identloc;	/* Sys 5r3 compatibility */
 STATIC	int	trulvl;
 STATIC	int	flslvl;
 
@@ -259,7 +260,7 @@ sayline(where)
 /* buffers which are "live"; the side buffers instack[0 : inctop[ifno]]
 /* are dormant, waiting for end-of-file on the current file.
 /*
-/* space for side buffers is obtained from 'savch' and is never returned.
+/* space for side buffers is obtained from 'malloc' and is never returned.
 /* bufstack[0:fretop-1] holds addresses of side buffers which
 /* are available for use.
 */
@@ -535,9 +536,9 @@ unfill(p) register char *p; {
 	}
 	if (fretop>0) np=bufstack[--fretop];
 	else {
-		np=savch; savch+=BUFSIZ;
-		if (savch>=sbf+SBSIZE) {pperror("no space"); exit(exfail);}
-		*savch++='\0';
+		np=malloc(BUFSIZ+1);
+		if (np==NULL) {pperror("no space"); exit(exfail);}
+		np[BUFSIZ]='\0';
 	}
 	instack[mactop]=np; op=pend-BUFSIZ; if (op<p) op=p;
 	for (;;) {while (*np++= *op++); if (eob(op)) break;} /* out with old */
@@ -583,7 +584,7 @@ doincl(p) register char *p; {
 	if (ifno+1 >=MAXINC) {
 		pperror("Unreasonable include nesting",0); return(p);
 	}
-	if((nfil=savch)>sbf+SBSIZE-BUFSIZ) {pperror("no space"); exit(exfail);}
+	if((nfil=malloc(BUFSIZ))==NULL) {pperror("no space"); exit(exfail);}
 	filok=0;
 	for (dirp=dirs+inctype; *dirp; ++dirp) {
 		if (
@@ -609,9 +610,10 @@ doincl(p) register char *p; {
 			filok=1; fin=fins[++ifno]; break;
 		}
 	}
-	if (filok==0) pperror("Can't find include file %s",filname);
+	if(filok==0){pperror("Can't find include file %s",filname);free(nfil);}
 	else {
-		lineno[ifno]=1; fnames[ifno]=cp=nfil; while (*cp++); savch=cp;
+		nfil=realloc(nfil,strlen(nfil)+1);
+		lineno[ifno]=1; fnames[ifno]=nfil;
 		dirnams[ifno]=dirs[0]=trmdir(copy(nfil));
 		sayline(START);
 		/* save current contents of buffer */
@@ -631,19 +633,18 @@ char *
 dodef(p) char *p; {/* process '#define' */
 	register char *pin,*psav,*cf;
 	char **pf,**qf; int b,c,params; struct symtab *np;
-	char *oldval,*oldsavch;
+	char *oldval;
+	char *space, *newspace;
 	char *formal[MAXFRM]; /* formal[n] is name of nth formal */
 	char formtxt[BUFSIZ]; /* space for formal names */
 
-	if (savch>sbf+SBSIZE-BUFSIZ) {pperror("too much defining"); return(p);}
-	oldsavch=savch; /* to reclaim space if redefinition */
 	++flslvl; /* prevent macro expansion during 'define' */
 	p=skipbl(p); pin=inp;
 	if ((toktyp+COFF)[*pin]!=IDENT) {
 		ppwarn("illegal macro name"); while (*inp!='\n') p=skipbl(p); return(p);
 	}
 	np=slookup(pin,p,1);
-	if (oldval=np->value) savch=oldsavch;	/* was previously defined */
+	if (oldval=np->value) free(lastcopy);	/* was previously defined */
 	b=1; cf=pin;
 	while (cf<p) {/* update macbit */
 		c= *cf++; xmac1(c,b,|=); b=(b+b)&0xFF;
@@ -673,7 +674,9 @@ dodef(p) char *p; {/* process '#define' */
 	/* remember beginning of macro body, so that we can
 	/* warn if a redefinition is different from old value.
 	*/
-	oldsavch=psav=savch;
+	space=psav=malloc(BUFSIZ);
+	if (space==NULL) {pperror("too much defining"); return(p);}
+	*psav++ = '\0';
 	for (;;) {/* accumulate definition until linefeed */
 		outp=inp=p; p=cotoken(p); pin=inp;
 		if (*pin=='\\' && pin[1]=='\n') {putc('\n',fout); continue;}	/* ignore escaped lf */
@@ -709,12 +712,21 @@ dodef(p) char *p; {/* process '#define' */
 	if ((cf=oldval)!=NULL) {/* redefinition */
 		--cf;	/* skip no. of params, which may be zero */
 		while (*--cf);	/* go back to the beginning */
-		if (0!=strcmp(++cf,oldsavch)) {/* redefinition different from old */
+		if (0!=strcmp(++cf,space+1)) {/* redefinition different from old */
 			--lineno[ifno]; ppwarn("%s redefined",np->name); ++lineno[ifno];
 			np->value=psav-1;
-		} else psav=oldsavch; /* identical redef.; reclaim space */
+		} else free(space); /* identical redef.; reclaim space */
 	} else np->value=psav-1;
-	--flslvl; inp=pin; savch=psav; return(p);
+	--flslvl; inp=pin;
+	if (np->value == psav-1) {
+		newspace = realloc(space, psav-space);
+		if (newspace==NULL) {pperror("no space"); exit(exfail);}
+		/*
+		 * Adjust pointer in case this moved.
+		 */
+		np->value += newspace-space;
+	}
+	return(p);
 }
 
 #define fasscan() ptrtab=fastab+COFF
@@ -783,6 +795,8 @@ for (;;) {
 			}
 			continue;
 		}
+	} else if (np==identloc) {/* ident (for Sys 5r3 compat) */
+		while(*inp!='\n') p=cotoken(p);
 	} else if (*++inp=='\n') outp=inp;	/* allows blank line after # */
 	else pperror("undefined control",0);
 	/* flush to lf */
@@ -822,7 +836,11 @@ stsym(s) register char *s; {
 struct symtab *
 ppsym(s) char *s; {/* kluge */
 	register struct symtab *sp;
-	cinit=SALT; *savch++=SALT; sp=stsym(s); --sp->name; cinit=0; return(sp);
+	register char *name;
+
+	cinit=SALT; sp=stsym(s); name = malloc(strlen(sp->name)+1+1);
+	name[0] = '#'; strcpy(name+1, sp->name); sp->name = name;
+	cinit=0; return(sp);
 }
 
 /* VARARGS1 */
@@ -991,8 +1009,10 @@ STATIC char *
 copy(s) register char *s; {
 	register char *old;
 
-	old = savch; while (*savch++ = *s++);
-	return(old);
+	old = malloc(strlen(s)+1);
+	if (old==NULL) {pperror("no space"); exit(exfail);}
+	strcpy(old, s);
+	return(lastcopy=old);
 }
 
 char *
@@ -1175,6 +1195,7 @@ main(argc,argv)
 	ifnloc=ppsym("ifndef");
 	ifloc=ppsym("if");
 	lneloc=ppsym("line");
+	identloc=ppsym("ident");	/* Sys 5r3 compatibility */
 	for (i=sizeof(macbit)/sizeof(macbit[0]); --i>=0; ) macbit[i]=0;
 # if unix
 	ysysloc=stsym("unix");
