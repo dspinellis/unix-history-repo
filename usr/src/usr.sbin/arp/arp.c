@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)arp.c	5.2 (Berkeley) %G%";
+static	char *sccsid = "@(#)arp.c	5.3 (Berkeley) %G%";
 #endif
 
 /*
@@ -72,8 +72,7 @@ file(name)
 	args[3] = &arg[3][0];
 	args[4] = &arg[4][0];
 	while(fgets(line, 100, fp) != NULL) {
-		i = sscanf(line, "%s %s %s %s", arg[0], arg[1], arg[2], arg[3],
-			arg[4]);
+		i = sscanf(line, "%s %s %s %s", arg[0], arg[1], arg[2], arg[3]);
 		if (i < 2) {
 			fprintf(stderr, "arp: bad line: %s\n", line);
 			continue;
