@@ -9,13 +9,13 @@
  * All advertising materials mentioning features or use of this software
  * must display the following acknowledgement:
  *	This product includes software developed by the University of
- *	California, Lawrence Berkeley Laboratories.
+ *	California, Lawrence Berkeley Laboratory.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)in_cksum.c	7.3 (Berkeley) %G%
+ *	@(#)in_cksum.c	7.4 (Berkeley) %G%
  *
- * from: $Header: in_cksum.c,v 1.6 92/06/17 05:22:04 torek Exp $
+ * from: $Header: in_cksum.c,v 1.7 92/11/26 03:04:52 torek Exp $
  */
 
 #include <sys/param.h>
