@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)sliplogin.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)sliplogin.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -334,7 +334,7 @@ main(argc, argv)
 	}
 	/* find out what unit number we were assigned */
 	if (ioctl(0, SLIOCGUNIT, (caddr_t)&unit) < 0) {
-		syslog(LOG_ERR, "ioctl (SLIOCGUNIT) (2): %m");
+		syslog(LOG_ERR, "ioctl (SLIOCGUNIT): %m");
 		exit(1);
 	}
 	(void) signal(SIGHUP, hup_handler);
