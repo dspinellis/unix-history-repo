@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)com6.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)com6.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "externs.h"
@@ -73,13 +73,20 @@ live()
 	exit(0);
 }
 
+/*
+ * sigh -- this program thinks "time" is an int.  It's easier to not load
+ * <time.h> than try and fix it.
+ */
+#define KERNEL
 #include <sys/time.h>
+#undef KERNEL
+
 post(ch)
 char ch;
 {
 	FILE *fp;
 	struct timeval tv;
-	char *date;
+	char *date, *ctime();
 	int s = sigblock(sigmask(SIGINT));
 
 	gettimeofday(&tv, (struct timezone *)0);	/* can't call time */
