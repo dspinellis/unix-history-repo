@@ -1,5 +1,5 @@
 /*
-char id_err[] = "@(#)err.c	1.4";
+char id_err[] = "@(#)err.c	1.5";
  *
  * file i/o error and initialization routines
  */
@@ -145,8 +145,9 @@ prnt_fmt(n) int n;
 
 /*initialization routine*/
 f_init()
-{	ini_std(STDERR, stderr, WRITE);
-	ini_std(STDIN, stdin, READ);
-	ini_std(STDOUT, stdout, WRITE);
+{	extern short init66_;
+	ini_std(STDERR, stderr, WRITE, 0);
+	ini_std(STDIN, stdin, READ, 0);
+	ini_std(STDOUT, stdout, WRITE, init66_);
 }
 
