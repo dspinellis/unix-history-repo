@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)tree.c 1.5 %G%";
+static char sccsid[] = "@(#)tree.c 1.6 %G%";
 
 /*
  * This module contains the interface between the SYM routines and
@@ -378,7 +378,7 @@ NODE *subs;
 	if (index < lb || index > ub) {
 	    error("subscript value %d out of range %d..%d", index, lb, ub);
 	}
-	i = i + (index - lb);
+	i = (ub-lb+1)*i + (index-lb);
 	t = t->chain;
 	p = p->right;
     }
