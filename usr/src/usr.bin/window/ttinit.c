@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ttinit.c	3.11 %G%";
+static char sccsid[] = "@(#)ttinit.c	3.12 %G%";
 #endif
 
 #include "ww.h"
@@ -8,11 +8,13 @@ static char sccsid[] = "@(#)ttinit.c	3.11 %G%";
 int tt_h19();
 int tt_h29();
 int tt_f100();
+int tt_tvi925();
 int tt_generic();
 struct tt_tab tt_tab[] = {
 	{ "h19",	3, tt_h19 },
 	{ "h29",	3, tt_h29 },
 	{ "f100",	4, tt_f100 },
+	{ "tvi925",	6, tt_tvi925 },
 	{ "generic",	0, tt_generic },
 	0
 };
