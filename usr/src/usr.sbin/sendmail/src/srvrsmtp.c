@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.27 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.28 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.27 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.28 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -93,8 +93,6 @@ char	*RealHostName = NULL;		/* verified hostname, set in daemon.c */
 
 static char	*skipword();
 
-#define REALHOSTNAME	(RealHostName == NULL ? "localhost" : RealHostName)
-
 smtp(e)
 	register ENVELOPE *e;
 {
@@ -109,6 +107,7 @@ smtp(e)
 	char *protocol;			/* sending protocol */
 	char *sendinghost;		/* sending hostname */
 	long msize;			/* approximate maximum message size */
+	char *peerhostname;		/* name of SMTP peer or "localhost" */
 	auto char *delimptr;
 	char *id;
 	int nrcpts;			/* number of RCPT commands */
@@ -123,7 +122,10 @@ smtp(e)
 		(void) dup2(fileno(OutChannel), fileno(stdout));
 	}
 	settime(e);
-	CurHostName = REALHOSTNAME;
+	peerhostname = RealHostName;
+	if (peerhostname == NULL)
+		peerhostname = "localhost";
+	CurHostName = peerhostname;
 	CurSmtpClient = macvalue('_', e);
 	if (CurSmtpClient == NULL)
 		CurSmtpClient = CurHostName;
@@ -252,7 +254,7 @@ smtp(e)
 			{
 				/* set sending host to our known value */
 				if (sendinghost == NULL)
-					sendinghost = REALHOSTNAME;
+					sendinghost = peerhostname;
 
 				if (bitset(PRIV_NEEDMAILHELO, PrivacyFlags))
 				{
@@ -277,19 +279,19 @@ smtp(e)
 			/* fork a subprocess to process this command */
 			if (runinchild("SMTP-MAIL", e) > 0)
 				break;
-			p = REALHOSTNAME;
 			if (!gothello)
 			{
 				auth_warning(e,
-					"Host %s didn't use HELO protocol", p);
+					"Host %s didn't use HELO protocol",
+					peerhostname);
 			}
 #ifdef PICKY_HELO_CHECK
-			if (strcasecmp(sendinghost, p) != 0 &&
-			    (strcasecmp(p, "localhost") != 0 ||
+			if (strcasecmp(sendinghost, peerhostname) != 0 &&
+			    (strcasecmp(peerhostname, "localhost") != 0 ||
 			     strcasecmp(sendinghost, MyHostName) != 0))
 			{
 				auth_warning(e, "Host %s claimed to be %s",
-					p, sendinghost);
+					peerhostname, sendinghost);
 			}
 #endif
 
@@ -702,7 +704,7 @@ smtp(e)
 			if (LogLevel > 0)
 				syslog(LOG_CRIT,
 				    "\"%s\" command from %s (%s)",
-				    c->cmdname, REALHOSTNAME,
+				    c->cmdname, peerhostname,
 				    anynet_ntoa(&RealHostAddr));
 # endif
 			/* FALL THROUGH */
@@ -739,6 +741,7 @@ skipword(p, w)
 	char *w;
 {
 	register char *q;
+	char *firstp = p;
 
 	/* find beginning of word */
 	while (isascii(*p) && isspace(*p))
@@ -753,7 +756,8 @@ skipword(p, w)
 	if (*p != ':')
 	{
 	  syntax:
-		message("501 Syntax error in parameters");
+		message("501 Syntax error in parameters scanning \"%s\"",
+			firstp);
 		Errors++;
 		return (NULL);
 	}
