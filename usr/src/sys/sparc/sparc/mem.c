@@ -9,13 +9,13 @@
  * All advertising materials mentioning features or use of this software
  * must display the following acknowledgement:
  *	This product includes software developed by the University of
- *	California, Lawrence Berkeley Laboratories.
+ *	California, Lawrence Berkeley Laboratory.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mem.c	7.4 (Berkeley) %G%
+ *	@(#)mem.c	7.5 (Berkeley) %G%
  *
- * from: $Header: mem.c,v 1.8 92/06/17 05:22:16 torek Exp $
+ * from: $Header: mem.c,v 1.9 92/11/26 03:05:03 torek Exp $
  */
 
 /*
@@ -53,7 +53,7 @@ mmrw(dev, uio, flags)
 		/* lock against other uses of shared vmempage */
 		while (physlock.locked) {
 			physlock.wanted = 1;
-			(void) tsleep((caddr_t)&physlock, PZERO, "mmrw", 0);
+			(void)tsleep((caddr_t)&physlock, PZERO, "mmrw", 0);
 		}
 		physlock.locked = 1;
 	}
