@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vfsops.c	7.5 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -53,10 +53,11 @@ int nfs_mount();
 int nfs_start();
 int nfs_unmount();
 int nfs_root();
-extern int nfs_statfs();
+int nfs_statfs();
 int nfs_sync();
 int nfs_fhtovp();
 int nfs_vptofh();
+int nfs_init();
 
 struct vfsops nfs_vfsops = {
 	nfs_mount,
@@ -67,6 +68,7 @@ struct vfsops nfs_vfsops = {
 	nfs_sync,
 	nfs_fhtovp,
 	nfs_vptofh,
+	nfs_init,
 };
 
 extern struct nfsreq nfsreqh;
