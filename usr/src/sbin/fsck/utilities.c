@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)utilities.c	3.4 (Berkeley) %G%";
+static char version[] = "@(#)utilities.c	3.5 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -142,6 +142,7 @@ ckfini()
 		flush(&dfile, &sblk);
 	}
 	flush(&dfile, &inoblk);
+	flush(&dfile, &cgblk);
 	(void)close(dfile.rfdes);
 	(void)close(dfile.wfdes);
 }
