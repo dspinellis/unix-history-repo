@@ -1,0 +1,410 @@
+/**/#
+/**/# $Id: Imakefile,v 1.5 1991/11/26 04:28:26 christos Exp $
+/**/#
+/**/# Imakefile for for tcsh 6.00
+/**/# Marc Horowitz, MIT SIPB
+/**/#
+
+#ifdef DestDir
+#undef DestDir
+#endif
+
+/* All config options go in a separate file. */
+
+#include "imake.config"
+
+/* This is a giant conditional block.  It should be set up right for
+platforms which are in here, but it may need to be changed for new
+ones.  Please send in your fixes and additions! */
+
+/**** tcsh configuration defines ****/
+
+/* specific platforms */
+
+#ifdef UltrixArchitecture
+#define ConfigH ultrix
+#endif
+
+#if defined(VaxArchitecture) && !defined(UltrixArchitecture)
+#define ConfigH bsd
+#endif
+
+#ifdef NeXTArchitecture
+#define ConfigH next
+#endif
+
+#if defined(SunArchitecture)
+# if (OSMajorVersion == 3)
+#  define ConfigH sunos3
+# else /* OSMajorVersion == 4 */
+#  if (OSMinorVersion == 0)
+#   define ConfigH sunos40
+#  else /* OSMinorVersion == 1 */
+#   define ConfigH sunos41
+#  endif
+# endif
+#endif
+
+#ifdef HPArchitecture
+#define ConfigH hpux
+#endif
+
+#ifdef CrayArchitecture
+#define ConfigH cray
+#endif
+
+#ifdef SGIArchitecture
+#define ConfigH sgi
+#endif
+
+#ifdef IBMArchitecture
+# if (SystemV == YES)
+#  define ConfigH aix
+# else
+#  define ConfigH bsd
+#  define AOSArchitecture
+# endif
+#endif
+
+#if defined(MipsBsdArchitecture) || defined(MipsSysvArchitecture)
+#define ConfigH mips
+#endif
+
+#ifdef DguxArchitecture
+#define ConfigH dgux
+#endif
+
+#ifdef ConvexArchitecture
+#define ConfigH convex
+#endif
+
+#ifdef SQNTArchitecture
+#define ConfigH sequent
+#endif
+
+/* generic os's */
+
+#ifndef ConfigH
+
+#if (SystemV == YES)
+#define ConfigH sysv3
+#else
+/* why this as a default?  Why not? */
+#define ConfigH bsd
+#endif
+
+#endif /* !ConfigH */
+
+/*
+ * Concat3 - concatenates three strings.
+ */
+#ifndef Concat3
+# if defined(__STDC__) && !defined(UnixCpp)
+#  define XConcat3(a,b,c) a##b##c
+#  define Concat3(a,b,c) XConcat3(a,b,c)
+# else
+#  define Concat3(a,b,c) a/**/b/**/c
+# endif
+#endif
+
+CONFIGH = Concat3(-DCONFIGH=\"config/config.,ConfigH,\")
+
+#ifdef TcshPath
+TCSHPATH = Concat3(-D_PATH_TCSHELL=\",TcshPath,\")
+#else
+TCSHPATH =
+#endif
+
+/**** libraries ****/
+
+#if (SystemV == NO) || defined(HPArchitecture) || defined(SQNTArchitecture) || \
+	defined(MacIIArchitecture) || defined(UseLibTermcap)
+LIBTERMCAP = -ltermcap
+#else
+LIBTERMCAP =
+#endif
+
+#if defined(SQNTArchitecture)
+LIBSQNT=-lseq
+#endif
+
+/* This may not be good enough - I don't have access to enough systems
+to really test it. */
+#if (SystemV == YES) || defined(UseLibCurses) && !defined(HPArchitecture)
+LIBCURSES = -lcurses
+#else
+LIBCURSES =
+#endif
+
+#if defined(UseLibNet)
+LIBNET = -lnet
+#else
+LIBNET =
+#endif
+
+#if defined(UseLibSocket)
+LIBSOCKET = -lsocket
+#else
+LIBSOCKET =
+#endif
+
+#if defined(SGIArchitecture) || defined(_IBMR2) || \
+	(!defined(RtArchitecture) && defined(AIXArchitecture)) || \
+	defined(UseLibBSD)
+LIBBSD = -lbsd
+#else
+LIBBSD = 
+#endif
+
+#if (defined(SGIArchitecture) && \
+     (OSMajorVersion == 3) && (OSMinorVersion == 3)) || \
+	defined(UseLibC_S)
+LIBC_S = -lc_s
+#else
+LIBC_S =
+#endif
+
+#if defined(UseLibSun)
+LIBSUN = -lsun
+#else
+LIBSUN =
+#endif
+
+#if defined(UseLibCposix)
+LIBCPOSIX = -lcposix
+#else
+LIBCPOSIX =
+#endif
+
+#if defined(UseLibInet)
+LIBINET = -linet
+#else
+LIBINET =
+#endif
+
+#if defined(UseLibDir)
+LIBDIR = -ldir
+#else
+LIBDIR = 
+#endif
+
+#if defined(UseLibX)
+LIBX = -lx
+#else
+LIBX =
+#endif
+
+#if defined(UseLibIntl)
+LIBINTL = -lintl
+#else
+LIBINTL =
+#endif
+
+#if defined(MacIIArchitecture) || defined(UseLibPosix)
+LIBPOSIX = -lposix
+#else
+LIBPOSIX =
+#endif
+
+#if defined(ATTArchitecture) || defined(UseLibDirent)
+LIBDIRENT = -ldirent
+#else
+LIBDIRENT =
+#endif
+
+# The order here is significant.  Although nothing uses all of these, 
+# some platforms which use more than one do care about the order.
+
+SYSLIBS = $(LIBPOSIX) $(LIBDIRENT) $(LIBTERMCAP) $(LIBCURSES) \
+	$(LIBNET) $(LIBINTL) $(LIBSOCKET) $(LIBSUN) $(LIBBSD) $(LIBCPOSIX) \
+	$(LIBINET) $(LIBDIR) $(LIBX) $(LIBC_S) $(LIBSQNT)
+
+/* Past here, nothing should need to be changed to compile on a different
+platform, unless you have a really weird architecture. */
+
+#ifdef MyCC
+CC = MyCC
+#else
+# ifdef HasGCC
+CC = gcc -fcombine-regs -finline-functions -fstrength-reduce
+# else
+CC = cc
+# endif
+#endif
+
+#ifdef HESIOD
+# ifdef NeXTArchitecture
+HESLIB = -L/usr/athena/lib -lhesiod -lresolv
+# else
+HESLIB = -L/usr/athena/lib -lhesiod
+# endif
+/* it seems to me that the -I shouldn't be necessary, but there seems
+to be a bug in the Imake stuff, so here it is. */
+HESDEF = -DHESIOD -I/usr/athena/include
+#else
+HESLIB =
+HESDEF =
+#endif
+
+/* This is encore specific, but I don't know what encore's #define is,
+and it shouldn't hurt to have it here, so here it is */
+PARALLEL=12				# Make the multi-max run fast.
+
+#ifndef DestDir
+#define DestDir /usr/local
+#endif
+
+DESTDIR = DestDir
+MANSUFFIX = 1
+#ifdef DestBin
+BINDIR = DestBin
+#else
+BINDIR = $(DESTDIR)/bin
+#endif
+#ifdef DestMan
+MANDIR = DestMan
+#else
+MANDIR = $(DESTDIR)/man/man$(MANSUFFIX)
+#endif
+
+#ifndef MyCflags
+#define MyCflags
+#endif
+
+#ifndef MyDefines
+#define MyDefines
+#endif
+
+#ifndef MyIncludes
+#define MyIncludes
+#endif
+
+#ifndef MyLibs
+#define MyLibs
+#endif
+
+#ifdef CDebugFlags
+CDEBUGFLAGS = CDebugFlags
+#else
+CDEBUGFLAGS = -O
+#endif
+
+#ifdef AOSArchitecture
+#define UStdc -U__STDC__
+#else
+#define UStdc
+#endif
+
+#ifdef HostType
+HTDEF = Concat3(-DHOSTTYPE=\",HostType,\")
+#else
+HTDEF =
+#endif
+
+DEFINES = $(CONFIGH) $(TCSHPATH) $(HESDEF) $(HTDEF) MyDefines MyCflags UStdc
+INCLUDES = -I. MyIncludes
+LDLIBS = MyLibs
+
+SUF = o
+VERSION = 6.00
+
+SHSRCS=	sh.c sh.dir.c sh.dol.c sh.err.c sh.exec.c sh.char.c \
+	sh.exp.c sh.file.c sh.func.c sh.glob.c sh.hist.c sh.init.c \
+	sh.lex.c sh.misc.c sh.parse.c sh.print.c sh.proc.c sh.sem.c \
+	sh.set.c sh.time.c sh.char.h sh.dir.h sh.proc.h sh.h \
+	sh.decls.h glob.c glob.h mi.wait.h mi.termios.c
+SHOBJS=	sh.${SUF} sh.dir.${SUF} sh.dol.${SUF} sh.err.${SUF} sh.exec.${SUF} \
+	sh.char.${SUF} sh.exp.${SUF} sh.func.${SUF} sh.glob.${SUF} \
+	sh.hist.${SUF} sh.init.${SUF} sh.lex.${SUF} sh.misc.${SUF} \
+	sh.parse.${SUF} sh.print.${SUF} sh.proc.${SUF} sh.sem.${SUF} \
+	sh.set.${SUF} sh.time.${SUF} glob.${SUF} mi.termios.${SUF}
+
+TWSRCS= tw.decls.h tw.h tw.help.c tw.init.c tw.parse.c tw.spell.c
+TWOBJS=	tw.help.${SUF} tw.init.${SUF} tw.parse.${SUF} tw.spell.${SUF}
+
+EDSRCS= ed.chared.c ed.decls.h ed.defns.c ed.h ed.init.c ed.inputl.c \
+	ed.refresh.c ed.screen.c ed.xmap.c ed.term.c ed.term.h
+EDOBJS=	ed.chared.${SUF} ed.refresh.${SUF} ed.screen.${SUF} ed.init.${SUF} \
+	ed.inputl.${SUF} ed.defns.${SUF} ed.xmap.${SUF} ed.term.${SUF}
+
+TCSRCS= tc.alloc.c tc.bind.c tc.const.c tc.decls.h tc.disc.c \
+	tc.func.c tc.os.c tc.os.h tc.printf.c tc.prompt.c \
+	tc.sched.c tc.sig.c tc.sig.h tc.str.c sh.types.h tc.vers.c tc.wait.h \
+	tc.who.c tc.h
+TCOBJS=	tc.alloc.${SUF} tc.bind.${SUF} tc.const.${SUF} tc.disc.${SUF} \
+	tc.func.${SUF} tc.os.${SUF} tc.printf.${SUF} \
+	tc.prompt.${SUF} tc.sched.${SUF} tc.sig.${SUF} tc.str.${SUF} \
+	tc.vers.${SUF} tc.who.${SUF} 
+
+MISCF = Makefile Fixes MAKEDIFFS MAKESHAR NewThings README FAQ \
+	WishList config_f.h eight-bit.me glob.3 patchlevel.h \
+	pathnames.h tcsh.man Ported src.desc Imakefile imake.config \
+	README.imake
+CONFSRCS=config/config.*
+
+
+SRCS = $(SHSRCS) $(TWSRCS) $(EDSRCS) $(TCSRCS)
+OBJS = $(SHOBJS) $(TWOBJS) $(EDOBJS) $(TCOBJS)
+
+ALLSRCS= $(MISCF) $(SRCS)
+
+all:: tcsh
+
+ed.defns.h: ed.defns.c
+	@rm -f $@
+	@echo '/* Do not edit this file, make creates it. */' > $@
+	@echo '#ifndef _h_ed_defns' >> $@
+	@echo '#define _h_ed_defns' >> $@
+	egrep '[FV]_' ed.defns.c | egrep '^#define' >> $@
+	@echo '#endif /* _h_ed_defns */' >> $@
+
+sh.err.h: sh.err.c
+	@rm -f $@
+	@echo '/* Do not edit this file, make creates it. */' > $@
+	@echo '#ifndef _h_sh_err' >> $@
+	@echo '#define _h_sh_err' >> $@
+	egrep 'ERR_' sh.err.c | egrep '^#define' >> $@
+	@echo '#endif /* _h_sh_err */' >> $@
+
+tc.const.h: tc.const.c
+	@rm -f $@
+	@echo '/* Do not edit this file, make creates it. */' > $@
+	$(CC) -E $(CFLAGS) tc.const.c | egrep 'Char STR' | \
+	    sed -e 's/Char \([a-zA-Z0-9_]*\)\(.*\)/extern Char \1[];/' | \
+	    sort >> $@
+
+$(OBJS): sh.err.h tc.const.h ed.defns.h
+
+tar:
+	rm -f tcsh-${VERSION}.tar.Z
+	rm -rf tcsh-${VERSION} 
+	mkdir tcsh-${VERSION} tcsh-${VERSION}/config
+	cp ${ALLSRCS} tcsh-${VERSION}
+	cp ${CONFSRCS} tcsh-${VERSION}/config
+	tar cvf - tcsh-${VERSION} | compress > tcsh-${VERSION}.tar.Z
+	rm -rf tcsh-${VERSION}
+
+shar:
+	rm -f tcsh-*.shar
+	rm -rf tcsh-${VERSION} 
+	mkdir tcsh-${VERSION} tcsh-${VERSION}/config
+	cp ${ALLSRCS} tcsh-${VERSION}
+	cp ${CONFSRCS} tcsh-${VERSION}/config
+	MAKESHAR ${VERSION} tcsh-${VERSION}/[a-zA-Z]* \
+			    tcsh-${VERSION}/config/config.*
+	rm -rf tcsh-${VERSION}
+
+world:
+	make clean ; make depend ; make tcsh ; make install
+
+clean::
+	rm -f ed.defns.h sh.err.h tc.const.h
+
+depend:: ed.defns.h sh.err.h tc.const.h $(SRCS)
+
+NormalProgramTarget(tcsh, $(OBJS), ed.defns.h sh.err.h tc.const.h, \
+			/*LOCALLIBS*/, $(HESLIB) $(SYSLIBS))
+
+InstallProgram(tcsh, $(BINDIR));
+InstallManPage(tcsh, $(MANDIR));
+DependTarget()

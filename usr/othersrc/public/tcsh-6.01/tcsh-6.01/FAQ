@@ -1,0 +1,87 @@
+
+Last Updated: Sun Jul 21 16:02:05 EDT 1991
+
+This is for people that do not read the manual!
+
+So far people who don't read manuals don't read this either...
+I may call it README.*PLEASE* in the future, but then people won't
+be able to get it... :-)
+
+1.  Why is the meta key broken in tcsh-5.20? 
+
+    On some machines the tty is not set up to pass 8 bit characters by default.
+    Tcsh 5.19 used to try to determine if pass8 should be set by looking at
+    the terminal's meta key. Unfortunately there is no good way of determining
+    if the terminal can really pass 8 characters or not. Consider if you are
+    logged in through a modem line with 7 bits and parity and your terminal 
+    has a meta key. Then tcsh 5.19 would set wrongly set pass8.
+
+    If you did like the prevous behavior you can add in /etc/Login, or
+    in .login:
+
+    if ( $?prompt ) then
+	if ( "`echotc meta`" == "yes" ) then
+	     stty pass8
+	endif
+    endif
+
+    If you don't have pass8, maybe something like
+
+	stty -parity -evenp -oddp cs8 -istrip   (rs6000)
+    or
+	stty -parenb -istrip cs8 
+    
+    would work..
+
+2.  I ran 'dbxtool &' and 'shelltool &' from tcsh, and they end up in cbreak 
+    and no echo mode?
+
+    These programs are broken. Background jobs should not try to look at the
+    tty. What happens is that dbxtool looks in stderr to inherit the tty
+    setups, but tcsh sets up the tty in cbreak and -echo modes, so that it
+    can do line editing. This cannot be fixed because tcsh cannot give away
+    the tty. A work-around is:
+
+    dbxtool < /dev/null >& /dev/null &
+
+3.  I tried to compile tcsh and it cannot find <locale.h>?
+
+    Your system does not support NLS. Undefine NLS in config_f.h and it
+    should work fine.
+
+4.  Where can I get csh sources? 
+
+    Csh sources are now available with the 4.4BSD networking distributions.
+    You don't need csh sources to compile tcsh-6.00.
+
+5.  I just made tcsh my login shell, and I cannot ftp any more?
+
+    Newer versions of the ftp daemon check for the validity of the
+    user's shell before they allow logins. The list of valid login
+    shells is either hardcoded or it is usually in a file called
+    /etc/shells. If it is hard-coded, then you are out of luck and
+    your best bet is to get a newer version of ftpd. Otherwise add
+    tcsh to the list of shells. Remember that the full path is required.
+    If there is no /etc/shells, and you are creating one, remember to
+    add /bin/csh, /bin/sh, and any other valid shells for your system,
+    so that other people can ftp too :-)
+
+6.  I am using SunView and editing is screwed up. In particular my
+    arrow keys and backspace don't work right. What am I doing wrong?
+
+    Well, cmdtool tries to do its own command line editing and the
+    effect you get is one of using an editor inside an editor. Both
+    try to interpret the arrow key sequences and cmdtool wins since
+    it gets them first. The solutions are in my order of preference:
+
+	1 Don't use suntools
+	2 Use shelltool instead of cmdtool.
+	3 Unset edit in tcsh.
+
+7.  I rlogin to another machine, and then no matter what I tell 'stty'
+    I cannot get it to pass 8 bit characters?
+
+    Maybe you need to use 'rlogin -8' to tell rlogin to pass 8 
+    bit characters.
+
+Everything else is a bug :-(

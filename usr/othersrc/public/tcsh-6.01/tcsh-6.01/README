@@ -1,0 +1,164 @@
+This is tcsh version tcsh 6.01.  Tcsh is a version of the Berkeley
+C-Shell, with the addition of: a command line editor, command and file
+name completion, listing, etc. and a bunch of small additions to the
+shell itself.
+
+Tcsh runs on BSD 4.2 and 4.3 Unix, Mach, Sun Unix (tested on 3.0, 3.2,
+3.4, 4.0, 4.1), Pyramid OS/X (in the bsd universe), Encore UMAX 4.2, 
+Apple A/UX 2.0, AT&T 3b machines under SysV.2 and V.3, HP/UX
+6.2 on series 300 and 800 machines and all HP machines under HP/UX
+6.5 and 7.0, and will probably work with a bit of tinkering on anything 
+else either BSD or SysV-ish.  Note that the above list is incomplete,
+and the place to look is the config directory to find a configuration 
+file appropriate for your machine. 
+
+Feel free to use it.  These changes to csh may only be included in a
+commercial product if the inclusion or exclusion does not change the
+purchase price, level of support, etc.  Please respect the individual
+authors by giving credit where credit is due (in other words, don't
+claim that you wrote portions that you haven't, and don't delete the
+names of the authors from the source code or documentation).  
+
+To install tcsh:
+
+1)  Look at the Makefile and make sure that you are using the right
+    compilation flags.
+
+2)  Copy the appropriate for your machine and OS config file from the
+    config subdirectory into config.h. If you are trying to compile
+    tcsh on a machine for which there is no config file yet, you will
+    need to create a config file using as a template one of the
+    supplied ones.  If you get tcsh working on a new machine, I'd
+    appreciate a copy of the config file plus additional information
+    about the architecture/OS.  If you are creating a new config file,
+    look very hard at BSDJOBS, BSDSIGS, and BSDTIMES if you are running
+    a non-BSD machine.  For vanila SysV, these would all be #undef-ed,
+    but others may vary (such as A/UX or HPUX).  On a pyramid, compile
+    in the UCB universe even if you are running under the ATT universe
+    usually; it will work anyway, and you get job control for free.
+
+
+3)  Look at config_f.h, and enable or disable any features you want.
+    It is configured the way I like it, but you may disagree.
+    If you do not have NLS, then locale.h will not be found. Undefine it
+    and things should work ok. On the other hand, if you have NLS you
+    might as well use it...
+
+4)  Look at tc.vers.c to make sure that you have the right #ifdefs to set
+    the environment variable "HOSTTYPE" correctly.  If you need to make
+    changes, PLEASE SEND THEM BACK TO ME.
+
+5)  You may want to adjust the DESTDIR and DESTMAN entries in the
+    Makefile.  These are the directories that tcsh, and the tcsh.1 man
+    entry will be placed in when you do a "make install".  If you decide
+    to install tcsh somewhere other than in /usr/local/bin/tcsh, you should
+    #define _PATH_TCSHELL "/your/installation/directory/tcsh" in pathnames.h.
+
+6)  make
+
+7)  Read the documentation while you are waiting.  The file tcsh.man
+    is in standard [nt]roff -man format.
+
+8)  Test tcsh to see that it has compiled correctly.  The history
+    command should give a time stamp on every entry.  Typing normal
+    characters should echo each exactly once.  Control-A should put the
+    cursor at the beginning of the input line, but after the prompt.
+    Typing characters after that should insert them into the line.
+    If you have job control make sure that stopping and restarting
+    jobs works. Make sure you can ^C in the middle of the input line.
+    Also make sure that pipelines work correctly and there
+    are no races. Try 'echo | cat | cat | cat | cat | more' a couple
+    of times. If you have job control, try this command in the background
+    and bring it in the foreground when it stops for tty output. 
+    Also make sure that the ioctl() modes are preserved.
+    Get into vi, enter and exit input mode and suspend it, background
+    it and foreground it again. After all that, lastly make sure that
+    the tty process group manipulation is happening correctly. Try
+    ftp to some host. If your passwd appears on the screen, you have
+    lost /dev/tty. Otherwise everything is fine. 
+
+9)  Enjoy.
+
+10) PLEASE send any bug reports (and fixes), code for new features,
+    comments, questions, etc. (even flames) to:
+
+	     -- Christos Zoulas
+		christos@ee.cornell.edu
+
+	SNail:  389 Engineering/Theory Center
+		Cornell University,
+		Ithaca, NY 14853.
+	Phone:	(607) 255-0302
+	Fax:	(607) 255-9072
+
+
+Various:
+
+***************************************************************************
+
+On sysv versions < 3.0 (not hpux) Doug Gwyn's public domain directory 
+manipulation library has to be installed. This library is available
+for anonymous ftp from prep.ai.mit.edu:/pub/gnu/libdirent.tar.Z
+If the network is not installed, then there is a gethostname()
+routine is tc.os.c, enabled by defining NEEDgethostname
+
+***************************************************************************
+
+On BSDreno, in ttyname() closedir() is called twice and so the same
+pointer gets free'd twice. tcsh's malloc is picky and it prints an
+error message to that effect. If you don't like the message:
+
+1. Apply the following patch:
+
+*** /usr/src/lib/libc/gen/ttyname.c.orig	Fri Jun  1 17:17:15 1990
+--- /usr/src/lib/libc/gen/ttyname.c	Tue Oct 29 16:33:12 1991
+***************
+*** 51,57 ****
+  		if (stat(buf, &sb2) < 0 || sb1.st_dev != sb2.st_dev ||
+  		    sb1.st_ino != sb2.st_ino)
+  			continue;
+- 		closedir(dp);
+  		rval = buf;
+  		break;
+  	}
+--- 51,56 ----
+
+Or: Comment the error printing out in tc.alloc.c
+Or: Compile -DSYSMALLOC
+
+
+***************************************************************************
+
+Tcsh has been ported to minix by  Scott Krotz (krotz@honey.rtsg.mot.com).
+Unfortunately the minix sed is broken, so you'll have to find a way to
+make tc.const.h, sh.err.h, ed.defns.h which are automatically generated.
+The easiest way to create them is to make a copy from unix, copying 
+config.minix to config.h, and then 'make sh.err.h tc.const.h ed.defns.h'
+
+The OS/dependent files are in mi.termios.h and mi.wait.h
+
+You will get some warnings, but dont worry about them, just ignore
+them.  After tcsh has compiled and the gcc binary is converted to a
+minix binary, remember to chmem it to give it more memory - it will
+need it!  How much you need depends on how many aliases you have, etc..
+Add at least 50000 to it.
+
+One last thing.  You might have to make some links for include files so
+that they are in the directories that tcsh is expecting while compiling.
+I forget if I had to do this or not, but it should be fairly easy to sort
+out.  If it cant find any include files this is probably the reason.
+
+If you have any problems, please tell me.  I can be contacted through
+e-mail at:
+
+krotz@honey.rtsg.mot.com
+
+I also read comp.os.minix on a regular basis, so a note there will get
+my attention also.
+
+Have fun!
+
+Scott Krotz
+
+ps.  The termios functions are provided by Magnus Doell and Bruce Evans.
+     Thanks, guys!

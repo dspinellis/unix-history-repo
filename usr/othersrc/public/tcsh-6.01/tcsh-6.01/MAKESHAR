@@ -1,0 +1,76 @@
+#!/bin/sh
+#
+# MAKESHAR.sh: Make a shar file for the tcsh sources
+#
+# $Id: MAKESHAR,v 3.0 1991/07/17 00:33:58 christos Exp $
+
+AWK=/usr/bin/nawk	# Must be nawk or gawk cause of 2D arrays
+WC=/usr/ucb/wc		
+GREP=/usr/bin/egrep
+SORT=/usr/bin/sort
+SH=/bin/sh
+#SH=cat
+
+if [ "x$1" = "x" ]
+then
+    echo "Usage: $0 <version> <files>"	1>&2
+    exit
+fi
+VERSION=$1
+shift
+
+$WC "$@" | $GREP -v total | $SORT +2 | $AWK '				\
+BEGIN {									\
+    i = 0;								\
+    seq = 1;								\
+    size = 0;								\
+    name = 1;								\
+    used = 2;								\
+    tty = "/dev/tty";							\
+    maxsize = 45000;							\
+    dirs = "tcsh-'$VERSION' tcsh-'$VERSION'/config";			\
+};									\
+{									\
+    a[i, size] = $3;							\
+    a[i, name] = $4;							\
+    a[i, used] = 0;							\
+    i++;								\
+};									\
+END {									\
+    for (maxi = i--; i >= 0; i--) {					\
+	idx = 0;							\
+	if (a[i, used] == 0) {						\
+	    if (a[i, size] > maxsize) 					\
+		printf("Warning: File %s is %d > %d\n",			\
+		       a[i, name], a[i, size], maxsize) > tty;		\
+	    s = a[i, size];						\
+	    a[i, used] = 1;						\
+	    kit[seq, idx++] = i; 					\
+	    j = 0;							\
+	    while (j < maxi) {						\
+		# Find the greatest file we can add			\
+		j = maxi;						\
+		for (k = 0; k < maxi; k++)				\
+		    if (a[k, used] == 0 && a[k, size] + s < maxsize)	\
+			j = k;						\
+		if (j < maxi) {						\
+		    s += a[j, size];					\
+		    a[j, used] = 1;					\
+		    kit[seq, idx++] = j; 				\
+		}							\
+	    }								\
+	    sizes[seq] = s;						\
+	    kit[seq++, idx] = -1; 					\
+	}								\
+    }									\
+    for (i = 1; i < seq; i++) {						\
+	printf("shar -n%d -e%d %s ", i, seq - 1, dirs);			\
+	printf("%2d of %2d: ", i, seq - 1) > tty;			\
+	for (j = 0; kit[i, j] != -1; j++) {				\
+	    printf("%s ", a[kit[i, j], name]) > tty;			\
+	    printf("%s ", a[kit[i, j], name]);				\
+	}								\
+	printf("> tcsh-%d.shar;", i);					\
+	printf("= %5d\n", sizes[i]) > tty;				\
+    }									\
+}' | $SH
