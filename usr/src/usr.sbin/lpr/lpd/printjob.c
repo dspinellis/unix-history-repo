@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)printjob.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)printjob.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -1255,14 +1255,6 @@ setty()
 	if (ioctl(pfd, TIOCSETP, (char *)&ttybuf) < 0) {
 		syslog(LOG_ERR, "%s: ioctl(TIOCSETP): %m", printer);
 		exit(1);
-	}
-	if (XC || XS) {
-		int ldisc = NTTYDISC;
-
-		if (ioctl(pfd, TIOCSETD, &ldisc) < 0) {
-			syslog(LOG_ERR, "%s: ioctl(TIOCSETD): %m", printer);
-			exit(1);
-		}
 	}
 	if (XC) {
 		if (ioctl(pfd, TIOCLBIC, &XC) < 0) {
