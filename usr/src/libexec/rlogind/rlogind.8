@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)rlogind.8	6.7 (Berkeley) %G%
+.\"	@(#)rlogind.8	6.8 (Berkeley) %G%
 .\"
 .TH RLOGIND 8 ""
 .UC 5
@@ -22,7 +22,7 @@ rlogind \- remote login server
 .SH SYNOPSIS
 .B /etc/rlogind
 [
-.B \-dl
+.B \-ln
 ]
 .SH DESCRIPTION
 .I Rlogind
@@ -39,7 +39,7 @@ When a service request is received the following protocol
 is initiated:
 .IP 1)
 The server checks the client's source port.
-If the port is not in the range 0-1023, the server
+If the port is not in the range 512-1023, the server
 aborts the connection.
 .IP 2)
 The server checks the client's source address
@@ -73,7 +73,7 @@ If automatic authentication fails, the user is
 prompted to log in as if on a standard terminal line.  The
 .I -l
 option prevents any authentication based on the user's
-``.rhosts'' file, unless the user is the superuser.
+``.rhosts'' file, unless the user is logging in as the superuser.
 .PP
 The parent of the login process manipulates the master side of
 the pseudo terminal, operating as an intermediary
@@ -89,6 +89,12 @@ as found in the environment variable, ``TERM''; see
 .IR environ (7).
 The screen or window size of the terminal is requested from the client,
 and window size changes from the client are propagated to the pseudo terminal.
+.PP
+Transport-level keepalive messages are enabled unless the
+.B \-n
+option is present.
+The use of keepalive messages allows sessions to be timed out
+if the client crashes or becomes unreachable.
 .SH DIAGNOSTICS
 All diagnostic messages are returned on the connection
 associated with the
