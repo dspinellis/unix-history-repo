@@ -1,0 +1,146 @@
+% Support for writing UNIX-style documentation (based on webmac.tex)
+
+
+\catcode`\@=11				% for a little while
+
+
+% More fonts
+
+\font\sixteentex=amtex10 scaled\magstep2
+\font\twelvetex=amtex10 scaled\magstep1
+\font\tentex=amtex10
+\font\eighttex=amtex10 at 8\p@
+
+\def\curfont{%
+    \ifcase\font@no
+	\rm\or
+	\it\or
+	\sl\or
+	\bf\or
+	\tt\or
+	\sc\or
+	\sf\or
+	\tx
+    \else \errmessage{font madness}\fi
+}
+
+\chardef\AM=`\&					% ampersand
+\chardef\BS=`\\					% backslash
+\chardef\LB=`\{					% left brace
+\chardef\RB=`\}					% right brace
+\def\LQ{{\tt\char'22}}				% left quote
+\def\RQ{{\tt\char'23}}				% right quote
+\def\SP{{\tt\char`\ }}				% space
+\chardef\TL=`\~					% tilde
+\chardef\UL=`\_					% underline
+
+\def\everypointsize#1#2{%
+    \def\tx{%
+	\font@no=8
+	\csname#1tex\endcsname
+	\let\&=\AM	\let\\=\BS	\let\{=\LB	\let\`=\LQ
+	\let\}=\RB	\let\'=\RQ	\let\ =\SP	\let\~=\TL
+	\let\_=\UL
+    }%
+}
+
+\curtype
+
+
+% Standard Characters
+
+\def\#{\hbox{\tt\char`\#}}			% parameter sign
+\def\${\hbox{\tt\char`\$}}			% dollar sign
+\def\%{\hbox{\tt\char`\%}}			% percent sign
+\def\^{\ifmmode\mathchar"222 \else\char`^ \fi}	% pointer or hat
+
+
+% Examples
+
+\def\eg#1{\hbox{\tx``#1''}}			% in-line
+
+\def\example#1\endexample{%			% multi-line
+    $$%
+	\displayindent=\leftskip
+	\ifdim\parindent>\z@
+	    \advance\displayindent by1.5\parindent
+	\else
+	    \advance\displayindent by.15\hsize
+	\fi
+	\let\\=\cr
+	\tabskip=\z@
+	\halign{%
+	    \leftline{\tx\ignorespaces##\unskip}\cr
+	    #1\cr
+	}%
+    $$%
+}
+
+
+% Miscellany
+
+\def\pgm#1{{\it#1}}			% UNIX programs
+\def\man#1(#2){\pgm{#1\/}(#2)}		% manual entries
+\def\arg#1{\hbox{\tx`{}#1'{}}}		% arguments to programs
+\def\switch#1{\hbox{\tx`{}-#1'{}}}	% switches to programs
+\def\file#1{\hbox{\sl#1}}		% filename
+\def\bq#1{`{}#1`{}}			% back-quoted command
+
+
+% Commonly used software systems
+
+\def\EMACS/{{\sf EMACS}}
+\def\INFO/{{\sf INFO}}
+\def\MLisp/{{\sf MLisp}}
+
+\def\MH/{{\sf MH}}
+\def\mh#1{{\sf mh.#1}}
+\def\Mail/{\file{Mail/}}
+\def\context/{\file{context}}
+\def\profile/{\file{.mh\_profile}}
+\def\sequences/{\file{.mh\_sequences}}
+\def\whatnow/{{\tx What now?\/}}
+
+\def\MMDF/{{\sf MMDF}}
+\def\MMDFII/{\hbox{\sf MMDF-II}}
+
+\def\SendMail/{{\sf SendMail}}
+\def\UUCP/{{\sf UUCP}}
+
+\def\AmS{$\cal A$\kern-.1667em\lower.5ex\hbox{$\cal M$}\kern-.125em$\cal S$}
+\def\AMSPPT.STY/{{\tt amsppt.sty}}
+\ifundefined{AmsTeX}
+    \def\AmSTeX{\AmS-\TeX}
+\fi
+
+\def\DISS.STY/{{\tt diss.sty}}
+\def\PhDTeX{\hbox{PhD-\TeX}}
+
+\def\LaTeX{L\kern-.2em\raise.3ex\hbox{\sc a}\kern-.09em\TeX}
+
+\def\NRTeX{\hbox{NR-\TeX}}
+
+\def\ROFF/{{\sf ROFF}}
+
+\def\SUMEX/{{\sf SUMEX}}
+
+\def\TTYD/{{\sf TTYD}}
+
+
+% TeX Hackery...
+
+\def\!{\hbox{$\backslash$}}
+
+\def\word#1{{\tt\!#1}}
+
+
+% Fractions (from TUGboat v6 n1, 1985)
+
+\def\frac#1/#2{%
+    \leavevmode\kern.1em
+    \raise.5ex\hbox{\the\scriptfont\z@ #1}\kern-.1em
+    /\kern-.15em\lower.25ex\hbox{\the\scriptfont\z@ #2}%
+}
+
+
+\catcode`\@=12				% back to normal
