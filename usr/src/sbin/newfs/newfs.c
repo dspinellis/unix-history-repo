@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)newfs.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifndef lint
@@ -427,7 +427,7 @@ main(argc, argv)
 	 * transfer size permitted by the controller or buffering.
 	 */
 	if (maxcontig == 0)
-		maxcontig = MAX(1, MIN(MAXPHYS, MAXBSIZE) / bsize);
+		maxcontig = MAX(1, MIN(MAXPHYS, MAXBSIZE) / bsize - 1);
 	if (density == 0)
 		density = NFPI * fsize;
 	if (minfree < MINFREE && opt != FS_OPTSPACE) {
