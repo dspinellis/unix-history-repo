@@ -1,14 +1,16 @@
-#	@(#)Files.cf	8.10 (Berkeley) %G%
+#	@(#)Files.cf	8.11 (Berkeley) %G%
 cf/README
 cf/cf/Makefile
 cf/cf/Makefile.dist
 cf/cf/chez.cs.mc
 cf/cf/clientproto.mc
+cf/cf/cs-hpux10.mc
 cf/cf/cs-hpux9.mc
 cf/cf/cs-osf1.mc
 cf/cf/cs-solaris2.mc
 cf/cf/cs-sunos4.1.mc
 cf/cf/cs-ultrix4.mc
+cf/cf/generic-hpux10.mc
 cf/cf/generic-hpux9.mc
 cf/cf/generic-osf1.mc
 cf/cf/generic-solaris2.mc
@@ -69,6 +71,7 @@ cf/ostype/bsdi1.0.m4
 cf/ostype/dgux.m4
 cf/ostype/domainos.m4
 cf/ostype/dynix3.2.m4
+cf/ostype/hpux10.m4
 cf/ostype/hpux9.m4
 cf/ostype/irix.m4
 cf/ostype/linux.m4
