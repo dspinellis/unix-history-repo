@@ -1,0 +1,63 @@
+#
+# fstty
+#
+# A function that works as a front end for both stty and the `bind'
+# builtin, so the tty driver and readline see the same changes
+#
+# chet@ins.cwru.edu
+#
+
+#
+# Convert between the stty ^H control character form and the readline \C-H
+# form
+#
+cvt()
+{
+	echo "$@" | cat -v | sed 's/\^/\\C-/'
+}
+
+#
+# stty front-end.  Parses the argument list and creates two command strings,
+# one for stty, another for bind.
+#
+fstty()
+{
+	local	cmd="" bargs=""
+	local	e
+
+	while [ $# -gt 0 ]
+	do
+		case "$1" in
+		-a)	cmd="$cmd everything"
+			;;
+		erase)	shift;
+			e=$(cvt "$1")
+			cmd="$cmd erase $1"
+			bargs="$bargs '$e: backward-delete-char'"
+			;;
+		kill)	shift
+			e=$(cvt "$1")
+			cmd="$cmd kill $1"
+			bargs="$bargs '$e: unix-line-discard'"
+			;;
+		werase)	shift;
+			e=$(cvt "$1")
+			cmd="$cmd erase $1"
+			bargs="$bargs '$e: backward-kill-word'"
+			;;
+		lnext)	shift;
+			e=$(cvt "$1")
+			cmd="$cmd erase $1"
+			bargs="$bargs '$e: quoted-insert'"
+			;;
+		*)	cmd="$cmd $1"
+			;;
+		esac
+		shift
+	done
+
+	command stty $cmd
+	if [ -n "$bargs" ]; then
+		builtin bind $bargs
+	fi
+}
