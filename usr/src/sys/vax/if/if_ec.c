@@ -1,4 +1,4 @@
-/*	if_ec.c	4.11	82/05/25	*/
+/*	if_ec.c	4.12	82/05/27	*/
 
 #include "ec.h"
 #include "imp.h"
@@ -758,8 +758,9 @@ COUNT(ECLHINIT);
 	sin = (struct sockaddr_in *)&ifp->if_addr;
 	sin->sin_family = AF_INET;
 	sin->sin_addr.s_addr = addr;
+	sin->sin_addr.s_lh = ecifp->if_host[0];
 	ifp->if_net = sin->sin_addr.s_net;
-	ifp->if_dstaddr = ecifp->if_addr;
+	ifp->if_dstaddr = ifp->if_addr;
 	ifp->if_flags = IFF_UP|IFF_POINTOPOINT;
 	ifp->if_output = looutput;
 	if_attach(ifp);
