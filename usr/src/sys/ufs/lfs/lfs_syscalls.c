@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_syscalls.c	7.29 (Berkeley) %G%
+ *	@(#)lfs_syscalls.c	7.30 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -169,7 +169,7 @@ lfs_markv(p, uap, retval)
 			bp = lfs_fakebuf(vp, blkp->bi_lbn, bsize,
 			    blkp->bi_bp);
 		else {
-			bp = getblk(vp, blkp->bi_lbn, bsize);
+			bp = getblk(vp, blkp->bi_lbn, bsize, 0, 0);
 			if (!(bp->b_flags & (B_DELWRI | B_DONE | B_CACHE)) &&
 			    (error = copyin(blkp->bi_bp, bp->b_un.b_addr,
 			    bsize)))
