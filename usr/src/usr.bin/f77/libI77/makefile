@@ -1,5 +1,5 @@
 # Makefile for the f77 I/O library
-#	@(#)makefile	1.14	%G%
+#	@(#)makefile	1.15	%G%
 # Originally written by P. Weinberger, Bell Labs, Murray Hill, N.J.
 # Modified by D. Wasley, Univ of California, Berkeley, Calif.
 
@@ -38,7 +38,7 @@ $(LIB):	$(OBJECTS) Version
 	@echo "" > /dev/tty
 
 install:	$(LIB) libI66.a
-	@mv $(LIBDIR)/$(LIB) $(LIBDIR)/$(LIB).old
+	@-mv $(LIBDIR)/$(LIB) $(LIBDIR)/$(LIB).old
 	cp $(LIB) $(LIBDIR)/$(LIB)
 	ranlib $(LIBDIR)/$(LIB)
 	chmod 644 $(LIBDIR)/$(LIB)
@@ -81,7 +81,7 @@ f_errlist.o:	f_errlist.c
 
 Version:	$(SOURCES) mkvers
 	@rm -f Version.c
-	mkvers $(LIB) $(SOURCES) > Version.c
+	./mkvers $(LIB) $(SOURCES) > Version.c
 	cc -c Version.c
 	mv Version.o Version
 
@@ -92,7 +92,7 @@ clean:
 	rm -f *.o $(LIB) libI66.a tags
 
 index:	$(SOURCES) mkindx
-	@mkindx "f77 libI77.a Source Listing " Makefile $(SOURCES)
+	@./mkindx "f77 libI77.a Source Listing " Makefile $(SOURCES)
 
 print:	index
 	@pr index Makefile `ls $(SOURCES)` | $(LPR)

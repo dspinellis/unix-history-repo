@@ -1,6 +1,6 @@
 # Makefile for the f77 math & startup lib - libF77.a
 
-#	@(#)makefile	1.12	%G%
+#	@(#)makefile	1.13	%G%
 
 LIB = libF77.a
 LPR = lpr
@@ -64,7 +64,7 @@ trapov_.o: trapov_.c
 	mv a.out $*.o
 
 install:	$(LIB)
-	mv $(LIBDIR)/$(LIB) $(LIBDIR)/$(LIB).old
+	@-mv $(LIBDIR)/$(LIB) $(LIBDIR)/$(LIB).old
 	cp $(LIB) $(LIBDIR)/$(LIB)
 	ranlib $(LIBDIR)/$(LIB)
 	chmod 644 $(LIBDIR)/$(LIB)
@@ -72,7 +72,7 @@ install:	$(LIB)
 clean:
 	rm -f $(ALL) $(LIB)
 
-SOURCES = Version.c main.c s_rnge.c abort_.c exit_.c \
+SOURCES = Version.c main.c s_rnge.c abort_.c exit_.c opcodes.h \
 	s_stop.c s_paus.c rand_.c bit.c range.c traper_.c trapov_.c \
 	dbesj0_.c dbesj1_.c dbesjn_.c dbesy0_.c dbesy1_.c dbesyn_.c \
 	besj0_.c besj1_.c besjn_.c besy0_.c besy1_.c besyn_.c \
@@ -100,7 +100,7 @@ print:	index
 	@pr index Makefile `ls $(SOURCES)` | $(LPR)
 
 index:	$(SOURCES) mkindx
-	@mkindx "libF77 Sources " Makefile $(SOURCES)
+	@./mkindx "libF77 Sources " Makefile $(SOURCES)
 
 mkindx:	mkindx.c
 	@cc mkindx.c -o mkindx
