@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)byteorder.3	6.5 (Berkeley) %G%
+.\"	@(#)byteorder.3	6.6 (Berkeley) %G%
 .\"
 .TH BYTEORDER 3 ""
 .UC 5
@@ -11,7 +11,7 @@
 htonl, htons, ntohl, ntohs \- convert values between host and network byte order
 .SH SYNOPSIS
 .nf
-.B #include <machine/endian.h>
+.B #include <sys/param.h>
 .PP
 .B netlong = htonl(hostlong);
 .B u_long netlong, hostlong;
@@ -27,9 +27,9 @@ htonl, htons, ntohl, ntohs \- convert values between host and network byte order
 .fi
 .SH DESCRIPTION
 These routines convert 16 and 32 bit quantities between network
-byte order and host byte order.  On machines such as the SUN
-these routines are defined as null macros in the include file
-.RI < netinet/in.h >.
+byte order and host byte order.
+On machines which have a byte order which is the same as the network
+order, routines are defined as null macros.
 .PP
 These routines are most often used in conjunction with Internet
 addresses and ports as returned by
