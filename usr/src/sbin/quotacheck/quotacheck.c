@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)quotacheck.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)quotacheck.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -37,6 +37,7 @@ static char sccsid[] = "@(#)quotacheck.c	8.3 (Berkeley) %G%";
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <err.h>
 
 char *qfname = QUOTAFILENAME;
 char *qfextension[] = INITQFNAMES;
@@ -47,7 +48,7 @@ union {
 	char	dummy[MAXBSIZE];
 } un;
 #define	sblock	un.sblk
-long dev_bsize = 1;
+long dev_bsize;
 long maxino;
 
 struct quotaname {
@@ -81,7 +82,6 @@ struct fileusage *
 char	*blockcheck __P((char *));
 void	 bread __P((daddr_t, char *, long));
 int	 chkquota __P((char *, char *, struct quotaname *));
-void	 err __P((const char *, ...));
 void	 freeinodebuf __P((void));
 struct dinode *
 	 getnextinode __P((ino_t));
@@ -153,7 +153,7 @@ main(argc, argv)
 	if (aflag)
 		exit(checkfstab(1, maxrun, needchk, chkquota));
 	if (setfsent() == 0)
-		err("%s: can't open", FSTAB);
+		err(1, "%s: can't open", FSTAB);
 	while ((fs = getfsent()) != NULL) {
 		if (((argnum = oneof(fs->fs_file, argv, argc)) >= 0 ||
 		    (argnum = oneof(fs->fs_spec, argv, argc)) >= 0) &&
@@ -191,7 +191,7 @@ needchk(fs)
 	    strcmp(fs->fs_type, FSTAB_RW))
 		return (NULL);
 	if ((qnp = malloc(sizeof(*qnp))) == NULL)
-		err("%s", strerror(errno));
+		err(1, "%s", strerror(errno));
 	qnp->flags = 0;
 	if (gflag && hasquota(fs, GRPQUOTA, &qfnp)) {
 		strcpy(qnp->grpqfname, qfnp);
@@ -234,6 +234,7 @@ chkquota(fsname, mntpt, qnp)
 		(void)printf(" quotas for %s (%s)\n", fsname, mntpt);
 	}
 	sync();
+	dev_bsize = 1;
 	bread(SBOFF, (char *)&sblock, (long)SBSIZE);
 	dev_bsize = sblock.fs_fsize / fsbtodb(&sblock, 1);
 	maxino = sblock.fs_ncg * sblock.fs_ipg;
@@ -476,7 +477,7 @@ addid(id, type, name)
 	else
 		len = 10;
 	if ((fup = calloc(1, sizeof(*fup) + len)) == NULL)
-		err("%s", strerror(errno));
+		err(1, "%s", strerror(errno));
 	fhp = &fuhead[type][id & (FUHASH - 1)];
 	fup->fu_next = *fhp;
 	*fhp = fup;
@@ -508,7 +509,7 @@ getnextinode(inumber)
 	static struct dinode *dp;
 
 	if (inumber != nextino++ || inumber > maxino)
-		err("bad inode number %d to nextinode", inumber);
+		err(1, "bad inode number %d to nextinode", inumber);
 	if (inumber >= lastinum) {
 		readcnt++;
 		dblk = fsbtodb(&sblock, ino_to_fsba(&sblock, lastinum));
@@ -548,7 +549,7 @@ resetinodebuf()
 	}
 	if (inodebuf == NULL &&
 	   (inodebuf = malloc((u_int)inobufsize)) == NULL)
-		err("%s", strerror(errno));
+		err(1, "%s", strerror(errno));
 	while (nextino < ROOTINO)
 		getnextinode(nextino);
 }
@@ -577,34 +578,5 @@ bread(bno, buf, cnt)
 
 	if (lseek(fi, (off_t)bno * dev_bsize, SEEK_SET) < 0 ||
 	    read(fi, buf, cnt) != cnt)
-		err("block %ld", bno);
-}
-
-#if __STDC__
-#include <stdarg.h>
-#else
-#include <varargs.h>
-#endif
-
-void
-#if __STDC__
-err(const char *fmt, ...)
-#else
-err(fmt, va_alist)
-	char *fmt;
-        va_dcl
-#endif
-{
-	va_list ap;
-#if __STDC__
-	va_start(ap, fmt);
-#else
-	va_start(ap);
-#endif
-	(void)fprintf(stderr, "quotacheck: ");
-	(void)vfprintf(stderr, fmt, ap);
-	va_end(ap);
-	(void)fprintf(stderr, "\n");
-	exit(1);
-	/* NOTREACHED */
+		err(1, "block %ld", bno);
 }
