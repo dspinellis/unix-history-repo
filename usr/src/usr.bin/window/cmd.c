@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd.c	3.24 84/04/05";
+static	char *sccsid = "@(#)cmd.c	3.25 84/04/06";
 #endif
 
 #include "defs.h"
@@ -61,9 +61,6 @@ docmd()
 			case 'c':
 				if ((w = getwin()) != 0)
 					c_close(w);
-				break;
-			case 'C':
-				c_close((struct ww *)0);
 				break;
 			case 'w':
 				c_window();

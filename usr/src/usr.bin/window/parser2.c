@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)parser2.c	3.3 84/03/23";
+static	char *sccsid = "@(#)parser2.c	3.4 84/04/06";
 #endif
 
 #include "parser.h"
@@ -18,7 +18,7 @@ register struct value *v;
 	register struct lcmd_tab *c;
 	register struct lcmd_arg *ap;
 	register i;
-	struct value av[LCMD_NARG];
+	struct value av[LCMD_NARG + 1];
 	register struct value *vp;
 
 	if (name != 0) {
@@ -30,7 +30,7 @@ register struct value *v;
 		c = 0;
 
 	if (c != 0)
-		for (vp = av; vp < &av[LCMD_NARG]; vp++)
+		for (vp = av; vp < &av[LCMD_NARG + 1]; vp++)
 			vp->v_type = V_ERR;
 
 	for (i = 0;;) {
@@ -49,18 +49,16 @@ register struct value *v;
 		if (t.v_type == V_ERR)
 			flag = 0;
 		if (token != T_ASSIGN) {
-			if (c != 0) {
-				ap = &c->lc_arg[i];
-				vp = &av[i];
-				if (ap->arg_name == 0) {
+			if (c != 0)
+				if (i >= LCMD_NARG || c->lc_arg != 0
+				    && (ap = c->lc_arg + i)->arg_name == 0) {
 					p_error("%s: Too many arguments.",
 						c->lc_name);
-					val_free(t);
 					ap = 0;
+					vp = 0;
 					flag = 0;
 				} else
-					i++;
-			}
+					vp = &av[i++];
 		} else {
 			char *tmp;
 			switch (t.v_type) {
@@ -68,11 +66,8 @@ register struct value *v;
 				tmp = 0;
 				break;
 			case V_NUM:
-				if ((tmp = str_itoa(t.v_num)) == 0) {
-					p_memerror();
+				if (p_convstr(&t) < 0)
 					goto abort;
-				}
-				break;
 			case V_STR:
 				tmp = t.v_str;
 				break;
@@ -89,16 +84,16 @@ register struct value *v;
 			if (tmp) {
 				/* we know c != 0 */
 				for (ap = c->lc_arg, vp = av;
-				     ap->arg_name != 0; ap++, vp++)
+				     ap != 0 && ap->arg_name != 0; ap++, vp++)
 					if (str_match(tmp, ap->arg_name,
 							ap->arg_minlen))
 						break;
-				if (ap->arg_name == 0) {
+				if (ap == 0 || ap->arg_name == 0) {
 					p_error("%s: Unknown argument \"%s\".",
 						c->lc_name, tmp);
-					val_free(t);
 					flag = 0;
 					ap = 0;
+					vp = 0;
 				}
 				str_free(tmp);
 			}
@@ -108,8 +103,8 @@ register struct value *v;
 				p_error("%s: Argument %d (%s) duplicated.",
 					c->lc_name, ap - c->lc_arg + 1,
 					ap->arg_name);
-				val_free(t);
 				flag = 0;
+				vp = 0;
 			} else if (t.v_type == V_ERR) {
 				/* do nothing */
 			} else if (ap->arg_type == ARG_NUM && t.v_type != V_NUM
@@ -117,11 +112,14 @@ register struct value *v;
 				p_error("%s: Argument %d (%s) type mismatch.",
 					c->lc_name, ap - c->lc_arg + 1,
 					ap->arg_name);
-				val_free(t);
 				flag = 0;
-			} else
-				*vp = t;
+				vp = 0;
+			}
 		}
+		if (vp != 0)
+			*vp = t;
+		else
+			val_free(t);
 		if (token == T_COMMA)
 			(void) s_gettok();
 	}
@@ -129,7 +127,7 @@ register struct value *v;
 	if (p_erred())
 		flag = 0;
 	if (token != T_RP && token != T_EOL && token != T_EOF)
-		flag = 0;		/* look ahead a bit */
+		flag = 0;		/* look for legal follow set */
 	v->v_type = V_ERR;
 	if (flag)
 		(*c->lc_func)(v, av);
