@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)headers.c	5.3 (Berkeley) %G%";
+static char	SccsId[] = "@(#)headers.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 # include <errno.h>
@@ -129,7 +129,7 @@ chompheader(line, def)
 	h->h_field = newstr(fname);
 	h->h_value = NULL;
 	h->h_link = NULL;
-	bcopy(mopts, h->h_mflags, sizeof mopts);
+	bcopy((char *) mopts, (char *) h->h_mflags, sizeof mopts);
 	*hp = h;
 	h->h_flags = hi->hi_flags;
 	if (def)

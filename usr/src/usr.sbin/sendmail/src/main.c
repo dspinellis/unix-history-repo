@@ -15,13 +15,17 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char	SccsId[] = "@(#)main.c	5.3 (Berkeley) %G%";
+static char	SccsId[] = "@(#)main.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 # define  _DEFINE
 # include <signal.h>
 # include <sgtty.h>
 # include "sendmail.h"
+
+# ifdef lint
+char	edata;
+# endif lint
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -853,6 +857,7 @@ thaw(freezefile)
 	union frz fhdr;
 	extern char edata;
 	extern char Version[];
+	extern caddr_t brk();
 
 	if (freezefile == NULL)
 		return (FALSE);
@@ -874,7 +879,7 @@ thaw(freezefile)
 	}
 
 	/* arrange to have enough space */
-	if (brk(fhdr.frzinfo.frzbrk) < 0)
+	if (brk(fhdr.frzinfo.frzbrk) == (caddr_t) -1)
 	{
 		syserr("Cannot break to %x", fhdr.frzinfo.frzbrk);
 		(void) close(f);
@@ -966,10 +971,10 @@ disconnect(fulldrop)
 		fd = open("/dev/tty", 2);
 		if (fd >= 0)
 		{
-			(void) ioctl(fd, TIOCNOTTY, 0);
+			(void) ioctl(fd, (int) TIOCNOTTY, (char *) 0);
 			(void) close(fd);
 		}
-		(void) setpgrp(0);
+		(void) setpgrp(0, 0);
 		errno = 0;
 	}
 #endif TIOCNOTTY
