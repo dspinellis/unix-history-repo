@@ -1,9 +1,9 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)closedir.c 4.3 %G%";
+static char sccsid[] = "@(#)closedir.c 4.4 %G%";
 
 #include <sys/param.h>
-#include <ndir.h>
+#include <dir.h>
 
 /*
  * close a directory.

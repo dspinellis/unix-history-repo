@@ -1,9 +1,9 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)telldir.c 4.2 %G%";
+static char sccsid[] = "@(#)telldir.c 4.3 %G%";
 
 #include <sys/param.h>
-#include <ndir.h>
+#include <dir.h>
 
 /*
  * return a pointer into a directory
