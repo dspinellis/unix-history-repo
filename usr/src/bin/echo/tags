@@ -1,0 +1,1 @@
+Mecho	echo.c	/^main(argc, argv)$/
