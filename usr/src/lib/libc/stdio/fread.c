@@ -1,4 +1,4 @@
-/* @(#)fread.c	4.1 (Berkeley) %G% */
+/* @(#)fread.c	4.2 (Berkeley) %G% */
 #include	<stdio.h>
 
 fread(ptr, size, count, iop)
@@ -7,6 +7,7 @@ fread(ptr, size, count, iop)
 	register FILE *iop;
 {
 	register int s;
+	int c;
 
 	s = size * count;
 	while (s > 0) {
@@ -20,8 +21,9 @@ fread(ptr, size, count, iop)
 			 * filbuf clobbers _cnt & _ptr,
 			 * so don't waste time setting them.
 			 */
-			if ((*ptr++ = _filbuf(iop)) == EOF)
+			if ((c = _filbuf(iop)) == EOF)
 				break;
+			*ptr++ = c;
 			s--;
 		}
 		if (iop->_cnt >= s) {
