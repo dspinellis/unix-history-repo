@@ -1,4 +1,4 @@
-/*	srt0.c	4.5	%G%	*/
+/*	srt0.c	4.6	81/03/21	*/
 
 #include "../h/mtpr.h"
 
@@ -18,7 +18,6 @@
 entry:	.globl	entry
 	.word	0x0
 	mtpr	$HIGH,$IPL		# just in case
-	mtpr	$_Scbbase,$SCBB
 	movl	$reloc-0x2400,sp
 start:
 	movab	_edata,r0
