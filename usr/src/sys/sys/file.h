@@ -1,4 +1,4 @@
-/*	file.h	4.15	83/05/27	*/
+/*	file.h	4.16	83/06/03	*/
 
 #ifdef KERNEL
 /*
@@ -39,12 +39,12 @@ struct	file *falloc();
 /* bits to save after open */
 #define	FMASK		00117	
 #define	FCNTLCANT	(FREAD|FWRITE|FMARK|FDEFER)
+#endif
 
 /* open only modes */
 #define	FCREAT		01000		/* create if nonexistant */
 #define	FTRUNC		02000		/* truncate to zero length */
 #define	FEXCL		04000		/* error if already created */
-#endif
 
 /*
  * User definitions.
