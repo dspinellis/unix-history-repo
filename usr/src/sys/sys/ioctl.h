@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ioctl.h	7.19 (Berkeley) %G%
+ *	@(#)ioctl.h	7.20 (Berkeley) %G%
  */
 
 #ifndef	_IOCTL_H_
@@ -192,9 +192,9 @@ __END_DECLS
  * Compatability with old terminal driver
  *
  * Source level -> #define USE_OLD_TTY
- * Kernel level -> options COMPAT_43
+ * Kernel level -> options COMPAT_43 or COMPAT_SUNOS
  */
-#if defined(USE_OLD_TTY) || defined(COMPAT_43)
+#if defined(USE_OLD_TTY) || defined(COMPAT_43) || defined(COMPAT_SUNOS)
 #ifdef KERNEL
 #include "ioctl_compat.h"
 #else
