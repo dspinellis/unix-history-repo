@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -31,7 +31,7 @@ static char sccsid[] = "@(#)telnet.c	8.2 (Berkeley) %G%";
 #include "general.h"
 
 
-#define	strip(x)	((x)&0x7f)
+#define	strip(x) ((my_want_state_is_wont(TELOPT_BINARY)) ? ((x)&0x7f) : (x))
 
 static unsigned char	subbuffer[SUBBUFSIZE],
 			*subpointer, *subend;	 /* buffer for sub-options */
