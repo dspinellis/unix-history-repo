@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)eval.c 1.9 %G%";
+static char sccsid[] = "@(#)eval.c 1.10 %G%";
 
 /*
  * Tree evaluation.
@@ -44,6 +44,7 @@ typedef Char Stack;
 
 public Stack stack[STACKSIZE];
 public Stack *sp = &stack[0];
+public Boolean useInstLoc = false;
 
 #define chksp() \
 { \
@@ -405,6 +406,7 @@ register Node p;
 		stepc();
 	    }
 	    inst_tracing = b;
+	    useInstLoc = (Boolean) (not p->value.step.source);
 	    printnews();
 	    break;
 
