@@ -1,15 +1,22 @@
-/*	vbavar.h	1.1	85/07/21	*/
+/*	vbavar.h	1.2	86/01/12	*/
 
 /*
  * This file contains definitions related to the kernel structures
  * for dealing with the Versabus adapters.
  *
+ * Each Versabus has a vba_hd structure.
  * Each Versabus controller which is not a device has a vba_ctlr structure.
  * Each Versabus device has a vba_device structure.
  */
 
-
 #ifndef LOCORE
+/*
+ * Per-vba structure.
+ */
+struct	vba_hd {
+	int	vh_lastiv;		/* last interrupt vector assigned */
+};
+
 /*
  * Per-controller structure.
  * (E.g. one for each disk and tape controller, and other things
@@ -28,6 +35,7 @@ struct vba_ctlr {
 	short	um_alive;	/* controller exists */
 	int	(**um_intr)();	/* interrupt handler(s) */
 	caddr_t	um_addr;	/* address of device in i/o space */
+	struct	vba_hd *um_hd;
 /* the driver saves the prototype command here for use in its go routine */
 	int	um_cmd;		/* communication to dgo() */
 	int	um_vbinfo;	/* save Versabus registers, etc */
@@ -67,6 +75,7 @@ struct vba_device {
 	struct	vba_device *ui_forw;
 /* if the device is connected to a controller, this is the controller */
 	struct	vba_ctlr *ui_mi;
+	struct	vba_hd *ui_hd;
 };
 #endif
 
@@ -87,22 +96,15 @@ struct vba_driver {
 	struct	vba_device **ud_dinfo;	/* backpointers to vbdinit structs */
 	char	*ud_mname;		/* name of a controller */
 	struct	vba_ctlr **ud_minfo;	/* backpointers to vbminit structs */
-	short	ud_xclu;		/* want exclusive use of bdp's */
 };
 
-/*
- * Flags to VBA map/bdp allocation routines
- */
-#define	VBA_NEEDBDP	1		/* transfer needs a bdp */
-#define	VBA_CANTWAIT	2		/* don't block me */
-#define	VBA_NEED16	3		/* need 16 bit addresses only */
-
-#define	numvba  1				/* number of vba's */
 #ifndef LOCORE
 #ifdef KERNEL
 /*
  * VBA related kernel variables
  */
+int	numvba;					/* number of uba's */
+struct	vba_hd vba_hd[];
 
 /*
  * Vbminit and vbdinit initialize the mass storage controller and

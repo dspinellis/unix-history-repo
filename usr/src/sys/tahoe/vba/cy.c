@@ -1,4 +1,4 @@
-/*	cy.c	1.2	86/01/05	*/
+/*	cy.c	1.3	86/01/12	*/
 
 #include "cy.h"
 #if NCY > 0
@@ -86,23 +86,20 @@ static	int (*cmd_tbl[15])() = {
 #define DO_BWT	14
 };
 
-
-extern	int cyprobe(), cyslave(), cyattach(), cydgo();
-extern unsigned	cyminsize();
 #if NCY > 0
 extern	char	cy0utl[];
 #endif
 #if NCY > 1
 extern	char	cy1utl[];
 #endif
-static	fmt_scp *scp_ptrs[MAXCONTROLLERS] =
-    { (fmt_scp *)0xc0000c06, (fmt_scp *)0xc0000c16, };
 struct	vba_ctlr *cyminfo[NCY];
 struct	vba_device *cydinfo[NUM_UNIT];
-struct vba_driver cydriver = {
-    cyprobe, cyslave, cyattach, cydgo, (long *)scp_ptrs,
-    "yc", cydinfo, "cy", cyminfo
-};
+long	cystd[] = { 0 };
+int cyprobe(), cyslave(), cyattach(), cydgo();
+struct	vba_driver cydriver =
+   { cyprobe, cyslave, cyattach, cydgo, cystd, "yc", cydinfo, "cy", cyminfo };
+fmt_scp	*cyscp[] = { (fmt_scp *)0xc0000c06, (fmt_scp *)0xc0000c16 };
+unsigned cyminsize();
 
 /*
  * Per-controller data structure.
@@ -156,30 +153,76 @@ typedef struct {
 } unit_tab;
 unit_tab unit_info[NUM_UNIT];
 
-cyprobe(ctlr_vaddr)
-	register caddr_t ctlr_vaddr;
+cyprobe(reg, vm)
+	caddr_t reg;
+	struct vba_ctlr *vm;
 {
-	static int ctlr = -1;			/* XXX */
+	register br, cvec;			/* must be r12, r11 */
 
-	ctlr++;
-	if (badcyaddr(ctlr_vaddr + 1) || 
-	    !cy_init_controller(ctlr_vaddr, ctlr, 1))
+	if (badcyaddr(reg+1))
 		return (0);
+	br = 0x13, cvec = 0x80;			/* XXX */
 	return (sizeof (caddr_t));		/* XXX */
 }
 
 /*
- * Initialize the controller after a controller reset or during autoconfigure.
- * All of the system control blocks are initialized and the controller is
- * asked to configure itself for later use.
- *
- * If the print value is true cy_first_TM_attention will anounce
- * the type of controller we are (Tapemasher) and will print the size
- * of the internal controller buffer.
+ * Check to see if a drive is attached to a controller.
+ * Since we can only tell that a drive is there if a tape is loaded and
+ * the drive is placed online, we always indicate the slave is present.
  */
-cy_init_controller(ctlr_vaddr, ctlr, print)
-	register caddr_t ctlr_vaddr;
-	register int ctlr, print;
+cyslave(vi, addr)
+	struct vba_device *vi;
+	caddr_t addr;
+{
+
+#ifdef lint
+	vi = vi; addr = addr;
+#endif
+	return (1);
+}
+
+/* THIS NEEDS TO BE REWRITTEN TO MOVE STUFF TO CYPROBE */
+cyattach(vi)
+	struct vba_device *vi;
+{
+	register unit_tab *ui = &unit_info[vi->ui_unit];
+	register struct buf *cq = &vi->ui_mi->um_tab;
+	register struct buf *uq = cq->b_forw;
+	register struct buf *start_queue = uq;
+
+	(void) cy_init_controller(vi->ui_addr, vi->ui_ctlr, 1);
+	/* Add unit to controllers queue */
+	if (cq->b_forw == NULL) {
+		cq->b_forw = &ui->u_queue;
+		ui->u_queue.b_forw = &ui->u_queue;
+	} else {
+		while (uq->b_forw != start_queue)
+			uq = uq->b_forw;
+		ui->u_queue.b_forw = start_queue;
+		uq->b_forw = &ui->u_queue;
+	}
+	ui->cleanup = cyno_op;
+	ui->last_status = 0;
+	ui->last_control = 0;
+	ui->file_number = 0;
+	ui->bad_count = 0;
+	ui->blkno = 0;
+	ui->open = 0;
+	ui->bot = 1;
+	ui->eot = 0;
+	ui->eof = 0;
+	ui->message = NULL;
+}
+
+/*
+ * Initialize the controller after a controller reset or
+ * during autoconfigure.  All of the system control blocks
+ * are initialized and the controller is asked to configure
+ * itself for later use.
+ */
+cy_init_controller(addr, ctlr, print)
+	caddr_t addr;
+	int ctlr, print;
 {
 	register int *pte;
 	register fmt_scp *SCP;
@@ -190,7 +233,7 @@ cy_init_controller(ctlr_vaddr, ctlr, print)
 	/*
 	 * Initialize the system configuration pointer.
 	 */
-	SCP = scp_ptrs[ctlr];
+	SCP = cyscp[ctlr];
 	/* make kernel writable */
 	pte = (int *)vtopte((struct proc *)0, btop(SCP)); 
 	*pte &= ~PG_PROT; *pte |= PG_KW;
@@ -227,15 +270,15 @@ cy_init_controller(ctlr_vaddr, ctlr, print)
 	ci->tpb.cmd = NO_OP;
 	ci->tpb.control = CW_16bits;
 	ci->ccb.gate = GATE_CLOSED;	
-	CY_ATTENTION(ctlr_vaddr);	/* execute! */
+	CY_ATTENTION(addr);	/* execute! */
 	if (cywait(&ci->ccb) || (ci->tpb.status & CS_ERm)) {
-		printf("yc%d: time-out during init\n", ctlr);
+		printf("cy%d: time-out during init\n", ctlr);
 		return (0);
 	}
 	ci->tpb.cmd = CONFIG;
 	ci->tpb.control = CW_16bits;
 	ci->ccb.gate = GATE_CLOSED;	
-	CY_ATTENTION(ctlr_vaddr);	/* execute! */
+	CY_ATTENTION(addr);		/* execute! */
 	if (cywait(&ci->ccb) || (ci->tpb.status & CS_ERm)) {
 		cyprint_err("Tapemaster configuration failure",
 		    0, ci->tpb.status);
@@ -244,55 +287,8 @@ cy_init_controller(ctlr_vaddr, ctlr, print)
 	uncache(&ci->tpb.count);
 	ci->bs = MULTIBUS_SHORT(ci->tpb.count);
 	if (print)
-		printf("yc%d: %dKb buffer\n", ctlr, ci->bs/1024);
+		printf("cy%d: %dKb buffer\n", ctlr, ci->bs/1024);
 	return (1);
-}
-
-/*
- * Check to see if a drive is attached to a controller.
- * Since we can only tell that a drive is there if a tape is loaded and
- * the drive is placed online, we always indicate the slave is present.
- */
-cyslave(vi, addr)
-	struct vba_device *vi;
-	caddr_t addr;
-{
-
-#ifdef lint
-	vi = vi; addr = addr;
-#endif
-	return (1);
-}
-
-cyattach(dev_info)
-	struct vba_device *dev_info;
-{
-	register unit_tab *ui = &unit_info[dev_info->ui_unit];
-	register struct buf *cq = &dev_info->ui_mi->um_tab;
-	register struct buf *uq = cq->b_forw;
-	register struct buf *start_queue = uq;
-
-	/* Add unit to controllers queue */
-	if (cq->b_forw == NULL) {
-		cq->b_forw = &ui->u_queue;
-		ui->u_queue.b_forw = &ui->u_queue;
-	} else {
-		while(uq->b_forw != start_queue)
-			uq = uq->b_forw;
-		ui->u_queue.b_forw = start_queue;
-		uq->b_forw = &ui->u_queue;
-	}
-	ui->cleanup = cyno_op;
-	ui->last_status = 0;
-	ui->last_control = 0;
-	ui->file_number = 0;
-	ui->bad_count = 0;
-	ui->blkno = 0;
-	ui->open = FALSE;
-	ui->bot = TRUE;
-	ui->eot = FALSE;
-	ui->eof = FALSE;
-	ui->message = NULL;
 }
 
 cydgo()

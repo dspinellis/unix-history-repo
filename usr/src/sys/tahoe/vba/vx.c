@@ -1,9 +1,9 @@
-/*	vx.c	1.2	86/01/05	*/
+/*	vx.c	1.3	86/01/12	*/
 
 #include "vx.h"
 #if NVX > 0
 /*
- *	VIOC-X driver
+ * VIOC-X driver
  */
 #include "../tahoe/pte.h"
 
@@ -44,15 +44,15 @@ long vxdebug = 0;
 
 #define RSPquals	1
 
-struct	vcx	vcx[NVIOCX] ;
-struct	tty	vx_tty[NVXPORTS];
-extern struct vcmds v_cmds[];
-extern long reinit;
+struct	vcx vcx[NVIOCX] ;
+struct	tty vx_tty[NVXPORTS];
+extern	struct vcmds v_cmds[];
+extern	long reinit;
 
 int	vxstart() ;
 int	ttrstrt() ;
-struct	vxcmd	*vobtain() ;
-struct	vxcmd	*nextcmd() ;
+struct	vxcmd *vobtain() ;
+struct	vxcmd *nextcmd() ;
 
 /*
  * Driver information for auto-configuration stuff.
@@ -62,25 +62,25 @@ int	vxprobe(), vxattach(), vxrint();
 struct	vba_device *vxinfo[NVIOCX];
 long	vxstd[] = { 0 };
 struct	vba_driver vxdriver =
-	{ vxprobe, 0, vxattach, 0, vxstd, "vx", vxinfo };
+    { vxprobe, 0, vxattach, 0, vxstd, "vx", vxinfo };
 
-char vxtype[NVIOCX];	/* 0: viox-x/vioc-b; 1: vioc-bop */
-char vxbbno = -1;
-char vxbopno[NVIOCX];	/* BOP board no. if indicated by vxtype[] */
-extern vbrall();
+char	vxtype[NVIOCX];	/* 0: viox-x/vioc-b; 1: vioc-bop */
+char	vxbbno = -1;
+char	vxbopno[NVIOCX];	/* BOP board no. if indicated by vxtype[] */
+int	vxivec[NVIOCX];		/* interrupt vector base */
+extern	vbrall();
 
-
-vxprobe(reg)
+vxprobe(reg, vi)
 	caddr_t reg;
+	struct vba_device *vi;
 {
-	register int br, cvec;
+	register int br, cvec;			/* must be r12, r11 */
 	register struct vblok *vp = (struct vblok *)reg;
 
 #ifdef lint
 	br = 0; cvec = br; br = cvec;
 	vackint(0); vunsol(0); vcmdrsp(0); vxfreset(0);
 #endif
-
 	if (badaddr((caddr_t)vp, 1))
 		return (0);
 	vp->v_fault = 0;
@@ -89,15 +89,29 @@ vxprobe(reg)
 	DELAY(4000000);
 	if (vp->v_fault != VREADY)
 		return (0);
+#ifdef notdef
+	/*
+	 * Align vioc interrupt vector base to 4 vector
+	 * boundary and fitting in 8 bits (is this necessary,
+	 * wish we had documentation).
+	 */
+	if ((vi->ui_hd->vh_lastiv -= 3) > 0xff)
+		vi->ui_hd->vh_lastiv = 0xff;
+	vxivec[vi->ui_unit] = vi->ui_hd->vh_lastiv =
+	    vi->ui_hd->vh_lastiv &~ 0x3;
+#else
+	vxivec[vi->ui_unit] = 0x40+vi->ui_unit*4;
+#endif
+	br = 0x18, cvec = vxivec[vi->ui_unit];	/* XXX */
 	return (sizeof (*vp));
 }
 
-vxattach(ui)
-	register struct vba_device *ui;
+vxattach(vi)
+	register struct vba_device *vi;
 {
 
-	VIOCBAS[ui->ui_unit] = ui->ui_addr;
-	vxinit(ui->ui_unit,(long)1);
+	VIOCBAS[vi->ui_unit] = vi->ui_addr;
+	vxinit(vi->ui_unit, (long)1);
 }
 
 /*
@@ -662,15 +676,18 @@ long wait;
 
 	cp = vobtain(xp);	/* grap the control block */
 	cp->cmd = LIDENT;	/* set command type */
-	cp->par[0] = i * 4 + VCVECT; 	/* ack vector */
-	cp->par[1] = cp->par[0] + 1;	/* cmd resp vector */
-	cp->par[3] = cp->par[0] + 2;	/* unsol intr vector */
+	cp->par[0] = vxivec[i]; 	/* ack vector */
+	cp->par[1] = cp->par[0]+1;	/* cmd resp vector */
+	cp->par[3] = cp->par[0]+2;	/* unsol intr vector */
 	cp->par[4] = 15;	/* max ports, no longer used */
 	cp->par[5] = 0;		/* set 1st port number */
 	vcmd(i, (caddr_t)&cp->cmd);	/* initialize the VIOC-X */
 
 	if (!wait) return;
-	while(cp->cmd == LIDENT);    /* wait for command completion */
+	for (j = 0; cp->cmd == LIDENT && j < 4000000; j++)
+		;
+	if (j >= 4000000)
+		printf("vx%d: didn't respond to LIDENT\n", i); 
 
  	/* calculate address of response buffer */
  	resp = (char *)kp;
