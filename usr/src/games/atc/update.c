@@ -8,7 +8,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)update.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)update.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "include.h"
@@ -163,7 +163,7 @@ update()
 			if (too_close(p1, p2, 1)) {
 				static char	buf[80];
 
-				sprintf(buf, "collided with plane '%c'.",
+				(void)sprintf(buf, "collided with plane '%c'.",
 					name(p2));
 				loser(p1, buf);
 			}
@@ -191,21 +191,21 @@ command(pp)
 
 	buf[0] = '\0';
 	bp = buf;
-	sprintf(bp, "%c%d%c%c%d: ", name(pp), pp->altitude, 
+	(void)sprintf(bp, "%c%d%c%c%d: ", name(pp), pp->altitude, 
 		(pp->fuel < LOWFUEL) ? '*' : ' ',
 		(pp->dest_type == T_AIRPORT) ? 'A' : 'E', pp->dest_no);
 
 	comm_start = bp = index(buf, '\0');
 	if (pp->altitude == 0)
-		sprintf(bp, "Holding @ A%d", pp->orig_no);
+		(void)sprintf(bp, "Holding @ A%d", pp->orig_no);
 	else if (pp->new_dir >= MAXDIR || pp->new_dir < 0)
 		strcpy(bp, "Circle");
 	else if (pp->new_dir != pp->dir)
-		sprintf(bp, "%d", dir_deg(pp->new_dir));
+		(void)sprintf(bp, "%d", dir_deg(pp->new_dir));
 
 	bp = index(buf, '\0');
 	if (pp->delayd)
-		sprintf(bp, " @ B%d", pp->delayd_no);
+		(void)sprintf(bp, " @ B%d", pp->delayd_no);
 
 	bp = index(buf, '\0');
 	if (*comm_start == '\0' && 
