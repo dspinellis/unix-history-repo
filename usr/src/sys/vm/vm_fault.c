@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_fault.c	7.17 (Berkeley) %G%
+ *	@(#)vm_fault.c	7.18 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -933,7 +933,7 @@ void vm_fault_copy_entry(dst_map, src_map, dst_entry, src_entry)
 
 #ifdef	lint
 	src_map++;
-#endif	lint
+#endif
 
 	src_object = src_entry->object.vm_object;
 	src_offset = src_entry->offset;

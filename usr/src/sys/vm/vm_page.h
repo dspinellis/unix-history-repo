@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_page.h	7.10 (Berkeley) %G%
+ *	@(#)vm_page.h	7.11 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -112,9 +112,9 @@ struct vm_page {
 		(PG_ACTIVE | PG_INACTIVE))) \
 		panic("vm_page_check: not valid!"); \
 }
-#else	VM_PAGE_DEBUG
+#else /* VM_PAGE_DEBUG */
 #define	VM_PAGE_CHECK(mem)
-#endif	VM_PAGE_DEBUG
+#endif /* VM_PAGE_DEBUG */
 
 #ifdef KERNEL
 /*

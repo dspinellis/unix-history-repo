@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if.c	7.25 (Berkeley) %G%
+ *	@(#)if.c	7.26 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -339,7 +339,7 @@ if_up(ifp)
 	/* this has no effect on IP, and will kill all iso connections XXX */
 	for (ifa = ifp->if_addrlist; ifa; ifa = ifa->ifa_next)
 		pfctlinput(PRC_IFUP, ifa->ifa_addr);
-#endif notyet
+#endif
 	rt_ifmsg(ifp);
 }
 
