@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)crt0.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)crt0.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -18,7 +18,13 @@ static char sccsid[] = "@(#)crt0.c	5.8 (Berkeley) %G%";
  *	which points to the base of the kernel calling frame.
  */
 
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
+
 char **environ = (char **)0;
+static char empty[1];
+char *__progname = empty;
 static int fd;
 
 asm(".text");
@@ -48,9 +54,9 @@ start()
 #ifdef lint
 	kfp = 0;
 	initcode = initcode = 0;
-#else not lint
+#else
 	asm("lea 4(%ebp),%ebx");	/* catch it quick */
-#endif not lint
+#endif
 	for (argv = targv = &kfp->kargv[0]; *targv++; /* void */)
 		/* void */ ;
 	if (targv >= (char **)(*argv))
@@ -71,13 +77,18 @@ asm("eprol:");
 		fd = open("/dev/null", 2);
 	} while (fd >= 0 && fd < 3);
 	close(fd);
-#endif paranoid
+#endif
 
 #ifdef MCRT0
 	atexit(_mcleanup);
 	monstartup(&eprol, &etext);
-#endif MCRT0
+#endif
 	errno = 0;
+	if (argv[0])
+		if ((__progname = strrchr(argv[0], '/')) == NULL)
+			__progname = argv[0];
+		else
+			++__progname;
 	exit(main(kfp->kargc, argv, environ));
 }
 
@@ -90,4 +101,4 @@ moncontrol(val)
 {
 
 }
-#endif /* CRT0 */
+#endif

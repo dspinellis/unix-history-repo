@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)crt0.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)crt0.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -21,7 +21,13 @@ static char sccsid[] = "@(#)crt0.c	5.4 (Berkeley) %G%";
  *	which points to the base of the kernel calling frame.
  */
 
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
+
 char **environ = (char **)0;
+static char empty[1];
+char *__progname = empty;
 static int fd;
 
 extern	unsigned char	etext;
@@ -63,8 +69,13 @@ asm("eprol:");
 
 #ifdef MCRT0
 	monstartup(&eprol, &etext);
-#endif MCRT0
+#endif
 	errno = 0;
+	if (argv[0])
+		if ((__progname = strrchr(argv[0], '/')) == NULL)
+			__progname = argv[0];
+		else
+			++__progname;
 	exit(main(kfp->kargc, argv, environ));
 }
 
@@ -77,7 +88,7 @@ exit(code)
 	_cleanup();
 	_exit(code);
 }
-#endif MCRT0
+#endif
 
 #ifdef CRT0
 /*
@@ -88,4 +99,4 @@ moncontrol(val)
 {
 
 }
-#endif CRT0
+#endif
