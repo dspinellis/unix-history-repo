@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.102 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.103 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.102 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.103 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -932,7 +932,7 @@ host_map_lookup(map, name, av, statp)
 			bcopy(name, hbuf, sizeof hbuf - 1);
 			hbuf[sizeof hbuf - 1] = '\0';
 		}
-		if (getcanonname(hbuf, sizeof hbuf - 1, !NoMXforCanon))
+		if (getcanonname(hbuf, sizeof hbuf - 1, !HasWildcardMX))
 		{
 			if (tTd(9, 1))
 				printf("%s\n", hbuf);

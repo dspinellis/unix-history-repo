@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.142 (Berkeley) %G%
+ *	@(#)sendmail.h	8.143 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.142		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.143		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -1005,7 +1005,7 @@ EXTERN bool	TryNullMXList;	/* if we are the best MX, try host directly */
 EXTERN bool	InChild;	/* true if running in an SMTP subprocess */
 EXTERN bool	DisConnected;	/* running with OutChannel redirected to xf */
 EXTERN bool	ColonOkInAddr;	/* single colon legal in address */
-EXTERN bool	NoMXforCanon;	/* don't use MX records when canonifying */
+EXTERN bool	HasWildcardMX;	/* don't use MX records when canonifying */
 EXTERN char	SpaceSub;	/* substitution for <lwsp> */
 EXTERN int	PrivacyFlags;	/* privacy flags */
 EXTERN char	*ConfFile;	/* location of configuration file [conf.c] */
