@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.2	(Berkeley)	83/05/08
+#	@(#)Makefile	4.3	(Berkeley)	83/05/08
 #
 DESTDIR=
 CFLAGS = -O
@@ -42,8 +42,8 @@ install: all
 	install -s refer $(DESTDIR)/usr/bin
 	install -s addbib $(DESTDIR)/usr/bin
 	install -s sortbib $(DESTDIR)/usr/bin
-	install -c roffbib.sh $(DESTDIR)/usr/bin
-	install -c indxbib.sh $(DESTDIR)/usr/bin
+	install -c roffbib.sh $(DESTDIR)/usr/bin/roffbib
+	install -c indxbib.sh $(DESTDIR)/usr/bin/indxbib
 	install -s lookbib $(DESTDIR)/usr/bin
 	install -c tmac.bib $(DESTDIR)/usr/lib/tmac
 clean:
