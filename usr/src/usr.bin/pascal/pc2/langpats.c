@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)langpats.c 1.6 %G%";
+static char sccsid[] = "@(#)langpats.c 1.7 %G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -323,7 +323,6 @@ main(argc, argv)
 		HASH(cp, hp);
 		while (*hp) {
 			if (strcmpn((*hp)->name, cp, size)==NULL) {
-				fprintf(stderr, "name = %s\n", (*hp)->name);
 				if (lp != NULL) {
 					*lp++ = '\n';
 					*lp = '\0';
