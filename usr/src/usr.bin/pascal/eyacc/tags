@@ -1,0 +1,47 @@
+Mey1	ey1.c	/^main(argc,argv) int argc; char *argv[]; {$/
+UNION	ey1.c	/^UNION( a, b, c ) int *a, *b, *c; {$/
+apack	ey4.c	/^apack(p, n ) int *p;{ \/* pack state i from temp1 /
+arrdone	ey1.c	/^arrdone(){$/
+arrset	ey1.c	/^arrset(s) char s[]; {$/
+arrval	ey1.c	/^arrval(n){$/
+aryfil	ey1.c	/^aryfil( v, n, c ) int *v,n,c; { \/* set elements 0/
+cclose	ey5.c	/^cclose(i) FILE *i; {$/
+cempty	ey3.c	/^cempty(){ \/* mark nonterminals which derive the e/
+cexit	ey5.c	/^cexit(i){$/
+cflush	ey5.c	/^cflush(x) FILE *x; { \/* fake! sets file to x *\/$/
+chcopy	ey1.c	/^char *chcopy( p, q )  char *p, *q; {$/
+chfind	ey2.c	/^chfind(t)$/
+chstash	ey2.c	/^chstash( c ){$/
+closure	ey3.c	/^closure(i){ \/* generate the closure of state i */
+compare	ey1.c	/^compare(v) char *v; {	\/* compare ctokn with v *\//
+copen	ey5.c	/^FILE *copen( s, c )$/
+copy	ey1.c	/^copy(v) char *v; {	\/* copy ctokn to v *\/$/
+cpfir	ey3.c	/^cpfir() {$/
+cpres	ey3.c	/^cpres(){ \/* conpute an array with the beginnings /
+cpyact	ey2.c	/^cpyact(){ \/* copy C action to the next ; or closi/
+cpycode	ey2.c	/^cpycode(){ \/* copies code between \\{ and \\} *\//
+defin	ey2.c	/^defin(t) {$/
+defout	ey2.c	/^defout(){ \/* write out the defines (at the end of/
+error	ey1.c	/^error(s,a1){ \/* write out error comment *\/$/
+finact	ey2.c	/^finact(){$/
+flset	ey3.c	/^struct looksets *flset( p ) $/
+gettok	ey2.c	/^int gettok() {$/
+go2	ey4.c	/^go2(i,c){ \/* do a goto on the closure state, not /
+go2gen	ey4.c	/^go2gen(c){ \/* output the gotos for nonterminal c /
+go2out	ey4.c	/^go2out(){ \/* output the gotos for the nontermnina/
+output	ey4.c	/^output(){ \/* print the output for the states *\/$/
+precftn	ey4.c	/^precftn(r,t){ \/* decide a shift\/reduce conflict /
+prlook	ey1.c	/^prlook( p ) struct looksets *p;{$/
+prred	ey4.c	/^prred(){ \/* print the information about the actio/
+putitem	ey3.c	/^putitem ( ptr, lptr )		int *ptr; struct looksets */
+settab	ey1.c	/^settab(){ \/* sets the output file to y.tab.c *\/$/
+settty	ey1.c	/^settty()$/
+setup	ey2.c	/^setup(argc,argv) int argc; char *argv[];$/
+stagen	ey3.c	/^stagen(){ \/* generate the states *\/$/
+state	ey3.c	/^state(c){ \/* sorts last state,and sees if it equa/
+summary	ey1.c	/^summary(){ \/* output the summary on the tty *\/$/
+symnam	ey1.c	/^char *symnam(i){ \/* return a pointer to the name /
+wract	ey4.c	/^wract(i){ \/* output state i *\/$/
+writem	ey1.c	/^char *writem(pp) struct item *pp; { \/* creates ou/
+wrstate	ey4.c	/^wrstate(i){ \/* writes state i *\/$/
+yalloc	ey1.c	/^int *yalloc(n){ \/* allocate n+1 words from vector/
