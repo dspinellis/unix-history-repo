@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_dmc.c	6.11 (Berkeley) %G%
+ *	@(#)if_dmc.c	6.12 (Berkeley) %G%
  */
 
 #include "dmc.h"
@@ -141,10 +141,11 @@ struct dmc_softc {
 } dmc_softc[NDMC];
 
 /* flags */
-#define DMC_ALLOC	01		/* unibus resources allocated */
-#define DMC_BMAPPED	02		/* base table mapped */
-#define DMC_RESTART	04		/* software restart in progress */
-#define DMC_ACTIVE	08		/* device active */
+#define DMC_ALLOC	0x01		/* unibus resources allocated */
+#define DMC_BMAPPED	0x02		/* base table mapped */
+#define DMC_RESTART	0x04		/* software restart in progress */
+#define DMC_ACTIVE	0x08		/* device active */
+#define DMC_RUNNING	0x20		/* device initialized */
 
 struct dmc_base {
 	short	d_base[128];		/* DMC base table */
@@ -297,6 +298,7 @@ dmcinit(unit)
 		}
 		ifp->if_flags |= IFF_RUNNING;
 	}
+	sc->sc_flag |= DMC_RUNNING;
 
 	/* initialize buffer pool */
 	/* receives */
@@ -331,7 +333,7 @@ dmcinit(unit)
 	/* specify half duplex operation, flags tell if primary */
 	/* or secondary station */
 	if (ui->ui_flags == 0)
-		/* use DDMCP mode in full duplex */
+		/* use DDCMP mode in full duplex */
 		dmcload(sc, DMC_CNTLI, 0, 0);
 	else if (ui->ui_flags == 1)
 		/* use MAINTENENCE mode */
@@ -507,7 +509,7 @@ dmcxint(unit)
 	struct dmcdevice *addr;
 	struct mbuf *m;
 	struct ifqueue *inq;
-	int arg, pkaddr, cmd, len;
+	int arg, pkaddr, cmd, len, s;
 	register struct ifrw *ifrw;
 	register struct dmcbufs *rp;
 	register struct ifxmt *ifxp;
@@ -606,11 +608,13 @@ dmcxint(unit)
 				goto setup;
 			}
 
+			s = splimp();
 			if (IF_QFULL(inq)) {
 				IF_DROP(inq);
 				m_freem(m);
 			} else
 				IF_ENQUEUE(inq, m);
+			splx(s);
 
 	setup:
 			/* is this needed? */
@@ -821,6 +825,7 @@ dmcioctl(ifp, cmd, data)
 	caddr_t data;
 {
 	int s = splimp(), error = 0;
+	register struct dmc_softc *sc = &dmc_softc[ifp->if_unit];
 
 	switch (cmd) {
 
@@ -835,6 +840,17 @@ dmcioctl(ifp, cmd, data)
 			dmcinit(ifp->if_unit); 
 		break;
 		
+	case SIOCSIFFLAGS:
+		if ((ifp->if_flags & IFF_UP) == 0 &&
+		    sc->sc_flag & DMC_RUNNING) {
+			((struct dmcdevice *)
+			   (dmcinfo[ifp->if_unit]->ui_addr))->bsel1 = DMC_MCLR;
+			sc->sc_flag &= ~DMC_RUNNING;
+		} else if (ifp->if_flags & IFF_UP &&
+		    (sc->sc_flag & DMC_RUNNING) == 0)
+			dmcrestart(ifp->if_unit);
+		break;
+
 	default:
 		error = EINVAL;
 	}
