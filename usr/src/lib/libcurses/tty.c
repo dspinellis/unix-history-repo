@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tty.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)tty.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -18,7 +18,7 @@ static char sccsid[] = "@(#)tty.c	5.4 (Berkeley) %G%";
 #include <termios.h>
 #include <unistd.h>
 
-struct termios newtermio, origtermio;
+struct termios origtermio;
 static struct termios norawt, rawt;
 static int useraw;
 
@@ -29,6 +29,8 @@ static int useraw;
 int
 gettmode()
 {
+	useraw = 0;
+	
 	if (tcgetattr(STDIN_FILENO, &origtermio))
 		return (ERR);
 
@@ -142,12 +144,9 @@ nonl()
 int
 endwin()
 {
-	if (curscr) {
-		if (curscr->flags & __WSTANDOUT) {
-			tputs(SE, 0, __cputchar);
-			curscr->flags &= ~__WSTANDOUT;
-		}
-		__endwin = 1;
+	if (curscr && curscr->flags & __WSTANDOUT) {
+		tputs(SE, 0, __cputchar);
+		curscr->flags &= ~__WSTANDOUT;
 	}
 
 	(void)tputs(VE, 0, __cputchar);
