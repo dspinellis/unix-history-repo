@@ -3,15 +3,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_ether.c	7.3 (Berkeley) %G%
+ *	@(#)if_ether.c	7.1.1.1 (Berkeley) %G%
  */
 
 /*
  * Ethernet address resolution protocol.
- * TODO:
- *	run at splnet (add ARP protocol intr.)
- *	link entries onto hash chains, keep free list
- *	add "inuse/lock" bit (or ref. count) along with valid bit
  */
 
 #include "param.h"
@@ -30,13 +26,8 @@
 #include "ip.h"
 #include "if_ether.h"
 
-#ifdef GATEWAY
-#define	ARPTAB_BSIZ	16		/* bucket size */
-#define	ARPTAB_NB	37		/* number of buckets */
-#else
 #define	ARPTAB_BSIZ	9		/* bucket size */
 #define	ARPTAB_NB	19		/* number of buckets */
-#endif
 #define	ARPTAB_SIZE	(ARPTAB_BSIZ * ARPTAB_NB)
 struct	arptab arptab[ARPTAB_SIZE];
 int	arptab_size = ARPTAB_SIZE;	/* for arp command */
@@ -149,9 +140,9 @@ arpresolve(ac, m, destip, desten, usetrailers)
 	int *usetrailers;
 {
 	register struct arptab *at;
+	register struct ifnet *ifp;
 	struct sockaddr_in sin;
-	u_long lna;
-	int s;
+	int s, lna;
 
 	*usetrailers = 0;
 	if (in_broadcast(*destip)) {	/* broadcast address */
@@ -160,18 +151,9 @@ arpresolve(ac, m, destip, desten, usetrailers)
 		return (1);
 	}
 	lna = in_lnaof(*destip);
+	ifp = &ac->ac_if;
 	/* if for us, use software loopback driver if up */
 	if (destip->s_addr == ac->ac_ipaddr.s_addr) {
-		/*
-		 * This test used to be
-		 *	if (loif.if_flags & IFF_UP)
-		 * It allowed local traffic to be forced
-		 * through the hardware by configuring the loopback down.
-		 * However, it causes problems during network configuration
-		 * for boards that can't receive packets they send.
-		 * It is now necessary to clear "useloopback"
-		 * to force traffic out to the hardware.
-		 */
 		if (useloopback) {
 			sin.sin_family = AF_INET;
 			sin.sin_addr = *destip;
@@ -189,7 +171,7 @@ arpresolve(ac, m, destip, desten, usetrailers)
 	s = splimp();
 	ARPTAB_LOOK(at, destip->s_addr);
 	if (at == 0) {			/* not found */
-		if (ac->ac_if.if_flags & IFF_NOARP) {
+		if (ifp->if_flags & IFF_NOARP) {
 			bcopy((caddr_t)ac->ac_enaddr, (caddr_t)desten, 3);
 			desten[3] = (lna >> 16) & 0x7f;
 			desten[4] = (lna >> 8) & 0xff;
@@ -198,8 +180,6 @@ arpresolve(ac, m, destip, desten, usetrailers)
 			return (1);
 		} else {
 			at = arptnew(destip);
-			if (at == 0)
-				panic("arpresolve: no free entry");
 			at->at_hold = m;
 			arpwhohas(ac, destip);
 			splx(s);
@@ -296,8 +276,8 @@ in_arpinput(ac, m)
 	ea = mtod(m, struct ether_arp *);
 	proto = ntohs(ea->arp_pro);
 	op = ntohs(ea->arp_op);
-	bcopy((caddr_t)ea->arp_spa, (caddr_t)&isaddr, sizeof (isaddr));
-	bcopy((caddr_t)ea->arp_tpa, (caddr_t)&itaddr, sizeof (itaddr));
+	isaddr.s_addr = ((struct in_addr *)ea->arp_spa)->s_addr;
+	itaddr.s_addr = ((struct in_addr *)ea->arp_tpa)->s_addr;
 	if (!bcmp((caddr_t)ea->arp_sha, (caddr_t)ac->ac_enaddr,
 	  sizeof (ea->arp_sha)))
 		goto out;	/* it's from me, ignore it. */
@@ -333,11 +313,10 @@ in_arpinput(ac, m)
 	}
 	if (at == 0 && itaddr.s_addr == myaddr.s_addr) {
 		/* ensure we have a table entry */
-		if (at = arptnew(&isaddr)) {
-			bcopy((caddr_t)ea->arp_sha, (caddr_t)at->at_enaddr,
-			    sizeof(ea->arp_sha));
-			at->at_flags |= ATF_COM;
-		}
+		at = arptnew(&isaddr);
+		bcopy((caddr_t)ea->arp_sha, (caddr_t)at->at_enaddr,
+		    sizeof(ea->arp_sha));
+		at->at_flags |= ATF_COM;
 	}
 	splx(s);
 reply:
@@ -434,7 +413,6 @@ arptfree(at)
  * This always succeeds since no bucket can be completely filled
  * with permanent entries (except from arpioctl when testing whether
  * another permanent entry will fit).
- * MUST BE CALLED AT SPLIMP.
  */
 struct arptab *
 arptnew(addr)
@@ -455,7 +433,7 @@ arptnew(addr)
 			goto out;	 /* found an empty entry */
 		if (at->at_flags & ATF_PERM)
 			continue;
-		if ((int) at->at_timer > oldest) {
+		if (at->at_timer > oldest) {
 			oldest = at->at_timer;
 			ato = at;
 		}
@@ -500,10 +478,6 @@ arpioctl(cmd, data)
 	case SIOCSARP:		/* set entry */
 		if (at == NULL) {
 			at = arptnew(&sin->sin_addr);
-			if (at == NULL) {
-				splx(s);
-				return (EADDRNOTAVAIL);
-			}
 			if (ar->arp_flags & ATF_PERM) {
 			/* never make all entries in a bucket permanent */
 				register struct arptab *tat;
