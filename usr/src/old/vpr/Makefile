@@ -1,6 +1,6 @@
 DESTDIR=
 CFLAGS=-O 
-SOURCES=sidebyside.c vcat.c vfontedpr.c vpac.c vpd.c vpf.c vpq.c vpr.c vprm.c vsort.c
+SOURCES=sidebyside.c vcat.c vfontedpr.c vgrindefs.c regexp.c vpac.c vpd.c vpf.c vpq.c vpr.c vprm.c vsort.c
 OBJS=sidebyside vcat vfontedpr vpac vad vpd vpf vpq vpr vprm vsort rvcat rvsort
 
 all:	$(OBJS)
@@ -9,8 +9,10 @@ sidebyside: sidebyside.c
 	cc -O -o sidebyside sidebyside.c
 vcat: vcat.c
 	cc -O -o vcat vcat.c
-vfontedpr: vfontedpr.c
-	cc -O -o vfontedpr vfontedpr.c
+vfontedpr: vfontedpr.c vgrindefs.c regexp.c
+	cc -O -o vfontedpr vfontedpr.c vgrindefs.c regexp.c
+retest: retest.c regexp.c
+	cc -g -o retest retest.c regexp.c
 vpac: vpac.c
 	cc -O -o vpac vpac.c
 vad: vpd.c
@@ -37,6 +39,7 @@ install: all
 	install -s vcat ${DESTDIR}/usr/lib/vcat
 	install -s vfontedpr ${DESTDIR}/usr/lib/vfontedpr
 	install -c vgrind.sh ${DESTDIR}/usr/ucb/vgrind
+	install -c vgrindefs.src ${DESTDIR}/usr/lib/vgrindefs
 	install -s vpac ${DESTDIR}/etc
 	install -s vad ${DESTDIR}/usr/lib/vad
 	install -s vpd ${DESTDIR}/usr/lib/vpd
