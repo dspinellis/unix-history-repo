@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	8.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	8.23 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -117,9 +117,9 @@ parseaddr(addr, a, flags, delim, delimptr, e)
 	*/
 
 	queueup = FALSE;
-	if (rewrite(pvp, 3, e) == EX_TEMPFAIL)
+	if (rewrite(pvp, 3, 0, e) == EX_TEMPFAIL)
 		queueup = TRUE;
-	if (rewrite(pvp, 0, e) == EX_TEMPFAIL)
+	if (rewrite(pvp, 0, 0, e) == EX_TEMPFAIL)
 		queueup = TRUE;
 
 
@@ -599,6 +599,7 @@ toktype(c)
 **	Parameters:
 **		pvp -- pointer to token vector.
 **		ruleset -- the ruleset to use for rewriting.
+**		reclevel -- recursion level (to catch loops).
 **		e -- the current envelope.
 **
 **	Returns:
@@ -620,9 +621,10 @@ struct match
 
 
 int
-rewrite(pvp, ruleset, e)
+rewrite(pvp, ruleset, reclevel, e)
 	char **pvp;
 	int ruleset;
+	int reclevel;
 	register ENVELOPE *e;
 {
 	register char *ap;		/* address pointer */
@@ -645,6 +647,11 @@ rewrite(pvp, ruleset, e)
 	if (ruleset < 0 || ruleset >= MAXRWSETS)
 	{
 		syserr("554 rewrite: illegal ruleset number %d", ruleset);
+		return EX_CONFIG;
+	}
+	if (reclevel++ > 50)
+	{
+		syserr("rewrite: infinite recursion, ruleset %d", ruleset);
 		return EX_CONFIG;
 	}
 	if (pvp == NULL)
@@ -1144,7 +1151,7 @@ rewrite(pvp, ruleset, e)
 				(int) (avp - npvp - 2) * sizeof *avp);
 			if (tTd(21, 3))
 				printf("-----callsubr %s\n", npvp[1]);
-			stat = rewrite(pvp, atoi(npvp[1]), e);
+			stat = rewrite(pvp, atoi(npvp[1]), reclevel, e);
 			if (rstat == EX_OK || stat == EX_TEMPFAIL)
 				rstat = stat;
 			if (*pvp != NULL && (**pvp & 0377) == CANONNET)
@@ -1388,11 +1395,11 @@ badaddr:
 	if (!bitset(RF_SENDERADDR|RF_HEADERADDR, flags))
 	{
 		/* sender addresses done later */
-		(void) rewrite(tv, 2, e);
+		(void) rewrite(tv, 2, 0, e);
 		if (m->m_re_rwset > 0)
-		       (void) rewrite(tv, m->m_re_rwset, e);
+		       (void) rewrite(tv, m->m_re_rwset, 0, e);
 	}
-	(void) rewrite(tv, 4, e);
+	(void) rewrite(tv, 4, 0, e);
 
 	/* save the result for the command line/RCPT argument */
 	cataddr(tv, NULL, buf, sizeof buf, '\0');
@@ -1644,7 +1651,7 @@ remotename(name, m, flags, pstat, e)
 	pvp = prescan(name, '\0', pvpbuf, sizeof pvpbuf, NULL);
 	if (pvp == NULL)
 		return (name);
-	if (rewrite(pvp, 3, e) == EX_TEMPFAIL)
+	if (rewrite(pvp, 3, 0, e) == EX_TEMPFAIL)
 		*pstat = EX_TEMPFAIL;
 	if (bitset(RF_ADDDOMAIN, flags) && e->e_fromdomain != NULL)
 	{
@@ -1661,7 +1668,7 @@ remotename(name, m, flags, pstat, e)
 
 			while ((*pxp++ = *qxq++) != NULL)
 				continue;
-			if (rewrite(pvp, 3, e) == EX_TEMPFAIL)
+			if (rewrite(pvp, 3, 0, e) == EX_TEMPFAIL)
 				*pstat = EX_TEMPFAIL;
 		}
 	}
@@ -1675,17 +1682,17 @@ remotename(name, m, flags, pstat, e)
 
 	if (bitset(RF_SENDERADDR, flags))
 	{
-		if (rewrite(pvp, 1, e) == EX_TEMPFAIL)
+		if (rewrite(pvp, 1, 0, e) == EX_TEMPFAIL)
 			*pstat = EX_TEMPFAIL;
 	}
 	else
 	{
-		if (rewrite(pvp, 2, e) == EX_TEMPFAIL)
+		if (rewrite(pvp, 2, 0, e) == EX_TEMPFAIL)
 			*pstat = EX_TEMPFAIL;
 	}
 	if (rwset > 0)
 	{
-		if (rewrite(pvp, rwset, e) == EX_TEMPFAIL)
+		if (rewrite(pvp, rwset, 0, e) == EX_TEMPFAIL)
 			*pstat = EX_TEMPFAIL;
 	}
 
@@ -1696,7 +1703,7 @@ remotename(name, m, flags, pstat, e)
 	**	may be used as a default to the above rules.
 	*/
 
-	if (rewrite(pvp, 4, e) == EX_TEMPFAIL)
+	if (rewrite(pvp, 4, 0, e) == EX_TEMPFAIL)
 		*pstat = EX_TEMPFAIL;
 
 	/*
@@ -1743,7 +1750,7 @@ maplocaluser(a, sendq, e)
 	if (pvp == NULL)
 		return;
 
-	(void) rewrite(pvp, 5, e);
+	(void) rewrite(pvp, 5, 0, e);
 	if (pvp[0] == NULL || (pvp[0][0] & 0377) != CANONNET)
 		return;
 
