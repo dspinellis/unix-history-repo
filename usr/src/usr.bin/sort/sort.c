@@ -1,5 +1,7 @@
-static	char *sccsid = "@(#)sort.c	4.13 (Berkeley) %G%";
+static	char *sccsid = "@(#)sort.c	4.14 (Berkeley) %G%";
+
 #include <sys/param.h>
+#include <sys/file.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
@@ -487,14 +489,16 @@ char *s, *t;
 
 newfile()
 {
-	register char *f;
+	int fd;
+	char *f;
 
 	f = setfil(nfiles);
-	if((os=fopen(f, "w")) == NULL) {
-		diag("can't create ",f);
+	if ((fd = open(f, O_WRONLY|O_CREAT, 0600)) < 0 ||
+	    !(os = fdopen(fd, "w"))) {
+		diag("can't create ", f);
 		term();
 	}
-	nfiles++;
+	++nfiles;
 }
 
 char *
