@@ -1,4 +1,4 @@
-/*	dn11.c	4.3	81/06/16	*/
+/*	dn11.c	4.4	81/06/16	*/
 
 #if DN11
 /*
@@ -22,15 +22,16 @@ char *num, *acu;
 	int child = -1, dn, lt, nw, connected = 1;
 	register int timelim;
 
+	if (boolean(value(VERBOSE)))
+		printf("\nstarting call...");
 	if ((dn = open(acu, 1)) < 0) {
 		if (errno == ENXIO)
-			printf("line busy\n");
+			printf("line busy...");
 		else
-			printf("acu open error\n");
+			printf("acu open error...");
 		return(0);
 	}
 	if (setjmp(jmpbuf)) {
-		printf("dn11 write error...");
 		kill(child, SIGKILL);
 		close(dn);
 		return(0);
@@ -39,7 +40,12 @@ char *num, *acu;
 	timelim = 5 * strlen(num);
 	alarm(timelim < 30 ? 30 : timelim);
 	if ((child = fork()) == 0) {
+		/*
+		 * ignore this stuff for aborts
+		 */
 		signal(SIGALRM, SIG_IGN);
+		signal(SIGINT, SIG_IGN);
+		signal(SIGQUIT, SIG_IGN);
 		sleep(2);
 		nw = write(dn, num, lt = strlen(num));
 		if (nw != lt) {
@@ -48,7 +54,9 @@ char *num, *acu;
 		}
 		exit(0);
 	}
-	/*  open line - will return on carrier */
+	/*
+	 * open line - will return on carrier
+	 */
 	FD = open(DV, 2);
 	if (FD < 0) {
 		if (errno == EIO)
@@ -88,6 +96,7 @@ alarmtr()
  */
 dn_disconnect()
 {
+	sleep(2);
 #ifdef VMUNIX
 	if (FD > 0)
 		ioctl(FD, TIOCCDTR, 0);
@@ -97,6 +106,7 @@ dn_disconnect()
 
 dn_abort()
 {
+	sleep(2);
 #ifdef VMUNIX
 	if (FD > 0)
 		ioctl(FD, TIOCCDTR, 0);
