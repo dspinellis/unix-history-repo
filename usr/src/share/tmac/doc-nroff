@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)doc-nroff	5.5 (Berkeley) %G%
+.\"     @(#)doc-nroff	5.6 (Berkeley) %G%
 .\"
 .\" tmac.mdoc-nroff
 .\"     %beginstrip%
@@ -35,7 +35,7 @@
 .ds nM \fB
 .ds nO \fR
 .ds pA \fI
-.ds Pu [.,;:()[]]
+.ds Pu {\ .\ ,\ ;\ :\ (\ )\ [\ ]}
 .ds rA \fR
 .ds rT \fI
 .ds sH \fB

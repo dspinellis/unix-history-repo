@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)doc-common	5.6 (Berkeley) %G%
+.\"     @(#)doc-common	5.7 (Berkeley) %G%
 .\"
 .\"     %beginstrip%
 .nr %A 1
@@ -68,6 +68,9 @@
 .nr Po 12n
 .nr Pq 12n
 .nr Ql 16n
+.nr Qc 3
+.nr Qo 12n
+.nr Qq 12n
 .nr Sc 3
 .nr So 12n
 .nr Sq 12n
@@ -84,6 +87,7 @@
 .nr Ta 1
 .nr Tv 1
 .nr Tx 22n
+.nr Ux 10n
 .nr Va 12n
 .nr Xc 3
 .nr Xo 1
