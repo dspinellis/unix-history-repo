@@ -1,0 +1,152 @@
+This README documents GNU e?grep version 1.5.  All bugs reported for
+previous versions have been fixed.  I would like to emphasize:  Please
+send bug reports directly to me (mike@ai.mit.edu), *not* bug-gnu-utils.
+
+Changes needed to the makefile under various perversions of Unix are
+described therein.
+
+If the type "char" is unsigned on your machine, you will have to fix
+the definition of the macro SIGN_EXTEND_CHAR() in regex.c.  A reasonable
+definition might be:
+	#define SIGN_EXTEND_CHAR(c) ((c)>(char)127?(c)-256:(c))
+
+GNU e?grep is provided "as is" with no warranty.  The exact terms
+under which you may use and (re)distribute this program are detailed
+in a comment at the top of grep.c.
+
+GNU e?grep is based on a fast lazy-state deterministic matcher (about
+twice as fast as stock Unix egrep) hybridized with a Boyer-Moore-Gosper
+search for a fixed string that eliminates impossible text from being
+considered by the full regexp matcher without necessarily having to
+look at every character.  The result is typically many times faster
+than Unix grep or egrep.  (Regular expressions containing backreferencing
+may run more slowly, however.)
+
+GNU e?grep attempts, as closely as possible, to understand compatibly
+the regexp syntaxes of the Unix programs it replaces.  The following table
+details the various special characters understood in both the grep and
+egrep incarnations:
+
+(grep)	(egrep)		(explanation)
+  .	   .		matches any single character except newline
+  \?	   ?		postfix operator; preceeding item is optional
+  *	   *		postfix operator; preceeding item 0 or more times
+  \+	   +		postfix operator; preceeding item 1 or more times
+  \|	   |		infix operator; matches either argument
+  ^	   ^		matches the empty string at the beginning of a line
+  $	   $		matches the empty string at the end of a line
+  \<	   \<		matches the empty string at the beginning of a word
+  \>	   \>		matches the empty string at the end of a word
+ [chars] [chars]	match any character in the given class; if the
+			first character after [ is ^, match any character
+			not in the given class; a range of characters may
+			be specified by <first>-<last>; for example, \W
+			(below) is equivalent to the class [^A-Za-z0-9]
+ \( \)	  ( )		parentheses are used to override operator precedence
+ \<1-9>	  \<1-9>	\<n> matches a repeat of the text matched earlier
+			in the regexp by the subexpression inside the
+			nth opening parenthesis
+  \	   \		any special character may be preceded by a backslash
+			to match it literally
+
+(the following are for compatibility with GNU Emacs)
+  \b	   \b		matches the empty string at the edge of a word
+  \B	   \B		matches the empty string if not at the edge of a word
+  \w	   \w		matches word-constituent characters (letters & digits)
+  \W	   \W		matches characters that are not word-constituent
+
+Operator precedence is (highest to lowest) ?, *, and +, concatenation,
+and finally |.  All other constructs are syntactically identical to
+normal characters.  For the truly interested, a comment in dfa.c describes
+the exact grammar understood by the parser.
+
+GNU e?grep understands the following command line options:
+	-A <num>	print <num> lines of context after every matching line
+	-B <num>	print <num> lines of context before every matching line
+	-C		print 2 lines of context on each side of every match
+	-<num>		print <num> lines of context on each side
+	-V		print the version number on stderr
+	-b		print every match preceded by its byte offset
+	-c		print a total count of matching lines only
+	-e <expr>	search for <expr>; useful if <expr> begins with -
+	-f <file>	take <expr> from the given <file>
+	-h		don't display filenames on matches
+	-i		ignore case difference when comparing strings
+	-l		list files containing matches only
+	-n		print each match preceded by its line number
+	-s		run silently producing no output except error messages
+	-v		print only lines that contain no matches for the <expr>
+	-w		print only lines where the match is a complete word
+	-x		print only lines where the match is a whole line
+
+The options understood by GNU e?grep are meant to be (nearly) compatible
+with both the BSD and System V versions of grep and egrep.
+
+The following incompatibilities with other versions of grep exist:
+	the context-dependent meaning of * is not quite the same (grep only)
+	-b prints a byte offset instead of a block offset
+	the \{m,n\} construct of System V grep is not implemented
+
+GNU e?grep has been thoroughly debugged and tested by several people
+over a period of several months; we think it's a reliable beast or we
+wouldn't distribute it.  If by some fluke of the universe you discover
+a bug, send a detailed description (including options, regular
+expressions, and a copy of an input file that can reproduce it) to me,
+mike@wheaties.ai.mit.edu.
+
+GNU e?grep is brought to you by the efforts of several people:
+
+	Mike Haertel wrote the deterministic regexp code and the bulk
+	of the program.
+
+	James A. Woods is responsible for the hybridized search strategy
+	of using Boyer-Moore-Gosper fixed-string search as a filter
+	before calling the general regexp matcher.
+
+	Arthur David Olson contributed code that finds fixed strings for
+	the aforementioned BMG search for a large class of regexps.
+
+	Richard Stallman wrote the backtracking regexp matcher that is
+	used for \<digit> backreferences, as well as the getopt that
+	is provided for 4.2BSD sites.  The backtracking matcher was
+	originally written for GNU Emacs.
+
+	D. A. Gwyn wrote the C alloca emulation that is provided so
+	System V machines can run this program.  (Alloca is used only
+	by RMS' backtracking matcher, and then only rarely, so there
+	is no loss if your machine doesn't have a "real" alloca.)
+
+	Scott Anderson and Henry Spencer designed the regression tests
+	used in the "regress" script.
+
+	Paul Placeway wrote the manual page, based on this README.
+
+If you are interested in improving this program, you may wish to try
+any of the following:
+
+1.  Make backreferencing \<digit> faster.  Right now, backreferencing is
+    handled by calling the Emacs backtracking matcher to verify the partial
+    match.  This is slow; if the DFA routines could handle backreferencing
+    themselves a speedup on the order of three to four times might occur
+    in those cases where the backtracking matcher is called to verify nearly
+    every line.  Also, some portability problems due to the inclusion of the
+    emacs matcher would be solved because it could then be eliminated.
+    Note that expressions with backreferencing are not true regular
+    expressions, and thus are not equivalent to any DFA.  So this is hard.
+
+2.  There is a bug in the backtracking matcher, regex.c, such that the |
+    operator is not properly commutative.  Let x and y be arbitrary
+    regular expressions, and suppose both x and y have matches at
+    some point in the target text.  Then the regexp x|y should select
+    the longest of the two matches.  With the backtracking matcher, if the
+    first match succeeds it does not even try the second, even though
+    the second may be a longer match.  This is obviously of no concern
+    for grep, which does not care exactly where or how long a match is,
+    so long as it knows it is there.  On the other hand, the backtracking
+    matcher is used in GNU AWK, wherein its behavior can only be considered
+    a bug.
+
+3.  Handle POSIX style regexps.  I'm not sure if this could be called an
+    improvement; some of the things on regexps in the POSIX draft I have
+    seen are pretty sickening.  But it would be useful in the interests of
+    conforming to the standard.
