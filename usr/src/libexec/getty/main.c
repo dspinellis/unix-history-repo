@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #define USE_OLD_TTY
@@ -165,13 +165,14 @@ main(argc, argv)
 	if (argc > 1)
 		tname = argv[1];
 	for (;;) {
-		int off = 0;
+		int off;
 
 		gettable(tname, tabent, tabstrs);
 		if (OPset || EPset || APset)
 			APset++, OPset++, EPset++;
 		setdefaults();
-		ioctl(0, TIOCFLUSH, 0);		/* clear out the crap */
+		off = 0;
+		ioctl(0, TIOCFLUSH, &off);	/* clear out the crap */
 		ioctl(0, FIONBIO, &off);	/* turn off non-blocking mode */
 		ioctl(0, FIOASYNC, &off);	/* ditto for async mode */
 		if (IS)
