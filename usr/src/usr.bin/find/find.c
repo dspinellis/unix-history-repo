@@ -1,5 +1,5 @@
 #ifndef	lint
-static char *sccsid = "@(#)find.c	4.22 (Berkeley) %G%";
+static char *sccsid = "@(#)find.c	4.23 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -861,7 +861,7 @@ fastfind ( pathpart )
 	globflag = index ( p, '*' ) || index ( p, '?' ) || index ( p, '[' );
 	patend = patprep ( p );
 
-	for ( c = getc ( fp ); ; ) {
+	for ( c = getc ( fp ); c != EOF; ) {
 
 		count += ( (c == SWITCH) ? getw ( fp ) : c ) - OFFSET;
 
@@ -872,8 +872,6 @@ fastfind ( pathpart )
 				c &= PARITY-1;
 				*p++ = bigram1[c], *p++ = bigram2[c];
 			}
-		if ( c == EOF )
-			break;
 		*p-- = NULL;
 		cutoff = ( found ? path : path + count );
 
