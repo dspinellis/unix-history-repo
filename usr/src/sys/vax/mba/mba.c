@@ -1,14 +1,11 @@
-/*	mba.c	4.11	81/02/28	*/
+/*	mba.c	4.12	81/03/03	*/
 
 #include "mba.h"
 #if NMBA > 0
 /*
- * Massbus driver; arbitrates massbusses through device driver routines
- * and provides common functions.
+ * Massbus driver; arbitrates massbus using device
+ * driver routines.  This module provides common functions.
  */
-int	mbadebug = 0;
-#define	dprintf if (mbadebug) printf
-
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/dk.h"
@@ -41,7 +38,6 @@ mbustart(mi)
 	register struct buf *bp;	/* i/o operation at head of queue */
 	register struct mba_hd *mhp;	/* header for mba device is on */
 
-	dprintf("enter mbustart\n");
 loop:
 	/*
 	 * Get the first thing to do off device queue.
@@ -51,29 +47,18 @@ loop:
 		return;
 	mdp = mi->mi_drv;
 	/*
-	 * Since we clear attentions on the drive when we are
-	 * finished processing it, the fact that an attention
-	 * status shows indicated confusion in the hardware or our logic.
-	 */
-	if (mdp->mbd_as & (1 << mi->mi_drive)) {
-		printf("mbustart: ata on for %d\n", mi->mi_drive);
-		mdp->mbd_as = 1 << mi->mi_drive;
-	}
-	/*
 	 * Let the drivers unit start routine have at it
 	 * and then process the request further, per its instructions.
 	 */
 	switch ((*mi->mi_driver->md_ustart)(mi)) {
 
 	case MBU_NEXT:		/* request is complete (e.g. ``sense'') */
-		dprintf("mbu_next\n");
 		mi->mi_tab.b_active = 0;
 		mi->mi_tab.b_actf = bp->av_forw;
 		iodone(bp);
 		goto loop;
 
 	case MBU_DODATA:	/* all ready to do data transfer */
-		dprintf("mbu_dodata\n");
 		/*
 		 * Queue the device mba_info structure on the massbus
 		 * mba_hd structure for processing as soon as the
@@ -97,7 +82,6 @@ loop:
 		return;
 
 	case MBU_STARTED:	/* driver started a non-data transfer */
-		dprintf("mbu_started\n");
 		/*
 		 * Mark device busy during non-data transfer
 		 * and count this as a ``seek'' on the device.
@@ -108,7 +92,6 @@ loop:
 		return;
 
 	case MBU_BUSY:		/* dual port drive busy */
-		dprintf("mbu_busy\n");
 		/*
 		 * We mark the device structure so that when an
 		 * interrupt occurs we will know to restart the unit.
@@ -135,17 +118,13 @@ mbstart(mhp)
 	struct buf *bp;
 	register struct mba_regs *mbp;
 
-	dprintf("mbstart\n");
 loop:
 	/*
 	 * Look for an operation at the front of the queue.
 	 */
-	if ((mi = mhp->mh_actf) == NULL) {
-		dprintf("nothing to do\n");
+	if ((mi = mhp->mh_actf) == NULL)
 		return;
-	}
 	if ((bp = mi->mi_tab.b_actf) == NULL) {
-		dprintf("nothing on actf\n");
 		mhp->mh_actf = mi->mi_forw;
 		goto loop;
 	}
@@ -154,7 +133,7 @@ loop:
 	 * we screwed up, and can't really do the operation.
 	 */
 	if ((mi->mi_drv->mbd_ds & (MBD_DPR|MBD_MOL)) != (MBD_DPR|MBD_MOL)) {
-		dprintf("not on line ds %x\n", mi->mi_drv->mbd_ds);
+		printf("%c%d not ready\n", mi->mi_name, dkunit(bp));
 		mi->mi_tab.b_actf = bp->av_forw;
 		bp->b_flags |= B_ERROR;
 		iodone(bp);
@@ -167,16 +146,13 @@ loop:
 	 * on disks).
 	 */
 	mhp->mh_active = 1;
-	if (mi->mi_driver->md_start) {
-		dprintf("md_start\n");
+	if (mi->mi_driver->md_start)
 		(*mi->mi_driver->md_start)(mi);
-	}
 
 	/*
 	 * Setup the massbus control and map registers and start
 	 * the transfer.
 	 */
-	dprintf("start mba\n");
 	mbp = mi->mi_mba;
 	mbp->mba_sr = -1;	/* conservative */
 	mbp->mba_var = mbasetup(mi);
@@ -211,10 +187,13 @@ mbintr(mbanum)
 	 */
 	mbastat = mbp->mba_sr;
 	mbp->mba_sr = mbastat;
+#if VAX750
+	if (mbastat&MBS_CBHUNG)
+		panic("mba CBHUNG");
+#endif
 	/* note: the mbd_as register is shared between drives */
 	as = mbp->mba_drv[0].mbd_as;
 	mbp->mba_drv[0].mbd_as = as;
-	dprintf("mbintr mbastat %x as %x\n", mbastat, as);
 
 	/*
 	 * Disable interrupts from the massbus adapter
@@ -230,7 +209,7 @@ mbintr(mbanum)
 	 */
 	if (mhp->mh_active) {
 		if ((mbastat & MBS_DTCMP) == 0) {
-			printf("mbintr(%d),b_active,no DTCMP!\n", mbanum);
+			printf("mb%d no DTCMP!\n", mbanum);
 			goto doattn;
 		}
 		/*
@@ -245,7 +224,6 @@ mbintr(mbanum)
 		switch((*mi->mi_driver->md_dtint)(mi, mbastat)) {
 
 		case MBD_DONE:		/* all done, for better or worse */
-			dprintf("mbd_done\n");
 			/*
 			 * Flush request from drive queue.
 			 */
@@ -254,7 +232,6 @@ mbintr(mbanum)
 			iodone(bp);
 			/* fall into... */
 		case MBD_RETRY:		/* attempt the operation again */
-			dprintf("mbd_retry\n");
 			/*
 			 * Dequeue data transfer from massbus queue;
 			 * if there is still a i/o request on the device
@@ -269,19 +246,14 @@ mbintr(mbanum)
 			break;
 
 		case MBD_RESTARTED:	/* driver restarted op (ecc, e.g.)
-			dprintf("mbd_restarted\n");
 			/*
 			 * Note that mp->b_active is still on.
 			 */
 			break;
 
 		default:
-			panic("mbaintr");
+			panic("mbintr");
 		}
-	} else {
-		dprintf("!dtcmp\n");
-		if (mbastat & MBS_DTCMP)
-			printf("mbaintr,DTCMP,!b_active\n");
 	}
 doattn:
 	/*
@@ -290,24 +262,16 @@ doattn:
 	 */
 	for (drive = 0; as && drive < 8; drive++)
 		if (as & (1 << drive)) {
-			dprintf("service as %d\n", drive);
 			as &= ~(1 << drive);
 			/*
 			 * Consistency check the implied attention,
 			 * to make sure the drive should have interrupted.
 			 */
 			mi = mhp->mh_mbip[drive];
-			if (mi == NULL)
-				goto random;		/* no such drive */
-			if (mi->mi_tab.b_active == 0 &&
-			    (mi->mi_tab.b_flags&B_BUSY) == 0)
-				goto random;		/* not active */
-			if ((bp = mi->mi_tab.b_actf) == NULL) {
-							/* nothing doing */
-random:
-				printf("random mbaintr %d %d\n",mbanum,drive);
-				continue;
-			}
+			if (mi == NULL || mi->mi_tab.b_active == 0 &&
+			    (mi->mi_tab.b_flags&B_BUSY) == 0 ||
+			    (bp = mi->mi_tab.b_actf) == NULL)
+				continue;		/* unsolicited */
 			/*
 			 * If this interrupt wasn't a notification that
 			 * a dual ported drive is available, and if the
@@ -321,7 +285,6 @@ random:
 				switch((*mi->mi_driver->md_ndint)(mi)) {
 
 				case MBN_DONE:
-					dprintf("mbn_done\n");
 					/*
 					 * Non-data transfer interrupt
 					 * completed i/o request's processing.
@@ -331,13 +294,12 @@ random:
 					iodone(bp);
 					/* fall into... */
 				case MBN_RETRY:
-					dprintf("mbn_retry\n");
 					if (mi->mi_tab.b_actf)
 						mbustart(mi);
 					break;
 
 				default:
-					panic("mbintr ndint");
+					panic("mbintr");
 				}
 			} else
 				mbustart(mi);

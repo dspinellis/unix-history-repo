@@ -1,7 +1,7 @@
-/*	autoconf.c	4.19	81/02/28	*/
+/*	autoconf.c	4.20	81/03/03	*/
 
 /*
- * Configure the system for the current machine.
+ * Initialize the devices for the current machine.
  */
 
 #include "mba.h"
@@ -75,6 +75,7 @@ configure()
 			ip = (int *)Sysmap; *ip &= ~PG_PROT; *ip |= PG_KR;
 			mtpr(TBIS, Sysbase);
 			cold = 0;
+			memenable();
 			return;
 		}
 	printf("cpu type %d unsupported\n", cpusid.cpuany.cp_type);

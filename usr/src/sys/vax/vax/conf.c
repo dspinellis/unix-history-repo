@@ -1,4 +1,4 @@
-/*	conf.c	4.21	%G%	*/
+/*	conf.c	4.22	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -124,7 +124,7 @@ int	dhopen(),dhclose(),dhread(),dhwrite(),dhioctl(),dhstop(),dhreset();
 struct	tty dh11[];
 #endif
 
-#if VAX==780
+#if VAX780
 int	flopen(),flclose(),flread(),flwrite();
 #endif
 
@@ -220,7 +220,7 @@ struct cdevsw	cdevsw[] =
 	vpioctl,	nulldev,	vpreset,	0,
 	nulldev,	nulldev,	swread,		swwrite,	/*7*/
 	nodev,		nodev,		nulldev,	0,
-#if VAX==780
+#if VAX780
 	flopen,		flclose,	flread,		flwrite,	/*8*/
 	nodev,		nodev,		nulldev,	0,
 #else
