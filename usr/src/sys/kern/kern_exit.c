@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_exit.c	7.37 (Berkeley) %G%
+ *	@(#)kern_exit.c	7.38 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -132,12 +132,6 @@ exit(p, rv)
 	fixjobc(p, p->p_pgrp, 0);
 	p->p_rlimit[RLIMIT_FSIZE].rlim_cur = RLIM_INFINITY;
 	(void) acct(p);
-	if (--p->p_limit->p_refcnt == 0)
-		FREE(p->p_limit, M_SUBPROC);
-	if (--p->p_cred->p_refcnt == 0) {
-		crfree(p->p_cred->pc_ucred);
-		FREE(p->p_cred, M_SUBPROC);
-	}
 #ifdef KTRACE
 	/* 
 	 * release trace file
