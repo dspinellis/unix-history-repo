@@ -3,9 +3,9 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 #
-SCCSID = @(#)Makefile 5.4 %G%
+SCCSID = @(#)Makefile 5.5 %G%
 INSTALL = ${DESTDIR}/usr/ucb
 INSTALLIB = ${DESTDIR}/usr/lib
 SRCDIR=	../src
@@ -25,7 +25,7 @@ install: all pxref.p
 	for i in ${PROGS}; do (install -s $$i ${INSTALL}/$$i ); done
 	for i in ${FILES}; do (install -m 644 -c $$i ${INSTALLIB}/$$i ); done
 	install -s pc3 ${INSTALLIB}/pc3
-	cd pc2; make install
+	cd pc2; make DESTDIR=${DESTDIR} install
 	-pc -w pxref.p
 	install -s a.out ${INSTALL}/pxref
 
