@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: locore.s 1.2 90/07/14$
  *
- *	@(#)locore.s	7.6 (Berkeley) %G%
+ *	@(#)locore.s	7.7 (Berkeley) %G%
  */
 
 #define MMUADDR(ar)	movl	_MMUbase,ar
@@ -296,9 +296,19 @@ _trap2:
  *	- trace traps for SUN binaries (not fully supported yet)
  * We just pass it on and let trap() sort it all out
  */
+	.globl	_kgdb_trap_glue
 _trap15:
 	clrw	sp@-
 	moveml	#0xFFFF,sp@-
+#ifdef KGDB
+	moveq	#T_TRAP15,d0
+	movl	sp@(64),d1		| from user mode?
+	andl	#PSL_S,d1
+	jeq	_fault
+	movl	d0,sp@-
+	jbsr	_kgdb_trap_glue		| returns if no debugger
+	addl	#4,sp
+#endif
 	moveq	#T_TRAP15,d0
 	jra	_fault
 
@@ -309,6 +319,15 @@ _trap15:
 _trace:
 	clrw	sp@-
 	moveml	#0xFFFF,sp@-
+#ifdef KGDB
+	moveq	#T_TRACE,d0
+	movl	sp@(64),d1		| from user mode?
+	andl	#PSL_S,d1
+	jeq	_fault
+	movl	d0,sp@-
+	jbsr	_kgdb_trap_glue		| returns if no debugger
+	addl	#4,sp
+#endif
 	moveq	#T_TRACE,d0
 	jra	_fault
 
@@ -937,7 +956,7 @@ Lclru1:
 	movl	a2,a4			| save phys addr of first avail page
 	RELOC(_proc0paddr, a0)
 	movl	d5,a0@			| save KVA of proc0 u-area
-	addl	#UPAGES*NBPG,d5		| and virtual addr as well
+	addl	#UPAGES*NBPG,d5		| increment virtual addr as well
 
 /*
  * Prepare to enable MMU.
@@ -1022,7 +1041,7 @@ Linitmem:
 	jbsr	_pmap_bootstrap		| sync up pmap module
 	addql	#8,sp
 |	movl	_avail_start,a4		| pmap_bootstrap may need RAM
-/* initialize (slightly) the pcb */
+/* set kernel stack, user SP, and initial pcb */
 	lea	_u,a1			| proc0 u-area
 	lea	a1@(UPAGES*NBPG-4),sp	| set kernel stack to end of u-area
 	movl	#USRSTACK-4,a2
@@ -1095,28 +1114,28 @@ Lesigcode:
  * Icode is copied out to process 1 to exec init.
  * If the exec fails, process 1 exits.
  */
-	.globl	_icode,_initflags,_szicode
-	.data
+	.globl	_icode,_szicode
+	.text
 _icode:
-	pea	pc@(argv-.-2)
-	pea	pc@(init-.-2)
 	clrl	sp@-
-	moveq	#SYS_execv,d0
+	pea	pc@((argv-.)+2)
+	pea	pc@((init-.)+2)
+	clrl	sp@-
+	moveq	#SYS_execve,d0
 	trap	#0
 	moveq	#SYS_exit,d0
 	trap	#0
 init:
 	.asciz	"/sbin/init"
 	.even
-_initflags:
-	.long	0
 argv:
-	.long	init+6-_icode
-	.long	_initflags-_icode
+	.long	init+6-_icode		| argv[0] = "init" ("/sbin/init" + 6)
+	.long	eicode-_icode		| argv[1] follows icode after copyout
 	.long	0
+eicode:
+
 _szicode:
 	.long	_szicode-_icode
-	.text
 
 /*
  * Primitives
@@ -1432,8 +1451,8 @@ ENTRY(longjmp)
  */
 
 	.globl	_whichqs,_qs,_cnt,_panic
-	.comm	_noproc,4
-	.comm	_runrun,4
+	.globl	_curproc
+	.comm	_want_resched,4
 
 /*
  * Setrq(p)
@@ -1541,7 +1560,7 @@ Lbadsw:
  */
 ENTRY(swtch)
 	movw	sr,_u+PCB_PS
-	movl	#1,_noproc
+	clrl	_curproc
 	addql	#1,_cnt+V_SWTCH
 Lsw1:
 	clrl	d0
@@ -1575,8 +1594,8 @@ Lswfnd:
 	bset	d0,d1
 	movl	d1,_whichqs
 Lsw2:
-	clrl	_noproc
-	clrl	_runrun
+	movl	a0,_curproc
+	clrl	_want_resched
 	tstl	a0@(P_WCHAN)
 	jne	Lbadsw
 	cmpb	#SRUN,a0@(P_STAT)
@@ -1584,11 +1603,11 @@ Lsw2:
 	clrl	a0@(P_RLINK)
 	movl	a0@(P_ADDR),d0
 	movl	d0,_masterpaddr
-	movl	a0@(P_MAP),a1		| map = p->p_map
-	tstl	a1			| map == VM_MAP_NULL?
+	movl	a0@(P_VMSPACE),a1	| map = p->p_vmspace
+	tstl	a1			| map == VM_MAP_NULL? ???
 	jeq	Lswnochg		| yes, skip
 	movl	a1@(PMAP),a1		| pmap = map->pmap
-	tstl	a1			| pmap == PMAP_NULL?
+	tstl	a1			| pmap == PMAP_NULL? ???
 	jeq	Lswnochg		| yes, skip
 	tstl	a1@(PM_STCHG)		| pmap->st_changed?
 	jeq	Lswnochg		| no, skip
@@ -1689,7 +1708,7 @@ Lnocache1:
 	movl	a1@(PCB_USTP),a0@(MMUUSTP) | context switch
 #endif
 Lcxswdone:
-	movl	a1@(U_PROCP),a0		| u.u_procp
+	movl	_curproc,a0		| curproc
 	bclr	#SPTECHGB-24,a0@(P_FLAG)| clear SPTECHG bit
 #if defined(HP330)
 	jeq	Lnot68851b		| if set need to flush user TLB
