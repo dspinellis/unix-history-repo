@@ -1,7 +1,7 @@
 # include	"../hdr/defines.h"
 # include	"../hdr/had.h"
 
-SCCSID(@(#)delta.c	4.5);
+SCCSID(@(#)delta.c	4.6);
 USXALLOC();
 
 # ifdef LOGDELTA
@@ -86,8 +86,7 @@ register char *argv[];
 	if (!HADS)
 		verbosity = -1;
 # ifdef LOGDELTA
-	if ((Logf = fopen(LogFile, "a")) == NULL)
-		fatal("cannot open logfile");
+	Logf = fopen(LogFile, "a");
 # endif
 	setsig();
 	Fflags =& ~FTLEXIT;
@@ -96,7 +95,8 @@ register char *argv[];
 		if (p=argv[i])
 			do_file(p,delta);
 # ifdef LOGDELTA
-	fclose(Logf);
+	if (Logf != NULL)
+		fclose(Logf);
 # endif
 	exit(Fcnt ? 1 : 0);
 }
@@ -336,13 +336,15 @@ int orig_nlines;
 	del_ba(&dt,str);
 	putline(pkt,str);
 # ifdef LOGDELTA
-	if (pkt->p_file[0] != '/') {
-		char buf[1024];
+	if (Logf != NULL) {
+		if (pkt->p_file[0] != '/') {
+			char buf[1024];
 
-		if (getwd(buf) != NULL)
-			fprintf(Logf, "%s/", buf);
+			if (getwd(buf) != NULL)
+				fprintf(Logf, "%s/", buf);
+		}
+		fprintf(Logf, "%s:\n%s%s\n", pkt->p_file, str + 5, Comments);
 	}
-	fprintf(Logf, "%s:\n%s%s\n", pkt->p_file, str + 5, Comments);
 # endif
 	if (ilist)
 		mkixg(pkt,INCLUSER,INCLUDE);
