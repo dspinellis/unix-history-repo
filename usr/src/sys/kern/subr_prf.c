@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_prf.c	7.1 (Berkeley) %G%
+ *	@(#)subr_prf.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -35,6 +35,11 @@
  * call to panic.
  */
 char	*panicstr;
+
+extern	cnputc();			/* standard console putc */
+extern	struct tty cons;		/* standard console tty */
+struct	tty *constty;			/* pointer to console "window" tty */
+int	(*v_console)() = cnputc;	/* routine to putc on virtual console */
 
 /*
  * Scaled down version of C Library printf.
@@ -104,11 +109,13 @@ tprintf(tp, fmt, x1)
 	unsigned x1;
 {
 	int flags = TOTTY | TOLOG;
-	extern struct tty cons;
 
 	logpri(LOG_INFO);
-	if (tp == (struct tty *)NULL)
-		tp = &cons;
+	if (tp == (struct tty *)NULL) {
+		tp = constty;
+		if (tp == (struct tty *)NULL)
+			tp = &cons;
+	}
 	if (ttycheckoutq(tp, 0) == 0)
 		flags = TOLOG;
 	prf(fmt, &x1, flags, tp);
@@ -299,6 +306,10 @@ putchar(c, flags, tp)
 	struct tty *tp;
 {
 
+	if ((flags & TOCONS) && panicstr == 0 && tp == 0 && constty) {
+		tp = constty;
+		flags |= TOTTY;
+	}
 	if (flags & TOTTY) {
 		register s = spltty();
 
@@ -308,7 +319,9 @@ putchar(c, flags, tp)
 				(void) ttyoutput('\r', tp);
 			(void) ttyoutput(c, tp);
 			ttstart(tp);
-		}
+			flags &= ~TOCONS;
+		} else if ((flags & TOCONS) && tp == constty)
+			constty = 0;
 		splx(s);
 	}
 	if ((flags & TOLOG) && c != '\0' && c != '\r' && c != 0177
@@ -329,5 +342,5 @@ putchar(c, flags, tp)
 			msgbuf.msg_bufx = 0;
 	}
 	if ((flags & TOCONS) && c != '\0')
-		cnputc(c);
+		(*v_console)(c);
 }
