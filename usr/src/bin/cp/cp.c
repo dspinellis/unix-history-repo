@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cp.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)cp.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -332,18 +332,20 @@ copy_file(fs, dne)
 	 * was created and is owned by the same uid.  If the source was
 	 * setgid, set the bits on the copy if the copy was created and is
 	 * owned by the same gid and the user is a member of that group.
+	 * If both setuid and setgid, lose both bits unless all the above
+	 * conditions are met.
 	 */
 	else if (fs->st_mode & (S_ISUID|S_ISGID)) {
-		if (fs->st_mode&S_ISUID && myuid != fs->st_uid)
-			fs->st_mode &= ~S_ISUID;
+		if (fs->st_mode & S_ISUID && myuid != fs->st_uid)
+			fs->st_mode &= ~(S_ISUID|S_ISGID);
 		if (fs->st_mode & S_ISGID) {
 			if (fstat(to_fd, &to_stat)) {
 				error(to.p_path);
-				fs->st_mode &= ~S_ISGID;
+				fs->st_mode &= ~(S_ISUID|S_ISGID);
 			}
 			else if (fs->st_gid != to_stat.st_gid ||
 			    !ismember(fs->st_gid))
-				fs->st_mode &= ~S_ISGID;
+				fs->st_mode &= ~(S_ISUID|S_ISGID);
 		}
 		if (fs->st_mode & (S_ISUID|S_ISGID) && fchmod(to_fd,
 		    fs->st_mode & (S_ISUID|S_ISGID|S_IRWXU|S_IRWXG|S_IRWXO) &
@@ -470,32 +472,33 @@ setfile(fs, fd)
 	int fd;
 {
 	static struct timeval tv[2];
-	static enum { SUCCEEDED, FAILED, PERMFAIL } dochown = SUCCEEDED;
 
 	tv[0].tv_sec = fs->st_atime;
 	tv[1].tv_sec = fs->st_mtime;
 	if (utimes(to.p_path, tv))
 		error(to.p_path);
 	/*
-	 * Changing the ownership probably won't succeed, unless we're root or
-	 * POSIX_CHOWN_RESTRICTED is not set.  Set uid before setting the mode;
-	 * current BSD behavior is to remove all setuid bits on chown.  If the
-	 * chown doesn't succeed, turn off all setuid bits.
+	 * Changing the ownership probably won't succeed, unless we're root
+	 * or POSIX_CHOWN_RESTRICTED is not set.  Set uid before setting the
+	 * mode; current BSD behavior is to remove all setuid bits on chown.
+	 * If setuid, lose the bits if chown fails.
+	 * If setgid, lose the bits if chgrp fails.
+	 * If both, lose the bits if either fails.
 	 */
-	if (dochown != PERMFAIL) {
-		if ((fd ? fchown(fd, fs->st_uid, fs->st_gid) :
-		    chown(to.p_path, fs->st_uid, fs->st_gid)))
-			if (errno == EPERM)
-				dochown = PERMFAIL;
-			else {
-				dochown = FAILED;
-				error(to.p_path);
-			}
-		else
-			dochown = SUCCEEDED;
+	if ((fd ?
+	    fchown(fd, fs->st_uid, -1) : chown(to.p_path, fs->st_uid, -1))) {
+		if (errno != EPERM)
+			error(to.p_path);
+		if (fs->st_mode & S_ISUID)
+			fs->st_mode &= ~(S_ISUID|S_ISGID);
 	}
-	if (dochown != SUCCEEDED)
-		fs->st_mode &= ~(S_ISUID|S_ISGID);
+	if ((fd ?
+	    fchown(fd, -1, fs->st_gid) : chown(to.p_path, -1, fs->st_gid))) {
+		if (errno != EPERM)
+			error(to.p_path);
+		if (fs->st_mode & S_ISGID)
+			fs->st_mode &= ~(S_ISUID|S_ISGID);
+	}
 	fs->st_mode &= S_ISUID|S_ISGID|S_IRWXU|S_IRWXG|S_IRWXO;
 	if (fd ? fchmod(fd, fs->st_mode) : chmod(to.p_path, fs->st_mode))
 		error(to.p_path);

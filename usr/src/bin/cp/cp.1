@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)cp.1	6.6 (Berkeley) %G%
+.\"	@(#)cp.1	6.7 (Berkeley) %G%
 .\"
 .TH CP 1 ""
 .UC 4
@@ -45,13 +45,16 @@ overwritten if permissions allow, but its mode, user ID, and group
 ID are unchanged.
 .PP
 If the destination file does not exist, the mode of the source file is
-used as modified by the file mode creation mask.
-However, if the source file has its set user ID bit on, that bit is
-removed unless both the source file and the destination file are owned
-by the same user.
+used as modified by the file mode creation mask (umask).
+If the source file has its set user ID bit on, that bit is removed
+unless both the source file and the destination file are owned by the
+same user.
 If the source file has its set group ID bit on, that bit is removed
 unless both the source file and the destination file are in the same
 group and the user is a member of that group.
+If both the set user ID and set group ID bits are set, all of the above
+conditions must be fulfilled or both bits are removed.
+.PP
 Appropriate permissions are required for file creation or overwriting.
 .PP
 The following options are available:
@@ -87,8 +90,19 @@ Causes
 to preserve in the copy as many of the modification time, access time,
 .\" and file mode as allowed by permissions.
 file mode, user ID, and group ID as allowed by permissions.
-If either the user ID or group ID are not settable for any reason,
-the set user ID and set group ID bits are removed from the copy's
+.IP
+If the user ID and group ID cannot be preserved, no error message
+is displayed and the exit value is not altered.
+.IP
+If the source file has its set user ID bit on and the user ID cannot
+be preserved, the set user ID bit is not preserved
+in the copy's permissions.
+If the source file has its set group ID bit on and the group ID cannot
+be preserved, the set group ID bit is not preserved
+in the copy's permissions.
+If the source file has both the set user ID and set group ID bits
+on and either the user ID or group ID cannot be preserved, neither
+the set user ID or set group ID bits are preserved in the copy's
 permissions.
 .TP
 .I -r
@@ -102,7 +116,7 @@ indirected through, and for
 .I cp
 to create special files rather than copying them as normal files.
 Created directories have the same mode as the corresponding source
-directory, unmodified by the process' file mode creation mask.
+directory, unmodified by the process' umask.
 .PP
 Symbolic links are followed unless the
 .I -r
