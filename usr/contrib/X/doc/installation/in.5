@@ -1,0 +1,43 @@
+.NH
+Installation Under Ultrix-32 1.1
+.PP
+The name of the executable built in the "X" directory for QVSS is
+Xqvss.
+Note that some of the files mentioned here are only available on the
+MIT distribution of X.
+.PP
+We recommend upgrading to Ultrix-32 1.2 as soon as possible.
+When you do, be sure to rebuild \fIXqvss\fP and \fIxterm\fP.
+.PP
+If you need to relocate the font directory, 
+edit the file \fIlibqvss/vssite.h\fP, recompile \fIlibqvss/ddxfontloc\fP,
+and replace the file into \fIlibqvss/libqvss.a\fP using \fIar(1)\fP.
+.PP
+Note that the \fIXqvss\fP server and the \fIxterm\fP
+executable should be recomiled
+when you upgrade to 1.2.
+A server built under 1.1 will not execute under field test two of Ultrix-32 1.2
+or under version 1.2 release due to a system call
+change.
+.PP
+The improved pty driver has already been installed, but the TCP problem
+is still with you.
+X will be slightly unreliable when pushed hard until you upgrade to Ultrix
+1.2 when using the TCP domain on the local host.
+Everything should run reliably if you run using the Unix domain.
+(use a DISPLAY variable of \fIunix:0\fP).
+The file provided should be added to your \fIBINARY.mvax\fP directory, and
+your kernel rebuilt.
+This will change the keyboard handling in the
+shared event queue of the QVSS driver to match what this version of X requires.
+.PP
+In addition, the file \fIsys/vaxuba/qevent.h\fP should replace the file of that
+name in \fI/usr/include/vaxuba\fP.
+This file avoids the redefinition problems you would encounter with the
+original.
+The bit-blit code is not available in source.  There is an object
+library \fIX/libqvss/libqvss.a\fP containing the object of the device dependent
+library.
+Note that you should not just \fIrcp(1)\fP the distribution tree, as there
+are symbolic links in the tree.
+If you have, you may need to \fIranlib(1)\fP the QVSS object library.
