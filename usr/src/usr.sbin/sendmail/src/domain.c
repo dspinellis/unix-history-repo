@@ -20,9 +20,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	5.16 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	5.17 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	5.16 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	5.17 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -54,6 +54,7 @@ getmxrr(host, mxhosts, localhost, rcode)
 	int ancount, qdcount, buflen, seenlocal;
 	u_short pref, localpref, type, prefer[MAXMXHOSTS];
 
+	errno = 0;
 	n = res_search(host, C_IN, T_MX, (char *)&answer, sizeof(answer));
 	if (n < 0)
 	{
@@ -140,7 +141,8 @@ punt:		mxhosts[0] = strcpy(hostbuf, host);
 	/* sort the records */
 	for (i = 0; i < nmx; i++) {
 		for (j = i + 1; j < nmx; j++) {
-			if (prefer[i] > prefer[j]) {
+			if (prefer[i] > prefer[j] ||
+			    (prefer[i] == prefer[j] && rand() % 1 == 0)) {
 				register int temp;
 				register char *temp1;
 
@@ -183,7 +185,19 @@ getcanonname(host, hbsize)
 
 	loopcnt = 0;
 loop:
+	/*
+	 * Use query type of ANY if possible (NO_WILDCARD_MX), which will
+	 * find types CNAME, A, and MX, and will cause all existing records
+	 * to be cached by our local server.  If there is (might be) a
+	 * wildcard MX record in the local domain or its parents that are
+	 * searched, we can't use ANY; it would cause fully-qualified names
+	 * to match as names in a local domain.
+	 */
+# ifdef NO_WILDCARD_MX
+	n = res_search(host, C_IN, T_ANY, (char *)&answer, sizeof(answer));
+# else
 	n = res_search(host, C_IN, T_CNAME, (char *)&answer, sizeof(answer));
+# endif
 	if (n < 0) {
 #ifdef DEBUG
 		if (tTd(8, 1))
