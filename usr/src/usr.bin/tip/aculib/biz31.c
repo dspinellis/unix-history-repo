@@ -1,7 +1,7 @@
-/*	biz31.c	4.1	81/05/09	*/
+/*	biz31.c	4.2	81/09/17	*/
 #include "tip.h"
 
-#if BIZCOMP
+#if BIZ1031
 #define MAXRETRY	3		/* sync up retry count */
 #define DISCONNECT	"\21\25\11\24"	/* disconnection string */
 
@@ -9,7 +9,7 @@ static int sigALRM();
 static int timeout = 0;
 
 /*
- * Dial up on a BIZCOMP with either
+ * Dial up on a BIZCOMP Model 1031 with either
  * 	tone dialing (mod = "f")
  *	pulse dialing (mod = "w")
  */
@@ -59,30 +59,30 @@ char *num, *mod;
 	else
 		flush("CONNECTION\r\n\07");
 	if (timeout)
-		biz_disconnect();	/* insurance */
+		biz31_disconnect();	/* insurance */
 	return(connected);
 }
 
-bizw_dialer(num, acu)
+biz31w_dialer(num, acu)
 char *num, *acu;
 {
 	return(biz_dialer(num, "w"));
 }
 
-bizf_dialer(num, acu)
+biz31f_dialer(num, acu)
 char *num, *acu;
 {
 	return(biz_dialer(num, "f"));
 }
 
-biz_disconnect()
+biz31_disconnect()
 {
 	write(FD, DISCONNECT, 4);
 	sleep(2);
 	ioctl(FD, TIOCFLUSH);
 }
 
-biz_abort()
+biz31_abort()
 {
 	write(FD, "\33", 1);
 	timeout = 1;
@@ -125,7 +125,7 @@ register char *s;
 {
 	char c;
 
-	signal(SIGALRM, biz_abort);
+	signal(SIGALRM, biz31_abort);
 	timeout = 0;
 	while (*s)
 	{
