@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)doname.c	4.8 (Berkeley) 85/09/18";
+static	char *sccsid = "@(#)doname.c	4.9 (Berkeley) 87/06/18";
 #include "defs"
 #include <strings.h>
 #include <signal.h>
@@ -34,6 +34,28 @@ char *pnamep, *p1namep, *cp;
 char *mkqlist();
 struct chain *qchain, *appendq();
 
+{
+	/*
+	 * VPATH= ${PATH1}:${PATH2} didn't work.  This fix is so ugly I don't
+	 * even want to think about it.  Basically it grabs VPATH and
+	 * explicitly does macro expansion before resolving names.  Why
+	 * VPATH didn't get handled correctly I have no idea; the symptom
+	 * was that, while macro expansion got done, the .c files in the
+	 * non-local directories wouldn't be found.
+	 */
+	struct varblock	*vpath_cp, *varptr();
+	static int	vpath_first;
+	char	vpath_exp[INMAX];
+
+	if (!vpath_first) {
+		vpath_first = 1;
+		vpath_cp = varptr("VPATH");
+		if (vpath_cp->varval) {
+			subst(vpath_cp->varval, vpath_exp);
+			setvar("VPATH",vpath_exp);
+		}
+	}
+}
 if(p == 0)
 	{
 	*tval = 0;
