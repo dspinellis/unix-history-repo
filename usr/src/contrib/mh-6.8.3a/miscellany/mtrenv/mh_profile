@@ -1,0 +1,53 @@
+Path: mhbox
+Draft-Folder: drafts
+Folder-Protect: 700
+Msg-Protect: 600
+Sequence-Negation: ^
+Alternate-Mailboxes: mrose*
+bboards:
+	system eunice-bugs eunice human-nets info-aos laser-lovers nrtc-sky
+	protocols risks tcp-ip-digest tex-workers texhax unix-tex unix-wizards
+ex-next: zz
+prompter-next: vi
+lproc: less
+moreproc: less
+mshproc: vmh
+showproc: mhl
+ali: -alias aliases
+anno: -inplace
+athome: -form athomecomps -whatnow push
+bbc: -quiet
+bbx: -quiet -host gremlin -user mrose -rpop -rcfile .bbxrc
+	system mailb motherb iso
+bby: -quiet -host louie -user mrose -norpop -rcfile .bbyrc
+	system mh-bugs mh-users mh-workers movies whimsey
+	arpa-mhs arpanet-bboards campus-mail colloquia csnet-forum
+        firearms gs3-people header-people heath-people ibm-nets
+	info-law list-of-lists mailgroup mmdfii mmdfii-bugs msggroup
+	namedroppers pcip poli-sci rfc security sf-lovers
+	tcp-ip unix-sources
+bbl: -verbose
+bomb: -annotate -form bombcomps -inplace -nocc all -whatnow push
+burst: -inplace
+dist: -annotate -inplace
+fixed: -annotate -form fixcomps -inplace -cc all -nocc me -whatnow push
+forw: -annotate -editor rapid -inplace -format
+inc: -rpop -form scan.time
+msh: -scan -topcur
+next: -noheader
+ok: -annotate -form okcomps -inplace -nocc all -whatnow push
+pick: -seq select -list
+prev: -noheader
+pop: -rpop -form scan.time
+popf: -pop
+push: -alias aliases -forward -msgid -push -verbose
+pushf: -push
+rapid: -rapid
+repl: -annotate -inplace -cc all -nocc me
+scan: -form scan.time
+send: -alias aliases -msgid -verbose
+sendf: -alias aliases -msgid -verbose -draftfolder +drafts
+show: -noheader
+thanks: -annotate -form thxcomps -inplace -nocc all -whatnow push
+whom: -alias aliases
+vmh: -novmhproc

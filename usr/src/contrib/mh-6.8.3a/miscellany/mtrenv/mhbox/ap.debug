@@ -1,0 +1,7 @@
+%<{error}%{error}:%|%<(mymbox{text})%|not %>my mbox:%> %{text}
+pers=%(putstr(pers{text})) mbox=%(putstr(mbox{text})) host=%(putstr(host{text}))
+path=%(putstr(path{text})) note=%(putstr(note{text}))
+type=%(putnum(type{text})) nohost=%(putnum(nohost{text}))
+ingrp=%(putnum(ingrp{text})) gname=%(putstr(gname{text}))
+proper=%(putstr(proper{text}))
+friendly=%(putstr(friendly{text}))

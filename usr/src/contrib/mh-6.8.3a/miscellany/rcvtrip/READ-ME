@@ -1,0 +1,7 @@
+Copy tripcomps to your MH-directory
+
+Copy ontrip.sh to bin/ontrip
+
+Copy offtrip.sh to bin/offtrip
+
+Copy rcvtrip.sh to bin/rcvtrip

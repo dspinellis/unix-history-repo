@@ -1,0 +1,249 @@
+% LaTeX customization
+
+
+\makeatletter				% for a little while
+
+
+% plain TeX compatibility
+
+\def\oldstyle{\xdef\@oldstyle{\the\textfont\@ne}\mit\@oldstyle}
+
+
+% PhD-TeX compatibility
+
+\def\showsummary{%
+    \begingroup
+	\def\note##1{%
+	    \ifcase\value{##1}no ##1s\or
+		1 ##1\else
+		\the\value{##1} ##1s\fi
+	}%
+	\typeout{LaTeX summary: \note{figure}, \note{table}, \note{footnote}.}%
+    \endgroup
+}
+
+\def\smaller{\footnotesize}
+
+
+% Float Support
+
+% \tagfigure*[FLOAT]{FILE}{CAPTION}{LABEL}
+%    *		optional
+%    FLOAT	float options
+%    FILE	reads TPIC output in file figureFILE
+%    CAPTION	for list of figures
+%    LABEL	for \ref and \pageref
+\def\tagfigure{\@ifstar{\@stagfigure}{\@tagfigure}}
+\def\@tagfigure{\@ifnextchar[{\@@tagfigure}{\@@tagfigure[t]}}
+\def\@stagfigure{\@ifnextchar[{\@@stagfigure}{\@@stagfigure[t]}}
+
+\def\@@tagfigure[#1]#2{%
+    \@@@tagfigure[#1]{\input figure#2\relax\centerline{\box\graph}}}
+\def\@@stagfigure[#1]#2{%
+    \@@@stagfigure[#1]{\input figure#2\relax\centerline{\box\graph}}}
+
+
+% \tagdiagram*[FLOAT]{FILE}{CAPTION}{LABEL}
+%    *		optional
+%    FLOAT	float options
+%    FILE	reads LaTeX input in file diagramFILE
+%    CAPTION	for list of figures
+%    LABEL	for \ref and \pageref
+\def\tagdiagram{\@ifstar{\@stagdiagram}{\@tagdiagram}}
+\def\@tagdiagram{\@ifnextchar[{\@@tagdiagram}{\@@tagdiagram[t]}}
+\def\@stagdiagram{\@ifnextchar[{\@@stagdiagram}{\@@stagdiagram[t]}}
+
+\def\@@tagdiagram[#1]#2{\@@@tagfigure[#1]{\input diagram#2\relax}}
+\def\@@stagdiagram[#1]#2{\@@@stagfigure[#1]{\input diagram#2\relax}}
+
+\def\@@@tagfigure[#1]#2#3#4{%
+    \begin{figure}[#1]
+	\hrule
+	\vskip .5\baselineskip
+	\begin{minipage}\columnwidth
+	    \small#2%
+	\end{minipage}
+	\vskip .5\baselineskip plus .5\baselineskip
+	\caption{#3}%
+	\label{#4}%
+	\vskip 2pt
+	\hrule
+    \end{figure}
+}
+
+\def\@@@stagfigure[#1]#2#3#4{%
+    \begin{figure*}[#1]
+	\hrule
+	\vskip .5\baselineskip
+	\begin{minipage}\textwidth
+	    \small#2%
+	\end{minipage}
+	\vskip .5\baselineskip plus .5\baselineskip
+	\caption{#3}%
+	\label{#4}%
+	\vskip 2pt
+	\hrule
+    \end{figure*}
+}
+
+
+% \tagtable*[FLOAT]{FILE}{CAPTION}{LABEL}
+%    *		optional
+%    FILE	read LaTeX input in file tableFILE
+%    FLOAT	float options
+%    CAPTION	for list of tables
+%    LABEL	for \ref and \pageref
+\def\tagtable{\@ifstar{\@stagtable}{\@tagtable}}
+\def\@tagtable{\@ifnextchar[{\@@tagtable}{\@@tagtable[t]}}
+\def\@stagtable{\@ifnextchar[{\@@stagtable}{\@@stagtable[t]}}
+
+\def\@@tagtable[#1]#2#3#4{%
+    \begin{table}[#1]
+	\hrule
+	\vskip .5\baselineskip
+	\begin{minipage}\textwidth
+	    \small\input table#2\relax
+	\end{minipage}
+	\vskip .5\baselineskip plus .5\baselineskip
+	\caption{#3}%
+	\label{#4}%
+	\vskip 2pt
+	\hrule
+    \end{table}
+}
+
+\def\@@stagtable[#1]#2#3#4{%
+    \begin{table*}[#1]
+	\hrule
+	\vskip .5\baselineskip
+	\begin{minipage}\columnwidth
+	    \small\input table#2\relax
+	\end{minipage}
+	\vskip .5\baselineskip plus .5\baselineskip
+	\caption{#3}%
+	\label{#4}%
+	\vskip 2pt
+	\hrule
+    \end{table*}
+}
+
+
+% Document style options:
+%	     10pt - Makes ten-point type the normal (default) type size
+%	draftnote - Customized draft option
+
+\@namedef{ds@10pt}{\def\@ptsize{0}}	%%% for orthogonality
+
+
+\newif\ifdraft	\draftfalse
+
+\def\draftstring{{\ifdraft \tt Draft\fi}}
+
+\def\draftext{%
+    \ifdraft
+	\begingroup
+	    \tt
+	    \ifodd\thepage
+		\LaTeX set \today\ with \fmtname\ v\fmtversion
+	    \else
+		Draft \versiontag/ of \versiondate/
+	    \fi
+	\endgroup
+    \fi
+}
+
+\def\versiontag/{%
+    \gdef\versiontag/{\#0}%
+    \gdef\versiondate/{\today}%
+    \@input{\jobname.vrsn}%6
+    \versiontag/%
+}
+\def\versiondate/{%
+    \gdef\versiontag/{\#0}%
+    \gdef\versiondate/{\today}%
+    \@input{\jobname.vrsn}%
+    \versiondate/%
+}
+
+\def\ds@draftnote{%
+    \drafttrue
+    \@ifundefined{ds@draft}{}{\ds@draft}%
+    \def\ps@plain{%
+	\def\@oddhead{\draftext\hfil}%
+	\def\@oddfoot{\draftstring\hfil\rm\thepage\hfil\draftstring}%
+	\let\@evenhead=\@oddhead
+	\let\@evenfoot=\@oddfoot
+    }%
+}
+
+
+% The Title
+
+\def\title#1{%
+    \gdef\@title{#1}%
+    \gdef\banner{%
+	\newpage\setcounter{page}{1}%
+	\begin{center}\Large#1\end{center}%
+    }%
+}
+
+
+% Miscellany
+
+\def\implies{\quad\supset\ }
+
+\def\tdots{\ldots\thinspace}
+
+\def\boxit#1{\fbox{\sc#1}}
+
+\def\note#1{\ifdraft\marginpar{\tt#1}\fi}
+
+
+% Fractions (from The TUGboat v6 n1, 1985)
+
+\def\myfrac#1/#2{%
+    \leavevmode\kern.1em
+    \raise.5ex\mbox{\the\scriptfont\z@ #1}\kern-.1em
+    /\kern-.15em\lower.25ex\mbox{\the\scriptfont\z@ #2}%
+}
+
+
+% Trademarks...
+
+\input trademark
+
+
+% Startup
+
+\xdef\today{%
+    \ifcase\month
+	\number\month\or
+	January\or February\or March\or April\or May\or June\or
+	July\or August\or September\or October\or November\or December\else
+	\number\month\fi
+    \space\number\day, {\noexpand\mit\number\year}%
+}
+
+\begingroup
+    \count0=\time
+    \count1=\count0
+    \divide\count0 by 60
+    \count2=\count0
+    \multiply\count0 by 60
+    \advance\count1 by -\count0
+    \ifnum\count2>11
+	\ifnum\count2>12 \advance\count2 by -12\fi
+	\def\ampm{pm}%
+    \else
+	\ifnum\count2=0 \advance\count2 by 12\fi
+	\def\ampm{am}%
+    \fi
+    \xdef\daytime{%
+	\ifnum\count2<10 0\fi \the\count2:%
+	\ifnum\count1<10 0\fi \the\count1
+	\ampm
+    }%
+\endgroup
+
+
+\makeatother				% back to normal

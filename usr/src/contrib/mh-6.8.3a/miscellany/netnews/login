@@ -1,0 +1,11 @@
+setenv MAILPOSTER "~/bin/rnmail %h"
+setenv MAILHEADER \
+'To: %T\
+Subject: %(%i=^$?:Re: %S\
+Fcc: +CC\
+Newsgroups: %n\
+In-Reply-To: %i)\
+%(%[references]!=^$?References\: %[references]\
+)Organization: %o\
+\
+'

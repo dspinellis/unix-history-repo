@@ -1,0 +1,19 @@
+: Check externals differ over first 7 chars
+:	Steven Pemberton, CWI, Amsterdam, steven@mcvax
+case $# in
+0) echo Usage: $0 executable-files ... ; exit 1;;
+*) ;;
+esac
+
+trap 'rm -f /tmp/lim1.$$ /tmp/lim2.$$; exit 1' 1 2 15
+for f
+do
+   nm -g $f | sed "s/^............//" >/tmp/lim1.$$
+   sed "s/^\(.......\).*/\1/" </tmp/lim1.$$ | uniq -d | sed "s/.*/grep \"^&\" \/tmp\/lim1.$$/" >/tmp/lim2.$$
+   if test -s /tmp/lim2.$$
+   then
+	echo $f:
+	sh /tmp/lim2.$$
+   fi
+done
+rm -f /tmp/lim1.$$ /tmp/lim2.$$

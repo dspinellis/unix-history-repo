@@ -1,0 +1,10 @@
+: run this script through /bin/sh
+
+ln $*/h/conf_util.h conf_util.h
+ln $*/h/ll_log.h ll_log.h
+ln $*/h/util.h util.h
+ln $*/h/ch.h ch.h
+ln $*/h/dm.h dm.h
+ln $*/h/conf.h conf.h
+ln $*/h/mmdf.h mmdf.h
+ln $*/lib/libmmdf.a libmmdf.a

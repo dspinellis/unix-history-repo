@@ -1,0 +1,198 @@
+
+
+
+     LLLLEEEESSSSSSSSKKKKEEEEYYYY((((1111))))                  UUUUNNNNIIIIXXXX 5555....0000                   LLLLEEEESSSSSSSSKKKKEEEEYYYY((((1111))))
+
+
+
+     NNNNAAAAMMMMEEEE
+          lesskey - specify key bindings for less
+
+     SSSSYYYYNNNNOOOOPPPPSSSSIIIISSSS
+          lllleeeesssssssskkkkeeeeyyyy [[[[----oooo oooouuuuttttppppuuuutttt]]]] [[[[iiiinnnnppppuuuutttt]]]]
+
+     DDDDEEEESSSSCCCCRRRRIIIIPPPPTTTTIIIIOOOONNNN
+          _L_e_s_s_k_e_y is used to specify a set of key bindings to be used
+          by _l_e_s_s. The input file is a text file which describes the
+          key bindings, and the output file is a binary file which is
+          used by _l_e_s_s. If no input file is specified, standard input
+          is used.  If no output file is specified, $HOME/.less is
+          used.
+
+          The input file consists of lines of the form:
+
+               string <whitespace> action [extra-string] <newline>
+
+          Whitespace is any sequence of one or more spaces and/or
+          tabs.  The "string" is the command key(s) which invoke the
+          action.  The string may be a single command key, or a
+          sequence of up to 15 keys.  The "action" is the name of the
+          less action, from the list below.  The characters in the
+          "string" may appear literally, or be prefixed by a carat to
+          indicate a control key.  A backslash may be used to cause
+          the following character to be taken literally.  Characters
+          which must be preceded by backslash include carat, space,
+          tab and the backslash itself.  A backslash followed by one
+          to three octal digits may be used to specify a character by
+          its octal value.  Blank lines and lines which start with a
+          pound sign (#) are ignored.
+
+          An action may be followed by an extra string.  This string
+          is parsed after the command is entered, just as if it were
+          entered on the command line.  This feature can be used in
+          certain cases to extend the functionality of a command.  For
+          example, these entries would create a pair of commands to
+          turn on/off line numbers using _v_i syntax:
+
+               :set\ nu       toggle-option -N
+               :set\ nonu     toggle-option +N
+
+          See also the ":ta" command in the example below.
+
+
+     EEEEXXXXAAAAMMMMPPPPLLLLEEEE
+          The following input file describes the set of default
+          command keys used by less:
+
+               r         forw-line
+               n         forw-line
+               e         forw-line
+
+
+
+     Page 1                                           (printed 3/2/91)
+
+
+
+
+
+
+     LLLLEEEESSSSSSSSKKKKEEEEYYYY((((1111))))                  UUUUNNNNIIIIXXXX 5555....0000                   LLLLEEEESSSSSSSSKKKKEEEEYYYY((((1111))))
+
+
+
+               j         forw-line
+               ^E        forw-line
+               ^N        forw-line
+               k         back-line
+               y         back-line
+               ^Y        back-line
+               ^K        back-line
+               ^P        back-line
+               J         forw-line-force
+               K         back-line-force
+               Y         back-line-force
+               d         forw-scroll
+               ^D        forw-scroll
+               u         back-scroll
+               ^U        back-scroll
+               '         back-scroll
+               \40       forw-screen
+               f         forw-screen
+               ^F        forw-screen
+               ^V        forw-screen
+               b         back-screen
+               ^B        back-screen
+               \33v      back-screen
+               z         forw-window
+               w         back-window
+               F         forw-forever
+               R         repaint-flush
+               r         repaint
+               ^R        repaint
+               ^L        repaint
+               g         goto-line
+               <         goto-line
+               \33<      goto-line
+               p         percent
+               %         percent
+               {         forw-bracket {}
+               }         back-bracket {}
+               (         forw-bracket ()
+               )         back-bracket ()
+               [         forw-bracket []
+               ]         back-bracket []
+               \33^F     forw-bracket
+               \33^B     back-bracket
+               G         goto-end
+               \33>      goto-end
+               >         goto-end
+               P         goto-end
+               =         status
+               ^G        status
+               :f        status
+               /         forw-search
+               ?         back-search
+
+
+
+     Page 2                                           (printed 3/2/91)
+
+
+
+
+
+
+     LLLLEEEESSSSSSSSKKKKEEEEYYYY((((1111))))                  UUUUNNNNIIIIXXXX 5555....0000                   LLLLEEEESSSSSSSSKKKKEEEEYYYY((((1111))))
+
+
+
+               \33/      forw-search *
+               \33?      back-search *
+               n         repeat-search
+               \33n      repeat-search-all
+               N         reverse-search
+               \33N      reverse-search-all
+               m         set-mark
+               '         goto-mark
+               ^X^X      goto-mark
+               E         examine
+               :e        examine
+               ^X^V      examine
+               :n        next-file
+               :p        prev-file
+               :x        index-file
+               -         toggle-option
+               :t        toggle-option t
+               s         toggle-option o
+               _         display-option
+               |         pipe
+               v         visual
+               !         shell
+               +         firstcmd
+               H         help
+               h         help
+               V         version
+               q         quit
+               :q        quit
+               :Q        quit
+               ZZ        quit
+               \33\33    quit
+
+          Commands specified by _l_e_s_s_k_e_y take precedence over the
+          default commands.  A default command key may be disabled by
+          including it in the key file with the action "invalid".
+
+
+     SSSSEEEEEEEE AAAALLLLSSSSOOOO
+          less(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+     Page 3                                           (printed 3/2/91)
+
+
+

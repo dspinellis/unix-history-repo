@@ -1,0 +1,1077 @@
+% begin text
+
+\banner
+
+\section{Introduction}
+Initially,
+a brief model of a user community employing a trusted mail service is
+introduced.
+Following this introduction,
+a prototype system is described which attempts to meet the needs of a user
+community.
+Finally,
+open issues are discussed,
+which are currently not satisfied by the prototype system or its model of
+operation.
+
+Two or more entities,
+called {\it users},
+wish to communicate in a {\it secure} environment.
+Depending on their available resources,
+different levels of security are possible.
+At the extreme,
+two parties with substantial resources may wish to communicate in a fashion
+which prevents any third parties,
+known as {\it adversaries},
+from observing their communication.
+At this level,
+not only is an adversary unable to capture the communication for analysis,
+but in fact, the adversary is unaware that any communication is occurring at
+all.
+In most applications,
+this level of security is prohibitively expensive.
+A more economic method is to translate messages into a form which is useless
+to an adversary and then to communicate those messages on an insecure medium.
+
+This latter method requires the two users to have some sort of {\it key}
+with which to ``lock'' the plaintext into ciphertext when transmitting,
+and then to ``unlock'' the ciphertext back into useful form when receiving.
+Hence, there are two central issues to deal with:
+\underbar{first},
+keys must be generated, distributed, and maintained in a secure fashion;
+and,
+\underbar{second},
+the keys must be ``intricate'' enough so that sense can't be made out of the
+ciphertext without knowledge of the key.
+The first part is handled by a {\it key distribution center} (\KDC/),
+which maintains a list of users and a set of keys for each pair of users.
+The second part relies on sophisticated encryption and decryption algorithms.
+It is beyond the scope of this paper to describe cryptographic techniques in
+detail.
+For a detailed survey of this area, the reader should consult \cite{VVoyd83}.
+
+\tagfigure{1}{The \MTS/ Model}{mtsmodel}
+In the context of our discussion (using the terminology of \cite{X.400}),
+the medium used to transport is supplied
+by a {\it message transport system} (\MTS/),
+which is composed of one or more {\it message transport agents} (\MTA/s).
+Usually,
+the entire \MTS/ is distributed in nature,
+and not under a single administrative entity;
+in contrast, an \MTA/ is usually controlled by a single administration and
+resides in a particular domain.
+At every end-point in the medium,
+a {\it user agent} (\UA/) acts on behalf of a user and interfaces
+to a local \MTA/.
+This model is briefly summarized in Figure~\mtsmodel.
+
+A message, in our context, consists of two parts:
+the {\it headers} and the {\it body}.
+The headers are rigorously structured;
+they contain addressing information and other forms useful to a \UA/.
+The body is freely formatted and is usually not meaningful to a \UA/.
+
+When a message is sent from one user to another,
+the following activities occur:
+The originating user indicates to the \UA/ the address of the recipient;
+the \UA/ then posts the message through a {\it posting slot} to an \MTA/,
+which involves a posting protocol in which the validity of the address
+and the syntax of the message are considered.
+Upon successful completion of the protocol,
+the \MTA/ accepts responsibility for delivering the message,
+or if delivery fails, to inform the originating user of the failure.
+The \MTA/ then decides if it can deliver the message directly to the
+recipient;
+if so, it delivers the message through a {\it delivery slot} to the
+recipient's \UA/,
+using a delivery protocol.
+If not, it contacts an adjacent \MTA/, closer to the recipient,
+and negotiates its transfer (using a protocol similar to the posting protocol).
+This process repeats until an \MTA/ is able to deliver the message,
+or an \MTA/ determines that the message can't be delivered.
+In this latter case,
+a failure notice is sent to the originating user.
+
+\tagfigure{2}{Mappings in the \MTS/ model}{mappings}
+It is important to note that there are two mappings which occur here.
+The first, which is performed implicitly by the originating user,
+maps the name of the recipient into the recipient's address;
+the second, which is performed explicitly by the \MTS/,
+maps the address of the recipient into a route to get from the originator's
+\MTA/ to the recipient's \MTA/.
+These mappings are depicted in Figure~\mappings.
+
+Obviously, there is no guarantee that the \MTS/ can be made secure,
+in {\it any} sense of the word.
+This is particularly true if it is under several administrations.
+Regardless of the number of administrations in the \MTS/,
+this problem quickly degenerates to a problem of
+Byzantine generals\cite{LLamp82}.
+Further, trying to secure each \MTA/ in the path that a message travels is
+equally questionable.
+
+\tagfigure{3}{Modifications to the \MTS/ model}{tmodel}
+To support secure communications in this environment,
+a new entity,
+the {\it trusted mail agent} (\TMA/) is introduced into our model.
+A solution is to have the \UA/ interact with this entity
+both when posting a message and when taking delivery of a message.
+The \UA/ first contacts a \TMA/ to encrypt the body of the message for the
+recipient,
+prior to pushing it through the posting slot.
+Upon receipt from the destination \MTA/,
+the \UA/ examines the message and contacts
+the \TMA/ to decipher the body of the message from the source.
+An overview of the relationship between the standard \MTS/ model
+and the augmentations made for the \trustedmail/ system is shown in
+Figure~\tmodel.
+
+To achieve these tasks,
+the \TMA/ interacts with a {\it key distribution service} (\KDS/),
+which manages keys between pairwise users.
+At this point, a third mapping takes place:
+the \UA/ must be able to map addresses into the identifier(s)
+by which the originator and recipient are known by the \TMA/ and \KDS/.
+These identifiers are known as \KDS/ IDs, or simply IDs.
+Usually, a fourth mapping also occurs,
+which maps the ID of a user into the name of a user.
+In our context,
+there is an exact one-to-one mapping between the name of a user and the ID
+of that user.
+In contrast,
+there may be a one-to-many mapping between the name of a user and
+that user's address in the \MTS/.
+Further, there are usually many different routes which a message may traverse
+when going from an originating user to a recipient user.
+
+The \TMA/ is said to be {\it trusted} because it can be relied on to perform
+only those actions specifically requested by the user.
+In the context of this paper,
+this means, given proper construction and maintenance of the \TMA/,
+that the software will communicate with the \KDC/ in some secure fashion to
+negotiate key relationships and that it will not disclose those key
+relationships to other parties.
+Furthermore,
+the body of mail messages exchanged between users which employ
+a trusted mail agent will be unintelligible to other parties.
+Finally,
+a recipient of a message receives authenticated information from the
+trusted mail agent as to the identify of the sender.
+
+Hence,
+when each user employs a \TMA/,
+end-to-end encryption occurs at the \UA/ level
+(to avoid any problems with malicious \MTA/s).%
+\nfootnote{Note that in the scope of this system,
+the end-points are the user agents, not the hosts they reside on.
+In fact,
+it may very well be the case that the user agent and the local message
+transport agent do not reside on the same host.}
+Any adversary listening in on the \MTS/,
+may observe messages,
+but make no sense out of them
+(other than rudimentary traffic analysis).
+Note, however,
+that since the medium itself is not secure,
+an adversary may still introduce new messages,
+corrupt messages,
+or remove messages,
+as they traverse the \MTS/.
+In the first two cases, however,
+the recipient would be suspicious
+because the adversary lacks the encrypting key employed by the source user.
+In the third case,
+the source user can retransmit the message after a suitable time.
+Of course,
+there is no built-in retransmission policy~---~this aspect depends on the
+user's sending mail and is beyond the scope of the system.
+
+It is important to understand the target community for the \trustedmail/ system
+described herein.
+In particular,
+the \TMA/ is intended for a commercial and not a military environment.
+This distinction is important,
+since it is the {\it fundamental} assumption of this paper that
+the latter community has much stricter requirements than the former.
+Because of this,
+the prototype system is able to make certain simplifying assumptions which
+permit it to operate in a mode which is less secure than military
+applications would permit.
+Although these issues are explored in greater detail at the end of the paper,
+for the moment recall that, like most qualities, trustedness is not absolute:
+there are varying degrees of trustedness,
+and as a system becomes more trusted,
+it becomes more expensive, in some sense, to operate and maintain.
+
+It is perhaps instructive at this point to consider why the introduction of a
+key distribution center is appropriate in this environment,
+and why the {\it fundamental} assumption that trusted mail agents do not
+directly communicate with each other is necessary.
+Although a user agent is able to converse with the local message transport
+agent in real-time,
+it is frequently not able to communicate with other user agents in real-time.
+Furthermore,
+considering the vast problems and overhead
+of trying to establish secure communications from ``scratch''
+(a problem far beyond the scope of this paper),
+it is would not be a good idea to try and communicate key relationships with
+other user agents,
+even if it were always possible to do so.
+In addition,
+by separating the trusted aspects of the message transport system from the
+system itself,
+many other advantages can be seen.
+These are presented in greater detail at the end of the paper.
+
+The discussion thus far has considered only a single recipient.
+In practice, a user might wish to send to several others,
+using a different key for each.
+Hence each copy of the message is encrypted differently,
+depending on the particular recipient in question.
+Note that this has the effect of {\it un-bundling} message transfer in the
+\MTS/,
+as advanced \MTA/s tend to keep only a single copy of the message for any
+number of recipients in order to save both cpu, disk, and I/O resources.
+
+For example,
+in some existing mail systems,
+if a message was sent to $n$ users on a remote system,
+then the $n$ addresses would be sent from the source \MTA/ to the remote \MTA/
+along with one copy of the message.
+Upon delivery,
+the remote \MTA/ would deliver a copy to each of the $n$ recipients,
+but the virtual wire between the source \MTA/ and the recipient \MTA/ was
+burdened with only one copy of the message.
+But in a secure environment,
+since a different key is used by the source user when communicating with each
+of the $n$ recipients,
+$n$ different messages will be posted with the local \MTA/,
+and the advantages of recipient bundling are lost.
+
+Along these lines however,
+private discussion groups may wish to avoid this problem by establishing
+access to a single ID for their use.
+In this case,
+a subscriber to the \KDS/ may actually have more than one ID,
+one for ``personal'' use and one for each discussion group.
+The appropriate ID is used when posting messages to the discussion group.
+Naturally the administrative policy for deciding who is allowed to use the
+\KDS/ ID of a discussion group is left to the moderator of the group.
+Observant readers will note that this vastly decreases the aspect of
+secure communications for the discussion group.
+This method is suggested as a compromise
+which permits the bundling of messages for multiple recipients
+to reduce \MTS/ traffic.
+The price is high however,
+as a compromise on behalf of {\it any} member of the discussion group
+compromises the entire group.
+For large discussion groups and a bandwidth limited \MTS/,
+this price may be worth paying.
+The prototype implementation of the \TMA/ supports multiple recipients but
+not multiple \KDS/ IDs.
+
+Having described this environment for communication,
+the designs of a \KDS/ and \TMA/ which form the heart of the \TTI/
+\trustedmail/ system are discussed.
+The prototype system was developed on a \vax/-11/780 running 4.2\bsd/ \unix/.
+The system is based on the \ansi/ draft\cite{FIKM}
+for financial key management,
+but diverges somewhat in operation
+owing to the differences between the electronic mail (CBMS)
+and electronic funds (EFT) environments.
+Note however that the \ansi/ data encryption algorithm\cite{DEA,FIPS46} is
+used in the current implementation.
+A public-key cipher system was not considered as the basis for the prototype
+since, to the authors' knowledge,
+an open standard for a public-key system has yet to be adopted by the
+commercial community.
+In contrast,
+the \ansi/ draft for financial key management appears to be receiving
+wide support from the commercial community.
+
+\tagtable{4}{Abbreviations used in this paper}{terms}
+In the description that follows,
+a large number of acronyms are employed to denote commonly used terms.
+In order to aid the reader,
+these are summarized in Table~\terms.
+
+\section{The Key Distribution Service}
+The prototype version of the \KDS/
+was designed to provide key distribution services for
+user agents under both the same or different administrations.
+As a result,
+the means by which a trusted mail agent connects to a key distribution server
+is quite flexible.
+For example,
+the prototype system supports connections via
+standard terminal lines,
+dial-ups (e.g., over a toll-free 800 number),
+\unix/ pipes,
+and over TCP sockets\cite{IP,TCP}.
+In the interests of simplicity,
+for the remainder of this paper,
+a TCP/IP model of communication is used.
+Initially,
+a server on a well-known service host in the ARPA Internet community
+listens for connections on a well-known port.%
+\nfootnote{The term {\it well known} in this context means that the 
+location of the service is known {\it a priori} to the clients.}
+As each connection is established,
+it services one or more transactions over the lifetime of the session.
+When all transactions for a session have been made,
+the connection is closed.
+If the necessary locking operations are performed by the server
+to avoid the usual database problems,
+then more than one connection may be in progress simultaneously.
+Of course,
+a time-out facility should also be employed to prevent a rogue agent from
+monopolizing the key distribution server.
+
+Once a session has been started,
+the client (a.k.a.~\TMA/) initiates transactions with the server
+(a.k.a.~\KDS/).
+Each transaction consists of the exchange of two or three
+{\it cryptographic service messages} (\CSM/s):
+the client sends a request,
+the server attempts to honor the request and sends a response,
+and,
+if the server responded positively,
+the client then acknowledges the transaction.
+By exchanging these cryptographic service messages,
+the \KDS/ and the \TMA/ are able to communicate key relationships.
+Obviously, the relationships themselves must be transmitted in encrypted
+form.%
+\nfootnote{Otherwise an adversary could simply impersonate a \TMA/ and ask
+for the desired key relationships.
+Similarly, this also prevents an adversary from successfully impersonating a
+key distribution server.}
+Hence, not only are key relationships between two \TMA/s communicated,
+but key relationships between the \KDS/ and the \TMA/ are communicated as well.
+
+This leads us to consider the key relationships that exist
+between a \TMA/ and the \KDS/.
+A client usually has three keys dedicated for use with the server.
+The first is the {\it master key} (denoted MK),
+which has an infinite cryptoperiod, and is rarely used.
+This key is distributed manually.
+The second is the {\it key-encrypting key} (denoted KK),
+which has a shorter cryptoperiod.
+Whenever a KK is transmitted to the \TMA/,
+it is encrypted with the master key.
+The third is the {\it authentication key} (denoted KA),
+which is used to authenticate transactions that do not contain data keys
+(a count field is also used to avoid play-back attacks).
+Whenever a KA is transmitted to the \TMA/,
+it is encrypted with the key-encrypting key.
+When transactions contain keys,
+an associated count field is included to indicate the number of
+keys encrypted with the key-encrypting key used.
+Although not used by the prototype implementation,
+a production system would employ audit mechanisms to monitor usage histories.
+
+Currently four types of requests are honored by the \KDS/:
+two key relationship primitives, and two name service primitives.
+The type is indicated by the {\it message class} (MCL) of the first
+cryptographic service message sent in the transaction.
+As each message class  is discussed,
+the appropriate datastructures used by the \KDS/ are introduced.
+Space considerations prevent a detailed description of the information
+exchanged in each transaction.
+Appendix~B of this paper presents a short example of an interaction between
+the \KDS/ and a \TMA/.
+
+The first two requests are used to create (or retrieve) key relationships,
+and to destroy key relationships:
+
+The {\it request service initialization} (RSI) message class
+is used to establish a {\it key-encrypting key} (KK) relationship
+between the \TMA/ and another \TMA/,
+or between the \TMA/ and the \KDS/.
+As implied by the name,
+a key-encrypting key is used to cipher keys which are used to cipher data
+exchanged between peers.
+These other keys are called {\it data keys} (KDs).
+
+The {\it disconnect service message} (DSM) message class
+is used to discontinue a KK-relationship
+between the \TMA/ and another \TMA/,
+or between the \TMA/ and the \KDS/.
+This prevents keys which are felt to have been compromised,
+or are vulnerable to compromise,
+from receiving further use in the system.
+It should be noted that,
+owing to mail messages (not \CSM/s) in transit,
+a discontinued key relationship
+may be needed to decipher the key used to encipher a mail message.
+The prototype \KDS/ supports this capability.
+
+In addition to maintaining an MK/KK/KA triple for each \TMA/,
+the \KDS/ also remembers KK-relationships between \TMA/s.
+The reason for this stems from a fundamental difference between the
+electronic funds transfer and computer-based message system worlds.
+The \KDS/ assumes that no two arbitrarily chosen \TMA/s can communicate in
+real-time,
+and as a result,
+\TMA/s do not exchange cryptographic service messages.
+(See Appendix~C for a more detailed discussion.)
+This means that when a \TMA/ establishes a KK-relationship with another \TMA/,
+the former \TMA/ may start using the KK before the latter \TMA/ knows of the
+new KK-relationship.
+In fact,
+it is quite possible for a KK-relationship to be established,
+used,
+and then discontinued,
+all unilaterally on the part of one \TMA/.
+It is up to the \KDS/ to retain old cryptographic material
+(possibly for an indefinite period of time),
+and aid the latter \TMA/ in reconstructing KK-relationships as the need arises.
+Naturally,
+discontinued KKs are not used to encode any new information,
+but rather to decode old information.
+(Again, refer to Appendix~C for additional details.)
+
+The other two requests are used to query the directory service aspects of the
+key distribution server:
+
+The {\it request user identification} (RUI) message class
+is used to identify a subscriber to the \KDS/.
+Both  the \KDS/ and \TMA/ are independent of any underlying mail transport
+system (\MTS/).
+As a result,
+a subscriber to the \KDS/ is known by two unique attributes:
+a ``real-world'' name,
+and a \KDS/ identifier (ID).
+The user of a mail system,
+or the \UA/,
+is responsible for mapping an \MTS/-specific address
+(e.g., {\tx MRose@UDEL.ARPA})
+to the person associated with that maildrop
+(e.g., \eg{Marshall\ T.\ Rose}).
+When conversing with the \KDS/,
+the \TMA/ uses the \KDS/ ID of another user to reference that person's \TMA/.
+Since it is inconvenient to remember the IDs (as opposed to people's names),
+the \KDS/ provides the RUI message class to permit a \TMA/ to query the
+mapping between names and IDs.
+If the \KDS/ cannot return an exact match,
+it may respond with a list of possible matches
+(if the identifying information given was ambiguous),
+or it may respond with a response that there is no matching user.
+
+Finally,
+the {\it request identified user} (RIU) message class
+performs the inverse operation:
+given a \KDS/ ID, a ``real-world'' name is returned.
+This request is useful for disambiguating unsuccessful RUI requests
+and in boot-strapping a \TMA/.
+
+The \KDS/ maintains two directories:
+a private directory and a public directory.
+The private directory contains all information on all clients to the \KDS/.
+The public directory is a subset of this,
+and is used by the \KDS/ when processing RUI and RIU requests.%
+\nfootnote{In the prototype implementation,
+the two directories are, for the moment, identical.}
+As a result,
+certain clients of the \KDS/ may have unlisted IDs and names.
+
+\section{The Trusted Mail Agent}
+The prototype version of the \TMA/
+was designed to interface directly to the user agent in order to maximize
+transparency to the user.
+In present form,
+the \TMA/ is available as a load-time library under 4.2\bsd/ \unix/,
+although efforts are currently underway to transport the \TMA/ to a PC-based
+environment.
+
+The software modules which compose the \TMA/ contain a rich set of interfaces
+to the \KDS/.
+In addition,
+the \TMA/ manages a local database,
+so responses from the \KDS/ may be cached and used at a later time.
+In all cases,
+the \KDS/ is consulted only if the information is not present
+in the \TMA/ database,
+or if the information in question has expired (e.g., KK-relationships).
+This caching activity minimizes connections to the \KDS/.
+Although connections are relatively cheap in the ARPA Internet,
+substantial savings are achieved for PCs which contact the \KDS/ over a
+public phone network (dial-up) connection.
+
+The \TMA/ performs mappings between pairs of the following objects:
+user names, \KDS/ IDs, and \MTS/ addresses.
+The \TMA/ considers all trusted mail agents, including itself,
+as a user name, \KDS/ ID, and one or more \MTS/ addresses.
+Although the \TMA/ does not interpret addresses itself,
+in order to simplify mail handling,
+the \TMA/ remembers the relationship between these objects so the user enters
+this information only once.
+
+Initially,
+when a \TMA/ is booted,
+the user supplies it with the master key and the user's \KDS/ ID.
+Both of these quantities are assigned by the personnel at the key
+distribution center,
+and subsequently transmitted to the user via an alternate, bonded service.%
+\nfootnote{In this fashion,
+the problems of boot-strapping over an unsecure medium are avoided.}
+The \TMA/ connects with the \KDS/ and verifies its identity.
+From this point on,
+the \TMA/ manages its KK-relationships between the \KDS/ and other \TMA/s
+without user intervention.
+
+The current implementation of the \TMA/ assumes a ``general memo framework''
+in the context of the Standards for ARPA Internet Text Messages\cite{DCroc82}:
+\smallskip
+{\advance\leftskip by\parindent
+\item{1.} A message consists of two parts:
+the {\it headers} and the {\it body}.
+A blank line separates the headers from the body.
+
+\item{2.} Each (virtual) line in the headers consists of a keyword/value
+pair, in which the keyword is separated from the value by a colon (:).
+The headers are rigorously structured in the sense that they contain
+addressing and other information useful to a user agent.
+
+\item{3.} The body is freely formatted and must not be meaningful to a
+user agent.
+However, as will be seen momentarily,
+the body of encrypted messages must have an initial fixed format which the
+\TMA/ enforces.
+\smallskip}
+\noindent
+This format is widely called ``822'' after the number assigned to the
+defining report\cite{DCroc82}.%
+\nfootnote{Although an 822--style framework is employed by the \TMA/ prototype,
+the 822 \eg{Encrypted:} header is not currently present in encrypted messages.
+This is due to a design decision which assumes that nothing in the headers of
+a message is sacred to the transport system,
+and that ``helpful'' munging might occur at any time.
+In the real world, such helpfulness is often a problem.}
+
+To support the cipher activities described below,
+the \TMA/ contains internal routines to perform the following DES functions:
+electronic code book (ECB) for key encryption,
+cipher block chaining (CBC) for mail message encryption,
+checksumming (CKS) for mail message and \CSM/ authentication.
+Readers interested in these different modes of operation for the DES should
+consult \cite{FIPS81}.
+
+\subsection{Encrypting Mail}
+To encipher a message, the method used is a straightforward adaptation
+of the standard encrypting/authentication techniques
+(though the terminology is tedious).
+Consider the following notation:
+\smallskip
+{\advance\leftskip by\parindent
+\itemm $a_x(s)$ the checksum of the string $s$ using the key $x$
+(DEA~{\it checksumming} authentication)
+
+\itemm $a_{x+y}(s)$ the checksum of the string $s$ using the exclusive-or
+of the two keys $x$ and $y$
+
+\itemm $e_x(y)$ the encryption of the key $y$ using the key $x$
+(DEA~{\it electronic code book} encryption)
+
+\itemm $e_{x,y}(s)$ the encryption of the string $s$ using the key $x$
+and initialization vector $y$
+(DEA~{\it cipher block chaining} encryption)
+
+\itemm $h$ the headers of the message
+
+\noindent and,
+
+\itemm $b$ the body of the message
+\smallskip}
+\noindent
+For each message to be encrypted,
+a data key, initialization vector, authentication key (KD/IV/KA)
+triple is generated by a random process.
+(It goes without saying that the integrity of the system depends on the
+process being {\it random\/}).
+Then, for each user to receive a copy of the encrypted message,
+the following actions are taken:
+
+First, the headers of the message are output in the clear.
+Then, a {\it banner} string, $i$, is constructed and placed at the beginning
+of the body of the message:
+\example ENCRYPTED MESSAGE: TTI TMA\endexample
+which identifies the message as being encrypted by the \TTI/ \TMA/.
+Following the banner string is a structure, $m$,
+which takes on the syntax and most of the semantics of a cryptographic
+service message:
+$$\displayindent=\leftskip	\advance\displayindent by1.5\parindent
+    \halign{\hfil#/&	\enspace#\hfil\cr
+	MCL&	MAIL\cr
+	RCV&	rcvid\cr
+	ORG&	orgid\cr
+	IDK&	kkid\cr
+	KD&	$e_{kk}(ka)$\cr
+	KD&	$e_{kk}(kd)$\cr
+	IV&	$e_{kd}(iv)$\cr
+	MIC&	$a_{ka}(b)$\cr
+	MAC&	$a_{kd+ka}(m)$\cr
+}$$
+After this, the encrypted body is output, $e_{kd,iv}(b)$.
+In short, the entire output consists of
+$$h+i+m+e_{kd,iv}(b).$$
+
+The purpose of the structure $m$ is many-fold.
+The MCL field indicates the structure $m$'s type;
+currently only the type MAIL is generated and understood.
+The RCV and ORG fields identify the intended recipient of the message
+and the originator.
+The IDK field identifies the key-encrypting key, KK,
+used to encrypt the next two fields.
+The first KD field has the encrypted authentication key, KA,
+used to calculate the MIC of the plaintext of the body of the message.
+After the body of the message is deciphered, $a_{ka}(b)$ is calculated and
+compared to the value of the MIC field.
+Hence, the MIC field authenticates the message body.
+The second KD field has the encrypted data encrypting key, KD,
+which along with the encrypted initialization vector in the IV field
+was used to generate the ciphertext of the body.
+Finally, the MAC field authenticates the $m$ structure itself.
+The use of a data key, initialization vector, authentication key (KD/IV/KA)
+triple permits us to perform key distribution in a hierarchical fashion and
+allows the system to use a KK-relationship over a longer cryptoperiod
+without fear of compromise.
+
+The \TMA/ provides three primary interfaces to a \UA/ to send encrypted mail:
+the first takes a file-descriptor to a message
+and returns a structure $g$ (called a {\it group})
+describing the ciphertext version of the body
+(this structure contains a KD, IV, and KA generated at random,
+along with a file-descriptor to the plaintext headers,
+a file-descriptor to the ciphertext body,
+and the checksum of the plaintext body);
+the second takes a user entry (or \MTS/ address) and $g$,
+and returns a file-descriptor to the encrypted message
+for that user (or \MTS/ address);
+the third takes $g$ and performs clean-up operations.
+The chief advantage to this scheme of encryption
+is that if the message is to be sent to more than one recipient,
+then the MIC and the encrypted body need only be calculated once,
+since the KD, IV, and KA remain constant
+(only the KK's change with each recipient,
+hence for each copy of the encrypted message,
+only the structure $m$ need be re-calculated).
+
+There are, however, a few subtleties involved:
+\underbar{first},
+the \MTS/ usually accepts only 7--bit characters,
+so the encrypted text is exploded to consist of only printable characters;%
+\nfootnote{%
+As a rule, in all \CSM/s,
+when encrypted information is transmitted,
+it is exploded after encryption by the sender,
+and imploded prior to decryption by the receiver.}
+\underbar{second},
+since the \MTS/ may impose limits on the length of a line,
+each line of output is limited to 64~characters;
+and,
+\underbar{third},
+since the body may require trailing padding,
+during encryption
+one last unit of 8~bytes is written (and encrypted),
+naming the number of characters (presently, nulls) padded in the
+previous 8~bytes ($0\tdots7$).
+
+\subsection{Decrypting Mail}
+To decipher a message, the method is also straightforward:
+The headers are output in the clear.
+The banner string is essentially ignored,
+and the structure $m$ is consulted to identify the correct key-encrypting key.
+The \TMA/ checks to see if it knows of that KK.
+If not, it asks the \KDS/ to supply it.
+From that point,
+the KA, KD, and IV are deciphered.
+The $m$ structure is then authenticated.
+With the correct key,
+the remainder of the body is deciphered,
+and all except for the last 16~bytes are output.
+The last 8~bytes indicate how many of the previous 8~bytes should be output.
+So,
+the appropriate number of bytes is output,
+and the plaintext body is authenticated and compared to the MIC.
+Needless to say,
+as the body is deciphered,
+it is imploded back to 8--bit characters and lines are restored to their
+previous lengths.
+To indicate that the message was correctly deciphered,
+a new header of the form
+\example X-KDS-ID: orgid (originator's name)\endexample
+is appended to the headers of the message.
+Note that this provides an authentication mechanism.
+Note, further,
+that the \UA/ did not have to know the identity of the sender of the message.
+
+\section{Modifications to MH}
+\MH/ is a public domain \UA/ for \unix/,
+which is widely used in dealing with both a large number of electronic mail
+application and a large number of messages.
+Although this document does not intend to describe \MH/,
+parts of the system are described as they relate to the \TMA/.
+Readers interested in \MH/ should consult either the user's
+manual\cite{MRose85a} for a detailed description,
+or \cite{MRose85d} for a higher-level description.
+
+To modify \MH/ in order to make use of a \TMA/,
+three programs were changed (with a high degree of transparency to the user),
+and two new programs were introduced.
+
+In \MH/,
+when a user wishes to send a composed draft
+(which may be an entirely new message,
+a re-distribution of a message,
+a forwarding of messages,
+or a reply to a message),
+the user invokes the \pgm{send} program.
+This program performs some minor front-end work for a program called
+\pgm{post} which actually interacts with the \MTS/.
+A new option to the \pgm{send} and \pgm{post} programs,
+the \switch{encrypt} switch,
+is introduced.
+If the user indicates
+\example send\ -encrypt\endexample
+then \pgm{post} encrypts the messages it sends.
+
+When sending an encrypted message,
+\pgm{post} first checks that each addressee has a mapping to a \KDS/ ID
+during address verification.
+Then, instead of batching all addresses for a message in a single posting
+transaction,
+for each addressee,
+\pgm{post} consults the \TMA/ for the appropriately encrypted text and
+posts that instead.
+(Appendix~A discusses the reasons for this more fully.)
+Hence,
+assuming the user has established mappings between \MTS/ addresses
+and \KDS/ IDs,
+the \TMA/ does all the work necessary to encrypt the message,
+including contacting the \KDS/ as necessary.%
+\nfootnote{Once the \TMA/ establishes a connection to the \KDS/,
+it retains that connection until the \UA/ terminates.
+This is done to minimize connections to the \KDS/.
+In the context of \MH/,
+since the trusted mail agent is active over the lifetime of an invocation of
+a program such as \pgm{post},
+this means that the connection is terminated just before the program
+terminates.}
+
+In \MH/,
+when a user is notified that new mail has arrived,
+the \pgm{inc} program is run.
+As each message is incorporated into the user's message handling area,
+a scan (one-line) listing of the message is generated.
+
+By default,
+the \pgm{inc} program upon detecting one or more encrypted messages,
+after the scanning process,
+asks the \TMA/ to decipher the message,
+and if successful,
+scans the deciphered messages.
+This action can be inhibited with the \switch{nodecrypt} switch.
+Hence, if the user wishes to retain messages in encrypted form,
+\pgm{inc} can be told to note the presence of encrypted messages,
+but otherwise not to process them.
+By using the \MH/ user profile mechanism,
+\pgm{inc} can be easily customized to reflect the user's tastes.
+Again,
+the actions of the \TMA/ are transparent to the user.
+In fact,
+if encrypted mail is received from users unknown to the \TMA/,
+it queries the \KDS/ as to their identity prior to retrieving the
+KK-relationship.
+
+If \pgm{inc} fails to decrypt a message for some reason,
+or if \pgm{inc} was told not to decrypt a message,
+the \pgm{decipher} program can be used.
+This simple program merely deciphers each message given in its argument
+list.
+The \pgm{decipher} program can be given the \switch{insitu} switch,
+which directs it to replace the ciphertext version of the message with the
+plaintext version;
+or,
+the \switch{noinsitu} switch can be used indicating that the ciphertext
+version of the message should be left untouched and the plaintext version
+should be listed on the standard output.
+
+Finally,
+the \pgm{tma} program is used to manipulate the \TMA/ database,
+containing commands to boot the database,
+add new users to the database,
+and to establish mappings between addresses and users in the \TMA/ database.
+This program can also be used to disconnect KKs between other \TMA/s,
+and the KK/KA between itself and the \KDS/.
+
+Appendix~A of this paper contains a transcript of an \MH/ session.
+
+\section{Remarks}
+We now consider the merit of the system described.
+After presenting some of the basic strengths of the system
+and a few unresolved questions,
+the discussion centers on the simplifying assumptions made by the system,
+and how these can be defended in a non-military environment.
+
+\subsection{Strengths}
+It can be argued that the prototype system
+(and the augmented model in which it finds its basis)
+present many strengths.
+
+Perhaps the most important is the high-level of independence from the \MTS/
+enjoyed by the system.
+As a result,
+since the \TMA/ does not interact directly with the \MTS/,
+it can be made to be completely free from any \MTS/-specific attributes,
+such as naming, addressing, and routing conventions.
+Furthermore,
+when interfacing a \trustedmail/ system,
+no modifications need be made to the \MTS/ or local \MTA/.
+
+In addition to the systems-level advantage to this scheme,
+users of the system profit as well,
+since many disjoint \MTS/s can be employed by a user with a single \TMA/.
+This reduces the number of weaknesses in the system and allows a user to keep
+a single database of ``trusted'' correspondents.
+It should also make analysis and verification of the \TMA/ easier.
+
+Of course from the user-viewpoint,
+once the \TMA/ has been initially booted,
+all key management is automatic.
+Not only does this reduce the risk of compromise of cryptographic material
+(given proper construction and maintenance of the \TMA/),
+but it relieves the user of a tedious and error-prone task.
+
+Finally,
+although the \KDS/ described herein is used to support \trustedmail/,
+other applications which require key management,
+could employ the services offered by the key distribution center.
+
+\subsection{Open Questions}
+At present, there are many restrictions on the prototype implementation
+described.
+Some of these result from that fact that the implementation is a prototype
+and not a production system.
+Others deal with more fundamental issues.
+
+In terms of the \TMA/,
+the expiration delay for keys is hard-wired in;
+it should be user-settable.
+In the prototype version,
+the KK and KA with the \KDS/ are good for 2~days or 10~uses
+(whichever comes first),
+while a KK for use with another \TMA/ is good for 1~day or 5~uses.
+In actual practice,
+keys with long cryptoperiods might be good for 6~months or 100~uses,
+while keys with short cryptoperiods might be good for 1~month or 25~uses.
+The choice of actual values is an open question
+beyond the scope of prototype system.%
+\nfootnote{The current values were chosen by guess work.
+Although not necessarily technically sound,
+the small numbers were very good for debugging purposes.}
+In many respects, this issue is a classic trade-off:
+with relatively small cryptoperiods,
+an adversary has less chance of breaking a key,
+but with longer cryptoperiods less connections have to be made to the key
+distribution server.
+
+A fundamental issue,
+owing to differences between the EFT and CBMS environments,
+is that the \KDS/ implements only a subset of the \ansi/ draft
+and the semantics of certain operations have changed somewhat.
+It would be nice to unify the CBMS and EFT views
+of a {\it key distribution center}
+(in the former environment, the center is called a \KDC/,
+while in the latter environment, the center is known as a \CKD/).
+Appendix~C of this paper discusses the differences between the two
+perspectives in greater detail.
+
+At present,
+the relationship between errors in the \TMA/ and the posting process is an
+open question.
+For example,
+if an address doesn't have a mapping in the \TMA/ database,
+\pgm{post} treats this as an address verification error.
+This prevents the draft from being posted.
+The philosophy of the \UA/ is unclear at this point,
+with respect to how recovery should occur.
+A second area, also in question, deals with the way in which plaintext and
+ciphertext versions of a message are present in a system.
+Clearly, it is a bad idea to make both versions available,
+but since the \TMA/ doesn't try to concern itself with first party
+observation,
+there seems to be little possibility of preventing this behavior.
+The best that can be done,
+at this stage,
+is simply to choose a consistent policy that user's should attempt to adhere
+to.
+The software can help somewhat in implementing this policy,
+but it certainly can't circumvent the user.
+
+The prototype is built on the assumption that a single key
+distribution server is present.
+Since the \ansi/ draft\cite{FIKM} makes provisions for
+{\it key translation centers},
+the \trustedmail/ prototype should perhaps be made to operate in a more diverse
+environment.
+Until the issues become clearer,
+this remains open.
+
+Finally,
+for distribution lists,
+a large number of people would need to share the same \KDS/ ID.
+The current implementation doesn't support this.
+Each \TMA/ database is for a particular ID.
+A user with multiple IDs would need multiple databases,
+or the database should be re-organized.
+
+\subsection{Weaknesses}
+As pointed out earlier,
+this prototype system situates itself in a commercial, not military,
+environment.
+With respect to this decision,
+several aspects of the system are now discussed,
+which we feel are acceptable in a commercial environment,
+but which would be considered weaknesses in a military environment:
+
+\item{1.} Traffic Flow\hbreak
+The prototype \TMA/ makes no attempt whatsoever to prevent or confuse traffic
+analysis by augmenting traffic flow.
+
+\item{2.} The Database of \KDS/ Subscribers\hbreak
+Since information returned by the request user identification (RUI)
+and request identified user (RIU) MCLs are returned in the clear,
+this allows an adversary to ascertain subscribers to the \KDS/,
+and perhaps deduce some information about the system.
+Without knowledge of the master key however,
+an adversary could not impersonate a subscriber though.
+Still, in the military sense, this is a weakness.
+However,
+all this assumes that the database maintained by the \KDS/ accurately
+reflects the real-world.
+
+\item{3.} Multiple Recipients\hbreak
+It is possible, though not proven to the authors' knowledge,
+that the scheme used to avoid encrypting the body of a message more than once
+for multiple recipients might permit one of the recipients who is also an
+adversary to compromise the key relationship between the sender and another
+recipient.
+
+\item{} The scenario goes like this:
+When a message is being prepared for encryption,
+a single KD/IV/KA triple is generated to encrypt the body.
+Since the sender has a different key relationship with each recipient,
+each message sent is different, since the structure $m$ depends not only on
+the KD/IV/KA triple but also on the key relation between the sender and a
+particular recipient.
+Now suppose that one of the recipients, $r_1$,
+in addition to receiving the copy of the message meant for him/her also
+intercepts a copy of the message destined for another recipient, $r_2$.
+At this point,
+the recipient $r_1$ has both the plaintext and ciphertext version of the body,
+the plaintext version of the KD/IV/KA triple,
+and the ciphertext version of the KD/IV/KA triple that was generated using
+the key relationship between the sender and the recipient $r_2$.
+The question is:
+can $r_1$ now deduce the key relationship between the sender and $r_2$?
+
+\item{} If so, then the way that the \TMA/ attempts to minimize the use of
+encryption resources is a weakness.
+But, even if this is possible,
+given relatively short cryptoperiods for key relationships between \TMA/
+peers,
+this becomes a non-problem.
+
+\item{4.} Discussion Groups\hbreak
+As discussed earlier,
+the proposed method of associating a single \KDS/ ID with the membership of a
+discussion group does introduce a significant weakness for the security of
+messages sent to the discussion group.
+Since the \TMA/ does not assume a general broadcast facility,
+it appears that there are no good solutions to the problem of discussion
+group traffic.
+Of course,
+it is easy enough to simply send to each member of the group.
+
+\item{} For the sake of argument,
+let's assume that the discussion group has $n$ members.
+Now,
+since a different key relationship would exist between the sender and
+each of the $n$ recipients,
+the structure $m$ would be different for each recipient
+and so a different message would have to be sent to each recipient.
+To make matters worse,
+if one rejects the way the \TMA/ handles multiple recipients,
+not only does the \MTS/ get burdened with $n$ different messages,
+but the sender's \TMA/ gets burdened by having to encrypt
+the body of the message $n$ times.
+For meaningful values of $n$ (say on the order of~500, or even~25),
+the amount of resources required for any trusted discussion group are simply
+too costly.
+
+\subsection{Compromises, Compromises}
+Each of the possible weaknesses discussed above represent a compromise
+between the expense of the system and the level of security it can provide.
+
+The first two areas, if addressed by the \TMA/,
+could result in much less background information being available to an
+adversary.
+In an application where it is important that an adversary not know who is
+talking to whom,
+or who can talk at all,
+this is very important.
+It is the authors' position that in the commercial environment,
+this issue is not paramount.
+By ignoring the issue of traffic flow,
+the \TMA/ has a lot less work to do and the \MTS/ is kept clear of
+``useless'' messages.
+By keeping the information returned by the RUI and RIU MCLs in the clear,
+the complexity of the \TMA/ is significantly reduced.
+
+The second two areas, if addressed by the \TMA/,
+could result in a lesser probability of traffic being deciphered by an
+adversary.
+Regardless of the application,
+this is always extremely important.
+However,
+the authors' feel that the compromise made by the \TMA/ in these two issues
+is not substantial,
+and does not result in an explicit weakness when a message is sent to
+multiple recipients
+(note that when there is only a single recipient of a message,
+these two policies can not introduce weaknesses).
+In return, efficient use can be made of both the \MTS/ and the \TMA/ when
+messages are being sent to multiple recipients.
+Given scarce resources or large numbers of recipients,
+this approach may prove to be quite winning.
+
+Of course, much work remains to be done to prove the success of the \TMA/ in
+all four of these areas.
+
+\section{Acknowledgements}
+The prototype implementation described herein utilizes a public domain
+implementation of the DES algorithm\cite{DEA}
+which was originally implemented by James J.~Gillogly in May, 1977
+(who at that time was with the Rand Corporation,
+and is now affiliated with Gillogly Software).
+Interfaces to Dr.~Gillogly's implementation were subsequently coded by
+Richard W.~Outerbridge in September, 1984
+(who at that time was with the Computer Systems Research Institute
+at the University of Toronto,
+and is now affiliated with Perle Systems, Incorporated).
+
+The authors would like to acknowledge Dennis Branstad,
+Elaine Barker, and David Balensen of the National Bureau of Standards
+for their comments on the prototype system
+and insights on the ANSI draft\cite{FIKM}.
+In particular, Dr.~Branstad originally suggested the method used for
+encrypting a single message for multiple recipients under different keys.
+
+The authors (and all those who have read this paper) would like to thank
+Willis H.~Ware of the Rand Corporation,
+and Jonathon B.~Postel of the USC/Information Sciences Institute.
+Their extensive comments resulted in a much more readable paper.
+In addition,
+the authors would like to thank
+Dr. Stephen P.~Smith and Major Douglas A.~Brothers
+for their insightful comments.
