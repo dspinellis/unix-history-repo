@@ -1,4 +1,4 @@
-# @(#)northamerica	4.8
+# @(#)northamerica	7.3
 
 ###############################################################################
 
@@ -40,7 +40,7 @@ Rule	US	1987	max	-	Apr	Sun>=1	2:00	1:00	D
 #    Yukon Standard Time(YST)    -same-
 #    Central Alaska S.T. (CAT)   Alaska-Hawaii St[an]dard Time (AHST)
 #    Nome Standard Time (NT)     Bering Standard Time (BST)
-# 
+#
 # ...Alaska's timezone lines were redrawn in 1983 to give only 2 tz.
 #    The YST zone now covers nearly all of the state, AHST just part
 #    of the Aleutian islands.   No DST.
@@ -116,6 +116,12 @@ Zone	US/Alaska	-9:00	US		AK%sT	# Abbreviation per USNO
 
 Zone	US/East-Indiana	-5:00	US		E%sT	1946
 			-5:00	-		EST	# Always EST as of 1986
+# From Arthur David Olson (October 28, 1991):
+# An article on page A3 of the Sunday, October 27, 1991 Washington Post
+# notes that Starke County switched from Central time to Eastern time as of
+# October 27, 1991.
+Zone	US/Indiana-Starke -6:00	US		C%sT	1991 Oct 27 2:00
+			-5:00	-		EST	# Always EST as of 1991
 Zone	US/Arizona	-7:00	US		M%sT	1946
 			-7:00	-		MST	# Always MST as of 1986
 
@@ -209,6 +215,42 @@ Zone	US/Hawaii	-10:30	US	H%sT	1933 Apr 30 2:00
 # be same as Pacific.  Stick with rules posted in 1988 until more authoritative
 # information is available.
 
+# From W. Jones (jones@skdad.usask.ca) (November 6, 1992):
+# The. . .below is based on information I got from our law library, the
+# provincial archives, and the provincial Community Services department.
+# A precise history would require digging through newspaper archives, and
+# since you didn't say what you wanted, I didn't bother.
+# 
+# Saskatchewan is split by a time zone meridian (105W) and over the years
+# the boundary became pretty ragged as communities near it reevaluated
+# their affiliations in one direction or the other.  In 1965 a provincial
+# referendum favoured legislating common time practices.
+# 
+# On 15 April 1966 the Time Act (c. T-14, Revised Statutes of
+# Saskatchewan 1978) was proclaimed, and established that the eastern
+# part of Saskatchewan would use CST year round, that districts in
+# northwest Saskatchewan would by default follow CST but could opt to
+# follow Mountain Time rules (thus 1 hour difference in the winter and
+# zero in the summer), and that districts in southwest Saskatchewan would
+# by default follow MT but could opt to follow CST.
+# 
+# It took a few years for the dust to settle (I know one story of a town
+# on one time zone having its school in another, such that a mom had to
+# serve her family lunch in two shifts), but presently it seems that only
+# a few towns on the border with Alberta (e.g. Lloydminster) follow MT
+# rules any more; all other districts appear to have used CST year round
+# since sometime in the 1960s.
+# 
+# Here's how I would summarize things.  Establish a "Saskatchewan" CST
+# time zone, and note that it officially exists as of 15 April 1966.  Any
+# current exceptions can put themselves in the "Mountain" zone, since
+# those are the rules they follow.  Any past exceptions can be forgotten,
+# since that's what those who live here have done.
+
+# From Arthur David Olson (November 21, 1992):
+# East-Saskatchewan kept to avoid problems for folks using that zone by name;
+# plain Saskatchewan added.
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Canada	1969	max	-	Oct	lastSun	2:00	0	S
 Rule	Canada	1969	1986	-	Apr	lastSun	2:00	1:00	D
@@ -220,7 +262,8 @@ Zone	Canada/Newfoundland	-3:30	Canada		N%sT
 Zone	Canada/Atlantic		-4:00	Canada		A%sT
 Zone	Canada/Eastern		-5:00	Canada		E%sT
 Zone	Canada/Central		-6:00	Canada		C%sT
-Zone	Canada/East-Saskatchewan	-6:00	-	CST # No DST as of 1987
+Zone	Canada/East-Saskatchewan	-6:00	-	CST # see above
+Zone	Canada/Saskatchewan	-6:00	-		CST # see above
 Zone	Canada/Mountain		-7:00	Canada		M%sT
 Zone	Canada/Pacific		-8:00	Canada		P%sT
 Zone	Canada/Yukon		-9:00	Canada		Y%sT
@@ -240,11 +283,11 @@ Zone	Canada/Yukon		-9:00	Canada		Y%sT
 # From Bob Devine (January 28, 1988):
 # The Federal District (where Mexico City is) has observed [DST] several
 # times but not recently.
-# 
+#
 # I don't where to drawn the line in the North Baja area.  28th latitude
 # sounds good -- but it may be higher (how far [d]o radio stations from
 # San Diego affect culture?).
-# 
+#
 # The dates of DST probably go back to 1981.  The rules are the same as
 # US's.  This is going to be a headache for US presidential electi[o]n years!
 
