@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 PROG=	vmstat
 SRCS=	getdev.c intr.c main.c mem.c names.c sum.c util.c vmstat.c
