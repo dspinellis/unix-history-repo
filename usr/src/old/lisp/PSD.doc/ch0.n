@@ -2,11 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ch0.n	6.1 (Berkeley) %G%
+.\"	@(#)ch0.n	6.2 (Berkeley) %G%
 .\"
 .\" $Header: ch0.n,v 1.3 83/07/27 15:10:52 layer Exp $
-.eh 'The Franz Lisp Manual''PS2:8-%'
-.oh 'PS2:8-%''The Franz Lisp Manual'
 .pp
 \ \ 
 .sp 2i
@@ -25,6 +23,7 @@
 .sp 2i
 .tl '''A document in'
 .tl '''four movements'
+.He
 .bp
 .sp 1i
 .ft I
