@@ -57,9 +57,9 @@ static char sccsid[] = "@(#)vgrindefs.c	5.3 (Berkeley) 6/1/90";
 static	char *tbuf;
 static	char *filename;
 static	int hopcount;	/* detect infinite loops in termcap, init 0 */
-char	*tskip();
+static	char	*tskip();
 char	*tgetstr();
-char	*tdecode();
+static	char	*tdecode();
 char	*getenv();
 
 /*

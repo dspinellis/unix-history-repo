@@ -116,10 +116,10 @@ if (-r index) then
     else
 	if ("$head" != "") then
 	    $vf $options -h "$head" $files | \
-		sh -c "vtroff -rx1 $voptions -i -mvgrind 2>> xindex"
+		sh -c "troff -rx1 $voptions -i -mvgrind 2>> xindex"
 	else
 	    $vf $options $files | \
-		sh -c "vtroff -rx1 $voptions -i -mvgrind 2>> xindex"
+		sh -c "troff -rx1 $voptions -i -mvgrind 2>> xindex"
 	endif
     endif
     sort -df +0 -2 xindex >index
@@ -133,9 +133,9 @@ else
 	endif
     else
 	if ("$head" != "") then
-	    $vf $options -h "$head" $files | vtroff -i $voptions -mvgrind
+	    $vf $options -h "$head" $files | troff -i $voptions -mvgrind
 	else
-	    $vf $options $files | vtroff -i $voptions -mvgrind
+	    $vf $options $files | troff -i $voptions -mvgrind
 	endif
     endif
 endif
