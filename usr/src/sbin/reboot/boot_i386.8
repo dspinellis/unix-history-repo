@@ -1,40 +1,45 @@
-.\" Copyright (c) 1990 The Regents of the University of California.
+.\" Copyright (c) 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" This code is derived from software written and contributed
 .\" to Berkeley by William Jolitz.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)boot_i386.8	1.1 (Berkeley) %G%
+.\"     @(#)boot_i386.8	1.2 (Berkeley) %G%
 .\"
-.TH REBOOT 8 "December 12, 1990"
-.SH NAME
-reboot \- UNIX bootstrapping procedures
-.SH SYNOPSIS
-.B reboot
-[
-.B \-n
-] [
-.B \-q
-]
-.SH DESCRIPTION
-.PP
-UNIX, an ordinary executable file,
+.Dd 
+.Dt REBOOT 8
+.Os
+.Sh NAME
+.Nm reboot
+.Nd
+.Tn UNIX
+bootstrapping procedures
+.Sh SYNOPSIS
+.Nm reboot
+.Op Fl n
+.Op Fl q
+.Sh DESCRIPTION
+.Tn UNIX ,
+an ordinary executable file,
 is placed into memory by bootstrap at location absolute zero, and
-entered at the executable's entry point (a_entry).
+entered at the executable's entry point
+.Pq Va a_entry .
 Upon startup, the system reorganizes memory to suit the needs of
 the hardware configuration found, thus it is not designed to
 be restartable without being reloaded on reboot.
 Each time it is to be bootstrapped, it must be reloaded, usually from
 a disk file.
-.PP
-.B Rebooting a running system.
-When a UNIX is running and a reboot is desired,
-.IR shutdown (8)
+.Pp
+.Sy Rebooting a running system .
+When a
+.Tn UNIX
+is running and a reboot is desired,
+.Xr shutdown 8
 is normally used.
 If there are no users then
-.B reboot
+.Nm reboot
 can be used.
 Reboot causes the disks to be synced and allows the system
 to perform other shutdown activities such as resynchronizing
@@ -43,100 +48,115 @@ A multi-user reboot (as described below) is then initiated.
 This causes a system to be
 booted and an automatic disk check to be performed.  If all this succeeds
 without incident, the system is then brought up for many users.
-.PP
+.Pp
 Options to reboot are:
-.TP
-.B \-n
+.Bl -tag -width indent
+.It Fl n
 option avoids the sync.  It can be used if a disk or the processor
 is on fire. 
-.TP
-.B \-q
+.It Fl q
 reboots quickly and ungracefully, without shutting down running
 processes first.
-.PP
-.I Reboot
+.El
+.Pp
+.Nm Reboot
 normally logs the reboot using
-.IR syslog (8)
+.Xr syslog 8
 and places a shutdown record in the login accounting file
-/var/log/wtmp.
+.Pa /var/log/wtmp .
 These actions are inhibited if the
-.B \-n
+.Fl n
 or
-.B \-q
+.Fl q
 options are present.
-.PP
-.B "Power fail and crash recovery."
+.Pp
+.Sy Power fail and crash recovery.
 Normally, the system will reboot itself at power-up or after crashes.
 An automatic consistency check of the file systems will be performed
 as described in
-.IR fsck (8).
+.Xr fsck 8 .
 and unless this fails, the system will resume multi-user operations.
-.PP
-.B Cold starts.
-The 386 PC AT clones attempt to boot the floppy disk drive A (otherwise
+.Pp
+.Sy Cold  starts .
+The 386
+.Tn "PC AT"
+clones attempt to boot the floppy disk drive A (otherwise
 known as drive 0) first, and failing that, attempt to boot the hard disk
 C (otherwise known as hard disk controller 1, drive 0).
-The automatic boot will attempt to load \fIvmunix\fP from partition A of
+The automatic boot will attempt to load
+.Pa vmunix
+from partition A of
 either the floppy or the hard disk. This boot may be aborted by typing
 any character on the keyboard repeatedly (four or five times at least)
 during the operating system load phase, after which the bootstrap will
 prompt for the file that you wish to load instead.
-.LP
-One exception to this is the 'd' key, which will not abort the load but
-instead silently force the DEBUG boot flags. The boot flags for an autoboot
+.Pp
+One exception to this is the
+.Ql d
+key, which will not abort the load but
+instead silently force the
+.Dv DEBUG
+boot flags. The boot flags for an autoboot
 are 0, and 3 for the successive boot after an aborted autoboot sequence.
 No other provison is made for setting boot flags (yet).
 A specific device or bootstrap file may be used; for example,
-.IP
+.Pp
 The file specifications used for the boostrap
-when loaded with the \*(lqaskme\*(rq flag
+when loaded with the
+.Dq askme
+flag
 (e.g. an aborted autoboot)
 are of the form:
-.IP
-device unit partition:
-.PP
+.Pp
+.Dl device unit partition:
+.Pp
 where
-.I device
+.Ar device
 is the type of the device, assumed to be on the ISA bus, to be searched,
-.I unit
+.Ar unit
 is the unit number of the disk or tape,
 and
-.I partition
+.Ar partition
 is the disk partition or tape file number.
 Normal line editing characters can be used when typing the file specification.
 The following list of supported devices may vary from installation to
 installation:
-.LP
-.ta 5 10
-.nf
-	wd	ST506, IDE, ESDI, RLL disks on a WD100[2367] or lookalike
-		controller
-	fd	5 1/4" or 3 1/2" High density floppies
-.fi
-.PP
+.Bd -unfilled -offset indent
+wd	ST506, IDE, ESDI, RLL disks on a WD100[2367] or lookalike
+	controller
+fd	5 1/4" or 3 1/2" High density floppies
+.Ed
+.Pp
 For example,
 to boot from a file system which starts at cylinder 0
-of unit 0 of an IDE disk, type \*(lqwd0a:vmunix\*(rq
-to the boot prompt; \*(lqfd0a:vmunix\*(rq
+of unit 0 of an IDE disk, type
+.Dq Li wd0a:vmunix
+to the boot prompt;
+.Dq Li fd0a:vmunix
 would specify a 3 1/2" floppy drive 0 .
-.PP
+.Pp
 In an emergency, the bootstrap methods described in the paper
-``Installing and Operating 4.3BSD-Reno UNIX on the AT/386'' can be used
+.%T "Installing and Operating 4.3 BSD-Reno UNIX on the AT/386"
+can be used
 to boot from a distribution tape.
-.SH FILES
-.ta \w'/vmunix   'u
-/vmunix	system code
-.br
-/boot	system bootstrap
-.SH "SEE ALSO"
-crash(8),
-disklabel(8),
-fsck(8),
-halt(8),
-init(8),
-rc(8),
-shutdown(8),
-syslogd(8)
-.SH BUGS
-The disklabel format used by this version of 4.3BSD-Reno is quite
-different from that of other architectures. Too bad.
+.Sh FILES
+.Bl -tag -width /vmunixxx -compact
+.It Pa /vmunix
+system code
+.It Pa /boot
+system bootstrap
+.El
+.Sh SEE ALSO
+.Xr crash 8 ,
+.Xr disklabel 8 ,
+.Xr fsck 8 ,
+.Xr halt 8 ,
+.Xr init 8 ,
+.Xr rc 8 ,
+.Xr shutdown 8 ,
+.Xr syslogd 8
+.Sh BUGS
+The disklabel format used by this version of
+.Bx
+is quite
+different from that of other architectures.
