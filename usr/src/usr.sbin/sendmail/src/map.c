@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.52 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.53 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1475,8 +1475,6 @@ hes_map_lookup(map, name, av, statp)
 	
 	if (hp[0] != NULL)
 	{
-		if (tTd(38, 20))
-			printf("  %d %s\n", i, hp[0]);
 		if (bitset(MF_MATCHONLY, map->map_mflags))
 			retdata = map_rewrite(map, name, strlen(name), NULL);
 		else
