@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)types.5	4.1 (Berkeley) %G%
+.\"	@(#)types.5	5.1 (Berkeley) %G%
 .\"
-.TH TYPES 5
+.TH TYPES 5 "1 April 1983"
 .UC 4
 .SH NAME
 types \- primitive system data types
@@ -24,7 +24,7 @@ The form
 .I daddr_t
 is used for disk addresses except in an
 i-node on disk, see
-.IR filsys (5).
+.IR fs (5).
 Times are encoded in seconds since 00:00:00 GMT, January 1, 1970.
 The major and minor parts of a device code
 specify kind and unit number of a device
@@ -35,4 +35,4 @@ The
 variables are used to save the processor state
 while another process is running.
 .SH SEE ALSO
-filsys(5), time(2), lseek(2), adb(1)
+fs(5), time(3), lseek(2), adb(1)
