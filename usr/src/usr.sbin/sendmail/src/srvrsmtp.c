@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.19 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.20 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.19 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.20 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -91,6 +91,7 @@ static struct cmd	CmdTab[] =
 };
 
 bool	OneXact = FALSE;		/* one xaction only this run */
+char	*CurSmtpClient;			/* who's at the other end of channel */
 
 static char	*skipword();
 
@@ -111,7 +112,11 @@ smtp(e)
 	}
 	settime(e);
 	CurHostName = RealHostName;
-	setproctitle("server %s startup", CurHostName);
+	CurSmtpClient = macvalue('_', e);
+	if (CurSmtpClient == NULL)
+		CurSmtpClient = RealHostName;
+
+	setproctitle("server %s startup", CurSmtpClient);
 	expand("\201e", inp, &inp[sizeof inp], e);
 	if (BrokenSmtpPeers)
 	{
@@ -156,11 +161,11 @@ smtp(e)
 		{
 			/* end of file, just die */
 			message("421 %s Lost input channel from %s",
-				MyHostName, CurHostName);
+				MyHostName, CurSmtpClient);
 #ifdef LOG
 			if (LogLevel > (gotmail ? 1 : 19))
 				syslog(LOG_NOTICE, "lost input channel from %s",
-					CurHostName);
+					CurSmtpClient);
 #endif
 			if (InChild)
 				ExitStat = EX_QUIT;
@@ -175,9 +180,9 @@ smtp(e)
 			fprintf(e->e_xfp, "<<< %s\n", inp);
 
 		if (e->e_id == NULL)
-			setproctitle("%s: %s", CurHostName, inp);
+			setproctitle("%s: %s", CurSmtpClient, inp);
 		else
-			setproctitle("%s %s: %s", e->e_id, CurHostName, inp);
+			setproctitle("%s %s: %s", e->e_id, CurSmtpClient, inp);
 
 		/* break off command */
 		for (p = inp; isascii(*p) && isspace(*p); p++)
@@ -226,9 +231,6 @@ smtp(e)
 				auth_warning(e, "Host %s claimed to be %s",
 					RealHostName, p);
 			}
-			p = macvalue('_', e);
-			if (p == NULL)
-				p = RealHostName;
 			message("250", "%s Hello %s, pleased to meet you", HostName, p);
 			break;
 
@@ -277,7 +279,7 @@ smtp(e)
 			define('s', sendinghost, e);
 			initsys(e);
 			nrcpts = 0;
-			setproctitle("%s %s: %s", e->e_id, CurHostName, inp);
+			setproctitle("%s %s: %s", e->e_id, CurSmtpClient, inp);
 
 			/* child -- go do the processing */
 			p = skipword(p, "from");
@@ -579,6 +581,11 @@ smtp(e)
 					message("252 Who's to say?");
 				else
 					message("502 That's none of your business");
+#ifdef LOG
+				if (LogLevel > 5)
+					syslog(LOG_INFO, "%s: %s [rejected]",
+						CurSmtpClient, inp);
+#endif
 				break;
 			}
 			else if (!gothello &&
@@ -592,7 +599,7 @@ smtp(e)
 				break;
 #ifdef LOG
 			if (LogLevel > 5)
-				syslog(LOG_INFO, "%s: %s", CurHostName, inp);
+				syslog(LOG_INFO, "%s: %s", CurSmtpClient, inp);
 #endif
 				paddrtree(a);
 			break;
