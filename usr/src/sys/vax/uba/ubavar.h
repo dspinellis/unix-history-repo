@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ubavar.h	7.4 (Berkeley) %G%
+ *	@(#)ubavar.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -61,7 +61,7 @@ struct	uba_hd {
 	short	uh_xclu;		/* an rk07 is using this uba! */
 	int	uh_lastmem;		/* limit of any unibus memory */
 #define	UAMSIZ	100
-	struct	map *uh_map;		/* buffered data path regs free */
+	struct	map *uh_map;		/* register free map */
 };
 
 /* given a pointer to uba_regs, find DWBUA registers */
@@ -163,12 +163,28 @@ struct uba_driver {
 
 /*
  * Macros to bust return word from map allocation routines.
+ * SHOULD USE STRUCTURE TO STORE UBA RESOURCE ALLOCATION:
  */
-#define	UBAI_BDP(i)	((int)(((unsigned)(i))>>28))
-#define	UBAI_NMR(i)	((int)((i)>>18)&0x3ff)
-#define	UBAI_MR(i)	((int)((i)>>9)&0x1ff)
-#define	UBAI_BOFF(i)	((int)((i)&0x1ff))
-#define	UBAI_ADDR(i)	((int)((i)&0x3ffff))	/* uba addr (boff+mr) */
+#ifdef notyet
+struct ubinfo {
+	long	ub_addr;	/* unibus address: mr + boff */
+	int	ub_nmr;		/* number of registers, 0 if empty */
+	int	ub_bdp;		/* bdp number, 0 if none */
+};
+#define	UBAI_MR(i)	(((i) >> 9) & 0x7ff)	/* starting map register */
+#define	UBAI_BOFF(i)	((i)&0x1ff)		/* page offset */
+#else
+#define	UBAI_BDP(i)	((int)(((unsigned)(i)) >> 28))
+#define	BDPMASK		0xf0000000
+#define	UBAI_NMR(i)	((int)((i) >> 20) & 0xff)	/* max 255 (=127.5K) */
+#define	UBA_MAXNMR	255
+#define	UBAI_MR(i)	((int)((i) >> 9) & 0x7ff)	/* max 2047 */
+#define	UBA_MAXMR	2047
+#define	UBAI_BOFF(i)	((int)((i) & 0x1ff))
+#define	UBAI_ADDR(i)	((int)((i) & 0xfffff))	/* uba addr (boff+mr) */
+#define	UBAI_INFO(off, mr, nmr, bdp) \
+	(((bdp) << 28) | ((nmr) << 20) | ((mr) << 9) | (off))
+#endif
 
 #ifndef LOCORE
 #ifdef KERNEL
