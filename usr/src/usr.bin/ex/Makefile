@@ -109,7 +109,7 @@ install: a.out exrecover expreserve
 	ln ${DESTDIR}/${BINDIR}/ex ${DESTDIR}/${BINDIR}/view
 	ln ${DESTDIR}/${BINDIR}/ex ${DESTDIR}/usr/bin/ex
 # The following line normally fails.  This is OK.
-	-mkdir ${DESTDIR}/usr/preserve
+	-mkdir ${DESTDIR}/usr/preserve > /dev/null 2>&1
 
 lint: FRC
 	lint ${CFLAGS} ${SRCS}
