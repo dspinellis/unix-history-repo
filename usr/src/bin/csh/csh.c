@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)csh.c	5.4 (Berkeley) %G%";
+static char *sccsid = "@(#)csh.c	5.5 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -434,6 +434,8 @@ srccat(cp, dp)
  * Source to a unit.  If onlyown it must be our file or our group or
  * we don't chance it.	This occurs on ".cshrc"s and the like.
  */
+int	insource;
+static
 srcunit(unit, onlyown, hflg)
 	register int unit;
 	bool onlyown;
@@ -483,6 +485,7 @@ srcunit(unit, onlyown, hflg)
 	 * once.  This is less efficient globally on many variable references
 	 * however.
 	 */
+	insource = 1;
 	getexit(oldexit);
 	reenter = 0;
 	if (setintr)
@@ -544,6 +547,7 @@ srcunit(unit, onlyown, hflg)
 	 */
 	if (reenter >= 2)
 		error(NOSTR);
+	insource = 0;
 }
 
 rechist()

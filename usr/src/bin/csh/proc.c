@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)proc.c	5.8 (Berkeley) %G%";
+static char *sccsid = "@(#)proc.c	5.9 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -35,9 +35,10 @@ pchild()
 	union wait w;
 	int jobflags;
 	struct rusage ru;
+	extern int insource;
 
 loop:
-	pid = wait3(&w, ((setintr && intty) ? WNOHANG|WUNTRACED:WNOHANG), &ru);
+	pid = wait3(&w, (setintr && (intty || insource) ? WNOHANG|WUNTRACED:WNOHANG), &ru);
 	if (pid <= 0) {
 		if (errno == EINTR) {
 			errno = 0;
