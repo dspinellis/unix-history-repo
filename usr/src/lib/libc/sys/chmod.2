@@ -2,25 +2,32 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)chmod.2	4.1 (Berkeley) %G%
+.\"	@(#)chmod.2	5.1 (Berkeley) %G%
 .\"
-.TH CHMOD 2 
+.TH CHMOD 2 "2 July 1983"
 .UC 4
 .SH NAME
 chmod \- change mode of file
 .SH SYNOPSIS
 .nf
-.B chmod(name, mode)
-.B char *name;
+.ft B
+chmod(path, mode)
+char *path;
+int mode;
+.PP
+.ft B
+fchmod(fd, mode)
+int fd, mode;
 .fi
 .SH DESCRIPTION
 The file whose name
-is given as the null-terminated string pointed to by
-.I name
+is given by \fIpath\fP
+or referenced by the descriptor
+.I fd
 has its mode changed to
 .IR mode .
 Modes are constructed by
-.IR or ing
+.IR or 'ing
 together some
 combination of the following:
 .PP
@@ -40,31 +47,65 @@ then mode 1000 prevents the system from
 abandoning the swap-space image of the program-text portion
 of the file when its last user
 terminates.
-Ability to set this bit is restricted to the super-user
-since swap space is consumed
-by the images.
-See
-.IR sticky (8).
+Ability to set this bit is restricted to the super-user.
 .PP
 Only the owner of a file (or the super-user) may change the mode.
-Only the super-user can set the 1000 mode.
 .PP
-On some systems,
-writing or changing the owner of a file
-turns off the set-user-id bit.
+Writing or changing the owner of a file
+turns off the set-user-id and set-group-id bits.
 This makes the system somewhat more secure
-by protecting set-user-id files
-from remaining set-user-id if they are modified,
+by protecting set-user-id (set-group-id) files
+from remaining set-user-id (set-group-id) if they are modified,
 at the expense of a degree of compatibility.
+.SH "RETURN VALUE
+Upon successful completion, a value of 0 is returned.
+Otherwise, a value of \-1 is returned and
+.I errno
+is set to indicate the error.
+.SH "ERRORS
+.I Chmod
+will fail and the file mode will be unchanged if:
+.TP 15
+[EPERM]
+The argument contains a byte with the high-order bit set.
+.TP 15
+[ENOTDIR]
+A component of the path prefix is not a directory.
+.TP 15
+[ENOENT]
+The pathname was too long.
+.TP 15
+[ENOENT]
+The named file does not exist.
+.TP 15
+[EACCES]
+Search permission is denied on a component of the path prefix.
+.TP 15
+[EPERM]
+The effective user ID does not match the owner of the file and
+the effective user ID is not the super-user.
+.TP 15
+[EROFS]
+The named file resides on a read-only file system.
+.TP 15
+[EFAULT]
+.I Path
+points outside the process's allocated address space.
+.TP 15
+[ELOOP]
+Too many symbolic links were encountered in translating the pathname.
+.PP
+.I Fchmod
+will fail if:
+.TP 15
+[EBADF]
+The descriptor is not valid.
+.TP 15
+[EINVAL]
+.I Fd
+refers to a socket, not to a file.
+.TP 15
+[EROFS]
+The file resides on a read-only file system.
 .SH "SEE ALSO"
-chmod(1)
-.SH DIAGNOSTIC
-Zero is returned if the mode is changed;
-\-1 is returned if
-.I name
-cannot be found or if the current user
-is neither the owner of the file nor the super-user.
-.SH "ASSEMBLER (PDP-11)"
-(chmod = 15.)
-.br
-.B sys chmod; name; mode
+open(2), chown(2)
