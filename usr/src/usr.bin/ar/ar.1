@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)ar.1	6.6 (Berkeley) %G%
+.\"	@(#)ar.1	6.7 (Berkeley) %G%
 .\"
 .TH AR 1 ""
 .AT 3
@@ -118,9 +118,12 @@ New files are appended to the archive unless one of the options \-a, \-b
 or \-i is specified.
 .TP
 \-s
-Truncate file names as necessary to fit in the standard archive file
-format (which has only sixteen bytes for the name).
-This means that file names that are not unique in their first sixteen
+Truncate file names to fit in the historical archive file format.
+The historic format had sixteen bytes for the name, but historic
+implementations couldn't handle names that used the entire space,
+so this option causes file names longer than fifteen characters to
+be truncated.
+This means that file names that are not unique in their first fifteen
 characters can subsequently be confused.
 A warning message is printed to the standard error output if any file
 names are truncated.
