@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ps.c	4.28 (Berkeley) %G%";
+static	char *sccsid = "@(#)ps.c	4.29 (Berkeley) %G%";
 #endif
 
 /*
@@ -433,6 +433,7 @@ getkvars(argc, argv)
 		if (!kflg)
 			nl[X_SYSMAP].n_name = "";
 		nlist(nlistf, nl);
+		nttys =  0;
 		getdev();
 	}
 
@@ -585,10 +586,9 @@ maybetty()
 
 	case 'r':
 		cp++;
-		if (*cp == 'r' || *cp == 'u' || *cp == 'h')
-			cp++;
 #define is(a,b) cp[0] == 'a' && cp[1] == 'b'
-		if (is(r,p) || is(u,p) || is(r,k) || is(r,m) || is(m,t)) {
+		if (is(h,p) || is(r,a) || is(u,p) || is(r,k) 
+		    || is(r,m) || is(m,t)) {
 			cp += 2;
 			if (isdigit(*cp) && cp[2] == 0)
 				return;
