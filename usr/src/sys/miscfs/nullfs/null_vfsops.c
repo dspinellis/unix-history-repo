@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)null_vfsops.c	8.4 (Berkeley) %G%
+ *	@(#)null_vfsops.c	8.5 (Berkeley) %G%
  *
  * @(#)lofs_vfsops.c	1.2 (Berkeley) 6/18/92
  * $Id: lofs_vfsops.c,v 1.9 1992/05/30 10:26:24 jsp Exp jsp $
@@ -157,18 +157,13 @@ nullfs_unmount(mp, mntflags, p)
 	struct vnode *nullm_rootvp = MOUNTTONULLMOUNT(mp)->nullm_rootvp;
 	int error;
 	int flags = 0;
-	extern int doforce;
 
 #ifdef NULLFS_DIAGNOSTIC
 	printf("nullfs_unmount(mp = %x)\n", mp);
 #endif
 
-	if (mntflags & MNT_FORCE) {
-		/* lofs can never be rootfs so don't check for it */
-		if (!doforce)
-			return (EINVAL);
+	if (mntflags & MNT_FORCE)
 		flags |= FORCECLOSE;
-	}
 
 	/*
 	 * Clear out buffer cache.  I don't think we

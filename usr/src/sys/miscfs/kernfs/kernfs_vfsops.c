@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kernfs_vfsops.c	8.7 (Berkeley) %G%
+ *	@(#)kernfs_vfsops.c	8.8 (Berkeley) %G%
  */
 
 /*
@@ -127,19 +127,14 @@ kernfs_unmount(mp, mntflags, p)
 {
 	int error;
 	int flags = 0;
-	extern int doforce;
 	struct vnode *rootvp = VFSTOKERNFS(mp)->kf_root;
 
 #ifdef KERNFS_DIAGNOSTIC
 	printf("kernfs_unmount(mp = %x)\n", mp);
 #endif
 
-	if (mntflags & MNT_FORCE) {
-		/* kernfs can never be rootfs so don't check for it */
-		if (!doforce)
-			return (EINVAL);
+	if (mntflags & MNT_FORCE)
 		flags |= FORCECLOSE;
-	}
 
 	/*
 	 * Clear out buffer cache.  I don't think we

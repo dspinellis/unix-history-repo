@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vfsops.c	8.16 (Berkeley) %G%
+ *	@(#)union_vfsops.c	8.17 (Berkeley) %G%
  */
 
 /*
@@ -243,18 +243,13 @@ union_unmount(mp, mntflags, p)
 	int error;
 	int freeing;
 	int flags = 0;
-	extern int doforce;
 
 #ifdef UNION_DIAGNOSTIC
 	printf("union_unmount(mp = %x)\n", mp);
 #endif
 
-	if (mntflags & MNT_FORCE) {
-		/* union can never be rootfs so don't check for it */
-		if (!doforce)
-			return (EINVAL);
+	if (mntflags & MNT_FORCE)
 		flags |= FORCECLOSE;
-	}
 
 	if (error = union_root(mp, &um_rootvp))
 		return (error);

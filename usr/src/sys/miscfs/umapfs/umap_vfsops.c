@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)umap_vfsops.c	8.5 (Berkeley) %G%
+ *	@(#)umap_vfsops.c	8.6 (Berkeley) %G%
  *
  * @(#)null_vfsops.c       1.5 (Berkeley) 7/10/92
  */
@@ -198,18 +198,13 @@ umapfs_unmount(mp, mntflags, p)
 	struct vnode *umapm_rootvp = MOUNTTOUMAPMOUNT(mp)->umapm_rootvp;
 	int error;
 	int flags = 0;
-	extern int doforce;
 
 #ifdef UMAPFS_DIAGNOSTIC
 	printf("umapfs_unmount(mp = %x)\n", mp);
 #endif
 
-	if (mntflags & MNT_FORCE) {
-		/* lofs can never be rootfs so don't check for it */
-		if (!doforce)
-			return (EINVAL);
+	if (mntflags & MNT_FORCE)
 		flags |= FORCECLOSE;
-	}
 
 	/*
 	 * Clear out buffer cache.  I don't think we
