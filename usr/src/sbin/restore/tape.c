@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "restore.h"
@@ -1230,3 +1230,19 @@ swabl(x)
 	swabst("l", (char *)&x);
 	return (x);
 }
+
+#ifdef sunos
+char *
+strerror(errnum)
+	int errnum;
+{
+	extern int sys_nerr;
+	extern char *sys_errlist[];
+
+	if (errnum < sys_nerr) {
+		return(sys_errlist[errnum]);
+	} else {
+		return("bogus errno in strerror");
+	}
+}
+#endif
