@@ -1,4 +1,4 @@
-/ @(#)units.lib	4.2 (Berkeley) %G%
+/ @(#)units.lib	4.3 (Berkeley) %G%
 
 / dimensions
 m			*a*
@@ -424,7 +424,7 @@ mev			1+6 e-volt
 mgd			megagal/day
 mh			millihenry
 mhz			1+6 /sec
-mil			1-2 in
+mil			1-3 in
 millenium		1000 year
 minersinch		1.5 ft3/min
 minim			1|60 fldr
