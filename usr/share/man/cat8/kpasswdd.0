@@ -1,0 +1,22 @@
+KPASSWDD(8)               BSD System Manager's Manual              KPASSWDD(8)
+
+NNAAMMEE
+     kkppaasssswwdddd - Kerberos password changing daemon
+
+SSYYNNOOPPSSIISS
+     kkppaasssswwdddd
+
+DDEESSCCRRIIPPTTIIOONN
+     KKppaasssswwdddd is the server for the passwd(1) program.  The server provides a
+     remote password changing facility with Kerberos authentication.  A user
+     must provide the old Kerberos password, encrypted in a random session
+     key, to the server.  KKppaasssswwdddd runs only on the Kerberos server, as it di-
+     rectly updates the Kerberos database.
+
+SSEEEE AALLSSOO
+     kerberos(1),  passwd(1)
+
+HHIISSTTOORRYY
+     The kkppaasssswwdddd utility first appeared in 4.4BSD.
+
+4.4BSD                           June 9, 1993                                1

@@ -1,0 +1,50 @@
+GETTY(8)                  BSD System Manager's Manual                 GETTY(8)
+
+NNAAMMEE
+     ggeettttyy - set terminal mode
+
+SSYYNNOOPPSSIISS
+     ggeettttyy [_t_y_p_e [_t_t_y]]
+
+DDEESSCCRRIIPPTTIIOONN
+     The ggeettttyy program is called by init(8) to open and initialize the tty
+     line, read a login name, and invoke login(1).
+
+     The argument _t_t_y is the special device file in _/_d_e_v to open for the ter-
+     minal (for example, ``ttyh0'').  If there is no argument or the argument
+     is `--', the tty line is assumed to be open as file descriptor 0.
+
+     The _t_y_p_e argument can be used to make ggeettttyy treat the terminal line spe-
+     cially.  This argument is used as an index into the ggeettttyyttaabb 55 database,
+     to determine the characteristics of the line.  If there is no argument,
+     or there is no such table, the _d_e_f_a_u_l_t table is used.  If there is no
+     _/_e_t_c_/_g_e_t_t_y_t_a_b a set of system defaults is used.  If indicated by the
+     table located, ggeettttyy will clear the terminal screen, print a banner head-
+     ing, and prompt for a login name.  Usually either the banner or the login
+     prompt will include the system hostname.
+
+     Most of the default actions of ggeettttyy can be circumvented, or modified, by
+     a suitable ggeettttyyttaabb table.
+
+     The ggeettttyy program can be set to timeout after some interval, which will
+     cause dial up lines to hang up if the login name is not entered reason-
+     ably quickly.
+
+DDIIAAGGNNOOSSTTIICCSS
+     ttttyyxxxx:: NNoo ssuucchh ddeevviiccee oorr aaddddrreessss..
+     ttttyyxxxx:: NNoo ssuucchh ffiillee oorr aaddddrreessss..  A terminal which is turned on in the
+     ttys file cannot be opened, likely because the requisite lines are either
+     not configured into the system, the associated device was not attached
+     during boot-time system configuration, or the special file in _/_d_e_v does
+     not exist.
+
+FFIILLEESS
+     /etc/gettytab
+
+SSEEEE AALLSSOO
+     gettytab(5),  init(8),  login(1),  ioctl(2),  tty(4),  ttys(5)
+
+HHIISSTTOORRYY
+     A ggeettttyy program appeared in Version 6 AT&T UNIX.
+
+4th Berkeley Distribution        June 4, 1993                                1
