@@ -31,7 +31,7 @@ static	char	sccsid[] = "@(#)outbound.c	3.1  10/29/86";
 #include "hostctlr.h"
 #include "oia.h"
 #include "screen.h"
-#include "ebc_disp.h"
+#include "../apilib/ebc_disp.h"
 
 #include "../general/globals.h"
 #include "options.ext"
