@@ -17,13 +17,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/stat.h>
 #include <pwd.h>
+#include <sys/file.h>
 #include "sendmail.h"
 
 /*
@@ -146,7 +147,10 @@ dropenvelope(e)
 	else if (queueit || !bitset(EF_INQUEUE, e->e_flags))
 	{
 #ifdef QUEUE
-		queueup(e, FALSE, FALSE);
+		FILE *lockfp, *queueup();
+		lockfp = queueup(e, FALSE, FALSE);
+		if (lockfp != NULL)
+			(void) fclose(lockfp);
 #else QUEUE
 		syserr("dropenvelope: queueup");
 #endif QUEUE
@@ -344,6 +348,7 @@ openxscript(e)
 	register ENVELOPE *e;
 {
 	register char *p;
+	int fd;
 
 # ifdef LOG
 	if (LogLevel > 19)
@@ -352,11 +357,11 @@ openxscript(e)
 	if (e->e_xfp != NULL)
 		return;
 	p = queuename(e, 'x');
-	e->e_xfp = fopen(p, "w");
-	if (e->e_xfp == NULL)
+	fd = open(p, O_WRONLY|O_CREAT, 0644);
+	if (fd < 0)
 		syserr("Can't create %s", p);
 	else
-		(void) chmod(p, 0644);
+		e->e_xfp = fdopen(fd, "w");
 }
 /*
 **  CLOSEXSCRIPT -- close the transcript file.
