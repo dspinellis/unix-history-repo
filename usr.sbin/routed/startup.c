@@ -100,7 +100,7 @@ ifinit()
 			    ifr->ifr_name);
                         continue;
                 }
-		ifs.int_flags = ifreq.ifr_flags | IFF_INTERFACE;
+		ifs.int_flags = (ifreq.ifr_flags & IFF_KERNELPUN) | IFF_INTERFACE;
 		if ((ifs.int_flags & IFF_UP) == 0 ||
 		    ifr->ifr_addr.sa_family == AF_UNSPEC) {
 			lookforinterfaces = 1;

@@ -78,6 +78,7 @@ struct interface {
 #define	IFF_DEBUG	0x4		/* turn on debugging */
 #define	IFF_LOOPBACK	0x8		/* software loopback net */
 #define	IFF_POINTOPOINT	0x10		/* interface is point-to-point link */
+#define IFF_KERNELPUN	0x1f		/* mask for above */
 
 #define	IFF_SUBNET	0x1000		/* interface on subnetted network */
 #define	IFF_PASSIVE	0x2000		/* can't tell if up/down */
