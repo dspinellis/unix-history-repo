@@ -1,4 +1,4 @@
-/*	tty_subr.c	6.5	84/11/15	*/
+/*	tty_subr.c	6.6	84/11/15	*/
 
 #include "param.h"
 #include "systm.h"
@@ -262,8 +262,7 @@ b_to_q(cp, cc, q)
 	register s, acc;
 
 	if (cc <= 0)
-		return(0);
-
+		return (0);
 	while (cc > 0) {
 		s = spl6();
 		if ((cq = q->c_cl) == NULL || q->c_cc < 0) {
@@ -275,30 +274,31 @@ b_to_q(cp, cc, q)
 			goto middle;
 		}
 		if (((int)cq & CROUND) == 0) {
-			bp = &((struct cblock *) cq)[-1];
+			bp = &((struct cblock *)cq)[-1];
 			if ((bp->c_next = cfreelist) == NULL) {
 				splx(s);
 				break;
 			}
 			bp = bp->c_next;
 			cq = bp->c_info;
-		middle:
+	middle:
 			cfreelist = bp->c_next;
 			cfreecount -= CBSIZE;
 			bp->c_next = NULL;
-			acc = MIN (cc, CBSIZE);
+			acc = MIN(cc, CBSIZE);
+		} else {
+			acc = (char *)((int)&cq[CBSIZE] &~ CROUND) - cq;
+			if (acc > cc)
+				acc = cc;
 		}
-		else if ((acc = (char *) ((int) &cq[CBSIZE] & ~CROUND) - cq)
-			      > cc)
-			acc = cc;
-		bcopy ((caddr_t)cp, cq, acc);
+		bcopy((caddr_t)cp, cq, acc);
 		q->c_cl = &cq[acc];
 		q->c_cc += acc;
 		splx(s);
 		cp += acc;
 		cc -= acc;
 	}
-	return(cc);
+	return (cc);
 }
 
 /*
