@@ -45,11 +45,13 @@ static	char	sccsid[] = "@(#)outbound.c	3.1  10/29/86";
 				    }
 
 
+static int	LastWasTerminated = 1;	/* was "control" = 1 last time? */
+
 /* some globals */
 
 #if	!defined(PURE3274)
-int	OutputClock = 0;		/* what time it is */
-int	TransparentClock = 0;		/* time we were last in transparent */
+int	OutputClock;		/* what time it is */
+int	TransparentClock;		/* time we were last in transparent */
 #endif	/* !defined(PURE3274) */
 
 
@@ -64,6 +66,18 @@ char CIABuffer[64] = {
     0xf8, 0xf9, 0x7a, 0x7b, 0x7c, 0x7d, 0x7e, 0x7f
 };
 
+/*
+ * ctlrinit()
+ *
+ *	Initialize all data from the 'data' portion to their startup values.
+ */
+
+void
+ctlrinit()
+{
+    LastWasTerminated = 1;
+}
+
 /* What we know is that table is of size ScreenSize */
 
 FieldFind(table, position, failure)
@@ -161,7 +175,6 @@ int	control;				/* this buffer ended block? */
     register int i;
     static int Command;
     static int Wcc;
-    static int	LastWasTerminated = 1;	/* was "control" = 1 last time? */
 
     origCount = count;
 
@@ -449,4 +462,32 @@ int	control;				/* this buffer ended block? */
     } else {
 	return(origCount-count);
     }
+}
+
+/*
+ * Init3270()
+ *
+ * Initialize any 3270 (controller) variables to an initial state
+ * in preparation for accepting a connection.
+ */
+
+void
+Init3270()
+{
+    OptInit();		/* initialize mappings */
+
+    bzero((char *)Host, sizeof Host);	/* Clear host */
+
+    bzero(Orders, sizeof Orders);
+    Orders[ORDER_SF] = Orders[ORDER_SBA] = Orders[ORDER_IC]
+	    = Orders[ORDER_PT] = Orders[ORDER_RA] = Orders[ORDER_EUA]
+	    = Orders[ORDER_YALE] = 1;	/* What is an order */
+
+    DeleteAllFields();		/* Clear screen */
+    Lowest = HighestScreen()+1;
+    Highest = LowestScreen()-1;
+    CursorAddress = BufferAddress = SetBufferAddress(0,0);
+    UnLocked = 1;
+    OutputClock = 1;
+    TransparentClock = -1;
 }

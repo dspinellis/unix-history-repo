@@ -60,15 +60,19 @@ static char	ourBuffer[400];
 static char	*ourPHead = ourBuffer,
 		*ourPTail = ourBuffer;
 
-static int	HadAid = 0;		/* Had an AID haven't sent */
+static int	HadAid;			/* Had an AID haven't sent */
 
-static int	XFormattedScreen = 0;	/* For optimizations */
+static int shifted,			/* Shift state of terminal */
+	alted;				/* Alt state of terminal */
 
+static int InsertMode;			/* is the terminal in insert mode? */
+
+static int	XFormattedScreen;	/* For optimizations */
 #if	!defined(PURE3274)
 extern int TransparentClock, OutputClock;
 #endif	/* !defined(PURE3274) */
 
-#include "3270pc.out"
+#include "kbd.out"		/* Get keyboard mapping function */
 
 /* the following are global variables */
 
@@ -534,9 +538,7 @@ int	count;				/* how much data there is */
     register int c;
     register int i;
     register int j;
-    static int InsertMode = 0;	/* is the terminal in insert mode? */
     enum ctlrfcn ctlrfcn;
-    static int shifted = 0, alted = 0;
 #   define HITNUM() ((shifted? 1:0) + ((alted?1:0)<<1))
 
     if (*buffer >= numberof(hits)) {
@@ -553,13 +555,13 @@ int	count;				/* how much data there is */
 		return(0);			/* nothing to do */
 	    }
 	}
-#if	defined(FCN_RESET) && defined(FCN_MASTER_RESET)
+#if	!defined(PURE3274)
 	if (!HadAid && EmptyChar()) {
 	    if ((ctlrfcn == FCN_RESET) || (ctlrfcn == FCN_MASTER_RESET)) {
 		UnLocked = 1;
 	    }
 	}
-#endif	/* defined(FCN_RESET) && defined(FCN_MASTER_RESET) */
+#endif	/* !defined(PURE3274) */
 	if (!UnLocked) {
 	    return(0);
 	}
@@ -685,7 +687,7 @@ int	count;				/* how much data there is */
 		}
 		break;
 
-#if	defined(FCN_ERASE)
+#if	!defined(PURE3274)
 	    case FCN_ERASE:
 		if (IsProtected(ScreenDec(CursorAddress))) {
 		    RingBell("Protected Field");
@@ -694,9 +696,6 @@ int	count;				/* how much data there is */
 		    Delete(CursorAddress, ScreenInc(CursorAddress));
 		}
 		break;
-#endif	/* defined(FCN_ERASE) */
-
-#if	defined(FCN_WERASE)
 	    case FCN_WERASE:
 		j = CursorAddress;
 		i = ScreenDec(j);
@@ -722,9 +721,7 @@ int	count;				/* how much data there is */
 		    Delete(CursorAddress, j);
 		}
 		break;
-#endif	/* defined(WERASE) */
 
-#if	defined(FCN_FERASE)
 	    case FCN_FERASE:
 		if (IsProtected(CursorAddress)) {
 		    RingBell("Protected Field");
@@ -734,20 +731,15 @@ int	count;				/* how much data there is */
 		    EraseEndOfField();
 		}
 		break;
-#endif	/* defined(FCN_FERASE) */
 
-#if	defined(FCN_RESET)
 	    case FCN_RESET:
 		InsertMode = 0;
 		break;
-#endif	/* defined(FCN_RESET) */
-
-#if	defined(FCN_MASTER_RESET)
 	    case FCN_MASTER_RESET:
 		InsertMode = 0;
 		RefreshScreen();
 		break;
-#endif	/* defined(FCN_MASTER_RESET) */
+#endif	/* !defined(PURE3274) */
 
 	    case FCN_UP:
 		CursorAddress = ScreenUp(CursorAddress);
@@ -903,43 +895,33 @@ int	count;				/* how much data there is */
 		break;
 #endif	/* NOTUSED */
 
-#if	defined(FCN_ESCAPE)
+#if	!defined(PURE3274)
 	    case FCN_ESCAPE:
 		/* FlushChar(); do we want to flush characters from before? */
 		StopScreen(1);
 		command(0);
 		ConnectScreen();
 		break;
-#endif	/* defined(FCN_ESCAPE)
 
-#if	defined(FCN_DISC)
 	    case FCN_DISC:
 		StopScreen(1);
 		suspend();
 		setconnmode();
 		ConnectScreen();
 		break;
-#endif	/* defined(FCN_DISC) */
 
-#if	defined(FCN_RESHOW)
 	    case FCN_RESHOW:
 		RefreshScreen();
 		break;
-#endif	/* defined(FCN_RESHOW) */
 
-#if	defined(FCN_SETTAB)
 	    case FCN_SETTAB:
 		OptColTabs[ScreenLineOffset(CursorAddress)] = 1;
 		break;
-#endif	/* defined(FCN_SETTAB) */
 
-#if	defined(FCN_DELTAB)
 	    case FCN_DELTAB:
 		OptColTabs[ScreenLineOffset(CursorAddress)] = 0;
 		break;
-#endif	/* defined(FCN_DELTAB) */
 
-#if	defined(FCN_CLRTAB)
 		/*
 		 * Clear all tabs, home line, and left margin.
 		 */
@@ -950,47 +932,33 @@ int	count;				/* how much data there is */
 		OptHome = 0;
 		OptLeftMargin = 0;
 		break;
-#endif	/* defined(FCN_CLRTAB) */
 
-#if	defined(FCN_COLTAB)
 	    case FCN_COLTAB:
 		ColTab();
 		break;
-#endif	/* defined(FCN_COLTAB) */
 
-#if	defined(FCN_COLBAK)
 	    case FCN_COLBAK:
 		ColBak();
 		break;
-#endif	/* defined(FCN_COLBAK) */
 
-#if	defined(FCN_INDENT)
 	    case FCN_INDENT:
 		ColTab();
 		OptLeftMargin = ScreenLineOffset(CursorAddress);
 		break;
-#endif	/* defined(FCN_INDENT) */
 
-#if	defined(FCN_UNDENT)
 	    case FCN_UNDENT:
 		ColBak();
 		OptLeftMargin = ScreenLineOffset(CursorAddress);
 		break;
-#endif	/* defined(FCN_UNDENT) */
 
-#if	defined(FCN_SETMRG)
 	    case FCN_SETMRG:
 		OptLeftMargin = ScreenLineOffset(CursorAddress);
 		break;
-#endif	/* defined(FCN_SETMRG) */
 
-#if	defined(FCN_SETHOM)
 	    case FCN_SETHOM:
 		OptHome = ScreenLine(CursorAddress);
 		break;
-#endif	/* defined(FCN_SETHOM) */
 
-#if	defined(FCN_WORDTAB)
 		/*
 		 * Point to first character of next unprotected word on
 		 * screen.
@@ -1015,9 +983,7 @@ int	count;				/* how much data there is */
 		}
 		CursorAddress = i;
 		break;
-#endif	/* defined(FCN_WORDTAB) */
 
-#if	defined(FCN_WORDBACKTAB)
 	    case FCN_WORDBACKTAB:
 		i = ScreenDec(CursorAddress);
 		SetXIsProtected();
@@ -1038,9 +1004,7 @@ int	count;				/* how much data there is */
 		}
 		CursorAddress = ScreenInc(i);
 		break;
-#endif	/* defined(FCN_WORDBACKTAB) */
 
-#if	defined(FCN_WORDEND)
 			/* Point to last non-blank character of this/next
 			 * unprotected word.
 			 */
@@ -1064,9 +1028,7 @@ int	count;				/* how much data there is */
 		}
 		CursorAddress = ScreenDec(i);
 		break;
-#endif	/* defined(WORDEND) */
 
-#if	defined(FCN_FIELDEND)
 			/* Get to last non-blank of this/next unprotected
 			 * field.
 			 */
@@ -1083,7 +1045,7 @@ int	count;				/* how much data there is */
 			/* else - nowhere else on screen to be; stay here */
 		}
 		break;
-#endif	/* defined(FCN_FIELDEND) */
+#endif	/* !defined(PURE3274) */
 
 	    default:
 				    /* We don't handle this yet */
