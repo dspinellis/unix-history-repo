@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	6.12 (Berkeley) %G%
+		@(#)README	6.13 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -366,6 +366,9 @@ You would use this if you had installed an MX record for cnmat.Berkeley.EDU
 pointing at this host; this rule catches the message and forwards it on
 using UUCP.
 
+You can also tweak rulesets 1 and 2 using LOCAL_RULE_1 and LOCAL_RULE_2.
+These rulesets are normally empty.
+
 A similar macro is LOCAL_CONFIG.  This introduces lines added after the
 boilerplate option setting but before rulesets, and can be used to
 declare local database maps or whatever.  For example:
@@ -578,8 +581,8 @@ M4 Variable Name	Default		Mac/Opt	Description
 confMAILER_NAME		MAILER-DAEMON	Dn	The sender name used for
 						internally generated
 						outgoing messages.
-confFROM_LINE		From $?<$<$|$g$.  $d	The From_ line used when
-					Dl	sending to files or programs.
+confFROM_LINE		From $g  $d	Dl	The From_ line used when
+						sending to files or programs.
 confFROM_HEADER		$?x$x <$g>$|$g$.	The format of an internally
 					Dq	generated From: address.
 confOPERATORS		.:%@!^/[]	Do	Address operator characters.
@@ -805,4 +808,4 @@ M4 DIVERSIONS
    6	local configuration (at top of file)
    7	mailer definitions
    8	special local name recognition (late in ruleset 3)
-   9	special local name recognition (late in ruleset 0)
+   9	special local rulesets (1 and 2)
