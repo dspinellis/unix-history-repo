@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)hys24.c	1.5	(Berkeley) %G%";
+static char sccsid[] = "@(#)hys24.c	1.6	(Berkeley) %G%";
 #endif !lint
 
 #include "../condevs.h"
@@ -171,7 +171,7 @@ hyscls24(fd, flag)
 int fd, flag;
 {
 	char dcname[20];
-	int fff = FREAD;
+	int fff = 1;
 
 	if (fd > 0) {
 		sprintf(dcname, "/dev/%s", devSel);
