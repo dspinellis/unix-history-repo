@@ -11,7 +11,8 @@ GDBSRCS=	blockframe.c breakpoint.c command.c copying.c core.c \
 SRCS=           $(CONFIGSRCS) $(GDBSRCS) init.c
 CFLAGS+=        -I. -I$(.CURDIR) -I$(.CURDIR)/config \
 		-DHAVE_VPRINTF -DKERNELDEBUG -DNEWVM
-LDADD=          -lreadline -ltermcap
+DPADD+=		$(LIBREADLINE) $(LIBTERM)
+LDADD+=		-lreadline -ltermcap
 YFLAGS=
 .PATH: $(.CURDIR)/config
 
