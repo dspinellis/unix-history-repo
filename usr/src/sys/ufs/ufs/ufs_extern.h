@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_extern.h	7.11 (Berkeley) %G%
+ *	@(#)ufs_extern.h	7.12 (Berkeley) %G%
  */
 
 struct buf;
@@ -20,6 +20,7 @@ struct ucred;
 struct uio;
 struct vattr;
 struct vnode;
+struct ufs_args;
 
 __BEGIN_DECLS
 void	 diskerr
@@ -44,7 +45,9 @@ int	 ufs_direnter __P((struct inode *, struct vnode *,struct componentname *));
 int	 ufs_dirremove __P((struct vnode *, struct componentname*));
 int	 ufs_dirrewrite
 	    __P((struct inode *, struct inode *, struct componentname *));
+void	 ufs_free_addrlist __P((struct ufsmount *));
 int	 ufs_getattr __P((struct vop_getattr_args *));
+int	 ufs_hang_addrlist __P((struct mount *, struct ufs_args *));
 struct vnode *
 	 ufs_ihashget __P((int, ino_t));
 void	 ufs_ihashinit __P((void));
