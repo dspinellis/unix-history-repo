@@ -1,13 +1,14 @@
 # define  _DEFINE
 # include <signal.h>
 # include <pwd.h>
+# include <sys/ioctl.h>
 # include "sendmail.h"
 # include <sys/stat.h>
 # ifdef LOG
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)main.c	3.89		%G%);
+SCCSID(@(#)main.c	3.90		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -473,12 +474,24 @@ main(argc, argv)
 	{
 		if (Debug == 0)
 		{
+			/* put us in background */
 			i = fork();
 			if (i < 0)
 				syserr("daemon: cannot fork");
 			if (i != 0)
 				exit(0);
+
+			/* get our pid right */
 			MotherPid = getpid();
+
+			/* disconnect from our controlling tty */
+			i = open("/dev/tty", 2);
+			if (i >= 0)
+			{
+				(void) ioctl(i, TIOCNOTTY, 0);
+				(void) close(i);
+			}
+			errno = 0;
 		}
 # ifdef QUEUE
 		if (queuemode)
