@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)service.c	4.3 %G%";
+static char sccsid[] = "@(#)service.c	4.4 %G%";
 #endif
 
 #
@@ -20,6 +20,7 @@ PROC VOID	gsort();
 
 INT		errno;
 STRING		sysmsg[];
+INT		num_sysmsg;
 
 /* fault handling */
 #define ENOMEM	12
@@ -261,8 +262,10 @@ VOID	await(i)
 			THEN	prs("ptrace: ");
 				sig = w_hi;
 			FI
-			IF sysmsg[sig]
-			THEN	IF i!=p ORF (flags&prompt)==0 THEN prp(); prn(p); blank() FI
+			IF sig < num_sysmsg ANDF sysmsg[sig]
+			THEN	IF i!=p ORF (flags&prompt)==0
+				THEN prp(); prn(p); blank()
+				FI
 				prs(sysmsg[sig]);
 				IF w&0200 THEN prs(coredump) FI
 			FI
