@@ -1,13 +1,12 @@
 /* $Header: fortune.c,v 1.40 88/08/18 11:41:50 arnold Exp $ */
 
-# include	<stdio.h>
-# include	<assert.h>
 # include	<sys/param.h>
 # include	<sys/types.h>
 # include	<sys/stat.h>
 # include	<sys/dir.h>
+# include	<stdio.h>
+# include	<assert.h>
 # include	"strfile.h"
-# include	"random.h"
 
 #ifdef	SYSV
 # include	<dirent.h>
@@ -173,7 +172,7 @@ char	*av[];
 #endif
 
 	init_prob();
-	srnd((long) (time((time_t *) NULL) + getpid()));
+	srandom((int)(time((time_t *) NULL) + getpid()));
 	do {
 		get_fort();
 	} while ((Short_only && fortlen() > SLEN) ||
@@ -435,7 +434,6 @@ FILEDESC	*parent;
 	register FILEDESC	*fp;
 	register int		fd;
 	register char		*path, *offensive;
-	register int		len;
 	register bool		was_malloc;
 	register bool		isdir;
 
@@ -859,8 +857,7 @@ init_prob()
 	}
 	else if (percent == 100 && num_noprob != 0) {
 		fprintf(stderr,
-			"fortune:No probability left to put in residual files\n",
-			percent);
+		    "fortune:No probability left to put in residual files\n");
 		exit(1);
 	}
 	percent = 100 - percent;
@@ -899,11 +896,12 @@ get_fort()
 {
 	register FILEDESC	*fp;
 	register int		choice;
+	long random();
 
 	if (File_list->next == NULL || File_list->percent == NO_PROB)
 		fp = File_list;
 	else {
-		choice = rnd(100L);
+		choice = random() % 100;
 		DPRINTF(1, (stderr, "choice = %d\n", choice));
 		for (fp = File_list; fp->percent != NO_PROB; fp = fp->next)
 			if (choice < fp->percent)
@@ -923,7 +921,7 @@ get_fort()
 	else {
 		if (fp->next != NULL) {
 			sum_noprobs(fp);
-			choice = rnd((long) Noprob_tbl.str_numstr);
+			choice = random() % Noprob_tbl.str_numstr;
 			DPRINTF(1, (stderr, "choice = %d (of %d) \n", choice,
 				    Noprob_tbl.str_numstr));
 			while (choice >= fp->tbl.str_numstr) {
@@ -963,7 +961,7 @@ FILEDESC	*parent;
 	register int		choice;
 
 	if (Equal_probs) {
-		choice = rnd((long) parent->num_children);
+		choice = random() % parent->num_children;
 		DPRINTF(1, (stderr, "    choice = %d (of %d)\n",
 			    choice, parent->num_children));
 		for (fp = parent->child; choice--; fp = fp->next)
@@ -973,7 +971,7 @@ FILEDESC	*parent;
 	}
 	else {
 		get_tbl(parent);
-		choice = rnd((long) parent->tbl.str_numstr);
+		choice = random() % parent->tbl.str_numstr;
 		DPRINTF(1, (stderr, "    choice = %d (of %d)\n",
 			    choice, parent->tbl.str_numstr));
 		for (fp = parent->child; choice >= fp->tbl.str_numstr;
@@ -1054,7 +1052,7 @@ FILEDESC	*fp;
 	if (fp->pos == POS_UNKNOWN) {
 		if ((fd = open(fp->posfile, 0)) < 0 ||
 		    read(fd, &fp->pos, sizeof fp->pos) != sizeof fp->pos)
-			fp->pos = rnd(fp->tbl.str_numstr);
+			fp->pos = random() % fp->tbl.str_numstr;
 		else if (fp->pos >= fp->tbl.str_numstr)
 			fp->pos %= fp->tbl.str_numstr;
 		if (fd >= 0)
