@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)bad144.c	4.1 (Berkeley) 81/05/10";
+static	char *sccsid = "@(#)bad144.c	4.2 (Berkeley) 81/05/11";
 
 /*
  * bad144
@@ -116,7 +116,7 @@ found:
 	}
 	dkbad.bt_csn = atoi(*argv++);
 	argc--;
-	dkbad.bt_magic = 0;
+	dkbad.bt_mbz = 0;
 	if (argc > 2 * di->di_nsect || argc > 126) {
 		printf("bad: too many bad sectors specified\n");
 		if (2 * di->di_nsect > 126)
