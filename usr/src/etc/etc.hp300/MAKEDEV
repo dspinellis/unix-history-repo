@@ -5,7 +5,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)MAKEDEV	5.2 (Berkeley) %G%
+#	@(#)MAKEDEV	5.3 (Berkeley) %G%
 #
 # Device "make" file.  Valid arguments:
 #	std	standard devices
@@ -30,7 +30,7 @@
 #	ite*	terminal emulator interface to HP300 graphics devices
 #	hil	HP300 HIL input devices
 
-PATH=/sbin:/bin/:/usr/bin
+PATH=/sbin:/bin/:/usr/bin:/etc
 umask 77
 for i
 do
@@ -44,13 +44,13 @@ std)
 	mknod null		c 2 2	; chmod 666 null
 	mknod tty		c 1 0	; chmod 666 tty
 	mknod klog		c 6 0	; chmod 600 klog
-	mknod stdin		c 53 0	; chmod 666 stdin
-	mknod stdout		c 53 1	; chmod 666 stdout
-	mknod stderr		c 53 2	; chmod 666 stderr
+	mknod stdin		c 21 0	; chmod 666 stdin
+	mknod stdout		c 21 1	; chmod 666 stdout
+	mknod stderr		c 21 2	; chmod 666 stderr
 	mkdir fd > /dev/null 2>&1
 	(cd fd && eval `echo "" | awk ' BEGIN { \
 		for (i = 0; i < 64; i++) \
-			printf("mknod %d c 53 %d;", i, i)}'`)
+			printf("mknod %d c 21 %d;", i, i)}'`)
 	chown -R bin.bin fd
 	chmod 555 fd
 	chmod 666 fd/*
@@ -144,10 +144,10 @@ dcm*)
 	unit=`expr $i : 'dcm\(.*\)'`
 	case $unit in
 	0|1|2|3)
-	        eval `echo $unit | awk ' { unit = $1; u = 4 * $1 } END {
-	        for (i = 0; i < 4; i++)
-                printf("mknod tty0%x c 15 %d; ",u+i,u+i); }'`
-        ;;
+		eval `echo $unit | awk ' { unit = $1; u = 4 * $1 } END {
+		for (i = 0; i < 4; i++)
+		printf("mknod tty0%x c 15 %d; ",u+i,u+i); }'`
+	;;
 	*)
 		echo bad unit for dcm in: $i
 		;;
