@@ -10,7 +10,7 @@
  * Perform message editing functions.
  */
 
-static char *SccsId = "@(#)edit.c	1.3 %G%";
+static char *SccsId = "@(#)edit.c	2.1 %G%";
 
 /*
  * Edit a message list.

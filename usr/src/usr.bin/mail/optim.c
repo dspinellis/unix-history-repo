@@ -9,7 +9,7 @@
 #include "rcv.h"
 #include <ctype.h>
 
-static char *SccsId = "@(#)optim.c	1.3 %G%";
+static char *SccsId = "@(#)optim.c	2.1 %G%";
 
 /*
  * Map a name into the correct network "view" of the

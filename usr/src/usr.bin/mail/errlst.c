@@ -1,4 +1,4 @@
-static char *SccsId = "@(#)errlst.c	1.1 %G%";
+static char *SccsId = "@(#)errlst.c	2.1 %G%";
 
 char	*sys_errlist[] = {
 	"Error 0",

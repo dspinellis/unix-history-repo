@@ -1,7 +1,7 @@
 #
 # Cory Hall Unix 11/70 Version 7
 #
-# Sccs Id = "@(#)makefile.cor	1.1 %G%";
+# Sccs Id = "@(#)makefile.cor	2.1 %G%";
 #
 
 CFLAGS=-O -DCORY

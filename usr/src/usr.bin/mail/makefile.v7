@@ -1,7 +1,7 @@
 #
 # Unix version 7.
 #
-# Sccs Id = "@(#)makefile.v7	1.1 %G%";
+# Sccs Id = "@(#)makefile.v7	2.1 %G%";
 #
 
 CFLAGS=-O -DV7 -DVFORK

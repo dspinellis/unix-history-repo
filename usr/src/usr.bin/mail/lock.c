@@ -9,7 +9,7 @@
 #include "rcv.h"
 #include <sys/stat.h>
 
-static char *SccsId = "@(#)lock.c	1.2 %G%";
+static char *SccsId = "@(#)lock.c	2.1 %G%";
 
 char	*maillock	= ".mail";		/* Lock suffix for mailname */
 char	*lockname	= "/usr/spool/mail/tmXXXXXX";
