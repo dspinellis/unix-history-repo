@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: mem.c 1.14 90/10/12$
  *
- *	@(#)mem.c	7.3 (Berkeley) %G%
+ *	@(#)mem.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -28,8 +28,8 @@
 
 #include "vm/vm_param.h"
 #include "vm/lock.h"
-#include "vm/pmap.h"
 #include "vm/vm_prot.h"
+#include "vm/pmap.h"
 
 /*ARGSUSED*/
 mmrw(dev, uio, flags)
@@ -37,7 +37,7 @@ mmrw(dev, uio, flags)
 	struct uio *uio;
 	int flags;
 {
-	register off_t v;
+	register u_long v;
 	register u_int c;
 	register struct iovec *iov;
 	int error = 0;
@@ -57,7 +57,7 @@ mmrw(dev, uio, flags)
 
 /* minor device 0 is physical memory */
 		case 0:
-			v = uio->uio_offset;
+			v = (u_long)uio->uio_offset;
 			c = iov->iov_len;
 			if (v + c >= physmem)
 				return (EFAULT);
@@ -67,7 +67,7 @@ mmrw(dev, uio, flags)
 
 /* minor device 1 is kernel memory */
 		case 1:
-			v = uio->uio_offset;
+			v = (u_long)uio->uio_offset;
 			if (v < MACH_CACHED_MEMORY_ADDR)
 				return (EFAULT);
 			c = iov->iov_len;
