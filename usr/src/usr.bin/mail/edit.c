@@ -10,7 +10,7 @@
  * Perform message editing functions.
  */
 
-static char *SccsId = "@(#)edit.c	1.1 %G%";
+static char *SccsId = "@(#)edit.c	1.2 %G%";
 
 /*
  * Edit a message list.
@@ -123,6 +123,14 @@ edit1(msgvec, ed)
 		fclose(obuf);
 
 		/*
+		 * If we are in read only mode, make the
+		 * temporary message file readonly as well.
+		 */
+
+		if (readonly)
+			chmod(edname, 0400);
+
+		/*
 		 * Fork/execl the editor on the edit file.
 		 */
 
@@ -146,6 +154,16 @@ edit1(msgvec, ed)
 		}
 		while (wait(&mesg) != pid)
 			;
+
+		/*
+		 * If in read only mode, just remove the editor
+		 * temporary and return.
+		 */
+
+		if (readonly) {
+			remove(edname);
+			continue;
+		}
 
 		/*
 		 * Now copy the message to the end of the
