@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)idp_usrreq.c	8.1 (Berkeley) %G%
+ *	@(#)idp_usrreq.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -352,7 +352,7 @@ idp_usrreq(so, req, m, nam, control)
 	int error = 0;
 
 	if (req == PRU_CONTROL)
-                return (ns_control(so, (int)m, (caddr_t)nam,
+                return (ns_control(so, m, (caddr_t)nam,
 			(struct ifnet *)control));
 	if (control && control->m_len) {
 		error = EINVAL;
