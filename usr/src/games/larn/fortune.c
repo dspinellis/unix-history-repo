@@ -4,9 +4,9 @@
 
 #ifndef BSD4.1
 #include <fcntl.h>
-#else BSD4.1
+#else
 #define O_RDONLY 0
-#endif BSD4.1
+#endif
 
 #include "header.h"
 /*

@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)arithmetic.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)arithmetic.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -77,7 +77,7 @@ main(argc, argv)
 	extern int optind;
 	int ch, cnt;
 	time_t time();
-	sig_t intr();
+	void intr();
 
 	while ((ch = getopt(argc, argv, "r:o:")) != EOF)
 		switch(ch) {
@@ -123,7 +123,7 @@ main(argc, argv)
 }
 
 /* Handle interrupt character.  Print score and exit. */
-sig_t
+void
 intr()
 {
 	showstats();
