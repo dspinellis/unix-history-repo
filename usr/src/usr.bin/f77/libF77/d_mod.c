@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)d_mod.c	5.2	%G%
+ *	@(#)d_mod.c	5.3	%G%
  */
 #ifdef tahoe
 #include <tahoemath/FP.h>
@@ -23,7 +23,7 @@ else {
 	quotient = floor(quotient);
 	if (quotient !=0)
 		*(unsigned long *)&quotient ^= SIGN_BIT;
-}
 #endif tahoe
+}
 return(*x - (*y) * quotient );
 }
