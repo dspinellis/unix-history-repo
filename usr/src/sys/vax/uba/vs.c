@@ -1,4 +1,4 @@
-/* @(#)vs.c	7.6 (MIT) %G% */
+/* @(#)vs.c	7.7 (MIT) %G% */
  /****************************************************************************
  *									    *
  *  Copyright (c) 1983, 1984 by						    *
@@ -743,9 +743,9 @@ dev_t dev;
 		splx(s);
 		return(0);
 
-	case FWRITE:
+	default:
 		splx(s);
-		return(EACCES);
+		return(0);	/* can never write */
 	}
 }
 
