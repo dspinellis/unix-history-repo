@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	2.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	2.3 (Berkeley) %G%";
 #endif not lint
 
 #include "timedc.h"
@@ -223,7 +223,7 @@ char *argv[];
 		argc--; argv++;
 		hp = gethostbyname(*argv);
 		if (hp == NULL) {
-			printf("%s: unknown host %s\n", *argv);
+			printf("%s: unknown host\n", *argv);
 			argc--; argv++;
 			continue;
 		}
