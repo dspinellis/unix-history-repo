@@ -3,35 +3,118 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)larn.6	5.2 (Berkeley) %G%
+.\"	@(#)larn.6	5.3 (Berkeley) %G%
 .\"
-.TH LARN 6 ""
-.UC 7
-.SH NAME
-larn \- Exploring the caverns of Larn
-.SH SYNOPSIS
-larn
-.SH DESCRIPTION
-Welcome to the game of
-.IR Larn .
-At this moment, you face a great problem.
-Your daughter has contracted a strange disease, and none of your home remedies
-seem to have any effect.
-You sense that she is in mortal danger, and you must try to save her.
-Time ago you heard of a land of great danger and opportunity.
-Perhaps here is the solution you need.
-.PP
-It has been said that there once was a great magician who called himself
-Polinneaus.
-Many years ago, after having many miraculous successes, Polinneaus
-retired to the caverns of Larn, where he devoted most of his time to the
-creation of magic.
-Rumors have it that one day Polinneaus set out to dispel an attacking
-army in a forest some distance to the north.
-It is believed that here he met his demise.
-.PP
-The caverns of Larn, it is thought, must be magnificent in design,
-and contain much magic and treasure.
-One option you have is to undertake a journey into these caverns.
-.PP
-Good Luck!  You're going to need it!
+.Vx
+.Dd 
+.Dt LARN 6
+.\" .UC 7
+.Sh NAME
+.Nm larn
+.Nd exploring the caverns of Larn
+.Sh SYNOPSIS
+.Nm /usr/games/larn
+.Op Fl r
+.Op Fl H Ar number
+.Op Fl n
+.Op Fl h
+.Op Fl o Ar optsfile
+.Sh DESCRIPTION
+.Nm Larn
+is a fantasy games in which your child has contracted
+a strange disease, and none of your home remedies
+seem to have any effect.  You set out to find a remedy in a limited
+amount of time, and to collect gold along the way of course!
+.Pp
+The options are:
+.Pp
+.Tw Ds
+.Tp Fl r
+The
+.Fl r
+option restores a checkpointed game after it has died.
+.Tp Fl H 
+The
+.Fl H
+option sets the hardness of the game.
+.Tp Fl n
+The
+.Fl n
+option suppresses the welcome message at start up, putting you directly
+into the game.
+.Tp Fl h
+The
+.Fl h
+option prints the command line options.
+.Tp Fl o
+The
+.Fl o
+option specifies a different options file than ~/.larnopts.
+.Sh COMMANDS
+.nf
+.Pp
+These are the movement commands:
+.ta \w'h'u+1n +\w'print program version'u+2n +\w'H'u+1n +\w'give present pack weight'u+2n +\w'Z'u+1n +\w'list all items found'u
+.sp
+h	move to the left	H	run left	.	stay here
+j	move down	J	run down	Z	teleport yourself
+k	move up	K	run up	c	cast a spell
+l	move to the right	L	run right	r	read a scroll
+y	move northwest	Y	run northwest	q	quaff a potion
+u	move northeast	U	run northeast	W	wear armor
+b	move southwest	B	run southwest	T	take off armor
+n	move southeast	N	run southeast	w	wield a weapon
+^	identify a trap	g	give present pack weight	P	give tax status
+d	drop an item	i	inventory your pockets	Q	quit the game
+v	print program version	S	save the game	D	list all items found
+?	this help screen	A	create diagnostic file	e	eat something
+			(wizards only)
+.ta
+.fi
+.Sh OPTIONS FILE
+.Pp
+The file "~/.larnopts" may be used to set a few options for 
+.Nm Larn.
+A sequence of words terminated by whitespace is used to specify options.
+.nf
+.ta \w'savefile save-file-name'u+6n
+.sp
+        \fIWord\fP	             \fIMeaning\fP
+.sp
+bold-objects	select bold display of objects
+inverse-objects	select inverse video display of objects
+no-introduction	do not display intro message
+enable-checkpointing	turn on periodic checkpointing
+no-beep	disable beeping of the terminal
+male	choose your sex to be a man
+female	choose your sex to be a woman
+name: "your name"	choose your playing name
+monster: "monst name"	choose a name for a monster
+savefile: "save-file-name"	define what the savegame filename will be
+.ta
+.fi
+.Pp
+Your name and monster names must be enclosed in double quotation marks and may
+be up to 34 characters long.  Longer names are truncated.
+Anything enclosed in quotation marks is considered one word, and must be
+separated from other words by whitespace.
+.Sh SPECIAL NOTES
+.Pp
+When \fBdropping gold\fP,
+if you type '*' as your amount, all your gold gets dropped.
+In general, typing in '*' means all of what your interested in.  This is true
+when visiting the bank, or when contributing at altars.
+.Pp
+You can get out of the store, trading post, school, or home by hitting
+\fB<esc>\fP.
+.Pp
+When casting a spell, if you need a list of spells you can cast, type \fBD\fP
+as the first letter of your spell.  The available list of spells will be shown,
+after which you may enter the spell code.  This only works on the 1st letter
+of the spell you are casting.
+.Sh AUTHOR
+Noah Morgan
+.Sh FILES
+.ta \w'/var/games/larn.scores'u+8n
+/var/games/larn.scores	Score file
+~/.larnopts	Options file
