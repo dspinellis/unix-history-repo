@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)badsect.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)badsect.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -138,7 +138,7 @@ chkuse(blkno, cnt)
 	if (acg.cg_magic != CG_MAGIC) {
 		fprintf(stderr, "cg %d: bad magic number\n", cg);
 		errs++;
-		return;
+		return (1);
 	}
 	bn = dtogd(fs, fsbn);
 	if (isclr(acg.cg_free, bn))
