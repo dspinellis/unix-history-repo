@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_clock.c	7.9 (Berkeley) %G%
+ *	@(#)kern_clock.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -25,6 +25,10 @@
 #endif
 #if defined(hp300)
 #include "machine/mtpr.h"
+#endif
+#ifdef i386
+#include "machine/frame.h"
+#include "machine/segments.h"
 #endif
 
 #ifdef GPROF
@@ -76,9 +80,15 @@ int	adjtimedelta;
  * we run through the statistics gathering routine as well.
  */
 /*ARGSUSED*/
+#ifndef i386
 hardclock(pc, ps)
 	caddr_t pc;
 	int ps;
+#else
+hardclock(frame)
+	struct intrframe frame;
+#define	pc	frame.if_eip
+#endif
 {
 	register struct callout *p1;
 	register struct proc *p = u.u_procp;
@@ -109,7 +119,11 @@ hardclock(pc, ps)
 	 * assuming that the current state has been around at least
 	 * one tick.
 	 */
+#ifdef i386
+	if (ISPL(frame.if_cs) == SEL_UPL) {
+#else
 	if (USERMODE(ps)) {
+#endif
 		/*
 		 * CPU was in user state.  Increment
 		 * user time counter, and process process-virtual time
@@ -191,7 +205,11 @@ hardclock(pc, ps)
 	 * we must gather the statistics.
 	 */
 	if (phz == 0)
+#ifdef i386
+		gatherstats(pc, ISPL(frame.if_cs), frame.if_ppl);
+#else
 		gatherstats(pc, ps);
+#endif
 
 	/*
 	 * Increment the time-of-day, and schedule
@@ -240,7 +258,12 @@ int	dk_ndrive = DK_NDRIVE;
  * update statistics accordingly.
  */
 /*ARGSUSED*/
+#ifdef i386
+#undef pc
+gatherstats(pc, ps, ppl)
+#else
 gatherstats(pc, ps)
+#endif
 	caddr_t pc;
 	int ps;
 {
@@ -249,7 +272,11 @@ gatherstats(pc, ps)
 	/*
 	 * Determine what state the cpu is in.
 	 */
+#ifdef i386
+	if (ps == SEL_UPL) {
+#else
 	if (USERMODE(ps)) {
+#endif
 		/*
 		 * CPU was in user state.
 		 */
@@ -270,7 +297,11 @@ gatherstats(pc, ps)
 		 * timers makes doing anything else difficult.
 		 */
 		cpstate = CP_SYS;
+#if defined(i386)
+		if (noproc && ps == 0)
+#else
 		if (noproc && BASEPRI(ps))
+#endif
 			cpstate = CP_IDLE;
 #ifdef GPROF
 		s = pc - s_lowpc;
@@ -294,9 +325,15 @@ gatherstats(pc, ps)
  * Run periodic events from timeout queue.
  */
 /*ARGSUSED*/
+#ifdef i386
+softclock(frame)
+	struct	intrframe frame;
+#define	pc	frame.if_eip
+#else
 softclock(pc, ps)
 	caddr_t pc;
 	int ps;
+#endif
 {
 
 	for (;;) {
@@ -321,7 +358,11 @@ softclock(pc, ps)
 	 * If trapped user-mode and profiling, give it
 	 * a profiling tick.
 	 */
+#ifdef i386
+	if (ISPL(frame.if_cs) == SEL_UPL) {
+#else
 	if (USERMODE(ps)) {
+#endif
 		register struct proc *p = u.u_procp;
 
 		if (u.u_prof.pr_scale) {

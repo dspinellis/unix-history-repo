@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_prof.c	7.8 (Berkeley) %G%
+ *	@(#)subr_prof.c	7.9 (Berkeley) %G%
  */
 
 #ifdef GPROF
@@ -20,15 +20,7 @@ int	profiling = 3;
 u_short	*froms;
 struct	tostruct *tos = 0;
 long	tolimit = 0;
-#if defined(vax)
-char	*s_lowpc = (char *)0x80000000;
-#endif
-#if defined(tahoe)
-char	*s_lowpc = (char *)0xc0000000;
-#endif
-#if defined(hp300)
-char	*s_lowpc = (char *)0x00000000;
-#endif
+char	*s_lowpc = (char *)KERNBASE;
 extern	char etext;
 char	*s_highpc = &etext;
 u_long	s_textsize = 0;

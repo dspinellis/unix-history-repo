@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_physio.c	7.14 (Berkeley) %G%
+ *	@(#)kern_physio.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -98,7 +98,7 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, vp, pfcent)
 #ifdef TRACE
 		trace(TR_SWAPIO, vp, bp->b_blkno);
 #endif
-#if defined(hp300)
+#if defined(hp300) || defined(i386)
 		vmapbuf(bp);
 #endif
 		VOP_STRATEGY(bp);
@@ -113,7 +113,7 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, vp, pfcent)
 				sleep((caddr_t)bp, PSWP);
 			splx(s);
 		}
-#if defined(hp300)
+#if defined(hp300) || defined(i386)
 		vunmapbuf(bp);
 #endif
 		bp->b_un.b_addr += c;
@@ -150,7 +150,7 @@ swdone(bp)
 	bclnlist = bp;
 	if (bswlist.b_flags & B_WANTED)
 		wakeup((caddr_t)&proc[2]);
-#if defined(hp300)
+#if defined(hp300) || defined(i386)
 	vunmapbuf(bp);
 #endif
 	splx(s);
@@ -243,14 +243,14 @@ physio(strat, bp, dev, rw, mincnt, uio)
 			requested = bp->b_bcount;
 			u.u_procp->p_flag |= SPHYSIO;
 			vslock(a = bp->b_un.b_addr, requested);
-#if defined(hp300)
+#if defined(hp300) || defined(i386)
 			vmapbuf(bp);
 #endif
 			(*strat)(bp);
 			s = splbio();
 			while ((bp->b_flags & B_DONE) == 0)
 				sleep((caddr_t)bp, PRIBIO);
-#if defined(hp300)
+#if defined(hp300) || defined(i386)
 			vunmapbuf(bp);
 #endif
 			vsunlock(a, requested, rw);
