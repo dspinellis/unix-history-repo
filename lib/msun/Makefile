@@ -1,5 +1,5 @@
 #  @(#)Makefile 5.1beta 93/09/24 
-#  $Id: Makefile,v 1.3 1994/05/06 09:21:20 gclarkii Exp $
+#  $Id: Makefile,v 1.4 1994/05/07 01:49:31 ljo Exp $
 # 
 #  ====================================================
 #  Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
@@ -41,19 +41,24 @@
 #					    default standard
 # 
 
- #Uncomment the following lines if you have a i387 (or i486 or Pentium)
+#Define HAVE_FPU if you have a i387 (or i486 or Pentium)
+
+.if defined(HAVE_FPU)
 .PATH:	${.CURDIR}/i387
+
 ARCH_SRCS = e_acos.S e_asin.S e_atan2.S e_exp.S e_fmod.S e_log.S e_log10.S \
 	    e_remainder.S e_scalb.S e_sqrt.S s_atan.S s_ceil.S s_copysign.S \
 	    s_cos.S s_finite.S s_floor.S s_ilogb.S s_log1p.S s_logb.S \
 	    s_rint.S s_scalbn.S s_significand.S s_sin.S s_tan.S
+
+.endif
 
 .PATH:	${.CURDIR}/src
 
 
 CFLAGS+= -D_IEEE_LIBM 
 
-LIB=	msun
+LIB=	m
 first:
 SRCS = k_standard.c k_rem_pio2.c k_cos.c k_sin.c k_tan.c \
 	e_acos.c e_acosh.c e_asin.c e_atan2.c e_atanh.c e_cosh.c e_exp.c \
@@ -97,5 +102,11 @@ MLINKS+=ieee_test.3 significand.3
 MLINKS+=j0.3 j1.3 j0.3 jn.3 j0.3 y0.3 j0.3 y1.3 j0.3 yn.3
 MLINKS+=lgamma.3 gamma.3
 MLINKS+=sqrt.3 cbrt.3
+
+beforeinstall:
+	@echo Installing new math.h
+	@(cd ${.CURDIR}/src; cmp -s math.h ${DESTDIR}/usr/include/math.h || \
+		install -c -o ${BINOWN} -g ${BINGRP} -m 444 math.h \
+		${DESTDIR}/usr/include/math.h;)
 
 .include <bsd.lib.mk>
