@@ -1,4 +1,4 @@
-/*	if.c	4.17	82/06/20	*/
+/*	if.c	4.18	82/06/23	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -145,4 +145,24 @@ if_down(ifp)
 {
 	ifp->if_flags &= ~IFF_UP;
 	pfctlinput(PRC_IFDOWN, (caddr_t)&ifp->if_addr);
+}
+
+/*
+ * Handle interface watchdog timer routines.  Called
+ * from softclock, we decrement timers (if set) and
+ * call the appropriate interface routine on expiration.
+ */
+if_slowtimo()
+{
+	register struct ifnet *ifp;
+
+	for (ifp = ifnet; ifp; ifp = ifp->if_next)
+		if (ifp->if_timer && --ifp->if_timer == 0) {
+			if (ifp->if_watchdog == 0) {
+				printf("%s%d: no watchdog routine\n", 
+					ifp->if_name, ifp->if_unit);
+				continue;
+			}
+			(*ifp->if_watchdog)(ifp->if_unit);
+		}
 }
