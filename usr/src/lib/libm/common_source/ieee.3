@@ -4,7 +4,7 @@ From Prof. Kahan at UC at Berkeley
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)ieee.3	6.4 (Berkeley) %G%
+.\"     @(#)ieee.3	6.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt IEEE 3
@@ -15,9 +15,7 @@ From Prof. Kahan at UC at Berkeley
 .Nm finite ,
 .Nm logb ,
 .Nm scalb
-.Nm copysign ,
-.Nm remainder,
-.Nd exponent manipulations
+.Nd "IEEE 754 floating point support
 .Sh SYNOPSIS
 .Fd #include <math.h>
 .Ft double 
@@ -126,8 +124,8 @@ lies between 0 and the Underflow Threshold.
 .Sx BUGS . )
 .Pp
 The
-Fn calb
-returns
+.Fn scalb
+function returns
 .Fa x Ns \(**(2** Ns Fa n )
 computed, for integer n, without first computing
 .Pf 2\(** Fa n .
@@ -226,7 +224,7 @@ follows 854's specification instead.
 .Pf \(+- Ns Fa x
 but says nothing
 else about the sign of a \*(Na.  A \*(Na
-.Em N Ns ot
+.Em (N Ns ot
 .Em a
 .Em N Ns umber )
 is
