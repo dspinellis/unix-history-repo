@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_exec.c	7.48 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.49 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -16,7 +16,6 @@
 #include "malloc.h"
 #include "namei.h"
 #include "vnode.h"
-#include "seg.h"
 #include "file.h"
 #include "acct.h"
 #include "exec.h"

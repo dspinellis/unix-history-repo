@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_sig.c	7.36 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.37 (Berkeley) %G%
  */
 
 #define	SIGPROP		/* include signal properties table */
@@ -17,7 +17,6 @@
 #include "timeb.h"
 #include "times.h"
 #include "buf.h"
-#include "seg.h"
 #include "acct.h"
 #include "kernel.h"
 #include "wait.h"
