@@ -10,7 +10,7 @@ without consuming lots of disk or requiring re-integration of local
 changes when system termcap files change.
 
 	John Kunze
-	termcap@berkeley
+	termcap@berkeley.cs.edu
 
 << 12 May 1983 >>
 To install this directory on your system:
@@ -47,5 +47,5 @@ please!) to me at one of the addresses below, so it can be incorporated
 back into the original source.  I will normally include anything unless
 there is a good reason not to, but I reserve the right to redo it differently.
 
-	ucbvax!termcap				(uucp)
-	termcap@berkeley			(Arpanet)
+	uunet!ucbvax!termcap			(uucp)
+	termcap@berkeley.cs.edu			(Internet)
