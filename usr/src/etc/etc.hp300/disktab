@@ -1,5 +1,5 @@
 #
-#	@(#)disktab	5.6 (Berkeley) %G%
+#	@(#)disktab	5.7 (Berkeley) %G%
 #
 # Disk geometry and partition layout tables. 
 # Key:
@@ -250,16 +250,16 @@ sd7548-utah|sd660|HP97548S with Utah partitions:\
 	:pf#1078399:of#218112:bf#4096:ff#1024:\
 	:pg#1213567:og#82944:bg#8192:fg#1024:\
 	:ph#1180799:oh#115712:bh#8192:fh#1024:
-sd95706|HP 95706A 1.3Gb disk:\
-	:ty=winchester:ns#72:nt#19:nc#1963:rm#4200:\
-	:pa#49152:ba#8192:fa#1024:\
+sd95706|HP 95706 (Coyote III) 1.3Gb disk:\
+	:ty=winchester:ns#60:nt#19:nc#2322:rm#4002:\
+	:pa#16384:ba#8192:fa#1024:\
 	:pb#65536:\
-	:pc#2685384:bc#8192:fc#1024:\
-	:pd#496684:bd#8192:fd#1024:\
-	:pe#1069774:be#8192:fe#1024:\
-	:pf#1069774:bf#8192:ff#1024:\
-	:pg#2570696:bg#8192:fg#1024:\
-	:ph#2139548:bh#8192:fh#1024:
+	:pc#2647080:bc#8192:fc#1024:\
+	:pd#98304:\
+	:pe#102400:be#8192:fe#1024:\
+	:pf#2428968:bf#8192:ff#1024:\
+	:pg#2564136:bg#8192:fg#1024:\
+	:ph#2531368:bh#8192:fh#1024:
 #
 # HP magneto-optical drive.
 # (ns, nt, nc are totally bogus)
