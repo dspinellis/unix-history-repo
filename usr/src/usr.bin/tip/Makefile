@@ -27,17 +27,16 @@
 #				explicitly to remcap.c if not 1024
 #	VMUNIX			allow VMUNIX tty stuff and job control
 
-ADM=${DESTDIR}/usr/adm
-BIN=${DESTDIR}/usr/ucb
-OWNER=uucp
-CFLAGS=-O -DDEFBR=300 -DDEFFS=BUFSIZ -DVENTEL -DACULOG
+ADM=	usr/adm
+OWNER=	uucp
+CFLAGS=	-O -DDEFBR=300 -DDEFFS=BUFSIZ -DVENTEL -DACULOG
 LDFLAGS=
 OBJECTS=acu.o acutab.o biz22.o biz31.o cmds.o cmdtab.o cu.o df.o dn11.o hunt.o \
 	lock.o log.o remote.o tip.o tipout.o value.o vars.o ventel.o
 SOURCES=acu.c acutab.c biz22.c biz31.c cmds.c cmdtab.c cu.c df.c dn11.c hunt.c \
 	lock.c log.c remcap.c remote.c tip.c tipout.c uucplock.c value.c  \
 	vars.c ventel.c
-CXREF=/usr/ucb/ctags -xw
+CXREF=	/usr/ucb/ctags -xw
 
 tip:	${OBJECTS} remcap.o uucplock.o
 	${CC} -o tip ${LDFLAGS} ${OBJECTS} remcap.o uucplock.o
@@ -47,15 +46,15 @@ tip:	${OBJECTS} remcap.o uucplock.o
 all:	tip aculog
 
 install: all
-	cp tip ${BIN}/tip
-	chown ${OWNER} ${BIN}/tip
-	chmod 4711 ${BIN}/tip
-#	cp aculog /etc/aculog
-#	chown ${OWNER} /etc/aculog
-#	chmod 4711 /etc/aculog
-#	cp /dev/null ${ADM}/aculog
-#	chown ${OWNER} ${ADM}/aculog
-#	chmod 600 ${ADM}/aculog
+	install tip ${DESTDIR}/usr/bin/tip
+	chown ${OWNER} ${DESTDIR}/usr/bin/tip
+	chmod 4711 ${DESTDIR}/usr/bin/tip
+#	install aculog ${DESTDIR}/etc/aculog
+#	chown ${OWNER} ${DESTDIR}/etc/aculog
+#	chmod 4711 ${DESTDIR}/etc/aculog
+#	cp /dev/null ${DESTDIR}/${ADM}/aculog
+#	chown ${OWNER} ${DESTDIR}/${ADM}/aculog
+#	chmod 600 ${DESTDIR}/${ADM}/aculog
 	@echo "create /etc/remote and /etc/phones"
 
 aculog:	aculog.c
