@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)dr.c	7.6 (Berkeley) %G%
+ *	@(#)dr.c	7.7 (Berkeley) %G%
  */
 
 #include "dr.h"
@@ -206,10 +206,8 @@ drread (dev, uio)
 			return (err);
 		dra->currenttimo++;	/* Update current timeout number */
 		/* Did we timeout */
-		if (dra->dr_flags & DR_TMDM) {
+		if (dra->dr_flags & DR_TMDM)
 			dra->dr_flags &= ~DR_TMDM; /* Clear timeout flag */
-			u.u_error = 0;	/* Made the error ourself, ignore it */
-		}
 		return (err);
 	}
 	return (physio(drstrategy, bp, dev,B_READ, drminphys, uio));
@@ -250,10 +248,8 @@ drwrite(dev, uio)
 			return (err);
 		dra->currenttimo++;	/* Update current timeout number */
 		/* Did we timeout */
-		if (dra->dr_flags & DR_TMDM) {
+		if (dra->dr_flags & DR_TMDM)
 			dra->dr_flags &= ~DR_TMDM;	/* Clear timeout flag */
-			u.u_error = 0;	/* Made the error ourself, ignore it */
-		}
 		return (err);
 	}
 	return (physio(drstrategy, bp, dev,B_WRITE, drminphys, uio));
@@ -385,10 +381,8 @@ drioctl(dev, cmd, data)
 		break;
 
 	case DRSETRTIMEOUT:		/* Set read stall timeout (1/10 secs) */
-		if (data[0] < 1) {
-			u.u_error = EINVAL;
-			temp = 1;
-		}
+		if (data[0] < 1)
+			error = EINVAL;
 		dra->rtimoticks = (data[0] * hz )/10;
 		break;
 
@@ -409,10 +403,8 @@ drioctl(dev, cmd, data)
 		break;
 
 	case DRSETWTIMEOUT:		/* Set write stall timeout (1/10's) */
-		if (data[0] < 1) {
-			u.u_error = EINVAL;
-			temp = 1;
-		}
+		if (data[0] < 1)
+			error = EINVAL;
 		dra->wtimoticks = (data[0] * hz )/10;
 		break;
 
