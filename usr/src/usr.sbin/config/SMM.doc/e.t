@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)e.t	6.1 (Berkeley) %G%
+.\"	@(#)e.t	6.2 (Berkeley) %G%
 .\"
 .\".ds RH "Network configuration options
 .bp
@@ -14,7 +14,7 @@ APPENDIX E. NETWORK CONFIGURATION OPTIONS
 .R
 .NL
 .PP
-For the most part, the network support in the kernel is self-configuring
+The network support in the kernel is self-configuring
 according to the protocol support options (INET and NS) and the network
 hardware discovered during autoconfiguration.
 There are several changes that may be made to customize network behavior
