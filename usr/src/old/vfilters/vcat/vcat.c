@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)vcat.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)vcat.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -791,7 +791,7 @@ slop_lines(nlines)
 	if (rlines < nlines) {
 		if (write(vc, buf0p, BYTES_PER_LINE * rlines) < 0)
 			exit(1);
-		clear(buf0p, rlines * BYTES_PER_LINE);
+		bzero(buf0p, rlines * BYTES_PER_LINE);
 		buf0p = buffer;
 		nlines -= rlines;
 		xpos -= rlines;
@@ -799,21 +799,13 @@ slop_lines(nlines)
 	}
 	if (write(vc, buf0p, BYTES_PER_LINE * nlines) < 0)
 		exit(1);
-	clear(buf0p, BYTES_PER_LINE * nlines);
+	bzero(buf0p, BYTES_PER_LINE * nlines);
 	buf0p += BYTES_PER_LINE * nlines;
 	if (buf0p >= &buffer[BUFFER_SIZE])
 		buf0p -= BUFFER_SIZE;
 	xpos -= nlines;
 	row -= RECONVERT(nlines);
 	/* ioctl(vc, VSETSTATE, pltmode);  WHY? */
-}
-
-/*ARGSUSED*/
-clear(lp, nbytes)
-	int *lp;
-	int nbytes;
-{
-	asm("movc5 $0,(sp),$0,8(ap),*4(ap)");
 }
 
 char *
