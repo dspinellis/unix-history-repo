@@ -1,4 +1,4 @@
-/*	trace.h	4.1	83/01/11	*/
+/*	trace.h	4.2	83/01/31	*/
 
 /*
  * Routing table management daemon.
@@ -30,21 +30,27 @@ struct	ifdebug {
 /*
  * Packet tracing stuff.
  */
+int	tracepackets;		/* watch packets as they go by */
 int	tracing;		/* on/off */
 FILE	*ftrace;		/* output trace file */
+
 #define	TRACE_ACTION(action, route) { \
 	  if (tracing) \
 		traceaction(ftrace, "action", route); \
 	}
-#define	TRACE_INPUT(ifp, from, size) { \
+#define	TRACE_INPUT(ifp, src, size) { \
 	  if (tracing) { \
-		ifp = if_iflookup(from); \
+		ifp = if_iflookup(src); \
 		if (ifp) \
-			trace(&ifp->int_input, from, packet, size, \
+			trace(&ifp->int_input, src, packet, size, \
 				ifp->int_metric); \
 	  } \
+	  if (tracepackets) \
+		dumppacket(stdout, "from", src, packet, size); \
 	}
-#define	TRACE_OUTPUT(ifp, to, size) { \
+#define	TRACE_OUTPUT(ifp, dst, size) { \
 	  if (tracing) \
-		trace(&ifp->int_output, to, packet, size, ifp->int_metric); \
+		trace(&ifp->int_output, dst, packet, size, ifp->int_metric); \
+	  if (tracepackets) \
+		dumppacket(stdout, "to", dst, packet, size); \
 	}

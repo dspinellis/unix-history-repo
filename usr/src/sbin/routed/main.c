@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	4.2 %G%";
+static char sccsid[] = "@(#)main.c	4.3 %G%";
 #endif
 
 /*
@@ -29,21 +29,6 @@ main(argc, argv)
 #endif
 	
 	argv0 = argv;
-#ifndef DEBUG
-	if (fork())
-		exit(0);
-	for (cc = 0; cc < 10; cc++)
-		(void) close(cc);
-	(void) open("/", 0);
-	(void) dup2(0, 1);
-	(void) dup2(0, 2);
-	{ int t = open("/dev/tty", 2);
-	  if (t >= 0) {
-		ioctl(t, TIOCNOTTY, (char *)0);
-		(void) close(t);
-	  }
-	}
-#endif
 	sp = getservbyname("router", "udp");
 	if (sp == NULL) {
 		fprintf(stderr, "routed: router/udp: unknown service\n");
@@ -64,19 +49,42 @@ main(argc, argv)
 #endif
 	argv++, argc--;
 	while (argc > 0 && **argv == '-') {
-		if (!strcmp(*argv, "-s") == 0) {
+		if (strcmp(*argv, "-s") == 0) {
 			supplier = 1;
 			argv++, argc--;
 			continue;
 		}
-		if (!strcmp(*argv, "-q") == 0) {
+		if (strcmp(*argv, "-q") == 0) {
 			supplier = 0;
 			argv++, argc--;
 			continue;
 		}
-		fprintf(stderr, "usage: routed [ -s ] [ -q ]\n");
+		if (strcmp(*argv, "-t") == 0) {
+			tracepackets++;
+			argv++, argc--;
+			continue;
+		}
+		fprintf(stderr, "usage: routed [ -s ] [ -q ] [ -t ]\n");
 		exit(1);
 	}
+#ifndef DEBUG
+	if (!tracepackets) {
+		int t;
+
+		if (fork())
+			exit(0);
+		for (cc = 0; cc < 10; cc++)
+			(void) close(cc);
+		(void) open("/", 0);
+		(void) dup2(0, 1);
+		(void) dup2(0, 2);
+		t = open("/dev/tty", 2);
+		if (t >= 0) {
+			ioctl(t, TIOCNOTTY, (char *)0);
+			(void) close(t);
+		}
+	}
+#endif
 	/*
 	 * Any extra argument is considered
 	 * a tracing log file.
