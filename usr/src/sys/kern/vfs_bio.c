@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_bio.c	7.17 (Berkeley) %G%
+ *	@(#)vfs_bio.c	7.18 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -548,69 +548,6 @@ biodone(bp)
 }
 
 /*
- * Ensure that no part of a specified block is in an incore buffer.
-#ifdef SECSIZE
- * "size" is given in device blocks (the units of b_lblkno).
-#endif SECSIZE
-#ifdef SECSIZE
- * "size" is given in device blocks (the units of b_blkno).
-#endif SECSIZE
- */
-blkflush(vp, blkno, size)
-	struct vnode *vp;
-	daddr_t blkno;
-#ifdef SECSIZE
-	int size;
-#else SECSIZE
-	long size;
-#endif SECSIZE
-{
-	register struct buf *ep;
-	struct buf *dp;
-	daddr_t curblk, nextblk, ecurblk, lastblk;
-	int s, error, allerrors = 0;
-
-	/*
-	 * Iterate through each possible hash chain.
-	 */
-	lastblk = blkno + btodb(size) - 1;
-	for (curblk = blkno; curblk <= lastblk; curblk = nextblk) {
-#if RND & (RND-1)
-		nextblk = ((curblk / RND) + 1) * RND;
-#else
-		nextblk = ((curblk & ~(RND-1)) + RND);
-#endif
-		ecurblk = nextblk > lastblk ? lastblk : nextblk - 1;
-		dp = BUFHASH(vp, curblk);
-loop:
-		for (ep = dp->b_forw; ep != dp; ep = ep->b_forw) {
-			if (ep->b_vp != vp || (ep->b_flags & B_INVAL))
-				continue;
-			/* look for overlap */
-			if (ep->b_bcount == 0 || ep->b_lblkno > ecurblk ||
-			    ep->b_lblkno + btodb(ep->b_bcount) <= curblk)
-				continue;
-			s = splbio();
-			if (ep->b_flags&B_BUSY) {
-				ep->b_flags |= B_WANTED;
-				sleep((caddr_t)ep, PRIBIO+1);
-				splx(s);
-				goto loop;
-			}
-			if (ep->b_flags & B_DELWRI) {
-				splx(s);
-				notavail(ep);
-				if (error = bwrite(ep))
-					allerrors = error;
-				goto loop;
-			}
-			splx(s);
-		}
-	}
-	return (allerrors);
-}
-
-/*
  * Make sure all write-behind blocks associated
  * with mount point are flushed out (from sync).
  */
@@ -752,7 +689,7 @@ bgetvp(vp, bp)
 
 	if (bp->b_vp)
 		panic("bgetvp: not free");
-	VREF(vp);
+	VHOLD(vp);
 	bp->b_vp = vp;
 	if (vp->v_type == VBLK || vp->v_type == VCHR)
 		bp->b_dev = vp->v_rdev;
@@ -796,7 +733,7 @@ brelvp(bp)
 	}
 	vp = bp->b_vp;
 	bp->b_vp = (struct vnode *) 0;
-	vrele(vp);
+	HOLDRELE(vp);
 }
 
 /*
