@@ -15,7 +15,7 @@
 
 # ifndef DAEMON
 # ifndef lint
-static char	SccsId[] = "@(#)daemon.c	5.4 (Berkeley) %G%	(w/o daemon mode)";
+static char	SccsId[] = "@(#)daemon.c	5.5 (Berkeley) %G%	(w/o daemon mode)";
 # endif not lint
 # else
 
@@ -27,7 +27,7 @@ static char	SccsId[] = "@(#)daemon.c	5.4 (Berkeley) %G%	(w/o daemon mode)";
 # include <sys/resource.h>
 
 # ifndef lint
-static char	SccsId[] = "@(#)daemon.c	5.4 (Berkeley) %G% (with daemon mode)";
+static char	SccsId[] = "@(#)daemon.c	5.5 (Berkeley) %G% (with daemon mode)";
 # endif not lint
 
 /*
@@ -212,6 +212,11 @@ makeconnection(host, port, outfile, infile)
 	{
 		register struct hostent *hp = gethostbyname(host);
 
+		if (errno == ETIMEDOUT)
+		{
+			CurEnv->e_flags &= ~EF_FATALERRS;
+			return (EX_TEMPFAIL);
+		}
 		if (hp == NULL)
 			return (EX_NOHOST);
 		bcopy(hp->h_addr, (char *) &SendmailAddress.sin_addr, hp->h_length);
