@@ -1,18 +1,24 @@
 /*
  * Copyright (c) 1987 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
  */
 
 #ifndef lint
 char copyright[] =
 "@(#) Copyright (c) 1987 Regents of the University of California.\n\
  All rights reserved.\n";
-#endif /* !lint */
+#endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fstat.c	5.9 (Berkeley) %G%";
-#endif /* !lint */
+static char sccsid[] = "@(#)fstat.c	5.10 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  *  fstat 
@@ -61,8 +67,6 @@ static char sccsid[] = "@(#)fstat.c	5.9 (Berkeley) %G%";
 #define	TEXT	-2
 #define	WD	-1
 
-#define	vprintf	if (vflg) printf
-
 typedef struct devs {
 	struct devs	*next;
 	dev_t	dev;
@@ -92,8 +96,7 @@ union {
 } user;
 
 extern int	errno;
-static off_t	procp;
-static int	fflg, hadfflg, vflg;
+static int	fflg, vflg;
 static int	kmem, mem, nproc, swap;
 static char	*uname;
 
@@ -134,7 +137,7 @@ main(argc, argv)
 			uid = passwd->pw_uid;
 			uname = passwd->pw_name;
 			break;
-		case 'v':
+		case 'v':	/* undocumented: print read error messages */
 			vflg++;
 			break;
 		case '?':
@@ -142,19 +145,14 @@ main(argc, argv)
 			usage();
 		}
 
-	for (argv += optind; *argv; ++argv) {
-		hadfflg = 1;
-		if (getfname(*argv))
-			fflg = 1;
+	if (*(argv += optind)) {
+		for (argv += optind; *argv; ++argv) {
+			if (getfname(*argv))
+				fflg = 1;
+		}
+		if (!fflg)	/* file(s) specified, but none accessable */
+			exit(1);
 	}
-	if (hadfflg && !fflg)	/* file(s) specified, but none accessable */
-		exit(1);
-
-	printf("USER\t CMD\t      PID    FD\tDEVICE\tINODE\t  SIZE TYPE");
-	if (fflg)
-		printf(" NAME\n");
-	else
-		printf("\n");
 
 	openfiles();
 
@@ -164,18 +162,19 @@ main(argc, argv)
 	}
 	Usrptma = (struct pte *)nl[X_USRPTMA].n_value;
 	usrpt = (struct pte *) nl[X_USRPT].n_value;
-	procp = lgetw((off_t)nl[X_PROC].n_value);
 	nproc = (int)lgetw((off_t)nl[X_NPROC].n_value);
 
+	(void)lseek(kmem, lgetw((off_t)nl[X_PROC].n_value), L_SET);
 	size = nproc * sizeof(struct proc);
 	if ((mproc = (struct proc *)malloc((u_int)size)) == NULL) {
 		fprintf(stderr, "fstat: out of space.\n");
 		exit(1);
 	}
-
-	(void)lseek(kmem, (off_t)procp, L_SET);
 	if (read(kmem, (char *)mproc, size) != size)
-		cantread("proc table", N_KMEM);
+		rerr1("proc table", N_KMEM);
+
+	printf("USER\t CMD\t      PID    FD\tDEVICE\tINODE\t  SIZE TYPE%s\n",
+	    fflg ? " NAME" : "");
 	for (; nproc--; ++mproc) {
 		if (mproc->p_stat == 0)
 			continue;
@@ -246,7 +245,7 @@ dotext()
 
 	(void)lseek(kmem, (off_t)mproc->p_textp, L_SET);
 	if (read(kmem, (char *) &text, sizeof(text)) != sizeof(text)) {
-		cantread("text table", N_KMEM);
+		rerr1("text table", N_KMEM);
 		return;
 	}
 	if (text.x_flag)
@@ -266,7 +265,7 @@ itrans(ftype, g, fno)
 	if (g || fflg) {
 		(void)lseek(kmem, (off_t)g, L_SET);
 		if (read(kmem, (char *)&inode, sizeof(inode)) != sizeof(inode)) {
-			vprintf("error %d reading inode at %x from kmem\n", errno, (int)g);
+			rerr2(errno, (int)g, "inode");
 			return;
 		}
 		idev = inode.i_dev;
@@ -363,7 +362,7 @@ socktrans(sock)
 	(void)lseek(kmem, (off_t)sock, L_SET);
 	if (read(kmem, (char *)&so, sizeof(struct socket))
 	    != sizeof(struct socket)) {
-		vprintf("error %d reading socket at %x from kmem\n", errno, (int)sock);
+		rerr2(errno, (int)sock, "socket");
 		return;
 	}
 
@@ -371,7 +370,7 @@ socktrans(sock)
 	(void)lseek(kmem, (off_t)so.so_proto, L_SET);
 	if (read(kmem, (char *)&proto, sizeof(struct protosw))
 	    != sizeof(struct protosw)) {
-		vprintf("error %d reading protosw at %x from kmem\n", errno, (int)so.so_proto);
+		rerr2(errno, (int)so.so_proto, "protosw");
 		return;
 	}
 
@@ -379,7 +378,7 @@ socktrans(sock)
 	(void)lseek(kmem, (off_t)proto.pr_domain, L_SET);
 	if (read(kmem, (char *)&dom, sizeof(struct domain))
 	    != sizeof(struct domain)) {
-		vprintf("error %d reading domain at %x from kmem\n", errno, (int)proto.pr_domain);
+		rerr2(errno, (int)proto.pr_domain, "domain");
 		return;
 	}
 
@@ -392,7 +391,7 @@ socktrans(sock)
 	else {
 		(void)lseek(kmem, (off_t)dom.dom_name, L_SET);
 		if ((len = read(kmem, dname, sizeof(dname) - 1)) < 0) {
-			vprintf("error %d reading char at %x from kmem\n", errno, (int)dom.dom_name);
+			rerr2(errno, (int)dom.dom_name, "char");
 			dname[0] = '\0';
 		}
 		else
@@ -406,7 +405,7 @@ socktrans(sock)
 		    so.so_state);
 
 	/* 
-	 * protocol specific formating 
+	 * protocol specific formatting
 	 *
 	 * Try to find interesting things to print.  For tcp, the interesting
 	 * thing is the address of the tcpcb, for udp and others, just the
@@ -424,7 +423,7 @@ socktrans(sock)
 				(void)lseek(kmem, (off_t)so.so_pcb, L_SET);
 				if (read(kmem, (char *)&inpcb, sizeof(struct inpcb))
 				    != sizeof(struct inpcb)){
-					vprintf("error %d reading inpcb at %x from kmem\n", errno, (int)so.so_pcb);
+					rerr2(errno, (int)so.so_pcb, "inpcb");
 					return;
 				}
 				printf(" %x", (int)inpcb.inp_ppcb);
@@ -440,7 +439,7 @@ socktrans(sock)
 			(void)lseek(kmem, (off_t)so.so_pcb, L_SET);
 			if (read(kmem, (char *)&unpcb, sizeof(struct unpcb))
 			    != sizeof(struct unpcb)){
-				vprintf("error %d reading unpcb at %x from kmem\n", errno, (int)so.so_pcb);
+				rerr2(errno, (int)so.so_pcb, "unpcb");
 				return;
 			}
 			if (unpcb.unp_conn) {
@@ -513,7 +512,7 @@ readf()
 		(void)lseek(kmem, (off_t)user.user.u_ofile[i], L_SET);
 		if (read(kmem, (char *)&lfile, sizeof(lfile))
 		    != sizeof(lfile)) {
-			cantread("file", N_KMEM);
+			rerr1("file", N_KMEM);
 			continue;
 		}
 		itrans(lfile.f_type, (struct inode *)lfile.f_data, i);
@@ -586,10 +585,20 @@ openfiles()
 }
 
 static
-cantread(what, fromwhat)
+rerr1(what, fromwhat)
 	char *what, *fromwhat;
 {
-	vprintf("fstat: error reading %s from %s", what, fromwhat);
+	if (vflg)
+		printf("fstat: error reading %s from %s", what, fromwhat);
+}
+
+static
+rerr2(err, address, what)
+	int err, address;
+	char *what;
+{
+	if (vflg)
+		printf("error %d reading %s at %x from kmem\n", errno, what, address);
 }
 
 static long
@@ -599,8 +608,8 @@ lgetw(loc)
 	long word;
 
 	(void)lseek(kmem, (off_t)loc, L_SET);
-	if (read(kmem, (char *) &word, sizeof(word)) != sizeof(word))
-		vprintf("error reading kmem at %lx\n", loc);
+	if (read(kmem, (char *)&word, sizeof(word)) != sizeof(word))
+		rerr2(errno, (int)loc, "word");
 	return(word);
 }
 
