@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)lab.c 1.4 %G%";
+static	char sccsid[] = "@(#)lab.c 1.5 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -80,20 +80,26 @@ label(r, l)
 		     *	throw them away if they aren't used in the function
 		     *	which defines them.
 		     */
-		    if (cbn == 1) {
-				/*
-				 *	stab the label for separate compilation.
-				 *	make label number = label name.
-				 */
-			    stabglabel( p -> symbol , line );
-			    p -> value[1] = atol( p -> symbol );
-			    putprintf( "	.globl	" , 1 );
-			    putprintf( PREFIXFORMAT , 0 , PLABELPREFIX
-					, p -> value[1] );
-		    } else {
-			    putprintf( "	.globl	" , 1 );
-			    putprintf( PREFIXFORMAT , 0 , GLABELPREFIX
-					, p -> value[1] );
+		    {
+			char	extname[ BUFSIZ ];
+			char	*starthere;
+			int	i;
+
+			starthere = &extname[0];
+			for ( i = 1 ; i < cbn ; i++ ) {
+			    sprintf( starthere , EXTFORMAT , enclosing[ i ] );
+			    starthere += strlen( enclosing[ i ] ) + 1;
+			}
+			sprintf( starthere , EXTFORMAT , p -> symbol );
+			starthere += strlen( p -> symbol ) + 1;
+			if ( starthere >= &extname[ BUFSIZ ] ) {
+			    panic( "lab decl namelength" );
+			}
+			putprintf( "	.globl	" , 1 );
+			putprintf( NAMEFORMAT , 0 , extname );
+			if ( cbn == 1 ) {
+			    stabglabel( extname , line );
+			}
 		    }
 #		endif PC
 	}
@@ -138,10 +144,23 @@ gotoop(s)
 		putop( P2CALL , P2INT );
 		putdot( filename , line );
 	    }
-	    if ( bn <= 1 ) {
-		printjbr( PLABELPREFIX , p -> value[1] );
-	    } else {
-		printjbr( GLABELPREFIX , p -> value[1] );
+	    {
+		char	extname[ BUFSIZ ];
+		char	*starthere;
+		int	i;
+
+		starthere = &extname[0];
+		for ( i = 1 ; i < bn ; i++ ) {
+		    sprintf( starthere , EXTFORMAT , enclosing[ i ] );
+		    starthere += strlen( enclosing[ i ] ) + 1;
+		}
+		sprintf( starthere , EXTFORMAT , p -> symbol );
+		starthere += strlen( p -> symbol ) + 1;
+		if ( starthere >= &extname[ BUFSIZ ] ) {
+		    panic( "goto namelength" );
+		}
+		putprintf( "	jbr	" , 1 );
+		putprintf( NAMEFORMAT , 0 , extname );
 	    }
 #	endif PC
 	if (bn == cbn)
@@ -185,12 +204,24 @@ labeled(s)
 	    patch4(p->entloc);
 #	endif OBJ
 #	ifdef PC
-	    if ( bn <= 1 ) {
-		putprintf( PREFIXFORMAT , 1 , PLABELPREFIX , p -> value[1] );
-	    } else {
-		putprintf( PREFIXFORMAT , 1 , GLABELPREFIX , p -> value[1] );
+	    {
+		char	extname[ BUFSIZ ];
+		char	*starthere;
+		int	i;
+
+		starthere = &extname[0];
+		for ( i = 1 ; i < bn ; i++ ) {
+		    sprintf( starthere , EXTFORMAT , enclosing[ i ] );
+		    starthere += strlen( enclosing[ i ] ) + 1;
+		}
+		sprintf( starthere , EXTFORMAT , p -> symbol );
+		starthere += strlen( p -> symbol ) + 1;
+		if ( starthere >= &extname[ BUFSIZ ] ) {
+		    panic( "labeled namelength" );
+		}
+		putprintf( NAMEFORMAT , 1 , extname );
+		putprintf( ":" , 0 );
 	    }
-	    putprintf( ":" , 0 );
 #	endif PC
 	if (p->value[NL_GOLEV] != NOTYET)
 		if (p->value[NL_GOLEV] < level) {
