@@ -3,7 +3,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)termcap.src	5.103 (Berkeley) %G%
+#	@(#)termcap.src	5.104 (Berkeley) %G%
 #
 
 #	Termcap source file
@@ -173,7 +173,7 @@ q101|qvt101|qvt-101|Qume 101 $310 special:\
 	:le=^H:bs:cm=\E=%+ %+ :cl=1^Z:co#80:ho=^^:li#24:ma=^K^P:nd=^L:ku=^K:\
 	:vs=\EM4\040\200\200\200:mr=\EG4:ms:so=\EG4:se=\EG1:
 # I suspect the xerox1720 is the same as the diablo 1620.
-x1720|x1700|1700|x1750|xerox 1720:\
+x1720|1700|x1750|xerox 1720:\
 	:co#132:le=^H:bs:hc:os:pt:do=^J:ct=\E2:st=\E1:
 # # --------------------------------
 #
