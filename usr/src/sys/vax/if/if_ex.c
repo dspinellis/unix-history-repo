@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_ex.c	6.12 (Berkeley) %G%
+ *	@(#)if_ex.c	6.13 (Berkeley) %G%
  */
 
 
@@ -892,7 +892,6 @@ ex_setaddr(physaddr, unit)
 	register struct ex_softc *xs = &ex_softc[unit];
 	struct uba_device *ui = exinfo[unit];
 	register struct exdevice *addr= (struct exdevice *)ui->ui_addr;
-	register struct ifnet *ifp = &xs->xs_if;
 	register struct ex_msg *bp;
 	
 	if (physaddr) {
