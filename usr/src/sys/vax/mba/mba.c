@@ -1,4 +1,4 @@
-/*	mba.c	4.13	81/03/03	*/
+/*	mba.c	4.14	81/03/06	*/
 
 #include "mba.h"
 #if NMBA > 0
@@ -133,7 +133,7 @@ loop:
 	 * we screwed up, and can't really do the operation.
 	 */
 	if ((mi->mi_drv->mbd_ds & (MBD_DPR|MBD_MOL)) != (MBD_DPR|MBD_MOL)) {
-		printf("%c%d not ready\n", mi->mi_name, dkunit(bp));
+		printf("%c%d: not ready\n", mi->mi_name, dkunit(bp));
 		mi->mi_tab.b_actf = bp->av_forw;
 		mi->mi_tab.b_errcnt = 0;
 		mi->mi_tab.b_active = 0;
@@ -190,8 +190,10 @@ mbintr(mbanum)
 	mbastat = mbp->mba_sr;
 	mbp->mba_sr = mbastat;
 #if VAX750
-	if (mbastat&MBS_CBHUNG)
-		panic("mba CBHUNG");
+	if (mbastat&MBS_CBHUNG) {
+		printf("mba%d: control bus hung\n", mbanum);
+		panic("cbhung");
+	}
 #endif
 	/* note: the mbd_as register is shared between drives */
 	as = mbp->mba_drv[0].mbd_as;
@@ -356,5 +358,13 @@ mbasetup(mi)
 	}
 	*(int *)io++ = 0;
 	return (vaddr);
+}
+
+mbainit(mp)
+	struct mba_regs *mp;
+{
+
+	mp->mba_cr = MBAINIT;
+	mp->mba_cr = MBAIE;
 }
 #endif
