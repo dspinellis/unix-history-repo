@@ -1,4 +1,4 @@
-/*	locore.s	6.16	84/08/22	*/
+/*	locore.s	6.17	84/08/23	*/
 
 #include "../machine/psl.h"
 #include "../machine/pte.h"
@@ -702,16 +702,22 @@ sigcode:
 #ifdef GPROF
 #define	ENTRY(name, regs) \
 	.globl _/**/name; .align 1; _/**/name: .word regs; jsb mcount
-#define	JSBENTRY(name) \
+#define	JSBENTRY(name, regs) \
 	.globl _/**/name; _/**/name: \
-	movl fp,-(sp); movab -12(sp),fp; movq r0,-(sp); jsb mcount; \
-	movq (sp)+,r0; movl (sp)+,fp
+	movl fp,-(sp); movab -12(sp),fp; pushr $(regs); jsb mcount; \
+	popr $(regs); movl (sp)+,fp
 #else
 #define	ENTRY(name, regs) \
 	.globl _/**/name; .align 1; _/**/name: .word regs
-#define	JSBENTRY(name) \
+#define	JSBENTRY(name, regs) \
 	.globl _/**/name; _/**/name:
 #endif GPROF
+#define R0 0x01
+#define R1 0x02
+#define R2 0x04
+#define R3 0x08
+#define R4 0x10
+#define R5 0x20
 #define R6 0x40
 
 /*
@@ -897,21 +903,23 @@ ENTRY(copystr, R6)
 /* 
  * Copy specified amount of data from user space into the kernel
  * Copyin(from, to, len)
+ *	r1 == from (user source address)
+ *	r3 == to (kernel destination address)
+ *	r5 == length
  */
 	.align	1
-JSBENTRY(Copyin)
-	movl	12(sp),r0		# copy length
-	blss	ersb
-	movl	4(sp),r1		# r1 = user src address
-	movl	8(sp),r3		# r3 = kernel dest addr
-	cmpl	$(NBPG*CLSIZE),r0	# probing one page or less ?
-	bleq	1f			# no
-	prober	$3,r0,(r1)		# bytes accessible ?
+JSBENTRY(Copyin, R1|R3|R5)
+	cmpl	r5,$(NBPG*CLSIZE)	# probing one page or less ?
+	bgtru	1f			# no
+	prober	$3,r5,(r1)		# bytes accessible ?
 	beql	ersb			# no
-	movc3	r0,(r1),(r3)
-	clrl	r0			#redundant
+	movc3	r5,(r1),(r3)
+/*	clrl	r0			# redundant */
 	rsb
 1:
+	blss	ersb			# negative length?
+	pushl	r6			# r6 = length
+	movl	r5,r6
 	bicl3	$~(NBPG*CLSIZE-1),r1,r0	# r0 = bytes on first page
 	subl3	r0,$(NBPG*CLSIZE),r0
 	addl2	$(NBPG*CLSIZE),r0	# plus one additional full page
@@ -921,19 +929,22 @@ ciloop:
 	movc3	r0,(r1),(r3)
 	movl	$(2*NBPG*CLSIZE),r0	# next amount to move
 2:
-	cmpl	r0,12(sp)
+	cmpl	r0,r6
 	bleq	3f
-	movl	12(sp),r0
+	movl	r6,r0
 3:
 	prober	$3,r0,(r1)		# bytes accessible ?
-	beql	ersb			# no
-	subl2	r0,12(sp)		# last move?
+	beql	ersb1			# no
+	subl2	r0,r6			# last move?
 	bneq	ciloop			# no
 
 	movc3	r0,(r1),(r3)
-	clrl	r0			#redundant
+/*	clrl	r0			# redundant */
+	movl	(sp)+,r6		# restore r6
 	rsb
 
+ersb1:
+	movl	(sp)+,r6		# restore r6
 ersb:
 	movl	$EFAULT,r0
 	rsb
@@ -941,21 +952,23 @@ ersb:
 /* 
  * Copy specified amount of data from kernel to the user space
  * Copyout(from, to, len)
+ *	r1 == from (kernel source address)
+ *	r3 == to (user destination address)
+ *	r5 == length
  */
 	.align	1
-JSBENTRY(Copyout)
-	movl	12(sp),r0		# copy length
-	blss	ersb
-	movl	4(sp),r1		# r1 = kernel src address
-	movl	8(sp),r3		# r3 = user dest addr
-	cmpl	$(NBPG*CLSIZE),r0	# moving one page or less ?
-	bleq	1f			# no
-	probew	$3,r0,(r3)		# bytes writeable?
+JSBENTRY(Copyout, R1|R3|R5)
+	cmpl	r5,$(NBPG*CLSIZE)	# moving one page or less ?
+	bgtru	1f			# no
+	probew	$3,r5,(r3)		# bytes writeable?
 	beql	ersb			# no
-	movc3	r0,(r1),(r3)
-	clrl	r0			#redundant
+	movc3	r5,(r1),(r3)
+/*	clrl	r0			# redundant */
 	rsb
 1:
+	blss	ersb			# negative length?
+	pushl	r6			# r6 = length
+	movl	r5,r6
 	bicl3	$~(NBPG*CLSIZE-1),r3,r0	# r0 = bytes on first page
 	subl3	r0,$(NBPG*CLSIZE),r0
 	addl2	$(NBPG*CLSIZE),r0	# plus one additional full page
@@ -965,17 +978,18 @@ coloop:
 	movc3	r0,(r1),(r3)
 	movl	$(2*NBPG*CLSIZE),r0	# next amount to move
 2:
-	cmpl	r0,12(sp)
+	cmpl	r0,r6
 	bleq	3f
-	movl	12(sp),r0
+	movl	r6,r0
 3:
 	probew	$3,r0,(r3)		# bytes writeable?
-	beql	ersb			# no
-	subl2	r0,12(sp)		# last move?
+	beql	ersb1			# no
+	subl2	r0,r6			# last move?
 	bneq	coloop			# no
 
 	movc3	r0,(r1),(r3)
-	clrl	r0			#redundant
+/*	clrl	r0			# redundant */
+	movl	(sp)+,r6		# restore r6
 	rsb
 
 /*
@@ -983,7 +997,7 @@ coloop:
  */
 #ifdef notdef		/* this is now expanded completely inline */
 	.align	1
-JSBENTRY(Setjmp)
+JSBENTRY(Setjmp, R0)
 	movl	fp,(r0)+	# current stack frame
 	movl	(sp),(r0)	# resuming pc
 	clrl	r0
@@ -992,7 +1006,7 @@ JSBENTRY(Setjmp)
 
 #define PCLOC 16
 	.align	1
-JSBENTRY(Longjmp)
+JSBENTRY(Longjmp, R0)
 	movl	(r0)+,newfp	# must save parameters in memory as all
 	movl	(r0),newpc	# registers may be clobbered.
 1:
@@ -1039,7 +1053,7 @@ newfp:	.space	4
  * Call should be made at spl6(), and p->p_stat should be SRUN
  */
 	.align	1
- JSBENTRY(Setrq)
+ JSBENTRY(Setrq, R0)
 	tstl	P_RLINK(r0)		## firewall: p->p_rlink must be 0
 	beql	set1			##
 	pushab	set3			##
@@ -1061,7 +1075,7 @@ set3:	.asciz	"setrq"
  * Call should be made at spl6().
  */
 	.align	1
- JSBENTRY(Remrq)
+ JSBENTRY(Remrq, R0)
 	movzbl	P_PRI(r0),r1
 	ashl	$-2,r1,r1
 	bbsc	r1,_whichqs,rem1
@@ -1110,7 +1124,7 @@ badsw:	pushab	sw0
  * Swtch(), using fancy VAX instructions
  */
 	.align	1
-JSBENTRY(Swtch)
+JSBENTRY(Swtch, 0)
 	movl	$1,_noproc
 	incl	_cnt+V_SWTCH
 sw1:	ffs	$0,$32,_whichqs,r0	# look for non-empty queue
@@ -1143,7 +1157,7 @@ sw3:
 /*
  * Resume(pf)
  */
-JSBENTRY(Resume)
+JSBENTRY(Resume, R0)
 	mtpr	$0x18,$IPL			# no interrupts, please
 	movl	_CMAP2,_u+PCB_CMAP2	# yech
 	svpctx
@@ -1166,7 +1180,7 @@ res1:
  * {fu,su},{byte,word}, all massaged by asm.sed to jsb's
  */
 	.align	1
-JSBENTRY(Fuword)
+JSBENTRY(Fuword, R0)
 	prober	$3,$4,(r0)
 	beql	fserr
 	movl	(r0),r0
@@ -1176,14 +1190,14 @@ fserr:
 	rsb
 
 	.align	1
-JSBENTRY(Fubyte)
+JSBENTRY(Fubyte, R0)
 	prober	$3,$1,(r0)
 	beql	fserr
 	movzbl	(r0),r0
 	rsb
 
 	.align	1
-JSBENTRY(Suword)
+JSBENTRY(Suword, R0|R1)
 	probew	$3,$4,(r0)
 	beql	fserr
 	movl	r1,(r0)
@@ -1191,7 +1205,7 @@ JSBENTRY(Suword)
 	rsb
 
 	.align	1
-JSBENTRY(Subyte)
+JSBENTRY(Subyte, R0|R1)
 	probew	$3,$1,(r0)
 	beql	fserr
 	movb	r1,(r0)
