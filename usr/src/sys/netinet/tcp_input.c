@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_input.c	8.6 (Berkeley) %G%
+ *	@(#)tcp_input.c	8.7 (Berkeley) %G%
  */
 
 #ifndef TUBA_INCLUDE
@@ -1011,16 +1011,14 @@ trimthenstep6:
 		 * If the window gives us less than ssthresh packets
 		 * in flight, open exponentially (maxseg per packet).
 		 * Otherwise open linearly: maxseg per window
-		 * (maxseg^2 / cwnd per packet), plus a constant
-		 * fraction of a packet (maxseg/8) to help larger windows
-		 * open quickly enough.
+		 * (maxseg * (maxseg / cwnd) per packet).
 		 */
 		{
 		register u_int cw = tp->snd_cwnd;
 		register u_int incr = tp->t_maxseg;
 
 		if (cw > tp->snd_ssthresh)
-			incr = incr * incr / cw + incr / 8;
+			incr = incr * incr / cw;
 		tp->snd_cwnd = min(cw + incr, TCP_MAXWIN<<tp->snd_scale);
 		}
 		if (acked > so->so_snd.sb_cc) {
