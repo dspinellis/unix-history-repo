@@ -1,9 +1,12 @@
-/*	if.c	4.24	82/11/13	*/
+/*	if.c	4.25	83/02/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/socket.h"
 #include "../h/protosw.h"
+#include "../h/time.h"
+#include "../h/kernel.h"
+
 #include "../net/if.h"
 #include "../net/af.h"
 
