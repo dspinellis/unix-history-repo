@@ -1,0 +1,1559 @@
+
+abbrev.c,715
+DEFUN ("abbrev-expansion", Fabbrev_expansion,182,5438
+DEFUN ("abbrev-symbol", Fabbrev_symbol,156,4652
+DEFUN ("clear-abbrev-table", Fclear_abbrev_table,81,2461
+DEFUN ("define-abbrev", Fdefine_abbrev,96,2842
+       Fdefine_abbrev_table,402,11375
+DEFUN ("define-global-abbrev", Fdefine_global_abbrev,131,3826
+DEFUN ("define-mode-abbrev", Fdefine_mode_abbrev,142,4189
+DEFUN ("expand-abbrev", Fexpand_abbrev,197,5936
+  Finsert_abbrev_table_description,361,10317
+DEFUN ("last-abbrev-expansion", Flast_abbrev_expansion,312,9117
+DEFUN ("make-abbrev-table", Fmake_abbrev_table,74,2269
+DEFUN ("unexpand-abbrev", Funexpand_abbrev,293,8572
+describe_abbrev 339,9760
+syms_of_abbrev 438,12370
+write_abbrev 320,9318
+
+alloc.c,1049
+DEFUN ("cons", Fcons,148,3671
+DEFUN ("garbage-collect", Fgarbage_collect,685,17889
+DEFUN ("list", Flist,178,4443
+DEFUN ("make-list", Fmake_list,197,4868
+DEFUN ("make-marker", Fmake_marker,359,9127
+DEFUN ("make-string", Fmake_string,433,11208
+DEFUN ("make-symbol", Fmake_symbol,296,7475
+DEFUN ("make-vector", Fmake_vector,219,5380
+DEFUN ("purecopy", Fpurecopy,575,15133
+DEFUN ("vector", Fvector,247,6248
+build_string 457,11852
+clear_marks 793,20919
+free_cons 141,3559
+gc_sweep 1068,28405
+init_alloc 1243,32418
+init_alloc_once 1216,31802
+init_cons 131,3304
+init_marker 350,8888
+init_strings 423,10939
+init_symbol 287,7236
+make_pure_string 526,13986
+make_pure_vector 560,14809
+make_string 446,11646
+make_zero_string 464,11953
+malloc_warning 71,1996
+malloc_warning_1 64,1838
+mark_buffer 1025,26486
+mark_object 877,22975
+memory_full 80,2197
+pure_cons 545,14453
+int pure[PURESIZE / sizeof 56,1639
+char staticvec1[NSTATICS * sizeof 630,16437
+staticpro 639,16652
+syms_of_alloc 1249,32459
+xmalloc 88,2314
+xrealloc 97,2436
+
+alloca.c,47
+alloca 120,3388
+find_stack_direction 66,2016
+
+auxdoc.c,0
+
+buffer.c,1638
+DEFUN ("barf-if-buffer-read-only", Fbarf_if_buffer_read_only,620,16729
+DEFUN ("buffer-file-name", Fbuffer_file_name,299,8093
+DEFUN ("buffer-flush-undo", Fbuffer_flush_undo,444,11856
+DEFUN ("buffer-list", Fbuffer_list,89,2462
+DEFUN ("buffer-local-variables", Fbuffer_local_variables,311,8435
+DEFUN ("buffer-modified-p", Fbuffer_modified_p,326,8853
+DEFUN ("buffer-name", Fbuffer_name,275,7494
+DEFUN ("buffer-number", Fbuffer_number,287,7793
+DEFUN ("bury-buffer", Fbury_buffer,630,17006
+DEFUN ("current-buffer", Fcurrent_buffer,592,15814
+Fdelete_buffer_internal 457,12169
+DEFUN ("erase-buffer", Ferase_buffer,773,21421
+DEFUN ("generate-new-buffer", Fgenerate_new_buffer,245,6749
+DEFUN ("get-buffer", Fget_buffer,96,2606
+DEFUN ("get-buffer-create", Fget_buffer_create,136,3803
+DEFUN ("get-file-buffer", Fget_file_buffer,111,3022
+DEFUN ("kill-all-local-variables", Fkill_all_local_variables,884,24628
+DEFUN ("kill-buffer", Fkill_buffer,506,13223
+DEFUN ("list-buffers", Flist_buffers,868,24068
+DEFUN ("other-buffer", Fother_buffer,415,10987
+DEFUN ("pop-to-buffer", Fpop_to_buffer,573,15166
+DEFUN ("rename-buffer", Frename_buffer,397,10510
+DEFUN ("set-buffer", Fset_buffer,601,16025
+DEFUN ("set-buffer-modified-p", Fset_buffer_modified_p,346,9347
+DEFUN ("switch-to-buffer", Fswitch_to_buffer,550,14454
+ModExist 378,10124
+SetBfp 652,17655
+SetBfx 762,21279
+init_buffer 953,26661
+init_buffer_once 916,25739
+keys_of_buffer 1116,33075
+list_buffers_1 804,22140
+nsberror 81,2289
+record_buffer 540,14222
+reset_buffer 204,5534
+reset_buffer_local_variables(218,5858
+syms_of_buffer 967,26985
+validate_region 783,21645
+
+buffer.h,25
+#define CharAt(143,5649
+
+bytecode.c,118
+#define DISCARD(140,3395
+DEFUN ("byte-code", Fbyte_code,147,3538
+#define PUSH(132,3239
+syms_of_bytecode 673,12556
+
+callint.c,236
+DEFUN ("call-interactively", Fcall_interactively,81,2220
+DEFUN ("interactive", Finteractive,40,1303
+DEFUN ("prefix-numeric-value", Fprefix_numeric_value,380,10452
+quotify_arg 51,1556
+quotify_args 63,1847
+syms_of_callint 406,11009
+
+callproc.c,231
+DEFUN ("call-process", Fcall_process,67,1729
+DEFUN ("call-process-region", Fcall_process_region,258,6129
+call_process_cleanup 56,1531
+child_setup 210,5118
+init_callproc 291,7140
+#define max(42,1168
+syms_of_callproc 304,7481
+
+casefiddle.c,584
+DEFUN ("capitalize", Fcapitalize,88,2278
+DEFUN ("capitalize-region", Fcapitalize_region,149,4129
+DEFUN ("capitalize-word", Fcapitalize_word,210,5837
+DEFUN ("downcase", Fdowncase,80,2073
+DEFUN ("downcase-region", Fdowncase_region,137,3715
+DEFUN ("downcase-word", Fdowncase_word,200,5547
+DEFUN ("upcase", Fupcase,72,1876
+DEFUN ("upcase-region", Fupcase_region,125,3309
+DEFUN ("upcase-word", Fupcase_word,190,5265
+casify_object 34,1079
+casify_region 100,2701
+keys_of_casefiddle 235,6497
+operate_on_word 174,4841
+syms_of_casefiddle 222,6218
+upcase_initials_region 166,4723
+
+cm.c,179
+Wcm_clear 381,9524
+Wcm_init 393,9645
+addcol 72,1740
+at 62,1625
+calccost 148,3963
+cmcostinit 108,2596
+cmgoto 280,7129
+cmputc 45,1280
+evalcost 38,1234
+losecursor 270,7029
+
+cm.h,46
+#define	cmat(94,3079
+#define	cmplus(95,3130
+
+cmds.c,515
+DEFUN ("backward-char", Fbackward_char,56,1622
+DEFUN ("beginning-of-line", Fbeginning_of_line,118,3088
+DEFUN ("delete-backward-char", Fdelete_backward_char,195,4873
+DEFUN ("delete-char", Fdelete_char,162,4082
+DEFUN ("end-of-line", Fend_of_line,135,3507
+DEFUN ("forward-char", Fforward_char,31,1058
+DEFUN ("forward-line", Fforward_line,71,1960
+DEFUN ("newline", Fnewline,228,5898
+DEFUN ("self-insert-command", Fself_insert_command,207,5330
+SelfInsert 261,6689
+keys_of_cmds 336,8557
+syms_of_cmds 311,7904
+
+commands.h,20
+#define Ctl(22,891
+
+config.h,0
+
+crt0.c,153
+_start 105,4475
+_start 118,4707
+_start(140,5110
+_start 221,6858
+_start 280,8305
+start1 126,4853
+start1 229,6974
+start1 292,8539
+start1 294,8566
+
+data.c,2794
+973,26978
+DEFUN ("1+", Fadd1,1170,31451
+DEFUN ("aref", Faref,789,22259
+Farray_length 841,23796
+DEFUN ("arrayp", Farrayp,197,4819
+DEFUN ("aset", Faset,815,23029
+DEFUN ("ash", Fash,1132,30466
+DEFUN ("atom", Fatom,125,3328
+DEFUN ("boundp", Fboundp,346,8204
+DEFUN ("bufferp", Fbufferp,216,5284
+DEFUN ("car", Fcar,264,6402
+DEFUN ("car-safe", Fcar_safe,280,6724
+DEFUN ("cdr", Fcdr,291,6972
+DEFUN ("cdr-safe", Fcdr_safe,307,7294
+DEFUN ("char-or-string-p", Fchar_or_string_p,253,6104
+DEFUN ("consp", Fconsp,116,3159
+DEFUN ("default-value", Fdefault_value,580,14525
+DEFUN ("eq", Feq,97,2832
+DEFUN ("=", Feqlsign,853,24088
+DEFUN ("fboundp", Ffboundp,356,8454
+DEFUN ("fmakunbound", Ffmakunbound,375,8924
+DEFUN ("fset", Ffset,414,9876
+DEFUN (">=", Fgeq,905,25267
+DEFUN (">", Fgtr,879,24662
+DEFUN ("int-to-string", Fint_to_string,942,26053
+DEFUN ("integer-or-marker-p", Finteger_or_marker_p,234,5657
+DEFUN ("integerp", Fintegerp,152,3921
+DEFUN ("kill-local-variable", Fkill_local_variable,754,21159
+DEFUN ("<=", Fleq,892,24959
+DEFUN ("listp", Flistp,134,3518
+DEFUN ("logand", Flogand,1105,29828
+DEFUN ("logior", Flogior,1114,30038
+DEFUN ("lognot", Flognot,1189,31831
+DEFUN ("logxor", Flogxor,1123,30247
+DEFUN ("lsh", Flsh,1151,30940
+DEFUN ("<", Flss,866,24368
+DEFUN ("make-local-variable", Fmake_local_variable,715,19743
+DEFUN ("make-variable-buffer-local", Fmake_variable_buffer_local,681,18426
+DEFUN ("makunbound", Fmakunbound,366,8727
+DEFUN ("markerp", Fmarkerp,225,5466
+DEFUN ("max", Fmax,1087,29411
+DEFUN ("min", Fmin,1096,29619
+DEFUN ("-", Fminus,1044,28461
+DEFUN ("natnump", Fnatnump,161,4095
+DEFUN ("/=", Fneq,918,25578
+DEFUN ("nlistp", Fnlistp,143,3716
+DEFUN ("null", Fnull,107,3015
+DEFUN ("+", Fplus,1035,28277
+DEFUN ("/", Fquo,1064,28938
+DEFUN ("%", Frem,1073,29136
+DEFUN ("sequencep", Fsequencep,206,5039
+DEFUN ("set", Fset,597,15070
+DEFUN ("set-default", Fset_default,654,17436
+DEFUN ("setcar", Fsetcar,318,7542
+DEFUN ("setcdr", Fsetcdr,331,7850
+DEFUN ("setplist", Fsetplist,427,10278
+DEFUN ("string-to-int", Fstring_to_int,954,26353
+DEFUN ("stringp", Fstringp,188,4645
+DEFUN ("1-", Fsub1,1180,31641
+DEFUN ("subrp", Fsubrp,244,5927
+DEFUN ("symbol-function", Fsymbol_function,384,9141
+DEFUN ("symbol-name", Fsymbol_name,403,9637
+DEFUN ("symbol-plist", Fsymbol_plist,395,9450
+DEFUN ("symbol-value", Fsymbol_value,508,12157
+DEFUN ("symbolp", Fsymbolp,170,4297
+DEFUN ("*", Ftimes,1055,28746
+DEFUN ("vectorp", Fvectorp,179,4471
+DEFUN ("zerop", Fzerop,931,25877
+args_out_of_range 72,2395
+args_out_of_range_3 79,2528
+arith_error 1444,39303
+do_symval_forwarding 443,10674
+init_data 1461,39624
+make_number 87,2695
+pure_write_error 67,2322
+store_symval_forwarding 471,11257
+syms_of_data 1200,32032
+wrong_type_argument 46,1732
+
+dired.c,372
+DEFUN ("directory-files", Fdirectory_files,54,1505
+DEFUN ("file-attributes", Ffile_attributes,272,7915
+DEFUN ("file-name-all-completions", Ffile_name_all_completions,118,3499
+DEFUN ("file-name-completion", Ffile_name_completion,98,2673
+file_name_completion 128,3793
+file_name_completion_stat 246,7292
+make_time 265,7789
+#define min(40,1198
+syms_of_dired 313,9231
+
+dispextern.h,0
+
+dispnew.c,1229
+Ding 1047,27450
+DEFSIMPLE ("baud-rate", Fbaud_rate,1016,26647
+DEFUN ("ding", Fding,1038,27290
+DEFUN ("open-termscript", Fopen_termscript,940,24483
+DEFUN ("screen-height", Fscreen_height,971,25266
+DEFUN ("screen-width", Fscreen_width,978,25447
+DEFUN ("send-string-to-terminal", Fsend_string_to_terminal,1020,26783
+DEFUN ("set-screen-height", Fset_screen_height,951,24780
+DEFUN ("set-screen-width", Fset_screen_width,961,25027
+DEFUN ("sit-for", Fsit_for,1108,28892
+DEFUN ("sleep-for", Fsleep_for,1058,27683
+#define LINE_NEXT(100,2803
+#define SET_LINE_NEXT(101,2854
+cancel_line 258,6586
+cancel_my_columns 425,10845
+change_screen_size 987,25736
+clear_screen_records 187,4938
+count_blanks 923,24209
+count_match 931,24322
+direct_output_for_insert 441,11210
+direct_output_forward_char 490,12567
+get_display_line 269,6844
+init_display 1161,30096
+line_draw_cost 231,5957
+line_hash_code 197,5204
+make_display_lines 115,3237
+#define max(52,1312
+#define min(53,1354
+new_display_line 157,4193
+preserve_my_columns 391,9944
+preserve_other_columns 351,8829
+return_display_line 175,4701
+scroll_screen_lines 303,7546
+scrolling 647,16687
+syms_of_display 1187,30665
+update_line 714,18856
+update_screen 513,13210
+
+doc.c,224
+DEFUN ("documentation", Fdocumentation,89,2251
+DEFUN ("Snarf-documentation", Fsnarf_documentation,137,3957
+DEFUN ("substitute-command-keys", Fsubstitute_command_keys,217,6175
+get_doc_string 41,1201
+syms_of_doc 343,9433
+
+doprnt.c,16
+doprnt 27,1063
+
+editfns.c,2479
+	   Lisp_Int, XSETINT, point>NumCharacters ? 0 : CharAt(337,8830
+	   Lisp_Int, XSETINT, point<=FirstCharacter ? 0 : CharAt(340,9003
+	 point<=FirstCharacter || CharAt(352,9525
+	 point>NumCharacters || CharAt(356,9720
+DEFPRED ("bobp", Fbobp,342,9072
+DEFPRED ("bolp", Fbolp,350,9440
+DEFUN ("buffer-string", Fbuffer_string,498,13192
+DEFUN ("buffer-substring", Fbuffer_substring,481,12758
+DEFSIMPLE ("buffer-size", Fbufsize,304,7541
+DEFUN ("char-after", Fchar_after,358,9767
+DEFUN ("char-equal", Fchar_equal,821,22011
+DEFUN ("char-to-string", Fchar_to_string,123,3057
+DEFUN ("current-time-string", Fcurrent_time_string,403,10975
+DEFUN ("delete-region", Fdelete_region,594,15778
+DEFPRED ("eobp", Feobp,346,9263
+DEFPRED ("eolp", Feolp,353,9575
+DEFSIMPLE ("following-char", Ffollchar,335,8721
+DEFUN ("format", Fformat,737,19937
+DEFUN ("getenv", Fgetenv,839,22504
+DEFUN ("goto-char", Fgoto_char,171,4113
+DEFUN ("insert", Finsert,413,11242
+DEFUN ("insert-before-markers", Finsert_before_markers,445,11876
+DEFUN ("insert-buffer-substring", Finsert_buffer_substring,507,13502
+DEFUN ("mark", Fmark,208,5144
+DEFUN ("mark-marker", Fmark_marker,217,5347
+DEFUN ("message", Fmessage,718,19308
+DEFUN ("narrow-to-region", Fnarrow_to_region,616,16382
+DEFSIMPLE ("point", Fpoint,159,3807
+DEFUN ("point-marker", Fpoint_marker,164,3964
+DEFSIMPLE ("point-max", Fpoint_max,321,8184
+DEFUN ("point-max-marker", Fpoint_max_marker,327,8451
+DEFSIMPLE ("point-min", Fpoint_min,308,7688
+DEFUN ("point-min-marker", Fpoint_min_marker,313,7910
+DEFSIMPLE ("preceding-char", Fprevchar,338,8894
+DEFUN ("region-beginning", Fregion_beginning,186,4548
+DEFUN ("region-end", Fregion_end,197,4858
+DEFUN ("save-excursion", Fsave_excursion,287,7041
+DEFUN ("save-restriction", Fsave_restriction,695,18440
+DEFUN ("set-mark", Fset_mark,225,5571
+DEFUN ("string-to-char", Fstring_to_char,135,3297
+DEFUN ("subst-char-in-region", Fsubst_char_in_region,558,14920
+DEFUN ("system-name", Fsystem_name,396,10799
+DEFUN ("user-full-name", Fuser_full_name,389,10618
+DEFUN ("user-login-name", Fuser_login_name,373,10187
+DEFUN ("user-real-login-name", Fuser_real_login_name,380,10366
+DEFUN ("widen", Fwiden,606,16117
+buildmark 151,3678
+format1 799,21573
+format1 802,21674
+init_editfns 42,1348
+#define max(29,1022
+#define min(28,980
+save_excursion_restore 262,6346
+save_excursion_save 246,6005
+save_restriction_restore 664,17724
+save_restriction_save 651,17355
+syms_of_editfns 853,22843
+
+emacs.c,204
+DEFUN ("dump-emacs", Fdump_emacs,362,9211
+DEFUN ("kill-emacs", Fkill_emacs,310,7980
+decode_env_path 400,10135
+fatal_error_signal 75,2023
+init_cmdargs 119,2953
+main 137,3271
+syms_of_emacs 426,10618
+
+eval.c,1789
+DEFUN ("and", Fand,192,4937
+DEFUN ("apply", Fapply,1426,37358
+DEFUN ("autoload", Fautoload,1151,30072
+DEFUN ("backtrace", Fbacktrace,1989,51779
+DEFUN ("backtrace-debug", Fbacktrace_debug,1967,51236
+DEFUN ("catch", Fcatch,754,19320
+DEFUN ("commandp", Fcommandp,1101,28458
+DEFUN ("cond", Fcond,241,5979
+DEFUN ("condition-case", Fcondition_case,878,22424
+DEFUN ("defconst", Fdefconst,526,13187
+DEFUN ("defmacro", Fdefmacro,476,11667
+DEFUN ("defun", Fdefun,458,11182
+DEFUN ("defvar", Fdefvar,497,12378
+DEFUN ("eval", Feval,1241,32739
+DEFUN ("funcall", Ffuncall,1623,42150
+DEFUN ("function", Ffunction,414,9770
+DEFUN ("global-set", Fglobal_set,1947,50728
+DEFUN ("global-value", Fglobal_value,1930,50255
+DEFUN ("if", Fif,222,5508
+DEFUN ("interactive-p", Finteractive_p,425,10064
+DEFUN ("let", Flet,601,15374
+DEFUN ("let*", FletX,567,14453
+DEFUN ("macroexpand", Fmacroexpand,676,17249
+DEFUN ("or", For,162,4370
+DEFUN ("prog1", Fprog1,308,7574
+DEFUN ("prog2", Fprog2,341,8240
+DEFUN ("progn", Fprogn,273,6816
+DEFUN ("quote", Fquote,406,9585
+DEFUN ("setq", Fsetq,376,8923
+DEFUN ("signal", Fsignal,997,25609
+DEFUN ("throw", Fthrow,832,21295
+DEFUN ("unwind-protect", Funwind_protect,855,21778
+DEFUN ("user-variable-p", Fuser_variable_p,549,13896
+DEFUN ("while", Fwhile,654,16833
+apply_lambda 1760,45754
+call1 1575,41187
+call2 1591,41501
+call3 1608,41851
+call_debugger 140,3765
+do_autoload 1212,31928
+do_debug_on_call 150,4030
+error 1092,28299
+find_handler_clause 1052,27229
+funcall_lambda 1804,46877
+grow_specpdl 1854,48048
+init_eval 128,3582
+init_eval_once 120,3394
+internal_catch 797,20537
+internal_condition_case 949,24433
+record_unwind_protect 1888,48936
+specbind 1876,48627
+syms_of_eval 2037,52966
+un_autoload 1189,31395
+unbind_to 1901,49259
+
+fileio.c,1661
+DEFUN ("add-name-to-file", Fadd_name_to_file,546,13893
+DEFUN ("clear-visited-file-modtime", Fclear_visited_file_modtime,987,25663
+DEFUN ("copy-file", Fcopy_file,442,10807
+DEFUN ("delete-file", Fdelete_file,487,12089
+DEFUN ("do-auto-save", Fdo_auto_save,1012,26123
+DEFUN ("expand-file-name", Fexpand_file_name,123,3374
+DEFUN ("file-directory-p", Ffile_directory_p,681,17880
+DEFUN ("file-exists-p", Ffile_exists_p,613,16090
+DEFUN ("file-modes", Ffile_modes,705,18641
+DEFUN ("file-name-directory", Ffile_name_directory,70,2064
+DEFUN ("file-name-nondirectory", Ffile_name_nondirectory,93,2605
+DEFUN ("file-symlink-p", Ffile_symlink_p,642,17037
+DEFUN ("file-writable-p", Ffile_writable_p,626,16502
+DEFUN ("insert-file-contents", Finsert_file_contents,751,19890
+DEFUN ("make-symbolic-link", Fmake_symbolic_link,580,14980
+DEFUN ("make-temp-name", Fmake_temp_name,112,3077
+DEFUN ("read-file-name", Fread_file_name,1134,29718
+DEFUN ("read-file-name-internal", Fread_file_name_internal,1093,28538
+DEFUN ("recent-auto-save-p", Frecent_auto_save_p,1082,28180
+DEFUN ("rename-file", Frename_file,500,12552
+DEFUN ("set-buffer-auto-saved", Fset_buffer_auto_saved,1072,27889
+DEFUN ("set-file-modes", Fset_file_modes,730,19355
+DEFUN ("substitute-in-file-name", Fsubstitute_in_file_name,266,6697
+DEFUN ("verify-visited-file-modtime", Fverify_visited_file_modtime,966,25065
+DEFUN ("write-region", Fwrite_region,824,21779
+auto_save_1 1004,26008
+auto_save_error 998,25957
+barf_or_query_if_file_exists 427,10380
+close_file_unwind 745,19816
+e_write 933,24497
+#define max(35,1123
+#define min(34,1081
+report_file_error 46,1442
+syms_of_fileio 1182,31340
+
+filelock.c,320
+DEFUN ("lock-buffer", Flock_buffer,238,5852
+DEFUN ("unlock-buffer", Funlock_buffer,256,6292
+current_lock_owner 167,4558
+fill_in_lock_file_name 94,3051
+lock_file 58,2081
+lock_file_1 119,3559
+lock_if_free 143,4052
+lock_superlock 200,5123
+syms_of_filelock 268,6585
+unlock_all_files 223,5512
+unlock_file 184,4806
+
+filemode.c,72
+filemodestring 72,2230
+ftypelet(96,2802
+rwx 124,3325
+setst 141,3681
+
+fns.c,1383
+DEFUN ("append", Fappend,200,5126
+DEFUN ("assoc", Fassoc,480,12405
+DEFUN ("assq", Fassq,460,11864
+DEFUN ("concat", Fconcat,211,5462
+DEFUN ("copy-sequence", Fcopy_sequence,234,6229
+DEFUN ("delq", Fdelq,520,13510
+DEFUN ("elt", Felt,424,10977
+DEFUN ("equal", Fequal,729,18189
+DEFUN ("featurep", Ffeaturep,1173,29007
+DEFUN ("fillarray", Ffillarray,783,19644
+DEFUN ("get", Fget,684,17024
+DEFUN ("identity", Fidentity,71,2025
+DEFUN ("length", Flength,99,2696
+DEFUN ("load-average", Fload_average,1049,26073
+DEFUN ("mapcar", Fmapcar,956,23558
+DEFUN ("mapconcat", Fmapconcat,925,22787
+DEFUN ("memq", Fmemq,442,11399
+DEFUN ("nconc", Fnconc,829,20682
+DEFUN ("nreverse", Fnreverse,552,14242
+DEFUN ("nth", Fnth,412,10638
+DEFUN ("nthcdr", Fnthcdr,395,10316
+DEFUN ("provide", Fprovide,1188,29528
+DEFUN ("put", Fput,702,17496
+DEFUN ("random", Frandom,79,2160
+DEFUN ("rassq", Frassq,500,12965
+DEFUN ("require", Frequire,1203,29959
+DEFUN ("reverse", Freverse,573,14678
+DEFUN ("sort", Fsort,593,15209
+DEFUN ("string-equal", Fstring_equal,133,3332
+DEFUN ("string-lessp", Fstring_lessp,152,3962
+DEFUN ("substring", Fsubstring,362,9322
+DEFUN ("vconcat", Fvconcat,223,5886
+DEFUN ("y-or-n-p", Fy_or_n_p,975,24024
+DEFUN ("yes-or-no-p", Fyes_or_no_p,1009,24941
+concat 246,6624
+concat2 187,4887
+mapcar1 876,21692
+merge 625,16008
+nconc2 816,20476
+syms_of_fns 1224,30591
+
+indent.c,513
+DEFSIMPLE ("current-column", Fcurrent_column,50,1593
+DEFUN ("current-indentation", Fcurrent_indentation,176,4241
+DEFUN ("indent-to", Findent_to,153,3679
+DEFUN ("move-to-column", Fmove_to_column,208,4959
+DEFUN ("vertical-motion", Fvertical_motion,482,12187
+ToCol 118,3031
+compute_motion 264,6186
+  Lisp_Int, XSETINT, current_column 53,1767
+current_column 55,1808
+#define max(35,1096
+#define min(34,1054
+pos_tab_offset 374,9280
+position_indentation 189,4576
+syms_of_indent 508,13034
+vmotion 396,9775
+
+indent.h,0
+
+insdel.c,264
+GapTo 29,1016
+InsCStr 205,4427
+InsStr 197,4314
+adjust_markers 115,2641
+del_range 244,5255
+gap_left 41,1182
+gap_right 75,1721
+insert_before_markers 232,4967
+insert_char 189,4196
+make_gap 149,3322
+modify_region 291,6188
+prepare_to_modify_buffer 303,6525
+
+keyboard.c,1759
+EchoThem 183,5468
+DEFUN ("abort-recursive-edit", Fabort_recursive_edit,415,10514
+DEFUN ("command-execute", Fcommand_execute,1148,27419
+DEFUN ("discard-input", Fdiscard_input,1269,30516
+DEFUN ("exit-recursive-edit", Fexit_recursive_edit,406,10269
+DEFUN ("input-pending-p", Finput_pending_p,1219,29043
+DEFUN ("open-dribble-file", Fopen_dribble_file,1258,30224
+DEFUN ("read-key-sequence", Fread_key_sequence,1127,26711
+DEFUN ("recent-keys", Frecent_keys,1229,29359
+DEFSIMPLE ("recursion-depth", Frecursion_depth,1254,30068
+DEFUN ("recursive-edit", Frecursive_edit,233,6465
+DEFUN ("set-input-mode", Fset_input_mode,1511,36908
+DEFUN ("suspend-emacs", Fsuspend_emacs,1286,30849
+DEFUN ("this-command-keys", Fthis_command_keys,1247,29879
+DEFUN ("top-level", Ftop_level,399,10136
+clear_waiting_for_input 1411,34046
+cmd_error 283,7637
+command_loop 370,9588
+command_loop_1 430,10910
+debugger 352,9185
+detect_input_pending 1207,28859
+fake_suspend 1312,31593
+get_char 630,15713
+get_input_pending 860,20967
+gobble_input 907,22092
+init_keyboard 1530,37452
+input_available_signal 962,23014
+interrupt_signal 1431,34708
+kbd_buffer_get_char 801,19695
+kbd_buffer_store_char 926,22439
+keys_of_keyboard 1663,41705
+#define	min(179,5405
+print_help 790,19483
+quit_throw_to_get_char 1501,36697
+read_avail_input 875,21304
+read_key_sequence 1028,24380
+recursive_edit_unwind 272,7467
+request_echo 601,15082
+set_waiting_for_input 1387,33488
+#define sigblockx(160,4732
+#define sigblockx(168,4961
+#define sigfree(158,4647
+#define sigholdx(159,4680
+#define sigpausex(162,4821
+#define sigpausex(170,5038
+#define sigunblockx(161,4783
+#define sigunblockx(169,4998
+stuff_buffered_input 1361,32856
+syms_of_keyboard 1567,38268
+top_level_1 387,9826
+
+keymap.c,1881
+DEFUN ("accessible-keymaps", Faccessible_keymaps,483,12799
+DEFUN ("apropos", Fapropos,1054,26137
+DEFUN ("current-local-map", Fcurrent_local_map,476,12620
+DEFUN ("define-key", Fdefine_key,243,6319
+DEFUN ("define-prefix-command", Fdefine_prefix_command,441,11781
+DEFUN ("describe-bindings", Fdescribe_bindings,755,19020
+DEFUN ("execute-extended-command", Fexecute_extended_command,1077,27007
+DEFUN ("global-key-binding", Fglobal_key_binding,367,9506
+DEFUN ("global-set-key", Fglobal_set_key,379,9910
+DEFUN ("global-unset-key", Fglobal_unset_key,419,11207
+DEFUN ("key-binding", Fkey_binding,326,8370
+DEFUN ("key-description", Fkey_description,534,14199
+DEFUN ("keymapp", Fkeymapp,125,3655
+DEFUN ("local-key-binding", Flocal_key_binding,353,9092
+DEFUN ("local-set-key", Flocal_set_key,396,10525
+DEFUN ("local-unset-key", Flocal_unset_key,429,11477
+DEFUN ("lookup-key", Flookup_key,288,7421
+DEFUN ("make-keymap", Fmake_keymap,69,2212
+DEFUN ("make-sparse-keymap", Fmake_sparse_keymap,79,2485
+DEFUN ("single-key-description", Fsingle_key_description,608,15415
+DEFUN ("text-char-description", Ftext_char_description,651,16171
+DEFUN ("use-global-map", Fuse_global_map,451,12061
+DEFUN ("use-local-map", Fuse_local_map,462,12329
+DEFUN ("where-is", Fwhere_is,737,18354
+DEFUN ("where-is-internal", Fwhere_is_internal,668,16570
+access_keymap 190,5142
+apropos1 992,24763
+apropos_accum 979,24412
+defkey 92,2921
+describe_alist 859,21517
+describe_buffer_bindings 767,19421
+describe_command 816,20518
+describe_map 840,21103
+describe_map_tree 801,20219
+describe_vector 906,22615
+get_keyelt 170,4717
+get_keymap 148,4225
+insert_first_line 1028,25638
+keys_of_keymap 1191,30486
+ndefkey 101,3072
+push_key_description 545,14565
+push_text_char_description 626,15811
+store_in_keymap 218,5834
+syms_of_keymap 1105,27841
+synkey 114,3396
+where_is_in_buffer 677,16837
+
+lastfile.c,0
+
+lisp.h,2001
+#define CHECK_BUFFER(420,13080
+#define CHECK_IMPURE(442,13951
+#define CHECK_IMPURE(450,14158
+#define CHECK_MARKER(432,13517
+#define CHECK_NUMBER(429,13410
+#define CHECK_NUMBER_COERCE_MARKER(435,13626
+#define CHECK_PROCESS(426,13298
+#define CHECK_STRING(411,12753
+#define CHECK_SYMBOL(414,12862
+#define CHECK_VECTOR(417,12971
+#define CHECK_WINDOW(423,13189
+#define DEFPRED(518,17120
+#define DEFSIMPLE(511,16922
+#define DEFUN(499,16576
+#define EQ(409,12704
+#define GCPRO1(578,18844
+#define GCPRO2(582,18966
+#define GCPRO3(587,19169
+#define GCPRO4(593,19451
+#define LISTP(408,12660
+#define NULL(407,12609
+#define XBUFFER(318,10260
+#define XCONS(317,10211
+#define XFASTINT(254,8078
+#define XFASTINT(286,9246
+#define XFUNCTION(323,10516
+#define XGCTYPE(271,8743
+#define XGCTYPE(308,10000
+#define XINT(256,8103
+#define XINT(290,9380
+#define XINT(292,9422
+#define XINTPTR(326,10667
+#define XMARK(274,8905
+#define XMARK(311,10115
+#define XMARKBIT(272,8813
+#define XMARKBIT(309,10033
+#define XMARKER(324,10568
+#define XOBJFWD(325,10621
+#define XPROCESS(328,10753
+#define XSET(262,8335
+#define XSET(299,9581
+#define XSETBUFFER(331,10855
+#define XSETCONS(330,10809
+#define XSETFUNCTION(336,11093
+#define XSETINT(259,8199
+#define XSETINT(296,9487
+#define XSETINTPTR(339,11239
+#define XSETMARKBIT(273,8849
+#define XSETMARKBIT(310,10070
+#define XSETMARKER(337,11143
+#define XSETOBJFWD(338,11191
+#define XSETPROCESS(341,11335
+#define XSETSTRING(334,10997
+#define XSETSUBR(333,10951
+#define XSETSYMBOL(335,11045
+#define XSETTYPE(250,7861
+#define XSETTYPE(282,9055
+#define XSETUINT(260,8266
+#define XSETUINT(297,9533
+#define XSETVECTOR(332,10903
+#define XSETWINDOW(340,11287
+#define XSTRING(321,10410
+#define XSUBR(320,10361
+#define XSYMBOL(322,10463
+#define XTYPE(249,7808
+#define XTYPE(281,9008
+#define XUINT(257,8165
+#define XUINT(295,9458
+#define XUNMARK(275,8939
+#define XUNMARK(312,10150
+#define XVECTOR(319,10308
+#define XWINDOW(327,10705
+
+lread.c,1023
+#define CHECK_OBARRAY(829,19844
+DefBoolVar 1078,25688
+DefBufferLispVar 1111,26544
+DefIntVar 1062,25300
+DefLispVar 1093,26061
+DEFUN ("eval-current-buffer", Feval_current_buffer,362,8805
+DEFUN ("eval-region", Feval_region,383,9486
+DEFUN ("get-file-char", Fget_file_char,150,3948
+DEFUN ("intern", Fintern,853,20396
+DEFUN ("intern-soft", Fintern_soft,889,21229
+DEFUN ("load", Fload,162,4188
+DEFUN ("mapatoms", Fmapatoms,980,23353
+DEFUN ("read", Fread,412,10471
+DEFUN ("read-char", Fread_char,134,3638
+DEFUN ("read-from-string", Fread_from_string,444,11513
+#define UNREAD(128,3500
+defalias 1048,24934
+defsubr 1039,24770
+hash_string 940,22516
+init_obarray 1003,23803
+init_read 1126,26908
+intern 838,20078
+load_unwind 288,7418
+map_obarray 959,22867
+mapatoms_1 974,23264
+oblookup 915,21844
+openp 229,6169
+read0 487,12719
+read1 507,13083
+read_escape 748,18472
+read_list 693,17075
+read_vector 661,16279
+static int readchar 67,1851
+readevalloop 304,7715
+syms_of_read 1138,27157
+unreadpure 297,7605
+
+m-7300.h,34
+#define SIGN_EXTEND_CHAR(49,1561
+
+m-apollo.h,34
+#define SIGN_EXTEND_CHAR(38,1318
+
+m-celerity.h,64
+#define LOAD_AVE_CVT(60,1857
+#define SIGN_EXTEND_CHAR(43,1418
+
+m-dual.h,34
+#define SIGN_EXTEND_CHAR(43,1442
+
+m-gould.h,64
+#define LOAD_AVE_CVT(77,2396
+#define SIGN_EXTEND_CHAR(49,1684
+
+m-hp200.h,64
+#define LOAD_AVE_CVT(79,2475
+#define SIGN_EXTEND_CHAR(49,1661
+
+m-mega68.h,64
+#define LOAD_AVE_CVT(58,1724
+#define SIGN_EXTEND_CHAR(42,1390
+
+m-ns16000.h,64
+#define LOAD_AVE_CVT(54,1721
+#define SIGN_EXTEND_CHAR(38,1386
+
+m-nu.h,34
+#define SIGN_EXTEND_CHAR(45,1540
+
+m-orion.h,64
+#define LOAD_AVE_CVT(76,2277
+#define SIGN_EXTEND_CHAR(56,1784
+
+m-plexus.h,34
+#define SIGN_EXTEND_CHAR(49,1667
+
+m-pyramid.h,64
+#define LOAD_AVE_CVT(58,1805
+#define SIGN_EXTEND_CHAR(43,1417
+
+m-sequent.h,64
+#define LOAD_AVE_CVT(84,2714
+#define SIGN_EXTEND_CHAR(52,1769
+
+m-stride.h,64
+#define LOAD_AVE_CVT(77,2511
+#define SIGN_EXTEND_CHAR(48,1656
+
+m-sun.h,64
+#define LOAD_AVE_CVT(61,1789
+#define SIGN_EXTEND_CHAR(38,1314
+
+m-sun2.h,64
+#define LOAD_AVE_CVT(61,1800
+#define SIGN_EXTEND_CHAR(38,1325
+
+m-sun3.h,0
+
+m-tahoe.h,64
+#define LOAD_AVE_CVT(60,1739
+#define SIGN_EXTEND_CHAR(42,1369
+
+m-template.h,64
+#define LOAD_AVE_CVT(75,2410
+#define SIGN_EXTEND_CHAR(49,1644
+
+m-tower32.h,34
+#define SIGN_EXTEND_CHAR(49,1687
+
+m-vax.h,64
+#define LOAD_AVE_CVT(56,1790
+#define SIGN_EXTEND_CHAR(38,1321
+
+macros.c,441
+DEFUN ("call-last-kbd-macro", Fcall_last_kbd_macro,139,3881
+DEFUN ("end-kbd-macro", Fend_kbd_macro,74,2171
+DEFUN ("execute-kbd-macro", Fexecute_kbd_macro,167,4631
+DEFUN ("name-last-kbd-macro", Fname_last_kbd_macro,209,5697
+DEFUN ("start-kbd-macro", Fstart_kbd_macro,42,1223
+finalize_kbd_macro_chars 134,3814
+init_macros 230,6377
+keys_of_macros 262,7263
+pop_kbd_macro 157,4455
+store_kbd_macro_char 115,3284
+syms_of_macros 238,6477
+
+macros.h,0
+
+malloc.c,411
+#define ASSERT(192,7271
+#define ASSERT(195,7372
+#define CHAIN(180,6817
+free 407,12505
+get_lim_data 588,16452
+get_lim_data 599,16605
+get_lim_data 606,16681
+#define getpagesize(117,4687
+#define getpagesize(120,4741
+#define getpagesize(125,4852
+getpool 316,10237
+malloc 350,10977
+malloc_init 218,7959
+malloc_stats 553,15801
+memalign 509,14701
+morecore 227,8071
+realloc 449,13268
+valloc 536,15533
+
+marker.c,262
+DEFUN ("copy-marker", Fcopy_marker,195,4845
+DEFUN ("marker-buffer", Fmarker_buffer,28,976
+DEFUN ("marker-position", Fmarker_position,46,1473
+DEFUN ("set-marker", Fset_marker,77,2175
+marker_position 172,4327
+syms_of_marker 221,5467
+unchain_marker 137,3635
+
+minibuf.c,1389
+DEFUN ("all-completions", Fall_completions,501,14665
+DEFUN ("completing-read", Fcompleting_read,599,17404
+DEFUN ("eval-minibuffer", Feval_minibuffer,250,7577
+DEFUN ("exit-minibuffer", Fexit_minibuffer,929,26261
+DEFUN ("minibuffer-complete", Fminibuffer_complete,724,21137
+DEFUN ("minibuffer-complete-and-exit", Fminibuffer_complete_and_exit,745,21556
+DEFUN ("minibuffer-complete-word", Fminibuffer_complete_word,783,22305
+DEFUN ("minibuffer-completion-help", Fminibuffer_completion_help,901,25407
+DEFUN ("read-buffer", Fread_buffer,317,9863
+DEFUN ("read-command", Fread_command,283,8830
+DEFUN ("read-from-minibuffer", Fread_from_minibuffer,216,6171
+DEFUN ("read-function", Fread_function,294,9141
+DEFUN ("read-minibuffer", Fread_minibuffer,237,7069
+DEFUN ("read-no-blanks-input", Fread_no_blanks_input,271,8393
+DEFUN ("read-string", Fread_string,262,8048
+DEFUN ("read-variable", Fread_variable,305,9461
+DEFUN ("self-insert-and-exit", Fself_insert_and_exit,921,26073
+DEFUN ("try-completion", Ftry_completion,346,10725
+#define cvt(470,14233
+do_completion 659,19438
+get_minibuffer 169,4875
+init_minibuf_once 936,26409
+keys_of_minibuf 1018,29077
+#define min(31,1043
+minibuffer_completion_help_1 871,24619
+read_minibuf 89,2536
+read_minibuf_string 79,2356
+read_minibuf_string_unwind 199,5590
+scmp 472,14283
+syms_of_minibuf 942,26495
+temp_minibuf_message 627,18758
+
+mocklisp.c,436
+DEFUN ("insert-string", Finsert_string,196,5009
+DEFUN ("ml-arg", Fml_arg,117,2906
+DEFUN ("ml-if", Fml_if,46,1374
+DEFUN ("ml-interactive", Fml_interactive,128,3263
+DEFUN ("ml-nargs", Fml_nargs,109,2691
+DEFUN ("ml-prefix-argument-loop", Fml_prefix_argument_loop,148,3823
+DEFUN ("ml-provide-prefix-argument", Fml_provide_prefix_argument,135,3466
+DEFUN ("ml-substr", Fml_substr,178,4421
+ml_apply 97,2443
+syms_of_mocklisp 226,5706
+
+ndir.h,26
+#define rewinddir(33,881
+
+paths.h,0
+
+print.c,539
+DEFUN ("prin1", Fprin1,305,7341
+DEFUN ("prin1-to-string", Fprin1_to_string,330,8051
+DEFUN ("princ", Fprinc,355,8778
+DEFUN ("print", Fprint,377,9371
+DEFUN ("terpri", Fterpri,287,6956
+DEFUN ("with-output-to-temp-buffer", Fwith_output_to_temp_buffer,254,6071
+DEFUN ("write-char", Fwrite_char,164,4360
+#define PRINTCHAR(83,2694
+internal_with_output_to_temp_buffer 235,5703
+print 402,10043
+printchar 91,2916
+strout 126,3529
+syms_of_print 590,14276
+temp_output_buffer_setup 217,5364
+write_string 182,4776
+write_string_1 199,5068
+
+process.c,2335
+DEFUN ("accept-process-output", Faccept_process_output,871,21871
+DEFUN ("continue-process", Fcontinue_process,1447,37095
+DEFUN ("delete-process", Fdelete_process,355,8641
+DEFUN ("get-buffer-process", Fget_buffer_process,308,7548
+DEFUN ("get-process", Fget_process,297,7265
+DEFUN ("interrupt-process", Finterrupt_process,1398,35445
+DEFUN ("kill-process", Fkill_process,1413,36044
+DEFUN ("list-processes", Flist_processes,624,15576
+DEFUN ("process-buffer", Fprocess_buffer,454,11430
+DEFUN ("process-command", Fprocess_command,429,10684
+DEFUN ("process-filter", Fprocess_filter,491,12493
+DEFUN ("process-id", Fprocess_id,408,10104
+DEFUN ("process-kill-without-query", Fprocess_kill_without_query,526,13495
+DEFUN ("process-mark", Fprocess_mark,466,11731
+DEFUN ("process-name", Fprocess_name,418,10365
+DEFUN ("process-send-eof", Fprocess_send_eof,1461,37500
+DEFUN ("process-sentinel", Fprocess_sentinel,515,13213
+DEFUN ("process-status", Fprocess_status,368,9016
+DEFUN ("processp", Fprocessp,289,7092
+DEFUN ("quit-process", Fquit_process,1423,36369
+DEFUN ("send-region", Fsend_region,1294,32567
+DEFUN ("send-string", Fsend_string,1313,33104
+DEFUN ("set-process-buffer", Fset_process_buffer,441,11093
+DEFUN ("set-process-filter", Fset_process_filter,476,11959
+DEFUN ("set-process-sentinel", Fset_process_sentinel,502,12780
+DEFUN ("start-process", Fstart_process,635,15905
+DEFUN ("stop-process", Fstop_process,1433,36709
+#define WCOREDUMP(80,2253
+#define WCOREDUMP(91,2504
+#define WIFEXITED(77,2158
+#define WIFSIGNALED(76,2098
+#define WIFSTOPPED(75,2057
+#define WRETCODE(78,2195
+#define WRETCODE(89,2440
+#define WSTOPSIG(79,2224
+#define WSTOPSIG(90,2472
+#define WTERMSIG(81,2290
+#define WTERMSIG(92,2538
+change_msgs(1629,41890
+child_sig 1533,39791
+count_active_processes 1494,38381
+create_process 706,17911
+create_process_1 696,17713
+deactivate_process 847,21296
+exec_sentinel 1714,43986
+get_process 332,8184
+handle_process_output 1174,29829
+init_process 1729,44274
+kill_buffer_processes 1478,37960
+list_processes_1 538,13809
+make_process 239,5935
+pty 182,4581
+read_process_output 1142,29185
+remove_process 277,6850
+send_process 1275,32169
+send_process_1 1236,31230
+send_process_trap 1227,31091
+sig_process 1333,33785
+syms_of_process 1746,44537
+wait_reading_process_input 904,22953
+
+process.h,29
+#define ChannelMask(79,2852
+
+regex.c,507
+#define PATFETCH(178,7600
+#define PATFETCH_RAW(183,7733
+#define PATPUSH(176,7558
+#define SIGN_EXTEND_CHAR(157,6822
+#define SYNTAX(74,3077
+bcmp_translate 1419,39755
+error 1594,44235
+init_syntax_once 574,16566
+insert_jump 618,17502
+main 1512,42481
+print_buf 1555,43323
+printchar 1580,44010
+re_comp 1440,40138
+re_compile_fastmap 638,18159
+re_compile_pattern 210,8437
+re_exec 1462,40600
+re_match 904,24589
+re_match_2 931,25485
+re_search 809,21875
+re_search_2 830,22622
+store_jump 601,17054
+
+regex.h,0
+
+s-bsd4.1.h,0
+
+s-bsd4.2.h,0
+
+s-bsd4.3.h,0
+
+s-hpux.h,0
+
+s-template.h,0
+
+s-umax.h,0
+
+s-unipl5.0.h,60
+#define ADDR_CORRECT(159,4685
+#define sigsetmask(133,3915
+
+s-unipl5.2.h,60
+#define ADDR_CORRECT(153,4351
+#define sigsetmask(127,3581
+
+s-usg5.0.h,60
+#define ADDR_CORRECT(153,4495
+#define sigsetmask(121,3491
+
+s-usg5.2.2.h,60
+#define ADDR_CORRECT(162,4768
+#define sigsetmask(130,3764
+
+s-usg5.2.h,60
+#define ADDR_CORRECT(152,4496
+#define sigsetmask(120,3492
+
+scroll.c,216
+CalcIDCosts 367,11777
+CalcIDCosts1 387,12499
+CalcLID 410,13224
+calculate_scrolling 95,3512
+do_scrolling 222,7578
+#define max(26,980
+#define min(27,1022
+scrolling_1 60,2078
+scrolling_max_lines_saved 302,9714
+
+search.c,1130
+DEFUN ("looking-at", Flooking_at,91,2494
+DEFUN ("match-beginning", Fmatch_beginning,858,23090
+DEFUN ("match-data", Fmatch_data,888,24084
+DEFUN ("match-end", Fmatch_end,873,23598
+DEFUN ("re-search-backward", Fre_search_backward,693,17834
+DEFUN ("re-search-forward", Fre_search_forward,709,18651
+DEFUN ("regexp-quote", Fregexp_quote,939,25467
+DEFUN ("replace-match", Freplace_match,725,19448
+DEFUN ("scan-buffer", Fscan_buffer,179,4896
+DEFUN ("search-backward", Fsearch_backward,634,14897
+DEFUN ("search-forward", Fsearch_forward,649,15611
+DEFUN ("skip-chars-backward", Fskip_chars_backward,232,6428
+DEFUN ("skip-chars-forward", Fskip_chars_forward,219,5892
+DEFUN ("store-match-data", Fstore_match_data,909,24688
+DEFUN ("string-match", Fstring_match,140,3652
+DEFUN ("word-search-backward", Fword_search_backward,663,16299
+DEFUN ("word-search-forward", Fword_search_forward,678,17077
+ScanBf 194,5468
+bcmp_buffer_translated 537,13053
+compile_pattern 54,1734
+place 844,22822
+search_buffer 372,9655
+search_command 314,8073
+signal_failure 84,2383
+skip_chars 242,6729
+syms_of_search 977,26471
+wordify 590,14009
+
+sink.h,0
+
+sinkmask.h,0
+
+syntax.c,924
+DEFUN ("backward-prefix-chars", Fbackward_prefix_chars,724,17636
+DEFUN ("char-syntax", Fchar_syntax,141,4478
+DEFUN ("copy-syntax-table", Fcopy_syntax_table,75,2133
+DEFUN ("describe-syntax", Fdescribe_syntax,322,8621
+DEFUN ("forward-word", Fforward_word,399,10097
+DEFUN ("modify-syntax-entry", Fmodify_syntax_entry,153,4905
+DEFUN ("parse-partial-sexp", Fparse_partial_sexp,961,23460
+DEFUN ("scan-lists", Fscan_lists,681,16069
+DEFUN ("scan-sexps", Fscan_sexps,705,16971
+DEFUN ("set-syntax-table", Fset_syntax_table,97,2795
+DEFUN ("standard-syntax-table", Fstandard_syntax_table,66,1918
+DEFUN ("syntax-table", Fsyntax_table,56,1663
+DEFUN ("syntax-table-p", Fsyntax_table_p,33,1167
+char_quoted 667,15781
+check_syntax_table 45,1456
+describe_syntax 209,6241
+describe_syntax_1 312,8409
+init_syntax_once 991,24441
+scan_lists 422,10640
+scan_sexps_forward 757,18754
+scan_words 340,9240
+syms_of_syntax 1029,25781
+
+syntax.h,208
+#define SYNTAX(50,1998
+#define SYNTAX_COMEND_FIRST(73,3012
+#define SYNTAX_COMEND_SECOND(76,3105
+#define SYNTAX_COMSTART_FIRST(67,2821
+#define SYNTAX_COMSTART_SECOND(70,2916
+#define SYNTAX_MATCH(56,2202
+
+sysdep.c,1376
+#define OSPEED(63,1767
+#define OSPEED(90,2336
+#define TABS_OK(64,1801
+#define TABS_OK(91,2378
+bcmp 971,21928
+bcopy 961,21780
+bzero 952,21665
+child_setup_tty 262,6113
+closedir 1226,27347
+croak 1185,26539
+discard_tty_input 118,2976
+dup2 1146,25780
+end_of_data 663,16070
+end_of_text 647,15796
+flush_pending_output 574,13776
+get_screen_size 502,12192
+get_system_name 687,16417
+gettimeofday 1168,26224
+getwd 1095,24925
+init_baud_rate 144,3392
+init_sigio 302,7243
+init_sigio 882,20744
+init_sys_modes 368,8340
+opendir 1200,26779
+random 994,22405
+read_input_waiting 841,20107
+readdir 1244,27663
+rename 1109,25228
+request_sigio 315,7410
+request_sigio 328,7610
+request_sigio 898,20969
+reset_sigio 307,7282
+reset_sigio 890,20856
+reset_sys_modes 528,12809
+select 724,17243
+select_alarm 712,17023
+set_exclusive_use 160,3678
+setpgrp_of_tty 290,7071
+setpriority 858,20414
+setpriority 1124,25444
+sigbit 942,21557
+sigfree 933,21407
+sigholdx 913,21153
+sigisheld 920,21243
+sigunhold 926,21314
+srandom 999,22440
+start_of_data 629,15491
+start_of_text 592,14121
+stuff_char 131,3128
+sys_open 872,20578
+sys_open 1062,24320
+sys_read 1049,24090
+sys_write 1073,24513
+tabs_safe_p 489,11900
+unrequest_sigio 321,7523
+unrequest_sigio 333,7660
+unrequest_sigio 903,21013
+vfork 1135,25551
+wait_for_termination 188,4253
+wait_without_blocking 171,3845
+
+term.c,1054
+#define OUTPUT(33,1132
+#define OUTPUT1(34,1190
+#define OUTPUT1_IF(37,1354
+#define OUTPUTL(35,1230
+#define OUTPUT_IF(36,1281
+background_highlight 311,9263
+calculate_costs 896,22791
+calculate_ins_del_char_costs 839,21296
+change_line_highlight 382,11295
+clear_end_of_line 510,14008
+clear_end_of_line_raw 524,14476
+clear_screen 482,13418
+clear_to_end 455,12984
+delete_chars 682,17718
+fatal 1158,30563
+highlight_if_desired 324,9497
+ins_del_lines 719,18393
+insert_chars 629,16733
+#define max(30,1047
+#define min(31,1089
+per_line_cost 826,21104
+raw_topos 436,12635
+reassert_line_highlight 361,10670
+reset_terminal_modes 195,6843
+ring_bell 172,6447
+set_scroll_region 242,7676
+set_terminal_modes 182,6613
+set_terminal_window 228,7399
+string_cost 804,20690
+string_cost_one_line 815,20902
+term_init 924,23496
+topos 417,12261
+turn_off_highlight 287,8811
+turn_off_insert 273,8406
+turn_on_highlight 297,8964
+turn_on_insert 266,8315
+update_begin 210,7152
+update_end 216,7227
+write_chars 557,15196
+write_standout_marker 345,10199
+
+termcap.c,309
+compare_contin 450,9567
+find_capability 81,1936
+gobble_line 489,10676
+main 540,11718
+memory_out 41,1256
+name_match 434,9224
+scan_file 393,8435
+tgetent 283,6002
+tgetflag 103,2279
+tgetnum 93,2116
+tgetst1 142,3401
+tgetstr 116,2662
+tprint 571,12194
+tputs 219,4750
+xmalloc 48,1345
+xrealloc 58,1468
+
+termchar.h,0
+
+termhooks.h,0
+
+terminfo.c,254
+#define BIN_OP(65,1891
+#define POP(59,1819
+#define PUSH(58,1784
+#define REG(57,1743
+#define SEND(70,1968
+#define SSEND(74,2027
+#define TO_REG(56,1699
+#define UN_OP(61,1840
+#define todigit(52,1635
+tparam 29,1022
+tparam 43,1477
+tparam1 80,2144
+
+termopts.h,0
+
+tparam.c,63
+main 207,5467
+tgoto 46,1583
+tparam 32,1392
+tparam1 59,1784
+
+undo.c,439
+DoneIsDone 248,5317
+DEFUN ("undo-boundary", Fundo_boundary,262,5585
+DEFUN ("undo-more", Fundo_more,280,6064
+DEFUN ("undo-start", Fundo_start,429,9521
+NewUndo 73,2144
+RecordChange 204,4507
+RecordChange1 227,4933
+RecordDelete 127,3226
+RecordInsert 107,2843
+free_undo_records 63,1974
+make_undo_records 48,1531
+record_block 164,3887
+record_chars 151,3636
+replace_chars 402,9012
+save_undone_chars 414,9219
+syms_of_undo 446,9961
+
+undo.h,0
+
+unexec.c,504
+#define ADDR_CORRECT(165,5213
+#define ERROR0(181,5438
+#define ERROR1(182,5501
+#define ERROR2(183,5566
+#define	N_BADMAG(131,4325
+#define N_SYMOFF(116,4019
+#define N_TXTOFF(115,3984
+#define PERROR(66,2748
+#define PERROR(69,2818
+adjust_lnnoptrs 674,17891
+copy_sym 586,15585
+copy_text_and_data 508,13744
+#define getpagesize(147,4698
+#define getpagesize(150,4752
+#define getpagesize(155,4863
+make_hdr 246,6939
+mark_x 632,16484
+report_error 171,5291
+report_error_1 186,5641
+unexec 205,5951
+
+window.c,2643
+#define CURBEG(1123,28991
+#define CURSIZE(1126,29064
+DEFUN ("delete-other-windows", Fdelete_other_windows,603,15636
+DEFUN ("delete-window", Fdelete_window,287,8148
+DEFUN ("delete-windows-on", Fdelete_windows_on,613,15882
+DEFUN ("display-buffer", Fdisplay_buffer,877,22730
+DEFUN ("enlarge-window", Fenlarge_window,1081,27956
+DEFUN ("get-buffer-window", Fget_buffer_window,592,15326
+DEFUN ("get-largest-window", Fget_largest_window,585,15164
+DEFUN ("get-lru-window", Fget_lru_window,572,14795
+DEFUN ("move-to-window-line", Fmove_to_window_line,1419,36989
+DEFUN ("next-window", Fnext_window,398,11005
+DEFUN ("other-window", Fother_window,468,12824
+DEFUN ("pos-visible-in-window-p", Fpos_visible_in_window_p,108,3061
+DEFUN ("previous-window", Fprevious_window,432,11866
+DEFUN ("recenter", Frecenter,1381,36074
+DEFUN ("replace-buffer-in-windows", Freplace_buffer_in_windows,628,16221
+DEFUN ("save-window-excursion", Fsave_window_excursion,1679,43276
+DEFUN ("scroll-down", Fscroll_down,1299,33689
+DEFUN ("scroll-left", Fscroll_left,1309,33976
+DEFUN ("scroll-other-window", Fscroll_other_window,1341,34908
+DEFUN ("scroll-right", Fscroll_right,1325,34440
+DEFUN ("scroll-up", Fscroll_up,1289,33411
+DEFUN ("select-window", Fselect_window,834,21536
+DEFUN ("selected-window", Fselected_window,101,2881
+DEFUN ("set-window-hscroll", Fset_window_hscroll,212,5768
+DEFUN ("set-window-point", Fset_window_point,259,7211
+DEFUN ("set-window-start", Fset_window_start,270,7548
+DEFUN ("show-buffer", Fshow_buffer,772,20020
+DEFUN ("shrink-window", Fshrink_window,1092,28277
+DEFUN ("split-window", Fsplit_window,977,25421
+DEFUN ("window-buffer", Fwindow_buffer,180,4936
+DEFUN ("window-edges", Fwindow_edges,228,6277
+DEFUN ("window-height", Fwindow_height,188,5133
+DEFUN ("window-hscroll", Fwindow_hscroll,204,5537
+DEFUN ("window-point", Fwindow_point,243,6774
+DEFUN ("window-start", Fwindow_start,251,6983
+DEFUN ("window-width", Fwindow_width,196,5349
+DEFUN ("windowp", Fwindowp,70,2102
+#define MINSIZE(1119,28869
+#define SAVE_DATA_SIZE(1584,41196
+change_window_height 1133,29269
+count_windows 1571,40856
+decode_window 170,4768
+init_window_once 1707,44012
+keys_of_window 1805,47001
+make_dummy_parent 949,24857
+make_window 79,2280
+replace_window 365,10193
+save_window_restore 1476,38400
+save_window_save 1589,41336
+save_window_save_1 1615,41965
+scroll_command 1270,32971
+set_window_height 649,16834
+set_window_width 713,18516
+syms_of_window 1735,44792
+temp_output_buffer_show 929,24374
+unshow_buffer 809,21009
+window_height 1104,28603
+window_loop 495,13244
+window_scroll 1217,31771
+window_width 1112,28739
+
+window.h,0
+
+xdisp.c,578
+#define CURRENT_END_POS(44,1357
+DoDsp 247,7138
+DEFUN ("redraw-display", Fredraw_display,151,4723
+decode_mode_spec 1373,38580
+display_minibuf_message 212,6243
+display_mode_line 1321,37290
+display_string 1556,43062
+display_text_line 1057,31267
+fmodetrunc 1344,38102
+init_xdisp 1692,46251
+mark_window_display_accurate 419,11927
+#define max(42,1314
+message 173,5488
+message1 194,5947
+#define min(41,1272
+redisplay_all_windows 452,12773
+redisplay_window 466,13028
+redisplay_windows 459,12879
+syms_of_xdisp 1662,45100
+try_window 684,19297
+try_window_id 736,21127
+
+xfns.c,1930
+DEFUN ("coordinates-in-window-p", Fcoordinates_in_window_p,500,13561
+DEFUN ("x-change-display", Fx_change_display,848,23193
+DEFUN ("x-color-p", Fx_color_p,343,9538
+DEFUN ("x-create-x-window", Fx_create_x_window,716,19607
+DEFUN ("x-flip-color", Fx_flip_color,127,3231
+DEFUN ("x-get-background-color", Fx_get_background_color,364,10022
+DEFUN ("x-get-border-color", Fx_get_border_color,374,10292
+DEFUN ("x-get-cursor-color", Fx_get_cursor_color,384,10546
+DEFUN ("x-get-cut-buffer", Fx_get_cut_buffer,676,18522
+DEFUN ("x-get-default", Fx_get_default,404,11057
+DEFUN ("x-get-foreground-color", Fx_get_foreground_color,354,9752
+DEFUN ("x-get-mouse-color", Fx_get_mouse_color,394,10800
+DEFUN ("x-get-mouse-event", Fx_get_mouse_event,597,16344
+DEFUN ("x-mouse-events", Fx_mouse_events,536,14822
+DEFUN ("x-pop-up-window", Fx_pop_up_window,104,2732
+DEFUN ("x-proc-mouse-event", Fx_proc_mouse_event,559,15320
+DEFUN ("x-rubber-band", Fx_rubber_band,692,18916
+DEFUN ("x-set-background-color", Fx_set_background_color,180,4837
+DEFUN ("x-set-bell", Fx_set_bell,113,2908
+DEFUN ("x-set-border-color", Fx_set_border_color,225,6219
+DEFUN ("x-set-border-width", Fx_set_border_width,746,20509
+DEFUN ("x-set-cursor-color", Fx_set_cursor_color,271,7429
+DEFUN ("x-set-font", Fx_set_font,448,12172
+DEFUN ("x-set-foreground-color", Fx_set_foreground_color,137,3497
+DEFUN ("x-set-icon", Fx_set_icon,433,11842
+DEFUN ("x-set-keyboard-enable", Fx_set_keyboard_enable,635,17480
+DEFUN ("x-set-mouse-color", Fx_set_mouse_color,304,8355
+DEFUN ("x-set-mouse-inform-flag", Fx_set_mouse_inform_flag,651,17893
+DEFUN ("x-set-window-edges", Fx_set_window_edges,476,12818
+DEFUN ("x-store-cut-buffer", Fx_store_cut_buffer,662,18170
+XAutoSave(1124,31095
+XRedrawDisplay(1119,31050
+XRestoreDisplay 843,23109
+#define abs(38,1255
+check_xterm 98,2634
+setxterm 1114,31018
+#define sgn(39,1294
+syms_of_xfns 1130,31133
+window_fetch(1039,29108
+
+xterm.c,1197
+ClearCursor 583,13903
+CursorToggle 510,11928
+HLmode 154,4286
+Input 1086,25543
+XBitmapIcon 1000,23425
+XExitGracefully 1027,23930
+XFlipColor 1400,33134
+XNewFont 1368,32434
+XPopUpWindow 1498,35344
+XSetFeep 1362,32389
+XSetFlash 1357,32343
+XSetOffset 1461,34561
+XSetWindowSize 1485,35015
+XTchange_line_highlight 175,4698
+XTclear_end_of_line 266,6560
+XTclear_screen 306,7334
+XTdelete_chars 748,18064
+XTextIcon 1010,23601
+XTfeep 494,11470
+XTflash 457,10635
+XTins_del_lines 724,17676
+XTinsert_chars 737,17873
+XTread_socket 867,20605
+XTreassert_line_highlight 165,4492
+XTreset_terminal_modes 297,7206
+XTset_terminal_modes 193,5167
+XTset_terminal_window 712,17460
+XTtopos 218,5656
+XTupdate_begin 606,14381
+XTupdate_end 627,14759
+XTwrite_chars 440,10283
+cleanup 257,6421
+dumpchars 331,7766
+dumpqueue 1334,31909
+dumprectangle 643,15090
+fixxrepbuffer 1568,37014
+flashback 481,11198
+loadxrepbuffer 1543,36437
+#define min(57,1707
+refreshicon 991,23225
+scraplines 815,19491
+#define sigblockx(59,1784
+#define sigunblockx(58,1746
+spacecheck 1520,35902
+stufflines 759,18285
+unloadxrepbuffer 1554,36689
+writechars 365,8898
+x_term_init 1173,27285
+xfixscreen 1033,23981
+
+xterm.h,0
