@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)systm.h	7.12 (Berkeley) %G%
+ *	@(#)systm.h	7.13 (Berkeley) %G%
  */
 
 /*
@@ -43,10 +43,6 @@ struct	vnode *argdev_vp;	/* vnode equivalent to above */
 extern	int icode[];		/* user init code */
 extern	int szicode;		/* its size */
 
-int	memall();
-int	vmemall();
-swblk_t	vtod();
-
 /*
  * Structure of the system-entry table
  */
@@ -75,3 +71,38 @@ int	enoioctl __P((void));
 int	enxio __P((void));
 int	eopnotsupp __P((void));
 int	seltrue __P((dev_t dev, int which, struct proc *p));
+
+void	panic __P((char *));
+void	tablefull __P((char *));
+void	addlog __P((const char *, ...));
+void	log __P((int, const char *, ...));
+void	printf __P((const char *, ...));
+void	ttyprintf __P((struct tty *, const char *, ...));
+
+void	bcopy __P((void *from, void *to, u_int len));
+void	ovbcopy __P((void *from, void *to, u_int len));
+void	bzero __P((void *buf, u_int len));
+int	bcmp __P((void *str1, void *str2, u_int len));
+int	strlen __P((char *string));
+
+int	copystr __P((void *kfaddr, void *kdaddr, u_int len, u_int *done));
+int	copyinstr __P((void *udaddr, void *kaddr, u_int len, u_int *done));
+int	copyoutstr __P((void *kaddr, void *udaddr, u_int len, u_int *done));
+int	copyin __P((void *udaddr, void *kaddr, u_int len));
+int	copyout __P((void *kaddr, void *udaddr, u_int len));
+
+int	fubyte __P((void *base));
+#ifdef notdef
+int	fuibyte __P((void *base));
+#endif
+int	subyte __P((void *base, int byte));
+int	suibyte __P((void *base, int byte));
+int	fuword __P((void *base));
+int	fuiword __P((void *base));
+int	suword __P((void *base, int word));
+int	suiword __P((void *base, int word));
+
+int	scanc __P((unsigned size, u_char *cp, u_char *table, int mask));
+int	skpc __P((int mask, int size, char *cp));
+int	locc __P((int mask, char *cp, unsigned size));
+int	ffs __P((long value));
