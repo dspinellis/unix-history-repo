@@ -1,7 +1,7 @@
 /*
  * Terminal initialization routines.
  *
- * %G% (Berkeley) @(#)setterm.c	1.10
+ * %G% (Berkeley) @(#)setterm.c	1.11
  */
 
 # include	"curses.ext"
@@ -146,7 +146,7 @@ zap() {
 	} while (*namp);
 	SG = tgetnum("sg");
 	UG = tgetnum("ug");
-	if ((SG || !SO) && (!UG && US)) {
+	if ((SG > 0 || !SO) && (UG <= 0 && US)) {
 		SO = US;
 		SE = UE;
 	}
