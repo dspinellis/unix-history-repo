@@ -1,0 +1,2 @@
+./gssetmod $*
+./gsaddmod $1 -dev $1
