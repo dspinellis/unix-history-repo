@@ -1,7 +1,8 @@
-#	@(#)Makefile	5.10 (Berkeley) %G%
+#	@(#)Makefile	5.11 (Berkeley) %G%
 
 CFLAGS=	-O -DLIBC_SCCS
 OBJS=	crt0.o mcrt0.o gcrt0.o
+CLEANFILES=gmon.o mon.o moncrt0.o
 
 .s.o:
 	${AS} -o ${.TARGET} ${.IMPSRC}
