@@ -1,4 +1,4 @@
-\"	@(#)postp.me	1.3 %G%
+\"	@(#)postp.me	1.4 %G%
 .EQ
 delim ##
 .EN
@@ -28,6 +28,9 @@ c c c c c.
 
 	1		4
 .TE
+.ce 1
+Topological ordering
+.ce 0
 .)z
 Time propagation is performed from the leaves of the
 call graph toward the roots, according to the order
@@ -107,19 +110,42 @@ though they are listed in the call graph profile.
 .TS
 center;
 c s c c s.
-8		9
+o		o
 
 
 .T&
 c c c c c.
-	3		7
+	o		o
 
 
-2		5		6
+o		o		o
 
 
-	1		4
+	o		o
 .TE
+.ce 1
+Cycle to be collapsed.
+.)z
+.(z
+.TS
+center;
+c s c c s.
+7		8
+
+
+.T&
+c c c c c.
+	6		6
+
+
+2		4		5
+
+
+	1		3
+.TE
+.ce 1
+Topological numbering after cycle collapsing.
+.ce 0
 .)z
 .pp
 Since the technique described above only collects the
