@@ -14,22 +14,23 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.3 (Berkeley) %G%
+# @(#)Makefile	5.3 (Berkeley) 5/9/89
 #
 
 CFLAGS=	-O -DKERBEROS
 LIBC=	/lib/libc.a
 SRCS=	rshd.c
-OBJS=
+OBJS=	rshd.o des_rw.o
 MAN=	rshd.0
+VPATH=	../../usr.bin/rlogin/des
 
 all: rshd
 
-rshd: ${LIBC}
-	${CC} -o $@ ${CFLAGS} $@.c -lkrb -ldes
+rshd: ${LIBC} ${OBJS}
+	${CC} -o $@ ${OBJS} ${CFLAGS} -lutil -lkrb -ldes
 
 clean:
-	rm -f ${OBJS} core rshd
+	rm -f core rshd ${OBJS}
 
 cleandir: clean
 	rm -f ${MAN} tags .depend
@@ -38,7 +39,7 @@ depend: ${SRCS}
 	mkdep -p ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 rshd ${DESTDIR}/usr/libexec
+	install -s -o root -g bin -m 755 rshd ${DESTDIR}/usr/libexec/rshd
 	install -c -o bin -g bin -m 444 rshd.0 ${DESTDIR}/usr/man/cat8
 
 lint: ${SRCS}
