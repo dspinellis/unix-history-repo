@@ -1,4 +1,4 @@
-/*	uipc_mbuf.c	1.29	82/02/08	*/
+/*	uipc_mbuf.c	1.30	82/03/09	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -259,21 +259,21 @@ nospace:
 m_cat(m, n)
 	register struct mbuf *m, *n;
 {
-
 	while (m->m_next)
 		m = m->m_next;
-	while (n)
-		if (m->m_off < MMAXOFF &&
-		    m->m_off + m->m_len + n->m_len <= MMAXOFF) {
-			bcopy(mtod(n, caddr_t), mtod(m, caddr_t) + m->m_len,
-			    (u_int)n->m_len);
-			m->m_len += n->m_len;
-			n = m_free(n);
-		} else {
+	while (n) {
+		if (m->m_off >= MMAXOFF ||
+		    m->m_off + m->m_len + n->m_len > MMAXOFF) {
+			/* just join the two chains */
 			m->m_next = n;
-			m = n;
-			n = m->m_next;
+			return;
 		}
+		/* splat the data from one into the other */
+		bcopy(mtod(n, caddr_t), mtod(m, caddr_t) + m->m_len,
+		    (u_int)n->m_len);
+		m->m_len += n->m_len;
+		n = m_free(n);
+	}
 }
 
 m_adj(mp, len)
