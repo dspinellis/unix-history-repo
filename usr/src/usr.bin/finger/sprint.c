@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sprint.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)sprint.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -89,7 +89,7 @@ office:			if (pn->office)
 			else if (pn->officephone)
 				(void)printf(" %-11.11s", " ");
 			if (pn->officephone)
-				(void)printf(" %s", pn->officephone);
+				(void)printf(" %-.14s", pn->officephone);
 			putchar('\n');
 		}
 	}
