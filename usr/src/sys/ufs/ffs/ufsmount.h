@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufsmount.h	8.1 (Berkeley) %G%
+ *	@(#)ufsmount.h	8.2 (Berkeley) %G%
  */
 
 struct buf;
@@ -14,10 +14,7 @@ struct timeval;
 struct ucred;
 struct uio;
 struct vnode;
-struct radix_node_head;
-#ifndef AF_MAX
-#include <sys/socket.h>
-#endif
+struct netexport;
 
 /* This structure describes the UFS specific mount structure data. */
 struct ufsmount {
@@ -38,8 +35,7 @@ struct ufsmount {
 	time_t	um_btime[MAXQUOTAS];		/* block quota time limit */
 	time_t	um_itime[MAXQUOTAS];		/* inode quota time limit */
 	char	um_qflags[MAXQUOTAS];		/* quota specific flags */
-	struct	netcred um_defexported;		/* Default export */
-	struct	radix_node_head *um_rtable[AF_MAX+1]; /* Individual exports */
+	struct	netexport um_export;		/* export information */
 };
 /*
  * Flags describing the state of quotas.
