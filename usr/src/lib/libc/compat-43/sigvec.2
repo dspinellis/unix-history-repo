@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)sigvec.2	6.2 (Berkeley) %G%
+.\"	@(#)sigvec.2	6.3 (Berkeley) %G%
 .\"
 .TH SIGVEC 2 ""
 .UC 4
@@ -137,6 +137,8 @@ SIGXFSZ	25	file size limit exceeded (see \fIsetrlimit\fP(2))
 SIGVTALRM	26	virtual time alarm (see \fIsetitimer\fP(2))
 SIGPROF	27	profiling timer alarm (see \fIsetitimer\fP(2))
 SIGWINCH	28\*b	window size change
+SIGUSR1	30	user defined signal 1
+SIGUSR2	31	user defined signal 2
 .fi
 .PP
 The starred signals in the list above cause a core image
