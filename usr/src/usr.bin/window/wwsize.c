@@ -9,13 +9,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwsize.c	3.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwsize.c	3.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
-#ifdef POSIX_TTY
-#include <sys/ioctl.h>
-#endif
 
 /*
  * Resize a window.  Should be unattached.
@@ -152,14 +149,8 @@ register struct ww *w;
 	/*
 	 * Fool with pty.
 	 */
-	if (w->ww_ispty && w->ww_pty >= 0) {
-		struct winsize winsize;
-
-		winsize.ws_row = nrow;
-		winsize.ws_col = ncol;
-		winsize.ws_xpixel = winsize.ws_ypixel = 0;
-		(void) ioctl(w->ww_pty, TIOCSWINSZ, (char *)&winsize);
-	}
+	if (w->ww_ispty && w->ww_pty >= 0)
+		(void) wwsetttysize(w->ww_pty, nrow, ncol);
 	return 0;
 bad:
 	if (win != 0)

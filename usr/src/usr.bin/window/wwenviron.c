@@ -9,11 +9,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwenviron.c	3.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwenviron.c	3.27 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
-#ifdef POSIX_TTY
+#if !defined(OLD_TTY) && !defined(TIOCSCTTY) && !defined(TIOCNOTTY)
 #include <sys/ioctl.h>
 #endif
 #include <sys/signal.h>
@@ -38,16 +38,11 @@ register struct ww *wp;
 	(void) close(i);
 #endif
 	if ((i = wp->ww_socket) < 0) {
-		struct winsize winsize;
-
 		if ((i = open(wp->ww_ttyname, 2)) < 0)
 			goto bad;
-		if (wwsettty(i, &wwwintty, (struct ww_tty *)0) < 0)
+		if (wwsettty(i, &wwwintty) < 0)
 			goto bad;
-		winsize.ws_row = wp->ww_w.nr;
-		winsize.ws_col = wp->ww_w.nc;
-		winsize.ws_xpixel = winsize.ws_ypixel = 0;
-		if (ioctl(i, TIOCSWINSZ, (char *)&winsize) < 0)
+		if (wwsetttysize(i, wp->ww_w.nr, wp->ww_w.nc) < 0)
 			goto bad;
 	}
 	(void) dup2(i, 0);
@@ -56,7 +51,7 @@ register struct ww *wp;
 	for (i = wwdtablesize - 1; i > 2; i--)
 		(void) close(i);
 #ifdef TIOCSCTTY
-	(void) setsid(0);
+	(void) setsid();
 	(void) ioctl(0, TIOCSCTTY, 0);
 #else
 	(void) ioctl(0, TIOCSPGRP, (char *)&pgrp);

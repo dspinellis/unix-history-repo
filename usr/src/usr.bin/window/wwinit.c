@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwinit.c	3.39 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwinit.c	3.40 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -39,7 +39,7 @@ wwinit()
 	if (wwgettty(0, &wwoldtty) < 0)
 		return -1;
 	wwwintty = wwoldtty;
-#ifndef POSIX_TTY
+#ifdef OLD_TTY
 	wwwintty.ww_sgttyb.sg_flags &= ~XTABS;
 	wwnewtty.ww_sgttyb = wwoldtty.ww_sgttyb;
 	wwnewtty.ww_sgttyb.sg_erase = -1;
@@ -61,6 +61,12 @@ wwinit()
 	wwnewtty.ww_lmode = wwoldtty.ww_lmode | LLITOUT;
 	wwnewtty.ww_ldisc = wwoldtty.ww_ldisc;
 #else
+#ifndef OXTABS
+#define OXTABS XTABS
+#endif
+#ifndef _POSIX_VDISABLE
+#define _POSIX_VDISABLE -1
+#endif
 	wwwintty.ww_termios.c_oflag &= ~OXTABS;
 	wwnewtty.ww_termios = wwoldtty.ww_termios;
 	wwnewtty.ww_termios.c_iflag &=
@@ -70,11 +76,11 @@ wwinit()
 	wwnewtty.ww_termios.c_cflag &= ~(CSIZE | PARENB);
 	wwnewtty.ww_termios.c_cflag |= CS8;
 	wwnewtty.ww_termios.c_lflag = 0;
-	for (i = 0; i < NCC; i++)
+	for (i = 0; i < NCCS; i++)
 		wwnewtty.ww_termios.c_cc[i] = _POSIX_VDISABLE;
 #endif
 	wwnewtty.ww_fflags = wwoldtty.ww_fflags | FASYNC;
-	if (wwsettty(0, &wwnewtty, &wwoldtty) < 0)
+	if (wwsettty(0, &wwnewtty) < 0)
 		goto bad;
 
 	if ((wwterm = getenv("TERM")) == 0) {
@@ -85,15 +91,70 @@ wwinit()
 		wwerrno = WWE_BADTERM;
 		goto bad;
 	}
-#ifndef POSIX_TTY
-	wwbaud = wwbaudmap[wwoldtty.ww_sgttyb.sg_ospeed];
+#ifdef OLD_TTY
+	wwospeed = wwoldtty.ww_sgttyb.sg_ospeed;
 #else
-#ifdef CBAUD
-	wwbaud = wwbaudmap[wwoldtty.ww_termios.c_cflag & CBAUD];
+	wwospeed = cfgetospeed(&wwoldtty.ww_termios);
+#endif
+	switch (wwospeed) {
+	default:
+	case B0:
+		wwbaud = 0;
+		break;
+	case B50:
+		wwbaud = 50;
+		break;
+	case B75:
+		wwbaud = 75;
+		break;
+	case B110:
+		wwbaud = 110;
+		break;
+	case B134:
+		wwbaud = 134;
+		break;
+	case B150:
+		wwbaud = 150;
+		break;
+	case B200:
+		wwbaud = 200;
+		break;
+	case B300:
+		wwbaud = 300;
+		break;
+	case B600:
+		wwbaud = 600;
+		break;
+	case B1200:
+		wwbaud = 1200;
+		break;
+	case B1800:
+		wwbaud = 1800;
+		break;
+	case B2400:
+		wwbaud = 2400;
+		break;
+	case B4800:
+		wwbaud = 4800;
+		break;
+	case B9600:
+		wwbaud = 9600;
+		break;
+#ifdef B19200
+	case B19200:
 #else
-	wwbaud = wwoldtty.ww_termios.c_ospeed;
+	case EXTA:
 #endif
+		wwbaud = 19200;
+		break;
+#ifdef B38400
+	case B38400:
+#else
+	case EXTB:
 #endif
+		wwbaud = 38400;
+		break;
+	}
 
 	if (xxinit() < 0)
 		goto bad;
@@ -207,7 +268,7 @@ bad:
 	 * Don't bother to free storage.  We're supposed
 	 * to exit when wwinit fails anyway.
 	 */
-	(void) wwsettty(0, &wwoldtty, &wwnewtty);
+	(void) wwsettty(0, &wwoldtty);
 	(void) signal(SIGIO, SIG_DFL);
 	(void) sigsetmask(s);
 	return -1;

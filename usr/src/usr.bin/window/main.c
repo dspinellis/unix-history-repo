@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	3.41 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	3.42 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -93,7 +93,7 @@ char **argv;
 		exit(1);
 	}
 
-#ifndef POSIX_TTY
+#ifdef OLD_TTY
 	if (debug)
 		wwnewtty.ww_tchars.t_quitc = wwoldtty.ww_tchars.t_quitc;
 	if (xflag) {
@@ -115,7 +115,7 @@ char **argv;
 	}
 #endif
 	if (debug || xflag)
-		(void) wwsettty(0, &wwnewtty, &wwoldtty);
+		(void) wwsettty(0, &wwnewtty);
 
 	if ((cmdwin = wwopen(wwbaud > 2400 ? WWO_REVERSE : 0, 1, wwncol,
 			     0, 0, 0)) == 0) {
