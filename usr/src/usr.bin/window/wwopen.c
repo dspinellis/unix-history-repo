@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwopen.c	3.4 83/08/22";
+static	char *sccsid = "@(#)wwopen.c	3.5 83/08/22";
 #endif
 
 #include "ww.h"
@@ -11,7 +11,7 @@ wwopen(mode, id, nrow, ncol, row, col)
 {
 	register struct ww *w = 0;
 
-	if (row < 0 || row + nrow >= wwnrow || col < 0 || col + ncol >= wwncol)
+	if (row < 0 || row + nrow > wwnrow || col < 0 || col + ncol > wwncol)
 		return 0;
 	w = (struct ww *)calloc(sizeof (struct ww), 1);
 	if (w == 0)
