@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 1985 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
@@ -5,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)res_send.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_send.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -30,7 +31,7 @@ res_send(buf, buflen, answer, anslen)
 	int anslen;
 {
 	register int n;
-	int s, retry, v_circuit, resplen;
+	int s, retry, v_circuit, resplen, ns;
 	u_short id, len;
 	char *cp;
 	int dsmask;
@@ -43,7 +44,7 @@ res_send(buf, buflen, answer, anslen)
 		printf("res_send()\n");
 		p_query(buf);
 	}
-#endif
+#endif DEBUG
 	if (!(_res.options & RES_INIT))
 		if (res_init() == -1) {
 			return(-1);
@@ -55,17 +56,24 @@ res_send(buf, buflen, answer, anslen)
 	 * Send request, RETRY times, or until successful
 	 */
 	for (retry = _res.retry; --retry >= 0; ) {
+	   for (ns = 0; ns < _res.nscount; ns++) {
+#ifdef DEBUG
+		if (_res.options & RES_DEBUG)
+			printf("Querying server (# %d) address = %s\n", ns+1,
+			      inet_ntoa(_res.nsaddr_list[ns].sin_addr.s_addr)); 
+#endif DEBUG
 		if (v_circuit) {
 			/*
 			 * Use virtual circuit.
 			 */
 			if (s < 0)
 				s = socket(AF_INET, SOCK_STREAM, 0);
-			if (connect(s, &_res.nsaddr, sizeof(_res.nsaddr)) < 0) {
+			if (connect(s, &(_res.nsaddr_list[ns]), 
+			   sizeof(struct sockaddr)) < 0) {
 #ifdef DEBUG
 				if (_res.options & RES_DEBUG)
 					printf("connect failed %d\n", errno);
-#endif
+#endif DEBUG
 				(void) close(s);
 				s = -1;
 				continue;
@@ -75,11 +83,11 @@ res_send(buf, buflen, answer, anslen)
 			 */
 			len = htons(buflen);
 			if (write(s, &len, sizeof(len)) != sizeof(len) ||
-			    write(s, buf, buflen) != buflen) {
+				    write(s, buf, buflen) != buflen) {
 #ifdef DEBUG
 				if (_res.options & RES_DEBUG)
 					printf("write failed %d\n", errno);
-#endif
+#endif DEBUG
 				(void) close(s);
 				s = -1;
 				continue;
@@ -97,7 +105,7 @@ res_send(buf, buflen, answer, anslen)
 #ifdef DEBUG
 				if (_res.options & RES_DEBUG)
 					printf("read failed %d\n", errno);
-#endif
+#endif DEBUG
 				(void) close(s);
 				s = -1;
 				continue;
@@ -112,7 +120,7 @@ res_send(buf, buflen, answer, anslen)
 #ifdef DEBUG
 				if (_res.options & RES_DEBUG)
 					printf("read failed %d\n", errno);
-#endif
+#endif DEBUG
 				(void) close(s);
 				s = -1;
 				continue;
@@ -123,17 +131,18 @@ res_send(buf, buflen, answer, anslen)
 			 */
 			if (s < 0)
 				s = socket(AF_INET, SOCK_DGRAM, 0);
-			if (sendto(s, buf, buflen, 0, &_res.nsaddr,
-			    sizeof(_res.nsaddr)) != buflen) {
+			if (sendto(s, buf, buflen, 0, &_res.nsaddr_list[ns],
+			    sizeof(struct sockaddr)) != buflen) {
 #ifdef DEBUG
-				if (_res.options & RES_DEBUG)
+				if (_res.options & RES_DEBUG) 
 					printf("sendto errno = %d\n", errno);
-#endif
+#endif DEBUG
 			}
 			/*
 			 * Wait for reply 
 			 */
-			timeout.tv_sec = _res.retrans;
+			timeout.tv_sec = 
+				((_res.retrans * _res.retry) / _res.nscount);
 			timeout.tv_usec = 0;
 			dsmask = 1 << s;
 			n = select(s+1, &dsmask, 0, 0, &timeout);
@@ -141,7 +150,7 @@ res_send(buf, buflen, answer, anslen)
 #ifdef DEBUG
 				if (_res.options & RES_DEBUG)
 					printf("select errno = %d\n", errno);
-#endif
+#endif DEBUG
 				continue;
 			}
 			if (n == 0) {
@@ -151,7 +160,7 @@ res_send(buf, buflen, answer, anslen)
 #ifdef DEBUG
 				if (_res.options & RES_DEBUG)
 					printf("timeout\n");
-#endif
+#endif DEBUG
 				continue;
 			}
 			if ((resplen = recvfrom(s, answer, anslen,
@@ -159,7 +168,7 @@ res_send(buf, buflen, answer, anslen)
 #ifdef DEBUG
 				if (_res.options & RES_DEBUG)
 					printf("recvfrom, errno=%d\n", errno);
-#endif
+#endif DEBUG
 				continue;
 			}
 			if (id != anhp->id) {
@@ -171,7 +180,7 @@ res_send(buf, buflen, answer, anslen)
 					printf("old answer:\n");
 					p_query(answer);
 				}
-#endif
+#endif DEBUG
 				continue;
 			}
 			if (!(_res.options & RES_IGNTC) && anhp->tc) {
@@ -181,7 +190,7 @@ res_send(buf, buflen, answer, anslen)
 #ifdef DEBUG
 				if (_res.options & RES_DEBUG)
 					printf("truncated answer\n");
-#endif
+#endif DEBUG
 				(void) close(s);
 				s = -1;
 				retry = _res.retry;
@@ -194,9 +203,10 @@ res_send(buf, buflen, answer, anslen)
 			printf("got answer:\n");
 			p_query(answer);
 		}
-#endif
+#endif DEBUG
 		(void) close(s);
 		return (resplen);
+	   }
 	}
 	(void) close(s);
 	errno = ETIMEDOUT;
