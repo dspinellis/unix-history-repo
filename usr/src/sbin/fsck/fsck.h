@@ -1,4 +1,4 @@
-/* @(#)fsck.h	3.3 (Berkeley) %G% */
+/* @(#)fsck.h	3.4 (Berkeley) %G% */
 
 #define	MAXDUP		10	/* limit on dup blks (per inode) */
 #define	MAXBAD		10	/* limit on bad blks (per inode) */
@@ -34,6 +34,7 @@ struct bufarea {
 	struct bufarea	*b_next;		/* must be first */
 	daddr_t	b_bno;
 	int	b_size;
+	int	b_errs;
 	union {
 		char	b_buf[MAXBSIZE];	/* buffer space */
 		short	b_lnks[SPERB];		/* link counts */

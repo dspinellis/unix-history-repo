@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)inode.c	3.10 (Berkeley) %G%";
+static char version[] = "@(#)inode.c	3.11 (Berkeley) %G%";
 #endif
 
 #include <pwd.h>
@@ -73,7 +73,8 @@ iblock(idesc, ilevel, isize)
 	if (outrange(idesc->id_blkno, idesc->id_numfrags)) /* protect thyself */
 		return (SKIP);
 	initbarea(&ib);
-	if (getblk(&ib, idesc->id_blkno, sblock.fs_bsize) == NULL)
+	getblk(&ib, idesc->id_blkno, sblock.fs_bsize);
+	if (ib.b_errs != NULL)
 		return (SKIP);
 	ilevel--;
 	for (sizepb = sblock.fs_bsize, i = 0; i < ilevel; i++)
@@ -147,15 +148,12 @@ ginode(inumber)
 	daddr_t iblk;
 	static ino_t startinum = 0;	/* blk num of first in raw area */
 
-
 	if (inumber < ROOTINO || inumber > imax)
 		errexit("bad inode number %d to ginode\n", inumber);
 	if (startinum == 0 ||
 	    inumber < startinum || inumber >= startinum + INOPB(&sblock)) {
 		iblk = itod(&sblock, inumber);
-		if (getblk(&inoblk, iblk, sblock.fs_bsize) == NULL) {
-			return (NULL);
-		}
+		getblk(&inoblk, iblk, sblock.fs_bsize);
 		startinum = (inumber / INOPB(&sblock)) * INOPB(&sblock);
 	}
 	return (&inoblk.b_un.b_dinode[inumber % INOPB(&sblock)]);
