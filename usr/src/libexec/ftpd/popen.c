@@ -84,7 +84,7 @@ ftpd_popen(program, type)
 	case -1:			/* error */
 		(void)close(pdes[0]);
 		(void)close(pdes[1]);
-		goto free;
+		goto pfree;
 		/* NOTREACHED */
 	case 0:				/* child */
 		if (*type == 'r') {
@@ -113,8 +113,10 @@ ftpd_popen(program, type)
 	}
 	pids[fileno(iop)] = pid;
 
-free:	for (argc = 1; argv[argc] != NULL; argc++)
+pfree:	for (argc = 1; argv[argc] != NULL; argc++) {
 		blkfree((char **)argv[argc]);
+		free((char *)argv[argc]);
+	}
 	return(iop);
 }
 
