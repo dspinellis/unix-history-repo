@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_proc.c	7.15 (Berkeley) %G%
+ *	@(#)kern_proc.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -97,6 +97,7 @@ enterpgrp(p, pgid, mksess)
 		       M_WAITOK);
 		if (mksess) {
 			register struct session *sess;
+
 			/*
 			 * new session
 			 */
@@ -106,6 +107,8 @@ enterpgrp(p, pgid, mksess)
 			sess->s_count = 1;
 			sess->s_ttyvp = NULL;
 			sess->s_ttyp = NULL;
+			bcopy(p->p_session->s_login, sess->s_login,
+			    sizeof(sess->s_login));
 			p->p_flag &= ~SCTTY;
 			pgrp->pg_session = sess;
 #ifdef DIAGNOSTIC
