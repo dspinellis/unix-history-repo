@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ms.7	6.1 (Berkeley) %G%
+.\"	@(#)ms.7	6.2 (Berkeley) %G%
 .\"
 .TH MS 7 ""
 .UC 4
@@ -183,6 +183,10 @@ they may be used anywhere in the text:
 	\e*(MO	month (month of the year)
 	\e*(DY	day (current date)
 	\e**	automatically numbered footnote
+	\e*[	opening footnote string delimiter
+	\e*]	closing footnote string delimiter
+	\e*([.	opening reference tag delimiter
+	\e*(.]	closing reference tag delimiter
 	\e*\'	acute accent (before letter)
 	\e*\`	grave accent (before letter)
 	\e*\d^	\ucircumflex (before letter)
@@ -191,6 +195,13 @@ they may be used anywhere in the text:
 	\e*\d~	\utilde (before letter)
 .fi
 .sp .3
+The opening and closing delimiters for footnote numbers
+and reference tags may be changed by resetting the appropriate string.
+Both opening delimiters change to italics and superscript in \fItroff\fP,
+reverting to the previous font and the baseline at the closing delimiter.
+In \fInroff\fP, square brackets are used as delimiters, with footnote
+numbers in italics.
+.PP
 When using the extended accent mark definitions available with .AM,
 these strings should come after, rather than before,
 the letter to be accented.
