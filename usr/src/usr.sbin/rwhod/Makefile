@@ -1,8 +1,8 @@
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 
 PROG=	rwhod
 MAN8=	rwhod.0
-DPADD=	${LIBUTIL}
-LDADD=	-lutil
+DPADD=	${LIBUTIL} ${LIBKVM}
+LDADD=	-lutil -lkvm
 
 .include <bsd.prog.mk>
