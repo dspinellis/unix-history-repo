@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.28 (Berkeley) %G%
+		@(#)README	8.29 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -336,12 +336,15 @@ mailertable	Include a "mailer table" which can be used to override
 		reflected into the message header.
 
 domaintable	Include a "domain table" which can be used to provide
-		full domains on unqualified (single word) hosts.  The
-		argument of the FEATURE may be the key definition.  If
-		none is specified, the definition used is:
+		domain name mapping.  Use of this should really be
+		limited to your own domains.  It may be useful if you
+		change names (e.g., your company changes names from
+		oldname.com to newname.com).  The argument of the
+		FEATURE may be the key definition.  If none is specified,
+		the definition used is:
 			hash -o /etc/domaintable
-		The key in this table is the unqualified host name; the
-		value is the fully qualified domain.  Anything in the
+		The key in this table is the domain name; the value is
+		the new (fully qualified) domain.  Anything in the
 		domaintable is reflected into headers; that is, this
 		is done in ruleset 3.
 
