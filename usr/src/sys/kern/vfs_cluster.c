@@ -1,4 +1,4 @@
-/*	vfs_cluster.c	4.23	81/07/25	*/
+/*	vfs_cluster.c	4.24	82/01/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -328,6 +328,10 @@ daddr_t blkno;
  * Assign a buffer for the given block.  If the appropriate
  * block is already associated, return it; otherwise search
  * for the oldest non-busy buffer and reassign it.
+ *
+ * We use splx here because this routine may be called
+ * on the interrupt stack during a dump, and we don't
+ * want to lower the ipl back to 0.
  */
 struct buf *
 getblk(dev, blkno)
@@ -339,24 +343,25 @@ daddr_t blkno;
 #ifdef	DISKMON
 	register int i;
 #endif
+	int s;
 
 	if ((unsigned)blkno >= 1 << (sizeof(int)*NBBY-PGSHIFT))
 		blkno = 1 << ((sizeof(int)*NBBY-PGSHIFT) + 1);
 	dblkno = fsbtodb(blkno);
 	dp = BUFHASH(dev, dblkno);
     loop:
-	(void) spl0();
 	for (bp = dp->b_forw; bp != dp; bp = bp->b_forw) {
 		if (bp->b_blkno != dblkno || bp->b_dev != dev ||
 		    bp->b_flags&B_INVAL)
 			continue;
-		(void) spl6();
+		s = spl6();
 		if (bp->b_flags&B_BUSY) {
 			bp->b_flags |= B_WANTED;
 			sleep((caddr_t)bp, PRIBIO+1);
+			splx(s);
 			goto loop;
 		}
-		(void) spl0();
+		splx(s);
 #ifdef	DISKMON
 		i = 0;
 		dp = bp->av_forw;
@@ -373,16 +378,17 @@ daddr_t blkno;
 	}
 	if (major(dev) >= nblkdev)
 		panic("blkdev");
-	(void) spl6();
+	s = spl6();
 	for (ep = &bfreelist[BQUEUES-1]; ep > bfreelist; ep--)
 		if (ep->av_forw != ep)
 			break;
 	if (ep == bfreelist) {		/* no free blocks at all */
 		ep->b_flags |= B_WANTED;
 		sleep((caddr_t)ep, PRIBIO+1);
+		splx(s);
 		goto loop;
 	}
-	(void) spl0();
+	splx(s);
 	bp = ep->av_forw;
 	notavail(bp);
 	if (bp->b_flags & B_DELWRI) {
