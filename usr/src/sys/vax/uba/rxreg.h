@@ -1,4 +1,4 @@
-/*	rxreg.h	4.6	83/04/23	*/
+/*	rxreg.h	4.6	83/05/06	*/
 
 /*
  * RX02 registers
@@ -62,6 +62,7 @@ RXES_DNER\4RXES_ACLO\3RXES_ID\1RXES_CRC"
 #define RXIOC_RDDSMK	(('d'<<8)|3)	/* did last read sector contain */
 					/* `deleted data'?*/
 #define	RXIOC_GDENS	(('d'<<8)|4)	/* return density of current disk */
+#define	RXIOC_MASK	0x0ffff		/* mask for ioctl codes */
 
 #ifdef RXDEFERR
 /*
