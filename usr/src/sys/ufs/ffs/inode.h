@@ -1,4 +1,4 @@
-/*	inode.h	4.6	81/06/15	*/
+/*	inode.h	4.7	81/10/17	*/
 
 /*
  * The I node is the focus of all
@@ -13,19 +13,6 @@
 
 #define	NADDR	13
 
-#define	NINDEX		6
-struct group
-{
-	short	g_state;
-	char	g_index;
-	char	g_rot;
-	struct	group	*g_group;
-	struct	inode	*g_inode;
-	struct	file	*g_file;
-	short	g_rotmask;
-	short	g_datq;
-	struct	chan *g_chans[NINDEX];
-};
 struct	inode
 {
 	char	i_flag;
@@ -46,10 +33,8 @@ struct	inode
 #define	i_lastr	i_f.I_lastr
 		struct {
 			daddr_t	I_rdev;		/* i_addr[0] */
-			struct	group I_group;	/* multiplexor group file */
 		} i_d;
 #define	i_rdev	i_d.I_rdev
-#define	i_group	i_d.I_group
 		struct {
 			daddr_t	I_port0;	/* low 16 bits of portid */
 			daddr_t	I_port1;	/* high 16 bits of portid */
@@ -93,8 +78,6 @@ struct	inode *namei();
 #define		IFBLK	0060000	/* block special */
 #define		IFREG	0100000	/* regular */
 #define		IFPORT	0010000	/* named port */
-#define		IFMPC	0030000	/* multiplexed char special */
-#define		IFMPB	0070000	/* multiplexed block special */
 #define	ISUID	04000		/* set user id on execution */
 #define	ISGID	02000		/* set group id on execution */
 #define	ISVTX	01000		/* save swapped text even after use */

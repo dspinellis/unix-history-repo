@@ -1,4 +1,4 @@
-/*	file.h	4.7	81/05/12	*/
+/*	file.h	4.8	81/10/17	*/
 
 /*
  * One file structure is allocated
@@ -14,7 +14,6 @@ struct	file
 	struct inode *f_inode;		/* pointer to inode structure */
 	union {
 		off_t	f_offset;	/* read/write character pointer */
-		struct chan *f_chan;	/* mpx channel pointer */
 		struct port *f_port;	/* port (used for pipes, too) */
 #ifdef CHAOS
 		struct connection *f_conn;
@@ -37,8 +36,5 @@ struct	file *falloc();
 #define	FREAD	01
 #define	FWRITE	02
 #define	FPIPE	04
-#define	FMPX	010
-#define	FMPY	020
-#define	FMP	030
 #define	FPORT	040
 #define FNET    0100    /* this is a network entry */

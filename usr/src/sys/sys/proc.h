@@ -1,4 +1,4 @@
-/*	proc.h	4.8	81/04/23	*/
+/*	proc.h	4.9	81/10/17	*/
 
 /*
  * One structure allocated per active
@@ -103,6 +103,7 @@ int	whichqs;		/* bit mask summarizing non-empty qs's */
 #define	SDETACH	0x080000	/* detached inherited by init */
 #define	SNUSIG	0x100000	/* using new signal mechanism */
 #define	SOWEUPC	0x200000	/* owe process an addupc() call at next ast */
+#define	SSEL	0x400000	/* selecting; wakeup/waiting danger */
 
 /*
  * parallel proc structure

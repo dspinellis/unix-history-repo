@@ -1,4 +1,4 @@
-/*	types.h	4.2	81/04/28	*/
+/*	types.h	4.3	81/10/17	*/
 
 /*
  * Basic system types and major/minor device constructing/busting macros.
@@ -31,3 +31,5 @@ typedef	int	label_t[14];
 typedef	short	dev_t;
 typedef	int	off_t;
 typedef	long	portid_t;
+
+typedef	struct	fd_set { int fds_bits[1]; } fd_set;

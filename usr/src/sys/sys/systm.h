@@ -1,4 +1,4 @@
-/*	systm.h	4.17	81/05/05	*/
+/*	systm.h	4.18	81/10/17	*/
 
 /*
  * Random set of variables
@@ -84,3 +84,4 @@ extern	int catcher[256];
 char	*panicstr;
 int	wantin;
 int	boothowto;		/* reboot flags, from console subsystem */
+int	select();
