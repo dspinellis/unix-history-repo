@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cpp.c	1.13 %G%";
+static char sccsid[] = "@(#)cpp.c	1.14 %G%";
 #endif lint
 
 #ifdef FLEXNAMES
@@ -642,11 +642,15 @@ dodef(p) char *p; {/* process '#define' */
 	char *space, *newspace;
 	char *formal[MAXFRM]; /* formal[n] is name of nth formal */
 	char formtxt[BUFSIZ]; /* space for formal names */
+	int opt_passcom=passcom;
+
+	passcom=0;	/* don't put comments in macro expansions */
 
 	++flslvl; /* prevent macro expansion during 'define' */
 	p=skipbl(p); pin=inp;
 	if ((toktyp+COFF)[*pin]!=IDENT) {
-		ppwarn("illegal macro name"); while (*inp!='\n') p=skipbl(p); return(p);
+		ppwarn("illegal macro name"); while (*inp!='\n') p=skipbl(p);
+		passcom=opt_passcom; return(p);
 	}
 	np=slookup(pin,p,1);
 	if (oldval=np->value) free(lastcopy);	/* was previously defined */
@@ -680,7 +684,11 @@ dodef(p) char *p; {/* process '#define' */
 	/* warn if a redefinition is different from old value.
 	*/
 	space=psav=malloc(BUFSIZ);
-	if (space==NULL) {pperror("too much defining"); return(p);}
+	if (space==NULL) {
+		pperror("too much defining");
+		passcom=opt_passcom;
+		return(p);
+	}
 	*psav++ = '\0';
 	for (;;) {/* accumulate definition until linefeed */
 		outp=inp=p; p=cotoken(p); pin=inp;
@@ -731,6 +739,7 @@ dodef(p) char *p; {/* process '#define' */
 		 */
 		np->value += newspace-space;
 	}
+	passcom=opt_passcom;
 	return(p);
 }
 
