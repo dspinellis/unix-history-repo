@@ -1,4 +1,4 @@
-/*	ffs_alloc.c	2.8	82/07/15	*/
+/*	ffs_alloc.c	2.9	82/07/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -9,6 +9,7 @@
 #include "../h/inode.h"
 #include "../h/dir.h"
 #include "../h/user.h"
+#include "../h/quota.h"
 
 extern u_long		hashalloc();
 extern ino_t		ialloccg();
@@ -62,6 +63,10 @@ alloc(ip, bpref, size)
 	    fs->fs_cstotal.cs_nbfree * fs->fs_frag + fs->fs_cstotal.cs_nffree <
 	      fs->fs_dsize * fs->fs_minfree / 100)
 		goto nospace;
+#ifdef	QUOTA
+	if (chkdq(ip, (long)((unsigned)size/DEV_BSIZE), 0))
+		return(NULL);
+#endif
 	if (bpref >= fs->fs_size)
 		bpref = 0;
 	if (bpref == 0)
@@ -116,6 +121,10 @@ realloccg(ip, bprev, bpref, osize, nsize)
 		    ip->i_dev, fs->fs_bsize, bprev, fs->fs_fsmnt);
 		panic("realloccg: bad bprev");
 	}
+#ifdef	QUOTA
+	if (chkdq(ip, (long)((unsigned)(nsize-osize)/DEV_BSIZE), 0))
+		return(NULL);
+#endif
 	cg = dtog(fs, bprev);
 	bno = fragextend(ip, cg, (long)bprev, osize, nsize);
 	if (bno != 0) {
@@ -185,6 +194,10 @@ ialloc(pip, ipref, mode)
 	fs = pip->i_fs;
 	if (fs->fs_cstotal.cs_nifree == 0)
 		goto noinodes;
+#ifdef	QUOTA
+	if (chkiq(pip->i_dev, NULL, u.u_uid, 0))
+		return(NULL);
+#endif
 	if (ipref >= fs->fs_ncg * fs->fs_ipg)
 		ipref = 0;
 	cg = itog(fs, ipref);
