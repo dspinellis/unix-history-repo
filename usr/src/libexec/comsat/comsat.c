@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)comsat.c	4.13 (Berkeley) %G%";
+static	char sccsid[] = "@(#)comsat.c	4.14 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -24,19 +24,19 @@ static	char sccsid[] = "@(#)comsat.c	4.13 (Berkeley) %G%";
 int	debug = 0;
 #define	dprintf	if (debug) printf
 
-#define MAXUTMP 100		/* down from init */
-
 struct	sockaddr_in sin = { AF_INET };
 extern	errno;
 
 char	hostname[32];
-struct	utmp utmp[100];
+struct	utmp *utmp = NULL;
 int	nutmp;
 int	uf;
-unsigned utmpmtime;			/* last modification time for utmp */
+unsigned utmpmtime = 0;			/* last modification time for utmp */
+unsigned utmpsize = 0;			/* last malloced size for utmp */
 int	onalrm();
 int	reapchildren();
 long	lastmsgtime;
+char 	*malloc(), *realloc();
 
 #define	MAXIDLE	120
 #define NAMLEN (sizeof (uts[0].ut_name) + 1)
@@ -97,7 +97,6 @@ reapchildren()
 onalrm()
 {
 	struct stat statbf;
-	struct utmp *utp;
 
 	if (time(0) - lastmsgtime >= MAXIDLE)
 		exit(0);
@@ -107,8 +106,19 @@ onalrm()
 	if (statbf.st_mtime > utmpmtime) {
 		dprintf(" changed\n");
 		utmpmtime = statbf.st_mtime;
+		if (statbf.st_size > utmpsize) {
+			utmpsize = statbf.st_size + 10 * sizeof(struct utmp);
+			if (utmp)
+				utmp = (struct utmp *)realloc(utmp, utmpsize);
+			else
+				utmp = (struct utmp *)malloc(utmpsize);
+			if (! utmp) {
+				dprintf("malloc failed\n");
+				exit(1);
+			}
+		}
 		lseek(uf, 0, 0);
-		nutmp = read(uf,utmp,sizeof(utmp))/sizeof(struct utmp);
+		nutmp = read(uf,utmp,statbf.st_size)/sizeof(struct utmp);
 	} else
 		dprintf(" ok\n");
 }
