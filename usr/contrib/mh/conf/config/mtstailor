@@ -1,0 +1,4 @@
+mmdfldir:	@(MHDROPATH)
+mmdflfil:	@(MHDROPFIL)
+hostable:	@(MHETCPATH)/hosts
+servers:	localhost \01localnet
