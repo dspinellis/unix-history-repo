@@ -1,4 +1,4 @@
-/*	buf.h	3.1	%H%	*/
+/*	buf.h	3.2	%H%	*/
 
 /*
  * Each buffer in the pool is usually doubly linked into 2 lists:
@@ -39,6 +39,7 @@ struct buf
 	daddr_t	b_blkno;		/* block # on device */
 	char	b_xmem;			/* high order core address */
 	char	b_error;		/* returned after I/O */
+	short	b_hlink;		/* hash links for buffer cache */
 	unsigned int b_resid;		/* words not transferred after error */
 	struct  proc  *b_proc;		/* process doing physical or swap I/O */
 };
