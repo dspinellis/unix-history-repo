@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_css.c	6.6 (Berkeley) %G%
+ *	@(#)if_css.c	6.7 (Berkeley) %G%
  */
 
 #include "css.h"
@@ -372,7 +372,7 @@ cssrint(unit)
          * The offset parameter is always 0 since using
          * trailers on the ARPAnet is insane.
          */
-        m = if_rubaget(&sc->css_ifuba, len, 0, &sc->css_if);
+        m = if_rubaget(&sc->css_ifuba, len, 0, sc->css_if);
         if (m == 0)
                 goto setup;
         if ((addr->css_icsr & IN_EOM) == 0) {
