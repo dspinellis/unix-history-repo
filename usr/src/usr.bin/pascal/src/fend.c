@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)fend.c 1.16 %G%";
+static char sccsid[] = "@(#)fend.c 1.17 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -247,9 +247,9 @@ funcend(fp, bundle, endline)
 	if ( opt( 't' ) && ( -sizes[ cbn ].om_max ) > DPOFF1 ) {
 	    putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
 		    , "_blkclr" );
+	    putLV( 0 , cbn , sizes[ cbn ].om_max , NLOCAL , P2CHAR );
 	    putleaf( P2ICON ,  ( -sizes[ cbn ].om_max ) - DPOFF1
 		    , 0 , P2INT , 0 );
-	    putLV( 0 , cbn , sizes[ cbn ].om_max , NLOCAL , P2CHAR );
 	    putop( P2LISTOP , P2INT );
 	    putop( P2CALL , P2INT );
 	    putdot( filename , line );
