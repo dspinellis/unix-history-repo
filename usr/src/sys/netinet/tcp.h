@@ -1,13 +1,13 @@
-/* tcp.h 1.14 81/11/08 */
+/* tcp.h 1.15 81/11/14 */
 
 /*
  * Tcp header.  Fits over the ip header after option removed.
  *
  * SHOULD MAKE A CLEAN HEADER FOR USE BY USERS.
  */
-struct th {
-	struct	th *t_next;		/* -> next tcp on rcv chain */
-	struct	th *t_prev;		/* -> prev tcp on rcv chain */
+struct tcpiphdr {
+	struct	tcpiphdr *t_next;		/* -> next tcp on rcv chain */
+	struct	tcpiphdr *t_prev;		/* -> prev tcp on rcv chain */
 	u_char	t_x1;			/* (unused) */
 	u_char	t_pr;			/* protocol */
 /* by rights, t_len should be a u_short, but this makes operations */

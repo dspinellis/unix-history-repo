@@ -1,4 +1,4 @@
-/*	tcp_var.h	4.1	81/11/08	*/
+/*	tcp_var.h	4.2	81/11/14	*/
 
 /*
  * Kernel variables for tcp.
@@ -7,17 +7,10 @@
 /*
  * Tcp control block.
  */
-struct tcb {
-	struct tcb_hd {
-		struct	th *seg_next,*seg_prev;		/* seq queue */
-		struct	tcb *tcb_next,*tcb_prev;	/* other tcb's */
-	} tcb_hd;
-	struct	th *t_template;		/* skeletal packet for transmit */
-	struct	socket *t_socket;	/* back pointer to socket */
-	struct	mbuf *seg_unack;	/* unacked message queue */
-	struct	host *t_host;
-	short	seqcnt;
-	short	xxx;
+struct tcpcb {
+	struct	tcpiphdr *seg_next,*seg_prev;	/* seq queue */
+	struct	tcpiphdr *t_template;	/* skeletal packet for transmit */
+	struct	inpcb *t_inpcb;
 	seq_t	iss;			/* initial send seq # */
 	seq_t	irs;			/* initial recv seq # */
 	seq_t	rcv_urp;		/* rcv urgent pointer */
@@ -37,16 +30,16 @@ struct tcb {
 	seq_t	t_rtl_val;		/* val saved in rexmt too long timer */
 	seq_t	t_xmt_val;		/* seq # sent when xmt timer started */
 	seq_t	rcv_adv;		/* advertised window */
+	struct	mbuf *seg_unack;	/* unacked message queue */
+	short	seqcnt;
 	u_short	tc_flags;		/* flags and state; see below */
 	u_short	t_options;
 #define	TO_EOL		0x01		/* eol mode */
 #define	TO_URG		0x02		/* urgent mode */
-	u_short	t_lport;		/* local port */
-	u_short	t_fport;		/* foreign port */
 	u_char	t_state;		/* state of this connection */
 	u_char	t_xmtime;		/* current rexmt time */
 /* timers... must be in order */
-	short	t_init;			/* initialization too long */
+	short	t_init;			/* init */
 	short	t_rexmt;		/* retransmission */
 	short	t_rexmttl;		/* retransmit too long */
 	short	t_persist;		/* retransmit persistance */
@@ -58,7 +51,7 @@ struct tcb {
 /* tc_flags values */
 #define	TC_ACK_DUE	0x0001		/* must we send ACK */
 #define	TC_CANCELLED	0x0002		/* retransmit timer cancelled */
-#define	TC_DROPPED_TXT	0x0004		/* dropped incoming data */
+/* ... */
 #define	TC_FIN_RCVD	0x0008		/* FIN received */
 #define	TC_FORCE_ONE	0x0010		/* force sending of one byte */
 #define	TC_NEW_WINDOW	0x0020		/* received new window size */
@@ -83,6 +76,9 @@ struct tcb {
 #define	TFINACK		4
 #define	TNTIMERS	5
 
+#define	intotcpcb(ip)	((struct tcpcb *)(ip)->inp_ppcb)
+#define	sototcpcb(so)	(intotcpcb(sotoinpcb(so)))
+
 /*
  * Tcp machine predicates
  */
@@ -98,8 +94,8 @@ struct tcb {
 
 #define	rcv_empty(x) \
     (((x)->tc_flags&TC_USR_ABORT) || \
-      ((x)->t_socket->so_rcv.sb_mb == NULL && \
-       (x)->tcb_hd.seg_next == (x)->tcb_hd.seg_prev))
+      ((x)->t_inpcb->inp_socket->so_rcv.sb_mb == NULL && \
+       (x)->seg_next == (x)->seg_prev))
 
 #define	ISSINCR		128		/* increment for iss each second */
 #define	TCPSIZE		20		/* size of TCP leader (bytes) */
@@ -109,6 +105,7 @@ struct tcb {
  *
  * *2 here is because slow timeout routine called every 1/2 second.
  */
+#define	T_INIT		(30*2)
 #define	T_2ML		(10*2)		/* 2*maximum packet lifetime */
 #define	T_PERS		(5*2)		/* persist time */
 #define	T_REXMT		(1*2)		/* base for retransmission time */
@@ -122,7 +119,7 @@ struct tcb {
  */
 struct tcp_debug {
 	long	td_tod;			/* time of day */
-	struct	tcb *td_tcb;		/* -> tcb */
+	struct	tcbcb *td_tcb;		/* -> tcb */
 	char	td_old;			/* old state */
 	char	td_inp;			/* input */
 	char	td_tim;			/* timer id */
@@ -136,18 +133,17 @@ struct tcp_debug {
 #endif
 
 #ifdef KERNEL
-struct	tcb_hd tcb;			/* tcp tcb list head */
 seq_t	tcp_iss;			/* tcp initial send seq # */
 int	tcpconsdebug;			/* set to 1 traces on console */
+struct	inpcb tcb;
 #ifdef TCPDEBUG
 struct	tcp_debug tcp_debug[TDBSIZE];
 #endif
 int	tdbx;			/* rotating index into tcp_debug */
-struct	th *tcp_template();
+struct	tcpiphdr *tcp_template();
 #endif
 
 #define	SEQ_LT(a,b)	((int)((a)-(b)) < 0)
 #define	SEQ_LEQ(a,b)	((int)((a)-(b)) <= 0)
 #define	SEQ_GT(a,b)	((int)((a)-(b)) > 0)
 #define	SEQ_GEQ(a,b)	((int)((a)-(b)) >= 0)
-struct	th *tcp_template();
