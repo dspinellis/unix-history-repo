@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_map.h	8.4 (Berkeley) %G%
+ *	@(#)vm_map.h	8.5 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -142,7 +142,16 @@ extern struct proc *curproc;	/* XXX */
 #define	vm_map_unlock(map)	lockmgr(&(map)->lock, LK_RELEASE, curproc)
 #define	vm_map_lock_read(map)	lockmgr(&(map)->lock, LK_SHARED, curproc)
 #define	vm_map_unlock_read(map)	lockmgr(&(map)->lock, LK_RELEASE, curproc)
-
+#define vm_map_set_recursive(map) { \
+	simple_lock(&(map)->lk_interlock); \
+	(map)->lk_flags |= LK_CANRECURSE; \
+	simple_unlock(&(map)->lk_interlock); \
+}
+#define vm_map_clear_recursive(map) { \
+	simple_lock(&(map)->lk_interlock); \
+	(map)->lk_flags &= ~LK_CANRECURSE; \
+	simple_unlock(&(map)->lk_interlock); \
+}
 /*
  *	Functions implemented as macros
  */
