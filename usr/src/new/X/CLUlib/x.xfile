@@ -1,0 +1,5 @@
+merge x ~CLU/lib/*
+ext f
+ce xdefs internal cursors
+loc f
+o
