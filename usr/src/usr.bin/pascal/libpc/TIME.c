@@ -1,12 +1,12 @@
 /*-
- * Copyright (c) 1979 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1979, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)TIME.c	1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)TIME.c	8.1 (Berkeley) %G%";
 #endif /* not lint */
 
 extern char *ctime();
