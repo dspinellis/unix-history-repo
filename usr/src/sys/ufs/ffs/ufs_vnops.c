@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	7.109 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.110 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -216,9 +216,7 @@ ufs_access(ap)
 found:
 		;
 	}
-	if ((ip->i_mode & mode) != 0)
-		return (0);
-	return (EACCES);
+	return ((ip->i_mode & mode) == mode ? 0 : EACCES);
 }
 
 /* ARGSUSED */
