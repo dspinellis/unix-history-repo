@@ -37,17 +37,20 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00044
+ * CURRENT PATCH LEVEL:         2       00071
  * --------------------         -----   ----------------------
  *
- * 14 Aug 92	Arne Henrik Juul	Added code for the kernel to
+ * 14 Aug 92	Arne Henrik Juul	Added code in the kernel to
  *					allow for DST in the BIOS.
+ * 17 Jan 93	Bruce Evans		Fixed leap year and second
+ *					calculations
  */
 
 /*
  * Primitive clock interrupt routines.
  */
 #include "param.h"
+#include "systm.h"
 #include "time.h"
 #include "kernel.h"
 #include "machine/segments.h"
@@ -94,8 +97,8 @@ int y;
 	int i;
 	unsigned long ret;
 
-	ret = 0; y = y - 70;
-	for(i=0;i<y;i++) {
+	ret = 0;
+	for(i = 1970; i < y; i++) {
 		if (i % 4) ret += 365*24*60*60;
 		else ret += 366*24*60*60;
 	}
@@ -145,15 +148,16 @@ inittodr(base)
 	while ((sa&RTCSA_TUP) == RTCSA_TUP)
 		sa = rtcin(RTC_STATUSA);
 
-	sec = bcd(rtcin(RTC_YEAR));
-	leap = !(sec % 4); sec += ytos(sec); /* year    */
+	sec = bcd(rtcin(RTC_YEAR)) + 1900;
+	if (sec < 1970)
+		sec += 100;
+	leap = !(sec % 4); sec = ytos(sec); /* year    */
 	yd = mtos(bcd(rtcin(RTC_MONTH)),leap); sec += yd;	/* month   */
 	t = (bcd(rtcin(RTC_DAY))-1) * 24*60*60; sec += t; yd += t; /* date    */
 	day_week = rtcin(RTC_WDAY);				/* day     */
 	sec += bcd(rtcin(RTC_HRS)) * 60*60;			/* hour    */
 	sec += bcd(rtcin(RTC_MIN)) * 60;			/* minutes */
 	sec += bcd(rtcin(RTC_SEC));				/* seconds */
-	sec -= 24*60*60; /* XXX why ??? */
 
 	/* XXX off by one? Need to calculate DST on SUNDAY */
 	/* Perhaps we should have the RTC hold GMT time to save */
