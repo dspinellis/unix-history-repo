@@ -1,587 +1,1066 @@
-/*
- * Copyright (c) 1980,1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Donn Seeley at UUNET Technologies, Inc.
+ *
+ * %sccs.include.redist.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	5.19 (Berkeley) %G%";
-#endif not lint
+char copyright[] =
+"@(#) Copyright (c) 1991 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)init.c	6.1 (Berkeley) %G%";
+#endif /* not lint */
 
 #include <sys/types.h>
-#include <sys/file.h>
-#include <sys/signal.h>
-#include <sys/reboot.h>
-#include <sys/syslog.h>
-#include <sys/stat.h>
-#include <sys/ioctl.h>
-#include <setjmp.h>
-#include <utmp.h>
+#include <sys/wait.h>
+#include <db.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <string.h>
+#include <syslog.h>
+#include <time.h>
 #include <ttyent.h>
+#include <unistd.h>
+
+#ifdef __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+
+#ifdef SECURE
+#include <pwd.h>
+#endif
+
 #include "pathnames.h"
 
-#define	CMDSIZ	200	/* max string length for getty or window command*/
-#define	ALL	p = itab; p ; p = p->next
-#define	EVER	;;
-#define SCPYN(a, b)	strncpy(a, b, sizeof(a))
-#define SCMPN(a, b)	strncmp(a, b, sizeof(a))
+/*
+ * Until the mythical util.h arrives...
+ */
+extern int login_tty __P((int));
+extern int logout __P((const char *));
+extern void logwtmp __P((const char *, const char *, const char *));
 
-char	shell[]	= _PATH_BSHELL;
-char	minus[]	= "-";
-char	runc[]	= _PATH_RC;
-char	ctty[]	= _PATH_CONSOLE;
+/*
+ * Sleep times; used to prevent thrashing.
+ */
+#define	GETTY_SPACING		60	/* fork getty on a port every N secs */
+#define	WINDOW_WAIT		 3	/* wait N secs after starting window */
+#define	STALL_TIMEOUT		30	/* wait N secs after warning */
+#define	DEATH_WATCH		30	/* wait N secs for procs to die */
 
-struct	tab
-{
-	char	line[UT_LINESIZE];
-	char	comn[CMDSIZ];
-	char	xflag;
-	int	pid;
-	int	wpid;		/* window system pid for SIGHUP	*/
-	char	wcmd[CMDSIZ];	/* command to start window system process */
-	time_t	gettytime;
-	int	gettycnt;
-	time_t	windtime;
-	int	windcnt;
-	struct	tab *next;
-} *itab;
+void handle __P((sig_t, ...));
+void delset __P((sigset_t *, ...));
 
-int	fi;
-int	mergflag;
-char	tty[20];
-jmp_buf	sjbuf, shutpass;
+void stall __P((char *, ...));
+void warning __P((char *, ...));
+void emergency __P((char *, ...));
+void disaster __P((int));
 
-char	*strcpy(), *strcat();
-long	lseek();
-void	idle(), merge(), reset();
+/*
+ * We really need a recursive typedef...
+ * The following at least guarantees that the return type of (*state_t)()
+ * is sufficiently wide to hold a function pointer.
+ */
+typedef long (*state_func_t) __P((void));
+typedef state_func_t (*state_t) __P((void));
 
-struct	sigvec rvec = { reset, sigmask(SIGHUP), 0 };
+state_func_t single_user __P((void));
+state_func_t runcom __P((void));
+state_func_t read_ttys __P((void));
+state_func_t multi_user __P((void));
+state_func_t clean_ttys __P((void));
+state_func_t catatonia __P((void));
+state_func_t death __P((void));
 
+enum { AUTOBOOT, FASTBOOT } runcom_mode = AUTOBOOT;
+
+void transition __P((state_t));
+state_t requested_transition = runcom;
+
+void setctty __P((char *));
+
+typedef struct session {
+	int	se_index;		/* index of entry in ttys file */
+	pid_t	se_process;		/* controlling process */
+	time_t	se_started;		/* used to avoid thrashing */
+	int	se_flags;		/* status of session */
+#define	SE_SHUTDOWN	0x1		/* session won't be restarted */
+	char	*se_device;		/* filename of port */
+	char	*se_getty;		/* what to run on that port */
+	char	**se_getty_argv;	/* pre-parsed argument array */
+	char	*se_window;		/* window system (started only once) */
+	char	**se_window_argv;	/* pre-parsed argument array */
+	struct	session *se_prev;
+	struct	session *se_next;
+} session_t;
+
+void free_session __P((session_t *));
+session_t *new_session __P((session_t *, int, struct ttyent *));
+session_t *sessions;
+
+char **construct_argv __P((char *));
+void start_window_system __P((session_t *));
+pid_t start_getty __P((session_t *));
+void chld_handler __P((int));
+void transition_handler __P((int));
+void alrm_handler __P((int));
+int clang;
+
+int start_logger __P((void));
+void clear_session_logs __P((session_t *));
+int logger_enable;
+
+void start_session_db __P((void));
+void add_session __P((session_t *));
+void del_session __P((session_t *));
+session_t *find_session __P((pid_t));
+DB *session_db;
+
+sigset_t multi_sig_mask;
+sigset_t death_mask;
+
+int
 main(argc, argv)
+	int argc;
 	char **argv;
 {
-	/* insure proper semantics for setjmp/longjmp */
-	static int howto, oldhowto, started = 0;
-#if defined(tahoe)
-	register int r12;		/* make sure r11 gets bootflags */
-#endif
-#if defined(vax) || defined(tahoe) || defined(hp300)
-	/* howto passed in high-order register XXX */
-	register int r11;		/* passed thru from boot */
-#ifdef __GNUC__
-#ifdef hp300
-	asm("movl d7,%0" : "=rm" (howto));
-#else
-	asm("movl r11,%0" : "=rm" (howto));
-#endif
-#else
-	howto = r11;
-#endif /* __GNUC__ */
-#else  /* vax || tahoe || hp300 */
-	/* howto passed as argument */
-	howto = 0;
-#endif  /* ! (vax || tahoe || hp300) */
+	int c;
+	sigset_t mask;
 
 	/*
-	 * We expect a single options argument from the kernel.
-	 * If it is present, we ignore anything in registers from above.
+	 * Silently dispose of random users running this program.
 	 */
-	if (argc > 1 && argv[1][0] == '-') {
-		char *cp;
+	if (getuid() != 0)
+		return 1;
 
-		howto = 0;
-		cp = &argv[1][1];
-		while (*cp) switch (*cp++) {
-#ifdef notyet
-		case 'f':
-			howto |= RB_FASTBOOT;
-			break;
-#endif
+	/*
+	 * Note that this does NOT open a file...
+	 * Does 'init' deserve its own facility number?
+	 */
+	openlog("init", LOG_CONS, LOG_DAEMON);
+
+	/*
+	 * This code assumes that we always get arguments through flags,
+	 * never through bits set in some random machine register.
+	 */
+	while ((c = getopt(argc, argv, "sf")) != -1)
+		switch (c) {
 		case 's':
-			howto |= RB_SINGLE;
+			requested_transition = single_user;
+			break;
+		case 'f':
+			runcom_mode = FASTBOOT;
+			break;
+		default:
+			warning("unrecognized flag '-%c'", c);
 			break;
 		}
-	}
-	if (getuid() != 0)
-		exit(1);
-	openlog("init", LOG_CONS|LOG_ODELAY, LOG_AUTH);
-	if (setsid() < 0)
-		syslog(LOG_ERR, "setsid failed (initial) %m");
-	sigvec(SIGTERM, &rvec, (struct sigvec *)0);
-	signal(SIGTSTP, idle);
-	signal(SIGTTIN, SIG_IGN);
-	signal(SIGTTOU, SIG_IGN);
-	(void) setjmp(sjbuf);
-	for (; ; ) {
-		oldhowto = howto;
-		howto = RB_SINGLE;
-		if (started && setjmp(shutpass) == 0)
-			shutdown();
-		started = 1;
-		if (oldhowto & RB_SINGLE)
-			single();
-		if (runcom(oldhowto) == 0) 
-			continue;
-		merge();
-		multiple();
-	}
+
+	if (optind != argc)
+		warning("ignoring excess arguments");
+
+	/*
+	 * We catch or block signals rather than ignore them,
+	 * so that they get reset on exec.
+	 */
+	handle(disaster, SIGABRT, SIGFPE, SIGILL, SIGSEGV,
+	       SIGBUS, SIGSYS, SIGXCPU, SIGXFSZ, 0);
+	handle(transition_handler, SIGHUP, SIGTERM, SIGTSTP, 0);
+	handle(alrm_handler, SIGALRM, 0);
+	handle(chld_handler, SIGCHLD, 0);
+	sigfillset(&mask);
+	delset(&mask, SIGABRT, SIGFPE, SIGILL, SIGSEGV,
+		SIGBUS, SIGSYS, SIGXCPU, SIGXFSZ, 0);
+	sigprocmask(SIG_SETMASK, &mask, (sigset_t *) 0);
+	multi_sig_mask = mask;
+	delset(&multi_sig_mask, SIGHUP, SIGTERM, SIGTSTP, SIGCHLD, 0);
+	death_mask = mask;
+	delset(&death_mask, SIGCHLD, SIGALRM);
+
+	/*
+	 * Paranoia.
+	 */
+	close(0);
+	close(1);
+	close(2);
+
+	/*
+	 * Start the state machine.
+	 */
+	transition(requested_transition);
+
+	/*
+	 * Should never reach here.
+	 */
+	return 1;
 }
-
-void	shutreset();
-
-shutdown()
-{
-	register i;
-	register struct tab *p, *p1;
-
-	signal(SIGHUP, SIG_IGN);
-	for (p = itab; p ; ) {
-		term(p);
-		p1 = p->next;
-		free(p);
-		p = p1;
-	}
-	itab = (struct tab *)0;
-	signal(SIGALRM, shutreset);
-	(void) kill(-1, SIGTERM);	/* one chance to catch it */
-	sleep(5);
-	alarm(30);
-	for (i = 0; i < 5; i++)
-		kill(-1, SIGKILL);
-	while (wait((int *)0) != -1)
-		;
-	alarm(0);
-	shutend();
-}
-
-char shutfailm[] = "init: WARNING: something is hung (won't die); ps axl advised\n";
 
 void
-shutreset()
+#ifdef __STDC__
+handle(sig_t handler, ...)
+#else
+handle(va_alist)
+	va_dcl
+#endif
 {
-	int status;
+	int sig;
+	struct sigaction sa;
+	int mask_everything;
+	va_list ap;
+#ifndef __STDC__
+	sig_t handler;
+
+	va_start(ap);
+	handler = va_arg(ap, sig_t);
+#else
+	va_start(ap, handler);
+#endif
+
+	sa.sa_handler = handler;
+	sigfillset(&mask_everything);
+
+	while (sig = va_arg(ap, int)) {
+		sa.sa_mask = mask_everything;
+		/* XXX SA_RESTART? */
+		sa.sa_flags = sig == SIGCHLD ? SA_NOCLDSTOP : 0;
+		sigaction(sig, &sa, (struct sigaction *) 0);
+	}
+}
+
+void
+#ifdef __STDC__
+delset(sigset_t *maskp, ...)
+#else
+delset(va_alist)
+	va_dcl
+#endif
+{
+	int sig;
+	va_list ap;
+#ifndef __STDC__
+	sigset_t *maskp;
+
+	va_start(ap);
+	maskp = va_arg(ap, sigset_t *);
+#else
+	va_start(ap, maskp);
+#endif
+
+	while (sig = va_arg(ap, int))
+		sigdelset(maskp, sig);
+}
+
+/*
+ * Log a message and sleep for a while (to give someone an opportunity
+ * to read it and to save log or hardcopy output if the problem is chronic).
+ * We fork so that we can't block on I/O when writing the message,
+ * and so that init proper doesn't acquire another open file.
+ * If the fork fails, or the child can't finish, too bad.
+ */
+void
+#ifdef __STDC__
+stall(char *message, ...)
+#else
+stall(va_alist)
+	va_dcl
+#endif
+{
+	pid_t pid;
+	va_list ap;
+#ifndef __STDC__
+	char *message;
+
+	va_start(ap);
+	message = va_arg(ap, char *);
+#else
+	va_start(ap, message);
+#endif
+
+	if ((pid = fork()) == 0) {
+		vsyslog(LOG_ALERT, message, ap);
+		_exit(0);
+	}
+	va_end(ap);
+	sleep(STALL_TIMEOUT);
+	if (pid != -1)
+		waitpid(pid, (int *) 0, WNOHANG);
+}
+
+/*
+ * Like stall(), but doesn't sleep.
+ * If cpp had variadic macros, the two functions could be #defines for another.
+ */
+void
+#ifdef __STDC__
+warning(char *message, ...)
+#else
+warning(va_alist)
+	va_dcl
+#endif
+{
+	va_list ap;
+#ifndef __STDC__
+	char *message;
+
+	va_start(ap);
+	message = va_arg(ap, char *);
+#else
+	va_start(ap, message);
+#endif
 
 	if (fork() == 0) {
-		int ct = open(ctty, 1);
-		write(ct, shutfailm, sizeof (shutfailm));
-		sleep(5);
-		exit(1);
+		vsyslog(LOG_ALERT, message, ap);
+		_exit(0);
 	}
-	sleep(5);
-	shutend();
-	longjmp(shutpass, 1);
-}
-
-shutend()
-{
-	register i;
-
-	acct(0);
-	signal(SIGALRM, SIG_DFL);
-	for (i = 0; i < 10; i++)
-		close(i);
-	logwtmp("~", "shutdown", "");
-}
-
-single()
-{
-	register pid;
-	register xpid;
-	int fd;
-	extern int errno;
-
-	do {
-		pid = fork();
-		if (pid == 0) {
-			signal(SIGTERM, SIG_DFL);
-			signal(SIGHUP, SIG_DFL);
-			signal(SIGALRM, SIG_DFL);
-			signal(SIGTSTP, SIG_IGN);
-			if (setsid() < 0)
-				syslog(LOG_ERR, "setsid failed (single): %m");
-			(void) revoke(ctty);
-			if ((fd = open(ctty, O_RDWR)) < 0) {
-				syslog(LOG_ERR, "open %s: %m", ctty);
-				exit(1);
-			}
-			if (ioctl(fd, TIOCSCTTY, 0) < 0)
-				syslog(LOG_ERR, "TIOCSCTTY failed: %m");
-			dup2(fd, 0);
-			dup2(fd, 1);
-			dup2(fd, 2);
-			if (fd > 2)
-				close(fd);
-			execl(shell, minus, (char *)0);
-			perror(shell);
-			exit(0);
-		}
-		while ((xpid = wait((int *)0)) != pid)
-			if (xpid == -1 && errno == ECHILD)
-				break;
-	} while (xpid == -1);
-}
-
-runcom(oldhowto)
-	int oldhowto;
-{
-	register pid;
-	int fd, status;
-
-	pid = fork();
-	if (pid == 0) {
-		signal(SIGTSTP, SIG_IGN);
-		signal(SIGHUP, SIG_IGN);
-		if ((fd = open(ctty, O_RDWR)) < 0)
-			syslog(LOG_ERR, "open %s: %m", ctty);
-		else {
-			dup2(fd, 0);
-			dup2(fd, 1);
-			dup2(fd, 2);
-			if (fd > 2)
-				close(fd);
-		}
-		if (setsid() < 0)
-			syslog(LOG_ERR, "setsid failed (runcom) %m");
-		if (ioctl(0, TIOCSCTTY, 0) < 0) 
-			syslog(LOG_ERR, "TIOCSCTTY failed (runcom) %m");
-		if (oldhowto & RB_SINGLE)
-			execl(shell, shell, runc, (char *)0);
-		else
-			execl(shell, shell, runc, "autoboot", (char *)0);
-		exit(1);
-	}
-	while (wait(&status) != pid)
-		;
-	if (status)
-		return (0);
-	logwtmp("~", "reboot", "");
-	return (1);
-}
-
-struct	sigvec	mvec = { merge, sigmask(SIGTERM), 0 };
-/*
- * Multi-user.  Listen for users leaving, SIGHUP's
- * which indicate ttys has changed, and SIGTERM's which
- * are used to shutdown the system.
- */
-multiple()
-{
-	extern int errno;
-	register struct tab *p;
-	register pid;
-	int omask;
-
-	sigvec(SIGHUP, &mvec, (struct sigvec *)0);
-	for (EVER) {
-		pid = wait((int *)0);
-/* SHOULD FIX THIS IN THE KERNEL */
-		if (pid == -1 && errno != EINTR)
-			return;
-		omask = sigblock(sigmask(SIGHUP));
-		for (ALL) {
-			/* must restart window system BEFORE emulator */
-			if (p->wpid == pid || p->wpid == -1)
-				wstart(p);
-			if (p->pid == pid || p->pid == -1) {
-				/* disown the window system */
-				if (p->wpid)
-					kill(p->wpid, SIGHUP);
-				cleanutmp(p);
-				dfork(p);
-			}
-		}
-		sigsetmask(omask);
-	}
+	va_end(ap);
 }
 
 /*
- * Merge current contents of ttys file
- * into in-core table of configured tty lines.
- * Entered as signal handler for SIGHUP.
+ * Log a message, no forking, no waiting.
+ * We take care to close syslog's file descriptor, however.
  */
-#define	FOUND	1
-#define	CHANGE	2
-#define WCHANGE 4
+void
+#ifdef __STDC__
+emergency(char *message, ...)
+#else
+emergency(va_alist)
+	va_dcl
+#endif
+{
+	va_list ap;
+#ifndef __STDC__
+	char *message;
+
+	va_start(ap);
+	message = va_arg(ap, char *);
+#else
+	va_start(ap, message);
+#endif
+
+	vsyslog(LOG_EMERG, message, ap);
+	va_end(ap);
+	closelog();
+	openlog("init", LOG_CONS, LOG_DAEMON);
+}
 
 void
-merge()
+disaster(sig)
+	int sig;
 {
-	register struct tab *p;
-	register struct ttyent *t;
-	register struct tab *p1;
+	emergency("fatal signal: %s",
+		sig < (unsigned) NSIG ? sys_siglist[sig] : "unknown signal");
 
-	for (ALL)
-		p->xflag = 0;
-	setttyent();
-	while (t = getttyent()) {
-		if ((t->ty_status & TTY_ON) == 0)
-			continue;
-		for (ALL) {
-			if (SCMPN(p->line, t->ty_name))
-				continue;
-			p->xflag |= FOUND;
-			if (SCMPN(p->comn, t->ty_getty)) {
-				p->xflag |= CHANGE;
-				SCPYN(p->comn, t->ty_getty);
-			}
-			if (SCMPN(p->wcmd, t->ty_window ? t->ty_window : "")) {
-				p->xflag |= WCHANGE|CHANGE;
-				SCPYN(p->wcmd, t->ty_window);
-			}
-			goto contin1;
-		}
+	sleep(STALL_TIMEOUT);
+	_exit(sig);		/* reboot */
+}
 
-		/*
-		 * Make space for a new one
-		 */
-		p1 = (struct tab *)calloc(1, sizeof(*p1));
-		if (!p1) {
-			syslog(LOG_ERR, "no space for '%s' !?!", t->ty_name);
-			goto contin1;
-		}
-		/*
-		 * Put new terminal at the end of the linked list.
-		 */
-		if (itab) {
-			for (p = itab; p->next ; p = p->next)
-				;
-			p->next = p1;
-		} else
-			itab = p1;
+/*
+ * Change states in the finite state machine.
+ * The initial state is passed as an argument.
+ */
+void
+transition(s)
+	state_t s;
+{
+	for (;;)
+		s = (state_t) (*s)();
+}
 
-		p = p1;
-		SCPYN(p->line, t->ty_name);
-		p->xflag |= FOUND|CHANGE;
-		SCPYN(p->comn, t->ty_getty);
-		if (t->ty_window && strcmp(t->ty_window, "") != 0) {
-			p->xflag |= WCHANGE;
-			SCPYN(p->wcmd, t->ty_window);
-		}
-	contin1:
-		;
+/*
+ * We send requests for session logging to another process for two reasons.
+ * First, we don't want to block if the log files go away (e.g. because
+ * one or more are on hard-mounted NFS systems whose server crashes).
+ * Second, despite all the crud already contained in init, it still isn't
+ * right that init should care about session logging record formats and files.
+ * We could use explicit 'Unix' IPC for this, but let's try to be POSIX...
+ */
+int
+start_logger()
+{
+	static char *argv[] = { _PATH_SLOGGER, 0 };
+	int fd, pfd[2];
+	pid_t pid;
+	sigset_t mask;
+
+	if (pipe(pfd) == -1) {
+		warning("session logging disabled: can't make pipe to %s: %m",
+			  argv[0]);
+		return -1;
 	}
-	endttyent();
-	p1 = (struct tab *)0;
-	for (ALL) {
-		if ((p->xflag&FOUND) == 0) {
-			term(p);
-			wterm(p);
-			if (p1)
-				p1->next = p->next;
-			else
-				itab = p->next;
-			free(p);
-			p = p1 ? p1 : itab;
+	if ((pid = fork()) == -1) {
+		emergency("session logging disabled: can't fork for %s: %m",
+			  argv[0]);
+		return -1;
+	}
+
+	if (pid == 0) {
+		close(pfd[1]);
+		if (pfd[0] != 0) {
+			dup2(pfd[0], 0);
+			close(pfd[0]);
+		}
+		if ((fd = open(_PATH_DEVNULL, O_WRONLY)) != -1) {
+			if (fd != 1)
+				dup2(fd, 1);
+			if (fd != 2)
+				dup2(fd, 2);
+			if (fd != 1 && fd != 2)
+				close(fd);
 		} else {
-			/* window system should be started first */
-			if (p->xflag&WCHANGE) {
-				wterm(p);
-				wstart(p);
-			}
-			if (p->xflag&CHANGE) {
-				term(p);
-				dfork(p);
-			}
+			/* paranoid */
+			close(1);
+			close(2);
 		}
-		p1 = p;
+		sigemptyset(&mask);
+		sigprocmask(SIG_SETMASK, &mask, (sigset_t *) 0);
+		execv(argv[0], argv);
+		stall("can't exec %s: %m", argv[0]);
+		_exit(1);
+	}
+
+	close(pfd[0]);
+	fcntl(pfd[1], F_SETFD, FD_CLOEXEC);
+	fcntl(pfd[1], F_SETFL, O_NONBLOCK);
+
+	return pfd[1];
+}
+
+void
+clear_session_logs(sp)
+	session_t *sp;
+{
+	if (fork() == 0 && logout(sp->se_device))
+		logwtmp(sp->se_device, "", "");
+}
+
+/*
+ * Start a session and allocate a controlling terminal.
+ * Only called by children of init after forking.
+ */
+void
+setctty(name)
+	char *name;
+{
+	int fd;
+
+	if ((fd = open(name, O_RDWR)) == -1) {
+		stall("can't open %s: %m", name);
+		_exit(1);
+	}
+	if (login_tty(fd) == -1) {
+		stall("can't get %s for controlling terminal: %m", name);
+		_exit(1);
 	}
 }
 
-term(p)
-	register struct tab *p;
+state_func_t
+single_user()
 {
+	pid_t pid, wpid;
+	int status;
+	sigset_t mask;
+	char *shell = _PATH_BSHELL;
+	char *argv[2];
+#ifdef SECURE
+	struct ttyent *typ;
+	struct passwd *pp;
+	static const char banner[] =
+		"Enter root password, or ^D to go multi-user\n";
+	char *password;
+#endif
 
-	if (p->pid != 0) {
-		cleanutmp(p);
-		kill(p->pid, SIGKILL);
-	}
-	p->pid = 0;
-	/* send SIGHUP to get rid of connections */
-	if (p->wpid > 0)
-		kill(p->wpid, SIGHUP);
-}
-
-dfork(p)
-	struct tab *p;
-{
-	register pid;
-	time_t t;
-	int dowait = 0;
-
-	time(&t);
-	p->gettycnt++;
-	if ((t - p->gettytime) >= 60) {
-		p->gettytime = t;
-		p->gettycnt = 1;
-	} else if (p->gettycnt >= 5) {
-		dowait = 1;
-		p->gettytime = t;
-		p->gettycnt = 1;
-	}
-	pid = fork();
-	if (pid == 0) {
-		signal(SIGTERM, SIG_DFL);
-		signal(SIGHUP, SIG_IGN);
-		sigsetmask(0);	/* since can be called from masked code */
-		if (dowait) {
-			syslog(LOG_ERR, "'%s %s' failing, sleeping", p->comn, p->line);
-			closelog();
-			sleep(30);
-		}
-		if (setsid() < 0)
-			syslog(LOG_ERR, "setsid failed(dfork) %m");
-		execit(p->comn, p->line);
-		exit(0);
-	}
-	p->pid = pid;
-}
-
-cleanutmp(p)
-	register struct tab *p;
-{
-	if (logout(p->line)) {
-		logwtmp(p->line, "", "");
+	if ((pid = fork()) == 0) {
 		/*
-		 * After a proper login force reset
-		 * of error detection code in dfork.
+		 * Start the single user session.
 		 */
-		p->gettytime = 0;
-		p->windtime = 0;
-	}
-}
+		setctty(_PATH_CONSOLE);
 
-void
-reset()
-{
-	longjmp(sjbuf, 1);
-}
-
-jmp_buf	idlebuf;
-
-void
-idlehup()
-{
-	longjmp(idlebuf, 1);
-}
-
-void
-idle()
-{
-	register struct tab *p;
-	register pid;
-
-	signal(SIGHUP, idlehup);
-	for (EVER) {
-		if (setjmp(idlebuf))
-			return;
-		pid = wait((int *) 0);
-		if (pid == -1) {
-			sigpause(0);
-			continue;
-		}
-		for (ALL) {
-			/* if window system dies, mark it for restart */
-			if (p->wpid == pid)
-				p->wpid = -1;
-			if (p->pid == pid) {
-				cleanutmp(p);
-				p->pid = -1;
+#ifdef SECURE
+		/*
+		 * Check the root password.
+		 * We don't care if the console is 'on' by default;
+		 * it's the only tty that can be 'off' and 'secure'.
+		 */
+		typ = getttynam("console");
+		pp = getpwnam("root");
+		if (typ && (typ->ty_status & TTY_SECURE) == 0 && pp) {
+			write(2, banner, sizeof banner - 1);
+			for (;;) {
+				password = getpass("Password:");
+				if (password == 0 || *password == '\0')
+					_exit(0);
+				if (strcmp(password, pp->pw_passwd) == 0)
+					break;
 			}
 		}
+#if 0
+		/*
+		 * Make the single-user shell be root's standard shell?
+		 */
+		if (pp && pp->pw_shell)
+			shell = pp->pw_shell;
+#endif
+		endttyent();
+		endpwent();
+#endif
+
+		/*
+		 * Unblock signals.
+		 * We catch all the interesting ones,
+		 * and those are reset to SIG_DFL on exec.
+		 */
+		sigemptyset(&mask);
+		sigprocmask(SIG_SETMASK, &mask, (sigset_t *) 0);
+
+		/*
+		 * Fire off a shell.
+		 * If the default one doesn't work, try the Bourne shell.
+		 */
+		argv[0] = "-sh";
+		argv[1] = 0;
+		execv(shell, argv);
+		emergency("can't exec %s for single user: %m", shell);
+		execv(_PATH_BSHELL, argv);
+		emergency("can't exec %s for single user: %m", _PATH_BSHELL);
+		sleep(STALL_TIMEOUT);
+		_exit(1);
 	}
-}
 
-wterm(p)
-	register struct tab *p;
-{
-	if (p->wpid != 0) {
-		kill(p->wpid, SIGKILL);
-	}
-	p->wpid = 0;
-}
-
-wstart(p)
-	register struct tab *p;
-{
-	register pid;
-	time_t t;
-	int dowait = 0;
-
-	time(&t);
-	p->windcnt++;
-	if ((t - p->windtime) >= 60) {
-		p->windtime = t;
-		p->windcnt = 1;
-	} else if (p->windcnt >= 5) {
-		dowait = 1;
-		p->windtime = t;
-		p->windcnt = 1;
+	if (pid == -1) {
+		/*
+		 * We are seriously hosed.  Do our best.
+		 */
+		emergency("can't fork single-user shell, trying again");
+		while (waitpid(-1, (int *) 0, WNOHANG) > 0)
+			;
+		return (state_func_t) single_user;
 	}
 
-	pid = fork();
-
-	if (pid == 0) {
-		signal(SIGTERM, SIG_DFL);
-		signal(SIGHUP,  SIG_IGN);
-		sigsetmask(0);	/* since can be called from masked code */
-		if (dowait) {
-			syslog(LOG_ERR, "'%s %s' failing, sleeping", p->wcmd, p->line);
-			closelog();
-			sleep(30);
+	while ((wpid = waitpid(pid, &status, WUNTRACED)) != pid ||
+	       WIFSTOPPED(status)) {
+		if (wpid == -1 && errno != EINTR) {
+			warning("wait for single-user shell failed: %m; restarting");
+			return (state_func_t) single_user;
 		}
-		if (setsid() < 0)
-			syslog(LOG_ERR, "setsid failed (window) %m");
-		execit(p->wcmd, p->line);
-		exit(0);
+		if (wpid == pid && WIFSTOPPED(status)) {
+			warning("init: shell stopped, restarting\n");
+			kill(pid, SIGCONT);
+		}
 	}
-	p->wpid = pid;
+
+	if (!WIFEXITED(status)) {
+		warning("single user shell terminated abnormally, restarting");
+		return (state_func_t) single_user;
+	}
+
+	runcom_mode = FASTBOOT;
+	return (state_func_t) runcom;
 }
 
-#define NARGS	20	/* must be at least 4 */
-#define ARGLEN	512	/* total size for all the argument strings */
-
-execit(s, arg)
-	char *s;
-	char *arg;	/* last argument on line */
+state_func_t
+runcom()
 {
-	char *argv[NARGS], args[ARGLEN], *envp[1];
-	register char *sp = s;
-	register char *ap = args;
-	register char c;
-	register int i;
+	pid_t pid, wpid;
+	int status;
+	char *argv[4];
+	sigset_t mask;
+
+	if ((pid = fork()) == 0) {
+		setctty(_PATH_CONSOLE);
+
+		argv[0] = "sh";
+		argv[1] = _PATH_RUNCOM;
+		argv[2] = runcom_mode == AUTOBOOT ? "autoboot" : 0;
+		argv[3] = 0;
+
+		sigemptyset(&mask);
+		sigprocmask(SIG_SETMASK, &mask, (sigset_t *) 0);
+
+		execv(_PATH_BSHELL, argv);
+		stall("can't exec %s for %s: %m", _PATH_BSHELL, _PATH_RUNCOM);
+		_exit(1);	/* force single user mode */
+	}
+
+	if (pid == -1) {
+		emergency("can't fork for %s on %s: %m",
+			_PATH_BSHELL, _PATH_RUNCOM);
+		sleep(STALL_TIMEOUT);
+		return (state_func_t) single_user;
+	}
 
 	/*
-	 * First we have to set up the argument vector.
-	 * "prog arg1 arg2" maps to exec("prog", "-", "arg1", "arg2"). 
+	 * Copied from single_user().  Is this too paranoid?
 	 */
-	for (i = 1; i < NARGS - 2; i++) {
-		argv[i] = ap;
-		for (EVER) {
-			if ((c = *sp++) == '\0' || ap >= &args[ARGLEN-1]) {
-				*ap = '\0';
-				goto done;
-			}
-			if (c == ' ') {
-				*ap++ = '\0';
-				while (*sp == ' ')
-					sp++;
-				if (*sp == '\0')
-					goto done;
-				break;
-			}
-			*ap++ = c;
+	while ((wpid = waitpid(pid, &status, WUNTRACED)) != pid ||
+	       WIFSTOPPED(status)) {
+		if (wpid == -1 && errno != EINTR) {
+			warning("wait for %s on %s failed: %m; going to single user mode",
+				_PATH_BSHELL, _PATH_RUNCOM);
+			return (state_func_t) single_user;
+		}
+		if (wpid == pid && WIFSTOPPED(status)) {
+			warning("init: %s on %s stopped, restarting\n",
+				_PATH_BSHELL, _PATH_RUNCOM);
+			kill(pid, SIGCONT);
 		}
 	}
-done:
-	argv[0] = argv[1];
-	argv[1] = "-";
-	argv[i+1] = arg;
-	argv[i+2] = 0;
-	envp[0] = 0;
-	execve(argv[0], &argv[1], envp);
-	/* report failure of exec */
-	syslog(LOG_ERR, "%s: %m", argv[0]);
-	closelog();
-	sleep(10);	/* prevent failures from eating machine */
+
+	if (!WIFEXITED(status)) {
+		warning("%s on %s terminated abnormally, going to single user mode",
+			_PATH_BSHELL, _PATH_RUNCOM);
+		return (state_func_t) single_user;
+	}
+
+	if (WEXITSTATUS(status))
+		return (state_func_t) single_user;
+
+	runcom_mode = AUTOBOOT;		/* the default */
+	return (state_func_t) read_ttys;
+}
+
+/*
+ * The db library seems awfully heavyweight for this task.
+ * This code may get replaced later.
+ * We could pass in the size here; is it worth it?
+ */
+void
+start_session_db()
+{
+	if (session_db)
+		(*session_db->close)(session_db);
+	session_db = hash_open((char *) 0, 0, 0, (HASHINFO *) 0);
+}
+
+void
+add_session(sp)
+	session_t *sp;
+{
+	DBT key;
+	DBT data;
+
+	key.data = &sp->se_process;
+	key.size = sizeof sp->se_process;
+	data.data = &sp;
+	data.size = sizeof sp;
+
+	(*session_db->put)(session_db, &key, &data, R_PUT);
+}
+
+void
+del_session(sp)
+	session_t *sp;
+{
+	DBT key;
+
+	key.data = &sp->se_process;
+	key.size = sizeof sp->se_process;
+
+	(*session_db->del)(session_db, &key, 0);
+}
+
+session_t *
+#ifdef __STDC__
+find_session(pid_t pid)
+#else
+find_session(pid)
+	pid_t pid;
+#endif
+{
+	DBT key;
+	DBT data;
+
+	key.data = &pid;
+	key.size = sizeof pid;
+	if ((*session_db->get)(session_db, &key, &data, 0) != 0)
+		return 0;
+	return *(session_t **)data.data;
+}
+
+char **
+construct_argv(command)
+	char *command;
+{
+	register int argc = 0;
+	register char **argv = (char **) malloc(((strlen(command) + 1) / 2 + 1)
+						* sizeof (char *));
+	static const char separators[] = " \t";
+
+	if ((argv[argc++] = strtok(command, separators)) == 0)
+		return 0;
+	while (argv[argc++] = strtok((char *) 0, separators))
+		;
+	return argv;
+}
+
+void
+free_session(sp)
+	register session_t *sp;
+{
+	free(sp->se_device);
+	free(sp->se_getty);
+	free(sp->se_getty_argv);
+	if (sp->se_window) {
+		free(sp->se_window);
+		free(sp->se_window_argv);
+	}
+	free(sp);
+}
+
+session_t *
+new_session(sprev, session_index, typ)
+	session_t *sprev;
+	int session_index;
+	register struct ttyent *typ;
+{
+	register session_t *sp;
+
+	if ((typ->ty_status & TTY_ON) == 0 ||
+	    typ->ty_name == 0 ||
+	    typ->ty_getty == 0)
+		return 0;
+
+	sp = (session_t *) malloc(sizeof (session_t));
+
+	sp->se_index = session_index;
+	sp->se_process = 0;
+	sp->se_started = 0;
+	sp->se_flags = 0;
+	sp->se_window = 0;
+
+	sp->se_device = malloc(6 + strlen(typ->ty_name));
+	memcpy(sp->se_device, _PATH_DEV, 5);
+	strcpy(sp->se_device + 5, typ->ty_name);
+
+	sp->se_getty = strdup(typ->ty_getty);
+	sp->se_getty_argv = construct_argv(sp->se_getty);
+	if (sp->se_getty_argv == 0) {
+		warning("can't parse getty for port %s",
+			sp->se_device);
+		free_session(sp);
+		return 0;
+	}
+	if (typ->ty_window) {
+		sp->se_window = strdup(typ->ty_window);
+		sp->se_window_argv = construct_argv(sp->se_window);
+		if (sp->se_window_argv == 0) {
+			warning("can't parse window for port %s",
+				sp->se_device);
+			free_session(sp);
+			return 0;
+		}
+	}
+
+	sp->se_next = 0;
+	if (sprev == 0) {
+		sessions = sp;
+		sp->se_prev = 0;
+	} else {
+		sprev->se_next = sp;
+		sp->se_prev = sprev;
+	}
+
+	return sp;
+}
+
+state_func_t
+read_ttys()
+{
+	int session_index = 0;
+	register session_t *sp, *snext;
+	register struct ttyent *typ;
+
+	/*
+	 * Destroy any previous session state.
+	 * There shouldn't be any, but just in case...
+	 */
+	for (sp = sessions; sp; sp = snext) {
+		if (sp->se_process)
+			clear_session_logs(sp);
+		snext = sp->se_next;
+		free_session(sp);
+	}
+	sessions = 0;
+	start_session_db();
+
+	/*
+	 * Allocate a session entry for each active port.
+	 * Note that sp starts at 0.
+	 */
+	while (typ = getttyent())
+		if (snext = new_session(sp, ++session_index, typ))
+			sp = snext;
+
+	endttyent();
+
+	logger_enable = 1;
+	return (state_func_t) multi_user;
+}
+
+void
+start_window_system(sp)
+	session_t *sp;
+{
+	pid_t pid;
+	sigset_t mask;
+
+	if ((pid = fork()) == -1) {
+		emergency("can't fork for window system on port %s: %m",
+			sp->se_device);
+		/* hope that getty fails and we can try again */
+		return;
+	}
+
+	if (pid)
+		return;
+
+	sigemptyset(&mask);
+	sigprocmask(SIG_SETMASK, &mask, (sigset_t *) 0);
+
+	execv(sp->se_window_argv[0], sp->se_window_argv);
+	stall("can't exec window system '%s' for port %s: %m",
+		sp->se_window_argv[0], sp->se_device);
+	_exit(1);
+}
+
+pid_t
+start_getty(sp)
+	session_t *sp;
+{
+	pid_t pid;
+	sigset_t mask;
+	time_t current_time = time((time_t *) 0);
+
+	/*
+	 * fork(), not vfork() -- we can't afford to block.
+	 */
+	if ((pid = fork()) == -1) {
+		emergency("can't fork for getty on port %s: %m", sp->se_device);
+		return -1;
+	}
+
+	if (pid)
+		return pid;
+
+	if (current_time > sp->se_started &&
+	    current_time - sp->se_started < GETTY_SPACING) {
+		warning("getty repeating too quickly on port %s, sleeping",
+		        sp->se_device);
+		sleep((unsigned) GETTY_SPACING -
+		      (current_time - sp->se_started));
+	}
+
+	if (sp->se_window) {
+		start_window_system(sp);
+		sleep(WINDOW_WAIT);
+	}
+
+	setctty(sp->se_device);
+
+	sigemptyset(&mask);
+	sigprocmask(SIG_SETMASK, &mask, (sigset_t *) 0);
+
+	execv(sp->se_getty_argv[0], sp->se_getty_argv);
+	stall("can't exec getty '%s' for port %s: %m",
+		sp->se_getty_argv[0], sp->se_device);
+	_exit(1);
+}
+
+void
+chld_handler(sig)
+	int sig;
+{
+	pid_t pid;
+	register session_t *sp, *sprev, *snext;
+
+	while (pid = waitpid(-1, (int *) 0, WNOHANG)) {
+		if (pid == -1)
+			if (errno == EINTR)
+				continue;
+			else
+				break;
+
+		if (! sessions)
+			continue;
+
+		if (! (sp = find_session(pid)))
+			continue;
+
+		clear_session_logs(sp);
+		del_session(sp);
+		sp->se_process = 0;
+
+		if (sp->se_flags & SE_SHUTDOWN) {
+			if (sprev = sp->se_prev)
+				sprev->se_next = sp->se_next;
+			else
+				sessions = sp->se_next;
+			if (snext = sp->se_next)
+				snext->se_prev = sp->se_prev;
+			free_session(sp);
+			continue;
+		}
+
+		if ((pid = start_getty(sp)) == -1) {
+			/* serious trouble */
+			requested_transition = clean_ttys;
+			return;
+		}
+
+		sp->se_process = pid;
+		sp->se_started = time((time_t *) 0);
+		add_session(sp);
+	}
+
+	requested_transition = 0;
+}
+
+void
+transition_handler(sig)
+	int sig;
+{
+	switch (sig) {
+	case SIGHUP:
+		requested_transition = clean_ttys;
+		break;
+	case SIGTERM:
+		requested_transition = death;
+		break;
+	case SIGTSTP:
+		requested_transition = catatonia;
+		break;
+	default:
+		requested_transition = 0;
+		break;
+	}
+}
+
+state_func_t
+multi_user()
+{
+	pid_t pid;
+	register session_t *sp;
+
+	requested_transition = 0;
+	logger_enable = 1;
+
+	for (sp = sessions; sp; sp = sp->se_next)
+		if (! sp->se_process) {
+			if ((pid = start_getty(sp)) == -1) {
+				/* serious trouble */
+				requested_transition = clean_ttys;
+				break;
+			}
+
+			sp->se_process = pid;
+			sp->se_started = time((time_t *) 0);
+			add_session(sp);
+		}
+
+	while (!requested_transition)
+		sigsuspend(&multi_sig_mask);
+
+	return (state_func_t) requested_transition;
+}
+
+/*
+ * This is an n-squared algorithm.  We hope it isn't run often...
+ */
+state_func_t
+clean_ttys()
+{
+	register session_t *sp, *sprev;
+	register struct ttyent *typ;
+	register int session_index = 0;
+
+	if (! sessions)
+		return (state_func_t) multi_user;
+
+	while (typ = getttyent()) {
+		++session_index;
+
+		for (sp = sessions; sp; sprev = sp, sp = sp->se_next)
+			if (strcmp(typ->ty_name, sp->se_device) == 0)
+				break;
+
+		if (sp) {
+			if (sp->se_index != session_index) {
+				warning("port %s changed utmp index from %d to %d",
+				       sp->se_device, sp->se_index,
+				       session_index);
+				sp->se_index = session_index;
+			}
+			if (typ->ty_status & TTY_ON)
+				sp->se_flags &= ~SE_SHUTDOWN;
+			else {
+				sp->se_flags |= SE_SHUTDOWN;
+				kill(sp->se_process, SIGHUP);
+			}
+			continue;
+		}
+
+		new_session(sprev, session_index, typ);
+	}
+
+	endttyent();
+
+	return (state_func_t) multi_user;
+}
+
+state_func_t
+catatonia()
+{
+	register session_t *sp;
+
+	for (sp = sessions; sp; sp = sp->se_next)
+		sp->se_flags |= SE_SHUTDOWN;
+
+	return (state_func_t) multi_user;
+}
+
+void
+alrm_handler(sig)
+	int sig;
+{
+	clang = 1;
+}
+
+state_func_t
+death()
+{
+	register session_t *sp;
+	register int i;
+	static const int death_sigs[3] = { SIGHUP, SIGTERM, SIGKILL };
+
+	for (sp = sessions; sp; sp = sp->se_next)
+		sp->se_flags |= SE_SHUTDOWN;
+
+	logger_enable = 0;
+
+	for (i = 0; i < 3; ++i) {
+		if (kill(-1, death_sigs[i]) == -1 && errno == ESRCH)
+			return (state_func_t) single_user;
+
+		clang = 0;
+		alarm(DEATH_WATCH);
+		do
+			sigsuspend(&death_mask);
+		while (! clang);
+
+		if (waitpid(-1, (int *) 0, WNOHANG) == -1 && errno == ECHILD)
+			return (state_func_t) single_user;
+	}
+
+	warning("some processes wouldn't die");
+
+	return (state_func_t) single_user;
 }
