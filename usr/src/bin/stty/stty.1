@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)stty.1	6.17 (Berkeley) %G%
+.\"     @(#)stty.1	6.18 (Berkeley) %G%
 .\"
 .Dd 
 .Dt STTY 1
@@ -47,10 +47,10 @@ in the traditional
 Open and use the terminal named by
 .Ar file
 rather than using standard input.  The file is opened
-using the 
-.Dv O_NONBLOCK 
+using the
+.Dv O_NONBLOCK
 flag of
-.Fn open , 
+.Fn open ,
 making it possible to
 set or display settings on a terminal that might otherwise
 block on the open.
@@ -193,7 +193,7 @@ is set and the input queue limit has been reached,
 subsequent input causes the system to send an ASCII BEL
 character to the output queue (the terminal beeps at you).  Otherwise,
 if
-.Cm imaxbel 
+.Cm imaxbel
 is unset and the input queue is full, the next input character causes
 the entire input and output queues to be discarded.
 .El
@@ -215,14 +215,24 @@ Expand (do not expand) tabs to spaces on output.
 .El
 .Ss Local Modes:
 .Pp
-Local mode flags affect various and sundry characteristics of terminal
-processing.  Historically the term "local" as pertaining
-to the terminal driver meant local to the VAX
-running in CORY hall on the UCB campus where features of the (then) new
-terminal driver that supported job control were first tested.  Alas,
-the terminology has stuck.  The other interpretation of the 'l' in lflag
-is that it stands for ``line discipline flag'', which is equally vacuous.  This
-corresponds to the c_lflag of the termios structure.
+Local mode flags (lflags) affect various and sundry characteristics of terminal
+processing.
+Historically the term "local" pertained to new job control features
+implemented by Jim Kulp on a
+.Tn Pdp 11/70
+at
+.Tn IASA .
+Later the driver ran on the first
+.Tn VAX
+at Evans Hall, UC Berkeley, where the job control details
+were greatly modified but the structure definitions and names
+remained essentially unchanged.
+The second interpretation of the 'l' in lflag
+is ``line discipline flag'' which corresponds to the
+.Ar c_lflag
+of the
+.Ar termios
+structure.
 .Bl -tag -width Fl
 .It Cm isig Pq Fl isig
 Enable (disable) the checking of
@@ -289,7 +299,7 @@ terminal output.
 .It Cm altwerase Pq Fl altwerase
 Use (do not use) an alternate word erase algorithm when processing
 .Dv WERASE
-characters.  This alternate algorithm considers sequences of 
+characters.  This alternate algorithm considers sequences of
 alphameric/underscores as words.  It also skips the first preceding character
 in its classification (as a convenience since the one preceding character
 could have been erased with simply an
@@ -311,9 +321,9 @@ or more input arrives.
 .Ss Control Characters:
 .Bl -tag -width Fl
 .It Ar control-character Ar string
-Set 
+Set
 .Ar control-character
-to 
+to
 .Ar string .
 If string is a single character,
 the control character is set to
@@ -327,7 +337,7 @@ is disabled (i.e. set to
 Recognized control-characters:
 .Bd -ragged -offset indent
 .Bl -column character Subscript
-.It control- 
+.It control-
 .It character	Subscript	Description
 .It _________	_________	_______________
 .It eof Ta Tn VEOF	EOF No character
@@ -416,7 +426,7 @@ Set modes suitable for users of Digital Equipment Corporation systems (
 .Dv ERASE ,
 .Dv KILL ,
 and
-.Dv INTR 
+.Dv INTR
 characters are set to ^?, ^U, and ^C;
 .Dv ixany
 is disabled, and
