@@ -1,5 +1,5 @@
 /*
-char	id_chmod[]	= "@(#)chmod_.c	1.1";
+char	id_chmod[]	= "@(#)chmod_.c	1.2";
  *
  * chmod - change file mode bits
  *
@@ -9,12 +9,16 @@ char	id_chmod[]	= "@(#)chmod_.c	1.1";
  */
 
 #include "../libI77/f_errno.h"
+#include <sys/param.h>
+#ifndef	MAXPATHLEN
+#define MAXPATHLEN	128
+#endif
 
 long chmod_(name, mode, namlen, modlen)
 char	*name, *mode;
 long	namlen, modlen;
 {
-	char	nambuf[256];
+	char	nambuf[MAXPATHLEN];
 	char	modbuf[32];
 	int	retcode;
 
