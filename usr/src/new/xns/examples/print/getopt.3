@@ -1,0 +1,149 @@
+.TH GETOPT 3 local
+.DA 25 March 1982
+.SH NAME
+getopt \- get option letter from argv
+.SH SYNOPSIS
+.ft B
+int getopt(argc, argv, optstring)
+.br
+int argc;
+.br
+char **argv;
+.br
+char *optstring;
+.sp
+extern char *optarg;
+.br
+extern int optind;
+.ft
+.SH DESCRIPTION
+.I Getopt
+returns the next option letter in
+.I argv
+that matches a letter in
+.IR optstring .
+.I Optstring
+is a string of recognized option letters;
+if a letter is followed by a colon, the option is expected to have
+an argument that may or may not be separated from it by white space.
+.I Optarg
+is set to point to the start of the option argument on return from
+.IR getopt .
+.PP
+.I Getopt
+places in
+.I optind
+the
+.I argv
+index of the next argument to be processed.
+Because
+.I optind
+is external, it is normally initialized to zero automatically
+before the first call to 
+.IR getopt .
+.PP
+When all options have been processed (i.e., up to the first
+non-option argument),
+.I getopt
+returns
+.BR EOF .
+The special option
+.B \-\-
+may be used to delimit the end of the options;
+.B EOF
+will be returned, and
+.B \-\-
+will be skipped.
+.SH SEE ALSO
+getopt(1)
+.SH DIAGNOSTICS
+.I Getopt
+prints an error message on
+.I stderr
+and returns a question mark
+.RB ( ? )
+when it encounters an option letter not included in
+.IR optstring .
+.SH EXAMPLE
+The following code fragment shows how one might process the arguments
+for a command that can take the mutually exclusive options
+.B a
+and
+.BR b ,
+and the options
+.B f
+and
+.BR o ,
+both of which require arguments:
+.PP
+.RS
+.nf
+main(argc, argv)
+int argc;
+char **argv;
+{
+	int c;
+	extern int optind;
+	extern char *optarg;
+	\&.
+	\&.
+	\&.
+	while ((c = getopt(argc, argv, "abf:o:")) != EOF)
+		switch (c) {
+		case 'a':
+			if (bflg)
+				errflg++;
+			else
+				aflg++;
+			break;
+		case 'b':
+			if (aflg)
+				errflg++;
+			else
+				bproc();
+			break;
+		case 'f':
+			ifile = optarg;
+			break;
+		case 'o':
+			ofile = optarg;
+			break;
+		case '?':
+		default:
+			errflg++;
+			break;
+		}
+	if (errflg) {
+		fprintf(stderr, "Usage: ...");
+		exit(2);
+	}
+	for (; optind < argc; optind++) {
+		\&.
+		\&.
+		\&.
+	}
+	\&.
+	\&.
+	\&.
+}
+.RE
+.PP
+A template similar to this can be found in
+.IR /usr/pub/template.c .
+.SH HISTORY
+Written by Henry Spencer, working from a Bell Labs manual page.
+Behavior believed identical to the Bell version.
+.SH BUGS
+It is not obvious how
+`\-'
+standing alone should be treated;  this version treats it as
+a non-option argument, which is not always right.
+.PP
+Option arguments are allowed to begin with `\-';
+this is reasonable but reduces the amount of error checking possible.
+.PP
+.I Getopt
+is quite flexible but the obvious price must be paid:  there is much
+it could do that it doesn't, like
+checking mutually exclusive options, checking type of
+option arguments, etc.
