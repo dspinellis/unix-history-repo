@@ -1,11 +1,9 @@
 #ifndef lint
-static char *sccsid = "@(#)cron.c	4.14 (Berkeley) %G%";
+static char *sccsid = "@(#)cron.c	4.15 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
-#include <stdio.h>
-#include <ctype.h>
-#include <signal.h>
+#include <sys/signal.h>
 #include <sys/time.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -15,17 +13,12 @@ static char *sccsid = "@(#)cron.c	4.14 (Berkeley) %G%";
 #include <pwd.h>
 #include <fcntl.h>
 #include <syslog.h>
+#include <stdio.h>
+#include <ctype.h>
+#include "pathnames.h"
 
 #define	LISTS	(2*BUFSIZ)
 #define	MAXLIN	BUFSIZ
-
-#ifndef CRONTAB
-#define CRONTAB "/usr/lib/crontab"
-#endif
-
-#ifndef CRONTABLOC
-#define CRONTABLOC  "/usr/lib/crontab.local"
-#endif
 
 #define	EXACT	100
 #define	ANY	101
@@ -33,8 +26,8 @@ static char *sccsid = "@(#)cron.c	4.14 (Berkeley) %G%";
 #define	RANGE	103
 #define	EOS	104
 
-char	crontab[]	= CRONTAB;
-char	loc_crontab[]   = CRONTABLOC;
+char	crontab[]	= _PATH_CRON;
+char	loc_crontab[]   = _PATH_LCRON;
 time_t	itime, time();
 struct	tm *loct;
 struct	tm *localtime();
@@ -232,8 +225,8 @@ char *s;
 	(void) freopen("/", "r", stdin);
 	closelog();
 	dprintf(debug, "%d: executing %s", pid, s), fflush (debug);
-	execl("/bin/sh", "sh", "-c", s, 0);
-	syslog(LOG_ERR, "cannot exec /bin/sh: %m");
+	execl(_PATH_BSHELL, "sh", "-c", s, 0);
+	syslog(LOG_ERR, "cannot exec %s: %m");
 	dprintf(debug, "%d: cannot execute sh\n", pid), fflush (debug);
 	exit(0);
 }
@@ -377,7 +370,7 @@ untty()
 {
 	int i;
 
-	i = open("/dev/tty", O_RDWR);
+	i = open(_PATH_TTY, O_RDWR);
 	if (i >= 0) {
 		(void) ioctl(i, TIOCNOTTY, (char *)0);
 		(void) close(i);
