@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.8	81/11/20	*/
+/*	uipc_socket.c	4.9	81/11/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -75,9 +75,8 @@ COUNT(SOCREATE);
 	 * and reserving resources.
 	 */
 	so->so_proto = prp;
-	(*prp->pr_usrreq)(so, PRU_ATTACH, 0, asa);
-	if (so->so_error) {
-		error = so->so_error;
+	error = (*prp->pr_usrreq)(so, PRU_ATTACH, 0, asa);
+	if (error) {
 		(void) m_free(dtom(so));
 		return (error);
 	}
@@ -281,6 +280,10 @@ again:
 		}
 		top = 0;
 		mp = &top;
+	}
+	if (u.u_count == 0) {
+		splx(s);
+		goto release;
 	}
 	if (sosendallatonce(so) && sbspace(&so->so_snd) < u.u_count) {
 		if (so->so_options & SO_NBIO)
