@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)execve.2	6.2 (Berkeley) %G%
+.\"	@(#)execve.2	6.3 (Berkeley) %G%
 .\"
 .TH EXECVE 2 ""
 .UC 4
@@ -47,14 +47,14 @@ the name of the executed program (i.e. the last component of \fIname\fP).
 .PP
 The argument \fIenvp\fP is also an array of character pointers
 to null-terminated strings.  These strings pass information to the
-new process which are not directly arguments to the command, see
+new process that is not directly an argument to the command, see
 .IR environ (7).
 .PP
 Descriptors open in the calling process remain open in
 the new process, except for those for which the close-on-exec
 flag is set; see
 .IR close (2).
-Descriptors which remain open are unaffected by
+Descriptors that remain open are unaffected by
 .IR execve .
 .PP
 Ignored signals remain ignored across an
