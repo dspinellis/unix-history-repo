@@ -4,7 +4,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)maketape	4.17 (Berkeley) %G%
+#	@(#)maketape	4.18 (Berkeley) %G%
 #
 #	maketape [ 6250 | 1600 [ tapename [ remotetapemachine ] ] ]
 miniroot=hp0d
@@ -57,7 +57,7 @@ then
 	fi
 fi
 echo "Add user source code"
-cd /nbsd/usr/src; tar cf ${tartape} . \
+cd /nbsd/usr/src; tar cfFF ${tartape} . \
 	${remote+"| $remote /usr/local/20b > $tape"}
 echo "Add user contributed software"
 cd /nbsd/usr/src/new; tar cf ${tartape} . \
