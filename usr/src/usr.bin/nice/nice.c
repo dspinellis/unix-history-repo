@@ -12,26 +12,30 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)nice.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)nice.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 
-#include <stdio.h>
 #include <ctype.h>
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
 
 #define	DEFNICE	10
 
-/* ARGSUSED */
+void usage __P((void));
+
+int
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
-	extern int errno;
 	int niceness;
-	char *strerror();
 
 	niceness = DEFNICE;
 	if (argv[1][0] == '-')
@@ -66,6 +70,7 @@ main(argc, argv)
 	exit(1);
 }
 
+void
 usage()
 {
 	(void)fprintf(stderr,
