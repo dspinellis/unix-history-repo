@@ -1,4 +1,4 @@
-/*	kern_synch.c	4.6	%G%	*/
+/*	kern_synch.c	4.7	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -167,14 +167,8 @@ restart:
 			if (p->p_stat == SSLEEP) {
 				/* OPTIMIZED INLINE EXPANSION OF setrun(p) */
 				p->p_stat = SRUN;
-				if (p->p_flag & SLOAD) {
-#ifndef FASTVAX
-					p->p_link = runq;
-					runq = p->p_link;
-#else
+				if (p->p_flag & SLOAD)
 					setrq(p);
-#endif
-				}
 				if(p->p_pri < curpri) {
 					runrun++;
 					aston();
@@ -192,7 +186,6 @@ restart:
 	splx(s);
 }
 
-#ifdef FASTVAX
 /*
  * Initialize the (doubly-linked) run queues
  * to be empty.
@@ -204,7 +197,6 @@ rqinit()
 	for (i = 0; i < NQS; i++)
 		qs[i].ph_link = qs[i].ph_rlink = (struct proc *)&qs[i];
 }
-#endif
 
 /*
  * Set the process running;

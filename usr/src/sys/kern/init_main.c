@@ -1,4 +1,4 @@
-/*	init_main.c	4.6	%G%	*/
+/*	init_main.c	4.7	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -42,9 +42,7 @@ main(firstaddr)
 	register int i;
 	register struct proc *p;
 
-#ifdef FASTVAX
 	rqinit();
-#endif
 	startup(firstaddr);
 	if (lotsfree == 0)
 		lotsfree = LOTSFREE;
