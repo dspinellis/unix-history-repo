@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)api.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)api.c	4.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -35,6 +35,8 @@ static char sccsid[] = "@(#)api.c	4.2 (Berkeley) %G%";
 #include "oia.h"
 
 #include "../general/globals.h"
+
+int apitrace = 0;		/* Should we trace API interactions */
 
 /*
  * General utility routines.
@@ -59,6 +61,9 @@ int length;
     char far *farparms = parms;
 
     movedata(es, di, FP_SEG(farparms), FP_OFF(farparms), length);
+    if (apitrace) {
+	Dump('(', parms, length);
+    }
 }
 
 static void
@@ -70,6 +75,9 @@ int length;
     char far *farparms = parms;
 
     movedata(FP_SEG(farparms), FP_OFF(farparms), es, di, length);
+    if (apitrace) {
+	Dump(')', parms, length);
+    }
 }
 #endif	/* defined(MSDOS) */
 
@@ -586,6 +594,13 @@ handle_api(regs, sregs)
 union REGS *regs;
 struct SREGS *sregs;
 {
+/*
+ * Do we need to log this transaction?
+ */
+    if (apitrace) {
+	Dump('<', (char *)regs, sizeof *regs);
+	Dump('<', (char *)sregs, sizeof *sregs);
+    }
     if (regs->h.ah == NAME_RESOLUTION) {
 	name_resolution(regs, sregs);
 #if	defined(unix)
@@ -698,5 +713,12 @@ struct SREGS *sregs;
 	    regs->h.cl = 0x34;		/* Invalid GATE entry */
 	    break;
 	}
+    }
+/*
+ * Do we need to log this transaction?
+ */
+    if (apitrace) {
+	Dump('>', (char *)regs, sizeof *regs);
+	Dump('>', (char *)sregs, sizeof *sregs);
     }
 }
