@@ -40,6 +40,7 @@ hp300/dev/dca.c			optional dca
 hp300/dev/dcm.c			optional dcm
 hp300/dev/scsi.c		optional scsi
 hp300/dev/sd.c			optional sd
+hp300/dev/st.c			optional st
 hp300/hpux/hpux_compat.c	optional hpuxcompat
 hp300/hpux/hpux_net.c		optional hpuxcompat
 hp300/hpux/hpux_sig.c		optional hpuxcompat
