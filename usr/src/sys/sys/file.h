@@ -1,4 +1,4 @@
-/*	file.h	4.18	83/06/12	*/
+/*	file.h	4.19	83/06/13	*/
 
 #ifdef KERNEL
 /*
@@ -6,7 +6,7 @@
  * One for each kernel object.
  */
 struct	file {
-	short	f_flag;		/* see below */
+	int	f_flag;		/* see below */
 	short	f_type;		/* descriptor type */
 	short	f_count;	/* reference count */
 	short	f_msgcount;	/* references from message queue */
@@ -34,6 +34,8 @@ struct	file *falloc();
 #define	FMARK		00020		/* mark during gc() */
 #define	FDEFER		00040		/* defer for next gc pass */
 #define	FASYNC		00100		/* signal pgrp when data ready */
+#define	FSHLOCK		00200		/* shared lock present */
+#define	FEXLOCK		00400		/* exclusive lock present */
 
 /* bits to save after open */
 #define	FMASK		00117	
