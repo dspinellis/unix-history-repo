@@ -1,10 +1,8 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwunframe.c	3.2 83/08/11";
+static	char *sccsid = "@(#)wwunframe.c	3.3 83/08/12";
 #endif
 
 #include "ww.h"
-
-char **wwfmap;
 
 wwunframe(w)
 register struct ww *w;

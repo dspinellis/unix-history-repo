@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwframe.c	3.1 83/08/11";
+static	char *sccsid = "@(#)wwframe.c	3.2 83/08/12";
 #endif
 
 #include "ww.h"
@@ -8,12 +8,14 @@ static	char *sccsid = "@(#)wwframe.c	3.1 83/08/11";
 #define BOTTOM	1
 #define LEFT	2
 #define RIGHT	3
-
 wwframe(w)
 register struct ww *w;
 {
-	register i;
-	char noleft, noright, notop, nobot;
+	register r, c;
+	char a1, a2, a3;
+	char b1, b2, b3;
+	register char *smap;
+	register code;
 	char ulc, top, urc, left, right, llc, bottom, lrc;
 	struct ww_dim oldsize;
 	Pos bstart;
@@ -88,75 +90,25 @@ register struct ww *w;
 
 	Wgetframe(&ulc, &top, &urc, &left, &right, &llc, &bottom, &lrc);
 
-	if (!notop) {
-		Wauxcursor(w->ww_win, 0, 0);
-		if (noleft)
-			Waputc(top, 0, w->ww_win);
-		else
-			Waputc(ulc, 0, w->ww_win);
-		for (i = w->ww_o.ncol - 2; i > 0; i--)
-			Waputc(top, 0, w->ww_win);
-		if (noright)
-			Waputc(top, 0, w->ww_win);
-		else
-			Waputc(urc, 0, w->ww_win);
 	}
 
-	if (!nobot) {
-		Wauxcursor(w->ww_win, w->ww_o.nrow - 1, 0);
-		if (noleft)
-			Waputc(bottom, 0, w->ww_win);
-		else
-			Waputc(llc, 0, w->ww_win);
-		for (i = w->ww_o.ncol - 2; i > 0; i--)
-			Waputc(bottom, 0, w->ww_win);
-		if (noright)
-			Waputc(bottom, 0, w->ww_win);
-		else
-			Waputc(lrc, 0, w->ww_win);
+	if (w->ww_w.b < wwnrow) {
+		r = w->ww_w.b;
+		c = w->ww_w.l - 1;
+		smap = &wwsmap[r - 1][c + 1];
+		a1 = 0;
+		a2 = 0;
+		b1 = 0;
+		b2 = wwframeok(w, r, c);
+
 	}
 
-	if (!noleft) {
-		Wauxcursor(w->ww_win, 0, 0);
-		if (notop)
-			Waputc(left, 0, w->ww_win);
-		else
-			Waputc(ulc, 0, w->ww_win);
-		for (i = 1; i < w->ww_o.nrow - 1; i++) {
-			Wauxcursor(w->ww_win, i, 0);
-			Waputc(left, 0, w->ww_win);
-		}
-		Wauxcursor(w->ww_win, w->ww_o.nrow - 1, 0);
-		if (nobot)
-			Waputc(left, 0, w->ww_win);
-		else
-			Waputc(llc, 0, w->ww_win);
-	}
-
-	if (!noright) {
-		Wauxcursor(w->ww_win, 0, w->ww_o.ncol - 1);
-		if (notop)
-			Waputc(right, 0, w->ww_win);
-		else
-			Waputc(urc, 0, w->ww_win);
-		for (i = 1; i < w->ww_o.nrow - 1; i++) {
-			Wauxcursor(w->ww_win, i, w->ww_o.ncol - 1);
-			Waputc(left, 0, w->ww_win);
-		}
-		Wauxcursor(w->ww_win, w->ww_o.nrow - 1, w->ww_o.ncol - 1);
-		if (nobot)
-			Waputc(right, 0, w->ww_win);
-		else
-			Waputc(lrc, 0, w->ww_win);
 	}
 
 	return 0;
-}
 
 wwcheckframe(flag, x, a, b, w)
 register struct ww *w;
-{
-	int xx, aa, bb;
 
 	if (a >= b)
 		return 1;
@@ -192,7 +144,8 @@ register struct ww *w;
 }
 
 wwunframe(w)
-register struct ww *w;
+struct ww *w;
+register r, c;
 {
 	char hasbot, hastop, hasright, hasleft;
 	register i;
@@ -228,3 +181,15 @@ register struct ww *w;
 	w->ww_i.ncol = w->ww_o.ncol;
 	Wsetmargins(w->ww_win, 0, 0, w->ww_o.ncol, w->ww_o.nrow);
 }
+
+/*
+wwckns()
+{
+	register i, j;
+
+	for (i = 0; i < wwnrow; i++)
+		for (j = 0; j < wwncol; j++)
+			if ((wwns[i][j].c_c & 0x7f) < ' ')
+				abort();
+}
+*/

@@ -1,4 +1,4 @@
-/*	@(#)ww.h	3.1 83/08/11		*/
+/*	@(#)ww.h	3.2 83/08/12		*/
 
 #include <stdio.h>
 #include <sgtty.h>
@@ -39,11 +39,51 @@ struct ww_tty {
 	int ww_pgrp;
 };
 
+union ww_char {
+	short c_w;		/* as a word */
+	struct {
+		char C_c;	/* the character part */
+		char C_m;	/* the mode part */
+	} c_un;
+};
+#define c_c c_un.C_c
+#define c_m c_un.C_m
+
+	/* parts of ww_char */
+#define WWC_CMASK	0x00ff
+#define WWC_MMASK	0xff00
+#define WWC_MSHIFT	8
+
+	/* c_m bits */
+#define WWM_REV		0x01	/* reverse video */
+#define WWM_BLK		0x02	/* blinking */
+#define WWM_UL		0x04	/* underlined */
+#define WWM_GLS		0x10	/* window only, glass, i.e. transparent */
+#define WWM_COV		0x20	/* window only, covered */
+
+	/* ww_state values */
+#define WWS_INITIAL	0	/* just opened */
+#define WWS_HASPROC	1	/* forked, in parent */
+#define WWS_INCHILD	2	/* forked, in child */
+#define WWS_DEAD	3	/* child died */
+
 	/* ww_state values */
 #define WW_INITIAL	0
 #define WW_HASPROC	1
 #define WW_INCHILD	2
 #define WW_DEAD		3
+
+	/* flags for wwfmap */
+#define WWF_U		0x01
+#define WWF_R		0x02
+#define WWF_D		0x04
+#define WWF_L		0x08
+#define WWF_MASK	(WWF_U|WWF_R|WWF_D|WWF_L)
+#define WWF_LABEL	0x40
+#define WWF_TOP		0x80
+
+	/* special ww_index value */
+#define WWX_NOBODY	NWW
 
 	/* ww_mode values */
 #define WW_PTY		0		/* has pty */
@@ -66,6 +106,7 @@ extern int wwnrow, wwncol;		/* the screen size */
 #define wwsetcursor(r,c) (WRCurRow = (r), WRCurCol = (c))
 #define wwflush()	Wrefresh(1)
 
+	/* quicky macros */
 struct ww *wwopen();
 struct ww *wwfind();
 int wwchild();

@@ -1,11 +1,11 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwlabel.c	3.1 83/08/11";
+static	char *sccsid = "@(#)wwlabel.c	3.2 83/08/12";
 #endif
 
 #include "ww.h"
 
 wwlabel(w, where, l, mode)
-register struct ww *w;
+struct ww *w;
 register char *l;
 {
 	register i;
