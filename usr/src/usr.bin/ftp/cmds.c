@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -40,7 +40,7 @@ setpeer(argc, argv)
 	int argc;
 	char *argv[];
 {
-	struct hostent *host, *hookup();
+	char *host, *hookup();
 	int port;
 
 	if (connected) {
