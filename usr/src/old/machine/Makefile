@@ -1,7 +1,9 @@
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 
-PROG=	machine
-LINKS=	${BINDIR}/machine ${BINDIR}/arch
-MLINKS=	machine.1 arch.1
+MAN1=	machine.0
+
+beforeinstall:
+	install -c -o ${BINOWN} -g ${BINGRP} -m ${BINMODE} \
+	    ${.CURDIR}/machine.sh ${DESTDIR}${BINDIR}/machine
 
 .include <bsd.prog.mk>
