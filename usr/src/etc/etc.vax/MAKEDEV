@@ -4,7 +4,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)MAKEDEV	4.25 (Berkeley) %G%
+#	@(#)MAKEDEV	4.26 (Berkeley) %G%
 #
 # Device "make" file.  Valid arguments:
 #	std	standard devices
@@ -254,10 +254,12 @@ pty*)
 	1) offset=16 name=q;;
 	2) offset=32 name=r;;
 	3) offset=48 name=s;;
+	4) offset=64 name=t;;
+	5) offset=80 name=u;;
 	*) echo bad unit for pty in: $i;;
 	esac
 	case $class in
-	0|1|2|3)
+	0|1|2|3|4|5)
 		umask 0
 		eval `echo $offset $name | awk ' { b=$1; n=$2 } END {
 			for (i = 0; i < 16; i++)
