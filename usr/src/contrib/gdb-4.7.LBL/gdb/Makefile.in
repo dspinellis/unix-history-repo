@@ -352,7 +352,7 @@ gdb.z:gdb.1
 	mv gdb.t.z gdb.z
 	
 install: gdb 
-	install -c gdb /usr/bin
+	install -s gdb /usr/contrib/bin
 
 init.c: $(srcdir)/munch $(OBS) $(TSOBS)
 	$(srcdir)/munch ${MUNCH_DEFINE} $(OBS) $(TSOBS) > init.c
