@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)read.2	6.5 (Berkeley) %G%
+.\"	@(#)read.2	6.6 (Berkeley) %G%
 .\"
 .TH READ 2 ""
 .UC 4
@@ -70,9 +70,9 @@ On objects capable of seeking, the
 .I read
 starts at a position
 given by the pointer associated with
-.IR d ,
-see
-.IR lseek (2).
+.IR d 
+(see
+.IR lseek (2)).
 Upon return from
 .IR read ,
 the pointer is incremented by the number of bytes actually read.
