@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ns_error.c	8.1 (Berkeley) %G%
+ *	@(#)ns_error.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -13,6 +13,7 @@
 #include <sys/mbuf.h>
 #include <sys/protosw.h>
 #include <sys/socket.h>
+#include <sys/socketvar.h>
 #include <sys/time.h>
 #include <sys/kernel.h>
 
