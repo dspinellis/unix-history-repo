@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	8.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	8.19 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -386,7 +386,11 @@ eatheader(e, full)
 		}
 
 		if (tTd(32, 1))
-			printf("%s: %s\n", h->h_field, h->h_value);
+		{
+			printf("%s: ", h->h_field);
+			xputs(h->h_value);
+			printf("\n");
+		}
 
 		/* count the number of times it has been processed */
 		if (bitset(H_TRACE, h->h_flags))
@@ -889,18 +893,23 @@ putheader(fp, m, e)
 				printf(" (skipped (resent))\n");
 			continue;
 		}
-		if (tTd(34, 11))
-			printf("\n");
 
+		/* macro expand value if generated internally */
 		p = h->h_value;
 		if (bitset(H_DEFAULT, h->h_flags))
 		{
-			/* macro expand value if generated internally */
 			expand(p, buf, &buf[sizeof buf], e);
 			p = buf;
 			if (p == NULL || *p == '\0')
+			{
+				if (tTd(34, 11))
+					printf(" (skipped -- null value)\n");
 				continue;
+			}
 		}
+
+		if (tTd(34, 11))
+			printf("\n");
 
 		if (bitset(H_FROM|H_RCPT, h->h_flags))
 		{
