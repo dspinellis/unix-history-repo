@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_exit.c	6.12 (Berkeley) %G%
+ *	@(#)kern_exit.c	6.13 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -99,8 +99,14 @@ exit(rv)
 #ifdef QUOTA
 	qclean();
 #endif
-	vrelpt(u.u_procp);
+	/*
+	 * Freeing the user structure and kernel stack
+	 * for the current process: have to run a bit longer
+	 * using the pages which are about to be freed...
+	 * vrelu will block memory allocation by raising ipl.
+	 */
 	vrelu(u.u_procp, 0);
+	vrelpt(u.u_procp);
 	if (*p->p_prev = p->p_nxt)		/* off allproc queue */
 		p->p_nxt->p_prev = p->p_prev;
 	if (p->p_nxt = zombproc)		/* onto zombproc */
