@@ -1,0 +1,56 @@
+(Message inbox:40)
+Date:  Tue, 17 Jul 1990 11:56 EDT
+From:  swl26%CAS.BITNET@CORNELLC.cit.cornell.edu
+Subject:  Re(2): port of flex-2.3 to IBM/MVS
+To:  vern@cs.cornell.edu
+
+>Message received.  I'm sending this response to
+>swl26%CAS.BITNET@CORNELLC.cit.cornell.edu.
+
+Great -- we can talk.
+
+>How extensive are the diffs?  If they're fairly short then yes, please
+>send them.  If they're pretty involved then probably not, as I'm not aware
+>of many MVS flex users ...
+
+I've built a context diff file which is ~850 lines.
+
+Summary of major changes necessary:
+
+   o a new initscan.c -- because MVS is ebcdic, the initial scanner had
+     to be changed.  I built a scanner from scan.l using -Ce, then
+     hand-manipulated the yy_ec table to fit EBCDIC instead of ASCII
+     chars.  (This is not included in the diff file above.)
+
+   o changes in main and flexdef.h to change how files are handled.  (No
+     dynamic file names, etc.)
+
+   o Some lines had to be shortened to 80 bytes.  This mostly impacted
+     your RCSID lines, which with the full path name were too long.
+
+   o SASC and the linker don't allow externals to be longer than 8 chars.
+     I thus wrote a Q&D program to shorten all externals.  (This would be
+     a separate file 'fixit.l', which is not included in the diffs.)
+
+   o There are several places where there are tests for 'isascii' (which I
+     deleted conditionally, using #ifdefs), and tests for 'A' <= x <= 'Z'
+     which I changed to 'isupper'.
+
+Many of the changes I've incorporated without impacting other systems.
+Others are with 'ifdefs'.  Still others (the short external names and new
+initscan) are 'isolable' as separate files which would have to be
+included with a distribution.
+
+Obviously, you are not going to want to (even if you can :-) ) worry about
+testing new versions in the MVS environment.  Likewise, I don't have the
+time or resources to provide much support. (I'm not sure my management
+would allow any :-( )
+
+With all of the above feel free to say "Thanks, but no thanks."  If you
+want to see the diffs anyway, I will certainly mail them.
+
+Thanks for your time and efforts.
+
+Steve Layten
+Chemical Abstracts Service, PO Box 3012, Columbus, OH 43210, +1 614 421-3600
+INET: swl26%cas.BITNET@CUNYVM.CUNY.Edu
