@@ -1,10 +1,11 @@
 #ifndef lint
-static	char *sccsid = "@(#)docmd.c	4.8 (Berkeley) 83/11/01";
+static	char *sccsid = "@(#)docmd.c	4.9 (Berkeley) 83/11/29";
 #endif
 
 #include "defs.h"
 
 FILE	*lfp;		/* log file for recording files updated */
+struct	block *special;	/* list of special commands */
 
 /*
  * Process commands for sending files to other machines.
@@ -19,18 +20,19 @@ dohcmds(files, hosts, cmds)
 	if (debug)
 		printf("dohcmds(%x, %x, %x)\n", files, hosts, cmds);
 
-	files = expand(files, 0);
+	files = expand(files, E_VARS|E_SHELL);
 	if (files == NULL) {
 		error("no files to be updated\n");
 		return;
 	}
-	hosts = expand(hosts, 1);
+	hosts = expand(hosts, E_VARS|E_SHELL);
 	if (hosts == NULL) {
 		error("empty list of hosts to be updated\n");
 		return;
 	}
 	if (!mkexceptlist(cmds))
 		return;
+	special = cmds;
 
 	ddir = files->b_next != NULL;
 
@@ -136,68 +138,57 @@ bad:
 	return(0);
 }
 
-struct tstamp {
-	time_t	lastmod;
-	FILE	*tfp;
-} ts[NSTAMPS];
-
-int	nstamps;
-
-extern char target[], *tp;
+time_t	lastmod;
+FILE	*tfp;
+extern	char target[], *tp;
 
 /*
  * Process commands for comparing files to time stamp files.
  */
-dofcmds(files, stamps, cmds)
-	struct block *files, *stamps, *cmds;
+dofcmds(files, stamp, cmds)
+	struct block *files, *stamp, *cmds;
 {
 	register struct block *b;
-	register struct tstamp *t;
 	register char **cpp;
 	struct timeval tv[2];
 	struct timezone tz;
 	struct stat stb;
-	extern char *tmpinc;
 
 	if (debug)
 		printf("dofcmds()\n");
 
-	files = expand(files, 0);
-	if (files == NULL){
+	files = expand(files, E_ALL);
+	if (files == NULL) {
 		error("no files to be updated\n");
 		return;
 	}
-	stamps = expand(stamps, 0);
-	if (stamps == NULL) {
-		error("empty time stamp file list\n");
+	stamp = expand(stamp, E_ALL);
+	if (stamp == NULL || stamp->b_next != NULL) {
+		error("Only one time stamp file allowed\n");
 		return;
 	}
 	if (!mkexceptlist(cmds))
 		return;
 
-	t = ts;
-	nstamps = 0;
-	for (b = stamps; b != NULL; b = b->b_next) {
-		if (stat(b->b_name, &stb) < 0) {
-			error("%s: %s\n", b->b_name, sys_errlist[errno]);
-			continue;
-		}
-		if (++nstamps > NSTAMPS)
-			fatal("too many time stamp files in one command\n");
-		if (debug)
-			printf("%s: %d\n", b->b_name, stb.st_mtime);
-		t->lastmod = stb.st_mtime;
+	if (stat(stamp->b_name, &stb) < 0) {
+		error("%s: %s\n", stamp->b_name, sys_errlist[errno]);
+		return;
+	}
+	if (debug)
+		printf("%s: %d\n", stamp->b_name, stb.st_mtime);
+	if (!nflag) {
+		lastmod = stb.st_mtime;
 		(void) gettimeofday(&tv[0], &tz);
 		tv[1] = tv[0];
-		(void) utimes(b->b_name, tv);
-		if (!nflag && !(options & VERIFY)) {
-			if ((t->tfp = fopen(tmpfile, "w")) == NULL)
-				error("%s: %s\n", b->b_name, sys_errlist[errno]);
-			(*tmpinc)++;
-		} else
-			t->tfp = NULL;
-		t++;
-	}
+		(void) utimes(stamp->b_name, tv);
+		if (options & VERIFY)
+			tfp = NULL;
+		else if ((tfp = fopen(tmpfile, "w")) == NULL) {
+			error("%s: %s\n", stamp->b_name, sys_errlist[errno]);
+			return;
+		}
+	} else
+		tfp = NULL;
 
 	for (b = files; b != NULL; b = b->b_next) {
 		if (filec) {
@@ -211,17 +202,13 @@ dofcmds(files, stamps, cmds)
 		cmptime(b->b_name);
 	}
 
-	*tmpinc = 'A';
-	for (t = ts; t < &ts[nstamps]; t++) {
-		if (t->tfp != NULL)
-			(void) fclose(t->tfp);
-		for (b = cmds; b != NULL; b = b->b_next)
-			if (b->b_type == NOTIFY)
-				notify(tmpfile, NULL, b->b_args, t->lastmod);
-		if (!nflag && !(options & VERIFY))
-			(void) unlink(tmpfile);
-		(*tmpinc)++;
-	}
+	if (tfp != NULL)
+		(void) fclose(tfp);
+	for (b = cmds; b != NULL; b = b->b_next)
+		if (b->b_type == NOTIFY)
+			notify(tmpfile, NULL, b->b_args, lastmod);
+	if (!nflag && !(options & VERIFY))
+		(void) unlink(tmpfile);
 }
 
 /*
@@ -230,14 +217,18 @@ dofcmds(files, stamps, cmds)
 cmptime(name)
 	char *name;
 {
-	register struct tstamp *t;
 	struct stat stb;
 
 	if (debug)
 		printf("cmptime(%s)\n", name);
 
-	if (exclude(name))
+	if (inlist(except, name))
 		return;
+
+	if (nflag) {
+		printf("comparing dates: %s\n", name);
+		return;
+	}
 
 	/*
 	 * first time cmptime() is called?
@@ -267,10 +258,8 @@ cmptime(name)
 		return;
 	}
 
-	for (t = ts; t < &ts[nstamps]; t++) {
-		if (stb.st_mtime > t->lastmod)
-			log(t->tfp, "new: %s\n", name);
-	}
+	if (stb.st_mtime > lastmod)
+		log(tfp, "new: %s\n", name);
 }
 
 rcmptime(st)
@@ -325,7 +314,7 @@ notify(file, rhost, to, lmod)
 	FILE *pf, *popen();
 	struct stat stb;
 
-	if (options & VERIFY)
+	if ((options & VERIFY) || to == NULL)
 		return;
 	if (!qflag) {
 		printf("notify ");
@@ -392,14 +381,15 @@ notify(file, rhost, to, lmod)
 struct	block *except;		/* list of files to exclude */
 
 /*
- * Return true if name is in list.
+ * Return true if name is in the list.
  */
-exclude(file)
+inlist(list, file)
+	struct block *list;
 	char *file;
 {
 	register struct block *c;
 
-	for (c = except; c != NULL; c = c->b_next)
+	for (c = list; c != NULL; c = c->b_next)
 		if (!strcmp(file, c->b_name))
 			return(1);
 	return(0);
@@ -422,16 +412,10 @@ mkexceptlist(cmds)
 		if (c->b_type != EXCEPT)
 			continue;
 		for (a = c->b_args; a != NULL; a = a->b_next) {
-			cp = a->b_name;
-			if (*cp == '~') {
-				if (exptilde(buf, cp) == NULL)
-					return(0);
-				cp = buf;
-			}
 			if (f == NULL)
-				except = f = expand(makeblock(NAME, cp), 0);
+				except = f = expand(makeblock(NAME, a->b_name), E_ALL);
 			else
-				f->b_next = expand(makeblock(NAME, cp), 0);
+				f->b_next = expand(makeblock(NAME, a->b_name), E_ALL);
 			while (f->b_next != NULL)
 				f = f->b_next;
 		}

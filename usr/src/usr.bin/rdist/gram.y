@@ -1,6 +1,6 @@
 %{
 #ifndef lint
-static	char *sccsid = "@(#)gram.y	4.6 (Berkeley) 83/10/26";
+static	char *sccsid = "@(#)gram.y	4.7 (Berkeley) 83/11/29";
 #endif
 
 #include "defs.h"
@@ -10,26 +10,30 @@ struct	block *lastc;
 
 %}
 
-%term EQUAL 1
-%term LP 2
-%term RP 3
-%term SM 4
-%term ARROW 5
-%term DCOLON 6
-%term NAME 7
-%term INSTALL 8
-%term NOTIFY 9
-%term EXCEPT 10
-%term OPTION 11
+%term EQUAL	1
+%term LP	2
+%term RP	3
+%term SM	4
+%term ARROW	5
+%term DCOLON	6
+%term NAME	7
+%term STRING	8
+%term INSTALL	9
+%term NOTIFY	10
+%term EXCEPT	11
+%term SPECIAL	12
+%term OPTION	13
 
 %union {
 	struct block *blk;
 	int intval;
+	char *string;
 }
 
-%type <blk> NAME, INSTALL, NOTIFY, EXCEPT
-%type <blk> namelist, names, opt_name, cmdlist, cmd
+%type <blk> NAME, INSTALL, NOTIFY, EXCEPT, SPECIAL
+%type <blk> namelist, names, opt_name, opt_namelist, cmdlist, cmd
 %type <intval> OPTION, options
+%type <string> STRING
 
 %%
 
@@ -44,7 +48,7 @@ command:	  NAME EQUAL namelist = {
 		| namelist ARROW namelist cmdlist = {
 			dohcmds($1, $3, $4);
 		}
-		| namelist DCOLON namelist cmdlist = {
+		| namelist DCOLON NAME cmdlist = {
 			dofcmds($1, $3, $4);
 		}
 		| error
@@ -91,7 +95,7 @@ cmd:		  INSTALL options opt_name SM = {
 
 			$1->b_options = $2 | options;
 			if ($3 != NULL) {
-				b = expand($3, 0);
+				b = expand($3, E_VARS|E_SHELL);
 				if (b->b_next != NULL)
 					yyerror("only one name allowed\n");
 				$1->b_name = b->b_name;
@@ -99,11 +103,17 @@ cmd:		  INSTALL options opt_name SM = {
 			$$ = $1;
 		}
 		| NOTIFY namelist SM = {
-			$1->b_args = expand($2, 1);
+			$1->b_args = expand($2, E_VARS);
 			$$ = $1;
 		}
 		| EXCEPT namelist SM = {
 			$1->b_args = $2;
+			$$ = $1;
+		}
+		| SPECIAL opt_namelist STRING SM = {
+			if ($2 != NULL)
+				$1->b_args = expand($2, E_ALL);
+			$1->b_name = $3;
 			$$ = $1;
 		}
 		;
@@ -120,6 +130,14 @@ opt_name:	  /* VOID */ = {
 			$$ = NULL;
 		}
 		| NAME = {
+			$$ = $1;
+		}
+		;
+
+opt_namelist:	  /* VOID */ = {
+			$$ = NULL;
+		}
+		| namelist = {
 			$$ = $1;
 		}
 		;
@@ -171,6 +189,38 @@ again:
 		c = '-';
 		break;
 
+	case '"':  /* STRING */
+		cp1 = yytext;
+		cp2 = &yytext[INMAX - 1];
+		for (;;) {
+			if (cp1 >= cp2) {
+				yyerror("command string too long\n");
+				break;
+			}
+			c = getc(fin);
+			if (c == EOF || c == '"')
+				break;
+			if (c == '\\') {
+				if ((c = getc(fin)) == EOF) {
+					*cp1++ = '\\';
+					break;
+				}
+			}
+			if (c == '\n')
+				c = ' '; /* can't send '\n' */
+			*cp1++ = c;
+		}
+		if (c != '"')
+			yyerror("missing closing '\"'\n");
+		*cp1++ = '\0';
+		yylval.string = cp2 = malloc(cp1 - yytext);
+		if (cp2 == NULL)
+			fatal("ran out of memory\n");
+		cp1 = yytext;
+		while (*cp2++ = *cp1++)
+			;
+		return(STRING);
+
 	case ':':  /* :: */
 		if ((c = getc(fin)) == ':')
 			return(DCOLON);
@@ -181,7 +231,7 @@ again:
 	cp2 = &yytext[INMAX - 1];
 	for (;;) {
 		if (cp1 >= cp2) {
-			fatal("input line too long\n");
+			yyerror("input line too long\n");
 			break;
 		}
 		if (c == '\\') {
@@ -207,7 +257,7 @@ again:
 			yylval.intval = COMPARE;
 			return(OPTION);
 
-		case 'r':
+		case 'R':
 			yylval.intval = REMOVE;
 			return(OPTION);
 
@@ -230,6 +280,8 @@ again:
 		c = NOTIFY;
 	else if (!strcmp(yytext, "except"))
 		c = EXCEPT;
+	else if (!strcmp(yytext, "special"))
+		c = SPECIAL;
 	else
 		c = NAME;
 	yylval.blk = makeblock(c, yytext);

@@ -1,126 +1,77 @@
 #ifndef lint
-static	char *sccsid = "@(#)expand.c	4.6 (Berkeley) 83/11/01";
+static	char *sccsid = "@(#)expand.c	4.7 (Berkeley) 83/11/29";
 #endif
 
 #include "defs.h"
 
-char	shchars[] = "{[*?";
+#define LC '{'
+#define RC '}'
 
-int	argc;
-char	**argv;
-char	*path, *pathp, *lastpathp;
-int	nleft;
+static char	shchars[] = "${[*?";
 
-int	argcnt;
-int	expany;		/* any expansions done? */
-char	*entp;
-char	**sortbase;
+static int	which;		/* bit mask of types to expand */
+static int	argc;		/* expanded arg count */
+static char	**argv;		/* expanded arg vectors */
+static char	*path;
+static char	*pathp;
+static char	*lastpathp;
+static char	*tilde;		/* null if expanding tilde */
+static char	*tpathp;
+static int	nleft;
+
+static int	expany;		/* any expansions done? */
+static char	*entp;
+static char	**sortbase;
 
 char	*index();
 struct block *copy();
 
 /*
  * Take a list of names and expand any macros, etc.
+ * wh = E_VARS if expanding variables.
+ * wh = E_SHELL if expanding shell characters.
+ * wh = E_TILDE if expanding `~'.
+ * or any of these or'ed together.
  */
 struct block *
-expand(list, noshexp)
+expand(list, wh)
 	struct block *list;
-	int noshexp;
+	int wh;
 {
-	register struct block *prev, *bp, *tp;
-	register char *cp;
+	register struct block *bp, *prev;
 	register int n;
-	char *tail;
-	int c;
 	char pathbuf[BUFSIZ];
 	char *argvbuf[GAVSIZ];
 
 	if (debug) {
-		printf("expand(%x, %d)\nlist = ", list, noshexp);
+		printf("expand(%x, %d)\nlist = ", list, wh);
 		prnames(list);
 	}
 
-	for (prev = NULL, bp = list; bp != NULL; prev = bp, bp = bp->b_next) {
-	again:
-		cp = index(bp->b_name, '$');
-		if (cp == NULL)
-			continue;
-		*cp++ = '\0';
-		if (*cp == '\0')
-			fatal("no variable name after '$'");
-		if (*cp == '{') {
-			cp++;
-			if ((tail = index(cp, '}')) == NULL)
-				fatal("missing '}'");
-			*tail++ = c = '\0';
-			if (*cp == '\0')
-				fatal("no variable name after '$'");
-		} else {
-			tail = cp + 1;
-			c = *tail;
-			*tail = '\0';
-		}
-		tp = lookup(cp, NULL, 0);
-		if (c != '\0')
-			*tail = c;
-		if ((tp = tp->b_args) != NULL) {
-			struct block *first = bp;
-
-			for (bp = prev; tp != NULL; tp = tp->b_next) {
-				if (bp == NULL)
-					list = bp = copy(tp, first->b_name, tail);
-				else {
-					bp->b_next = copy(tp, first->b_name, tail);
-					bp = bp->b_next;
-				}
-			}
-			bp->b_next = first->b_next;
-			free(first->b_name);
-			free(first);
-			if (prev == NULL)
-				bp = list;
-			else
-				bp = prev->b_next;
-			goto again;
-		} else {
-			if (prev == NULL)
-				list = tp = bp->b_next;
-			else
-				prev->b_next = tp = bp->b_next;
-			free(bp->b_name);
-			free(bp);
-			if (tp != NULL) {
-				bp = tp;
-				goto again;
-			}
-			break;
-		}
-	}
-
-	if (noshexp)
+	if (wh == 0)
 		return(list);
 
-	if (debug) {
-		printf("shexpand ");
-		prnames(list);
-	}
-
-	path = pathp = pathbuf;
+	which = wh;
+	path = tpathp = pathp = pathbuf;
 	*pathp = '\0';
 	lastpathp = &path[sizeof pathbuf - 2];
+	tilde = NULL;
 	argc = 0;
 	argv = sortbase = argvbuf;
 	*argv = 0;
 	nleft = NCARGS - 4;
-	argcnt = 0;
-	for (bp = list; bp != NULL; bp = bp->b_next)
-		expsh(bp->b_name);
-	for (bp = list; bp != NULL; bp = tp) {
-		tp = bp->b_next;
+	/*
+	 * Walk the block list and expand names into argv[];
+	 */
+	for (bp = list; bp != NULL; bp = bp->b_next) {
+		expstr(bp->b_name);
 		free(bp->b_name);
 		free(bp);
 	}
-	prev = NULL;
+	/*
+	 * Take expanded list of names from argv[] and build a block list.
+	 */
+	list = prev = NULL;
 	for (n = 0; n < argc; n++) {
 		bp = ALLOC(block);
 		if (bp == NULL)
@@ -135,53 +86,106 @@ expand(list, noshexp)
 			prev = bp;
 		}
 	}
+	if (debug) {
+		printf("expanded list = ");
+		prnames(list);
+	}
 	return(list);
 }
 
-/*
- * Return a new NAME block named "head, bp->b_name, tail"
- */
-struct block *
-copy(bp, head, tail)
-	struct block *bp;
-	char *head, *tail;
+expstr(s)
+	char *s;
 {
-	register int n;
-	register char *cp;
-	register struct block *np;
+	register char *cp, *cp1;
+	register struct block *tp;
+	char *tail, *opathp;
+	char buf[BUFSIZ];
+	int savec, oargc;
+	extern char homedir[];
 
-	np = ALLOC(block);
-	if (np == NULL)
-		fatal("ran out of memory\n");
-	np->b_type = NAME;
-	np->b_next = bp->b_args = NULL;
-	n = strlen(bp->b_name) + strlen(head) + strlen(tail) + 1;
-	np->b_name = cp = malloc(n);
-	if (cp == NULL)
-		fatal("ran out of memory");
-	sprintf(cp, "%s%s%s", head, bp->b_name, tail);
-	return(np);
-}
+	if (s == NULL || *s == '\0')
+		return;
 
-/*
- * If there are any Shell meta characters in the name,
- * expand into a list, after searching directory
- */
-expsh(s)
-	register char *s;
-{
-	register int oargc = argc;
-
-	if (!strcmp(s, "{") || !strcmp(s, "{}")) {
+	if ((which & E_VARS) && (cp = index(s, '$')) != NULL) {
+		*cp++ = '\0';
+		if (*cp == '\0') {
+			error("no variable name after '$'\n");
+			return;
+		}
+		if (*cp == LC) {
+			cp++;
+			if ((tail = index(cp, RC)) == NULL) {
+				error("unmatched %c\n", *cp);
+				return;
+			}
+			*tail++ = savec = '\0';
+			if (*cp == '\0') {
+				error("no variable name after '$'\n");
+				return;
+			}
+		} else {
+			tail = cp + 1;
+			savec = *tail;
+			*tail = '\0';
+		}
+		tp = lookup(cp, NULL, 0);
+		if (savec != '\0')
+			*tail = savec;
+		if ((tp = tp->b_args) != NULL) {
+			for (; tp != NULL; tp = tp->b_next) {
+				sprintf(buf, "%s%s%s", s, tp->b_name, tail);
+				expstr(buf);
+			}
+			return;
+		}
+		sprintf(buf, "%s%s", s, tail);
+		expstr(buf);
+		return;
+	}
+	if ((which & ~E_VARS) == 0 || !strcmp(s, "{") || !strcmp(s, "{}")) {
 		Cat(s, "");
 		sort();
 		return;
 	}
-
-	pathp = path;
-	*pathp = 0;
+	if (*s == '~') {
+		cp = ++s;
+		if (*cp == '\0' || *cp == '/') {
+			tilde = "~";
+			cp1 = homedir;
+		} else {
+			tilde = cp1 = buf;
+			*cp1++ = '~';
+			do
+				*cp1++ = *cp++;
+			while (*cp && *cp != '/');
+			*cp1 = '\0';
+			if (pw == NULL || strcmp(pw->pw_name, buf+1) != 0) {
+				if ((pw = getpwnam(buf+1)) == NULL) {
+					error("unknown user %s\n", buf+1);
+					return;
+				}
+			}
+			cp1 = pw->pw_dir;
+			s = cp;
+		}
+		for (cp = path; *cp++ = *cp1++; )
+			;
+		tpathp = pathp = cp - 1;
+	} else
+		pathp = path;
+	*pathp = '\0';
+	if (!(which & E_SHELL)) {
+		if (which & E_TILDE)
+			Cat(path, s);
+		else
+			Cat(tilde, s);
+		sort();
+		return;
+	}
+	oargc = argc;
 	expany = 0;
-	expstr(s);
+	expsh(s);
+	pathp = opathp;
 	if (argc != oargc)
 		sort();
 }
@@ -205,7 +209,11 @@ sort()
 	sortbase = ap;
 }
 
-expstr(s)
+/*
+ * If there are any Shell meta characters in the name,
+ * expand into a list, after searching directory
+ */
+expsh(s)
 	char *s;
 {
 	register char *cp;
@@ -216,11 +224,11 @@ expstr(s)
 	cp = s;
 	while (!any(*cp, shchars)) {
 		if (*cp == '\0') {
-			if (!expany)
-				Cat(path, "");
-			else if (stat(path, &stb) >= 0) {
-				Cat(path, "");
-				argcnt++;
+			if (!expany || stat(path, &stb) >= 0) {
+				if (which & E_TILDE)
+					Cat(path, "");
+				else
+					Cat(tilde, tpathp);
 			}
 			goto endit;
 		}
@@ -263,8 +271,13 @@ matchdir(pattern)
 	}
 	while ((dp = readdir(dirp)) != NULL)
 		if (match(dp->d_name, pattern)) {
-			Cat(path, dp->d_name);
-			argcnt++;
+			if (which & E_TILDE)
+				Cat(path, dp->d_name);
+			else {
+				strcpy(pathp, dp->d_name);
+				Cat(tilde, tpathp);
+				*pathp = '\0';
+			}
 		}
 	closedir(dirp);
 	return;
@@ -272,7 +285,7 @@ matchdir(pattern)
 patherr1:
 	closedir(dirp);
 patherr2:
-	fatal("%s: %s\n", path, sys_errlist[errno]);
+	error("%s: %s\n", path, sys_errlist[errno]);
 }
 
 execbrc(p, s)
@@ -302,7 +315,7 @@ execbrc(p, s)
 			for (pe++; *pe && *pe != ']'; pe++)
 				continue;
 			if (!*pe)
-				fatal("Missing ]\n");
+				error("Missing ]\n");
 			continue;
 		}
 pend:
@@ -333,7 +346,7 @@ doit:
 			*pm = savec;
 			if (s == 0) {
 				spathp = pathp;
-				expstr(restbuf);
+				expsh(restbuf);
 				pathp = spathp;
 				*pathp = 0;
 			} else if (amatch(s, restbuf))
@@ -346,7 +359,7 @@ doit:
 			for (pm++; *pm && *pm != ']'; pm++)
 				continue;
 			if (!*pm)
-				fatal("Missing ]\n");
+				error("Missing ]\n");
 			continue;
 		}
 	return (0);
@@ -442,10 +455,12 @@ slash:
 			addpath('/');
 			if (stat(path, &stb) == 0 && ISDIR(stb.st_mode))
 				if (*p == '\0') {
-					Cat(path, "");
-					argcnt++;
+					if (which & E_TILDE)
+						Cat(path, "");
+					else
+						Cat(tilde, tpathp);
 				} else
-					expstr(p);
+					expsh(p);
 			pathp = spathp;
 			*pathp = '\0';
 			return (0);
@@ -517,7 +532,7 @@ Cat(s1, s2)
 
 	nleft -= len;
 	if (nleft <= 0 || ++argc >= GAVSIZ)
-		fatal("Arguments too long\n");
+		error("Arguments too long\n");
 	argv[argc] = 0;
 	argv[argc - 1] = s = malloc(len);
 	if (s == NULL)
