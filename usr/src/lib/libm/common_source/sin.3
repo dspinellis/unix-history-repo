@@ -1,0 +1,70 @@
+.\"	@(#)sin.3	4.1 (Berkeley) %G%
+.\"
+.TH SIN 3M 
+.AT 3
+.SH NAME
+sin, cos, tan, asin, acos, atan, atan2 \- trigonometric functions
+.SH SYNOPSIS
+.nf
+.B #include <math.h>
+.PP
+.B double sin(x)
+.B double x;
+.PP
+.B double cos(x)
+.B double x;
+.PP
+.B double asin(x)
+.B double x;
+.PP
+.B double acos(x)
+.B double x;
+.PP
+.B double atan(x)
+.B double x;
+.PP
+.B double atan2(x, y)
+.B double x, y;
+.fi
+.SH DESCRIPTION
+.I Sin, cos
+and
+.I tan
+return trigonometric functions of radian arguments.
+The magnitude of the argument should be checked
+by the caller to make sure the result is meaningful.
+.PP
+.I Asin
+returns the arc sin in the range \-\(*p/2 to \(*p/2.
+.PP
+.I Acos
+returns the arc cosine in the range
+0 to \(*p.
+.PP
+.I Atan
+returns the arc tangent of
+.I x
+in the range \-\(*p/2 to \(*p/2.
+.PP
+.I Atan2
+returns the arc tangent of
+.I x/y
+in the range \-\(*p to \(*p.
+.SH DIAGNOSTICS
+Arguments of magnitude greater than 1
+cause
+.I asin
+and
+.I acos
+to return value 0;
+.I errno
+is set to EDOM.
+The value of
+.I tan
+at its singular points is a huge number, and
+.I errno
+is set to ERANGE.
+.SH BUGS
+The value of
+.I tan
+for arguments greater than about 2**31 is garbage.
