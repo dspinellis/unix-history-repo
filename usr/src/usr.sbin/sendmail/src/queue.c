@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.16		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.17		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.16		%G%);
+SCCSID(@(#)queue.c	3.17		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -49,6 +49,7 @@ queueup(df)
 		syserr("queueup: cannot create control file %s", cf);
 		return;
 	}
+	(void) chmod(cf, 0600);
 
 # ifdef DEBUG
 	if (Debug)
