@@ -4,10 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfs_vnops.c	7.21 (Berkeley) %G%
+ *	@(#)mfs_vnops.c	7.22 (Berkeley) %G%
  */
 
 #include "param.h"
+#include "systm.h"
 #include "time.h"
 #include "kernel.h"
 #include "proc.h"
@@ -30,50 +31,40 @@ extern char mfsiobuf[];
 /*
  * mfs vnode operations.
  */
-int	mfs_open(),
-	mfs_strategy(),
-	mfs_bmap(),
-	mfs_ioctl(),
-	mfs_close(),
-	mfs_inactive(),
-	mfs_print(),
-	mfs_badop(),
-	mfs_nullop();
-
 struct vnodeops mfs_vnodeops = {
-	mfs_badop,		/* lookup */
-	mfs_badop,		/* create */
-	mfs_badop,		/* mknod */
+	mfs_lookup,		/* lookup */
+	mfs_create,		/* create */
+	mfs_mknod,		/* mknod */
 	mfs_open,		/* open */
 	mfs_close,		/* close */
-	mfs_badop,		/* access */
-	mfs_badop,		/* getattr */
-	mfs_badop,		/* setattr */
-	mfs_badop,		/* read */
-	mfs_badop,		/* write */
+	mfs_access,		/* access */
+	mfs_getattr,		/* getattr */
+	mfs_setattr,		/* setattr */
+	mfs_read,		/* read */
+	mfs_write,		/* write */
 	mfs_ioctl,		/* ioctl */
-	mfs_badop,		/* select */
-	mfs_badop,		/* mmap */
-	mfs_badop,		/* fsync */
-	mfs_badop,		/* seek */
-	mfs_badop,		/* remove */
-	mfs_badop,		/* link */
-	mfs_badop,		/* rename */
-	mfs_badop,		/* mkdir */
-	mfs_badop,		/* rmdir */
-	mfs_badop,		/* symlink */
-	mfs_badop,		/* readdir */
-	mfs_badop,		/* readlink */
-	mfs_badop,		/* abortop */
+	mfs_select,		/* select */
+	mfs_mmap,		/* mmap */
+	mfs_fsync,		/* fsync */
+	mfs_seek,		/* seek */
+	mfs_remove,		/* remove */
+	mfs_link,		/* link */
+	mfs_rename,		/* rename */
+	mfs_mkdir,		/* mkdir */
+	mfs_rmdir,		/* rmdir */
+	mfs_symlink,		/* symlink */
+	mfs_readdir,		/* readdir */
+	mfs_readlink,		/* readlink */
+	mfs_abortop,		/* abortop */
 	mfs_inactive,		/* inactive */
-	mfs_nullop,		/* reclaim */
-	mfs_nullop,		/* lock */
-	mfs_nullop,		/* unlock */
+	mfs_reclaim,		/* reclaim */
+	mfs_lock,		/* lock */
+	mfs_unlock,		/* unlock */
 	mfs_bmap,		/* bmap */
 	mfs_strategy,		/* strategy */
 	mfs_print,		/* print */
-	mfs_nullop,		/* islocked */
-	mfs_badop,		/* advlock */
+	mfs_islocked,		/* islocked */
+	mfs_advlock,		/* advlock */
 };
 
 /*
@@ -84,10 +75,11 @@ struct vnodeops mfs_vnodeops = {
  * so we can tell when we are doing I/O to ourself.
  */
 /* ARGSUSED */
-mfs_open(vp, mode, cred)
+mfs_open(vp, mode, cred, p)
 	register struct vnode *vp;
 	int mode;
 	struct ucred *cred;
+	struct proc *p;
 {
 
 	if (vp->v_type != VBLK) {
@@ -101,12 +93,13 @@ mfs_open(vp, mode, cred)
  * Ioctl operation.
  */
 /* ARGSUSED */
-mfs_ioctl(vp, com, data, fflag, cred)
+mfs_ioctl(vp, com, data, fflag, cred, p)
 	struct vnode *vp;
 	int com;
 	caddr_t data;
 	int fflag;
 	struct ucred *cred;
+	struct proc *p;
 {
 
 	return (-1);
@@ -120,11 +113,12 @@ mfs_strategy(bp)
 {
 	register struct mfsnode *mfsp;
 	struct vnode *vp;
+	struct proc *p = curproc;		/* XXX */
 
 	if (vfinddev(bp->b_dev, VBLK, &vp) || vp->v_usecount == 0)
 		panic("mfs_strategy: bad dev");
 	mfsp = VTOMFS(vp);
-	if (mfsp->mfs_pid == curproc->p_pid) {
+	if (mfsp->mfs_pid == p->p_pid) {
 		mfs_doio(bp, mfsp->mfs_baseoff);
 	} else {
 		bp->av_forw = mfsp->mfs_buflist;
@@ -253,10 +247,11 @@ mfs_bmap(vp, bn, vpp, bnp)
  * Memory filesystem close routine
  */
 /* ARGSUSED */
-mfs_close(vp, flag, cred)
+mfs_close(vp, flag, cred, p)
 	register struct vnode *vp;
 	int flag;
 	struct ucred *cred;
+	struct proc *p;
 {
 	register struct mfsnode *mfsp = VTOMFS(vp);
 	register struct buf *bp;
@@ -297,8 +292,9 @@ mfs_close(vp, flag, cred)
  * Memory filesystem inactive routine
  */
 /* ARGSUSED */
-mfs_inactive(vp)
+mfs_inactive(vp, p)
 	struct vnode *vp;
+	struct proc *p;
 {
 
 	if (VTOMFS(vp)->mfs_buflist != (struct buf *)(-1))
@@ -326,15 +322,6 @@ mfs_badop()
 
 	panic("mfs_badop called\n");
 	/* NOTREACHED */
-}
-
-/*
- * Block device null operation
- */
-mfs_nullop()
-{
-
-	return (0);
 }
 
 /*
