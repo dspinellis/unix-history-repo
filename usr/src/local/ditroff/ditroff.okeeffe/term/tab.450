@@ -24,6 +24,7 @@ up	"\033\n"
 down	"\n"
 right	" "
 left	"\b"
+eject	""
 
 charset
 em 1 -
