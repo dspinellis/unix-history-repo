@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.151		%G%);
+SCCSID(@(#)deliver.c	3.152		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -1010,6 +1010,7 @@ putmessage(fp, m, xdot)
 	struct mailer *m;
 	bool xdot;
 {
+	char *template = "$l\n";
 	char buf[BUFSIZ];
 
 	/*
@@ -1031,6 +1032,8 @@ putmessage(fp, m, xdot)
 			char *sys = macvalue('g');
 			char *bang = index(sys, '!');
 
+		expand("$g", buf, &buf[sizeof buf - 1], CurEnv);
+		bang = index(buf, '!');
 			if (bang == NULL)
 				syserr("No ! in UUCP! (%s)", sys);
 			else
