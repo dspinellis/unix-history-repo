@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)maps.c	1.2 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)maps.c	1.3 (Berkeley/CCI) %G%";
 #endif
 
 
@@ -67,8 +67,6 @@ short	flags;
 					load_free_table();
 					return true;
 				}
-else
-printf("%d: junk, slot %d/%d\n", trk, i, bad_map->bs_count);
 			}
 			blkzero(bad_map, bytes_trk);
 			bad_map->bs_id = 0;
@@ -98,25 +96,19 @@ boolean read_bad_sector_map()
 	if (C_INFO.type == SMD_ECTLR) {
 		access_dsk((char *)save, &dskaddr, RD_RAW, 1, 1);
 		if (align_buf((unsigned long *)save, CDCSYNC) == true) {
-printf("Reading manufacturer's flaw maps...");
 			read_flaw_map();
-printf("\n");
 			return (false);
 		} else if (read_map(NRM) == true) {
 			return (true);
 		} else {
-printf("Scanning for old relocations...");
 			get_smde_relocations();
-printf("\n");
 			return false;
 		}
 	} else {
 		if (read_map(WPT) == true)
 			return (true);
 		else {
-printf("Scanning for old relocations...");
 			get_relocations_the_hard_way();
-printf("\n");
 			return (false);
 		}
 	}
