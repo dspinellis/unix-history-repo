@@ -1,0 +1,14 @@
+CFLAGS=	-O -DV6 -I/usr/include/retrofit
+
+termlib.a: termcap.o tgoto.o tputs.o
+	ar r termlib.a termcap.o tgoto.o tputs.o
+
+clean:
+	-rm -f *.o
+	-rm -f termlib.a
+
+install: termlib.a
+	cp termlib.a /usr/lib/libtermlib.a
+	cp termcap /etc
+	chmod 644 /etc/termcap /usr/lib/libtermlib.a
+	chdir tabset; install
