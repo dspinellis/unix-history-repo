@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	8.37 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	8.38 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -2226,6 +2226,10 @@ dequote_init(map, args)
 		  case 'a':
 			map->map_app = ++p;
 			break;
+
+		  case 's':
+			map->map_coldelim = *++p;
+			break;
 		}
 		while (*p != '\0' && !(isascii(*p) && isspace(*p)))
 			p++;
@@ -2262,19 +2266,13 @@ dequote_map(map, name, av, statp)
 	register char *p;
 	register char *q;
 	register char c;
-	int anglecnt;
-	int cmntcnt;
-	int quotecnt;
-	int spacecnt;
-	bool quotemode;
-	bool bslashmode;
-
-	anglecnt = 0;
-	cmntcnt = 0;
-	quotecnt = 0;
-	spacecnt = 0;
-	quotemode = FALSE;
-	bslashmode = FALSE;
+	int anglecnt = 0;
+	int cmntcnt = 0;
+	int quotecnt = 0;
+	int spacecnt = 0;
+	bool quotemode = FALSE;
+	bool bslashmode = FALSE;
+	char spacesub = map->map_coldelim;
 
 	for (p = q = name; (c = *p++) != '\0'; )
 	{
@@ -2285,8 +2283,8 @@ dequote_map(map, name, av, statp)
 			continue;
 		}
 
-		if (c == ' ' && SpaceSub != '\0')
-			c = SpaceSub;
+		if (c == ' ' && spacesub != '\0')
+			c = spacesub;
 
 		switch (c)
 		{
