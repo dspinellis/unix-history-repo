@@ -1,48 +1,14 @@
-#
-# Copyright (c) 1988 Regents of the University of California.
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms are permitted
-# provided that the above copyright notice and this paragraph are
-# duplicated in all such forms and that any documentation, advertising
-# materials, and other materials related to such redistribution and
-# use acknowledge that the software was developed by the University
-# of California, Berkeley.  The name of the University may not be
-# used to endorse or promote products derived from this software
-# without specific prior written permission.  THIS SOFTWARE IS PROVIDED
-# ``AS IS'' AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-# WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
-# FITNESS FOR A PARTICULAR PURPOSE.
-#
-# @(#)Makefile	5.5 (Berkeley) %G%
-#
+#	@(#)Makefile	5.6 (Berkeley) %G%
 
-CFLAGS=	-O
-LIBC=	/lib/libc.a
-SRCS=	enpload.c
-MAN=	enpload.0
+PROG=	enpload
+MAN8=	enpload.0
 
-all: enpload
+install:
+	install ${STRIP} -o ${BINOWN} -g ${BINGRP} -m ${BINMODE} enpload \
+	    ${DESTDIR}${BINDIR}
+	install -c -o ${MANOWN} -g ${MANGRP} -m ${MANMODE} ${MAN8} \
+	    ${DESTDIR}${MANDIR}8/tahoe
+	install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${.CURDIR}/enpcode \
+	    ${DESTDIR}/etc
 
-enpload: ${OBJS} ${LIBC}
-	${CC} -o $@ ${CFLAGS} $@.c
-
-clean:
-	rm -f ${OBJS} core enpload
-
-cleandir: clean
-	rm -f ${MAN} tags .depend
-
-depend: ${SRCS}
-	mkdep -p ${CFLAGS} ${SRCS}
-
-install: ${MAN}
-	install -s -o bin -g bin -m 755 enpload ${DESTDIR}/sbin
-	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8/tahoe
-	install -c -o bin -g bin -m 444 enpcode ${DESTDIR}/etc
-
-lint: ${SRCS}
-	lint ${CFLAGS} ${SRCS}
-
-tags: ${SRCS}
-	ctags ${SRCS}
+.include <bsd.prog.mk>

@@ -1,41 +1,7 @@
-#
-# Copyright (c) 1989 The Regents of the University of California.
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms are permitted
-# provided that the above copyright notice and this paragraph are
-# duplicated in all such forms and that any documentation,
-# advertising materials, and other materials related to such
-# distribution and use acknowledge that the software was developed
-# by the University of California, Berkeley.  The name of the
-# University may not be used to endorse or promote products derived
-# from this software without specific prior written permission.
-# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
-#
-#	@(#)Makefile	5.7 (Berkeley) %G%
-#
-# Configuration options
-#  
-#  LARNHOME is the directory where the larn data files will be installed.
-#  BINDIR is the directory where the larn binary will be installed.
+#	@(#)Makefile	5.8 (Berkeley) %G%
 
-LARNHOME=	/usr/games/lib/larnfiles
-BINDIR=		/usr/games
-
-# Available compile time options:
-# WIZID=xxx
-#	This is the userid (or playerid) of the wizard.  Default is zero
-#	(superuser), which disables all wizard functions.  Players must
-#	have this userid (or playerid) in order to become the non-scoring
-#	wizard player.  Definition of WIZID to non-zero will enable the
-#	special wizard debugging commands.  For root to become wizard, use
-#	WIZID= -1.
 # EXTRA
 #	Incorporates code to gather additional performance statistics
-# TIMECHECK
-#	Incorporates code to disable play during working hours (8-5)
 # SYSV
 #	Use system III/V (instead of V7) type ioctl calls
 # BSD
@@ -53,8 +19,6 @@ BINDIR=		/usr/games
 #	checkpoints (again if enabled in the .larnopts file).  This usually
 #	avoids pauses in larn while the checkpointing is being done (on
 #	large machines).
-# SAVEINHOME
-#	Put save files in users HOME instead of LARNHOME the as default
 # VER
 #	This is the version of the software, example:  12
 # SUBVER
@@ -86,44 +50,19 @@ BINDIR=		/usr/games
 #	used to delay for effect when casting missile type spells.
 # NOLOG
 #	Turn off logging.
-#
 
-OPTIONS = -DBSD -DVER=12 -DSUBVER=0 -DWIZID=-7 -DSAVEINHOME -DNONAP -DNOLOG
-
+PROG=	larn
+CFLAGS+=-DBSD -DVER=12 -DSUBVER=0 -DNONAP
 SRCS=	main.c object.c create.c tok.c display.c global.c data.c io.c \
 	monster.c store.c diag.c help.c config.c nap.c bill.c scores.c \
 	signal.c moreobj.c movem.c regen.c fortune.c savelev.c
-OBJS=	main.o object.o create.o tok.o display.o global.o data.o io.o \
-	monster.o store.o diag.o help.o config.o nap.o bill.o scores.o \
-	signal.o moreobj.o movem.o regen.o fortune.o savelev.o
+DPADD=	${LIBTERM} ${LIBCOMPAT}
+LDADD=	-ltermcap -lcompat
+HIDEGAME=hidegame
 
-CFLAGS= -O ${OPTIONS} -DLARNHOME=\"${LARNHOME}/\"
+beforeinstall:
+	(cd ${.CURDIR}/datfiles; install -c -o ${BINOWN} -g ${BINGRP} -m 444 \
+	    larnmaze larnopts lfortune larn.help \
+	    ${DESTDIR}/usr/share/games/larn)
 
-all: larn
-
-larn: ${OBJS} ${LIBC}
-	${CC} ${CFLAGS} ${OBJS} -o $@ -ltermcap -lcompat
-
-install: ${MAN}
-	-[ -d ${DESTDIR}/usr/games/lib/larnfiles ] || mkdir ${DESTDIR}/usr/games/lib/larnfiles
-	chmod 700 ${DESTDIR}/usr/games/lib/larnfiles
-	chown games.src ${DESTDIR}/usr/games/lib/larnfiles
-	install -s -o games -g bin -m 4700 larn ${DESTDIR}/usr/games/hide
-	(cd ${DESTDIR}/usr/games; rm -f larn; ln -s dm larn; chown games.bin larn)
-	install -c -o games -g bin -m 444 larnmaze larnopts lfortune \
-		larn.help ${DESTDIR}/usr/games/lib/larnfiles
-
-clean:
-	rm -f ${OBJS} core larn
-
-cleandir: clean
-	rm -f ${MAN} tags .depend
-
-depend: ${SRCS}
-	mkdep ${CFLAGS} ${SRCS}
-
-lint: ${SRCS}
-	lint ${CFLAGS} ${SRCS}
-
-tags: ${SRCS}
-	ctags ${SRCS}
+.include <bsd.prog.mk>

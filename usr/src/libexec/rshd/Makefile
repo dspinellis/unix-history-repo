@@ -1,49 +1,11 @@
-#
-# Copyright (c) 1988 Regents of the University of California.
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms are permitted
-# provided that the above copyright notice and this paragraph are
-# duplicated in all such forms and that any documentation, advertising
-# materials, and other materials related to such redistribution and
-# use acknowledge that the software was developed by the University
-# of California, Berkeley.  The name of the University may not be
-# used to endorse or promote products derived from this software
-# without specific prior written permission.  THIS SOFTWARE IS PROVIDED
-# ``AS IS'' AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-# WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
-# FITNESS FOR A PARTICULAR PURPOSE.
-#
-# @(#)Makefile	5.3 (Berkeley) 5/9/89
-#
+#	@(#)Makefile	5.5 (Berkeley) %G%
 
-CFLAGS=	-O -DKERBEROS
-LIBC=	/lib/libc.a
-SRCS=	rshd.c
-OBJS=	rshd.o des_rw.o
-MAN=	rshd.0
-VPATH=	../../usr.bin/rlogin/des
+PROG=	rshd
+CFLAGS+=-DKERBEROS
+SRCS=	rshd.c des_rw.c
+MAN8=	rshd.0
+DPADD=	${LIBUTIL} ${LIBKRB} ${LIBDES}
+LDADD=	-lutil -lkrb -ldes
+.PATH: ${.CURDIR}/../../usr.bin/rlogin
 
-all: rshd
-
-rshd: ${LIBC} ${OBJS}
-	${CC} -o $@ ${OBJS} ${CFLAGS} -lutil -lkrb -ldes
-
-clean:
-	rm -f core rshd ${OBJS}
-
-cleandir: clean
-	rm -f ${MAN} tags .depend
-
-depend: ${SRCS}
-	mkdep -p ${CFLAGS} ${SRCS}
-
-install: ${MAN}
-	install -s -o root -g bin -m 755 rshd ${DESTDIR}/usr/libexec/rshd
-	install -c -o bin -g bin -m 444 rshd.0 ${DESTDIR}/usr/man/cat8
-
-lint: ${SRCS}
-	lint ${CFLAGS} ${SRCS}
-
-tags: ${SRCS}
-	ctags ${SRCS}
+.include <bsd.prog.mk>

@@ -1,49 +1,11 @@
-#
-# Copyright (c) 1988 Regents of the University of California.
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms are permitted
-# provided that the above copyright notice and this paragraph are
-# duplicated in all such forms and that any documentation, advertising
-# materials, and other materials related to such redistribution and
-# use acknowledge that the software was developed by the University
-# of California, Berkeley.  The name of the University may not be
-# used to endorse or promote products derived from this software
-# without specific prior written permission.  THIS SOFTWARE IS PROVIDED
-# ``AS IS'' AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-# WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
-# FITNESS FOR A PARTICULAR PURPOSE.
-#
-# @(#)Makefile	5.7 (Berkeley) %G%
-#
+#	@(#)Makefile	5.8 (Berkeley) %G%
 
-CFLAGS=	-O -DKERBEROS
-LIBC=	/lib/libc.a
+PROG=	rlogind
+CFLAGS+=-DKERBEROS
 SRCS=	rlogind.c des_rw.c
-OBJS=	des_rw.o
-MAN=	rlogind.0
-VPATH=	../../usr.bin/rlogin/des
+MAN8=	rlogind.0
+DPADD=	${LIBUTIL} ${LIBKRB} ${LIBDES}
+LDADD=	-lutil -lkrb -ldes
+.PATH: ${.CURDIR}/../../usr.bin/rlogin
 
-all: rlogind
-
-rlogind: ${LIBC} ${OBJS}
-	${CC} -o $@ ${CFLAGS} $@.c ${OBJS} -lutil -lkrb -ldes
-
-clean:
-	rm -f ${OBJS} core rlogind
-
-cleandir: clean
-	rm -f ${MAN} tags .depend
-
-depend: ${SRCS}
-	mkdep -p ${CFLAGS} ${SRCS}
-
-install: ${MAN}
-	install -s -o bin -g bin -m 755 rlogind ${DESTDIR}/usr/libexec
-	install -c -o bin -g bin -m 444 rlogind.0 ${DESTDIR}/usr/man/cat8
-
-lint: ${SRCS}
-	lint ${CFLAGS} ${SRCS}
-
-tags: ${SRCS}
-	ctags ${SRCS}
+.include <bsd.prog.mk>
