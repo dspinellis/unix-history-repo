@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)pftn.c	1.11 (Berkeley) %G%";
+static char *sccsid ="@(#)pftn.c	1.12 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -829,6 +829,8 @@ int idebug = 0;
 
 int ibseen = 0;  /* the number of } constructions which have been filled */
 
+int ifull = 0; /* 1 if all initializers have been seen */
+
 int iclass;  /* storage class of thing being initialized */
 
 int ilocctr = 0;  /* location counter for current initialization */
@@ -864,6 +866,7 @@ beginit(curid){
 
 	inoff = 0;
 	ibseen = 0;
+	ifull = 0;
 
 	pstk = 0;
 
@@ -1063,6 +1066,11 @@ doinit( p ) register NODE *p; {
 
 	if( p == NIL ) return;  /* for throwing away strings that have been turned into lists */
 
+	if( ifull ){
+		uerror( "too many initializers" );
+		iclass = -1;
+		goto leave;
+		}
 	if( ibseen ){
 		uerror( "} expected");
 		goto leave;
@@ -1155,7 +1163,7 @@ gotscal(){
 			}
 
 		}
-
+	ifull = 1;
 	}
 
 ilbrace(){ /* process an initializer's left brace */
@@ -1207,6 +1215,7 @@ irbrace(){
 		}
 
 	/* these right braces match ignored left braces: throw out */
+	ifull = 1;
 
 	}
 
@@ -1884,9 +1893,10 @@ clearst( lev ) register int lev; {
 	/* step 2: fix any mishashed entries */
 	p = clist;
 	while( p ){
-		register struct symtab *r;
+		register struct symtab *r, *next;
 
 		q = p;
+		next = p->snext;
 		for(;;){
 			if( ++q >= &stab[SYMTSZ] )q = stab;
 			if( q == p || q->stype == TNULL )break;
@@ -1895,7 +1905,7 @@ clearst( lev ) register int lev; {
 				q->stype = TNULL;
 				}
 			}
-		p = p->snext;
+		p = next;
 		}
 
 	lineno = temp;
