@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)symbols.raw	7.2 (Berkeley) %G%
+#	@(#)symbols.raw	7.3 (Berkeley) %G%
 #
 	_version
 #dmesg
@@ -31,7 +31,7 @@
 	_nproc
 	_ntext
 #pstat
-	_inode
+	_vnode
 	_text
 	_proc
 #	_dz_tty
