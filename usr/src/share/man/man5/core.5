@@ -2,14 +2,14 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)core.5	6.1 (Berkeley) %G%
+.\"	@(#)core.5	6.2 (Berkeley) %G%
 .\"
 .TH CORE 5  ""
 .UC 4
 .SH NAME
 core \- format of memory image file
 .SH SYNOPSIS
-.B #include <machine/param.h>
+.B #include <sys/param.h>
 .SH DESCRIPTION
 The UNIX System writes out a memory image of a terminated
 process when any of various errors occur.  See
@@ -29,7 +29,7 @@ The core file consists of the
 .I u.
 area, whose size (in pages) is
 defined by the UPAGES manifest in the
-.RI < machine/param.h >
+.RI < sys/param.h >
 file.  The 
 .I u.
 area starts with a 
@@ -50,6 +50,9 @@ variable
 in the 
 .I u.
 area.
+The size of a ``page'' is given by the constant NBPG
+(also from
+.RI < sys/param.h >).
 .PP
 In general the debugger
 .IR adb (1)
