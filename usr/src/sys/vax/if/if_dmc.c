@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_dmc.c	7.7 (Berkeley) %G%
+ *	@(#)if_dmc.c	7.8 (Berkeley) %G%
  */
 
 #include "dmc.h"
@@ -45,6 +45,8 @@
 #include "syslog.h"
 #include "vmmac.h"
 #include "errno.h"
+#include "time.h"
+#include "kernel.h"
 
 #include "../net/if.h"
 #include "../net/netisr.h"
@@ -64,8 +66,6 @@
 #include "../vaxuba/ubareg.h"
 #include "../vaxuba/ubavar.h"
 
-#include "../h/time.h"
-#include "../h/kernel.h"
 
 /*
  * output timeout value, sec.; should depend on line speed.
