@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)output.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)output.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -46,8 +46,8 @@ output()
     free_itemsets();
     free_shifts();
     free_reductions();
-    output_defines();
     output_stored_text();
+    output_defines();
     output_rule_data();
     output_yydefred();
     output_actions();
@@ -806,7 +806,7 @@ output_stored_text()
     if (!lflag)
     {
 	++outline;
-	fprintf(out, line_format, outline, output_file_name);
+	fprintf(out, line_format, outline + 1, output_file_name);
     }
 }
 
@@ -1086,7 +1086,7 @@ output_trailing_text()
     if (!lflag)
     {
 	++outline;
-	fprintf(output_file, line_format, outline, output_file_name);
+	fprintf(output_file, line_format, outline + 1, output_file_name);
     }
 }
 
