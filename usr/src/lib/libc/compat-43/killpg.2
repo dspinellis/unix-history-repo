@@ -1,0 +1,61 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)killpg.2	4.1 (Berkeley) %G%
+.\"
+.TH KILLPG 2J
+.UC 4
+.SH NAME
+killpg \- send signal to a process or a process group
+.SH SYNOPSIS
+.B killpg(pgrp, sig)
+.PP
+.B cc ... \-ljobs
+.SH DESCRIPTION
+.I Killpg
+sends the signal
+.I sig
+to the specified process group.
+See
+.IR sigsys (2)
+for a list of signals;
+see
+.IR jobs (3)
+for an explanation of process groups.
+.PP
+The sending process and members of the process group must
+have the same effective user ID, otherwise
+this call is restricted to the super-user.
+As a single special case the continue signal SIGCONT may be sent
+to any process which is a descendant of the current process.  This
+allows a command interpreter such as
+.IR csh (1)
+to restart set-user-id processes stopped from the keyboard with a stop signal.
+.PP
+The calls
+.IP
+.B "killpg(0, sig)"
+.LP
+and
+.IP
+.B "kill(0, sig)
+.LP
+have identical effects, sending the signal to all members of the
+invoker's process group (including the process itself).
+It is preferable to use the call involving
+.I kill
+in this case, as it is portable to other UNIX systems.
+.SH "SEE ALSO"
+jobs(3), kill(2), sigsys(2), signal(2), csh(1), kill(1)
+.SH DIAGNOSTICS
+Zero is returned if the processes are sent the signals;
+\-1 is returned if any process in the process group cannot be sent
+the signal, or if there are no members in the process group.
+.SH BUGS
+The job control facilities are not available in standard version 7 UNIX.
+These facilities are still under development and may change in future
+releases of the system as better inter-process communication facilities
+and support for virtual terminals become available.  The options and
+specifications of this system call and even the call itself
+are thus subject to change.
