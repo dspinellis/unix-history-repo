@@ -1,4 +1,4 @@
-/*	setjmp.s	4.7	85/03/11	*/
+/*	setjmp.s	4.8	85/04/24	*/
 
 /*
  * C library -- setjmp, longjmp
@@ -13,23 +13,23 @@
 
 #include "DEFS.h"
 
-ENTRY(setjmp, 0)
-	movl	4(ap),r1		# construct sigcontext
+ENTRY(setjmp, R6)
+	movl	4(ap),r6		# construct sigcontext
 	subl2	$8,sp			# space for current struct sigstack
 	pushl	sp			# get current values
 	pushl	$0			# no new values
 	calls	$3,_sigstack		# pop args plus signal stack value
-	movl	*(sp)+,(r1)+		# save onsigstack status of caller
+	movl	*(sp)+,(r6)+		# save onsigstack status of caller
 	pushl	$0
 	calls	$1,_sigblock		# get signal mask
-	movl	r0,(r1)+		# save signal mask of caller
+	movl	r0,(r6)+		# save signal mask of caller
 	movl	(ap),r0
-	moval	4(ap)[r0],(r1)+		# save sp of caller
-	movl	12(fp),(r1)+		# save frame pointer of caller
-	movl	8(fp),(r1)+		# save argument pointer of caller
-	movl	16(fp),(r1)+		# save pc of caller
-	movpsl	(r1)			# save psl of caller
-	movw	4(fp),(r1)
+	moval	4(ap)[r0],(r6)+		# save sp of caller
+	movl	12(fp),(r6)+		# save frame pointer of caller
+	movl	8(fp),(r6)+		# save argument pointer of caller
+	movl	16(fp),(r6)+		# save pc of caller
+	movpsl	(r6)			# save psl of caller
+	movw	4(fp),(r6)
 	clrl	r0
 	ret
 
