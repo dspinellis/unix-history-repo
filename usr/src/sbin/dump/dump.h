@@ -1,5 +1,5 @@
 /*
- * "@(#)dump.h	1.8 (Berkeley) %G%"
+ * "@(#)dump.h	1.9 (Berkeley) %G%"
  */
 #define	NI		16
 #define MAXINOPB	(MAXBSIZE / sizeof(struct dinode))
@@ -16,7 +16,6 @@
 #include <utmp.h>
 #include <time.h>
 #include <signal.h>
-int (*signal())();
 #include <fstab.h>
 
 #define	MWORD(m,i)	(m[(unsigned)(i-1)/NBBY])
@@ -101,10 +100,7 @@ int	interrupt();		/* in case operator bangs on console */
 #define	OPGRENT	"operator"		/* group entry to notify */
 #define DIALUP	"ttyd"			/* prefix for dialups */
 
-#define	MAXFSTAB		32
-struct	fstab	fstab[MAXFSTAB];
 struct	fstab	*fstabsearch();	/* search in fs_file and fs_spec */
-int	nfstab;
 
 /*
  *	The contents of the file NINCREM is maintained both on
