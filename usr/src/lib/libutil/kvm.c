@@ -32,15 +32,23 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00032
+ * CURRENT PATCH LEVEL:         2       00052
  * --------------------         -----   ----------------------
  *
+ * 08 Sep 92	Greenman & Kranenburg	Change vaddr calc, move bogus #endif
  * 05 Aug 92    David Greenman          Fix kernel namelist db create/use
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
 static char sccsid[] = "@(#)kvm.c	5.18 (Berkeley) 5/7/91";
 #endif /* LIBC_SCCS and not lint */
+
+/*
+ *  Updated for 386BSD 0.1 by David Greenman (davidg%implode@percy.rain.com)
+ *     and Paul Kranenburg (pk@cs.few.eur.nl)
+ *  20-Aug-1992
+ */
+
 
 #include <sys/param.h>
 #include <sys/user.h>
@@ -698,17 +706,20 @@ kvm_getu(p)
 			argaddr1 = ctob(pftoc(pte[CLSIZE*1].pg_pfnum));
 		}
 	}
+#endif							/* 08 Sep 92*/
 	kp->kp_eproc.e_vm.vm_rssize =
 	    kp->kp_eproc.e_vm.vm_pmap.pm_stats.resident_count; /* XXX */
-#endif
 
 #ifdef i386
 	if (kp->kp_eproc.e_vm.vm_pmap.pm_pdir) {
 		struct pde pde;
-		u_int vaddr = USRSTACK-ARGSIZE;
+		/* u_int vaddr = USRSTACK-ARGSIZE;*/
+/* 08 Sep 92*/	u_int vaddr = (u_int)kp->kp_eproc.e_vm.vm_maxsaddr + MAXSSIZ - ARGSIZE;
 
+		/* 08 Sep 92 ---------
 		if ((u_int)kp->kp_eproc.e_vm.vm_maxsaddr + MAXSSIZ < USRSTACK)
 			vaddr -= MAXSSIZ;
+		 */
 #if 0
 		klseek(kmem,
 			(long)(kp->kp_eproc.e_vm.vm_pmap.pm_pdir + UPTDI), 0);
