@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dca.c	7.10 (Berkeley) %G%
+ *	@(#)dca.c	7.11 (Berkeley) %G%
  */
 
 #include "dca.h"
@@ -204,8 +204,10 @@ dcaopen(dev, flag, mode, p)
 }
  
 /*ARGSUSED*/
-dcaclose(dev, flag)
+dcaclose(dev, flag, mode, p)
 	dev_t dev;
+	int flag, mode;
+	struct proc *p;
 {
 	register struct tty *tp;
 	register struct dcadevice *dca;
@@ -214,7 +216,7 @@ dcaclose(dev, flag)
 	unit = UNIT(dev);
 	dca = dca_addr[unit];
 	tp = &dca_tty[unit];
-	(*linesw[tp->t_line].l_close)(tp);
+	(*linesw[tp->t_line].l_close)(tp, flag);
 	dca->dca_cfcr &= ~CFCR_SBREAK;
 #ifdef KGDB
 	/* do not disable interrupts if debugging */

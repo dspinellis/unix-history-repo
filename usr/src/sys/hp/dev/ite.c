@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: ite.c 1.1 90/07/09$
  *
- *	@(#)ite.c	7.5 (Berkeley) %G%
+ *	@(#)ite.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -225,12 +225,14 @@ iteopen(dev, mode, devtype, p)
 }
 
 /*ARGSUSED*/
-iteclose(dev, flag)
+iteclose(dev, flag, mode, p)
 	dev_t dev;
+	int flag, mode;
+	struct proc *p;
 {
 	register struct tty *tp = &ite_tty[UNIT(dev)];
 
-	(*linesw[tp->t_line].l_close)(tp);
+	(*linesw[tp->t_line].l_close)(tp, flag);
 	ttyclose(tp);
 	iteoff(dev, 0);
 	return(0);

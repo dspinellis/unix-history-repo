@@ -11,7 +11,7 @@
  *
  * from: $Hdr: dcm.c 1.26 91/01/21$
  *
- *	@(#)dcm.c	7.12 (Berkeley) %G%
+ *	@(#)dcm.c	7.13 (Berkeley) %G%
  */
 
 /*
@@ -334,15 +334,17 @@ dcmopen(dev, flag, mode, p)
 }
  
 /*ARGSUSED*/
-dcmclose(dev, flag)
+dcmclose(dev, flag, mode, p)
 	dev_t dev;
+	int flag, mode;
+	struct proc *p;
 {
 	register struct tty *tp;
 	int unit;
  
 	unit = UNIT(dev);
 	tp = &dcm_tty[unit];
-	(*linesw[tp->t_line].l_close)(tp);
+	(*linesw[tp->t_line].l_close)(tp, flag);
 #ifdef KGDB
 	if (dev != kgdb_dev)
 #endif
