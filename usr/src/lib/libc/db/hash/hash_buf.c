@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash_buf.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash_buf.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /******************************************************************************
@@ -143,6 +143,7 @@ BUFHEAD	*prev_bp;
     u_short	oaddr;
     SEGMENT	segp;
 
+    oaddr = 0;
     bp = LRU;
     /* 
 	If LRU buffer is pinned, the buffer pool is too small.
@@ -168,7 +169,9 @@ BUFHEAD	*prev_bp;
 		before bytes are swapped
 	    */
 	    shortp = (u_short *)bp->page;
-	    oaddr = shortp[shortp[0]-1];
+	    if ( shortp[0] ) {
+		oaddr = shortp[shortp[0]-1];
+	    }
 	    if ( (bp->flags & BUF_MOD) && 
 		 __put_page(bp->page, bp->addr, (int)IS_BUCKET(bp->flags), 0) ) {
 		return(NULL);
@@ -210,7 +213,9 @@ BUFHEAD	*prev_bp;
 		if ( IS_BUCKET(xbp->flags) || (oaddr != xbp->addr) ) break;
 
 		shortp = (u_short *)xbp->page;
-		oaddr = shortp[shortp[0]-1];	/* set before __put_page */
+		if ( shortp[0] ) {
+		    oaddr = shortp[shortp[0]-1];  /* set before __put_page */
+		}
 		if ( (xbp->flags & BUF_MOD) &&
 		    __put_page ( xbp->page, xbp->addr, 0, 0 ) ) {
 		    return(NULL);
