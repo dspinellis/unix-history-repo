@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -40,7 +40,7 @@ long	dumpnum = 1;
 long	volno = 0;
 long	ntrec;
 char	*dumpmap;
-char	*clrimap;
+char	*usedinomap;
 ino_t	maxino;
 time_t	dumptime;
 time_t	dumpdate;

@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -224,8 +224,8 @@ setup()
 	dprintf(stdout, "maxino = %d\n", maxino);
 	map = calloc((unsigned)1, (unsigned)howmany(maxino, NBBY));
 	if (map == NULL)
-		panic("no memory for file removal list\n");
-	clrimap = map;
+		panic("no memory for active inode map\n");
+	usedinomap = map;
 	curfile.action = USING;
 	getfile(xtrmap, xtrmapskip);
 	if (spcl.c_type != TS_BITS) {
@@ -1116,10 +1116,10 @@ accthdr(header)
 		goto newcalc;
 	switch (prevtype) {
 	case TS_BITS:
-		fprintf(stderr, "Dump mask header");
+		fprintf(stderr, "Dumped inodes map header");
 		break;
 	case TS_CLRI:
-		fprintf(stderr, "Remove mask header");
+		fprintf(stderr, "Used inodes map header");
 		break;
 	case TS_INODE:
 		fprintf(stderr, "File header, ino %d", previno);
