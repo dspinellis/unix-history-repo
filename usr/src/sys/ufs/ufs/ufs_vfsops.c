@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vfsops.c	7.63 (Berkeley) %G%
+ *	@(#)ufs_vfsops.c	7.64 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -122,39 +122,6 @@ ufs_quotactl(mp, cmds, uid, arg, p)
 	}
 	/* NOTREACHED */
 #endif
-}
-
-int syncprt = 0;
-
-/*
- * Print out statistics on the current allocation of the buffer pool.
- * Can be enabled to print out on every ``sync'' by setting "syncprt"
- * above.
- */
-void
-ufs_bufstats()
-{
-	int s, i, j, count;
-	register struct buf *bp, *dp;
-	int counts[MAXBSIZE/CLBYTES+1];
-	static char *bname[BQUEUES] = { "LOCKED", "LRU", "AGE", "EMPTY" };
-
-	for (bp = bfreelist, i = 0; bp < &bfreelist[BQUEUES]; bp++, i++) {
-		count = 0;
-		for (j = 0; j <= MAXBSIZE/CLBYTES; j++)
-			counts[j] = 0;
-		s = splbio();
-		for (dp = bp->av_forw; dp != bp; dp = dp->av_forw) {
-			counts[dp->b_bufsize/CLBYTES]++;
-			count++;
-		}
-		splx(s);
-		printf("%s: total-%d", bname[i], count);
-		for (j = 0; j <= MAXBSIZE/CLBYTES; j++)
-			if (counts[j] != 0)
-				printf(", %d-%d", j * CLBYTES, counts[j]);
-		printf("\n");
-	}
 }
 
 /*
