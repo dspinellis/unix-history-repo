@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_subs.c	7.28 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.29 (Berkeley) %G%
  */
 
 /*
@@ -63,7 +63,7 @@ static char *nfs_unixauth();
  * Maximum number of groups passed through to NFS server.
  * According to RFC1057 it should be 16.
  * For release 3.X systems, the maximum value is 8.
- * For release 4.X systems, the maximum value is 10.
+ * For some other servers, the maximum value is 10.
  */
 int numgrps = 8;
 
@@ -92,7 +92,8 @@ struct mbuf *nfsm_reqh(prog, vers, procid, cred, hsiz, bpos, mb, retxid)
 	int asiz, siz;
 
 	NFSMGETHDR(mreq);
-	asiz = (((cred->cr_ngroups > numgrps) ? numgrps : cred->cr_ngroups)<<2);
+	asiz = ((((cred->cr_ngroups - 1) > numgrps) ? numgrps :
+		  (cred->cr_ngroups - 1)) << 2);
 #ifdef FILLINHOST
 	asiz += nfsm_rndup(hostnamelen)+(9*NFSX_UNSIGNED);
 #else
@@ -518,9 +519,9 @@ static char *nfs_unixauth(cr)
 	/* Maybe someday there should be a cache of AUTH_SHORT's */
 	if ((p = rpc_uidp) == NULL) {
 #ifdef FILLINHOST
-		i = nfsm_rndup(hostnamelen)+(19*NFSX_UNSIGNED);
+		i = nfsm_rndup(hostnamelen)+(25*NFSX_UNSIGNED);
 #else
-		i = 19*NFSX_UNSIGNED;
+		i = 25*NFSX_UNSIGNED;
 #endif
 		MALLOC(p, u_long *, i, M_TEMP, M_WAITOK);
 		bzero((caddr_t)p, i);
@@ -540,9 +541,9 @@ static char *nfs_unixauth(cr)
 	}
 	*p++ = txdr_unsigned(cr->cr_uid);
 	*p++ = txdr_unsigned(cr->cr_groups[0]);
-	ngr = (cr->cr_ngroups > numgrps) ? numgrps : cr->cr_ngroups;
+	ngr = ((cr->cr_ngroups - 1) > numgrps) ? numgrps : (cr->cr_ngroups - 1);
 	*p++ = txdr_unsigned(ngr);
-	for (i = 0; i < ngr; i++)
+	for (i = 1; i <= ngr; i++)
 		*p++ = txdr_unsigned(cr->cr_groups[i]);
 	/* And add the AUTH_NULL */
 	*p++ = 0;
