@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fdesc_vfsops.c	8.5 (Berkeley) %G%
+ *	@(#)fdesc_vfsops.c	8.6 (Berkeley) %G%
  *
  * $Id: fdesc_vfsops.c,v 1.9 1993/04/06 15:28:33 jsp Exp $
  */
@@ -63,7 +63,7 @@ fdesc_mount(mp, path, data, ndp, p)
 	/* XXX -- don't mark as local to work around fts() problems */
 	/*mp->mnt_flag |= MNT_LOCAL;*/
 	mp->mnt_data = (qaddr_t) fmp;
-	getnewfsid(mp, MOUNT_FDESC);
+	vfs_getnewfsid(mp);
 
 	(void) copyinstr(path, mp->mnt_stat.f_mntonname, MNAMELEN - 1, &size);
 	bzero(mp->mnt_stat.f_mntonname + size, MNAMELEN - size);
@@ -144,18 +144,6 @@ fdesc_root(mp, vpp)
 }
 
 int
-fdesc_quotactl(mp, cmd, uid, arg, p)
-	struct mount *mp;
-	int cmd;
-	uid_t uid;
-	caddr_t arg;
-	struct proc *p;
-{
-
-	return (EOPNOTSUPP);
-}
-
-int
 fdesc_statfs(mp, sbp, p)
 	struct mount *mp;
 	struct statfs *sbp;
@@ -188,7 +176,6 @@ fdesc_statfs(mp, sbp, p)
 	if (fdp->fd_nfiles < lim)
 		freefd += (lim - fdp->fd_nfiles);
 
-	sbp->f_type = MOUNT_FDESC;
 	sbp->f_flags = 0;
 	sbp->f_bsize = DEV_BSIZE;
 	sbp->f_iosize = DEV_BSIZE;
@@ -198,6 +185,7 @@ fdesc_statfs(mp, sbp, p)
 	sbp->f_files = lim + 1;		/* Allow for "." */
 	sbp->f_ffree = freefd;		/* See comments above */
 	if (sbp != &mp->mnt_stat) {
+		sbp->f_type = mp->mnt_vfc->vfc_typenum;
 		bcopy(&mp->mnt_stat.f_fsid, &sbp->f_fsid, sizeof(sbp->f_fsid));
 		bcopy(mp->mnt_stat.f_mntonname, sbp->f_mntonname, MNAMELEN);
 		bcopy(mp->mnt_stat.f_mntfromname, sbp->f_mntfromname, MNAMELEN);
@@ -214,39 +202,6 @@ fdesc_sync(mp, waitfor)
 	return (0);
 }
 
-/*
- * Fdesc flat namespace lookup.
- * Currently unsupported.
- */
-int
-fdesc_vget(mp, ino, vpp)
-	struct mount *mp;
-	ino_t ino;
-	struct vnode **vpp;
-{
-
-	return (EOPNOTSUPP);
-}
-
-int
-fdesc_fhtovp(mp, fhp, setgen, vpp)
-	struct mount *mp;
-	struct fid *fhp;
-	int setgen;
-	struct vnode **vpp;
-{
-	return (EOPNOTSUPP);
-}
-
-int
-fdesc_vptofh(vp, fhp)
-	struct vnode *vp;
-	struct fid *fhp;
-{
-
-	return (EOPNOTSUPP);
-}
-
 struct vfsops fdesc_vfsops = {
 	fdesc_mount,
 	fdesc_start,
@@ -259,4 +214,5 @@ struct vfsops fdesc_vfsops = {
 	fdesc_fhtovp,
 	fdesc_vptofh,
 	fdesc_init,
+	fdesc_sysctl,
 };

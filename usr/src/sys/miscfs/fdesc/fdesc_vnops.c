@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fdesc_vnops.c	8.12 (Berkeley) %G%
+ *	@(#)fdesc_vnops.c	8.13 (Berkeley) %G%
  *
  * $Id: fdesc_vnops.c,v 1.12 1993/04/06 16:17:17 jsp Exp $
  */
@@ -56,7 +56,8 @@ u_long fdhash;
 /*
  * Initialise cache headers
  */
-fdesc_init()
+fdesc_init(vfsp)
+	struct vfsconf *vfsp;
 {
 
 	devctty = makedev(nchrdev, 0);
@@ -826,16 +827,6 @@ fdesc_vfree(ap)
 }
 
 /*
- * /dev/fd vnode unsupported operation
- */
-int
-fdesc_enotsupp()
-{
-
-	return (EOPNOTSUPP);
-}
-
-/*
  * /dev/fd "should never get here" operation
  */
 int
@@ -846,48 +837,37 @@ fdesc_badop()
 	/* NOTREACHED */
 }
 
-/*
- * /dev/fd vnode null operation
- */
-int
-fdesc_nullop()
-{
-
-	return (0);
-}
-
-#define fdesc_create ((int (*) __P((struct  vop_create_args *)))fdesc_enotsupp)
-#define fdesc_mknod ((int (*) __P((struct  vop_mknod_args *)))fdesc_enotsupp)
+#define fdesc_create ((int (*) __P((struct  vop_create_args *)))eopnotsupp)
+#define fdesc_mknod ((int (*) __P((struct  vop_mknod_args *)))eopnotsupp)
 #define fdesc_close ((int (*) __P((struct  vop_close_args *)))nullop)
 #define fdesc_access ((int (*) __P((struct  vop_access_args *)))nullop)
-#define fdesc_mmap ((int (*) __P((struct  vop_mmap_args *)))fdesc_enotsupp)
+#define fdesc_mmap ((int (*) __P((struct  vop_mmap_args *)))eopnotsupp)
 #define fdesc_fsync ((int (*) __P((struct  vop_fsync_args *)))nullop)
 #define fdesc_seek ((int (*) __P((struct  vop_seek_args *)))nullop)
-#define fdesc_remove ((int (*) __P((struct  vop_remove_args *)))fdesc_enotsupp)
-#define fdesc_link ((int (*) __P((struct  vop_link_args *)))fdesc_enotsupp)
-#define fdesc_rename ((int (*) __P((struct  vop_rename_args *)))fdesc_enotsupp)
-#define fdesc_mkdir ((int (*) __P((struct  vop_mkdir_args *)))fdesc_enotsupp)
-#define fdesc_rmdir ((int (*) __P((struct  vop_rmdir_args *)))fdesc_enotsupp)
-#define fdesc_symlink ((int (*) __P((struct vop_symlink_args *)))fdesc_enotsupp)
+#define fdesc_remove ((int (*) __P((struct  vop_remove_args *)))eopnotsupp)
+#define fdesc_link ((int (*) __P((struct  vop_link_args *)))eopnotsupp)
+#define fdesc_rename ((int (*) __P((struct  vop_rename_args *)))eopnotsupp)
+#define fdesc_mkdir ((int (*) __P((struct  vop_mkdir_args *)))eopnotsupp)
+#define fdesc_rmdir ((int (*) __P((struct  vop_rmdir_args *)))eopnotsupp)
+#define fdesc_symlink ((int (*) __P((struct vop_symlink_args *)))eopnotsupp)
 #define fdesc_abortop ((int (*) __P((struct  vop_abortop_args *)))nullop)
 #define fdesc_lock ((int (*) __P((struct  vop_lock_args *)))nullop)
 #define fdesc_unlock ((int (*) __P((struct  vop_unlock_args *)))nullop)
 #define fdesc_bmap ((int (*) __P((struct  vop_bmap_args *)))fdesc_badop)
 #define fdesc_strategy ((int (*) __P((struct  vop_strategy_args *)))fdesc_badop)
 #define fdesc_islocked ((int (*) __P((struct  vop_islocked_args *)))nullop)
-#define fdesc_advlock ((int (*) __P((struct vop_advlock_args *)))fdesc_enotsupp)
+#define fdesc_advlock ((int (*) __P((struct vop_advlock_args *)))eopnotsupp)
 #define fdesc_blkatoff \
-	((int (*) __P((struct  vop_blkatoff_args *)))fdesc_enotsupp)
-#define fdesc_vget ((int (*) __P((struct  vop_vget_args *)))fdesc_enotsupp)
+	((int (*) __P((struct  vop_blkatoff_args *)))eopnotsupp)
 #define fdesc_valloc ((int(*) __P(( \
 		struct vnode *pvp, \
 		int mode, \
 		struct ucred *cred, \
-		struct vnode **vpp))) fdesc_enotsupp)
+		struct vnode **vpp))) eopnotsupp)
 #define fdesc_truncate \
-	((int (*) __P((struct  vop_truncate_args *)))fdesc_enotsupp)
-#define fdesc_update ((int (*) __P((struct  vop_update_args *)))fdesc_enotsupp)
-#define fdesc_bwrite ((int (*) __P((struct  vop_bwrite_args *)))fdesc_enotsupp)
+	((int (*) __P((struct  vop_truncate_args *)))eopnotsupp)
+#define fdesc_update ((int (*) __P((struct  vop_update_args *)))eopnotsupp)
+#define fdesc_bwrite ((int (*) __P((struct  vop_bwrite_args *)))eopnotsupp)
 
 int (**fdesc_vnodeop_p)();
 struct vnodeopv_entry_desc fdesc_vnodeop_entries[] = {

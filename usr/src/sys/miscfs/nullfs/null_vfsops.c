@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)null_vfsops.c	8.3 (Berkeley) %G%
+ *	@(#)null_vfsops.c	8.4 (Berkeley) %G%
  *
  * @(#)lofs_vfsops.c	1.2 (Berkeley) 6/18/92
  * $Id: lofs_vfsops.c,v 1.9 1992/05/30 10:26:24 jsp Exp jsp $
@@ -116,7 +116,7 @@ nullfs_mount(mp, path, data, ndp, p)
 	if (NULLVPTOLOWERVP(nullm_rootvp)->v_mount->mnt_flag & MNT_LOCAL)
 		mp->mnt_flag |= MNT_LOCAL;
 	mp->mnt_data = (qaddr_t) xmp;
-	getnewfsid(mp, MOUNT_LOFS);
+	vfs_getnewfsid(mp);
 
 	(void) copyinstr(path, mp->mnt_stat.f_mntonname, MNAMELEN - 1, &size);
 	bzero(mp->mnt_stat.f_mntonname + size, MNAMELEN - size);
@@ -323,7 +323,10 @@ nullfs_vptofh(vp, fhp)
 	return VFS_VPTOFH(NULLVPTOLOWERVP(vp), fhp);
 }
 
-int nullfs_init __P((void));
+int nullfs_init __P((struct vfsconf *));
+
+#define nullfs_sysctl ((int (*) __P((int *, u_int, void *, size_t *, void *, \
+	    size_t, struct proc *)))eopnotsupp)
 
 struct vfsops null_vfsops = {
 	nullfs_mount,
@@ -337,4 +340,5 @@ struct vfsops null_vfsops = {
 	nullfs_fhtovp,
 	nullfs_vptofh,
 	nullfs_init,
+	nullfs_sysctl,
 };
