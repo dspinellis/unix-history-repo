@@ -33,34 +33,32 @@ pass(fn, map)
 	}
 }
 
-icat(dp, fn1, fn2)
+icat(dp, fn1)
 	register struct	dinode	*dp;
-	int (*fn1)(), (*fn2)();
+	int (*fn1)();
 {
 	register int i;
 
-	(*fn2)(dp->di_db, NDADDR);
 	for (i = 0; i < NDADDR; i++) {
 		if (dp->di_db[i] != 0)
 			(*fn1)(dp->di_db[i]);
 	}
 	for (i = 0; i < NIADDR; i++) {
 		if (dp->di_ib[i] != 0)
-			indir(dp->di_ib[i], fn1, fn2, i);
+			indir(dp->di_ib[i], fn1, i);
 	}
 }
 
-indir(d, fn1, fn2, n)
-daddr_t d;
-int (*fn1)(), (*fn2)();
+indir(d, fn1, n)
+	daddr_t d;
+	int (*fn1)();
+	int n;
 {
 	register i;
 	daddr_t	idblk[NINDIR];
 
 	bread(d, (char *)idblk, sizeof(idblk));
 	if(n <= 0) {
-		spcl.c_type = TS_ADDR;
-		(*fn2)(idblk, NINDIR);
 		for(i=0; i<NINDIR; i++) {
 			d = idblk[i];
 			if(d != 0)
@@ -71,13 +69,13 @@ int (*fn1)(), (*fn2)();
 		for(i=0; i<NINDIR; i++) {
 			d = idblk[i];
 			if(d != 0)
-				indir(d, fn1, fn2, n);
+				indir(d, fn1, n);
 		}
 	}
 }
 
 mark(ip)
-struct dinode *ip;
+	struct dinode *ip;
 {
 	register f;
 
@@ -99,14 +97,14 @@ struct dinode *ip;
 }
 
 add(ip)
-struct dinode *ip;
+	struct dinode *ip;
 {
 
 	if(BIT(ino, nodmap))
 		return;
 	nsubdir = 0;
 	dadded = 0;
-	icat(ip, dsrch, nullf);
+	icat(ip, dsrch);
 	if(dadded) {
 		BIS(ino, nodmap);
 		est(ip);
@@ -118,9 +116,10 @@ struct dinode *ip;
 }
 
 dump(ip)
-struct dinode *ip;
+	struct dinode *ip;
 {
-	register i;
+	register int i;
+	long size;
 
 	if(newtape) {
 		newtape = 0;
@@ -131,30 +130,87 @@ struct dinode *ip;
 	spcl.c_type = TS_INODE;
 	spcl.c_count = 0;
 	i = ip->di_mode & IFMT;
-	if(i != IFDIR && i != IFREG) {
+	if ((i != IFDIR && i != IFREG) || ip->di_size == 0) {
 		spclrec();
 		return;
 	}
-	icat(ip, tapsrec, dmpspc);
+	if (ip->di_size > NDADDR * BSIZE)
+		i = NDADDR * FRAG;
+	else
+		i = howmany(ip->di_size, FSIZE);
+	blksout(&ip->di_db[0], i);
+	size = ip->di_size - NDADDR * BSIZE;
+	if (size <= 0)
+		return;
+	for (i = 0; i < NIADDR; i++) {
+		dmpindir(ip->di_ib[i], i, &size);
+		if (size <= 0)
+			return;
+	}
 }
 
-dmpspc(dp, n)
-daddr_t *dp;
+dmpindir(blk, lvl, size)
+	daddr_t blk;
+	int lvl;
+	long *size;
 {
-	register i, t;
+	int i, cnt;
+	daddr_t idblk[NINDIR];
 
-	spcl.c_count = n;
-	for(i=0; i<n; i++) {
-		t = 0;
-		if(dp[i] != 0)
-			t++;
-		spcl.c_addr[i] = t;
+	if (blk != 0)
+		bread(blk, (char *)idblk, sizeof(idblk));
+	else
+		blkclr(idblk, sizeof(idblk));
+	if (lvl <= 0) {
+		if (*size < NINDIR * BSIZE)
+			cnt = howmany(*size, TP_BSIZE);
+		else
+			cnt = NINDIR * BLKING * FRAG;
+		*size -= NINDIR * BSIZE;
+		blksout(&idblk[0], cnt);
+		return;
 	}
-	spclrec();
+	lvl--;
+	for (i = 0; i < NINDIR; i++) {
+		dmpindir(idblk[i], lvl, size);
+		if (*size <= 0)
+			return;
+	}
+}
+
+blksout(blkp, frags)
+	daddr_t *blkp;
+	int frags;
+{
+	int i, j, count, blks;
+
+	blks = frags * BLKING;
+	for (i = 0; i < blks; i += TP_NINDIR) {
+		if (i + TP_NINDIR > blks)
+			count = blks;
+		else
+			count = i + TP_NINDIR;
+		for (j = i; j < count; j++)
+			if (blkp[j / (BLKING * FRAG)] != 0)
+				spcl.c_addr[j - i] = 1;
+			else
+				spcl.c_addr[j - i] = 0;
+		spcl.c_count = count - i;
+		spclrec();
+		for (j = i; j < count; j += (BLKING * FRAG))
+			if (blkp[j / (BLKING * FRAG)] != 0)
+				if (j + (BLKING * FRAG) <= count)
+					dmpblk(blkp[j / (BLKING * FRAG)],
+					    BSIZE);
+				else
+					dmpblk(blkp[j / (BLKING * FRAG)],
+					    (count - j) * TP_BSIZE);
+		spcl.c_type = TS_ADDR;
+	}
 }
 
 bitmap(map, typ)
-short *map;
+	short *map;
 {
 	register i, n;
 	char *cp;
@@ -166,32 +222,32 @@ short *map;
 	if(n < 0)
 		return;
 	spcl.c_type = typ;
-	spcl.c_count = (n*sizeof(map[0]) + BSIZE)/BSIZE;
+	spcl.c_count = (n*sizeof(map[0]) + TP_BSIZE)/TP_BSIZE;
 	spclrec();
 	cp = (char *)map;
 	for(i=0; i<spcl.c_count; i++) {
 		taprec(cp);
-		cp += BSIZE;
+		cp += TP_BSIZE;
 	}
 }
 
 spclrec()
 {
-	register i, *ip, s;
+	register int s, i, *ip;
 
 	spcl.c_inumber = ino;
 	spcl.c_magic = MAGIC;
 	spcl.c_checksum = 0;
 	ip = (int *)&spcl;
 	s = 0;
-	for(i=0; i<BSIZE/sizeof(*ip); i++)
+	for(i = 0; i < sizeof(union u_spcl)/sizeof(int); i++)
 		s += *ip++;
 	spcl.c_checksum = CHECKSUM - s;
 	taprec((char *)&spcl);
 }
 
 dsrch(d)
-daddr_t d;
+	daddr_t d;
 {
 	register char *cp;
 	register i;
@@ -219,10 +275,6 @@ daddr_t d;
 		if(BIT(in, dirmap))
 			nsubdir++;
 	}
-}
-
-nullf()
-{
 }
 
 struct dinode *
@@ -278,7 +330,7 @@ bread(da, ba, c)
 }
 
 CLR(map)
-register short *map;
+	register short *map;
 {
 	register n;
 
@@ -288,3 +340,9 @@ register short *map;
 	while(--n);
 }
 
+blkclr(cp, size)
+	char *cp;
+	long size;
+{
+	asm("movc5	$0,(r0),$0,8(ap),*4(ap)");
+}
