@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_physio.c	7.23 (Berkeley) %G%
+ *	@(#)kern_physio.c	7.24 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -41,7 +41,7 @@ physio(strat, bp, dev, rw, mincnt, uio)
 	struct uio *uio;
 {
 	register struct iovec *iov;
-	register int requested, done;
+	register int requested = 0, done = 0;
 	register struct proc *p = curproc;
 	char *a;
 	int s, allocbuf = 0, error = 0;
@@ -52,6 +52,8 @@ physio(strat, bp, dev, rw, mincnt, uio)
 	}
 	for (; uio->uio_iovcnt; uio->uio_iov++, uio->uio_iovcnt--) {
 		iov = uio->uio_iov;
+		if (iov->iov_len == 0)
+			continue;
 		if (!useracc(iov->iov_base, (u_int)iov->iov_len,
 		    rw == B_READ ? B_WRITE : B_READ)) {
 			error = EFAULT;
