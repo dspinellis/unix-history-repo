@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)cp.c	4.7 83/06/20";
+static char *sccsid = "@(#)cp.c	4.8 83/07/01";
 #endif
 
 /*
@@ -8,7 +8,7 @@ static char *sccsid = "@(#)cp.c	4.7 83/06/20";
 #include <stdio.h>
 #include <sys/param.h>
 #include <sys/stat.h>
-#include <dir.h>
+#include <sys/dir.h>
 
 #define	BSIZE	8192
 
