@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)pwd.h	4.4 (Berkeley) %G%
+ *	@(#)pwd.h	4.5 (Berkeley) %G%
  */
 
 #define	_PATH_PASSWD		"/etc/passwd"
@@ -24,6 +24,8 @@
 
 #define	_PW_KEYBYNAME		'0'
 #define	_PW_KEYBYUID		'1'
+
+#define	_PASSWORD_LEN		128
 
 struct passwd {
 	char	*pw_name;			/* user name */
