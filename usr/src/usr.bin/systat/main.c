@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	1.2 (Lucasfilm) %G%";
+static char sccsid[] = "@(#)main.c	1.3 (Lucasfilm) %G%";
 #endif
 
 #include "systat.h"
@@ -31,6 +31,14 @@ struct nlist nlst[] = {
         { "_nswdev" },
 #define	X_SWDEVT	12
 	{ "_swdevt" },
+#define	X_NTEXT		13
+	{ "_ntext" },
+#define	X_TEXT		14
+	{ "_text" },
+#define	X_DMTEXT	15
+	{ "_dmtext" },
+#define	X_MBSTAT	16
+	{ "_mbstat" },
         { "" }
 };
 
@@ -43,10 +51,13 @@ int     die();
 int     display();
 int     suspend();
 
-int     showpigs(), openpigs(), fetchpigs(), labelpigs();
-int     showswap(), fetchswap(), labelswap();
-int     showuser(), openuser(), fetchuser(), labeluser();
-int     shownet(), opennet(), fetchnet(), labelnet();
+int     showpigs(), openpigs(), fetchpigs(), labelpigs(), initpigs();
+int     showswap(), fetchswap(), labelswap(), initswap();
+int	showmbufs(), fetchmbufs(), labelmbufs(), initmbufs();
+#ifdef notdef
+int     showuser(), openuser(), fetchuser(), labeluser(), inituser();
+int     shownet(), opennet(), fetchnet(), labelnet(), initnet();
+#endif
 
 struct  cmdtab {
         char    *c_name;
@@ -54,16 +65,20 @@ struct  cmdtab {
         int     (*c_open)();
         int     (*c_fetch)();
         int     (*c_label)();
+	int	(*c_init)();
+	char	c_flags;
 } cmdtab[] = {
         { "pigs",       showpigs,       openpigs,       fetchpigs,
-          labelpigs },
+          labelpigs,	initpigs },
         { "swap",       showswap,       openpigs,       fetchswap,
-          labelswap },
+          labelswap,	initswap },
+        { "mbufs",	showmbufs,	openpigs,       fetchmbufs,
+          labelmbufs,	initmbufs },
 #ifdef notdef
         { "user",       showuser,       openuser,       fetchuser,
-          labeluser },
+          labeluser,	inituser },
         { "net",        shownet,        opennet,        fetchnet,
-          labelnet },
+          labelnet,	initnet },
 #endif
         { "" }
 };
@@ -112,7 +127,6 @@ main(argc, argv)
         lseek(kmem, nlst[X_CCPU].n_value, 0);
         read(kmem, &ccpu, sizeof (ccpu));
         lccpu = log(ccpu);
-        (*curcmd->c_fetch)();
         labels();
 
         known[0].k_uid = -1;
@@ -138,8 +152,12 @@ main(argc, argv)
                         if (ch >= 'A' && ch <= 'Z')
                                 ch += 'a' - 'A';
                         if (col == 0) {
+#define	mask(s)	(1 << ((s) - 1))
                                 if (ch == CTRL(l)) {
-                                        wrefresh(curscr);
+					int oldmask = sigblock(mask(SIGALRM));
+
+					wrefresh(curscr);
+					sigsetmask(oldmask);
                                         continue;
                                 }
                                 if (ch != ':')
@@ -303,6 +321,10 @@ display()
         /* Get the load average over the last minute. */
         lseek(kmem, nlst[X_AVENRUN].n_value, L_SET);
         read(kmem, &lave, sizeof (lave));
+	if (curcmd->c_flags == 0) {
+		(*curcmd->c_init)();
+		curcmd->c_flags = 1;
+	}
         (*curcmd->c_fetch)();
         j = 5.0*lave + 0.5;
         dellave -= lave;
@@ -333,4 +355,12 @@ die()
 
         endwin();
         exit(0);
+}
+
+error(fmt, a1, a2, a3)
+{
+
+	mvprintw(22, 0, fmt, a1, a2, a3);
+	clrtoeol();
+	refresh();
 }

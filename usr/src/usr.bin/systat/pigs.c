@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)pigs.c	1.1 (Lucasfilm) %G%";
+static char sccsid[] = "@(#)pigs.c	1.2 (Lucasfilm) %G%";
 #endif
 
 #include "systat.h"
@@ -134,6 +134,21 @@ openpigs()
 
 struct proc *kprocp;
 
+initpigs()
+{
+
+        if (procp == NULL) {
+                procp = getw(nlst[X_PROC].n_value);
+                nproc = getw(nlst[X_NPROC].n_value);
+                kprocp = (struct proc *)malloc(sizeof (*kprocp) * nproc);
+        }
+        if (usrpt != NULL)
+		return;
+	usrpt = (struct pte *)nlst[X_USRPT].n_value;
+	Usrptma = (struct pte *)nlst[X_USRPTMAP].n_value;
+	pt = (struct p_times *)malloc(nproc * sizeof (struct p_times));
+}
+
 fetchpigs()
 {
         register int i;
@@ -141,17 +156,6 @@ fetchpigs()
         register float time;
         register struct proc *pp;
 
-        if (procp == NULL) {
-                procp = getw(nlst[X_PROC].n_value);
-                nproc = getw(nlst[X_NPROC].n_value);
-                kprocp = (struct proc *)malloc(sizeof (*kprocp) * nproc);
-        }
-        if (usrpt == NULL) {
-                usrpt = (struct pte *)nlst[X_USRPT].n_value;
-                Usrptma = (struct pte *)nlst[X_USRPTMAP].n_value;
-                pt = (struct p_times *)malloc(nproc * sizeof (struct p_times));
-                return;
-        }
         prt = pt;
         lseek(kmem, procp, L_SET);
         read(kmem, kprocp, sizeof (struct proc) * nproc);
