@@ -1,4 +1,4 @@
-.\"	@(#)e5	5.1 (Berkeley) %G%
+.\"	@(#)e5	6.1 (Berkeley) %G%
 .\"
 .SH
 Change and Insert \- ``c'' and ``i''
@@ -251,8 +251,8 @@ in that case,
 every line except the last must end with a backslash
 .UL \e :
 .P1
-g/xxx/\*.-1s/abc/def/\\
-\&\*.+2s/ghi/jkl/\\
+g/xxx/\*.-1s/abc/def/\e
+\&\*.+2s/ghi/jkl/\e
 \&\*.-2,\*.p
 .P2
 makes changes in the lines before and after each line
