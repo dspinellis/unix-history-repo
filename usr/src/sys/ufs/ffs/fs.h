@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-/*	fs.h	4.1	82/04/19	*/
+/*	fs.h	4.2	82/06/14	*/
 
 /*
  * Each disk drive contains some number of file systems.
@@ -372,4 +372,5 @@ struct	cg {
 
 #ifdef KERNEL
 struct	fs *getfs();
+struct	fs *mountfs();
 #endif
