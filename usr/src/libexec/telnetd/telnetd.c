@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -260,6 +260,13 @@ telnet(f, p)
 			if (c == IAC)
 				*nfrontp++ = c;
 			*nfrontp++ = c;
+			if (c == '\r') {
+				if (pcc > 0 && ((*ptyip & 0377) == '\n')) {
+					*nfrontp++ = *ptyip++ & 0377;
+					pcc--;
+				} else
+					*nfrontp++ = '\0';
+			}
 		}
 		if ((obits & (1 << f)) && (nfrontp - nbackp) > 0)
 			netflush();
@@ -310,8 +317,20 @@ telrcv()
 			}
 			if (inter > 0)
 				break;
+			/*
+			 * We map \r\n ==> \n, since \r\n says
+			 * that we want to be in column 1 of the next
+			 * printable line, and \n is the standard
+			 * unix way of saying that (\r is only good
+			 * if CRMOD is set, which it normally is).
+			 */
 			if (!myopts[TELOPT_BINARY] && c == '\r') {
-				state = TS_CR;
+				if ((ncc > 0) && ('\n' == *netip)) {
+					netip++; ncc--;
+					c = '\n';
+				} else {
+					state = TS_CR;
+				}
 			}
 			*pfrontp++ = c;
 			break;
