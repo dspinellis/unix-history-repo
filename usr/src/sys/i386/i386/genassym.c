@@ -7,7 +7,7 @@
  *
  * %sccs.include.noredist.c%
  *
- *	@(#)genassym.c	5.3 (Berkeley) %G%
+ *	@(#)genassym.c	5.4 (Berkeley) %G%
  */
 
 #include "../i386/pte.h"
@@ -33,6 +33,8 @@ main()
 	register struct pcb *pcb = (struct pcb *)0;
 
 	printf("#ifdef LOCORE\n");
+	printf("#define\tI386_CR3PAT %d\n", I386_CR3PAT);
+
 	printf("#define\tU_PROCP %d\n", &u->u_procp);
 	printf("#define\tU_EOSYS %d\n", &u->u_eosys);
 	printf("#define\tP_LINK %d\n", &p->p_link);
