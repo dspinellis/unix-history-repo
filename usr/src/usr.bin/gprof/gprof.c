@@ -1,5 +1,5 @@
 #ifndef lint
-    static	char *sccsid = "@(#)gprof.c	1.8 (Berkeley) %G%";
+    static	char *sccsid = "@(#)gprof.c	1.9 (Berkeley) %G%";
 #endif lint
 
 #include "gprof.h"
@@ -14,21 +14,30 @@ main(argc, argv)
     debug = 0;
     while ( *argv != 0 && **argv == '-' ) {
 	(*argv)++;
-	if ( **argv == 'd' ) {
+	switch ( **argv ) {
+	case 'd':
 	    (*argv)++;
 	    debug |= atoi( *argv );
 	    debug |= ANYDEBUG;
 #	    ifdef DEBUG
 		printf( "[main] debug = %d\n" , debug );
 #	    endif DEBUG
-	} else if ( **argv == 'a' ) {
+	    break;
+	case 'a':
 	    aflag++;
-	} else if ( **argv == 'b' ) {
+	    break;
+	case 'b':
 	    bflag++;
-	} else if ( **argv == 'c' ) {
+	    break;
+	case 'c':
 	    cflag++;
-	} else if ( **argv == 'z' ) {
+	    break;
+	case 's':
+	    sflag++;
+	    break;
+	case 'z':
 	    zflag++;
+	    break;
 	}
 	argv++;
     }
@@ -51,7 +60,18 @@ main(argc, argv)
 	/*
 	 *	get information about mon.out file(s).
 	 */
-    getpfile( gmonname );
+    do	{
+	getpfile( gmonname );
+	if ( *argv != 0 ) {
+	    gmonname = *argv;
+	}
+    } while ( sflag && *argv++ != 0 );
+	/*
+	 *	dump out a gmon.sum file if requested
+	 */
+	if ( sflag ) {
+	    dumpsum( GMONSUM );
+	}
 	/*
 	 *	assign samples to procedures
 	 */
@@ -255,13 +275,20 @@ FILE *
 openpfile(filename)
     char *filename;
 {
+    struct hdr	tmp;
     FILE	*pfile;
 
     if((pfile = fopen(filename, "r")) == NULL) {
 	perror(filename);
 	done();
     }
-    fread(&h, sizeof(struct hdr), 1, pfile);
+    fread(&tmp, sizeof(struct hdr), 1, pfile);
+    if ( s_highpc != 0 && ( tmp.lowpc != h.lowpc ||
+	 tmp.highpc != h.highpc || tmp.ncnt != h.ncnt ) ) {
+	fprintf(stderr, "%s: incompatible with first gmon file\n", filename);
+	done();
+    }
+    h = tmp;
     s_lowpc = (unsigned long) h.lowpc;
     s_highpc = (unsigned long) h.highpc;
     lowpc = h.lowpc - (UNIT *)0;
@@ -287,6 +314,58 @@ tally( rawp )
 	}
 #   endif DEBUG
     addarc( parentp , childp , rawp -> raw_count );
+}
+
+/*
+ * dump out the gmon.sum file
+ */
+dumpsum( sumfile )
+    char *sumfile;
+{
+    register nltype *nlp;
+    register arctype *arcp;
+    struct rawarc arc;
+    FILE *sfile;
+
+    if ( ( sfile = fopen ( sumfile , "w" ) ) == NULL ) {
+	perror( sumfile );
+	done();
+    }
+    /*
+     * dump the header; use the last header read in
+     */
+    if ( fwrite( &h , sizeof h , 1 , sfile ) != 1 ) {
+	perror( sumfile );
+	done();
+    }
+    /*
+     * dump the samples
+     */
+    if (fwrite(samples, sizeof(unsigned UNIT), nsamples, sfile) != nsamples) {
+	perror( sumfile );
+	done();
+    }
+    /*
+     * dump the normalized raw arc information
+     */
+    for ( nlp = nl ; nlp < npe - 1 ; nlp++ ) {
+	for ( arcp = nlp -> children ; arcp ; arcp = arcp -> arc_childlist ) {
+	    arc.raw_frompc = arcp -> arc_parentp -> value;
+	    arc.raw_selfpc = arcp -> arc_childp -> value;
+	    arc.raw_count = arcp -> arc_count;
+	    if ( fwrite ( &arc , sizeof arc , 1 , sfile ) != 1 ) {
+		perror( sumfile );
+		done();
+	    }
+#	    ifdef DEBUG
+		if ( debug & SAMPLEDEBUG ) {
+		    printf( "[dumpsum] frompc 0x%x selfpc 0x%x count %d\n" ,
+			    arc.raw_frompc , arc.raw_selfpc , arc.raw_count );
+		}
+#	    endif DEBUG
+	}
+    }
+    fclose( sfile );
 }
 
 valcmp(p1, p2)

@@ -1,11 +1,11 @@
-    /* sccsid:  @(#)gprof.h	1.7 (Berkeley) %G% */
+    /* sccsid:  @(#)gprof.h	1.8 (Berkeley) %G% */
 
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <a.out.h>
 #include <pagsiz.h>
-#include "monitor.h"
+#include "gmcrt0.h"
 
     /*
      *	ticks per second
@@ -18,6 +18,7 @@ char	*a_outname;
 
 char	*gmonname;
 #define	GMONNAME		"gmon.out"
+#define	GMONSUM			"gmon.sum"
 
     /*
      *	a constructed arc,
@@ -131,6 +132,7 @@ unsigned char	*textspace;		/* text space of a.out in core */
 int	aflag;				/* static functions, too */
 int	bflag;				/* blurbs, too */
 int	cflag;				/* discovered call graph, too */
+int	sflag;				/* sum multiple gmon.out files */
 int	zflag;				/* zero time/called functions, too */
 
     /*
