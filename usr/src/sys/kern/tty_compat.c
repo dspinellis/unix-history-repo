@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty_compat.c	7.2 (Berkeley) %G%
+ *	@(#)tty_compat.c	7.3 (Berkeley) %G%
  */
 
 /* 
@@ -97,8 +97,6 @@ ttcompat(tp, com, data, flag)
 			term.c_ospeed = compatspcodes[speed];
 		term.c_cc[VERASE] = sg->sg_erase;
 		term.c_cc[VKILL] = sg->sg_kill;
-		if (sg->sg_erase == -1)
-			term.c_cc[VERASE2] = _POSIX_VDISABLE;
 		tp->t_flags = (tp->t_flags&0xffff0000) | sg->sg_flags;
 		ttcompatsetflags(tp, &term);
 		return (ttioctl(tp, com == TIOCSETP ? TIOCSETAF : TIOCSETA, 
@@ -180,11 +178,11 @@ ttcompat(tp, com, data, flag)
 			printf("CLGET: returning %x\n", *(int *)data);
 		break;
 
-	case TIOCGETDCOMPAT:
+	case OTIOCGETD:
 		*(int *)data = tp->t_line ? tp->t_line : 2;
 		break;
 
-	case TIOCSETDCOMPAT: {
+	case OTIOCSETD: {
 		int ldisczero = 0;
 
 		return(ttioctl(tp, TIOCSETD, 
