@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sprint.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)sprint.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -34,6 +34,7 @@ sflag_print()
 {
 	extern time_t now;
 	register PERSON *pn;
+	register WHERE *w;
 	register int cnt;
 	register char *p;
 	PERSON **list, **sort();
@@ -56,47 +57,51 @@ sflag_print()
 	 */
 #define	MAXREALNAME	20
 	(void)printf("%-*s %-*s %s\n", UT_NAMESIZE, "Login", MAXREALNAME,
-	    "Name", "Tty  Idle Login        Office      Office Phone");
+	    "Name", "Tty  Idle  Login        Office      Office Phone");
 	for (cnt = 0; cnt < entries; ++cnt) {
 		pn = list[cnt];
-		 (void)printf("%-*.*s %-*.*s ", UT_NAMESIZE, UT_NAMESIZE,
-		    pn->name, MAXREALNAME, MAXREALNAME,
-		    pn->realname ? pn->realname : "");
-		if (!pn->loginat) {
-			(void)printf("          Never logged in\n");
-			continue;
+		for (w = pn->whead; w != NULL; w = w->next) {
+			(void)printf("%-*.*s %-*.*s ", UT_NAMESIZE, UT_NAMESIZE,
+			    pn->name, MAXREALNAME, MAXREALNAME,
+			    pn->realname ? pn->realname : "");
+			if (!w->loginat) {
+				(void)printf("  *     *  No logins   ");
+				goto office;
+			}
+			(void)putchar(w->info == LOGGEDIN && !w->writable ?
+			    '*' : ' ');
+			if (*w->tty)
+				(void)printf("%-2.2s ",
+				    w->tty[0] != 't' || w->tty[1] != 't' ||
+				    w->tty[2] != 'y' ? w->tty : w->tty + 3);
+			else
+				(void)printf("   ");
+			if (w->info == LOGGEDIN) {
+				stimeprint(w);
+				(void)printf("  ");
+			} else
+				(void)printf("    *  ");
+			p = ctime(&w->loginat);
+			(void)printf("%.6s", p + 4);
+			if (now - w->loginat >= SECSPERDAY * DAYSPERNYEAR / 2)
+				(void)printf("  %.4s", p + 20);
+			else
+				(void)printf(" %.5s", p + 11);
+office:			if (pn->office)
+				(void)printf(" %-11.11s", pn->office);
+			else if (pn->officephone)
+				(void)printf(" %-11.11s", " ");
+			if (pn->officephone)
+				(void)printf(" %s", pn->officephone);
+			putchar('\n');
 		}
-		(void)printf(pn->info == LOGGEDIN &&
-		    !pn->writable ? "*" : " ");
-		if (*pn->tty)
-			(void)printf("%-2.2s ",
-			    pn->tty[0] != 't' || pn->tty[1] != 't' ||
-			    pn->tty[2] != 'y' ? pn->tty : pn->tty + 3);
-		else
-			(void)printf("   ");
-		stimeprint(pn);
-		p = ctime(&pn->loginat);
-		(void)printf(" %.6s", p + 4);
-		if (now - pn->loginat >= SECSPERDAY * DAYSPERNYEAR / 2)
-			(void)printf(" %.4s ", p + 20);
-		else
-			(void)printf(" %.5s", p + 11);
-		if (pn->office)
-			(void)printf(" %-11.11s", pn->office);
-		else if (pn->officephone)
-			(void)printf(" %-11.11s", " ");
-		if (pn->officephone)
-			(void)printf(" %s", pn->officephone);
-		putchar('\n');
 	}
 }
 
 PERSON **
 sort()
 {
-	extern PERSON *head;
-	register PERSON *pn;
-	register int cnt;
+	register PERSON *pn, **lp;
 	PERSON **list;
 	int psort();
 	char *malloc();
@@ -105,8 +110,8 @@ sort()
 		(void)fprintf(stderr, "finger: out of space.\n");
 		exit(1);
 	}
-	for (pn = head, cnt = 0; cnt < entries; pn = pn->next)
-		list[cnt++] = pn;
+	for (lp = list, pn = phead; pn != NULL; pn = pn->next)
+		*lp++ = pn;
 	(void)qsort(list, entries, sizeof(PERSON *), psort);
 	return(list);
 }
@@ -117,16 +122,12 @@ psort(p, t)
 	return(strcmp((*p)->name, (*t)->name));
 }
 
-stimeprint(pn)
-	PERSON *pn;
+stimeprint(w)
+	WHERE *w;
 {
 	register struct tm *delta;
 
-	if (pn->info != LOGGEDIN) {
-		(void)printf("     ");
-		return;
-	}
-	delta = gmtime(&pn->idletime);
+	delta = gmtime(&w->idletime);
 	if (!delta->tm_yday)
 		if (!delta->tm_hour)
 			if (!delta->tm_min)

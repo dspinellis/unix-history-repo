@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -31,24 +31,24 @@ static char sccsid[] = "@(#)util.c	5.1 (Berkeley) %G%";
 #include "finger.h"
 #include "pathnames.h"
 
-find_idle_and_ttywrite(pn)
-	register PERSON *pn;
+find_idle_and_ttywrite(w)
+	register WHERE *w;
 {
 	extern time_t now;
 	extern int errno;
 	struct stat sb;
 	char *strerror();
 
-	(void)sprintf(tbuf, "%s/%s", _PATH_DEV, pn->tty);
+	(void)sprintf(tbuf, "%s/%s", _PATH_DEV, w->tty);
 	if (stat(tbuf, &sb) < 0) {
 		(void)fprintf(stderr,
 		    "finger: %s: %s\n", tbuf, strerror(errno));
 		exit(1);
 	}
-	pn->idletime = now < sb.st_atime ? 0 : now - sb.st_atime;
+	w->idletime = now < sb.st_atime ? 0 : now - sb.st_atime;
 
 #define	TALKABLE	0220		/* tty is writable if 220 mode */
-	pn->writable = ((sb.st_mode & TALKABLE) == TALKABLE);
+	w->writable = ((sb.st_mode & TALKABLE) == TALKABLE);
 }
 
 userinfo(pn, pw)
@@ -116,38 +116,156 @@ match(pw, user)
 	return(0);
 }
 
-find_when(pn)
+enter_lastlog(pn)
 	register PERSON *pn;
 {
+	register WHERE *w;
 	static int fd;
 	struct lastlog ll;
+	char doit = 0;
 	off_t lseek();
 
-	if (!fd && (fd = open(_PATH_LASTLOG, O_RDONLY, 0)) < 0) {
-		(void)fprintf(stderr,
-		    "finger: %s: open error\n", _PATH_LASTLOG);
-		exit(1);
+	/*
+	 * Some systems may choose not to keep lastlog,
+	 * so we don't report any errors.
+	 * Not only that, we leave fd at -1 so lseek and read
+	 * will fail and act like there were no last logins.
+	 * Not the fastest way to do it, but what the hell.
+	 */
+	if (fd == 0)
+		fd = open(_PATH_LASTLOG, O_RDONLY, 0);
+	(void) lseek(fd, (long) (pn->uid * sizeof ll), L_SET);
+	if (read(fd, (char *)&ll, sizeof ll) != sizeof ll) {
+		/* same as never logged in */
+		ll.ll_line[0] = 0;
+		ll.ll_host[0] = 0;
+		ll.ll_time = 0;
 	}
-	(void)lseek(fd, (long)(pn->uid * (sizeof(ll))), L_SET);
-	if (read(fd, (char *)&ll, sizeof(ll)) != sizeof(ll)) {
-		(void)fprintf(stderr,
-		    "finger: %s: read error\n", _PATH_LASTLOG);
-		exit(1);
+	if ((w = pn->whead) == NULL)
+		doit = 1;
+	else {
+		/* if last login is earlier than some current login */
+		for (; !doit && w != NULL; w = w->next)
+			if (w->info == LOGGEDIN && w->loginat < ll.ll_time)
+				doit = 1;
+		/*
+		 * and if it's not any of the current logins
+		 * can't use time comparison because there may be a small
+		 * discrepency since login calls time() twice
+		 */
+		for (w = pn->whead; doit && w != NULL; w = w->next)
+			if (w->info == LOGGEDIN &&
+			    strncmp(w->tty, ll.ll_line, UT_LINESIZE) == 0)
+				doit = 0;
 	}
-	bcopy(ll.ll_line, pn->tty, UT_LINESIZE);
-	pn->tty[UT_LINESIZE] = NULL;
-	bcopy(ll.ll_host, pn->host, UT_HOSTSIZE);
-	pn->host[UT_HOSTSIZE] = NULL;
-	pn->loginat = ll.ll_time;
+	if (doit) {
+		w = walloc(pn);
+		w->info = LASTLOG;
+		bcopy(ll.ll_line, w->tty, UT_LINESIZE);
+		w->tty[UT_LINESIZE] = 0;
+		bcopy(ll.ll_host, w->host, UT_HOSTSIZE);
+		w->host[UT_HOSTSIZE] = 0;
+		w->loginat = ll.ll_time;
+	}
 }
 
-utcopy(ut, pn)
+enter_where(ut, pn)
 	struct utmp *ut;
 	PERSON *pn;
 {
-	bcopy(ut->ut_line, pn->tty, UT_LINESIZE);
-	pn->tty[UT_LINESIZE] = 0;
-	bcopy(ut->ut_host, pn->host, UT_HOSTSIZE);
-	pn->host[UT_HOSTSIZE] = 0;
-	pn->loginat = (time_t)ut->ut_time;
+	register WHERE *w = walloc(pn);
+
+	w->info = LOGGEDIN;
+	bcopy(ut->ut_line, w->tty, UT_LINESIZE);
+	w->tty[UT_LINESIZE] = 0;
+	bcopy(ut->ut_host, w->host, UT_HOSTSIZE);
+	w->host[UT_HOSTSIZE] = 0;
+	w->loginat = (time_t)ut->ut_time;
+	find_idle_and_ttywrite(w);
+}
+
+PERSON *
+enter_person(pw)
+	register struct passwd *pw;
+{
+	register PERSON *pn, **pp;
+
+	for (pp = htab + hash(pw->pw_name);
+	     *pp != NULL && strcmp((*pp)->name, pw->pw_name) != 0;
+	     pp = &(*pp)->hlink)
+		;
+	if ((pn = *pp) == NULL) {
+		pn = palloc();
+		entries++;
+		if (phead == NULL)
+			phead = ptail = pn;
+		else {
+			ptail->next = pn;
+			ptail = pn;
+		}
+		pn->next = NULL;
+		pn->hlink = NULL;
+		*pp = pn;
+		userinfo(pn, pw);
+		pn->whead = NULL;
+	}
+	return(pn);
+}
+
+PERSON *
+find_person(name)
+	char *name;
+{
+	register PERSON *pn;
+
+	/* name may be only UT_NAMESIZE long and not terminated */
+	for (pn = htab[hash(name)];
+	     pn != NULL && strncmp(pn->name, name, UT_NAMESIZE) != 0;
+	     pn = pn->hlink)
+		;
+	return(pn);
+}
+
+hash(name)
+	register char *name;
+{
+	register int h, i;
+
+	h = 0;
+	/* name may be only UT_NAMESIZE long and not terminated */
+	for (i = UT_NAMESIZE; --i >= 0 && *name;)
+		h = ((h << 2 | h >> HBITS - 2) ^ *name++) & HMASK;
+	return(h);
+}
+
+PERSON *
+palloc()
+{
+	PERSON *p;
+
+	if ((p = (PERSON *)malloc((u_int) sizeof(PERSON))) == NULL) {
+		(void)fprintf(stderr, "finger: out of space.\n");
+		exit(1);
+	}
+	return(p);
+}
+
+WHERE *
+walloc(pn)
+	register PERSON *pn;
+{
+	register WHERE *w;
+
+	if ((w = (WHERE *)malloc((u_int) sizeof(WHERE))) == NULL) {
+		(void)fprintf(stderr, "finger: out of space.\n");
+		exit(1);
+	}
+	if (pn->whead == NULL)
+		pn->whead = pn->wtail = w;
+	else {
+		pn->wtail->next = w;
+		pn->wtail = w;
+	}
+	w->next = NULL;
+	return(w);
 }

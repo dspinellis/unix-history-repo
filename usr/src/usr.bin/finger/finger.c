@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)finger.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)finger.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -47,10 +47,8 @@ static char sccsid[] = "@(#)finger.c	5.13 (Berkeley) %G%";
 #include "finger.h"
 #include "pathnames.h"
 
-struct utmp user;
-PERSON *head;
 time_t now;
-int entries, lflag, sflag, mflag, pplan;
+int lflag, sflag, mflag, pplan;
 char tbuf[1024];
 
 main(argc, argv)
@@ -95,7 +93,7 @@ main(argc, argv)
 		if (!lflag)
 			sflag = 1;	/* if -l not explicit, force -s */
 		loginlist();
-		if (!head)
+		if (entries == 0)
 			(void)printf("No one logged on.\n");
 	} else {
 		userlist(argv);
@@ -107,7 +105,7 @@ main(argc, argv)
 		if (!sflag)
 			lflag = 1;	/* if -s not explicit, force -l */
 	}
-	if (head) {
+	if (entries != 0) {
 		if (lflag)
 			lflag_print();
 		else
@@ -121,66 +119,52 @@ loginlist()
 	register PERSON *pn;
 	register int fd;
 	struct passwd *pw;
-	char name[UT_NAMESIZE + 1], *strdup(), *malloc();
+	struct utmp user;
+	char name[UT_NAMESIZE + 1];
 
 	if ((fd = open(_PATH_UTMP, O_RDONLY, 0)) < 0) {
 		(void)fprintf(stderr, "finger: can't read %s.\n", _PATH_UTMP);
 		exit(2);
 	}
 	name[UT_NAMESIZE] = NULL;
-	while(read(fd, (char *)&user, sizeof(user)) == sizeof(user)) {
+	while (read(fd, (char *)&user, sizeof(user)) == sizeof(user)) {
 		if (!user.ut_name[0])
 			continue;
-		bcopy(user.ut_name, name, UT_NAMESIZE);
-		if (!(pw = getpwnam(name)))
-			continue;
-		if (!(pn = (PERSON *)malloc((u_int)sizeof(PERSON)))) {
-			(void)fprintf(stderr, "finger: out of space.\n");
-			exit(1);
+		if ((pn = find_person(user.ut_name)) == NULL) {
+			bcopy(user.ut_name, name, UT_NAMESIZE);
+			if ((pw = getpwnam(name)) == NULL)
+				continue;
+			pn = enter_person(pw);
 		}
-		++entries;
-		pn->next = head;
-		head = pn;
-		utcopy(&user, pn);
-		userinfo(pn, pw);
-		find_idle_and_ttywrite(pn);
-		pn->info = LOGGEDIN;
+		enter_where(&user, pn);
 	}
 	(void)close(fd);
+	for (pn = phead; lflag && pn != NULL; pn = pn->next)
+		enter_lastlog(pn);
 }
 
 #define	ARGIGNORE	(char *)0x01
 userlist(argv)
 	char **argv;
 {
-	register PERSON *nethead, *p, *pn;
-	register struct passwd *pw;
-	register char **a1, **a2;
-	int fd, dolocal, nelem;
-	char **sargv, **arglist, *malloc(), *rindex(), *strcpy();
-
-	/* suppress duplicates while it's still easy */
-	for (a1 = argv; *a1; ++a1)
-		for (a2 = a1 + 1; *a2; ++a2)
-			if (!strcasecmp(*a1, *a2)) {
-				*a1 = ARGIGNORE;
-				break;
-			}
+	register char **ap;
+	register PERSON *pn;
+	PERSON *nethead;
+	struct utmp user;
+	struct passwd *pw;
+	int fd, dolocal, *index();
 
 	/* pull out all network requests */
-	for (sargv = argv, dolocal = 0, nethead = NULL; *argv; ++argv) {
-		if (!index(*argv, '@')) {
+	for (ap = argv, dolocal = 0, nethead = NULL; *ap != NULL; ap++) {
+		if (!index(*ap, '@')) {
 			dolocal = 1;
 			continue;
 		}
-		if (!(pn = (PERSON *)malloc((u_int)sizeof(PERSON)))) {
-			(void)fprintf(stderr, "finger: out of space.\n");
-			exit(1);
-		}
+		pn = palloc();
 		pn->next = nethead;
 		nethead = pn;
-		pn->name = *argv;
-		*argv = ARGIGNORE;
+		pn->name = *ap;
+		*ap = ARGIGNORE;
 	}
 
 	if (!dolocal)
@@ -188,44 +172,33 @@ userlist(argv)
 
 	/*
 	 * traverse the list of possible login names and check the login name
-	 * and real name against the name specified by the user.  Possible
-	 * speedup would be to use getpwnam(3) if mflag set -- maybe not
-	 * worthwhile, given that the default is the mflag off.
+	 * and real name against the name specified by the user.
 	 */
-	nelem = argv - sargv + 1;
-	if (!(arglist =
-	    (char **)malloc((u_int)(nelem * sizeof(char *))))) {
-		(void)fprintf(stderr, "finger: out of space.\n");
-		exit(1);
-	}
-	bcopy((char *)sargv, (char *)arglist, nelem * sizeof(char *));
-	while (pw = getpwent()) {
-		for (argv = sargv; *argv; ++argv) {
-			if (*argv == ARGIGNORE)
+	if (mflag)
+		for (ap = argv; *ap != NULL; ap++) {
+			if (*ap == ARGIGNORE)
 				continue;
-			if (strcasecmp(pw->pw_name, *argv) &&
-			    (mflag || !match(pw, *argv)))
+			if ((pw = getpwnam(*ap)) == NULL)
 				continue;
-			if (!(pn = (PERSON *)malloc((u_int)sizeof(PERSON)))) {
-				(void)fprintf(stderr,
-				    "finger: out of space.\n");
-				exit(1);
-			}
-			++entries;
-			pn->next = head;
-			head = pn;
-			userinfo(pn, pw);
-			pn->info = FOUND;
-			arglist[argv - sargv] = ARGIGNORE;
+			enter_person(pw);
+			*ap = ARGIGNORE;
+		}
+	else while (pw = getpwent())
+		for (ap = argv; *ap != NULL; ap++) {
+			if (*ap == ARGIGNORE)
+				continue;
+			if (strcasecmp(pw->pw_name, *ap) && !match(pw, *ap))
+				continue;
+			enter_person(pw);
+			*ap = ARGIGNORE;
 			/* don't break, may be listed multiple times */
 		}
-	}
 
 	/* list errors */
-	for (; *arglist; ++arglist)
-		if (*arglist != ARGIGNORE)
+	for (ap = argv; *ap != NULL; ap++)
+		if (*ap != ARGIGNORE)
 			(void)fprintf(stderr,
-			    "finger: %s: no such user.\n", *arglist);
+			    "finger: %s: no such user.\n", *ap);
 
 	/* handle network requests */
 net:	for (pn = nethead; pn; pn = pn->next) {
@@ -234,7 +207,7 @@ net:	for (pn = nethead; pn; pn = pn->next) {
 			putchar('\n');
 	}
 
-	if (!head)
+	if (entries == 0)
 		return;
 
 	/*
@@ -248,32 +221,11 @@ net:	for (pn = nethead; pn; pn = pn->next) {
 	while (read(fd, (char *)&user, sizeof(user)) == sizeof(user)) {
 		if (!user.ut_name[0])
 			continue;
-		for (pn = head; pn; pn = pn->next) {
-			if (strncasecmp(pn->name, user.ut_name, UT_NAMESIZE))
-				continue;
-			if (pn->info == LOGGEDIN) {
-				if (!(p =
-				    (PERSON *)malloc((u_int)sizeof(PERSON)))) {
-					(void)fprintf(stderr,
-					    "finger: out of space.\n");
-					exit(1);
-				}
-				++entries;
-				p->name = pn->name;
-				(void)strcpy(p->tty, pn->tty);
-				/* link in so finds `real' entry first! */
-				p->next = pn->next;
-				pn->next = p;
-				pn = p;
-			}
-			pn->info = LOGGEDIN;
-			utcopy(&user, pn);
-			find_idle_and_ttywrite(pn);
-			/* don't break, may be listed multiple times... */
-		}
+		if ((pn = find_person(user.ut_name)) == NULL)
+			continue;
+		enter_where(&user, pn);
 	}
 	(void)close(fd);
-	for (pn = head; pn; pn = pn->next)
-		if (pn->info == FOUND)
-			find_when(pn);
+	for (pn = phead; pn != NULL; pn = pn->next)
+		enter_lastlog(pn);
 }
