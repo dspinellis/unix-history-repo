@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_vv.c	6.18 (Berkeley) %G%
+ *	@(#)if_vv.c	6.19 (Berkeley) %G%
  */
 
 #include "vv.h"
@@ -17,6 +17,8 @@
  *
  * This driver is compatible with the proNET 10 meagbit and
  * 80 megabit token ring interfaces (models p1000 and p1080).
+ * A unit may be marked as 80 megabit using "flags 1" in the
+ * config file.
  *
  * TRAILERS: You must turn off trailers via ifconfig if you want to share
  * a ring with software using the following protocol types:
@@ -26,13 +28,16 @@
  * This is because the protocol type values chosen for trailers
  * conflict with these protocols. It's too late to change either now.
  *
- * HARDWARE COMPATABILITY: This driver requires that the HSBU (p1001)
+ * HARDWARE COMPATABILITY: This driver prefers that the HSBU (p1001)
  * have a serial number >= 040, which is about March, 1982. Older
- * HSBUs do not carry across 64kbyte boundaries. The old warning
- * about use without Wire Centers applies only to CTL (p1002) cards with
- * serial <= 057, which have not received ECO 176-743, which was
- * implemented in March, 1982. Most such CTLs have received this ECO,
- * but they are only compatible with the old HSBUs (<=039) anyways.
+ * HSBUs do not carry across 64kbyte boundaries. They can be supported
+ * by adding "| UBA_NEED16" to the vs_ifuba.ifu_flags initialization
+ * in vvattach().
+ *
+ * The old warning about use without Wire Centers applies only to CTL
+ * (p1002) cards with serial <= 057, which have not received ECO 176-743,
+ * which was implemented in March, 1982. Most such CTLs have received
+ * this ECO.
  */
 #include "../machine/pte.h"
 
@@ -63,14 +68,6 @@
 #include "if_uba.h"
 #include "../vaxuba/ubareg.h"
 #include "../vaxuba/ubavar.h"
-
-/*
- * 80 megabit configuration
- * Uncomment the next line if you are using the 80 megabit system. The
- * only change is the disposition of packets with parity/link_data_error
- * indication.
- */
-/* #define PRONET80 */
 
 /*
  *    maximum transmission unit definition --
@@ -135,6 +132,7 @@ struct	vv_softc {
 	struct	ifuba vs_ifuba;		/* UNIBUS resources */
 	u_short	vs_host;		/* this interface address */
 	short	vs_oactive;		/* is output active */
+	short	vs_is80;		/* is 80 megabit version */
 	short	vs_olen;		/* length of last output */
 	u_short	vs_lastx;		/* address of last packet sent */
 	u_short	vs_lastr;		/* address of last packet received */
@@ -204,6 +202,10 @@ vvattach(ui)
 	vs->vs_if.if_timer = 0;
 	vs->vs_if.if_watchdog = vvwatchdog;
 	vs->vs_ifuba.ifu_flags = UBA_CANTWAIT | UBA_NEEDBDP;
+
+	/* use flag to determine if this is proNET-80 */
+	vs->vs_is80 = (short)(ui->ui_flags & 01);
+
 #if defined(VAX750)
 	/* don't chew up 750 bdp's */
 	if (cpu == VAX_750 && ui->ui_unit > 0)
@@ -262,7 +264,7 @@ vvinit(unit)
 		vs->vs_if.if_flags &= ~IFF_UP;
 		return;
 	}
-	printf("vv%d: host %d\n", unit, vs->vs_host);
+	printf("vv%d: host %u\n", unit, vs->vs_host);
 
 	/*
 	 * Reset the interface, and stay in the ring
@@ -439,8 +441,10 @@ gotit:			/* we got something--is it any good? */
 					    ->vh_dhost = shost;
 				}
 				successes++;
-				v->vh_type = 0;  /* clear to check again */
+			} else {
+				failures++;
 			}
+			v->vh_type = 0;  /* clear to check again */
 		}
 
 		if (failures >= VVIDENTRETRY)
@@ -533,8 +537,6 @@ restart:
 	if (addr->vvocsr & VV_NOK)
 		vs->vs_init++;			/* count ring inits */
 	addr->vvocsr = VV_IEN | VV_CPB | VV_DEN | VV_INR | VV_ENB;
-	vs->vs_if.if_timer = VVTIMEOUT;
-	vs->vs_oactive = 1;
 }
 
 /*
@@ -636,7 +638,7 @@ vvrint(unit)
 	addr = (struct vvreg *)vvinfo[unit]->ui_addr;
 
 	/*
-	 * Purge BDP; drop if input error indicated.
+	 * Purge BDP
 	 */
 	if (vs->vs_ifuba.ifu_flags & UBA_NEEDBDP)
 		UBAPURGE(vs->vs_ifuba.ifu_uba, vs->vs_ifuba.ifu_r.ifrw_bdp);
@@ -659,15 +661,15 @@ vvrint(unit)
 		/* we don't have to clear it because the receive command */
 		/* writes 0 to parity bit */
 		vs->vs_parity++;
-#ifndef PRONET80
+
 		/*
 		 * only on 10 megabit proNET is VV_LDE an end-to-end parity
 		 * bit. On 80 megabit, it returns to the intended use of
 		 * node-to-node parity. End-to-end parity errors on 80 megabit
 		 * give VV_BDF.
 		 */
-		goto dropit;
-#endif
+		if (vs->vs_is80 == 0)
+		    goto dropit;
 	}
 
 	/*
@@ -712,8 +714,8 @@ len = %d, vvicsr = %b\n",
 				    unit, off, 0xffff&(addr->vvicsr), VV_IBITS);
 			goto dropit;
 		}
-		vv->vh_type = *vvdataaddr(vv, off, u_short *);
-		resid = *(vvdataaddr(vv, off+2, u_short *));
+		vv->vh_type = ntohs(*vvdataaddr(vv, off, u_short *));
+		resid = ntohs(*(vvdataaddr(vv, off+2, u_short *)));
 		if (off + resid > len) {
 			vvprintf("vv%d: trailer packet too short\n", unit);
 			vvprintf("vv%d: off = %d, resid = %d, vvicsr = %b\n",
@@ -864,8 +866,8 @@ vvoutput(ifp, m0, dst)
 			type = RING_IPTrailer + (off>>9);
 			m->m_off -= 2 * sizeof (u_short);
 			m->m_len += 2 * sizeof (u_short);
-			*mtod(m, u_short *) = RING_IP;
-			*(mtod(m, u_short *) + 1) = m->m_len;
+			*mtod(m, u_short *) = htons(RING_IP);
+			*(mtod(m, u_short *) + 1) = htons(m->m_len);
 			goto gottrailertype;
 		}
 		type = RING_IP;
@@ -913,7 +915,7 @@ gottype:
 	vv->vh_dhost = dest;
 	vv->vh_version = RING_VERSION;
 	vv->vh_type = type;
-	vv->vh_info = off;
+	vv->vh_info = htons(off);
 	vvtracehdr("vo", vv);
 
 	/*
@@ -956,6 +958,11 @@ vvioctl(ifp, cmd, data)
 		ifp->if_flags |= IFF_UP;
 		if ((ifp->if_flags & IFF_RUNNING) == 0)
 			vvinit(ifp->if_unit);
+		/*
+		 * Did self-test succeed?
+		 */
+		if ((ifp->if_flags & IFF_UP) == 0)
+			error = ENETDOWN;
                 /*
                  * Attempt to check agreement of protocol address
                  * and board address.
@@ -990,4 +997,4 @@ vvprt_hdr(s, v)
 		0xff & (int)(v->vh_version), 0xff & (int)(v->vh_type),
 		0xffff & (int)(v->vh_info));
 }
-#endif
+#endif NVV
