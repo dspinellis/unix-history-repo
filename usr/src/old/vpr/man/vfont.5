@@ -1,0 +1,90 @@
+.\"	@(#)vfont.5	4.1 (Berkeley) %G%
+.\"
+.TH VFONT 5 2/26/79
+.AT 3
+.SH NAME
+vfont \- font formats for the Benson-Varian or Versatec
+.SH SYNOPSIS
+.B /usr/lib/vfont/\(**
+.SH DESCRIPTION
+The fonts for the printer/plotters have the following format.
+Each file contains a header, an array of 256 character description
+structures, and then the bit maps for the characters themselves.
+The header has the following format:
+.in +5
+.nf
+.sp
+.ta 8n +\w'unsigned short  'u
+struct header {
+	short	magic;
+	unsigned short	size;
+	short	maxx;
+	short	maxy;
+	short	xtnd;
+} header;
+.fi
+.in -5
+.PP
+The
+.I magic
+number is 0436 (octal).
+The
+.I maxx,
+.I maxy,
+and
+.I xtnd
+fields are not used at the current time.
+.I Maxx
+and
+.I maxy
+are intended to be the maximum horizontal and vertical size of
+any glyph in the font, in raster lines.
+The
+.I size
+is the size of the
+bit maps for the characters in bytes.
+Before the maps for the characters is an array of 256 structures for
+each of the possible characters in the font.
+Each element of the array has the form:
+.in +5
+.nf
+.sp
+.ta 8n +\w'unsigned short  'u
+struct dispatch {
+	unsigned short	addr;
+	short	nbytes;
+	char	up;
+	char	down;
+	char	left;
+	char	right;
+	short	width;
+};
+.fi
+.in -5
+.PP
+The
+.I nbytes
+field is nonzero for characters which actually exist.
+For such characters, the
+.I addr
+field is an offset into the rest of the file where the data for
+that character begins.
+There are
+.I up+down
+rows of data for each character,
+each of which has
+.I left+right
+bits, rounded up to a number of bytes.
+The
+.I width
+field is not used by vcat,
+although it is used by
+.IR vwidth (1)
+to make width tables for
+.IR troff .
+It represents the logical width of the glyph, in raster lines,
+and shows where the base point of the next glyph would be.
+.SH FILES
+/usr/lib/vfont/\(**
+.SH SEE ALSO
+troff(1), pti(1), vpr(1), vtroff(1), vwidth(1), vfontinfo(1), fed(1)
