@@ -14,7 +14,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mailstats.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)mailstats.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sendmail.h>
@@ -37,6 +37,7 @@ main(argc, argv)
 	char *cfile;
 	FILE *cfp;
 	bool mnames;
+	long frmsgs = 0, frbytes = 0, tomsgs = 0, tobytes = 0;
 	char mtable[MAXMAILERS][MNAMELEN+1];
 	char sfilebuf[100];
 	char buf[MAXLINE];
@@ -169,7 +170,14 @@ main(argc, argv)
 			if (mnames)
 				printf("  %s", mtable[i]);
 			printf("\n");
+			frmsgs += stat.stat_nf[i];
+			frbytes += stat.stat_bf[i];
+			tomsgs += stat.stat_nt[i];
+			tobytes += stat.stat_bt[i];
 		}
 	}
+	printf("========================================\n");
+	printf(" T %6ld %10ldK %6ld %10ldK\n",
+		frmsgs, frbytes, tomsgs, tobytes);
 	exit(EX_OK);
 }
