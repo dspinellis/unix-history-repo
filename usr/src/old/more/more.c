@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)more.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)more.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -55,7 +55,7 @@ static char sccsid[] = "@(#)more.c	5.16 (Berkeley) %G%";
 
 #define TBUFSIZ	1024
 #define LINSIZ	256
-#define ctrl(letter)	('letter' & 077)
+#define ctrl(letter)	(letter & 077)
 #define RUBOUT	'\177'
 #define ESC	'\033'
 #define QUIT	'\034'
@@ -649,7 +649,7 @@ Sprintf (n)
     *sptr++ = n % 10 + '0';
 }
 
-static char bell = ctrl(G);
+static char bell = ctrl('G');
 
 strlen (s)
 char *s;
@@ -992,7 +992,7 @@ register FILE *f;
 		done++;
 	    break;
 	case 'b':
-	case ctrl(B):
+	case ctrl('B'):
 	    {
 		register int initline;
 
@@ -1038,7 +1038,7 @@ register FILE *f;
 	    else if (comchar == 'z') dlines = nlines;
 	    ret (nlines);
 	case 'd':
-	case ctrl(D):
+	case ctrl('D'):
 	    if (nlines != 0) nscroll = nlines;
 	    ret (nscroll);
 	case 'q':
