@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)arp.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)arp.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -176,8 +176,10 @@ set(argc, argv)
 		}
 		else if (strncmp(argv[0], "pub", 3) == 0)
 			doing_proxy = SIN_PROXY;
-		else if (strncmp(argv[0], "trail", 5) == 0)
-			flags = RTF_PROTO1;
+		else if (strncmp(argv[0], "trail", 5) == 0) {
+			printf("%s: Sending trailers is no longer supported\n",
+				host);
+		}
 		argv++;
 	}
 tryagain:
@@ -343,8 +345,6 @@ u_long addr;
 			printf(" permanent");
 		if (sin->sin_other & SIN_PROXY)
 			printf(" published (proxy only)");
-		if (rtm->rtm_flags & RTF_PROTO1)
-			printf(" trailers");
 		if (rtm->rtm_addrs & RTA_NETMASK) {
 			sin = (struct sockaddr_inarp *)
 				(sdl->sdl_len + (char *)sdl);
@@ -383,7 +383,7 @@ usage()
 	printf("usage: arp hostname\n");
 	printf("       arp -a [kernel] [kernel_memory]\n");
 	printf("       arp -d hostname\n");
-	printf("       arp -s hostname ether_addr [temp] [pub] [trail]\n");
+	printf("       arp -s hostname ether_addr [temp] [pub]\n");
 	printf("       arp -f filename\n");
 	exit(1);
 }
