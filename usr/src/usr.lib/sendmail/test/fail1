@@ -1,0 +1,3 @@
+#!/bin/csh
+echo this is a data format error
+exit 65
