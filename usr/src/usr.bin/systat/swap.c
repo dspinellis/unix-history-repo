@@ -1,22 +1,28 @@
-/*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1980, 1992 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)swap.c	5.10 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)swap.c	5.11 (Berkeley) %G%";
+#endif /* not lint */
 
+#include <sys/types.h>
+#include <sys/dmap.h>
+
+#include <nlist.h>
 #include "systat.h"
-#ifdef NOTDEF
-#include <sys/user.h>
-#include <sys/proc.h>
-#include <sys/conf.h>
-#include <sys/stat.h>
-#include <machine/pte.h>
-#include <paths.h>
-#endif NOTDEF
+#include "extern.h"
+
+long ntext, textp;
+struct text *xtext;
+
+static void swaplabel __P((int, int, int));
+static void vsacct __P((struct dmap *));
+static int swapdisplay __P((int, int, int));
+static int dmtoindex __P((int));
 
 WINDOW *
 openswap()
@@ -24,6 +30,7 @@ openswap()
 	return (subwin(stdscr, LINES-5-1, 0, 5, 0));
 }
 
+void
 closeswap(w)
 	WINDOW *w;
 {
@@ -34,7 +41,6 @@ closeswap(w)
 	delwin(w);
 }
 
-#ifdef NOTDEF
 int	dmmin;
 int	dmmax;
 int	dmtext;
@@ -43,11 +49,11 @@ int	nswdev;
 short	buckets[MAXSWAPDEV][NDMAP];
 struct	swdevt *swdevt;
 int	colwidth;
-#endif NOTDEF
 
+void
 showswap()
 {
-#ifdef NOTDEF
+#ifdef notdef	
 	register int i, j;
 	register struct proc *pp;
 	register struct text *xp;
@@ -86,22 +92,20 @@ showswap()
 			continue;
 		vsacct(&u.u_dmap);
 		vsacct(&u.u_smap);
-#ifdef notdef
 		if ((pp->p_flag & SLOAD) == 0)
 			vusize(pp);
-#endif
 	}
 	(void) swapdisplay(1+row, dmmax, 'X');
-#endif NOTDEF
+#endif
 }
 
 #define	OFFSET	5			/* left hand column */
 
+static int
 swapdisplay(baserow, dmbound, c)
-	int baserow, dmbound;
-	char c;
+	int baserow, dmbound, c;
 {
-#ifdef NOTDEF
+#ifdef notdef	
 	register int i, j, k, row;
 	register short *pb;
 	char buf[10];
@@ -128,13 +132,14 @@ swapdisplay(baserow, dmbound, c)
 		}
 	}
 	return (row);
-#endif NOTDEF
+#endif
 }
 
+static void
 vsacct(dmp)
 	register struct dmap *dmp;
 {
-#ifdef NOTDEF
+#ifdef notdef	
 	register swblk_t *ip;
 	register int blk = dmmin, index = 0;
 
@@ -152,13 +157,14 @@ vsacct(dmp)
 			index++;
 		}
 	}
-#endif NOTDEF
+#endif
 }
 
+static int
 dmtoindex(dm)
 	int dm;
 {
-#ifdef NOTDEF
+#ifdef notdef	
 	register int i, j;
 
 	for (j = 0, i = dmmin; i <= dmmax; i *= 2, j++)
@@ -166,7 +172,7 @@ dmtoindex(dm)
 			return (j);
 	error("dmtoindex(%d)", dm);
 	return (NDMAP - 1);
-#endif NOTDEF
+#endif
 }
 
 static struct nlist nlst[] = {
@@ -190,11 +196,15 @@ static struct nlist nlst[] = {
 	{ "" }
 };
 
+int
 initswap()
 {
-#ifdef NOTDEF
+#ifdef notdef	
 	if (nlst[X_FIRST].n_type == 0) {
-		kvm_nlist(nlst);
+		if (kvm_nlist(kd, nlst)) {
+			nlsterr(nlst);
+			return(0);
+		}
 		if (nlst[X_FIRST].n_type == 0) {
 			error("namelist on %s failed", _PATH_UNIX);
 			return(0);
@@ -215,12 +225,13 @@ initswap()
 	if (xtext == NULL)
 		xtext = (struct text *)calloc(ntext, sizeof (struct text));
 	return(1);
-#endif NOTDEF
+#endif
 }
 
+void
 fetchswap()
 {
-#ifdef NOTDEF
+#ifdef notdef	
 	if (nlst[X_FIRST].n_type == 0)
 		return;
 	/*
@@ -233,12 +244,13 @@ fetchswap()
 	}
 	if (!KREAD(textp, xtext, ntext * sizeof (struct text)))
 		error("couldn't read text table");
-#endif NOTDEF
+#endif
 }
 
+void
 labelswap()
 {
-#ifdef NOTDEF
+#ifdef notdef	
 	register int row;
 
 	if (nswdev == 0) {
@@ -248,14 +260,15 @@ labelswap()
 	colwidth = (COLS - OFFSET - (nswdev - 1)) / nswdev;
 	row = swaplabel(0, dmtext, 1);
 	(void) swaplabel(row, dmmax, 0);
-#endif NOTDEF
+#endif
 }
 
+static void
 swaplabel(row, dmbound, donames)
 	register int row;
 	int dmbound, donames;
 {
-#ifdef NOTDEF
+#ifdef notdef	
 	register int i, j;
 
 	for (i = 0; i < nswdev; i++) {
@@ -276,5 +289,5 @@ swaplabel(row, dmbound, donames)
 			mvwaddch(wnd, row, OFFSET + k*(1 + colwidth) - 1, '|');
 	}
 	return (row);
-#endif NOTDEF
+#endif
 }
