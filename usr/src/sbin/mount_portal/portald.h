@@ -8,13 +8,13 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)portald.h	1.1 (Berkeley) %G%
+ *	@(#)portald.h	1.2 (Berkeley) %G%
  *
  * $Id: portald.h,v 1.1 1992/05/25 21:43:09 jsp Exp jsp $
  */
 
 #include <sys/cdefs.h>
-#include <portal/portal.h>
+#include <miscfs/portal/portal.h>
 
 /*
  * Meta-chars in an RE.  Paths in the config file containing
