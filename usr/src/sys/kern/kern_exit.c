@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_exit.c	7.52 (Berkeley) %G%
+ *	@(#)kern_exit.c	7.53 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -247,7 +247,7 @@ struct wait_args {
 };
 
 #ifdef COMPAT_43
-#ifdef hp300
+#if defined(hp300) || defined(luna68k)
 #include <machine/frame.h>
 #define GETPS(rp)	((struct frame *)(rp))->f_sr
 #else
