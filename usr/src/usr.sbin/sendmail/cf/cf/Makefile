@@ -1,4 +1,4 @@
-#	@(#)Makefile	6.5 (Berkeley) %G%
+#	@(#)Makefile	6.6 (Berkeley) %G%
 
 M4=	m4
 #M4=	/usr/src/usr.bin/m4/obj/m4
@@ -14,6 +14,7 @@ RM=	rm -f
 	$(CHMOD) $(ROMODE) $@
 
 ALL=	cs-hidden.cf cs-exposed.cf \
+	hpux-cs-exposed.cf hpux-cs-hidden.cf \
 	sunos3.5-cs-exposed.cf sunos3.5-cs-hidden.cf \
 	sunos4.1-cs-exposed.cf sunos4.1-cs-hidden.cf \
 	ultrix4.1-cs-exposed.cf ultrix4.1-cs-hidden.cf \
