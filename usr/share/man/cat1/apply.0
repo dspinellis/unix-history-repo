@@ -1,0 +1,59 @@
+APPLY(1)                     BSD Reference Manual                     APPLY(1)
+
+NNAAMMEE
+     aappppllyy - apply a command to a set of arguments
+
+SSYYNNOOPPSSIISS
+     aappppllyy [--aa_c] [--_#] _c_o_m_m_a_n_d _a_r_g_u_m_e_n_t _._._.
+
+DDEESSCCRRIIPPTTIIOONN
+     AAppppllyy runs the named _c_o_m_m_a_n_d on each argument _a_r_g_u_m_e_n_t in turn.
+
+     Character sequences of the form ``%d'' in _c_o_m_m_a_n_d, where ``d'' is a digit
+     from 1 to 9, are replaced by the d'th following unused _a_r_g_u_m_e_n_t. In this
+     case, the largest digit number of arguments are discarded for each execu-
+     tion of _c_o_m_m_a_n_d.
+
+     The options are as follows:
+
+     --_#   Normally arguments are taken singly; the optional number --## speci-
+          fies the number of arguments to be passed to _c_o_m_m_a_n_d. If the number
+          is zero, _c_o_m_m_a_n_d is run, without arguments, once for each _a_r_g_u_m_e_n_t.
+
+          If any sequences of ``%d'' occur in command, the --nn option is ig-
+          nored.
+
+     --aa_c  The use of the character ``%'' as a magic character may be changed
+          with the --aa option.
+
+EENNVVIIRROONNMMEENNTT VVAARRIIAABBLLEESS
+     The following environment variable affects the execution of aappppllyy:
+
+     SHELL  Pathname of shell to use.  If this variable is not defined, the
+            Bourne shell is used.
+
+EEXXAAMMPPLLEESS
+     apply echo a*
+            is similar to ls(1);
+     apply -2 cmp a1 b1 a2 b2 a3 b3
+            compares the `a' files to the `b' files;
+     apply -0 who 1 2 3 4 5
+            runs who(1) 5 times; and
+     apply 'ln %1 /usr/joe' *
+            links all files in the current directory to the directory
+            _/_u_s_r_/_j_o_e.
+
+FFiilleess
+     _/_b_i_n_/_s_h  Default shell
+
+AAUUTTHHOORR
+     Rob Pike
+
+BBUUGGSS
+     Shell metacharacters in _c_o_m_m_a_n_d may have bizarre effects; it is best to
+     enclose complicated commands in single quotes (`').
+
+HHIISSTTOORRYY
+     The aappppllyy command appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        April 4, 1994                               1

@@ -1,0 +1,33 @@
+BIFF(1)                      BSD Reference Manual                      BIFF(1)
+
+NNAAMMEE
+     bbiiffff - be notified if mail arrives and who it is from
+
+SSYYNNOOPPSSIISS
+     bbiiffff [nnyy]
+
+DDEESSCCRRIIPPTTIIOONN
+     BBiiffff informs the system whether you want to be notified when mail arrives
+     during the current terminal session.
+
+     Options supported by bbiiffff:
+
+     nn     Disables notification.
+
+     yy     Enables notification.
+
+     When mail notification is enabled, the header and first few lines of the
+     message will be printed on your screen whenever mail arrives.  A ``biff
+     y'' command is often included in the file _._l_o_g_i_n or _._p_r_o_f_i_l_e to be exe-
+     cuted at each login.
+
+     BBiiffff operates asynchronously.  For synchronous notification use the _M_A_I_L
+     variable of sh(1) or the _m_a_i_l variable of csh(1).
+
+SSEEEE AALLSSOO
+     csh(1),  mail(1),  sh(1),  comsat(8)
+
+HHIISSTTOORRYY
+     The bbiiffff command appeared in 4.0BSD.
+
+4th Berkeley Distribution        June 6, 1993                                1

@@ -1,0 +1,83 @@
+CALENDAR(1)                  BSD Reference Manual                  CALENDAR(1)
+
+NNAAMMEE
+     ccaalleennddaarr - reminder service
+
+SSYYNNOOPPSSIISS
+     ccaalleennddaarr [--aa]
+
+DDEESSCCRRIIPPTTIIOONN
+     CCaalleennddaarr checks the current directory for a file named _c_a_l_e_n_d_a_r and dis-
+     plays lines that begin with either today's date or tomorrow's.  On Fri-
+     days, events on Friday through Monday are displayed.
+
+     The following options are available:
+
+     --aa      Process the ``calendar'' files of all users and mail the results
+             to them.  This requires super-user privileges.
+
+     Lines should begin with a month and day.  They may be entered in almost
+     any format, either numeric or as character strings.  A single asterisk
+     (``*'') matches every month.  A day without a month matches that day of
+     every week.  A month without a day matches the first of that month.  Two
+     numbers default to the month followed by the day.  Lines with leading
+     tabs default to the last entered date, allowing multiple line specifica-
+     tions for a single date.  By convention, dates followed by an asterisk
+     are not fixed, i.e., change from year to year.
+
+     The ``calendar'' file is preprocessed by cpp(1),  allowing the inclusion
+     of shared files such as company holidays or meetings.  If the shared file
+     is not referenced by a full pathname, cpp(1) searches in the current (or
+     home) directory first, and then in the directory _/_u_s_r_/_s_h_a_r_e_/_c_a_l_e_n_d_a_r.
+     Empty lines and lines protected by the C commenting syntax (/* ... */)
+     are ignored.
+
+     Some possible calendar entries:
+
+           #include  <calendar.usholiday>
+           #include  <calendar.birthday>
+
+           6/15      ... June 15 (if ambiguous, will default to month/day).
+           Jun. 15        ... June 15.
+           15 June        ... June 15.
+           Thursday  ... Every Thursday.
+           June      ... Every June 1st.
+           15 *      ... 15th of every month.
+
+FFIILLEESS
+     The following default calendar files are provided:
+
+     calendar.birthday   Births and deaths of famous (and not-so-famous) peo-
+                         ple.
+     calendar.christian  Christian holidays.  This calendar should be updated
+                         yearly by the local system administrator so that rov-
+                         ing holidays are set correctly for the current year.
+     calendar.computer   Days of special significance to computer people.
+     calendar.history    Everything  else,  mostly  U. S. historical events.
+     calendar.holiday    Other  holidays,  including  the  not-well-known,
+                         obscure, and _r_e_a_l_l_y obscure.
+     calendar.judaic     Jewish holidays.  This calendar should be updated
+                         yearly by the local system administrator so that rov-
+                         ing holidays are set correctly for the current year.
+     calendar.music      Musical  events,  births, and deaths.  Strongly  ori-
+                         ented  toward  rock 'n' roll.
+     calendar.usholiday  U.S. holidays.  This calendar should be updated year-
+                         ly by the local system administrator so that roving
+                         holidays are set correctly for the current year.
+
+SSEEEE AALLSSOO
+     at(1),  cpp(1),  cron(8) mail(1),
+
+CCOOMMPPAATTIIBBIILLIITTYY
+     The ccaalleennddaarr program previously selected lines which had the correct date
+     anywhere in the line.  This is no longer true, the date is only recog-
+     nized when it occurs first on the line.
+
+HHIISSTTOORRYY
+     A ccaalleennddaarr command appeared in Version 7 AT&T UNIX.
+
+BBUUGGSS
+     CCaalleennddaarr doesn't handle events that move around from year to year, i.e.,
+     ``the last Monday in April''.
+
+4.4BSD                           June 29, 1993                               2
