@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1982, 1985, 1986 Regents of the University of California.
+ * Copyright (c) 1982,1985,1986,1988 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)socket.h	7.3 (Berkeley) %G%
+ *	@(#)socket.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -95,10 +95,18 @@ struct	linger {
  * Structure used by kernel to store most
  * addresses.
  */
+#ifdef notyet
+struct sockaddr {
+	u_char	sa_len;			/* total length */
+	u_char	sa_family;		/* address family */
+	char	sa_addr[1];		/* actually longer; address value */
+};
+#else
 struct sockaddr {
 	u_short	sa_family;		/* address family */
 	char	sa_data[14];		/* up to 14 bytes of direct address */
 };
+#endif
 
 /*
  * Structure used by kernel to pass protocol
@@ -139,6 +147,7 @@ struct sockproto {
 
 /*
  * Message header for recvmsg and sendmsg calls.
+ * Used value-result for recvmsg, value only for sendmsg.
  */
 struct msghdr {
 	caddr_t	msg_name;		/* optional address */
@@ -147,10 +156,33 @@ struct msghdr {
 	int	msg_iovlen;		/* # elements in msg_iov */
 	caddr_t	msg_accrights;		/* access rights sent/received */
 	int	msg_accrightslen;
+	caddr_t	msg_control;		/* ancillary data not conveyable
+					 * by flags; msgs of the form
+					 *	u_short type;
+					 *	u_short count;
+					 *	u_char  data[count];
+					 */
+	int	msg_controllen;
+	int	msg_flags;		/* flags on received message */
 };
 
 #define	MSG_OOB		0x1		/* process out-of-band data */
 #define	MSG_PEEK	0x2		/* peek at incoming message */
 #define	MSG_DONTROUTE	0x4		/* send without using routing tables */
+#define	MSG_EOR		0x8		/* data completes record */
+#define	MSG_TRUNC	0x10		/* data discarded before delivery */
+#define	MSG_CTRUNC	0x20		/* control data lost before delivery */
+
+/*
+ * 4.3-compat message header (move to compat file later).
+ */
+struct omsghdr {
+	caddr_t	msg_name;		/* optional address */
+	int	msg_namelen;		/* size of address */
+	struct	iovec *msg_iov;		/* scatter/gather array */
+	int	msg_iovlen;		/* # elements in msg_iov */
+	caddr_t	msg_accrights;		/* access rights sent/received */
+	int	msg_accrightslen;
+};
 
 #define	MSG_MAXIOVLEN	16
