@@ -2,21 +2,21 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)up.4	4.1 (Berkeley) %G%
+.\"	@(#)up.4	5.1 (Berkeley) %G%
 .\"
-.TH UP 4 5/10/81
+.TH UP 4 "27 July 1983"
 .UC 4
 .SH NAME
 up \- unibus storage module controller/drives
 .SH SYNOPSIS
-controller sc0 at uba? csr 0176700 vector upintr
+.B "controller sc0 at uba? csr 0176700 vector upintr
 .br
-disk up0 at sc0 drive 0
+.B "disk up0 at sc0 drive 0"
 .SH DESCRIPTION
 This is a generic UNIBUS storage module disk driver.
-It is specifically designed to work with the Emulex SC-21 controller
-and Ampex or CDC 300M or Fujitsu 160M drives.  It can be easily
-adapted to other drives and controllers (although bootstrapping will
+It is specifically designed to work with the Emulex SC-21 controller.
+It can be easily
+adapted to other controllers (although bootstrapping will
 not necessarily be directly possible.)
 .PP
 Files with minor device numbers 0 through 7 refer to various portions
@@ -25,41 +25,6 @@ minor devices 8 through 15 refer to drive 1, etc.
 The standard device names begin with ``up'' followed by
 the drive number and then a letter a-h for partitions 0-7 respectively.
 The character ? stands here for a drive number in the range 0-7.
-.PP
-The origin and size of the pseudo-disks on each drive are
-as follows:
-.PP
-.nf
-.ta .5i +\w'000000    'u +\w'000000    'u +\w'000000    'u
-AMPEX/CDC 300M drive partitions:
-	disk	start	length	cyl
-	up?a	0	15884	0-26
-	up?b	16416	33440	27-81
-	up?c	0	495520	0-814
-	up?d	341696	15884	562-588
-	up?e	358112	55936	589-680
-	up?f	414048	81472	681-814
-	up?g	341696	153824	562-814
-	up?h	49856	291346	82-561
-.PP
-FUJITSU 160M drive partitions:
-	disk	start	length	cyl
-	up?a	0	15884	0-49
-	up?b	16000	33440	50-154
-	up?c	0	263360	0-822
-	up?h	49600	213760	155-822
-.DT
-.fi
-.PP
-It is unwise for all of these files to be present in one installation,
-since there is overlap in addresses and protection becomes
-a sticky matter.
-The up?a partition is normally used for the root file system,
-the up?b partition as a paging area,
-and the up?c partition for pack-pack copying (it maps the entire disk).
-On 160M drives the up?h partition maps the rest of the pack.
-On 300M drives both up?g and up?h are used to map the
-remaining cylinders.
 .PP
 The block files access the disk via the system's normal
 buffering mechanism and may be read and written without regard to
@@ -75,16 +40,81 @@ In raw I/O counts should be a multiple of 512 bytes (a disk sector).
 Likewise
 .I seek
 calls should specify a multiple of 512 bytes.
+.SH "DISK SUPPORT"
+The driver interrogates the controller's holding register
+to determine the type of drive attached.  The driver recognizes
+four different drives: AMPEX 9300, CDC 9766, AMPEX Capricorn,
+and FUJITSU 160.
+The origin and size of the pseudo-disks on each drive are
+as follows:
+.PP
+.nf
+.ta .5i +\w'000000    'u +\w'000000    'u +\w'000000    'u
+CDC 9766 300M drive partitions:
+	disk	start	length	cyl
+	up?a	0	15884	0-26
+	up?b	16416	33440	27-81
+	up?c	0	500384	0-822
+	up?d	341696	15884	562-588
+	up?e	358112	55936	589-680
+	up?f	414048	861760	681-822
+	up?g	341696	158528	562-822
+	up?h	49856	291346	82-561
+.PP
+AMPEX 9300 300M drive partitions:
+	disk	start	length	cyl
+	up?a	0	15884	0-26
+	up?b	16416	33440	27-81
+	up?c	0	495520	0-814
+	up?d	341696	15884	562-588
+	up?e	358112	55936	589-680
+	up?f	414048	81312	681-814
+	up?g	341696	153664	562-814
+	up?h	49856	291346	82-561
+.PP
+AMPEX Capricorn 330M drive partitions:
+	disk	start	length	cyl
+	hp?a	0	15884	0-31
+	hp?b	16384	33440	32-97
+	hp?c	0	524288	0-1023
+	hp?d	342016	15884	668-699
+	hp?e	358400	55936	700-809
+	hp?f	414720	109408	810-1023
+	hp?g	342016	182112	668-1023
+	hp?h	50176	291346	98-667
+.PP
+FUJITSU 160M drive partitions:
+	disk	start	length	cyl
+	up?a	0	15884	0-49
+	up?b	16000	33440	50-154
+	up?c	0	263360	0-822
+	up?d	49600	15884	155-204
+	up?e	65600	55936	205-379
+	up?f	121600	141600	380-822
+	up?g	49600	213600	155-822
+.DT
+.fi
+.PP
+It is unwise for all of these files to be present in one installation,
+since there is overlap in addresses and protection becomes
+a sticky matter.
+The up?a partition is normally used for the root file system,
+the up?b partition as a paging area,
+and the up?c partition for pack-pack copying (it maps the entire disk).
+On 160M drives the up?g partition maps the rest of the pack.
+On other drives both up?g and up?h are used to map the
+remaining cylinders.
 .SH FILES
 /dev/up[0-7][a-h]	block files
 .br
 /dev/rup[0-7][a-h]	raw files
 .SH SEE ALSO
-hk(4), hp(4)
+hk(4), hp(4), uda(4)
 .SH DIAGNOSTICS
 \fBup%d%c: hard error sn%d cs2=%b er1=%b er2=%b\fR.  An unrecoverable
-error occured during transfer of the specified sector of the specified
-disk partition.  The contents of the cs2, er1 and er2 registers are printed
+error occurred during transfer of the specified sector in the specified
+disk partition.
+The contents of the cs2, er1 and er2 registers are printed
 in octal and symbolically with bits decoded.
 The error was either unrecoverable, or a large number of retry attempts
 (including offset positioning and drive recalibration) could not
@@ -96,15 +126,16 @@ when a write was attempted.  The write operation is not recoverable.
 \fBup%d: not ready\fR.  The drive was spun down or off line when it was
 accessed.  The i/o operation is not recoverable.
 .PP
-\fBup%d: not ready (came back!)\fR.  The drive was not ready, but after
+\fBup%d: not ready (flakey)\fR.  The drive was not ready, but after
 printing the message about being not ready (which takes a fraction
 of a second) was ready.  The operation is recovered if no further
 errors occur.
 .PP
 \fBup%d%c: soft ecc sn%d\fR.  A recoverable ECC error occurred on the
-specified sector of the specified disk partition.  This happens normally
+specified sector of the specified disk partition.
+This happens normally
 a few times a week.  If it happens more frequently than
-this the sectors where the errors are occuring should be checked to see
+this the sectors where the errors are occurring should be checked to see
 if certain cylinders on the pack, spots on the carriage of the drive
 or heads are indicated.
 .PP
@@ -132,12 +163,7 @@ and
 .IR lseek (2)
 should always deal in 512-byte multiples.
 .PP
-DEC-standard error logging and bad block forwarding should be supported;
-the code to do this could be easily incorporated from the
-.IR hp (4)
-driver.  All that would be needed then would be a stand-alone formatting
-program to detect the bad sectors, format the disk so that the sectors
-were marked bad and initialize the bad sector files.
+DEC-standard error logging should be supported.
 .PP
 A program to analyze the logged error information (even in its
 present reduced form) is needed.
