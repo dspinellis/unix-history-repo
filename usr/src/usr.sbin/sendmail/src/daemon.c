@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-static char	SccsId[] =	"@(#)daemon.c	3.3	%G%";
+static char	SccsId[] =	"@(#)daemon.c	3.4	%G%";
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
@@ -61,6 +61,6 @@ getrequests()
 		**	Perhaps we should allow concurrent processing?
 		*/
 
-		wait(&st);
+		(void) wait(&st);
 	}
 }
