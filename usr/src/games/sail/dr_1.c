@@ -1,75 +1,8 @@
 #ifndef lint
-static	char *sccsid = "@(#)dr_1.c	2.10 84/03/08";
+static	char *sccsid = "@(#)dr_1.c	2.11 85/03/04";
 #endif
 
 #include "driver.h"
-
-main(argc, argv)
-int argc;
-char **argv;
-{
-	register int n;
-	register struct ship *sp;
-	int nat[NNATION];
-
-	if (argc != 2)
-		exit(1);
-	(void) signal(SIGINT, SIG_IGN);
-	(void) signal(SIGQUIT, SIG_IGN);
-	(void) signal(SIGTSTP, SIG_IGN);
-	(void) srand(getpid());
-	(void) setruid(geteuid());
-	/* ;;; add code here to check the game number. */
-	game = atoi(argv[1]);
-	cc = &scene[game];
-	ls = SHIP(cc->vessels);
-	if (sync_open() < 0) {
-		perror("driver: syncfile");
-		exit(1);
-	}
-	for (n = 0; n < NNATION; n++)
-		nat[n] = 0;
-	foreachship(sp) {
-		sp->file = (struct File *) calloc(1, sizeof (struct File));
-		if (sp == NULL) {
-			(void) printf("driver: OUT OF MEMORY\n");
-			exit(1);
-		}
-		sp->file->index = sp - SHIP(0);
-		sp->file->loadL = L_ROUND;
-		sp->file->loadR = L_ROUND;
-		sp->file->readyR = R_LOADED|R_INITIAL;
-		sp->file->readyL = R_LOADED|R_INITIAL;
-		sp->file->stern = nat[sp->nationality]++;
-		sp->file->dir = sp->shipdir;
-		sp->file->row = sp->shiprow;
-		sp->file->col = sp->shipcol;
-	}
-	windspeed = cc->windspeed;
-	winddir = cc->winddir;
-	for (;;) {
-		sleep(7);
-		if (Sync() < 0) {
-			sync_close(1);
-			exit(1);
-		}
-		next();
-		unfoul();
-		checkup();
-		prizecheck();
-		moveall();
-		thinkofgrapples();
-		boardcomp();
-		compcombat();
-		resolve();
-		reload();
-		checksails();
-		if (Sync() < 0) {
-			sync_close(1);
-			exit(1);
-		}
-	}
-}
 
 unfoul()
 {
@@ -83,8 +16,8 @@ unfoul()
 			continue;
 		nat = capship(sp)->nationality;
 		foreachship(to) {
-			if (nat != capship(to)->nationality
-			    && !toughmelee(sp, to, 0, 0))
+			if (nat != capship(to)->nationality &&
+			    !toughmelee(sp, to, 0, 0))
 				continue;
 			for (i = fouled2(sp, to); --i >= 0;)
 				if (die() <= 2)
@@ -494,12 +427,4 @@ next()
 			Write(W_WIND, SHIP(0), 0, winddir, windspeed, 0, 0);
 		}
 	}
-}
-
-/*ARGSUSED*/
-/*VARARGS2*/
-Signal(fmt, ship, a, b, c)
-char *fmt;
-struct ship *ship;
-{
 }

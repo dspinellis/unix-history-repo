@@ -1,10 +1,26 @@
 /*
- * @(#)extern.h	2.4 84/02/23
+ * @(#)extern.h	2.5 85/03/04
  */
 #include <stdio.h>
 #include <signal.h>
 #include <ctype.h>
+#include <setjmp.h>
 #include "machdep.h"
+
+	/* program mode */
+int mode;
+jmp_buf restart;
+#define MODE_PLAYER	1
+#define MODE_DRIVER	2
+#define MODE_LOGGER	3
+
+	/* command line flags */
+char debug;				/* -D */
+char randomize;				/* -x */
+char longfmt;				/* -l */
+
+	/* other initial modes */
+char issetuid;				/* running setuid */
 
 #define die()		((rand() >> 3) % 6 + 1)
 #define sqr(a)		((a) * (a))
@@ -244,7 +260,6 @@ int turn;
 int game;
 int alive;
 int people;
-char isplayer;
 char hasdriver;
 
 char *info();
@@ -254,6 +269,7 @@ char *saywhat();
 struct ship *closestenemy();
 
 char *calloc();
+char *rindex();
 char *strcpy();
 char *strcat();
 char *strncpy();

@@ -1,14 +1,11 @@
 #ifndef lint
-static	char *sccsid = "@(#)lo_main.c	2.1 83/10/31";
+static	char *sccsid = "@(#)lo_main.c	2.2 85/03/04";
 #endif
 
 /*
  * Print out the top ten SAILors
  *
- * sail.log [-s/l]
- *
- *  -s force a short listing (without real usernames)
- *  -l force a long listing (print out real usernames)
+ * -l force a long listing (print out real usernames)
  */
 #include <pwd.h>
 #include "externs.h"
@@ -19,27 +16,15 @@ char *title[] = {
 	"Commander", "Lieutenant"
 };
 
-main(argc, argv)
-int argc;
-char **argv;
+lo_main()
 {
 	FILE *fp;
 	char sbuf[32];
 	int n = 0, people;
-	int usrnam = 0;
 	struct passwd *getpwuid(), *pass;
 	struct logs log;
 	struct ship *ship;
 
-	if (argc > 1 && argc == 2)
-		if (strcmp(argv[1], "-s") == 0)
-			usrnam = 0;
-		else if (strcmp(argv[1], "-l") == 0)
-			usrnam = 1;
-		else {
-			fprintf(stderr, "usage: %s: [-s/l]\n", argv[0]);
-			exit(1);
-		}
 	if ((fp = fopen(LOGFILE, "r")) == 0) {
 		perror(LOGFILE);
 		exit(1);
@@ -54,9 +39,9 @@ char **argv;
 		perror(LOGFILE);
 		exit(1);
 	}
-	while (fread((char *)&log, sizeof log, 1, fp) == 1
-	       && log.l_name[0] != '\0') {
-		if (usrnam && (pass = getpwuid(log.l_uid)) != NULL)
+	while (fread((char *)&log, sizeof log, 1, fp) == 1 &&
+	       log.l_name[0] != '\0') {
+		if (longfmt && (pass = getpwuid(log.l_uid)) != NULL)
 			(void) sprintf(sbuf, "%10.10s (%s)",
 				log.l_name, pass->pw_name);
 		else
@@ -67,4 +52,5 @@ char **argv;
 			(float) log.l_netpoints / ship->specs->pts);
 	}
 	printf("\n%d people have played.\n", people);
+	return 0;
 }

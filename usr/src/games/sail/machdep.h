@@ -1,16 +1,10 @@
 /*
- * sccsid = "@(#)machdep.h	2.5 %G%";
+ * sccsid = "@(#)machdep.h	2.6 %G%";
  */
-#define LOGFILE "/usr/games/lib/saillog"
-#define DRIVER1 "driver"
-#define DRIVER2 "/usr/games/lib/saildriver"
-#define DRIVER3 "/usr/public/.driver"
-#define DRIVERNAME "driver"
-#define SETUID			/* player and driver run setuid */
 
-#define TIMEOUT 300		/* Sync() time out */
+#define LOGFILE "/usr/games/lib/saillog"	/* has to match the makefile */
 
-#define BUFSIZE 4096
+#define TIMEOUT 300				/* Sync() timeout in seconds */
 
 /* for 4.2bsd machines */
 #define blockalarm()	((void) sigblock(1 << SIGALRM-1))
