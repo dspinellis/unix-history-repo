@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)raw_cb.h	7.3 (Berkeley) %G%
+ *	@(#)raw_cb.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -47,8 +47,8 @@ struct rawcb {
 /*
  * Nominal space allocated to a raw socket.
  */
-#define	RAWSNDQ		2048
-#define	RAWRCVQ		2048
+#define	RAWSNDQ		8192
+#define	RAWRCVQ		8192
 
 /*
  * Format of raw interface header prepended by
