@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sig.c	7.41 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.42 (Berkeley) %G%
  */
 
 #define	SIGPROP		/* include signal properties table */
@@ -108,6 +108,12 @@ setsigvec(p, sig, sa)
 		ps->ps_sigonstack |= bit;
 	else
 		ps->ps_sigonstack &= ~bit;
+#ifdef COMPAT_SUNOS
+	if (sa->sa_flags & SA_USERTRAMP)
+		ps->ps_usertramp |= bit;
+	else
+		ps->ps_usertramp &= ~bit;
+#endif
 	if (sig == SIGCHLD) {
 		if (sa->sa_flags & SA_NOCLDSTOP)
 			p->p_flag |= SNOCLDSTOP;
@@ -237,7 +243,7 @@ sigpending(p, uap, retval)
 	return (0);
 }
 
-#ifdef COMPAT_43
+#if defined(COMPAT_43) || defined(COMPAT_SUNOS)
 /*
  * Generalized interface signal handler, 4.3-compatible.
  */
@@ -270,8 +276,10 @@ osigvec(p, uap, retval)
 			sv->sv_flags |= SV_ONSTACK;
 		if ((ps->ps_sigintr & bit) != 0)
 			sv->sv_flags |= SV_INTERRUPT;
+#ifndef COMPAT_SUNOS
 		if (p->p_flag & SNOCLDSTOP)
 			sv->sv_flags |= SA_NOCLDSTOP;
+#endif
 		if (error = copyout((caddr_t)sv, (caddr_t)uap->osv,
 		    sizeof (vec)))
 			return (error);
@@ -280,6 +288,16 @@ osigvec(p, uap, retval)
 		if (error = copyin((caddr_t)uap->nsv, (caddr_t)sv,
 		    sizeof (vec)))
 			return (error);
+#ifdef COMPAT_SUNOS
+		/*
+		 * SunOS uses this bit (SA_NOCLDSTOP) as SV_RESETHAND,
+		 * `reset to SIG_DFL on delivery'. We have no such
+		 * option now or ever!
+		 */
+		if (sv->sv_flags & SA_NOCLDSTOP)
+			return (EINVAL);
+		sv->sv_flags |= SA_USERTRAMP;
+#endif
 		sv->sv_flags ^= SA_RESTART;	/* opposite of SV_INTERRUPT */
 		setsigvec(p, sig, (struct sigaction *)sv);
 	}
@@ -404,7 +422,7 @@ kill(cp, uap, retval)
 	/* NOTREACHED */
 }
 
-#ifdef COMPAT_43
+#if defined(COMPAT_43) || defined(COMPAT_SUNOS)
 /* ARGSUSED */
 okillpg(p, uap, retval)
 	struct proc *p;
