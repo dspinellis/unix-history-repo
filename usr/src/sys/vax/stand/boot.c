@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)boot.c	6.7 (Berkeley) %G%
+ *	@(#)boot.c	6.8 (Berkeley) %G%
  */
 
 #include "../h/param.h"
@@ -38,15 +38,7 @@ char	devname[][2] = {
 	0,0,		/* 13 = rx */
 	'r','l',	/* 14 = rl */
 };
-
-/*
- * constants for converting a "minor" device numbers to unit number
- * and partition number
- */
-#define UNITSHIFT	16
-#define UNITMASK	0x1ff
-#define PARTITIONMASK	0x7
-#define PARTITIONSHIFT	3
+#define	MAXTYPE	(sizeof(devname) / sizeof(devname[0]))
 
 #define	UNIX	"vmunix"
 char line[100];
@@ -55,10 +47,11 @@ int	retry = 0;
 
 main()
 {
-	register howto, devtype;	/* howto=r11, devtype=r10 */
-	int io;
+	register unsigned howto, devtype;	/* howto=r11, devtype=r10 */
+	int io, i;
 	register type, part, unit;
 	register char *cp;
+	long atol();
 
 #ifdef lint
 	howto = 0; devtype = 0;
@@ -67,13 +60,12 @@ main()
 #ifdef JUSTASK
 	howto = RB_ASKNAME|RB_SINGLE;
 #else
-	type = devtype & 0xff;
-	unit = (int)((unsigned)devtype >> UNITSHIFT) & UNITMASK;
-	part = unit & PARTITIONMASK;
-	unit = unit >> PARTITIONSHIFT;
-	if ((howto&RB_ASKNAME)==0) {
-		if (type >= 0 && type < sizeof(devname) / 2
-		    && devname[type][0]) {
+	type = (devtype >> B_TYPESHIFT) & B_TYPEMASK;
+	unit = (devtype >> B_UNITSHIFT) & B_UNITMASK;
+	unit += 8 * (devtype >> B_ADAPTORSHIFT) & B_ADAPTORMASK;
+	part = (devtype >> B_PARTITIONSHIFT) & B_PARTITIONMASK;
+	if ((howto & RB_ASKNAME) == 0) {
+		if (type >= 0 && type <= MAXTYPE && devname[type][0]) {
 			cp = line;
 			*cp++ = devname[type][0];
 			*cp++ = devname[type][1];
@@ -97,8 +89,30 @@ main()
 			printf(": %s\n", line);
 		io = open(line, 0);
 		if (io >= 0) {
+			if (howto & RB_ASKNAME) {
+				/*
+				 * Build up devtype register to pass on to
+				 * booted program.
+				 */ 
+				cp = line;
+				for (i = 0; i <= MAXTYPE; i++)
+					if ((devname[i][0] == cp[0]) && 
+					    (devname[i][1] == cp[1]))
+					    	break;
+				if (i <= MAXTYPE) {
+					devtype = i << B_TYPESHIFT;
+					cp += 3;
+					i = *cp++ - '0';
+					if (*cp >= '0' && *cp <= '9')
+						i = i * 10 + *cp++ - '0';
+					cp++;
+					devtype |= ((i % 8) << B_UNITSHIFT);
+					devtype |= ((i / 8) << B_ADAPTORSHIFT);
+					devtype |= atol(cp) << B_PARTITIONSHIFT;
+				}
+			}
 			loadpcs();
-			copyunix(howto, io);
+			copyunix(howto, devtype, io);
 			close(io);
 			howto = RB_SINGLE|RB_ASKNAME;
 		}
@@ -108,8 +122,8 @@ main()
 }
 
 /*ARGSUSED*/
-copyunix(howto, io)
-	register howto, io;
+copyunix(howto, devtype, io)
+	register howto, devtype, io;	/* howto=r11, devtype=r10 */
 {
 	struct exec x;
 	register int i;
@@ -144,7 +158,6 @@ shread:
 	_stop("Short read\n");
 }
 
-#ifndef SMALL
 /* 750 Patchable Control Store magic */
 
 #include "../vax/mtpr.h"
@@ -228,4 +241,3 @@ loadpcs()
 	printf("new rev level=%d\n", sid.cpu750.cp_urev);
 	pcsdone = 1;
 }
-#endif SMALL
