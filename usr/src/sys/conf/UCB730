@@ -1,0 +1,26 @@
+#
+# ETHERNET MIRO
+#
+machine		vax
+cpu		"VAX730"
+ident		MIRO
+timezone	8 dst
+maxusers	8
+options		INET
+options		NS
+options		QUOTA
+
+config		vmunix		root on rb0
+config		rlvmunix	root on rb1
+
+controller	uba0	at nexus ?
+controller	idc0	at uba0 csr 0175606		vector idcintr
+disk		rb0	at idc0 drive 0
+disk		rb1	at idc0 drive 1
+controller	zs0	at uba? csr 0172520		vector tsintr
+device		ts0	at zs0 drive 0
+device		dmf0	at uba? csr 0160340 flags 0xfc
+	vector dmfsrint dmfsxint dmfdaint dmfdbint dmfrint dmfxint dmflint
+pseudo-device	pty
+pseudo-device	loop
+device		en0	at uba? csr 0161000 vector enxint enrint encollide
