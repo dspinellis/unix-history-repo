@@ -1,0 +1,2 @@
+/^\.Lf/	{ print $2, FILENAME, "?^\.Lf " $2 "?" }
+/^\.Lx/	{ print $2, FILENAME, "?^\.Lx " $2 "?" }
