@@ -6,7 +6,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)main.c	3.123		%G%);
+SCCSID(@(#)main.c	3.124		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -417,7 +417,7 @@ main(argc, argv)
 	**		during startup.
 	*/
 
-	if (Mode == MD_DAEMON)
+	if (Mode == MD_DAEMON || QueueIntvl != 0)
 	{
 		if (!tTd(0, 1))
 		{
@@ -447,7 +447,12 @@ main(argc, argv)
 		}
 # ifdef QUEUE
 		if (queuemode)
+		{
 			runqueue(TRUE);
+			if (Mode != MD_DAEMON)
+				for (;;)
+					pause();
+		}
 # endif QUEUE
 		checkerrors(CurEnv);
 		getrequests();
