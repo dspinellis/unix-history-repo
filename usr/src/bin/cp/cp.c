@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)cp.c	4.11 (Berkeley) %G%";
+static char *sccsid = "@(#)cp.c	4.12 (Berkeley) %G%";
 #endif
 
 /*
@@ -93,18 +93,24 @@ copy(from, to)
 		to = destname;
 	}
 	if (rflag && (stfrom.st_mode&S_IFMT) == S_IFDIR) {
+		int fixmode = 0;	/* cleanup mode after rcopy */
+
 		(void) close(fold);
 		if (stat(to, &stto) < 0) {
-			if (mkdir(to, stfrom.st_mode & 07777) < 0) {
+			if (mkdir(to, (stfrom.st_mode & 07777) | 0700) < 0) {
 				Perror(to);
 				return (1);
 			}
+			fixmode = 1;
 		} else if ((stto.st_mode&S_IFMT) != S_IFDIR) {
 			fprintf(stderr, "cp: %s: Not a directory.\n", to);
 			return (1);
 		} else if (pflag)
+			fixmode = 1;
+		n = rcopy(from, to);
+		if (fixmode)
 			(void) chmod(to, stfrom.st_mode & 07777);
-		return (rcopy(from, to));
+		return (n);
 	}
 
 	if ((stfrom.st_mode&S_IFMT) == S_IFDIR)
