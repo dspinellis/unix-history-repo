@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)main.c	3.73		%G%);
+SCCSID(@(#)main.c	3.74		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -102,8 +102,9 @@ SCCSID(@(#)main.c	3.73		%G%);
 
 
 
-int	NextMailer = 0;		/* "free" index into Mailer struct */
+int		NextMailer = 0;	/* "free" index into Mailer struct */
 static char	*FullName;	/* sender's full name */
+ENVELOPE	MainEnvelope;	/* the envelope around the basic letter */
 
 #ifdef DAEMON
 #ifndef SMTP
@@ -147,6 +148,7 @@ main(argc, argv)
 		(void) signal(SIGHUP, finis);
 	(void) signal(SIGTERM, finis);
 	OldUmask = umask(0);
+	CurEnv = &MainEnvelope;
 # ifdef LOG
 	openlog("sendmail", 0);
 # endif LOG
@@ -165,7 +167,7 @@ main(argc, argv)
 # endif
 	errno = 0;
 	from = NULL;
-	OldStyle = TRUE;
+	CurEnv->e_oldstyle = TRUE;
 	initmacros();
 
 	/*
@@ -374,7 +376,7 @@ main(argc, argv)
 			break;
 
 		  case 'o':	/* take new-style headers (with commas) */
-			OldStyle = FALSE;
+			CurEnv->e_oldstyle = FALSE;
 			break;
 
 		  default:
@@ -493,7 +495,7 @@ main(argc, argv)
 	*/
 
 	if (++HopCount > MAXHOP)
-		syserr("Infinite forwarding loop (%s->%s)", From.q_paddr, *argv);
+		syserr("Infinite forwarding loop (%s->%s)", CurEnv->e_from.q_paddr, *argv);
 
 	/*
 	**  Scan argv and deliver the message to everyone.
@@ -514,7 +516,7 @@ main(argc, argv)
 	*/
 
 	DontSend = FALSE;
-	To = NULL;
+	CurEnv->e_to = NULL;
 	if (!verifyonly || GrabTo)
 		collect(FALSE);
 	errno = 0;
@@ -544,8 +546,8 @@ main(argc, argv)
 	initsys();
 
 	/* collect statistics */
-	Stat.stat_nf[From.q_mailer->m_mno]++;
-	Stat.stat_bf[From.q_mailer->m_mno] += kbytes(MsgSize);
+	Stat.stat_nf[CurEnv->e_from.q_mailer->m_mno]++;
+	Stat.stat_bf[CurEnv->e_from.q_mailer->m_mno] += kbytes(CurEnv->e_msgsize);
 
 	/*
 	**  Arrange that the person who is sending the mail
@@ -554,13 +556,13 @@ main(argc, argv)
 
 # ifdef DEBUG
 	if (Debug)
-		printf("From person = \"%s\"\n", From.q_paddr);
+		printf("From person = \"%s\"\n", CurEnv->e_from.q_paddr);
 # endif DEBUG
 
-	From.q_flags |= QDONTSEND;
+	CurEnv->e_from.q_flags |= QDONTSEND;
 	if (!MeToo)
-		(void) recipient(&From);
-	To = NULL;
+		recipient(&CurEnv->e_from, &CurEnv->e_sendqueue);
+	CurEnv->e_to = NULL;
 
 	/*
 	**  Actually send everything.
@@ -573,7 +575,7 @@ main(argc, argv)
 	** All done.
 	*/
 
-	To = NULL;
+	CurEnv->e_to = NULL;
 	if (!verifyonly)
 		poststats(StatFile);
 	finis();
@@ -624,7 +626,7 @@ setfrom(from, realname)
 	extern char *index();
 
 	if (realname == NULL)
-		realname = From.q_paddr;
+		realname = CurEnv->e_from.q_paddr;
 
 # ifdef DEBUG
 	if (Debug > 1)
@@ -646,32 +648,32 @@ setfrom(from, realname)
 	}
 
 	SuprErrs = TRUE;
-	if (from == NULL || parse(from, &From, 1) == NULL)
+	if (from == NULL || parse(from, &CurEnv->e_from, 1) == NULL)
 	{
 		from = newstr(realname);
-		(void) parse(from, &From, 1);
+		(void) parse(from, &CurEnv->e_from, 1);
 	}
 	else
 		FromFlag = TRUE;
 	SuprErrs = FALSE;
-	From.q_uid = getuid();
-	From.q_gid = getgid();
+	CurEnv->e_from.q_uid = getuid();
+	CurEnv->e_from.q_gid = getgid();
 # ifndef V6
-	From.q_home = getenv("HOME");
+	CurEnv->e_from.q_home = getenv("HOME");
 # endif V6
-	if (From.q_uid != 0)
+	if (CurEnv->e_from.q_uid != 0)
 	{
-		DefUid = From.q_uid;
-		DefGid = From.q_gid;
+		DefUid = CurEnv->e_from.q_uid;
+		DefGid = CurEnv->e_from.q_gid;
 	}
 
 	/*
 	**  Set up the $r and $s macros to show who it came from.
 	*/
 
-	if (From.q_host != NULL && From.q_host[0] != '\0')
+	if (CurEnv->e_from.q_host != NULL && CurEnv->e_from.q_host[0] != '\0')
 	{
-		define('s', From.q_host);
+		define('s', CurEnv->e_from.q_host);
 
 		/* should determine network type here */
 	}
@@ -708,12 +710,12 @@ finis()
 {
 # ifdef DEBUG
 	if (Debug > 0)
-		printf("\n====finis: stat %d SendReceipt %d FatalErrors %d\n",
-		     ExitStat, SendReceipt, FatalErrors);
+		printf("\n====finis: stat %d sendreceipt %d FatalErrors %d\n",
+		     ExitStat, CurEnv->e_sendreceipt, FatalErrors);
 # endif DEBUG
 
 	/* send back return receipts as requested */
-	if (SendReceipt && ExitStat == EX_OK)
+	if (CurEnv->e_sendreceipt && ExitStat == EX_OK)
 		returntosender("Return receipt", FALSE);
 
 	/* mail back the transcript on errors */
@@ -722,7 +724,7 @@ finis()
 
 	if (Transcript != NULL)
 		(void) unlink(Transcript);
-	if (QueueUp)
+	if (CurEnv->e_queueup)
 	{
 # ifdef QUEUE
 		queueup(InFileName);

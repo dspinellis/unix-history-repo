@@ -36,7 +36,7 @@
 
 
 
-SCCSID(@(#)conf.c	3.45		%G%);
+SCCSID(@(#)conf.c	3.46		%G%);
 /*
 **  Header info table
 **	Final (null) entry contains the flags used for any other field.
@@ -391,7 +391,7 @@ checkcompat(to)
 	register STAB *s;
 # endif ING70
 
-	if (to->q_mailer != LocalMailer && MsgSize > 100000)
+	if (to->q_mailer != LocalMailer && CurEnv->e_msgsize > 100000)
 	{
 		usrerr("Message exceeds 100000 bytes");
 		NoReturn++;
@@ -399,7 +399,7 @@ checkcompat(to)
 	}
 # ifdef ING70
 	s = stab("arpa", ST_MAILER, ST_FIND);
-	if (s != NULL && From.q_mailer != LocalMailer && to->q_mailer == s->s_mailer)
+	if (s != NULL && CurEnv->e_from.q_mailer != LocalMailer && to->q_mailer == s->s_mailer)
 	{
 		usrerr("No ARPA mail through this machine: see your system administration");
 		return (FALSE);

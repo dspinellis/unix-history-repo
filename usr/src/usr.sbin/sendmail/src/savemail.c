@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-SCCSID(@(#)savemail.c	3.27		%G%);
+SCCSID(@(#)savemail.c	3.28		%G%);
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -43,16 +43,16 @@ savemail()
 	**  to, make someone up.
 	*/
 
-	if (From.q_paddr == NULL)
+	if (CurEnv->e_from.q_paddr == NULL)
 	{
-		if (parse("root", &From, 0) == NULL)
+		if (parse("root", &CurEnv->e_from, 0) == NULL)
 		{
 			syserr("Cannot parse root!");
 			ExitStat = EX_SOFTWARE;
 			finis();
 		}
 	}
-	To = NULL;
+	CurEnv->e_to = NULL;
 
 	/*
 	**  If called from Eric Schmidt's network, do special mailback.
@@ -128,16 +128,16 @@ savemail()
 	if (ArpaMode)
 		return;
 	p = NULL;
-	if (From.q_mailer == LocalMailer)
+	if (CurEnv->e_from.q_mailer == LocalMailer)
 	{
-		if (From.q_home != NULL)
-			p = From.q_home;
-		else if ((pw = getpwnam(From.q_user)) != NULL)
+		if (CurEnv->e_from.q_home != NULL)
+			p = CurEnv->e_from.q_home;
+		else if ((pw = getpwnam(CurEnv->e_from.q_user)) != NULL)
 			p = pw->pw_dir;
 	}
 	if (p == NULL)
 	{
-		syserr("Can't return mail to %s", From.q_paddr);
+		syserr("Can't return mail to %s", CurEnv->e_from.q_paddr);
 # ifdef DEBUG
 		p = "/usr/tmp";
 # else
@@ -152,7 +152,7 @@ savemail()
 		message(Arpa_Info, "Saving message in dead.letter");
 		define('z', p);
 		(void) expand("$z/dead.letter", buf, &buf[sizeof buf - 1]);
-		To = buf;
+		CurEnv->e_to = buf;
 		q = NULL;
 		sendto(buf, -1, (ADDRESS *) NULL, &q);
 		(void) deliver(q, (fnptr) NULL);
@@ -196,9 +196,9 @@ returntosender(msg, sendbody)
 	SendBody = sendbody;
 
 	/* fake up an address header for the from person */
-	bmove((char *) &From, (char *) &to_addr, sizeof to_addr);
+	bmove((char *) &CurEnv->e_from, (char *) &to_addr, sizeof to_addr);
 	(void) expand("$n", buf, &buf[sizeof buf - 1]);
-	if (parse(buf, &From, -1) == NULL)
+	if (parse(buf, &CurEnv->e_from, -1) == NULL)
 	{
 		syserr("Can't parse myself!");
 		ExitStat = EX_SOFTWARE;
@@ -207,18 +207,18 @@ returntosender(msg, sendbody)
 	to_addr.q_next = NULL;
 	to_addr.q_flags &= ~QDONTSEND;
 	i = deliver(&to_addr, errhdr);
-	bmove((char *) &to_addr, (char *) &From, sizeof From);
+	bmove((char *) &to_addr, (char *) &CurEnv->e_from, sizeof CurEnv->e_from);
 
-	/* if From was queued up, put in on SendQueue */
-	if (bitset(QQUEUEUP, From.q_flags))
+	/* if CurEnv->e_from was queued up, put in on CurEnv->e_sendqueue */
+	if (bitset(QQUEUEUP, CurEnv->e_from.q_flags))
 	{
-		From.q_next = SendQueue;
-		SendQueue = &From;
+		CurEnv->e_from.q_next = CurEnv->e_sendqueue;
+		CurEnv->e_sendqueue = &CurEnv->e_from;
 	}
 
 	if (i != 0)
 	{
-		syserr("Can't return mail to %s", From.q_paddr);
+		syserr("Can't return mail to %s", CurEnv->e_from.q_paddr);
 		return (-1);
 	}
 	return (0);
@@ -287,7 +287,7 @@ errhdr(fp, m, xdot)
 		(void) expand("$g", buf, &buf[sizeof buf - 1]);
 		fprintf(fp, "From: %s (Mail Delivery Subsystem)\n", buf);
 	}
-	fprintf(fp, "To: %s\n", To);
+	fprintf(fp, "To: %s\n", CurEnv->e_to);
 	fprintf(fp, "Subject: %s\n", ErrorMessage);
 
 	/*

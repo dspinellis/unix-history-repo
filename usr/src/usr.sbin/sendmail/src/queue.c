@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.12		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.13		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.12		%G%);
+SCCSID(@(#)queue.c	3.13		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -65,13 +65,13 @@ queueup(df)
 	fprintf(f, "D%s\n", df);
 
 	/* output name of sender */
-	fprintf(f, "S%s\n", From.q_paddr);
+	fprintf(f, "S%s\n", CurEnv->e_from.q_paddr);
 
 	/* output timeout */
 	fprintf(f, "T%ld\n", TimeOut);
 
 	/* output message priority */
-	fprintf(f, "P%ld\n", MsgPriority);
+	fprintf(f, "P%ld\n", CurEnv->e_msgpriority);
 
 	/* output macro definitions */
 	for (i = 0; i < 128; i++)
@@ -84,7 +84,7 @@ queueup(df)
 	}
 
 	/* output list of recipient addresses */
-	for (q = SendQueue; q != NULL; q = q->q_next)
+	for (q = CurEnv->e_sendqueue; q != NULL; q = q->q_next)
 	{
 # ifdef DEBUG
 		if (Debug > 0)
@@ -98,7 +98,7 @@ queueup(df)
 	}
 
 	/* output headers for this message */
-	for (h = Header; h != NULL; h = h->h_link)
+	for (h = CurEnv->e_header; h != NULL; h = h->h_link)
 	{
 		if (h->h_value == NULL || h->h_value[0] == '\0')
 			continue;
@@ -449,7 +449,7 @@ dowork(w)
 		if (Debug > 2)
 			printf("CurTime=%ld, TimeOut=%ld\n", CurTime, TimeOut);
 # endif DEBUG
-		if (QueueUp && CurTime > TimeOut)
+		if (CurEnv->e_queueup && CurTime > TimeOut)
 			timeout(w);
 		(void) unlink(w->w_name);
 		finis();
@@ -505,7 +505,7 @@ readqf(cf)
 	*/
 
 	if (Verbose)
-		message(Arpa_Info, "Running %s (from %s)", cf, From.q_paddr);
+		message(Arpa_Info, "Running %s", cf);
 
 	while (fgets(buf, sizeof buf, f) != NULL)
 	{
@@ -522,6 +522,8 @@ readqf(cf)
 			break;
 
 		  case 'S':		/* sender */
+			if (Verbose)
+				message(Arpa_Info, "Sender: %s", &buf[1]);
 			setsender(newstr(&buf[1]));
 			break;
 
@@ -537,10 +539,10 @@ readqf(cf)
 			break;
 
 		  case 'P':		/* message priority */
-			(void) sscanf(&buf[1], "%ld", &MsgPriority);
+			(void) sscanf(&buf[1], "%ld", &CurEnv->e_msgpriority);
 
 			/* make sure that big things get sent eventually */
-			MsgPriority -= WKTIMEFACT;
+			CurEnv->e_msgpriority -= WKTIMEFACT;
 			break;
 
 		  case 'M':		/* define macro */
@@ -579,7 +581,7 @@ timeout(w)
 	(void) returntosender("Cannot send mail for three days");
 
 	/* arrange to remove files from queue */
-	QueueUp = FALSE;
+	CurEnv->e_queueup = FALSE;
 }
 
 # endif QUEUE

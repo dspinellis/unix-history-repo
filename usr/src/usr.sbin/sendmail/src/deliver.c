@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)deliver.c	3.78		%G%);
+SCCSID(@(#)deliver.c	3.79		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -82,7 +82,7 @@ deliver(firstto, editfcn)
 
 	if (NoConnect && !QueueRun && bitset(M_EXPENSIVE, m->m_flags))
 	{
-		QueueUp = TRUE;
+		CurEnv->e_queueup = TRUE;
 		for (; to != NULL; to = to->q_next)
 			if (!bitset(QDONTSEND, to->q_flags))
 				to->q_flags |= QQUEUEUP|QDONTSEND;
@@ -172,7 +172,7 @@ deliver(firstto, editfcn)
 # ifdef QUEUE
 		if (i == EX_TEMPFAIL)
 		{
-			QueueUp = TRUE;
+			CurEnv->e_queueup = TRUE;
 			tempfail = TRUE;
 		}
 # endif QUEUE
@@ -191,7 +191,7 @@ deliver(firstto, editfcn)
 	*/
 
 	tobuf[0] = '\0';
-	To = tobuf;
+	CurEnv->e_to = tobuf;
 	ctladdr = NULL;
 	for (; to != NULL; to = to->q_next)
 	{
@@ -217,7 +217,7 @@ deliver(firstto, editfcn)
 			ctladdr = getctladdr(to);
 
 		user = to->q_user;
-		To = to->q_paddr;
+		CurEnv->e_to = to->q_paddr;
 		to->q_flags |= QDONTSEND;
 		if (tempfail)
 		{
@@ -265,7 +265,7 @@ deliver(firstto, editfcn)
 # ifdef QUEUE
 				if (i == EX_TEMPFAIL)
 				{
-					QueueUp = TRUE;
+					CurEnv->e_queueup = TRUE;
 					to->q_flags |= QQUEUEUP;
 				}
 				else
@@ -294,7 +294,7 @@ deliver(firstto, editfcn)
 
 		/* save statistics.... */
 		Stat.stat_nt[to->q_mailer->m_mno]++;
-		Stat.stat_bt[to->q_mailer->m_mno] += kbytes(MsgSize);
+		Stat.stat_bt[to->q_mailer->m_mno] += kbytes(CurEnv->e_msgsize);
 
 		/*
 		**  See if this user name is "special".
@@ -303,7 +303,7 @@ deliver(firstto, editfcn)
 		**	Note that this means that editfcn's will not
 		**	be applied to the message.  Also note that
 		**	this type of addresses is not processed along
-		**	with the others, so we fudge on the To person.
+		**	with the others, so we fudge on the CurEnv->e_to person.
 		*/
 
 		if (m == LocalMailer)
@@ -359,7 +359,7 @@ deliver(firstto, editfcn)
 	}
 
 	/* print out messages as full list */
-	To = tobuf;
+	CurEnv->e_to = tobuf;
 
 	/*
 	**  Fill out any parameters after the $u parameter.
@@ -385,7 +385,7 @@ deliver(firstto, editfcn)
 	if (editfcn == NULL)
 		editfcn = putmessage;
 	if (ctladdr == NULL)
-		ctladdr = &From;
+		ctladdr = &CurEnv->e_from;
 # ifdef SMTP
 	if (clever)
 	{
@@ -404,7 +404,7 @@ deliver(firstto, editfcn)
 # ifdef QUEUE
 	if (i == EX_TEMPFAIL)
 	{
-		QueueUp = TRUE;
+		CurEnv->e_queueup = TRUE;
 		for (to = tochain; to != NULL; to = to->q_tchain)
 			to->q_flags |= QQUEUEUP;
 	}
@@ -528,10 +528,10 @@ sendoff(m, pvp, editfcn, ctladdr)
 	giveresponse(i, TRUE, m);
 
 	/* arrange a return receipt if requested */
-	if (RetReceipt && bitset(M_LOCAL, m->m_flags) && i == EX_OK)
+	if (CurEnv->e_retreceipt && bitset(M_LOCAL, m->m_flags) && i == EX_OK)
 	{
-		SendReceipt = TRUE;
-		fprintf(Xscript, "%s... successfully delivered\n", To);
+		CurEnv->e_sendreceipt = TRUE;
+		fprintf(Xscript, "%s... successfully delivered\n", CurEnv->e_to);
 		/* do we want to send back more info? */
 	}
 
@@ -888,7 +888,7 @@ giveresponse(stat, force, m)
 	}
 
 # ifdef LOG
-	syslog(LOG_INFO, "%s->%s: %ld: %s", From.q_paddr, To, MsgSize, statmsg);
+	syslog(LOG_INFO, "%s->%s: %ld: %s", CurEnv->e_from.q_paddr, CurEnv->e_to, CurEnv->e_msgsize, statmsg);
 # endif LOG
 # ifdef QUEUE
 	if (stat != EX_TEMPFAIL)
@@ -1014,10 +1014,10 @@ putheader(fp, m)
 	char *of_line;
 
 	of_line = hvalue("original-from");
-	for (h = Header; h != NULL; h = h->h_link)
+	for (h = CurEnv->e_header; h != NULL; h = h->h_link)
 	{
 		register char *p;
-		char *origfrom = OrigFrom;
+		char *origfrom = CurEnv->e_origfrom;
 		bool nooutput;
 
 		nooutput = FALSE;
@@ -1063,7 +1063,7 @@ putheader(fp, m)
 					extern bool isatword();
 					char *oldp;
 
-					if (!OldStyle || !isspace(*p))
+					if (!CurEnv->e_oldstyle || !isspace(*p))
 					{
 						p++;
 						continue;
@@ -1377,7 +1377,7 @@ mailfile(filename, ctladdr)
 		if (bitset(0111, stb.st_mode))
 			exit(EX_CANTCREAT);
 		if (ctladdr == NULL)
-			ctladdr = &From;
+			ctladdr = &CurEnv->e_from;
 		if (!bitset(S_ISGID, stb.st_mode) || setgid(stb.st_gid) < 0)
 		{
 			if (ctladdr->q_uid == 0)
@@ -1447,16 +1447,16 @@ sendall(verifyonly)
 # ifdef DEBUG
 	if (Debug > 1)
 	{
-		printf("\nSendQueue:\n");
-		printaddr(SendQueue, TRUE);
+		printf("\nSend Queue:\n");
+		printaddr(CurEnv->e_sendqueue, TRUE);
 	}
 # endif DEBUG
 
-	for (q = SendQueue; q != NULL; q = q->q_next)
+	for (q = CurEnv->e_sendqueue; q != NULL; q = q->q_next)
 	{
 		if (verifyonly)
 		{
-			To = q->q_paddr;
+			CurEnv->e_to = q->q_paddr;
 			if (!bitset(QDONTSEND|QBADADDR, q->q_flags))
 			{
 				if (bitset(M_LOCAL, q->q_mailer->m_flags))

@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.66		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.67		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -33,13 +33,7 @@ static char SmailSccsId[] =	"@(#)sendmail.h	3.66		%G%";
 # define SPACESUB	('.'|0200)	/* substitution for <lwsp> */
 
 extern char	Arpa_Info[];	/* the message number for Arpanet info */
-
-
-
-
-
-
-/*
+/*
 **  Address structure.
 **	Addresses are stored internally in this structure.
 **
@@ -83,12 +77,7 @@ typedef struct address ADDRESS;
 # define QPRIMARY	000010	/* set from argv */
 # define QQUEUEUP	000020	/* queue for later transmission */
 # define QPSEUDO	000040	/* only on the list for verification */
-
-
-
-
-
-/*
+/*
 **  Mailer definition structure.
 **	Every mailer known to the system is declared in this
 **	structure.  It defines the pathname of the mailer, some
@@ -138,9 +127,7 @@ EXTERN MAILER	*Mailer[MAXMAILERS+1];
 
 EXTERN MAILER	*LocalMailer;		/* ptr to local mailer */
 EXTERN MAILER	*ProgMailer;		/* ptr to program mailer */
-
-
-/*
+/*
 **  Header structure.
 **	This structure is used internally to store header items.
 */
@@ -155,8 +142,6 @@ struct header
 };
 
 typedef struct header	HDR;
-
-EXTERN HDR	*Header;	/* head of header list */
 
 /*
 **  Header information structure.
@@ -182,10 +167,35 @@ extern struct hdrinfo	HdrInfo[];
 # define H_ACHECK	00040	/* ditto, but always (not just default) */
 # define H_FORCE	00100	/* force this field, even if default */
 # define H_ADDR		00200	/* this field contains addresses */
+/*
+**  Envelope structure.
+**	This structure defines the message itself.  There is usually
+**	only one of these -- for the message that we originally read
+**	and which is our primary interest -- but other envelopes can
+**	be generated during processing.  For example, error messages
+**	will have their own envelope.
+*/
 
+struct envelope
+{
+	HDR	*e_header;	/* head of header list */
+	long	e_msgpriority;	/* adjusted priority of this message */
+	bool	e_queueup;	/* queue this message for future xmission */
+	bool	e_oldstyle;	/* spaces (not commas) delimit addresses */
+	bool	e_retreceipt;	/* give a return receipt if delivery occurs */
+	bool	e_sendreceipt;	/* actually send a receipt back */
+	char	*e_origfrom;	/* the From: line read from the message */
+	char	*e_to;		/* the target person */
+	ADDRESS	e_from;		/* the person it is from */
+	ADDRESS	*e_sendqueue;	/* list of message recipients */
+	long	e_msgsize;	/* size of the message in bytes */
+	int	(*e_putfunc)();	/* function used to put the message */
+};
 
+typedef struct envelope	ENVELOPE;
 
-/*
+EXTERN ENVELOPE	*CurEnv;	/* envelope currently being processed */
+/*
 **  Work queue.
 */
 
@@ -205,7 +215,7 @@ EXTERN WORK	*WorkQ;			/* queue of things to be done */
 **  Message priorities.
 **	Priorities > 0 should be preemptive.
 **
-**	MsgPriority is the number of bytes in the message adjusted
+**	CurEnv->e_msgpriority is the number of bytes in the message adjusted
 **	by the message priority and the amount of time the message
 **	has been sitting around.  Each priority point is worth
 **	WKPRIFACT bytes of message, and each time we reprocess a
@@ -221,12 +231,7 @@ EXTERN WORK	*WorkQ;			/* queue of things to be done */
 
 # define WKPRIFACT	1800		/* bytes each pri point is worth */
 # define WKTIMEFACT	400		/* bytes each time unit is worth */
-
-EXTERN long	MsgPriority;		/* adjusted priority of this message */
-
-
-
-/*
+/*
 **  Rewrite rules.
 */
 
@@ -251,10 +256,7 @@ extern struct rewrite	*RewriteRules[];
 # define CONDIF		'\030'	/* conditional if-then */
 # define CONDELSE	'\031'	/* conditional else */
 # define CONDFI		'\032'	/* conditional fi */
-
-
-
-/*
+/*
 **  Symbol table definitions
 */
 
@@ -291,11 +293,7 @@ extern STAB	*stab();
 /* opcodes to stab */
 # define ST_FIND	0	/* find entry */
 # define ST_ENTER	1	/* enter if not there */
-
-
-
-
-/*
+/*
 **  Statistics structure.
 */
 
@@ -311,11 +309,7 @@ struct statistics
 
 EXTERN struct statistics	Stat;
 extern long			kbytes();	/* for _bf, _bt */
-
-
-
-
-/*
+/*
 **  Global variables.
 */
 
@@ -335,15 +329,11 @@ EXTERN bool	NoReturn;	/* don't return letter to sender */
 EXTERN bool	Daemon;		/* running as a daemon */
 EXTERN bool	Smtp;		/* using SMTP over connection */
 EXTERN bool	SuprErrs;	/* set if we are suppressing errors */
-EXTERN bool	QueueUp;	/* queue this message for future xmission */
 EXTERN bool	QueueRun;	/* currently running message from the queue */
 EXTERN bool	HoldErrs;	/* only output errors to transcript */
 EXTERN bool	ArpaMode;	/* set if running arpanet protocol */
 EXTERN bool	ForkOff;	/* fork after initial verification */
-EXTERN bool	OldStyle;	/* spaces (not commas) delimit addresses */
 EXTERN bool	NoConnect;	/* don't connect to non-local mailers */
-EXTERN bool	RetReceipt;	/* give a return receipt if delivery occurs */
-EXTERN bool	SendReceipt;	/* actually send a receipt back */
 EXTERN bool	FatalErrors;	/* set if fatal errors during processing */
 extern time_t	TimeOut;	/* time until timeout */
 EXTERN FILE	*InChannel;	/* input connection */
@@ -361,8 +351,6 @@ EXTERN int	ExitStat;	/* exit status code */
 EXTERN int	HopCount;	/* hop count */
 EXTERN int	AliasLevel;	/* depth of aliasing */
 EXTERN time_t	QueueIntvl;	/* intervals between running the queue */
-EXTERN char	*OrigFrom;	/* the From: line read from the message */
-EXTERN char	*To;		/* the target person */
 EXTERN char	*HostName;	/* name of this host for SMTP messages */
 EXTERN char	*InFileName;	/* input file name */
 EXTERN char	*Transcript;	/* the transcript file name */
@@ -371,9 +359,6 @@ extern char	*AliasFile;	/* location of alias file */
 extern char	*ConfFile;	/* location of configuration file */
 extern char	*StatFile;	/* location of statistics summary */
 extern char	*QueueDir;	/* location of queue directory */
-EXTERN ADDRESS	From;		/* the person it is from */
-EXTERN ADDRESS	*SendQueue;	/* list of message recipients */
-EXTERN long	MsgSize;	/* size of the message in bytes */
 EXTERN time_t	CurTime;	/* time of this message */
 
 
