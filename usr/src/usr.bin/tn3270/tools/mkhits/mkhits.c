@@ -23,8 +23,6 @@
 #include <string.h>
 #endif	/* defined(unix) */
 #include <ctype.h>
-#include "../ascii/ascebc.h"
-#include "../ctlr/ebc_disp.h"
 #include "../ctlr/function.h"
 
 #include "dohits.h"

@@ -24,8 +24,8 @@
 #endif	/* defined(unix) */
 #include <ctype.h>
 #include "../general/general.h"
-#include "../ascii/ascebc.h"
-#include "../ctlr/ebc_disp.h"
+#include "../apilib/asc_ebc.h"
+#include "../apilib/ebc_disp.h"
 #include "../ctlr/function.h"
 
 #include "dohits.h"
@@ -169,7 +169,7 @@ struct Hits *hits;
     }
     if (type[1] == 0) {		/* character */
 	hit->ctlrfcn = FCN_CHARACTER;
-	hit->code = ebc_disp[ascebc[AE_IN][type[0]]];
+	hit->code = ebc_disp[asc_ebc[type[0]]];
 	return savechr(*type);		/* The character is the name */
     } else {
 	for (this = firstentry(type); this; this = this->next) {

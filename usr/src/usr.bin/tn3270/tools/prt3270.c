@@ -10,11 +10,11 @@ static	char	sccsid[] = "@(#)prt3270.c	3.1  10/29/86";
 
 #include "../general/general.h"
 
-#include "../ascii/ascebc.h"
+#include "../apilib/asc_ebc.h"
 #include "../ctlr/hostctlr.h"
 #include "../ctlr/screen.h"
 #include "../ctlr/function.h"
-#include "../ascii/astosc.h"
+#include "../apilib/astosc.h"
 #include "../general/globals.h"
 
 #include "../ctlr/kbd.out"
@@ -149,7 +149,7 @@ void
 putEChar(character)
 int character;
 {
-    putChar(ebcasc[0][character]);
+    putChar(ebc_asc[character]);
     if (ColsLeft() < 10) {
 	Column1();
     }

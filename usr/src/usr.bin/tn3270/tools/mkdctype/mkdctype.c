@@ -1,4 +1,4 @@
-#include "../ctlr/ebc_disp.h"
+#include "../apilib/ebc_disp.h"
 #include "ectype.h"
 
 

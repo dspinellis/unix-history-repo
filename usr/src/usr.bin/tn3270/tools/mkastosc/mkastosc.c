@@ -8,8 +8,6 @@
 #include <ctype.h>
 
 #include "../general/general.h"
-#include "../ascii/ascebc.h"
-#include "../ctlr/ebc_disp.h"
 #include "../ctlr/function.h"
 
 #include "dohits.h"
