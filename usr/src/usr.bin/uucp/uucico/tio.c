@@ -1,6 +1,16 @@
+/*-
+ * Copyright (c) 1982 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Rick Adams.
+ *
+ * %sccs.include.redist.c%
+ */
+
 #ifndef lint
-static char sccsid[] = "@(#)tio.c	4.11	(Berkeley) %G%";
-#endif
+static char sccsid[] = "@(#)tio.c	4.12 (Berkeley) %G%";
+#endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/signal.h>
